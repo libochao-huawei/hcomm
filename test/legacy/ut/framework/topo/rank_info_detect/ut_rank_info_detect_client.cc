@@ -43,8 +43,6 @@
 #include "topo_addr_info.h"
 #include "adapter_error_manager_pub.h"
 
-void CheckRootInfoJson(const nlohmann::json &parseJson);
-
 using namespace Hccl;
 
 std::string filePath{HCOMM_CODE_ROOT_DIR "/test/legacy/ut/framework/topo/rank_info_detect/rootinfo.json"};
@@ -329,7 +327,7 @@ TEST_F(RankInfoDetectClientTest, Ut_CheckRootInfoJson_When_VersionNot2_Expect_Rp
     j["version"] = "1.0";
     j["topo_file_path"] = "/fake/path";
     j["rank_count"] = 1;
-    EXPECT_THROW(CheckRootInfoJson(j), InvalidParamsException);
+    EXPECT_THROW(Hccl::CheckRootInfoJson(j), InvalidParamsException);
 }
 
 TEST_F(RankInfoDetectClientTest, Ut_CheckRootInfoJson_When_TopoFilePathInvalid_Expect_RptInputErr)
@@ -340,7 +338,7 @@ TEST_F(RankInfoDetectClientTest, Ut_CheckRootInfoJson_When_TopoFilePathInvalid_E
     j["version"] = "1.0";
     j["topo_file_path"] = "/invalid/path/that/does/not/exist";
     j["rank_count"] = 1;
-    EXPECT_THROW(CheckRootInfoJson(j), InvalidParamsException);
+    EXPECT_THROW(Hccl::CheckRootInfoJson(j), InvalidParamsException);
 }
 
 TEST_F(RankInfoDetectClientTest, Ut_CheckRootInfoJson_When_RankCountMismatch_Expect_RptInputErr)
@@ -354,7 +352,7 @@ TEST_F(RankInfoDetectClientTest, Ut_CheckRootInfoJson_When_RankCountMismatch_Exp
     nlohmann::json rankList = nlohmann::json::array();
     rankList.push_back(nlohmann::json::object());
     j["rank_list"] = rankList;
-    EXPECT_THROW(CheckRootInfoJson(j), InvalidParamsException);
+    EXPECT_THROW(Hccl::CheckRootInfoJson(j), InvalidParamsException);
 }
 
 TEST_F(RankInfoDetectClientTest, Ut_RecvRankTable_When_RankFailed_Expect_RptInputErr)
