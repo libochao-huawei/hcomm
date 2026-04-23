@@ -393,7 +393,8 @@ public:
         pipe.InitBuffer(localFlagBuf, UB_FLAG_SIZE_4);
         localSetTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_ONE_OFFSET);
         localCheckTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_TWO_OFFSET);
-        localCheckGETensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_THREE_OFFSET);
+        localClearTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_THREE_OFFSET);
+        localClearTensor.SetValue(0, 0);
         localGetTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_FOUR_OFFSET);
 
         pipe.InitBuffer(flagBatchSetQue, 1, UB_FLAG_SIZE_8); // 最多支持同时set8个flag值，256B可存放32个u64，最多2组16rank
@@ -434,7 +435,8 @@ public:
         pipe.InitBuffer(localFlagBuf, UB_FLAG_SIZE_4);
         localSetTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_ONE_OFFSET);
         localCheckTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_TWO_OFFSET);
-        localCheckGETensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_THREE_OFFSET);
+        localClearTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_THREE_OFFSET);
+        localClearTensor.SetValue(0, 0);
         localGetTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_FOUR_OFFSET);
 
         localOffset = (rankSize_ * NUM_BLOCKS_FOUR_PER_RANK_A3 * FLAG_BUF_NUM) * FLAG_SIZE;
@@ -532,7 +534,8 @@ public:
         pipe.InitBuffer(localFlagBuf, UB_FLAG_SIZE_7);
         localSetTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_ONE_OFFSET);
         localCheckTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_TWO_OFFSET);
-        localCheckGETensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_THREE_OFFSET);
+        localClearTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_THREE_OFFSET);
+        localClearTensor.SetValue(0, 0);
         localGetTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_FOUR_OFFSET);
         ubLocal = localFlagBuf.GetWithOffset<uint64_t>(UB_FLAG_PAD_COUNT, FLAG_FIVE_OFFSET);
         ubLocalHead = localFlagBuf.GetWithOffset<uint32_t>(UB_FLAG_PAD_COUNT, FLAG_SIX_OFFSET);
@@ -681,7 +684,7 @@ public:
     TBuf<> localFlagBuf;
     LocalTensor<int32_t> localSetTensor;
     LocalTensor<int32_t> localCheckTensor;
-    LocalTensor<int32_t> localCheckGETensor;
+    LocalTensor<int32_t> localClearTensor;
     LocalTensor<int32_t> localGetTensor;
     LocalTensor<uint64_t> ubLocal;
     LocalTensor<uint32_t> ubLocalHead;
@@ -712,25 +715,31 @@ __aicore__ inline void AivCommBase::Barrier(uint32_t step)
     // 用10个flag
     uint32_t flagOffset = 2 * 1024 * 1024 + (step % 2) * FLAG_SIZE * rankSize_;
     __gm__ int32_t *ctrlFlagsGM;
+    localSetTensor.SetValue(0, 1);
+    GlobalTensor<int32_t> globalTensor;
     if (blockIdx_ == 0) {
         pipe_barrier(PIPE_ALL);
         for (int i = 1; i < rankSize_; i++) {
             uint32_t targetRank = (rank_ + i) % rankSize_; 
             ctrlFlagsGM = (__gm__ int32_t *)(GM_OUT[targetRank] + flagOffset + rank_ * FLAG_SIZE);
-            SetSignalValue(ctrlFlagsGM, localSetTensor, 1);
+            globalTensor.SetGlobalBuffer(ctrlFlagsGM, UB_FLAG_PAD_COUNT);
+            DataCopy(globalTensor, localSetTensor, UB_FLAG_PAD_COUNT);
         }
         pipe_barrier(PIPE_ALL);
         for (int i = 1; i < rankSize_; i++) {
             uint32_t targetRank = (rank_ + i) % rankSize_; 
             ctrlFlagsGM = (__gm__ int32_t *)(GM_OUT[rank_] + flagOffset + targetRank * FLAG_SIZE);
-            WaitSignalValue(ctrlFlagsGM, localCheckTensor, 1);
+            globalTensor.SetGlobalBuffer(ctrlFlagsGM, UB_FLAG_PAD_COUNT);
+            while (true) {
+                DataCopy(localCheckTensor, globalTensor, UB_FLAG_PAD_COUNT);
+                SyncFunc<HardEvent::MTE2_S>();
+                if (localCheckTensor.GetValue(0) == 1) {
+                    break;
+                }
+            }
+            DataCopy(globalTensor, localClearTensor, UB_FLAG_PAD_COUNT); // 清零
         }
         pipe_barrier(PIPE_ALL);
-        for (int i = 1; i < rankSize_; i++) {
-            uint32_t targetRank = (rank_ + i) % rankSize_; 
-            ctrlFlagsGM = (__gm__ int32_t *)(GM_OUT[rank_] + flagOffset + targetRank * FLAG_SIZE);
-            SetSignalValue(ctrlFlagsGM, localSetTensor, 0);
-        }
     }
 }
  
@@ -751,8 +760,12 @@ __aicore__ inline void AivCommBase::BlockSync()
     if (blockIdx_ == 0) {
         //通知其他核
         pipe_barrier(PIPE_ALL);
+        GlobalTensor<int32_t> globalTensor;
+        localSetTensor.SetValue(0, 1);
+        SyncFunc<HardEvent::S_MTE3>();
         for (int i = 1; i < numBlocks_; i++) {
-            SetSignalValue(ctrlFlagsGM + i * FLAG_SIZE, localSetTensor, 1);
+            globalTensor.SetGlobalBuffer(ctrlFlagsGM + i * FLAG_SIZE, UB_FLAG_PAD_COUNT);
+            DataCopy(globalTensor, localSetTensor, UB_FLAG_PAD_COUNT);
         }
         pipe_barrier(PIPE_ALL);
     } else {
