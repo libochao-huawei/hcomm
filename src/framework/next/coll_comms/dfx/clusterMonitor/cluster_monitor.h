@@ -10,19 +10,32 @@
 #ifndef CLUSTER_MONITOR_H
 #define CLUSTER_MONITOR_H
 
+#include <string>
+#include <map>
+#include <queue>
+#include <mutex>
+#include <atomic>
+#include <thread>
+#include "hccl_types.h"
+#include "sal.h"
+#include "hccl_common.h"
+#include "hccl_comm_socket_c_adpt.h"
+#include "ring_buffer.h"
+#include "reference_map.h"
+
 namespace hccl {
 
 using ClusterUIDType = struct HcclClusterMonitorUid {
-    char id[512] = {0}; // netLayerId + deviceLogicId + eid 最大不超过512字节
-    bool operator == (const HcclClusterMonitorUid &that) const
+    char id[512] = {0}; // netLayerId + netInstanceId + deviceLogicId + eid 最大不超过512字节
+    bool operator==(const HcclClusterMonitorUid &that) const
     {
         return std::string(this->id) == std::string(that.id);
     }
-    bool operator != (const HcclClusterMonitorUid &that) const
+    bool operator!=(const HcclClusterMonitorUid &that) const
     {
         return std::string(this->id) != std::string(that.id);
     }
-    bool operator < (const HcclClusterMonitorUid &that) const
+    bool operator<(const HcclClusterMonitorUid &that) const
     {
         return std::string(this->id) < std::string(that.id);
     }
@@ -38,55 +51,70 @@ enum class ClusterMonitorStatus {
     CLUSTER_MONITOR_INCONSISTENT
 };
 
+enum class MonitorLinkStatus { MONITOR_LINK_NOT_START, MONITOR_LINK_BUILDING, MONITOR_LINK_COMPLETED };
+
 struct ClusterMonitorFrame {
     ClusterUIDType src;
     ClusterUIDType dst;
     ClusterUIDType crimer;
     ClusterUIDType informer;
     ClusterMonitorStatus status = ClusterMonitorStatus::CLUSTER_MONITOR_OK;
-    HcclUs TOARelative; // time of arrival (Relative)
+    HcclUs TOARelative;       // time of arrival (Relative)
     HcclSystemTime TOASystem; // time of arrival (System)
-    ClusterMonitorFrame() {}
-    ClusterMonitorFrame(ClusterUIDType &crimer, ClusterUIDType &informer, ClusterMonitorStatus status, HcclUs TOARelativeIn,
-        HcclSystemTime TOASystemIn)
-        : crimer(crimer), informer(informer), status(status), TOARelative(TOARelativeIn),
-        TOASystem(TOASystemIn)
-    {}
-    ClusterMonitorFrame(ClusterUIDType &src, ClusterUIDType &dst, ClusterUIDType &crimer, ClusterUIDType &informer, ClusterMonitorStatus status)
-        : src(src), dst(dst), crimer(crimer), informer(informer), status(status)
-    {}
+    ClusterMonitorFrame()
+    {
+    }
+    ClusterMonitorFrame(ClusterUIDType &crimer, ClusterUIDType &informer, ClusterMonitorStatus status,
+        HcclUs TOARelativeIn, HcclSystemTime TOASystemIn)
+        : crimer(crimer),
+          informer(informer),
+          status(status),
+          TOARelative(TOARelativeIn),
+          TOASystem(TOASystemIn)
+    {
+    }
+    ClusterMonitorFrame(ClusterUIDType &src, ClusterUIDType &dst, ClusterUIDType &crimer, ClusterUIDType &informer,
+        ClusterMonitorStatus status)
+        : src(src),
+          dst(dst),
+          crimer(crimer),
+          informer(informer),
+          status(status)
+    {
+    }
 };
 
-struct ClusterMonitorSocketCtx { // 原ConnInfo
-    HcommSocketDesc socketDesc;                   // 与对端连接的描述符
-    hcomm::socketHandler  socketHandler           // socketHandler
-    std::queue<ClusterMonitorFrame> sendBuffer;   // 用来发送的帧队列
-    u32 restSize = 0;                             // 剩余待发送的帧长度
-    RingBuffer recvBuffer;                        // 用来接收的环形帧队列
-    u32 lostNum = 0;                              // 丢失的心跳个数
-    bool newConn = false;                         // 是否是新增的连接
-    ClusterMonitorSocketCtx() {}
-    ClusterMonitorSocketCtx(bool newConn, HcommSocketDesc &socketDesc)
-        : newConn(newConn), socket(socketDesc)
-    {}
-};
-
-struct CommLinkContext {
-    CommLink    commLink;
-    uint32_t    localRank{0};
-    uint32_t    remoteRank{0};
+struct ClusterMonitorContext {                  // 原ConnInfo
+    HcclCommSocketDesc socketDesc;              // 与对端连接的描述符
+    HcclCommSocketHandle socketHandler;         // socketHandler
+    std::queue<ClusterMonitorFrame> sendBuffer; // 用来发送的帧队列
+    u64 restSize = 0;                           // 剩余待发送的帧长度
+    RingBuffer recvBuffer;                      // 用来接收的环形帧缓冲区
+    u32 lostNum = 0;                            // 丢失的心跳个数
+    bool newConn = false;                       // 是否是新增的连接
+    ClusterMonitorContext()
+    {
+    }
+    ClusterMonitorContext(bool newConn, HcclCommSocketDesc &socketDesc) : socketDesc(socketDesc), newConn(newConn)
+    {
+    }
 };
 
 struct ClusterUidCtxt {
-    uint32_t        netLayer;
-    uint32_t        phyId;
-    std::string     commAddrStr;
-    ClusterUidCtxt() {}
-    ClusterUidCtxt(uint32_t netLayer,
-        uint32_t phyId, std::string &commAddrStr)
-    : netLayer(netLayer),
-        deviceLogicId(phyId), commAddrStr(commAddrStr)
-    {}
+    uint32_t netLayer;
+    std::string netInstanceId;
+    s32 deviceLogicId;
+    std::string commAddrStr;
+    ClusterUidCtxt()
+    {
+    }
+    ClusterUidCtxt(uint32_t netLayer, std::string &netInstanceId, s32 deviceLogicId, std::string &commAddrStr)
+        : netLayer(netLayer),
+          netInstanceId(netInstanceId),
+          deviceLogicId(deviceLogicId),
+          commAddrStr(commAddrStr)
+    {
+    }
 };
 
 class ClusterMonitor {
@@ -97,59 +125,69 @@ public:
 private:
     ClusterMonitor() = default;
     ~ClusterMonitor();
-    HcclResult ClusterMonitor::GetRemEndpointDescs(hccl::CollComm* collComm, 
-        std::map<uint32_t, std::vector<EndpointDesc>> &remEndpointDescs)
     struct FrameStatus { // 专门用来给frame设置对应的状态
         ClusterMonitorStatus status = ClusterMonitorStatus::CLUSTER_MONITOR_OK;
         ClusterUIDType informer;
         bool needBroadcast = false;
-        FrameStatus() {}
+        FrameStatus()
+        {
+        }
     };
 
-    enum class MonitorLinkStatus {
-        MONITOR_LINK_NOT_START;
-        MONITOR_LINK_BUILDING;
-        MONITOR_LINK_COMPLETED;
-    };
+    HcclResult FormatUID(ClusterUidCtxt ctxt, ClusterUIDType &uid);
 
-    uint32_t        devicePhyId_;
-    s32 deviceLogicId_{0};
-    // 
-    bool clusterMonitorThreadFlag_ = false;
-    std::unique_ptr<std::thread> clusterMonitorThread_;
-    // 防止重复初始化
-    bool initialized_ = false;
-    uint32_t lostThreshold_ = 0;
-    bool isDeInit_ = false;
-    std::atomic<bool> linkThreadRunning_{false};
+    std::string GetUID(const ClusterUIDType &uid) const;
+
+    HcclResult CreateMonitorLinksAsync();
+
+    HcclResult CreateTransportHandle(ClusterMonitorContext &info);
+
+    void CreateLinkWithRemotePonit(std::string group, ClusterUIDType rem, ClusterMonitorContext needConnectRank);
+
+    HcclResult SendMonitorFrame(
+        ClusterUIDType &dst, ClusterUIDType &crimer, ClusterUIDType &informer, ClusterMonitorStatus status);
+
+    HcclResult RecvMonitorFrame(ClusterUIDType &src);
+
+    HcclResult ParseMonitorFrame(ClusterMonitorFrame &cmFrame, ClusterUIDType &src);
 
     // 防止多线程同时初始化的线程锁
-    std::mutext threadLock_;
-    std::vector<ClusterUIDType> errorSocket_;
-    std::queue<ClusterMonitorFrame> errStatusQueue_;
-    
-    // 通信域名称为key，ClusterUIDType表示1个节点, bool表示0或1，是否连接上，用来指示是否有过这个通信域以及对应通信域里待连接的节点是否以及连接上，原groupMap_
+    std::mutex threadLock_;
+
+    std::mutex linksConnInfoMtx_;
+
+    // 防止重复初始化
+    bool initialized_ = false;
+
+    // 通信域名称为key，ClusterUIDType表示1个节点,
+    // bool表示0或1，是否连接上，用来指示是否有过这个通信域以及对应通信域里待连接的节点是否以及连接上，原groupMap_
     std::map<std::string, std::map<ClusterUIDType, bool>> commIdMap_;
-    
+
     // 通信域名称为key, 一个通信域有多个待连接心跳的connInfo，存储到该结构体，待monitor线程轮询拿到, 原hbLinkConnInfo_
-    std::map<std::string, std::queue<std::pair<ClusterUIDType, ClusterMonitorSocketCtx>>> clusterLinkContext_{};
-    std::mutex clusertMonitorLinkMtx_;
-    
+    std::map<std::string, std::queue<std::pair<ClusterUIDType, ClusterMonitorContext>>> clusterLinkContext_{};
+
     // 存储UID与监控连接状态的map, NOT_START/BUILDING/COMPILETED，原rankId2LinkStatusMap_
     std::map<ClusterUIDType, MonitorLinkStatus> monitorLinkStatusMap_;
-    
+
     // 存储UID与连接上下文的计数map，由于多个通信域都有可能使用同一个context去连接远端，需要计数处理，解注册时计数--，原rankId2SocketMap_
-    ReferenceMap<ClusterUIDType, ClusterMonitorSocketCtx> uid2SocketRefMap_;
-    
+    ReferenceMap<ClusterUIDType, ClusterMonitorContext> uid2ContextRefMap_;
+
     // 用来做帧的统计计数，设置对应帧的状态，原rankId2StatusMap_
     ReferenceMap<ClusterUIDType, FrameStatus> uid2FrameStatusMap_;
-    
+
     // uid与thread的维护关系，不同的remote起不同的异步建链线程，原linkThreadMap_
     std::map<ClusterUIDType, std::unique_ptr<std::thread>> linkThreadMap_{};
-    
+
     // 保存错误的节点
     std::queue<ClusterUIDType> errRankQueue_;
 
+    ClusterUIDType uid_; // cluster monitor自己的uid
+
+    u32 deviceLogicId_ = 0;
+
+    std::atomic<bool> linkRunningStatus_{false};
+
+    std::mutex monitorProcessLock_;
 };
-}// namespace hccl
+} // namespace hccl
 #endif // CLUSTER_MONITOR_H
