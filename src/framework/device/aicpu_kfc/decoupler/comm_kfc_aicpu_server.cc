@@ -126,12 +126,27 @@ void LogOpenOpParamBrief(const char *stage, const std::vector<uint8_t> &opParam)
 
     const auto *param = reinterpret_cast<const ops_hccl::OpParam *>(opParam.data());
     HCCL_INFO("[MC2_OPEN_DIAG][%s] opParamSize %zu, opType %u, algName[%s], inputPtr %p, outputPtr %p, "
-              "count %llu, dataType %u, outputType %u, strideCount %llu, resCtx %p, ctxSize %llu, stream %p.",
+              "resCtx %p, ctxSize %llu, stream %p.",
               stage, opParam.size(), static_cast<u32>(param->opType), param->algName,
-              param->inputPtr, param->outputPtr, static_cast<unsigned long long>(param->DataDes.count),
-              static_cast<u32>(param->DataDes.dataType), static_cast<u32>(param->DataDes.outputType),
-              static_cast<unsigned long long>(param->DataDes.strideCount),
+              param->inputPtr, param->outputPtr,
               param->resCtx, static_cast<unsigned long long>(param->ctxSize), param->stream);
+    if (param->opType == HCCL_CMD_ALLTOALLV) {
+        HCCL_INFO("[MC2_OPEN_DIAG][FormatRun][AllToAllV] runOpType %u, runAlgName[%s], runInputPtr %p, "
+                "runOutputPtr %p, sendDataType %u, recvDataType %u, "
+                "stream %p.", static_cast<u32>(param->opType), param->algName, 
+                param->inputPtr, param->outputPtr, static_cast<u32>(param->all2AllVDataDes.sendType),
+                static_cast<u32>(param->all2AllVDataDes.recvType), param->stream);
+    } else if (param->opType == HCCL_CMD_ALLTOALL) {
+        HCCL_INFO("[MC2_OPEN_DIAG][AllToAll] sendCount %llu, sendDataType %u, recvCount %llu, recvDataType %u, "
+                "stream %p.", static_cast<unsigned long long>(param->all2AllDataDes.sendCount),
+                static_cast<u32>(param->all2AllDataDes.sendType), static_cast<unsigned long long>(param->all2AllDataDes.recvCount),
+                static_cast<u32>(param->all2AllDataDes.recvType), param->stream);
+    } else {
+        HCCL_INFO("[MC2_OPEN_DIAG][Else] count %llu, dataType %u, outputType %u, strideCount %llu.",
+                static_cast<unsigned long long>(param->DataDes.count),
+                static_cast<u32>(param->DataDes.dataType), static_cast<u32>(param->DataDes.outputType),
+                static_cast<unsigned long long>(param->DataDes.strideCount));
+    }
 }
 }
 
