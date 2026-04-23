@@ -1489,34 +1489,34 @@ HcclResult hrtNotifyCreate(s32 deviceId, aclrtNotify *notify)
         aclrtStream stream = nullptr;
         aclError ret = aclrtCreateStream(&stream);
         if (ret != ACL_SUCCESS) {
-            HCCL_ERROR("[hrtNotifyCreate] aclrtCreateStream fail, ret[%d], destory event.", ret);
+            HCCL_ERROR("[hrtNotifyCreate] aclrtCreateStream fail, ret[%d], destroy event.", ret);
             aclrtDestroyEvent(*notify);
             return ret;
         }
         ret = aclrtRecordEvent(*notify, stream);
         if (ret != ACL_SUCCESS) {
-            HCCL_ERROR("[hrtNotifyCreate] aclrtRecordEvent fail, ret[%d], destory stream and event.", ret);
+            HCCL_ERROR("[hrtNotifyCreate] aclrtRecordEvent fail, ret[%d], destroy stream and event.", ret);
             aclrtDestroyStream(stream);
             aclrtDestroyEvent(*notify);
             return ret;
         }
         ret = aclrtResetEvent(*notify, stream);
         if (ret != ACL_SUCCESS) {
-            HCCL_ERROR("[hrtNotifyCreate] aclrtResetEvent fail, ret[%d], destory stream and event.", ret);
+            HCCL_ERROR("[hrtNotifyCreate] aclrtResetEvent fail, ret[%d], destroy stream and event.", ret);
             aclrtDestroyStream(stream);
             aclrtDestroyEvent(*notify);
             return ret;
         }
         ret = aclrtSynchronizeStream(stream);
         if (ret != ACL_SUCCESS) {
-            HCCL_ERROR("[hrtNotifyCreate] aclrtSynchronizeStream fail, ret[%d], destory stream and event.", ret);
+            HCCL_ERROR("[hrtNotifyCreate] aclrtSynchronizeStream fail, ret[%d], destroy stream and event.", ret);
             aclrtDestroyStream(stream);
             aclrtDestroyEvent(*notify);
             return ret;
         }
         ret = aclrtDestroyStream(stream);
         if (ret != ACL_SUCCESS) {
-            HCCL_ERROR("[hrtNotifyCreate] aclrtDestroyStream fail, ret[%d], destory event.", ret);
+            HCCL_ERROR("[hrtNotifyCreate] aclrtDestroyStream fail, ret[%d], destroy event.", ret);
             aclrtDestroyEvent(*notify);
             return ret;
         }
@@ -1992,7 +1992,7 @@ HcclResult hrtStreamCreate(aclrtStream *stream)
     s32 streamId = 0;
     HcclResult hcclRet = hrtGetStreamId(stream, streamId);
     if (hcclRet != HCCL_SUCCESS) {
-        HCCL_ERROR("[hrtStreamCreate] hrtGetStreamId fail, ret[%d], destory stream.", ret);
+        HCCL_ERROR("[hrtStreamCreate] hrtGetStreamId fail, ret[%d], destroy stream.", ret);
         aclrtDestroyStream(*stream);
         return hcclRet;
     }
@@ -2017,7 +2017,7 @@ HcclResult hrtStreamCreateWithFlags(aclrtStream *stream, int32_t priority, uint3
     s32 streamId = 0;
     HcclResult hcclRet = hrtGetStreamId(stream, streamId);
     if (hcclRet != HCCL_SUCCESS) {
-        HCCL_ERROR("[hrtStreamCreateWithFlags] hrtGetStreamId fail, ret[%d], destory stream.", ret);
+        HCCL_ERROR("[hrtStreamCreateWithFlags] hrtGetStreamId fail, ret[%d], destroy stream.", ret);
         aclrtDestroyStream(*stream);
         return hcclRet;
     }

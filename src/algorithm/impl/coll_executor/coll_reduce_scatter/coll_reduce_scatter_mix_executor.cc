@@ -371,13 +371,13 @@ HcclResult CollReduceScatterMixExecutor::KernelRun(const OpParam &param, ExecMem
             TemplateType::TEMPLATE_REDUCESCATTER_RING, dispatcher_);
         CHK_SMART_PTR_NULL(level1Executor);
         CHK_RET(level1Executor->Prepare(reduceAttr));
-        HCCL_INFO("[CollReduceScatterMixExecutor][KernelRun]ReduceScatter mix: using ring algo inter-server.");
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_RING in COMM_LEVEL1", __func__);
     } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR) {
         level1Executor = AlgTemplateRegistry::Instance().GetAlgTemplate(
             TemplateType::TEMPLATE_REDUCESCATTER_NHR, dispatcher_);
         CHK_SMART_PTR_NULL(level1Executor);
         CHK_RET(level1Executor->Prepare(reduceAttr, false));
-        HCCL_INFO("[CollReduceScatterMixExecutor][KernelRun]ReduceScatter mix: using nhr algo inter-server.");
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_NHR in COMM_LEVEL1", __func__);
     } else {
         HCCL_ERROR("[CollReduceScatterMixExecutor][KernelRun]ReduceScatter mix: algType[%u] is not supported.", algType_.algoLevel1);
         return HCCL_E_NOT_SUPPORT;

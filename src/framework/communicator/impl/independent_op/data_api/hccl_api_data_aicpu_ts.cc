@@ -733,8 +733,7 @@ int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channe
         auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
         CHK_PTR_NULL(streamLitePtr);
 
-        (void)timeOut;
-        EXECEPTION_CATCH(ubTransportLitePtr->Wait(localNotifyIdx, *streamLitePtr), ret = HCCL_E_INTERNAL);
+        EXECEPTION_CATCH(ubTransportLitePtr->WaitWithTimeout(localNotifyIdx, *streamLitePtr, timeOut), ret = HCCL_E_INTERNAL);
     } else {
         Stream *stream = GetStream(thread);
         CHK_PTR_NULL(stream);
@@ -782,6 +781,7 @@ int32_t HcommAcquireComm(const char* commId)
     CHK_PTR_NULL(commId);
     DevType deviceType;
     CHK_RET(hrtGetDeviceType(deviceType));
+    HCCL_INFO("[%s]comId[%s], devType[%d]", __func__, commId, deviceType);
     if (deviceType != DevType::DEV_TYPE_950) {
         HcclCommAicpu *hcclComm = AicpuHcclProcess::AicpuGetCommbyGroup(commId);
         CHK_PRT_RET(!hcclComm, HCCL_ERROR("%s AicpuGetCommbyGroup is null, commId[%s]", __func__, commId), HCCL_E_PTR);
@@ -816,12 +816,11 @@ int32_t HcommReleaseComm(const char* commId)
     CHK_PTR_NULL(commId);
     DevType deviceType;
     CHK_RET(hrtGetDeviceType(deviceType));
+    HCCL_INFO("[%s]comId[%s], devType[%d]", __func__, commId, deviceType);
     if (deviceType != DevType::DEV_TYPE_950) {
         AicpuHcclProcess::AicpuReleaseCommbyGroup(commId);
-        HCCL_INFO("[%s] AicpuReleaseCommbyGroup success, commId[%s]", __func__, commId);
     } else {
         AicpuIndopProcess::AicpuReleaseCommMgrbyGroup(commId);
-        HCCL_INFO("[%s] AicpuReleaseCommMgrbyGroup success, commId[%s]", __func__, commId);
     }
     return HCCL_SUCCESS;
 }
@@ -928,7 +927,7 @@ HcclResult HcommProfilingReportKernelStartTask(uint64_t thread, const char* grou
     auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
     CHK_PTR_NULL(streamLitePtr);
     Hccl::FlagTaskInfo flagTaskInfo;
-    flagTaskInfo.streamId = streamLitePtr->GetId();
+    flagTaskInfo.streamId = streamLitePtr->GetSqId();
     flagTaskInfo.taskId = streamLitePtr->GetRtsq()->GetTaskId();
     flagTaskInfo.type = Hccl::MainStreamTaskType::HEAD;
     Hccl::ProfilingHandlerLite::GetInstance().ReportMainStreamTask(flagTaskInfo);
@@ -946,12 +945,11 @@ HcclResult HcommProfilingReportKernelEndTask(uint64_t thread, const char* groupn
     CHK_PRT_RET(streamLitePtr == nullptr, HCCL_ERROR("[%s] streamLitePtr is null", __func__), HCCL_E_PTR);
     //FlagTaskInfo Report
     Hccl::FlagTaskInfo flagTaskInfo;
-    flagTaskInfo.streamId = streamLitePtr->GetId();
-    flagTaskInfo.taskId = streamLitePtr->GetRtsq()->GetTaskId() - 1;
+    flagTaskInfo.streamId = streamLitePtr->GetSqId();
+    flagTaskInfo.taskId = streamLitePtr->GetRtsq()->GetTaskId();
     flagTaskInfo.type = Hccl::MainStreamTaskType::TAIL;
     
     Hccl::ProfilingHandlerLite::GetInstance().ReportMainStreamTask(flagTaskInfo);
-    CHK_RET(AicpuIndopProcess::ReportAllTasks(groupname));
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }

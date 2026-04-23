@@ -118,8 +118,8 @@ HcclResult CommConfig::Load(const HcclCommConfig *userConfig)
     HCCL_RUN_INFO("[Load] comm config info of [%s]: configSize[%llu], version[%u], opExpansionMode[%u]", commName_.c_str(),
         configHandle.info.configSize, configHandle.info.version, configHandle.opExpansionMode);
     HCCL_RUN_INFO("[Load] comm config of [%s]: bufferSize[%llu], deterministic[%u], trafficClass[%u], serviceLevel[%u]"
-        ", execTimeOut[%u]s, bufferName[%s], hcclQos[%u], symmetricMemoryStride[%llu]",
-        commName_.c_str(), bufferSize_, deterministic_, trafficClass_, serviceLevel_, execTimeOut_, bufferName_.c_str(), hcclQos_, symmetricMemoryStride_);
+        ", execTimeOut[%u]s, bufferName[%s], hcclQos[%u], symmetricMemoryStride[%llu], aclGraphZeroCopyEnable[%u]",
+        commName_.c_str(), bufferSize_, deterministic_, trafficClass_, serviceLevel_, execTimeOut_, bufferName_.c_str(), hcclQos_, symmetricMemoryStride_, aclGraphZeroCopyEnable_);
     return HCCL_SUCCESS;
 }
 

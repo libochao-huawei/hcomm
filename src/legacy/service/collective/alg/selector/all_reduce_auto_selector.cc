@@ -18,7 +18,6 @@ constexpr u64 AR_M2M_1D_MAX_DATA_SIZE = 8 * 1024 * 1024;
 constexpr u64 AR_AICPU_1D_SMALL_DATA_SIZE = 8 * 1024 * 1024;
 constexpr u64 AR_AICPU_1D_MAX_DATA_SIZE = 16 * 1024 * 1024;
 constexpr u64 AR_ONESHOT_1D_MAX_DATA_SIZE = 16 * 1024;
-constexpr double DEFAULT_RANK_SIZE = 8.0;
 
 SelectorStatus AllReduceAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo,
                                                     const CollAlgOperator &op,
@@ -148,7 +147,11 @@ SelectorStatus AllReduceAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topo
                         op.dataType.Describe().c_str(),
                         topoInfo.levelNum),
                     SelectorStatus::NOT_MATCH);
-                primQueueGenName = "CcuAllReduceParallelMesh1DNHR";
+                if(IsSmallDataCCU(dataSize_, rankSize_)){
+                    primQueueGenName = "CcuAllReduceParallelMesh1DNHR";//64M以下跑ccu
+                } else {
+                    return SelectorStatus::NOT_MATCH;//64M以上切为aicpu
+                }
             }
         } else {
             HCCL_WARNING("[Algo][AllReduceAutoSelector] level0Shape[%d] is not supported yet for ccu schedule mode.",
@@ -201,7 +204,11 @@ SelectorStatus AllReduceAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topo
                 HCCL_WARNING("[Algo][AllReduceAutoSelector] level0 PCIE mix is not supported yet for ccu schedule mode.");
                 return SelectorStatus::NOT_MATCH;
             } else {
-                primQueueGenName = "CcuAllReduceParallelMesh1DNHR";
+                if(IsSmallDataCCU(dataSize_, rankSize_)){
+                    primQueueGenName = "CcuAllReduceParallelMesh1DNHR";//64M以下跑ccu
+                } else {
+                    return SelectorStatus::NOT_MATCH;//64M以上切为aicpu
+                }
             }
         } else if (topoInfo.level0Shape == Level0Shape::CLOS) {
             HCCL_WARNING("[Algo][AllReduceAutoSelector] level0Shape[%d] is not supported yet for ccu schedule mode.",

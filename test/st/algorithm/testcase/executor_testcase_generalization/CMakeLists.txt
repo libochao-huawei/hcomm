@@ -66,3 +66,6 @@ target_sources(executor_hccl_test
     main.cc
     ../testcase/testcase_utils.cc
 )
+
+enable_testing()
+add_test(NAME executor_hccl_test COMMAND executor_hccl_test)

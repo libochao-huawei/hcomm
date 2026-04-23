@@ -2217,7 +2217,6 @@ TEST_F(OpbaseTestV2, Ut_HcclCommInitRootInfoV2_When_InputValue_Expect_Return_HCC
     MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_950));
     MOCKER(HrtGetDeviceCount).stubs().will(returnValue(1));
     MOCKER_CPP(&HcclCommunicator::Init, HcclResult(HcclCommunicator::*)(const RankTableInfo &)).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HcclCommunicator::InitDeviceListenPort).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CommunicatorImpl::SetCommExecuteConfig).stubs().will(ignoreReturnValue());
  
     // then
@@ -2258,7 +2257,6 @@ TEST_F(OpbaseTestV2, Ut_HcclCommInitRootInfoConfigV2_When_InputValue_Expect_Retu
     MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_950));
     MOCKER(HrtGetDeviceCount).stubs().will(returnValue(1));
     MOCKER_CPP(&HcclCommunicator::Init, HcclResult(HcclCommunicator::*)(const RankTableInfo &)).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HcclCommunicator::InitDeviceListenPort).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CommunicatorImpl::SetCommExecuteConfig).stubs().will(ignoreReturnValue());
  
     // then
@@ -2281,7 +2279,6 @@ TEST_F(OpbaseTestV2, Ut_HcclCommInitRootInfoConfigV2_When_NotSetBufSize_Expect_R
     MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_950));
     MOCKER(HrtGetDeviceCount).stubs().will(returnValue(1));
     MOCKER_CPP(&HcclCommunicator::Init, HcclResult(HcclCommunicator::*)(const RankTableInfo &)).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HcclCommunicator::InitDeviceListenPort).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CommunicatorImpl::SetCommExecuteConfig).stubs().will(ignoreReturnValue());
     CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap.clear();
     CommManager::GetInstance(0).GetCommInfoV2().pComm = nullptr;
@@ -2331,7 +2328,6 @@ TEST_F(OpbaseTestV2, Ut_HcclCommInitAllV2_When_InputValue_Expect_Return_HCCL_SUC
     MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_950));
     MOCKER(HrtGetDeviceCount).stubs().will(returnValue(1));
     MOCKER_CPP(&HcclCommunicator::Init, HcclResult(HcclCommunicator::*)(const RankTableInfo &)).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HcclCommunicator::InitDeviceListenPort).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CommunicatorImpl::SetCommExecuteConfig).stubs().will(ignoreReturnValue());
     CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap.clear();
     CommManager::GetInstance(0).GetCommInfoV2().pComm = nullptr;
@@ -2603,14 +2599,26 @@ TEST_F(OpbaseTestV2, Ut_HcclSetOpArgs_When_Param_Error_Expect_ReturnIsHCCL_E_PAR
     HcclResult ret1 = HcclGetOpArgsV2(&opArgs);
     EXPECT_EQ(ret1, HCCL_SUCCESS);
     EXPECT_NE(nullptr, opArgs);
+
     HcclResult ret2 = HcclSetOpCountV2(opArgs, 0xFFFFFFFFF);
     EXPECT_EQ(ret2, HCCL_E_PARA);
+
     char algConfig[128] = "xxxxxxxxxxx";
     MOCKER(strcpy_s).stubs().will(returnValue(1));
     HcclResult ret3 = HcclSetOpAlgConfigV2(opArgs, algConfig);
     EXPECT_EQ(ret3, HCCL_E_PARA);
-    HcclResult ret4 = HcclFreeOpArgsV2(opArgs);
-    EXPECT_EQ(ret4, HCCL_SUCCESS);
+
+    HcclResult ret4 = HcclSetOpSrcDataTypeV2(opArgs, 100);
+    EXPECT_EQ(ret4, HCCL_E_PARA);
+
+    HcclResult ret5 = HcclSetOpDstDataTypeV2(opArgs, 100);
+    EXPECT_EQ(ret5, HCCL_E_PARA);
+
+    HcclResult ret6 = HcclSetOpReduceTypeV2(opArgs, 100);
+    EXPECT_EQ(ret6, HCCL_E_PARA);
+
+    HcclResult ret7 = HcclFreeOpArgsV2(opArgs);
+    EXPECT_EQ(ret7, HCCL_SUCCESS);
 }
  
 TEST_F(OpbaseTestV2, Ut_HcclDevMemAcquireV2_When_Normal_Expect_ReturnIsHCCL_SUCCESS)

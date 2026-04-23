@@ -8,7 +8,7 @@
 
 本项目编译用到的软件依赖如下，注意满足版本号要求。
 
-- python: 3.7.x 至 3.13.x 版本
+- python >= 3.7.0
 - pip3 >= 20.3.0
 - setuptools >= 45.0.0
 - wheel >= 0.34.0
@@ -229,3 +229,4 @@ bash build.sh --ut
 | protobuf      | 25.1                   | [protobuf-25.1.tar.gz](https://gitcode.com/cann-src-third-party/protobuf/releases/download/v25.1/protobuf-25.1.tar.gz)                                                                                      |
 | rdma-core      | v42.7-h1                   | [rdma-core-42.7.tar.gz](https://gitcode.com/cann-src-third-party/rdma-core/releases/download/v42.7-h1/rdma-core-42.7.tar.gz)                                                                                      |
 | rdma-core-patch      | v42.7-h1                   | [rdma-core-42.7.patch](https://gitcode.com/cann-src-third-party/rdma-core/releases/download/v42.7-h1/rdma-core-42.7.patch)|
+| cann-cmake     | master-001            | [cmake-master-001.tar.gz](https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/cmake/cmake-master-001.tar.gz) |

@@ -43,7 +43,8 @@ private:
     CcuRep::Variable outputoffset_;
     CcuRep::Variable outBuffBaseOff_;
     GroupOpSize groupOpSize_;
-
+    uint32_t signalNum_; //需要使用的signal数量
+    uint16_t bitNumPerCKE_;
     void CreateLocalCopyLoop();
     void LocalCopyByLoopGroup(CcuRep::Memory dst, CcuRep::Memory src);
     void InitResource();

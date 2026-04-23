@@ -136,10 +136,17 @@ HcclResult HcclCommTaskExceptionLite::ProcessCqe(CollCommAicpu *aicpuComm, const
     const u32 sqeId = static_cast<uint32_t>(exceptionInfo.taskId << 16) | static_cast<uint32_t>(exceptionInfo.streamId);
     HCCL_INFO("[%s]group[%s], sqeId[0x%x], taskId[%u], streamId[%u].",
         __func__, aicpuComm->GetIdentifier().c_str(), sqeId, exceptionInfo.taskId, exceptionInfo.streamId);
-    const auto curTask = Hccl::GlobalMirrorTasks::Instance().GetTaskInfo(devId_, exceptionInfo.sqId, sqeId);
+    CHK_PTR_NULL(aicpuComm->GetHcclCommDfxLite());
+    CHK_PTR_NULL(aicpuComm->GetHcclCommDfxLite()->GetMirrorTaskManagerLite());
+    const auto curTask = aicpuComm->GetHcclCommDfxLite()->GetMirrorTaskManagerLite()->GetTaskInfo(exceptionInfo.sqId, sqeId);
     if (curTask == nullptr) {
         // 未找到异常对应的TaskInfo
         HCCL_ERROR("[%s]Exception task not found. devId_[%u], streamId(sqId)[%u], taskId(sqeId)[%u].",
+            __func__, devId_, exceptionInfo.sqId, sqeId);
+        return HCCL_E_PARA;
+    }
+    if (curTask->dfxOpInfo_ == nullptr) {
+        HCCL_ERROR("[%s]dfxOpInfo is nullptr. devId_[%u], streamId(sqId)[%u], taskId(sqeId)[%u].",
             __func__, devId_, exceptionInfo.sqId, sqeId);
         return HCCL_E_PARA;
     }
@@ -173,7 +180,7 @@ HcclResult HcclCommTaskExceptionLite::ProcessCqe(CollCommAicpu *aicpuComm, const
     if (curTask->taskParam_.taskType != Hccl::TaskParamType::TASK_NOTIFY_WAIT) { // 非notify场景，仅打印算子信息
         HCCL_ERROR("[TaskException][AICPU]opData information is %s.", GetOpDataInfo(*curTask).c_str());
     } else {
-        CHK_RET(PrintTaskContextInfo(exceptionInfo.sqId, sqeId)); // notify场景打印算子信息和task序列
+        CHK_RET(PrintTaskContextInfo(aicpuComm, exceptionInfo.sqId, sqeId)); // notify场景打印算子信息和task序列
     }
     return HCCL_SUCCESS;
 }
@@ -337,29 +344,27 @@ uint16_t HcclCommTaskExceptionLite::SwitchSdmaCqeErrCodeToTsErrCode(u32 cqeErrCo
     }
 }
 
-HcclResult HcclCommTaskExceptionLite::PrintTaskContextInfo(u32 sqId, u32 taskId)
+HcclResult HcclCommTaskExceptionLite::PrintTaskContextInfo(CollCommAicpu *aicpuComm, u32 sqId, u32 taskId)
 {
-    auto queue = Hccl::GlobalMirrorTasks::Instance().GetQueue(devId_, sqId);
+    auto queue = aicpuComm->GetHcclCommDfxLite()->GetMirrorTaskManagerLite()->GetQueue(sqId);
     CHK_PRT_RET(queue == nullptr,
         HCCL_ERROR("[%s]GetQueue nullptr, devId[%u], sqId[%u].", __func__, devId_, sqId), HCCL_E_PARA);
 
     auto func = [taskId] (const std::shared_ptr<Hccl::TaskInfo>& task) { return task->taskId_ == taskId; };
-    auto taskItorPtr = queue->Find(func);
-    CHK_PRT_RET(taskItorPtr == nullptr || *taskItorPtr == *queue->End(),
+    auto taskIterPtr = queue->Find(func);
+    CHK_PRT_RET(taskIterPtr == nullptr || *taskIterPtr == *queue->End(),
         HCCL_ERROR("[%s]exception task not found, devId[%u], sqId[%u], taskId[%u]", __func__, devId_, sqId, taskId),
         HCCL_E_PARA);
 
     // 找到当前异常task的前50个task(至多)
     std::vector<std::shared_ptr<Hccl::TaskInfo>> taskContext {};
-    for (uint32_t i = 0; i < TASK_CONTEXT_SIZE && *taskItorPtr != *queue->Begin(); ++i, --(*taskItorPtr)) {
-        if ((**taskItorPtr)->taskId_ > taskId) {
+    for (uint32_t i = 0; i < TASK_CONTEXT_SIZE && *taskIterPtr != *queue->Begin(); ++i, --(*taskIterPtr)) {
+        if ((**taskIterPtr)->taskId_ > taskId) {
             HCCL_ERROR("[%s]prev taskId[%u] is bigger than err taskId[%u], stop traversal",
-                __func__, (**taskItorPtr)->taskId_, taskId);
+                __func__, (**taskIterPtr)->taskId_, taskId);
             break;
         }
-        if ((**taskItorPtr)->taskId_ != taskId) {
-            taskContext.emplace_back(**taskItorPtr);
-        }
+        taskContext.emplace_back(**taskIterPtr);
     }
 
     HCCL_ERROR("[TaskException][AICPU]context sequence before error task is "
@@ -410,13 +415,11 @@ std::string HcclCommTaskExceptionLite::GetOpDataInfo(const Hccl::TaskInfo& taskI
     }
 
     const auto &opInfo = taskInfo.dfxOpInfo_;
-    return Hccl::StringFormat("opIndex[%u], algTag[%s], count[%llu], reduceType[%s], src[0x%llx], dst[0x%llx], dataType[%s]",
+    return Hccl::StringFormat("opIndex[%u], algTag[%s], count[%llu], reduceType[%s], dataType[%s]",
         opInfo->opIndex_,
         opInfo->algTag_.c_str(),
         opInfo->op_.dataCount,
         opInfo->op_.reduceOp.Describe().c_str(),
-        opInfo->op_.inputMem == nullptr ? 0 : static_cast<u64>(opInfo->op_.inputMem->GetAddr()),
-        opInfo->op_.outputMem == nullptr ? 0 : static_cast<u64>(opInfo->op_.outputMem->GetAddr()),
         opInfo->op_.dataType.Describe().c_str());
 }
 

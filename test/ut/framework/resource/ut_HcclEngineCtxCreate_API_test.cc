@@ -118,11 +118,28 @@ TEST_F(HcclEngineCtxCreateTest, ut_HcclEngineCtxCreate_When_Devicemallocfailed_E
     CommEngine engine = COMM_ENGINE_AICPU;
     void * ctx;
     uint64_t size = 256;
-
+    
     MOCKER(hrtMalloc)
         .expects(once())
         .will(returnValue(HCCL_E_RUNTIME));
-
+    
     HcclResult result = HcclEngineCtxCreate(comm, ctxTag, engine, size, &ctx);
     EXPECT_EQ(result, HCCL_E_RUNTIME);
+}
+
+TEST_F(HcclEngineCtxCreateTest, ut_HcclEngineCtxCreate_WithDifferentCommEngines_Expect_ReturnIsHCCL_SUCCESS)
+{
+    const char *ctxTag = "test_ctx";
+    void * ctx;
+    uint64_t size = 256;
+    
+    HcclResult result;
+    
+    result = HcclEngineCtxCreate(comm, ctxTag, COMM_ENGINE_CPU, size, &ctx);
+    EXPECT_EQ(result, HCCL_SUCCESS);
+    HcclEngineCtxDestroy(comm, ctxTag, COMM_ENGINE_CPU);
+    
+    result = HcclEngineCtxCreate(comm, ctxTag, COMM_ENGINE_AICPU, size, &ctx);
+    EXPECT_EQ(result, HCCL_SUCCESS);
+    HcclEngineCtxDestroy(comm, ctxTag, COMM_ENGINE_AICPU);
 }

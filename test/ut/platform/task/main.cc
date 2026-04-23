@@ -8,21 +8,12 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include <sstream>
-#include <iostream>
-#include <cstdint>
-#include <iomanip>
-#include <array>
-#include "adapter_rts_common.h"
-#include "externalinput_pub.h"
-#include "config_log.h"
-#include "sal_pub.h"
-#include "../../../algorithm/pub_inc/common.h"
-#include "task_exception_handler.h"
+#include "gtest/gtest.h"
+#include "comm.h"
+#include "env_config.h"
 
-using namespace hccl;
-
-void TaskExceptionHandler::DumpAivPrintWorkSpace(const std::shared_ptr<std::deque<TaskInfo>> &taskQue)
-{
-    return;
+GTEST_API_ int main(int argc, char **argv) {
+    testing::InitGoogleTest(&argc, argv);
+    setenv("HCCL_DFS_CONFIG", "connection_fault_detection_time:0", 1);
+    return RUN_ALL_TESTS();
 }

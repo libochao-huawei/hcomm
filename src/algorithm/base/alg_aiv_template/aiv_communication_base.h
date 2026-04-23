@@ -99,17 +99,11 @@ enum class CommPattern {
 };
 
 #define AIV_INFO(format,...) do { \
-    if(logLevel_==1) { \
-        AscendC::PRINTF(format, ##__VA_ARGS__); \
-    } \
+    AscendC::PRINTF(format, ##__VA_ARGS__); \
 } while(0)
 
-#define AIV_ERROR(condition, format,...) do { \
-    if(condition) { \
-        AscendC::PrintfImpl(DumpType::DUMP_SCALAR, "[AIV_ERROR] %s:%d:" format, __FILE__, __LINE__, ##__VA_ARGS__); \
-        trap(); \
-    } \
-} while(0)
+#define AIV_INFO_HINT \
+    AIV_INFO("Aiv log dump is enabled in %s\n", __func__)
 
 #define KERNEL_ARGS_DEF \
 GM_ADDR buffIn0, GM_ADDR buffIn1, GM_ADDR buffIn2, GM_ADDR buffIn3, \
@@ -329,17 +323,22 @@ uint32_t devType = args->devType; GM_ADDR headCountMem = args->headCountMem; GM_
 GM_ADDR addOneMem = args->addOneMem; uint32_t counterMemSize = args->counterMemSize; bool isEnableCounter = args->isEnableCounter; \
 uint32_t deterministic = args->deterministic; uint64_t rmaInfo = args->rmaInfo
 
-// sk 绑定函数
-#define SuperKernelBind(kernel_name) \
+// sk 绑定函数 A2
+#define SuperKernelBindA2(kernel_name) \
+extern "C" __sk__ void kernel_name##_1(SK_BIND_FUNC_ARGS); \
+extern "C" __sk__ void kernel_name##_2(SK_BIND_FUNC_ARGS); \
+extern "C" __sk__ void kernel_name##_3(SK_BIND_FUNC_ARGS); \
+extern "C" __sk__ void kernel_name##_4(SK_BIND_FUNC_ARGS); \
 SK_BIND(kernel_name, 0, kernel_name##_1, kernel_name##_2, kernel_name##_3, kernel_name##_4)
 
 // A2 sk 导出函数
-#define SK_BIND_FUNC_DEF_A2(kernel_name, postfix) \
+#define _SK_BIND_FUNC_DEF_A2(kernel_name, postfix) \
 extern "C" __sk__ void kernel_name##_##postfix(SK_BIND_FUNC_ARGS) \
 { \
     CONVERT_SK_PARAM_TO_KERNEL_ARGS_A2; \
     kernel_name##_inner(KERNEL_ARGS_CALL); \
 }
+#define SK_BIND_FUNC_DEF_A2(kernel_name, postfix) _SK_BIND_FUNC_DEF_A2(kernel_name, postfix)
 
 // A2 Global 导出函数
 #define GLOBAL_FUNC_DEF_A2(kernel_name) \
@@ -389,8 +388,6 @@ public:
         seperateOffset = countOffset + NUM_BLOCKS_FOUR_PER_RANK_A3 * rankSize_ * FLAG_SIZE;
         logLevel_ = GetLogLevel();
         uint64_t offset = (logLevel_ == 1) ? (tag_ & 1 ? INFO_EVEN_BUFFER_OFFSET : INFO_ODD_BUFFER_OFFSET) : INFO_EVEN_BUFFER_OFFSET;
-        AscendC::InitDump(false, GM_OUT[rank_] + offset, ONE_CORE_DUMP_SIZE);
-        AIV_INFO("[AivCommBase::Init][Init]initdumpaddr is [%p], tag is [%d]", GM_OUT[rank_] + offset, tag_);
 
         pipe.InitBuffer(localFlagBuf, UB_FLAG_SIZE_4);
         localSetTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_ONE_OFFSET);
@@ -858,7 +855,7 @@ template<typename T>
 __aicore__ inline void AivCommBase::CpGM2GM(__gm__ T *outputGM, __gm__ T *inputGM, uint64_t count, bool atomic,
     uint32_t atomicOp)
 {
-    AIV_INFO("[CpGM2GM]outputGM is [%p], inputGM is [%p], count is [%llu] ", outputGM, inputGM, count);
+    AIV_INFO("[CpGM2GM]outputGM is [%p], inputGM is [%p], count is [%llu]\n", outputGM, inputGM, count);
     GlobalTensor<T> inputGT;
     inputGT.SetGlobalBuffer(inputGM, count);
     GlobalTensor<T> outputGT;
@@ -899,7 +896,7 @@ __aicore__ inline void AivCommBase::CpGM2GMWithFlagWrap(__gm__ T *outputGM, __gm
     int32_t index, uint64_t flushFrequency, int32_t tag)
 {
     AIV_INFO("[AivCommBase::CpGM2GMWithFlagWrap][CpGM2GMWithFlagWrap]outputGM is [%p], inputGM is [%p], count is [%llu], "
-        "index is [%d], flushFrequency is [%llu], tag is [%d]",
+        "index is [%d], flushFrequency is [%llu], tag is [%d]\n",
         outputGM, inputGM, count, index, flushFrequency, tag_);
     uint64_t curBatchCount = 0;
 
@@ -941,7 +938,7 @@ __aicore__ inline void AivCommBase::CpGM2GMWithFlagWrap(__gm__ T *outputGM, __gm
     __gm__ int32_t* ctrlFlagGM, uint64_t flushFrequency, int32_t tag)
 {
     AIV_INFO("[AivCommBase::CpGM2GMWithFlagWrap][CpGM2GMWithFlagWrap]outputGM is [%p], inputGM is [%p], count is [%llu], "
-        "ctrlFlagGM is [%p], flushFrequency is [%llu], tag is [%d]",
+        "ctrlFlagGM is [%p], flushFrequency is [%llu], tag is [%d]\n",
         outputGM, inputGM, count, ctrlFlagGM, flushFrequency, tag_);
     uint64_t curBatchCount = 0;
 

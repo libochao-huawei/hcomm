@@ -244,7 +244,6 @@ static string StatusCode2Str(uint8_t highPart, uint8_t lowPart)
 
     const auto lowMap = MISSION_SUB_STATUS_MAP.find(highPart);
     if (lowMap == MISSION_SUB_STATUS_MAP.end()) {
-        HCCL_ERROR("[%s]highPart[%u] not found in MISSION_SUB_STATUS_MAP", __func__, highPart);
         return result.str();
     }
 

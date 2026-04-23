@@ -3530,3 +3530,70 @@ TEST_F(CommunicatorImplTest, Ut_When_DestroyDpuKernelResource_Expect_ResetDpuDev
     ret = comm.DestroyDpuKernelResource();
     EXPECT_EQ(ret, HCCL_E_RUNTIME);
 }
+
+class TryFastCcuLaunchTest : public CommunicatorImplTest {
+protected:
+    void SetUp() override {
+        CommunicatorImplTest::SetUp();
+        // 初始化测试环境
+        fakeStreamPtr = (void *)1;
+        sendBuffer = 10;
+        fakeOpParams.sendBuf = static_cast<void *>(&sendBuffer);
+        recvBuffer = 20;
+        fakeOpParams.recvBuf = static_cast<void *>(&recvBuffer);
+        fakeOpParams.opType = OpType::ALLREDUCE;
+        fakeOpParams.dataType = DataType::FP32;
+        fakeOpParams.reduceOp = ReduceOp::SUM;
+        fakeOpParams.count = 1024;
+        fakeComm.commExecuteConfig.accState = AcceleratorState::CCU_SCHED;
+        MOCKER_CPP(&CommunicatorImpl::InitCcuSuperFastLoad).stubs().with(any()).will(ignoreReturnValue());
+        MOCKER_CPP(&CommunicatorImpl::ExecuteFastCcuLaunch).stubs().with(any()).will(ignoreReturnValue());
+        CcuTaskParam ccuTaskParam{};
+        std::vector<std::vector<CcuTaskParam>> ccuIns;
+        std::vector<std::vector<CcuProfilingInfo>> ccuProInfo;
+        ccuIns.push_back({ccuTaskParam});
+        ccuProInfo.resize(1);
+        fakeComm.currentCollOperator->opType = fakeOpParams.opType;
+        fakeComm.ccuParamsMappingKey = {static_cast<std::uint32_t>(fakeOpParams.reduceOp),
+                            static_cast<std::uint32_t>(fakeOpParams.dataType),
+                            static_cast<std::uint32_t>(fakeOpParams.count)};
+        fakeComm.saveCCUParams(std::move(ccuIns), std::move(ccuProInfo), 0, CcuInstType::CCU_INS_GROUP, true);
+    }
+private:
+    CollOpParams fakeOpParams{};
+    u32 sendBuffer;
+    u32 recvBuffer;
+    void *fakeStreamPtr;
+};
+
+TEST_F(TryFastCcuLaunchTest, Ut_TryFastCcuLaunch_When_NoNeedProf_Expect_ReturnTrue)
+{
+    // when
+    fakeComm.enableProfilingEnv = false;
+    // then
+    EXPECT_EQ(fakeComm.TryFastCcuLaunch(fakeOpParams, fakeStreamPtr), true);
+}
+
+TEST_F(TryFastCcuLaunchTest, Ut_TryFastCcuLaunch_When_NeedProf_Expect_ReturnTrue)
+{
+    // when
+    fakeComm.enableProfilingEnv = true;
+    // then
+    EXPECT_EQ(fakeComm.TryFastCcuLaunch(fakeOpParams, fakeStreamPtr), true);
+}
+
+TEST_F(TryFastCcuLaunchTest, Ut_TryFastCcuLaunch_When_NoCcu_Expect_ReturnFalse)
+{
+    // when
+    fakeComm.commExecuteConfig.accState = AcceleratorState::AICPU_TS;
+    // then
+    EXPECT_EQ(fakeComm.TryFastCcuLaunch(fakeOpParams, fakeStreamPtr), false);
+}
+
+TEST_F(TryFastCcuLaunchTest, Ut_TryFastCcuLaunch_When_OpNoSupportFastLaunch_Expect_ReturnFalse)
+{
+    // when
+    fakeOpParams.opType = OpType::ALLGATHERV;
+    // then
+    EXPECT_EQ(fakeComm.TryFastCcuLaunch(fakeOpParams, fakeStreamPtr), false);
+}
