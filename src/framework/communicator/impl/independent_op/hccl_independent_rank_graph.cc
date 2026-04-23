@@ -225,8 +225,11 @@ HcclResult HcclRankGraphGetTopoInstsByLayer(HcclComm comm, uint32_t netLayer, ui
             HCCL_RUN_INFO("HcclRankGraphGetTopoInstsByLayer success, topoInstNum [%u]", *topoInstNum);
             return HCCL_SUCCESS;
         }());
-    HCCL_ERROR("[%s] Failed to execute, only A5 is supported", __func__);
-    return HCCL_E_NOT_SUPPORT;
+
+    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    HcclResult ret = hcclComm->GetTopoInstsByLayer(netLayer, topoInsts, topoInstNum);
+
+    return ret;
 }
 
 HcclResult HcclRankGraphGetTopoType(HcclComm comm, uint32_t netLayer, uint32_t topoInstId, CommTopo *topoType)
@@ -242,8 +245,9 @@ HcclResult HcclRankGraphGetTopoType(HcclComm comm, uint32_t netLayer, uint32_t t
             HCCL_RUN_INFO("HcclRankGraphGetTopoType success, topoType [%d]", *topoType);
             return HCCL_SUCCESS;
         }());
-    HCCL_ERROR("[%s] Failed to execute, only A5 is supported", __func__);
-    return HCCL_E_NOT_SUPPORT;
+    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    HcclResult ret = hcclComm->GetTopoType(netLayer, topoInstId, topoType);
+    return ret;
 }
 
 HcclResult HcclRankGraphGetRanksByTopoInst(HcclComm comm, uint32_t netLayer, uint32_t topoInstId, uint32_t **ranks, uint32_t *rankNum)
@@ -260,8 +264,9 @@ HcclResult HcclRankGraphGetRanksByTopoInst(HcclComm comm, uint32_t netLayer, uin
             HCCL_RUN_INFO("HcclRankGraphGetRanksByTopoInst success, rankNum [%u]", *rankNum);
             return HCCL_SUCCESS;
         }());
-    HCCL_ERROR("[%s] Failed to execute, only A5 is supported", __func__);
-    return HCCL_E_NOT_SUPPORT;
+    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    HcclResult ret = hcclComm->GetRanksByTopoInst(netLayer, topoInstId, ranks, rankNum);
+    return ret;
 }
 
 HcclResult HcclRankGraphGetEndpointNum(HcclComm comm, uint32_t layer, uint32_t topoInstId, uint32_t *num)
@@ -277,8 +282,9 @@ HcclResult HcclRankGraphGetEndpointNum(HcclComm comm, uint32_t layer, uint32_t t
             HCCL_RUN_INFO("HcclRankGraphGetEndpointNum success, num [%u]", *num);
             return HCCL_SUCCESS;
         }());
-    HCCL_ERROR("[%s] Failed to execute, only A5 is supported", __func__);
-    return HCCL_E_NOT_SUPPORT;
+    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    HcclResult ret = hcclComm->GetEndpointNum(layer, topoInstId, num);
+    return ret;
 }
 
 HcclResult HcclRankGraphGetEndpointDesc(HcclComm comm, uint32_t layer, uint32_t topoInstId, uint32_t *descNum, EndpointDesc *endpointDesc)
@@ -295,8 +301,10 @@ HcclResult HcclRankGraphGetEndpointDesc(HcclComm comm, uint32_t layer, uint32_t 
             HCCL_RUN_INFO("HcclRankGraphGetEndpointDesc success");
             return HCCL_SUCCESS;
         }());
-    HCCL_ERROR("[%s] Failed to execute, only A5 is supported", __func__);
-    return HCCL_E_NOT_SUPPORT;
+    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    HcclResult ret = hcclComm->GetEndpointDesc(layer, topoInstId, descNum, endpointDesc);
+
+    return ret;
 }
 
 HcclResult HcclRankGraphGetEndpointInfo(HcclComm comm, uint32_t rankId, const EndpointDesc *endpointDesc, EndpointAttr endpointAttr, uint32_t infoLen, void *info)
