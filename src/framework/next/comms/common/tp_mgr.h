@@ -98,9 +98,11 @@ private:
     };
 
     using QosKey = uint32_t;
-    /// 每台设备 TpMgr 内：同一 tpProtocol + 同一 qos 共用一个 TpInfo（同一 tpHandle / SL 策略结果），不按对端分桶。
-    using InfoCtxMap = std::unordered_map<QosKey, TpInfoCtx>;
-    using ReqCtxMap = std::unordered_map<QosKey, RequestCtx>;
+    /// 本/对端地址键（与 GetTpCfg 中 EID 同源）+ qos：同一 EID 对、同协议、同 qos 的多个通信域复用同一 TpInfo；不同 EID 对互不共享。
+    using InfoCtxMap = std::unordered_map<Hccl::IpAddress,
+        std::unordered_map<Hccl::IpAddress, std::unordered_map<QosKey, TpInfoCtx>>>;
+    using ReqCtxMap = std::unordered_map<Hccl::IpAddress,
+        std::unordered_map<Hccl::IpAddress, std::unordered_map<QosKey, RequestCtx>>>;
 
 private:
     TpMgr() = default;
