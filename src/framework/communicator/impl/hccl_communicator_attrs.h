@@ -216,6 +216,7 @@ private:
     u32 localRank_{INVALID_VALUE_RANKID};
     HcclIpAddress hostIp_{};
     bool isNeedInitNic_{ false };
+    bool isOxcMode_{ false };
     bool isHostUseDevNic_{ false };
     bool isUseRankPort_{ false };
     std::vector<u32> nicRanksPort_;

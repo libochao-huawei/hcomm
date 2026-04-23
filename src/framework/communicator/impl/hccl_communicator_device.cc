@@ -28,6 +28,7 @@
 #include "rank_consistentcy_checker.h"
 #include "hccl_aiv.h"
 #include "task_abort_handler_pub.h"
+#include "../../common/src/topo/topoinfo_ranktableParser_pub.h"
 #include "adapter_rts_common.h"
 #include "coll_alg_utils.h"
 #include "../common/src/state_guard.h"
@@ -103,12 +104,36 @@ namespace hccl
 
     HcclResult HcclCommunicator::Init(HcclCommParams &params, const RankTable_t &rankTable)
     {
+        CHK_RET(InitCommParams(params));
+        CHK_RET(InitNetPlaneInfo(rankTable));
         return HCCL_SUCCESS;
     }
 
     HcclResult HcclCommunicator::Init(HcclCommParams &params, const std::vector<RankInfo> &rankList,
                                       WorldGroupInfo &groupCommonData)
     {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::InitNetPlaneInfo(const RankTable_t &rankTable)
+    {
+        if (netPlaneInfoValid_) {
+            return HCCL_SUCCESS;
+        }
+
+        if (rankTable.version != OXC_CLUSTER_VERSION) {
+            return HCCL_SUCCESS;
+        }
+
+        auto rankIter = std::find_if(rankTable.rankList.begin(), rankTable.rankList.end(),
+            [this](const RankInfo_t &rankInfo) { return rankInfo.rankId == userRank_; });
+        CHK_PRT_RET(rankIter == rankTable.rankList.end(),
+            HCCL_ERROR("[OXC_HCOMM][HcclCommunicator][InitNetPlaneInfo] userRank[%u] not found in rankTable.",
+                userRank_), HCCL_E_PARA);
+
+        netPlaneId_ = rankIter->netPlaneId;
+        netPlaneNum_ = (rankIter->netPlaneNum == 0) ? 1 : rankIter->netPlaneNum;
+        netPlaneInfoValid_ = true;
         return HCCL_SUCCESS;
     }
 
@@ -169,6 +194,23 @@ namespace hccl
 
     HcclResult HcclCommunicator::InitCommParams(HcclCommParams &params)
     {
+        commHandle_ = params.commHandle;
+        userRank_ = params.rank;
+        realUserRank_ = params.userRank;
+        userRankSize_ = params.totalRanks;
+        deviceLogicId_ = params.logicDevId;
+        profilingOption_ = params.profilingOption;
+        profilingInitiated_ = params.profilingInitiated;
+        deviceType_ = params.deviceType;
+        commWorkMode_ = params.commWorkMode;
+        hcomGroupNicInit_ = params.hcomGroupNicInit;
+        identifier_ = params.identifier;
+        collectiveId_ = params.id.internal;
+        ranktableCrc_ = params.ranktableCrc;
+        commConnections_ = params.commConnections;
+        commPortConfig_ = params.commPortConfig;
+        cclBuffName_ = params.cclBuffName;
+        isShareComm_ = !cclBuffName_.empty();
         return HCCL_SUCCESS;
     }
 
@@ -266,6 +308,10 @@ namespace hccl
 
     HcclResult HcclCommunicator::GetAlgType(AlgType &algType, HcclCMDType opType)
     {
+        if (implAlg_ == nullptr) {
+            algType = {};
+            return HCCL_SUCCESS;
+        }
         return HCCL_E_NOT_SUPPORT;
     }
 

@@ -11,6 +11,7 @@
 #include "topoinfo_ranktableOxc.h"
 
 #include <algorithm>
+#include <array>
 #include <limits>
 #include <set>
 #include <utility>
@@ -101,18 +102,30 @@ HcclResult GetOptionalU32Field(const nlohmann::json &obj, const char *propName, 
     return ParseU32FromJsonValue(*iter, propName, value);
 }
 
-// OXC 2.0 第一阶段仍缺少正式的“server 分组”消费链，
-// 因此这里通过 level=1 的 netInstanceId 生成一个稳定的内部 serverId，
-// 让现有 ranktable 校验和后续 params 填充能够继续工作。
 std::string DeriveServerId(const RankInfo_t &rankInfo)
 {
     for (const auto &levelInfo : rankInfo.levelList) {
+        if (levelInfo.netLayer == 0 && !levelInfo.netInstanceId.empty()) {
+            auto pos = levelInfo.netInstanceId.find('_');
+            return (pos == std::string::npos) ? levelInfo.netInstanceId : levelInfo.netInstanceId.substr(0, pos);
+        }
         if (levelInfo.netLayer == 1 && !levelInfo.netInstanceId.empty()) {
             return levelInfo.netInstanceId;
         }
     }
     return "default_server";
 }
+
+std::string DeriveGroupId(const RankInfo_t &rankInfo)
+{
+    for (const auto &levelInfo : rankInfo.levelList) {
+        if (levelInfo.netLayer == 1 && !levelInfo.netInstanceId.empty()) {
+            return levelInfo.netInstanceId;
+        }
+    }
+    return "default_group";
+}
+
 }
 
 TopoinfoRanktableOxc::TopoinfoRanktableOxc(const std::string &rankTableM, const std::string &identify)
@@ -142,6 +155,12 @@ HcclResult TopoinfoRanktableOxc::GetClusterInfo(HcclCommParams &params, RankTabl
 {
     params = params_;
     rankTable = rankTable_;
+    return HCCL_SUCCESS;
+}
+
+HcclResult TopoinfoRanktableOxc::SetIsInterSuperPodRetryEnable(bool isRetryEnable)
+{
+    isInterSuperPodRetryEnable_ = isRetryEnable;
     return HCCL_SUCCESS;
 }
 
@@ -225,8 +244,7 @@ HcclResult TopoinfoRanktableOxc::ParseRankList(RankTable_t &rankTable)
         RankInfo_t rankInfo;
         rankInfo.deviceInfo.deviceIp.push_back(HcclIpAddress());
         CHK_RET(ParseSingleRank(rankObj, rankInfo));
-        // 如果输入中没有显式 server_id，就从 level_list 推导一个稳定 server 标识，
-        // 以兼容现有 RankTable_t 的 server 维度校验逻辑。
+        rankInfo.oxcGroupId = DeriveGroupId(rankInfo);
         rankInfo.serverId = rankInfo.serverId.empty() ? DeriveServerId(rankInfo) : rankInfo.serverId;
         GenerateServerIdx(rankInfo.serverId, rankInfo.serverIdx);
         serverIds.insert(rankInfo.serverId);
@@ -239,9 +257,14 @@ HcclResult TopoinfoRanktableOxc::ParseRankList(RankTable_t &rankTable)
             rankCount, rankTable.rankList.size()),
         HCCL_E_PARA);
 
+    CHK_RET(ValidateRankLevelLayouts(rankTable.rankList));
+
+    if (params_.deviceType == DevType::DEV_TYPE_910_93) {
+        CHK_RET(ValidateAndFinalizeA3RankInfo(rankTable));
+    }
+
     rankTable.rankNum = static_cast<u32>(rankTable.rankList.size());
     rankTable.serverNum = serverIds.empty() ? 1U : static_cast<u32>(serverIds.size());
-    rankTable.superPodNum = 0;
     rankTable.nicDeploy = NICDeployment::NIC_DEPLOYMENT_DEVICE;
     CHK_RET(GetDevNum(rankTable.rankList, rankTable.deviceNum));
     return HCCL_SUCCESS;
@@ -268,7 +291,54 @@ HcclResult TopoinfoRanktableOxc::ParseSingleRank(const nlohmann::json &rankObj, 
         rankInfo.deviceInfo.port = devicePort;
     }
 
+    CHK_RET(ParseA3RankExtensions(rankObj, rankInfo));
+
     CHK_RET(ParseLevelList(rankObj, rankInfo));
+    return HCCL_SUCCESS;
+}
+
+HcclResult TopoinfoRanktableOxc::ParseA3RankExtensions(const nlohmann::json &rankObj, RankInfo_t &rankInfo)
+{
+    std::string hostIp;
+    if (GetStringField(rankObj, PROP_HOST_IP.c_str(), hostIp, true) && !hostIp.empty()) {
+        CHK_RET(ConvertIpAddress(hostIp, rankInfo.hostIp));
+    }
+
+    std::string deviceIp;
+    if (GetStringField(rankObj, PROP_DEV_IP.c_str(), deviceIp, true) && !deviceIp.empty()) {
+        HcclIpAddress deviceIpAddr;
+        CHK_RET(ConvertIpAddress(deviceIp, deviceIpAddr));
+        rankInfo.deviceInfo.deviceIp.clear();
+        rankInfo.deviceInfo.deviceIp.push_back(deviceIpAddr);
+        CHK_RET(CheckUniqueAndInsertPool(JsonUniqueInfoType::UNIQUE_INFO_TYPE_DEVICE_IP,
+            deviceIp, JsonCheckOpType::CHECK_OP_TYPE_INSERT));
+    }
+
+    std::string backupDeviceIp;
+    if (GetStringField(rankObj, PROP_BACKUP_DEV_IP.c_str(), backupDeviceIp, true) && !backupDeviceIp.empty()) {
+        HcclIpAddress backupDeviceIpAddr;
+        CHK_RET(ConvertIpAddress(backupDeviceIp, backupDeviceIpAddr));
+        rankInfo.deviceInfo.backupDeviceIp.clear();
+        rankInfo.deviceInfo.backupDeviceIp.push_back(backupDeviceIpAddr);
+        CHK_RET(CheckUniqueAndInsertPool(JsonUniqueInfoType::UNIQUE_INFO_TYPE_BACKUP_DEVICE_IP,
+            backupDeviceIp, JsonCheckOpType::CHECK_OP_TYPE_INSERT));
+    }
+
+    u32 backupPort = 0;
+    if (GetOptionalU32Field(rankObj, PROP_BACKUP_DEV_PORT.c_str(), backupPort) == HCCL_SUCCESS) {
+        rankInfo.deviceInfo.backupPort = backupPort;
+    }
+
+    if (params_.deviceType != DevType::DEV_TYPE_910_93) {
+        return HCCL_SUCCESS;
+    }
+
+    CHK_RET(GetRequiredStringField(rankObj, PROP_SUPER_POD_ID.c_str(), rankInfo.superPodId));
+    rankInfo.originalSuperPodId = rankInfo.superPodId;
+    GenerateSuperPodIdx(rankInfo.superPodId, rankInfo.superPodIdx);
+    u32 superDeviceId = INVALID_UINT;
+    CHK_RET(GetRequiredU32Field(rankObj, PROP_SUPER_DEVICE_ID.c_str(), superDeviceId));
+    rankInfo.superDeviceId = superDeviceId;
     return HCCL_SUCCESS;
 }
 
@@ -284,6 +354,8 @@ HcclResult TopoinfoRanktableOxc::ParseLevelList(const nlohmann::json &rankObj, R
     // 这里逐层解析，但暂不在 parser 阶段引入 netplane/CommPlane 消费逻辑。
     rankInfo.levelList.clear();
     rankInfo.levelList.reserve(iter->size());
+    const u32 invalidPreviousNetLayer = std::numeric_limits<u32>::max();
+    u32 previousNetLayer = invalidPreviousNetLayer;
     for (const auto &levelObj : *iter) {
         CHK_PRT_RET(!levelObj.is_object(), HCCL_ERROR("[OXC_HCOMM][Parse][level_list] level item is not object."),
             HCCL_E_PARA);
@@ -321,8 +393,91 @@ HcclResult TopoinfoRanktableOxc::ParseLevelList(const nlohmann::json &rankObj, R
         // rank_addr_list 内的每个地址端点都完整保存在 levelInfo 中，
         // 后续是否映射到平面/拓扑接口由下一阶段处理。
         CHK_RET(ParseRankAddrList(levelObj, levelInfo, defaultAddrType));
+
+        // OXC 2.0 当前阶段继续把“层级顺序 + L2 语义”留在 parser 层兜底，
+        // 这样可以尽早拦住 schema 级错误，避免把非法 level_list 传播到后续 params/rankTable。
+        CHK_RET(ValidateLevelInfo(levelInfo, previousNetLayer));
         rankInfo.levelList.push_back(levelInfo);
     }
+    return HCCL_SUCCESS;
+}
+
+HcclResult TopoinfoRanktableOxc::ValidateLevelInfo(const RankLevelInfoOxc &levelInfo, u32 &previousNetLayer)
+{
+    constexpr u32 MAX_OXC_NET_LAYER = 3;
+    CHK_PRT_RET(levelInfo.netLayer > MAX_OXC_NET_LAYER,
+        HCCL_ERROR("[OXC_HCOMM][Parse][net_layer] value[%u] exceeds OXC range[0,%u].",
+            levelInfo.netLayer, MAX_OXC_NET_LAYER), HCCL_E_PARA);
+
+    if (previousNetLayer != std::numeric_limits<u32>::max()) {
+        CHK_PRT_RET(levelInfo.netLayer <= previousNetLayer,
+            HCCL_ERROR("[OXC_HCOMM][Parse][level_list] net_layer[%u] is not strictly increasing after [%u].",
+                levelInfo.netLayer, previousNetLayer), HCCL_E_PARA);
+    }
+
+    if (levelInfo.netLayer == 2) {
+        CHK_PRT_RET(levelInfo.netType != "OXC_Mesh",
+            HCCL_ERROR("[OXC_HCOMM][Parse][net_type] net_layer[2] must be OXC_Mesh, got[%s].",
+                levelInfo.netType.c_str()), HCCL_E_NOT_SUPPORT);
+        CHK_PRT_RET(levelInfo.netInstanceId != "0",
+            HCCL_ERROR("[OXC_HCOMM][Parse][net_instance_id] net_layer[2] must be 0, got[%s].",
+                levelInfo.netInstanceId.c_str()), HCCL_E_PARA);
+    }
+
+    previousNetLayer = levelInfo.netLayer;
+    return HCCL_SUCCESS;
+}
+
+HcclResult TopoinfoRanktableOxc::ValidateRankLevelLayouts(const std::vector<RankInfo_t> &rankList)
+{
+    constexpr u32 EXPECTED_OXC_LEVEL_COUNT = 4;
+    std::array<std::string, EXPECTED_OXC_LEVEL_COUNT> baselineNetTypes;
+    bool baselineInitialized = false;
+
+    for (u32 rankIndex = 0; rankIndex < rankList.size(); ++rankIndex) {
+        const auto &rankInfo = rankList[rankIndex];
+        CHK_PRT_RET(rankInfo.levelList.size() != EXPECTED_OXC_LEVEL_COUNT,
+            HCCL_ERROR("[OXC_HCOMM][Parse][level_list] rank[%u] expect[%u] levels, actual[%zu].",
+                rankInfo.rankId, EXPECTED_OXC_LEVEL_COUNT, rankInfo.levelList.size()), HCCL_E_PARA);
+
+        for (u32 levelIndex = 0; levelIndex < EXPECTED_OXC_LEVEL_COUNT; ++levelIndex) {
+            const auto &levelInfo = rankInfo.levelList[levelIndex];
+            CHK_PRT_RET(levelInfo.netLayer != levelIndex,
+                HCCL_ERROR("[OXC_HCOMM][Parse][level_list] rank[%u] levelIndex[%u] expect net_layer[%u], actual[%u].",
+                    rankInfo.rankId, levelIndex, levelIndex, levelInfo.netLayer), HCCL_E_PARA);
+
+            if (!baselineInitialized) {
+                baselineNetTypes[levelIndex] = levelInfo.netType;
+                continue;
+            }
+
+            CHK_PRT_RET(levelInfo.netType != baselineNetTypes[levelIndex],
+                HCCL_ERROR("[OXC_HCOMM][Parse][net_type] rank[%u] level[%u] expect[%s], actual[%s].",
+                    rankInfo.rankId, levelIndex, baselineNetTypes[levelIndex].c_str(), levelInfo.netType.c_str()),
+                HCCL_E_PARA);
+        }
+        baselineInitialized = true;
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult TopoinfoRanktableOxc::ValidateAndFinalizeA3RankInfo(RankTable_t &rankTable)
+{
+    std::map<std::string, std::set<u32>> superPodToSdid;
+    for (auto &rankInfo : rankTable.rankList) {
+        CHK_PRT_RET(rankInfo.superPodId.empty(),
+            HCCL_ERROR("[OXC_HCOMM][Parse][super_pod_id] rank[%u] field is missing.", rankInfo.rankId),
+            HCCL_E_NOT_FOUND);
+        CHK_PRT_RET(rankInfo.superDeviceId == INVALID_UINT,
+            HCCL_ERROR("[OXC_HCOMM][Parse][super_device_id] rank[%u] field is missing.", rankInfo.rankId),
+            HCCL_E_NOT_FOUND);
+        auto &sdidSet = superPodToSdid[rankInfo.superPodId];
+        CHK_PRT_RET(sdidSet.find(rankInfo.superDeviceId) != sdidSet.end(),
+            HCCL_ERROR("[OXC_HCOMM][Parse][super_device_id] rank[%u] conflicts in super_pod_id[%s] with duplicate super_device_id[%u].",
+                rankInfo.rankId, rankInfo.superPodId.c_str(), rankInfo.superDeviceId), HCCL_E_PARA);
+        sdidSet.insert(rankInfo.superDeviceId);
+    }
+    rankTable.superPodNum = static_cast<u32>(superPodToSdid.size());
     return HCCL_SUCCESS;
 }
 

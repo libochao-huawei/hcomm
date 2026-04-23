@@ -15,11 +15,47 @@
 #include "comm_base_pub.h"
 #include "hccl_impl_pub.h"
 #include "coll_alg_param.h"
+#include "topoinfo_plane_transformer.h"
+#include <numeric>
 
 
 namespace hccl {
 
 constexpr u32 SERVER_RANK_SIZE = 8;
+
+namespace {
+struct LayeredSourceSelection {
+    u32 ringIndex { INVALID_UINT };
+    u32 groupIndex { INVALID_UINT };
+    u32 positionInGroup { INVALID_UINT };
+    u32 localIndex { INVALID_UINT };
+};
+
+bool FindLayeredSourceSelection(const std::vector<std::vector<RankInfo>> &sourcePlaneVec,
+    const std::vector<std::vector<u32>> &groups, u32 userRank, LayeredSourceSelection &selection)
+{
+    for (u32 ringIndex = 0; ringIndex < sourcePlaneVec.size(); ++ringIndex) {
+        const auto &ringRanks = sourcePlaneVec[ringIndex];
+        for (u32 groupIndex = 0; groupIndex < groups.size(); ++groupIndex) {
+            const auto &group = groups[groupIndex];
+            for (u32 position = 0; position < group.size(); ++position) {
+                const u32 localIndex = group[position];
+                if (localIndex >= ringRanks.size()) {
+                    continue;
+                }
+                if (ringRanks[localIndex].userRank == userRank) {
+                    selection.ringIndex = ringIndex;
+                    selection.groupIndex = groupIndex;
+                    selection.positionInGroup = position;
+                    selection.localIndex = localIndex;
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+}
 
 TopoInfoExtractor::TopoInfoExtractor(HcclAlgoAttr &algoAttr, HcclTopoAttr &topoAttr, const TopoType topoType)
     : identifier_(algoAttr.identifier), userRank_(topoAttr.userRank), userRankSize_(topoAttr.userRankSize),
@@ -33,7 +69,10 @@ TopoInfoExtractor::TopoInfoExtractor(HcclAlgoAttr &algoAttr, HcclTopoAttr &topoA
       isDiffDeviceType_(topoAttr.isDiffDeviceType),
       gcdDeviceNumPerAggregation_(topoAttr.gcdDeviceNumPerAggregation),
       CommPlaneSubGroupVector_(COMM_LEVEL_RESERVED),
-      CommPlaneVector_(COMM_LEVEL_RESERVED)
+      CommPlaneVector_(COMM_LEVEL_RESERVED),
+      layeredIndexVector_(0),
+      algoAttr_(&algoAttr),
+      topoAttr_(&topoAttr)
 { };
 
 #ifdef CCL_LLT
@@ -51,7 +90,10 @@ TopoInfoExtractor::TopoInfoExtractor(std::string identifier, u32 userRank, u32 u
       isConfigAHC_(false),
       isConfigNULL_(false),
       CommPlaneVector_(COMM_LEVEL_RESERVED),
-      CommPlaneSubGroupVector_(COMM_LEVEL_RESERVED)
+      CommPlaneSubGroupVector_(COMM_LEVEL_RESERVED),
+      layeredIndexVector_(0),
+      algoAttr_(nullptr),
+      topoAttr_(nullptr)
 {};
 #endif
 
@@ -557,8 +599,9 @@ HcclResult TopoInfoExtractor::SetTopoInfoForLevel0()
 
 HcclResult TopoInfoExtractor::SetTopoInfoForLevel1(bool prepareAHC)
 {
+    const bool useOxcLevel1MergeView = (!prepareAHC && topoAttr_ != nullptr && topoAttr_->isOxcMode);
     std::map<u32, std::vector<RankInfo>> &serverToRank =
-        (prepareAHC) ? serverToRankMerge_ : serverToRank_;
+        (prepareAHC || useOxcLevel1MergeView) ? serverToRankMerge_ : serverToRank_;
 
     CommPlane commPlaneLevel1 = (prepareAHC) ? COMM_LEVEL1_AHC : COMM_LEVEL1;
 
@@ -627,7 +670,9 @@ HcclResult TopoInfoExtractor::SetTopoInfoForLevel1(bool prepareAHC)
 
                 // 环内填充 aggregatedSubGroup superPodId-> subGroupIndex 用于生成分组信息
                 if (!calcGroupDone && (deviceType_ == DevType::DEV_TYPE_910_93 || deviceType_ == DevType::DEV_TYPE_910B)) {
-                    std::string IdForIndexing = (iterMap->second)[ringIndex].superPodId;
+                    std::string IdForIndexing = useOxcLevel1MergeView ?
+                        (iterMap->second)[ringIndex].oxcGroupId :
+                        (iterMap->second)[ringIndex].superPodId;
                     auto itIndex = aggregatedSubGroup.find(IdForIndexing);
                     if (itIndex != aggregatedSubGroup.end()) {
                         itIndex->second.push_back(subGroupIndex);
@@ -1165,6 +1210,8 @@ HcclResult TopoInfoExtractor::SetAHCSubGroupsAndAlgOption()
         CHK_RET(AHCSubGroupInit(COMM_COMBINE_ORDER, CommPlaneSubGroupVector_));
     }
 
+    CHK_RET(ApplyLayeredPlaneTransformer());
+
     //算法配置初始化
     CommAHCBaseInfo::InitConcAlgOption(ahcAlgOption_);
     return HCCL_SUCCESS;
@@ -1321,6 +1368,171 @@ HcclResult TopoInfoExtractor::AHCSubGroupInit(CommPlane algLevel, std::vector<st
 
     CHK_RET(CommAHCBaseInfo::CheckGlobalGroups(globalSubGroups));
 
+    return HCCL_SUCCESS;
+}
+
+HcclResult TopoInfoExtractor::ApplyLayeredPlaneTransformer()
+{
+    CHK_PRT_RET(algoAttr_ == nullptr || topoAttr_ == nullptr,
+        HCCL_WARNING("[OXC_HCOMM][TopoInfoExtractor][ApplyLayeredPlaneTransformer] skip layered closure in compatibility constructor."),
+        HCCL_SUCCESS);
+
+    if (topoAttr_->isOxcMode) {
+        const CommPlane sourcePlane = COMM_LEVEL1;
+        auto &subGroups = CommPlaneSubGroupVector_[sourcePlane];
+        CHK_PRT_RET(CommPlaneVector_[sourcePlane].empty(),
+            HCCL_ERROR("[OXC_HCOMM][TopoInfoExtractor][ApplyLayeredPlaneTransformer] OXC sourcePlane[%u] has no plane vector.",
+                sourcePlane), HCCL_E_INTERNAL);
+        if (subGroups.empty() || subGroups[0].empty()) {
+            HCCL_INFO("[OXC_HCOMM][TopoInfoExtractor][ApplyLayeredPlaneTransformer] no OXC subgroup available for source plane[%u].",
+                sourcePlane);
+            return HCCL_SUCCESS;
+        }
+
+        const auto &groups = subGroups[0];
+        LayeredSourceSelection selection;
+        CHK_PRT_RET(!FindLayeredSourceSelection(CommPlaneVector_[sourcePlane], groups, userRank_, selection),
+            HCCL_ERROR("[OXC_HCOMM][TopoInfoExtractor][ApplyLayeredPlaneTransformer] OXC userRank[%u] not found in sourcePlane[%u] subgroup.",
+                userRank_, sourcePlane), HCCL_E_INTERNAL);
+
+        topoAttr_->groupSize = static_cast<u32>(groups.size());
+        topoAttr_->groupId = selection.groupIndex;
+
+        layeredIndexVector_.clear();
+        layeredIndexVector_.resize(CommPlaneVector_[sourcePlane][selection.ringIndex].size());
+        std::iota(layeredIndexVector_.begin(), layeredIndexVector_.end(), 0U);
+
+        CHK_RET(SetTopoInfoForLayeredLevel1(sourcePlane, groups, selection.ringIndex, selection.groupIndex));
+        CHK_RET(SetTopoInfoForLayeredLevel2(sourcePlane, groups, selection.ringIndex,
+            selection.positionInGroup, layeredIndexVector_));
+
+        HCCL_INFO("[OXC_HCOMM][TopoInfoExtractor][ApplyLayeredPlaneTransformer] OXC sourcePlane[%u] ringIndex[%u] groupId[%u] groupSize[%u] netPlaneId[%u] netPlaneNum[%u].",
+            sourcePlane, selection.ringIndex, topoAttr_->groupId, topoAttr_->groupSize, topoAttr_->netPlaneId,
+            topoAttr_->netPlaneNum);
+        return HCCL_SUCCESS;
+    }
+
+    if (!isConfigAHC_) {
+        return HCCL_SUCCESS;
+    }
+
+    const CommPlane sourcePlane = COMM_LEVEL1_AHC;
+    auto &globalSubGroups = CommPlaneSubGroupVector_[sourcePlane];
+    CHK_PRT_RET(CommPlaneVector_[sourcePlane].empty(),
+        HCCL_ERROR("[OXC_HCOMM][TopoInfoExtractor][ApplyLayeredPlaneTransformer] sourcePlane[%u] has no plane vector.",
+            sourcePlane), HCCL_E_INTERNAL);
+    if (globalSubGroups.empty() || globalSubGroups[0].empty()) {
+        HCCL_INFO("[OXC_HCOMM][TopoInfoExtractor][ApplyLayeredPlaneTransformer] no subgroup available for source plane[%u].",
+            sourcePlane);
+        return HCCL_SUCCESS;
+    }
+
+    std::vector<std::vector<u32>> regroupedGroups = globalSubGroups[0];
+    bool enabledBroke = false;
+    for (u32 opType = 0; opType < static_cast<u32>(HcclCMDType::HCCL_CMD_MAX); ++opType) {
+        const auto &algoType = algoAttr_->commAlgoConfig[static_cast<HcclCMDType>(opType)];
+        if (algoType[HCCL_ALGO_LEVEL_1] == HcclAlgoType::HCCL_ALGO_TYPE_AHC_BROKE) {
+            enabledBroke = true;
+            break;
+        }
+    }
+
+    CHK_RET(TopoinfoPlaneTransformer::RegroupAndSelectAlgo(topoAttr_->netPlaneNum, enabledBroke, regroupedGroups,
+        algoAttr_->intraAlgType, algoAttr_->interAlgType));
+
+    LayeredSourceSelection selection;
+    CHK_PRT_RET(!FindLayeredSourceSelection(CommPlaneVector_[sourcePlane], regroupedGroups, userRank_, selection),
+        HCCL_ERROR("[OXC_HCOMM][TopoInfoExtractor][ApplyLayeredPlaneTransformer] userRank[%u] not found in sourcePlane[%u] regrouped groups.",
+            userRank_, sourcePlane), HCCL_E_INTERNAL);
+
+    topoAttr_->groupSize = static_cast<u32>(regroupedGroups.size());
+    topoAttr_->groupId = selection.groupIndex;
+    CHK_RET(TopoinfoPlaneTransformer::ReparseGroupedPlane(selection.localIndex, regroupedGroups, topoAttr_->netPlaneId,
+        topoAttr_->netPlaneNum));
+
+    layeredIndexVector_.clear();
+    CHK_RET(TopoinfoPlaneTransformer::TransformPlaneByAlgo(algoAttr_->interAlgType, topoAttr_->netPlaneId,
+        selection.localIndex, regroupedGroups, layeredIndexVector_));
+
+    if (topoAttr_->groupSize > 0) {
+        CHK_RET(SetTopoInfoForLayeredLevel1(sourcePlane, regroupedGroups, selection.ringIndex, selection.groupIndex));
+        CHK_RET(SetTopoInfoForLayeredLevel2(sourcePlane, regroupedGroups, selection.ringIndex,
+            selection.positionInGroup, layeredIndexVector_));
+    }
+
+    HCCL_INFO("[OXC_HCOMM][TopoInfoExtractor][ApplyLayeredPlaneTransformer] sourcePlane[%u] ringIndex[%u] groupId[%u] groupSize[%u] netPlaneId[%u] netPlaneNum[%u] intraAlg[%u] interAlg[%u].",
+        sourcePlane, selection.ringIndex, topoAttr_->groupId, topoAttr_->groupSize, topoAttr_->netPlaneId,
+        topoAttr_->netPlaneNum, static_cast<u32>(algoAttr_->intraAlgType), static_cast<u32>(algoAttr_->interAlgType));
+    return HCCL_SUCCESS;
+}
+
+HcclResult TopoInfoExtractor::SetTopoInfoForLayeredLevel1(CommPlane sourcePlane,
+    const std::vector<std::vector<u32>> &groups, const u32 ringIndex, const u32 groupIndex)
+{
+    CHK_PRT_RET(CommPlaneVector_[sourcePlane].empty(),
+        HCCL_ERROR("[OXC_HCOMM][TopoInfoExtractor][SetTopoInfoForLayeredLevel1] sourcePlane[%u] has no plane vector.",
+            sourcePlane), HCCL_E_INTERNAL);
+    CHK_PRT_RET(ringIndex >= CommPlaneVector_[sourcePlane].size(),
+        HCCL_ERROR("[OXC_HCOMM][TopoInfoExtractor][SetTopoInfoForLayeredLevel1] ringIndex[%u] out of range[%zu].",
+            ringIndex, CommPlaneVector_[sourcePlane].size()), HCCL_E_INTERNAL);
+    CHK_PRT_RET(groupIndex >= groups.size(),
+        HCCL_ERROR("[OXC_HCOMM][TopoInfoExtractor][SetTopoInfoForLayeredLevel1] groupIndex[%u] out of range[%zu].",
+            groupIndex, groups.size()), HCCL_E_INTERNAL);
+
+    const auto &sourceRankVec = CommPlaneVector_[sourcePlane][ringIndex];
+    const auto &group = groups[groupIndex];
+    std::vector<RankInfo> layeredGroup;
+    layeredGroup.reserve(group.size());
+    for (const auto &localIndex : group) {
+        CHK_PRT_RET(localIndex >= sourceRankVec.size(),
+            HCCL_ERROR("[OXC_HCOMM][TopoInfoExtractor][SetTopoInfoForLayeredLevel1] localIndex[%u] out of range[%zu].",
+                localIndex, sourceRankVec.size()), HCCL_E_INTERNAL);
+        layeredGroup.push_back(sourceRankVec[localIndex]);
+    }
+    CommPlaneVector_[COMM_LAYERED_LEVEL1].clear();
+    CommPlaneVector_[COMM_LAYERED_LEVEL1].push_back(layeredGroup);
+    return HCCL_SUCCESS;
+}
+
+HcclResult TopoInfoExtractor::SetTopoInfoForLayeredLevel2(CommPlane sourcePlane,
+    const std::vector<std::vector<u32>> &groups, const u32 ringIndex, const u32 positionInGroup,
+    const std::vector<u32> &indexList)
+{
+    CHK_PRT_RET(CommPlaneVector_[sourcePlane].empty(),
+        HCCL_ERROR("[OXC_HCOMM][TopoInfoExtractor][SetTopoInfoForLayeredLevel2] sourcePlane[%u] has no plane vector.",
+            sourcePlane), HCCL_E_INTERNAL);
+    CHK_PRT_RET(ringIndex >= CommPlaneVector_[sourcePlane].size(),
+        HCCL_ERROR("[OXC_HCOMM][TopoInfoExtractor][SetTopoInfoForLayeredLevel2] ringIndex[%u] out of range[%zu].",
+            ringIndex, CommPlaneVector_[sourcePlane].size()), HCCL_E_INTERNAL);
+
+    const auto &sourceRankVec = CommPlaneVector_[sourcePlane][ringIndex];
+    std::vector<RankInfo> layeredCrossGroup;
+    layeredCrossGroup.reserve(groups.size());
+    for (const auto &group : groups) {
+        /**
+         * @brief BROKE 重分组后允许出现短尾分组。
+         *
+         * @note 文档语义要求“从每个分组取相同位置的 rank 构成组间平面”，因此这里只消费
+         *       仍然拥有 `positionInGroup` 的分组。对 broken tail 分组直接跳过，避免把
+         *       regroup 产生的短尾视为内部错误。
+         */
+        if (positionInGroup >= group.size()) {
+            HCCL_DEBUG("[OXC_HCOMM][TopoInfoExtractor][SetTopoInfoForLayeredLevel2] skip short group size[%zu] for positionInGroup[%u].",
+                group.size(), positionInGroup);
+            continue;
+        }
+        const u32 sourceIndex = group[positionInGroup];
+        CHK_PRT_RET(sourceIndex >= indexList.size(),
+            HCCL_ERROR("[OXC_HCOMM][TopoInfoExtractor][SetTopoInfoForLayeredLevel2] sourceIndex[%u] out of indexList range[%zu].",
+                sourceIndex, indexList.size()), HCCL_E_INTERNAL);
+        const u32 mappedIndex = indexList[sourceIndex];
+        CHK_PRT_RET(mappedIndex >= sourceRankVec.size(),
+            HCCL_ERROR("[OXC_HCOMM][TopoInfoExtractor][SetTopoInfoForLayeredLevel2] mappedIndex[%u] out of range[%zu].",
+                mappedIndex, sourceRankVec.size()), HCCL_E_INTERNAL);
+        layeredCrossGroup.push_back(sourceRankVec[mappedIndex]);
+    }
+    CommPlaneVector_[COMM_LAYERED_LEVEL2].clear();
+    CommPlaneVector_[COMM_LAYERED_LEVEL2].push_back(layeredCrossGroup);
     return HCCL_SUCCESS;
 }
 

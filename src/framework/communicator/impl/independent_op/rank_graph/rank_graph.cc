@@ -12,8 +12,15 @@
 #include "rank_graph.h"
 #include "externalinput_pub.h"
 #include "comm_base_pub.h"
+#include "comm_utils.h"
 
 namespace hccl {  
+namespace {
+bool HasNetLayerValue(const std::vector<uint32_t> &netLayers, uint32_t target)
+{
+    return std::find(netLayers.begin(), netLayers.end(), target) != netLayers.end();
+}
+}
 
 // 根据 rankId 获取 rank 信息
 const RankInfo_t* RankGraph::FindRank(uint32_t rankId) const {
@@ -108,6 +115,11 @@ HcclResult RankGraph::Init(const RankTable_t &rankTable, const HcclTopoAttr &top
     topoAttr_ = topoAttr;
     rankIndex_.clear();
     rankPairInfo_.clear();
+    netLayer_.clear();
+    rankList_.clear();
+    rankSizeList_.clear();
+    topoInstList_.clear();
+    instRankList_.clear();
     HCCL_INFO("[RankGraph][%s] rankNum[%zu]", __func__, rankTable_.rankList.size());
     CommProtocol protocol = CommProtocol::COMM_PROTOCOL_RESERVED;
     CHK_RET(DevTypeToCommProtocol(devType_, protocol));
@@ -128,9 +140,37 @@ HcclResult RankGraph::Init(const RankTable_t &rankTable, const HcclTopoAttr &top
 HcclResult RankGraph::Init(const HcclTopoAttr &topoAttr)
 {
     topoAttr_ = topoAttr;
+    rankTable_.rankList.clear();
+    for (const auto &algoRank : topoAttr_.rankInfoList) {
+        RankInfo_t rankInfo;
+        rankInfo.rankId = algoRank.userRank;
+        rankInfo.localRank = algoRank.localRank;
+        rankInfo.serverId = algoRank.serverId;
+        rankInfo.serverIdx = algoRank.serverIdx;
+        rankInfo.superDeviceId = algoRank.superDeviceId;
+        rankInfo.superPodId = algoRank.superPodId;
+        rankInfo.superPodIdx = algoRank.superPodIdx;
+        rankInfo.deviceInfo.devicePhyId = algoRank.devicePhyId;
+        rankInfo.deviceInfo.deviceType = algoRank.deviceType;
+        rankInfo.deviceInfo.deviceIp = algoRank.nicIp;
+        rankTable_.rankList.push_back(rankInfo);
+    }
     rankIndex_.clear();
     rankPairInfo_.clear();
+    netLayer_.clear();
+    rankList_.clear();
+    rankSizeList_.clear();
+    topoInstList_.clear();
+    instRankList_.clear();
     HCCL_INFO("[RankGraph][%s] rankNum[%zu]", __func__, rankTable_.rankList.size());
+    CommProtocol protocol = CommProtocol::COMM_PROTOCOL_RESERVED;
+    CHK_RET(DevTypeToCommProtocol(devType_, protocol));
+    for (const auto &r : rankTable_.rankList) {
+        RankGraphInfo info;
+        CHK_RET(BuildRankGraphInfo(r, protocol, info));
+        rankIndex_[r.rankId] = std::move(info);
+    }
+    rankGraph_ = rankTable_.rankList;
     CHK_RET(InitRankInfo());
     CHK_RET(InitNetLayer());
     CHK_RET(InitHeterogMode());
@@ -308,18 +348,47 @@ HcclResult RankGraph::GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dst
         return HCCL_E_PARA;
     }
 
-    if (netLayer > HCCL_NETLAYER_2) {
-        HCCL_ERROR("[RankGraph][%s] srcRank[%u] and dstRank[%u] are do not have netLayer[%u]",
-            __func__, srcRank, dstRank, netLayer);
-        return HCCL_E_PARA;
-    }
+    const bool isTraditionalLayer = netLayer <= HCCL_NETLAYER_2;
+    const bool isLayeredLevel1 = netLayer == HCCL_NETLAYER_LAYERED_LEVEL1;
+    const bool isLayeredLevel2 = netLayer == HCCL_NETLAYER_LAYERED_LEVEL2;
+    CHK_PRT_RET(!isTraditionalLayer && !isLayeredLevel1 && !isLayeredLevel2,
+        HCCL_ERROR("[RankGraph][%s] srcRank[%u] and dstRank[%u] do not support netLayer[%u]",
+            __func__, srcRank, dstRank, netLayer), HCCL_E_PARA);
     auto &srcEndpointDescs = rankIndex_[srcRank].endPoints;
     auto &dstEndpointDescs = rankIndex_[dstRank].endPoints;
 
     const RankInfo_t &srcInfo = rankIndex_[srcRank].rankInfo;
     const RankInfo_t &dstInfo = rankIndex_[dstRank].rankInfo;
     CommProtocol protocol = COMM_PROTOCOL_RESERVED;
-    protocol = GetCommProtocolFromRankInfo(srcInfo, dstInfo, netLayer);
+    if (isLayeredLevel1 || isLayeredLevel2) {
+        bool inSameInstance = false;
+        auto instIt = instRankList_.find(netLayer);
+        if (instIt != instRankList_.end()) {
+            for (const auto &instance : instIt->second) {
+                const bool hasSrc = std::find(instance.begin(), instance.end(), srcRank) != instance.end();
+                const bool hasDst = std::find(instance.begin(), instance.end(), dstRank) != instance.end();
+                if (hasSrc && hasDst) {
+                    inSameInstance = true;
+                    break;
+                }
+            }
+        }
+        if (!inSameInstance) {
+            HCCL_WARNING("[RankGraph][%s] layered netLayer[%u] has no shared instance for srcRank[%u] dstRank[%u]", __func__, netLayer, srcRank, dstRank);
+            *linkList = nullptr;
+            *listSize = 0;
+            return HCCL_SUCCESS;
+        }
+        if (isLayeredLevel1) {
+            protocol = (srcInfo.serverIdx == dstInfo.serverIdx) ? GetCommProtocolInSameServer(srcInfo, dstInfo)
+                                                               : GetCommProtocolBetweenServers(srcInfo, dstInfo);
+        } else {
+            protocol = (srcInfo.serverIdx != dstInfo.serverIdx) ? GetCommProtocolBetweenServers(srcInfo, dstInfo)
+                                                                : GetCommProtocolInSameServer(srcInfo, dstInfo);
+        }
+    } else {
+        protocol = GetCommProtocolFromRankInfo(srcInfo, dstInfo, netLayer);
+    }
     if (protocol == COMM_PROTOCOL_RESERVED) {
         HCCL_WARNING("[RankGraph][%s] no links between srcRank[%u] dstRank[%u]", __func__, srcRank, dstRank);
         *linkList = nullptr;
@@ -422,9 +491,24 @@ HcclResult RankGraph::GetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum)
     return HCCL_SUCCESS;
 }
 
+HcclResult RankGraph::GetTopoInstsByNetLayer(uint32_t netLayer, uint32_t **topoInsts, uint32_t *topoInstNum)
+{
+    if (!HasNetLayerValue(netLayer_, netLayer)) {
+        HCCL_ERROR("[rankGraph][%s] invalid para. netlayer[%u]", __func__, netLayer);
+        return HCCL_E_PARA;
+    }
+    if (topoInstList_.find(netLayer) == topoInstList_.end()) {
+        HCCL_ERROR("[rankGraph][%s] failed to find topoInstList map. netlayer[%u]", __func__, netLayer);
+        return HCCL_E_INTERNAL;
+    }
+    *topoInstNum = topoInstList_[netLayer].size();
+    *topoInsts = topoInstList_[netLayer].data();
+    return HCCL_SUCCESS;
+}
+
 HcclResult RankGraph::GetInstTopoTypeByNetLayer(uint32_t netLayer, CommTopo *topoType)
 {
-    if (netLayer >= netLayer_.size()) {
+    if (!HasNetLayerValue(netLayer_, netLayer)) {
         HCCL_ERROR("[rankGraph][%s] invalid para. netlayer[%u]", __func__, netLayer);
         return HCCL_E_PARA;
     }
@@ -441,6 +525,8 @@ HcclResult RankGraph::GetInstTopoTypeByNetLayer(uint32_t netLayer, CommTopo *top
             *topoType = CommTopo::COMM_TOPO_1DMESH;
         } else if (netLayer == static_cast<uint32_t>(HcclNetLayerlevel::HCCL_NetLayer_L1)) {
             *topoType = CommTopo::COMM_TOPO_CLOS;
+        } else if (netLayer == HCCL_NETLAYER_LAYERED_LEVEL1 || netLayer == HCCL_NETLAYER_LAYERED_LEVEL2) {
+            *topoType = CommTopo::COMM_TOPO_CLOS;
         }
     } else if (deviceType == DevType::DEV_TYPE_310P3) {
         if (netLayer == static_cast<uint32_t>(HcclNetLayerlevel::HCCL_NetLayer_L0)) {
@@ -452,7 +538,7 @@ HcclResult RankGraph::GetInstTopoTypeByNetLayer(uint32_t netLayer, CommTopo *top
 
 HcclResult RankGraph::GetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum)
 {
-    if (netLayer >= netLayer_.size()) {
+    if (!HasNetLayerValue(netLayer_, netLayer)) {
         HCCL_ERROR("[rankGraph][%s] invalid para. netlayer[%u]", __func__, netLayer);
         return HCCL_E_PARA;
     }
@@ -468,7 +554,7 @@ HcclResult RankGraph::GetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum
 
 HcclResult RankGraph::GetInstRanksByNetLayer(uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum)
 {
-    if (netLayer >= netLayer_.size()) {
+    if (!HasNetLayerValue(netLayer_, netLayer)) {
         HCCL_ERROR("[rankGraph][%s] invalid para. netlayer[%u]", __func__, netLayer);
         return HCCL_E_PARA;
     }
@@ -483,9 +569,26 @@ HcclResult RankGraph::GetInstRanksByNetLayer(uint32_t netLayer, uint32_t **rankL
     return HCCL_SUCCESS;
 }
 
+HcclResult RankGraph::GetRanksByTopoInst(uint32_t netLayer, uint32_t topoInst, uint32_t **rankList, uint32_t *rankNum)
+{
+    if (!HasNetLayerValue(netLayer_, netLayer)) {
+        HCCL_ERROR("[rankGraph][%s] invalid para. netlayer[%u]", __func__, netLayer);
+        return HCCL_E_PARA;
+    }
+    if (instRankList_.find(netLayer) == instRankList_.end()) {
+        HCCL_ERROR("[rankGraph][%s] failed to find instRankList map. netlayer[%u]", __func__, netLayer);
+        return HCCL_E_INTERNAL;
+    }
+    CHK_PRT_RET(topoInst >= instRankList_[netLayer].size(),
+        HCCL_ERROR("[rankGraph][%s] topoInst[%u] out of range[%zu] for netlayer[%u]", __func__, topoInst, instRankList_[netLayer].size(), netLayer), HCCL_E_PARA);
+    *rankNum = instRankList_[netLayer][topoInst].size();
+    *rankList = instRankList_[netLayer][topoInst].data();
+    return HCCL_SUCCESS;
+}
+
 HcclResult RankGraph::GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize)
 {
-    if (netLayer >= netLayer_.size()) {
+    if (!HasNetLayerValue(netLayer_, netLayer)) {
         HCCL_ERROR("[rankGraph][%s] invalid para. netlayer[%u]", __func__, netLayer);
         return HCCL_E_PARA;
     }
@@ -637,6 +740,18 @@ HcclResult RankGraph::InitSuperPodRankInfo()
     return HCCL_SUCCESS;
 }
 
+namespace {
+void BuildLayerEntries(const std::vector<std::vector<u32>> &instances, std::vector<u32> &flatRanks, std::vector<u32> &instSizes)
+{
+    flatRanks.clear();
+    instSizes.clear();
+    for (const auto &instance : instances) {
+        instSizes.push_back(static_cast<u32>(instance.size()));
+        flatRanks.insert(flatRanks.end(), instance.begin(), instance.end());
+    }
+}
+}
+
 HcclResult RankGraph::InitNetLayer()
 {
     netLayer_.clear();
@@ -660,6 +775,10 @@ HcclResult RankGraph::InitNetLayer()
         rankSizeListTmp.push_back(iter.second.size());
     }
     rankSizeList_.insert({static_cast<uint32_t>(HcclNetLayerlevel::HCCL_NetLayer_L0), rankSizeListTmp});
+    topoInstList_.insert({static_cast<uint32_t>(HcclNetLayerlevel::HCCL_NetLayer_L0), std::vector<u32>(rankSizeListTmp.size(), 0)});
+    for (u32 i = 0; i < topoInstList_[static_cast<uint32_t>(HcclNetLayerlevel::HCCL_NetLayer_L0)].size(); ++i) topoInstList_[static_cast<uint32_t>(HcclNetLayerlevel::HCCL_NetLayer_L0)][i] = i;
+    instRankList_[static_cast<uint32_t>(HcclNetLayerlevel::HCCL_NetLayer_L0)].clear();
+    for (auto &pair : serverToRank_) { std::vector<u32> inst; for (auto iter : pair.second) inst.push_back(iter.userRank); instRankList_[static_cast<uint32_t>(HcclNetLayerlevel::HCCL_NetLayer_L0)].push_back(inst); }
  
     DevType deviceType = topoAttr_.deviceType;
     if (serverToRank_.size() > 1) {
@@ -673,6 +792,8 @@ HcclResult RankGraph::InitNetLayer()
             }
             rankList_.insert({static_cast<uint32_t>(HcclNetLayerlevel::HCCL_NetLayer_L1), rankListTmp1});
             rankSizeList_.insert({static_cast<uint32_t>(HcclNetLayerlevel::HCCL_NetLayer_L1), {topoAttr_.userRankSize}});
+            topoInstList_[static_cast<uint32_t>(HcclNetLayerlevel::HCCL_NetLayer_L1)] = {0};
+            instRankList_[static_cast<uint32_t>(HcclNetLayerlevel::HCCL_NetLayer_L1)] = {rankListTmp1};
         } else if (deviceType == DevType::DEV_TYPE_910_93) {
             auto it = superPodToRank_.find(rankData_.superPodIdx);
             if (it == superPodToRank_.end()) {
@@ -689,6 +810,10 @@ HcclResult RankGraph::InitNetLayer()
             }
             rankList_.insert({static_cast<uint32_t>(HcclNetLayerlevel::HCCL_NetLayer_L1), rankListTmp1});
             rankSizeList_.insert({static_cast<uint32_t>(HcclNetLayerlevel::HCCL_NetLayer_L1), rankSizeListTmp1});
+            topoInstList_[static_cast<uint32_t>(HcclNetLayerlevel::HCCL_NetLayer_L1)] = std::vector<u32>(rankSizeListTmp1.size(), 0);
+            for (u32 i = 0; i < topoInstList_[static_cast<uint32_t>(HcclNetLayerlevel::HCCL_NetLayer_L1)].size(); ++i) topoInstList_[static_cast<uint32_t>(HcclNetLayerlevel::HCCL_NetLayer_L1)][i] = i;
+            instRankList_[static_cast<uint32_t>(HcclNetLayerlevel::HCCL_NetLayer_L1)].clear();
+            for (auto &pair : superPodToRank_) { std::vector<u32> inst; for (auto iter : pair.second) inst.push_back(iter.userRank); instRankList_[static_cast<uint32_t>(HcclNetLayerlevel::HCCL_NetLayer_L1)].push_back(inst); }
         }
     }
  
@@ -702,6 +827,31 @@ HcclResult RankGraph::InitNetLayer()
         }
         rankList_.insert({static_cast<uint32_t>(HcclNetLayerlevel::HCCL_NetLayer_L2), rankListTmp2});
         rankSizeList_.insert({static_cast<uint32_t>(HcclNetLayerlevel::HCCL_NetLayer_L2), {topoAttr_.userRankSize}});
+        topoInstList_[static_cast<uint32_t>(HcclNetLayerlevel::HCCL_NetLayer_L2)] = {0};
+        instRankList_.insert({static_cast<uint32_t>(HcclNetLayerlevel::HCCL_NetLayer_L2), {rankListTmp2}});
+    }
+
+    if (topoAttr_.commPlaneRanks.size() > COMM_LAYERED_LEVEL1 && !topoAttr_.commPlaneRanks[COMM_LAYERED_LEVEL1].empty()) {
+        netLayer_.push_back(HCCL_NETLAYER_LAYERED_LEVEL1);
+        std::vector<u32> flatRanks;
+        std::vector<u32> instSizes;
+        BuildLayerEntries(topoAttr_.commPlaneRanks[COMM_LAYERED_LEVEL1], flatRanks, instSizes);
+        rankList_[HCCL_NETLAYER_LAYERED_LEVEL1] = flatRanks;
+        rankSizeList_[HCCL_NETLAYER_LAYERED_LEVEL1] = instSizes;
+        topoInstList_[HCCL_NETLAYER_LAYERED_LEVEL1] = std::vector<u32>(instSizes.size(), 0);
+        for (u32 i = 0; i < topoInstList_[HCCL_NETLAYER_LAYERED_LEVEL1].size(); ++i) topoInstList_[HCCL_NETLAYER_LAYERED_LEVEL1][i] = i;
+        instRankList_[HCCL_NETLAYER_LAYERED_LEVEL1] = topoAttr_.commPlaneRanks[COMM_LAYERED_LEVEL1];
+    }
+    if (topoAttr_.commPlaneRanks.size() > COMM_LAYERED_LEVEL2 && !topoAttr_.commPlaneRanks[COMM_LAYERED_LEVEL2].empty()) {
+        netLayer_.push_back(HCCL_NETLAYER_LAYERED_LEVEL2);
+        std::vector<u32> flatRanks;
+        std::vector<u32> instSizes;
+        BuildLayerEntries(topoAttr_.commPlaneRanks[COMM_LAYERED_LEVEL2], flatRanks, instSizes);
+        rankList_[HCCL_NETLAYER_LAYERED_LEVEL2] = flatRanks;
+        rankSizeList_[HCCL_NETLAYER_LAYERED_LEVEL2] = instSizes;
+        topoInstList_[HCCL_NETLAYER_LAYERED_LEVEL2] = std::vector<u32>(instSizes.size(), 0);
+        for (u32 i = 0; i < topoInstList_[HCCL_NETLAYER_LAYERED_LEVEL2].size(); ++i) topoInstList_[HCCL_NETLAYER_LAYERED_LEVEL2][i] = i;
+        instRankList_[HCCL_NETLAYER_LAYERED_LEVEL2] = topoAttr_.commPlaneRanks[COMM_LAYERED_LEVEL2];
     }
     return HCCL_SUCCESS;
 }

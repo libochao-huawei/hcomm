@@ -77,6 +77,18 @@ public:
 
 private:
     HcclResult AHCSubGroupInit(CommPlane algLevel, std::vector<std::vector<std::vector<std::vector<u32>>>> &CommPlaneSubGroupVector);  
+    /**
+     * @brief 在 `topo_info_extractor` 内建立 layered plane transformer 消费闭环。
+     * @return HcclResult
+     *
+     * @note `topo_info_extractor` 当前已经承担 plane transformer 工厂体系的完整消费者角色，
+     *       但本轮改动仍把边界限定在该层，不继续向 RankGraph/HCCL 更深链路扩散。
+     */
+    HcclResult ApplyLayeredPlaneTransformer();
+    HcclResult SetTopoInfoForLayeredLevel1(CommPlane sourcePlane, const std::vector<std::vector<u32>> &groups,
+        u32 ringIndex, u32 groupIndex);
+    HcclResult SetTopoInfoForLayeredLevel2(CommPlane sourcePlane, const std::vector<std::vector<u32>> &groups,
+        u32 ringIndex, u32 positionInGroup, const std::vector<u32> &indexList);
 
     const std::string identifier_; // 本节点所在的通信域ID
     const u32 userRank_;        //  本节点的用户原始rank号
@@ -133,6 +145,12 @@ private:
 
     // 保存所有级别的通信rank关系, CommPlaneVector_[CommPlane][ringIndex]: 第CommPlane级 第ringIndex个环
     std::vector<std::vector<std::vector<RankInfo> > > CommPlaneVector_;
+    // 保存当前 layered 消费链路生成的索引映射，供后续阶段与 UT 观测。
+    std::vector<u32> layeredIndexVector_;
+    // 指向传入的算法属性，便于把组内/组间选择结果回写给上游。
+    HcclAlgoAttr *algoAttr_ { nullptr };
+    // 指向传入的拓扑属性，便于把 plane/group 结果回写给上游。
+    HcclTopoAttr *topoAttr_ { nullptr };
 };
 
 bool Ascending(const RankInfo &first, const RankInfo &second);

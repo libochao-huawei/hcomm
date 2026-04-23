@@ -231,6 +231,11 @@ namespace hccl
     {
         return communicator_->GetNetLayers(netLayers, netLayerNum);
     }
+
+    HcclResult hcclComm::GetTopoInstsByNetLayer(uint32_t netLayer, uint32_t **topoInsts, uint32_t *topoInstNum)
+    {
+        return communicator_->GetTopoInstsByNetLayer(netLayer, topoInsts, topoInstNum);
+    }
     
     HcclResult hcclComm::GetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum)
     {
@@ -245,6 +250,11 @@ namespace hccl
     HcclResult hcclComm::GetInstRanksByNetLayer(uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum)
     {
         return communicator_->GetInstRanksByNetLayer(netLayer, rankList, rankNum);
+    }
+
+    HcclResult hcclComm::GetRanksByTopoInst(uint32_t netLayer, uint32_t topoInst, uint32_t **rankList, uint32_t *rankNum)
+    {
+        return communicator_->GetRanksByTopoInst(netLayer, topoInst, rankList, rankNum);
     }
     
     HcclResult hcclComm::GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize)

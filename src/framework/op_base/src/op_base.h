@@ -98,6 +98,8 @@ HcclResult GetCaptureInfo(aclrtStream stream, aclmdlRICaptureStatus& captureStat
 
 HcclResult HcclGetInitTilingList(const void *mc2Tiling, const void *p[], uint32_t &cnt);
 
+HcclResult InjectWorldCommNetPlaneInfo(uint32_t rank, hccl::RankTable_t &rankTable, hccl::CommConfig &runtimeCommConfig);
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus

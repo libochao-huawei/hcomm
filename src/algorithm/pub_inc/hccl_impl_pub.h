@@ -65,6 +65,10 @@ using HcclAlgoAttr = struct HcclAlgoAttrDef {
     NICDeployment nicDeployment;
     WorkMode commWorkMode;
     std::map<HcclCMDType, std::vector<HcclAlgoType>> commAlgoConfig;
+    /** @brief OXC 分层闭环中组选后的组内算法类型。 */
+    HcclAlgoType intraAlgType;
+    /** @brief OXC 分层闭环中组选后的组间算法类型。 */
+    HcclAlgoType interAlgType;
 
     HcclAlgoAttrDef()
         : isHaveCpuRank(false),
@@ -74,7 +78,9 @@ using HcclAlgoAttr = struct HcclAlgoAttrDef {
         identifier(""),
         collectiveId(""),
         nicDeployment(NICDeployment::NIC_DEPLOYMENT_DEVICE),
-        commWorkMode(WorkMode::HCCL_MODE_NORMAL)
+        commWorkMode(WorkMode::HCCL_MODE_NORMAL),
+        intraAlgType(HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT),
+        interAlgType(HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT)
     {
         SetDefaultAlgo();
     }
@@ -126,6 +132,17 @@ struct HcclTopoAttr {
     bool isSupportHccsAndSio;         //是否支持hccs sio并发
     u32 localNicPort;
     bool isNeedInitNic;      // 是否需要初始化Nic，心跳使用
+    bool isOxcMode;          // 当前通信域是否来自 OXC 2.0 ranktable
+    /** @brief 当前 rank 所属的并行平面 ID。 */
+    u32 netPlaneId;
+    /** @brief 当前通信域可见的并行平面总数。 */
+    u32 netPlaneNum;
+    /** @brief 当前 rank 所属的分组 ID。 */
+    u32 groupId;
+    /** @brief 当前分层通信域的分组数量。 */
+    u32 groupSize;
+    /** @brief 由 TopoInfoExtractor 导出的各通信平面 rank 列表，供 RankGraph 等只读消费者复用。 */
+    std::vector<std::vector<std::vector<u32>>> commPlaneRanks;
 
     HcclTopoAttr()
         : serverNum(0),
@@ -159,7 +176,13 @@ struct HcclTopoAttr {
         isSupportRdmaLite(false),
         isSupportHccsAndSio(false),
         localNicPort(0),
-        isNeedInitNic(false)
+        isNeedInitNic(false),
+        isOxcMode(false),
+        netPlaneId(0),
+        netPlaneNum(1),
+        groupId(0),
+        groupSize(0),
+        commPlaneRanks(0)
     {}
 };
 
