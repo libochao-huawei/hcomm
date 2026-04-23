@@ -131,6 +131,9 @@ TEST_F(HcclChannelDescTest, Ut_ProcessRoceChannelDesc_When_RetryIntervalIsInvail
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
+// 声明 CheckCommEngine 函数
+bool CheckCommEngine(const CommEngine engine, const uint32_t opExpansionMode);
+
 TEST_F(HcclChannelDescTest, Ut_ProcessRoceChannelDesc_When_RetryCntIsInvaild_ReturnHCCLEPARA)
 {
     std::vector<HcclChannelDesc> channelDesc(1);
@@ -184,14 +187,32 @@ TEST_F(HcclChannelDescTest, Ut_CheckCommEngine_When_EngineIsAICPU_TS_ReturnTrue)
 
 TEST_F(HcclChannelDescTest, Ut_HcclChannelAcquire_When_EngineIsCCU_And_OpExpansionModeIsInvalid_ReturnHCCLEPARA)
 {
-    hcclCommPtr->collComm_->config_.opExpansionMode_ = 1; // 设置非法的opExpansionMode
+    // Mock MyRank::GetOpExpansionMode 方法返回非法值
+    hccl::MyRank* mockMyRank = new hccl::MyRank();
+    MOCKER(mockMyRank->GetOpExpansionMode)
+        .stubs()
+        .will(returnValue(1)); // 返回非法的opExpansionMode
+    
+    // Mock CollComm::GetMyRank 方法返回我们的mock对象
+    MOCKER(hcclCommPtr->collComm_->GetMyRank)
+        .stubs()
+        .will(returnValue(mockMyRank));
+    
+    // Mock MyRank::CreateChannels 方法
+    MOCKER(mockMyRank->CreateChannels)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+
     comm = static_cast<HcclComm>(hcclCommPtr.get());
 
     std::vector<HcclChannelDesc> channelDesc(1);
     std::vector<ChannelHandle> channels(1);
     GetChannelDesc(channelDesc);
-    channelDesc[0].channelProtocol = CommProtocol::COMM_PROTOCOL_CCU;
+    // 使用有效的协议类型
+    channelDesc[0].channelProtocol = CommProtocol::COMM_PROTOCOL_ROCE;
 
     ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_CCU, channelDesc.data(), 1, channels.data());
     EXPECT_EQ(ret, HCCL_E_PARA);
+    
+    delete mockMyRank;
 }
