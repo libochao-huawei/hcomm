@@ -836,6 +836,7 @@ HcclResult DevUbConnection::testSetTpAttr()
     struct TpAttr tpAttr {0};
     tpAttr.dataUdpSrcport = 128;
     CHK_RET(HrtRaSetTpAttrAsync(rdmaHandle, tpInfo.tpHandle, attrBitmap, tpAttr, reqHandle));
+    return HCCL_SUCCESS;
 }
 
 void DevUbConnection::AddNop(const Stream &stream)
