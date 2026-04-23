@@ -1698,8 +1698,10 @@ HcclResult hrtGetIfNum(struct RaGetIfattr &config, u32 &num)
     }
 
     s32 ret = DlRaFunction::GetInstance().dlRaGetIfNum(&config, &num);
-    CHK_PRT_RET(ret != 0, HCCL_ERROR("[Get][IfNum]errNo[0x%016llx] ra get if num fail. ret[%d], num[%u]", \
-        HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), ret, num), HCCL_E_TCP_CONNECT);
+    constexpr s32 MAX_SUPPORT_IFNUM = 65536;
+    CHK_PRT_RET((ret != 0 || num > MAX_SUPPORT_IFNUM), HCCL_ERROR("[Get][IfNum]errNo[0x%016llx] ra get if num fail."
+        " ret[%d], num[%u] should be less than [%u]", \
+        HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), ret, num, MAX_SUPPORT_IFNUM), HCCL_E_TCP_CONNECT);
     return HCCL_SUCCESS;
 #else
     HCCL_ERROR("[hrtGetIfNum]Does not support this interface.");
