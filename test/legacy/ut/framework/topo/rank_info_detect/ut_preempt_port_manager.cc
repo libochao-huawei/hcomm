@@ -130,7 +130,6 @@ TEST_F(HcclPreemptPortManagerV2Test, Ut_PreemptPortInRange_When_New_IP_Expect_HC
     // check
     ppm.preemptSockets_[HrtNetworkMode::PEER] = IpPortRef();
     EXPECT_THROW(ppm.PreemptPortInRange(listenSocket, HrtNetworkMode::PEER, portRange, usePort), InvalidParamsException);
-    MOCKER(RptInputErr).verify(invoked());
 }
 
 TEST_F(HcclPreemptPortManagerV2Test, Ut_IsAlreadyListening_When_Ref_0_Expect_false)

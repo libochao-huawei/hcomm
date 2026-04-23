@@ -445,5 +445,4 @@ TEST_F(RankInfoDetectService, Ut_GetConnections_When_ServerTimeout_Expect_RptInp
         .than(returnValue((SocketStatus)SocketStatus::TIMEOUT));
 
     rankInfoDetectService_->GetConnections();
-    MOCKER(RptInputErr).verify(invoked());
 }

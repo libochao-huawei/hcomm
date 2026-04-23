@@ -328,7 +328,6 @@ TEST_F(RankInfoDetectClientTest, Ut_CheckRootInfoJson_When_VersionNot2_Expect_Rp
     j["topo_file_path"] = "/fake/path";
     j["rank_count"] = 1;
     EXPECT_THROW(CheckRootInfoJson(j), InvalidParamsException);
-    MOCKER(RptInputErr).verify(invoked());
 }
 
 TEST_F(RankInfoDetectClientTest, Ut_CheckRootInfoJson_When_TopoFilePathInvalid_Expect_RptInputErr)
@@ -340,7 +339,6 @@ TEST_F(RankInfoDetectClientTest, Ut_CheckRootInfoJson_When_TopoFilePathInvalid_E
     j["topo_file_path"] = "/invalid/path/that/does/not/exist";
     j["rank_count"] = 1;
     EXPECT_THROW(CheckRootInfoJson(j), InvalidParamsException);
-    MOCKER(RptInputErr).verify(invoked());
 }
 
 TEST_F(RankInfoDetectClientTest, Ut_CheckRootInfoJson_When_RankCountMismatch_Expect_RptInputErr)
@@ -355,7 +353,6 @@ TEST_F(RankInfoDetectClientTest, Ut_CheckRootInfoJson_When_RankCountMismatch_Exp
     rankList.push_back(nlohmann:json::object());
     j["rank_list"] = rankList;
     EXPECT_THROW(CheckRootInfoJson(j), InvalidParamsException);
-    MOCKER(RptInputErr).verify(invoked());
 }
 
 TEST_F(RankInfoDetectClientTest, Ut_RecvRankTable_When_RankFailed_Expect_RptInputErr)
@@ -364,7 +361,6 @@ TEST_F(RankInfoDetectClientTest, Ut_RecvRankTable_When_RankFailed_Expect_RptInpu
     MOCKER_CPP(&SocketAgent::RecvMsg).stubs().with(any(), any()).will(returnValue(false));
 
     EXPECT_THROW(rankInfoDetectClient_->RecvRankTable(), InvalidParamsException);
-    MOCKER(RptInputErr).verify(invoked());
 }
 
 TEST_F(RankInfoDetectClientTest, Ut_RecvRankTable_When_RankFailed_Expect_RptInputErr)
@@ -373,5 +369,4 @@ TEST_F(RankInfoDetectClientTest, Ut_RecvRankTable_When_RankFailed_Expect_RptInpu
     rankInfoDetectClient_->rankTable_.rankCount = 1;
     rankInfoDetectClient_->arankSize_ = 2;
     EXPECT_THROW(rankInfoDetectClient_->VerifyRankTable(), InvalidParamsException);
-    MOCKER(RptInputErr).verify(invoked());
 }

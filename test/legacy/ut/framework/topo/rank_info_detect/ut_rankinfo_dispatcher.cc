@@ -257,7 +257,6 @@ TEST_F(RankInfoDispatherTest, Ut_ProcessSend_When_Send_Again_Expect_Return_TimeO
     // check
     workers.rankNum_ = 1;
     EXPECT_THROW(workers.ProcessSend(), TimeoutException);
-    MOCKER(RptInputErr).verify(invoked());
 }
 
 

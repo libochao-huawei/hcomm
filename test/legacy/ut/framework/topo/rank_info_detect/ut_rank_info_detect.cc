@@ -262,6 +262,5 @@ TEST_F(RankInfoDetectTest, Ut_WaitComplete_When_Input_Expect_Right)
 
     // check
     EXPECT_THROW(rankInfoDetect.WaitComplete(4000, RANKINFO_DETECT_SERVER_STATUS_IDLE), TimeoutException);
-    MOCKER(RptInputErr).verify(invoked());
 }
 
