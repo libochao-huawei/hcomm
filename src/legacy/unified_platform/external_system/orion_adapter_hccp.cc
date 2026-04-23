@@ -1723,7 +1723,6 @@ void HrtRaCustomChannel(const HRaInfo &raInfo, void *customIn, void *customOut)
     info.mode   = HRT_NETWORK_MODE_MAP.at(raInfo.mode);
     info.phyId = raInfo.phyId;
 
-    HCCL_INFO("[HrtRaCustomChannel] Input params: customIn=%p, customOut=%p, mode=%d, phyId=%u", customIn, customOut, info.mode, info.phyId);
     struct CustomChanInfoIn  *in  = reinterpret_cast<struct CustomChanInfoIn *>(customIn);
     struct CustomChanInfoOut *out = reinterpret_cast<struct CustomChanInfoOut *>(customOut);
 
@@ -1980,7 +1979,7 @@ RequestHandle HrtRaSocketSendAsync(const FdHandle fdHandle, const void *data, u3
 {
     CHECK_NULLPTR(fdHandle, "[HrtRaSocketSendAsync] fdHandle is nullptr!");
     CHECK_NULLPTR(data, "[HrtRaSocketSendAsync] data is nullptr!");
-    HCCL_INFO("[HrtRaSocketSendAsync] Input params: fdHandle=%p, data=%p, stze=%u, sentSize=%llu", fdHandle, data, size, sentSize);
+    HCCL_INFO("[HrtRaSocketSendAsync] Input params: fdHandle=%p, data=%p, size=%u, sentSize=%llu", fdHandle, data, size, sentSize);
     void *raReqHandle = nullptr;
     s32 ret = RaSocketSendAsync(fdHandle, data, size, &sentSize, &raReqHandle);
     if (ret != 0 || !raReqHandle) {
@@ -1997,7 +1996,7 @@ RequestHandle HrtRaSocketRecvAsync(const FdHandle fdHandle, void *data, u32 size
 {
     CHECK_NULLPTR(fdHandle, "[HrtRaSocketRecvAsync] fdHandle is nullptr!");
     CHECK_NULLPTR(data, "[HrtRaSocketRecvAsync] data is nullptr!");
-    HCCL_INFO("[HrtRaSocketRecvAsync] Input params: fdHandle=%p, data=%p, stze=%u, recvSize=%llu", fdHandle, data, size, recvSize);
+    HCCL_INFO("[HrtRaSocketRecvAsync] Input params: fdHandle=%p, data=%p, size=%u, recvSize=%llu", fdHandle, data, size, recvSize);
     void *raReqHandle = nullptr;
     s32 ret = RaSocketRecvAsync(fdHandle, data, size, &recvSize, &raReqHandle);
         if (ret != 0 || !raReqHandle) {
