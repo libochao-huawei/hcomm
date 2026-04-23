@@ -1990,7 +1990,7 @@ HcclResult hrtStreamCreate(aclrtStream *stream)
         "rtRet[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret), HCCL_E_RUNTIME);
 
     s32 streamId = 0;
-    HcclResult hcclRet = hrtGetStreamId(stream, streamId);
+    HcclResult hcclRet = hrtGetStreamId(*stream, streamId);
     if (hcclRet != HCCL_SUCCESS) {
         HCCL_ERROR("[hrtStreamCreate] hrtGetStreamId fail, ret[%d], destroy stream.", ret);
         aclrtDestroyStream(*stream);
@@ -2015,7 +2015,7 @@ HcclResult hrtStreamCreateWithFlags(aclrtStream *stream, int32_t priority, uint3
         "error, rtRet[%d], flags[%u]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, flags), HCCL_E_RUNTIME);
 
     s32 streamId = 0;
-    HcclResult hcclRet = hrtGetStreamId(stream, streamId);
+    HcclResult hcclRet = hrtGetStreamId(*stream, streamId);
     if (hcclRet != HCCL_SUCCESS) {
         HCCL_ERROR("[hrtStreamCreateWithFlags] hrtGetStreamId fail, ret[%d], destroy stream.", ret);
         aclrtDestroyStream(*stream);
