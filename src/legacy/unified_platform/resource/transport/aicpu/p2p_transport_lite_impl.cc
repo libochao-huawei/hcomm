@@ -13,6 +13,7 @@
 #include "binary_stream.h"
 #include "exception_util.h"
 #include "sal.h"
+#include "communicator_impl_lite_manager.h"
 
 namespace Hccl {
 constexpr u32 NOTIFY_RECORD_WRITE_VALUE = 1;
@@ -301,11 +302,16 @@ void P2PTransportLiteImpl::Post(u32 index, const StreamLite &stream)
 
 void P2PTransportLiteImpl::Wait(u32 index, const StreamLite &stream)
 {
+    WaitWithTimeout(index, stream, CommunicatorImplLiteMgr::GetInstance().GetEnvConfig().hcclExecTimeout);
+}
+
+void P2PTransportLiteImpl::WaitWithTimeout(u32 index, const StreamLite &stream, u32 timeout)
+{
     auto taskId   = stream.GetRtsq()->GetTaskId();
     auto notifyId = locNotifyVec[index]->GetId();
-    BuildNotifyWaitTask(stream, notifyId);
+    stream.GetRtsq()->NotifyWait(notifyId, timeout);
 
-    HCCL_INFO("P2PTransportLiteImpl::Wait notifyId[%u], taskId[%u]", notifyId, taskId);
+    HCCL_INFO("P2PTransportLiteImpl::WaitWithTimeout notifyId[%u], taskId[%u], timeout[%u]", notifyId, taskId, timeout);
     if (callback_ == nullptr)
     {
         HCCL_WARNING("[P2PTransportLiteImpl] callback_ is nullptr.");

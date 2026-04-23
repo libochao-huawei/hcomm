@@ -2341,7 +2341,7 @@ HcclResult HrtRaCreateCq(RdmaHandle rdmaHandle, CqInfo& cq)
     }
     return HCCL_SUCCESS;
 }
-// ra_cq_destory
+// ra_cq_destroy
 HcclResult HrtRaDestroyCq(RdmaHandle rdmaHandle, CqInfo& cq)
 {
     CHK_PTR_NULL(rdmaHandle);

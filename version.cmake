@@ -8,12 +8,12 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 
-set_package(hcomm VERSION "9.0.0")
+set_cann_package(hcomm VERSION "9.0.0")
 
-set_build_dependencies(runtime "CUR_MAJOR_MINOR_VER")
-set_build_dependencies(metadef "CUR_MAJOR_MINOR_VER")
-set_build_dependencies(bisheng-compiler "CUR_MAJOR_MINOR_VER")
-set_build_dependencies(asc-devkit "CUR_MAJOR_MINOR_VER")
+set_cann_build_dependencies(runtime "CUR_MAJOR_MINOR_VER")
+set_cann_build_dependencies(metadef "CUR_MAJOR_MINOR_VER")
+set_cann_build_dependencies(bisheng-compiler "CUR_MAJOR_MINOR_VER")
+set_cann_build_dependencies(asc-devkit "CUR_MAJOR_MINOR_VER")
 
-set_run_dependencies(runtime "CUR_MAJOR_MINOR_VER")
-set_run_dependencies(metadef "CUR_MAJOR_MINOR_VER")
+set_cann_run_dependencies(runtime "CUR_MAJOR_MINOR_VER")
+set_cann_run_dependencies(metadef "CUR_MAJOR_MINOR_VER")

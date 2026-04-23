@@ -15,9 +15,13 @@
 #include "rs_ctx_inner.h"
 #include "rs_inner.h"
 
+#define JETTY_CONTEXT_LEN 256U
+#define JFC_CONTEXT_LEN 128U
+
 int RsUbCtxGetAuxInfo(struct RsUbDevCb *devCb, struct HccpAuxInfoIn *infoIn, struct HccpAuxInfoOut *infoOut);
 int RsEpollEventJfcInHandle(struct rs_cb *rsCb, int fd);
 int RsEpollEventUrmaAsyncEventInHandle(struct rs_cb *rsCb, int fd);
 void RsUbCtxGetAsyncEvents(struct RsUbDevCb *devCb, struct AsyncEvent asyncEvents[], unsigned int *num);
+int RsUbGetJettyContext(struct RsUbDevCb *devCb, unsigned int id, uint8_t context[], unsigned int *len);
 
 #endif // RS_UB_DFX_H

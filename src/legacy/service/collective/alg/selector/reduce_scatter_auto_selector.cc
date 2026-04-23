@@ -135,7 +135,7 @@ SelectorStatus ReduceScatterAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &
                                  "ccu_schedule mode with ms reduce. levelNum[%u]",
                         op.dataType.Describe().c_str(), topoInfo.levelNum),
                     SelectorStatus::NOT_MATCH);
-                if(IsSmallDataCCU(dataSize_, rankSize_)){
+                if(IsSmallDataCCU((dataSize_ * rankSize_), rankSize_)){
                     primQueueGenName = "CcuReduceScatterParallelMesh1DNHR";//64M以下跑ccu
                 } else {
                     return SelectorStatus::NOT_MATCH;//64M以上切为aicpu

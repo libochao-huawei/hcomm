@@ -88,3 +88,5 @@ target_sources(open_hccl_test
         testcase_ars_alg.cc
 )
 
+enable_testing()
+add_test(NAME open_hccl_test COMMAND open_hccl_test)
