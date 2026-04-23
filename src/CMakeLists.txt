@@ -676,23 +676,29 @@ target_sources(hccd PRIVATE
     ${common_cc}
 )
 # 指定hccd构建完成后安装到指定的目标位置
-install(TARGETS  hccd
-    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
-)
+if(NOT BUILD_OPEN_PROJECT)
+    install(TARGETS  hccd
+        LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
+    )
+endif()
 
 # 指定ccl_kernel_plf构建完成后安装到指定的目标位置
-install(TARGETS  ccl_kernel_plf
-    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
-)
+if(NOT BUILD_OPEN_PROJECT)
+    install(TARGETS  ccl_kernel_plf
+        LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
+    )
+endif()
 # 设置ccl_kernel_plf_a输出文件的名字
 set_target_properties(ccl_kernel_plf_a
     PROPERTIES
     OUTPUT_NAME ccl_kernel_plf
 )
 # 指定ccl_kernel_plf_a构建完成后安装到指定的目标位置
-install(TARGETS  ccl_kernel_plf_a
-    ARCHIVE DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
-)
+if(NOT BUILD_OPEN_PROJECT)
+    install(TARGETS  ccl_kernel_plf_a
+        ARCHIVE DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
+    )
+endif()    
 
 if(DEVICE_MODE)
     set(HCCD_TAR_DIR ${HCCL_BASE_DIR}/../build_hccd/hccd_tar_pkg/lib64)

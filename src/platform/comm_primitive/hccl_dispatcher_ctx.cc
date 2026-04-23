@@ -225,6 +225,21 @@ HcclResult AcquireDispatcherCtx(DispatcherCtxPtr *ctx, const char* commId)
         HCCL_ERROR("[AcquireCtx] CTX init fail");
         return ret;
     }
+
+    // 如果存在，销毁创建的DispatcherCtx，返回存在的DispatcherCtx
+    if (BindDispatcherCtxWithComm(Ctx_tmp, commId) != HCCL_SUCCESS) {
+        Ctx_tmp->Destroy();
+        delete Ctx_tmp;
+        // 查找已有ctx
+        if (!FindDispatcherByCommId(ctx, commId)) {
+            HCCL_ERROR("[AcquireCtx] Bind fail AND no existing ctx for commId[%s]", commId);
+            return HCCL_E_NOT_FOUND; // 明确返回错误，而非SUCCESS
+        }
+        gDispatcherCtx = *ctx;
+        HCCL_WARNING("[AcquireCtx] CTX bind fail, reuse existing ctx[%p] commId[%s]", *ctx, commId);
+        return HCCL_SUCCESS;
+    }
+
     *ctx = Ctx_tmp;
     gDispatcherCtx = Ctx_tmp;
     HCCL_INFO("[AcquireCtx] CTX create success, ctx[%p] commId[%s]", *ctx, commId);

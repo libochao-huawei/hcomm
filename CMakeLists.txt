@@ -209,25 +209,29 @@ elseif(BUILD_OPEN_PROJECT)
         )
         install(FILES ${BUILD_DEVICE_DIR}/signatures/cann-hcomm-compat.tar.gz
             DESTINATION ${INSTALL_DEVICE_TAR_DIR} OPTIONAL
+            PERMISSIONS OWNER_READ GROUP_READ
+            OPTIONAL
         )
         install(FILES ${BUILD_DEVICE_DIR}/signatures/aicpu_hcomm.tar.gz
-            DESTINATION ${INSTALL_DEVICE_TAR_DIR} OPTIONAL
+            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
         )
         install(FILES ${BUILD_HCCD_DIR}/signatures/cann-hccd-compat.tar.gz
             DESTINATION ${INSTALL_DEVICE_TAR_DIR} OPTIONAL
+            PERMISSIONS OWNER_READ GROUP_READ
+            OPTIONAL
         )
         install(FILES ${BUILD_DEVICE_DIR}/src/framework/libaicpu_custom.so
-            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
+            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
         )
         install(FILES ${BUILD_DEVICE_DIR}/src/framework/libaicpu_custom.json
-            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
+            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
         )
 
         add_custom_target(install_ccl_kernel DEPENDS
             ${BUILD_DEVICE_DIR}/src/framework/libccl_kernel.so
         )
         install(FILES ${BUILD_DEVICE_DIR}/src/framework/libccl_kernel.so
-            DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL
+            DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/devlib/device OPTIONAL
         )
         add_dependencies(install_tar hcomm)
         add_dependencies(install_ccl_kernel hcomm)
@@ -238,10 +242,12 @@ elseif(BUILD_OPEN_PROJECT)
         ${HCCL_JSON}
         DESTINATION ${INSTALL_INCLUDE_DIR}/hccl/ OPTIONAL
     )
-    install(FILES
-        ${HCOMM_HEAD}
-        DESTINATION ${INSTALL_INCLUDE_DIR}/ OPTIONAL
-    )
+    if(NOT BUILD_OPEN_PROJECT)
+        install(FILES 
+            ${HCOMM_HEAD} 
+            DESTINATION ${INSTALL_INCLUDE_DIR}/ OPTIONAL 
+        )
+    endif()
     install(FILES
         include/hcomm_primitives.h
         DESTINATION ${INSTALL_INCLUDE_DIR}/hcomm/ OPTIONAL
@@ -251,15 +257,6 @@ elseif(BUILD_OPEN_PROJECT)
         include/hcomm_res_defs.h
         DESTINATION ${INSTALL_INCLUDE_DIR}/hcomm/ OPTIONAL
     )
-    install(CODE [[
-file(MAKE_DIRECTORY "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/hcomm/include/hccl")
-file(REMOVE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/hcomm/include/hcomm_primitives.h")
-file(REMOVE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/hcomm/include/hccl/hcomm_primitives.h")
-file(CREATE_LINK "../hcomm/hcomm_primitives.h" "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/hcomm/include/hccl/hcomm_primitives.h" SYMBOLIC)
-file(REMOVE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/hcomm/include/hcomm_res_defs.h")
-file(REMOVE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/hcomm/include/hccl/hcomm_res_defs.h")
-file(CREATE_LINK "../hcomm/hcomm_res_defs.h" "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/hcomm/include/hccl/hcomm_res_defs.h" SYMBOLIC)
-]])
 
     set(HCCL_PKG_HEAD
         pkg_inc/hccl/base.h
