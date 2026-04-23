@@ -126,12 +126,30 @@ void LogOpenOpParamBrief(const char *stage, const std::vector<uint8_t> &opParam)
 
     const auto *param = reinterpret_cast<const ops_hccl::OpParam *>(opParam.data());
     HCCL_INFO("[MC2_OPEN_DIAG][%s] opParamSize %zu, opType %u, algName[%s], inputPtr %p, outputPtr %p, "
-              "count %llu, dataType %u, outputType %u, strideCount %llu, resCtx %p, ctxSize %llu, stream %p.",
+              "resCtx %p, ctxSize %llu, stream %p.",
               stage, opParam.size(), static_cast<u32>(param->opType), param->algName,
-              param->inputPtr, param->outputPtr, static_cast<unsigned long long>(param->DataDes.count),
-              static_cast<u32>(param->DataDes.dataType), static_cast<u32>(param->DataDes.outputType),
-              static_cast<unsigned long long>(param->DataDes.strideCount),
+              param->inputPtr, param->outputPtr,
               param->resCtx, static_cast<unsigned long long>(param->ctxSize), param->stream);
+    if (param->opType == HCCL_CMD_ALLTOALLV) {
+        HCCL_INFO("[MC2_OPEN_DIAG][FormatRun][AllToAllV] sendDataType %u, recvDataType %u, sendCounts %p, recvCounts %p, sdispls %p, rdispls %p.",
+                static_cast<u32>(param->all2AllVDataDes.sendType), static_cast<u32>(param->all2AllVDataDes.recvType),
+                param->all2AllVDataDes.sendCounts, param->all2AllVDataDes.recvCounts,
+                param->all2AllVDataDes.sdispls, param->all2AllVDataDes.rdispls);
+    } else if (param->opType == HCCL_CMD_ALLTOALL) {
+        HCCL_INFO("[MC2_OPEN_DIAG][AllToAll] sendCount %llu, sendDataType %u, recvCount %llu, recvDataType %u.",
+                static_cast<unsigned long long>(param->all2AllDataDes.sendCount),
+                static_cast<u32>(param->all2AllDataDes.sendType), static_cast<unsigned long long>(param->all2AllDataDes.recvCount),
+                static_cast<u32>(param->all2AllDataDes.recvType));
+        HCCL_INFO("[MC2_OPEN_DIAG][AllToAllV][AllToAll] sendDataType %u, recvDataType %u, sendCounts %p, recvCounts %p, sdispls %p, rdispls %p.",
+                static_cast<u32>(param->all2AllVDataDes.sendType), static_cast<u32>(param->all2AllVDataDes.recvType),
+                param->all2AllVDataDes.sendCounts, param->all2AllVDataDes.recvCounts,
+                param->all2AllVDataDes.sdispls, param->all2AllVDataDes.rdispls);
+    } else {
+        HCCL_INFO("[MC2_OPEN_DIAG][Else] count %llu, dataType %u, outputType %u, strideCount %llu.",
+                static_cast<unsigned long long>(param->DataDes.count),
+                static_cast<u32>(param->DataDes.dataType), static_cast<u32>(param->DataDes.outputType),
+                static_cast<unsigned long long>(param->DataDes.strideCount));
+    }
 }
 }
 
@@ -357,12 +375,22 @@ HcclResult CommKfcAicpuServer::FormatOpParamFromMsg(
         execCtx.baseOpParam, msg, extMsg, rankNum_, repeatIdx, stream, opParam);
 }
 
-HcclResult CommKfcAicpuServer::LaunchOpenAicpuKernelServer(std::vector<uint8_t> &opParam)
+HcclResult CommKfcAicpuServer::LaunchOpenAicpuKernelServer(std::vector<uint8_t> &opParam, bool isAllToAllV)
 {
     LogOpenOpParamBrief("KernelServerBegin", opParam);
-    HcclResult ret = LaunchOpenOpParamData(opParam);
-    HCCL_INFO("[MC2_OPEN_DIAG][KernelServerEnd] ret %u, opParamSize %zu.", ret, opParam.size());
+    HcclResult ret = LaunchOpenOpParamData(opParam, rankNum_, isAllToAllV);
+    HCCL_INFO("[MC2_OPEN_DIAG][KernelServerEnd] ret %u, opParamSize %zu, isAllToAllV %u.", ret, opParam.size(), isAllToAllV);
     return ret;
+}
+
+bool CommKfcAicpuServer::GetIsAllToAllV(const HcclApi::HcclMsg &msg, std::vector<uint8_t> &opParam)
+{
+    auto *param = reinterpret_cast<ops_hccl::OpParam *>(opParam.data());
+    HCCL_INFO("[MC2_OPEN_DIAG][GetIsAllToAllV] param.opType %u, msg.strideCount %llu.", static_cast<u32>(param->opType), msg.strideCount);
+    if (param->opType == HCCL_CMD_ALLTOALLV || (param->opType == HCCL_CMD_ALLTOALL && msg.strideCount > 0)) {
+        return true;
+    }
+    return false;
 }
 
 HcclResult CommKfcAicpuServer::Orchestrate(const HcclMsg &msg, HcclMsgExt &extMsg, u32 msgPos)
@@ -404,6 +432,8 @@ HcclResult CommKfcAicpuServer::Orchestrate(const HcclMsg &msg, HcclMsgExt &extMs
 
         UpdateProgress("BeforeFormat", msgPos, i, turnIdx, opParamKey, waitAddr, recordAddr);
         HcclResult ret = FormatOpParamFromMsg(msg, extMsg, *execCtx, i, runParam);
+        // 调试用变量 isAllToAllV
+        bool isAllToAllV = GetIsAllToAllV(msg, runParam);
         UpdateProgress("AfterFormat", msgPos, i, turnIdx, opParamKey, waitAddr, recordAddr);
         HCCL_INFO("[MC2_OPEN_DIAG][LoopAfterFormat] group %u, msgPos %u, repeatIdx %u, ret %u, runParamSize %zu.",
                   groupIdx_, msgPos, i, ret, runParam.size());
@@ -421,7 +451,7 @@ HcclResult CommKfcAicpuServer::Orchestrate(const HcclMsg &msg, HcclMsgExt &extMs
         UpdateProgress("BeforeKernel", msgPos, i, turnIdx, opParamKey, waitAddr, recordAddr);
         HCCL_INFO("[MC2_OPEN_DIAG][LoopBeforeKernel] group %u, msgPos %u, repeatIdx %u, turnIdx %u.",
                   groupIdx_, msgPos, i, turnIdx);
-        ret = LaunchOpenAicpuKernelServer(runParam);
+        ret = LaunchOpenAicpuKernelServer(runParam, isAllToAllV);
         UpdateProgress("AfterKernel", msgPos, i, turnIdx, opParamKey, waitAddr, recordAddr);
         HCCL_INFO("[MC2_OPEN_DIAG][LoopAfterKernel] group %u, msgPos %u, repeatIdx %u, turnIdx %u, ret %u.",
                   groupIdx_, msgPos, i, turnIdx, ret);
