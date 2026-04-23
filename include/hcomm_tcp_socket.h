@@ -41,38 +41,22 @@ const uint32_t HCOMM_SOCK_CONN_TAG_MAX_SIZE = 192; ///< 握手标识最大长度
 
 // 要求：set device
 // 接口内部：get device查询phyId
-extern HcommResult HcommTcpSocketGetDeviceVnicIp(EndpointLoc location{devPhyId}, struct in_addr *addr);
-
 /**
  * @brief 获取本端VNIC IP
  * @param[in] location 网卡部署位置（只支持device）
  * @param[out] addr 输出的ipv4 地址
  * @return 执行状态码 HcommResult
  */
-// extern HcommResult HcommTcpSocketGetLocalVnicIp(EndpointLoc location{devPhyId}, struct in_addr *addr);
-
-/**
- * @brief 获取远端VNIC IP
- * @param[in] location 本端网卡部署位置（只支持device）
- * @param[in] remoteLocation 远端网卡部署位置（只支持device）
- * @param[out] addr 输出的ipv4 地址
- * @return 执行状态码 HcommResult
- */
-// extern HcommResult HcommTcpSocketGetRemoteVnicIp(EndpointLoc location{devPhyId}, EndpointLoc remoteLocation{devPhyId/superPodDeviceId}, struct in_addr *addr);
+extern HcommResult HcommTcpSocketGetDeviceVnicIp(EndpointLoc location, struct in_addr *addr);
 
 /**
  * @brief 创建Socket通信实例
- * @param[in] location 网卡部署位置
- * @param[in] domain 协议域（如AF_INET/AF_INET6）
- * @param[in] addr 绑定的本地IP地址（支持IPv4/IPv6）
- * @param[in] addrlen 地址结构体长度
+ * @param[in] endpoint endpoint句柄
+ * @param[in] type 类型（当前仅支持传0，默认为非阻塞socket，后续考虑扩展HCOMM_SOCK_BLOCK）
  * @param[out] socket 输出的socket句柄
  * @return 执行状态码 HcommResult
  */
-extern HcommResult HcommTcpSocketCreate(EndpointLoc location, int32_t domain, int32_t type,
-    const struct sockaddr *addr, socklen_t addrlen, HcommTcpSocket *socket);
-// 增加type，当前只支持non block
-
+extern HcommResult HcommTcpSocketCreate(EndpointHandle endpoint, int32_t type, HcommTcpSocket *socket);
 
 /**
  * @brief 关闭Socket句柄并释放资源
@@ -89,20 +73,9 @@ extern HcommResult HcommTcpSocketClose(HcommTcpSocket socket);
  */
 extern HcommResult HcommTcpSocketListen(HcommTcpSocket socket, int32_t backlog);
 
-/**
- * @brief 接受客户端连接（非阻塞操作）
- * @param[in] serverSocket 处于监听状态的服务器socket句柄
- * @param[in] handShakeTag 握手标识
- * @param[in] tagLen 标识长度（必须<=HCOMM_SOCK_CONN_TAG_MAX_SIZE）
- * @param[out] socket 输出的新连接句柄
- * @return 执行状态码 HcommResult
- */
-// extern HcommResult HcommTcpSocketAccept(HcommTcpSocket serverSocket,
-//     char *handShakeTag, uint32_t tagLen, HcommTcpSocket *socket);
-
 struct HcommTcpSocketAcceptInfo {
-    char *handShakeTag;
-    uint32_t tagLen;
+    char *handShakeTag; // handShakeTag 握手标识
+    uint32_t tagLen; // 标识长度（必须<=HCOMM_SOCK_CONN_TAG_MAX_SIZE）
 };
 
 /**
@@ -116,32 +89,12 @@ struct HcommTcpSocketAcceptInfo {
 extern HcommResult HcommTcpSocketBatchAccept(HcommTcpSocket serverSocket,
     HcommTcpSocketAcceptInfo *acceptInfos, uint32_t acceptNum, HcommTcpSocket *sockets);
 
-/**
- * @brief 客户端发起连接请求（非阻塞操作）
- * @param[in] socket 已初始化的socket句柄
- * @param[in] addr 目标服务器地址
- * @param[in] addrlen 地址结构体长度
- * @param[in] handShakeTag 握手标识
- * @param[in] tagLen 标识长度（必须<=HCOMM_SOCK_CONN_TAG_MAX_SIZE）
- * @return 执行状态码 HcommResult
- */
-extern HcommResult HcommTcpSocketConnect(
-    HcommTcpSocket socket, const struct sockaddr *addr, socklen_t addrlen, char *handShakeTag, uint32_t tagLen);
-
-/**
- * @brief 获取Socket连接状态
- * @param[in] socket 目标socket句柄
- * @param[out] status 状态码输出（0表示正常）
- * @return 执行状态码 HcommResult
- */
-extern HcommResult HcommTcpSocketGetStatus(HcommTcpSocket socket, int32_t *status);
-
 struct HcommTcpSocketConnectInfo {
     HcommTcpSocket socket;
-    const struct sockaddr *addr;
-    socklen_t addrlen;
-    char *handShakeTag;
-    uint32_t tagLen;
+    const struct sockaddr *addr; // 目标服务器地址
+    socklen_t addrlen; // 地址结构体长度
+    char *handShakeTag; // 握手标识
+    uint32_t tagLen; // 标识长度（必须<=HCOMM_SOCK_CONN_TAG_MAX_SIZE）
 };
 
 /**
@@ -162,24 +115,35 @@ extern HcommResult HcommTcpSocketBatchConnect(HcommTcpSocketConnectInfo *connect
 extern HcommResult HcommTcpSocketBatchGetStatus(HcommTcpSocket *sockets, int32_t *status, uint32_t socketNum);
 
 /**
+ * @brief 获取远端地址
+ * @param[in] sockets socket句柄
+ * @param[out] addr 远端地址
+ * @param[out] addrlen 地址结构体长度
+ * @return 执行状态码 HcommResult
+ */
+extern HcommResult HcommTcpSocketGetPeerName(HcommTcpSocket socket, struct sockaddr *addr, socklen_t *addrlen);
+
+/**
  * @brief 发送数据（非阻塞）
  * @param[in] socket 已连接的socket句柄（考虑增加性能约束）
  * @param[in] data 待发送数据缓冲区
  * @param[in] len 待发送数据长度（字节）
+ * @param[in] flags 控制发送行为的标记位（当前仅支持传0，默认为非阻塞，后续考虑扩展MSG_BLOCK）
  * @param[out] sendLen 实际发送数据长度（可能部分发送）
  * @return 执行状态码 HcommResult
  */
-extern HcommResult HcommTcpSocketSend(HcommTcpSocket socket, void *data, uint64_t len, uint64_t *sendLen, int32_t flags);
+extern HcommResult HcommTcpSocketSend(HcommTcpSocket socket, void *data, uint64_t len, int32_t flags, uint64_t *sendLen);
 
 /**
  * @brief 接收数据（非阻塞）
  * @param[in] socket 已连接的socket句柄（考虑增加性能约束）
  * @param[out] recvBuf 接收数据缓冲区
  * @param[in] len 缓冲区最大容量
+ * @param[in] flags 控制接收行为的标记位（当前仅支持传0，默认为非阻塞，后续考虑扩展MSG_BLOCK）
  * @param[out] recvLen 实际接收数据长度
  * @return 执行状态码 HcommResult
  */
-extern HcommResult HcommTcpSocketRecv(HcommTcpSocket socket, void *recvBuf, uint64_t len, uint64_t *recvLen, int32_t flags);
+extern HcommResult HcommTcpSocketRecv(HcommTcpSocket socket, void *recvBuf, uint64_t len, int32_t flags, uint64_t *recvLen);
 
 /**
  * @brief 获取套接字选项
@@ -266,36 +230,22 @@ extern HcommResult HcommTcpSocketHostWhiteListEnable();
 extern HcommResult HcommTcpSocketHostWhiteListDisable();
 
 /**
- * @brief 启用白名单认证功能（socket级，不支持）
- * @param[in] serverSocket 服务端socket句柄
- * @return 执行状态码 HcommResult
- */
-extern HcommResult HcommTcpSocketWhiteListEnable(HcommTcpSocket serverSocket);
-
-/**
- * @brief 禁用白名单认证功能（socket级，不支持）
- * @param[in] serverSocket 服务端socket句柄
- * @return 执行状态码 HcommResult
- */
-extern HcommResult HcommTcpSocketWhiteListDisable(HcommTcpSocket serverSocket);
-
-/**
  * @brief 添加白名单规则
- * @param[in] serverSocket 已启用白名单的socket句柄
+ * @param[in] endpoint endpoint句柄
  * @param[in] whitelists 规则数组（支持批量添加）
  * @param[in] num 规则数量（数组长度）
  * @return 执行状态码 HcommResult
  */
-extern HcommResult HcommTcpSocketWhiteListAdd(HcommTcpSocket serverSocket, HcommTcpSocketWlistInfo *whitelists, uint32_t num);
+extern HcommResult HcommTcpSocketWhiteListAdd(EndpointHandle endpoint, HcommTcpSocketWlistInfo *whitelists, uint32_t num);
 
 /**
  * @brief 删除白名单规则
- * @param[in] serverSocket 已启用白名单的socket句柄
+ * @param[in] endpoint endpoint句柄
  * @param[in] whitelists 待删除规则数组
  * @param[in] num 规则数量（数组长度）
  * @return 执行状态码 HcommResult
  */
-extern HcommResult HcommTcpSocketWhiteListDel(HcommTcpSocket serverSocket, HcommTcpSocketWlistInfo *whitelists, uint32_t num);
+extern HcommResult HcommTcpSocketWhiteListDel(EndpointHandle endpoint, HcommTcpSocketWlistInfo *whitelists, uint32_t num);
 
 #ifdef __cplusplus
 }
