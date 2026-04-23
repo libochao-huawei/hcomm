@@ -117,7 +117,7 @@ HcclResult CcuTempAllReduceMesh1D::Run(const TempFuncs &tempFuncs, const RankSli
             outputAddr = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff;
         }
     } else {
-        inputAddr = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
+        inputAddr = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff + tempFuncs.usrData.usrInSlices[0].GetOffset();
         outputAddr = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff + tempFuncs.usrData.usrOutSlices[0].GetOffset();
     }
     HCCL_INFO("inputAddr[%llu], outputAddr[%llu]", inputAddr, outputAddr);
