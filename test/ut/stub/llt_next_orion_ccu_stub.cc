@@ -154,7 +154,7 @@ HcclResult CcuComponent::CleanTaskKillState() const
     return HcclResult::HCCL_E_NOT_SUPPORT;
 }
 
-std::array<bool, MAX_CCU_IODIE_NUM> CcuComponent::GetDieEnableFlags() const
+const std::array<bool, MAX_CCU_IODIE_NUM> &CcuComponent::GetDieEnableFlags() const
 {
     return {false, false};
 }
