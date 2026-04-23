@@ -41,6 +41,7 @@
 #include "env_config.h"
 #include "base_config.h"
 #include "topo_addr_info.h"
+#include "adapter_error_manager_pub.h"
 
 using namespace Hccl;
 
@@ -62,6 +63,7 @@ protected:
         MOCKER(HrtRaSocketInit).stubs().with(any(), any()).will(returnValue(socketHandle));
         MOCKER_CPP(&HccpPeerManager::Init).stubs().with(any());
         MOCKER_CPP(&HccpPeerManager::DeInit).stubs().with(any());
+        MOCKER(RpInputErr).stubs().will(returnValue(HCCL_SUCCESS));
         IpAddress serverIp = IpAddress("10.0.0.10");
         u32 hostPort = 60001;
         IpAddress hostIp_ = IpAddress("192.168.1.8");
@@ -317,3 +319,59 @@ TEST_F(RankInfoDetectClientTest, Ut_VerifyTlsConsistency_When_KnownInconsistentA
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
+TEST_F(RankInfoDetectClientTest, Ut_CheckRootInfoJson_When_VersionNot2_Expect_RptInputErr)
+{
+    MOCKER(RpInputErr).stubs().will(returnValue(HCCL_SUCCESS));
+
+    nlohmann::json j;
+    j["version"] = "1.0";
+    j["topo_file_path"] = "/fake/path";
+    j["rank_count"] = 1;
+    EXPECT_THROW(CheckRootInfoJson(j), InvalidParamsException);
+    MOCKER(RptInputErr).verify(invoked());
+}
+
+TEST_F(RankInfoDetectClientTest, Ut_CheckRootInfoJson_When_TopoFilePathInvalid_Expect_RptInputErr)
+{
+    MOCKER(RpInputErr).stubs().will(returnValue(HCCL_SUCCESS));
+
+    nlohmann::json j;
+    j["version"] = "1.0";
+    j["topo_file_path"] = "/invalid/path/that/does/not/exist";
+    j["rank_count"] = 1;
+    EXPECT_THROW(CheckRootInfoJson(j), InvalidParamsException);
+    MOCKER(RptInputErr).verify(invoked());
+}
+
+TEST_F(RankInfoDetectClientTest, Ut_CheckRootInfoJson_When_RankCountMismatch_Expect_RptInputErr)
+{
+    MOCKER(RpInputErr).stubs().will(returnValue(HCCL_SUCCESS));
+
+    nlohmann::json j;
+    j["version"] = "2.0";
+    j["topo_file_path"] = "/fake/path";
+    j["rank_count"] = 2;
+    nlohmann:json rankList = nlohmann::json::array();
+    rankList.push_back(nlohmann:json::object());
+    j["rank_list"] = rankList;
+    EXPECT_THROW(CheckRootInfoJson(j), InvalidParamsException);
+    MOCKER(RptInputErr).verify(invoked());
+}
+
+TEST_F(RankInfoDetectClientTest, Ut_RecvRankTable_When_RankFailed_Expect_RptInputErr)
+{
+    MOCKER(RpInputErr).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&SocketAgent::RecvMsg).stubs().with(any(), any()).will(returnValue(false));
+
+    EXPECT_THROW(rankInfoDetectClient_->RecvRankTable(), InvalidParamsException);
+    MOCKER(RptInputErr).verify(invoked());
+}
+
+TEST_F(RankInfoDetectClientTest, Ut_RecvRankTable_When_RankFailed_Expect_RptInputErr)
+{
+    MOCKER(RpInputErr).stubs().will(returnValue(HCCL_SUCCESS));
+    rankInfoDetectClient_->rankTable_.rankCount = 1;
+    rankInfoDetectClient_->arankSize_ = 2;
+    EXPECT_THROW(rankInfoDetectClient_->VerifyRankTable(), InvalidParamsException);
+    MOCKER(RptInputErr).verify(invoked());
+}

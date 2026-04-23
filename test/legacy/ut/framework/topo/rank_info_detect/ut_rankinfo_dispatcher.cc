@@ -24,6 +24,7 @@
 #include "socket.h"
 #include "rank_info_detect_service.h"
 #include "rank_info_detect_client.h"
+#include "adapter_error_manager_pub.h"
 #undef private
 
 using namespace std;
@@ -43,6 +44,7 @@ protected:
     virtual void SetUp()
     {
         std::cout << "A Test SetUP" << std::endl;
+        MOCKER(RptInputErr).stubs().will(returnValue(HCCL_SUCCESS));
     }
     virtual void TearDown()
     {
@@ -255,6 +257,7 @@ TEST_F(RankInfoDispatherTest, Ut_ProcessSend_When_Send_Again_Expect_Return_TimeO
     // check
     workers.rankNum_ = 1;
     EXPECT_THROW(workers.ProcessSend(), TimeoutException);
+    MOCKER(RptInputErr).verify(invoked());
 }
 
 

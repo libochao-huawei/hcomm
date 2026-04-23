@@ -16,6 +16,7 @@
 #define protected public
 #include "hccl_common_v2.h"
 #include "preempt_port_manager.h"
+#include "adapter_error_manager_pub.h"
 #undef private
 #undef protected
 
@@ -36,6 +37,7 @@ protected:
     // Some expensive resource shared by all tests.
     virtual void SetUp()
     {
+        MOCKER(RpInputErr).stubs().will(returnValue(HCCL_SUCCESS));
     }
 
     virtual void TearDown()
@@ -128,7 +130,7 @@ TEST_F(HcclPreemptPortManagerV2Test, Ut_PreemptPortInRange_When_New_IP_Expect_HC
     // check
     ppm.preemptSockets_[HrtNetworkMode::PEER] = IpPortRef();
     EXPECT_THROW(ppm.PreemptPortInRange(listenSocket, HrtNetworkMode::PEER, portRange, usePort), InvalidParamsException);
-    
+    MOCKER(RptInputErr).verify(invoked());
 }
 
 TEST_F(HcclPreemptPortManagerV2Test, Ut_IsAlreadyListening_When_Ref_0_Expect_false)
