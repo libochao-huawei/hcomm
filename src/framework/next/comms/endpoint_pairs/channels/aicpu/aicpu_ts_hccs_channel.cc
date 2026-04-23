@@ -74,7 +74,8 @@ HcclResult AicpuTsHccsChannel::ParseInputParam()
 
 HcclResult AicpuTsHccsChannel::GetFirstIpByPhyId(u32 devicePhyId, u32 superDevId, HcclIpAddress &ip)
 {
-    CHK_RET(GlobalNetDevMgr::GetInstance(devicePhyId).GetDeviceVnicIP(devicePhyId, superDevId, ip));
+    CHK_RET(GlobalNetDevMgr::GetDeviceVnicIP(devicePhyId, superDevId, ip));
+    HcclNetDevGetBusAddr();
     HCCL_INFO("[AicpuTsHccsChannel][GetFirstIpByPhyId]devicePhyId[%u] superDevId[%u] linkInfo.ip[%s]",
         devicePhyId, superDevId, ip.GetReadableAddress());
     return HCCL_SUCCESS;

@@ -124,21 +124,42 @@ void GlobalNetDevMgr::UnInit()
     HCCL_INFO("[GlobalNetDevMgr][UnInit]UnInit success. devicePhyId[%u], deviceLogicId[%d]", devicePhyId_, deviceLogicId_);
 }
 
-HcclResult GlobalNetDevMgr::GetDeviceVnicIP(u32 devicePhyId, u32 superDeviceId, hccl::HcclIpAddress &ipAddr)
+HcclResult GlobalNetDevMgr::GetDeviceVnicIP(u32 devicePhyId, u32 superDeviceId, hccl::HcclIpAddress &vnicIP)
 {
-    bool useSuperPodMode;
-    CHK_RET(IsSuperPodMode(useSuperPodMode));
-    if (useSuperPodMode) {
-        CHK_RET(hrtRaGetSingleSocketVnicIpInfo(devicePhyId,
-            DeviceIdType::DEVICE_ID_TYPE_SDID,
-            superDeviceId,
-            ipAddr));
+    s32 localDeviceLogicId;
+    u32 localDeviceId;
+    CHK_RET(hrtGetDevice(&localDeviceLogicId));
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(localDeviceLogicId), localDeviceId));
+
+    // 先创建进程
+    bool isHostUseDevNic;
+    CHK_RET(IsHostUseDevNic(isHostUseDevNic));
+    u32 tempDevicePhyId = hccl::DEFAULT_PHY_ID;
+    HCCL_DEBUG("[GlobalNetDevMgr][%s]GetDeviceVnicIP, deviceLogicId[%u], devicePhyId[%u], nicDeploy[%d], hasBackup[%d],"
+               " tempDevicePhyId[%u]",
+        __func__,
+        localDeviceLogicId,
+        devicePhyId,
+        NICDeployment::NIC_DEPLOYMENT_DEVICE,
+        false,
+        tempDevicePhyId);
+    CHK_RET(hccl::NetworkManager::GetInstance(localDeviceLogicId)
+                .InitV2(NICDeployment::NIC_DEPLOYMENT_DEVICE, false, tempDevicePhyId, isHostUseDevNic));
+ 
+    // 参考 Heartbeat::GetConnInfo
+    // hccl::HcclIpAddress vnicIP(localDeviceId);
+    if (superDeviceId != SUPER_DEVICE_ID_INVALID) {
+        CHK_RET(hrtRaGetSingleSocketVnicIpInfo(localDeviceId, DeviceIdType::DEVICE_ID_TYPE_SDID, superDeviceId, vnicIP));
     } else {
-        CHK_RET(hrtRaGetSingleSocketVnicIpInfo(devicePhyId,
-            DeviceIdType::DEVICE_ID_TYPE_PHY_ID,
-            devicePhyId,
-            ipAddr));
+        CHK_RET(hrtRaGetSingleSocketVnicIpInfo(localDeviceId, DeviceIdType::DEVICE_ID_TYPE_PHY_ID, devicePhyId, vnicIP));
     }
+
+    HCCL_INFO("[GlobalNetDevMgr][GetDeviceVnicIP] vnicIP [%s] for devicePhyId[%u], superDeviceId[%u]",
+        vnicIP.GetReadableAddress(), devicePhyId, superDeviceId);
+
+    // 销毁进程
+    CHK_RET(hccl::NetworkManager::GetInstance(localDeviceLogicId)
+                .DeInitV2(NICDeployment::NIC_DEPLOYMENT_DEVICE, false, false));
     return HCCL_SUCCESS;
 }
 

@@ -32,9 +32,9 @@ public:
     static GlobalNetDevMgr& GetInstance(u32 devicePhyId); // 获取单例
     static void MakeSocketTag(hccl::HcclIpAddress tagServerIp, uint32_t tagServerPort,
         hccl::HcclIpAddress tagClientIp, std::string &socketTag, u64 id);
+    static  HcclResult GetDeviceVnicIP(u32 devicePhyId, u32 superDeviceId, hccl::HcclIpAddress &vnicIP);
     ~GlobalNetDevMgr();
 
-    HcclResult GetDeviceVnicIP(u32 devicePhyId, u32 superDeviceId, hccl::HcclIpAddress &ipAddr);
     HcclResult RefNetDevCtx(NicType nicType, const HcclIpAddress& ipAddr, u32 port, HcclNetDevCtx& netDevCtx);
     HcclResult UnRefNetDevCtx(NicType nicType, const HcclIpAddress& ipAddr, u32 port);
 
