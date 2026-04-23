@@ -548,20 +548,11 @@ HcclResult CcuConnection::Describe(std::string &dfxMsg)
     Hccl::Eid rmtEid = rmtAddr.GetReverseEid();
 
     std::string dfxStr = Hccl::StringFormat("chip id[%u] die id[%u] func_id[%u] jetty id[%s] "
-        "local %s remote %s udp sport[%u]",
-        devLogicId_, dieId_, funcId_, jettyIds.c_str(), locEid.Describe().c_str(), rmtEid.Describe().c_str(), udpSport);
+        "local %s remote %s udp sport[%u] attrBitMap[%u]",
+        devLogicId_, dieId_, funcId_, jettyIds.c_str(), locEid.Describe().c_str(), rmtEid.Describe().c_str(), udpSport, attrBitmap);
     dfxMsg += dfxStr;
     HCCL_INFO("[CcuConnection::%s] %s", __func__, dfxStr.c_str());
     return HcclResult::HCCL_SUCCESS;
-}
-
-HcclResult CcuConnection::testSetTpAttr()
-{
-    uint32_t attrBitmap = 8192;
-    struct TpAttr tpAttr {0};
-    tpAttr.dataUdpSrcport = 128;
-    CHK_RET(Hccl::HrtRaSetTpAttrAsync(ctxHandle_, tpInfo_.tpHandle, attrBitmap, tpAttr, reqHandles_[0]));
-    return HCCL_SUCCESS;
 }
 
 uint32_t CcuConnection::GetDieId() const
