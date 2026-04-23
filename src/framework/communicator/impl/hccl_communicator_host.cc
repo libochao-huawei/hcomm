@@ -63,13 +63,13 @@ constexpr u16 MAX_VALUE_U16 = 0xFFFF;
 namespace hccl
 {
     static std::mutex g_hcomInitMutex;
-    static std::atomic<u32> g_enableBackupLinkCommCount{0}; // 开启借轨的通信域计数
+    static std::atomic<u32> g_enableBackupLinkCommCount{0}; // 开启借轨的通信域计�?
     constexpr u32 MEMORY_CAPACITY = 256 * 1024;
     constexpr u32 WAIT_PREPARE_SLEEP_TIME = 5000;
     constexpr u32 SINGLE_SERVER_NUM = 1;
     constexpr u32 CONN_LIMIT = 4096;
     constexpr u32 COMM_DEV_TYPE_DIGIT_NUM = 8;
-    constexpr u32 TILINGDATA_BUF_SIZE = 32 * 1024; // 单位：字节
+    constexpr u32 TILINGDATA_BUF_SIZE = 32 * 1024; // 单位：字�?
     constexpr u32 ALLTOALL_INFO_MATRIX_SIZE = 4;
     constexpr u32 AICPU_RETRY_LINKROCE_DEFAULT = 0;
     constexpr u32 AICPU_RETRY_LINKROCE_BACKUP = 1;
@@ -78,7 +78,7 @@ namespace hccl
     constexpr u32 TYPE_USER_MEM = 1;
     constexpr u32 NON_BATCH_WRITE_MAX_STREAM_NUM = 19U;
     constexpr u64 GIGABYTE_TO_BYTE = 1024ULL * 1024ULL * 1024ULL;
-    constexpr u8 AICPU_ORDERLAUNCH_INVALID_HCOM_MODE = 255; // 图模式下无附属从流，不进行按序下发
+    constexpr u8 AICPU_ORDERLAUNCH_INVALID_HCOM_MODE = 255; // 图模式下无附属从流，不进行按序下�?
     enum TransferMemInfoIdx
     {
         TRANSFER_MEM_INFO_KEY_IDX = 0,
@@ -94,16 +94,16 @@ namespace hccl
         HOST_TO_AICPU_1 = 1,
 
         // 用于控制单算子模式各通信域kernel按序占核的notify
-        ORDER_INDEX_OPBASE_0 = 2, // host_order流 record, kernel流 wait
-        ORDER_INDEX_OPBASE_1 = 3, // aicpu_order流 record, host_order流 wait
+        ORDER_INDEX_OPBASE_0 = 2, // host_order�?record, kernel�?wait
+        ORDER_INDEX_OPBASE_1 = 3, // aicpu_order�?record, host_order�?wait
 
         // 用于控制Aclgraph模式各通信域kernel按序占核的notify
-        ORDER_INDEX_ACLGRAPH_0 = 4, // host_order流 record, kernel流 wait
-        ORDER_INDEX_ACLGRAPH_1 = 5, // aicpu_order流 record, host_order流 wait
+        ORDER_INDEX_ACLGRAPH_0 = 4, // host_order�?record, kernel�?wait
+        ORDER_INDEX_ACLGRAPH_1 = 5, // aicpu_order�?record, host_order�?wait
 
         // 用于控制图模式各通信域kernel按序占核的notify
-        ORDER_INDEX_HCOM_0 = 6, // host_order流 record, kernel流 wait
-        ORDER_INDEX_HCOM_1 = 7 // aicpu_order流 record, host_order流 wait
+        ORDER_INDEX_HCOM_0 = 6, // host_order�?record, kernel�?wait
+        ORDER_INDEX_HCOM_1 = 7 // aicpu_order�?record, host_order�?wait
     };
 
     enum class AicpuLocalEventIdx : u32
@@ -112,8 +112,8 @@ namespace hccl
          *@brief 用于控制Aclgraph模式按序下发控制流入图的event
          *@note 通信域绑定Context，而Stream是Context管理的资源，因此对应下在Stream上的event与通信域强相关，需要communicator管理
         **/
-        ORDER_INDEX_ACLGRAPH_EVENT_0 = 0, // kernel流 record, host_order流 wait
-        ORDER_INDEX_ACLGRAPH_EVENT_1 = 1, // host_order流 record, kernel流 wait
+        ORDER_INDEX_ACLGRAPH_EVENT_0 = 0, // kernel�?record, host_order�?wait
+        ORDER_INDEX_ACLGRAPH_EVENT_1 = 1, // host_order�?record, kernel�?wait
     };
 
     HcclCommunicator::HcclCommunicator()
@@ -267,7 +267,7 @@ namespace hccl
         DeInitTransportMem();
         MrManagerDeInit();
 
-        /* 网络资源销毁 */
+        /* 网络资源销�?*/
         DestroyNetworkResources();
         notifyPool_ = nullptr;
         queueNotifyManager_ = nullptr;
@@ -363,21 +363,21 @@ namespace hccl
         CHK_RET(InitMemoryManager());
         CHK_RET(InitCombinOpara());
         CHK_RET(RegisterRanksToDca());
-        /*--------------加锁区--------------*/
+        /*--------------加锁�?-------------*/
         std::unique_lock<std::mutex> lock(g_hcomInitMutex);
         CHK_RET(RegistTaskExceptionHandler());
 
         attrCollector_.GenCollectiveId(params, rankTable);
         collectiveId_ = attrCollector_.GetCollectiveId();
 
-        // 初始化参数(需要放置在ranktable解析之后)
+        // 初始化参�?需要放置在ranktable解析之后)
         HcclResult ret = InitPara();
         CHK_PRT_RET(ret != HCCL_SUCCESS,
                     HCCL_ERROR("[HcclCommunicator][Init]errNo[0x%016llx] collectiveid[%s] parameter initialization failed",
                                HCCL_ERROR_CODE(ret), params.id.internal),
                     ret);
         lock.unlock();
-        /*--------------加锁区--------------*/
+        /*--------------加锁�?-------------*/
         if (deviceType_ == DevType::DEV_TYPE_910B || deviceType_ == DevType::DEV_TYPE_910_93){
             CHK_RET(RegisterKernel(deviceType_));
         }
@@ -458,9 +458,9 @@ namespace hccl
 
     HcclResult HcclCommunicator::LoadCustomKernel(void)
     {
-        // 加载自定义算子
-        // 请勿删除，该函数为用户自定义算子时使用，应加载句柄
-        // 读取customEnable环境变量，开启了就执行
+        // 加载自定义算�?
+        // 请勿删除，该函数为用户自定义算子时使用，应加载句�?
+        // 读取customEnable环境变量，开启了就执�?
         std::string jsonPath;
         CHK_RET(GetCustomKernelFilePath(jsonPath));
         jsonPath += "libaicpu_custom.json";
@@ -470,7 +470,7 @@ namespace hccl
 
     void HcclCommunicator::UnloadCustomKernel(void)
     {
-        // 卸载自定义算子
+        // 卸载自定义算�?
         // 请勿删除，该函数为用户自定义算子时使用，应释放句柄：UnloadBinary(binCustomHandle_);
         return;
     }
@@ -518,7 +518,7 @@ namespace hccl
         if (intraRoceSwitch ||
             (!useSuperPodMode_ && localServerId != remoteServerId) ||
             (localSuperPodId != remoteSuperPodId)) {
-            // 1. 初始化网口
+            // 1. 初始化网�?
             CHK_RET(InitNic());
             isOneSidedServiceNicInited = true;
 
@@ -645,7 +645,7 @@ namespace hccl
                             __func__, opType),
                     false);
 
-        // 只支持aicpu展开、单算子模式、910_93芯片
+        // 只支持aicpu展开、单算子模式�?10_93芯片
         CHK_PRT_RET(!opParam.aicpuUnfoldMode,
                     HCCL_INFO("[%s] aicpuUnfold:%d not support symmetric memory", __func__, opParam.aicpuUnfoldMode), false);
         CHK_PRT_RET(GetWorkflowMode() != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE,
@@ -683,7 +683,7 @@ namespace hccl
             __func__, opParam.aicpuUnfoldMode, GetWorkflowMode(), deviceType_,
             deviceNumPerAggregation_, multiModuleDiffDeviceNumMode_, opParam.tag.c_str());
 
-        // 只支持aicpu展开、非重执行、单算子模式、910_93芯片
+        // 只支持aicpu展开、非重执行、单算子模式�?10_93芯片
         CHK_PRT_RET(!opParam.aicpuUnfoldMode,
                     HCCL_INFO("[%s] aicpuUnfold:%d not support zero copy", __func__, opParam.aicpuUnfoldMode), false);
         CHK_PRT_RET(GetWorkflowMode() != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE,
@@ -692,7 +692,7 @@ namespace hccl
                     HCCL_INFO("[%s] deviceType:%d not support zero copy", __func__, deviceType_), false);
 
         // 判断拓扑逻辑是否支持zero copy
-        // 每个节点只有一张卡或节点间非对称场景不支持零拷贝
+        // 每个节点只有一张卡或节点间非对称场景不支持零拷�?
         CHK_PRT_RET(deviceNumPerAggregation_ == 1 || multiModuleDiffDeviceNumMode_,
                     HCCL_INFO("[%s] deviceNumPerAggregation[%u], multiModuleDiffDeviceNumMode_[%d] not support zero copy",
                               __func__, deviceNumPerAggregation_, multiModuleDiffDeviceNumMode_),
@@ -710,7 +710,7 @@ namespace hccl
     HcclResult HcclCommunicator::PrepareZeroCopy(const std::string &algName, const AlgDesc &algDesc, OpParam &opParam)
     {
         if (!algDesc.isZeroCopy) {
-            opParam.supportSymmetricMemory = false;     //  当前对称内存与零拷贝算法绑定，对称内存使能关闭，确保aicpu侧不走对称内存分支
+            opParam.supportSymmetricMemory = false;     //  当前对称内存与零拷贝算法绑定，对称内存使能关闭，确保aicpu侧不走对称内存分�?
             HCCL_INFO("[HcclCommunicator][PrepareZeroCopy] algName[%s] not support zerocopy.", algName.c_str());
             return HCCL_SUCCESS;
         }
@@ -720,14 +720,14 @@ namespace hccl
                       algName.c_str());
             return HCCL_SUCCESS;
         }
-        // ARS特性不支持零拷贝
+        // ARS特性不支持零拷�?
         if ((opParam.opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER || opParam.opType == HcclCMDType::HCCL_CMD_ALLGATHER ||
                 opParam.opType == HcclCMDType::HCCL_CMD_ALLREDUCE) && deviceType_ == DevType::DEV_TYPE_910_93 && 
                 multiModuleDiffDeviceNumMode_ && !multiSuperPodDiffDeviceNumMode_){
             return HCCL_SUCCESS;
         }
 
-        // 如果自己侧的共享内存没有申请，那么进行申请，并设置给transportManager，后续p2p建链时进行交换
+        // 如果自己侧的共享内存没有申请，那么进行申请，并设置给transportManager，后续p2p建链时进行交�?
         if (zeroCopyLocalBuffer_.ptr() == nullptr) {
             CHK_RET(DeviceMem::alloc(zeroCopyLocalBuffer_, ZERO_COPY_IPC_BUFFER_LENGTH));
             CHK_RET(hrtMemSet(zeroCopyLocalBuffer_.ptr(), zeroCopyLocalBuffer_.size(), zeroCopyLocalBuffer_.size()));
@@ -752,7 +752,7 @@ namespace hccl
             for (u64 i = 0; i < singleSubCommTransport.links.size(); ++i) {
                 LINK link = singleSubCommTransport.links[i];
                 if (link == nullptr || !singleSubCommTransport.transportRequests[i].isValid) {
-                    // 无效或者不支持的链路
+                    // 无效或者不支持的链�?
                     continue;
                 }
 
@@ -832,7 +832,7 @@ namespace hccl
                 (pairLinkInfo_[static_cast<u32>(LinkTypeInServer::HCCS_TYPE)].size() == userRankSize_));
     }
 
-    // 910B A+X 在RDMA未启用情况下，两模块间的device数目需要一致且两模块中使用的卡都在同一平面上
+    // 910B A+X 在RDMA未启用情况下，两模块间的device数目需要一致且两模块中使用的卡都在同一平面�?
     HcclResult HcclCommunicator::CheckSingleServerComm(const std::vector<RankInfo_t> &rankList) const
     {
         if (serverNum_ == 1 && moduleNum_ == HCCL_MODULE_NUM_TWO && GetExternalInputIntraRoceSwitch() == 0 && !isStandardCard_) {
@@ -1007,7 +1007,7 @@ namespace hccl
         }
 
         tagCommInfo_.erase(tag);
-        // stream解绑定
+        // stream解绑�?
         auto iterStream = tagStreamInfo_.find(tag);
         if (iterStream != tagStreamInfo_.end()) {
             CHK_RET(StreamActiveManager::GetInstance(deviceLogicId_).StreamsUnactive(iterStream->second.ringStreams));
@@ -1175,12 +1175,12 @@ namespace hccl
 
     HcclResult HcclCommunicator::InitPara()
     {
-        // 检查当前user_rank 对应的devid和rt查到的一致
+        // 检查当前user_rank 对应的devid和rt查到的一�?
         CHK_RET(attrCollector_.CheckLocalRankInfo());
         CHK_RET(attrCollector_.CalAndSetMeshAggRankSize());
         meshAggregationRankSize_ = attrCollector_.GetMeshAggregationRankSize();
 
-        // 初始化计数任务
+        // 初始化计数任�?
         CHK_RET(OpExeCounter::GetInstance(deviceLogicId_).InitCounter());
 
         notifyPool_.reset(new (std::nothrow) NotifyPool());
@@ -1394,7 +1394,7 @@ namespace hccl
             nicDeployment_ == NICDeployment::NIC_DEPLOYMENT_DEVICE) {
             CHK_RET(HcclNetInit(NICDeployment::NIC_DEPLOYMENT_DEVICE, devicePhyId_, deviceLogicId_, false));
             if (IsEnableBackupLink()) {
-                // 超节点 && level2支持重执行 && Aicpu -> 初始化主备hccp资源(Pid粒度)
+                // 超节�?&& level2支持重执�?&& Aicpu -> 初始化主备hccp资源(Pid粒度)
                 CHK_RET(hrtGetPairDevicePhyId(devicePhyId_, deviceBackUpPhyId_));
                 if (hrtGetDeviceIndexByPhyId(deviceBackUpPhyId_, deviceBackUpLogicId_) != HCCL_SUCCESS) {
                     rtsSupportChangeLink_ = false;
@@ -1460,14 +1460,14 @@ namespace hccl
             }
 
             if (IsEnableRoce()) {
-                CHK_RET(InitNic()); // isUsedRdmaLevel0_默认为false，若初始化网卡时，网卡IP有效才根据环境变量配置
+                CHK_RET(InitNic()); // isUsedRdmaLevel0_默认为false，若初始化网卡时，网卡IP有效才根据环境变量配�?
             }
         }
 
         HCCL_INFO("isUsedRdmaLevel0_[%u] nicNum[%u] hostIP[%s], nicDeployment[%d].",
                   isUsedRdmaLevel0_, devIpAddr_.size(), hostIp_.GetReadableAddress(), nicDeployment_);
 
-        raResourceInit_ = true; // 全局通信域会初始化，子通信域不会初始化，但是析构均会进入此逻辑，需要标记
+        raResourceInit_ = true; // 全局通信域会初始化，子通信域不会初始化，但是析构均会进入此逻辑，需要标�?
         attrCollector_.GenSupportRdmaLite();
         CHK_RET(attrCollector_.GenSupportHccsAndSio());
         isSupportRdmaLite_ = attrCollector_.GetSupportRdmaLite();     // 是否支持Rdma Lite
@@ -1510,7 +1510,7 @@ namespace hccl
                   ifAiv, GetWorkflowMode(), ifHcomWithAiv);
         if (ifHcomWithAiv && (deviceType_ == DevType::DEV_TYPE_910_93 || deviceType_ == DevType::DEV_TYPE_910B)) {
             HCCL_INFO("[GetWorkspaceSubStreamNum] Hcom AIV enabled, calculating the streamNum.");
-            // A3 和 A2 公用以下的参数
+            // A3 �?A2 公用以下的参�?
             std::string newTag;
             std::unique_ptr<CollAlgOperator> algOperator = implAlg_->GetAlgOperator(opType);
             CHK_SMART_PTR_NULL(algOperator);
@@ -1522,7 +1522,7 @@ namespace hccl
                 param.All2AllDataDes.sendType = dataType;
                 param.All2AllDataDes.recvType = dataType;
                 param.All2AllDataDes.sendCount = count;
-            } else { //不论 A2 还是 A3，AIV场景下的AllReduce/ReduceScatter还是A2上单独支持AIV的算子都用以下参数
+            } else { //不论 A2 还是 A3，AIV场景下的AllReduce/ReduceScatter还是A2上单独支持AIV的算子都用以下参�?
                 param.DataDes.count = count;
                 param.DataDes.dataType = dataType;
             }
@@ -1554,7 +1554,7 @@ namespace hccl
         if (deviceType_ == DevType::DEV_TYPE_910_93) {
             streamNum = HCCL_SUB_STREAM_NUM_DOUBLE_RING + RDMA_PLANE_NUM_IN_NPRING_DOUBLE;
             if (algType.algoLevel0 == AlgTypeLevel0::ALG_LEVEL0_NP_DOUBLE_RING) {
-                streamNum += 1U; // semi_ring算法server内增加一条从流，需要2条从流
+                streamNum += 1U; // semi_ring算法server内增加一条从流，需�?条从�?
             }
             if (opType == HcclCMDType::HCCL_CMD_ALLTOALLV || opType == HcclCMDType::HCCL_CMD_ALLTOALL ||
                 opType == HcclCMDType::HCCL_CMD_ALLTOALLVC) {
@@ -1564,16 +1564,16 @@ namespace hccl
             return HCCL_SUCCESS;
         }
 
-        // AR RS 在开启Strict && 静态图、RSv 在开启确定性 && 静态图时, 需要重新计算StreamNum
+        // AR RS 在开启Strict && 静态图、RSv 在开启确定�?&& 静态图�? 需要重新计算StreamNum
         if (deviceType_ == DevType::DEV_TYPE_910B
             && (((opType == HcclCMDType::HCCL_CMD_ALLREDUCE || opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER)
                     && GetExternalInputHcclDeterministicV2() == DETERMINISTIC_STRICT)
                 || (opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V
                     && GetExternalInputHcclDeterministicV2() != DETERMINISTIC_DISABLE)
                 || (opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V
-                    && !isSingleMeshAggregation_ && !multiModuleDiffDeviceNumMode_//多机&对称&图模式
+                    && !isSingleMeshAggregation_ && !multiModuleDiffDeviceNumMode_//多机&对称&图模�?
                     && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB))) {
-            // 图模式 A2规约保序场景，需要重新计算需要的streamNum
+            // 图模�?A2规约保序场景，需要重新计算需要的streamNum
             streamNum = CalcStreamNumForReduceOrderPreservation();
             HCCL_DEBUG("[GetWorkspaceSubStreamNum]A2 reduce order preservation, the streamNum is %llu", streamNum);
             return HCCL_SUCCESS;
@@ -1590,7 +1590,7 @@ namespace hccl
             algType.algoLevel0 == AlgTypeLevel0::ALG_LEVEL0_NP_MESH &&                                       // fullmesh
             (opType == HcclCMDType::HCCL_CMD_ALLGATHER || opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER ||
             opType == HcclCMDType::HCCL_CMD_ALLGATHER_V) && // AG或RS或AGV
-            moduleNum_ > 1 && deviceNumPerAggregation_ > 1 &&                                                // 多机且每机器出多卡
+            moduleNum_ > 1 && deviceNumPerAggregation_ > 1 &&                                                // 多机且每机器出多�?
             (moduleNum_ <= MODULE_NUM_FOUR ||                                                                // "机器数量小于等于4"
              dataSize > HCCL_SMALL_COUNT_1_MB ||                                                             // "大数据量"
              algType.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_PIPELINE)) { // "指定level1的算法为pipeline"
@@ -1599,7 +1599,7 @@ namespace hccl
             return HCCL_SUCCESS;
         }
 
-        // 设置310P图模式 alltoall 的streamNum
+        // 设置310P图模�?alltoall 的streamNum
         if(deviceType_ == DevType::DEV_TYPE_310P3 && (opType == HcclCMDType::HCCL_CMD_ALLTOALL || opType == HcclCMDType::HCCL_CMD_ALLTOALLV || opType == HcclCMDType::HCCL_CMD_ALLTOALLVC)){
             streamNum = userRankSize_ * RANK_SET_COMPUTE_CONST;
             HCCL_DEBUG("[GetWorkspaceSubStreamNum]DEV_TYPE_310P3, the streamNum is %llu", streamNum);
@@ -1640,7 +1640,7 @@ namespace hccl
                    iter->second.c_str(), streamNum);
 
         u64 sliceNum = CalculatePiplineSliceNum(opType, dataSize, algType, deviceType_, deviceNumPerServer_, serverNum_);
-        // 图模式下数据量固定, 按照当前数据量判断是否支持pipline切分并申请从流
+        // 图模式下数据量固�? 按照当前数据量判断是否支持pipline切分并申请从�?
         if (implAlg_ != nullptr && sliceNum >= MIN_PIPLINE_SLICE_NUM) {
             streamNum++;
         }
@@ -1660,7 +1660,7 @@ namespace hccl
             return HCCL_SUCCESS;
         }
 
-        // nic的初始化独立调用，在此单独判断是否需要解初始化
+        // nic的初始化独立调用，在此单独判断是否需要解初始�?
         if (nicInitialized_ > 0) {
             CHK_RET(DeinitNic());
         }
@@ -1677,7 +1677,7 @@ namespace hccl
             if (static_cast<s32>(devicePhyId_) != HOST_DEVICE_ID ||
                 nicDeployment_ == NICDeployment::NIC_DEPLOYMENT_DEVICE) {
                 if (IsEnableBackupLink()) {
-                    // 超节点 && level2支持重执行 && Aicpu -> 释放主备hccp资源
+                    // 超节�?&& level2支持重执�?&& Aicpu -> 释放主备hccp资源
                     CHK_RET(HcclNetDeInit(NICDeployment::NIC_DEPLOYMENT_DEVICE, devicePhyId_, deviceLogicId_));
                     CHK_RET(HcclNetDeInit(NICDeployment::NIC_DEPLOYMENT_DEVICE, deviceBackUpPhyId_,
                                           deviceBackUpLogicId_, true));
@@ -1753,8 +1753,8 @@ namespace hccl
 
     /*
         1. 选择算法
-        2. 计算resource，存到request内
-        3. 创建和分配资源
+        2. 计算resource，存到request�?
+        3. 创建和分配资�?
     */
     HcclResult HcclCommunicator::HcclSelectAlg(HcclCMDType opType, u64 count, void* counts, HcclDataType dataType,
                                                HcclReduceOp op, int32_t aivCoreLimit, bool &ifAiv, std::string &algName)
@@ -1767,7 +1767,7 @@ namespace hccl
             HCCL_INFO("[HcclCommunicator][HcclSelectAlg] opType[%d] no need select AIV algorithm", opType);
             return HCCL_SUCCESS;
         }
-        /* 选择算法前，先更新成图模式 */
+        /* 选择算法前，先更新成图模�?*/
         auto originWorkflowMode = GetWorkflowMode();
         SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
 
@@ -1802,7 +1802,7 @@ namespace hccl
             return HCCL_SUCCESS;
         }
 
-        /* 完成算法选择和记录后，恢复成原来的模式 */
+        /* 完成算法选择和记录后，恢复成原来的模�?*/
         SetWorkflowMode(originWorkflowMode);
         ifAiv = true;
         HCCL_INFO("[HcclCommunicator][HcclSelectAlg] compile for aiv, select algName is [%s]", algName.c_str());
@@ -1843,7 +1843,7 @@ namespace hccl
                                                      bool clearEnable, HcclDataType dataType, HcclReduceOp op, void *&commContext, u64 &len, u32 aivCoreLimit)
     {
         /* 将Host申请和注册好的资源，传给AICPU */
-        // 1\ algName 从getstr里某一个名字里获取出来（要防止名字重复） commContext & len 从 response里拿
+        // 1\ algName 从getstr里某一个名字里获取出来（要防止名字重复�?commContext & len �?response里拿
         // 2\ rtmemcopy 先获取一下algoperator对象，用这个调用getalgxxx
         AivSuperKernelArgs aivSuperKernelArgs;
         SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
@@ -1895,7 +1895,7 @@ namespace hccl
             CHK_RET(algOperator->CalcResRequest(algName, param, resRequest)); // [重构建议] 计算和alloc可以拆开
             CHK_RET(AllocAlgResource(newTag, opType, param, resRequest, resMap_[newTag]));
             CHK_RET(algOperator->PrepareCommInfoToDevice(algName, resMap_[newTag]));
-            // 暂不作心跳注册
+            // 暂不作心跳注�?
         }
 
         CHK_RET(algOperator->GetAivExecParam(algName, param, resMap_[newTag], aivSuperKernelArgs));
@@ -2001,7 +2001,7 @@ namespace hccl
                        tmpRankInfoList[groupRanks[index]].serverIdx);
         }
 
-        // 按rank id从小到大的顺序返回
+        // 按rank id从小到大的顺序返�?
         std::sort(ranksInfo.begin(), ranksInfo.end(), CompareWithUserRank);
 
         for (u32 index = 0; index < ranksInfo.size(); ++index) {
@@ -2144,7 +2144,7 @@ namespace hccl
         if (nicDeployment_ == NICDeployment::NIC_DEPLOYMENT_HOST) {
             return GetHostPort(devicePhyId_);
         }
-        // isUseRankPort_在ranksPort初始化时一同配置：1. 异构场景 2. 开启device侧端口配置
+        // isUseRankPort_在ranksPort初始化时一同配置：1. 异构场景 2. 开启device侧端口配�?
         // groupRanksPort_为空说明此时处于全局通信域，要从ranksPort_取监听端口；否则取groupRanksPort_
         bool devicePortSwitchOn = commPortConfig_.devPortSwitchOn;
         if (nicType == NicType::HOST_NIC_TYPE) {
@@ -2283,7 +2283,7 @@ namespace hccl
                               "listened ip[%s] port[%u]",
                               backupNicSocket->GetLocalIp().GetReadableAddress(), backupNicSocket->GetLocalPort());
                 } else {
-                    // 超节点 && level2支持重执行 && Aicpu -> 备用网卡 initRdma
+                    // 超节�?&& level2支持重执�?&& Aicpu -> 备用网卡 initRdma
                     HcclNetDevCtx nicPortBackUpCtx;
                     if (isOneSidedTaskAndBackupInitA3) {
                         CHK_RET(OneSidedBackupInitNetResource(nicPortBackUpCtx, backupDevPhyId, backupDevLogicId, localIpList));
@@ -2353,7 +2353,7 @@ namespace hccl
                 }
             }
             if (IsEnableBackupLink() && netDevCtxMap_.find(devBackupIpAddr_[0]) != netDevCtxMap_.end()) {
-                // 超节点 && level2支持重执行 && Aicpu -> 备用网卡 deinit
+                // 超节�?&& level2支持重执�?&& Aicpu -> 备用网卡 deinit
                 CHK_RET(socketManager_->ServerDeInit(netDevCtxMap_[devBackupIpAddr_[0]], devBackupPort_));
                 if (nicInitialized_ - 1 <= 0) {
                     HcclNetCloseDev(netDevCtxMap_[devBackupIpAddr_[0]]);
@@ -2474,7 +2474,7 @@ namespace hccl
 
     HcclResult HcclCommunicator::MrManagerInit()
     {
-        // 拉远、下沉、推理场景(ps、worker)支持使用mrManager
+        // 拉远、下沉、推理场�?ps、worker)支持使用mrManager
         if (!GetExternalInputHcclIsTcpMode() && (Is310PDevice())) {
             mrManager_.reset(new (std::nothrow) MrManager(netDevCtxMap_[devIpAddr_[0]]));
             CHK_SMART_PTR_NULL(mrManager_);
@@ -2534,7 +2534,8 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         u32 perDataSize = SIZE_TABLE[dataType];
         u64 totalSize = inputCount * perDataSize;
@@ -2579,7 +2580,8 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         u32 perDataSize = SIZE_TABLE[dataType];
         u64 totalSize = sendCount * perDataSize;
@@ -2703,7 +2705,8 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         u32 perDataSize = SIZE_TABLE[dataType];
         u64 totalSize = inputCount * perDataSize * userRankSize_;
@@ -2735,7 +2738,7 @@ namespace hccl
     {
         CHK_RET(CheckSuspendingStatus());
         if (userRankSize_ == 1) {
-            // rankSize为1时，退化为AllGather
+            // rankSize�?时，退化为AllGather
             return AllGatherOutPlace(tag, inputPtr, outputPtr, inputCount, dataType, stream);
         }
 
@@ -2757,7 +2760,8 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         u32 perDataSize = SIZE_TABLE[dataType];
         u64 outputSize = 0;
@@ -2844,7 +2848,8 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         u32 perDataSize = SIZE_TABLE[dataType];
         u64 totalSize = count * perDataSize;
@@ -2975,7 +2980,8 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         u32 perDataSize = SIZE_TABLE[dataType];
         u64 totalSize = count * perDataSize;
@@ -3026,7 +3032,8 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         OpParam opParam;
         opParam.tag = tag;
@@ -3085,7 +3092,8 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         OpParam opParam;
         opParam.tag = tag;
@@ -3145,7 +3153,8 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         OpParam opParam;
         opParam.tag = tag;
@@ -3200,7 +3209,8 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         OpParam opParam;
         opParam.tag = tag;
@@ -3272,7 +3282,8 @@ namespace hccl
         }
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
         CHK_RET(ExecOpAlltoAll(HcclCMDType::HCCL_CMD_ALLTOALL, opParam));
         return HCCL_SUCCESS;
     }
@@ -3296,7 +3307,8 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
         u32 perDataSize = SIZE_TABLE[dataType];
         u64 totalSize = count * perDataSize;
 
@@ -3345,7 +3357,8 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         u32 perDataSize = SIZE_TABLE[dataType];
         u64 totalSize = count * perDataSize;
@@ -3394,7 +3407,8 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         u32 perDataSize = SIZE_TABLE[dataType];
         u64 outputSize = recvCount * perDataSize;
@@ -3445,7 +3459,8 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         u32 perDataSize = SIZE_TABLE[dataType];
         u64 outputSize = recvCount * perDataSize;
@@ -3544,7 +3559,8 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         u32 perDataSize = SIZE_TABLE[dataType];
         u64 totalSize = count * perDataSize;
@@ -3591,7 +3607,8 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         u32 perDataSize = SIZE_TABLE[dataType];
 
@@ -3655,7 +3672,8 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         u32 perDataSize = SIZE_TABLE[dataType];
 
@@ -3686,7 +3704,7 @@ namespace hccl
     {
         CHK_RET(CheckSuspendingStatus());
         if (userRankSize_ == 1) {
-            // rankSize为1时，退化为ReduceScatter
+            // rankSize�?时，退化为ReduceScatter
             return ReduceScatter(tag, inputPtr, outputPtr, outputCount, dataType, op, stream);
         }
 
@@ -3701,7 +3719,8 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         const bool aicpuUnfoldMode = GetAicpuUnfoldConfig() &&
                                      IsSupportSDMAReduce(inputPtr, outputPtr, dataType, op) && (deviceType_ == DevType::DEV_TYPE_910_93);
@@ -3749,7 +3768,7 @@ namespace hccl
     {
         CHK_RET(CheckSuspendingStatus());
         if (userRankSize_ == 1) {
-            // rankSize为1时，退化为ReduceScatter
+            // rankSize�?时，退化为ReduceScatter
             return ReduceScatterOutPlace(tag, inputPtr, outputPtr, outputCount, dataType, op, stream);
         }
 
@@ -3767,7 +3786,8 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         const bool aicpuUnfoldMode = GetAicpuUnfoldConfig() &&
                                      IsSupportSDMAReduce(inputPtr, outputPtr, dataType, op) && (deviceType_ == DevType::DEV_TYPE_910_93);
@@ -3839,7 +3859,8 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
         OpParam opParam;
         opParam.tag = tag;
         opParam.stream = streamObj;
@@ -3928,7 +3949,8 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         u32 perDataSize = SIZE_TABLE[dataType];
         u64 totalSize = count * perDataSize;
@@ -4023,7 +4045,8 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         u32 perDataSize = SIZE_TABLE[dataType];
         u64 totalSize = count * perDataSize;
@@ -4133,8 +4156,8 @@ namespace hccl
 
     HcclResult HcclCommunicator::ExecOpCache(HcclCMDType opType, OpParam &opParam, HcclCacheInfo& cacheInfo)
     {
-        //可用核数也需要作为key的一部分，防止cache中拿出来的和计算出来的实际核数不一致
-        //cache目前仅支持executor的kernel为1的情况
+        //可用核数也需要作为key的一部分，防止cache中拿出来的和计算出来的实际核数不一�?
+        //cache目前仅支持executor的kernel�?的情�?
         cacheInfo.resourceArgs.buffersIn = cacheInfo.buffersIn;
         cacheInfo.resourceArgs.buffersOut = cacheInfo.buffersOut;
         cacheInfo.resourceArgs.stream = opParam.stream.ptr(); // 刷新cache下发的stream
@@ -4153,7 +4176,7 @@ namespace hccl
         CHK_RET(HandleAclGraphFirstOpAivBuff(opParam.stream.ptr()));
         //保留dfx
         CHK_RET(RegisterDfxInfo(opParam, algType, resMap_[newTag].slaveStreams, selectAivAlg));
-        // 头计数
+        // 头计�?
         CHK_RET(StarsCounter(dispatcher_, opParam.stream, HEAD, opParam.aicpuUnfoldMode, retryEnable_, selectAivAlg));
         u64 dataSize = (opParam.opType == HcclCMDType::HCCL_CMD_ALLTOALL ?
             opParam.All2AllDataDes.sendCount * SIZE_TABLE[opParam.All2AllDataDes.sendType] : 0);
@@ -4280,11 +4303,11 @@ namespace hccl
         std::string algName;
         std::string newTag;
         if (opParam.aicpuUnfoldMode) {
-            // 用于inplace支持重执行判断
+            // 用于inplace支持重执行判�?
             CHK_RET(algOperator->SetRetryEnable(retryEnable_));
         }
         if (GetExternalInputHcclAivMode()) {
-            // 用于判断图模式是否清零
+            // 用于判断图模式是否清�?
             CHK_RET(algOperator->SetAivClearEnable(aivClearEnable_));
         }
 
@@ -4303,7 +4326,7 @@ namespace hccl
         CHK_RET(PrepareZeroCopy(algName, algDesc, opParam));
 
         if (opParam.isCapture) {
-            // aclgraph使用新的Tag，避免影响其他操作
+            // aclgraph使用新的Tag，避免影响其他操�?
             newTag += "_Capture";
             // aclgraph零拷贝场景下，每个算子都有单独的tag，需要记录，在graph销毁时清理相关资源
             if (isInGraphCaptureZeroCopy) {
@@ -4331,10 +4354,10 @@ namespace hccl
             if (IsEnableBackupLink()) {
                 CHK_RET(CleanTransportLinks(resRequest.opTransport, resMap_[newTag].opTransportResponseBackUp));
             }
-            // 记录指令信息用于一致性校验
+            // 记录指令信息用于一致性校�?
             CHK_RET(RecordOpPara(opType, opParam));
             CHK_RET(IncreAllocLink(newTag, opParam, resRequest, resMap_[newTag]));
-            // 移除tag对应的指令信息
+            // 移除tag对应的指令信�?
             CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
         }
         InsertNewTagToTagMap(newTag, opParam.tag);
@@ -4362,7 +4385,7 @@ namespace hccl
                     std::vector<u32> &vnicPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
                     Heartbeat::GetInstance(deviceLogicId_).SetRankPortInfo(isUseRankPort_, nicPorts, vnicPorts, commPortConfig_.devPortSwitchOn);
                 }
-                // 开始注册心跳
+                // 开始注册心�?
                 if (opType == HcclCMDType::HCCL_CMD_SEND) {
                     CHK_RET(RegisterToHeartBeat(opParam.dstRank, tag));
                     hbSendRecvTags_.emplace(tag);
@@ -4375,7 +4398,7 @@ namespace hccl
             }
             CHK_RET(UpdateZeroCopy(opParam, resMap_[newTag]));
         } else if (opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV) {
-            // batchsendrecv需要根据任务来确定和哪些卡建链，因此复用tag，并在此基础上实现增量建链
+            // batchsendrecv需要根据任务来确定和哪些卡建链，因此复用tag，并在此基础上实现增量建�?
             AlgResourceRequest resRequest;
             CHK_RET(algOperator->CalcIncreLinkRequest(algName, opParam, ranksLinked_, resRequest, needIncreLink));
             if (needIncreLink) {
@@ -4390,7 +4413,7 @@ namespace hccl
         if (selectAivAlg) {
             CHK_RET(HandleAclGraphFirstOpAivBuff(opParam.stream.ptr()));
             if (aivClearEnable_) {
-                // 用于判断图模式是否清零
+                // 用于判断图模式是否清�?
                 CHK_RET(algOperator->SetAivClearEnable(aivClearEnable_));
                 aivOffloadTag_ = 1;
             }
@@ -4420,7 +4443,7 @@ namespace hccl
         }
         auto algType = algOperator->GetAlgType();
         CHK_RET(RegisterDfxInfo(opParam, algType, resMap_[newTag].slaveStreams, selectAivAlg, tag));
-        // 头计数
+        // 头计�?
         CHK_RET(StarsCounter(dispatcher_, opParam.stream, HEAD, opParam.aicpuUnfoldMode, retryEnable_, selectAivAlg));
         if (opParam.aicpuUnfoldMode) {
             isInplaceStatus_ = 0;
@@ -4465,7 +4488,7 @@ namespace hccl
             CHK_RET(newalgOperator->SelectAlg(opParam.tag, opParam, limit, algName, algDesc, tempTag));
             CHK_RET(newalgOperator->Orchestrate(algName, opParam, resMap_[newTag]));
         }
-        // 尾计数
+        // 尾计�?
         CHK_RET(StarsCounter(dispatcher_, opParam.stream, TAIL, opParam.aicpuUnfoldMode, retryEnable_, selectAivAlg));
         CHK_RET(UnRegisterDfxInfo(opParam, resMap_[newTag].slaveStreams));
         if (selectAivAlg) {
@@ -4486,7 +4509,7 @@ namespace hccl
     HcclResult HcclCommunicator::FreeScratchMemOnOpBaseMode(DeviceMem &scratchMem, const OpParam &opParam,
                                                             const HcclCMDType &opType)
     {
-        // 当前单算子模式下scratch内存为手动申请，需要手动进行释放
+        // 当前单算子模式下scratch内存为手动申请，需要手动进行释�?
         if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE || IsForceAicpuOpBaseMode(opParam, opType)) {
             scratchMem.free();
         }
@@ -4523,7 +4546,7 @@ namespace hccl
             AlgResourceRequest resRequest;
             CHK_RET(algOperator->CalcResRequest(algName, opParam, resRequest));
 
-            // 释放旧内存防止泄漏
+            // 释放旧内存防止泄�?
             CHK_RET(FreeScratchMemOnOpBaseMode(resMap_[newTag].scratchMem, opParam, opType));
 
             if (aicpuUnfoldModeFor910B) {
@@ -4605,7 +4628,7 @@ namespace hccl
         std::string algName;
         std::string newTag;
         if (opParam.aicpuUnfoldMode) {
-            // 用于inplace支持重执行判断
+            // 用于inplace支持重执行判�?
             CHK_RET(algOperator->SetRetryEnable(retryEnable_));
         }
         std::unique_ptr<PreProcessMetaInfo> preMetaInfo = std::make_unique<PreProcessMetaInfo>();
@@ -4642,7 +4665,7 @@ namespace hccl
         CHK_RET(PrepareZeroCopy(algName, algDesc, opParam));
 
         if (opParam.isCapture) {
-            // aclgraph使用新的Tag，避免影响其他操作
+            // aclgraph使用新的Tag，避免影响其他操�?
             newTag += "_Capture";
             // aclgraph零拷贝场景下，每个算子都有单独的tag，需要记录，在graph销毁时清理相关资源
             if (isInGraphCaptureZeroCopy) {
@@ -4672,10 +4695,10 @@ namespace hccl
             if (IsEnableBackupLink()) {
                 CHK_RET(CleanTransportLinks(resRequest.opTransport, resMap_[newTag].opTransportResponseBackUp));
             }
-            // 记录指令信息用于一致性校验
+            // 记录指令信息用于一致性校�?
             CHK_RET(RecordOpPara(opType, opParam));
             CHK_RET(IncreAllocLink(newTag, opParam, resRequest, resMap_[newTag]));
-            // 移除tag对应的指令信息
+            // 移除tag对应的指令信�?
             CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
         }
         InsertNewTagToTagMap(newTag, opParam.tag);
@@ -4717,7 +4740,7 @@ namespace hccl
         auto &algRes = resMap_[newTag];
 
         if (hcclNslbDp::GetInstance().GetGlobalCommTaskId() != 0 && hcclNslbDp::GetInstance().GetInitNetCoFlag() == true) {
-            /* NSLB 填充 表  */
+            /* NSLB 填充 �? */
             u32 srcLocalRankId = userRank_;
             u32 rootRank = (opParam.root == INVALID_VALUE_RANKID) ? 0 : opParam.root;
             AlgType nslbAlgType = algOperator->GetAlgType();
@@ -4735,15 +4758,15 @@ namespace hccl
             HCCL_INFO("NSLBDP-SWK NslbDp_CollectOperTable nslb_identifier[%s] .", nslb_identifier.c_str());
             u32 rankSize = userRankSize_;
             u64 count = opParam.All2AllDataDes.sendCount * SIZE_TABLE[opParam.All2AllDataDes.sendType];
-            // 填充表2
+            // 填充�?
             hcclNslbDp::GetInstance().GenerateOpAndAdjTable(opType, rootRank, srcLocalRankId, nslbAlg, nslb_identifier, count, rankSize);
             AdjInfo nslbAdjInfo = {};
             CHK_RET(algOperator->GetAdjInfo(algName, opParam, algRes, nslbAdjInfo));
             HCCL_INFO("[NSLBDP-WEN]-nslbAdjInfosize[%u]-algName[%s]-rankSize[%u]-commDesc[%s]..",
                           nslbAdjInfo.dstRankNum, algName.c_str(), userRankSize_, identifier_.c_str());
-            // 填充表3
+            // 填充�?
             hcclNslbDp::GetInstance().GetAlgAdjacencyTable(opType, srcLocalRankId, rootRank, nslbAlg, nslb_identifier, nslbAdjInfo);
-            /*发送流程*/
+            /*发送流�?/
             hcclNslbDp::GetInstance().SendAlgorithmInfoTable();
         }
         // 算法执行
@@ -4757,7 +4780,7 @@ namespace hccl
         if (selectAivAlg) {
             CHK_RET(HandleAclGraphFirstOpAivBuff(opParam.stream.ptr()));
             if (aivClearEnable_) {
-                // 用于判断图模式是否清零
+                // 用于判断图模式是否清�?
                 CHK_RET(algOperator->SetAivClearEnable(aivClearEnable_));
                 aivOffloadTag_ = 1;
             }
@@ -4771,7 +4794,7 @@ namespace hccl
 
         auto algType = algOperator->GetAlgType();
         CHK_RET(RegisterDfxInfo(opParam, algType, algRes.slaveStreams, selectAivAlg, tag));
-        // 头计数
+        // 头计�?
         CHK_RET(StarsCounter(dispatcher_, opParam.stream, HEAD, opParam.aicpuUnfoldMode, retryEnable_, selectAivAlg));
         // 算法执行
         auto isSupportAicpuAlg = [](const std::string &algName) {
@@ -4810,7 +4833,7 @@ namespace hccl
                 CHK_RET(GetCacheMap(algOperator, opParam, algType, selectAivAlg, newTag));
             }
         }
-        // 尾计数
+        // 尾计�?
         CHK_RET(StarsCounter(dispatcher_, opParam.stream, TAIL, opParam.aicpuUnfoldMode, retryEnable_, selectAivAlg));
         CHK_RET(UnRegisterDfxInfo(opParam, algRes.slaveStreams));
         if (selectAivAlg) {
@@ -4895,7 +4918,7 @@ namespace hccl
         CHK_RET(GetStreamCaptureInfo(mainStream, rtModel, isCapture));
         if (isCapture) {
             CHK_PTR_NULL(rtModel);
-            // 获取不到modelId会报错
+            // 获取不到modelId会报�?
             CHK_RET(GetModelId(rtModel, modelId));
             if (captureModelIds_.find(modelId) == captureModelIds_.end()) {
                 // aclgraph场景，首算子清理AIV buff
@@ -4957,7 +4980,7 @@ namespace hccl
             tagLocalResHostPtr->ScratchmemSize = algResource.scratchMem.size();
             tagLocalResHostPtr->Scratchmem = reinterpret_cast<u64>(algResource.scratchMem.ptr());
 
-            // 3、将节点插入链表头
+            // 3、将节点插入链表�?
             ListCommonAddHead(&tagLocalResDevicePtr->nextTagRes,
                               &tagLocalResHostPtr->nextTagRes,
                               &localResHostPtr->nextTagRes,
@@ -5040,7 +5063,7 @@ namespace hccl
         CHK_RET(AllocAndGetStreamContextBuff(opMainStream_.id(),
                                              localResHostPtr->mainStreamParam.sqCqContextAddr, localResHostPtr->mainStreamParam.sqCqContextSize));
 
-        // 按序下发的aicpu控制流
+        // 按序下发的aicpu控制�?
         if (aicpuOrderStream_.ptr() == nullptr) {
             aicpuOrderStream_ = Stream(StreamType::STREAM_TYPE_DEVICE);
         }
@@ -5189,9 +5212,9 @@ namespace hccl
                                                     GetAiMemTypeVal(HcclAiRMAMemType::LOCAL_OUTPUT)];
             if (i != aiRMAInfoPtr->curRankId && ((i % localRankSize) == (aiRMAInfoPtr->curRankId % localRankSize)  
                 || (i / localRankSize) == (aiRMAInfoPtr->curRankId / localRankSize))) {
-                auto transport = links[i % localRankSize]; // localranksize个
+                auto transport = links[i % localRankSize]; // localranksize�?
                 if ((i % localRankSize) == (aiRMAInfoPtr->curRankId % localRankSize)){
-                    transport = tmpLinks[i / localRankSize];// servernum个
+                    transport = tmpLinks[i / localRankSize];// servernum�?
                 }
                 // link rank info
                 CHK_RET(GetTransportRemoteMem(transport, UserMemType::INPUT_MEM, remoteIn));
@@ -5528,7 +5551,7 @@ namespace hccl
     HcclResult HcclCommunicator::BuildOpRemoteLinkP2pResParam(const LINK &link, HccltagRemoteResV3 &tagRemoteRes,
                                                               TransportLinkType linkType)
     {
-        // hccs sio并发场景，sio链路（linkTyp为SIO）打包到linkP2pSio, hccs链路（linkTyp为HCCS）打包到linkP2p；
+        // hccs sio并发场景，sio链路（linkTyp为SIO）打包到linkP2pSio, hccs链路（linkTyp为HCCS）打包到linkP2p�?
         // 其他场景打包到linkP2p
         HcclLinkP2pV2 *linkp2p = &(tagRemoteRes.tagRemoteResPtr->linkP2p);
         if (linkType == TransportLinkType::SIO) {
@@ -5548,7 +5571,7 @@ namespace hccl
         (linkp2p->remoteMem)[OUTPUT].addr = reinterpret_cast<u64>(outbufferPtr);
         CHK_RET(link->GetRemoteMemSize(UserMemType::INPUT_MEM, (linkp2p->remoteMem)[INPUT].size));
         CHK_RET(link->GetRemoteMemSize(UserMemType::OUTPUT_MEM, (linkp2p->remoteMem)[OUTPUT].size));
-        MemDetails localMem; // 暂时预留，赋值为空
+        MemDetails localMem; // 暂时预留，赋值为�?
         (linkp2p->localMem)[0] = localMem;
         (linkp2p->localMem)[1] = localMem;
         HCCL_DEBUG("[%s] finish set localMem & remoteMem info", __func__);
@@ -5810,7 +5833,7 @@ namespace hccl
                                   __func__, usrRankId, rankRelationResHostPtr, rankRelationResDevicePtr, newTag.c_str());
                         CHK_RET(BuildRemoteResByTag(newTag, usrRankId, rankRelationResHostPtr,
                                                     rankRelationResDevicePtr, isBackup, isRetry));
-                        // transport信息保存（notify、qp）
+                        // transport信息保存（notify、qp�?
                         if (!transportRequest.isUsedRdma || tempLink->GetLinkType() == LinkType::LINK_SIO) {
                             // sdma -> P2P
                             CHK_RET(BuildOpRemoteLinkP2pResParam(tempLink, rankTagRemoteRes_[usrRankId][newTag],
@@ -5854,9 +5877,9 @@ namespace hccl
             CHK_RET(ParseRemoteDataToMem(algResource.opTransportResponseBackUp, newTag, opType, true, isRetry));
         }
         if (deviceType_ == DevType::DEV_TYPE_910_93 || deviceType_ == DevType::DEV_TYPE_910B) {
-            opResPara_.notifysize = 4; // 910B & 910_93 每个notify占4个字节
+            opResPara_.notifysize = 4; // 910B & 910_93 每个notify�?个字�?
         } else {
-            opResPara_.notifysize = 8; // 其他芯片类型每个notify占8个字节
+            opResPara_.notifysize = 8; // 其他芯片类型每个notify�?个字�?
         }
         return HCCL_SUCCESS;
     }
@@ -5994,7 +6017,7 @@ namespace hccl
         CHK_RET(hrtGetDeviceSatMode(&floatOverflowMode));
         opResPara_.config.floatOverflowMode = floatOverflowMode;
         opResPara_.config.taskMonitorInterval = GetExternalInputDfsTaskMonitorInterval();
-        bool isSupportAtomicWrite = false; // 涉及到任务编排，当前不能只判断本机驱动版本是否支持
+        bool isSupportAtomicWrite = false; // 涉及到任务编排，当前不能只判断本机驱动版本是否支�?
         opResPara_.config.isSupportAtomicWrite = static_cast<u8>(isSupportAtomicWrite);
         opResPara_.config.notifyWaitTime =
             (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET ||
@@ -6085,7 +6108,7 @@ namespace hccl
             }
         }
 
-        // task exception使用: 算子计数，算子入参信息(src/dst/datatype/reducetype)
+        // task exception使用: 算子计数，算子入参信�?src/dst/datatype/reducetype)
         HCCL_PROFILER_ADD_OPDATA_OP(param.tag, count, param.inputPtr, param.outputPtr, dataType, param.root, identifier_,
                                     param.reduceType);
         // 记录主流相关信息, 给profiling和task exception使用
@@ -6096,7 +6119,7 @@ namespace hccl
              !param.isCapture) {
             return HCCL_SUCCESS;
         }
-        // 从流信息profiling开关打开的话再注册
+        // 从流信息profiling开关打开的话再注�?
         for (u32 streamIndex = 0; streamIndex < slaveStreams.size(); streamIndex++) {
             HCCL_PROFILER_ADD_STREAM_BY_STREAMID(slaveStreams[streamIndex].id(), param.tag, streamIndex + 1, algType);
         }
@@ -6133,7 +6156,7 @@ namespace hccl
         if (aicpuStreams.empty()) {
             HCCL_INFO("only exist main stream, streamId:%d", opMainStream_.id());
             hcclMc2Info_.commStreamIds[0] = opMainStream_.id();
-            hcclMc2Info_.commStreamSize = 1; // 只有主流1条
+            hcclMc2Info_.commStreamSize = 1; // 只有主流1�?
             CHK_RET(ProfilingManagerPub::CallMsprofReportMc2CommInfo(hrtMsprofSysCycleTime(), &hcclMc2Info_,
                                                                      sizeof(hcclMc2Info_)));
         }
@@ -6147,7 +6170,7 @@ namespace hccl
         uint64_t streamMode = 0;
         CHK_RET(hrtStreamGetMode(param.stream.ptr(), &streamMode));
         rtStream_t aicpuStream;
-        Mc2AiCpuStreamAllocAndGet(streamMode, aicpuStream); // aicpuStream需要在首次下发时申请
+        Mc2AiCpuStreamAllocAndGet(streamMode, aicpuStream); // aicpuStream需要在首次下发时申�?
         if (!isContextLaunched_) {
             // 1、通信域内首次下发，从algResource中获取资源，H2D刷新资源，launch init
             rtStream_t aicpuInitStream;
@@ -6159,7 +6182,7 @@ namespace hccl
             CHK_RET(SetAicpuUnfoldFlag());
         } else if (newTagResAlloced_.find(newTag) == newTagResAlloced_.end() ||
                 (opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV && needIncreLink) || needRecreateAlltoallComm) {
-            // 2、通信域内非首次，但是有新的newTag，查看是否需要补充资源。
+            // 2、通信域内非首次，但是有新的newTag，查看是否需要补充资源�?
             PetersonLockGuard guard(hostDeviceLock_.get());
             CHK_PRT_RET(guard.IsLockFailed(),
                         HCCL_ERROR("[HcclCommunicator][OrchestrateAicp] hostDeviceLock lock failed"), HCCL_E_INTERNAL);
@@ -6184,7 +6207,7 @@ namespace hccl
         CHK_RET(hrtGetDeviceSatMode(&floatOverflowMode));
         opTilingInfo.floatOverflowMode = floatOverflowMode;
         HcclResult ret = HCCL_SUCCESS;
-        // 根据算子类型，获取 Aicpu Kernel 名称
+        // 根据算子类型，获�?Aicpu Kernel 名称
         auto iter = HCOM_CMD_TYPE_STR_MAP.find(opType);
         CHK_PRT_RET((iter == HCOM_CMD_TYPE_STR_MAP.end()),
             HCCL_ERROR("[%s] RunAicpuRpcSrvLaunchV2 kernel not found, opType=[%d]", __func__, static_cast<int>(opType)),
@@ -6229,7 +6252,7 @@ namespace hccl
         CHK_RET(SalGetDataTypeSize(opParam.All2AllDataDes.sendType, sendTypeSize));
         CHK_RET(SalGetDataTypeSize(opParam.All2AllDataDes.recvType, recvTypeSize));
 
-        // 在sendCount/recvCount全0时, 使用tinySendRecvMem, 避免使用空deviceMem
+        // 在sendCount/recvCount�?�? 使用tinySendRecvMem, 避免使用空deviceMem
         algResResponse.paramInputMem = sendCount == 0 ? DeviceMem::create(tinySendRecvMem.ptr(), tinySendRecvMem.size()) : DeviceMem::create(opParam.inputPtr, sendCount * sendTypeSize);
         algResResponse.paramOutputMem = recvCount == 0 ? DeviceMem::create(tinySendRecvMem.ptr(), tinySendRecvMem.size()) : DeviceMem::create(opParam.outputPtr, recvCount * recvTypeSize);
 
@@ -6378,14 +6401,14 @@ namespace hccl
         }
         if ((AIV_COMM_INFO_BUFFER_BITMASK & resRequest.aivBufferRequest) || opParam.isNpuDirectRoce) {
             if (!useOpbaseFlag) {
-                DeviceMem aivCommInfoMem; // 图模式每个算子单独一块内存
+                DeviceMem aivCommInfoMem; // 图模式每个算子单独一块内�?
                 CHK_RET(DeviceMem::alloc(aivCommInfoMem, AIV_COMM_INFO_SIZE));
                 algResResponse.aivCommInfoMem = aivCommInfoMem;
                 aivOffloadCommInfoMem_.emplace_back(std::move(aivCommInfoMem));
             } else {
                 ret = cclBufferManager_.CreateCommInfoAIVbuffer();
                 CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Alloc][AlgResource]Create CommInfoAIVbuffer failed"), ret);
-                algResResponse.aivCommInfoMem = cclBufferManager_.GetAivCommInfoBuffer(); // 单算子每个通信域只用一块内存
+                algResResponse.aivCommInfoMem = cclBufferManager_.GetAivCommInfoBuffer(); // 单算子每个通信域只用一块内�?
             }
             HCCL_INFO("[AllocAlgResource] tag[%s] alloc aiv comm info buffer", newTag.c_str());
         }
@@ -6401,7 +6424,7 @@ namespace hccl
                    algResResponse.paramOutputMem.ptr(), algResResponse.paramOutputMem.size());
         algResResponse.opTransportResponse = resRequest.opTransport;
 
-        // 零拷贝场景这里只借助P2p的openIpc能力交换控制面zeroCopyLocalBuffer_，不交换实际用户的输出输出
+        // 零拷贝场景这里只借助P2p的openIpc能力交换控制面zeroCopyLocalBuffer_，不交换实际用户的输出输�?
         if (opParam.isZeroCopy) {
             HCCL_INFO("[AllocAlgResource] zero copy change paramInput[%p] paramOutput[%p] scratchMem[%p] to localBuffer[%p]",
                       transMem.paramInputMem.ptr(), transMem.paramOutputMem.ptr(), transMem.scratchMem.ptr(), zeroCopyLocalBuffer_.ptr());
@@ -6470,7 +6493,7 @@ namespace hccl
         }
 
         if (IsEnableBackupLink()) {
-            // 超节点 && level2支持重执行 && Aicpu：创建备用Transport资源
+            // 超节�?&& level2支持重执�?&& Aicpu：创建备用Transport资源
             StateGuard<HcclCommunicator, HcclCommState> guard(this, HcclCommState::BUILDING);
             ret = transportManager_->Alloc(opParam.tag, transMem, algResResponse.opTransportResponseBackUp,
                                            opParam.aicpuUnfoldMode, true, opParam.isCapture);
@@ -6560,7 +6583,7 @@ namespace hccl
     HcclResult HcclCommunicator::InitRecvMsgAndRequestBuffer()
     {
         CHK_RET(CheckSuspendingStatus());
-        // 拉远、下沉、推理场景(ps、worker)支持使用msg/request内存池
+        // 拉远、下沉、推理场�?ps、worker)支持使用msg/request内存�?
         if (pMsgInfosMem_ == nullptr) {
             pMsgInfosMem_.reset(new (std::nothrow) LocklessRingMemoryAllocate<HcclMessageInfo>(MEMORY_CAPACITY));
             CHK_SMART_PTR_NULL(pMsgInfosMem_);
@@ -6585,7 +6608,7 @@ namespace hccl
         if (!GetExternalInputHcclIsTcpMode() && (Is310PDevice() || isHostUseDevNic_)) {
             // 注册mr,hdc模式下在通信类内进行
             if (!isHostUseDevNic_) {
-                // 初始化信封内存
+                // 初始化信封内�?
                 memBlocksManager_.reset(new (std::nothrow) HeterogMemBlocksManager());
                 CHK_SMART_PTR_NULL(memBlocksManager_);
                 CHK_RET(memBlocksManager_->Init(memBlockNum));
@@ -6743,7 +6766,7 @@ namespace hccl
             uint64_t streamMode = 0;
             CHK_RET(hrtStreamGetMode(opParam.stream.ptr(), &streamMode));
             rtStream_t aicpuStream;
-            Mc2AiCpuStreamAllocAndGet(streamMode, aicpuStream); // aicpuStream需要在首次下发时申请
+            Mc2AiCpuStreamAllocAndGet(streamMode, aicpuStream); // aicpuStream需要在首次下发时申�?
 
             rtStream_t aicpuInitStream;
             Mc2AiCpuInitStreamAllocAndGet(streamMode, aicpuInitStream);
@@ -6773,7 +6796,7 @@ namespace hccl
         CHK_RET(CreateAndGetAiCpuNotifyWithNotifyRes(combinOparaPtr->signalInfo.aicpuNotify));
         HCCL_INFO("Create aicpu notify %p.", localAiCpuNotifyRes_[0]->ptr());
 
-        // 只有第一次创建，此处通过CCL Buffer地址有效来防止通信域内非首次重新申请内存
+        // 只有第一次创建，此处通过CCL Buffer地址有效来防止通信域内非首次重新申请内�?
         // 已注册user mem情况下，不创建ccl buffer，使用user mem通信
         if (userMemMap_.empty()) {
             CHK_RET(CreateCommCCLbuffer());
@@ -6785,7 +6808,7 @@ namespace hccl
             opParam.inputSize = it->second->size();
         }
 
-        // 按照 ccl buffer size 折算，不同算子折算方式不同, allreduce和cclbuffer size相同
+        // 按照 ccl buffer size 折算，不同算子折算方式不�? allreduce和cclbuffer size相同
         // allgather、reducescatter、alltoall需除以rank size
         uint64_t count = opParam.outputSize / SIZE_TABLE[HcclDataType::HCCL_DATA_TYPE_FP16];
         if (opParam.opType != HcclCMDType::HCCL_CMD_ALLREDUCE) {
@@ -6890,7 +6913,7 @@ namespace hccl
             combinOparaPtr->overFlowAddr = reinterpret_cast<u64>(overflowAddr);
             HCCL_INFO("[HcclImplBase][Mc2CreateAndLaunchContext]get combinOparaPtr->overFlowAddr %llx",
                       combinOparaPtr->overFlowAddr);
-            // 非整卡 (2DUO卡各取1芯的场景) 因为受到PCIE限制，不可以使用读操作进行数据拷贝
+            // 非整�?(2DUO卡各�?芯的场景) 因为受到PCIE限制，不可以使用读操作进行数据拷�?
             if (pairLinkInfo_[static_cast<u32>(LinkTypeInServer::HCCS_TYPE)].size() != userRankSize_) {
                 combinOparaPtr->onlyRead = 1;
             }
@@ -6898,7 +6921,7 @@ namespace hccl
         HCCL_INFO("read only is set to %u", combinOparaPtr->onlyRead);
 
         if (isA2MC2MultiServer_) {
-            // 拷贝normal transport信息到device侧
+            // 拷贝normal transport信息到device�?
             bool isSupportAIVNormalQP = false;
             CHK_RET(IsSupportAIVNormalQP(devicePhyId_, isSupportAIVNormalQP));
             CHK_PTR_NULL(transDevIbverbsDataMem_);
@@ -7025,10 +7048,10 @@ namespace hccl
         HCCL_RUN_INFO("[%s] start to init group[%s] aicpu resources newTag[%s] local rankId[%u]",
                       __func__, identifier_.c_str(), newTag.c_str(), userRank_);
         isContextLaunched_ = true;
-        CHK_RET(BuildOpResParam(algName, algResource, newTag, opType, aicpuStream)); // 构建context结构体
+        CHK_RET(BuildOpResParam(algName, algResource, newTag, opType, aicpuStream)); // 构建context结构�?
         std::string kernelName = "RunAicpuKfcResInitV2";
         // 在这里构建suspending状态码的HDC通道初始化，并且在host侧进行init
-        // （这个主要是针对hcomId；对算子通信域的复用；也就是多个算子复用（tag+Identifier）这个通信域的情况）
+        // （这个主要是针对hcomId；对算子通信域的复用；也就是多个算子复用（tag+Identifier）这个通信域的情况�?
         CHK_RET(AiCpuKernelLaunch(aicpuStream, reinterpret_cast<u64>(opResDevicePara_.ptr()), kernelName));
         SetMC2EnvFlag();
         newTagResAlloced_.insert(newTag);
@@ -7138,7 +7161,7 @@ namespace hccl
         if (opParam.aicpuCacheEnable != 0 &&
             GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB &&
             ((IsForceAicpuOpBaseMode(opParam, opType) && !opParam.isZeroCopy) || opParam.isCapture)) {
-            // 环境变量传入的aicpuCacheEnable一定 < 10
+            // 环境变量传入的aicpuCacheEnable一�?< 10
             constexpr uint8_t FORCE_OP_BASE_DELTA = 10;
             CHK_PRT_RET(opParam.aicpuCacheEnable >= FORCE_OP_BASE_DELTA,
                 HCCL_ERROR("[HcclCommunicator][AicpuInitOpTilingDataBuf] enforce opbase mode: opParam.aicpuCacheEnable >= %u",
@@ -7150,7 +7173,7 @@ namespace hccl
             HCCL_WARNING("[HcclCommunicator][AicpuInitOpTilingDataBuf] enforce opbase mode: opParam.aicpuCacheEnable[%u]"\
                 "opTilingData->aicpuCacheEnable[%u]", opParam.aicpuCacheEnable, opTilingData->aicpuCacheEnable);
             
-            // 注意: 开启aicpu cache且存在强制单算子模式转换, 传入device的aicpuCacheEnable一定 > 10
+            // 注意: 开启aicpu cache且存在强制单算子模式转换, 传入device的aicpuCacheEnable一�?> 10
             CHK_PRT_RET(opTilingData->aicpuCacheEnable <= FORCE_OP_BASE_DELTA,
                 HCCL_ERROR("[HcclCommunicator][AicpuInitOpTilingDataBuf] enforce opbase mode: opTilingData->aicpuCacheEnable[%u] <= %u",
                     opTilingData->aicpuCacheEnable, FORCE_OP_BASE_DELTA),
@@ -7205,7 +7228,7 @@ namespace hccl
         CHK_RET(BuildHierarchicalAlgOption(opTilingData->ahcConfInfo));
         CHK_RET(AicpuInitOpTilingDataAicpuCache(opParam, opType, opTilingData));
 
-        // 填充动态内容
+        // 填充动态内�?
         HostMem dynamicDataMem = opTilingDataBuf_.range(sizeof(struct OpTilingData), dynamicDataSize);
         CHK_PTR_NULL(dynamicDataMem.ptr());
         if (opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV) {
@@ -7295,7 +7318,7 @@ namespace hccl
             HCCL_ERROR("[HcclCommunicator][InitAndCheckAicpuOrderNotify]get aicpu notify [%u] errorCode[%u]", idx0,
             HCCL_ERROR_CODE(ret)), ret);
 
-        // 按序下发(aicpu控制流 record host控制流) 使用的notify信息
+        // 按序下发(aicpu控制�?record host控制�? 使用的notify信息
         HcclSignalInfo orderSignalInfo1;
         ret = CreateAndGetAiCpuNotify(localAiCpuOpNotify_[idx1], orderSignalInfo1);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
@@ -7327,7 +7350,7 @@ namespace hccl
         if (opParam.isCapture || mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
             kfcOpStream = opStream_;
         } else {
-            // 如果是图模式，则尝试从附属从流中获取一下stream，如果能拿到则使用，否则退化
+            // 如果是图模式，则尝试从附属从流中获取一下stream，如果能拿到则使用，否则退�?
             if (isSupportHcomAttachedStream) {
                 HCCL_INFO("[HcclCommunicator][AicpuKfcTilingDataLaunchIn] attachedStreams_ is valid in graph mode");
                 kfcOpStream = attachedStreams_[0];
@@ -7412,7 +7435,7 @@ namespace hccl
         constexpr u32 GRAPH_ATTACHED_STREAM_INDEX = 0; // 图粒度的附属从流
         constexpr u32 GROUP_ATTACHED_STREAM_INDEX = 1; // 通信域粒度的附属从流
 
-        // 在图模式下，通信使用的附属从流可能不同，所以这里直接刷新所有
+        // 在图模式下，通信使用的附属从流可能不同，所以这里直接刷新所�?
         attachedStreams_.clear();
 
         bool isValid = !streams.empty() && (streams.size() > GROUP_ATTACHED_STREAM_INDEX) &&
@@ -7422,7 +7445,7 @@ namespace hccl
             return HCCL_E_NOT_FOUND;
         }
 
-        // 向GE申请流的时候，图粒度的流排在第一个，所以在streams列表中，第一条流是图粒度的附属从流
+        // 向GE申请流的时候，图粒度的流排在第一个，所以在streams列表中，第一条流是图粒度的附属从�?
         s32 graphAttachedStreamId = 0;
         OrderLaunch& orderLaunch = OrderLaunch::GetInstance(deviceLogicId_);
         auto& graphStream = streams[GRAPH_ATTACHED_STREAM_INDEX];
@@ -7710,7 +7733,7 @@ namespace hccl
             streamInfo.ringDeviceSignal.resize(resNum);
             for (u32 ringIndex = 0; ringIndex < rankSize; ringIndex++) {
                 auxRingCommStreamsDev_[ringIndex] = Stream(StreamType::STREAM_TYPE_DEVICE);
-                // 给device侧申请的流不需要setmode，否则rts会捕获流成员Flags为1024的异常
+                // 给device侧申请的流不需要setmode，否则rts会捕获流成员Flags�?024的异�?
             }
             for (auto &signal : streamInfo.ringDeviceSignal) {
                 signal = nullptr;
@@ -7752,7 +7775,7 @@ namespace hccl
                     ret);
 
         if (isA2MC2MultiServer_) {
-            // 该场景下ccl buffer有一块区域在上层会被用作flag区，因此需要先清理一下
+            // 该场景下ccl buffer有一块区域在上层会被用作flag区，因此需要先清理一�?
             CHK_RET(cclBufferManager_.CleanCCLbuffer());
         }
 
@@ -7772,6 +7795,8 @@ namespace hccl
         // 根据tag创建comm和流资源
         if (!(IsExistCommRes(tag))) {
             std::unique_ptr<CommInfo> commInfo = nullptr;
+            implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, vnicRanksPorts, isSetHDCModeInfo_,
+                isUseRankPort_);
             HcclResult ret = implAlg_->CreateComm(tag, inputMem, outputMem, algType, commInfo,
                                                   INVALID_VALUE_RANKID, false, true);
 
@@ -7795,7 +7820,7 @@ namespace hccl
         if (!(IsExistMutiStreamRes(tag))) {
             level1StreamInfo_t streamInfo;
             std::unique_lock<std::mutex> mutiStreamLock(tagStreamInfoLock_);
-            // 2p场景下，mc2当前algType为518，streamInfo.ringNum走默认流程值为1导致资源申请不足，910_93 mc2固定在节点内默认用mesh
+            // 2p场景下，mc2当前algType�?18，streamInfo.ringNum走默认流程值为1导致资源申请不足�?10_93 mc2固定在节点内默认用mesh
             constexpr u32 RANK_SIZE_TWO = 2;
             if ((GetRankSize() == RANK_SIZE_TWO && !isA2MC2MultiServer_) || (deviceType_ == DevType::DEV_TYPE_910_93)) {
                 algTypeTmp.algoLevel0 = AlgTypeLevel0::ALG_LEVEL0_NP_MESH;
@@ -7839,7 +7864,7 @@ namespace hccl
         if (Is310P3Common(isHaveCpuRank_, deviceType_)) {
             *comm = tagCommInfo_[tag].commIntraServer.get();
         } else if (isA2MC2MultiServer_) {
-            // 使用打平RDMA Mesh子通信域
+            // 使用打平RDMA Mesh子通信�?
             *comm = tagCommInfo_[tag].commLevel1Rdma[0].get();
         } else {
             *comm = tagCommInfo_[tag].commLevel0[0].get();
@@ -8334,7 +8359,7 @@ namespace hccl
             for (auto &levelNSubCommTransport : resIt.second.opTransportResponse) {
                 for (auto &singleSubCommTransport : levelNSubCommTransport) {
                     for (auto &transportRequest : singleSubCommTransport.transportRequests) {
-                        if (transportRequest.isValid && transportRequest.isUsedRdma) { // 仅RDMA链路需要刷新
+                        if (transportRequest.isValid && transportRequest.isUsedRdma) { // 仅RDMA链路需要刷�?
                             CHK_RET(SetSingleLinkInfo(switchRanks, transportRequest.remoteUserRank, changeLinkInfo));
                         }
                     }
@@ -8453,7 +8478,7 @@ namespace hccl
         if (ret == HCCL_SUCCESS) {
             ret = PrepareLinkForSwitchNic(switchRanks, changeLinkInfo);
         }
-        changeLinkInfo.isChangeLinkFlag = ret == HCCL_SUCCESS; // 如果入参校验失败，则无需刷新链路；通知aicpu侧，防止其他卡超时等待
+        changeLinkInfo.isChangeLinkFlag = ret == HCCL_SUCCESS; // 如果入参校验失败，则无需刷新链路；通知aicpu侧，防止其他卡超时等�?
 
         switchNicWaitingResult_ = false;
 
@@ -8468,7 +8493,7 @@ namespace hccl
         KfcExecStatus switchStatus;
         switchStatus.execStatus.kfcStatus = KfcStatus::kNull;
         u32 waitSwitchExecCmdTimeout = static_cast<u32>(GetExternalInputHcclLinkTimeOut() * 1000 * 2.5f);
-        auto waitSwitchExecCmdTimeoutMs = std::chrono::milliseconds(waitSwitchExecCmdTimeout); // 等待2.5倍的建链超时时间，给快慢卡场景提供冗余
+        auto waitSwitchExecCmdTimeoutMs = std::chrono::milliseconds(waitSwitchExecCmdTimeout); // 等待2.5倍的建链超时时间，给快慢卡场景提供冗�?
         auto startTime = std::chrono::steady_clock::now();
         while (true) {
             if (switchNicWaitingResult_) {
