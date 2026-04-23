@@ -8,7 +8,12 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 cmake_minimum_required(VERSION 3.16.0)
+include(cmake/fetch_cann_cmake.cmake)
 project(hcomm)
+
+# 初始化 CANN 项目配置
+init_cann_project()
+
 option(BUILD_OPEN_PROJECT "Build open hcomm project." ON)
 message(STATUS "BUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}")
 message(STATUS "DEVICE_MODE=${DEVICE_MODE}")
@@ -18,6 +23,7 @@ set(HCOMM_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(HCC_TOOLCHAIN_DIR "${CUSTOM_ASCEND_CANN_PACKAGE_PATH}/toolkit/toolchain/hcc/")
 set(HCC_CXX_COMPILER  "${HCC_TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-g++")
 set(HCC_C_COMPILER    "${HCC_TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-gcc")
+set(HCC_C_AR          "${HCC_TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-ar")
 
 # 交叉编译场景（x86机器上编译arm包）
 if(AARCH_MODE)
@@ -37,16 +43,14 @@ execute_process(
 )
 message(STATUS "当前系统架构: ${SYSTEM_ARCH}")
 
-# 引入CANN/cmake库
-include(cmake/fetch_cann_cmake.cmake)
-
-# 引入CANN/cmake库，初始化
-init_cann_project()
-
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_FLAGS_RELEASE "")
 set(CMAKE_CXX_FLAGS_RELEASE "")
+
+if(NOT DEFINED PRODUCT_SIDE)
+    set(PRODUCT_SIDE host)
+endif()
 
 # 获取 CPU 核心数
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
@@ -106,15 +110,18 @@ elseif(BUILD_OPEN_PROJECT)
             SOURCE_DIR ${HCOMM_ROOT_DIR}/cmake/device
             BINARY_DIR ${CMAKE_BINARY_DIR}/device_build
             CMAKE_ARGS
-                -DKERNEL_MODE=${KERNEL_MODE}
                 -DTOOLCHAIN_DIR=${HCC_TOOLCHAIN_DIR}
                 -DCMAKE_TOOLCHAIN_FILE=${HCOMM_ROOT_DIR}/cmake/aarch64-hcc-toolchain.cmake
                 -DCMAKE_C_COMPILER=${HCC_C_COMPILER}
                 -DCMAKE_CXX_COMPILER=${HCC_CXX_COMPILER}
                 -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
                 -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
+                -DCMAKE_C_AR=${HCC_CXX_AR}
                 -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
                 -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/device_install
+                -DASCEND_INSTALL_PATH=${ASCEND_INSTALL_PATH}
+                -DBUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}
+                -DDEVICE_MODE=${DEVICE_MODE}
                 -DCANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH}
                 -DENABLE_SIGN=${ENABLE_SIGN}
                 -DCUSTOM_SIGN_SCRIPT=${CUSTOM_SIGN_SCRIPT}
