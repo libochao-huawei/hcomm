@@ -3958,7 +3958,13 @@ HcclResult CommunicatorImpl::Mc2AiCpuStreamAllocAndGetV2(rtStream_t *aiCpuStream
 
 HcclResult CommunicatorImpl::GetDpuStreamId(s32 &streamId)
 {
-    return hrtGetStreamId(dpuStream, streamId);
+    s32 ret = HrtGetStreamId(dpuStream);
+    if (ret == -1) {
+        HCCL_ERROR("[GetDpuStreamId] HrtGetStreamId failed");
+        return HCCL_E_INTERNAL;
+    }
+    streamId = ret;
+    return HCCL_SUCCESS;
 }
 
 } // namespace Hccl
