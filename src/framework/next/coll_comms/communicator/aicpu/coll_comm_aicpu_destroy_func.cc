@@ -45,7 +45,7 @@ HcclResult CollCommAicpuDestroyFunc::Process()
         CollCommAicpu *aicpuComm = commInfo.second->GetCollCommAicpu();
         CHK_PTR_NULL(aicpuComm);
 
-        if (aicpuComm->GetCommmStatus() != HcclCommStatus::HCCL_COMM_STATUS_READY) {
+        if (aicpuComm->GetCommmStatus() != HcclCommStatus::HCCL_COMM_STATUS_INVALID) {
             continue;
         }
 
