@@ -16,7 +16,7 @@
 #include <hccl/base.h>
 #include "acl/acl_base.h"
 
-constexpr u32 TBE_MAX_MODULE_DEVICE_NUM = 65; // 单server双模组时支持最大的设备数量
+constexpr u32 TBE_MAX_MODULE_DEVICE_NUM = 32; // 单server双模组时支持最大的设备数量
 struct TbeReduceParam {
     void *src1{nullptr};
     void *src2{nullptr};
