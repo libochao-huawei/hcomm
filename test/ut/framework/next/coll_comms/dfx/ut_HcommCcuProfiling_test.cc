@@ -215,16 +215,16 @@ TEST_F(CcuKernelTest, AddProfilingInfo_Normal) {
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-TEST_F(Ccukernel_ReportProfilingTest, WhenReporccuprofiling_expect_HcclSucess) {
+TEST_F(Ccukernel_ReportProfilingTest, WhenReportccuprofiling_expect_HcclSuccess) {
 using namespace hccl;
 using namespace CcuRep;
-  MockCcuKernelArg agrs;
-  CcuKernel * ccuKernel = new TestCcuKernel(agrs);
-  std::vector<CcuTaskParam> taskParams;
-  CcuTaskParam taskParam;
-  taskParams.push_back(taskParam);
+    MockCcuKernelArg agrs;
+    CcuKernel * ccuKernel = new TestCcuKernel(agrs);
+    std::vector<CcuTaskParam> taskParams;
+    CcuTaskParam taskParam;
+    taskParams.push_back(taskParam);
 
-  MOCKER(hrtGetDeviceType)
+    MOCKER(hrtGetDeviceType)
         .stubs()
         .with(outBound(DevType::DEV_TYPE_950))
         .will(returnValue(HCCL_SUCCESS));

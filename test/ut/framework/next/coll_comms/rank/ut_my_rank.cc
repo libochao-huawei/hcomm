@@ -33,28 +33,47 @@ protected:
         GlobalMockObject::verify();
         std::cout << "A Test case in MyRankTest TearDown" << std::endl;
     }
+
+    void CreateCclBuffer(HcclMem& cclBuffer) {
+        cclBuffer.addr = (void*)0xab;
+        cclBuffer.size = 1024;
+        cclBuffer.type = HCCL_MEM_TYPE_DEVICE;
+    }
+
+    void CreateEndpointDesc(EndpointDesc& ep, CommProtocol protocol, const std::string& ip) {
+        ep.protocol = protocol;
+        ep.commAddr.type = COMM_ADDR_TYPE_IP_V4;
+        ep.commAddr.addr = Hccl::IpAddress(ip).GetBinaryAddress().addr;
+        ep.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
+    }
+
+    void MockerFuncs()
+    {
+        MOCKER_CPP(&Hccl::SocketManager::GetConnectedSocket).stubs().with(any()).will(returnValue((Hccl::Socket*)0xab));
+        MOCKER_CPP(&hccl::CommMems::GetTagMemoryHandles).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&hcomm::EndpointMgr::RegisterMemory).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&hccl::CommMems::SetMemHandles).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&hcomm::CcuResContainer::Init).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&hccl::MyRank::TryInitCcuInstance).stubs().will(returnValue(HCCL_SUCCESS));
+    }
 };
 
 TEST_F(MyRankTest, Ut_When_QueryListenPort_Listen_Port_Expect_SUCCESS)
 {
     uint32_t devPort = 60001;
     MOCKER_CPP(&Hccl::IRankGraph::GetDevicePort).stubs().with(any(), outBoundP(&devPort)).will(returnValue(HCCL_SUCCESS));
+
     aclrtBinHandle binHandle;
     CommConfig config;
     ManagerCallbacks callbacks;
     void* rankGraphPtr = (void*)0x114514;
     std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
     MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
+
     EndpointDesc localEp;
-    localEp.protocol = COMM_PROTOCOL_ROCE;
-    localEp.commAddr.type = COMM_ADDR_TYPE_IP_V4;
-    localEp.commAddr.addr = Hccl::IpAddress("1.0.0.0").GetBinaryAddress().addr;
-    localEp.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
+    CreateEndpointDesc(localEp, COMM_PROTOCOL_ROCE, "1.0.0.0");
     EndpointDesc rmtEp;
-    rmtEp.protocol = COMM_PROTOCOL_ROCE;
-    rmtEp.commAddr.type = COMM_ADDR_TYPE_IP_V4;
-    rmtEp.commAddr.addr = Hccl::IpAddress("2.0.0.0").GetBinaryAddress().addr;
-    rmtEp.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
+    CreateEndpointDesc(rmtEp, COMM_PROTOCOL_ROCE, "2.0.0.0");
 
     uint32_t listenPort;
     HcommChannelDesc desc;
@@ -64,10 +83,7 @@ TEST_F(MyRankTest, Ut_When_QueryListenPort_Listen_Port_Expect_SUCCESS)
     EXPECT_EQ(desc.role, HCOMM_SOCKET_ROLE_SERVER);
 
     EndpointDesc rmtEp2;
-    rmtEp2.protocol = COMM_PROTOCOL_ROCE;
-    rmtEp2.commAddr.type = COMM_ADDR_TYPE_IP_V4;
-    rmtEp2.commAddr.addr = Hccl::IpAddress("0.0.0.0").GetBinaryAddress().addr;
-    rmtEp2.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
+    CreateEndpointDesc(rmtEp2, COMM_PROTOCOL_ROCE, "0.0.0.0");
     ret = myRank.QueryListenPort(0, 2, localEp, rmtEp2, listenPort, desc);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(listenPort, devPort);
@@ -78,22 +94,18 @@ TEST_F(MyRankTest, Ut_When_QueryListenPort_InValid_Port_Expect_E_PARA)
 {
     uint32_t devPort = 1919000;
     MOCKER_CPP(&Hccl::IRankGraph::GetDevicePort).stubs().with(any(), outBoundP(&devPort)).will(returnValue(HCCL_SUCCESS));
+
     aclrtBinHandle binHandle;
     CommConfig config;
     ManagerCallbacks callbacks;
     void* rankGraphPtr = (void*)0x114514;
     std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
     MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
+
     EndpointDesc localEp;
-    localEp.protocol = COMM_PROTOCOL_ROCE;
-    localEp.commAddr.type = COMM_ADDR_TYPE_IP_V4;
-    localEp.commAddr.addr = Hccl::IpAddress("1.0.0.0").GetBinaryAddress().addr;
-    localEp.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
+    CreateEndpointDesc(localEp, COMM_PROTOCOL_ROCE, "1.0.0.0");
     EndpointDesc rmtEp;
-    rmtEp.protocol = COMM_PROTOCOL_ROCE;
-    rmtEp.commAddr.type = COMM_ADDR_TYPE_IP_V4;
-    rmtEp.commAddr.addr = Hccl::IpAddress("2.0.0.0").GetBinaryAddress().addr;
-    rmtEp.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
+    CreateEndpointDesc(rmtEp, COMM_PROTOCOL_ROCE, "2.0.0.0");
 
     uint32_t listenPort;
     HcommChannelDesc desc;
@@ -106,43 +118,28 @@ TEST_F(MyRankTest, Ut_When_BatchCreateChannels_Expect_SUCCESS)
     setenv("HCCL_DFS_CONFIG", "task_exception:on", 1);
     uint32_t devPort = 60001;
     MOCKER_CPP(&Hccl::IRankGraph::GetDevicePort).stubs().with(any(), outBoundP(&devPort)).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&Hccl::SocketManager::GetConnectedSocket).stubs().with(any()).will(returnValue((Hccl::Socket*)0xab));
-    MOCKER_CPP(&hccl::CommMems::GetTagMemoryHandles).stubs().with(any()).will(returnValue(static_cast<int>(HCCL_SUCCESS)));
-    MOCKER_CPP(&hcomm::EndpointMgr::RegisterMemory).stubs().with(any()).will(returnValue(static_cast<int>(HCCL_SUCCESS)));
-    MOCKER_CPP(&hccl::CommMems::SetMemHandles).stubs().with(any()).will(returnValue(static_cast<int>(HCCL_SUCCESS)));
-    MOCKER_CPP(&hcomm::CcuResContainer::Init).stubs().with(any()).will(returnValue(static_cast<int>(HCCL_SUCCESS)));
+    MockerFuncs();
     ChannelHandle channelHandle = 0xab;
     MOCKER(hcomm::ChannelProcess::CreateChannelsLoop)
         .stubs()
         .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&hccl::MyRank::TryInitCcuInstance).stubs().will(returnValue(HCCL_SUCCESS));
+
     aclrtBinHandle binHandle;
     CommConfig config;
     ManagerCallbacks callbacks;
     void* rankGraphPtr = (void*)0x114514;
     std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
     MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
+    
     HcclMem cclBuffer;
-    cclBuffer.addr = (void*)0xab;
-    cclBuffer.size = 1024;
-    cclBuffer.type = HCCL_MEM_TYPE_DEVICE;
+    CreateCclBuffer(cclBuffer);
     EXPECT_EQ(myRank.Init(cclBuffer, 2, 2), HCCL_SUCCESS);
     EndpointDesc localEp;
-    localEp.protocol = COMM_PROTOCOL_UB_MEM;
-    localEp.commAddr.type = COMM_ADDR_TYPE_IP_V4;
-    localEp.commAddr.addr = Hccl::IpAddress("1.0.0.0").GetBinaryAddress().addr;
-    localEp.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
+    CreateEndpointDesc(localEp, COMM_PROTOCOL_UB_MEM, "1.0.0.0");
     EndpointDesc rmtEp;
-    rmtEp.protocol = COMM_PROTOCOL_UB_MEM;
-    rmtEp.commAddr.type = COMM_ADDR_TYPE_IP_V4;
-    rmtEp.commAddr.addr = Hccl::IpAddress("2.0.0.0").GetBinaryAddress().addr;
-    rmtEp.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
-
+    CreateEndpointDesc(rmtEp, COMM_PROTOCOL_UB_MEM, "2.0.0.0");
     EndpointDesc rmtEp2;
-    rmtEp2.protocol = COMM_PROTOCOL_UB_MEM;
-    rmtEp2.commAddr.type = COMM_ADDR_TYPE_IP_V4;
-    rmtEp2.commAddr.addr = Hccl::IpAddress("0.0.0.0").GetBinaryAddress().addr;
-    rmtEp2.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
+    CreateEndpointDesc(rmtEp2, COMM_PROTOCOL_UB_MEM, "0.0.0.0");
 
     HcclChannelDesc channelDesc[3];
     channelDesc[0].channelProtocol = COMM_PROTOCOL_UB_MEM;
@@ -192,17 +189,16 @@ TEST_F(MyRankTest, Ut_Init_When_Default_Mode_Expect_Set_By_Env)
 {
     setenv("HCCL_OP_EXPANSION_MODE", "CCU_SCHED", 1);
     MOCKER_CPP(&hccl::MyRank::TryInitCcuInstance).stubs().will(returnValue(HCCL_SUCCESS));
-    // 构造myrank
+
     aclrtBinHandle binHandle;
     CommConfig config;
     ManagerCallbacks callbacks;
     void* rankGraphPtr = (void*)0x114514;
     std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
     MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
+    
     HcclMem cclBuffer;
-    cclBuffer.addr = (void*)0xab;
-    cclBuffer.size = 1024;
-    cclBuffer.type = HCCL_MEM_TYPE_DEVICE;
+    CreateCclBuffer(cclBuffer);
 
     uint32_t defaultOpExpansionMode = 0;
     EXPECT_EQ(myRank.Init(cclBuffer, defaultOpExpansionMode, 2), HCCL_SUCCESS);
@@ -215,17 +211,16 @@ TEST_F(MyRankTest, Ut_Init_When_Ccu_Driver_Fail_Expect_Fallback_Aicpu)
 {
     setenv("HCCL_INDEPENDENT_OP", "1", 1);
     MOCKER_CPP(&hcomm::CcuResContainer::ChangeMode).stubs().will(returnValue(HCCL_E_AGAIN));
-    // 构造myrank
+
     aclrtBinHandle binHandle;
     CommConfig config;
     ManagerCallbacks callbacks;
     void* rankGraphPtr = (void*)0x114514;
     std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
     MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
+    
     HcclMem cclBuffer;
-    cclBuffer.addr = (void*)0xab;
-    cclBuffer.size = 1024;
-    cclBuffer.type = HCCL_MEM_TYPE_DEVICE;
+    CreateCclBuffer(cclBuffer);
 
     uint32_t opExpansionModeMs = 5;
     EXPECT_EQ(myRank.Init(cclBuffer, opExpansionModeMs, 2), HCCL_SUCCESS);
@@ -240,17 +235,16 @@ TEST_F(MyRankTest, Ut_Init_When_Ccu_Ms_Insufficient_Expect_Fallback_Sched)
     MOCKER_CPP(&hcomm::CcuResContainer::ChangeMode).stubs()
         .will(returnValue(HCCL_E_UNAVAIL))
         .then(returnValue(HCCL_SUCCESS));
-    // 构造myrank
+
     aclrtBinHandle binHandle;
     CommConfig config;
     ManagerCallbacks callbacks;
     void* rankGraphPtr = (void*)0x114514;
     std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
     MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
+    
     HcclMem cclBuffer;
-    cclBuffer.addr = (void*)0xab;
-    cclBuffer.size = 1024;
-    cclBuffer.type = HCCL_MEM_TYPE_DEVICE;
+    CreateCclBuffer(cclBuffer);
 
     uint32_t opExpansionModeMs = 5;
     EXPECT_EQ(myRank.Init(cclBuffer, opExpansionModeMs, 2), HCCL_SUCCESS);
@@ -263,17 +257,16 @@ TEST_F(MyRankTest, Ut_Init_When_Ccu_Ms_And_Sched_Insufficient_Expect_Fallback_Ai
 {
     setenv("HCCL_INDEPENDENT_OP", "1", 1);
     MOCKER_CPP(&hcomm::CcuResContainer::ChangeMode).stubs().will(returnValue(HCCL_E_UNAVAIL));
-    // 构造myrank
+
     aclrtBinHandle binHandle;
     CommConfig config;
     ManagerCallbacks callbacks;
     void* rankGraphPtr = (void*)0x114514;
     std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
     MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
+    
     HcclMem cclBuffer;
-    cclBuffer.addr = (void*)0xab;
-    cclBuffer.size = 1024;
-    cclBuffer.type = HCCL_MEM_TYPE_DEVICE;
+    CreateCclBuffer(cclBuffer);
 
     uint32_t opExpansionModeMs = 5;
     EXPECT_EQ(myRank.Init(cclBuffer, opExpansionModeMs, 2), HCCL_SUCCESS);
@@ -286,17 +279,16 @@ TEST_F(MyRankTest, Ut_Init_When_Resource_Fail_Expect_Fail)
 {
     setenv("HCCL_INDEPENDENT_OP", "1", 1);
     MOCKER_CPP(&hcomm::CcuResContainer::ChangeMode).stubs().will(returnValue(HCCL_E_PARA));
-    // 构造myrank
+
     aclrtBinHandle binHandle;
     CommConfig config;
     ManagerCallbacks callbacks;
     void* rankGraphPtr = (void*)0x114514;
     std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
     MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
+    
     HcclMem cclBuffer;
-    cclBuffer.addr = (void*)0xab;
-    cclBuffer.size = 1024;
-    cclBuffer.type = HCCL_MEM_TYPE_DEVICE;
+    CreateCclBuffer(cclBuffer);
 
     uint32_t opExpansionModeMs = 5;
     EXPECT_EQ(myRank.Init(cclBuffer, opExpansionModeMs, 2), HCCL_E_PARA);
@@ -309,48 +301,28 @@ TEST_F(MyRankTest, Ut_BatchCreateChannels_When_Resource_fallback_Expect_Return_H
     uint32_t devPort = 60001;
     MOCKER_CPP(&Hccl::IRankGraph::GetDevicePort).stubs().with(any(), outBoundP(&devPort)).will(returnValue(HCCL_SUCCESS));
     MOCKER(HcommEndpointStartListen).stubs().with(any()).will(returnValue(static_cast<int>(HCCL_SUCCESS)));
-    MOCKER_CPP(&Hccl::SocketManager::GetConnectedSocket).stubs().with(any(), any(), any()).will(returnValue((Hccl::Socket*)0xab));
-    MOCKER_CPP(&hccl::CommMems::GetTagMemoryHandles).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&hcomm::EndpointMgr::RegisterMemory).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&hccl::CommMems::SetMemHandles).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&hcomm::CcuResContainer::Init).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER(HcommChannelDestroy).stubs().with(any(), any()).will(returnValue(static_cast<int>(HCCL_SUCCESS)));
-    MOCKER_CPP(&hccl::MyRank::TryInitCcuInstance).stubs().will(returnValue(HCCL_SUCCESS));
+    MockerFuncs();
     
-    // 构造myrank
+
     aclrtBinHandle binHandle;
     CommConfig config;
     ManagerCallbacks callbacks;
     void* rankGraphPtr = (void*)0x114514;
     std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
     MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
+    
     HcclMem cclBuffer;
-    cclBuffer.addr = (void*)0xab;
-    cclBuffer.size = 1024;
-    cclBuffer.type = HCCL_MEM_TYPE_DEVICE;
+    CreateCclBuffer(cclBuffer);
     EXPECT_EQ(myRank.Init(cclBuffer, 5, 2), HCCL_SUCCESS);
 
-    // 构造local endpoint
     EndpointDesc localEp;
-    localEp.protocol = COMM_PROTOCOL_UBC_CTP;
-    localEp.commAddr.type = COMM_ADDR_TYPE_IP_V4;
-    localEp.commAddr.addr = Hccl::IpAddress("1.0.0.0").GetBinaryAddress().addr;
-    localEp.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
-
-    // 构造两个remote endpoint
+    CreateEndpointDesc(localEp, COMM_PROTOCOL_UBC_CTP, "1.0.0.0");
     EndpointDesc rmtEp1;
-    rmtEp1.protocol = COMM_PROTOCOL_UBC_CTP;
-    rmtEp1.commAddr.type = COMM_ADDR_TYPE_IP_V4;
-    rmtEp1.commAddr.addr = Hccl::IpAddress("2.0.0.0").GetBinaryAddress().addr;
-    rmtEp1.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
-
+    CreateEndpointDesc(rmtEp1, COMM_PROTOCOL_UBC_CTP, "2.0.0.0");
     EndpointDesc rmtEp2;
-    rmtEp2.protocol = COMM_PROTOCOL_UBC_CTP;
-    rmtEp2.commAddr.type = COMM_ADDR_TYPE_IP_V4;
-    rmtEp2.commAddr.addr = Hccl::IpAddress("3.0.0.0").GetBinaryAddress().addr;
-    rmtEp2.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
+    CreateEndpointDesc(rmtEp2, COMM_PROTOCOL_UBC_CTP, "3.0.0.0");
 
-    // 构造channelDesc，到rmtEp1有两个channel，到rmtEp2有三个channel
     HcclChannelDesc channelDesc[5];
     for (int i = 0; i < 2; i++) {
         channelDesc[i].channelProtocol = COMM_PROTOCOL_UBC_CTP;
@@ -413,48 +385,27 @@ TEST_F(MyRankTest, Ut_BatchCreateChannels_Multi_Times_When_fallback_Expect_Retur
     uint32_t devPort = 60001;
     MOCKER_CPP(&Hccl::IRankGraph::GetDevicePort).stubs().with(any(), outBoundP(&devPort)).will(returnValue(HCCL_SUCCESS));
     MOCKER(HcommEndpointStartListen).stubs().with(any()).will(returnValue(static_cast<int>(HCCL_SUCCESS)));
-    MOCKER_CPP(&Hccl::SocketManager::GetConnectedSocket).stubs().with(any(), any(), any()).will(returnValue((Hccl::Socket*)0xab));
-    MOCKER_CPP(&hccl::CommMems::GetTagMemoryHandles).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&hcomm::EndpointMgr::RegisterMemory).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&hccl::CommMems::SetMemHandles).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&hcomm::CcuResContainer::Init).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER(HcommChannelDestroy).stubs().with(any(), any()).will(returnValue(static_cast<int>(HCCL_SUCCESS)));
-    MOCKER_CPP(&hccl::MyRank::TryInitCcuInstance).stubs().will(returnValue(HCCL_SUCCESS));
-    
-    // 构造myrank
+    MockerFuncs();
+
     aclrtBinHandle binHandle;
     CommConfig config;
     ManagerCallbacks callbacks;
     void* rankGraphPtr = (void*)0x114514;
     std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
     MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
+    
     HcclMem cclBuffer;
-    cclBuffer.addr = (void*)0xab;
-    cclBuffer.size = 1024;
-    cclBuffer.type = HCCL_MEM_TYPE_DEVICE;
+    CreateCclBuffer(cclBuffer);
     EXPECT_EQ(myRank.Init(cclBuffer, 5, 2), HCCL_SUCCESS);
 
-    // 构造local endpoint
     EndpointDesc localEp;
-    localEp.protocol = COMM_PROTOCOL_UBC_CTP;
-    localEp.commAddr.type = COMM_ADDR_TYPE_IP_V4;
-    localEp.commAddr.addr = Hccl::IpAddress("1.0.0.0").GetBinaryAddress().addr;
-    localEp.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
-
-    // 构造两个remote endpoint
+    CreateEndpointDesc(localEp, COMM_PROTOCOL_UBC_CTP, "1.0.0.0");
     EndpointDesc rmtEp1;
-    rmtEp1.protocol = COMM_PROTOCOL_UBC_CTP;
-    rmtEp1.commAddr.type = COMM_ADDR_TYPE_IP_V4;
-    rmtEp1.commAddr.addr = Hccl::IpAddress("2.0.0.0").GetBinaryAddress().addr;
-    rmtEp1.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
-
+    CreateEndpointDesc(rmtEp1, COMM_PROTOCOL_UBC_CTP, "2.0.0.0");
     EndpointDesc rmtEp2;
-    rmtEp2.protocol = COMM_PROTOCOL_UBC_CTP;
-    rmtEp2.commAddr.type = COMM_ADDR_TYPE_IP_V4;
-    rmtEp2.commAddr.addr = Hccl::IpAddress("3.0.0.0").GetBinaryAddress().addr;
-    rmtEp2.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
+    CreateEndpointDesc(rmtEp2, COMM_PROTOCOL_UBC_CTP, "3.0.0.0");
 
-    // 构造channelDesc，到rmtEp1有两个channel，到rmtEp2有三个channel
     HcclChannelDesc channelDesc[5];
     for (int i = 0; i < 2; i++) {
         channelDesc[i].channelProtocol = COMM_PROTOCOL_UBC_CTP;
