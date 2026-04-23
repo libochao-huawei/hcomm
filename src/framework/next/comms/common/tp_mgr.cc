@@ -98,7 +98,7 @@ static bool ApplyUbcQosTpSlPolicy(const GetTpInfoParam &param, uint32_t nTp, uin
     mappedSlOut = SlValueAtRankInMask16(slMask, slRank);
     return true;
 }
-
+/*
 static HcclResult CommitMappedSlToTpAttr(const uint32_t devPhyId, const CommAddr &locCommAddr, uint64_t tpHandle,
     uint32_t mappedSl)
 {
@@ -125,7 +125,7 @@ static HcclResult CommitMappedSlToTpAttr(const uint32_t devPhyId, const CommAddr
         static_cast<unsigned>(mappedSl & 0xFU));
     return HcclResult::HCCL_SUCCESS;
 }
-
+*/
 } // namespace
 
 TpMgr &TpMgr::GetInstance(const uint32_t devicePhyId)
