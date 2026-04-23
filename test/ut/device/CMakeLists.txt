@@ -17,6 +17,7 @@ set(hccl_utest_device_src_list
     ut_engine_aicpu_interface.cc
     ut_aicpu_one_side_service.cc
     ut_hccl_aicpu_utils.cc
+    ut_executor_tracer.cc
 
     ${HCCL_CODE_ROOT}/src/common/stream/stream_utils_aicpu.cc
     ${HCCL_CODE_ROOT}/src/common/debug/profiling/plugin_runner_device.cc
@@ -33,6 +34,7 @@ set(hccl_utest_device_src_list
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads/slaves/aicpu_thread_process.cc
     ${HCCL_CODE_ROOT}/src/framework/device/framework/aicpu_one_side_service.cc
     ${HCCL_CODE_ROOT}/src/framework/device/hccl_aicpu_interface.cc
+    ${HCCL_CODE_ROOT}/src/framework/device/debug/dfx/trace/executor_tracer.cc
 )
 
 add_executable(hccl_utest_device ${hccl_utest_device_src_list})
@@ -46,6 +48,8 @@ target_include_directories(hccl_utest_device PRIVATE
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/communicator/aicpu/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads/slaves/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads/
+    ${HCCL_CODE_ROOT}/src/framework/device/debug/dfx/trace/
+    ${HCCL_CODE_ROOT}/src/framework/device/debug/dfx/
 )
 target_compile_definitions(hccl_utest_device PRIVATE
     _GLIBCXX_USE_CXX11_ABI=0
