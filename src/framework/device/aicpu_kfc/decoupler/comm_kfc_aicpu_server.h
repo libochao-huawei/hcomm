@@ -93,14 +93,11 @@ private:
     bool IsTimeout() const { return GetCurCpuTimestamp() - lastMsgTimestamp_ >= timeout_ * KFC_NSEC_PER_SEC; }
     void SetMsgPosByHandle(HcclHandle handle, u32 msgPos) { handleIdToMsgPos_[handle] = msgPos; }
     void SetRepeatByHandle(HcclHandle handle, u32 repeat) { handleIdToRepeat_[handle] = repeat; }
-    u64 ResolveLogicalStrideCount(const HcclApi::HcclMsg &msg, u32 msgPos);
-    bool TryReadMsg(u32 msgPos, HcclApi::HcclMsg &msg) const;
 
 private:
     std::unordered_map<uintptr_t, void *> ctxToOpHandle_{};
     std::unordered_map<HcclHandle, u32> handleIdToMsgPos_{};
     std::unordered_map<HcclHandle, u32> handleIdToRepeat_{};
-    std::unordered_map<u32, u64> logicalStrideByMsgPos_{};
     std::vector<ServerExecCtx> execCtxList_{};
     const ServerExecCtx *syncExecCtx_{nullptr};
     HcclApi::HcclMsgArea *msgArea_{nullptr};
