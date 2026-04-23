@@ -18,6 +18,7 @@
 #include "unified_platform/ccu/ccu_device/ccu_component/ccu_component.h"
 #include "unified_platform/ccu/ccu_device/ccu_res_specs.h"
 #include "unified_platform/ccu/ccu_device/ccu_res_batch_allocator.h"
+#include "exception_handler.h"
 
 /* 开源自定义算子CCU设备管理实现，当前支持新老通信域混跑，
  * 暂时改用legacy数据结构，避免反向依赖
@@ -218,7 +219,12 @@ HcclResult CcuAllocChannels(const int32_t deviceLogicId, const CcuChannelPara &c
     para.feId = feId;
     para.jettyNum = ccuChannelPara.jettyNum;
     para.sqSize = ccuChannelPara.sqSize;
-    return Hccl::CcuComponent::GetInstance(deviceLogicId).AllocChannels(dieId, para, ccuChannelInfos);
+
+    HcclResult ret;
+    EXCEPTION_HANDLE_BEGIN
+    ret = Hccl::CcuComponent::GetInstance(deviceLogicId).AllocChannels(dieId, para, ccuChannelInfos);
+    EXCEPTION_HANDLE_END
+    return ret;
 }
 
 HcclResult CcuReleaseChannel(const int32_t deviceLogicId, const uint8_t dieId,
@@ -227,109 +233,179 @@ HcclResult CcuReleaseChannel(const int32_t deviceLogicId, const uint8_t dieId,
     HCCL_INFO("[%s] new release request: deviceLogicId[%d], dieId[%u], "
         "ccuChannelId[%u].", __func__, deviceLogicId, dieId, ccuChannelId);
 
-    return Hccl::CcuComponent::GetInstance(deviceLogicId).ReleaseChannel(dieId, ccuChannelId);
+    HcclResult ret;
+    EXCEPTION_HANDLE_BEGIN
+    ret = Hccl::CcuComponent::GetInstance(deviceLogicId).ReleaseChannel(dieId, ccuChannelId);
+    EXCEPTION_HANDLE_END
+    return ret;
 }
 
 // 以下为hcomm基础通信内部CCU流程使用的接口
 HcclResult CcuDevMgrImp::GetCcuVersion(const int32_t deviceLogicId, CcuVersion &ccuVersion)
 {
+    EXCEPTION_HANDLE_BEGIN
     ccuVersion = Hccl::CcuResSpecifications::GetInstance(deviceLogicId).GetCcuVersion();
+    EXCEPTION_HANDLE_END
     return HcclResult::HCCL_SUCCESS;
 }
 
 HcclResult CcuDevMgrImp::GetCcuResourceSpaceBufInfo(const int32_t deviceLogicId, const uint8_t dieId,
     uint64_t &addr, uint64_t &size)
 {
-    return Hccl::CcuComponent::GetInstance(deviceLogicId).GetCcuResourceSpaceBufInfo(dieId, addr, size);
+    HcclResult ret;
+    EXCEPTION_HANDLE_BEGIN
+    ret = Hccl::CcuComponent::GetInstance(deviceLogicId).GetCcuResourceSpaceBufInfo(dieId, addr, size);
+    EXCEPTION_HANDLE_END
+    return ret;
 }
 
 HcclResult CcuDevMgrImp::GetCcuResourceSpaceTokenInfo(const int32_t deviceLogicId, const uint8_t dieId,
     uint64_t &tokenId, uint64_t &tokenValue)
 {
-    return Hccl::CcuComponent::GetInstance(deviceLogicId).GetCcuResourceSpaceTokenInfo(dieId, tokenId, tokenValue);
+    HcclResult ret;
+    EXCEPTION_HANDLE_BEGIN
+    ret = Hccl::CcuComponent::GetInstance(deviceLogicId).GetCcuResourceSpaceTokenInfo(dieId, tokenId, tokenValue);
+    EXCEPTION_HANDLE_END
+    return ret;
 }
 
 HcclResult CcuDevMgrImp::ConfigChannel(const int32_t deviceLogicId, const uint8_t dieId,
     ChannelCfg &cfg)
 {
-    return Hccl::CcuComponent::GetInstance(deviceLogicId).ConfigChannel(dieId, cfg);
+    HcclResult ret;
+    EXCEPTION_HANDLE_BEGIN
+    ret = Hccl::CcuComponent::GetInstance(deviceLogicId).ConfigChannel(dieId, cfg);
+    EXCEPTION_HANDLE_END
+    return ret;
 }
 
 HcclResult CcuDevMgrImp::GetLoopChannelId(const int32_t deviceLogicId, const uint8_t srcDieId,
     const uint8_t dstDieId, uint32_t &channIdx)
 {
-    return Hccl::CcuComponent::GetInstance(deviceLogicId).GetLoopChannelId(srcDieId, dstDieId, channIdx);
+    HcclResult ret;
+    EXCEPTION_HANDLE_BEGIN
+    ret = Hccl::CcuComponent::GetInstance(deviceLogicId).GetLoopChannelId(srcDieId, dstDieId, channIdx);
+    EXCEPTION_HANDLE_END
+    return ret;
 }
 
 HcclResult CcuDevMgrImp::GetResource(const int32_t deviceLogicId,
     const CcuResHandle handle, CcuResRepository &ccuResRepo)
 {
-    return Hccl::CcuResBatchAllocator::GetInstance(deviceLogicId).GetResource(handle, ccuResRepo);
+    HcclResult ret;
+    EXCEPTION_HANDLE_BEGIN
+    ret = Hccl::CcuResBatchAllocator::GetInstance(deviceLogicId).GetResource(handle, ccuResRepo);
+    EXCEPTION_HANDLE_END
+    return ret;
 }
 
 HcclResult CcuDevMgrImp::AllocResHandle(const int32_t deviceLogicId, const CcuResReq resReq,
     CcuResHandle &handle)
 {
-    return Hccl::CcuResBatchAllocator::GetInstance(deviceLogicId).AllocResHandle(resReq, handle);
+    HcclResult ret;
+    EXCEPTION_HANDLE_BEGIN
+    ret = Hccl::CcuResBatchAllocator::GetInstance(deviceLogicId).AllocResHandle(resReq, handle);
+    EXCEPTION_HANDLE_END
+    return ret;
 }
 
 HcclResult CcuDevMgrImp::ReleaseResHandle(const int32_t deviceLogicId, const CcuResHandle handle)
 {
-    return Hccl::CcuResBatchAllocator::GetInstance(deviceLogicId).ReleaseResHandle(handle);
+    HcclResult ret;
+    EXCEPTION_HANDLE_BEGIN
+    ret = Hccl::CcuResBatchAllocator::GetInstance(deviceLogicId).ReleaseResHandle(handle);
+    EXCEPTION_HANDLE_END
+    return ret;
 }
 
 HcclResult CcuDevMgrImp::AllocIns(const int32_t deviceLogicId, const uint8_t dieId,
     const uint32_t num, ResInfo &insInfo)
 {
-    return Hccl::CcuComponent::GetInstance(deviceLogicId).AllocIns(dieId, num, insInfo);
+    HcclResult ret;
+    EXCEPTION_HANDLE_BEGIN
+    ret = Hccl::CcuComponent::GetInstance(deviceLogicId).AllocIns(dieId, num, insInfo);
+    EXCEPTION_HANDLE_END
+    return ret;
 }
 
 HcclResult CcuDevMgrImp::ReleaseIns(const int32_t deviceLogicId, const uint8_t dieId,
     const ResInfo &insInfo)
 {
-    return Hccl::CcuComponent::GetInstance(deviceLogicId).ReleaseIns(dieId, insInfo);
+    HcclResult ret;
+    EXCEPTION_HANDLE_BEGIN
+    ret = Hccl::CcuComponent::GetInstance(deviceLogicId).ReleaseIns(dieId, insInfo);
+    EXCEPTION_HANDLE_END
+    return ret;
 }
 
 HcclResult CcuDevMgrImp::AllocCke(const int32_t deviceLogicId, const uint8_t dieId,
     const uint32_t num, std::vector<ResInfo> &ckeInfos)
 {
-    return Hccl::CcuComponent::GetInstance(deviceLogicId).AllocCke(dieId, num, ckeInfos);
+    HcclResult ret;
+    EXCEPTION_HANDLE_BEGIN
+    ret = Hccl::CcuComponent::GetInstance(deviceLogicId).AllocCke(dieId, num, ckeInfos);
+    EXCEPTION_HANDLE_END
+    return ret;
 }
 
 HcclResult CcuDevMgrImp::ReleaseCke(const int32_t deviceLogicId, const uint8_t dieId,
     const std::vector<ResInfo> &ckeInfos)
 {
-    return Hccl::CcuComponent::GetInstance(deviceLogicId).ReleaseCke(dieId, ckeInfos);
+    HcclResult ret;
+    EXCEPTION_HANDLE_BEGIN
+    ret = Hccl::CcuComponent::GetInstance(deviceLogicId).ReleaseCke(dieId, ckeInfos);
+    EXCEPTION_HANDLE_END
+    return ret;
 }
 
 HcclResult CcuDevMgrImp::AllocXn(const int32_t deviceLogicId, const uint8_t dieId,
     const uint32_t num, std::vector<ResInfo>& xnInfos)
 {
-    return Hccl::CcuComponent::GetInstance(deviceLogicId).AllocXn(dieId, num, xnInfos);
+    HcclResult ret;
+    EXCEPTION_HANDLE_BEGIN
+    ret = Hccl::CcuComponent::GetInstance(deviceLogicId).AllocXn(dieId, num, xnInfos);
+    EXCEPTION_HANDLE_END
+    return ret;
 }
 
 HcclResult CcuDevMgrImp::ReleaseXn(const int32_t deviceLogicId, const uint8_t dieId,
     const std::vector<ResInfo> &xnInfos)
 {
-    return Hccl::CcuComponent::GetInstance(deviceLogicId).ReleaseXn(dieId, xnInfos);
+    HcclResult ret;
+    EXCEPTION_HANDLE_BEGIN
+    ret = Hccl::CcuComponent::GetInstance(deviceLogicId).ReleaseXn(dieId, xnInfos);
+    EXCEPTION_HANDLE_END
+    return ret;
 }
 
 HcclResult CcuDevMgrImp::GetMissionKey(const int32_t deviceLogicId, const uint8_t dieId,
     uint32_t &missionKey)
 {
-    return Hccl::CcuResSpecifications::GetInstance(deviceLogicId).GetMissionKey(dieId, missionKey);
+    HcclResult ret;
+    EXCEPTION_HANDLE_BEGIN
+    ret = Hccl::CcuResSpecifications::GetInstance(deviceLogicId).GetMissionKey(dieId, missionKey);
+    EXCEPTION_HANDLE_END
+    return ret;
 }
 
 HcclResult CcuDevMgrImp::GetInstructionNum(const int32_t deviceLogicId, const uint8_t dieId,
     uint32_t &instrNum)
 {
-    return Hccl::CcuResSpecifications::GetInstance(deviceLogicId).GetInstructionNum(dieId, instrNum);
+    HcclResult ret;
+    EXCEPTION_HANDLE_BEGIN
+    ret = Hccl::CcuResSpecifications::GetInstance(deviceLogicId).GetInstructionNum(dieId, instrNum);
+    EXCEPTION_HANDLE_END
+    return ret;
 }
 
 HcclResult CcuDevMgrImp::GetXnBaseAddr(const uint32_t devLogicId, const uint8_t dieId,
     uint64_t& xnBaseAddr)
 {
-    return Hccl::CcuResSpecifications::GetInstance(devLogicId).GetXnBaseAddr(dieId, xnBaseAddr);
+    HcclResult ret;
+    EXCEPTION_HANDLE_BEGIN
+    ret = Hccl::CcuResSpecifications::GetInstance(devLogicId).GetXnBaseAddr(dieId, xnBaseAddr);
+    EXCEPTION_HANDLE_END
+    return ret;
 }
 
 HcclResult CheckDieValid(const char *funcName, const int32_t devLogicId, const uint8_t dieId,
@@ -355,7 +431,11 @@ HcclResult CcuSetTaskKill(const int32_t deviceLogicId)
     CHK_PRT_RET((deviceLogicId < 0 || static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM),
         HCCL_ERROR("[CcuSetTaskKill]deviceLogicId[%d] error, MAX_MODULE_DEVICE_NUM[%u]", deviceLogicId, MAX_MODULE_DEVICE_NUM),
             HcclResult::HCCL_E_PARA);
-    return Hccl::CcuComponent::GetInstance(deviceLogicId).SetTaskKill();
+    HcclResult ret;
+    EXCEPTION_HANDLE_BEGIN
+    ret = Hccl::CcuComponent::GetInstance(deviceLogicId).SetTaskKill();
+    EXCEPTION_HANDLE_END
+    return ret;
 }
 
 HcclResult CcuSetTaskKillDone(const int32_t deviceLogicId)
@@ -365,7 +445,11 @@ HcclResult CcuSetTaskKillDone(const int32_t deviceLogicId)
     CHK_PRT_RET((deviceLogicId < 0 || static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM),
         HCCL_ERROR("[CcuSetTaskKillDone]deviceLogicId[%d] error, MAX_MODULE_DEVICE_NUM[%u]", deviceLogicId, MAX_MODULE_DEVICE_NUM),
             HcclResult::HCCL_E_PARA);
-    return Hccl::CcuComponent::GetInstance(deviceLogicId).SetTaskKillDone();
+    HcclResult ret;
+    EXCEPTION_HANDLE_BEGIN
+    ret = Hccl::CcuComponent::GetInstance(deviceLogicId).SetTaskKillDone();
+    EXCEPTION_HANDLE_END
+    return ret;
 }
 
 HcclResult CcuCleanTaskKillState(const int32_t deviceLogicId)
@@ -375,7 +459,11 @@ HcclResult CcuCleanTaskKillState(const int32_t deviceLogicId)
     CHK_PRT_RET((deviceLogicId < 0 || static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM),
         HCCL_ERROR("[CcuCleanTaskKillState]deviceLogicId[%d] error, MAX_MODULE_DEVICE_NUM[%u]", deviceLogicId, MAX_MODULE_DEVICE_NUM),
             HcclResult::HCCL_E_PARA);
-    return Hccl::CcuComponent::GetInstance(deviceLogicId).CleanTaskKillState();
+    HcclResult ret;
+    EXCEPTION_HANDLE_BEGIN
+    ret = Hccl::CcuComponent::GetInstance(deviceLogicId).CleanTaskKillState();
+    EXCEPTION_HANDLE_END
+    return ret;
 }
 
 HcclResult CcuCleanDieCkes(const int32_t deviceLogicId, const uint8_t dieId)
@@ -385,7 +473,11 @@ HcclResult CcuCleanDieCkes(const int32_t deviceLogicId, const uint8_t dieId)
     CHK_PRT_RET((deviceLogicId < 0 || static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM),
         HCCL_ERROR("[CcuCleanDieCkes]deviceLogicId[%d] error, MAX_MODULE_DEVICE_NUM[%u]", deviceLogicId, MAX_MODULE_DEVICE_NUM),
             HcclResult::HCCL_E_PARA);
-    return Hccl::CcuComponent::GetInstance(deviceLogicId).CleanDieCkes(dieId);
+    HcclResult ret;
+    EXCEPTION_HANDLE_BEGIN
+    ret = Hccl::CcuComponent::GetInstance(deviceLogicId).CleanDieCkes(dieId);
+    EXCEPTION_HANDLE_END
+    return ret;
 }
 
 }; // namespace hcomm
