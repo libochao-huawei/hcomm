@@ -833,7 +833,7 @@ void DevUbConnection::testSetTpAttr()
 {
     uint32_t attrBitmap = 0x1FFFF;
     struct TpAttr tpAttr {0};
-    tpAttr.dataUdpSrcport = 12345;
+    tpAttr.dataUdpSrcport = 128;
     CHK_RET(HrtRaSetTpAttrAsync(rdmaHandle, tpInfo.tpHandle, attrBitmap, tpAttr, reqHandle));
 }
 
