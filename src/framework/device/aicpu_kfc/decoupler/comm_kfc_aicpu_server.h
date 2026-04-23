@@ -74,10 +74,13 @@ public:
     HcclResult LaunchOpenCcorePost(const ServerExecCtx &execCtx, u64 recordAddr, u32 turnNum, u64 turnNumsAddr);
     HcclResult LaunchOpenCcoreWait(
         const ServerExecCtx &execCtx, u64 waitAddr, u32 turnNum, u64 turnNumsAddr, bool isLast);
-    HcclResult LaunchOpenAicpuKernelServer(std::vector<uint8_t> &opParam);
+    // 初始函数定义 HcclResult LaunchOpenAicpuKernelServer(std::vector<uint8_t> &opParam); 调试完成后整改
+    HcclResult LaunchOpenAicpuKernelServer(std::vector<uint8_t> &opParam, bool isAllToAllV);
     HcclResult FormatOpParamFromMsg(const HcclApi::HcclMsg &msg, HcclApi::HcclMsgExt &extMsg,
         const ServerExecCtx &execCtx, u32 repeat, std::vector<uint8_t> &runParam);
     const ServerExecCtx *MatchExecCtx(u64 opParamKey) const;
+    // 调试用函数 GetIsAllToAllV
+    bool GetIsAllToAllV(const HcclApi::HcclMsg &msg, std::vector<uint8_t> &opParam);
 
 private:
 #ifdef CCL_LLT
