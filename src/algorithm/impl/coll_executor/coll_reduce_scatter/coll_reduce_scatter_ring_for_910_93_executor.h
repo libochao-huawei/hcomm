@@ -21,25 +21,8 @@ public:
 
 protected:
     u64 CalcTotalCount(const OpParam &param) const;
-
-private:
-    void ParseParam(const OpParam& param) override;
-    /* *************** 资源计算 *************** */
-    bool isZeroCopy_= false;
-    HcclResult CalcScratchMemSize(u64& scratchMemSize) override;
     HcclResult CalcStreamNum(u32& streamNum) override;
-    HcclResult CalcCommInfo(std::vector<LevelNSubCommTransport>& opTransport) override;
-    HcclResult CalcLevel0CommInfo(TransportMemType inputType,
-        TransportMemType outputType,
-        std::vector<LevelNSubCommTransport>& opTransport) override;
-    HcclResult CalcLevel2CommInfo(TransportMemType inputType,
-        TransportMemType outputType,
-        std::vector<LevelNSubCommTransport>& opTransport) override;
-    HcclResult CalcTransportMemType(TransportMemType &inputType, TransportMemType &outputType);
-
-    /* *************** 算法编排 *************** */
     u64 CalcLoopMaxCount(const u32 unitSize) override;
-    bool IsHugeData(const u64 curSize, OpParam *param = nullptr) override;
     virtual HcclResult RunIntraSeverReduceScatter(const std::string &tag, DeviceMem &inputMem, DeviceMem &outputMem,
         const u64 count, const HcclDataType &dataType, const HcclReduceOp &reductionOp,
         const std::vector<std::vector<Slice>> &multRingsSliceZero, const Stream &stream, s32 profStage,
@@ -47,15 +30,9 @@ private:
         const std::vector<std::vector<Slice>> &multRingsUserMemSlice = std::vector<std::vector<Slice>>(0),
         const bool disableDMAReduce = false);
     virtual HcclResult GetLevelCommInfo();
-    HcclResult KernelRun(const OpParam &param, ExecMem &execMem) override;
-    HcclResult Getlevel1CommRank(SubCommInfo& level1CommInfo) override;
-    HcclResult SelectTempAlg(std::unique_ptr<AlgTemplateBase> &level1TempAlg, u32 level1RankSize) override;
-    virtual bool IsUnifiedMarch(const OpParam &param) const;
     HcomCollOpInfo GetHcomCollOpInfo(const OpParam &param, const ExecMem &execMem) const;
+    virtual bool IsUnifiedMarch(const OpParam &param) const;
     u64 CalcSrcMemOffset(const ExecMem &execMem, const OpParam &param, u32 perDataSize) const;
-    /* **************** 数据准备*************** */
-    virtual void FillMultiRingSlice(const ExecMem &execMem, const std::vector<std::vector<Slice>> &multiStreamSlice,
-        u32 sliceNum, u32 level1RankSize, u32 level2RankSize, const u32 ringIndex, std::vector<Slice> &dataSlice);
     virtual HcclResult CalLevel0DataSegsSlice(const ExecMem &execMem, std::vector<std::vector<Slice>> &multiStreamSlice,
         const OpParam &param, u32 ringNum, u32 sliceNum, u32 level1RankSize, u32 level2RankSize, HcclDataType dataType,
         std::vector<std::vector<Slice>> &level0DataSegsSlice);
@@ -69,6 +46,29 @@ private:
         std::vector<Slice> &level1DataSegsSlice);
     virtual HcclResult CalLevel2DataSegsSlice(const ExecMem &execMem, const OpParam &param, u32 level2RankSize,
         u32 perDataSize, std::vector<Slice> &level2DataSegsSlice);
+
+private:
+    void ParseParam(const OpParam& param) override;
+    /* *************** 资源计算 *************** */
+    bool isZeroCopy_= false;
+    HcclResult CalcScratchMemSize(u64& scratchMemSize) override;
+    HcclResult CalcCommInfo(std::vector<LevelNSubCommTransport>& opTransport) override;
+    HcclResult CalcLevel0CommInfo(TransportMemType inputType,
+        TransportMemType outputType,
+        std::vector<LevelNSubCommTransport>& opTransport) override;
+    HcclResult CalcLevel2CommInfo(TransportMemType inputType,
+        TransportMemType outputType,
+        std::vector<LevelNSubCommTransport>& opTransport) override;
+    HcclResult CalcTransportMemType(TransportMemType &inputType, TransportMemType &outputType);
+
+    /* *************** 算法编排 *************** */
+    bool IsHugeData(const u64 curSize, OpParam *param = nullptr) override;
+    HcclResult KernelRun(const OpParam &param, ExecMem &execMem) override;
+    HcclResult Getlevel1CommRank(SubCommInfo& level1CommInfo) override;
+    HcclResult SelectTempAlg(std::unique_ptr<AlgTemplateBase> &level1TempAlg, u32 level1RankSize) override;
+    /* **************** 数据准备*************** */
+    virtual void FillMultiRingSlice(const ExecMem &execMem, const std::vector<std::vector<Slice>> &multiStreamSlice,
+        u32 sliceNum, u32 level1RankSize, u32 level2RankSize, const u32 ringIndex, std::vector<Slice> &dataSlice);
 
     using Level0SlicesCalculator = void(*)(const OpParam &param, u32 sliceNum, u32 level1RankSize, u32 level1Index,
         u32 level2Index, u32 perDataSize, std::vector<Slice> &segSlices);
@@ -92,6 +92,7 @@ private:
         u32 sliceNum, u32 level1RankSize, u32 level2RankSize, u32 perDataSize, std::vector<Slice> &level1DataSegsSlice);
     virtual HcclResult CalLevel2DataSegsSliceV(const OpParam &param, u32 level2RankSize, u32 perDataSize,
         std::vector<Slice> &level2DataSegsSlice);
+
 protected:
     SubCommInfo logicalLevel0CommInfo_ = {0, 0, {}, {}};
     SubCommInfo logicalLevel1CommInfo_ = {0, 0, {}, {}};

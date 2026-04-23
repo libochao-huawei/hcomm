@@ -519,6 +519,11 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
         } else if (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING) {
             if (IsSupportUnifiedMarch(param, topoType_, serverNum_, superPodNum_)) {
                 algName = "ReduceScatterSemiRingExecutor";
+            } else if (isOpbase && superPodNum_ > 1 &&
+                       !(param.aicpuUnfoldMode && retryEnable_) &&
+                       isSupportInlineReduce &&
+                       dataSize >= HCCL_SMALL_COUNT_2_MB) {
+                algName = "AlignedReduceScatterDoubleRingPipelineFor91093Executor";
             } else {
                 algName = "ReduceScatterFastDoubleRingFor91093Executor";
             }

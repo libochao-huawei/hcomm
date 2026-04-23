@@ -12,6 +12,7 @@ set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_deter_executor.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_fast_double_ring_for_910_93_executor.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/coll_aligned_reduce_scatter_double_ring_for_910_93_executor.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/coll_aligned_reduce_scatter_double_ring_pipeline_for_910_93_executor.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_ring_for_910_93_executor.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_executor.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_mesh_dma_elimination.cc
