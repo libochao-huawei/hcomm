@@ -31,6 +31,7 @@ struct FakeEndpoint { // will be used as EndpointHandle (void*)
     }
     EndpointDesc GetEndpointDesc() { return desc; }
     void* GetRdmaHandle() { return rdmaHandle; }
+    Hccl::IpAddress GetIpAddress() const { return Hccl::IpAddress("127.0.0.1"); }
 };
 
 class FakeSocket : public Hccl::Socket {
@@ -68,6 +69,10 @@ namespace Hccl {
 class FakeLocalUbRmaBuffer : public Hccl::LocalUbRmaBuffer {
 public:
     FakeLocalUbRmaBuffer(std::shared_ptr<Hccl::Buffer> b, void* rdma): LocalUbRmaBuffer(b, rdma) {}
+    string Describe() const override
+    {
+        return "hello";
+    }
 };
 class FakeUbLocalNotify : public Hccl::UbLocalNotify {
 public:
@@ -248,4 +253,47 @@ TEST_F(AicpuTsUboeChannelTest, Ut_Init_WithFakes_Runs) {
     auto ret = ch.Init();
     // Init may try to build resources; expect success or graceful failure depending on deeper deps
     SUCCEED();
+}
+
+TEST_F(AicpuTsUboeChannelTest, Ut_H2DResPack_Packs_Data) {
+    FakeEndpoint fe;
+    EndpointHandle ep = reinterpret_cast<EndpointHandle>(&fe);
+    auto fakeSock = new FakeSocket();
+    HcommChannelDesc desc = MakeFakeChannelDesc(fakeSock);
+
+    AicpuTsUboeChannel ch(ep, desc);
+
+    // Prepare channel so GetUniqueIdV2() can run: status READY and one notify
+    ch.channelStatus = ChannelStatus::READY;
+    ch.notifyNum_ = 1;
+    ch.bufferNum_ = 2;
+    ch.connNum_ = 1;
+
+    auto notifyUptr = std::make_unique<Hccl::FakeUbLocalNotify>(fe.GetRdmaHandle(), true);
+    Hccl::UbLocalNotify *rawNotify = notifyUptr.get();
+    ch.localNotifies_.push_back(std::move(notifyUptr));
+    ch.commonRes_.notifyVec.push_back(rawNotify);
+
+    auto rmtUbRmaBufPtr = std::make_unique<Hccl::RemoteUbRmaBuffer>(fe.GetRdmaHandle());
+    ch.rmtNotifyVec_.push_back(std::move(rmtUbRmaBufPtr));
+
+    auto buffer = std::make_shared<Hccl::Buffer>(0x100, 0x100);
+    auto locUbRmaBufPtr = std::make_unique<Hccl::FakeLocalUbRmaBuffer>(buffer, fe.GetRdmaHandle());
+    Hccl::FakeLocalUbRmaBuffer *locUbRmaBuf = locUbRmaBufPtr.get();
+    ch.commonRes_.bufferVec.push_back(locUbRmaBuf);
+    ch.commonRes_.bufferVec.push_back(nullptr);
+
+    auto rmtBufPtr = std::make_unique<Hccl::RemoteUbRmaBuffer>(fe.GetRdmaHandle());
+    ch.rmtBufferVec_.push_back(std::move(rmtBufPtr));
+
+    Hccl::IpAddress ipAddress = fe.GetIpAddress();
+    Hccl::DevUbUboeConnection uboeConn(fe.GetRdmaHandle(), ipAddress, ipAddress, Hccl::OpMode::OPBASE, true,
+        Hccl::HrtUbJfcMode::STARS_POLL, ipAddress, ipAddress);
+    ch.commonRes_.connVec.push_back(&uboeConn);
+
+    std::vector<char> out{};
+    HcclResult ret = ch.H2DResPack(out);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    delete fakeSock;
 }
