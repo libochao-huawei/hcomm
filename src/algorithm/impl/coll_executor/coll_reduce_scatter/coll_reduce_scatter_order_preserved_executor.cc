@@ -119,8 +119,9 @@ bool CollReduceScatterOrderPreservedExecutor::IsSmallData(const u64 totalSize, c
 }
 
 HcclResult CollReduceScatterOrderPreservedExecutor::RunReduceScatterLevel0SingleRank(const OpParam &param,
-    ExecMem &execMem, SubCommInfo &level0CommInfo)
+    ExecMem &execMem, const SubCommInfo &level0CommInfo) const
 {
+    (void) level0CommInfo;
     u64 unitSize = SIZE_TABLE[param.DataDes.dataType];
     u64 curSize = execMem.count * unitSize;
     DeviceMem bufferMem = scratchMemFlag_ ? execMem.scratchMem : execMem.inputMem;
