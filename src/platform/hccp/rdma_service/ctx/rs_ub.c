@@ -1755,6 +1755,8 @@ int RsUbCtxJettyCreate(struct RsUbDevCb *devCb, struct CtxQpAttr *attr, struct Q
     }
 
     RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
+    jettyCb->scqIndex = attr->scqIndex;
+    jettyCb->rcqIndex = attr->rcqIndex;
     RsListAddTail(&jettyCb->list, &devCb->jettyList);
     devCb->jettyCnt++;
     RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
