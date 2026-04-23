@@ -843,7 +843,7 @@ HcclResult DevUbConnection::Describe(std::string &dfxMsg)
 
 HcclResult DevUbConnection::testSetTpAttr()
 {
-    uint32_t attrBitmap = 0x1FFFF;
+    uint32_t attrBitmap = 8192;
     struct TpAttr tpAttr {0};
     tpAttr.dataUdpSrcport = 128;
     CHK_RET(HrtRaSetTpAttrAsync(rdmaHandle, tpInfo.tpHandle, attrBitmap, tpAttr, reqHandle));
