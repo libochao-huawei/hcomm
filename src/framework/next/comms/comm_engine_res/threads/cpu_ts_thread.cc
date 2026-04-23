@@ -200,13 +200,13 @@ void CpuTsThread::LaunchTask() const
 // Local Data Plane Functions
 HcclResult CpuTsThread::LocalNotifyRecord(uint32_t notifyId) const
 {
-    HCCL_ERROR("[CpuTsThread][%s]not support", __func__);
+    HCCL_ERROR("[CpuTsThread][%s]does not support", __func__);
     return HCCL_E_NOT_SUPPORT;
 }
 
 HcclResult CpuTsThread::LocalNotifyWait(uint32_t notifyId) const
 {
-    HCCL_ERROR("[CpuTsThread][%s]not support", __func__);
+    HCCL_ERROR("[CpuTsThread][%s]does not support", __func__);
     return HCCL_E_NOT_SUPPORT;
 }
 

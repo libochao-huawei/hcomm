@@ -465,7 +465,7 @@ HcclResult hrtGetDeviceTypeBySocVersion(std::string &socVersion, DevType &devTyp
 {
     devType = DevType::DEV_TYPE_COUNT;
     if (socVersion == "Ascend310B1") {
-        HCCL_WARNING("hrtGetDeviceTypeBySocVersion Ascend310B1 not support! please check usage");
+        HCCL_WARNING("hrtGetDeviceTypeBySocVersion Ascend310B1 does not support! please check usage");
     }
     if (socVersion.find("Ascend950") != std::string::npos) {
         devType = DevType::DEV_TYPE_950;
@@ -1100,7 +1100,7 @@ HcclResult hrtIpcSetMemoryAttr(const u8 *name, aclrtIpcMemAttrType type, u64 att
         __func__, HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, name, type, attr), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("Call aclrtIpcMemSetAttr not support");
+    HCCL_ERROR("Call aclrtIpcMemSetAttr does not support");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -2541,7 +2541,7 @@ HcclResult hrtThreadExchangeCaptureMode(aclmdlRICaptureMode *mode)
     aclError ret = aclmdlRICaptureThreadExchangeMode(mode);
     HCCL_DEBUG("Call aclmdlRICaptureThreadExchangeMode mode before: %d, ret: %d", *mode, ret);
     if (ret == ACL_ERROR_RT_FEATURE_NOT_SUPPORT) {
-        HCCL_INFO("[hrtThreadExchangeCaptureMode]aclmdlRICaptureThreadExchangeMode not support!");
+        HCCL_INFO("[hrtThreadExchangeCaptureMode]aclmdlRICaptureThreadExchangeMode does not support!");
         return HCCL_E_NOT_SUPPORT;
     } else {
         CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[hrtThreadExchangeCaptureMode]aclmdlRICaptureThreadExchangeMode "

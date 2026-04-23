@@ -140,7 +140,7 @@ struct OpcodeInterfaceInfo gInterfaceInfoList[] = {
 RS_ATTRI_VISI_DEF int RsGetInterfaceVersion(unsigned int opcode, unsigned int *version)
 {
     int i;
-    unsigned int interfaceVersion = 0; // default interface is 0 (0: not support this interface opcode)
+    unsigned int interfaceVersion = 0; // default interface is 0 (0: does not support this interface opcode)
     int num = sizeof(gInterfaceInfoList) / sizeof(gInterfaceInfoList[0]);
 
     CHK_PRT_RETURN(version == NULL, hccp_err("rs_get_interface_version failed! version is null"), -EINVAL);

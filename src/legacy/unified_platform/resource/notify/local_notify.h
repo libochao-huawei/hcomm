@@ -44,7 +44,7 @@ public:
 
     virtual std::unique_ptr<Serializable> GetExchangeDto()
     {
-        MACRO_THROW(NotSupportException, StringFormat("not support."));
+        MACRO_THROW(NotSupportException, StringFormat("does not support."));
     }
 
     RtsNotify* GetNotify() const

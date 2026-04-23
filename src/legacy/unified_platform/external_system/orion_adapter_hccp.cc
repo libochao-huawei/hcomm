@@ -1472,7 +1472,7 @@ static HrtRaUbJettyImportedOutParam ImportJetty(RdmaHandle handle, u8 *key, u32 
     CHECK_NULLPTR(key, "[ImportJetty] key is nullptr!");
     HCCL_INFO("[ImportJetty] Input params: handle=%p, key=%d, keyLen=%u, mode=%d", handle, *key, keyLen, mode);
     if (mode == JettyImportMode::JETTY_IMPORT_MODE_NORMAL) {
-        MACRO_THROW(NotSupportException, StringFormat("[%s] currently not support JETTY_IMPORT_MODE_NORMAL.",
+        MACRO_THROW(NotSupportException, StringFormat("[%s] currently does not support JETTY_IMPORT_MODE_NORMAL.",
             __func__));
     }
 
@@ -2145,7 +2145,7 @@ static RequestHandle ImportJettyAsync(RdmaHandle rdmaHandle, const HrtRaUbJettyI
     CHECK_NULLPTR(rdmaHandle, "[ImportJettyAsync] rdmaHandle is nullptr!");
     HCCL_INFO("[ImportJettyAsync] Input params: rdmaHandle=%p, remQpHandle=%p", rdmaHandle, remQpHandle);
     if (mode == JettyImportMode::JETTY_IMPORT_MODE_NORMAL) {
-        MACRO_THROW(NotSupportException, StringFormat("[%s] currently not support JETTY_IMPORT_MODE_NORMAL.",
+        MACRO_THROW(NotSupportException, StringFormat("[%s] currently does not support JETTY_IMPORT_MODE_NORMAL.",
             __func__));
     }
 

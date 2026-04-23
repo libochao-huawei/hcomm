@@ -488,7 +488,7 @@ HcommResult HcommEngineCtxCreate(CommEngine engine, uint64_t size, void **ctx)
         || engine == COMM_ENGINE_AIV) {
         CHK_RET(hrtMalloc(ctx, size));
     } else {
-        HCCL_ERROR("[%s] not support engine type[%d]", __func__, engine);
+        HCCL_ERROR("[%s] does not support engine type[%d]", __func__, engine);
         return HCCL_E_PARA;
     }
     return HCCL_SUCCESS;

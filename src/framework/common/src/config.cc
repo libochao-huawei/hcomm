@@ -53,7 +53,7 @@ HcclResult CfgGetClusterInfo(const std::string &rankTableM, const std::string &i
     } else {
         RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "value", "variable" ,"expect" }),
             std::vector<std::string>({rankTable.version, "version", "a valid version number." }));
-        HCCL_ERROR("[%s][%s]version[%s] is not support",
+        HCCL_ERROR("[%s][%s]version[%s] does not support",
             LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str(),rankTable.version.c_str());
         return HCCL_E_NOT_SUPPORT;
     }
@@ -100,7 +100,7 @@ HcclResult CfgGetClusterInfoWithoutDev(const std::string &rankTableM, const std:
     } else if (rankTable.version.compare("Standard") == 0) {
         pTopoRanktable.reset(new (std::nothrow) TopoinfoRanktableStandard(rankTableM, identify));
     } else {
-        HCCL_ERROR("[Get][RanktableVersion]version[%s] is not support", rankTable.version.c_str());
+        HCCL_ERROR("[Get][RanktableVersion]version[%s] does not support", rankTable.version.c_str());
         return HCCL_E_NOT_SUPPORT;
     }
     // 检查指针是否为空

@@ -33,7 +33,7 @@ HcclResult CpuRoceEndpoint::Init()
     HCCL_INFO("[%s] localEndpoint protocol[%d]", __func__, endpointDesc_.protocol);
 
     if (endpointDesc_.loc.locType != ENDPOINT_LOC_TYPE_HOST) {
-        HCCL_INFO("[CpuRoceEndpoint][%s] CpuRoceEndpoint not support device", __func__);
+        HCCL_INFO("[CpuRoceEndpoint][%s] CpuRoceEndpoint does not support device", __func__);
         return HCCL_E_NOT_SUPPORT;
     }
     Hccl::IpAddress ipAddr{};

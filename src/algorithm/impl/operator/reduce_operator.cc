@@ -65,7 +65,7 @@ HcclResult ReduceOperator::SelectAlg(const std::string &tag, const OpParam &para
     }
 
     if (isDiffDeviceType_) {
-        HCCL_ERROR("[ReduceOperator][SelectAlg] Reduce not support diffDeviceType");
+        HCCL_ERROR("[ReduceOperator][SelectAlg] Reduce does not support diffDeviceType");
         return HCCL_E_NOT_SUPPORT;
     } else if (deviceType_ == DevType::DEV_TYPE_910) {
         ret = SelectAlgfor910A(param, algName);

@@ -302,7 +302,7 @@ static HcclResult ImportJetty(const CtxHandle ctxHandle, u8 *key,
     HrtRaUbJettyImportedOutParam &out)
 {
     if (mode == JettyImportMode::JETTY_IMPORT_MODE_NORMAL) {
-        HCCL_ERROR("[%s] currently not support JETTY_IMPORT_MODE_NORMAL.",
+        HCCL_ERROR("[%s] currently does not support JETTY_IMPORT_MODE_NORMAL.",
             __func__);
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
@@ -378,7 +378,7 @@ static HcclResult ImportJettyAsync(CtxHandle ctxHandle, const HccpUbJettyImporte
     TpProtocol protocol, RequestHandle &reqHandle)
 {
     if (mode == JettyImportMode::JETTY_IMPORT_MODE_NORMAL) {
-        HCCL_ERROR("[%s] currently not support JETTY_IMPORT_MODE_NORMAL.",
+        HCCL_ERROR("[%s] currently does not support JETTY_IMPORT_MODE_NORMAL.",
             __func__);
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }

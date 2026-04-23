@@ -24,7 +24,7 @@ namespace Hccl {
 #ifdef CCL_FWK_LLT
 typedef void *aclrtCntNotify;
 #define ACL_NOTIFY_DEFAULT          0x00000000U
-#define  ACL_ERROR_RT_FEATURE_NOT_SUPPORT        207000 // feature not support
+#define  ACL_ERROR_RT_FEATURE_NOT_SUPPORT        207000 // feature does not support
 #define ACL_NOTIFY_DEVICE_USE_ONLY  0x00000001U
 #endif
 

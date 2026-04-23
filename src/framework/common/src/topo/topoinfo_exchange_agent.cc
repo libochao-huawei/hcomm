@@ -1040,7 +1040,7 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterTlsConsistency(const RankTable_t 
     } else if (isTlsConsistent && !isSupportCheckTlsStatus) {
     // 3.通信域内的部分卡不支持查询TLS开关状态，目前能查询到的卡的TLS开关状态是一致的，打印warning提醒
         HCCL_RUN_WARNING("[Verify][TlsConsistency] Some ranks do not support to check tlsStatus, " \
-            "not support serverId/rankId: %s", tlsUnknownRankStr.c_str());
+            "does not support serverId/rankId: %s", tlsUnknownRankStr.c_str());
     } else {
         // 4.通信域内的部分卡不支持查询TLS开关状态，但是目前能查询到的卡的TLS开关状态已经不一致，报错
         ReportTlsConfigurationError(tlsInconsistentTlsType, tlsInconsistentStr, tlsUnknownRankStr);

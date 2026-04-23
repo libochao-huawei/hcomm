@@ -56,7 +56,7 @@ HcclResult LocalNotifyImpl::Init(const s32 localDeviceId,
             }
             notify_.reset(new (std::nothrow) EschedNotify(NotifyType::ESCHED_EVENT));
         } else {
-            HCCL_ERROR("[Create][LocalNotify]not support create notify, notify load type[%d], localDeviceId[%d], "
+            HCCL_ERROR("[Create][LocalNotify]does not support create notify, notify load type[%d], localDeviceId[%d], "
                 "remoteDeviceId[%d]", type, localDeviceId, remoteDeviceId);
         }
     }

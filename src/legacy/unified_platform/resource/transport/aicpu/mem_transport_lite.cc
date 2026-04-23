@@ -35,7 +35,7 @@ MemTransportLite::MemTransportLite(std::vector<char>                            
     } else if(type == TransportType::P2P) {
         impl = std::make_unique<P2PTransportLiteImpl>(uniqueId, callback);
     } else {
-        THROW<NotSupportException>(StringFormat("%s doesnot support now", type.Describe().c_str()));
+        THROW<NotSupportException>(StringFormat("%s doesdoes not support now", type.Describe().c_str()));
     }
 }
 

@@ -39,11 +39,11 @@ void Mc2Compont::AllocCommResource(void *mc2Tiling, void **commContext)
     auto tilingVersion = *static_cast<uint32_t *>(mc2Tiling);
     HCCL_INFO("[Mc2Compont:%s] Tiling version [%u]", __func__, tilingVersion);
     if (tilingVersion != UNKNOWN_TILING_V1 && tilingVersion != UNKNOWN_TILING_V2) {
-        THROW<NotSupportException>(StringFormat("Tiling version not support, version[%u]", tilingVersion));
+        THROW<NotSupportException>(StringFormat("Tiling version does not support, version[%u]", tilingVersion));
     }
 
     if (comm->GetRankSize() == 1) {
-        HCCL_WARNING("Comm[%s] rank size is 1, Mc2 not support", comm->GetId().c_str());
+        HCCL_WARNING("Comm[%s] rank size is 1, Mc2 does not support", comm->GetId().c_str());
         return;
     }
 
@@ -122,7 +122,7 @@ std::vector<CcuTaskParam> Mc2Compont::GetCcuTaskInfo(void *tilingData)
     auto version = mc2Tiling->version;
 
     if (version != UNKNOWN_TILING_V1 && version != UNKNOWN_TILING_V2) {
-        THROW<NotSupportException>(StringFormat("Tiling version not support, version[%u]", version));
+        THROW<NotSupportException>(StringFormat("Tiling version does not support, version[%u]", version));
     }
 
     // 校验curExecId是否有效

@@ -36,7 +36,7 @@ void LinkTypeRecorder::SetLinkTypeMap(std::vector<CheckerDevType> &devTypes)
                 this->SetLinkTypeMapOf910_93();
                 break;
             default:
-                HCCL_ERROR("the devType [%d] is not support", *it);
+                HCCL_ERROR("the devType [%d] does not support", *it);
                 break;
         }
     }

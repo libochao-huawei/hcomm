@@ -65,7 +65,7 @@ HcclResult CommP2P::CalcLink()
     }
     if (!isSupportP2P) {
         HCCL_ERROR("[Calc][Link]comm p2p rank[%u] devid[%d] serverId[%s] and dstRank[%u] devid[%d] serverId[%s] is "\
-            "not support P2P", rank_, paraVector_[rank_].devicePhyId, paraVector_[rank_].serverId.c_str(),\
+            "does not support P2P", rank_, paraVector_[rank_].devicePhyId, paraVector_[rank_].serverId.c_str(),\
             dstRank, paraVector_[dstRank].devicePhyId, paraVector_[dstRank].serverId.c_str());
         return HCCL_E_PARA;
     }
@@ -79,7 +79,7 @@ HcclResult CommP2P::CalcLink()
         CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Calc][Link]comm p2p calc links num failed, type[%d], dstRank[%u]",
             static_cast<int32_t>(MachineType::MACHINE_CLIENT_TYPE), dstRank), ret);
     } else {
-        HCCL_ERROR("[Calc][Link]comm p2p dstRank_[%u] is not support to create link with itself", dstRank);
+        HCCL_ERROR("[Calc][Link]comm p2p dstRank_[%u] does not support to create link with itself", dstRank);
         return HCCL_E_PARA;
     }
 

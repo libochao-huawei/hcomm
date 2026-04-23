@@ -455,7 +455,7 @@ STATIC int RsUbFreeJfcCb(struct RsUbDevCb *devCb, struct RsCtxJfcCb *jfcCb)
         (void)RsUrmaDeleteJfc(urmaJfc);
         hccp_info("[deinit][rs_jfc]destroy success, dev jfcCnt:%u", devCb->jfcCnt);
     } else {
-        hccp_err("jfc_type:%d is invalid, not support!", jfcCb->jfcType);
+        hccp_err("jfc_type:%d is invalid, does not support!", jfcCb->jfcType);
         ret = -EINVAL;
     }
 
@@ -1404,7 +1404,7 @@ int RsUbCtxJfcCreate(struct RsUbDevCb *devCb, struct CtxCqAttr *attr, struct Ctx
             goto jfc_cb_init_err;
         }
     } else {
-        hccp_err("jfc_type %d is invalid, not support!", attr->ub.mode);
+        hccp_err("jfc_type %d is invalid, does not support!", attr->ub.mode);
         ret = -EINVAL;
         goto jfc_cb_init_err;
     }
@@ -1800,7 +1800,7 @@ int RsUbCtxJettyDestroy(struct RsUbDevCb *devCb, unsigned int jettyId)
     ret = RsUbGetJettyCb(devCb, jettyId, &jettyCb);
     CHK_PRT_RETURN(ret != 0, hccp_run_warn("get jetty_cb unsuccessful, ret:%d, jettyId %u", ret, jettyId), ret);
     if (jettyCb->state != RS_JETTY_STATE_CREATED) {
-        hccp_err("jetty_cb->state:%u not support to destroy, jettyId:%u", jettyCb->state, jettyId);
+        hccp_err("jetty_cb->state:%u does not support to destroy, jettyId:%u", jettyCb->state, jettyId);
         return -EINVAL;
     }
 
@@ -1997,7 +1997,7 @@ int RsUbCtxJettyUnimport(struct RsUbDevCb *devCb, unsigned int remJettyId)
 
     ret = RsUbGetRemJettyCb(devCb, remJettyId, &rjettyCb);
     CHK_PRT_RETURN(ret != 0, hccp_err("get rjetty_cb failed, ret:%d remJettyId:%u", ret, remJettyId), ret);
-    CHK_PRT_RETURN(rjettyCb->state != RS_JETTY_STATE_IMPORTED, hccp_err("rjetty_cb->state:%u not support to "
+    CHK_PRT_RETURN(rjettyCb->state != RS_JETTY_STATE_IMPORTED, hccp_err("rjetty_cb->state:%u does not support to "
         "unimport, jettyId:%u", rjettyCb->state, remJettyId), -EINVAL);
 
     RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
@@ -2035,7 +2035,7 @@ int RsUbCtxJettyBind(struct RsUbDevCb *devCb, struct RsCtxQpInfo *jettyInfo,
     CHK_PRT_RETURN(ret != 0, hccp_err("get rjetty_cb failed, ret:%d, remJettyId %u", ret, rjettyInfo->id), ret);
 
     if (jettyCb->state != RS_JETTY_STATE_CREATED || rjettyCb->state != RS_JETTY_STATE_IMPORTED) {
-        hccp_err("local jetty id:%u state:%u or remote jetty id:%u state:%u not support to bind",
+        hccp_err("local jetty id:%u state:%u or remote jetty id:%u state:%u does not support to bind",
             jettyInfo->id, jettyCb->state, rjettyInfo->id, rjettyCb->state);
         return -EINVAL;
     }
@@ -2059,7 +2059,7 @@ int RsUbCtxJettyUnbind(struct RsUbDevCb *devCb, unsigned int jettyId)
     ret = RsUbGetJettyCb(devCb, jettyId, &jettyCb);
     CHK_PRT_RETURN(ret != 0, hccp_run_warn("get jetty_cb unsuccessful, ret:%d, jettyId %u", ret, jettyId), ret);
     if (jettyCb->state != RS_JETTY_STATE_BIND) {
-        hccp_err("jetty_cb->state:%u not support to unbind, jettyId:%u", jettyCb->state, jettyId);
+        hccp_err("jetty_cb->state:%u does not support to unbind, jettyId:%u", jettyCb->state, jettyId);
         return -EINVAL;
     }
 
@@ -2348,7 +2348,7 @@ STATIC int RsUbGetJettyDestroyBatchInfo(struct RsUbDevCb *devCb, unsigned int je
         ret = RsUbGetJettyCb(devCb, jettyIds[i], &batchInfo->jettyCbArr[i]);
         CHK_PRT_RETURN(ret != 0, hccp_err("get jetty_cb[%u] failed, jettyId:%u, ret:%d", i, jettyIds[i], ret), ret);
         CHK_PRT_RETURN(batchInfo->jettyCbArr[i]->state != RS_JETTY_STATE_CREATED, hccp_err("jetty_cb[%u]->state:%u "
-        "not support to destroy, jettyId:%u", i, batchInfo->jettyCbArr[i]->state, jettyIds[i]), -EINVAL);
+        "does not support to destroy, jettyId:%u", i, batchInfo->jettyCbArr[i]->state, jettyIds[i]), -EINVAL);
 
         RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
         RsListDel(&batchInfo->jettyCbArr[i]->list);

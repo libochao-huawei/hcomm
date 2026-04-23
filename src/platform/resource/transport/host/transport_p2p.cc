@@ -179,14 +179,14 @@ HcclResult TransportP2p::ParseSpecifyLink(LinkTypeInServer &linkType)
         s32 sendPid = 0;
         CHK_RET(SalGetBareTgid(&sendPid));
         CHK_PRT_RET(sendPid == recvPid_,
-            HCCL_WARNING("%s specifyLink is not support in multi-thread", __func__), HCCL_SUCCESS);
+            HCCL_WARNING("%s specifyLink does not support in multi-thread", __func__), HCCL_SUCCESS);
 
         // A3 DIE间通信场景, 将链路从SIO切换到HCCS
         linkType = LinkTypeInServer::HCCS_SW_TYPE;
         isSioToHccs_ = true;
         HCCL_INFO("%s specifyLink change to HCCS_SW_TYPE", __func__);
     } else {
-        HCCL_ERROR("%s fail, linkType:%d, specifyLink:%d is not support", __func__, linkType, machinePara_.specifyLink);
+        HCCL_ERROR("%s fail, linkType:%d, specifyLink:%d does not support", __func__, linkType, machinePara_.specifyLink);
         return HCCL_E_NOT_SUPPORT;
     }
     return HCCL_SUCCESS;
@@ -1412,7 +1412,7 @@ HcclResult TransportP2p::GetRemoteMem(UserMemType memType, void **remotePtr)
         }
 
         default: {
-            HCCL_ERROR("[Get][RemoteMem]not support dst_mem_type=%d", memType);
+            HCCL_ERROR("[Get][RemoteMem]does not support dst_mem_type=%d", memType);
             return HCCL_E_NOT_SUPPORT;
         }
     }
@@ -1440,7 +1440,7 @@ HcclResult TransportP2p::GetRemoteMemSize(UserMemType memType, u64 &size)
         }
 
         default: {
-            HCCL_ERROR("[Get][RemoteMem]not support dst_mem_type=%d", memType);
+            HCCL_ERROR("[Get][RemoteMem]does not support dst_mem_type=%d", memType);
             return HCCL_E_NOT_SUPPORT;
         }
     }

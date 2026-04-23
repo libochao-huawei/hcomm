@@ -675,7 +675,7 @@ RS_ATTRI_VISI_DEF int RsCtxBatchSendWr(struct WrlistBaseInfo *baseInfo, struct B
             ret = RsUbCtxBatchSendWr(rscb, baseInfo, wrData, wrResp, wrlistNum);
             break;
         default:
-            hccp_err("protocol[%d] not support", rscb->protocol);
+            hccp_err("protocol[%d] does not support", rscb->protocol);
             return -EINVAL;
     }
     return ret;
@@ -700,7 +700,7 @@ RS_ATTRI_VISI_DEF int RsCtxUpdateCi(struct RaRsDevInfo *devInfo, unsigned int qp
             ret = RsUbCtxJettyUpdateCi(devCb, qpId, ci);
             break;
         default:
-            hccp_err("protocol[%d] not support", rscb->protocol);
+            hccp_err("protocol[%d] does not support", rscb->protocol);
             return -EINVAL;
     }
     return ret;

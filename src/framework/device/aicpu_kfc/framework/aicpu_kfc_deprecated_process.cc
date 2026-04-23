@@ -183,7 +183,7 @@ HcclResult HcclOpExecFsmStoppedProcess(AicpuComContext *ctx, HcclOpExecFSM &stat
     }
 
     if (!HcclOpSupportRetry(ctx, opParams)) {
-        HCCL_ERROR("hccl aicpu not support retry, enable[%u], commType[%u].", ctx->retryEnable, opParams.commType);
+        HCCL_ERROR("hccl aicpu does not support retry, enable[%u], commType[%u].", ctx->retryEnable, opParams.commType);
         errorCode = KfcError::kExec;
         state = HcclOpExecFSM::HCCL_OP_EXEC_FSM_ERROR;
         return HCCL_SUCCESS;

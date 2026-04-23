@@ -1058,7 +1058,7 @@ HcclResult TransportIbverbs::GetIndOpRemoteMemDetails(MemDetails** remoteMem, ui
     } else if (memType == HcclMemType::HCCL_MEM_TYPE_HOST) {
         memCount = remoteUserHostMemMsg_.size();
     } else {
-        HCCL_ERROR("[%s] not support memType[%d]", __func__, memType);
+        HCCL_ERROR("[%s] does not support memType[%d]", __func__, memType);
         return HCCL_E_INTERNAL;
     }
     if (memCount == 0) {
@@ -1140,7 +1140,7 @@ HcclResult TransportIbverbs::GetRemoteMem(UserMemType memType, void **remotePtr)
             break;
 
         default:
-            HCCL_ERROR("[Get][RemoteMem]not support dst_mem_type=%d", memType);
+            HCCL_ERROR("[Get][RemoteMem]does not support dst_mem_type=%d", memType);
             return HCCL_E_NOT_SUPPORT;
     }
     return HCCL_SUCCESS;
@@ -1155,7 +1155,7 @@ HcclResult TransportIbverbs::GetRemoteMemSize(UserMemType memType, u64 &size)
             break;
 
         default:
-            HCCL_ERROR("[Get][RemoteMem]not support dst_mem_type=%d", memType);
+            HCCL_ERROR("[Get][RemoteMem]does not support dst_mem_type=%d", memType);
             return HCCL_E_NOT_SUPPORT;
     }
     return HCCL_SUCCESS;
@@ -1901,7 +1901,7 @@ HcclResult TransportIbverbs::RegUserMem(MemType memType, u8*& exchangeDataPtr, u
         }
 
         default: {
-            HCCL_ERROR("[Reg][UserMem]not support dst_mem_type=%d", memType);
+            HCCL_ERROR("[Reg][UserMem]does not support dst_mem_type=%d", memType);
             return HCCL_E_NOT_SUPPORT;
         }
     }
@@ -2025,7 +2025,7 @@ HcclResult TransportIbverbs::GetMemInfo(UserMemType memType, void **dstMemPtr, u
         }
 
         default: {
-            HCCL_ERROR("[Get][MemInfo]not support dst_mem_type=%d", memType);
+            HCCL_ERROR("[Get][MemInfo]does not support dst_mem_type=%d", memType);
             return HCCL_E_NOT_SUPPORT;
         }
     }
@@ -2415,7 +2415,7 @@ HcclResult TransportIbverbs::GetRemoteMemKey(UserMemType memType, uint32_t *remo
             break;
 
         default:
-            HCCL_ERROR("[Get][RemoteMemKey]not support dst_mem_type=%d", memType);
+            HCCL_ERROR("[Get][RemoteMemKey]does not support dst_mem_type=%d", memType);
             return HCCL_E_NOT_SUPPORT;
     }
     return HCCL_SUCCESS;
@@ -2432,7 +2432,7 @@ HcclResult TransportIbverbs::GetLocalMemDetails(UserMemType memType, MemDetails 
             break;
 
         default:
-            HCCL_ERROR("[Get][LocalMemDetails]not support dst_mem_type=%d", memType);
+            HCCL_ERROR("[Get][LocalMemDetails]does not support dst_mem_type=%d", memType);
             return HCCL_E_NOT_SUPPORT;
     }
     return HCCL_SUCCESS;
@@ -2462,7 +2462,7 @@ HcclResult TransportIbverbs::GetAiRMAQueueInfo(std::vector<HcclAiRMAQueueInfo> &
     bool isSupport = false;
     CHK_RET(IsSupportAIVNormalQP(machinePara_.localDeviceId, isSupport));
     CHK_PRT_RET(isSupport == false, HCCL_ERROR("[IsSupportCQCoverNormalQP]"
-        "devicePhyId[%u] not support" , machinePara_.localDeviceId), HCCL_E_NOT_SUPPORT);
+        "devicePhyId[%u] does not support" , machinePara_.localDeviceId), HCCL_E_NOT_SUPPORT);
 
     u32 sl = GetExternalInputRdmaServerLevel();
     if (machinePara_.sl != HCCL_COMM_SERVICE_LEVEL_CONFIG_NOT_SET) {
@@ -2637,7 +2637,7 @@ HcclResult TransportIbverbs::GetTransportErrorCqe(const HcclNetDevCtx netDevCtx,
     HcclIpAddress localIp   = (static_cast<NetDevContext *>(netDevCtx))->GetLocalIp();
     NicType nicType         = (static_cast<NetDevContext *>(netDevCtx))->GetNicType();
     CHK_PRT_RET(nicType == NicType::HOST_NIC_TYPE,
-        HCCL_WARNING("[TransportIbverbs][GetTransportErrorCqe] nicType[%d] not support", nicType), HCCL_SUCCESS);
+        HCCL_WARNING("[TransportIbverbs][GetTransportErrorCqe] nicType[%d] does not support", nicType), HCCL_SUCCESS);
     RaResourceInfo raResourceInfo;
     CHK_RET(NetworkManager::GetInstance(deviceLogicId).GetRaResourceInfo(raResourceInfo));
     RdmaHandle rdmaHandle   = raResourceInfo.nicSocketMap[localIp].nicRdmaHandle;

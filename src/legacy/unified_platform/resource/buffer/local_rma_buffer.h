@@ -60,7 +60,7 @@ public:
 
     virtual std::unique_ptr<Serializable> GetExchangeDto()
     {
-        HCCL_ERROR("this is base class, not support.");
+        HCCL_ERROR("this is base class, does not support.");
         return nullptr;
     }
 

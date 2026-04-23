@@ -358,7 +358,7 @@ HcclResult AicpuKfcBatchwriteProcess::RunSlaveRpcServerForApi(AicpuComContext *c
 {
     HCCL_INFO("----------start Slave Rpc Server For Api Hccl, ctx:%p ----------", ctx);
     if (ctx->devType != DevType::DEV_TYPE_910B) {
-        HCCL_WARNING("Platform not support multi thread handle batch write, please use 910B platform.");
+        HCCL_WARNING("Platform does not support multi thread handle batch write, please use 910B platform.");
         return HCCL_SUCCESS;
     }
     CommonHcclMsg commonHcclMsg;

@@ -1185,7 +1185,7 @@ HcclResult HrtThreadExchangeCaptureMode(aclmdlRICaptureMode *mode)
     HCCL_INFO("[HrtThreadExchangeCaptureMode] mode[%p].", mode);
     aclError ret = aclmdlRICaptureThreadExchangeMode(mode);
     if (ret == ACL_ERROR_RT_FEATURE_NOT_SUPPORT) {
-        HCCL_WARNING("[HrtThreadExchangeCaptureMode] rtThreadExchangeCaptureMode not support!, ret=%d, mode=%p.",
+        HCCL_WARNING("[HrtThreadExchangeCaptureMode] rtThreadExchangeCaptureMode does not support!, ret=%d, mode=%p.",
                         ret, mode);
         return HCCL_E_NOT_SUPPORT;
     } else {

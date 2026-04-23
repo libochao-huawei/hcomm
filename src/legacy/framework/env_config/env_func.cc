@@ -555,7 +555,7 @@ HcclResult SetSpecificAlgType(std::vector<std::string> &algos, std::map<OpType, 
             std::vector<HcclAlgoType> algType;
             CHK_RET(ParseAlgoString(opStringName, remainAlgoConfig, algType));
             if (algType[0] == HcclAlgoType::HCCL_ALGO_TYPE_NULL) {
-                HCCL_ERROR("[SetSpecificAlgType] specific config level0 not support null type.");
+                HCCL_ERROR("[SetSpecificAlgType] specific config level0 does not support null type.");
                 return HCCL_E_PARA;
             }
             hcclAlgoConfig[optype] = algType;

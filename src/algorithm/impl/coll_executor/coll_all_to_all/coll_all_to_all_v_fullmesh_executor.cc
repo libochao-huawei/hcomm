@@ -60,7 +60,7 @@ HcclResult CollRunAlltoAllVFullMesh::CalAlltoAllFullMeshCommInfo(TransportMemTyp
     bool isDifModule = topoAttr_.serverNum == 1 && topoAttr_.isDiffDeviceModule &&
         topoAttr_.userRankSize > HCCL_ALLTOALLV_P2P_SIZE;
     CHK_PRT_RET(isDifModule && !algoAttr_.isUsedRdmaLevel0,
-        HCCL_ERROR("[CalAlltoAllFullMeshCommInfo] not support dual modules in a single server" \
+        HCCL_ERROR("[CalAlltoAllFullMeshCommInfo] does not support dual modules in a single server" \
                    " when RDMA disabled "), HCCL_E_NOT_SUPPORT);
 
     // 将网卡初始化判断，提到上层调用，减少无必要的循环依赖。

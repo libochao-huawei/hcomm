@@ -34,7 +34,7 @@ STATIC int RsGetNetcoCfg(unsigned int phyId, NetCoIpPortArg *netcoArg)
     CHK_PRT_RETURN(ret != 0, hccp_err("file_read_cfg udp_port_mode failed, ret(%d)", ret), ret);
 
     nslbSupport = (strncmp(cfgVal, "nslb_dp", strlen("nslb_dp") + 1) == 0) ? true : false;
-    CHK_PRT_RETURN(!nslbSupport, hccp_run_warn("phy_id(%u) not support nslb", phyId), -ENOTSUPP);
+    CHK_PRT_RETURN(!nslbSupport, hccp_run_warn("phy_id(%u) does not support nslb", phyId), -ENOTSUPP);
 
     (void)memset_s(cfgVal, CFG_VAL_LEN, 0, CFG_VAL_LEN);
     ret = FileReadCfg(NETCO_CFGFILE_PATH, (int)phyId, "nslb_dp_listen_port", cfgVal, CFG_VAL_LEN);

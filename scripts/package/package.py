@@ -65,7 +65,7 @@ def get_compress_cmd(pkg_args: Namespace,
             CommLog.cilog_error(err_msg)
             CommLog.cilog_error("create_run_command failed!")
     else:
-        CommLog.cilog_error("the repack type '%s' is not support!", suffix)
+        CommLog.cilog_error("the repack type '%s' does not support!", suffix)
         sys.exit(FAIL)
     try:
         makeself_dir = os.path.join(pkg_utils.get_build_dir(), "makeself.txt")

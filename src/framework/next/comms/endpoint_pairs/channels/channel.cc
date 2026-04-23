@@ -34,11 +34,11 @@ HcclResult Channel::CreateChannel(
                     return HCCL_E_PARA);
                 break;
             }
-            HCCL_ERROR("[Channel][%s] Engine[COMM_ENGINE_CPU] not support Protocol[%d] except COMM_PROTOCOL_ROCE", 
+            HCCL_ERROR("[Channel][%s] Engine[COMM_ENGINE_CPU] does not support Protocol[%d] except COMM_PROTOCOL_ROCE", 
                         __func__, channelDesc.remoteEndpoint.protocol);
             return HCCL_E_NOT_SUPPORT;
         case COMM_ENGINE_CPU_TS:
-            HCCL_ERROR("[Channel][%s] CommEngine[COMM_ENGINE_CPU_TS] not support", __func__);
+            HCCL_ERROR("[Channel][%s] CommEngine[COMM_ENGINE_CPU_TS] does not support", __func__);
             return HCCL_E_NOT_SUPPORT;
         case COMM_ENGINE_AICPU:
         case COMM_ENGINE_AICPU_TS:
@@ -70,7 +70,7 @@ HcclResult Channel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32
 
 HcclResult Channel::UpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum)
 {
-    HCCL_WARNING("[UpdateMemInfo] not support.");
+    HCCL_WARNING("[UpdateMemInfo] does not support.");
     return HCCL_SUCCESS;
 }
 } // namespace hcomm

@@ -246,7 +246,7 @@ void Interpret(const InsLocalCopyExtend &ins, const StreamLite &stream, ResMgrFe
 inline void AicpuCheckLocalReduceIns(const InsLocalReduce &ins)
 {
     if (UNLIKELY(ins.GetDataType() == DataType::INT64)) {
-        THROW<InvalidParamsException>(StringFormat("%s LocalReduce SDMA InlineReduce dose not support INT64, need use TBE.",
+        THROW<InvalidParamsException>(StringFormat("%s LocalReduce SDMA InlineReduce dose does not support INT64, need use TBE.",
             __func__));
     }
 }

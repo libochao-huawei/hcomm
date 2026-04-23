@@ -227,7 +227,7 @@ HcclResult GlobalMemRegMgr::CheckOneSidedBackupAndSetDevId(const HcclIpAddress &
     CHK_RET(hrtGetDeviceType(deviceType));
     if (deviceType != DevType::DEV_TYPE_910_93) {
         isOneSidedTaskAndBackupInitA3 = false;
-        HCCL_INFO("[GlobalMemRegMgr::CheckOneSidedBackupAndSetDevId] deviceType[%d] is not 910_93, One sided backup not support",
+        HCCL_INFO("[GlobalMemRegMgr::CheckOneSidedBackupAndSetDevId] deviceType[%d] is not 910_93, One sided backup does not support",
             static_cast<u32>(deviceType));
         return HCCL_SUCCESS;
     }

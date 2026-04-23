@@ -1224,7 +1224,7 @@ HCCP_ATTRI_VISI_DEF int RaAiQpCreate(void *rdevHandle, struct QpExtAttrs *attrs,
     if (ret == 0 && interfaceVersion >= RA_RS_OPCODE_BASE_VERSION) {
         ret = rdmaHandleTmp->rdmaOps->raAiQpCreateWithAttrs(rdmaHandleTmp, attrs, info, qpHandle);
     } else {
-        // origin procedure: not support to process data_plane_flag.bs.cq_cstm
+        // origin procedure: does not support to process data_plane_flag.bs.cq_cstm
         ret = rdmaHandleTmp->rdmaOps->raAiQpCreate(rdmaHandleTmp, attrs, info, qpHandle);
     }
     CHK_PRT_RETURN(ret != 0 || *qpHandle == NULL, hccp_err("[create][ra_ai_qp]create qp failed, ret(%d) phyId(%u)",
@@ -1690,7 +1690,7 @@ STATIC int RaIfaddrInfoConverter(unsigned int phyId, bool isAll, struct Interfac
             hccp_err("[converter][ra_ifaddr]ra_hdc_get_ifaddrs_v2 failed, ret(%d), phyId(%u), isAll(%d), num(%u)",
                 ret, phyId, isAll, *num), ret);
     } else {
-        hccp_err("[converter][ra_ifaddr]interface version not support, interfaceVersion(%u)", interfaceVersion);
+        hccp_err("[converter][ra_ifaddr]interface version does not support, interfaceVersion(%u)", interfaceVersion);
         return -EINVAL;
     }
 

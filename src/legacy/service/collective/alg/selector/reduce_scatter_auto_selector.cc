@@ -44,7 +44,7 @@ SelectorStatus ReduceScatterAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoIn
         SelectorStatus::NOT_MATCH);
 
     CHK_PRT_RET(op.dataType == DataType::INT64 || op.dataType == DataType::UINT64 || op.dataType == DataType::FP64,
-        HCCL_WARNING("[Algo][ReduceScatterAutoSelector] ccu_ms mode not support INT64, UINT64, FP64."),
+        HCCL_WARNING("[Algo][ReduceScatterAutoSelector] ccu_ms mode does not support INT64, UINT64, FP64."),
         SelectorStatus::NOT_MATCH);
 
     HcclDetourType detourType = EnvConfig::GetInstance().GetDetourConfig().GetDetourType();
@@ -120,7 +120,7 @@ SelectorStatus ReduceScatterAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &
         SelectorStatus::NOT_MATCH);
 
     if (op.dataType == DataType::INT64 || op.dataType == DataType::UINT64 || op.dataType == DataType::FP64) {
-        HCCL_WARNING("[Algo][ReduceScatterAutoSelector] ccu_schedule mode not support INT64, UINT64, FP64.");
+        HCCL_WARNING("[Algo][ReduceScatterAutoSelector] ccu_schedule mode does not support INT64, UINT64, FP64.");
         return SelectorStatus::NOT_MATCH;
     }
 
@@ -338,7 +338,7 @@ SelectorStatus ReduceScatterAutoSelector::SelectAivAlgo(const TopoInfo &topoInfo
         SelectorStatus::NOT_MATCH);
 
     if (op.dataType == DataType::UINT64 || op.dataType == DataType::FP64) {
-        HCCL_WARNING("[Algo][ReduceScatterAutoSelector] aiv mode not support INT64, UINT64, FP64.");
+        HCCL_WARNING("[Algo][ReduceScatterAutoSelector] aiv mode does not support INT64, UINT64, FP64.");
         return SelectorStatus::NOT_MATCH;
     }
 

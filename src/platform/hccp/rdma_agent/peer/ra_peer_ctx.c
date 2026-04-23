@@ -299,7 +299,7 @@ int RaPeerCtxCqCreate(struct RaCtxHandle *ctxHandle, struct CqInfoT *info, struc
     struct CtxCqInfo cqInfo = {0};
     int ret = 0;
 
-    CHK_PRT_RETURN(info->in.ub.mode != JFC_MODE_NORMAL, hccp_err("[init][ctx_cq]jfc_mode[%d] not support, phyId[%u]",
+    CHK_PRT_RETURN(info->in.ub.mode != JFC_MODE_NORMAL, hccp_err("[init][ctx_cq]jfc_mode[%d] does not support, phyId[%u]",
         info->in.ub.mode, phyId), -EINVAL);
 
     RaRsSetDevInfo(&devInfo, phyId, ctxHandle->devIndex);
@@ -344,7 +344,7 @@ int RaPeerCtxQpCreate(struct RaCtxHandle *ctxHandle, struct QpCreateAttr *qpAttr
     struct CtxQpAttr ctxQpAttr = {0};
     int ret = 0;
 
-    CHK_PRT_RETURN(qpAttr->ub.mode != JETTY_MODE_URMA_NORMAL, hccp_err("[init][ctx_cq]jetty_mode[%d] not support,"
+    CHK_PRT_RETURN(qpAttr->ub.mode != JETTY_MODE_URMA_NORMAL, hccp_err("[init][ctx_cq]jetty_mode[%d] does not support,"
         " phyId[%u]", qpAttr->ub.mode, phyId), -EINVAL);
 
     RaRsSetDevInfo(&devInfo, phyId, ctxHandle->devIndex);

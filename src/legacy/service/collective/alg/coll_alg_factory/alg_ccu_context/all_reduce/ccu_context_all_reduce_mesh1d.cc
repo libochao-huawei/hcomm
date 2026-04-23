@@ -58,7 +58,7 @@ void CcuContextAllReduceMesh1D::RunBroadcast(std::vector<CcuRep::Memory> &dst, C
     if (ccuVersion_ == CcuVersion::CCU_V1) {
         GroupBroadcast(transports, dst, src, groupOpSize_);
     } else {
-        THROW<NotSupportException>(StringFormat("CCU version not support, version[%u]", ccuVersion_));
+        THROW<NotSupportException>(StringFormat("CCU version does not support, version[%u]", ccuVersion_));
     }
 }
 
@@ -67,7 +67,7 @@ void CcuContextAllReduceMesh1D::RunReduce(CcuRep::Memory &dst, std::vector<CcuRe
     if (ccuVersion_ == CcuVersion::CCU_V1) {
         GroupReduce(transports, dst, src, groupOpSize_, dataType_, outputDataType_, reduceOp_);
     } else {
-        THROW<NotSupportException>(StringFormat("CCU version not support, version[%u]", ccuVersion_));
+        THROW<NotSupportException>(StringFormat("CCU version does not support, version[%u]", ccuVersion_));
     }
 }
 
@@ -110,7 +110,7 @@ void CcuContextAllReduceMesh1D::Algorithm()
     if (ccuVersion_ == CcuVersion::CCU_V1) {
         Load(groupOpSize_);
     } else {
-        THROW<NotSupportException>(StringFormat("CCU version not support, version[%u]", ccuVersion_));
+        THROW<NotSupportException>(StringFormat("CCU version does not support, version[%u]", ccuVersion_));
     }
 
     for (auto t : transports) {
@@ -201,7 +201,7 @@ std::vector<uint64_t> CcuContextAllReduceMesh1D::GeneArgs(const CcuTaskArg &arg)
             "offset[%llu], sliceSize[%llu]", inputAddr, outputAddr, offset, sliceSize);
         return {inputAddr, outputAddr, tokenInfo, offset, goSize[0], goSize[1], goSize[2], goSize[3]};
     } else {
-        THROW<NotSupportException>(StringFormat("CCU version not support, version[%u]", ccuVersion_));
+        THROW<NotSupportException>(StringFormat("CCU version does not support, version[%u]", ccuVersion_));
     }
 
     return {};

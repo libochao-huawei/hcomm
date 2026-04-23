@@ -143,7 +143,7 @@ void CommunicatorImplLite::UnfoldOp(HcclKernelParamLite *kernelParam)
         HCCL_INFO("CommunicatorImplLite::UnfoldOpBase DevType is DEV_TYPE_910A2.");
         insExecutor->Execute(*insQueue);
     } else {
-        HCCL_WARNING("CommunicatorImplLite::UnfoldOpBase DevType is not support.");
+        HCCL_WARNING("CommunicatorImplLite::UnfoldOpBase DevType does not support.");
     }
     kernelParam->op.algOperator.scratchMem = nullptr;
 }

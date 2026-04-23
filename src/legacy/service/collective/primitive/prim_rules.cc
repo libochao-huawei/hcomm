@@ -63,7 +63,7 @@ inline void CheckLinkIsValid(const LinkData &link, const string &desc)
             return;
         }
     }
-    string msg = StringFormat("type=%s is not support in %s", link.Describe().c_str(), desc.c_str());
+    string msg = StringFormat("type=%s does not support in %s", link.Describe().c_str(), desc.c_str());
     throw NotSupportException(msg);
 }
 
@@ -95,8 +95,8 @@ inline void AppendInsPostFinAck(RankId remote, const LinkData &link, vector<uniq
         return;
     }
 
-    // not support, throw exception
-    string msg = StringFormat("link=%s does not need or not support AppendInsPostFinAck", link.Describe().c_str());
+    // does not support, throw exception
+    string msg = StringFormat("link=%s does not need or does not support AppendInsPostFinAck", link.Describe().c_str());
     THROW<NotSupportException>(msg);
 }
 
@@ -126,8 +126,8 @@ inline void AppendInsWaitFinAck(RankId remote, const LinkData &link, vector<uniq
         // do nothing
         return;
     }
-    // not support, throw exception
-    string msg = StringFormat("link=%s does not need or not support AppendInsWaitFinAck", link.Describe().c_str());
+    // does not support, throw exception
+    string msg = StringFormat("link=%s does not need or does not support AppendInsWaitFinAck", link.Describe().c_str());
     THROW<NotSupportException>(msg);
 }
 
@@ -176,7 +176,7 @@ inline vector<unique_ptr<Instruction>> PrimSendInWriteMode(const PrimSend &send)
         }
         return PrimSendInNormalWriteMode(send);
     }
-    // not support, throw exception
+    // does not support, throw exception
     string msg = StringFormat("link=%s does not support PrimSendInWriteMode", send.GetLink().Describe().c_str());
     MACRO_THROW(NotSupportException, msg);
 }

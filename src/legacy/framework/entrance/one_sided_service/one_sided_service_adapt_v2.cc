@@ -66,7 +66,7 @@ HcclResult HcclRegisterMemV2(HcclComm comm, u32 remoteRank, int type, void *addr
         HCCL_ERROR("[HcclRegisterMem]memory size[%llu] is too large, please check memory size", size),
         HCCL_E_PARA);
     CHK_PRT_RET(memType == HcclMemType::HCCL_MEM_TYPE_HOST ,
-        HCCL_ERROR("[HcclRegisterMem] HCCL_MEM_TYPE_HOST is not support, please check memory type"),
+        HCCL_ERROR("[HcclRegisterMem] HCCL_MEM_TYPE_HOST does not support, please check memory type"),
         HCCL_E_NOT_SUPPORT);
 
     HCCL_INFO("HcclRegisterMemV2 GetLocalRankID Success: localRank[%u]", localRank);

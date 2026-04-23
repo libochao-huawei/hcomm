@@ -386,7 +386,7 @@ void CommunicatorImpl::SingleRankProc(const CollOpParams &opParams, void *stream
 {
     if (opParams.opType == Hccl::OpType::BATCHSENDRECV || opParams.opType == Hccl::OpType::SEND
         || opParams.opType == Hccl::OpType::RECV) {
-        HCCL_WARNING("[CommunicatorImpl][%s] ranksize == 1 is not support BATCHSENDRECV SEND RECV", __func__);
+        HCCL_WARNING("[CommunicatorImpl][%s] ranksize == 1 does not support BATCHSENDRECV SEND RECV", __func__);
         return;
     }
     if (opParams.sendBuf == opParams.recvBuf) {
@@ -933,7 +933,7 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
         ExecAlgSelect(opParams, OpMode::OFFLOAD);
 
         if (opExecuteConfig.accState == AcceleratorState::HOSTCPU_TS) { // 950不支持HOST_TS模式
-            HCCL_ERROR("[CommunicatorImpl::LoadOffloadCollOp] HOSTCPU_TS is not support.");
+            HCCL_ERROR("[CommunicatorImpl::LoadOffloadCollOp] HOSTCPU_TS does not support.");
             return HcclResult::HCCL_E_NOT_SUPPORT;
         }
 
@@ -1504,7 +1504,7 @@ void CommunicatorImpl::TryInitCcuFeature()
     // 打开ccu驱动后初始化ccu资源
     ccuDrvHandle = CommManager::GetInstance(devLogicId).GetCcuDriver();
     if (ccuDrvHandle == nullptr) {
-        HCCL_WARNING("CCU not support reuse in single device multi-precess services, accelerator fallback AICPU_TS");
+        HCCL_WARNING("CCU does not support reuse in single device multi-precess services, accelerator fallback AICPU_TS");
         OpExecuteConfig opExeCfg{AcceleratorState::AICPU_TS};
         SetCommExecuteConfig(opExeCfg);
         SetOpExecuteConfig(opExeCfg);
@@ -1777,7 +1777,7 @@ HcclResult CommunicatorImpl::AllocCommResource(void *mc2Tiling, void **commConte
 {
     bool isAiv = (GetCommExecuteConfig().accState == AcceleratorState::AIV || GetCommExecuteConfig().accState == AcceleratorState::AIV_ONLY);
     if (!GetCommCcuFeatureFlag() && !isAiv) { // 通信域粒度
-        HCCL_ERROR("CommunicatorImpl::AllocCommResource: Comm accelerator is [%s] not support AllocCommResource",
+        HCCL_ERROR("CommunicatorImpl::AllocCommResource: Comm accelerator is [%s] does not support AllocCommResource",
                    GetCommExecuteConfig().accState.Describe().c_str());
         return HCCL_E_NOT_SUPPORT;
     }
@@ -2646,7 +2646,7 @@ void CommunicatorImpl::ExecAlgSelect(const CollOpParams &opParams, const OpMode 
     params.isMc2                      = opParams.isMc2;
     if (opParams.isMc2) {
         if(accStateMap.find(opParams.commEngine) == accStateMap.end()) {
-            THROW<NotSupportException>("[CommunicatorImpl][ExecAlgSelect] not support commEngine type[%s]!", opParams.commEngine.Describe().c_str());
+            THROW<NotSupportException>("[CommunicatorImpl][ExecAlgSelect] does not support commEngine type[%s]!", opParams.commEngine.Describe().c_str());
         }
         opExecuteConfig.accState = accStateMap.find(opParams.commEngine)->second;
     }
@@ -2694,7 +2694,7 @@ void CommunicatorImpl::SelectCollService()
     // 根据执行方式和展开方式，选择对应的CollService
     auto mapIt = collServices.find(GetOpExecuteConfig().accState); // 算子粒度
     if (mapIt == collServices.end()) {
-        auto msg = StringFormat("[CommunicatorImpl][%s] not support, accelerator is %s", __func__,
+        auto msg = StringFormat("[CommunicatorImpl][%s] does not support, accelerator is %s", __func__,
                                 GetOpExecuteConfig().accState.Describe().c_str());
         THROW<NotSupportException>(msg);
     }
@@ -2739,7 +2739,7 @@ HcclResult CommunicatorImpl::SetAccelerator(HcclAccelerator hcclAccelerator, boo
     switch (hcclAccelerator) {
         case HcclAccelerator::CCU_MS:
             if (hcclMainboardId == HcclMainboardId::MAINBOARD_PCIE_STD) { // 标卡环境下配置CCU_MS加速模式拦截报错
-                HCCL_ERROR("[SetAccelerator] hcclAccelerator[%s] not support in %s", hcclAccelerator.Describe().c_str(), hcclMainboardId.Describe().c_str());
+                HCCL_ERROR("[SetAccelerator] hcclAccelerator[%s] does not support in %s", hcclAccelerator.Describe().c_str(), hcclMainboardId.Describe().c_str());
                 return HCCL_E_NOT_SUPPORT;
             }
             commAccelerator = isCcuMsAvailable ? AcceleratorState::CCU_MS : AcceleratorState::CCU_SCHED;
@@ -2761,10 +2761,10 @@ HcclResult CommunicatorImpl::SetAccelerator(HcclAccelerator hcclAccelerator, boo
             commAccelerator = AcceleratorState::AICPU_TS;
             break;
         case HcclAccelerator::HOSTCPU_TS: // 950不支持HOST展开，进行拦截
-            HCCL_ERROR("[SetAccelerator] hcclAccelerator[%s] not support in 950", hcclAccelerator.Describe().c_str());
+            HCCL_ERROR("[SetAccelerator] hcclAccelerator[%s] does not support in 950", hcclAccelerator.Describe().c_str());
             return HCCL_E_NOT_SUPPORT;
         case HcclAccelerator::AICPU:
-            HCCL_ERROR("[SetAccelerator] hcclAccelerator[%s] not support", hcclAccelerator.Describe().c_str());
+            HCCL_ERROR("[SetAccelerator] hcclAccelerator[%s] does not support", hcclAccelerator.Describe().c_str());
             return HCCL_E_NOT_SUPPORT;
         default:
             HCCL_ERROR("[SetAccelerator] hcclAccelerator[%s] internal error", hcclAccelerator.Describe().c_str());
@@ -3049,7 +3049,7 @@ HcclResult CommunicatorImpl::ReLoadOffloadOp()
     ExecAlgSelect(curOpParams, OpMode::OFFLOAD); // 根据配置选择对应的collService
 
     if (opExecuteConfig.accState == AcceleratorState::HOSTCPU_TS) { // 950不支持HOST_TS模式
-            HCCL_ERROR("[CommunicatorImpl::ReLoadOffloadOp] HOSTCPU_TS is not support.");
+            HCCL_ERROR("[CommunicatorImpl::ReLoadOffloadOp] HOSTCPU_TS does not support.");
             return HcclResult::HCCL_E_NOT_SUPPORT;
     }
     bool isAiv = (opExecuteConfig.accState == AcceleratorState::AIV || opExecuteConfig.accState == AcceleratorState::AIV_ONLY);
@@ -3762,7 +3762,7 @@ HcclResult CommunicatorImpl::GetTilingAccelerator(void *mc2Tiling, AcceleratorSt
     auto tilingVersion = *static_cast<uint32_t *>(mc2Tiling);
     HCCL_INFO("[CommunicatorImpl:%s] Tiling version [%u]", __func__, tilingVersion);
     if (tilingVersion != UNKNOWN_TILING_V1 && tilingVersion != UNKNOWN_TILING_V2) {
-        HCCL_ERROR("[CommunicatorImpl::GetTilingAccelerator] Tiling version not support, version[%u]", tilingVersion);
+        HCCL_ERROR("[CommunicatorImpl::GetTilingAccelerator] Tiling version does not support, version[%u]", tilingVersion);
         return HCCL_E_NOT_SUPPORT;
     }
     uint8_t accelerator{0};
@@ -3811,7 +3811,7 @@ HcclResult CommunicatorImpl::GetTilingAccelerator(void *mc2Tiling, AcceleratorSt
             acceleratorState = AcceleratorState::AIV_ONLY;
             break;
         default:
-            HCCL_ERROR("[GetTilingAccelerator] Tiling hcclAccelerator not support, hcclAccelerator[%s]", hcclAccelerator.Describe().c_str());
+            HCCL_ERROR("[GetTilingAccelerator] Tiling hcclAccelerator does not support, hcclAccelerator[%s]", hcclAccelerator.Describe().c_str());
             return HCCL_E_NOT_SUPPORT;
     }
 

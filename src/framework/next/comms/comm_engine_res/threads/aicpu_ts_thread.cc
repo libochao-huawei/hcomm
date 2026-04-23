@@ -143,7 +143,7 @@ HcclResult AicpuTsThread::InitStream(HcclStreamParam &streamParam)
     if (ret == HCCL_E_NOT_SUPPORT) {
         CHK_PRT_RET(isCustom,
             HCCL_ERROR(
-                "%s hrtHalResourceIdRestore fail, drv not support, custom[%d], ret[%d]", __func__, isCustom, ret),
+                "%s hrtHalResourceIdRestore fail, drv does not support, custom[%d], ret[%d]", __func__, isCustom, ret),
             HCCL_E_DRV);
     } else if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("%s hrtHalResourceIdRestore fail, ret[%d]", __func__, ret);
@@ -241,7 +241,7 @@ void AicpuTsThread::LaunchTask() const
 // Local Data Plane Functions
 HcclResult AicpuTsThread::LocalNotifyWait(uint32_t notifyId) const
 {
-    HCCL_ERROR("[AicpuTsThread][%s] without timeout not support", __func__);
+    HCCL_ERROR("[AicpuTsThread][%s] without timeout does not support", __func__);
     return HCCL_E_NOT_SUPPORT;
 }
 
@@ -265,7 +265,7 @@ HcclResult AicpuTsThread::LocalNotifyRecord(uint32_t notifyId) const
 
 HcclResult AicpuTsThread::LocalNotifyRecord(ThreadHandle dstThread, uint32_t dstNotifyIdx) const
 {
-    HCCL_ERROR("[AicpuTsThread][%s]not support", __func__);
+    HCCL_ERROR("[AicpuTsThread][%s]does not support", __func__);
     return HCCL_E_NOT_SUPPORT;
 }
 
@@ -333,7 +333,7 @@ HcclResult AicpuTsThread::LocalReduce(
 HcclResult AicpuTsThread::HostInit()
 {
     CHK_PRT_RET(!uniqueIdStr_.empty(),
-        HCCL_ERROR("[AicpuTsThread][Init]not support init with uniqueId on host"),
+        HCCL_ERROR("[AicpuTsThread][Init]does not support init with uniqueId on host"),
         HCCL_E_NOT_SUPPORT);
     s32 deviceLogicId;
     CHK_RET(hrtGetDevice(&deviceLogicId));

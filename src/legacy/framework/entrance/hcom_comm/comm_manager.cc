@@ -734,7 +734,7 @@ HcclResult CommManager::SetCommAcceleratorV2(Hccl::HcclCommunicator *communicato
     // 通过进程锁看护，避免多个通信域同时占用CCU_MS
     std::unique_lock<std::mutex> lock(opbasedCommInfoV2.groupParamsLock);
     if ((hcclAccelerator == HcclAccelerator::CCU_MS || hcclAccelerator == HcclAccelerator::CCU_SCHED) && !isCcuAvailable) {
-        HCCL_WARNING("CCU not support reuse in single device multi-precess services, accelerator fallback AICPU_TS");
+        HCCL_WARNING("CCU does not support reuse in single device multi-precess services, accelerator fallback AICPU_TS");
         hcclAccelerator = HcclAccelerator::AICPU_TS;
     }
     bool isMsAvailable = opbasedCommInfoV2.ccuStatus.IsMsAvailable(communicator->GetId());

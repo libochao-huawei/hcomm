@@ -116,7 +116,7 @@ std::map<HcclReduceOp, ReduceOp> HCCL_OP_REDUCE_MAP = {{HCCL_REDUCE_SUM, ReduceO
 static void CheckHcclDeterministic(uint32_t hcclDeterministic)
 {
     if (hcclDeterministic == 0) {
-        HCCL_WARNING("[HcclCommInitClusterInfoConfig] hcclDeterministic[%u] is not support.", hcclDeterministic);
+        HCCL_WARNING("[HcclCommInitClusterInfoConfig] hcclDeterministic[%u] does not support.", hcclDeterministic);
     } else if (hcclDeterministic != HCCL_COMM_DETERMINISTIC_CONFIG_NOT_SET && hcclDeterministic != 1) {
         HCCL_WARNING("[HcclCommInitClusterInfoConfig] hcclDeterministic[%u] is invalid.", hcclDeterministic);
     }
@@ -1311,7 +1311,7 @@ HcclResult HcclGetHeterogModeV2(HcclComm comm, HcclHeterogMode *mode)
 HcclResult HcclCommSuspendV2(HcclComm comm)
 {
     CHK_PTR_NULL(comm);
-    HCCL_ERROR("HcclCommSuspend V950 not support suspend");
+    HCCL_ERROR("HcclCommSuspend V950 does not support suspend");
 
     return HCCL_E_NOT_SUPPORT;
 }
@@ -1576,7 +1576,7 @@ HcclResult HcclGetRemoteIpcHcclBufV2(HcclComm comm, uint64_t remoteRank, void **
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         HCCL_RUN_INFO("Entry-HcclGetRemoteIpcHcclBuf V950 start, remoteRank[%llu], addr[%p], size[%llu], commId[%s]", remoteRank, *addr, *size, communicator->GetId().c_str());
     }
-    HCCL_ERROR("Entry-HcclGetRemoteIpcHcclBuf V950 not support, commId[%s]", communicator->GetId().c_str());
+    HCCL_ERROR("Entry-HcclGetRemoteIpcHcclBuf V950 does not support, commId[%s]", communicator->GetId().c_str());
     return HCCL_E_NOT_SUPPORT;
 }
  
@@ -2761,7 +2761,7 @@ HcclResult HcclSnapshotGetBufSize(uint32_t step, uint32_t *size)
     HCCL_INFO("[%s] start", __func__);
     Hccl::DevType devType = HrtGetDeviceType();
     if (devType != DevType::DEV_TYPE_950) {
-        HCCL_INFO("[%s] Get buffer size not support in this device type[%d]", __func__, devType);
+        HCCL_INFO("[%s] Get buffer size does not support in this device type[%d]", __func__, devType);
         return HCCL_E_NOT_SUPPORT;
     }
 
@@ -2784,7 +2784,7 @@ HcclResult HcclGetTopoDescV2()
 
 HcclResult HcclGetCommAsyncErrorV2()
 {
-    HCCL_WARNING("HcclGetCommAsyncErrorV2 is not support!");
+    HCCL_WARNING("HcclGetCommAsyncErrorV2 does not support!");
     return HCCL_SUCCESS;
 }
 
@@ -2995,7 +2995,7 @@ HcclResult HcclCommWorkingDevNicSetV2(HcclComm comm, uint32_t *ranks, bool *useB
     (void) ranks;
     (void) useBackup;
     (void) nRanks;
-    HCCL_ERROR("HcclCommWorkingDevNicSetV2 not support V950.");
+    HCCL_ERROR("HcclCommWorkingDevNicSetV2 does not support V950.");
     return HCCL_E_NOT_SUPPORT;
 }
 
@@ -3006,7 +3006,7 @@ HcclResult HcclCommSetMemoryRangeV2(HcclComm comm, void *baseVirPtr, size_t size
     (void) size;
     (void) alignment;
     (void) flags;
-    HCCL_ERROR("HcclCommSetMemoryRangeV2 not support V950.");
+    HCCL_ERROR("HcclCommSetMemoryRangeV2 does not support V950.");
     return HCCL_E_NOT_SUPPORT;
 }
 
@@ -3014,7 +3014,7 @@ HcclResult HcclCommUnsetMemoryRangeV2(HcclComm comm, void *baseVirPtr)
 {
     (void) comm;
     (void) baseVirPtr;
-    HCCL_ERROR("HcclCommUnsetMemoryRangeV2 not support V950.");
+    HCCL_ERROR("HcclCommUnsetMemoryRangeV2 does not support V950.");
     return HCCL_E_NOT_SUPPORT;
 }
 
@@ -3026,7 +3026,7 @@ HcclResult HcclCommActivateCommMemoryV2(HcclComm comm, void *virPtr, size_t size
     (void) offset;
     (void) handle;
     (void) flags;
-    HCCL_ERROR("HcclCommActivateCommMemoryV2 not support V950.");
+    HCCL_ERROR("HcclCommActivateCommMemoryV2 does not support V950.");
     return HCCL_E_NOT_SUPPORT;
 }
 
@@ -3034,7 +3034,7 @@ HcclResult HcclCommDeactivateCommMemoryV2(HcclComm comm, void *virPtr)
 {
     (void) comm;
     (void) virPtr;
-    HCCL_ERROR("HcclCommDeactivateCommMemoryV2 not support V950.");
+    HCCL_ERROR("HcclCommDeactivateCommMemoryV2 does not support V950.");
     return HCCL_E_NOT_SUPPORT;
 }
 

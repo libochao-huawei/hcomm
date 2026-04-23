@@ -32,7 +32,7 @@ HCCP_ATTRI_VISI_DEF int RaTlvInit(struct TlvInitInfo *initInfo, unsigned int *bu
         hccp_err("[init][ra_tlv]init_info or buffer_size or tlv_handle is NULL"),
             ConverReturnCode(HCCP_INIT, -EINVAL));
 
-    CHK_PRT_RETURN(initInfo->nicPosition != NETWORK_OFFLINE, hccp_err("[init][ra_tlv]mode(%u) not support",
+    CHK_PRT_RETURN(initInfo->nicPosition != NETWORK_OFFLINE, hccp_err("[init][ra_tlv]mode(%u) does not support",
         initInfo->nicPosition), ConverReturnCode(HCCP_INIT, -EINVAL));
     CHK_PRT_RETURN(initInfo->phyId >= RA_MAX_PHY_ID_NUM,
         hccp_err("[init][ra_tlv]phy_id(%u) must smaller than %u", initInfo->phyId, RA_MAX_PHY_ID_NUM),

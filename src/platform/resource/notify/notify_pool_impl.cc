@@ -89,7 +89,7 @@ HcclResult NotifyPoolImpl::CreateNotify(std::shared_ptr<LocalIpcNotify> &localNo
             "ret[%d]", ret), errorFlag = true);
         if (!isAligned) {
             tmpNotifys.push_back(tmpNotify);
-            HCCL_DEBUG("CreateNotify id[%u] offset[%llu] is not support atomic write, create again",
+            HCCL_DEBUG("CreateNotify id[%u] offset[%llu] does not support atomic write, create again",
                 tmpNotify->notifyId_, tmpNotify->offset);
             continue;
         }

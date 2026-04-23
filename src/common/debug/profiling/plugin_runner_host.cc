@@ -48,7 +48,7 @@ HcclResult PluginRunner::isStreamCapture(rtStream_t stream, bool &isCapture) con
             break;
         }
         default: {
-            HCCL_ERROR("[PluginRunner][isStreamCapture]rtGet not support stream capture status.");
+            HCCL_ERROR("[PluginRunner][isStreamCapture]rtGet does not support stream capture status.");
             break;
         }
     }

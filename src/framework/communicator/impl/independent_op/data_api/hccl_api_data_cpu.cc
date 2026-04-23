@@ -637,7 +637,7 @@ int32_t HcommAcquireComm(const char* commId)
 int32_t HcommReleaseComm(const char* commId)
 {
     CHK_PTR_NULL(commId);
-    HCCL_INFO("%s not support, commId[%s], do nothing", __func__, commId);
+    HCCL_INFO("%s does not support, commId[%s], do nothing", __func__, commId);
     return HCCL_SUCCESS;
 }
 
@@ -690,7 +690,7 @@ int32_t HcommChannelFence(ChannelHandle channel)
 
 HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo) // 兼容性接口，后续删除
 {
-    HCCL_WARNING("%s not support", __func__);
+    HCCL_WARNING("%s does not support", __func__);
     return HCCL_SUCCESS;
 }
 

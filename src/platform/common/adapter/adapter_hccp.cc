@@ -3083,7 +3083,7 @@ HcclResult HrtRaGetHccnCfg(s32 networkMode, u32 devicePhyId, enum HccnCfgKeyT ke
             hccnKey = HccnCfgKey::HCCN_CFG_RESV_MEM_INFO;
             break;
         default:
-            HCCL_ERROR("[HrtRaGetHccnCfg]not support key[%d]", key);
+            HCCL_ERROR("[HrtRaGetHccnCfg]does not support key[%d]", key);
             return HCCL_E_PARA;
     }
 
@@ -3095,7 +3095,7 @@ HcclResult HrtRaGetHccnCfg(s32 networkMode, u32 devicePhyId, enum HccnCfgKeyT ke
         HCCL_WARNING("[HrtRaGetHccnCfg] device networkMode[%d] with phyId[%u], "
                      "get hccn config key[%d] info is empty. Possible reasons: "
                      "1. Device not need to use multi_qp/nslb-dp settings. "
-                     "  2. In this package, hccn_tool not support multi_qp/nslb-dp settings. "
+                     "  2. In this package, hccn_tool does not support multi_qp/nslb-dp settings. "
                      "  3. The right key not exist in device's config file or key's value is empty.",
             networkMode,
             devicePhyId,

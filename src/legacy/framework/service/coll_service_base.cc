@@ -359,7 +359,7 @@ bool CollServiceBase::IsAllTransportRecoveredReady(const std::string &opTag)
 
 HcclResult CollServiceBase::GetSnapShotDynamicBuf(CollOperator &op,BinaryStream &buf)
 {
-    HCCL_ERROR("[%s] not support.", __func__);
+    HCCL_ERROR("[%s] does not support.", __func__);
     return HCCL_E_NOT_SUPPORT;
 }
 

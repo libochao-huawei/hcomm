@@ -496,7 +496,7 @@ typedef union urma_jfs_flag {
     struct {
         uint32_t lock_free      : 1;  /* default as 0, lock protected */
         uint32_t error_suspend  : 1;  /* 0: error continue; 1: error suspend */
-        uint32_t outorder_comp  : 1;  /* 0: not support; 1: support out-of-order completion */
+        uint32_t outorder_comp  : 1;  /* 0: does not support; 1: support out-of-order completion */
         uint32_t order_type     : 8;  /* (0x0): default, auto config by driver */
                                       /* (0x1): OT, target ordering */
                                       /* (0x2): OI, initiator ordering */

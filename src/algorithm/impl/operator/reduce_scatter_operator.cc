@@ -99,7 +99,7 @@ HcclResult ReduceScatterOperator::SelectAlgforMix(const OpParam& param, std::str
 
     // 混合组网场景不支持规约保序
     if (IsNeedStrictMode(param)) {
-        HCCL_ERROR("[ReduceScatterOperator][SelectAlgforMix] not support DETERMINISTIC_STRICT mode.");
+        HCCL_ERROR("[ReduceScatterOperator][SelectAlgforMix] does not support DETERMINISTIC_STRICT mode.");
         return HCCL_E_NOT_SUPPORT;
     }
 
@@ -339,7 +339,7 @@ HcclResult ReduceScatterOperator::SelectAlgfor910B(const OpParam& param, std::st
             "data type support range:[int8, int16, int32, float16, float32, bfloat16] reduce type support range:[sum, max, min]",
             GetDataTypeEnumStr(param.DataDes.dataType).c_str(), GetReduceOpEnumStr(param.reduceType).c_str()), HCCL_E_NOT_SUPPORT);
 
-        CHK_PRT_RET(!isSupportAivDeter, HCCL_ERROR("is not support aiv deter.isSingleMeshAggregation_[%d] isOpbase[%d] "\
+        CHK_PRT_RET(!isSupportAivDeter, HCCL_ERROR("does not support aiv deter.isSingleMeshAggregation_[%d] isOpbase[%d] "\
             "deterministic config[%u] dataSize[%llu], serverNum_[%u]",
             isSingleMeshAggregation_, isOpbase, topoMatcher_->GetDeterministicConfig(), dataSize, serverNum_), HCCL_E_NOT_SUPPORT);
 
@@ -414,7 +414,7 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
 
     if (IsNeedStrictMode(param)) {
         CHK_PRT_RET(!CheckStrictCondition(param), 
-            HCCL_ERROR("[ReduceScatterOperator][SelectAlgfor91093] not support DETERMINISTIC_STRICT mode."),
+            HCCL_ERROR("[ReduceScatterOperator][SelectAlgfor91093] does not support DETERMINISTIC_STRICT mode."),
             HCCL_E_NOT_SUPPORT);
 
         algName = "ReduceScatterOrderPreservedFor91093Executor";

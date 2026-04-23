@@ -247,7 +247,7 @@ add_env_rc() {
 
     echo "${shell_type}" | grep -E "^(bash|fish|csh)$" > /dev/null
     if [ $? -ne 0 ]; then
-        log "ERROR" "shell type ${shell_type} not support!"
+        log "ERROR" "shell type ${shell_type} does not support!"
         exit 1
     fi
 
@@ -353,7 +353,7 @@ del_env_rc() {
 
     echo "${shell_type}" | grep -E "^(bash|fish|csh)$" > /dev/null
     if [ $? -ne 0 ]; then
-        log "ERROR" "shell type ${shell_type} not support!"
+        log "ERROR" "shell type ${shell_type} does not support!"
         exit 1
     fi
 

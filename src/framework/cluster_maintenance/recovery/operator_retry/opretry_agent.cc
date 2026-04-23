@@ -342,7 +342,7 @@ HcclResult OpRetryAgentRunning::ParseKfcErr(RetryContext* retryCtx, RetryState &
         }
         default: {
             if (lastError != kfcError) {
-                HCCL_RUN_INFO("[OpRetry][Agent]KfcError[%d] is not support, do nothing", kfcError);
+                HCCL_RUN_INFO("[OpRetry][Agent]KfcError[%d] does not support, do nothing", kfcError);
             }
             break;
         }

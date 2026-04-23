@@ -336,7 +336,7 @@ HcclResult InsAlgTemplateBase::CalNumBlocks(u32& numBlocks, u64 dataSize, u32 nu
     (void)numBlocks;
     (void)dataSize;
     (void)numBlocksLimit;
-    HCCL_WARNING("CalNumBlocks not support ins template.");
+    HCCL_WARNING("CalNumBlocks does not support ins template.");
     return HCCL_SUCCESS;
 }
 

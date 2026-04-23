@@ -271,7 +271,7 @@ HcclResult IsSupportAicpuNormalQP(const u32& devicePhyId, bool &isSupportNormalQ
     u32 aiQpCreateVersion = 0;
     HcclResult ret = hrtRaGetInterfaceVersion(devicePhyId, AI_QP_CREATE, &aiQpCreateVersion);
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[IsSupportAicpuNormalQP] ret[%d]"
-        "devicePhyId[%u] not support" , ret, devicePhyId), HCCL_E_NETWORK);
+        "devicePhyId[%u] does not support" , ret, devicePhyId), HCCL_E_NETWORK);
     if (aiQpCreateVersion >= AI_NORMAL_QP_CREATE_VERSION) {
         isSupportNormalQP = true;
     } else {
@@ -288,7 +288,7 @@ HcclResult IsSupportAIVNormalQP(const u32& devicePhyId, bool &isSupport)
     u32 version = 0;
     HcclResult ret = hrtRaGetInterfaceVersion(devicePhyId, AI_QP_CREATE_WITH_ATTRS, &version);
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[hrtRaGetInterfaceVersion] ret[%d]"
-        "devicePhyId[%u] not support" , ret, devicePhyId), HCCL_E_NETWORK);
+        "devicePhyId[%u] does not support" , ret, devicePhyId), HCCL_E_NETWORK);
 
     if (version >= AI_QP_CREATE_WITH_ATTRS_VERSION) {
         isSupport = true;
@@ -375,7 +375,7 @@ HcclResult IsSupportAtomicWrite(DevType deviceType, u32 devicePhyId, bool& isSup
             __func__, deviceType, devicePhyId, version, isSupportAtomicWrite);
     } else {
         isSupportAtomicWrite = false;
-        HCCL_INFO("%s deviceType[%d] not support", __func__, deviceType);
+        HCCL_INFO("%s deviceType[%d] does not support", __func__, deviceType);
     }
     return HCCL_SUCCESS;
 }

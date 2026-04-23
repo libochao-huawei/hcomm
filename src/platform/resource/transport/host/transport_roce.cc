@@ -72,7 +72,7 @@ HcclResult TransportRoce::RegUserMem(MemType memType)
         }
 
         default: {
-            HCCL_ERROR("[Reg][UserMem]not support dst_mem_type=%d", memType);
+            HCCL_ERROR("[Reg][UserMem]does not support dst_mem_type=%d", memType);
             return HCCL_E_NOT_SUPPORT;
         }
     }
@@ -691,7 +691,7 @@ HcclResult TransportRoce::GetRemoteMem(UserMemType memType, void **remotePtr)
             break;
 
         default:
-            HCCL_ERROR("[Get][RemoteMem]not support dst_mem_type=%d", memType);
+            HCCL_ERROR("[Get][RemoteMem]does not support dst_mem_type=%d", memType);
             return HCCL_E_NOT_SUPPORT;
     }
     return HCCL_SUCCESS;
@@ -706,7 +706,7 @@ HcclResult TransportRoce::GetRemoteMemSize(UserMemType memType, u64 &size)
             break;
 
         default:
-            HCCL_ERROR("[Get][RemoteMem]not support dst_mem_type=%d", memType);
+            HCCL_ERROR("[Get][RemoteMem]does not support dst_mem_type=%d", memType);
             return HCCL_E_NOT_SUPPORT;
     }
     return HCCL_SUCCESS;

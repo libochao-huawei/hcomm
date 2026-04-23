@@ -27,19 +27,19 @@ HcclResult CollExecutorBase::SetAlgType(const AlgType algType)
     algType_ = algType;
     if (!l0Algo.empty()
         && std::find(l0Algo.begin(), l0Algo.end(), algType_.algoLevel0) == l0Algo.end()) {
-        HCCL_WARNING("[%s] not support level0 algo[%d], reset to algo[%d]", __func__,
+        HCCL_WARNING("[%s] does not support level0 algo[%d], reset to algo[%d]", __func__,
             algType_.algoLevel0, l0Algo[0]);
         algType_.algoLevel0 = l0Algo[0];
     }
     if (!l1Algo.empty()
         && std::find(l1Algo.begin(), l1Algo.end(), algType_.algoLevel1) == l1Algo.end()) {
-        HCCL_WARNING("[%s] not support level1 algo[%d], reset to algo[%d]", __func__,
+        HCCL_WARNING("[%s] does not support level1 algo[%d], reset to algo[%d]", __func__,
             algType_.algoLevel1, l1Algo[0]);
         algType_.algoLevel1 = l1Algo[0];
     }
     if (!l2Algo.empty()
         && std::find(l2Algo.begin(), l2Algo.end(), algType_.algoLevel2) == l2Algo.end()) {
-        HCCL_WARNING("[%s] not support level2 algo[%d], reset to algo[%d]", __func__,
+        HCCL_WARNING("[%s] does not support level2 algo[%d], reset to algo[%d]", __func__,
             algType_.algoLevel2, l2Algo[0]);
         algType_.algoLevel2 = l2Algo[0];
     }

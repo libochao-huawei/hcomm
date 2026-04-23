@@ -641,32 +641,32 @@ namespace hccl
                     opType != HcclCMDType::HCCL_CMD_ALLREDUCE &&
                     opType != HcclCMDType::HCCL_CMD_ALLTOALL &&
                     opType != HcclCMDType::HCCL_CMD_REDUCE_SCATTER,
-                    HCCL_INFO("[%s] opType[%d] not support symmetric memory", 
+                    HCCL_INFO("[%s] opType[%d] does not support symmetric memory", 
                             __func__, opType),
                     false);
 
         // 只支持aicpu展开、单算子模式、910_93芯片
         CHK_PRT_RET(!opParam.aicpuUnfoldMode,
-                    HCCL_INFO("[%s] aicpuUnfold:%d not support symmetric memory", __func__, opParam.aicpuUnfoldMode), false);
+                    HCCL_INFO("[%s] aicpuUnfold:%d does not support symmetric memory", __func__, opParam.aicpuUnfoldMode), false);
         CHK_PRT_RET(GetWorkflowMode() != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE,
-                    HCCL_INFO("[%s] workflowMode:%d not support symmetric memory", __func__, GetWorkflowMode()), false);
+                    HCCL_INFO("[%s] workflowMode:%d does not support symmetric memory", __func__, GetWorkflowMode()), false);
         CHK_PRT_RET(deviceType_ != DevType::DEV_TYPE_910_93,
-                    HCCL_INFO("[%s] deviceType:%d not support symmetric memory", __func__, deviceType_), false);
+                    HCCL_INFO("[%s] deviceType:%d does not support symmetric memory", __func__, deviceType_), false);
 
         // 判断拓扑逻辑是否支持symmetric memory
         // 每个节点只有一张卡或节点间非对称场景不支持对称内存
         CHK_PRT_RET(deviceNumPerAggregation_ == 1 || multiModuleDiffDeviceNumMode_,
-                    HCCL_INFO("[%s] deviceNumPerAggregation[%u], multiModuleDiffDeviceNumMode_[%d] not support symmetric memory",
+                    HCCL_INFO("[%s] deviceNumPerAggregation[%u], multiModuleDiffDeviceNumMode_[%d] does not support symmetric memory",
                               __func__, deviceNumPerAggregation_, multiModuleDiffDeviceNumMode_),
                     false);
 
         // 判断输入输出地址是否都注册为对称内存
         HcclResult ret = symmetricMemory_->FindSymmetricWindow(opParam.inputPtr, opParam.inputSize, &opParam.inputSymWindow, &opParam.inputOffset);
         CHK_PRT_RET(ret != HCCL_SUCCESS || opParam.inputSymWindow == nullptr,
-                    HCCL_INFO("[%s] input[%p] size[%llu] is not support symmetric memory", __func__, opParam.inputPtr, opParam.inputSize), false);
+                    HCCL_INFO("[%s] input[%p] size[%llu] does not support symmetric memory", __func__, opParam.inputPtr, opParam.inputSize), false);
         ret = symmetricMemory_->FindSymmetricWindow(opParam.outputPtr, opParam.outputSize, &opParam.outputSymWindow, &opParam.outputOffset);
         CHK_PRT_RET(ret != HCCL_SUCCESS || opParam.outputSymWindow == nullptr,
-                    HCCL_INFO("[%s] output[%p] size[%llu] is not support symmetric memory", __func__, opParam.outputPtr, opParam.outputSize), false);
+                    HCCL_INFO("[%s] output[%p] size[%llu] does not support symmetric memory", __func__, opParam.outputPtr, opParam.outputSize), false);
         
         HCCL_INFO("[HcclCommunicator][IsSupportSymmetricMemory] opParam.inputPtr[%p], inputOffset[%llu], inputSymWindow[%p]",
                     opParam.inputPtr, opParam.inputOffset, opParam.inputSymWindow);
@@ -685,24 +685,24 @@ namespace hccl
 
         // 只支持aicpu展开、非重执行、单算子模式、910_93芯片
         CHK_PRT_RET(!opParam.aicpuUnfoldMode,
-                    HCCL_INFO("[%s] aicpuUnfold:%d not support zero copy", __func__, opParam.aicpuUnfoldMode), false);
+                    HCCL_INFO("[%s] aicpuUnfold:%d does not support zero copy", __func__, opParam.aicpuUnfoldMode), false);
         CHK_PRT_RET(GetWorkflowMode() != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE,
-                    HCCL_INFO("[%s] workflowMode:%d not support zero copy", __func__, GetWorkflowMode()), false);
+                    HCCL_INFO("[%s] workflowMode:%d does not support zero copy", __func__, GetWorkflowMode()), false);
         CHK_PRT_RET(deviceType_ != DevType::DEV_TYPE_910_93,
-                    HCCL_INFO("[%s] deviceType:%d not support zero copy", __func__, deviceType_), false);
+                    HCCL_INFO("[%s] deviceType:%d does not support zero copy", __func__, deviceType_), false);
 
         // 判断拓扑逻辑是否支持zero copy
         // 每个节点只有一张卡或节点间非对称场景不支持零拷贝
         CHK_PRT_RET(deviceNumPerAggregation_ == 1 || multiModuleDiffDeviceNumMode_,
-                    HCCL_INFO("[%s] deviceNumPerAggregation[%u], multiModuleDiffDeviceNumMode_[%d] not support zero copy",
+                    HCCL_INFO("[%s] deviceNumPerAggregation[%u], multiModuleDiffDeviceNumMode_[%d] does not support zero copy",
                               __func__, deviceNumPerAggregation_, multiModuleDiffDeviceNumMode_),
                     false);
 
         // 判断输入输出地址是否都是支持零Copy特性的
         CHK_PRT_RET(!ZeroCopyMemoryAgent::IsActivateCommMemoryAddr(opParam.inputPtr, opParam.inputSize),
-                    HCCL_INFO("[%s] input[%p] size[%llu] is not support zero copy", __func__, opParam.inputPtr, opParam.inputSize), false);
+                    HCCL_INFO("[%s] input[%p] size[%llu] does not support zero copy", __func__, opParam.inputPtr, opParam.inputSize), false);
         CHK_PRT_RET(!ZeroCopyMemoryAgent::IsActivateCommMemoryAddr(opParam.outputPtr, opParam.outputSize),
-                    HCCL_INFO("[%s] output[%p] size[%llu] is not support zero copy", __func__, opParam.outputPtr, opParam.outputSize), false);
+                    HCCL_INFO("[%s] output[%p] size[%llu] does not support zero copy", __func__, opParam.outputPtr, opParam.outputSize), false);
 
         return true;
     }
@@ -711,7 +711,7 @@ namespace hccl
     {
         if (!algDesc.isZeroCopy) {
             opParam.supportSymmetricMemory = false;     //  当前对称内存与零拷贝算法绑定，对称内存使能关闭，确保aicpu侧不走对称内存分支
-            HCCL_INFO("[HcclCommunicator][PrepareZeroCopy] algName[%s] not support zerocopy.", algName.c_str());
+            HCCL_INFO("[HcclCommunicator][PrepareZeroCopy] algName[%s] does not support zerocopy.", algName.c_str());
             return HCCL_SUCCESS;
         }
 
@@ -840,7 +840,7 @@ namespace hccl
             std::vector<u32> devIdList1;
             for (RankInfo_t rankInfo : rankList){
                 if (rankInfo.deviceInfo.devicePhyId == HOST_DEVICE_ID) {
-                    HCCL_ERROR("[Check][SingleServerComm]not support cpu rank");
+                    HCCL_ERROR("[Check][SingleServerComm]does not support cpu rank");
                     return HCCL_E_NOT_SUPPORT;
                 }
                 if (rankInfo.deviceInfo.devicePhyId < DEVICE_PER_MODULE) {
@@ -1299,7 +1299,7 @@ namespace hccl
     HcclResult HcclCommunicator::InitPreResource(const RankTable_t &rankTable)
     {
         if (static_cast<s32>(devicePhyId_) == HOST_DEVICE_ID) {
-            HCCL_ERROR("[Init][PreResource]not support cpu rank");
+            HCCL_ERROR("[Init][PreResource]does not support cpu rank");
             return HCCL_E_NOT_SUPPORT;
         }
         (void)rankTable;
@@ -2049,7 +2049,7 @@ namespace hccl
     HcclResult HcclCommunicator::InitProfiling()
     {
         if (static_cast<s32>(devicePhyId_) == HOST_DEVICE_ID) {
-            HCCL_ERROR("[Init][Profiling]not support cpu rank");
+            HCCL_ERROR("[Init][Profiling]does not support cpu rank");
             return HCCL_E_NOT_SUPPORT;
         }
         CHK_PRT_RET(profilingInitiated_, HCCL_DEBUG("Profiling plugin has already been Initiated."), HCCL_SUCCESS);
@@ -2178,7 +2178,7 @@ namespace hccl
         CHK_RET(hrtGetDeviceType(deviceType));
         if (deviceType != DevType::DEV_TYPE_910_93) {
             isOneSidedTaskAndBackupInitA3 = false;
-            HCCL_INFO("[HcclCommunicator::CheckOneSidedBackupAndSetDevId] DeviceType[%d] is not 910_93, one sided backup not support",
+            HCCL_INFO("[HcclCommunicator::CheckOneSidedBackupAndSetDevId] DeviceType[%d] is not 910_93, one sided backup does not support",
                 static_cast<u32>(deviceType));
             return HCCL_SUCCESS;
         }
@@ -2381,7 +2381,7 @@ namespace hccl
     HcclResult HcclCommunicator::RegisterRanksToDca()
     {
         if (deviceType_ != DevType::DEV_TYPE_910_93 && deviceType_ != DevType::DEV_TYPE_910B) {
-            HCCL_WARNING("[RegisterRanksToDca] not support deviceType[%d]", deviceType_);
+            HCCL_WARNING("[RegisterRanksToDca] does not support deviceType[%d]", deviceType_);
             return HCCL_SUCCESS;
         }
         CHK_RET(setVnicIpToRankInfoList());
@@ -4296,7 +4296,7 @@ namespace hccl
         CHK_RET(algOperator->SelectAlg(opParam.tag, opParam, limit, algName, algDesc, newTag));
         if (isOnlyAiv_ && !algDesc.isAivMode) {
             std::string opTypeName = GetCMDTypeEnumStr(opType);
-            HCCL_ERROR("[HcclCommunicator][ExecOp] opType[%s] currently do not select aiv mode, aiv only not support.",
+            HCCL_ERROR("[HcclCommunicator][ExecOp] opType[%s] currently do not select aiv mode, aiv only does not support.",
                 opTypeName.c_str());
             return HCCL_E_NOT_SUPPORT;
         }
@@ -4635,7 +4635,7 @@ namespace hccl
         opParam.isNpuDirectRoce = algName == "AlltoAllDirectFullmeshAIVExecutor";
         if (isOnlyAiv_ && !algDesc.isAivMode) {
             std::string opTypeName = GetCMDTypeEnumStr(opType);
-            HCCL_ERROR("[HcclCommunicator][ExecOp] opType[%s] currently do not select aiv mode, aiv only not support.",
+            HCCL_ERROR("[HcclCommunicator][ExecOp] opType[%s] currently do not select aiv mode, aiv only does not support.",
                 opTypeName.c_str());
             return HCCL_E_NOT_SUPPORT;
         }
@@ -7892,7 +7892,7 @@ namespace hccl
             if (isSupportAIVNormalQP && isA2MC2IntraHie_) {
                 CHK_RET(GenAiRMAInfo(comm));
             } else {
-                HCCL_WARNING("[%s] db transfer normal qp not support. tag[%s] curRankId[%u] rankNum[%u] isSupportAIVNormalQP[%u]",
+                HCCL_WARNING("[%s] db transfer normal qp does not support. tag[%s] curRankId[%u] rankNum[%u] isSupportAIVNormalQP[%u]",
                              __func__, comm->Tag().c_str(), curRankId, rankSize, isSupportAIVNormalQP);
             }
 
@@ -8247,7 +8247,7 @@ namespace hccl
     HcclResult HcclCommunicator::SetMemoryRange(void *baseVirPtr, size_t size, size_t alignment, uint64_t flags)
     {
         CHK_PRT_RET(deviceType_ != DevType::DEV_TYPE_910_93,
-                    HCCL_ERROR("[HcclCommunicator][SetMemoryRange] deviceType[%d] not support zero copy", deviceType_), HCCL_E_NOT_SUPPORT);
+                    HCCL_ERROR("[HcclCommunicator][SetMemoryRange] deviceType[%d] does not support zero copy", deviceType_), HCCL_E_NOT_SUPPORT);
         if (zeroCopyMemoryAgent_ == nullptr) {
             CHK_RET(InitZeroCopyMemoryAgent());
         }
@@ -8745,7 +8745,7 @@ namespace hccl
         HDCommunicateParams &kfcStatusTransferD2HParams)
     {
         if (GetSupportHDCommunicate() == false) {
-            HCCL_WARNING("%s not support HDCommunicate, skip", __func__);
+            HCCL_WARNING("%s does not support HDCommunicate, skip", __func__);
             return HCCL_SUCCESS;
         }
         CHK_SMART_PTR_NULL(kfcControlTransferH2D_);
@@ -9033,11 +9033,11 @@ namespace hccl
     HcclResult HcclCommunicator::InitSymmetricMemory()
     {
         if (superPodNum_ > 1) {
-            HCCL_DEBUG("[InitSymmetricMemory] Cross-SuperNode not support symmetric memory");
+            HCCL_DEBUG("[InitSymmetricMemory] Cross-SuperNode does not support symmetric memory");
             return HCCL_SUCCESS;
         }
         if (deviceType_ != DevType::DEV_TYPE_910_93) {
-            HCCL_DEBUG("[%s] deviceType:%d not support symmetric memory", __func__, deviceType_);
+            HCCL_DEBUG("[%s] deviceType:%d does not support symmetric memory", __func__, deviceType_);
             return HCCL_SUCCESS;
         }
         
@@ -9057,10 +9057,10 @@ namespace hccl
     HcclResult HcclCommunicator::RegisterWindow(void* ptr, size_t size, HcclCommSymWindow *winHandle)
     {
         CHK_PRT_RET(superPodNum_ > 1, 
-            HCCL_ERROR("[RegisterWindow] Cross-SuperNode not support symmetric memory"), HCCL_E_NOT_SUPPORT);
+            HCCL_ERROR("[RegisterWindow] Cross-SuperNode does not support symmetric memory"), HCCL_E_NOT_SUPPORT);
 
         CHK_PRT_RET(deviceType_ != DevType::DEV_TYPE_910_93, 
-            HCCL_ERROR("[%s] deviceType:%d not support symmetric memory", __func__, deviceType_), HCCL_E_NOT_SUPPORT);
+            HCCL_ERROR("[%s] deviceType:%d does not support symmetric memory", __func__, deviceType_), HCCL_E_NOT_SUPPORT);
 
         CHK_SMART_PTR_NULL(symmetricMemory_);
         return symmetricMemory_->RegisterSymmetricMem(ptr, size, winHandle);

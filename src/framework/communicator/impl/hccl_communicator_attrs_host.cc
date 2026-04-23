@@ -791,7 +791,7 @@ namespace hccl
         HCCL_DEBUG("[HcclCommunicatorAttrs][Init]deviceType[%u].", deviceType_);
         if (static_cast<s32>(devicePhyId_) == HOST_DEVICE_ID)
         {
-            HCCL_ERROR("[HcclCommunicatorAttrs][Init]not support cpu rank");
+            HCCL_ERROR("[HcclCommunicatorAttrs][Init]does not support cpu rank");
             return HCCL_E_NOT_SUPPORT;
         }
         else

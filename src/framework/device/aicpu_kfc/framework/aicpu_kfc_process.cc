@@ -1476,7 +1476,7 @@ HcclResult PrepareHcommInstance(HcclOpResParam *commParam, const Mc2InitTilingIn
 
     DevType devType = hcclCommAicpu->GetDevType();
     CHK_PRT_RET(devType != DevType::DEV_TYPE_910_93,
-                HCCL_ERROR("Platform %u not support, please use 910_93 platform.", static_cast<u32>(devType)),
+                HCCL_ERROR("Platform %u does not support, please use 910_93 platform.", static_cast<u32>(devType)),
                 HCCL_E_INTERNAL);
 
     const DfxExtendInfo *dfxInfo = hcclCommAicpu->GetDfxExtendInfo();
@@ -1683,7 +1683,7 @@ HcclResult AicpuKfcProcess::AddTaskForHcclMsg(AicpuComContext *ctx, AicpuKfcRpcS
 HcclResult AicpuKfcProcess::RunRpcServerApi(AicpuComContext *ctx, AicpuKfcRpcServer &rpc, u64 tilingBase)
 {
     if (ctx->devType != DevType::DEV_TYPE_910B) {
-        HCCL_ERROR("Platform not support, please use 910B platform.");
+        HCCL_ERROR("Platform does not support, please use 910B platform.");
         return HCCL_E_PARA;
     }
     HcclMsg hcclMsg;

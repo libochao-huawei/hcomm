@@ -146,7 +146,7 @@ void RankGraphBuilder::AddFabricInfo(u32 netLayer)
     } 
 
     if (netInst->GetNetType() != NetType::CLOS) {
-        THROW<NotSupportException>(StringFormat("[RankGraphBuilder][AddFabricInfo] NetInstance is not CLOS, not support add fabric."));
+        THROW<NotSupportException>(StringFormat("[RankGraphBuilder][AddFabricInfo] NetInstance is not CLOS, does not support add fabric."));
     }
     set<RankId> inRanks = netInst->GetRankIds();
     string      netInstId = netInst->GetNetInstId();
@@ -401,7 +401,7 @@ std::shared_ptr<NetInstance> RankGraphBuilder::CreateNetInstance(const RankLevel
     } else if (levelInfo.netType == NetType::CLOS) {
         netInst = std::make_shared<ClosNetInstance>(levelInfo.netLayer, levelInfo.netInstId);
     } else {
-        THROW<NotSupportException>(StringFormat("[RankGraphBuilder][CreateNetInstance] netType: %s is not support", levelInfo.netType));
+        THROW<NotSupportException>(StringFormat("[RankGraphBuilder][CreateNetInstance] netType: %s does not support", levelInfo.netType));
     }
     return netInst;
 }

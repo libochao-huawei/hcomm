@@ -77,8 +77,8 @@ HcclResult HcclOneSidedService::CheckLink(LinkData linkData) const
     HCCL_INFO("[HcclOneSidedService][CheckLink] linkData[%s]", linkData.Describe().c_str());
     CHK_PRT_RET(
         (linkData.GetLinkProtocol() != LinkProtocol::UB_CTP && linkData.GetLinkProtocol() != LinkProtocol::UB_TP),
-        HCCL_ERROR("[HcclOneSidedService][CheckLink] Proto is not UB, not support"), HCCL_E_NOT_SUPPORT);
-    CHK_PRT_RET(linkData.GetHop() > 1, HCCL_ERROR("[HcclOneSidedService][CheckLink]Hop is greater than 1, not support"),
+        HCCL_ERROR("[HcclOneSidedService][CheckLink] Proto is not UB, does not support"), HCCL_E_NOT_SUPPORT);
+    CHK_PRT_RET(linkData.GetHop() > 1, HCCL_ERROR("[HcclOneSidedService][CheckLink]Hop is greater than 1, does not support"),
                 HCCL_E_NOT_SUPPORT);
     return HCCL_SUCCESS;
 }

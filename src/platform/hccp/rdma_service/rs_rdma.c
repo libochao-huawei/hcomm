@@ -2391,7 +2391,7 @@ RS_ATTRI_VISI_DEF int RsQpBatchModify(unsigned int phyId, unsigned int rdevIndex
             CHK_PRT_RETURN(ret, hccp_err("modify_qp qpn[%d]:%d to pause failed, ret[%d] phyId[%u]",
                 i, qpn[i], ret, phyId), ret);
         } else {
-            hccp_err("modify_qp qpn[%d]:%d failed, not support to modify status[%d] to status[%d], phyId[%u]",
+            hccp_err("modify_qp qpn[%d]:%d failed, does not support to modify status[%d] to status[%d], phyId[%u]",
                 i, qpn[i], qpCb->state, status, phyId);
             return -EINVAL;
         }
