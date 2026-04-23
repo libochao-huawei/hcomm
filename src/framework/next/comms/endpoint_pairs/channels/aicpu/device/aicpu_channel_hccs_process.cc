@@ -12,6 +12,7 @@
 #include "aicpu_res_package_helper.h"
 #include "aicpu_channel_hccs_process.h"
 #include "dispatcher_ctx.h"
+#include "adapter_hal_pub.h"
 
 namespace hccl {
 // HcclDispatcher   AicpuChannelHccsProcess::dispatcher_; // dispatcher放到最后析构
@@ -80,9 +81,11 @@ HcclResult AicpuChannelHccsProcess::InitP2pChannel(HcclChannelTransportResSet *t
     TransportPara para{};
     const std::unique_ptr<hccl::NotifyPool> notifyPool;
 
+    u32 devId = 0;
+    CHK_RET(hrtDrvGetLocalDevIDByHostDevID(channelHccsRes.localDevicePhyId, &devId));
     // for data dispatcher read/write with DEFAULT_DISPATCH_NAME
     if (!FindDispatcherByCommId(&dispatcherCtx_, DEFAULT_DISPATCH_NAME)) {
-        CHK_RET(CreateDispatcherCtx(&dispatcherCtx_, machinePara.localDeviceId, DEFAULT_DISPATCH_NAME));
+        CHK_RET(CreateDispatcherCtx(&dispatcherCtx_, devId, DEFAULT_DISPATCH_NAME));
     }
     CHK_PTR_NULL(dispatcherCtx_);
 
