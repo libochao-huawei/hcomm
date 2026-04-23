@@ -3040,8 +3040,7 @@ bool HcclCommAicpu::HcclOpSupportRetry(const std::string &algName, bool retryEna
 
     CHK_RET(SupportRetryWithInplaceCheck(algName, param));
     // 不支持inplace的通信算子重执行
-    if ((!algOpContext_.opRetryHandler.inplaceSupportRetry) && (!algOpContext_.opRetryHandler.isInplacePreSync) &&
-        (!algOpContext_.opRetryHandler.isPostSync)) {
+    if (true) {
         HCCL_ERROR("[OpRetry][AICPU]hccl aicpu can not retry, not support inplace case, opType[%s], "
             "inputPtr[0x%016lx], outputPtr[0x%016lx], opRetryHandler.inplaceSupportRetry[%d], "
             "opRetryHandler.isInplacePreSync[%d], opRetryHandler.isPostSync[%d]",
