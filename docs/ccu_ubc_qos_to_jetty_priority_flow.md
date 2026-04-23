@@ -19,6 +19,7 @@
 | [§3 共用：`TpMgr`](#3-共用tpmgrgettpinfo-异步两阶段缓存与策略) | **两路径 + 环回** 共用的 **`GetTpInfo`**、**`ReqPhase`**、stub、**RA→URMA**（§3.7） |
 | [§4 路径 A（CCU）](#4-路径-accu从-ccuurmachannel-到-hccpubcreatejettyasync) | Transport、轮询状态机、`GetTpInfo`、`CreateJetty` |
 | [§5 路径 B（AICPU / AICPU_TS）](#5-路径-baicpu--aicpu_ts) | **`BuildConnection` 同步 `TpMgr`**、`DevUbConnection`、`RaUbCreateJettyAsync` |
+| [§5.1.1 BuildConnection 与 CCU 共用的 TpMgr 内部链](#511-buildconnection-与-ccu-共用的-tpmgr-内部调用链) | **`TpMgr::GetInstance(devPhyId).GetTpInfo`** 与 CCU 同实现：**`StartGetTpInfoListRequest` → `StartGetTpAttrForFirstTp` → `HandleCompletedRequest`（含 `ApplyUbcQosTpSlPolicy`）** |
 | [§6 `HrtRaUbCreateJettyParam::qos` 汇总](#6-hrtraubcreatejettyparamqos--attrubpriority) | 路径 A / 环回 / 路径 B 对照表 |
 | [§7 流程图](#7-流程图-mermaid) | 路径 A、路径 B |
 | [§8 时序图](#8-时序图-mermaid-ccu) | 路径 A：轮询驱动 `GetTpInfo` |
@@ -223,10 +224,25 @@
 | 1 | **`ParseInputParam`** | **`localEp_` / `remoteEp_` / `rdmaHandle_` / `socket_` / `bufs_`** |
 | 2 | **`BuildSocket`** | 若无 **`socket_`** 则建 listen + **`SocketMgr::GetSocket`** |
 | 3 | **`BuildAttr`** | **`attr_.devicePhyId`** 等 |
-| 4 | **`BuildConnection`** | **`TpMgr::GetTpInfo`** + **`DevUbTpConnection` / `DevUbCtpConnection(..., qos)`** → **构造内 `CreateJetty` → `RaUbCreateJettyAsync`** |
+| 4 | **`BuildConnection`** | **`TpMgr::GetInstance(devPhyId).GetTpInfo`**（与 CCU 共用 **`TpMgr` 内部链**，见 **§5.1.1**）+ **`DevUbTpConnection` / `DevUbCtpConnection(..., qos)`** → **构造内 `CreateJetty` → `RaUbCreateJettyAsync`** |
 | 5 | **`BuildNotify`** | notify 资源 |
 | 6 | **`BuildBuffer`** | RMA buffer 列表 |
 | 7 | **`BuildUbMemTransport`** | **`UbMemTransport`**（与 **Jetty qos** 无直接写 **`req.qos`** 关系，但依赖前面已建 **`DevUbConnection`**） |
+
+### 5.1.1 BuildConnection 与 CCU 共用的 TpMgr 内部调用链
+
+**`AicpuTsUrmaChannel::BuildConnection`**（`aicpu_ts_urma_channel.cc`）中调用：
+
+**`hcomm::TpMgr::GetInstance(devPhyId).GetTpInfo(param, tpInfo)`**
+
+与 **CCU** 侧 **`CcuConnection::GetTpInfo`** 里 **`hcomm::TpMgr::GetInstance(devPhyId_).GetTpInfo(MakeGetTpInfoParam(), tpInfo_)`** 指向 **同一套 `TpMgr` 实现**（见 **§3**）。从 **`GetTpInfo` 入口**到产出 **`TpInfo`**，内部会走与 CCU **相同**的异步两阶段与策略链（**§3.2–§3.4**），概括为：
+
+1. **`StartGetTpInfoListRequest`**：`WAIT_LIST`，**`RaGetTpInfoListAsync`** 拉 TP 列表。  
+2. **`StartGetTpAttrForFirstTp`**：`WAIT_TP_ATTR`；**stub** 或 **`RaGetTpAttrAsync`**（**`get_tp_attr`** 语义见 **§3.7**）。  
+3. **`HandleCompletedRequest`**：**`ReadSlAvailableMask16`**、掩码兜底、**`ApplyUbcQosTpSlPolicy`**，并写 **`mappedJettyPriority`** / **`hasMappedJettyPriority`**。  
+4. **`ApplyUbcQosTpSlPolicy`**：由 **`HandleCompletedRequest`** 调用，用 **`GetTpInfoParam::qos`** 与 **`slMask`** 等得到 **`tpListIndex`**、**`mappedSl`**（与 **Jetty priority** 的开关关系见 **§3.4**）。
+
+路径 B 与路径 A 的差异主要在于 **谁在何时轮询 `HCCL_E_AGAIN`**（**§5.2**），**不是** `TpMgr` 内部上述链路的实现分叉。
 
 ### 5.2 `BuildConnection` 与路径 A（CCU）的差异
 
