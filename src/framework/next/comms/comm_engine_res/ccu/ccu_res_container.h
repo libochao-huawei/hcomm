@@ -17,7 +17,14 @@
 #include "hccl_res.h"
 
 #include "ccu_kernel.h"
+/* 开源自定义算子CCU设备管理实现，当前支持新老通信域混跑，
+ * 暂时引入了同名文件，需要区分
+ * #include "ccu_res_pack.h"
+ */
+
+// 区分legacy同名文件
 #include "../../ccu/pub_inc/ccu_res_pack.h"
+
 #include "ccu_drv_handle.h"
 
 namespace hcomm {

@@ -19,9 +19,16 @@
 #include "unified_platform/ccu/ccu_device/ccu_res_specs.h"
 #include "unified_platform/ccu/ccu_device/ccu_res_batch_allocator.h"
 
-// #include "ccu_comp.h"
+/* 开源自定义算子CCU设备管理实现，当前支持新老通信域混跑，
+ * 暂时改用legacy数据结构，避免反向依赖
+ * #include "ccu_comp.h"
+ * #include "ccu_res_specs.h"
+ * #include "ccu_res_batch_allocator.h"
+ */
+
+// 引入主板类型查询接口，后续应根据ccu驱动提供的信息用于判断
+// 当前先简化修改
 #include "./ccu_res_specs.h"
-// #include "ccu_res_batch_allocator.h"
 
 #include "adapter_rts.h"
 

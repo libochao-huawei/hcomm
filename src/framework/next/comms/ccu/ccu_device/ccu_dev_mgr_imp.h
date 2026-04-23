@@ -26,197 +26,233 @@ using CcuVersion = Hccl::CcuVersion;
 using ResType = Hccl::ResType;
 using ChannelPara = Hccl::ChannelPara;
 
-// MAKE_ENUM(CcuVersion, CCU_V1, CCU_INVALID);
-
-// MAKE_ENUM(ResType, LOOP, MS, CKE, XN, GSA, INS, MISSION);
-
-// struct ChannelPara {
-//     uint32_t feId;
-//     uint32_t jettyNum;
-//     uint32_t sqSize;
-// };
+/* 开源自定义算子CCU设备管理实现，当前支持新老通信域混跑，
+ * 暂时改用legacy数据结构，避免反向依赖
+ * MAKE_ENUM(CcuVersion, CCU_V1, CCU_INVALID);
+ * MAKE_ENUM(ResType, LOOP, MS, CKE, XN, GSA, INS, MISSION);
+ * struct ChannelPara {
+ *     uint32_t feId;
+ *     uint32_t jettyNum;
+ *     uint32_t sqSize;
+ * };
+ */
 
 using JettyInfo = CcuJettyInfo;
 using ChannelInfo = CcuChannelInfo;
 
 using JettyCfg = Hccl::JettyCfg;
-
-// struct JettyCfg {
-//     uint16_t jettyCtxId;
-//     uint64_t dbVa;
-//     uint32_t dbTokenId;
-//     uint32_t dbTokenValue;
-// };
+/* 开源自定义算子CCU设备管理实现，当前支持新老通信域混跑，
+ * 暂时改用legacy数据结构，避免反向依赖
+ * struct JettyCfg {
+ *     uint16_t jettyCtxId;
+ *     uint64_t dbVa;
+ *     uint32_t dbTokenId;
+ *     uint32_t dbTokenValue;
+ * };
+ */
 
 using ChannelCfg = Hccl::ChannelCfg;
+/* 开源自定义算子CCU设备管理实现，当前支持新老通信域混跑，
+ * 暂时改用legacy数据结构，避免反向依赖
+ * struct ChannelCfg {
+ *     uint32_t channelId{0};
+ *     // remote channel info
+ *     Eid remoteEid{};
+ *     uint32_t tpn{0};
 
-// struct ChannelCfg {
-//     uint32_t channelId{0};
-//     // remote channel info
-//     Eid remoteEid{};
-//     uint32_t tpn{0};
-
-//     uint64_t remoteCcuVa{0};
-//     uint32_t memTokenId{0};
-//     uint32_t memTokenValue{0};
-//     std::vector<JettyCfg> jettyCfgs;
-// };
+ *     uint64_t remoteCcuVa{0};
+ *     uint32_t memTokenId{0};
+ *     uint32_t memTokenValue{0};
+ *     std::vector<JettyCfg> jettyCfgs;
+ * };
+ */
 
 using CcuOpcodeType = Hccl::CcuOpcodeType;
-/* opcode definition */
-// enum class CcuOpcodeType {
-//     CCU_U_OP_GET_VERSION =  0, /* 获取CCU版本号 */
+/* 开源自定义算子CCU设备管理实现，当前支持新老通信域混跑，
+ * 暂时改用legacy数据结构，避免反向依赖
+ * // opcode definition
+ * enum class CcuOpcodeType {
+ *     CCU_U_OP_GET_VERSION =  0, // 获取CCU版本号
 
-//     CCU_U_OP_K_MIN             = 10, /* 定义需要向内核发送请求的操作最小值 */
+ *     CCU_U_OP_K_MIN             = 10, // 定义需要向内核发送请求的操作最小值
+ *     CCU_U_OP_GET_BASIC_INFO    = 11, // 获取基础信息
+ *     CCU_U_OP_GET_DIE_WORKING   = 15, // 获取该dieId是否工作
+ *     CCU_U_OP_SET_MSID_TOKEN       = 53, // 设置连续MSID的配置值和Token相关值
+ *     CCU_U_OP_SET_TASKKILL         = 54, // 启动taskkill任务
+ *     CCU_U_OP_CLEAN_TASKKILL_STATE = 55, // 清除taskkill任务
+ *     CCU_U_OP_CLEAN_TIF_TABLE      = 56, // 清除TIF表项
+ *     CCU_U_OP_K_MAX = 100, // 定义需要向内核发送请求的造作最大值
 
-//     CCU_U_OP_GET_BASIC_INFO    = 11, /* 获取基础信息 */
-//     CCU_U_OP_GET_DIE_WORKING   = 15, /* 获取该dieId是否工作 */
+ *     // 以下为操作CCU映射到用户态资源空间的操作码
+ *     CCU_U_OP_IN_RS_MIN       = 200, // 定义一个在RS空间操作的最小值
+ *     CCU_U_OP_GET_INSTRUCTION = 201, // 设置INS指令
+ *     CCU_U_OP_GET_GSA         = 202, // 获取GSA数据
+ *     CCU_U_OP_GET_XN          = 203, // 获取XN数据
+ *     CCU_U_OP_GET_CKE         = 204, // 获取CKE数据
+ *     CCU_U_OP_GET_PFE         = 205, // 获取PFE数据
+ *     CCU_U_OP_GET_CHANNEL     = 206, // 获取Channel数据
+ *     CCU_U_OP_GET_JETTY_CTX   = 207, // 获取Jetty_ctx数据
+ *     CCU_U_OP_GET_MISSION_CTX = 208, // 获取Mission_ctx数据
+ *     CCU_U_OP_GET_LOOP_CTX    = 209, // 获取Loop_ctx数据
 
-//     CCU_U_OP_SET_MSID_TOKEN       = 53, /* 设置连续MSID的配置值和Token相关值 */
-//     CCU_U_OP_SET_TASKKILL         = 54, /* 启动taskkill任务 */
-//     CCU_U_OP_CLEAN_TASKKILL_STATE = 55, /* 清除taskkill任务 */
-//     CCU_U_OP_CLEAN_TIF_TABLE      = 56, /* 清除TIF表项 */
-
-//     CCU_U_OP_K_MAX = 100, /* 定义需要向内核发送请求的造作最大值 */
-
-//     /* 以下为操作CCU映射到用户态资源空间的操作码 */
-//     CCU_U_OP_IN_RS_MIN       = 200, /* 定义一个在RS空间操作的最小值 */
-//     CCU_U_OP_GET_INSTRUCTION = 201, /* 设置INS指令 */
-//     CCU_U_OP_GET_GSA         = 202, /* 获取GSA数据 */
-//     CCU_U_OP_GET_XN          = 203, /* 获取XN数据 */
-//     CCU_U_OP_GET_CKE         = 204, /* 获取CKE数据 */
-//     CCU_U_OP_GET_PFE         = 205, /* 获取PFE数据 */
-//     CCU_U_OP_GET_CHANNEL     = 206, /* 获取Channel数据 */
-//     CCU_U_OP_GET_JETTY_CTX   = 207, /* 获取Jetty_ctx数据 */
-//     CCU_U_OP_GET_MISSION_CTX = 208, /* 获取Mission_ctx数据 */
-//     CCU_U_OP_GET_LOOP_CTX    = 209, /* 获取Loop_ctx数据 */
-
-//     CCU_U_OP_SET_INSTRUCTION = 251, /* 设置INS指令 */
-//     CCU_U_OP_SET_GSA         = 252, /* 设置GSA数据 */
-//     CCU_U_OP_SET_XN          = 253, /* 设置XN数据 */
-//     CCU_U_OP_SET_CKE         = 254, /* 设置CKE数据 */
-//     CCU_U_OP_SET_PFE         = 255, /* 设置PFE数据 */
-//     CCU_U_OP_SET_CHANNEL     = 256, /* 设置Channel数据 */
-//     CCU_U_OP_SET_JETTY_CTX   = 257, /* 设置Jetty_ctx数据 */
-//     CCU_U_OP_SET_MISSION_CTX = 258, /* 设置Mission_ctx数据 */
-//     CCU_U_OP_SET_LOOP_CTX    = 259, /* 设置Loop_ctx数据 */
-
-//     CCU_U_OP_IN_RS_MAX = 300, /* 定义一个在RS空间操作的最大值 */
-// };
+ *     CCU_U_OP_SET_INSTRUCTION = 251, // 设置INS指令
+ *     CCU_U_OP_SET_GSA         = 252, // 设置GSA数据
+ *     CCU_U_OP_SET_XN          = 253, // 设置XN数据
+ *     CCU_U_OP_SET_CKE         = 254, // 设置CKE数据
+ *     CCU_U_OP_SET_PFE         = 255, // 设置PFE数据
+ *     CCU_U_OP_SET_CHANNEL     = 256, // 设置Channel数据
+ *     CCU_U_OP_SET_JETTY_CTX   = 257, // 设置Jetty_ctx数据
+ *     CCU_U_OP_SET_MISSION_CTX = 258, // 设置Mission_ctx数据
+ *     CCU_U_OP_SET_LOOP_CTX    = 259, // 设置Loop_ctx数据
+ *     CCU_U_OP_IN_RS_MAX = 300, 定义一个在RS空间操作的最大值
+ * };
+ */
 
 using CcuDataByte8 = Hccl::CcuDataByte8;
-// struct CcuDataByte8 {
-//     char raw[8];
-// };
+/* 开源自定义算子CCU设备管理实现，当前支持新老通信域混跑，
+ * 暂时改用legacy数据结构，避免反向依赖
+ * struct CcuDataByte8 {
+ *     char raw[8];
+ * };
+ */
 
 using CcuDataByte32 = Hccl::CcuDataByte32;
-// struct CcuDataByte32 {
-//     char raw[32];
-// };
+/* 开源自定义算子CCU设备管理实现，当前支持新老通信域混跑，
+ * 暂时改用legacy数据结构，避免反向依赖
+ * struct CcuDataByte32 {
+ *     char raw[32];
+ * };
+ */
 
 using CcuDataByte64 = Hccl::CcuDataByte64;
-// struct CcuDataByte64 {
-//     char raw[64];
-// };
+/* 开源自定义算子CCU设备管理实现，当前支持新老通信域混跑，
+ * 暂时改用legacy数据结构，避免反向依赖
+ * struct CcuDataByte64 {
+ *      char raw[64];
+ * };
+ */
 
 using CcuInstrInfo = Hccl::CcuInstrInfo;
-// struct CcuInstrInfo {
-//     uint64_t resourceAddr;
-// };
+/* 开源自定义算子CCU设备管理实现，当前支持新老通信域混跑，
+ * 暂时改用legacy数据结构，避免反向依赖
+ * struct CcuInstrInfo {
+ *     uint64_t resourceAddr;
+ * };
+ */
 
-// using CCU_ENABLE_FLAG = Hccl::CCU_ENABLE_FLAG;
-// constexpr uint32_t CCU_ENABLE_FLAG = 1;
+/* 开源自定义算子CCU设备管理实现，当前支持新老通信域混跑，
+ * 暂时改用legacy数据结构，避免反向依赖
+ * constexpr uint32_t CCU_ENABLE_FLAG = 1;
+ */
 
 using CcuDieInfo = Hccl::CcuDieInfo;
-// struct CcuDieInfo {
-//     uint32_t enableFlag;
-// };
+/* 开源自定义算子CCU设备管理实现，当前支持新老通信域混跑，
+ * 暂时改用legacy数据结构，避免反向依赖
+ * struct CcuDieInfo {
+ *     uint32_t enableFlag;
+ * };
+ */
 
 using CcuDataCaps = Hccl::CcuDataCaps;
-// struct CcuDataCaps {
-//     uint32_t cap0;
-//     uint32_t cap1;
-//     uint32_t cap2;
-//     uint32_t cap3;
-//     uint32_t cap4;
-// };
+/* 开源自定义算子CCU设备管理实现，当前支持新老通信域混跑，
+ * 暂时改用legacy数据结构，避免反向依赖
+ * struct CcuDataCaps {
+ *     uint32_t cap0;
+ *     uint32_t cap1;
+ *     uint32_t cap2;
+ *     uint32_t cap3;
+ *     uint32_t cap4;
+ * };
+ */
 
 using CcuBaseInfoData = Hccl::CcuBaseInfoData;
-// struct CcuBaseInfoData {
-//     uint32_t           msId;
+/* 开源自定义算子CCU设备管理实现，当前支持新老通信域混跑，
+ * 暂时改用legacy数据结构，避免反向依赖
+ * struct CcuBaseInfoData {
+ *     uint32_t           msId;
 
-//     uint32_t           tokenId;
-//     uint32_t           tokenValue;
-//     uint32_t           tokenValid;
+ *     uint32_t           tokenId;
+ *     uint32_t           tokenValue;
+ *     uint32_t           tokenValid;
 
-//     uint32_t           missionKey;
-//     uint64_t           resourceAddr;
-//     struct CcuDataCaps caps;
-// };
+ *     uint32_t           missionKey;
+ *     uint64_t           resourceAddr;
+ *     struct CcuDataCaps caps;
+ * };
+ */
 
 using CcuDataTypeUnion = Hccl::CcuDataTypeUnion;
-// union CcuDataTypeUnion {
-//     struct CcuDataByte8    byte8;
-//     struct CcuDataByte32   byte32;
-//     struct CcuDataByte64   byte64;
-//     struct CcuBaseInfoData baseinfo;
-//     struct CcuInstrInfo    insinfo;
-//     struct CcuDieInfo      dieinfo;
-// };
+/* 开源自定义算子CCU设备管理实现，当前支持新老通信域混跑，
+ * 暂时改用legacy数据结构，避免反向依赖
+ * union CcuDataTypeUnion {
+ *     struct CcuDataByte8    byte8;
+ *     struct CcuDataByte32   byte32;
+ *     struct CcuDataByte64   byte64;
+ *     struct CcuBaseInfoData baseinfo;
+ *     struct CcuInstrInfo    insinfo;
+ *     struct CcuDieInfo      dieinfo;
+ * };
+ */
 
 using CcuData = Hccl::CcuData;
-// struct CcuData {
-//     uint32_t               udieIdx;
-//     uint32_t               dataLen;       /* 数据的总长度（sizeof(dataArray[xxx]) *  dataArraySize的值 */
-//     uint32_t               dataArraySize; /* dataArray数组的个数 */
-//     union CcuDataTypeUnion dataArray[8];  /* 不同类型的数据，通过联合体来存储 */
-// };
+/* 开源自定义算子CCU设备管理实现，当前支持新老通信域混跑，
+ * 暂时改用legacy数据结构，避免反向依赖
+ * struct CcuData {
+ *     uint32_t               udieIdx;
+ *     uint32_t               dataLen;       // 数据的总长度（sizeof(dataArray[xxx]) *  dataArraySize的值
+ *     uint32_t               dataArraySize; // dataArray数组的个数
+ *     union CcuDataTypeUnion dataArray[8];  // 不同类型的数据，通过联合体来存储
+ * };
+ */
 
 using CcuDataUnion = Hccl::CcuDataUnion;
-// union CcuDataUnion {
-//     char           raw[2048]; /* 对外呈现是一个字符数组，内部转换成对应类型CcuData */
-//     struct CcuData dataInfo;
-// };
+/* 开源自定义算子CCU设备管理实现，当前支持新老通信域混跑，
+ * 暂时改用legacy数据结构，避免反向依赖
+ * union CcuDataUnion {
+ *     char           raw[2048]; // 对外呈现是一个字符数组，内部转换成对应类型CcuData
+ *     struct CcuData dataInfo;
+ * };
+ */
 
 using CustomChannelInfoIn = Hccl::CustomChannelInfoIn;
-// struct CustomChannelInfoIn {
-//     CcuDataUnion data; /* 对外呈现是一个字符数组，内部转换成对应类型ccu_data */
-//     uint32_t offsetStartIdx; /* 对应需要操作的元素的idx位置，位置用正整数代替，使用者不需要关心元素的实际大小 */
-//     CcuOpcodeType op;
+/* 开源自定义算子CCU设备管理实现，当前支持新老通信域混跑，
+ * 暂时改用legacy数据结构，避免反向依赖
+ * struct CustomChannelInfoIn {
+ *     CcuDataUnion data; // 对外呈现是一个字符数组，内部转换成对应类型ccu_data
+ *     uint32_t offsetStartIdx; // 对应需要操作的元素的idx位置，位置用正整数代替，使用者不需要关心元素的实际大小
+ *     CcuOpcodeType op;
 
-//     CustomChannelInfoIn() : offsetStartIdx(0), op(CcuOpcodeType::CCU_U_OP_GET_VERSION) {
-//         (void)memset_s(&data, sizeof(data), 0, sizeof(data));
-//     }
-// };
+ *     CustomChannelInfoIn() : offsetStartIdx(0), op(CcuOpcodeType::CCU_U_OP_GET_VERSION) {
+ *         (void)memset_s(&data, sizeof(data), 0, sizeof(data));
+ *     }
+ * };
+ */
 
 using CustomChannelInfoOut = Hccl::CustomChannelInfoOut;
-// struct CustomChannelInfoOut {
-//     CcuDataUnion data;      /* 对外呈现是一个字符数组，内部转换成对应类型CcuData */
-//     uint32_t offsetNextIdx; /* 操作后返回下一个元素的idx位置，位置用正整数代替，使用者不需要关心元素的实际大小 */
-//     int opRet;
+/* 开源自定义算子CCU设备管理实现，当前支持新老通信域混跑，
+ * 暂时改用legacy数据结构，避免反向依赖
+ * struct CustomChannelInfoOut {
+ *     CcuDataUnion data;      // 对外呈现是一个字符数组，内部转换成对应类型CcuData
+ *     uint32_t offsetNextIdx; // 操作后返回下一个元素的idx位置，位置用正整数代替，使用者不需要关心元素的实际大小
+ *     int opRet;
 
-//     CustomChannelInfoOut() : offsetNextIdx(0), opRet(0) {
-//         (void)memset_s(&data, sizeof(data), 0, sizeof(data));
-//     }
-// };
+ *     CustomChannelInfoOut() : offsetNextIdx(0), opRet(0) {
+ *         (void)memset_s(&data, sizeof(data), 0, sizeof(data));
+ *     }
+ * };
+ */
 
-// constexpr uint32_t SHIFT_2BITS  = 2;
-// constexpr uint32_t SHIFT_4BITS  = 4;
-// constexpr uint32_t SHIFT_8BITS  = 8;
-// constexpr uint32_t SHIFT_12BITS = 12;
-// constexpr uint32_t SHIFT_16BITS = 16;
-// constexpr uint32_t SHIFT_20BITS = 20;
-// constexpr uint32_t SHIFT_24BITS = 24;
-// constexpr uint32_t SHIFT_40BITS = 40;
-
-// constexpr uint32_t SHIFT_2BITS  = Hccl::SHIFT_2BITS;
-// constexpr uint32_t SHIFT_4BITS  = Hccl::SHIFT_4BITS;
-// constexpr uint32_t SHIFT_8BITS  = Hccl::SHIFT_8BITS;
-// constexpr uint32_t SHIFT_12BITS = Hccl::SHIFT_12BITS;
-// constexpr uint32_t SHIFT_16BITS = Hccl::SHIFT_16BITS;
-// constexpr uint32_t SHIFT_20BITS = Hccl::SHIFT_20BITS;
-// constexpr uint32_t SHIFT_24BITS = Hccl::SHIFT_24BITS;
-// constexpr uint32_t SHIFT_40BITS = Hccl::SHIFT_40BITS;
+/* 开源自定义算子CCU设备管理实现，当前支持新老通信域混跑，
+ * 暂时改用legacy数据结构，避免反向依赖
+ * constexpr uint32_t SHIFT_2BITS  = 2;
+ * constexpr uint32_t SHIFT_4BITS  = 4;
+ * constexpr uint32_t SHIFT_8BITS  = 8;
+ * constexpr uint32_t SHIFT_12BITS = 12;
+ * constexpr uint32_t SHIFT_16BITS = 16;
+ * constexpr uint32_t SHIFT_20BITS = 20;
+ * constexpr uint32_t SHIFT_24BITS = 24;
+ * constexpr uint32_t SHIFT_40BITS = 40;
+ */
 
 class CcuDevMgrImp {
 public:
