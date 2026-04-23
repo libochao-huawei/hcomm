@@ -238,9 +238,10 @@ function(check_pkg_build_deps pkg_name)
     endif()
 endfunction()
 
-set(HOST_ONLY "false")
-if (NOT FULL_MODE)
-set(HOST_ONLY "true")
+if(DEVICE_MODE)
+    set(HOST_ONLY "false")
+elseif()
+    set(HOST_ONLY "true")
 endif()
 
 # 添加生成version.info的目标

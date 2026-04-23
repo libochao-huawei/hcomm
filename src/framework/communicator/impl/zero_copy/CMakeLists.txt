@@ -13,7 +13,7 @@ set(src_list
     zero_copy_memory_agent.cc
 )
 
-if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
+if((NOT BUILD_OPEN_PROJECT) OR DEVICE_MODE)
     set(src_list_device
         zero_copy_address_mgr_device.cc
     )

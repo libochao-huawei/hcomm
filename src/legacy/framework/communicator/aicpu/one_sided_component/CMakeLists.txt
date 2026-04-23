@@ -11,7 +11,7 @@ target_sources(hccl_v2 PRIVATE
     one_sided_component_lite.cpp
 )
 
-if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
+if((NOT BUILD_OPEN_PROJECT) OR DEVICE_MODE)
 target_sources(ccl_kernel PRIVATE
     one_sided_component_lite.cpp
 )
