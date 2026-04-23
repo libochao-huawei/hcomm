@@ -45,8 +45,8 @@ __aicore__ inline void AivAll2All91093Single::ProcessBig(GM_ADDR input, GM_ADDR 
     uint64_t remoteSendOffset, uint64_t localRecvOffset, uint64_t remoteSendCount)
 {
     uint32_t blockNumPerGroup = numBlocks_/ rankSize_; 
-    uint32_t blockIdxInGroup = GetBlockIdx()% blockNumPerGroup;
-    uint32_t dstRank = GetBlockIdx()/ blockNumPerGroup;
+    uint32_t blockIdxInGroup = blockIdx_% blockNumPerGroup;
+    uint32_t dstRank = blockIdx_/ blockNumPerGroup;
     uint32_t padCount = UB_ALIGN_SIZE / sizeof(T);
 
     // 内存准备
@@ -81,8 +81,8 @@ __aicore__ inline void AivAll2All91093Single::ProcessSmall(GM_ADDR input, GM_ADD
     uint64_t remoteSendOffset, uint64_t localRecvOffset, uint64_t remoteSendCount)
 {
     uint32_t blockNumPerGroup = numBlocks_/ rankSize_; 
-    uint32_t blockIdxInGroup = GetBlockIdx()% blockNumPerGroup;
-    uint32_t dstRank = GetBlockIdx()/ blockNumPerGroup;
+    uint32_t blockIdxInGroup = blockIdx_% blockNumPerGroup;
+    uint32_t dstRank = blockIdx_/ blockNumPerGroup;
     uint32_t padCount = UB_ALIGN_SIZE / sizeof(T);
 
     uint32_t dataOffset = (tag % 2 == 0) ? AIV_INIT_OFFSET : AIV_PING_PONG_SIZE;
@@ -125,7 +125,7 @@ __aicore__ inline void aiv_all_to_all_vc_91093_single_graph(KERNEL_ARGS_DEF, Ext
     op.Init(KERNEL_CLASS_INIT, true);
 
     uint32_t blockNumPerGroup = op.numBlocks_/ rankSize; 
-    uint32_t dstRank = GetBlockIdx()/ blockNumPerGroup;
+    uint32_t dstRank = op.blockIdx_/ blockNumPerGroup;
 
     uint64_t remoteSendOffset = 0;
     for (uint32_t i = 0; i < rank; i++) {
@@ -149,7 +149,7 @@ __aicore__ inline void aiv_all_to_all_91093_single(KERNEL_ARGS_DEF)
     op.Init(KERNEL_CLASS_INIT, true);
 
     uint32_t blockNumPerGroup = op.numBlocks_/ rankSize; 
-    uint32_t dstRank = GetBlockIdx()/ blockNumPerGroup;
+    uint32_t dstRank = op.blockIdx_/ blockNumPerGroup;
 
     uint64_t remoteSendOffset = rank * len;
     uint64_t localRecvOffset = dstRank * len;
@@ -165,7 +165,7 @@ __aicore__ inline void sk_all_to_all_91093_single(SUPERKERNEL_ARGS_DEF)
     AivAll2All91093Single op;
     op.Init(SUPERKERNEL_CLASS_INIT, AIV_A3_ALL_TO_ALL_GRAPH_GUIYI_SIZE);
     uint32_t blockNumPerGroup = op.numBlocks_/ op.rankSize_; 
-    uint32_t dstRank = GetBlockIdx()/ blockNumPerGroup;
+    uint32_t dstRank = op.blockIdx_/ blockNumPerGroup;
 
     uint64_t remoteSendOffset = op.rank_ * op.len_;
     uint64_t localRecvOffset = dstRank * op.len_;

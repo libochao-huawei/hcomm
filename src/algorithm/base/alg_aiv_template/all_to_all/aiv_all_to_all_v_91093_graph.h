@@ -105,7 +105,7 @@ __aicore__ inline void AivAll2AllVGraph91093::Process(GM_ADDR buffOut0, GM_ADDR 
     BatchRecordWait(tag, buffersOut, AivNotifyType::DataSignal);
  
     // 最后一个核做localcopy
-    if (GetBlockIdx() == numBlocks_ - 1) {
+    if (blockIdx_ == numBlocks_ - 1) {
         uint64_t sendOffset = extraArgs->sendDispls[rank_];
         uint64_t recvOffset = extraArgs->recvDispls[rank_];
         uint64_t sendCount = extraArgs->recvCounts[rank_];

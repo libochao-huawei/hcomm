@@ -94,7 +94,7 @@ __aicore__ inline void AivReduceScatterBig910B::Process(GM_ADDR input, GM_ADDR o
     uint64_t avgSizePerSlice = avgLengthPerSlice * sizeof(T);
 
     uint32_t blockNumPerGroup = rankSize_;
-    uint32_t targetRank = GetBlockIdx() >= rankSize_ ? GetBlockIdx() - rankSize_ : GetBlockIdx();
+    uint32_t targetRank = blockIdx_ >= rankSize_ ? blockIdx_ - rankSize_ : blockIdx_;
 
     __gm__ T *inputGm = (__gm__ T *)input;
     __gm__ T *outputGm = (__gm__ T *)output;
@@ -102,7 +102,7 @@ __aicore__ inline void AivReduceScatterBig910B::Process(GM_ADDR input, GM_ADDR o
     __gm__ T *cclGmOther = (__gm__ T *)(GM_IN[targetRank]);
     
 
-    if (GetBlockIdx() < blockNumPerGroup) {
+    if (blockIdx_ < blockNumPerGroup) {
         uint64_t inputOffset = targetRank * totallen;
         uint64_t cclGmSelfOffset = targetRank * maxCount;
 
@@ -140,7 +140,7 @@ __aicore__ inline void AivReduceScatterBig910B::ProcessSingleRanksizeCore(GM_ADD
 {
     uint64_t avgLengthPerSlice = len;
     uint64_t avgSizePerSlice = avgLengthPerSlice * sizeof(T);
-    uint32_t targetRank = GetBlockIdx();
+    uint32_t targetRank = blockIdx_;
 
     __gm__ T *inputGm = (__gm__ T *)input;
     __gm__ T *outputGm = (__gm__ T *)output;
