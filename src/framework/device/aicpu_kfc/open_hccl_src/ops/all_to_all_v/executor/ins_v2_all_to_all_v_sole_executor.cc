@@ -206,6 +206,8 @@ HcclResult InsV2AlltoAllVSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate
             recvCounts[i] = reinterpret_cast<u64*>(param.all2AllVDataDes.recvCounts)[i];
             sdispls[i] = reinterpret_cast<u64*>(param.all2AllVDataDes.sdispls)[i];
             rdispls[i] = reinterpret_cast<u64*>(param.all2AllVDataDes.rdispls)[i];
+            HCCL_INFO("[InsV2AlltoAllVSoleExecutor][param.all2AllVDataDes] sendCounts[%d]:[%llu], recvCounts[%d]:[%llu], sdispls[%d]:[%llu], rdispls[%d]:[%llu]",
+                    i, sendCounts[i], i, recvCounts[i], i, sdispls[i], i, rdispls[i]);
         }
     }
 
@@ -302,6 +304,8 @@ HcclResult InsV2AlltoAllVSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate
                 tempAlgParams.recvCounts[i] = 0;
                 tempAlgParams.rdispls[i] = rdispls[i] + recvCounts[i];
             }
+            HCCL_INFO("[InsV2AlltoAllVSoleExecutor][tempAlgParams] sendCounts[%d]:[%llu], recvCounts[%d]:[%llu], sdispls[%d]:[%llu], rdispls[%d]:[%llu]",
+                    i, tempAlgParams.sendCounts[i], i, tempAlgParams.recvCounts[i], i, tempAlgParams.sdispls[i], i, tempAlgParams.rdispls[i]);
         }
 
         // 因为只考虑执行0级算法，所以传进template里面的channels就是channels_的第一个vector
