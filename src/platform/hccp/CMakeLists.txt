@@ -86,6 +86,7 @@ target_link_libraries(hccp_service.bin PRIVATE
 
 install(TARGETS  hccp_service.bin
     RUNTIME DESTINATION ${INSTALL_RUNTIME_DIR}  ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
 )
 
 add_dependencies(hccp_service.bin rs)

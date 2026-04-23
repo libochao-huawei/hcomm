@@ -99,4 +99,5 @@ target_link_libraries(ra_adp PRIVATE
 
 install(TARGETS  ra_adp
     LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}  ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
 )

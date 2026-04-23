@@ -237,5 +237,7 @@ add_custom_command(TARGET hccl_alg_adaption POST_BUILD
 
 install(TARGETS hccl_alg_adaption
     LIBRARY DESTINATION lib ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     RUNTIME DESTINATION bin ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
 )

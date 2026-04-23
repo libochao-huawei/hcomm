@@ -111,4 +111,5 @@ target_compile_definitions(ra_hdc PRIVATE
 
 install(TARGETS  ra_hdc
     LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}  ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
 )

@@ -92,4 +92,5 @@ target_compile_definitions(ra_peer PRIVATE
 
 install(TARGETS  ra_peer
     LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}  ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
 )
