@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "mockcpp/mockcpp.hpp"
-#include "framework/device/debug/dfx/trace/executor_tracer.h"
+#include "executor_tracer.h"
 #include "framework/aicpu_hccl_process.h"
 #include "framework/aicpu_communicator.h"
 #include "dfx/aicpu_executor_tracer.h"
