@@ -20,6 +20,7 @@ CollCommAicpuDestroyFunc &CollCommAicpuDestroyFunc::GetInstance()
 
 void CollCommAicpuDestroyFunc::Call()
 {
+    HCCL_INFO("[%s] Call display stopCall_[%d] ret[%d]", __func__, stopCall_);
     if (stopCall_ == true) {
         return;
     }
@@ -45,16 +46,22 @@ HcclResult CollCommAicpuDestroyFunc::Process()
         CollCommAicpu *aicpuComm = commInfo.second->GetCollCommAicpu();
         CHK_PTR_NULL(aicpuComm);
 
-        if (aicpuComm->GetCommmStatus() != HcclCommStatus::HCCL_COMM_STATUS_READY) {
-            continue;
+        HcclCommStatus status = aicpuComm->GetCommmStatus();
+        HCCL_INFO("[%s] display CommStatus[%d]", __func__, status);
+        if (status == HcclCommStatus::HCCL_COMM_STATUS_INVALID || status== HcclCommStatus::HCCL_COMM_STATUS_SUSPENDING) {
+            
+        } else {
+            coutinue;
         }
 
         Hccl::KfcCommand cmd = Hccl::KfcCommand::NONE;
         CHK_RET(aicpuComm->BackGroundGetCmd(cmd));
+        HCCL_INFO("[%s] display kfcCmd[%d]", __func__, cmd);
         if (cmd != Hccl::KfcCommand::DESTROY_AICPU_COMM) {
             continue;
         }
         destroyComm.push_back(aicpuComm->GetIdentifier());
+        HCCL_INFO("[%s] response  DESTROY_AICPU_COMM kfc", __func__);
         CHK_RET(aicpuComm->BackGroundSetStatus(Hccl::KfcStatus::DESTROY_AICPU_COMM_DONE));
         HCCL_RUN_INFO("[%s]group[%s] Recv DESTROY_AICPU_COMM cmd and set DESTROY_AICPU_COMM_DONE",
             __func__, aicpuComm->GetIdentifier().c_str());
