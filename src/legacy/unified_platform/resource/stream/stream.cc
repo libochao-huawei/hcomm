@@ -68,6 +68,11 @@ u32 Stream::GetId() const
     return id;
 }
 
+u32 Stream::GetSqId() const
+{
+    return sqId;
+}
+
 bool Stream::IsMaster() const
 {
     return isMaster_;

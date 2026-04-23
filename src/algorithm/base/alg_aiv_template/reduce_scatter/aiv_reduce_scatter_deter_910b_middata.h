@@ -43,12 +43,12 @@ public:
 
 __aicore__ inline void AivReduceScatterDeterMid910B::EndSync(int32_t tag)
 {
-    uint32_t targetRank = GetBlockIdx() % rankSize_;
+    uint32_t targetRank = blockIdx_ % rankSize_;
 
     int64_t flagOffsetBasic = seperateOffset + BASE_FLAG_OFFSET * AIV_REDUCE_SCATTER_DETER_910B_MIDDATA;
     uint32_t flagOffset = (((tag % 2 == 0) ? 3 : 9) * rankSize_ * FLAG_SIZE) + flagOffsetBasic;
 
-    if (GetBlockIdx() < rankSize_) {
+    if (blockIdx_ < rankSize_) {
         if (targetRank != rank_) {
             PipeBarrier<PIPE_ALL>();
             SetSignalValue((__gm__ int32_t *)(GM_OUT[targetRank] + flagOffset + rank_ * FLAG_SIZE), localSetTensor, tag);
@@ -229,7 +229,7 @@ __aicore__ inline void AivReduceScatterDeterMid910B::Process(GM_ADDR input, GM_A
     int64_t count = len;
     int64_t allCount = count*rankSize_;
     int64_t blockNumPerGroup = rankSize_;
-    int64_t x = GetBlockIdx() % blockNumPerGroup;
+    int64_t x = blockIdx_ % blockNumPerGroup;
     int64_t flagOffsetBasic = seperateOffset + BASE_FLAG_OFFSET * AIV_REDUCE_SCATTER_DETER_910B_MIDDATA;
 
     uint32_t flagOffsetBase = ((tag % 2 == 0) ? 0 : 6 * rankSize_ * FLAG_SIZE) + flagOffsetBasic;
@@ -246,12 +246,12 @@ __aicore__ inline void AivReduceScatterDeterMid910B::Process(GM_ADDR input, GM_A
     int64_t flagOffsetCheck = flagOffsetBase + (4*rankSize_ ) * FLAG_SIZE;
  
     // 第一组 先从input拷贝到cclbuffer
-    if (GetBlockIdx() < blockNumPerGroup) {
+    if (blockIdx_ < blockNumPerGroup) {
         CpGM2GMWithFlagWrap(cclGMSelf + x * count, inputGM + x * count, count, (__gm__ int32_t *)(GM_OUT[rank_] + flagOffset1stCount), 8, tag);
         return;
     } 
     // 第二组 拷贝cclbuffer前半部分到cllbuffer后半部分
-    else if (blockNumPerGroup<=GetBlockIdx() && GetBlockIdx() < 2*blockNumPerGroup) {
+    else if (blockNumPerGroup<=blockIdx_ && blockIdx_ < 2*blockNumPerGroup) {
         __gm__ int32_t *flagCntDoneOtner = (__gm__ int32_t *)(GM_OUT[x] + flagOffsetBase + (rank_)* FLAG_SIZE);
         __gm__ int32_t *flagCntSelf = (__gm__ int32_t *)(GM_OUT[rank_] + flagOffset2stCount);
         if (x == 0) {
@@ -289,7 +289,7 @@ __aicore__ inline void AivReduceScatterDeterMid910B::ProcessSingleRanksizeCore(G
     int64_t count = len;
     int64_t allCount = count*rankSize_;
     int64_t blockNumPerGroup = rankSize_;
-    int64_t x = GetBlockIdx() % blockNumPerGroup;
+    int64_t x = blockIdx_ % blockNumPerGroup;
     int64_t flagOffsetBasic = seperateOffset + BASE_FLAG_OFFSET * AIV_REDUCE_SCATTER_DETER_910B_MIDDATA;
 
     uint32_t flagOffsetBase = ((tag % 2 == 0) ? 0 : 6 * rankSize_ * FLAG_SIZE) + flagOffsetBasic;

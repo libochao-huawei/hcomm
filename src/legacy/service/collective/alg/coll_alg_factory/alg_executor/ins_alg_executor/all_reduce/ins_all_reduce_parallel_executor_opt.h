@@ -86,9 +86,11 @@ private:
 
         tempAlgIntraAG.SetDmaMode(dmaMode_);
         tempAlgIntraAG.SetCollOp(op);
+        tempAlgIntraAG.SetDataType(dataType_);
 
         tempAlgInterAG.SetDmaMode(dmaMode_);
         tempAlgInterAG.SetCollOp(op);
+        tempAlgInterAG.SetDataType(dataType_);
     }
 
     inline HcclResult CalcQue(AlgTempResReq &resReqIntraRS, AlgTempResReq &resReqInterRS,

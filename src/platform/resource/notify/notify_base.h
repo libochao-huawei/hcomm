@@ -107,6 +107,9 @@ public:
 
     static HcclResult Deserialize(const std::vector<u8>& byteVector, HcclNotifyInfo &notifyInfo)
     {
+        CHK_PRT_RET(byteVector.size() < sizeof(HcclNotifyInfo),
+            HCCL_ERROR("[Deserialize]expected byteVector size[%zu] < sizeof(HcclNotifyInfo)[%zu]",
+            byteVector.size(), sizeof(HcclNotifyInfo)), HCCL_E_PARA);
         CHK_SAFETY_FUNC_RET(memcpy_s((u8 *)&notifyInfo, sizeof(HcclNotifyInfo),
             &byteVector[0], sizeof(HcclNotifyInfo)));
         return HCCL_SUCCESS;

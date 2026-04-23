@@ -36,6 +36,8 @@ public:
     TaskInfoQueueMap::iterator Begin(u32 devId);
     TaskInfoQueueMap::iterator End(u32 devId);
 
+    HcclResult FindTaskInfo(u32 devId, u32 streamId, u32 taskId, std::shared_ptr<TaskInfo> &curTask) const;
+    
 private:
     static GlobalMirrorTasks                       ins_;
     std::array<TaskInfoQueueMap, DEVICE_MAX_NUM> taskMaps_;

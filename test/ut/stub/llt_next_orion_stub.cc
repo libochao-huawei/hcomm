@@ -1523,6 +1523,12 @@ u32 GlobalMirrorTasks::DevSize() const
     return 0;
 }
 
+TaskInfoQueue &GlobalMirrorTasks::CreateQueue(u32 devId, u32 streamId, QueueType type)
+{
+    static CircularQueue<std::shared_ptr<TaskInfo>> queue(MAX_CIRCULAR_QUEUE_LENGTH);
+    return queue;
+}
+
 TaskInfoQueue *GlobalMirrorTasks::GetQueue(u32 devId, u32 streamId) const
 {
     static CircularQueue<std::shared_ptr<TaskInfo>> queue(MAX_CIRCULAR_QUEUE_LENGTH);
@@ -1535,12 +1541,28 @@ void GlobalMirrorTasks::DestroyQueue(u32 devId, u32 streamId)
    
 }
 
+TaskInfoQueueMap::iterator GlobalMirrorTasks::Begin(u32 devId)
+{
+    static TaskInfoQueueMap map;
+    return map.begin();
+}
+
+TaskInfoQueueMap::iterator GlobalMirrorTasks::End(u32 devId)
+{
+    static TaskInfoQueueMap map;
+    return map.end();
+}
+
 std::shared_ptr<TaskInfo> GlobalMirrorTasks::GetTaskInfo(u32 devId, u32 streamId, u32 taskId) const
 {
 
     return nullptr;
 }
 
+HcclResult GlobalMirrorTasks::FindTaskInfo(u32 devId, u32 streamId, u32 taskId, std::shared_ptr<TaskInfo> &curTask) const
+{
+    return HCCL_E_NOT_FOUND;
+}
 
 MirrorTaskManager::MirrorTaskManager(u32 devId, GlobalMirrorTasks *globalMirrorTasks, bool devUsed)
     : devId_(devId), globalMirrorTasks_(globalMirrorTasks), devUsed_(devUsed)
@@ -2201,6 +2223,54 @@ HcclResult HcclCommunicator::SetAccelerator(int32_t accelerator, bool isCcuMsAva
     return HCCL_SUCCESS;
 }
 
+}  // namespace Hccl
+
+namespace Hccl {
+class CommunicatorImplLite {
+public:
+    CommunicatorImplLite(u32 commId) : commId_(commId) {}
+    ~CommunicatorImplLite() {}
+private:
+    u32 commId_;
+};
+
+class CommunicatorImplLiteMgr {
+public:
+    CommunicatorImplLiteMgr();
+    ~CommunicatorImplLiteMgr();
+    static CommunicatorImplLiteMgr &GetInstance();
+    void DestroyComm(u32 commIdIndex);
+    CommunicatorImplLite *Get(const u32 commIdIndex);
+    std::vector<CommunicatorImplLite *> GetAll();
+    void SetEnvConfig(const HcclDeviceEnvConfigLite& envConfig) { envConfig_ = envConfig; }
+    const HcclDeviceEnvConfigLite& GetEnvConfig() { return envConfig_; }
+private:
+    std::unordered_map<u32, std::unique_ptr<CommunicatorImplLite>> communicatorImplLites;
+    std::mutex serialMutex;
+    HcclDeviceEnvConfigLite envConfig_;
+};
+
+CommunicatorImplLiteMgr::CommunicatorImplLiteMgr() {}
+CommunicatorImplLiteMgr::~CommunicatorImplLiteMgr() {}
+
+CommunicatorImplLiteMgr &CommunicatorImplLiteMgr::GetInstance()
+{
+    static CommunicatorImplLiteMgr instance;
+    return instance;
+}
+
+void CommunicatorImplLiteMgr::DestroyComm(u32 commIdIndex) {(void)commIdIndex;}
+
+CommunicatorImplLite *CommunicatorImplLiteMgr::Get(const u32 commIdIndex)
+{
+    (void)commIdIndex;
+    return nullptr;
+}
+
+std::vector<CommunicatorImplLite *> CommunicatorImplLiteMgr::GetAll()
+{
+    return {};
+}
 }  // namespace Hccl
 
 HcclResult HcclCommDestroyV2(HcclComm comm)

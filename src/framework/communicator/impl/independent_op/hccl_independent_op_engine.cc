@@ -167,7 +167,7 @@ HcclResult HcclThreadAcquireWithStream(HcclComm comm, CommEngine engine,
             CHK_PTR_NULL(threadStream);
             Mc2CommInfo mc2CommInfo;
             mc2CommInfo.FreeStreamId = 0;
-            mc2CommInfo.streamsId.push_back(static_cast<u32>(threadStream->id()));
+            mc2CommInfo.streamsId.push_back(static_cast<u32>(threadStream->sqId()));
             mc2CommInfo.groupname = commId;
             mc2CommInfo.myRankId = collComm->GetMyRankId();
             mc2CommInfo.rankSize = collComm->GetRankSize();
@@ -286,7 +286,7 @@ HcclResult HcclThreadExportToCommEngine(HcclComm comm, uint32_t threadNum, const
     CHK_PRT_RET(!IsValidCommEngine(dstCommEngine),
                 HCCL_ERROR("[%s] commEngine[%d] is invalid", __func__, static_cast<int32_t>(dstCommEngine)), HCCL_E_PARA);
     if (threadNum == 0 || threadNum > MAX_EXPORT_THREAD_NUM) {
-        HCCL_ERROR("[%s] threadNum is 0 or greater than %u", __func__, MAX_EXPORT_THREAD_NUM);
+        HCCL_ERROR("[%s] threadNum[%u] is 0 or greater than %u", __func__, threadNum, MAX_EXPORT_THREAD_NUM);
         return HCCL_E_PARA;
     }
 

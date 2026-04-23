@@ -68,10 +68,10 @@ __aicore__ inline void AivAllReduce91093Deter::InitDataCopyOffset(uint64_t perRa
     } else {
         numTargets = 1;
         blockNumPerGroup = numBlocks_ / rankSize_; // 多少个aiv服务一个rank
-        targetRanks[0] = GetBlockIdx() / blockNumPerGroup;
+        targetRanks[0] = blockIdx_ / blockNumPerGroup;
 
         uint32_t padCount = UB_ALIGN_SIZE / sizeof(T);
-        blockIdxInGroup = GetBlockIdx() % blockNumPerGroup;
+        blockIdxInGroup = blockIdx_ % blockNumPerGroup;
 
         if (len <= halfBufferCount) { // ccl够用，只需要搬一轮的情况
             countMid = 0;
@@ -231,7 +231,7 @@ __aicore__ inline void AivAllReduce91093Deter::Process(GM_ADDR buffIn0, GM_ADDR 
         uint32_t numReduce = rankSize_ < usedBlockNum_ ? rankSize_ : usedBlockNum_;
         uint32_t totalRounds = CeilLog2(rankSize_);
         
-        if (GetBlockIdx() < numReduce) {
+        if (blockIdx_ < numReduce) {
             uint64_t dataNum = curGroupCount;
             if (rank_ == rankSize_ - 1){
                 dataNum = curGroupCountLast;
@@ -243,7 +243,7 @@ __aicore__ inline void AivAllReduce91093Deter::Process(GM_ADDR buffIn0, GM_ADDR 
                 
                 // 计算当前核负责的offset范围
                 uint32_t offsetsPerCore = (curBlocks + numReduce - 1) / numReduce;
-                uint32_t startOffset = GetBlockIdx() * offsetsPerCore;
+                uint32_t startOffset = blockIdx_ * offsetsPerCore;
                 uint32_t endOffset = startOffset + offsetsPerCore;
                 if (endOffset > curBlocks) endOffset = curBlocks;
                 
