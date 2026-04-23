@@ -811,6 +811,7 @@ string DevUbConnection::Describe() const
 
 HcclResult DevUbConnection::Describe(std::string &dfxMsg)
 {
+    testSetTpAttr();
     uint16_t udpSport = 0xFFFF; // 无法获取实际的udpSport，使用0xFFFF表示未知
     if (tpProtocol == TpProtocol::TP) {
         struct TpAttr tpAttr {0};
@@ -837,6 +838,14 @@ HcclResult DevUbConnection::Describe(std::string &dfxMsg)
     dfxMsg += dfxStr;
     HCCL_INFO("[DevUbConnection::%s] %s", __func__, dfxStr.c_str());
     return HCCL_SUCCESS;
+}
+
+void DevUbConnection::testSetTpAttr()
+{
+    uint32_t attrBitmap = 0x1FFFF;
+    struct TpAttr tpAttr {0};
+    tpAttr.dataUdpSrcport = 12345;
+    CHK_RET(HrtRaSetTpAttrAsync(rdmaHandle, tpInfo.tpHandle, attrBitmap, tpAttr, reqHandle));
 }
 
 void DevUbConnection::AddNop(const Stream &stream)

@@ -554,6 +554,14 @@ HcclResult CcuConnection::Describe(std::string &dfxMsg)
     return HcclResult::HCCL_SUCCESS;
 }
 
+void CcuConnection::testSetTpAttr()
+{
+    uint32_t attrBitmap = 0x1FFFF;
+    struct TpAttr tpAttr {0};
+    tpAttr.dataUdpSrcport = 12345;
+    CHK_RET(HrtRaSetTpAttrAsync(ctxHandle_, tpInfo_.tpHandle, attrBitmap, tpAttr, reqHandle_[0]));
+}
+
 uint32_t CcuConnection::GetDieId() const
 {
     return dieId_;
