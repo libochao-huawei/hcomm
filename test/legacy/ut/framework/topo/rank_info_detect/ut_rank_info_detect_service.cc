@@ -34,6 +34,7 @@
 #include "env_config.h"
 #include "base_config.h"
 #include "socket_agent.h"
+#include "adapter_error_manager_pub.h"
 #undef private
 
 using namespace Hccl;
@@ -56,6 +57,7 @@ protected:
         // 初始化模拟 Socket 句柄
         hccpSocketHandle = new int(0);
         MOCKER(HrtRaSocketInit).stubs().with(any(), any()).will(returnValue(hccpSocketHandle)); 
+        MOCKER(RptInputErr).stubs().will(returnValue(HCCL_SUCCESS));
 
         // 1. 构造测试所需参数
         u32 devPhyId_ = 0;
@@ -432,4 +434,15 @@ TEST_F(RankInfoDetectServiceTest, Ut_GetConnections_When_Sudden_Fail)
 
     auto res1 = rankInfoDetectService_->connSockets_.size();
     EXPECT_EQ(1, res1);
+}
+
+TEST_F(RankInfoDetectServiceTest, Ut_GetConnections_When_ServerTimeout_Expect_RptInputErr)
+{
+    MOCKER(RptInputErr).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostSocketHandleManager::Get).stubs().with(any(), any()).will(returnValue(hccpSocketHandle));
+    MOCKER_CPP(&Socket::GetStatus).stubs()
+        .then(returnValue((SocketStatus)SocketStatus::CONNECTING))
+        .then(returnValue((SocketStatus)SocketStatus::TIMEOUT));
+
+    rankInfoDetectService_->GetConnections();
 }

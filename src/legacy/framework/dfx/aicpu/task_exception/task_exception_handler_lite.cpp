@@ -15,6 +15,7 @@
 #include "dlhal_function_v2.h"
 #include "task_param.h"
 #include "kernel_param_lite.h"
+#include "adapter_error_manager_pub.h"
 
 #include "task_struct_v2.h"
 #include "task_scheduler_error.h"
@@ -186,6 +187,23 @@ HcclResult SendTaskExceptionByMBox(const u32 localDeviceId, const u32 notifyId, 
         aicpuSqe.u.aicpu_record.ret_code = SwitchUBCqeErrCodeToTsErrCode(exceptionInfo->errorCode & 0xFF);
     } else {
         aicpuSqe.u.aicpu_record.ret_code = SwitchSdmaCqeErrCodeToTsErrCode(exceptionInfo->errorCode);
+        std::string sdmaErrDesc;
+        switch (exceptionInfo->errorCode) {
+            case RT_SDMA_DATAERR:
+                sdmaErrDesc = "read HBM return ERROR";
+                break;
+            case RT_SDMA_COMPERR:
+                sdmaErrDesc = "write copy timeout or address decode ERROR";
+                break;
+            case RT_SDMA_COMPDATAERR:
+                sdmaErrDesc = "read copy timeout or read HBM return ERROR";
+                break;
+            default:
+                sdmaErrDesc = "unknown SDMA ERROR";
+                break;
+        }
+        RPT_INPUT_ERR(true, "EI0012", std::vector<std::string>({"error_code", "error_description"}),
+            std::vector<std::string>({std::to_string(exceptionInfo->errorCode), sdmaErrDesc}));
     }
 
     struct event_summary event;

@@ -32,6 +32,7 @@
 #include "bootstrap_ip.h"
 #include "preempt_port_manager.h"
 #include "rank_info_detect.h"
+#include "adapter_error_manager_pub.h"
 #undef private
 #include "whitelist_test.h"
 #include "env_config_stub.h"
@@ -59,6 +60,7 @@ protected:
         MOCKER(HrtRaSocketInit).stubs().with(any(), any()).will(ignoreReturnValue());
         MOCKER_CPP(&HccpPeerManager::Init).stubs().with(any()).will(ignoreReturnValue());
         MOCKER_CPP(&HccpPeerManager::DeInit).stubs().with(any()).will(ignoreReturnValue());
+        MOCKER(RptInputErr).stubs().will(returnValue(HCCL_SUCCESS));
         SocketHandle hostSocketHandle;
         MOCKER_CPP(&HostSocketHandleManager::Create).stubs().with(any(), any()).will(returnValue(hostSocketHandle));
         MOCKER(HrtRaSocketWhiteListAdd).stubs().with(any(), any(), any()).will(ignoreReturnValue());
