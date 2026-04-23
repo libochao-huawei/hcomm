@@ -26,7 +26,7 @@ CONFIG_SCRIPT_PATH = 'package'
 BLOCK_CONFIG_PATH = 'package/module'
 BUILD_DIR_NAME = "build"
 
-SUCCESS = 0
+SUCC = 0
 FAIL = -1
 
 
@@ -43,6 +43,14 @@ class PackageConfigError(PackageError):
 
 class BlockConfigError(PackageError):
     """块配置错误异常。"""
+
+
+class MultiPkgModError(PackageError):
+    """多个pkg_mod元素报错。"""
+ 
+ 
+class MultiPkgSoftlinkError(PackageError):
+    """多个pkg_softlink元素报错。"""
 
 
 class ParseOsArchError(PackageError):
@@ -63,6 +71,10 @@ class ContainAsteriskError(PackageError):
 
 class FilelistError(PackageError):
     """文件列表异常。"""
+
+
+class PkgInnerSoftlinkNotAllowed(PackageError):
+    """不允许使用pkg_inner_softlink。"""
 
 
 class UnknownOperateTypeError(PackageError):
