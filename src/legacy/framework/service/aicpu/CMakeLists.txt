@@ -15,7 +15,7 @@ target_sources(hccl_v2
         ins_to_sqe_rule.cc
 )
 
-if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
+if((NOT BUILD_OPEN_PROJECT) OR DEVICE_MODE)
 target_sources(ccl_kernel PRIVATE
         alg_topo_package_helper.cc
         ins_executor.cc

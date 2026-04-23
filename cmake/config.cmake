@@ -155,7 +155,7 @@ endif ()
 
 set(HI_PYTHON                     "python3"                       CACHE   STRING   "python executor")
 
-message(STATUS "config.cmake KERNEL_MODE=${KERNEL_MODE} BUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}")
+message(STATUS "config.cmake BUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}")
 message(STATUS "config.cmake PRODUCT=${PRODUCT} PRODUCT_SIDE=${PRODUCT_SIDE}")
 
 set(INSTALL_LIBRARY_DIR ${CMAKE_SYSTEM_PROCESSOR}-linux/lib64)
