@@ -431,7 +431,7 @@ TEST_F(PingMesh_UT, ut_PingMeshAddDelTargetPatch)
     socket->Init();
     pingMesh->socketMaps_.insert({target[i].sip.GetReadableIP(), socket});
     PingQpInfo rdmainfo { 0 };
-    pingMesh->rdmaInfoMaps_.insert({target[i].sip.GetReadableIP(), rdmainfo});
+    pingMesh->rdmaInfoMaps_.Emplace(target[i].sip.GetReadableIP(), rdmainfo);
     ret = pingMesh->HccnRpingRemoveTarget(deviceId, nodeNum, target);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     HcclNetCloseDev(netCtx);
@@ -656,7 +656,7 @@ TEST_F(PingMesh_UT, ut_PingMeshGetResult)
     PingQpInfo rdmainfo {0};
     for (u32 i = 0; i < 10; i++) {
         HcclIpAddress targetIp = HcclIpAddress(0x7F000002 + i);
-        pingMesh->rdmaInfoMaps_.insert({std::string(targetIp.GetReadableIP()), rdmainfo});
+        pingMesh->rdmaInfoMaps_.Emplace(std::string(targetIp.GetReadableIP()), rdmainfo);
         target[i].sip = targetIp;
         target[i].dip = targetIp;
         target[i].port = 13866;
@@ -722,7 +722,7 @@ TEST_F(PingMesh_UT, ut_PingMeshGetResultFail)
     PingQpInfo rdmainfo {0};
     for (u32 i = 0; i < 10; i++) {
         HcclIpAddress targetIp = HcclIpAddress(0x7F000002 + i);
-        pingMesh->rdmaInfoMaps_.insert({std::string(targetIp.GetReadableIP()), rdmainfo});
+        pingMesh->rdmaInfoMaps_.Emplace(std::string(targetIp.GetReadableIP()), rdmainfo);
         target[i].sip = targetIp;
         target[i].dip = targetIp;
         target[i].port = 13866;
@@ -913,7 +913,7 @@ TEST_F(PingMesh_UT, ut_PingMeshGetPayload)
     for (u32 i = 0; i < 10; i++) {
         ipAddrBin.addr6.s6_addr[15]++;
         HcclIpAddress targetIp = HcclIpAddress(AF_INET6, ipAddrBin);
-        pingMesh->rdmaInfoMaps_.insert({std::string(targetIp.GetReadableIP()), rdmainfo});
+        pingMesh->rdmaInfoMaps_.Emplace(std::string(targetIp.GetReadableIP()), rdmainfo);
         target[i].sip = targetIp;
         target[i].dip = targetIp;
         target[i].port = 13866;
