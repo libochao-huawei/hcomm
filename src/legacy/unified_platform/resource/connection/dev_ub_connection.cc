@@ -811,7 +811,7 @@ string DevUbConnection::Describe() const
 
 HcclResult DevUbConnection::Describe(std::string &dfxMsg)
 {
-    testSetTpAttr();
+    CHK_RET(testSetTpAttr());
     uint16_t udpSport = 0xFFFF; // 无法获取实际的udpSport，使用0xFFFF表示未知
     if (tpProtocol == TpProtocol::TP) {
         uint32_t attrBitmap = 8192;
@@ -819,6 +819,7 @@ HcclResult DevUbConnection::Describe(std::string &dfxMsg)
         CHK_RET(HrtRaGetTpAttrAsync(rdmaHandle, tpInfo.tpHandle, attrBitmap, tpAttr, reqHandle));
         udpSport = tpAttr.dataUdpSrcport;
     }
+    HCCL_INFO("[DevUbConnection::%s] Get tp attr success, udpSport[%u]", __func__, udpSport);
     udpSport = udpSport & 0xFF;
 
     std::string dfxStr = StringFormat("chip id[%u] die id[%u] func id[%u] jetty id[%u] "
@@ -829,7 +830,7 @@ HcclResult DevUbConnection::Describe(std::string &dfxMsg)
     return HCCL_SUCCESS;
 }
 
-void DevUbConnection::testSetTpAttr()
+HcclResult DevUbConnection::testSetTpAttr()
 {
     uint32_t attrBitmap = 0x1FFFF;
     struct TpAttr tpAttr {0};
