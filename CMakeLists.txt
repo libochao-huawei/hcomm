@@ -120,10 +120,6 @@ elseif(BUILD_OPEN_PROJECT)
         include/hcomm_primitives.h
     )
 
-    set(HCCL_JSON
-        cmake/scripts/ccl_kernel.json
-    )
-
     if(DEVICE_MODE)
         set(HCCP_TAR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_device/tar_pkg/)
         set(CCL_KERNEL_TAR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_device/ccl_kernel_tar_pkg/)
@@ -208,15 +204,15 @@ elseif(BUILD_OPEN_PROJECT)
             ${BUILD_DEVICE_DIR}/src/framework/libaicpu_custom.json
         )
         install(FILES ${BUILD_DEVICE_DIR}/signatures/cann-hcomm-compat.tar.gz
-            DESTINATION ${INSTALL_DEVICE_TAR_DIR} ${INSTALL_OPTIONAL}
+            DESTINATION ${INSTALL_DEVICE_TAR_DIR} OPTIONAL
             COMPONENT hcomm
         )
         install(FILES ${BUILD_DEVICE_DIR}/signatures/aicpu_hcomm.tar.gz
-            DESTINATION ${INSTALL_DEVICE_TAR_DIR} ${INSTALL_OPTIONAL}
+            DESTINATION ${INSTALL_DEVICE_TAR_DIR} OPTIONAL
             COMPONENT hcomm
         )
         install(FILES ${BUILD_HCCD_DIR}/signatures/cann-hccd-compat.tar.gz
-            DESTINATION ${INSTALL_DEVICE_TAR_DIR} ${INSTALL_OPTIONAL}
+            DESTINATION ${INSTALL_DEVICE_TAR_DIR} OPTIONAL
             COMPONENT hcomm
         )
         install(FILES ${BUILD_DEVICE_DIR}/src/framework/libaicpu_custom.so
@@ -241,7 +237,6 @@ elseif(BUILD_OPEN_PROJECT)
 
     install(FILES
         ${HCCL_HEAD}
-        ${HCCL_JSON}
         DESTINATION ${INSTALL_INCLUDE_DIR}/hccl/ ${INSTALL_OPTIONAL}
         COMPONENT hcomm
     )
