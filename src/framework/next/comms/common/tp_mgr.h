@@ -98,10 +98,9 @@ private:
     };
 
     using QosKey = uint32_t;
-    using InfoCtxMap = std::unordered_map<Hccl::IpAddress,
-        std::unordered_map<Hccl::IpAddress, std::unordered_map<QosKey, TpInfoCtx>>>;
-    using ReqCtxMap = std::unordered_map<Hccl::IpAddress,
-        std::unordered_map<Hccl::IpAddress, std::unordered_map<QosKey, RequestCtx>>>;
+    /// 每台设备 TpMgr 内：同一 tpProtocol + 同一 qos 共用一个 TpInfo（同一 tpHandle / SL 策略结果），不按对端分桶。
+    using InfoCtxMap = std::unordered_map<QosKey, TpInfoCtx>;
+    using ReqCtxMap = std::unordered_map<QosKey, RequestCtx>;
 
 private:
     TpMgr() = default;
