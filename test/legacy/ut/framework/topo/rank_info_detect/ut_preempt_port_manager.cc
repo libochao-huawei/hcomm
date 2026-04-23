@@ -37,7 +37,7 @@ protected:
     // Some expensive resource shared by all tests.
     virtual void SetUp()
     {
-        MOCKER(RpInputErr).stubs().will(returnValue(HCCL_SUCCESS));
+        MOCKER(RptInputErr).stubs().will(returnValue(HCCL_SUCCESS));
     }
 
     virtual void TearDown()
