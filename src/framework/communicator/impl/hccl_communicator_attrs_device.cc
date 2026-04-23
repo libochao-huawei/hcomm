@@ -13,6 +13,7 @@
 #include "config.h"
 #include "externalinput_pub.h"
 #include "env_config.h"
+#include "../common/src/topo/topoinfo_ranktableParser_pub.h"
 
 using namespace std;
 
@@ -20,12 +21,14 @@ namespace hccl
 {
     HcclResult HcclCommunicatorAttrs::Init(HcclCommParams &params, const RankTable_t &rankTable)
     {
+        isOxcMode_ = rankTable.version == OXC_CLUSTER_VERSION;
         return HCCL_SUCCESS;
     }
 
     HcclResult HcclCommunicatorAttrs::Init(HcclCommParams &params, const RankTable_t &rankTable,
                                            const std::map<HcclCMDType, std::vector<HcclAlgoType>>& algoConfigMap)
     {
+        isOxcMode_ = rankTable.version == OXC_CLUSTER_VERSION;
         return HCCL_SUCCESS;
     }
 
@@ -235,6 +238,7 @@ namespace hccl
 
     void HcclCommunicatorAttrs::GetTopoAttr(HcclTopoAttr &topoAttr)
     {
+        topoAttr.isOxcMode = isOxcMode_;
     }
 
     void HcclCommunicatorAttrs::GetAlgoAttr(HcclAlgoAttr &algoAttr)

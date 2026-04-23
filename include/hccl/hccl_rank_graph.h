@@ -137,6 +137,29 @@ extern HcclResult HcclGetRankSize(HcclComm comm, uint32_t *rankSize);
 extern HcclResult HcclRankGraphGetLayers(HcclComm comm, uint32_t **netLayers, uint32_t *netLayerNum);
 
 /**
+ * @brief 给定通信域和 netLayer，返回该层的拓扑实例列表。
+ * @param[in] comm 通信域
+ * @param[in] netLayer 通信网络层次
+ * @param[out] topoInsts 该层拓扑实例编号列表
+ * @param[out] topoInstNum 实例数量
+ * @return HcclResult 执行结果状态码
+ */
+extern HcclResult HcclRankGraphGetTopoInstsByLayer(HcclComm comm, uint32_t netLayer, uint32_t **topoInsts,
+    uint32_t *topoInstNum);
+
+/**
+ * @brief 给定通信域、netLayer 和 topoInst，返回该实例中的 rank 列表。
+ * @param[in] comm 通信域
+ * @param[in] netLayer 通信网络层次
+ * @param[in] topoInst 拓扑实例编号
+ * @param[out] ranks 实例中的 rank 列表
+ * @param[out] rankNum rank 数量
+ * @return HcclResult 执行结果状态码
+ */
+extern HcclResult HcclRankGraphGetRanksByTopoInst(HcclComm comm, uint32_t netLayer, uint32_t topoInst,
+    uint32_t **ranks, uint32_t *rankNum);
+
+/**
  * @brief 给定通信域和netLayer，返回本Rank所在的netInstance中的所有ranks
  * @param[in] comm 通信域
  * @param[in] netLayer 通信网络层次

@@ -50,9 +50,10 @@ HcclResult CfgGetClusterInfo(const std::string &rankTableM, const std::string &i
     } else if (rankTable.version.compare(HETEROG_CLUSTER_VERSION) == 0) {
         pTopoRanktable.reset(new (std::nothrow) TopoinfoRanktableHeterog(rankTableM, identify, deviceType));
     } else if (rankTable.version.compare(OXC_CLUSTER_VERSION) == 0) {
-        // OXC 2.0 与 1.x/Standard 的 schema 差异较大，这里单独分派到独立 parser，
-        // 避免把 OXC 的 level_list / rank_addr_list 语义混入 legacy parser。
+        // OXC 使用独立 parser：当前外部合同为 1.4 风格
+        // `server_list + super_pod_list + oxc_group_list`，避免把 OXC 语义混入 legacy parser。
         pTopoRanktable.reset(new (std::nothrow) TopoinfoRanktableOxc(rankTableM, identify));
+        pTopoRanktable->SetIsInterSuperPodRetryEnable(isInterSuperPodRetryEnable);
     } else if (rankTable.version.compare("Standard") == 0) {
         pTopoRanktable.reset(new (std::nothrow) TopoinfoRanktableStandard(rankTableM, identify));
     } else {
@@ -103,8 +104,9 @@ HcclResult CfgGetClusterInfoWithoutDev(const std::string &rankTableM, const std:
     } else if (rankTable.version.compare(HETEROG_CLUSTER_VERSION) == 0) {
         pTopoRanktable.reset(new (std::nothrow) TopoinfoRanktableHeterog(rankTableM, identify));
     } else if (rankTable.version.compare(OXC_CLUSTER_VERSION) == 0) {
-        // 保持 WithoutDev 入口与主入口的版本行为一致，避免 2.0 在不同入口出现分派差异。
+        // 保持 WithoutDev 入口与主入口的 OXC 版本行为一致。
         pTopoRanktable.reset(new (std::nothrow) TopoinfoRanktableOxc(rankTableM, identify));
+        pTopoRanktable->SetIsInterSuperPodRetryEnable(isInterSuperPodRetryEnable);
     } else if (rankTable.version.compare("Standard") == 0) {
         pTopoRanktable.reset(new (std::nothrow) TopoinfoRanktableStandard(rankTableM, identify));
     } else {

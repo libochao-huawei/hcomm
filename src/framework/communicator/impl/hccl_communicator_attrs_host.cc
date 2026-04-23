@@ -13,6 +13,7 @@
 #include "config.h"
 #include "externalinput_pub.h"
 #include "env_config.h"
+#include "../common/src/topo/topoinfo_ranktableParser_pub.h"
 
 using namespace std;
 
@@ -20,6 +21,7 @@ namespace hccl
 {
     HcclResult HcclCommunicatorAttrs::Init(HcclCommParams &params, const RankTable_t &rankTable)
     {
+        isOxcMode_ = rankTable.version == OXC_CLUSTER_VERSION;
         CHK_RET(InitCommParams(params));
         CHK_RET(InitRankInfo(rankTable));
         return HCCL_SUCCESS;
@@ -29,6 +31,7 @@ namespace hccl
         const std::map<HcclCMDType, std::vector<HcclAlgoType>>& algoConfigMap)
     {
         algoConfigMap_ = algoConfigMap;
+        isOxcMode_ = rankTable.version == OXC_CLUSTER_VERSION;
         CHK_RET(InitCommParams(params));
         CHK_RET(InitRankInfo(rankTable));
         return HCCL_SUCCESS;
@@ -576,6 +579,7 @@ namespace hccl
                 rankInfo.hostPort = orgRankInfo.hostPort;
                 rankInfo.localRank = orgRankInfo.localRank;
                 rankInfo.superDeviceId = orgRankInfo.superDeviceId;
+                rankInfo.oxcGroupId = orgRankInfo.oxcGroupId;
                 if (gcdServerNumPerSuperPod_ > 0) {
                     u32 gcdSuperPodIdx = rankInfo.serverIdx / gcdServerNumPerSuperPod_;
                     rankInfo.superPodId = orgRankInfo.superPodId + "_" + std::to_string(gcdSuperPodIdx);
@@ -1035,6 +1039,7 @@ namespace hccl
         topoAttr.isSupportHccsAndSio = isSupportHccsAndSio_;
         topoAttr.localNicPort = GetLocalNicPort(NicType::DEVICE_NIC_TYPE);
         topoAttr.isNeedInitNic = isNeedInitNic_;
+        topoAttr.isOxcMode = isOxcMode_;
     }
 
     void HcclCommunicatorAttrs::GetAlgoAttr(HcclAlgoAttr &algoAttr)

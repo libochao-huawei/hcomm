@@ -42,6 +42,7 @@
 #include "mmpa_api.h"
 #include "aicpu_operator_pub.h"
 #include "../nslbdp/hccl_nslbdp.h"
+#include "../common/src/topo/topoinfo_ranktableParser_pub.h"
 #include "comm_configer.h"
 
 #define DOUBLE_SIZE 2
@@ -52,6 +53,47 @@ using namespace hccl;
 const std::string HCCL_ALLTOALL = "ALLTOALL";
 const std::string HCCL_ALLTOALLV = "ALLTOALLV";
 const std::string HCCL_ALLTOALLVC = "ALLTOALLVC";
+
+/**
+ * @brief 在主通信域初始化链路中注入 OXC world-comm 并行平面信息。
+ * @param rank 当前 user rank。
+ * @param rankTable 输入输出：当前通信域 ranktable。
+ * @param runtimeCommConfig 输入输出：运行时 CommConfig。
+ * @return HcclResult
+ *
+ * @note 文档要求在 `pComm->init(...)` 前完成 world-comm 的 netplane 解析。
+ *       这里沿用 plane transformer 已有的 parser 语义，把整个 ranktable 当作
+ *       当前通信域成员重新计算，并把当前 rank 的 netplane 回灌到运行时配置。
+ */
+HcclResult InjectWorldCommNetPlaneInfo(uint32_t rank, RankTable_t &rankTable, CommConfig &runtimeCommConfig)
+{
+    if (runtimeCommConfig.GetConfigNetPlaneInfoSet()) {
+        return HCCL_SUCCESS;
+    }
+
+    if (rankTable.version != OXC_CLUSTER_VERSION) {
+        return HCCL_SUCCESS;
+    }
+
+    std::vector<u32> rankIds;
+    rankIds.reserve(rankTable.rankList.size());
+    for (u32 rankIndex = 0; rankIndex < rankTable.rankList.size(); ++rankIndex) {
+        rankIds.push_back(rankIndex);
+    }
+
+    u32 netPlaneNum = 1;
+    CHK_RET(TopoinfoPlaneTransformer::ParsePlane(rankIds, rankTable.rankList, rankTable.rankList, netPlaneNum));
+
+    auto rankIter = std::find_if(rankTable.rankList.begin(), rankTable.rankList.end(),
+        [rank](const RankInfo_t &rankInfo) { return rankInfo.rankId == rank; });
+    CHK_PRT_RET(rankIter == rankTable.rankList.end(),
+        HCCL_ERROR("[OXC_HCOMM][InitCommClusterInfo] rank[%u] not found after ParsePlane.", rank), HCCL_E_PARA);
+
+    runtimeCommConfig.SetConfigNetPlane(rankIter->netPlaneId, netPlaneNum);
+    HCCL_INFO("[OXC_HCOMM][InitCommClusterInfo] injected world-comm netPlaneId[%u] netPlaneNum[%u] for rank[%u].",
+        rankIter->netPlaneId, netPlaneNum, rank);
+    return HCCL_SUCCESS;
+}
 
 HcclResult CallMsprofReportHostApi(hccl::hcclComm* hcclComm, HcclCMDType cmdType, uint64_t beginTime, u64 count,
     HcclDataType dataType, const std::string &tag)
@@ -364,6 +406,7 @@ HcclResult InitCommClusterInfo(std::string &rankTableM, const uint32_t rank, con
     /* --------------初始化------------------------- */
     bool errorFlag = false;
     do {
+        CommConfig runtimeCommConfig = commConfig;
         RankConsistentcyChecker::GetInstance().SetCheckCannVersionSwitch(true); // 打开CANN软件版本校验开关
         ret = InitOtherInfo(opBaseHcom.params, rankTableM.c_str());
         CHK_PRT_BREAK(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][CommClusterInfo]errNo[0x%016llx] init other Info.",
@@ -382,54 +425,60 @@ HcclResult InitCommClusterInfo(std::string &rankTableM, const uint32_t rank, con
             HCCL_ERROR("[Init][CommClusterInfo]errNo[0x%016llx]"\
                 "info error:rank[%u]", HCCL_ERROR_CODE(ret), rank), errorFlag = true);
 
-        ret = opBaseHcom.pComm->init(opBaseHcom.params, commConfig, opBaseHcom.rankTable);
+        ret = InjectWorldCommNetPlaneInfo(rank, opBaseHcom.rankTable, runtimeCommConfig);
+        CHK_PRT_BREAK(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[OXC_HCOMM][Init][CommClusterInfo]errNo[0x%016llx] inject world comm netplane failed for rank[%u].",
+                HCCL_ERROR_CODE(ret), rank), errorFlag = true);
+
+        ret = opBaseHcom.pComm->init(opBaseHcom.params, runtimeCommConfig, opBaseHcom.rankTable);
         CHK_PRT_BREAK(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][CommClusterInfo]errNo[0x%016llx] hcclComm init error.",
             HCCL_ERROR_CODE(ret)), errorFlag = true);
 
         /* 设置确定性计算配置 */
-        ret = opBaseHcom.pComm->SetDeterministicConfig(commConfig.GetConfigDeterministic());
+        ret = opBaseHcom.pComm->SetDeterministicConfig(runtimeCommConfig.GetConfigDeterministic());
         CHK_PRT_BREAK(ret != HCCL_SUCCESS,
             HCCL_ERROR("[Init][CommClusterInfo]errNo[0x%016llx] set deterministic error.", HCCL_ERROR_CODE(ret)),
             errorFlag = true);
 
         // 设置TC/SL配置
-        ret = opBaseHcom.pComm->SetQpQosAttr(commConfig.GetConfigTrafficClass(), commConfig.GetConfigServiceLevel());
+        ret = opBaseHcom.pComm->SetQpQosAttr(runtimeCommConfig.GetConfigTrafficClass(),
+            runtimeCommConfig.GetConfigServiceLevel());
         CHK_PRT_BREAK(ret != HCCL_SUCCESS,
             HCCL_ERROR("[Init][CommClusterInfo]errNo[0x%016llx] set TC and SL error or Invalid configuration parameter.",
             HCCL_ERROR_CODE(ret)), errorFlag = true);
-        if (commConfig.GetConfigJobID() != 0) {
+        if (runtimeCommConfig.GetConfigJobID() != 0) {
             HCCL_RUN_INFO("[NSLBDP]GetConfigJobID = %llu,GetConfigWorldRankID = %u.",
-                           commConfig.GetConfigJobID(), commConfig.GetConfigWorldRankID());
-            hcclNslbDp::GetInstance().SetGlobalCommTaskId(commConfig.GetConfigJobID());
-            hcclNslbDp::GetInstance().SetGlobalCommNodeId(commConfig.GetConfigWorldRankID());
+                           runtimeCommConfig.GetConfigJobID(), runtimeCommConfig.GetConfigWorldRankID());
+            hcclNslbDp::GetInstance().SetGlobalCommTaskId(runtimeCommConfig.GetConfigJobID());
+            hcclNslbDp::GetInstance().SetGlobalCommNodeId(runtimeCommConfig.GetConfigWorldRankID());
         }
 
         /* 设置AIV模式 */
-        ret = opBaseHcom.pComm->SetAivModeConfig(commConfig.GetConfigAivMode());
+        ret = opBaseHcom.pComm->SetAivModeConfig(runtimeCommConfig.GetConfigAivMode());
         CHK_PRT_BREAK(ret != HCCL_SUCCESS,
             HCCL_ERROR("[Init][CommClusterInfo]errNo[0x%016llx] set aivMode error.", HCCL_ERROR_CODE(ret)),
             errorFlag = true);
 
         /* 设置only AIV模式 */
-        ret = opBaseHcom.pComm->SetOnlyAivModeConfig(commConfig.GetConfigIsOnlyAivMode());
+        ret = opBaseHcom.pComm->SetOnlyAivModeConfig(runtimeCommConfig.GetConfigIsOnlyAivMode());
         CHK_PRT_BREAK(ret != HCCL_SUCCESS,
             HCCL_ERROR("[Init][CommClusterInfo]errNo[0x%016llx] set only aivMode error.", HCCL_ERROR_CODE(ret)),
             errorFlag = true);
 
         /* 设置AICPU */
-        ret = opBaseHcom.pComm->SetAicpuUnfoldConfig(commConfig.GetConfigAicpuUnfold());
+        ret = opBaseHcom.pComm->SetAicpuUnfoldConfig(runtimeCommConfig.GetConfigAicpuUnfold());
         CHK_PRT_BREAK(ret != HCCL_SUCCESS,
             HCCL_ERROR("[Init][CommClusterInfo]errNo[0x%016llx] set aicpu error.", HCCL_ERROR_CODE(ret)),
             errorFlag = true);
 
         /* 设置HcclExecTimeOut */
-        ret = opBaseHcom.pComm->SetExecTimeOutConfig(commConfig.GetConfigExecTimeOut());
+        ret = opBaseHcom.pComm->SetExecTimeOutConfig(runtimeCommConfig.GetConfigExecTimeOut());
         CHK_PRT_BREAK(ret != HCCL_SUCCESS,
             HCCL_ERROR("[Init][CommClusterInfo]errNo[0x%016llx] set execTimeOut error.", HCCL_ERROR_CODE(ret)),
             errorFlag = true);
         
         /* 设置HcclAlgo */
-        ret = opBaseHcom.pComm->SetAlgoConfig(commConfig.GetConfigHcclAlgoMap());
+        ret = opBaseHcom.pComm->SetAlgoConfig(runtimeCommConfig.GetConfigHcclAlgoMap());
         CHK_PRT_BREAK(ret != HCCL_SUCCESS,
             HCCL_ERROR("[Init][CommClusterInfo]errNo[0x%016llx] set hcclAlgo error.", HCCL_ERROR_CODE(ret)),
             errorFlag = true);
@@ -440,7 +489,7 @@ HcclResult InitCommClusterInfo(std::string &rankTableM, const uint32_t rank, con
             HCCL_ERROR("[Init][CommClusterInfo]errNo[0x%016llx] put ranktable info error.",
                 HCCL_ERROR_CODE(ret)), errorFlag = true);
         /* 设置独立算子参数 */
-        ret = opBaseHcom.pComm->SetIndependentOpConfig(commConfig, opBaseHcom.rankTable);
+        ret = opBaseHcom.pComm->SetIndependentOpConfig(runtimeCommConfig, opBaseHcom.rankTable);
         CHK_PRT_BREAK(ret != HCCL_SUCCESS,
             HCCL_ERROR("[Init][CommClusterInfo]errNo[0x%016llx] set SetIndependentOpConfig error.", HCCL_ERROR_CODE(ret)),
             errorFlag = true);

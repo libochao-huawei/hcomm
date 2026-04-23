@@ -173,6 +173,7 @@ public:
     u32 superDeviceId{INVALID_UINT};                                      // 当前rank所在的超节点内的device id（sdid）
     std::string superPodId{""};                                           // 当前rank所在超节点id
     u32 superPodIdx{INVALID_UINT};                                        // SuperPod在ranktable中的自然顺序（用户指定)
+    std::string oxcGroupId{""};                                           // OXC NetLayer1 的 Group_ID
     HcclIpAddress deviceVnicIp;                                           // 当前rank所归属网卡的虚拟ip                                                // 当前rank所在通信域的server数
 };
 

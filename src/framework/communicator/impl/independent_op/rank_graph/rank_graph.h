@@ -21,6 +21,8 @@ namespace hccl {
 constexpr uint32_t HCCL_NETLAYER_0 = 0;
 constexpr uint32_t HCCL_NETLAYER_1 = 1;
 constexpr uint32_t HCCL_NETLAYER_2 = 2;
+constexpr uint32_t HCCL_NETLAYER_LAYERED_LEVEL1 = 100;
+constexpr uint32_t HCCL_NETLAYER_LAYERED_LEVEL2 = 101;
 
 class RankGraph {
 struct RankGraphInfo {
@@ -45,9 +47,11 @@ public:
     const RankInfo_t* FindRank(uint32_t rankId) const;
     HcclResult GetRankGraphInfo(GraphType type, void **graph, uint32_t *len);
     HcclResult GetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum);
+    HcclResult GetTopoInstsByNetLayer(uint32_t netLayer, uint32_t **topoInsts, uint32_t *topoInstNum);
     HcclResult GetInstTopoTypeByNetLayer(uint32_t netLayer, CommTopo *topoType);
     HcclResult GetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum);
     HcclResult GetInstRanksByNetLayer(uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum);
+    HcclResult GetRanksByTopoInst(uint32_t netLayer, uint32_t topoInst, uint32_t **rankList, uint32_t *rankNum);
     HcclResult GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize);
     
 private:
@@ -73,6 +77,8 @@ private:
     std::vector<uint32_t> netLayer_;
     std::unordered_map<uint32_t, std::vector<u32>> rankList_;      //level->rankList
     std::unordered_map<uint32_t, std::vector<u32>> rankSizeList_;  //level->rankSizeList
+    std::unordered_map<uint32_t, std::vector<u32>> topoInstList_;   // level->topoInst ids
+    std::unordered_map<uint32_t, std::vector<std::vector<u32>>> instRankList_; // level->instances->ranks
     std::vector<RankInfo_t> rankGraph_;
     std::vector<struct GraphRankInfo> graphRankInfo_;
     HcclTopoAttr topoAttr_;

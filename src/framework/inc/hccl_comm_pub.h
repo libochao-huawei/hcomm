@@ -382,9 +382,11 @@ public:
     HcclResult CommGetInstTopoTypeByNetLayer(uint32_t netLayer, u32 *topoType);
     //rankgraph interface 
     HcclResult GetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum);
+    HcclResult GetTopoInstsByNetLayer(uint32_t netLayer, uint32_t **topoInsts, uint32_t *topoInstNum);
     HcclResult GetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum);
     HcclResult GetInstTopoTypeByNetLayer(uint32_t netLayer, CommTopo *topoType);
     HcclResult GetInstRanksByNetLayer(uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum);
+    HcclResult GetRanksByTopoInst(uint32_t netLayer, uint32_t topoInst, uint32_t **rankList, uint32_t *rankNum);
     HcclResult GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize);
     HcclResult GetRankGraph(GraphType type, void **graph, uint32_t *len);
     HcclResult GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank,

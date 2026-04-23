@@ -96,6 +96,7 @@ using RankInfo_t = struct tagRankInfo {
     u32 nodeId = INVALID_UINT;          // 离线编译逻辑ranktable 和NumaConfig中的node id相同
     s32 itemId = INVALID_UINT;          // 离线编译逻辑ranktable 和NumaConfig中的item id相同
     std::string groupName;              // [DEPRECATED]group名称
+    std::string oxcGroupId;             // OXC NetLayer1 的 Group_ID，供 COMM_LEVEL1 分组使用
     std::string podName;                // [DEPRECATED]容器名称
     DeviceInfo_t deviceInfo;            // 设备信息
     std::vector<TransportInfo_t> transportInfo; // [DEPRECATED]本rank与其余rank的数据传输信息（抽象信息）
@@ -104,6 +105,12 @@ using RankInfo_t = struct tagRankInfo {
     std::string originalSuperPodId;     // 划分逻辑超节点前的原超节点ID，来源为用户配置
     /** OXC ranktable 2.0 新增的层级拓扑信息；当前仓第一阶段只做“解析并保存”。 */
     std::vector<RankLevelInfoOxc> levelList; // OXC ranktable 2.0 的层级拓扑信息
+    /** @brief 当前 rank 所属的并行平面 ID；默认退化为单平面中的 0 号平面。 */
+    u32 netPlaneId { 0 };
+    /** @brief 当前通信域的并行平面总数；默认值 1 表示未进入并行平面拆分。 */
+    u32 netPlaneNum { 1 };
+    /** @brief 当前 rank 所属的平面分组 ID；用于 plane transformer 内部做同组扩展判定。 */
+    u32 groupId { 0 };
 };
 
 // 对外的ranktable格式

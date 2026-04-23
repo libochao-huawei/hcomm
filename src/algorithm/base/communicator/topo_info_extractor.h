@@ -77,6 +77,29 @@ public:
 
 private:
     HcclResult AHCSubGroupInit(CommPlane algLevel, std::vector<std::vector<std::vector<std::vector<u32>>>> &CommPlaneSubGroupVector);  
+    void ResetLayeredPlaneInfo();
+    /**
+     * @brief 在 OXC 路线下恢复组内平面 `COMM_LAYERED_LEVEL1`。
+     *
+     * @details
+     * 当前阶段只恢复 Level1/Level2 的基础 OXC 语义，不重新依赖
+     * `RegroupAndSelectAlgo / ReparseGroupedPlane / TransformPlaneByAlgo`。
+     * 这里直接基于 `COMM_LEVEL1` 与缓存 subgroup 构造当前 rank 所属的组内平面。
+     *
+     * @return HcclResult
+     */
+    HcclResult SetTopoInfoForLayeredLevel1();
+    /**
+     * @brief 在 OXC 路线下恢复组间平面 `COMM_LAYERED_LEVEL2`。
+     *
+     * @details
+     * 当前阶段只恢复组间平面的基础拼接语义：从每个 subgroup 中取当前 rank
+     * 相同组内位置的成员构成组间平面；不恢复 `ReparseGroupedPlane` 与
+     * `TransformPlaneByAlgo` 驱动的 netplane 重算与最终重排。
+     *
+     * @return HcclResult
+     */
+    HcclResult SetTopoInfoForLayeredLevel2();
 
     const std::string identifier_; // 本节点所在的通信域ID
     const u32 userRank_;        //  本节点的用户原始rank号
@@ -133,6 +156,10 @@ private:
 
     // 保存所有级别的通信rank关系, CommPlaneVector_[CommPlane][ringIndex]: 第CommPlane级 第ringIndex个环
     std::vector<std::vector<std::vector<RankInfo> > > CommPlaneVector_;
+    // 当前主线已屏蔽 plane_transformer 的 Layered 闭环；保留该字段仅用于显式表达“当前无 layered 重排结果”。
+    std::vector<u32> layeredIndexVector_;
+    // 指向传入的拓扑属性，便于把 plane/group 结果回写给上游。
+    HcclTopoAttr *topoAttr_ { nullptr };
 };
 
 bool Ascending(const RankInfo &first, const RankInfo &second);

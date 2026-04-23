@@ -11,6 +11,9 @@ set(src_to_test_list
     main.cc
     hccl_api_base_test.cc
     ut_HcclGetNetPlaneInfo_API_test.cc
+    ut_HcclCommunicator_91093_Oxc_Capability_test.cc
+    ut_HcclCommunicator_91093_Oxc_Init_API_test.cc
+    ut_HcclRankGraph_Layered_API_test.cc
     ut_HcclSetConfig_API_test.cc
     ut_HcclGetConfig_API_test.cc
     ut_HcclGetCommName_API_test.cc

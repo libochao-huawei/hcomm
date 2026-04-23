@@ -19,7 +19,7 @@
 
 namespace hccl {
 /**
- * @brief OXC ranktable 2.0 的专用 parser。
+ * @brief OXC ranktable 的专用 parser。
  *
  * @note 第一阶段目标是把 OXC schema 解析为内部 `params + rankTable`，
  *       因此该类只负责“读取/校验/保存”，不承担下游拓扑消费逻辑。
@@ -57,6 +57,17 @@ public:
      */
     HcclResult GetClusterInfo(HcclCommParams &params, RankTable_t &rankTable) override;
 
+    /**
+     * @brief 记录跨 superPod retry 开关。
+     * @param isRetryEnable 是否开启跨 superPod retry。
+     * @return HcclResult
+     *
+     * @note OXC 2.0 parser 当前阶段仍以 schema 解析为主，尚未直接消费该开关；
+     *       这里保留 setter 是为了与 parser 工厂注入链路保持一致，避免 2.0
+     *       在不同入口下丢失运行时配置语义。
+     */
+    HcclResult SetIsInterSuperPodRetryEnable(bool isRetryEnable) override;
+
 private:
     TopoinfoRanktableOxc(const TopoinfoRanktableOxc &);
     TopoinfoRanktableOxc &operator=(const TopoinfoRanktableOxc &);
@@ -70,7 +81,7 @@ private:
     HcclResult ParserClusterInfo(HcclCommParams &params, RankTable_t &rankTable);
 
     /**
-     * @brief 解析 OXC 2.0 的可选字段 task_id。
+     * @brief 解析 OXC ranktable 的可选字段 task_id。
      * @param rankTable 输出 ranktable。
      * @return HcclResult
      * @note task_id 缺失时保留空串，不影响第一阶段解析完成标准。
@@ -78,11 +89,20 @@ private:
     HcclResult ParseTaskId(RankTable_t &rankTable);
 
     /**
-     * @brief 解析 OXC 2.0 的 rank_list。
+     * @brief 解析 OXC ranktable 的 server_list / super_pod_list / oxc_group_list。
      * @param rankTable 输出 ranktable。
      * @return HcclResult
      */
     HcclResult ParseRankList(RankTable_t &rankTable);
+
+    HcclResult ParseServerList(RankTable_t &rankTable);
+    HcclResult ParseSingleServer(const nlohmann::json &serverObj, u32 serverIndex, RankTable_t &rankTable);
+    HcclResult ParseDeviceList(const nlohmann::json &serverObj, const std::string &serverId, u32 serverIndex,
+        const HcclIpAddress &hostIp, RankTable_t &rankTable);
+    HcclResult ParseSingleDevice(const nlohmann::json &deviceObj, const std::string &serverId, u32 serverIndex,
+        const HcclIpAddress &hostIp, RankInfo_t &rankInfo);
+    HcclResult ParseSuperPodList(RankTable_t &rankTable);
+    HcclResult ParseOxcGroupList(RankTable_t &rankTable);
 
     /**
      * @brief 解析单个 rank 对象。
@@ -91,6 +111,24 @@ private:
      * @return HcclResult
      */
     HcclResult ParseSingleRank(const nlohmann::json &rankObj, RankInfo_t &rankInfo);
+
+    /**
+     * @brief 解析 A3 world-comm 主线所需的 rank 级扩展字段。
+     * @param rankObj 输入 json rank 对象。
+     * @param rankInfo 输出内部 rank 信息。
+     * @return HcclResult
+     *
+     * @note 这些字段对 OXC 通用 parser 不是全部强制项，但在 910_93(A3)
+     *       主线中属于关键承载信息：
+     *       - `super_pod_id`
+     *       - `super_device_id`
+     *       - `host_ip`
+     *       - `device_ip`
+     *       - `backup_device_ip`
+     *       - `device_port`
+     *       - `backup_device_port`
+     */
+    HcclResult ParseA3RankExtensions(const nlohmann::json &rankObj, RankInfo_t &rankInfo);
 
     /**
      * @brief 解析 rank 对象中的 level_list。
@@ -103,6 +141,49 @@ private:
     HcclResult ParseLevelList(const nlohmann::json &rankObj, RankInfo_t &rankInfo);
 
     /**
+     * @brief 校验 OXC level_list 的层级与 L2 约束。
+     * @param levelInfo 当前层级信息。
+     * @param previousNetLayer 输入输出：上一层 netLayer，初始值为 `INVALID_UINT`。
+     * @return HcclResult
+     *
+     * @note 当前阶段仅补 OXC schema 的关键约束：
+     *       1. `net_layer` 必须在 0~3 范围内；
+     *       2. `level_list` 必须严格递增；
+     *       3. `net_layer == 2` 时必须满足 `net_type == "OXC_Mesh"`
+     *          且 `net_instance_id == "0"`。
+     */
+    HcclResult ValidateLevelInfo(const RankLevelInfoOxc &levelInfo, u32 &previousNetLayer);
+
+    /**
+     * @brief 校验 rank 间 level_list 的完整性与公共布局一致性。
+     * @param rankList 已解析完成的 rank 列表。
+     * @return HcclResult
+     *
+     * @note 当前阶段要求 OXC ranktable 显式包含 L0/L1/L2/L3 四层，且所有 rank
+     *       的层级序列与各层 net_type 保持一致，避免 parser 输出出现在 rank 间“结构漂移”。
+     */
+    HcclResult ValidateRankLevelLayouts(const std::vector<RankInfo_t> &rankList);
+
+    /**
+     * @brief 校验 A3 参数面字段在当前阶段的最小 contract。
+     * @param rankTable 输入：已完成 rank_list / serverNum / nicDeploy 统计的 ranktable。
+     * @return HcclResult
+     *
+     * @note 当前阶段只收敛 world-comm 主线所需的最小输入约束：
+     *       - 跨 server 时 `host_ip` 必须可用；
+     *       - device NIC 部署且跨 server 时 `device_ip` 必须可用；
+     *       - `backup_device_ip / backup_device_port` 仍保持可选，不在本轮升级为 readiness 约束。
+     */
+    HcclResult ValidateA3ParameterPlaneContract(const RankTable_t &rankTable);
+
+    /**
+     * @brief 校验 A3 OXC rank_list 中 superPod / superDeviceId 的一致性，并计算 superPodNum。
+     * @param rankTable 输入输出：待补充 superPod 统计信息的 ranktable。
+     * @return HcclResult
+     */
+    HcclResult ValidateAndFinalizeA3RankInfo(RankTable_t &rankTable);
+
+    /**
      * @brief 解析单个 level 下的 rank_addr_list。
      * @param levelObj 输入 json level 对象。
      * @param levelInfo 输出内部 level 信息。
@@ -111,6 +192,8 @@ private:
      */
     HcclResult ParseRankAddrList(const nlohmann::json &levelObj, RankLevelInfoOxc &levelInfo,
         const std::string &defaultAddrType);
+
+    bool isInterSuperPodRetryEnable_ { GetExternalInputInterSuperPodRetryEnable() };
 };
 } // namespace hccl
 
