@@ -77,7 +77,7 @@ __aicore__ inline void AivReduceScatterBigGraph910B::Process(GM_ADDR input, GM_A
     uint32_t avgSizePerSlice = avgLengthPerSlice * sizeof(T);
 
     uint32_t blockNumPerGroup = rankSize_;
-    uint32_t targetRank = GetBlockIdx() >= rankSize_ ? GetBlockIdx() - rankSize_ : GetBlockIdx(); // 0-7
+    uint32_t targetRank = blockIdx_ >= rankSize_ ? blockIdx_ - rankSize_ : blockIdx_; // 0-7
 
     __gm__ T *inputGm = (__gm__ T *)input;
     __gm__ T *outputGm = (__gm__ T *)output;
@@ -86,7 +86,7 @@ __aicore__ inline void AivReduceScatterBigGraph910B::Process(GM_ADDR input, GM_A
 
     int32_t inputOffset = targetRank * avgLengthPerSlice;
 
-    if (GetBlockIdx() == rank_) {
+    if (blockIdx_ == rank_) {
         // 拷贝相应的数据到output
         uint64_t freq = avgSizePerSlice >= 2 * 1024 * 1024 ? 4 : 16;
         CpGM2GMWithFlagWrap(outputGm, inputGm + inputOffset, avgLengthPerSlice, rank_, freq, tag);

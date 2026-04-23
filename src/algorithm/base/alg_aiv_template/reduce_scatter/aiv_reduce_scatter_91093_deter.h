@@ -150,7 +150,7 @@ __aicore__ inline void AivReduceScatter91093Deter::Process(GM_ADDR buffIn0, GM_A
         uint32_t numReduce = rankSize_ < usedBlockNum_ ? rankSize_ : usedBlockNum_;
         uint32_t totalRounds = CeilLog2(rankSize_);
         
-        if (GetBlockIdx() < numReduce) {
+        if (blockIdx_ < numReduce) {
             uint64_t dataNum = curGroupCount;
             uint32_t curBlocks = rankSize_;
             for (uint32_t round = 0; round < totalRounds; round++) {
@@ -159,7 +159,7 @@ __aicore__ inline void AivReduceScatter91093Deter::Process(GM_ADDR buffIn0, GM_A
                 
                 // 计算当前核负责的offset范围
                 uint32_t offsetsPerCore = (curBlocks + numReduce - 1) / numReduce;
-                uint32_t startOffset = GetBlockIdx() * offsetsPerCore;
+                uint32_t startOffset = blockIdx_ * offsetsPerCore;
                 uint32_t endOffset = startOffset + offsetsPerCore;
                 if (endOffset > curBlocks) endOffset = curBlocks;
                 
@@ -196,7 +196,7 @@ __aicore__ inline void AivReduceScatter91093Deter::Process(GM_ADDR buffIn0, GM_A
 
         // step4 本端ccl -> 本端 output
         // 该算法不会使用多倍rankSize的核
-        if (GetBlockIdx() == 0) {
+        if (blockIdx_ == 0) {
             CpGM2GM(outputGM + curOffset + curBlockOffset,
                 cclGMSelf + halfBufferCount + curBlockOffset,
                 curGroupCount);

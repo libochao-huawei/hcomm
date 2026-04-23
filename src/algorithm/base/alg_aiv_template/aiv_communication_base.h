@@ -380,6 +380,7 @@ public:
 
         useDoubleBuffer_ = useDoubleBuffer;
         numBlocks_ = numBlocks;
+        blockIdx_ = GetBlockIdx();
 
         localOffset = (rankSize_ * NUM_BLOCKS_FOUR_PER_RANK_A3 * FLAG_BUF_NUM) * FLAG_SIZE;
         multiOffset = MAX_NUM_BLOCKS * DOUBLE * FLAG_SIZE+ localOffset;
@@ -428,6 +429,7 @@ public:
         dataType_ = args->dataType;
         unitSize_ = args->unitSize;
         numBlocks_ = args->numBlocks;
+        blockIdx_ = GetBlockIdx();
  
         pipe.InitBuffer(localFlagBuf, UB_FLAG_SIZE_4);
         localSetTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_ONE_OFFSET);
@@ -518,6 +520,7 @@ public:
         reduceOp_ = reduceOp;
         useDoubleBuffer_ = useDoubleBuffer;
         numBlocks_ = numBlocks;
+        blockIdx_ = GetBlockIdx();
         tag_ = tag;
 
         localOffset = (rankSize_ * NUM_BLOCKS_FOUR_PER_RANK_A3 * FLAG_BUF_NUM) * FLAG_SIZE;
@@ -641,7 +644,7 @@ public:
 
     __aicore__ inline void HeadCounter()
     {
-        if (GetBlockIdx() == 0 && isEnableCounter_) {
+        if (blockIdx_ == 0 && isEnableCounter_) {
             CpGM2GM((__gm__ int32_t*)headCountMem_, (__gm__ int32_t*)addOneMem_, counterMemSize_ / sizeof(int32_t), true,
                 HcclReduceOp::HCCL_REDUCE_SUM);
         }
@@ -649,7 +652,7 @@ public:
 
     __aicore__ inline void TailCounter()
     {
-        if (GetBlockIdx() == 0 && isEnableCounter_) {
+        if (blockIdx_ == 0 && isEnableCounter_) {
             CpGM2GM((__gm__ int32_t*)tailCountMem_, (__gm__ int32_t*)addOneMem_, counterMemSize_ / sizeof(int32_t), true,
                 HcclReduceOp::HCCL_REDUCE_SUM);
         }
@@ -670,6 +673,7 @@ public:
     int32_t tag_;
     int32_t numBlocks_;
     int32_t logLevel_;
+    uint32_t blockIdx_;
 
     bool useDoubleBuffer_;
 
@@ -708,7 +712,7 @@ __aicore__ inline void AivCommBase::Barrier(uint32_t step)
     // 用10个flag
     uint32_t flagOffset = 2 * 1024 * 1024 + (step % 2) * FLAG_SIZE * rankSize_;
     __gm__ int32_t *ctrlFlagsGM;
-    if (GetBlockIdx() == 0) {
+    if (blockIdx_ == 0) {
         pipe_barrier(PIPE_ALL);
         for (int i = 1; i < rankSize_; i++) {
             uint32_t targetRank = (rank_ + i) % rankSize_; 
@@ -735,7 +739,7 @@ __aicore__ inline void AivCommBase::ClearFlag()
     // 用10个flag
     __gm__ int32_t *ctrlFlagsGM = (__gm__ int32_t *)(GM_OUT[rank_]);
     __gm__ int32_t *emtpyGM = (__gm__ int32_t *)(GM_OUT[rank_] + CLEAR_BUFFER_OFFSET);
-    if (GetBlockIdx() == 0) {
+    if (blockIdx_ == 0) {
         CpGM2GM(ctrlFlagsGM, emtpyGM, BUFFER_AREA / sizeof(int32_t));
     }
 }
@@ -744,7 +748,7 @@ __aicore__ inline void AivCommBase::BlockSync()
 {
     uint32_t flagOffset = SYNC_BUFFER_OFFSET + 2 * FLAG_SIZE * numBlocks_;
     __gm__ int32_t *ctrlFlagsGM = (__gm__ int32_t *)(GM_OUT[rank_] + flagOffset);
-    if (GetBlockIdx() == 0) {
+    if (blockIdx_ == 0) {
         //通知其他核
         pipe_barrier(PIPE_ALL);
         for (int i = 1; i < numBlocks_; i++) {
@@ -753,8 +757,8 @@ __aicore__ inline void AivCommBase::BlockSync()
         pipe_barrier(PIPE_ALL);
     } else {
         //接收通知并清零
-        WaitSignalValue(ctrlFlagsGM + GetBlockIdx() * FLAG_SIZE, localCheckTensor, 1);
-        SetSignalValue(ctrlFlagsGM +  GetBlockIdx() * FLAG_SIZE, localSetTensor, 0);
+        WaitSignalValue(ctrlFlagsGM + blockIdx_ * FLAG_SIZE, localCheckTensor, 1);
+        SetSignalValue(ctrlFlagsGM +  blockIdx_ * FLAG_SIZE, localSetTensor, 0);
         pipe_barrier(PIPE_ALL);
     }
 }

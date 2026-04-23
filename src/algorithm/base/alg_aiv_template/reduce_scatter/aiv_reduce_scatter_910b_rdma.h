@@ -27,37 +27,37 @@ __aicore__ inline void AivReduceScatterRdma910B::Process(GM_ADDR input, GM_ADDR 
     __gm__ T *inputGM = (__gm__ T *)input;
     __gm__ T *outputGM = (__gm__ T *)output;
     __gm__ T *cclGMSelf = (__gm__ T *)(GM_IN[rank_]);
-    __gm__ T *cclGMOther = (__gm__ T *)(GM_IN[GetBlockIdx()]);
+    __gm__ T *cclGMOther = (__gm__ T *)(GM_IN[blockIdx_]);
 
     // reduce scatter，数据从input输入，inputMem+0作为buffer，结果放在原位，标记放在inputMem末尾flag区的起始位置
     uint32_t LengthPerPlane = serverNum * count;
     uint32_t LengthPerServer = rankSize_ * count;
 
-    if (GetBlockIdx() == rank_) {   // 本rank对应的block,将数据从input搬至ccl
+    if (blockIdx_ == rank_) {   // 本rank对应的block,将数据从input搬至ccl
         for (uint32_t i = 0; i < serverNum; i++) {    //循环处理每个服务器需要的数据
-            CpGM2GM(cclGMSelf + GetBlockIdx() * LengthPerPlane + i * count,
-                    inputGM + GetBlockIdx() * count + i * LengthPerServer, count);
+            CpGM2GM(cclGMSelf + blockIdx_ * LengthPerPlane + i * count,
+                    inputGM + blockIdx_ * count + i * LengthPerServer, count);
         }
         // 本地拷贝 & 卡间同步
         pipe_barrier(PIPE_ALL);
         Record1vN(tag, CommPattern::intraRank);  // 本卡该片数据已可以被跨片读取（也可累加）
     } else {                    // 其余block,先将数据从input搬至ccl，再从其他卡的ccl读数据至本卡ccl
         for (uint32_t i = 0; i < serverNum; i++) {    //循环处理每个服务器需要的数据
-            CpGM2GM(cclGMSelf + GetBlockIdx() * LengthPerPlane + i * count,
-                    inputGM + GetBlockIdx() * count + i * LengthPerServer, count);
+            CpGM2GM(cclGMSelf + blockIdx_ * LengthPerPlane + i * count,
+                    inputGM + blockIdx_ * count + i * LengthPerServer, count);
         }
         // 本地拷贝 & 卡间同步
         pipe_barrier(PIPE_ALL);
-        Record(tag, GetBlockIdx(), AivNotifyType::ACK);  // 本卡该片数据已可以被跨片读取
+        Record(tag, blockIdx_, AivNotifyType::ACK);  // 本卡该片数据已可以被跨片读取
 
         // 检查对端数据就绪且本端就绪 & 跨片搬运
-        Wait(tag, GetBlockIdx(), AivNotifyType::ACK);
+        Wait(tag, blockIdx_, AivNotifyType::ACK);
         WaitNv1(tag, rank_);
         pipe_barrier(PIPE_ALL);
         CpGM2GM(cclGMSelf + LengthPerPlane * rank_,
                 cclGMOther + LengthPerPlane * rank_, count * serverNum, true, reduceOp_);
-        Record(tag, GetBlockIdx(), AivNotifyType::DataSignal);  // 本卡该片数据已可以被跨片读取
-        Wait(tag, GetBlockIdx(), AivNotifyType::DataSignal);
+        Record(tag, blockIdx_, AivNotifyType::DataSignal);  // 本卡该片数据已可以被跨片读取
+        Wait(tag, blockIdx_, AivNotifyType::DataSignal);
     }
     return;
 }
