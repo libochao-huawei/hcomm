@@ -187,6 +187,7 @@ private:
 
     void GetHCCLReportData(const TaskInfo &taskInfo, HCCLReportData &hcclReportData) const;
     void CallAddtionInfo(HCCLReportData &hcclReportData, void *data, u32 len) const;
+    void CallDpuTrackInfo(const HCCLReportData &hcclReportData) const;
 
     void ReportCcuInfo(const TaskInfo &taskInfo) const;
     void GetCcuTaskInfo(const TaskInfo &taskInfo, const CcuProfilingInfo &info) const;

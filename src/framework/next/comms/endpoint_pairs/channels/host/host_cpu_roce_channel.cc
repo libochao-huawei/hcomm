@@ -680,7 +680,7 @@ HcclResult HostCpuRoceChannel::PrepareNotifyWrResource(
     return HCCL_SUCCESS;
 }
 
-HcclResult HostCpuRoceChannel::NotifyRecord(const uint32_t remoteNotifyIdx, uint64_t aicpuTaskId)
+HcclResult HostCpuRoceChannel::NotifyRecord(const uint32_t remoteNotifyIdx)
 {
     // 1.构造send_WR
     struct ibv_send_wr  notifyRecordWr {};
@@ -717,7 +717,6 @@ HcclResult HostCpuRoceChannel::NotifyRecord(const uint32_t remoteNotifyIdx, uint
     }
     wqeNum_++;
     HCCL_INFO("[HostCpuRoceChannel::NotifyRecord] NotifyRecord end, wqeNum_=%u", wqeNum_);
-    taskParam.aicpuTaskId = aicpuTaskId;
 
     taskParam.endTime  = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
     if (dfxCallback_ != nullptr) {

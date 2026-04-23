@@ -47,12 +47,12 @@ public:
     std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> GetDfxCallback() const;
 
     // 数据面调用verbs接口
-    HcclResult NotifyRecord(const uint32_t remoteNotifyIdx, u64 aicpuTaskId);
-    HcclResult NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout, u64 aicpuTaskId);
-    HcclResult WriteWithNotify(void *dst, const void *src, const uint64_t len, uint32_t remoteNotifyIdx, u64 aicpuTaskId);
+    HcclResult NotifyRecord(const uint32_t remoteNotifyIdxd);
+    HcclResult NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout);
+    HcclResult WriteWithNotify(void *dst, const void *src, const uint64_t len, uint32_t remoteNotifyIdx);
     HcclResult Write(void *dst, const void *src, uint64_t len);
     HcclResult Read(void *dst, const void *src, uint64_t len);
-    HcclResult ChannelFence(u64 aicpuTaskId);
+    HcclResult ChannelFence();
     HcclResult GetHcclBuffer(void*& addr, uint64_t& size);
 
     virtual HcclResult Clean() override;
