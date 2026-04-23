@@ -281,7 +281,6 @@ install(TARGETS hcomm
     LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL
 )
 
-message(STATUS "framework KERNEL_MODE=${KERNEL_MODE}")
 message(STATUS "framework BUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}")
 message(STATUS "framework ASCEND_CANN_PACKAGE_PATH=${ASCEND_CANN_PACKAGE_PATH}")
 
@@ -294,7 +293,7 @@ foreach (dir ${sources_list})
     endif()
 endforeach()
 
-if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
+if((NOT BUILD_OPEN_PROJECT) OR DEVICE_MODE)
     add_library(ccl_kernel  SHARED)
 
     set(CCL_KERNEL_SRC_LIST
@@ -932,7 +931,7 @@ add_subdirectory(cluster_maintenance)
 add_subdirectory(nslbdp)
 add_subdirectory(next)
 
-if(NOT KERNEL_MODE)
+if(NOT DEVICE_MODE)
     SET(HCCL_CMAKE_DIR ${HCCL_OPEN_CODE_BASE_DIR}/../cmake/)
     message(STATUS "HCCL_CMAKE_DIR = ${HCCL_CMAKE_DIR}")
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
@@ -964,7 +963,7 @@ if(NOT KERNEL_MODE)
     add_dependencies(hcomm ccl_kernel_json aicpu_custom_json dpu_kernel_json)
 endif()
 
-if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
+if(BUILD_OPEN_PROJECT AND DEVICE_MODE)
     if(BUILD_OPEN_PROJECT)
         set(CMAKE_CXX_FLAGS "")
         target_compile_definitions(ccl_kernel PRIVATE
@@ -1016,7 +1015,7 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
     endif()
 endif()
 
-if(DEVICE_MODE AND KERNEL_MODE)
+if(DEVICE_MODE)
     set(AICPU_CUSTOM_COMPILE_DEFINITIONS
         HCCD
         CCL_KERNEL_AICPU

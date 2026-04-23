@@ -12,7 +12,7 @@ target_sources(hccl_v2 PRIVATE
          aicpu_ts_thread_interface.cc
 )
 
-if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
+if((NOT BUILD_OPEN_PROJECT) OR DEVICE_MODE)
 target_sources(ccl_kernel PRIVATE
         rank_graph_interface.cc
         aicpu_ts_thread_interface.cc

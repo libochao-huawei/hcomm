@@ -19,57 +19,14 @@ include(${HCOMM_ROOT_DIR}/cmake/fetch_cann_cmake.cmake)
 init_cann_project()
 
 # third_party
+include(${HCOMM_ROOT_DIR}/cmake/hcomm_utils.cmake)
 include(${HCOMM_ROOT_DIR}/cmake/third_party/json.cmake)
 
 add_cann_subdirectories_relative(${HCOMM_ROOT_DIR}
+    ${HCOMM_ROOT_DIR}/src/hccd
     ${HCOMM_ROOT_DIR}/src/framework
     ${HCOMM_ROOT_DIR}/src/platform/hccp
-    ${HCOMM_ROOT_DIR}/src/platform
-    ${HCOMM_ROOT_DIR}/src/aicpu_sched/aicpu_kernel
-    ${HCOMM_ROOT_DIR}/src/queue_schedule
-    ${HCOMM_ROOT_DIR}/src/aicpu_sched
-    ${HCOMM_ROOT_DIR}/cmake/stub
 )
-
-add_dependencies(mmpa c_sec)
-add_dependencies(static_mmpa c_sec)
-add_dependencies(platform c_sec)
-
-sign_file(
-  OUTPUT_TARGET sign_tsch_fw
-  INPUT "${CMAKE_BINARY_DIR}/lib_acl/libtsch_fw_plugin_910b.o"
-  CONFIG "${HCOMM_ROOT_DIR}/scripts/package/sign.xml" 
-  RESULT_VAR "tsch_fw_sign_file"
-  DEPENDS copy_acl_headers_and_libs
-)
-
-pack_targets_and_files(
-  OUTPUT_TARGET "pack_cann_tsch_compat"
-  OUTPUT "cann-tsch-compat.tar.gz"
-  FILES "${tsch_fw_sign_file}"
-  TARGETS queue_schedule_so aicpu_sharder aicpu_prof aicpu_processer aicpu_scheduler_so aicpu_custom_scheduler_so queue_schedule aicpu_scheduler sign_tsch_fw
-  MANIFEST "aicpu_compat_bin_hash.cfg"
-)
-
-sign_file(
-  INPUT "cann-tsch-compat.tar.gz"
-  CONFIG "${HCOMM_ROOT_DIR}/scripts/package/sign.xml"
-  RESULT_VAR "tsch_compat_sign_file"
-  DEPENDS pack_cann_tsch_compat
-)
-
-install(FILES
-  ${tsch_compat_sign_file}
-  DESTINATION compat
-  COMPONENT npu-runtime
-)
-
-if(TOPLEVEL_PROJECT)
-    set_cann_subprj_package()
-endif()
-
-
-# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 # 打包并签名：cann-hcomm-compat.tar.gz
 pack_targets_and_files(
@@ -114,3 +71,13 @@ sign_file(
     RESULT_VAR "aicpu_hcomm_sign_file"
     DEPENDS generate_device_aicpu_package
 )
+
+# install(FILES
+#     ${tsch_compat_sign_file}
+#     DESTINATION compat
+#     COMPONENT npu-runtime
+# )
+
+# if(TOPLEVEL_PROJECT)
+#     set_cann_subprj_package()
+# endif()
