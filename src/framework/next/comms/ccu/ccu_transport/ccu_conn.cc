@@ -543,7 +543,7 @@ HcclResult CcuConnection::Describe(std::string &dfxMsg)
 
 HcclResult CcuConnection::testSetTpAttr()
 {
-    uint32_t attrBitmap = 0x1FFFF;
+    uint32_t attrBitmap = 8192;
     struct TpAttr tpAttr {0};
     tpAttr.dataUdpSrcport = 128;
     CHK_RET(Hccl::HrtRaSetTpAttrAsync(ctxHandle_, tpInfo_.tpHandle, attrBitmap, tpAttr, reqHandles_[0]));
