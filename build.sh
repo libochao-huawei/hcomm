@@ -21,7 +21,6 @@ ASAN="false"
 COV="false"
 CUSTOM_OPTION="-DCMAKE_INSTALL_PREFIX=${BUILD_OUTPUT_DIR}"
 FULL_MODE="false"  # 新增变量，用于控制是否全量构建
-KERNEL="false"  # 新增变量，用于控制是否只编译 ccl_kernel.so
 DO_NOT_CLEAN="false" # 是否清理
 CANN_3RD_LIB_PATH="${CURRENT_DIR}/third_party"
 CANN_UTILS_LIB_PATH="${CURRENT_DIR}/utils"
@@ -65,10 +64,8 @@ function clean()
         rm -rf ${BUILD_DIR}
     fi
 
-    if [ -z "${TEST}" ] && [ -z "${KERNEL}" ];then
-        if [ -n "${BUILD_OUTPUT_DIR}" ];then
-            rm -rf ${BUILD_OUTPUT_DIR}
-        fi
+    if [ -n "${BUILD_OUTPUT_DIR}" ];then
+        rm -rf ${BUILD_OUTPUT_DIR}
     fi
 
     mkdir -p ${BUILD_DIR}
@@ -198,11 +195,6 @@ function build_st() {
     log "Info: Build and tests completed successfully!"
 }
 
-function build_kernel() {
-    cmake_config
-    log "Info: build_kernel"
-    build ccl_kernel_plf ccl_kernel_plf_a ccl_kernel aicpu_custom_json aicpu_custom
-}
 
 function mk_dir() {
   local create_dir="$1"  # the target to make
@@ -419,10 +411,6 @@ while [[ $# -gt 0 ]]; do
         ST_TASKS+=("legacy_alg_testcase")
         shift
         ;;
-    --aicpu)  # 新增选项，用于只编译 ccl_kernel.so
-        KERNEL="true"
-        shift
-        ;;
     --full)
         FULL_MODE="true"
         shift
@@ -467,10 +455,6 @@ while [[ $# -gt 0 ]]; do
         ;;
     esac
 done
-
-if [ "${KERNEL}" == "true" ];then
-    CUSTOM_OPTION="${CUSTOM_OPTION} -DKERNEL_MODE=ON -DDEVICE_MODE=ON -DPRODUCT=ascend -DPRODUCT_SIDE=device"
-fi
 
 if [ "${FULL_MODE}" == "true" ];then
     CUSTOM_OPTION="${CUSTOM_OPTION} -DFULL_MODE=ON"
