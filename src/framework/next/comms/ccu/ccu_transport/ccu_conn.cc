@@ -510,7 +510,7 @@ std::string CcuConnection::Describe()
 
 HcclResult CcuConnection::Describe(std::string &dfxMsg)
 {
-    testSetTpAttr();
+    CHK_RET(testSetTpAttr());
     uint16_t udpSport = 0xFFFF;
     if (tpProtocol_ == TpProtocol::RTP) {
         uint32_t attrBitmap = 8192;
@@ -518,6 +518,7 @@ HcclResult CcuConnection::Describe(std::string &dfxMsg)
         CHK_RET(Hccl::HrtRaGetTpAttrAsync(ctxHandle_, tpInfo_.tpHandle, attrBitmap, tpAttr, reqHandles_[0]));
         udpSport = tpAttr.dataUdpSrcport;
     }
+    HCCL_INFO("[CcuConnection::%s] Get tp attr success, udpSport[%u]", __func__, udpSport);
     udpSport = udpSport & 0xFF;
 
     std::string jettyIds;
@@ -540,7 +541,7 @@ HcclResult CcuConnection::Describe(std::string &dfxMsg)
     return HcclResult::HCCL_SUCCESS;
 }
 
-void CcuConnection::testSetTpAttr()
+HcclResult CcuConnection::testSetTpAttr()
 {
     uint32_t attrBitmap = 0x1FFFF;
     struct TpAttr tpAttr {0};
