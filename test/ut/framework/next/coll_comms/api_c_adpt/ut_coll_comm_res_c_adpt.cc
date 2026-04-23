@@ -188,18 +188,12 @@ TEST_F(HcclChannelDescTest, Ut_CheckCommEngine_When_EngineIsAICPU_TS_ReturnTrue)
 TEST_F(HcclChannelDescTest, Ut_HcclChannelAcquire_When_EngineIsCCU_And_OpExpansionModeIsInvalid_ReturnHCCLEPARA)
 {
     // Mock MyRank::GetOpExpansionMode 方法返回非法值
-    hccl::MyRank* mockMyRank = new hccl::MyRank();
-    MOCKER(mockMyRank->GetOpExpansionMode)
+    MOCKER(&MyRank::GetOpExpansionMode)
         .stubs()
         .will(returnValue(1)); // 返回非法的opExpansionMode
     
-    // Mock CollComm::GetMyRank 方法返回我们的mock对象
-    MOCKER(hcclCommPtr->collComm_->GetMyRank)
-        .stubs()
-        .will(returnValue(mockMyRank));
-    
     // Mock MyRank::CreateChannels 方法
-    MOCKER(mockMyRank->CreateChannels)
+    MOCKER(&MyRank::CreateChannels)
         .stubs()
         .will(returnValue(HCCL_SUCCESS));
 
@@ -213,6 +207,4 @@ TEST_F(HcclChannelDescTest, Ut_HcclChannelAcquire_When_EngineIsCCU_And_OpExpansi
 
     ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_CCU, channelDesc.data(), 1, channels.data());
     EXPECT_EQ(ret, HCCL_E_PARA);
-    
-    delete mockMyRank;
 }
