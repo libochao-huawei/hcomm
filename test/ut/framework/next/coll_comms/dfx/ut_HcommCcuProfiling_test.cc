@@ -221,9 +221,10 @@ using namespace CcuRep;
     MockCcuKernelArg agrs;
     CcuKernel * ccuKernel = new TestCcuKernel(agrs);
     std::vector<CcuTaskParam> taskParams;
-    CcuTaskParam taskParam;
+    CcuTaskParam taskParam{};
     taskParams.push_back(taskParam);
 
+    setenv("HCCL_DFS_CONFIG", "task_exception:on", 1);
     MOCKER(hrtGetDeviceType)
         .stubs()
         .with(outBound(DevType::DEV_TYPE_950))
@@ -270,6 +271,7 @@ using namespace CcuRep;
     // hcomm::CcuKernelMgr::GetInstance(HcclGetThreadDeviceId());
     ret =  HcclCcuKernelLaunch(comm, thread, kernelHandle, taskArgs);
     EXPECT_EQ(ret, 0);
+    unsetenv("HCCL_DFS_CONFIG");
 }
 
 TEST_F(Ccukernel_ReportProfilingTest, Ut_HcclReportAivKernel_Normal)
