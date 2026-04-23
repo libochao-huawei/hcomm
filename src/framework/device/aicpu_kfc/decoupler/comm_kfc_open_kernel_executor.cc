@@ -52,22 +52,6 @@ u64 GetDataTypeSize(HcclDataType dataType)
     }
 }
 
-HcclResult RestoreVarDataBatchSendRecv(ops_hccl::OpParam &param)
-{
-    u64 sendRecvItemSize = static_cast<u64>(sizeof(HcclSendRecvItem));
-    u64 itemNum = static_cast<u64>(param.batchSendRecvDataDes.itemNum);
-    if (param.varMemSize != itemNum * sendRecvItemSize) {
-        HCCL_ERROR("param.varMemSize[%lu] is not equal to itemNum[%lu] multiply [HcclSendRecvItem] size[%lu]."
-                   "Failed to restore end recv info for BatchSendRecv!",
-            param.varMemSize,
-            itemNum,
-            sendRecvItemSize);
-        return HCCL_E_PARA;
-    }
-    param.batchSendRecvDataDes.sendRecvItemsPtr = reinterpret_cast<HcclSendRecvItem *>(param.varData);
-    return HCCL_SUCCESS;
-}
-
 HcclResult RestoreVarDataAlltoAllV(ops_hccl::OpParam &param, const ops_hccl::AlgResourceCtxSerializable &resCtx)
 {
     u64 rankSize = resCtx.topoInfo.userRankSize;
@@ -80,76 +64,54 @@ HcclResult RestoreVarDataAlltoAllV(ops_hccl::OpParam &param, const ops_hccl::Alg
             sizeof(u64)),
         HCCL_E_PARA);
 
-    constexpr u32 ALL_TO_ALL_V_OFFSET_RECV_COUNTS = 1;
-    constexpr u32 ALL_TO_ALL_V_OFFSET_SDISPLS = 2;
-    constexpr u32 ALL_TO_ALL_V_OFFSET_RDISPLS = 3;
-
-    u64 *data = reinterpret_cast<u64 *>(param.varData);
-    param.all2AllVDataDes.sendCounts = data;
-    param.all2AllVDataDes.recvCounts = data + ALL_TO_ALL_V_OFFSET_RECV_COUNTS * rankSize;
-    param.all2AllVDataDes.sdispls = data + ALL_TO_ALL_V_OFFSET_SDISPLS * rankSize;
-    param.all2AllVDataDes.rdispls = data + ALL_TO_ALL_V_OFFSET_RDISPLS * rankSize;
-
-    return HCCL_SUCCESS;
-}
-
-HcclResult RestoreVarDataReduceScatterV(ops_hccl::OpParam &param,
-    const ops_hccl::AlgResourceCtxSerializable &resCtx)
-{
-    u64 rankSize = resCtx.topoInfo.userRankSize;
-    HCCL_INFO("rankSize:%u", rankSize);
-    CHK_PRT_RET(param.varMemSize != ops_hccl::REDUCE_SCATTER_V_VECTOR_NUM * rankSize * sizeof(u64),
-        HCCL_ERROR("[RestoreVarDataReduceScatterV] param.varMemSize [%llu] is invalid,"
-                   "REDUCE_SCATTER_V_VECTOR_NUM is [%u], rankSize is [%u], sizeof(u64) is [%u],",
-            param.varMemSize,
-            ops_hccl::REDUCE_SCATTER_V_VECTOR_NUM,
-            rankSize,
-            sizeof(u64)),
-        HCCL_E_PARA);
-
-    u64 *data = reinterpret_cast<u64 *>(param.varData);
-    param.vDataDes.counts = data;
-    param.vDataDes.displs = data + rankSize;
-    return HCCL_SUCCESS;
-}
-
-HcclResult RestoreVarDataAllGatherV(ops_hccl::OpParam &param, const ops_hccl::AlgResourceCtxSerializable &resCtx)
-{
-    u64 rankSize = resCtx.topoInfo.userRankSize;
-    HCCL_INFO("rankSize:%u", rankSize);
-    CHK_PRT_RET(param.varMemSize != ops_hccl::ALL_GATHER_V_VECTOR_NUM * rankSize * sizeof(u64),
-        HCCL_ERROR("[RestoreVarDataAllGatherV] param.varMemSize [%llu] is invalid,"
-                   "ALL_GATHER_V_VECTOR_NUM is [%u], rankSize is [%u], sizeof(u64) is [%u],",
-            param.varMemSize,
-            ops_hccl::ALL_GATHER_V_VECTOR_NUM,
-            rankSize,
-            sizeof(u64)),
-        HCCL_E_PARA);
-
-    u64 *data = reinterpret_cast<u64 *>(param.varData);
-    param.vDataDes.counts = data;
-    for (u64 i = 0; i < rankSize; i++) {
-        HCCL_INFO("param.vDataDes.counts[%u]:%u", i, reinterpret_cast<u64 *>(param.vDataDes.counts)[i]);
+    HCCL_INFO("[RestoreVarDataAlltoAllV] param.varMemSize [%llu],"
+                " ALL_TO_ALL_V_VECTOR_NUM is [%u], rankSize is [%u], sizeof(u64) is [%u],",
+        param.varMemSize,
+        ops_hccl::ALL_TO_ALL_V_VECTOR_NUM,
+        rankSize,
+        sizeof(u64));
+    for (uint32_t i = 0; i < rankSize; i++) {
+        HCCL_INFO("param.all2AllVDataDes.sendCounts[%d]:[%llu], param.all2AllVDataDes.recvCounts[%d]:[%llu], "
+                    "param.all2AllVDataDes.sdispls[%d]:[%llu], param.all2AllVDataDes.rdispls[%d]:[%llu]",
+                    i, reinterpret_cast<u64*>(param.all2AllVDataDes.sendCounts)[i],
+                    i, reinterpret_cast<u64*>(param.all2AllVDataDes.recvCounts)[i],
+                    i, reinterpret_cast<u64*>(param.all2AllVDataDes.sdispls)[i],
+                    i, reinterpret_cast<u64*>(param.all2AllVDataDes.rdispls)[i]);
     }
-    param.vDataDes.displs = data + rankSize;
-    for (u64 i = 0; i < rankSize; i++) {
-        HCCL_INFO("param.vDataDes.displs[%u]:%u", i, reinterpret_cast<u64 *>(param.vDataDes.displs)[i]);
+    constexpr u64 SEND_COUNT_IDX = 0;
+    constexpr u64 RECV_COUNT_IDX = 1;
+    constexpr u64 SEND_DISPL_IDX = 2;
+    constexpr u64 RECV_DISPL_IDX = 3;
+
+    u64 *data = reinterpret_cast<u64 *>(param.varData);
+    for (u64 i = 0; i < ops_hccl::ALL_TO_ALL_V_VECTOR_NUM * rankSize; i++) {
+        u64 val = i / rankSize;
+        switch(val) {
+            case SEND_COUNT_IDX:
+                data[i] = reinterpret_cast<u64*>(param.all2AllVDataDes.sendCounts)[i % rankSize];
+                break;
+            case RECV_COUNT_IDX:
+                data[i] = reinterpret_cast<u64*>(param.all2AllVDataDes.recvCounts)[i % rankSize];
+                break;
+            case SEND_DISPL_IDX:
+                data[i] = reinterpret_cast<u64*>(param.all2AllVDataDes.sdispls)[i % rankSize];
+                break;
+            case RECV_DISPL_IDX:
+                data[i] = reinterpret_cast<u64*>(param.all2AllVDataDes.rdispls)[i % rankSize];
+                break;
+            default:
+                break;
+        }
     }
+
     return HCCL_SUCCESS;
 }
 
 HcclResult RestoreVarDataIfNeeded(ops_hccl::OpParam &param, const ops_hccl::AlgResourceCtxSerializable &resCtx)
 {
     HcclResult ret = HCCL_SUCCESS;
-    if (param.opType == HCCL_CMD_BATCH_SEND_RECV) {
-        ret = RestoreVarDataBatchSendRecv(param);
-    } else if (param.opType == HCCL_CMD_ALLTOALLV || param.opType == HCCL_CMD_ALLTOALLVC
-               || param.opType == HCCL_CMD_ALLTOALL) {
+    if (param.opType == HCCL_CMD_ALLTOALLV || param.opType == HCCL_CMD_ALLTOALL) {
         ret = RestoreVarDataAlltoAllV(param, resCtx);
-    } else if (param.opType == HCCL_CMD_REDUCE_SCATTER_V) {
-        ret = RestoreVarDataReduceScatterV(param, resCtx);
-    } else if (param.opType == HCCL_CMD_ALLGATHER_V) {
-        ret = RestoreVarDataAllGatherV(param, resCtx);
     }
     return ret;
 }
@@ -164,16 +126,23 @@ HcclResult LaunchOpenOpParamDataImpl(std::vector<uint8_t> &opParam)
     char *ctx = static_cast<char *>(param->resCtx);
     std::vector<char> seq(ctx, ctx + param->ctxSize);
     resCtx.DeSerialize(seq);
-    HCCL_INFO("[MC2_OPEN_DIAG][Launch] opType %u, algName[%s], inputPtr %p, outputPtr %p, count %llu, "
-              "dataType %u, outputType %u, strideCount %llu, resCtx %p, ctxSize %llu, stream %p.",
+    HCCL_INFO("[MC2_OPEN_DIAG][Launch] opType %u, algName[%s], inputPtr %p, outputPtr %p, resCtx %p, ctxSize %llu, stream %p."
+              "userRank %u, userRankSize %u, threadNum %zu, cclMemAddr %p, cclMemSize %llu.", 
               static_cast<u32>(param->opType), param->algName, param->inputPtr, param->outputPtr,
-              static_cast<unsigned long long>(param->DataDes.count), static_cast<u32>(param->DataDes.dataType),
-              static_cast<u32>(param->DataDes.outputType), static_cast<unsigned long long>(param->DataDes.strideCount),
-              param->resCtx, static_cast<unsigned long long>(param->ctxSize), param->stream);
-    HCCL_INFO("[MC2_OPEN_DIAG][LaunchResCtx] userRank %u, userRankSize %u, threadNum %zu, cclMemAddr %p, "
-              "cclMemSize %llu.",
+              param->resCtx, static_cast<unsigned long long>(param->ctxSize), param->stream,
               resCtx.topoInfo.userRank, resCtx.topoInfo.userRankSize, resCtx.threads.size(), resCtx.cclMem.addr,
               static_cast<unsigned long long>(resCtx.cclMem.size));
+    if (param->opType == HCCL_CMD_ALLTOALLV || param->opType == HCCL_CMD_ALLTOALL) {
+        HCCL_INFO("[MC2_OPEN_DIAG][Launch][AllToAllV] sendDataType %u, recvDataType %u, sendCounts %p, recvCounts %p, sdispls %p, rdispls %p.",
+                static_cast<u32>(param->all2AllVDataDes.sendType), static_cast<u32>(param->all2AllVDataDes.recvType),
+                param->all2AllVDataDes.sendCounts, param->all2AllVDataDes.recvCounts,
+                param->all2AllVDataDes.sdispls, param->all2AllVDataDes.rdispls);
+    } else {
+        HCCL_INFO("[MC2_OPEN_DIAG][Launch][Else] count %llu, dataType %u, outputType %u, strideCount %llu.",
+                static_cast<unsigned long long>(param->DataDes.count),
+                static_cast<u32>(param->DataDes.dataType), static_cast<u32>(param->DataDes.outputType),
+                static_cast<unsigned long long>(param->DataDes.strideCount));
+    }
     const u64 dataTypeSize = GetDataTypeSize(param->DataDes.dataType);
     const u64 inputBytes = param->DataDes.count * dataTypeSize;
     const bool isAllGather = (param->opType == HCCL_CMD_ALLGATHER);
