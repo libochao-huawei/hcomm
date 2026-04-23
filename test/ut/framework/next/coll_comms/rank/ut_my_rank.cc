@@ -282,7 +282,7 @@ TEST_F(MyRankTest, Ut_Init_When_Ccu_Ms_And_Sched_Insufficient_Expect_Fallback_Ai
 }
 
 // 测试Init在申请资源时出现其他报错时失败
-TEST_F(MyRankTest, Ut_Init_When_)
+TEST_F(MyRankTest, Ut_Init_When_Resource_Fail_Expect_Fail)
 {
     setenv("HCCL_INDEPENDENT_OP", "1", 1);
     MOCKER_CPP(&hcomm::CcuResContainer::ChangeMode).stubs().will(returnValue(HCCL_E_PARA));
