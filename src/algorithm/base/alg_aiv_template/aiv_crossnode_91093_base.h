@@ -217,7 +217,7 @@ public:
 
     __aicore__ inline void HeadCounter()
     {
-        if (GetBlockIdx() == 0 && isEnableCounter_) {
+        if (blockIdx_ == 0 && isEnableCounter_) {
             CpGM2GM((__gm__ int32_t*)headCountMem_, (__gm__ int32_t*)addOneMem_, counterMemSize_ / sizeof(int32_t), true,
                 HcclReduceOp::HCCL_REDUCE_SUM);
         }
@@ -225,7 +225,7 @@ public:
 
     __aicore__ inline void TailCounter()
     {
-        if (GetBlockIdx() == 0 && isEnableCounter_) {
+        if (blockIdx_ == 0 && isEnableCounter_) {
             CpGM2GM((__gm__ int32_t*)tailCountMem_, (__gm__ int32_t*)addOneMem_, counterMemSize_ / sizeof(int32_t), true,
                 HcclReduceOp::HCCL_REDUCE_SUM);
         }
@@ -250,6 +250,7 @@ public:
  
     uint64_t len_;
     uint32_t numBlocks_;
+    uint32_t blockIdx_;
     
     TPipe pipe;
 
@@ -268,7 +269,7 @@ public:
     uint32_t targetRanks[MAX_TARGET_NUM] = {}; // 最多768/48 = 16 次（一次代表服务48张卡）
     uint32_t blockNumPerGroup = 1; // 多少个aiv服务一个rank
     uint32_t blockIdxInGroup = 0; // 同一组中的aiv编号
-    uint32_t blockGroupIdx = GetBlockIdx(); // 同一组中的aiv编号
+    uint32_t blockGroupIdx = blockIdx_; // 同一组中的aiv编号
     uint64_t groupMid_ = 0; // 一组aiv负责搬运的数据量, 区分中间轮和尾轮
     uint64_t groupTail_ = 0; 
     uint64_t groupTailLast_ = 0;  // 尾轮对应lastRank的一组aiv负责的数据量
@@ -350,20 +351,20 @@ __aicore__ inline void AivCrossNode91093Base::CalcNumTargetsAndTargetRanks()
             leftTailRankSize = halfConcurrent;
             rightTailRankSize = tailRankSize - halfConcurrent;
         }
-        if (GetBlockIdx() < halfConcurrent && (halfConcurrent - GetBlockIdx()) <= leftTailRankSize) {
+        if (blockIdx_ < halfConcurrent && (halfConcurrent - blockIdx_) <= leftTailRankSize) {
             numTargets += 1;
         }
-        if (GetBlockIdx() >= halfConcurrent && (GetBlockIdx() - halfConcurrent + 1) <= rightTailRankSize) {
+        if (blockIdx_ >= halfConcurrent && (blockIdx_ - halfConcurrent + 1) <= rightTailRankSize) {
             numTargets += 1;
         }
     }
 
     for (uint32_t i = 0; i < numTargets; i++) {
         uint32_t targetRank;
-        if (GetBlockIdx() < halfConcurrent) {
-            targetRank = (rank_ + rankSize_ - (halfConcurrent - GetBlockIdx()) - i * halfConcurrent) % rankSize_; // left
+        if (blockIdx_ < halfConcurrent) {
+            targetRank = (rank_ + rankSize_ - (halfConcurrent - blockIdx_) - i * halfConcurrent) % rankSize_; // left
         } else {
-            targetRank = (rank_ + (GetBlockIdx() - halfConcurrent + 1) + i * halfConcurrent) % rankSize_; // right
+            targetRank = (rank_ + (blockIdx_ - halfConcurrent + 1) + i * halfConcurrent) % rankSize_; // right
         }
         targetRanks[i] = targetRank;
     }
@@ -372,16 +373,16 @@ __aicore__ inline void AivCrossNode91093Base::CalcNumTargetsAndTargetRanks()
 __aicore__ inline void AivCrossNode91093Base::CalcNumTargetsAndTargetRanksGroup() 
 {
     blockNumPerGroup = numBlocks_ / blockGroup_; // 多少个aiv服务同一个对端
-    blockIdxInGroup = (GetBlockIdx() /blockGroup_) % blockNumPerGroup;
-    blockGroupIdx = GetBlockIdx() % blockGroup_;
+    blockIdxInGroup = (blockIdx_ /blockGroup_) % blockNumPerGroup;
+    blockGroupIdx = blockIdx_ % blockGroup_;
     numTargets = (rankSize_) / blockGroup_;
     uint32_t tailRankSize = (rankSize_) % blockGroup_;
-    if (tailRankSize > 0 && GetBlockIdx() < tailRankSize) {
+    if (tailRankSize > 0 && blockIdx_ < tailRankSize) {
         numTargets += 1;
     }
 
     for (uint32_t i = 0; i < numTargets; i++) {
-        uint32_t targetRank =  (GetBlockIdx() % blockGroup_ + i * blockGroup_) % rankSize_;
+        uint32_t targetRank =  (blockIdx_ % blockGroup_ + i * blockGroup_) % rankSize_;
         targetRanks[i] = targetRank;
         if (targetRank == rank_) {
             localCopyCores = true;
@@ -420,6 +421,7 @@ __aicore__ inline void AivCrossNode91093Base::Init(GM_ADDR buffOut0, GM_ADDR buf
     numBlocks_ = numBlocks;
     blockGroup_ = numBlocks_;
     commAddr_ = buffOut1;
+    blockIdx_ = GetBlockIdx();
     
     InitSetCheckClearArgsTensor();
     pipe.InitBuffer(offsetArgsBuf, UB_FLAG_SIZE * MAX_TARGET_NUM);
@@ -461,6 +463,7 @@ __aicore__ inline void AivCrossNode91093Base::InitDeter(GM_ADDR buffOut0, GM_ADD
     pingpongOffset = 0;
     blockGroup_ = numBlocks_;
     commAddr_ = buffOut1;
+    blockIdx_ = GetBlockIdx();
 
     InitSetCheckClearArgsTensor();
     if (rankSize > numBlocks_ ) {
@@ -493,6 +496,7 @@ __aicore__ inline void AivCrossNode91093Base::InitSuperKernel(GM_ADDR hiddenInpu
     flagAddrSelf_ = args->buffersOut[0];
     dataAddrSelf_ = args->buffersIn[0];
     commAddr_ = args->buffersOut[1];
+    blockIdx_ = GetBlockIdx();
 
     blockGroup_ = rankSize_ > numBlocks_ ? numBlocks_ : rankSize_;
     
@@ -523,6 +527,7 @@ __aicore__ inline void AivCrossNode91093Base::Init(GM_ADDR buffOut0, GM_ADDR buf
     usedBlockNum_ = numBlocks;
     numBlocks_ = numBlocks;
     commAddr_ = buffOut1;
+    blockIdx_ = GetBlockIdx();
 
     InitSetCheckClearArgsTensor();
     
@@ -566,6 +571,7 @@ __aicore__ inline void AivCrossNode91093Base::Init(GM_ADDR buffOut0, GM_ADDR buf
     usedBlockNum_ = numBlocks;
     numBlocks_ = numBlocks;
     commAddr_ = buffOut1;
+    blockIdx_ = GetBlockIdx();
 
     InitSetCheckClearArgsTensor();
     CalcNumTargetsAndTargetRanksGroup();
@@ -730,7 +736,7 @@ __aicore__ inline void AivCrossNode91093Base::LocalRecord(uint32_t tag, uint32_t
 
 __aicore__ inline void AivCrossNode91093Base::LocalWait(uint32_t tag, AivNotifyType notifyType, bool ifClear)
 {
-    int32_t waitOffset = localOffset + GetBlockIdx() * FLAG_SIZE + (int32_t(notifyType) % 3)* MAX_NUM_BLOCKS * FLAG_SIZE +
+    int32_t waitOffset = localOffset + blockIdx_ * FLAG_SIZE + (int32_t(notifyType) % 3)* MAX_NUM_BLOCKS * FLAG_SIZE +
         (int32_t(notifyType) / 3) * 2560 * 1024;
     __gm__ int32_t *ctrlFlagGM = (__gm__ int32_t *)(flagAddrSelf_  + waitOffset );
     WaitSignalValue(ctrlFlagGM, localCheckTensor, tag);
@@ -767,7 +773,7 @@ __aicore__ inline void AivCrossNode91093Base::localMultiRecord(uint32_t tag, int
 #endif
     SyncFunc<HardEvent::S_MTE3>();
     for (int32_t i = 0; i < blockGroup; i++) {
-        LocalRecord(tag, GetBlockIdx() + i, notifyType, false);
+        LocalRecord(tag, blockIdx_ + i, notifyType, false);
     }
 }
 
@@ -926,7 +932,7 @@ __aicore__ inline void AivCrossNode91093Base::ClearGM()
 __aicore__ inline void AivCrossNode91093Base::SyncAllCycle(AivNotifyType notifyType, int32_t blockGroup, bool ifSyncCore)
 {
     //todo
-    LocalRecord(1, GetBlockIdx(), notifyType);
+    LocalRecord(1, blockIdx_, notifyType);
     if (ifSyncCore) {
         LocalMultiWaitRecord(1, notifyType, blockGroup, false);
     } 
@@ -939,13 +945,13 @@ __aicore__ inline void AivCrossNode91093Base::ClearCycle()
     if (blockIdxInGroup == 0) {
         Barrier(buffersOut, 1);
         pipe_barrier(PIPE_ALL);
-        SyncAllCycle(AivNotifyType::ClearACK, blockGroup_, GetBlockIdx()==0);
+        SyncAllCycle(AivNotifyType::ClearACK, blockGroup_, blockIdx_==0);
         pipe_barrier(PIPE_ALL);
         ClearGM();
         Barrier(buffersOut, IDX_2);
         pipe_barrier(PIPE_ALL);
     }
-    SyncAllCycle(AivNotifyType::ClearDataSingal, numBlocks_, GetBlockIdx()==0);
+    SyncAllCycle(AivNotifyType::ClearDataSingal, numBlocks_, blockIdx_==0);
     pipe_barrier(PIPE_ALL);
 }
 
