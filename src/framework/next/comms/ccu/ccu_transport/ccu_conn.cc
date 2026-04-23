@@ -528,6 +528,7 @@ HcclResult CcuConnection::Describe(std::string &dfxMsg)
         EXCEPTION_HANDLE_END
         udpSport = tpAttr.dataUdpSrcport;
     }
+    HCCL_INFO("[CcuConnection::%s] Get tp attr success, udpSport[%u]", __func__, udpSport);
     udpSport = udpSport & 0xFF;
 
     std::ostringstream oss;
@@ -554,7 +555,7 @@ HcclResult CcuConnection::Describe(std::string &dfxMsg)
     return HcclResult::HCCL_SUCCESS;
 }
 
-void CcuConnection::testSetTpAttr()
+HcclResult CcuConnection::testSetTpAttr()
 {
     uint32_t attrBitmap = 0x1FFFF;
     struct TpAttr tpAttr {0};
