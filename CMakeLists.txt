@@ -120,10 +120,6 @@ elseif(BUILD_OPEN_PROJECT)
         include/hcomm_primitives.h
     )
 
-    set(HCCL_JSON
-        cmake/scripts/ccl_kernel.json
-    )
-
     if(DEVICE_MODE)
         set(HCCP_TAR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_device/tar_pkg/)
         set(CCL_KERNEL_TAR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_device/ccl_kernel_tar_pkg/)
@@ -209,29 +205,33 @@ elseif(BUILD_OPEN_PROJECT)
         )
         install(FILES ${BUILD_DEVICE_DIR}/signatures/cann-hcomm-compat.tar.gz
             DESTINATION ${INSTALL_DEVICE_TAR_DIR} OPTIONAL
+            COMPONENT hcomm
             PERMISSIONS OWNER_READ GROUP_READ
-            OPTIONAL
         )
         install(FILES ${BUILD_DEVICE_DIR}/signatures/aicpu_hcomm.tar.gz
             DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
+            COMPONENT hcomm
         )
         install(FILES ${BUILD_HCCD_DIR}/signatures/cann-hccd-compat.tar.gz
             DESTINATION ${INSTALL_DEVICE_TAR_DIR} OPTIONAL
+            COMPONENT hcomm
             PERMISSIONS OWNER_READ GROUP_READ
-            OPTIONAL
         )
         install(FILES ${BUILD_DEVICE_DIR}/src/framework/libaicpu_custom.so
-            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
+            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel ${INSTALL_OPTIONAL}
+            COMPONENT hcomm
         )
         install(FILES ${BUILD_DEVICE_DIR}/src/framework/libaicpu_custom.json
-            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
+            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel ${INSTALL_OPTIONAL}
+            COMPONENT hcomm
         )
 
         add_custom_target(install_ccl_kernel DEPENDS
             ${BUILD_DEVICE_DIR}/src/framework/libccl_kernel.so
         )
         install(FILES ${BUILD_DEVICE_DIR}/src/framework/libccl_kernel.so
-            DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/devlib/device OPTIONAL
+            DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/devlib/device ${INSTALL_OPTIONAL}
+            COMPONENT hcomm
         )
         add_dependencies(install_tar hcomm)
         add_dependencies(install_ccl_kernel hcomm)
@@ -239,23 +239,26 @@ elseif(BUILD_OPEN_PROJECT)
 
     install(FILES
         ${HCCL_HEAD}
-        ${HCCL_JSON}
-        DESTINATION ${INSTALL_INCLUDE_DIR}/hccl/ OPTIONAL
+        DESTINATION ${INSTALL_INCLUDE_DIR}/hccl/ ${INSTALL_OPTIONAL}
+        COMPONENT hcomm
     )
     if(NOT BUILD_OPEN_PROJECT)
         install(FILES 
             ${HCOMM_HEAD} 
-            DESTINATION ${INSTALL_INCLUDE_DIR}/ OPTIONAL 
+            DESTINATION ${INSTALL_INCLUDE_DIR}/ ${INSTALL_OPTIONAL}
+            COMPONENT hcomm 
         )
     endif()
     install(FILES
         include/hcomm_primitives.h
-        DESTINATION ${INSTALL_INCLUDE_DIR}/hcomm/ OPTIONAL
+        DESTINATION ${INSTALL_INCLUDE_DIR}/hcomm/ ${INSTALL_OPTIONAL}
+        COMPONENT hcomm
     )
     install(FILES
         include/hcomm_res.h
         include/hcomm_res_defs.h
-        DESTINATION ${INSTALL_INCLUDE_DIR}/hcomm/ OPTIONAL
+        DESTINATION ${INSTALL_INCLUDE_DIR}/hcomm/ ${INSTALL_OPTIONAL}
+        COMPONENT hcomm
     )
 
     set(HCCL_PKG_HEAD
@@ -273,7 +276,8 @@ elseif(BUILD_OPEN_PROJECT)
     )
     install(FILES
         ${HCCL_PKG_HEAD}
-        DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hccl/ OPTIONAL
+        DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hccl/ ${INSTALL_OPTIONAL}
+        COMPONENT hcomm
     )
     set(HCCL_PKG_CCU_HEAD
         pkg_inc/hcomm/ccu/ccu_assist_pub.h
@@ -312,13 +316,15 @@ elseif(BUILD_OPEN_PROJECT)
     )
     install(FILES
         ${HCCL_PKG_CCU_HEAD}
-        DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hcomm/ccu/ OPTIONAL
+        DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hcomm/ccu/ ${INSTALL_OPTIONAL}
+        COMPONENT hcomm
     )
     set(HCOMM_PKG_HEAD
         pkg_inc/hcomm/hcomm_primitives_expt.h
     )
     install(FILES
         ${HCOMM_PKG_HEAD}
-        DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hcomm/ OPTIONAL
+        DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hcomm/ ${INSTALL_OPTIONAL}
+        COMPONENT hcomm
     )
 endif()
