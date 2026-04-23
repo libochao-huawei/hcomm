@@ -3405,8 +3405,6 @@ static HcclConfigTypeOpExpansionMode OpExpansionModeValueToModeEnum(const uint32
 HcclResult HcclConfigGetInfo(HcclComm comm, HcclConfigType cfgType,
     uint32_t infoLen, void *info)
 {
-    HCCL_RUN_INFO("Entry-%s", __func__);
-
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(info);
