@@ -60,60 +60,60 @@ struct CcuProfilingInfo {
 };
 
 struct ParaDMA {
-    const void *src;
-    const void *dst;
-    std::size_t size;
-    u64         notifyID;
-    u32         notifyValue;
-    DfxLinkType linkType;
-    DmaOp       dmaOp;
+    const void *src{nullptr};
+    const void *dst{nullptr};
+    std::size_t size{0};
+    u64         notifyID{0};
+    u32         notifyValue{0};
+    DfxLinkType linkType{DfxLinkType::STANDARD_ROCE};
+    DmaOp       dmaOp{DmaOp::HCCL_DMA_READ};
     Eid         locEid{};
     Eid         rmtEid{};
-    std::string  locAddr;
-    std::string  rmtAddr;
+    char        locAddr[64]{0};
+    char        rmtAddr[64]{0};
 };
 
 struct ParaReduce {
-    const void  *src;
-    const void  *dst;
-    std::size_t  size;
-    u64          notifyID;
-    u32          notifyValue;
-    DfxLinkType  linkType;
+    const void  *src{nullptr};
+    const void  *dst{nullptr};
+    std::size_t  size{0};
+    u64          notifyID{0};
+    u32          notifyValue{0};
+    DfxLinkType  linkType{DfxLinkType::STANDARD_ROCE};
     HcclReduceOp reduceOp{HcclReduceOp::HCCL_REDUCE_RESERVED};
     HcclDataType dataType{HcclDataType::HCCL_DATA_TYPE_RESERVED};
     Eid         locEid{};
- 	Eid         rmtEid{};
+  	Eid         rmtEid{};
 };
 
 struct ParaNotify {
-    u64 notifyID;
-    u32 value;
+    u64 notifyID{0};
+    u32 value{0};
 };
 
 constexpr u32 CCU_COSTOM_ARGS_LEN = 32;
 struct ParaCcu {
-    u8  dieId;
-    u8  missionId;
-    u8  execMissionId;
-    u32 instrId;
-    u64 costumArgs[CCU_COSTOM_ARGS_LEN];
-    u64 executeId;
+    u8  dieId{0};
+    u8  missionId{0};
+    u8  execMissionId{0};
+    u32 instrId{0};
+    u64 costumArgs[CCU_COSTOM_ARGS_LEN]{0};
+    u64 executeId{0};
     u64 ccuKernelHandle{0};
 };
 
 struct ParaAiv{
-    HcclCMDType cmdType;
-    u32 tag;
-    u64 count;
-    u32 numBlocks;
-    u32 rankSize;
-    void* flagMem;
-    u64 flagMemSize;
-    u32 rank;
-    u32 sendRecvRemoteRank;
-    bool isOpbase;
-    HcclDataType dataType;
+    HcclCMDType cmdType{HcclCMDType::HCCL_CMD_MAX};
+    u32 tag{0};
+    u64 count{0};
+    u32 numBlocks{0};
+    u32 rankSize{0};
+    void* flagMem{nullptr};
+    u64 flagMemSize{0};
+    u32 rank{0};
+    u32 sendRecvRemoteRank{0};
+    bool isOpbase{false};
+    HcclDataType dataType{HcclDataType::HCCL_DATA_TYPE_RESERVED};
 };
 
 struct TaskParam {
@@ -121,6 +121,7 @@ struct TaskParam {
     u64           beginTime;
     u64           endTime;
     u64           aicpuTaskId{0}; // 关联的aicpu任务id，0表示不关联
+    uint16_t      npuDevId{0};
     bool          isMaster{false};
     union {
         ParaDMA    DMA;    // taskType = SDMA/RDMA使用, 包括rtRDMASend写notify

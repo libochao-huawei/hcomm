@@ -57,7 +57,10 @@ HcclResult HcclCommDfx::AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl
 HcclResult HcclCommDfx::AddDpuTaskInfoCallback(const Hccl::TaskParam &taskParam, u64 handle) {
     u32 streamId = npuStreamId_;
     u32 taskId = GetTaskId(streamId);
-    return AddTaskInfoCallback(streamId, taskId, taskParam, handle);
+    Hccl::TaskParam localTaskParam = taskParam;
+    localTaskParam.aicpuTaskId = aicpuTaskId_;
+    localTaskParam.npuDevId = deviceId_;
+    return AddTaskInfoCallback(streamId, taskId, localTaskParam, handle);
 }
 
 // HcclCommDfx接口实现 - 修改为返回HcclResult类型

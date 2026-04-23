@@ -64,6 +64,13 @@ public:
 
     u32 GetNpuStreamId() const;
     void SetNpuStreamId(u32 npuStreamId);
+
+    u32 GetAicpuTaskId() const { return aicpuTaskId_; }
+    u32 GetAicpuStreamId() const { return aicpuStreamId_; }
+    void SetAicpuTaskIdAndStreamId(u32 taskId, u32 streamId) {
+        aicpuTaskId_ = taskId;
+        aicpuStreamId_ = streamId;
+    }
 private:
     std::unique_ptr<Hccl::MirrorTaskManager> mirrorTaskManager_;
     std::unique_ptr<HcclCommProfiling> profiling_;
@@ -75,6 +82,8 @@ private:
     u32 deviceId_{0};
     u32 myRankId_{0};
     u32 npuStreamId_{0};
+    u32 aicpuTaskId_{INVALID_UINT};
+    u32 aicpuStreamId_{INVALID_UINT};
     std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> setAddTaskCallback_;
 };
 

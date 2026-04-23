@@ -675,7 +675,7 @@ HcclResult HostCpuRoceChannel::PrepareNotifyWrResource(
     taskParam.taskPara.DMA.linkType    = DfxLinkType::ROCE;
     taskParam.taskPara.DMA.dmaOp       = DmaOp::HCCL_DMA_WRITE;
     taskParam.taskPara.DMA.locAddr     = GetCommAddrString(localEp_);
-    taskParam.taskPara.DMA.locAddr     = GetCommAddrString(remoteEp_);
+    taskParam.taskPara.DMA.rmtAddr     = GetCommAddrString(remoteEp_);
 
     return HCCL_SUCCESS;
 }
@@ -835,7 +835,7 @@ HcclResult HostCpuRoceChannel::PrepareWriteWrResource(const void *dst, const voi
     taskParam.taskPara.DMA.linkType = DfxLinkType::ROCE;
     taskParam.taskPara.DMA.dmaOp    = DmaOp::HCCL_DMA_WRITE;
     taskParam.taskPara.DMA.locAddr     = GetCommAddrString(localEp_);
-    taskParam.taskPara.DMA.locAddr     = GetCommAddrString(remoteEp_);
+    taskParam.taskPara.DMA.rmtAddr     = GetCommAddrString(remoteEp_);
 
     return HCCL_SUCCESS;
 }
@@ -1110,7 +1110,7 @@ HcclResult HostCpuRoceChannel::ChannelFence(u64 aicpuTaskId)
     fenceFlag_ = true;
     HCCL_INFO("[HostCpuRoceChannel::%s] SUCCESS. wqeNum_[%u].", __func__, wqeNum_);
     
-    taskParam.taskType                 = TaskParamType::TASK_NOTIFY_WAIT;
+    taskParam.taskType                 = TaskParamType::Dpu_ChannelFence;
     
     taskParam.taskPara.Notify.notifyID = INVALID_U64;
     taskParam.taskPara.Notify.value    = 1;
