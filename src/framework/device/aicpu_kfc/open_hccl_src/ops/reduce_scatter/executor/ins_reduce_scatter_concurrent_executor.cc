@@ -45,8 +45,9 @@ HcclResult InsReduceScatterConcurrentExecutor<AlgTopoMatch, InsAlgTemplate0, Ins
     InitCommInfo(param, topoInfo, algHierarchyInfo);
 
     // 拆一下algHierarchyInfo
-    if (algHierarchyInfo.infos.size() == 0) {
+    if (algHierarchyInfo.infos.size() == 0 || algHierarchyInfo.infos[0].size() < 2) {
         HCCL_ERROR("[InsReduceScatterConcurrentExecutor] algHierarchyInfo has no members, Please check the algHierarchyInfo!");
+        return HCCL_E_PARA;
     }
     std::vector<std::vector<u32>> temp0HierarchyInfo = {algHierarchyInfo.infos[0][0]};
     std::vector<std::vector<u32>> temp1HierarchyInfo = {algHierarchyInfo.infos[0][1]};
@@ -302,6 +303,7 @@ HcclResult InsReduceScatterConcurrentExecutor<AlgTopoMatch, InsAlgTemplate0, Ins
     reduceOp_ = param.reduceType;
     dataType_ = param.DataDes.dataType;
     dataCount_ = param.DataDes.count; // recvCount
+    strideCount_ = param.DataDes.strideCount;
     dataTypeSize_ = SIZE_TABLE[param.DataDes.dataType];
 
     algHierarchyInfo_ = algHierarchyInfo;
@@ -318,6 +320,7 @@ HcclResult InsReduceScatterConcurrentExecutor<AlgTopoMatch, InsAlgTemplate0, Ins
     rankSize_ = resCtx.topoInfo.userRankSize;
 
     dataCount_ = param.DataDes.count;
+    strideCount_ = param.DataDes.strideCount;
     dataTypeSize_ =  SIZE_TABLE[param.DataDes.dataType];
     dataSize_ = dataCount_ * dataTypeSize_;
     dataType_ = param.DataDes.dataType;
@@ -340,7 +343,9 @@ void InsReduceScatterConcurrentExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTem
     tempAlgParams.buffInfo.outBuffBaseOff = dataOffset;
     tempAlgParams.sliceSize = dataCountforTemp * dataTypeSize_;
     tempAlgParams.tailSize = tempAlgParams.sliceSize;
-    tempAlgParams.inputSliceStride = dataSize_; // 输出长度
+    tempAlgParams.inputSliceStride = (strideCount_ == 0)
+                                     ? dataSize_
+                                     : strideCount_ * dataTypeSize_; // 输出长度
     tempAlgParams.outputSliceStride = maxCountPerLoop * dataTypeSize_; // 如果是scratchbuffer，偏移是单次循环处理的最大数据量
 }
 

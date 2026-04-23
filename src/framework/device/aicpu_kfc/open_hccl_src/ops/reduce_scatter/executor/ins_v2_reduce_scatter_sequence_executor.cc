@@ -108,6 +108,7 @@ HcclResult InsV2ReduceScatterSequenceExecutor<AlgTopoMatch, InsAlgTemplate0, Ins
     rankSize_ = resCtx.topoInfo.userRankSize;
 
     dataCount_ = param.DataDes.count;
+    strideCount_ = param.DataDes.strideCount;
     dataTypeSize_ =  SIZE_TABLE[param.DataDes.dataType];
     dataSize_ = dataCount_ * dataTypeSize_;
     dataType_ = param.DataDes.dataType;
@@ -147,6 +148,9 @@ HcclResult InsV2ReduceScatterSequenceExecutor<AlgTopoMatch, InsAlgTemplate0, Ins
     HcclMem cclOutMem = {resCtx.cclMem.type , cclOutAddr, resCtx.cclMem.size / 2};
     // 声明框内templateargs，user in搬运到ccl in，最终规约到ccl in
     TemplateDataParams tempAlgParamsInter;
+    tempAlgParamsInter.buffInfo.inBuffType = BufferType::INPUT;
+    tempAlgParamsInter.buffInfo.outBuffType = BufferType::HCCL_BUFFER;
+    tempAlgParamsInter.buffInfo.hcclBuffType = BufferType::HCCL_BUFFER;
     tempAlgParamsInter.buffInfo.inputPtr = param.inputPtr;
     tempAlgParamsInter.buffInfo.outputPtr = cclOutMem.addr;
     tempAlgParamsInter.buffInfo.hcclBuff = cclInMem; // ! 待验证这样使用是否能正常输出到CCL-IN，或者这里改用CCL-OUT
@@ -202,8 +206,10 @@ HcclResult InsV2ReduceScatterSequenceExecutor<AlgTopoMatch, InsAlgTemplate0, Ins
         tempAlgParamsInter.sliceSize = currDataCount * dataTypeSize_;
         tempAlgParamsInter.tailSize = tempAlgParamsInter.sliceSize;
         // 这里的stride当成传统意义上的sreide 间隔
-        tempAlgParamsInter.inputSliceStride = dataSize_; // ccl-in按照rank偏移量，每次偏移是单次循环最大数据量
-        tempAlgParamsInter.outputSliceStride = currDataCount * dataTypeSize_; // 如果是scratchbuffer，偏移是单次循环处理的最大数据量
+        tempAlgParamsInter.inputSliceStride = (strideCount_ == 0)
+                                        ? dataSize_
+                                        : strideCount_ * dataTypeSize_; // ccl-in按照rank偏移量，每次偏移是单次循环最大数据量
+        tempAlgParamsInter.outputSliceStride = 0; // 如果是scratchbuffer，偏移是单次循环处理的最大数据量
         
         HCCL_INFO("[InsV2ReduceScatterSequenceExecutor] loop [%u] tempAlgParamsInter.inputSliceStride [%u],"
             "tempAlgParamsInter.outputSliceStride [%u] tempAlgParamsInter.sliceSize [%u]",
@@ -214,7 +220,9 @@ HcclResult InsV2ReduceScatterSequenceExecutor<AlgTopoMatch, InsAlgTemplate0, Ins
         // m*n组网框内需要做n次重复
         tempAlgParamsInter.repeatNum = algHierarchyInfo_.infos[1][0].size();
         HCCL_INFO("templateScratchMultiplierInter is %u", templateScratchMultiplierInter);
-        tempAlgParamsInter.inputRepeatStride = templateScratchMultiplierInter * dataCount_ * dataTypeSize_;
+        tempAlgParamsInter.inputRepeatStride = (strideCount_ == 0)
+                                               ? templateScratchMultiplierInter * dataCount_ * dataTypeSize_
+                                               : templateScratchMultiplierInter * strideCount_ * dataTypeSize_;
         tempAlgParamsInter.outputRepeatStride = templateScratchMultiplierInter * currDataCount * dataTypeSize_;
         HCCL_INFO("[InsV2ReduceScatterSequenceExecutor] loop [%u] tempAlgParamsInter.repeatNum [%u],"
             "tempAlgParamsInter.inputRepeatStride [%u], tempAlgParamsInter.outputRepeatStride [%u]",

@@ -134,10 +134,10 @@ void InsReduceScatterParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTempl
     tempAlgParamsIntra0.tailSize = tempAlgParamsIntra0.sliceSize;
     tempAlgParamsIntra0.count = dataCountPerLoopAixs0;
 
-    tempAlgParamsIntra0.inputSliceStride = dataSize_;
+    tempAlgParamsIntra0.inputSliceStride = (strideCount_ == 0) ? dataSize_ : strideCount_ * dataTypeSize_;
     tempAlgParamsIntra0.outputSliceStride = 0;
     tempAlgParamsIntra0.repeatNum = rankSizeLevel1_;
-    tempAlgParamsIntra0.inputRepeatStride = dataSize_ * rankSizeLevel0_;
+    tempAlgParamsIntra0.inputRepeatStride = (strideCount_ == 0) ? dataSize_ * rankSizeLevel0_ : strideCount_ * dataTypeSize_ * rankSizeLevel0_;
     tempAlgParamsIntra0.outputRepeatStride = dataCountPerLoopAixs0 * dataTypeSize_ * rankSizeLevel0_;
     return;
 }
@@ -192,10 +192,10 @@ void InsReduceScatterParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTempl
     tempAlgParamsInter1.tailSize = tempAlgParamsInter1.sliceSize;
     tempAlgParamsInter1.count = dataCountPerLoopAixs1;
 
-    tempAlgParamsInter1.inputSliceStride = dataSize_ * rankSizeLevel0_;
+    tempAlgParamsInter1.inputSliceStride = (strideCount_ == 0) ? dataSize_ * rankSizeLevel0_ : strideCount_ * dataTypeSize_ * rankSizeLevel0_;
     tempAlgParamsInter1.outputSliceStride = 0;
     tempAlgParamsInter1.repeatNum = rankSizeLevel0_;
-    tempAlgParamsInter1.inputRepeatStride = dataSize_;
+    tempAlgParamsInter1.inputRepeatStride = (strideCount_ == 0) ? dataSize_ : strideCount_ * dataTypeSize_;
     tempAlgParamsInter1.outputRepeatStride = dataCountPerLoopAixs1 * dataTypeSize_ * rankSizeLevel1_;
     return;
 }
@@ -244,6 +244,11 @@ HcclResult InsReduceScatterParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAl
 {
     u64 intraThreadsNum = tempAlgIntra.GetThreadNum();
     u64 interThreadsNum = tempAlgInter.GetThreadNum();
+    if (threads_.size() < intraThreadsNum + interThreadsNum + 1) {
+        HCCL_ERROR("[InsReduceScatterParallelExecutor][PrepareResForTemplate] threads size is %d, but intraThreadsNum is %d, interThreadsNum is %d",
+            threads_.size(), intraThreadsNum, interThreadsNum);
+        return HCCL_E_PARA;
+    }
     intraThreads_.assign(threads_.begin() + 1, threads_.begin() + 1 + intraThreadsNum);
     interThreads_.assign(threads_.begin() + 1 + intraThreadsNum, threads_.end());
     // 用于两个算法同步
@@ -278,6 +283,7 @@ HcclResult InsReduceScatterParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAl
         interChannelMap_ = remoteRankToChannelInfo_[1];
     }
     dataCount_ = param.DataDes.count;
+    strideCount_ = param.DataDes.strideCount;
     dataType_ = param.DataDes.dataType;
     dataTypeSize_ = DATATYPE_SIZE_TABLE[param.DataDes.dataType];
     dataSize_ = dataCount_ * dataTypeSize_;
@@ -445,49 +451,9 @@ HcclResult InsReduceScatterParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAl
     }
     HCCL_INFO("[InsReduceScatterParallelExecutor][HcclEngineCtxCreate] threadNum[%llu], ccuKernelNum[%llu]", threadNum, ccuKernelNum);
 
-    u64 size = CcuFastLaunchCtx::GetCtxSize(threadNum, ccuKernelNum);
-    // 申请ctx
-    void *ctxPtr = nullptr;
-    HCCL_INFO("[InsReduceScatterParallelExecutor][HcclEngineCtxCreate] Tag[%s], size[%llu]", param.fastLaunchTag, size);
-    CHK_RET(HcclEngineCtxCreate(param.hcclComm, param.fastLaunchTag, CommEngine::COMM_ENGINE_CCU, size, &ctxPtr));
-
-    CcuFastLaunchCtx *ccuFastLaunchCtx = reinterpret_cast<CcuFastLaunchCtx*>(ctxPtr);
-    // 1 算法名
-    CHK_SAFETY_FUNC_RET(strcpy_s(ccuFastLaunchCtx->algName, sizeof(ccuFastLaunchCtx->algName), param.algName));
-    HCCL_INFO("[InsReduceScatterParallelExecutor][FastLaunchSaveCtx] algName[%s]", ccuFastLaunchCtx->algName);
-
-    // 2 thread
-    ccuFastLaunchCtx->threadNum = threadNum;
-    ThreadHandle *threads = ccuFastLaunchCtx->GetThreadHandlePtr();
-    for (u32 i = 0; i < threadNum; i++) {
-        threads[i] = threads_[i];
-    }
-        
-    // 3 ccu kernel handle, taskArg入参
-    u32 templateIdx = 0;
-    ccuFastLaunchCtx->ccuKernelNum[templateIdx++] = ccuKernelLaunchNumIntra0_;
-    ccuFastLaunchCtx->ccuKernelNum[templateIdx++] = ccuKernelLaunchNumInter1_;
-    ccuFastLaunchCtx->ccuKernelNum[templateIdx++] = ccuKernelLaunchNumInter0_;
-    ccuFastLaunchCtx->ccuKernelNum[templateIdx++] = ccuKernelLaunchNumIntra1_;
-    CcuKernelSubmitInfo *kernelSubmitInfos = ccuFastLaunchCtx->GetCcuKernelSubmitInfoPtr();
-    
-    for (u32 i = 0; i < threadNum; i++) {
-        threads[i] = threads_[i];
-    }
-    u32 kernelIdx = 0;
-    for (u32 i = 0; i < ccuKernelLaunchNumIntra0_; i++) {
-        kernelSubmitInfos[kernelIdx++] = templateAlgResIntra.submitInfos[i];
-    }
-    for (u32 i = 0; i < ccuKernelLaunchNumInter1_; i++) {
-        kernelSubmitInfos[kernelIdx++] = templateAlgResInter.submitInfos[i];
-    }
-    for (u32 i = ccuKernelLaunchNumInter1_; i < ccuKernelLaunchNumInter0_ + ccuKernelLaunchNumInter1_; i++) {
-        kernelSubmitInfos[kernelIdx++] = templateAlgResInter.submitInfos[i];
-    }
-    for (u32 i = ccuKernelLaunchNumIntra0_; i < ccuKernelLaunchNumIntra1_ + ccuKernelLaunchNumIntra0_; i++) {
-        kernelSubmitInfos[kernelIdx++] = templateAlgResIntra.submitInfos[i];
-    }
-    return HCCL_SUCCESS;
+    std::vector<u32> ccuKernelNumList = {ccuKernelLaunchNumIntra0_, ccuKernelLaunchNumInter1_, ccuKernelLaunchNumInter0_, ccuKernelLaunchNumIntra1_};
+    std::vector<std::vector<CcuKernelSubmitInfo>> submitInfosList = {templateAlgResIntra.submitInfos, templateAlgResInter.submitInfos};
+    return FastLaunchSaveCtxTwoTemplate(param, threadNum, ccuKernelNum, threads_, ccuKernelNumList, submitInfosList);
 }
 
 template <typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTemplate1>
