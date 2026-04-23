@@ -82,8 +82,7 @@ public:
 
     HcclResult CreateChannel(EndpointHandle endpointHandle, CommEngine engine, u32 reuseIdx,
         HcommChannelDesc *channelDescs, ChannelHandle *channels);
-    
-    // todo: 新增DestroyChannel
+
     HcclResult DestroyChannel(CommEngine engine, u32 reuseIdx);
 
     bool IsChannelNotExist(CommEngine engine, u32 reuseIdx);

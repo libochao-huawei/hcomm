@@ -115,6 +115,7 @@ TEST_F(MyRankTest, Ut_When_BatchCreateChannels_Expect_SUCCESS)
     MOCKER(hcomm::ChannelProcess::CreateChannelsLoop)
         .stubs()
         .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hccl::MyRank::TryInitCcuInstance).stubs().will(returnValue(HCCL_SUCCESS));
     aclrtBinHandle binHandle;
     CommConfig config;
     ManagerCallbacks callbacks;
@@ -125,7 +126,7 @@ TEST_F(MyRankTest, Ut_When_BatchCreateChannels_Expect_SUCCESS)
     cclBuffer.addr = (void*)0xab;
     cclBuffer.size = 1024;
     cclBuffer.type = HCCL_MEM_TYPE_DEVICE;
-    EXPECT_EQ(myRank.Init(cclBuffer, 0, 2), HCCL_SUCCESS);
+    EXPECT_EQ(myRank.Init(cclBuffer, 2, 2), HCCL_SUCCESS);
     EndpointDesc localEp;
     localEp.protocol = COMM_PROTOCOL_UB_MEM;
     localEp.commAddr.type = COMM_ADDR_TYPE_IP_V4;
@@ -165,12 +166,18 @@ TEST_F(MyRankTest, Ut_When_BatchCreateChannels_Expect_SUCCESS)
     std::vector<ChannelHandle> hostChannelHandles(3);
     ChannelHandle *hostChannelHandleList = hostChannelHandles.data();
     EXPECT_EQ(myRank.BatchCreateChannels(COMM_ENGINE_AICPU_TS, channelDesc, 1, hcommDesc, hostChannelHandleList), HCCL_SUCCESS);
+    EXPECT_EQ(myRank.newChannels_.size(), 1);
+    EXPECT_EQ(myRank.newChannels_[0], std::make_pair(0u, 0u));
 
     EXPECT_EQ(myRank.BatchCreateSockets(channelDesc, 2, "test", hcommDesc), HCCL_SUCCESS);
     EXPECT_EQ(myRank.BatchCreateChannels(COMM_ENGINE_AICPU_TS, channelDesc, 2, hcommDesc, hostChannelHandleList), HCCL_SUCCESS);
+    EXPECT_EQ(myRank.newChannels_.size(), 1);
+    EXPECT_EQ(myRank.newChannels_[0], std::make_pair(1u, 1u));
 
     EXPECT_EQ(myRank.BatchCreateSockets(channelDesc, 3, "test", hcommDesc), HCCL_SUCCESS);
     EXPECT_EQ(myRank.BatchCreateChannels(COMM_ENGINE_AICPU_TS, channelDesc, 3, hcommDesc, hostChannelHandleList), HCCL_SUCCESS);
+    EXPECT_EQ(myRank.newChannels_.size(), 1);
+    EXPECT_EQ(myRank.newChannels_[0], std::make_pair(2u, 0u));
 
     MOCKER_CPP(&hcomm::ChannelProcess::ChannelGetStatus).stubs().with(any()).will(returnValue(HCCL_E_AGAIN));
     MOCKER_CPP(&Hccl::EnvSocketConfig::GetLinkTimeOut).stubs().with(any()).will(returnValue((s32)(1)));
@@ -178,6 +185,235 @@ TEST_F(MyRankTest, Ut_When_BatchCreateChannels_Expect_SUCCESS)
     MOCKER_CPP(&hcomm::ChannelProcess::ChannelGetStatus).stubs().with(any()).will(returnValue(HCCL_E_TIMEOUT));
     EXPECT_EQ(myRank.BatchConnectChannels(channelDesc, hostChannelHandleList, 3), HCCL_E_TIMEOUT);
     unsetenv("HCCL_DFS_CONFIG");
+}
+
+// 测试BatchCreateChannels在资源不足时销毁新申请的channel
+TEST_F(MyRankTest, Ut_BatchCreateChannels_When_Resource_fallback_Expect_Return_HCCL_E_UNAVAIL)
+{
+    uint32_t devPort = 60001;
+    MOCKER_CPP(&Hccl::IRankGraph::GetDevicePort).stubs().with(any(), outBoundP(&devPort)).will(returnValue(HCCL_SUCCESS));
+    MOCKER(HcommEndpointStartListen).stubs().with(any()).will(returnValue(static_cast<int>(HCCL_SUCCESS)));
+    MOCKER_CPP(&Hccl::SocketManager::GetConnectedSocket).stubs().with(any(), any(), any()).will(returnValue((Hccl::Socket*)0xab));
+    MOCKER_CPP(&hccl::CommMems::GetTagMemoryHandles).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hcomm::EndpointMgr::RegisterMemory).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hccl::CommMems::SetMemHandles).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hcomm::CcuResContainer::Init).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER(HcommChannelDestroy).stubs().with(any(), any()).will(returnValue(static_cast<int>(HCCL_SUCCESS)));
+    MOCKER_CPP(&hccl::MyRank::TryInitCcuInstance).stubs().will(returnValue(HCCL_SUCCESS));
+    
+    // 构造myrank
+    aclrtBinHandle binHandle;
+    CommConfig config;
+    ManagerCallbacks callbacks;
+    void* rankGraphPtr = (void*)0x114514;
+    std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
+    MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
+    HcclMem cclBuffer;
+    cclBuffer.addr = (void*)0xab;
+    cclBuffer.size = 1024;
+    cclBuffer.type = HCCL_MEM_TYPE_DEVICE;
+    EXPECT_EQ(myRank.Init(cclBuffer, 5, 2), HCCL_SUCCESS);
+
+    // 构造local endpoint
+    EndpointDesc localEp;
+    localEp.protocol = COMM_PROTOCOL_UBC_CTP;
+    localEp.commAddr.type = COMM_ADDR_TYPE_IP_V4;
+    localEp.commAddr.addr = Hccl::IpAddress("1.0.0.0").GetBinaryAddress().addr;
+    localEp.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
+
+    // 构造两个remote endpoint
+    EndpointDesc rmtEp1;
+    rmtEp1.protocol = COMM_PROTOCOL_UBC_CTP;
+    rmtEp1.commAddr.type = COMM_ADDR_TYPE_IP_V4;
+    rmtEp1.commAddr.addr = Hccl::IpAddress("2.0.0.0").GetBinaryAddress().addr;
+    rmtEp1.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
+
+    EndpointDesc rmtEp2;
+    rmtEp2.protocol = COMM_PROTOCOL_UBC_CTP;
+    rmtEp2.commAddr.type = COMM_ADDR_TYPE_IP_V4;
+    rmtEp2.commAddr.addr = Hccl::IpAddress("3.0.0.0").GetBinaryAddress().addr;
+    rmtEp2.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
+
+    // 构造channelDesc，到rmtEp1有两个channel，到rmtEp2有三个channel
+    HcclChannelDesc channelDesc[5];
+    for (int i = 0; i < 2; i++) {
+        channelDesc[i].channelProtocol = COMM_PROTOCOL_UBC_CTP;
+        channelDesc[i].remoteRank = 1;
+        channelDesc[i].notifyNum = 2;
+        channelDesc[i].localEndpoint = localEp;
+        channelDesc[i].remoteEndpoint = rmtEp1;
+    }
+    for (int i = 2; i < 5; i++) {
+        channelDesc[i].channelProtocol = COMM_PROTOCOL_UBC_CTP;
+        channelDesc[i].remoteRank = 2;
+        channelDesc[i].notifyNum = 2;
+        channelDesc[i].localEndpoint = localEp;
+        channelDesc[i].remoteEndpoint = rmtEp2;
+    }
+
+    // 模拟创建到rmtEp2的第二个channel时资源不足，需要清理前三个channel
+    MOCKER(HcommCollectiveChannelCreate)
+        .stubs()
+        .will(returnValue(static_cast<int>(HCCL_SUCCESS)))
+        .then(returnValue(static_cast<int>(HCCL_SUCCESS)))
+        .then(returnValue(static_cast<int>(HCCL_SUCCESS)))
+        .then(returnValue(static_cast<int>(HCCL_E_UNAVAIL)));
+    std::vector<HcommChannelDesc> hcommDesc(5);
+    std::vector<ChannelHandle> hostChannelHandles(5);
+    ChannelHandle *hostChannelHandleList = hostChannelHandles.data();
+    EXPECT_EQ(myRank.BatchCreateChannels(COMM_ENGINE_CCU, channelDesc, 5, hcommDesc, hostChannelHandleList), HCCL_E_UNAVAIL);
+    EXPECT_EQ(myRank.newChannels_.size(), 0);
+
+    // 获取到rmtEp1的endpointPair
+    RankIdPair rankIdPair1 = std::make_pair(0, 1);
+    EndpointDescPair endpointDescPair1 = std::make_pair(localEp, rmtEp1);
+    RankPair* rankPair1 = nullptr;
+    hcomm::EndpointPair* endpointPair1 = nullptr;
+    myRank.rankPairMgr_->Get(rankIdPair1, rankPair1);
+    rankPair1->GetEndpointPair(endpointDescPair1, endpointPair1);
+
+    // 检查channelHandle是否被清理
+    EXPECT_EQ(endpointPair1->channelHandles_.size(), 1);
+    EXPECT_NE(endpointPair1->channelHandles_.find(COMM_ENGINE_CCU), endpointPair1->channelHandles_.end());
+    EXPECT_EQ(endpointPair1->channelHandles_[COMM_ENGINE_CCU].size(), 0);
+
+    // 获取到rmtEp2的endpointPair
+    RankIdPair rankIdPair2 = std::make_pair(0, 2);
+    EndpointDescPair endpointDescPair2 = std::make_pair(localEp, rmtEp2);
+    RankPair* rankPair2 = nullptr;
+    hcomm::EndpointPair* endpointPair2 = nullptr;
+    myRank.rankPairMgr_->Get(rankIdPair2, rankPair2);
+    rankPair2->GetEndpointPair(endpointDescPair2, endpointPair2);
+
+    // 检查channelHandle是否被清理
+    EXPECT_EQ(endpointPair2->channelHandles_.size(), 1);
+    EXPECT_NE(endpointPair2->channelHandles_.find(COMM_ENGINE_CCU), endpointPair2->channelHandles_.end());
+    EXPECT_EQ(endpointPair2->channelHandles_[COMM_ENGINE_CCU].size(), 0);
+}
+
+// 测试多次调用BatchCreateChannels，在最后一次资源不足时只销毁新申请的channel
+TEST_F(MyRankTest, Ut_BatchCreateChannels_Multi_Times_When_fallback_Expect_Return_HCCL_E_UNAVAIL)
+{
+    uint32_t devPort = 60001;
+    MOCKER_CPP(&Hccl::IRankGraph::GetDevicePort).stubs().with(any(), outBoundP(&devPort)).will(returnValue(HCCL_SUCCESS));
+    MOCKER(HcommEndpointStartListen).stubs().with(any()).will(returnValue(static_cast<int>(HCCL_SUCCESS)));
+    MOCKER_CPP(&Hccl::SocketManager::GetConnectedSocket).stubs().with(any(), any(), any()).will(returnValue((Hccl::Socket*)0xab));
+    MOCKER_CPP(&hccl::CommMems::GetTagMemoryHandles).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hcomm::EndpointMgr::RegisterMemory).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hccl::CommMems::SetMemHandles).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hcomm::CcuResContainer::Init).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER(HcommChannelDestroy).stubs().with(any(), any()).will(returnValue(static_cast<int>(HCCL_SUCCESS)));
+    MOCKER_CPP(&hccl::MyRank::TryInitCcuInstance).stubs().will(returnValue(HCCL_SUCCESS));
+    
+    // 构造myrank
+    aclrtBinHandle binHandle;
+    CommConfig config;
+    ManagerCallbacks callbacks;
+    void* rankGraphPtr = (void*)0x114514;
+    std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
+    MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
+    HcclMem cclBuffer;
+    cclBuffer.addr = (void*)0xab;
+    cclBuffer.size = 1024;
+    cclBuffer.type = HCCL_MEM_TYPE_DEVICE;
+    EXPECT_EQ(myRank.Init(cclBuffer, 5, 2), HCCL_SUCCESS);
+
+    // 构造local endpoint
+    EndpointDesc localEp;
+    localEp.protocol = COMM_PROTOCOL_UBC_CTP;
+    localEp.commAddr.type = COMM_ADDR_TYPE_IP_V4;
+    localEp.commAddr.addr = Hccl::IpAddress("1.0.0.0").GetBinaryAddress().addr;
+    localEp.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
+
+    // 构造两个remote endpoint
+    EndpointDesc rmtEp1;
+    rmtEp1.protocol = COMM_PROTOCOL_UBC_CTP;
+    rmtEp1.commAddr.type = COMM_ADDR_TYPE_IP_V4;
+    rmtEp1.commAddr.addr = Hccl::IpAddress("2.0.0.0").GetBinaryAddress().addr;
+    rmtEp1.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
+
+    EndpointDesc rmtEp2;
+    rmtEp2.protocol = COMM_PROTOCOL_UBC_CTP;
+    rmtEp2.commAddr.type = COMM_ADDR_TYPE_IP_V4;
+    rmtEp2.commAddr.addr = Hccl::IpAddress("3.0.0.0").GetBinaryAddress().addr;
+    rmtEp2.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
+
+    // 构造channelDesc，到rmtEp1有两个channel，到rmtEp2有三个channel
+    HcclChannelDesc channelDesc[5];
+    for (int i = 0; i < 2; i++) {
+        channelDesc[i].channelProtocol = COMM_PROTOCOL_UBC_CTP;
+        channelDesc[i].remoteRank = 1;
+        channelDesc[i].notifyNum = 2;
+        channelDesc[i].localEndpoint = localEp;
+        channelDesc[i].remoteEndpoint = rmtEp1;
+    }
+    for (int i = 2; i < 5; i++) {
+        channelDesc[i].channelProtocol = COMM_PROTOCOL_UBC_CTP;
+        channelDesc[i].remoteRank = 2;
+        channelDesc[i].notifyNum = 2;
+        channelDesc[i].localEndpoint = localEp;
+        channelDesc[i].remoteEndpoint = rmtEp2;
+    }
+
+    // 第一次调用BatchCreateChannels，创建3个channel成功
+    // 第二次调用BatchCreateChannels，创建5个channel，前4个channel成功，第5个channel失败
+    // 需要只清理到rmtEp2的第二个channel
+    MOCKER(HcommCollectiveChannelCreate)
+        .stubs()
+        .will(returnValue(static_cast<int>(HCCL_SUCCESS))) // 第一次调用，到rmtEp1的channel1成功
+        .then(returnValue(static_cast<int>(HCCL_SUCCESS))) // 第一次调用，到rmtEp1的channel2成功
+        .then(returnValue(static_cast<int>(HCCL_SUCCESS))) // 第一次调用，到rmtEp2的channel1成功
+        .then(returnValue(static_cast<int>(HCCL_SUCCESS))) // 第二次调用，到rmtEp2的channel2成功
+        .then(returnValue(static_cast<int>(HCCL_E_UNAVAIL))); // 第二次调用，到rmtEp2的channel3失败
+    std::vector<HcommChannelDesc> hcommDesc(5);
+    std::vector<ChannelHandle> hostChannelHandles(5);
+    ChannelHandle *hostChannelHandleList = hostChannelHandles.data();
+    // 第一次调用BatchCreateChannels成功，创建3个channel
+    EXPECT_EQ(myRank.BatchCreateChannels(COMM_ENGINE_CCU, channelDesc, 3, hcommDesc, hostChannelHandleList), HCCL_SUCCESS);
+    EXPECT_EQ(myRank.newChannels_.size(), 3);
+    EXPECT_EQ(myRank.newChannels_[0], std::make_pair(0u, 0u));
+    EXPECT_EQ(myRank.newChannels_[1], std::make_pair(1u, 1u));
+    EXPECT_EQ(myRank.newChannels_[2], std::make_pair(2u, 0u));
+
+    // 获取到rmtEp1的endpointPair
+    RankIdPair rankIdPair1 = std::make_pair(0, 1);
+    EndpointDescPair endpointDescPair1 = std::make_pair(localEp, rmtEp1);
+    RankPair* rankPair1 = nullptr;
+    hcomm::EndpointPair* endpointPair1 = nullptr;
+    myRank.rankPairMgr_->Get(rankIdPair1, rankPair1);
+    rankPair1->GetEndpointPair(endpointDescPair1, endpointPair1);
+
+    // 获取到rmtEp2的endpointPair
+    RankIdPair rankIdPair2 = std::make_pair(0, 2);
+    EndpointDescPair endpointDescPair2 = std::make_pair(localEp, rmtEp2);
+    RankPair* rankPair2 = nullptr;
+    hcomm::EndpointPair* endpointPair2 = nullptr;
+    myRank.rankPairMgr_->Get(rankIdPair2, rankPair2);
+    rankPair2->GetEndpointPair(endpointDescPair2, endpointPair2);
+    
+    // 期望到rmtEp1的channelHandle不为空
+    EXPECT_EQ(endpointPair1->channelHandles_.size(), 1);
+    EXPECT_NE(endpointPair1->channelHandles_.find(COMM_ENGINE_CCU), endpointPair1->channelHandles_.end());
+    EXPECT_EQ(endpointPair1->channelHandles_[COMM_ENGINE_CCU].size(), 2);
+
+    // 期望到rmtEp2的channelHandle不为空
+    EXPECT_EQ(endpointPair2->channelHandles_.size(), 1);
+    EXPECT_NE(endpointPair2->channelHandles_.find(COMM_ENGINE_CCU), endpointPair2->channelHandles_.end());
+    EXPECT_EQ(endpointPair2->channelHandles_[COMM_ENGINE_CCU].size(), 1);
+
+    // 第二次调用BatchCreateChannels，创建第5个channel失败
+    EXPECT_EQ(myRank.BatchCreateChannels(COMM_ENGINE_CCU, channelDesc, 5, hcommDesc, hostChannelHandleList), HCCL_E_UNAVAIL);
+    EXPECT_EQ(myRank.newChannels_.size(), 0);
+
+    // 期望到rmtEp1的channelHandle不被清理
+    EXPECT_EQ(endpointPair1->channelHandles_.size(), 1);
+    EXPECT_NE(endpointPair1->channelHandles_.find(COMM_ENGINE_CCU), endpointPair1->channelHandles_.end());
+    EXPECT_EQ(endpointPair1->channelHandles_[COMM_ENGINE_CCU].size(), 2);
+
+    // 期望到rmtEp2的channelHandle只有第二次新创建的channel2被清理
+    EXPECT_EQ(endpointPair2->channelHandles_.size(), 1);
+    EXPECT_NE(endpointPair2->channelHandles_.find(COMM_ENGINE_CCU), endpointPair2->channelHandles_.end());
+    EXPECT_EQ(endpointPair2->channelHandles_[COMM_ENGINE_CCU].size(), 1);
 }
 
 TEST_F(MyRankTest, Ut_When_ChannelGetRemoteMem_Normal_Expect_SUCCESS)

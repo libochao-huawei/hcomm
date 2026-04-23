@@ -98,7 +98,7 @@ HcclResult EndpointPair::GetSocket(const uint32_t myRank, const uint32_t rmtRank
 HcclResult EndpointPair::CreateChannel(EndpointHandle endpointHandle, CommEngine engine, u32 reuseIdx,
         HcommChannelDesc *channelDescs, ChannelHandle *channels)
 {
-    if (channelHandles_.find(engine) == channelHandles_.end() || channelHandles_.size() <= reuseIdx) {
+    if (channelHandles_.find(engine) == channelHandles_.end() || channelHandles_[engine].size() <= reuseIdx) {
         CHK_RET_UNAVAIL(static_cast<HcclResult>(
             HcommCollectiveChannelCreate(endpointHandle, engine, channelDescs, 1, channels)));
         channelHandles_[engine].push_back(channels[0]);
@@ -112,7 +112,7 @@ HcclResult EndpointPair::CreateChannel(EndpointHandle endpointHandle, CommEngine
     return HCCL_SUCCESS;
 }
 
-// todo：实现ChannelDestroy，在外部提供入参后，找到对应的channelhandle，调用hcomm channel destroy销毁平台层对象
+// 找到对应的channelhandle，调用HcommChannelDestroy销毁平台层对象，并删除channelHandles_中的channelHandle元素
 HcclResult EndpointPair::DestroyChannel(CommEngine engine, u32 reuseIdx)
 {
     if (IsChannelNotExist(engine, reuseIdx)) {
@@ -131,6 +131,7 @@ HcclResult EndpointPair::DestroyChannel(CommEngine engine, u32 reuseIdx)
     return HCCL_SUCCESS;
 }
 
+// 检查channel是否存在，channel不存在则返回true
 bool EndpointPair::IsChannelNotExist(CommEngine engine, u32 reuseIdx)
 {
     return channelHandles_.find(engine) == channelHandles_.end() || channelHandles_[engine].size() <= reuseIdx;

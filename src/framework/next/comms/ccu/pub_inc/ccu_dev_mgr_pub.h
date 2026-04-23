@@ -91,10 +91,10 @@ HcclResult CcuDeinitFeature(const int32_t devLogicId);
  * @brief 申请批量ccu channel资源
  *
  * @param deviceLogicId device逻辑ID
- * @param todo
- * @param todo
+ * @param dieId ccu channel 所属的 IO Die 编号
+ * @param enableFlag 出参，表示该die是否启用
  * @return HcclResult 返回HcclResult类型的结果
- * @note todo:
+ * @note dieId越界时返回HCCL_E_PARA
  */
 HcclResult CcuGetDieEnableInfo(int32_t deviceLogicId, uint8_t dieId, bool &enableFlag);
 

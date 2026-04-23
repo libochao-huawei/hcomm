@@ -240,9 +240,7 @@ HcclResult MyRank::BatchCreateSockets(const HcclChannelDesc* channelDescs, uint3
         u32& reuseIdx = reuseSocketIdxMap[rankPair][endpointPair];
 
         Hccl::Socket* socket = nullptr;
-        // todo: 需要记录本轮新申请的socket，传递到外部（存疑，aicpu也需要socket）
-        // return channelIndex, reuseIdx
-        // 外部在资源不足申请失败时，主动清理新申请socket
+        // 申请的socket在channel资源不足回退时不释放，回退后会复用
         auto ret = endpointPair->GetSocket(rankId_, remoteRank, commTag, reuseIdx, listenPort, socket);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[%s] failed to get socket, channelIndex[%u], remoteRank[%u], protocol[%d] reuseIdx[%u]",
@@ -299,7 +297,7 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
     std::unordered_map<RankPair*, std::unordered_map<CommEngine,
         std::unordered_map<hcomm::EndpointPair*, u32>>> reuseChannelIdxMap{};
     
-    // vector记录本轮新申请的channel
+    // 记录本轮新申请的channel
     newChannels_.clear();
     bool isAllSuccess = true;
 
@@ -411,7 +409,7 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
             __func__, i + 1, channelNum, remoteRank, channelHandles[i]);
     }
 
-    // 如果申请失败，根据记录的channelIndex找到 channel desc，找到对应的endPoint pair，清理endpoint pair中记录的channel handle
+    // 如果申请失败，清理endpoint pair中记录的channel handle
     if (!isAllSuccess) {
         HCCL_WARNING("[%s] create channel failed, destroy channels num[%u], engine[%d]", __func__, newChannels_.size(), engine);
         CHK_RET(DestroyNewChannels(engine, channelDescs));
@@ -424,7 +422,7 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
 HcclResult MyRank::DestroyNewChannels(CommEngine engine, const HcclChannelDesc* channelDescs)
 {
     uint32_t localRank = rankId_;
-    for (auto idxPairIter = std::rbegin(newChannels_); idxPairIter != std::rend(newChannels_); ++idxPairIter) { // 要从后往前销毁
+    for (auto idxPairIter = std::rbegin(newChannels_); idxPairIter != std::rend(newChannels_); ++idxPairIter) { // 由于新申请的在申请过的后面，所以要从后往前找reuseIdx销毁
         auto idxPair = *idxPairIter;
         const EndpointDesc &localEndpointDesc = channelDescs[idxPair.first].localEndpoint;
         const EndpointDesc &remoteEndpointDesc = channelDescs[idxPair.first].remoteEndpoint;
