@@ -2661,7 +2661,7 @@ HcclResult HrtRaGetTpAttrAsync(u32 phyId, RdmaHandle handle, uint64_t tpHandle, 
         return HCCL_E_NOT_SUPPORT;
     }
     void *raReqHandle = nullptr;
-    s32 ret = RaGetTpAttrAsync(handle, tpHandle, &attrBitmap, &attr, &raReqHandle);
+    ret = RaGetTpAttrAsync(handle, tpHandle, &attrBitmap, &attr, &raReqHandle);
     if (ret != 0) {
         string msg = StringFormat("call RaGetTpAttrAsync failed, error code =%d.", ret);
         THROW<NetworkApiException>(msg);
