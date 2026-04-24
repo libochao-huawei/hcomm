@@ -1,4 +1,4 @@
-target_sources(hccl_v2_native_alg_repo PRIVATE
+target_sources(hccl_v2 PRIVATE
     ccu_alg_template_base.cc
     ccu_temp_all_gather_mesh_1D.cc
     ccu_temp_all_gather_mesh_1D_detour.cc
