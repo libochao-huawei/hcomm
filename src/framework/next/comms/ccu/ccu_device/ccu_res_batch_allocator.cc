@@ -768,7 +768,6 @@ HcclResult CcuResBatchAllocator::CcuMissionMgr::Alloc(const uintptr_t handleKey,
     constexpr MissionReqType defaultReqType = MissionReqType::FUSION_MULTIPLE_DIE;
     if (missionReq.reqType != MissionReqType::FUSION_MULTIPLE_DIE) {
         HCCL_WARNING("[CcuMissionMgr][%s] mission reqType[%d], mission resources "
-ces "
             "now only support %d.", __func__, reqType,
             defaultReqType);
         reqType = MissionReqType::FUSION_MULTIPLE_DIE;
