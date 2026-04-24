@@ -222,6 +222,9 @@ HcclResult CollAllReduceMeshAivExecutor::KernelRun(const OpParam &param, ExecMem
     algArgs.execTimeOutSet = true;
     struct AivProfilingInfo aivProfilingInfo;
     aivProfilingInfo.counter = opCounter_;
+    if (aivClearEnable_) {
+        CHK_RET(ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs, algArgs));
+    }
  
     HcclResult ret = ExecuteKernelLaunch(opArgs, topoArgs, resourceArgs, algArgs, aivProfilingInfo);
 
