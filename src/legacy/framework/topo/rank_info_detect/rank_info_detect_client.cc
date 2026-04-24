@@ -65,7 +65,6 @@ void RankInfoDetectClient::CheckStatus()
         CHK_PRT_THROW(isTimeout,
             HCCL_ERROR("[RankInfoDetectClient::%s] get connected status socket timeout! timeout[%lld s]", __func__, timeout),
                 TimeoutException, "client get connection timeout");
-        }
 
         if (clientSocket_->GetStatus() == SocketStatus::OK) {
             HCCL_DEBUG("[RankInfoDetectClient::%s] client get socket connection success.", __func__);

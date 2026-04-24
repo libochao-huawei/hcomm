@@ -442,6 +442,7 @@ TEST_F(RankInfoDetectServiceTest, Ut_GetConnections_When_ServerTimeout_Expect_Rp
     MOCKER_CPP(&Socket::GetStatus).stubs()
         .then(returnValue((SocketStatus)SocketStatus::CONNECTING))
         .then(returnValue((SocketStatus)SocketStatus::TIMEOUT));
+    MOCKER(RptInputErr).expects(exactly(1)).will(returnValue(HCCL_SUCCESS));
 
     rankInfoDetectService_->GetConnections();
 }

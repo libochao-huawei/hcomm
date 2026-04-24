@@ -26,7 +26,7 @@ std::string GetJsonProperty(const nlohmann::json &obj, const char *propName, boo
     if (!obj.contains(propName)) {
         RPT_INPUT_ERR(true, "EI0017", std::vector<std::string>({"config"}),
             std::vector<std::string>({std::string(propName)}));
-        THROW<InvalidParamsException>(StringFormat("[][][] json object has no property called %s.",
+        THROW<InvalidParamsException>(StringFormat("[GetJsonProperty] json object has no property called %s.",
             HCOM_ERROR_CODE(HcclResult::HCCL_E_NOT_FOUND), propName));
     }
     std::string value = obj.at(propName).get<std::string>();
@@ -42,7 +42,7 @@ u32 GetJsonPropertyUInt(const nlohmann::json &obj, const char *propName, bool re
     if (!obj.contains(propName)) {
         RPT_INPUT_ERR(true, "EI0017", std::vector<std::string>({"config"}),
             std::vector<std::string>({std::string(propName)}));
-        THROW<InvalidParamsException>(StringFormat("[][][] json object has no property called %s.",
+        THROW<InvalidParamsException>(StringFormat("[GetJsonPropertyUInt] json object has no property called %s.",
             HCOM_ERROR_CODE(HcclResult::HCCL_E_NOT_FOUND), propName));
     }
 
@@ -66,7 +66,7 @@ s32 GetJsonPropertySInt(const nlohmann::json &obj, const char *propName, bool re
     if (!obj.contains(propName)) {
         RPT_INPUT_ERR(true, "EI0017", std::vector<std::string>({"config"}),
             std::vector<std::string>({std::string(propName)}));
-        THROW<InvalidParamsException>(StringFormat("[][][] json object has no property called %s.",
+        THROW<InvalidParamsException>(StringFormat("[GetJsonPropertySInt] json object has no property called %s.",
             HCOM_ERROR_CODE(HcclResult::HCCL_E_NOT_FOUND), propName));
     }
 
@@ -88,7 +88,7 @@ void GetJsonPropertyList(const nlohmann::json &obj, const char *propName, nlohma
     if (!obj.contains(propName)) {
         RPT_INPUT_ERR(true, "EI0017", std::vector<std::string>({"config"}),
             std::vector<std::string>({std::string(propName)}));
-        THROW<InvalidParamsException>(StringFormat("[][][] json object has no property called %s.",
+        THROW<InvalidParamsException>(StringFormat("[GetJsonPropertyList] json object has no property called %s.",
             HCOM_ERROR_CODE(HcclResult::HCCL_E_NOT_FOUND), propName));
     }
 
