@@ -956,7 +956,7 @@ TEST_F(AdapterHccpTest, HrtRaGetEidByIp_ra_get_eid_by_ip_error)
 
     MOCKER(RaGetEidByIp).stubs().will(returnValue(1));
 
-    EXPECT_THROW(HrtRaGetEidByIp(handle, ipV4AddrList, eidAddrList), NetworkApiException);
+    EXPECT_EQ(HrtRaGetEidByIp(handle, ipV4AddrList, eidAddrList), HCCL_E_INTERNAL);
 }
 
 TEST_F(AdapterHccpTest, HrtRaGetEidByIp_count_mismatch_returns_internal)
