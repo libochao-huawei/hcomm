@@ -38,7 +38,8 @@ void AicpuUtils::CreateSingleInstance(void *args) const
     auto *kernelParam = reinterpret_cast<HcclKernelParamLite *>(args);
     UbConnLiteMgr::GetInstance();
     AicpuDaemonService::GetInstance();
-    TaskExceptionFunc::GetInstance().SetEnable(kernelParam->envConfig.taskExceptionEnable); // 根据环境变量使能TaskException
+    TaskExceptionFunc::GetInstance().SetEnable(
+        kernelParam->envConfig.taskExceptionEnable); // 根据环境变量使能TaskException
     AicpuCommDestroyFunc::GetInstance();
     TaskExceptionHandlerLite::GetInstance();
     ProfilingHandlerLite::GetInstance();
@@ -46,17 +47,18 @@ void AicpuUtils::CreateSingleInstance(void *args) const
     CommunicatorImplLiteMgr::GetInstance().SetEnvConfig(kernelParam->envConfig); // 初始化并设置Device侧环境变量
 }
 
-HcclResult AicpuUtils::WaitCommFree(CommunicatorImplLite *communicatorImplLite, const char* funcName) const
+HcclResult AicpuUtils::WaitCommFree(CommunicatorImplLite *communicatorImplLite, const char *funcName) const
 {
-    auto                    startTime         = std::chrono::steady_clock::now();
-    constexpr uint32_t      pollIntervalUs    = 10; // 轮询间隔10us
-    constexpr uint32_t      pollTimeoutMs     = 10; // 轮询超时时间10ms
-    auto                    waitPollTimeOutMs = std::chrono::milliseconds(pollTimeoutMs);
+    auto startTime = std::chrono::steady_clock::now();
+    constexpr uint32_t pollIntervalUs = 10; // 轮询间隔10us
+    constexpr uint32_t pollTimeoutMs = 10;  // 轮询超时时间10ms
+    auto waitPollTimeOutMs = std::chrono::milliseconds(pollTimeoutMs);
     unique_lock<std::mutex> aicpuLock(communicatorImplLite->GetAicpuMc2Mutex());
     while (true) {
         if (communicatorImplLite->IsUsed()) {
             if ((std::chrono::steady_clock::now() - startTime) >= waitPollTimeOutMs) {
-                HCCL_ERROR("%s poll timeout, comm id [%u] has been used", funcName, communicatorImplLite->GetCommIdIndex());
+                HCCL_ERROR(
+                    "%s poll timeout, comm id [%u] has been used", funcName, communicatorImplLite->GetCommIdIndex());
                 return HCCL_E_TIMEOUT;
             }
             aicpuLock.unlock();
@@ -86,21 +88,22 @@ HcclResult AicpuUtils::GetCommHandle(CommunicatorImplLite *communicatorImplLite,
         EXECEPTION_CATCH(communicatorImplLite->UpdateRes(kernelParam_), return HCCL_E_INTERNAL);
     } else {
         HCCL_ERROR("[%s]%s only support opbase, but get opMode %s.", __func__, __func__,
-                    kernelParam_->op.algOperator.opMode.Describe().c_str());
+            kernelParam_->op.algOperator.opMode.Describe().c_str());
         return HCCL_E_PARA;
     }
-    
+
     *opHandle = reinterpret_cast<void *>(communicatorImplLite);
     return HCCL_SUCCESS;
 }
 
-int AicpuUtils::GetException(StreamLite *curStream, uint32_t flag, CommunicatorImplLite *communicatorImplLite, string additionInfo) const
+int AicpuUtils::GetException(
+    StreamLite *curStream, uint32_t flag, CommunicatorImplLite *communicatorImplLite, string additionInfo) const
 {
     // 遍历主从流的状态
-    auto               recvInfo         = make_shared<halReportRecvInfo>();
-    constexpr uint32_t cqeSize          = MAX_REPORT_CNT * sizeof(rtLogicCqReport_t);
-    uint8_t            tmpAddr[cqeSize] = {};      // cqe byte size
-    recvInfo->cqe_addr                  = tmpAddr; // 外部保证是有效的地址
+    auto recvInfo = make_shared<halReportRecvInfo>();
+    constexpr uint32_t cqeSize = MAX_REPORT_CNT * sizeof(rtLogicCqReport_t);
+    uint8_t tmpAddr[cqeSize] = {}; // cqe byte size
+    recvInfo->cqe_addr = tmpAddr;  // 外部保证是有效的地址
 
     const char *typeStr = (flag == GET_TASK_STATUS) ? "HcclGetTaskStatus" : "HcclPrintTaskExceptionAllComm";
 
@@ -115,7 +118,8 @@ int AicpuUtils::GetException(StreamLite *curStream, uint32_t flag, CommunicatorI
     }
 
     if (flag == GET_TASK_STATUS) {
-        HCCL_INFO("[%s]Status info:stream %u, head %u, tail %u", __func__ , curStream->GetId(), curStream->GetRtsq()->GetHead(), curStream->GetRtsq()->GetTail());
+        HCCL_INFO("[%s]Status info:stream %u, head %u, tail %u", __func__, curStream->GetId(),
+            curStream->GetRtsq()->GetHead(), curStream->GetRtsq()->GetTail());
         for (uint32_t idx = 0U; idx < reportNum; ++idx) {
             auto &reportOfOne
                 = *((reinterpret_cast<rtLogicCqReport_t *>(recvInfo->cqe_addr)) + idx); // 外部保证是有效的地址
@@ -138,7 +142,8 @@ int AicpuUtils::GetException(StreamLite *curStream, uint32_t flag, CommunicatorI
     return 0;
 }
 
-void AicpuUtils::GetStreamException(StreamLite *curStream, string nullInfo, CommunicatorImplLite *communicatorImplLite, string additionInfo) const
+void AicpuUtils::GetStreamException(
+    StreamLite *curStream, string nullInfo, CommunicatorImplLite *communicatorImplLite, string additionInfo) const
 {
     if (curStream == nullptr) {
         HCCL_WARNING("[%s]%s", __func__, nullInfo.c_str());
@@ -161,24 +166,24 @@ void AicpuUtils::GetStreamException(StreamLite *curStream, string nullInfo, Comm
         finishInfo = "unfinished";
         GetException(curStream, GET_EXCEPTION_INFO, communicatorImplLite, additionInfo);
     }
-    HCCL_INFO("[%s]Stream %u %s, sq id %u, head %u, tail %u.", __func__, curStream->GetId(), finishInfo.c_str(), curStream->GetSqId(),
-                curSqHead, curSqTail);
+    HCCL_INFO("[%s]Stream %u %s, sq id %u, head %u, tail %u.", __func__, curStream->GetId(), finishInfo.c_str(),
+        curStream->GetSqId(), curSqHead, curSqTail);
     return;
 }
 
-HcclResult AicpuUtils::HcclLaunchCcore(void *opHandle, uint64_t dstAddr, uint32_t turnNum, uint64_t turnNumAddr,
-                                            bool isLast, int ccoreType) const
+HcclResult AicpuUtils::HcclLaunchCcore(
+    void *opHandle, uint64_t dstAddr, uint32_t turnNum, uint64_t turnNumAddr, bool isLast, int ccoreType) const
 {
     const char *typeStr = (ccoreType == CCORE_NOTIFY_TYPE) ? "HcclLaunchCcoreWait" : "HcclLaunchCcorePost";
     HCCL_INFO("[%s]opHandle %p, dstAddr %llu, turnNum %u, turnNumAddr %llu, isLast %u, type %s.", __func__, opHandle,
-              dstAddr, turnNum, turnNumAddr, isLast, typeStr);
+        dstAddr, turnNum, turnNumAddr, isLast, typeStr);
     if (ccoreType != CCORE_WAIT_TYPE && ccoreType != CCORE_NOTIFY_TYPE) {
         HCCL_ERROR("[%s]Args type %d is not in CCORE_WAIT_TYPE(0) or CCORE_NOTIFY_TYPE(1).", __func__, ccoreType);
         return HCCL_E_PARA;
     }
 
     CommunicatorImplLite *communicatorImplLite = reinterpret_cast<CommunicatorImplLite *>(opHandle);
-    auto                 *streamLiteMgr        = communicatorImplLite->GetStreamLiteMgr();
+    auto *streamLiteMgr = communicatorImplLite->GetStreamLiteMgr();
     CHK_PTR_NULL(streamLiteMgr);
 
     auto *master = streamLiteMgr->GetMaster();
@@ -198,8 +203,8 @@ HcclResult AicpuUtils::HcclLaunchCcore(void *opHandle, uint64_t dstAddr, uint32_
 
 void AicpuUtils::CalcA2ASendRecvMem(const CollAlgOperator &algOperator, uint64_t &sendSize, uint64_t &recvSize) const
 {
-    uint64_t sendCount    = 0;
-    uint64_t recvCount    = 0;
+    uint64_t sendCount = 0;
+    uint64_t recvCount = 0;
     uint32_t sendTypeSize = 0;
     uint32_t recvTypeSize = 0;
 
@@ -207,7 +212,7 @@ void AicpuUtils::CalcA2ASendRecvMem(const CollAlgOperator &algOperator, uint64_t
         for (uint32_t i = 0; i < rankSize_; i++) {
             uint64_t curSendCount = *(static_cast<const uint64_t *>(algOperator.all2AllVDataDes.sendCounts) + i)
                                     + *(static_cast<const uint64_t *>(algOperator.all2AllVDataDes.sdispls) + i);
-            sendCount             = std::max(sendCount, curSendCount);
+            sendCount = std::max(sendCount, curSendCount);
             uint64_t curRecvCount = *(static_cast<const uint64_t *>(algOperator.all2AllVDataDes.recvCounts) + i)
                                     + *(static_cast<const uint64_t *>(algOperator.all2AllVDataDes.rdispls) + i);
             recvCount = std::max(recvCount, curRecvCount);
@@ -216,16 +221,16 @@ void AicpuUtils::CalcA2ASendRecvMem(const CollAlgOperator &algOperator, uint64_t
         recvTypeSize = DataTypeSizeGet(algOperator.all2AllVDataDes.recvType);
     } else if (algOperator.opType == OpType::ALLTOALLVC) {
         for (uint32_t i = 0; i < rankSize_; i++) {
-            sendCount += *(static_cast<const uint64_t *>(algOperator.all2AllVCDataDes.sendCountMatrix)
-                           + myRank_ * rankSize_ + i);
-            recvCount += *(static_cast<const uint64_t *>(algOperator.all2AllVCDataDes.sendCountMatrix) + myRank_
-                           + rankSize_ * i);
+            sendCount += *(
+                static_cast<const uint64_t *>(algOperator.all2AllVCDataDes.sendCountMatrix) + myRank_ * rankSize_ + i);
+            recvCount += *(
+                static_cast<const uint64_t *>(algOperator.all2AllVCDataDes.sendCountMatrix) + myRank_ + rankSize_ * i);
         }
         sendTypeSize = DataTypeSizeGet(algOperator.all2AllVCDataDes.sendType);
         recvTypeSize = DataTypeSizeGet(algOperator.all2AllVCDataDes.recvType);
     } else {
-        sendCount    = algOperator.all2AllDataDes.sendCount * rankSize_;
-        recvCount    = algOperator.all2AllDataDes.recvCount * rankSize_;
+        sendCount = algOperator.all2AllDataDes.sendCount * rankSize_;
+        recvCount = algOperator.all2AllDataDes.recvCount * rankSize_;
         sendTypeSize = DataTypeSizeGet(algOperator.all2AllDataDes.sendType);
         recvTypeSize = DataTypeSizeGet(algOperator.all2AllDataDes.recvType);
     }
@@ -233,17 +238,17 @@ void AicpuUtils::CalcA2ASendRecvMem(const CollAlgOperator &algOperator, uint64_t
     recvSize = recvCount * recvTypeSize;
     HCCL_INFO("[%s]CalcA2ASendRecvMem finish, algOperator %s, sendCount %llu, sendTypeSize %u, "
               "recvCount %llu, recvTypeSize %u, sendSize %llu, recvSize %llu",
-              __func__, algOperator.opType.Describe().c_str(), sendCount, sendTypeSize, recvCount, recvTypeSize,
-              sendSize, recvSize);
+        __func__, algOperator.opType.Describe().c_str(), sendCount, sendTypeSize, recvCount, recvTypeSize, sendSize,
+        recvSize);
 }
-HcclResult AicpuUtils::ConvertCollOperatorMemV(CollAlgOperator &algOperator, HcclAicpuOpLite &op,
-                                                    const HcclOpData *data) const
+HcclResult AicpuUtils::ConvertCollOperatorMemV(
+    CollAlgOperator &algOperator, HcclAicpuOpLite &op, const HcclOpData *data) const
 {
     auto dataType = HcclDataTypeToDataType(data->dataType);
     CHECK_DATA_TYPE(dataType);
-    uint64_t  size       = DataTypeSizeGet(dataType) * data->dataCount;
-    uint64_t *counts     = static_cast<uint64_t *>(data->vDataDes.counts);
-    uint64_t  totalCount = 0;
+    uint64_t size = DataTypeSizeGet(dataType) * data->dataCount;
+    uint64_t *counts = static_cast<uint64_t *>(data->vDataDes.counts);
+    uint64_t totalCount = 0;
     for (size_t index = 0; index < rankSize_; index++) {
         totalCount += counts[index];
     }
@@ -251,63 +256,63 @@ HcclResult AicpuUtils::ConvertCollOperatorMemV(CollAlgOperator &algOperator, Hcc
 
     if (algOperator.opType == OpType::REDUCESCATTERV) {
         algOperator.inputMem = make_shared<Buffer>(data->input, totalSize);
-        op.input.size        = totalSize;
+        op.input.size = totalSize;
     } else {
         algOperator.inputMem = make_shared<Buffer>(data->input, size);
-        op.input.size        = size;
+        op.input.size = size;
     }
     if (algOperator.opType == OpType::ALLGATHERV) {
         algOperator.outputMem = make_shared<Buffer>(data->output, totalSize);
-        op.output.size        = totalSize;
+        op.output.size = totalSize;
     } else {
         algOperator.outputMem = make_shared<Buffer>(data->output, size);
-        op.output.size        = size;
+        op.output.size = size;
     }
 
     HCCL_INFO("[%s] finish, opType[%s], inputSize[%llu], outputSize[%llu]", __func__,
-              algOperator.opType.Describe().c_str(), op.input.size, op.output.size);
+        algOperator.opType.Describe().c_str(), op.input.size, op.output.size);
     return HCCL_SUCCESS;
 }
 
-void AicpuUtils::ConvertCollOperatorMem(CollAlgOperator &algOperator, HcclAicpuOpLite &op, const HcclOpData *data,
-                                             const uint64_t &size) const
+void AicpuUtils::ConvertCollOperatorMem(
+    CollAlgOperator &algOperator, HcclAicpuOpLite &op, const HcclOpData *data, const uint64_t &size) const
 {
     if (algOperator.opType == OpType::REDUCESCATTER || algOperator.opType == OpType::SCATTER) {
         algOperator.inputMem = make_shared<Buffer>(data->input, size * rankSize_);
-        op.input.size        = size * rankSize_;
+        op.input.size = size * rankSize_;
     } else {
         algOperator.inputMem = make_shared<Buffer>(data->input, size);
-        op.input.size        = size;
+        op.input.size = size;
     }
     if (algOperator.opType == OpType::ALLGATHER || algOperator.opType == OpType::GATHER) {
         algOperator.outputMem = make_shared<Buffer>(data->output, size * rankSize_);
-        op.output.size        = size * rankSize_;
+        op.output.size = size * rankSize_;
     } else {
         algOperator.outputMem = make_shared<Buffer>(data->output, size);
-        op.output.size        = size;
+        op.output.size = size;
     }
 
     HCCL_INFO("[%s] finish, opType[%s], inputSize[%llu], outputSize[%llu]", __func__,
-              algOperator.opType.Describe().c_str(), op.input.size, op.output.size);
+        algOperator.opType.Describe().c_str(), op.input.size, op.output.size);
 }
 
-HcclResult AicpuUtils::FillCollOperatorMemInfo(CollAlgOperator &algOperator, HcclAicpuOpLite &op,
-                                                    const HcclOpData *data) const
+HcclResult AicpuUtils::FillCollOperatorMemInfo(
+    CollAlgOperator &algOperator, HcclAicpuOpLite &op, const HcclOpData *data) const
 {
-    op.input.addr        = data->input;
-    op.input.tokenId     = 0;
-    op.input.tokenValue  = 0;
-    op.output.addr       = data->output;
-    op.output.tokenId    = 0;
+    op.input.addr = data->input;
+    op.input.tokenId = 0;
+    op.input.tokenValue = 0;
+    op.output.addr = data->output;
+    op.output.tokenId = 0;
     op.output.tokenValue = 0;
     if (algOperator.opType == OpType::ALLTOALL || algOperator.opType == OpType::ALLTOALLV
         || algOperator.opType == OpType::ALLTOALLVC) {
         uint64_t sendSize = 0, recvSize = 0;
         CalcA2ASendRecvMem(algOperator, sendSize, recvSize);
-        algOperator.inputMem  = make_shared<Buffer>(data->input, sendSize);
+        algOperator.inputMem = make_shared<Buffer>(data->input, sendSize);
         algOperator.outputMem = make_shared<Buffer>(data->output, recvSize);
-        op.input.size         = sendSize;
-        op.output.size        = recvSize;
+        op.input.size = sendSize;
+        op.output.size = recvSize;
     } else if (algOperator.opType == OpType::BATCHSENDRECV) {
         HCCL_INFO("[%s] OpType::BATCHSENDRECV item = %llu", __func__, algOperator.batchSendRecvDataDes.itemNum);
     } else {
@@ -327,28 +332,29 @@ HcclResult AicpuUtils::FillCollOperatorMemInfo(CollAlgOperator &algOperator, Hcc
     }
     HCCL_INFO("[%s]opType %s, op.input.addr %llu, op.input.size %llu, op.output.addr %llu, "
               "op.output.size %llu",
-              __func__, algOperator.opType.Describe().c_str(), op.input.addr, op.input.size, op.output.addr,
-              op.output.size);
+        __func__, algOperator.opType.Describe().c_str(), op.input.addr, op.input.size, op.output.addr, op.output.size);
     return HCCL_SUCCESS;
 }
 
 HcclResult AicpuUtils::FillKernelParam(HcclOpData *data) const
 {
-    kernelParam_->op.algOperator.reduceOp       = HcclReduceOpToReduceOp(HCCL_REDUCE_RESERVED);
-    if (data->opType == HCCL_CMD_ALLREDUCE || data->opType == HCCL_CMD_REDUCE ||
-         data->opType == HCCL_CMD_REDUCE_SCATTER || data->opType == HCCL_CMD_REDUCE_SCATTER_V){
-        kernelParam_->op.algOperator.reduceOp       = HcclReduceOpToReduceOp(data->reduceOp);
+    kernelParam_->op.algOperator.reduceOp = HcclReduceOpToReduceOp(HCCL_REDUCE_RESERVED);
+    if (data->opType == HcclCMDType::HCCL_CMD_ALLREDUCE || data->opType == HcclCMDType::HCCL_CMD_REDUCE
+        || data->opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER
+        || data->opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V) {
+        kernelParam_->op.algOperator.reduceOp = HcclReduceOpToReduceOp(data->reduceOp);
     }
     kernelParam_->op.algOperator.dataType = HcclDataTypeToDataType(data->dataType);
     CHECK_DATA_TYPE(kernelParam_->op.algOperator.dataType);
     kernelParam_->op.algOperator.outputDataType = HcclDataTypeToDataType(data->outputDataType);
     CHECK_DATA_TYPE(kernelParam_->op.algOperator.outputDataType);
-    kernelParam_->op.algOperator.dataCount          = data->dataCount;
-    kernelParam_->op.algOperator.root               = data->root;
+    kernelParam_->op.algOperator.dataCount = data->dataCount;
+    kernelParam_->op.algOperator.root = data->root;
     kernelParam_->op.algOperator.sendRecvRemoteRank = data->sendRecvRemoteRank;
-    HCCL_INFO("[%s]opType=%s, reduceOp=%u, dataType=%u, outputDataType=%u, dataCount=%llu, root=%u, sendRecvRemoteRank=%u", __func__,
-              kernelParam_->op.algOperator.opType.Describe().c_str(), data->reduceOp, data->dataType, data->outputDataType,
-              data->dataCount, data->root, data->sendRecvRemoteRank);
+    HCCL_INFO(
+        "[%s]opType=%s, reduceOp=%u, dataType=%u, outputDataType=%u, dataCount=%llu, root=%u, sendRecvRemoteRank=%u",
+        __func__, kernelParam_->op.algOperator.opType.Describe().c_str(), data->reduceOp, data->dataType,
+        data->outputDataType, data->dataCount, data->root, data->sendRecvRemoteRank);
     if (kernelParam_->op.algOperator.opType == OpType::ALLTOALL) {
         kernelParam_->op.algOperator.all2AllDataDes.recvType = HcclDataTypeToDataType(data->all2AllDataDes.recvType);
         CHECK_DATA_TYPE(kernelParam_->op.algOperator.all2AllDataDes.recvType);
@@ -366,9 +372,9 @@ HcclResult AicpuUtils::FillKernelParam(HcclOpData *data) const
         CHK_PTR_NULL(data->all2AllVDataDes.recvCounts);
         kernelParam_->op.algOperator.all2AllVDataDes.recvCounts = data->all2AllVDataDes.recvCounts;
         CHK_PTR_NULL(data->all2AllVDataDes.sdispls);
-        kernelParam_->op.algOperator.all2AllVDataDes.sdispls    = data->all2AllVDataDes.sdispls;
+        kernelParam_->op.algOperator.all2AllVDataDes.sdispls = data->all2AllVDataDes.sdispls;
         CHK_PTR_NULL(data->all2AllVDataDes.rdispls);
-        kernelParam_->op.algOperator.all2AllVDataDes.rdispls    = data->all2AllVDataDes.rdispls;
+        kernelParam_->op.algOperator.all2AllVDataDes.rdispls = data->all2AllVDataDes.rdispls;
     } else if (kernelParam_->op.algOperator.opType == OpType::ALLTOALLVC) {
         kernelParam_->op.algOperator.all2AllVCDataDes.sendType
             = HcclDataTypeToDataType(data->all2AllVCDataDes.sendType);
@@ -381,9 +387,9 @@ HcclResult AicpuUtils::FillKernelParam(HcclOpData *data) const
     } else if (kernelParam_->op.algOperator.opType == OpType::ALLGATHERV
                || kernelParam_->op.algOperator.opType == OpType::REDUCESCATTERV) {
         CHK_PTR_NULL(data->vDataDes.counts);
-        kernelParam_->op.algOperator.vDataDes.counts   = data->vDataDes.counts;
+        kernelParam_->op.algOperator.vDataDes.counts = data->vDataDes.counts;
         CHK_PTR_NULL(data->vDataDes.displs);
-        kernelParam_->op.algOperator.vDataDes.displs   = data->vDataDes.displs;
+        kernelParam_->op.algOperator.vDataDes.displs = data->vDataDes.displs;
         kernelParam_->op.algOperator.vDataDes.dataType = HcclDataTypeToDataType(data->vDataDes.dataType);
         CHECK_DATA_TYPE(kernelParam_->op.algOperator.vDataDes.dataType);
     } else if (kernelParam_->op.algOperator.opType == OpType::BATCHSENDRECV) {
@@ -395,9 +401,9 @@ HcclResult AicpuUtils::FillKernelParam(HcclOpData *data) const
         CHECK_DATA_TYPE(kernelParam_->op.algOperator.dataType);
         kernelParam_->op.algOperator.batchSendRecvDataDes.itemNum = data->batchSendRecvDataDes.itemNum;
     } else {
-        kernelParam_->op.algOperator.dataDes.dataType   = HcclDataTypeToDataType(data->dataDes.dataType);
+        kernelParam_->op.algOperator.dataDes.dataType = HcclDataTypeToDataType(data->dataDes.dataType);
         CHECK_DATA_TYPE(kernelParam_->op.algOperator.dataDes.dataType);
-        kernelParam_->op.algOperator.dataDes.dataCount   = data->dataDes.dataCount;
+        kernelParam_->op.algOperator.dataDes.dataCount = data->dataDes.dataCount;
         kernelParam_->op.algOperator.dataDes.strideCount = data->dataDes.strideCount;
     }
     return HCCL_SUCCESS;
@@ -409,34 +415,38 @@ HcclResult AicpuUtils::RecoverKernelParam(CommunicatorImplLite *communicatorImpl
     uint32_t commIdIndex = communicatorImplLite->GetCommIdIndex();
     auto kernelParamIter = kernelParamMap_.find(commIdIndex);
     if (kernelParamIter == kernelParamMap_.end()) {
-        HCCL_ERROR("[%s]KernelParam is not found, commId %u, please execute HcclGetCommHandleByCtx first.", __func__, commIdIndex);
+        HCCL_ERROR("[%s]KernelParam is not found, commId %u, please execute HcclGetCommHandleByCtx first.", __func__,
+            commIdIndex);
         return HCCL_E_PTR;
     }
     kernelParam_ = kernelParamIter->second;
     rankSize_ = communicatorImplLite->GetRankSize();
-    myRank_   = communicatorImplLite->GetMyRank();
+    myRank_ = communicatorImplLite->GetMyRank();
 
     // 恢复op算子信息，buffer
     if (OP_TYPE_MAP.find(data->opType) == OP_TYPE_MAP.end()) {
-        HCCL_ERROR("[%s]Args OP_TYPE_MAP not find data->opType %u, commId %u.", __func__, data->opType, communicatorImplLite->GetCommIdIndex());
+        HCCL_ERROR("[%s]Args OP_TYPE_MAP not find data->opType %u, commId %u.", __func__, data->opType,
+            communicatorImplLite->GetCommIdIndex());
         return HCCL_E_PARA;
     }
     if (kernelParam_->op.algOperator.opType != OP_TYPE_MAP.at(data->opType)) {
-        HCCL_ERROR("[%s]Args kernelParam_->op.algOperator.opType %s is not equal to data->opType %s, commId %u.", __func__,
-                   kernelParam_->op.algOperator.opType.Describe().c_str(), OP_TYPE_MAP.at(data->opType).Describe().c_str(), 
-                   communicatorImplLite->GetCommIdIndex());
+        HCCL_ERROR("[%s]Args kernelParam_->op.algOperator.opType %s is not equal to data->opType %s, commId %u.",
+            __func__, kernelParam_->op.algOperator.opType.Describe().c_str(),
+            OP_TYPE_MAP.at(data->opType).Describe().c_str(), communicatorImplLite->GetCommIdIndex());
         return HCCL_E_PARA;
     }
     HCCL_INFO("[%s]opHandle %p, commId %u, rankSize_ %u, myRank_ %u, opType %u", __func__, communicatorImplLite,
-              communicatorImplLite->GetCommIdIndex(), rankSize_, myRank_, data->opType);
+        communicatorImplLite->GetCommIdIndex(), rankSize_, myRank_, data->opType);
     auto ret = FillKernelParam(data);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[%s]FillKernelParam execute failed, ret %u, commId %u", __func__, ret, communicatorImplLite->GetCommIdIndex());
+        HCCL_ERROR("[%s]FillKernelParam execute failed, ret %u, commId %u", __func__, ret,
+            communicatorImplLite->GetCommIdIndex());
         return ret;
     }
     ret = FillCollOperatorMemInfo(kernelParam_->op.algOperator, kernelParam_->op, data);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[%s]FillCollOperatorMemInfo execute failed, ret %u, commId %u", __func__, ret, communicatorImplLite->GetCommIdIndex());
+        HCCL_ERROR("[%s]FillCollOperatorMemInfo execute failed, ret %u, commId %u", __func__, ret,
+            communicatorImplLite->GetCommIdIndex());
         return ret;
     }
     return HCCL_SUCCESS;

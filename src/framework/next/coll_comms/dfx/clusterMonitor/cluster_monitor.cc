@@ -9,7 +9,7 @@
  */
 #include "cluster_monitor.h"
 #include "hccl_types.h"
-#include "comm_addr_convert.h"
+// #include "comm_addr_convert.h"
 #include "adapter_rts_common.h"
 #include "externalinput_pub.h"
 
@@ -134,17 +134,19 @@ HcclResult ClusterMonitor::RegisterToClusterMonitor(HcclComm comm)
     //         hbLinkConnInfo_[group].push(std::move(item));
     //     }
     // }
+    return HCCL_SUCCESS;
 }
 
 HcclResult ClusterMonitor::UnRegisterToClusterMonitor(HcclComm comm)
 {
+    return HCCL_SUCCESS;
 }
 
 HcclResult ClusterMonitor::CreateMonitorLinksAsync()
 {
     std::unique_lock<std::mutex> linksLock(linksConnInfoMtx_);
     if (clusterLinkContext_.empty()) {
-        return;
+        return HCCL_SUCCESS;
     }
     linkRunningStatus_ = true;
     std::queue<std::tuple<std::string, ClusterUIDType, ClusterMonitorContext>> connInfoQueue;
@@ -177,7 +179,7 @@ HcclResult ClusterMonitor::CreateMonitorLinksAsync()
         }
         connInfoQueue.pop();
     }
-    return;
+    return HCCL_SUCCESS;
 }
 
 HcclResult ClusterMonitor::CreateTransportHandle(ClusterMonitorContext &info)
@@ -265,7 +267,7 @@ void ClusterMonitor::CreateLinkWithRemotePonit(
             lock.unlock();
             break;
         }
-        uid2ContextRefMap_[rem] = MonitorLinkStatus::MONITOR_LINK_COMPLETED;
+        monitorLinkStatusMap_[rem] = MonitorLinkStatus::MONITOR_LINK_COMPLETED;
         commIdMap_[commId][rem] = true; // 更新状态为已连接
         lock.unlock();
         HCCL_RUN_INFO("commId:[%s], establish rank[%s] to rank[%s] heartbeat connection success.", commId.c_str(),
@@ -294,7 +296,7 @@ HcclResult ClusterMonitor::SendMonitorFrame(
             u64 sendDis = sizeof(ClusterMonitorFrame) - uid2ContextRefMap_[dst].restSize;
             u64 compSize = 0;
             HcclResult ret = HcclCommSocketSendNb(uid2ContextRefMap_[dst].socketHandler,
-                (reinterpret_cast<void *>(&hbf) + sendDis), uid2ContextRefMap_[dst].restSize,
+                (reinterpret_cast<char *>(&hbf) + sendDis), uid2ContextRefMap_[dst].restSize,
                 (reinterpret_cast<uint64_t *>(&compSize)));
             if (ret != HCCL_SUCCESS) {
                 HCCL_WARNING("[CreateTransportHandle] HcclCommSocketSendNb failed, ret[%d]", ret);

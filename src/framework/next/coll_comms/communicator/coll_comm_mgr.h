@@ -15,7 +15,9 @@
 #include <mutex>
 #include <vector>
 #include "coll_comm.h"
-#include "cluster_monitor.h"
+#include "../dfx/clusterMonitor/cluster_monitor.h"
+
+static constexpr u32 MAX_MODULE_DEVICE_NUMS = 65;
 
 namespace hccl {
 /**
@@ -24,17 +26,17 @@ namespace hccl {
 class CollCommMgr {
 public:
     static CollCommMgr *GetInstance();
-    void RegisteCollComm(CollComm* collComm);
-    void UnRegisteCollComm(CollComm* collComm);
-    std::unordered_map<std::string, CollComm*> GetAllCollComms();
-    ClusterMonitor &CollCommMgr::GetClusterMonitor(s32 deviceLogicId);
+    void RegisteCollComm(CollComm *collComm);
+    void UnRegisteCollComm(CollComm *collComm);
+    std::unordered_map<std::string, CollComm *> GetAllCollComms();
+    ClusterMonitor &GetClusterMonitor(s32 deviceLogicId);
 
 private:
-    static CollCommMgr* instance_;
-    std::unordered_map<std::string, CollComm*> allCollComms_;
+    static CollCommMgr *instance_;
+    std::unordered_map<std::string, CollComm *> allCollComms_;
     static ClusterMonitor clusterMonitor_[MAX_MODULE_DEVICE_NUMS];
 
     std::mutex mutex_;
 };
-}
+} // namespace hccl
 #endif // COLL_COMM_MGR_H

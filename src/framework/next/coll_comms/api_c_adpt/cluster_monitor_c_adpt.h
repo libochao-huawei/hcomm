@@ -11,6 +11,7 @@
 #define CLUSTER_MONITOR_C_ADPT_H
 
 #include <cstdint>
+#include "hccl/hccl_res.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -20,31 +20,11 @@ extern "C" {
 #endif
 
 namespace hcomm {
-public:
-    /**
-     * @brief IPv4 地址转换辅助函数
-     */
-    static std::string ConvertIPv4(const struct in_addr& addr);
-
-    /**
-     * @brief IPv6 地址转换辅助函数
-     */
-    static std::string ConvertIPv6(const struct in6_addr& addr6);
-
-    /**
-     * @brief ID 类型转换辅助函数
-     */
-    static std::string ConvertID(uint32_t id);
-
-    /**
-     * @brief EID 类型转换辅助函数
-     */
-    static std::string ConvertEID(const uint8_t eid[16]);
-
-    /**
-     * @brief commAddr转换为string字符串
-     */
-    static std::string CommAddr2Str(const CommAddr commAddr);
+    std::string ConvertIPv4(const struct in_addr &addr);
+    std::string ConvertIPv6(const struct in6_addr &addr6);
+    std::string ConvertID(uint32_t id);
+    std::string ConvertEID(const uint8_t eid[16]);
+    std::string CommAddr2Str(const CommAddr commAddr);
 
 } // namespace hcomm
 

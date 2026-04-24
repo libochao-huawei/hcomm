@@ -38,10 +38,11 @@ void EnvHostNicConfig::Parse()
         devicePortRangeOss << " [" << std::to_string(range.min) << ", " << std::to_string(range.max) << "]";
     }
 
-    HCCL_RUN_INFO("[Init][EnvVarParam]Env config hcclIfIp[%s], hcclIfBasePort[%u], hcclSocketIfName[%s], whitelistDisable[%d], "
-                  "hcclHostSocketPortRange[%s], devicePortRangeOss[%s]",
-                  GetControlIfIp().Describe().c_str(), GetIfBasePort(), GetSocketIfName().configIfNameStr.c_str(),
-                  whitelistDisable.Get(), hosrPortRangeOss.str().c_str(), devicePortRangeOss.str().c_str());
+    HCCL_RUN_INFO(
+        "[Init][EnvVarParam]Env config hcclIfIp[%s], hcclIfBasePort[%u], hcclSocketIfName[%s], whitelistDisable[%d], "
+        "hcclHostSocketPortRange[%s], devicePortRangeOss[%s]",
+        GetControlIfIp().Describe().c_str(), GetIfBasePort(), GetSocketIfName().configIfNameStr.c_str(),
+        whitelistDisable.Get(), hosrPortRangeOss.str().c_str(), devicePortRangeOss.str().c_str());
 }
 
 const IpAddress &EnvHostNicConfig::GetControlIfIp() const
@@ -85,8 +86,8 @@ void EnvSocketConfig::Parse()
 {
     hcclSocketFamily.Parse();
     linkTimeOut.Parse();
-    HCCL_RUN_INFO("[Init][EnvVarParam]Env config hcclSocketFamily[%d], linkTimeOut[%d]",
-                  GetSocketFamily(), GetLinkTimeOut());
+    HCCL_RUN_INFO(
+        "[Init][EnvVarParam]Env config hcclSocketFamily[%d], linkTimeOut[%d]", GetSocketFamily(), GetLinkTimeOut());
 }
 
 s32 EnvSocketConfig::GetSocketFamily() const
@@ -105,7 +106,8 @@ void EnvRtsConfig::Parse()
 {
     execTimeOut.Parse();
     aivExecTimeOut.Parse();
-    HCCL_RUN_INFO("[Init][EnvVarParam]Env config execTimeOut[%u], aivExecTimeOut[%f]", GetExecTimeOut(), GetAivExecTimeOut());
+    HCCL_RUN_INFO(
+        "[Init][EnvVarParam]Env config execTimeOut[%u], aivExecTimeOut[%f]", GetExecTimeOut(), GetAivExecTimeOut());
 }
 
 u32 EnvRtsConfig::GetExecTimeOut() const
@@ -126,8 +128,9 @@ void EnvRdmaConfig::Parse()
     rdmaServerLevel.Parse();
     rdmaTimeOut.Parse();
     rdmaRetryCnt.Parse();
-    HCCL_RUN_INFO("[Init][EnvVarParam]Env config rdmaTrafficClass[%u], rdmaServerLevel[%u], rdmaTimeOut[%u], rdmaRetryCnt[%u]",
-                  GetRdmaTrafficClass(), GetRdmaServerLevel(), GetRdmaTimeOut(), GetRdmaRetryCnt());
+    HCCL_RUN_INFO(
+        "[Init][EnvVarParam]Env config rdmaTrafficClass[%u], rdmaServerLevel[%u], rdmaTimeOut[%u], rdmaRetryCnt[%u]",
+        GetRdmaTrafficClass(), GetRdmaServerLevel(), GetRdmaTimeOut(), GetRdmaRetryCnt());
 }
 
 u32 EnvRdmaConfig::GetRdmaTrafficClass() const
@@ -164,12 +167,14 @@ void EnvAlgoConfig::Parse()
         hcclAlgoConfigOss << " [" << opType.Describe().c_str() << ", ";
         std::vector<HcclAlgoType> algoTypes = algoConfig.second;
         for (auto algoType : algoTypes) {
-           hcclAlgoConfigOss << algoType.Describe().c_str() << " ";
+            hcclAlgoConfigOss << algoType.Describe().c_str() << " ";
         }
         hcclAlgoConfigOss << "]";
     }
-    HCCL_RUN_INFO("[Init][EnvVarParam]Env config primQueueGenName[%s], hcclAlgoConfig[%s], bufferSize[%llu], hcclAccelerator[%s]",
-                  GetPrimQueueGenName().c_str(), hcclAlgoConfigOss.str().c_str(), GetBuffSize(), GetHcclAccelerator().Describe().c_str());
+    HCCL_RUN_INFO(
+        "[Init][EnvVarParam]Env config primQueueGenName[%s], hcclAlgoConfig[%s], bufferSize[%llu], hcclAccelerator[%s]",
+        GetPrimQueueGenName().c_str(), hcclAlgoConfigOss.str().c_str(), GetBuffSize(),
+        GetHcclAccelerator().Describe().c_str());
 }
 
 const std::string &EnvAlgoConfig::GetPrimQueueGenName() const
@@ -191,7 +196,7 @@ HcclAccelerator EnvAlgoConfig::GetHcclAccelerator() const
 {
     return hcclAccelerator_.Get();
 }
- 
+
 // EnvLogConfig
 void EnvLogConfig::Parse()
 {
@@ -199,9 +204,9 @@ void EnvLogConfig::Parse()
     cannVersion.Parse();
     dfsConfig.Parse();
     HCCL_RUN_INFO("[Init][EnvVarParam]Env config entryLogEnable[%d], cannVersion[%s], dfsConfig taskException[%d]"
-                  "dfsConfig clsuter_heartbeat[%d]",
-                  GetEntryLogEnable(), GetCannVersion().c_str(), GetDfsConfig().taskExceptionEnable,
-                  GetDfsConfig().cluseterHeartBeatEnable);
+                  "dfsConfig cluster_heartbeat[%d]",
+        GetEntryLogEnable(), GetCannVersion().c_str(), GetDfsConfig().taskExceptionEnable,
+        GetDfsConfig().clusterHeartBeatEnable);
 }
 
 bool EnvLogConfig::GetEntryLogEnable() const

@@ -9,14 +9,14 @@
  */
 #include "coll_comm_mgr.h"
 #include "ns_recovery/task_abort_handler.h"
-#include "cluster_monitor.h"
+#include "../dfx/clusterMonitor/cluster_monitor.h"
 
 namespace hccl {
 
-CollCommMgr* CollCommMgr::instance_ = nullptr;
+CollCommMgr *CollCommMgr::instance_ = nullptr;
 static std::once_flag instanceFlag;
 
-CollCommMgr* CollCommMgr::GetInstance() 
+CollCommMgr *CollCommMgr::GetInstance()
 {
     std::call_once(instanceFlag, [&] {
         instance_ = new CollCommMgr();
@@ -24,7 +24,7 @@ CollCommMgr* CollCommMgr::GetInstance()
     return instance_;
 }
 
-void CollCommMgr::RegisteCollComm(CollComm* collComm)
+void CollCommMgr::RegisteCollComm(CollComm *collComm)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     allCollComms_[collComm->GetCommId()] = collComm;
@@ -32,7 +32,7 @@ void CollCommMgr::RegisteCollComm(CollComm* collComm)
     HcclTaskAbortHandler::GetInstance().Register(collComm);
 }
 
-void CollCommMgr::UnRegisteCollComm(CollComm* collComm)
+void CollCommMgr::UnRegisteCollComm(CollComm *collComm)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     allCollComms_.erase(collComm->GetCommId());
@@ -40,7 +40,7 @@ void CollCommMgr::UnRegisteCollComm(CollComm* collComm)
     HcclTaskAbortHandler::GetInstance().UnRegister(collComm);
 }
 
-std::unordered_map<std::string, CollComm*> CollCommMgr::GetAllCollComms()
+std::unordered_map<std::string, CollComm *> CollCommMgr::GetAllCollComms()
 {
     return allCollComms_;
 }
@@ -48,11 +48,11 @@ std::unordered_map<std::string, CollComm*> CollCommMgr::GetAllCollComms()
 ClusterMonitor &CollCommMgr::GetClusterMonitor(s32 deviceLogicId)
 {
     if (static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUMS) {
-        HCCL_WARNING("[ClusterMonitor][%s]deviceLogicId[%d] >= %u, invalid",
-            __func__, deviceLogicId, MAX_MODULE_DEVICE_NUMS);
+        HCCL_WARNING(
+            "[ClusterMonitor][%s]deviceLogicId[%d] >= %u, invalid", __func__, deviceLogicId, MAX_MODULE_DEVICE_NUMS);
         return clusterMonitor_[0];
     }
     return clusterMonitor_[deviceLogicId];
 }
 
-}
+} // namespace hccl

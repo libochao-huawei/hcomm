@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef HCOMM_C_ADPT_H
-#define HCOMM_C_ADPT_H
+#ifndef HCCL_COMM_SOCKET_C_ADPT_H
+#define HCCL_COMM_SOCKET_C_ADPT_H
 
 #include "hcomm_res.h"
 #include "hccl/hccl_res.h"
@@ -55,4 +55,4 @@ HcclResult HcclCommSocketRecvNb(
 }
 #endif // __cplusplus
 
-#endif // HCOMM_C_ADPT_H
+#endif // HCCL_COMM_SOCKET_C_ADPT_H

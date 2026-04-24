@@ -15,10 +15,11 @@
 #include <securec.h>
 
 namespace hcomm {
-std::string ConvertIPv4(const struct in_addr& addr)
+
+[[maybe_unused]] std::string ConvertIPv4(const struct in_addr &addr)
 {
     std::array<char, INET_ADDRSTRLEN> buffer;
-    const char* result = inet_ntop(AF_INET, &addr, buffer.data(), buffer.size());
+    const char *result = inet_ntop(AF_INET, &addr, buffer.data(), buffer.size());
     if (result == nullptr) {
         HCCL_ERROR("[%s] inet_ntop failed for IPv4 address", __func__);
         return "conversion failed";
@@ -26,10 +27,10 @@ std::string ConvertIPv4(const struct in_addr& addr)
     return std::string(result);
 }
 
-std::string ConvertIPv6(const struct in6_addr& addr6)
+[[maybe_unused]] std::string ConvertIPv6(const struct in6_addr &addr6)
 {
     std::array<char, INET6_ADDRSTRLEN> buffer;
-    const char* result = inet_ntop(AF_INET6, &addr6, buffer.data(), buffer.size());
+    const char *result = inet_ntop(AF_INET6, &addr6, buffer.data(), buffer.size());
     if (result == nullptr) {
         HCCL_ERROR("[%s] inet_ntop failed for IPv6 address", __func__);
         return "conversion failed";
@@ -44,27 +45,15 @@ std::string ConvertID(uint32_t id)
 
 std::string ConvertEID(const uint8_t eid[16])
 {
-    // 模仿 Eid::Describe 的格式
-    // 输出：eid[xxxxxxxxxxxxxxxx:xxxxxxxxxxxxxxxx]
-    // 其中前 8 字节是 subnetPrefix，后 8 字节是 interfaceId（网络字节序）
-
-    // 从字节数组中提取两个 64 位整数（网络字节序）
     uint64_t subnetPrefix = 0;
     uint64_t interfaceId = 0;
-
-    // 使用 memcpy 避免对齐问题
     (void)memcpy_s(&subnetPrefix, sizeof(subnetPrefix), eid, sizeof(subnetPrefix));
     (void)memcpy_s(&interfaceId, sizeof(interfaceId), eid + 8, sizeof(interfaceId));
-
-    // 转换字节序（网络字节序 -> 主机字节序）
     subnetPrefix = be64toh(subnetPrefix);
     interfaceId = be64toh(interfaceId);
-
     char buffer[64];
-    int32_t ret = snprintf_s(buffer, sizeof(buffer), sizeof(buffer) - 1,
-        "eid[%016llx:%016llx]",
-        static_cast<unsigned long long>(subnetPrefix),
-        static_cast<unsigned long long>(interfaceId));
+    int32_t ret = snprintf_s(buffer, sizeof(buffer), sizeof(buffer) - 1, "eid[%016llx:%016llx]",
+        static_cast<unsigned long long>(subnetPrefix), static_cast<unsigned long long>(interfaceId));
     if (ret < 0) {
         HCCL_ERROR("[%s] snprintf_s failed for EID", __func__);
         return "conversion failed";
@@ -72,11 +61,9 @@ std::string ConvertEID(const uint8_t eid[16])
     return std::string(buffer);
 }
 
-std::string CommAddr2Str(const CommAddr commAddr)
+[[maybe_unused]] std::string CommAddr2Str(const CommAddr commAddr)
 {
-    // 输出：eid[xxxxxxxxxxxxxxxx:xxxxxxxxxxxxxxxx], AF=v4/v6, addr=xxx.xxx.xxx.xxx, scopeId=0x0]
     std::string desc = "AF=";
-
     switch (commAddr.type) {
         case COMM_ADDR_TYPE_IP_V4:
             desc += "v4, addr=" + ConvertIPv4(commAddr.addr);
@@ -94,7 +81,7 @@ std::string CommAddr2Str(const CommAddr commAddr)
             desc += "Unknown]";
             break;
     }
-
     return desc;
 }
+
 } // namespace hcomm

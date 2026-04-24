@@ -16,6 +16,7 @@
 #include <mutex>
 #include <atomic>
 #include <thread>
+#include <functional>
 #include "hccl_types.h"
 #include "sal.h"
 #include "hccl_common.h"
@@ -26,7 +27,7 @@
 namespace hccl {
 
 using ClusterUIDType = struct HcclClusterMonitorUid {
-    char id[512] = {0}; // netLayerId + netInstanceId + deviceLogicId + eid 最大不超过512字节
+    char id[512] = {0};
     bool operator==(const HcclClusterMonitorUid &that) const
     {
         return std::string(this->id) == std::string(that.id);
@@ -40,6 +41,21 @@ using ClusterUIDType = struct HcclClusterMonitorUid {
         return std::string(this->id) < std::string(that.id);
     }
 };
+
+} // namespace hccl
+
+namespace std {
+
+template <> struct hash<hccl::HcclClusterMonitorUid> {
+    size_t operator()(const hccl::HcclClusterMonitorUid &u) const noexcept
+    {
+        return hash<std::string>{}(std::string(u.id));
+    }
+};
+
+} // namespace std
+
+namespace hccl {
 
 enum class ClusterMonitorStatus {
     CLUSTER_MONITOR_OK,
