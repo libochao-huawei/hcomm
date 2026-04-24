@@ -831,6 +831,7 @@ HcclResult OpRetryServerWaitResume::ProcessEvent(RetryContext *retryCtx)
         return HCCL_SUCCESS;
     }
     if (!retryCtx->isServerStateWaitResume_ && retryCtx->haveCommEnableBackupLink_) {
+        HCCL_RUN_INFO("[OpRetry][Server]OpRetryServerWaitResume, start to send cmd");
         for (auto &it : retryCtx->serverSockets_) {
             const u32 &agentId = it.first;
             RetryCommandInfo commandInfo;
