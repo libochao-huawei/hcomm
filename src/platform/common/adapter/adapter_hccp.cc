@@ -2952,7 +2952,7 @@ HcclResult HrtRaRemapMr(RdmaHandle rdmaHandle, struct MemRemapInfo info[], unsig
 
 HcclResult CreateQpWithDepthConfig(RdmaHandle rdmaHandle, s32 qpMode, const QpConfigInfo& qpConfig, QpHandle &qpHandle, struct TypicalQp& qpInfo)
 {
-    HCCL_DEBUG("CreateQp qpMode[%d], sq_depth[%u], rq_depth[%u], scq_depth[%u], rcq_depth[%u], TC[%u], SL[%u], rdmaRetryCnt[%u], rdmaTimeOut[%u]",
+    HCCL_DEBUG("CreateQp qpMode[%d], sq_depth[%u], rq_depth[%u], scq_depth[%u], rcq_depth[%u], TC[%u], SL[%u], rdmaRetryCnt[%u], rdmaTimeOut[%u]s",
         qpMode, qpConfig.sq_depth, qpConfig.rq_depth, qpConfig.scq_depth, qpConfig.rcq_depth, qpInfo.tc, qpInfo.sl, qpInfo.retryCnt,
         qpInfo.retryTime);
     
