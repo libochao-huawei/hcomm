@@ -118,6 +118,36 @@ HcclResult CcuGetDieEnableInfo(int32_t deviceLogicId, uint8_t dieId, bool &enabl
     return HcclResult::HCCL_SUCCESS;
 }
 
+inline void ConfigCcuResReqCcuMs(CcuResReq &resReq, uint8_t dieId)
+{
+    resReq.loopEngineReq[dieId] = 0;
+    resReq.blockLoopEngineReq[dieId] = 8 * 8 * 2;
+    resReq.msReq[dieId] = 0;
+    resReq.blockMsReq[dieId] = 64 * 8 * 2;
+    resReq.ckeReq[dieId] = 32;
+    resReq.blockCkeReq[dieId] = 8 * 8 * 2;
+    resReq.continuousXnReq[dieId] = 0;
+    resReq.xnReq[dieId] = 400;
+    resReq.gsaReq[dieId] = 400;
+    resReq.missionReq.reqType = MissionReqType::FUSION_MULTIPLE_DIE;
+    resReq.missionReq.req[dieId] = 2;
+}
+
+inline void ConfigCcuResReqCcuSched(CcuResReq &resReq, uint8_t dieId)
+{
+    resReq.loopEngineReq[dieId] = 0;
+    resReq.blockLoopEngineReq[dieId] = 16;
+    resReq.msReq[dieId] = 0;
+    resReq.blockMsReq[dieId] = 128;
+    resReq.ckeReq[dieId] = 32;
+    resReq.blockCkeReq[dieId] = 16;
+    resReq.continuousXnReq[dieId] = 0;
+    resReq.xnReq[dieId] = 400;
+    resReq.gsaReq[dieId] = 400;
+    resReq.missionReq.reqType = MissionReqType::FUSION_MULTIPLE_DIE;
+    resReq.missionReq.req[dieId] = 2;
+}
+
 // CCU设备管理对集合通信提供的接口
 HcclResult CcuAllocEngineResHandle(const int32_t deviceLogicId,
     const CcuEngine ccuEngine, CcuResHandle &resHandle)
@@ -136,29 +166,9 @@ HcclResult CcuAllocEngineResHandle(const int32_t deviceLogicId,
         }
 
         if (ccuEngine == CcuEngine::CCU_MS) {
-            resReq.loopEngineReq[dieId] = 0;
-            resReq.blockLoopEngineReq[dieId] = 8 * 8 * 2;
-            resReq.msReq[dieId] = 0;
-            resReq.blockMsReq[dieId] = 64 * 8 * 2;
-            resReq.ckeReq[dieId] = 32;
-            resReq.blockCkeReq[dieId] = 8 * 8 * 2;
-            resReq.continuousXnReq[dieId] = 0;
-            resReq.xnReq[dieId] = 400;
-            resReq.gsaReq[dieId] = 400;
-            resReq.missionReq.reqType = MissionReqType::FUSION_MULTIPLE_DIE;
-            resReq.missionReq.req[dieId] = 2;
+            ConfigCcuResReqCcuMs(resReq, dieId);
         } else {
-            resReq.loopEngineReq[dieId] = 0;
-            resReq.blockLoopEngineReq[dieId] = 16;
-            resReq.msReq[dieId] = 0;
-            resReq.blockMsReq[dieId] = 128;
-            resReq.ckeReq[dieId] = 32;
-            resReq.blockCkeReq[dieId] = 16;
-            resReq.continuousXnReq[dieId] = 0;
-            resReq.xnReq[dieId] = 400;
-            resReq.gsaReq[dieId] = 400;
-            resReq.missionReq.reqType = MissionReqType::FUSION_MULTIPLE_DIE;
-            resReq.missionReq.req[dieId] = 2;
+            ConfigCcuResReqCcuSched(resReq, dieId);
         }
     }
 

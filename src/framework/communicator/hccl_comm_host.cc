@@ -314,11 +314,7 @@ namespace hccl
         HcclResult retCode = LoadBinaryFromFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0, binHandle_);
         CHK_PRT_RET(retCode != HCCL_SUCCESS,
             HCCL_ERROR("[InitCollComm]errNo[0x%016llx]load aicpu file fail, path[%s] optionType[%u]"
-                    "cpuKernelMode[%u].",
-                retCode,
-                jsonPath.c_str(),
-                ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE,
-                0),
+                       "cpuKernelMode[%u].", retCode, jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0),
             retCode);
         CHK_PTR_NULL(commV2);
 
@@ -333,10 +329,8 @@ namespace hccl
         const auto opExpansionMode = GetCollCommOpExpansionMode(collComm_.get());
         HCCL_RUN_INFO("[%s]success, commId[%s], deviceLogicId[%u], devicePhyId[%u], devType[%u], "
             "userRank[%u], userRankSize[%u], opExpansionMode[%u].",
-            __func__, collComm_->GetCommId().c_str(), commAicpuParam_.deviceLogicId,
-            commAicpuParam_.devicePhyId, commAicpuParam_.deviceType,
-            commAicpuParam_.userRank, commAicpuParam_.userRankSize,
-            opExpansionMode);
+            __func__, collComm_->GetCommId().c_str(), commAicpuParam_.deviceLogicId, commAicpuParam_.devicePhyId,
+            commAicpuParam_.deviceType, commAicpuParam_.userRank, commAicpuParam_.userRankSize, opExpansionMode);
         
         const char *indOp = getenv("HCCL_INDEPENDENT_OP");
         if (indOp != nullptr && strcmp(indOp, "") != 0) {
