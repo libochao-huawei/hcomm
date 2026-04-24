@@ -1,4 +1,4 @@
-target_sources(hccl_v2_native_alg_repo PRIVATE
+target_sources(hccl_v2 PRIVATE
         ins_broadcast_parallel_executor.cc
         ins_broadcast_parallel_aicpu_executor.cc
         ins_broadcast_sole_executor.cc
