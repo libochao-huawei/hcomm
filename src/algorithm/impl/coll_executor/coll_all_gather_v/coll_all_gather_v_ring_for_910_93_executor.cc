@@ -52,16 +52,16 @@ std::vector<Slice> CollAllGatherVRingFor91093Executor::PrepareSlicesL2(const OpP
     u32 perDataSize, u64 inputMemSize) const
 {
     (void) inputMemSize;
+    std::vector<Slice> level2DataSegsSlice;
     const auto *counts = static_cast<u64 *>(param.VDataDes.counts);
     const u32 level0RankSize = level0CommInfo.localRankSize;
     const u32 level0ServerIndex = level0CommInfo.localRank;
     const u32 level1RankSize = level1CommInfo.localRankSize;
     const u32 level1ServerIndex = level1CommInfo.localRank;
     const u32 level2RankSize = level2CommInfo.localRankSize;
-    std::vector<Slice> level2DataSegsSlice;
     for (u32 i = 0; i < level2RankSize; i++) {
-        Slice sliceTemp;
         const u32 rank = i * level1RankSize * level0RankSize + level1ServerIndex * level0RankSize + level0ServerIndex;
+        Slice sliceTemp;
         sliceTemp.size = counts[rank] * perDataSize;
         const u64 offset = std::accumulate(counts, counts + rank, 0ULL);
         sliceTemp.offset = offset * perDataSize;
