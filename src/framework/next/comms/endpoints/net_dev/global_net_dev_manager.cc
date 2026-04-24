@@ -104,6 +104,7 @@ HcclResult GlobalNetDevMgr::Init(u32 devicePhyId, u32 deviceLogicId)
 
 void GlobalNetDevMgr::UnInit()
 {
+    std::unique_lock<std::mutex> lock(netDevCtxMtx_);
     if (!isInited_) {
         HCCL_INFO(
             "[GlobalNetDevMgr][UnInit]has been deinited. devicePhyId[%u], deviceLogicId[%d]", devicePhyId_, deviceLogicId_);
