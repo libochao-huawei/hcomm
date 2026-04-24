@@ -224,8 +224,8 @@ HcclResult RankConsistentcyChecker::CheckFrameRecv(const u8 *recvBuf, u32 recvBu
     //     return HCCL_E_INTERNAL;
     // }
 
-    HCCL_INFO("[RankConsistentcyChecker][CheckFrameRecv] check success, len of frame[%u], len of check data[%zu].",
-        recvBufLen, sizeof(checkInfo));
+    HCCL_INFO("[RankConsistentcyChecker][CheckFrameRecv] check success, len of frame[%u], tag[%s].",
+        recvBufLen, tag.c_str());
     return HCCL_SUCCESS;
 }
 
@@ -287,7 +287,7 @@ HcclResult RankConsistentcyChecker::RecordEnvVarCrc()
         "HCCL_MULTI_QP_THRESHOLD"
     };
 
-    envCrcTable_.clear();
+    crcTable_.clear();
     for (const auto &envVar : ENV_VAR_NAMES) {
         const char *value = getenv(envVar.c_str());
         std::string envStr = envVar + "=" + (value != nullptr ? value : "");
@@ -303,10 +303,10 @@ HcclResult RankConsistentcyChecker::RecordEnvVarCrc()
 HcclResult RankConsistentcyChecker::RecordSubCommPara(uint32_t rankNum, const uint32_t *rankIds, uint64_t subCommId, const char *parentCommIdentifier)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    CHK_PTR_RET(rankNum == 0, HCCL_ERROR("[RankConsistentcyChecker][RecordSubCommPara] rankNum is 0."), HCCL_E_PARA);
-    CHK_PTR_RET(rankNum > MAX_SUB_COMM_RANK_NUM, HCCL_ERROR("[RankConsistentcyChecker][RecordSubCommPara] rankNum exceeds max[%u].", 
+    CHK_PRT_RET(rankNum == 0, HCCL_ERROR("[RankConsistentcyChecker][RecordSubCommPara] rankNum is 0."), HCCL_E_PARA);
+    CHK_PRT_RET(rankNum > MAX_SUB_COMM_RANK_NUM, HCCL_ERROR("[RankConsistentcyChecker][RecordSubCommPara] rankNum exceeds max[%u].", 
         MAX_SUB_COMM_RANK_NUM), HCCL_E_PARA);
-    CHK_PTR_NULL(rankIds);
+    CHK_PRT_RET(rankIds);
 
     subCommInfo_.rankNum = rankNum;
     subCommInfo_.subCommId = subCommId;
@@ -376,7 +376,7 @@ HcclResult RankConsistentcyChecker::CheckHcommInfo(const u8 *recvBuf, u32 recvBu
             if (localCrcInfoGlobal.envCrcArray[i] != recvCrcInfoGlobal.crcArray[i]) {
                 std::string envVarName = ENV_VAR_NAMES[i];
                 HCCL_ERROR("[RankConsistentcyChecker][CheckHcommInfo] Env var Crc mismatch:%s local[0x%x], remote[0x%x]", 
-                    envVarName, localCrcInfoGlobal.envCrcArray[i], recvCrcInfoGlobal.crcArray[i]));
+                    envVarName, localCrcInfoGlobal.envCrcArray[i], recvCrcInfoGlobal.crcArray[i]);
                 RPT_INPUT_ERR(true, "EI0005", 
                     std::vector<std::string>({"ccl_op", "group", "para_name", "local_para", "remote_para"}), 
                     std::vector<std::string>({"N/A", tag, "envVarName", 
@@ -393,7 +393,7 @@ HcclResult RankConsistentcyChecker::CheckHcommInfo(const u8 *recvBuf, u32 recvBu
         RPT_INPUT_ERR(true, "EI0005", 
             std::vector<std::string>({"ccl_op", "group", "para_name", "local_para", "remote_para"}), 
             std::vector<std::string>({"N/A", tag, "protocolType", 
-                std::to_string(protocolType_), std::to_string(recvProtocolType)}));
+                std::to_string(static_cast<s32>(protocolType_)), std::to_string(static_cast<s32>(recvProtocolType))}));
         isDiff = true;
     }
 
@@ -612,7 +612,7 @@ HcclResult RankConsistentcyChecker::GenerateCheckFrame(HcclCheckInfo &checkInfo,
     // 添加CRC字段到校验帧
     checkInfo.crcInfoGlobal.configFileExist_ = configFileExist_;
     checkInfo.crcInfoGlobal.envCrcNum = crcTable_.size();
-    if (u32 i = 0; i < checkInfo.crcInfoGlobal.envCrcNum; i+=) {
+    if (u32 i = 0; i < checkInfo.crcInfoGlobal.envCrcNum; i++) {
         checkInfo.crcInfoGlobal.envCrcArray[i] = crcTable_[i];
     }
     // 添加CMD参数信息到校验帧

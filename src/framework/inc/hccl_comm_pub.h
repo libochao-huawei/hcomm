@@ -423,8 +423,8 @@ public:
     aclrtBinHandle GetBinHandle();
 
     // 交换信息管理接口
-    HcclResult AddExchangeInfo(void *data. uint32_t length);
-    HcclResult GetExchangeInfo(uint32_t remoteRank, void* data. uint32_t length);
+    HcclResult AddExchangeInfo(void *data, uint32_t length);
+    HcclResult GetExchangeInfo(uint32_t remoteRank, void* data, uint32_t length);
     HcclResult StoreRemoteExchangeInfo(uint32_t remoteRank, const std::vector<u8>& data);
     void ClearExchangeInfoState();
     bool IsExchangeInfoReady() const;
@@ -477,9 +477,9 @@ private:
     struct ExchangeInfoEntry {
         std::vector<u8> data;    // 交换数据
         uint32_t length;         // 数据长度
-    }
+    };
     std::mutex exchangeInfoMutex_;                                            // 交换信息互斥锁
-    boo exchangeInfoReady_ = false;                                           // 是否有待交换信息
+    bool exchangeInfoReady_ = false;                                           // 是否有待交换信息
     std::vector<u8> exchangeInfoBuf_;                                         // 本端待交换信息缓冲区
     uint32_t exchangeInfoLen_ = 0;                                            // 本端待交换数据长度
     std::unordered_map<uint32_t, ExchangeInfoEntry> remoteExchangeInfoMap_;   // 对端交换信息<remoteRank, data>
