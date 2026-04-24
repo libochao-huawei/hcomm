@@ -159,7 +159,7 @@ static HcclResult FindOneUsableEid(const int32_t devLogicId, const uint32_t devP
     if (versionRet != 0 || uboeVersion < GET_UBOE_FLAG_ENABLE_VERSION) {
         HCCL_ERROR("[%s] this package does not support UboeIpv4ToEid for device, "
             "please change new package. ret[%d], uboeVersion[%u].", __func__, versionRet, uboeVersion);
-        return;
+        return HcclResult::HCCL_E_PARA;
     }
 
     std::vector<DevEidInfo> eidInfos;
