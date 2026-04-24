@@ -340,6 +340,15 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
         CHK_RET(SelectAlgforAHC(dataSize, AHCOpType::AHC_OP_TYPE_ALLGATHER));
     }
 
+    constexpr u64 ALLGATHER_PIPELINE_THRESHOLD = 4 * 1024 * 1024; // 4MB
+    constexpr u64 ALLGATHER_PIPELINE_SLICE_THRESHOLD = 2; // 2
+    u64 maxCountPerLoop = cclBufferManager_.GetInCCLbufferSize() / HCCL_DEVICE_NUM_TWO / userRankSize_
+                          / HCCL_MIN_SLICE_ALIGN * HCCL_MIN_SLICE_ALIGN / unitSize;
+    u64 bufferSliceNum = 0;
+    if (maxCountPerLoop != 0) {
+        bufferSliceNum = (param.DataDes.count + maxCountPerLoop - 1) / maxCountPerLoop;
+    }
+
     bool isHccsPlusSio = userRankSize_ == 2 && pairLinkCounter_[static_cast<u32>(LinkTypeInServer::SIO_TYPE)] == 2 &&
                          pairLinkCounter_[static_cast<u32>(LinkTypeInServer::HCCS_TYPE)] == 0;
     isHccsPlusSio = false;
@@ -362,33 +371,6 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
         algName = "AllGatherSmallCount";
     } else if (midCountOptimMultiPod) {
         algName = "AllGatherMidCountFor91093Executor";
-    } else if (superPodNum_ > 1 && topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING) {
-        // 三级流水线优化分支：针对A3集群的大数据量跨超节点AllGather
-        constexpr u64 ALLGATHER_PIPELINE_THRESHOLD = 2 * 1024 * 1024;  // 2MB，待校准
-        HcclAlgoType configAlgTypeLevel2 = topoMatcher_->GetAlgoConfig(HcclCMDType::HCCL_CMD_ALLGATHER)[HCCL_ALGO_LEVEL_2];
-        bool enablePipeline = (configAlgTypeLevel2 == HcclAlgoType::HCCL_ALGO_TYPE_PIPELINE) ||
-                              (configAlgTypeLevel2 == HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT && dataSize >= ALLGATHER_PIPELINE_THRESHOLD);
-
-        if (enablePipeline) {
-            algName = "CollAlignedAllGatherDoubleRingPipelineFor91093Executor";
-            algType_.algoLevel2 = AlgTypeLevel2::ALG_LEVEL2_PIPELINE;
-            HCCL_INFO("[SelectAlgfor91093] Select three-level pipeline executor for dataSize[%llu], superPodNum[%u]",
-                dataSize, superPodNum_);
-        } else {
-            // 不使用Pipeline，回退到原有逻辑
-            if (!(algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RING || algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB ||
-                algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_WHOLE_RING || algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC ||
-                algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC_BROKE )) {
-                algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_NHR;
-                HCCL_WARNING("[AllGatherOperator][SelectAlgfor91093] only support ring, NB AHC and NHR in AlgoLevel1 yet, "\
-                    "default is algType=NHR.");
-            }
-            if (IsSupportUnifiedMarch(param, topoType_, serverNum_, superPodNum_)) {
-                algName = "AllGatherSemiRingExecutor";
-            } else {
-                algName = "AlignedAllGatherDoubleRingFor91093Executor";
-            }
-        }
     } else if ((param.supportSymmetricMemory || param.supportZeroCopy) &&
         (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING || param.DataDes.count * unitSize * deviceNumPerAggregation_ > HCCL_MID_COUNT_16_MB)) {
         const u32 SEVER_NUM_FOUR = 4;
@@ -404,6 +386,11 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
         } else {
             algName = "AllGatherRingZerocopyExchangeExecutor";      // 连续数据通信+额外的数据交换（AHC不支持）
         }
+    } else if (superPodNum_ > 1 && maxCountPerLoop * unitSize > ALLGATHER_PIPELINE_THRESHOLD && bufferSliceNum > ALLGATHER_PIPELINE_SLICE_THRESHOLD
+               && isOpbase && !isAHCAlgo && !multiModuleDiffDeviceNumMode_
+               && (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING
+                   || topoType_ == TopoType::TOPO_TYPE_NP_SINGLE_RING)) {
+        algName = "AllGatherPipelineFor91093Executor";
     } else {
         if (!(algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RING || algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB ||
             algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_WHOLE_RING || algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC ||
@@ -412,6 +399,9 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
             HCCL_WARNING("[AllGatherOperator][SelectAlgfor91093] only support ring, NB AHC and NHR in AlgoLevel1 yet, "\
                 "default is algType=NHR.");
         }
+        constexpr u64 ALLGATHER_PIPELINE_THRESHOLD = 16 * 1024 * 1024;  // 16MB，待校准
+        u64 maxCountPerLoop = cclBufferManager_.GetInCCLbufferSize() / HCCL_DEVICE_NUM_TWO / userRankSize_ / HCCL_MIN_SLICE_ALIGN * HCCL_MIN_SLICE_ALIGN / unitSize;
+        u64 bufferSliceNum = (param.DataDes.count + maxCountPerLoop - 1) / maxCountPerLoop;
         if (IsSupportUnifiedMarch(param, topoType_, serverNum_, superPodNum_)) {
             algName = "AllGatherSemiRingExecutor";
         } else if (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING) {
