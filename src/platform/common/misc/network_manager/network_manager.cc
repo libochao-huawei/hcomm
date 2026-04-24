@@ -1068,16 +1068,12 @@ HcclResult NetworkManager::StopNic(const HcclIpAddress &ipAddr, u32 port)
     }
 
     if (ipSock.listenedPort.size() == 0) {
-        if (ipSock.nicSocketHandle != nullptr) {
-            ret = StopNicsSocket(ipAddr);
-            CHK_PRT_RET(ret != HCCL_SUCCESS,
-                HCCL_ERROR("[Stop][Nic]errNo[0x%016llx] stop nic socket failed,devid[%u], ip[%s], return[%d]",
-                HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), devicePhyId_, ipAddr.GetReadableAddress(), ret),
-                HCCL_E_INTERNAL);
-        }
-        if (ipSock.nicSocketHandle == nullptr && ipSock.nicRdmaHandle == nullptr) {
-            raResourceInfo_.nicSocketMap.erase(ipAddr);
-        }
+        ret = StopNicsSocket(ipAddr);
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[Stop][Nic]errNo[0x%016llx] stop nic socket failed,devid[%u], ip[%s], return[%d]",
+            HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), devicePhyId_, ipAddr.GetReadableAddress(), ret),
+            HCCL_E_INTERNAL);
+        raResourceInfo_.nicSocketMap.erase(ipAddr);
     }
     return HCCL_SUCCESS;
 }
@@ -1089,28 +1085,26 @@ HcclResult NetworkManager::StopAllDeviceNicSockets()
         for (auto itPort : listenedPorts) {
             ret = StopNicsSocketListen(itSocket.first, itPort);
             if (ret != HCCL_SUCCESS) {
-                HCCL_ERROR("[Stop][AllDeviceNicSockets]errNo[0x%016llx] stop nic socket listen failed,devid[%u],ip[%s], "
+                HCCL_ERROR("[Stop][AllDeviceNicSockets]errNo[0x%016llx] stop nic socket failed,devid[%u],ip[%s], "
                            "port[%u],return[%d]",
                     HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), devicePhyId_, itSocket.first.GetReadableAddress(), itPort, ret);
                 itSocket.second.listenedPort.erase(itPort);
+                break;
             }
         }
-        if (itSocket.second.nicSocketHandle != nullptr) {
-            ret = StopNicsSocket(itSocket.first);
-            if (ret != HCCL_SUCCESS) {
-                HCCL_WARNING("[Stop][AllDeviceNicSockets] stop nic socket failed, devid[%u], ip[%s], ret[%d], "
-                    "nicSocketHandle may already be cleaned by HAL deinit",
-                    devicePhyId_, itSocket.first.GetReadableAddress(), ret);
-                itSocket.second.nicSocketHandle = nullptr;
-            }
-        }
-        if (itSocket.second.nicRdmaHandle != nullptr) {
-            ret = HrtRaRdmaDeInit(itSocket.second.nicRdmaHandle, notifyType_);
-            if (ret != HCCL_SUCCESS) {
-                HCCL_WARNING("[Stop][AllDeviceNicSockets] stop nic rdma failed, devid[%u], ip[%s], ret[%d], "
-                    "nicRdmaHandle may already be cleaned by HAL deinit",
-                    devicePhyId_, itSocket.first.GetReadableAddress(), ret);
+        ret = StopNicsSocket(itSocket.first);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[Stop][AllDeviceNicSockets]errNo[0x%016llx] stop nic socket failed,devid[%u],ip[%s],return[%d]",
+                HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), devicePhyId_, itSocket.first.GetReadableAddress(), ret);
+            if (itSocket.second.nicRdmaHandle != nullptr) {
+                HCCL_ERROR("[StopVnicSocketHandle] itSocket.second.nicRdmaHandle is not nullptr.");
+                (void)HrtRaRdmaDeInit(itSocket.second.nicRdmaHandle, notifyType_);
                 itSocket.second.nicRdmaHandle = nullptr;
+            }
+            if (itSocket.second.nicSocketHandle != nullptr) {
+                HCCL_ERROR("[StopVnicSocketHandle] itSocket.second.nicSocketHandle is not nullptr.");
+                (void)HrtRaRdmaDeInit(itSocket.second.nicSocketHandle, notifyType_);
+                itSocket.second.nicSocketHandle = nullptr;
             }
         }
     }
@@ -1471,6 +1465,11 @@ HcclResult NetworkManager::StopNicsSocket(const HcclIpAddress &ipAddr)
         HCCL_ERROR("[Stop][NicsSocket]ip[%s] is not found in nicSocketMap.", ipAddr.GetReadableAddress()),
         HCCL_E_INTERNAL);
     IpSocket &ipSock = it->second;
+    if (ipSock.nicRdmaHandle != nullptr && HrtRaRdmaDeInit(ipSock.nicRdmaHandle, notifyType_)) {
+        HCCL_ERROR("[Stop][NicsSocket]NIC rdev deInit not successfully, notifyType_[%d]", notifyType_);
+        return HCCL_E_NETWORK;
+    }
+    ipSock.nicRdmaHandle = nullptr;
     if (ipSock.nicSocketHandle != nullptr && hrtRaSocketDeInit(ipSock.nicSocketHandle)) {
         HCCL_ERROR("[Stop][NicsSocket]NIC socket deInit not successfully");
         return HCCL_E_NETWORK;
