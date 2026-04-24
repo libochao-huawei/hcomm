@@ -149,8 +149,9 @@ protected:
     HcclResult ResetNotify(RetryContext* retryCtx);
     HcclResult SetTransportStatusForStop(RetryContext* retryCtx);
     HcclResult SetTransportStatusForResume(RetryContext* retryCtx);
-    HcclResult GetLinkPortStatus(RetryContext* retryCtx, LinkPortStatus &linkPortStatus);
-    HcclResult InitChangeLinkInfo(RetryContext* retryCtx, bool incre = false);
+    HcclResult GetLinkPortStatus(RetryContext* retryCtx, LinkPortStatus &linkPortStatus,
+        bool isGetGroupAllRemoteRank = false);
+    HcclResult InitChangeLinkInfo(RetryContext* retryCtx, bool incre = false, bool isGetGroupAllRemoteRank = false);
     /*获取batchsendrecv rdma重执行时的故障信息*/
     HcclResult SetBsrOpId(RetryContext* retryCtx, HcclSendRecvType type);
     HcclResult GetBsrOpId(RetryContext* retryCtx, HcclSendRecvType type);
