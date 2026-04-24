@@ -12,7 +12,7 @@
 #include "rank_consistentcy_checker.h"
 
 namespace hccl {
-HcclResult hcclComm::AddExchangeInfo(void* data. uint32_t length)
+HcclResult hcclComm::AddExchangeInfo(void* data, uint32_t length)
 {
     CHK_PTR_NULL(data);
     CHK_PRT_RET(length == 0, HCCL_ERROR("[AddExchangeInfo] length is 0."), HCCL_E_PARA);
@@ -32,7 +32,7 @@ HcclResult hcclComm::AddExchangeInfo(void* data. uint32_t length)
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::GetExchangeInfo(uint32_t remoteRank, void* data. uint32_t length)
+HcclResult hcclComm::GetExchangeInfo(uint32_t remoteRank, void* data, uint32_t length)
 {
     CHK_PTR_NULL(data);
 
