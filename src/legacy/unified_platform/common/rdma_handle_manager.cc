@@ -19,6 +19,7 @@
 #include "network_api_exception.h"
 #include "log.h"
 #include "tokenInfo_manager.h"
+#include "hccp.h"
 
 namespace Hccl {
 
