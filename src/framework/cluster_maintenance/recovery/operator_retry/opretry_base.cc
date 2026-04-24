@@ -125,7 +125,7 @@ HcclResult OpRetryBase::IssueCommandWithOpId(std::shared_ptr<HcclSocket> socket,
 {
     HcclResult ret = Send(socket, &commandInfo, sizeof(RetryCommandInfo));
     if (ret == HCCL_SUCCESS) {
-        HCCL_DEBUG("[OpRetry]IssueCommand success, command[%s], cmd[%u]",
+        HCCL_RUN_INFO("[OpRetry]IssueCommand success, command[%s], cmd[%u]",
             GetReadableCmd(commandInfo.command), commandInfo.cmd);
     } 
     return ret;
@@ -471,7 +471,7 @@ HcclResult OpRetryBase::SetTransportStatusForResume(RetryContext* retryCtx)
 
 HcclResult OpRetryBase::Send(std::shared_ptr<HcclSocket> socket, void *data, u64 size)
 {
-    HCCL_DEBUG("[OpRetry][Send]start, para: data[%p], size[%llu Byte]", data, size);
+    HCCL_RUN_INFO("[OpRetry][Send]start, para: data[%p], size[%llu Byte]", data, size);
     const auto start = std::chrono::steady_clock::now();
     const u32 timeoutValue = std::max(static_cast<u32>(GetExternalInputHcclLinkTimeOut()), OP_RETRY_SEND_RECV_TIMEOUT) + OP_RETRY_WAIT_AICPU_TIMEOUT;
     const std::chrono::seconds timeout = std::chrono::seconds(timeoutValue);
@@ -485,13 +485,13 @@ HcclResult OpRetryBase::Send(std::shared_ptr<HcclSocket> socket, void *data, u64
         const auto elapsed =
             std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - start);
         CHK_PRT_RET(elapsed > timeout,
-            HCCL_WARNING("Send fail, Wait timeout for sockets send, dataPtr[%p], restSize[%llu Byte]", dataPtr, restSize),
+            HCCL_RUN_WARNING("Send fail, Wait timeout for sockets send, dataPtr[%p], restSize[%llu Byte]", dataPtr, restSize),
             HCCL_E_TIMEOUT);
 
         u64 compSize = 0; // 本次发送数据长度
         HcclResult ret = socket->ISend(dataPtr, restSize, compSize);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_WARNING("Send fail, dataPtr[%p], restSize[%llu Byte], compSize[%llu]", dataPtr, restSize, compSize), ret);
+            HCCL_RUN_WARNING("Send fail, dataPtr[%p], restSize[%llu Byte], compSize[%llu]", dataPtr, restSize, compSize), ret);
 
         if (restSize == compSize) { // 数据发送完成
             HCCL_DEBUG("OpRetryBase send end");
@@ -542,11 +542,12 @@ HcclResult OpRetryBase::Recv(std::shared_ptr<HcclSocket> socket, void *data, u64
     return HCCL_SUCCESS;
 }
 
-HcclResult OpRetryBase::InitChangeLinkInfo(RetryContext* retryCtx, bool incre)
+HcclResult OpRetryBase::InitChangeLinkInfo(RetryContext* retryCtx, bool incre, bool isGetGroupAllRemoteRank)
 {
     std::string newTag = std::string(reinterpret_cast<const char*>(retryCtx->localRetryInfo_.opInfo.opId.newTag));
     std::vector<u32> rankList;
-    auto ret = OpRetryManager::GetLinkInfoByIdentifier(retryCtx->deviceLogicId_, retryCtx->group_, newTag, rankList);
+    auto ret = OpRetryManager::GetLinkInfoByIdentifier(retryCtx->deviceLogicId_, retryCtx->group_, newTag,
+        rankList, isGetGroupAllRemoteRank);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[OpRetry][Agent]GetLinkPortStatus failed: deviceLogicId[%d], identify[%s], tag[%s]", 
         retryCtx->deviceLogicId_, retryCtx->group_.c_str(), newTag.c_str()), ret);
@@ -595,14 +596,16 @@ HcclResult OpRetryBase::InitChangeLinkInfo(RetryContext* retryCtx, bool incre)
     return HCCL_SUCCESS;
 }
 
-HcclResult OpRetryBase::GetLinkPortStatus(RetryContext* retryCtx, LinkPortStatus &linkPortStatus)
+HcclResult OpRetryBase::GetLinkPortStatus(RetryContext* retryCtx, LinkPortStatus &linkPortStatus,
+    bool isGetGroupAllRemoteRank)
 {
     std::string newTag = std::string(reinterpret_cast<const char*>(retryCtx->localRetryInfo_.opInfo.opId.newTag));
     HCCL_RUN_INFO("[OpRetry][Agent]begin to GetLinkPortStatus from: deviceLogicId[%d], identifier[%s] tag[%s]",
         retryCtx->deviceLogicId_, retryCtx->group_.c_str(), newTag.c_str());
 
     std::vector<u32> rankList;
-    auto ret = OpRetryManager::GetLinkInfoByIdentifier(retryCtx->deviceLogicId_, retryCtx->group_, newTag, rankList);
+    auto ret = OpRetryManager::GetLinkInfoByIdentifier(retryCtx->deviceLogicId_, retryCtx->group_, newTag,
+        rankList, isGetGroupAllRemoteRank);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[OpRetry][Agent]GetLinkPortStatus failed: deviceLogicId[%d], identify[%s], tag[%s]", 
             retryCtx->deviceLogicId_, retryCtx->group_.c_str(), newTag.c_str()), ret);
