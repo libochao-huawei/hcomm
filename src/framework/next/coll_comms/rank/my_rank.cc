@@ -293,6 +293,7 @@ HcclResult MyRank::CheckChannelParam(CommEngine engine, const HcclChannelDesc &c
     return HCCL_SUCCESS;
 }
 
+// 批量创建channels，如果CCU资源不足（如Xn, Cke, channel ctx, jetty ctx, wqebb）会失败，返回HCCL_E_UNAVAIL
 HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc* channelDescs, uint32_t channelNum,
         std::vector<HcommChannelDesc> &hcommDescs, ChannelHandle *channelHandles)
 {

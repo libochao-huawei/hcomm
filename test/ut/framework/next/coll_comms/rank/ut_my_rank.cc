@@ -56,6 +56,11 @@ protected:
         MOCKER_CPP(&hcomm::CcuResContainer::Init).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
         MOCKER_CPP(&hccl::MyRank::TryInitCcuInstance).stubs().will(returnValue(HCCL_SUCCESS));
     }
+
+    uint32_t DEFAULT_MODE = 0;
+    uint32_t AICPU_TS_MODE = 2;
+    uint32_t CCU_MS_MODE = 5;
+    uint32_t CCU_SCHED_MODE = 6;
 };
 
 TEST_F(MyRankTest, Ut_When_QueryListenPort_Listen_Port_Expect_SUCCESS)
@@ -159,23 +164,30 @@ TEST_F(MyRankTest, Ut_When_BatchCreateChannels_Expect_SUCCESS)
     channelDesc[2].localEndpoint = localEp;
     channelDesc[2].remoteEndpoint = rmtEp2;
 
+    u32 channelIdx0 = 0u;
+    u32 channelIdx1 = 1u;
+    u32 channelIdx2 = 2u;
+    u32 RmtEp1reuseIdx0 = 0u;
+    u32 RmtEp1reuseIdx1 = 1u;
+    u32 RmtEp2reuseIdx0 = 0u;
+
     std::vector<HcommChannelDesc> hcommDesc(3);
     EXPECT_EQ(myRank.BatchCreateSockets(channelDesc, 1, "test", hcommDesc), HCCL_SUCCESS);
     std::vector<ChannelHandle> hostChannelHandles(3);
     ChannelHandle *hostChannelHandleList = hostChannelHandles.data();
     EXPECT_EQ(myRank.BatchCreateChannels(COMM_ENGINE_AICPU_TS, channelDesc, 1, hcommDesc, hostChannelHandleList), HCCL_SUCCESS);
     EXPECT_EQ(myRank.newChannels_.size(), 1);
-    EXPECT_EQ(myRank.newChannels_[0], std::make_pair(0u, 0u));
+    EXPECT_EQ(myRank.newChannels_[0], std::make_pair(channelIdx0, RmtEp1reuseIdx0));
 
     EXPECT_EQ(myRank.BatchCreateSockets(channelDesc, 2, "test", hcommDesc), HCCL_SUCCESS);
     EXPECT_EQ(myRank.BatchCreateChannels(COMM_ENGINE_AICPU_TS, channelDesc, 2, hcommDesc, hostChannelHandleList), HCCL_SUCCESS);
     EXPECT_EQ(myRank.newChannels_.size(), 1);
-    EXPECT_EQ(myRank.newChannels_[0], std::make_pair(1u, 1u));
+    EXPECT_EQ(myRank.newChannels_[0], std::make_pair(channelIdx1, RmtEp1reuseIdx1));
 
     EXPECT_EQ(myRank.BatchCreateSockets(channelDesc, 3, "test", hcommDesc), HCCL_SUCCESS);
     EXPECT_EQ(myRank.BatchCreateChannels(COMM_ENGINE_AICPU_TS, channelDesc, 3, hcommDesc, hostChannelHandleList), HCCL_SUCCESS);
     EXPECT_EQ(myRank.newChannels_.size(), 1);
-    EXPECT_EQ(myRank.newChannels_[0], std::make_pair(2u, 0u));
+    EXPECT_EQ(myRank.newChannels_[0], std::make_pair(channelIdx2, RmtEp2reuseIdx0));
 
     MOCKER_CPP(&hcomm::ChannelProcess::ChannelGetStatus).stubs().with(any()).will(returnValue(HCCL_E_AGAIN));
     MOCKER_CPP(&Hccl::EnvSocketConfig::GetLinkTimeOut).stubs().with(any()).will(returnValue((s32)(1)));
@@ -201,9 +213,9 @@ TEST_F(MyRankTest, Ut_Init_When_Default_Mode_Expect_Set_By_Env)
     HcclMem cclBuffer;
     CreateCclBuffer(cclBuffer);
 
-    uint32_t defaultOpExpansionMode = 0;
+    uint32_t defaultOpExpansionMode = DEFAULT_MODE;
     EXPECT_EQ(myRank.Init(cclBuffer, defaultOpExpansionMode, 2), HCCL_SUCCESS);
-    EXPECT_EQ(myRank.opExpansionMode_, 6);
+    EXPECT_EQ(myRank.opExpansionMode_, CCU_SCHED_MODE);
     unsetenv("HCCL_OP_EXPANSION_MODE");
 }
 
@@ -223,9 +235,9 @@ TEST_F(MyRankTest, Ut_Init_When_Ccu_Driver_Fail_Expect_Fallback_Aicpu)
     HcclMem cclBuffer;
     CreateCclBuffer(cclBuffer);
 
-    uint32_t opExpansionModeMs = 5;
+    uint32_t opExpansionModeMs = CCU_MS_MODE;
     EXPECT_EQ(myRank.Init(cclBuffer, opExpansionModeMs, 2), HCCL_SUCCESS);
-    EXPECT_EQ(myRank.opExpansionMode_, 2);
+    EXPECT_EQ(myRank.opExpansionMode_, AICPU_TS_MODE);
     unsetenv("HCCL_INDEPENDENT_OP");
 }
 
@@ -247,9 +259,9 @@ TEST_F(MyRankTest, Ut_Init_When_Ccu_Ms_Insufficient_Expect_Fallback_Sched)
     HcclMem cclBuffer;
     CreateCclBuffer(cclBuffer);
 
-    uint32_t opExpansionModeMs = 5;
+    uint32_t opExpansionModeMs = CCU_MS_MODE;
     EXPECT_EQ(myRank.Init(cclBuffer, opExpansionModeMs, 2), HCCL_SUCCESS);
-    EXPECT_EQ(myRank.opExpansionMode_, 6);
+    EXPECT_EQ(myRank.opExpansionMode_, CCU_SCHED_MODE);
     unsetenv("HCCL_INDEPENDENT_OP");
 }
 
@@ -269,9 +281,9 @@ TEST_F(MyRankTest, Ut_Init_When_Ccu_Ms_And_Sched_Insufficient_Expect_Fallback_Ai
     HcclMem cclBuffer;
     CreateCclBuffer(cclBuffer);
 
-    uint32_t opExpansionModeMs = 5;
+    uint32_t opExpansionModeMs = CCU_MS_MODE;
     EXPECT_EQ(myRank.Init(cclBuffer, opExpansionModeMs, 2), HCCL_SUCCESS);
-    EXPECT_EQ(myRank.opExpansionMode_, 2);
+    EXPECT_EQ(myRank.opExpansionMode_, AICPU_TS_MODE);
     unsetenv("HCCL_INDEPENDENT_OP");
 }
 
@@ -291,7 +303,7 @@ TEST_F(MyRankTest, Ut_Init_When_Resource_Fail_Expect_Fail)
     HcclMem cclBuffer;
     CreateCclBuffer(cclBuffer);
 
-    uint32_t opExpansionModeMs = 5;
+    uint32_t opExpansionModeMs = CCU_MS_MODE;
     EXPECT_EQ(myRank.Init(cclBuffer, opExpansionModeMs, 2), HCCL_E_PARA);
     unsetenv("HCCL_INDEPENDENT_OP");
 }
@@ -361,7 +373,7 @@ TEST_F(MyRankTest, St_BatchCreateChannels_When_Resource_fallback_Expect_Return_H
     myRank.rankPairMgr_->Get(rankIdPair1, rankPair1);
     rankPair1->GetEndpointPair(endpointDescPair1, endpointPair1);
 
-    // 检查channelHandle是否被清理
+    // 期望channelHandle被清理
     EXPECT_EQ(endpointPair1->channelHandles_.size(), 1);
     EXPECT_NE(endpointPair1->channelHandles_.find(COMM_ENGINE_CCU), endpointPair1->channelHandles_.end());
     EXPECT_EQ(endpointPair1->channelHandles_[COMM_ENGINE_CCU].size(), 0);
@@ -374,7 +386,7 @@ TEST_F(MyRankTest, St_BatchCreateChannels_When_Resource_fallback_Expect_Return_H
     myRank.rankPairMgr_->Get(rankIdPair2, rankPair2);
     rankPair2->GetEndpointPair(endpointDescPair2, endpointPair2);
 
-    // 检查channelHandle是否被清理
+    // 期望channelHandle被清理
     EXPECT_EQ(endpointPair2->channelHandles_.size(), 1);
     EXPECT_NE(endpointPair2->channelHandles_.find(COMM_ENGINE_CCU), endpointPair2->channelHandles_.end());
     EXPECT_EQ(endpointPair2->channelHandles_[COMM_ENGINE_CCU].size(), 0);
@@ -439,9 +451,15 @@ TEST_F(MyRankTest, St_BatchCreateChannels_Multi_Times_When_fallback_Expect_Retur
     // 第一次调用BatchCreateChannels成功，创建3个channel
     EXPECT_EQ(myRank.BatchCreateChannels(COMM_ENGINE_CCU, channelDesc, 3, hcommDesc, hostChannelHandleList), HCCL_SUCCESS);
     EXPECT_EQ(myRank.newChannels_.size(), 3);
-    EXPECT_EQ(myRank.newChannels_[0], std::make_pair(0u, 0u));
-    EXPECT_EQ(myRank.newChannels_[1], std::make_pair(1u, 1u));
-    EXPECT_EQ(myRank.newChannels_[2], std::make_pair(2u, 0u));
+    u32 channelIdx0 = 0u;
+    u32 channelIdx1 = 1u;
+    u32 channelIdx2 = 2u;
+    u32 RmtEp1reuseIdx0 = 0u;
+    u32 RmtEp1reuseIdx1 = 1u;
+    u32 RmtEp2reuseIdx0 = 0u;
+    EXPECT_EQ(myRank.newChannels_[0], std::make_pair(channelIdx0, RmtEp1reuseIdx0));
+    EXPECT_EQ(myRank.newChannels_[1], std::make_pair(channelIdx1, RmtEp1reuseIdx1));
+    EXPECT_EQ(myRank.newChannels_[2], std::make_pair(channelIdx2, RmtEp2reuseIdx0));
 
     // 获取到rmtEp1的endpointPair
     RankIdPair rankIdPair1 = std::make_pair(0, 1);
@@ -459,12 +477,12 @@ TEST_F(MyRankTest, St_BatchCreateChannels_Multi_Times_When_fallback_Expect_Retur
     myRank.rankPairMgr_->Get(rankIdPair2, rankPair2);
     rankPair2->GetEndpointPair(endpointDescPair2, endpointPair2);
     
-    // 期望到rmtEp1的channelHandle不为空
+    // 期望到rmtEp1的channelHandle有两个channel
     EXPECT_EQ(endpointPair1->channelHandles_.size(), 1);
     EXPECT_NE(endpointPair1->channelHandles_.find(COMM_ENGINE_CCU), endpointPair1->channelHandles_.end());
     EXPECT_EQ(endpointPair1->channelHandles_[COMM_ENGINE_CCU].size(), 2);
 
-    // 期望到rmtEp2的channelHandle不为空
+    // 期望到rmtEp2的channelHandle有一个channel
     EXPECT_EQ(endpointPair2->channelHandles_.size(), 1);
     EXPECT_NE(endpointPair2->channelHandles_.find(COMM_ENGINE_CCU), endpointPair2->channelHandles_.end());
     EXPECT_EQ(endpointPair2->channelHandles_[COMM_ENGINE_CCU].size(), 1);
@@ -473,12 +491,12 @@ TEST_F(MyRankTest, St_BatchCreateChannels_Multi_Times_When_fallback_Expect_Retur
     EXPECT_EQ(myRank.BatchCreateChannels(COMM_ENGINE_CCU, channelDesc, 5, hcommDesc, hostChannelHandleList), HCCL_E_UNAVAIL);
     EXPECT_EQ(myRank.newChannels_.size(), 0);
 
-    // 期望到rmtEp1的channelHandle不被清理
+    // 期望到rmtEp1的channelHandle不被清理，保持两个channel
     EXPECT_EQ(endpointPair1->channelHandles_.size(), 1);
     EXPECT_NE(endpointPair1->channelHandles_.find(COMM_ENGINE_CCU), endpointPair1->channelHandles_.end());
     EXPECT_EQ(endpointPair1->channelHandles_[COMM_ENGINE_CCU].size(), 2);
 
-    // 期望到rmtEp2的channelHandle只有第二次新创建的channel2被清理
+    // 期望到rmtEp2的channelHandle只有第二次新创建的channel2被清理，保持第一次创建时的一个channel
     EXPECT_EQ(endpointPair2->channelHandles_.size(), 1);
     EXPECT_NE(endpointPair2->channelHandles_.find(COMM_ENGINE_CCU), endpointPair2->channelHandles_.end());
     EXPECT_EQ(endpointPair2->channelHandles_[COMM_ENGINE_CCU].size(), 1);
