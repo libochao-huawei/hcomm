@@ -105,7 +105,9 @@ void ExecutorTracer::TaskMonitor(void)
     (void)AicpuHcclProcess::AicpuGetCommAll(aicpuCommInfo);
     for (auto &commInfo : aicpuCommInfo) {
         hccl::HcclCommAicpu *hcclAicpu = commInfo.second;
-        (void)hcclAicpu->StreamTaskMonitor();
+        if (hcclAicpu->GetCommInfoStatus()) {
+            (void)hcclAicpu->StreamTaskMonitor();
+        }
     }
     rwlock.readUnlock();
 }
