@@ -297,9 +297,9 @@ message(STATUS "ccl_kernel_plf BUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}")
 message(STATUS "ccl_kernel_plf ASCEND_CANN_PACKAGE_PATH=${ASCEND_CANN_PACKAGE_PATH}")
 
 # 创建 ccl_kernel_plf共享库
-add_library(ccl_kernel_plf  SHARED)
+add_library(ccl_kernel_plf SHARED)
 # 创建 ccl_kernel_plf_a静态库
-add_library(ccl_kernel_plf_a  STATIC)
+add_library(ccl_kernel_plf_a STATIC)
 
 # 指定ccl_kernel_plf所需包含文件搜索路径
 if(BUILD_OPEN_PROJECT)

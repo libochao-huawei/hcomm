@@ -207,6 +207,23 @@ install(TARGETS  ccl_dpu
     LIBRARY DESTINATION ${INSTALL_DPU_KERNEL_JSON_DIR} OPTIONAL
 )
 
+# 解析 libccl_dpu.ini
+add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/libccl_dpu.json
+    COMMAND ${HI_PYTHON} ${HCOMM_ROOT_DIR}/cmake/scripts/parser_ini.py
+            ${HCOMM_ROOT_DIR}/src/legacy/framework/communicator/hostdpu/ccl_dpu.ini
+            ${CMAKE_CURRENT_BINARY_DIR}/libccl_dpu.json
+    DEPENDS ${HCOMM_ROOT_DIR}/src/legacy/framework/communicator/hostdpu/ccl_dpu.ini
+    COMMENT "Generating libccl_dpu.json"
+    VERBATIM
+)
+add_custom_target(dpu_kernel_json
+    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/libccl_dpu.json
+)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libccl_dpu.json
+    DESTINATION ${INSTALL_DPU_KERNEL_JSON_DIR} OPTIONAL
+)
+
 # 需要链接的库，后需增加
 IF (NOT DEFINED ENV{HCCL_LOCAL_BUILD})
 target_link_libraries(hccl_v2 PRIVATE
