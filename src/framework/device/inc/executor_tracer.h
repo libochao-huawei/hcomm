@@ -25,12 +25,12 @@ public:
                                  CqeQueryInput &cqeQueryInput);
 private:
     static void HandleCqeStatus(AicpuComContext *const ctx);
-    static void StopLaunchCommandHandle(AicpuComContext *const ctx);
-    static void KfcCommandHandle(AicpuComContext *const ctx);
+    static void StopLaunchCommandHandle(AicpuComContext *const ctx, bool isDfx);
+    static void KfcCommandHandle(AicpuComContext *const ctx, bool isDfx);
     static void HandleBackGround(AicpuComContext *const ctx);
     static void HandleCqeStatusInComm();
     static void HandleReportStatusInComm();
-    static void HandleAICPUCommand(hccl::HcclCommAicpu *const commInfo);
+    static void HandleAICPUCommand(hccl::HcclCommAicpu *const commInfo, bool isDfx);
     static void StopBackGround(AicpuComContext *const ctx,bool &isNotStop);
     static void HandleDestroyComm(AicpuComContext *const ctx);
     static void HandleSwitchNic(AicpuComContext *const ctx);
