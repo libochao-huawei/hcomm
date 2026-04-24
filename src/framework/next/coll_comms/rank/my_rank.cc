@@ -400,7 +400,7 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
         }
         if (ret == HCCL_E_UNAVAIL) {
             // 申请channel因资源不足失败，清理已申请的channel
-            HCCL_WARNING("[%s] create channel failed, channelIndex[%u], remoteRank[%u], engine[%d], reuseIdx[%u]",
+            HCCL_RUN_WARNING("[%s] create channel failed, channelIndex[%u], remoteRank[%u], engine[%d], reuseIdx[%u], need clean new channels",
                 __func__, i + 1, remoteRank, engine, reuseIdx);
             isAllSuccess = false;
             break;
@@ -422,7 +422,7 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
 
     // 如果申请失败，清理endpoint pair中记录的channel handle
     if (!isAllSuccess) {
-        HCCL_WARNING("[%s] create channel failed, destroy channels num[%u], engine[%d]", __func__, newChannels_.size(), engine);
+        HCCL_RUN_WARNING("[%s] create channel failed, destroy new channels num[%u], engine[%d]", __func__, newChannels_.size(), engine);
         CHK_RET(DestroyNewChannels(engine, channelDescs));
         return HCCL_E_UNAVAIL;
     }

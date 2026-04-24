@@ -63,7 +63,7 @@ HcclResult CcuResContainer::ChangeMode(uint32_t opExpansionMode)
         opExpansionMode_ = opExpansionMode;
         auto ret = Init();
         if (ret == HcclResult::HCCL_E_AGAIN || ret == HcclResult::HCCL_E_UNAVAIL) {
-            HCCL_WARNING("[%s] init ret[%d] need fallback, opExpansionMode[%d].", __func__, ret, opExpansionMode_);
+            HCCL_RUN_WARNING("[%s] init ret[%d] need fallback, opExpansionMode[%d].", __func__, ret, opExpansionMode_);
             return ret;
         }
         CHK_RET(ret);
@@ -105,6 +105,7 @@ HcclResult CcuResContainer::Init()
             return ret;
         }
     }
+    // 除重复拉起和资源不足这两种需要回退的情况外，不允许其它错误返回HCCL_E_AGAIN和HCCL_E_UNAVAIL错误码
 
     return HcclResult::HCCL_SUCCESS;
 }

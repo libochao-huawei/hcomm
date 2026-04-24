@@ -297,7 +297,7 @@ TEST_F(MyRankTest, Ut_Init_When_Resource_Fail_Expect_Fail)
 }
 
 // 测试BatchCreateChannels在资源不足时销毁新申请的channel
-TEST_F(MyRankTest, Ut_BatchCreateChannels_When_Resource_fallback_Expect_Return_HCCL_E_UNAVAIL)
+TEST_F(MyRankTest, St_BatchCreateChannels_When_Resource_fallback_Expect_Return_HCCL_E_UNAVAIL)
 {
     uint32_t devPort = 60001;
     MOCKER_CPP(&Hccl::IRankGraph::GetDevicePort).stubs().with(any(), outBoundP(&devPort)).will(returnValue(HCCL_SUCCESS));
@@ -381,7 +381,7 @@ TEST_F(MyRankTest, Ut_BatchCreateChannels_When_Resource_fallback_Expect_Return_H
 }
 
 // 测试多次调用BatchCreateChannels，在最后一次资源不足时只销毁新申请的channel
-TEST_F(MyRankTest, Ut_BatchCreateChannels_Multi_Times_When_fallback_Expect_Return_HCCL_E_UNAVAIL)
+TEST_F(MyRankTest, St_BatchCreateChannels_Multi_Times_When_fallback_Expect_Return_HCCL_E_UNAVAIL)
 {
     uint32_t devPort = 60001;
     MOCKER_CPP(&Hccl::IRankGraph::GetDevicePort).stubs().with(any(), outBoundP(&devPort)).will(returnValue(HCCL_SUCCESS));
