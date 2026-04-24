@@ -343,6 +343,7 @@ namespace hccl
             static_cast<const void *>(&transportResInfo_), sizeof(transportResInfo_),
             isUseRankPort_, isUsedRdmaLevel0_, nicRanksPorts, vnicRanksPorts, useSuperPodMode_,
             devIpAddr_, hostIp_, localVnicIp_, netDevCtxMap_)));
+        transportManager_->SetHcclComm(static_cast<hcclComm *>(this));
         CHK_SMART_PTR_NULL(transportManager_);
         (void)transportManager_->SetPortConfig(commPortConfig_.devPortSwitchOn);
         (void)transportManager_->SetIsStandardCard(isStandardCard_);
@@ -356,6 +357,7 @@ namespace hccl
             static_cast<const void *>(&transportResInfo_), sizeof(transportResInfo_),
             isUseRankPort_, isUsedRdmaLevel0_, nicRanksPorts, vnicRanksPorts, useSuperPodMode_,
             devIpAddr_, hostIp_, localVnicIp_, netDevCtxMap_)));
+        indptOpTransportManager_->SetHcclComm(static_cast<hcclComm *>(this));
         CHK_SMART_PTR_NULL(indptOpTransportManager_);
         (void)indptOpTransportManager_->SetPortConfig(commPortConfig_.devPortSwitchOn);
         (void)indptOpTransportManager_->SetIsStandardCard(isStandardCard_);

@@ -123,6 +123,11 @@ HcclResult TransportManager::CreateVirturalTransport(SingleSubCommTransport& sin
     return HCCL_SUCCESS;
 }
 
+void TransportManager::SetHcclComm(hcclComm *comm)
+{
+    hcclComm_ = comm;
+}
+
 void TransportManager::SetQpQosAttr(u32 trafficClass, u32 serviceLevel)
 {
     trafficClass_ = trafficClass;
@@ -1417,6 +1422,33 @@ HcclResult TransportManager::SetMachinePara(const std::string &tag, MachineType 
     machinePara.exchangeInfo.resize(rankConsistentDataLength_);
     CHK_RET(RankConsistentcyChecker::GetInstance().GetCheckFrame(&machinePara.exchangeInfo[0],
         rankConsistentDataLength_, tag));
+  
+    // 多channel场景处理
+    bool isNewChannel = true;
+    for (const auto &transportPair : transportMap_) { // 检查transportMap_中是否已存在该remoteRank链路
+        if (transportPair.second && transportPair.second->GetRemoteRank() == machinePara.remoteUserrank) {
+            isNewChannel = false;
+            break;
+        }
+    } 
+
+    if (isNewChannel && hcclComm_ != nullptr && hcclComm_->IsExchangeInfoReady()) {
+        std::vector<u8> userExchangeInfo = hcclComm_->GetExchangeInfoBuf();
+        uint32_t userExchangeInfoLen = hcclComm_->GetExchangeInfoLen();
+        // 追加HCCL算子交换信息到exchangeInfo末尾
+        if (userExchangeInfoLen > 0 && !userExchangeInfo.empty()) {
+            size_t originalSize = machinePara.exchangeInfo.size();
+            machinePara.exchangeInfo.resize(originalSize + userExchangeInfoLen);
+            s32 sRet = memcpy_s(&machinePara.exchangeInfo[originalSize], userExchangeInfoLen, userExchangeInfo.data(), userExchangeInfoLen);
+            CHK_PRT_RET(sRet != EOK, 
+                HCCL_ERROR("[SetMachinePara] memcpy_s user exchange info failed, ret[%d]", sRet), HCCL_E_MEMORY);
+        }
+        HCCL_INFO("[SetMachinePara] New channel, append HCCL exchange info, len[%u]", userExchangeInfoLen);
+    }else {
+        // 存量channel不交换HCCL信息
+        HCCL_INFO("[SetMachinePara] Existing channel, skip HCCL exchange info");
+    }
+
     machinePara.supportDataReceivedAck = supportDataReceivedAck; /* NeedDataReceivedAck(); */
     machinePara.nicDeploy = nicDeployment_;
     machinePara.localSocketPort = rankInfoList_[userRank_].hostPort;
@@ -1555,6 +1587,14 @@ HcclResult TransportManager::TransportInit(const u32 dstRank, MachinePara &machi
             recvData.size(), machinePara.exchangeInfo.size()), HCCL_E_INTERNAL);
         CHK_RET(RankConsistentcyChecker::GetInstance().CheckFrameRecv(&recvData[0],
             recvData.size(), machinePara.tag.c_str()));
+
+        if (hcclComm_ != nullptr) {
+            u64 hcommInfoLen = RankConsistentcyChecker::GetInstance().GetHcommInfoLength();
+            if (recvData.size() > hcommInfoLen) {
+                std::vector<u8> remoteUserData(recvData.begin() + hcommInfoLen, recvData.end());
+                CHK_RET(hcclComm_->StoreRemoteExchangeInfo(dstRank, remoteUserData));
+            }
+        }
     }
     return HCCL_SUCCESS;
 }

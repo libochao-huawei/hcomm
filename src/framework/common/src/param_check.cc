@@ -447,6 +447,9 @@ HcclResult HcclParseRanktable(const std::string &rankTableM, const std::string &
     std::string curVersion = GetExternalInputCannVersion();
     CHK_RET(RankConsistentcyChecker::GetInstance().RecordVerInfo(curVersion));
 
+    // 记录环境变量CRC
+    CHK_RET(RankConsistentcyChecker::GetInstance().RecordEnvVarCrc());
+
     // ranktableCRC计算
     if (rankTableM.c_str() == nullptr) {
         HCCL_INFO("rank table is null, rankTableCrc is 0.");
