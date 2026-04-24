@@ -1319,6 +1319,14 @@ HcclResult HcclCreateSubCommConfig(HcclComm *comm, uint32_t rankNum, uint32_t *r
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s]errNo[0x%016llx] load comm config failed.", __func__, HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
 
+    // 记录子通信域参数到一致性校验器（包含父通信域标识符）
+    ret = RankConsistentcyChecker::GetInstance().RecordSubCommPara(randNum, 
+        rankIds, subCommId, globalComm->GetIdentifier().c_str());
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[%s]errNo[0x%016llx] record subcomm para failed, rankNum[%u], subCommId[%llu], parentComm[%s].", 
+            __func__, HCCL_ERROR_CODE(ret)), rankNum, subCommId, globalComm->GetIdentifier().c_str());
+
+
     CHK_RET(HcclCreateSubCommConfigInner(globalComm, rankNum, rankIds, subCommRankId, commConfig, subComm));
 
     // 记录groupName和UDI的映射

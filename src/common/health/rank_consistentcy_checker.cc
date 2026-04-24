@@ -176,26 +176,53 @@ HcclResult RankConsistentcyChecker::CheckFrameRecv(const u8 *recvBuf, u32 recvBu
     CHK_PRT_RET(recvBufLen < sizeof(HcclCheckInfo),
         HCCL_ERROR("[RankConsistentcyChecker][CheckFrameRecv] errNo[0x%016llx] recvBufLen[%u]is less than "
         "check info[%zu].", HCCL_ERROR_CODE(HCCL_E_INTERNAL), recvBufLen, sizeof(HcclCheckInfo)), HCCL_E_PARA);
+    
+    // 校验Hcomm基础信息
+    u64 hcommInfoLen = GetHcommInfoLength();
+    CHK_PRT_RET(recvBufLen < hcommInfoLen, 
+        HCCL_ERROR("[RankConsistentcyChecker][CheckFrameRecv] recvBufLen[%u] < hcommInfoLen[%u]", 
+            recvBufLen, hcommInfoLen), HCCL_E_PARA);
 
-    HcclCheckInfo checkInfoRecv;
-    // 对固定长度的全局数组变量，结构体变量进行初始化和拷贝，可以不用检查初始化安全函数返回值
-    (void)memset_s(&checkInfoRecv, sizeof(HcclCheckInfo), 0, sizeof(HcclCheckInfo));
-    (void)memcpy_s(&checkInfoRecv, sizeof(HcclCheckInfo), recvBuf, sizeof(HcclCheckInfo));
+    HcclResult ret = CheckHcommInfo(recvBuf, hcommInfoLen, tag);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[RankConsistentcyChecker][CheckFrameRecv] Hcom basic info check failed, tag[%s]", 
+            tag.c_str());
+        return ret;
+    }
+    HCCL_INFO("[RankConsistentcyChecker][CheckFrameRecv] Hcomm basic info check passed, tag[%s]", tag.c_str());
 
-    HcclCheckInfo checkInfo;
-    CHK_RET(GenerateCheckFrame(checkInfo, tag));
-    if (checkInfo.cmdInfo.cmdType == HcclCMDType::HCCL_CMD_SEND) {
-        checkInfo.cmdInfo.cmdType = HcclCMDType::HCCL_CMD_RECEIVE;
-        checkInfo.cmdInfo.rank = checkInfo.cmdInfo.selfRank;
-    } else if (checkInfo.cmdInfo.cmdType == HcclCMDType::HCCL_CMD_RECEIVE) {
-        checkInfo.cmdInfo.cmdType = HcclCMDType::HCCL_CMD_SEND;
-        checkInfo.cmdInfo.rank = checkInfo.cmdInfo.selfRank;
+    // 校验HCCL算子信息
+    // 检查是否包含HCCL算子信息
+    if (recvBufLen > hcommInfoLen) {
+        u32 hcclOpInfoLen = recvBufLen - hcommInfoLen;
+        ret = CheckHcclOpInfo(recvBuf + hcommInfoLen, hcclOpInfoLen, tag);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[RankConsistentcyChecker][CheckFrameRecv] HCCL operator info check failed, tag[%s]", 
+                tag.c_str());
+            return ret;
+        }
+        HCCL_INFO("[RankConsistentcyChecker][CheckFrameRecv] HCCL operator info check passed, tag[%s]", tag.c_str());
     }
 
-    checkInfo.cmdInfo.selfRank = 0; // 自身的子group rank 不做校验
-    if (CompareFrame(checkInfo, checkInfoRecv)) {
-        return HCCL_E_INTERNAL;
-    }
+    // HcclCheckInfo checkInfoRecv;
+    // // 对固定长度的全局数组变量，结构体变量进行初始化和拷贝，可以不用检查初始化安全函数返回值
+    // (void)memset_s(&checkInfoRecv, sizeof(HcclCheckInfo), 0, sizeof(HcclCheckInfo));
+    // (void)memcpy_s(&checkInfoRecv, sizeof(HcclCheckInfo), recvBuf, sizeof(HcclCheckInfo));
+
+    // HcclCheckInfo checkInfo;
+    // CHK_RET(GenerateCheckFrame(checkInfo, tag));
+    // if (checkInfo.cmdInfo.cmdType == HcclCMDType::HCCL_CMD_SEND) {
+    //     checkInfo.cmdInfo.cmdType = HcclCMDType::HCCL_CMD_RECEIVE;
+    //     checkInfo.cmdInfo.rank = checkInfo.cmdInfo.selfRank;
+    // } else if (checkInfo.cmdInfo.cmdType == HcclCMDType::HCCL_CMD_RECEIVE) {
+    //     checkInfo.cmdInfo.cmdType = HcclCMDType::HCCL_CMD_SEND;
+    //     checkInfo.cmdInfo.rank = checkInfo.cmdInfo.selfRank;
+    // }
+
+    // checkInfo.cmdInfo.selfRank = 0; // 自身的子group rank 不做校验
+    // if (CompareFrame(checkInfo, checkInfoRecv)) {
+    //     return HCCL_E_INTERNAL;
+    // }
 
     HCCL_INFO("[RankConsistentcyChecker][CheckFrameRecv] check success, len of frame[%u], len of check data[%zu].",
         recvBufLen, sizeof(checkInfo));
@@ -215,6 +242,8 @@ void RankConsistentcyChecker::ClearCheckInfo()
     // 相关规范的例外场景，对固定数组的memset_s可以不判断返回值
     (void)memset_s(cannVersion_, MAX_CANN_VERSION_LEN + 1, 0, MAX_CANN_VERSION_LEN + 1);
     protocolType_ = ProtocolType::RESERVED;
+    subCommInfoRecorded_ = false;
+    (void)memset_s(&subCommInfo_, sizeof(subCommInfo_), 0, sizeof(subCommInfo_));
     return;
 }
 
@@ -248,7 +277,262 @@ void RankConsistentcyChecker::SetCheckCannVersionSwitch(const bool cannVerCheckS
     return;
 }
 
+HcclResult RankConsistentcyChecker::RecordEnvVarCrc()
+{
+    static const std::vector<std::string> ENV_VAR_NAMES = {
+        "HCCL_ALGO",
+        "HCCL_BUFFSIZE",
+        "HCCL_OP_EXPANSION_MODE",
+        "HCCL_RDMA_QPS_PER_CONNECTION",
+        "HCCL_MULTI_QP_THRESHOLD"
+    };
+
+    envCrcTable_.clear();
+    for (const auto &envVar : ENV_VAR_NAMES) {
+        const char *value = getenv(envVar.c_str());
+        std::string envStr = envVar + "=" + (value != nullptr ? value : "");
+        u32 crc = 0;
+        CHK_RET(CalcStringCrc(envStr.c_str(), crc));
+        crcTable_.push_back(crc);
+        HCCL_INFO("[RankConsistentcyChecker][RecordEnvVarCrc] %s, crc[0x%x]", envStr.c_str(), crc);
+    }
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult RankConsistentcyChecker::RecordSubCommPara(uint32_t rankNum, const uint32_t *rankIds, uint64_t subCommId, const char *parentCommIdentifier)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    CHK_PTR_RET(rankNum == 0, HCCL_ERROR("[RankConsistentcyChecker][RecordSubCommPara] rankNum is 0."), HCCL_E_PARA);
+    CHK_PTR_RET(rankNum > MAX_SUB_COMM_RANK_NUM, HCCL_ERROR("[RankConsistentcyChecker][RecordSubCommPara] rankNum exceeds max[%u].", 
+        MAX_SUB_COMM_RANK_NUM), HCCL_E_PARA);
+    CHK_PTR_NULL(rankIds);
+
+    subCommInfo_.rankNum = rankNum;
+    subCommInfo_.subCommId = subCommId;
+    subCommInfo_.valid = 1;
+
+    // 拷贝父通信域标识符
+    if (parentCommIdentifier != nullptr) {
+        s32 sRet = memcpy_s(subCommInfo_.parentCommIdentifier, MAX_COMM_IDENTIFIER_LEN + 1, parentCommIdentifier, strlen(parentCommIdentifier));
+        CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[RankConsistentcyChecker][RecordSubCommPara] memcpy_s parentCommIdentifier failed, ret[%d]", sRet), HCCL_E_MEMORY);
+    }
+
+    s32 sRet = memcpy_s(subCommInfo_.rankIds, sizeof(subCommInfo_.rankIds), rankIds, rankNum * sizeof(u32));
+    CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[RankConsistentcyChecker][RecordSubCommPara] memcpy_s rankIds failed, ret[%d]", sRet), HCCL_E_MEMORY);
+
+    subCommInfoRecorded_ = true;
+    return HCCL_SUCCESS;
+}
+
+u64 RankConsistentcyChecker::GetHcommInfoLength()
+{
+    // Hcomm基础信息 不包含ccrInfoOp和cmdInfo（HCCL算子信息）
+    return sizeof(HcclCRCInfo) + sizeof(ProtocolType) + MAX_CANN_VERSION_LEN + 1;
+}
+
+HcclResult RankConsistentcyChecker::CheckHcommInfo(const u8 *recvBuf, u32 recvBufLen, const std::string &tag)
+{
+    CHK_PTR_NULL(recvBuf);
+
+    u64 hcommInfoLen = GetHcommInfoLength();
+    CHK_PRT_RET(recvBufLen < hcommInfoLen, HCCL_ERROR("[RankConsistentcyChecker][CheckHcommInfo] recvBufLen[%u] < hcommInfoLen[%llu]", 
+        recvBufLen, hcommInfoLen), HCCL_E_PARA);
+    
+    // 解析接收到的Hcomm基础信息
+    HcclCRCInfo recvCrcInfoGlobal;
+    ProtocolType recvProtocolType;
+    char recvVersion[MAX_CANN_VERSION_LEN + 1] = {0};
+    u32 offset = 0;
+    (void)memcpy_s(&recvCrcInfoGlobal, sizeof(HcclCRCInfo), recvBuf + offset, sizeof(HcclCRCInfo));
+    offset += sizeof(HcclCRCInfo);
+    (void)memcpy_s(&recvProtocolType, sizeof(recvProtocolType), recvBuf + offset, sizeof(recvProtocolType));
+    offset += sizeof(recvProtocolType);
+    (void)memcpy_s(recvVersion, MAX_CANN_VERSION_LEN + 1, recvBuf + offset, MAX_CANN_VERSION_LEN + 1);
+
+    // 生成本地Hcomm基础信息
+    HcclCRCInfo localCrcInfoGlobal;
+    localCrcInfoGlobal.configFileExist_ = configFileExist_;
+    localCrcInfoGlobal.envCrcNum = crcTable_.size();
+    for (u32 i = 0; i < localCrcInfoGlobal.envCrcNum; i++) {
+        localCrcInfoGlobal.envCrcArray[i] = crcTable_[i];
+    }
+
+    // 对比环境变量CRC
+    bool isDiff = false;
+    static const std::vector<std::string> ENV_VAR_NAMES = {
+        "HCCL_ALGO",
+        "HCCL_BUFFSIZE",
+        "HCCL_OP_EXPANSION_MODE",
+        "HCCL_RDMA_QPS_PER_CONNECTION",
+        "HCCL_MULTI_QP_THRESHOLD"
+    };
+    if (localCrcInfoGlobal.envCrcNum != recvCrcInfoGlobal.envCrcNum) {
+        HCCL_ERROR("[RankConsistentcyChecker][CheckHcommInfo] CRC count mismatch: local[%u], remote[%u]", 
+            localCrcInfoGlobal.envCrcNum, recvCrcInfoGlobal.envCrcNum);
+        isDiff = true;
+    } else {
+        for (u32 i = 0; i < localCrcInfoGlobal.envCrcNum; i++) {
+            if (localCrcInfoGlobal.envCrcArray[i] != recvCrcInfoGlobal.crcArray[i]) {
+                std::string envVarName = ENV_VAR_NAMES[i];
+                HCCL_ERROR("[RankConsistentcyChecker][CheckHcommInfo] Env var Crc mismatch:%s local[0x%x], remote[0x%x]", 
+                    envVarName, localCrcInfoGlobal.envCrcArray[i], recvCrcInfoGlobal.crcArray[i]));
+                RPT_INPUT_ERR(true, "EI0005", 
+                    std::vector<std::string>({"ccl_op", "group", "para_name", "local_para", "remote_para"}), 
+                    std::vector<std::string>({"N/A", tag, "envVarName", 
+                        std::to_string(localCrcInfoGlobal.envCrcArray[i]), std::to_string(recvCrcInfoGlobal.crcArray[i])}));
+                isDiff = true;
+            }
+        }
+    }
+
+    // 对比协议类型
+    if (protocolType_ != recvProtocolType) {
+        HCCL_ERROR("[RankConsistentcyChecker][CheckHcommInfo] ProtocolType count mismatch: local[%d], remote[%d]", 
+            static_cast<s32>(protocolType_), static_cast<s32>(recvProtocolType));
+        RPT_INPUT_ERR(true, "EI0005", 
+            std::vector<std::string>({"ccl_op", "group", "para_name", "local_para", "remote_para"}), 
+            std::vector<std::string>({"N/A", tag, "protocolType", 
+                std::to_string(protocolType_), std::to_string(recvProtocolType)}));
+        isDiff = true;
+    }
+
+    // 对比CANN版本（仅在版本校验开关打开时）
+    if (cannVerCheckSwitch_) {
+        std::string localVersion(cannVersion_);
+        std::string remoteVersion(recvVersion);
+        if (localVersion.empty() || remoteVersion.empty()) {
+            HCCL_WARNING("[RankConsistentcyChecker][CheckHcommInfo] CANN version is empty. local[%s], remote[%s]",  
+                localVersion.c_str(), remoteVersion.c_str());
+        } else if (localVersion != remoteVersion) {
+            HCCL_ERROR("[RankConsistentcyChecker][CheckHcommInfo] CANN version mismatch: local[%s], remote[%s]", 
+                localVersion.c_str(), remoteVersion.c_str());
+            RPT_INPUT_ERR(true, "EI0008", 
+                std::vector<std::string>({"local_version", "remote_version"}), 
+                std::vector<std::string>({localVersion, remoteVersion}));
+            isDiff = true;
+        }
+    }
+    return isDiff ? HCCL_E_PARA : HCCL_SUCCESS;
+}
+
+HcclResult RankConsistentcyChecker::CheckHcclOpInfo(const u8 *recvBuf, u32 recvBufLen, const std::string &tag)
+{
+    CHK_PTR_NULL(recvBuf);
+
+    // 生成本地HCCL算子校验信息
+    HcclCheckInfo localCheckInfo;
+    CHK_PRT(GenerateCheckFrame(localCheckInfo, tag));
+
+    // 解析接收到的HCCL算子信息
+    HcclCRCInfo recvCrcInfoOp;
+    HcclCMDInfo recvCmdInfo;
+
+    u32 offset = 0;
+    (void)memcpy_s(&recvCrcInfoOp, sizeof(HcclCRCInfo), recvBuf + offset, sizeof(HcclCRCInfo));
+    offset += sizeof(HcclCRCInfo);
+    (void)memcpy_s(&recvCmdInfo, sizeof(HcclCMDInfo), recvBuf + offset, sizeof(HcclCMDInfo));
+    
+    // 比对算子CRC信息
+    bool isDiff = CompareCrcInfo(localCheckInfo.cmdInfo, localCheckInfo.crcInfoOp, recvCrcInfoOp);
+    if (isDiff) {
+        HCCL_ERROR("[RankConsistentcyChecker][CheckHcclOpInfo] Op CRC check fail");
+        RPT_INPUT_ERR(true, "EI0005", 
+            std::vector<std::string>({"reason"}), 
+            std::vector<std::string>({"Op CRC check fail"}));
+    }
+
+    // 处理Send/Recv的cmdType交换
+    if (localCheckInfo.cmdInfo.cmdType == HcclCMDType::HCCL_CMD_SEND) {
+        localCheckInfo.cmdInfo.cmdType = HcclCMDType::HCCL_CMD_RECEIVE;
+        localCheckInfo.cmdInfo.rank = localCheckInfo.cmdInfo.selfRank;
+    } else if (localCheckInfo.cmdInfo.cmdType == HcclCMDType::HCCL_CMD_RECEIVE) {
+        localCheckInfo.cmdInfo.cmdType = HcclCMDType::HCCL_CMD_SEND;
+        localCheckInfo.cmdInfo.rank = localCheckInfo.cmdInfo.selfRank;
+    }
+    localCheckInfo.cmdInfo.selfRank = 0;
+
+    // 比对CMD参数信息
+    if (!CompareSection(reinterpret_cast<char_t *>(&localCheckInfo.cmdInfo), 
+        reinterpret_cast<char_t *>(&recvCmdInfo), sizeof(HcclCMDInfo))) {
+        HCCL_ERROR("[RankConsistentcyChecker][CheckHcclOpInfo] CMD check fail");
+        RPT_INPUT_ERR(true, "EI0005", 
+            std::vector<std::string>({"reason"}), 
+            std::vector<std::string>({"CMD check fail"}));
+        isDiff = true;
+    }
+
+    return isDiff ? HCCL_E_PARA : HCCL_SUCCESS;
+}
+
 // private
+bool RankConsistentcyChecker::CompareSubCommInfo(HcclSubCommInfo &localInfo, HcclSubCommInfo &remoteInfo)
+{
+    bool bIsDiff = false;
+
+    if(!localInfo.valid && !remoteInfo.valid) {
+        return false;
+    } 
+
+    if(localInfo.valid != remoteInfo.valid) {
+        HCCL_ERROR("[RankConsistentcyChecker][CompareSubCommInfo] subCommInfo valid flag mismatch, "
+            "local[%u], remote[%u]", localInfo.valid, remoteInfo.valid);
+        bIsDiff = true;
+    } 
+
+    // 父通信域标识符对比
+    if(strcmp(localInfo.parentCommIdentifier, remoteInfo.parentCommIdentifier) != 0) {
+        RPT_INPUT_ERR(true, "EI0005", 
+            std::vector<std::string>({"ccl_op", "group", "para_name", "local_para", "remote_para"}), 
+            std::vector<std::string>({"HcclCreateSubCommConfig", "", "parentCommIdentifier", 
+                localInfo.parentCommIdentifier, remoteInfo.parentCommIdentifier}));
+        HCCL_ERROR("[RankConsistentcyChecker][CompareSubCommInfo][%s][%s] Parent comm identifier check fail, local[%s], remote[%s]", 
+            LOG_KEYWORDS_INIT_CHANNEL.c_str(), LOG_KEYWORDS_PARAMETER_CONFLICT.c_str(), 
+            localInfo.parentCommIdentifier, remoteInfo.parentCommIdentifier);
+        bIsDiff = true;
+    }
+
+    // rankNum比对
+    if(localInfo.rankNum != remoteInfo.rankNum) {
+        RPT_INPUT_ERR(true, "EI0005", 
+            std::vector<std::string>({"ccl_op", "group", "para_name", "local_para", "remote_para"}), 
+            std::vector<std::string>({"HcclCreateSubCommConfig", "", "rankNum", 
+                std::to_string(localInfo.rankNum), std::to_string(remoteInfo.rankNum)}));
+        HCCL_ERROR("[RankConsistentcyChecker][CompareSubCommInfo][%s][%s] SubComm rankNum check fail, local[%u], remote[%u]", 
+            LOG_KEYWORDS_INIT_CHANNEL.c_str(), LOG_KEYWORDS_PARAMETER_CONFLICT.c_str(), 
+            localInfo.rankNum, remoteInfo.rankNum);
+        bIsDiff = true;
+    } else {
+        // rankNum一致， 逐项比较rankIds
+        for (u32 i = 0; i < localInfo.rankNum; i++) {
+            if (localInfo.rankIds[i] != remoteInfo.rankIds[i]) {
+                RPT_INPUT_ERR(true, "EI0005", 
+                    std::vector<std::string>({"ccl_op", "group", "para_name", "local_para", "remote_para"}), 
+                    std::vector<std::string>({"HcclCreateSubCommConfig", "", "rankIds[" + std::to_string(i) + "]", 
+                        std::to_string(localInfo.rankIds[i]), std::to_string(remoteInfo.rankIds[i])}));
+                HCCL_ERROR("[RankConsistentcyChecker][CompareSubCommInfo][%s][%s] SubComm rankIds[%u] check fail, local[%u], remote[%u]", 
+                    LOG_KEYWORDS_INIT_CHANNEL.c_str(), LOG_KEYWORDS_PARAMETER_CONFLICT.c_str(), 
+                    localInfo.rankIds[i], remoteInfo.rankIds[i]);
+                bIsDiff = true;
+            }
+        }
+    }
+
+    // subCommId对比
+    if(localInfo.subCommId != remoteInfo.subCommId) {
+        RPT_INPUT_ERR(true, "EI0005", 
+            std::vector<std::string>({"ccl_op", "group", "para_name", "local_para", "remote_para"}), 
+            std::vector<std::string>({"HcclCreateSubCommConfig", "", "subCommId", 
+                std::to_string(localInfo.subCommId), std::to_string(remoteInfo.subCommId)}));
+        HCCL_ERROR("[RankConsistentcyChecker][CompareSubCommInfo][%s][%s] SubComm subCommId check fail, local[%llu], remote[%llu]", 
+            LOG_KEYWORDS_INIT_CHANNEL.c_str(), LOG_KEYWORDS_PARAMETER_CONFLICT.c_str(), 
+            localInfo.rankNum, remoteInfo.rankNum);
+        bIsDiff = true;
+    }
+
+    return bIsDiff;
+}
+
 HcclResult RankConsistentcyChecker::RecordOpPara(HcclCMDType opCMD, const std::string &tag, u64 count,
     HcclDataType dataType, HcclReduceOp op, u32 root, u32 rank, u32 srTag, u32 selfRank, u64 inCclBufferSize,
     u64 outCclBufferSize, const char *group, u32 crc, u8 deterministic, u32 aivCoreLimit)
@@ -288,6 +572,7 @@ HcclResult RankConsistentcyChecker::RecordOpPara(HcclCMDType opCMD, const std::s
     return HCCL_SUCCESS;
 }
 
+
 HcclResult RankConsistentcyChecker::GetOpParaByTag(const std::string &tag, HcclCMDInfo &CMDInfoOutput)
 {
     auto getResult = cmdInfoMap_.find(tag);
@@ -325,14 +610,10 @@ HcclResult RankConsistentcyChecker::GenerateCheckFrame(HcclCheckInfo &checkInfo,
     (void)memset_s(&checkInfo, checkInfoLen, 0, checkInfoLen);
 
     // 添加CRC字段到校验帧
-    u32 crcLen = crcTable_.size();
     checkInfo.crcInfoGlobal.configFileExist_ = configFileExist_;
-    if (crcLen != 0) {
-        CHK_PRT_RET(crcLen > MAX_CRC_LEN,
-            HCCL_ERROR("[RankConsistentcyChecker][GenerateCheckFrame]crc num[%u] is too big.", crcLen),
-            HCCL_E_INTERNAL);
-        checkInfo.crcInfoGlobal.crcNum = crcLen;
-        CHK_RET(GetCrc(crcLen, &checkInfo.crcInfoGlobal.crcArray[0]));
+    checkInfo.crcInfoGlobal.envCrcNum = crcTable_.size();
+    if (u32 i = 0; i < checkInfo.crcInfoGlobal.envCrcNum; i+=) {
+        checkInfo.crcInfoGlobal.envCrcArray[i] = crcTable_[i];
     }
     // 添加CMD参数信息到校验帧
     {
@@ -361,6 +642,13 @@ HcclResult RankConsistentcyChecker::GenerateCheckFrame(HcclCheckInfo &checkInfo,
     // 910* 不会配置isTcpMode，因此910*在此处的待校验值是一致的
     checkInfo.protocolType = protocolType_;
     HCCL_INFO("[RankConsistentcyChecker][GenerateCheckFrame] loc protocolType is [%d].", checkInfo.protocolType);
+
+    // 添加子通信域参数校验信息
+    if (subCommInfoRecorded_) {
+        s32 sRet = memcpy_s(&checkInfo.subCommInfo, sizeof(HcclSubCommInfo), &subCommInfo_, sizeof(HcclSubCommInfo));
+        CHK_PRT_RET(sRet != EOK, 
+            HCCL_ERROR("[RankConsistentcyChecker][GenerateCheckFrame] memcpy_s subCommInfo failed, ret[%d]", sRet), HCCL_E_MEMORY);
+    }
 
     return HCCL_SUCCESS;
 }
@@ -543,6 +831,13 @@ bool RankConsistentcyChecker::CompareFrame(HcclCheckInfo &checkInfo, HcclCheckIn
             bIsDiff = true;
         }
     }
+
+    // 子通信域参数一致性校验
+    if (CompareSubCommInfo(checkInfo.subCommInfo, checkInfoRecv.subCommInfo)) {
+        HCCL_ERROR("[RankConsistentcyChecker][CompareFrame]errNo[0x%016llx] SubCommInfo check fail", HCCL_ERROR_CODE(HCCL_E_INTERNAL));
+        bIsDiff = true;
+    }
+
     return bIsDiff;
 }
 
