@@ -29,14 +29,14 @@ __aicore__ inline void AivAllGatherVSmall910B::Process(GM_ADDR input, GM_ADDR ou
 
     __gm__ T *inputGM = (__gm__ T *)input;
     __gm__ T *cclGMSelf = (__gm__ T *)(GM_IN[rank_] + dataOffset);
-    __gm__ T *cclGMOther = (__gm__ T *)(GM_IN[GetBlockIdx()] + dataOffset);
+    __gm__ T *cclGMOther = (__gm__ T *)(GM_IN[blockIdx_] + dataOffset);
     __gm__ T *outputGM = (__gm__ T *)output;
 
-    if (GetBlockIdx() != rank_) {
-        WaitNv1(tag, GetBlockIdx(), AivNotifyType::DataSignal, 0, ifPingpong);
+    if (blockIdx_ != rank_) {
+        WaitNv1(tag, blockIdx_, AivNotifyType::DataSignal, 0, ifPingpong);
         pipe_barrier(PIPE_ALL);
 
-        CpGM2GM(outputGM + extraArgs.recvDispls[GetBlockIdx()], cclGMOther, extraArgs.recvCounts[GetBlockIdx()]);
+        CpGM2GM(outputGM + extraArgs.recvDispls[blockIdx_], cclGMOther, extraArgs.recvCounts[blockIdx_]);
         // 卡间同步
     } else {
         CpGM2GM(cclGMSelf, inputGM, extraArgs.recvCounts[rank_]);

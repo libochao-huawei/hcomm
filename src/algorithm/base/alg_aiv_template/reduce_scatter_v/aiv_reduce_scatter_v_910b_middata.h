@@ -30,15 +30,15 @@ __aicore__ inline void AivReduceScatterVMid910B::Process(GM_ADDR input, GM_ADDR 
     __gm__ T *inputGm = (__gm__ T *)input;
     __gm__ T *outputGm = (__gm__ T *)output;
     __gm__ T *cclGmSelf = (__gm__ T *)(GM_IN[rank_] + dataOffset);
-    __gm__ T *cclGmOther = (__gm__ T *)(GM_IN[GetBlockIdx()] + dataOffset);
-    if (GetBlockIdx() != rank_) {
-        CpGM2GM(cclGmSelf + extraArgs.sendDispls[GetBlockIdx()], inputGm + extraArgs.sendDispls[GetBlockIdx()],
-            extraArgs.sendCounts[GetBlockIdx()]);
+    __gm__ T *cclGmOther = (__gm__ T *)(GM_IN[blockIdx_] + dataOffset);
+    if (blockIdx_ != rank_) {
+        CpGM2GM(cclGmSelf + extraArgs.sendDispls[blockIdx_], inputGm + extraArgs.sendDispls[blockIdx_],
+            extraArgs.sendCounts[blockIdx_]);
         // 卡内同步
         WaitNv1(tag, rank_, AivNotifyType::DataSignal, 0, ifPingpong);
         pipe_barrier(PIPE_ALL);
-        Record(tag, GetBlockIdx(), AivNotifyType::DataSignal, 0, ifPingpong);
-        Wait(tag, GetBlockIdx(), AivNotifyType::DataSignal, 0, ifPingpong);
+        Record(tag, blockIdx_, AivNotifyType::DataSignal, 0, ifPingpong);
+        Wait(tag, blockIdx_, AivNotifyType::DataSignal, 0, ifPingpong);
         pipe_barrier(PIPE_ALL);
         CpGM2GM(outputGm, cclGmOther + extraArgs.sendDispls[rank_], extraArgs.sendCounts[rank_], true, reduceOp_);
     } else {

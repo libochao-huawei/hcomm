@@ -22,6 +22,7 @@
 #include "hccn_rping.h"
 #include "orion_adapter_hccp.h"
 #include "dispatcher_task_types.h"
+#include "hashtable/universal_concurrent_map.h"
  
 namespace hccl
 {
@@ -167,8 +168,9 @@ private:
     u8 *payload_ = nullptr;                        // client侧记录的payload信息
     RpingState rpingState_ = RpingState::UNINIT;   // 记录client状态
     int rpingTargetNum_ = 0;                       // 记录client目标数量
+    std::mutex socketMapsMtx_;
     std::map<std::string, std::shared_ptr<HcclSocket>> socketMaps_;  // 记录client端的socket信息
-    std::map<std::string, PingQpInfo> rdmaInfoMaps_;    // 记录target的rdma或者ub信息
+    UniversalConcurrentMap<std::string, PingQpInfo> rdmaInfoMaps_;    // 记录target的rdma或者ub信息
     std::unique_ptr<std::thread> connThread_;      // server端等待socket建链的背景线程
     HcclNetDevCtx netCtx_ = nullptr;               // 记录网络上下文信息
     std::shared_ptr<HDCommunicate> hdcD2H_ = nullptr; // 从device侧获取数据的接口
@@ -178,7 +180,7 @@ private:
     bool isSocketClosed_ = false;
     std::atomic<bool> connThreadStop_{false};      // 侦听的子线程的结束条件
     bool isUsePayload_ = false;
-    std::map<std::string, u32> payloadLenMap_;     // 记录自定义payload的长度
+    UniversalConcurrentMap<std::string, u32> payloadLenMap_;     // 记录自定义payload的长度
     HccnRpingMode mode = HCCN_RPING_MODE_ROCE;     //ROCEorUB,
  
     HcclResult RpingSendInitInfo(u32 deviceId, u32 port, HcclIpAddress ipAddr, PingInitInfo initInfo,
@@ -189,7 +191,8 @@ private:
     HcclResult HccnRaInit(u32 deviceId);
     HcclResult HccnTargetAttrInter(u32 targetNumInter, RpingInput *inputInter, HccnRpingAddTargetConfig *configInter, PingTargetInfo *targetInter);
     HcclResult HccnTarRemoveAttrInter(u32 targetNumInter, RpingInput *inputInter, PingTargetCommInfo *targetInter, std::shared_ptr<HcclSocket> &socketInter);
-    HcclResult RpingResultInfoInit(PingTargetResult *resultInfo, std::map<std::string, PingQpInfo> rdmaInfoMaps, RpingInput *input, u32 targetNum);
+    HcclResult RpingResultInfoInit(PingTargetResult *resultInfo,
+        UniversalConcurrentMap<std::string, PingQpInfo> &rdmaInfoMaps, RpingInput *input, u32 targetNum);
     HcclResult HccnSupportedAndGetphyid(u32 deviceId, LinkType netMode);
     HcclResult HccnRpingOpenTsd(u32 deviceId, u32 mode, u32 port, u32 nodeNum, u32 bufferSize, u32 sl, u32 tc);
 public:

@@ -414,7 +414,7 @@ HcclResult NetworkManager::HeterogInit(u32 devId, const HcclIpAddress &ipAddr, u
     if (!GetExternalInputHcclIsTcpMode()) {
         ret = InitRdmaHandle(devId, ipAddr);
         if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[HeterogInit] InitRdmaHandle fail, ret[%d], destory resource.", ret);
+            HCCL_ERROR("[HeterogInit] InitRdmaHandle fail, ret[%d], destroy resource.", ret);
             hrtRaSocketDeInit(socketHandle);
             HrtRaDeInit(&config);
             return ret;
@@ -423,7 +423,7 @@ HcclResult NetworkManager::HeterogInit(u32 devId, const HcclIpAddress &ipAddr, u
 
     ret = HeterogStartListen(ipAddr, port);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[HeterogInit] HeterogStartListen fail, ret[%d], destory resource.", ret);
+        HCCL_ERROR("[HeterogInit] HeterogStartListen fail, ret[%d], destroy resource.", ret);
         if (!GetExternalInputHcclIsTcpMode()) {
             auto& ipSock = raResourceInfo_.nicSocketMap[ipAddr];
             if (ipSock.nicRdmaHandle != nullptr) {

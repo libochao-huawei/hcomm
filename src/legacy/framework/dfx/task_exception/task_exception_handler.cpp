@@ -295,7 +295,7 @@ void TaskExceptionHandler::PrintAivPreviousTaskException(rtExceptionInfo_t *exce
     }
 
     HCCL_ERROR("[TaskExceptionHandler][AIV]Task run failed, para information is "
-               "deviceId[%u] streamId[%u], TaskId[%u], task info before failed task is:",
+               "deviceId[%u] streamId[%u], TaskId[%u].",
                exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid);
 
     for (uint32_t i = 0; i < TASK_CONTEXT_SIZE && *taskItorPtr != *queue->Begin(); --(*taskItorPtr)) {
