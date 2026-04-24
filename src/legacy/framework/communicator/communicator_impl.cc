@@ -1176,7 +1176,9 @@ void CommunicatorImpl::CovertToCurrentCollOperator(std::string &opTag, const Col
             currentCollOperator->vDataDes.counts = opParams.vDataDes.counts;
             currentCollOperator->vDataDes.displs = opParams.vDataDes.displs;
             currentCollOperator->vDataDes.dataType = opParams.vDataDes.dataType;
-            ConvertCollOperatorMemV(opParams);
+            if (!isHcomSelectAlg) { // hcomSeletAlg不填写参数
+                ConvertCollOperatorMemV(opParams);
+            }
         } else {
             u64 size = DataTypeSizeGet(opParams.dataType) * opParams.count;
             if (size != 0) {
