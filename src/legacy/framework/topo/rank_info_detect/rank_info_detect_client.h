@@ -33,7 +33,6 @@ public:
 
     void Setup(RankTableInfo &rankTable);
     void Update(u32 devicePort, RankTableInfo &rankTable);
-    void CheckRootInfoJson(const nlohmann::json &parseJson);
 
 private:
     u32                             devPhyId_{0};
@@ -64,6 +63,8 @@ private:
         const std::string &tlsDisableRankStr, const std::string &tlsUnknownRankStr) const;
     void TearDown();
 };
+
+void CheckRootInfoJson(const nlohmann::json &parseJson);
 
 } // namespace Hccl
 #endif // HCCLV2_RANK_INFO_DETECT_CLIENT_H
