@@ -62,6 +62,13 @@ HcclResult HcclDfxRegOpInfoByCommId(char* commId, void* hcclDfxOpInfo)
 {
     CHK_PTR_NULL(commId);
     CHK_PTR_NULL(hcclDfxOpInfo);
+
+    DevType deviceType;
+    CHK_RET(hrtGetDeviceType(deviceType));
+    if (deviceType == DevType::DEV_TYPE_910B) {
+        HCCL_INFO("[%s]not support, comId[%s], devType[%d]", __func__, commId, deviceType);
+    }
+
     HcclDfxOpInfo *aicpuDfxInfo = reinterpret_cast<HcclDfxOpInfo *>(hcclDfxOpInfo);
     CHK_RET(HcommThreadGetNotifyId(aicpuDfxInfo->cpuTsThread, aicpuDfxInfo->cpuWaitAicpuNotifyIdx, &aicpuDfxInfo->cpuWaitAicpuNotifyId));
     CHK_RET(AicpuIndopProcess::AicpuDfxOpInfoInit(aicpuDfxInfo, commId));
@@ -913,14 +920,26 @@ int32_t HcommThreadJoin(ThreadHandle thread, uint32_t timeout)
 HcclResult HcommProfilingReportDeviceOp(const char* groupname) {
     HCCL_INFO("[%s] START.", __func__);
     CHK_PTR_NULL(groupname);
+
+    DevType deviceType;
+    CHK_RET(hrtGetDeviceType(deviceType));
+    if (deviceType != DevType::DEV_TYPE_950) {
+        return HCCL_SUCCESS;
+    }
+
     CHK_RET(AicpuIndopProcess::ProfilingReportDeviceOp(groupname));
     return HCCL_SUCCESS;
 }
 
 HcclResult HcommProfilingReportKernelStartTask(uint64_t thread, const char* groupname)
 {
-    HCCL_INFO("[%s] START, thread [%llu], groupname[%s].", __func__, thread, groupname);
+    DevType deviceType;
+    CHK_RET(hrtGetDeviceType(deviceType));
+    if (deviceType != DevType::DEV_TYPE_950) {
+        return HCCL_SUCCESS;
+    }
     CHK_PTR_NULL(groupname);
+    HCCL_INFO("[%s] START, thread [%llu], groupname[%s].", __func__, thread, groupname);
     CHK_RET(AicpuIndopProcess::UpdateTask(groupname));
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
@@ -937,8 +956,15 @@ HcclResult HcommProfilingReportKernelStartTask(uint64_t thread, const char* grou
 
 HcclResult HcommProfilingReportKernelEndTask(uint64_t thread, const char* groupname)
 {
-    HCCL_INFO("[%s] START. thread [%llu], groupname[%s].", __func__, thread, groupname);
     CHK_PTR_NULL(groupname);
+    HCCL_INFO("[%s] START. thread [%llu], groupname[%s].", __func__, thread, groupname);
+
+    DevType deviceType;
+    CHK_RET(hrtGetDeviceType(deviceType));
+    if (deviceType != DevType::DEV_TYPE_950) {
+        return HCCL_SUCCESS;
+    }
+
     Thread *const threadPtr = reinterpret_cast<Thread*>(thread);
     CHK_PRT_RET(threadPtr == nullptr, HCCL_ERROR("[%s] threadPtr is null", __func__), HCCL_E_PTR);
     auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
