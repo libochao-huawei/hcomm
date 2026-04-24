@@ -40,6 +40,7 @@ struct DevEidInfo {
     uint32_t dieId{0};
     uint32_t chipId{0};
     uint32_t funcId{0};
+    uint32_t devFeature{0};
 };
 
 HcclResult IpAddressToHccpEid(const Hccl::IpAddress &ipAddr, Eid &eid);

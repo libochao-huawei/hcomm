@@ -85,6 +85,7 @@ HcclResult RaGetDevEidInfos(const RaInfo &raInfo, std::vector<DevEidInfo> &devEi
         devEidInfos[i].dieId = infoList[i].dieId;
         devEidInfos[i].chipId = infoList[i].chipId;
         devEidInfos[i].funcId = infoList[i].funcId;
+        devEidInfos[i].devFeature = infoList[i].devFeature;
     }
 
     return HcclResult::HCCL_SUCCESS;
