@@ -174,6 +174,7 @@ public:
 }  // namespace std
 
 namespace hccl {
+class hcclComm;
 // 独立算子内存
 struct IndOpMem {
     std::vector<HostMem> userHostMem;
@@ -247,6 +248,8 @@ public:
     void SetOpType(HcclCMDType opType);
     HcclResult SetGroupMode(bool groupMode);
     std::map<u32, TransportType> GetRemoteTransportMap();
+
+    void SetHcclComm(hcclComm *comm);
 private:
     HcclResult GetIOMem(const TransportIOMem &transMem,
         const TransportMemType inputMemType, const TransportMemType outputMemType,
@@ -352,6 +355,8 @@ private:
     bool isStandardCard_ = false;
     std::unique_ptr<MulQpInfo> mulQpinfo_ = { nullptr };
     std::mutex createSocketMutex_;    // BatchSendRecv建链调用CreateDestSockets时，保护socketTagVec_等资源
+
+    hcclComm *hcclComm_ = nullptr;
 };
 }  // namespace hccl
 

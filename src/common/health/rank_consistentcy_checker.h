@@ -49,7 +49,19 @@ using HcclCRCInfo = struct TagHcclCRCInfo {
     u32 configFileExist_ = 0;
     u32 crcNum = 0;
     u32 crcArray[MAX_CRC_LEN] = {0};
+    u32 envCrcNum = 0;
+    u32 envCrcArray[MAX_CRC_LEN] = {0};
 };
+
+constexpr u32 MAX_SUB_COMM_RANK_NUM = 4096;
+constexpr u32 MAX_COMM_IDENTIFIER_LEN = 128;  //通信域标识符最大长度
+using HcclSubCommInfo = struct TagHcclSubCommInfo {
+    u32 rankNum{0};                                                     // 子通信域rank数量
+    u32 rankIds[MAX_SUB_COMM_RANK_NUM] = {0};                           // 子通信域rankID列表
+    u64 subCommId{INVALID_SUBCOMM_ID};                                  // 子通信域ID
+    char parentCommIdentifier[MAX_COMM_IDENTIFIER_LEN + 1] = {0};       // 父通信域唯一标识符
+    u32 valid{0};                                                       // 是否有效(1:有效, 0:无效/未设置)
+}
 
 using HcclCheckInfo = struct TagHcclCheckInfo {
     HcclCRCInfo crcInfoGlobal;
@@ -57,6 +69,7 @@ using HcclCheckInfo = struct TagHcclCheckInfo {
     HcclCMDInfo cmdInfo;
     ProtocolType protocolType = ProtocolType::RESERVED;
     char version[MAX_CANN_VERSION_LEN + 1] = {0};
+    HcclSubCommInfo subCommInfo;
 };
 
 enum class HcclCrcRecordType {
@@ -126,6 +139,12 @@ public:
 
     void SetCheckCannVersionSwitch(const bool cannVerCheckSwitch);
 
+    HcclResult RecordEnvVarCrc();
+    HcclResult RecordSubCommPara(uint32_t rankNum, const uint32_t *rankIds, uint64_t subCommId, const char *parentCommIdentifier);
+    HcclResult CheckHcommInfo(const u8 *recvBuf, u32 recvBufLen, const std::string &tag);
+    HcclResult CheckHcclOpInfo(const u8 *recvBuf, u32 recvBufLen, const std::string &tag);
+    u64 GetHcommInfoLength();
+
 private:
     explicit RankConsistentcyChecker();
     // all of that
@@ -155,6 +174,8 @@ private:
     HcclResult GetCrc(u32 num, u32 *crcAddr);
     HcclResult CalcRawDataCrc(const void *ptr, u64 length, u32 &crc);
 
+    bool CompareSubCommInfo(HcclSubCommInfo &localInfo, HcclSubCommInfo &remoteInfo);
+
     // 要校验的内容
     std::unordered_map<std::string, HcclCMDInfo> cmdInfoMap_;
     std::unordered_map<std::string, std::map<HcclCrcRecordType, u32>> crcRecords_; // CRC校验码记录
@@ -171,6 +192,8 @@ private:
     ProtocolType protocolType_ = ProtocolType::RESERVED;
     std::vector<u32> crcTable_;
     std::mutex mutex_;
+    HcclSubCommInfo subCommInfo_;
+    bool subCommInfoRecorded_ = false;
 };
 }
 #endif  // RANK_CONSISTENTCY_CHECKER_H
