@@ -670,6 +670,7 @@ public:
     int32_t tag_;
     int32_t numBlocks_;
     int32_t logLevel_;
+    uint32_t blockIdx_ = GetBlockIdx(); // 在构造函数中初始化，以免漏初始化
 
     bool useDoubleBuffer_;
 

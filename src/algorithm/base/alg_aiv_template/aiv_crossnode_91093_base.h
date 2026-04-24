@@ -250,6 +250,7 @@ public:
  
     uint64_t len_;
     uint32_t numBlocks_;
+    uint32_t blockIdx_ = GetBlockIdx(); // 在构造函数中初始化，以免漏初始化
     
     TPipe pipe;
 
