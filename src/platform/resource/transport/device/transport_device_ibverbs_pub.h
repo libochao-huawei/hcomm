@@ -79,6 +79,11 @@ public:
     HcclResult ReadAsync(struct Transport::Buffer &localBuf, struct Transport::Buffer &remoteBuf,
         Stream &stream) override;
 
+    HcclResult BatchWriteAsync(std::vector<struct Transport::Buffer> &remoteBufs,
+        std::vector<struct Transport::Buffer> &localBufs, Stream &stream) override;
+    HcclResult BatchReadAsync(std::vector<struct Transport::Buffer> &localBufs,
+        std::vector<struct Transport::Buffer> &remoteBufs, Stream &stream) override;
+
     HcclResult PostReady(Stream &stream);
     HcclResult WaitReady(Stream &stream);
 
