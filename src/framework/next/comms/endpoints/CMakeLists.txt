@@ -13,6 +13,7 @@ set(src_list
     urma_endpoint.cc
     ub_mem_endpoint.cc
     endpoint.cc
+    uboe_endpoint.cc
 )
 
 target_sources(hcomm PRIVATE

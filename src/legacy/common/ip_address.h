@@ -337,9 +337,14 @@ public:
     explicit IpAddress(BinaryStream &binaryStream) // 基于序列化数据得到IpAddress
     {
         binaryStream >> family_ >> scopeID_;
+        // 打印family_、scopeID_
+        HCCL_INFO("[IpAddress::%s] family_[%d], scopeID_[%d]",
+            __func__, family_, scopeID_);
         char        dst[INET6_ADDRSTRLEN]{0};
         binaryStream >> dst;
         std::string ip = dst; 
+        // 打印ip
+        HCCL_INFO("[IpAddress::%s] ip_[%s]", __func__, ip.c_str());
         InitBinaryAddr(ip);
         binaryStream >> eid_.raw; // 恢复eid.raw，覆盖eid
     }
