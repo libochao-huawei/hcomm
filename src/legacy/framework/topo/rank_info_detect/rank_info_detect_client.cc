@@ -73,11 +73,11 @@ void RankInfoDetectClient::CheckStatus()
     auto timeout   = std::chrono::seconds(EnvConfig::GetInstance().GetSocketConfig().GetLinkTimeOut());
 
     while (true) {
-        if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
-            RPT_INPUT_ERR(true, "EI0015", std::vector<std::string>({"error_reason"}),
-                std::vector<std::string>({"socket connection timeout"}));
-            CHK_PRT_THROW((std::chrono::steady_clock::now() - startTime) >= timeout,
-                HCCL_ERROR("[RankInfoDetectClient::%s] get connected status socket timeout! timeout[%lld s]", __func__, timeout),
+        bool isTimeout = ((std::chrono::steady_clock::now() - startTime) >= timeout);
+        RPT_INPUT_ERR(isTimeout, "EI0015", std::vector<std::string>({"error_reason"}),
+            std::vector<std::string>({"socket connection timeout"}));
+        CHK_PRT_THROW(isTimeout,
+            HCCL_ERROR("[RankInfoDetectClient::%s] get connected status socket timeout! timeout[%lld s]", __func__, timeout),
                 TimeoutException, "client get connection timeout");
         }
 
@@ -308,12 +308,12 @@ void RankInfoDetectClient::RecvRankTableMsg(vector<char> &rankInfoMsg)
     u64 revMsgLen = 0;
     std::unique_ptr<HostBuffer> msg = std::make_unique<HostBuffer>(MAX_BUFFER_LEN);
     char *msgAddr = reinterpret_cast<char *>(msg->GetAddr());
-    bool recvFailed = socketAgent_.RecvMsg(msgAddr, revMsgLen);
-    if (!recvFailed) {
+    bool recvSuccess = socketAgent_.RecvMsg(msgAddr, revMsgLen);
+    if (!recvSuccess) {
         RPT_INPUT_ERR(true, "EI0015", std::vector<std::string>({"error_reason"}),
             std::vector<std::string>({"recv ranktable message failed"}));
     }
-    CHK_PRT_THROW(!recvFailed,
+    CHK_PRT_THROW(!recvSuccess,
         HCCL_ERROR("RankInfoDetectClient::%s, recv rankTable error.", __func__),
         SocketException, "client recv fail");
 

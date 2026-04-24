@@ -438,11 +438,12 @@ TEST_F(RankInfoDetectServiceTest, Ut_GetConnections_When_Sudden_Fail)
 
 TEST_F(RankInfoDetectServiceTest, Ut_GetConnections_When_ServerTimeout_Expect_RptInputErr)
 {
-    MOCKER(RptInputErr).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostSocketHandleManager::Get).stubs().with(any(), any()).will(returnValue(hccpSocketHandle));
     MOCKER_CPP(&Socket::GetStatus).stubs()
         .then(returnValue((SocketStatus)SocketStatus::CONNECTING))
         .then(returnValue((SocketStatus)SocketStatus::TIMEOUT));
-
+        
+    EXPECT_CALL(RptInputErr(true, StrEq("EI0015"), ElementsAre(StrEq("error_reason")),
+        ElementsAre(StrEq("server get socket timeout")))).Time(1);
     rankInfoDetectService_->GetConnections();
 }

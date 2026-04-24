@@ -545,9 +545,10 @@ void TaskExceptionHandler::ProcessCcuException(const rtExceptionInfo_t* exceptio
     for (uint32_t i = 0; i < ccuExDetailInfo.ccuMissionNum; ++i) { // ccuExDetailInfo.ccuMissionNum为1
         const auto& missionInfo = ccuExDetailInfo.missionInfo[i]; // 异常mission
         uint16_t status = static_cast<uint16_t>(missionInfo.status) << BYTE | missionInfo.subStatus;
-        RPT_INPUT_ERR(true, "EI0018", std::vector<std::string>({"deviceId", "dieId", "missionId", "executeId"}),
-            std::vector<std::string>({std::to_string(deviceId), std::to_string(missionInfo.dieId),
-                std::to_string(missionInfo.missionId), std::to_string(taskInfo.taskParam_.taskPara.Ccu.executeId)}));
+        RPT_INPUT_ERR(true, "EI0018", std::vector<std::string>({"localServerId", "localDeviceId", "localDeviceIp",
+            "remoteServerId", "remoteDeviceId", "remoteDeviceIp"}),
+            std::vector<std::string>({"", std::to_string(deviceId), std::to_string(missionInfo.dieId), "",
+                std::to_string(taskInfo.taskParam_.taskPara.Ccu.executeId), ""}));
         PrintCcuErrorInfo(deviceId, status, taskInfo);
         // 打印寄存器信息
         PrintPanicLogInfo(missionInfo.panicLog);
@@ -720,8 +721,7 @@ void ReportErrorMsg(const TaskInfo &exceptionTaskInfo, const string &groupRankCo
         || exceptionTaskInfo.taskParam_.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY
         || exceptionTaskInfo.taskParam_.taskType == TaskParamType::TASK_UB_INLINE_WRITE
         || exceptionTaskInfo.taskParam_.taskType == TaskParamType::TASK_UB_REDUCE_INLINE
-        || exceptionTaskInfo.taskParam_.taskType == TaskParamType::TASK_UB
-        || exceptionTaskInfo.taskParam_.taskType == TaskParamType::TASK_CCU) {
+        || exceptionTaskInfo.taskParam_.taskType == TaskParamType::TASK_UB) {
         HCCL_ERROR("[ReportErrorMsg] EI0018");
         RPT_INPUT_ERR(true,
             "EI0018",
