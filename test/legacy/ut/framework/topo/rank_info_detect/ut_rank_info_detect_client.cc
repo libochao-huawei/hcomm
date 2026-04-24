@@ -43,10 +43,6 @@
 #include "topo_addr_info.h"
 #include "adapter_error_manager_pub.h"
 
-namespace Hccl {
-void CheckRootInfoJson(const nlohmann::json &parseJson);
-}
-
 using namespace Hccl;
 
 std::string filePath{HCOMM_CODE_ROOT_DIR "/test/legacy/ut/framework/topo/rank_info_detect/rootinfo.json"};

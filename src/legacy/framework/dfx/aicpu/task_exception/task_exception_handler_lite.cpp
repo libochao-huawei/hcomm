@@ -202,8 +202,10 @@ HcclResult SendTaskExceptionByMBox(const u32 localDeviceId, const u32 notifyId, 
                 sdmaErrDesc = "unknown SDMA ERROR";
                 break;
         }
-        RPT_INPUT_ERR(true, "EI0012", std::vector<std::string>({"error_code", "error_description"}),
-            std::vector<std::string>({std::to_string(exceptionInfo->errorCode), sdmaErrDesc}));
+        std::string errorInfo = "error_code=" + std::to_string(exceptionInfo->errorCode) + ", description=" + sdmaErrDesc;
+        RPT_INPUT_ERR(true, "EI0012", std::vector<std::string>({"remote_rankid", "base_information",
+            "task_information", "group_rank_content"}),
+            std::vector<std::string>({"", std::to_string(localDeviceId), errorInfo, ""}));
     }
 
     struct event_summary event;
