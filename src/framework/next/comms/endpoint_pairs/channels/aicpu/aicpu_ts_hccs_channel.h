@@ -70,7 +70,7 @@ private:
     hccl::HcclIpAddress                                         remoteIp_;
     uint32_t                                                    notifyNum_{0};
     AicpuTsHccsEndPoint                                         *localEpPtr_{nullptr};
-
+    uint32_t                                                    server_port_{AICPU_CHANNEL_DEFUALT_PORT};
     // --------------------- 具体成员 ---------------------
     std::shared_ptr<hccl::HcclSocket>                           socket_{};
     std::string                                                 socketTag_{};
