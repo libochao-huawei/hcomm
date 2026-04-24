@@ -78,7 +78,7 @@ public:
     
     // 临时方案：新增临时接口用于支持混跑
     HcclResult GetSocket(const uint32_t myRank, const uint32_t rmtRank,
-        const std::string &socketTag, u32 reuseIdx, const uint32_t listenPort, Hccl::Socket *&socket);
+        const std::string &socketTag, u32 reuseIdx, const uint32_t listenPort, Hccl::Socket *&socket, uint32_t devicePhyId, uint32_t remoteDevicePhyId);
 
     HcclResult CreateChannel(EndpointHandle endpointHandle, CommEngine engine, u32 reuseIdx,
         HcommChannelDesc *channelDescs, ChannelHandle *channels);

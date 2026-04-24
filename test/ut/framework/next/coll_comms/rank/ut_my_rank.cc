@@ -118,6 +118,7 @@ TEST_F(MyRankTest, Ut_When_BatchCreateChannels_Expect_SUCCESS)
     setenv("HCCL_DFS_CONFIG", "task_exception:on", 1);
     uint32_t devPort = 60001;
     MOCKER_CPP(&Hccl::IRankGraph::GetDevicePort).stubs().with(any(), outBoundP(&devPort)).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&Hccl::IRankGraph::GetDeviceId).stubs().with(any()).will(returnValue(static_cast<int>(HCCL_SUCCESS)));
     MockerFuncs();
     ChannelHandle channelHandle = 0xab;
     MOCKER(hcomm::ChannelProcess::CreateChannelsLoop)
