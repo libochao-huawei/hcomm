@@ -33,6 +33,7 @@ public:
 
     void Setup(RankTableInfo &rankTable);
     void Update(u32 devicePort, RankTableInfo &rankTable);
+    void CheckRootInfoJson(const nlohmann::json &parseJson);
 
 private:
     u32                             devPhyId_{0};
