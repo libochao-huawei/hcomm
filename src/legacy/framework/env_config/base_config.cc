@@ -105,7 +105,7 @@ void EnvRtsConfig::Parse()
 {
     execTimeOut.Parse();
     aivExecTimeOut.Parse();
-    HCCL_RUN_INFO("[Init][EnvVarParam]Env config execTimeOut[%u], aivExecTimeOut[%f]s", GetExecTimeOut(), GetAivExecTimeOut());
+    HCCL_RUN_INFO("[Init][EnvVarParam]Env config execTimeOut[%u]s, aivExecTimeOut[%f]s", GetExecTimeOut(), GetAivExecTimeOut());
 }
 
 u32 EnvRtsConfig::GetExecTimeOut() const
@@ -126,7 +126,7 @@ void EnvRdmaConfig::Parse()
     rdmaServerLevel.Parse();
     rdmaTimeOut.Parse();
     rdmaRetryCnt.Parse();
-    HCCL_RUN_INFO("[Init][EnvVarParam]Env config rdmaTrafficClass[%u], rdmaServerLevel[%u], rdmaTimeOut[%u], rdmaRetryCnt[%u]s",
+    HCCL_RUN_INFO("[Init][EnvVarParam]Env config rdmaTrafficClass[%u], rdmaServerLevel[%u], rdmaTimeOut[%u]s, rdmaRetryCnt[%u]",
                   GetRdmaTrafficClass(), GetRdmaServerLevel(), GetRdmaTimeOut(), GetRdmaRetryCnt());
 }
 
