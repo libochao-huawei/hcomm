@@ -24,8 +24,6 @@
 
 namespace Hccl {
 
-void CheckRootInfoJson(const nlohmann::json &parseJson);
-
 const u32 RANKINFO_DETECT_SERVER_STATUS_IDLE = 0;
 const u32 RANKINFO_DETECT_SERVER_STATUS_RUNING = 1;
 const u32 RANKINFO_DETECT_SERVER_STATUS_ERROR = 2;
