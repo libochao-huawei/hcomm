@@ -36,6 +36,7 @@ HcclResult UboeEndpoint::Init()
     CHK_RET(hrtGetDevicePhyIdByIndex(deviceLogicId, devPhyId));
     endpointDesc_.loc.device.devPhyId = devPhyId;
 
+    Hccl::HccpHdcManager::GetInstance().Init(deviceLogicId);
     auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
     Hccl::IpAddress eidAddress{};
     rdmaHandleMgr.UboeIpv4ToEid(ipAddr, eidAddress, devPhyId);
