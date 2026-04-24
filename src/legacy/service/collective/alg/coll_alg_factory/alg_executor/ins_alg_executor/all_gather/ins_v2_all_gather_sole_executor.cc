@@ -122,6 +122,11 @@ HcclResult InsV2AllGatherSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate
 
     std::shared_ptr<InsAlgTemplate> algTemplate = nullptr;
     CHK_RET(CreateTemplates(algTemplate));
+    // 通过判断哪层通信域能有到所有remoteRank的path，判断当前算法跑在哪一层
+    std::map<u32, u32>rank2PathNumMap;
+    HCCL_INFO("[InsV2AllGatherSoleExecutor] Orchestrate host SetPathNumMap");
+    CHK_RET(SetPathNumMapByRankGraphMultiLevel(rankGraph, virtRanks_, myRank_, rank2PathNumMap));
+    algTemplate->setPathNumMap(rank2PathNumMap);  
 
     AlgTempResReq tempResReq;
     CHK_RET(GetTemplateResRequest(rankGraph, algTemplate, tempResReq));

@@ -96,6 +96,11 @@ HcclResult InsV2ReduceScatterSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchest
     std::shared_ptr<InsAlgTemplate> algTemplate = nullptr;
     CHK_RET(CreateTemplates(algTemplate));
 
+    std::map<u32, u32>rank2PathNumMap;
+    HCCL_INFO("[InsV2ReduceScatterSoleExecutor] CalcRes SetPathNumMap");
+    CHK_RET(SetPathNumMapByRankGraphMultiLevel(rankGraph, virtRanks_, myRank_, rank2PathNumMap));
+    algTemplate->setPathNumMap(rank2PathNumMap);  
+
     AlgTempResReq tempResReq;
     if (enableDetour_) {
         HCCL_DEBUG("[InsV2ReduceScatterSoleExecutor][Orchestrate] [%s] Rank[%d], CalcRes with detouring enabled.", __func__, myRank_);

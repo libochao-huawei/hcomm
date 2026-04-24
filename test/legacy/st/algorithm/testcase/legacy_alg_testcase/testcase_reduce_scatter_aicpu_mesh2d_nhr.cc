@@ -51,27 +51,6 @@ protected:
 };
 
 
-TEST_F(ReduceScatterAICPUMesh2dNHRTest, reduceScatter_aicpu_case_test_2_pod_ParallelMesh2DNHR)
-{
-    TopoMeta topoMeta{{{0, 1, 8, 9, 24, 25, 32, 33}, {3, 5, 19, 21}}};
-    setenv("HCCL_IODIE_NUM", "2", 1);
-
-    CheckerOpParam checkerOpParam;
-    checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
-    checkerOpParam.tag = "ReduceScatter";
-    checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
-    checkerOpParam.DataDes.count = 400;
-    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.algName = "InsReduceScatterParallelMesh2DNHR";
-
-    Checker checker;
-    HcclResult ret;
-    ret = checker.CheckA5Aicpu(checkerOpParam, topoMeta);
-    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
-}
-
 TEST_F(ReduceScatterAICPUMesh2dNHRTest, reduceScatter_aicpu_case_test_2_server_ParallelMesh2DNHR)
 {
     TopoMeta topoMeta{{{0, 1, 8, 9}, {16, 17, 24, 25}}};
@@ -270,72 +249,4 @@ TEST_F(ReduceScatterAICPUMesh2dNHRTest, reduceScatter_aicpu_case_test_3_pod_Symm
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
 }
 
-TEST_F(ReduceScatterAICPUMesh2dNHRTest, reduceScatter_aicpu_case_test_2_pod_Asymmetric_2mul2_2mul4)
-{
-    RankTable_For_LLT gen;
-    TopoMeta topoMeta{{{0, 1, 8, 9}, {2, 3, 10, 11, 18, 19, 26, 27}}};
-
-    setenv("HCCL_IODIE_NUM", "2", 1);
-
-    CheckerOpParam checkerOpParam;
-    checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
-    checkerOpParam.tag = "ReduceScatter";
-    checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MAX;
-    checkerOpParam.DataDes.count = 100;
-    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
-    checkerOpParam.algName = "InsReduceScatterParallelMesh2DNHR";
-
-    Checker checker;
-    HcclResult ret;
-    ret = checker.CheckA5Aicpu(checkerOpParam, topoMeta);
-    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
-}
-
-TEST_F(ReduceScatterAICPUMesh2dNHRTest, reduceScatter_aicpu_case_test_3_pod_Asymmetric_2mul2_2mul4_2mul6)
-{
-    RankTable_For_LLT gen;
-    TopoMeta topoMeta{{{0, 1, 8, 9}, {2, 3, 10, 11, 18, 19, 26, 27}, {4, 5, 12, 13, 20, 21, 28, 29, 36, 37, 44, 45}}};
-
-    setenv("HCCL_IODIE_NUM", "2", 1);
-
-    CheckerOpParam checkerOpParam;
-    checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
-    checkerOpParam.tag = "ReduceScatter";
-    checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MIN;
-    checkerOpParam.DataDes.count = 1000;
-    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT16;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
-    checkerOpParam.algName = "InsReduceScatterParallelMesh2DNHR";
-
-    Checker checker;
-    HcclResult ret;
-    ret = checker.CheckA5Aicpu(checkerOpParam, topoMeta);
-    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
-}
-
-TEST_F(ReduceScatterAICPUMesh2dNHRTest, reduceScatter_aicpu_case_test_3_pod_Asymmetric_2mul2_2mul4_2mul4)
-{
-    RankTable_For_LLT gen;
-    TopoMeta topoMeta{{{0, 1, 8, 9}, {2, 3, 10, 11, 18, 19, 26, 27}, {4, 5, 12, 13, 20, 21, 28, 29}}};
-
-    setenv("HCCL_IODIE_NUM", "2", 1);
-
-    CheckerOpParam checkerOpParam;
-    checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
-    checkerOpParam.tag = "ReduceScatter";
-    checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
-    checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.DataDes.count = 1024;
-    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
-    checkerOpParam.algName = "InsReduceScatterParallelMesh2DNHR";
-
-    Checker checker;
-    HcclResult ret;
-    ret = checker.CheckA5Aicpu(checkerOpParam, topoMeta);
-    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
-}
 

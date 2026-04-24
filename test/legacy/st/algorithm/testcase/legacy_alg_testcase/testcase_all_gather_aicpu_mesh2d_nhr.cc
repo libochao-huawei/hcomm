@@ -132,7 +132,7 @@ TEST_F(AllGatherAICPUMesh2dNHRTest, Aicpu_AllGather_Parallel_executor_4x2_2x2)
     CollAlgResReq resReq;
     auto ret = algoExecutor->CalcRes(&virtTopo, resReq);
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
-    EXPECT_EQ(resReq.primQueueNum, 3);
+    EXPECT_EQ(resReq.primQueueNum, 4);
     std::shared_ptr<InsQueue> insQue(new InsQueue);
 
     algoExecutor->vTopo_.clear();
@@ -141,7 +141,7 @@ TEST_F(AllGatherAICPUMesh2dNHRTest, Aicpu_AllGather_Parallel_executor_4x2_2x2)
 
     ret = algoExecutor->Orchestrate(&virtTopo, collAlgOp, collAlgParams, insQue);
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
-    EXPECT_EQ(insQue->SizeOfSlaves(), 2);
+    EXPECT_EQ(insQue->SizeOfSlaves(), 3);
     // check vTpopo size
     EXPECT_EQ(algoExecutor->vTopo_.size(), 2);
     EXPECT_EQ(algoExecutor->vTopo_[0].size(), 2);
@@ -197,7 +197,7 @@ TEST_F(AllGatherAICPUMesh2dNHRTest, Aicpu_AllGather_Parallel_executor_2x2_2x2)
     CollAlgResReq resReq;
     auto ret = algoExecutor->CalcRes(&virtTopo, resReq);
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
-    EXPECT_EQ(resReq.primQueueNum, 3);
+    EXPECT_EQ(resReq.primQueueNum, 4);
     std::shared_ptr<InsQueue> insQue(new InsQueue);
 
     algoExecutor->vTopo_.clear();
@@ -206,7 +206,7 @@ TEST_F(AllGatherAICPUMesh2dNHRTest, Aicpu_AllGather_Parallel_executor_2x2_2x2)
 
     ret = algoExecutor->Orchestrate(&virtTopo, collAlgOp, collAlgParams, insQue);
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
-    EXPECT_EQ(insQue->SizeOfSlaves(), 2);
+    EXPECT_EQ(insQue->SizeOfSlaves(), 3);
     // check vTpopo size
     EXPECT_EQ(algoExecutor->vTopo_.size(), 2);
     EXPECT_EQ(algoExecutor->vTopo_[0].size(), 2);

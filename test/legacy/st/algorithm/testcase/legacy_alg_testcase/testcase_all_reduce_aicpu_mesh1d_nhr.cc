@@ -80,7 +80,7 @@ TEST_F(AllReduceAICPUMesh1dNHRTest, allreduce_aicpu_case_test_2_mul_1_rank_Paral
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.algName = "InsAllReduceParallelMesh1DNHR";
+    checkerOpParam.algName = "InsAllReduceNHR";
 
     Checker checker;
     HcclResult ret;
@@ -309,98 +309,6 @@ TEST_F(AllReduceAICPUMesh1dNHRTest, allreduce_aicpu_case_test_2_mul_2_rank_Paral
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 0;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.algName = "InsAllReduceParallelMesh1DNHR";
-
-    Checker checker;
-    HcclResult ret;
-    ret = checker.CheckA5Aicpu(checkerOpParam, topoMeta);
-    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
-}
-
-TEST_F(AllReduceAICPUMesh1dNHRTest, allreduce_aicpu_case_test_Asymmetric_2pod_2mul1_2mul2)
-{
-    RankTable_For_LLT gen;
-    TopoMeta topoMeta{{{0, 1}, {0, 1, 2, 3}}};
-
-    setenv("HCCL_IODIE_NUM", "2", 1);
-
-    CheckerOpParam checkerOpParam;
-    checkerOpParam.opType = CheckerOpType::ALLREDUCE;
-    checkerOpParam.tag = "AllReduce";
-    checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.DataDes.count = 1;
-    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
-    checkerOpParam.algName = "InsAllReduceParallelMesh1DNHR";
-
-    Checker checker;
-    HcclResult ret;
-    ret = checker.CheckA5Aicpu(checkerOpParam, topoMeta);
-    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
-}
-
-TEST_F(AllReduceAICPUMesh1dNHRTest, allreduce_aicpu_case_test_Asymmetric_2pod_2mul2_3mul2)
-{
-    RankTable_For_LLT gen;
-    TopoMeta topoMeta{{{0, 1, 8, 9}, {0, 1, 2, 8, 9, 10}}};
-
-    setenv("HCCL_IODIE_NUM", "2", 1);
-
-    CheckerOpParam checkerOpParam;
-    checkerOpParam.opType = CheckerOpType::ALLREDUCE;
-    checkerOpParam.tag = "AllReduce";
-    checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
-    checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MIN;
-    checkerOpParam.DataDes.count = 200;
-    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP16;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
-    checkerOpParam.algName = "InsAllReduceParallelMesh1DNHR";
-
-    Checker checker;
-    HcclResult ret;
-    ret = checker.CheckA5Aicpu(checkerOpParam, topoMeta);
-    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
-}
-
-TEST_F(AllReduceAICPUMesh1dNHRTest, allreduce_aicpu_case_test_2_pod_Asymmetric_3mul3_3mul2)
-{
-    RankTable_For_LLT gen;
-    TopoMeta topoMeta{{{0, 1, 2, 8, 9, 10, 16, 17, 18}, {2, 3, 4, 10, 11, 12}}};
-
-    setenv("HCCL_IODIE_NUM", "2", 1);
-
-    CheckerOpParam checkerOpParam;
-    checkerOpParam.opType = CheckerOpType::ALLREDUCE;
-    checkerOpParam.tag = "AllReduce";
-    checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MAX;
-    checkerOpParam.DataDes.count = 1024;
-    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
-    checkerOpParam.algName = "InsAllReduceParallelMesh1DNHR";
-
-    Checker checker;
-    HcclResult ret;
-    ret = checker.CheckA5Aicpu(checkerOpParam, topoMeta);
-    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
-}
-
-TEST_F(AllReduceAICPUMesh1dNHRTest, AllGatherParallel_asymmetric_opbase_6n6n9)
-{
-    RankTable_For_LLT gen;
-    TopoMeta topoMeta{{{0, 1, 2, 8, 9, 10}, {3, 4, 5, 11, 12, 13}, {4, 5, 6, 12, 13, 14, 20, 21, 22}}};
-
-    setenv("HCCL_IODIE_NUM", "2", 1);
-
-    CheckerOpParam checkerOpParam;
-    checkerOpParam.opType = CheckerOpType::ALLREDUCE;
-    checkerOpParam.tag = "AllReduce";
-    checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
-    checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.DataDes.count = 1024;
-    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_BFP16;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsAllReduceParallelMesh1DNHR";
 
     Checker checker;

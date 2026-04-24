@@ -357,6 +357,12 @@ HcclResult InsAllReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTem
     tempAlgInter.SetCollOp(op);  // CCU template需要传递op信息
     tempAlgInter.InitReduceInfo(redOp_, dataType_);
 
+    std::vector<map<u32, u32>> rank2PathNumMap;
+    HCCL_INFO("[InsAllReduceParallelExecutor] Orchestrate host SetPathNumMap");
+    CHK_RET(SetPathNumMapByRankGraphMultiLevel(rankGraph, virtRanks_, myRank_, rank2PathNumMap));
+    tempAlgIntra.setPathNumMap(rank2PathNumMap[0]);
+    tempAlgInter.setPathNumMap(rank2PathNumMap[1]);
+
     // 计算算法模板所需资源
     CHK_RET(PrepareResForTemplate(rankGraph, tempAlgIntra, tempAlgInter));
 

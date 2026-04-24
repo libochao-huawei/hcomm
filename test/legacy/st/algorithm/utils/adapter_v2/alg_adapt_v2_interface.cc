@@ -89,6 +89,7 @@ void GenCollOpParams(u32 myRank, CheckerOpParam &checkerOpParam, CollOpParams &o
         opParams.all2AllDataDes.recvType = g_CheckerDataType2DataType_aicpu[checkerOpParam.All2AllDataDes.recvType];
         opParams.all2AllDataDes.sendCount = checkerOpParam.All2AllDataDes.sendCount;
         opParams.all2AllDataDes.recvCount = checkerOpParam.All2AllDataDes.recvCount;
+        opParams.dataType = g_CheckerDataType2DataType_aicpu[checkerOpParam.DataDes.dataType];
     } else if (opParams.opType == OpType::ALLTOALLV) {
         opParams.all2AllVDataDes.sendType = g_CheckerDataType2DataType_aicpu[checkerOpParam.All2AllDataDes.sendType];
         opParams.all2AllVDataDes.recvType = g_CheckerDataType2DataType_aicpu[checkerOpParam.All2AllDataDes.recvType];
@@ -96,10 +97,12 @@ void GenCollOpParams(u32 myRank, CheckerOpParam &checkerOpParam, CollOpParams &o
         opParams.all2AllVDataDes.recvCounts = static_cast<void *>(checkerOpParam.All2AllDataDes.recvCounts.data());
         opParams.all2AllVDataDes.sdispls = static_cast<void *>(checkerOpParam.All2AllDataDes.sdispls.data());
         opParams.all2AllVDataDes.rdispls = static_cast<void *>(checkerOpParam.All2AllDataDes.rdispls.data());
+        opParams.dataType = g_CheckerDataType2DataType_aicpu[checkerOpParam.DataDes.dataType];
     } else if (opParams.opType == OpType::ALLTOALLVC) {
         opParams.all2AllVCDataDes.sendType = g_CheckerDataType2DataType_aicpu[checkerOpParam.All2AllDataDes.sendType];
         opParams.all2AllVCDataDes.recvType = g_CheckerDataType2DataType_aicpu[checkerOpParam.All2AllDataDes.recvType];
         opParams.all2AllVCDataDes.sendCountMatrix = static_cast<void *>(checkerOpParam.All2AllDataDes.sendCountMatrix.data());
+        opParams.dataType = g_CheckerDataType2DataType_aicpu[checkerOpParam.DataDes.dataType];
     } else if (opParams.opType == OpType::REDUCESCATTERV || opParams.opType == OpType::ALLGATHERV) {
         opParams.vDataDes.counts = static_cast<void *>(checkerOpParam.VDataDes.counts.data());
         opParams.vDataDes.displs = static_cast<void *>(checkerOpParam.VDataDes.displs.data());

@@ -160,6 +160,8 @@ HcclResult InsAlltoAllSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate(co
 {
     // init and check params
     CHK_RET(Init(op, params, insQue));
+    dataType_ = op.dataType;
+    // std::cout<< "dataType_" <<dataType_<<std::endl;
     // Topo Match
     AlgTopoMatch topoMatch(myRank_, rankSize_, rankGraph, devType_);
     CHK_RET(topoMatch.MatchTopo(vTopo_, virtRanks_, virtRankMap_));
@@ -171,6 +173,22 @@ HcclResult InsAlltoAllSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate(co
     tempAlg.SetCollOp(op);  // CCU template需要传递op信息
     tempAlg.SetA2ASendRecvInfo(localSendRecvInfo_);
     tempAlg.SetLoadInfo(params);
+    tempAlg.SetDataType(dataType_);
+
+    std::map<u32, u32>rank2PathNumMap;
+    HCCL_INFO("[InsAlltoAllSoleExecutor] CalcRes SetPathNumMap");
+    for(auto rankIdx : virtRanks_){
+        if(rankIdx==myRank_){
+            continue;
+        }
+        std::vector<NetInstance::Path> tmpPaths0 =
+            rankGraph->GetPaths(0, myRank_, rankIdx);
+        std::vector<NetInstance::Path> tmpPaths1 =
+            rankGraph->GetPaths(1, myRank_, rankIdx);
+        rank2PathNumMap[rankIdx] = tmpPaths0.size() + tmpPaths1.size();
+        // std::cout<<"myRank_="<<myRank_<<" rankIdx="<<rankIdx<<" tmpPaths0.size()="<<tmpPaths0.size()<<" tmpPaths1.size()"<<tmpPaths1.size()<<std::endl;
+    }
+    tempAlg.setPathNumMap(rank2PathNumMap);
 
     // calculate required insQues and prepare queue
     AlgTempResReq tempResReq;
@@ -190,6 +208,7 @@ HcclResult InsAlltoAllSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate(co
 
     CHK_RET(OrchestrateOpbase(tempAlg));
 
+    // std::cout<<"Orchestrate end"<<std::endl;
     return HcclResult::HCCL_SUCCESS;
 }
 

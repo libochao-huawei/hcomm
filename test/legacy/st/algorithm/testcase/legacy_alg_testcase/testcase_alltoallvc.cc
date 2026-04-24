@@ -66,6 +66,7 @@ protected:
         checkerOpParam.All2AllDataDes.recvType = CheckerDataType::DATA_TYPE_FP16;
         checkerOpParam.All2AllDataDes.sendCountMatrix = GenerateSendCountMatrix(dataCount, rankNum);
         checkerOpParam.algName = algName;
+        checkerOpParam.DataDes.dataType = checkerOpParam.All2AllDataDes.sendType;
 
         Checker checker;
         HcclResult ret;
