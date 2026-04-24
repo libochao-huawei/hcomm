@@ -26,6 +26,7 @@
 #include "transport_pub.h"
 #include "topoinfo_struct.h"
 #include "comm_config_pub.h"
+
 namespace hccl {
 using RankId = u32;
 constexpr u32 BROADCAST_INTERVAL = 50; // 背景线程执行周期为50 ms
