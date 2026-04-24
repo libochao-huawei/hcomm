@@ -50,6 +50,7 @@
 #include "acl/acl_rt.h"
 #include "adapter_tdt.h"
 #include "acl/acl_rt.h"
+#include "hccl_aiv.h"
 
 /*----------------------------------------------*
  * 外部变量说明                                 *
@@ -5494,6 +5495,11 @@ aclError aclmdlRIDestroyRegisterCallback(aclmdlRI modelRI, aclrtCallback func, v
 namespace hccl {
 HcclResult LoadBinaryFromFile(const char *binPath, aclrtBinaryLoadOptionType optionType, uint32_t cpuKernelMode,
     aclrtBinHandle &binHandle)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult ClearAivSyncBuf(void** cclBuffersOut, const AivResourceArgs &resourceArgs, const AivTopoArgs &topoArgs, AivAlgArgs algArgs)
 {
     return HCCL_SUCCESS;
 }
