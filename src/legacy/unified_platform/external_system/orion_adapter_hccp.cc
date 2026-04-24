@@ -2681,7 +2681,6 @@ HcclResult HrtRaGetTpAttrAsync(u32 phyId, RdmaHandle handle, uint64_t tpHandle, 
     return HCCL_SUCCESS;
 }
 
-<<<<<<< HEAD
 HcclResult HrtGetUboeFlagEnable(const u32 devPhyId)
 {
     u32 uboeVersion = 0;
@@ -2692,22 +2691,6 @@ HcclResult HrtGetUboeFlagEnable(const u32 devPhyId)
     CHK_PRT_RET(uboeVersion < GET_UBOE_FLAG_ENABLE_VERSION,
         HCCL_ERROR("[%s] this package does not support to get uboe flag, "
             "please change new package. uboeVersion[%u].", __func__, uboeVersion), HCCL_E_NOT_SUPPORT);
-=======
-HcclResult HrtRaCtxGetTpAttr(u32 phyId, RdmaHandle handle, uint64_t tpHandle, uint32_t& attrBitmap, TpAttr& attr)
-{
-    HCCL_INFO("[HrtRaCtxGetTpAttr] begain, phyId[%u] tpHandle[%llu]", phyId, tpHandle);
-    u32 tpAttrVersion = 0;
-    s32 ret = RaGetInterfaceVersion(phyId, GET_TP_ATTR_OPCODE, &tpAttrVersion);
-    if (ret != 0 || tpAttrVersion < GET_TP_ATTR_VERSION) {
-        HCCL_WARNING("this package does not support RaCtxGetTpAttr for device, please change new package");
-        return HCCL_E_NOT_SUPPORT;
-    }
-    ret = RaCtxGetTpAttr(handle, tpHandle, &attrBitmap, &attr);
-    if (ret != 0) {
-        HCCL_ERROR("RaCtxGetTpAttr fail. phyId[%u] tpHandle[%llu]", phyId, tpHandle);
-        return HCCL_E_NETWORK;
-    }
->>>>>>> support ub comm log
     return HCCL_SUCCESS;
 }
 } // namespace Hccl
