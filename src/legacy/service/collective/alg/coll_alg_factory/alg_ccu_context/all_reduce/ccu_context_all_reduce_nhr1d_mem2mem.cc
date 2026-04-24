@@ -210,14 +210,14 @@ void CcuContextAllReduceNHR1D::DoWriteReduceSlice(const u32 &toRank, CcuRep::Mem
                                                   const u32 &sendSliceIdx, u32 signalIndex)
 {
     bool          islastSlice;
-    CcuTransport *sendTransport = transports[indexMap_[toRank]];
-    islastSlice = (sendSliceIdx + 1 == dimSize_);
     // 添加 die1 偏移
     if (axisId_ == 1) {
         dst.addr += die0Size_;
         src.addr += die0Size_;
     }
-
+    CcuTransport *sendTransport = transports[indexMap_[toRank]];
+    islastSlice = (sendSliceIdx + 1 == dimSize_);
+    
     // allreduce切片的最后一块slice，大小可能不一致
     const CcuRep::Variable &sliceSize = axisId_ == 0? (islastSlice? die0LastSliceSize_ : die0SliceSize_)
                                                     : (islastSlice? die1LastSliceSize_ : die1SliceSize_);

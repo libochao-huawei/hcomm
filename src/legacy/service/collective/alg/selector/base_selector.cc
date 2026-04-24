@@ -512,7 +512,7 @@ bool BaseSelector::IsLevel0PcieMix() const
         }
         std::vector<NetInstance::Path> paths = rankGraph_->GetPaths(netLayer, myRank_, rankId);
         CHK_PRT_RET(paths.size() == 0 || paths[0].links.size() == 0,
-            HCCL_INFO("[BaseSelector][Is2DieFullMesh], Can not find path from Local[%d] to Rmt[%d], in netLayer %u. "
+            HCCL_INFO("[BaseSelector][IsLevel0PcieMix], Can not find path from Local[%d] to Rmt[%d], in netLayer %u. "
                       "Topo is not mesh",
                 myRank_,
                 rankId,
