@@ -524,14 +524,14 @@ HcclResult ChannelProcess::LaunchCommonChannelKernel(ChannelHandle *channelHandl
 }
 
 HcclResult ChannelProcess::LaunchChannelKernel(ChannelHandle *channelHandles,
-    ChannelHandle *hostChannelHandles, uint32_t listNum, aclrtBinHandle binHandle)
+    ChannelHandle *hostChannelHandles, HcommChannelDesc *hcommDesc, uint32_t listNum, aclrtBinHandle binHandle)
 {
     HCCL_RUN_INFO("[%s] listNum[%u]", __func__, listNum);
     CHK_PRT_RET(listNum == 0U, HCCL_ERROR("[%s] listNum is 0", __func__), HCCL_E_PARA);
     auto *ch = reinterpret_cast<Channel *>(hostChannelHandles[0]);
     CHK_PTR_NULL(ch);
     if (ch->GetChannelKind() == HcommChannelKind::AICPU_TS_URMA) {
-        return ChannelKernelLaunchForBase(channelHandles, hostChannelHandles, listNum, binHandle);
+        return ChannelKernelLaunchForBase(channelHandles, hostChannelHandles, hcommDesc, listNum, binHandle);
     }
     return LaunchCommonChannelKernel(channelHandles, hostChannelHandles, listNum, ch->GetChannelKind(), binHandle);
 }
@@ -547,7 +547,7 @@ HcclResult ChannelProcess::SaveChannels(ChannelHandle* targetChannels, ChannelHa
         if (channelNum == 0U) {
             return HCCL_SUCCESS;
         }
-        CHK_RET(LaunchChannelKernel(userChannels, targetChannels, channelNum, binHandle));
+        CHK_RET(LaunchChannelKernel(userChannels, targetChannels, channelDescs, channelNum, binHandle));
     } else {
         HCCL_INFO("[%s] engine[%d] no need to KernelLaunch.", __func__, engine);
         for (uint32_t i = 0; i < channelNum; i++) {

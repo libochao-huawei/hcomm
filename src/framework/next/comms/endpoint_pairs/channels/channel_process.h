@@ -73,7 +73,7 @@ private:
         uint32_t listNum, aclrtBinHandle binHandle);
     /** AICPU 系引擎下按通道种类选择 HcommChannelRes 或旧 HcclChannelUrmaRes 路径，便于后续扩展 */
     static HcclResult LaunchChannelKernel(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles,
-        uint32_t listNum, aclrtBinHandle binHandle);
+        HcommChannelDesc* hcommDesc, uint32_t listNum, aclrtBinHandle binHandle);
     static HcclResult LaunchCommonChannelKernel(ChannelHandle *channelHandles,
         ChannelHandle *hostChannelHandles, uint32_t listNum, HcommChannelKind channelKind, aclrtBinHandle binHandle);
 
