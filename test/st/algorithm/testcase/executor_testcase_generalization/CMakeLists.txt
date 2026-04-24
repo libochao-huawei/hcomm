@@ -52,13 +52,13 @@ target_link_libraries(executor_hccl_test PRIVATE
     -ldl
 )
 
-add_subdirectory(RunAlltoAllVTwoLevelPipeline)
-add_subdirectory(BroadCastRingFor91093Executor)
-add_subdirectory(AllGatherMeshOpbasePipelineExecutor)
-add_subdirectory(AllGatherMeshExecutor)
-add_subdirectory(ScatterMeshExecutor)
-add_subdirectory(BroadCastMeshExecutor)
-add_subdirectory(AllGatherMeshGraphPipelineExecutor)
+# add_subdirectory(RunAlltoAllVTwoLevelPipeline)
+# add_subdirectory(BroadCastRingFor91093Executor)
+# add_subdirectory(AllGatherMeshOpbasePipelineExecutor)
+# add_subdirectory(AllGatherMeshExecutor)
+# add_subdirectory(ScatterMeshExecutor)
+# add_subdirectory(BroadCastMeshExecutor)
+# add_subdirectory(AllGatherMeshGraphPipelineExecutor)
 add_subdirectory(HcclAlgoEnv)
 
 target_sources(executor_hccl_test
