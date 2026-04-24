@@ -45,6 +45,15 @@ constexpr uint8_t MAX_CCU_IODIE_NUM = 2;
 // 清理CKE批量申请大小
 constexpr u32 MAX_CKE_DATA_ARRAY_SIZE = 8;
 
+// UBOE EID判断
+constexpr u32 GET_UBOE_FLAG_ENABLE_OPCODE = 57;
+constexpr u32 GET_UBOE_FLAG_ENABLE_VERSION = 2;
+constexpr u32 UBOE_DEV_FLAG_RIGHT_SHIFT = 19;
+
+constexpr bool IsUboeSupported(u32 devFeature) {
+return (devFeature >> UBOE_DEV_FLAG_RIGHT_SHIFT) & 1;
+}
+
 CcuComponent &CcuComponent::GetInstance(const int32_t deviceLogicId)
 {
     static CcuComponent ccuComponent[MAX_MODULE_DEVICE_NUM + 1];
@@ -144,6 +153,15 @@ HcclResult CcuComponent::CheckDiesEnable()
 static HcclResult FindOneUsableEid(const int32_t devLogicId, const uint32_t devPhyId,
     const uint8_t dieId, uint32_t &feId, CommAddr &commAddr)
 {
+    // 判断当前版本HCCP是否支持判断UBOE标志位
+    u32 uboeVersion = 0;
+    s32 versionRet = RaGetInterfaceVersion(devPhyId, GET_UBOE_FLAG_ENABLE_OPCODE, &uboeVersion);
+    if (versionRet != 0 || uboeVersion < GET_UBOE_FLAG_ENABLE_VERSION) {
+        HCCL_ERROR("[%s] this package does not support UboeIpv4ToEid for device, "
+            "please change new package. ret[%d], uboeVersion[%u].", __func__, versionRet, uboeVersion);
+        return;
+    }
+
     std::vector<DevEidInfo> eidInfos;
     auto ret = EidInfoMgr::GetInstance(devPhyId).GetEidInfos(eidInfos);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
@@ -159,6 +177,11 @@ static HcclResult FindOneUsableEid(const int32_t devLogicId, const uint32_t devP
     EXCEPTION_HANDLE_BEGIN
     auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
     for (auto &eidInfo : eidInfos) {
+        // 如果是UBOE设备，则跳过
+        if (IsUboeSupported(eidInfo.devFeature)) {
+            continue;
+        }
+
         if (eidInfo.dieId != dieId) {
             continue;
         }
