@@ -16,3 +16,12 @@ src/framework/next/comms/endpoint_pairs/channels/channel_process.cc
 src/framework/next/comms/endpoint_pairs/channels/aicpu/device/aicpu_channel_process.cc
 src/legacy/framework/dfx/aicpu/profiling/profiling_command_handle_lite.cc
 src/framework/next/coll_comms/api_c_adpt/dev/dev_coll_comm_c_adpt.cc
+src/legacy/unified_platform/resource/transport/aicpu/p2p_transport_lite_impl.cc
+src/legacy/unified_platform/resource/transport/aicpu/ub_transport_lite_impl.cc
+src/legacy/unified_platform/resource/transport/p2p_transport.cc
+src/legacy/unified_platform/resource/stream/stream.cc
+src/legacy/unified_platform/resource/notify/ipc_remote_notify.cc
+src/legacy/interface/rank_graph_interface.cc
+src/framework/next/comms/endpoint_pairs/channels/aicpu/aicpu_ts_p2p_channel.cc
+src/framework/next/comms/endpoint_pairs/channels/channel.cc
+src/framework/next/comms/common/orion_adpt_utils.cc
