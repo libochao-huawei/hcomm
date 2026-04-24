@@ -4,6 +4,7 @@
 #include "framework/aicpu_hccl_process.h"
 #include "framework/aicpu_communicator.h"
 #include "dfx/aicpu_executor_tracer.h"
+#include "read_write_lock_base.h"
 
 using namespace testing;
 using namespace mockcpp;
@@ -47,18 +48,38 @@ TEST_F(ExecutorTracerTest, Ut_StopBackGroundDfx)
 
 TEST_F(ExecutorTracerTest, Ut_TaskMonitor)
 {
-    // Mock ReadWriteLockBase
-    ReadWriteLockBase mockMutex;
+    // Mock HcclCommAicpu
+    class MockHcclCommAicpu {
+    public:
+        MOCK_METHOD0(GetCommInfoStatus, bool());
+        MOCK_METHOD0(StreamTaskMonitor, HcclResult());
+    };
     
-    // Mock AicpuHcclProcess::AicpuGetCommMutex
-    MOCKER(AicpuHcclProcess::AicpuGetCommMutex)
+    MockHcclCommAicpu mockComm;
+    
+    // Mock GetCommInfoStatus to return true
+    MOCKER(&MockHcclCommAicpu::GetCommInfoStatus)
         .stubs()
-        .will(returnValue(&mockMutex));
+        .will(returnValue(true));
     
-    // Mock AicpuHcclProcess::AicpuGetCommAll
-    MOCKER(AicpuHcclProcess::AicpuGetCommAll)
+    // Mock StreamTaskMonitor
+    MOCKER(&MockHcclCommAicpu::StreamTaskMonitor)
         .stubs()
         .will(returnValue(HCCL_SUCCESS));
+    
+    // Mock AicpuHcclProcess::AicpuGetCommMutex to return a valid ReadWriteLockBase reference
+    static ReadWriteLockBase mockMutex;
+    MOCKER(AicpuHcclProcess::AicpuGetCommMutex)
+        .stubs()
+        .will(returnValueRef(mockMutex));
+    
+    // Mock AicpuHcclProcess::AicpuGetCommAll to return our vector
+    MOCKER(AicpuHcclProcess::AicpuGetCommAll)
+        .stubs()
+        .will(doAction([&](std::vector<std::pair<std::string, hccl::HcclCommAicpu *>> &commInfo) {
+            commInfo.push_back({"test_group", reinterpret_cast<hccl::HcclCommAicpu *>(&mockComm)});
+            return HCCL_SUCCESS;
+        }));
     
     // Execute TaskMonitor
     ExecutorTracer::TaskMonitor();
