@@ -316,3 +316,4 @@ TEST_F(RankInfoDetectClientTest, Ut_VerifyTlsConsistency_When_KnownInconsistentA
 
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
+
