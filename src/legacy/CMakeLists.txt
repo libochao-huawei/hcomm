@@ -98,13 +98,13 @@ ENDIF ()
 #        -fno-strict-aliasing
 #        -pipe
 #        -O3
- 
+
 #        -Wextra
 #        -Wno-unused-parameter
 #        -Wno-missing-field-initializers
 #        -Wfloat-equal
 #)
- 
+
 target_compile_options(hccl_v2 PRIVATE
     -Werror
     -Wfloat-equal
@@ -217,7 +217,6 @@ target_link_libraries(hccl_v2 PRIVATE
     runtime
     ascendcl
     error_manager
-    hccl_v2_alg_frame
     ccl_dpu
     tsdclient
     ra
@@ -229,13 +228,6 @@ ENDIF ()
 
 # 将hccl编译出的动态库加入CANN的安装包
 IF (NOT DEFINED ENV{HCCL_LOCAL_BUILD})
-install(TARGETS hccl_v2
-    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL)
-install(TARGETS hccl_v2_native_alg_repo
-    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL)
-install(TARGETS hccl_v2_alg_frame
-    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL)
-
 install(TARGETS hccl_v2
     LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL
 )

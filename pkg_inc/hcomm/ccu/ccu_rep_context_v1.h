@@ -39,11 +39,13 @@ struct CcuProfilingInfo {
     uint32_t ckeId;
     uint32_t mask;
     uint64_t dataSize;         // 输入数据大小
+    uint32_t sqeNum;
     uint16_t channelId[CCU_MAX_CHANNEL_NUM];    // LoopGroup所包含的搬运指令使用的ChannelId
     uint32_t remoteRankId[CCU_MAX_CHANNEL_NUM]; // LoopGroup所包含的搬运指令的对端
     uint64_t channelHandle[CCU_MAX_CHANNEL_NUM]; // channelhandle句柄
 
-    CcuProfilingInfo() : name(""), type(0), dieId(0), missionId(0), reduceOpType(0), inputDataType(0), outputDataType(0), instrId(0), ckeId(0), mask(0), dataSize(0) {
+    CcuProfilingInfo() : name(""), type(0), dieId(0), missionId(0), reduceOpType(0), inputDataType(0), outputDataType(0),
+        instrId(0), ckeId(0), mask(0), dataSize(0), sqeNum(0) {
         (void)memset_s(channelId, sizeof(channelId), INVALID_VALUE_CHANNELID, sizeof(channelId));
         (void)memset_s(remoteRankId, sizeof(remoteRankId), INVALID_RANKID, sizeof(remoteRankId));
         (void)memset_s(channelHandle, sizeof(channelHandle), static_cast<int>(INVALID_VALUE_NOTIFYID), sizeof(channelHandle));
@@ -100,6 +102,7 @@ public:
     std::vector<CcuProfilingInfo> profilingInfo; // context全部profiling缓存信息
 protected:
     std::set<std::string> registeredLoop;
+    uint32_t sqeNum{0};
 
 private:
     std::shared_ptr<CcuRep::CcuRepBlock> activeBlock{nullptr};

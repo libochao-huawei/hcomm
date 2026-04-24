@@ -148,8 +148,9 @@ void CcuRepContext::AddSqeProfiling()
     ccuProfilingInfoCache.type      = (uint8_t)CcuProfilinType::CCU_TASK_PROFILING;
     ccuProfilingInfoCache.name      = "CCU_KERNEL";
     ccuProfilingInfoCache.dieId     = GetDieId();
-    HCCL_DEBUG("[%s]type[%d], name[%s], dieId[%u]", __func__, ccuProfilingInfoCache.type,
-        ccuProfilingInfoCache.name.c_str(), ccuProfilingInfoCache.dieId);
+    ccuProfilingInfoCache.sqeNum    = sqeNum;
+    HCCL_DEBUG("[%s]type[%d], name[%s], dieId[%u], sqeNum[%u]", __func__, ccuProfilingInfoCache.type,
+        ccuProfilingInfoCache.name.c_str(), ccuProfilingInfoCache.dieId, ccuProfilingInfoCache.sqeNum);
     profilingInfo.push_back(ccuProfilingInfoCache);
 }
     
