@@ -1075,7 +1075,7 @@ HcclResult TransportManager::CreateDestSockets(const std::string &tag, RankId re
     // 改对端的ip和port
     UpdateIsInterRdma(remoteRank, isInterRdma, forceRdma);
     HCCL_INFO("[Create][DestSockets]UpdateIsInterRdma finished. local rank[%u], remote rank[%u],"
-        "isInterRdma[%d], forceRdma[%d]", userRank_, remoteRank, isInterRdma, forceRdma);
+        "isInterRdma[%d], forceRdma[%d], tag[%s]", userRank_, remoteRank, isInterRdma, forceRdma, tag.c_str());
 
     u32 socketsPerLink = 1;
     if (isInterRdma) {
