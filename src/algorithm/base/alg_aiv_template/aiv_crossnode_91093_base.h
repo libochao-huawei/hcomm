@@ -188,7 +188,7 @@ public:
  
     uint64_t len_;
     uint32_t numBlocks_;
-    uint32_t blockIdx_;
+    uint32_t blockIdx_ = GetBlockIdx(); // 在构造函数中初始化，以免漏初始化
     
     TPipe pipe;
 
@@ -361,7 +361,6 @@ __aicore__ inline void AivCrossNode91093Base::Init(GM_ADDR buffOut0, GM_ADDR buf
     numBlocks_ = numBlocks;
     blockGroup_ = numBlocks_;
     commAddr_ = buffOut1;
-    blockIdx_ = GetBlockIdx();
     
     InitSetCheckClearArgsTensor();
     pipe.InitBuffer(offsetArgsBuf, UB_FLAG_SIZE * MAX_TARGET_NUM);
@@ -403,7 +402,6 @@ __aicore__ inline void AivCrossNode91093Base::InitDeter(GM_ADDR buffOut0, GM_ADD
     pingpongOffset = 0;
     blockGroup_ = numBlocks_;
     commAddr_ = buffOut1;
-    blockIdx_ = GetBlockIdx();
 
     InitSetCheckClearArgsTensor();
     if (rankSize > numBlocks_ ) {
@@ -436,7 +434,6 @@ __aicore__ inline void AivCrossNode91093Base::InitSuperKernel(GM_ADDR hiddenInpu
     flagAddrSelf_ = args->buffersOut[0];
     dataAddrSelf_ = args->buffersIn[0];
     commAddr_ = args->buffersOut[1];
-    blockIdx_ = GetBlockIdx();
 
     blockGroup_ = rankSize_ > numBlocks_ ? numBlocks_ : rankSize_;
     
@@ -467,7 +464,6 @@ __aicore__ inline void AivCrossNode91093Base::Init(GM_ADDR buffOut0, GM_ADDR buf
     usedBlockNum_ = numBlocks;
     numBlocks_ = numBlocks;
     commAddr_ = buffOut1;
-    blockIdx_ = GetBlockIdx();
 
     InitSetCheckClearArgsTensor();
     
@@ -511,7 +507,6 @@ __aicore__ inline void AivCrossNode91093Base::Init(GM_ADDR buffOut0, GM_ADDR buf
     usedBlockNum_ = numBlocks;
     numBlocks_ = numBlocks;
     commAddr_ = buffOut1;
-    blockIdx_ = GetBlockIdx();
 
     InitSetCheckClearArgsTensor();
     CalcNumTargetsAndTargetRanksGroup();
