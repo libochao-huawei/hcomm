@@ -252,8 +252,7 @@ function make_ut_gov() {
     cd ${CURRENT_DIR}
     rm -rf ${CURRENT_DIR}/cov
     mkdir -p ${CURRENT_DIR}/cov
-    lcov --ignore-errors mismatch,corrupt,empty,inconsistent -c -d ${BUILD_DIR}/test/ut/ -d ${BUILD_DIR}/test/legacy/ut/ -o cov/coverage.info -rc geninfo_unexecuted_block=1
-    
+    lcov --ignore-errors mismatch,corrupt,empty,inconsistent -c -d ${BUILD_DIR}/test/ut/ -d ${BUILD_DIR}/test/legacy/ut/ -o cov/coverage.info
     lcov -r cov/coverage.info */src/platform/hccp/external_depends/* -o cov/coverage.info
     lcov -e cov/coverage.info */src/algorithm/* */src/common/* */src/hccd/* */src/legacy/* */src/framework/* */src/platform/* */src/pub_inc/* -o cov/coverage.info
 
