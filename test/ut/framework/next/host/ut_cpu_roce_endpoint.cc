@@ -279,11 +279,11 @@ TEST_F(CpuRoceEndpointTest, ut_HcommMemUnreg_When_EndpointIsNull_Expect_ReturnHC
     EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
 }
 
-TEST_F(CpuRoceEndpointTest, ut_HcclMemExport_When_EndpointIsNull_Expect_ReturnHCCL_E_NOT_FOUND)
+TEST_F(CpuRoceEndpointTest, ut_HcommMemExport_When_EndpointIsNull_Expect_ReturnHCCL_E_NOT_FOUND)
 {
     void *memDesc = nullptr;
     uint32_t memDescLen = 0;
-    HcommResult ret = HcclMemExport(nullptr, reinterpret_cast<HcommMemHandle>(0x12345678), &memDesc, &memDescLen);
+    HcommResult ret = HcommMemExport(nullptr, reinterpret_cast<HcommMemHandle>(0x12345678), &memDesc, &memDescLen);
     EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
 }
 
