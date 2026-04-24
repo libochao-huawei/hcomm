@@ -53,7 +53,7 @@ TEST_F(ExecutorTracerTest, Ut_TaskMonitor)
     // Mock AicpuHcclProcess::AicpuGetCommMutex
     MOCKER(AicpuHcclProcess::AicpuGetCommMutex)
         .stubs()
-        .will(returnValueByRef(mockMutex));
+        .will(returnValue(&mockMutex));
     
     // Mock AicpuHcclProcess::AicpuGetCommAll
     MOCKER(AicpuHcclProcess::AicpuGetCommAll)
