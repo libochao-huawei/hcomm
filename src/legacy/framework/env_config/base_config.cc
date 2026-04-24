@@ -85,7 +85,7 @@ void EnvSocketConfig::Parse()
 {
     hcclSocketFamily.Parse();
     linkTimeOut.Parse();
-    HCCL_RUN_INFO("[Init][EnvVarParam]Env config hcclSocketFamily[%d], linkTimeOut[%d]",
+    HCCL_RUN_INFO("[Init][EnvVarParam]Env config hcclSocketFamily[%d], linkTimeOut[%d]s",
                   GetSocketFamily(), GetLinkTimeOut());
 }
 
@@ -105,7 +105,7 @@ void EnvRtsConfig::Parse()
 {
     execTimeOut.Parse();
     aivExecTimeOut.Parse();
-    HCCL_RUN_INFO("[Init][EnvVarParam]Env config execTimeOut[%u], aivExecTimeOut[%f]", GetExecTimeOut(), GetAivExecTimeOut());
+    HCCL_RUN_INFO("[Init][EnvVarParam]Env config execTimeOut[%u]s, aivExecTimeOut[%f]s", GetExecTimeOut(), GetAivExecTimeOut());
 }
 
 u32 EnvRtsConfig::GetExecTimeOut() const
