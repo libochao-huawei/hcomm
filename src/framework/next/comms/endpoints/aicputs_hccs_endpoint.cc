@@ -52,7 +52,6 @@ HcclResult AicpuTsHccsEndPoint::Init()
     HCCL_INFO("[AicpuTsHccsEndPoint]devPhyId[%u] superDevId[%u] devIpAddr_[%s] ",
         devPhyId, superDevId, devIpAddr_.GetReadableAddress());
 
-    // will not do ServerInit if server_port_ is 0
     CHK_RET(hccl::GlobalNetDevMgr::GetInstance(endpointDesc_.loc.device.devPhyId).RefNetDevCtx(
         NicType::VNIC_TYPE, devIpAddr_, server_port_, netDevCtx_));
 
@@ -62,13 +61,15 @@ HcclResult AicpuTsHccsEndPoint::Init()
 
 HcclResult AicpuTsHccsEndPoint::ServerSocketListen(const uint32_t port)
 {
-    CHK_RET(hccl::GlobalNetDevMgr::GetInstance(endpointDesc_.loc.device.devPhyId).ServerSocketListen(netDevCtx_, port));
+    CHK_RET(hccl::GlobalNetDevMgr::GetInstance(endpointDesc_.loc.device.devPhyId).ServerInit(
+        netDevCtx_, server_port_));
     return HCCL_SUCCESS;
 }
 
 HcclResult AicpuTsHccsEndPoint::ServerSocketStopListen(const uint32_t port)
 {
-    CHK_RET(hccl::GlobalNetDevMgr::GetInstance(endpointDesc_.loc.device.devPhyId).ServerSocketStopListen(netDevCtx_, port));
+    CHK_RET(hccl::GlobalNetDevMgr::GetInstance(endpointDesc_.loc.device.devPhyId).ServerDeInit(
+        netDevCtx_, port));
     return HCCL_SUCCESS;
 }
 
