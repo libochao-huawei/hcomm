@@ -1176,7 +1176,9 @@ void CommunicatorImpl::CovertToCurrentCollOperator(std::string &opTag, const Col
             currentCollOperator->vDataDes.counts = opParams.vDataDes.counts;
             currentCollOperator->vDataDes.displs = opParams.vDataDes.displs;
             currentCollOperator->vDataDes.dataType = opParams.vDataDes.dataType;
-            ConvertCollOperatorMemV(opParams);
+            if (!isHcomSelectAlg) { // isHcomSeletAlg表示是否为图插件接口进来，若是跳过该步。未来aiv支持reducescatterv/allgatherv算子时，改处需做对应适配。
+                ConvertCollOperatorMemV(opParams);
+            }
         } else {
             u64 size = DataTypeSizeGet(opParams.dataType) * opParams.count;
             if (size != 0) {
