@@ -338,7 +338,7 @@ int32_t HcommWriteWithNotifyOnThread(ThreadHandle thread, ChannelHandle channel,
 int32_t HcommWriteReduceWithNotifyOnThread(ThreadHandle thread, ChannelHandle channel, void *dst,
     const void *src, uint64_t count, HcommDataType dataType, HcommReduceOp reduceOp, uint32_t remoteNotifyIdx)
 {
-    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d], remoteNotifyIdx[%u].", 
+    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d], remoteNotifyIdx[%u].",
         __func__, thread, channel, dst, src, count, dataType, reduceOp, remoteNotifyIdx);
 
     CHK_PTR_NULL(dst);
@@ -454,6 +454,7 @@ int32_t HcommWriteNbi(ChannelHandle channel, void *dst, const void *src, uint64_
 int32_t HcommWriteWithNotifyNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
     uint64_t len, uint32_t remoteNotifyIdx)
 {
+    auto startut = TIME_NOW();
     HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu], remoteNotifyIdx[%u].",
         __func__, thread, channel, dst, src, len, remoteNotifyIdx);
 
@@ -475,6 +476,7 @@ int32_t HcommWriteWithNotifyNbiOnThread(ThreadHandle thread, ChannelHandle chann
         HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu], remoteNotifyIdx[%u].",
         __func__, thread, channel, dst, src, len, remoteNotifyIdx), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
+    HCCL_RUN_INFO("[%s] take time [%lld]us", __func__, DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
 }
 
@@ -517,6 +519,7 @@ int32_t HcommReadNbi(ChannelHandle channel, void *dst, const void *src, uint64_t
 
 int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t remoteNotifyIdx)
 {
+    auto startut = TIME_NOW();
     HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], remoteNotifyIdx[%u].", __func__, thread, channel, remoteNotifyIdx);
 
     HcclResult ret = HCCL_SUCCESS;
@@ -539,6 +542,7 @@ int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle chan
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], remoteNotifyIdx[%u].", __func__, thread, channel, remoteNotifyIdx), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
+    HCCL_RUN_INFO("[%s] take time [%lld]us", __func__, DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
 }
 
@@ -554,6 +558,7 @@ int32_t HcommChannelNotifyRecord(ChannelHandle channel, uint32_t remoteNotifyIdx
 
 int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeOut)
 {
+    auto startut = TIME_NOW();
     HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], localNotifyIdx[%u], timeOut[%u].", __func__, thread, channel, localNotifyIdx, timeOut);
 
     HcclResult ret = HCCL_SUCCESS;
@@ -576,6 +581,7 @@ int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channe
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], localNotifyIdx[%u], timeOut[%u].", __func__, thread, channel, localNotifyIdx, timeOut), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
+    HCCL_RUN_INFO("[%s] take time [%lld]us", __func__, DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
 }
 
@@ -643,11 +649,13 @@ int32_t HcommReleaseComm(const char* commId)
 
 int32_t HcommFenceOnThread(ThreadHandle thread)
 {
+    auto startut = TIME_NOW();
     HCCL_INFO("[%s] START. thread[0x%llx].", __func__, thread);
     (void)thread;
     HcclResult ret = HcommFlushV2();
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx].", __func__, thread), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
+    HCCL_RUN_INFO("[%s] take time [%lld]us", __func__, DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
 }
 
@@ -664,6 +672,7 @@ int32_t HcommFlush()
 
 int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel)
 {
+    auto startut = TIME_NOW();
     HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx].", __func__, thread, channel);
 
     (void)thread;
@@ -680,6 +689,7 @@ int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel)
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx].", __func__, thread, channel), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
+    HCCL_RUN_INFO("[%s] take time [%lld]us", __func__, DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
 }
 
@@ -716,7 +726,7 @@ HcclResult HcclDfxRegOpInfoByCommId(char* commId, void* hcclDfxOpInfo)
     hccl::CollComm* collComm = hcclComm->GetCollComm();
     CHK_PTR_NULL(collComm);
 
-    dfxOpInfo->beginTime = hrtMsprofSysCycleTime();	 
+    dfxOpInfo->beginTime = hrtMsprofSysCycleTime();
     if (dfxOpInfo->engine == COMM_ENGINE_AICPU_TS) {
         LocalNotify *notify = GetNotify(dfxOpInfo->cpuTsThread, dfxOpInfo->cpuWaitAicpuNotifyIdx);
         CHK_PRT_RET(!notify, HCCL_ERROR("[%s]GetNotify null, thread[%llu], notifyIdx[%u]",
@@ -733,7 +743,7 @@ HcclResult HcclDfxRegOpInfoByCommId(char* commId, void* hcclDfxOpInfo)
     CHK_SMART_PTR_NULL(dfxOpInfoOnce);
     dfxOpInfoOnce->comm_ = static_cast<void*>(collComm);
     dfxOpInfoOnce->isIndop_ = true;
-    dfxOpInfoOnce->groupName_ = collComm->GetCommId(); 
+    dfxOpInfoOnce->groupName_ = collComm->GetCommId();
     dfxOpInfoOnce->opIndex_ = collComm->UpdateIndex();
     dfxOpInfoOnce->rankSize_ = collComm->GetRankSize();
     //单算子模式，暂时覆盖opTag
@@ -833,4 +843,4 @@ extern HcclResult HcclReportAivKernel(HcclComm comm, uint64_t beginTime)
     CHK_RET(hcclCommDfx->AddTaskInfoCallback(streamId, taskId, taskParam, INVALID_U64));
     HCCL_INFO("[HcclReportAivKernel] HcclReportAivKernel sucess");
     return HCCL_SUCCESS;
-} 
+}
