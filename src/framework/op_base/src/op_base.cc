@@ -500,25 +500,25 @@ void CheckCcuMc2CompatMode()
 {
     // 临时方案，处理HCCL与HCOMM前向兼容CCU算子
     // 配置HCCL_CCU_CUSTOM_OP_MODE为1时，指示HCCL选择开源CCU流程
-    // 其他值时走原有
-    const char *opModeEnv = getenv("HCCL_CCU_CUSTOM_OP_MODE");
-    if (opModeEnv != nullptr) { // 若用户已配置，则不处理
-        HCCL_RUN_WARNING("[Opbase][%s] HCCL_CCU_CUSTOM_OP_MODE set to %s",
-            __func__, opModeEnv);
-        return;
-    }
+    // 其他值时走用户配置，不处理
+    static std::once_flag s_init_flag;
+    std::call_once(s_init_flag, []() {
+        const char *opModeEnv = getenv("HCCL_CCU_CUSTOM_OP_MODE");
+        if (opModeEnv != nullptr) { // 用户已配置则不处理
+            HCCL_RUN_WARNING("[Opbase][%s] HCCL_CCU_CUSTOM_OP_MODE already set to %s",
+                __func__, opModeEnv);
+            return;
+        }
 
-    // 用户未配置时，配置新流程算子标志位，指引算子走开源CCU流程
-    int ret = setenv("HCCL_CCU_CUSTOM_OP_MODE", "1", 1);
-    if (ret != 0) {
-        HCCL_RUN_WARNING("[Opbase][%s] failed to set HCCL_CCU_CUSTOM_OP_MODE.",
-            __func__);
-        return;
-    }
+        int ret = setenv("HCCL_CCU_CUSTOM_OP_MODE", "1", 1);
+        if (ret != 0) {
+            HCCL_RUN_WARNING("[Opbase][%s] Failed to set HCCL_CCU_CUSTOM_OP_MODE. errno=%d",
+                __func__, errno);
+            return;
+        }
 
-    HCCL_RUN_INFO("[Opbase][%s] HCCL_CCU_CUSTOM_OP_MODE set to %s",
-        __func__, opModeEnv);
-    return;
+        HCCL_RUN_INFO("[Opbase][%s] HCCL_CCU_CUSTOM_OP_MODE defaulted to 1.", __func__);
+    });
 }
 
 HcclResult HcclCommInitCollComm(uint32_t rank, void **commV2, HcclCommConfig *config, HcclComm *comm)
