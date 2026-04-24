@@ -741,10 +741,52 @@ TEST_F(AllGatherTest, allgather_ax_4server_16p)
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
 }
 
-TEST_F(AllGatherTest, allgather_superpod_asym_gcd)
+TEST_F(AllGatherTest, allgather_zwl_superpod_asym_gcd)
 {
     RankTable_For_LLT gen;
     TopoMeta topoMeta {{{0, 1, 2}, {0, 1, 2}}, {{0, 1, 2}, {0, 1, 2}}, {{0, 1, 2}, {0, 1, 2}, {0, 1, 2}, {0, 1, 2}}};
+
+    CheckerOpParam  checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::ALLGATHER;
+    checkerOpParam.tag = "AllGather";
+    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_93;
+    checkerOpParam.DataDes.count = 1000000;
+    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
+
+    Checker checker;
+    HcclResult ret;
+    ret = checker.Check(checkerOpParam, topoMeta);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(AllGatherTest, allgather_zwl_1)
+{
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta;
+    gen.GenTopoMeta(topoMeta, 2, 1, 4);
+
+    CheckerOpParam  checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::ALLGATHER;
+    checkerOpParam.tag = "AllGather";
+    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_93;
+    checkerOpParam.DataDes.count = 1000000;
+    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
+    checkerOpParam.algName = "CollAlignedAllGatherDoublePipelineFor91093Executor";
+
+    Checker checker;
+    checker.EnableTaskPrint();
+    HcclResult ret;
+    ret = checker.Check(checkerOpParam, topoMeta);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(AllGatherTest, allgather_zwl_2)
+{
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta;
+    gen.GenTopoMeta(topoMeta, 4, 3, 2);
 
     CheckerOpParam  checkerOpParam;
     checkerOpParam.opType = CheckerOpType::ALLGATHER;
