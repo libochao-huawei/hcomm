@@ -302,8 +302,9 @@ static HcclResult LaunchKernel(const HcclChannelUrmaRes &channelParam,
     return HCCL_SUCCESS;
 }
 
-HcclResult ChannelProcess::LaunchChannelKernelCommon(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles, HcommChannelDesc* hcommDesc,
-    uint32_t listNum, const std::string &commTag, aclrtBinHandle binHandle, const std::string &kernelName, bool needProfiling)
+HcclResult ChannelProcess::LaunchChannelKernelCommon(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles,
+    HcommChannelDesc* hcommDesc, uint32_t listNum, const std::string &commTag, aclrtBinHandle binHandle,
+    const std::string &kernelName, bool needProfiling)
 {
     CHK_PTR_NULL(channelHandles);
     CHK_PTR_NULL(hostChannelHandles);
@@ -394,15 +395,15 @@ HcclResult ChannelProcess::LaunchChannelKernelCommon(ChannelHandle *channelHandl
     return HCCL_SUCCESS;
 }
 
-HcclResult ChannelProcess::ChannelKernelLaunchForComm(ChannelHandle *channelHandles, 
-    ChannelHandle *hostChannelHandles, HcommChannelDesc* hcommDesc, uint32_t listNum, const std::string &commTag, aclrtBinHandle binHandle) 
+HcclResult ChannelProcess::ChannelKernelLaunchForComm(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles,
+    HcommChannelDesc* hcommDesc, uint32_t listNum, const std::string &commTag, aclrtBinHandle binHandle)
 {
     return LaunchChannelKernelCommon(channelHandles, hostChannelHandles, hcommDesc, listNum,
         commTag, binHandle, "RunAicpuIndOpChannelInitV2", true);
 }
 
-HcclResult ChannelProcess::ChannelKernelLaunchForBase(ChannelHandle *channelHandles, 
-    ChannelHandle *hostChannelHandles, HcommChannelDesc* hcommDesc, uint32_t listNum, aclrtBinHandle binHandle) 
+HcclResult ChannelProcess::ChannelKernelLaunchForBase(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles,
+    HcommChannelDesc* hcommDesc, uint32_t listNum, aclrtBinHandle binHandle)
 {
     return LaunchChannelKernelCommon(channelHandles, hostChannelHandles, hcommDesc, listNum, "", 
         binHandle, "RunAicpuChannelInitV2", false);

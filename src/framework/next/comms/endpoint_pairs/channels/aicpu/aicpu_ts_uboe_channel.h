@@ -47,7 +47,8 @@ private:
     using RemoteBufferVec = std::vector<std::unique_ptr<Hccl::RemoteUbRmaBuffer>>;
     using LocalBufferVec = std::vector<Hccl::LocalUbRmaBuffer *>;
 
-    HcclResult Makebufs(HcommMemHandle *memHandles, uint32_t memHandleNum, std::vector<std::shared_ptr<Hccl::Buffer>> &bufs);
+    HcclResult Makebufs(HcommMemHandle *memHandles, uint32_t memHandleNum,
+        std::vector<std::shared_ptr<Hccl::Buffer>> &bufs);
     HcclResult ParseInputParam();
     HcclResult BuildConnection();
     HcclResult BuildNotify();
@@ -83,7 +84,8 @@ private:
         std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &tagVec);
     void ConnVecPack(Hccl::BinaryStream &binaryStream);
     void RmtEidUnpackProc(Hccl::IpAddress& rmtAddr);
-    void RmtBufferVecUnpackProc(u32 locNum, Hccl::BinaryStream &binaryStream, RemoteBufferVec &bufferVec, UboeRmtBufType type);
+    void RmtBufferVecUnpackProc(u32 locNum, Hccl::BinaryStream &binaryStream,
+        RemoteBufferVec &bufferVec, UboeRmtBufType type);
     bool ConnVecUnpackProc(Hccl::BinaryStream &binaryStream);
     void BuildConn();
 
@@ -92,8 +94,6 @@ private:
     std::vector<char> GetLocBufferUniqueIds(LocalBufferVec &bufferVec, UboeRmtBufType type) const;
     std::vector<char> GetSingleRmtBufferUniqueId(u64 addr, u64 size, u32 tokenId, u32 tokenValue) const;
     std::vector<char> GetConnUniqueIds();
-
-
 private:
     // --------------------- 入参 ---------------------
     EndpointHandle                                              endpointHandle_;

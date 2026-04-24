@@ -49,7 +49,7 @@ HcclResult Channel::CreateChannel(
                        channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_UBC_TP) {
                 channelPtr.reset(new (std::nothrow) AicpuTsUrmaChannel(endpointHandle, channelDesc));
             } else {
-                HCCL_ERROR("[Channel][%s] invalid protocol for engine %d, protocol=%d", 
+                HCCL_ERROR("[Channel][%s] invalid protocol for engine %d, protocol=%d",
                     __func__, engine, channelDesc.remoteEndpoint.protocol);
                 return HCCL_E_NOT_SUPPORT;
             }

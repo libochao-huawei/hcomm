@@ -193,10 +193,16 @@ TEST_F(AicpuTsUboeChannelTest, Ut_ProcessUboeState_AllStates_Transitions) {
         .stubs()
         .with(any(), any())
         .will(invoke(stub_Socket_RecvAsync));
+    MOCKER_CPP(&AicpuTsUboeChannel::BuildConnection).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
 
     HcommChannelDesc desc = MakeFakeChannelDesc(fakeSock);
 
     AicpuTsUboeChannel ch(ep, desc);
+
+    FakeEndpoint localEp;
+    FakeEndpoint remoteEp;
+    ch.localEp_ = localEp.GetEndpointDesc();
+    ch.remoteEp_ = remoteEp.GetEndpointDesc();
 
     ch.channelDesc_.socket = reinterpret_cast<void*>(fakeSock);
     ch.socket_ = reinterpret_cast<Hccl::Socket*>(fakeSock);
@@ -205,13 +211,13 @@ TEST_F(AicpuTsUboeChannelTest, Ut_ProcessUboeState_AllStates_Transitions) {
     ch.channelDesc_.exchangeAllMems = false;
 
     // Ensure buffers/conns empty so IsResReady() returns true and SendDataSize() is exercised
-    ch.commonRes_.connVec.clear();
-    ch.commonRes_.bufferVec.clear();
+    ch.commonRes_.connVec = {};
+    ch.commonRes_.bufferVec = {};
     ch.connNum_ = 0;
     ch.bufferNum_ = 0;
 
     ch.channelStatus = ChannelStatus::SOCKET_OK;
-    ch.uboeStatus = AicpuTsUboeChannel::UboeStatus::SEND_SIZE;
+    ch.uboeStatus = AicpuTsUboeChannel::UboeStatus::INIT;
 
     // Drive through the state machine by repeatedly calling GetStatus to cover IsResReady() and SendDataSize().
     int iter = 0;

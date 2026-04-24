@@ -27,8 +27,11 @@
 
 namespace hcomm {
 
-AicpuTsUboeChannel::AicpuTsUboeChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc):
-    endpointHandle_(endpointHandle), channelDesc_(channelDesc) {}
+AicpuTsUboeChannel::AicpuTsUboeChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc)
+    : endpointHandle_(endpointHandle),
+      channelDesc_(channelDesc)
+{
+}
 
 HcclResult AicpuTsUboeChannel::Makebufs(HcommMemHandle *memHandles, uint32_t memHandleNum,
     std::vector<std::shared_ptr<Hccl::Buffer>> &bufs)
@@ -45,7 +48,7 @@ HcclResult AicpuTsUboeChannel::Makebufs(HcommMemHandle *memHandles, uint32_t mem
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsUboeChannel::ParseInputParam() 
+HcclResult AicpuTsUboeChannel::ParseInputParam()
 {
     // 1. 从 endpointHandle_，获得 localEp_ 和 rdmaHandle_
     Endpoint* localEpPtr = reinterpret_cast<Endpoint*>(endpointHandle_);
@@ -71,9 +74,11 @@ HcclResult AicpuTsUboeChannel::ParseInputParam()
         for (uint32_t i = 0; i < memHandleNum; ++i) {
             std::shared_ptr<Hccl::LocalUbRmaBuffer> &localUbRmaBuffer = memHandles[i];
             HCCL_INFO("[AicpuTsUboeChannel][%s] Got memHandle No.%u: addr[0x%llx], size[0x%llx], memTag[%s].",
-                __func__, i, localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize(), localUbRmaBuffer->GetBuf()->GetMemTag().c_str());
+                __func__, i, localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize(),
+                localUbRmaBuffer->GetBuf()->GetMemTag().c_str());
             bufs_.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
-                localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize(), localUbRmaBuffer->GetBuf()->GetMemTag().c_str())
+                localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize(),
+                localUbRmaBuffer->GetBuf()->GetMemTag().c_str())
             ));
         }
     } else {
