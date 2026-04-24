@@ -31,6 +31,21 @@ array<map<s32, GetAicpuTaskExceptionCallBackHcomm>, MAX_MODULE_DEVICE_NUM_V2> g_
 std::mutex g_commHadCallbackArrayMutexV2;
 array<bool, MAX_MODULE_DEVICE_NUM_V2> g_commHadCallbackArrayV2 = {false};
 
+GetRemoteRankIdCallBackHcomm g_getRemoteRankIdCallBack = nullptr;
+void RegisterGetAicpuRemoteRankIdCallBackHcomm(GetRemoteRankIdCallBackHcomm p1)
+{
+    g_getRemoteRankIdCallBack = p1;
+    //HCCL_INFO("RegisterGetRemoteRankIdCallBackHcomm success, callback[%p]", callback);
+    return;
+}
+
+void TaskExceptionHost::ClusterMoniterGetRemoteRankId(u32 rankId, uint16_t status, Hccl::Eid LocalEid, Hccl::Eid RemoteEid)
+{
+    if (g_getRemoteRankIdCallBack != nullptr) {
+        g_getRemoteRankIdCallBack(rankId, status, LocalEid, RemoteEid);
+    }
+    return;
+}
 
 TaskExceptionHost::~TaskExceptionHost()
 {
@@ -474,7 +489,10 @@ void TaskExceptionHost::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo)
             }
 
             ReportErrorMsg(exceptionTaskInfo, groupRankContent, errorMessage, exceptionInfo);
-
+            if(errorMessage.taskType == Hccl::TaskParamType::TASK_UB && errorMessage.ubCqeStatus != 0) {
+                ClusterMoniterGetRemoteRankId(errorMessage.remoteUserRank, errorMessage.ubCqeStatus, errorMessage.locEid, errorMessage.rmtEid);
+            }
+            
             lock.lock();
             g_commHadCallbackArrayV2[exceptionInfo->deviceid] = true;
         } else {
@@ -484,5 +502,20 @@ void TaskExceptionHost::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo)
         HCCL_INFO("PrintAicpuErrorMessage streamId[%u] is not found.", exceptionInfo->streamid);
     }
 }
-
-} // namespace Hccl
+u32 GetAicpuRemoteRankId(rtExceptionInfo_t *exceptionInfo)
+{
+    Hccl::ErrorMessageReport errorMessage;
+    u32 remoteRankId = 0;
+    if (g_communicatorCallbackMapV2[exceptionInfo->deviceid].find(exceptionInfo->streamid) !=\
+        g_communicatorCallbackMapV2[exceptionInfo->deviceid].end()) {
+        // 找到对应的通信域，并调用回调函数从HDC通道获取AICPU异常信息
+        errorMessage = (g_communicatorCallbackMapV2[exceptionInfo->deviceid])[exceptionInfo->streamid]();
+        if (strlen(errorMessage.tag) > 0) {
+            remoteRankId = errorMessage.remoteUserRank;
+        } else {
+            HCCL_WARNING("GetRemoteRankId No Vaild errorMessage!");
+        }
+    }
+    return remoteRankId;
+}
+} // namespace Hccl 

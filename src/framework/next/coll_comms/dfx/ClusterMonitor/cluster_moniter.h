@@ -11,8 +11,9 @@
 #include "log.h"
 #include "sal_pub.h"
 #include "topoinfo_struct.h"
+#include "ip_address.h"
 
-namespace hccl {
+namespace hcomm {
 constexpr u32 EVENT_MAX_CNT = 5000;          // 防止内存泄漏，同时不能太短，防止正常事件被冲掉
 constexpr u32 OPINFO_SEND_NUM_BY_TAG = 500;   // 一次心跳帧发送的算子信息个数
 constexpr u32 OPINFO_TAG_QUEUE_NUM = 10;   // 一次心跳帧发送的算子信息个数
@@ -81,9 +82,17 @@ inline std::string GetHeartBeatStatusStr(HeartBeatStatus  status)
     }
 }
 
+struct CqeErrInfo{
+    u32 CqeRemoterankId;
+    uint16_t CqeRemoterstatus;
+    Hccl::Eid CqeLocalEid; 
+    Hccl::Eid CqeRemoteEid;
+};
+
 class ClusterMonitor {
 public:
-    void GetRemoteRankId(u32 rankId, uint16_t status);
+    static ClusterMonitor& GetInstance();
+    void GetRemoteRankId(u32 rankId, uint16_t status, Hccl::Eid LocalEid, Hccl::Eid RemoteEid);
     ClusterMonitor() = default;
     ~ClusterMonitor() = default;
 private:
@@ -107,6 +116,7 @@ private:
     UIDType uid_;
     std::queue<UIDType> errRankQueue_;
     std::queue<HeartBeatFrame> errStatusQueue_;
+    CqeErrInfo CqeErrInfo_;
 };
 }
 

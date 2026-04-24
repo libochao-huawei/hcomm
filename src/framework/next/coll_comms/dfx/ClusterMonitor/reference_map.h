@@ -11,19 +11,21 @@
 #ifndef HCCL_REFERENCE_MAP_H
 #define HCCL_REFERENCE_MAP_H
 
-#include <unordered_map>
+#include <map>
+#include "hccl_types.h"
+#include "log.h"
 
-namespace hccl {
-
+namespace hcomm {
+typedef unsigned int u32;
 template<typename keyType, typename valueType>
 class ReferenceMap {
 public:
-    typename std::unordered_map<keyType, valueType>::iterator begin()
+    typename std::map<keyType, valueType>::iterator begin()
     {
         return data_.begin();
     }
 
-    typename std::unordered_map<keyType, valueType>::iterator end()
+    typename std::map<keyType, valueType>::iterator end()
     {
         return data_.end();
     }
@@ -97,8 +99,8 @@ public:
         return data_.size();
     }
 private:
-    std::unordered_map<keyType, valueType> data_;
-    std::unordered_map<keyType, u32> ref_;
+    std::map<keyType, valueType> data_;
+    std::map<keyType, u32> ref_;
 };
 
 } // namespace hccl
