@@ -70,6 +70,8 @@ HcclResult AlignedAllGatherDoubleRing::RunAsync(const u32 rank, const u32 rankSi
 HcclResult AlignedAllGatherDoubleRing::CheckParameters(const u32 rank, const u32 rankSize,
                                                           const std::vector<LINK> &links)
 {
+    HCCL_INFO("mainSignals_.size[%zu], subSignals_.size[%zu], subStreams_.size[%zu]",
+        mainSignals_.size(), subSignals_.size(), subStreams_.size());
     CHK_PTR_NULL(opInfo_);
     CHK_RET(CheckConcurrentDirectParameters(rank, rankSize, links));
     // 判断subStreams数量是否正确
