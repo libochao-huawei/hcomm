@@ -505,19 +505,20 @@ void CheckCcuMc2CompatMode()
     std::call_once(s_init_flag, []() {
         const char *opModeEnv = getenv("HCCL_CCU_CUSTOM_OP_MODE");
         if (opModeEnv != nullptr) { // 用户已配置则不处理
-            HCCL_RUN_WARNING("[Opbase][%s] HCCL_CCU_CUSTOM_OP_MODE already set to %s",
-                __func__, opModeEnv);
+            HCCL_RUN_WARNING("[Opbase][CheckCcuMc2CompatMode] "
+                "HCCL_CCU_CUSTOM_OP_MODE already set to %s", opModeEnv);
             return;
         }
 
         int ret = setenv("HCCL_CCU_CUSTOM_OP_MODE", "1", 1);
         if (ret != 0) {
-            HCCL_RUN_WARNING("[Opbase][%s] Failed to set HCCL_CCU_CUSTOM_OP_MODE. errno=%d",
-                __func__, errno);
+            HCCL_RUN_WARNING("[Opbase][CheckCcuMc2CompatMode] "
+                "Failed to set HCCL_CCU_CUSTOM_OP_MODE. errno=%d", errno);
             return;
         }
 
-        HCCL_RUN_INFO("[Opbase][%s] HCCL_CCU_CUSTOM_OP_MODE defaulted to 1.", __func__);
+        HCCL_RUN_INFO("[Opbase][CheckCcuMc2CompatMode] "
+            "HCCL_CCU_CUSTOM_OP_MODE defaulted to 1.");
     });
 }
 
