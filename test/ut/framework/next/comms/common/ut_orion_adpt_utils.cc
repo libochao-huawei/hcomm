@@ -158,6 +158,6 @@ TEST(UtOrionAdptUtils, EndpointDescPairToLinkDataWithRankIds_Ipv6_Success)
     EndpointDesc loc = MakeEpDev(COMM_PROTOCOL_ROCE, a);
     EndpointDesc rmt = MakeEpDev(COMM_PROTOCOL_ROCE, b);
     Hccl::LinkData ld = BuildDefaultLinkData();
-    ASSERT_EQ(EndpointDescPairToLinkDataWithRankIds(7U, 8U, loc, rmt, ld, 3U), HCCL_SUCCESS);
+    ASSERT_EQ(EndpointDescPairToLinkDataWithRankIds(7U, 8U, loc, rmt, ld, 3U, 4U), HCCL_SUCCESS);
     EXPECT_TRUE(ld.GetLinkProtocol() == Hccl::LinkProtocol::ROCE);
 }
