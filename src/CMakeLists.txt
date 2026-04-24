@@ -42,7 +42,7 @@ set(HCOMM_REAL_PATH ${CMAKE_CURRENT_SOURCE_DIR}/..)
 add_library(hccd  SHARED)
 
 #需要编译的文件list
-set(include_list
+set(HCOMM_SRC_INCLUDE_LIST
     ${HCCL_BASE_DIR}/pub_inc
     ${HCCL_BASE_DIR}/pub_inc/aicpu/
     ${HCCL_BASE_DIR}/pub_inc/inner
@@ -229,9 +229,8 @@ else()
     )
 endif()
 
-
 target_include_directories(hccd PRIVATE
-    ${include_list}
+    ${HCOMM_SRC_INCLUDE_LIST}
     ${HCCL_BASE_DIR}/hccl/hccl_comm/comm/inc/inc_all_reduce_deter
     ${HCCL_BASE_DIR}/hccl/hccl_comm/wrapper/notify/
     ${HCCL_BASE_DIR}/algorithm/pub_inc
@@ -487,7 +486,7 @@ target_compile_definitions(ccl_kernel_plf_a PRIVATE
 
 # 设置ccl_kernel_plf 包含文件列表
 set(ccl_kernel_plf_include_list
-    ${include_list}
+    ${HCOMM_SRC_INCLUDE_LIST}
     ${HCCL_BASE_DIR}/hccl/hccl_comm/wrapper/notify/
     ${HCCL_BASE_DIR}/common/debug/profiling/inc/aicpu
     ${HCCL_BASE_DIR}/framework/common/src/aicpu
