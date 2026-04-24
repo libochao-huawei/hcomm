@@ -38,22 +38,22 @@ public:
     HcclResult RefNetDevCtx(NicType nicType, const HcclIpAddress& ipAddr, u32 port, HcclNetDevCtx& netDevCtx);
     HcclResult UnRefNetDevCtx(NicType nicType, const HcclIpAddress& ipAddr, u32 port);
 
-    HcclResult ServerSocketListen(const HcclNetDevCtx netDevCtx, u32 port);
-    HcclResult ServerSocketStopListen(const HcclNetDevCtx netDevCtx, u32 port);
-    HcclResult ConnectToServer(const HcclNetDevCtx netDevCtx, hccl::HcclIpAddress remoteIp,
+    HcclResult ServerInit(const HcclNetDevCtx netDevCtx, u32 port);
+    HcclResult ServerDeInit(const HcclNetDevCtx netDevCtx, u32 port);
+
+    HcclResult ConnectToServer(const HcclNetDevCtx netDevCtx, uint32_t localPort, hccl::HcclIpAddress remoteIp,
         uint32_t remotePort, std::string &socketTag, std::shared_ptr<hccl::HcclSocket> &socket);
-    HcclResult AcceptClient(const HcclNetDevCtx netDevCtx, hccl::HcclIpAddress remoteIp,
+    HcclResult AcceptClient(const HcclNetDevCtx netDevCtx, uint32_t localPort, hccl::HcclIpAddress remoteIp,
         std::string &socketTag, std::shared_ptr<hccl::HcclSocket> &socket);
     void CloseSocket(std::shared_ptr<hccl::HcclSocket> &socket);
 
 private:
     static HcclResult Init(u32 devicePhyId, u32 deviceLogicId);
     void UnInit();
-
-    HcclResult ServerSocketListenInner(const HcclNetDevCtx netDevCtx, const uint32_t port);
-    HcclResult ServerSocketStopInner(const uint32_t port);
-    HcclResult AddListenSocketWhiteList(uint32_t port, const std::vector<SocketWlistInfo> &wlistInfos);
-    HcclResult AcceptDataSocket(uint32_t port, const std::string &tag,
+    HcclResult ServerDeInit(const HcclIpAddress& localIp, u32 port);
+    HcclResult AddListenSocketWhiteList(const HcclIpAddress& localIp, uint32_t port,
+        const std::vector<SocketWlistInfo> &wlistInfos);
+    HcclResult AcceptDataSocket(const HcclIpAddress& localIp, uint32_t port, const std::string &tag,
         std::shared_ptr<hccl::HcclSocket> &outConnected, uint32_t acceptTimeoutMs);
     HcclResult WaitClientSocketLinkEstablished(const std::shared_ptr<hccl::HcclSocket> &socket, s32 timeoutSec);
 
@@ -62,13 +62,15 @@ private:
     s32 deviceLogicId_{INVALID_INT};
 
     bool isInited_{false};
-    u32 serverPort_;
 
     static std::map<PortInfo, std::pair<NicType, HcclNetDevCtx>> netDevCtxMap_;
     static std::map<PortInfo, Referenced> netDevCtxRefMap_;
     static std::mutex netDevCtxMtx_;
     static bool isDlRaInited_;
-    static std::unordered_map<uint32_t, std::shared_ptr<hccl::HcclSocket>> serverSocketMap_;
+
+    static std::mutex serverMapMutex_;
+    static std::map<PortInfo, std::shared_ptr<hccl::HcclSocket>> serverSocketMap_;
+    static std::map<PortInfo, Referenced> serverSocketRefMap_;
 };
 
 } // namespace hccl
