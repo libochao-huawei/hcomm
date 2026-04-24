@@ -55,17 +55,17 @@ TEST_F(TestHcommMem, Ut_TestHcommMemUnreg_When_InvalidHandle_Return_HCCL_E_PTR)
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
-TEST_F(TestHcommMem, Ut_TestHcclMemExport_When_InvalidMemHandle_Return_HCCL_E_PTR)
+TEST_F(TestHcommMem, Ut_TestHcommMemExport_When_InvalidMemHandle_Return_HCCL_E_PTR)
 {
     void* memDesc = nullptr;
     uint32_t memDescLen = 0;
-    HcommResult ret = HcclMemExport(nullptr, nullptr, &memDesc, &memDescLen);
+    HcommResult ret = HcommMemExport(nullptr, nullptr, &memDesc, &memDescLen);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
-TEST_F(TestHcommMem, Ut_TestHcclMemExport_When_OutputNullptr_Return_HCCL_E_PTR)
+TEST_F(TestHcommMem, Ut_TestHcommMemExport_When_OutputNullptr_Return_HCCL_E_PTR)
 {
-    HcommResult ret = HcclMemExport(nullptr, this, nullptr, nullptr);
+    HcommResult ret = HcommMemExport(nullptr, this, nullptr, nullptr);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
