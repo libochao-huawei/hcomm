@@ -130,7 +130,7 @@ public:
         return links_;
     }
 
-    void SetLinks(std::vector<LinkData> &links) const override
+    void SetLinks(std::vector<LinkData> &links)
     {
         links_ = links;
     }
@@ -140,7 +140,7 @@ public:
         return rankGroup_;
     }
 
-    void SetRankGroup(RankGroup &rankGroup) const override
+    void SetRankGroup(RankGroup &rankGroup)
     {
         rankGroup_ = rankGroup;
     }
