@@ -93,7 +93,7 @@ RdmaHandle RdmaHandleManager::Get(u32 devPhyId, const PortData &localPort, LinkP
     IpAddress  localIp = localPort.GetAddr();
     if (linkProtocol == LinkProtocol::UBOE) {
         IpAddress eidAddress;
-        UboeIpv4ToEid(localIp, eidAddress);
+        UboeIpv4ToEid(localIp, eidAddress, devPhyId);
         localIp = eidAddress;
     }
 
@@ -315,13 +315,28 @@ HcclResult GetEidByAnyEidInfo(s32 deviceLogicId, const HrtDevEidInfo& eidInfo, c
     return HCCL_SUCCESS;
 }
 
+constexpr u32 GET_UBOE_FLAG_ENABLE_OPCODE = 57;
+constexpr u32 GET_UBOE_FLAG_ENABLE_VERSION = 2;
+constexpr u32 UBOE_DEV_FLAG_RIGHT_SHIFT = 19;
+
+constexpr bool IsUboeSupported(u32 devFeature) {
+    return (devFeature >> UBOE_DEV_FLAG_RIGHT_SHIFT) & 1;
+}
 /* 将IPV4转为EID
     1、基于IPV4 IpAddress查询uboeIpv4EidMap，如果存在直接返回
     2、不存在时，调用hccp接口根据IPV4 IpAddress查询EID，并将其保存到uboeIpv4EidMap中
 */
-void RdmaHandleManager::UboeIpv4ToEid(const IpAddress& ipV4Address, IpAddress& eidAddress)
+void RdmaHandleManager::UboeIpv4ToEid(const IpAddress& ipV4Address, IpAddress& eidAddress, u32 devPhyId)
 {
-    HCCL_INFO("[UboeIpv4ToEid] begain, ipV4Address[%s]", ipV4Address.Describe().c_str());
+    u32 uboeVersion = 0;
+    s32 versionRet = RaGetInterfaceVersion(devPhyId, GET_UBOE_FLAG_ENABLE_OPCODE, &uboeVersion);
+    if (versionRet != 0 || uboeVersion < GET_UBOE_FLAG_ENABLE_VERSION) {
+        HCCL_ERROR("[%s] this package does not support UboeIpv4ToEid for device, "
+            "please change new package. ret[%d], uboeVersion[%u].", __func__, versionRet, uboeVersion);
+        return;
+    }
+
+    HCCL_INFO("[UboeIpv4ToEid] begin, ipV4Address[%s]", ipV4Address.Describe().c_str());
     auto it = uboeIpv4EidMap.find(ipV4Address);
     if (it != uboeIpv4EidMap.end()) {
         eidAddress = it->second;
@@ -340,7 +355,8 @@ void RdmaHandleManager::UboeIpv4ToEid(const IpAddress& ipV4Address, IpAddress& e
         __func__, deviceLogicId, eidInfoList.size());
 
     for (const auto& eidInfo : eidInfoList) {
-        if (GetEidByAnyEidInfo(deviceLogicId, eidInfo, ipV4Address, eidAddress) == HCCL_SUCCESS) {
+        if (IsUboeSupported(eidInfo.devFeature) && 
+            GetEidByAnyEidInfo(deviceLogicId, eidInfo, ipV4Address, eidAddress) == HCCL_SUCCESS) {
             // 存储eid到AddressInfo
             HCCL_INFO("[UboeIpv4ToEid] success, eidAddress[%s]", eidAddress.Describe().c_str());
             uboeIpv4EidMap.insert(std::make_pair(ipV4Address, eidAddress));
