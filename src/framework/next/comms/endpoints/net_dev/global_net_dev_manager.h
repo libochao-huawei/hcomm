@@ -38,6 +38,10 @@ public:
     HcclResult RefNetDevCtx(NicType nicType, const HcclIpAddress& ipAddr, u32 port, HcclNetDevCtx& netDevCtx);
     HcclResult UnRefNetDevCtx(NicType nicType, const HcclIpAddress& ipAddr, u32 port);
 
+    HcclResult ServerInit(const HcclNetDevCtx netDevCtx, u32 port);
+    HcclResult ServerDeInit(const HcclNetDevCtx netDevCtx, u32 port);
+    HcclResult ServerDeInit(const HcclIpAddress& localIp, u32 port);
+
     HcclResult ServerSocketListen(const HcclNetDevCtx netDevCtx, u32 port);
     HcclResult ServerSocketStopListen(const HcclNetDevCtx netDevCtx, u32 port);
     HcclResult ConnectToServer(const HcclNetDevCtx netDevCtx, hccl::HcclIpAddress remoteIp,
@@ -68,7 +72,10 @@ private:
     static std::map<PortInfo, Referenced> netDevCtxRefMap_;
     static std::mutex netDevCtxMtx_;
     static bool isDlRaInited_;
-    static std::unordered_map<uint32_t, std::shared_ptr<hccl::HcclSocket>> serverSocketMap_;
+
+    static std::mutex serverMapMutex_;
+    static std::map<PortInfo, std::shared_ptr<hccl::HcclSocket>> serverSocketMap_;
+    static std::map<PortInfo, Referenced> serverSocketRefMap_;
 };
 
 } // namespace hccl
