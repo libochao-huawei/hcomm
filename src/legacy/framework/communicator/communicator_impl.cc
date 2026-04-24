@@ -479,7 +479,7 @@ static void FastCcuLaunchSaveDfxTaskInfo(const CommunicatorImpl &comm, const Tas
 void CommunicatorImpl::FillAllToAllVArgs(const CollOpParams &opParams, rtCcuTaskInfo_t *&ccuParams) const
 {
     std::vector<uint64_t> args;
-    CcuContextAllToAllVMesh1D::RefreshArgs(opParams, rankSize, args);
+    CcuContextAllToAllVMesh1D::RefreshArgs(opParams, rankSize, args, myRank);
     rtCcuTaskInfo_t *currCcuParam = ccuParams;
     for (u32 i = 0; i < args.size(); i++) {
         // skip token info
