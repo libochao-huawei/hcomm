@@ -5498,6 +5498,11 @@ HcclResult LoadBinaryFromFile(const char *binPath, aclrtBinaryLoadOptionType opt
     return HCCL_SUCCESS;
 }
 
+HcclResult ClearAivSyncBuf(void** cclBuffersOut, const AivResourceArgs &resourceArgs, const AivTopoArgs &topoArgs, AivAlgArgs algArgs)
+{
+    return HCCL_SUCCESS;
+}
+
 HcclResult GetCustomKernelFilePath(std::string &binaryPath)
 {
     binaryPath = "./";
