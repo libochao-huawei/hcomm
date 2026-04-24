@@ -125,7 +125,7 @@ template<typename T>
 __aicore__ inline void aiv_all_to_all_v_91093_single(KERNEL_ARGS_DEF, ExtraArgs* extraArgs)
 {
     AivAll2AllV91093Single op;
-    op.Init(KERNEL_CLASS_INIT, true);
+    op.Init(KERNEL_CLASS_INIT, true, true);
     op.HeadCounter();
     op.Process<T>(input, output, tag, bufferSize, extraArgs);
     op.TailCounter();

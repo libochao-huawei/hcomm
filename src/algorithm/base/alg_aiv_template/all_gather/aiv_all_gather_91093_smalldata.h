@@ -143,9 +143,9 @@ __aicore__ inline void aiv_all_gather_91093_smalldata(KERNEL_ARGS_DEF)
 {
     AivAllGatherSmall91093 op;
     if (len * sizeof(T) > AIV_A3_ALL_GATHER_GRAPH_GUIYI_SIZE) {
-        op.Init(KERNEL_CLASS_INIT,true);
+        op.Init(KERNEL_CLASS_INIT, true, true);
     } else {
-        op.Init(KERNEL_CLASS_INIT,false);
+        op.Init(KERNEL_CLASS_INIT, false, true);
     }
     op.HeadCounter();
     op.Process<T>(input, output, len, tag);
