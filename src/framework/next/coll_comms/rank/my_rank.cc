@@ -588,6 +588,5 @@ HcclResult MyRank::Resume()
     HCCL_INFO("[NsRecovery][Resume] MyRank::Resume success!");
     return HCCL_SUCCESS;
 }
-
 } // namespace hccl
 

@@ -8,5 +8,13 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 
+set(src_list
+    comm_addr_convert.cc
+)
+
+target_sources(hcomm PRIVATE
+    ${src_list}
+)
+
 # 添加 loggers 子目录
 add_subdirectory(loggers)

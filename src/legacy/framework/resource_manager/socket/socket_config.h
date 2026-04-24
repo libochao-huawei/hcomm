@@ -19,54 +19,74 @@ namespace Hccl {
 MAKE_ENUM(SocketRole, SERVER, CLIENT)
 class SocketConfig {
 public:
-    RankId            remoteRank;
-    LinkData          link;
-    uint32_t          listeningPort{DEFAULT_LISTENING_PORT};
+    RankId remoteRank;
+    LinkData link;
+    uint32_t listeningPort{DEFAULT_LISTENING_PORT};
     const std::string tag;
 
     SocketConfig(RankId remoteRank, const LinkData &link, const std::string &tag)
-        : remoteRank(remoteRank), link(link), tag(tag),
+        : remoteRank(remoteRank),
+          link(link),
+          tag(tag),
           role(link.GetLocalRankId() < link.GetRemoteRankId() ? SocketRole::SERVER : SocketRole::CLIENT),
           hccpTag(role == SocketRole::SERVER
-                      ? tag + "_" + to_string(link.GetLocalRankId()) + "_" + to_string(link.GetRemoteRankId()) + "_" +
-                            link.GetLocalAddr().GetIpStr() + "_" + link.GetRemoteAddr().GetIpStr()
-                      : tag + "_" + to_string(link.GetRemoteRankId()) + "_" + to_string(link.GetLocalRankId()) + "_" +
-                            link.GetRemoteAddr().GetIpStr() + "_" + link.GetLocalAddr().GetIpStr())
-    {}
+                      ? tag + "_" + to_string(link.GetLocalRankId()) + "_" + to_string(link.GetRemoteRankId()) + "_"
+                            + link.GetLocalAddr().GetIpStr() + "_" + link.GetRemoteAddr().GetIpStr()
+                      : tag + "_" + to_string(link.GetRemoteRankId()) + "_" + to_string(link.GetLocalRankId()) + "_"
+                            + link.GetRemoteAddr().GetIpStr() + "_" + link.GetLocalAddr().GetIpStr())
+    {
+    }
 
     SocketConfig(const LinkData &link, const std::string &tag)
-        : remoteRank(link.GetRemoteRankId()), link(link), tag(tag),
+        : remoteRank(link.GetRemoteRankId()),
+          link(link),
+          tag(tag),
           role(link.GetLocalAddr() < link.GetRemoteAddr() ? SocketRole::SERVER : SocketRole::CLIENT),
           hccpTag(role == SocketRole::SERVER
-                      ? tag + "_" + to_string(link.GetLocalRankId()) + "_" + to_string(link.GetRemoteRankId()) + "_" +
-                            link.GetLocalAddr().GetIpStr() + "_" + link.GetRemoteAddr().GetIpStr()
-                      : tag + "_" + to_string(link.GetRemoteRankId()) + "_" + to_string(link.GetLocalRankId()) + "_" +
-                            link.GetRemoteAddr().GetIpStr() + "_" + link.GetLocalAddr().GetIpStr())
-    {}
+                      ? tag + "_" + to_string(link.GetLocalRankId()) + "_" + to_string(link.GetRemoteRankId()) + "_"
+                            + link.GetLocalAddr().GetIpStr() + "_" + link.GetRemoteAddr().GetIpStr()
+                      : tag + "_" + to_string(link.GetRemoteRankId()) + "_" + to_string(link.GetLocalRankId()) + "_"
+                            + link.GetRemoteAddr().GetIpStr() + "_" + link.GetLocalAddr().GetIpStr())
+    {
+    }
+
+    SocketConfig(const LinkData &link, const std::string &tag, SocketRole role)
+        : remoteRank(link.GetRemoteRankId()),
+          link(link),
+          tag(tag),
+          role(role),
+          hccpTag(role == SocketRole::SERVER
+                      ? tag + "_" + link.GetLocalAddr().GetIpStr() + "_" + link.GetRemoteAddr().GetIpStr()
+                      : tag + "_" + link.GetRemoteAddr().GetIpStr() + "_" + link.GetLocalAddr().GetIpStr())
+    {
+    }
 
     SocketConfig(const LinkData &link, const std::string &tag, bool noRankId)
-        : remoteRank(link.GetRemoteRankId()), link(link), tag(tag),
-        role(link.GetLocalAddr() < link.GetRemoteAddr() ? SocketRole::SERVER : SocketRole::CLIENT),
-        hccpTag(role == SocketRole::SERVER
-                    ? tag + "_" + link.GetLocalAddr().GetIpStr() + "_" + link.GetRemoteAddr().GetIpStr()
-                    : tag + "_" + link.GetRemoteAddr().GetIpStr() + "_" + link.GetLocalAddr().GetIpStr())
+        : remoteRank(link.GetRemoteRankId()),
+          link(link),
+          tag(tag),
+          role(link.GetLocalAddr() < link.GetRemoteAddr() ? SocketRole::SERVER : SocketRole::CLIENT),
+          hccpTag(role == SocketRole::SERVER
+                      ? tag + "_" + link.GetLocalAddr().GetIpStr() + "_" + link.GetRemoteAddr().GetIpStr()
+                      : tag + "_" + link.GetRemoteAddr().GetIpStr() + "_" + link.GetLocalAddr().GetIpStr())
     {
         (void)noRankId;
     }
 
-
     SocketConfig(const LinkData &link, const uint32_t listenPort, const std::string &tag)
-        : link(link), listeningPort(listenPort), tag(tag)
+        : link(link),
+          listeningPort(listenPort),
+          tag(tag)
     {
         remoteRank = link.GetRemoteRankId();
         role = link.GetLocalAddr() < link.GetRemoteAddr() ? SocketRole::SERVER : SocketRole::CLIENT;
- 
+
         if (role == SocketRole::SERVER) { // server: tag_local_remote
-            hccpTag = tag + "_" + link.GetLocalAddr().GetIpStr() + "_" + link.GetRemoteAddr().GetIpStr() + 
-                      "_" + to_string(listenPort);
+            hccpTag = tag + "_" + link.GetLocalAddr().GetIpStr() + "_" + link.GetRemoteAddr().GetIpStr() + "_"
+                      + to_string(listenPort);
         } else { // client: tag_remote_local
-            hccpTag = tag + "_" + link.GetRemoteAddr().GetIpStr() + "_" + link.GetLocalAddr().GetIpStr() + 
-                      "_" + to_string(listenPort);
+            hccpTag = tag + "_" + link.GetRemoteAddr().GetIpStr() + "_" + link.GetLocalAddr().GetIpStr() + "_"
+                      + to_string(listenPort);
         }
     }
 
@@ -82,7 +102,7 @@ public:
 
 private:
     SocketRole role{};
-    string     hccpTag;
+    string hccpTag;
 };
 } // namespace Hccl
 
@@ -93,10 +113,10 @@ public:
     size_t operator()(const Hccl::SocketConfig &socketConfig) const
     {
         auto remoteRankHash = hash<Hccl::RankId>{}(socketConfig.remoteRank);
-        auto localPortHash  = hash<Hccl::PortData>{}(socketConfig.link.GetLocalPort());
+        auto localPortHash = hash<Hccl::PortData>{}(socketConfig.link.GetLocalPort());
         auto remotePortHash = hash<Hccl::PortData>{}(socketConfig.link.GetRemotePort());
-        auto tagHash        = hash<string>{}(socketConfig.tag);
-        auto portHash       = hash<uint32_t>{}(socketConfig.listeningPort);
+        auto tagHash = hash<string>{}(socketConfig.tag);
+        auto portHash = hash<uint32_t>{}(socketConfig.listeningPort);
 
         return Hccl::HashCombine({remoteRankHash, localPortHash, remotePortHash, tagHash, portHash});
     }
