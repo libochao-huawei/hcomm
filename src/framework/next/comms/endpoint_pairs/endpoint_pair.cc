@@ -47,6 +47,29 @@ HcclResult EndpointPair::GetSocket(const std::string &socketTag, const uint32_t 
     return HCCL_SUCCESS;
 }
 
+HcclResult EndpointPair::GetSocketWithRank(const uint32_t myRank, const uint32_t rmtRank, const std::string &socketTag,
+    const uint32_t listenPort, u32 reuseIdx, Hccl::Socket*& socket)
+{
+    uint32_t connectMode = 0;
+    Hccl::LinkData linkData = BuildDefaultLinkData();
+    CHK_RET(EndpointDescPairToLinkData(localEndpointDesc_, remoteEndpointDesc_, linkData, reuseIdx));
+    std::string linkTag = socketTag;
+
+    if (localEndpointDesc_.loc.locType != remoteEndpointDesc_.loc.locType) {
+        connectMode = 1;
+    } else {
+        if (linkData.GetReuseIdx() != "0") {
+            linkTag += ("_" + linkData.GetReuseIdx());
+        }
+    }
+
+    /* A2: host nic(cpu roce channel) -- device nic(transport ibv)时，两边ip地址格式不一样，判断大小算法不匹配
+     * 修改成按照rank id大小判断server和client */
+    Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, listenPort, linkTag, connectMode, myRank, rmtRank);
+    CHK_RET(socketMgr_->GetSocket(socketConfig, socket));
+    return HCCL_SUCCESS;
+}
+
 HcclResult EndpointPair::GetSocket(const uint32_t myRank, const uint32_t rmtRank,
     const std::string &socketTag, u32 reuseIdx, const uint32_t listenPort, Hccl::Socket*& socket, uint32_t devicePhyId, uint32_t remoteDevicePhyId)
 {
@@ -58,7 +81,7 @@ HcclResult EndpointPair::GetSocket(const uint32_t myRank, const uint32_t rmtRank
         } else {
             socketTagPrefix += "_" + std::to_string(rmtRank) + "_" + std::to_string(myRank);
         }
-        CHK_RET(this->GetSocket(socketTagPrefix, listenPort, reuseIdx, socket));
+        CHK_RET(this->GetSocketWithRank(myRank, rmtRank, socketTagPrefix, listenPort, reuseIdx, socket));
         return HCCL_SUCCESS;
     }
 
