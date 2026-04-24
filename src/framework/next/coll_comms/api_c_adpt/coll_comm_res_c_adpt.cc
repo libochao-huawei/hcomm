@@ -57,7 +57,7 @@ static void FillChannelDescFinal(hccl::CommConfig commConfig, const HcclChannelD
         channelDescFinal.roceAttr.retryInterval = (channelDesc.roceAttr.retryInterval == INVALID_UINT) ? rdmaConfig.GetRdmaTimeOut() : channelDesc.roceAttr.retryInterval;
         channelDescFinal.roceAttr.tc = (commConfig.GetConfigTrafficClass() == INVALID_UINT) ? rdmaConfig.GetRdmaTrafficClass() : commConfig.GetConfigTrafficClass();
         channelDescFinal.roceAttr.sl = (commConfig.GetConfigServiceLevel() == INVALID_UINT) ? rdmaConfig.GetRdmaServerLevel() : commConfig.GetConfigServiceLevel();
-        channelDescFinal.roceAttr.qpThreshold = (channelDesc.roceAttr.qpThreshold == INVALID_UINT) ? rdmaConfig.GetMultiQpThreshold() : channelDesc.roceAttr.qpThreshold;
+        channelDescFinal.roceAttr.qpThreshold = (channelDesc.roceAttr.qpThreshold == INVALID_UINT) ? rdmaConfig.GetRdmaMultiQpThreshold() : channelDesc.roceAttr.qpThreshold;
     } else {
         channelDescFinal.roceAttr.retryCnt = (channelDesc.roceAttr.retryCnt == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaRetryCnt() : channelDesc.roceAttr.retryCnt;
         channelDescFinal.roceAttr.retryInterval = (channelDesc.roceAttr.retryInterval == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaTimeOut() : channelDesc.roceAttr.retryInterval;

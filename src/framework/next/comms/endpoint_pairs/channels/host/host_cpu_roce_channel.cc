@@ -1005,17 +1005,18 @@ HcclResult HostCpuRoceChannel::WriteWithNotify(
         struct ibv_send_wr writeWithNotifyWr{};
         struct ibv_sge sgList{};
         writeWithNotifyWr.sg_list = &sgList;
-        CHK_RET(PrepareWriteWrResource(static_cast<char *>(tailDst) + wrLen * i, static_cast<const char *>(tailSrc) + wrLen * i, tailLen, remoteNotifyIdx, writeWithNotifyWr, taskParam));
+        CHK_RET(PrepareWriteWrResource(static_cast<char *>(tailDst) + wrLen * i, static_cast<const char *>(tailSrc) + wrLen * i, qpLen, remoteNotifyIdx, writeWithNotifyWr, taskParam));
         CHK_RET(PostAndCheckSend(qpInfo[i].qp, __func__, writeWithNotifyWr));
     }
 
     // 未使用的QP，发长度为0的数据
     while (i < qpInfo.size()) {
         struct ibv_send_wr writeWithNotifyWr{};
-        struct ibv_sge sg;
+        struct ibv_sge sgList{};
+        writeWithNotifyWr.sg_list = &sgList;
         qpLen = 0;
-        CHK_RET(PrepareWriteWrResource(static_cast<char *>(tailDst) + wrLen * i, static_cast<const char *>(tailSrc) + wrLen * i, tailLen, remoteNotifyIdx, writeWithNotifyWr));
-        CHK_RET(PostAndCheckSend(qpInfo[i].qp, __func__, wr));
+        CHK_RET(PrepareWriteWrResource(static_cast<char *>(tailDst) + wrLen * i, static_cast<const char *>(tailSrc) + wrLen * i, qpLen, remoteNotifyIdx, writeWithNotifyWr, taskParam));
+        CHK_RET(PostAndCheckSend(qpInfo[i].qp, __func__, writeWithNotifyWr));
         i++;
     }
 
@@ -1045,10 +1046,10 @@ void HostCpuRoceChannel::BuildRdmaWr(const char *caller, ibv_wr_opcode opcode, v
     wr.wr.rdma.remote_addr = reinterpret_cast<uint64_t>(remoteAddr);
 }
 
-HcclResult HostCpuRoceChannel::PostAndCheckSend(struct *ibv_qp, const char *caller, struct ibv_send_wr &wr)
+HcclResult HostCpuRoceChannel::PostAndCheckSend(struct ibv_qp *qp, const char *caller, struct ibv_send_wr &wr)
 {
     struct ibv_send_wr *badWr = nullptr;
-    s32 ret = ibv_post_send(qpInfo[0].qp, &wr, &badWr);
+    s32 ret = ibv_post_send(qp, &wr, &badWr);
     if (ret != 0 && badWr == nullptr) {
         HCCL_ERROR("[HostCpuRoceChannel::%s] ibv_post_send failed while badWr is nullptr", caller);
         return HCCL_E_INTERNAL;
@@ -1107,13 +1108,13 @@ HcclResult HostCpuRoceChannel::PostRdmaOp(const char *caller, ibv_wr_opcode opco
     if (wrLen < qpInfo[0].qpThreshold) {
         uint32_t minSize = len / qpInfo[0].qpThreshold;     // 保证每个qp分担的数据量满足最小阈值
         useQpNum = minSize;
-        wrLen = tailLen / useQpNum;
-        wrLenTail = tailLen - (useQpNum - 1) * wrLen;
+        wrLen = len / useQpNum;
+        wrLenTail = len - (useQpNum - 1) * wrLen;
     }
 
     uint32_t i, qpLen;
     for (i = 0; i < useQpNum; i++) {
-        qpLen = (i == qpInfoSize - 1) ? wrLenTail : wrLen;
+        qpLen = (i == useQpNum - 1) ? wrLenTail : wrLen;
         struct ibv_send_wr wr{};
         struct ibv_sge sg;
         BuildRdmaWr(caller, opcode, static_cast<char*>(localAddr) + wrLen * i, static_cast<const char*>(remoteAddr) + wrLen * i, qpLen, localIdx, rmtIdx, wr, sg);
