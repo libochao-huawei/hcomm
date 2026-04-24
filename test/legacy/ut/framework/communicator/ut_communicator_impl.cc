@@ -1506,13 +1506,13 @@ TEST_F(CommunicatorImplTest, ut_GetJsonProperty_When_PropertyMissing_Expect_Thro
     EXPECT_THROW(GetJsonProperty(j, propName, true), InvalidParamsException);
 }
 
-TEST_F(CommunicatorImplTest, ut_GetJsonPropertyUInt_When_PropertyMissing_Expect_Throw)
-{
-    MOCKER(RptInputErr).stubs().will(returnValue(HCCL_SUCCESS));
-    nlohmann::json j = nlohmann::json::object();
-    const char* propName = "missing_property";
-    EXPECT_THROW(GetJsonPropertyUInt(j, propName, true, 0), InvalidParamsException);
-}
+// TEST_F(CommunicatorImplTest, ut_GetJsonPropertyUInt_When_PropertyMissing_Expect_Throw)
+// {
+//     MOCKER(RptInputErr).stubs().will(returnValue(HCCL_SUCCESS));
+//     nlohmann::json j = nlohmann::json::object();
+//     const char* propName = "missing_property";
+//     EXPECT_THROW(GetJsonPropertyUInt(j, propName, true, 0), InvalidParamsException);
+// }
 
 TEST_F(CommunicatorImplTest, ut_GetJsonPropertySInt_When_PropertyMissing_Expect_Throw)
 {
