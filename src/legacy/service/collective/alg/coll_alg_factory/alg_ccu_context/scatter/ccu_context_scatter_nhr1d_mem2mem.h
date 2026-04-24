@@ -37,6 +37,7 @@ private:
     void AxisSync(uint32_t signalIndex);
     void DoScatterNHR();
     void DoScatterNHRSingleStep(const NHRStepInfo &nhrStepInfo);
+    void PostSync();
     void DoSendRecvSlice(const u32 &toRank, CcuRep::Memory &src, CcuRep::Memory &dst, u32 signalIndex);
 
     // 构造函数中
