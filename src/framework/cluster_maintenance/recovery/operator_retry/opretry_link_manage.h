@@ -13,6 +13,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 #include <mutex>
 
@@ -32,6 +33,7 @@ public:
 
     HcclResult AddLinkInfoByIdentifier(const std::string &identifier, const std::string &newTag, std::vector<u32> &remoteRankList, bool incre);
     HcclResult GetLinkInfoByIdentifier(const std::string &identifier, const std::string &newTag, std::vector<u32> &remoteRankList);
+    HcclResult GetLinkInfoByIdentifier(const std::string &identifier, std::vector<u32> &remoteRankList);
     HcclResult DeleteLinkInfoByIdentifier(const std::string &identifier);
 
 private:
@@ -39,6 +41,7 @@ private:
     ~OpretryLinkManage();
 
     std::unordered_map<std::string, std::unordered_map<std::string, std::vector<u32>>> allRemoteRankList_;
+    std::unordered_map<std::string, std::unordered_set<u32>> groupAllRemoteRankList_;
 
     std::mutex opretryLinkMutex_;
     bool isDeInit_ = false;
