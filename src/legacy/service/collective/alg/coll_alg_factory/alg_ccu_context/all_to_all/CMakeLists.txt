@@ -1,4 +1,4 @@
-target_sources(hccl_v2_native_alg_repo PRIVATE
+target_sources(hccl_v2 PRIVATE
             ccu_context_all_to_all_mesh1d.cc
             ccu_context_all_to_all_mesh1d_2Die.cc
             ccu_context_all_to_all_mesh2d.cc
