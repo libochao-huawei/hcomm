@@ -61,7 +61,7 @@ using HcclSubCommInfo = struct TagHcclSubCommInfo {
     u64 subCommId{INVALID_SUBCOMM_ID};                                  // 子通信域ID
     char parentCommIdentifier[MAX_COMM_IDENTIFIER_LEN + 1] = {0};       // 父通信域唯一标识符
     u32 valid{0};                                                       // 是否有效(1:有效, 0:无效/未设置)
-}
+};
 
 using HcclCheckInfo = struct TagHcclCheckInfo {
     HcclCRCInfo crcInfoGlobal;
