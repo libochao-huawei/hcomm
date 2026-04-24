@@ -2651,9 +2651,15 @@ HcclResult HrtRaSetTpAttrAsync(RdmaHandle handle, uint64_t tpHandle, uint32_t at
     return HCCL_SUCCESS;
 }
 
-HcclResult HrtRaGetTpAttrAsync(RdmaHandle handle, uint64_t tpHandle, uint32_t& attrBitmap, TpAttr& attr, RequestHandle& reqHandle)
+HcclResult HrtRaGetTpAttrAsync(u32 phyId, RdmaHandle handle, uint64_t tpHandle, uint32_t& attrBitmap, TpAttr& attr, RequestHandle& reqHandle)
 {
     HCCL_INFO("[HrtRaGetTpAttrAsync] begain, reqHandle[%llu]", reqHandle);
+    u32 tpAttrVersion = 0;
+    s32 ret = RaGetInterfaceVersion(phyId, GET_TP_ATTR_OPCODE, &tpAttrVersion);
+    if (ret != 0 || tpAttrVersion < GET_TP_ATTR_VERSION) {
+        HCCL_WARNING("this package does not support RaCtxGetTpAttr for device, please change new package");
+        return HCCL_E_NOT_SUPPORT;
+    }
     void *raReqHandle = nullptr;
     s32 ret = RaGetTpAttrAsync(handle, tpHandle, &attrBitmap, &attr, &raReqHandle);
     if (ret != 0) {
@@ -2663,23 +2669,6 @@ HcclResult HrtRaGetTpAttrAsync(RdmaHandle handle, uint64_t tpHandle, uint32_t& a
 
     CHK_RET(WaitRequestResult(raReqHandle, reqHandle));
     HCCL_INFO("[HrtRaGetTpAttrAsync] success, reqHandle[%llu]", reqHandle);
-    return HCCL_SUCCESS;
-}
-
-HcclResult HrtRaCtxGetTpAttr(u32 phyId, RdmaHandle handle, uint64_t tpHandle, uint32_t& attrBitmap, TpAttr& attr)
-{
-    HCCL_INFO("[HrtRaCtxGetTpAttr] begain, phyId[%u] tpHandle[%llu]", phyId, tpHandle);
-    u32 tpAttrVersion = 0;
-    s32 ret = RaGetInterfaceVersion(phyId, GET_TP_ATTR_OPCODE, &tpAttrVersion);
-    if (ret != 0 || tpAttrVersion < GET_TP_ATTR_VERSION) {
-        HCCL_WARNING("this package does not support RaCtxGetTpAttr for device, please change new package");
-        return HCCL_E_NOT_SUPPORT;
-    }
-    ret = RaCtxGetTpAttr(handle, tpHandle, &attrBitmap, &attr);
-    if (ret != 0) {
-        HCCL_ERROR("RaCtxGetTpAttr fail. phyId[%u] tpHandle[%llu]", phyId, tpHandle);
-        return HCCL_E_NETWORK;
-    }
     return HCCL_SUCCESS;
 }
 } // namespace Hccl

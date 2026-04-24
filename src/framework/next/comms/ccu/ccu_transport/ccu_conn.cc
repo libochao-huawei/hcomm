@@ -514,7 +514,8 @@ HcclResult CcuConnection::Describe(std::string &dfxMsg)
     if (tpProtocol_ == TpProtocol::RTP) {
         uint32_t attrBitmap = 8192;
         struct TpAttr tpAttr {0};
-        CHK_RET(Hccl::HrtRaGetTpAttrAsync(ctxHandle_, tpInfo_.tpHandle, attrBitmap, tpAttr, reqHandles_[0]));
+        u32 devicePhyId = Hccl::HrtGetDevicePhyIdByIndex(devLogicId_);
+        CHK_RET(Hccl::HrtRaGetTpAttrAsync(devicePhyId, ctxHandle_, tpInfo_.tpHandle, attrBitmap, tpAttr, reqHandles_[0]));
         udpSport = tpAttr.dataUdpSrcport;
     }
     udpSport = udpSport & 0xFF;
