@@ -27,6 +27,8 @@
 namespace dfx_tracer {
 void ExecutorTracer::BackGroundDfx(void *info)
 {
+    u32 count = 0;
+    bool isDfx = false;
     HCCL_RUN_INFO("Start to back ground.");
     // 外部保证info有效
     auto ctx = static_cast<AicpuComContext *>(info);
@@ -37,6 +39,11 @@ void ExecutorTracer::BackGroundDfx(void *info)
             HCCL_INFO("Back ground thread returned..");
             break;
         }
+        if ((count == 1000)) {
+            HCCL_RUN_INFO(" backGround runing");
+            count = 0;
+            isDfx = true;
+        }
         HandleDestroyComm(ctx);
         HandleBackGround(ctx);
         bool isNotStop = false;
@@ -46,13 +53,15 @@ void ExecutorTracer::BackGroundDfx(void *info)
             break;
         }
         HandleReportStatusInComm();
-        StopLaunchCommandHandle(ctx);
-        KfcCommandHandle(ctx);
+        StopLaunchCommandHandle(ctx, isDfx);
+        KfcCommandHandle(ctx, isDfx);
         HandleSwitchNic(ctx);
         TaskMonitor();
         HandleCqeStatus(ctx);
         HandleResumeChangeLink(ctx);
         hccl::HcclOneSideServiceAicpu::HandleErrCqe();
+        count ++;
+        isDfx = false;
         usleep(TEN_MILLISECOND_OF_USLEEP);
     }
     (void)dfx::CannErrorReporter::GetInstance().Clear();
@@ -149,7 +158,7 @@ void ExecutorTracer::StopBackGroundDfx(void *info)
 }
 
 // handle StopLaunch Command
-void ExecutorTracer::StopLaunchCommandHandle(AicpuComContext *const ctx)
+void ExecutorTracer::StopLaunchCommandHandle(AicpuComContext *const ctx, bool isDfx)
 {
     AicpuExecutorTracer::StopLaunchCommandHandle(ctx);
     ReadWriteLockBase &commAicpuMapMutex = AicpuHcclProcess::AicpuGetCommMutex();
@@ -161,10 +170,15 @@ void ExecutorTracer::StopLaunchCommandHandle(AicpuComContext *const ctx)
     for (auto &commInfo : aicpuCommInfo) {
         hccl::HcclCommAicpu *hcclAicpu = commInfo.second;
         cmd = KfcCommand::kNone;
+        if (isDfx) {
+            HCCL_RUN_INFO("[StopLaunchCommandHandle] comm[%s] GetCommInfoStatus[%d], GetNsStopLaunchStatus[%d]",
+                hcclAicpu->GetGroupName().c_str(), hcclAicpu->GetCommInfoStatus(), hcclAicpu->GetNsStopLaunchStatus());
+        }
         if (hcclAicpu->GetCommInfoStatus()) {
             if (!hcclAicpu->GetNsStopLaunchStatus()) {
                 (void)hcclAicpu->BackGroundGetCmd(cmd);
                 if (cmd == KfcCommand::NsStopLaunch) {
+                    HCCL_RUN_INFO("[StopLaunchCommandHandle] BackGroundGetOpStatus[%d]", hcclAicpu->BackGroundGetOpStatus());
                     if (!hcclAicpu->BackGroundGetOpStatus()) {
                         (void)hcclAicpu->BackGroundSetStatus(KfcStatus::kStoplaunch);
                         hcclAicpu->SetCommRecoveryFlag(true);
@@ -179,7 +193,7 @@ void ExecutorTracer::StopLaunchCommandHandle(AicpuComContext *const ctx)
 }
 
 // handle StopExec and Clean Command
-void ExecutorTracer::KfcCommandHandle(AicpuComContext *const ctx)
+void ExecutorTracer::KfcCommandHandle(AicpuComContext *const ctx, bool isDfx)
 {
     AicpuExecutorTracer::KfcCommandHandle(ctx);
     ReadWriteLockBase &commAicpuMapMutex = AicpuHcclProcess::AicpuGetCommMutex();
@@ -189,9 +203,13 @@ void ExecutorTracer::KfcCommandHandle(AicpuComContext *const ctx)
     (void)AicpuHcclProcess::AicpuGetCommAll(aicpuCommInfo);
     for (auto &commItem : aicpuCommInfo) {
         hccl::HcclCommAicpu *commInfo = commItem.second;
+        if (isDfx) {
+            HCCL_RUN_INFO("comm[%s] GetCommInfoStatus[%d], GetCommRecoveryFlag[%d]", commInfo->GetGroupName().c_str(),
+                commInfo->GetCommInfoStatus(), commInfo->GetCommRecoveryFlag());
+        }
         if (commInfo->GetCommInfoStatus()) {
             if (commInfo->GetCommRecoveryFlag()) {
-                HandleAICPUCommand(commInfo);
+                HandleAICPUCommand(commInfo, isDfx);
             }
         }
     }
@@ -354,26 +372,33 @@ void ExecutorTracer::SetCqeQueryInput(const uint32_t devId, const HcclComStreamI
     cqeQueryInput.type = static_cast<uint32_t>(DRV_LOGIC_TYPE);
 }
 
-void ExecutorTracer::HandleAICPUCommand(hccl::HcclCommAicpu *const commInfo){
+void ExecutorTracer::HandleAICPUCommand(hccl::HcclCommAicpu *const commInfo, bool isDfx){
     using CommandCall = std::function<void(hccl::HcclCommAicpu *const commInfo)>;
     static std::map<KfcCommand, CommandCall> commandAicpuHandles = {
         {KfcCommand::NsStopExec, AICPUcommandHandles::NsCommStop},
         {KfcCommand::NsClear, AICPUcommandHandles::NsCommClean}};
     KfcCommand cmd = KfcCommand::kNone;
     (void) commInfo->BackGroundGetCmd(cmd);
+    if (isDfx) {
+        HCCL_RUN_INFO("HandleAICPUCommand cmd[%d]", cmd);
+    }
     auto iter = commandAicpuHandles.find(cmd);
     if (iter == commandAicpuHandles.cend()) {
+        if (isDfx) {
+            HCCL_RUN_INFO("HandleAICPUCommand cmd[%d] not match", cmd);
+        }
         return;
     }
-    HCCL_DEBUG("Start to run aicpu command %ld", cmd);
+    HCCL_RUN_INFO("Start to run aicpu command %ld", cmd);
     iter->second(commInfo);
 }
 
 void AICPUcommandHandles::NsCommStop(hccl::HcclCommAicpu *const commInfo)
 {
     bool streamStatus = commInfo->GetCommInfoStreamStatus();
+    std::string groupName = commInfo->GetGroupName();
+    HCCL_RUN_INFO("[NsRecovery][NsCommStop]  start groupName[%s], status[%u]",  groupName.c_str(), streamStatus);
     if (streamStatus) {
-        std::string groupName = commInfo->GetGroupName();
         commInfo->SetCommInfoStreamStatus(false);
         HCCL_RUN_INFO("[NsRecovery][NsCommStop] groupName[%s]", groupName.c_str());
         commInfo->NsCommStop();
