@@ -251,6 +251,9 @@ HcclResult CollAllReduceSmallCountAivRdmaExecutor::KernelRun(const OpParam &para
     algArgs.execTimeOutSet = true;
     struct AivProfilingInfo aivProfilingInfo;
     aivProfilingInfo.counter = opCounter_;
+    if (aivClearEnable_) {
+        CHK_RET(ClearAivSyncBuf(flagBuffers, resourceArgs, topoArgs, algArgs));
+    }
  
     CHK_RET(ExecuteKernelLaunch(opArgs, topoArgs, resourceArgs, algArgs, aivProfilingInfo));
  
