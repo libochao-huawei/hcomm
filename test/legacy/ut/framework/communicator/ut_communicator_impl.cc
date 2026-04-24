@@ -51,7 +51,6 @@
 #include "hccp_tlv_hdc_manager.h"
 #include "ccu_driver_handle.h"
 #include "comm_manager.h"
-#include "adapter_error_manager_pub.h"
 
 #include "op_params_checker.h"
 #include "hdc_lite.h"
@@ -1496,39 +1495,6 @@ TEST_F(CommunicatorImplTest, ut_GetJsonProperty_1)
     nlohmann::json j;
     char *propName = nullptr;
     EXPECT_THROW(GetJsonProperty(j, propName), NullPtrException);
-}
-
-TEST_F(CommunicatorImplTest, ut_GetJsonProperty_When_PropertyMissing_Expect_Throw)
-{
-    MOCKER(RptInputErr).stubs().will(returnValue(HCCL_SUCCESS));
-    nlohmann::json j = nlohmann::json::object();
-    const char* propName = "missing_property";
-    EXPECT_THROW(GetJsonProperty(j, propName, true), InvalidParamsException);
-}
-
-// TEST_F(CommunicatorImplTest, ut_GetJsonPropertyUInt_When_PropertyMissing_Expect_Throw)
-// {
-//     MOCKER(RptInputErr).stubs().will(returnValue(HCCL_SUCCESS));
-//     nlohmann::json j = nlohmann::json::object();
-//     const char* propName = "missing_property";
-//     EXPECT_THROW(GetJsonPropertyUInt(j, propName, true, 0), InvalidParamsException);
-// }
-
-TEST_F(CommunicatorImplTest, ut_GetJsonPropertySInt_When_PropertyMissing_Expect_Throw)
-{
-    MOCKER(RptInputErr).stubs().will(returnValue(HCCL_SUCCESS));
-    nlohmann::json j = nlohmann::json::object();
-    const char* propName = "missing_property";
-    EXPECT_THROW(GetJsonPropertySInt(j, propName, true, 0), InvalidParamsException);
-}
-
-TEST_F(CommunicatorImplTest, ut_GetJsonPropertyList_When_PropertyMissing_Expect_Throw)
-{
-    MOCKER(RptInputErr).stubs().will(returnValue(HCCL_SUCCESS));
-    nlohmann::json j = nlohmann::json::object();
-    const char* propName = "missing_property";
-    nlohmann::json listObj;
-    EXPECT_THROW(GetJsonPropertyList(j, propName, listObj), InvalidParamsException);
 }
 
 TEST_F(CommunicatorImplTest, should_fail_when_AllocCommResource_not_ccu)

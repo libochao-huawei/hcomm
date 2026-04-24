@@ -24,7 +24,6 @@
 #include "socket.h"
 #include "rank_info_detect_service.h"
 #include "rank_info_detect_client.h"
-#include "adapter_error_manager_pub.h"
 #undef private
 
 using namespace std;
@@ -44,7 +43,6 @@ protected:
     virtual void SetUp()
     {
         std::cout << "A Test SetUP" << std::endl;
-        MOCKER(RptInputErr).stubs().will(returnValue(HCCL_SUCCESS));
     }
     virtual void TearDown()
     {
