@@ -70,6 +70,8 @@ HcclResult AlignedAllGatherDoubleRing::RunAsync(const u32 rank, const u32 rankSi
 HcclResult AlignedAllGatherDoubleRing::CheckParameters(const u32 rank, const u32 rankSize,
                                                           const std::vector<LINK> &links)
 {
+    HCCL_INFO("mainSignals_.size[%zu], subSignals_.size[%zu], subStreams_.size[%zu]",
+        mainSignals_.size(), subSignals_.size(), subStreams_.size());
     CHK_PTR_NULL(opInfo_);
     CHK_RET(CheckConcurrentDirectParameters(rank, rankSize, links));
     // 判断subStreams数量是否正确
@@ -317,6 +319,7 @@ HcclResult AlignedAllGatherDoubleRing::LocalMemcpy(const u32 ringIndex,
 {
     // 校验流数
     if (GetWorkflowMode() != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB) {
+        HCCL_INFO("LocalMemcpy: ringIndex[%u], mainSignals_[ringIndex + 1][%p], subSignals_[ringIndex + 1][%p]", ringIndex, mainSignals_[ringIndex + 1].get(), subSignals_[ringIndex + 1].get());
         CHK_RET(LocalNotify::Post(subStreams_[ringIndex + 1], dispatcher_, mainSignals_[ringIndex + 1], profilerInput_.stage));
         CHK_RET(LocalNotify::Wait(subStreams_[ringIndex + 1], dispatcher_, subSignals_[ringIndex + 1], profilerInput_.stage));
         if (localSrcMem != localDstMem) {
