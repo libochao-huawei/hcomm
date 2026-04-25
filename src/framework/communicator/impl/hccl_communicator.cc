@@ -362,12 +362,12 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    TransportManager HcclCommunicator::GetTranportManager()
+    TransportManager HcclCommunicator::GetTransportManager()
     {
         return transportManager_;
     }
 
-    TransportManager HcclCommunicator::GetIndptOpTranportManager
+    TransportManager HcclCommunicator::GetIndptOpTransportManager
     {
         return indptOpTransportManager_;
     }
