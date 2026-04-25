@@ -18,15 +18,3 @@ GTEST_API_ int main(int argc, char **argv) {
     setenv("TOPO_PATH_NAME", "testcase", 1);
     return RUN_ALL_TESTS();
 }
-
-// [----------] Global test environment tear-down
-// [==========] 289 tests from 18 test suites ran. (44642 ms total)
-// [  PASSED  ] 258 tests.
-// [  FAILED  ] 31 tests, listed below:
-
-
-
-// AllReduceTest.allreduce_aicpu_case_test_AllReduceNHR_2pod_2mul2_2mul2
-// AllReduceTest.allreduce_aicpu_case_test_AllReduceNHR_3pod_2mul1_2mul2_3mul1
-// ReduceScatterTest.reduceScatter_aicpu_case_test_ReduceScatterNHR_2pod_2mul2_2mul2
-// ReduceScatterTest.reduceScatter_aicpu_case_test_ReduceScatterNHR_3pod_2mul1_2mul2_3mul1

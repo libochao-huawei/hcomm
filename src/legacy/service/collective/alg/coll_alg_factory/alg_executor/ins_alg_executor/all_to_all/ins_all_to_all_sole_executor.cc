@@ -161,7 +161,6 @@ HcclResult InsAlltoAllSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate(co
     // init and check params
     CHK_RET(Init(op, params, insQue));
     dataType_ = op.dataType;
-    // std::cout<< "dataType_" <<dataType_<<std::endl;
     // Topo Match
     AlgTopoMatch topoMatch(myRank_, rankSize_, rankGraph, devType_);
     CHK_RET(topoMatch.MatchTopo(vTopo_, virtRanks_, virtRankMap_));
@@ -207,7 +206,6 @@ HcclResult InsAlltoAllSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate(co
 
     CHK_RET(OrchestrateOpbase(tempAlg));
 
-    // std::cout<<"Orchestrate end"<<std::endl;
     return HcclResult::HCCL_SUCCESS;
 }
 
