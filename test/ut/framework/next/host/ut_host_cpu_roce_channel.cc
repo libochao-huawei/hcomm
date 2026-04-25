@@ -801,3 +801,26 @@ TEST_F(HostCpuRoceChannelTest, Ut_WriteWithNotify_When_LenExceedsMaxMsgSize_Expe
     HcclResult ret = impl_->WriteWithNotify((void *)0x1, (void *)0x2, 250, 0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
+
+TEST_F(HostCpuRoceChannelTest, Ut_NotifyWait_When_IbvPollCqStatusNotSuccess_Expect_HCCL_E_NETWORK)
+{
+    SetupSuccessfulConnectionMocks();
+    auto impl_ = CreateInitAndConnect();
+    impl_->localDpuNotifyIds_.push_back(100);
+    std::vector<Hccl::QpInfo> qpInfos(1);
+    ibv_cq cq{};
+    ibv_qp qp{};
+    ibv_context context{};
+    qpInfos[0].recvCq = &cq;
+    qpInfos[0].qp = &qp;
+    qpInfos[0].recvCq->context = &context;
+    MOCKER_CPP(&HostCpuRoceChannel::GetQpInfos).stubs().will(returnValue(qpInfos));
+    struct ibv_wc wc{};
+    wc.status = IBV_WC_WR_FLUSH_ERR;
+    wc.imm_data = 100;
+    MOCKER(ibv_poll_cq).stubs().with(any(), eq(1), outBoundP(&wc, sizeof(wc))).will(returnValue(1));
+    MOCKER_CPP(&HostCpuRoceChannel::IbvPostRecv).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(RptInputErr).stubs().will(returnValue(HCCL_SUCCESS));
+    HcclResult ret = impl_->NotifyWait(0, 1800);
+    EXPECT_EQ(ret, HCCL_E_NETWORK);
+}
