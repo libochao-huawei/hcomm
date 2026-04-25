@@ -5223,7 +5223,7 @@ HcclResult HcclCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
     CHK_RET(hrtSetlocalDevice(topoInfo_.deviceLogicId));
     CHK_RET(hrtSetlocalDeviceType(topoInfo_.deviceType));
     CHK_RET(hrtDrvGetLocalDevIDByHostDevID(topoInfo_.devicePhyId, &devId_));
-    CHK_RET(taskExecption_.Init(devId_, localUserRank_, identifier_));
+    CHK_RET(taskExecption_.Init(devId_, topoInfo_.userRank, identifier_));
     CHK_RET(RegisterProfCallBack());
 
     if (topoInfo_.deviceType == DevType::DEV_TYPE_950) {
