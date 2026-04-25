@@ -21,6 +21,7 @@
 extern "C" {
 #endif
 HcclResult hrtOpenTsd();
+HcclResult hrtOpenTsdwithResvMem(u32 poolId);
 HcclResult hrtOpenNetService(rtNetServiceOpenArgs *openArgs);
 HcclResult hrtCloseNetService();
 HcclResult hrtTsdCapabilityGet(uint32_t deviceLogicId, int32_t type, uint64_t ptr);
