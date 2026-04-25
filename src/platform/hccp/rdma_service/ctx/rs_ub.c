@@ -2281,6 +2281,9 @@ STATIC int RsUbCtxBatchSendWrExt(struct RsCtxJettyCb *jettyCb, struct BatchSendW
         // record doorbell info
         hccp_dbg("jetty_id %u post info: dwqe_addr:%pK, dbAddr:%pK, ctrl:%pK, pi:%u",
             jettyCb->jetty->jetty_id.id, wrOut.dwqe_addr, wrOut.db_addr, wrOut.ctrl, wrOut.pi);
+        
+        (void)memcpy_s((void *)wrOut.db_addr, sizeof(uint32_t), &wrOut.pi, sizeof(uint32_t));
+        hccp_err("[xzdebug] finish doorbell");
     }
 
     *wrlistNum->completeNum = i;

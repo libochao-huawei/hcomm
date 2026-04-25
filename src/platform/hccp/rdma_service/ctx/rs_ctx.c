@@ -496,6 +496,7 @@ RS_ATTRI_VISI_DEF int RsCtxCqCreate(struct RaRsDevInfo *devInfo, struct CtxCqAtt
     ret = RsUbCtxJfcCreate(devCb, attr, info);
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_ub_ctx_jfc_create failed, ret:%d devIndex:0x%x",
         ret, devInfo->devIndex), ret);
+    hccp_err("rs_ub_ctx_jfc_create succ, mode:%d", attr->ub.mode);
 
     return ret;
 }
@@ -542,6 +543,7 @@ RS_ATTRI_VISI_DEF int RsCtxQpCreate(struct RaRsDevInfo *devInfo, struct CtxQpAtt
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_ub_ctx_jetty_create failed, ret:%d devIndex:0x%x",
         ret, devInfo->devIndex), ret);
 
+    hccp_err("RsUbCtxJettyCreate succ, mode:%d", qpAttr->ub.mode);
     return ret;
 }
 
