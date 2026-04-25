@@ -565,20 +565,15 @@ elif [ "${BUILD_CB_TEST}" == "true" ]; then
     fi
 elif [ "${FULL_MODE}" == "true" ]; then
     cd ..
-    mkdir -p ${BUILD_DEVICE_DIR}
-    cd ${BUILD_DEVICE_DIR}
+    cd ${BUILD_DIR}
     CURRENT_CUSTOM_OPTION="${CUSTOM_OPTION}"
-    CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DFULL_MODE=ON -DDEVICE_MODE=ON -DKERNEL_MODE=ON -DPRODUCT=ascend910B -DPRODUCT_SIDE=device -DUSE_ALOG=0 -DCUSTOM_SIGN_SCRIPT=${CUSTOM_SIGN_SCRIPT} -DENABLE_SIGN=${ENABLE_SIGN} -DVERSION_INFO=${VERSION_INFO}"
-    build_device
-    BUILD_HCCD_DIR="${CURRENT_DIR}/build_hccd"
-    mkdir -p ${BUILD_HCCD_DIR}
-    cd ${BUILD_HCCD_DIR}
-    CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DDEVICE_MODE=ON -DPRODUCT=ascend -DPRODUCT_SIDE=device -DUSE_ALOG=1 -DCUSTOM_SIGN_SCRIPT=${CUSTOM_SIGN_SCRIPT} -DENABLE_SIGN=${ENABLE_SIGN} -DVERSION_INFO=${VERSION_INFO}"
-    build_hccd
-    cd .. & cd ${BUILD_DIR}
+    # Phase 1: Device build (single cmake + single build)
+    CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DFULL_MODE=ON -DDEVICE_MODE=ON -DKERNEL_MODE=ON -DPRODUCT=ascend -DPRODUCT_SIDE=device -DUSE_ALOG=1 -DCUSTOM_SIGN_SCRIPT=${CUSTOM_SIGN_SCRIPT} -DENABLE_SIGN=${ENABLE_SIGN} -DVERSION_INFO=${VERSION_INFO}"
+    cmake_config
+    build hccp_service.bin rs ra_peer ra_hdc ra hccd net_co ccl_kernel_plf ccl_kernel_plf_a ccl_kernel aicpu_custom_json aicpu_custom generate_device_hccp_package generate_device_aicpu_package generate_device_hccd_package sign_cann_hcomm_compat sign_aicpu_hcomm sign_cann_hccd_compat
+    # Phase 2: Host packaging
     CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DDEVICE_MODE=OFF -DPRODUCT=ascend -DPRODUCT_SIDE=host -DUSE_ALOG=1"
     build_package
-    rmdir ${BUILD_DEVICE_DIR} ${BUILD_HCCD_DIR}
 else
     cd ..
     mkdir -p ${BUILD_DEVICE_DIR}

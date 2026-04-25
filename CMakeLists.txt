@@ -125,9 +125,9 @@ elseif(BUILD_OPEN_PROJECT)
     )
 
     if(DEVICE_MODE)
-        set(HCCP_TAR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_device/tar_pkg/)
-        set(CCL_KERNEL_TAR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_device/ccl_kernel_tar_pkg/)
-        set(HCCD_TAR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_hccd/hccd_tar_pkg/)
+        set(HCCP_TAR_DIR ${CMAKE_BINARY_DIR}/device_build/tar_pkg/)
+        set(CCL_KERNEL_TAR_DIR ${CMAKE_BINARY_DIR}/device_build/ccl_kernel_tar_pkg/)
+        set(HCCD_TAR_DIR ${CMAKE_BINARY_DIR}/device_build/hccd_tar_pkg/)
 
         message(STATUS "Detected CUSTOM_SIGN_SCRIPT: ${CUSTOM_SIGN_SCRIPT}")
         message(STATUS "Detected ENABLE_SIGN: ${ENABLE_SIGN}")
@@ -198,8 +198,8 @@ elseif(BUILD_OPEN_PROJECT)
     if (NOT DEVICE_MODE)
         message(STATUS "Detected INSTALL_LIBRARY_DIR: ${INSTALL_LIBRARY_DIR}")
 
-        set(BUILD_DEVICE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_device/)
-        set(BUILD_HCCD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_hccd/)
+        set(BUILD_DEVICE_DIR ${CMAKE_BINARY_DIR}/device_build/)
+        set(BUILD_HCCD_DIR ${CMAKE_BINARY_DIR}/device_build/)
         add_custom_target(install_tar DEPENDS
             ${BUILD_DEVICE_DIR}/signatures/cann-hcomm-compat.tar.gz
             ${BUILD_DEVICE_DIR}/signatures/aicpu_hcomm.tar.gz

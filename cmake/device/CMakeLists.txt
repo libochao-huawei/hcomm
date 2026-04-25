@@ -29,6 +29,9 @@ include(${HCOMM_ROOT_DIR}/cmake/func.cmake)
 include(${HCOMM_ROOT_DIR}/cmake/package.cmake)
 
 set(KERNEL_MODE ON)
+set(FULL_MODE ON)
+set(USE_ALOG 1)
+set(PRODUCT ascend)
 add_subdirectory(${HCOMM_ROOT_DIR}/src ${CMAKE_BINARY_DIR}/_src)
 
 # 打包并签名：cann-hcomm-compat.tar.gz
