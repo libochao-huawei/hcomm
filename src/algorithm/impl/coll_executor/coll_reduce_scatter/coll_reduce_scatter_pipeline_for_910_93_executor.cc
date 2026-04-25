@@ -8,37 +8,37 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "coll_aligned_reduce_scatter_double_ring_pipeline_for_910_93_executor.h"
+#include "coll_reduce_scatter_pipeline_for_910_93_executor.h"
 #include "alg_template_register.h"
 
 namespace hccl {
-CollAlignedReduceScatterDoubleRingPipelineFor91093Executor::
-    CollAlignedReduceScatterDoubleRingPipelineFor91093Executor(
+CollReduceScatterPipelineFor91093Executor::
+    CollReduceScatterPipelineFor91093Executor(
         const HcclDispatcher dispatcher,
         std::unique_ptr<TopoMatcher> &topoMatcher)
-    : CollAlignedReduceScatterDoubleRingFor91093Executor(dispatcher, topoMatcher)
+    : CollReduceScatterRingFor91093Executor(dispatcher, topoMatcher)
 {
 }
 
-HcclResult CollAlignedReduceScatterDoubleRingPipelineFor91093Executor::CalcStreamNum(u32 &streamNum)
+HcclResult CollReduceScatterPipelineFor91093Executor::CalcStreamNum(u32 &streamNum)
 {
     CHK_RET(CollReduceScatterRingFor91093Executor::CalcStreamNum(streamNum));
     streamNum += 1;
-    HCCL_INFO("[CollAlignedReduceScatterDoubleRingPipelineFor91093Executor][CalcStreamNum] tag[%s] streamNum[%u]",
+    HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][CalcStreamNum] tag[%s] streamNum[%u]",
         tag_.c_str(), streamNum);
     return HCCL_SUCCESS;
 }
 
-u64 CollAlignedReduceScatterDoubleRingPipelineFor91093Executor::CalcLoopMaxCount(const u32 unitSize)
+u64 CollReduceScatterPipelineFor91093Executor::CalcLoopMaxCount(const u32 unitSize)
 {
-    u64 maxCountPerLoop = CollReduceScatterRingFor91093Executor::CalcLoopMaxCount(unitSize);
-    maxCountPerLoop /= 2; // double buffer: split CclIn/CclOut in half
-    HCCL_INFO("[CollAlignedReduceScatterDoubleRingPipelineFor91093Executor][CalcLoopMaxCount] "
-        "tag[%s] maxCountPerLoop[%llu]", tag_.c_str(), maxCountPerLoop);
+    u64 baseMaxCount = CollReduceScatterRingFor91093Executor::CalcLoopMaxCount(unitSize);
+    u64 maxCountPerLoop = baseMaxCount / 2;
+    HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][CalcLoopMaxCount] "
+        "maxCountPerLoop[%llu], baseMaxCount[%llu]", maxCountPerLoop, baseMaxCount);
     return maxCountPerLoop;
 }
 
-HcclResult CollAlignedReduceScatterDoubleRingPipelineFor91093Executor::RunLoop(
+HcclResult CollReduceScatterPipelineFor91093Executor::RunLoop(
     OpParam &param, AlgResourceResponse &algRes)
 {
     const u32 unitSize = SIZE_TABLE[param.DataDes.dataType];
@@ -46,7 +46,6 @@ HcclResult CollAlignedReduceScatterDoubleRingPipelineFor91093Executor::RunLoop(
         (param.DataDes.dataType != HCCL_DATA_TYPE_INT64)) ?
         ReduceType::INLINE_REDUCE : ReduceType::TBE_REDUCE;
 
-    // double buffer: split CclIn and CclOut in half
     const u64 cclInputSizeHalved = algRes.cclInputMem.size() / 2;
     DeviceMem cclInputAMem = algRes.cclInputMem.range(0, cclInputSizeHalved);
     DeviceMem cclInputBMem = algRes.cclInputMem.range(cclInputSizeHalved, cclInputSizeHalved);
@@ -66,7 +65,7 @@ HcclResult CollAlignedReduceScatterDoubleRingPipelineFor91093Executor::RunLoop(
 
     const u64 countDataPerLoop = CalcLoopMaxCount(unitSize);
     CHK_PRT_RET(countDataPerLoop == 0,
-        HCCL_ERROR("[CollAlignedReduceScatterDoubleRingPipelineFor91093Executor][RunLoop]"
+        HCCL_ERROR("[CollReduceScatterPipelineFor91093Executor][RunLoop]"
             "countDataPerLoop is zero."),
         HCCL_E_INTERNAL);
 
@@ -74,20 +73,26 @@ HcclResult CollAlignedReduceScatterDoubleRingPipelineFor91093Executor::RunLoop(
     const u64 countDataLastLoop = countDataLastLoopTemp > 0 ? countDataLastLoopTemp : countDataPerLoop;
     const u64 sizeDataPerLoop = countDataPerLoop * unitSize;
     const u64 numBlockTotal = (param.DataDes.count - countDataLastLoop) / countDataPerLoop + 1;
-    const u64 numLoopTotal = numBlockTotal + 1; // +1 for drain phase
+    const u64 numLoopTotal = numBlockTotal + 1;
 
     Stream streamL0L1 = param.stream;
     Stream streamL2 = algResResp_->slaveStreams.back();
     auto notifyL0L1toL2 = algResResp_->notifiesAux.back();
     auto notifyL2toL0L1 = algResResp_->notifiesMain.back();
 
-    HCCL_INFO("[CollAlignedReduceScatterDoubleRingPipelineFor91093Executor][RunLoop] "
-        "tag[%s] numBlockTotal[%llu] countDataPerLoop[%llu] countDataLastLoop[%llu]",
-        param.tag.c_str(), numBlockTotal, countDataPerLoop, countDataLastLoop);
+    HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][RunLoop] "
+        "tag[%s] numBlockTotal[%llu] numLoopTotal[%llu] countDataPerLoop[%llu] countDataLastLoop[%llu]",
+        param.tag.c_str(), numBlockTotal, numLoopTotal, countDataPerLoop, countDataLastLoop);
+    HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][RunLoop] "
+        "streamL2[%p] notifyL0L1toL2[%p] notifyL2toL0L1[%p]",
+        streamL2.ptr(), notifyL0L1toL2.ptr(), notifyL2toL0L1.ptr());
 
     for (u64 i = 0; i < numLoopTotal; ++i) {
-        // L0+L1 phase on StreamL0L1
         if (i < numBlockTotal) {
+            HCCL_CONFIG_INFO(HCCL_ALG,
+                "[CollReduceScatterPipelineFor91093Executor][RunLoop] loop[%llu/%llu] blockIdx[%llu] useBufferA[%d]",
+                i, numLoopTotal, i, (i % 2 == 0));
+
             if (i >= 2) {
                 CHK_RET(LocalNotify::Wait(streamL0L1, dispatcher_, notifyL2toL0L1, INVALID_VALUE_STAGE));
             }
@@ -107,8 +112,11 @@ HcclResult CollAlignedReduceScatterDoubleRingPipelineFor91093Executor::RunLoop(
             CHK_RET(LocalNotify::Post(streamL0L1, dispatcher_, notifyL0L1toL2, INVALID_VALUE_STAGE));
         }
 
-        // L2 phase on StreamL2
         if (i >= 1 && i <= numBlockTotal) {
+            HCCL_CONFIG_INFO(HCCL_ALG,
+                "[CollReduceScatterPipelineFor91093Executor][RunLoop] loop[%llu/%llu] blockIdx[%llu] L2 phase",
+                i, numLoopTotal, i - 1);
+
             CHK_RET(LocalNotify::Wait(streamL2, dispatcher_, notifyL0L1toL2, INVALID_VALUE_STAGE));
 
             const u64 prevIdx = i - 1;
@@ -128,16 +136,19 @@ HcclResult CollAlignedReduceScatterDoubleRingPipelineFor91093Executor::RunLoop(
         }
     }
 
-    // PostSync: consume remaining notifyL2toL0L1 signals
     const u64 remainingSignals = (numBlockTotal >= 2) ? 2 : numBlockTotal;
     for (u64 s = 0; s < remainingSignals; ++s) {
-        CHK_RET(LocalNotify::Wait(streamL0L1, dispatcher_, notifyL2toL0L1, INVALID_VALUE_STAGE));
+        HcclResult ret = LocalNotify::Wait(streamL0L1, dispatcher_, notifyL2toL0L1, INVALID_VALUE_STAGE);
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[CollReduceScatterPipelineFor91093Executor][RunLoop] PostSync wait error, tag[%s]",
+                param.tag.c_str()), ret);
     }
 
+    HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][RunLoop] Pipeline run success");
     return HCCL_SUCCESS;
 }
 
-HcclResult CollAlignedReduceScatterDoubleRingPipelineFor91093Executor::RunLevel0To1(
+HcclResult CollReduceScatterPipelineFor91093Executor::RunLevel0To1(
     OpParam &param, const ReduceType &reduceType, ExecMem &execMem, Stream &streamL0L1)
 {
     (void)reduceType;
@@ -150,14 +161,18 @@ HcclResult CollAlignedReduceScatterDoubleRingPipelineFor91093Executor::RunLevel0
         execMem.outputMem = execMem.outputMem.range(0, curSize);
     }
 
+    HCCL_CONFIG_INFO(HCCL_ALG,
+        "[CollReduceScatterPipelineFor91093Executor][RunLevel0To1] chunk starts");
+
     HcclResult ret = KernelRunLevel0To1(param, execMem, streamL0L1);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[RunLevel0To1] kernel run error, tag[%s]", param.tag.c_str()), ret);
+        HCCL_ERROR("[CollReduceScatterPipelineFor91093Executor][RunLevel0To1] kernel run error, tag[%s]",
+            param.tag.c_str()), ret);
 
     return HCCL_SUCCESS;
 }
 
-HcclResult CollAlignedReduceScatterDoubleRingPipelineFor91093Executor::RunLevel2(
+HcclResult CollReduceScatterPipelineFor91093Executor::RunLevel2(
     OpParam &param, const ReduceType &reduceType, ExecMem &execMem, Stream &streamL2)
 {
     (void)reduceType;
@@ -170,14 +185,135 @@ HcclResult CollAlignedReduceScatterDoubleRingPipelineFor91093Executor::RunLevel2
         execMem.outputMem = execMem.outputMem.range(0, curSize);
     }
 
+    HCCL_CONFIG_INFO(HCCL_ALG,
+        "[CollReduceScatterPipelineFor91093Executor][RunLevel2] chunk starts");
+
     HcclResult ret = KernelRunLevel2(param, execMem, streamL2);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[RunLevel2] kernel run error, tag[%s]", param.tag.c_str()), ret);
+        HCCL_ERROR("[CollReduceScatterPipelineFor91093Executor][RunLevel2] kernel run error, tag[%s]",
+            param.tag.c_str()), ret);
 
     return HCCL_SUCCESS;
 }
 
-HcclResult CollAlignedReduceScatterDoubleRingPipelineFor91093Executor::KernelRunLevel0To1(
+// 基类用 slaveStreams.size()+1 推断 ringNum，Pipeline 多 1 条 StreamL2，需扣除后再 +1，即 size()。
+// 分支条件和索引逻辑与基类一致。
+HcclResult CollReduceScatterPipelineFor91093Executor::GetSubStreamInfoOnOneRing(const u32 ringIndex,
+    std::vector<Stream> &subStreamsInOneRing,
+    std::vector<std::shared_ptr<LocalNotify>> &mainSignalsInOneRing,
+    std::vector<std::shared_ptr<LocalNotify>> &subSignalsInOneRing)
+{
+    u32 ringNum = algResResp_->slaveStreams.size();
+    if (ringNum == LEVEL0_PLANE_NUM_IN_NPRING_DOUBLE * STREAM_NUM_FOR_DMAREDUCE_ONE_RING) {
+        subStreamsInOneRing.push_back(algResResp_->slaveStreams[ringIndex + 1]);
+        mainSignalsInOneRing.push_back(algResResp_->notifiesMain[ringIndex + 1]);
+        subSignalsInOneRing.push_back(algResResp_->notifiesAux[ringIndex + 1]);
+    } else if (ringNum == LEVEL0_PLANE_NUM_IN_NPRING_SINGLE * STREAM_NUM_FOR_DMAREDUCE_ONE_RING) {
+        subStreamsInOneRing.push_back(algResResp_->slaveStreams[ringIndex]);
+        mainSignalsInOneRing.push_back(algResResp_->notifiesMain[ringIndex]);
+        subSignalsInOneRing.push_back(algResResp_->notifiesAux[ringIndex]);
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult CollReduceScatterPipelineFor91093Executor::RunIntraSeverReduceScatter(
+    const std::string &tag, DeviceMem &inputMem, DeviceMem &outputMem,
+    const u64 count, const HcclDataType &dataType, const HcclReduceOp &reductionOp,
+    const std::vector<std::vector<Slice>> &multRingsSliceZero, const Stream &stream, s32 profStage,
+    const u64 baseOffset, const HcomCollOpInfo *opInfo,
+    const std::vector<std::vector<Slice>> &multRingsUserMemSlice, const bool disableDMAReduce)
+{
+    // SemiRing（IsUnifiedMarch）分支不可达：Pipeline 约束 workflowMode_==OP_BASE 排除图模式，
+    // superPodNum>1 排除单 server，IsUnifiedMarch 恒为 false。
+    HcclResult ret = HCCL_SUCCESS;
+    if (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING) {
+        ret = DoubleRingReduceScatter(tag, inputMem, outputMem, count, dataType, reductionOp,
+            multRingsSliceZero, stream, profStage, baseOffset, opInfo,
+            multRingsUserMemSlice, disableDMAReduce);
+    } else {
+        ret = CollReduceScatterRingFor91093Executor::RunIntraSeverReduceScatter(
+            tag, inputMem, outputMem, count, dataType, reductionOp,
+            multRingsSliceZero, stream, profStage, baseOffset, opInfo,
+            multRingsUserMemSlice, disableDMAReduce);
+    }
+
+    CHK_RET(ret);
+    return HCCL_SUCCESS;
+}
+
+// 逻辑与 CollAlignedReduceScatterDoubleRingFor91093Executor::DoubleRingReduceScatter 一致
+HcclResult CollReduceScatterPipelineFor91093Executor::DoubleRingReduceScatter(
+    const std::string &tag, DeviceMem inputMem, DeviceMem outputMem,
+    const u64 count, const HcclDataType dataType, const HcclReduceOp reductionOp,
+    const std::vector<std::vector<Slice>> multRingsSliceZero, Stream stream, s32 profStage,
+    const u64 baseOffset, const HcomCollOpInfo *opInfo,
+    const std::vector<std::vector<Slice>> multRingsUserMemSlice, const bool disableDMAReduce)
+{
+    (void)tag;
+    HCCL_CONFIG_INFO(HCCL_ALG,
+        "[CollReduceScatterPipelineFor91093Executor][DoubleRingReduceScatter] DoubleRingReduceScatter starts");
+    u32 ringNum = multRingsSliceZero.size();
+    CHK_RET(CheckCommSize(COMM_LEVEL0, ringNum));
+
+    SubCommInfo level0ZeroCommInfo = GetSubCommInfo(COMM_LEVEL0, COMM_INDEX_0);
+    auto nicList = topoAttr_.nicList;
+    std::vector<std::vector<u32>> multiRingsOrder =
+        GetRingsOrderByTopoType(level0ZeroCommInfo.localRankSize, topoType_, nicList);
+
+    u64 reduceAttr = GetReduceAttr(inputMem, outputMem, dataType, reductionOp);
+
+    SubCommInfo level0RingCommInfo = GetSubCommInfo(COMM_LEVEL0, COMM_INDEX_0);
+
+    std::vector<std::vector<Slice>> userMemInputSlicesOfDoubleRing;
+    CHK_RET(CollectMultiRingsUserMemSlices(ringNum, dataType,
+        opInfo, multRingsSliceZero,
+        multiRingsOrder, multRingsUserMemSlice,
+        userMemInputSlicesOfDoubleRing));
+
+    std::vector<std::vector<u32>> rankOrders;
+    CHK_RET(CollectMultiRingsRankOrder(ringNum, multiRingsOrder, rankOrders));
+
+    std::unique_ptr<AlgTemplateBase> tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
+        TemplateType::TEMPLATE_REDUCESCATTER_DB_RING, dispatcher_);
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_DB_RING in COMM_LEVEL0", __func__);
+    CHK_SMART_PTR_NULL(tempAlg);
+    // 排除尾部 Pipeline 专用流（StreamL2），使模板看到与基类一致的流数
+    std::vector<Stream> baseSlaveStreams(algResResp_->slaveStreams.begin(),
+        algResResp_->slaveStreams.end() - 1);
+    std::vector<std::shared_ptr<LocalNotify>> baseNotifiesMain(algResResp_->notifiesMain.begin(),
+        algResResp_->notifiesMain.end() - 1);
+    std::vector<std::shared_ptr<LocalNotify>> baseNotifiesAux(algResResp_->notifiesAux.begin(),
+        algResResp_->notifiesAux.end() - 1);
+    HcclResult ret = tempAlg->Prepare(inputMem, inputMem, outputMem, count, dataType, stream, multRingsSliceZero,
+        reductionOp, LEVEL0_BRIDGE_RANK_ID, baseOffset, disableDMAReduce,
+        reduceAttr, opInfo, topoAttr_.userRank, baseSlaveStreams,
+        baseNotifiesMain, baseNotifiesAux, rankOrders, userMemInputSlicesOfDoubleRing);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[CollReduceScatterPipelineFor91093Executor][DoubleRingReduceScatter] "
+        "Double ring ReduceScatter failed,return[%d]", ret), ret);
+
+    u32 ringIndexOp = COMM_INDEX_0;
+    u32 rankSize = level0RingCommInfo.localRankSize;
+    ret = tempAlg->RegisterProfiler(
+        ((ringIndexOp + 1) << PROF_RINGINDEX_OFFSET_OF_PLANEID) +
+        (rankSize << PROF_RANKSIZE_OFFSET_OF_PLANEID) + level0RingCommInfo.localRank,
+        profStage, HCCL_EXEC_STEP_NOT_SET, stream);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[CollReduceScatterPipelineFor91093Executor][DoubleRingReduceScatter] "
+        "Double ring ReduceScatter RegisterProfiler failed,return[%d]", ret), ret);
+
+    CHK_RET(AlgTemplateBase::ExecEmptyTask(inputMem, outputMem, stream, dispatcher_));
+    ret = RunTemplate(tempAlg, level0RingCommInfo);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[CollReduceScatterPipelineFor91093Executor][DoubleRingReduceScatter] "
+        "Double ring ReduceScatter RunTemplate failed,return[%d]", ret), ret);
+
+    CHK_RET(AlgTemplateBase::ExecEmptyTask(inputMem, outputMem, stream, dispatcher_));
+    return HCCL_SUCCESS;
+}
+
+// 拆分自 CollReduceScatterRingFor91093Executor::KernelRun 的 L0+L1 部分
+HcclResult CollReduceScatterPipelineFor91093Executor::KernelRunLevel0To1(
     const OpParam &param, ExecMem &execMem, Stream &streamL0L1)
 {
     HCCL_CONFIG_INFO(HCCL_ALG, "[%s] executor starts", __func__);
@@ -213,8 +349,6 @@ HcclResult CollAlignedReduceScatterDoubleRingPipelineFor91093Executor::KernelRun
     const u32 level2RankSize = level2CommInfo.localRankSize;
     const u32 level1RankSize = logicalLevel1CommInfo_.localRankSize;
 
-    CHK_RET(ActiveSlaveStreams(streamL0L1));
-
     std::vector<std::vector<Slice>> multiStreamSlice;
     std::vector<std::vector<Slice>> level0DataSegsSlice;
     CHK_RET(CalLevel0DataSegsSlice(execMem, multiStreamSlice, param, ringNum, sliceNum, level1RankSize, level2RankSize,
@@ -232,14 +366,12 @@ HcclResult CollAlignedReduceScatterDoubleRingPipelineFor91093Executor::KernelRun
     CalUserMemDataSegsSlice(execMem, level0DataSegsSlice, multiStreamSlice, param, ringNum, sliceNum, level1RankSize,
         level2RankSize, dataType, perDataSize, opInfoPtr, disableDMAReduce, multRingsUserMemSlice);
 
-    // Level 0: intra-server reduce scatter (DMA reduce branch, outputAddr = nullptr)
     HcomCollOpInfo opInfoByReduceScatterDMAreduce = *opInfoPtr;
     opInfoByReduceScatterDMAreduce.outputAddr = nullptr;
     CHK_RET(RunIntraSeverReduceScatter(param.tag, execMem.inputMem, execMem.scratchMem, execMem.count,
         dataType, param.reduceType, level0DataSegsSlice, streamL0L1, PROF_STAGE_1, 0,
         &opInfoByReduceScatterDMAreduce, multRingsUserMemSlice, disableDMAReduce));
 
-    // Level 1: inter-server reduce scatter
     if (level1RankSize > 1) {
         u64 reduceAttr = GetReduceAttr(execMem.inputMem, execMem.scratchMem, dataType, param.reduceType);
         std::unique_ptr<AlgTemplateBase> level1TempAlg;
@@ -251,11 +383,13 @@ HcclResult CollAlignedReduceScatterDoubleRingPipelineFor91093Executor::KernelRun
         if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RING) {
             level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                 TemplateType::TEMPLATE_REDUCESCATTER_RING, dispatcher_);
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_RING in COMM_LEVEL1", __func__);
             CHK_SMART_PTR_NULL(level1TempAlg);
             CHK_RET(level1TempAlg->Prepare(reduceAttr));
         } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB) {
             level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                 TemplateType::TEMPLATE_REDUCESCATTER_NB, dispatcher_);
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_NB in COMM_LEVEL1", __func__);
             CHK_SMART_PTR_NULL(level1TempAlg);
             CHK_RET(level1TempAlg->Prepare(reduceAttr));
         } else if (isSelectAHC) {
@@ -266,9 +400,11 @@ HcclResult CollAlignedReduceScatterDoubleRingPipelineFor91093Executor::KernelRun
             if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC) {
                 level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                     TemplateType::TEMPLATE_REDUCESCATTER_AHC, dispatcher_);
+                HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_AHC in COMM_LEVEL1", __func__);
             } else {
                 level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                     TemplateType::TEMPLATE_REDUCESCATTER_AHC_BROKE, dispatcher_);
+                HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_AHC_BROKE in COMM_LEVEL1", __func__);
             }
             CHK_SMART_PTR_NULL(level1TempAlg);
             CHK_RET(level1TempAlg->Prepare(execMem.count, globalSubGroups, ahcAlgOption));
@@ -276,6 +412,7 @@ HcclResult CollAlignedReduceScatterDoubleRingPipelineFor91093Executor::KernelRun
         } else {
             level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                 TemplateType::TEMPLATE_REDUCESCATTER_NHR, dispatcher_);
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_NHR in COMM_LEVEL1", __func__);
             CHK_SMART_PTR_NULL(level1TempAlg);
             CHK_RET(level1TempAlg->Prepare(reduceAttr, false));
         }
@@ -291,7 +428,8 @@ HcclResult CollAlignedReduceScatterDoubleRingPipelineFor91093Executor::KernelRun
     return HCCL_SUCCESS;
 }
 
-HcclResult CollAlignedReduceScatterDoubleRingPipelineFor91093Executor::KernelRunLevel2(
+// 拆分自 CollReduceScatterRingFor91093Executor::KernelRun 的 L2+copyOut 部分，stream 替换为 streamL2
+HcclResult CollReduceScatterPipelineFor91093Executor::KernelRunLevel2(
     const OpParam &param, ExecMem &execMem, Stream &streamL2)
 {
     HCCL_CONFIG_INFO(HCCL_ALG, "[%s] executor starts", __func__);
@@ -313,7 +451,6 @@ HcclResult CollAlignedReduceScatterDoubleRingPipelineFor91093Executor::KernelRun
     }
     const u32 level2RankSize = level2CommInfo.localRankSize;
 
-    // Level 2: inter-superpod reduce scatter
     if (level2RankSize > 1) {
         u64 reduceAttr = GetReduceAttr(execMem.inputMem, execMem.scratchMem, dataType, param.reduceType);
 
@@ -324,11 +461,13 @@ HcclResult CollAlignedReduceScatterDoubleRingPipelineFor91093Executor::KernelRun
         if (algType_.algoLevel2 == AlgTypeLevel2::ALG_LEVEL2_NB) {
             level2TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                 TemplateType::TEMPLATE_REDUCESCATTER_NB, dispatcher_);
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_NB in COMM_LEVEL2", __func__);
             CHK_SMART_PTR_NULL(level2TempAlg);
             CHK_RET(level2TempAlg->Prepare(reduceAttr));
         } else if (algType_.algoLevel2 == AlgTypeLevel2::ALG_LEVEL2_NHR) {
             level2TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                 TemplateType::TEMPLATE_REDUCESCATTER_NHR, dispatcher_);
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_NHR in COMM_LEVEL2", __func__);
             CHK_SMART_PTR_NULL(level2TempAlg);
             CHK_RET(level2TempAlg->Prepare(reduceAttr, false));
             if (algoAttr_.isSupportAtomicWrite) {
@@ -337,6 +476,7 @@ HcclResult CollAlignedReduceScatterDoubleRingPipelineFor91093Executor::KernelRun
         } else {
             level2TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                 TemplateType::TEMPLATE_REDUCESCATTER_RING, dispatcher_);
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_RING in COMM_LEVEL2", __func__);
             CHK_SMART_PTR_NULL(level2TempAlg);
             CHK_RET(level2TempAlg->Prepare(reduceAttr));
         }
@@ -349,7 +489,6 @@ HcclResult CollAlignedReduceScatterDoubleRingPipelineFor91093Executor::KernelRun
         CHK_RET(RunTemplate(level2TempAlg, level2CommInfo));
     }
 
-    // copyOut: CclIn result -> UserOut
     HcomCollOpInfo opInfo = GetHcomCollOpInfo(param, execMem);
     HcomCollOpInfo *opInfoPtr = &opInfo;
 
@@ -365,7 +504,7 @@ HcclResult CollAlignedReduceScatterDoubleRingPipelineFor91093Executor::KernelRun
     return HCCL_SUCCESS;
 }
 
-REGISTER_EXEC("AlignedReduceScatterDoubleRingPipelineFor91093Executor",
-    AlignedReduceScatterDoubleRingPipelineFor91093,
-    CollAlignedReduceScatterDoubleRingPipelineFor91093Executor);
+REGISTER_EXEC("ReduceScatterPipelineFor91093Executor",
+    ReduceScatterPipelineFor91093,
+    CollReduceScatterPipelineFor91093Executor);
 }
