@@ -1,7 +1,6 @@
 #include "gtest/gtest.h"
 #include "executor_tracer.h"
 #include "framework/aicpu_hccl_process.h"
-#include "framework/aicpu_communicator.h"
 #include "dfx/aicpu_executor_tracer.h"
 #include "read_write_lock_base.h"
 #include "mockcpp/mockcpp.hpp"
@@ -14,27 +13,6 @@
 using namespace testing;
 using namespace dfx_tracer;
 using namespace hccl;
-
-class TestHcclCommAicpu : public hccl::HcclCommAicpu {
-public:
-    TestHcclCommAicpu();
-    bool GetCommInfoStatus() const
-    {
-        return m_commInfoStatus;
-    }
-    HcclResult StreamTaskMonitor()
-    {
-        m_streamTaskMonitorCalled = true;
-        return HCCL_SUCCESS;
-    }
-    bool m_commInfoStatus;
-    bool m_streamTaskMonitorCalled;
-};
-
-TestHcclCommAicpu::TestHcclCommAicpu()
-    : hccl::HcclCommAicpu(), m_commInfoStatus(true), m_streamTaskMonitorCalled(false)
-{
-}
 
 class ExecutorTracerTest : public ::testing::Test {
 protected:
@@ -73,46 +51,84 @@ TEST_F(ExecutorTracerTest, Ut_StopBackGroundDfx)
     EXPECT_EQ(ctx.dfxExtendInfo.commandToBackGroud, CommandToBackGroud::kStop);
 }
 
-// 测试用的AicpuGetCommAll stub函数
-TestHcclCommAicpu g_testComm;
-HcclResult AicpuGetCommAll_stub(std::vector<std::pair<std::string, hccl::HcclCommAicpu *>> &aicpuCommInfo)
-{
-    aicpuCommInfo.push_back(std::make_pair("test_group", &g_testComm));
-    return HCCL_SUCCESS;
-}
-
 TEST_F(ExecutorTracerTest, Ut_TaskMonitor_CommInfoStatus_True)
 {
-    // 设置测试通信域对象状态
-    g_testComm.m_commInfoStatus = true;
-    g_testComm.m_streamTaskMonitorCalled = false;
-
-    // Mock AicpuGetCommAll方法
+    // 创建一个HcclCommAicpu对象
+    HcclCommAicpu *hcclAicpu = new HcclCommAicpu();
+    
+    // Mock GetCommInfoStatus方法，返回true
+    MOCKER(&HcclCommAicpu::GetCommInfoStatus)
+        .stubs()
+        .will(returnValue(true));
+    
+    // Mock StreamTaskMonitor方法，记录调用
+    bool streamTaskMonitorCalled = false;
+    MOCKER(&HcclCommAicpu::StreamTaskMonitor)
+        .stubs()
+        .will(doAction([&streamTaskMonitorCalled]() {
+            streamTaskMonitorCalled = true;
+            return HCCL_SUCCESS;
+        }));
+    
+    // 创建一个包含测试通信域的向量
+    std::vector<std::pair<std::string, hccl::HcclCommAicpu *>> aicpuCommInfo;
+    aicpuCommInfo.push_back(std::make_pair("test_group", hcclAicpu));
+    
+    // Mock AicpuGetCommAll方法，返回测试通信域
     MOCKER(AicpuHcclProcess::AicpuGetCommAll)
         .stubs()
-        .will(invoke(AicpuGetCommAll_stub));
+        .will(invoke([&aicpuCommInfo](std::vector<std::pair<std::string, hccl::HcclCommAicpu *>> &info) {
+            info = aicpuCommInfo;
+            return HCCL_SUCCESS;
+        }));
 
     // 执行TaskMonitor函数
     ExecutorTracer::TaskMonitor();
 
     // 验证StreamTaskMonitor被调用
-    EXPECT_TRUE(g_testComm.m_streamTaskMonitorCalled);
+    EXPECT_TRUE(streamTaskMonitorCalled);
+    
+    // 清理
+    delete hcclAicpu;
 }
 
 TEST_F(ExecutorTracerTest, Ut_TaskMonitor_CommInfoStatus_False)
 {
-    // 设置测试通信域对象状态
-    g_testComm.m_commInfoStatus = false;
-    g_testComm.m_streamTaskMonitorCalled = false;
-
-    // Mock AicpuGetCommAll方法
+    // 创建一个HcclCommAicpu对象
+    HcclCommAicpu *hcclAicpu = new HcclCommAicpu();
+    
+    // Mock GetCommInfoStatus方法，返回false
+    MOCKER(&HcclCommAicpu::GetCommInfoStatus)
+        .stubs()
+        .will(returnValue(false));
+    
+    // Mock StreamTaskMonitor方法，记录调用
+    bool streamTaskMonitorCalled = false;
+    MOCKER(&HcclCommAicpu::StreamTaskMonitor)
+        .stubs()
+        .will(doAction([&streamTaskMonitorCalled]() {
+            streamTaskMonitorCalled = true;
+            return HCCL_SUCCESS;
+        }));
+    
+    // 创建一个包含测试通信域的向量
+    std::vector<std::pair<std::string, hccl::HcclCommAicpu *>> aicpuCommInfo;
+    aicpuCommInfo.push_back(std::make_pair("test_group", hcclAicpu));
+    
+    // Mock AicpuGetCommAll方法，返回测试通信域
     MOCKER(AicpuHcclProcess::AicpuGetCommAll)
         .stubs()
-        .will(invoke(AicpuGetCommAll_stub));
+        .will(invoke([&aicpuCommInfo](std::vector<std::pair<std::string, hccl::HcclCommAicpu *>> &info) {
+            info = aicpuCommInfo;
+            return HCCL_SUCCESS;
+        }));
 
     // 执行TaskMonitor函数
     ExecutorTracer::TaskMonitor();
 
     // 验证StreamTaskMonitor未被调用
-    EXPECT_FALSE(g_testComm.m_streamTaskMonitorCalled);
+    EXPECT_FALSE(streamTaskMonitorCalled);
+    
+    // 清理
+    delete hcclAicpu;
 }
