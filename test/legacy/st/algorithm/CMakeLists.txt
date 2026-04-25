@@ -43,7 +43,10 @@ set(HCOMM_LEGACY_SERVICE   ${HCOMM_CODE_LEGACY}/service/collective)
 
 set(THIRD_PARTY_PATH   ${CANN_3RD_LIB_PATH})
 set(PROTOC_PROGRAM     ${THIRD_PARTY_PATH}/protobuf/bin/protoc)
-include(${HCOMM_ROOT_PATH}/cmake/third_party/gtest.cmake)
+#include(${HCOMM_ROOT_PATH}/cmake/third_party/gtest.cmake)
+
+add_cann_third_party(gtest)
+message("111111111 use algorithm")
 
 # Include List
 set(ASCEND_CANN_INCLUDE_LIST

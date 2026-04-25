@@ -9,22 +9,23 @@
 # -----------------------------------------------------------------------------------------------------------
 # 引入CANN/cmake库
 
-if(NOT PROJECT_SOURCE_DIR)
-    if(CANN_3RD_LIB_PATH AND IS_DIRECTORY "${CANN_3RD_LIB_PATH}/cann-cmake")
+if(TRUE OR NOT PROJECT_SOURCE_DIR)
+    if(FALSE AND CANN_3RD_LIB_PATH AND IS_DIRECTORY "${CANN_3RD_LIB_PATH}/cann-cmake")
         include("${CANN_3RD_LIB_PATH}/cann-cmake/function/prepare.cmake")
     else()
         include(FetchContent)
 
-        set(CANN_CMAKE_TAG "master-001")
+        set(CANN_CMAKE_TAG "master")
         if(CANN_3RD_LIB_PATH AND EXISTS "${CANN_3RD_LIB_PATH}/cmake-${CANN_CMAKE_TAG}.tar.gz")
             FetchContent_Declare(
                 cann-cmake
                 URL "${CANN_3RD_LIB_PATH}/cmake-${CANN_CMAKE_TAG}.tar.gz"
             )
         else()
+            message("11111111111111 use download zdj cmake")
             FetchContent_Declare(
                 cann-cmake
-                GIT_REPOSITORY https://gitcode.com/cann/cmake.git
+                GIT_REPOSITORY https://gitcode.com/gcw_UQE6G7Ro/cmake.git
                 GIT_TAG        ${CANN_CMAKE_TAG}
                 GIT_SHALLOW    TRUE
             )

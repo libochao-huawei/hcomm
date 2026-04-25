@@ -11,7 +11,10 @@
 set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../..)
 
 include(${HCCL_CODE_ROOT}/cmake/hcomm_utils.cmake)
-include(${HCCL_CODE_ROOT}/cmake/third_party/openssl.cmake)
+#include(${HCCL_CODE_ROOT}/cmake/third_party/openssl.cmake)
+
+add_cann_third_party(openssl)
+message("111111111 use platform")
 
 add_subdirectory(hccp_service)
 add_subdirectory(rdma_agent)

@@ -197,7 +197,7 @@ if(BUILD_OPEN_PROJECT)
 
         ${HCCL_BASE_DIR}/../externel_depends/tsch/
 
-        ${THIRD_PARTY_NLOHMANN_PATH}
+        ${JSON_INCLUDE_DIR}
     )
 
     target_link_directories(hccd PRIVATE
@@ -343,7 +343,7 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/../externel_depends/tsch/
         ${RDMA_CORE_INCLUDE_DIR}
 
-        ${THIRD_PARTY_NLOHMANN_PATH}
+        ${JSON_INCLUDE_DIR}
     )
 
     target_include_directories(ccl_kernel_plf_a PRIVATE
@@ -379,7 +379,7 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/../externel_depends/tsch/
         ${RDMA_CORE_INCLUDE_DIR}
 
-        ${THIRD_PARTY_NLOHMANN_PATH}
+        ${JSON_INCLUDE_DIR}
     )
 
     target_link_directories(ccl_kernel_plf PRIVATE

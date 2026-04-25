@@ -130,8 +130,8 @@ set(ASCEND_MOCKCPP_PACKAGE_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 #     message(FATAL_ERROR "${ASCEND_CANN_PACKAGE_PATH} does not exist, please install the cann package and set environment variables.")
 # endif()
 
-# if (NOT EXISTS "${THIRD_PARTY_NLOHMANN_PATH}")
-#     message(FATAL_ERROR "${THIRD_PARTY_NLOHMANN_PATH} does not exist, please check the setting of THIRD_PARTY_NLOHMANN_PATH.")
+# if (NOT EXISTS "${JSON_INCLUDE_DIR}")
+#     message(FATAL_ERROR "${JSON_INCLUDE_DIR} does not exist, please check the setting of JSON_INCLUDE_DIR.")
 # endif()
 
 #execute_process(COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/cmake/scripts/check_version_compatiable.sh

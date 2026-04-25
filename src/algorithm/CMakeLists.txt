@@ -120,7 +120,7 @@ if(BUILD_OPEN_PROJECT)
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
 
-        ${THIRD_PARTY_NLOHMANN_PATH}
+        ${JSON_INCLUDE_DIR}
     )
 
     target_link_directories(hccl_alg PRIVATE

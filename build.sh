@@ -521,7 +521,7 @@ else
 fi
 
 if [ -n "${third_party_nlohmann_path}" ];then
-    CUSTOM_OPTION="${CUSTOM_OPTION} -DTHIRD_PARTY_NLOHMANN_PATH=${third_party_nlohmann_path}"
+    CUSTOM_OPTION="${CUSTOM_OPTION} -DJSON_INCLUDE_DIR=${third_party_nlohmann_path}"
 fi
 
 CUSTOM_OPTION="${CUSTOM_OPTION} -DCUSTOM_ASCEND_CANN_PACKAGE_PATH=${ASCEND_CANN_PACKAGE_PATH}"
