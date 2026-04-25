@@ -6,9 +6,35 @@
 #include "dfx/aicpu_executor_tracer.h"
 #include "read_write_lock_base.h"
 
+#ifndef private
+#define private public
+#define protected public
+#endif
+
 using namespace testing;
 using namespace mockcpp;
 using namespace dfx_tracer;
+
+class TestHcclCommAicpu : public hccl::HcclCommAicpu {
+public:
+    TestHcclCommAicpu();
+    bool GetCommInfoStatus() const
+    {
+        return m_commInfoStatus;
+    }
+    HcclResult StreamTaskMonitor()
+    {
+        m_streamTaskMonitorCalled = true;
+        return HCCL_SUCCESS;
+    }
+    bool m_commInfoStatus;
+    bool m_streamTaskMonitorCalled;
+};
+
+TestHcclCommAicpu::TestHcclCommAicpu()
+    : hccl::HcclCommAicpu(), m_commInfoStatus(true), m_streamTaskMonitorCalled(false)
+{
+}
 
 class ExecutorTracerTest : public ::testing::Test {
 protected:
@@ -48,42 +74,18 @@ TEST_F(ExecutorTracerTest, Ut_StopBackGroundDfx)
 
 TEST_F(ExecutorTracerTest, Ut_TaskMonitor)
 {
-    // Mock HcclCommAicpu
-    class MockHcclCommAicpu {
-    public:
-        MOCK_METHOD0(GetCommInfoStatus, bool());
-        MOCK_METHOD0(StreamTaskMonitor, HcclResult());
-    };
-    
-    MockHcclCommAicpu mockComm;
-    
-    // Mock GetCommInfoStatus to return true
-    MOCKER(&MockHcclCommAicpu::GetCommInfoStatus)
-        .stubs()
-        .will(returnValue(true));
-    
-    // Mock StreamTaskMonitor
-    MOCKER(&MockHcclCommAicpu::StreamTaskMonitor)
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
-    
-    // Mock AicpuHcclProcess::AicpuGetCommMutex to return a valid ReadWriteLockBase reference
-    static ReadWriteLockBase mockMutex;
-    MOCKER(AicpuHcclProcess::AicpuGetCommMutex)
-        .stubs()
-        .will(returnValueRef(mockMutex));
-    
-    // Mock AicpuHcclProcess::AicpuGetCommAll to return our vector
+    TestHcclCommAicpu testComm;
+    testComm.m_commInfoStatus = true;
+    testComm.m_streamTaskMonitorCalled = false;
+
     MOCKER(AicpuHcclProcess::AicpuGetCommAll)
         .stubs()
         .will(doAction([&](std::vector<std::pair<std::string, hccl::HcclCommAicpu *>> &commInfo) {
-            commInfo.push_back({"test_group", reinterpret_cast<hccl::HcclCommAicpu *>(&mockComm)});
+            commInfo.push_back({"test_group", &testComm});
             return HCCL_SUCCESS;
         }));
-    
-    // Execute TaskMonitor
+
     ExecutorTracer::TaskMonitor();
-    
-    // Verify the function was called
-    EXPECT_TRUE(true);
+
+    EXPECT_TRUE(testComm.m_streamTaskMonitorCalled);
 }
