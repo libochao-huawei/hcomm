@@ -8,14 +8,9 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 cmake_minimum_required(VERSION 3.16.0)
-include(cmake/fetch_cann_cmake.cmake)
-project(hcomm)
- 	 
-# 初始化 CANN 项目配置
-init_cann_project()
-
 option(BUILD_OPEN_PROJECT "Build open hcomm project." ON)
 message(STATUS "BUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}")
+message(STATUS "CANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH}")
 message(STATUS "DEVICE_MODE=${DEVICE_MODE}")
 message(STATUS "AARCH_MODE=${AARCH_MODE}")
 
@@ -46,6 +41,14 @@ execute_process(
     OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 message(STATUS "当前系统架构: ${SYSTEM_ARCH}")
+
+# 引入CANN/cmake库
+include(cmake/fetch_cann_cmake.cmake)
+
+project(hcomm)
+
+# 引入CANN/cmake库，初始化
+init_cann_project()
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
