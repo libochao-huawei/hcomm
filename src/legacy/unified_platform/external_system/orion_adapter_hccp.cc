@@ -1811,10 +1811,14 @@ std::vector<HrtDevEidInfo> HrtRaGetDevEidInfoList(const HRaInfo &raInfo)
         hrtDevEidInfo[i].dieId = infoList[i].dieId;
         hrtDevEidInfo[i].chipId = infoList[i].chipId;
         hrtDevEidInfo[i].funcId = infoList[i].funcId;
-        HCCL_INFO("[%s] HrtDevEidInfo[%d]: name[%s], ipAddress[%s], type[%u], eidIndex[%u], dieId[%u], chipId[%u], funcId[%u]",
-        __func__, i,
-        hrtDevEidInfo[i].name.c_str(), hrtDevEidInfo[i].ipAddress.Describe().c_str(), hrtDevEidInfo[i].type,
-        hrtDevEidInfo[i].eidIndex, hrtDevEidInfo[i].dieId, hrtDevEidInfo[i].chipId, hrtDevEidInfo[i].funcId);
+        hrtDevEidInfo[i].devFeature = infoList[i].devFeature;
+        HCCL_INFO("[%s] HrtDevEidInfo[%d]: name[%s], ipAddress[%s], type[%u], "
+                "eidIndex[%u], dieId[%u], chipId[%u], funcId[%u], devFeature[%u]",
+                __func__, i, hrtDevEidInfo[i].name.c_str(),
+                hrtDevEidInfo[i].ipAddress.Describe().c_str(),
+                hrtDevEidInfo[i].type, hrtDevEidInfo[i].eidIndex,
+                hrtDevEidInfo[i].dieId, hrtDevEidInfo[i].chipId,
+                hrtDevEidInfo[i].funcId, hrtDevEidInfo[i].devFeature);
     }
 
     return hrtDevEidInfo;
@@ -2585,8 +2589,8 @@ HcclResult HrtRaGetEidByIp(RdmaHandle handle, const vector<IpAddress>& ipV4AddrL
     union HccpEid eidList[num] = {};
     s32 ret = RaGetEidByIp(handle, ipInfoList, eidList, &num);
     if (ret != 0) {
-        string msg = StringFormat("call RaGetEidByIp failed, error code =%d.", ret);
-        THROW<NetworkApiException>(msg);
+        HCCL_WARNING("call RaGetEidByIp failed, error code =%d.", ret);
+        return HCCL_E_INTERNAL;
     }
 
     if (num != ipV4AddrList.size()) {

@@ -158,7 +158,20 @@ bool RdmaHandleManager::GetRtpEnable(RdmaHandle rdmaHandle)
 {
     return true;
 }
- 
+
+HcclResult RdmaHandleManager::GetEidByIpv4Addr(const IpAddress& addr, IpAddress& eidAddr)
+{
+    Hccl::IpAddress ip("0000:0000:0000:0000:0000:0000:c0a8:0367", AF_INET6);
+    eidAddr = ip;
+    return HCCL_SUCCESS;
+}
+
+void RdmaHandleManager::UboeIpv4ToEid(const IpAddress& ipV4Address, IpAddress& eidAddress, u32 devPhyId)
+{
+    Hccl::IpAddress ip("0000:0000:0000:0000:0000:0000:c0a8:0367", AF_INET6);
+    eidAddress = ip;
+}
+
 SocketStatus Socket::GetAsyncStatus()
 {
     return SocketStatus::OK;

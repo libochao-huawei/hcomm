@@ -51,10 +51,11 @@ private:
         hccl::HostMem &hostPackBuf);
     static HcclResult FillChannelD2HMap(ChannelHandle *deviceChannelHandles, ChannelHandle *hostChannelHandles, 
         uint32_t listNum);
-    static HcclResult LaunchChannelKernelCommon(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles, HcommChannelDesc* hcommDesc,
-        uint32_t listNum, const std::string &commTag, aclrtBinHandle binHandle, const std::string &kernelName, bool needProfiling);
-    static HcclResult ChannelKernelLaunchForBase(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles, HcommChannelDesc* hcommDesc,
-        uint32_t listNum, aclrtBinHandle binHandle);
+    static HcclResult LaunchChannelKernelCommon(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles,
+        HcommChannelDesc* hcommDesc, uint32_t listNum, const std::string &commTag, aclrtBinHandle binHandle,
+        const std::string &kernelName, bool needProfiling);
+    static HcclResult ChannelKernelLaunchForBase(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles,
+        HcommChannelDesc* hcommDesc, uint32_t listNum, aclrtBinHandle binHandle);
 
     static HcclResult ChannelResumeConcurrency(const ChannelHandle *channelList, uint32_t channelNum);
     
