@@ -7378,15 +7378,15 @@ namespace hccl
             notify1 = localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_ACLGRAPH_1)];
             HcclRtEvent event0 = localAicpuOpEvent_[static_cast<u32>(AicpuLocalEventIdx::ORDER_INDEX_ACLGRAPH_EVENT_0)];
             CHK_RET(orderLaunch.AclgraphLaunchInOrderToOrderStream(
-                identifier_, kfcOpStream, notify0, notify1, timeOut, event0));
+                opParam.tag, identifier_, kfcOpStream, notify0, notify1, timeOut, event0));
         } else if (mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
             notify0 = localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_OPBASE_0)];
             notify1 = localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_OPBASE_1)];
-            CHK_RET(orderLaunch.OpbaseLaunchInOrder(identifier_, kfcOpStream, notify0, notify1, timeOut));
+            CHK_RET(orderLaunch.OpbaseLaunchInOrder(opParam.tag, identifier_, kfcOpStream, notify0, notify1, timeOut));
         } else if (mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB && isSupportHcomAttachedStream) {
             notify0 = localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_HCOM_0)];
             notify1 = localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_HCOM_1)];
-            CHK_RET(orderLaunch.HcomLaunchInOrder(identifier_, kfcOpStream, graphId_, notify0,
+            CHK_RET(orderLaunch.HcomLaunchInOrder(opParam.tag, identifier_, kfcOpStream, graphId_, notify0,
                 notify1, timeOut));
         }
         CHK_RET(KernelLaunchChooseAicpuOrCustom(opParam.inputPtr, opParam.outputPtr, kfcOpStream.ptr(),
@@ -7394,7 +7394,7 @@ namespace hccl
                                                 kernelName, mode, opParam.tag, isCustom));
         if (opParam.isCapture) {
             HcclRtEvent event1 = localAicpuOpEvent_[static_cast<u32>(AicpuLocalEventIdx::ORDER_INDEX_ACLGRAPH_EVENT_1)];
-            CHK_RET(orderLaunch.AclgraphLaunchInOrderToKernelStream(identifier_, kfcOpStream, event1));
+            CHK_RET(orderLaunch.AclgraphLaunchInOrderToKernelStream(opParam.tag, identifier_, kfcOpStream, event1));
         }
 
         uint64_t endTime = hrtMsprofSysCycleTime();
