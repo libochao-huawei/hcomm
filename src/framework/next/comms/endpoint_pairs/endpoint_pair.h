@@ -96,6 +96,7 @@ private:
     std::unique_ptr<Hccl::SocketManager> socketMgrCompat_;
     std::unordered_map<CommEngine, std::vector<ChannelHandle>> channelHandles_{};
     std::unordered_map<CommEngine, std::vector<HcommSocket>> channelSockets_{};
+    std::unordered_map<CommEngine, std::vector<std::vector<HcommMemHandle>>> channelMemHandles_{};
 };
 
 } // namespace hcomm
