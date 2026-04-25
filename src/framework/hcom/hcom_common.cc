@@ -615,6 +615,7 @@ HcclResult HcomDestroyGroup(const char *group)
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
             std::unique_lock<std::mutex> groupParaLock(hcomInfo.groupParamsLock);
+            CHK_RET(HcomDestroyGroupImplV2(group));
             auto iter = hcomInfo.hcomGroupMap.find(group);
             if (iter == hcomInfo.hcomGroupMap.end()) {
                 HCCL_ERROR(
@@ -623,7 +624,6 @@ HcclResult HcomDestroyGroup(const char *group)
             }
             hcomInfo.hcomGroupMap.erase(group);
             groupParaLock.unlock();
-            CHK_RET(HcomDestroyGroupImplV2(group));
             return HCCL_SUCCESS;
         }());
 #endif
@@ -1042,12 +1042,12 @@ HcclResult HcomDestroy(void)
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
             std::unique_lock<std::mutex> lock(g_destroyDeviceLock);
+            CHK_RET(HcomDestroyV2());
             for (u32 i = 0; i <= MAX_MODULE_DEVICE_NUM; i++) {
                 HcomInfo &hcomInfo = HcomGetCtxHomInfoById(i);
                 hcomInfo.pComm = nullptr;
                 hcomInfo.hcomGroupMap.clear();
             }
-            CHK_RET(HcomDestroyV2());
             return HCCL_SUCCESS;
         }());
 #endif
