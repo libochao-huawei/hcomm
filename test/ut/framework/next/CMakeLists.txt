@@ -28,6 +28,7 @@ set(src_to_test_list
     coll_comms/rank/ut_my_rank_tls.cc
     comms/api_c_adpt/ut_hcomm_res_mgr_test.cc
     comms/api_c_adpt/ut_hcomm_endpoint_test.cc
+    comms/api_c_adpt/ut_hcomm_endpoint_uboe_test.cc
     comms/api_c_adpt/ut_hcomm_mem_test.cc
     comms/api_c_adpt/ut_hcomm_channel_test.cc
     comms/api_c_adpt/ut_hcomm_engine_ctx_test.cc
@@ -44,6 +45,7 @@ set(src_to_test_list
     coll_comms/api_c_adpt/ut_coll_comm_res_c_adpt.cc
     # Ns recovery相关测试用例
     comms/endpoint_pairs/channels/aicpu/ut_aicpu_ts_urma_channel.cc
+    comms/endpoint_pairs/channels/aicpu/ut_aicpu_ts_uboe_channel.cc
     comms/endpoint_pairs/channels/ccu/ut_ccu_urma_channel.cc
     comms/endpoint_pairs/channels/aiv/ut_aiv_ub_mem_channel.cc
     comms/endpoint_pairs/ut_endpoint_pair_mgr.cc

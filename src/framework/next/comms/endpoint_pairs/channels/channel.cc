@@ -14,6 +14,7 @@
 #include "channel.h"
 #include "./aicpu/aicpu_ts_urma_channel.h"
 #include "./aicpu/aicpu_ts_p2p_channel.h"
+#include "./aicpu/aicpu_ts_uboe_channel.h"
 #include "./host/host_cpu_roce_channel.h"
 #include "./ccu/ccu_urma_channel.h"
 #include "./aiv/aiv_ub_mem_channel.h"
@@ -25,11 +26,8 @@ HcclResult Channel::CreateChannel(
     HcommChannelDesc channelDesc, std::unique_ptr<Channel>& channelPtr)
 {
     channelPtr.reset();
-    // TODO: 通过引擎 + 协议
-    // Endpoint 只区分协议
     switch (engine) {
         case COMM_ENGINE_CPU:
-            // TODO: if 判断 EndpointDesc 里面的协议
             if (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_ROCE) {
                 EXECEPTION_CATCH(channelPtr = std::make_unique<HostCpuRoceChannel>(endpointHandle, channelDesc),
                     return HCCL_E_PARA);
@@ -43,16 +41,19 @@ HcclResult Channel::CreateChannel(
             return HCCL_E_NOT_SUPPORT;
         case COMM_ENGINE_AICPU:
         case COMM_ENGINE_AICPU_TS:
-            if (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_PCIE) {
-                channelPtr.reset(new (std::nothrow) AicpuTsP2pChannel(
-                    endpointHandle, channelDesc
-                ));
-            } else if (channelDesc.remoteEndpoint.protocol != COMM_PROTOCOL_RESERVED) { //  TODO == P2P
-                channelPtr.reset(new (std::nothrow) AicpuTsUrmaChannel(
-                    endpointHandle, channelDesc
-                ));
+            if (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_UBOE) {
+                channelPtr.reset(new (std::nothrow) AicpuTsUboeChannel(endpointHandle, channelDesc));
+            } else if (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_PCIE) {
+                channelPtr.reset(new (std::nothrow) AicpuTsP2pChannel(endpointHandle, channelDesc));
+            } else if (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_UBC_CTP ||
+                       channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_UBC_TP) {
+                channelPtr.reset(new (std::nothrow) AicpuTsUrmaChannel(endpointHandle, channelDesc));
+            } else {
+                HCCL_ERROR("[Channel][%s] invalid protocol for engine %d, protocol=%d",
+                    __func__, engine, channelDesc.remoteEndpoint.protocol);
+                return HCCL_E_NOT_SUPPORT;
             }
-            break; 
+            break;
         case COMM_ENGINE_AIV:
             channelPtr.reset(
                 new (std::nothrow) AivUbMemChannel(endpointHandle, channelDesc));

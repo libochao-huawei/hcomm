@@ -12,6 +12,7 @@
 #include "exception_handler.h"
 #include "channel_param.h"
 #include "aicpu_ts_urma_channel.h"
+#include "aicpu_ts_uboe_channel.h"
 #include "launch_aicpu.h"
 #include "hcclCommDfx.h"
 #include "env_config/env_config.h"
@@ -301,8 +302,9 @@ static HcclResult LaunchKernel(const HcclChannelUrmaRes &channelParam,
     return HCCL_SUCCESS;
 }
 
-HcclResult ChannelProcess::LaunchChannelKernelCommon(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles, HcommChannelDesc* hcommDesc,
-    uint32_t listNum, const std::string &commTag, aclrtBinHandle binHandle, const std::string &kernelName, bool needProfiling)
+HcclResult ChannelProcess::LaunchChannelKernelCommon(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles,
+    HcommChannelDesc* hcommDesc, uint32_t listNum, const std::string &commTag, aclrtBinHandle binHandle,
+    const std::string &kernelName, bool needProfiling)
 {
     CHK_PTR_NULL(channelHandles);
     CHK_PTR_NULL(hostChannelHandles);
@@ -320,6 +322,9 @@ HcclResult ChannelProcess::LaunchChannelKernelCommon(ChannelHandle *channelHandl
         if (hcommDesc[index].remoteEndpoint.protocol == CommProtocol::COMM_PROTOCOL_PCIE) {
             auto aicpuTsP2pChannel = reinterpret_cast<AicpuTsP2pChannel *>(hostChannelHandles[index]);
             CHK_PRT(aicpuTsP2pChannel->H2DResPack(hostPackBuffers[index]));
+        } else if (hcommDesc[index].remoteEndpoint.protocol == CommProtocol::COMM_PROTOCOL_UBOE) {
+            auto aicpuTsUboeChannel = reinterpret_cast<AicpuTsUboeChannel *>(hostChannelHandles[index]);
+            CHK_PRT(aicpuTsUboeChannel->H2DResPack(hostPackBuffers[index]));
         } else {
             auto aicpuTsUrmaChannel = reinterpret_cast<AicpuTsUrmaChannel *>(hostChannelHandles[index]);
             CHK_PRT(aicpuTsUrmaChannel->H2DResPack(hostPackBuffers[index]));
@@ -390,15 +395,15 @@ HcclResult ChannelProcess::LaunchChannelKernelCommon(ChannelHandle *channelHandl
     return HCCL_SUCCESS;
 }
 
-HcclResult ChannelProcess::ChannelKernelLaunchForComm(ChannelHandle *channelHandles, 
-    ChannelHandle *hostChannelHandles, HcommChannelDesc* hcommDesc, uint32_t listNum, const std::string &commTag, aclrtBinHandle binHandle) 
+HcclResult ChannelProcess::ChannelKernelLaunchForComm(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles,
+    HcommChannelDesc* hcommDesc, uint32_t listNum, const std::string &commTag, aclrtBinHandle binHandle)
 {
     return LaunchChannelKernelCommon(channelHandles, hostChannelHandles, hcommDesc, listNum,
         commTag, binHandle, "RunAicpuIndOpChannelInitV2", true);
 }
 
-HcclResult ChannelProcess::ChannelKernelLaunchForBase(ChannelHandle *channelHandles, 
-    ChannelHandle *hostChannelHandles, HcommChannelDesc* hcommDesc, uint32_t listNum, aclrtBinHandle binHandle) 
+HcclResult ChannelProcess::ChannelKernelLaunchForBase(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles,
+    HcommChannelDesc* hcommDesc, uint32_t listNum, aclrtBinHandle binHandle)
 {
     return LaunchChannelKernelCommon(channelHandles, hostChannelHandles, hcommDesc, listNum, "", 
         binHandle, "RunAicpuChannelInitV2", false);
