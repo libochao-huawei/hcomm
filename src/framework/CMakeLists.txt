@@ -23,6 +23,9 @@ else()
     set(INSTALL_DPU_KERNEL_JSON_DIR ${INSTALL_LIBRARY_DIR})
 endif()
 
+if((NOT BUILD_OPEN_PROJECT) OR (DEVICE_MODE OR KERNEL_MODE))
+    include(ccl_kernel.cmake)
+endif()
 
 set(HCCL_V2_CODE_ROOT ${ORION_REAL_PATH})
 
