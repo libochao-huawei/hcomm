@@ -23,6 +23,15 @@ target_sources(hcomm PRIVATE
     ${src_list}
 )
 
+target_include_directories(ccl_kernel PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/thread
+    ${CMAKE_CURRENT_SOURCE_DIR}/rank_graph
+    ${CMAKE_CURRENT_SOURCE_DIR}/channel
+    ${CMAKE_CURRENT_SOURCE_DIR}/channel/device
+    ${CMAKE_CURRENT_SOURCE_DIR}/data_api
+)
+
 add_subdirectory(channel)
 add_subdirectory(data_api)
 add_subdirectory(resource)

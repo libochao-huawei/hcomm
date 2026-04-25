@@ -9,7 +9,10 @@
 # -----------------------------------------------------------------------------------------------------------
 
 # 定义 ccl_kernel 动态链接库，在 device 侧使用
-add_library(ccl_kernel SHARED
+add_library(ccl_kernel SHARED)
+
+# 添加源文件
+target_sources(ccl_kernel PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/communicator/impl/independent_op/hccl_independent_rank_graph.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/communicator/impl/one_sided_service/i_hccl_one_sided_service.cc
 )
@@ -74,44 +77,6 @@ set(CCL_KERNEL_INCLUDE_LIST
     ${HCOMM_ROOT_DIR}/src/platform/hccp/inc
     ${HCOMM_ROOT_DIR}/src/platform/hccp/inc/network
 
-    ${HCOMM_ROOT_DIR}/src/framework
-    ${HCOMM_ROOT_DIR}/src/framework/common
-    ${HCOMM_ROOT_DIR}/src/framework/common/src
-    ${HCOMM_ROOT_DIR}/src/framework/common/src/mgr
-    ${HCOMM_ROOT_DIR}/src/framework/communicator
-    ${HCOMM_ROOT_DIR}/src/framework/communicator/impl/independent_op/resource/engine
-
-    ${HCOMM_ROOT_DIR}/src/algorithm/base/inc
-    ${HCOMM_ROOT_DIR}/src/algorithm/pub_inc
-    ${HCOMM_ROOT_DIR}/src/algorithm/base/alg_aiv_template
-    ${HCOMM_ROOT_DIR}/src/algorithm/base/alg_template
-    ${HCOMM_ROOT_DIR}/src/algorithm/base/alg_template/component
-    ${HCOMM_ROOT_DIR}/src/algorithm/base/mc2_handler
-    ${HCOMM_ROOT_DIR}/src/algorithm/base/communicator
-    ${HCOMM_ROOT_DIR}/src/algorithm/impl
-    ${HCOMM_ROOT_DIR}/src/algorithm/impl/inc
-    ${HCOMM_ROOT_DIR}/src/algorithm/impl/legacy
-    ${HCOMM_ROOT_DIR}/src/algorithm/impl/legacy/operator
-    ${HCOMM_ROOT_DIR}/src/algorithm/base/communicator/legacy
-    ${HCOMM_ROOT_DIR}/src/algorithm/impl/resource_manager
-    ${HCOMM_ROOT_DIR}/src/algorithm/impl/task
-    ${HCOMM_ROOT_DIR}/src/algorithm/impl/operator
-    ${HCOMM_ROOT_DIR}/src/algorithm/impl/operator/registry
-    ${HCOMM_ROOT_DIR}/src/algorithm/impl/coll_executor
-    ${HCOMM_ROOT_DIR}/src/algorithm/impl/coll_executor/registry
-    ${HCOMM_ROOT_DIR}/src/algorithm/impl/coll_executor/coll_send_receive
-    ${HCOMM_ROOT_DIR}/src/algorithm/impl/coll_executor/coll_all_reduce
-    ${HCOMM_ROOT_DIR}/src/algorithm/impl/coll_executor/coll_all_reduce/310P
-    ${HCOMM_ROOT_DIR}/src/algorithm/impl/coll_executor/coll_all_gather
-    ${HCOMM_ROOT_DIR}/src/algorithm/impl/coll_executor/coll_all_gather/310P
-    ${HCOMM_ROOT_DIR}/src/algorithm/impl/coll_executor/coll_all_gather_v
-    ${HCOMM_ROOT_DIR}/src/algorithm/impl/coll_executor/coll_reduce_scatter
-    ${HCOMM_ROOT_DIR}/src/algorithm/impl/coll_executor/coll_reduce_scatter/310P
-    ${HCOMM_ROOT_DIR}/src/algorithm/impl/coll_executor/coll_reduce_scatter_v
-    ${HCOMM_ROOT_DIR}/src/algorithm/impl/coll_executor/coll_reduce_scatter_v/310P
-    ${HCOMM_ROOT_DIR}/src/algorithm/impl/coll_executor/coll_all_to_all
-    ${HCOMM_ROOT_DIR}/src/algorithm/impl/coll_executor/coll_scatter
-
     ${HCOMM_ROOT_DIR}/src/common/health
     ${HCOMM_ROOT_DIR}/src/common/debug/profiling/inc
     ${HCOMM_ROOT_DIR}/src/common/debug/profiling/inc/aicpu
@@ -120,48 +85,11 @@ set(CCL_KERNEL_INCLUDE_LIST
     ${HCOMM_ROOT_DIR}/src/common/stream
     ${HCOMM_ROOT_DIR}/src/common/launch_device
 
+    ${HCOMM_ROOT_DIR}/src/framework
     ${HCOMM_ROOT_DIR}/src/framework/inc
     ${HCOMM_ROOT_DIR}/src/framework/cluster_maintenance/health/heartbeat/
-    ${HCOMM_ROOT_DIR}/src/framework/cluster_maintenance/detect/detect_connect_anomalies/
     ${HCOMM_ROOT_DIR}/src/framework/cluster_maintenance/snapshot/
-    ${HCOMM_ROOT_DIR}/src/framework/common/src
-    ${HCOMM_ROOT_DIR}/src/framework/common/src/aicpu
-    ${HCOMM_ROOT_DIR}/src/framework/common/src/config
-    ${HCOMM_ROOT_DIR}/src/framework/common/src/task
-    ${HCOMM_ROOT_DIR}/src/framework/common/src/topo
-    ${HCOMM_ROOT_DIR}/src/framework/hcom
-    ${HCOMM_ROOT_DIR}/src/framework/communicator/impl/
-    ${HCOMM_ROOT_DIR}/src/framework/communicator/impl/one_sided_service/
-    ${HCOMM_ROOT_DIR}/src/framework/communicator/impl/zero_copy
-    ${HCOMM_ROOT_DIR}/src/framework/communicator/impl/resource_manager
-    ${HCOMM_ROOT_DIR}/src/framework/op_base/src/
-    ${HCOMM_ROOT_DIR}/src/framework/device/
-    ${HCOMM_ROOT_DIR}/src/framework/device/aicpu_kfc
-    ${HCOMM_ROOT_DIR}/src/framework/device/aicpu_kfc/inc
-    ${HCOMM_ROOT_DIR}/src/framework/device/aicpu_kfc/dfx
-    ${HCOMM_ROOT_DIR}/src/framework/device/common
-    ${HCOMM_ROOT_DIR}/src/framework/device/inc
-    ${HCOMM_ROOT_DIR}/src/framework/device/framework
     ${HCOMM_ROOT_DIR}/src/framework/cluster_maintenance/recovery/operator_retry
-    ${HCOMM_ROOT_DIR}/src/framework/common/src/exception
-    ${HCOMM_ROOT_DIR}/src/framework/communicator/impl/independent_op/
-    ${HCOMM_ROOT_DIR}/src/framework/communicator/impl/independent_op/resource
-    ${HCOMM_ROOT_DIR}/src/framework/communicator/impl/independent_op/thread
-    ${HCOMM_ROOT_DIR}/src/framework/communicator/impl/independent_op/rank_graph
-    ${HCOMM_ROOT_DIR}/src/framework/communicator/impl/independent_op/channel
-    ${HCOMM_ROOT_DIR}/src/framework/communicator/impl/independent_op/channel/device
-    ${HCOMM_ROOT_DIR}/src/framework/communicator/impl/independent_op/data_api
-
-    ${HCOMM_ROOT_DIR}/src/algorithm/base/alg_template/temp_all_gather
-    ${HCOMM_ROOT_DIR}/src/algorithm/base/alg_template/temp_all_reduce
-    ${HCOMM_ROOT_DIR}/src/algorithm/base/alg_template/temp_alltoall
-    ${HCOMM_ROOT_DIR}/src/algorithm/base/alg_template/temp_alltoallv
-    ${HCOMM_ROOT_DIR}/src/algorithm/base/alg_template/temp_broadcast
-    ${HCOMM_ROOT_DIR}/src/algorithm/base/alg_template/temp_reduce
-    ${HCOMM_ROOT_DIR}/src/algorithm/base/alg_template/temp_reduce_scatter
-    ${HCOMM_ROOT_DIR}/src/algorithm/base/alg_template/temp_scatter
-    ${HCOMM_ROOT_DIR}/src/algorithm/base/alg_template
-    ${HCOMM_ROOT_DIR}/src/algorithm/pub_inc
 
     ${HCOMM_ROOT_DIR}/src/platform/
     ${HCOMM_ROOT_DIR}/src/platform/inc/
@@ -196,11 +124,6 @@ set(CCL_KERNEL_INCLUDE_LIST
     ${HCOMM_ROOT_DIR}/src/pub_inc
     ${HCOMM_ROOT_DIR}/src/pub_inc/aicpu
 
-    ${HCOMM_ROOT_DIR}/src/framework/device/
-    ${HCOMM_ROOT_DIR}/src/framework/device/common
-    ${HCOMM_ROOT_DIR}/src/framework/device/inc
-    ${HCOMM_ROOT_DIR}/src/framework/device/framework
-
     # runtime头文件
     ${ASCEND_CANN_PACKAGE_PATH}/include/
 
@@ -233,12 +156,6 @@ set(CCL_KERNEL_INCLUDE_LIST
 
     ${HCOMM_ROOT_DIR}/src/platform/hccp/inc/network/
     ${HCOMM_ROOT_DIR}/src/platform/hccp/inc/
-    ${HCOMM_ROOT_DIR}/src/framework/next/comms/endpoint_pairs/sockets/
-    ${HCOMM_ROOT_DIR}/src/framework/next/comms/endpoints/
-    ${HCOMM_ROOT_DIR}/src/framework/next/comms/comm_engine_res/threads
-    ${HCOMM_ROOT_DIR}/src/framework/next/comms/comm_engine_res/threads/slaves/
-    ${HCOMM_ROOT_DIR}/src/framework/next/coll_comms/communicator/aicpu
-    ${HCOMM_ROOT_DIR}/src/framework/next/coll_comms/dfx
 )
 
 target_include_directories(ccl_kernel PRIVATE
@@ -246,7 +163,34 @@ target_include_directories(ccl_kernel PRIVATE
     ${ORION_HEAD_LIST}
 )
 
-if(NOT BUILD_OPEN_PROJECT)
+if(BUILD_OPEN_PROJECT)
+    # 链接ascendalog需要LOG_CPP，链接slog不需要
+    target_compile_definitions(ccl_kernel PRIVATE
+        OPEN_BUILD_PROJECT
+        _GLIBCXX_USE_CXX11_ABI=1
+    )
+    if(FULL_MODE)
+        set(CCL_KERNEL_PLF_PATH ccl_kernel_plf)
+    else()
+        set(CCL_KERNEL_PLF_PATH
+            -Wl,--whole-archive
+            ccl_kernel_plf_a
+            -Wl,--no-whole-archive
+            -Wl,-Bsymbolic
+        )
+    endif()
+    target_link_libraries(ccl_kernel PRIVATE
+        -Wl,--no-as-needed
+        ascend_hal
+        c_sec
+        mmpa
+        ${CCL_KERNEL_PLF_PATH}
+        -Wl,--as-needed
+        -lrt
+        -ldl
+        -lpthread
+    )
+else()
     target_include_directories(ccl_kernel PRIVATE
         ${TOP_DIR}/inc
         ${TOP_DIR}/inc/driver
@@ -292,35 +236,6 @@ if(NOT BUILD_OPEN_PROJECT)
 
     install(TARGETS ccl_kernel
         LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL
-    )
-endif()
-
-if(BUILD_OPEN_PROJECT)
-    # 链接ascendalog需要LOG_CPP，链接slog不需要
-    target_compile_definitions(ccl_kernel PRIVATE
-        OPEN_BUILD_PROJECT
-        _GLIBCXX_USE_CXX11_ABI=1
-    )
-    if(FULL_MODE)
-        set(CCL_KERNEL_PLF_PATH ccl_kernel_plf)
-    else()
-        set(CCL_KERNEL_PLF_PATH
-            -Wl,--whole-archive
-            ccl_kernel_plf_a
-            -Wl,--no-whole-archive
-            -Wl,-Bsymbolic
-        )
-    endif()
-    target_link_libraries(ccl_kernel PRIVATE
-        -Wl,--no-as-needed
-        ascend_hal
-        c_sec
-        mmpa
-        ${CCL_KERNEL_PLF_PATH}
-        -Wl,--as-needed
-        -lrt
-        -ldl
-        -lpthread
     )
 endif()
 

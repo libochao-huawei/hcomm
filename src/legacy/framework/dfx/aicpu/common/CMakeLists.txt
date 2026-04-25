@@ -11,7 +11,7 @@ target_sources(hccl_v2 PRIVATE
     mirror_task_manager_lite.cc
 )
 
-if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
+if(TARGET ccl_kernel)
 target_sources(ccl_kernel PRIVATE
     mirror_task_manager_lite.cc
 )

@@ -39,7 +39,7 @@ target_sources(hccl_v2 PRIVATE
         ins_temp_reduce_scatter_mesh_1D_opt.cc
 )
 
-if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
+if(TARGET ccl_kernel)
 target_sources(ccl_kernel PRIVATE
         ins_alg_template_base.cc
         ins_temp_all_gather_mesh.cc

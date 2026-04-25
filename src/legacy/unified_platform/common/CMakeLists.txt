@@ -24,7 +24,7 @@ target_sources(hccl_v2 PRIVATE
         orion_adapter_hal.cc
 )
 
-if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
+if(TARGET ccl_kernel)
 target_sources(ccl_kernel PRIVATE
         dev_capability.cc
         dlhal_function_v2.cc

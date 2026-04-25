@@ -13,7 +13,7 @@ target_sources(hccl_v2
     task_exception_handler_lite.cpp
 )
 
-if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
+if(TARGET ccl_kernel)
 target_sources(ccl_kernel PRIVATE    
     task_exception_func.cpp
     task_exception_handler_lite.cpp

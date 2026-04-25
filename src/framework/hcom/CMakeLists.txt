@@ -19,9 +19,14 @@ target_sources(hcomm PRIVATE
 
 add_subdirectory(gradient_segment)
 
-if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
+if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
     ${src_list}
     ${CMAKE_CURRENT_SOURCE_DIR}/hcom_device_profiling.cc
     )
 endif()
+
+target_include_directories(ccl_kernel PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/gradient_segment
+)

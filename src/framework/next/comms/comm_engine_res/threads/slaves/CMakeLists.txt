@@ -11,8 +11,12 @@ set(src_list
     aicpu_thread_process.cc
 )
 
-if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
+if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         ${src_list}
     )
 endif()
+
+target_include_directories(ccl_kernel PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)

@@ -7,6 +7,13 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
+if(TARGET ccl_kernel)
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/inc
+        ${CMAKE_CURRENT_SOURCE_DIR}/alg_aiv_template
+    )
+endif()
+
 add_subdirectory(communicator)
 add_subdirectory(alg_template)
 add_subdirectory(alg_aiv_template)

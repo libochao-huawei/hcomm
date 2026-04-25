@@ -11,7 +11,7 @@ target_sources(hccl_v2
         coll_operator_check.cc
 )
 
-if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
+if(TARGET ccl_kernel)
 target_sources(ccl_kernel PRIVATE
         coll_operator.cc
         coll_operator_check.cc

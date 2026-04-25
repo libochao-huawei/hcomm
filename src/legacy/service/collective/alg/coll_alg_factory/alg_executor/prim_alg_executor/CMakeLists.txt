@@ -9,7 +9,7 @@ target_sources(hccl_v2 PRIVATE
 
 )
 
-if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
+if(TARGET ccl_kernel)
 target_sources(ccl_kernel PRIVATE
         all_gather_seq_executor.cc
         all_gather_sole_executor.cc
