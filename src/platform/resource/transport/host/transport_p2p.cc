@@ -18,6 +18,7 @@
 #include "mem_name_repository_pub.h"
 #include "adapter_rts.h"
 #include "device_capacity.h"
+#include "mem_host_pub.h"
 
 namespace hccl {
 std::array<DeviceMem, MAX_MODULE_DEVICE_NUM> TransportP2p::notifyValueMem_;
@@ -1553,28 +1554,39 @@ HcclResult TransportP2p::WriteSync(
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportP2p::WriteAsync(
+HcclResult TransportP2p::WriteAsyncEx(
     struct Transport::Buffer &remoteBuf, struct Transport::Buffer &localBuf, Stream &stream)
 {
     HCCL_DEBUG("HCCL_KEY_INFO: localAddr=[%p],localSize=[%llu],remoteAddr=[%p],remoteSize=[%llu]", localBuf.addr,
         localBuf.size, remoteBuf.addr, remoteBuf.size);
-    DeviceMem remoteDevMem(const_cast<void *>(remoteBuf.addr), remoteBuf.size);
-    DeviceMem localDevMem(const_cast<void *>(localBuf.addr), localBuf.size);
+    bool isLocalHostAddr = false;
+    bool isRemoteHostAddr = false;
+    struct Transport::Buffer newLocalBuf{};
+    struct Transport::Buffer newRemoteBuf{};
+    CHK_RET(ReplaceMemAddr(localBuf, remoteBuf, newLocalBuf, newRemoteBuf, isLocalHostAddr, isRemoteHostAddr));
+    HCCL_DEBUG("NewOndeSide HCCL_KEY_INFO: localAddr=[%p],localSize=[%llu],remoteAddr=[%p],remoteSize=[%llu] "
+        "isLocalHostAddr=[%u], isRemoteHostAddr=[%u]",
+        newLocalBuf.addr, newLocalBuf.size, newRemoteBuf.addr, newRemoteBuf.size,
+        static_cast<uint32_t>(isLocalHostAddr), static_cast<uint32_t>(isRemoteHostAddr));
 
+    DeviceMem dstDevMem(const_cast<void *>(newRemoteBuf.addr), newRemoteBuf.size);
+    DeviceMem srcDevMem(const_cast<void *>(newLocalBuf.addr), newLocalBuf.size);
+    CHK_RET(reinterpret_cast<DispatcherPub*>(dispatcher_)->MemcpyAsync(dstDevMem, srcDevMem, stream,
+        machinePara_.remoteWorldRank, transportAttr_.linkType));
+    return HCCL_SUCCESS;
+}
+
+HcclResult TransportP2p::WriteAsync(
+    struct Transport::Buffer &remoteBuf, struct Transport::Buffer &localBuf, Stream &stream)
+{
     if (machinePara_.isNewOndeSide) {
-        struct Transport::Buffer newRemoteBuf{};
-        struct Transport::Buffer newLocalBuf{};
-        CHK_RET(ReplaceMemAddr(localBuf, remoteBuf, newLocalBuf, newRemoteBuf));
-        DeviceMem newRemoteDevMem(const_cast<void *>(newRemoteBuf.addr), newRemoteBuf.size);
-        DeviceMem newLocalDevMem(const_cast<void *>(newLocalBuf.addr), newLocalBuf.size);
-        HCCL_DEBUG("NewOndeSide HCCL_KEY_INFO: localAddr=[%p],localSize=[%llu],remoteAddr=[%p],remoteSize=[%llu]",
-            newLocalDevMem.ptr(), newLocalDevMem.size(), newRemoteDevMem.ptr(), newRemoteDevMem.size());
-        remoteDevMem = newRemoteDevMem;
-        localDevMem = newLocalDevMem;
+        return WriteAsyncEx(remoteBuf, localBuf, stream);
     }
 
-    HCCL_DEBUG("HCCL_KEY_INFO: localAddr=[%p],localSize=[%llu],remoteAddr=[%p],remoteSize=[%llu]",
-        localDevMem.ptr(),localDevMem.size(), remoteDevMem.ptr(), remoteDevMem.size());
+    DeviceMem remoteDevMem(const_cast<void *>(remoteBuf.addr), remoteBuf.size);
+    DeviceMem localDevMem(const_cast<void *>(localBuf.addr), localBuf.size);
+    HCCL_DEBUG("HCCL_KEY_INFO: localAddr=[%p],localSize=[%llu],remoteAddr=[%p],remoteSize=[%llu]", localDevMem.ptr(),
+        localDevMem.size(), remoteDevMem.ptr(), remoteDevMem.size());
     CHK_RET(HcclD2DMemcpyAsync(dispatcher_, remoteDevMem, localDevMem,
         stream, machinePara_.remoteWorldRank, transportAttr_.linkType));
     return HCCL_SUCCESS;
@@ -1638,28 +1650,36 @@ HcclResult TransportP2p::ReadReduceSync(struct Transport::Buffer &localBuf, stru
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportP2p::ReadAsync(
+HcclResult TransportP2p::ReadAsyncEx(
     struct Transport::Buffer &localBuf, struct Transport::Buffer &remoteBuf, Stream &stream)
 {
     HCCL_DEBUG("HCCL_KEY_INFO: localAddr=[%p],localSize=[%llu],remoteAddr=[%p],remoteSize=[%llu]", localBuf.addr,
         localBuf.size, remoteBuf.addr, remoteBuf.size);
+    bool isLocalHostAddr = false;
+    bool isRemoteHostAddr = false;
+    struct Transport::Buffer newLocalBuf{};
+    struct Transport::Buffer newRemoteBuf{};
+    CHK_RET(ReplaceMemAddr(localBuf, remoteBuf, newLocalBuf, newRemoteBuf, isLocalHostAddr, isRemoteHostAddr));
+    HCCL_DEBUG("NewOndeSide HCCL_KEY_INFO: localAddr=[%p],localSize=[%llu],remoteAddr=[%p],remoteSize=[%llu] "
+        "isLocalHostAddr=[%u], isRemoteHostAddr=[%u]",
+        newLocalBuf.addr, newLocalBuf.size, newRemoteBuf.addr, newRemoteBuf.size,
+        static_cast<uint32_t>(isLocalHostAddr), static_cast<uint32_t>(isRemoteHostAddr));
+
+    DeviceMem dstDevMem(const_cast<void *>(newLocalBuf.addr), newLocalBuf.size);
+    DeviceMem srcDevMem(const_cast<void *>(newRemoteBuf.addr), newRemoteBuf.size);
+    CHK_RET(reinterpret_cast<DispatcherPub*>(dispatcher_)->MemcpyAsync(dstDevMem, srcDevMem, stream,
+        machinePara_.remoteWorldRank, transportAttr_.linkType));
+    return HCCL_SUCCESS;
+}
+
+HcclResult TransportP2p::ReadAsync(
+    struct Transport::Buffer &localBuf, struct Transport::Buffer &remoteBuf, Stream &stream)
+{
+    if (machinePara_.isNewOndeSide) {
+        return ReadAsyncEx(localBuf, remoteBuf, stream);
+    }
     DeviceMem dstDevMem(const_cast<void *>(localBuf.addr), localBuf.size);
     DeviceMem srcDevMem(const_cast<void *>(remoteBuf.addr), remoteBuf.size);
-
-    if (machinePara_.isNewOndeSide) {
-        struct Transport::Buffer newLocalBuf{};
-        struct Transport::Buffer newRemoteBuf{};
-        CHK_RET(ReplaceMemAddr(localBuf, remoteBuf, newLocalBuf, newRemoteBuf));
-        DeviceMem newDstDevMem(const_cast<void *>(newLocalBuf.addr), newLocalBuf.size);
-        DeviceMem newSrcDevMem(const_cast<void *>(newRemoteBuf.addr), newRemoteBuf.size);
-        HCCL_DEBUG("NewOndeSide HCCL_KEY_INFO: localAddr=[%p],localSize=[%llu],remoteAddr=[%p],remoteSize=[%llu]",
-            newDstDevMem.ptr(), newDstDevMem.size(), newSrcDevMem.ptr(), newSrcDevMem.size());
-        srcDevMem = newSrcDevMem;
-        dstDevMem = newDstDevMem;
-    }
-    HCCL_DEBUG("HCCL_KEY_INFO: localAddr=[%p],localSize=[%llu],remoteAddr=[%p],remoteSize=[%llu]",
-        dstDevMem.ptr(), dstDevMem.size(), srcDevMem.ptr(), srcDevMem.size());
-
     return HcclD2DMemcpyAsync(dispatcher_, dstDevMem, srcDevMem,
         stream, machinePara_.remoteWorldRank, transportAttr_.linkType);
 }
@@ -1737,11 +1757,13 @@ void TransportP2p::SetMemIncludeFlag()
 }
 
 HcclResult TransportP2p::ReplaceMemAddr(Transport::Buffer &localMem, Transport::Buffer &remoteMem,
-        Transport::Buffer &newLocalMem, Transport::Buffer &newRemoteMem)
+        Transport::Buffer &newLocalMem, Transport::Buffer &newRemoteMem, bool &isLocalHostAddr, bool &isRemoteHostAddr)
 {
     HCCL_INFO("[TransportP2p][ReplaceMemAddr]old localAddr=[%p],localSize=[%llu],remoteAddr=[%p],remoteSize=[%llu]",
         localMem.addr, localMem.size, remoteMem.addr, remoteMem.size);
 
+    isLocalHostAddr = false;
+    isRemoteHostAddr = false;
     void *localAddr = const_cast<void *>(localMem.addr);
     u64 localSize = localMem.size;
     auto localKey = BufferKey<uintptr_t, u64>(reinterpret_cast<uintptr_t>(localAddr), localSize);
@@ -1751,6 +1773,9 @@ HcclResult TransportP2p::ReplaceMemAddr(Transport::Buffer &localMem, Transport::
         u64 localDataOffSet = static_cast<u8*>(localAddr) - static_cast<u8*>(localBufMemPtr->addr);
         newLocalMem.addr = static_cast<void*>(static_cast<u8*>(localBufMemPtr->devAddr) + localDataOffSet);
         newLocalMem.size = localMem.size;
+        if (localBufMemPtr->type == HcclMemType::HCCL_MEM_TYPE_HOST) {
+            isLocalHostAddr = true;
+        }
     } else {
         HCCL_INFO("[TransportP2p][ReplaceMemAddr] Can't find localBufferPair by key {%p, %llu}",
             localAddr, localSize);
@@ -1766,6 +1791,9 @@ HcclResult TransportP2p::ReplaceMemAddr(Transport::Buffer &localMem, Transport::
         u64 remoteDataOffSet = static_cast<u8*>(remoteAddr) - static_cast<u8*>(remoteBufMemPtr->addr);
         newRemoteMem.addr =
             static_cast<void *>(static_cast<u8 *>(remoteBufMemPtr->devAddr) + remoteDataOffSet);
+        if (remoteBufMemPtr->type == HcclMemType::HCCL_MEM_TYPE_HOST) {
+            isRemoteHostAddr = true;
+        }
     } else {
         HCCL_INFO("[TransportP2p][ReplaceMemAddr] Can't find remoteBuffer by key {%p, %llu}",
             remoteAddr, remoteMem.size);
@@ -1773,8 +1801,10 @@ HcclResult TransportP2p::ReplaceMemAddr(Transport::Buffer &localMem, Transport::
     }
     newRemoteMem.size = remoteMem.size;
 
-    HCCL_INFO("[TransportP2p][ReplaceMemAddr]old localAddr=[%p],localSize=[%llu],remoteAddr=[%p],remoteSize=[%llu]",
-        newLocalMem.addr, newLocalMem.size, newRemoteMem.addr, newRemoteMem.size);
+    HCCL_INFO("[TransportP2p][ReplaceMemAddr]old localAddr=[%p],localSize=[%llu],remoteAddr=[%p],remoteSize=[%llu], "
+        "isLocalHostAddr[%u] isRemoteHostAddr[%u]",
+        newLocalMem.addr, newLocalMem.size, newRemoteMem.addr, newRemoteMem.size,
+        static_cast<uint32_t>(isLocalHostAddr), static_cast<uint32_t>(isRemoteHostAddr));
     return HCCL_SUCCESS;
 }
 
