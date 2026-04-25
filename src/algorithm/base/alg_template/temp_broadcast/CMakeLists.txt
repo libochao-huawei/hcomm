@@ -22,3 +22,9 @@ set(src_list_pub
 target_sources(hccl_alg PRIVATE
     ${src_list_pub}
 )
+
+if(TARGET ccl_kernel)
+    target_sources(ccl_kernel PRIVATE
+        ${src_list_pub}
+    )
+endif()

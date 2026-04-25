@@ -25,6 +25,12 @@ target_sources(hccl_alg PRIVATE
     ${src_list_pub}
 )
 
+if(TARGET ccl_kernel)
+    target_sources(ccl_kernel PRIVATE
+        ${src_list_pub}
+    )
+endif()
+
 add_subdirectory(component)
 add_subdirectory(temp_alltoall)
 add_subdirectory(temp_all_gather)
