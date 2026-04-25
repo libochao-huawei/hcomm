@@ -369,7 +369,7 @@ namespace hccl
         return transportManager_;
     }
 
-    TransportManager HcclCommunicator::GetIndptOpTransportManager
+    TransportManager HcclCommunicator::GetIndptOpTransportManager()
     {
         return indptOpTransportManager_;
     }
