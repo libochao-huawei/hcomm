@@ -2219,6 +2219,16 @@ std::shared_ptr<TaskInfo>  MirrorTaskManagerLite::GetTaskInfo(u32 streamId, u32 
     return nullptr;
 }
 
+HcclResult HcclCommunicator::SetAccelerator(HcclAccelerator hcclAccelerator, bool isCcuMsAvailable)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommunicator::SetAccelerator(int32_t accelerator, bool isCcuMsAvailable)
+{
+    return HCCL_SUCCESS;
+}
+
 }  // namespace Hccl
 
 namespace Hccl {

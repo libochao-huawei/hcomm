@@ -83,6 +83,10 @@ public:
     HcclResult CreateChannel(EndpointHandle endpointHandle, CommEngine engine, u32 reuseIdx,
         HcommChannelDesc *channelDescs, ChannelHandle *channels);
 
+    HcclResult DestroyChannel(CommEngine engine, u32 reuseIdx);
+
+    bool IsChannelNotExist(CommEngine engine, u32 reuseIdx);
+
     const std::unordered_map<CommEngine, std::vector<ChannelHandle>>& GetChannelHandles();
 
 private:

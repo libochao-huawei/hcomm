@@ -49,3 +49,64 @@ TEST_F(TestEndpointPair, Ut_EndpointPair_Construct_Expect_HCCL_SUCCESS)
     ret = endpointPair.GetSocket(1, 0, "Hccl_Test_Group", 60001, 0, socket, 0, 0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
+
+// 测试销毁不存在的channel，返回HCCL_SUCCESS
+TEST_F(TestEndpointPair, Ut_DestroyChannel_When_Channel_Not_Exist_Expect_SUCCESS)
+{
+    MOCKER(HcommChannelDestroy).stubs().will(returnValue(static_cast<int>(HCCL_SUCCESS)));
+
+    EndpointDesc localEndpointDesc{};
+    localEndpointDesc.protocol = COMM_PROTOCOL_UBC_CTP;
+    localEndpointDesc.commAddr.type = COMM_ADDR_TYPE_IP_V4;
+    Hccl::IpAddress localIp("192.168.100.100");
+    localEndpointDesc.commAddr.addr = localIp.GetBinaryAddress().addr;
+    localEndpointDesc.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
+    EndpointDesc remoteEndpointDesc{};
+    remoteEndpointDesc.protocol = COMM_PROTOCOL_UBC_CTP;
+    remoteEndpointDesc.commAddr.type = COMM_ADDR_TYPE_IP_V4;
+    Hccl::IpAddress remoteIp("192.168.100.101");
+    remoteEndpointDesc.commAddr.addr = remoteIp.GetBinaryAddress().addr;
+    remoteEndpointDesc.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
+    EndpointPair endpointPair(localEndpointDesc, remoteEndpointDesc);
+    HcclResult ret = endpointPair.Init();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(endpointPair.channelHandles_.size(), 0);
+
+    ret = endpointPair.DestroyChannel(COMM_ENGINE_CCU, 0);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+// 测试销毁channel，返回HCCL_SUCCESS，预期channelHandles_[COMM_ENGINE_CCU]为空
+TEST_F(TestEndpointPair, Ut_DestroyChannel_When_Channel_Exist_Expect_SUCCESS)
+{
+    MOCKER(HcommChannelDestroy).stubs().will(returnValue(static_cast<int>(HCCL_SUCCESS)));
+
+    EndpointDesc localEndpointDesc{};
+    localEndpointDesc.protocol = COMM_PROTOCOL_UBC_CTP;
+    localEndpointDesc.commAddr.type = COMM_ADDR_TYPE_IP_V4;
+    Hccl::IpAddress localIp("192.168.100.100");
+    localEndpointDesc.commAddr.addr = localIp.GetBinaryAddress().addr;
+    localEndpointDesc.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
+    EndpointDesc remoteEndpointDesc{};
+    remoteEndpointDesc.protocol = COMM_PROTOCOL_UBC_CTP;
+    remoteEndpointDesc.commAddr.type = COMM_ADDR_TYPE_IP_V4;
+    Hccl::IpAddress remoteIp("192.168.100.101");
+    remoteEndpointDesc.commAddr.addr = remoteIp.GetBinaryAddress().addr;
+    remoteEndpointDesc.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
+    EndpointPair endpointPair(localEndpointDesc, remoteEndpointDesc);
+    HcclResult ret = endpointPair.Init();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // channelHandles_[COMM_ENGINE_CCU]中添加三个不同handle
+    ChannelHandle fakeChannelHandle = 100;
+    endpointPair.channelHandles_[COMM_ENGINE_CCU].push_back(fakeChannelHandle);
+    endpointPair.channelHandles_[COMM_ENGINE_CCU].push_back(fakeChannelHandle + 1);
+    endpointPair.channelHandles_[COMM_ENGINE_CCU].push_back(fakeChannelHandle + 2);
+
+    // 删除index为0的channel
+    ret = endpointPair.DestroyChannel(COMM_ENGINE_CCU, 0);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(endpointPair.channelHandles_[COMM_ENGINE_CCU].size(), 2);
+    EXPECT_EQ(endpointPair.channelHandles_[COMM_ENGINE_CCU][0], fakeChannelHandle + 1);
+    EXPECT_EQ(endpointPair.channelHandles_[COMM_ENGINE_CCU][1], fakeChannelHandle + 2);
+}

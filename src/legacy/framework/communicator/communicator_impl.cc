@@ -2744,6 +2744,15 @@ HcclResult CommunicatorImpl::SetAccelerator(HcclAccelerator hcclAccelerator, boo
     }
     HcclMainboardId hcclMainboardId;
     CHK_RET(HrtGetMainboardId(devLogicId, hcclMainboardId));
+
+    // 开启新流程时，仅mc2场景走回legacy通信域，此时不允许使用ms模式
+    const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+    if (indOp != nullptr && strcmp(indOp, "") != 0) {
+        HCCL_WARNING("[CommunicatorImpl][%s] legacy communicator not support ccu ms mode for mc2.",
+            __func__);
+        isCcuMsAvailable = false;
+    }
+
     switch (hcclAccelerator) {
         case HcclAccelerator::CCU_MS:
             if (hcclMainboardId == HcclMainboardId::MAINBOARD_PCIE_STD) { // 标卡环境下配置CCU_MS加速模式拦截报错

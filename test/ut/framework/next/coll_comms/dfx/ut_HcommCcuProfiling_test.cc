@@ -38,7 +38,7 @@
 #include "ccuTaskException.h"
 #include "hcclCommTaskException.h"
 #include "ccu_rep_assign_v1.h"
-#include "ccu_res_specs.h"
+#include "comms/ccu/ccu_device/ccu_res_specs.h"
 
 namespace hcomm {
 
@@ -215,16 +215,17 @@ TEST_F(CcuKernelTest, AddProfilingInfo_Normal) {
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-TEST_F(Ccukernel_ReportProfilingTest, WhenReporccuprofiling_expect_HcclSucess) {
+TEST_F(Ccukernel_ReportProfilingTest, WhenReportccuprofiling_expect_HcclSuccess) {
 using namespace hccl;
 using namespace CcuRep;
-  MockCcuKernelArg agrs;
-  CcuKernel * ccuKernel = new TestCcuKernel(agrs);
-  std::vector<CcuTaskParam> taskParams;
-  CcuTaskParam taskParam;
-  taskParams.push_back(taskParam);
+    MockCcuKernelArg agrs;
+    CcuKernel * ccuKernel = new TestCcuKernel(agrs);
+    std::vector<CcuTaskParam> taskParams;
+    CcuTaskParam taskParam{};
+    taskParams.push_back(taskParam);
 
-  MOCKER(hrtGetDeviceType)
+    setenv("HCCL_DFS_CONFIG", "task_exception:on", 1);
+    MOCKER(hrtGetDeviceType)
         .stubs()
         .with(outBound(DevType::DEV_TYPE_950))
         .will(returnValue(HCCL_SUCCESS));
@@ -270,6 +271,7 @@ using namespace CcuRep;
     // hcomm::CcuKernelMgr::GetInstance(HcclGetThreadDeviceId());
     ret =  HcclCcuKernelLaunch(comm, thread, kernelHandle, taskArgs);
     EXPECT_EQ(ret, 0);
+    unsetenv("HCCL_DFS_CONFIG");
 }
 
 TEST_F(Ccukernel_ReportProfilingTest, Ut_HcclReportAivKernel_Normal)
