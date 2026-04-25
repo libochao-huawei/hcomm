@@ -203,27 +203,7 @@ HcclResult RankConsistentcyChecker::CheckFrameRecv(const u8 *recvBuf, u32 recvBu
         }
         HCCL_INFO("[RankConsistentcyChecker][CheckFrameRecv] HCCL operator info check passed, tag[%s]", tag.c_str());
     }
-
-    // HcclCheckInfo checkInfoRecv;
-    // // 对固定长度的全局数组变量，结构体变量进行初始化和拷贝，可以不用检查初始化安全函数返回值
-    // (void)memset_s(&checkInfoRecv, sizeof(HcclCheckInfo), 0, sizeof(HcclCheckInfo));
-    // (void)memcpy_s(&checkInfoRecv, sizeof(HcclCheckInfo), recvBuf, sizeof(HcclCheckInfo));
-
-    // HcclCheckInfo checkInfo;
-    // CHK_RET(GenerateCheckFrame(checkInfo, tag));
-    // if (checkInfo.cmdInfo.cmdType == HcclCMDType::HCCL_CMD_SEND) {
-    //     checkInfo.cmdInfo.cmdType = HcclCMDType::HCCL_CMD_RECEIVE;
-    //     checkInfo.cmdInfo.rank = checkInfo.cmdInfo.selfRank;
-    // } else if (checkInfo.cmdInfo.cmdType == HcclCMDType::HCCL_CMD_RECEIVE) {
-    //     checkInfo.cmdInfo.cmdType = HcclCMDType::HCCL_CMD_SEND;
-    //     checkInfo.cmdInfo.rank = checkInfo.cmdInfo.selfRank;
-    // }
-
-    // checkInfo.cmdInfo.selfRank = 0; // 自身的子group rank 不做校验
-    // if (CompareFrame(checkInfo, checkInfoRecv)) {
-    //     return HCCL_E_INTERNAL;
-    // }
-
+    
     HCCL_INFO("[RankConsistentcyChecker][CheckFrameRecv] check success, len of frame[%u], tag[%s].",
         recvBufLen, tag.c_str());
     return HCCL_SUCCESS;
@@ -526,7 +506,7 @@ bool RankConsistentcyChecker::CompareSubCommInfo(HcclSubCommInfo &localInfo, Hcc
                 std::to_string(localInfo.subCommId), std::to_string(remoteInfo.subCommId)}));
         HCCL_ERROR("[RankConsistentcyChecker][CompareSubCommInfo][%s][%s] SubComm subCommId check fail, local[%llu], remote[%llu]", 
             LOG_KEYWORDS_INIT_CHANNEL.c_str(), LOG_KEYWORDS_PARAMETER_CONFLICT.c_str(), 
-            localInfo.rankNum, remoteInfo.rankNum);
+            localInfo.subCommId, remoteInfo.subCommId);
         bIsDiff = true;
     }
 

@@ -15,7 +15,6 @@ namespace hccl {
 HcclResult hcclComm::AddExchangeInfo(void* data, uint32_t length)
 {
     CHK_PTR_NULL(data);
-    CHK_PRT_RET(length == 0, HCCL_ERROR("[AddExchangeInfo] length is 0."), HCCL_E_PARA);
 
     std::lock_guard<std::mutex> lock(exchangeInfoMutex_);
     CHK_PRT_RET(exchangeInfoReady_, 
@@ -32,24 +31,23 @@ HcclResult hcclComm::AddExchangeInfo(void* data, uint32_t length)
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::GetExchangeInfo(uint32_t remoteRank, void* data, uint32_t length)
+HcclResult hcclComm::GetExchangeInfo(uint32_t remoteRank, void* data, uint32_t &length)
 {
     CHK_PTR_NULL(data);
 
     std::lock_guard<std::mutex> lock(exchangeInfoMutex_);
     auto iter = remoteExchangeInfoMap_.find(remoteRank);
-    CHK_PRT_RET(iter == remoteExchangeInfoMap_.end(), 
-        HCCL_ERROR("[GetExchangeInfo] no exchange info for remoteRank[%u]", remoteRank), 
-        HCCL_E_PARA);
-    CHK_PRT_RET(length < iter->second.length, 
-        HCCL_ERROR("[GetExchangeInfo] buffer length[%u] < actual[%u] for remoteRank[%u]", length, iter->second.length, remoteRank), 
-        HCCL_E_PARA);
+    if (iter == remoteExchangeInfoMap_.end()) {
+        length = 0;
+        return HCCL_SUCCESS;
+    }
+    length = iter->second.length;
     
-    s32 sRet = memcpy_s(data, length, iter->second.data.data(), iter->second.length);
+    s32 sRet = memcpy_s(data, iter->second.length, iter->second.data.data(), iter->second.length);
     CHK_PRT_RET(sRet != EOK, 
         HCCL_ERROR("[GetExchangeInfo] memcpy_s failed, ret[%d]", sRet), HCCL_E_MEMORY);
 
-    // 读请
+    // 读后清除
     remoteExchangeInfoMap_.erase(iter);
 
     return HCCL_SUCCESS;
