@@ -33,7 +33,7 @@ namespace hccl
                                    HcclDataType dataType, HcclReduceOp op, HcclRtStream stream, SyncMode syncMode)
     {
         /* 增加输出日志关键字 */
-        HCCL_DEBUG("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], count[%llu], data_type[%s], op[%s]",
+        HCCL_INFO("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], count[%llu], data_type[%s], op[%s]",
                    tag.c_str(), inputPtr, outputPtr, count, GetDataTypeEnumStr(dataType).c_str(),
                    GetReduceOpEnumStr(op).c_str());
 
@@ -62,7 +62,7 @@ namespace hccl
                                            HcclDataType dataType, HcclReduceOp op, HcclRtStream stream, SyncMode syncMode)
     {
         /* 增加输出日志关键字 */
-        HCCL_DEBUG("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], count[%llu], data_type[%s], op[%s]", tag.c_str(),
+        HCCL_INFO("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], count[%llu], data_type[%s], op[%s]", tag.c_str(),
                    inputPtr, outputPtr, count, GetDataTypeEnumStr(dataType).c_str(), GetReduceOpEnumStr(op).c_str());
 
         /* * 入参检查 */
