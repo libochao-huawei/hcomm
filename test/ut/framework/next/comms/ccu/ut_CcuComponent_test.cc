@@ -41,13 +41,13 @@ protected:
 
 TEST_F(CcuComponentTest, Ut_CcuComponent_Init_When_Mock_Is_Fine_Expect_Return_Ok)
 {
-    const int32_t devLogicId = MAX_MODULE_DEVICE_NUM - 1; // 避免影响其他用例
-    const hcomm::CcuVersion ccuVersion = hcomm::CcuVersion::CCU_V1;
-    MockCcuNetworkDeviceDefault(devLogicId); // 先处理网络设备，再初始化ccu
-    MockCcuResourcesDefault(devLogicId, ccuVersion);
+    constexpr int32_t fakeDevLogicId = MAX_MODULE_DEVICE_NUM - 1; // 避免影响其他用例
+    constexpr hcomm::CcuVersion fakeCcuVersion = hcomm::CcuVersion::CCU_V1;
+    MockCcuNetworkDeviceDefault(fakeDevLogicId); // 先处理网络设备，再初始化ccu
+    EXPECT_EQ(MockCcuResourcesDefault(fakeDevLogicId, fakeCcuVersion), HcclResult::HCCL_SUCCESS);
 
     hcomm::CcuComponent ccuComponent{};
-    ccuComponent.devLogicId_ = devLogicId;
+    ccuComponent.devLogicId_ = fakeDevLogicId;
 
     EXPECT_EQ(ccuComponent.Init(), HcclResult::HCCL_SUCCESS);
 }

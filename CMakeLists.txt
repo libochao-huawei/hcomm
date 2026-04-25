@@ -277,42 +277,30 @@ elseif(BUILD_OPEN_PROJECT)
     )
     set(HCCL_PKG_CCU_HEAD
         pkg_inc/hcomm/ccu/ccu_assist_pub.h
-        pkg_inc/hcomm/ccu/ccu_common.h
-        pkg_inc/hcomm/ccu/ccu_condition_v1.h
-        pkg_inc/hcomm/ccu/ccu_kernel_resource.h
-        pkg_inc/hcomm/ccu/ccu_datatype_v1.h
-        pkg_inc/hcomm/ccu/ccu_funccall_v1.h
-        pkg_inc/hcomm/ccu/ccu_instr_info_v1.h
-        pkg_inc/hcomm/ccu/ccu_interface_assist_v1.h
-        pkg_inc/hcomm/ccu/ccu_kernel_arg.h
-        pkg_inc/hcomm/ccu/ccu_kernel_signature.h
-        pkg_inc/hcomm/ccu/ccu_kernel.h
-        pkg_inc/hcomm/ccu/ccu_loopblock_v1.h
-        pkg_inc/hcomm/ccu/ccu_loopcall_v1.h
-        pkg_inc/hcomm/ccu/ccu_loopgroupcall_v1.h
-        pkg_inc/hcomm/ccu/ccu_microcode_v1.h
-        pkg_inc/hcomm/ccu/ccu_operator_v1.h
-        pkg_inc/hcomm/ccu/ccu_rep_arg_v1.h
-        pkg_inc/hcomm/ccu/ccu_rep_base_v1.h
-        pkg_inc/hcomm/ccu/ccu_rep_block_v1.h
-        pkg_inc/hcomm/ccu/ccu_rep_context_v1.h
-        pkg_inc/hcomm/ccu/ccu_rep_funcblock_v1.h
-        pkg_inc/hcomm/ccu/ccu_rep_funccall_v1.h
-        pkg_inc/hcomm/ccu/ccu_rep_jump_v1.h
-        pkg_inc/hcomm/ccu/ccu_rep_jumplabel_v1.h
-        pkg_inc/hcomm/ccu/ccu_rep_loopblock_v1.h
-        pkg_inc/hcomm/ccu/ccu_rep_loopcall_v1.h
-        pkg_inc/hcomm/ccu/ccu_rep_reference_manager_v1.h
-        pkg_inc/hcomm/ccu/ccu_rep_type_v1.h
-        pkg_inc/hcomm/ccu/ccu_repeat_v1.h
-        pkg_inc/hcomm/ccu/ccu_res_repo.h
-        pkg_inc/hcomm/ccu/ccu_task_arg_v1.h
-        pkg_inc/hcomm/ccu/ccu_task_param_v1.h
-        pkg_inc/hcomm/ccu/hccl_ccu_res.h
     )
     install(FILES
         ${HCCL_PKG_CCU_HEAD}
         DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hcomm/ccu/ OPTIONAL
+    )
+    set(HCCL_PKG_CCU_NEW_HEAD
+        pkg_inc/hcomm/ccu_new/ccu_address.hpp
+        pkg_inc/hcomm/ccu_new/ccu_api.hpp
+        pkg_inc/hcomm/ccu_new/ccu_buffer.hpp
+        pkg_inc/hcomm/ccu_new/ccu_control_api.h
+        pkg_inc/hcomm/ccu_new/ccu_control_flow_macro.h
+        pkg_inc/hcomm/ccu_new/ccu_data_api_impl.h
+        pkg_inc/hcomm/ccu_new/ccu_data_utils.hpp
+        pkg_inc/hcomm/ccu_new/ccu_event.hpp
+        pkg_inc/hcomm/ccu_new/ccu_if_label_stack.hpp
+        pkg_inc/hcomm/ccu_new/ccu_local_addr.hpp
+        pkg_inc/hcomm/ccu_new/ccu_loop_macro.h
+        pkg_inc/hcomm/ccu_new/ccu_remote_addr.hpp
+        pkg_inc/hcomm/ccu_new/ccu_types.h
+        pkg_inc/hcomm/ccu_new/ccu_variable.hpp
+    )
+    install(FILES
+        ${HCCL_PKG_CCU_NEW_HEAD}
+        DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hcomm/ccu_new/ OPTIONAL
     )
     set(HCOMM_PKG_HEAD
         pkg_inc/hcomm/hcomm_primitives_expt.h

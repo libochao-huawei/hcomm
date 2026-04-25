@@ -25,7 +25,7 @@
 #include "rank_graph.h"
 #include "orion_adapter_hccp.h"
 
-#include "../../comms/comm_engine_res/ccu/ccu_res_container.h"
+#include "ccu_types.h"
 
 
 namespace hccl {
@@ -44,10 +44,12 @@ public:
 
     EngineCtxs* GetEngineCtxs() const { return engineCtxs_.get(); }
 
-    hcomm::CcuResContainer *GetCcuResContainer() { return ccuResContainer_.get(); }
-
     uint32_t GetOpExpansionMode() {
         return opExpansionMode_;
+    }
+
+    CcuInsHandle GetCcuInstance() {
+        return ccuInsHandle_;
     }
 
     HcclResult CreateChannels(CommEngine engine, const std::string &commTag, 
@@ -70,13 +72,12 @@ private:
     HcclResult BatchCreateChannels(CommEngine engine, const HcclChannelDesc* channelDescs, uint32_t channelNum,
         std::vector<HcommChannelDesc> &hcommDescs, ChannelHandle *channelHandles);
     HcclResult BatchConnectChannels(const HcclChannelDesc* channelDescs, ChannelHandle *channelHandles, uint32_t channelNum);
-    HcclResult CheckChannelParam(CommEngine engine, const HcclChannelDesc* channelDesc, uint32_t channelNum);
+    HcclResult CheckChannelParam(CommEngine engine, const HcclChannelDesc &channelDesc, uint32_t index);
     HcclResult QueryListenPort(uint32_t localRank, uint32_t remoteRank, const EndpointDesc &localEndpointDesc, 
         const EndpointDesc &remoteEndpointDesc, uint32_t &listenPort, HcommChannelDesc &hcommDesc);
     HcclResult GetLocalTlsStatus(Hccl::TlsStatus &tlsStatus) const;
 
     HcclResult TryInitCcuInstance();
-    HcclResult DestroyNewChannels(CommEngine engine, const HcclChannelDesc* channelDescs);
 
     aclrtBinHandle binHandle_{nullptr};
     uint32_t rankId_{};
@@ -90,16 +91,12 @@ private:
     std::unique_ptr<CommMems> commMems_{nullptr};
     std::unique_ptr<EngineCtxs> engineCtxs_{nullptr};
 
-    // 当前CommEngineResMgr复用a3代码，为不影响a3流程，先将ccu资源管理放在MyRank
-    std::unique_ptr<hcomm::CcuResContainer> ccuResContainer_{nullptr};
+    CcuInsHandle ccuInsHandle_{0};
 
     ManagerCallbacks callbacks_;
 
     // RankGraph (临时放在myRank里面，后面会随着createchannel整体迁移到RankPairMgr上)
     RankGraph* rankGraph_{nullptr};
-
-    // 记录每次调用BatchCreateChannels时新增的channelIndex, reuseIdx
-    std::vector<std::pair<u32, u32>> newChannels_{};
 
     // Ns recovery
     std::unique_ptr<NsRecoveryProcessor> nsRecoveryProcessor_{nullptr};
