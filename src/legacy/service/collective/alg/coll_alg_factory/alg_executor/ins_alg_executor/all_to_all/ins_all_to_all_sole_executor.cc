@@ -176,17 +176,16 @@ HcclResult InsAlltoAllSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate(co
     tempAlg.SetDataType(dataType_);
 
     std::map<u32, u32>rank2PathNumMap;
-    HCCL_INFO("[InsAlltoAllSoleExecutor] CalcRes SetPathNumMap");
+    HCCL_INFO("[InsAlltoAllSoleExecutor] Orchestrate rankGraph SetPathNumMap");
     for(auto rankIdx : virtRanks_){
         if(rankIdx==myRank_){
             continue;
         }
-        std::vector<NetInstance::Path> tmpPaths0 =
-            rankGraph->GetPaths(0, myRank_, rankIdx);
         std::vector<NetInstance::Path> tmpPaths1 =
             rankGraph->GetPaths(1, myRank_, rankIdx);
+        std::vector<NetInstance::Path> tmpPaths0 =
+            rankGraph->GetPaths(0, myRank_, rankIdx);
         rank2PathNumMap[rankIdx] = tmpPaths0.size() + tmpPaths1.size();
-        // std::cout<<"myRank_="<<myRank_<<" rankIdx="<<rankIdx<<" tmpPaths0.size()="<<tmpPaths0.size()<<" tmpPaths1.size()"<<tmpPaths1.size()<<std::endl;
     }
     tempAlg.setPathNumMap(rank2PathNumMap);
 
