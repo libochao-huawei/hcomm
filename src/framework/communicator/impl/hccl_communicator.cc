@@ -364,12 +364,12 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    std::unique_ptr<TransportManager> HcclCommunicator::GetTransportManager()
+    TransportManager* HcclCommunicator::GetTransportManager()
     {
         return transportManager_;
     }
 
-    std::unique_ptr<TransportManager> HcclCommunicator::GetIndptOpTransportManager()
+    TransportManager* HcclCommunicator::GetIndptOpTransportManager()
     {
         return indptOpTransportManager_;
     }

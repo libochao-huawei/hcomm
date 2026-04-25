@@ -494,8 +494,8 @@ public:
     HcclResult InitSymmetricMemory();
     HcclResult GetCommSymWin(void* ptr, size_t size, HcclCommSymWindow *winHandle, size_t *offset);
 
-    std::unique_ptr<TransportManager> GetTransportManager();
-    std::unique_ptr<TransportManager> GetIndptOpTransportManager();
+    TransportManager* GetTransportManager();
+    TransportManager* GetIndptOpTransportManager();
 
 private:
 
