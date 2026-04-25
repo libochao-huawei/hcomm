@@ -107,7 +107,7 @@ HcclResult NetworkManager::GetNicIp(uint32_t devicePhyId, HcclAddress** addr, ui
     return HCCL_SUCCESS;
 }
 
-HcclResult NetworkManager::TsdProcessOpen(bool hasBackup)
+HcclResult NetworkManager::TsdProcessOpen(bool hasBackup, bool useResvMem, u32 poolId)
 {
     s32 locaLogDevid = 0;
     hrtGetDevice(&locaLogDevid);
@@ -126,17 +126,22 @@ HcclResult NetworkManager::TsdProcessOpen(bool hasBackup)
     }
     isTsdProcessOpen_ = true;
     if (!hasBackup || halAPIVersion < BACKUP_DEVICE_LOG_DEV_VERSION) {
-        std::string extPam("--hdcType=" + std::to_string(HDC_SERVICE_TYPE_RDMA_V2));
+        std::string extPams[TSD_OPEN_EXT_PARA_NUM] =
+            {std::string("--hdcType=" + std::to_string(HDC_SERVICE_TYPE_RDMA_V2)),
+             std::string("--ResvMemPoolId=" +std::to_string(poolId))};
+        rtProcExtParam extParams[TSD_OPEN_EXT_PARA_NUM] {};
+        for (u32 i = 0; i < TSD_OPEN_EXT_PARA_NUM; i++) {
+            extParams[i].paramInfo = extPams[i].c_str();
+            extParams[i].paramLen = extPams[i].size();
+        }
+        
         rtNetServiceOpenArgs  openArgs;
-        rtProcExtParam extParam{};
-        extParam.paramInfo = extPam.c_str();
-        extParam.paramLen = extPam.size();
-        openArgs.extParamList = &extParam;
-        openArgs.extParamCnt = 1UL;
+        openArgs.extParamList = extParams;
+        openArgs.extParamCnt = useResvMem ? TSD_OPEN_EXT_PARA_NUM : TSD_OPEN_EXT_PARA_NUM-1;
         // 根据pid粒度拉起hccp的rs进程
         CHK_RET(hrtOpenNetService(&openArgs));
-        HCCL_INFO("[%s]hrtOpenNetService success, subPid[%d], devicePhyId_[%u], deviceLogicId_[%d], hasBackup[%u]",
-            __func__, subPid_, devicePhyId_, deviceLogicId_, hasBackup);
+        HCCL_INFO("[%s]hrtOpenNetService success, subPid[%d], devicePhyId_[%u], deviceLogicId_[%d], hasBackup[%u], useResvMem[%u], poolId[%u]",
+            __func__, subPid_, devicePhyId_, deviceLogicId_, hasBackup, useResvMem, poolId);
     } else {
         // 获取chip上另一个die的logicalID
         u32 deviceBackUpPhyId = 0;
@@ -144,14 +149,14 @@ HcclResult NetworkManager::TsdProcessOpen(bool hasBackup)
         rtNetServiceOpenArgs openArgs;
         std::string extPams[TSD_OPEN_EXT_PARA_NUM] =
             {std::string("--hdcType=" + std::to_string(HDC_SERVICE_TYPE_RDMA_V2)),
-            std::string("--backupPhyId=" + std::to_string(deviceBackUpPhyId))};
+             std::string("--backupPhyId=" + std::to_string(deviceBackUpPhyId))};
         rtProcExtParam extParams[TSD_OPEN_EXT_PARA_NUM] {};
         for (u32 i = 0; i < TSD_OPEN_EXT_PARA_NUM; i++) {
             extParams[i].paramInfo = extPams[i].c_str();
             extParams[i].paramLen = extPams[i].size();
         }
         openArgs.extParamList = extParams;
-        openArgs.extParamCnt = TSD_OPEN_EXT_PARA_NUM;
+        openArgs.extParamCnt =  TSD_OPEN_EXT_PARA_NUM ;
         // 根据pid粒度拉起hccp的rs进程
         CHK_RET(hrtOpenNetService(&openArgs));
         HCCL_INFO("[%s]hrtOpenNetService success, subPid[%u], "
@@ -236,7 +241,7 @@ HcclResult NetworkManager:: GetTsdOpen(NICDeployment nicDeploy, bool hasBackup, 
 }
 /* init network resource */
 HcclResult NetworkManager::Init(NICDeployment nicDeploy, bool enableWhitelistFlag, u32 devicePhyId,
-    bool isHostUseDevNic, bool hasBackup)
+    bool isHostUseDevNic, bool hasBackup, bool useResvMem, u32 poolId)
 {
     s32 ref = 0;
     if (nicDeploy == NICDeployment::NIC_DEPLOYMENT_HOST) {
@@ -260,8 +265,8 @@ HcclResult NetworkManager::Init(NICDeployment nicDeploy, bool enableWhitelistFla
         CHK_RET(hrtGetDevice(&deviceLogicId_));
         CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(deviceLogicId_), devicePhyId_));
     }
-    HCCL_INFO("NetworkManager: devicePhyId[%u], devicePhyId_[%u] deviceLogicId_[%u], hasBackup[%d]", devicePhyId,
-        devicePhyId_, deviceLogicId_, hasBackup);
+    HCCL_INFO("NetworkManager: devicePhyId[%u], devicePhyId_[%u] deviceLogicId_[%u], hasBackup[%d], useResvMem[%u], poolId[%u]",
+        devicePhyId, devicePhyId_, deviceLogicId_, hasBackup, useResvMem, poolId);
 
     bool supportMultiProcHCCP = false;
     if (nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE && !Is310PDevice()) { // DC场景不需要拉起tsd
@@ -270,12 +275,16 @@ HcclResult NetworkManager::Init(NICDeployment nicDeploy, bool enableWhitelistFla
         HCCL_INFO("[NetworkManager][Init]supportMultiProcHCCP[%u], hasBackup[%u]", supportMultiProcHCCP, hasBackup);
         if (supportMultiProcHCCP || hasBackup) {
             // 根据pid粒度拉起hccp的rs进程
-            CHK_RET(TsdProcessOpen(hasBackup));
+            CHK_RET(TsdProcessOpen(hasBackup, useResvMem, poolId));
             HCCL_INFO("[NetworkManager][Init]open tsd by process success, devicePhyId[%u], deviceLogicId_[%d].",
                 devicePhyId_, deviceLogicId_);
         } else {
             // device 网卡初始化前需要拉起 hccp.
-            CHK_RET(hrtOpenTsd());
+            if (useResvMem) {
+                CHK_RET(hrtOpenTsdwithResvMem(poolId));
+            } else {
+                CHK_RET(hrtOpenTsd());
+            }
             HCCL_INFO("[%s]NetworkManager open tsd success, devicePhyId[%u], deviceLogicId_[%d]",
                 __func__, devicePhyId_, deviceLogicId_);
         }
