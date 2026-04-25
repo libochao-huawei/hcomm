@@ -340,15 +340,6 @@ namespace hccl
             CHK_RET(commImplV2->SetAccelerator(static_cast<int32_t>(opExpansionMode), isCcuMsAvailable));
         }
 
-        
-        const char *indOp = getenv("HCCL_INDEPENDENT_OP");
-        if (indOp != nullptr && strcmp(indOp, "") != 0) {
-            // 当前需要支持coll comm与legacy comm混跑，coll comm确定加速模式后，需要设置comm加速模式
-            auto *commImplV2 = static_cast<Hccl::HcclCommunicator *>(commV2);
-            constexpr bool isCcuMsAvailable = false; // 禁止legacy通信域使用ms模式，避免抢占过多coll comm ccu可用资源
-            CHK_RET(commImplV2->SetAccelerator(static_cast<int32_t>(opExpansionMode), isCcuMsAvailable));
-        }
-
         return HCCL_SUCCESS;
     }
 
