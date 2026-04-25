@@ -53,6 +53,8 @@ const bool& GetExternalInputStuckDetect();
 
 const bool& GetExternalInconsistentCheckSwitch();
 
+const u64& GetExternalInputTopoHierarchicalThreshold();
+
 s32& GetExternalInputDfsConnectionFaultDetectionTime();
 
 /*************** For Internal Use ***************/
@@ -72,6 +74,7 @@ struct EnvConfig {
     bool opCounterEnable;
     bool inconsistentCheckSwitch;
     s32 dfsConnectionFaultDetectionTime;
+    u64 topoHierarchicalThreshold;
 
     // HCCL_ALGO环境变量参数
     bool specificAlgoMode;
@@ -99,6 +102,8 @@ struct EnvConfig {
         opCounterEnable = true;
         // 初始化 inconsistentCheckSwitch 为默认值
         inconsistentCheckSwitch = false;
+        // 初始化分层建链的初始阈值
+ 	    topoHierarchicalThreshold = 32768;
         dfsConnectionFaultDetectionTime = HCCL_MIN_CONNECT_FAULT_DETECTION_TIME;
         specificAlgoMode = false;
         for (u32 opType = 0; opType < static_cast<u32>(HcclCMDType::HCCL_CMD_MAX); opType++) {

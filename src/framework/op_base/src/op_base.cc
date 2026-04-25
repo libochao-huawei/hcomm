@@ -1115,8 +1115,8 @@ HcclResult InitCommRootInfo(const u32 nRanks, const u32 rank, const HcclRootHand
         std::shared_ptr<TopoInfoDetect> topoDetectAgent;
         EXECEPTION_CATCH((topoDetectAgent = std::make_shared<TopoInfoDetect>()), return HCCL_E_MEMORY);
         topoDetectAgent->SetIsInterSuperPodRetryEnable(commConfig.GetConfigInterSuperPodRetryEnable());
-        // 32k 作为agent开启阈值
-        if (nRanks > TOPO_HIERARCHICAL_ENABLE_THRESHOLD ) {
+        // 默认32k 作为agent开启阈值
+        if (nRanks > GetExternalInputTopoHierarchicalThreshold()) {
             HCCL_RUN_INFO("[Init][CommRootInfo][Hierarchical]nRanks[%u] entry hierarchical topo detect.", nRanks);
 
             std::shared_ptr<TopoInfoDetect> topoDetectMember;
