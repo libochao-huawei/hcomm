@@ -87,6 +87,12 @@ private:
     uint16_t selfBit_{0};
     uint16_t allBit_{0};
 
+    uint32_t bitNumPerCKE_;
+    uint32_t selfSignalId_;
+
+    uint32_t signalNum_;
+    uint32_t blockNum_;
+    std::vector<uint16_t> waitBitVector_;
     // 在本地的搬运完成标记
     CcuRep::MaskSignal locSignal_;
 };

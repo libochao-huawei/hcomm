@@ -23,6 +23,7 @@ constexpr int TOKEN_XN_ID = 2;
 constexpr uint64_t CCU_MS_SIZE   = 4096;
 constexpr uint64_t LOCAL_COPY_MS = 8;
 
+constexpr uint16_t RANK_NUM_PER_BLOCK = 8;
 CcuContextAllToAllMesh1D2Die::CcuContextAllToAllMesh1D2Die(const CcuCtxArg                   &arg,
                                                            const std::vector<CcuTransport *> &transports,
                                                            const CcuTransportGroup           &group)
@@ -81,7 +82,8 @@ void CcuContextAllToAllMesh1D2Die::InitResource()
     }
 
     logicRankSize = withMyRank_ ? transports.size() + 1 : transports.size();
-    signalNum_    = (rankSize_ + bitNumPerCKE_ - 1) / bitNumPerCKE_;
+    signalNum_    = (rankSize_ + bitNumPerCKE_ * 2 - 1) / (bitNumPerCKE_ * 2);
+    blockNum_     = (rankSize_ + bitNumPerCKE_ - 1) / bitNumPerCKE_;
     HCCL_INFO("[CcuContextAlltoAll2Die] CtxArg: rankId_[%u], rankSize_[%u], signalNum_[%u]", rankId_, rankSize_, signalNum_);
     return;
 }
@@ -117,8 +119,12 @@ void CcuContextAllToAllMesh1D2Die::PreSync()
         GroupWait(*transportGroup, CKE_IDX_1, allBit); // index = 1，传递output信息
         GroupWait(*transportGroup, CKE_IDX_2, allBit); // index = 2，传递token信息
     } else {
-        uint16_t selfSignalId = rankId_ / bitNumPerCKE_;
+        uint16_t selfSignalId = rankId_ / (bitNumPerCKE_ * 2);
         uint16_t selfBit      = 1 << (rankId_ % bitNumPerCKE_);
+        if ((rankId_ / bitNumPerCKE_) % 2 == 1) {
+            selfBit = selfBit << RANK_NUM_PER_BLOCK;
+        }
+
         for (auto t : transports) {
             // （transport, param, paramID, SemID, mask）
             WriteVariableWithSignal(*t, output_[virRankSize - 1], OUPUT_XN_ID, selfSignalId + signalNum_ * CKE_IDX_1,
@@ -127,11 +133,18 @@ void CcuContextAllToAllMesh1D2Die::PreSync()
                                     selfBit); // index = 2，传递token信息
         }
         std::vector<uint16_t> waitBitVector(signalNum_, 0);
-        for (uint16_t sId = 0; sId < waitBitVector.size(); sId++) {
-            waitBitVector[sId] = (1 << bitNumPerCKE_) - 1;
-            if (sId == selfSignalId) {
-                waitBitVector[sId] = 0;
+        for (uint16_t bId = 0; bId < blockNum_; bId++) {
+            uint16_t sId = bId / 2;
+            if (rankId_ / bitNumPerCKE_ == bId) {
+                continue;
             }
+            if (bId % 2) {
+                waitBitVector[sId] = waitBitVector[sId] + (((1 << bitNumPerCKE_) - 1) << RANK_NUM_PER_BLOCK);
+            } else {
+                waitBitVector[sId] = waitBitVector[sId] + ((1 << bitNumPerCKE_) - 1);
+            }
+        }
+        for (uint16_t sId = 0; sId < waitBitVector.size(); sId++) {
             GroupWait(*transportGroup, sId + signalNum_ * CKE_IDX_1, waitBitVector[sId]); // index = 1，传递output信息
             GroupWait(*transportGroup, sId + signalNum_ * CKE_IDX_2, waitBitVector[sId]); // index = 2，传递token信息
         }
@@ -153,8 +166,11 @@ void CcuContextAllToAllMesh1D2Die::PostSync()
         }
         GroupWait(*transportGroup, CKE_IDX_0, allBit);
     } else {
-        uint16_t selfSignalId = rankId_ / bitNumPerCKE_;
+        uint16_t selfSignalId = rankId_ / (bitNumPerCKE_ * 2);
         uint16_t selfBit      = 1 << (rankId_ % bitNumPerCKE_);
+        if ((rankId_ / bitNumPerCKE_) % 2 == 1) {
+            selfBit = selfBit << RANK_NUM_PER_BLOCK;
+        }
         for (auto t : transports) {
             if (t == nullptr) {
                 THROW<NullPtrException>(StringFormat("CcuContextAllToAllMesh1D2Die::Algorithm transport ptr is null"));
@@ -162,12 +178,19 @@ void CcuContextAllToAllMesh1D2Die::PostSync()
             RemotePost(*t, selfSignalId + signalNum_ * CKE_IDX_0, selfBit);
         }
         std::vector<uint16_t> waitBitVector(signalNum_, 0);
-        for (uint16_t sId = 0; sId < waitBitVector.size(); sId++) {
-            waitBitVector[sId] = (1 << bitNumPerCKE_) - 1;
-            if (sId == selfSignalId) {
-                waitBitVector[sId] = 0;
+        for (uint16_t bId = 0; bId < blockNum_; bId++) {
+            uint16_t sId = bId / 2;
+            if (rankId_ / bitNumPerCKE_ == bId) {
+                continue;
             }
-            GroupWait(*transportGroup, CKE_IDX_0, allBit);
+            if (bId % 2) {
+                waitBitVector[sId] = waitBitVector[sId] + (((1 << bitNumPerCKE_) - 1) << RANK_NUM_PER_BLOCK);
+            } else {
+                waitBitVector[sId] = waitBitVector[sId] + ((1 << bitNumPerCKE_) - 1);
+            }
+        }
+        for (uint16_t sId = 0; sId < waitBitVector.size(); sId++) {
+            GroupWait(*transportGroup, sId + signalNum_ * CKE_IDX_0, waitBitVector[sId]);
         }
     }
     
@@ -226,19 +249,29 @@ void CcuContextAllToAllMesh1D2Die::DoRepeatAllToAll()
         LocalWait(locMask, allBit_);
     } else {
         vector<CcuRep::MaskSignal> locMask;
-        uint16_t signalNum = logicRankSize / bitNumPerCKE_;
+        uint16_t signalNum = (logicRankSize + bitNumPerCKE_ * 2 - 1) / (bitNumPerCKE_ * 2);
         std::vector<uint16_t> waitBitVector(signalNum, 0);
         for (uint16_t sId = 0; sId < signalNum; sId++) {
             locMask.push_back(CreateMaskSignal());
         }
         for (uint16_t r = 0; r < logicRankSize; r++) {
-            uint16_t rmtSignalId = r / bitNumPerCKE_;
+            uint16_t rmtSignalId = r / (bitNumPerCKE_ * 2);
             uint16_t rmtSignalBit = 1 << (r % bitNumPerCKE_);
+            if (((r / bitNumPerCKE_) % 2) == 1) {
+                rmtSignalBit = rmtSignalBit << RANK_NUM_PER_BLOCK;
+            }
             Write(*transports[transportIdx], dst[r], src[r], sliceSize_, locMask[rmtSignalId], rmtSignalBit);
             transportIdx++;
         }
+        for (uint16_t bId = 0; bId < (blockNum_ - 1); bId++) {
+            uint16_t sId = bId / 2;
+            if (bId % 2) {
+                waitBitVector[sId] = waitBitVector[sId] + (((1 << bitNumPerCKE_) - 1) << RANK_NUM_PER_BLOCK);
+            } else {
+                waitBitVector[sId] = waitBitVector[sId] + ((1 << bitNumPerCKE_) - 1);
+            }
+        }
         for (uint16_t sId = 0; sId < signalNum; sId++) {
-            waitBitVector[sId] = (1 << bitNumPerCKE_) - 1;
             LocalWait(locMask[sId], waitBitVector[sId]);
         }
     }

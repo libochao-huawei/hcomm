@@ -26,9 +26,9 @@ class CcuCtxArgAllToAllVMesh2Die : public CcuCtxArg {
 public:
     CcuCtxArgAllToAllVMesh2Die(const std::vector<uint32_t> &dSize, uint32_t rId, bool withMyRank,
         const CollAlgOperator &op, const std::vector<std::vector<RankId>> &tempVTopo,
-        const std::vector<RankId> &rankGroup) :
+        const std::vector<RankId> &rankGroup, u32 bitNum) :
             CcuCtxArg(), dimSize(dSize), rankId(rId), withMyRank(withMyRank), op(op), tempVTopo(tempVTopo),
-            rankGroup(rankGroup) {}
+            rankGroup(rankGroup), bitNum(bitNum) {}
 
     ~CcuCtxArgAllToAllVMesh2Die() override {}
 
@@ -45,6 +45,7 @@ public:
     CollAlgOperator op;
     std::vector<std::vector<RankId>> tempVTopo;
     std::vector<RankId> rankGroup;
+    u32 bitNum;
 };
 
 class CcuTaskArgAllToAllVMesh2Die : public CcuTaskArg {
@@ -68,7 +69,7 @@ public:
         CcuInstruction(), op_(op), dimSize_(dimSize), tempVTopo_(tempVTopo) {}
 
     void Init(uint32_t rankId, bool withMyRank, uint64_t inputAddr, uint64_t outputAddr, uint64_t scratchAddr,
-        uint64_t token, const A2ASendRecvInfo& localSendRecvInfo)
+        uint64_t token, const A2ASendRecvInfo& localSendRecvInfo, u32 bitNum)
     {
         rankId_ = rankId;
         withMyRank_ = withMyRank;
@@ -77,6 +78,7 @@ public:
         scratchAddr_ = scratchAddr;
         token_ = token;
         localSendRecvInfo_ = localSendRecvInfo;
+        bitNum_ = bitNum;
         return;
     }
 
@@ -100,9 +102,9 @@ public:
     std::unique_ptr<CcuCtxArg> GetCtxArg() const override
     {
         HCCL_INFO("[CcuInstructionAllToAllVMesh2Die][GetCtxArg] dimSize.size[%u], rankId[%u], withMyRank[%u], "
-            "tempVTopo.size[%u]", dimSize_.size(), rankId_, withMyRank_, tempVTopo_.size());
+            "tempVTopo.size[%u], bitNum[%u]", dimSize_.size(), rankId_, withMyRank_, tempVTopo_.size(), bitNum_);
         return std::make_unique<CcuCtxArgAllToAllVMesh2Die>(dimSize_, rankId_, withMyRank_, op_, tempVTopo_,
-            rankGroup_.GetRanks());
+            rankGroup_.GetRanks(), bitNum_);
     }
 
     std::unique_ptr<CcuTaskArg> GetTaskArg() const override
@@ -125,6 +127,7 @@ private:
     uint64_t scratchAddr_{0};
     uint64_t token_{0};
     A2ASendRecvInfo localSendRecvInfo_;
+    u32 bitNum_;
 };
 
 }

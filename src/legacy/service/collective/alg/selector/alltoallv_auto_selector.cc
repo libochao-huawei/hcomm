@@ -15,6 +15,32 @@
 
 namespace Hccl {
 
+SelectorStatus AlltoAllVAutoSelector::SelectCcuScheduleAlgoLevel1(const TopoInfo &topoInfo,
+                                                        const CollAlgOperator &op,
+                                                        std::string &primQueueGenName) const
+{
+    if (isMc2_) {
+        HCCL_WARNING("[Algo][AlltoAllVAutoSelector] levelNum > 1 is not supported yet for ccu_schedule mode.");
+        return SelectorStatus::NOT_MATCH;
+    }
+    if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
+        if (topoInfo.netLayerDetails.localNetInsSizeOfLayer[0] == 1) {
+            primQueueGenName = "CcuAlltoAllVMesh1D";
+        } else {
+            if (op.dataType == DataType::INT8) {
+                HCCL_WARNING("[Algo][AlltoAllVAutoSelector] int8 is not supported yet for ccu_schedule mode.");
+                return SelectorStatus::NOT_MATCH;
+            }
+            primQueueGenName = "CcuAllToAllVMesh1D2Die";
+        }
+    } else {
+        HCCL_WARNING("[Algo][AlltoAllVAutoSelector] level0Shape[%d] is not supported yet for ccu schedule mode.",
+            topoInfo.level0Shape);
+        return SelectorStatus::NOT_MATCH;
+    }
+    return SelectorStatus::MATCH;
+}
+
 SelectorStatus AlltoAllVAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topoInfo,
                                                     const CollAlgOperator &op,
                                                     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,
@@ -25,8 +51,8 @@ SelectorStatus AlltoAllVAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topo
     HCCL_DEBUG("[AlltoAllVAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
 
     if (topoInfo.levelNum > 1) {
-        HCCL_WARNING("[Algo][AlltoAllVAutoSelector] levelNum > 1 is not supported yet for ccu_ms mode.");
-        return SelectorStatus::NOT_MATCH;
+        SelectorStatus ret = SelectCcuScheduleAlgoLevel1(topoInfo, op, primQueueGenName);
+        return ret;
     } else {
         if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
             if (Is2DieFullMesh()) {

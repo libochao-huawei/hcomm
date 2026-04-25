@@ -136,7 +136,8 @@ HcclResult CcuTempAlltoAllVMesh2Die::Run(const TempFuncs &tempFuncs, const RankS
     for (uint32_t axisId = 0; axisId < 2; axisId++) {   // 2Die算法，需要执行两次
         CcuInstructionAllToAllVMesh2Die ins = CcuInstructionAllToAllVMesh2Die(op_, dimSize_, tempVTopo_);
         bool withMyRank = links_[axisId].size() < links_[1 - axisId].size();
-        ins.Init(myRank_, withMyRank, inputAddr, outputAddr, scratchAddr, token, localSendRecvInfo_);
+        u32 bitNum = min(links_[axisId].size(), links_[1 - axisId].size()) + 1;
+        ins.Init(myRank_, withMyRank, inputAddr, outputAddr, scratchAddr, token, localSendRecvInfo_, bitNum);
         ins.SetLinks(links_[axisId]);
         ins.SetRankGroup(rankGroup_[axisId]);
         const u32 ckeNum = 5;
