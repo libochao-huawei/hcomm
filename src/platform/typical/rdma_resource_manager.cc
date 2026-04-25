@@ -58,7 +58,13 @@ HcclResult RdmaResourceManager::Init()
     CHK_RET(NetworkManager::GetInstance(deviceLogicId_).Init(nicDeploy_, false, devicePhyId_, true));
     HCCL_DEBUG("[RdmaResourceManager][Init] NetworkManager Init, deviceLogicId[%d], devicePhyId[%u], nicDeployment_[%d]",
         deviceLogicId_, devicePhyId_, nicDeploy_);
-        
+    CHK_RET(InitResvMemInfo());
+    u32 poolId = 0;
+    if (HCCL_SUCCESS == GetResvMemPoolIdByType(0, poolId)) {
+        CHK_RET(NetworkManager::GetInstance(deviceLogicId_).DeInit(nicDeploy_, false, true));
+        CHK_RET(NetworkManager::GetInstance(deviceLogicId_).Init(nicDeploy_, false, devicePhyId_, true, true, poolId));
+    }
+
     std::vector<HcclIpAddress> deviceIPs;
     CHK_RET(hrtRaGetDeviceIP(devicePhyId_, deviceIPs));
     CHK_PRT_RET(deviceIPs.size() < 1,
@@ -96,7 +102,7 @@ HcclResult RdmaResourceManager::Init()
     CHK_RET(hrtRaRegGlobalMr(rdmaHandle_, notifyMrInfo_, mrHandle_));
     HCCL_RUN_INFO("[RdmaResourceManager][Init] Register NotifyBaseAddr addr[%p] size[%llu] key[%u]", notifyMrInfo_.addr,
         notifyMrInfo_.size, notifyMrInfo_.lkey);
-    CHK_RET(InitResvMemInfo());
+
     return HCCL_SUCCESS;
 }
 
@@ -180,7 +186,8 @@ HcclResult RdmaResourceManager::GetNotifyMrInfo(struct MrInfoT& mrInfo)
     return HCCL_SUCCESS;
 }
 
-HcclResult RdmaResourceManager::InitResvMemInfo() {
+HcclResult RdmaResourceManager::InitResvMemInfo()
+{
     std::string flagValue;
     std::vector<std::string> parts;
     std::vector<std::string> tokens;
