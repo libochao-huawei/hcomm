@@ -310,7 +310,7 @@ HcclResult hcclComm::AllGather(const std::string &tag, void *inputPtr, void *out
                                HcclDataType dataType, HcclRtStream stream, HcomCollOpInfo *opInfo)
 {
     /* 增加输出日志关键字 */
-    HCCL_DEBUG("HCCL_KEY_INFO: tag[%s], count[%llu], data_type[%s]", tag.c_str(), inputCount,
+    HCCL_INFO("HCCL_KEY_INFO: tag[%s], count[%llu], data_type[%s]", tag.c_str(), inputCount,
         GetDataTypeEnumStr(dataType).c_str());
 
     /* * 入参检查 */
@@ -336,7 +336,7 @@ HcclResult hcclComm::AllGatherV(const std::string &tag, const void *sendBuf, u64
     const void *recvCounts, const void *rdispls, HcclDataType dataType, HcclRtStream stream)
 {
     /* 增加输出日志关键字 */
-    HCCL_DEBUG("HCCL_KEY_INFO: tag[%s], count[%llu], data_type[%s]", tag.c_str(), sendCount,
+    HCCL_INFO("HCCL_KEY_INFO: tag[%s], count[%llu], data_type[%s]", tag.c_str(), sendCount,
         GetDataTypeEnumStr(dataType).c_str());
 
     /* * 入参检查 */
@@ -363,7 +363,7 @@ HcclResult hcclComm::AllGatherOutPlace(const std::string &tag, void *inputPtr, v
     HcclDataType dataType, HcclRtStream stream)
 {
     /* 增加输出日志关键字 */
-    HCCL_DEBUG("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], count[%llu], data_type[%s]",
+    HCCL_INFO("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], count[%llu], data_type[%s]",
         tag.c_str(), inputPtr, outputPtr, inputCount, GetDataTypeEnumStr(dataType).c_str());
 
     /* * 入参检查 */
@@ -381,7 +381,7 @@ HcclResult hcclComm::AllGatherVOutPlace(const std::string &tag, void *inputPtr, 
     u64 inputCount, const void *outputCounts, const void *outputDispls, HcclDataType dataType, HcclRtStream stream)
 {
     /* 增加输出日志关键字 */
-    HCCL_DEBUG("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], counts[%llu], data_type[%d]",
+    HCCL_INFO("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], counts[%llu], data_type[%d]",
         tag.c_str(), inputPtr, outputPtr, outputCounts, dataType);
 
     /* * 入参检查 */
@@ -501,7 +501,7 @@ HcclResult hcclComm::Broadcast(const std::string &tag, void *ptr, u64 count, Hcc
                                HcclRtStream stream)
 {
     /* 增加输出日志关键字 */
-    HCCL_DEBUG("HCCL_KEY_INFO:tag[%s], ptr[%p], count[%llu], data_type[%s], root[%u]",
+    HCCL_INFO("HCCL_KEY_INFO:tag[%s], ptr[%p], count[%llu], data_type[%s], root[%u]",
                tag.c_str(), ptr, count, GetDataTypeEnumStr(dataType).c_str(), root);
 
     /* * 入参检查 */
@@ -532,7 +532,7 @@ HcclResult hcclComm::BroadcastOutPlace(const std::string &tag, void *ptr, u64 co
     HcclRtStream stream)
 {
     /* 增加输出日志关键字 */
-    HCCL_DEBUG("HCCL_KEY_INFO:tag[%s], ptr[%p], count[%llu], data_type[%s], root[%u]", tag.c_str(), ptr, count,
+    HCCL_INFO("HCCL_KEY_INFO:tag[%s], ptr[%p], count[%llu], data_type[%s], root[%u]", tag.c_str(), ptr, count,
         GetDataTypeEnumStr(dataType).c_str(), root);
 
     /* * 入参检查 */
@@ -551,7 +551,7 @@ HcclResult hcclComm::ScatterOutPlace(const std::string &tag, void *inputPtr, voi
     HcclDataType dataType, u32 root, HcclRtStream stream)
 {
     /* 增加输出日志关键字 */
-    HCCL_DEBUG("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], recvCount[%llu], data_type[%s], root[%u]",
+    HCCL_INFO("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], recvCount[%llu], data_type[%s], root[%u]",
         tag.c_str(), inputPtr, outputPtr, recvCount, GetDataTypeEnumStr(dataType).c_str(), root);
 
     if (tag.empty()) {
@@ -576,7 +576,7 @@ HcclResult hcclComm::ReduceScatter(const std::string &tag, void *inputPtr, void 
                                    HcclDataType dataType, HcclReduceOp op, HcclRtStream stream)
 {
     /* 增加输出日志关键字 */
-    HCCL_DEBUG("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], count[%llu], data_type[%s], "
+    HCCL_INFO("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], count[%llu], data_type[%s], "
                "op[%s]", tag.c_str(), inputPtr, outputPtr, count, GetDataTypeEnumStr(dataType).c_str(),
                GetReduceOpEnumStr(op).c_str());
 
@@ -608,7 +608,7 @@ HcclResult hcclComm::ReduceScatterOutPlace(const std::string &tag, void *inputPt
     HcclDataType dataType, HcclReduceOp op, HcclRtStream stream)
 {
     /* 增加输出日志关键字 */
-    HCCL_DEBUG("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], count[%llu], data_type[%s], op[%s]",
+    HCCL_INFO("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], count[%llu], data_type[%s], op[%s]",
         tag.c_str(), inputPtr, outputPtr, count, GetDataTypeEnumStr(dataType).c_str(), GetReduceOpEnumStr(op).c_str());
 
     /* * 入参检查 */
@@ -628,7 +628,7 @@ HcclResult hcclComm::ReduceScatterV(const std::string &tag, void *inputPtr,
     HcclDataType dataType, HcclReduceOp op, HcclRtStream stream)
 {
     /* 增加输出日志关键字 */
-    HCCL_DEBUG("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], " \
+    HCCL_INFO("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], " \
         "input_counts[%p], input_displs[%p], output_count[%llu], data_type[%s], op[%s]",
         tag.c_str(), inputPtr, outputPtr, inputCounts, inputDispls, outputCount,
         GetDataTypeEnumStr(dataType).c_str(), GetReduceOpEnumStr(op).c_str());
@@ -669,7 +669,7 @@ HcclResult hcclComm::ReduceScatterVOutPlace(const std::string &tag, void *inputP
     HcclDataType dataType, HcclReduceOp op, HcclRtStream stream)
 {
     /* 增加输出日志关键字 */
-    HCCL_DEBUG("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], " \
+    HCCL_INFO("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], " \
         "input_counts[%llu], input_displs[%llu], output_count[%llu], data_type[%s], op[%s]",
         tag.c_str(), inputPtr, outputPtr, inputCounts, inputDispls, outputCount,
         GetDataTypeEnumStr(dataType).c_str(), GetReduceOpEnumStr(op).c_str());
@@ -691,7 +691,7 @@ HcclResult hcclComm::Reduce(const std::string &tag, void *inputPtr, void *output
                             HcclDataType dataType, HcclReduceOp op, u32 root, HcclRtStream stream)
 {
     /* 增加输出日志关键字 */
-    HCCL_DEBUG("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], count[%llu], data_type[%s], op[%s], root[%u]",\
+    HCCL_INFO("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], count[%llu], data_type[%s], op[%s], root[%u]",\
                tag.c_str(), inputPtr, outputPtr, count, GetDataTypeEnumStr(dataType).c_str(),
                GetReduceOpEnumStr(op).c_str(), root);
 
@@ -724,7 +724,7 @@ HcclResult hcclComm::ReduceOutPlace(const std::string &tag, void *inputPtr, void
     HcclDataType dataType, HcclReduceOp op, u32 root, HcclRtStream stream)
 {
     /* 增加输出日志关键字 */
-    HCCL_DEBUG("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], count[%llu], data_type[%s], op[%s], root[%u]",
+    HCCL_INFO("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], count[%llu], data_type[%s], op[%s], root[%u]",
         tag.c_str(), inputPtr, outputPtr, count, GetDataTypeEnumStr(dataType).c_str(), GetReduceOpEnumStr(op).c_str(),
         root);
 
@@ -757,7 +757,7 @@ HcclResult hcclComm::send(const std::string &tag, void *inputPtr, u64 count, Hcc
                           u32 destRank, rtStream_t stream, u32 srTag, u32 localGroupRank)
 {
     /* 增加输出日志关键字 */
-    HCCL_DEBUG("HCCL_KEY_INFO: tag[%s], input_ptr[%p], count[%llu], data_type[%s], destRank[%u]",
+    HCCL_INFO("HCCL_KEY_INFO: tag[%s], input_ptr[%p], count[%llu], data_type[%s], destRank[%u]",
         tag.c_str(), inputPtr, count, GetDataTypeEnumStr(dataType).c_str(), destRank);
 
     /* 入参检查 */
@@ -785,7 +785,7 @@ HcclResult hcclComm::SendOutPlace(const std::string &tag, void *inputPtr, u64 co
     u32 destRank, rtStream_t stream)
 {
     /* 增加输出日志关键字 */
-    HCCL_DEBUG("HCCL_KEY_INFO: tag[%s], input_ptr[%p], count[%llu], data_type[%s], destRank[%u],",
+    HCCL_INFO("HCCL_KEY_INFO: tag[%s], input_ptr[%p], count[%llu], data_type[%s], destRank[%u],",
         tag.c_str(), inputPtr, count, GetDataTypeEnumStr(dataType).c_str(), destRank);
 
     /* 入参检查 */
@@ -804,7 +804,7 @@ HcclResult hcclComm::ReceiveOutPlace(const std::string &tag, void *outputPtr, u6
     u32 srcRank, rtStream_t stream)
 {
     /* 增加输出日志关键字 */
-    HCCL_DEBUG("HCCL_KEY_INFO: tag[%s], output_ptr[%p], count[%llu], data_type[%s], srcRank[%u]",
+    HCCL_INFO("HCCL_KEY_INFO: tag[%s], output_ptr[%p], count[%llu], data_type[%s], srcRank[%u]",
         tag.c_str(), outputPtr, count, GetDataTypeEnumStr(dataType).c_str(), srcRank);
 
     /* * 入参检查 */
@@ -823,7 +823,7 @@ HcclResult hcclComm::receive(const std::string &tag, void *outputPtr, u64 count,
                              u32 srcRank, rtStream_t stream, u32 srTag, u32 localGroupRank)
 {
     /* 增加输出日志关键字 */
-    HCCL_DEBUG("HCCL_KEY_INFO: tag[%s], output_ptr[%p], count[%llu], data_type[%s], srcRank[%u]",
+    HCCL_INFO("HCCL_KEY_INFO: tag[%s], output_ptr[%p], count[%llu], data_type[%s], srcRank[%u]",
                tag.c_str(), outputPtr, count, GetDataTypeEnumStr(dataType).c_str(), srcRank);
 
     /* * 入参检查 */
