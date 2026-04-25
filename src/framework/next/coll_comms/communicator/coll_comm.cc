@@ -31,7 +31,7 @@ CollComm::CollComm(void * comm, uint32_t rankId, const std::string &commName, co
 CollComm::~CollComm()
 {
     CollCommMgr::GetInstance()->UnRegisteCollComm(this); 
-    HCCL_INFO("[CollComm][~CollComm] collComm deinit");
+    HCCL_INFO("[CollComm][~CollComm] collComm deinit, commId[%s]", commId_.c_str());
     (void)DestroyAicpuComm();
 }
 
@@ -174,6 +174,7 @@ HcclCommStatus CollComm::GetCommStatus() const
 
 HcclResult CollComm::Suspend()
 {
+    HCCL_INFO("[CollComm][Suspend] Suspend commId[%s], commStatus_[%d]", commId_.c_str(), commStatus_);
     if (commStatus_ == HcclCommStatus::HCCL_COMM_STATUS_SUSPENDING) {
         HCCL_WARNING("[CollComm][Suspend] The current communication has been suspended, no need to suspend again.");
         return HcclResult::HCCL_SUCCESS;
