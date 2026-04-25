@@ -111,6 +111,12 @@
 #include "../../../legacy/unified_platform/ccu/ccu_microcode/ccu_assist.h"
 #include "acl/acl_rt.h"
 
+#include "p2p_transport.h"
+#include "dev_capability.h"
+#include "p2p_connection.h"
+#include "rts_cnt_notify.h"
+#include "rts_1ton_cnt_notify.h"
+#include "ipc_local_notify.h"
 
 namespace Hccl {
 
@@ -954,10 +960,10 @@ void UbLocalNotify::ReleaseResource() const
 UbLocalNotify::~UbLocalNotify()
 {}
 
-RtsNotify::RtsNotify(bool devUsed)
-{}
-RtsNotify::~RtsNotify()
-{}
+// RtsNotify::RtsNotify(bool devUsed)
+// {}
+// RtsNotify::~RtsNotify()
+// {}
 
 UbMemTransport::UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, const LinkData &linkData,
     const Socket &socket, RdmaHandle rdmaHandle1, LocCntNotifyRes &locCntNotifyRes1, bool isRecvFirst)
@@ -2213,6 +2219,241 @@ std::shared_ptr<TaskInfo>  MirrorTaskManagerLite::GetTaskInfo(u32 streamId, u32 
     return nullptr;
 }
 
+RtNotify_t HrtIpcOpenNotifyWithFlag(const char_t *name, uint32_t flags)
+{
+    return nullptr;
+}
+
+u32 HrtStreamGetCqId(const aclrtStream ptr)
+{
+    return 0;
+}
+
+void HrtNotifyDestroy(RtNotify_t ptr)
+{
+    return ;
+}
+
+s32 HrtGetStreamId(aclrtStream ptr)
+{
+    return 0;
+}
+
+aclrtStream HrtStreamCreateWithFlags(uint32_t priority, uint32_t flag)
+{
+    static aclrtStream stream;
+    return stream;
+}
+
+u32 HrtNotifyGetOffset(RtNotify_t ptr)
+{
+    return 0;
+}
+
+u32 HrtGetNotifyID(RtNotify_t notifyHandle)
+{
+    return 0;
+}
+
+s32 HrtDeviceGetBareTgid()
+{
+    return 0;
+}
+
+void HrtSetIpcNotifyPid(aclrtNotify notify, int32_t pid)
+{
+    return ;
+}
+
+void HrtStreamDestroy(aclrtStream ptr)
+{
+    return ;
+}
+
+void HrtIpcSetNotifyName(RtNotify_t ptr, char_t *name, uint32_t len)
+{
+    return ;
+}
+
+aclrtNotify HrtNotifyCreateWithFlag(u32 devId, u32 flag)
+{
+    static aclrtNotify notify;
+    return notify;
+}
+
+aclrtNotify HrtNotifyCreate(s32 deviceLogicId)
+{
+    static aclrtNotify notify;
+    return notify;
+}
+
+u64 HrtNotifyGetAddr(RtNotify_t notifyHandle)
+{
+    return 0;
+}
+
+RtNotify_t HrtIpcOpenNotify(const char_t *name)
+{
+    return nullptr;
+}
+
+u32 HrtStreamGetSqId(const aclrtStream ptr)
+{
+    return 0;
+}
+
+void HrtNotifyRecord(RtNotify_t notifyPtr, aclrtStream streamPtr)
+{
+    return ;
+}
+
+void HrtNotifyWaitWithTimeOut(RtNotify_t notifyPtr, aclrtStream streamPtr, uint32_t timeOut)
+{
+    return ;
+}
+
+P2PTransport::P2PTransport(CommonLocRes &commonLocRes, Attribution &attr, const LinkData &linkData,
+                            const Socket &socket)
+    : BaseMemTransport(commonLocRes, attr, linkData, socket, TransportType::P2P)
+{
+}
+
+HcclResult P2PTransport::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags)
+{
+    return HCCL_SUCCESS;
+}
+
+std::vector<char> P2PTransport::GetUniqueIdV2()
+{
+    return {};
+}
+
+std::string P2PTransport::Describe() const
+{
+    return "";
+}
+
+TransportStatus P2PTransport::GetStatus()
+{
+    return TransportStatus::READY;
+}
+
+std::vector<char> P2PTransport::GetUniqueId()
+{
+    return {};
+}
+
+void P2PTransport::Post(u32 index, const Stream &stream)
+{
+    return ;
+}
+
+void P2PTransport::Read(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice, const Stream &stream)
+{
+    return ;
+}
+
+void P2PTransport::ReadReduce(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice, const ReduceIn &reduceIn,
+                const Stream &stream)
+{
+    return ;
+}
+
+void P2PTransport::Write(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice, const Stream &stream)
+{
+    return ;
+}
+
+void P2PTransport::WriteReduce(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice, const ReduceIn &reduceIn,
+                    const Stream &stream)
+{
+    return ;
+}
+
+DevCapability::DevCapability()
+{
+}
+DevCapability &DevCapability::GetInstance()
+{
+    static DevCapability devCapability;
+    return devCapability;
+}
+
+P2PConnection::P2PConnection(Socket *socket, const std::string &tag)
+    : RmaConnection(socket, RmaConnType::P2P)
+{
+}
+
+void P2PConnection::Connect()
+{
+    return ;
+}
+RmaConnStatus P2PConnection::GetStatus()
+{
+    return RmaConnStatus::READY;
+}
+string P2PConnection::Describe() const
+{
+    return "";
+}
+
+unique_ptr<BaseTask> P2PConnection::PrepareRead(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
+                                    const SqeConfig &config)
+{
+    return nullptr;
+}
+
+unique_ptr<BaseTask> P2PConnection::PrepareReadReduce(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
+                                        DataType datatype, ReduceOp reduceOp, const SqeConfig &config)
+{
+    return nullptr;
+}
+
+unique_ptr<BaseTask> P2PConnection::PrepareWrite(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
+                                    const SqeConfig &config)
+{
+    return nullptr;
+}
+
+unique_ptr<BaseTask> P2PConnection::PrepareWriteReduce(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
+                                        DataType datatype, ReduceOp reduceOp, const SqeConfig &config)
+{
+    return nullptr;
+}
+
+std::string RtsCntNotify::Describe() const
+{
+    return "";
+}
+
+std::string Rts1ToNCntNotify::Describe() const
+{
+    return "";
+}
+
+IpcLocalNotify::IpcLocalNotify(bool devUsed) : BaseLocalNotify(RmaType::IPC, devUsed)
+{
+}
+
+void IpcLocalNotify::Wait(const Stream &stream, u32 timeout) const
+{
+    return ;
+}
+
+void IpcLocalNotify::Post(const Stream &stream) const
+{
+    return ;
+}
+
+std::unique_ptr<Serializable> IpcLocalNotify::GetExchangeDto()
+{
+    return nullptr;
+}
+
+string IpcLocalNotify::Describe() const
+{
+    return "";
+}
 }  // namespace Hccl
 
 HcclResult HcclCommDestroyV2(HcclComm comm)
@@ -2239,4 +2480,3 @@ HcclResult HcclGetRankGraphV2(HcclComm *comm, void **rankGraph)
 {
     return HCCL_SUCCESS;
 }
-

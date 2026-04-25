@@ -55,7 +55,6 @@ protected:
     Hccl::Socket *fakeSocket;
     Hccl::RdmaHandle rdmaHandle = (void *)0x1000000;
 };
-
 class LocalRmaBufferStub : public Hccl::LocalRmaBuffer {
 public:
     LocalRmaBufferStub(std::shared_ptr<Hccl::Buffer> buf, u64 mockAddr, u64 mockSize, u64 mockOffset, u32 mockPid)
@@ -69,7 +68,8 @@ public:
     }
 
     std::unique_ptr<Hccl::Serializable> GetExchangeDto() override {
-        return std::make_unique<Hccl::ExchangeIpcBufferDto>(mockAddr_, mockSize_, mockOffset_, mockPid_);
+        std::string memTag = "HcclBuff";
+        return std::make_unique<Hccl::ExchangeIpcBufferDto>(mockAddr_, mockSize_, mockOffset_, mockPid_, memTag.c_str());
     }
 
     u64 mockAddr_{0};
