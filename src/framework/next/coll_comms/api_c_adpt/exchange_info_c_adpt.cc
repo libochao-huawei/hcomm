@@ -13,7 +13,7 @@
 
 using namespace hccl;
 
-HcclResult HcclResult HcclCommAddExchangeInfo(HcclComm comm, void* data, uint32_t length)
+HcclResult HcclCommAddExchangeInfo(HcclComm comm, void* data, uint32_t length)
 {
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(data);

@@ -285,6 +285,7 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
         HCCL_ERROR("[%s] Failed to acquire channel, group[%s], engine[%d], channelNum[%llu], ret[%d]",
            __func__, hcclComm->GetIdentifier().c_str(), engine, channelNum, ret);
         return ret;
+    }
     
     hcclComm->ClearExchangeInfoState();
  
