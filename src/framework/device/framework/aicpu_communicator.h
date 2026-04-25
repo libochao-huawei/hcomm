@@ -172,7 +172,7 @@ public:
     HcclResult ResumeChangeLink();
     HcclResult ParseHierarchicalAlgOption(u32 *ahcConfInfo);
     void RegisterKfcHandler(AicpuKfcHandlerType type, AicpuKfcHandler cb) { kfcHandlers_[static_cast<size_t>(type)] = cb; }
-    HcclResult RecordHostOrder(const HcclOpResParam *commParam, const std::string& tag, u8 orderLaunchMode); // kernel占到核后，通知host侧
+    HcclResult RecordHostOrder(const HcclOpResParam *commParam, const std::string& tag, const std::string& newTag, u8 orderLaunchMode); // kernel占到核后，通知host侧
     std::string GetTaskExceptionTaskInfo(u32 sqHead, SqeRingBuffer *sqeContextBuffer, uint8_t &type, uint16_t &taskId, uint32_t &remoteRank);
     HcclResult RegisterProfCallBack();
     // 独立算子专用
