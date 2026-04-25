@@ -1336,6 +1336,7 @@ std::string CommunicatorImpl::GetTopoFilePath()
     CHK_PRT_THROW(realpath(topoFilePath.c_str(), resolvedPath) == nullptr,
             HCCL_ERROR("[%s] topo_file_path[%s] is not a valid real path", __func__, topoFilePath.c_str()),
             InvalidParamsException, "topo_file_path error");
+    HCCL_INFO("[CommunicatorImpl::%s] topoFilePath[%s]", __func__, topoFilePath.c_str());
     return topoFilePath;
 }
 

@@ -125,16 +125,20 @@ int TopoGetFilePath(unsigned mainboard_id, char* buf_size, size_t buf_len)
     {
         case MAIN_BOARD_ID_CARD_NOMESH:
             ret = sprintf_s(buf_size, buf_len, "%s/%s", driver_install_path, "driver/topo/950/atlas_350_1.json");
+            printf("[TopoGetFilePath] mainboard_id[%u] -> path[%s]\n", mainboard_id, buf_size);
             break;
         case MAIN_BOARD_ID_CARD_2PMESH:
             ret = sprintf_s(buf_size, buf_len, "%s/%s", driver_install_path, "driver/topo/950/atlas_350_2.json");
+            printf("[TopoGetFilePath] mainboard_id[%u] -> path[%s]\n", mainboard_id, buf_size);
             break;
         case MAIN_BOARD_ID_CARD_4PMESH:
             ret = sprintf_s(buf_size, buf_len, "%s/%s", driver_install_path, "driver/topo/950/atlas_350_3.json");
+            printf("[TopoGetFilePath] mainboard_id[%u] -> path[%s]\n", mainboard_id, buf_size);
             break;
         case MAIN_BOARD_ID_POD:
         case MAIN_BOARD_ID_POD_2D:
             ret = sprintf_s(buf_size, buf_len, "%s/%s", driver_install_path, "driver/topo/950/atlas_950_1.json");
+            printf("[TopoGetFilePath] mainboard_id[%u] -> path[%s]\n", mainboard_id, buf_size);
             break;
         case MAIN_BOARD_ID_SERVER_TYPE1:
         case MAIN_BOARD_ID_SERVER_8PMESH:
@@ -142,9 +146,11 @@ int TopoGetFilePath(unsigned mainboard_id, char* buf_size, size_t buf_len)
         case MAIN_BOARD_ID_SERVER_8PMESH_NOSP:
         case MAIN_BOARD_ID_SERVER_8PMESH_NOSP_UBOE:
             ret = sprintf_s(buf_size, buf_len, "%s/%s", driver_install_path, "driver/topo/950/atlas_850_1.json");
+            printf("[TopoGetFilePath] mainboard_id[%u] -> path[%s]\n", mainboard_id, buf_size);
             break;
         case MAIN_BOARD_ID_SERVER_UBX:
             ret = sprintf_s(buf_size, buf_len, "%s/%s", driver_install_path, "driver/topo/950/atlas_850_3.json");
+            printf("[TopoGetFilePath] mainboard_id[%u] -> path[%s]\n", mainboard_id, buf_size);
             break;
         default:
             break;
