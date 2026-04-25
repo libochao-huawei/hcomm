@@ -69,12 +69,12 @@ void ClusterMonitor::ProcessExceptionEvent()
     }
     return;
 }
-void GetRemoteRankId(unsigned int rankId, unsigned short int status, Hccl::Eid LocalEid, Hccl::Eid RemoteEid)
+void GetRemoteRankId(unsigned int rankId, unsigned short int status, std::string LocalEid, std::string RemoteEid)
 {
     return ClusterMonitor::GetInstance().GetRemoteRankId(rankId, status, LocalEid, RemoteEid);
 }
 
-void ClusterMonitor::GetRemoteRankId(u32 rankId, uint16_t status, Hccl::Eid LocalEid, Hccl::Eid RemoteEid)
+void ClusterMonitor::GetRemoteRankId(u32 rankId, uint16_t status, std::string LocalEid, std::string RemoteEid)
 {
     CqeErrInfo_.CqeRemoterankId = rankId;
     CqeErrInfo_.CqeRemoterstatus = status;
@@ -93,5 +93,7 @@ __attribute__((constructor)) void ClusterMonitorCallBackInit()
 {
     hcomm::RegisterGetAicpuRemoteRankIdCallBackHcomm(GetRemoteRankId);
 }
+
+
 
 }

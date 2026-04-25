@@ -19,6 +19,7 @@
 #include "ccu_rep_context_v1.h"
 #include "ccu_dev_mgr_pub.h"
 #include "ccu_jetty_.h"
+#include "coll_comm.h"
 
 namespace hcomm {
 using RdmaHandle = void*;
@@ -105,6 +106,9 @@ private:
     
     static uint64_t GetCcuGSAValue(int32_t deviceId, uint32_t dieId, uint32_t gsaId);
     static uint16_t GetMSIdPerDie(uint16_t msId) { return msId & 0x7fff; }
+    static void GetCqeErrorInfo(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId);
+    static u32 GetCqeErrDeviceIdByRankId(hccl::CollComm* collComm, uint32_t rankid);
+    static std::string GetCqeErrNetInstanceByRankId(hccl::CollComm* collComm, uint32_t rankid);
 };
 } // namespace hcomm
 

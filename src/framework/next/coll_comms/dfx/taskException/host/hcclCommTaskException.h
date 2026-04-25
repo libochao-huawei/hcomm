@@ -11,6 +11,7 @@
 #define HCCL_COMM_TASKEXCEPTION_H
 
 #include <array>
+#include <string>
 #include "types.h"
 #include "hccl_types.h"
 #include "orion_adapter_rts.h"
@@ -23,7 +24,7 @@
 namespace hcomm {
 using RdmaHandle = void*;
 using GetAicpuTaskExceptionCallBackHcomm = std::function<Hccl::ErrorMessageReport()>; 
-using GetRemoteRankIdCallBackHcomm = void (*)(u32 rankId, uint16_t status, Hccl::Eid LocalEid, Hccl::Eid RemoteEid); // 获取远端rankId的回调函数类型
+using GetRemoteRankIdCallBackHcomm = void (*)(u32 rankId, uint16_t status, std::string LocalEid, std::string RemoteEid); // 获取远端rankId的回调函数类型
 void RegisterGetAicpuRemoteRankIdCallBackHcomm(GetRemoteRankIdCallBackHcomm); // 注册获取远端rankId的回调函数   
 class TaskExceptionHost {
 public:
@@ -43,7 +44,7 @@ private:
     static void PrintGroupErrorMessage(Hccl::ErrorMessageReport &errorMessage, Hccl::TaskInfo &exceptionTaskInfo, std::string &groupRankContent, std::string &stageErrInfo);
     static void PrintOpDataErrorMessage(u32 deviceId, Hccl::ErrorMessageReport &errorMessage, std::string &stageErrInfo);
     static HcclResult PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHandle);
-    static void ClusterMoniterGetRemoteRankId(u32 rankId, uint16_t status, Hccl::Eid LocalEid, Hccl::Eid RemoteEid);
+    static void ClusterMoniterGetRemoteRankId(u32 rankId, uint16_t status, std::string LocalEid, std::string RemoteEid);
 
 
 private:
