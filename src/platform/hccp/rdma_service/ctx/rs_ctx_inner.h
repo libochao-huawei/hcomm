@@ -62,7 +62,7 @@ struct RsCtxAsyncEventCb {
     urma_async_event_t asyncEvent;
     unsigned int resId;
     unsigned int len;
-    char context[CONTEXT_MAX_LEN];
+    uint8_t context[CONTEXT_MAX_LEN];
     struct RsListHead list;
 };
 
