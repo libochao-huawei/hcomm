@@ -20,23 +20,21 @@ target_sources(hcomm PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/hccl_mem_alloc.cc
 )
 
-
 if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         ${src_list}
     )
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/..
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/mgr
+        ${CMAKE_CURRENT_SOURCE_DIR}/aicpu
+        ${CMAKE_CURRENT_SOURCE_DIR}/config
+        ${CMAKE_CURRENT_SOURCE_DIR}/task
+        ${CMAKE_CURRENT_SOURCE_DIR}/topo
+        ${CMAKE_CURRENT_SOURCE_DIR}/exception
+    )
 endif()
-
-target_include_directories(ccl_kernel PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/..
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/mgr
-    ${CMAKE_CURRENT_SOURCE_DIR}/aicpu
-    ${CMAKE_CURRENT_SOURCE_DIR}/config
-    ${CMAKE_CURRENT_SOURCE_DIR}/task
-    ${CMAKE_CURRENT_SOURCE_DIR}/topo
-    ${CMAKE_CURRENT_SOURCE_DIR}/exception
-)
 
 add_subdirectory(opexecounter)
 add_subdirectory(topo)

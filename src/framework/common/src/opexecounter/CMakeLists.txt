@@ -14,7 +14,6 @@ target_sources(hcomm PRIVATE
     ${src_list}
 )
 
-
 if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         ${src_list}

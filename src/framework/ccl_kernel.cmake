@@ -17,8 +17,29 @@ target_sources(ccl_kernel PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/communicator/impl/one_sided_service/i_hccl_one_sided_service.cc
 )
 
-# 添加子目录
+# 添加 src/framework/ 子目录
 add_subdirectory(device)
+add_subdirectory(communicator)
+add_subdirectory(group)
+add_subdirectory(hcom)
+add_subdirectory(nslbdp)
+add_subdirectory(op_base)
+add_subdirectory(common)
+add_subdirectory(cluster_maintenance)
+add_subdirectory(next)
+
+# 添加 src/common/ 子目录
+add_subdirectory(${HCOMM_ROOT_DIR}/src/common/debug/config)
+
+# src/legacy/ 下各子目录
+add_subdirectory(${HCOMM_ROOT_DIR}/src/legacy/common/exception)
+add_subdirectory(${HCOMM_ROOT_DIR}/src/legacy/common/utils)
+add_subdirectory(${HCOMM_ROOT_DIR}/src/legacy/interface)
+add_subdirectory(${HCOMM_ROOT_DIR}/src/legacy/framework)
+add_subdirectory(${HCOMM_ROOT_DIR}/src/legacy/service/collective)
+add_subdirectory(${HCOMM_ROOT_DIR}/src/legacy/unified_platform)
+
+# 添加 src/algorithm/ 子目录
 add_subdirectory(${HCOMM_ROOT_DIR}/src/algorithm/base)
 add_subdirectory(${HCOMM_ROOT_DIR}/src/algorithm/impl)
 
@@ -272,12 +293,21 @@ add_custom_command(
 # 与 ccl_kernel 内容一致，但运行在 AICPU Custom 进程
 # 与 ccl_kernel 区别在于，aicpu_custom 链接 ccl_kernel_plf_a 静态库，ccl_kernel 链接 ccl_kernel_plf 动态库
 add_library(aicpu_custom SHARED)
-add_library(aicpu_custom SHARED)
+
+# 获取 ccl_kernel 所有头文件搜索路径
+get_target_property(CCL_KERNEL_ALL_INCLUDES ccl_kernel INCLUDE_DIRECTORIES)
+if(CCL_KERNEL_ALL_INCLUDES)
+    list(REMOVE_DUPLICATES CCL_KERNEL_ALL_INCLUDES)
+    target_include_directories(aicpu_custom PRIVATE ${CCL_KERNEL_ALL_INCLUDES})
+endif()
+
+# 获取 ccl_kernel 所有源文件
 get_target_property(CCL_KERNEL_ALL_SOURCES ccl_kernel SOURCES)
 if(CCL_KERNEL_ALL_SOURCES)
     list(REMOVE_DUPLICATES CCL_KERNEL_ALL_SOURCES)
     target_sources(aicpu_custom PRIVATE ${CCL_KERNEL_ALL_SOURCES})
 endif()
+
 target_compile_definitions(aicpu_custom PRIVATE
     HCCD
     CCL_KERNEL_AICPU
@@ -289,10 +319,6 @@ target_compile_options(aicpu_custom PRIVATE
 )
 target_link_options(aicpu_custom PRIVATE
     ${CCL_KERNEL_LINK_OPTIONS}
-)
-target_include_directories(aicpu_custom PRIVATE
-    ${CCL_KERNEL_INCLUDE_LIST}
-    ${ORION_HEAD_LIST}
 )
 target_link_directories(aicpu_custom PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/
