@@ -19,6 +19,17 @@
 
 namespace hcomm {
 
+namespace {
+HcclResult UpdateChannelMemInfo(const HcommChannelDesc *channelDesc, ChannelHandle channel)
+{
+    if (channelDesc->memHandleNum > 1) {
+        CHK_RET(static_cast<HcclResult>(HcommChannelUpdateMemInfo(channelDesc->memHandles + 1,
+            channelDesc->memHandleNum - 1, channel)));
+    }
+    return HCCL_SUCCESS;
+}
+} // namespace
+
 EndpointPair::~EndpointPair() 
 {
     for (auto &channels : channelHandles_) {
@@ -33,6 +44,7 @@ HcclResult EndpointPair::Init()
 {
     EXECEPTION_CATCH(socketMgr_ = std::make_unique<SocketMgr>(), return HCCL_E_PTR);
     channelHandles_.clear();
+    channelSockets_.clear();
     return HCCL_SUCCESS;
 }
 
@@ -98,17 +110,35 @@ HcclResult EndpointPair::GetSocket(const uint32_t myRank, const uint32_t rmtRank
 HcclResult EndpointPair::CreateChannel(EndpointHandle endpointHandle, CommEngine engine, u32 reuseIdx,
         HcommChannelDesc *channelDescs, ChannelHandle *channels)
 {
-    if (channelHandles_.find(engine) == channelHandles_.end() || channelHandles_[engine].size() <= reuseIdx) {
+    auto &engineChannelHandles = channelHandles_[engine];
+    auto &engineChannelSockets = channelSockets_[engine];
+    if (engine == COMM_ENGINE_AIV) {
+        for (size_t idx = 0; idx < engineChannelHandles.size(); ++idx) {
+            if (channelDescs->socket != nullptr && idx < engineChannelSockets.size() &&
+                engineChannelSockets[idx] == channelDescs->socket) {
+                channels[0] = engineChannelHandles[idx];
+                CHK_RET(UpdateChannelMemInfo(channelDescs, channels[0]));
+                return HCCL_SUCCESS;
+            }
+        }
+
         CHK_RET_UNAVAIL(static_cast<HcclResult>(
             HcommCollectiveChannelCreate(endpointHandle, engine, channelDescs, 1, channels)));
-        channelHandles_[engine].push_back(channels[0]);
+        engineChannelHandles.push_back(channels[0]);
+        engineChannelSockets.push_back(channelDescs->socket);
         return HCCL_SUCCESS;
     }
 
-    channels[0] = channelHandles_[engine][reuseIdx];
-    if (channelDescs->memHandleNum > 1) {
-        CHK_RET(static_cast<HcclResult>(HcommChannelUpdateMemInfo(channelDescs->memHandles + 1, channelDescs->memHandleNum - 1, channels[0])));
+    if (engineChannelHandles.size() <= reuseIdx) {
+        CHK_RET_UNAVAIL(static_cast<HcclResult>(
+            HcommCollectiveChannelCreate(endpointHandle, engine, channelDescs, 1, channels)));
+        engineChannelHandles.push_back(channels[0]);
+        engineChannelSockets.push_back(channelDescs->socket);
+        return HCCL_SUCCESS;
     }
+
+    channels[0] = engineChannelHandles[reuseIdx];
+    CHK_RET(UpdateChannelMemInfo(channelDescs, channels[0]));
     return HCCL_SUCCESS;
 }
 
@@ -126,6 +156,9 @@ HcclResult EndpointPair::DestroyChannel(CommEngine engine, u32 reuseIdx)
     CHK_RET(static_cast<HcclResult>(HcommChannelDestroy(&channelHandle, 1)));
     // 去掉channelHandles_中reuseIdx位置的channelHandle
     channelHandles_[engine].erase(channelHandles_[engine].begin() + reuseIdx);
+    if (channelSockets_.find(engine) != channelSockets_.end() && channelSockets_[engine].size() > reuseIdx) {
+        channelSockets_[engine].erase(channelSockets_[engine].begin() + reuseIdx);
+    }
     HCCL_INFO("EndpointPair::DestroyChannel: engine[%d] reuseIdx[%u] destroy channel success,"
               "channelHandle size[%u]", engine, reuseIdx, channelHandles_[engine].size());
     return HCCL_SUCCESS;
