@@ -54,6 +54,10 @@ extern "C" {
         const uint64_t count, const HcclRtMemcpyKind kind, hccl::Stream &stream, const u32 remoteUserRank,
         hccl::LinkType linkType);
 
+    HcclResult HcclMemcpyAsyncWithoutCheckKind(HcclDispatcher dispatcherPtr, void *dst, const uint64_t destMax, const void *src,
+        const uint64_t count, const HcclRtMemcpyKind kind, hccl::Stream &stream, const u32 remoteUserRank,
+        hccl::LinkType linkType);
+
     HcclResult HcclReduceAsync(HcclDispatcher dispatcherPtr, void *src, uint64_t count,
         const HcclDataType datatype, const HcclReduceOp reduceOp, hccl::Stream &stream, void *dst,
         const u32 remoteUserRank, const hccl::LinkType linkType, const u64 reduceAttr);
