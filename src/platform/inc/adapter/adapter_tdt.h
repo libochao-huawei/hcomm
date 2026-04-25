@@ -16,11 +16,13 @@
 #include "dltdt_function.h"
 #include "acl/acl_base.h"
 #include "rt_external.h"
+#include "network_manager_pub.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 HcclResult hrtOpenTsd();
+HcclResult hrtOpenTsdwithResvMem(u32 poolId);
 HcclResult hrtOpenNetService(rtNetServiceOpenArgs *openArgs);
 HcclResult hrtCloseNetService();
 HcclResult hrtTsdCapabilityGet(uint32_t deviceLogicId, int32_t type, uint64_t ptr);
