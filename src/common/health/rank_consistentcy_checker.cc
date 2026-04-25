@@ -203,7 +203,7 @@ HcclResult RankConsistentcyChecker::CheckFrameRecv(const u8 *recvBuf, u32 recvBu
         }
         HCCL_INFO("[RankConsistentcyChecker][CheckFrameRecv] HCCL operator info check passed, tag[%s]", tag.c_str());
     }
-    
+
     HCCL_INFO("[RankConsistentcyChecker][CheckFrameRecv] check success, len of frame[%u], tag[%s].",
         recvBufLen, tag.c_str());
     return HCCL_SUCCESS;
@@ -333,9 +333,9 @@ HcclResult RankConsistentcyChecker::CheckHcommInfo(const u8 *recvBuf, u32 recvBu
     // 生成本地Hcomm基础信息
     HcclCRCInfo localCrcInfoGlobal;
     localCrcInfoGlobal.configFileExist_ = configFileExist_;
-    localCrcInfoGlobal.envCrcNum = crcTable_.size();
-    for (u32 i = 0; i < localCrcInfoGlobal.envCrcNum; i++) {
-        localCrcInfoGlobal.envCrcArray[i] = crcTable_[i];
+    localCrcInfoGlobal.crcNum = crcTable_.size();
+    for (u32 i = 0; i < localCrcInfoGlobal.crcNum; i++) {
+        localCrcInfoGlobal.crcArray[i] = crcTable_[i];
     }
 
     // 对比环境变量CRC
@@ -347,20 +347,20 @@ HcclResult RankConsistentcyChecker::CheckHcommInfo(const u8 *recvBuf, u32 recvBu
         "HCCL_RDMA_QPS_PER_CONNECTION",
         "HCCL_MULTI_QP_THRESHOLD"
     };
-    if (localCrcInfoGlobal.envCrcNum != recvCrcInfoGlobal.envCrcNum) {
+    if (localCrcInfoGlobal.crcNum != recvCrcInfoGlobal.crcNum) {
         HCCL_ERROR("[RankConsistentcyChecker][CheckHcommInfo] CRC count mismatch: local[%u], remote[%u]", 
-            localCrcInfoGlobal.envCrcNum, recvCrcInfoGlobal.envCrcNum);
+            localCrcInfoGlobal.crcNum, recvCrcInfoGlobal.crcNum);
         isDiff = true;
     } else {
-        for (u32 i = 0; i < localCrcInfoGlobal.envCrcNum; i++) {
-            if (localCrcInfoGlobal.envCrcArray[i] != recvCrcInfoGlobal.crcArray[i]) {
+        for (u32 i = 0; i < localCrcInfoGlobal.crcNum; i++) {
+            if (localCrcInfoGlobal.crcArray[i] != recvCrcInfoGlobal.crcArray[i]) {
                 std::string envVarName = ENV_VAR_NAMES[i];
                 HCCL_ERROR("[RankConsistentcyChecker][CheckHcommInfo] Env var Crc mismatch:%s local[0x%x], remote[0x%x]", 
-                    envVarName, localCrcInfoGlobal.envCrcArray[i], recvCrcInfoGlobal.crcArray[i]);
+                    envVarName, localCrcInfoGlobal.crcArray[i], recvCrcInfoGlobal.crcArray[i]);
                 RPT_INPUT_ERR(true, "EI0005", 
                     std::vector<std::string>({"ccl_op", "group", "para_name", "local_para", "remote_para"}), 
                     std::vector<std::string>({"N/A", tag, "envVarName", 
-                        std::to_string(localCrcInfoGlobal.envCrcArray[i]), std::to_string(recvCrcInfoGlobal.crcArray[i])}));
+                        std::to_string(localCrcInfoGlobal.crcArray[i]), std::to_string(recvCrcInfoGlobal.crcArray[i])}));
                 isDiff = true;
             }
         }
@@ -591,9 +591,9 @@ HcclResult RankConsistentcyChecker::GenerateCheckFrame(HcclCheckInfo &checkInfo,
 
     // 添加CRC字段到校验帧
     checkInfo.crcInfoGlobal.configFileExist_ = configFileExist_;
-    checkInfo.crcInfoGlobal.envCrcNum = crcTable_.size();
+    checkInfo.crcInfoGlobal.crcNum = crcTable_.size();
     for (u32 i = 0; i < checkInfo.crcInfoGlobal.envCrcNum; i++) {
-        checkInfo.crcInfoGlobal.envCrcArray[i] = crcTable_[i];
+        checkInfo.crcInfoGlobal.crcArray[i] = crcTable_[i];
     }
     // 添加CMD参数信息到校验帧
     {
