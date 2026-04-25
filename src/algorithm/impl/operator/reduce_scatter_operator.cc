@@ -513,6 +513,12 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
         } else {
             algName = "ReduceScatterRingZerocopyExchangeExecutor";      // 连续数据通信+数据交换（AHC不支持）
         }
+    } else if (isOpbase && superPodNum_ > 1 &&
+               !isAHCAlgo &&
+               (topoType_ == TopoType::TOPO_TYPE_NP_SINGLE_RING ||
+                topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING) &&
+               dataSize >= HCCL_SMALL_COUNT_2_MB) {
+        algName = "ReduceScatterPipelineFor91093Executor";
     } else {
         if (topoType_ == TopoType::TOPO_TYPE_NP_SINGLE_RING) {
             algName = "ReduceScatterRingFor91093Executor";
