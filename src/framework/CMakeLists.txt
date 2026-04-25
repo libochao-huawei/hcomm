@@ -1017,7 +1017,7 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
 endif()
 
 if(DEVICE_MODE AND KERNEL_MODE)
-    set(CCL_KERNEL_TAR_DIR ${HCCL_BASE_DIR}/../build_device/ccl_kernel_tar_pkg/aicpu_kernels_device)
+    set(CCL_KERNEL_TAR_DIR ${CMAKE_BINARY_DIR}/ccl_kernel_tar_pkg/aicpu_kernels_device)
     add_custom_command(
         TARGET ccl_kernel
         POST_BUILD
