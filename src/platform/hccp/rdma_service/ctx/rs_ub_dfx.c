@@ -157,6 +157,7 @@ STATIC int RsHandleEpollPollJfc(struct RsUbDevCb *devCb, urma_jfce_t *jfce)
         ret = -EOPENSRC;
         goto rearm_jfc;
     }
+    hccp_run_info("rs_urma_poll_jfc succ");
 
     for (i = 0; i < polledCnt; i++) {
         jettyId = gCrBuf[i].local_id;
