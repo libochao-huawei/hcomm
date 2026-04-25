@@ -141,7 +141,7 @@ HcclResult OrderLaunch::InitGroupCtx(const std::string &group)
 }
 
 // aclgraph模式下，先在kernel stream上写record，再在上order stream写wait；解order stream的wait
-HcclResult OrderLaunch::AclgraphLaunchInOrderToOrderStream(std::string &group, const Stream& kernelStream,
+HcclResult OrderLaunch::AclgraphLaunchInOrderToOrderStream(const std::string &tag, std::string &group, const Stream& kernelStream,
     std::shared_ptr<LocalNotify> notify0, std::shared_ptr<LocalNotify> notify1, u32 timeOut, HcclRtEvent event)
 {
     std::unique_lock<std::mutex> mapLock(streamMutex_);
@@ -158,15 +158,15 @@ HcclResult OrderLaunch::AclgraphLaunchInOrderToOrderStream(std::string &group, c
     // kernelStream -> aclgraphStream
     ret = aclrtRecordEvent(event, kernelStream.ptr());
     CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[%s]aclrtRecordEvent failed, ret[%d]", __func__, ret), HCCL_E_RUNTIME);
-    HCCL_CONFIG_INFO(HCCL_TASK, "[%s]aclrtRecordEvent para: kernelStreamId[%d]", __func__, kernelStream.id());
+    HCCL_CONFIG_INFO(HCCL_TASK, "[%s]aclrtRecordEvent para: tag[%s], kernelStreamId[%d]",  __func__, tag.c_str(), kernelStream.id());
 
     ret = aclrtStreamWaitEvent(aclgraphStream.ptr(), event);
     CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[%s]aclrtStreamWaitEvent failed, ret[%d]", __func__, ret), HCCL_E_RUNTIME);
-    HCCL_CONFIG_INFO(HCCL_TASK, "[%s]aclrtStreamWaitEvent para: orderStreamId[%d]",  __func__, aclgraphStream.id());
+    HCCL_CONFIG_INFO(HCCL_TASK, "[%s]aclrtStreamWaitEvent para: tag[%s], orderStreamId[%d]",  __func__, tag.c_str(), aclgraphStream.id());
 
-    HCCL_INFO("[%s] group[%s], kernelStreamId[%u], orderStreamId[%u], context[0x%llx]",
-        __func__, group.c_str(), kernelStream.id(), aclgraphStream.id(), context);
-    CHK_RET(LaunchInOrder(group, kernelStream, aclgraphStream, notify0, notify1, timeOut));
+    HCCL_INFO("[%s] tag[%s], group[%s], kernelStreamId[%u], orderStreamId[%u], context[0x%llx]",
+        __func__, tag.c_str(), group.c_str(), kernelStream.id(), aclgraphStream.id(), context);
+    CHK_RET(LaunchInOrder(tag, group, kernelStream, aclgraphStream, notify0, notify1, timeOut));
     return HCCL_SUCCESS;
 }
 
@@ -176,7 +176,7 @@ HcclResult OrderLaunch::AclgraphLaunchInOrderToOrderStream(std::string &group, c
  * 1. 在order stream上record事件
  * 2. 在kernel stream上wait该事件，解开kernel stream的阻塞
  */
-HcclResult OrderLaunch::AclgraphLaunchInOrderToKernelStream(std::string &group, const Stream& kernelStream,
+HcclResult OrderLaunch::AclgraphLaunchInOrderToKernelStream(const std::string &tag, std::string &group, const Stream& kernelStream,
     HcclRtEvent event)
 {
     std::unique_lock<std::mutex> mapLock(streamMutex_);
@@ -196,23 +196,23 @@ HcclResult OrderLaunch::AclgraphLaunchInOrderToKernelStream(std::string &group, 
     aclError ret = ACL_SUCCESS;
     ret = aclrtRecordEvent(event, aclgraphStream.ptr());
     CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[%s]aclrtRecordEvent failed, ret[%d]", __func__, ret), HCCL_E_RUNTIME);
-    HCCL_CONFIG_INFO(HCCL_TASK, "[%s]aclrtRecordEvent para: orderStreamId[%d]", __func__, aclgraphStream.id());
+    HCCL_CONFIG_INFO(HCCL_TASK, "[%s]aclrtRecordEvent para: tag[%s], orderStreamId[%d]",  __func__, tag.c_str(), aclgraphStream.id());
 
     ret = aclrtStreamWaitEvent(kernelStream.ptr(), event);
     CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[%s]aclrtStreamWaitEvent failed, ret[%d]", __func__, ret), HCCL_E_RUNTIME);
-    HCCL_CONFIG_INFO(HCCL_TASK, "[%s]aclrtStreamWaitEvent para: kernelStreamId[%d]", __func__, kernelStream.id());
+    HCCL_CONFIG_INFO(HCCL_TASK, "[%s]aclrtStreamWaitEvent para: tag[%s], kernelStreamId[%d]",  __func__, tag.c_str(), kernelStream.id());
 
-    HCCL_INFO("[%s] group[%s], kernelStreamId[%u], orderStreamId[%u], context[0x%llx]",
-        __func__, group.c_str(), kernelStream.id(), aclgraphStream.id(), ctxIt->second);
+    HCCL_INFO("[%s] tag[%s], group[%s], kernelStreamId[%u], orderStreamId[%u], context[0x%llx]",
+        __func__, tag.c_str(), group.c_str(), kernelStream.id(), aclgraphStream.id(), ctxIt->second);
     return HCCL_SUCCESS;
 }
 
-HcclResult OrderLaunch::OpbaseLaunchInOrder(std::string &group, const Stream& kernelStream,
+HcclResult OrderLaunch::OpbaseLaunchInOrder(const std::string &tag, std::string &group, const Stream& kernelStream,
     std::shared_ptr<LocalNotify> notify0, std::shared_ptr<LocalNotify> notify1, u32 timeOut)
 {
     std::unique_lock<std::mutex> mapLock(streamMutex_);
-    HCCL_INFO("[OrderLaunch][OpbaseLaunchInOrder] group[%s], kernelStreamId[%u], timeOut[%d]",
-        group.c_str(), kernelStream.id(), timeOut);
+    HCCL_INFO("[OrderLaunch][OpbaseLaunchInOrder] tag[%s], group[%s], kernelStreamId[%u], timeOut[%d]",
+        tag.c_str(), group.c_str(), kernelStream.id(), timeOut);
     // group未注册过，或者未记录过算子下发阶段的线程context
     if (groupCtxMap_.find(group) == groupCtxMap_.end() || groupCtxMap_[group] == INVALID_U64) {
         CHK_RET(InitGroupCtx(group));
@@ -222,9 +222,9 @@ HcclResult OrderLaunch::OpbaseLaunchInOrder(std::string &group, const Stream& ke
     Stream& opbaseStream = contextResMgrMap_[context].opbaseStream;
     EnsureOrderStreamForGroup(group, context, opbaseStream); // 单算子控制流
 
-    HCCL_INFO("[%s] group[%s], kernelStreamId[%u], orderStreamId[%u], context[0x%llx]",
-        __func__, group.c_str(), kernelStream.id(), opbaseStream.id(), context);
-    CHK_RET(LaunchInOrder(group, kernelStream, opbaseStream, notify0, notify1, timeOut));
+    HCCL_INFO("[%s] tag[%s], group[%s], kernelStreamId[%u], orderStreamId[%u], context[0x%llx]",
+        __func__, tag.c_str(), group.c_str(), kernelStream.id(), opbaseStream.id(), context);
+    CHK_RET(LaunchInOrder(tag, group, kernelStream, opbaseStream, notify0, notify1, timeOut));
     return HCCL_SUCCESS;
 }
 
@@ -233,19 +233,19 @@ HcclResult OrderLaunch::OpbaseLaunchInOrder(std::string &group, const Stream& ke
  *
  * 图模式下，使用预先设置的hcomAttachedStream作为order stream
  */
-HcclResult OrderLaunch::HcomLaunchInOrder(std::string &group, const Stream& kernelStream, u32 graphId,
+HcclResult OrderLaunch::HcomLaunchInOrder(const std::string &tag, std::string &group, const Stream& kernelStream, u32 graphId,
     std::shared_ptr<LocalNotify> notify0, std::shared_ptr<LocalNotify> notify1, u32 timeOut)
 {
     std::unique_lock<std::mutex> mapLock(streamMutex_);
     Stream hostOrderStream;
     if (hcomStreamMap_.find(graphId) == hcomStreamMap_.end()) {
-        HCCL_ERROR("[%s] graphId[%u] group[%s] stream not found", __func__, graphId, group.c_str());
+        HCCL_ERROR("[%s] tag[%s], graphId[%u] group[%s] stream not found", __func__, tag.c_str(), graphId, group.c_str());
         return HCCL_E_NOT_FOUND;
     }
     hostOrderStream = hcomStreamMap_[graphId];
     CHK_PTR_NULL(hostOrderStream.ptr());
-    HCCL_INFO("[%s] group[%s], graphId[%u], streamId[%u]", __func__, group.c_str(), graphId, hostOrderStream.id());
-    CHK_RET(LaunchInOrder(group, kernelStream, hostOrderStream, notify0, notify1, timeOut));
+    HCCL_INFO("[%s] tag[%s], group[%s], graphId[%u], streamId[%u]", __func__, tag.c_str(), group.c_str(), graphId, hostOrderStream.id());
+    CHK_RET(LaunchInOrder(tag, group, kernelStream, hostOrderStream, notify0, notify1, timeOut));
     return HCCL_SUCCESS;
 }
 
@@ -255,7 +255,7 @@ HcclResult OrderLaunch::HcomLaunchInOrder(std::string &group, const Stream& kern
  * 2. record notify0 on hostOrderStream - 在order stream上record notify
  * 3. wait notify1 on hostOrderStream - 等待其他算子在order stream上完成
  */
-HcclResult OrderLaunch::LaunchInOrder(std::string &group, const Stream &kernelStream, const Stream &hostOrderStream,
+HcclResult OrderLaunch::LaunchInOrder(const std::string &tag, std::string &group, const Stream &kernelStream, const Stream &hostOrderStream,
     std::shared_ptr<LocalNotify> notify0, std::shared_ptr<LocalNotify> notify1, u32 timeOut) 
 {
     CHK_SMART_PTR_NULL(notify0);
@@ -263,23 +263,23 @@ HcclResult OrderLaunch::LaunchInOrder(std::string &group, const Stream &kernelSt
     aclError ret = ACL_SUCCESS;
     ret = aclrtWaitAndResetNotify(notify0->ptr(), kernelStream.ptr(), timeOut);
     CHK_PRT_RET(ret != ACL_SUCCESS,
-        HCCL_ERROR("[%s] aclrtWaitAndResetNotify failed, ret[%d], notifyId[%u], streamId[%d], timeOut[%d s]",
-        __func__, ret, notify0->notifyId_, kernelStream.id(), timeOut), HCCL_E_RUNTIME);
-    HCCL_CONFIG_INFO(HCCL_TASK, "[%s] aclrtWaitAndResetNotify para: notifyId[%u], streamId[%d], timeOut[%d s]",
-        __func__, notify0->notifyId_, kernelStream.id(), timeOut);
+        HCCL_ERROR("[%s] tag[%s], aclrtWaitAndResetNotify failed, ret[%d], notifyId[%u], streamId[%d], timeOut[%d s]",
+        __func__, tag.c_str(), ret, notify0->notifyId_, kernelStream.id(), timeOut), HCCL_E_RUNTIME);
+    HCCL_CONFIG_INFO(HCCL_TASK, "[%s] aclrtWaitAndResetNotify para: tag[%s], notifyId[%u], streamId[%d], timeOut[%d s]",
+        __func__, tag.c_str(), notify0->notifyId_, kernelStream.id(), timeOut);
 
     ret = aclrtRecordNotify(notify0->ptr(), hostOrderStream.ptr());
     CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[%s] aclrtRecordNotify failed, ret[%d], notifyId[%u], streamId[%d]",
-        __func__, ret, notify0->notifyId_, hostOrderStream.id()), HCCL_E_RUNTIME);
-    HCCL_CONFIG_INFO(HCCL_TASK, "[%s] aclrtRecordNotify para: notifyId[%u], streamId[%d]",
-        __func__, notify0->notifyId_, hostOrderStream.id());
+        __func__, tag.c_str(), ret, notify0->notifyId_, hostOrderStream.id()), HCCL_E_RUNTIME);
+    HCCL_CONFIG_INFO(HCCL_TASK, "[%s] aclrtRecordNotify para: tag[%s], notifyId[%u], streamId[%d]",
+        __func__, tag.c_str(), notify0->notifyId_, hostOrderStream.id());
 
     ret = aclrtWaitAndResetNotify(notify1->ptr(), hostOrderStream.ptr(), timeOut);
     CHK_PRT_RET(ret != ACL_SUCCESS,
         HCCL_ERROR("[%s] aclrtWaitAndResetNotify failed, ret[%d], notifyId[%u], streamId[%d], timeOut[%d s]",
-        __func__, ret, notify1->notifyId_, hostOrderStream.id(), timeOut), HCCL_E_RUNTIME);
-    HCCL_CONFIG_INFO(HCCL_TASK, "[%s] aclrtWaitAndResetNotify para: notifyId[%u], streamId[%d], timeOut[%d s]",
-        __func__, notify1->notifyId_, hostOrderStream.id(), timeOut);
+        __func__, tag.c_str(), ret, notify1->notifyId_, hostOrderStream.id(), timeOut), HCCL_E_RUNTIME);
+    HCCL_CONFIG_INFO(HCCL_TASK, "[%s] aclrtWaitAndResetNotify para: tag[%s], notifyId[%u], streamId[%d], timeOut[%d s]",
+        __func__, tag.c_str(), notify1->notifyId_, hostOrderStream.id(), timeOut);
     return HCCL_SUCCESS;
 }
 

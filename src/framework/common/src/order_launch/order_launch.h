@@ -68,14 +68,14 @@ public:
     HcclResult RegisterOrderLaunch(const std::string &group);
     HcclResult UnRegisterOrderLaunch(const std::string &group);
 
-    HcclResult AclgraphLaunchInOrderToOrderStream(std::string &group, const Stream& kernelStream,
+    HcclResult AclgraphLaunchInOrderToOrderStream(const std::string &tag, std::string &group, const Stream& kernelStream,
         std::shared_ptr<LocalNotify> notify0, std::shared_ptr<LocalNotify> notify1, u32 timeOut, HcclRtEvent event);
-    HcclResult AclgraphLaunchInOrderToKernelStream(std::string &group, const Stream& kernelStream, HcclRtEvent event);
+    HcclResult AclgraphLaunchInOrderToKernelStream(const std::string &tag, std::string &group, const Stream& kernelStream, HcclRtEvent event);
 
-    HcclResult OpbaseLaunchInOrder(std::string &group, const Stream& kernelStream,
+    HcclResult OpbaseLaunchInOrder(const std::string &tag, std::string &group, const Stream& kernelStream,
         std::shared_ptr<LocalNotify> notify0, std::shared_ptr<LocalNotify> notify1, u32 timeOut);
 
-    HcclResult HcomLaunchInOrder(std::string &group, const Stream& kernelStream, u32 graphId,
+    HcclResult HcomLaunchInOrder(const std::string &tag, std::string &group, const Stream& kernelStream, u32 graphId,
         std::shared_ptr<LocalNotify> notify0, std::shared_ptr<LocalNotify> notify1, u32 timeOut);
 
     HcclResult SetHcomStream(u32 graphId, const Stream& hcomAttachedStream);
