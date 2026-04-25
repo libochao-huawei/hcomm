@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 200" width="500" height="200">
+  <defs>
+    <radialGradient id="bg4" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#f0f4f8"/>
+    </radialGradient>
+    <filter id="gl4"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="500" height="200" fill="url(#bg4)" rx="10" stroke="#ccc" stroke-width="1"/>
+  <text x="250" y="26" text-anchor="middle" fill="#1a1a2e" font-size="14" font-weight="bold" font-family="Arial, sans-serif">10.5 HcclRankGraphGetInstSizeListByLayer</text>
+
+  <rect x="50" y="45" width="400" height="65" rx="8" fill="#e4eff8" stroke="#4a9aca" stroke-width="1.5"/>
+  <text x="250" y="68" text-anchor="middle" fill="#1a5a8a" font-size="12" font-weight="bold" font-family="Arial, sans-serif">netLayer = 0：分为 2 个 TopoInstance（每个 Server 一个）</text>
+  <rect x="120" y="80" width="110" height="20" rx="4" fill="#d4edda" stroke="#28a745" stroke-width="1"/>
+  <text x="175" y="94" text-anchor="middle" fill="#155724" font-size="11" font-weight="bold" font-family="monospace">TopoInst 0: 8 卡</text>
+  <rect x="270" y="80" width="110" height="20" rx="4" fill="#d4edda" stroke="#28a745" stroke-width="1"/>
+  <text x="325" y="94" text-anchor="middle" fill="#155724" font-size="11" font-weight="bold" font-family="monospace">TopoInst 1: 8 卡</text>
+
+  <rect x="50" y="125" width="400" height="65" rx="8" fill="#d6e8f0" stroke="#4a9aca" stroke-width="1.5"/>
+  <text x="250" y="148" text-anchor="middle" fill="#1a5a8a" font-size="12" font-weight="bold" font-family="Arial, sans-serif">netLayer = 1：分为 2 个 TopoInstance（每个 Clos 平面一个）</text>
+  <rect x="120" y="158" width="110" height="20" rx="4" fill="#d4edda" stroke="#28a745" stroke-width="1"/>
+  <text x="175" y="172" text-anchor="middle" fill="#155724" font-size="11" font-weight="bold" font-family="monospace">TopoInst 0: 16 卡</text>
+  <rect x="270" y="158" width="110" height="20" rx="4" fill="#d4edda" stroke="#28a745" stroke-width="1"/>
+  <text x="325" y="172" text-anchor="middle" fill="#155724" font-size="11" font-weight="bold" font-family="monospace">TopoInst 1: 16 卡</text>
+</svg>

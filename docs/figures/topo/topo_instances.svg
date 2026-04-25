@@ -1,0 +1,149 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 440" width="680" height="440">
+  <defs>
+    <radialGradient id="bgT" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#f0f4f8"/>
+    </radialGradient>
+    <radialGradient id="cT" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#0088cc"/><stop offset="100%" stop-color="#005599"/>
+    </radialGradient>
+    <radialGradient id="f0T" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#e85d04"/><stop offset="100%" stop-color="#b94800"/>
+    </radialGradient>
+    <radialGradient id="f1T" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#7c3aed"/><stop offset="100%" stop-color="#5b21b6"/>
+    </radialGradient>
+    <filter id="gT"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="680" height="440" fill="url(#bgT)" rx="12" stroke="#ccc" stroke-width="1"/>
+  <text x="340" y="28" text-anchor="middle" fill="#1a1a2e" font-size="16" font-weight="bold" font-family="Arial, sans-serif">TopoInstance 分布示意（2 Server × 8 卡 + 双平面 Clos）</text>
+
+  <!-- ===== Layer 0: 2 TopoInstances ===== -->
+  <!-- S0 - TopoInst 0 -->
+  <rect x="20" y="50" width="300" height="150" rx="8" fill="none" stroke="#6a9abf" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <rect x="20" y="50" width="300" height="150" rx="8" fill="#d6e8f0" opacity="0.3"/>
+  <text x="170" y="70" text-anchor="middle" fill="#1a5a8a" font-size="12" font-weight="bold" font-family="Arial, sans-serif">Layer 0 · TopoInstance 0（Server 0 内 8 卡）</text>
+  <g filter="url(#gT)">
+    <circle cx="75" cy="115" r="12" fill="url(#cT)"/><circle cx="135" cy="115" r="12" fill="url(#cT)"/>
+    <circle cx="195" cy="115" r="12" fill="url(#cT)"/><circle cx="255" cy="115" r="12" fill="url(#cT)"/>
+    <circle cx="75" cy="160" r="12" fill="url(#cT)"/><circle cx="135" cy="160" r="12" fill="url(#cT)"/>
+    <circle cx="195" cy="160" r="12" fill="url(#cT)"/><circle cx="255" cy="160" r="12" fill="url(#cT)"/>
+  </g>
+  <g fill="#fff" font-size="10" font-weight="bold" text-anchor="middle" font-family="Arial">
+    <text x="75" y="119">0</text><text x="135" y="119">1</text><text x="195" y="119">2</text><text x="255" y="119">3</text>
+    <text x="75" y="164">4</text><text x="135" y="164">5</text><text x="195" y="164">6</text><text x="255" y="164">7</text>
+  </g>
+
+  <!-- S1 - TopoInst 1 -->
+  <rect x="360" y="50" width="300" height="150" rx="8" fill="none" stroke="#6a9abf" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <rect x="360" y="50" width="300" height="150" rx="8" fill="#d6e8f0" opacity="0.3"/>
+  <text x="510" y="70" text-anchor="middle" fill="#1a5a8a" font-size="12" font-weight="bold" font-family="Arial, sans-serif">Layer 0 · TopoInstance 1（Server 1 内 8 卡）</text>
+  <g filter="url(#gT)">
+    <circle cx="415" cy="115" r="12" fill="url(#cT)"/><circle cx="475" cy="115" r="12" fill="url(#cT)"/>
+    <circle cx="535" cy="115" r="12" fill="url(#cT)"/><circle cx="595" cy="115" r="12" fill="url(#cT)"/>
+    <circle cx="415" cy="160" r="12" fill="url(#cT)"/><circle cx="475" cy="160" r="12" fill="url(#cT)"/>
+    <circle cx="535" cy="160" r="12" fill="url(#cT)"/><circle cx="595" cy="160" r="12" fill="url(#cT)"/>
+  </g>
+  <g fill="#fff" font-size="10" font-weight="bold" text-anchor="middle" font-family="Arial">
+    <text x="415" y="119">8</text><text x="475" y="119">9</text><text x="535" y="119">10</text><text x="595" y="119">11</text>
+    <text x="415" y="164">12</text><text x="475" y="164">13</text><text x="535" y="164">14</text><text x="595" y="164">15</text>
+  </g>
+
+  <!-- ===== Layer 1: 2 TopoInstances (one per Clos plane) ===== -->
+  <!-- TopoInst 0 - Plane 0 -->
+  <rect x="20" y="230" width="300" height="195" rx="8" fill="none" stroke="#e85d04" stroke-width="1.5"/>
+  <rect x="20" y="230" width="300" height="195" rx="8" fill="#fde8d0" opacity="0.2"/>
+  <text x="170" y="252" text-anchor="middle" fill="#c94e00" font-size="12" font-weight="bold" font-family="Arial, sans-serif">Layer 1 · TopoInstance 0（Plane 0 Clos，16 卡）</text>
+
+  <!-- Fabric P0 -->
+  <rect x="70" y="265" width="200" height="30" rx="6" fill="#b94800" stroke="#e85d04" stroke-width="1.5" filter="url(#gT)"/>
+  <text x="170" y="285" text-anchor="middle" fill="#fff" font-size="11" font-weight="bold" font-family="Arial">Fabric P0</text>
+
+  <!-- S0 cards: 4 cols × 2 rows (centered) -->
+  <g filter="url(#gT)">
+    <!-- Row 1 -->
+    <circle cx="80" cy="325" r="10" fill="url(#cT)"/><circle cx="140" cy="325" r="10" fill="url(#cT)"/>
+    <circle cx="200" cy="325" r="10" fill="url(#cT)"/><circle cx="260" cy="325" r="10" fill="url(#cT)"/>
+    <!-- Row 2 -->
+    <circle cx="80" cy="360" r="10" fill="url(#cT)"/><circle cx="140" cy="360" r="10" fill="url(#cT)"/>
+    <circle cx="200" cy="360" r="10" fill="url(#cT)"/><circle cx="260" cy="360" r="10" fill="url(#cT)"/>
+  </g>
+  <g fill="#fff" font-size="9" font-weight="bold" text-anchor="middle" font-family="Arial">
+    <text x="80" y="329">0</text><text x="140" y="329">1</text><text x="200" y="329">2</text><text x="260" y="329">3</text>
+    <text x="80" y="364">4</text><text x="140" y="364">5</text><text x="200" y="364">6</text><text x="260" y="364">7</text>
+  </g>
+
+  <!-- S1 cards: 4 cols × 2 rows (centered) -->
+  <g filter="url(#gT)">
+    <!-- Row 3 -->
+    <circle cx="80" cy="385" r="10" fill="url(#cT)"/><circle cx="140" cy="385" r="10" fill="url(#cT)"/>
+    <circle cx="200" cy="385" r="10" fill="url(#cT)"/><circle cx="260" cy="385" r="10" fill="url(#cT)"/>
+    <!-- Row 4 -->
+    <circle cx="80" cy="410" r="10" fill="url(#cT)"/><circle cx="140" cy="410" r="10" fill="url(#cT)"/>
+    <circle cx="200" cy="410" r="10" fill="url(#cT)"/><circle cx="260" cy="410" r="10" fill="url(#cT)"/>
+  </g>
+  <g fill="#fff" font-size="9" font-weight="bold" text-anchor="middle" font-family="Arial">
+    <text x="80" y="389">8</text><text x="140" y="389">9</text><text x="200" y="389">10</text><text x="260" y="389">11</text>
+    <text x="80" y="414">12</text><text x="140" y="414">13</text><text x="200" y="414">14</text><text x="260" y="414">15</text>
+  </g>
+
+  <!-- P0 links: all cards to Fabric -->
+  <g stroke="#e85d04" stroke-width="0.6" opacity="0.3">
+    <line x1="80" y1="315" x2="170" y2="295"/><line x1="140" y1="315" x2="170" y2="295"/>
+    <line x1="200" y1="315" x2="170" y2="295"/><line x1="260" y1="315" x2="170" y2="295"/>
+    <line x1="80" y1="350" x2="170" y2="295"/><line x1="140" y1="350" x2="170" y2="295"/>
+    <line x1="200" y1="350" x2="170" y2="295"/><line x1="260" y1="350" x2="170" y2="295"/>
+    <line x1="80" y1="375" x2="170" y2="295"/><line x1="140" y1="375" x2="170" y2="295"/>
+    <line x1="200" y1="375" x2="170" y2="295"/><line x1="260" y1="375" x2="170" y2="295"/>
+    <line x1="80" y1="400" x2="170" y2="295"/><line x1="140" y1="400" x2="170" y2="295"/>
+    <line x1="200" y1="400" x2="170" y2="295"/><line x1="260" y1="400" x2="170" y2="295"/>
+  </g>
+
+  <!-- TopoInst 1 - Plane 1 -->
+  <rect x="360" y="230" width="300" height="195" rx="8" fill="none" stroke="#7c3aed" stroke-width="1.5"/>
+  <rect x="360" y="230" width="300" height="195" rx="8" fill="#e8d5f8" opacity="0.2"/>
+  <text x="510" y="252" text-anchor="middle" fill="#5b21b6" font-size="12" font-weight="bold" font-family="Arial, sans-serif">Layer 1 · TopoInstance 1（Plane 1 Clos，16 卡）</text>
+
+  <!-- Fabric P1 -->
+  <rect x="410" y="265" width="200" height="30" rx="6" fill="#5b21b6" stroke="#7c3aed" stroke-width="1.5" filter="url(#gT)"/>
+  <text x="510" y="285" text-anchor="middle" fill="#fff" font-size="11" font-weight="bold" font-family="Arial">Fabric P1</text>
+
+  <!-- S0 cards: 4 cols × 2 rows (centered) -->
+  <g filter="url(#gT)">
+    <!-- Row 1 -->
+    <circle cx="420" cy="325" r="10" fill="url(#cT)"/><circle cx="480" cy="325" r="10" fill="url(#cT)"/>
+    <circle cx="540" cy="325" r="10" fill="url(#cT)"/><circle cx="600" cy="325" r="10" fill="url(#cT)"/>
+    <!-- Row 2 -->
+    <circle cx="420" cy="360" r="10" fill="url(#cT)"/><circle cx="480" cy="360" r="10" fill="url(#cT)"/>
+    <circle cx="540" cy="360" r="10" fill="url(#cT)"/><circle cx="600" cy="360" r="10" fill="url(#cT)"/>
+  </g>
+  <g fill="#fff" font-size="9" font-weight="bold" text-anchor="middle" font-family="Arial">
+    <text x="420" y="329">0</text><text x="480" y="329">1</text><text x="540" y="329">2</text><text x="600" y="329">3</text>
+    <text x="420" y="364">4</text><text x="480" y="364">5</text><text x="540" y="364">6</text><text x="600" y="364">7</text>
+  </g>
+
+  <!-- S1 cards: 4 cols × 2 rows (centered) -->
+  <g filter="url(#gT)">
+    <!-- Row 3 -->
+    <circle cx="420" cy="385" r="10" fill="url(#cT)"/><circle cx="480" cy="385" r="10" fill="url(#cT)"/>
+    <circle cx="540" cy="385" r="10" fill="url(#cT)"/><circle cx="600" cy="385" r="10" fill="url(#cT)"/>
+    <!-- Row 4 -->
+    <circle cx="420" cy="410" r="10" fill="url(#cT)"/><circle cx="480" cy="410" r="10" fill="url(#cT)"/>
+    <circle cx="540" cy="410" r="10" fill="url(#cT)"/><circle cx="600" cy="410" r="10" fill="url(#cT)"/>
+  </g>
+  <g fill="#fff" font-size="9" font-weight="bold" text-anchor="middle" font-family="Arial">
+    <text x="420" y="389">8</text><text x="480" y="389">9</text><text x="540" y="389">10</text><text x="600" y="389">11</text>
+    <text x="420" y="414">12</text><text x="480" y="414">13</text><text x="540" y="414">14</text><text x="600" y="414">15</text>
+  </g>
+
+  <!-- P1 links: all cards to Fabric -->
+  <g stroke="#7c3aed" stroke-width="0.6" opacity="0.3">
+    <line x1="420" y1="315" x2="510" y2="295"/><line x1="480" y1="315" x2="510" y2="295"/>
+    <line x1="540" y1="315" x2="510" y2="295"/><line x1="600" y1="315" x2="510" y2="295"/>
+    <line x1="420" y1="350" x2="510" y2="295"/><line x1="480" y1="350" x2="510" y2="295"/>
+    <line x1="540" y1="350" x2="510" y2="295"/><line x1="600" y1="350" x2="510" y2="295"/>
+    <line x1="420" y1="375" x2="510" y2="295"/><line x1="480" y1="375" x2="510" y2="295"/>
+    <line x1="540" y1="375" x2="510" y2="295"/><line x1="600" y1="375" x2="510" y2="295"/>
+    <line x1="420" y1="400" x2="510" y2="295"/><line x1="480" y1="400" x2="510" y2="295"/>
+    <line x1="540" y1="400" x2="510" y2="295"/><line x1="600" y1="400" x2="510" y2="295"/>
+  </g>
+</svg>

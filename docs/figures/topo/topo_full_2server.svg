@@ -1,0 +1,158 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 700" width="900" height="700">
+  <defs>
+    <radialGradient id="bgMain" cx="50%" cy="50%" r="75%">
+      <stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#f0f4f8"/>
+    </radialGradient>
+    <radialGradient id="card" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#0088cc"/><stop offset="100%" stop-color="#005599"/>
+    </radialGradient>
+    <radialGradient id="fab0" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#e85d04"/><stop offset="100%" stop-color="#b94800"/>
+    </radialGradient>
+    <radialGradient id="fab1" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#7c3aed"/><stop offset="100%" stop-color="#5b21b6"/>
+    </radialGradient>
+    <filter id="gl"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="shadow"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.2"/></filter>
+  </defs>
+  <rect width="900" height="700" fill="url(#bgMain)" rx="12" stroke="#ccc" stroke-width="1"/>
+
+  <text x="450" y="30" text-anchor="middle" fill="#1a1a2e" font-size="20" font-weight="bold" font-family="Arial, sans-serif">2 Server × 8 卡集群完整拓扑图</text>
+
+  <!-- Server 0 -->
+  <rect x="30" y="60" width="380" height="290" rx="10" fill="none" stroke="#6a9abf" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="220" y="82" text-anchor="middle" fill="#1a5a8a" font-size="14" font-weight="bold" font-family="Arial, sans-serif">Server 0（Layer 0 TopoInstance 0 · 8 卡 FullMesh）</text>
+
+  <g stroke="#d0dce8" stroke-width="0.8" opacity="0.5">
+    <line x1="100" y1="140" x2="165" y2="140"/><line x1="100" y1="140" x2="230" y2="140"/><line x1="100" y1="140" x2="295" y2="140"/>
+    <line x1="100" y1="140" x2="100" y2="210"/><line x1="100" y1="140" x2="165" y2="210"/><line x1="100" y1="140" x2="230" y2="210"/><line x1="100" y1="140" x2="295" y2="210"/>
+    <line x1="165" y1="140" x2="230" y2="140"/><line x1="165" y1="140" x2="295" y2="140"/>
+    <line x1="165" y1="140" x2="100" y2="210"/><line x1="165" y1="140" x2="165" y2="210"/><line x1="165" y1="140" x2="230" y2="210"/><line x1="165" y1="140" x2="295" y2="210"/>
+    <line x1="230" y1="140" x2="295" y2="140"/>
+    <line x1="230" y1="140" x2="100" y2="210"/><line x1="230" y1="140" x2="165" y2="210"/><line x1="230" y1="140" x2="230" y2="210"/><line x1="230" y1="140" x2="295" y2="210"/>
+    <line x1="295" y1="140" x2="100" y2="210"/><line x1="295" y1="140" x2="165" y2="210"/><line x1="295" y1="140" x2="230" y2="210"/><line x1="295" y1="140" x2="295" y2="210"/>
+    <line x1="100" y1="210" x2="165" y2="210"/><line x1="100" y1="210" x2="230" y2="210"/><line x1="100" y1="210" x2="295" y2="210"/>
+    <line x1="165" y1="210" x2="230" y2="210"/><line x1="165" y1="210" x2="295" y2="210"/><line x1="230" y1="210" x2="295" y2="210"/>
+  </g>
+
+  <g filter="url(#gl)">
+    <circle cx="100" cy="140" r="16" fill="url(#card)" stroke="#0088cc" stroke-width="1.5"/>
+    <circle cx="165" cy="140" r="16" fill="url(#card)" stroke="#0088cc" stroke-width="1.5"/>
+    <circle cx="230" cy="140" r="16" fill="url(#card)" stroke="#0088cc" stroke-width="1.5"/>
+    <circle cx="295" cy="140" r="16" fill="url(#card)" stroke="#0088cc" stroke-width="1.5"/>
+    <circle cx="100" cy="210" r="16" fill="url(#card)" stroke="#0088cc" stroke-width="1.5"/>
+    <circle cx="165" cy="210" r="16" fill="url(#card)" stroke="#0088cc" stroke-width="1.5"/>
+    <circle cx="230" cy="210" r="16" fill="url(#card)" stroke="#0088cc" stroke-width="1.5"/>
+    <circle cx="295" cy="210" r="16" fill="url(#card)" stroke="#0088cc" stroke-width="1.5"/>
+  </g>
+  <g fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" font-family="Arial, sans-serif">
+    <text x="100" y="145">0</text><text x="165" y="145">1</text><text x="230" y="145">2</text><text x="295" y="145">3</text>
+    <text x="100" y="215">4</text><text x="165" y="215">5</text><text x="230" y="215">6</text><text x="295" y="215">7</text>
+  </g>
+
+  <!-- Server 1 -->
+  <rect x="490" y="60" width="380" height="290" rx="10" fill="none" stroke="#6a9abf" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="680" y="82" text-anchor="middle" fill="#1a5a8a" font-size="14" font-weight="bold" font-family="Arial, sans-serif">Server 1（Layer 0 TopoInstance 1 · 8 卡 FullMesh）</text>
+
+  <g stroke="#d0dce8" stroke-width="0.8" opacity="0.5">
+    <line x1="560" y1="140" x2="625" y2="140"/><line x1="560" y1="140" x2="690" y2="140"/><line x1="560" y1="140" x2="755" y2="140"/>
+    <line x1="560" y1="140" x2="560" y2="210"/><line x1="560" y1="140" x2="625" y2="210"/><line x1="560" y1="140" x2="690" y2="210"/><line x1="560" y1="140" x2="755" y2="210"/>
+    <line x1="625" y1="140" x2="690" y2="140"/><line x1="625" y1="140" x2="755" y2="140"/>
+    <line x1="625" y1="140" x2="560" y2="210"/><line x1="625" y1="140" x2="625" y2="210"/><line x1="625" y1="140" x2="690" y2="210"/><line x1="625" y1="140" x2="755" y2="210"/>
+    <line x1="690" y1="140" x2="755" y2="140"/>
+    <line x1="690" y1="140" x2="560" y2="210"/><line x1="690" y1="140" x2="625" y2="210"/><line x1="690" y1="140" x2="690" y2="210"/><line x1="690" y1="140" x2="755" y2="210"/>
+    <line x1="755" y1="140" x2="560" y2="210"/><line x1="755" y1="140" x2="625" y2="210"/><line x1="755" y1="140" x2="690" y2="210"/><line x1="755" y1="140" x2="755" y2="210"/>
+    <line x1="560" y1="210" x2="625" y2="210"/><line x1="560" y1="210" x2="690" y2="210"/><line x1="560" y1="210" x2="755" y2="210"/>
+    <line x1="625" y1="210" x2="690" y2="210"/><line x1="625" y1="210" x2="755" y2="210"/><line x1="690" y1="210" x2="755" y2="210"/>
+  </g>
+
+  <g filter="url(#gl)">
+    <circle cx="560" cy="140" r="16" fill="url(#card)" stroke="#0088cc" stroke-width="1.5"/>
+    <circle cx="625" cy="140" r="16" fill="url(#card)" stroke="#0088cc" stroke-width="1.5"/>
+    <circle cx="690" cy="140" r="16" fill="url(#card)" stroke="#0088cc" stroke-width="1.5"/>
+    <circle cx="755" cy="140" r="16" fill="url(#card)" stroke="#0088cc" stroke-width="1.5"/>
+    <circle cx="560" cy="210" r="16" fill="url(#card)" stroke="#0088cc" stroke-width="1.5"/>
+    <circle cx="625" cy="210" r="16" fill="url(#card)" stroke="#0088cc" stroke-width="1.5"/>
+    <circle cx="690" cy="210" r="16" fill="url(#card)" stroke="#0088cc" stroke-width="1.5"/>
+    <circle cx="755" cy="210" r="16" fill="url(#card)" stroke="#0088cc" stroke-width="1.5"/>
+  </g>
+  <g fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" font-family="Arial, sans-serif">
+    <text x="560" y="145">8</text><text x="625" y="145">9</text><text x="690" y="145">10</text><text x="755" y="145">11</text>
+    <text x="560" y="215">12</text><text x="625" y="215">13</text><text x="690" y="215">14</text><text x="755" y="215">15</text>
+  </g>
+
+  <!-- Fabrics -->
+  <rect x="150" y="390" width="240" height="44" rx="10" fill="#b94800" stroke="#e85d04" stroke-width="2.5" filter="url(#gl)"/>
+  <text x="270" y="417" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="bold" font-family="Arial, sans-serif">Fabric Plane 0</text>
+  <rect x="510" y="390" width="240" height="44" rx="10" fill="#5b21b6" stroke="#7c3aed" stroke-width="2.5" filter="url(#gl)"/>
+  <text x="630" y="417" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="bold" font-family="Arial, sans-serif">Fabric Plane 1</text>
+
+  <!-- TopoInstance labels -->
+  <rect x="150" y="445" width="240" height="28" rx="6" fill="#b94800" opacity="0.15" stroke="#e85d04" stroke-width="1"/>
+  <text x="270" y="464" text-anchor="middle" fill="#c94e00" font-size="11" font-family="Arial, sans-serif">Layer 1 TopoInstance 0 (16 卡)</text>
+  <rect x="510" y="445" width="240" height="28" rx="6" fill="#5b21b6" opacity="0.15" stroke="#7c3aed" stroke-width="1"/>
+  <text x="630" y="464" text-anchor="middle" fill="#5b21b6" font-size="11" font-family="Arial, sans-serif">Layer 1 TopoInstance 1 (16 卡)</text>
+
+  <!-- Plane 0 connections -->
+  <g stroke="#e85d04" stroke-width="1" opacity="0.4">
+    <line x1="100" y1="226" x2="270" y2="390"/><line x1="165" y1="226" x2="270" y2="390"/>
+    <line x1="230" y1="226" x2="270" y2="390"/><line x1="295" y1="226" x2="270" y2="390"/>
+    <line x1="560" y1="226" x2="270" y2="390"/><line x1="625" y1="226" x2="270" y2="390"/>
+    <line x1="690" y1="226" x2="270" y2="390"/><line x1="755" y1="226" x2="270" y2="390"/>
+  </g>
+
+  <!-- Plane 1 connections -->
+  <g stroke="#7c3aed" stroke-width="1" opacity="0.4">
+    <line x1="100" y1="226" x2="630" y2="390"/><line x1="165" y1="226" x2="630" y2="390"/>
+    <line x1="230" y1="226" x2="630" y2="390"/><line x1="295" y1="226" x2="630" y2="390"/>
+    <line x1="560" y1="226" x2="630" y2="390"/><line x1="625" y1="226" x2="630" y2="390"/>
+    <line x1="690" y1="226" x2="630" y2="390"/><line x1="755" y1="226" x2="630" y2="390"/>
+  </g>
+
+  <!-- API Annotations -->
+  <g filter="url(#shadow)">
+    <rect x="20" y="500" width="420" height="36" rx="6" fill="#d6e8f0" stroke="#4a9aca" stroke-width="1.5"/>
+    <text x="35" y="523" fill="#005599" font-size="12" font-weight="bold" font-family="monospace">10.1 GetLayers → [0, 1], layerNum=2</text>
+
+    <rect x="20" y="545" width="420" height="36" rx="6" fill="#d6e8f0" stroke="#4a9aca" stroke-width="1.5"/>
+    <text x="35" y="568" fill="#005599" font-size="12" font-weight="bold" font-family="monospace">10.4 GetTopoTypeByLayer → L0:MESH_1D, L1:CLOS</text>
+
+    <rect x="20" y="590" width="420" height="36" rx="6" fill="#d6e8f0" stroke="#4a9aca" stroke-width="1.5"/>
+    <text x="35" y="613" fill="#005599" font-size="12" font-weight="bold" font-family="monospace">10.3 GetRankSizeByLayer → L0:8, L1:16</text>
+
+    <rect x="460" y="500" width="420" height="36" rx="6" fill="#d6e8f0" stroke="#4a9aca" stroke-width="1.5"/>
+    <text x="475" y="523" fill="#005599" font-size="12" font-weight="bold" font-family="monospace">10.5 GetInstSizeListByLayer → L0:[8,8], L1:[16,16]</text>
+
+    <rect x="460" y="545" width="420" height="36" rx="6" fill="#d6e8f0" stroke="#4a9aca" stroke-width="1.5"/>
+    <text x="475" y="568" fill="#005599" font-size="12" font-weight="bold" font-family="monospace">10.2 GetRanksByLayer(L0) → [0..7] or [8..15]</text>
+
+    <rect x="460" y="590" width="420" height="36" rx="6" fill="#d6e8f0" stroke="#4a9aca" stroke-width="1.5"/>
+    <text x="475" y="613" fill="#005599" font-size="12" font-weight="bold" font-family="monospace">10.6 GetLinks(r0,r8,L1) → 2条UB_CTP链路(P0+P1)</text>
+
+    <rect x="20" y="635" width="420" height="36" rx="6" fill="#d6e8f0" stroke="#4a9aca" stroke-width="1.5"/>
+    <text x="35" y="658" fill="#005599" font-size="12" font-weight="bold" font-family="monospace">10.7 GetTopoInstsByLayer(L1) → [0,1]</text>
+
+    <rect x="460" y="635" width="420" height="36" rx="6" fill="#d6e8f0" stroke="#4a9aca" stroke-width="1.5"/>
+    <text x="475" y="658" fill="#005599" font-size="12" font-weight="bold" font-family="monospace">10.8 GetEndpointNum → 各端点属性查询</text>
+  </g>
+
+  <!-- Arrows -->
+  <g stroke="#4a9aca" stroke-width="1" stroke-dasharray="4,3" opacity="0.6">
+    <line x1="230" y1="500" x2="230" y2="350"/>
+    <line x1="230" y1="545" x2="230" y2="350"/>
+    <line x1="230" y1="590" x2="230" y2="350"/>
+    <line x1="670" y1="500" x2="670" y2="350"/>
+    <line x1="670" y1="545" x2="220" y2="350"/>
+    <line x1="670" y1="590" x2="450" y2="390"/>
+  </g>
+
+  <!-- Legend -->
+  <g font-size="12" font-family="Arial, sans-serif">
+    <line x1="100" y1="688" x2="140" y2="688" stroke="#e85d04" stroke-width="2" opacity="0.7"/>
+    <text x="148" y="692" fill="#c94e00">Plane 0 链路 (UB_CTP)</text>
+    <line x1="320" y1="688" x2="360" y2="688" stroke="#7c3aed" stroke-width="2" opacity="0.7"/>
+    <text x="368" y="692" fill="#5b21b6">Plane 1 链路 (UB_CTP)</text>
+    <line x1="530" y1="688" x2="570" y2="688" stroke="#d0dce8" stroke-width="2" opacity="0.7"/>
+    <text x="578" y="692" fill="#4a6a8a">FullMesh 链路 (UB_CTP)</text>
+  </g>
+</svg>
