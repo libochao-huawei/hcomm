@@ -15,7 +15,9 @@
 #include "dlra_function.h"
 #include "adapter_rts_common.h"
 #include "adapter_rts.h"
-
+#include "adapter_tdt.h"
+#include "adapter_hal.h"
+#include "network_manager_pub.h"
 #define private public
 #define protected public
 #include "network_manager_pub.h"
@@ -609,5 +611,23 @@ TEST_F(HccpTest, Ut_NetworkManager_Destory_HostRaDeinitFail)
     ret = NetworkManager::GetInstance(device_id).Destroy();
     EXPECT_EQ(ret, HCCL_SUCCESS);
     
+    GlobalMockObject::verify();
+}
+
+TEST_F(HccpTest, ut_TsdProcessOpenWithResvMem)
+{
+    HcclResult ret = HCCL_SUCCESS;
+    MOCKER(hrtOpenNetService).stubs().will(returnValue(HCCL_SUCCESS));
+
+    // 新版本driver（主备hccp进程日志可以获取）
+    s32 apiVersion = 0x72318; // MAJOR:0x07, MINOR:0x23, PATCH:0x18 新版本号
+    MOCKER(hrtHalGetAPIVersion).stubs().with(outBound(apiVersion)).will(returnValue(ret));
+    MOCKER(hrtGetPairDevicePhyId).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    ret = NetworkManager::GetInstance(0).TsdProcessOpen(false, true, 0);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ret = NetworkManager::GetInstance(0).TsdProcessOpen(true, true, 0);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ret = hrtOpenTsdwithResvMem(0);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
 }
