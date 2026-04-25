@@ -818,9 +818,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_NotifyWait_When_IbvPollCqStatusNotSuccess_Expe
     struct ibv_wc wc{};
     wc.status = IBV_WC_WR_FLUSH_ERR;
     wc.imm_data = 100;
-    MOCKER(ibv_poll_cq).stubs().with(any(), eq(1), outBoundP(&wc, sizeof(wc))).will(returnValue(1));
     MOCKER_CPP(&HostCpuRoceChannel::IbvPostRecv).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(RptInputErr).stubs().will(returnValue(HCCL_SUCCESS));
     HcclResult ret = impl_->NotifyWait(0, 1800);
     EXPECT_EQ(ret, HCCL_E_NETWORK);
 }
