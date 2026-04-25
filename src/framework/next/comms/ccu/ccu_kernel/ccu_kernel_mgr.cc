@@ -646,8 +646,9 @@ HcclResult CcuKernelMgr::LoadInstruction(const CcuRep::CcuInstrInfo &instrInfo, 
     CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(devLogicId_), devPhyId));
 
     const RaInfo info{NetworkMode::NETWORK_OFFLINE, devPhyId};
-    struct CustomChannelInfoIn  inBuff{};
-    struct CustomChannelInfoOut outBuff{};
+    // CustomChannelInfoIn/Out 在 ccu_dev_mgr_imp.h 中已为 Hccl 类型的 using 别名，不能再用 struct 重复声明
+    CustomChannelInfoIn  inBuff{};
+    CustomChannelInfoOut outBuff{};
 
     // 设置操作码和通道数据
     inBuff.op                          = CcuOpcodeType::CCU_U_OP_SET_INSTRUCTION;
