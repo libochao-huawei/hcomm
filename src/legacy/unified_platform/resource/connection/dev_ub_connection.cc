@@ -24,7 +24,6 @@ namespace Hccl {
 constexpr u32 OPBASED_UB_SQ_DEPTH_MAX = 8192;
 constexpr u32 UB_SQ_OFFLOAD_DEPTH     = 128;
 constexpr u32 UB_SQ_WQEBB_SIZE        = 64;
-constexpr u32 WQE_NUM_PER_SQE         = 4; // URMA约束每个SQE包含4个WQEBB
 constexpr u32 UB_MAX_TRANS_SIZE       = 256 * 1024 * 1024; // UB单次最大传输量256*1024*1024 Byte
 
 DevUbConnection::DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
@@ -54,7 +53,7 @@ DevUbConnection::DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &l
     }
     HCCL_INFO("[DevUbConnection][Constructor] set sqDepth[%u]", sqDepth);
 
-    if (sqDepth > (UINT32_MAX / UB_SQ_WQEBB_SIZE / WQE_NUM_PER_SQE)) {
+    if (sqDepth > (UINT32_MAX / UB_SQ_WQEBB_SIZE)) {
         THROW<InternalException>("integer overflow occurs");
     }
 
@@ -127,7 +126,7 @@ void DevUbConnection::SetWqInfo(HcclAiRMAWQ &wq)
     wq.jettyId = jettyId;
     wq.dbAddr = dbAddr;
     wq.sqVA = sqBuffVa;
-    wq.sqDepth = sqDepth * WQE_NUM_PER_SQE;
+    wq.sqDepth = sqDepth;
     wq.tp_id = tpn;
     memcpy_s(wq.rmtEid, sizeof(wq.rmtEid), rmtEid.raw, sizeof(wq.rmtEid));
 }
@@ -289,11 +288,11 @@ bool DevUbConnection::CheckRequestResult()
 
 void DevUbConnection::CreateJetty(const bool devUsed)
 {
-    if (sqDepth > UINT32_MAX / UB_SQ_WQEBB_SIZE / WQE_NUM_PER_SQE) {
+    if (sqDepth > UINT32_MAX / UB_SQ_WQEBB_SIZE) {
         THROW<InternalException>("[DevUbConnection][%s] failed, sqDepth[%u] times "
             "UB_SQ_WQEBB_SIZE[%u] overflow uint32 max.", __func__, sqDepth, UB_SQ_WQEBB_SIZE);
     }
-    u32 size = static_cast<u32>(sqDepth) * static_cast<u32>(UB_SQ_WQEBB_SIZE) * static_cast<u32>(WQE_NUM_PER_SQE);
+    u32 size = static_cast<u32>(sqDepth) * static_cast<u32>(UB_SQ_WQEBB_SIZE);
     TokenIdHandle tokenIdHandle = RdmaHandleManager::GetInstance().GetTokenIdInfo(rdmaHandle).first;
     HrtRaUbCreateJettyParam req {
         jfcHandle, jfcHandle,
