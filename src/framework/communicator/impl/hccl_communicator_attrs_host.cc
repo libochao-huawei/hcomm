@@ -129,23 +129,17 @@ namespace hccl
                                                  const std::vector<RankInfo_t> &servRankList, RankInfo &rankInfo) const
     {
         CHK_PRT_RET(servRankList.empty(), HCCL_ERROR("[Get][NicInfo]errNo[0x%016llx] server rank list is empty", HCCL_ERROR_CODE(HCCL_E_PARA)), HCCL_E_PARA);
-
+        CHK_PRT_RET(curRankIndex >= servRankList.size(), HCCL_ERROR("[Get][NicInfo]rankindex[%u] invalid,rank list "
+                                                                    "size is[%zu]",
+                                                                    curRankIndex, servRankList.size()),
+                    HCCL_E_PARA);
         rankInfo.nicDeploy = nicDeploy;
-        if (nicDeploy == NICDeployment::NIC_DEPLOYMENT_HOST)
-        {
+        const RankInfo_t &curRankInfo = servRankList[curRankIndex];
+        if (nicDeploy == NICDeployment::NIC_DEPLOYMENT_HOST && curRankInfo.deviceInfo.deviceIp.size() == 0) {
             // 检查网卡个数
             // 网卡挂载位置在host时，按rank index从网卡列表中获取
-            const RankInfo_t &curRankInfo = servRankList[curRankIndex];
             rankInfo.nicIp.push_back(curRankInfo.hostIp);
-        }
-        else
-        {
-            CHK_PRT_RET(curRankIndex >= servRankList.size(), HCCL_ERROR("[Get][NicInfo]rankindex[%u] invalid,rank list "
-                                                                        "size is[%zu]",
-                                                                        curRankIndex, servRankList.size()),
-                        HCCL_E_PARA);
-
-            const RankInfo_t &curRankInfo = servRankList[curRankIndex];
+        } else {
             CHK_PRT_RET(curRankInfo.deviceInfo.deviceIp.size() == 0,
                         HCCL_ERROR("[Get][NicInfo]rankindex[%u] invalid,deviceIp is zero", curRankIndex), HCCL_E_PARA);
             rankInfo.nicIp.push_back(curRankInfo.deviceInfo.deviceIp[0]);
@@ -615,7 +609,7 @@ namespace hccl
                     rankInfo.superPodId = orgRankInfo.superPodId;
                     rankInfo.superPodIdx = orgRankInfo.superPodIdx;
                 }
-                CHK_RET(GetNicInfo(rankTable.nicDeploy, index, iter->second, rankInfo));
+                CHK_RET(GetNicInfo(orgRankInfo.deviceInfo.nicDeploy, index, iter->second, rankInfo));
                 rankInfo.nicIdx.assign(nicList_.begin(), nicList_.end());
                 rankInfoList_.push_back(rankInfo);
             }
