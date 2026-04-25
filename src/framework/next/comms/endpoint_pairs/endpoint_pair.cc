@@ -113,15 +113,8 @@ HcclResult EndpointPair::CreateChannel(EndpointHandle endpointHandle, CommEngine
     auto &engineChannelHandles = channelHandles_[engine];
     auto &engineChannelSockets = channelSockets_[engine];
     if (engine == COMM_ENGINE_AIV) {
-        for (size_t idx = 0; idx < engineChannelHandles.size(); ++idx) {
-            if (channelDescs->socket != nullptr && idx < engineChannelSockets.size() &&
-                engineChannelSockets[idx] == channelDescs->socket) {
-                channels[0] = engineChannelHandles[idx];
-                CHK_RET(UpdateChannelMemInfo(channelDescs, channels[0]));
-                return HCCL_SUCCESS;
-            }
-        }
-
+        // AIV transport has a stateful mem-info exchange on the socket. Reusing a previous AIV channel can
+        // desynchronize that exchange even when the socket is the same, so create a fresh channel per request.
         CHK_RET_UNAVAIL(static_cast<HcclResult>(
             HcommCollectiveChannelCreate(endpointHandle, engine, channelDescs, 1, channels)));
         engineChannelHandles.push_back(channels[0]);
