@@ -75,7 +75,7 @@ STATIC void RsMunmapJettyVa(struct RsCtxJettyCb *jettyCb)
 
     vaInfo.resType = RES_ADDR_TYPE_HCCP_URMA_JETTY;
     vaInfo.va = jettyCb->sqBuffVa;
-    vaInfo.len = WQE_BB_SIZE * jettyCb->txDepth * WQEBB_NUM_PER_SQE;
+    vaInfo.len = WQE_BB_SIZE * jettyCb->txDepth;
     vaInfo.pid = getpid();
     (void)RsResAddrMunmap(jettyCb, &vaInfo);
 
@@ -97,7 +97,7 @@ STATIC int RsMmapJettyVa(struct RsCtxJettyCb *jettyCb)
 
     jettyVaInfo.resType = RES_ADDR_TYPE_HCCP_URMA_JETTY;
     jettyVaInfo.va = jettyCb->sqBuffVa;
-    jettyVaInfo.len = WQE_BB_SIZE * jettyCb->txDepth * WQEBB_NUM_PER_SQE;
+    jettyVaInfo.len = WQE_BB_SIZE * jettyCb->txDepth;
     jettyVaInfo.pid = getpid();
     ret = RsResAddrMmap(jettyCb, &jettyVaInfo, &jettyVaInfoOut);
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_res_addr_mmap failed, res_type:%u ret:%d",
