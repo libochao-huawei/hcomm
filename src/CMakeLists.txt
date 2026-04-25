@@ -497,33 +497,6 @@ add_subdirectory(algorithm)
 add_subdirectory(platform)
 add_subdirectory(common)
 
-set(FRAMEWORK_SRC PRIVATE
-    ${HCCL_BASE_DIR}/framework/common/src/config.cc
-    ${HCCL_BASE_DIR}/framework/common/src/json_utils.cc
-    ${HCCL_BASE_DIR}/framework/common/src/param_check.cc
-    ${HCCL_BASE_DIR}/framework/common/src/topo/topoinfo_ranktableParser.cc
-    ${HCCL_BASE_DIR}/framework/common/src/topo/topoinfo_ranktableConcise.cc
-    ${HCCL_BASE_DIR}/framework/common/src/topo/topoinfo_ranktableHeterog.cc
-    ${HCCL_BASE_DIR}/framework/common/src/topo/topoinfo_ranktableStandard.cc
-    ${HCCL_BASE_DIR}/framework/common/src/topo/topoinfo_roletableParser.cc
-)
-
-set(algorithm_open_cc PRIVATE
-    ${HCCL_BASE_DIR}/algorithm/impl/resource_manager/workspace_resource.cc
-    ${HCCL_BASE_DIR}/algorithm/impl/resource_manager/workspace_resource_impl.cc
-    ${HCCL_BASE_DIR}/algorithm/impl/resource_manager/workspace_mem.cc
-    ${HCCL_BASE_DIR}/algorithm/impl/resource_manager/offload_stream_manager.cc
-    ${HCCL_BASE_DIR}/algorithm/impl/resource_manager/ccl_buffer_manager.cc
-    ${HCCL_BASE_DIR}/algorithm/impl/resource_manager/share_ccl_buffer_manager.cc
-    ${HCCL_BASE_DIR}/algorithm/impl/resource_manager/workspace_mem.cc
-)
-
-set(common_cc PRIVATE
-    ${HCCL_BASE_DIR}/common/health/rank_consistentcy_checker.cc
-    ${HCCL_BASE_DIR}/common/health/calc_crc.cc
-    ${HCCL_BASE_DIR}/common/debug/config/config_log.cc
-)
-
 # 指定ccl_kernel_plf构建完成后安装到指定的目标位置
 if(NOT BUILD_OPEN_PROJECT)
     install(TARGETS  ccl_kernel_plf
