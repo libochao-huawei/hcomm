@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 200" width="500" height="200">
+  <defs>
+    <radialGradient id="bg5" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#f0f4f8"/>
+    </radialGradient>
+    <radialGradient id="c5" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#0088cc"/><stop offset="100%" stop-color="#005599"/>
+    </radialGradient>
+    <filter id="gl5"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="500" height="200" fill="url(#bg5)" rx="10" stroke="#ccc" stroke-width="1"/>
+  <text x="250" y="26" text-anchor="middle" fill="#1a1a2e" font-size="14" font-weight="bold" font-family="Arial, sans-serif">10.6 HcclRankGraphGetLinks（rank 0 → rank 8, netLayer=1）</text>
+
+  <!-- Src card -->
+  <rect x="30" y="48" width="100" height="60" rx="8" fill="#e4eff8" stroke="#4a9aca" stroke-width="1.5"/>
+  <g filter="url(#gl5)">
+    <circle cx="80" cy="78" r="14" fill="url(#c5)" stroke="#28a745" stroke-width="2.5"/>
+    <text x="80" y="82" text-anchor="middle" fill="#fff" font-size="11" font-weight="bold" font-family="Arial">0</text>
+  </g>
+  <text x="80" y="102" text-anchor="middle" fill="#005599" font-size="9" font-family="Arial">rank 0 (S0)</text>
+
+  <!-- Fabric P0 box -->
+  <rect x="170" y="50" width="160" height="32" rx="6" fill="#b94800" stroke="#e85d04" stroke-width="1.5"/>
+  <text x="250" y="70" text-anchor="middle" fill="#fff" font-size="11" font-weight="bold" font-family="Arial">Fabric Plane 0</text>
+
+  <!-- Fabric P1 box -->
+  <rect x="170" y="90" width="160" height="32" rx="6" fill="#5b21b6" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="250" y="110" text-anchor="middle" fill="#fff" font-size="11" font-weight="bold" font-family="Arial">Fabric Plane 1</text>
+
+  <!-- Dst card -->
+  <rect x="370" y="48" width="100" height="60" rx="8" fill="#e4eff8" stroke="#4a9aca" stroke-width="1.5"/>
+  <g filter="url(#gl5)">
+    <circle cx="420" cy="78" r="14" fill="url(#c5)" stroke="#28a745" stroke-width="2.5"/>
+    <text x="420" y="82" text-anchor="middle" fill="#fff" font-size="11" font-weight="bold" font-family="Arial">8</text>
+  </g>
+  <text x="420" y="102" text-anchor="middle" fill="#005599" font-size="9" font-family="Arial">rank 8 (S1)</text>
+
+  <!-- Connections: straight horizontal lines -->
+  <!-- Plane 0: src → P0 → dst -->
+  <line x1="130" y1="66" x2="170" y2="66" stroke="#e85d04" stroke-width="2.5" opacity="0.8"/>
+  <text x="150" y="62" text-anchor="middle" fill="#e85d04" font-size="9" font-weight="bold" font-family="Arial">P0</text>
+  <line x1="330" y1="66" x2="370" y2="66" stroke="#e85d04" stroke-width="2.5" opacity="0.8"/>
+  <text x="350" y="62" text-anchor="middle" fill="#e85d04" font-size="9" font-weight="bold" font-family="Arial">P0</text>
+
+  <!-- Plane 1: src → P1 → dst -->
+  <line x1="130" y1="106" x2="170" y2="106" stroke="#7c3aed" stroke-width="2.5" opacity="0.8"/>
+  <text x="150" y="102" text-anchor="middle" fill="#7c3aed" font-size="9" font-weight="bold" font-family="Arial">P1</text>
+  <line x1="330" y1="106" x2="370" y2="106" stroke="#7c3aed" stroke-width="2.5" opacity="0.8"/>
+  <text x="350" y="102" text-anchor="middle" fill="#7c3aed" font-size="9" font-weight="bold" font-family="Arial">P1</text>
+
+  <!-- Result -->
+  <rect x="30" y="135" width="440" height="52" rx="6" fill="#d4edda" stroke="#28a745" stroke-width="1.5"/>
+  <text x="250" y="158" text-anchor="middle" fill="#155724" font-size="12" font-weight="bold" font-family="monospace">linkNum = 2</text>
+  <text x="250" y="178" text-anchor="middle" fill="#155724" font-size="11" font-family="monospace">links[0]: UB_CTP, hop=1, Plane 0  |  links[1]: UB_CTP, hop=1, Plane 1</text>
+</svg>

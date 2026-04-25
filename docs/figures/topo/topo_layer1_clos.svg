@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 520" width="700" height="520">
+  <defs>
+    <radialGradient id="bg2" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f0f4f8"/>
+    </radialGradient>
+    <radialGradient id="cardGrad" cx="40%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#0088cc"/>
+      <stop offset="100%" stop-color="#005599"/>
+    </radialGradient>
+    <radialGradient id="fabGrad0" cx="40%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#e85d04"/>
+      <stop offset="100%" stop-color="#b94800"/>
+    </radialGradient>
+    <radialGradient id="fabGrad1" cx="40%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#5b21b6"/>
+    </radialGradient>
+    <filter id="glow2"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="700" height="520" fill="url(#bg2)" rx="12" stroke="#ccc" stroke-width="1"/>
+  <text x="350" y="28" text-anchor="middle" fill="#1a1a2e" font-size="18" font-weight="bold" font-family="Arial, sans-serif">Layer 1：Server 间双平面 Clos 网络</text>
+
+  <!-- Plane 0 Fabric -->
+  <rect x="140" y="50" width="140" height="40" rx="8" fill="#b94800" stroke="#e85d04" stroke-width="2" filter="url(#glow2)"/>
+  <text x="210" y="75" text-anchor="middle" fill="#ffffff" font-size="13" font-weight="bold" font-family="Arial, sans-serif">Fabric P0</text>
+
+  <!-- Plane 1 Fabric -->
+  <rect x="420" y="50" width="140" height="40" rx="8" fill="#5b21b6" stroke="#7c3aed" stroke-width="2" filter="url(#glow2)"/>
+  <text x="490" y="75" text-anchor="middle" fill="#ffffff" font-size="13" font-weight="bold" font-family="Arial, sans-serif">Fabric P1</text>
+
+  <!-- Server 0 cards (top row) -->
+  <g filter="url(#glow2)">
+    <circle cx="100" cy="200" r="18" fill="url(#cardGrad)" stroke="#0088cc" stroke-width="2"/>
+    <circle cx="170" cy="200" r="18" fill="url(#cardGrad)" stroke="#0088cc" stroke-width="2"/>
+    <circle cx="240" cy="200" r="18" fill="url(#cardGrad)" stroke="#0088cc" stroke-width="2"/>
+    <circle cx="310" cy="200" r="18" fill="url(#cardGrad)" stroke="#0088cc" stroke-width="2"/>
+    <circle cx="380" cy="200" r="18" fill="url(#cardGrad)" stroke="#0088cc" stroke-width="2"/>
+    <circle cx="450" cy="200" r="18" fill="url(#cardGrad)" stroke="#0088cc" stroke-width="2"/>
+    <circle cx="520" cy="200" r="18" fill="url(#cardGrad)" stroke="#0088cc" stroke-width="2"/>
+    <circle cx="590" cy="200" r="18" fill="url(#cardGrad)" stroke="#0088cc" stroke-width="2"/>
+  </g>
+  <g fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" font-family="Arial, sans-serif">
+    <text x="100" y="205">0</text><text x="170" y="205">1</text><text x="240" y="205">2</text><text x="310" y="205">3</text>
+    <text x="380" y="205">4</text><text x="450" y="205">5</text><text x="520" y="205">6</text><text x="590" y="205">7</text>
+  </g>
+
+  <!-- Server 1 cards (bottom row) -->
+  <g filter="url(#glow2)">
+    <circle cx="100" cy="400" r="18" fill="url(#cardGrad)" stroke="#0088cc" stroke-width="2"/>
+    <circle cx="170" cy="400" r="18" fill="url(#cardGrad)" stroke="#0088cc" stroke-width="2"/>
+    <circle cx="240" cy="400" r="18" fill="url(#cardGrad)" stroke="#0088cc" stroke-width="2"/>
+    <circle cx="310" cy="400" r="18" fill="url(#cardGrad)" stroke="#0088cc" stroke-width="2"/>
+    <circle cx="380" cy="400" r="18" fill="url(#cardGrad)" stroke="#0088cc" stroke-width="2"/>
+    <circle cx="450" cy="400" r="18" fill="url(#cardGrad)" stroke="#0088cc" stroke-width="2"/>
+    <circle cx="520" cy="400" r="18" fill="url(#cardGrad)" stroke="#0088cc" stroke-width="2"/>
+    <circle cx="590" cy="400" r="18" fill="url(#cardGrad)" stroke="#0088cc" stroke-width="2"/>
+  </g>
+  <g fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" font-family="Arial, sans-serif">
+    <text x="100" y="405">8</text><text x="170" y="405">9</text><text x="240" y="405">10</text><text x="310" y="405">11</text>
+    <text x="380" y="405">12</text><text x="450" y="405">13</text><text x="520" y="405">14</text><text x="590" y="405">15</text>
+  </g>
+
+  <!-- Server labels -->
+  <rect x="55" y="170" width="24" height="60" rx="4" fill="#d6e8f0" stroke="#6a9abf" stroke-width="1"/>
+  <text x="67" y="205" text-anchor="middle" fill="#1a5a8a" font-size="10" font-family="Arial, sans-serif">S0</text>
+  <rect x="55" y="370" width="24" height="60" rx="4" fill="#d6e8f0" stroke="#6a9abf" stroke-width="1"/>
+  <text x="67" y="405" text-anchor="middle" fill="#1a5a8a" font-size="10" font-family="Arial, sans-serif">S1</text>
+
+  <!-- Connections: Plane 0 (orange) -->
+  <g stroke="#e85d04" stroke-width="1.2" opacity="0.5">
+    <line x1="100" y1="182" x2="210" y2="90"/><line x1="170" y1="182" x2="210" y2="90"/>
+    <line x1="240" y1="182" x2="210" y2="90"/><line x1="310" y1="182" x2="210" y2="90"/>
+    <line x1="380" y1="182" x2="210" y2="90"/><line x1="450" y1="182" x2="210" y2="90"/>
+    <line x1="520" y1="182" x2="210" y2="90"/><line x1="590" y1="182" x2="210" y2="90"/>
+    <line x1="100" y1="382" x2="210" y2="90"/><line x1="170" y1="382" x2="210" y2="90"/>
+    <line x1="240" y1="382" x2="210" y2="90"/><line x1="310" y1="382" x2="210" y2="90"/>
+    <line x1="380" y1="382" x2="210" y2="90"/><line x1="450" y1="382" x2="210" y2="90"/>
+    <line x1="520" y1="382" x2="210" y2="90"/><line x1="590" y1="382" x2="210" y2="90"/>
+  </g>
+  <!-- Connections: Plane 1 (purple) -->
+  <g stroke="#7c3aed" stroke-width="1.2" opacity="0.5">
+    <line x1="100" y1="182" x2="490" y2="90"/><line x1="170" y1="182" x2="490" y2="90"/>
+    <line x1="240" y1="182" x2="490" y2="90"/><line x1="310" y1="182" x2="490" y2="90"/>
+    <line x1="380" y1="182" x2="490" y2="90"/><line x1="450" y1="182" x2="490" y2="90"/>
+    <line x1="520" y1="182" x2="490" y2="90"/><line x1="590" y1="182" x2="490" y2="90"/>
+    <line x1="100" y1="382" x2="490" y2="90"/><line x1="170" y1="382" x2="490" y2="90"/>
+    <line x1="240" y1="382" x2="490" y2="90"/><line x1="310" y1="382" x2="490" y2="90"/>
+    <line x1="380" y1="382" x2="490" y2="90"/><line x1="450" y1="382" x2="490" y2="90"/>
+    <line x1="520" y1="382" x2="490" y2="90"/><line x1="590" y1="382" x2="490" y2="90"/>
+  </g>
+
+  <!-- Legend -->
+  <g font-size="11" font-family="Arial, sans-serif">
+    <rect x="180" y="480" width="12" height="12" rx="2" fill="#e85d04" opacity="0.7"/>
+    <text x="198" y="491" fill="#c94e00">— Plane 0 链路 (UB_CTP)</text>
+    <rect x="370" y="480" width="12" height="12" rx="2" fill="#7c3aed" opacity="0.7"/>
+    <text x="388" y="491" fill="#5b21b6">— Plane 1 链路 (UB_CTP)</text>
+  </g>
+  <text x="350" y="512" text-anchor="middle" fill="#4a6a8a" font-size="12" font-family="Arial, sans-serif">每张卡出 2 条链路，分别连接 2 个 Clos 平面</text>
+</svg>
