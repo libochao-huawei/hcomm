@@ -5,7 +5,7 @@
 #include "ccu_loop_macro.h"
 #include "ccu_control_flow_macro.h"
 #include "ccu_log.h"
-#include "hcom_common.h"
+// #include "hcom_common.h"
 
 #include "ccu_variable.hpp"
 #include "ccu_address.hpp"
