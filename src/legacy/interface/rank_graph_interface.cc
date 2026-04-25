@@ -249,8 +249,11 @@ namespace Hccl {
 
     static HcclResult InsertClosLinks(const NetInstance::Path &path, std::vector<CommLink> &linkListVec)
     {
+        size_t linkListSizeBefore = linkListVec.size();
         const NetInstance::Link *peer2net = nullptr;
         const NetInstance::Link *net2peer = nullptr;
+        HCCL_INFO("[InsertClosLinks] start, pathLinkNum[%zu], linkListSizeBefore[%zu].",
+                  path.links.size(), linkListSizeBefore);
         for (const auto &link : path.links) {
             bool srcNull = (link.GetSourceIface() == nullptr);
             bool dstNull = (link.GetTargetIface() == nullptr);
@@ -292,6 +295,9 @@ namespace Hccl {
                 commLink.dstEndpointDesc.loc.device.devPhyId = dstPeer->GetDeviceId();
             }
 
+            HCCL_INFO("[InsertClosLinks] append clos link, protocol[%s], srcIface[%s], dstIface[%s].",
+                      commProtocol.Describe().c_str(), 
+                      srcInterface->Describe().c_str(), dstInterface->Describe().c_str());
             linkListVec.emplace_back(std::move(commLink));
         }
         return HCCL_SUCCESS;

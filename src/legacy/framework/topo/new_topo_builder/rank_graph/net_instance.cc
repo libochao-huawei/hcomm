@@ -255,6 +255,8 @@ vector<NetInstance::Path> InnerNetInstance::GetPaths(const RankId srcRankId, con
         vector<NetInstance::Link> srcToFabricLinks;
         vGraph.TraverseEdge(srcPeerId, fabricId, [&](shared_ptr<NetInstance::Link> edge) {
             srcToFabricLinks.push_back(*edge);
+            HCCL_INFO("[InnerNetInstance::GetPaths] fabric path found,srcPeerId[%u], fabricId[%u]",
+                              srcPeerId, fabricId);
             return;
         });
 
@@ -262,6 +264,8 @@ vector<NetInstance::Path> InnerNetInstance::GetPaths(const RankId srcRankId, con
         vector<NetInstance::Link> fabricToDstLinks;
         vGraph.TraverseEdge(fabricId, dstPeerId, [&](shared_ptr<NetInstance::Link> edge) {
             fabricToDstLinks.push_back(*edge);
+            HCCL_INFO("[InnerNetInstance::GetPaths] fabric path found,fabricId[%u], dstPeerId[%u]",
+                              fabricId, dstPeerId);
             return;
         });
 
@@ -282,6 +286,8 @@ vector<NetInstance::Path> InnerNetInstance::GetPaths(const RankId srcRankId, con
         }
     }
 
+    HCCL_INFO("[InnerNetInstance::GetPaths] end, netInst[%s], srcRankId[%d], dstRankId[%d], pathNum[%zu].",
+              netInstId.c_str(), srcRankId, dstRankId, paths.size());
     return paths;
 }
 
@@ -326,6 +332,8 @@ vector<NetInstance::Path> ClosNetInstance::GetPaths(const RankId srcRankId, cons
         }
     }
 
+    HCCL_INFO("[ClosNetInstance::GetPaths] end, netInst[%s], srcRankId[%d], dstRankId[%d], pathNum[%zu].",
+              netInstId.c_str(), srcRankId, dstRankId, paths.size());
     return paths;
 }
 
