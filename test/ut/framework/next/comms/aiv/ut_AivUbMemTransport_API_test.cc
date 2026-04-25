@@ -55,7 +55,6 @@ protected:
     Hccl::Socket *fakeSocket;
     Hccl::RdmaHandle rdmaHandle = (void *)0x1000000;
 };
-
 class LocalRmaBufferStub : public Hccl::LocalRmaBuffer {
 public:
     LocalRmaBufferStub(std::shared_ptr<Hccl::Buffer> buf, u64 mockAddr, u64 mockSize, u64 mockOffset, u32 mockPid)
@@ -69,13 +68,73 @@ public:
     }
 
     std::unique_ptr<Hccl::Serializable> GetExchangeDto() override {
-        return std::make_unique<Hccl::ExchangeIpcBufferDto>(mockAddr_, mockSize_, mockOffset_, mockPid_);
+        std::string memTag = "HcclBuff";
+        return std::make_unique<Hccl::ExchangeIpcBufferDto>(mockAddr_, mockSize_, mockOffset_, mockPid_, memTag.c_str());
     }
 
     u64 mockAddr_{0};
     u64 mockSize_{0};
     u64 mockOffset_{0};
     u32 mockPid_{0};
+};
+
+class AivUbMemTransportTest : public testing::Test {
+protected:
+    static void SetUpTestCase()
+    {
+        std::cout << "AivUbMemTransportTest tests set up." << std::endl;
+    }
+
+    static void TearDownTestCase()
+    {
+        std::cout << "AivUbMemTransportTest tests tear down." << std::endl;
+    }
+
+    virtual void SetUp()
+    {
+        std::cout << "A Test case in AivUbMemTransportTest SetUP" << std::endl;
+        Hccl::IpAddress   localIp("1.0.0.0");
+        Hccl::IpAddress   remoteIp("2.0.0.0");
+        fakeSocket_ = new Hccl::Socket(nullptr, localIp, 100, remoteIp, "test", Hccl::SocketRole::SERVER, Hccl::NicType::HOST_NIC_TYPE);
+        setenv("HCCL_DFS_CONFIG", "task_exception:on", 1);
+        MOCKER(&Hccl::EnvSocketConfig::GetLinkTimeOut).stubs().will(returnValue(100));
+    }
+
+    virtual void TearDown()
+    {
+        delete fakeSocket_;
+        unsetenv("HCCL_DFS_CONFIG");
+        GlobalMockObject::verify();
+        std::cout << "A Test case in AivUbMemTransportTest TearDown" << std::endl;
+    }
+
+    std::shared_ptr<hcomm::AivUbMemTransport> CreateAivTransport(HcommChannelDesc &desc)
+    {
+        return std::make_shared<hcomm::AivUbMemTransport>(fakeSocket_, desc);
+    }
+
+    std::shared_ptr<LocalRmaBufferStub> CreateLocalRmaBuffer(u64 addr, u64 size, u32 pid)
+    {
+        auto buffer = std::make_shared<Hccl::Buffer>(addr, size);
+        return std::make_shared<LocalRmaBufferStub>(buffer, addr, size, 0, pid);
+    }
+
+    std::array<char, HCCL_RES_TAG_MAX_LEN> BuildMemTagArray(const std::string &tag)
+    {
+        std::array<char, HCCL_RES_TAG_MAX_LEN> memTag{};
+        memcpy_s(memTag.data(), memTag.size(), tag.c_str(), tag.size());
+        return memTag;
+    }
+
+    CommMemInfo BuildMemInfo(void *bufferHandle, const std::string &tag)
+    {
+        CommMemInfo memInfo{};
+        memInfo.bufferHandle = bufferHandle;
+        memcpy_s(memInfo.memTag, sizeof(memInfo.memTag), tag.c_str(), tag.size());
+        return memInfo;
+    }
+
+    Hccl::Socket *fakeSocket_;
 };
 
 TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_GetUserRemoteMem_When_Normal_Expect_ReturnIsHCCL_SUCCESS)

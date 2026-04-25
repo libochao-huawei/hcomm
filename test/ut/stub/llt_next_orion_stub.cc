@@ -111,6 +111,12 @@
 #include "../../../legacy/unified_platform/ccu/ccu_microcode/ccu_assist.h"
 #include "acl/acl_rt.h"
 
+#include "p2p_transport.h"
+#include "dev_capability.h"
+#include "p2p_connection.h"
+#include "rts_cnt_notify.h"
+#include "rts_1ton_cnt_notify.h"
+#include "ipc_local_notify.h"
 
 namespace Hccl {
 
@@ -954,10 +960,10 @@ void UbLocalNotify::ReleaseResource() const
 UbLocalNotify::~UbLocalNotify()
 {}
 
-RtsNotify::RtsNotify(bool devUsed)
-{}
-RtsNotify::~RtsNotify()
-{}
+// RtsNotify::RtsNotify(bool devUsed)
+// {}
+// RtsNotify::~RtsNotify()
+// {}
 
 UbMemTransport::UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, const LinkData &linkData,
     const Socket &socket, RdmaHandle rdmaHandle1, LocCntNotifyRes &locCntNotifyRes1, bool isRecvFirst)
@@ -2239,4 +2245,3 @@ HcclResult HcclGetRankGraphV2(HcclComm *comm, void **rankGraph)
 {
     return HCCL_SUCCESS;
 }
-

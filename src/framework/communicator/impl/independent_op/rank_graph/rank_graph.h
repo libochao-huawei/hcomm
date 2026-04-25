@@ -43,6 +43,7 @@ public:
     const RankInfo_t* FindRank(uint32_t rankId) const;
     HcclResult GetRankGraphInfo(GraphType type, void **graph, uint32_t *len) override;
     HcclResult GetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum) override;
+    HcclResult GetDeviceId(uint32_t rankId, uint32_t *deviceId) override;
     HcclResult GetInstTopoTypeByNetLayer(uint32_t netLayer, CommTopo *topoType) override;
     HcclResult GetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum) override;
     HcclResult GetInstRanksByNetLayer(uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum) override;
