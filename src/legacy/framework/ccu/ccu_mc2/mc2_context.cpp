@@ -129,8 +129,8 @@ void Mc2ContextBase::GenOpSelector()
 
 void Mc2ContextBase::Algorithm()
 {
-    GenOpSelector();
-    GenCircularQueue();
+    //GenOpSelector();
+    //GenCircularQueue();
 }
 
 void Mc2Context::SetCommAddr(uint64_t syncAddr, uint64_t paramAddr)
@@ -347,9 +347,10 @@ void Mc2Context::LoadFuncParamFromMemory(CcuRep::Variable &paramAddr, array<CcuR
 
 vector<uint64_t> Mc2Context::GeneArgs(const CcuTaskArg &arg)
 {
-    const CcuTaskArgMc2 *taskArg   = dynamic_cast<const CcuTaskArgMc2 *>(&arg);
-    uint64_t             tokenInfo = taskArg->token_;
-    return {tokenInfo};
+    //const CcuTaskArgMc2 *taskArg   = dynamic_cast<const CcuTaskArgMc2 *>(&arg);
+    //uint64_t             tokenInfo = taskArg->token_;
+    //return {tokenInfo};
+    return {};
 }
 
 void Mc2SlaveContext::GenCircularQueue()
