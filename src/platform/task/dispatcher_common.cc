@@ -139,18 +139,6 @@ HcclResult HcclMemcpyAsync(HcclDispatcher dispatcherPtr, void *dst, const uint64
         stream, remoteUserRank, linkType);
 }
 
-HcclResult HcclMemcpyAsyncWithoutCheckKind(HcclDispatcher dispatcherPtr, void *dst, const uint64_t destMax, const void *src,
-    const uint64_t count, const HcclRtMemcpyKind kind, hccl::Stream &stream, const u32 remoteUserRank,
-    hccl::LinkType linkType)
-{
-    CHK_PTR_NULL(dispatcherPtr);
-    CHK_PTR_NULL(dst);
-    CHK_PTR_NULL(src);
-
-    return reinterpret_cast<DispatcherPub*>(dispatcherPtr)->MemcpyAsyncWithoutCheckKind(dst, destMax, src, count, kind,
-        stream, remoteUserRank, linkType);  
-}
-
 HcclResult HcclReduceAsync(HcclDispatcher dispatcherPtr, void *src, uint64_t count, const HcclDataType datatype,
     const HcclReduceOp reduceOp, Stream &stream, void *dst, const u32 remoteUserRank,
     const LinkType linkType, const u64 reduceAttr)

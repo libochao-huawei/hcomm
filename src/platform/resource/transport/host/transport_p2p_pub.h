@@ -161,7 +161,7 @@ protected:
     bool useSdmaToSignalRecord_{false};
 
     HcclResult ReplaceMemAddr(Transport::Buffer &localMem, Transport::Buffer &remoteMem,
-        Transport::Buffer &newLocalMem, Transport::Buffer &newRemoteMem, bool &hasHostAddr);
+        Transport::Buffer &newLocalMem, Transport::Buffer &newRemoteMem, bool &isLocalHostAddr, bool &isRemoteHostAddr);
     HcclResult InitHcclMemExMgrWithMem(HcclMemEx *bufMem, u32 bufSize, HcclMemExMgr &hcommMemExMgr);
     HcclResult InitHcclMemExMgr(MachinePara &machinePara);
     HcclMemExMgr localHcclMemExMgr_;
