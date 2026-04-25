@@ -8,7 +8,7 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 target_sources(orion_alg_aicpu_2d_testcase
-        PUBLIC	 
+        PUBLIC
         main.cc
         testcase_all_reduce_aicpu_2d.cc
         testcase_utils.cc
