@@ -295,8 +295,7 @@ namespace Hccl {
                 commLink.dstEndpointDesc.loc.device.devPhyId = dstPeer->GetDeviceId();
             }
 
-            HCCL_INFO("[InsertClosLinks] append clos link, protocol[%s], srcIface[%s], dstIface[%s].",
-                      commProtocol.Describe().c_str(), 
+            HCCL_INFO("[InsertClosLinks] append clos link, srcIface[%s], dstIface[%s].",
                       srcInterface->Describe().c_str(), dstInterface->Describe().c_str());
             linkListVec.emplace_back(std::move(commLink));
         }
