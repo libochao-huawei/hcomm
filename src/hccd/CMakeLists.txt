@@ -26,7 +26,6 @@ target_sources(hccd PRIVATE
     ${HCOMM_ROOT_DIR}/src/algorithm/impl/resource_manager/offload_stream_manager.cc
     ${HCOMM_ROOT_DIR}/src/algorithm/impl/resource_manager/ccl_buffer_manager.cc
     ${HCOMM_ROOT_DIR}/src/algorithm/impl/resource_manager/share_ccl_buffer_manager.cc
-    ${HCOMM_ROOT_DIR}/src/algorithm/impl/resource_manager/workspace_mem.cc
 
     ${HCOMM_ROOT_DIR}/src/framework/common/src/config.cc
     ${HCOMM_ROOT_DIR}/src/framework/common/src/json_utils.cc
@@ -158,6 +157,11 @@ else()
         -lpthread
         ofed_headers
     )
+
+    # 安装
+    install(TARGETS hccd
+        LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL
+    )
 endif()
 
 # 头文件搜索路径
@@ -182,13 +186,6 @@ endforeach()
 add_dependencies(hccd json)
 if(BUILD_OPEN_PROJECT)
     add_dependencies(hccd hccl_legacy)
-endif()
-
-# 安装
-if(NOT BUILD_OPEN_PROJECT)
-    install(TARGETS hccd
-        LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL
-    )
 endif()
 
 # 复制 so 到指定目录，供打包使用
