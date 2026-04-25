@@ -424,13 +424,13 @@ HcclResult HcclReportCcuProfilingInfo(uint64_t execId, hcomm::CcuProfilingInfo *
     CHK_PTR_NULL(profilingArray);
     auto hcclComm = static_cast<hccl::hcclComm*>(comm);
     CHK_PTR_NULL(hcclComm);
-    
+
     // 设置任务参数的基本信息
     taskParam.taskPara.Ccu.dieId     = profilingArray[0].dieId;
     taskParam.taskPara.Ccu.missionId = profilingArray[0].missionId;
     taskParam.taskPara.Ccu.execMissionId = profilingArray[0].missionId;
-    taskParam.taskPara.Ccu.instrId   = profilingArray[0].instrId;
-    taskParam.taskPara.Ccu.executeId = execId; // TODO: 传入是kernelHandle，不建议赋值给executeId
+    taskParam.taskPara.Ccu.instrId   = profilingArray[0].instrId; // TODO: 值怎么给？
+    taskParam.taskPara.Ccu.executeId = execId;
     taskParam.taskPara.Ccu.ccuKernelHandle = execId;
     taskParam.isMaster = isMaster;
     HCCL_INFO("[%s]dieId[%u], missionId[%u], execMissionId[%u], instrId[%u], executeId[%u], ccuKernelHandle[%u]",
@@ -501,7 +501,7 @@ HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
     CHK_PTR_NULL(taskArgs);
     CHK_PRT_RET(threadHandle == 0, HCCL_ERROR("[%s] failed, thread handle is empty.", __func__), HCCL_E_PARA);
 
-    const Thread *rtsThread = reinterpret_cast<Thread *>(threadHandle); 
+    const Thread *rtsThread = reinterpret_cast<Thread *>(threadHandle);
     const auto *threadStream = rtsThread->GetStream();
     CHK_PTR_NULL(threadStream);
     auto *streamPtr = threadStream->ptr();
@@ -526,24 +526,17 @@ HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
 
     std::vector<hcomm::CcuProfilingInfo> allCcuProfilingInfo;
     CHK_RET(kernel->GetCcuProfilingInfo(*ccuTaskArgs, allCcuProfilingInfo));
-    hcomm::CcuProfilingInfo* ccuTaskProfilingPtr = nullptr;
-    for (hcomm::CcuProfilingInfo &profiling : allCcuProfilingInfo) {
-        if (profiling.type == static_cast<uint8_t>(hcomm::CcuProfilinType::CCU_TASK_PROFILING)) {
-            ccuTaskProfilingPtr = &profiling;
-            break;
-        }
-    }
 
     for (size_t idx = 0; idx < ccuParams.size(); ++idx) {
         Hccl::TaskParam taskParam{};
         taskParam.taskType = Hccl::TaskParamType::TASK_CCU;
 
         CHK_RET(LaunchCcuTasks(ccuParams[idx], streamPtr, taskParam));
-        hcomm::CcuProfilingInfo *profilingArray = (idx + 1 == ccuParams.size()) ? allCcuProfilingInfo.data() : ccuTaskProfilingPtr;
         size_t infoNum = (idx + 1 == ccuParams.size()) ? allCcuProfilingInfo.size() : 1;
-        CHK_RET(HcclReportCcuProfilingInfo(kernelHandle, profilingArray, infoNum, comm, taskParam, rtsThread->GetMaster()));
+        CHK_RET(HcclReportCcuProfilingInfo(kernelHandle, allCcuProfilingInfo.data(), infoNum, comm, taskParam,
+            rtsThread->GetMaster()));
     }
-    
+
     EXCEPTION_HANDLE_END
     return HcclResult::HCCL_SUCCESS;
 }
