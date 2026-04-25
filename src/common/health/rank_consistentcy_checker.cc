@@ -592,7 +592,7 @@ HcclResult RankConsistentcyChecker::GenerateCheckFrame(HcclCheckInfo &checkInfo,
     // 添加CRC字段到校验帧
     checkInfo.crcInfoGlobal.configFileExist_ = configFileExist_;
     checkInfo.crcInfoGlobal.crcNum = crcTable_.size();
-    for (u32 i = 0; i < checkInfo.crcInfoGlobal.envCrcNum; i++) {
+    for (u32 i = 0; i < checkInfo.crcInfoGlobal.crcNum; i++) {
         checkInfo.crcInfoGlobal.crcArray[i] = crcTable_[i];
     }
     // 添加CMD参数信息到校验帧
