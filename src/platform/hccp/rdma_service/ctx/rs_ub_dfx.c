@@ -276,6 +276,7 @@ STATIC int RsUbGetSaveAsyncEvent(struct RsUbDevCb *devCb)
     struct RsCtxAsyncEventCb *asyncEventCb = NULL;
     urma_async_event_t *event = NULL;
     int ret = 0;
+    uint32_t context[CONTEXT_MAX_LEN / sizeof(unsigned int)] = {0};
 
     asyncEventCb = calloc(1, sizeof(struct RsCtxAsyncEventCb));
     CHK_PRT_RETURN(asyncEventCb == NULL, hccp_err("calloc asyncEventCb failed"), -ENOMEM);
@@ -294,6 +295,17 @@ STATIC int RsUbGetSaveAsyncEvent(struct RsUbDevCb *devCb)
     if (ret != 0) {
         hccp_err("RsUbFillAsyncEventCb failed, ret:%d devIndex:0x%x", ret, devCb->index);
         goto free_event_cb;
+    }
+
+    hccp_run_info("get asyncEvent:%d, resId:%u devIndex:0x%x", event->event_type, asyncEventCb->resId, devCb->index);
+    ret = memcpy_s(context, sizeof(context), asyncEventCb->context, sizeof(asyncEventCb->context));
+    if (ret != 0) {
+        hccp_err("memcpy_s failed, ret:%d devIndex:0x%x", ret, devCb->index);
+        goto free_event_cb;
+    }
+
+    for (i = 0; i < CONTEXT_MAX_LEN / sizeof(unsigned int); i++) {
+        hccp_run_info("i:%u context:%u", i, context[i]);
     }
 
     RsListAddTail(&asyncEventCb->list, &devCb->asyncEventList);
