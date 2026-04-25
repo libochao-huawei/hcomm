@@ -20,6 +20,20 @@ target_sources(hcomm PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/hccl_mem_alloc.cc
 )
 
+target_include_directories(hcomm PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/host
+    ${CMAKE_CURRENT_SOURCE_DIR}/config
+    ${CMAKE_CURRENT_SOURCE_DIR}/topo
+    ${CMAKE_CURRENT_SOURCE_DIR}/task
+    ${CMAKE_CURRENT_SOURCE_DIR}/exception
+    ${CMAKE_CURRENT_SOURCE_DIR}/h2d_tlv
+    ${CMAKE_CURRENT_SOURCE_DIR}/thread
+    ${CMAKE_CURRENT_SOURCE_DIR}/h2d_dto
+    ${CMAKE_CURRENT_SOURCE_DIR}/onesided_memory_management
+    ${CMAKE_CURRENT_SOURCE_DIR}/mgr
+)
+
 if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         ${src_list}

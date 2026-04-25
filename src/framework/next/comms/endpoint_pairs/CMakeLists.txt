@@ -24,5 +24,7 @@ add_subdirectory(sockets)
 
 target_include_directories(hcomm PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/channels
+    ${CMAKE_CURRENT_SOURCE_DIR}/channels/aicpu/
+    ${CMAKE_CURRENT_SOURCE_DIR}/channels/aicpu/device/
     ${CMAKE_CURRENT_SOURCE_DIR}/sockets
 )

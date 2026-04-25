@@ -174,7 +174,7 @@ target_include_directories(hccd PRIVATE
     ${HCOMM_ROOT_DIR}/src/common/debug/config
     ${HCOMM_ROOT_DIR}/src/framework/common/src/aicpu
 )
-# 添加 legacy 目录下的头文件搜索路径
+# 添加 src/legacy/ 目录下的头文件搜索路径
 FILE(GLOB_RECURSE LEGACY_SOURCE_LIST LIST_DIRECTORIES TRUE ${HCOMM_ROOT_DIR}/src/legacy/*)
 foreach(legacy_dir ${LEGACY_SOURCE_LIST})
     if(IS_DIRECTORY ${legacy_dir})

@@ -17,5 +17,15 @@ add_subdirectory(communicator)
 
 target_include_directories(hcomm PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/rank_pairs
+    ${CMAKE_CURRENT_SOURCE_DIR}/communicator
+    ${CMAKE_CURRENT_SOURCE_DIR}/rank
+    ${CMAKE_CURRENT_SOURCE_DIR}/rank/comm_mems/
+    ${CMAKE_CURRENT_SOURCE_DIR}/dfx
+    ${CMAKE_CURRENT_SOURCE_DIR}/dfx/profiling
+    ${CMAKE_CURRENT_SOURCE_DIR}/dfx/profiling/aicpu
+    ${CMAKE_CURRENT_SOURCE_DIR}/dfx/profiling/host
+    ${CMAKE_CURRENT_SOURCE_DIR}/dfx/taskException
+    ${CMAKE_CURRENT_SOURCE_DIR}/dfx/taskException/aicpu
+    ${CMAKE_CURRENT_SOURCE_DIR}/dfx/taskException/host
 )
 

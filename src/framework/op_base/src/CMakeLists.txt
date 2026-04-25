@@ -17,6 +17,10 @@ target_sources(hcomm PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/op_base_host.cc
 )
 
+target_include_directories(hcomm PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
 if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         ${src_list}

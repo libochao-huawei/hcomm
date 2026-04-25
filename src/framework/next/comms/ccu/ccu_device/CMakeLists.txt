@@ -21,3 +21,11 @@ set(src_list
 target_sources(hcomm PRIVATE
     ${src_list}
 )
+
+target_include_directories(hcomm PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/ccu_comp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ccu_comp/ccu_channel
+    ${CMAKE_CURRENT_SOURCE_DIR}/ccu_comp/ccu_channel/ccu_pfe
+    ${CMAKE_CURRENT_SOURCE_DIR}/ccu_comp/ccu_channel/ccu_channel_ctx_v1
+)

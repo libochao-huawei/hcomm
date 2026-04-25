@@ -17,6 +17,11 @@ target_sources(hcomm PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/hcom_host_profiling.cc
 )
 
+target_include_directories(hcomm PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/gradient_segment
+)
+
 add_subdirectory(gradient_segment)
 
 if(TARGET ccl_kernel)

@@ -21,6 +21,18 @@ target_sources(hcomm PRIVATE
     task_abort_handler.cc
 )
 
+target_include_directories(hcomm PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource_manager
+    ${CMAKE_CURRENT_SOURCE_DIR}/one_sided_service
+    ${CMAKE_CURRENT_SOURCE_DIR}/zero_copy
+    ${CMAKE_CURRENT_SOURCE_DIR}/independent_op
+    ${CMAKE_CURRENT_SOURCE_DIR}/independent_op/rank_graph
+    ${CMAKE_CURRENT_SOURCE_DIR}/independent_op/resource/engine
+    ${CMAKE_CURRENT_SOURCE_DIR}/independent_op/channel
+    ${CMAKE_CURRENT_SOURCE_DIR}/independent_op/channel/device
+)
+
 if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         ${src_list}
