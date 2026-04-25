@@ -81,7 +81,7 @@ HcclResult TopoInfoExchangeAgent::Setup()
     HCCL_INFO("TopoExchangeAgent: client connect with server ip[%s] port[%u] success.",
         serverIP_.GetReadableAddress(), serverPort_);
 
-    if (!isByMasterInfo_ && localRankInfo_.rankSize > TOPO_HIERARCHICAL_ENABLE_THRESHOLD) {
+    if (!isByMasterInfo_ && localRankInfo_.rankSize > GetExternalInputTopoHierarchicalThreshold()) {
         ret = socket_->Send(&localRankHandle_, sizeof(localRankHandle_));
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[SendRankHandle]errNo[0x%016llx] rankID[%s] send localRankHandle to remote by"\
