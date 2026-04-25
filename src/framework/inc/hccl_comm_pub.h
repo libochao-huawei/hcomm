@@ -424,7 +424,7 @@ public:
 
     // 交换信息管理接口
     HcclResult AddExchangeInfo(void *data, uint32_t length);
-    HcclResult GetExchangeInfo(uint32_t remoteRank, void* data, uint32_t length);
+    HcclResult GetExchangeInfo(uint32_t remoteRank, void* data, uint32_t &length);
     HcclResult StoreRemoteExchangeInfo(uint32_t remoteRank, const std::vector<u8>& data);
     void ClearExchangeInfoState();
     bool IsExchangeInfoReady() const;
