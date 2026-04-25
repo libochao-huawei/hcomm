@@ -4,6 +4,7 @@
 #include "framework/aicpu_communicator.h"
 #include "dfx/aicpu_executor_tracer.h"
 #include "read_write_lock_base.h"
+#include "mockcpp/mockcpp.hpp"
 
 #ifndef private
 #define private public
@@ -13,15 +14,6 @@
 using namespace testing;
 using namespace dfx_tracer;
 using namespace hccl;
-
-// 声明全局变量，用于访问AicpuHcclProcess中的通信域映射
-extern "C" {
-    struct hcclCommAicpuInfo {
-        ReadWriteLockBase commAicpuMapMutex;
-        std::unordered_map<std::string, std::pair<std::shared_ptr<hccl::HcclCommAicpu>, bool>> commMap;
-    };
-    extern hcclCommAicpuInfo g_commAicpuInfo;
-}
 
 class TestHcclCommAicpu : public hccl::HcclCommAicpu {
 public:
@@ -47,13 +39,11 @@ TestHcclCommAicpu::TestHcclCommAicpu()
 class ExecutorTracerTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        // 清空通信域映射
-        g_commAicpuInfo.commMap.clear();
     }
 
     void TearDown() override {
-        // 清空通信域映射
-        g_commAicpuInfo.commMap.clear();
+        GlobalMockObject::verify();
+        GlobalMockObject::reset();
     }
 };
 
@@ -83,36 +73,46 @@ TEST_F(ExecutorTracerTest, Ut_StopBackGroundDfx)
     EXPECT_EQ(ctx.dfxExtendInfo.commandToBackGroud, CommandToBackGroud::kStop);
 }
 
+// 测试用的AicpuGetCommAll stub函数
+TestHcclCommAicpu g_testComm;
+HcclResult AicpuGetCommAll_stub(std::vector<std::pair<std::string, hccl::HcclCommAicpu *>> &aicpuCommInfo)
+{
+    aicpuCommInfo.push_back(std::make_pair("test_group", &g_testComm));
+    return HCCL_SUCCESS;
+}
+
 TEST_F(ExecutorTracerTest, Ut_TaskMonitor_CommInfoStatus_True)
 {
-    // 创建测试通信域对象
-    auto testComm = std::make_shared<TestHcclCommAicpu>();
-    testComm->m_commInfoStatus = true;
-    testComm->m_streamTaskMonitorCalled = false;
+    // 设置测试通信域对象状态
+    g_testComm.m_commInfoStatus = true;
+    g_testComm.m_streamTaskMonitorCalled = false;
 
-    // 将测试对象添加到全局通信域映射中
-    g_commAicpuInfo.commMap["test_group"] = std::make_pair(testComm, true);
+    // Mock AicpuGetCommAll方法
+    MOCKER(AicpuHcclProcess::AicpuGetCommAll)
+        .stubs()
+        .will(invoke(AicpuGetCommAll_stub));
 
     // 执行TaskMonitor函数
     ExecutorTracer::TaskMonitor();
 
     // 验证StreamTaskMonitor被调用
-    EXPECT_TRUE(testComm->m_streamTaskMonitorCalled);
+    EXPECT_TRUE(g_testComm.m_streamTaskMonitorCalled);
 }
 
 TEST_F(ExecutorTracerTest, Ut_TaskMonitor_CommInfoStatus_False)
 {
-    // 创建测试通信域对象
-    auto testComm = std::make_shared<TestHcclCommAicpu>();
-    testComm->m_commInfoStatus = false;
-    testComm->m_streamTaskMonitorCalled = false;
+    // 设置测试通信域对象状态
+    g_testComm.m_commInfoStatus = false;
+    g_testComm.m_streamTaskMonitorCalled = false;
 
-    // 将测试对象添加到全局通信域映射中
-    g_commAicpuInfo.commMap["test_group"] = std::make_pair(testComm, true);
+    // Mock AicpuGetCommAll方法
+    MOCKER(AicpuHcclProcess::AicpuGetCommAll)
+        .stubs()
+        .will(invoke(AicpuGetCommAll_stub));
 
     // 执行TaskMonitor函数
     ExecutorTracer::TaskMonitor();
 
     // 验证StreamTaskMonitor未被调用
-    EXPECT_FALSE(testComm->m_streamTaskMonitorCalled);
+    EXPECT_FALSE(g_testComm.m_streamTaskMonitorCalled);
 }
