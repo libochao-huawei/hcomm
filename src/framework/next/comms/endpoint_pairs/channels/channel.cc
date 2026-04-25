@@ -66,7 +66,7 @@ HcclResult Channel::CreateChannel(
             return HCCL_E_NOT_FOUND;
     }
     CHK_PTR_NULL(channelPtr);
-    CHK_RET(channelPtr->Init());
+    CHK_RET_UNAVAIL(channelPtr->Init());
     return HCCL_SUCCESS;
 }
 

@@ -144,6 +144,7 @@ set(HCOMM_FRAMEWORK_INCLUDE_LIST
     ${HCOMM_CODE_FRAMEWORK}/communicator/impl/independent_op/rank_graph
     ${HCOMM_CODE_FRAMEWORK}/communicator/impl/independent_op/resource/engine
 
+    ${HCOMM_CODE_FRAMEWORK}/next/
     ${HCOMM_CODE_FRAMEWORK}/next/comms/comm_engine_res/threads
     ${HCOMM_CODE_FRAMEWORK}/next/comms/comm_engine_res/threads/slaves/
     ${HCOMM_CODE_FRAMEWORK}/next/coll_comms
@@ -189,6 +190,7 @@ set(HCOMM_FRAMEWORK_INCLUDE_LIST
 )
 
 set(HCOMM_LEGACY_INCLUDE_LIST
+    ${HCOMM_CODE_LEGACY}
     ${HCOMM_CODE_LEGACY}/interface
     ${HCOMM_CODE_LEGACY}/common
     ${HCOMM_CODE_LEGACY}/common/utils
@@ -211,7 +213,13 @@ set(HCOMM_LEGACY_INCLUDE_LIST
     ${HCOMM_CODE_LEGACY}/unified_platform
     ${HCOMM_CODE_LEGACY}/unified_platform/external_system
     ${HCOMM_CODE_LEGACY}/unified_platform/common
+    ${HCOMM_CODE_LEGACY}/unified_platform/ccu/
+    ${HCOMM_CODE_LEGACY}/unified_platform/ccu/ccu_device/
+    ${HCOMM_CODE_LEGACY}/unified_platform/ccu/ccu_device/ccu_component/
+    ${HCOMM_CODE_LEGACY}/unified_platform/ccu/ccu_device/ccu_component/ccu_channel/
+    ${HCOMM_CODE_LEGACY}/unified_platform/ccu/ccu_context/
     ${HCOMM_CODE_LEGACY}/unified_platform/pub_inc
+    ${HCOMM_CODE_LEGACY}/unified_platform/pub_inc/ccu/
     ${HCOMM_CODE_LEGACY}/unified_platform/resource
     ${HCOMM_CODE_LEGACY}/unified_platform/resource/transport
     ${HCOMM_CODE_LEGACY}/unified_platform/resource/transport/aicpu

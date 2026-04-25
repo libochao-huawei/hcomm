@@ -75,6 +75,9 @@ private:
         const EndpointDesc &remoteEndpointDesc, uint32_t &listenPort, HcommChannelDesc &hcommDesc);
     HcclResult GetLocalTlsStatus(Hccl::TlsStatus &tlsStatus) const;
 
+    HcclResult TryInitCcuInstance();
+    HcclResult DestroyNewChannels(CommEngine engine, const HcclChannelDesc* channelDescs);
+
     aclrtBinHandle binHandle_{nullptr};
     uint32_t rankId_{};
     CommConfig config_{};
@@ -94,6 +97,9 @@ private:
 
     // RankGraph (临时放在myRank里面，后面会随着createchannel整体迁移到RankPairMgr上)
     RankGraph* rankGraph_{nullptr};
+
+    // 记录每次调用BatchCreateChannels时新增的channelIndex, reuseIdx
+    std::vector<std::pair<u32, u32>> newChannels_{};
 
     // Ns recovery
     std::unique_ptr<NsRecoveryProcessor> nsRecoveryProcessor_{nullptr};

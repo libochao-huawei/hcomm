@@ -46,9 +46,9 @@ constexpr TpProtocol LOOP_JETTY_PROTOCOL = TpProtocol::TP; // 环回使用TP避�
 
 CcuComponent &CcuComponent::GetInstance(const int32_t deviceLogicId)
 {
-    static CcuComponent ccuComponent[MAX_MODULE_DEVICE_NUM];
+    static CcuComponent ccuComponent[MAX_MODULE_DEVICE_NUM + 1];
 
-    if (deviceLogicId < 0 || static_cast<uint32_t>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM) {
+    if (deviceLogicId < 0 || static_cast<uint32_t>(deviceLogicId) > MAX_MODULE_DEVICE_NUM) {
         THROW<InvalidParamsException>("[CcuComponent][%s] failed, devLogicId[%d] should be less "
             "than %u.", __func__, deviceLogicId, MAX_MODULE_DEVICE_NUM);
     }
@@ -897,7 +897,7 @@ HcclResult CcuComponent::CleanTaskKillState() const
     return HcclResult::HCCL_SUCCESS;
 }
 
-std::array<bool, MAX_CCU_IODIE_NUM> CcuComponent::GetDieEnableFlags() const
+const std::array<bool, MAX_CCU_IODIE_NUM> &CcuComponent::GetDieEnableFlags() const
 {
     return dieEnableFlags;
 }
