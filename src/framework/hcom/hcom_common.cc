@@ -480,6 +480,7 @@ HcclResult HcomCreateGroup(const char *group, u32 rankNum, u32 *rankIds)
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
+            CheckCcuMc2CompatMode();
             CHK_RET(HcomCreateGroupImplV2(group, rankNum, ranks));
             HcclGroupParams groupParams{};
             void *commV2 = nullptr;
@@ -614,6 +615,7 @@ HcclResult HcomDestroyGroup(const char *group)
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
             std::unique_lock<std::mutex> groupParaLock(hcomInfo.groupParamsLock);
+            CHK_RET(HcomDestroyGroupImplV2(group));
             auto iter = hcomInfo.hcomGroupMap.find(group);
             if (iter == hcomInfo.hcomGroupMap.end()) {
                 HCCL_ERROR(
@@ -622,7 +624,6 @@ HcclResult HcomDestroyGroup(const char *group)
             }
             hcomInfo.hcomGroupMap.erase(group);
             groupParaLock.unlock();
-            CHK_RET(HcomDestroyGroupImplV2(group));
             return HCCL_SUCCESS;
         }());
 #endif
@@ -1041,12 +1042,12 @@ HcclResult HcomDestroy(void)
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
             std::unique_lock<std::mutex> lock(g_destroyDeviceLock);
+            CHK_RET(HcomDestroyV2());
             for (u32 i = 0; i <= MAX_MODULE_DEVICE_NUM; i++) {
                 HcomInfo &hcomInfo = HcomGetCtxHomInfoById(i);
                 hcomInfo.pComm = nullptr;
                 hcomInfo.hcomGroupMap.clear();
             }
-            CHK_RET(HcomDestroyV2());
             return HCCL_SUCCESS;
         }());
 #endif
@@ -1467,6 +1468,7 @@ HcclResult HcomInitByFile(const char *rankTablePath, const char *identify)
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
+            CheckCcuMc2CompatMode();
             CHK_RET(HcomInitByFileV2(rankTablePath, identify));
             u32 rankNum = 0;
             CHK_RET(HcomGetRankSize(HCCL_WORLD_GROUP, &rankNum));
