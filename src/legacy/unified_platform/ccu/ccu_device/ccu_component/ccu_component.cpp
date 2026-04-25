@@ -510,7 +510,6 @@ HcclResult CcuComponent::ConfigLoopChannel(const uint8_t dieId, const IpAddress 
         });
     }
 
-    CHK_PTR_NULL(channelMgrs[dieId]);
     return channelMgrs[dieId]->Config(cfg);
 }
 
@@ -612,7 +611,6 @@ HcclResult CcuComponent::AllocChannels(const uint8_t dieId, const ChannelPara &c
 {
     CHK_RET(CheckDieValid(__func__, devLogicId, dieId, dieEnableFlags));
 
-    CHK_PTR_NULL(channelMgrs[dieId]);
     auto ret = channelMgrs[dieId]->Alloc(channelPara, channelInfos);
     CHK_PRT_RET(ret != HcclResult::HCCL_SUCCESS,
         HCCL_WARNING("[CcuComponent][%s] failed, feId[%u], devLogicId[%d], dieId[%u].",
@@ -632,7 +630,6 @@ HcclResult CcuComponent::ConfigChannel(const uint8_t dieId, const ChannelCfg &cf
             "devLogicId[%d], dieId[%u].", __func__, channelId, devLogicId, dieId),
         HcclResult::HCCL_E_PARA);
 
-    CHK_PTR_NULL(channelMgrs[dieId]);
     auto ret = channelMgrs[dieId]->Config(cfg);
     CHK_PRT_RET(ret != HcclResult::HCCL_SUCCESS,
         HCCL_WARNING("[CcuComponent][%s] failed, channelId[%u], devLogicId[%d], dieId[%u].",
@@ -650,7 +647,6 @@ HcclResult CcuComponent::ReleaseChannel(const uint8_t dieId, const uint32_t chan
             "devLogicId[%d], dieId[%u].", __func__, channelId, devLogicId, dieId),
         HcclResult::HCCL_E_PARA);
 
-    CHK_PTR_NULL(channelMgrs[dieId]);
     auto ret = channelMgrs[dieId]->Release(channelId);
     CHK_PRT_RET(ret != HcclResult::HCCL_SUCCESS,
         HCCL_WARNING("[CcuComponent][%s] failed, channelId[%u], devLogicId[%d], dieId[%u].",
@@ -681,7 +677,6 @@ HcclResult CcuComponent::AllocRes(const uint8_t dieId, const ResType resType, co
 {
     CHK_RET(CheckDieValid(__func__, devLogicId, dieId, dieEnableFlags));
 
-    CHK_PTR_NULL(resAllocators[dieId]);
     auto ret = resAllocators[dieId]->Alloc(resType, num, consecutive, resInfos);
     CHK_PRT_RET(ret != HcclResult::HCCL_SUCCESS,
         HCCL_WARNING("[CcuComponent][%s] failed, resType[%s], num[%u], devLogicId[%d], dieId[%u].",
@@ -696,7 +691,6 @@ HcclResult CcuComponent::ReleaseRes(const uint8_t dieId, const ResType resType, 
 {
     CHK_RET(CheckDieValid(__func__, devLogicId, dieId, dieEnableFlags));
 
-    CHK_PTR_NULL(resAllocators[dieId]);
     auto ret = resAllocators[dieId]->Release(resType, startId, num);
     CHK_PRT_RET(ret != HcclResult::HCCL_SUCCESS,
         HCCL_WARNING("[CcuComponent][%s] failed, resType[%s], startId[%u], num[%u], "
@@ -710,7 +704,6 @@ HcclResult CcuComponent::ReleaseRes(const uint8_t dieId, const ResType resType, 
 HcclResult CcuComponent::AllocIns(const uint8_t dieId, const uint32_t num, ResInfo &insInfo)
 {
     CHK_RET(CheckDieValid(__func__, devLogicId, dieId, dieEnableFlags));
-    CHK_PTR_NULL(resAllocators[dieId]);
 
     vector<ResInfo> resInfos;
     auto ret = resAllocators[dieId]->Alloc(ResType::INS, num, true, resInfos);
@@ -726,7 +719,6 @@ HcclResult CcuComponent::AllocIns(const uint8_t dieId, const uint32_t num, ResIn
 HcclResult CcuComponent::ReleaseIns(const uint8_t dieId, const ResInfo &insInfo)
 {
     CHK_RET(CheckDieValid(__func__, devLogicId, dieId, dieEnableFlags));
-    CHK_PTR_NULL(resAllocators[dieId]);
 
     auto ret = resAllocators[dieId]->Release(ResType::INS, insInfo.startId, insInfo.num);
     CHK_PRT_RET(ret != HcclResult::HCCL_SUCCESS,
@@ -740,7 +732,6 @@ HcclResult CcuComponent::ReleaseIns(const uint8_t dieId, const ResInfo &insInfo)
 HcclResult CcuComponent::AllocCke(const uint8_t dieId, const uint32_t num, vector<ResInfo> &ckeInfos)
 {
     CHK_RET(CheckDieValid(__func__, devLogicId, dieId, dieEnableFlags));
-    CHK_PTR_NULL(resAllocators[dieId]);
 
     auto ret = resAllocators[dieId]->Alloc(ResType::CKE, num, false, ckeInfos);
     CHK_PRT_RET(ret != HcclResult::HCCL_SUCCESS,
@@ -754,7 +745,6 @@ HcclResult CcuComponent::AllocCke(const uint8_t dieId, const uint32_t num, vecto
 HcclResult CcuComponent::ReleaseCke(const uint8_t dieId, const vector<ResInfo> &ckeInfos)
 {
     CHK_RET(CheckDieValid(__func__, devLogicId, dieId, dieEnableFlags));
-    CHK_PTR_NULL(resAllocators[dieId]);
 
     for (auto &ckeInfo : ckeInfos) {
         auto ret = resAllocators[dieId]->Release(ResType::CKE, ckeInfo.startId, ckeInfo.num);
@@ -770,7 +760,6 @@ HcclResult CcuComponent::ReleaseCke(const uint8_t dieId, const vector<ResInfo> &
 HcclResult CcuComponent::AllocXn(const uint8_t dieId, const uint32_t num, vector<ResInfo> &xnInfos)
 {
     CHK_RET(CheckDieValid(__func__, devLogicId, dieId, dieEnableFlags));
-    CHK_PTR_NULL(resAllocators[dieId]);
 
     auto ret = resAllocators[dieId]->Alloc(ResType::XN, num, false, xnInfos);
     CHK_PRT_RET(ret != HcclResult::HCCL_SUCCESS,
@@ -784,7 +773,6 @@ HcclResult CcuComponent::AllocXn(const uint8_t dieId, const uint32_t num, vector
 HcclResult CcuComponent::ReleaseXn(const uint8_t dieId, const vector<ResInfo> &xnInfos)
 {
     CHK_RET(CheckDieValid(__func__, devLogicId, dieId, dieEnableFlags));
-    CHK_PTR_NULL(resAllocators[dieId]);
 
     for (auto &xnInfo : xnInfos) {
         auto ret = resAllocators[dieId]->Release(ResType::XN, xnInfo.startId, xnInfo.num);
