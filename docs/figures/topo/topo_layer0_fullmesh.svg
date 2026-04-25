@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f0f4f8"/>
+    </radialGradient>
+    <radialGradient id="nodeGrad" cx="40%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#0088cc"/>
+      <stop offset="100%" stop-color="#005599"/>
+    </radialGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="500" height="500" fill="url(#bg)" rx="12" stroke="#ccc" stroke-width="1"/>
+  <!-- Title -->
+  <text x="250" y="36" text-anchor="middle" fill="#1a1a2e" font-size="18" font-weight="bold" font-family="Arial, sans-serif">Server 内 8 卡 FullMesh 互联（Layer 0）</text>
+  <!-- Full mesh lines between all 8 nodes -->
+  <!-- Positions: 8 nodes on a circle, radius=180, center=(250,270) -->
+  <g stroke="#b0c4d8" stroke-width="1.5" opacity="0.6">
+    <!-- All pairs connections -->
+    <line x1="250" y1="90" x2="377" y2="143"/><line x1="250" y1="90" x2="430" y2="270"/>
+    <line x1="250" y1="90" x2="377" y2="397"/><line x1="250" y1="90" x2="250" y2="450"/>
+    <line x1="250" y1="90" x2="123" y2="397"/><line x1="250" y1="90" x2="70" y2="270"/>
+    <line x1="250" y1="90" x2="123" y2="143"/>
+    <line x1="377" y1="143" x2="430" y2="270"/><line x1="377" y1="143" x2="377" y2="397"/>
+    <line x1="377" y1="143" x2="250" y2="450"/><line x1="377" y1="143" x2="123" y2="397"/>
+    <line x1="377" y1="143" x2="70" y2="270"/><line x1="377" y1="143" x2="123" y2="143"/>
+    <line x1="430" y1="270" x2="377" y2="397"/><line x1="430" y1="270" x2="250" y2="450"/>
+    <line x1="430" y1="270" x2="123" y2="397"/><line x1="430" y1="270" x2="70" y2="270"/>
+    <line x1="430" y1="270" x2="123" y2="143"/>
+    <line x1="377" y1="397" x2="250" y2="450"/><line x1="377" y1="397" x2="123" y2="397"/>
+    <line x1="377" y1="397" x2="70" y2="270"/><line x1="377" y1="397" x2="123" y2="143"/>
+    <line x1="250" y1="450" x2="123" y2="397"/><line x1="250" y1="450" x2="70" y2="270"/>
+    <line x1="250" y1="450" x2="123" y2="143"/>
+    <line x1="123" y1="397" x2="70" y2="270"/><line x1="123" y1="397" x2="123" y2="143"/>
+    <line x1="70" y1="270" x2="123" y2="143"/>
+  </g>
+  <!-- Nodes -->
+  <g filter="url(#glow)">
+    <circle cx="250" cy="90" r="22" fill="url(#nodeGrad)" stroke="#0088cc" stroke-width="2"/>
+    <circle cx="377" cy="143" r="22" fill="url(#nodeGrad)" stroke="#0088cc" stroke-width="2"/>
+    <circle cx="430" cy="270" r="22" fill="url(#nodeGrad)" stroke="#0088cc" stroke-width="2"/>
+    <circle cx="377" cy="397" r="22" fill="url(#nodeGrad)" stroke="#0088cc" stroke-width="2"/>
+    <circle cx="250" cy="450" r="22" fill="url(#nodeGrad)" stroke="#0088cc" stroke-width="2"/>
+    <circle cx="123" cy="397" r="22" fill="url(#nodeGrad)" stroke="#0088cc" stroke-width="2"/>
+    <circle cx="70" cy="270" r="22" fill="url(#nodeGrad)" stroke="#0088cc" stroke-width="2"/>
+    <circle cx="123" cy="143" r="22" fill="url(#nodeGrad)" stroke="#0088cc" stroke-width="2"/>
+  </g>
+  <!-- Labels -->
+  <g fill="#ffffff" font-size="13" font-weight="bold" text-anchor="middle" font-family="Arial, sans-serif">
+    <text x="250" y="95">0</text><text x="377" y="148">1</text><text x="430" y="275">2</text>
+    <text x="377" y="402">3</text><text x="250" y="455">4</text><text x="123" y="402">5</text>
+    <text x="70" y="275">6</text><text x="123" y="148">7</text>
+  </g>
+  <!-- Legend -->
+  <text x="250" y="488" text-anchor="middle" fill="#4a6a8a" font-size="12" font-family="Arial, sans-serif">任意两卡直连（hop=1），链路协议：UB_CTP</text>
+</svg>
