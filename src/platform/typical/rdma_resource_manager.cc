@@ -58,7 +58,13 @@ HcclResult RdmaResourceManager::Init()
     CHK_RET(NetworkManager::GetInstance(deviceLogicId_).Init(nicDeploy_, false, devicePhyId_, true));
     HCCL_DEBUG("[RdmaResourceManager][Init] NetworkManager Init, deviceLogicId[%d], devicePhyId[%u], nicDeployment_[%d]",
         deviceLogicId_, devicePhyId_, nicDeploy_);
-        
+    CHK_RET(InitResvMemInfo());
+    u32 poolId = 0;
+    if (GetResvMemPoolIdByType(0, poolId, false)) {
+        CHK_RET(NetworkManager::GetInstance(deviceLogicId_).DeInit(nicDeploy_, false, true));
+        CHK_RET(NetworkManager::GetInstance(deviceLogicId_).Init(nicDeploy_, false, devicePhyId_, true, true, poolId));
+    }
+
     std::vector<HcclIpAddress> deviceIPs;
     CHK_RET(hrtRaGetDeviceIP(devicePhyId_, deviceIPs));
     CHK_PRT_RET(deviceIPs.size() < 1,
@@ -96,7 +102,7 @@ HcclResult RdmaResourceManager::Init()
     CHK_RET(hrtRaRegGlobalMr(rdmaHandle_, notifyMrInfo_, mrHandle_));
     HCCL_RUN_INFO("[RdmaResourceManager][Init] Register NotifyBaseAddr addr[%p] size[%llu] key[%u]", notifyMrInfo_.addr,
         notifyMrInfo_.size, notifyMrInfo_.lkey);
-    CHK_RET(InitResvMemInfo());
+
     return HCCL_SUCCESS;
 }
 
@@ -180,7 +186,8 @@ HcclResult RdmaResourceManager::GetNotifyMrInfo(struct MrInfoT& mrInfo)
     return HCCL_SUCCESS;
 }
 
-HcclResult RdmaResourceManager::InitResvMemInfo() {
+HcclResult RdmaResourceManager::InitResvMemInfo()
+{
     std::string flagValue;
     std::vector<std::string> parts;
     std::vector<std::string> tokens;
@@ -217,29 +224,35 @@ HcclResult RdmaResourceManager::InitResvMemInfo() {
         u32 type = std::stoi(tokens[HCCN_RESV_MEM_TYPE_OFFSET]);
         u32 pageSize = std::stoi(tokens[HCCN_RESV_MEM_PAGESIZE_OFFSET]);
         u32 poolId = std::stoi(tokens[HCCN_RESV_MEM_POOLID_OFFSET]);
-        int supportLite;
-        if (HCCL_SUCCESS == HrtGetRdmaLiteStatus(rdmaHandle_, &supportLite)) {
-            if (((2 == supportLite) && (HCCN_RESV_MEM_PAGESIZE_64K == pageSize)) || (1 == supportLite)) {
-                resvMemInfo_.insert({type, poolId});
-            }
-        }
+        resvMemInfo_.insert({type, std::make_pair(poolId, pageSize)});
         tokens.clear();
     }
 
     return HCCL_SUCCESS;
 }
 
-HcclResult RdmaResourceManager::GetResvMemPoolIdByType(u32 type, u32& poolId)
+HcclResult RdmaResourceManager::GetResvMemPoolIdByType(u32 type, u32& poolId, bool isCreatQp)
 {
     auto it = resvMemInfo_.find(type);
     if (it == resvMemInfo_.end()) {
         HCCL_WARNING("[RdmaResourceManager][GetResvMemPoolIdByType] can not find [%u].", type);
         return HCCL_E_NOT_FOUND;
     }
+    if (!isCreatQp) {
+        poolId = resvMemInfo_[type].first;
+        HCCL_INFO("[RdmaResourceManager][GetResvMemPoolIdByType] type[%u], resvMemPoolId exist[%u].", type, poolId);
+        return HCCL_SUCCESS;
+    }
 
-    poolId = resvMemInfo_[type];
-    HCCL_RUN_INFO("[RdmaResourceManager][GetResvMemPoolIdByType] type[%u], resvMemPoolId [%u].", type, poolId);
-    return HCCL_SUCCESS;
+    int supportLite;
+    if (HCCL_SUCCESS == HrtGetRdmaLiteStatus(rdmaHandle_, &supportLite)) {
+        if (((2 == supportLite) && (HCCN_RESV_MEM_PAGESIZE_64K == resvMemInfo_[type].second)) || (1 == supportLite)) {
+            poolId = resvMemInfo_[type].first;
+            HCCL_RUN_INFO("[RdmaResourceManager][GetResvMemPoolIdByType] type[%u], resvMemPoolId [%u].", type, poolId);
+            return HCCL_SUCCESS;
+        }
+    }
+    return HCCL_E_NOT_FOUND;
 }
 
 }
