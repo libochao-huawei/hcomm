@@ -33,8 +33,12 @@ HcclResult Channel::CreateChannel(
                 EXECEPTION_CATCH(channelPtr = std::make_unique<HostCpuRoceChannel>(endpointHandle, channelDesc),
                     return HCCL_E_PARA);
                 break;
+            } else (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_UBOE) {
+                EXECEPTION_CATCH(channelPtr = std::make_unique<HostCpuUboeChannel>(endpointHandle, channelDesc),
+                    return HCCL_E_PARA);
+                break;
             }
-            HCCL_ERROR("[Channel][%s] Engine[COMM_ENGINE_CPU] not support Protocol[%d] except COMM_PROTOCOL_ROCE", 
+            HCCL_ERROR("[Channel][%s] Engine[COMM_ENGINE_CPU] not support Protocol[%d] except COMM_PROTOCOL_ROCE or COMM_PROTOCOL_UBOE", 
                         __func__, channelDesc.remoteEndpoint.protocol);
             return HCCL_E_NOT_SUPPORT;
         case COMM_ENGINE_CPU_TS:
