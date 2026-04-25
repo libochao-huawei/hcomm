@@ -1461,15 +1461,8 @@ HcclResult TransportManager::SetMachinePara(const std::string &tag, MachineType 
         rankConsistentDataLength_, tag));
   
     // 多channel场景处理
-    bool isNewChannel = true;
-    for (const auto &transportPair : transportMap_) { // 检查transportMap_中是否已存在该remoteRank链路
-        if (transportPair.second && transportPair.second->GetRemoteRank() == machinePara.remoteUserrank) {
-            isNewChannel = false;
-            break;
-        }
-    } 
-
-    if (isNewChannel && hcclComm_ != nullptr && hcclComm_->IsExchangeInfoReady()) {
+    // CreateLink线只在links[linkIdx]==nullptr时被创建，每次调用SetmachinePare即为新建链路
+    if (hcclComm_ != nullptr && hcclComm_->IsExchangeInfoReady()) {
         std::vector<u8> userExchangeInfo = hcclComm_->GetExchangeInfoBuf();
         uint32_t userExchangeInfoLen = hcclComm_->GetExchangeInfoLen();
         // 追加HCCL算子交换信息到exchangeInfo末尾
