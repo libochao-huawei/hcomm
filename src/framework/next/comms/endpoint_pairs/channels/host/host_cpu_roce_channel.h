@@ -47,7 +47,7 @@ public:
     std::function<HcclResult(const Hccl::TaskParam&, u64)> GetDfxCallback() const;
 
     // 数据面调用verbs接口
-    HcclResult NotifyRecord(const uint32_t remoteNotifyIdxd);
+    HcclResult NotifyRecord(const uint32_t remoteNotifyIdx);
     HcclResult NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout);
     HcclResult WriteWithNotify(void *dst, const void *src, const uint64_t len, uint32_t remoteNotifyIdx);
     HcclResult Write(void *dst, const void *src, uint64_t len);
