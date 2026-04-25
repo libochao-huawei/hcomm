@@ -990,7 +990,8 @@ HcclResult DevUbConnection::GetTpAttrAsync()
     uint32_t attrBitmap = 0;
     struct TpAttr tpAttr = {0};
 
-    CHK_RET(HrtRaGetTpAttrAsync(rdmaHandle, tpHandle, attrBitmap, tpAttr, reqHandle));
+    u32 devicePhyId = HrtGetDevicePhyIdByIndex(devLogicId);
+    CHK_RET(HrtRaGetTpAttrAsync(devicePhyId, rdmaHandle, tpHandle, attrBitmap, tpAttr, reqHandle));
     HCCL_INFO("[DevUbConnection::%s] locIpv4Addr[%s], rmtIpv4Addr[%s], locAddr[%s], rmtAddr[%s]",
         __func__, locIpv4Addr.Describe().c_str(), rmtIpv4Addr.Describe().c_str(),
         locAddr.Describe().c_str(), rmtAddr.Describe().c_str());
