@@ -37,6 +37,30 @@ HcclResult hrtOpenTsd()
 #endif
 }
 
+HcclResult hrtOpenTsdwithResvMem(u32 poolId)
+{
+#ifndef HCCD
+    std::string extPams[TSD_OPEN_EXT_PARA_NUM] =
+        {std::string("--hdcType=" + std::to_string(HDC_SERVICE_TYPE_RDMA_V2)),
+            std::string("--resvMemPoolId=" +std::to_string(poolId))};
+    rtProcExtParam extParams[TSD_OPEN_EXT_PARA_NUM] {};
+    for (u32 i = 0; i < TSD_OPEN_EXT_PARA_NUM; i++) {
+        extParams[i].paramInfo = extPams[i].c_str();
+        extParams[i].paramLen = extPams[i].size();
+    }
+    
+    rtNetServiceOpenArgs  openArgs;
+    openArgs.extParamList = extParams;
+    openArgs.extParamCnt = TSD_OPEN_EXT_PARA_NUM;
+    CHK_RET(hrtOpenNetService(&openArgs));
+    HCCL_INFO("hrtOpenTsdwithResvMem success,poolId[%u]", poolId);
+    return HCCL_SUCCESS;
+#else
+    HCCL_ERROR("[hrtOpenTsdwithResvMem]Does not support this interface.");
+    return HCCL_E_NOT_SUPPORT;
+#endif
+}
+
 HcclResult __hrtOpenNetService(rtNetServiceOpenArgs *openArgs)
 {
 #if !defined(CCL_KERNEL) && !defined(HCCD)
