@@ -524,6 +524,7 @@ static HcclResult GetRankTableInfo(const char *rankTablePath, std::string &rankt
     }
 
     HCCL_INFO("waiting for json file load complete");
+    HCCL_INFO("[GetRankTableInfo] rankTablePath[%s] resolvedPath[%s]", rankTablePath, resolvedPath);
     u64 ranktableFileSize = GetFileSize(resolvedPath);
     if (ranktableFileSize > RANKTABLE_FILE_MAX_SIZE || ranktableFileSize <= 0) {
         HCCL_ERROR("[GetRankTableInfo] ranktablefile size: %u, ranktable must be greater than 0 and less than %u", ranktableFileSize, RANKTABLE_FILE_MAX_SIZE);
