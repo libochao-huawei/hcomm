@@ -31,10 +31,14 @@ private:
         const std::vector<std::vector<Slice>> &multRingsUserMemSlice = std::vector<std::vector<Slice>>(0),
         const bool disableDMAReduce = false) override;
 
-    HcclResult RunLevel0To1(OpParam &param, const ReduceType &reduceType, ExecMem &execMem, Stream &streamL0L1);
-    HcclResult RunLevel2(OpParam &param, const ReduceType &reduceType, ExecMem &execMem, Stream &streamL2);
-    HcclResult KernelRunLevel0To1(const OpParam &param, ExecMem &execMem, Stream &streamL0L1);
-    HcclResult KernelRunLevel2(const OpParam &param, ExecMem &execMem, Stream &streamL2);
+    HcclResult RunLevel0To1(OpParam &param, const ReduceType &reduceType, ExecMem &execMem, Stream &streamL0L1,
+        const u64 baseOffset);
+    HcclResult RunLevel2(OpParam &param, const ReduceType &reduceType, ExecMem &execMem, Stream &streamL2,
+        const u64 baseOffset);
+    HcclResult KernelRunLevel0To1(const OpParam &param, ExecMem &execMem, Stream &streamL0L1,
+        const u64 baseOffset);
+    HcclResult KernelRunLevel2(const OpParam &param, ExecMem &execMem, Stream &streamL2,
+        const u64 baseOffset);
 
     HcclResult DoubleRingReduceScatter(const std::string &tag, DeviceMem inputMem, DeviceMem outputMem,
         const u64 count, const HcclDataType dataType, const HcclReduceOp reductionOp,

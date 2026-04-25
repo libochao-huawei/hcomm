@@ -515,6 +515,7 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
         }
     } else if (isOpbase && superPodNum_ > 1 &&
                !isAHCAlgo &&
+               !multiSuperPodDiffDeviceNumMode_ &&
                (topoType_ == TopoType::TOPO_TYPE_NP_SINGLE_RING ||
                 topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING) &&
                dataSize >= HCCL_SMALL_COUNT_2_MB) {
