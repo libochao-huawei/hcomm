@@ -157,6 +157,7 @@ STATIC int RsHandleEpollPollJfc(struct RsUbDevCb *devCb, urma_jfce_t *jfce)
         ret = -EOPENSRC;
         goto rearm_jfc;
     }
+    hccp_run_info("rs_urma_poll_jfc succ, polledCnt:%d", polledCnt);
 
     for (i = 0; i < polledCnt; i++) {
         jettyId = gCrBuf[i].local_id;
@@ -175,6 +176,7 @@ STATIC int RsHandleEpollPollJfc(struct RsUbDevCb *devCb, urma_jfce_t *jfce)
 rearm_jfc:
     retTmp = RsUrmaRearmJfc(evJfc, false);
     CHK_PRT_RETURN(retTmp != 0, hccp_err("rs_urma_rearm_jfc failed, retTmp:%d errno:%d", retTmp, errno), -EOPENSRC);
+    hccp_run_info("RsUrmaRearmJfc succ");
     return ret;
 }
 
