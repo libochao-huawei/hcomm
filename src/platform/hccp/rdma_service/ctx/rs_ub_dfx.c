@@ -157,6 +157,7 @@ STATIC int RsHandleEpollPollJfc(struct RsUbDevCb *devCb, urma_jfce_t *jfce)
         ret = -EOPENSRC;
         goto rearm_jfc;
     }
+    hccp_run_info("rs_urma_poll_jfc succ, polledCnt:%d", polledCnt);
 
     for (i = 0; i < polledCnt; i++) {
         jettyId = gCrBuf[i].local_id;
@@ -169,12 +170,14 @@ STATIC int RsHandleEpollPollJfc(struct RsUbDevCb *devCb, urma_jfce_t *jfce)
         }
         jettyCb->qpShareInfoAddr->ciVal += 1;
         RsJfcCallbackProcess(jettyCb, &(gCrBuf[i]), evJfc);
+        hccp_run_info("cqe status:%u", gCrBuf[i].status);
         RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
     }
 
 rearm_jfc:
     retTmp = RsUrmaRearmJfc(evJfc, false);
     CHK_PRT_RETURN(retTmp != 0, hccp_err("rs_urma_rearm_jfc failed, retTmp:%d errno:%d", retTmp, errno), -EOPENSRC);
+    hccp_run_info("RsUrmaRearmJfc succ");
     return ret;
 }
 
@@ -296,6 +299,7 @@ STATIC int RsUbGetSaveAsyncEvent(struct RsUbDevCb *devCb)
         goto free_event_cb;
     }
 
+    hccp_run_info("resId:%d devIndex:0x%x event_type:%d", asyncEventCb->resId, devCb->index, event->event_type);
     RsListAddTail(&asyncEventCb->list, &devCb->asyncEventList);
     devCb->asyncEventCnt++;
 
