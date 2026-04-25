@@ -89,6 +89,18 @@ void UbTransportLiteImpl::Init(std::vector<char> &uniqueId)
     ParseConnVec(connUniqueIds);
 }
 
+HcclResult UbTransportLiteImpl::SetAddTaskInfoCallback(std::function<HcclResult(u32, u32, const TaskParam&, u64)> callback) {
+    CHK_PTR_NULL(callback);
+    newCallback_ = callback;
+    return HCCL_SUCCESS;
+}
+
+HcclResult UbTransportLiteImpl::SetAddDpuTaskInfoCallback(std::function<HcclResult(const TaskParam&, u64)> callback) {
+    CHK_PTR_NULL(callback);
+    newDpuCallback_ = callback;
+    return HCCL_SUCCESS;
+}
+
 UbTransportLiteImpl::~UbTransportLiteImpl()
 {
     for (auto &it : connUniqueIdVec) {

@@ -86,6 +86,7 @@ struct DpuKernelLaunchParam {
     void       *hostMem;
     int32_t     deviceId;
     std::string commId;
+    s32         streamId;
 };
 DpuKernelLaunchParam hostArgsTemp;
 
@@ -3244,6 +3245,9 @@ HcclResult CommunicatorImpl::LaunchDpuKernel(aclrtFuncHandle &funcHandle)
     HCCL_INFO("[CommunicatorImpl::%s] DpuKernelLaunchParam{commId:%s; memorySize:%u; shareHBM:%p; hostMem:%p}",
               __func__, hostArgsTemp.commId.c_str(), hostArgsTemp.memorySize, hostArgsTemp.shareHBM,
               hostArgsTemp.hostMem);
+    s32 streamId = 0;
+    CHK_RET(GetDpuStreamId(streamId));
+    hostArgsTemp.streamId = streamId;
     size_t               argsSize = sizeof(hostArgsTemp);
     aclrtPlaceHolderInfo placeHolderArrays;
     size_t               placeHolderNum = 0;
@@ -3966,6 +3970,17 @@ HcclResult CommunicatorImpl::Mc2AiCpuStreamAllocAndGetV2(rtStream_t *aiCpuStream
     Stream *stream = aicpuStreamManager->GetFreeStream();
     *aiCpuStream = stream->GetPtr();
     HCCL_RUN_INFO("[CommunicatorImpl::Mc2AiCpuStreamAllocAndGetV2] success, stream %s", stream->Describe().c_str());
+    return HCCL_SUCCESS;
+}
+
+HcclResult CommunicatorImpl::GetDpuStreamId(s32 &streamId)
+{
+    s32 ret = HrtGetStreamId(dpuStream);
+    if (ret == -1) {
+        HCCL_ERROR("[GetDpuStreamId] HrtGetStreamId failed");
+        return HCCL_E_INTERNAL;
+    }
+    streamId = ret;
     return HCCL_SUCCESS;
 }
 

@@ -24,6 +24,7 @@ __attribute__((visibility("default"))) uint32_t RunDpuRpcSrvLaunch(const uint64_
         void*       hostMem;
         int32_t    deviceId;
         std::string commId;
+        s32         streamId;
     };
 
     HCCL_INFO("[%s] Launch Dpu Kernel: 0x%lx", __func__, args);

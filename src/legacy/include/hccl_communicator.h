@@ -134,9 +134,11 @@ public:
 
     u32 GetDeviceLogicId() const;
     u32 GetRankInParentComm();
-    HcclResult Mc2AiCpuStreamAllocAndGetV2(rtStream_t *aiCpuStream);
+HcclResult Mc2AiCpuStreamAllocAndGetV2(rtStream_t *aiCpuStream);
+
+    HcclResult GetStreamId(u32 &streamId);
  
-private:
+ private:
     CommParams                        commParams;
     HcclCommConfig                    config{};
     std::unique_ptr<CommunicatorImpl> pimpl;

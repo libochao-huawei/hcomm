@@ -120,9 +120,52 @@ struct MsprofHcclInfo {
     uint32_t reserve2;
 #ifdef __cplusplus
     MsprofHcclInfo() : role(0xFFFFFFFF), srcAddr(0xFFFFFFFF), dstAddr(0xFFFFFFFF),
-        dataSize(0xFFFFFFFF), opType(0xFFFFFFFF), 
+        dataSize(0xFFFFFFFF), opType(0xFFFFFFFF),
         dataType(0xFFFFFFFF), linkType(0xFFFFFFFF),
         transportType(0xFFFFFFFF), rdmaType(0xFFFFFFFF)
+    {
+    }
+#endif
+};
+
+struct MsprofDpuHcclTrack {
+    uint64_t itemId;
+    uint64_t cclTag;
+    uint64_t groupName;
+    uint32_t localRank;
+    uint32_t remoteRank;
+    uint32_t rankSize;
+    uint32_t stage;
+    uint64_t notifyID;
+    uint64_t timeStamp;
+    double durationEstimated;
+    uint64_t srcAddr;
+    uint64_t dstAddr;
+    uint64_t dataSize; // bytes
+    uint32_t taskId;
+    uint32_t reserve;
+    uint16_t streamId;
+    uint16_t planeID;
+    uint8_t opType; // {0: sum, 1: mul, 2: max, 3: min}
+    uint8_t dataType; // data type {0: INT8, 1: INT16, 2: INT32, 3: FP16, 4:FP32, 5:INT64, 6:UINT64}
+    uint8_t linkType; // link type {0: 'OnChip', 1: 'HCCS', 2: 'PCIe', 3: 'RoCE'}
+    uint8_t transportType; // transport type {0: SDMA, 1: RDMA, 2:LOCAL}
+    uint8_t rdmaType; // RDMA type {0: RDMASendNotify, 1:RDMASendPayload}
+    uint8_t role; // role {0: dst, 1:src}
+    uint8_t workFlowMode;
+    uint8_t reserves[9];
+    uint32_t aicpu_task_id;
+    uint16_t npuDevId;
+    uint16_t dpuDevId;
+#ifdef __cplusplus
+    MsprofDpuHcclTrack() : timeStamp(0), durationEstimated(0),
+        srcAddr(0xFFFFFFFFFFFFFFFF), dstAddr(0xFFFFFFFFFFFFFFFF),
+        dataSize(0xFFFFFFFFFFFFFFFF), taskId(0), reserve(0),
+        streamId(0), planeID(0), opType(0xFF),
+        dataType(0xFF), linkType(0xFF),
+        transportType(0xFF), rdmaType(0xFF),
+        role(0xFF), workFlowMode(0),
+        aicpu_task_id(0xFFFFFFFF), npuDevId(0xFFFF), dpuDevId(0xFFFF)
     {
     }
 #endif

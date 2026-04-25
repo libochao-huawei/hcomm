@@ -454,8 +454,10 @@ int32_t HcommWriteNbi(ChannelHandle channel, void *dst, const void *src, uint64_
 int32_t HcommWriteWithNotifyNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
     uint64_t len, uint32_t remoteNotifyIdx)
 {
-    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu], remoteNotifyIdx[%u].",
-        __func__, thread, channel, dst, src, len, remoteNotifyIdx);
+    s32 dpuDevId;
+    CHK_RET(hrtGetDevice(&dpuDevId));
+    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu], remoteNotifyIdxIdx[%u], dpuDevId[%d].",
+        __func__, thread, channel, dst, src, len, remoteNotifyIdx, dpuDevId);
 
     (void)thread;
     CHK_PTR_NULL(src);
@@ -472,8 +474,8 @@ int32_t HcommWriteWithNotifyNbiOnThread(ThreadHandle thread, ChannelHandle chann
         ret = HCCL_E_NOT_SUPPORT;
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu], remoteNotifyIdx[%u].",
-        __func__, thread, channel, dst, src, len, remoteNotifyIdx), ret);
+        HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu], remoteNotifyIdxIdx[%u], dpuDevId[%u].",
+            __func__, thread, channel, dst, src, len, remoteNotifyIdx, dpuDevId), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
@@ -621,6 +623,25 @@ int32_t HcommThreadRegisterDfx(ThreadHandle thread, std::function<HcclResult(u32
     CHK_PTR_NULL(threadPtr);
     CHK_RET(threadPtr->SetAddTaskInfoCallback(callback));
     HCCL_INFO("[HcommThreadRegisterDfx] Init success");
+    return HCCL_SUCCESS;
+}
+
+// int32_t HcommChannelRegisterDfx(ChannelHandle channel, std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback)
+// {
+//     HCCL_INFO("[HcommChannelRegisterDfx] Init begin");
+//     auto *const hostCpuRoceChannelPtr = reinterpret_cast<hcomm::HostCpuRoceChannel *>(channel);
+//     CHK_PTR_NULL(hostCpuRoceChannelPtr);
+//     CHK_RET(hostCpuRoceChannelPtr->SetDfxCallback(callback));
+//     HCCL_INFO("[HcommChannelRegisterDfx] Init success");
+//     return HCCL_SUCCESS;
+// }
+
+int32_t HcommDpuChannelRegisterDfx(ChannelHandle channel, std::function<HcclResult(const Hccl::TaskParam&, u64)> callback) {
+    HCCL_INFO("[HcommDpuChannelRegisterDfx] Init begin");
+    auto *const hostCpuRoceChannelPtr = reinterpret_cast<hcomm::HostCpuRoceChannel *>(channel);
+    CHK_PTR_NULL(hostCpuRoceChannelPtr);
+    CHK_RET(hostCpuRoceChannelPtr->SetDfxCallback(callback));
+    HCCL_INFO("[HcommDpuChannelRegisterDfx] Init success");
     return HCCL_SUCCESS;
 }
 
@@ -802,6 +823,7 @@ HcclResult HcclReportAicpuKernel(HcclComm comm, uint64_t beginTime, char* kernel
     uint32_t taskId = INVALID_UINT;
     uint32_t streamId = INVALID_UINT;
     CHK_RET(hrtGetTaskIdAndStreamID(taskId, streamId));
+    hcclCommDfx->SetAicpuTaskIdAndStreamId(taskId, streamId);
     CHK_RET(hcclCommDfx->AddTaskInfoCallback(streamId, taskId, taskParam, INVALID_U64));
     HCCL_INFO("[HcclReportAicpuKernel] HcclReportAicpuKernel sucess");
     return HCCL_SUCCESS;

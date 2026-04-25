@@ -455,12 +455,43 @@ HcclResult HcclTaskRegisterV2(HcclComm comm, const char *msgTag, Callback cb)
     CHK_PTR_NULL(comm);
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     std::string commId = communicator->GetId();
+    HCCL_INFO("[HcclTaskRegisterV2] commId[%s]", commId.c_str());
     if (g_taskServiceMap.find(commId) == g_taskServiceMap.end()) {
         HCCL_ERROR("[HcclTaskRegisterV2] TaskService of CommId[%s] Not Found, g_taskServiceMap size[%zu]", commId.c_str(), g_taskServiceMap.size());
         return HCCL_E_NOT_FOUND;
     }
     return g_taskServiceMap[commId]->TaskRegister(msgTag, cb);
 }
+
+HcclResult HcclTaskRegisterProfV2(HcclComm comm, ProfCallbackTemplate profCallback)
+{
+    HCCL_RUN_INFO("[HcclTaskRegisterProfV2] start to register prof task");
+    CHK_PTR_NULL(comm);
+    Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
+    std::string commId = communicator->GetId();
+    HCCL_INFO("[HcclTaskRegisterProfV2] commId[%s]", commId.c_str());
+    if (g_taskServiceMap.find(commId) == g_taskServiceMap.end()) {
+        HCCL_ERROR("[HcclTaskRegisterProfV2] TaskService of CommId[%s] Not Found, g_taskServiceMap size[%zu]", commId.c_str(), g_taskServiceMap.size());
+        return HCCL_E_NOT_FOUND;
+    }
+    return g_taskServiceMap[commId]->TaskProfRegister(profCallback);
+}
+
+uint32_t HcclGetDpuSteamIdV2(HcclComm comm) {
+    HCCL_RUN_INFO("[HcclTaskRegisterV2] start to Get DpuSteamId");
+    CHK_PTR_NULL(comm);
+    Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
+    u32 dpuStreamId;
+    auto ret = communicator->GetStreamId(dpuStreamId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_WARNING("[HcclGetDpuSteamIdV2] GetStreamId failed, ret[0x%016llx]", HCCL_ERROR_CODE(ret));
+        return ret;
+    }
+    return dpuStreamId;
+}
+
+
+
 
 HcclResult HcclTaskUnRegisterV2(HcclComm comm, const char *msgTag)
 {

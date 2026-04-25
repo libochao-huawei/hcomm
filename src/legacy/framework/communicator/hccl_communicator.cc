@@ -546,4 +546,15 @@ HcclResult HcclCommunicator::Mc2AiCpuStreamAllocAndGetV2(rtStream_t *aiCpuStream
     return pimpl->Mc2AiCpuStreamAllocAndGetV2(aiCpuStream);
 }
 
+HcclResult HcclCommunicator::GetStreamId(u32 &streamId)
+{
+    s32 dpuStreamId;
+    auto ret = pimpl->GetDpuStreamId(dpuStreamId);
+    if (ret != HCCL_SUCCESS) {
+        return ret;
+    }
+    streamId = static_cast<u32>(dpuStreamId);
+    return HCCL_SUCCESS;
+}
+
 } // namespace Hccl

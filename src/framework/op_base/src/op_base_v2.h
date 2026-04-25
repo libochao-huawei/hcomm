@@ -10,6 +10,15 @@
 
 #ifndef OP_BASE_V2_H
 #define OP_BASE_V2_H
+
+#include <functional>
+#include "hccl_types.h"
+#include "task_param.h"
+
+namespace Hccl {
+using ProfCallbackTemplate = std::function<HcclResult(const TaskParam&, uint64_t)>;
+}
+
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus
@@ -185,6 +194,8 @@ HcclResult __attribute__((weak)) HcclGetAicpuOpStreamAndNotifyV2(HcclComm comm, 
 typedef int32_t(Callback)(uint64_t, int32_t);
 HcclResult __attribute__((weak)) HcclTaskRegisterV2(HcclComm comm, const char *msgTag, Callback cb);
 HcclResult __attribute__((weak)) HcclTaskUnRegisterV2(HcclComm comm, const char *msgTag);
+HcclResult __attribute__((weak)) HcclTaskRegisterProfV2(HcclComm comm, Hccl::ProfCallbackTemplate profCallback);
+uint32_t __attribute__((weak)) HcclGetDpuSteamIdV2(HcclComm comm);
 #endif
 #ifdef __cplusplus
 }

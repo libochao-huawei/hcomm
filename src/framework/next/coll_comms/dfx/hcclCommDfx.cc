@@ -14,13 +14,15 @@ namespace hccl {
 ReadWriteLockBase HcclCommDfx::baseLock_;
 ReadWriteLock HcclCommDfx::rwLock_(HcclCommDfx::baseLock_);
 std::unordered_map<std::string,std::unordered_map<u64, u32> > HcclCommDfx::channelRemoteRankId_;
+std::unordered_map<u32, u32> HcclCommDfx::streamIdToTaskId_;
 HcclCommDfx::HcclCommDfx() {
 }
 
-HcclResult HcclCommDfx::Init(u32 deviceId, const std::string& comTag) {
-    HCCL_INFO("[%s]deviceId[%u], comTag[%s]", __func__, deviceId, comTag.c_str());
+HcclResult HcclCommDfx::Init(u32 deviceId, const std::string& comTag, u32 myRankIdParam) {
+    HCCL_INFO("[%s]deviceId[%u], comTag[%s], myRankId[%u]", __func__, deviceId, comTag.c_str(), myRankIdParam);
     deviceId_ = deviceId;
     commTag_ = comTag;
+    myRankId_ = myRankIdParam;
     // 1. 如果mirrorTaskManager_为空，则创建新的MirrorTaskManager
     if (!mirrorTaskManager_) {
         mirrorTaskManager_ = std::make_unique<Hccl::MirrorTaskManager>(deviceId_, &Hccl::GlobalMirrorTasks::Instance(), false);
@@ -50,6 +52,15 @@ HcclResult HcclCommDfx::AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl
     EXECEPTION_CATCH(mirrorTaskManager_->AddTaskInfo(taskInfo), return HCCL_E_PTR);
     HCCL_INFO("[%s]taskInfo: %s", __func__, taskInfo->Describe().c_str());
     return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommDfx::AddDpuTaskInfoCallback(const Hccl::TaskParam &taskParam, u64 handle) {
+    u32 streamId = npuStreamId_;
+    u32 taskId = GetTaskId(streamId);
+    Hccl::TaskParam localTaskParam = taskParam;
+    localTaskParam.aicpuTaskId = aicpuTaskId_;
+    localTaskParam.npuDevId = deviceId_;
+    return AddTaskInfoCallback(streamId, taskId, localTaskParam, handle);
 }
 
 // HcclCommDfx接口实现 - 修改为返回HcclResult类型
@@ -114,6 +125,32 @@ HcclResult HcclCommDfx::ReportKernel(uint64_t beginTime, const std::string& comm
     CHK_PTR_NULL(profiling_);
     CHK_RET(profiling_->ReportKernel(beginTime, commTag, kernelName, threadId));
     return HCCL_SUCCESS; 
+}
+
+u32 HcclCommDfx::GetTaskId(u32 streamId) {
+    rwLock_.writeLock();
+    auto it = streamIdToTaskId_.find(streamId);
+    if (it == streamIdToTaskId_.end()) {
+        streamIdToTaskId_[streamId] = 0;
+        rwLock_.writeUnlock();
+        return 0;
+    }
+    u32 taskId = it->second;
+    taskId++;
+    if (taskId > 65535) {
+        taskId = 0;
+    }
+    streamIdToTaskId_[streamId] = taskId;
+    rwLock_.writeUnlock();
+    return taskId;
+}
+
+u32 HcclCommDfx::GetNpuStreamId() const {
+    return npuStreamId_;
+}
+
+void HcclCommDfx::SetNpuStreamId(u32 npuStreamId) {
+    npuStreamId_ = npuStreamId;
 }
 
 }
