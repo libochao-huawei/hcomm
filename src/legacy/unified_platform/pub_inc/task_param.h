@@ -90,12 +90,12 @@ struct ParaNotify {
 
 constexpr u32 CCU_COSTOM_ARGS_LEN = 32;
 struct ParaCcu {
-    u8  dieId;
-    u8  missionId;
-    u8  execMissionId;
-    u32 instrId;
+    u8  dieId{0};
+    u8  missionId{0};
+    u8  execMissionId{0};
+    u32 instrId{0};
     u64 costumArgs[CCU_COSTOM_ARGS_LEN];
-    u64 executeId;
+    u64 executeId{0};
     u64 ccuKernelHandle{0};
 };
 
@@ -115,8 +115,8 @@ struct ParaAiv{
 
 struct TaskParam {
     TaskParamType taskType;
-    u64           beginTime;
-    u64           endTime;
+    u64           beginTime{0};
+    u64           endTime{0};
     bool          isMaster{false};
     union {
         ParaDMA    DMA;    // taskType = SDMA/RDMA使用, 包括rtRDMASend写notify
@@ -125,7 +125,7 @@ struct TaskParam {
         ParaCcu    Ccu;
         ParaAiv    Aiv; //aiv param
     } taskPara;
-    std::shared_ptr<std::vector<CcuProfilingInfo>> ccuDetailInfo; // taskType为TASK_CCU时，ParaCcu的补充profiling信息
+    std::shared_ptr<std::vector<CcuProfilingInfo>> ccuDetailInfo{nullptr}; // taskType为TASK_CCU时，ParaCcu的补充profiling信息
     std::string Describe() const
     {
         return StringFormat("TaskParam[taskType[%s] beginTime[%llu] endTime[%llu]]", taskType.Describe().c_str(), beginTime, endTime);
