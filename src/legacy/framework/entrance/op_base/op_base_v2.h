@@ -182,7 +182,7 @@ HcclResult HcclRankGraphGetEndpointInfoV2(HcclComm comm, uint32_t rankId, const 
 typedef int32_t(Callback)(uint64_t, int32_t);
 HcclResult HcclTaskRegisterV2(HcclComm comm, const char *msgTag, Callback cb);
 HcclResult HcclTaskRegisterProfV2(HcclComm comm, ProfCallbackTemplate profCallback);
-uint32_t HcclGetDpuSteamIdV2(HcclComm comm);
+HcclResult HcclGetDpuSteamIdV2(HcclComm comm, u32 &dpuStreamId);
 HcclResult HcclTaskUnRegisterV2(HcclComm comm, const char *msgTag);
 
 HcclResult HcclCommWorkingDevNicSetV2(HcclComm comm, uint32_t *ranks, bool *useBackup, uint32_t nRanks);

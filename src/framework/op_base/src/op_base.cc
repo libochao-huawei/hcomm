@@ -4811,7 +4811,12 @@ int32_t HcclTaskRegister(HcclComm comm, const char *msgTag, Callback cb)
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
     HcclComm commV2 = hcclComm->GetCommunicatorV2();
     CHK_PTR_NULL(commV2);
-    uint32_t dpuStreamId = HcclGetDpuSteamIdV2(comm);
+    uint32_t dpuStreamId;
+    HcclResult ret = HcclGetDpuSteamIdV2(comm, dpuStreamId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[HcclTaskRegister] GetDpuSteamIdV2 failed, ret[0x%016llx]", HCCL_ERROR_CODE(ret));
+        return ret;
+    }
     hccl::CollComm *collComm = hcclComm->GetCollComm();
     collComm->GetHcclCommDfx()->SetNpuStreamId(dpuStreamId);
     auto profCallback = collComm->GetHcclCommDfx()->GetDpuCallback();
@@ -4819,7 +4824,7 @@ int32_t HcclTaskRegister(HcclComm comm, const char *msgTag, Callback cb)
         HCCL_ERROR("[HcclTaskRegister] GetDfxCallback failed");
         return HCCL_E_PTR;
     }
-    HcclResult ret = HcclTaskRegisterProfV2(commV2, profCallback);
+    ret = HcclTaskRegisterProfV2(commV2, profCallback);
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[HcclTaskRegister] TaskProfRegister failed, ret[0x%016llx]", HCCL_ERROR_CODE(ret));
         return ret;

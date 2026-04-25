@@ -477,17 +477,16 @@ HcclResult HcclTaskRegisterProfV2(HcclComm comm, ProfCallbackTemplate profCallba
     return g_taskServiceMap[commId]->TaskProfRegister(profCallback);
 }
 
-uint32_t HcclGetDpuSteamIdV2(HcclComm comm) {
+HcclResult HcclGetDpuSteamIdV2(HcclComm comm, u32 &dpuStreamId) {
     HCCL_RUN_INFO("[HcclTaskRegisterV2] start to Get DpuSteamId");
     CHK_PTR_NULL(comm);
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
-    u32 dpuStreamId;
     auto ret = communicator->GetStreamId(dpuStreamId);
     if (ret != HCCL_SUCCESS) {
         HCCL_WARNING("[HcclGetDpuSteamIdV2] GetStreamId failed, ret[0x%016llx]", HCCL_ERROR_CODE(ret));
         return ret;
     }
-    return dpuStreamId;
+    return HCCL_SUCCESS;
 }
 
 

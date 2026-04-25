@@ -195,7 +195,7 @@ typedef int32_t(Callback)(uint64_t, int32_t);
 HcclResult __attribute__((weak)) HcclTaskRegisterV2(HcclComm comm, const char *msgTag, Callback cb);
 HcclResult __attribute__((weak)) HcclTaskUnRegisterV2(HcclComm comm, const char *msgTag);
 HcclResult __attribute__((weak)) HcclTaskRegisterProfV2(HcclComm comm, Hccl::ProfCallbackTemplate profCallback);
-uint32_t __attribute__((weak)) HcclGetDpuSteamIdV2(HcclComm comm);
+HcclResult __attribute__((weak)) HcclGetDpuSteamIdV2(HcclComm comm, u32 &dpuStreamId);
 #endif
 #ifdef __cplusplus
 }

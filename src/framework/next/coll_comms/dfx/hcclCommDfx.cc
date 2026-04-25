@@ -31,9 +31,12 @@ HcclResult HcclCommDfx::Init(u32 deviceId, const std::string& comTag, u32 myRank
     // 2. 创建Profiling管理类
     EXECEPTION_CATCH(profiling_ = std::make_unique<HcclCommProfiling>(deviceId_, mirrorTaskManager_.get()), return HCCL_E_PTR);
     
-    // 3. 注册回调到单例 RegisterProfilingCallback();
+    // 3. 注册回调到单例
     setAddTaskCallback_ = [this](u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle) {
         return this->AddTaskInfoCallback(streamId, taskId, taskParam, handle);
+    };
+    setAddDpuTaskCallback_ = [this](const Hccl::TaskParam &taskParam, u64 handle) {
+        return this->AddDpuTaskInfoCallback(taskParam, handle);
     };
     HCCL_INFO("[HcclCommDfx][Init] Init success");
     return HCCL_SUCCESS; // 初始化成功返回成功码

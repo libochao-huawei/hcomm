@@ -56,9 +56,7 @@ public:
         return setAddTaskCallback_;
     }
     std::function<HcclResult(const Hccl::TaskParam&, u64)> GetDpuCallback() {
-        return [this](const Hccl::TaskParam &taskParam, u64 handle) {
-            return this->AddDpuTaskInfoCallback(taskParam, handle);
-        };
+        return setAddDpuTaskCallback_;
     }
     HcclResult ReportKernel(uint64_t beginTime, const std::string& commTag, const std::string& kernelName, uint32_t threadId);
 
@@ -85,6 +83,7 @@ private:
     u32 aicpuTaskId_{INVALID_UINT};
     u32 aicpuStreamId_{INVALID_UINT};
     std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> setAddTaskCallback_;
+    std::function<HcclResult(const Hccl::TaskParam&, u64)> setAddDpuTaskCallback_;
 };
 
 } // namesapce hccl
