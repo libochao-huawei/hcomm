@@ -24,7 +24,6 @@ constexpr u32 MAX_AGENT_BUF_SIZE = 256; // masterInfo方式: superPodId(128) + h
 constexpr s32 TOPO_SERVERIP_OFFSET_OF_RANKID = 32;
 constexpr int BIT_NUM_PER_BYTE = 8;
 constexpr u32 TOPO_GROUPLEADER_PORT_OFFSET = 16 ; //TopoDetect GroupLeader监听端口偏移值
-constexpr u32 TOPO_HIERARCHICAL_ENABLE_THRESHOLD = 32768 ; //TopoDetect 分层阈值
 constexpr u32 TOPO_MAX_GROUP_SIZE = 2048 ;
 
 enum class TopoDetectResult {
