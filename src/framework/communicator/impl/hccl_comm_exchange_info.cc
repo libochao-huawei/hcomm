@@ -45,7 +45,7 @@ HcclResult hcclComm::GetExchangeInfo(uint32_t remoteRank, void* data, uint32_t l
         HCCL_ERROR("[GetExchangeInfo] buffer length[%u] < actual[%u] for remoteRank[%u]", length, iter->second.length, remoteRank), 
         HCCL_E_PARA);
     
-    s32 sRet = memcpy_s(data. length, iter->second.data.data(), iter->second.length);
+    s32 sRet = memcpy_s(data, length, iter->second.data.data(), iter->second.length);
     CHK_PRT_RET(sRet != EOK, 
         HCCL_ERROR("[GetExchangeInfo] memcpy_s failed, ret[%d]", sRet), HCCL_E_MEMORY);
 
