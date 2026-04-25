@@ -38,7 +38,7 @@ constexpr u32 DEFAULT_PHY_ID = INVALID_UINT;
 constexpr u32 NO_LISTEN_PORT = INVALID_UINT;
 constexpr s32 FIRST_LISTEN = 1;    /* 首次监听 */
 constexpr s32 LAST_RELEASE = 0;    /* 最后释放 */
-constexpr u64 TSD_OPEN_EXT_PARA_NUM = 2UL;
+constexpr u64 TSD_OPEN_EXT_PARA_NUM = 3UL;
 constexpr s32 BACKUP_DEVICE_LOG_DEV_VERSION = 0x72318; // MAJOR:0x07, MINOR:0x23, PATCH:0x18
 
 class NetworkManager {
@@ -47,7 +47,7 @@ public:
     static NetworkManager &GetInstance(s32 deviceLogicID);
     // 初始化网卡，enableWhitelistFlag决定是否感知白名单disable配置
     HcclResult Init(NICDeployment nicDeploy, bool enableWhitelistFlag = false, u32 devicePhyId = DEFAULT_PHY_ID,
-        bool isHostUseDevNic = false, bool hasBackup = false);
+        bool isHostUseDevNic = false, bool hasBackup = false, bool useResvMem = false, u32 poolId = 0);
     HcclResult DeInit(NICDeployment nicDeploy, bool resetDeviceFlag = false, bool hasBackup = false);
     HcclResult HeterogInit(u32 devId, const HcclIpAddress &ipAddr, u32 port);
     HcclResult HeterogDeinit(u32 devId, const HcclIpAddress &ipAddr, u32 port);
@@ -105,7 +105,7 @@ private:
     NetworkManager();
     ~NetworkManager();
     HcclResult TsdCapabilityGet(bool &supportMultiProcHCCP);
-    HcclResult TsdProcessOpen(bool hasBackup);
+    HcclResult TsdProcessOpen(bool hasBackup, bool useResvMem = false, u32 poolId = 0);
     HcclResult InitHostSocket(const HcclIpAddress &addr, SocketHandle &socketHandle) const;
     HcclResult InitDeviceSocket(u32 devicePhysicID, const HcclIpAddress &ipAddr, SocketHandle &socketHandle);
     HcclResult InitRDMA(u32 devicePhysicID, const HcclIpAddress &ipAddr, NetworkMode netMode, NotifyTypeT notifyType,
