@@ -672,5 +672,3 @@ TEST_F(ReduceScatterTest, reduceScatter_aicpu_case_test_ReduceScatterNHR_3pod_2m
     ret = checker.CheckA5Aicpu(checkerOpParam, topoMeta);
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
 }
-
-}
