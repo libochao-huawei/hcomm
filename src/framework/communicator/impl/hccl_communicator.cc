@@ -364,12 +364,12 @@ namespace hccl
 
     TransportManager* HcclCommunicator::GetTransportManager()
     {
-        return transportManager_;
+        return transportManager_.get();
     }
 
     TransportManager* HcclCommunicator::GetIndptOpTransportManager()
     {
-        return indptOpTransportManager_;
+        return indptOpTransportManager_.get();
     }
 
     HcclResult HcclCommunicator::InitMemoryManager()
