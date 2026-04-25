@@ -85,10 +85,12 @@ public:
 
     HcclResult WriteAsync(struct Transport::Buffer &remoteBuf, struct Transport::Buffer &localBuf, Stream &stream);
     HcclResult WriteSync(struct Transport::Buffer &remoteBuf, struct Transport::Buffer &localBuf, Stream &stream);
+    HcclResult WriteSyncEx(struct Transport::Buffer &remoteBuf, struct Transport::Buffer &localBuf, Stream &stream);
     HcclResult WriteReduceAsync(struct Transport::Buffer &remoteBuf,
         struct Transport::Buffer &localBuf, const HcclDataType datatype, HcclReduceOp redOp, Stream &stream) override;
 
     HcclResult ReadAsync(struct Transport::Buffer &localBuf, struct Transport::Buffer &remoteBuf, Stream &stream);
+    HcclResult ReadAsyncEx(struct Transport::Buffer &localBuf, struct Transport::Buffer &remoteBuf, Stream &stream);
     HcclResult ReadSync(struct Transport::Buffer &localBuf, struct Transport::Buffer &remoteBuf, Stream &stream);
     HcclResult ReadReduceSync(struct Transport::Buffer &localBuf, struct Transport::Buffer &remoteBuf,
         const HcclDataType datatype, HcclReduceOp redOp, Stream &stream);
@@ -161,7 +163,7 @@ protected:
     bool useSdmaToSignalRecord_{false};
 
     HcclResult ReplaceMemAddr(Transport::Buffer &localMem, Transport::Buffer &remoteMem,
-        Transport::Buffer &newLocalMem, Transport::Buffer &newRemoteMem, bool &hasHostAddr);
+        Transport::Buffer &newLocalMem, Transport::Buffer &newRemoteMem, bool &isLocalHostAddr, bool &isRemoteHostAddr);
     HcclResult InitHcclMemExMgrWithMem(HcclMemEx *bufMem, u32 bufSize, HcclMemExMgr &hcommMemExMgr);
     HcclResult InitHcclMemExMgr(MachinePara &machinePara);
     HcclMemExMgr localHcclMemExMgr_;
