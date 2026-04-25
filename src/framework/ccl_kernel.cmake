@@ -26,7 +26,7 @@ target_compile_definitions(ccl_kernel PRIVATE
 )
 
 # 编译选项
-target_compile_options(ccl_kernel PRIVATE
+set(CCL_KERNEL_COMPILE_OPTIONS
     -Werror
     -Wfloat-equal
     -Wall
@@ -37,19 +37,50 @@ target_compile_options(ccl_kernel PRIVATE
     -O3
     -std=c++14
 )
+target_compile_options(ccl_kernel PRIVATE ${CCL_KERNEL_COMPILE_OPTIONS})
 
 # 链接选项
-target_link_options(ccl_kernel PRIVATE
+set(CCL_KERNEL_LINK_OPTIONS
     -Wl,-z,relro
     -Wl,-z,now
     -Wl,-z,noexecstack
     -s
 )
+target_link_options(ccl_kernel PRIVATE ${CCL_KERNEL_LINK_OPTIONS})
 
 set(CCL_KERNEL_INCLUDE_LIST
     ${HCOMM_ROOT_DIR}/include/hccl
+    ${HCOMM_ROOT_DIR}/pkg_inc
+    ${HCOMM_ROOT_DIR}/pkg_inc/hccl
+
     ${HCOMM_ROOT_DIR}/src/pub_inc
-    ${TOP_DIR}/abl/atrace/inc/utrace
+    ${HCOMM_ROOT_DIR}/src/pub_inc/inner
+    ${HCOMM_ROOT_DIR}/src/pub_inc/aicpu
+    ${HCOMM_ROOT_DIR}/src/pub_inc/new
+
+    ${HCOMM_ROOT_DIR}/src/platform/
+    ${HCOMM_ROOT_DIR}/src/platform/inc/
+    ${HCOMM_ROOT_DIR}/src/platform/inc/adapter
+    ${HCOMM_ROOT_DIR}/src/platform/resource/transport/heterog/
+    ${HCOMM_ROOT_DIR}/src/platform/resource/transport/host/
+    ${HCOMM_ROOT_DIR}/src/platform/resource/transport/
+    ${HCOMM_ROOT_DIR}/src/platform/resource/notify/
+    ${HCOMM_ROOT_DIR}/src/platform/resource/dispatcher_ctx
+    ${HCOMM_ROOT_DIR}/src/platform/task
+    ${HCOMM_ROOT_DIR}/src/platform/common
+    ${HCOMM_ROOT_DIR}/src/platform/common/unique
+    ${HCOMM_ROOT_DIR}/src/platform/common/unfold_cache
+
+    ${HCOMM_ROOT_DIR}/src/platform/hccp/inc
+    ${HCOMM_ROOT_DIR}/src/platform/hccp/inc/network
+
+    ${HCOMM_ROOT_DIR}/src/framework
+    ${HCOMM_ROOT_DIR}/src/framework/common
+    ${HCOMM_ROOT_DIR}/src/framework/common/src
+    ${HCOMM_ROOT_DIR}/src/framework/common/src/mgr
+    ${HCOMM_ROOT_DIR}/src/framework/communicator
+    ${HCOMM_ROOT_DIR}/src/framework/communicator/impl/independent_op/resource/engine
+
     ${HCOMM_ROOT_DIR}/src/algorithm/base/inc
     ${HCOMM_ROOT_DIR}/src/algorithm/pub_inc
     ${HCOMM_ROOT_DIR}/src/algorithm/base/alg_aiv_template
@@ -80,6 +111,7 @@ set(CCL_KERNEL_INCLUDE_LIST
     ${HCOMM_ROOT_DIR}/src/algorithm/impl/coll_executor/coll_reduce_scatter_v/310P
     ${HCOMM_ROOT_DIR}/src/algorithm/impl/coll_executor/coll_all_to_all
     ${HCOMM_ROOT_DIR}/src/algorithm/impl/coll_executor/coll_scatter
+
     ${HCOMM_ROOT_DIR}/src/common/health
     ${HCOMM_ROOT_DIR}/src/common/debug/profiling/inc
     ${HCOMM_ROOT_DIR}/src/common/debug/profiling/inc/aicpu
@@ -87,6 +119,7 @@ set(CCL_KERNEL_INCLUDE_LIST
     ${HCOMM_ROOT_DIR}/src/common/debug/
     ${HCOMM_ROOT_DIR}/src/common/stream
     ${HCOMM_ROOT_DIR}/src/common/launch_device
+
     ${HCOMM_ROOT_DIR}/src/framework/inc
     ${HCOMM_ROOT_DIR}/src/framework/cluster_maintenance/health/heartbeat/
     ${HCOMM_ROOT_DIR}/src/framework/cluster_maintenance/detect/detect_connect_anomalies/
@@ -129,8 +162,6 @@ set(CCL_KERNEL_INCLUDE_LIST
     ${HCOMM_ROOT_DIR}/src/algorithm/base/alg_template/temp_scatter
     ${HCOMM_ROOT_DIR}/src/algorithm/base/alg_template
     ${HCOMM_ROOT_DIR}/src/algorithm/pub_inc
-    ${HCOMM_ROOT_DIR}/pkg_inc/
-    ${HCOMM_ROOT_DIR}/pkg_inc/hccl/
 
     ${HCOMM_ROOT_DIR}/src/platform/
     ${HCOMM_ROOT_DIR}/src/platform/inc/
@@ -162,8 +193,6 @@ set(CCL_KERNEL_INCLUDE_LIST
     ${HCOMM_ROOT_DIR}/include
     ${HCOMM_ROOT_DIR}/include/hccl
     ${HCOMM_ROOT_DIR}/inc/hccl/hccl
-    ${HCOMM_ROOT_DIR}/pkg_inc/
-    ${HCOMM_ROOT_DIR}/pkg_inc/hccl/
     ${HCOMM_ROOT_DIR}/src/pub_inc
     ${HCOMM_ROOT_DIR}/src/pub_inc/aicpu
 
@@ -214,22 +243,11 @@ set(CCL_KERNEL_INCLUDE_LIST
 
 target_include_directories(ccl_kernel PRIVATE
     ${CCL_KERNEL_INCLUDE_LIST}
-)
-
-target_include_directories(ccl_kernel PRIVATE
     ${ORION_HEAD_LIST}
 )
 
 if(NOT BUILD_OPEN_PROJECT)
     target_include_directories(ccl_kernel PRIVATE
-        ${HCOMM_ROOT_DIR}/include/hccl
-        ${HCOMM_ROOT_DIR}/src/pub_inc
-        ${HCOMM_ROOT_DIR}/src/pub_inc/inner
-        ${HCOMM_ROOT_DIR}/src/pub_inc/aicpu
-        ${HCOMM_ROOT_DIR}/src/pub_inc/new
-
-        ${HCOMM_ROOT_DIR}/src/hccl/hccl_comm/wrapper/notify/
-
         ${TOP_DIR}/inc
         ${TOP_DIR}/inc/driver
         ${TOP_DIR}/metadef/inc/external
@@ -251,31 +269,6 @@ if(NOT BUILD_OPEN_PROJECT)
         ${TOP_DIR}/runtime/pkg_inc/aicpu_sched
         ${TOP_DIR}/asc/asc-devkit
         ${TOP_DIR}/asc/asc-devkit/include/adv_api/hccl/internal
-
-        ${HCOMM_ROOT_DIR}/src/platform/
-        ${HCOMM_ROOT_DIR}/src/platform/inc/
-        ${HCOMM_ROOT_DIR}/src/platform/inc/adapter
-        ${HCOMM_ROOT_DIR}/src/platform/resource/transport/heterog/
-        ${HCOMM_ROOT_DIR}/src/platform/resource/transport/host/
-        ${HCOMM_ROOT_DIR}/src/platform/resource/transport/
-        ${HCOMM_ROOT_DIR}/src/platform/resource/notify/
-        ${HCOMM_ROOT_DIR}/src/platform/resource/dispatcher_ctx
-        ${HCOMM_ROOT_DIR}/src/platform/task
-        ${HCOMM_ROOT_DIR}/src/platform/common
-        ${HCOMM_ROOT_DIR}/src/platform/common/unique
-        ${HCOMM_ROOT_DIR}/src/platform/common/unfold_cache
-
-        ${HCOMM_ROOT_DIR}/src/platform/hccp/inc
-        ${HCOMM_ROOT_DIR}/src/platform/hccp/inc/network
-	    ${HCOMM_ROOT_DIR}/pkg_inc/
-        ${HCOMM_ROOT_DIR}/pkg_inc/hccl/
-
-        ${HCOMM_ROOT_DIR}/src/framework
-        ${HCOMM_ROOT_DIR}/src/framework/common
-        ${HCOMM_ROOT_DIR}/src/framework/common/src
-        ${HCOMM_ROOT_DIR}/src/framework/common/src/mgr
-        ${HCOMM_ROOT_DIR}/src/framework/communicator
-        ${HCOMM_ROOT_DIR}/src/framework/communicator/impl/independent_op/resource/engine
     )
     target_link_libraries(ccl_kernel PRIVATE
         $<BUILD_INTERFACE:intf_pub_cxx14>
@@ -288,8 +281,8 @@ if(NOT BUILD_OPEN_PROJECT)
         $<BUILD_INTERFACE:kernel_tiling_headers>
         -Wl,--no-as-needed
         c_sec
-        ccl_kernel_plf      # 链接 ccl_kernel_plf 动态库
         mmpa
+        ccl_kernel_plf      # 链接 ccl_kernel_plf 动态库
         -Wl,--as-needed
         -lrt
         -ldl
@@ -301,23 +294,6 @@ if(NOT BUILD_OPEN_PROJECT)
         LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL
     )
 endif()
-
-# 解析 ccl_kernel.ini
-add_custom_command(
-    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
-    COMMAND ${HI_PYTHON} ${HCOMM_ROOT_DIR}/scripts/parser_ini.py
-            ${CMAKE_CURRENT_SOURCE_DIR}/device/framework/ccl_kernel.ini
-            ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
-    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/device/framework/ccl_kernel.ini
-    COMMENT "Generating ccl_kernel.json"
-    VERBATIM
-)
-add_custom_target(ccl_kernel_json
-    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
-)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
-    DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/config OPTIONAL
-)
 
 if(BUILD_OPEN_PROJECT)
     # 链接ascendalog需要LOG_CPP，链接slog不需要
@@ -348,6 +324,24 @@ if(BUILD_OPEN_PROJECT)
     )
 endif()
 
+# 解析 ccl_kernel.ini
+add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
+    COMMAND ${HI_PYTHON} ${HCOMM_ROOT_DIR}/scripts/parser_ini.py
+            ${CMAKE_CURRENT_SOURCE_DIR}/device/framework/ccl_kernel.ini
+            ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/device/framework/ccl_kernel.ini
+    COMMENT "Generating ccl_kernel.json"
+    VERBATIM
+)
+add_custom_target(ccl_kernel_json
+    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
+)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
+    DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/config OPTIONAL
+)
+
+# 拷贝 ccl_kernel 到指定目录，供打包使用
 set(CCL_KERNEL_TAR_DIR ${HCOMM_ROOT_DIR}/build_device/ccl_kernel_tar_pkg/aicpu_kernels_device)
 add_custom_command(
     TARGET ccl_kernel
@@ -361,6 +355,7 @@ add_custom_command(
 
 # 定义 aicpu_custom 动态链接库，在 device 侧使用
 # 与 ccl_kernel 内容一致，但运行在 AICPU Custom 进程
+# 与 ccl_kernel 区别在于，aicpu_custom 链接 ccl_kernel_plf_a 静态库，ccl_kernel 链接 ccl_kernel_plf 动态库
 add_library(aicpu_custom SHARED)
 add_library(aicpu_custom SHARED)
 get_target_property(CCL_KERNEL_ALL_SOURCES ccl_kernel SOURCES)
@@ -372,24 +367,13 @@ target_compile_definitions(aicpu_custom PRIVATE
     HCCD
     CCL_KERNEL_AICPU
     OPEN_BUILD_PROJECT
-    -D_GLIBCXX_USE_CXX11_ABI=1
+    _GLIBCXX_USE_CXX11_ABI=1
 )
 target_compile_options(aicpu_custom PRIVATE
-    -Werror
-    -Wfloat-equal
-    -Wall
-    -fno-common
-    -fstack-protector-strong
-    -fno-strict-aliasing
-    -pipe
-    -O3
-    -std=c++14
+    ${CCL_KERNEL_COMPILE_OPTIONS}
 )
 target_link_options(aicpu_custom PRIVATE
-    -Wl,-z,relro
-    -Wl,-z,now
-    -Wl,-z,noexecstack
-    -s
+    ${CCL_KERNEL_LINK_OPTIONS}
 )
 target_include_directories(aicpu_custom PRIVATE
     ${CCL_KERNEL_INCLUDE_LIST}
@@ -411,13 +395,6 @@ target_link_libraries(aicpu_custom PRIVATE
     -ldl
     -lpthread
 )
-add_dependencies(aicpu_custom ccl_kernel ccl_kernel_plf_a aicpu_custom_json)
-install(TARGETS aicpu_custom
-    LIBRARY DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
-)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
-    DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
-)
 
 # 解析 libaicpu_custom.ini
 add_custom_command(
@@ -432,6 +409,12 @@ add_custom_command(
 add_custom_target(aicpu_custom_json
     DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
 )
+add_dependencies(aicpu_custom ccl_kernel ccl_kernel_plf_a aicpu_custom_json)
+
+# 安装
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
     DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
+)
+install(TARGETS aicpu_custom
+    LIBRARY DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
 )
