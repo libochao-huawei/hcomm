@@ -1324,7 +1324,8 @@ HcclResult HcclCreateSubCommConfig(HcclComm *comm, uint32_t rankNum, uint32_t *r
         rankIds, subCommId, globalComm->GetIdentifier().c_str());
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s]errNo[0x%016llx] record subcomm para failed, rankNum[%u], subCommId[%llu], parentComm[%s].", 
-            __func__, HCCL_ERROR_CODE(ret)), rankNum, subCommId, globalComm->GetIdentifier().c_str(), HCCL_E_PARA);
+            __func__, HCCL_ERROR_CODE(ret), rankNum, subCommId, globalComm->GetIdentifier().c_str()), 
+        HCCL_E_PARA);
 
     CHK_RET(HcclCreateSubCommConfigInner(globalComm, rankNum, rankIds, subCommRankId, commConfig, subComm));
 
