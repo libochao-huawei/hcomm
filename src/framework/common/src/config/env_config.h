@@ -57,6 +57,8 @@ s32& GetExternalInputDfsConnectionFaultDetectionTime();
 
 u32& GetExternalInputDfsTaskMonitorInterval();
 
+const u64& GetExternalInputTopoHierarchicalThreshold();
+
 /*************** For Internal Use ***************/
 
 struct EnvConfig {
@@ -77,6 +79,7 @@ struct EnvConfig {
     bool inconsistentCheckSwitch;
     s32 dfsConnectionFaultDetectionTime;
     u32 dfsTaskMonitorInterval;
+    u64 topoHierarchicalThreshold;
 
     // HCCL_ALGO环境变量参数
     bool specificAlgoMode;
@@ -108,6 +111,8 @@ struct EnvConfig {
         inconsistentCheckSwitch = false;
         dfsConnectionFaultDetectionTime = HCCL_MIN_CONNECT_FAULT_DETECTION_TIME;
         dfsTaskMonitorInterval = 0;
+        // 初始化分层建链的初始阈值
+        topoHierarchicalThreshold = 32768;
         specificAlgoMode = false;
         for (u32 opType = 0; opType < static_cast<u32>(HcclCMDType::HCCL_CMD_MAX); opType++) {
             hcclAlgoConfig[static_cast<HcclCMDType>(opType)] =
