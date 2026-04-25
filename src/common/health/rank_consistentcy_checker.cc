@@ -306,7 +306,7 @@ HcclResult RankConsistentcyChecker::RecordSubCommPara(uint32_t rankNum, const ui
     CHK_PRT_RET(rankNum == 0, HCCL_ERROR("[RankConsistentcyChecker][RecordSubCommPara] rankNum is 0."), HCCL_E_PARA);
     CHK_PRT_RET(rankNum > MAX_SUB_COMM_RANK_NUM, HCCL_ERROR("[RankConsistentcyChecker][RecordSubCommPara] rankNum exceeds max[%u].", 
         MAX_SUB_COMM_RANK_NUM), HCCL_E_PARA);
-    CHK_PRT_RET(rankIds);
+    CHK_PTR_NULL(rankIds);
 
     subCommInfo_.rankNum = rankNum;
     subCommInfo_.subCommId = subCommId;
@@ -612,7 +612,7 @@ HcclResult RankConsistentcyChecker::GenerateCheckFrame(HcclCheckInfo &checkInfo,
     // 添加CRC字段到校验帧
     checkInfo.crcInfoGlobal.configFileExist_ = configFileExist_;
     checkInfo.crcInfoGlobal.envCrcNum = crcTable_.size();
-    if (u32 i = 0; i < checkInfo.crcInfoGlobal.envCrcNum; i++) {
+    for (u32 i = 0; i < checkInfo.crcInfoGlobal.envCrcNum; i++) {
         checkInfo.crcInfoGlobal.envCrcArray[i] = crcTable_[i];
     }
     // 添加CMD参数信息到校验帧
