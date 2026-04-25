@@ -493,7 +493,7 @@ HcclResult HcclCommAicpu::NotifyWait(void)
 }
 
 // 按照算子模式来Post对应的Notify
-HcclResult HcclCommAicpu::RecordHostOrder(const HcclOpResParam *commParam, const std::string& tag, u8 orderLaunchMode)
+HcclResult HcclCommAicpu::RecordHostOrder(const HcclOpResParam *commParam, const std::string& tag, const std::string& newTag, u8 orderLaunchMode)
 {
     const u8 orderLaunchInvalidInHcom = 255;
     if (orderLaunchMode == orderLaunchInvalidInHcom) {
@@ -514,8 +514,8 @@ HcclResult HcclCommAicpu::RecordHostOrder(const HcclOpResParam *commParam, const
         HCCL_INFO("%s success, group[%s], resId[%llu]", __func__, identifier_.c_str(), aicpuOrderNotify->resId);
     }
 
-    HCCL_INFO("%s group[%s] tag[%s] isDeviceMode[%d] orderLaunchMode[%u] mode[%d] streamId[%d] notifyId[%u]",
-            __func__, identifier_.c_str(), tag.c_str(), isDeviceMode_, orderLaunchMode, GetWorkflowMode(), orderStream_.id(),
+    HCCL_INFO("%s group[%s] tag[%s] newTag[%s] isDeviceMode[%d] orderLaunchMode[%u] mode[%d] streamId[%d] notifyId[%u]",
+            __func__, identifier_.c_str(), tag.c_str(), newTag.c_str(), isDeviceMode_, orderLaunchMode, GetWorkflowMode(), orderStream_.id(),
             orderNotifies_[orderLaunchMode]->notifyId_);
     CHK_RET(LocalNotify::Post(orderStream_, dispatcher_, orderNotifies_[orderLaunchMode]));
     CHK_RET(LaunchTask(dispatcher_, const_cast<Stream &>(orderStream_)));
