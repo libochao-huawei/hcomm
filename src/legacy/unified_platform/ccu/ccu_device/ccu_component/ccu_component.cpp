@@ -815,7 +815,14 @@ HcclResult CcuComponent::CleanDieCkes(const uint8_t dieId) const
 
     // 设置操作码和数据
     uint32_t ckeNum = 0;
-    CHK_RET(CcuResSpecifications::GetInstance(devLogicId).GetCkeNum(dieId, ckeNum));
+    auto ret = CcuResSpecifications::GetInstance(devLogicId).GetCkeNum(dieId, ckeNum);
+    if (ret != HcclResult::HCCL_SUCCESS || ckeNum == 0) {
+        // 新老通信域兼容情况下，图模式析构顺序与单算子不一致
+        // 在CcuResSpecifications已经deinit的情况下，取消主动清理
+        HCCL_WARNING("[CcuComponent][%s] failed but passed, cke num is 0.", __func__);
+        return HcclResult::HCCL_SUCCESS;
+    }
+
     HCCL_INFO("[CcuComponent][CleanAllCke]Nsrecovery devLogicId[%d], dieId[%u] ckeNum[%u].",
         devLogicId, dieId, ckeNum);
     
