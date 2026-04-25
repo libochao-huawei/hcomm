@@ -1288,12 +1288,11 @@ HcclResult HcclCreateSubCommConfig(HcclComm *comm, uint32_t rankNum, uint32_t *r
         HCCL_ERROR("[%s]errNo[0x%016llx] load comm config failed.", __func__, HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
 
     // 记录子通信域参数到一致性校验器（包含父通信域标识符）
-    ret = RankConsistentcyChecker::GetInstance().RecordSubCommPara(randNum, 
+    ret = RankConsistentcyChecker::GetInstance().RecordSubCommPara(rankNum, 
         rankIds, subCommId, globalComm->GetIdentifier().c_str());
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s]errNo[0x%016llx] record subcomm para failed, rankNum[%u], subCommId[%llu], parentComm[%s].", 
-            __func__, HCCL_ERROR_CODE(ret)), rankNum, subCommId, globalComm->GetIdentifier().c_str());
-
+            __func__, HCCL_ERROR_CODE(ret)), rankNum, subCommId, globalComm->GetIdentifier().c_str(), HCCL_E_PARA);
 
     CHK_RET(HcclCreateSubCommConfigInner(globalComm, rankNum, rankIds, subCommRankId, commConfig, subComm));
 
@@ -3481,6 +3480,9 @@ HcclResult InitOtherInfo(hccl::HcclCommParams &params, const char *rankTable)
     // 记录版本信息
     std::string curVersion = GetExternalInputCannVersion();
     CHK_RET(RankConsistentcyChecker::GetInstance().RecordVerInfo(curVersion));
+
+    // 记录环境变量CRC
+    CHK_RET(RankConsistentcyChecker::GetInstance().RecordEnvVarCrc());
 
     // ranktableCRC计算
     if (rankTable == nullptr) {

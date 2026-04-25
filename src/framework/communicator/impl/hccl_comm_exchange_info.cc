@@ -41,7 +41,7 @@ HcclResult hcclComm::GetExchangeInfo(uint32_t remoteRank, void* data, uint32_t l
     CHK_PRT_RET(iter == remoteExchangeInfoMap_.end(), 
         HCCL_ERROR("[GetExchangeInfo] no exchange info for remoteRank[%u]", remoteRank), 
         HCCL_E_PARA);
-    CHK_PRT_RET(length < iter->sencond.length, 
+    CHK_PRT_RET(length < iter->second.length, 
         HCCL_ERROR("[GetExchangeInfo] buffer length[%u] < actual[%u] for remoteRank[%u]", length, iter->sencond.length, remoteRank), 
         HCCL_E_PARA);
     
@@ -65,7 +65,7 @@ HcclResult hcclComm::StoreRemoteExchangeInfo(uint32_t remoteRank, const std::vec
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::ClearExchangeInfoState()
+void hcclComm::ClearExchangeInfoState()
 {
     std::lock_guard<std::mutex> lock(exchangeInfoMutex_);
     exchangeInfoReady_ = false;
@@ -73,7 +73,7 @@ HcclResult hcclComm::ClearExchangeInfoState()
     exchangeInfoLen_ = 0;
 }
 
-HcclResult hcclComm::IsExchangeInfoReady() const
+bool hcclComm::IsExchangeInfoReady() const
 {
     return exchangeInfoReady_;
 }
