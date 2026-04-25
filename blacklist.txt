@@ -20,4 +20,12 @@ src/framework/hcom/hcom.cc
 src/framework/communicator/impl/zero_copy/zero_copy_memory_agent.cc
 src/framework/next/comms/endpoint_pairs/channels/aicpu/device/aicpu_ts_urma_channel_kernel.cc
 src/framework/next/coll_comms/dfx/taskException/aicpu/hcclCommTaskExceptionLite.cc
-
+src/legacy/unified_platform/resource/transport/aicpu/p2p_transport_lite_impl.cc
+src/legacy/unified_platform/resource/transport/aicpu/ub_transport_lite_impl.cc
+src/legacy/unified_platform/resource/transport/p2p_transport.cc
+src/legacy/unified_platform/resource/stream/stream.cc
+src/legacy/unified_platform/resource/notify/ipc_remote_notify.cc
+src/legacy/interface/rank_graph_interface.cc
+src/framework/next/comms/endpoint_pairs/channels/aicpu/aicpu_ts_p2p_channel.cc
+src/framework/next/comms/endpoint_pairs/channels/channel.cc
+src/framework/next/comms/common/orion_adpt_utils.cc
