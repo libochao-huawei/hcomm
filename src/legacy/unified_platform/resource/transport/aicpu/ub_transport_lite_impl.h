@@ -68,13 +68,12 @@ public:
     void BatchTransfer(const std::vector<RmaBufferLite> &loc, const std::vector<Buffer> &rmt,
                         const std::vector<TransferOp> &transferOp, const StreamLite &stream) override;
 
-    HcclResult BuildLocRmaBufferLite(const uintptr_t addr, const size_t size, RmaBufferLite &rmaBufferLite) const;
+    HcclResult BuildLocRmaBufferLite(const uintptr_t addr, const size_t size, RmaBufferLite &rmaBufferLite) override;
     HcclResult Fence();
 
     HcclResult Clean();
     HcclResult Resume(std::vector<char> &uniqueId);
 
-    HcclResult SetAddTaskInfoCallback(std::function<HcclResult(u32, u32, const TaskParam&, u64)> callback); // 自定义算子流程上报task的Callback
 private:
     u32 notifyNum{0};
     u32 bufferNum{0};
