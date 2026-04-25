@@ -90,7 +90,7 @@ HcclResult TopoInfoExchangeServer::Setup()
             CHK_PRT_CONT(result == HCCL_SUCCESS, HCCL_ERROR("[TopoInfoExchangeServer]failed to connect rankList:[%s]", failedAgentIdList.c_str()));
         }
         u32 rankSize = connectSockets_.size();
-        if (!isByMasterInfo_ && rankSize > TOPO_HIERARCHICAL_ENABLE_THRESHOLD) {
+        if (!isByMasterInfo_ && rankSize > GetExternalInputTopoHierarchicalThreshold()) {
             ret = HierarchicalSendRecv();
             CHK_PRT_BREAK(ret != HCCL_SUCCESS,
                 HCCL_ERROR("[TopoInfoExchangeServer][Setup]HierarchicalSendRecv ranktable failed"), error = ret);
@@ -388,7 +388,7 @@ HcclResult TopoInfoExchangeServer::GroupLeaderConnect(std::map<std::string, std:
             u32 rankNum = 0;
             CHK_RET(GetRemoteFdAndRankSize(socket, connectSockets, rankNum));
             expectSocketNum_ = (previousRankNum_ == 0) ? rankNum : expectSocketNum_;
-            groupMaxRankNum = (rankNum > TOPO_HIERARCHICAL_ENABLE_THRESHOLD) ? 
+            groupMaxRankNum = (rankNum > GetExternalInputTopoHierarchicalThreshold()) ? 
                 groupMaxRankNum : expectSocketNum_;
             CHK_RET(VerifyRemoteRankNum(previousRankNum_, rankNum));
 

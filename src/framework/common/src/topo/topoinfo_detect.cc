@@ -500,7 +500,7 @@ HcclResult TopoInfoDetect::SetupAgent(u32 rankSize, u32 myrank, const HcclRootHa
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[Setup][Agent]topo detect generate local rank info failed! rank[%u]", myrank), ret);
     
-    if (rankSize > TOPO_HIERARCHICAL_ENABLE_THRESHOLD) {
+    if (rankSize > GetExternalInputTopoHierarchicalThreshold()) {
         /* 首节点日志，建链失败属常见问题，在建链前记录相关信息 */
         HCCL_RUN_INFO("[HCCL_TRACE][Hierarchical]SetupAgent rankNum[%u], rank[%u], rootInfo identifier[%s], server[%s], serverPort[%u]"
             "deviceType[%d], logicDevId[%d], phydevId[%d], deviceIp[%s]", rankSize, myrank, rootInfo.identifier,

@@ -34,6 +34,7 @@ const std::string STUCK_DETECTION_CONFIG = "stuck_detection:";
 const std::string INCONSISTENT_CHECK_CONFIG = "inconsistent_check:";
 const std::string CONNECTION_FAULT_DETECTION_TIME = "connection_fault_detection_time:";
 const std::string TASK_MONITOR_INTERVAL = "task_monitor_interval:";
+const std::string TOPO_HIERARCHICAL_THRESHOLD = "topo_hierarchical_threshold:";
 constexpr static const s32 HCCL_MAX_LINK_TIME_OUT_S  = (120 * 60); // HCCL 最大探测超时时间设置为120*60s
 HcclResult InitEnvConfig()
 {
@@ -744,6 +745,19 @@ HcclResult ParseDFSConfig()
             "'on' or 'off'", inconsistentCheckSwitch.c_str());
     }
 
+    // 解析 分层建链使能的阈值
+    std::string topoDetectThreshold;
+    CHK_RET(ParseSingleDFSConfigItem(dfsConfigEnv, TOPO_HIERARCHICAL_THRESHOLD, topoDetectThreshold));
+    if (!topoDetectThreshold.empty()) {
+        u32 resultValue = 0;
+        CHK_RET(SalStrToULong(topoDetectThreshold.c_str(), HCCL_BASE_DECIMAL, resultValue));
+        g_envConfig.topoHierarchicalThreshold = resultValue;
+        HCCL_RUN_INFO("TOPO_HIERARCHICAL_THRESHOLD set by environment to [%u]", g_envConfig.topoHierarchicalThreshold);
+    } else {
+        HCCL_RUN_WARNING("[ParseDFSConfig] HCCL_DFS_CONFIG-topo_hierarchical_threshold was configed to [%u], please configed to"\
+            , g_envConfig.topoHierarchicalThreshold);
+    }
+
     std::string taskMonitorInterval = "";
     s32 monitorTime = 0;
     CHK_RET(ParseSingleDFSConfigItem(dfsConfigEnv, TASK_MONITOR_INTERVAL, taskMonitorInterval));
@@ -756,8 +770,9 @@ HcclResult ParseDFSConfig()
         g_envConfig.dfsConnectionFaultDetectionTime = HCCL_MIN_CONNECT_FAULT_DETECTION_TIME;
         HCCL_RUN_INFO("[HCCL_ENV][Parse] HCCL_DFS_CONFIG cluster_heartbeat set by environment to [%d], "
             "stuck_detection set by environment to [%d], connection_fault_detection_time[%d]s inconsistentCheckSwitch[%d],"
-            "task_monitor_interval[%u]ms", g_envConfig.enableClusterHeartBeat, g_envConfig.opCounterEnable,
-            g_envConfig.dfsConnectionFaultDetectionTime, g_envConfig.inconsistentCheckSwitch, g_envConfig.dfsTaskMonitorInterval);
+            "task_monitor_interval[%u]ms, topoHierarchicalThreshold[%llu]", g_envConfig.enableClusterHeartBeat, g_envConfig.opCounterEnable,
+            g_envConfig.dfsConnectionFaultDetectionTime, g_envConfig.inconsistentCheckSwitch, g_envConfig.dfsTaskMonitorInterval,
+            g_envConfig.topoHierarchicalThreshold);
         return HCCL_SUCCESS;
     }
     s32 detctTime = 0;
@@ -777,8 +792,9 @@ HcclResult ParseDFSConfig()
 
     HCCL_RUN_INFO("[HCCL_ENV][Parse] HCCL_DFS_CONFIG cluster_heartbeat set by environment to [%d], "
         "stuck_detection set by environment to [%d], connection_fault_detection_time[%d]s inconsistentCheckSwitch[%d],"
-        "task_monitor_interval[%u]ms", g_envConfig.enableClusterHeartBeat, g_envConfig.opCounterEnable,
-        g_envConfig.dfsConnectionFaultDetectionTime, g_envConfig.inconsistentCheckSwitch, g_envConfig.dfsTaskMonitorInterval);
+        "task_monitor_interval[%u]ms, topoHierarchicalThreshold[%llu]", g_envConfig.enableClusterHeartBeat, g_envConfig.opCounterEnable,
+        g_envConfig.dfsConnectionFaultDetectionTime, g_envConfig.inconsistentCheckSwitch, g_envConfig.dfsTaskMonitorInterval,
+        g_envConfig.topoHierarchicalThreshold);
     return HCCL_SUCCESS;
 }
 
@@ -839,6 +855,11 @@ const bool& GetExternalInputStuckDetect()
 const bool& GetExternalInconsistentCheckSwitch()
 {
     return g_envConfig.inconsistentCheckSwitch;
+}
+
+const u64& GetExternalInputTopoHierarchicalThreshold()
+{
+    return g_envConfig.topoHierarchicalThreshold;
 }
 
 HcclResult ParseHcclAlgo()
