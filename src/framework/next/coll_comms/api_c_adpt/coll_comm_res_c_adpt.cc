@@ -416,20 +416,17 @@ HcclResult SaveDfxTaskInfo(const HcclComm comm, const Hccl::TaskParam &taskParam
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclReportCcuProfilingInfo(const ThreadHandle threadHandle, uint64_t execId, void *streamProfilingInfos, size_t infoNum,
+HcclResult HcclReportCcuProfilingInfo(uint64_t execId, hcomm::CcuProfilingInfo *profilingArray, size_t infoNum,
                                         const HcclComm comm, Hccl::TaskParam &taskParam, bool isMaster)
 {
     if (infoNum == 0) {
         HCCL_INFO("There is no ccu profiling info.");
         return HCCL_SUCCESS;
     }
-    CHK_PTR_NULL(streamProfilingInfos);
+    CHK_PTR_NULL(profilingArray);
     CHK_PRT_RET(comm == nullptr, HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
     auto hcclComm = static_cast<hccl::hcclComm*>(comm);
     CHK_PTR_NULL(hcclComm);
-
-    // 将 void* 转换为 CcuProfilingInfo 数组指针
-    hcomm::CcuProfilingInfo* profilingArray = reinterpret_cast<hcomm::CcuProfilingInfo*>(streamProfilingInfos);
     
     // 设置任务参数的基本信息
     taskParam.taskPara.Ccu.dieId     = profilingArray[0].dieId;
@@ -504,7 +501,6 @@ HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
     const CcuKernelHandle kernelHandle, void *taskArgs)
 {
     // 性能关键路径，禁止打印算子粒度频次的日志
-    (void)comm;
     CHK_PTR_NULL(taskArgs);
     CHK_PRT_RET(threadHandle == 0, HCCL_ERROR("[%s] failed, thread handle is empty.", __func__), HCCL_E_PARA);
 
@@ -532,26 +528,39 @@ HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
     }
     std::vector<hcomm::CcuProfilingInfo> allCcuProfilingInfo;
     CHK_RET(kernel->GetCcuProfilingInfo(*ccuTaskArgs, allCcuProfilingInfo));
-    Hccl::TaskParam taskParam = {
-        .taskType  = Hccl::TaskParamType::TASK_CCU,
-        .beginTime = 0,
-        .endTime   = 0,
-        .isMaster = false,
-        .taskPara  = {
-            .Ccu = {
-                .dieId         = 0,
-                .missionId     = 0,
-                .execMissionId = 0,
-                .instrId       = 0,
-                .costumArgs    = {},
-                .executeId     = 0
-            }
-        },
-        .ccuDetailInfo  = nullptr
-    };
-    CHK_RET(LaunchCcuTasks(ccuParams, streamPtr, taskParam));
-    CHK_RET(HcclReportCcuProfilingInfo(threadHandle, kernelHandle, allCcuProfilingInfo.data(), allCcuProfilingInfo.size(),
-                                        comm, taskParam, rtsThread->GetMaster()));
+    hcomm::CcuProfilingInfo* ccuTaskProfilingPtr = nullptr;
+    for (hcomm::CcuProfilingInfo &profiling : allCcuProfilingInfo) {
+        if (profiling.type == static_cast<uint8_t>(hcomm::CcuProfilinType::CCU_TASK_PROFILING)) {
+            ccuTaskProfilingPtr = &profiling;
+            break;
+        }
+    }
+
+    for (size_t idx = 0; idx < ccuParams.size(); ++idx) {
+        Hccl::TaskParam taskParam = {
+            .taskType  = Hccl::TaskParamType::TASK_CCU,
+            .beginTime = 0,
+            .endTime   = 0,
+            .isMaster = false,
+            .taskPara  = {
+                .Ccu = {
+                    .dieId           = 0,
+                    .missionId       = 0,
+                    .execMissionId   = 0,
+                    .instrId         = 0,
+                    .costumArgs      = {},
+                    .executeId       = 0,
+                }
+            },
+            .ccuDetailInfo  = nullptr
+        };
+
+        CHK_RET(LaunchCcuTasks(ccuParams[idx], streamPtr, taskParam));
+        hcomm::CcuProfilingInfo *profilingArray = (idx + 1 == ccuParams.size()) ? allCcuProfilingInfo.data() : ccuTaskProfilingPtr;
+        size_t infoNum = (idx + 1 == ccuParams.size()) ? allCcuProfilingInfo.size() : 1;
+        CHK_RET(HcclReportCcuProfilingInfo(kernelHandle, profilingArray, infoNum, comm, taskParam, rtsThread->GetMaster()));
+    }
+    
     EXCEPTION_HANDLE_END
     return HcclResult::HCCL_SUCCESS;
 }
