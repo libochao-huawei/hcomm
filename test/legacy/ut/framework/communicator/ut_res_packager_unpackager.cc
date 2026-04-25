@@ -49,7 +49,7 @@ TEST_F(ResPackagerTest, test_package_res)
     CommunicatorImpl impl;
 
     impl.connLocalNotifyManager = std::make_unique<ConnLocalNotifyManager>(&impl);
-    impl.queueNotifyManager      = std::make_unique<QueueNotifyManager>(impl);
+    impl.aicpuQueueNotifyManager_      = std::make_unique<QueueNotifyManager>(impl);
     impl.queueWaitGroupCntNotifyManager = std::make_unique<QueueWaitGroupCntNotifyManager>();
     impl.queueBcastPostCntNotifyManager = std::make_unique<QueueBcastPostCntNotifyManager>();
     impl.localRmaBufManager      = std::make_unique<LocalRmaBufManager>(impl);

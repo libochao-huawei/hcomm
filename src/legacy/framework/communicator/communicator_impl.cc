@@ -1405,7 +1405,9 @@ void CommunicatorImpl::InitDataBufferManager()
 
 void CommunicatorImpl::InitNotifyManager()
 {
-    queueNotifyManager = std::make_unique<QueueNotifyManager>(*this);
+    aicpuQueueNotifyManager_ = std::make_unique<QueueNotifyManager>(*this);
+
+    ccuQueueNotifyManager_ = std::make_unique<QueueNotifyManager>(*this);
 
     queueWaitGroupCntNotifyManager = std::make_unique<QueueWaitGroupCntNotifyManager>();
 
@@ -1670,10 +1672,16 @@ RemoteRmaBufManager &CommunicatorImpl::GetRemoteRmaBufManager() const
     return *remoteRmaBufManager;
 }
 
-QueueNotifyManager &CommunicatorImpl::GetQueueNotifyManager() const
+QueueNotifyManager &CommunicatorImpl::GetAicpuQueueNotifyManager() const
 {
-    CHECK_NULLPTR(queueNotifyManager, "queueNotifyManager is nullptr!");
-    return *queueNotifyManager;
+    CHECK_NULLPTR(aicpuQueueNotifyManager_, "aicpuQueueNotifyManager is nullptr!");
+    return *aicpuQueueNotifyManager_;
+}
+
+QueueNotifyManager &CommunicatorImpl::GetCcuQueueNotifyManager() const
+{
+    CHECK_NULLPTR(ccuQueueNotifyManager_, "ccuQueueNotifyManager is nullptr!");
+    return *ccuQueueNotifyManager_;
 }
 
 ConnLocalNotifyManager &CommunicatorImpl::GetConnLocalNotifyManager() const
