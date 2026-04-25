@@ -39,7 +39,7 @@ void RegisterGetAicpuRemoteRankIdCallBackHcomm(GetRemoteRankIdCallBackHcomm p1)
     return;
 }
 
-void TaskExceptionHost::ClusterMoniterGetRemoteRankId(u32 rankId, uint16_t status, Hccl::Eid LocalEid, Hccl::Eid RemoteEid)
+void TaskExceptionHost::ClusterMoniterGetRemoteRankId(u32 rankId, uint16_t status, string LocalEid, string RemoteEid)
 {
     if (g_getRemoteRankIdCallBack != nullptr) {
         g_getRemoteRankIdCallBack(rankId, status, LocalEid, RemoteEid);
@@ -489,10 +489,10 @@ void TaskExceptionHost::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo)
             }
 
             ReportErrorMsg(exceptionTaskInfo, groupRankContent, errorMessage, exceptionInfo);
+
             if(errorMessage.taskType == Hccl::TaskParamType::TASK_UB && errorMessage.ubCqeStatus != 0) {
-                ClusterMoniterGetRemoteRankId(errorMessage.remoteUserRank, errorMessage.ubCqeStatus, errorMessage.locEid, errorMessage.rmtEid);
+                ClusterMoniterGetRemoteRankId(errorMessage.remoteUserRank, errorMessage.ubCqeStatus, errorMessage.locEid.Describe(), errorMessage.rmtEid.Describe());
             }
-            
             lock.lock();
             g_commHadCallbackArrayV2[exceptionInfo->deviceid] = true;
         } else {

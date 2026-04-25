@@ -1,10 +1,12 @@
 #ifndef CLUSTER_NOBITOR_H
 #define CLUSTER_NOBITOR_H
+
 #include <string>
 #include <deque>
 #include <vector>
 #include <mutex>
 #include <queue>
+
 
 #include "reference_map.h"
 #include "hccl_types.h"
@@ -13,28 +15,42 @@
 #include "topoinfo_struct.h"
 #include "ip_address.h"
 
+
 namespace hcomm {
 constexpr u32 EVENT_MAX_CNT = 5000;          // 防止内存泄漏，同时不能太短，防止正常事件被冲掉
 constexpr u32 OPINFO_SEND_NUM_BY_TAG = 500;   // 一次心跳帧发送的算子信息个数
 constexpr u32 OPINFO_TAG_QUEUE_NUM = 10;   // 一次心跳帧发送的算子信息个数
 
 typedef unsigned int u32;
-using UIDType = struct HcclHeartBeatUid {
+using UIDType = struct HcclClusterMonitorUid {
     char id[512] = {0}; // ip[IP_ADDRESS_BUFFER_LEN] + ifname[MAX_INTERFACE_NAME_LEN] + devid 最大不超过512字节
-    bool operator == (const HcclHeartBeatUid &that) const
+    bool operator == (const HcclClusterMonitorUid &that) const
     {
         return std::string(this->id) == std::string(that.id);
     }
-    bool operator != (const HcclHeartBeatUid &that) const
+    bool operator != (const HcclClusterMonitorUid &that) const
     {
         return std::string(this->id) != std::string(that.id);
     }
-    bool operator < (const HcclHeartBeatUid &that) const
+    bool operator < (const HcclClusterMonitorUid &that) const
     {
         return std::string(this->id) < std::string(that.id);
     }
 };
 
+}
+
+namespace std {
+template <> class hash<hcomm::HcclClusterMonitorUid> {
+public:
+    size_t operator () (const hcomm::HcclClusterMonitorUid &uid) const
+    {
+        return hash<string>()(string(uid.id));
+    }
+};
+}
+
+namespace hcomm {
 struct ConnInfo {
     u32 lostNum = 0;
     bool newConn = false;
@@ -85,14 +101,14 @@ inline std::string GetHeartBeatStatusStr(HeartBeatStatus  status)
 struct CqeErrInfo{
     u32 CqeRemoterankId;
     uint16_t CqeRemoterstatus;
-    Hccl::Eid CqeLocalEid; 
-    Hccl::Eid CqeRemoteEid;
+    std::string CqeLocalEid; 
+    std::string CqeRemoteEid;
 };
 
 class ClusterMonitor {
 public:
     static ClusterMonitor& GetInstance();
-    void GetRemoteRankId(u32 rankId, uint16_t status, Hccl::Eid LocalEid, Hccl::Eid RemoteEid);
+    void GetRemoteRankId(u32 rankId, uint16_t status, std::string LocalEid, std::string RemoteEid);
     ClusterMonitor() = default;
     ~ClusterMonitor() = default;
 private:
