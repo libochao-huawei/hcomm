@@ -47,130 +47,130 @@ target_link_options(ccl_kernel PRIVATE
 )
 
 set(CCL_KERNEL_INCLUDE_LIST
-    ${HCCL_BASE_DIR}/../include/hccl
-    ${HCCL_BASE_DIR}/pub_inc
+    ${HCOMM_ROOT_DIR}/include/hccl
+    ${HCOMM_ROOT_DIR}/src/pub_inc
     ${TOP_DIR}/abl/atrace/inc/utrace
-    ${HCCL_BASE_DIR}/algorithm/base/inc
-    ${HCCL_BASE_DIR}/algorithm/pub_inc
-    ${HCCL_BASE_DIR}/algorithm/base/alg_aiv_template
-    ${HCCL_BASE_DIR}/algorithm/base/alg_template
-    ${HCCL_BASE_DIR}/algorithm/base/alg_template/component
-    ${HCCL_BASE_DIR}/algorithm/base/mc2_handler
-    ${HCCL_BASE_DIR}/algorithm/base/communicator
-    ${HCCL_BASE_DIR}/algorithm/impl
-    ${HCCL_BASE_DIR}/algorithm/impl/inc
-    ${HCCL_BASE_DIR}/algorithm/impl/legacy
-    ${HCCL_BASE_DIR}/algorithm/impl/legacy/operator
-    ${HCCL_BASE_DIR}/algorithm/base/communicator/legacy
-    ${HCCL_BASE_DIR}/algorithm/impl/resource_manager
-    ${HCCL_BASE_DIR}/algorithm/impl/task
-    ${HCCL_BASE_DIR}/algorithm/impl/operator
-    ${HCCL_BASE_DIR}/algorithm/impl/operator/registry
-    ${HCCL_BASE_DIR}/algorithm/impl/coll_executor
-    ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/registry
-    ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_send_receive
-    ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_reduce
-    ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_reduce/310P
-    ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_gather
-    ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_gather/310P
-    ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_gather_v
-    ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_reduce_scatter
-    ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_reduce_scatter/310P
-    ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_reduce_scatter_v
-    ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_reduce_scatter_v/310P
-    ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_to_all
-    ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_scatter
-    ${HCCL_BASE_DIR}/common/health
-    ${HCCL_BASE_DIR}/common/debug/profiling/inc
-    ${HCCL_BASE_DIR}/common/debug/profiling/inc/aicpu
-    ${HCCL_BASE_DIR}/common/debug/config/
-    ${HCCL_BASE_DIR}/common/debug/
-    ${HCCL_BASE_DIR}/common/stream
-    ${HCCL_BASE_DIR}/common/launch_device
-    ${HCCL_BASE_DIR}/framework/inc
-    ${HCCL_BASE_DIR}/framework/cluster_maintenance/health/heartbeat/
-    ${HCCL_BASE_DIR}/framework/cluster_maintenance/detect/detect_connect_anomalies/
-    ${HCCL_BASE_DIR}/framework/cluster_maintenance/snapshot/
-    ${HCCL_BASE_DIR}/framework/common/src
-    ${HCCL_BASE_DIR}/framework/common/src/aicpu
-    ${HCCL_BASE_DIR}/framework/common/src/config
-    ${HCCL_BASE_DIR}/framework/common/src/task
-    ${HCCL_BASE_DIR}/framework/common/src/topo
-    ${HCCL_BASE_DIR}/framework/hcom
-    ${HCCL_BASE_DIR}/framework/communicator/impl/
-    ${HCCL_BASE_DIR}/framework/communicator/impl/one_sided_service/
-    ${HCCL_BASE_DIR}/framework/communicator/impl/zero_copy
-    ${HCCL_BASE_DIR}/framework/communicator/impl/resource_manager
-    ${HCCL_BASE_DIR}/framework/op_base/src/
-    ${HCCL_BASE_DIR}/framework/device/
-    ${HCCL_BASE_DIR}/framework/device/aicpu_kfc
-    ${HCCL_BASE_DIR}/framework/device/aicpu_kfc/inc
-    ${HCCL_BASE_DIR}/framework/device/aicpu_kfc/dfx
-    ${HCCL_BASE_DIR}/framework/device/common
-    ${HCCL_BASE_DIR}/framework/device/inc
-    ${HCCL_BASE_DIR}/framework/device/framework
-    ${HCCL_BASE_DIR}/framework/cluster_maintenance/recovery/operator_retry
-    ${HCCL_BASE_DIR}/framework/common/src/exception
-    ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/
-    ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/resource
-    ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/thread
-    ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/rank_graph
-    ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/channel
-    ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/channel/device
-    ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/data_api
+    ${HCOMM_ROOT_DIR}/src/algorithm/base/inc
+    ${HCOMM_ROOT_DIR}/src/algorithm/pub_inc
+    ${HCOMM_ROOT_DIR}/src/algorithm/base/alg_aiv_template
+    ${HCOMM_ROOT_DIR}/src/algorithm/base/alg_template
+    ${HCOMM_ROOT_DIR}/src/algorithm/base/alg_template/component
+    ${HCOMM_ROOT_DIR}/src/algorithm/base/mc2_handler
+    ${HCOMM_ROOT_DIR}/src/algorithm/base/communicator
+    ${HCOMM_ROOT_DIR}/src/algorithm/impl
+    ${HCOMM_ROOT_DIR}/src/algorithm/impl/inc
+    ${HCOMM_ROOT_DIR}/src/algorithm/impl/legacy
+    ${HCOMM_ROOT_DIR}/src/algorithm/impl/legacy/operator
+    ${HCOMM_ROOT_DIR}/src/algorithm/base/communicator/legacy
+    ${HCOMM_ROOT_DIR}/src/algorithm/impl/resource_manager
+    ${HCOMM_ROOT_DIR}/src/algorithm/impl/task
+    ${HCOMM_ROOT_DIR}/src/algorithm/impl/operator
+    ${HCOMM_ROOT_DIR}/src/algorithm/impl/operator/registry
+    ${HCOMM_ROOT_DIR}/src/algorithm/impl/coll_executor
+    ${HCOMM_ROOT_DIR}/src/algorithm/impl/coll_executor/registry
+    ${HCOMM_ROOT_DIR}/src/algorithm/impl/coll_executor/coll_send_receive
+    ${HCOMM_ROOT_DIR}/src/algorithm/impl/coll_executor/coll_all_reduce
+    ${HCOMM_ROOT_DIR}/src/algorithm/impl/coll_executor/coll_all_reduce/310P
+    ${HCOMM_ROOT_DIR}/src/algorithm/impl/coll_executor/coll_all_gather
+    ${HCOMM_ROOT_DIR}/src/algorithm/impl/coll_executor/coll_all_gather/310P
+    ${HCOMM_ROOT_DIR}/src/algorithm/impl/coll_executor/coll_all_gather_v
+    ${HCOMM_ROOT_DIR}/src/algorithm/impl/coll_executor/coll_reduce_scatter
+    ${HCOMM_ROOT_DIR}/src/algorithm/impl/coll_executor/coll_reduce_scatter/310P
+    ${HCOMM_ROOT_DIR}/src/algorithm/impl/coll_executor/coll_reduce_scatter_v
+    ${HCOMM_ROOT_DIR}/src/algorithm/impl/coll_executor/coll_reduce_scatter_v/310P
+    ${HCOMM_ROOT_DIR}/src/algorithm/impl/coll_executor/coll_all_to_all
+    ${HCOMM_ROOT_DIR}/src/algorithm/impl/coll_executor/coll_scatter
+    ${HCOMM_ROOT_DIR}/src/common/health
+    ${HCOMM_ROOT_DIR}/src/common/debug/profiling/inc
+    ${HCOMM_ROOT_DIR}/src/common/debug/profiling/inc/aicpu
+    ${HCOMM_ROOT_DIR}/src/common/debug/config/
+    ${HCOMM_ROOT_DIR}/src/common/debug/
+    ${HCOMM_ROOT_DIR}/src/common/stream
+    ${HCOMM_ROOT_DIR}/src/common/launch_device
+    ${HCOMM_ROOT_DIR}/src/framework/inc
+    ${HCOMM_ROOT_DIR}/src/framework/cluster_maintenance/health/heartbeat/
+    ${HCOMM_ROOT_DIR}/src/framework/cluster_maintenance/detect/detect_connect_anomalies/
+    ${HCOMM_ROOT_DIR}/src/framework/cluster_maintenance/snapshot/
+    ${HCOMM_ROOT_DIR}/src/framework/common/src
+    ${HCOMM_ROOT_DIR}/src/framework/common/src/aicpu
+    ${HCOMM_ROOT_DIR}/src/framework/common/src/config
+    ${HCOMM_ROOT_DIR}/src/framework/common/src/task
+    ${HCOMM_ROOT_DIR}/src/framework/common/src/topo
+    ${HCOMM_ROOT_DIR}/src/framework/hcom
+    ${HCOMM_ROOT_DIR}/src/framework/communicator/impl/
+    ${HCOMM_ROOT_DIR}/src/framework/communicator/impl/one_sided_service/
+    ${HCOMM_ROOT_DIR}/src/framework/communicator/impl/zero_copy
+    ${HCOMM_ROOT_DIR}/src/framework/communicator/impl/resource_manager
+    ${HCOMM_ROOT_DIR}/src/framework/op_base/src/
+    ${HCOMM_ROOT_DIR}/src/framework/device/
+    ${HCOMM_ROOT_DIR}/src/framework/device/aicpu_kfc
+    ${HCOMM_ROOT_DIR}/src/framework/device/aicpu_kfc/inc
+    ${HCOMM_ROOT_DIR}/src/framework/device/aicpu_kfc/dfx
+    ${HCOMM_ROOT_DIR}/src/framework/device/common
+    ${HCOMM_ROOT_DIR}/src/framework/device/inc
+    ${HCOMM_ROOT_DIR}/src/framework/device/framework
+    ${HCOMM_ROOT_DIR}/src/framework/cluster_maintenance/recovery/operator_retry
+    ${HCOMM_ROOT_DIR}/src/framework/common/src/exception
+    ${HCOMM_ROOT_DIR}/src/framework/communicator/impl/independent_op/
+    ${HCOMM_ROOT_DIR}/src/framework/communicator/impl/independent_op/resource
+    ${HCOMM_ROOT_DIR}/src/framework/communicator/impl/independent_op/thread
+    ${HCOMM_ROOT_DIR}/src/framework/communicator/impl/independent_op/rank_graph
+    ${HCOMM_ROOT_DIR}/src/framework/communicator/impl/independent_op/channel
+    ${HCOMM_ROOT_DIR}/src/framework/communicator/impl/independent_op/channel/device
+    ${HCOMM_ROOT_DIR}/src/framework/communicator/impl/independent_op/data_api
 
-    ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_all_gather
-    ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_all_reduce
-    ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_alltoall
-    ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_alltoallv
-    ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_broadcast
-    ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_reduce
-    ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_reduce_scatter
-    ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_scatter
-    ${HCCL_BASE_DIR}/algorithm/base/alg_template
-    ${HCCL_BASE_DIR}/algorithm/pub_inc
-    ${HCCL_BASE_DIR}/../pkg_inc/
-    ${HCCL_BASE_DIR}/../pkg_inc/hccl/
+    ${HCOMM_ROOT_DIR}/src/algorithm/base/alg_template/temp_all_gather
+    ${HCOMM_ROOT_DIR}/src/algorithm/base/alg_template/temp_all_reduce
+    ${HCOMM_ROOT_DIR}/src/algorithm/base/alg_template/temp_alltoall
+    ${HCOMM_ROOT_DIR}/src/algorithm/base/alg_template/temp_alltoallv
+    ${HCOMM_ROOT_DIR}/src/algorithm/base/alg_template/temp_broadcast
+    ${HCOMM_ROOT_DIR}/src/algorithm/base/alg_template/temp_reduce
+    ${HCOMM_ROOT_DIR}/src/algorithm/base/alg_template/temp_reduce_scatter
+    ${HCOMM_ROOT_DIR}/src/algorithm/base/alg_template/temp_scatter
+    ${HCOMM_ROOT_DIR}/src/algorithm/base/alg_template
+    ${HCOMM_ROOT_DIR}/src/algorithm/pub_inc
+    ${HCOMM_ROOT_DIR}/pkg_inc/
+    ${HCOMM_ROOT_DIR}/pkg_inc/hccl/
 
-    ${HCCL_BASE_DIR}/platform/
-    ${HCCL_BASE_DIR}/platform/inc/
-    ${HCCL_BASE_DIR}/platform/inc/adapter
-    ${HCCL_BASE_DIR}/platform/resource/transport/heterog/
-    ${HCCL_BASE_DIR}/platform/resource/transport/host/
-    ${HCCL_BASE_DIR}/platform/resource/transport/
-    ${HCCL_BASE_DIR}/platform/resource/notify/
-    ${HCCL_BASE_DIR}/platform/task
-    ${HCCL_BASE_DIR}/platform/common
-    ${HCCL_BASE_DIR}/platform/common/unique
-    ${HCCL_BASE_DIR}/platform/common/unfold_cache
+    ${HCOMM_ROOT_DIR}/src/platform/
+    ${HCOMM_ROOT_DIR}/src/platform/inc/
+    ${HCOMM_ROOT_DIR}/src/platform/inc/adapter
+    ${HCOMM_ROOT_DIR}/src/platform/resource/transport/heterog/
+    ${HCOMM_ROOT_DIR}/src/platform/resource/transport/host/
+    ${HCOMM_ROOT_DIR}/src/platform/resource/transport/
+    ${HCOMM_ROOT_DIR}/src/platform/resource/notify/
+    ${HCOMM_ROOT_DIR}/src/platform/task
+    ${HCOMM_ROOT_DIR}/src/platform/common
+    ${HCOMM_ROOT_DIR}/src/platform/common/unique
+    ${HCOMM_ROOT_DIR}/src/platform/common/unfold_cache
 
     ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
 
     ${RDMA_CORE_INCLUDE_DIR}
-    ${HCCL_BASE_DIR}/platform/
-    ${HCCL_BASE_DIR}/platform/inc/
-    ${HCCL_BASE_DIR}/platform/inc/adapter
-    ${HCCL_BASE_DIR}/platform/resource/transport/heterog/
-    ${HCCL_BASE_DIR}/platform/resource/transport/host/
-    ${HCCL_BASE_DIR}/platform/resource/transport/
-    ${HCCL_BASE_DIR}/platform/resource/notify/
-    ${HCCL_BASE_DIR}/platform/resource/dispatcher_ctx
-    ${HCCL_BASE_DIR}/platform/task
-    ${HCCL_BASE_DIR}/platform/common
-    ${HCCL_BASE_DIR}/platform/common/unique
+    ${HCOMM_ROOT_DIR}/src/platform/
+    ${HCOMM_ROOT_DIR}/src/platform/inc/
+    ${HCOMM_ROOT_DIR}/src/platform/inc/adapter
+    ${HCOMM_ROOT_DIR}/src/platform/resource/transport/heterog/
+    ${HCOMM_ROOT_DIR}/src/platform/resource/transport/host/
+    ${HCOMM_ROOT_DIR}/src/platform/resource/transport/
+    ${HCOMM_ROOT_DIR}/src/platform/resource/notify/
+    ${HCOMM_ROOT_DIR}/src/platform/resource/dispatcher_ctx
+    ${HCOMM_ROOT_DIR}/src/platform/task
+    ${HCOMM_ROOT_DIR}/src/platform/common
+    ${HCOMM_ROOT_DIR}/src/platform/common/unique
     ${hccl_include_list}
-    ${HCCL_BASE_DIR}/../include
-    ${HCCL_BASE_DIR}/../include/hccl
-    ${HCCL_BASE_DIR}/../inc/hccl/hccl
-    ${HCCL_BASE_DIR}/../pkg_inc/
-    ${HCCL_BASE_DIR}/../pkg_inc/hccl/
-    ${HCCL_BASE_DIR}/pub_inc
-    ${HCCL_BASE_DIR}/pub_inc/aicpu
+    ${HCOMM_ROOT_DIR}/include
+    ${HCOMM_ROOT_DIR}/include/hccl
+    ${HCOMM_ROOT_DIR}/inc/hccl/hccl
+    ${HCOMM_ROOT_DIR}/pkg_inc/
+    ${HCOMM_ROOT_DIR}/pkg_inc/hccl/
+    ${HCOMM_ROOT_DIR}/src/pub_inc
+    ${HCOMM_ROOT_DIR}/src/pub_inc/aicpu
 
-    ${HCCL_BASE_DIR}/framework/device/
-    ${HCCL_BASE_DIR}/framework/device/common
-    ${HCCL_BASE_DIR}/framework/device/inc
-    ${HCCL_BASE_DIR}/framework/device/framework
+    ${HCOMM_ROOT_DIR}/src/framework/device/
+    ${HCOMM_ROOT_DIR}/src/framework/device/common
+    ${HCOMM_ROOT_DIR}/src/framework/device/inc
+    ${HCOMM_ROOT_DIR}/src/framework/device/framework
 
     # runtime头文件
     ${ASCEND_CANN_PACKAGE_PATH}/include/
@@ -198,18 +198,18 @@ set(CCL_KERNEL_INCLUDE_LIST
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
     ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/
 
-    ${HCCL_BASE_DIR}/../externel_depends/tsch/
+    ${HCOMM_ROOT_DIR}/externel_depends/tsch/
     ${RDMA_CORE_INCLUDE_DIR}
     ${THIRD_PARTY_NLOHMANN_PATH}
 
-    ${HCCL_BASE_DIR}/platform/hccp/inc/network/
-    ${HCCL_BASE_DIR}/platform/hccp/inc/
-    ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/sockets/
-    ${HCCL_BASE_DIR}/framework/next/comms/endpoints/
-    ${HCCL_BASE_DIR}/framework/next/comms/comm_engine_res/threads
-    ${HCCL_BASE_DIR}/framework/next/comms/comm_engine_res/threads/slaves/
-    ${HCCL_BASE_DIR}/framework/next/coll_comms/communicator/aicpu
-    ${HCCL_BASE_DIR}/framework/next/coll_comms/dfx
+    ${HCOMM_ROOT_DIR}/src/platform/hccp/inc/network/
+    ${HCOMM_ROOT_DIR}/src/platform/hccp/inc/
+    ${HCOMM_ROOT_DIR}/src/framework/next/comms/endpoint_pairs/sockets/
+    ${HCOMM_ROOT_DIR}/src/framework/next/comms/endpoints/
+    ${HCOMM_ROOT_DIR}/src/framework/next/comms/comm_engine_res/threads
+    ${HCOMM_ROOT_DIR}/src/framework/next/comms/comm_engine_res/threads/slaves/
+    ${HCOMM_ROOT_DIR}/src/framework/next/coll_comms/communicator/aicpu
+    ${HCOMM_ROOT_DIR}/src/framework/next/coll_comms/dfx
 )
 
 target_include_directories(ccl_kernel PRIVATE
@@ -222,13 +222,13 @@ target_include_directories(ccl_kernel PRIVATE
 
 if(NOT BUILD_OPEN_PROJECT)
     target_include_directories(ccl_kernel PRIVATE
-        ${HCCL_BASE_DIR}/../include/hccl
-        ${HCCL_BASE_DIR}/pub_inc
-        ${HCCL_BASE_DIR}/pub_inc/inner
-        ${HCCL_BASE_DIR}/pub_inc/aicpu
-        ${HCCL_BASE_DIR}/pub_inc/new
+        ${HCOMM_ROOT_DIR}/include/hccl
+        ${HCOMM_ROOT_DIR}/src/pub_inc
+        ${HCOMM_ROOT_DIR}/src/pub_inc/inner
+        ${HCOMM_ROOT_DIR}/src/pub_inc/aicpu
+        ${HCOMM_ROOT_DIR}/src/pub_inc/new
 
-        ${HCCL_BASE_DIR}/hccl/hccl_comm/wrapper/notify/
+        ${HCOMM_ROOT_DIR}/src/hccl/hccl_comm/wrapper/notify/
 
         ${TOP_DIR}/inc
         ${TOP_DIR}/inc/driver
@@ -242,40 +242,40 @@ if(NOT BUILD_OPEN_PROJECT)
         ${TOP_DIR}/atc/opcompiler/ascendc_compiler/api/include
         ${TOP_DIR}/abl/atrace/inc/utrace
         ${TOP_DIR}/runtime/include/external
- 	      ${TOP_DIR}/runtime/include/external/acl
- 	      ${TOP_DIR}/runtime/pkg_inc
- 	      ${TOP_DIR}/runtime/pkg_inc/runtime
- 	      ${TOP_DIR}/runtime/pkg_inc/profiling
- 	      ${TOP_DIR}/runtime/pkg_inc/trace
- 	      ${TOP_DIR}/runtime/pkg_inc/base
- 	      ${TOP_DIR}/runtime/pkg_inc/aicpu_sched
+        ${TOP_DIR}/runtime/include/external/acl
+        ${TOP_DIR}/runtime/pkg_inc
+        ${TOP_DIR}/runtime/pkg_inc/runtime
+        ${TOP_DIR}/runtime/pkg_inc/profiling
+        ${TOP_DIR}/runtime/pkg_inc/trace
+        ${TOP_DIR}/runtime/pkg_inc/base
+        ${TOP_DIR}/runtime/pkg_inc/aicpu_sched
         ${TOP_DIR}/asc/asc-devkit
- 	      ${TOP_DIR}/asc/asc-devkit/include/adv_api/hccl/internal
+        ${TOP_DIR}/asc/asc-devkit/include/adv_api/hccl/internal
 
-        ${HCCL_BASE_DIR}/platform/
-        ${HCCL_BASE_DIR}/platform/inc/
-        ${HCCL_BASE_DIR}/platform/inc/adapter
-        ${HCCL_BASE_DIR}/platform/resource/transport/heterog/
-        ${HCCL_BASE_DIR}/platform/resource/transport/host/
-        ${HCCL_BASE_DIR}/platform/resource/transport/
-        ${HCCL_BASE_DIR}/platform/resource/notify/
-        ${HCCL_BASE_DIR}/platform/resource/dispatcher_ctx
-        ${HCCL_BASE_DIR}/platform/task
-        ${HCCL_BASE_DIR}/platform/common
-        ${HCCL_BASE_DIR}/platform/common/unique
-        ${HCCL_BASE_DIR}/platform/common/unfold_cache
+        ${HCOMM_ROOT_DIR}/src/platform/
+        ${HCOMM_ROOT_DIR}/src/platform/inc/
+        ${HCOMM_ROOT_DIR}/src/platform/inc/adapter
+        ${HCOMM_ROOT_DIR}/src/platform/resource/transport/heterog/
+        ${HCOMM_ROOT_DIR}/src/platform/resource/transport/host/
+        ${HCOMM_ROOT_DIR}/src/platform/resource/transport/
+        ${HCOMM_ROOT_DIR}/src/platform/resource/notify/
+        ${HCOMM_ROOT_DIR}/src/platform/resource/dispatcher_ctx
+        ${HCOMM_ROOT_DIR}/src/platform/task
+        ${HCOMM_ROOT_DIR}/src/platform/common
+        ${HCOMM_ROOT_DIR}/src/platform/common/unique
+        ${HCOMM_ROOT_DIR}/src/platform/common/unfold_cache
 
-        ${HCCL_BASE_DIR}/platform/hccp/inc
-        ${HCCL_BASE_DIR}/platform/hccp/inc/network
-	      ${HCCL_BASE_DIR}/../pkg_inc/
-        ${HCCL_BASE_DIR}/../pkg_inc/hccl/
+        ${HCOMM_ROOT_DIR}/src/platform/hccp/inc
+        ${HCOMM_ROOT_DIR}/src/platform/hccp/inc/network
+	    ${HCOMM_ROOT_DIR}/pkg_inc/
+        ${HCOMM_ROOT_DIR}/pkg_inc/hccl/
 
-        ${HCCL_BASE_DIR}/framework
-        ${HCCL_BASE_DIR}/framework/common
-        ${HCCL_BASE_DIR}/framework/common/src
-        ${HCCL_BASE_DIR}/framework/common/src/mgr
-        ${HCCL_BASE_DIR}/framework/communicator
-        ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/resource/engine
+        ${HCOMM_ROOT_DIR}/src/framework
+        ${HCOMM_ROOT_DIR}/src/framework/common
+        ${HCOMM_ROOT_DIR}/src/framework/common/src
+        ${HCOMM_ROOT_DIR}/src/framework/common/src/mgr
+        ${HCOMM_ROOT_DIR}/src/framework/communicator
+        ${HCOMM_ROOT_DIR}/src/framework/communicator/impl/independent_op/resource/engine
     )
     target_link_libraries(ccl_kernel PRIVATE
         $<BUILD_INTERFACE:intf_pub_cxx14>
@@ -348,7 +348,7 @@ if(BUILD_OPEN_PROJECT)
     )
 endif()
 
-set(CCL_KERNEL_TAR_DIR ${HCCL_BASE_DIR}/../build_device/ccl_kernel_tar_pkg/aicpu_kernels_device)
+set(CCL_KERNEL_TAR_DIR ${HCOMM_ROOT_DIR}/build_device/ccl_kernel_tar_pkg/aicpu_kernels_device)
 add_custom_command(
     TARGET ccl_kernel
     POST_BUILD
