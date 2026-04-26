@@ -12,6 +12,7 @@
 #define AICPU_TS_THREAD_INTERFACE_H
 
 #include "hccl_types.h"
+#include "stream_lite.h"
 
 namespace Hccl {
 
@@ -36,9 +37,15 @@ public:
     HcclResult SdmaReduce(uint64_t dstAddr, uint64_t srcAddr, uint64_t sizeByte, uint32_t dataTypeRaw,
                           uint32_t reduceOpRaw) const;
 
-    // INNOTODO: inline
-    void* GetStreamLitePtr() const;
-    uint32_t GetSqId() const;
+    inline void* GetStreamLitePtr() const
+    {
+        return streamLiteVoidPtr_;
+    }
+
+    inline uint32_t GetSqId() const
+    {
+        return static_cast<StreamLite *>(streamLiteVoidPtr_)->GetSqId();
+    }
 
 private:
     void *streamLiteVoidPtr_{nullptr};

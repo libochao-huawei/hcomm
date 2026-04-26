@@ -35,22 +35,22 @@ public:
 
     virtual void Reset();
 
-    virtual u32 GetSqDepth()
+    inline virtual u32 GetSqDepth()
     {
         return sqDepth_;
     }
 
-    virtual u32 GetHead()
+    inline virtual u32 GetHead()
     {
         return sqHead_;
     }
 
-    virtual u32 GetTail()
+    inline virtual u32 GetTail()
     {
         return sqTail_;
     }
 
-    virtual u32 GetTaskId()
+    inline virtual u32 GetTaskId()
     {
         return taskId_;
     }

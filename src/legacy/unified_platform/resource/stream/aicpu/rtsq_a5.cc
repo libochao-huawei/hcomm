@@ -57,7 +57,7 @@ void RtsqA5::Reset()
 // 计算head和tail之间的距离
 u32 RtsqA5::GetTailToHeadDist() const
 {
-    if (sqHead_ == sqTail_) { // 头尾相同，则距离大小为sq深度
+    if (UNLIKELY(sqHead_ == sqTail_)) { // 头尾相同，则距离大小为sq深度
         return sqDepth_;
     }
     return (sqTail_ < sqHead_) ? (sqHead_ - sqTail_) : (sqDepth_ - (sqTail_ - sqHead_));
@@ -170,7 +170,7 @@ u8 *RtsqA5::GetCurrSqeBuffer()
 
 void RtsqA5::RefreshInfo()
 {
-    // INNOTODO: 底层接口是否总是存在
+    // PROFTODO: 底层接口是否总是存在
     if (UNLIKELY(SetTaskIdBySqeId() != HCCL_SUCCESS)) {
         taskId_++;
     }

@@ -94,7 +94,7 @@ u64 RtsqBase::QuerySqBaseAddr()
     return ((static_cast<u64>(queryInfo.value[1])) << 32) | queryInfo.value[0];
 }
 
-// INNOTODO: inline
+// PROFTODO: inline
 u32 RtsqBase::QuerySqHead()
 {
     return QuerySqStatusByType(drvSqCqPropType_t::DRV_SQCQ_PROP_SQ_HEAD);
@@ -130,7 +130,7 @@ void RtsqBase::ConfigSqStatusByType(drvSqCqPropType_t givenType, u32 value)
     }
 }
 
-// INNOTODO: inline
+// PROFTODO: inline
 void RtsqBase::ConfigSqTail(u32 value)
 {
     HCCL_INFO("RtsqBase::%s, value=%u", __func__, value);
