@@ -53,7 +53,7 @@ struct hccpInitPara {
     unsigned int whiteListStatus;
     bool useResvMem;
     unsigned int resvMemPoolId;
-}
+};
 
 struct RaOpHandle {
     unsigned int opcode;

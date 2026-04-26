@@ -27,6 +27,7 @@
 #define WHITE_LIST_STATUS_PREFIX       "whiteListStatus"
 #define BACKUP_PHYID_PREFIX            "backupPhyId"
 #define RESV_MEM_POOL_ID_PREFIX        "resvMemPoolId"
+
 #define HCCP_CMD_MAX_LEN  128
 #define HCCP_KEY_EXPIRED  127
 
@@ -52,7 +53,7 @@ struct HccpInitParam {
     bool backupFlag;
     unsigned int backupChipId;
     bool useResvMem;
-    unsigned int resvMemPoolId; 
+    unsigned int resvMemPoolId;
 };
 
 struct ParamHandle {

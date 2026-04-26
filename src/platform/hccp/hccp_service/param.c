@@ -133,7 +133,7 @@ STATIC int HccpParseResvMemPoolId(const char *input, struct HccpInitParam *param
 
     ret = HccpParamParseId(input, (int *)(void *)&param->resvMemPoolId);
     if (ret != 0) {
-        hccp_warn("parse resvMemPoolId unsuccessfull ret:%d", ret);
+        hccp_warn("parse resvMemPoolId unsuccessful ret:%d", ret);
         return 0;
     }
 
