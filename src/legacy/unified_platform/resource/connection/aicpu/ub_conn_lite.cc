@@ -101,6 +101,7 @@ void UbConnLite::ProcessSlices(const RmaBufSliceLite &loc, const RmtRmaBufSliceL
 
     // reduce操作需要保证切片大小是数据类型大小的整数倍
     u64 sliceSize = UB_DMA_MAX_READ_WEITE_SIZE;
+    // INNOTODO: 不需要，删除
     if (dataType != DataType::INVALID) {
         u32 dataTypeSize = DATA_TYPE_SIZE_MAP.at(dataType);
         sliceSize        = UB_DMA_MAX_READ_WEITE_SIZE / dataTypeSize * dataTypeSize;
@@ -111,6 +112,8 @@ void UbConnLite::ProcessSlices(const RmaBufSliceLite &loc, const RmtRmaBufSliceL
     u64 lastSliceSize = locBufSize % sliceSize;
 
     u64 totalSize = sliceNum * sliceSize;
+
+    // INNOTODO: 是否有必要
     if (UNLIKELY(loc.GetAddr() > UINT64_MAX - totalSize || rmt.GetAddr() > UINT64_MAX - totalSize)) {
         THROW<InternalException>("integer overflow occurs");
     }
@@ -206,6 +209,8 @@ void UbConnLite::FillOneSqeWrite(const RmaBufSliceLite &loc, const RmtRmaBufSlic
     HCCL_INFO("[UbConnLite::%s] end", __func__);
 }
 
+// INNOTODO: 考虑批量memcpy_sp
+// INNOTODO：确认地址属性
 void UbConnLite::ProcessOneWqe(UdmaSqeWrite *sqe, UdmaSqOpcode opCode, const StreamLite &stream)
 {
     HCCL_INFO("[UbConnLite::%s] start, opCode[%s]", __func__, opCode.Describe().c_str());

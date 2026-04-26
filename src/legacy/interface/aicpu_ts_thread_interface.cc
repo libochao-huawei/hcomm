@@ -21,6 +21,7 @@ namespace Hccl {
 
 namespace { // make the definitions file-scoped
 
+// INNOTODO: 不需要判空
 inline HcclResult GetRtsqWithNullCheck(void *streamLiteVoidPtr, RtsqBase *&rtsqPtr)
 {
     StreamLite *streamLitePtr = static_cast<StreamLite *>(streamLiteVoidPtr);
@@ -131,6 +132,7 @@ HcclResult IAicpuTsThread::NotifyRecordLoc(uint32_t notifyId) const
 
 HcclResult IAicpuTsThread::SdmaCopy(uint64_t dstAddr, uint64_t srcAddr, uint64_t sizeByte) const
 {
+    // INNOTODO: 是否需要检查
     if (sizeByte > std::numeric_limits<uint32_t>::max()) {
         HCCL_ERROR("[%s] sizeByte [%ld] exceeds the maximum value of uint32", __func__, sizeByte);
         return HCCL_E_PARA;
@@ -139,6 +141,7 @@ HcclResult IAicpuTsThread::SdmaCopy(uint64_t dstAddr, uint64_t srcAddr, uint64_t
     RtsqBase *rtsqA5 = nullptr;
     CHK_RET(GetRtsqWithNullCheck(streamLiteVoidPtr_, rtsqA5));
 
+    // INNOTODO: partId没用
     uint32_t partId           = 0; // partId will not be used
     uint32_t sizeByteNarrowed = static_cast<uint32_t>(sizeByte);
 
@@ -149,6 +152,7 @@ HcclResult IAicpuTsThread::SdmaCopy(uint64_t dstAddr, uint64_t srcAddr, uint64_t
         srcAddr,
         sizeByteNarrowed);
 
+    // INNOTODO: 目前A5的SdmaCopy接口只支持32位的sizeByte的原因
     rtsqA5->SdmaCopy(srcAddr, dstAddr, sizeByteNarrowed, partId);
 
     return HCCL_SUCCESS;

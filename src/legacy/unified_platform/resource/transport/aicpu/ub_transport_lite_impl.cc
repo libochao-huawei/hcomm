@@ -253,6 +253,7 @@ RmtRmaBufSliceLite UbTransportLiteImpl::GetRmtNotifySliceLite(u32 index)
     return RmtRmaBufSliceLite(lite.addr, lite.size, 0, lite.tokenId, lite.tokenValue);
 }
 
+// INNOTODO: 是否需要遍历查找，能否直接使用rmtBufferVec[0]的token信息
 RmtRmaBufSliceLite UbTransportLiteImpl::GetRmtRmaBufSliceLite(const Buffer &rmtBuf)
 {
     for (auto &it : rmtBufferVec) {
@@ -270,6 +271,7 @@ RmtRmaBufSliceLite UbTransportLiteImpl::GetRmtRmaBufSliceLite(const RmaBufferLit
     return RmtRmaBufSliceLite(lite.GetAddr(), lite.GetSize(), 0, lite.GetTokenId() , lite.GetTokenValue());
 }
 
+// INNOTODO: 这个接口可以直接返回locBufferVec[0]的token信息
 HcclResult UbTransportLiteImpl::BuildLocRmaBufferLite(const uintptr_t addr, const size_t size, RmaBufferLite &rmaBufferLite)
 {
     HCCL_INFO("[UbTransportLiteImpl::%s] start to find addr[0x%llx], size[0x%llx] in locBufferVec, whose size is %zu. ",
@@ -492,10 +494,12 @@ void UbTransportLiteImpl::Read(const RmaBufferLite &loc, const Buffer &rmt, cons
 
 void UbTransportLiteImpl::Write(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream)
 {
+    // INNOTODO: 构造时执行一次，不需要每次执行，清理动作是否还需要？
     ClearConnOut();
     SqeConfigLite cfg;
     SetFenceConfig(cfg);
     auto taskId = stream.GetRtsq()->GetTaskId();
+    // INNOTODO: 构造时check，使用时不需要
     CheckConnVec("UbTransportLiteImpl::Write"); // 待修改优化, 检查connection
     // 当前使用1个connection，下标为0
     auto locRmaBufSlicelite = GetRmaBufSlicelite(loc);

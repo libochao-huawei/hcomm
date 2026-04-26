@@ -27,6 +27,7 @@ void BuildA5SqeNotifyWait(u32 streamId, u32 taskId, u32 notifyId, uint8_t * cons
     BuildA5SqeNotifyWait(streamId, taskId, notifyId, GetKernelExecTimeoutFromEnvConfig(), sqeIn);
 }
 
+// INNOTODO: inline
 void BuildA5SqeNotifyWait(u32 streamId, u32 taskId, u32 notifyId, u32 timeout, uint8_t * const sqeIn)
 {
     (void) streamId;

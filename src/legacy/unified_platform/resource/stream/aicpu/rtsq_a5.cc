@@ -98,6 +98,7 @@ void RtsqA5::MakeSureAvailableSpace()
 
 void RtsqA5::CopyLocBufToSq()
 {
+    // INNOTODO: memcpy_s更换为memcpy_sp
     sqHead_        = QuerySqHead();
     u8 *sqCurrAddr = reinterpret_cast<u8 *>(sqBaseAddr_) + sqTail_ * rtsqSqeSize;
     if (sqTail_ >= sqHead_) {
@@ -152,9 +153,13 @@ void RtsqA5::LaunchTask()
     CopyLocBufToSq();
 
     // 更新tail，触发芯片执行
+
+    // INNOTODO: 构造时判断
     if (UNLIKELY(sqDepth_ == 0)) {
         THROW<InternalException>("sqDepth_ cannot be zero.");
     }
+
+    // INNOTODO: 不可能发生
     if (UNLIKELY(pendingSqeCnt > (UINT32_MAX - sqTail_))) {
         THROW<InternalException>("integer overflow occurs");
     }
@@ -168,6 +173,7 @@ void RtsqA5::LaunchTask()
     HCCL_INFO("RtsqA5::%s: END, pendingSqeCnt[%u], sqHead_[%u] sqTail_[%u]", __func__, pendingSqeCnt, sqHead_, sqTail_);
 }
 
+// INNOTODO: 不需要判空
 u8 *RtsqA5::GetCurrSqeBuffer()
 {
     CHECK_NULLPTR(locBuf + pendingSqeCnt * rtsqSqeSize, "[GetCurrSqeBuffer] return nullptr!");
@@ -176,6 +182,7 @@ u8 *RtsqA5::GetCurrSqeBuffer()
 
 void RtsqA5::RefreshInfo()
 {
+    // INNOTODO: 底层接口是否总是存在
     if (UNLIKELY(SetTaskIdBySqeId() != HCCL_SUCCESS)) {
         taskId_++;
     }
@@ -204,6 +211,7 @@ void RtsqA5::NotifyWait(u32 notifyId)
 void RtsqA5::NotifyWait(u32 notifyId, u32 timeout)
 {
     BuildA5SqeNotifyWait(streamId_, taskId_, notifyId, timeout, GetCurrSqeBuffer());
+    // INNOTODO: SQE打印删除
     HCCL_INFO("RtsqA5::NotifyWait: notifyWait Sqe: %s", Bytes2hex(GetCurrSqeBuffer(), rtsqSqeSize).c_str());
     HCCL_INFO("RtsqA5::NotifyWait: streamId %u, taskId %u, notifyId %u, timeout %u", streamId_, taskId_, notifyId, timeout);
     RefreshInfo();

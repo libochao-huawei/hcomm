@@ -15,6 +15,7 @@ extern HcclResult CommTaskPrepare(char *key, uint32_t keyLen); // host ffts+使�
 
 bool LaunchContext::IsBatchLaunchMode() const
 {
+    // INNOTODO: 写法优化，直接 return mode_ == HCOMM_LAUNCH_MODE_BATCH
     if (mode_ == HCOMM_LAUNCH_MODE_BATCH) {
         return true;
     } else {

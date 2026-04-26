@@ -196,6 +196,7 @@ uint32_t AicpuTsThread::GetNotifyNum() const
 
 LocalNotify *AicpuTsThread::GetNotify(uint32_t index) const
 {
+    // INNOTODO: UNLIKELY
     if (index >= notifyNum_) {
         HCCL_ERROR("[AicpuTsThread][GetNotify] notifyNum[%u], index[%u] out of range[0, %u]",
             notifyNum_,
@@ -220,6 +221,7 @@ Stream *AicpuTsThread::GetStream() const
 // A5 Stream
 void *AicpuTsThread::GetStreamLitePtr() const
 {
+    // INNOTODO: 构造时判空，使用时不需要判空
     if (pImpl_ == nullptr) {
         return nullptr;
     }
@@ -272,12 +274,17 @@ HcclResult AicpuTsThread::LocalNotifyRecord(ThreadHandle dstThread, uint32_t dst
 HcclResult AicpuTsThread::LocalNotifyWait(uint32_t notifyId, uint32_t timeout) const
 {
     u64 beginTime = ProfGetCurCpuTimestamp();
+    // INNOTODO: 构造时判空，使用时不需要判空
     CHK_PTR_NULL(pImpl_);
     void* streamLitePtr = GetStreamLitePtr();
+    // INNOTODO: 构造时判空，使用时不需要判空
     CHK_PTR_NULL(streamLitePtr);
     Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(streamLitePtr);
+    // INNOTODO: 构造时判空，使用时不需要判空
     CHK_PTR_NULL(streamLite);
+    // INNOTODO: Get类接口全部改成inline
     Hccl::RtsqBase* rtsq = streamLite->GetRtsq();
+    // INNOTODO: 构造时判空，使用时不需要判空
     CHK_PTR_NULL(rtsq);
     u32 taskId = rtsq->GetTaskId();
     HCCL_INFO("LocalNotifyWait taskId %u, timeout %u", taskId, timeout);

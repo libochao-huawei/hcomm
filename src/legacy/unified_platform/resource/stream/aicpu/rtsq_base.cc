@@ -115,6 +115,8 @@ u32 RtsqBase::QueryCqeStatus()
     return QuerySqStatusByType(QueryDrvSqCqPtopType::CQE_STATUS);
 }
 
+// INNOTODO: 调用者直接传入drvSqCqPropType_t::DRV_SQCQ_PROP_SQ_DISABLE_TO_ENABLE
+// INNOTODO: HCCL_INFO是否需要保留
 void RtsqBase::ConfigSqStatusByType(ConfigDrvSqCqPtopType givenType, u32 value)
 {
     const std::unordered_map<ConfigDrvSqCqPtopType, drvSqCqPropType_t, std::EnumClassHash> ConfigDrvSqCqPtopTypeMap
