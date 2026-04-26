@@ -1845,7 +1845,7 @@ STATIC void *RaPthread(void *arg)
     CHK_PRT_RETURN(ret, hccp_err("pthread detach failed ret %d", ret), NULL);
 
     ret = RsPrctlByResvMem(gHdcInitPara.useResvMem, gHdcInitPara.resvMemPoolId);
-    CHK_PRT_RETURN(ret != 0, hccp_err("RsPrctlByResvMem failed ret %d", ret), NULL);
+    CHK_PRT_RETURN(ret != 0, hccp_err("RsPrctlByResvMem failed, ret %d", ret), NULL);
 
     RA_PTHREAD_MUTEX_LOCK(&gHdcInitPara.mutex);
     gHdcInitPara.threadStatus = THREAD_RUNNING;
@@ -2155,8 +2155,8 @@ RA_ADP_ATTRI_VISI_DEF int HccpInit(struct hccpInitPara *initPara)
     unsigned int whiteListStatus;
     struct timeval start, end;
     float timeCost = 0.0;
-    int ret, retTmp;
     unsigned int chipId;
+    int ret, retTmp;
     int hdcType;
     pid_t pid;
 
@@ -2167,13 +2167,11 @@ RA_ADP_ATTRI_VISI_DEF int HccpInit(struct hccpInitPara *initPara)
     pid = initPara->pid;
     hdcType = initPara->hdcType;
     whiteListStatus = initPara->whiteListStatus;
-
     hccp_info("hccp[%u] hdc_type[%d] white_list_status[%u] useResvMem[%u] resvMemPoolId[%u] init start",
         chipId, hdcType, whiteListStatus, initPara->useResvMem, initPara->resvMemPoolId);
 
     ret = DlHalInit();
-    CHK_PRT_RETURN(ret != 0, hccp_err("dl_hal_init failed, ret = %d", ret), ret);
-
+    CHK_PRT_RETURN(ret != 0, hccp_err("dl_hal_init failed, ret:%d", ret), ret);
 
     ret = HccpSetAffinity(chipId);
     if (ret != 0) {
