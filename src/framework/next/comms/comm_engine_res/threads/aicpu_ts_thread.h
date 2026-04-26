@@ -32,10 +32,11 @@ public:
     HcclResult SupplementNotify(u32 notifyNum, const std::string &notifyDesc);
 
     // A3 Stream & A5 Stream
-    // INNOTODO: 考虑内联这些函数，减少调用开销
+    // INNOTODO: inline
     bool IsDeviceA5() const override;
     Stream *GetStream() const override;
     void *GetStreamLitePtr() const override;
+
     void LaunchTask() const override;
 
     // Local Data Plane Functions

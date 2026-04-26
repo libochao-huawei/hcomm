@@ -21,7 +21,7 @@ public:
 
     ~IAicpuTsThread();
 
-    void StreamLiteInit(uint32_t id, uint32_t sqIds, uint32_t phyId, uint32_t logicCqids);
+    HcclResult StreamLiteInit(uint32_t id, uint32_t sqIds, uint32_t phyId, uint32_t logicCqids);
 
     void LaunchTask() const;
 
@@ -36,12 +36,12 @@ public:
     HcclResult SdmaReduce(uint64_t dstAddr, uint64_t srcAddr, uint64_t sizeByte, uint32_t dataTypeRaw,
                           uint32_t reduceOpRaw) const;
 
-    HcclResult GetStreamLitePtr(void **streamLitePtrPtr) const;
-
-    HcclResult GetSqId(uint32_t &sqId) const;
+    // INNOTODO: inline
+    void* GetStreamLitePtr() const;
+    uint32_t GetSqId() const;
 
 private:
-    void *streamLiteVoidPtr_ = nullptr;
+    void *streamLiteVoidPtr_{nullptr};
 };
 
 } // namespace Hccl

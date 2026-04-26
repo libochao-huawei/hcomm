@@ -13,6 +13,7 @@
 #include "rtsq_a5.h"
 namespace Hccl {
 
+// INNOTODO: 构造rtsq时判空
 StreamLite::StreamLite(std::vector<char> &uniqueId)
 {
     BinaryStream binaryStream(uniqueId);
