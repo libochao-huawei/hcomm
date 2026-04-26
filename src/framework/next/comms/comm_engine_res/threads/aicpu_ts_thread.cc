@@ -226,8 +226,6 @@ HcclResult AicpuTsThread::LocalNotifyRecord(uint32_t notifyId) const
 
     CHK_RET(pImpl_->NotifyRecordLoc(notifyId));
 
-    // PROFTODO
-    return HCCL_SUCCESS;
     void *streamLitePtr = GetStreamLitePtr();
     Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(streamLitePtr);
     Hccl::RtsqBase *rtsq = streamLite->GetRtsq();
@@ -248,8 +246,6 @@ HcclResult AicpuTsThread::LocalNotifyWait(uint32_t notifyId, uint32_t timeout) c
 
     CHK_RET(pImpl_->NotifyWait(notifyId, timeout));
 
-    // PROFTODO
-    return HCCL_SUCCESS;
     void *streamLitePtr = GetStreamLitePtr();
     Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(streamLitePtr);
     Hccl::RtsqBase *rtsq = streamLite->GetRtsq();
@@ -267,8 +263,6 @@ HcclResult AicpuTsThread::LocalCopy(void *dst, const void *src, uint64_t sizeByt
     uint64_t srcAddr = reinterpret_cast<uint64_t>(src);
     CHK_RET(pImpl_->SdmaCopy(dstAddr, srcAddr, sizeByte));
 
-    // PROFTODO
-    return HCCL_SUCCESS;
     void *streamLitePtr = GetStreamLitePtr();
     Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(streamLitePtr);
     Hccl::RtsqBase *rtsq = streamLite->GetRtsq();
@@ -289,8 +283,6 @@ HcclResult AicpuTsThread::LocalReduce(
 
     CHK_RET(pImpl_->SdmaReduce(dstAddr, srcAddr, sizeByte, dataTypeRaw, reduceOpRaw));
 
-    // PROFTODO
-    return HCCL_SUCCESS;
     void *streamLitePtr = GetStreamLitePtr();
     Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(streamLitePtr);
     Hccl::RtsqBase *rtsq = streamLite->GetRtsq();

@@ -353,8 +353,6 @@ void UbTransportLiteImpl::Post(u32 index, const StreamLite &stream)
 
     HCCL_INFO("UbTransportLiteImpl::Post notifyId[0x%llx], pi=%u", rmtBuffSliceLite.GetAddr(), connOut.pi);
 
-    // PROFTODO
-    return;
     if (callback_ == nullptr && newCallback_ == nullptr)
     {
         HCCL_WARNING("[UbTransportLiteImpl] callback_ is nullptr.");
@@ -395,8 +393,6 @@ void UbTransportLiteImpl::WaitWithTimeout(u32 index, const StreamLite &stream, u
     auto notifyId = locNotifyVec[index]->GetId();
     stream.GetRtsq()->NotifyWait(notifyId, timeout);
 
-    // PROFTODO
-    return;
     auto taskId   = stream.GetRtsq()->GetTaskId();
     if (callback_ == nullptr && newCallback_ == nullptr)
     {
@@ -490,8 +486,6 @@ void UbTransportLiteImpl::Read(const RmaBufferLite &loc, const Buffer &rmt, cons
     connVec[0]->Read(locRmaBufSlicelite, rmtRmaBufSlicelite, cfg, stream, connOut);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
-    // PROFTODO
-    return;
     auto taskId = stream.GetRtsq()->GetTaskId();
     ProfilingProcess(reinterpret_cast<void *>(locRmaBufSlicelite.GetAddr()),
                      reinterpret_cast<void *>(rmtRmaBufSlicelite.GetAddr()),
@@ -509,8 +503,6 @@ void UbTransportLiteImpl::Write(const RmaBufferLite &loc, const Buffer &rmt, con
     connVec[0]->Write(locRmaBufSlicelite, rmtRmaBufSlicelite, cfg, stream, connOut);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
-    // PROFTODO
-    return;
     auto taskId = stream.GetRtsq()->GetTaskId();
     ProfilingProcess(reinterpret_cast<void *>(locRmaBufSlicelite.GetAddr()),
                      reinterpret_cast<void *>(rmtRmaBufSlicelite.GetAddr()),
@@ -529,8 +521,6 @@ void UbTransportLiteImpl::ReadReduce(const RmaBufferLite &loc, const Buffer &rmt
     connVec[0]->ReadReduce(reduceIn, locRmaBufSlicelite, rmtRmaBufSlicelite, stream, cfg, connOut);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
-    // PROFTODO
-    return;
     auto taskId = stream.GetRtsq()->GetTaskId();
     ReduceProfilingProcess(reinterpret_cast<void *>(locRmaBufSlicelite.GetAddr()),
                             reinterpret_cast<void *>(rmtRmaBufSlicelite.GetAddr()),
@@ -550,8 +540,6 @@ void UbTransportLiteImpl::WriteReduce(const RmaBufferLite &loc, const Buffer &rm
                             rmtRmaBufSlicelite, cfg, connOut);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
-    // PROFTODO
-    return;
     auto taskId = stream.GetRtsq()->GetTaskId();
     ReduceProfilingProcess(reinterpret_cast<void *>(locRmaBufSlicelite.GetAddr()),
                             reinterpret_cast<void *>(rmtRmaBufSlicelite.GetAddr()),
@@ -593,8 +581,6 @@ void UbTransportLiteImpl::BatchTransfer(const std::vector<RmaBufferLite> &loc, c
     }
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
-    // PROFTODO
-    return;
     auto taskId = stream.GetRtsq()->GetTaskId();
     u64 totalSize = 0;
     for (u32 i = 0; i < insNum; i++) {
@@ -630,8 +616,6 @@ void UbTransportLiteImpl::WriteWithNotify(const RmaBufferLite &loc, const Buffer
                                 rmtNotifySliceLite, stream, notifyData);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
-    // PROFTODO
-    return;
     if (callback_ == nullptr && newCallback_ == nullptr)
     {
         HCCL_WARNING("[UbTransportLiteImpl] callback_ is nullptr.");
@@ -676,8 +660,6 @@ void UbTransportLiteImpl::WriteReduceWithNotify(const RmaBufferLite &loc, const 
                                       notifyData);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
-    // PROFTODO
-    return;
     auto taskId = stream.GetRtsq()->GetTaskId();
     if (callback_ == nullptr && newCallback_ == nullptr)
     {
