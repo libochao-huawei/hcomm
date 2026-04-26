@@ -160,6 +160,7 @@ int32_t HcommThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t notifyIdx, u
 {
     HCCL_INFO("[%s] START. thread[0x%llx], notifyIdx[%u], timeout[%u].", __func__, thread, notifyIdx, timeout);
 
+    // PROFTODO: 每个平台层接口调用都需要添加thread，后续可以考虑在算法调用层做统一添加，避免每个接口都需要添加AddThread调用
     AddThread(thread);
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
@@ -168,6 +169,7 @@ int32_t HcommThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t notifyIdx, u
     HcclResult ret = HCCL_SUCCESS;
     if (threadPtr->IsDeviceA5()) {
         LocalNotify *const notifyPtr = threadPtr->GetNotify(notifyIdx);
+        // PROFTODO: 添加时校验，使用时不判空
         CHK_PTR_NULL(notifyPtr);
         const uint32_t notifyId = notifyPtr->notifyId_;
         EXECEPTION_CATCH(ret = threadPtr->LocalNotifyWait(notifyId, timeout), ret = HCCL_E_INTERNAL);
