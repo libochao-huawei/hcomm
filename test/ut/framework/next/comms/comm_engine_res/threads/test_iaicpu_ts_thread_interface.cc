@@ -31,9 +31,7 @@ public:
 
         aicpuThread.StreamLiteInit(id, sqIds, phyId, logicCqids);
 
-        HcclResult ret = HCCL_SUCCESS; 
-        ret = aicpuThread.GetStreamLitePtr(&streamLitePtr);
-        EXPECT_EQ(HCCL_SUCCESS, ret);
+        streamLitePtr = aicpuThread.GetStreamLitePtr();
         EXPECT_NE(nullptr, streamLitePtr);
 
         rtsqPtr = static_cast<StreamLite *>(streamLitePtr)->GetRtsq();
@@ -319,37 +317,9 @@ TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_GetStreamLitePtr_When_Inited_Expect
 {
     IAicpuTsThread aicpuThread;
     aicpuThread.StreamLiteInit(1, 2, 3, 4);
-    void *streamLitePtr = nullptr;
+    void *streamLitePtr = aicpuThread.GetStreamLitePtr();
 
-    HcclResult ret = aicpuThread.GetStreamLitePtr(&streamLitePtr);
-    EXPECT_EQ(HCCL_SUCCESS, ret);
     EXPECT_NE(nullptr, streamLitePtr);
-}
-
-/**
- * 测试 IAicpuTsThread GetStreamLitePtr 未初始化时调用
- * 验证：未初始化时返回错误码
- */
-TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_GetStreamLitePtr_When_NotInited_Expect_Return_Ptr_Error)
-{
-    IAicpuTsThread aicpuThread;
-    void *streamLitePtr = nullptr;
-
-    HcclResult ret = aicpuThread.GetStreamLitePtr(&streamLitePtr);
-    EXPECT_EQ(HCCL_E_PTR, ret);
-}
-
-/**
- * 测试 IAicpuTsThread GetStreamLitePtr 传入空指针
- * 验证：传入空指针时返回错误码
- */
-TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_GetStreamLitePtr_When_NullPtr_Expect_Return_Ptr_Error)
-{
-    IAicpuTsThread aicpuThread;
-    aicpuThread.StreamLiteInit(1, 2, 3, 4);
-
-    HcclResult ret = aicpuThread.GetStreamLitePtr(nullptr);
-    EXPECT_EQ(HCCL_E_PTR, ret);
 }
 
 /**
@@ -360,25 +330,9 @@ TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_GetSqId_When_Inited_Expect_Success)
 {
     IAicpuTsThread aicpuThread;
     aicpuThread.StreamLiteInit(1, 2, 3, 4);
-    uint32_t sqId = 0;
-
-    HcclResult ret = aicpuThread.GetSqId(sqId);
-    EXPECT_EQ(HCCL_SUCCESS, ret);
+    uint32_t sqId = aicpuThread.GetSqId();
     // sqId 应该被正确设置
     EXPECT_EQ(2, sqId);
-}
-
-/**
- * 测试 IAicpuTsThread GetSqId 未初始化时调用
- * 验证：未初始化时返回错误码
- */
-TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_GetSqId_When_NotInited_Expect_Return_Ptr_Error)
-{
-    IAicpuTsThread aicpuThread;
-    uint32_t sqId = 0;
-
-    HcclResult ret = aicpuThread.GetSqId(sqId);
-    EXPECT_EQ(HCCL_E_PTR, ret);
 }
 
 /**
@@ -468,13 +422,11 @@ TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_StreamLiteInit_MultipleTimes_Expect
 
     // 第一次初始化
     aicpuThread.StreamLiteInit(1, 2, 3, 4);
-    void *streamLitePtr1 = nullptr;
-    aicpuThread.GetStreamLitePtr(&streamLitePtr1);
+    void *streamLitePtr1 = aicpuThread.GetStreamLitePtr();
 
     // 第二次初始化
     aicpuThread.StreamLiteInit(10, 20, 30, 40);
-    void *streamLitePtr2 = nullptr;
-    aicpuThread.GetStreamLitePtr(&streamLitePtr2);
+    void *streamLitePtr2 = aicpuThread.GetStreamLitePtr();
 
     // 两次获得的指针应该不同（因为是新的 StreamLite）
     EXPECT_NE(streamLitePtr1, streamLitePtr2);
