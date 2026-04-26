@@ -33,27 +33,6 @@ RmtRmaBufSliceLite RmtRmaBufferLite::GetRmtRmaBufSliceLite(u64 offset, u64 slice
     return RmtRmaBufSliceLite(addr_ + offset, sliceSize, rkey_, tokenId_, tokenValue_);
 }
 
-u64 RmtRmaBufferLite::GetAddr() const
-{
-    return addr_;
-}
-u64 RmtRmaBufferLite::GetSize() const
-{
-    return size_;
-}
-u32 RmtRmaBufferLite::GetTokenId() const
-{
-    return tokenId_;
-}
-u32 RmtRmaBufferLite::GetTokenValue() const
-{
-    return tokenValue_;
-}
-u32 RmtRmaBufferLite::GetRkey() const
-{
-    return rkey_;
-}
-
 std::string RmtRmaBufferLite::Describe() const
 {
     return StringFormat("RmtRmaBufferLite[type=%s, addr=0x%llx, size=0x%x, rkey=%u]",
