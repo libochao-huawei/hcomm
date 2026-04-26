@@ -160,7 +160,7 @@ int32_t HcommThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t notifyIdx, u
 {
     HCCL_INFO("[%s] START. thread[0x%llx], notifyIdx[%u], timeout[%u].", __func__, thread, notifyIdx, timeout);
 
-    // INNOTODO: 每个平台层接口调用都需要添加thread，后续可以考虑在算法调用层做统一添加，避免每个接口都需要添加AddThread调用
+    // PROFTODO: 每个平台层接口调用都需要添加thread，后续可以考虑在算法调用层做统一添加，避免每个接口都需要添加AddThread调用
     AddThread(thread);
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);

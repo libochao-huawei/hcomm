@@ -59,7 +59,7 @@ IAicpuTsThread::~IAicpuTsThread()
     }
 }
 
-// INNOTODO: 确保流程上一定调用
+// PROFTODO: 确保流程上一定调用
 HcclResult IAicpuTsThread::StreamLiteInit(uint32_t id, uint32_t sqIds, uint32_t phyId, uint32_t logicCqids)
 {
     StreamLite *streamLitePtr = new StreamLite(id, sqIds, phyId, logicCqids, true);
@@ -114,7 +114,7 @@ HcclResult IAicpuTsThread::NotifyRecordLoc(uint32_t notifyId) const
 
 HcclResult IAicpuTsThread::SdmaCopy(uint64_t dstAddr, uint64_t srcAddr, uint64_t sizeByte) const
 {
-    // INNOTODO: 目前A5的SdmaCopy接口只支持32位的sizeByte的原因，这里是否需要检查
+    // PROFTODO: 目前A5的SdmaCopy接口只支持32位的sizeByte的原因，这里是否需要检查
     if (sizeByte > std::numeric_limits<uint32_t>::max()) {
         HCCL_ERROR("[%s] sizeByte [%ld] exceeds the maximum value of uint32", __func__, sizeByte);
         return HCCL_E_PARA;
@@ -135,7 +135,7 @@ HcclResult IAicpuTsThread::SdmaCopy(uint64_t dstAddr, uint64_t srcAddr, uint64_t
 HcclResult IAicpuTsThread::SdmaReduce(uint64_t dstAddr, uint64_t srcAddr, uint64_t sizeByte, uint32_t dataTypeRaw,
                                           uint32_t reduceOpRaw) const
 {
-    // INNOTODO: 目前A5的SdmaCopy接口只支持32位的sizeByte的原因，这里是否需要检查
+    // PROFTODO: 目前A5的SdmaCopy接口只支持32位的sizeByte的原因，这里是否需要检查
     if (sizeByte > std::numeric_limits<uint32_t>::max()) {
         HCCL_ERROR("[%s] sizeByte [%ld] exceeds the maximum value of uint32", __func__, sizeByte);
         return HCCL_E_PARA;
@@ -158,18 +158,6 @@ HcclResult IAicpuTsThread::SdmaReduce(uint64_t dstAddr, uint64_t srcAddr, uint64
     rtsqA5->SdmaReduce(srcAddr, dstAddr, sizeByteNarrowed, 0, reduceIn);
 
     return HCCL_SUCCESS;
-}
-
-// INNOTODO: inline
-void* IAicpuTsThread::GetStreamLitePtr() const
-{
-    return streamLiteVoidPtr_;
-}
-
-// INNOTODO: inline
-uint32_t IAicpuTsThread::GetSqId() const
-{
-    return static_cast<StreamLite *>(streamLiteVoidPtr_)->GetSqId();
 }
 
 } // namespace Hccl

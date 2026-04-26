@@ -201,22 +201,10 @@ LocalNotify *AicpuTsThread::GetNotify(uint32_t index) const
     return notifys_[index].get();
 }
 
-bool AicpuTsThread::IsDeviceA5() const
-{
-    return devType_ == DevType::DEV_TYPE_950;
-}
-
 // A3 Stream
 Stream *AicpuTsThread::GetStream() const
 {
     return stream_.get();
-}
-
-// A5 Stream
-// INNOTODO: inline
-void *AicpuTsThread::GetStreamLitePtr() const
-{
-    return pImpl_->GetStreamLitePtr();
 }
 
 void AicpuTsThread::LaunchTask() const
@@ -238,6 +226,8 @@ HcclResult AicpuTsThread::LocalNotifyRecord(uint32_t notifyId) const
 
     CHK_RET(pImpl_->NotifyRecordLoc(notifyId));
 
+    // PROFTODO
+    return HCCL_SUCCESS;
     void *streamLitePtr = GetStreamLitePtr();
     Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(streamLitePtr);
     Hccl::RtsqBase *rtsq = streamLite->GetRtsq();
@@ -258,6 +248,8 @@ HcclResult AicpuTsThread::LocalNotifyWait(uint32_t notifyId, uint32_t timeout) c
 
     CHK_RET(pImpl_->NotifyWait(notifyId, timeout));
 
+    // PROFTODO
+    return HCCL_SUCCESS;
     void *streamLitePtr = GetStreamLitePtr();
     Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(streamLitePtr);
     Hccl::RtsqBase *rtsq = streamLite->GetRtsq();
@@ -275,6 +267,8 @@ HcclResult AicpuTsThread::LocalCopy(void *dst, const void *src, uint64_t sizeByt
     uint64_t srcAddr = reinterpret_cast<uint64_t>(src);
     CHK_RET(pImpl_->SdmaCopy(dstAddr, srcAddr, sizeByte));
 
+    // PROFTODO
+    return HCCL_SUCCESS;
     void *streamLitePtr = GetStreamLitePtr();
     Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(streamLitePtr);
     Hccl::RtsqBase *rtsq = streamLite->GetRtsq();
@@ -293,11 +287,14 @@ HcclResult AicpuTsThread::LocalReduce(
     uint32_t dataTypeRaw = static_cast<uint32_t>(dataType);
     uint32_t reduceOpRaw = static_cast<uint32_t>(reduceOp);
 
+    CHK_RET(pImpl_->SdmaReduce(dstAddr, srcAddr, sizeByte, dataTypeRaw, reduceOpRaw));
+
+    // PROFTODO
+    return HCCL_SUCCESS;
     void *streamLitePtr = GetStreamLitePtr();
     Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(streamLitePtr);
     Hccl::RtsqBase *rtsq = streamLite->GetRtsq();
     u32 taskId = rtsq->GetTaskId();
-    CHK_RET(pImpl_->SdmaReduce(dstAddr, srcAddr, sizeByte, dataTypeRaw, reduceOpRaw));
     CHK_RET(
         ReportAicpuLocalReduceTask(dst, src, sizeByte, dataType, reduceOp, beginTime, taskId, streamLite->GetSqId()));
     return HCCL_SUCCESS;

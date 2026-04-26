@@ -13,12 +13,6 @@
 extern HcclResult CommTaskLaunch(ThreadHandle *threads, uint32_t threadNum); // host ffts+或aicpu stars使用"
 extern HcclResult CommTaskPrepare(char *key, uint32_t keyLen); // host ffts+使用
 
-// INNOTODO: inline
-bool LaunchContext::IsBatchLaunchMode() const
-{
-    return mode_ == HCOMM_LAUNCH_MODE_BATCH;
-}
-
 void LaunchContext::AddThread(ThreadHandle thread)
 {
     if (mode_ != HCOMM_LAUNCH_MODE_BATCH) {

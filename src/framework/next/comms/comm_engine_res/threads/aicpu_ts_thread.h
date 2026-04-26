@@ -32,10 +32,17 @@ public:
     HcclResult SupplementNotify(u32 notifyNum, const std::string &notifyDesc);
 
     // A3 Stream & A5 Stream
-    // INNOTODO: inline
-    bool IsDeviceA5() const override;
+    inline bool IsDeviceA5() const override
+    {
+        return devType_ == DevType::DEV_TYPE_950;
+    }
+
     Stream *GetStream() const override;
-    void *GetStreamLitePtr() const override;
+
+    inline void *GetStreamLitePtr() const override
+    {
+        return pImpl_->GetStreamLitePtr();
+    }
 
     void LaunchTask() const override;
 
