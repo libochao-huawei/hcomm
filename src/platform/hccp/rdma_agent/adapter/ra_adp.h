@@ -45,6 +45,7 @@ struct RaHdcInitPara {
     bool useResvMem;
     unsigned int resvMemPoolId;
 };
+
 struct hccpInitPara {
     unsigned int chipId;
     pid_t pid;

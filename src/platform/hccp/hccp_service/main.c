@@ -88,6 +88,7 @@ STATIC int HccpSetLogInfo(struct HccpInitParam *param)
 #endif
     return 0;
 }
+
 STATIC void HccpSetInitPara(struct HccpInitParam *param, struct hccpInitpara *initPara)
 {
     initPara->chipId = param->chipId;

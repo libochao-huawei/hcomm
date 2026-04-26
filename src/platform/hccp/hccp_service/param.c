@@ -126,15 +126,17 @@ STATIC int HccpParseBackupPhyid(const char *input, struct HccpInitParam *param)
     param->backupFlag = true;
     return 0;
 }
+
 STATIC int HccpParseResvMemPoolId(const char *input, struct HccpInitParam *param)
 {
     int ret;
 
-    ret = HccpParamParseId(input,(int *)(void *)&param->resvMemPoolId);
+    ret = HccpParamParseId(input, (int *)(void *)&param->resvMemPoolId);
     if (ret != 0) {
         hccp_warn("parse resvMemPoolId unsuccessfull ret:%d", ret);
         return 0;
     }
+
     hccp_info("resvMemPoolId from TSD is [%u]", param->resvMemPoolId);
     param->useResvMem = true;
     return 0;
