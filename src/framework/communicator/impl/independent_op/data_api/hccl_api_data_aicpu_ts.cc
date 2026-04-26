@@ -75,7 +75,7 @@ int32_t HcommLocalCopyOnThread(ThreadHandle thread, void *dst, const void *src, 
 
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
-    AddThread(thread);
+    // AddThread(thread);
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
@@ -102,7 +102,7 @@ int32_t HcommLocalReduceOnThread(ThreadHandle thread, void *dst, const void *src
 
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
-    AddThread(thread);
+    // AddThread(thread);
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
@@ -131,7 +131,7 @@ int32_t HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThr
 {
     HCCL_INFO("[%s] START. thread[0x%llx], dstThread[0x%llx], dstNotifyIdx[%u].", __func__, thread, dstThread, dstNotifyIdx);
 
-    AddThread(thread);
+    // AddThread(thread);
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
@@ -160,7 +160,7 @@ int32_t HcommThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t notifyIdx, u
 {
     HCCL_INFO("[%s] START. thread[0x%llx], notifyIdx[%u], timeout[%u].", __func__, thread, notifyIdx, timeout);
 
-    AddThread(thread);
+    // AddThread(thread);
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
@@ -187,7 +187,7 @@ int32_t HcommAclrtNotifyRecordOnThread(ThreadHandle thread, uint64_t dstNotifyId
 {
     HCCL_INFO("[%s] START. thread[0x%llx], dstNotifyId[%llu].", __func__, thread, dstNotifyId);
 
-    AddThread(thread);
+    // AddThread(thread);
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
@@ -209,7 +209,7 @@ int32_t HcommAclrtNotifyWaitOnThread(ThreadHandle thread, uint64_t notifyId, uin
 {
     HCCL_INFO("[%s] START. thread[0x%llx], notifyId[%llu], timeout[%u].", __func__, thread, notifyId, timeout);
 
-    AddThread(thread);
+    // AddThread(thread);
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
@@ -324,7 +324,7 @@ int32_t HcommWriteOnThread(ThreadHandle thread, ChannelHandle channel, void *dst
 
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
-    AddThread(thread);
+    // AddThread(thread);
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
@@ -368,7 +368,7 @@ int32_t HcommWriteReduceOnThread(ThreadHandle thread, ChannelHandle channel, voi
 
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
-    AddThread(thread);
+    // AddThread(thread);
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
@@ -420,7 +420,7 @@ HcclResult CommWriteReduceWithNotify(ThreadHandle thread, ChannelHandle channel,
 {
     CHK_PTR_NULL(src);
     CHK_PTR_NULL(dst);
-    AddThread(thread);
+    // AddThread(thread);
     CHK_PRT_RET((IsSupportReduce(dataType, reduceOp) == false), HCCL_ERROR("[%s] Not support reduce, "
         "dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d]", __func__, dst, src, count, dataType, reduceOp), HCCL_E_PARA);
     HcclBuf locBuf{const_cast<void*>(src), count * SIZE_TABLE[dataType], nullptr};
@@ -442,7 +442,7 @@ int32_t HcommWriteWithNotifyOnThread(ThreadHandle thread, ChannelHandle channel,
 
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
-    AddThread(thread);
+    // AddThread(thread);
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
@@ -489,7 +489,7 @@ int32_t HcommWriteReduceWithNotifyOnThread(ThreadHandle thread, ChannelHandle ch
 
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
-    AddThread(thread);
+    // AddThread(thread);
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
@@ -537,7 +537,7 @@ int32_t HcommReadOnThread(ThreadHandle thread, ChannelHandle channel, void *dst,
 
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
-    AddThread(thread);
+    // AddThread(thread);
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
@@ -581,7 +581,7 @@ int32_t HcommReadReduceOnThread(ThreadHandle thread, ChannelHandle channel, void
 
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
-    AddThread(thread);
+    // AddThread(thread);
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
@@ -684,7 +684,7 @@ int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle chan
 {
     HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], remoteNotifyIdx[%u].", __func__, thread, channel, remoteNotifyIdx);
 
-    AddThread(thread);
+    // AddThread(thread);
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
@@ -720,7 +720,7 @@ int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channe
 {
     HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], localNotifyIdx[%u], timeOut[%u].", __func__, thread, channel, localNotifyIdx, timeOut);
 
-    AddThread(thread);
+    // AddThread(thread);
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
@@ -773,7 +773,7 @@ int32_t HcommBatchModeStart(const char *batchTag)
 
 void HcommBatchModeAddThread(ThreadHandle thread)
 {
-    // AddThread(thread);
+    AddThread(thread);
 }
 
 int32_t HcommBatchModeEnd(const char *batchTag)

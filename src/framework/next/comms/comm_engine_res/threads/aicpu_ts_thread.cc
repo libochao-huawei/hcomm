@@ -259,6 +259,7 @@ HcclResult AicpuTsThread::LocalNotifyRecord(uint32_t notifyId) const
     HCCL_INFO("LocalNotifyRecord taskId %u", taskId);
     CHK_RET(pImpl_->NotifyRecordLoc(notifyId));
 
+    return HCCL_SUCCESS;
     CHK_RET(ReportAicpuNotifyRecordTask(notifyId, beginTime, taskId, streamLite->GetSqId()));
     return HCCL_SUCCESS;
 }
@@ -284,6 +285,7 @@ HcclResult AicpuTsThread::LocalNotifyWait(uint32_t notifyId, uint32_t timeout) c
 
     CHK_RET(pImpl_->NotifyWait(notifyId, timeout));
 
+    return HCCL_SUCCESS;
     CHK_RET(ReportAicpuNotifyWaitTask(notifyId, beginTime, taskId, streamLite->GetSqId()));
     return HCCL_SUCCESS;
 }
@@ -303,6 +305,7 @@ HcclResult AicpuTsThread::LocalCopy(void *dst, const void *src, uint64_t sizeByt
     uint64_t dstAddr = reinterpret_cast<uint64_t>(dst);
     uint64_t srcAddr = reinterpret_cast<uint64_t>(src);
     CHK_RET(pImpl_->SdmaCopy(dstAddr, srcAddr, sizeByte));
+    return HCCL_SUCCESS;
     CHK_RET(ReportAicpuLocalCopyTask(dst, src, sizeByte, beginTime, taskId, streamLite->GetSqId()));
     return HCCL_SUCCESS;
 }
@@ -325,6 +328,7 @@ HcclResult AicpuTsThread::LocalReduce(
     uint32_t dataTypeRaw = static_cast<uint32_t>(dataType);
     uint32_t reduceOpRaw = static_cast<uint32_t>(reduceOp);
     CHK_RET(pImpl_->SdmaReduce(dstAddr, srcAddr, sizeByte, dataTypeRaw, reduceOpRaw));
+    return HCCL_SUCCESS;
     CHK_RET(ReportAicpuLocalReduceTask(dst, src, sizeByte, dataType, reduceOp, beginTime, taskId, streamLite->GetSqId()));
     return HCCL_SUCCESS;
 }
