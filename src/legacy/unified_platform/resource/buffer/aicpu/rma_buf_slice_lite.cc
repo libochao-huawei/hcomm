@@ -16,22 +16,6 @@ RmaBufSliceLite::RmaBufSliceLite(u64 addr, u64 size, u32 lkey, u32 tokenId)
 {
     HCCL_INFO("RmaBufSliceLite::RmaBufSliceLite:%s", Describe().c_str());
 }
-u64 RmaBufSliceLite::GetAddr() const
-{
-    return addr_;
-}
-u64 RmaBufSliceLite::GetSize() const
-{
-    return size_;
-}
-u32 RmaBufSliceLite::GetLkey() const
-{
-    return lkey_;
-}
-u32 RmaBufSliceLite::GetTokenId() const
-{
-    return tokenId_;
-}
 
 std::string RmaBufSliceLite::Describe() const
 {
