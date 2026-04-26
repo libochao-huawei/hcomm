@@ -213,6 +213,10 @@ typedef struct {
         struct {
             uint32_t qos;            ///< HCCS QoS
         } hccsAttr;
+        struct {
+            uint32_t sqSize;         ///< CCU SQ大小，0表示使用默认值
+            uint32_t reserved;        ///< 保留字段
+        } ccuAttr;
     };
 } HcommChannelDesc;
 
@@ -277,6 +281,8 @@ static inline HcommResult HcommChannelDescInit(HcommChannelDesc *channelDesc, ui
         if (EndpointDescInit(&channelDesc->remoteEndpoint, 1) != 0) {
             return hcommEInternal;
         }
+        channelDesc->ccuAttr.sqSize = 0;      // 0表示使用默认值
+        channelDesc->ccuAttr.reserved = 0;
         ++channelDesc;
     }
 

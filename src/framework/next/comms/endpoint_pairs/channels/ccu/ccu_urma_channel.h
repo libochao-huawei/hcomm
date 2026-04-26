@@ -62,6 +62,7 @@ private:
     // 当前CCU不支持自定义内存交换，仅包含 hccl buffer
     std::unique_ptr<HcclMem> hcclBufferInfoPtr_{};
     std::string memTag_{"HcclBuffer"};
+    uint32_t sqSize_{0};
 };
 
 }  // namespace hcomm

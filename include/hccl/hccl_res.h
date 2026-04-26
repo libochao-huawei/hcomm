@@ -55,6 +55,10 @@ typedef struct {
             uint8_t tc;               ///< 流量类别(QoS)
             uint8_t sl;               ///< 服务等级(QoS)
         } roceAttr;
+        struct {
+            uint32_t sqSize;          ///< CCU SQ大小，0表示使用默认值
+            uint32_t reserved;        ///< 保留字段
+        } ccuAttr;
     };
 } HcclChannelDesc;
 
@@ -95,6 +99,9 @@ static inline HcclResult HcclChannelDescInit(HcclChannelDesc *channelDesc, uint3
                 UNLIKELY(EndpointDescInit(&channelDesc->remoteEndpoint, 1) != HCCL_SUCCESS)) {
                 return HCCL_E_INTERNAL;
             }
+            // 初始化CCU相关字段
+            channelDesc->ccuAttr.sqSize = 0;      // 0表示使用默认值
+            channelDesc->ccuAttr.reserved = 0;
             channelDesc++;  // 移动到下一个描述符
         } else {
             return HCCL_E_PTR;

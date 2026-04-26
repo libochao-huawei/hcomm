@@ -36,6 +36,8 @@ HcommChannelDesc ChannelDescHccl2Hcomm(const HcclChannelDesc &hcclDesc)
     hcommDesc.roceAttr.retryInterval = hcclDesc.roceAttr.retryInterval;
     hcommDesc.roceAttr.sl = hcclDesc.roceAttr.sl;
     hcommDesc.roceAttr.tc = hcclDesc.roceAttr.tc;
+    hcommDesc.ccuAttr.sqSize = hcclDesc.ccuAttr.sqSize;
+    hcommDesc.ccuAttr.reserved = hcclDesc.ccuAttr.reserved;
     
     return hcommDesc;
 }
