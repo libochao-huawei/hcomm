@@ -385,6 +385,8 @@ extern int32_t HcommBatchModeStart(const char *batchTag);
  */
 extern int32_t HcommBatchModeEnd(const char *batchTag);
 
+extern void HcommBatchModeAddThread(ThreadHandle threadId);
+
 /** @} */  // 批量下发设置接口
 
 /** @} */  // 数据面编程接口

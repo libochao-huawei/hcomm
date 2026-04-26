@@ -771,6 +771,11 @@ int32_t HcommBatchModeStart(const char *batchTag)
     return HcommSetLaunchMode(batchTag, HCOMM_LAUNCH_MODE_BATCH);
 }
 
+void HcommBatchModeAddThread(ThreadHandle thread)
+{
+    // AddThread(thread);
+}
+
 int32_t HcommBatchModeEnd(const char *batchTag)
 {
     return HcommSetLaunchMode(batchTag, HCOMM_LAUNCH_MODE_EAGER);
