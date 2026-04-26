@@ -17,13 +17,18 @@ namespace Hccl {
 
 class IAicpuTsThread {
 public:
-    IAicpuTsThread() {}
-
-    ~IAicpuTsThread() {}
-
-    void StreamLiteInit(uint32_t id, uint32_t sqIds, uint32_t phyId, uint32_t cqIds)
+    IAicpuTsThread()
     {
-        streamLiteVoidPtr_  = reinterpret_cast<void *>(0x3344);
+    }
+
+    ~IAicpuTsThread()
+    {
+    }
+
+    HcclResult StreamLiteInit(uint32_t id, uint32_t sqIds, uint32_t phyId, uint32_t cqIds)
+    {
+        streamLiteVoidPtr_ = reinterpret_cast<void *>(0x3344);
+        return HCCL_SUCCESS;
     }
 
     HcclResult NotifyWait(uint32_t notifyId) const
@@ -52,23 +57,24 @@ public:
         return HCCL_SUCCESS;
     }
 
-    HcclResult GetStreamLitePtr(void **streamLitePtrPtr) const
+    inline void *GetStreamLitePtr() const
     {
-        *streamLitePtrPtr = streamLiteVoidPtr_;
-        return HCCL_SUCCESS;
+        return streamLiteVoidPtr_;
     }
 
-    void LaunchTask() const {}
-
-    HcclResult GetSqId(uint32_t &sqId) const
+    void LaunchTask() const
     {
-        return HCCL_SUCCESS;
+    }
+
+    inline uint32_t GetSqId() const
+    {
+        return 0;
     }
 
 private:
     void *streamLiteVoidPtr_ = nullptr;
 };
 
-}  // namespace Hccl
+} // namespace Hccl
 
 #endif
