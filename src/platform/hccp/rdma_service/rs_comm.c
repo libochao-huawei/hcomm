@@ -10,8 +10,9 @@
 
 #include <sys/prctl.h>
 #include "securec.h"
-#include "ra_rs_comm.h"
 #include "dl_ibverbs_function.h"
+#include "ra_rs_comm.h"
+#include "rs_common_inner.h"
 #include "rs.h"
 
 struct OpcodeInterfaceInfo gInterfaceInfoList[] = {
