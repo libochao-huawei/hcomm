@@ -26,6 +26,10 @@ public:
             .stubs()
             .with(any())
             .will(returnValue(HCCL_SUCCESS));
+        MOCKER(taskAppend)
+            .stubs()
+            .with(any(), any())
+            .will(returnValue(HCCL_SUCCESS));
     }
     void TearDown() override {
         BaseInit::TearDown();
@@ -149,6 +153,60 @@ TEST_F(HcclAllGatherVTest, Ut_HcclAllGatherV_When_RecvCountsZero_Expect_ReturnIs
     HcclResult ret = HcclAllGatherVInner(sendBuf, sendCount, recvBuf, recvCounts, recvDispls, HCCL_DATA_TYPE_INT8, comm, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
+    UT_UNSET_SENDBUF_RECVBUFV_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
+}
+
+TEST_F(HcclAllGatherVTest, Ut_HcclAllGatherV_When_GroupModeSuccess_Expect_ReturnIsHCCL_SUCCESS)
+{
+    UT_SET_SENDBUF_COUNT_RECVBUFV(HCCL_COM_DATA_SIZE,
+        HCCL_COM_DATA_SIZE,
+        HCCL_COM_DATA_SIZE,
+        1, HCCL_COM_DATA_SIZE,
+        1, 0);
+    UT_COMM_CREATE_DEFAULT(comm);
+    UT_STREAM_CREATE_DEFAULT(stream);
+    hcclGroupDepth = 1;
+
+    HcclResult ret = HcclAllGatherVInner(sendBuf, sendCount, recvBuf, recvCounts, recvDispls, HCCL_DATA_TYPE_INT8, comm, stream);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    hcclGroupDepth = 0;
+    UT_UNSET_SENDBUF_RECVBUFV_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
+}
+
+TEST_F(HcclAllGatherVTest, Ut_HcclAllGatherV_When_GroupModeAndRecvBufIsNull_Expect_ReturnIsHCCL_E_PTR)
+{
+    hcclGroupDepth = 1;
+    UT_SET_SENDBUF_COUNT_RECVBUFV(HCCL_COM_DATA_SIZE,
+        HCCL_COM_DATA_SIZE,
+        0,
+        1, HCCL_COM_DATA_SIZE,
+        1, 0);
+    UT_COMM_CREATE_DEFAULT(comm);
+    UT_STREAM_CREATE_DEFAULT(stream);
+
+    HcclResult ret = HcclAllGatherVInner(sendBuf, sendCount, recvBuf, recvCounts, recvDispls, HCCL_DATA_TYPE_INT8, comm, stream);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+
+    hcclGroupDepth = 0;
+    UT_UNSET_SENDBUF_RECVBUFV_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
+}
+
+TEST_F(HcclAllGatherVTest, Ut_HcclAllGatherV_When_GroupModeAndCommIsNull_Expect_ReturnIsHCCL_E_PTR)
+{
+    hcclGroupDepth = 1;
+    UT_SET_SENDBUF_COUNT_RECVBUFV(HCCL_COM_DATA_SIZE,
+        HCCL_COM_DATA_SIZE,
+        HCCL_COM_DATA_SIZE,
+        1, HCCL_COM_DATA_SIZE,
+        1, 0);
+    Ut_Device_Set(0);
+    UT_STREAM_CREATE_DEFAULT(stream);
+
+    HcclResult ret = HcclAllGatherVInner(sendBuf, sendCount, recvBuf, recvCounts, recvDispls, HCCL_DATA_TYPE_INT8, comm, stream);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+
+    hcclGroupDepth = 0;
     UT_UNSET_SENDBUF_RECVBUFV_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
 }
 
