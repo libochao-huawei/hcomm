@@ -510,15 +510,22 @@ std::string CcuConnection::Describe()
 
 HcclResult CcuConnection::Describe(std::string &dfxMsg)
 {
-    uint16_t udpSport = 0xFFFF;
+    uint16_t udpSport = 0xFFFF; // 无法获取实际的udpSport，使用0xFFFF表示未知
+    struct TpAttr tpAttr {0};
     if (tpProtocol_ == TpProtocol::RTP) {
-        uint32_t attrBitmap = 8192;
+        uint32_t attrBitmap = 0x1FFFF;
         struct TpAttr tpAttr {0};
         u32 devicePhyId = Hccl::HrtGetDevicePhyIdByIndex(devLogicId_);
         CHK_RET(Hccl::HrtRaGetTpAttrAsync(devicePhyId, ctxHandle_, tpInfo_.tpHandle, attrBitmap, tpAttr, reqHandles_[0]));
-        udpSport = tpAttr.dataUdpSrcport;
     }
+    udpSport = tpAttr.dataUdpSrcport;
     udpSport = udpSport & 0xFF;
+
+    std::string log = StringFormat(" retryTimesInit:%hhu, at:%hhu, vlan_id:%hhu, vlan_en:%hhu, dscp:%hhu, at_times:%u, "
+        "sl:%hhu, ttl:%hhu, ackUdpSrcport:%hhu, dataUdpSrcport:%hhu, udpSrcportRange:%hhu, sprayEn:%hhu, udpGlobalEn:%hhu",
+        tpAttr.retryTimesInit, tpAttr.at, tpAttr.vlan_id, tpAttr.vlan_en, tpAttr.dscp, tpAttr.at_times, tpAttr.sl,
+        tpAttr.ttl, tpAttr.ackUdpSrcport, tpAttr.dataUdpSrcport, tpAttr.udpSrcportRange, tpAttr.sprayEn, tpAttr.udpGlobalEn);
+
 
     std::string jettyIds;
     for (size_t i = 0; i < ccuJettys_.size(); i++) {
@@ -536,6 +543,7 @@ HcclResult CcuConnection::Describe(std::string &dfxMsg)
         "local %s remote %s udp sport[%u]",
         devLogicId_, dieId_, funcId_, jettyIds.c_str(), locEid.Describe().c_str(), rmtEid.Describe().c_str(), udpSport);
     dfxMsg += dfxStr;
+    dfxMsg += log;
     HCCL_INFO("[CcuConnection::%s] %s", __func__, dfxStr.c_str());
     return HcclResult::HCCL_SUCCESS;
 }
