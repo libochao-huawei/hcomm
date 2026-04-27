@@ -134,8 +134,10 @@ TEST_F(CcuCompPubTest, Ut_CcuCleanDieCkesWhenUnderlyingFailsExpectFailure) {
 }
 
 // ===================== 覆盖你修改的 2 行红色代码 =====================
+// ===================== 覆盖你修改的 2 行红色代码 =====================
 TEST_F(CcuCompPubTest, Ut_CcuMissionMgr_Alloc_ReqType_Not_Supported)
 {
+    // 获取单例，不手动创建 → 不崩溃
     CcuResBatchAllocator& allocator = CcuResBatchAllocator::GetInstance(0);
 
     MissionReq missionReq = {};
@@ -150,6 +152,7 @@ TEST_F(CcuCompPubTest, Ut_CcuMissionMgr_Alloc_ReqType_Not_Supported)
 
 TEST_F(CcuCompPubTest, Ut_CcuMissionMgr_Alloc_HandleBlockRes_Unavailable)
 {
+    // 获取单例，不手动创建 → 不崩溃
     CcuResBatchAllocator& allocator = CcuResBatchAllocator::GetInstance(0);
 
     MissionReq missionReq = {};
