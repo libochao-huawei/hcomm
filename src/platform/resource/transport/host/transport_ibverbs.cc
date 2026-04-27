@@ -194,10 +194,14 @@ HcclResult TransportIbverbs::Init()
         machinePara_.exchangeInfo.size());
     HcclUs startut = TIME_NOW();
 
-    CHK_SMART_PTR_NULL(machinePara_.inputMem);
-    CHK_SMART_PTR_NULL(machinePara_.outputMem);
+    if (machinePara_.userMemEnable) {
+        CHK_SMART_PTR_NULL(machinePara_.inputMem);
+        CHK_SMART_PTR_NULL(machinePara_.outputMem);
+    }
     CHK_PTR_NULL(dispatcher_);
-    CHK_SMART_PTR_NULL(notifyPool_);
+    if (machinePara_.notifyNum != 0) {
+        CHK_SMART_PTR_NULL(notifyPool_);
+    }
     CHK_RET(CheckDeviceId());
     CHK_RET(CheckExchangeData());
 
@@ -286,10 +290,14 @@ HcclResult TransportIbverbs::FillExchangeDataTotalSize()
     if (UseMultiQp()) {
         exchangeDataTotalSize_ += sizeof(u32);  // 再放个MultiQpThreshold
     }
-    exchangeDataTotalSize_ += sizeof(MemMsg)*2; // 2: output and input mem
-    exchangeDataTotalSize_ += sizeof(MemMsg)*3; // 3: dataNotify_\ackNotify_\dataAckNotify_ or aicpu ones
+    if (machinePara_.userMemEnable) {
+        exchangeDataTotalSize_ += sizeof(MemMsg) * 2; // 2: output and input mem
+    }
+    if (machinePara_.notifyNum != 0) {
+        exchangeDataTotalSize_ += sizeof(MemMsg) * 3; // 3: dataNotify_\ackNotify_\dataAckNotify_
+    }
     exchangeDataTotalSize_ += machinePara_.exchangeInfo.size();
-    if (UseMultiQp()) {
+    if (UseMultiQp() && machinePara_.notifyNum != 0) {
         exchangeDataTotalSize_ += qpsPerConnection_ * sizeof(MemMsg);  // 多QP下新增协商内容
     }
 
@@ -342,23 +350,27 @@ HcclResult TransportIbverbs::ConstructExchangeForSend()
         exchangeDataBlankSize -= sizeof(u32);
     }
 
-    CHK_RET(RegUserMem(MemType::USER_OUTPUT_MEM, exchangeDataPtr, exchangeDataBlankSize));
-    CHK_RET(RegUserMem(MemType::USER_INPUT_MEM, exchangeDataPtr, exchangeDataBlankSize));
-    if (machinePara_.isAicpuModeEn) {
-        CHK_RET(CreateNotifyBuffer(dataNotify_, MemType::DATA_NOTIFY_MEM,
-            exchangeDataPtr, exchangeDataBlankSize, NotifyLoadType::DEVICE_NOTIFY));
-        CHK_RET(CreateNotifyBuffer(ackNotify_, MemType::ACK_NOTIFY_MEM,
-            exchangeDataPtr, exchangeDataBlankSize, NotifyLoadType::DEVICE_NOTIFY));
-        CHK_RET(CreateNotifyBuffer(dataAckNotify_, MemType::DATA_ACK_NOTIFY_MEM,
-            exchangeDataPtr, exchangeDataBlankSize, NotifyLoadType::DEVICE_NOTIFY));
-    } else {
-        CHK_RET(CreateNotifyBuffer(dataNotify_, MemType::DATA_NOTIFY_MEM, exchangeDataPtr, exchangeDataBlankSize));
-        CHK_RET(CreateNotifyBuffer(ackNotify_, MemType::ACK_NOTIFY_MEM, exchangeDataPtr, exchangeDataBlankSize));
-        CHK_RET(CreateNotifyBuffer(dataAckNotify_, MemType::DATA_ACK_NOTIFY_MEM,
-            exchangeDataPtr, exchangeDataBlankSize));
+    if (machinePara_.userMemEnable) {
+        CHK_RET(RegUserMem(MemType::USER_OUTPUT_MEM, exchangeDataPtr, exchangeDataBlankSize));
+        CHK_RET(RegUserMem(MemType::USER_INPUT_MEM, exchangeDataPtr, exchangeDataBlankSize));
+    }
+    if (machinePara_.notifyNum != 0) {
+        if (machinePara_.isAicpuModeEn) {
+            CHK_RET(CreateNotifyBuffer(dataNotify_, MemType::DATA_NOTIFY_MEM,
+                exchangeDataPtr, exchangeDataBlankSize, NotifyLoadType::DEVICE_NOTIFY));
+            CHK_RET(CreateNotifyBuffer(ackNotify_, MemType::ACK_NOTIFY_MEM,
+                exchangeDataPtr, exchangeDataBlankSize, NotifyLoadType::DEVICE_NOTIFY));
+            CHK_RET(CreateNotifyBuffer(dataAckNotify_, MemType::DATA_ACK_NOTIFY_MEM,
+                exchangeDataPtr, exchangeDataBlankSize, NotifyLoadType::DEVICE_NOTIFY));
+        } else {
+            CHK_RET(CreateNotifyBuffer(dataNotify_, MemType::DATA_NOTIFY_MEM, exchangeDataPtr, exchangeDataBlankSize));
+            CHK_RET(CreateNotifyBuffer(ackNotify_, MemType::ACK_NOTIFY_MEM, exchangeDataPtr, exchangeDataBlankSize));
+            CHK_RET(CreateNotifyBuffer(dataAckNotify_, MemType::DATA_ACK_NOTIFY_MEM,
+                exchangeDataPtr, exchangeDataBlankSize));
+        }
     }
     CHK_RET(ConstructExchangeDataForSend(exchangeDataPtr, exchangeDataBlankSize));
-    if (UseMultiQp()) {
+    if (UseMultiQp() && machinePara_.notifyNum != 0) {
         for (u32 i = 0; i < qpsPerConnection_; i++) {
             std::shared_ptr<LocalIpcNotify> oneNotify;
             if (machinePara_.isAicpuModeEn) {
@@ -447,24 +459,27 @@ HcclResult TransportIbverbs::ParseReceivedExchangeData()
         exchangeDataBlankSize -= sizeof(u32);
     }
 
-    CHK_RET(GetRemoteAddr(MemType::USER_OUTPUT_MEM, exchangeDataPtr, exchangeDataBlankSize));
+    if (machinePara_.userMemEnable) {
+        CHK_RET(GetRemoteAddr(MemType::USER_OUTPUT_MEM, exchangeDataPtr, exchangeDataBlankSize));
+        CHK_RET(GetRemoteAddr(MemType::USER_INPUT_MEM, exchangeDataPtr, exchangeDataBlankSize));
+    }
 
-    CHK_RET(GetRemoteAddr(MemType::USER_INPUT_MEM, exchangeDataPtr, exchangeDataBlankSize));
-
-    CHK_RET(GetRemoteAddr(MemType::DATA_NOTIFY_MEM, exchangeDataPtr, exchangeDataBlankSize));
-    s32 sret = memcpy_s(&remoteDataNotifyMsg_, sizeof(MemMsg),
-        &remoteMemMsg_[static_cast<u32>(MemType::DATA_NOTIFY_MEM)], sizeof(MemMsg));
-    CHK_PRT_RET(sret != EOK,
-        HCCL_ERROR("[Get][RemoteMem]errNo[0x%016llx] In lbv exp init, memory copy failed. errorno[%d], "
-                "params:destMaxSize[%zu],count[%zu]",
-        HCCL_ERROR_CODE(HCCL_E_MEMORY), sret, sizeof(MemMsg), sizeof(MemMsg)),
-        HCCL_E_MEMORY);
-    CHK_RET(GetRemoteAddr(MemType::ACK_NOTIFY_MEM, exchangeDataPtr, exchangeDataBlankSize));
-    CHK_RET(GetRemoteAddr(MemType::DATA_ACK_NOTIFY_MEM, exchangeDataPtr, exchangeDataBlankSize));
+    if (machinePara_.notifyNum != 0) {
+        CHK_RET(GetRemoteAddr(MemType::DATA_NOTIFY_MEM, exchangeDataPtr, exchangeDataBlankSize));
+        s32 sret = memcpy_s(&remoteDataNotifyMsg_, sizeof(MemMsg),
+            &remoteMemMsg_[static_cast<u32>(MemType::DATA_NOTIFY_MEM)], sizeof(MemMsg));
+        CHK_PRT_RET(sret != EOK,
+            HCCL_ERROR("[Get][RemoteMem]errNo[0x%016llx] In lbv exp init, memory copy failed. errorno[%d], "
+                    "params:destMaxSize[%zu],count[%zu]",
+            HCCL_ERROR_CODE(HCCL_E_MEMORY), sret, sizeof(MemMsg), sizeof(MemMsg)),
+            HCCL_E_MEMORY);
+        CHK_RET(GetRemoteAddr(MemType::ACK_NOTIFY_MEM, exchangeDataPtr, exchangeDataBlankSize));
+        CHK_RET(GetRemoteAddr(MemType::DATA_ACK_NOTIFY_MEM, exchangeDataPtr, exchangeDataBlankSize));
+    }
 
     CHK_RET(ParseExchangeData(exchangeDataPtr, exchangeDataBlankSize));
 
-    if (UseMultiQp()) {
+    if (UseMultiQp() && machinePara_.notifyNum != 0) {
         for (u32 i = 0; i < qpsPerConnection_; i++) {
             CHK_RET(GetRemoteAddr(MemType::MULTI_QP_DATA_NOTIFY_MEM, exchangeDataPtr, exchangeDataBlankSize));
         }
@@ -2118,6 +2133,10 @@ HcclResult TransportIbverbs::GetRemoteNotifyAddr(u8*& exchangeDataPtr, u64& exch
 
 HcclResult TransportIbverbs::CreateNotifyValueBuffer()
 {
+    if (machinePara_.notifyNum == 0) {
+        HCCL_INFO("notifyNum is 0, no need to create notify value buffer");
+        return HCCL_SUCCESS;
+    }
     std::unique_lock<std::mutex> lock(notifyValueMutex_[machinePara_.deviceLogicId]);
     if (notifyValueMem_[machinePara_.deviceLogicId].ptr() == nullptr) {
         u64 notifyVaule = 1; // notify值写1表示record
