@@ -252,7 +252,7 @@ function make_ut_gov() {
     cd ${CURRENT_DIR}
     rm -rf ${CURRENT_DIR}/cov
     mkdir -p ${CURRENT_DIR}/cov
-    lcov --ignore-errors mismatch,corrupt,empty,inconsistent,negative \
+    lcov --ignore-errors mismatch,corrupt,empty,inconsistent,negative,unused \
          -c \
          -d ${BUILD_DIR}/test/ut/ \
          -d ${BUILD_DIR}/test/legacy/ut/ \
