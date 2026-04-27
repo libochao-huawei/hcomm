@@ -679,7 +679,7 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
     endif()
 endif()
 if(DEVICE_MODE AND KERNEL_MODE)
-    set(CCL_KERNEL_TAR_DIR ${HCCL_BASE_DIR}/../build_device/ccl_kernel_tar_pkg/aicpu_kernels_device)
+    set(CCL_KERNEL_TAR_DIR ${BUILD_DEVICE_DIR}/ccl_kernel_tar_pkg/aicpu_kernels_device)
     add_custom_command(
         TARGET ccl_kernel
         POST_BUILD
@@ -753,5 +753,70 @@ if(DEVICE_MODE AND KERNEL_MODE)
     )
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
         DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
+    )
+endif()
+
+if(BUILD_OPEN_PROJECT AND DEVICE_MODE AND KERNEL_MODE)
+    set(CCL_KERNEL_TAR_LIBS
+        ${BUILD_DEVICE_DIR}/ccl_kernel_tar_pkg/aicpu_kernels_device/libccl_kernel_plf.so
+        ${BUILD_DEVICE_DIR}/ccl_kernel_tar_pkg/aicpu_kernels_device/libccl_kernel.so
+    )
+    pack_targets_and_files(
+        OUTPUT_TARGET "generate_device_aicpu_package"
+        OUTPUT "aicpu_hcomm.tar.gz"
+        FILES ${CCL_KERNEL_TAR_LIBS}
+        MANIFEST "bin_hash.cfg"
+        TAR_ROOT_DIR "aicpu_kernels_device"
+    )
+    add_dependencies(generate_device_aicpu_package ccl_kernel ccl_kernel_plf)
+    sign_file(
+        INPUT "aicpu_hcomm.tar.gz"
+        CONFIG "${CMAKE_CURRENT_SOURCE_DIR}/scripts/sign/hcomm_check_cfg.xml"
+        RESULT_VAR "aicpu_hcomm_sign_file"
+        DEPENDS generate_device_aicpu_package
+    )
+    add_dependencies(sign_aicpu_hcomm generate_device_aicpu_package)
+endif()
+
+if(BUILD_OPEN_PROJECT AND (NOT KERNEL_MODE))
+    add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
+        COMMAND ${HI_PYTHON} ${HCOMM_DIR}/cmake/scripts/parser_ini.py
+                             ${CMAKE_CURRENT_SOURCE_DIR}/device/framework/ccl_kernel.ini
+                             ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    add_custom_target(ccl_kernel_json DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
+        DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/config OPTIONAL
+    )
+
+    add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
+        COMMAND ${HI_PYTHON} ${HCOMM_DIR}/cmake/scripts/parser_ini.py
+                             ${CMAKE_CURRENT_SOURCE_DIR}/device/framework/aicpu_custom.ini
+                             ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    add_custom_target(aicpu_custom_json DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
+        DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
+    )
+endif()
+
+# 安装
+if(BUILD_OPEN_PROJECT AND (NOT DEVICE_MODE))
+    install(FILES ${BUILD_DEVICE_DIR}/signatures/aicpu_hcomm.tar.gz
+        DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
+    )
+    install(FILES ${BUILD_DEVICE_DIR}/src/framework/libaicpu_custom.so
+        DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
+    )
+    install(FILES ${BUILD_DEVICE_DIR}/src/framework/libaicpu_custom.json
+        DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
+    )
+    add_custom_target(install_ccl_kernel DEPENDS
+        ${BUILD_DEVICE_DIR}/src/framework/libccl_kernel.so
+    )
+    install(FILES ${BUILD_DEVICE_DIR}/src/framework/libccl_kernel.so
+        DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/devlib/device OPTIONAL
     )
 endif()
