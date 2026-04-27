@@ -1480,8 +1480,8 @@ void CommunicatorImpl::InitHccpHdc() const
 
 void CommunicatorImpl::TryInitCcuFeature()
 {
-    const char *indOp = getenv("HCCL_INDEPENDENT_OP");
-    if (indOp != nullptr && strcmp(indOp, "") != 0) {
+    const char *opModeEnv = getenv("HCCL_CCU_CUSTOM_OP_MODE");
+    if (opModeEnv != nullptr && strcmp(opModeEnv, "1") == 0) {
         TpManager::GetInstance(devLogicId).Init();
         HCCL_RUN_INFO("[CommunicatorImpl][%s] passed, "
             "will use open source ccu feature.", __func__);
@@ -2746,8 +2746,8 @@ HcclResult CommunicatorImpl::SetAccelerator(HcclAccelerator hcclAccelerator, boo
     CHK_RET(HrtGetMainboardId(devLogicId, hcclMainboardId));
 
     // 开启新流程时，仅mc2场景走回legacy通信域，此时不允许使用ms模式
-    const char *indOp = getenv("HCCL_INDEPENDENT_OP");
-    if (indOp != nullptr && strcmp(indOp, "") != 0) {
+    const char *opModeEnv = getenv("HCCL_CCU_CUSTOM_OP_MODE");
+    if (opModeEnv != nullptr && strcmp(opModeEnv, "1") == 0) {
         HCCL_WARNING("[CommunicatorImpl][%s] legacy communicator not support ccu ms mode for mc2.",
             __func__);
         isCcuMsAvailable = false;

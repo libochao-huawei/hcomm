@@ -64,7 +64,7 @@ constexpr u32 INVALID_QOSCFG = 0xFFFFFFFF;
 // 系统常用参数
 constexpr u64 SYS_MAX_COUNT = 0x7FFFFFFFF; // 系统当前支持的最大count数
 constexpr u32 HCCL_AISERVER_DEVICE_NUM = 8; // 单个Server 支持最大的设备数量
-constexpr u32 MAX_MODULE_DEVICE_NUM = 32; // 单server双模组时支持最大的设备数量
+constexpr u32 MAX_MODULE_DEVICE_NUM = 65; // 单server双模组时支持最大的设备数量
 constexpr u32 HCCL_DEVICE_NIC_NUM = 3; // device网卡上最大的device ip数目，1个ipv4,ipv4自动转换的ipv6,用户配置的ipv6
 constexpr u32 HCCL_HOST_NIC_NUM = 1000; // host 支持最大的网卡数量
 constexpr int HCCL_DEVICE_MINNUM = 1;

@@ -169,10 +169,20 @@ HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint3
         opExpansionMode_ = static_cast<uint32_t>(accelerator);
     }
 
-    // 仅自定义算子ccu流程初始化资源
+    // 仅自定义算子ccu流程初始化资源（与主线对齐：支持 HCCL_CCU_CUSTOM_OP_MODE=1 或原 HCCL_INDEPENDENT_OP；实现走 CcuInstance / ccuInsHandle_）
+    const char *opModeEnv = getenv("HCCL_CCU_CUSTOM_OP_MODE");
     const char *indOp = getenv("HCCL_INDEPENDENT_OP");
-    if ((indOp != nullptr && strcmp(indOp, "") != 0) && ccuInsHandle_ == 0 && rankNum != 1) {
-        CHK_RET(TryInitCcuInstance());
+    const bool wantCustomCcu = (opModeEnv != nullptr && strcmp(opModeEnv, "1") == 0) ||
+        (indOp != nullptr && strcmp(indOp, "") != 0);
+    if (wantCustomCcu && ccuInsHandle_ == 0 && rankNum != 1 &&
+        (opExpansionMode_ == CCU_MS_MODE || opExpansionMode_ == CCU_SCHED_MODE)) {
+        const uint32_t originOpExpansionMode = opExpansionMode_;
+        auto ret = TryInitCcuInstance();
+        if (ret != HcclResult::HCCL_SUCCESS) {
+            HCCL_ERROR("[MyRank][%s] failed to init ccu instance, op expansion mode[%u].",
+                __func__, originOpExpansionMode);
+            return ret;
+        }
     }
 
     // 创建端点管理器
