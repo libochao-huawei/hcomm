@@ -71,7 +71,7 @@ HcclResult HostCpuUrmaChannel::ParseInputParam()
 
     EXECEPTION_CATCH(socketMgr_ = std::make_unique<SocketMgr>(), return HCCL_E_PTR);
 
-    return HCLC_SUCCESS;
+    return HCCL_SUCCESS;
 }
 
 HcclResult HostCpuUrmaChannel::BuildAttr()
