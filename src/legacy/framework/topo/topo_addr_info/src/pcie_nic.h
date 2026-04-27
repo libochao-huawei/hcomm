@@ -23,9 +23,12 @@ int isSamePcieSwitch(NPU *npu, HCA *nic);
 
 /**
  * 扫描所有HCA
+ * @param nics HCA数组指针
+ * @param maxNicNum 最大HCA数量
+ * @param nicNum 扫描到的HCA数量指针
+ * @return 0 成功，-1 失败0
  */
-int scanHca(HCA *nics, int *nic_len);
-
+int scanHca(HCA *nics, int maxNicNum, int *nicNum);
 
 /**
  * 从文件中读取整数,用来读取numa

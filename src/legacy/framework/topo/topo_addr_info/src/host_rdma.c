@@ -53,11 +53,11 @@ static int matchNpuAndHca(NPU* npus, HCA* nics, int npuNum, int nicNum)
     if (npuNum == 0 || nicNum == 0) {
         return -1;
     }
-    size_t cur = 0;
-    for (size_t i = 0; i < npuNum; ++i) {
+    int cur = 0;
+    for (int i = 0; i < npuNum; ++i) {
         // 网卡已经匹配后，需要从cur位置继续匹配，避免网卡足够时，匹配到同一个网卡
         // 当网卡数量不足时，循环绕一圈，继续匹配到仅有的网卡
-        for (size_t j = cur; j < nicNum + cur; ++j) {
+        for (int j = cur; j < nicNum + cur; ++j) {
             size_t pos = j % nicNum;
             if (isSamePcieSwitch(&npus[i], &nics[pos])) {
                 (void)strcpy_s(npus[i].nicPciePath, sizeof(npus[i].nicPciePath), nics[pos].pciePath);
@@ -76,7 +76,7 @@ static int matchNpuAndHca(NPU* npus, HCA* nics, int npuNum, int nicNum)
     return 0;
 }
 
-int InitNPU(NPU* npu)
+int initNpu(NPU* npu)
 {
     struct dcmi_pcie_info_all pcie_info;
     int ret = hal_get_device_pcie_info(npu->id, &pcie_info);
@@ -107,6 +107,7 @@ static void InitNpus(NPU *npu, size_t npu_count)
 {
     for (size_t i = 0; i < npu_count; ++i) {
         npu[i].id = i;
+        initNpu(&npu[i]);
     }
 }
 
@@ -118,7 +119,7 @@ int GetNpuHostRdmaIp(int npu_id, char* ip_addr, size_t ip_addr_len)
     int npuNum = hal_get_npu_count();
     int nicNum = MAX_NIC_COUNT;
     InitNpus(npus, npuNum);
-    if (scanHca(nics, &nicNum) != 0) {
+    if (scanHca(nics, MAX_NIC_COUNT, &nicNum) != 0) {
         return -1;
     }
     if (nicNum == 0) {

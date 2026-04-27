@@ -117,24 +117,29 @@ int GetHcaEth(HCA *hca)
     return getFileNameInDir(netPath, hca->ethName, MAX_NIC_PCIE_PATH) ;
 }
 
-int GetHcaVerbs(HCA *hca) 
+/**
+ * @brief 获取网卡的verbs名称
+ * @param hca 网卡指针
+ * @return int 0表示成功，-1表示失败
+ */
+int GetHcaVerbs(const char* hcaName, char* verbsName, size_t verbsNameLen) 
 {
-    char netPath[MAX_NIC_PCIE_PATH] = {0};
-    int ret = sprintf_s(netPath, MAX_NIC_PCIE_PATH, "%s/infiniband_verbs", hca->pciePath);
+    char verbsPath[MAX_NIC_PCIE_PATH] = {0};
+    int ret = sprintf_s(verbsPath, MAX_NIC_PCIE_PATH, "/sys/class/infiniband/%s/device/infiniband_verbs", hcaName);
     if (ret < 0) {
         return -1;
     }
-    ret = getFileNameInDir(netPath, hca->verbsName, MAX_NIC_PCIE_PATH) ;
+    ret = getFileNameInDir(verbsPath, verbsName, verbsNameLen);
     if (ret != 0) {
         return -1;
     }
     // 检查verbs可见性，不存在说明没有挂载到容器内
-    char verbsPath[MAX_NIC_PCIE_PATH] = {0};
-    ret = sprintf_s(verbsPath, MAX_NIC_PCIE_PATH, "/dev/infiniband/%s", hca->verbsName);
+    char devVerbsPath[MAX_NIC_PCIE_PATH] = {0};
+    ret = sprintf_s(devVerbsPath, MAX_NIC_PCIE_PATH, "/dev/infiniband/%s", verbsName);
     if (ret < 0) {
         return -1;
     }   
-    if (access(verbsPath, F_OK) != 0) {
+    if (access(devVerbsPath, F_OK) != 0) {
         return -1;
     }
     return 0;
@@ -202,7 +207,7 @@ int InitHcaByName(const char* hcaName, HCA* hca)
     if (ret != 0) {
         return -1;
     }
-    ret = GetHcaVerbs(hca);
+    ret = GetHcaVerbs(hca->hcaName, hca->verbsName, MAX_NIC_PCIE_PATH);
     if (ret != 0) {
         return -1;
     }
@@ -215,9 +220,9 @@ int InitHcaByName(const char* hcaName, HCA* hca)
 }
 
 /**
- * 获取本机所有网卡信息
+ * 获取本机所有Host Channel Adapter信息
  */
-int scanHca(HCA *nics, int *nic_len)
+int scanHca(HCA *nics, int maxNicNum, int *nicNum)
 {
     DIR *dir = opendir("/sys/class/infiniband");
     if (dir == NULL) {
@@ -228,7 +233,7 @@ int scanHca(HCA *nics, int *nic_len)
     int pos = 0;
     struct dirent *entry = NULL;
     while ((entry=readdir(dir)) != NULL) {
-        if (loop >= maxLoop || pos >= MAX_NIC_COUNT) {
+        if (loop >= maxLoop || pos >= maxNicNum) {
             break;
         }
         loop++;
@@ -241,7 +246,7 @@ int scanHca(HCA *nics, int *nic_len)
         }
         pos++;
     }
-    (*nic_len) = loop;
+    (*nicNum) = pos;
     closedir(dir);
     return 0;
 }
