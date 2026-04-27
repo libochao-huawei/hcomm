@@ -521,7 +521,7 @@ HcclResult CcuConnection::Describe(std::string &dfxMsg)
     udpSport = tpAttr.dataUdpSrcport;
     udpSport = udpSport & 0xFF;
 
-    std::string log = StringFormat(" retryTimesInit:%hhu, at:%hhu, vlanId:%hhu, vlanEn:%hhu, dscp:%hhu, atTimes:%u, "
+    std::string log = Hccl::StringFormat(" retryTimesInit:%hhu, at:%hhu, vlanId:%hhu, vlanEn:%hhu, dscp:%hhu, atTimes:%u, "
         "sl:%hhu, ttl:%hhu, ackUdpSrcport:%hhu, dataUdpSrcport:%hhu, udpSrcportRange:%hhu, sprayEn:%hhu, udpGlobalEn:%hhu",
         tpAttr.retryTimesInit, tpAttr.at, tpAttr.vlanId, tpAttr.vlanEn, tpAttr.dscp, tpAttr.atTimes, tpAttr.sl,
         tpAttr.ttl, tpAttr.ackUdpSrcport, tpAttr.dataUdpSrcport, tpAttr.udpSrcportRange, tpAttr.sprayEn, tpAttr.udpGlobalEn);
