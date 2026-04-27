@@ -227,6 +227,8 @@ TEST_F(CollServiceDeviceModeTest, test_init_LoadWithOffloadMode)
     OpType opType = OpType::ALLREDUCE;
     auto stream = std::make_unique<Stream>();
     fakeComm.currentCollOperator->opMode = OpMode::OFFLOAD;
+    std::shared_ptr<Buffer> buffer = DevBuffer::Create(0x100, 10);
+    fakeComm.currentCollOperator->scratchMem = buffer;
     EXPECT_NO_THROW(service->LoadWithOffloadMode(*fakeComm.currentCollOperator, std::move(stream)));
 
     CollOffloadOpResReq resReq;
@@ -653,7 +655,8 @@ TEST_F(CollServiceDeviceModeTest, test_init_ReLoadWithOpBasedMode_Offload)
     auto stream = std::make_unique<Stream>();
 
     service->ccuInsPreprocessor.resAllocSuccess = false;
-
+    std::shared_ptr<Buffer> buffer = DevBuffer::Create(0x100, 10);
+ 	fakeComm.currentCollOperator->scratchMem = buffer;
     EXPECT_THROW(service->LoadWithOffloadMode(*fakeComm.currentCollOperator, std::move(stream)), NotSupportException);
 }
 
@@ -952,7 +955,7 @@ TEST_F(CollServiceDeviceModeTest, ut_alloc_cnt_notify_for_single_queue_with_loca
     CommunicatorImpl comm;
     auto queueNotifyManager = std::make_unique<QueueNotifyManager>(comm);
     CollServiceDeviceMode service(&comm);
-    comm.queueNotifyManager = std::move(queueNotifyManager);
+    comm.ccuQueueNotifyManager_ = std::move(queueNotifyManager);
 
     InsQueue insQueue;
     auto insLocalPostTo = std::make_unique<InsLocalPostTo>(1);
@@ -968,7 +971,7 @@ TEST_F(CollServiceDeviceModeTest, ut_alloc_cnt_notify_for_single_queue_with_loca
     CommunicatorImpl comm;
     auto queueNotifyManager = std::make_unique<QueueNotifyManager>(comm);
     CollServiceDeviceMode service(&comm);
-    comm.queueNotifyManager = std::move(queueNotifyManager);
+    comm.ccuQueueNotifyManager_ = std::move(queueNotifyManager);
 
     InsQueue insQueue;
     auto insLocalWaitFrom = std::make_unique<InsLocalWaitFrom>(1);

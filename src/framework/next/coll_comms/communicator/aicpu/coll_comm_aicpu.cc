@@ -139,7 +139,7 @@ HcclResult CollCommAicpu::AllocChannelResource(HcclChannelUrmaRes *commParam)
               "commParam->listNum[%u], commParam->uniqueIdAddr[%p], commParam->uniqueIdSize[%u]",
               __func__, topoInfo_.deviceLogicId, topoInfo_.devicePhyId, topoInfo_.deviceType, commParam->channelList,
               commParam->listNum, commParam->uniqueIdAddr, commParam->uniqueIdSize);
-    CHK_PRT(InitUrmaChannel(commParam));
+    CHK_RET(InitUrmaChannel(commParam));
     return HCCL_SUCCESS;
 }
 
@@ -150,6 +150,10 @@ HcclResult CollCommAicpu::ProcessUrmaRes(HcclChannelUrmaRes *commParam, bool isI
     ChannelHandle* channelList = reinterpret_cast<ChannelHandle*>(commParam->channelList);
     u8* currentSrcAddr = reinterpret_cast<u8*>(commParam->uniqueIdAddr);
     u32* addSize = reinterpret_cast<u32*>(commParam->channelSizeAddr);
+    CHK_PTR_NULL(channelList);
+    CHK_PTR_NULL(currentSrcAddr);
+    CHK_PTR_NULL(addSize);
+
     for (u32 index = 0; index < commParam->listNum; index++) {
         std::vector<char> data(*addSize);
 
@@ -204,13 +208,30 @@ HcclResult CollCommAicpu::ParsePackData(std::vector<char> &data, ChannelHandle &
     std::vector<char> transpUniqueId;
     binaryStream >> transpUniqueId;
 
-    std::unique_ptr<Hccl::UbTransportLiteImpl> ubTransportLiteImpl;
-    EXECEPTION_CATCH((ubTransportLiteImpl = std::make_unique<Hccl::UbTransportLiteImpl>(transpUniqueId)),
-        return HCCL_E_PTR);
-    CHK_SMART_PTR_NULL(ubTransportLiteImpl);
-
-    handle = reinterpret_cast<uint64_t>(ubTransportLiteImpl.get());
-    ubTransportMap_.insert({handle, std::move(ubTransportLiteImpl)});
+    Hccl::BinaryStream binaryStreamForType(transpUniqueId);
+    u32 transType;
+    binaryStreamForType >> transType;
+    HCCL_INFO("[CollCommAicpu][ParsePackData] transType[%u]", transType);
+    // TODO TransportType
+    if (transType == Hccl::TransportType::UB) {
+        std::unique_ptr<Hccl::UbTransportLiteImpl> ubTransportLiteImpl;
+        EXECEPTION_CATCH((ubTransportLiteImpl = std::make_unique<Hccl::UbTransportLiteImpl>(transpUniqueId)),
+            return HCCL_E_PTR);
+        CHK_SMART_PTR_NULL(ubTransportLiteImpl);
+        handle = reinterpret_cast<uint64_t>(ubTransportLiteImpl.get());
+        ubTransportMap_.insert({handle, std::move(ubTransportLiteImpl)});
+    } else if (transType == Hccl::TransportType::P2P) {
+        std::unique_ptr<Hccl::P2PTransportLiteImpl> p2pTransportLiteImpl;
+        EXECEPTION_CATCH((p2pTransportLiteImpl = std::make_unique<Hccl::P2PTransportLiteImpl>(transpUniqueId)),
+            return HCCL_E_PTR);
+        CHK_SMART_PTR_NULL(p2pTransportLiteImpl);
+        handle = reinterpret_cast<uint64_t>(p2pTransportLiteImpl.get());
+        p2pTransportMap_.insert({handle, std::move(p2pTransportLiteImpl)});
+        // TODO 是否需要缓存用于NsRecovery
+    } else {
+        HCCL_ERROR("[CollCommAicpu][ParsePackData] unsupported transportType[%u]", transType);
+        return HCCL_E_INTERNAL;
+    }
 
     return HCCL_SUCCESS;
 }

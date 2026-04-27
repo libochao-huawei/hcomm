@@ -12,6 +12,7 @@
 
 #include "sal.h"
 #include "socket_exception.h"
+#include "network_api_exception.h"
 
 namespace Hccl {
 
@@ -67,6 +68,14 @@ void Socket::Connect()
     socketStatus = SocketStatus::CONNECTING;
 }
 
+void Socket::PrintErrorSocketInfo()
+{
+    HCCL_ERROR("Socket::GetStatus failed.");
+    HCCL_ERROR("Please check if env HCCL_SOCKET_IFNAME is set correctly, "
+               "which can be verified by checking localIp and remoteIp in socket info:");
+    HCCL_ERROR("%s", Describe().c_str());
+}
+
 SocketStatus Socket::GetStatus()
 {
     if (socketStatus == SocketStatus::OK) {
@@ -75,7 +84,13 @@ SocketStatus Socket::GetStatus()
     }
 
     RaSocketGetParam param(socketHandle, remoteIp, tag, fdHandle);
-    auto result = HrtRaBlockGetOneSocket(static_cast<u32>(role), param);
+    RaSocketFdHandleParam result(nullptr, 0);
+    TRY_CATCH_PROCESS_THROW(
+        NetworkApiException,
+        result = HrtRaBlockGetOneSocket(static_cast<u32>(role), param),
+        "Socket::GetStatus failed",
+        PrintErrorSocketInfo()
+    );
 
     fdHandle = result.fdHandle;
 

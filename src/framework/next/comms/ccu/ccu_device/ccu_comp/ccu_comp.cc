@@ -521,7 +521,7 @@ HcclResult CcuComponent::ConfigLoopChannel(const uint8_t dieId, const CommAddr &
 
     ChannelCfg cfg{};
     cfg.channelId = channelInfo.channelId;
-    CHK_RET(IpAddressToReverseHccpEid(ipAddr, cfg.remoteEid));
+    CHK_RET(IpAddressToReverseHcclEid(ipAddr, cfg.remoteEid));
     cfg.tpn       = importedOutParamMap_[dieId][0].second.tpn; // 环回仅1个对端
     cfg.remoteCcuVa   = ccuRmaBuffer->GetBuf()->GetAddr();
     cfg.memTokenId    = ccuRmaBuffer->GetTokenId();
@@ -546,8 +546,8 @@ HcclResult CcuComponent::ConfigMsIdToken()
 {
     const bool armX86Flag = CcuResSpecifications::GetInstance(devLogicId_).GetArmX86Flag();
     const RaInfo info{NetworkMode::NETWORK_OFFLINE, devPhyId_};
-    struct CustomChannelInfoIn  inBuff{};
-    struct CustomChannelInfoOut outBuff{};
+    CustomChannelInfoIn  inBuff{};
+    CustomChannelInfoOut outBuff{};
     for (uint8_t dieId = 0; dieId < CCU_MAX_IODIE_NUM; dieId++) {
         const auto &dieIter = ccuRmaBufferMap_.find(dieId);
         if (dieIter == ccuRmaBufferMap_.end()) {
@@ -818,7 +818,7 @@ HcclResult CcuComponent::ReleaseXn(const uint8_t dieId, const std::vector<ResInf
     return HcclResult::HCCL_SUCCESS;
 }
 
-std::array<bool, CCU_MAX_IODIE_NUM> CcuComponent::GetDieEnableFlags() const
+const std::array<bool, CCU_MAX_IODIE_NUM> &CcuComponent::GetDieEnableFlags() const
 {
     return dieEnableFlags_;
 }
@@ -902,8 +902,8 @@ HcclResult CcuComponent::DestroyAllJettys()
 
 HcclResult CcuComponent::SetProcess(CcuOpcodeType opCode) const
 {
-    struct CustomChannelInfoIn  inBuff;
-    struct CustomChannelInfoOut outBuff;
+    CustomChannelInfoIn  inBuff;
+    CustomChannelInfoOut outBuff;
 
     inBuff.op = opCode;
     for (uint8_t dieId = 0; dieId < MAX_CCU_IODIE_NUM; dieId++) {

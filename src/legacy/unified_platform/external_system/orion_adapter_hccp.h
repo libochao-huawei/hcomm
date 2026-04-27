@@ -559,6 +559,7 @@ struct HrtDevEidInfo {
     uint32_t dieId{0};
     uint32_t chipId{0};
     uint32_t funcId{0};
+    uint32_t devFeature{0};
 };
 std::vector<HrtDevEidInfo> HrtRaGetDevEidInfoList(const HRaInfo &raInfo);
 

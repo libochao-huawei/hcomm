@@ -111,6 +111,12 @@
 #include "../../../legacy/unified_platform/ccu/ccu_microcode/ccu_assist.h"
 #include "acl/acl_rt.h"
 
+#include "p2p_transport.h"
+#include "dev_capability.h"
+#include "p2p_connection.h"
+#include "rts_cnt_notify.h"
+#include "rts_1ton_cnt_notify.h"
+#include "ipc_local_notify.h"
 
 namespace Hccl {
 
@@ -152,7 +158,20 @@ bool RdmaHandleManager::GetRtpEnable(RdmaHandle rdmaHandle)
 {
     return true;
 }
- 
+
+HcclResult RdmaHandleManager::GetEidByIpv4Addr(const IpAddress& addr, IpAddress& eidAddr)
+{
+    Hccl::IpAddress ip("0000:0000:0000:0000:0000:0000:c0a8:0367", AF_INET6);
+    eidAddr = ip;
+    return HCCL_SUCCESS;
+}
+
+void RdmaHandleManager::UboeIpv4ToEid(const IpAddress& ipV4Address, IpAddress& eidAddress, u32 devPhyId)
+{
+    Hccl::IpAddress ip("0000:0000:0000:0000:0000:0000:c0a8:0367", AF_INET6);
+    eidAddress = ip;
+}
+
 SocketStatus Socket::GetAsyncStatus()
 {
     return SocketStatus::OK;
@@ -954,10 +973,10 @@ void UbLocalNotify::ReleaseResource() const
 UbLocalNotify::~UbLocalNotify()
 {}
 
-RtsNotify::RtsNotify(bool devUsed)
-{}
-RtsNotify::~RtsNotify()
-{}
+// RtsNotify::RtsNotify(bool devUsed)
+// {}
+// RtsNotify::~RtsNotify()
+// {}
 
 UbMemTransport::UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, const LinkData &linkData,
     const Socket &socket, RdmaHandle rdmaHandle1, LocCntNotifyRes &locCntNotifyRes1, bool isRecvFirst)
@@ -1523,6 +1542,12 @@ u32 GlobalMirrorTasks::DevSize() const
     return 0;
 }
 
+TaskInfoQueue &GlobalMirrorTasks::CreateQueue(u32 devId, u32 streamId, QueueType type)
+{
+    static CircularQueue<std::shared_ptr<TaskInfo>> queue(MAX_CIRCULAR_QUEUE_LENGTH);
+    return queue;
+}
+
 TaskInfoQueue *GlobalMirrorTasks::GetQueue(u32 devId, u32 streamId) const
 {
     static CircularQueue<std::shared_ptr<TaskInfo>> queue(MAX_CIRCULAR_QUEUE_LENGTH);
@@ -1535,12 +1560,28 @@ void GlobalMirrorTasks::DestroyQueue(u32 devId, u32 streamId)
    
 }
 
+TaskInfoQueueMap::iterator GlobalMirrorTasks::Begin(u32 devId)
+{
+    static TaskInfoQueueMap map;
+    return map.begin();
+}
+
+TaskInfoQueueMap::iterator GlobalMirrorTasks::End(u32 devId)
+{
+    static TaskInfoQueueMap map;
+    return map.end();
+}
+
 std::shared_ptr<TaskInfo> GlobalMirrorTasks::GetTaskInfo(u32 devId, u32 streamId, u32 taskId) const
 {
 
     return nullptr;
 }
 
+HcclResult GlobalMirrorTasks::FindTaskInfo(u32 devId, u32 streamId, u32 taskId, std::shared_ptr<TaskInfo> &curTask) const
+{
+    return HCCL_E_NOT_FOUND;
+}
 
 MirrorTaskManager::MirrorTaskManager(u32 devId, GlobalMirrorTasks *globalMirrorTasks, bool devUsed)
     : devId_(devId), globalMirrorTasks_(globalMirrorTasks), devUsed_(devUsed)
@@ -2181,6 +2222,311 @@ HcclResult CcuCleanDieCkes(const int32_t deviceLogicId, const uint8_t dieId)
     return HCCL_SUCCESS;
 }
 
+std::string CollOpToString(const BaseCollOperator &collOp)
+{
+    return "collOp";
+}
+
+std::shared_ptr<TaskInfo>  MirrorTaskManagerLite::GetTaskInfo(u32 streamId, u32 taskId) const
+{
+    return nullptr;
+}
+
+HcclResult HcclCommunicator::SetAccelerator(HcclAccelerator hcclAccelerator, bool isCcuMsAvailable)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommunicator::SetAccelerator(int32_t accelerator, bool isCcuMsAvailable)
+{
+    return HCCL_SUCCESS;
+}
+
+}  // namespace Hccl
+
+namespace Hccl {
+class CommunicatorImplLite {
+public:
+    CommunicatorImplLite(u32 commId) : commId_(commId) {}
+    ~CommunicatorImplLite() {}
+private:
+    u32 commId_;
+};
+
+class CommunicatorImplLiteMgr {
+public:
+    CommunicatorImplLiteMgr();
+    ~CommunicatorImplLiteMgr();
+    static CommunicatorImplLiteMgr &GetInstance();
+    void DestroyComm(u32 commIdIndex);
+    CommunicatorImplLite *Get(const u32 commIdIndex);
+    std::vector<CommunicatorImplLite *> GetAll();
+    void SetEnvConfig(const HcclDeviceEnvConfigLite& envConfig) { envConfig_ = envConfig; }
+    const HcclDeviceEnvConfigLite& GetEnvConfig() { return envConfig_; }
+private:
+    std::unordered_map<u32, std::unique_ptr<CommunicatorImplLite>> communicatorImplLites;
+    std::mutex serialMutex;
+    HcclDeviceEnvConfigLite envConfig_;
+};
+
+CommunicatorImplLiteMgr::CommunicatorImplLiteMgr() {}
+CommunicatorImplLiteMgr::~CommunicatorImplLiteMgr() {}
+
+CommunicatorImplLiteMgr &CommunicatorImplLiteMgr::GetInstance()
+{
+    static CommunicatorImplLiteMgr instance;
+    return instance;
+}
+
+void CommunicatorImplLiteMgr::DestroyComm(u32 commIdIndex) {(void)commIdIndex;}
+
+CommunicatorImplLite *CommunicatorImplLiteMgr::Get(const u32 commIdIndex)
+{
+    (void)commIdIndex;
+    return nullptr;
+}
+
+std::vector<CommunicatorImplLite *> CommunicatorImplLiteMgr::GetAll()
+{
+    return {};
+}
+
+RtNotify_t HrtIpcOpenNotifyWithFlag(const char_t *name, uint32_t flags)
+{
+    return nullptr;
+}
+
+u32 HrtStreamGetCqId(const aclrtStream ptr)
+{
+    return 0;
+}
+
+void HrtNotifyDestroy(RtNotify_t ptr)
+{
+    return ;
+}
+
+s32 HrtGetStreamId(aclrtStream ptr)
+{
+    return 0;
+}
+
+aclrtStream HrtStreamCreateWithFlags(uint32_t priority, uint32_t flag)
+{
+    static aclrtStream stream;
+    return stream;
+}
+
+u32 HrtNotifyGetOffset(RtNotify_t ptr)
+{
+    return 0;
+}
+
+u32 HrtGetNotifyID(RtNotify_t notifyHandle)
+{
+    return 0;
+}
+
+s32 HrtDeviceGetBareTgid()
+{
+    return 0;
+}
+
+void HrtSetIpcNotifyPid(aclrtNotify notify, int32_t pid)
+{
+    return ;
+}
+
+void HrtStreamDestroy(aclrtStream ptr)
+{
+    return ;
+}
+
+void HrtIpcSetNotifyName(RtNotify_t ptr, char_t *name, uint32_t len)
+{
+    return ;
+}
+
+aclrtNotify HrtNotifyCreateWithFlag(u32 devId, u32 flag)
+{
+    static aclrtNotify notify;
+    return notify;
+}
+
+aclrtNotify HrtNotifyCreate(s32 deviceLogicId)
+{
+    static aclrtNotify notify;
+    return notify;
+}
+
+u64 HrtNotifyGetAddr(RtNotify_t notifyHandle)
+{
+    return 0;
+}
+
+RtNotify_t HrtIpcOpenNotify(const char_t *name)
+{
+    return nullptr;
+}
+
+u32 HrtStreamGetSqId(const aclrtStream ptr)
+{
+    return 0;
+}
+
+void HrtNotifyRecord(RtNotify_t notifyPtr, aclrtStream streamPtr)
+{
+    return ;
+}
+
+void HrtNotifyWaitWithTimeOut(RtNotify_t notifyPtr, aclrtStream streamPtr, uint32_t timeOut)
+{
+    return ;
+}
+
+P2PTransport::P2PTransport(CommonLocRes &commonLocRes, Attribution &attr, const LinkData &linkData,
+                           const Socket &socket)
+    : BaseMemTransport(commonLocRes, attr, linkData, socket, TransportType::P2P)
+{
+}
+
+HcclResult P2PTransport::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags)
+{
+    return HCCL_SUCCESS;
+}
+
+std::vector<char> P2PTransport::GetUniqueIdV2()
+{
+    return {};
+}
+
+std::string P2PTransport::Describe() const
+{
+    return "";
+}
+
+TransportStatus P2PTransport::GetStatus()
+{
+    return TransportStatus::READY;
+}
+
+std::vector<char> P2PTransport::GetUniqueId()
+{
+    return {};
+}
+
+void P2PTransport::Post(u32 index, const Stream &stream)
+{
+    return ;
+}
+
+void P2PTransport::Read(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice, const Stream &stream)
+{
+    return ;
+}
+
+void P2PTransport::ReadReduce(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice, const ReduceIn &reduceIn,
+                const Stream &stream)
+{
+    return ;
+}
+
+void P2PTransport::Write(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice, const Stream &stream)
+{
+    return ;
+}
+
+void P2PTransport::WriteReduce(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice, const ReduceIn &reduceIn,
+                    const Stream &stream)
+{
+    return ;
+}
+
+DevCapability::DevCapability()
+{
+}
+DevCapability &DevCapability::GetInstance()
+{
+    static DevCapability devCapability;
+    return devCapability;
+}
+
+P2PConnection::P2PConnection(Socket *socket, const std::string &tag)
+    : RmaConnection(socket, RmaConnType::P2P)
+{
+}
+
+void P2PConnection::Connect()
+{
+    return ;
+}
+RmaConnStatus P2PConnection::GetStatus()
+{
+    return RmaConnStatus::READY;
+}
+string P2PConnection::Describe() const
+{
+    return "";
+}
+
+unique_ptr<BaseTask> P2PConnection::PrepareRead(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
+                                    const SqeConfig &config)
+{
+    return nullptr;
+}
+
+unique_ptr<BaseTask> P2PConnection::PrepareReadReduce(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
+                                        DataType datatype, ReduceOp reduceOp, const SqeConfig &config)
+{
+    return nullptr;
+}
+
+unique_ptr<BaseTask> P2PConnection::PrepareWrite(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
+                                    const SqeConfig &config)
+{
+    return nullptr;
+}
+
+unique_ptr<BaseTask> P2PConnection::PrepareWriteReduce(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
+                                        DataType datatype, ReduceOp reduceOp, const SqeConfig &config)
+{
+    return nullptr;
+}
+
+std::string RtsCntNotify::Describe() const
+{
+    return "";
+}
+
+std::string Rts1ToNCntNotify::Describe() const
+{
+    return "";
+}
+
+IpcLocalNotify::IpcLocalNotify(bool devUsed) : BaseLocalNotify(RmaType::IPC, devUsed)
+{
+}
+
+void IpcLocalNotify::Wait(const Stream &stream, u32 timeout) const
+{
+    return ;
+}
+
+void IpcLocalNotify::Post(const Stream &stream) const
+{
+    return ;
+}
+
+std::unique_ptr<Serializable> IpcLocalNotify::GetExchangeDto()
+{
+    return nullptr;
+}
+
+string IpcLocalNotify::Describe() const
+{
+    return "";
+}
+
 }  // namespace Hccl
 
 HcclResult HcclCommDestroyV2(HcclComm comm)
@@ -2207,4 +2553,3 @@ HcclResult HcclGetRankGraphV2(HcclComm *comm, void **rankGraph)
 {
     return HCCL_SUCCESS;
 }
-

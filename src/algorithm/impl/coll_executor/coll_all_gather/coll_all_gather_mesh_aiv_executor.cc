@@ -210,9 +210,9 @@ HcclResult CollAllGatherMeshAivExecutor::KernelRun(const OpParam &param, ExecMem
         param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), numBlocks_, param.aivTag
     };
     AivAlgArgs algArgs {};
+    struct AivProfilingInfo aivProfilingInfo;
     algArgs.execTimeOut = topoMatcher_->GetExecTimeOutConfig();
     algArgs.execTimeOutSet = true;
-    struct AivProfilingInfo aivProfilingInfo;
     aivProfilingInfo.counter = opCounter_;
 
     HcclResult ret = ExecuteKernelLaunch(opArgs, topoArgs, resourceArgs, algArgs, aivProfilingInfo);

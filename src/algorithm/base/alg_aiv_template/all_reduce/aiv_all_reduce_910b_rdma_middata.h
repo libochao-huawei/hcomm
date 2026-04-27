@@ -35,7 +35,7 @@ __aicore__ inline void AivAllReduceRdmaMid910B::Process(GM_ADDR input, GM_ADDR o
     __gm__ T *inputGM = (__gm__ T *)input;
     __gm__ T *outputGM = (__gm__ T *)output;
     __gm__ T *cclGMSelf = (__gm__ T *)(GM_IN[rank_]);
-    __gm__ T *cclGMOther = (__gm__ T *)(GM_IN[GetBlockIdx()]);
+    __gm__ T *cclGMOther = (__gm__ T *)(GM_IN[blockIdx_]);
     uint32_t padCount = UB_ALIGN_SIZE / sizeof(T);
     uint64_t avgLengthPerRank = CeilDiv(len, rankSize_);
     uint64_t avgLengthPerSlice = CeilDiv(avgLengthPerRank, padCount) * padCount; // 32B对齐
@@ -56,25 +56,25 @@ __aicore__ inline void AivAllReduceRdmaMid910B::ReduceScatter(__gm__ T *inputGM,
     __gm__ T *cclGMOther, uint64_t sliceCount, uint64_t avgLengthPerSlice, uint64_t tailLength, int32_t tag)
 {
     // reduce scatter，数据从input输入，inputMem+0作为buffer，结果放在原位
-    if (GetBlockIdx() == rank_) {
-        int64_t curCount = CalActualCount(GetBlockIdx(), sliceCount, avgLengthPerSlice, tailLength);
+    if (blockIdx_ == rank_) {
+        int64_t curCount = CalActualCount(blockIdx_, sliceCount, avgLengthPerSlice, tailLength);
         
         // 本地拷贝 & 卡间同步
-        CpGM2GM(cclGMSelf + avgLengthPerSlice * GetBlockIdx(), inputGM + avgLengthPerSlice * GetBlockIdx(), curCount);
+        CpGM2GM(cclGMSelf + avgLengthPerSlice * blockIdx_, inputGM + avgLengthPerSlice * blockIdx_, curCount);
         pipe_barrier(PIPE_ALL);
         Record1vN(tag, CommPattern::intraRank);
     } else {
-        int64_t curCount = CalActualCount(GetBlockIdx(), sliceCount, avgLengthPerSlice, tailLength);
+        int64_t curCount = CalActualCount(blockIdx_, sliceCount, avgLengthPerSlice, tailLength);
  
         // 本地拷贝 & 卡间同步
-        CpGM2GM(cclGMSelf + avgLengthPerSlice * GetBlockIdx(), inputGM + avgLengthPerSlice * GetBlockIdx(), curCount);
+        CpGM2GM(cclGMSelf + avgLengthPerSlice * blockIdx_, inputGM + avgLengthPerSlice * blockIdx_, curCount);
         pipe_barrier(PIPE_ALL);
-        Record(tag, GetBlockIdx(), AivNotifyType::ACK); // 本卡该片数据已经可以被跨片读取
+        Record(tag, blockIdx_, AivNotifyType::ACK); // 本卡该片数据已经可以被跨片读取
         
         // 检查对端数据就绪且本端就绪 & 跨片搬运
         curCount = CalActualCount(rank_, sliceCount, avgLengthPerSlice, tailLength);
  
-        Wait(tag, GetBlockIdx(), AivNotifyType::ACK);
+        Wait(tag, blockIdx_, AivNotifyType::ACK);
          WaitNv1(tag, rank_);
         pipe_barrier(PIPE_ALL);
         CpGM2GM(cclGMSelf + avgLengthPerSlice * rank_, cclGMOther + avgLengthPerSlice * rank_, curCount,
@@ -87,27 +87,27 @@ template<typename T>
 __aicore__ inline void AivAllReduceRdmaMid910B::AllGather(__gm__ T *outputGM, __gm__ T *cclGMSelf,
     __gm__ T *cclGMOther, uint64_t sliceCount, uint64_t avgLengthPerSlice, uint64_t tailLength, int32_t tag)
 {
-    if (GetBlockIdx() == rank_) {
-        int64_t curCount = CalActualCount(GetBlockIdx(), sliceCount, avgLengthPerSlice, tailLength);
+    if (blockIdx_ == rank_) {
+        int64_t curCount = CalActualCount(blockIdx_, sliceCount, avgLengthPerSlice, tailLength);
  
         // 本地拷贝 & 卡间同步
         Record1vN(tag, CommPattern::interRank);
-        CpGM2GM(outputGM + avgLengthPerSlice * GetBlockIdx(), cclGMSelf + avgLengthPerSlice * GetBlockIdx(), curCount);
+        CpGM2GM(outputGM + avgLengthPerSlice * blockIdx_, cclGMSelf + avgLengthPerSlice * blockIdx_, curCount);
     } else {
-        int64_t curCount = CalActualCount(GetBlockIdx(), sliceCount, avgLengthPerSlice, tailLength);
+        int64_t curCount = CalActualCount(blockIdx_, sliceCount, avgLengthPerSlice, tailLength);
  
         // 检查对端就绪 & 跨片拷贝
-        WaitNv1(tag, GetBlockIdx());
+        WaitNv1(tag, blockIdx_);
         pipe_barrier(PIPE_ALL);
-        CpGM2GM(outputGM + (GetBlockIdx() * avgLengthPerSlice), cclGMOther + GetBlockIdx() * avgLengthPerSlice, curCount);
+        CpGM2GM(outputGM + (blockIdx_ * avgLengthPerSlice), cclGMOther + blockIdx_ * avgLengthPerSlice, curCount);
         pipe_barrier(PIPE_ALL);
         
         // 末尾同步
         // 本卡已读完GetBlockIdx()号对端上的rank号数据
-        Record(tag, GetBlockIdx(), AivNotifyType::DataSignal);
+        Record(tag, blockIdx_, AivNotifyType::DataSignal);
         pipe_barrier(PIPE_ALL);
         // 检查本卡上是否有GetBlockIdx()号对端的读完标记
-        Wait(tag, GetBlockIdx(), AivNotifyType::DataSignal);
+        Wait(tag, blockIdx_, AivNotifyType::DataSignal);
     }
     return;
 }

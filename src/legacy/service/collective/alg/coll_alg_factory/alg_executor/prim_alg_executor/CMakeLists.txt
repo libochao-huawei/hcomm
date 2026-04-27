@@ -1,4 +1,4 @@
-target_sources(hccl_v2_native_alg_repo PRIVATE
+target_sources(hccl_v2 PRIVATE
 
         coll_alg_base.cc
         all_gather_sole_executor.cc

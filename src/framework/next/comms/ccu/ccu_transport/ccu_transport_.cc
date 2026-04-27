@@ -67,7 +67,13 @@ HcclResult CcuCreateTransport(Hccl::Socket *socket, const CcuTransport::CcuConne
     ccuTransport.reset(new (std::nothrow)
         CcuTransport(socket, std::move(ccuConnection), bufferInfos));
     CHK_PTR_NULL(ccuTransport);
-    CHK_RET(ccuTransport->Init());
+    // 可能申请xn cke失败，需要回退
+    auto ret = ccuTransport->Init();
+    if (ret == HcclResult::HCCL_E_UNAVAIL) {
+        HCCL_WARNING("[%s] ccuTransport init failed, ccu transport resources unavailable.", __func__);
+        return ret;
+    }
+    CHK_RET(ret);
 
     return HcclResult::HCCL_SUCCESS;
 }
@@ -714,6 +720,8 @@ HcclResult CcuTransport::UpdateMemInfo(std::vector<CcuTransport::CclBufferInfo> 
     Hccl::BinaryStream recvStream(recvData_);
     CHK_RET(BufferInfoUnpack(recvStream));
     locBufferInfos_.insert(locBufferInfos_.end(), bufferVecTemp.begin(), bufferVecTemp.end());
+    // 流程中已有新增内存数量判断，故执行到此位置一定存在新增内存，需要将标识置位false，使得再次调用GetUserRemoteMem时重新构造缓存
+    cacheValid_ = false;
     return HcclResult::HCCL_SUCCESS;
 }
 } // namespace hcomm

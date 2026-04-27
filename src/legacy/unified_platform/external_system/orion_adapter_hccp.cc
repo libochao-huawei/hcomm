@@ -35,10 +35,10 @@ constexpr uint32_t TP_HANDLE_REQUEST_NUM        = 1;
 constexpr u32      AUTO_LISTEN_PORT             = 0;
 constexpr u64 SOCKET_SEND_MAX_SIZE              = 0x7FFFFFFFFFFFFFFF;
 constexpr u32 MAX_WR_NUM = 1024;
-constexpr u32 MAX_SEND_SGE_NUM = 8;
+constexpr u32 MAX_SEND_SGE_NUM = 1;
 constexpr u32 MAX_RECV_SGE_NUM = 1;
 constexpr u32 MAX_CQ_DEPTH = 65535;
-constexpr u32 MAX_INLINE_DATA = 128;
+constexpr u32 MAX_INLINE_DATA = 64;
 constexpr u32 RA_TLV_REQUEST_UNAVAIL = 128308;
 constexpr u32 ROCE_ENOMEM_RET = 328100;
 constexpr u32 GET_TLS_ENABLE_OPCODE = 95;
@@ -439,7 +439,7 @@ void RaBlockGetSockets(u32 role, SocketInfoT conn[], u32 num) // 修改为内部
     auto timeout       = std::chrono::seconds(EnvLinkTimeoutGet());
     while (true) {
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
-            MACRO_THROW(NetworkApiException, StringFormat("[HrtRaBlockGetSockets] get rasocket timeout role[%u], num[%u], goten[%u], timeout[%lld]s, the HCCL_CONNECT_TIMEOUT may be insufficient",
+            MACRO_THROW(NetworkApiException, StringFormat("[HrtRaBlockGetSockets] get rasocket timeout role[%u], num[%u], gotSocketsCnt[%u], timeout[%lld]s",
                 role, num, gotSocketsCnt, timeout));
         }
         u32 connectedNum = 0;
@@ -567,10 +567,16 @@ void HrtRaSocketBlockRecv(const FdHandle fdHandle, void *data, u32 size)
     HCCL_INFO("before ra socket recv, para: fdHandle[%p], data[%p], size[%u]", fdHandle, data, size);
     while (true) {
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
-            MACRO_THROW(NetworkApiException, StringFormat("[Recv][RaSocket]errNo[0x%016llx] Wait timeout for sockets recv, data[%p], "
-                       "size[%u], recvSize[%u], The most common cause is that the firewall is incorrectly "
-                       "configured. Check the firewall configuration or try to disable the firewall fdHandle[%p] ret[%d]",
-                       HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), data, size, recvSize, fdHandle, rtRet));
+            std::string errMsg = StringFormat(
+                "[Recv][RaSocket]errNo[0x%016llx] Wait timeout for sockets recv, data[%p], "
+                "size[%u], recvSize[%u], fdHandle[%p], ret[%d]",
+                HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), data, size, recvSize, fdHandle, rtRet
+            );
+            HCCL_ERROR("%s", errMsg.c_str());
+            HCCL_ERROR("Please check the following reasons:");
+            HCCL_ERROR("1. check the firewall configuration or try to disable the firewall.");
+            HCCL_ERROR("2. check error log on the other process or thread.");
+            MACRO_THROW(NetworkApiException, errMsg);
         }
         rtRet = RaSocketRecv(fdHandle, reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(data) + getedLen),
                                size - getedLen, &recvSize);
@@ -1717,7 +1723,6 @@ void HrtRaCustomChannel(const HRaInfo &raInfo, void *customIn, void *customOut)
     info.mode   = HRT_NETWORK_MODE_MAP.at(raInfo.mode);
     info.phyId = raInfo.phyId;
 
-    HCCL_INFO("[HrtRaCustomChannel] Input params: customIn=%p, customOut=%p, mode=%d, phyId=%u", customIn, customOut, info.mode, info.phyId);
     struct CustomChanInfoIn  *in  = reinterpret_cast<struct CustomChanInfoIn *>(customIn);
     struct CustomChanInfoOut *out = reinterpret_cast<struct CustomChanInfoOut *>(customOut);
 
@@ -1806,10 +1811,14 @@ std::vector<HrtDevEidInfo> HrtRaGetDevEidInfoList(const HRaInfo &raInfo)
         hrtDevEidInfo[i].dieId = infoList[i].dieId;
         hrtDevEidInfo[i].chipId = infoList[i].chipId;
         hrtDevEidInfo[i].funcId = infoList[i].funcId;
-        HCCL_INFO("[%s] HrtDevEidInfo[%d]: name[%s], ipAddress[%s], type[%u], eidIndex[%u], dieId[%u], chipId[%u], funcId[%u]",
-        __func__, i,
-        hrtDevEidInfo[i].name.c_str(), hrtDevEidInfo[i].ipAddress.Describe().c_str(), hrtDevEidInfo[i].type,
-        hrtDevEidInfo[i].eidIndex, hrtDevEidInfo[i].dieId, hrtDevEidInfo[i].chipId, hrtDevEidInfo[i].funcId);
+        hrtDevEidInfo[i].devFeature = infoList[i].devFeature;
+        HCCL_INFO("[%s] HrtDevEidInfo[%d]: name[%s], ipAddress[%s], type[%u], "
+                "eidIndex[%u], dieId[%u], chipId[%u], funcId[%u], devFeature[%u]",
+                __func__, i, hrtDevEidInfo[i].name.c_str(),
+                hrtDevEidInfo[i].ipAddress.Describe().c_str(),
+                hrtDevEidInfo[i].type, hrtDevEidInfo[i].eidIndex,
+                hrtDevEidInfo[i].dieId, hrtDevEidInfo[i].chipId,
+                hrtDevEidInfo[i].funcId, hrtDevEidInfo[i].devFeature);
     }
 
     return hrtDevEidInfo;
@@ -1974,7 +1983,7 @@ RequestHandle HrtRaSocketSendAsync(const FdHandle fdHandle, const void *data, u3
 {
     CHECK_NULLPTR(fdHandle, "[HrtRaSocketSendAsync] fdHandle is nullptr!");
     CHECK_NULLPTR(data, "[HrtRaSocketSendAsync] data is nullptr!");
-    HCCL_INFO("[HrtRaSocketSendAsync] Input params: fdHandle=%p, data=%p, stze=%u, sentSize=%llu", fdHandle, data, size, sentSize);
+    HCCL_INFO("[HrtRaSocketSendAsync] Input params: fdHandle=%p, data=%p, size=%u, sentSize=%llu", fdHandle, data, size, sentSize);
     void *raReqHandle = nullptr;
     s32 ret = RaSocketSendAsync(fdHandle, data, size, &sentSize, &raReqHandle);
     if (ret != 0 || !raReqHandle) {
@@ -1991,7 +2000,7 @@ RequestHandle HrtRaSocketRecvAsync(const FdHandle fdHandle, void *data, u32 size
 {
     CHECK_NULLPTR(fdHandle, "[HrtRaSocketRecvAsync] fdHandle is nullptr!");
     CHECK_NULLPTR(data, "[HrtRaSocketRecvAsync] data is nullptr!");
-    HCCL_INFO("[HrtRaSocketRecvAsync] Input params: fdHandle=%p, data=%p, stze=%u, recvSize=%llu", fdHandle, data, size, recvSize);
+    HCCL_INFO("[HrtRaSocketRecvAsync] Input params: fdHandle=%p, data=%p, size=%u, recvSize=%llu", fdHandle, data, size, recvSize);
     void *raReqHandle = nullptr;
     s32 ret = RaSocketRecvAsync(fdHandle, data, size, &recvSize, &raReqHandle);
         if (ret != 0 || !raReqHandle) {
@@ -2335,7 +2344,7 @@ HcclResult HrtRaCreateCq(RdmaHandle rdmaHandle, CqInfo& cq)
     }
     return HCCL_SUCCESS;
 }
-// ra_cq_destory
+// ra_cq_destroy
 HcclResult HrtRaDestroyCq(RdmaHandle rdmaHandle, CqInfo& cq)
 {
     CHK_PTR_NULL(rdmaHandle);
@@ -2580,8 +2589,8 @@ HcclResult HrtRaGetEidByIp(RdmaHandle handle, const vector<IpAddress>& ipV4AddrL
     union HccpEid eidList[num] = {};
     s32 ret = RaGetEidByIp(handle, ipInfoList, eidList, &num);
     if (ret != 0) {
-        string msg = StringFormat("call RaGetEidByIp failed, error code =%d.", ret);
-        THROW<NetworkApiException>(msg);
+        HCCL_WARNING("call RaGetEidByIp failed, error code =%d.", ret);
+        return HCCL_E_INTERNAL;
     }
 
     if (num != ipV4AddrList.size()) {

@@ -52,7 +52,6 @@ set(ASCEND_CANN_INCLUDE_LIST
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/hccl
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling
     ${ASCEND_CANN_PACKAGE_PATH}/include
     ${ASCEND_CANN_PACKAGE_PATH}/include/hccl
@@ -232,6 +231,13 @@ set(checker_include_list
 set(HCOMM_PLATFORM_INCLUDE_LIST
     ${HCOMM_CODE_PLATFORM}/hccp/inc/network
     ${HCOMM_CODE_PLATFORM}/hccp/external_depends/inc/log
+)
+
+# 设置全局包含路径，让所有子目录继承
+include_directories(
+    ${HCOMM_ROOT_PATH}/include
+    ${HCOMM_ROOT_PATH}/include/hccl
+    ${HCOMM_ROOT_PATH}/include/hcomm
 )
 
 add_subdirectory(testcase)

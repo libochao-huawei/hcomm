@@ -95,7 +95,6 @@ public:
     HcclResult GetEndpointNum(uint32_t layer, uint32_t topoInstId, uint32_t* num);
     HcclResult GetEndpointDesc(uint32_t layer, uint32_t topoInstId, uint32_t *descNum, EndpointDesc *endpointDesc);
     HcclResult GetEndpointInfo(uint32_t rankId, const EndpointDesc *endPointDesc, EndpointAttr endpointAttr, uint32_t infoLen, void *info);
-    HcclResult InitDeviceListenPort(u32 &linstenPort) const;
 
     u32 GetCcuMc2ServerNum();
 
@@ -131,7 +130,9 @@ public:
 
     virtual RemoteRmaBufManager &GetRemoteRmaBufManager() const;
 
-    virtual QueueNotifyManager &GetQueueNotifyManager() const;
+    virtual QueueNotifyManager &GetAicpuQueueNotifyManager() const;
+
+    virtual QueueNotifyManager &GetCcuQueueNotifyManager() const;
 
     virtual ConnLocalNotifyManager &GetConnLocalNotifyManager() const;
 
@@ -379,7 +380,7 @@ public:
     
     HcclResult ClearOpResource(const std::string &opTag);// 清空opTag所属资源
     HcclResult GetAicpuOpStreamNotify(rtStream_t *opStream, u8 aicpuNotifyNum, void** aicpuNotify) const;
-    std::string GetTopoFilePath() const;
+    static std::string GetTopoFilePath();
     std::vector<LinkData> GetFullMeshLinks() const;
     ErrorMessageReport GetAicpuTaskException();
     u32 GetRankInParentComm();
@@ -404,7 +405,8 @@ private:
     unique_ptr<DataBufManager>                 dataBufferManager;
     unique_ptr<LocalRmaBufManager>             localRmaBufManager;
     unique_ptr<RemoteRmaBufManager>            remoteRmaBufManager;
-    unique_ptr<QueueNotifyManager>             queueNotifyManager;
+    unique_ptr<QueueNotifyManager>             aicpuQueueNotifyManager_;
+    unique_ptr<QueueNotifyManager>             ccuQueueNotifyManager_;
     unique_ptr<QueueWaitGroupCntNotifyManager> queueWaitGroupCntNotifyManager;
     unique_ptr<QueueBcastPostCntNotifyManager> queueBcastPostCntNotifyManager;
     unique_ptr<ConnLocalNotifyManager>         connLocalNotifyManager;

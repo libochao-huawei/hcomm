@@ -10,6 +10,7 @@
 set(hccl_utest_platform_transport_list
     main.cc
     ut_aicpu_transport_device_p2p_utest.cc
+    ut_transport_ibverbs_utest.cc
 )
 add_executable(hccl_utest_platform_transport  ${hccl_utest_platform_transport_list})
 

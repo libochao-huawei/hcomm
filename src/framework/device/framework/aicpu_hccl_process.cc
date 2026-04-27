@@ -581,6 +581,8 @@ HcclResult AicpuHcclProcess::WaitAsyncFlag(hccl::Transport::Buffer *localFlagBuf
     uint32_t index = flagValue - FLAG_OFFSET;
     bool isTimeout = true;
     u64 startTime = GetCurCpuTimestamp();
+    CHK_PTR_NULL(localFlagBufforCheck);
+    CHK_PTR_NULL(localFlagBufforCheck[index].addr);
     uint32_t* waitPtr = const_cast<uint32_t*>(static_cast<const uint32_t*>(localFlagBufforCheck[index].addr));
     while ((GetCurCpuTimestamp() - startTime) < static_cast<unsigned long long>(NSEC_PER_SEC * timeOut)) {
         if (*waitPtr == flagValue) {
@@ -647,6 +649,7 @@ HcclResult AicpuHcclProcess::AicpuIndOpChannelInit(HcclIndOpChannelRemoteResV3 *
 
 HcclResult AicpuHcclProcess::AicpuIndOpNotifyInit(NotifyMgrAicpuParam *param)
 {
+    CHK_PTR_NULL(param);
     std::string group = param->hcomId;
     hccl::HcclCommAicpu *hcclCommAicpu = AicpuHcclProcess::AicpuGetCommbyGroup(group);
     CHK_PRT_RET(!hcclCommAicpu, HCCL_ERROR("%s hcclCommAicpu is null, group[%s]", __func__, group.c_str()), HCCL_E_PTR);

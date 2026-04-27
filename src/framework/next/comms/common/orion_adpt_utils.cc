@@ -79,6 +79,12 @@ HcclResult CommProtocolToLinkProtocol(CommProtocol commProtocol, Hccl::LinkProto
         case COMM_PROTOCOL_UB_MEM:
             linkProtocol = Hccl::LinkProtocol::UB_MEM;
             break;
+        case COMM_PROTOCOL_PCIE:
+            linkProtocol = Hccl::LinkProtocol::PCIE;
+            break;
+        case COMM_PROTOCOL_UBOE:
+            linkProtocol = Hccl::LinkProtocol::UBOE;
+            break;
         default:
             HCCL_ERROR("[%s] Invaild CommProtocol[%u]", __func__, commProtocol);
             return HCCL_E_PARA;
@@ -150,7 +156,8 @@ HcclResult EndpointDescPairToLinkData(const EndpointDesc &locEp, const EndpointD
 }
 
 HcclResult EndpointDescPairToLinkDataWithRankIds(const uint32_t myRank, const uint32_t rmtRank,
-    const EndpointDesc &locEp, const EndpointDesc &rmtEp, Hccl::LinkData &linkData, u32 reuseIdx)
+    const EndpointDesc &locEp, const EndpointDesc &rmtEp, Hccl::LinkData &linkData, uint32_t devicePhyId, uint32_t remoteDevicePhyId,
+    u32 reuseIdx)
 {
     Hccl::PortDeploymentType portDeploymentType = Hccl::PortDeploymentType::INVALID;
     CHK_RET(EndpointLocTypeToPortDeploymentType(locEp.loc.locType, portDeploymentType));
@@ -168,8 +175,9 @@ HcclResult EndpointDescPairToLinkDataWithRankIds(const uint32_t myRank, const ui
         portDeploymentType,
         linkProtocol, 
         myRank, rmtRank,
-        locAddr, rmtAddr, reuseIdx
+        locAddr, rmtAddr, devicePhyId, remoteDevicePhyId, reuseIdx
     );
+    linkData.UpdateIpAddrWithPCIE();
 
     return HCCL_SUCCESS;
 }

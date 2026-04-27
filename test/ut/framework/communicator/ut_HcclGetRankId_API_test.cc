@@ -31,3 +31,11 @@ TEST_F(HcclGetRankIdTest, Ut_HcclGetRankId_WhenCommIsNull_Expect_ReturnIsHCCL_E_
     HcclResult ret = HcclGetRankId(comm, &rankId);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
+
+TEST_F(HcclGetRankIdTest, Ut_HcclGetRankId_When_RankIdIsNull_Expect_ReturnIsHCCL_E_PTR)
+{
+    Ut_Device_Set(0);
+
+    HcclResult ret = HcclGetRankId(comm, nullptr);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}

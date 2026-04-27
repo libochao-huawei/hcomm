@@ -42,6 +42,7 @@ set(src_to_test_list
     # ut_HcclSetConfig_API_test.cc
     # ut_HcclTopoInfoDetect_API_test.cc
     ut_hccl_comm_host.cc
+    ut_ind_op_transport_alloc.cc
 )
 
 add_executable(hccl_utest_framework_communicator ${src_to_test_list})

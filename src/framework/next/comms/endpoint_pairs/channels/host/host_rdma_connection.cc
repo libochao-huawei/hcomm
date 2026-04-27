@@ -138,13 +138,13 @@ HcclResult HostRdmaConnection::DestroyQp()
 
     s32 ret = RaDestroyCompChannel(qpInfo_.rdmaHandle, sendCompChannel_);
     CHK_PRT_RET(ret != 0,
-                HCCL_ERROR("[HostRdmaConnection::DestroyQp]errNo[0x%016llx] ra_destory_comp_channel fail. "
+                HCCL_ERROR("[HostRdmaConnection::DestroyQp]errNo[0x%016llx] ra_destroy_comp_channel fail. "
                            "return[%d], params: rdmaHandle[%p], sendCompChannel[%p]",
                            HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, qpInfo_.rdmaHandle, &sendCompChannel_),
                 HCCL_E_NETWORK);
     ret = RaDestroyCompChannel(qpInfo_.rdmaHandle, recvCompChannel_);
     CHK_PRT_RET(ret != 0,
-                HCCL_ERROR("[HostRdmaConnection::DestroyQp]errNo[0x%016llx] ra_destory_comp_channel fail. "
+                HCCL_ERROR("[HostRdmaConnection::DestroyQp]errNo[0x%016llx] ra_destroy_comp_channel fail. "
                            "return[%d], params: rdmaHandle[%p], rcvCompChannel[%p]",
                            HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, qpInfo_.rdmaHandle, &recvCompChannel_),
                 HCCL_E_NETWORK);

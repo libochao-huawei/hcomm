@@ -1,4 +1,4 @@
-target_sources(hccl_v2_native_alg_repo PRIVATE
+target_sources(hccl_v2 PRIVATE
     aiv_alg_template_base.cc
     aiv_temp_all_reduce_mesh_1D_twoshot.cc
     aiv_temp_scatter_mesh_1D.cc

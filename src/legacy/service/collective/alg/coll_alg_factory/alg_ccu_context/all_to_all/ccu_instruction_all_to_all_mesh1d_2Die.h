@@ -24,8 +24,8 @@ namespace Hccl {
 class CcuCtxArgAllToAllMesh1D2Die : public CcuCtxArg {
 public:
     explicit CcuCtxArgAllToAllMesh1D2Die(const std::vector<uint64_t> &dimSize, uint32_t rankId, const CollAlgOperator &op,
-        const std::vector<std::vector<RankId>> &tempVTopo, bool withMyRank,  const std::vector<RankId> &rankGroup) :
-            dimSize_(dimSize), rankId_(rankId), op_(op), tempVTopo_(tempVTopo), withMyRank_(withMyRank), rankGroup(rankGroup) {}
+        const std::vector<std::vector<RankId>> &tempVTopo, bool withMyRank,  const std::vector<RankId> &rankGroup, u32 bitNum) :
+            dimSize_(dimSize), rankId_(rankId), op_(op), tempVTopo_(tempVTopo), withMyRank_(withMyRank), rankGroup(rankGroup), bitNum_(bitNum) {}
     CcuCtxSignature GetCtxSignature() const override
     {
         CcuCtxSignature signature;
@@ -38,6 +38,7 @@ public:
     std::vector<std::vector<RankId>> tempVTopo_;
     bool withMyRank_;
     std::vector<RankId> rankGroup;
+    u32 bitNum_;
 };
 
 class CcuTaskArgAllToAllMesh1D2Die : public CcuTaskArg {
@@ -66,7 +67,7 @@ public:
      void Init(uint32_t rankId, uint64_t inputAddr, uint64_t outputAddr, uint64_t sliceSize,
         uint64_t token, uint64_t inputSliceStride, uint64_t outputSliceStride,
         uint64_t outBuffBaseOff,  CollAlgOperator &op,
-        std::vector<std::vector<RankId>> &tempVTopo, bool withMyRank)
+        std::vector<std::vector<RankId>> &tempVTopo, bool withMyRank, u32 bitNum)
     {
         u32 maxDimNum = 1;
         if (tempVTopo.size() != maxDimNum) {
@@ -85,6 +86,7 @@ public:
         op_ = op;
         tempVTopo_ = tempVTopo;
         withMyRank_ = withMyRank;
+        bitNum_ = bitNum;
         return;
     }
 
@@ -101,7 +103,7 @@ public:
 
     std::unique_ptr<CcuCtxArg> GetCtxArg() const override
     {
-        return std::make_unique<CcuCtxArgAllToAllMesh1D2Die>(dimSize_, rankId_, op_, tempVTopo_, withMyRank_,rankGroup_.GetRanks());
+        return std::make_unique<CcuCtxArgAllToAllMesh1D2Die>(dimSize_, rankId_, op_, tempVTopo_, withMyRank_,rankGroup_.GetRanks(), bitNum_);
     }
 
     void SetInstType(CcuInstType instType) 
@@ -128,6 +130,7 @@ private:
     CollAlgOperator op_;
     std::vector<std::vector<RankId>> tempVTopo_;
     bool withMyRank_{false};
+    u32 bitNum_;
 };
 
 }

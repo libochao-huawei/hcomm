@@ -592,7 +592,6 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         # common
         ${HCCL_BASE_DIR}/common/debug/profiling/task_profiling.cc
         ${HCCL_BASE_DIR}/common/debug/profiling/task_exception_handler.cc
-        ${HCCL_BASE_DIR}/common/debug/profiling/task_exception_handler_device.cc
         ${HCCL_BASE_DIR}/common/debug/profiling/profiler_base.cc
         ${HCCL_BASE_DIR}/common/debug/profiling/plugin_runner.cc
         ${HCCL_BASE_DIR}/common/debug/profiling/plugin_runner_device.cc
@@ -780,7 +779,6 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/common/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
@@ -860,7 +858,6 @@ if(NOT BUILD_OPEN_PROJECT)
         ${TOP_DIR}/atc/opcompiler/ascendc_compiler/api
         ${TOP_DIR}/atc/opcompiler/ascendc_compiler/api/impl
         ${TOP_DIR}/atc/opcompiler/ascendc_compiler/api/include
-        ${TOP_DIR}/abl/adump/inc/adump
         ${TOP_DIR}/abl/atrace/inc/utrace
         ${TOP_DIR}/runtime/include/external
  	    ${TOP_DIR}/runtime/include/external/acl
@@ -943,7 +940,7 @@ if(NOT KERNEL_MODE)
     )
     add_custom_target(ccl_kernel_json DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
-        DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
+        DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/config OPTIONAL
     )
 
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
@@ -952,7 +949,7 @@ if(NOT KERNEL_MODE)
     )
     add_custom_target(aicpu_custom_json DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
-        DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
+        DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
     )
 
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/libccl_dpu.json
@@ -1009,7 +1006,7 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
         )
         add_custom_target(aicpu_custom_json DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json)
         install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
-            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
+            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
         )
 
         target_link_directories(ccl_kernel PRIVATE
@@ -1089,9 +1086,9 @@ if(DEVICE_MODE AND KERNEL_MODE)
         SUFFIX ".so"
     )
     install(TARGETS aicpu_custom
-        LIBRARY DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
+        LIBRARY DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
     )
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
-        DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
+        DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
     )
 endif()

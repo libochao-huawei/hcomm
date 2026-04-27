@@ -43,6 +43,8 @@ public:
 
     void Wait(u32 index, const StreamLite &stream) override;
 
+    void WaitWithTimeout(u32 index, const StreamLite &stream, u32 timeout) override;
+
     void Read(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream) override;
 
     void Write(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream) override;
@@ -68,13 +70,12 @@ public:
     void BatchTransfer(const std::vector<RmaBufferLite> &loc, const std::vector<Buffer> &rmt,
                         const std::vector<TransferOp> &transferOp, const StreamLite &stream) override;
 
-    HcclResult BuildLocRmaBufferLite(const uintptr_t addr, const size_t size, RmaBufferLite &rmaBufferLite) const;
+    HcclResult BuildLocRmaBufferLite(const uintptr_t addr, const size_t size, RmaBufferLite &rmaBufferLite) override;
     HcclResult Fence();
 
     HcclResult Clean();
     HcclResult Resume(std::vector<char> &uniqueId);
 
-    HcclResult SetAddTaskInfoCallback(std::function<HcclResult(u32, u32, const TaskParam&, u64)> callback); // 自定义算子流程上报task的Callback
 private:
     u32 notifyNum{0};
     u32 bufferNum{0};
@@ -131,10 +132,10 @@ private:
     
     std::function<HcclResult(u32, u32, const TaskParam&, u64)> newCallback_{nullptr};
 
-    void ProfilingProcess(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, const StreamLite &stream, DmaOp dmaOp,
+    void ProfilingProcess(void *src, void *dst, u64 size, const StreamLite &stream, DmaOp dmaOp,
                             u32 taskId);
 
-    void ReduceProfilingProcess(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, const ReduceIn &reduceIn,
+    void ReduceProfilingProcess(void *src, void *dst, u64 size, const ReduceIn &reduceIn,
                                       const StreamLite &stream, u32 taskId);
 
     void ParseLocNotifyVec(std::vector<char> &data);

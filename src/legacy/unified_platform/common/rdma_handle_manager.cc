@@ -19,6 +19,7 @@
 #include "network_api_exception.h"
 #include "log.h"
 #include "tokenInfo_manager.h"
+#include "hccp.h"
 
 namespace Hccl {
 
@@ -93,7 +94,7 @@ RdmaHandle RdmaHandleManager::Get(u32 devPhyId, const PortData &localPort, LinkP
     IpAddress  localIp = localPort.GetAddr();
     if (linkProtocol == LinkProtocol::UBOE) {
         IpAddress eidAddress;
-        UboeIpv4ToEid(localIp, eidAddress);
+        UboeIpv4ToEid(localIp, eidAddress, devPhyId);
         localIp = eidAddress;
     }
 
@@ -297,13 +298,46 @@ void RdmaHandleManager::DestroyAll()
     netWorkModeMap.clear();
 }
 
+HcclResult GetEidByAnyEidInfo(s32 deviceLogicId, const HrtDevEidInfo& eidInfo, const IpAddress& ipV4Address, IpAddress& eidAddress)
+{
+    // 根据eidInfo初始化rdmaHandle
+    HrtRaUbCtxInitParam in(HrtNetworkMode::HDC, HrtGetDevicePhyIdByIndex(deviceLogicId), eidInfo.ipAddress);
+    RdmaHandle rdmaHandle = HrtRaUbCtxInit(in);
+
+    // 调用ra_get_eid_by_ip转换ipAddress为eid
+    vector<IpAddress> eidAddrList{};
+    CHK_RET(HrtRaGetEidByIp(rdmaHandle, {ipV4Address}, eidAddrList));
+    if (eidAddrList.empty()) {
+        HCCL_WARNING("[RdmaHandleManager::%s] Get Eid failed, deviceLogicId=%d, ipV4Address=%s", 
+            __func__, deviceLogicId, ipV4Address.Describe().c_str());
+        return HCCL_E_NOT_FOUND;
+    }
+    eidAddress = eidAddrList.front();
+    return HCCL_SUCCESS;
+}
+
+constexpr u32 GET_UBOE_FLAG_ENABLE_OPCODE = 57;
+constexpr u32 GET_UBOE_FLAG_ENABLE_VERSION = 2;
+constexpr u32 UBOE_DEV_FLAG_RIGHT_SHIFT = 19;
+
+constexpr bool IsUboeSupported(u32 devFeature) {
+    return (devFeature >> UBOE_DEV_FLAG_RIGHT_SHIFT) & 1;
+}
 /* 将IPV4转为EID
     1、基于IPV4 IpAddress查询uboeIpv4EidMap，如果存在直接返回
     2、不存在时，调用hccp接口根据IPV4 IpAddress查询EID，并将其保存到uboeIpv4EidMap中
 */
-void RdmaHandleManager::UboeIpv4ToEid(const IpAddress& ipV4Address, IpAddress& eidAddress)
+void RdmaHandleManager::UboeIpv4ToEid(const IpAddress& ipV4Address, IpAddress& eidAddress, u32 devPhyId)
 {
-    HCCL_INFO("[UboeIpv4ToEid] begain, ipV4Address[%s]", ipV4Address.Describe().c_str());
+    u32 uboeVersion = 0;
+    s32 versionRet = RaGetInterfaceVersion(devPhyId, GET_UBOE_FLAG_ENABLE_OPCODE, &uboeVersion);
+    if (versionRet != 0 || uboeVersion < GET_UBOE_FLAG_ENABLE_VERSION) {
+        HCCL_ERROR("[%s] this package does not support UboeIpv4ToEid for device, "
+            "please change new package. ret[%d], uboeVersion[%u].", __func__, versionRet, uboeVersion);
+        return;
+    }
+
+    HCCL_INFO("[UboeIpv4ToEid] begin, ipV4Address[%s]", ipV4Address.Describe().c_str());
     auto it = uboeIpv4EidMap.find(ipV4Address);
     if (it != uboeIpv4EidMap.end()) {
         eidAddress = it->second;
@@ -311,41 +345,33 @@ void RdmaHandleManager::UboeIpv4ToEid(const IpAddress& ipV4Address, IpAddress& e
         return;
     }
 
-    // 1.获取一个可用EID
     s32 deviceLogicId = HrtGetDevice();
     HRaInfo                      info(HrtNetworkMode::HDC, HrtGetDevicePhyIdByIndex(deviceLogicId));
     vector<HrtDevEidInfo> eidInfoList =  HrtRaGetDevEidInfoList(info);
     if (eidInfoList.empty()) {
-        HCCL_WARNING("[RdmaHandleManager::%s] Get EidInfo failed, deviceLogicId=%d", __func__, deviceLogicId);
+        HCCL_WARNING("[RdmaHandleManager::%s] Get EidInfoList empty, deviceLogicId=%d", __func__, deviceLogicId);
         return;
     }
     HCCL_INFO("[RdmaHandleManager::%s] Get EidInfo success, deviceLogicId=%d, eidInfo size=%u",
         __func__, deviceLogicId, eidInfoList.size());
 
-    HrtDevEidInfo eidInfo = eidInfoList.front();
-    // 2.根据ipV4Address初始化rdmaHandle
-    HrtRaUbCtxInitParam in(HrtNetworkMode::HDC, HrtGetDevicePhyIdByIndex(deviceLogicId), eidInfo.ipAddress);
-    RdmaHandle rdmaHandle = HrtRaUbCtxInit(in);
-
-    // 3.调用ra_get_eid_by_ip转换ipAddress为eid
-    vector<IpAddress> eidAddrList{};
-    HrtRaGetEidByIp(rdmaHandle, {ipV4Address}, eidAddrList);
-    if (eidAddrList.empty()) {
-        HCCL_WARNING("[RdmaHandleManager::%s] Get Eid failed, deviceLogicId=%d, ipV4Address=%s", 
-            __func__, deviceLogicId, ipV4Address.Describe().c_str());
-        return;
+    for (const auto& eidInfo : eidInfoList) {
+        if (IsUboeSupported(eidInfo.devFeature) && 
+            GetEidByAnyEidInfo(deviceLogicId, eidInfo, ipV4Address, eidAddress) == HCCL_SUCCESS) {
+            // 存储eid到AddressInfo
+            HCCL_INFO("[UboeIpv4ToEid] success, eidAddress[%s]", eidAddress.Describe().c_str());
+            uboeIpv4EidMap.insert(std::make_pair(ipV4Address, eidAddress));
+            return;
+        }
     }
-
-    // 4.存储eid到AddressInfo
-    eidAddress = eidAddrList.front();
-    HCCL_INFO("[UboeIpv4ToEid] success, eidAddress[%s]", eidAddress.Describe().c_str());
-    uboeIpv4EidMap.insert(std::make_pair(ipV4Address, eidAddress));
+    HCCL_WARNING("[RdmaHandleManager::%s] Get EidInfo failed, deviceLogicId=%d", __func__, deviceLogicId);
 }
 
 HcclResult RdmaHandleManager::GetEidByIpv4Addr(const IpAddress& addr, IpAddress& eidAddr)
 {
     auto it = uboeIpv4EidMap.find(addr);
     if (it == uboeIpv4EidMap.end()) {
+        HCCL_WARNING("[RdmaHandleManager::%s] Find Eid failed, addr[%s]", __func__, addr.Describe().c_str());
         return HCCL_E_PARA;
     }
     eidAddr = it->second;

@@ -1848,10 +1848,6 @@ namespace hccl
         AivSuperKernelArgs aivSuperKernelArgs;
         SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
 
-        void *sendAlgParamMemPtr = nullptr;
-        // alloc device 地址
-        hrtMalloc(&sendAlgParamMemPtr, sizeof(AivSuperKernelArgs));
-        HCCL_INFO("SPK sendalgparam %p.", sendAlgParamMemPtr);
         OpParam param;
         param.DataDes.count = count;
         param.DataDes.dataType = dataType;
@@ -1917,10 +1913,20 @@ namespace hccl
         // clearenable
         //  拷贝到Device
         SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
-        CHK_RET(hrtMemSyncCopy(
-            sendAlgParamMemPtr, sizeof(AivSuperKernelArgs),
-            &aivSuperKernelArgs, sizeof(AivSuperKernelArgs),
-            HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
+
+        void *sendAlgParamMemPtr = nullptr;
+        // alloc device 地址
+        CHK_RET(hrtMalloc(&sendAlgParamMemPtr, sizeof(AivSuperKernelArgs)));
+        HCCL_INFO("SPK sendalgparam %p.", sendAlgParamMemPtr);
+
+        HcclResult hcclRet = hrtMemSyncCopy(sendAlgParamMemPtr, sizeof(AivSuperKernelArgs),
+                                            &aivSuperKernelArgs, sizeof(AivSuperKernelArgs),
+                                            HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE);
+        if (hcclRet != HCCL_SUCCESS) {
+            HCCL_ERROR("[HcclCommunicator][%s]hrtMemSyncCopy error, ret[%d]", __func__, hcclRet);
+            CHK_RET(hrtFree(sendAlgParamMemPtr));
+            return hcclRet;
+        }
         commContext = sendAlgParamMemPtr;
         len = sizeof(AivSuperKernelArgs);
         return HCCL_SUCCESS;
@@ -4412,6 +4418,11 @@ namespace hccl
                 opParam.BatchSendRecvDataDes.sendRecvItemsPtr = aicpuSendRecvInfo.data();
                 opParam.BatchSendRecvDataDes.itemNum = aicpuSendRecvInfo.size();
             }
+        }
+        // A2 Group SendRecv 将isDirectRemoteRank全部置为false
+        if (opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV && deviceType_ == DevType::DEV_TYPE_910B && isGroupMode_) {
+            isDirectRemoteRank.resize(userRankSize_, 0);
+            opParam.BatchSendRecvDataDes.isDirectRemoteRank = isDirectRemoteRank.data();
         }
         auto algType = algOperator->GetAlgType();
         CHK_RET(RegisterDfxInfo(opParam, algType, resMap_[newTag].slaveStreams, selectAivAlg, tag));
@@ -7211,14 +7222,11 @@ namespace hccl
                 CHK_PTR_NULL(opParam.BatchSendRecvDataDes.sendRecvItemsPtr + i);
                 batchSendRecvDataPtr->batchSendRecvItem[i] = *(opParam.BatchSendRecvDataDes.sendRecvItemsPtr + i);
             }
-            if (deviceType_ == DevType::DEV_TYPE_910B && isGroupMode_) {
-                // 如果是A2的GroupSendRecv则跳过下面这段
-            } else {
-                u8 *isDirectRemoteRankPtr = reinterpret_cast<u8*>(batchSendRecvDataPtr->batchSendRecvItem + opParam.BatchSendRecvDataDes.itemNum);
-                for (u32 i = 0; i < userRankSize_; i++) {
-                    CHK_PTR_NULL(isDirectRemoteRankPtr + i);
-                    isDirectRemoteRankPtr[i] = *(opParam.BatchSendRecvDataDes.isDirectRemoteRank + i);
-                }
+
+            u8 *isDirectRemoteRankPtr = reinterpret_cast<u8*>(batchSendRecvDataPtr->batchSendRecvItem + opParam.BatchSendRecvDataDes.itemNum);
+            for (u32 i = 0; i < userRankSize_; i++) {
+                CHK_PTR_NULL(isDirectRemoteRankPtr + i);
+                isDirectRemoteRankPtr[i] = *(opParam.BatchSendRecvDataDes.isDirectRemoteRank + i);
             }
         } else if (opType == HcclCMDType::HCCL_CMD_ALLTOALL) {
             CHK_RET(SetDynamicTilingDataAlltoall(opParam, dynamicDataMem));
@@ -8723,12 +8731,12 @@ namespace hccl
             HcclCMDType::HCCL_CMD_INVALID, false, isIndOp);
         if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("[%s] Failed to alloc transport, tag[%s], isAicpuModeEn[%d], ret[%d]",
-                __func__, tag, isAicpuModeEn, ret);
+                __func__, tag.c_str(), isAicpuModeEn, ret);
             return ret;
         }
 
         HCCL_RUN_INFO("[%s] Alloc transport success, tag[%s], isAicpuModeEn[%d], ret[%d]",
-            __func__, tag, isAicpuModeEn, ret);
+            __func__, tag.c_str(), isAicpuModeEn, ret);
         return HCCL_SUCCESS;
     }
 

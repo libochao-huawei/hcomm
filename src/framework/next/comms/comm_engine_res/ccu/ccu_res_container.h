@@ -17,7 +17,14 @@
 #include "hccl_res.h"
 
 #include "ccu_kernel.h"
-#include "ccu_res_pack.h"
+/* 开源自定义算子CCU设备管理实现，当前支持新老通信域混跑，
+ * 暂时引入了同名文件，需要区分
+ * #include "ccu_res_pack.h"
+ */
+
+// 区分legacy同名文件
+#include "../../ccu/pub_inc/ccu_res_pack.h"
+
 #include "ccu_drv_handle.h"
 
 namespace hcomm {
@@ -27,16 +34,19 @@ namespace hcomm {
  */
 class CcuResContainer {
 public:
-    CcuResContainer(const uint32_t opExpansionMode) : opExpansionMode_(opExpansionMode) {};
+    CcuResContainer() {};
     ~CcuResContainer();
-    HcclResult Init();
+    
+    HcclResult ChangeMode(uint32_t opExpansionMode);
     HcclResult ResetResPack();
     CcuResPack *GetResPack();
     HcclResult SaveCcuKernel(const CcuKernelHandle kernelHandle);
     const std::vector<CcuKernelHandle> &GetUntranslatedKernels();
 
 private:
-    uint32_t opExpansionMode_{0};
+    HcclResult Init();
+
+    uint32_t opExpansionMode_{0xffff}; // 提供非法值，触发首次初始化
     int32_t devLogicId_{INT32_MAX};
     std::shared_ptr<hcomm::CcuDrvHandle> ccuDrvHandle_{};
     std::unique_ptr<CcuResPack> resPack_{};

@@ -198,6 +198,20 @@ const u64 HCCL_MODULE_ID = 5;
         }                                             \
     } while (0)
 
+/* 检查函数返回值，HCCL_E_UNAVAIL时给Warning, 并返回指定错误码 */
+#define CHK_RET_UNAVAIL(call)                                      \
+    do {                                                             \
+        HcclResult hcclRet = call;                                   \
+        if (UNLIKELY(hcclRet != HCCL_SUCCESS)) {                         \
+            if (hcclRet == HCCL_E_AGAIN || hcclRet == HCCL_E_UNAVAIL) {           \
+                HCCL_WARNING("[%s]call trace: hcclRet -> %d", __func__, hcclRet);    \
+            } else {                                                                    \
+                HCCL_ERROR("[%s]call trace: hcclRet -> %d", __func__, hcclRet);      \
+            }                                                                          \
+            return hcclRet;                                                   \
+        }                                                         \
+    } while (0)
+
 /* 检查函数返回值, 返错时打印函数名及通信域标识 */
 #define CHK_RET_AND_PRINT_IDE(call, identifier)         \
     do {                                              \

@@ -63,14 +63,16 @@ private :
 
     HcclResult CopySendDataToScratch(u32 step, const std::vector<u32> &commRanks,
                                      std::unordered_map<u32, UsrData> &sendSliceInfo,
+                                     const ResLinks &tempLinks,
                                      std::vector<InsQuePtr>                 &queues) const;
-
+    
     HcclResult SendRecvData(u32 step, const std::vector<u32> &commRanks,
                             std::unordered_map<u32, UsrData> &sendSliceInfo, std::unordered_map<u32, UsrData> &readSliceInfo,
                             const ResLinks &tempLinks, std::vector<InsQuePtr> &queues) const;
 
     HcclResult CopyRecvDataFromScratch(u32 step, const std::vector<u32> &commRanks,
                                        std::unordered_map<u32, UsrData> &readSliceInfo,
+                                       const ResLinks &tempLinks,
                                        std::vector<InsQuePtr>                 &queues) const;
 
     HcclResult LocalDataCopy(InsQuePtr tempInsQue);

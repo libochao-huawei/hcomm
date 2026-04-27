@@ -896,7 +896,7 @@ HcclResult TopoInfoExchangeAgent::VerifyServerDevicePhysicID(const std::vector<R
                     "EI0015",
                     std::vector<std::string>({"error_reason"}),
                     std::vector<std::string>({errormessage}));
-                HCCL_ERROR("[%s][%s]rank[%u] and rank[%u] has the same device physic id[%d].",
+                HCCL_ERROR("[%s][%s]%s",
                     LOG_KEYWORDS_INIT_GROUP.c_str(),
                     LOG_KEYWORDS_RANKTABLE_DETECT.c_str(),
                     errormessage.c_str());
