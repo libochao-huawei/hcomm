@@ -47,6 +47,7 @@ set(hccl_utest_misc_list
     # ut_hccl_transport_p2p.cc
     # ut_onesided_service.cc
     ut_transport_mem.cc
+    ut_transport_ibverbs.cc
     ut_load_backup_ip.cc
     # ut_backup_link.cc
     ut_adapter.cc

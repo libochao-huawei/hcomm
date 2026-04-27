@@ -12,9 +12,14 @@
 #ifndef __AICPU_CHANNEL_PROCESS_H__
 #define __AICPU_CHANNEL_PROCESS_H__
 
+#include <memory>
+#include <mutex>
+#include <unordered_map>
+
 #include "common.h"
 #include "channel_param.h"
 #include "ub_transport_lite_impl.h"
+
 class AicpuChannelProcess {
 public:
     ~AicpuChannelProcess() = default;
@@ -22,6 +27,8 @@ public:
     static HcclResult InitUrmaChannel(HcclChannelUrmaRes *commParam);
     static HcclResult AicpuChannelInit(HcclChannelUrmaRes *commParam);
     static HcclResult AicpuChannelDestroy(HcclChannelUrmaRes *commParam);
+    static HcclResult InitHcommChannelRes(HcommChannelRes *commParam);
+
 private:
     static std::mutex mutex_;
     static std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::UbTransportLiteImpl>> ubTransportMap_;
