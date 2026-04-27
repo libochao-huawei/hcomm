@@ -4,6 +4,7 @@
 #include "ccu_dev_mgr_pub.h"
 #include "ccu_comp.h"
 #include "hccl_common.h"
+#include "ccu_res_batch_allocator.h"
 
 #include "unified_platform/ccu/ccu_device/ccu_component/ccu_component.h"
 
@@ -132,36 +133,32 @@ TEST_F(CcuCompPubTest, Ut_CcuCleanDieCkesWhenUnderlyingFailsExpectFailure) {
     EXPECT_EQ(ret, HcclResult::HCCL_E_INTERNAL);
 }
 
-// ===================== 覆盖你修改的2行代码 =====================
-TEST_F(CcuCompPubTest, Ut_CcuResBatchAllocator_Alloc_ReqType_Not_Multiple_Die)
+// ===================== 覆盖你修改的 2 行红色代码 =====================
+TEST_F(CcuCompPubTest, Ut_CcuMissionMgr_Alloc_ReqType_Not_Supported)
 {
-    CcuResBatchAllocator allocator;
-    uint32_t handleKey = 0;
+    CcuResBatchAllocator& allocator = CcuResBatchAllocator::GetInstance(0);
+
     MissionReq missionReq = {};
-    MissionResInfo info;
-
-    // 触发第 1 个红色分支：reqType != FUSION_MULTIPLE_DIE
     missionReq.reqType = FUSION_SINGLE_DIE;
+    missionReq.req[0] = 1;
 
-    HcclResult ret = allocator.Alloc(handleKey, missionReq, info);
+    MissionResInfo info;
+    HcclResult ret = allocator.missionMgr_.Alloc(1234, missionReq, info);
+
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-TEST_F(CcuCompPubTest, Ut_CcuResBatchAllocator_Alloc_HandleBlockRes_Unavailable)
+TEST_F(CcuCompPubTest, Ut_CcuMissionMgr_Alloc_HandleBlockRes_Unavailable)
 {
-    CcuResBatchAllocator allocator;
-    uint32_t handleKey = 0;
+    CcuResBatchAllocator& allocator = CcuResBatchAllocator::GetInstance(0);
+
     MissionReq missionReq = {};
-    MissionResInfo info;
-
     missionReq.reqType = FUSION_MULTIPLE_DIE;
+    missionReq.req[0] = 999999;
+    missionReq.req[1] = 999999;
 
-    // Mock 触发第 2 个红色分支
-    MOCK_METHOD(HandleBlockRes, HCCLResult,
-        (uint32_t, uint32_t, BlockStrategy, std::vector<Block>&, std::vector<ResInfo>&));
-    EXPECT_CALL(HandleBlockRes(_, _, _, _, _))
-        .willOnce(Return(HCCL_E_UNAVAIL));
+    MissionResInfo info;
+    HcclResult ret = allocator.missionMgr_.Alloc(1234, missionReq, info);
 
-    HcclResult ret = allocator.Alloc(handleKey, missionReq, info);
     EXPECT_EQ(ret, HCCL_E_UNAVAIL);
 }
