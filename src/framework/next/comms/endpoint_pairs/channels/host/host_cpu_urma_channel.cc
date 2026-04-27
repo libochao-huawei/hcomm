@@ -23,6 +23,7 @@
 // #include <cstddef>
 // #include <algorithm>
 
+
 namespace hcomm {
 constexpr u32 FENCE_TIMEOUT_MS = 30 * 1000; // 定义最大等待30秒
 constexpr u32 MEMORY_BLOCK_SIZE = 128;
