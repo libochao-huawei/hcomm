@@ -144,6 +144,13 @@ HcclResult CcuComponent::CheckDiesEnable()
 static HcclResult FindOneUsableEid(const int32_t devLogicId, const uint32_t devPhyId,
     const uint8_t dieId, uint32_t &feId, CommAddr &commAddr)
 {
+    bool uboeFlagValid;
+    CHK_RET(HccpGetUboeFlagEnable(devPhyId, uboeFlagValid));
+
+    CHK_PRT_RET(uboeFlagValid == false,
+        HCCL_ERROR("[CcuComponent][%s] Uboe flag is not enabled, devPhyId[%d].",
+            __func__, devPhyId), HCCL_E_NOT_SUPPORT);
+
     std::vector<DevEidInfo> eidInfos;
     auto ret = EidInfoMgr::GetInstance(devPhyId).GetEidInfos(eidInfos);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
@@ -159,7 +166,8 @@ static HcclResult FindOneUsableEid(const int32_t devLogicId, const uint32_t devP
     EXCEPTION_HANDLE_BEGIN
     auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
     for (auto &eidInfo : eidInfos) {
-        if (eidInfo.dieId != dieId) {
+        // 如果是UBOE设备，则跳过
+        if (HccpCheckUboeSupported(eidInfo.devFeature) || (eidInfo.dieId != dieId)) {
             continue;
         }
 

@@ -113,6 +113,15 @@ void MockCcuNetworkDevice(const int32_t devLogicId)
     eidInfo.chipId  = static_cast<uint32_t>(devLogicId);
     eidInfoListStbu.push_back(eidInfo);
 
+    MOCKER(HrtGetUboeFlagEnable)
+        .stubs()
+        .with(any(), outBound(true))
+        .will(returnValue(HcclResult::HCCL_SUCCESS));
+
+    MOCKER(HrtCheckUboeSupported)
+        .stubs()
+        .will(returnValue(false));
+
     MOCKER(HrtRaGetDevEidInfoList)
         .stubs()
         .with(any())

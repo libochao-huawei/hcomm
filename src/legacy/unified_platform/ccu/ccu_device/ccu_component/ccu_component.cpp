@@ -154,13 +154,21 @@ static HcclResult FindOneUsableEid(const uint32_t devLogicId, const uint8_t dieI
     std::string name;
     bool findFlag = false;
     u32 devPhyId = HrtGetDevicePhyIdByIndex(devLogicId);
+
+    bool uboeFlagValid;
+    CHK_RET(HrtGetUboeFlagEnable(devPhyId, uboeFlagValid));
+
+    CHK_PRT_RET(uboeFlagValid == false,
+        HCCL_ERROR("[CcuComponent][%s] Uboe flag is not enabled, devPhyId[%d].",
+            __func__, devPhyId), HCCL_E_NOT_SUPPORT);
+
     auto &rdmaHandleMgr = RdmaHandleManager::GetInstance();
     // 当前结论，需要选择可以申请到Tp handle的eid
     for (auto &eidInfo : eidInfoList) {
-        if (eidInfo.dieId != dieId) {
+        // 如果是UBOE设备，则跳过
+        if (HrtCheckUboeSupported(eidInfo.devFeature) || (eidInfo.dieId != dieId)) {
             continue;
         }
-
         const RdmaHandle rdmaHandle = rdmaHandleMgr.GetByIp(devPhyId, eidInfo.ipAddress);
         const bool rtpEnable = rdmaHandleMgr.GetRtpEnable(rdmaHandle);
         if (rtpEnable) {
