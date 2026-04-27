@@ -60,7 +60,7 @@ enum class HeartBeatStatus {
     HEARTBEAT_OK,
     HEARTBEAT_LOST,
     HEARTBEAT_EXCEPTION,
-    HEARTBEAT_CQE_EXCEPTION
+    HEARTBEAT_CQE_ERR
 };
 
 
@@ -111,6 +111,10 @@ class ClusterMonitor {
 public:
     static ClusterMonitor& GetInstance();
     void GetCqeErrInfo(u32 RemoteDeviceId, u32 LocDeviceId, uint16_t status, std::string LocalEid, std::string RemoteEid, std::string RemoteInsId);
+    std::vector<std::string> GetErrStatusVec(const std::string &group);
+    bool IsKeyEvent(HeartBeatFrame &event, HcclUs curTime, const std::string &group);
+    std::vector<std::string> PrintEvents(std::map<HeartBeatStatus, std::queue<HeartBeatFrame>> &keyEvents);
+    void MakeErrMsg(std::queue<HeartBeatFrame> &keyEvents, std::vector<std::string> &errStatusVec);
     ClusterMonitor() = default;
     ~ClusterMonitor() = default;
 private:
@@ -135,6 +139,7 @@ private:
     std::queue<UIDType> errRankQueue_;
     std::queue<HeartBeatFrame> errStatusQueue_;
     CqeErrInfo CqeErrInfo_;
+    std::mutex ProcessLock_;
 };
 }
 
