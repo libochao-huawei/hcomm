@@ -30,13 +30,11 @@ struct IbvPollCqTestControl {
 
 IbvPollCqTestControl g_ibvPollCqControl;
 
-extern "c" {
-int mock_ibv_poll_cq(struct ibv_cq *cq, int num_entries, struct ibv_wc *wc)
+static int mock_ibv_poll_cq(struct ibv_cq *cq, int num_entries, struct ibv_wc *wc)
 {
     wc->status = static_cast<ibv_wc_status>(g_ibvPollCqControl.status);
     wc->imm_data = g_ibvPollCqControl.immData;
     return g_ibvPollCqControl.returnValue;
-}
 }
 
 #define ibv_poll_cq mock_ibv_poll_cq
