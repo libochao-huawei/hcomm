@@ -38,6 +38,7 @@
 #include "hcom_private_v2.h"
 #include "comm_topo_desc.h"
 #include "hcom_common.h"
+#include "hcom_pub.h"
 
 using namespace std;
 using namespace hccl;
@@ -2947,6 +2948,14 @@ __attribute__((constructor)) void CallBackInit()
         HcomCallBackGroupIsInitHeterog,
         HcomDestroyGroupImplHeterog,
         HcomDestroyOneDeviceHeterog);
+}
+
+HcclResult HcomGetGroupNameByOpBase(s64 opBaseHcom, char **groupname) 
+{   
+    hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
+    CHK_PTR_NULL(hcclComm);
+    *groupname = const_cast<char *>(hcclComm->GetIdentifier().c_str());
+    return HCCL_SUCCESS;
 }
 
 HcclResult GetGroupNameByOpBaseHcom(s64 opBaseHcom, char **groupname) 
