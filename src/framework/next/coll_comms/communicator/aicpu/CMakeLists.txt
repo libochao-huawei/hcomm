@@ -14,7 +14,6 @@ set(src_list
     coll_comm_aicpu.cc
     hccl_aicpu_hdc_handler.cc
     coll_comm_aicpu_destroy_func.cc
-    aicpu_indop_env.cc
 )
 
 if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))

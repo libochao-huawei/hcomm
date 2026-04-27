@@ -26,6 +26,7 @@
 #include "launch_aicpu.h"
 #include "launch_device.h"
 #include "sal_pub.h"
+#include "env_config/env_config.h"
 
 namespace hccl
 {
