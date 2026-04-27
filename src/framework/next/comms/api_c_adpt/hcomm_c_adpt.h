@@ -117,6 +117,8 @@ HcommResult HcommCollectiveChannelCreate(EndpointHandle endpointHandle, CommEngi
     HcommChannelDesc *channelDescs, uint32_t channelNum, ChannelHandle *channels);
 HcommResult HcommChannelUpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum, ChannelHandle channelHandle);
 
+HcommResult CheckUbAttr(HcommChannelDesc &channelDesc);
+
 #ifdef __cplusplus
 }
 

@@ -59,7 +59,7 @@ HcclResult CcuChannelCtxPool::ResourceBatch::Init(const std::vector<CcuChannelIn
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult CcuChannelCtxPool::PrepareCreate(const std::vector<Hccl::LinkData> &links)
+HcclResult CcuChannelCtxPool::PrepareCreate(const std::vector<Hccl::LinkData> &links, uint32_t sqSize)
 {
     CHK_PRT_RET(links.empty(),
         HCCL_INFO("[CcuChannelCtxPool][%s] passed, links is empty, devLogicId[%d].",
@@ -76,7 +76,7 @@ HcclResult CcuChannelCtxPool::PrepareCreate(const std::vector<Hccl::LinkData> &l
 
         const auto &locAddr = link.GetLocalAddr();
         ResourceBatch *batchPtr = nullptr;
-        auto ret = GetAvailableBatch(locAddr, batchPtr);
+        auto ret = GetAvailableBatch(locAddr, batchPtr, sqSize);
         CHK_PRT_RET(ret == HcclResult::HCCL_E_UNAVAIL,
             HCCL_WARNING("[CcuChannelCtxPool][%s] failed to alloc ccu channels, ccu resources "
                 "are unavaialble, locAddr[%s], devLogicId[%d].",
@@ -100,7 +100,7 @@ HcclResult CcuChannelCtxPool::PrepareCreate(const std::vector<Hccl::LinkData> &l
 }
 
 // 当前以locAddr为粒度调用，根据locAddr可以找到已申请的批次，如果资源充足则复用，不足则按新批次申请资源
-HcclResult CcuChannelCtxPool::GetAvailableBatch(const BatchKey &batchKey, ResourceBatch *&batchPtr)
+HcclResult CcuChannelCtxPool::GetAvailableBatch(const BatchKey &batchKey, ResourceBatch *&batchPtr, uint32_t sqSize)
 {
     // 当前以locAddr作为batchKey，不同本端不能复用资源
     if (FindAvailableBatch(batchKey, batchPtr)) {
@@ -109,8 +109,10 @@ HcclResult CcuChannelCtxPool::GetAvailableBatch(const BatchKey &batchKey, Resour
     // 已有的资源不足，需要新增资源，获取的channel数量可能超过申请数量
     CommAddr commAddr{};
     CHK_RET(IpAddressToCommAddr(batchKey, commAddr));
+    // 使用传入的sqSize，如果为0xFFFFFFFF则使用默认值
+    uint32_t actualSqSize = (sqSize != 0xFFFFFFFF) ? sqSize : CCU_DEFAULT_REQUEST_SQ_SIZE;
     const CcuChannelPara channelPara{commAddr, CCU_DEFAULT_REQUEST_CHANNEL_NUM,
-            CCU_DEFAULT_REQUEST_JETTY_NUM, CCU_DEFAULT_REQUEST_SQ_SIZE}; //这里面也需要修改IP
+            CCU_DEFAULT_REQUEST_JETTY_NUM, actualSqSize};
     std::vector<CcuChannelInfo> channelInfos;
     auto ret = CcuAllocChannels(devLogicId_, channelPara, channelInfos);  
     CHK_PRT_RET(ret == HcclResult::HCCL_E_UNAVAIL,
