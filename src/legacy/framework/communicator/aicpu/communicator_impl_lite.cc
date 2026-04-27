@@ -113,7 +113,7 @@ void CommunicatorImplLite::CreateCollAlgComponentLite()
 
 void CommunicatorImplLite::UnfoldOp(HcclKernelParamLite *kernelParam)
 {
-    opIndex = kernelParam->comm.opIndex;
+    opIndex_ = kernelParam->comm.opIndex_;
     uint64_t beginTime = ProfGetCurCpuTimestamp();
     profilingReporterLite->UpdateProfStat();
     UpdateCommParam(kernelParam);
@@ -125,9 +125,7 @@ void CommunicatorImplLite::UnfoldOp(HcclKernelParamLite *kernelParam)
 
     UpdateHDCommnicate(kernelParam);
     RegisterRtsqCallback();
-#ifdef CCL_KERNEL_AICPU
-    RegisterProfCallBack();
-#endif
+
     isCommReady = true;
     HCCL_INFO("CommunicatorImplLite::UnfoldOpBase isCommReady is set to true.");
     std::shared_ptr<InsQueue> insQueue = GetInsQueue(kernelParam);
@@ -138,7 +136,7 @@ void CommunicatorImplLite::UnfoldOp(HcclKernelParamLite *kernelParam)
         HCCL_INFO("CommunicatorImplLite::UnfoldOpBase DevType is DEV_TYPE_950.");
         insExecutor->ExecuteV82(*insQueue);
         profilingReporterLite->ReportAllTasks();
-        ProfilingHandlerLite::GetInstance().ReportHcclOpInfo(*mirrorTaskMgr->GetCurrDfxOpInfo());
+        ProfilingHandlerLite::GetInstance().ReportHcclOpInfo(*mirrorTaskMgrLite->GetCurrDfxOpInfo());
     } else if (devType == DevType::DEV_TYPE_910A2) {
         HCCL_INFO("CommunicatorImplLite::UnfoldOpBase DevType is DEV_TYPE_910A2.");
         insExecutor->Execute(*insQueue);
@@ -157,20 +155,7 @@ void CommunicatorImplLite::RegisterRtsqCallback()
         streamLiteMgr->GetSlave(i)->GetRtsq()->SetOpExecStatusCallback(checkOpExecStatusCallback);
     }
 }
-#ifdef CCL_KERNEL_AICPU
-void CommunicatorImplLite::RegisterProfCallBack()
-{
-    if (MsprofRegisterCallback != nullptr) {
-        HCCL_INFO("RegisterProfCallBack not null");
-        int32_t ret = MsprofRegisterCallback(AICPU, &DeviceCommandHandle);
-        if (ret != 0) {
-            THROW<InternalException>(StringFormat("CommunicatorImplLite::MsprofRegisterCallback failed, ret = %d", ret));
-        }
-    } else {
-        HCCL_INFO("RegisterProfCallBack is null");
-    }
-}
-#endif
+
 void CommunicatorImplLite::CheckOpExecStatus() const
 {
     if (isSuspended) {
@@ -481,16 +466,16 @@ void CommunicatorImplLite::SetDfxOpInfo(uint64_t beginTime)
     auto dfxopInfo           = std::make_shared<DfxOpInfo>();
     dfxopInfo->op_           = currentOp;
     dfxopInfo->tag_          = currentOp.opTag;
-    dfxopInfo->algType_      = AlgType::MESH; // 暂时
+    dfxopInfo->algType_      = AlgType{AlgType::MESH}.Describe();
     dfxopInfo->commIndex_    = idIndex_;
     dfxopInfo->beginTime_    = beginTime;
     dfxopInfo->comm_         = this;
     dfxopInfo->commId_       = commId;
- 	dfxopInfo->opIndex_      = opIndex;
+ 	dfxopInfo->opIndex_      = opIndex_;
  	dfxopInfo->headOpCounterAddr_ = opCounterAddr + size;
  	dfxopInfo->tailOpCounterAddr_ = opCounterAddr + size * 2;
     CHECK_NULLPTR(streamLiteMgr->GetMaster(), "[SetDfxOpInfo]master stream is nullptr!");
-    mirrorTaskMgr->SetCurrDfxOpInfo(dfxopInfo);
+    mirrorTaskMgrLite->SetCurrDfxOpInfo(dfxopInfo);
 }
 
 void CommunicatorImplLite::CreateOneSidedComponentLite()

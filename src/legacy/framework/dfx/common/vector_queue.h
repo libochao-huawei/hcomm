@@ -27,26 +27,40 @@ public:
     class Iterator : public Queue<T>::Iterator {
     private:
         VectorQueue *queue_{nullptr};
+        u32          index_ = 0;
 
     protected:
         void check() override
         {
-            if ((this->it_) < queue_->elems_.begin() || (this->it_) > queue_->elems_.end()) {
+            if ((this->index_) > queue_->elems_.size()) {
                 THROW<InternalException>(StringFormat("VectorQueue<T>::Iterator out of range"));
             }
         }
 
     public:
-        Iterator(typename std::vector<T>::iterator it, VectorQueue *queue) : Queue<T>::Iterator(it), queue_(queue)
+        using pointer   = T *;
+        using reference = T &;
+
+        Iterator(VectorQueue *queue, u32 index) : queue_(queue), index_(index)
         {
             check();
         }
 
         ~Iterator() override = default;
+        
+        reference operator*() const override
+        {
+            return (this->queue_->elems_[this->index_]);
+        }
+
+        pointer operator->() const override
+        {
+            return &(this->queue_->elems_[this->index_]);
+        }
 
         typename Queue<T>::Iterator &operator++() override
         {
-            (this->it_)++;
+            (this->index_)++;
             check();
             return *this;
         }
@@ -54,14 +68,14 @@ public:
         typename Queue<T>::Iterator operator++(int) override
         {
             Iterator temp = *this;
-            (this->it_)++;
+            (this->index_)++;
             check();
             return temp;
         }
 
         typename Queue<T>::Iterator &operator--() override
         {
-            (this->it_)--;
+            (this->index_)--;
             check();
             return *this;
         }
@@ -69,9 +83,19 @@ public:
         typename Queue<T>::Iterator operator--(int) override
         {
             Iterator temp = *this;
-            (this->it_)--;
+            (this->index_)--;
             check();
             return temp;
+        }
+        // 当前==方法的使用场景为同一队列中，是否为同一个索引的地方。而不是元素值是否相等，也不用于不同队列的比较。
+        bool operator==(const typename Queue<T>::Iterator &other) const override
+        {
+            return this->index_ == static_cast<const Iterator&>(other).index_;
+        }
+        // 当前!=方法的使用场景为同一队列中，是否为同一个索引的地方。而不是元素值是否相等，也不用于不同队列的比较。
+        bool operator!=(const typename Queue<T>::Iterator &other) const override
+        {
+            return this->index_ != static_cast<const Iterator&>(other).index_;
         }
     };
 
@@ -111,24 +135,24 @@ public:
     {
         auto it = std::find_if(elems_.begin(), elems_.end(), cond);
         if (it != elems_.end()) {
-            return std::make_shared<Iterator>(it, this);
+            return std::make_shared<Iterator>(this, static_cast<u32>(it - elems_.begin()));
         }
-        return std::make_shared<Iterator>(elems_.end(), this);
+        return std::make_shared<Iterator>(this, static_cast<u32>(it - elems_.begin()));
     }
 
     std::shared_ptr<typename Queue<T>::Iterator> Begin() override
     {
-        return std::make_shared<Iterator>(elems_.begin(), this);
+        return std::make_shared<Iterator>(this, 0);
     }
 
     std::shared_ptr<typename Queue<T>::Iterator> Tail() override
     {
-        return std::make_shared<Iterator>(elems_.begin() + elems_.size() - 1, this);
+        return std::make_shared<Iterator>(this, static_cast<u32>(elems_.size() - 1));
     }
 
     std::shared_ptr<typename Queue<T>::Iterator> End() override
     {
-        return std::make_shared<Iterator>(elems_.end(), this);
+        return std::make_shared<Iterator>(this, static_cast<u32>(elems_.size()));
     }
 };
 

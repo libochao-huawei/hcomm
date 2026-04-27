@@ -10,12 +10,14 @@
 
 #include <gtest/gtest.h>
 #include "hccl/hccl_res.h"
+#include "hccl/hccl_res_expt.h"
 #include "../../hccl_api_base_test.h"
 #include "hccl_tbe_task.h"
 #include "adapter_hal.h"
 #include "dispatcher_ctx.h"
 #include "hcomm_primitives.h"
 #include "launch_aicpu.h"
+#include "hccl_rank_graph.h"
 
 using namespace hccl;
 static const char* RANKTABLE_FILE_NAME = nullptr;
@@ -57,9 +59,9 @@ TEST_F(HcclIndependentOpEngineTest, Ut_HcclThreadAcquire_When_Param_Is_Invalid_E
     EXPECT_EQ(ret, HCCL_E_PARA);
     ret = HcclThreadAcquire(comm, CommEngine::COMM_ENGINE_CPU_TS , 2, 1, threads);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    ret = HcclThreadAcquire(comm, CommEngine::COMM_ENGINE_CPU_TS , 39, 1, threads);
+    ret = HcclThreadAcquire(comm, CommEngine::COMM_ENGINE_CPU_TS , 199, 1, threads);
     EXPECT_EQ(ret, HCCL_E_UNAVAIL);
-    ret = HcclThreadAcquire(comm, CommEngine::COMM_ENGINE_CPU_TS , 1, 64, threads);
+    ret = HcclThreadAcquire(comm, CommEngine::COMM_ENGINE_CPU_TS , 1, 65536, threads);
     EXPECT_EQ(ret, HCCL_E_UNAVAIL);
 }
 
@@ -147,7 +149,7 @@ TEST_F(HcclIndependentOpEngineTest, Ut_HcclThreadAcquire_When_Alloced_Threads_Mo
     }
 
     ThreadHandle thread3[2] = {0};
-    ret = HcclThreadAcquire(comm, g_hostEngine, 1, 61, thread3);
+    ret = HcclThreadAcquire(comm, g_hostEngine, 1, 65535, thread3);
     EXPECT_EQ(ret, HCCL_E_UNAVAIL);
 }
 
@@ -155,7 +157,7 @@ TEST_F(HcclIndependentOpEngineTest, Ut_HcclThreadAcquire_When_Alloced_Threads_Mo
 TEST_F(HcclIndependentOpEngineTest, Ut_HcclThreadAcquire_When_Alloced_Notify_Morethan_Quota_Expect_Unavailable)
 {
     ThreadHandle thread1[2] = {0};
-    HcclResult ret = HcclThreadAcquire(comm, g_hostEngine, 2, 100, thread1);
+    HcclResult ret = HcclThreadAcquire(comm, g_hostEngine, 2, 100000, thread1);
     EXPECT_EQ(ret, HCCL_E_UNAVAIL);
 }
 
@@ -261,4 +263,20 @@ TEST_F(HcclIndependentOpEngineTest, Ut_HcclThreadExportToCommEngine_When_Engine_
     threadMgr->HcclThreadAcquireWithStream(CommEngine::COMM_ENGINE_CPU, nullptr, 1, threads);
     ret = HcclThreadExportToCommEngine(comm, 1, threads, CommEngine::COMM_ENGINE_AICPU_TS, exportedThreads);
     EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(HcclIndependentOpEngineTest, Ut_PrintLinksInfo)
+{
+    RankGraphV1 rankGraph_;
+    CommLink link;
+    CommLinkInit(&link, 1);
+    link.srcEndpointDesc.loc.device.devPhyId = 0;
+    link.srcEndpointDesc.loc.device.superDevId = 0;
+    link.srcEndpointDesc.loc.device.serverIdx = 0;
+    link.srcEndpointDesc.loc.device.superPodIdx = 0;
+    link.dstEndpointDesc.loc.device.devPhyId = 1;
+    link.dstEndpointDesc.loc.device.superDevId = 1;
+    link.dstEndpointDesc.loc.device.serverIdx = 1;
+    link.dstEndpointDesc.loc.device.superPodIdx = 1;
+    rankGraph_.PrintLinksInfo(link);
 }

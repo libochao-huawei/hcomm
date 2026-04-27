@@ -20,14 +20,18 @@
 #include "thread.h"
 #include "local_notify.h"
 #include "ub_transport_lite_impl.h"
+#include "p2p_transport_lite_impl.h"
 #include "task_exception.h"
 #include "aicpu_launch_manager.h"
 #include "channel_param.h"
 #include "hdc_pub.h"
+#include "ns_recovery/aicpu/ns_recovery_lite.h"
+#include <atomic>
 #include "hcclCommDfxLite.h"
 #include "error_message_v2.h"
 #include "kfc.h"
 #include "aicpu_hdc.h"
+#include "hccl/hccl_types.h"
 
 using namespace hccl;
 class CollCommAicpu {
@@ -37,7 +41,6 @@ public:
     HcclResult AllocChannelResource(HcclChannelUrmaRes *commParam);
     HcclResult NotifyFree(NotifyMgrAicpuParam *param);
     HcclResult NotifyAlloc(NotifyMgrAicpuParam *param);
-
     const std::vector<std::shared_ptr<Thread>>& GetAllThread() { return threads_; };
     const HcclTopoInfo& GetTopoInfo() { return topoInfo_; }
     const std::string& GetIdentifier() { return identifier_; }
@@ -54,8 +57,13 @@ public:
     HcclResult BackGroundSetStatus(Hccl::KfcStatus state);
     u32 UpdateIndex();
 
-    bool GetIsReady() { return isReady_; }
-    void SetIsReady(bool flag);
+    HcclCommStatus GetCommmStatus() { return commStatus_; }
+    void SetCommmStatus(HcclCommStatus status);
+
+    // N秒快恢
+    hccl::NsRecoveryLitePtr GetNsRecoveryLitePtr();
+    HcclResult Clean();
+    HcclResult Resume(HcclChannelUrmaRes *commParam);
 
 private:
     HcclResult InitUrmaChannel(HcclChannelUrmaRes *commParam);
@@ -63,6 +71,8 @@ private:
     HcclResult RegisterChannelAddDfxTaskInfo(ChannelHandle channel);
     HcclResult RegisterThreadAddDfxTaskInfo(ThreadHandle thread);
     void InitBackGroundThread();
+    HcclResult ResumePackData(std::vector<char> &data, ChannelHandle &handle);
+    HcclResult ProcessUrmaRes(HcclChannelUrmaRes *commParam, bool isInit);
 
     u32 devId_{0};
     //通用的通道
@@ -70,13 +80,16 @@ private:
     std::shared_ptr<hccl::HDCommunicate> kfcStatusTransferD2H_{nullptr};
 
     std::string identifier_;
-    bool isReady_{ false }; // 独立算子流程通信域是否初始化
+    HcclCommStatus commStatus_{HcclCommStatus::HCCL_COMM_STATUS_INVALID};
     HcclTopoInfo topoInfo_;
     std::vector<std::shared_ptr<Thread>> threads_;
     std::vector<std::unique_ptr<LocalNotify>> notifys_;
-    std::unordered_map<s32, Thread*> streamIdToThreadMap_;
     // A5 独立算子
     std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::UbTransportLiteImpl>> ubTransportMap_;
+    std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::P2PTransportLiteImpl>> p2pTransportMap_;
+
+    // N秒快恢相关
+    hccl::NsRecoveryLitePtr nsRecoveryLitePtr_{nullptr};
 
     // dfx
     bool isErrorReported_{false}; // 是否上报了taskException信息

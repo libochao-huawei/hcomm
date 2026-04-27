@@ -18,6 +18,8 @@
 
 namespace Hccl {
 
+constexpr u64 REDUCE_SCATTER_SMALL_COUNT_512KB = 512 * 1024;
+
 class AivTempReduceScatterMesh1D : public AivAlgTemplateBase {
 public:
     explicit AivTempReduceScatterMesh1D(const RankId virtualRank, const u32 tempRankSize,

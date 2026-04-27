@@ -201,6 +201,15 @@ static void DlHalApiInit(void)
 
     gHalOps.dlDrvMemGetAttribute = (DVresult (*)(DVdeviceptr vptr, struct DVattribute *attr))
         AscendHalDlsym(gHalApiHandle, "drvMemGetAttribute");
+
+    gHalOps.dlHalHostRegister = (drvError_t (*)(void *srcPtr, uint64_t size, uint32_t flag, uint32_t devId, void **dstPtr))
+        AscendHalDlsym(gHalApiHandle, "halHostRegister");
+
+    gHalOps.dlHalHostUnregister = (drvError_t (*)(void *src_ptr, uint32_t devid))
+        AscendHalDlsym(gHalApiHandle, "halHostUnregister");
+
+    gHalOps.dlHalHostUnregisterEx = (drvError_t (*)(void *src_ptr, uint32_t devid, uint32_t flag))
+        AscendHalDlsym(gHalApiHandle, "halHostUnregisterEx");
     return;
 }
 
@@ -642,4 +651,25 @@ int DlDrvMemGetAttribute(DVdeviceptr vptr, struct DVattribute *attr)
     DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlDrvMemGetAttribute, "dlDrvMemGetAttribute");
 
     return gHalOps.dlDrvMemGetAttribute(vptr, attr);
+}
+
+int DlHalHostRegister(void *srcPtr, uint64_t size, uint32_t flag, uint32_t devId, void **dstPtr)
+{
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlHalHostRegister, "dlHalHostRegister");
+
+    return gHalOps.dlHalHostRegister(srcPtr, size, flag, devId, dstPtr);
+}
+
+int DlHalHostUnRegister(void *srcPtr, uint32_t devId)
+{
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlHalHostUnregister, "dlHalHostUnregister");
+
+    return gHalOps.dlHalHostUnregister(srcPtr, devId);
+}
+
+int DlHalHostUnRegisterEx(void *srcPtr, uint32_t devId, uint32_t flag)
+{
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlHalHostUnregisterEx, "dlHalHostUnregisterEx");
+
+    return gHalOps.dlHalHostUnregisterEx(srcPtr, devId, flag);
 }

@@ -51,7 +51,9 @@ public:
 
         rmaConnectionManager = make_unique<RmaConnManager>(*this);
 
-        queueNotifyManager = make_unique<QueueNotifyManager>(*this);
+        aicpuQueueNotifyManager_ = make_unique<QueueNotifyManager>(*this);
+
+        ccuQueueNotifyManager_ = make_unique<QueueNotifyManager>(*this);
 
         queueWaitGroupCntNotifyManager = make_unique<QueueWaitGroupCntNotifyManager>();
 
@@ -83,9 +85,14 @@ public:
         return *remoteRmaBufManager.get();
     }
 
-    QueueNotifyManager &GetQueueNotifyManager() const override
+    QueueNotifyManager &GetAicpuQueueNotifyManager() const override
     {
-        return *queueNotifyManager.get();
+        return *aicpuQueueNotifyManager_.get();
+    }
+
+    QueueNotifyManager &GetCcuQueueNotifyManager() const override
+    {
+        return *ccuQueueNotifyManager_.get();
     }
 
     QueueWaitGroupCntNotifyManager &GetQueueWaitGroupCntNotifyManager() const override
@@ -117,7 +124,8 @@ private:
     unique_ptr<DataBufManager> dataBufferManager;
     unique_ptr<LocalRmaBufManager> localRmaBufManager;
     unique_ptr<RemoteRmaBufManager> remoteRmaBufManager;
-    unique_ptr<QueueNotifyManager> queueNotifyManager;
+    unique_ptr<QueueNotifyManager> aicpuQueueNotifyManager_;
+    unique_ptr<QueueNotifyManager> ccuQueueNotifyManager_;
     unique_ptr<QueueWaitGroupCntNotifyManager> queueWaitGroupCntNotifyManager;
     unique_ptr<QueueBcastPostCntNotifyManager> queueBcastPostCntNotifyManager;
     unique_ptr<ConnLocalNotifyManager> connLocalNotifyManager;
@@ -192,7 +200,7 @@ TEST_F(InterpreterTest, Ut_Submit_When_input_Expect_NO_THROW)
     MOCKER(HrtGetDevice).defaults().will(returnValue(0));
     MOCKER(CcuDeviceManager::ReleaseCke).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
+    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER_CPP(&CcuTransportGroup::Destroy).stubs();
     MOCKER_CPP(&CcuTransport::ReleaseTransRes).stubs();
     MOCKER_CPP(&CcuConnection::ReleaseConnRes).stubs().will(returnValue((HcclResult)HcclResult::HCCL_SUCCESS));

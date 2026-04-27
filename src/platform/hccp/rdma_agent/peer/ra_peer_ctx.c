@@ -60,7 +60,7 @@ int RaPeerCtxInit(struct RaCtxHandle *ctxHandle, struct CtxInitAttr *attr, unsig
     RsSetCtx(phyId);
     ret = RsCtxInit(attr, devIndex, devBaseAttr);
     if (ret != 0) {
-        hccp_err("[init][ra_peer_ctx]ctx init failed[%d] phy_id[%u]", ret, phyId);
+        hccp_err("[init][ra_peer_ctx]ctx init failed, ret[%d] phy_id[%u]", ret, phyId);
     }
 
     RaPeerMutexUnlock(phyId);
@@ -383,6 +383,67 @@ int RaPeerCtxQpDestroy(struct RaCtxQpHandle *qpHandle)
     return ret;
 }
 
+int RaPeerCtxGetTpInfoList(struct RaCtxHandle *ctxHandle, struct GetTpCfg *cfg, struct HccpTpInfo infoList[],
+    unsigned int *num)
+{
+    unsigned int phyId = ctxHandle->attr.phyId;
+    struct RaRsDevInfo devInfo = {0};
+    int ret = 0;
+
+    RaRsSetDevInfo(&devInfo, phyId, ctxHandle->devIndex);
+
+    RaPeerMutexLock(phyId);
+    RsSetCtx(phyId);
+    ret = RsGetTpInfoList(&devInfo, cfg, infoList, num);
+    RaPeerMutexUnlock(phyId);
+    if (ret != 0) {
+        hccp_err("[get][RaTpInfo]RsGetTpInfoList failed, ret[%d] phyId[%u] devIndex[0x%x]",
+            ret, phyId, ctxHandle->devIndex);
+    }
+
+    return ret;
+}
+
+int RaPeerCtxGetTpAttr(struct RaCtxHandle *ctxHandle, uint64_t tpHandle, uint32_t *attrBitmap, struct TpAttr *attr)
+{
+    unsigned int phyId = ctxHandle->attr.phyId;
+    struct RaRsDevInfo devInfo = {0};
+    int ret = 0;
+
+    RaRsSetDevInfo(&devInfo, phyId, ctxHandle->devIndex);
+
+    RaPeerMutexLock(phyId);
+    RsSetCtx(phyId);
+    ret = RsGetTpAttr(&devInfo, attrBitmap, tpHandle, attr);
+    RaPeerMutexUnlock(phyId);
+    if (ret != 0) {
+        hccp_err("[get][RaTpAttr]RsGetTpAttr failed, ret[%d] phyId[%u] devIndex[0x%x]",
+            ret, phyId, ctxHandle->devIndex);
+    }
+
+    return ret;
+}
+
+int RaPeerCtxSetTpAttr(struct RaCtxHandle *ctxHandle, uint64_t tpHandle, uint32_t attrBitmap, struct TpAttr *attr)
+{
+    unsigned int phyId = ctxHandle->attr.phyId;
+    struct RaRsDevInfo devInfo = {0};
+    int ret = 0;
+
+    RaRsSetDevInfo(&devInfo, phyId, ctxHandle->devIndex);
+
+    RaPeerMutexLock(phyId);
+    RsSetCtx(phyId);
+    ret = RsSetTpAttr(&devInfo, attrBitmap, tpHandle, attr);
+    RaPeerMutexUnlock(phyId);
+    if (ret != 0) {
+        hccp_err("[set][RaTpAttr]RsSetTpAttr failed, ret[%d] phyId[%u] devIndex[0x%x]",
+            ret, phyId, ctxHandle->devIndex);
+    }
+
+    return ret;
+}
+
 STATIC void RaPeerPrepareQpImport(struct QpImportInfoT *qpInfo, struct RsJettyImportAttr *importAttr)
 {
     struct RaRsJettyImportAttr *raRsImportAttr = NULL;
@@ -478,6 +539,23 @@ int RaPeerCtxQpUnbind(struct RaCtxQpHandle *qpHandle)
     RaPeerMutexUnlock(phyId);
     CHK_PRT_RETURN(ret != 0, hccp_err("[deinit][ra_peer_qp]rs_ctx_qp_unbind failed, ret[%d] phyId[%u]", ret, phyId),
         ret);
+
+    return ret;
+}
+
+int RaPeerCtxGetJettyContext(struct RaCtxQpHandle *qpHandle, uint8_t context[], unsigned int *len)
+{
+    unsigned int phyId = qpHandle->phyId;
+    struct RaRsDevInfo devInfo = {0};
+    int ret = 0;
+
+    RaRsSetDevInfo(&devInfo, phyId, qpHandle->devIndex);
+    RaPeerMutexLock(phyId);
+    RsSetCtx(phyId);
+    ret = RsCtxGetUbContext(&devInfo, qpHandle->id, CONTEXT_TYPE_JETTY, context, len);
+    RaPeerMutexUnlock(phyId);
+    CHK_PRT_RETURN(ret != 0, hccp_err("[get][jettyContext]RsCtxGetJettyContext failed, ret[%d] phyId[%u] devIndex[%u]",
+        ret, phyId, qpHandle->devIndex), ret);
 
     return ret;
 }

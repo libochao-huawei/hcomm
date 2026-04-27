@@ -24,6 +24,8 @@ set(src_to_test_list
     ut_HcclAllGather_API_test.cc
     ut_HcclBarrier_API_test.cc
     ut_HcclReduceScatter_API_test.cc
+    ut_HcomGetCommHandleByGroup_API_test.cc
+    ut_op_base_misc_test.cc
 )
 
 add_executable(hccl_utest_framework_op_base_api ${src_to_test_list})
@@ -64,7 +66,5 @@ target_link_libraries(hccl_utest_framework_op_base_api PRIVATE
 )
 add_dependencies(hccl_utest_framework_op_base_api hccl_llt)
 
-run_llt_test(
-   TARGET  hccl_utest_framework_op_base_api
-   TASK_NUM 1
-)
+enable_testing()
+add_test(NAME hccl_utest_framework_op_base_api COMMAND hccl_utest_framework_op_base_api)

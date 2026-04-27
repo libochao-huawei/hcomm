@@ -27,12 +27,12 @@ uint64_t ThreadMgr::GetMaxNotifyTotal()
     uint64_t maxNotifyTotal = 0;
     if (threadNum_ == HCCL_COMM_THREADNUM_CONFIG_NOT_SET &&
         notifyNumPerThread_ == HCCL_COMM_NOTIFY_NUM_PER_THREAD_CONFIG_NOT_SET) {
-        maxNotifyTotal = LOCAL_NOTIFY_MAX_NUM;
-        threadNum_ = LOCAL_STREAM_MAX_NUM;
-        notifyNumPerThread_ = LOCAL_NOTIFY_MAX_NUM;
+        maxNotifyTotal = HCCL_THREAD_NOTIFY_MAX_NUM;
+        threadNum_ = SIGNAL_DEV_STREAM_MAX_NUM;
+        notifyNumPerThread_ = HCCL_THREAD_NOTIFY_MAX_NUM;
     } else {
         maxNotifyTotal = static_cast<uint64_t>(threadNum_) * static_cast<uint64_t>(notifyNumPerThread_);
-        maxNotifyTotal = maxNotifyTotal > LOCAL_NOTIFY_MAX_NUM ? LOCAL_NOTIFY_MAX_NUM : maxNotifyTotal;
+        maxNotifyTotal = maxNotifyTotal > HCCL_THREAD_NOTIFY_MAX_NUM ? HCCL_THREAD_NOTIFY_MAX_NUM : maxNotifyTotal;
     }
     return maxNotifyTotal;
 }
@@ -44,7 +44,7 @@ HcclResult ThreadMgr::CheckNotifyNum(CommEngine engine, uint32_t threadNum, uint
     uint64_t remainNotifyQuota = (maxNotifyTotal > used) ? (maxNotifyTotal - used) : 0;
     uint64_t needNotifyTotal = static_cast<uint64_t>(threadNum) * static_cast<uint64_t>(notifyNumPerThread);
     if (remainNotifyQuota < needNotifyTotal  || notifyNumPerThread > notifyNumPerThread_ ||
-        maxNotifyTotal > LOCAL_NOTIFY_MAX_NUM) {
+        maxNotifyTotal > HCCL_THREAD_NOTIFY_MAX_NUM) {
         HCCL_ERROR("[ThreadMgr][%s] Notify quota exhausted: remainQuota[%llu], total[%llu], used[%llu], need[%llu], " 
             "setPreNum[%u], allocPreNum[%u]", __func__, remainNotifyQuota, maxNotifyTotal, used, needNotifyTotal,
             notifyNumPerThread_, notifyNumPerThread);
@@ -71,29 +71,42 @@ HcclResult ThreadMgr::CheckThreadNum(CommEngine engine, uint32_t threadNum, uint
     return CheckNotifyNum(engine, threadNum, notifyNumPerThread);
 }
 
-HcclResult ThreadMgr::SupplementNotify(CommEngine engine, uint32_t notifyNumPerThread)
+HcclResult ThreadMgr::SupplementNotify(CommEngine engine, uint32_t threadNum, uint32_t notifyNumPerThread)
 {
     NotifyLoadType notifyLoadType = NotifyLoadType::HOST_NOTIFY;
     CHK_RET(CommEngineToNotifyLoadType(engine, notifyLoadType));
     std::vector<std::shared_ptr<Thread>> &threads = engineToThreadsMap_[engine];
+    std::vector<std::shared_ptr<Thread>> needSupplementThread;
     HcclResult ret = HCCL_E_INTERNAL;
-    CHK_RET(CheckNotifyNum(engine, threads.size(), notifyNumPerThread));
+    HCCL_INFO("[ThreadMgr][%s] Hcom[%s] threadNum[%zu] supplementNotifyNum[%u] notifyLoadType[%u]",
+        __func__, commId_.c_str(), threads.size(), notifyNumPerThread, static_cast<int32_t>(notifyLoadType));
 
-    for (uint32_t i = 0; i < threads.size(); ++i) {
+    DevType devType = DevType::DEV_TYPE_COUNT;
+    CHK_RET(hrtGetDeviceType(devType));
+    u32 aicpuHostNotify = (devType == DevType::DEV_TYPE_950 && (engine == COMM_ENGINE_AICPU_TS ||
+        engine == COMM_ENGINE_AICPU)) ? 1 : 0;
+
+    for (uint32_t i = 0; i < threads.size() && i < threadNum; ++i) {
         HCCL_INFO("[ThreadMgr][%s] Hcom[%s] AicpuTsThread notifyLoadType[%u]",
                 __func__, commId_.c_str(), static_cast<int32_t>(notifyLoadType));
-        ret = threads[i]->SupplementNotify(notifyNumPerThread);
-        if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[ThreadMgr][SupplementNotify] Failed to supplement notify[%u] on thread index %u",
-                notifyNumPerThread, i);
-            return ret;
+        u32 notifyNum = threads[i]->GetNotifyNum() >= aicpuHostNotify ?
+            (threads[i]->GetNotifyNum() - aicpuHostNotify) : 0;
+        if (notifyNumPerThread > notifyNum) {
+            u32 supplementNotifyNum = notifyNumPerThread - notifyNum;
+            CHK_RET(CheckNotifyNum(engine, 1, supplementNotifyNum));
+            ret = threads[i]->SupplementNotify(supplementNotifyNum);
+            if (ret != HCCL_SUCCESS) {
+                HCCL_ERROR("[ThreadMgr][SupplementNotify] Failed to supplement notify[%u] on thread index %u",
+                    supplementNotifyNum, i);
+                return ret;
+            }
+            needSupplementThread.push_back(threads[i]);
+            usedNotifyNum_ += supplementNotifyNum;
         }
-        usedNotifyNum_ += notifyNumPerThread;
     }
 
     // thread资源 AICPU侧展开
-    std::unique_ptr<ThreadHandle[]> hostHandle;
-    if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
+    if ((engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) && needSupplementThread.size() > 0) {
         if (!callbacks_.getAicpuCommState()) {
             HCCL_INFO("ThreadMgr::SupplementNotify kernelLaunchAicpuCommInit start");
             HcclResult ret = callbacks_.kernelLaunchAicpuCommInit();
@@ -102,10 +115,15 @@ HcclResult ThreadMgr::SupplementNotify(CommEngine engine, uint32_t notifyNumPerT
             callbacks_.setAicpuCommState(true);
         }
 
-        EXECEPTION_CATCH(hostHandle = std::make_unique<ThreadHandle[]>(threads.size()),
+        std::unique_ptr<ThreadHandle[]> threadHandle;
+        EXECEPTION_CATCH(threadHandle = std::make_unique<ThreadHandle[]>(needSupplementThread.size()),
             return HCCL_E_PTR);
-        HCCL_INFO("ThreadMgr::SupplementNotify ThreadKernelLaunchForComm start");
-        ret = AicpuLaunchMgr::ThreadKernelLaunchForComm(threads, commId_, hostHandle, binHandle_);
+        for (uint32_t i = 0; i < needSupplementThread.size(); ++i) {
+            threadHandle[i] = hostToDeviceThreadHandle_[reinterpret_cast<ThreadHandle>(needSupplementThread[i].get())];
+        }
+        HCCL_INFO("ThreadMgr::SupplementNotify ThreadKernelLaunchForComm start needSupplementThread size[%zu]",
+            needSupplementThread.size());
+        ret = AicpuLaunchMgr::SupplementNotifyKernelLaunch(needSupplementThread, commId_, threadHandle, binHandle_);
         HCCL_INFO("ThreadMgr::SupplementNotify ThreadKernelLaunchForComm end");
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[ThreadMgr][SupplementNotify] AiCpuKernelLaunch failed, return [%d].", ret), ret);
@@ -120,13 +138,16 @@ HcclResult ThreadMgr::SupplementThread(CommEngine engine, uint32_t supplementThr
     StreamType streamType;
     CHK_RET(CommEngineToNotifyLoadType(engine, notifyLoadType));
     CHK_RET(CommEngineToStreamType(engine, streamType));
+    HCCL_INFO("[ThreadMgr][%s] Hcom[%s] supplementThreadNum[%u] notifyNum[%u] notifyLoadType[%u], streamType[%u]",
+        __func__, commId_.c_str(), supplementThreadNum, notifyNumPerThread,
+        static_cast<int32_t>(notifyLoadType), static_cast<int32_t>(streamType));
     std::vector<std::shared_ptr<Thread>> newThreads;
     newThreads.reserve(supplementThreadNum);
     HcclResult ret = HCCL_E_INTERNAL;
 
     for (uint32_t i = 0; i < supplementThreadNum; ++i) {
         std::shared_ptr<Thread> handle;
-        HCCL_INFO("[ThreadMgr][%s] Hcom[%s] AicpuTsThread notifyLoadType[%u], streamType[%u]",
+        HCCL_INFO("[ThreadMgr][%s] Hcom[%s] notifyLoadType[%u], streamType[%u]",
                 __func__, commId_.c_str(), static_cast<int32_t>(notifyLoadType), static_cast<int32_t>(streamType));
         CHK_RET(CreateThread(engine, streamType, notifyNumPerThread, notifyLoadType, handle));
         ret = handle->Init();
@@ -195,15 +216,9 @@ HcclResult ThreadMgr::HcclThreadAcquireV2(CommEngine engine, uint32_t threadNum,
         engineToThreadsMap_.emplace(engine, std::vector<std::shared_ptr<Thread>>{});
     }
     auto &threadVec = engineToThreadsMap_[engine];
-    DevType devType = DevType::DEV_TYPE_COUNT;
-    CHK_RET(hrtGetDeviceType(devType));
-    u32 aicpuHostNotify = (devType == DevType::DEV_TYPE_950 && (engine == COMM_ENGINE_AICPU_TS ||
-        engine == COMM_ENGINE_AICPU)) ? 1 : 0;
-    if (threadVec.size() > 0 && (threadVec[0]->GetNotifyNum() >= aicpuHostNotify) &&
-        ((threadVec[0]->GetNotifyNum() - aicpuHostNotify) < notifyNumPerThread)) {
-        u32 supplementNotifyNum = notifyNumPerThread - (threadVec[0]->GetNotifyNum() - aicpuHostNotify);
+    if (threadVec.size() > 0) {
         // 调用补充函数，如果engine是COMM_ENGINE_AICPU_TS、COMM_ENGINE_AICPU，需要去device恢复
-        CHK_RET(SupplementNotify(engine, supplementNotifyNum));
+        CHK_RET(SupplementNotify(engine, threadNum, notifyNumPerThread));
     }
 
     // 2、补充thread
@@ -212,15 +227,17 @@ HcclResult ThreadMgr::HcclThreadAcquireV2(CommEngine engine, uint32_t threadNum,
         // 调用补充函数，如果engine是COMM_ENGINE_AICPU_TS、COMM_ENGINE_AICPU，需要去device恢复
         CHK_RET(SupplementThread(engine, supplementThreadNum, notifyNumPerThread));
     }
-
     // 3、返回threadHandle和id
     for (u32 idx = 0; idx < threadNum; idx++) {
         ThreadHandle handle = reinterpret_cast<ThreadHandle>(threadVec[idx].get());
         threads[idx] = (engine == COMM_ENGINE_AICPU_TS || engine == COMM_ENGINE_AICPU) ?
             hostToDeviceThreadHandle_[handle] : handle;
-        uint32_t id = threadVec[idx]->GetStream()->id();
+        uint32_t id = threadVec[idx]->GetStream()->sqId();
         HCCL_DEBUG("[%s]idx[%u] threadHandle[%llu] thread id = [%u]", __func__, idx, threads[idx], id);
         threadId.push_back(id);
+
+        std::lock_guard<std::mutex> threadhandleToThreadMtx(threadhandleToThreadMutex_);
+        threadMap_[threads[idx]] = threadVec[idx];
     }
 
     HCCL_INFO("[ThreadMgr][%s] Hcom[%s] HcclThreadAcquire done: engine[%d] threadNum[%u],"
@@ -357,6 +374,8 @@ HcclResult ThreadMgr::HcclThreadAcquireWithStream(CommEngine engine,
     std::lock_guard<std::mutex> lock(mainThreadMutex_);
     mainThread_.emplace(stream, std::move(handle));
     *thread = reinterpret_cast<ThreadHandle>(mainThread_[stream].get());
+    std::lock_guard<std::mutex> threadhandleToThreadMtx(threadhandleToThreadMutex_);
+    threadMap_[*thread] = mainThread_[stream];
     HCCL_INFO("[ThreadMgr] Hcom[%s] HcclThreadAcquireWithStream done: engine[%d] stream[%p],"
         "notifyNum[%u]", commId_.c_str(), engine, stream, notifyNum);
     return HCCL_SUCCESS;
@@ -458,4 +477,31 @@ HcclResult ThreadMgr::HcclThreadExportToCommEngine(uint32_t threadNum, const Thr
     }
     return HCCL_SUCCESS;
 }
+
+HcclResult ThreadMgr::HcclThreadResGetInfo(ThreadHandle thread, ThreadResType resType, uint32_t infoLen, void **info)
+{
+    CHK_PRT_RET(resType != ThreadResType::THREAD_RES_TYPE_STREAM, HCCL_ERROR("[%s] failed. resType[%d] is not supported.", 
+        __func__, static_cast<int32_t>(resType)), HCCL_E_NOT_SUPPORT);
+
+    std::lock_guard<std::mutex> threadhandleToThreadMtx(threadhandleToThreadMutex_);
+    auto it = threadMap_.find(thread);
+    CHK_PRT_RET(it == threadMap_.end(), 
+        HCCL_ERROR("[%s] failed to find handle mapping in threadMap_, thread[0x%llx].", __func__, thread), HCCL_E_NOT_FOUND);
+    std::shared_ptr<Thread> threadPtr = it->second;
+    CHK_PTR_NULL(threadPtr);
+    if (resType == ThreadResType::THREAD_RES_TYPE_STREAM) {
+        CHK_PRT_RET(infoLen != sizeof(ThreadResTypeStream), HCCL_ERROR("[%s] failed. infoLen[%u] is mismatch sizeof(ThreadResTypeStream)[%zu]", 
+                    __func__, infoLen, sizeof(ThreadResTypeStream)), HCCL_E_PARA);
+        CHK_PTR_NULL(threadPtr->GetStream());
+        ThreadResTypeStream stream = threadPtr->GetStream()->ptr();
+        CHK_PTR_NULL(stream);
+        *info = stream;
+    } else {
+        HCCL_ERROR("[%s] unsupported resType[%d]", __func__, static_cast<int32_t>(resType));
+        return HCCL_E_NOT_SUPPORT;
+    }
+    HCCL_INFO("[%s] success. thread[0x%llx] resType[%d] info[%p]", __func__, thread, static_cast<int32_t>(resType), *info);
+    return HCCL_SUCCESS;
+}
+
 }

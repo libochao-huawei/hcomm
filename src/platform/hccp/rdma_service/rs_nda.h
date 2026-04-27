@@ -9,15 +9,102 @@
  */
 
 #ifndef RS_NDA_H
-#define RA_NDA_H
+#define RS_NDA_H
 
+#include "ibv_extend.h"
 #include "hccp_nda.h"
+#include "rs_rdma_inner.h"
+#include "rs_list.h"
+#include "rs.h"
 
 #define RS_VENDOR_ID_19E5 0x19E5
 
-static inline int rsNdaGetDirectFlagByVendorId(uint32_t vendorId)
+struct RsNdaPcieCb {
+    struct ibv_extend_ops ibvExOps;
+    struct RsListHead ndaDbList;
+};
+
+struct RsNdaUbCb {
+    struct ibv_extend_ops ibvExOps;
+    struct RsListHead ndaDbList;
+    uint16_t ndaDbGuidCnt;
+};
+
+struct RsNdaCb {
+    struct NdaOps ndaOps;
+    struct RsNdaPcieCb ndaPcieCb;
+    struct RsNdaUbCb ndaUbCb;
+};
+
+struct NdaPcieDbCb {
+    uint64_t hva;
+    uint64_t dva;
+    uint32_t refCnt;
+    uint32_t resv;
+
+    struct RsListHead list;
+};
+
+struct NdaUbDbCb {
+    uint64_t guidL;
+    uint64_t guidH;
+    uint64_t dva;
+    uint16_t guidIdx;
+    uint16_t resv;
+    uint32_t refCnt;
+
+    struct RsListHead list;
+};
+
+union DbUbResInfo {
+    struct {
+        uint32_t dbIdx : 12;
+        uint32_t guidIdx : 16;
+        uint32_t resv : 4;
+    };
+    uint32_t resId;
+};
+
+struct NdaUbResMapPrivInfo {
+    unsigned long long guid_l;
+    unsigned long long guid_h;
+    unsigned int db_idx;
+    unsigned int db_num;
+    unsigned int resv[8];
+};
+
+static inline int RsNdaGetDirectFlagByVendorId(uint32_t vendorId)
 {
     return (vendorId == RS_VENDOR_ID_19E5) ? DIRECT_FLAG_UB : DIRECT_FLAG_PCIE;
 }
+
+static inline unsigned int RsNdaGenerateResId(uint32_t dbIdx, uint16_t guidIdx)
+{
+    union DbUbResInfo resInfo = {0};
+
+    resInfo.dbIdx = dbIdx;
+    resInfo.guidIdx = guidIdx;
+    return resInfo.resId;
+}
+
+static inline uint64_t AlignDown(uint64_t val, uint64_t align)
+{
+    return (val) & ~(align - 1);
+}
+
+static inline uint64_t AlignUp(uint64_t val, uint64_t align)
+{
+    return (val + align - 1) & ~(align - 1);
+}
+
+int RsInitNdaCb(struct RsRdevCb *rdevCb);
+void RsDeinitNdaCb(struct RsRdevCb *rdevCb);
+RS_ATTRI_VISI_DEF int RsNdaGetDirectFlag(unsigned int phyId, unsigned int rdevIndex, int *directFlag);
+RS_ATTRI_VISI_DEF int RsNdaCqCreate(unsigned int phyId, unsigned int rdevIndex, struct NdaCqInitAttr *attr, 
+    struct NdaCqInfo *info, void **ibvCqExt);
+RS_ATTRI_VISI_DEF int RsNdaCqDestroy(unsigned int phyId, unsigned int rdevIndex, void *ibvCqExt);
+RS_ATTRI_VISI_DEF int RsNdaQpCreate(unsigned int phyId, unsigned int rdevIndex, struct NdaQpInitAttr *attr,
+    struct NdaQpInfo *info, struct RsQpResp *qpResp);
+RS_ATTRI_VISI_DEF int RsNdaQpDestroy(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn);
 
 #endif // RS_NDA_H

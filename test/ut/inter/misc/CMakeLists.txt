@@ -92,11 +92,10 @@ if(BUILD_OPEN_PROJECT) # 蓝区构建
     target_link_directories(hccl_utest_inter_misc PRIVATE
         ${ASCEND_CANN_PACKAGE_PATH}/lib64
     )
-    find_library(LIBRARY_ASCEND_HAL libascend_hal.so ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/lib/stub)
+    
     target_link_libraries(hccl_utest_inter_misc PRIVATE
         framework_stub
         mmpa
-        ${LIBRARY_ASCEND_HAL}
         $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
         ${LIBRARY_GTEST}
         ${LIBRARY_MOCKCPP}
@@ -109,7 +108,7 @@ else()
         $<BUILD_INTERFACE:mmpa_headers>
         $<BUILD_INTERFACE:msprof_headers>
         $<BUILD_INTERFACE:slog_headers>
-        $<BUILD_INTERFACE:runtime_headers>
+        $<BUILD_INTERFACE:npu_runtime_headers>
         $<BUILD_INTERFACE:cce_headers>
         $<BUILD_INTERFACE:atrace_headers>
         $<BUILD_INTERFACE:kernel_tiling_headers> 
@@ -122,8 +121,6 @@ else()
     )
 
     add_dependencies(hccl_utest_inter_misc hccl_llt hccl_llt_open)
-    run_llt_test(
-    TARGET  hccl_utest_inter_misc
-    TASK_NUM 1
-    )
+    enable_testing()
+    add_test(NAME hccl_utest_inter_misc COMMAND hccl_utest_inter_misc)
 endif()

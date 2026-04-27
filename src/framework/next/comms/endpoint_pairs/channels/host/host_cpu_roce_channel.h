@@ -15,13 +15,14 @@
 #include "../channel.h"
 #include "enum_factory.h"
 #include "hccl_common.h"
+#include "../../sockets/socket_mgr.h"
+#include "infiniband/verbs.h"
 
 // Orion
 #include "../../../../../../legacy/unified_platform/resource/socket/socket.h"
 #include "../../../../../../legacy/unified_platform/resource/buffer/local_rdma_rma_buffer.h"
 #include "remote_rma_buffer.h"
 #include "host_rdma_connection.h"
-// #include "base_mem_transport.h"
 
 namespace hcomm {
 
@@ -44,18 +45,21 @@ public:
     HcclResult NotifyRecord(const uint32_t remoteNotifyIdx);
     HcclResult NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout);
     HcclResult WriteWithNotify(void *dst, const void *src, const uint64_t len, uint32_t remoteNotifyIdx);
-    HcclResult Write(void *dst, const void *src, uint64_t len) const;
-    HcclResult Read(void *dst, const void *src, uint64_t len) const;
+    HcclResult Write(void *dst, const void *src, uint64_t len);
+    HcclResult Read(void *dst, const void *src, uint64_t len);
     HcclResult ChannelFence();
     HcclResult GetHcclBuffer(void*& addr, uint64_t& size);
 
+    virtual HcclResult Clean() override;
+    virtual HcclResult Resume() override;
+
 private:
     HcclResult ParseInputParam();
-    // HcclResult BuildAttr();
+    HcclResult StartListen();
+    HcclResult BuildSocket();
     HcclResult BuildConnection();
     HcclResult BuildNotify();
     HcclResult BuildBuffer();
-
 
     HcclResult CheckSocketStatus();
     HcclResult CreateQp();
@@ -78,6 +82,19 @@ private:
     HcclResult PrepareNotifyWrResource(const uint64_t len, const uint32_t remoteNotifyIdx, struct ibv_send_wr &notifyRecordWr) const;
     HcclResult PrepareWriteWrResource(const void *dst, const void *src, const uint64_t len, const uint32_t remoteNotifyIdx,
                                       struct ibv_send_wr &writeWithNotifyWr) const;
+
+    HcclResult PostRdmaOp(const char *caller, ibv_wr_opcode opcode, void *localAddr, const void *remoteAddr, uint64_t len);
+    void BuildRdmaWr(const char *caller, ibv_wr_opcode opcode, void *localAddr, const void *remoteAddr, uint64_t len,
+                     size_t localIdx, size_t rmtIdx, struct ibv_send_wr &wr, struct ibv_sge &sg) const;
+    HcclResult PostAndCheckSend(const char *caller, struct ibv_send_wr &wr);
+    HcclResult FindLocalBuffer(const uint64_t addr, const uint64_t len, size_t &targetIdx) const;
+    HcclResult FindRemoteBuffer(const uint64_t addr, const uint64_t len, size_t &targetIdx) const;
+
+    // Wrapper for stub
+    int IbvPollCq(ibv_cq *sendCq, uint32_t numEntries, ibv_wc *wc) const
+    {
+        return ibv_poll_cq(sendCq, numEntries, wc);
+    }
 
     // 入参
     EndpointHandle endpointHandle_;
@@ -103,6 +120,10 @@ private:
     ExchangeRdmaConnDto rmtConnDto_;
     std::vector<std::unique_ptr<HcclMem>> remoteMems{};
     uint32_t wqeNum_{0};
+    std::unique_ptr<SocketMgr> socketMgr_{nullptr};
+    bool fenceFlag_{false};
+
+    uint64_t maxMsgSize_{0};
 
     std::mutex cq_mutex;
     std::mutex sendCq_mutex;

@@ -41,8 +41,6 @@ set(HCOMM_LEGACY_FRAMEWORK ${HCOMM_CODE_LEGACY}/framework)
 set(HCOMM_LEGACY_PLATFORM  ${HCOMM_CODE_LEGACY}/unified_platform)
 set(HCOMM_LEGACY_SERVICE   ${HCOMM_CODE_LEGACY}/service/collective)
 
-# 下载并编译gtest
-set(CANN_3RD_LIB_PATH ${HCOMM_ROOT_PATH}/third_party)
 set(THIRD_PARTY_PATH   ${CANN_3RD_LIB_PATH})
 set(PROTOC_PROGRAM     ${THIRD_PARTY_PATH}/protobuf/bin/protoc)
 include(${HCOMM_ROOT_PATH}/cmake/third_party/gtest.cmake)
@@ -54,7 +52,6 @@ set(ASCEND_CANN_INCLUDE_LIST
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/hccl
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling
     ${ASCEND_CANN_PACKAGE_PATH}/include
     ${ASCEND_CANN_PACKAGE_PATH}/include/hccl
@@ -101,6 +98,8 @@ set(legacy_framework_include_list
     ${HCOMM_LEGACY_FRAMEWORK}/communicator
     ${HCOMM_LEGACY_FRAMEWORK}/communicator/aicpu
     ${HCOMM_LEGACY_FRAMEWORK}/dfx/common
+    ${HCOMM_LEGACY_FRAMEWORK}/dfx/aicpu
+    ${HCOMM_LEGACY_FRAMEWORK}/dfx/aicpu/common
     ${HCOMM_LEGACY_FRAMEWORK}/dfx/task_exception
     ${HCOMM_LEGACY_FRAMEWORK}/ccu
     ${HCOMM_LEGACY_FRAMEWORK}/ccu/ccu_ins
@@ -232,6 +231,13 @@ set(checker_include_list
 set(HCOMM_PLATFORM_INCLUDE_LIST
     ${HCOMM_CODE_PLATFORM}/hccp/inc/network
     ${HCOMM_CODE_PLATFORM}/hccp/external_depends/inc/log
+)
+
+# 设置全局包含路径，让所有子目录继承
+include_directories(
+    ${HCOMM_ROOT_PATH}/include
+    ${HCOMM_ROOT_PATH}/include/hccl
+    ${HCOMM_ROOT_PATH}/include/hcomm
 )
 
 add_subdirectory(testcase)

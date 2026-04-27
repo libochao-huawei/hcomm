@@ -380,6 +380,14 @@ int RaGetInterfaceVersion(unsigned int phy_id, unsigned int interface_opcode, un
     return 0;
 }
 
+int RaGetTlsEnable(struct RaInfo *info, bool *tlsEnable)
+{
+    if (tlsEnable != nullptr) {
+        *tlsEnable = false;
+    }
+    return 0;
+}
+
 int RaQpCreate(void *rdev_handle, int flag, int qp_mode, void **qp_handle)
 {
     return 0;
@@ -716,6 +724,21 @@ int RaCtxQpDestroyBatchAsync(void *ctx_handle, void*qp_handle[], unsigned int *n
 
 int RaSocketGetVnicIpInfos(unsigned int phyId, enum IdType type, unsigned int ids[],
     unsigned int num, struct IpInfo infos[])
+{
+    return 0;
+}
+
+int RaGetEidByIp(void *ctxHandle, struct IpInfo ip[], union HccpEid eid[], unsigned int *num)
+{
+    return 0;
+}
+
+int RaSetTpAttrAsync(void *ctxHandle, uint64_t tpHandle, uint32_t attrBitmap, struct TpAttr *attr, void **reqHandle)
+{
+    return 0;
+}
+
+int RaGetTpAttrAsync(void *ctxHandle, uint64_t tpHandle, uint32_t *attrBitmap, struct TpAttr *attr, void **reqHandle)
 {
     return 0;
 }

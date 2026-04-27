@@ -10,10 +10,10 @@
 
 if (DEVICE_MODE)
     add_subdirectory(stub_tsd)
+    add_subdirectory(netco)
 endif()
 add_subdirectory(rdma_agent)
 add_subdirectory(rdma_service)
-add_subdirectory(netco)
 
 if (NOT DEVICE_MODE)
     return()
@@ -83,7 +83,6 @@ target_link_libraries(hccp_service.bin PRIVATE
     tsd_eventclient
     -ldl
 )
-
 
 install(TARGETS  hccp_service.bin
     RUNTIME DESTINATION ${INSTALL_RUNTIME_DIR}  OPTIONAL

@@ -69,7 +69,7 @@ void CcuContextReduceMesh2D::InitResources()
     anotherAxisSignal_ = CreateMaskSignal();
     ExportMaskSignal(localAxisSignal_, localAxisSignalName_);
     anotherAxisSignal_ = ImportMaskSignal(anotherAxisSignalName_);
-    offSet_            = CreateVariable();
+    offset_            = CreateVariable();
 
     output_.push_back(CreateVariable());
     if (transports.size() == 0) {
@@ -137,7 +137,7 @@ void CcuContextReduceMesh2D::LoadArgs()
     Load(input_[localId_]);
     Load(output_[0]);
     Load(token_[localId_]);
-    Load(offSet_);
+    Load(offset_);
     Load(xAxisGroupOpSize_);
     Load(yAxisGroupOpSize_);
     HCCL_INFO("[CcuContextReduceMesh2D] LoadArgs run finished");
@@ -234,7 +234,7 @@ std::vector<uint64_t> CcuContextReduceMesh2D::GeneArgs(const CcuTaskArg &arg)
     uint64_t inputAddr  = taskArg->inputAddr_;
     uint64_t outputAddr = taskArg->outputAddr_;
     uint64_t tokenInfo  = taskArg->token_;
-    uint64_t offset     = taskArg->offSet_;
+    uint64_t offset     = taskArg->offset_;
     uint64_t xAxisSize = taskArg->xAxisSize_;
     uint64_t yAxisSize = taskArg->yAxisSize_;
     auto     xAxisGoSize = CalGoSize(xAxisSize);

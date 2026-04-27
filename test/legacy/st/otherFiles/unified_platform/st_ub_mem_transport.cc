@@ -252,8 +252,8 @@ TEST(UbMemTransportTest, UbMemTransport_describe)
     void                             *rdmaHandle = (void *)0x100;
     IpAddress                         ipAddress("1.0.0.0");
     Socket                            fakeSocket(nullptr, ipAddress, 100, ipAddress, "tag", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
-
-    UbMemTransport transport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes);
+    bool                              isRecvFirst = false;                
+    UbMemTransport transport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
     transport.Describe();
 }
 
@@ -269,8 +269,8 @@ TEST(UbMemTransportTest, UbMemTransport_get_status)
     void                             *rdmaHandle = (void *)0x100;
     IpAddress                         ipAddress("1.0.0.0");
     Socket                            fakeSocket(nullptr, ipAddress, 100, ipAddress, "tag", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
-
-    UbMemTransport transport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes);
+    bool                              isRecvFirst = false;   
+    UbMemTransport transport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
 
     MOCKER_CPP(&UbMemTransport::SendExchangeData).stubs().will(ignoreReturnValue());
     MOCKER_CPP(&UbMemTransport::RecvExchangeData).stubs();
@@ -383,8 +383,8 @@ TEST(UbMemTransportTest, UbMemTransport_send_recv_exchange_data)
     locCntRes.vec.push_back(&localCntNotify);
     locCntRes.desc.push_back('0');
     locCntRes.desc.push_back(0);
-
-    UbMemTransport transport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes);
+    bool isRecvFirst = false;   
+    UbMemTransport transport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
     EXPECT_THROW(transport.GetUniqueId(), InternalException);
     MOCKER(memcpy_s).stubs().with().will(invoke(memcpy_stub));
     MOCKER(HrtDeviceGetBareTgid).stubs().will(returnValue(100));
@@ -440,8 +440,8 @@ TEST(UbMemTransportTest, UbMemTransport_send_recv_finish)
     void                             *rdmaHandle = (void *)0x100;
     IpAddress                         ipAddress("1.0.0.0");
     Socket                            fakeSocket(nullptr, ipAddress, 100, ipAddress, "tag", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
-
-    UbMemTransport transport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes);
+    bool                              isRecvFirst = false;  
+    UbMemTransport transport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
 
     MOCKER(memcpy_s).stubs().will(returnValue(-1));
     EXPECT_THROW(transport.SendFinish(), SocketException);
@@ -509,7 +509,7 @@ TEST(UbMemTransportTest, UbMemTransport_read_write_read_reduce_write_reduce)
     StubCommunicatorImplTransMgr comm;
     MemTransportCallback callback(link, comm.GetMirrorTaskManager());
     MOCKER_CPP(&DlProfFunc::isStubMode).stubs().will(returnValue(true));
- 
+
     UbMemTransport transport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes, callback);
     transport.Read(locSlice, rmtSlice, stream);
     transport.Write(locSlice, rmtSlice, stream);
@@ -545,7 +545,7 @@ TEST(UbMemTransportTest, UbMemTransport_post_wait)
     StubCommunicatorImplTransMgr comm;
     MemTransportCallback callback(link, comm.GetMirrorTaskManager());
     MOCKER_CPP(&DlProfFunc::isStubMode).stubs().will(returnValue(true));
- 
+
     UbMemTransport transport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes, callback);
 
     std::unique_ptr<RemoteUbRmaBuffer> remoteUbRmaBuffer = std::make_unique<RemoteUbRmaBuffer>(rdmaHandle);
@@ -587,7 +587,7 @@ TEST(UbMemTransportTest, UbMemTransport_write_with_notify_write_reduce_with_noti
     StubCommunicatorImplTransMgr comm;
     MemTransportCallback callback(link, comm.GetMirrorTaskManager());
     MOCKER_CPP(&DlProfFunc::isStubMode).stubs().will(returnValue(true));
- 
+
     UbMemTransport transport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes, callback);
 
     std::unique_ptr<RemoteUbRmaBuffer> remoteUbRmaBuffer0 = std::make_unique<RemoteUbRmaBuffer>(rdmaHandle);
@@ -653,8 +653,8 @@ TEST(UbMemTransportTest, UbMemTransport_wait)
     locCntRes.vec.push_back(&localCntNotify);
     locCntRes.desc.push_back('0');
     locCntRes.desc.push_back(0);
-
-    UbMemTransport transport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes);
+    bool isRecvFirst = false;  
+    UbMemTransport transport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
     transport.IsResReady();
 }
 
@@ -670,8 +670,8 @@ TEST(UbMemTransportTest, UbMemTransport_ConnVecUnpackProc)
     StubUbRmaConnection  stubRmaConnection(link);
     RmaConnection       *rmaConnection    = &stubRmaConnection;
     locRes.connVec.push_back(rmaConnection);
-
-    UbMemTransport transport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes);
+    bool isRecvFirst = false;  
+    UbMemTransport transport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
     u32 connNum = 1;
     transport.connNum = connNum;
 

@@ -41,7 +41,7 @@ HcclResult CollAllGatherExecutor::Orchestrate(OpParam& param, AlgResourceRespons
         execMem.inputPtr = param.inputPtr;
         execMem.outputPtr = param.outputPtr;
         HCCL_DEBUG("[CollAllGatherExecutor][Orchestrate]offload inputMem[%p][%llu], outputMem[%p][%llu]," \
-            "scratchMem[%p][%llu], inputPtr[%p] outputPtr[%p], count[%llu]",
+            "scratchMem[%p][%llu], inputPtr[%p] outputPtr[%p], count[%llu].",
             execMem.inputMem.ptr(), execMem.inputMem.size(), execMem.outputMem.ptr(), execMem.outputMem.size(),
             execMem.scratchMem.ptr(), execMem.scratchMem.size(), execMem.inputPtr, execMem.outputPtr, execMem.count);
         ret = KernelRun(param, execMem);
@@ -96,7 +96,7 @@ HcclResult CollAllGatherExecutor::Orchestrate(OpParam& param, AlgResourceRespons
         CHK_RET(LaunchTaskExtend(dispatcher_, param.stream, algResResp_->slaveStreams));
     }
 
-    HCCL_INFO("tag[%s], Allgather executor orchestrate success, take time [%lld]us.",
+    HCCL_INFO("tag[%s], Allgather executor orchestrate success, take time [%lld]us",
         param.tag.c_str(), DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
 }
@@ -107,7 +107,7 @@ u64 CollAllGatherExecutor::CalcLoopMaxCount(const u64 cclBuffSize, const u32 uni
     u64 maxCountPerLoop = cclBuffSize / topoAttr_.userRankSize / HCCL_MIN_SLICE_ALIGN
         * HCCL_MIN_SLICE_ALIGN / unitSize;
     HCCL_WARNING("[CollAllGatherExecutor][CalcLoopMaxCount]" \
-        "using default maxCountPerLoop[%llu] as CCLBuffSize / unitSize.", maxCountPerLoop);
+        "using default maxCountPerLoop[%llu] as CCLBuffSize / unitSize", maxCountPerLoop);
     return maxCountPerLoop;
 }
 
@@ -120,7 +120,7 @@ bool CollAllGatherExecutor::IsHugeData(const u64 curSize)
 
 bool CollAllGatherExecutor::IsSmallData(const u64 size)
 {
-    HCCL_INFO("[CollAllGatherExecutor][IsSmallData]opMeta is using the default option: not small data.");
+    HCCL_INFO("[CollAllGatherExecutor][IsSmallData]opMeta is using the default option: not small data");
     return false;
 }
 
@@ -245,7 +245,7 @@ HcclResult CollAllGatherExecutor::RunLoop(OpParam &param, AlgResourceResponse &a
         u64 curSize = curCount * unitSize; // 单位：字节
 
         HCCL_DEBUG("[CollAllGatherExecutor][RunLoop]tag[%s], inputOffset[%llu], outputOffset[%llu], " \
-            "sendBuf[%p], recvBuf[%p], sendCount[%llu], dataType[%d].",
+            "sendBuf[%p], recvBuf[%p], sendCount[%llu], dataType[%d]",
             param.tag.c_str(), inputOffset, outputOffset, curInputPtr, curOutputPtr, curCount, param.DataDes.dataType);
 
         if (!is310P3Common_) {
@@ -284,7 +284,7 @@ HcclResult CollAllGatherExecutor::RunLoop(OpParam &param, AlgResourceResponse &a
         }
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[CollAllGatherExecutor][RunLoop]errNo[0x%016llx]kernel run error, tag[%s], " \
-            "inputMem ptr[%p], outputMem ptr[%p], count[%llu], dataType[%d]",
+            "inputMem ptr[%p], outputMem ptr[%p], count[%llu], dataType[%d].",
             HCCL_ERROR_CODE(ret), param.tag.c_str(), commInputPtr, commOutputPtr,
             curCount, param.DataDes.dataType),
             ret);
@@ -320,7 +320,14 @@ HcclResult CollAllGatherExecutor::RunLoopV(OpParam &param, AlgResourceResponse &
     u8 *curOutputPtr = static_cast<u8 *>(param.outputPtr);
     u8 *commInputPtr = static_cast<u8 *>(algRes.cclInputMem.ptr());
     u8 *commOutputPtr = static_cast<u8 *>(algRes.cclOutputMem.ptr());
-    CHK_PTR_NULL(curInputPtr);
+
+    if (UNLIKELY(curInputPtr == nullptr)) {
+        // 若本rank的input count为0，此时允许curInputPtr传入空指针，为保证后续流程正常执行，赋值为cclin的地址
+        curInputPtr = commInputPtr;
+        HCCL_DEBUG("Since the input count is 0, set curInputPtr to ccl input[%p]", curInputPtr);
+    } else {
+        CHK_PTR_NULL(curInputPtr);
+    }
     CHK_PTR_NULL(curOutputPtr);
     CHK_PTR_NULL(commInputPtr);
     CHK_PTR_NULL(commOutputPtr);
@@ -342,7 +349,7 @@ HcclResult CollAllGatherExecutor::RunLoopV(OpParam &param, AlgResourceResponse &
         const u64 totalSize = CalcCurrentTotalCount(param, curCounts) * unitSize;
 
         HCCL_DEBUG("[CollAllGatherExecutor][RunLoopV]tag[%s], sendBuf[%p], recvBuf[%p], sendSize[%llu], "
-            "recvSize[%llu], cclInputMem[%u], cclOutputMem[%u], dataType[%d].", param.tag.c_str(), curInputPtr,
+            "recvSize[%llu], cclInputMem[%u], cclOutputMem[%u], dataType[%d]", param.tag.c_str(), curInputPtr,
             curOutputPtr, curSize, totalSize, algRes.cclInputMem.size(), algRes.cclOutputMem.size(), dataType);
 
         /* 设置子图复用标志 */

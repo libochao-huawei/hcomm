@@ -366,6 +366,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_all_gather/all_gather_ahc_broke.cc
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_all_gather/all_gather_hd_stage.cc
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_all_gather/all_gather_hccs_sio.cc
+        ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_all_gather/all_gather_graph_pipeline.cc
         
 
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_all_reduce/all_reduce_recursive_hd.cc
@@ -579,6 +580,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_to_all/coll_all_to_all_v_2level_pipeline_excecutor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_to_all/310P/coll_all_to_all_v_for_310p_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_to_all/coll_all_to_all_v_continuous_pipeline_executor.cc
+        ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_to_all/coll_all_to_all_v_staged_executor.cc
 
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/registry/coll_alg_exec_registry.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/alg_profiling.cc
@@ -590,7 +592,6 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         # common
         ${HCCL_BASE_DIR}/common/debug/profiling/task_profiling.cc
         ${HCCL_BASE_DIR}/common/debug/profiling/task_exception_handler.cc
-        ${HCCL_BASE_DIR}/common/debug/profiling/task_exception_handler_device.cc
         ${HCCL_BASE_DIR}/common/debug/profiling/profiler_base.cc
         ${HCCL_BASE_DIR}/common/debug/profiling/plugin_runner.cc
         ${HCCL_BASE_DIR}/common/debug/profiling/plugin_runner_device.cc
@@ -778,7 +779,6 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/common/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
@@ -858,7 +858,6 @@ if(NOT BUILD_OPEN_PROJECT)
         ${TOP_DIR}/atc/opcompiler/ascendc_compiler/api
         ${TOP_DIR}/atc/opcompiler/ascendc_compiler/api/impl
         ${TOP_DIR}/atc/opcompiler/ascendc_compiler/api/include
-        ${TOP_DIR}/abl/adump/inc/adump
         ${TOP_DIR}/abl/atrace/inc/utrace
         ${TOP_DIR}/runtime/include/external
  	    ${TOP_DIR}/runtime/include/external/acl
@@ -905,7 +904,7 @@ if(NOT BUILD_OPEN_PROJECT)
         $<BUILD_INTERFACE:msprof_headers>
         $<BUILD_INTERFACE:slog_headers>
         $<BUILD_INTERFACE:hccl_headers>
-        $<BUILD_INTERFACE:runtime_headers>
+        $<BUILD_INTERFACE:npu_runtime_headers>
         $<BUILD_INTERFACE:atrace_headers>
         $<BUILD_INTERFACE:kernel_tiling_headers>
         -Wl,--no-as-needed
@@ -941,7 +940,7 @@ if(NOT KERNEL_MODE)
     )
     add_custom_target(ccl_kernel_json DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
-        DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
+        DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/config OPTIONAL
     )
 
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
@@ -950,7 +949,7 @@ if(NOT KERNEL_MODE)
     )
     add_custom_target(aicpu_custom_json DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
-        DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
+        DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
     )
 
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/libccl_dpu.json
@@ -1007,7 +1006,7 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
         )
         add_custom_target(aicpu_custom_json DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json)
         install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
-            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
+            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
         )
 
         target_link_directories(ccl_kernel PRIVATE
@@ -1087,9 +1086,9 @@ if(DEVICE_MODE AND KERNEL_MODE)
         SUFFIX ".so"
     )
     install(TARGETS aicpu_custom
-        LIBRARY DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
+        LIBRARY DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
     )
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
-        DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
+        DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
     )
 endif()

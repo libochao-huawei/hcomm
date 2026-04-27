@@ -89,7 +89,8 @@ void BaseMemTransport::ConnVecPack(BinaryStream &binaryStream)
 
 void BaseMemTransport::HandshakeMsgPack(BinaryStream &binaryStream)
 {
-    HCCL_INFO("start pack %s handshakeMsg, size=%u", transportType.Describe().c_str(), attr.handshakeMsg.size());
+    HCCL_INFO("[BaseMemTransport::%s] start pack %s handshakeMsg, size=%u, accelerator=%s", 
+        __func__, transportType.Describe().c_str(), attr.handshakeMsg.size(), attr.opAcceState.Describe().c_str());
     binaryStream << static_cast<u32>(attr.opAcceState);
     binaryStream << attr.handshakeMsg;
 }
@@ -98,9 +99,9 @@ void BaseMemTransport::HandshakeMsgUnpack(BinaryStream &binaryStream)
 {
     u32 rmtAccelerator{0};
     binaryStream >> rmtAccelerator;
-    HCCL_INFO("[BaseMemTransport::HandshakeMsgUnpack], rmtAccelerator[%u]", rmtAccelerator);
     rmtOpAcceState = static_cast<AcceleratorState::Value>(rmtAccelerator);
-
+    HCCL_INFO("[BaseMemTransport::%s] locOpAccelerator[%s], rmtOpAccelerator[%s]", 
+        __func__, attr.opAcceState.Describe().c_str(), rmtOpAcceState.Describe().c_str());
     if (rmtOpAcceState != attr.opAcceState) {
         THROW<InvalidParamsException>(
             StringFormat("[BaseMemTransport::HandshakeMsgUnpack] Accelerator information check fail. "

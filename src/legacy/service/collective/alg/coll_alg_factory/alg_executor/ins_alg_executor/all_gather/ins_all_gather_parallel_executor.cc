@@ -18,6 +18,7 @@
 
 #include "topo_match_mesh_nhr.h"
 #include "topo_match_concurr_mesh_nhr.h"
+#include "topo_match_mesh_nhr_pcie.h"
 
 #include "alg_data_trans_wrapper.h"
 
@@ -57,6 +58,11 @@ HcclResult InsAllGatherParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTem
     rankSizeLevel1_ = virtRanks_[1].size();
     InsAlgTemplate0 intraTempAlg(myRank_, rankSizeLevel0_, vTopo_[0], virtRankMap_[0]);
     InsAlgTemplate1 interTempAlg(myRank_, rankSizeLevel1_, vTopo_[1], virtRankMap_[1]);
+    std::vector<map<u32, u32>> rank2PathNumMap;
+    HCCL_INFO("[InsAllGatherParallelExecutor] CalcResOffload SetPathNumMap");
+    CHK_RET(SetPathNumMapByRankGraphMultiLevel(rankGraph, virtRanks_, myRank_, rank2PathNumMap));
+    intraTempAlg.setPathNumMap(rank2PathNumMap[0]);
+    interTempAlg.setPathNumMap(rank2PathNumMap[1]);
 
     // calculate required insQues and prepare queue
     AlgTempResReq resReqIntra;
@@ -96,7 +102,12 @@ HcclResult InsAllGatherParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTem
     // instantiate a template
     InsAlgTemplate0 intraTempAlg(myRank_, rankSizeLevel0_, vTopo_[0], virtRankMap_[0]);
     InsAlgTemplate1 interTempAlg(myRank_, rankSizeLevel1_, vTopo_[1], virtRankMap_[1]);
-
+    std::vector<map<u32, u32>> rank2PathNumMap;
+    HCCL_INFO("[InsAllGatherParallelExecutor] CalcRes SetPathNumMap");
+    CHK_RET(SetPathNumMapByRankGraphMultiLevel(rankGraph, virtRanks_, myRank_, rank2PathNumMap));
+    intraTempAlg.setPathNumMap(rank2PathNumMap[0]);
+    interTempAlg.setPathNumMap(rank2PathNumMap[1]);
+ 
     // calculate required insQues and prepare queue
     AlgTempResReq resReqIntra;
     AlgTempResReq resReqInter;
@@ -117,9 +128,7 @@ HcclResult InsAllGatherParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTem
     CHK_RET(CalcLinkInfo(myRank_, rankGraph, resReqIntra.links, algResReq.levelRankPairs));
     CHK_RET(CalcLinkInfo(myRank_, rankGraph, resReqInter.links, algResReq.levelRankPairs));
     algResReq.primQueueNum = resReqIntra.streamNum + resReqInter.streamNum;
-
-    CHK_RET(CalcParallelNotifyReq(algResReq.primQueueNum, algResReq.queueNotifys));
-    
+    CHK_RET(CalcParallelNotifyReq(algResReq.primQueueNum, resReqIntra.queNum, algResReq.queueNotifys));
     HCCL_DEBUG("[InsAllGatherParallelExecutor] algResReq.primQueueNum %u", algResReq.primQueueNum);
     CHK_RET(CalcResLinks(myRank_, rankGraph, linkPriority_, resReqIntra.links, algResReq.links));
     CHK_RET(CalcResLinks(myRank_, rankGraph, linkPriority_, resReqInter.links, algResReq.links));
@@ -141,7 +150,7 @@ void InsAllGatherParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1
     tempAlgParamsIntra0.buffInfo.outBuffBaseOff = rankIdxLevel1_ * rankSizeLevel0_ * dataSize_ + dataOffset;
     tempAlgParamsIntra0.buffInfo.scratchBuffBaseOff = scratchOffset;
     tempAlgParamsIntra0.sliceSize = dataCountPerLoopAixs0 * dataTypeSize_;
-
+    tempAlgParamsIntra0.tailSize = dataCountPerLoopAixs0 * dataTypeSize_;
     tempAlgParamsIntra0.inputSliceStride = 0;
     tempAlgParamsIntra0.outputSliceStride = dataSize_;
     tempAlgParamsIntra0.repeatNum = 1;
@@ -177,7 +186,7 @@ void InsAllGatherParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1
     tempAlgParamsInter0.buffInfo.outBuffBaseOff = dataOffset;
     tempAlgParamsInter0.buffInfo.scratchBuffBaseOff = scratchOffset;
     tempAlgParamsInter0.sliceSize = dataCountPerLoopAixs0 * dataTypeSize_;
-
+    tempAlgParamsInter0.tailSize = dataCountPerLoopAixs0 * dataTypeSize_;
     tempAlgParamsInter0.inputSliceStride = dataSize_ * rankSizeLevel0_;
     tempAlgParamsInter0.outputSliceStride = dataSize_ * rankSizeLevel0_;
     tempAlgParamsInter0.repeatNum = rankSizeLevel0_;
@@ -208,7 +217,7 @@ void InsAllGatherParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1
     tempAlgParamsInter1.buffInfo.outBuffBaseOff = rankIdxLevel0_ * dataSize_ + dataOffset;  // for example 0 2 4 | 1 3 5
     tempAlgParamsInter1.buffInfo.scratchBuffBaseOff = scratchOffset;
     tempAlgParamsInter1.sliceSize = dataCountPerLoopAixs1 * dataTypeSize_;
-
+    tempAlgParamsInter1.tailSize = dataCountPerLoopAixs1 * dataTypeSize_;
     tempAlgParamsInter1.inputSliceStride = 0;
     tempAlgParamsInter1.outputSliceStride = dataSize_ * rankSizeLevel0_;
     tempAlgParamsInter1.repeatNum = 1;
@@ -237,7 +246,7 @@ void InsAllGatherParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1
     tempAlgParamsIntra1.buffInfo.outBuffBaseOff = dataOffset;
     tempAlgParamsIntra1.buffInfo.scratchBuffBaseOff = scratchOffset;
     tempAlgParamsIntra1.sliceSize = dataCountPerLoopAixs1 * dataTypeSize_;
-
+    tempAlgParamsIntra1.tailSize = dataCountPerLoopAixs1 * dataTypeSize_;
     tempAlgParamsIntra1.inputSliceStride = dataSize_;
     tempAlgParamsIntra1.outputSliceStride = dataSize_;
     tempAlgParamsIntra1.repeatNum = rankSizeLevel1_;
@@ -352,10 +361,9 @@ HcclResult InsAllGatherParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTem
     InsQuePtr insQue)
 {
     HCCL_INFO("[InsAllGatherParallelExecutor] Orchestrate begins.");
-
     // init and check params
     CHK_RET(Init(op, params, insQue));
-
+    dataType_ = op.dataType;
     virtRanks_ = topoInfo.virtRanks;
     vTopo_ = topoInfo.vTopo;
     virtRankMap_ = topoInfo.virtRankMap;
@@ -372,9 +380,17 @@ HcclResult InsAllGatherParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTem
 
     tempAlgIntra.SetDmaMode(dmaMode_);
     tempAlgIntra.SetCollOp(op);  // CCU template需要传递op信息
+    tempAlgIntra.SetDataType(dataType_);
 
     tempAlgInter.SetDmaMode(dmaMode_);
     tempAlgInter.SetCollOp(op);  // CCU template需要传递op信息
+    tempAlgInter.SetDataType(dataType_);
+
+    std::vector<std::map<u32, u32>>rank2PathNumMap;
+    CHK_RET(SetPathNumMapByLinkMgrMultiLevel(linkMgr, virtRanks_, myRank_, rank2PathNumMap));
+    tempAlgIntra.setPathNumMap(rank2PathNumMap[0]);
+    tempAlgInter.setPathNumMap(rank2PathNumMap[1]);
+    
 
     // 计算算法模板所需资源
     CHK_RET(PrepareResForTemplate(linkMgr, tempAlgIntra, tempAlgInter));
@@ -505,6 +521,8 @@ INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::ALLGATHER, InsAllGatherParallelMesh2DNHR,
     TopoMatchConcurrMeshNHR, InsTempAllGatherMesh2D, InsTempAllGatherNHR);
 INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::ALLGATHER, InsAllGatherParallelNHRNHR, InsAllGatherParallelExecutor,
     TopoMatchMeshNHR, InsTempAllGatherMesh2D, InsTempAllGatherNHR);
+INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::ALLGATHER, InsAllGatherParallelMesh1DNHRPcie, InsAllGatherParallelExecutor,
+    TopoMatchMeshNHRPcie, InsTempAllGatherMesh1D, InsTempAllGatherNHR);
 
 // 算法注册
 #ifndef CCL_KERNEL_AICPU

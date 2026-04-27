@@ -203,7 +203,8 @@ RS_ATTRI_VISI_DEF int RsCtxDeinit(struct RaRsDevInfo *devInfo)
     ret = RsUbGetDevCb(rscb, devInfo->devIndex, &devCb);
     CHK_PRT_RETURN(ret != 0, hccp_err("get dev_cb fail, ret:%d devIndex:0x%x", ret, devInfo->devIndex), ret);
 
-    (void)RsUbCtxDeinit(devCb);
+    ret = RsUbCtxDeinit(devCb);
+    CHK_PRT_RETURN(ret != 0, hccp_err("rs ub ctx deinit failed, ret:%d devIndex:0x%x", ret, devInfo->devIndex), ret);
 
     return ret;
 }
@@ -237,7 +238,7 @@ RS_ATTRI_VISI_DEF int RsGetTpInfoList(struct RaRsDevInfo *devInfo, struct GetTpC
 {
     struct RsUbDevCb *devCb = NULL;
     struct rs_cb *rscb = NULL;
-    int ret;
+    int ret = 0;
 
     RS_CHECK_POINTER_NULL_RETURN_INT(devInfo);
     RS_CHECK_POINTER_NULL_RETURN_INT(cfg);
@@ -247,17 +248,11 @@ RS_ATTRI_VISI_DEF int RsGetTpInfoList(struct RaRsDevInfo *devInfo, struct GetTpC
     ret = RsGetRsCb(devInfo->phyId, &rscb);
     CHK_PRT_RETURN(ret != 0, hccp_err("get rscb failed, ret:%d", ret), ret);
 
-    switch (rscb->protocol) {
-        case PROTOCOL_UDMA:
-            ret = RsUbGetDevCb(rscb, devInfo->devIndex, &devCb);
-            CHK_PRT_RETURN(ret != 0, hccp_err("get dev_cb failed, ret:%d devIndex:0x%x", ret, devInfo->devIndex),
-                ret);
-            ret = RsUbGetTpInfoList(devCb, cfg, infoList, num);
-            break;
-        default:
-            hccp_err("protocol[%d] not support", rscb->protocol);
-            return -EINVAL;
-    }
+    ret = RsUbGetDevCb(rscb, devInfo->devIndex, &devCb);
+    CHK_PRT_RETURN(ret != 0, hccp_err("get dev_cb failed, ret:%d devIndex:0x%x", ret, devInfo->devIndex),
+        ret);
+    ret = RsUbGetTpInfoList(devCb, cfg, infoList, num);
+
     return ret;
 }
 
@@ -266,7 +261,7 @@ RS_ATTRI_VISI_DEF int RsGetTpAttr(struct RaRsDevInfo *devInfo, unsigned int *att
 {
     struct RsUbDevCb *devCb = NULL;
     struct rs_cb *rscb = NULL;
-    int ret;
+    int ret = 0;
 
     RS_CHECK_POINTER_NULL_RETURN_INT(devInfo);
     RS_CHECK_POINTER_NULL_RETURN_INT(attrBitmap);
@@ -287,7 +282,7 @@ RS_ATTRI_VISI_DEF int RsSetTpAttr(struct RaRsDevInfo *devInfo, const unsigned in
 {
     struct RsUbDevCb *devCb = NULL;
     struct rs_cb *rscb = NULL;
-    int ret;
+    int ret = 0;
 
     RS_CHECK_POINTER_NULL_RETURN_INT(devInfo);
     RS_CHECK_POINTER_NULL_RETURN_INT(attr);
@@ -847,5 +842,33 @@ RS_ATTRI_VISI_DEF int RsCtxGetCrErrInfoList(struct RaRsDevInfo *devInfo, struct 
     }
 
     *num = crErrIdx;
+    return ret;
+}
+
+RS_ATTRI_VISI_DEF int RsCtxGetUbContext(struct RaRsDevInfo *devInfo, unsigned int id, unsigned int contextType,
+    uint8_t context[], unsigned int *len)
+{
+    struct RsUbDevCb *devCb = NULL;
+    struct rs_cb *rscb = NULL;
+    int ret = 0;
+
+    RS_CHECK_POINTER_NULL_RETURN_INT(devInfo);
+    RS_CHECK_POINTER_NULL_RETURN_INT(context);
+    RS_CHECK_POINTER_NULL_RETURN_INT(len);
+    CHK_PRT_RETURN(*len < CONTEXT_MAX_LEN, hccp_err("len:%u less than %u", *len, CONTEXT_MAX_LEN), -EINVAL);
+
+    ret = RsGetRsCb(devInfo->phyId, &rscb);
+    CHK_PRT_RETURN(ret != 0, hccp_err("get rscb failed, ret:%d", ret), ret);
+
+    ret = RsUbGetDevCb(rscb, devInfo->devIndex, &devCb);
+    CHK_PRT_RETURN(ret != 0, hccp_err("get devCb failed, ret:%d devIndex:0x%x", ret, devInfo->devIndex), ret);
+
+    if (contextType == CONTEXT_TYPE_JETTY) {
+        ret = RsUbGetJettyContext(devCb, id, context, len);
+    } else {
+        hccp_err("invalid contextType:%u, devIndex:0x%x", contextType, devInfo->devIndex);
+        ret = -EINVAL;
+    }
+
     return ret;
 }

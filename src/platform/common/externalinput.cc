@@ -24,7 +24,6 @@
 #include "config_plf_log.h"
 #include "device_capacity.h"
 #include "externalinput.h"
-#include <acl/acl.h>
 
 using namespace std;
 using namespace hccl;
@@ -138,7 +137,7 @@ HcclResult InitEnvVarParam()
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
         std::vector<std::string>({"value", "env", "expect"}),
-        std::vector<std::string>({GET_ENV(MM_ENV_HCCL_WHITELIST_DISABLE), "HCCL_WHITELIST_DISABLE", "0 or 1."}));
+        std::vector<std::string>({GET_ENV(MM_ENV_HCCL_WHITELIST_DISABLE), "HCCL_WHITELIST_DISABLE", "0 or 1"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse whitelist switch failed. errorno[%d]",
             LOG_KEYWORDS_INIT_GROUP.c_str(),
@@ -287,7 +286,7 @@ HcclResult InitEnvVarParam()
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
         std::vector<std::string>({"value", "env", "expect"}),
-        std::vector<std::string>({GET_ENV(MM_ENV_HCCL_BUFFSIZE), "HCCL_BUFFSIZE", "equal to or greater than 1(MB)."}));
+        std::vector<std::string>({GET_ENV(MM_ENV_HCCL_BUFFSIZE), "HCCL_BUFFSIZE", "equal to or greater than 1(MB)"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse HCCL_BUFFSIZE failed. errorno[%d]",
             LOG_KEYWORDS_INIT_GROUP.c_str(),
@@ -301,7 +300,7 @@ HcclResult InitEnvVarParam()
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
         std::vector<std::string>({"value", "env", "expect"}),
-        std::vector<std::string>({GET_ENV(MM_ENV_HCCL_DETERMINISTIC), "HCCL_DETERMINISTIC", "true, false or strict."}));
+        std::vector<std::string>({GET_ENV(MM_ENV_HCCL_DETERMINISTIC), "HCCL_DETERMINISTIC", "true, false or strict"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse HCCL_DETERMINISTIC failed. errorno[%d]",
             LOG_KEYWORDS_INIT_GROUP.c_str(),
@@ -315,7 +314,7 @@ HcclResult InitEnvVarParam()
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
         std::vector<std::string>({"value", "env", "expect"}),
-        std::vector<std::string>({GET_ENV(MM_ENV_HCCL_DIAGNOSE_ENABLE), "HCCL_DIAGNOSE_ENABLE", "0 or 1."}));
+        std::vector<std::string>({GET_ENV(MM_ENV_HCCL_DIAGNOSE_ENABLE), "HCCL_DIAGNOSE_ENABLE", "0 or 1"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse HCCL_DIAGNOSE_ENABLE failed. "
                    "errorno[%d]",
@@ -330,7 +329,7 @@ HcclResult InitEnvVarParam()
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
         std::vector<std::string>({"value", "env", "expect"}),
-        std::vector<std::string>({GET_ENV(MM_ENV_HCCL_ENTRY_LOG_ENABLE), "HCCL_ENTRY_LOG_ENABLE", "0 or 1."}));
+        std::vector<std::string>({GET_ENV(MM_ENV_HCCL_ENTRY_LOG_ENABLE), "HCCL_ENTRY_LOG_ENABLE", "0 or 1"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse HCCL_ENTRY_LOG_ENABLE failed. "
                    "errorno[%d]",
@@ -345,7 +344,7 @@ HcclResult InitEnvVarParam()
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
         std::vector<std::string>({"value", "env", "expect"}),
-        std::vector<std::string>({GET_ENV(MM_ENV_HCCL_INTER_HCCS_DISABLE), "HCCL_INTER_HCCS_DISABLE", "true or false."}));
+        std::vector<std::string>({GET_ENV(MM_ENV_HCCL_INTER_HCCS_DISABLE), "HCCL_INTER_HCCS_DISABLE", "true or false"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse HCCL_INTER_HCCS_DISABLE failed. "
                    "errorno[%d]",
@@ -360,7 +359,7 @@ HcclResult InitEnvVarParam()
         "EI0001",
         std::vector<std::string>({"value", "env", "expect"}),
         std::vector<std::string>({GET_ENV(MM_ENV_HCCL_OP_EXPANSION_MODE), "HCCL_OP_EXPANSION_MODE",
-            "Atlas A3: AI_CPU | AIV; Atlas A2 AIV | HOST | HOST_TS; Atlas 300I AI_CPU | HOST. "}));
+            "Atlas A3: AI_CPU | AIV; Atlas A2 AIV | HOST | HOST_TS; Atlas 300I AI_CPU | HOST"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse HCCL_OP_EXPANSION_MODE failed. "
                    "errorno[%d]",
@@ -392,7 +391,7 @@ HcclResult InitEnvVarParam()
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
         std::vector<std::string>({"value", "env", "expect"}),
-        std::vector<std::string>({GET_ENV(MM_ENV_HCCL_MULTI_QP_THRESHOLD), "HCCL_MULTI_QP_THRESHOLD", "larger than 0, less than 8193(KB)."}));
+        std::vector<std::string>({GET_ENV(MM_ENV_HCCL_MULTI_QP_THRESHOLD), "HCCL_MULTI_QP_THRESHOLD", "larger than 0, less than 8193(KB)"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse "
                    "HCCL_MULTI_QP_THRESHOLD(range[1,8192]) failed. errorno[%d]",
@@ -408,7 +407,7 @@ HcclResult InitEnvVarParam()
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
         std::vector<std::string>({"value", "env", "expect"}),
-        std::vector<std::string>({GET_ENV(MM_ENV_HCCL_OP_RETRY_ENABLE), "HCCL_OP_RETRY_ENABLE", "0 or 1."}));
+        std::vector<std::string>({GET_ENV(MM_ENV_HCCL_OP_RETRY_ENABLE), "HCCL_OP_RETRY_ENABLE", "0 or 1"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse HCCL_OP_RETRY_ENABLE failed. "
                    "errorno[%d]",
@@ -456,7 +455,7 @@ HcclResult InitEnvVarParam()
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
         std::vector<std::string>({"value", "env", "expect"}),
-        std::vector<std::string>({GET_ENV(MM_ENV_HCCL_RDMA_PCIE_DIRECT_POST_NOSTRICT), "HCCL_RDMA_PCIE_DIRECT_POST_NOSTRICT", "true or false."}));
+        std::vector<std::string>({GET_ENV(MM_ENV_HCCL_RDMA_PCIE_DIRECT_POST_NOSTRICT), "HCCL_RDMA_PCIE_DIRECT_POST_NOSTRICT", "true or false"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse "
                    "HCCL_RDMA_PCIE_DIRECT_POST_NOSTRICT failed. errorno[%d]",
@@ -489,7 +488,7 @@ HcclResult InitEnvVarParam()
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
         std::vector<std::string>({"value", "env", "expect"}),
-        std::vector<std::string>({envValue, "HCCL_DEBUG_CONFIG", "ALG,TASK,RESOURCE,AIV_OPS_EXC(optionally prefixed with'^')"}));
+        std::vector<std::string>({envValue, "HCCL_DEBUG_CONFIG", "ALG,TASK,RESOURCE(optionally prefixed with'^')"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, "
                    "parse HCCL_DEBUG_CONFIG failed. errorno[%d]",
@@ -1084,7 +1083,7 @@ HcclResult SetMasterInfo(const string &masterIp, const string &masterPort, const
             RPT_ENV_ERR(HCCL_E_PARA,
                 "EI0001",
                 std::vector<std::string>({"value", "env", "expect"}),
-                std::vector<std::string>({rankIp, "CM_WORKER_IP", "an available ip."}));
+                std::vector<std::string>({rankIp, "CM_WORKER_IP", "an available ip"}));
             HCCL_ERROR("[%s][%s]errNo[0x%016llx] masterIp agent address[CM_WORKER_IP][%s] is invalid. errorno[%d]",
                 LOG_KEYWORDS_INIT_GROUP.c_str(),
                 LOG_KEYWORDS_ENV_CONFIG.c_str(),
@@ -1289,6 +1288,132 @@ HcclResult ParseRDMARetryCnt()
     HCCL_RUN_INFO("[HCCL_ENV] HCCL_RDMA_RETRY_CNT set by environment to [%u]", rdmaRetryCnt);
     return HCCL_SUCCESS;
 }
+#if !defined(CCL_KERNEL_AICPU) && !defined(HCCD)
+namespace
+{
+#define PKG_VERSION_MAX_SIZE 128
+constexpr auto kVersionInfoKey = "Version=";
+constexpr auto kRelPathInfo = "/share/info/";
+constexpr auto kInfoFileName = "/version.info";
+std::string Trim(const std::string& str) {
+    const size_t first = str.find_first_not_of(" \t\r\n");
+    if (std::string::npos == first) {
+        return "";
+    }
+    const size_t last = str.find_last_not_of(" \t\r\n");
+    return str.substr(first, (last - first + 1));
+}
+
+HcclResult GetVersionStringInternal(const std::string &fullPath, const char_t *pkgName, std::string &versionOut, bool isSilent = false) {
+    std::ifstream ifs(fullPath);
+    if (!ifs.is_open()) {
+        if (isSilent) {
+            HCCL_WARNING("Version file not found at [%s] (Silent check, will retry alternative).", fullPath.c_str());
+        } else {
+            HCCL_WARNING("Version file not found at [%s]. Please check if package name [%s] is correct and package is installed.",
+                          fullPath.c_str(), pkgName);
+        }
+        return HCCL_E_OPEN_FILE_FAILURE;
+    }
+    std::string line;
+    bool found = false;
+    const size_t keyLen = std::strlen(kVersionInfoKey);
+    while (std::getline(ifs, line)) {
+        const size_t pos = line.find(kVersionInfoKey);
+        if (pos != std::string::npos) {
+            versionOut = Trim(line.substr(pos + keyLen));
+            found = true;
+            break;
+        }
+    }
+    ifs.close();
+    if (!found || versionOut.empty()) {
+        HCCL_WARNING("Keyword [%s] not found in file [%s].", kVersionInfoKey, fullPath.c_str());
+        return HCCL_E_NOT_FOUND;
+    }
+    return HCCL_SUCCESS;
+}
+
+std::string GetLocalRealPath(const std::string &path)
+{
+    if (path.empty()) {
+        return "";
+    }
+    char resolvedPath[PATH_MAX] = {0};
+    if (realpath(path.c_str(), resolvedPath) == nullptr) {
+        HCCL_WARNING("Failed to get real path for [%s], errno:%d", path.c_str(), errno);
+        return "";
+    }
+    return std::string(resolvedPath);
+}
+
+HcclResult GetVersionByPkgName(const std::string &targetPkgName, std::string &versionContent, bool isSilent) {
+    const char *pathEnv = nullptr;
+    MM_SYS_GET_ENV(MM_ENV_ASCEND_HOME_PATH, pathEnv);
+    if (pathEnv == nullptr) {
+        HCCL_WARNING("Can not get env [%s]. Please check if ASCEND_HOME_PATH is set.", "ASCEND_HOME_PATH");
+        return HCCL_E_OPEN_FILE_FAILURE;
+    }
+    std::string homePath(pathEnv);
+    homePath = GetLocalRealPath(homePath);
+    if (homePath.empty()) {
+        HCCL_WARNING("ASCEND_HOME_PATH [%s] does not exist.", homePath.c_str());
+        return HCCL_E_OPEN_FILE_FAILURE;
+    }
+    const std::string fullPath = homePath + kRelPathInfo + targetPkgName + kInfoFileName;
+    return GetVersionStringInternal(fullPath, targetPkgName.c_str(), versionContent, isSilent);
+}
+HcclResult GetPkgVersionContent(const char *pkgName, std::string &versionContent) {
+    const std::string originPkgName(pkgName);
+    std::string altPkgName = originPkgName;
+    bool hasAlternative = false;
+
+    if (originPkgName.find('-') != std::string::npos) {
+        std::replace(altPkgName.begin(), altPkgName.end(), '-', '_');
+        hasAlternative = true;
+    } else if (originPkgName.find('_') != std::string::npos) {
+        std::replace(altPkgName.begin(), altPkgName.end(), '_', '-');
+        hasAlternative = true;
+    }
+    const bool isSilent = hasAlternative;
+    HcclResult ret = GetVersionByPkgName(originPkgName, versionContent, isSilent);
+    if (ret == HCCL_SUCCESS) {
+        return ret;
+    }
+    if (hasAlternative) {
+        HCCL_INFO("Pkg [%s] not found, trying alternative name [%s]...",
+                     originPkgName.c_str(), altPkgName.c_str());
+
+        ret = GetVersionByPkgName(altPkgName, versionContent, false);
+        if (ret == HCCL_SUCCESS) {
+            HCCL_INFO("Found version info using alternative name [%s].", altPkgName.c_str());
+            return HCCL_SUCCESS;
+        }
+    }
+    return ret;
+}
+
+HcclResult GetPkgVersionStr(char *pkgName, char *versionStr)
+{
+    HCCL_INFO("start to execute GetPkgVersionStr.");
+    CHK_PTR_NULL(versionStr);
+    CHK_PTR_NULL(pkgName);
+    std::string verInfo;
+    const HcclResult ret = GetPkgVersionContent(pkgName, verInfo);
+    if (ret != HCCL_SUCCESS) {
+        return ret;
+    }
+    if (strcpy_s(versionStr, PKG_VERSION_MAX_SIZE, verInfo.c_str()) != EOK) {
+        HCCL_WARNING("Copy string failed. Dest buffer size is [%d], source len is [%lu].",
+                      PKG_VERSION_MAX_SIZE, verInfo.length());
+        return HCCL_E_INTERNAL;
+    }
+    HCCL_INFO("GetPkgVersionStr success. Pkg:[%s], Ver:[%s]", pkgName, versionStr);
+    return ret;
+}
+
+}
+#endif
 
 HcclResult ParseCannVersion()
 {
@@ -1298,25 +1423,31 @@ HcclResult ParseCannVersion()
     constexpr u32 HCCL_VERSION_STR_MAX_LEN = 128;
     std::vector<char> hcommVersion(HCCL_VERSION_STR_MAX_LEN, 0);
     std::vector<char> hcclVersion(HCCL_VERSION_STR_MAX_LEN, 0);
-    aclError aclRet = aclsysGetVersionStr(hcommPkgName, hcommVersion.data());
+    HcclResult versionRet = GetPkgVersionStr(hcommPkgName, hcommVersion.data());
     CHK_PRT_RET(
-        aclRet != ACL_SUCCESS,
-        HCCL_WARNING("[Parse][CannVersion]failed to get hcomm version, aclRet[%d]", static_cast<int>(aclRet)),
+        versionRet != HCCL_SUCCESS,
+        HCCL_WARNING("[Parse][CannVersion]failed to get hcomm version, ret[%d]", versionRet),
         HCCL_E_NOT_FOUND);
-    aclRet = aclsysGetVersionStr(hcclPkgName, hcclVersion.data());
-    CHK_PRT_RET(
-        aclRet != ACL_SUCCESS,
-        HCCL_WARNING("[Parse][CannVersion]failed to get hccl version, aclRet[%d]", static_cast<int>(aclRet)),
-        HCCL_E_NOT_FOUND);
-    size_t hlen = strnlen(hcommVersion.data(), HCCL_VERSION_STR_MAX_LEN);
-    size_t clen = strnlen(hcclVersion.data(), HCCL_VERSION_STR_MAX_LEN);
-    if (hlen == 0 || clen == 0 || hlen == HCCL_VERSION_STR_MAX_LEN || clen == HCCL_VERSION_STR_MAX_LEN) {
-        HCCL_WARNING("[Parse][CannVersion]hcomm version or hccl version is empty, hcomm Version=%s, hccl Version=%s.",
-                     std::string(hcommVersion.data(), hlen).c_str(), std::string(hcclVersion.data(), clen).c_str());
+    versionRet = GetPkgVersionStr(hcclPkgName, hcclVersion.data());
+    if (versionRet != HCCL_SUCCESS) {
+        HCCL_WARNING("[Parse][CannVersion]failed to get hccl version, ret[%d]", versionRet);
+        hcclVersion.assign(HCCL_VERSION_STR_MAX_LEN, 0);
+    }
+    const size_t hlen = strnlen(hcommVersion.data(), HCCL_VERSION_STR_MAX_LEN);
+    const size_t clen = strnlen(hcclVersion.data(), HCCL_VERSION_STR_MAX_LEN);
+    if (hlen == 0 || hlen == HCCL_VERSION_STR_MAX_LEN) {
+        HCCL_WARNING("[Parse][CannVersion]hcomm version is empty", std::string(hcommVersion.data(), hlen).c_str());
         return HCCL_E_NOT_FOUND;
     }
-    g_externalInput.cannVersion = std::string(hcommVersion.data()) + "_" + std::string(hcclVersion.data());
-    HCCL_RUN_INFO("[Parse][CannVersion]success, hcomm version is %s, hccl version is %s ", std::string(hcommVersion.data()).c_str(), std::string(hcclVersion.data()).c_str());
+    g_externalInput.cannVersion = std::string(hcommVersion.data());
+    if (clen != 0 && clen != HCCL_VERSION_STR_MAX_LEN) {
+        g_externalInput.cannVersion += "_" + std::string(hcclVersion.data());
+        HCCL_RUN_INFO("[Parse][CannVersion]success, hcomm version is %s, hccl version is %s ",
+            std::string(hcommVersion.data()).c_str(), std::string(hcclVersion.data()).c_str());
+    } else {
+        HCCL_RUN_INFO("[Parse][CannVersion]success, hcomm version is %s, but hccl package not found.",
+            std::string(hcommVersion.data()).c_str());
+    }
     return HcclResult::HCCL_SUCCESS;
 #else
 	HCCL_WARNING("[ParseCannVersion]Does not support this interface.");
@@ -1776,7 +1907,7 @@ HcclResult ParseDebugConfig()
         } else if (strcasecmp(subConfig, "RESOURCE") == 0) {
             mask = PLF_RES;
         } else if (strcasecmp(subConfig, "AIV_OPS_EXC") == 0) {
-            mask = PLF_AIV_OPS_EXC;
+            HCCL_WARNING("HCCL_DEBUG_CONFIG:%s subConfig:%s is deprecated and ignored", env, subConfig);
         } else {
             HCCL_ERROR("HCCL_DEBUG_CONFIG:%s is invalid, subConfig:%s is not supported", env, subConfig);
             free(configDup);
@@ -2036,3 +2167,4 @@ void SetExternalInputDebugConfig(u64 value)
 {
     g_externalInput.debugConfig = value;
 }
+

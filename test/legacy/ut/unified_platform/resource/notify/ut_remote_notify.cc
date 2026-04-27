@@ -12,7 +12,7 @@
 #include <mockcpp/mokc.h>
 #include <mockcpp/mockcpp.hpp>
 #define private public
-#include "remote_notify.h"
+#include "ipc_remote_notify.h"
 #undef private
 #include "local_notify.h"
 #include "exchange_ipc_notify_dto.h"

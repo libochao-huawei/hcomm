@@ -25,12 +25,16 @@ UbRegedMemMgr::UbRegedMemMgr()
 {
     localUbRmaBufferMgr_ = std::make_unique<LocalUbRmaBufferMgr>();
 }
-    
+
 HcclResult UbRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void **memHandle)
 {
     HCCL_INFO("[%s] Begin", __FUNCTION__);
     CHK_PTR_NULL(this->localUbRmaBufferMgr_);
     CHK_PTR_NULL(memHandle);
+    CHK_PTR_NULL(mem.addr);
+    CHK_PRT_RET(mem.size == 0, HCCL_ERROR("[%s] mem size is zero", __func__), HCCL_E_PARA);
+    CHK_PRT_RET(mem.type == COMM_MEM_TYPE_INVALID, 
+        HCCL_ERROR("[%s] invalid mem type [%d]", __func__, mem.type), HCCL_E_PARA);
 
     std::shared_ptr<Hccl::LocalUbRmaBuffer> localUbRmaBuffer = nullptr;
 
@@ -42,7 +46,8 @@ HcclResult UbRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void 
     } else {
         // 构造LocalUbRmaBuffer
         std::shared_ptr<Hccl::Buffer> localBufferPtr = nullptr;
-        EXECEPTION_CATCH((localBufferPtr = std::make_shared<Hccl::Buffer>(reinterpret_cast<uintptr_t>(mem.addr), mem.size, mem.type, memTag)),
+        EXECEPTION_CATCH((localBufferPtr = std::make_shared<Hccl::Buffer>(reinterpret_cast<uintptr_t>(mem.addr),
+            mem.size, static_cast<HcclMemType>(mem.type), memTag)),
             return HCCL_E_PTR);
 
         if (memTag && (strcmp(memTag, "HcclBuffer") == 0)) {
@@ -56,12 +61,7 @@ HcclResult UbRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void 
     }
     
     // 注册到LocalUbRmaBuffer计数器
-    auto resultPair = localUbRmaBufferMgr_->Add(tempKey, localUbRmaBuffer);
-    if (resultPair.first == localUbRmaBufferMgr_->End()) {
-        // 若已注册内存有交叉，返回HCCL_E_INTERNAL
-        HCCL_ERROR("[UbRegedMemMgr][RegisterMemory] [%s]The memory overlaps with the memory that has been registered.", __FUNCTION__);
-        return HCCL_E_INTERNAL;
-    }
+    auto resultPair = localUbRmaBufferMgr_->AddWithoutCheck(tempKey, localUbRmaBuffer);
 
     std::shared_ptr<Hccl::LocalUbRmaBuffer> &localBuffer = resultPair.first->second.buffer;
     CHK_SMART_PTR_NULL(localBuffer);
@@ -74,7 +74,7 @@ HcclResult UbRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void 
     } else {  
         HCCL_INFO("[UbRegedMemMgr][RegisterMemory]Memory is already registered, just increase the reference count. Add key "
                 "{%p, %llu}", mem.addr, mem.size);;
-        return HCCL_E_AGAIN;
+        return HCCL_SUCCESS;
     }
 
     this->allRegisteredBuffers_.push_back(localBuffer);
@@ -98,7 +98,7 @@ HcclResult UbRegedMemMgr::UnregisterMemory(void* memHandle)
     if (!resultPair) {
         HCCL_INFO("[UbRegedMemMgr][[UnregisterMemory] Memory reference count is larger than 0"
                   "(used by other RemoteRank), do not deregister memory.");
-        return HCCL_E_AGAIN;
+        return HCCL_SUCCESS;
     }
     
     // 删除vector中的LocalUbRmaBuffer

@@ -145,9 +145,10 @@ protected:
         .with(any())
         .will(invoke(hrtRaGetInterfaceVersionStub));
 
+        void* ptr = (void*)0xabcd;
         MOCKER(hrtRaPingInit)
         .stubs()
-        .with(any())
+        .with(any(), any(), outBoundP(&ptr, sizeof(ptr)))
         .will(returnValue(HCCL_SUCCESS));
 
         MOCKER(hrtRaPingDeinit)
@@ -273,6 +274,42 @@ TEST_F(PingMesh_UT, ut_PingMeshInit)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
+HcclResult stub_hrtRaGetDevEidInfoList(RaInfo info, struct HccpDevEidInfo *eid_info, unsigned int* num)
+{
+    memset(eid_info->eid.raw, 0, sizeof(eid_info->eid.raw));
+    *num = 1;
+    return HCCL_SUCCESS;
+}
+
+TEST_F(PingMesh_UT, ut_PingMeshInit_950)
+{
+    const char *fakeA5SocName = "Ascend950PR_958b";
+    MOCKER(aclrtGetSocName).stubs().will(returnValue(fakeA5SocName));
+    u32 num = 1;
+    MOCKER(hrtRaGetDevEidInfoNum).stubs().with(any(), outBoundP(&num, sizeof(&num)))
+        .will(returnValue(HCCL_E_NOT_SUPPORT))
+        .then(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtRaGetSecRandom).stubs().with(any(), outBoundP(&num, sizeof(&num))).will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtRaGetDevEidInfoList).stubs().will(invoke(stub_hrtRaGetDevEidInfoList));
+    u32 deviceId = 1;
+    u32 mode = static_cast<u32>(LinkType::LINK_UB);
+    HcclIpAddress ipAddr = HcclIpAddress(0x7F000001);
+    u32 port = 13866;
+    u32 nodeNum = 10;
+    u32 bufferSize = 100U;
+    u32 sl = 0;
+    u32 tc = 0;
+
+    // 初始化成功
+    std::shared_ptr<PingMesh> pingMesh;
+    pingMesh.reset(new (std::nothrow) PingMesh());
+    auto ret = pingMesh->HccnRpingInit(deviceId, mode, ipAddr, port, nodeNum, bufferSize, sl, tc);
+    EXPECT_EQ(ret, HCCL_E_NETWORK);
+
+    ret = pingMesh->HccnRpingInit(deviceId, mode, ipAddr, port, nodeNum, bufferSize, sl, tc);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
 
 TEST_F(PingMesh_UT, ut_PingMeshAddDelTarget)
 {
@@ -394,7 +431,7 @@ TEST_F(PingMesh_UT, ut_PingMeshAddDelTargetPatch)
     socket->Init();
     pingMesh->socketMaps_.insert({target[i].sip.GetReadableIP(), socket});
     PingQpInfo rdmainfo { 0 };
-    pingMesh->rdmaInfoMaps_.insert({target[i].sip.GetReadableIP(), rdmainfo});
+    pingMesh->rdmaInfoMaps_.Emplace(target[i].sip.GetReadableIP(), rdmainfo);
     ret = pingMesh->HccnRpingRemoveTarget(deviceId, nodeNum, target);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     HcclNetCloseDev(netCtx);
@@ -619,7 +656,7 @@ TEST_F(PingMesh_UT, ut_PingMeshGetResult)
     PingQpInfo rdmainfo {0};
     for (u32 i = 0; i < 10; i++) {
         HcclIpAddress targetIp = HcclIpAddress(0x7F000002 + i);
-        pingMesh->rdmaInfoMaps_.insert({std::string(targetIp.GetReadableIP()), rdmainfo});
+        pingMesh->rdmaInfoMaps_.Emplace(std::string(targetIp.GetReadableIP()), rdmainfo);
         target[i].sip = targetIp;
         target[i].dip = targetIp;
         target[i].port = 13866;
@@ -685,7 +722,7 @@ TEST_F(PingMesh_UT, ut_PingMeshGetResultFail)
     PingQpInfo rdmainfo {0};
     for (u32 i = 0; i < 10; i++) {
         HcclIpAddress targetIp = HcclIpAddress(0x7F000002 + i);
-        pingMesh->rdmaInfoMaps_.insert({std::string(targetIp.GetReadableIP()), rdmainfo});
+        pingMesh->rdmaInfoMaps_.Emplace(std::string(targetIp.GetReadableIP()), rdmainfo);
         target[i].sip = targetIp;
         target[i].dip = targetIp;
         target[i].port = 13866;
@@ -876,7 +913,7 @@ TEST_F(PingMesh_UT, ut_PingMeshGetPayload)
     for (u32 i = 0; i < 10; i++) {
         ipAddrBin.addr6.s6_addr[15]++;
         HcclIpAddress targetIp = HcclIpAddress(AF_INET6, ipAddrBin);
-        pingMesh->rdmaInfoMaps_.insert({std::string(targetIp.GetReadableIP()), rdmainfo});
+        pingMesh->rdmaInfoMaps_.Emplace(std::string(targetIp.GetReadableIP()), rdmainfo);
         target[i].sip = targetIp;
         target[i].dip = targetIp;
         target[i].port = 13866;

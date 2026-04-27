@@ -161,6 +161,12 @@ struct RaLoopbackInfo {
     struct ibv_cq *ibSendCq;
     struct ibv_cq *ibRecvCq;
     void *cqContext;
+    struct ibv_comp_channel *compChannel;
+};
+
+struct RaCqHandleExt {
+    unsigned long long addr;
+    struct RaRdmaHandle *rdmaHandle;
 };
 
 struct RaQpHandle {
@@ -196,6 +202,7 @@ struct RaQpHandle {
     unsigned int bpCnt; // only valid in RDMA Lite scenario
     struct RaLoopbackInfo *loopbackInfo;
     struct RaQpHandle *loopbackQpHandle;
+    int directFlag;
 };
 
 struct RaMrHandle {

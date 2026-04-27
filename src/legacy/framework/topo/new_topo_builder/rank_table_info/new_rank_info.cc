@@ -67,6 +67,9 @@ void NewRankInfo::Deserialize(const nlohmann::json &newRankInfoJson)
     for (auto &levelJson : levelJsons) {
         RankLevelInfo levelInfo;
         levelInfo.Deserialize(levelJson);
+        for (auto &addrsInfo : levelInfo.rankAddrs) {
+            addrsInfo.socketPort_ = devicePort;
+        }
         rankLevelInfos.emplace_back(levelInfo);
     }
 
@@ -93,8 +96,8 @@ void NewRankInfo::Deserialize(const nlohmann::json &newRankInfoJson)
 
 std::string NewRankInfo::Describe() const
 {
-    return StringFormat("NewRankInfo[rankId=%d, localId=%d, replacedLocalId=%d, ranklevelInfos size=%d, device_port=%d]",
-                        rankId, localId, replacedLocalId, rankLevelInfos.size(), devicePort);
+    return StringFormat("NewRankInfo[rankId=%d, localId=%d, replacedLocalId=%d, ranklevelInfos size=%d, device_port=%d, "
+        "tlsStatus=%d]", rankId, localId, replacedLocalId, rankLevelInfos.size(), devicePort, static_cast<int>(tlsStatus));
 }
 
 NewRankInfo::NewRankInfo(BinaryStream &binStream)
@@ -109,6 +112,7 @@ NewRankInfo::NewRankInfo(BinaryStream &binStream)
     }
     ControlPlane controlPlanes(binStream);
     controlPlane=controlPlanes;
+    binStream >> tlsStatus;
 }
 
 void NewRankInfo::GetBinStream(bool isContainLoaId, BinaryStream &binStream) const
@@ -128,6 +132,7 @@ void NewRankInfo::GetBinStream(bool isContainLoaId, BinaryStream &binStream) con
         it.GetBinStream(binStream);
     }
     controlPlane.GetBinStream(binStream);
+    binStream << tlsStatus;
 }
 
 } // namespace Hccl

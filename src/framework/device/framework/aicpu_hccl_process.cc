@@ -319,6 +319,24 @@ hccl::HcclCommAicpu *AicpuHcclProcess::AicpuGetCommbyGroup(const std::string &gr
     return nullptr;
 }
 
+hccl::HcclCommAicpu *AicpuHcclProcess::AicpuGetComm(const std::string &group)
+{
+    if (group.empty()) {
+        HCCL_ERROR("[AicpuHcclProcess] group is empty");
+        return nullptr;
+    }
+    ReadWriteLock rwlock(g_commAicpuInfo.commAicpuMapMutex);
+    rwlock.readLock();
+    auto iter = g_commAicpuInfo.commMap.find(group);
+    if (iter == g_commAicpuInfo.commMap.end()) {
+        HCCL_ERROR("[AicpuHcclProcess] exist group size is [%u]", g_commAicpuInfo.commMap.size());
+        rwlock.readUnlock();
+        return nullptr;
+    }
+    rwlock.readUnlock();
+    return iter->second.first.get();
+}
+
 bool AicpuHcclProcess::GetCommExecStatus(const std::string &group)
 {
     auto iter = g_commAicpuInfo.commMap.find(group);
@@ -337,7 +355,7 @@ void AicpuHcclProcess::AicpuReleaseCommbyGroup(const std::string &group)
         rwlock.readUnlock();
         return;
     }
-    g_hcclComm = iter->second.first.get();
+    g_hcclComm = nullptr;
     iter->second.second = false;
     rwlock.readUnlock();
 }
@@ -563,6 +581,8 @@ HcclResult AicpuHcclProcess::WaitAsyncFlag(hccl::Transport::Buffer *localFlagBuf
     uint32_t index = flagValue - FLAG_OFFSET;
     bool isTimeout = true;
     u64 startTime = GetCurCpuTimestamp();
+    CHK_PTR_NULL(localFlagBufforCheck);
+    CHK_PTR_NULL(localFlagBufforCheck[index].addr);
     uint32_t* waitPtr = const_cast<uint32_t*>(static_cast<const uint32_t*>(localFlagBufforCheck[index].addr));
     while ((GetCurCpuTimestamp() - startTime) < static_cast<unsigned long long>(NSEC_PER_SEC * timeOut)) {
         if (*waitPtr == flagValue) {
@@ -629,6 +649,7 @@ HcclResult AicpuHcclProcess::AicpuIndOpChannelInit(HcclIndOpChannelRemoteResV3 *
 
 HcclResult AicpuHcclProcess::AicpuIndOpNotifyInit(NotifyMgrAicpuParam *param)
 {
+    CHK_PTR_NULL(param);
     std::string group = param->hcomId;
     hccl::HcclCommAicpu *hcclCommAicpu = AicpuHcclProcess::AicpuGetCommbyGroup(group);
     CHK_PRT_RET(!hcclCommAicpu, HCCL_ERROR("%s hcclCommAicpu is null, group[%s]", __func__, group.c_str()), HCCL_E_PTR);

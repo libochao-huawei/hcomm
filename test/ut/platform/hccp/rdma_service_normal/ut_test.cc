@@ -21,6 +21,7 @@ extern "C" {
 #include "gtest/gtest.h"
 #include "tc_ut_rs_ub.h"
 #include "tc_ut_rs_ctx.h"
+#include "tc_ut_rs_nda.h"
 
 using namespace std;
 
@@ -77,7 +78,7 @@ TEST_M(RS, Tcrs_check_pridata);
 TEST_M(RS, Tctls_load_cert);
 TEST_M(RS, Tcrs_ssl_err_string);
 TEST_M(RS, tc_rs_socket_fill_wlist_by_phyID);
- TEST_M(RS, TcRsNotifyCfgSet);
+TEST_M(RS, TcRsNotifyCfgSet);
 TEST_M(RS, TcRsServerSendWlistCheckResult);
 
 TEST_M(RS, TcRsSocketDeinit2);
@@ -266,3 +267,10 @@ TEST_M(RS, TcRsRetryTimeoutExceptionCheck);
 TEST_M(RS, TcRsSetQpLbValue);
 TEST_M(RS, TcRsGetQpLbValue);
 TEST_M(RS, TcRsGetLbMax);
+TEST_M(RS, TcRsNdaGetDirectFlag);
+TEST_M(RS, TcRsNdaQpCreateFailed);
+TEST_M(RS, TcRsNdaQpCreate);
+TEST_M(RS, TcRsNdaQpCreateEx);
+TEST_M(RS, TcRsNdaUbAllocFailed);
+TEST_M(RS, TcRsNdaDbMmapHostVa);
+TEST_M(RS, TcRsNdaDbMmapUbRes);

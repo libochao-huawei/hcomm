@@ -14,22 +14,11 @@
 #include <memory>
 #include <array>
 #include "dfx_common.h"
-#include "queue.h"
-#include "task_info.h"
 #include "exception_util.h"
 #include "internal_exception.h"
-#include "circular_queue.h"
-#include "vector_queue.h"
 #include <array>
 
 namespace Hccl {
-
-const u32 MAX_CIRCULAR_QUEUE_LENGTH = 2048;
-
-MAKE_ENUM(QueueType, Circular_Queue, Vector_Queue)
-
-using TaskInfoQueue    = Queue<std::shared_ptr<TaskInfo>>;
-using TaskInfoQueueMap = std::map<u32, std::unique_ptr<TaskInfoQueue>>;
 
 class GlobalMirrorTasks {
 public:
@@ -47,6 +36,8 @@ public:
     TaskInfoQueueMap::iterator Begin(u32 devId);
     TaskInfoQueueMap::iterator End(u32 devId);
 
+    HcclResult FindTaskInfo(u32 devId, u32 streamId, u32 taskId, std::shared_ptr<TaskInfo> &curTask) const;
+    
 private:
     static GlobalMirrorTasks                       ins_;
     std::array<TaskInfoQueueMap, DEVICE_MAX_NUM> taskMaps_;

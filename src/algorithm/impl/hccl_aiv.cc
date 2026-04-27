@@ -48,145 +48,170 @@ constexpr u32 AIV_ATTRNUM_THREE = 3;
 
 using AivKernelInfo = struct AivKernelInfoDef {
     const char* kernelName;
-    HcclCMDType cmdType;
     HcclDataType dataType;
     KernelArgsType argsType;
 
-    AivKernelInfoDef(const char* kernelName, HcclCMDType cmdType, HcclDataType dataType,
+    AivKernelInfoDef(const char* kernelName, HcclDataType dataType,
         KernelArgsType argsType = KernelArgsType::ARGS_TYPE_SERVER)
-        : kernelName(kernelName), cmdType(cmdType), dataType(dataType), argsType(argsType)
+        : kernelName(kernelName), dataType(dataType), argsType(argsType)
     {
     }
 };
 
 static bool g_init = false;
 static mutex g_mut;
-static aclrtBinHandle g_binHandle;
+static std::unordered_map<HcclCMDType, aclrtBinHandle> g_binHandleMap;
 static std::unordered_map<s8*, aclrtFuncHandle> g_aivFuncMap;
 static std::unordered_map<s8*, std::string> g_aivNameMap;
 
-static std::vector<AivKernelInfo> g_aivKernelInfoList = {
-    // allreduce
-    {"aiv_all_reduce_float", HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_FP32},
-    {"aiv_all_reduce_half", HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_FP16},
-    {"aiv_all_reduce_int16_t", HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_INT16},
-    {"aiv_all_reduce_int32_t", HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_INT32},
-    {"aiv_all_reduce_int8_t", HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_INT8},
-    {"aiv_all_reduce_bfloat16_t", HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_BFP16},
-    {"aiv_all_reduce_cn_float", HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_FP32, KernelArgsType::ARGS_TYPE_SIMPLE},
-    {"aiv_all_reduce_cn_half", HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_FP16, KernelArgsType::ARGS_TYPE_SIMPLE},
-    {"aiv_all_reduce_cn_int16_t", HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_INT16, KernelArgsType::ARGS_TYPE_SIMPLE},
-    {"aiv_all_reduce_cn_int32_t", HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_INT32, KernelArgsType::ARGS_TYPE_SIMPLE},
-    {"aiv_all_reduce_cn_int8_t", HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_INT8, KernelArgsType::ARGS_TYPE_SIMPLE},
-    {"aiv_all_reduce_cn_bfloat16_t", HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_BFP16, KernelArgsType::ARGS_TYPE_SIMPLE},
-    // alltoall alltoallvc
-    {"aiv_all_to_all_vc_half", HcclCMDType::HCCL_CMD_ALLTOALLVC, HcclDataType::HCCL_DATA_TYPE_FP16},
-    {"aiv_all_to_all_vc_int16_t", HcclCMDType::HCCL_CMD_ALLTOALLVC, HcclDataType::HCCL_DATA_TYPE_INT16},
-    {"aiv_all_to_all_vc_uint16_t", HcclCMDType::HCCL_CMD_ALLTOALLVC, HcclDataType::HCCL_DATA_TYPE_UINT16},
-    {"aiv_all_to_all_vc_float", HcclCMDType::HCCL_CMD_ALLTOALLVC, HcclDataType::HCCL_DATA_TYPE_FP32},
-    {"aiv_all_to_all_vc_int32_t", HcclCMDType::HCCL_CMD_ALLTOALLVC, HcclDataType::HCCL_DATA_TYPE_INT32},
-    {"aiv_all_to_all_vc_uint32_t", HcclCMDType::HCCL_CMD_ALLTOALLVC, HcclDataType::HCCL_DATA_TYPE_UINT32},
-    {"aiv_all_to_all_vc_int8_t", HcclCMDType::HCCL_CMD_ALLTOALLVC, HcclDataType::HCCL_DATA_TYPE_INT8},
-    {"aiv_all_to_all_vc_uint8_t", HcclCMDType::HCCL_CMD_ALLTOALLVC, HcclDataType::HCCL_DATA_TYPE_UINT8},
-    {"aiv_all_to_all_vc_bfloat16_t", HcclCMDType::HCCL_CMD_ALLTOALLVC, HcclDataType::HCCL_DATA_TYPE_BFP16},
-    // alltoallv
-    {"aiv_all_to_all_v_half", HcclCMDType::HCCL_CMD_ALLTOALLV, HcclDataType::HCCL_DATA_TYPE_FP16},
-    {"aiv_all_to_all_v_int16_t", HcclCMDType::HCCL_CMD_ALLTOALLV, HcclDataType::HCCL_DATA_TYPE_INT16},
-    {"aiv_all_to_all_v_uint16_t", HcclCMDType::HCCL_CMD_ALLTOALLV, HcclDataType::HCCL_DATA_TYPE_UINT16},
-    {"aiv_all_to_all_v_float", HcclCMDType::HCCL_CMD_ALLTOALLV, HcclDataType::HCCL_DATA_TYPE_FP32},
-    {"aiv_all_to_all_v_int32_t", HcclCMDType::HCCL_CMD_ALLTOALLV, HcclDataType::HCCL_DATA_TYPE_INT32},
-    {"aiv_all_to_all_v_uint32_t", HcclCMDType::HCCL_CMD_ALLTOALLV, HcclDataType::HCCL_DATA_TYPE_UINT32},
-    {"aiv_all_to_all_v_int8_t", HcclCMDType::HCCL_CMD_ALLTOALLV, HcclDataType::HCCL_DATA_TYPE_INT8},
-    {"aiv_all_to_all_v_uint8_t", HcclCMDType::HCCL_CMD_ALLTOALLV, HcclDataType::HCCL_DATA_TYPE_UINT8},
-    {"aiv_all_to_all_v_bfloat16_t", HcclCMDType::HCCL_CMD_ALLTOALLV, HcclDataType::HCCL_DATA_TYPE_BFP16},
-    // alltoallv a3
-    {"aiv_all_to_all_v_sp_half",
-        HcclCMDType::HCCL_CMD_ALLTOALLV, HcclDataType::HCCL_DATA_TYPE_FP16, KernelArgsType::ARGS_TYPE_SUPERPOD},
-    {"aiv_all_to_all_v_sp_int16_t",
-        HcclCMDType::HCCL_CMD_ALLTOALLV, HcclDataType::HCCL_DATA_TYPE_INT16, KernelArgsType::ARGS_TYPE_SUPERPOD},
-    {"aiv_all_to_all_v_sp_uint16_t",
-        HcclCMDType::HCCL_CMD_ALLTOALLV, HcclDataType::HCCL_DATA_TYPE_UINT16, KernelArgsType::ARGS_TYPE_SUPERPOD},
-    {"aiv_all_to_all_v_sp_float",
-        HcclCMDType::HCCL_CMD_ALLTOALLV, HcclDataType::HCCL_DATA_TYPE_FP32, KernelArgsType::ARGS_TYPE_SUPERPOD},
-    {"aiv_all_to_all_v_sp_int32_t",
-        HcclCMDType::HCCL_CMD_ALLTOALLV, HcclDataType::HCCL_DATA_TYPE_INT32, KernelArgsType::ARGS_TYPE_SUPERPOD},
-    {"aiv_all_to_all_v_sp_uint32_t",
-        HcclCMDType::HCCL_CMD_ALLTOALLV, HcclDataType::HCCL_DATA_TYPE_UINT32, KernelArgsType::ARGS_TYPE_SUPERPOD},
-    {"aiv_all_to_all_v_sp_int8_t",
-        HcclCMDType::HCCL_CMD_ALLTOALLV, HcclDataType::HCCL_DATA_TYPE_INT8, KernelArgsType::ARGS_TYPE_SUPERPOD},
-    {"aiv_all_to_all_v_sp_uint8_t",
-        HcclCMDType::HCCL_CMD_ALLTOALLV, HcclDataType::HCCL_DATA_TYPE_UINT8, KernelArgsType::ARGS_TYPE_SUPERPOD},
-    {"aiv_all_to_all_v_sp_bfloat16_t",
-        HcclCMDType::HCCL_CMD_ALLTOALLV, HcclDataType::HCCL_DATA_TYPE_BFP16, KernelArgsType::ARGS_TYPE_SUPERPOD},
-    // alltoall
-    {"aiv_all_to_all_half", HcclCMDType::HCCL_CMD_ALLTOALL, HcclDataType::HCCL_DATA_TYPE_FP16},
-    {"aiv_all_to_all_int16_t", HcclCMDType::HCCL_CMD_ALLTOALL, HcclDataType::HCCL_DATA_TYPE_INT16},
-    {"aiv_all_to_all_uint16_t", HcclCMDType::HCCL_CMD_ALLTOALL, HcclDataType::HCCL_DATA_TYPE_UINT16},
-    {"aiv_all_to_all_float", HcclCMDType::HCCL_CMD_ALLTOALL, HcclDataType::HCCL_DATA_TYPE_FP32},
-    {"aiv_all_to_all_int32_t", HcclCMDType::HCCL_CMD_ALLTOALL, HcclDataType::HCCL_DATA_TYPE_INT32},
-    {"aiv_all_to_all_uint32_t", HcclCMDType::HCCL_CMD_ALLTOALL, HcclDataType::HCCL_DATA_TYPE_UINT32},
-    {"aiv_all_to_all_int8_t", HcclCMDType::HCCL_CMD_ALLTOALL, HcclDataType::HCCL_DATA_TYPE_INT8},
-    {"aiv_all_to_all_uint8_t", HcclCMDType::HCCL_CMD_ALLTOALL, HcclDataType::HCCL_DATA_TYPE_UINT8},
-    {"aiv_all_to_all_bfloat16_t", HcclCMDType::HCCL_CMD_ALLTOALL, HcclDataType::HCCL_DATA_TYPE_BFP16},
-    // reducescatter
-    {"aiv_reduce_scatter_float", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, HcclDataType::HCCL_DATA_TYPE_FP32},
-    {"aiv_reduce_scatter_half", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, HcclDataType::HCCL_DATA_TYPE_FP16},
-    {"aiv_reduce_scatter_int16_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, HcclDataType::HCCL_DATA_TYPE_INT16},
-    {"aiv_reduce_scatter_int32_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, HcclDataType::HCCL_DATA_TYPE_INT32},
-    {"aiv_reduce_scatter_int8_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, HcclDataType::HCCL_DATA_TYPE_INT8},
-    {"aiv_reduce_scatter_bfloat16_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, HcclDataType::HCCL_DATA_TYPE_BFP16},
-    {"aiv_reduce_scatter_cn_float", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, HcclDataType::HCCL_DATA_TYPE_FP32, KernelArgsType::ARGS_TYPE_SIMPLE},
-    {"aiv_reduce_scatter_cn_half", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, HcclDataType::HCCL_DATA_TYPE_FP16, KernelArgsType::ARGS_TYPE_SIMPLE},
-    {"aiv_reduce_scatter_cn_int16_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, HcclDataType::HCCL_DATA_TYPE_INT16, KernelArgsType::ARGS_TYPE_SIMPLE},
-    {"aiv_reduce_scatter_cn_int32_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, HcclDataType::HCCL_DATA_TYPE_INT32, KernelArgsType::ARGS_TYPE_SIMPLE},
-    {"aiv_reduce_scatter_cn_int8_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, HcclDataType::HCCL_DATA_TYPE_INT8, KernelArgsType::ARGS_TYPE_SIMPLE},
-    {"aiv_reduce_scatter_cn_bfloat16_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, HcclDataType::HCCL_DATA_TYPE_BFP16, KernelArgsType::ARGS_TYPE_SIMPLE},
-    // reducescatterv
-    {"aiv_reduce_scatter_v_float", HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V, HcclDataType::HCCL_DATA_TYPE_FP32},
-    {"aiv_reduce_scatter_v_half", HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V, HcclDataType::HCCL_DATA_TYPE_FP16},
-    {"aiv_reduce_scatter_v_int16_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V, HcclDataType::HCCL_DATA_TYPE_INT16},
-    {"aiv_reduce_scatter_v_int32_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V, HcclDataType::HCCL_DATA_TYPE_INT32},
-    {"aiv_reduce_scatter_v_int8_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V, HcclDataType::HCCL_DATA_TYPE_INT8},
-    {"aiv_reduce_scatter_v_bfloat16_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V, HcclDataType::HCCL_DATA_TYPE_BFP16},
-     // allgather
-    {"aiv_all_gather_half", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_FP16},
-    {"aiv_all_gather_int16_t", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_INT16},
-    {"aiv_all_gather_uint16_t", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_UINT16},
-    {"aiv_all_gather_float", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_FP32},
-    {"aiv_all_gather_int32_t", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_INT32},
-    {"aiv_all_gather_uint32_t", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_UINT32},
-    {"aiv_all_gather_int8_t", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_INT8},
-    {"aiv_all_gather_uint8_t", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_UINT8},
-    {"aiv_all_gather_bfloat16_t", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_BFP16},
-    {"aiv_all_gather_cn_half", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_FP16, KernelArgsType::ARGS_TYPE_SIMPLE},
-    {"aiv_all_gather_cn_int16_t", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_INT16, KernelArgsType::ARGS_TYPE_SIMPLE},
-    {"aiv_all_gather_cn_uint16_t", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_UINT16, KernelArgsType::ARGS_TYPE_SIMPLE},
-    {"aiv_all_gather_cn_float", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_FP32, KernelArgsType::ARGS_TYPE_SIMPLE},
-    {"aiv_all_gather_cn_int32_t", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_INT32, KernelArgsType::ARGS_TYPE_SIMPLE},
-    {"aiv_all_gather_cn_uint32_t", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_UINT32, KernelArgsType::ARGS_TYPE_SIMPLE},
-    {"aiv_all_gather_cn_int8_t", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_INT8, KernelArgsType::ARGS_TYPE_SIMPLE},
-    {"aiv_all_gather_cn_uint8_t", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_UINT8, KernelArgsType::ARGS_TYPE_SIMPLE},
-    {"aiv_all_gather_cn_bfloat16_t", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_BFP16, KernelArgsType::ARGS_TYPE_SIMPLE},
-     // allgatherv
-    {"aiv_all_gather_v_half", HcclCMDType::HCCL_CMD_ALLGATHER_V, HcclDataType::HCCL_DATA_TYPE_FP16},
-    {"aiv_all_gather_v_int16_t", HcclCMDType::HCCL_CMD_ALLGATHER_V, HcclDataType::HCCL_DATA_TYPE_INT16},
-    {"aiv_all_gather_v_uint16_t", HcclCMDType::HCCL_CMD_ALLGATHER_V, HcclDataType::HCCL_DATA_TYPE_UINT16},
-    {"aiv_all_gather_v_float", HcclCMDType::HCCL_CMD_ALLGATHER_V, HcclDataType::HCCL_DATA_TYPE_FP32},
-    {"aiv_all_gather_v_int32_t", HcclCMDType::HCCL_CMD_ALLGATHER_V, HcclDataType::HCCL_DATA_TYPE_INT32},
-    {"aiv_all_gather_v_uint32_t", HcclCMDType::HCCL_CMD_ALLGATHER_V, HcclDataType::HCCL_DATA_TYPE_UINT32},
-    {"aiv_all_gather_v_int8_t", HcclCMDType::HCCL_CMD_ALLGATHER_V, HcclDataType::HCCL_DATA_TYPE_INT8},
-    {"aiv_all_gather_v_uint8_t", HcclCMDType::HCCL_CMD_ALLGATHER_V, HcclDataType::HCCL_DATA_TYPE_UINT8},
-    {"aiv_all_gather_v_bfloat16_t", HcclCMDType::HCCL_CMD_ALLGATHER_V, HcclDataType::HCCL_DATA_TYPE_BFP16},
-    // broadcast
-    {"aiv_broadcast_half", HcclCMDType::HCCL_CMD_BROADCAST, HcclDataType::HCCL_DATA_TYPE_FP16},
-    {"aiv_broadcast_int16_t", HcclCMDType::HCCL_CMD_BROADCAST, HcclDataType::HCCL_DATA_TYPE_INT16},
-    {"aiv_broadcast_uint16_t", HcclCMDType::HCCL_CMD_BROADCAST, HcclDataType::HCCL_DATA_TYPE_UINT16},
-    {"aiv_broadcast_float", HcclCMDType::HCCL_CMD_BROADCAST, HcclDataType::HCCL_DATA_TYPE_FP32},
-    {"aiv_broadcast_int32_t", HcclCMDType::HCCL_CMD_BROADCAST, HcclDataType::HCCL_DATA_TYPE_INT32},
-    {"aiv_broadcast_uint32_t", HcclCMDType::HCCL_CMD_BROADCAST, HcclDataType::HCCL_DATA_TYPE_UINT32},
-    {"aiv_broadcast_int8_t", HcclCMDType::HCCL_CMD_BROADCAST, HcclDataType::HCCL_DATA_TYPE_INT8},
-    {"aiv_broadcast_uint8_t", HcclCMDType::HCCL_CMD_BROADCAST, HcclDataType::HCCL_DATA_TYPE_UINT8},
-    {"aiv_broadcast_bfloat16_t", HcclCMDType::HCCL_CMD_BROADCAST, HcclDataType::HCCL_DATA_TYPE_BFP16},
+static std::vector<AivKernelInfo> g_allreduceAivKernelInfoList = {
+    {"aiv_all_reduce_float", HcclDataType::HCCL_DATA_TYPE_FP32},
+    {"aiv_all_reduce_half", HcclDataType::HCCL_DATA_TYPE_FP16},
+    {"aiv_all_reduce_int16_t", HcclDataType::HCCL_DATA_TYPE_INT16},
+    {"aiv_all_reduce_int32_t", HcclDataType::HCCL_DATA_TYPE_INT32},
+    {"aiv_all_reduce_int8_t", HcclDataType::HCCL_DATA_TYPE_INT8},
+    {"aiv_all_reduce_bfloat16_t", HcclDataType::HCCL_DATA_TYPE_BFP16},
+    {"aiv_all_reduce_cn_float", HcclDataType::HCCL_DATA_TYPE_FP32, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_all_reduce_cn_half", HcclDataType::HCCL_DATA_TYPE_FP16, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_all_reduce_cn_int16_t", HcclDataType::HCCL_DATA_TYPE_INT16, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_all_reduce_cn_int32_t", HcclDataType::HCCL_DATA_TYPE_INT32, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_all_reduce_cn_int8_t", HcclDataType::HCCL_DATA_TYPE_INT8, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_all_reduce_cn_bfloat16_t", HcclDataType::HCCL_DATA_TYPE_BFP16, KernelArgsType::ARGS_TYPE_SIMPLE},
+};
+static std::string g_allreduceAivBinaryName = "hccl_aiv_all_reduce_op.o";
+
+static std::vector<AivKernelInfo> g_reducescatterAivKernelInfoList = {
+    {"aiv_reduce_scatter_float", HcclDataType::HCCL_DATA_TYPE_FP32},
+    {"aiv_reduce_scatter_half", HcclDataType::HCCL_DATA_TYPE_FP16},
+    {"aiv_reduce_scatter_int16_t", HcclDataType::HCCL_DATA_TYPE_INT16},
+    {"aiv_reduce_scatter_int32_t", HcclDataType::HCCL_DATA_TYPE_INT32},
+    {"aiv_reduce_scatter_int8_t", HcclDataType::HCCL_DATA_TYPE_INT8},
+    {"aiv_reduce_scatter_bfloat16_t", HcclDataType::HCCL_DATA_TYPE_BFP16},
+    {"aiv_reduce_scatter_cn_float", HcclDataType::HCCL_DATA_TYPE_FP32, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_reduce_scatter_cn_half", HcclDataType::HCCL_DATA_TYPE_FP16, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_reduce_scatter_cn_int16_t", HcclDataType::HCCL_DATA_TYPE_INT16, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_reduce_scatter_cn_int32_t", HcclDataType::HCCL_DATA_TYPE_INT32, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_reduce_scatter_cn_int8_t", HcclDataType::HCCL_DATA_TYPE_INT8, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_reduce_scatter_cn_bfloat16_t", HcclDataType::HCCL_DATA_TYPE_BFP16, KernelArgsType::ARGS_TYPE_SIMPLE},
+};
+static std::string g_reducescatterAivBinaryName = "hccl_aiv_reduce_scatter_op.o";
+
+static std::vector<AivKernelInfo> g_allgatherAivKernelInfoList = {
+    {"aiv_all_gather_half", HcclDataType::HCCL_DATA_TYPE_FP16},
+    {"aiv_all_gather_int16_t", HcclDataType::HCCL_DATA_TYPE_INT16},
+    {"aiv_all_gather_uint16_t", HcclDataType::HCCL_DATA_TYPE_UINT16},
+    {"aiv_all_gather_float", HcclDataType::HCCL_DATA_TYPE_FP32},
+    {"aiv_all_gather_int32_t", HcclDataType::HCCL_DATA_TYPE_INT32},
+    {"aiv_all_gather_uint32_t", HcclDataType::HCCL_DATA_TYPE_UINT32},
+    {"aiv_all_gather_int8_t", HcclDataType::HCCL_DATA_TYPE_INT8},
+    {"aiv_all_gather_uint8_t", HcclDataType::HCCL_DATA_TYPE_UINT8},
+    {"aiv_all_gather_bfloat16_t", HcclDataType::HCCL_DATA_TYPE_BFP16},
+    {"aiv_all_gather_cn_half", HcclDataType::HCCL_DATA_TYPE_FP16, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_all_gather_cn_int16_t", HcclDataType::HCCL_DATA_TYPE_INT16, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_all_gather_cn_uint16_t", HcclDataType::HCCL_DATA_TYPE_UINT16, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_all_gather_cn_float", HcclDataType::HCCL_DATA_TYPE_FP32, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_all_gather_cn_int32_t", HcclDataType::HCCL_DATA_TYPE_INT32, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_all_gather_cn_uint32_t", HcclDataType::HCCL_DATA_TYPE_UINT32, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_all_gather_cn_int8_t", HcclDataType::HCCL_DATA_TYPE_INT8, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_all_gather_cn_uint8_t", HcclDataType::HCCL_DATA_TYPE_UINT8, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_all_gather_cn_bfloat16_t", HcclDataType::HCCL_DATA_TYPE_BFP16, KernelArgsType::ARGS_TYPE_SIMPLE},
+};
+static std::string g_allgatherAivBinaryName = "hccl_aiv_all_gather_op.o";
+
+static std::vector<AivKernelInfo> g_broadcastAivKernelInfoList = {
+    {"aiv_broadcast_half", HcclDataType::HCCL_DATA_TYPE_FP16},
+    {"aiv_broadcast_int16_t", HcclDataType::HCCL_DATA_TYPE_INT16},
+    {"aiv_broadcast_uint16_t", HcclDataType::HCCL_DATA_TYPE_UINT16},
+    {"aiv_broadcast_float", HcclDataType::HCCL_DATA_TYPE_FP32},
+    {"aiv_broadcast_int32_t", HcclDataType::HCCL_DATA_TYPE_INT32},
+    {"aiv_broadcast_uint32_t", HcclDataType::HCCL_DATA_TYPE_UINT32},
+    {"aiv_broadcast_int8_t", HcclDataType::HCCL_DATA_TYPE_INT8},
+    {"aiv_broadcast_uint8_t", HcclDataType::HCCL_DATA_TYPE_UINT8},
+    {"aiv_broadcast_bfloat16_t", HcclDataType::HCCL_DATA_TYPE_BFP16},
+};
+static std::string g_broadcastAivBinaryName = "hccl_aiv_broadcast_op.o";
+
+static std::vector<AivKernelInfo> g_alltoallAivKernelInfoList = {
+    {"aiv_all_to_all_half", HcclDataType::HCCL_DATA_TYPE_FP16},
+    {"aiv_all_to_all_int16_t", HcclDataType::HCCL_DATA_TYPE_INT16},
+    {"aiv_all_to_all_uint16_t", HcclDataType::HCCL_DATA_TYPE_UINT16},
+    {"aiv_all_to_all_float", HcclDataType::HCCL_DATA_TYPE_FP32},
+    {"aiv_all_to_all_int32_t", HcclDataType::HCCL_DATA_TYPE_INT32},
+    {"aiv_all_to_all_uint32_t", HcclDataType::HCCL_DATA_TYPE_UINT32},
+    {"aiv_all_to_all_int8_t", HcclDataType::HCCL_DATA_TYPE_INT8},
+    {"aiv_all_to_all_uint8_t", HcclDataType::HCCL_DATA_TYPE_UINT8},
+    {"aiv_all_to_all_bfloat16_t", HcclDataType::HCCL_DATA_TYPE_BFP16},
+};
+static std::string g_alltoallAivBinaryName = "hccl_aiv_all_to_all_op.o";
+
+static std::vector<AivKernelInfo> g_alltoallvAivKernelInfoList = {
+    {"aiv_all_to_all_v_half", HcclDataType::HCCL_DATA_TYPE_FP16},
+    {"aiv_all_to_all_v_int16_t", HcclDataType::HCCL_DATA_TYPE_INT16},
+    {"aiv_all_to_all_v_uint16_t", HcclDataType::HCCL_DATA_TYPE_UINT16},
+    {"aiv_all_to_all_v_float", HcclDataType::HCCL_DATA_TYPE_FP32},
+    {"aiv_all_to_all_v_int32_t", HcclDataType::HCCL_DATA_TYPE_INT32},
+    {"aiv_all_to_all_v_uint32_t", HcclDataType::HCCL_DATA_TYPE_UINT32},
+    {"aiv_all_to_all_v_int8_t", HcclDataType::HCCL_DATA_TYPE_INT8},
+    {"aiv_all_to_all_v_uint8_t", HcclDataType::HCCL_DATA_TYPE_UINT8},
+    {"aiv_all_to_all_v_bfloat16_t", HcclDataType::HCCL_DATA_TYPE_BFP16},
+    {"aiv_all_to_all_v_sp_half", HcclDataType::HCCL_DATA_TYPE_FP16, KernelArgsType::ARGS_TYPE_SUPERPOD},
+    {"aiv_all_to_all_v_sp_int16_t", HcclDataType::HCCL_DATA_TYPE_INT16, KernelArgsType::ARGS_TYPE_SUPERPOD},
+    {"aiv_all_to_all_v_sp_uint16_t", HcclDataType::HCCL_DATA_TYPE_UINT16, KernelArgsType::ARGS_TYPE_SUPERPOD},
+    {"aiv_all_to_all_v_sp_float", HcclDataType::HCCL_DATA_TYPE_FP32, KernelArgsType::ARGS_TYPE_SUPERPOD},
+    {"aiv_all_to_all_v_sp_int32_t", HcclDataType::HCCL_DATA_TYPE_INT32, KernelArgsType::ARGS_TYPE_SUPERPOD},
+    {"aiv_all_to_all_v_sp_uint32_t", HcclDataType::HCCL_DATA_TYPE_UINT32, KernelArgsType::ARGS_TYPE_SUPERPOD},
+    {"aiv_all_to_all_v_sp_int8_t", HcclDataType::HCCL_DATA_TYPE_INT8, KernelArgsType::ARGS_TYPE_SUPERPOD},
+    {"aiv_all_to_all_v_sp_uint8_t", HcclDataType::HCCL_DATA_TYPE_UINT8, KernelArgsType::ARGS_TYPE_SUPERPOD},
+    {"aiv_all_to_all_v_sp_bfloat16_t", HcclDataType::HCCL_DATA_TYPE_BFP16, KernelArgsType::ARGS_TYPE_SUPERPOD},
+};
+static std::string g_alltoallvAivBinaryName = "hccl_aiv_all_to_all_v_op.o";
+
+static std::vector<AivKernelInfo> g_alltoallvcAivKernelInfoList = {
+    {"aiv_all_to_all_vc_half", HcclDataType::HCCL_DATA_TYPE_FP16},
+    {"aiv_all_to_all_vc_int16_t", HcclDataType::HCCL_DATA_TYPE_INT16},
+    {"aiv_all_to_all_vc_uint16_t", HcclDataType::HCCL_DATA_TYPE_UINT16},
+    {"aiv_all_to_all_vc_float", HcclDataType::HCCL_DATA_TYPE_FP32},
+    {"aiv_all_to_all_vc_int32_t", HcclDataType::HCCL_DATA_TYPE_INT32},
+    {"aiv_all_to_all_vc_uint32_t", HcclDataType::HCCL_DATA_TYPE_UINT32},
+    {"aiv_all_to_all_vc_int8_t", HcclDataType::HCCL_DATA_TYPE_INT8},
+    {"aiv_all_to_all_vc_uint8_t", HcclDataType::HCCL_DATA_TYPE_UINT8},
+    {"aiv_all_to_all_vc_bfloat16_t", HcclDataType::HCCL_DATA_TYPE_BFP16},
+};
+static std::string g_alltoallvcAivBinaryName = "hccl_aiv_all_to_all_vc_op.o";
+
+static std::vector<AivKernelInfo> g_reducescattervAivKernelInfoList = {
+    {"aiv_reduce_scatter_v_float", HcclDataType::HCCL_DATA_TYPE_FP32},
+    {"aiv_reduce_scatter_v_half", HcclDataType::HCCL_DATA_TYPE_FP16},
+    {"aiv_reduce_scatter_v_int16_t", HcclDataType::HCCL_DATA_TYPE_INT16},
+    {"aiv_reduce_scatter_v_int32_t", HcclDataType::HCCL_DATA_TYPE_INT32},
+    {"aiv_reduce_scatter_v_int8_t", HcclDataType::HCCL_DATA_TYPE_INT8},
+    {"aiv_reduce_scatter_v_bfloat16_t", HcclDataType::HCCL_DATA_TYPE_BFP16},
+};
+static std::string g_reducescattervAivBinaryName = "hccl_aiv_reduce_scatter_v_op.o";
+
+static std::vector<AivKernelInfo> g_allgathervAivKernelInfoList = {
+    {"aiv_all_gather_v_half", HcclDataType::HCCL_DATA_TYPE_FP16},
+    {"aiv_all_gather_v_int16_t", HcclDataType::HCCL_DATA_TYPE_INT16},
+    {"aiv_all_gather_v_uint16_t", HcclDataType::HCCL_DATA_TYPE_UINT16},
+    {"aiv_all_gather_v_float", HcclDataType::HCCL_DATA_TYPE_FP32},
+    {"aiv_all_gather_v_int32_t", HcclDataType::HCCL_DATA_TYPE_INT32},
+    {"aiv_all_gather_v_uint32_t", HcclDataType::HCCL_DATA_TYPE_UINT32},
+    {"aiv_all_gather_v_int8_t", HcclDataType::HCCL_DATA_TYPE_INT8},
+    {"aiv_all_gather_v_uint8_t", HcclDataType::HCCL_DATA_TYPE_UINT8},
+    {"aiv_all_gather_v_bfloat16_t", HcclDataType::HCCL_DATA_TYPE_BFP16},
+};
+static std::string g_allgathervAivBinaryName = "hccl_aiv_all_gather_v_op.o";
+
+static std::map<HcclCMDType, std::pair<std::string, std::vector<AivKernelInfo>>> g_aivKernelInfoMap = {
+    {HcclCMDType::HCCL_CMD_ALLREDUCE, {g_allreduceAivBinaryName, g_allreduceAivKernelInfoList}},
+    {HcclCMDType::HCCL_CMD_REDUCE_SCATTER, {g_reducescatterAivBinaryName, g_reducescatterAivKernelInfoList}},
+    {HcclCMDType::HCCL_CMD_ALLGATHER, {g_allgatherAivBinaryName, g_allgatherAivKernelInfoList}},
+    {HcclCMDType::HCCL_CMD_BROADCAST, {g_broadcastAivBinaryName, g_broadcastAivKernelInfoList}},
+    {HcclCMDType::HCCL_CMD_ALLTOALL, {g_alltoallAivBinaryName, g_alltoallAivKernelInfoList}},
+    {HcclCMDType::HCCL_CMD_ALLTOALLV, {g_alltoallvAivBinaryName, g_alltoallvAivKernelInfoList}},
+    {HcclCMDType::HCCL_CMD_ALLTOALLVC, {g_alltoallvcAivBinaryName, g_alltoallvcAivKernelInfoList}},
+    {HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V, {g_reducescattervAivBinaryName, g_reducescattervAivKernelInfoList}},
+    {HcclCMDType::HCCL_CMD_ALLGATHER_V, {g_allgathervAivBinaryName, g_allgathervAivKernelInfoList}},
 };
 
 using AivKernelArgs = struct AivKernelArgsDef {
@@ -371,7 +396,7 @@ using AivKernelArgsV3 = struct AivKernelArgsV3Def {
     }
 };
 
-HcclResult GetAivOpBinaryPath(DevType deviceType, std::string &binaryPath)
+HcclResult GetAivOpBinaryPath(const std::string &aivBinaryName, std::string &binaryPath)
 {
     // 获取二进制文件路径
     std::string libPath;
@@ -381,25 +406,13 @@ HcclResult GetAivOpBinaryPath(DevType deviceType, std::string &binaryPath)
         libPath = getPath;
     } else {
         libPath = "/usr/local/Ascend/cann";
-        HCCL_WARNING("[GetOpBinaryPath]ENV:ASCEND_HOME_PATH is not set");
+        HCCL_WARNING("[GetAivOpBinaryPath]ENV:ASCEND_HOME_PATH is not set");
     }
     binaryPath = libPath + "/lib64";
-    HCCL_INFO("op binary file path[%s]", binaryPath.c_str());
 
-    // 判断应该加载的文件
-    switch (deviceType) {
-        case DevType::DEV_TYPE_910B:
-        case DevType::DEV_TYPE_910_93:
-            binaryPath += "/hccl_aiv_op_ascend910B.o";
-            break;
-        case DevType::DEV_TYPE_910:
-        case DevType::DEV_TYPE_310P3:
-        case DevType::DEV_TYPE_310P1:
-        default:
-            HCCL_ERROR("[AIV][GetAivOpBinaryPath]devType[%u] is not supported", deviceType);
-            return HCCL_E_NOT_SUPPORT;
-    }
-    HCCL_INFO("[AIV][GetAivOpBinaryPath]op binary file path[%s]", binaryPath.c_str());
+    // 拼接应该加载的文件
+    binaryPath += "/" + aivBinaryName;
+    HCCL_RUN_INFO("[GetAivOpBinaryPath]op binary file path[%s]", binaryPath.c_str());
     return HCCL_SUCCESS;
 }
 
@@ -474,21 +487,29 @@ HcclResult RegisterKernel(DevType deviceType)
         return HCCL_SUCCESS;
     }
     HcclResult ret;
-    string binFilePath;
-    ret = GetAivOpBinaryPath(deviceType, binFilePath);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[AIV][RegisterKernel] get aiv op binary path failed"), HCCL_E_RUNTIME);
 
-    ret = LoadBinaryFromFile(binFilePath.c_str(), ACL_RT_BINARY_LOAD_OPT_LAZY_LOAD, 1, g_binHandle);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[AIV][RegisterKernel] read aiv kernel bin file failed"),
-        HCCL_E_RUNTIME);
+    for (auto& aivOpKernelInfo : g_aivKernelInfoMap) {
+        HcclCMDType cmdType = aivOpKernelInfo.first;
+        const std::string &aivBinaryName = aivOpKernelInfo.second.first;
+        std::vector<AivKernelInfo> &aivKernelInfoList = aivOpKernelInfo.second.second;
 
-    for (auto &aivKernelInfo: g_aivKernelInfoList) {
-        ret = RegisterBinaryKernel(aivKernelInfo.kernelName, g_binHandle,
-            GetStubFunc(aivKernelInfo.cmdType, aivKernelInfo.dataType, aivKernelInfo.argsType));
-        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[AIV][RegisterKernel] register binary kernel for kernelName[%s] "
-            "cmdType[%d] dataType[%s] argsType[%d] failed", aivKernelInfo.kernelName, aivKernelInfo.cmdType,
-            GetDataTypeEnumStr(aivKernelInfo.dataType).c_str(), aivKernelInfo.argsType), HCCL_E_RUNTIME);
+        string binFilePath;
+        ret = GetAivOpBinaryPath(aivBinaryName, binFilePath);
+        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[AIV][RegisterKernel] get aiv op binary path failed"), HCCL_E_RUNTIME);
+
+        ret = LoadBinaryFromFile(binFilePath.c_str(), ACL_RT_BINARY_LOAD_OPT_LAZY_LOAD, 1, g_binHandleMap[cmdType]);
+        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[AIV][RegisterKernel] read aiv kernel bin file failed"),
+            HCCL_E_RUNTIME);
+
+        for (auto &aivKernelInfo: aivKernelInfoList) {
+            ret = RegisterBinaryKernel(aivKernelInfo.kernelName, g_binHandleMap[cmdType],
+                GetStubFunc(cmdType, aivKernelInfo.dataType, aivKernelInfo.argsType));
+            CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[AIV][RegisterKernel] register binary kernel for kernelName[%s] "
+                "cmdType[%d] dataType[%s] argsType[%d] failed", aivKernelInfo.kernelName, cmdType,
+                GetDataTypeEnumStr(aivKernelInfo.dataType).c_str(), aivKernelInfo.argsType), HCCL_E_RUNTIME);
+        }
     }
+
     g_init = true;
 
     return HCCL_SUCCESS;
@@ -498,7 +519,9 @@ HcclResult UnRegisterAivKernel()
 {
     lock_guard<mutex> guard(g_mut);
     if (g_init) {
-        aclrtBinaryUnLoad(g_binHandle);
+        for (auto& binHandleItem : g_binHandleMap) {
+            aclrtBinaryUnLoad(binHandleItem.second);
+        }
         g_aivFuncMap.clear();
 
         g_init = false;
@@ -615,7 +638,7 @@ HcclResult ExecuteKernelLaunchInner(const AivOpArgs &opArgs, const AivTopoArgs &
     aclError aclRet = aclrtLaunchKernelWithHostArgs(funcHandle, resourceArgs.numBlocks, resourceArgs.stream,
         &cfg, args, argsSize, nullptr, 0);
     if (aclRet == ACL_ERROR_RT_INVALID_HANDLE) {
-        aclError aclGetRet = aclrtBinaryGetFunction(g_binHandle, g_aivNameMap[stubFunc].c_str(), &funcHandle);
+        aclError aclGetRet = aclrtBinaryGetFunction(g_binHandleMap[opArgs.cmdType], g_aivNameMap[stubFunc].c_str(), &funcHandle);
         CHK_PRT_RET(aclGetRet != ACL_SUCCESS, HCCL_ERROR("[RegisterBinaryKernel]errNo[0x%016llx] get function from binary error.", aclRet),
             HCCL_E_NOT_FOUND);
         aclRet = aclrtLaunchKernelWithHostArgs(funcHandle, resourceArgs.numBlocks, resourceArgs.stream,

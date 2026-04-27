@@ -47,10 +47,10 @@ protected:
         // 初始化memTransportManager
         comm.InitMemTransportManager();
         // 向transport map添加transport
-        unique_ptr<UbMemTransport> transportOpbase = make_unique<UbMemTransport>(locRes, attr, linkData, fakeSocket, rdmaHandle, locCntRes);
+        unique_ptr<UbMemTransport> transportOpbase = make_unique<UbMemTransport>(locRes, attr, linkData, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
         comm.memTransportManager->opTagOpbasedMap[linkData] = std::move(transportOpbase);
         comm.memTransportManager->newOpbasedTransports[linkData] = 0;
-        unique_ptr<UbMemTransport> transportOffload = make_unique<UbMemTransport>(locRes, attr, linkData, fakeSocket, rdmaHandle, locCntRes);
+        unique_ptr<UbMemTransport> transportOffload = make_unique<UbMemTransport>(locRes, attr, linkData, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
         comm.memTransportManager->opTagOffloadMap[opTag][linkData] = std::move(transportOffload);
         comm.memTransportManager->newOffloadTransports[opTag][linkData] = 0;
 
@@ -78,6 +78,7 @@ protected:
     IpAddress                         ipAddress{"1.0.0.0"};
     Socket                            fakeSocket{nullptr, ipAddress, 100, ipAddress, "tag", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE};
     RdmaHandle                        rdmaHandle = (void *)0x100;
+    bool                              isRecvFirst = false;
 };
 
 TEST_F(CollServiceBaseTest, Ut_WaitOpbasedTransportReady_When_TransportReady_Expect_NoException)

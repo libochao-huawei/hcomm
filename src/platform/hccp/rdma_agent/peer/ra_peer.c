@@ -20,7 +20,9 @@
 #include "ra_rs_comm.h"
 #include "ra_rs_err.h"
 #include "rs.h"
+#include "ra_peer_nda.h"
 #include "ra_peer.h"
+#include "rs_common_inner.h"
 
 #define PAGE_SHIFT              12
 int gNotifyFd = -1;
@@ -66,12 +68,10 @@ int RaPeerSocketBatchClose(unsigned int devId, struct SocketCloseInfoT conn[], u
     RsSetCtx(devId);
     PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[devId]);
     ret = RsSocketBatchClose(disuseLinger, &closeInfo[index], closeNum);
-    if (ret) {
+    if (ret != 0) {
         hccp_err("[batch_close][ra_peer_socket]ra close failed ret(%d).", ret);
-        goto out;
     }
 
-out:
     for (i = 0; i < num; i++) {
         if (conn[i].fdHandle != NULL) {
             free(conn[i].fdHandle);
@@ -114,9 +114,9 @@ int RaPeerSocketBatchConnect(unsigned int devId, struct SocketConnectInfoT conn[
     ret = RsSocketSetScopeId(devId, ((struct RaSocketHandle *)conn[0].socketHandle)->scopeId);
     if (ret != 0) {
         PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[devId]);
+        hccp_err("[set scope id][ra_peer_socket]ra_peer_socket_set_scope_id failed, ret(%d).", ret);
+        return ret;
     }
-    CHK_PRT_RETURN(ret, hccp_err("[set scope id][ra_peer_socket]ra_peer_socket_set_scope_id failed"
-        "ret(%d).", ret), ret);
 
     ret = RsSocketBatchConnect(connOut, num);
     if (ret) {
@@ -146,9 +146,9 @@ int RaPeerSocketListenStart(unsigned int devId, struct SocketListenInfoT conn[],
     ret = RsSocketSetScopeId(devId, ((struct RaSocketHandle *)conn[0].socketHandle)->scopeId);
     if (ret != 0) {
         PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[devId]);
+        hccp_err("[set scope id][ra_peer_socket]ra_peer_socket_set_scope_id failed ret(%d)", ret);
+        return ret;
     }
-    CHK_PRT_RETURN(ret, hccp_err("[set scope id][ra_peer_socket]ra_peer_socket_set_scope_id failed"
-        "ret(%d)", ret), ret);
 
     ret = RsSocketListenStart(rsConn, num);
     // listen node found, degrade log level make it consistent with inner call
@@ -447,6 +447,7 @@ int RaPeerSocketWhiteListDel(struct rdev rdevInfo,
 int RaPeerSocketDeinit(struct rdev rdevInfo)
 {
     int ret;
+
     PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[rdevInfo.phyId]);
     RsSetCtx(rdevInfo.phyId);
     ret = RsSocketDeinit(rdevInfo);
@@ -479,7 +480,7 @@ int RaPeerQpCreate(struct RaRdmaHandle *rdmaHandle, int flag, int qpMode, void *
     RsSetCtx(phyId);
     ret = RsQpCreate(phyId, rdmaHandle->rdevIndex, qpNorm, &qpResp);
     if (ret) {
-        hccp_err("[create][ra_peer_qp]ra open failed ret[%d]", ret);
+        hccp_err("[create][ra_peer_qp]RsQpCreate failed ret[%d]", ret);
         PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[phyId]);
         goto calloc_err;
     }
@@ -528,7 +529,7 @@ int RaPeerQpCreateWithAttrs(struct RaRdmaHandle *rdmaHandle, struct QpExtAttrs *
     RsSetCtx(phyId);
     ret = RsQpCreateWithAttrs(phyId, rdmaHandle->rdevIndex, &qpNorm, &qpResp);
     if (ret) {
-        hccp_err("[create][ra_peer_qp_with_attrs]ra open failed ret[%d]", ret);
+        hccp_err("[create][ra_peer_qp_with_attrs]RsQpCreateWithAttrs failed ret[%d]", ret);
         PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[phyId]);
         goto calloc_err;
     }
@@ -746,11 +747,24 @@ STATIC void RaPeerLoopbackSingleQpDestroy(struct RaQpHandle *qpHandle)
     attr.ibRecvCq = &(loopbackInfo->ibRecvCq);
 
     (void)RaPeerNormalQpDestroy(qpHandle);
-
     (void)RaPeerCqDestroy(rdmaHandle, &attr);
+    (void)RaPeerDestroyCompChannel((void *)loopbackInfo->compChannel);
 
     free(loopbackInfo);
     loopbackInfo = NULL;
+}
+
+STATIC void RaPeerLoopbackQpCreatePrepare(struct CqAttr *cqAttr, struct ibv_qp_init_attr *qpInitAttr)
+{
+    qpInitAttr->qp_context = *(cqAttr->qpContext);
+    qpInitAttr->send_cq = *(cqAttr->ibSendCq);
+    qpInitAttr->recv_cq = *(cqAttr->ibRecvCq);
+    qpInitAttr->qp_type = IBV_QPT_RC;
+    qpInitAttr->cap.max_send_wr = QP_DEFAULT_MIN_CAP_SEND_WR;
+    qpInitAttr->cap.max_recv_wr = QP_DEFAULT_MIN_CAP_RECV_WR;
+    qpInitAttr->cap.max_send_sge = QP_DEFAULT_MIN_CAP_SEND_SGE;
+    qpInitAttr->cap.max_recv_sge = QP_DEFAULT_MIN_CAP_RECV_SGE;
+    qpInitAttr->cap.max_inline_data = QP_DEFAULT_MAX_CAP_INLINE_DATA;
 }
 
 STATIC int RaPeerLoopbackSingleQpCreate(struct RaRdmaHandle *rdmaHandle, struct RaQpHandle **qpHandle,
@@ -758,17 +772,23 @@ STATIC int RaPeerLoopbackSingleQpCreate(struct RaRdmaHandle *rdmaHandle, struct 
 {
     struct RaLoopbackInfo *loopbackInfo = NULL;
     struct ibv_qp_init_attr qpInitAttr = {0};
-    struct ibv_qp_cap qpCap = {0};
     struct CqAttr cqAttr = {0};
     int ret = 0;
 
     loopbackInfo = (struct RaLoopbackInfo *)calloc(1, sizeof(struct RaLoopbackInfo));
-    CHK_PRT_RETURN(loopbackInfo == NULL, hccp_err("loopback_info calloc failed"),
-        -ENOMEM);
+    CHK_PRT_RETURN(loopbackInfo == NULL, hccp_err("loopback_info calloc failed"), -ENOMEM);
+
+    ret = RaPeerCreateCompChannel(rdmaHandle, (void **)&loopbackInfo->compChannel);
+    if (ret != 0) {
+        hccp_err("RaPeerCreateCompChannel failed, ret:%d", ret);
+        goto channel_create_err;
+    }
 
     cqAttr.qpContext = &(loopbackInfo->cqContext);
     cqAttr.ibSendCq = &(loopbackInfo->ibSendCq);
     cqAttr.ibRecvCq = &(loopbackInfo->ibRecvCq);
+    cqAttr.sendChannel = loopbackInfo->compChannel;
+    cqAttr.recvChannel = loopbackInfo->compChannel;
     cqAttr.sendCqDepth = CQ_DEFAULT_MIN_SEND_DEPTH;
     cqAttr.recvCqDepth = CQ_DEFAULT_MIN_RECV_DEPTH;
     ret = RaPeerCqCreate(rdmaHandle, &cqAttr);
@@ -777,16 +797,7 @@ STATIC int RaPeerLoopbackSingleQpCreate(struct RaRdmaHandle *rdmaHandle, struct 
         goto cq_create_err;
     }
 
-    qpCap.max_send_wr = QP_DEFAULT_MIN_CAP_SEND_WR;
-    qpCap.max_recv_wr = QP_DEFAULT_MIN_CAP_RECV_WR;
-    qpCap.max_send_sge = QP_DEFAULT_MIN_CAP_SEND_SGE;
-    qpCap.max_recv_sge = QP_DEFAULT_MIN_CAP_RECV_SGE;
-    qpCap.max_inline_data = QP_DEFAULT_MAX_CAP_INLINE_DATA;
-    qpInitAttr.qp_context = *(cqAttr.qpContext);
-    qpInitAttr.send_cq = *(cqAttr.ibSendCq);
-    qpInitAttr.recv_cq = *(cqAttr.ibRecvCq);
-    qpInitAttr.qp_type = IBV_QPT_RC;
-    qpInitAttr.cap = qpCap;
+    RaPeerLoopbackQpCreatePrepare(&cqAttr, &qpInitAttr);
     ret = RaPeerNormalQpCreate(rdmaHandle, &qpInitAttr, (void **)qpHandle, (void **)qp);
     if (ret != 0) {
         hccp_err("ra_peer_normal_qp_create failed, ret:%d", ret);
@@ -798,6 +809,8 @@ STATIC int RaPeerLoopbackSingleQpCreate(struct RaRdmaHandle *rdmaHandle, struct 
 qp_create_err:
     (void)RaPeerCqDestroy(rdmaHandle, &cqAttr);
 cq_create_err:
+    (void)RsDestroyCompChannel((void *)loopbackInfo->compChannel);
+channel_create_err:
     free(loopbackInfo);
     loopbackInfo = NULL;
     return ret;
@@ -866,13 +879,14 @@ STATIC int RaPeerSingleQpDestroy(struct RaQpHandle *qpPeer)
 
 int RaPeerQpDestroy(struct RaQpHandle *qpPeer)
 {
-    if (qpPeer->loopbackQpHandle == NULL) {
+    if (qpPeer->loopbackQpHandle != NULL) {
+        RaPeerLoopbackQpDestroy(qpPeer);
+        return 0;
+    } else if (qpPeer->directFlag != DIRECT_FLAG_NOTSUPP) {
+        return RaPeerNdaQpDestroy(qpPeer);
+    } else {
         return RaPeerSingleQpDestroy(qpPeer);
     }
-
-    RaPeerLoopbackQpDestroy(qpPeer);
-
-    return 0;
 }
 
 int RaPeerSendWr(struct RaQpHandle *qpPeer, struct SendWr *wr, struct SendWrRsp *wrRsp)
@@ -889,6 +903,14 @@ int RaPeerSendWr(struct RaQpHandle *qpPeer, struct SendWr *wr, struct SendWrRsp 
     return ret;
 }
 
+STATIC void RaInitWrlistBaseInfo(struct RsWrlistBaseInfo *baseInfo, struct RaQpHandle *qpHandle)
+{
+    baseInfo->phyId = qpHandle->phyId;
+    baseInfo->rdevIndex = qpHandle->rdevIndex;
+    baseInfo->qpn = qpHandle->qpn;
+    baseInfo->keyFlag = 0;
+}
+
 int RaPeerSendWrlist(struct RaQpHandle *qpHandle, struct SendWrlistData wr[], struct SendWrRsp opRsp[],
     struct WrlistSendCompleteNum wrlistNum)
 {
@@ -900,10 +922,9 @@ int RaPeerSendWrlist(struct RaQpHandle *qpHandle, struct SendWrlistData wr[], st
     unsigned int compeletOnceCnt, i;
     struct WrInfo *wrList = NULL;
 
-    baseInfo.phyId = qpHandle->phyId;
-    baseInfo.rdevIndex = qpHandle->rdevIndex;
-    baseInfo.qpn = qpHandle->qpn;
-    baseInfo.keyFlag = 0;
+    RaInitWrlistBaseInfo(&baseInfo, qpHandle);
+    CHK_PRT_RETURN(
+        wrlistNum.sendNum > SIZE_MAX / sizeof(struct WrInfo), hccp_err("Sendnum is invalid"), -EINVAL);
     wrList = calloc(wrlistNum.sendNum, sizeof(struct WrInfo));
     CHK_PRT_RETURN(wrList == NULL, hccp_err("wr_list calloc failed."), -ENOMEM);
 
@@ -1077,15 +1098,18 @@ dl_deinit:
 int RaPeerGetIfnum(unsigned int phyId, unsigned int *num)
 {
     int ret;
+
     hccp_info("[get][ra_peer_ifnum]ra_peer_get_ifnum phyId[%u] start", phyId);
     PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[phyId]);
     RsSetCtx(phyId);
     ret = RsPeerGetIfnum(phyId, num);
     if (ret) {
         hccp_err("[get][ra_peer_ifnum]rs_peer_get_ifnum failed(%d)", ret);
+    } else {
+        hccp_info("[get][ra_peer_ifnum]ra_peer_get_ifnum phyId[%u] succ", phyId);
     }
     PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[phyId]);
-    hccp_info("[get][ra_peer_ifnum]ra_peer_get_ifnum phyId[%u] succ", phyId);
+
     return ret;
 }
 
@@ -1103,8 +1127,6 @@ int RaPeerGetIfaddrs(unsigned int phyId, struct InterfaceInfo interfaceInfos[], 
     hccp_info("[get][ra_peer_ifaddrs] ra_peer_get_ifaddrs phyId[%u] succ", phyId);
     return ret;
 }
-
-#define PAGE_SHIFT              12
 
 int HostNotifyBaseAddrInit(unsigned int phyId)
 {
@@ -1325,9 +1347,7 @@ int RaPeerRecvWrlist(struct RaQpHandle *qpHandle, struct RecvWrlistData *wr, uns
     unsigned int recvNumPer;
     unsigned int compeletOnceCnt;
 
-    baseInfo.phyId = qpHandle->phyId;
-    baseInfo.rdevIndex = qpHandle->rdevIndex;
-    baseInfo.qpn = qpHandle->qpn;
+    RaInitWrlistBaseInfo(&baseInfo, qpHandle);
 
     while (recvCnt < recvNum) {
         recvNumPer = (recvNum - recvCnt) > MAX_WR_NUM ? MAX_WR_NUM :
@@ -1357,6 +1377,7 @@ int RaPeerRecvWrlist(struct RaQpHandle *qpHandle, struct RecvWrlistData *wr, uns
 int RaPeerGetQpContext(struct RaQpHandle *qpPeer, void** qp, void** sendCq, void** recvCq)
 {
     int ret;
+
     RsSetCtx(qpPeer->phyId);
     ret = RsGetQpContext(qpPeer->phyId, qpPeer->rdevIndex, qpPeer->qpn, qp, sendCq, recvCq);
     if (ret) {
@@ -1452,24 +1473,29 @@ int RaPeerNormalQpDestroy(struct RaQpHandle *qpPeer)
 
 int RaPeerSetQpAttrQos(struct RaQpHandle *qpPeer, struct QosAttr *attr)
 {
+    int ret;
+
     RsSetCtx(qpPeer->phyId);
-    int ret = RsSetQpAttrQos(qpPeer->phyId, qpPeer->rdevIndex, qpPeer->qpn, attr);
+    ret = RsSetQpAttrQos(qpPeer->phyId, qpPeer->rdevIndex, qpPeer->qpn, attr);
     CHK_PRT_RETURN(ret, hccp_err("[ra_peer_set_qp_attr_qos]rs_set_qp_attr_qos failed ret(%d)", ret), ret);
     return ret;
 }
 
 int RaPeerSetQpAttrTimeout(struct RaQpHandle *qpPeer, unsigned int *timeout)
 {
+    int ret;
+
     RsSetCtx(qpPeer->phyId);
-    int ret = RsSetQpAttrTimeout(qpPeer->phyId, qpPeer->rdevIndex, qpPeer->qpn, timeout);
+    ret = RsSetQpAttrTimeout(qpPeer->phyId, qpPeer->rdevIndex, qpPeer->qpn, timeout);
     CHK_PRT_RETURN(ret, hccp_err("[ra_peer_set_qp_attr_timeout]rs_set_qp_attr_timeout failed ret(%d)", ret), ret);
     return ret;
 }
 
 int RaPeerSetQpAttrRetryCnt(struct RaQpHandle *qpPeer, unsigned int *retryCnt)
 {
+    int ret;
     RsSetCtx(qpPeer->phyId);
-    int ret = RsSetQpAttrRetryCnt(qpPeer->phyId, qpPeer->rdevIndex, qpPeer->qpn, retryCnt);
+    ret = RsSetQpAttrRetryCnt(qpPeer->phyId, qpPeer->rdevIndex, qpPeer->qpn, retryCnt);
     CHK_PRT_RETURN(ret, hccp_err("[ra_peer_set_qp_attr_retry_cnt]rs_set_qp_attr_retry_cnt failed ret(%d)", ret), ret);
     return ret;
 }

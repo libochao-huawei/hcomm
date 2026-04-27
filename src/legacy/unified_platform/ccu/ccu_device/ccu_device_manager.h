@@ -18,7 +18,9 @@
 #include "ccu_dev_mgr.h"
 #include "orion_adapter_hccp.h"
 #include "local_ub_rma_buffer.h"
-#include <array>
+
+// 支持新老ccu混跑新增，引入对外头文件，避免重复定义
+#include "../../../../pkg_inc/hcomm/ccu/ccu_res_repo.h"
 
 namespace Hccl {
 
@@ -28,60 +30,13 @@ MAKE_ENUM(CcuVersion, CCU_V1, CCU_INVALID);
 
 MAKE_ENUM(ResType, LOOP, MS, CKE, XN, GSA, INS, MISSION);
 
-/*
- * MissionReqType 申请Mission资源的策略类型，当前只按FUSION_MULTIPLE_DIE处理
- * FUSION_MULTIPLE_DIE missionid连续，跨die的missionid相同
- * FUSION_ONE_DIE missionid连续，单die
- * NO_FUSION_ONE_DIE missionid不要求连续，单die
-*/
-MAKE_ENUM(MissionReqType, FUSION_MULTIPLE_DIE, FUSION_ONE_DIE, NO_FUSION_ONE_DIE);
-
-class ResInfo {
-public:
-    ResInfo(): startId(0), num(0){};
-    ResInfo(uint32_t startId, uint32_t num) : startId(startId), num(num){};
-    uint32_t startId{0};
-    uint32_t num{0};
-
-    string Describe() const;
-};
-
-struct MissionResInfo {
-    MissionReqType reqType;
-    std::array<std::vector<ResInfo>, MAX_CCU_IODIE_NUM> mission;
-};
-
-// 不提供默认初始化可能产生随机值
-struct CcuResRepository {
-    std::array<std::vector<ResInfo>, MAX_CCU_IODIE_NUM> loopEngine{};
-    std::array<std::vector<ResInfo>, MAX_CCU_IODIE_NUM> blockLoopEngine{};
-    std::array<std::vector<ResInfo>, MAX_CCU_IODIE_NUM> ms{};
-    std::array<std::vector<ResInfo>, MAX_CCU_IODIE_NUM> blockMs{};
-    std::array<std::vector<ResInfo>, MAX_CCU_IODIE_NUM> cke{};
-    std::array<std::vector<ResInfo>, MAX_CCU_IODIE_NUM> blockCke{};
-    std::array<std::vector<ResInfo>, MAX_CCU_IODIE_NUM> continuousXn{};
-    std::array<std::vector<ResInfo>, MAX_CCU_IODIE_NUM> xn{};
-    std::array<std::vector<ResInfo>, MAX_CCU_IODIE_NUM> gsa{};
-    MissionResInfo mission{};
-};
-
-struct MissionReq {
-    MissionReqType reqType{MissionReqType::FUSION_MULTIPLE_DIE};
-    std::array<uint32_t, MAX_CCU_IODIE_NUM> missionReq{};
-};
-
-struct CcuResReq {
-    std::array<uint32_t, MAX_CCU_IODIE_NUM> loopEngineReq{};
-    std::array<uint32_t, MAX_CCU_IODIE_NUM> blockLoopEngineReq{};
-    std::array<uint32_t, MAX_CCU_IODIE_NUM> msReq{};
-    std::array<uint32_t, MAX_CCU_IODIE_NUM> blockMsReq{};
-    std::array<uint32_t, MAX_CCU_IODIE_NUM> ckeReq{};
-    std::array<uint32_t, MAX_CCU_IODIE_NUM> blockCkeReq{};
-    std::array<uint32_t, MAX_CCU_IODIE_NUM> continuousXnReq{};
-    std::array<uint32_t, MAX_CCU_IODIE_NUM> xnReq{};
-    std::array<uint32_t, MAX_CCU_IODIE_NUM> gsaReq{};
-    MissionReq missionReq{};
-};
+// 使用对外头文件的数据结构
+using MissionReqType = hcomm::MissionReqType;
+using ResInfo = hcomm::ResInfo;
+using MissionResInfo = hcomm::MissionResInfo;
+using CcuResRepository = hcomm::CcuResRepository;
+using MissionReq = hcomm::MissionReq;
+using CcuResReq = hcomm::CcuResReq;
 
 struct ChannelPara {
     uint32_t feId;

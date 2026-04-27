@@ -40,6 +40,9 @@ LIBS = -L$(ASCEND_LIB_DIR) -lhccl -lascendcl \
 INCS = -I$(ASCEND_INC_DIR) -I$(MPI_INC_DIR)
 TARGET = one_device_per_process
 
+# 设备数量，默认值为：8
+N ?= 8
+
 # Default target
 all:
 	g++ $(CXXFLAGS) $(SOURCES) $(INCS) $(LIBS) -o ${TARGET}
@@ -48,7 +51,7 @@ all:
 # Test target
 test: 
 	export LD_LIBRARY_PATH=${MPI_LIB_DIR}:${LD_LIBRARY_PATH}; \
-	${MPI_HOME}/bin/mpirun -n 8 ./${TARGET}
+	${MPI_HOME}/bin/mpirun -n $(N) ./${TARGET}
 
 # Clean build artifacts
 clean:

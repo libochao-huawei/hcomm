@@ -74,6 +74,9 @@ HcclResult CcuTempAllGatherNHRMem2Mem1D::GenExtIns(const TempFuncs &tempFuncs, T
                                                    const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues)
 {
     HCCL_INFO("[CcuTempAllGatherNHRMem2Mem1D] Template Run start.");
+    CHK_PRT_RET(tempInsQues.empty(),
+        HCCL_ERROR("[CcuTempAllGatherNHRMem2Mem1D] empty queue"), HcclResult::HCCL_E_INTERNAL);
+    CHK_PTR_NULL(tempInsQues[0]);
     std::vector<uint64_t> dimSize;
     dimSize.push_back(tempRankSize_);
     opMode_            = tempFuncs.opMode;

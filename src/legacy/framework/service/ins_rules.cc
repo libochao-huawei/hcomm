@@ -341,7 +341,7 @@ void Interpret(const InsLocalPostTo &insLocalPostTo, CommunicatorImpl &comm, con
 
     if (insLocalPostTo.GetNotifyType() == NotifyType::NORMAL) {
         auto notify
-            = RtsNotifyGet(comm.GetQueueNotifyManager(), insLocalPostTo.GetPostQid(), insLocalPostTo.GetWaitQid(),
+            = RtsNotifyGet(comm.GetCcuQueueNotifyManager(), insLocalPostTo.GetPostQid(), insLocalPostTo.GetWaitQid(),
                                  insLocalPostTo.GetTopicId(), insLocalPostTo.Describe());
         notify->Post(stream);
         notifyID = notify->GetId();
@@ -375,7 +375,7 @@ void Interpret(const InsLocalWaitFrom &insLocalWaitFrom, CommunicatorImpl &comm,
     u64 notifyID;
 
     if (insLocalWaitFrom.GetNotifyType() == NotifyType::NORMAL) {
-        auto notify = RtsNotifyGet(comm.GetQueueNotifyManager(), insLocalWaitFrom.GetPostQid(),
+        auto notify = RtsNotifyGet(comm.GetCcuQueueNotifyManager(), insLocalWaitFrom.GetPostQid(),
                                                      insLocalWaitFrom.GetWaitQid(), insLocalWaitFrom.GetTopicId(),
                                                      insLocalWaitFrom.Describe());
         notify->Wait(stream, taskConfig.GetNotifyWaitTime());
@@ -773,7 +773,7 @@ void Interpret(const AicpuInstruction &aicpuInstruction, CommunicatorImpl &comm,
     aicpuKernelLauncher.AicpuKernelLaunch(stream, aicpuInstruction.GetAlgName());
 }
 
-static void ReportAivTaskInfo(const CommunicatorImpl &comm, AivOpArgs &aivOpArgs)
+static void ReportAivTaskInfo(const CommunicatorImpl &comm, AivOpArgs &aivOpArgs, bool isMaster)
 {
     HCCL_DEBUG("Begin to SaveAivDfxTaskInfo taskType[%d]", static_cast<int32_t>(TaskParamType::TASK_AIV));
     //flagMem每个stream的中的任务复用，异常时只有最后一个task的信息
@@ -781,7 +781,7 @@ static void ReportAivTaskInfo(const CommunicatorImpl &comm, AivOpArgs &aivOpArgs
         .taskType  = TaskParamType::TASK_AIV,
         .beginTime = aivOpArgs.beginTime,
         .endTime   = DlProfFunction::GetInstance().dlMsprofSysCycleTime(),
-        .isMaster = false,
+        .isMaster = isMaster,
         .taskPara  = {
             .Aiv = {
                     .cmdType     = aivOpArgs.cmdType,
@@ -801,7 +801,7 @@ static void ReportAivTaskInfo(const CommunicatorImpl &comm, AivOpArgs &aivOpArgs
         .ccuDetailInfo  = nullptr
     };
  
-    SaveDfxTaskInfo(comm, taskParam, INVALID_RANKID);
+    SaveDfxTaskInfo(comm, taskParam, INVALID_RANKID, isMaster);
 }
 
 void Interpret(const AivInstruction &aivInstruction, const CommunicatorImpl &comm, const Stream &stream,
@@ -851,7 +851,7 @@ void Interpret(const AivInstruction &aivInstruction, const CommunicatorImpl &com
                 reinterpret_cast<void *>(comm.GetAivOffloadTagBuffer()->GetAddr() + AIV_FLAG_CLEAR_OFFSET);
         bool isAivClearEnable = comm.GetAivClearEnable();
         if (isAivClearEnable) {
-            HrtMemcpy(buffersInAddr, AIV_FLAG_AREA_SIZE, buffersInAddrSrc, AIV_FLAG_AREA_SIZE, RT_MEMCPY_DEVICE_TO_DEVICE);
+            HrtMemAsyncCopy(buffersInAddr, AIV_FLAG_AREA_SIZE, buffersInAddrSrc, AIV_FLAG_AREA_SIZE, ACL_MEMCPY_DEVICE_TO_DEVICE, stream.GetPtr());
         }
     }
 
@@ -868,8 +868,9 @@ void Interpret(const AivInstruction &aivInstruction, const CommunicatorImpl &com
         u64 localOutputAddr = static_cast<uint64_t>(comm.GetCurrentCollOperator()->outputMem->GetAddr());
         aivOpArgs.output += localOutputAddr;
     }
+    aivOpArgs.beginTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
     ExecuteKernelLaunch(aivOpArgs);
-    ReportAivTaskInfo(comm, aivOpArgs);
+    ReportAivTaskInfo(comm, aivOpArgs, stream.IsMaster());
 }
 
 } // namespace Hccl

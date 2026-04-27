@@ -12,9 +12,11 @@
 #include "exception_handler.h"
 #include "channel_param.h"
 #include "aicpu_ts_urma_channel.h"
+#include "aicpu_ts_uboe_channel.h"
 #include "launch_aicpu.h"
 #include "hcclCommDfx.h"
 #include "env_config/env_config.h"
+#include "aicpu_ts_p2p_channel.h"
 
 namespace hcomm {
 
@@ -60,9 +62,11 @@ HcclResult ChannelProcess::WithChannelByHandleLocked(ChannelHandle inHandle, Fun
 HcclResult ChannelProcess::CreateChannelsLoop(EndpointHandle endpointHandle, CommEngine engine,
     HcommChannelDesc *channelDescs, uint32_t channelNum, ChannelHandle *outHandles)
 {
+    CHK_PTR_NULL(endpointHandle);
+
     for (uint32_t i = 0; i < channelNum; ++i) {
         std::unique_ptr<Channel> tmpPtr = nullptr;
-        CHK_RET(Channel::CreateChannel(endpointHandle, engine, channelDescs[i], tmpPtr));
+        CHK_RET_UNAVAIL(Channel::CreateChannel(endpointHandle, engine, channelDescs[i], tmpPtr));
         CHK_SMART_PTR_NULL(tmpPtr);
 
         ChannelHandle handle = reinterpret_cast<ChannelHandle>(tmpPtr.get());
@@ -86,6 +90,30 @@ HcclResult ChannelProcess::CreateChannelsLoop(EndpointHandle endpointHandle, Com
             g_ChannelD2HMap.emplace(handle, handle);
         }
     }
+    return HCCL_SUCCESS;
+}
+
+HcclResult ChannelProcess::ChannelUpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum, ChannelHandle channelHandle)
+{
+    std::lock_guard<std::mutex> lock(g_ChannelMapMtx);
+    // 1) D2H 映射
+    auto itH = g_ChannelD2HMap.find(channelHandle);
+    if (itH == g_ChannelD2HMap.end()) {
+        HCCL_ERROR("[%s] handle not found in g_ChannelD2HMap, channelHandle[0x%llx].", __func__, channelHandle);
+        return HcclResult::HCCL_E_NOT_FOUND;
+    }
+    const ChannelHandle mappedHandle = itH->second;
+
+    // 2) ChannelMap 查找
+    auto itC = g_ChannelMap.find(mappedHandle);
+    if (itC == g_ChannelMap.end() || !itC->second) {
+        HCCL_ERROR("[%s] channel not found in g_ChannelMap, channelHandle[0x%llx], mappedHandle[0x%llx].",
+            __func__,
+            channelHandle,
+            mappedHandle);
+        return HcclResult::HCCL_E_INTERNAL;
+    }
+    CHK_RET(itC->second->UpdateMemInfo(memHandles, memHandleNum));
     return HCCL_SUCCESS;
 }
 
@@ -130,9 +158,12 @@ HcclResult ChannelProcess::ChannelGetStatus(const ChannelHandle *channelList, ui
     return HCCL_SUCCESS;
 }
 
-HcclResult ChannelProcess::ConnectChannels(ChannelHandle* targetChannels, uint32_t channelNum, 
-    CommEngine engine) 
+HcclResult ChannelProcess::ConnectChannels(ChannelHandle* targetChannels, uint32_t channelNum,
+    CommEngine engine)
 {
+    CHK_PTR_NULL(targetChannels);
+    CHK_PRT_RET((channelNum == 0), HCCL_ERROR("[%s]Invalid channelNum, channelNum[%u]", __func__, channelNum), HCCL_E_PARA);
+
     auto timeout = std::chrono::seconds(Hccl::EnvConfig::GetInstance().GetSocketConfig().GetLinkTimeOut());
     auto startTime = std::chrono::steady_clock::now();
 
@@ -194,6 +225,10 @@ HcclResult ChannelProcess::CombineHostMemory(const std::vector<std::vector<char>
 HcclResult ChannelProcess::FillChannelD2HMap(ChannelHandle *deviceChannelHandles,
     ChannelHandle *hostChannelHandles, uint32_t listNum)
 {
+    CHK_PTR_NULL(deviceChannelHandles);
+    CHK_PTR_NULL(hostChannelHandles);
+    CHK_PRT_RET((listNum == 0), HCCL_ERROR("[%s]Invalid listNum, listNum[%u]", __func__, listNum), HCCL_E_PARA);
+
     std::lock_guard<std::mutex> lock(g_ChannelMapMtx);
     for (uint32_t idx = 0; idx < listNum; idx++) {
         auto deviceChannelHandle = deviceChannelHandles[idx];
@@ -214,7 +249,7 @@ static HcclResult FillChannelParam(HcclChannelUrmaRes &channelParam,
     hccl::DeviceMem &devicePackBuf,
     uint32_t listNum, 
     uint32_t totalListNum,
-    uint32_t singleUniqueIdSize)
+    hccl::DeviceMem &channelSizeAddr)
 {
     // channelParam资源参数填充
     s32 sRet = strncpy_s(channelParam.hcomId, HCOMID_MAX_LENGTH, commTag.c_str(), HCOMID_MAX_LENGTH - 1);
@@ -224,7 +259,7 @@ static HcclResult FillChannelParam(HcclChannelUrmaRes &channelParam,
     channelParam.listNum = listNum;
     channelParam.uniqueIdAddr = static_cast<void *>(devicePackBuf.ptr());
     channelParam.uniqueIdSize = totalListNum;
-    channelParam.singleUniqueIdSize = singleUniqueIdSize;
+    channelParam.channelSizeAddr = static_cast<void *>(channelSizeAddr.ptr());
 
     CHK_RET(hrtGetDevice(&channelParam.deviceLogicId));
     DevType devType;
@@ -268,19 +303,34 @@ static HcclResult LaunchKernel(const HcclChannelUrmaRes &channelParam,
 }
 
 HcclResult ChannelProcess::LaunchChannelKernelCommon(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles,
-    uint32_t listNum, const std::string &commTag, aclrtBinHandle binHandle, const std::string &kernelName, bool needProfiling)
+    HcommChannelDesc* hcommDesc, uint32_t listNum, const std::string &commTag, aclrtBinHandle binHandle,
+    const std::string &kernelName, bool needProfiling)
 {
+    CHK_PTR_NULL(channelHandles);
+    CHK_PTR_NULL(hostChannelHandles);
+    CHK_PRT_RET((listNum == 0), HCCL_ERROR("[%s]Invalid listNum, listNum[%u]", __func__, listNum), HCCL_E_PARA);
+
     HCCL_RUN_INFO("[%s] listNum[%u], commTag[%s]", __func__, listNum, commTag.c_str());
     std::vector<std::vector<char>> hostPackBuffers(listNum);
     HcclChannelUrmaRes channelParam{};
     CHK_SAFETY_FUNC_RET(memset_s(&channelParam, sizeof(channelParam), 0, sizeof(channelParam)));
 
     // 获取host侧序列化的地址
+    std::vector<u32> channelSizeVec{};
     uint32_t totalListNum = 0;
     for (uint32_t index = 0; index < listNum; index++) {
-        auto aicpuTsUrmaChannel = reinterpret_cast<AicpuTsUrmaChannel *>(hostChannelHandles[index]);
-        CHK_PRT(aicpuTsUrmaChannel->H2DResPack(hostPackBuffers[index]));
+        if (hcommDesc[index].remoteEndpoint.protocol == CommProtocol::COMM_PROTOCOL_PCIE) {
+            auto aicpuTsP2pChannel = reinterpret_cast<AicpuTsP2pChannel *>(hostChannelHandles[index]);
+            CHK_PRT(aicpuTsP2pChannel->H2DResPack(hostPackBuffers[index]));
+        } else if (hcommDesc[index].remoteEndpoint.protocol == CommProtocol::COMM_PROTOCOL_UBOE) {
+            auto aicpuTsUboeChannel = reinterpret_cast<AicpuTsUboeChannel *>(hostChannelHandles[index]);
+            CHK_PRT(aicpuTsUboeChannel->H2DResPack(hostPackBuffers[index]));
+        } else {
+            auto aicpuTsUrmaChannel = reinterpret_cast<AicpuTsUrmaChannel *>(hostChannelHandles[index]);
+            CHK_PRT(aicpuTsUrmaChannel->H2DResPack(hostPackBuffers[index]));
+        }
         totalListNum += hostPackBuffers[index].size();
+        channelSizeVec.push_back(hostPackBuffers[index].size());
     }
     HCCL_INFO("[%s] totalListNum[%llu]", __func__, totalListNum);
 
@@ -298,13 +348,21 @@ HcclResult ChannelProcess::LaunchChannelKernelCommon(ChannelHandle *channelHandl
         totalListNum,
         HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
 
+    hccl::DeviceMem channelSizeAddr = hccl::DeviceMem::alloc(channelSizeVec.size() * sizeof(u32));
+    CHK_PTR_NULL(channelSizeAddr.ptr());
+
+    CHK_RET(hrtMemSyncCopy(channelSizeAddr.ptr(),
+        channelSizeVec.size() * sizeof(u32),
+        channelSizeVec.data(),
+        channelSizeVec.size() * sizeof(u32),
+        HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
     // 为device侧的channelList分配内存
     hccl::DeviceMem deviceChannelList = hccl::DeviceMem::alloc(listNum * sizeof(ChannelHandle));
     CHK_PTR_NULL(deviceChannelList.ptr());
 
     // 填充channelParam参数
     CHK_RET(FillChannelParam(channelParam, commTag, deviceChannelList, devicePackBuf, 
-        listNum, totalListNum, totalListNum / hostPackBuffers.size()));
+        listNum, totalListNum, channelSizeAddr));
     
     // profiling信息
     hccl::DeviceMem remoteRankList = hccl::DeviceMem::alloc(listNum * sizeof(u32));
@@ -337,25 +395,29 @@ HcclResult ChannelProcess::LaunchChannelKernelCommon(ChannelHandle *channelHandl
     return HCCL_SUCCESS;
 }
 
-HcclResult ChannelProcess::ChannelKernelLaunchForComm(ChannelHandle *channelHandles, 
-    ChannelHandle *hostChannelHandles, uint32_t listNum, const std::string &commTag, aclrtBinHandle binHandle) 
+HcclResult ChannelProcess::ChannelKernelLaunchForComm(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles,
+    HcommChannelDesc* hcommDesc, uint32_t listNum, const std::string &commTag, aclrtBinHandle binHandle)
 {
-    return LaunchChannelKernelCommon(channelHandles, hostChannelHandles, listNum, 
+    return LaunchChannelKernelCommon(channelHandles, hostChannelHandles, hcommDesc, listNum,
         commTag, binHandle, "RunAicpuIndOpChannelInitV2", true);
 }
 
-HcclResult ChannelProcess::ChannelKernelLaunchForBase(ChannelHandle *channelHandles, 
-    ChannelHandle *hostChannelHandles, uint32_t listNum, aclrtBinHandle binHandle) 
+HcclResult ChannelProcess::ChannelKernelLaunchForBase(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles,
+    HcommChannelDesc* hcommDesc, uint32_t listNum, aclrtBinHandle binHandle)
 {
-    return LaunchChannelKernelCommon(channelHandles, hostChannelHandles, listNum, "", 
+    return LaunchChannelKernelCommon(channelHandles, hostChannelHandles, hcommDesc, listNum, "", 
         binHandle, "RunAicpuChannelInitV2", false);
 }
 
-HcclResult ChannelProcess::SaveChannels(ChannelHandle* targetChannels, ChannelHandle* userChannels, 
-    uint32_t channelNum, CommEngine engine, aclrtBinHandle binHandle) 
+HcclResult ChannelProcess::SaveChannels(ChannelHandle* targetChannels, ChannelHandle* userChannels,
+    HcommChannelDesc *channelDescs, uint32_t channelNum, CommEngine engine, aclrtBinHandle binHandle)
 {
+    CHK_PTR_NULL(targetChannels);
+    CHK_PTR_NULL(userChannels);
+    CHK_PRT_RET((channelNum == 0), HCCL_ERROR("[%s]Invalid channelNum, channelNum[%u]", __func__, channelNum), HCCL_E_PARA);
+
     if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
-        CHK_RET(ChannelKernelLaunchForBase(userChannels, targetChannels, channelNum, binHandle));
+        CHK_RET(ChannelKernelLaunchForBase(userChannels, targetChannels, channelDescs, channelNum, binHandle));
     } else {
         HCCL_INFO("[%s] engine[%d] no need to KernelLaunch.", __func__, engine);
         for (uint32_t i = 0; i < channelNum; i++) {
@@ -374,7 +436,7 @@ HcclResult ChannelProcess::ChannelGetNotifyNum(ChannelHandle channelHandle, uint
     });
 }
 
-HcclResult ChannelProcess::ChannelGetRemoteMem(ChannelHandle channelHandle, HcommMem **remoteMem, uint32_t *memNum, char **memTags)
+HcclResult ChannelProcess::ChannelGetRemoteMem(ChannelHandle channelHandle, CommMem **remoteMem, uint32_t *memNum, char **memTags)
 {
     HcclMem **remoteMemConverted = reinterpret_cast<HcclMem **>(remoteMem);
 
@@ -387,6 +449,10 @@ HcclResult ChannelProcess::ChannelGetRemoteMem(ChannelHandle channelHandle, Hcom
 
 HcclResult ChannelProcess::ChannelGetUserRemoteMem(ChannelHandle channelHandle, CommMem **remoteMem, char ***memTag, uint32_t *memNum)
 {
+    CHK_PTR_NULL(remoteMem);
+    CHK_PTR_NULL(memTag);
+    CHK_PTR_NULL(memNum);
+
     return WithChannelByHandleLocked(channelHandle, [&](Channel &channel) -> HcclResult {
         // 锁内调用，避免 destroy 并发释放
         channel.GetUserRemoteMem(remoteMem, memTag, memNum);
@@ -503,6 +569,164 @@ HcclResult ChannelProcess::ChannelDestroy(const ChannelHandle *channels, uint32_
         CHK_RET(ChannelKernelDestroy(deviceHandles.data(), deviceHandles.size(), binHandle));
     }
     HCCL_INFO("[%s] SUCCESS.", __func__);
+    return HCCL_SUCCESS;
+}
+
+HcclResult ChannelProcess::ChannelClean(const ChannelHandle *channelList, uint32_t listNum)
+{
+    CHK_PTR_NULL(channelList);
+
+    for (uint32_t i = 0; i < listNum; ++i) {
+        const ChannelHandle inHandle = channelList[i];
+        // 单锁：D2H 映射 + 查 map + 锁内调用 Clean()
+        HcclResult ret = WithChannelByHandleLocked(inHandle, [&](Channel &channel) -> HcclResult {
+            return channel.Clean();  
+        });
+
+        if (ret != HcclResult::HCCL_SUCCESS) {
+            HCCL_ERROR("[%s] ChannelHandle Clean failed, ret = 0x%016llx, i = %u", __func__, HCCL_ERROR_CODE(ret), i);
+            return ret;
+        }
+    }
+
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult ChannelProcess::ChannelResumeConcurrency(const ChannelHandle *channelList, uint32_t channelNum)
+{
+    for (uint32_t i = 0; i < channelNum; ++i) {
+        const ChannelHandle inHandle = channelList[i];
+        HcclResult ret = WithChannelByHandleLocked(inHandle, [&](Channel &channel) -> HcclResult {
+            return channel.Resume();
+        });
+
+        if (ret != HcclResult::HCCL_SUCCESS) {
+            HCCL_ERROR("[%s] Get ChannelHandle failed, ret = 0x%016llx, i = %u", __func__, HCCL_ERROR_CODE(ret), i);
+            return ret;
+        }
+    }
+    return HCCL_SUCCESS;
+}
+HcclResult ChannelProcess::ChannelResume(const ChannelHandle *channelList, uint32_t channelNum)
+{
+    CHK_PTR_NULL(channelList);
+
+    // 1.resume resource
+    HcclResult ret = ChannelResumeConcurrency(channelList, channelNum);
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        HCCL_ERROR("HcommChannelResumeConcurrency error, ret = 0x%016llx", HCCL_ERROR_CODE(ret));
+        return ret;
+    }
+
+    auto timeout = std::chrono::seconds(Hccl::EnvConfig::GetInstance().GetSocketConfig().GetLinkTimeOut());
+    auto startTime = std::chrono::steady_clock::now();
+    HCCL_INFO("[%s] start resuming channels, timeout[%u]sec", __func__, timeout);
+
+    std::vector<int32_t> statusVec(channelNum, 0);
+    int32_t* statusList = statusVec.data();
+    uint32_t retryCount{0};
+    while (true) {
+        HcclResult ret = ChannelGetStatus(channelList, channelNum, statusList);
+        // 1. 检查超时
+        if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now() - startTime).count();
+            HCCL_ERROR("[%s] channel resume timeout after %u sec, channelNum[%u], elapsed[%lld]ms, retryCount[%u]",
+                __func__, timeout, channelNum, elapsed, retryCount);
+            return HCCL_E_TIMEOUT;
+        }
+
+        // 2. 处理重试（去除频繁的重试日志，一秒可能重试上千次）
+        if (ret == HCCL_E_AGAIN) {
+            ++retryCount;
+            continue;
+        }
+
+        // 3. 处理失败
+        if (ret != HCCL_SUCCESS) {
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now() - startTime).count();
+            HCCL_ERROR("[%s] channel connect failed, channelNum[%u], ret[%d], elapsed[%lld]ms, retryCount[%u]",
+                __func__, channelNum, ret, elapsed, retryCount);
+            return ret;
+        }
+
+        // 4. 正常情况：所有通道连接成功
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::steady_clock::now() - startTime).count();
+        HCCL_INFO("[%s] all channels connected successfully, channelNum[%u], elapsed[%lld]ms, retryCount[%u]",
+            __func__, channelNum, elapsed, retryCount);
+        break;
+    }
+
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult ChannelProcess::ChannelUpdateKernelLaunch(ChannelHandle* deviceChannelHandles, ChannelHandle* hostChannelHandles, uint32_t listNum,
+    const std::string &commTag, aclrtBinHandle binHandle)
+{
+    HCCL_RUN_INFO("[%s] listNum[%u], commTag[%s]", __func__, listNum, commTag.c_str());
+    std::vector<std::vector<char>> hostPackBuffers(listNum);
+    HcclChannelUrmaRes channelParam{};
+    CHK_SAFETY_FUNC_RET(memset_s(&channelParam, sizeof(channelParam), 0, sizeof(channelParam)));
+
+    // 获取host侧序列化的地址
+    uint32_t totalListNum = 0;
+    std::vector<u32> channelSizeVec{};
+    for (uint32_t index = 0; index < listNum; index++) {
+        auto aicpuTsUrmaChannel = reinterpret_cast<AicpuTsUrmaChannel *>(hostChannelHandles[index]);
+        CHK_PRT(aicpuTsUrmaChannel->H2DResPack(hostPackBuffers[index]));   // todo:后续只打包connction
+        totalListNum += hostPackBuffers[index].size();
+        channelSizeVec.push_back(hostPackBuffers[index].size());
+    }
+    HCCL_INFO("[%s] totalListNum[%llu]", __func__, totalListNum);
+
+    hccl::DeviceMem channelSizeAddr = hccl::DeviceMem::alloc(channelSizeVec.size() * sizeof(u32));
+    CHK_PTR_NULL(channelSizeAddr.ptr());
+
+    CHK_RET(hrtMemSyncCopy(channelSizeAddr.ptr(),
+    channelSizeVec.size() * sizeof(u32),
+    channelSizeVec.data(),
+    channelSizeVec.size() * sizeof(u32),
+    HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
+
+    // 分配连续的host内存，将序列化的地址放入其中
+    hccl::HostMem hostPackBuf = hccl::HostMem::alloc(totalListNum);
+    CHK_PTR_NULL(hostPackBuf.ptr());
+    CHK_RET(CombineHostMemory(hostPackBuffers, hostPackBuf));
+    hccl::DeviceMem devicePackBuf = hccl::DeviceMem::alloc(totalListNum);
+    CHK_PTR_NULL(devicePackBuf.ptr());
+
+    // 将host侧序列化内容拷贝到device侧内存中
+    CHK_RET(hrtMemSyncCopy(devicePackBuf.ptr(),
+        totalListNum,
+        hostPackBuf.ptr(),
+        totalListNum,
+        HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
+
+    // 填充channelParam参数
+    s32 sRet = strncpy_s(channelParam.hcomId, HCOMID_MAX_LENGTH, commTag.c_str(), HCOMID_MAX_LENGTH - 1);
+    CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[%s] str copy fail. return[%d]", __func__, sRet), HCCL_E_INTERNAL);
+    channelParam.listNum = listNum;
+    channelParam.uniqueIdAddr = static_cast<void *>(devicePackBuf.ptr());
+    channelParam.uniqueIdSize = totalListNum;
+    channelParam.channelSizeAddr = static_cast<void *>(channelSizeAddr.ptr());
+
+    // 将 host 侧的 channel handles 拷贝到 device 内存，供内核使用
+    hccl::DeviceMem deviceChannelList = hccl::DeviceMem::alloc(listNum * sizeof(ChannelHandle));
+    CHK_PTR_NULL(deviceChannelList.ptr());
+    CHK_RET(hrtMemSyncCopy(deviceChannelList.ptr(),
+        listNum * sizeof(ChannelHandle),
+        deviceChannelHandles,
+        listNum * sizeof(ChannelHandle),
+        HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
+    channelParam.channelList = static_cast<void *>(deviceChannelList.ptr());
+
+    // 调用抽离的通用内核启动函数
+    std::string kernelName = "RunAicpuIndOpChannelUpdateV2";
+    CHK_RET(LaunchKernel(channelParam, binHandle, kernelName));
+
+    HCCL_INFO("[%s] channel kernel launch success.", __func__);
     return HCCL_SUCCESS;
 }
 

@@ -56,6 +56,16 @@ union Eid {
                             static_cast<unsigned long long>(be64toh(in6.subnetPrefix)),
                             static_cast<unsigned long long>(be64toh(in6.interfaceId)));
     }
+
+    bool operator==(const Eid &that) const
+    {
+        return memcmp(&raw, &that.raw, sizeof(raw)) == 0;
+    }
+
+    bool operator<(const Eid &that) const
+    {
+        return memcmp(&raw, &that.raw, sizeof(raw)) < 0;
+    }
 };
 
 union BinaryAddr {
@@ -273,6 +283,11 @@ public:
         return eid_;
     }
 
+    void SetEid(Eid eid)
+    {
+        eid_ = eid;
+    }
+
     Eid GetReverseEid() const
     {
         Eid eidOut;
@@ -287,9 +302,9 @@ public:
         string desc = StringFormat("IpAddress[%s, ", eid_.Describe().c_str());
         
         if (family_ == AF_INET) {
-            desc += StringFormat("AF=v4, addr=%s]", GetIpStr().c_str());
+            desc += StringFormat("AF=IPv4, addr=%s]", GetIpStr().c_str());
         } else {
-            desc += StringFormat("AF=v6, addr=%s, scopeId=0x%x]", GetIpStr().c_str(), scopeID_);
+            desc += StringFormat("AF=IPv6, addr=%s, scopeId=0x%x]", GetIpStr().c_str(), scopeID_);
         }
         return desc;
     }
@@ -322,9 +337,14 @@ public:
     explicit IpAddress(BinaryStream &binaryStream) // 基于序列化数据得到IpAddress
     {
         binaryStream >> family_ >> scopeID_;
+        // 打印family_、scopeID_
+        HCCL_INFO("[IpAddress::%s] family_[%d], scopeID_[%d]",
+            __func__, family_, scopeID_);
         char        dst[INET6_ADDRSTRLEN]{0};
         binaryStream >> dst;
         std::string ip = dst; 
+        // 打印ip
+        HCCL_INFO("[IpAddress::%s] ip_[%s]", __func__, ip.c_str());
         InitBinaryAddr(ip);
         binaryStream >> eid_.raw; // 恢复eid.raw，覆盖eid
     }
@@ -390,6 +410,25 @@ private:
 } // namespace Hccl
 
 namespace std {
+
+template <> class equal_to<Hccl::Eid> {
+public:
+    bool operator()(const Hccl::Eid &p1, const Hccl::Eid &p2) const
+    {
+        return p1 == p2;
+    }
+};
+
+template <> class hash<Hccl::Eid> {
+public:
+    size_t operator()(const Hccl::Eid &eid) const
+    {
+        auto subnetPrefixHash = hash<uint64_t>{}(be64toh(eid.in6.subnetPrefix));
+        auto interfaceIdHash = hash<uint64_t>{}(be64toh(eid.in6.interfaceId));
+        return Hccl::HashCombine({subnetPrefixHash, interfaceIdHash});
+    }
+};
+    
 template <> class equal_to<Hccl::IpAddress> {
 public:
     bool operator()(const Hccl::IpAddress &p1, const Hccl::IpAddress &p2) const

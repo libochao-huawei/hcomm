@@ -16,6 +16,7 @@
 #include "rma_type.h"
 #include "serializable.h"
 #include <hcomm_res_defs.h>
+#include "hccl_mem_defs.h"
 namespace Hccl {
 
 class RemoteRmaBuffer {

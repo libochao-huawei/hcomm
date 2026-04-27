@@ -13,6 +13,7 @@
 #include "log.h"
 #include "ins_coll_alg_registry.h"
 #include "topo_match_mesh_nhr.h"
+#include "topo_match_mesh_nhr_pcie.h"
 #include "alg_data_trans_wrapper.h"
 #include "ins_temp_reduce_nhr.h"
 #include "ins_temp_reduce_mesh_1D.h"
@@ -424,6 +425,8 @@ HcclResult InsReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTempla
 // 算法注册
 INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::REDUCE, InsReduceParallelMesh1DNHR, InsReduceParallelExecutor, TopoMatchMeshNHR,
     InsTempReduceMesh1D, InsTempReduceNHR);
+INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::REDUCE, InsReduceParallelMesh1DNHRPcie, InsReduceParallelExecutor,
+    TopoMatchMeshNHRPcie, InsTempReduceMesh1D, InsTempReduceNHR);
 #ifndef CCL_KERNEL_AICPU
 INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::REDUCE, CcuReduceParallelMesh1DNHR, InsReduceParallelExecutor, TopoMatchMeshNHR,
     CcuTempReduceMeshMem2Mem1D, CcuTempReduceNHRMem2Mem1D);

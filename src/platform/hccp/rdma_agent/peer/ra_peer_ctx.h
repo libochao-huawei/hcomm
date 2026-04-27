@@ -56,6 +56,13 @@ int RaPeerCtxQpCreate(struct RaCtxHandle *ctxHandle, struct QpCreateAttr *qpAttr
 
 int RaPeerCtxQpDestroy(struct RaCtxQpHandle *qpHandle);
 
+int RaPeerCtxGetTpInfoList(struct RaCtxHandle *ctxHandle, struct GetTpCfg *cfg, struct HccpTpInfo infoList[],
+    unsigned int *num);
+
+int RaPeerCtxGetTpAttr(struct RaCtxHandle *ctxHandle, uint64_t tpHandle, uint32_t *attrBitmap, struct TpAttr *attr);
+
+int RaPeerCtxSetTpAttr(struct RaCtxHandle *ctxHandle, uint64_t tpHandle, uint32_t attrBitmap, struct TpAttr *attr);
+
 int RaPeerCtxQpImport(struct RaCtxHandle *ctxHandle, struct QpImportInfoT *qpInfo,
     struct RaCtxRemQpHandle *remQpHandle);
 
@@ -64,5 +71,7 @@ int RaPeerCtxQpUnimport(struct RaCtxRemQpHandle *remQpHandle);
 int RaPeerCtxQpBind(struct RaCtxQpHandle *qpHandle, struct RaCtxRemQpHandle *remQpHandle);
 
 int RaPeerCtxQpUnbind(struct RaCtxQpHandle *qpHandle);
+
+int RaPeerCtxGetJettyContext(struct RaCtxQpHandle *qpHandle, uint8_t context[], unsigned int *len);
 
 #endif  // RA_PEER_CTX_H

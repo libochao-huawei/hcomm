@@ -37,7 +37,8 @@ private:
     HcclResult RunReduceScatter(const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues,
                                 const TemplateDataParams &tempAlgParams);
     RankId GetRankFromMap(const u32 rankIdx);
-    u64 processSize_{0};
+    vector<u64> processSize_{0};
+    vector<u64> linkSliceOffsetVec_{0};
 };
 
 } // namespace Hccl

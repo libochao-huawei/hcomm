@@ -20,7 +20,7 @@ target_include_directories(hccl_st_fwk PUBLIC
         ${TOP_DIR}/ace/comop/inc/external/
         ${TOP_DIR}/ace/comop/inc/external/hccl
         ${TOP_DIR}/inc/external
-        ${TOP_DIR}/abl/adump/inc/adump
+        ${TOP_DIR}/runtime/src/dfx/adump/inc/adump
         ${TOP_DIR}/metadef/inc/external
         ${TOP_DIR}/metadef/pkg_inc
         ${TOP_DIR}/abl/mmpa/inc/mmpa

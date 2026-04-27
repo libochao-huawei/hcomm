@@ -48,7 +48,8 @@ HcclResult CollAllReduceSmallCountAivRdmaExecutor::CalcCommInfo(std::vector<Leve
     CHK_RET(CalcLevel1CommInfo(inputType, outputType, opTransport));
 
     // aiv+rdma小数据量在server间使用HD通信域，并在多机A+X场景下当未设置使用RDMA时，默认使用PCIE
-    if (topoMatcher_->GetExternalInputIntraRoceSwitch() == 0) {
+    bool isSingleAX = topoAttr_.serverNum == 1 && topoAttr_.moduleNum == 2;    // A+X单机跨module
+    if (topoMatcher_->GetExternalInputIntraRoceSwitch() == 0 && isSingleAX) {
         std::vector<SingleSubCommTransport> &commTransportLevel1 = opTransport[COMM_LEVEL1];
         for (u32 ringIndex = 0; ringIndex < commTransportLevel1.size(); ringIndex++) {
             for (auto &transportRequest : commTransportLevel1[ringIndex].transportRequests) {
@@ -98,7 +99,7 @@ HcclResult CollAllReduceSmallCountAivRdmaExecutor::CalNumBlocks(u32& numBlocks, 
         HCCL_WARNING("[CollAllReduceSmallCountAivRdmaExecutor][CalNumBlocks]aivCore[%u] is invalid, at least need [%u].",
         numBlocks_, numBlocks), HCCL_E_PARA);
 
-    HCCL_INFO("[CollAllReduceSmallCountAivRdmaExecutor][CalNumBlocks] numBlocks is set to [%u], limit[%u], best[%u]",
+    HCCL_INFO("[CollAllReduceSmallCountAivRdmaExecutor][CalNumBlocks] numBlocks is set to [%u], limit[%u], recommanded[%u]",
         numBlocks, numBlocks_, bestNumBlocks);
     return HCCL_SUCCESS;
 }

@@ -23,6 +23,9 @@ set(MOCKCPP_PATCH_FILE "mockcpp-2.7_py3.patch")
 set(MOCKCPP_PATCH_URL "https://gitcode.com/cann-src-third-party/mockcpp/releases/download/v2.7-h4/${MOCKCPP_PATCH_FILE}")
 set(MOCKCPP_PATCH_PATH ${CANN_3RD_LIB_PATH}/${MOCKCPP_PATCH_FILE})
 
+# mockcpp 需要使用 boost 库
+include(${CMAKE_CURRENT_LIST_DIR}/boost.cmake)
+
 # 查找目录下是否已经安装，避免重复编译安装
 message(STATUS "[ThirdParty] MOCKCPP_INSTALL_PATH=${MOCKCPP_INSTALL_PATH}")
 find_path(MOCKCPP_INCLUDE
@@ -54,9 +57,6 @@ message(STATUS "[ThirdParty] Found MockCpp: ${mockcpp_FOUND}")
 if(mockcpp_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
     message(STATUS "[ThirdParty] MockCpp found in ${MOCKCPP_INSTALL_PATH}, and not force rebuild cann third_party")
 else()
-    # 编译 mockcpp 需要 boost 库
-    include(${CMAKE_CURRENT_LIST_DIR}/boost.cmake)
-
     # mockcpp 补丁
     if(EXISTS ${MOCKCPP_PATCH_PATH})
         message(STATUS "[ThirdParty] Found local mockcpp patch package: ${MOCKCPP_PATCH_PATH}")
@@ -88,8 +88,6 @@ else()
         -DCMAKE_INSTALL_PREFIX=${MOCKCPP_INSTALL_PATH}
         -DCMAKE_INSTALL_LIBDIR=lib
         -DBOOST_INCLUDE_DIRS=${BOOST_SRC_PATH}
-        -DCMAKE_SHARED_LINKER_FLAGS=""
-        -DCMAKE_EXE_LINKER_FLAGS=""
         -DBUILD_32_BIT_TARGET_BY_64_BIT_COMPILER=OFF
         -DBUILD_TESTING=OFF
     )
@@ -131,5 +129,8 @@ endif()
 
 set_target_properties(mockcpp PROPERTIES
     IMPORTED_LOCATION ${MOCKCPP_INSTALL_PATH}/lib/libmockcpp.a
-    INTERFACE_INCLUDE_DIRECTORIES ${MOCKCPP_INSTALL_PATH}/include
+)
+target_include_directories(mockcpp INTERFACE
+    ${MOCKCPP_INSTALL_PATH}/include
+    ${BOOST_SRC_PATH}
 )

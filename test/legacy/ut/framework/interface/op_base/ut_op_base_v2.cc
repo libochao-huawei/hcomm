@@ -130,7 +130,7 @@ const std::string rankTable_ut_stub_4p = R"(
 )";
 
 // ranktable 910 8p
-static nlohmann::json rank_table_910D_1server_8rank = nlohmann::json::object({
+static nlohmann::json rank_table_950_1server_8rank = nlohmann::json::object({
     {"version", "2.0"},
     {"rank_count", "4"},
     {"rank_list", nlohmann::json::array({
@@ -201,6 +201,9 @@ TEST_F(OpbaseTestV2, HcclBatchSendRecvV2)
     unique_ptr<HcclSendRecvItem> sendRecvInfo = make_unique<HcclSendRecvItem>();
 
     MOCKER_CPP(&HcclCommunicator::LoadOpbasedCollOp).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(static_cast<HcclResult(*)(const char*, u64, HcclDataType, const void*)>(&HcomCheckOpParamV2))
+        .stubs().with(any(), any(), any(), any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER(&HcomCheckUserRankV2).stubs().with(any(),any()).will(returnValue(HCCL_SUCCESS));
     HcclResult result = HcclBatchSendRecvV2(sendRecvInfo.get(), itemNum, comm, stream);
     EXPECT_EQ(result, HCCL_SUCCESS);
 }
@@ -221,6 +224,9 @@ TEST_F(OpbaseTestV2, HcclBatchSendRecvV2_With_Log)
     unique_ptr<HcclSendRecvItem> sendRecvInfo = make_unique<HcclSendRecvItem>();
 
     MOCKER_CPP(&HcclCommunicator::LoadOpbasedCollOp).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(static_cast<HcclResult(*)(const char*, u64, HcclDataType, const void*)>(&HcomCheckOpParamV2))
+        .stubs().with(any(), any(), any(), any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER(&HcomCheckUserRankV2).stubs().with(any(),any()).will(returnValue(HCCL_SUCCESS));
     HcclResult result = HcclBatchSendRecvV2(sendRecvInfo.get(), itemNum, comm, stream);
     EXPECT_EQ(result, HCCL_SUCCESS);
 
@@ -340,8 +346,8 @@ TEST_F(OpbaseTestV2, HcclCommInitClusterInfoV2)
     CommManager::GetInstance(0).GetCommInfoV2().pComm = nullptr;
     MOCKER(HrtGetDevice).stubs().with(any()).will(returnValue(0));
 
-    nlohmann::json rank_table = rank_table_910D_1server_8rank;
-    char file_name_t[] = "./st_hcom_test_rank_table_1server_8rank_910D.json";
+    nlohmann::json rank_table = rank_table_950_1server_8rank;
+    char file_name_t[] = "./st_hcom_test_rank_table_1server_8rank_950.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
 
     if (outfile.is_open()) {
@@ -358,7 +364,7 @@ TEST_F(OpbaseTestV2, HcclCommInitClusterInfoV2)
     s32 rank = atoi(identify);
     DevType devType = DevType::DEV_TYPE_950;
 
-    char *clusterInfo = "./st_hcom_test_rank_table_1server_8rank_910D.json";
+    char *clusterInfo = "./st_hcom_test_rank_table_1server_8rank_950.json";
     MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue(devType));
     MOCKER_CPP(&HcclCommunicator::Init, HcclResult(HcclCommunicator::*)(const std::string &)).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CommunicatorImpl::SetCommExecuteConfig).stubs().will(ignoreReturnValue());
@@ -379,8 +385,8 @@ void PrepareCommConfig(HcclCommConfig &config, uint32_t hcclBufferSize = 200, st
 
 TEST_F(OpbaseTestV2, HcclCommInitClusterInfoConfigV2)
 {
-    nlohmann::json rank_table = rank_table_910D_1server_8rank;
-    char file_name_t[] = "./st_hcom_test_rank_table_1server_8rank_910D.json";
+    nlohmann::json rank_table = rank_table_950_1server_8rank;
+    char file_name_t[] = "./st_hcom_test_rank_table_1server_8rank_950.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
 
     if (outfile.is_open()) {
@@ -396,7 +402,7 @@ TEST_F(OpbaseTestV2, HcclCommInitClusterInfoConfigV2)
     s32 rankSize = 1;
     s32 rank = atoi(identify);
 
-    char *clusterInfo = "./st_hcom_test_rank_table_1server_8rank_910D.json";
+    char *clusterInfo = "./st_hcom_test_rank_table_1server_8rank_950.json";
 
     HcclCommConfig config;
     string worldgroup = "hccl_world_group";
@@ -415,8 +421,8 @@ TEST_F(OpbaseTestV2, HcclCommInitClusterInfoConfigV2)
 
 TEST_F(OpbaseTestV2, HcclCommInitClusterInfoConfigV2_CONFIGNOTSET)
 {
-    nlohmann::json rank_table = rank_table_910D_1server_8rank;
-    char file_name_t[] = "./st_hcom_test_rank_table_1server_8rank_910D.json";
+    nlohmann::json rank_table = rank_table_950_1server_8rank;
+    char file_name_t[] = "./st_hcom_test_rank_table_1server_8rank_950.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
 
     if (outfile.is_open()) {
@@ -432,7 +438,7 @@ TEST_F(OpbaseTestV2, HcclCommInitClusterInfoConfigV2_CONFIGNOTSET)
     s32 rankSize = 1;
     s32 rank = atoi(identify);
 
-    char *clusterInfo = "./st_hcom_test_rank_table_1server_8rank_910D.json";
+    char *clusterInfo = "./st_hcom_test_rank_table_1server_8rank_950.json";
 
     HcclCommConfig config;
     string worldgroup = "hccl_world_group";
@@ -972,6 +978,7 @@ TEST_F(OpbaseTestV2, HcclSendV2)
     HcclDataType dataType = HCCL_DATA_TYPE_INT8;
     Hccl::CommParams commParams;
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
+    hcclComm->pimpl->rankSize = 2;
     HcclComm comm = static_cast<HcclComm>(hcclComm.get());
     aclrtStream stream = (void *)0x1000000;
     uint64_t count = 10;
@@ -995,6 +1002,7 @@ TEST_F(OpbaseTestV2, HcclSendV2_With_Log)
     HcclDataType dataType = HCCL_DATA_TYPE_INT8;
     Hccl::CommParams commParams;
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
+    hcclComm->pimpl->rankSize = 2;
     HcclComm comm = static_cast<HcclComm>(hcclComm.get());
     aclrtStream stream = (void *)0x1000000;
     uint64_t count = 10;
@@ -1016,6 +1024,7 @@ TEST_F(OpbaseTestV2, HcclRecvV2)
     HcclDataType dataType = HCCL_DATA_TYPE_INT8;
     Hccl::CommParams commParams;
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
+    hcclComm->pimpl->rankSize = 2;
     HcclComm comm = static_cast<HcclComm>(hcclComm.get());
     aclrtStream stream = (void *)0x1000000;
     uint64_t count = 10;
@@ -1039,6 +1048,7 @@ TEST_F(OpbaseTestV2, HcclRecvV2_With_Log)
     HcclDataType dataType = HCCL_DATA_TYPE_INT8;
     Hccl::CommParams commParams;
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
+    hcclComm->pimpl->rankSize = 2;
     HcclComm comm = static_cast<HcclComm>(hcclComm.get());
     aclrtStream stream = (void *)0x1000000;
     uint64_t count = 10;
@@ -1676,8 +1686,8 @@ TEST_F(OpbaseTestV2, HcclCommDestroyV2_3)
 
 TEST_F(OpbaseTestV2, Ut_HcclCommInitClusterInfoConfigV2_When_InputInvalue_Expect_Return_HCCL_SUCCESS) 
 {
-    nlohmann::json rank_table = rank_table_910D_1server_8rank;
-    char file_name_t[] = "./st_hcom_test_rank_table_1server_8rank_910D.json";
+    nlohmann::json rank_table = rank_table_950_1server_8rank;
+    char file_name_t[] = "./st_hcom_test_rank_table_1server_8rank_950.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
 
     if (outfile.is_open()) {
@@ -1693,7 +1703,7 @@ TEST_F(OpbaseTestV2, Ut_HcclCommInitClusterInfoConfigV2_When_InputInvalue_Expect
     s32 rankSize = 1;
     s32 rank = atoi(identify);
 
-    char *clusterInfo = "./st_hcom_test_rank_table_1server_8rank_910D.json";
+    char *clusterInfo = "./st_hcom_test_rank_table_1server_8rank_950.json";
 
     // 打桩GetCommInfoV2。
     CommManager::GetInstance(0).GetCommInfoV2().status = DeviceStatus::DEVICE_IDLE;
@@ -1713,8 +1723,8 @@ TEST_F(OpbaseTestV2, Ut_HcclCommInitClusterInfoConfigV2_When_InputInvalue_Expect
 
 TEST_F(OpbaseTestV2, Ut_HcclCommInitClusterInfoConfigV2_When_InputValue_Expect_Return_HCCL_SUCCESS) 
 {
-    nlohmann::json rank_table = rank_table_910D_1server_8rank;
-    char file_name_t[] = "./st_hcom_test_rank_table_1server_8rank_910D.json";
+    nlohmann::json rank_table = rank_table_950_1server_8rank;
+    char file_name_t[] = "./st_hcom_test_rank_table_1server_8rank_950.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
 
     if (outfile.is_open()) {
@@ -1730,7 +1740,7 @@ TEST_F(OpbaseTestV2, Ut_HcclCommInitClusterInfoConfigV2_When_InputValue_Expect_R
     s32 rankSize = 1;
     s32 rank = atoi(identify);
 
-    char *clusterInfo = "./st_hcom_test_rank_table_1server_8rank_910D.json";
+    char *clusterInfo = "./st_hcom_test_rank_table_1server_8rank_950.json";
 
     HcclCommConfig config;
     string worldgroup = "hccl_world_group";
@@ -1906,6 +1916,47 @@ TEST_F(OpbaseTestV2, Ut_HcclAllGatherVV2_When_DatatypeNotSurport_Expect_Error)
     HcclResult result =
         HcclAllGatherVV2(sendBuf, sendCount, recvBuf, &recvCounts, &recvDispls, sendType, comm, stream);
     EXPECT_EQ(result, HCCL_E_NOT_SUPPORT);
+}
+
+TEST_F(OpbaseTestV2, Ut_HcclAllGatherVV2_When_SingleRank)
+{
+    constexpr u64 FAKE_RANK_SIZE = 1;
+    void *FAKE_PTR = (void *)0x1000000;
+    constexpr HcclDataType FAKE_DATA_TYPE = HCCL_DATA_TYPE_INT32;
+    Hccl::CommParams commParams;
+    std::unique_ptr<Hccl::HcclCommunicator> communicator = std::make_unique<Hccl::HcclCommunicator>(commParams);
+    communicator->pimpl->myRank = 0;
+    communicator->pimpl->rankSize = FAKE_RANK_SIZE;
+    HcclComm comm = static_cast<HcclComm>(communicator.get());
+    void *sendBuf = FAKE_PTR;
+    u64 sendCount = 1;
+    void *recvBuf = FAKE_PTR;
+    u64 recvCounts[FAKE_RANK_SIZE] = {1};
+    u64 recvDispls[FAKE_RANK_SIZE] = {1};
+    HcclDataType sendType = FAKE_DATA_TYPE;
+    int a = 1;
+    aclrtStream stream = static_cast<aclrtStream>(&a);
+
+    MOCKER_CPP(&HcclCommunicator::LoadOpbasedCollOp).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
+    // 回退： 空count
+    sendBuf = FAKE_PTR;
+    sendCount = 0;
+    recvBuf = FAKE_PTR;
+    HcclResult result =
+        HcclAllGatherVV2(sendBuf, sendCount, recvBuf, &recvCounts, &recvDispls, sendType, comm, stream);
+    EXPECT_EQ(result, HCCL_SUCCESS);
+    // 空sendcount
+    sendBuf = nullptr;
+    sendCount = 1;
+    recvBuf = FAKE_PTR;
+    result = HcclAllGatherVV2(sendBuf, sendCount, recvBuf, &recvCounts, &recvDispls, sendType, comm, stream);
+    EXPECT_EQ(result, HCCL_E_PTR);
+    // 正常回退
+    sendBuf = FAKE_PTR;
+    sendCount = 1;
+    recvBuf = FAKE_PTR;
+    result = HcclAllGatherVV2(sendBuf, sendCount, recvBuf, &recvCounts, &recvDispls, sendType, comm, stream);
+    EXPECT_EQ(result, HCCL_SUCCESS);    
 }
 
 TEST_F(OpbaseTestV2, Ut_HcclReduceScatterVV2_When_Normal_Expect_Success)
@@ -2090,6 +2141,48 @@ TEST_F(OpbaseTestV2, Ut_HcclReduceScatterVV2_When_ReduceOpNotSurport_Expect_Erro
     EXPECT_EQ(result, HCCL_E_NOT_SUPPORT);
 }
 
+TEST_F(OpbaseTestV2, Ut_HcclReduceScatterVV2_When_SingleRank)
+{
+    constexpr u64 FAKE_RANK_SIZE = 1;
+    void *FAKE_PTR = (void *)0x1000000;
+    constexpr HcclDataType FAKE_DATA_TYPE = HCCL_DATA_TYPE_INT32;
+    Hccl::CommParams commParams;
+    std::unique_ptr<Hccl::HcclCommunicator> communicator = std::make_unique<Hccl::HcclCommunicator>(commParams);
+    communicator->pimpl->myRank = 0;
+    communicator->pimpl->rankSize = FAKE_RANK_SIZE;
+    HcclComm comm = static_cast<HcclComm>(communicator.get());
+    void *sendBuf = FAKE_PTR;
+    u64 sendCounts[FAKE_RANK_SIZE] = {1};
+    u64 sendDispls[FAKE_RANK_SIZE] = {1};
+    void *recvBuf = FAKE_PTR;
+    u64 recvCount = 1;
+    HcclDataType dataType = FAKE_DATA_TYPE;
+    HcclReduceOp op = HCCL_REDUCE_SUM;
+    int a = 1;
+    aclrtStream stream = static_cast<aclrtStream>(&a);
+
+    MOCKER_CPP(&HcclCommunicator::LoadOpbasedCollOp).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
+    // 回退： 空count
+    sendBuf = FAKE_PTR;
+    recvCount = 0;
+    recvBuf = FAKE_PTR;
+    HcclResult result =
+        HcclReduceScatterVV2(sendBuf, &sendCounts, &sendDispls, recvBuf, recvCount, dataType, op, comm, stream);
+    EXPECT_EQ(result, HCCL_SUCCESS);
+    // 空sendcount
+    sendBuf = nullptr;
+    recvCount = 1;
+    recvBuf = FAKE_PTR;
+    result = HcclReduceScatterVV2(sendBuf, &sendCounts, &sendDispls, recvBuf, recvCount, dataType, op, comm, stream);
+    EXPECT_EQ(result, HCCL_E_PTR);
+    // 正常回退
+    sendBuf = FAKE_PTR;
+    recvCount = 1;
+    recvBuf = FAKE_PTR;
+    result = HcclReduceScatterVV2(sendBuf, &sendCounts, &sendDispls, recvBuf, recvCount, dataType, op, comm, stream);
+    EXPECT_EQ(result, HCCL_SUCCESS);    
+}
+
 TEST_F(OpbaseTestV2, Ut_HcclGetRootInfoV2_When_NoNeedInput_Expect_Return_HCCL_SUCCESS) 
 {
     // when
@@ -2124,7 +2217,6 @@ TEST_F(OpbaseTestV2, Ut_HcclCommInitRootInfoV2_When_InputValue_Expect_Return_HCC
     MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_950));
     MOCKER(HrtGetDeviceCount).stubs().will(returnValue(1));
     MOCKER_CPP(&HcclCommunicator::Init, HcclResult(HcclCommunicator::*)(const RankTableInfo &)).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HcclCommunicator::InitDeviceListenPort).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CommunicatorImpl::SetCommExecuteConfig).stubs().will(ignoreReturnValue());
  
     // then
@@ -2165,7 +2257,6 @@ TEST_F(OpbaseTestV2, Ut_HcclCommInitRootInfoConfigV2_When_InputValue_Expect_Retu
     MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_950));
     MOCKER(HrtGetDeviceCount).stubs().will(returnValue(1));
     MOCKER_CPP(&HcclCommunicator::Init, HcclResult(HcclCommunicator::*)(const RankTableInfo &)).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HcclCommunicator::InitDeviceListenPort).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CommunicatorImpl::SetCommExecuteConfig).stubs().will(ignoreReturnValue());
  
     // then
@@ -2188,7 +2279,6 @@ TEST_F(OpbaseTestV2, Ut_HcclCommInitRootInfoConfigV2_When_NotSetBufSize_Expect_R
     MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_950));
     MOCKER(HrtGetDeviceCount).stubs().will(returnValue(1));
     MOCKER_CPP(&HcclCommunicator::Init, HcclResult(HcclCommunicator::*)(const RankTableInfo &)).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HcclCommunicator::InitDeviceListenPort).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CommunicatorImpl::SetCommExecuteConfig).stubs().will(ignoreReturnValue());
     CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap.clear();
     CommManager::GetInstance(0).GetCommInfoV2().pComm = nullptr;
@@ -2238,7 +2328,6 @@ TEST_F(OpbaseTestV2, Ut_HcclCommInitAllV2_When_InputValue_Expect_Return_HCCL_SUC
     MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_950));
     MOCKER(HrtGetDeviceCount).stubs().will(returnValue(1));
     MOCKER_CPP(&HcclCommunicator::Init, HcclResult(HcclCommunicator::*)(const RankTableInfo &)).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HcclCommunicator::InitDeviceListenPort).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CommunicatorImpl::SetCommExecuteConfig).stubs().will(ignoreReturnValue());
     CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap.clear();
     CommManager::GetInstance(0).GetCommInfoV2().pComm = nullptr;
@@ -2510,14 +2599,26 @@ TEST_F(OpbaseTestV2, Ut_HcclSetOpArgs_When_Param_Error_Expect_ReturnIsHCCL_E_PAR
     HcclResult ret1 = HcclGetOpArgsV2(&opArgs);
     EXPECT_EQ(ret1, HCCL_SUCCESS);
     EXPECT_NE(nullptr, opArgs);
+
     HcclResult ret2 = HcclSetOpCountV2(opArgs, 0xFFFFFFFFF);
     EXPECT_EQ(ret2, HCCL_E_PARA);
+
     char algConfig[128] = "xxxxxxxxxxx";
     MOCKER(strcpy_s).stubs().will(returnValue(1));
     HcclResult ret3 = HcclSetOpAlgConfigV2(opArgs, algConfig);
     EXPECT_EQ(ret3, HCCL_E_PARA);
-    HcclResult ret4 = HcclFreeOpArgsV2(opArgs);
-    EXPECT_EQ(ret4, HCCL_SUCCESS);
+
+    HcclResult ret4 = HcclSetOpSrcDataTypeV2(opArgs, 100);
+    EXPECT_EQ(ret4, HCCL_E_PARA);
+
+    HcclResult ret5 = HcclSetOpDstDataTypeV2(opArgs, 100);
+    EXPECT_EQ(ret5, HCCL_E_PARA);
+
+    HcclResult ret6 = HcclSetOpReduceTypeV2(opArgs, 100);
+    EXPECT_EQ(ret6, HCCL_E_PARA);
+
+    HcclResult ret7 = HcclFreeOpArgsV2(opArgs);
+    EXPECT_EQ(ret7, HCCL_SUCCESS);
 }
  
 TEST_F(OpbaseTestV2, Ut_HcclDevMemAcquireV2_When_Normal_Expect_ReturnIsHCCL_SUCCESS)

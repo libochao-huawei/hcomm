@@ -84,10 +84,6 @@ HcclResult CcuContext::GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskP
         HCCL_INFO("[GeneTaskParam]task Param, dieId[%u] missionId[%u] instStartId[%u] instCnt[%u], argSize[%u]",
                   taskParams[index].dieId, taskParams[index].missionId, taskParams[index].instStartId,
                   taskParams[index].instCnt, taskParams[index].argSize);
-        for (uint32_t i = 0; i < taskParams[index].argSize; i++) {
-            if (i == TOKEN_VALUE_INDEX) { continue; }
-            HCCL_INFO("[GeneTaskParam]arg[%lu] = %lu", i, taskParams[index].args[i]);
-        }
     }
     return HCCL_SUCCESS;
 }
@@ -115,6 +111,10 @@ void CcuContext::AllocGoResource(uint32_t parallelDim, uint32_t msPerLoop)
         moRes.maskSignal = CreateBlockMaskSignal(moConfig.loopCount);
         moRes.ccuBuffer = CreateBlockCcuBuffer(moConfig.loopCount * moConfig.msInterleave);
     }
+
+    if (moRes.maskSignal.size() < 2) {
+        THROW<CcuApiException>("MaskSignal is not enough, maskSignal = %lu", moRes.maskSignal.size());
+    }
 }
 
 std::vector<uint64_t> CcuContext::CalGoSize(uint64_t size)
@@ -136,8 +136,9 @@ std::vector<uint64_t> CcuContext::CalGoSizeStatic(uint64_t size, GroupOpConfig &
         THROW<CcuApiException>("Please Check Configure, loopCount = %u, memSlice = %u", moCfg.loopCount,
                                moCfg.memSlice);
     }
+
     if (size > maxSize) {
-        THROW<CcuApiException>("Too Large Size, size = %lu, maxSize = %lu", size, maxSize);
+        THROW<CcuApiException>("Too Large Size, size = %llu, maxSize = %llu", size, maxSize);
     }
 
     uint64_t m = size / loopSize;
@@ -150,9 +151,9 @@ std::vector<uint64_t> CcuContext::CalGoSizeStatic(uint64_t size, GroupOpConfig &
         p = moCfg.memSlice;
     }
 
-    HCCL_INFO("[CalGoSizeStatic] moCfg.memSlice[%u], moCfg.loopCount[%u], moCfg.msInterleave[%u]", 
+    HCCL_INFO("[CalGoSizeStatic] moCfg.memSlice[%llu], moCfg.loopCount[%u], moCfg.msInterleave[%u]", 
         moCfg.memSlice, moCfg.loopCount, moCfg.msInterleave);
-    HCCL_INFO("Ccu Slice Split: m = %lu, n = %lu, p = %lu", m, n, p);
+    HCCL_INFO("Ccu Slice Split: m = %llu, n = %llu, p = %llu", m, n, p);
 
     // 数据量 < 256K, 跳过LoopGroup0
     // 此时loopIterNum == 0
@@ -248,14 +249,14 @@ CcuResReq CcuContext::GetResourceRequest()
     req.continuousXnReq[dieId]    = res.continuousVariable[dieId].size();
 
     req.missionReq.reqType           = MissionReqType::FUSION_MULTIPLE_DIE;
-    req.missionReq.missionReq[dieId] = 1;
+    req.missionReq.req[dieId] = 1;
 
     auto info
         = StringFormat("resource request: dieId[%u], ms[%u], blockMs[%u], cke[%u], blockCke[%u], "
                        "loopEngine[%u], blockLoopEngine[%u], gsa[%u], xn[%u], continuous xn[%u], missionId[%u]",
                        dieId, req.msReq[dieId], req.blockMsReq[dieId], req.ckeReq[dieId], req.blockCkeReq[dieId],
                        req.loopEngineReq[dieId], req.blockLoopEngineReq[dieId], req.gsaReq[dieId], req.xnReq[dieId],
-                       req.continuousXnReq[dieId], req.missionReq.missionReq[dieId]);
+                       req.continuousXnReq[dieId], req.missionReq.req[dieId]);
 
     HCCL_INFO("%s", info.c_str());
 

@@ -23,7 +23,6 @@ RankGraphV2::RankGraphV2(void *rankGraphPtr)
 
 HcclResult RankGraphV2::GetRankSize(uint32_t *rankSize)
 {
-    HCCL_RUN_INFO("3->RankGraphImpl = %p", pImpl.get());
     return pImpl->GetRankSize(rankSize);
 }
 
@@ -47,6 +46,11 @@ HcclResult RankGraphV2::GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t d
 HcclResult RankGraphV2::GetRankGraphInfo(GraphType type, void **graph, uint32_t *len)
 {
     return pImpl->GetRankGraphInfo(graph, len);
+}
+
+HcclResult RankGraphV2::GetDeviceId(uint32_t rankId, uint32_t *deviceId)
+{
+    return pImpl->GetDeviceId(rankId, deviceId);
 }
 
 HcclResult RankGraphV2::GetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum)

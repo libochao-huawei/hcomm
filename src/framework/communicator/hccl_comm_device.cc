@@ -10,6 +10,7 @@
 
 
 #include "hccl_comm_pub.h"
+#include "hccl_communicator.h"
  
 namespace hccl {
 HcclResult hcclComm::RegistTaskAbortHandler() const
@@ -140,6 +141,14 @@ HcclComm hcclComm::GetCommunicatorV2()
 void hcclComm::BinaryUnLoad()
 {
     binHandle_ = nullptr;
+}
+
+HcclResult hcclComm::Resume()
+{
+    if (!IsCommunicatorV2()) {
+        CHK_RET(communicator_->Resume());
+    }
+    return HCCL_SUCCESS;
 }
 
 }  // namespace hccl

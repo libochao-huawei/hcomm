@@ -136,22 +136,27 @@ HcclResult HcclCommunicator::GetRankSize(uint32_t *rankSize)
 HcclResult HcclCommunicator::HcclGetCclBuffer(uintptr_t &cclBufferAddr, size_t &cclBufferSize, HcclMemType &cclBufferMemType)
 {
     auto commImpl = GetCommImpl();
-    if (commImpl == nullptr) {
-        HCCL_ERROR("[GetFoldParamsFromOrionToHcomm] commImpl is null");
-        return HCCL_E_PTR;
+    if (UNLIKELY(commImpl == nullptr)) {
+        HCCL_ERROR("[HcclCommunicator][%s] commImpl is null.", __func__);
+        return HcclResult::HCCL_E_PTR;
     }
-    shared_ptr<DevBuffer> hcclBuffer = commImpl->GetCclBuffer();
-     if (hcclBuffer == nullptr) {
+
+    // GetCclBuffer接口不合理，应返回裸指针
+    // 本次性能整改暂时最小化修改，避免重复分配内存和拷贝
+    const auto &hcclBuffer = commImpl->GetCclBuffer();
+    if (UNLIKELY(hcclBuffer == nullptr)) {
         cclBufferSize = 0;
         cclBufferAddr = 0;
         cclBufferMemType = HcclMemType::HCCL_MEM_TYPE_DEVICE;
-    } else {
-        cclBufferSize = commImpl->GetBufferSize();
-        cclBufferAddr = hcclBuffer->GetAddr();
-        cclBufferMemType = hcclBuffer->GetMemType();
+        return HcclResult::HCCL_SUCCESS;
     }
+
+    cclBufferSize = commImpl->GetBufferSize();
+    cclBufferAddr = hcclBuffer->GetAddr();
+    cclBufferMemType = hcclBuffer->GetMemType();
     return HCCL_SUCCESS;
 }
+
 HcclResult HcclCommunicator::GetRankId(uint32_t &rankId)
 {
     rankId = pimpl->GetMyRank();
@@ -337,6 +342,17 @@ HcclResult HcclCommunicator::SetAccelerator(HcclAccelerator hcclAccelerator, boo
     return HcclResult::HCCL_SUCCESS;
 }
 
+HcclResult HcclCommunicator::SetAccelerator(int32_t accelerator, bool isCcuMsAvailable)
+{
+    if (accelerator < static_cast<int32_t>(HcclAccelerator::DEFAULT) || accelerator > static_cast<int32_t>(HcclAccelerator::AICPU)) {
+        HCCL_ERROR("[HcclCommunicator][SetAccelerator] Invalid accelerator value [%d], valid range is [0,7]", accelerator);
+        return HCCL_E_NOT_SUPPORT;
+    }
+    HcclAccelerator hcclAccelerator = static_cast<HcclAccelerator::Value>(accelerator);
+    CHK_RET(SetAccelerator(hcclAccelerator, isCcuMsAvailable));
+    return HcclResult::HCCL_SUCCESS;
+}
+
 HcclResult HcclCommunicator::GetAccelerator(int32_t* accelerator) const
 {
     CHK_RET(pimpl->GetAccelerator(accelerator));
@@ -516,11 +532,6 @@ HcclResult HcclCommunicator::GetEndpointInfo(uint32_t rankId, const EndpointDesc
     return pimpl->GetEndpointInfo(rankId, endpointDesc, endpointAttr, infoLen, info);
 }
 
-HcclResult HcclCommunicator::InitDeviceListenPort(u32 &linstenPort)
-{
-    return pimpl->InitDeviceListenPort(linstenPort);
-}
-
 Trace& HcclCommunicator::GetTrace() const
 {
     return pimpl->GetTrace();
@@ -528,6 +539,11 @@ Trace& HcclCommunicator::GetTrace() const
 
 u32 HcclCommunicator::GetRankInParentComm() {
     return pimpl->GetRankInParentComm();
+}
+
+HcclResult HcclCommunicator::Mc2AiCpuStreamAllocAndGetV2(rtStream_t *aiCpuStream)
+{
+    return pimpl->Mc2AiCpuStreamAllocAndGetV2(aiCpuStream);
 }
 
 } // namespace Hccl

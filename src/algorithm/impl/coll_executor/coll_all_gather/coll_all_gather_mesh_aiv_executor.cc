@@ -85,7 +85,7 @@ HcclResult CollAllGatherMeshAivExecutor::CalNumBlocks(u32& numBlocks, u32 rankSi
         numBlocks = numBlocks_ / rankSize * rankSize;
     }
 
-    HCCL_INFO("[CollAllGatherMeshAivExecutor][CalNumBlocks] numBlocks is set to [%u], limit[%u], best[%u]",
+    HCCL_INFO("[CollAllGatherMeshAivExecutor][CalNumBlocks] numBlocks is set to [%u], limit[%u], recommanded[%u]",
         numBlocks, numBlocks_, bestNumBlocks);
     return HCCL_SUCCESS;
 }
@@ -210,9 +210,9 @@ HcclResult CollAllGatherMeshAivExecutor::KernelRun(const OpParam &param, ExecMem
         param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), numBlocks_, param.aivTag
     };
     AivAlgArgs algArgs {};
+    struct AivProfilingInfo aivProfilingInfo;
     algArgs.execTimeOut = topoMatcher_->GetExecTimeOutConfig();
     algArgs.execTimeOutSet = true;
-    struct AivProfilingInfo aivProfilingInfo;
     aivProfilingInfo.counter = opCounter_;
 
     HcclResult ret = ExecuteKernelLaunch(opArgs, topoArgs, resourceArgs, algArgs, aivProfilingInfo);

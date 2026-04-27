@@ -95,7 +95,6 @@ public:
     HcclResult GetEndpointNum(uint32_t layer, uint32_t topoInstId, uint32_t* num);
     HcclResult GetEndpointDesc(uint32_t layer, uint32_t topoInstId, uint32_t *descNum, EndpointDesc *endpointDesc);
     HcclResult GetEndpointInfo(uint32_t rankId, const EndpointDesc *endPointDesc, EndpointAttr endpointAttr, uint32_t infoLen, void *info);
-    HcclResult InitDeviceListenPort(u32 &linstenPort) const;
 
     u32 GetCcuMc2ServerNum();
 
@@ -131,7 +130,9 @@ public:
 
     virtual RemoteRmaBufManager &GetRemoteRmaBufManager() const;
 
-    virtual QueueNotifyManager &GetQueueNotifyManager() const;
+    virtual QueueNotifyManager &GetAicpuQueueNotifyManager() const;
+
+    virtual QueueNotifyManager &GetCcuQueueNotifyManager() const;
 
     virtual ConnLocalNotifyManager &GetConnLocalNotifyManager() const;
 
@@ -188,8 +189,10 @@ public:
 
     const NotifyTimeoutCfg &GetNotifyTimeoutCfg() const;
 
-    const shared_ptr<DevBuffer> GetCclBuffer() const
+    const shared_ptr<DevBuffer> &GetCclBuffer() const
     {
+        // 接口设计不合理，其他数据结构无权管理hccl buffer生命周期
+        // 建议改为传递裸指针，但整改范围较大，本次性能优化暂不处理
         return cclBuffer;
     }
 
@@ -253,7 +256,7 @@ public:
 
     virtual u32 GetStep() const;
     bool        IsCommReady();
-    void CovertToCurrentCollOperator(std::string &opTag, const CollOpParams &opParams, OpMode opMode, bool isLaunch = true);
+    void CovertToCurrentCollOperator(std::string &opTag, const CollOpParams &opParams, OpMode opMode, bool isLaunch = true, bool isHcomSelectAlg = false);
 
     virtual MirrorTaskManager &GetMirrorTaskManager() const;
     virtual ProfilingReporter &GetProfilingReporter() const;
@@ -377,12 +380,13 @@ public:
     
     HcclResult ClearOpResource(const std::string &opTag);// 清空opTag所属资源
     HcclResult GetAicpuOpStreamNotify(rtStream_t *opStream, u8 aicpuNotifyNum, void** aicpuNotify) const;
-    std::string GetTopoFilePath() const;
+    static std::string GetTopoFilePath();
     std::vector<LinkData> GetFullMeshLinks() const;
     ErrorMessageReport GetAicpuTaskException();
     u32 GetRankInParentComm();
     aclrtFuncHandle GetAicpuKernelFuncHandle(const char *kernelName) const;
     bool IsCommWithPCIEProtocol();   // 判断通信域内是否有rank之间存在PCIE链路
+    HcclResult Mc2AiCpuStreamAllocAndGetV2(rtStream_t *aiCpuStream);
 
 private:
     std::string                                id;
@@ -401,7 +405,8 @@ private:
     unique_ptr<DataBufManager>                 dataBufferManager;
     unique_ptr<LocalRmaBufManager>             localRmaBufManager;
     unique_ptr<RemoteRmaBufManager>            remoteRmaBufManager;
-    unique_ptr<QueueNotifyManager>             queueNotifyManager;
+    unique_ptr<QueueNotifyManager>             aicpuQueueNotifyManager_;
+    unique_ptr<QueueNotifyManager>             ccuQueueNotifyManager_;
     unique_ptr<QueueWaitGroupCntNotifyManager> queueWaitGroupCntNotifyManager;
     unique_ptr<QueueBcastPostCntNotifyManager> queueBcastPostCntNotifyManager;
     unique_ptr<ConnLocalNotifyManager>         connLocalNotifyManager;
@@ -506,6 +511,7 @@ private:
     void InitRankGraph(std::unique_ptr<RankGraph> &inputRankGraph);
     void InitRankGraph(const RankTableInfo &ranktable);
     void CheckRankGraph() const;
+    void CheckRankGraphAddrs() const;
     HcclResult CheckCommStatus();
     void InitDataBufferManager();
     void InitNotifyManager();
@@ -524,16 +530,13 @@ private:
     void InitHDCommunicate();
     void InitOneSidedService();
     void InitUbMemoryTransportMgr();
-    void TraceStartInfo(u32 streamId, const CollOpParams &opParams, OpMode opMode) const;
-    void TraceOpInfo(const CollOpParams &opParams) const;
-    void TraceEndInfo(HcclUs startut, HcclUs endut, const CollOpParams &opParams) const;
     void RefreshSubmittedOpcnt();
     void SingleRankProc(const CollOpParams &opParams, void *stream) const;
-    void ConvertCollOperatorA2A(const CollOpParams &opParams, bool isLaunch = true);
+    void ConvertCollOperatorA2A(const CollOpParams &opParams, bool isLaunch = true, bool isHcomSelectAlg = false);
     void DefaultConvertCollOperatorA2A(const CollOpParams &opParams);
-    void LaunchConvertCollOperatorA2A(const CollOpParams &opParams);
+    void LaunchConvertCollOperatorA2A(const CollOpParams &opParams, bool isHcomSelectAlg = false);
     void ConvertCollOperatorMem(const CollOpParams &opParams, u64 size);
-    void CalcA2ASendRecvMem(const CollOpParams &opParams, u64 &sendSize, u64 &recvSize) const;
+    void CalcA2ASendRecvMem(const CollOpParams &opParams, u64 &sendSize, u64 &recvSize, bool isHcomSelectAlg = false) const;
     void ConvertCollOperatorMemV(const CollOpParams &opParams);
     void RegisterAicpuKernel();
 
@@ -592,7 +595,6 @@ private:
     HcclResult GetTilingAccelerator(void *mc2Tiling, AcceleratorState& acceleratorState) const;
 
     // AICPU场景aclgraph专用
-    bool IsOpSupportZeroCopyAlg(const CollOpParams &opParams, const rtStream_t stream) const;
     HcclResult OffloadResourcePre(std::string &opTag, const CollOpParams &opParams);
 };
 } // namespace Hccl

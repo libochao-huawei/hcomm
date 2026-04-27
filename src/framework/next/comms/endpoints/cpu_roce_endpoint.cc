@@ -17,6 +17,10 @@
 #include "adapter_rts_common.h"
 #include "hccp_peer_manager.h"
 #include "server_socket_manager.h"
+
+using Hccl::HcclException;
+using std::string;
+using std::exception;
  
 namespace hcomm {
 CpuRoceEndpoint::CpuRoceEndpoint(const EndpointDesc &endpointDesc)
@@ -40,8 +44,8 @@ HcclResult CpuRoceEndpoint::Init()
     u32 devPhyId = 0;
     CHK_RET(hrtGetDevicePhyIdByIndex(devId, devPhyId));
     auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
-    ctxHandle_ = static_cast<void *>(
-        rdmaHandleMgr.GetByAddr(devPhyId, Hccl::LinkProtoType::RDMA, ipAddr, Hccl::PortDeploymentType::HOST_NET));
+    TRY_CATCH_RETURN(ctxHandle_ = static_cast<void *>(
+        rdmaHandleMgr.GetByAddr(devPhyId, Hccl::LinkProtoType::RDMA, ipAddr, Hccl::PortDeploymentType::HOST_NET)));
     CHK_PTR_NULL(ctxHandle_);
     HCCL_INFO("CpuRoceEndpoint::%s success, devId[%u], ipAddr[%s], ctxHandle[%p]",
         __func__,
@@ -125,6 +129,20 @@ HcclResult CpuRoceEndpoint::MemoryUnimport(const void *memDesc, uint32_t descLen
 HcclResult CpuRoceEndpoint::GetAllMemHandles(void **memHandles, uint32_t *memHandleNum)
 {
     CHK_RET(this->regedMemMgr_->GetAllMemHandles(memHandles, memHandleNum));
+    return HCCL_SUCCESS;
+}
+
+HcclResult CpuRoceEndpoint::GetCapabilities(Capabilities &caps)
+{
+    HCCL_INFO("[CpuRoceEndpoint::%s] START.", __func__);
+    static constexpr uint64_t RDMA_MAX_WR_LENGTH = 1ULL * 1024 * 1024 * 1024; // 单次RDMA操作最大长度1GB
+    if (!isCapabilitiesAvailable_) {
+        // 待 HCCP 提供查询设备支持的最大发送消息的接口后，查询设备实际值。
+        capabilities_.maxMsgSize = RDMA_MAX_WR_LENGTH;
+        isCapabilitiesAvailable_ = true;
+    }
+    caps = capabilities_;
+    HCCL_INFO("[CpuRoceEndpoint::%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
 }

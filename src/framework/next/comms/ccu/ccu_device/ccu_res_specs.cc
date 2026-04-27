@@ -41,8 +41,8 @@ static CcuVersion CheckCcuVersion()
 static bool CheckDieEnable(const uint32_t devPhyId, const uint8_t dieId)
 {
     const RaInfo info{NetworkMode::NETWORK_OFFLINE, devPhyId};
-    struct CustomChannelInfoIn  inBuff{};
-    struct CustomChannelInfoOut outBuff{};
+    CustomChannelInfoIn  inBuff{};
+    CustomChannelInfoOut outBuff{};
     inBuff.op                    = CcuOpcodeType::CCU_U_OP_GET_DIE_WORKING;
     inBuff.offsetStartIdx        = 0;
     inBuff.data.dataInfo.udieIdx = dieId;
@@ -58,7 +58,7 @@ static bool CheckDieEnable(const uint32_t devPhyId, const uint8_t dieId)
     }
 
     const uint32_t enableFlag = outBuff.data.dataInfo.dataArray[0].dieinfo.enableFlag;
-    return enableFlag == CCU_ENABLE_FLAG;
+    return enableFlag == Hccl::CCU_ENABLE_FLAG;
 }
 
 static CcuBaseInfoData ParseOutBuffToBaseInfoData(const CustomChannelInfoOut &outBuff)
@@ -108,8 +108,8 @@ static HcclResult CheckResSpecifications(const uint32_t devPhyId, const uint8_t 
     const CcuVersion ccuVersion, CcuResSpecInfo &resSpecs)
 {
     const RaInfo info{NetworkMode::NETWORK_OFFLINE, devPhyId};
-    struct CustomChannelInfoIn  inBuff{};
-    struct CustomChannelInfoOut outBuff{};
+    CustomChannelInfoIn  inBuff{};
+    CustomChannelInfoOut outBuff{};
     inBuff.op                    = CcuOpcodeType::CCU_U_OP_GET_BASIC_INFO;
     inBuff.offsetStartIdx        = 0;
     inBuff.data.dataInfo.udieIdx = dieId;
@@ -127,29 +127,6 @@ static HcclResult CheckResSpecifications(const uint32_t devPhyId, const uint8_t 
     resSpecs = ParseOutBuffToResSpecInfo(ccuVersion, outBuff);
     return HcclResult::HCCL_SUCCESS;
 }
-
-constexpr uint64_t POD_MAINBOARD = 0x0;
-constexpr uint64_t A_K_SERVER_MAINBOARD = 0x1;
-constexpr uint64_t A_X_SERVER_MAINBOARD = 0x2;
-constexpr uint64_t PCIE_STD_MAINBOARD = 0x3;
-constexpr uint64_t RSV1_MAINBOARD = 0x4;
-constexpr uint64_t RSV2_MAINBOARD = 0x5;
-constexpr uint64_t EQUIP_MAINBOARD = 0x6;
-constexpr uint64_t EVB_MAINBOARD = 0x7;
-
-MAKE_ENUM(HcclMainboardId, MAINBOARD_POD, MAINBOARD_A_K_SERVER, MAINBOARD_A_X_SERVER, MAINBOARD_PCIE_STD,
-          MAINBOARD_RSV, MAINBOARD_EQUIPMENT, MAINBOARD_EVB, MAINBOARD_OTHERS);
-
-const std::unordered_map<uint64_t, HcclMainboardId> rtMainboardIdToHcclMainboardId = {
-    {POD_MAINBOARD, HcclMainboardId::MAINBOARD_POD},
-    {A_K_SERVER_MAINBOARD, HcclMainboardId::MAINBOARD_A_K_SERVER},
-    {A_X_SERVER_MAINBOARD, HcclMainboardId::MAINBOARD_A_X_SERVER},
-    {PCIE_STD_MAINBOARD, HcclMainboardId::MAINBOARD_PCIE_STD},
-    {RSV1_MAINBOARD, HcclMainboardId::MAINBOARD_RSV},
-    {RSV2_MAINBOARD, HcclMainboardId::MAINBOARD_RSV},
-    {EQUIP_MAINBOARD, HcclMainboardId::MAINBOARD_EQUIPMENT},
-    {EVB_MAINBOARD, HcclMainboardId::MAINBOARD_EVB}
-};
 
 /*
  * 获取Mainboard ID 5-7位，输出整机形态枚举值
@@ -175,7 +152,26 @@ const std::unordered_map<uint64_t, HcclMainboardId> rtMainboardIdToHcclMainboard
  *  1: 池化（NPU作为资源池，其它Host对等访问）
  * }
  */
-static HcclResult GetMainboardId(uint32_t deviceLogicId, HcclMainboardId &hcclMainboardId)
+constexpr uint64_t POD_MAINBOARD = 0x0;
+constexpr uint64_t A_K_SERVER_MAINBOARD = 0x1;
+constexpr uint64_t A_X_SERVER_MAINBOARD = 0x2;
+constexpr uint64_t PCIE_STD_MAINBOARD = 0x3;
+constexpr uint64_t RSV1_MAINBOARD = 0x4;
+constexpr uint64_t RSV2_MAINBOARD = 0x5;
+constexpr uint64_t EQUIP_MAINBOARD = 0x6;
+constexpr uint64_t EVB_MAINBOARD = 0x7;
+const std::unordered_map<uint64_t, HcclMainboardId> rtMainboardIdToHcclMainboardId = {
+    {POD_MAINBOARD, HcclMainboardId::MAINBOARD_POD},
+    {A_K_SERVER_MAINBOARD, HcclMainboardId::MAINBOARD_A_K_SERVER},
+    {A_X_SERVER_MAINBOARD, HcclMainboardId::MAINBOARD_A_X_SERVER},
+    {PCIE_STD_MAINBOARD, HcclMainboardId::MAINBOARD_PCIE_STD},
+    {RSV1_MAINBOARD, HcclMainboardId::MAINBOARD_RSV},
+    {RSV2_MAINBOARD, HcclMainboardId::MAINBOARD_RSV},
+    {EQUIP_MAINBOARD, HcclMainboardId::MAINBOARD_EQUIPMENT},
+    {EVB_MAINBOARD, HcclMainboardId::MAINBOARD_EVB}
+};
+
+HcclResult CcuGetMainboardId(uint32_t deviceLogicId, HcclMainboardId &hcclMainboardId)
 {
     constexpr aclrtDevAttr devAttr = aclrtDevAttr::ACL_DEV_ATTR_MAINBOARD_ID;
     constexpr uint64_t BITS_5 = 5;
@@ -183,28 +179,29 @@ static HcclResult GetMainboardId(uint32_t deviceLogicId, HcclMainboardId &hcclMa
     int64_t val = 0;
     auto ret = aclrtGetDeviceInfo(deviceLogicId, devAttr, &val);
     if (ret != RT_ERROR_NONE) {
-        HCCL_ERROR("[GetDeviceInfo]errNo[0x%016llx] rt get device info failed, "
-                   "deviceLogicId=%u, devAttr=%d",
-                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), deviceLogicId, devAttr);
+        HCCL_ERROR("[%s]errNo[0x%016llx] rt get device info failed, "
+                   "deviceLogicId=%u, devAttr=%d", __func__,
+                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME),
+                   deviceLogicId, devAttr);
         return HcclResult::HCCL_E_RUNTIME;
     }
 
-    HCCL_INFO("[GetMainboardId] deviceLogicId[%d] val[%ld].", deviceLogicId, val);
+    HCCL_INFO("[%s] deviceLogicId[%d] val[%ld].", __func__, deviceLogicId, val);
     uint64_t mainboardId = (static_cast<uint64_t>(val) >> BITS_5) & MASK_7; // 提取val的5-7位，判断整机形态
     hcclMainboardId = HcclMainboardId::MAINBOARD_OTHERS;
     auto it = rtMainboardIdToHcclMainboardId.find(mainboardId);
     if (it != rtMainboardIdToHcclMainboardId.end()) {
         hcclMainboardId = it->second;
     }
-    HCCL_INFO("[HrtGetMainboardId] deviceLogicId[%d] mainboardId[%llu] hcclMainboardId[%s].",
-              deviceLogicId, mainboardId, hcclMainboardId.Describe().c_str());
+    HCCL_INFO("[%s] deviceLogicId[%d] mainboardId[%llu] hcclMainboardId[%s].",
+              __func__, deviceLogicId, mainboardId, hcclMainboardId.Describe().c_str());
     return HcclResult::HCCL_SUCCESS;
 }
 
 static HcclResult CheckArmX86Flag(int32_t devLogicId, bool &armX86Flag)
 {
     HcclMainboardId hcclMainboardId{HcclMainboardId::MAINBOARD_RSV};
-    CHK_RET(GetMainboardId(devLogicId, hcclMainboardId));
+    CHK_RET(CcuGetMainboardId(devLogicId, hcclMainboardId));
 
     armX86Flag = hcclMainboardId == HcclMainboardId::MAINBOARD_A_X_SERVER
         || hcclMainboardId == HcclMainboardId::MAINBOARD_PCIE_STD;

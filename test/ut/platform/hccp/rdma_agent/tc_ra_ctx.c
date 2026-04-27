@@ -402,7 +402,7 @@ void TcRaCtxQpBind()
 void TcRaBatchSendWr()
 {
     struct RaCtxRemQpHandle remQpHandle = {0};
-    struct RaLmemHandle rmemHandle = {0};
+    struct RaRmemHandle rmemHandle = {0};
     struct RaCtxQpHandle qpHandle = {0};
     struct RaCtxHandle ctxHandle = {0};
     struct SendWrData wrList[1] = {0};
@@ -1936,4 +1936,202 @@ void TcRaRsCtxGetCrErrInfoList()
     inBuf = NULL;
     free(outBuf);
     outBuf = NULL;
+}
+
+void TcRaCtxGetTpInfoList()
+{
+    struct HccpTpInfo infoList[HCCP_MAX_TPID_INFO_NUM] = {0};
+    struct RaCtxHandle ctxHandle = {0};
+    struct GetTpCfg cfg = {0};
+    unsigned int num = 0;
+    int ret = 0;
+
+    ret = RaCtxGetTpInfoList(NULL, &cfg, infoList, &num);
+    EXPECT_INT_EQ(ret, 128103);
+
+    ret = RaCtxGetTpInfoList(&ctxHandle, &cfg, NULL, &num);
+    EXPECT_INT_EQ(ret, 128103);
+
+    ret = RaCtxGetTpInfoList(&ctxHandle, &cfg, infoList, &num);
+    EXPECT_INT_EQ(ret, 128103);
+
+    num = 1;
+    ret = RaCtxGetTpInfoList(&ctxHandle, &cfg, infoList, &num);
+    EXPECT_INT_EQ(ret, 0);
+}
+
+void TcRaPeerCtxGetTpInfoList()
+{
+    struct HccpTpInfo infoList[HCCP_MAX_TPID_INFO_NUM] = {0};
+    struct RaCtxHandle ctxHandle = {0};
+    struct GetTpCfg cfg = {0};
+    unsigned int num = 1;
+    int ret = 0;
+
+    mocker_clean();
+    mocker(RsGetTpInfoList, 1, -1);
+    ret = RaPeerCtxGetTpInfoList(&ctxHandle, &cfg, infoList, &num);
+    EXPECT_INT_EQ(ret, -1);
+    mocker_clean();
+}
+
+void TcRaCtxGetTpAttr()
+{
+    struct RaCtxHandle ctxHandle = {0};
+    struct TpAttr attr = {0};
+    uint32_t attrBitmap = 0;
+    uint64_t tpHandle = 0;
+    int ret = 0;
+
+    ret = RaCtxGetTpAttr(NULL, tpHandle, &attrBitmap, &attr);
+    EXPECT_INT_EQ(ret, 128103);
+
+    ret = RaCtxGetTpAttr(&ctxHandle, tpHandle, &attrBitmap, &attr);
+    EXPECT_INT_EQ(ret, 0);
+
+    mocker_clean();
+    mocker(RaPeerCtxGetTpAttr, 1, -1);
+    ret = RaCtxGetTpAttr(&ctxHandle, tpHandle, &attrBitmap, &attr);
+    EXPECT_INT_EQ(ret, 128100);
+    mocker_clean();
+}
+
+void TcRaPeerCtxGetTpAttr()
+{
+    struct RaCtxHandle ctxHandle = {0};
+    struct TpAttr attr = {0};
+    uint32_t attrBitmap = 0;
+    uint64_t tpHandle = 0;
+    int ret = 0;
+
+    mocker_clean();
+    mocker(RsGetTpAttr, 1, -1);
+    ret = RaPeerCtxGetTpAttr(&ctxHandle, tpHandle, &attrBitmap, &attr);
+    EXPECT_INT_EQ(ret, -1);
+    mocker_clean();
+}
+
+void TcRaCtxSetTpAttr()
+{
+    struct RaCtxHandle ctxHandle = {0};
+    struct TpAttr attr = {0};
+    uint32_t attrBitmap = 0;
+    uint64_t tpHandle = 0;
+    int ret = 0;
+
+    ret = RaCtxSetTpAttr(NULL, tpHandle, attrBitmap, &attr);
+    EXPECT_INT_EQ(ret, 128103);
+
+    ret = RaCtxSetTpAttr(&ctxHandle, tpHandle, attrBitmap, &attr);
+    EXPECT_INT_EQ(ret, 0);
+
+    mocker_clean();
+    mocker(RaPeerCtxSetTpAttr, 1, -1);
+    ret = RaCtxSetTpAttr(&ctxHandle, tpHandle, attrBitmap, &attr);
+    EXPECT_INT_EQ(ret, 128100);
+    mocker_clean();
+}
+
+void TcRaPeerCtxSetTpAttr()
+{
+    struct RaCtxHandle ctxHandle = {0};
+    struct TpAttr attr = {0};
+    uint32_t attrBitmap = 0;
+    uint64_t tpHandle = 0;
+    int ret = 0;
+
+    mocker_clean();
+    mocker(RsSetTpAttr, 1, -1);
+    ret = RaPeerCtxSetTpAttr(&ctxHandle, tpHandle, attrBitmap, &attr);
+    EXPECT_INT_EQ(ret, -1);
+    mocker_clean();
+}
+
+void TcRaCtxGetJettyContext()
+{
+    uint8_t context[CONTEXT_MAX_LEN];
+    struct RaCtxQpHandle qpHandle = {0};
+    struct RaCtxHandle ctxHandle = {0};
+    struct RaCtxOps ctxOps = {0};
+    unsigned int len = 0;
+    int ret = 0;
+
+    mocker_clean();
+    ret = RaCtxGetJettyContext(NULL, NULL, NULL);
+    EXPECT_INT_EQ(ret, 128103);
+
+    ret = RaCtxGetJettyContext(&qpHandle, NULL, NULL);
+    EXPECT_INT_EQ(ret, 128103);
+
+    ret = RaCtxGetJettyContext(&qpHandle, context, NULL);
+    EXPECT_INT_EQ(ret, 128103);
+
+    ret = RaCtxGetJettyContext(&qpHandle, context, &len);
+    EXPECT_INT_EQ(ret, 128103);
+
+    len = CONTEXT_MAX_LEN;
+    ret = RaCtxGetJettyContext(&qpHandle, context, &len);
+    EXPECT_INT_EQ(ret, 128103);
+
+    ctxHandle.ctxOps = NULL;
+    qpHandle.ctxHandle = &ctxHandle;
+    ret = RaCtxGetJettyContext(&qpHandle, context, &len);
+    EXPECT_INT_EQ(ret, 128103);
+    mocker_clean();
+
+    mocker(RaHdcCtxGetJettyContext, 1, -EINVAL);
+    ctxHandle.ctxOps = &gRaHdcCtxOps;
+    ret = RaCtxGetJettyContext(&qpHandle, context, &len);
+    EXPECT_INT_EQ(ret, 128103);
+    mocker_clean();
+
+    mocker(RaHdcCtxGetJettyContext, 1, 0);
+    ctxHandle.ctxOps = &gRaHdcCtxOps;
+    ret = RaCtxGetJettyContext(&qpHandle, context, &len);
+    EXPECT_INT_EQ(ret, 0);
+    mocker_clean();
+}
+
+void TcRaHdcCtxGetJettyContext()
+{
+    struct RaCtxQpHandle qpHandle = {0};
+    uint8_t context[CONTEXT_MAX_LEN];
+    unsigned int len = 0;
+    int ret = 0;
+
+    mocker_clean();
+    mocker(RaHdcProcessMsg, 1, -1);
+    ret = RaHdcCtxGetJettyContext(&qpHandle, context, &len);
+    EXPECT_INT_EQ(ret, -1);
+    mocker_clean();
+
+    mocker(RaHdcProcessMsg, 1, 0);
+    mocker(memcpy_s, 1, -1);
+    ret = RaHdcCtxGetJettyContext(&qpHandle, context, &len);
+    EXPECT_INT_EQ(ret, -ESAFEFUNC);
+    mocker_clean();
+
+    mocker(RaHdcProcessMsg, 1, 0);
+    mocker(memcpy_s, 1, 0);
+    ret = RaHdcCtxGetJettyContext(&qpHandle, context, &len);
+    EXPECT_INT_EQ(ret, 0);
+    mocker_clean();
+}
+
+void TcRaPeerCtxGetJettyContext()
+{
+    struct RaCtxQpHandle qpHandle = {0};
+    uint8_t context[CONTEXT_MAX_LEN];
+    unsigned int len = 0;
+    int ret = 0;
+
+    mocker_clean();
+    ret = RaPeerCtxGetJettyContext(&qpHandle, context, &len);
+    EXPECT_INT_EQ(ret, 0);
+    mocker_clean();
+
+    mocker(RsCtxGetUbContext, 1, -1);
+    ret = RaPeerCtxGetJettyContext(&qpHandle, context, &len);
+    EXPECT_INT_EQ(ret, -1);
+    mocker_clean();
 }

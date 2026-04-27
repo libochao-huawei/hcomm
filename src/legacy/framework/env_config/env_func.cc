@@ -253,7 +253,7 @@ void CheckRDMATrafficClass(const u32 &rdmaTrafficClass)
 {
     if (rdmaTrafficClass % HCCL_RDMA_TC_BASE != 0) {
         RPT_ENV_ERR(true, "EI0001", std::vector<std::string>({"value", "env", "expect"}),
-                            std::vector<std::string>({std::to_string(rdmaTrafficClass), "HCCL_RDMA_TC", "value should be multiple of four."}));
+                            std::vector<std::string>({std::to_string(rdmaTrafficClass), "HCCL_RDMA_TC", "value should be multiple of four"}));
         HCCL_ERROR("rdmaTrafficClass[%u] is not a multiple of [%u]", rdmaTrafficClass, HCCL_RDMA_TC_BASE);
         THROW<InvalidParamsException>(
             StringFormat("rdmaTrafficClass[%u] is not a multiple of [%u]", rdmaTrafficClass, HCCL_RDMA_TC_BASE));
@@ -618,7 +618,7 @@ HcclAccelerator CastHcclAccelerator(const std::string &s)
     HcclAccelerator mode;
     if (s == "AI_CPU") {
         mode = HcclAccelerator::AICPU_TS;
-    } else if (s == "AIV") {
+    } else if (s == "AIV" || s == "AIV_ONLY") {
         mode = HcclAccelerator::AIV;
     } else if (s == "HOST" || s == "HOST_TS") {
         mode = HcclAccelerator::CCU_SCHED;
@@ -630,7 +630,7 @@ HcclAccelerator CastHcclAccelerator(const std::string &s)
     } else {
         THROW<InvalidParamsException>(
             StringFormat("Env HCCL_OP_EXPANSION_MODE config \"%s\" is invalid."
-                "it should be one of [AI_CPU, AIV, CCU_MS, CCU_SCHED].", s.c_str()));
+                "it should be one of [AI_CPU, AIV, AIV_ONLY, CCU_MS, CCU_SCHED].", s.c_str()));
     }
     return mode;
 }

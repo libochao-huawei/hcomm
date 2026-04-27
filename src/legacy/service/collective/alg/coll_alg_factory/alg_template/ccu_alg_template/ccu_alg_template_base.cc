@@ -141,7 +141,7 @@ HcclResult CcuAlgTemplateBase::GetToken(const CollAlgOperator &op, uint64_t &tok
                                      static_cast<uint64_t>(op.scratchMem->GetSize()));
         return HCCL_SUCCESS;
     }
-    HCCL_ERROR("[GetToken] Both inputMem and outputMem are null");
+    HCCL_WARNING("[GetToken] Both inputMem and outputMem are null");
     return HCCL_E_PTR;
 }
 u32 CcuAlgTemplateBase::CalcScratchMultiple(BufferType inBuffType, BufferType outBuffType)
@@ -190,5 +190,13 @@ HcclResult CcuAlgTemplateBase::CalNumBlocks(u32& numBlocks, u64 dataSize, u32 nu
     HCCL_WARNING("CalNumBlocks not support ccu template.");
     return HCCL_SUCCESS;
 }
+
+HcclResult CcuAlgTemplateBase::setPathNumMap(const std::map<u32, u32> &rank2PathNumMap)
+{
+    (void)rank2PathNumMap;
+    HCCL_WARNING("[CcuAlgTemplateBase] Unsupported interface of setPathNumMap!");
+    return HCCL_SUCCESS;
+}
+ 
 
 } // namespace Hccl

@@ -17,6 +17,32 @@
 
 using namespace AscendC;
 
+#define EXPORT_AIV_META_INFO(kernel_name) \
+static const struct FunLevelKType kernel_name##_kernel_type_section __attribute__ \
+((used, section (".ascend.meta." #kernel_name))) \
+= {{F_TYPE_KTYPE, sizeof(unsigned int), K_TYPE_AIV}}
+
+// AIV支持的Atomic数据类型
+#define AIV_ATOMIC_DATA_TYPE_DEF(func) \
+    func(float); \
+    func(half); \
+    func(int16_t); \
+    func(int32_t); \
+    func(int8_t); \
+    func(bfloat16_t)
+
+// AIV支持的DataCopy数据类型
+#define AIV_COPY_DATA_TYPE_DEF(func) \
+    func(half); \
+    func(int16_t); \
+    func(uint16_t); \
+    func(float); \
+    func(int32_t); \
+    func(uint32_t); \
+    func(int8_t); \
+    func(uint8_t); \
+    func(bfloat16_t)
+    
 constexpr uint32_t MAX_RANK_SIZE = 16; // server内最大卡数
 constexpr uint32_t MAX_RANK_SIZE_A3 = 768; // 超节点内最大卡数
 constexpr uint32_t MAX_TARGET_NUM = 20; // 最大轮数
@@ -73,17 +99,11 @@ enum class CommPattern {
 };
 
 #define AIV_INFO(format,...) do { \
-    if(logLevel_==1) { \
-        AscendC::PRINTF(format, ##__VA_ARGS__); \
-    } \
+    AscendC::PRINTF(format, ##__VA_ARGS__); \
 } while(0)
 
-#define AIV_ERROR(condition, format,...) do { \
-    if(condition) { \
-        AscendC::PrintfImpl(DumpType::DUMP_SCALAR, "[AIV_ERROR] %s:%d:" format, __FILE__, __LINE__, ##__VA_ARGS__); \
-        trap(); \
-    } \
-} while(0)
+#define AIV_INFO_HINT \
+    AIV_INFO("Aiv log dump is enabled in %s\n", __func__)
 
 #define KERNEL_ARGS_DEF \
 GM_ADDR buffIn0, GM_ADDR buffIn1, GM_ADDR buffIn2, GM_ADDR buffIn3, \
@@ -161,8 +181,9 @@ constexpr uint64_t AIV_PING_PONG_FACTOR_TWO = 2;
 
 constexpr uint64_t AIV_ALL_GATHER_SMALL_SIZE = 700 * 1024;
 constexpr uint64_t AIV_REDUCE_SCATTER_MID_SIZE = 2 * 1024 * 1024;
-constexpr uint64_t AIV_REDUCE_SCATTER_V_MID_SIZE = 2 * 1024 * 1024;
+constexpr uint64_t AIV_REDUCE_SCATTER_SMALL_SIZE = 1 * 1024 * 1024;
 constexpr uint64_t AIV_ALL_TO_ALL_BIG_SIZE = 512 * 1024;
+constexpr uint32_t AIV_REDUCE_SCATTER_RANK_SIZE_8 = 8;
 
 constexpr uint64_t AIV_A3_ALL_REDUCE_GRAPH_GUIYI_SIZE = 190 * 1024;
 constexpr uint64_t AIV_A3_REDUCE_SCATTER_GRAPH_GUIYI_SIZE = 760 * 1024;
@@ -246,6 +267,87 @@ constexpr uint32_t MAX_FLAG_SIZE_PER_KERNEL = 6 * MAX_RANK_SIZE * FLAG_SIZE;
 #define DEV_TYPE_910B   2
 #define DEV_TYPE_910_93 4
 
+// __sk__函数参数 A2
+struct SkArgsStruct {
+    GM_ADDR buffIn0; GM_ADDR buffIn1; GM_ADDR buffIn2; GM_ADDR buffIn3;
+    GM_ADDR buffIn4; GM_ADDR buffIn5; GM_ADDR buffIn6; GM_ADDR buffIn7;
+    GM_ADDR buffIn8; GM_ADDR buffIn9; GM_ADDR buffIn10; GM_ADDR buffIn11;
+    GM_ADDR buffIn12; GM_ADDR buffIn13; GM_ADDR buffIn14; GM_ADDR buffIn15;
+    GM_ADDR buffOut0; GM_ADDR buffOut1; GM_ADDR buffOut2; GM_ADDR buffOut3;
+    GM_ADDR buffOut4; GM_ADDR buffOut5; GM_ADDR buffOut6; GM_ADDR buffOut7;
+    GM_ADDR buffOut8; GM_ADDR buffOut9; GM_ADDR buffOut10; GM_ADDR buffOut11;
+    GM_ADDR buffOut12; GM_ADDR buffOut13; GM_ADDR buffOut14; GM_ADDR buffOut15;
+    GM_ADDR input; GM_ADDR output;
+    uint32_t rank;
+    uint32_t rankSize;
+    uint64_t len;
+    uint32_t dataType;
+    uint32_t reduceOp;
+    uint32_t root;
+    int32_t tag;
+    uint32_t numBlocks;
+    alignas(4) bool isOpBase;
+    uint64_t bufferSize;
+    int32_t aivRdmaStep;
+    alignas(4) bool useAivRdmaSmall;
+    int32_t serverNum;
+    uint32_t devType;
+    GM_ADDR headCountMem;
+    GM_ADDR tailCountMem;
+    GM_ADDR addOneMem;
+    uint32_t counterMemSize;
+    alignas(4) bool isEnableCounter;
+    uint32_t deterministic;
+    uint64_t rmaInfo;
+};
+
+// __sk__定义的函数参数 A2
+#define SK_BIND_FUNC_ARGS \
+    __gm__ struct SkArgsStruct* args
+
+// 将__sk__参数转成__aicore__参数 A2
+#define CONVERT_SK_PARAM_TO_KERNEL_ARGS_A2 \
+GM_ADDR buffIn0 = args->buffIn0; GM_ADDR buffIn1 = args->buffIn1; GM_ADDR buffIn2 = args->buffIn2; GM_ADDR buffIn3 = args->buffIn3; \
+GM_ADDR buffIn4 = args->buffIn4; GM_ADDR buffIn5 = args->buffIn5; GM_ADDR buffIn6 = args->buffIn6; GM_ADDR buffIn7 = args->buffIn7; \
+GM_ADDR buffIn8 = args->buffIn8; GM_ADDR buffIn9 = args->buffIn9; GM_ADDR buffIn10 = args->buffIn10; GM_ADDR buffIn11 = args->buffIn11; \
+GM_ADDR buffIn12 = args->buffIn12; GM_ADDR buffIn13 = args->buffIn13; GM_ADDR buffIn14 = args->buffIn14; GM_ADDR buffIn15 = args->buffIn15; \
+GM_ADDR buffOut0 = args->buffOut0; GM_ADDR buffOut1 = args->buffOut1; GM_ADDR buffOut2 = args->buffOut2; GM_ADDR buffOut3 = args->buffOut3; \
+GM_ADDR buffOut4 = args->buffOut4; GM_ADDR buffOut5 = args->buffOut5; GM_ADDR buffOut6 = args->buffOut6; GM_ADDR buffOut7 = args->buffOut7; \
+GM_ADDR buffOut8 = args->buffOut8; GM_ADDR buffOut9 = args->buffOut9; GM_ADDR buffOut10 = args->buffOut10; GM_ADDR buffOut11 = args->buffOut11; \
+GM_ADDR buffOut12 = args->buffOut12; GM_ADDR buffOut13 = args->buffOut13; GM_ADDR buffOut14 = args->buffOut14; GM_ADDR buffOut15 = args->buffOut15; \
+GM_ADDR input = args->input; GM_ADDR output = args->output; uint32_t rank = args->rank; uint32_t rankSize = args->rankSize; \
+uint64_t len = args->len; uint32_t dataType = args->dataType; uint32_t reduceOp = args->reduceOp; uint32_t root = args->root; \
+int32_t tag = args->tag; uint32_t numBlocks = args->numBlocks; bool isOpBase = args->isOpBase; uint64_t bufferSize = args->bufferSize; \
+int32_t aivRdmaStep = args->aivRdmaStep; bool useAivRdmaSmall = args->useAivRdmaSmall; int32_t serverNum = args->serverNum; \
+uint32_t devType = args->devType; GM_ADDR headCountMem = args->headCountMem; GM_ADDR tailCountMem = args->tailCountMem; \
+GM_ADDR addOneMem = args->addOneMem; uint32_t counterMemSize = args->counterMemSize; bool isEnableCounter = args->isEnableCounter; \
+uint32_t deterministic = args->deterministic; uint64_t rmaInfo = args->rmaInfo
+
+// sk 绑定函数 A2
+#define SuperKernelBindA2(kernel_name) \
+extern "C" __sk__ void kernel_name##_1(SK_BIND_FUNC_ARGS); \
+extern "C" __sk__ void kernel_name##_2(SK_BIND_FUNC_ARGS); \
+extern "C" __sk__ void kernel_name##_3(SK_BIND_FUNC_ARGS); \
+extern "C" __sk__ void kernel_name##_4(SK_BIND_FUNC_ARGS); \
+SK_BIND(kernel_name, 0, kernel_name##_1, kernel_name##_2, kernel_name##_3, kernel_name##_4)
+
+// A2 sk 导出函数
+#define _SK_BIND_FUNC_DEF_A2(kernel_name, postfix) \
+extern "C" __sk__ void kernel_name##_##postfix(SK_BIND_FUNC_ARGS) \
+{ \
+    CONVERT_SK_PARAM_TO_KERNEL_ARGS_A2; \
+    kernel_name##_inner(KERNEL_ARGS_CALL); \
+}
+#define SK_BIND_FUNC_DEF_A2(kernel_name, postfix) _SK_BIND_FUNC_DEF_A2(kernel_name, postfix)
+
+// A2 Global 导出函数
+#define GLOBAL_FUNC_DEF_A2(kernel_name) \
+extern "C" __global__ __aicore__ void kernel_name(KERNEL_ARGS_DEF) \
+{ \
+    kernel_name##_inner(KERNEL_ARGS_CALL); \
+} \
+EXPORT_AIV_META_INFO(kernel_name)
+
 class AivCommBase {
 public:
     __aicore__ inline AivCommBase() {}
@@ -286,8 +388,6 @@ public:
         seperateOffset = countOffset + NUM_BLOCKS_FOUR_PER_RANK_A3 * rankSize_ * FLAG_SIZE;
         logLevel_ = GetLogLevel();
         uint64_t offset = (logLevel_ == 1) ? (tag_ & 1 ? INFO_EVEN_BUFFER_OFFSET : INFO_ODD_BUFFER_OFFSET) : INFO_EVEN_BUFFER_OFFSET;
-        AscendC::InitDump(false, GM_OUT[rank_] + offset, ONE_CORE_DUMP_SIZE);
-        AIV_INFO("[AivCommBase::Init][Init]initdumpaddr is [%p], tag is [%d]", GM_OUT[rank_] + offset, tag_);
 
         pipe.InitBuffer(localFlagBuf, UB_FLAG_SIZE_4);
         localSetTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_ONE_OFFSET);
@@ -541,7 +641,7 @@ public:
 
     __aicore__ inline void HeadCounter()
     {
-        if (GetBlockIdx() == 0 && isEnableCounter_) {
+        if (blockIdx_ == 0 && isEnableCounter_) {
             CpGM2GM((__gm__ int32_t*)headCountMem_, (__gm__ int32_t*)addOneMem_, counterMemSize_ / sizeof(int32_t), true,
                 HcclReduceOp::HCCL_REDUCE_SUM);
         }
@@ -549,7 +649,7 @@ public:
 
     __aicore__ inline void TailCounter()
     {
-        if (GetBlockIdx() == 0 && isEnableCounter_) {
+        if (blockIdx_ == 0 && isEnableCounter_) {
             CpGM2GM((__gm__ int32_t*)tailCountMem_, (__gm__ int32_t*)addOneMem_, counterMemSize_ / sizeof(int32_t), true,
                 HcclReduceOp::HCCL_REDUCE_SUM);
         }
@@ -570,6 +670,7 @@ public:
     int32_t tag_;
     int32_t numBlocks_;
     int32_t logLevel_;
+    uint32_t blockIdx_ = GetBlockIdx(); // 在构造函数中初始化，以免漏初始化
 
     bool useDoubleBuffer_;
 
@@ -608,7 +709,7 @@ __aicore__ inline void AivCommBase::Barrier(uint32_t step)
     // 用10个flag
     uint32_t flagOffset = 2 * 1024 * 1024 + (step % 2) * FLAG_SIZE * rankSize_;
     __gm__ int32_t *ctrlFlagsGM;
-    if (GetBlockIdx() == 0) {
+    if (blockIdx_ == 0) {
         pipe_barrier(PIPE_ALL);
         for (int i = 1; i < rankSize_; i++) {
             uint32_t targetRank = (rank_ + i) % rankSize_; 
@@ -635,7 +736,7 @@ __aicore__ inline void AivCommBase::ClearFlag()
     // 用10个flag
     __gm__ int32_t *ctrlFlagsGM = (__gm__ int32_t *)(GM_OUT[rank_]);
     __gm__ int32_t *emtpyGM = (__gm__ int32_t *)(GM_OUT[rank_] + CLEAR_BUFFER_OFFSET);
-    if (GetBlockIdx() == 0) {
+    if (blockIdx_ == 0) {
         CpGM2GM(ctrlFlagsGM, emtpyGM, BUFFER_AREA / sizeof(int32_t));
     }
 }
@@ -644,7 +745,7 @@ __aicore__ inline void AivCommBase::BlockSync()
 {
     uint32_t flagOffset = SYNC_BUFFER_OFFSET + 2 * FLAG_SIZE * numBlocks_;
     __gm__ int32_t *ctrlFlagsGM = (__gm__ int32_t *)(GM_OUT[rank_] + flagOffset);
-    if (GetBlockIdx() == 0) {
+    if (blockIdx_ == 0) {
         //通知其他核
         pipe_barrier(PIPE_ALL);
         for (int i = 1; i < numBlocks_; i++) {
@@ -653,8 +754,8 @@ __aicore__ inline void AivCommBase::BlockSync()
         pipe_barrier(PIPE_ALL);
     } else {
         //接收通知并清零
-        WaitSignalValue(ctrlFlagsGM + GetBlockIdx() * FLAG_SIZE, localCheckTensor, 1);
-        SetSignalValue(ctrlFlagsGM +  GetBlockIdx() * FLAG_SIZE, localSetTensor, 0);
+        WaitSignalValue(ctrlFlagsGM + blockIdx_ * FLAG_SIZE, localCheckTensor, 1);
+        SetSignalValue(ctrlFlagsGM +  blockIdx_ * FLAG_SIZE, localSetTensor, 0);
         pipe_barrier(PIPE_ALL);
     }
 }
@@ -755,7 +856,7 @@ template<typename T>
 __aicore__ inline void AivCommBase::CpGM2GM(__gm__ T *outputGM, __gm__ T *inputGM, uint64_t count, bool atomic,
     uint32_t atomicOp)
 {
-    AIV_INFO("[CpGM2GM]outputGM is [%p], inputGM is [%p], count is [%llu] ", outputGM, inputGM, count);
+    AIV_INFO("[CpGM2GM]outputGM is [%p], inputGM is [%p], count is [%llu]\n", outputGM, inputGM, count);
     GlobalTensor<T> inputGT;
     inputGT.SetGlobalBuffer(inputGM, count);
     GlobalTensor<T> outputGT;
@@ -796,7 +897,7 @@ __aicore__ inline void AivCommBase::CpGM2GMWithFlagWrap(__gm__ T *outputGM, __gm
     int32_t index, uint64_t flushFrequency, int32_t tag)
 {
     AIV_INFO("[AivCommBase::CpGM2GMWithFlagWrap][CpGM2GMWithFlagWrap]outputGM is [%p], inputGM is [%p], count is [%llu], "
-        "index is [%d], flushFrequency is [%llu], tag is [%d]",
+        "index is [%d], flushFrequency is [%llu], tag is [%d]\n",
         outputGM, inputGM, count, index, flushFrequency, tag_);
     uint64_t curBatchCount = 0;
 
@@ -838,7 +939,7 @@ __aicore__ inline void AivCommBase::CpGM2GMWithFlagWrap(__gm__ T *outputGM, __gm
     __gm__ int32_t* ctrlFlagGM, uint64_t flushFrequency, int32_t tag)
 {
     AIV_INFO("[AivCommBase::CpGM2GMWithFlagWrap][CpGM2GMWithFlagWrap]outputGM is [%p], inputGM is [%p], count is [%llu], "
-        "ctrlFlagGM is [%p], flushFrequency is [%llu], tag is [%d]",
+        "ctrlFlagGM is [%p], flushFrequency is [%llu], tag is [%d]\n",
         outputGM, inputGM, count, ctrlFlagGM, flushFrequency, tag_);
     uint64_t curBatchCount = 0;
 

@@ -173,3 +173,197 @@ TEST_F(TopoExchangeAgentTest, St_VerifyClusterTlsConsistency_When_Consistent_Fal
     HcclResult ret = agent.VerifyClusterTlsConsistency(clusterInfo);
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
+
+TEST_F(TopoExchangeAgentTest, VerifyClusterInfo_RankListSizeMismatch_ReturnParaError)
+{
+    HcclIpAddress localIp(1694542016);
+    HcclNetDevCtx netDevCtx;
+    HcclBasicRankInfo localRankInfo;
+    localRankInfo.deviceType = DevType::DEV_TYPE_910_93;
+    localRankInfo.rankSize = 4;
+    u32 serverPort = 60000;
+    string identifier = "test";
+    RankTable_t clusterInfo;
+    TestConstructRankTable(clusterInfo);
+    clusterInfo.rankList.resize(2);
+    clusterInfo.rankNum = 2;
+    TopoInfoExchangeAgent agent(localIp, serverPort, identifier, netDevCtx, localRankInfo);
+    HcclResult ret = agent.VerifyClusterInfo(clusterInfo);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(TopoExchangeAgentTest, VerifyClusterInfo_RankNumMismatch_ReturnParaError)
+{
+    HcclIpAddress localIp(1694542016);
+    HcclNetDevCtx netDevCtx;
+    HcclBasicRankInfo localRankInfo;
+    localRankInfo.deviceType = DevType::DEV_TYPE_910_93;
+    localRankInfo.rankSize = 4;
+    u32 serverPort = 60000;
+    string identifier = "test";
+    RankTable_t clusterInfo;
+    TestConstructRankTable(clusterInfo);
+    clusterInfo.rankNum = 2;
+    TopoInfoExchangeAgent agent(localIp, serverPort, identifier, netDevCtx, localRankInfo);
+    HcclResult ret = agent.VerifyClusterInfo(clusterInfo);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(TopoExchangeAgentTest, VerifyClusterInfo_ServerNumMismatch_ReturnParaError)
+{
+    HcclIpAddress localIp(1694542016);
+    HcclNetDevCtx netDevCtx;
+    HcclBasicRankInfo localRankInfo;
+    localRankInfo.deviceType = DevType::DEV_TYPE_910_93;
+    localRankInfo.rankSize = 4;
+    u32 serverPort = 60000;
+    string identifier = "test";
+    RankTable_t clusterInfo;
+    TestConstructRankTable(clusterInfo);
+    clusterInfo.rankNum = 4;
+    clusterInfo.serverNum = 3;
+    TopoInfoExchangeAgent agent(localIp, serverPort, identifier, netDevCtx, localRankInfo);
+    HcclResult ret = agent.VerifyClusterInfo(clusterInfo);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(TopoExchangeAgentTest, VerifyClusterInfo_NicDeployMismatch_ReturnParaError)
+{
+    HcclIpAddress localIp(1694542016);
+    HcclNetDevCtx netDevCtx;
+    HcclBasicRankInfo localRankInfo;
+    localRankInfo.deviceType = DevType::DEV_TYPE_910_93;
+    localRankInfo.rankSize = 4;
+    localRankInfo.nicDeploy = NICDeployment::NIC_DEPLOYMENT_DEVICE;
+    u32 serverPort = 60000;
+    string identifier = "test";
+    RankTable_t clusterInfo;
+    TestConstructRankTable(clusterInfo);
+    clusterInfo.rankNum = 4;
+    clusterInfo.serverNum = 2;
+    clusterInfo.nicDeploy = NICDeployment::NIC_DEPLOYMENT_HOST;
+    TopoInfoExchangeAgent agent(localIp, serverPort, identifier, netDevCtx, localRankInfo);
+    HcclResult ret = agent.VerifyClusterInfo(clusterInfo);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(TopoExchangeAgentTest, VerifyClusterDeviceIP_DuplicateDeviceIP_ReturnParaError)
+{
+    HcclIpAddress localIp(1694542016);
+    HcclNetDevCtx netDevCtx;
+    HcclBasicRankInfo localRankInfo;
+    localRankInfo.deviceType = DevType::DEV_TYPE_910_93;
+    localRankInfo.rankSize = 4;
+    u32 serverPort = 60000;
+    string identifier = "test";
+    RankTable_t clusterInfo;
+    TestConstructRankTable(clusterInfo);
+    clusterInfo.rankNum = 4;
+    clusterInfo.serverNum = 2;
+    
+    HcclIpAddress duplicateIp(0x7f000001);
+    clusterInfo.rankList[0].deviceInfo.deviceIp.push_back(duplicateIp);
+    clusterInfo.rankList[1].deviceInfo.deviceIp.push_back(duplicateIp);
+    
+    TopoInfoExchangeAgent agent(localIp, serverPort, identifier, netDevCtx, localRankInfo);
+    HcclResult ret = agent.VerifyClusterDeviceIP(clusterInfo);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(TopoExchangeAgentTest, VerifyClusterRankID_DuplicateRankID_ReturnParaError)
+{
+    HcclIpAddress localIp(1694542016);
+    HcclNetDevCtx netDevCtx;
+    HcclBasicRankInfo localRankInfo;
+    localRankInfo.deviceType = DevType::DEV_TYPE_910_93;
+    u32 serverPort = 60000;
+    string identifier = "test";
+    RankTable_t clusterInfo;
+    TestConstructRankTable(clusterInfo);
+    clusterInfo.rankList[1].rankId = 0;
+    
+    TopoInfoExchangeAgent agent(localIp, serverPort, identifier, netDevCtx, localRankInfo);
+    HcclResult ret = agent.VerifyClusterRankID(clusterInfo);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(TopoExchangeAgentTest, VerifyServerDevicePhysicID_DuplicateDevicePhyID_ReturnParaError)
+{
+    HcclIpAddress localIp(1694542016);
+    HcclNetDevCtx netDevCtx;
+    HcclBasicRankInfo localRankInfo;
+    localRankInfo.deviceType = DevType::DEV_TYPE_910_93;
+    u32 server = 60000;
+    string identifier = "test";
+    RankTable_t clusterInfo;
+    TestConstructRankTable(clusterInfo);
+    
+    std::vector<RankInfo_t> serverInfo = clusterInfo.rankList;
+    serverInfo[1].deviceInfo.devicePhyId = 0;
+    
+    TopoInfoExchangeAgent agent(localIp, server, identifier, netDevCtx, localRankInfo);
+    HcclResult ret = agent.VerifyServerDevicePhysicID(serverInfo);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(TopoExchangeAgentTest, VerifyClusterSuperPodInfo_MissingSuperPodId_ReturnParaError)
+{
+    bool useSuperPodMode = true;
+    MOCKER(IsSuperPodMode)
+        .stubs()
+        .with(outBound(useSuperPodMode))
+        .will(returnValue(HCCL_SUCCESS));
+    
+    HcclIpAddress localIp(1694542016);
+    HcclNetDevCtx netDevCtx;
+    HcclBasicRankInfo localRankInfo;
+    localRankInfo.deviceType = DevType::DEV_TYPE_910_93;
+    u32 serverPort = 60000;
+    string identifier = "test";
+
+    RankTable_t clusterInfo;
+    RankInfo_t info1;
+    info1.deviceInfo.deviceType = DevType::DEV_TYPE_910_93;
+    info1.superPodId = "";
+    info1.superDeviceId = INVALID_UINT;
+    clusterInfo.rankList.push_back(info1);
+
+    TopoInfoExchangeAgent agent(localIp, serverPort, identifier, netDevCtx, localRankInfo);
+    HcclResult ret = agent.VerifyClusterSuperPodInfo(clusterInfo.rankList);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+    
+    GlobalMockObject::verify();
+}
+
+TEST_F(TopoExchangeAgentTest, VerifyClusterSuperPodInfo_DuplicateSuperDeviceId_ReturnParaError)
+{
+    bool useSuperPodMode = true;
+    MOCKER(IsSuperPodMode)
+        .stubs()
+        .with(outBound(useSuperPodMode))
+        .will(returnValue(HCCL_SUCCESS));
+    
+    HcclIpAddress localIp(1694542016);
+    HcclNetDevCtx netDevCtx;
+    HcclBasicRankInfo localRankInfo;
+    localRankInfo.deviceType = DevType::DEV_TYPE_910_93;
+    u32 serverPort = 60000;
+    string identifier = "test";
+
+    RankTable_t clusterInfo;
+    RankInfo_t info1,info2;
+    info1.deviceInfo.deviceType = DevType::DEV_TYPE_910_93;
+    info1.superPodId = "superpod1";
+    info1.superDeviceId = 0;
+    info2.deviceInfo.deviceType = DevType::DEV_TYPE_910_93;
+    info2.superPodId = "superpod1";
+    info2.superDeviceId = 0;
+    clusterInfo.rankList.push_back(info1);
+    clusterInfo.rankList.push_back(info2);
+
+    TopoInfoExchangeAgent agent(localIp, serverPort, identifier, netDevCtx, localRankInfo);
+    HcclResult ret = agent.VerifyClusterSuperPodInfo(clusterInfo.rankList);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+    
+    GlobalMockObject::verify();
+}

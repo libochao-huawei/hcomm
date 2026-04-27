@@ -17,6 +17,7 @@
 #include "coll_alg_component.h"
 #include "data_type.h"
 #include "acl/acl_rt.h"
+#include "invalid_params_exception.h"
 
 namespace Hccl {
 CollAlgComponent::CollAlgComponent(RankGraph *rankGraph, DevType devType, u32 myRank, u32 rankSize)
@@ -143,7 +144,9 @@ HcclResult CollAlgComponent::CalcResOffload(const OpType &opType, const u64 &dat
                 HCCL_ERROR("[CollAlgComponent] Unable to Set InsCollAlgExecutor, please check params!"),
                 HcclResult::HCCL_E_PARA);
     CHK_RET(insGenFunc->CalcResOffload(rankGraph_, dataSize, resReq));
-    CHK_RET(TmpStubCalcResOffload(resReq));
+    if(opExecuteConfig.accState == AcceleratorState::CCU_MS || opExecuteConfig.accState == AcceleratorState::CCU_SCHED){
+        CHK_RET(TmpStubCalcResOffload(resReq));
+    }
 
     HCCL_INFO("[CollAlgComponent][CalcResOffload] requiredSubQueNum[%llu], requiredScratchMemSize[%llu]",
                resReq.requiredSubQueNum, resReq.requiredScratchMemSize);
@@ -213,7 +216,10 @@ CollAlgOpReq CollAlgComponent::GetCollAlgOpReq(const CollAlgOperator &op, const 
     SetInsCollAlgExecutor(insGenFunc);
     insGenFunc->SetOp(op);
     insGenFunc->SetSendRecvRemoteRank(op.sendRecvRemoteRank);
-    insGenFunc->CalcRes(rankGraph_, collAlgOpReq.resReq);
+    auto req = insGenFunc->CalcRes(rankGraph_, collAlgOpReq.resReq);
+    if (req != HcclResult::HCCL_SUCCESS) {
+        THROW<InvalidParamsException>(StringFormat("CollAlgComponent::CalcRes failed"));
+    }
     algName2Res[collAlgOpReq.algName] = collAlgOpReq.resReq;
 
     if (rankSize_ == 1) {

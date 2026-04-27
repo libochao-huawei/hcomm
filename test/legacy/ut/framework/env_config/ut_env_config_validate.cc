@@ -78,7 +78,7 @@ TEST_F(EnvConfigValidateTest, test_parse_HCCL_EXEC_TIMEOUT_shoudl_success_910A3)
     EXPECT_EQ(rtsCfg.execTimeOut.Get(), 300);
 }
 
-TEST_F(EnvConfigValidateTest, test_parse_HCCL_EXEC_TIMEOUT_should_success_when_value_0_v910_95)
+TEST_F(EnvConfigValidateTest, test_parse_HCCL_EXEC_TIMEOUT_should_success_when_value_0_v950)
 {
     EnvRtsConfig rtsCfg{};
     MOCKER(SalGetEnv).stubs().will(returnValue(string("0")));
@@ -87,7 +87,7 @@ TEST_F(EnvConfigValidateTest, test_parse_HCCL_EXEC_TIMEOUT_should_success_when_v
     EXPECT_EQ(rtsCfg.execTimeOut.Get(), 0);
 }
 
-TEST_F(EnvConfigValidateTest, test_parse_HCCL_EXEC_TIMEOUT_should_success_when_value_2147483647_v910_95)
+TEST_F(EnvConfigValidateTest, test_parse_HCCL_EXEC_TIMEOUT_should_success_when_value_2147483647_v950)
 {
     EnvRtsConfig rtsCfg{};
     MOCKER(SalGetEnv).stubs().will(returnValue(string("2147483587")));
@@ -96,7 +96,7 @@ TEST_F(EnvConfigValidateTest, test_parse_HCCL_EXEC_TIMEOUT_should_success_when_v
     EXPECT_EQ(rtsCfg.execTimeOut.Get(), 2147483587);
 }
 
-TEST_F(EnvConfigValidateTest, test_parse_HCCL_EXEC_TIMEOUT_shoudl_success_v910_95)
+TEST_F(EnvConfigValidateTest, test_parse_HCCL_EXEC_TIMEOUT_shoudl_success_v950)
 {
     EnvRtsConfig rtsCfg{};
     MOCKER(SalGetEnv).stubs().will(returnValue(string("300")));

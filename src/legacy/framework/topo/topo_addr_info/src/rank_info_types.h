@@ -32,8 +32,12 @@ extern "C" {
 #define MAX_ADDR_NUM (32)      // 最大地址个数
 #define MAX_NET_ADDR_LEN (33)  // 保留结束符
 
+#define NET_TYPE_TOPO_FILE_DESC "TOPO_FILE_DESC"
 #define NET_TYPE_MESH "TOPO_FILE_DESC"
 #define NET_TYPE_CLOS "CLOS"
+
+#define UDIE_0 (0)
+#define UDIE_1 (1)
 
 #define RET_OK (0)
 #define RET_NOK (-1)
@@ -82,6 +86,7 @@ int AddrAddPort(Addr* addr, const char* port);
 void NetLayerInit(NetLayer *net_layer, int level, const char *layer_id);
 void NetLayerSetNetInstanceId(NetLayer* net_layer, const char *net_instance_id);
 void NetLayerAddAddr(NetLayer *net_layer, const Addr *addr);
+void NetLayerSetAddrAt(NetLayer *net_layer, const Addr *addr, int index);
 void NetLayerSetNetType(NetLayer *layer, const char* net_type);
 char* NetLayerToString(const NetLayer* net_layer);
 

@@ -18,12 +18,14 @@
 #include "nlohmann/json.hpp"
 #include "rank_level_info.h"
 #include "control_plane.h"
+#include "orion_adapter_hccp.h"
 namespace Hccl {
 constexpr unsigned int MAX_VALUE_DEVICEID = 64;
-constexpr unsigned int DEFAULT_VALUE_DEVICEPORT = 60001;
+constexpr unsigned int DEFAULT_VALUE_DEVICEPORT = 16666;
 constexpr unsigned int MAX_VALUE_DEVICEPORT = 65535;
 constexpr unsigned int MIN_VALUE_DEVICEPORT = 1;
 constexpr unsigned int MAX_LEVEL_lIST  = 8; 
+const IpAddress DEVICE_PORT_KEY_IPADDRESS = IpAddress();  // 用于socketmanager的端口占用，vnic情况下使用
 class NewRankInfo{
 public:
     NewRankInfo() {};
@@ -36,6 +38,7 @@ public:
     u32                        devicePort{DEFAULT_VALUE_DEVICEPORT};
     std::vector<RankLevelInfo> rankLevelInfos{};
     ControlPlane               controlPlane{};
+    TlsStatus                  tlsStatus{TlsStatus::UNKNOWN};
     std::string                Describe() const;
     void                       Deserialize(const nlohmann::json &newRankInfoJson);
     explicit                   NewRankInfo(BinaryStream &binStream);

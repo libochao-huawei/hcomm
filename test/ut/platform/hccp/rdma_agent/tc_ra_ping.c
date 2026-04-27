@@ -56,7 +56,7 @@ void TcRaPingInitGetHandleAbnormal()
     EXPECT_INT_EQ(ret, -22);
     mocker_clean();
 
-    initAttr.bufferSize = RA_RS_PING_BUFFER_ALIGN_4K_PAGE_SIZE;
+    initAttr.bufferSize = RA_RS_4K_PAGE_SIZE;
     initAttr.commInfo.rdma.udpSport = 65536;
     ret = RaPingInitGetHandle(&initAttr, &initInfo, &pingHandle);
     EXPECT_INT_EQ(ret, -22);

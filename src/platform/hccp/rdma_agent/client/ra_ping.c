@@ -76,9 +76,9 @@ STATIC int RaPingInitGetHandle(struct PingInitAttr *initAttr, struct PingInitInf
     pingHandle->pingOps = &gRaHdcPingOps;
     CHK_PRT_RETURN(pingHandle->pingOps->raPingInit == NULL, hccp_err("[init][ra_ping]ra_ping_init is NULL"),
         -EINVAL);
-    CHK_PRT_RETURN(initAttr->bufferSize == 0 || initAttr->bufferSize % RA_RS_PING_BUFFER_ALIGN_4K_PAGE_SIZE != 0,
+    CHK_PRT_RETURN(initAttr->bufferSize == 0 || initAttr->bufferSize % RA_RS_4K_PAGE_SIZE != 0,
         hccp_err("[init][ra_ping]initAttr->buffer_size:0x%x not 0x%xB aligned", initAttr->bufferSize,
-        RA_RS_PING_BUFFER_ALIGN_4K_PAGE_SIZE), -EINVAL);
+        RA_RS_4K_PAGE_SIZE), -EINVAL);
     pingHandle->bufferSize = initAttr->bufferSize;
 
     ret = pthread_mutex_init(&pingHandle->mutex, NULL);
@@ -137,6 +137,8 @@ HCCP_ATTRI_VISI_DEF int RaPingTargetAdd(void *pingHandle, struct PingTargetInfo 
     phyId = pingHandleTmp->phyId;
     CHK_PRT_RETURN(phyId >= RA_MAX_PHY_ID_NUM, hccp_err("[add][ra_ping]phyId(%u) must less than %d!", phyId,
         RA_MAX_PHY_ID_NUM), ConverReturnCode(RDMA_OP, -EINVAL));
+    CHK_PRT_RETURN(pingHandleTmp->targetCnt + num < num,
+        hccp_err("[add][ra_ping]pingHandleTmp->targetCnt + num is out of range"), ConverReturnCode(RDMA_OP, -EINVAL));
 
     RA_PTHREAD_MUTEX_LOCK(&pingHandleTmp->mutex);
     // disallow add target when task is running

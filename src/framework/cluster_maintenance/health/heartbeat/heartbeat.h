@@ -133,16 +133,6 @@ inline std::string GetInconsistentTypeStr(InconsistentType status)
     }
 };
 
-struct OpInconsistentInfo {
-    InconsistentType inconsistentType;
-    std::string localInfo;
-    std::string remoteInfo;
-
-    OpInconsistentInfo(InconsistentType inconsistentType, const std::string &localInfo, const std::string &remoteInfo)
-                : inconsistentType(inconsistentType), localInfo(localInfo), remoteInfo(remoteInfo)
-    {}
-};
-
 struct OpInfoDesc {
     HcclCMDType opType = HcclCMDType::HCCL_CMD_INVALID;
     HcclDataType dataType = HcclDataType::HCCL_DATA_TYPE_RESERVED;
@@ -151,6 +141,16 @@ struct OpInfoDesc {
     uint64_t count = 0;
     uint64_t index = 0;
     bool isValid = false;
+};
+
+struct OpInconsistentInfo {
+    InconsistentType inconsistentType;
+    std::string localInfo;
+    std::string remoteInfo;
+    OpInfoDesc opInfoDesc;
+    OpInconsistentInfo(InconsistentType inconsistentType, const std::string &localInfo, const std::string &remoteInfo, const OpInfoDesc &opInfoDesc)
+                : inconsistentType(inconsistentType), localInfo(localInfo), remoteInfo(remoteInfo), opInfoDesc(opInfoDesc)
+    {}
 };
 
 struct OpInfoTagQueue {

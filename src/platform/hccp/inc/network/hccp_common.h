@@ -129,6 +129,23 @@ union HccpGid {
 
 /**
  * @ingroup libinit
+ * rdma/ub gid/eid
+ */
+union HccpEid {
+    uint8_t raw[16U]; /* Network Order */
+    struct {
+        uint64_t reserved; /* If IPv4 mapped to IPv6, == 0 */
+        uint32_t prefix;   /* If IPv4 mapped to IPv6, == 0x0000ffff */
+        uint32_t addr;     /* If IPv4 mapped to IPv6, == IPv4 addr */
+    } in4;
+    struct {
+        uint64_t subnetPrefix;
+        uint64_t interfaceId;
+    } in6;
+};
+
+/**
+ * @ingroup libinit
  * info need of rdma_agent
  */
 struct RaInfo {
@@ -140,6 +157,8 @@ enum HccnCfgKey {
     HCCN_CFG_UDP_PORT_MODE = 0,
     HCCN_CFG_MULTI_QP_COUNT = 1,
     HCCN_CFG_MULTI_QP_UDP_PORTS = 2,
+    HCCN_CFG_RESV_MEM_INFO = 3,
+    HCCN_CFG_QOS_DSCP = 4,
     HCCN_CFG_KEY_INVALID
 };
 
@@ -597,7 +616,15 @@ struct QpExtAttrs {
     int memAlign; // 0,1:4KB, 2:2MB
     uint32_t udpSport;
     union AiDataPlaneCstmFlag dataPlaneFlag; // only valid in ra_ai_qp_create
-    uint32_t reserved[29U];
+    union {
+        struct {
+            uint32_t useResvMem : 1;
+            uint32_t reserved0 : 31;
+        } bs;
+        uint32_t value;
+    } cstmFlag; // only valid in RaQpCreateWithAttrs
+    uint32_t resvMemPoolId; // valid when cstmFlag.bs.useResvMem was 1
+    uint32_t reserved[27U];
 };
 
 struct AiQpInfo {

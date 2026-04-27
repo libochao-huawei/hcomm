@@ -28,6 +28,7 @@ set(rs_ut_normal_list
     tc_ut_rs_tlv.c
     tc_ut_rs_ctx.c
     tc_ut_rs_ub.c
+    tc_ut_rs_nda.c
     ${SRC_DIR}/test/ut/platform/hccp/stub/crypto/encrypt.c
     ${SRC_DIR}/test/ut/platform/hccp/stub/crypto/kmc_crypt.c
     ${SRC_DIR}/src/platform/hccp/rdma_service/rs_drv_rdma.c
@@ -35,7 +36,11 @@ set(rs_ut_normal_list
     ${SRC_DIR}/src/platform/hccp/rdma_service/rs_ping_roce.c
     ${SRC_DIR}/src/platform/hccp/rdma_service/rs_ping_inner.c
     ${SRC_DIR}/src/platform/hccp/rdma_service/rs.c
+    ${SRC_DIR}/src/platform/hccp/rdma_service/rs_nda.c
+    ${SRC_DIR}/src/platform/hccp/rdma_service/rs_comm.c
+    ${SRC_DIR}/src/platform/hccp/rdma_service/rs_drv_sensor.c
     ${SRC_DIR}/src/platform/hccp/rdma_service/rs_rdma.c
+    ${SRC_DIR}/src/platform/hccp/rdma_service/rs_nda.c
     ${SRC_DIR}/src/platform/hccp/rdma_service/rs_epoll.c
     ${SRC_DIR}/src/platform/hccp/rdma_service/rs_drv_socket.c
     ${SRC_DIR}/src/platform/hccp/rdma_service/rs_socket.c
@@ -95,14 +100,20 @@ target_include_directories(rs_ut_normal PRIVATE
     ${CANN_3RD_LIB_PATH}/gtest/include/
     ${CANN_3RD_LIB_PATH}/mockcpp/include/
     ${CANN_3RD_LIB_PATH}/mockcpp/include/3rdparty/
+    ${CANN_3RD_LIB_PATH}/boost/
 )
 
 target_compile_options(rs_ut_normal PRIVATE
     -U_FORTIFY_SOURCE -O0 -g
+    $<$<BOOL:${ENABLE_ASAN}>:-fsanitize=address -fno-omit-frame-pointer -static-libasan -fsanitize=undefined -static-libubsan -fsanitize=leak -static-libtsan>
 )
 
 target_compile_definitions(rs_ut_normal PRIVATE
     HNS_ROCE_LLT USE_DISPATCH_EXPECT CA_CONFIG_LLT DEVICE_TLS_CONFIG CONFIG_SSL CONFIG_RDMA RS_DEVICE_CONFIG CUSTOM_INTERFACE RDMA_LITE_STUB_TEST CCU_CONFIG_LLT
+)
+
+target_link_options(rs_ut_normal PRIVATE
+    $<$<BOOL:${ENABLE_ASAN}>:-fsanitize=address -static-libasan -fsanitize=undefined -static-libubsan -fsanitize=leak -static-libtsan>
 )
 
 target_link_libraries(rs_ut_normal PRIVATE
@@ -113,7 +124,5 @@ target_link_libraries(rs_ut_normal PRIVATE
     -ldl
 )
 
-run_llt_test(
-    TARGET rs_ut_normal
-    TASK_NUM 1
-)
+enable_testing()
+add_test(NAME rs_ut_normal COMMAND rs_ut_normal)

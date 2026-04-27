@@ -10,7 +10,7 @@
 
 set(hccl_utest_pingmesh_list
     main.cc
-    # ut_ping_mesh.cc
+    ut_ping_mesh.cc
     ut_hccn_rping.cc
 )
 add_executable(hccl_utest_pingmesh ${hccl_utest_pingmesh_list})
@@ -52,7 +52,5 @@ target_link_libraries(hccl_utest_pingmesh PRIVATE
 )
 add_dependencies(hccl_utest_pingmesh hccl_llt)
 
-run_llt_test(
-   TARGET hccl_utest_pingmesh
-   TASK_NUM 1
-)
+enable_testing()
+add_test(NAME hccl_utest_pingmesh COMMAND hccl_utest_pingmesh)

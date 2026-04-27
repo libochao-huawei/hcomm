@@ -25,6 +25,7 @@
 #include "hcclCommOp.h"
 #include "hcomm_diag.h"
 #include "hccl_api_data_aicpu_ts.h"
+#include "hccl_diag.h"
 
 using namespace hccl;
 thread_local LaunchContext g_threadLaunchCtx;
@@ -46,6 +47,27 @@ bool IsSupportReduce(HcommDataType dataType, HcommReduceOp op)
     return checkDataType && checkReduceType;
 }
  
+HcclResult HcommThreadGetNotifyId(ThreadHandle thread, uint32_t notifyIdx, uint32_t *notifyId)
+{
+    Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
+    CHK_PTR_NULL(threadPtr);
+    LocalNotify *const notifyPtr = threadPtr->GetNotify(notifyIdx);
+    CHK_PTR_NULL(notifyPtr);
+    *notifyId = notifyPtr->notifyId_;
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclDfxRegOpInfoByCommId(char* commId, void* hcclDfxOpInfo)
+{
+    CHK_PTR_NULL(commId);
+    CHK_PTR_NULL(hcclDfxOpInfo);
+    HcclDfxOpInfo *aicpuDfxInfo = reinterpret_cast<HcclDfxOpInfo *>(hcclDfxOpInfo);
+    CHK_RET(HcommThreadGetNotifyId(aicpuDfxInfo->cpuTsThread, aicpuDfxInfo->cpuWaitAicpuNotifyIdx, &aicpuDfxInfo->cpuWaitAicpuNotifyId));
+    CHK_RET(AicpuIndopProcess::AicpuDfxOpInfoInit(aicpuDfxInfo, commId));
+
+    return HCCL_SUCCESS;
+}
 
 int32_t HcommLocalCopyOnThread(ThreadHandle thread, void *dst, const void *src, uint64_t len)
 {
@@ -134,9 +156,9 @@ int32_t HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThr
     return HCCL_SUCCESS;
 }
 
-int32_t HcommThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t notifyIdx, uint32_t timeOut)
+int32_t HcommThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t notifyIdx, uint32_t timeout)
 {
-    HCCL_INFO("[%s] START. thread[0x%llx], notifyIdx[%u], timeOut[%u].", __func__, thread, notifyIdx, timeOut);
+    HCCL_INFO("[%s] START. thread[0x%llx], notifyIdx[%u], timeout[%u].", __func__, thread, notifyIdx, timeout);
 
     AddThread(thread);
 
@@ -148,15 +170,15 @@ int32_t HcommThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t notifyIdx, u
         LocalNotify *const notifyPtr = threadPtr->GetNotify(notifyIdx);
         CHK_PTR_NULL(notifyPtr);
         const uint32_t notifyId = notifyPtr->notifyId_;
-        EXECEPTION_CATCH(ret = threadPtr->LocalNotifyWait(notifyId), ret = HCCL_E_INTERNAL);
+        EXECEPTION_CATCH(ret = threadPtr->LocalNotifyWait(notifyId, timeout), ret = HCCL_E_INTERNAL);
     } else {
         Stream *stream = GetStream(thread);
         CHK_PTR_NULL(stream);
         LocalNotify *notify = GetNotify(thread, notifyIdx);
         CHK_PTR_NULL(notify);
-        ret = HcclLocalNotifyWait(stream, notify, timeOut);
+        ret = HcclLocalNotifyWait(stream, notify, timeout);
     }
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], notifyIdx[%u], timeOut[%u].", __func__, thread, notifyIdx, timeOut), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], notifyIdx[%u], timeout[%u].", __func__, thread, notifyIdx, timeout), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
@@ -183,9 +205,9 @@ int32_t HcommAclrtNotifyRecordOnThread(ThreadHandle thread, uint64_t dstNotifyId
     return HCCL_SUCCESS;
 }
 
-int32_t HcommAclrtNotifyWaitOnThread(ThreadHandle thread, uint64_t notifyId, uint32_t timeOut)
+int32_t HcommAclrtNotifyWaitOnThread(ThreadHandle thread, uint64_t notifyId, uint32_t timeout)
 {
-    HCCL_INFO("[%s] START. thread[0x%llx], notifyId[%llu], timeOut[%u].", __func__, thread, notifyId, timeOut);
+    HCCL_INFO("[%s] START. thread[0x%llx], notifyId[%llu], timeout[%u].", __func__, thread, notifyId, timeout);
 
     AddThread(thread);
 
@@ -194,13 +216,13 @@ int32_t HcommAclrtNotifyWaitOnThread(ThreadHandle thread, uint64_t notifyId, uin
 
     HcclResult ret = HCCL_SUCCESS;
     if (threadPtr->IsDeviceA5()) {
-        EXECEPTION_CATCH(ret = threadPtr->LocalNotifyWait(notifyId), ret = HCCL_E_INTERNAL);
+        EXECEPTION_CATCH(ret = threadPtr->LocalNotifyWait(notifyId, timeout), ret = HCCL_E_INTERNAL);
     } else {
         Stream *stream = GetStream(thread);
         CHK_PTR_NULL(stream);
-        ret = HcclLocalBareNotifyWait(stream, notifyId, timeOut);
+        ret = HcclLocalBareNotifyWait(stream, notifyId, timeout);
     }
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], notifyId[%llu], timeOut[%u].", __func__, thread, notifyId, timeOut), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], notifyId[%llu], timeout[%u].", __func__, thread, notifyId, timeout), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
@@ -522,19 +544,19 @@ int32_t HcommReadOnThread(ThreadHandle thread, ChannelHandle channel, void *dst,
 
     HcclResult ret = HCCL_SUCCESS;
     if (threadPtr->IsDeviceA5()) {
-        auto *const ubTransportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
-        CHK_PTR_NULL(ubTransportLitePtr);
+        auto *const transportLitePtr = reinterpret_cast<Hccl::BaseTransportLiteImpl *>(channel);
+        CHK_PTR_NULL(transportLitePtr);
         auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
         CHK_PTR_NULL(streamLitePtr);
 
         Hccl::RmaBufferLite locRmaBuf;
-        ret = ubTransportLitePtr->BuildLocRmaBufferLite(reinterpret_cast<uintptr_t>(dst), len, locRmaBuf);
+        ret = transportLitePtr->BuildLocRmaBufferLite(reinterpret_cast<uintptr_t>(dst), len, locRmaBuf);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[%s] FAIL at BuildLocRmaBufferLite. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].",
             __func__, thread, channel, dst, src, len), ret);
         const Hccl::Buffer rmtBuf{reinterpret_cast<uintptr_t>(src), len};
 
-        EXECEPTION_CATCH(ubTransportLitePtr->Read(locRmaBuf, rmtBuf, *streamLitePtr), ret = HCCL_E_INTERNAL);
+        EXECEPTION_CATCH(transportLitePtr->Read(locRmaBuf, rmtBuf, *streamLitePtr), ret = HCCL_E_INTERNAL);
     } else {
         HcclBuf locBuf{dst, len, nullptr};
         HcclBuf rmtBuf{const_cast<void *>(src), len, nullptr};
@@ -568,13 +590,13 @@ int32_t HcommReadReduceOnThread(ThreadHandle thread, ChannelHandle channel, void
 
     HcclResult ret = HCCL_SUCCESS;
     if (threadPtr->IsDeviceA5()) {
-        auto *const ubTransportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
-        CHK_PTR_NULL(ubTransportLitePtr);
+        auto *const transportLitePtr = reinterpret_cast<Hccl::BaseTransportLiteImpl *>(channel);
+        CHK_PTR_NULL(transportLitePtr);
         auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
         CHK_PTR_NULL(streamLitePtr);
 
         Hccl::RmaBufferLite locRmaBuf;
-        ret = ubTransportLitePtr->BuildLocRmaBufferLite(reinterpret_cast<uintptr_t>(dst), len, locRmaBuf);
+        ret = transportLitePtr->BuildLocRmaBufferLite(reinterpret_cast<uintptr_t>(dst), len, locRmaBuf);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[%s] FAIL at BuildLocRmaBufferLite. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d].",
             __func__, thread, channel, dst, src, count, dataType, reduceOp), ret);
@@ -586,7 +608,7 @@ int32_t HcommReadReduceOnThread(ThreadHandle thread, ChannelHandle channel, void
             __func__, thread, channel, dst, src, count, dataType, reduceOp), ret);
         Hccl::ReduceIn reduceIn{mapHcommDataTypeToA5.at(dataType), mapHcommReduceOpToA5.at(reduceOp)};
 
-        EXECEPTION_CATCH(ubTransportLitePtr->ReadReduce(locRmaBuf, rmtBuf, reduceIn, *streamLitePtr), ret = HCCL_E_INTERNAL);
+        EXECEPTION_CATCH(transportLitePtr->ReadReduce(locRmaBuf, rmtBuf, reduceIn, *streamLitePtr), ret = HCCL_E_INTERNAL);
     } else {
         CHK_PRT_RET((IsSupportReduce(dataType, reduceOp) == false), HCCL_ERROR("[%s] Not support reduce, "
             "dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d]", __func__, dst, src, count, dataType, reduceOp), HCCL_E_PARA);
@@ -670,13 +692,13 @@ int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle chan
     HcclResult ret = HCCL_SUCCESS;
     if (threadPtr->IsDeviceA5()) {
         HCCL_DEBUG("[%s] Running on A5.", __func__);
-        auto *const ubTransportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
-        CHK_PTR_NULL(ubTransportLitePtr);
+        auto *const transportLitePtr = reinterpret_cast<Hccl::BaseTransportLiteImpl *>(channel);
+        CHK_PTR_NULL(transportLitePtr);
         auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
         CHK_PTR_NULL(streamLitePtr);
         HCCL_INFO("channel streamlite ptr %p.", streamLitePtr);
 
-        EXECEPTION_CATCH(ubTransportLitePtr->Post(remoteNotifyIdx, *streamLitePtr), ret = HCCL_E_INTERNAL);
+        EXECEPTION_CATCH(transportLitePtr->Post(remoteNotifyIdx, *streamLitePtr), ret = HCCL_E_INTERNAL);
     } else {
         Stream *stream = GetStream(thread);
         CHK_PTR_NULL(stream);
@@ -694,9 +716,9 @@ int32_t HcommChannelNotifyRecord(ChannelHandle channel, uint32_t remoteNotifyIdx
     return HCCL_E_NOT_SUPPORT;
 }
 
-int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeout)
+int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeOut)
 {
-    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], localNotifyIdx[%u], timeout[%u].", __func__, thread, channel, localNotifyIdx, timeout);
+    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], localNotifyIdx[%u], timeOut[%u].", __func__, thread, channel, localNotifyIdx, timeOut);
 
     AddThread(thread);
 
@@ -706,27 +728,26 @@ int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channe
     HcclResult ret = HCCL_SUCCESS;
     if (threadPtr->IsDeviceA5()) {
         HCCL_DEBUG("[%s] Running on A5.", __func__);
-        auto *const ubTransportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
-        CHK_PTR_NULL(ubTransportLitePtr);
+        auto *const transportLitePtr = reinterpret_cast<Hccl::BaseTransportLiteImpl *>(channel);
+        CHK_PTR_NULL(transportLitePtr);
         auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
         CHK_PTR_NULL(streamLitePtr);
 
-        (void)timeout;
-        EXECEPTION_CATCH(ubTransportLitePtr->Wait(localNotifyIdx, *streamLitePtr), ret = HCCL_E_INTERNAL);
+        EXECEPTION_CATCH(transportLitePtr->WaitWithTimeout(localNotifyIdx, *streamLitePtr, timeOut), ret = HCCL_E_INTERNAL);
     } else {
         Stream *stream = GetStream(thread);
         CHK_PTR_NULL(stream);
 
-        ret = HcclRemoteNotifyWait(stream, reinterpret_cast<void *>(channel), localNotifyIdx, timeout);
+        ret = HcclRemoteNotifyWait(stream, reinterpret_cast<void *>(channel), localNotifyIdx, timeOut);
     }
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], localNotifyIdx[%u], timeout[%u].", __func__, thread, channel, localNotifyIdx, timeout), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], localNotifyIdx[%u], timeOut[%u].", __func__, thread, channel, localNotifyIdx, timeOut), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
 
-int32_t HcommChannelNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeout)
+int32_t HcommChannelNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeOut)
 {
-    HCCL_DEBUG("[%s] channel[0x%llx], localNotifyIdx[%u], timeout[%u].", __func__, channel, localNotifyIdx, timeout);
+    HCCL_DEBUG("[%s] channel[0x%llx], localNotifyIdx[%u], timeOut[%u].", __func__, channel, localNotifyIdx, timeOut);
     return HCCL_E_NOT_SUPPORT;
 }
 
@@ -758,20 +779,25 @@ int32_t HcommBatchModeEnd(const char *batchTag)
 int32_t HcommAcquireComm(const char* commId)
 {
     CHK_PTR_NULL(commId);
-    HcclCommAicpu *hcclComm = AicpuHcclProcess::AicpuGetCommbyGroup(commId);
-    CHK_PRT_RET(!hcclComm, HCCL_ERROR("%s hcclComm is null, commId[%s]", __func__, commId), HCCL_E_PTR);
-    DevType devType = hcclComm->GetDevType();
-    if (devType != DevType::DEV_TYPE_950){
+    DevType deviceType;
+    CHK_RET(hrtGetDeviceType(deviceType));
+    HCCL_INFO("[%s]comId[%s], devType[%d]", __func__, commId, deviceType);
+    if (deviceType != DevType::DEV_TYPE_950) {
+        HcclCommAicpu *hcclComm = AicpuHcclProcess::AicpuGetCommbyGroup(commId);
+        CHK_PRT_RET(!hcclComm, HCCL_ERROR("%s AicpuGetCommbyGroup is null, commId[%s]", __func__, commId), HCCL_E_PTR);
         CHK_RET(hcclComm->SetDispatcherCtxOnThread());
+    } else {
+        CollCommAicpuMgr *hcclComm = AicpuIndopProcess::AicpuGetCommMgrbyGroup(commId);
+        CHK_PRT_RET(!hcclComm, HCCL_ERROR("%s AicpuGetCommMgrbyGroup is null, commId[%s]", __func__, commId), HCCL_E_PTR);
     }
     return HCCL_SUCCESS;
 }
 
 int32_t HcommChannelRegisterDfx(ChannelHandle channel, std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback) {
     HCCL_INFO("[HcommChannelRegisterDfx] Init begin");
-    auto *const ubTransportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
-    CHK_PTR_NULL(ubTransportLitePtr);
-    CHK_RET(ubTransportLitePtr->SetAddTaskInfoCallback(callback));
+    auto *const transportLitePtr = reinterpret_cast<Hccl::BaseTransportLiteImpl *>(channel);
+    CHK_PTR_NULL(transportLitePtr);
+    CHK_RET(transportLitePtr->SetAddTaskInfoCallback(callback));
     HCCL_INFO("[HcommChannelRegisterDfx] Init success");
     return HCCL_SUCCESS;
 }
@@ -788,8 +814,14 @@ int32_t HcommThreadRegisterDfx(ThreadHandle thread, std::function<HcclResult(u32
 int32_t HcommReleaseComm(const char* commId)
 {
     CHK_PTR_NULL(commId);
-    AicpuHcclProcess::AicpuReleaseCommbyGroup(commId);
-    HCCL_INFO("%s success, commId[%s]", __func__, commId);
+    DevType deviceType;
+    CHK_RET(hrtGetDeviceType(deviceType));
+    HCCL_INFO("[%s]comId[%s], devType[%d]", __func__, commId, deviceType);
+    if (deviceType != DevType::DEV_TYPE_950) {
+        AicpuHcclProcess::AicpuReleaseCommbyGroup(commId);
+    } else {
+        AicpuIndopProcess::AicpuReleaseCommMgrbyGroup(commId);
+    }
     return HCCL_SUCCESS;
 }
 
@@ -799,6 +831,9 @@ int32_t HcommFenceOnThread(ThreadHandle thread)
     return HCCL_E_NOT_SUPPORT;
 }
 
+#ifdef __cplusplus
+extern "C" {
+#endif  // __cplusplus
 int32_t HcommFlush()
 {
     return HCCL_E_NOT_SUPPORT;
@@ -807,7 +842,15 @@ int32_t HcommFlush()
 int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel)
 {
     HCCL_DEBUG("[%s] thread[0x%llx], channel[0x%llx].", __func__, thread, channel);
-    return HCCL_E_NOT_SUPPORT;
+    Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
+    CHK_PTR_NULL(threadPtr);
+    if (threadPtr->IsDeviceA5()) {
+        auto *const ubTransportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
+        CHK_PTR_NULL(ubTransportLitePtr);
+        CHK_RET(ubTransportLitePtr->Fence());
+    }
+
+    return HCCL_SUCCESS;
 }
 
 int32_t HcommChannelFence(ChannelHandle channel)
@@ -863,6 +906,9 @@ int32_t HcommThreadJoin(ThreadHandle thread, uint32_t timeout)
     HCCL_ERROR("[%s]Does not support this interface.", __func__);
     return HCCL_E_NOT_SUPPORT;
 }
+#ifdef __cplusplus
+}
+#endif  // __cplusplus
 
 HcclResult HcommProfilingReportDeviceOp(const char* groupname) {
     HCCL_INFO("[%s] START.", __func__);
@@ -881,7 +927,7 @@ HcclResult HcommProfilingReportKernelStartTask(uint64_t thread, const char* grou
     auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
     CHK_PTR_NULL(streamLitePtr);
     Hccl::FlagTaskInfo flagTaskInfo;
-    flagTaskInfo.streamId = streamLitePtr->GetId();
+    flagTaskInfo.streamId = streamLitePtr->GetSqId();
     flagTaskInfo.taskId = streamLitePtr->GetRtsq()->GetTaskId();
     flagTaskInfo.type = Hccl::MainStreamTaskType::HEAD;
     Hccl::ProfilingHandlerLite::GetInstance().ReportMainStreamTask(flagTaskInfo);
@@ -899,12 +945,11 @@ HcclResult HcommProfilingReportKernelEndTask(uint64_t thread, const char* groupn
     CHK_PRT_RET(streamLitePtr == nullptr, HCCL_ERROR("[%s] streamLitePtr is null", __func__), HCCL_E_PTR);
     //FlagTaskInfo Report
     Hccl::FlagTaskInfo flagTaskInfo;
-    flagTaskInfo.streamId = streamLitePtr->GetId();
-    flagTaskInfo.taskId = streamLitePtr->GetRtsq()->GetTaskId() - 1;
+    flagTaskInfo.streamId = streamLitePtr->GetSqId();
+    flagTaskInfo.taskId = streamLitePtr->GetRtsq()->GetTaskId();
     flagTaskInfo.type = Hccl::MainStreamTaskType::TAIL;
     
     Hccl::ProfilingHandlerLite::GetInstance().ReportMainStreamTask(flagTaskInfo);
-    CHK_RET(AicpuIndopProcess::ReportAllTasks(groupname));
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }

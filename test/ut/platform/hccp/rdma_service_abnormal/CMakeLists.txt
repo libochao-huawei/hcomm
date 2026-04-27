@@ -34,6 +34,9 @@ set(rs_ut_abnormal_list
     ${CTX_DIR}/rs_ping_urma.c
     ${SRC_DIR}/src/platform/hccp/rdma_service/rs_ping_inner.c
     ${SRC_DIR}/src/platform/hccp/rdma_service/rs.c
+    ${SRC_DIR}/src/platform/hccp/rdma_service/rs_nda.c
+    ${SRC_DIR}/src/platform/hccp/rdma_service/rs_comm.c
+    ${SRC_DIR}/src/platform/hccp/rdma_service/rs_drv_sensor.c
     ${SRC_DIR}/src/platform/hccp/rdma_service/rs_drv_rdma.c
     ${SRC_DIR}/src/platform/hccp/rdma_service/rs_epoll.c
     ${SRC_DIR}/src/platform/hccp/rdma_service/rs_drv_socket.c
@@ -89,14 +92,20 @@ target_include_directories(rs_ut_abnormal PRIVATE
     ${CANN_3RD_LIB_PATH}/gtest/include/
     ${CANN_3RD_LIB_PATH}/mockcpp/include/
     ${CANN_3RD_LIB_PATH}/mockcpp/include/3rdparty/
+    ${CANN_3RD_LIB_PATH}/boost/
 )
 
 target_compile_options(rs_ut_abnormal PRIVATE
     -U_FORTIFY_SOURCE -O0 -g
+    $<$<BOOL:${ENABLE_ASAN}>:-fsanitize=address -fno-omit-frame-pointer -static-libasan -fsanitize=undefined -static-libubsan -fsanitize=leak -static-libtsan>
 )
 
 target_compile_definitions(rs_ut_abnormal PRIVATE
     HNS_ROCE_LLT USE_DISPATCH_EXPECT CA_CONFIG_LLT DEVICE_TLS_CONFIG CONFIG_SSL CONFIG_RDMA CONFIG_LLT CUSTOM_INTERFACE RDMA_LITE_STUB_TEST CCU_CONFIG_LLT
+)
+
+target_link_options(rs_ut_abnormal PRIVATE
+    $<$<BOOL:${ENABLE_ASAN}>:-fsanitize=address -static-libasan -fsanitize=undefined -static-libubsan -fsanitize=leak -static-libtsan>
 )
 
 target_link_libraries(rs_ut_abnormal PRIVATE
@@ -107,7 +116,5 @@ target_link_libraries(rs_ut_abnormal PRIVATE
     -ldl
 )
 
-run_llt_test(
-    TARGET rs_ut_abnormal
-    TASK_NUM 1
-)
+enable_testing()
+add_test(NAME rs_ut_abnormal COMMAND rs_ut_abnormal)

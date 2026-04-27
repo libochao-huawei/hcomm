@@ -37,16 +37,10 @@ BUILD_CB_TEST="false"
 
 ENABLE_UT="off"
 ENABLE_ST="off"
+ST_TASKS=()
+ENABLE_GCOV="off"
+ENABLE_NO_EXEC="off"
 CMAKE_BUILD_TYPE="Debug"
-HCOMM_LIB_NAME="libhcomm.so"
-INSTALL_XML_FILE="${CURRENT_DIR}/scripts/package/module/ascend/CommLib.xml"
-ORION_HCCL_V2="<file value=\"libhccl_v2.so\" file_type=\"shared\" release_type=\"debug\"/>"
-ORION_ALG_FRAME="<file value=\"libhccl_v2_alg_frame.so\" file_type=\"shared\" release_type=\"debug\"/>"
-ORION_ALG_REPO="<file value=\"libhccl_v2_native_alg_repo.so\" file_type=\"shared\" release_type=\"debug\"/>"
-ORION_AIV_OP="<file value=\"hccl_aiv_op_910_95.o\"/>"
-DPU_INSTALL_PATH="opp/built-in/op_impl/dpu"
-DPU_JSON="<file value=\"libccl_dpu.json\"/>"
-DPU_LIB="<file value=\"libccl_dpu.so\" file_type=\"shared\" install_softlink=\"\$(TARGET_ENV)/lib64/libccl_dpu.so\"/>"
 
 if [ "${USER_ID}" != "0" ]; then
     DEFAULT_TOOLKIT_INSTALL_DIR="${HOME}/Ascend/ascend-toolkit/latest"
@@ -81,11 +75,17 @@ function clean()
     mkdir -p ${BUILD_DIR}
 }
 
+function rmdir()
+{
+    if [ "${DO_NOT_CLEAN}" = "false" ] && [ $# -gt 0 ]; then
+        rm -rf "$@"
+    fi
+}
+
 function cmake_config()
 {
-    local extra_option="$1"
-    log "Info: cmake config ${CUSTOM_OPTION} ${extra_option} ."
-    cmake ..  ${CUSTOM_OPTION} ${extra_option}
+    log "Info: cmake config ${CUSTOM_OPTION} $*"
+    cmake .. ${CUSTOM_OPTION} "$@"
 }
 
 function build()
@@ -129,100 +129,74 @@ function build_cb_test_verify(){
     bash build.sh
 }
 
-function build_test() {
-    ENABLE_ST="on"
-    cmake_config -DENABLE_ST=${ENABLE_ST}
-
-    LIBRARY_DIR="${BUILD_DIR}/test:${ASCEND_HOME_PATH}/lib64:"
-    # 每日构建sdk包安装路径
-    if [ -d "${ASCEND_HOME_PATH}/opensdk" ];then
-        LIBRARY_DIR="${LIBRARY_DIR}${ASCEND_HOME_PATH}/opensdk/opensdk/gtest_shared/lib64:"
+function run_ctest() {
+    # 设置 --noexec 选项，则跳过执行测试用例
+    if [[ "$ENABLE_NO_EXEC" = "on" ]]; then
+        log "Info: Skip executing tests"
+        return 0
     fi
 
-    # 社区sdk包安装路径
-    if [ -d "${ASCEND_HOME_PATH}/../../latest/opensdk" ];then
-        LIBRARY_DIR="${LIBRARY_DIR}${ASCEND_HOME_PATH}/../../latest/opensdk/opensdk/gtest_shared/lib64:"
+    local suite_name="$1"   # "ut" or "st"
+    local log_dir="${OUTPUT_PATH}/logs/${suite_name}"
+    local ctest_log="${log_dir}/ctest_output.log"
+    local ctest_summary="${log_dir}/ctest_summary.log"
+
+    # 创建日志目录
+    mk_dir "${log_dir}"
+
+    # CTest 执行用例
+    ctest ${JOB_NUM} \
+          --build-nocmake \
+          --timeout 200 \
+          --output-on-failure \
+          --stop-on-failure \
+          --test-output-size-failed 10000000 \
+          -O "${ctest_log}" \
+          2>&1 | tee "${ctest_summary}"
+
+    # 超时时间：200s
+    local ctest_ret=${PIPESTATUS[0]}
+    if [ "${ctest_ret}" -eq 137 ]; then
+        log "Error: ctest timeout: execute more than 200s killed"
+        exit 1
     fi
 
-    GCC_MAJOR=`gcc -dumpversion | cut -d. -f1`
-    if [ "${ASAN}" == "true" ];then
-        ARCH=$(uname -m)
-        if [[ $ARCH == "x86_64" || $ARCH == "i386" || $ARCH == "i686" ]]; then
-            PRELOAD="/usr/lib/gcc/x86_64-linux-gnu/${GCC_MAJOR}/libasan.so:/usr/lib/gcc/x86_64-linux-gnu/${GCC_MAJOR}/libstdc++.so"
-        elif [[ $ARCH == "aarch64" || $ARCH == "armv8l" || $ARCH == "armv7l" ]]; then
-            PRELOAD="/usr/lib/gcc/aarch64-linux-gnu/${GCC_MAJOR}/libasan.so:/usr/lib/gcc/aarch64-linux-gnu/${GCC_MAJOR}/libstdc++.so"
-        else
-            echo "未知架构: $ARCH"
-        fi
-        echo "PRELOAD is ${PRELOAD}"
-        ASAN_OPT="detect_leaks=0"
+    return ${ctest_ret}
+}
+
+function build_st() {
+    log "Info: build_st"
+    mk_dir "${BUILD_DIR}"
+    cd "${BUILD_DIR}"
+
+    # 配置 ST 用例代码
+    local st_tasks=$(printf '%s;' "${ST_TASKS[@]}" | sed 's/;$//')
+    log "Info: build_st: ST_TASKS=${st_tasks}"
+    cmake_config -DPRODUCT_SIDE=host \
+                 -DENABLE_GCOV=${ENABLE_GCOV} \
+                 -DENABLE_TEST=${ENABLE_TEST} \
+                 -DENABLE_ST=${ENABLE_ST} \
+                 -DST_TASKS=${st_tasks}
+    if [ $? -ne 0 ]; then
+        log "Error: build_st: cmake config failed"
+        exit 1
     fi
 
-    if [ "${TEST_TASK_NAME}" == "open_hccl_test" ] || [ "$TEST" = "all" ];then
-        build open_hccl_test
-        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
-        && ${BUILD_DIR}/test/st/algorithm/testcase/testcase/open_hccl_test
+    # 编译 ST 用例代码
+    cmake --build . ${JOB_NUM}
+    if [ $? -ne 0 ]; then
+        log "Error: build_st: cmake build failed"
+        exit 1
     fi
 
-    if [ "${TEST_TASK_NAME}" == "executor_hccl_test" ] || [ "$TEST" = "all" ];then
-        build executor_hccl_test
-        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
-        && ${BUILD_DIR}/test/st/algorithm/testcase/executor_testcase_generalization/executor_hccl_test
+    # CTest 运行用例
+    run_ctest "st"
+    if [ $? -ne 0 ]; then
+        log "Error: build_st: ctest execution failed"
+        exit 1
     fi
 
-    if [ "${TEST_TASK_NAME}" == "executor_reduce_hccl_test" ] || [ "$TEST" = "all" ];then
-        build executor_reduce_hccl_test
-        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
-        && ${BUILD_DIR}/test/st/algorithm/testcase/executor_reduce_testcase_generalization/executor_reduce_hccl_test
-    fi
-
-    if [ "${TEST_TASK_NAME}" == "executor_pipeline_hccl_test" ] || [ "$TEST" = "all" ];then
-        build executor_pipeline_hccl_test
-        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
-        && ${BUILD_DIR}/test/st/algorithm/testcase/executor_alltoall_A3_pipeline_testcase/executor_pipeline_hccl_test
-    fi
-
-    if [ "${TEST_TASK_NAME}" == "legacy_aicpu_2d_testcase" ] || [ "${TEST_TASK_NAME}" == "legacy_all_testcase" ] || [ "$TEST" = "all" ];then
-        build legacy_alg_aicpu_2d_testcase
-        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
-        && ${BUILD_DIR}/test/legacy/st/algorithm/testcase/aicpu_2d_testcase/legacy_alg_aicpu_2d_testcase
-    fi
-
-    if [ "${TEST_TASK_NAME}" == "legacy_ccu_1d_hf16p_testcase" ] || [ "${TEST_TASK_NAME}" == "legacy_all_testcase" ] || [ "$TEST" = "all" ];then
-        build legacy_alg_ccu_1d_hf16p_testcase
-        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
-        && ${BUILD_DIR}/test/legacy/st/algorithm/testcase/ccu_1d_hf16p_testcase/legacy_alg_ccu_1d_hf16p_testcase
-    fi
-
-    if [ "${TEST_TASK_NAME}" == "legacy_ccu_1d_testcase_part1" ] || [ "${TEST_TASK_NAME}" == "legacy_all_testcase" ] || [ "$TEST" = "all" ];then
-        build legacy_alg_ccu_1d_testcase_part1
-        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
-        && ${BUILD_DIR}/test/legacy/st/algorithm/testcase/ccu_1d_testcase_part1/legacy_alg_ccu_1d_testcase_part1
-    fi
-
-    if [ "${TEST_TASK_NAME}" == "legacy_ccu_1d_testcase_part2" ] || [ "${TEST_TASK_NAME}" == "legacy_all_testcase" ] || [ "$TEST" = "all" ];then
-        build legacy_alg_ccu_1d_testcase_part2
-        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
-        && ${BUILD_DIR}/test/legacy/st/algorithm/testcase/ccu_1d_testcase_part2/legacy_alg_ccu_1d_testcase_part2
-    fi
-
-    if [ "${TEST_TASK_NAME}" == "legacy_alg_ccu_reduce" ] || [ "${TEST_TASK_NAME}" == "legacy_all_testcase" ] || [ "$TEST" = "all" ];then
-        build legacy_alg_ccu_reduce
-        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
-        && ${BUILD_DIR}/test/legacy/st/algorithm/testcase/ccu_reduce_testcase/legacy_alg_ccu_reduce
-    fi
-
-    if [ "${TEST_TASK_NAME}" == "legacy_function_ut_testcase" ] || [ "${TEST_TASK_NAME}" == "legacy_all_testcase" ] || [ "$TEST" = "all" ];then
-        build legacy_alg_function_ut_testcase
-        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
-        && ${BUILD_DIR}/test/legacy/st/algorithm/testcase/function_ut_testcase/legacy_alg_function_ut_testcase
-    fi
-
-    if [ "${TEST_TASK_NAME}" == "legacy_alg_testcase" ] || [ "${TEST_TASK_NAME}" == "legacy_all_testcase" ] || [ "$TEST" = "all" ];then
-        build legacy_alg_testcase
-        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
-        && ${BUILD_DIR}/test/legacy/st/algorithm/testcase/legacy_alg_testcase/legacy_alg_testcase
-    fi
+    log "Info: Build and tests completed successfully!"
 }
 
 function build_kernel() {
@@ -237,138 +211,54 @@ function mk_dir() {
   echo "created ${create_dir}"
 }
 
-# create build path
 function build_ut() {
-  echo "create build directory and build";
-  mk_dir ${OUTPUT_PATH}
-  mk_dir "${BUILD_DIR}"
-  local report_dir="${OUTPUT_PATH}/report/ut" && mk_dir "${report_dir}"
-  cd "${BUILD_DIR}"
-  unset LD_LIBRARY_PATH
+    log "Info: build_ut"
+    mk_dir "${BUILD_DIR}"
+    cd "${BUILD_DIR}"
 
-  local LLT_KILL_TIME=1200
-  CMAKE_ARGS="-DPRODUCT_SIDE=host \
-              -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
-              -DCMAKE_INSTALL_PREFIX=${BUILD_OUTPUT_DIR} \
-              -DASCEND_INSTALL_PATH=${ASCEND_INSTALL_PATH} \
-              -DCANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH} \
-              -DENABLE_GCOV=${ENABLE_GCOV} \
-              -DENABLE_TEST=${ENABLE_TEST} \
-              -DENABLE_UT=${ENABLE_UT} \
-              -DOUTPUT_PATH=${OUTPUT_PATH} \
-              -DLLT_KILL_TIME=${LLT_KILL_TIME}"
+    # 避免加载系统库
+    unset LD_LIBRARY_PATH
 
-  echo "CMAKE_ARGS=${CMAKE_ARGS}"
-  cmake ${CMAKE_ARGS} ..
-  if [ $? -ne 0 ]; then
-    echo "execute command: cmake ${CMAKE_ARGS} .. failed."
-    return 1
-  fi
+    # 配置 UT 用例代码
+    cmake_config -DPRODUCT_SIDE=host \
+                 -DENABLE_TEST=${ENABLE_TEST} \
+                 -DENABLE_UT=${ENABLE_UT} \
+                 -DENABLE_GCOV=${ENABLE_GCOV}
+    if [ $? -ne 0 ]; then
+        log "Error: build_ut: cmake config failed"
+        exit 1
+    fi
 
-  # make all
-  cmake --build . -j${CPU_NUM}
-  run_ret=${PIPESTATUS[0]}
-  echo "exit code: ${run_ret}"
-  if [ "${run_ret}" -eq 137 ]
-  then
-      echo "timeout: execute more than ${LLT_KILL_TIME}s killed"
-      exit 1
-  fi
-  if [ $? -ne 0 ]; then
-    echo "execute command: make -j${THREAD_NUM} failed."
-    return 1
-  fi
-  echo "build success!"
+    # 编译 UT 用例代码
+    cmake --build . ${JOB_NUM}
+    if [ $? -ne 0 ]; then
+        log "Error: build_ut: cmake build failed"
+        exit 1
+    fi
+
+    # CTest 运行用例
+    run_ctest "ut"
+    if [ $? -ne 0 ]; then
+        log "Error: build_ut: ctest execution failed"
+        exit 1
+    fi
+
+    log "Info: Build and tests completed successfully!"
 }
 
 function make_ut_gov() {
-  if [[ "X$ENABLE_UT" = "Xon" || "X$ENABLE_GCOV" = "Xon" ]]; then
+  if [[ "X$ENABLE_UT" = "Xon" && "X$ENABLE_GCOV" = "Xon" ]]; then
     echo "Generated coverage statistics, please wait..."
     cd ${CURRENT_DIR}
     rm -rf ${CURRENT_DIR}/cov
     mkdir -p ${CURRENT_DIR}/cov
-    lcov -c -d ${BUILD_DIR}/test/ut/ -o cov/all.info
-    lcov -r cov/all.info */src/platform/hccp/external_depends/* -o cov/tmp.info
-    lcov -e cov/all.info */src/algorithm/* */src/common/* */src/hccd/* */src/legacy/* */src/framework/* */src/platform/* */src/pub_inc/* -o cov/coverage.info
+    lcov -c -d ${BUILD_DIR}/test/ut/ -d ${BUILD_DIR}/test/legacy/ut/ -o cov/coverage.info
+    lcov -r cov/coverage.info */src/platform/hccp/external_depends/* -o cov/coverage.info
+    lcov -e cov/coverage.info */src/algorithm/* */src/common/* */src/hccd/* */src/legacy/* */src/framework/* */src/platform/* */src/pub_inc/* -o cov/coverage.info
 
     cd ${CURRENT_DIR}/cov
     genhtml coverage.info
   fi
-}
-
-function run_ut() {
-  if [[ "X$ENABLE_UT" = "Xon" ]]; then
-    local ut_dir="${BUILD_DIR}/test"
-    echo "ut_dir = ${ut_dir}"
-    find "$ut_dir" -type f -executable | while read -r ut_exec; do
-        filename=$(basename "$ut_exec")
-        echo "Executing: $filename"
-        ${ut_exec}
-    done
-  else
-    echo "Unit tests is not enabled, sh build.sh with parameter -u or --ut to enable it"
-  fi
-}
-
-function xml_add_orion_so() {
-    if [[ ! -f "$INSTALL_XML_FILE" ]]; then
-        echo "error:file $INSTALL_XML_FILE not exist."
-        exit 1
-    fi
-
-    strings=("$ORION_HCCL_V2" "$ORION_ALG_FRAME" "$ORION_ALG_REPO" "$ORION_AIV_OP")
-    dpu_json_string="$DPU_JSON"
-    dpu_lib_string="$DPU_LIB"
-    not_found=()
-    for str in "${strings[@]}"; do
-        if ! grep -q "$str" "$INSTALL_XML_FILE"; then
-            not_found+=("$str")
-        fi
-    done
-
-    if [[ ${#not_found[@]} -eq 0 ]]; then
-        echo "orion lib has been existed in $INSTALL_XML_FILE"
-        return
-    fi
-
-    insert_content=""
-    for str in "${not_found[@]}"; do
-        insert_content+="$str"$'
-        '
-    done
-
-    temp_file=$(mktemp)
-    while IFS= read -r line; do
-        echo "$line" >> "$temp_file"
-        if [[ "$line" == *"$HCOMM_LIB_NAME"* ]]; then
-            echo "$insert_content" >> "$temp_file"
-        fi
-
-        if [[ "$line" == *"$DPU_INSTALL_PATH"* && "$line" == *"json"* ]]; then
-            echo "$dpu_json_string" >> "$temp_file"
-        fi
-
-        if [[ "$line" == *"$DPU_INSTALL_PATH"* && "$line" == *"lib64"* ]]; then
-            echo "$dpu_lib_string" >> "$temp_file"
-        fi
-    done < "$INSTALL_XML_FILE"
-    mv "$temp_file" "$INSTALL_XML_FILE"
-}
-
-function xml_delete_orion_so() {
-    if [[ ! -f "$INSTALL_XML_FILE" ]]; then
-        echo "error:file $INSTALL_XML_FILE not exist."
-        exit 1
-    fi
-
-    temp_file=$(mktemp)
-    while IFS= read -r line; do
-        if ! [[ "$line" == *"$ORION_HCCL_V2"* || "$line" == *"$ORION_ALG_FRAME"* || "$line" == *"$ORION_ALG_REPO"* ||
-            "$line" == *"$ORION_AIV_OP"* || "$line" == *"$DPU_JSON"* || "$line" == *"$DPU_LIB"* ]]; then
-            echo "$line" >> "$temp_file"
-        fi
-    done < "$INSTALL_XML_FILE"
-    mv "$temp_file" "$INSTALL_XML_FILE"
 }
 
 # print usage message
@@ -382,12 +272,12 @@ function usage() {
   echo "Options:"
   echo "    -h, --help     Print usage"
   echo "    --asan         Enable AddressSanitizer"
-  echo "    -build-type=<TYPE>"
+  echo "    --build-type=<TYPE>"
   echo "                   Specify build type (TYPE options: Release/Debug), Default: Release"
   echo "    -j<N>          Set the number of threads used for building, default is 8"
   echo "    --cann_3rd_lib_path=<PATH>"
   echo "                   Set ascend third_party package install path, default ./output/third_party"
-  echo "    -p|--package-path <PATH>"
+  echo "    -p, --package-path <PATH>"
   echo "                   Set ascend package install path, default /usr/local/Ascend/cann"
   echo "    --sign-script <PATH>"
   echo "                   Set sign-script's path to <PATH>"
@@ -395,6 +285,9 @@ function usage() {
   echo "                   Enable to sign"
   echo "    --version <VERSION>"
   echo "                   Set sign version to <VERSION>"
+  echo "    -u, --ut       Run all unit tests (UT)"
+  echo "    -s, --st       Run all system tests (ST)"
+  echo "    --noexec       Run build and skip executing tests"
   echo ""
 }
 
@@ -434,73 +327,97 @@ while [[ $# -gt 0 ]]; do
         CANN_3RD_LIB_PATH="$(realpath ${OPTARG#*=})"
         shift
         ;;
+    --noexec)
+        ENABLE_NO_EXEC="on"
+        shift
+        ;;
     -u|--ut)
         ENABLE_TEST="on"
         ENABLE_UT="on"
         shift
         ;;
     -s|--st)
-        TEST="all"
+        ENABLE_TEST="on"
+        ENABLE_ST="on"
+        ST_TASKS+=("all")
         shift
         ;;
     --open_hccl_test)
-        TEST="partial"
-        TEST_TASK_NAME="open_hccl_test"
+        ENABLE_TEST="on"
+        ENABLE_ST="on"
+        ST_TASKS+=("open_hccl_test")
         shift
         ;;
     --executor_hccl_test)
-        TEST="partial"
-        TEST_TASK_NAME="executor_hccl_test"
+        ENABLE_TEST="on"
+        ENABLE_ST="on"
+        ST_TASKS+=("executor_hccl_test")
         shift
         ;;
     --executor_reduce_hccl_test)
-        TEST="partial"
-        TEST_TASK_NAME="executor_reduce_hccl_test"
+        ENABLE_TEST="on"
+        ENABLE_ST="on"
+        ST_TASKS+=("executor_reduce_hccl_test")
         shift
         ;;
     --executor_pipeline_hccl_test)
-        TEST="partial"
-        TEST_TASK_NAME="executor_pipeline_hccl_test"
+        ENABLE_TEST="on"
+        ENABLE_ST="on"
+        ST_TASKS+=("executor_pipeline_hccl_test")
         shift
         ;;
     --legacy_all_testcase)
-        TEST="partial"
-        TEST_TASK_NAME="legacy_all_testcase"
+        ENABLE_TEST="on"
+        ENABLE_ST="on"
+        ST_TASKS+=("legacy_all_testcase")
         shift
         ;;
     --legacy_aicpu_2d_testcase)
-        TEST="partial"
-        TEST_TASK_NAME="legacy_aicpu_2d_testcase"
+        ENABLE_TEST="on"
+        ENABLE_ST="on"
+        ST_TASKS+=("legacy_aicpu_2d_testcase")
+        shift
+        ;;
+    --legacy_ccu_2d_testcase)
+        ENABLE_TEST="on"
+        ENABLE_ST="on"
+        ST_TASKS+=("legacy_ccu_2d_testcase")
         shift
         ;;
     --legacy_ccu_1d_hf16p_testcase)
-        TEST="partial"
-        TEST_TASK_NAME="legacy_ccu_1d_hf16p_testcase"
+        ENABLE_TEST="on"
+        ENABLE_ST="on"
+        ST_TASKS+=("legacy_ccu_1d_hf16p_testcase")
         shift
         ;;
     --legacy_ccu_1d_testcase_part1)
-        TEST="partial"
-        TEST_TASK_NAME="legacy_ccu_1d_testcase_part1"
+        ENABLE_TEST="on"
+        ENABLE_ST="on"
+        ST_TASKS+=("legacy_ccu_1d_testcase_part1")
         shift
         ;;
     --legacy_ccu_1d_testcase_part2)
-        TEST="partial"
-        TEST_TASK_NAME="legacy_ccu_1d_testcase_part2"
+        ENABLE_TEST="on"
+        ENABLE_ST="on"
+        ST_TASKS+=("legacy_ccu_1d_testcase_part2")
         shift
         ;;
     --legacy_alg_ccu_reduce)
-        TEST="partial"
-        TEST_TASK_NAME="legacy_alg_ccu_reduce"
+        ENABLE_TEST="on"
+        ENABLE_ST="on"
+        ST_TASKS+=("legacy_alg_ccu_reduce")
         shift
         ;;
     --legacy_function_ut_testcase)
-        TEST="partial"
-        TEST_TASK_NAME="legacy_function_ut_testcase"
+        ENABLE_TEST="on"
+        ENABLE_ST="on"
+        ST_TASKS+=("legacy_function_ut_testcase")
         shift
         ;;
     --legacy_alg_testcase)
-        TEST="partial"
-        TEST_TASK_NAME="legacy_alg_testcase"
+        ENABLE_TEST="on"
+        ENABLE_ST="on"
+        ST_TASKS+=("legacy_alg_testcase")
         shift
         ;;
     --aicpu)  # 新增选项，用于只编译 ccl_kernel.so
@@ -520,6 +437,7 @@ while [[ $# -gt 0 ]]; do
         shift
         ;;
     --cov)
+        ENABLE_GCOV="on"
         COV="true"
         shift
         ;;
@@ -561,20 +479,20 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-if [ -n "${TEST}" ];then
-    CUSTOM_OPTION="${CUSTOM_OPTION} -DENABLE_TEST=ON"
-fi
-
 if [ "${KERNEL}" == "true" ];then
     CUSTOM_OPTION="${CUSTOM_OPTION} -DKERNEL_MODE=ON -DDEVICE_MODE=ON -DPRODUCT=ascend -DPRODUCT_SIDE=device"
 fi
 
 if [ "${FULL_MODE}" == "true" ];then
     CUSTOM_OPTION="${CUSTOM_OPTION} -DFULL_MODE=ON"
+else
+    CUSTOM_OPTION="${CUSTOM_OPTION} -DFULL_MODE=OFF"
 fi
 
 if [ "${BUILD_AARCH}" == "true" ];then
     CUSTOM_OPTION="${CUSTOM_OPTION} -DAARCH_MODE=ON"
+else
+    CUSTOM_OPTION="${CUSTOM_OPTION} -DAARCH_MODE=OFF"
 fi
 
 if [ "${ASAN}" == "true" ];then
@@ -584,6 +502,8 @@ fi
 if [ "${COV}" == "true" ];then
     CUSTOM_OPTION="${CUSTOM_OPTION} -DENABLE_GCOV=ON"
 fi
+
+CUSTOM_OPTION="${CUSTOM_OPTION} -DASCENDC_DUMP=0" # AIV算子调测阶段可配置为1以打开AscendC打印功能
 
 if [ -n "${ascend_package_path}" ];then
     ASCEND_CANN_PACKAGE_PATH=${ascend_package_path}
@@ -605,6 +525,7 @@ if [ -n "${third_party_nlohmann_path}" ];then
 fi
 
 CUSTOM_OPTION="${CUSTOM_OPTION} -DCUSTOM_ASCEND_CANN_PACKAGE_PATH=${ASCEND_CANN_PACKAGE_PATH}"
+CUSTOM_OPTION="${CUSTOM_OPTION} -DASCEND_INSTALL_PATH=${ASCEND_CANN_PACKAGE_PATH}"
 # CUSTOM_OPTION="${CUSTOM_OPTION} -DCANN_3RD_LIB_PATH=${cann_3rd_lib_path}"
 CUSTOM_OPTION="$CUSTOM_OPTION -DCANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH} -DCANN_UTILS_LIB_PATH=${CANN_UTILS_LIB_PATH}"
 
@@ -623,8 +544,8 @@ cd ${BUILD_DIR}
 if [ "${ENABLE_UT}" == "on" ]; then
     build_ut
     make_ut_gov
-elif [ -n "${TEST}" ];then
-    build_test
+elif [ "${ENABLE_ST}" == "on" ]; then
+    build_st 
 elif [ "${KERNEL}" == "true" ]; then
     build_kernel
 elif [ "${BUILD_FWK_HLT}" == "true" ]; then
@@ -657,7 +578,7 @@ elif [ "${FULL_MODE}" == "true" ]; then
     cd .. & cd ${BUILD_DIR}
     CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DDEVICE_MODE=OFF -DPRODUCT=ascend -DPRODUCT_SIDE=host -DUSE_ALOG=1"
     build_package
-    rm -rf ${BUILD_DEVICE_DIR} ${BUILD_HCCD_DIR}
+    rmdir ${BUILD_DEVICE_DIR} ${BUILD_HCCD_DIR}
 else
     cd ..
     mkdir -p ${BUILD_DEVICE_DIR}
@@ -668,5 +589,5 @@ else
     cd .. & cd ${BUILD_DIR}
     CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DDEVICE_MODE=OFF -DPRODUCT=ascend -DPRODUCT_SIDE=host -DUSE_ALOG=1"
     build_package
-    rm -rf ${BUILD_DEVICE_DIR}
+    rmdir ${BUILD_DEVICE_DIR}
 fi

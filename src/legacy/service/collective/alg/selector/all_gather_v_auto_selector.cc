@@ -17,6 +17,8 @@ namespace Hccl {
 SelectorStatus AllGatherVAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo, const CollAlgOperator &op,
     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap, std::string &primQueueGenName) const
 {
+    (void)op;
+    (void)configAlgMap;
     HCCL_DEBUG("[AllGatherVAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
     if (topoInfo.levelNum > 1) {
         HCCL_WARNING("[Algo][AllGatherVAutoSelector] levelNum > 1 is not supported yet for ccu_ms mode.");
@@ -63,6 +65,8 @@ SelectorStatus AllGatherVAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo,
 SelectorStatus AllGatherVAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topoInfo, const CollAlgOperator &op,
     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap, std::string &primQueueGenName) const
 {
+    (void)op;
+    (void)configAlgMap;
     HCCL_DEBUG("[AllGatherVAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
 
     if (topoInfo.levelNum > 1) {

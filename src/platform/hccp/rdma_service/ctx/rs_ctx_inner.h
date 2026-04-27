@@ -22,6 +22,7 @@
 #define DEV_INDEX_UE_INFO_MASK 0x0000FFFFUL
 #define CI_ADDR_BUFFER_ALIGN_4K_PAGE_SIZE 4096U
 #define WQE_BB_SIZE 64ULL
+#define UB_ID_OFFSET 16U
 
 struct RsUbDevCb {
     struct rs_cb *rscb;
@@ -60,6 +61,8 @@ struct RsCtxAsyncEventCb {
     struct RsUbDevCb *devCb;
     urma_async_event_t asyncEvent;
     unsigned int resId;
+    unsigned int len;
+    char context[CONTEXT_MAX_LEN];
     struct RsListHead list;
 };
 
@@ -128,6 +131,8 @@ struct RsCtxJettyCb {
     struct CtxQpShareInfo *qpShareInfoAddr;
     struct RsCrErrInfo crErrInfo;
     struct RsListHead list;
+    uint64_t scqIndex;
+    uint64_t rcqIndex;
 };
 
 struct RsTokenIdCb {
@@ -184,6 +189,11 @@ STATIC inline uint32_t RsGenerateUeInfo(uint32_t dieId, uint32_t funcId)
 STATIC inline uint32_t RsGenerateDevIndex(uint32_t devCnt, uint32_t dieId, uint32_t funcId)
 {
     return (devCnt << DEV_INDEX_CNT_OFFSET) | RsGenerateUeInfo(dieId, funcId);
+}
+
+STATIC inline uint32_t RsGenerateMmapResId(uint32_t id, uint32_t dieId, uint32_t funcId)
+{
+    return (id << UB_ID_OFFSET) | RsGenerateUeInfo(dieId, funcId);
 }
 
 #endif // RS_CTX_INNER_H

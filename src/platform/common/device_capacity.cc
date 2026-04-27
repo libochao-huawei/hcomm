@@ -253,6 +253,9 @@ HcclResult GetMaxDevNum(u32& MaxDevNum)
             case DevType::DEV_TYPE_310P3:
                 cachedMaxDevNum = MAX_DEVICE_NUM_THIRTY_TWO;
                 break;
+            case DevType::DEV_TYPE_950:
+                cachedMaxDevNum = MAX_DEVICE_NUM_SIXTY_FIVE;
+                break;
             default:
                 cachedMaxDevNum = MAX_DEVICE_NUM_SIXTEEN;
                 break;
@@ -365,7 +368,7 @@ u32 GetNotifyMaxWaitTime()
 
 HcclResult IsSupportAtomicWrite(DevType deviceType, u32 devicePhyId, bool& isSupportAtomicWrite)
 {
-    if (deviceType == DevType::DEV_TYPE_910_93) {
+    if (deviceType == DevType::DEV_TYPE_910_93 || deviceType == DevType::DEV_TYPE_910B) {
         u32 version = 0;
         HcclResult ret = hrtRaGetInterfaceVersion(devicePhyId, RA_RS_GET_ROCE_API, &version);
         CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("%s call hrtRaGetInterfaceVersion ret[%d] devicePhyId[%u]",

@@ -39,15 +39,6 @@ void RankInfoDetectService::Setup()
     BroadcastRankTable();
 }
 
-void RankInfoDetectService::Update()
-{    
-    // 1. 接收所有rank发来的新localRankTable并整合为全局RankTable
-    GetRankTable();
-    
-    // 2. 将完整RankTable广播给所有rank
-    BroadcastRankTable();
-}
-
 void RankInfoDetectService::GetConnections()
 {
     HCCL_INFO("[RankInfoDetectService::%s] start.", __func__);
@@ -80,8 +71,14 @@ void RankInfoDetectService::GetConnections()
         }
         std::shared_ptr<Socket> connSocket = std::make_shared<Socket>(
             hccpHostSocketHandle, hostIp_, hostPort, hostIp_, connSocketTag, SocketRole::SERVER, NicType::HOST_NIC_TYPE);
-        EXECEPTION_CATCH((status = connSocket->GetStatus()), 
-            HCCL_ERROR("[RankInfoDetectService::%s] server get socket fail", __func__));
+        EXECEPTION_CATCH(status = connSocket->GetStatus(), 
+            {
+                // 非本端client首次连接异常，直接重试
+                if(status == SocketStatus::OK) {
+                    status = SocketStatus::CONNECTING;
+                }
+                HCCL_ERROR("[RankInfoDetectService::%s] server get socket fail", __func__);
+            });
         if (status == SocketStatus::OK) {
             if(!RecvAndVerifyRemoteAgentIdAndRankSize(connSocket, expectedSocketNum, previousRankNum)) {
                 break;

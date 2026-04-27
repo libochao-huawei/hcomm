@@ -434,6 +434,7 @@ void CommunicatorImpl::InitCcuInstance()
         HCCL_INFO("CommunicatorImpl[%s] RankSize 1 no need initCcuInstance", __func__);
         return;
     }
+    CcuResSpecifications::GetInstance(devLogicId).Init();
     CcuComponent::GetInstance(devLogicId).Init();
     CcuResBatchAllocator::GetInstance(devLogicId).Init();
     CtxMgrImp::GetInstance(devLogicId).Init();
@@ -451,7 +452,7 @@ CollServiceStub *CommunicatorImpl::GetCollService() const
 
 CommunicatorImpl::~CommunicatorImpl()
 {
-    HCCL_DEBUG("[~CommunicatorImpl]start CommunicatorImpl destory");
+    HCCL_DEBUG("[~CommunicatorImpl]start CommunicatorImpl destroy");
 }
 
 bool CommunicatorImpl::IsOpUsingCcuMs() const

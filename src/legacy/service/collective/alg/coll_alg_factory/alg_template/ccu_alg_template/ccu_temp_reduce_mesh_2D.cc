@@ -127,7 +127,7 @@ HcclResult CcuTempReduceMesh2D::Run(const TempFuncs &tempFuncs, const RankSliceI
     std::vector<uint64_t> dimSize;
     dimSize.push_back(tempRankSize_); // tempRankSize_ 就是rank数量
 
-    // 只传userIn的起始位置，不带偏移，偏移已在offSet中包含
+    // 只传userIn的起始位置，不带偏移，偏移已在offset中包含
     uint64_t inputAddr;
     // userOut 的位置，需要带上偏移
     uint64_t outputAddr;
@@ -150,7 +150,7 @@ HcclResult CcuTempReduceMesh2D::Run(const TempFuncs &tempFuncs, const RankSliceI
     }
     uint64_t sliceSize = sliceInfoVec[myRank_][0].size;
     // 自己需要 reduce 的数据基于userIn的起始位置的偏移
-    uint64_t offSet = 0;
+    uint64_t offset = 0;
     uint64_t token;
     CHK_RET(GetToken(op_, token));
     std::vector<uint32_t> dimId;
@@ -164,11 +164,11 @@ HcclResult CcuTempReduceMesh2D::Run(const TempFuncs &tempFuncs, const RankSliceI
             uint64_t yAxisSize = sliceSize;
             CcuInstructionReduceMesh2D ccuInsReduceMesh2D;
             ccuInsReduceMesh2D.Init(dimSize_, static_cast<uint32_t>(myRank_), rootId_, axisId, inputAddr, outputAddr, sliceSize,
-                xAxisSize, yAxisSize, offSet, token, op_, tempVTopo_);
+                xAxisSize, yAxisSize, offset, token, op_, tempVTopo_);
 
             HCCL_INFO("[CcuTempReduceMesh2D] Run Init: myRank_[%d], dimSize[%llu], inputAddr[%llu],"\
                "outputAddr[%llu], sliceSize[%llu], xAxisSize[%llu], yAxisSize[%llu], offset[%llu], axisId_[%u]",
-            myRank_, dimSize[0], inputAddr, outputAddr, sliceSize, xAxisSize, yAxisSize, offSet, axisId);
+            myRank_, dimSize[0], inputAddr, outputAddr, sliceSize, xAxisSize, yAxisSize, offset, axisId);
 
             ccuInsReduceMesh2D.SetLinks(axisId == 0 ? linksX_ : linksY_);
             ccuInsReduceMesh2D.SetRankGroup(axisId == 0 ? rankGroupX : rankGroupY);

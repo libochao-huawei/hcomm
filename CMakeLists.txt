@@ -13,12 +13,6 @@ message(STATUS "DEVICE_MODE=${DEVICE_MODE}")
 message(STATUS "BUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}")
 message(STATUS "AARCH_MODE=${AARCH_MODE}")
 
-find_program(CCACHE_PROGRAM ccache)
-if(CCACHE_PROGRAM)
-    set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
-    set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
-endif()
-
 if((BUILD_OPEN_PROJECT AND DEVICE_MODE) OR AARCH_MODE)
     # need to switch
     set(CMAKE_SYSTEM_NAME Linux)
@@ -44,17 +38,19 @@ execute_process(
     OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 message(STATUS "当前系统架构: ${SYSTEM_ARCH}")
+
+# 引入CANN/cmake库
+include(cmake/fetch_cann_cmake.cmake)
+
 project(hcomm)
 
+# 引入CANN/cmake库，初始化
+init_cann_project()
+
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_FLAGS_RELEASE "")
 set(CMAKE_CXX_FLAGS_RELEASE "")
-
-set(CMAKE_CXX_COMPILE_OBJECT
-    "<CMAKE_CXX_COMPILER> <DEFINES> -D__FILE__='\"$(notdir $(abspath <SOURCE>))\"' -Wno-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>"
-)
-set(CMAKE_C_COMPILE_OBJECT
-    "<CMAKE_C_COMPILER> <DEFINES> -D__FILE__='\"$(notdir $(abspath <SOURCE>))\"' -Wno-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>"
-)
 
 # 获取 CPU 核心数
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
@@ -82,6 +78,7 @@ set(CMAKE_JOB_POOL_COMPILE "${JOBS}")
 set(CMAKE_JOB_POOL_LINK "${JOBS}")
 
 if(ENABLE_TEST)
+    enable_testing()
     include(cmake/config.cmake)
     include(cmake/function.cmake)
     include(cmake/intf_pub_gccnative.cmake)
@@ -103,7 +100,7 @@ elseif(BUILD_OPEN_PROJECT)
     include(cmake/func.cmake)
     include(version.cmake)
     if(ENABLE_OPEN_SRC)
- 	    check_pkg_build_deps("hcomm")
+        check_pkg_build_deps("hcomm")
     endif()
     add_version_info_targets()
     pack_built_in()
@@ -116,9 +113,11 @@ elseif(BUILD_OPEN_PROJECT)
         src/pub_inc/hccn_rping.h
         include/hccl/hccl_rank_graph.h
         include/hccl/hccl_res.h
-        include/hccl/hcomm_primitives.h
-        include/hcomm_res.h
-        include/hcomm_res_defs.h
+        include/hccl/hccl_sym_win.h
+    )
+
+    set(HCOMM_HEAD
+        include/hcomm_primitives.h
     )
 
     set(HCCL_JSON
@@ -210,25 +209,29 @@ elseif(BUILD_OPEN_PROJECT)
         )
         install(FILES ${BUILD_DEVICE_DIR}/signatures/cann-hcomm-compat.tar.gz
             DESTINATION ${INSTALL_DEVICE_TAR_DIR} OPTIONAL
+            PERMISSIONS OWNER_READ GROUP_READ
+            OPTIONAL
         )
         install(FILES ${BUILD_DEVICE_DIR}/signatures/aicpu_hcomm.tar.gz
-            DESTINATION ${INSTALL_DEVICE_TAR_DIR} OPTIONAL
+            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
         )
         install(FILES ${BUILD_HCCD_DIR}/signatures/cann-hccd-compat.tar.gz
             DESTINATION ${INSTALL_DEVICE_TAR_DIR} OPTIONAL
+            PERMISSIONS OWNER_READ GROUP_READ
+            OPTIONAL
         )
         install(FILES ${BUILD_DEVICE_DIR}/src/framework/libaicpu_custom.so
-            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
+            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
         )
         install(FILES ${BUILD_DEVICE_DIR}/src/framework/libaicpu_custom.json
-            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
+            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
         )
 
         add_custom_target(install_ccl_kernel DEPENDS
             ${BUILD_DEVICE_DIR}/src/framework/libccl_kernel.so
         )
         install(FILES ${BUILD_DEVICE_DIR}/src/framework/libccl_kernel.so
-            DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL
+            DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/devlib/device OPTIONAL
         )
         add_dependencies(install_tar hcomm)
         add_dependencies(install_ccl_kernel hcomm)
@@ -239,11 +242,27 @@ elseif(BUILD_OPEN_PROJECT)
         ${HCCL_JSON}
         DESTINATION ${INSTALL_INCLUDE_DIR}/hccl/ OPTIONAL
     )
+    if(NOT BUILD_OPEN_PROJECT)
+        install(FILES 
+            ${HCOMM_HEAD} 
+            DESTINATION ${INSTALL_INCLUDE_DIR}/ OPTIONAL 
+        )
+    endif()
+    install(FILES
+        include/hcomm_primitives.h
+        DESTINATION ${INSTALL_INCLUDE_DIR}/hcomm/ OPTIONAL
+    )
+    install(FILES
+        include/hcomm_res.h
+        include/hcomm_res_defs.h
+        DESTINATION ${INSTALL_INCLUDE_DIR}/hcomm/ OPTIONAL
+    )
 
     set(HCCL_PKG_HEAD
         pkg_inc/hccl/base.h
         pkg_inc/hccl/hccl_ex.h
         pkg_inc/hccl/hccl_one_sided_services.h
+        pkg_inc/hccl/hccl_res_expt.h
         pkg_inc/hccl/hcom.h
         pkg_inc/hccl/hccl_diag.h
         pkg_inc/hccl/hcomm_diag.h
@@ -294,5 +313,12 @@ elseif(BUILD_OPEN_PROJECT)
     install(FILES
         ${HCCL_PKG_CCU_HEAD}
         DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hcomm/ccu/ OPTIONAL
+    )
+    set(HCOMM_PKG_HEAD
+        pkg_inc/hcomm/hcomm_primitives_expt.h
+    )
+    install(FILES
+        ${HCOMM_PKG_HEAD}
+        DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hcomm/ OPTIONAL
     )
 endif()

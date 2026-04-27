@@ -100,6 +100,43 @@ static thread_local u32 g_devicePhyId = INVALID_UINT;
 static thread_local DevType g_deviceType = DevType::DEV_TYPE_COUNT;
 }
 
+// 根据soc name判断是否支持 hccl v2流程，使用全局变量减少重复调用aclrt接口
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+enum class HcclV2SupportStatus {
+    UNKNOWN,      // 获取soc name失败
+    SUPPORTED,    // 支持v2
+    NOT_SUPPORTED // 不支持v2
+};
+
+static thread_local HcclV2SupportStatus g_socV2SupportStatus = HcclV2SupportStatus::UNKNOWN;
+#endif
+
+HcclResult hrtGetHcclV2Support(bool *isSupport)
+{
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    CHK_PTR_NULL(isSupport);
+    if (LIKELY(g_socV2SupportStatus != HcclV2SupportStatus::UNKNOWN)) {
+        *isSupport = g_socV2SupportStatus == HcclV2SupportStatus::SUPPORTED;
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    const char *socNamePtr = aclrtGetSocName();
+    CHK_PTR_NULL(socNamePtr);
+    if (strstr(socNamePtr, "Ascend950") != nullptr) {
+        g_socV2SupportStatus = HcclV2SupportStatus::SUPPORTED;
+        *isSupport = true;
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    g_socV2SupportStatus = HcclV2SupportStatus::NOT_SUPPORTED;
+    *isSupport = false;
+    return HcclResult::HCCL_SUCCESS;
+
+#endif
+    HCCL_WARNING("[%s] Does does not support this interface.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
 #if T_DESC("Device管理", true)
 HcclResult hrtThreadExchangeCaptureMode(aclmdlRICaptureMode *mode);
 
@@ -1089,7 +1126,7 @@ HcclResult hrtIpcOpenMemory(void **ptr, const u8 *name)
         "rtOpen ipc memory fail. return[%d], para: ptr[%p], name[%s]",
         HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, *ptr, name), HCCL_E_RUNTIME);
 
-    HCCL_INFO("Call aclrtIpcMemImportByKey, return value[%d], para: ptr[%p], name[%s].", ret, ptr, name);
+    HCCL_INFO("Call aclrtIpcMemImportByKey, return value[%d], para: ptr[%p], name[%s].", ret, *ptr, name);
 
     return HCCL_SUCCESS;
 }
@@ -1450,11 +1487,39 @@ HcclResult hrtNotifyCreate(s32 deviceId, aclrtNotify *notify)
     auto creatEventFuncPtr = [](rtNotify_t *notify) -> s32 {
         CHK_RT_RET(aclrtCreateEvent(notify));
         aclrtStream stream = nullptr;
-        CHK_RT_RET(aclrtCreateStream(&stream));
-        CHK_RT_RET(aclrtRecordEvent(*notify, stream));
-        CHK_RT_RET(aclrtResetEvent(*notify, stream));
-        CHK_RT_RET(aclrtSynchronizeStream(stream));
-        CHK_RT_RET(aclrtDestroyStream(stream));
+        aclError ret = aclrtCreateStream(&stream);
+        if (ret != ACL_SUCCESS) {
+            HCCL_ERROR("[hrtNotifyCreate] aclrtCreateStream fail, ret[%d], destroy event.", ret);
+            aclrtDestroyEvent(*notify);
+            return ret;
+        }
+        ret = aclrtRecordEvent(*notify, stream);
+        if (ret != ACL_SUCCESS) {
+            HCCL_ERROR("[hrtNotifyCreate] aclrtRecordEvent fail, ret[%d], destroy stream and event.", ret);
+            aclrtDestroyStream(stream);
+            aclrtDestroyEvent(*notify);
+            return ret;
+        }
+        ret = aclrtResetEvent(*notify, stream);
+        if (ret != ACL_SUCCESS) {
+            HCCL_ERROR("[hrtNotifyCreate] aclrtResetEvent fail, ret[%d], destroy stream and event.", ret);
+            aclrtDestroyStream(stream);
+            aclrtDestroyEvent(*notify);
+            return ret;
+        }
+        ret = aclrtSynchronizeStream(stream);
+        if (ret != ACL_SUCCESS) {
+            HCCL_ERROR("[hrtNotifyCreate] aclrtSynchronizeStream fail, ret[%d], destroy stream and event.", ret);
+            aclrtDestroyStream(stream);
+            aclrtDestroyEvent(*notify);
+            return ret;
+        }
+        ret = aclrtDestroyStream(stream);
+        if (ret != ACL_SUCCESS) {
+            HCCL_ERROR("[hrtNotifyCreate] aclrtDestroyStream fail, ret[%d], destroy event.", ret);
+            aclrtDestroyEvent(*notify);
+            return ret;
+        }
         return 0;
     }; // 使用event替换notify后需要获取event id，get event id 前必须先record，因此在创建event时执行一把record
 
@@ -1925,7 +1990,12 @@ HcclResult hrtStreamCreate(aclrtStream *stream)
         "rtRet[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret), HCCL_E_RUNTIME);
 
     s32 streamId = 0;
-    CHK_RET(hrtGetStreamId(stream, streamId));
+    HcclResult hcclRet = hrtGetStreamId(*stream, streamId);
+    if (hcclRet != HCCL_SUCCESS) {
+        HCCL_ERROR("[hrtStreamCreate] hrtGetStreamId fail, ret[%d], destroy stream.", ret);
+        aclrtDestroyStream(*stream);
+        return hcclRet;
+    }
     s32 deviceId = GetDeviceLogicalId();
     PLF_CONFIG_DEBUG(PLF_RES, "Create Stream para: deviceId[%d] streamId[%d]", deviceId, streamId);
     return HCCL_SUCCESS;
@@ -1945,7 +2015,12 @@ HcclResult hrtStreamCreateWithFlags(aclrtStream *stream, int32_t priority, uint3
         "error, rtRet[%d], flags[%u]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, flags), HCCL_E_RUNTIME);
 
     s32 streamId = 0;
-    CHK_RET(hrtGetStreamId(stream, streamId));
+    HcclResult hcclRet = hrtGetStreamId(*stream, streamId);
+    if (hcclRet != HCCL_SUCCESS) {
+        HCCL_ERROR("[hrtStreamCreateWithFlags] hrtGetStreamId fail, ret[%d], destroy stream.", ret);
+        aclrtDestroyStream(*stream);
+        return hcclRet;
+    }
     s32 deviceId = GetDeviceLogicalId();
     PLF_CONFIG_DEBUG(PLF_RES, "Create Stream para: deviceId[%d] streamId[%d] priority[%d] flags[%u]",
         deviceId, streamId, priority, flags);
@@ -2003,6 +2078,8 @@ HcclResult hrtMemcpy(void *dst, uint64_t destMax, const void *src, uint64_t coun
 {
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
+    CHK_PRT_RET(count > destMax, HCCL_ERROR("[hrtMemcpy] count[%llu] exceeds destMax[%llu].",
+        count, destMax), HCCL_E_PARA);
     aclrtMemcpyKind rtKind;
     CHK_RET(MemcpyKindTranslate(kind, &rtKind));
 #ifndef HCCD

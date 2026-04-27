@@ -105,6 +105,14 @@ bool AutoSelectorBase::IsLargeData(const u64 dataSize) const
     return dataSize >= LARGE_COUNT_1024KB;
 }
 
+bool AutoSelectorBase::IsSmallDataCCU(const u64 dataSize, const u64 rankSize) const
+{
+    if (rankSize == 0) {
+        HCCL_WARNING("the selector is not set RankSize");
+    } 
+    return (dataSize <= CCU_PARALLEL_MAX_DATA_SIZE) ? true : false;
+}
+
 SelectorStatus AutoSelectorBase::SelectCcuMsAlgo(const TopoInfo &topoInfo,
                                                     const CollAlgOperator &op,
                                                     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,

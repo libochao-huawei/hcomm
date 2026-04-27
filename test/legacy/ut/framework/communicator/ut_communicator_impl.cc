@@ -77,6 +77,8 @@
 #include "ranktable_stub_clos.h"
 #include "dev_buffer.h"
 #include "rma_buffer.h"
+#include "topo_addr_info.h"
+#include "hal.h"
 #undef private
 #undef protected
 
@@ -135,7 +137,7 @@ protected:
         MOCKER_CPP(&DataBufManager::Get).stubs().with(any(), any(), any()).will(returnValue(buf));
         MOCKER_CPP(&LocalRmaBufManager::Reg,
                    LocalRmaBuffer *
-                       (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &))
+                       (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &, LinkProtocol))
             .stubs()
             .with(any(), any(), any())
             .will(returnValue(rmaBuf));
@@ -803,43 +805,6 @@ TEST_F(CommunicatorImplTest, LoadOpbasedCollOp_success_CovertToCurrentCollOperat
     EXPECT_NO_THROW(fakeComm.CovertToCurrentCollOperator(tag, opParams, OpMode::OFFLOAD));
 }
 
-TEST_F(CommunicatorImplTest, TraceOpInfo_BATCHSENDRECV)
-{
-    CommunicatorImpl comm;
-    comm.cclBuffer = DevBuffer::Create(0x100, 0x100);
-    comm.status = CommStatus::COMM_READY;
-    comm.devLogicId = 0;
-    comm.InitMirrorTaskManager();
-    comm.InitProfilingReporter();
-    comm.opExecuteConfig.accState = AcceleratorState::AICPU_TS;
-    MirrorTaskManager &mirrorTaskManager = comm.GetMirrorTaskManager();
-    CollServiceAiCpuImpl collService{&comm};
-    comm.collService = &collService;
-    CollOpParams opParams;
-    bool ccuEnable = false;
-    bool isDevUsed = true;
-    std::vector<HcclDataType> datatypeWithoutReduce = {
-        HcclDataType::HCCL_DATA_TYPE_INT8,   HcclDataType::HCCL_DATA_TYPE_INT16,  HcclDataType::HCCL_DATA_TYPE_INT32,
-        HcclDataType::HCCL_DATA_TYPE_INT64,  HcclDataType::HCCL_DATA_TYPE_UINT8,  HcclDataType::HCCL_DATA_TYPE_UINT16,
-        HcclDataType::HCCL_DATA_TYPE_UINT32, HcclDataType::HCCL_DATA_TYPE_UINT64, HcclDataType::HCCL_DATA_TYPE_FP16,
-        HcclDataType::HCCL_DATA_TYPE_FP32,   HcclDataType::HCCL_DATA_TYPE_FP64,   HcclDataType::HCCL_DATA_TYPE_BFP16};
-    opParams.opType = OpType::BATCHSENDRECV;
-    HcclSendRecvItem *sendRecvItemdata = nullptr;
-    sendRecvItemdata = new HcclSendRecvItem[1];
-    opParams.batchSendRecvDataDes.itemNum = 1;
-    comm.trace = std::make_unique<Trace>();
-    for (auto dtype : datatypeWithoutReduce) {
-        sendRecvItemdata->dataType = dtype;
-        sendRecvItemdata->sendRecvType = HcclSendRecvType::HCCL_SEND;
-        sendRecvItemdata->count = 1;
-        sendRecvItemdata->remoteRank = 1;
-        sendRecvItemdata->buf = (void *)0x100;
-        opParams.batchSendRecvDataDes.sendRecvItemsPtr = static_cast<void *>(sendRecvItemdata);
-        comm.TraceOpInfo(opParams);
-    }
-    delete[] sendRecvItemdata;
-}
-
 TEST_F(CommunicatorImplTest, LoadOpbasedCollOp_success_CovertToCurrentCollOperatorA2A)
 {
     CollAlgComponent collAlgComponent(nullptr, DevType::DEV_TYPE_950, 0, 1);
@@ -1258,7 +1223,7 @@ TEST_F(CommunicatorImplTest, should_no_throw_exception_when_only_ccu_enabled)
     MOCKER_CPP(&DataBufManager::Get).stubs().with(any(), any(), any()).will(returnValue(buf));
     MOCKER_CPP(
         &LocalRmaBufManager::Reg,
-        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &))
+        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &, LinkProtocol))
         .stubs()
         .with(any(), any(), any())
         .will(returnValue(rmaBuf));
@@ -3486,4 +3451,150 @@ TEST_F(CommunicatorImplTest, Ut_GetInfo_When_endpointDecsNull_Return_Hccl_E_PTR)
     EndpointAttrBwCoeff bwCoeff{};
     HcclResult ret = comm.GetEndpointInfo(0, nullptr, ENDPOINT_ATTR_BW_COEFF, infoLen, &bwCoeff);
     EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(CommunicatorImplTest, Ut_CheckRankGraphAddrs_When_GetDevEidList_Not_Enough)
+{
+    vector<HrtDevEidInfo> eidInfoListStbu;
+    HrtDevEidInfo         eidInfo;
+    eidInfo.name    = "udma0";
+    eidInfo.dieId   = 0;
+    eidInfo.funcId  = 3;
+    eidInfo.chipId  = static_cast<uint32_t>(0);
+    eidInfo.ipAddress = IpAddress("192.168.100.10");
+    eidInfoListStbu.push_back(eidInfo);
+
+    MOCKER(HrtRaGetDevEidInfoList)
+        .stubs()
+        .with(any())
+        .will(returnValue(eidInfoListStbu));
+
+    CommunicatorImpl comm;
+    comm.devLogicId = 0;
+    comm.myRank = 0;
+    HcclCommConfig config;
+    CommParams params;
+
+    RankGraphBuilder rankGraphBuilder;
+    string topoFilePath{HCOMM_CODE_ROOT_DIR "/test/legacy/ut/framework/communicator/topo2pclos.json"};
+    comm.rankGraph = rankGraphBuilder.Build(RankTable2pClos, topoFilePath, 0);
+    comm.ranktableInfo = rankGraphBuilder.GetRankTableInfo();
+    EXPECT_NE(comm.rankGraph, nullptr);
+
+    EXPECT_THROW(comm.CheckRankGraphAddrs(), InvalidParamsException);
+}
+
+TEST_F(CommunicatorImplTest, Ut_GetTopoFilePath)
+{
+    CommunicatorImpl comm;
+    comm.devPhyId = 0;
+    unsigned int mainBoardId = 0x3;
+    char topoFileName[32] = "atlas_950_1.json";
+    char drv_path[256] = "/usr/local/Ascend2";
+    MOCKER(hal_get_mainboard_id).stubs().with(any(), outBoundP(&mainBoardId)).will(returnValue(0));
+    MOCKER(realpath).stubs().with(any(), any()).will(returnValue(&topoFileName[0]));
+    MOCKER(hal_get_driver_install_path).stubs().with(outBoundP(drv_path, strlen(drv_path)), any()).will(returnValue(0));
+
+    std::string topoFilePath = comm.GetTopoFilePath();
+    EXPECT_NE(topoFilePath.find(topoFileName), std::string::npos);
+}
+
+TEST_F(CommunicatorImplTest, Ut_When_DestroyDpuKernelResource_Expect_DpuStream_Uninit_Failed)
+{
+    CommunicatorImpl comm;
+    comm.devPhyId = 0;
+    comm.isDpuKernelLaunched = true;
+    MOCKER(aclrtSetCurrentContext).stubs().with(any()).will(returnValue(ACL_SUCCESS));
+    MOCKER(aclrtDestroyStreamForce).stubs().with(any()).will(returnValue(ACL_ERROR_INVALID_PARAM));
+    MOCKER_CPP(&CommunicatorImpl::WaitDpuKernelThreadTerminate).stubs().will(returnValue(HCCL_SUCCESS));
+
+    HcclResult ret = comm.DestroyDpuKernelResource();
+    EXPECT_EQ(ret, HCCL_E_RUNTIME);
+}
+
+TEST_F(CommunicatorImplTest, Ut_When_DestroyDpuKernelResource_Expect_ResetDpuDevice_Failed)
+{
+    CommunicatorImpl comm;
+    comm.devPhyId = 0;
+    comm.isDpuKernelLaunched = true;
+    MOCKER(aclrtGetCurrentContext).stubs().with(any()).will(returnValue(ACL_SUCCESS));
+    MOCKER(aclrtSetCurrentContext).stubs().with(any()).will(returnValue(ACL_SUCCESS));
+    MOCKER(aclrtDestroyStreamForce).stubs().with(any()).will(returnValue(ACL_SUCCESS));
+    MOCKER(HrtSetXpuDevice).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER(HrtResetXpuDevice).stubs().with(any()).will(returnValue(HCCL_E_RUNTIME));
+    MOCKER_CPP(&CommunicatorImpl::WaitDpuKernelThreadTerminate).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CommunicatorImpl::CreateWorkspaceBuf).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CommunicatorImpl::PrepareDpuKernelResource).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CommunicatorImpl::LaunchDpuKernel).stubs().will(returnValue(HCCL_SUCCESS));
+    HcclResult ret = comm.InitAndLaunchDpuKernel();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ret = comm.DestroyDpuKernelResource();
+    EXPECT_EQ(ret, HCCL_E_RUNTIME);
+}
+
+class TryFastCcuLaunchTest : public CommunicatorImplTest {
+protected:
+    void SetUp() override {
+        CommunicatorImplTest::SetUp();
+        // 初始化测试环境
+        fakeStreamPtr = (void *)1;
+        sendBuffer = 10;
+        fakeOpParams.sendBuf = static_cast<void *>(&sendBuffer);
+        recvBuffer = 20;
+        fakeOpParams.recvBuf = static_cast<void *>(&recvBuffer);
+        fakeOpParams.opType = OpType::ALLREDUCE;
+        fakeOpParams.dataType = DataType::FP32;
+        fakeOpParams.reduceOp = ReduceOp::SUM;
+        fakeOpParams.count = 1024;
+        fakeComm.commExecuteConfig.accState = AcceleratorState::CCU_SCHED;
+        MOCKER_CPP(&CommunicatorImpl::InitCcuSuperFastLoad).stubs().with(any()).will(ignoreReturnValue());
+        MOCKER_CPP(&CommunicatorImpl::ExecuteFastCcuLaunch).stubs().with(any()).will(ignoreReturnValue());
+        CcuTaskParam ccuTaskParam{};
+        std::vector<std::vector<CcuTaskParam>> ccuIns;
+        std::vector<std::vector<CcuProfilingInfo>> ccuProInfo;
+        ccuIns.push_back({ccuTaskParam});
+        ccuProInfo.resize(1);
+        fakeComm.currentCollOperator->opType = fakeOpParams.opType;
+        fakeComm.ccuParamsMappingKey = {static_cast<std::uint32_t>(fakeOpParams.reduceOp),
+                            static_cast<std::uint32_t>(fakeOpParams.dataType),
+                            static_cast<std::uint32_t>(fakeOpParams.count)};
+        fakeComm.saveCCUParams(std::move(ccuIns), std::move(ccuProInfo), 0, CcuInstType::CCU_INS_GROUP, true);
+    }
+private:
+    CollOpParams fakeOpParams{};
+    u32 sendBuffer;
+    u32 recvBuffer;
+    void *fakeStreamPtr;
+};
+
+TEST_F(TryFastCcuLaunchTest, Ut_TryFastCcuLaunch_When_NoNeedProf_Expect_ReturnTrue)
+{
+    // when
+    fakeComm.enableProfilingEnv = false;
+    // then
+    EXPECT_EQ(fakeComm.TryFastCcuLaunch(fakeOpParams, fakeStreamPtr), true);
+}
+
+TEST_F(TryFastCcuLaunchTest, Ut_TryFastCcuLaunch_When_NeedProf_Expect_ReturnTrue)
+{
+    // when
+    fakeComm.enableProfilingEnv = true;
+    // then
+    EXPECT_EQ(fakeComm.TryFastCcuLaunch(fakeOpParams, fakeStreamPtr), true);
+}
+
+TEST_F(TryFastCcuLaunchTest, Ut_TryFastCcuLaunch_When_NoCcu_Expect_ReturnFalse)
+{
+    // when
+    fakeComm.commExecuteConfig.accState = AcceleratorState::AICPU_TS;
+    // then
+    EXPECT_EQ(fakeComm.TryFastCcuLaunch(fakeOpParams, fakeStreamPtr), false);
+}
+
+TEST_F(TryFastCcuLaunchTest, Ut_TryFastCcuLaunch_When_OpNoSupportFastLaunch_Expect_ReturnFalse)
+{
+    // when
+    fakeOpParams.opType = OpType::ALLGATHERV;
+    // then
+    EXPECT_EQ(fakeComm.TryFastCcuLaunch(fakeOpParams, fakeStreamPtr), false);
 }

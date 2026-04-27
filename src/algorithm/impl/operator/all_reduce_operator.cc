@@ -372,11 +372,10 @@ HcclResult AllReduceOperator::SelectAlgfor910B(const OpParam& param, std::string
         }
     }
 
-    if (topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_STRICT &&
-        (!isMeshTopo || multiModuleDiffDeviceNumMode_)) {
-        // 保序规约场景（多batch一致），当前不支持A2标卡（ring拓扑场景）/ 非对称场景
-        HCCL_ERROR("[SelectAlgfor910B] reduce order preservation only support MeshTopo(isMeshTopo:[%d]) and Symmetry("
-            "multiModuleDiffDeviceNumMode_[%d]).", isMeshTopo, multiModuleDiffDeviceNumMode_);
+    if (topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_STRICT && multiModuleDiffDeviceNumMode_) {
+        // 保序规约场景（多batch一致），当前不支持非对称场景
+        HCCL_ERROR("[SelectAlgfor910B] reduce order preservation only support Symmetry("
+            "multiModuleDiffDeviceNumMode_[%d]).", multiModuleDiffDeviceNumMode_);
         return HCCL_E_NOT_SUPPORT;
     }
 
@@ -432,7 +431,8 @@ HcclResult AllReduceOperator::SelectAlgfor910B(const OpParam& param, std::string
                 algName = "AllReduceRingExecutor";
             }
         // 多机单卡/两卡 pipeline需单独做判断(pipeline无确定性算法，并只支持单算子模式）
-        } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_PIPELINE &&
+        } else if (topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_DISABLE &&
+            algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_PIPELINE &&
             IsMultiMeshInlineReduce(param.inputPtr, param.outputPtr, param.DataDes.dataType, param.reduceType)) {
                 if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
                     algName = "AllReduceMeshOpbasePipelineExecutor";
@@ -617,18 +617,18 @@ HcclResult AllReduceOperator::SelectAlgfor91093(const OpParam& param, std::strin
                     && (!retryEnable_)
                     && !multiModuleDiffDeviceNumMode_;
     
+    if (isSupportAivDeter) {
+        algName = "AllReduceMeshAivFor91093Executor";
+        HCCL_INFO("[SelectAlgfor91093] allreduce SelectAlgfor91093 algName [%s].", algName.c_str());
+        return HCCL_SUCCESS;
+    }
+
     if (IsNeedStrictMode(param)) {
         CHK_PRT_RET(!CheckStrictCondition(param), 
             HCCL_ERROR("[AllReduceOperator][SelectAlgfor91093] not support DETERMINISTIC_STRICT mode."),
             HCCL_E_NOT_SUPPORT);
 
         algName = "AllReduceOrderPreservedFor91093Executor";
-        HCCL_INFO("[SelectAlgfor91093] allreduce SelectAlgfor91093 algName [%s].", algName.c_str());
-        return HCCL_SUCCESS;
-    }
-
-    if (isSupportAivDeter) {
-        algName = "AllReduceMeshAivFor91093Executor";
         HCCL_INFO("[SelectAlgfor91093] allreduce SelectAlgfor91093 algName [%s].", algName.c_str());
         return HCCL_SUCCESS;
     }

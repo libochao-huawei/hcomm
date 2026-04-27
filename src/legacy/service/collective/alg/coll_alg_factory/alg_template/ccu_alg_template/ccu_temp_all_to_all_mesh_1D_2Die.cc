@@ -75,10 +75,9 @@ HcclResult CcuTempAllToAllMesh1D2Die::GenExtIns(const TempFuncs          &tempFu
     buffInfo_ = templateDataParams.buffInfo;
 
     CcuInstructionAllToAllMesh1D2Die ccuInsAllToAllMesh1D2Die;
-    if (tempInsQues.size() == 0) {
-        HCCL_ERROR("[CcuTempAllToAllMesh1D2Die] tempInsQues.size() is 0.");
-        return HcclResult::HCCL_E_INTERNAL;
-    }
+    CHK_PRT_RET(tempInsQues.empty(),
+        HCCL_ERROR("[CcuTempAllToAllMesh1D2Die] empty queue"), HcclResult::HCCL_E_INTERNAL);
+    CHK_PTR_NULL(tempInsQues[0]);
 
     std::vector<uint64_t> dimSize;
     dimSize.push_back(tempRankSize_);
@@ -120,8 +119,9 @@ HcclResult CcuTempAllToAllMesh1D2Die::GenExtIns(const TempFuncs          &tempFu
     for (uint32_t dieId = 0; dieId < 2; dieId++) { // 2Die算法，需要下发 2 条通信指令
         CcuInstructionAllToAllMesh1D2Die ccuInstruction;
         bool withMyRank = linksDie[dieId].size() > linksDie[1 - dieId].size() ? false : true;
+        u32 bitNum = min(linksDie[dieId].size(), linksDie[1 - dieId].size()) + 1;
         ccuInstruction.Init(static_cast<uint32_t>(myRank_), inputAddr, outputAddr, sliceSize, token,
-                            inputSliceStride, outputSliceStride, outBuffBaseOff, op_, tempVTopo_, withMyRank);
+                            inputSliceStride, outputSliceStride, outBuffBaseOff, op_, tempVTopo_, withMyRank, bitNum);
         ccuInstruction.SetLinks(linksDie[dieId]);
         ccuInstruction.SetRankGroup(rankGroup[dieId]);
         ccuInstruction.SetCntCkeNum(5); // 每个transport用5个CKE

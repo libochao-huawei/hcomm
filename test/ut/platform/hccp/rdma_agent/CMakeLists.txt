@@ -17,6 +17,7 @@ set(rdma_agent_utest_list
     stub/devdrv_runtime_api.c
     stub/rs_tlv.c
     stub/rs_ctx.c
+    stub/rs_nda.c
     tc_rdma_agent.c
     tc_ra_ping.c
     tc_ra_peer.c
@@ -27,6 +28,7 @@ set(rdma_agent_utest_list
     tc_ra_adp_tlv.c
     tc_hdc.c
     tc_host.c
+    tc_ra_nda.c
     ${SRC_DIR}/test/ut/platform/hccp/rdma_agent/stub/dl.c
     ${SRC_DIR}/src/platform/hccp/rdma_agent/client/ra_host.c
     ${SRC_DIR}/src/platform/hccp/rdma_agent/client/ra_common.c
@@ -36,6 +38,7 @@ set(rdma_agent_utest_list
     ${SRC_DIR}/src/platform/hccp/rdma_agent/client/ra_init.c
     ${SRC_DIR}/src/platform/hccp/rdma_agent/client/ra_socket.c
     ${SRC_DIR}/src/platform/hccp/rdma_agent/client/ra_tlv.c
+    ${SRC_DIR}/src/platform/hccp/rdma_agent/client/ra_nda.c
     ${SRC_DIR}/src/platform/hccp/rdma_agent/client/async/ra_comm.c
     ${SRC_DIR}/src/platform/hccp/rdma_agent/client/async/ra_ctx.c
     ${SRC_DIR}/src/platform/hccp/rdma_agent/client/async/ra_socket.c
@@ -58,6 +61,7 @@ set(rdma_agent_utest_list
     ${SRC_DIR}/src/platform/hccp/rdma_agent/peer/ra_peer.c
     ${SRC_DIR}/src/platform/hccp/rdma_agent/peer/ra_peer_socket.c
     ${SRC_DIR}/src/platform/hccp/rdma_agent/peer/ra_peer_ctx.c
+    ${SRC_DIR}/src/platform/hccp/rdma_agent/peer/ra_peer_nda.c
     ${SRC_DIR}/src/platform/hccp/rdma_agent/comm/ra_comm.c
     ${SRC_DIR}/src/platform/hccp/rdma_agent/comm/ctx/ra_ctx_comm.c
     ${SRC_DIR}/src/platform/hccp/common/dl_hal_function.c
@@ -97,21 +101,28 @@ target_include_directories(rdma_agent_utest PRIVATE
     ${SRC_DIR}/src/platform/hccp/external_depends/inc
     ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
     ${SRC_DIR}/src/platform/hccp/external_depends/host_lite
+    ${SRC_DIR}/src/platform/hccp/external_depends/nda
     ${RDMA_CORE_INCLUDE_DIR}
-    ${CANN_3RD_LIB_PATH}/json/include/	 
-    ${CANN_3RD_LIB_PATH}/gtest/include/	 
-    ${CANN_3RD_LIB_PATH}/mockcpp/include/	 
+    ${CANN_3RD_LIB_PATH}/json/include/
+    ${CANN_3RD_LIB_PATH}/gtest/include/
+    ${CANN_3RD_LIB_PATH}/mockcpp/include/
     ${CANN_3RD_LIB_PATH}/mockcpp/include/3rdparty/
+    ${CANN_3RD_LIB_PATH}/boost/
 )
 
 target_compile_options(rdma_agent_utest PRIVATE
     -U_FORTIFY_SOURCE -O0 -g
+    $<$<BOOL:${ENABLE_ASAN}>:-fsanitize=address -fno-omit-frame-pointer -static-libasan -fsanitize=undefined -static-libubsan -fsanitize=leak -static-libtsan>
 )
 
 target_compile_definitions(rdma_agent_utest PRIVATE
-    HNS_ROCE_LLT 
-    USE_DISPATCH_EXPECT 
+    HNS_ROCE_LLT
+    USE_DISPATCH_EXPECT
     CONFIG_SSL
+)
+
+target_link_options(rdma_agent_utest PRIVATE
+    $<$<BOOL:${ENABLE_ASAN}>:-fsanitize=address -static-libasan -fsanitize=undefined -static-libubsan -fsanitize=leak -static-libtsan>
 )
 
 target_link_libraries(rdma_agent_utest PRIVATE
@@ -122,7 +133,5 @@ target_link_libraries(rdma_agent_utest PRIVATE
     -ldl
 )
 
-run_llt_test(
-    TARGET rdma_agent_utest
-    TASK_NUM 1
-)
+enable_testing()
+add_test(NAME rdma_agent_utest COMMAND rdma_agent_utest)

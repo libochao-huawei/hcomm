@@ -18,6 +18,16 @@
 extern "C" {
 #endif // __cplusplus
 
+/**
+ * @enum HcclMemType
+ * @brief 兼容的内存类型枚举定义
+ */
+typedef enum {
+    HCCL_MEM_TYPE_DEVICE = 0, ///< 设备侧内存（如NPU等）
+    HCCL_MEM_TYPE_HOST = 1,   ///< 主机侧内存
+    HCCL_MEM_TYPE_NUM = 2     ///< 内存类型数量
+} HcclMemType;
+
 /* 网络设备句柄 */
 typedef void *HcclNetDev;
 using HcclNetDevCtx = void *;

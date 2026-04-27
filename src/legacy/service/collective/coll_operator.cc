@@ -225,6 +225,10 @@ std::string vectorToOpTag(const std::vector<char> &opTagvector)
 
 std::vector<char> CollOperator::GetUniqueId() const
 {
+    HCCL_INFO("[CollOperator::%s] opMode[%s], opType[%s], reduceOp[%s], dataType[%s], dataCount[%llu], root[%u], "
+        "myRank[%u], sendRecvRemoteRank[%u], opTag[%s], staticAddr[%d], staticShape[%d], outputDataType[%s], ",
+        __func__, opMode.Describe().c_str(), opType.Describe().c_str(), reduceOp.Describe().c_str(), dataType.Describe().c_str(),
+        dataCount, root, myRank, sendRecvRemoteRank, opTag.c_str(), staticAddr, staticShape, outputDataType.Describe().c_str());
     BinaryStream binaryStream;
     binaryStream << opMode;
     binaryStream << opType;

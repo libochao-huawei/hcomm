@@ -27,7 +27,10 @@ RemoteIpcRmaBuffer::RemoteIpcRmaBuffer(const Serializable &rmtDto) : RemoteRmaBu
     ipcAddr         = dto.addr;
     ipcOffset       = dto.offset;
     size            = dto.size;
+    memTag          = dto.memTag;
     (void)memcpy_s(ipcName, RTS_IPC_MEM_NAME_LEN, dto.name, RTS_IPC_MEM_NAME_LEN);
+    HCCL_INFO("[RemoteIpcRmaBuffer][RemoteIpcRmaBuffer]ipcAddr[%llu] ipcOffset[%llu] ipcName[%s] memTag[%s]",
+              ipcAddr, ipcOffset, ipcName, memTag.c_str());
     myPid = HrtDeviceGetBareTgid();
     if (myPid == remotePid) {
         HCCL_INFO("RemoteIpcRmaBuffer: myPid is equal to remotePid, do not need to open memory");
@@ -48,9 +51,10 @@ RemoteIpcRmaBuffer::RemoteIpcRmaBuffer(const Serializable &rmtDto, const string 
     ipcAddr         = dto.addr;
     ipcOffset       = dto.offset;
     size            = dto.size;
+    memTag          = dto.memTag;
     (void)memcpy_s(ipcName, RTS_IPC_MEM_NAME_LEN, dto.name, RTS_IPC_MEM_NAME_LEN);
-    HCCL_INFO("[RemoteIpcRmaBuffer][RemoteIpcRmaBuffer] tag[%s] ipcAddr[%llu] ipcOffset[%llu] ipcName[%s]", tag.c_str(),
-              ipcAddr, ipcOffset, ipcName);
+    HCCL_INFO("[RemoteIpcRmaBuffer][RemoteIpcRmaBuffer] tag[%s] ipcAddr[%llu] ipcOffset[%llu] ipcName[%s] memTag[%s]", tag.c_str(),
+              ipcAddr, ipcOffset, ipcName, memTag.c_str());
     ipcPtr   = HrtIpcOpenMemory(ipcName);
     addr     = reinterpret_cast<uintptr_t>(ipcPtr) + ipcOffset;
     isOpened = true;
@@ -94,7 +98,7 @@ RemoteRdmaRmaBuffer::RemoteRdmaRmaBuffer(RdmaHandle rdmaHandle, const Serializab
     size = dto.size;
     rkey = dto.rkey;
     memTag = dto.memTag;
-    HCCL_INFO("[RemoteRdmaRmaBuffer]addr = %llu; size = %u; memTag = %s", addr, size, memTag.c_str());
+    HCCL_INFO("[RemoteRdmaRmaBuffer]addr = 0x%llx; size = 0x%llx; memTag = %s", addr, size, memTag.c_str());
 }
 
 RemoteRdmaRmaBuffer::~RemoteRdmaRmaBuffer()

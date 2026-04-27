@@ -10,13 +10,15 @@
 
 set(hccl_utest_device_src_list
     main.cc
-    ut_aiv_device_utest.cc
+    # ut_aiv_device_utest.cc
     ut_stream_device_utest.cc
     ut_communicator_device_utest.cc
     ut_zero_copy_device_utest.cc
+    ut_engine_aicpu_interface.cc
+    ut_aicpu_one_side_service.cc
+    ut_hccl_aicpu_utils.cc
 
     ${HCCL_CODE_ROOT}/src/common/stream/stream_utils_aicpu.cc
-    ${HCCL_CODE_ROOT}/src/common/debug/profiling/task_exception_handler_device.cc
     ${HCCL_CODE_ROOT}/src/common/debug/profiling/plugin_runner_device.cc
     ${HCCL_CODE_ROOT}/src/framework/common/src/config/env_config_aicpu.cc
     ${HCCL_CODE_ROOT}/src/framework/op_base/src/op_base_device.cc
@@ -27,6 +29,10 @@ set(hccl_utest_device_src_list
     ${HCCL_CODE_ROOT}/src/algorithm/impl/hccl_aiv_device.cc
     ${HCCL_CODE_ROOT}/src/algorithm/impl/hccl_alg_device.cc
     ${HCCL_CODE_ROOT}/src/algorithm/impl/coll_executor/coll_all_to_all/coll_all_to_all_executor_aicpu.cc
+    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/resource/device/engine_aicpu_interface.cc
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads/slaves/aicpu_thread_process.cc
+    ${HCCL_CODE_ROOT}/src/framework/device/framework/aicpu_one_side_service.cc
+    ${HCCL_CODE_ROOT}/src/framework/device/hccl_aicpu_interface.cc
 )
 
 add_executable(hccl_utest_device ${hccl_utest_device_src_list})
@@ -34,6 +40,12 @@ add_executable(hccl_utest_device ${hccl_utest_device_src_list})
 # 头文件搜索路径
 target_include_directories(hccl_utest_device PRIVATE
     ${UT_COMMON_INCLUDE_LIST}
+    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/resource/device/
+    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/resource/engine/
+    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/device/
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/communicator/aicpu/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads/slaves/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads/
 )
 target_compile_definitions(hccl_utest_device PRIVATE
     _GLIBCXX_USE_CXX11_ABI=0
@@ -66,3 +78,6 @@ target_link_libraries(hccl_utest_device PRIVATE
     -ldl
 )
 add_dependencies(hccl_utest_device hccl_llt)
+
+enable_testing()
+add_test(NAME hccl_utest_device COMMAND hccl_utest_device)

@@ -64,7 +64,8 @@ protected:
         locCntRes.desc.push_back('0');
         locCntRes.desc.push_back(0);
 
-        UbMemTransport ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes);
+        bool isRecvFirst = false;
+        UbMemTransport ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
         ubTransport.baseStatus = TransportStatus::READY;
         LinkData linkData(BasePortType(PortDeploymentType::DEV_NET, ConnectProtoType::UB), 0, 1, 0, 1);
         MirrorTaskManager mirrorTaskMgr(0, &GlobalMirrorTasks::Instance(), true);

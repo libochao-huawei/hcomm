@@ -23,6 +23,7 @@ extern "C" {
 #include "tc_hdc.h"
 #include "tc_host.h"
 #include "tc_ra_ctx.h"
+#include "tc_ra_nda.h"
 #include "tc_ra_async.h"
 
 using namespace std;
@@ -253,6 +254,8 @@ TEST_M(RdmaAgent, TcRaHdcCtxGetAuxInfo);
 TEST_M(RdmaAgent, TcRaRsCtxGetAuxInfo);
 TEST_M(RdmaAgent, TcRaHdcCtxGetCrErrInfoList);
 TEST_M(RdmaAgent, TcRaRsCtxGetCrErrInfoList);
+TEST_M(RdmaAgent, TcRaHdcCtxGetJettyContext);
+TEST_M(RdmaAgent, TcRaPeerCtxGetJettyContext);
 
 /* pingMesh ut cases */
 TEST_M(RdmaAgent, TcRaPingInitGetHandleAbnormal);
@@ -284,6 +287,7 @@ TEST_M(RdmaAgent, TcRaCtxUpdateCi);
 TEST_M(RdmaAgent, TcRaCustomChannel);
 TEST_M(RdmaAgent, TcRaGetEidByIp);
 TEST_M(RdmaAgent, TcRaCtxGetCrErrInfoList);
+TEST_M(RdmaAgent, TcRaCtxGetJettyContext);
 
 TEST_M(RdmaAgent, TcRaRsAsyncHdcSessionConnect);
 TEST_M(RdmaAgent, TcRaHdcAsyncSendPkt);
@@ -343,6 +347,12 @@ TEST_M(RdmaAgent, TcRaRsTlvRequest);
 TEST_M(RdmaAgent, TcRaGetTpInfoListAsync);
 TEST_M(RdmaAgent, TcRaHdcGetTpInfoListAsync);
 TEST_M(RdmaAgent, TcRaRsGetTpInfoList);
+TEST_M(RdmaAgent, TcRaCtxGetTpInfoList);
+TEST_M(RdmaAgent, TcRaPeerCtxGetTpInfoList);
+TEST_M(RdmaAgent, TcRaCtxGetTpAttr);
+TEST_M(RdmaAgent, TcRaPeerCtxGetTpAttr);
+TEST_M(RdmaAgent, TcRaCtxSetTpAttr);
+TEST_M(RdmaAgent, TcRaPeerCtxSetTpAttr);
 TEST_M(RdmaAgent, TcRaGetSecRandom);
 TEST_M(RdmaAgent, TcRaRsGetSecRandom);
 TEST_M(RdmaAgent, TcRaGetTlsEnable);
@@ -360,3 +370,7 @@ TEST_M(RdmaAgent, TcRaCtxQpQueryBatch);
 TEST_M(RdmaAgent, TcQpQueryBatchParamCheck);
 TEST_M(RdmaAgent, TcRaHdcCtxQpQueryBatch);
 TEST_M(RdmaAgent, TcRaRsCtxQpQueryBatch);
+TEST_M(RdmaAgent, TcRaNdaGetDirectFlag);
+TEST_M(RdmaAgent, TcRaPeerNdaGetDirectFlag);
+TEST_M(RdmaAgent, TcRaNdaQpCreate);
+TEST_M(RdmaAgent, TcRaPeerNdaQpCreate);

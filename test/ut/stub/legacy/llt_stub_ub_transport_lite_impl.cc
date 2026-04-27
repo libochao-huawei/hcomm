@@ -81,7 +81,7 @@ RmtRmaBufSliceLite UbTransportLiteImpl::GetRmtRmaBufSliceLite(const RmaBufferLit
     return RmtRmaBufSliceLite(lite.GetAddr(), lite.GetSize(), 0, lite.GetTokenId() , lite.GetTokenValue());
 }
 
-HcclResult UbTransportLiteImpl::BuildLocRmaBufferLite(const uintptr_t addr, const size_t size, RmaBufferLite &rmaBufferLite) const
+HcclResult UbTransportLiteImpl::BuildLocRmaBufferLite(const uintptr_t addr, const size_t size, RmaBufferLite &rmaBufferLite)
 {
     return HCCL_SUCCESS;
 }
@@ -109,7 +109,11 @@ void UbTransportLiteImpl::Wait(u32 index, const StreamLite &stream)
 {
 }
 
-void UbTransportLiteImpl::ProfilingProcess(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream,
+void UbTransportLiteImpl::WaitWithTimeout(u32 index, const StreamLite &stream, u32 timeout)
+{
+}
+
+void UbTransportLiteImpl::ProfilingProcess(void *src, void *dst, u64 size, const StreamLite &stream,
                                            DmaOp dmaOp, u32 taskId)
 {
 }
@@ -127,8 +131,8 @@ void UbTransportLiteImpl::ReadReduce(const RmaBufferLite &loc, const Buffer &rmt
 {
 }
 
-void UbTransportLiteImpl::ReduceProfilingProcess(const RmaBufferLite &loc, const Buffer &rmt,
-                                                 const ReduceIn &reduceIn, const StreamLite &stream, u32 taskId)
+void UbTransportLiteImpl::ReduceProfilingProcess(void *src, void *dst, u64 size,
+                                                  const ReduceIn &reduceIn, const StreamLite &stream, u32 taskId)
 {
 }
 

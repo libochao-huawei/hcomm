@@ -14,6 +14,7 @@
 #include "sal.h"
 #include "rank_info_detect_service.h"
 #include "hccp_peer_manager.h"
+#include "hccp_hdc_manager.h"
 #include "internal_exception.h"
 #include "orion_adapter_hccp.h"
 #include "orion_adapter_rts.h"
@@ -158,6 +159,7 @@ void RankInfoDetect::SetupAgent(u32 rankSize, u32 rankId, const HcclRootHandleV2
 
     // 网卡使能
     HccpPeerManager::GetInstance().Init(devLogicId_);
+    HccpHdcManager::GetInstance().Init(devLogicId_);
 
     // 获取LocalHostIP
     hostIp_ = GetBootstrapIp(devPhyId_);
@@ -174,16 +176,6 @@ void RankInfoDetect::SetupAgent(u32 rankSize, u32 rankId, const HcclRootHandleV2
     rankInfoDetectClient->Setup(rankTable_);
 
     HCCL_INFO("[RankInfoDetect::%s] setup agent end.", __func__);
-}
-
-HcclResult RankInfoDetect::UpdateAgent(u32 devicePort)
-{
-    CHK_PTR_NULL(rankInfoDetectClient);
-
-    // 1. 创建RankInfoDetectClient对象
-    rankInfoDetectClient->Update(devicePort, rankTable_);
-    HCCL_INFO("[RankInfoDetect::%s] update agent end.", __func__);
-    return HCCL_SUCCESS;
 }
 
 void RankInfoDetect::SetupRankInfoDetectService(shared_ptr<Socket> serverSocket, s32 devLogicId, u32 devPhyId,
@@ -219,22 +211,20 @@ void RankInfoDetect::SetupRankInfoDetectService(shared_ptr<Socket> serverSocket,
 
     HCCL_INFO("[RankInfoDetect::%s] end, status idle.", __func__);
 
-    // 第二次发送的ranktable带有端口信息
-    EXECEPTION_CATCH(rankInfoDetectService->Update(), hasException = true);
+    // 确保root info流程先销毁server socket 再返回
+    // 可能失败，需要将错误状态带出
+    EXECEPTION_CATCH(serverSocket->Destroy(), hasException = true);
     HrtResetDevice(devLogicId);
 
     // 若有异常则设置error状态退出
     if(hasException == true) {
         g_detectServerStatus_.EmplaceAndUpdate(hostPort, 
             [](volatile u32 &status) { status = RANKINFO_DETECT_SERVER_STATUS_ERROR; });
-        HCCL_ERROR("[RankInfoDetect::%s] end, status error.", __func__);
+        HCCL_ERROR("[RankInfoDetect::%s] Destroy end, status error.", __func__);
         return;
     }
-
-    g_detectServerStatus_.EmplaceAndUpdate(
-        hostPort, [](volatile u32 &status) { status = RANKINFO_DETECT_SERVER_STATUS_UPDATE; });
     
-    HCCL_INFO("[RankInfoDetect::%s] end, status update.", __func__);  
+    HCCL_INFO("[RankInfoDetect::%s] end.", __func__);
 }
 
 u32 RankInfoDetect::GetHostListenPort()

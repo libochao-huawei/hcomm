@@ -480,7 +480,7 @@ HcclResult EnvConfigPathCache::LoadMultiQpSrcPortFromFile()
 
         // 配置源端口号
         if (cacheInfo_.find(ipPair) != cacheInfo_.end()) {
-            const std::string  DUPLICATE_IPPAIR_ERROR = "[line: " + std::to_string(lineCnt) + "] ip pair: " + ipPair + " has existed.";
+            const std::string  DUPLICATE_IPPAIR_ERROR = "[line: " + std::to_string(lineCnt) + "] ip pair: " + ipPair + " has existed";
             RPT_INPUT_ERR(true, "EI0001", std::vector<std::string>({"value", "env", "expect"}),
                 std::vector<std::string>({ipPair, "IP pair Key", "unique IP pair whitout duplicates"}));
             HCCL_ERROR("[%s][%s][line: %u]ip pair[%s] has existed.[%s]",

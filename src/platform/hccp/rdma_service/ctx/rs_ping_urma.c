@@ -297,6 +297,7 @@ STATIC int RsPingCommonInitSegCb(struct rs_cb *rscb, struct RsPingCtxCb *pingCb,
         .bs.token_policy = URMA_TOKEN_PLAIN_TEXT,
         .bs.cacheable = URMA_NON_CACHEABLE,
         .bs.access = URMA_ACCESS_LOCAL_ONLY,
+        .bs.non_pin = 1,
         .bs.token_id_valid = URMA_TOKEN_ID_INVALID,
         .bs.reserved = 0
     };
@@ -316,7 +317,7 @@ STATIC int RsPingCommonInitSegCb(struct rs_cb *rscb, struct RsPingCtxCb *pingCb,
     CHK_PRT_RETURN(ret != 0, hccp_err("pthread_mutex_init seg_cb mutex failed, ret:%d", ret), ret);
 
     flag = ((unsigned long)pingCb->logicDevid << BUFF_FLAGS_DEVID_OFFSET) | BUFF_SP_SVM;
-    ret = DlHalBuffAllocAlignEx(segCb->len, RA_RS_PING_BUFFER_ALIGN_4K_PAGE_SIZE,
+    ret = DlHalBuffAllocAlignEx(segCb->len, RA_RS_4K_PAGE_SIZE,
         flag, (int)rscb->grpId, (void **)&segCb->addr);
     if (ret != 0) {
         hccp_err("DlHalBuffAllocAlignEx failed, length:0x%llx, dev_id:0x%x, flag:0x%lx, grp_id:%u, ret:%d",
@@ -1083,7 +1084,7 @@ STATIC int RsPongJettyResolveResponsePacket(struct RsPingCtxCb *pingCb, uint32_t
     targetInfo->resultSummary.recvCnt++;
     targetInfo->resultSummary.taskId = header->taskId;
     // rtt timeout, increase timeoutCnt
-    if ((targetInfo->resultSummary.taskAttr.timeoutInterval * RS_PING_MSEC_TO_USEC) < rtt) {
+    if (((uint64_t)targetInfo->resultSummary.taskAttr.timeoutInterval * RS_PING_MSEC_TO_USEC) < rtt) {
         targetInfo->resultSummary.timeoutCnt++;
         hccp_dbg("recvCnt:%u timeoutInterval:%u rtt:%u timeoutCnt:%u", targetInfo->resultSummary.recvCnt,
             targetInfo->resultSummary.taskAttr.timeoutInterval, rtt, targetInfo->resultSummary.timeoutCnt);

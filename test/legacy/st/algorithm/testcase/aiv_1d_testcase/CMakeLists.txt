@@ -59,3 +59,6 @@ target_sources(orion_alg_aiv_1d_testcase
     testcase_reduce_scatter_aiv_1d.cc
     ${UTILS_DIR}/common/virtual_topo_stub/virtual_topo_stub.cc
 )
+
+enable_testing()
+add_test(NAME orion_alg_aiv_1d_testcase COMMAND orion_alg_aiv_1d_testcase)

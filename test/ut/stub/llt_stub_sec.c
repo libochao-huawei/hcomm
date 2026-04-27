@@ -32,6 +32,11 @@ errno_t memcpy_sOptAsm(void *dest, size_t destMax, const void *src, size_t count
     return memcpy_s(dest, destMax, src, count);
 }
 
+errno_t memcpy_sOptTc(void *dest, size_t destMax, const void *src, size_t count)
+{
+    return memcpy_s(dest, destMax, src, count);
+}
+
 SECUREC_API errno_t memmove_s(void *dest, size_t destMax, const void *src, size_t count)
 {
 	memmove(dest, src, count);
@@ -51,5 +56,8 @@ int vsnprintf_s(char* strDest, size_t destMax, size_t count, const char* format,
 
 errno_t strcat_s(char *strDest, size_t destMax, const char *strSrc)
 {
-    return strcat(strDest, strSrc);
+    if (strcat(strDest, strSrc) != strDest) {
+        return -1;
+    }
+    return 0;
 }

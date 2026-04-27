@@ -24,8 +24,9 @@ TOP_SOURCE_DIR = TOP_DIR + '/scripts/'
 DELIVERY_PATH = "build/_CPack_Packages/makeself_staging"
 CONFIG_SCRIPT_PATH = 'package'
 BLOCK_CONFIG_PATH = 'package/module'
+BUILD_DIR_NAME = "build"
 
-SUCCESS = 0
+SUCC = 0
 FAIL = -1
 
 
@@ -42,6 +43,14 @@ class PackageConfigError(PackageError):
 
 class BlockConfigError(PackageError):
     """块配置错误异常。"""
+
+
+class MultiPkgModError(PackageError):
+    """多个pkg_mod元素报错。"""
+ 
+ 
+class MultiPkgSoftlinkError(PackageError):
+    """多个pkg_softlink元素报错。"""
 
 
 class ParseOsArchError(PackageError):
@@ -62,6 +71,10 @@ class ContainAsteriskError(PackageError):
 
 class FilelistError(PackageError):
     """文件列表异常。"""
+
+
+class PkgInnerSoftlinkNotAllowed(PackageError):
+    """不允许使用pkg_inner_softlink。"""
 
 
 class UnknownOperateTypeError(PackageError):
@@ -102,6 +115,19 @@ class InstallScriptFormatError(PackageError):
 
 class VersionInfoNotExist(PackageError):
     """version.info文件不存在。"""
+
+
+def get_build_dir() -> str:
+    """返回当前打包流程使用的构建目录。"""
+    current_dir = os.getcwd()
+    if os.path.isfile(os.path.join(current_dir, "CMakeCache.txt")):
+        return current_dir
+    return os.path.join(TOP_DIR, BUILD_DIR_NAME)
+
+
+def get_delivery_dir() -> str:
+    """返回当前打包流程使用的staging目录。"""
+    return os.path.join(get_build_dir(), "_CPack_Packages", "makeself_staging")
 
 
 def flatten(list_of_lists):

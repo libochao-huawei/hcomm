@@ -56,7 +56,6 @@ target_include_directories(hccl_v2 PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
@@ -98,13 +97,13 @@ ENDIF ()
 #        -fno-strict-aliasing
 #        -pipe
 #        -O3
- 
+
 #        -Wextra
 #        -Wno-unused-parameter
 #        -Wno-missing-field-initializers
 #        -Wfloat-equal
 #)
- 
+
 target_compile_options(hccl_v2 PRIVATE
     -Werror
     -Wfloat-equal
@@ -138,25 +137,24 @@ target_include_directories(ccl_dpu PRIVATE
     ${HCCL_BASE_DIR}/include/
     ${HCCL_BASE_DIR}/include/hccl
     ${HCCL_BASE_DIR}/pkg_inc
-    ${HCCL_BASE_DIR}/src/pub_inc
     ${HCCL_BASE_DIR}/src/pub_inc/hccl
     ${ASCEND_CANN_PACKAGE_PATH}/include
     ${ASCEND_CANN_PACKAGE_PATH}/include/hccl
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
+    ${HCCL_V2_CODE_ROOT}/common/
 )
 # 指定 ccl_dpu 的构建依赖关系
-# add_dependencies(ccl_dpu hccl_v2)
 add_dependencies(hccl_v2 ccl_dpu)
 # 指定源文件
 set(CCL_DPU_SRC_LIST
     ${HCCL_V2_CODE_ROOT}/framework/communicator/hostdpu/dpu_kernel_entrance.cc
     ${HCCL_V2_CODE_ROOT}/framework/communicator/hostdpu/task_service.cc
+    ${HCCL_V2_CODE_ROOT}/common/log.cc
 )
 target_sources(ccl_dpu PRIVATE
     ${CCL_DPU_SRC_LIST}
@@ -192,6 +190,7 @@ target_link_libraries(ccl_dpu
     c_sec
     mmpa
     runtime
+    acl_rt
     -Wl,--as-needed
     -lrt
     -ldl
@@ -201,6 +200,9 @@ target_link_libraries(ccl_dpu
 # 指定 ccl_dpu 构建完成后安装到指定的目标位置
 install(TARGETS  ccl_dpu
     LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL
+)
+install(TARGETS  ccl_dpu
+    LIBRARY DESTINATION ${INSTALL_DPU_KERNEL_JSON_DIR} OPTIONAL
 )
 
 # 需要链接的库，后需增加
@@ -213,7 +215,6 @@ target_link_libraries(hccl_v2 PRIVATE
     runtime
     ascendcl
     error_manager
-    hccl_v2_alg_frame
     ccl_dpu
     tsdclient
     ra
@@ -225,13 +226,6 @@ ENDIF ()
 
 # 将hccl编译出的动态库加入CANN的安装包
 IF (NOT DEFINED ENV{HCCL_LOCAL_BUILD})
-install(TARGETS hccl_v2
-    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL)
-install(TARGETS hccl_v2_native_alg_repo
-    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL)
-install(TARGETS hccl_v2_alg_frame
-    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL)
-
 install(TARGETS hccl_v2
     LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL
 )

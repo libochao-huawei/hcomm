@@ -76,12 +76,10 @@ public:
         }
 
         dimSize_.push_back(tempVTopo[0].size());
-
         rankId_              = rankId;
         op_                  = op;
         rmtReduceWithMyRank_ = rmtReduceWithMyRank;
         tempVTopo_           = tempVTopo;
-
         inputAddr_   = inputAddr;
         outputAddr_  = outputAddr;
         scratchAddr_ = scratchAddr;
@@ -126,7 +124,6 @@ private:
     CollAlgOperator                  op_;
     bool                             rmtReduceWithMyRank_{true};
     std::vector<std::vector<RankId>> tempVTopo_;
-
     uint64_t inputAddr_{0};
     uint64_t outputAddr_{0};
     uint64_t scratchAddr_{0};

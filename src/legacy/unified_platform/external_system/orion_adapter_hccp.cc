@@ -18,7 +18,6 @@
 #include "hccp.h"
 #include "hccp_tlv.h"
 #include "hccp_ctx.h"
-#include "hccp_async_ctx.h"
 #include "hccp_async.h"
 #include "env_config.h"
 #include "hccp_common.h"
@@ -36,12 +35,14 @@ constexpr uint32_t TP_HANDLE_REQUEST_NUM        = 1;
 constexpr u32      AUTO_LISTEN_PORT             = 0;
 constexpr u64 SOCKET_SEND_MAX_SIZE              = 0x7FFFFFFFFFFFFFFF;
 constexpr u32 MAX_WR_NUM = 1024;
-constexpr u32 MAX_SEND_SGE_NUM = 8;
+constexpr u32 MAX_SEND_SGE_NUM = 1;
 constexpr u32 MAX_RECV_SGE_NUM = 1;
 constexpr u32 MAX_CQ_DEPTH = 65535;
-constexpr u32 MAX_INLINE_DATA = 128;
+constexpr u32 MAX_INLINE_DATA = 64;
 constexpr u32 RA_TLV_REQUEST_UNAVAIL = 128308;
 constexpr u32 ROCE_ENOMEM_RET = 328100;
+constexpr u32 GET_TLS_ENABLE_OPCODE = 95;
+constexpr u32 GET_TLS_ENABLE_VERSION = 1;
 
 const std::unordered_map<HrtNetworkMode, NetworkMode, EnumClassHash> HRT_NETWORK_MODE_MAP
     = {{HrtNetworkMode::PEER, NetworkMode::NETWORK_PEER_ONLINE}, {HrtNetworkMode::HDC, NetworkMode::NETWORK_OFFLINE}};
@@ -51,6 +52,34 @@ inline s32 EnvLinkTimeoutGet()
 {
     g_linkTimeout = g_linkTimeout != 0 ? g_linkTimeout : EnvConfig::GetInstance().GetSocketConfig().GetLinkTimeOut();
     return g_linkTimeout;
+}
+
+HcclResult HrtRaGetTlsStatus(struct RaInfo *info, TlsStatus &tlsStatus)
+{
+    tlsStatus = TlsStatus::UNKNOWN;
+    CHK_PTR_NULL(info);
+
+    u32 tlsVersion = 0;
+    s32 versionRet = RaGetInterfaceVersion(info->phyId, GET_TLS_ENABLE_OPCODE, &tlsVersion);
+    if (versionRet != 0 || tlsVersion < GET_TLS_ENABLE_VERSION) {
+        HCCL_WARNING("[HrtRaGetTlsStatus] this package does not support RaGetTlsEnable for device, "
+            "please change new package. ret[%d], tlsVersion[%u].", versionRet, tlsVersion);
+        return HCCL_E_NOT_SUPPORT;
+    }
+
+    bool tlsEnable = false;
+    s32 ret = RaGetTlsEnable(info, &tlsEnable);
+    if (ret != 0) {
+        tlsStatus = TlsStatus::DISABLE;
+        HCCL_ERROR("[HrtRaGetTlsStatus] errNo[0x%016llx] failed ret[%d], phyId[%u]",
+            HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, info->phyId);
+        return HCCL_E_NETWORK;
+    }
+
+    tlsStatus = tlsEnable ? TlsStatus::ENABLE : TlsStatus::DISABLE;
+    HCCL_INFO("[HrtRaGetTlsStatus] phyId[%u], tlsEnable[%d], tlsStatus[%d]",
+        info->phyId, tlsEnable, static_cast<s32>(tlsStatus));
+    return HCCL_SUCCESS;
 }
 
 inline union HccpIpAddr IpAddressToHccpIpAddr(IpAddress &addr)
@@ -332,6 +361,9 @@ static bool RaSocketTryListenStart(struct SocketListenInfoT conn[], u32 num)
         HCCL_INFO("[%s]ra socket listen could not start, due to the port[%u] has already been bound. please try"
                     " another port or check the port status", __func__, (num > 0 ? conn[0].port : HCCL_INVALID_PORT));
         return false;
+    } else if (ret == SOCK_EADDRNOTAVAIL){
+        MACRO_THROW(NetworkApiException, StringFormat("[%s] Socket listen start fail: " 
+            "IP address is not available, please check the IP address configuration, return[%d]", __func__, ret));
     } else {
         // 非ra限速场景错误，不轮询，直接退出
         MACRO_THROW(NetworkApiException, StringFormat("[TryListenStart][RaSocket]errNo[0x%016llx] ra socket listen start fail, return[%d], params: num[%u]", 
@@ -407,7 +439,7 @@ void RaBlockGetSockets(u32 role, SocketInfoT conn[], u32 num) // 修改为内部
     auto timeout       = std::chrono::seconds(EnvLinkTimeoutGet());
     while (true) {
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
-            MACRO_THROW(NetworkApiException, StringFormat("[HrtRaBlockGetSockets] get rasocket timeout role[%u], num[%u], goten[%u], timeout[%lld]s, the HCCL_CONNECT_TIMEOUT may be insufficient",
+            MACRO_THROW(NetworkApiException, StringFormat("[HrtRaBlockGetSockets] get rasocket timeout role[%u], num[%u], gotSocketsCnt[%u], timeout[%lld]s",
                 role, num, gotSocketsCnt, timeout));
         }
         u32 connectedNum = 0;
@@ -535,10 +567,16 @@ void HrtRaSocketBlockRecv(const FdHandle fdHandle, void *data, u32 size)
     HCCL_INFO("before ra socket recv, para: fdHandle[%p], data[%p], size[%u]", fdHandle, data, size);
     while (true) {
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
-            MACRO_THROW(NetworkApiException, StringFormat("[Recv][RaSocket]errNo[0x%016llx] Wait timeout for sockets recv, data[%p], "
-                       "size[%u], recvSize[%u], The most common cause is that the firewall is incorrectly "
-                       "configured. Check the firewall configuration or try to disable the firewall fdHandle[%p] ret[%d]",
-                       HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), data, size, recvSize, fdHandle, rtRet));
+            std::string errMsg = StringFormat(
+                "[Recv][RaSocket]errNo[0x%016llx] Wait timeout for sockets recv, data[%p], "
+                "size[%u], recvSize[%u], fdHandle[%p], ret[%d]",
+                HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), data, size, recvSize, fdHandle, rtRet
+            );
+            HCCL_ERROR("%s", errMsg.c_str());
+            HCCL_ERROR("Please check the following reasons:");
+            HCCL_ERROR("1. check the firewall configuration or try to disable the firewall.");
+            HCCL_ERROR("2. check error log on the other process or thread.");
+            MACRO_THROW(NetworkApiException, errMsg);
         }
         rtRet = RaSocketRecv(fdHandle, reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(data) + getedLen),
                                size - getedLen, &recvSize);
@@ -1069,7 +1107,6 @@ RdmaHandle HrtRaUbCtxInit(const HrtRaUbCtxInitParam &in)
 {
     HCCL_INFO("[HrtRaUbCtxInit] Input params: mode=%d, phyId=%u, addr=%s", in.mode, in.phyId, in.addr.GetIpStr().c_str());
     struct CtxInitCfg initCfg {};
-    initCfg.rdma.disabledLiteThread = false;
     initCfg.mode                 = HRT_NETWORK_MODE_MAP.at(in.mode);
 
     struct CtxInitAttr ctxInfo {};
@@ -1463,7 +1500,7 @@ static HrtRaUbJettyImportedOutParam ImportJetty(RdmaHandle handle, u8 *key, u32 
 
     info.in.ub.expImportCfg = cfg;
 
-    if (protocol != TpProtocol::TP && protocol != TpProtocol::CTP) {
+    if (protocol != TpProtocol::TP && protocol != TpProtocol::CTP && protocol != TpProtocol::UBOE) {
         MACRO_THROW(NetworkApiException, StringFormat("[%s] failed, tp protocol[%s] is not expected.",
             __func__, protocol.Describe().c_str()));
     }
@@ -1686,7 +1723,6 @@ void HrtRaCustomChannel(const HRaInfo &raInfo, void *customIn, void *customOut)
     info.mode   = HRT_NETWORK_MODE_MAP.at(raInfo.mode);
     info.phyId = raInfo.phyId;
 
-    HCCL_INFO("[HrtRaCustomChannel] Input params: customIn=%p, customOut=%p, mode=%d, phyId=%u", customIn, customOut, info.mode, info.phyId);
     struct CustomChanInfoIn  *in  = reinterpret_cast<struct CustomChanInfoIn *>(customIn);
     struct CustomChanInfoOut *out = reinterpret_cast<struct CustomChanInfoOut *>(customOut);
 
@@ -1775,6 +1811,14 @@ std::vector<HrtDevEidInfo> HrtRaGetDevEidInfoList(const HRaInfo &raInfo)
         hrtDevEidInfo[i].dieId = infoList[i].dieId;
         hrtDevEidInfo[i].chipId = infoList[i].chipId;
         hrtDevEidInfo[i].funcId = infoList[i].funcId;
+        hrtDevEidInfo[i].devFeature = infoList[i].devFeature;
+        HCCL_INFO("[%s] HrtDevEidInfo[%d]: name[%s], ipAddress[%s], type[%u], "
+                "eidIndex[%u], dieId[%u], chipId[%u], funcId[%u], devFeature[%u]",
+                __func__, i, hrtDevEidInfo[i].name.c_str(),
+                hrtDevEidInfo[i].ipAddress.Describe().c_str(),
+                hrtDevEidInfo[i].type, hrtDevEidInfo[i].eidIndex,
+                hrtDevEidInfo[i].dieId, hrtDevEidInfo[i].chipId,
+                hrtDevEidInfo[i].funcId, hrtDevEidInfo[i].devFeature);
     }
 
     return hrtDevEidInfo;
@@ -1939,7 +1983,7 @@ RequestHandle HrtRaSocketSendAsync(const FdHandle fdHandle, const void *data, u3
 {
     CHECK_NULLPTR(fdHandle, "[HrtRaSocketSendAsync] fdHandle is nullptr!");
     CHECK_NULLPTR(data, "[HrtRaSocketSendAsync] data is nullptr!");
-    HCCL_INFO("[HrtRaSocketSendAsync] Input params: fdHandle=%p, data=%p, stze=%u, sentSize=%llu", fdHandle, data, size, sentSize);
+    HCCL_INFO("[HrtRaSocketSendAsync] Input params: fdHandle=%p, data=%p, size=%u, sentSize=%llu", fdHandle, data, size, sentSize);
     void *raReqHandle = nullptr;
     s32 ret = RaSocketSendAsync(fdHandle, data, size, &sentSize, &raReqHandle);
     if (ret != 0 || !raReqHandle) {
@@ -1956,7 +2000,7 @@ RequestHandle HrtRaSocketRecvAsync(const FdHandle fdHandle, void *data, u32 size
 {
     CHECK_NULLPTR(fdHandle, "[HrtRaSocketRecvAsync] fdHandle is nullptr!");
     CHECK_NULLPTR(data, "[HrtRaSocketRecvAsync] data is nullptr!");
-    HCCL_INFO("[HrtRaSocketRecvAsync] Input params: fdHandle=%p, data=%p, stze=%u, recvSize=%llu", fdHandle, data, size, recvSize);
+    HCCL_INFO("[HrtRaSocketRecvAsync] Input params: fdHandle=%p, data=%p, size=%u, recvSize=%llu", fdHandle, data, size, recvSize);
     void *raReqHandle = nullptr;
     s32 ret = RaSocketRecvAsync(fdHandle, data, size, &recvSize, &raReqHandle);
         if (ret != 0 || !raReqHandle) {
@@ -2080,6 +2124,7 @@ RequestHandle RaUbGetTpInfoAsync(const RdmaHandle rdmaHandle, const RaUbGetTpInf
     struct GetTpCfg cfg{};
     cfg.flag.bs.rtp = tpProtocol == TpProtocol::TP ? 1 : 0;
     cfg.flag.bs.ctp = tpProtocol == TpProtocol::CTP ? 1 : 0;
+    cfg.flag.bs.uboe = tpProtocol == TpProtocol::UBOE ? 1 : 0;
     cfg.transMode = TransportModeT::CONN_RM; // 当前只使用RM Jetty
     cfg.localEid = IpAddressToHccpEid(locAddr);
     HCCL_INFO("RaUbGetTpInfoAsync cfg.localEid=%s", HccpEidDesc(cfg.localEid).c_str());
@@ -2132,7 +2177,7 @@ static RequestHandle ImportJettyAsync(RdmaHandle rdmaHandle, const HrtRaUbJettyI
 
     info->in.ub.expImportCfg = cfg;
 
-    if (protocol != TpProtocol::TP && protocol != TpProtocol::CTP) {
+    if (protocol != TpProtocol::TP && protocol != TpProtocol::CTP && protocol != TpProtocol::UBOE) {
         MACRO_THROW(NetworkApiException, StringFormat("[%s] failed, tp protocol[%s] is not expected, %s.",
         __func__, protocol.Describe().c_str()));
     }
@@ -2299,7 +2344,7 @@ HcclResult HrtRaCreateCq(RdmaHandle rdmaHandle, CqInfo& cq)
     }
     return HCCL_SUCCESS;
 }
-// ra_cq_destory
+// ra_cq_destroy
 HcclResult HrtRaDestroyCq(RdmaHandle rdmaHandle, CqInfo& cq)
 {
     CHK_PTR_NULL(rdmaHandle);
@@ -2527,4 +2572,100 @@ HcclResult HrtGetCcuMemInfo(void* tlv_handle, uint32_t udieIdx, uint64_t memType
     HCCL_INFO("tlv request success, tlv module type[%u], message type[%u]", tlv_module_type, send_msg.type);
     return HCCL_SUCCESS;
 }
+
+HcclResult HrtRaGetEidByIp(RdmaHandle handle, const vector<IpAddress>& ipV4AddrList, vector<IpAddress>& eidAddrList)
+{
+    HCCL_INFO("[HrtRaGetEidByIp] begain, ipV4AddrList size=%u", ipV4AddrList.size());
+    size_t ipV4AddrListSize = ipV4AddrList.size();
+    unsigned int num = ipV4AddrListSize;
+    IpInfo ipInfoList[num] = {};
+    for (size_t i = 0; i < num; i++) {
+        auto ipAddress = ipV4AddrList.at(i);
+        HCCL_INFO("[HrtRaGetEidByIp] ipV4AddrList[%d][%s]", i, ipAddress.Describe().c_str());
+        ipInfoList[i].family = ipAddress.GetFamily();
+        ipInfoList[i].ip                 = IpAddressToHccpIpAddr(ipAddress);
+    }
+
+    union HccpEid eidList[num] = {};
+    s32 ret = RaGetEidByIp(handle, ipInfoList, eidList, &num);
+    if (ret != 0) {
+        HCCL_WARNING("call RaGetEidByIp failed, error code =%d.", ret);
+        return HCCL_E_INTERNAL;
+    }
+
+    if (num != ipV4AddrList.size()) {
+        HCCL_ERROR("call RaGetEidByIp failed, The number of ipInfoList and eidList is inconsistent, "
+                   "ipV4AddrList size =%d, eidList size =%d",
+            ipV4AddrList.size(),
+            num);
+        return HCCL_E_INTERNAL;
+    }
+
+    for (unsigned int i = 0; i < num; i++) {
+        IpAddress eidAddr = HccpEidToIpAddress(eidList[i]);
+        eidAddrList.push_back(eidAddr);
+    }
+    HCCL_INFO("[HrtRaGetEidByIp] success, eidAddrList size=%u", eidAddrList.size());
+    return HCCL_SUCCESS;
+}
+
+HcclResult WaitRequestResult(void* raReqHandle, RequestHandle& reqHandle)
+{
+    reqHandle = reinterpret_cast<RequestHandle>(raReqHandle);
+    auto startTime = std::chrono::steady_clock::now();
+    constexpr uint32_t pollTimeoutMs     = 10000; // 轮询超时时间
+    auto waitPollTimeOutMs = std::chrono::milliseconds(pollTimeoutMs);
+    while (true) {
+        if ((std::chrono::steady_clock::now() - startTime) >= waitPollTimeOutMs) {
+            HCCL_ERROR("[WaitRequestResult] poll timeout.");
+            return HCCL_E_TIMEOUT;  // 超时报错
+        }
+
+        ReqHandleResult result;
+        TRY_CATCH_RETURN(result = HrtRaGetAsyncReqResult(reqHandle));
+    
+        // 结果判断
+        if (result == ReqHandleResult::NOT_COMPLETED) {
+            continue;
+        } else if (result == ReqHandleResult::COMPLETED) {
+            break;
+        } else {
+            HCCL_ERROR("[WaitRequestResult] failed, result[%s] is unexpected.", result.Describe().c_str());
+            return HCCL_E_INTERNAL;
+        }
+    }
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtRaSetTpAttrAsync(RdmaHandle handle, uint64_t tpHandle, uint32_t attrBitmap, TpAttr& attr, RequestHandle& reqHandle)
+{
+    HCCL_INFO("[HrtRaSetTpAttrAsync] begain, reqHandle[%llu]", reqHandle);
+    void *raReqHandle = nullptr;
+    s32 ret = RaSetTpAttrAsync(handle, tpHandle, attrBitmap, &attr, &raReqHandle);
+    if (ret != 0) {
+        string msg = StringFormat("call RaSetTpAttrAsync failed, error code =%d.", ret);
+        THROW<NetworkApiException>(msg);
+    }
+
+    CHK_RET(WaitRequestResult(raReqHandle, reqHandle));
+    HCCL_INFO("[HrtRaSetTpAttrAsync] success, reqHandle[%llu]", reqHandle);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtRaGetTpAttrAsync(RdmaHandle handle, uint64_t tpHandle, uint32_t& attrBitmap, TpAttr& attr, RequestHandle& reqHandle)
+{
+    HCCL_INFO("[HrtRaGetTpAttrAsync] begain, reqHandle[%llu]", reqHandle);
+    void *raReqHandle = nullptr;
+    s32 ret = RaGetTpAttrAsync(handle, tpHandle, &attrBitmap, &attr, &raReqHandle);
+    if (ret != 0) {
+        string msg = StringFormat("call RaGetTpAttrAsync failed, error code =%d.", ret);
+        THROW<NetworkApiException>(msg);
+    }
+
+    CHK_RET(WaitRequestResult(raReqHandle, reqHandle));
+    HCCL_INFO("[HrtRaGetTpAttrAsync] success, reqHandle[%llu]", reqHandle);
+    return HCCL_SUCCESS;
+}
+
 } // namespace Hccl

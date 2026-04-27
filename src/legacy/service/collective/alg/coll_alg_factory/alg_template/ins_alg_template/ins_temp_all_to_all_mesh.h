@@ -18,7 +18,7 @@
 
 namespace Hccl {
 
-const uint32_t ALLTOALLV_DIRECT_FULLMESH_CONCURRENT_SIZE =  8; // fullmesh最大的并发数量
+const uint32_t ALLTOALLV_DIRECT_FULLMESH_CONCURRENT_SIZE =  16; // fullmesh最大的并发数量
 
 class InsTempAlltoAllMesh : public InsAlgTemplateBase {
 public:
@@ -63,14 +63,16 @@ private :
 
     HcclResult CopySendDataToScratch(u32 step, const std::vector<u32> &commRanks,
                                      std::unordered_map<u32, UsrData> &sendSliceInfo,
+                                     const ResLinks &tempLinks,
                                      std::vector<InsQuePtr>                 &queues) const;
-
+    
     HcclResult SendRecvData(u32 step, const std::vector<u32> &commRanks,
                             std::unordered_map<u32, UsrData> &sendSliceInfo, std::unordered_map<u32, UsrData> &readSliceInfo,
                             const ResLinks &tempLinks, std::vector<InsQuePtr> &queues) const;
 
     HcclResult CopyRecvDataFromScratch(u32 step, const std::vector<u32> &commRanks,
                                        std::unordered_map<u32, UsrData> &readSliceInfo,
+                                       const ResLinks &tempLinks,
                                        std::vector<InsQuePtr>                 &queues) const;
 
     HcclResult LocalDataCopy(InsQuePtr tempInsQue);
@@ -83,6 +85,7 @@ private :
     u64 buffBlockSize_ = 0;
     A2ASendRecvInfo localSendRecvInfo_;
     BuffInfo buffInfo_;
+    u32 maxPathNum = 0;
 };
 
 } // namespace Hccl

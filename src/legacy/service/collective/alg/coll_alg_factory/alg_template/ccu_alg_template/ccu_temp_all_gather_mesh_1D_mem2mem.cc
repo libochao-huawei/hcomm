@@ -96,6 +96,9 @@ HcclResult CcuTempAllGatherMeshMem2Mem1D::Run(const TempFuncs &tempFuncs, const 
                                               const BuffInfo &buffInfo, const ResLinks &tempLinks,
                                               std::vector<InsQuePtr> &tempInsQues)
 {
+    CHK_PRT_RET(tempInsQues.empty(),
+        HCCL_ERROR("[CcuTempAllGatherMeshMem2Mem1D] empty queue"), HcclResult::HCCL_E_INTERNAL);
+    CHK_PTR_NULL(tempInsQues[0]);
     opMode_ = tempFuncs.opMode;
     buffInfo_ = buffInfo;
 

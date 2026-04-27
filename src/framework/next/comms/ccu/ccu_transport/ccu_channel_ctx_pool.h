@@ -30,6 +30,7 @@ public:
     HcclResult PrepareCreate(const std::vector<Hccl::LinkData> &links);
     using CcuChannelCtx = std::pair<CcuChannelInfo, std::vector<CcuJetty *>>;
     HcclResult GetChannelCtx(const Hccl::LinkData &link, CcuChannelCtx &channelCtx) const;
+    HcclResult GetCcuChannelCtxById(const std::pair<uint8_t, uint32_t> &key, CcuChannelCtx& ctx);
 
 private:
     struct ResIdHash {

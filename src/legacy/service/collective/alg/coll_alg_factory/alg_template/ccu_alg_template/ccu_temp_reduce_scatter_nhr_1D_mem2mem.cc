@@ -76,6 +76,9 @@ HcclResult CcuTempReduceScatterNHR1DMem2Mem::GenExtIns(const TempFuncs &tempFunc
                                                        const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues)
 {
     HCCL_INFO("[CcuTempReduceScatterNHRMem2Mem1D] Template Run start.");
+    CHK_PRT_RET(tempInsQues.empty(),
+        HCCL_ERROR("[CcuTempReduceScatterNHRMem2Mem1D] empty queue"), HcclResult::HCCL_E_INTERNAL);
+    CHK_PTR_NULL(tempInsQues[0]);
     uint64_t isBottom = tempFuncs.isBottom;
     opMode_ = tempFuncs.opMode;
     std::vector<uint64_t> dimSize;

@@ -108,8 +108,15 @@
 #include "../../../legacy/framework/dfx/task_exception/task_exception_handler.h"
 #include "../../../legacy/unified_platform/external_system/orion_adapter_hccp.h"
 #include "../../../legacy/include/hccl_communicator.h"
+#include "../../../legacy/unified_platform/ccu/ccu_microcode/ccu_assist.h"
 #include "acl/acl_rt.h"
 
+#include "p2p_transport.h"
+#include "dev_capability.h"
+#include "p2p_connection.h"
+#include "rts_cnt_notify.h"
+#include "rts_1ton_cnt_notify.h"
+#include "ipc_local_notify.h"
 
 namespace Hccl {
 
@@ -146,7 +153,25 @@ std::pair<TokenIdHandle, uint32_t> RdmaHandleManager::GetTokenIdInfo(RdmaHandle 
 {
     return {0x12345678, 12345678};
 }
- 
+
+bool RdmaHandleManager::GetRtpEnable(RdmaHandle rdmaHandle)
+{
+    return true;
+}
+
+HcclResult RdmaHandleManager::GetEidByIpv4Addr(const IpAddress& addr, IpAddress& eidAddr)
+{
+    Hccl::IpAddress ip("0000:0000:0000:0000:0000:0000:c0a8:0367", AF_INET6);
+    eidAddr = ip;
+    return HCCL_SUCCESS;
+}
+
+void RdmaHandleManager::UboeIpv4ToEid(const IpAddress& ipV4Address, IpAddress& eidAddress, u32 devPhyId)
+{
+    Hccl::IpAddress ip("0000:0000:0000:0000:0000:0000:c0a8:0367", AF_INET6);
+    eidAddress = ip;
+}
+
 SocketStatus Socket::GetAsyncStatus()
 {
     return SocketStatus::OK;
@@ -400,6 +425,24 @@ bool Socket::Recv(void *recvBuf, u32 size) const
     return true;
 }
 
+RtsqBase::RtsqBase(u32 devPhyId, u32 streamId, u32 sqId) : devPhyId_(devPhyId), streamId_(streamId), sqId_(sqId)
+{
+}
+void RtsqBase::Reset() {}
+
+StreamLite::StreamLite(u32 id, u32 sqIds, u32 phyId, u32 cqIds)
+    : id(id), sqId(sqIds), devPhyId(phyId), cqId(cqIds)
+{
+    rtsq = std::make_unique<RtsqBase>(phyId, id, sqIds);
+}
+
+StreamLite::StreamLite(u32 id, u32 sqIds, u32 phyId, u32 cqIds, bool launchFlag)
+    : id(id), sqId(sqIds), devPhyId(phyId), cqId(cqIds)
+{
+    (void)launchFlag;
+    rtsq = std::make_unique<RtsqBase>(phyId, id, sqIds);
+}
+
 u32 StreamLite::GetId() const
 {
     return 2;
@@ -416,18 +459,16 @@ u32 StreamLite::GetDevPhyId() const
 {
     return 2;
 }
-RtsqBase::RtsqBase(u32 devPhyId, u32 streamId, u32 sqId) : devPhyId_(devPhyId), streamId_(streamId), sqId_(sqId)
-{
-}
-void RtsqBase::Reset() {
 
-}
 RtsqBase *StreamLite::GetRtsq() const
 {
-    RtsqBase *rtSq = new RtsqBase(1, 2, 3);
-    return rtSq;
+    return rtsq.get();
 }
 
+u32 GetKernelExecTimeoutFromEnvConfig()
+{
+    return 0;
+}
 
 
 
@@ -523,20 +564,28 @@ std::vector<char> AicpuResPackageHelper::GetPackedData(
 
 
 DevUbConnection::DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
-    const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode)
+    const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode, const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr)
     : RmaConnection(nullptr, RmaConnType::UB), rdmaHandle(rdmaHandle), locAddr(locAddr), rmtAddr(rmtAddr),
-      opMode(opMode), jfcMode(jfcMode), rmtEid(rmtAddr.GetReverseEid())
+      opMode(opMode), jfcMode(jfcMode), locIpv4Addr(locIpv4Addr), rmtIpv4Addr(rmtIpv4Addr), rmtEid(rmtAddr.GetReverseEid())
 {}
 
 DevUbTpConnection::DevUbTpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
-    const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode)
-    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode)
+    const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode, const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr)
+    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode, locIpv4Addr, rmtIpv4Addr)
 {}
 
 DevUbCtpConnection::DevUbCtpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
-    const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode)
-    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode)
+    const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode, const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr)
+    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode, locIpv4Addr, rmtIpv4Addr)
 {}
+
+DevUbUboeConnection::DevUbUboeConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
+                                         const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode,
+                                         const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr)
+    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode, locIpv4Addr, rmtIpv4Addr)
+{
+    tpProtocol = TpProtocol::UBOE;
+}
 
 std::vector<char> DevUbConnection::GetUniqueId() const
 {
@@ -924,15 +973,15 @@ void UbLocalNotify::ReleaseResource() const
 UbLocalNotify::~UbLocalNotify()
 {}
 
-RtsNotify::RtsNotify(bool devUsed)
-{}
-RtsNotify::~RtsNotify()
-{}
+// RtsNotify::RtsNotify(bool devUsed)
+// {}
+// RtsNotify::~RtsNotify()
+// {}
 
 UbMemTransport::UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, const LinkData &linkData,
-    const Socket &socket, RdmaHandle rdmaHandle1, LocCntNotifyRes &locCntNotifyRes1)
+    const Socket &socket, RdmaHandle rdmaHandle1, LocCntNotifyRes &locCntNotifyRes1, bool isRecvFirst)
     : BaseMemTransport(commonLocRes, attr, linkData, socket, TransportType::UB), rdmaHandle(rdmaHandle1),
-      locCntNotifyRes(locCntNotifyRes1)
+      locCntNotifyRes(locCntNotifyRes1), isRecvFirst_(isRecvFirst)
 {}
 
 UbMemTransport::UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, const LinkData &linkData,
@@ -942,7 +991,8 @@ UbMemTransport::UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, co
       locCntNotifyRes(locCntNotifyRes1)
 {}
 
-HcclResult UbMemTransport::FillTagVec()
+HcclResult UbMemTransport::FillTagVec(std::vector<LocalRmaBuffer *> &bufferVec,
+        std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &localUserMemTag)
 {
     return HCCL_SUCCESS;
 }
@@ -1039,7 +1089,8 @@ bool UbMemTransport::RecvDataProcess()
     return ConnVecUnpackProc(binaryStream);
 }
 
-void UbMemTransport::BufferVecPack(BinaryStream &binaryStream)
+void UbMemTransport::BufferVecPack(BinaryStream &binaryStream, std::vector<LocalRmaBuffer *> &bufferVec,
+        std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &localUserMemTag)
 {}
 
 void UbMemTransport::CntNotifyVecPack(BinaryStream &binaryStream)
@@ -1137,6 +1188,16 @@ HcclResult UbMemTransport::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, c
 }
 
 HcclResult UbMemTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult UbMemTransport::CheckSocketStatus()
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult UbMemTransport::UpdateMemInfo(std::vector<LocalRmaBuffer *> &bufferVecTemp)
 {
     return HCCL_SUCCESS;
 }
@@ -1481,6 +1542,12 @@ u32 GlobalMirrorTasks::DevSize() const
     return 0;
 }
 
+TaskInfoQueue &GlobalMirrorTasks::CreateQueue(u32 devId, u32 streamId, QueueType type)
+{
+    static CircularQueue<std::shared_ptr<TaskInfo>> queue(MAX_CIRCULAR_QUEUE_LENGTH);
+    return queue;
+}
+
 TaskInfoQueue *GlobalMirrorTasks::GetQueue(u32 devId, u32 streamId) const
 {
     static CircularQueue<std::shared_ptr<TaskInfo>> queue(MAX_CIRCULAR_QUEUE_LENGTH);
@@ -1493,12 +1560,28 @@ void GlobalMirrorTasks::DestroyQueue(u32 devId, u32 streamId)
    
 }
 
+TaskInfoQueueMap::iterator GlobalMirrorTasks::Begin(u32 devId)
+{
+    static TaskInfoQueueMap map;
+    return map.begin();
+}
+
+TaskInfoQueueMap::iterator GlobalMirrorTasks::End(u32 devId)
+{
+    static TaskInfoQueueMap map;
+    return map.end();
+}
+
 std::shared_ptr<TaskInfo> GlobalMirrorTasks::GetTaskInfo(u32 devId, u32 streamId, u32 taskId) const
 {
 
     return nullptr;
 }
 
+HcclResult GlobalMirrorTasks::FindTaskInfo(u32 devId, u32 streamId, u32 taskId, std::shared_ptr<TaskInfo> &curTask) const
+{
+    return HCCL_E_NOT_FOUND;
+}
 
 MirrorTaskManager::MirrorTaskManager(u32 devId, GlobalMirrorTasks *globalMirrorTasks, bool devUsed)
     : devId_(devId), globalMirrorTasks_(globalMirrorTasks), devUsed_(devUsed)
@@ -1557,6 +1640,49 @@ MirrorTaskManager::~MirrorTaskManager()
 {
 }
 
+MirrorTaskManagerLite::MirrorTaskManagerLite()
+{
+    
+}
+
+void MirrorTaskManagerLite::RegFullyCallBack(std::function<void(const std::string&, u32)> callBack)
+{
+   
+}
+
+void MirrorTaskManagerLite::RegFullyCallBack(std::function<void()> callBack)
+{
+    
+}
+
+void MirrorTaskManagerLite::AddTaskInfo(std::shared_ptr<TaskInfo> taskInfo)
+{
+    
+}
+
+bool MirrorTaskManagerLite::IsStaticGraphMode(const CollOperator &collOperator) const
+{
+    return false;
+}
+
+void MirrorTaskManagerLite::SetCurrDfxOpInfo(std::shared_ptr<DfxOpInfo> dfxOpInfo)
+{
+   
+}
+
+std::shared_ptr<DfxOpInfo> MirrorTaskManagerLite::GetCurrDfxOpInfo() const
+{
+   return nullptr;
+}
+
+TaskInfoQueue *MirrorTaskManagerLite::GetQueue(u32 streamId) const
+{
+   
+}
+
+MirrorTaskManagerLite::~MirrorTaskManagerLite()
+{
+}
 ProfilingHandler::ProfilingHandler()
 {
     
@@ -1943,8 +2069,8 @@ void ProfilingReporter::CallReportMc2CommInfo(const u32 kfcStreamId,
 
 std::array<ProfilingReporter::lastPosesMap, 65> ProfilingReporter::allLastPoses_{};
 
-ProfilingReporterLite::ProfilingReporterLite(MirrorTaskManager *mirrorTaskMgr, ProfilingHandlerLite *profilingHandlerLite, bool isIndop)
-    : mirrorTaskMgr_(mirrorTaskMgr), profilingHandlerLite_(profilingHandlerLite)
+ProfilingReporterLite::ProfilingReporterLite(MirrorTaskManagerLite *mirrorTaskMgrLite, ProfilingHandlerLite *profilingHandlerLite, bool isIndop)
+    : mirrorTaskMgrLite_(mirrorTaskMgrLite), profilingHandlerLite_(profilingHandlerLite)
 {}
 
 ProfilingReporterLite::~ProfilingReporterLite()
@@ -2063,6 +2189,344 @@ u32 Hccl::HcclCommunicator::GetRankInParentComm()
     return 0;
 }
 
+HcclResult CcuCleanTaskKillState(const int32_t deviceLogicId)
+{
+    return HCCL_SUCCESS;
+}
+
+uint16_t CcuRep::ParseRepeatNumFromParallelParam(uint64_t parallelParam)
+{
+    return 3;
+}
+
+HcclResult GetCcuErrorMsg(s32 deviceId, uint16_t status, const ParaCcu &ccuTaskParam, std::vector<CcuErrorInfo> &errorInfo)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult GetCcuJettys(s32 deviceLogicId, const ParaCcu& ccuTaskParam, std::vector<CcuJetty *>& ccuJettys)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult RaBatchQueryJettyStatus(const std::vector<JettyHandle> &jettyHandles, std::vector<JettyStatus> &jettyAttrs, u32 &num)
+{
+    return HCCL_SUCCESS;
+}
+void HrtGetTaskIdAndStreamID(u32 &taskId, u32 &streamId)
+{
+}
+
+HcclResult CcuCleanDieCkes(const int32_t deviceLogicId, const uint8_t dieId)
+{
+    return HCCL_SUCCESS;
+}
+
+std::string CollOpToString(const BaseCollOperator &collOp)
+{
+    return "collOp";
+}
+
+std::shared_ptr<TaskInfo>  MirrorTaskManagerLite::GetTaskInfo(u32 streamId, u32 taskId) const
+{
+    return nullptr;
+}
+
+HcclResult HcclCommunicator::SetAccelerator(HcclAccelerator hcclAccelerator, bool isCcuMsAvailable)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommunicator::SetAccelerator(int32_t accelerator, bool isCcuMsAvailable)
+{
+    return HCCL_SUCCESS;
+}
+
+}  // namespace Hccl
+
+namespace Hccl {
+class CommunicatorImplLite {
+public:
+    CommunicatorImplLite(u32 commId) : commId_(commId) {}
+    ~CommunicatorImplLite() {}
+private:
+    u32 commId_;
+};
+
+class CommunicatorImplLiteMgr {
+public:
+    CommunicatorImplLiteMgr();
+    ~CommunicatorImplLiteMgr();
+    static CommunicatorImplLiteMgr &GetInstance();
+    void DestroyComm(u32 commIdIndex);
+    CommunicatorImplLite *Get(const u32 commIdIndex);
+    std::vector<CommunicatorImplLite *> GetAll();
+    void SetEnvConfig(const HcclDeviceEnvConfigLite& envConfig) { envConfig_ = envConfig; }
+    const HcclDeviceEnvConfigLite& GetEnvConfig() { return envConfig_; }
+private:
+    std::unordered_map<u32, std::unique_ptr<CommunicatorImplLite>> communicatorImplLites;
+    std::mutex serialMutex;
+    HcclDeviceEnvConfigLite envConfig_;
+};
+
+CommunicatorImplLiteMgr::CommunicatorImplLiteMgr() {}
+CommunicatorImplLiteMgr::~CommunicatorImplLiteMgr() {}
+
+CommunicatorImplLiteMgr &CommunicatorImplLiteMgr::GetInstance()
+{
+    static CommunicatorImplLiteMgr instance;
+    return instance;
+}
+
+void CommunicatorImplLiteMgr::DestroyComm(u32 commIdIndex) {(void)commIdIndex;}
+
+CommunicatorImplLite *CommunicatorImplLiteMgr::Get(const u32 commIdIndex)
+{
+    (void)commIdIndex;
+    return nullptr;
+}
+
+std::vector<CommunicatorImplLite *> CommunicatorImplLiteMgr::GetAll()
+{
+    return {};
+}
+
+RtNotify_t HrtIpcOpenNotifyWithFlag(const char_t *name, uint32_t flags)
+{
+    return nullptr;
+}
+
+u32 HrtStreamGetCqId(const aclrtStream ptr)
+{
+    return 0;
+}
+
+void HrtNotifyDestroy(RtNotify_t ptr)
+{
+    return ;
+}
+
+s32 HrtGetStreamId(aclrtStream ptr)
+{
+    return 0;
+}
+
+aclrtStream HrtStreamCreateWithFlags(uint32_t priority, uint32_t flag)
+{
+    static aclrtStream stream;
+    return stream;
+}
+
+u32 HrtNotifyGetOffset(RtNotify_t ptr)
+{
+    return 0;
+}
+
+u32 HrtGetNotifyID(RtNotify_t notifyHandle)
+{
+    return 0;
+}
+
+s32 HrtDeviceGetBareTgid()
+{
+    return 0;
+}
+
+void HrtSetIpcNotifyPid(aclrtNotify notify, int32_t pid)
+{
+    return ;
+}
+
+void HrtStreamDestroy(aclrtStream ptr)
+{
+    return ;
+}
+
+void HrtIpcSetNotifyName(RtNotify_t ptr, char_t *name, uint32_t len)
+{
+    return ;
+}
+
+aclrtNotify HrtNotifyCreateWithFlag(u32 devId, u32 flag)
+{
+    static aclrtNotify notify;
+    return notify;
+}
+
+aclrtNotify HrtNotifyCreate(s32 deviceLogicId)
+{
+    static aclrtNotify notify;
+    return notify;
+}
+
+u64 HrtNotifyGetAddr(RtNotify_t notifyHandle)
+{
+    return 0;
+}
+
+RtNotify_t HrtIpcOpenNotify(const char_t *name)
+{
+    return nullptr;
+}
+
+u32 HrtStreamGetSqId(const aclrtStream ptr)
+{
+    return 0;
+}
+
+void HrtNotifyRecord(RtNotify_t notifyPtr, aclrtStream streamPtr)
+{
+    return ;
+}
+
+void HrtNotifyWaitWithTimeOut(RtNotify_t notifyPtr, aclrtStream streamPtr, uint32_t timeOut)
+{
+    return ;
+}
+
+P2PTransport::P2PTransport(CommonLocRes &commonLocRes, Attribution &attr, const LinkData &linkData,
+                           const Socket &socket)
+    : BaseMemTransport(commonLocRes, attr, linkData, socket, TransportType::P2P)
+{
+}
+
+HcclResult P2PTransport::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags)
+{
+    return HCCL_SUCCESS;
+}
+
+std::vector<char> P2PTransport::GetUniqueIdV2()
+{
+    return {};
+}
+
+std::string P2PTransport::Describe() const
+{
+    return "";
+}
+
+TransportStatus P2PTransport::GetStatus()
+{
+    return TransportStatus::READY;
+}
+
+std::vector<char> P2PTransport::GetUniqueId()
+{
+    return {};
+}
+
+void P2PTransport::Post(u32 index, const Stream &stream)
+{
+    return ;
+}
+
+void P2PTransport::Read(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice, const Stream &stream)
+{
+    return ;
+}
+
+void P2PTransport::ReadReduce(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice, const ReduceIn &reduceIn,
+                const Stream &stream)
+{
+    return ;
+}
+
+void P2PTransport::Write(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice, const Stream &stream)
+{
+    return ;
+}
+
+void P2PTransport::WriteReduce(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice, const ReduceIn &reduceIn,
+                    const Stream &stream)
+{
+    return ;
+}
+
+DevCapability::DevCapability()
+{
+}
+DevCapability &DevCapability::GetInstance()
+{
+    static DevCapability devCapability;
+    return devCapability;
+}
+
+P2PConnection::P2PConnection(Socket *socket, const std::string &tag)
+    : RmaConnection(socket, RmaConnType::P2P)
+{
+}
+
+void P2PConnection::Connect()
+{
+    return ;
+}
+RmaConnStatus P2PConnection::GetStatus()
+{
+    return RmaConnStatus::READY;
+}
+string P2PConnection::Describe() const
+{
+    return "";
+}
+
+unique_ptr<BaseTask> P2PConnection::PrepareRead(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
+                                    const SqeConfig &config)
+{
+    return nullptr;
+}
+
+unique_ptr<BaseTask> P2PConnection::PrepareReadReduce(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
+                                        DataType datatype, ReduceOp reduceOp, const SqeConfig &config)
+{
+    return nullptr;
+}
+
+unique_ptr<BaseTask> P2PConnection::PrepareWrite(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
+                                    const SqeConfig &config)
+{
+    return nullptr;
+}
+
+unique_ptr<BaseTask> P2PConnection::PrepareWriteReduce(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
+                                        DataType datatype, ReduceOp reduceOp, const SqeConfig &config)
+{
+    return nullptr;
+}
+
+std::string RtsCntNotify::Describe() const
+{
+    return "";
+}
+
+std::string Rts1ToNCntNotify::Describe() const
+{
+    return "";
+}
+
+IpcLocalNotify::IpcLocalNotify(bool devUsed) : BaseLocalNotify(RmaType::IPC, devUsed)
+{
+}
+
+void IpcLocalNotify::Wait(const Stream &stream, u32 timeout) const
+{
+    return ;
+}
+
+void IpcLocalNotify::Post(const Stream &stream) const
+{
+    return ;
+}
+
+std::unique_ptr<Serializable> IpcLocalNotify::GetExchangeDto()
+{
+    return nullptr;
+}
+
+string IpcLocalNotify::Describe() const
+{
+    return "";
+}
+
 }  // namespace Hccl
 
 HcclResult HcclCommDestroyV2(HcclComm comm)
@@ -2071,6 +2535,21 @@ HcclResult HcclCommDestroyV2(HcclComm comm)
 }
 
 HcclResult HcommFlushV2()
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclGetCommNameV2(HcclComm commHandle, char *commName)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclGetCclBuffer(HcclComm comm, uintptr_t &cclBufferAddr, size_t &cclBufferSize, HcclMemType &cclBufferMemType)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclGetRankGraphV2(HcclComm *comm, void **rankGraph)
 {
     return HCCL_SUCCESS;
 }

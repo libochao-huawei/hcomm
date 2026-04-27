@@ -19,14 +19,15 @@
 #include "local_notify.h"
 #include "aicpu_init_param.h"
 
-constexpr uint32_t THREAD_UNIQUE_ID_MAX_SIZE = 1024;
-constexpr uint32_t NOTIFY_UNIQUE_ID_MAX_SIZE = THREAD_UNIQUE_ID_MAX_SIZE * LOCAL_NOTIFY_MAX_NUM;
-constexpr uint32_t NOTIFY_DEVCIE_ID_MAX_SIZE = 21  * LOCAL_NOTIFY_MAX_NUM;
+constexpr uint32_t THREAD_UNIQUE_ID_MAX_SIZE = 6000;
+constexpr uint32_t NOTIFY_UNIQUE_ID_MAX_SIZE = THREAD_UNIQUE_ID_MAX_SIZE * hccl::HCCL_THREAD_NOTIFY_MAX_NUM;
+constexpr uint32_t NOTIFY_DEVICE_ID_MAX_SIZE = 21  * hccl::HCCL_THREAD_NOTIFY_MAX_NUM;
 constexpr uint32_t NAME_SIZE = 64;
+constexpr uint32_t SIGNAL_DEV_STREAM_MAX_NUM = 200;
 struct ThreadMgrAicpuParam {
     u32 threadNum;
     char hcomId[HCOMID_MAX_SIZE];
-    char threadParam[LOCAL_STREAM_MAX_NUM][THREAD_UNIQUE_ID_MAX_SIZE]; // 含序列化后thread信息，约40KB
+    char threadParam[SIGNAL_DEV_STREAM_MAX_NUM][THREAD_UNIQUE_ID_MAX_SIZE]; // 含序列化后thread信息，约40KB
     void* deviceHandle;
     u32 rsv1;
     s32 deviceLogicId{-1}; // 基础通信使用
@@ -65,11 +66,14 @@ struct ThreadKernelLaunchConfig {
     bool needDeviceInfo;            // 是否需要设备信息
     uint32_t timeoutSec;            // 超时时间（秒）
     bool needProfiling;             // 是否需要性能分析
+    bool isSupplementNotify;        // 是否是补充notify kernel
 
     ThreadKernelLaunchConfig(const std::string &cid, aclrtBinHandle binHandle,
-                             const std::string &name, bool needDev, uint32_t timeout, bool profiling)
+                             const std::string &name, bool needDev, uint32_t timeout, bool profiling,
+                            bool isSupplementNotify)
         : commId(cid), binHandle(binHandle), kernelName(name),
-          needDeviceInfo(needDev), timeoutSec(timeout), needProfiling(profiling) {}
+          needDeviceInfo(needDev), timeoutSec(timeout), needProfiling(profiling),
+          isSupplementNotify(isSupplementNotify) {}
 };
 
 class AicpuLaunchMgr {
@@ -84,14 +88,15 @@ public:
         const std::string &commId, std::unique_ptr<ThreadHandle[]> &aicpuHandle, aclrtBinHandle binHandle);
     static HcclResult ThreadKernelLaunchForBase(std::vector<std::shared_ptr<Thread>> &newThreads,
         std::unique_ptr<ThreadHandle[]> &aicpuHandle, aclrtBinHandle binHandle);
+    static HcclResult SupplementNotifyKernelLaunch(std::vector<std::shared_ptr<Thread>> &newThreads,
+        const std::string &commId, std::unique_ptr<ThreadHandle[]> &aicpuHandle, aclrtBinHandle binHandle);
     static HcclResult ThreadKernelLaunchDestroy(ThreadHandle *threadHandles, uint32_t listNum, 
         aclrtBinHandle binHandle);
     static HcclResult NotifyKernelLaunchAlloc(std::vector<std::unique_ptr<LocalNotify>> &newNotifys,
         const std::string &commId, std::unique_ptr<NotifyHandle[]> &hostHandle, aclrtBinHandle binCustomHandle);
     static HcclResult NotifyKernelLaunchFree(std::vector<NotifyHandle> &aicpuNotifys, uint32_t notifyNum,
         const std::string &commId, aclrtBinHandle binCustomHandle);
-    template <typename OpParam>
-    static HcclResult KernelLaunchAicpuCustom(OpParam &opParam, std::string kernelName, rtStream_t aicpuInitStream,
+    static HcclResult KernelLaunchAicpuCustom(uint64_t context, std::string kernelName, rtStream_t aicpuInitStream,
         aclrtBinHandle binCustomHandle);
 private:
     HcclResult AiCpuStreamAllocAndGet(rtStream_t &aiCpuStream);

@@ -127,6 +127,11 @@ HcclResult InsV2ReduceScatterSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchest
     dataSize_ = dataCount_ * dataSizePerVolume;
     std::shared_ptr<InsAlgTemplate> algTemplate = nullptr;
     CHK_RET(CreateTemplates(algTemplate));
+    
+    std::map<u32, u32>rank2PathNumMap;
+    CHK_RET(SetPathNumMapByLinkMgrMultiLevel(linkMgr, virtRanks_, myRank_, rank2PathNumMap));
+    algTemplate->setPathNumMap(rank2PathNumMap);
+
     AlgTempResReq tempResReq;
     if (enableDetour_) {
         CHK_RET(algTemplate->CalcResDetour(linkMgr, tempResReq));
@@ -157,7 +162,8 @@ HcclResult InsV2ReduceScatterSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchest
     u32 templateScratchMultiplier =
         algTemplate->CalcScratchMultiple(tempAlgParams.buffInfo.inBuffType, tempAlgParams.buffInfo.outBuffType);
     if (templateScratchMultiplier != 0) {
-        u64 scratchBoundDataSize = maxTmpMemSize_ / templateScratchMultiplier;
+        // reduce 时 保障scratch上偏移按照dataTypeSize_对齐
+        u64 scratchBoundDataSize = (maxTmpMemSize_ / templateScratchMultiplier) / dataTypeSize_ * dataTypeSize_;
         maxDataSizePerLoop = min(transportBoundDataSize, scratchBoundDataSize);
     } else {
         maxDataSizePerLoop = transportBoundDataSize;
@@ -221,6 +227,12 @@ HcclResult InsV2ReduceScatterSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalcRes
     algResReq.topoInfo.UpdateSingleLevelTopo(virtRanks_, virtRankMap_, vTopo_);
 
     InsAlgTemplate tempAlg(myRank_, rankSize_, vTopo_, virtRankMap_);
+    
+    // 通过判断哪层通信域能有到所有remoteRank的path，判断当前算法跑在哪一层    
+    std::map<u32, u32>rank2PathNumMap;
+    HCCL_INFO("[InsV2ReduceScatterSoleExecutor] CalcRes SetPathNumMap");
+    CHK_RET(SetPathNumMapByRankGraphMultiLevel(rankGraph, virtRanks_, myRank_, rank2PathNumMap));
+    tempAlg.setPathNumMap(rank2PathNumMap);  
 
     AlgTempResReq tempResReq;
     if (enableDetour_) {
@@ -252,6 +264,12 @@ HcclResult InsV2ReduceScatterSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalcRes
 
     std::shared_ptr<InsAlgTemplate> algTemplate = nullptr;
     CHK_RET(CreateTemplates(algTemplate));
+
+    // 通过判断哪层通信域能有到所有remoteRank的path，判断当前算法跑在哪一层    
+    std::map<u32, u32>rank2PathNumMap;
+    HCCL_INFO("[InsV2ReduceScatterSoleExecutor] CalcResOffload SetPathNumMap");
+    CHK_RET(SetPathNumMapByRankGraphMultiLevel(rankGraph, virtRanks_, myRank_, rank2PathNumMap));
+    algTemplate->setPathNumMap(rank2PathNumMap);  
 
     AlgTempResReq tempResReq;
     if (enableDetour_) {

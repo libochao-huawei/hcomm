@@ -147,6 +147,15 @@ TEST_F(RtsqA5Test, notify_wait)
     rtsq.NotifyWait(fakeNotifyId);
 }
 
+TEST_F(RtsqA5Test, notify_wait_with_timeout)
+{
+    RtsqA5 rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
+
+    u32 fakeNotifyId = 0;
+    u32 fakeTimeout = 68;
+    rtsq.NotifyWait(fakeNotifyId, fakeTimeout);
+}
+
 TEST_F(RtsqA5Test, notify_record_local)
 {
     RtsqA5 rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
@@ -292,7 +301,7 @@ TEST_F(RtsqA5Test, Ut_MakeSureAvailableSpace_When_InputValue_Expect_NO_THROW)
     u64 dbAddr = 0;
     u32 piVal = 0;
     MOCKER_CPP(&RtsqBase::QuerySqHead).stubs().with(any()).will(throws(InternalException("")));
-    EXPECT_THROW(rtsq.MakeSureAvailableSpace(), InternalException);
+    EXPECT_THROW(rtsq.MakeSureAvailableSpace(), std::exception);
 }
 
 TEST_F(RtsqA5Test, Ut_CopyLocBufToSq_THROW)

@@ -651,7 +651,7 @@ HcclResult HrtRaGetNotifyMrInfo(u32 phyId, RdmaHandle handle, struct MrInfoT *mr
     auto timeout = chrono::seconds(GetExternalInputHcclLinkTimeOut());
     while (true) {
         ret = DlRaFunction::GetInstance().dlRaGetNotifyMrInfo(handle, mrInfo);
-        if(!ret) {
+        if (!ret) {
             break;  // 成功跳出
         } else if (ret == ROCE_EAGAIN) {
             bool bTimeout = ((chrono::steady_clock::now() - startTime) >= timeout);
@@ -1362,6 +1362,7 @@ HcclResult hrtRaSocketNonBlockSendHeart(const FdHandle fdHandle, const void *dat
 
 HcclResult hrtRaSocketBlockSend(const FdHandle fdHandle, const void *data, u64 sendSize, std::function<bool()> needStop)
 {
+    CHK_PTR_NULL(data);
     if (sendSize > SOCKET_SEND_MAX_SIZE) {
         HCCL_ERROR("[Send][RaSocket]errNo[0x%016llx] ra socket send size is too large, " \
             "data[%p], size[%llu Byte]", HCCL_ERROR_CODE(HCCL_E_NETWORK), data, sendSize);
@@ -1538,6 +1539,7 @@ HcclResult IsSupportHdcAsync(bool &isSupportHdcAsync)
 s32 hrtRaSocketSendAsync(const FdHandle fdHandle, const void *data, u64 size, u64 *sentSize, void **reqHandle)
 {
     if (DlRaFunction::GetInstance().dlRaSocketSendAsync == nullptr) {
+        HCCL_WARNING("this package does not support hrtRaSocketSendAsync, please change new package");
         return OTHERS_ENOTSUPP;
     }
     return DlRaFunction::GetInstance().dlRaSocketSendAsync(fdHandle, data, size, sentSize, reqHandle);
@@ -1546,6 +1548,7 @@ s32 hrtRaSocketSendAsync(const FdHandle fdHandle, const void *data, u64 size, u6
 s32 hrtRaSocketRecvAsync(const FdHandle fdHandle, void *data, u64 size, u64 *receivedSize, void **reqHandle)
 {
     if (DlRaFunction::GetInstance().dlRaSocketRecvAsync == nullptr) {
+        HCCL_WARNING("this package does not support hrtRaSocketRecvAsync, please change new package");
         return OTHERS_ENOTSUPP;
     }
     return DlRaFunction::GetInstance().dlRaSocketRecvAsync(fdHandle, data, size, receivedSize, reqHandle);
@@ -1554,6 +1557,7 @@ s32 hrtRaSocketRecvAsync(const FdHandle fdHandle, void *data, u64 size, u64 *rec
 s32 hrtRaSocketGetAsyncReqResult(void *reqHandle, s32 *reqResult)
 {
     if (DlRaFunction::GetInstance().dlRaGetAsyncReqResult == nullptr) {
+        HCCL_WARNING("this package does not support hrtRaSocketGetAsyncReqResult, please change new package");
         return OTHERS_ENOTSUPP;
     }
     return DlRaFunction::GetInstance().dlRaGetAsyncReqResult(reqHandle, reqResult);
@@ -1694,8 +1698,10 @@ HcclResult hrtGetIfNum(struct RaGetIfattr &config, u32 &num)
     }
 
     s32 ret = DlRaFunction::GetInstance().dlRaGetIfNum(&config, &num);
-    CHK_PRT_RET(ret != 0, HCCL_ERROR("[Get][IfNum]errNo[0x%016llx] ra get if num fail. ret[%d], num[%u]", \
-        HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), ret, num), HCCL_E_TCP_CONNECT);
+    constexpr s32 MAX_SUPPORT_IFNUM = 65536;
+    CHK_PRT_RET((ret != 0 || num > MAX_SUPPORT_IFNUM), HCCL_ERROR("[Get][IfNum]errNo[0x%016llx] ra get if num fail."
+        " ret[%d], num[%u] should be less than [%u]", \
+        HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), ret, num, MAX_SUPPORT_IFNUM), HCCL_E_TCP_CONNECT);
     return HCCL_SUCCESS;
 #else
     HCCL_ERROR("[hrtGetIfNum]Does not support this interface.");
@@ -2036,11 +2042,26 @@ HcclResult CreateQp(RdmaHandle rdmaHandle, int& flag, s32& qpMode, QpInfo& qp, b
     }
 
     // Hdc模式下HCCP不支持hrtRaGetQpContext接口
-    CHK_RET(SetQpAttrQos(qp.qpHandle, qp.trafficClass, qp.serviceLevel));
+    HcclResult ret = SetQpAttrQos(qp.qpHandle, qp.trafficClass, qp.serviceLevel);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[CreateQp] SetQpAttrQos fail, ret[%d], destroy QP", ret);
+        HrtRaQpDestroy(qp.qpHandle);
+        return ret;
+    }
     // 配置RDMA Timeout时间
-    CHK_RET(SetQpAttrTimeOut(qp.qpHandle));
+    ret = SetQpAttrTimeOut(qp.qpHandle);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[CreateQp] SetQpAttrTimeOut fail, ret[%d], destroy QP", ret);
+        HrtRaQpDestroy(qp.qpHandle);
+        return ret;
+    }
     // 配置RDMA Retry Cnt重传次数
-    CHK_RET(SetQpAttrRetryCnt(qp.qpHandle));
+    ret = SetQpAttrRetryCnt(qp.qpHandle);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[CreateQp] SetQpAttrRetryCnt fail, ret[%d], destroy QP", ret);
+        HrtRaQpDestroy(qp.qpHandle);
+        return ret;
+    }
 
     return HCCL_SUCCESS;
 }
@@ -2060,11 +2081,26 @@ HcclResult CreateNormalQp(RdmaHandle rdmaHandle, QpInfo& qp)
     ibQpAttr.cap.max_recv_wr = (qp.srq == nullptr ? qp.attr.maxWr : 0);
     ibQpAttr.cap.max_recv_sge = (qp.srq == nullptr ? qp.attr.maxRecvSge : 0);
     CHK_RET(hrtRaNormalQpCreate(rdmaHandle, &ibQpAttr, qp.qpHandle, qp.qp));
-    CHK_RET(SetQpAttrQos(qp.qpHandle, qp.trafficClass, qp.serviceLevel));
+    HcclResult ret = SetQpAttrQos(qp.qpHandle, qp.trafficClass, qp.serviceLevel);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[CreateNormalQp] SetQpAttrQos fail, ret[%d], destroy QP", ret);
+        HrtRaQpDestroy(qp.qpHandle);
+        return ret;
+    }
     // 配置RDMA Timeout时间
-    CHK_RET(SetQpAttrTimeOut(qp.qpHandle));
+    ret = SetQpAttrTimeOut(qp.qpHandle);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[CreateNormalQp] SetQpAttrTimeOut fail, ret[%d], destroy QP", ret);
+        HrtRaQpDestroy(qp.qpHandle);
+        return ret;
+    }
     // 配置RDMA Retry Cnt重传次数
-    CHK_RET(SetQpAttrRetryCnt(qp.qpHandle));
+    ret = SetQpAttrRetryCnt(qp.qpHandle);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[CreateNormalQp] SetQpAttrRetryCnt fail, ret[%d], destroy QP", ret);
+        HrtRaQpDestroy(qp.qpHandle);
+        return ret;
+    }
 
     return HCCL_SUCCESS;
 }
@@ -2090,7 +2126,12 @@ HcclResult CreateCqAndQp(RdmaHandle &rdmaHandle, string &label, QpConfig &config
         CHK_RET(CreateCq(rdmaHandle, cq));
         QpInfo qp(config, rdmaHandle, nullptr, nullptr, cq.context, cq.sq, cq.rq, info.srq,
             info.srqCq, info.srqContext);
-        CHK_RET(CreateNormalQp(rdmaHandle, qp));
+        HcclResult ret = CreateNormalQp(rdmaHandle, qp);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[CreateCqAndQp] CreateNormalQp fail, ret[%d], destroy CQ", ret);
+            DestroyCq(rdmaHandle, cq);
+            return ret;
+        }
 
         cq.used += qp.attr.maxWr;
         cq.qps.push_back(qp);
@@ -2190,7 +2231,12 @@ HcclResult CreateQpWithCq(RdmaHandle rdmaHandle, s32 sqEvent, s32 rqEvent,
         info.sendCq = qp.sendCq;
         info.recvCq = qp.recvCq;
     } else {
-        CHK_RET(CreateNormalQp(rdmaHandle, qp));
+        HcclResult ret = CreateNormalQp(rdmaHandle, qp);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[CreateQpWithCq] CreateNormalQp fail, ret[%d], destroy CQ", ret);
+            DestroyCq(rdmaHandle, cq);
+            return ret;
+        }
         info = qp;
     }
     return HCCL_SUCCESS;
@@ -2230,12 +2276,31 @@ HcclResult CreateAiQp(RdmaHandle rdmaHandle, struct AiQpInfo &aiQpInfo, QpInfo &
 
     CHK_RET(hrtRaAiQpCreate(devicePhyId, rdmaHandle, &attrs, &aiQpInfo, info.qpHandle));
 
-    CHK_RET(SetQpAttrQos(info.qpHandle, info.trafficClass, info.serviceLevel));
-    CHK_RET(SetQpAttrTimeOut(info.qpHandle));
-    CHK_RET(SetQpAttrRetryCnt(info.qpHandle));
+    HcclResult ret = SetQpAttrQos(info.qpHandle, info.trafficClass, info.serviceLevel);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[CreateAiQp] SetQpAttrQos fail, ret[%d], destroy qpHandle", ret);
+        HrtRaQpDestroy(info.qpHandle);
+        return ret;
+    }
+    ret = SetQpAttrTimeOut(info.qpHandle);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[CreateAiQp] SetQpAttrTimeOut fail, ret[%d], destroy qpHandle", ret);
+        HrtRaQpDestroy(info.qpHandle);
+        return ret;
+    }
+    ret = SetQpAttrRetryCnt(info.qpHandle);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[CreateAiQp] SetQpAttrRetryCnt fail, ret[%d], destroy qpHandle", ret);
+        HrtRaQpDestroy(info.qpHandle);
+        return ret;
+    }
 
     info.qp = reinterpret_cast<struct ibv_qp *>(aiQpInfo.aiQpAddr);
-    CHK_PTR_NULL(info.qp);
+    if (info.qp == nullptr) {
+        HCCL_ERROR("info.qp is nullptr.");
+        HrtRaQpDestroy(info.qpHandle);
+        return HCCL_E_PARA;
+    }
 
     info.sendCq = reinterpret_cast<struct ibv_cq *>(aiQpInfo.aiScqAddr);
     info.recvCq = reinterpret_cast<struct ibv_cq *>(aiQpInfo.aiRcqAddr);
@@ -2903,7 +2968,8 @@ HcclResult CreateQpWithDepthConfig(RdmaHandle rdmaHandle, s32 qpMode, const QpCo
     ext_attrs.qpAttr.cap.max_recv_sge = DEFAULT_MAX_RECV_SGE;
     ext_attrs.qpAttr.qp_type = IBV_QPT_RC;
     ext_attrs.udpSport = 0x0;
-
+    ext_attrs.cstmFlag.bs.useResvMem = qpConfig.use_resv_mem;
+    ext_attrs.resvMemPoolId = qpConfig.resv_mem_pool_id;
     s32 deviceLogicID = -1;
     u32 devicePhyId = 0;
     CHK_RET(hrtGetDevice(&deviceLogicID));
@@ -2915,10 +2981,16 @@ HcclResult CreateQpWithDepthConfig(RdmaHandle rdmaHandle, s32 qpMode, const QpCo
         HCCL_ERROR("this package does not support CreateQpWithDepthConfig for device, please change new package");
         return HCCL_E_NOT_SUPPORT;
     }
+
     CHK_RET(hrtRaQpCreateWithAttrs(rdmaHandle, &ext_attrs, qpHandle));
 
     struct QpAttr attr{};
-    CHK_RET(hrtRaGetQpAttr(qpHandle, &attr));
+    HcclResult ret = hrtRaGetQpAttr(qpHandle, &attr);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[CreateQpWithDepthConfig] hrtRaGetQpAttr failed, ret[%d].", ret);
+        HrtRaQpDestroy(qpHandle);
+        return ret;
+    }
     qpInfo.qpn = attr.qpn;
     qpInfo.gidIdx = attr.gidIdx;
     for (uint32_t i = 0; i < HCCP_GID_RAW_LEN; i++) {
@@ -2986,6 +3058,14 @@ HcclResult HrtRaGetHccnCfg(s32 networkMode, u32 devicePhyId, enum HccnCfgKeyT ke
         }
         return HCCL_SUCCESS;
     }
+
+    if ((key == HccnCfgKeyT::HCCN_RESV_MEM_INFO) && (raGetHccnCfg <= GET_HCCH_CFG_VERSION)) {
+        HCCL_WARNING("[HrtRaGetHccnCfg] this package does not support resvMem for device, "
+            "please change new package ret[%d], version[%lu]",
+            static_cast<int>(vRet), raGetHccnCfg);
+        return HCCL_SUCCESS;
+    }
+
     struct RaInfo raInfo = {};
     raInfo.mode = networkMode;
     raInfo.phyId = devicePhyId;
@@ -3000,6 +3080,9 @@ HcclResult HrtRaGetHccnCfg(s32 networkMode, u32 devicePhyId, enum HccnCfgKeyT ke
             break;
         case HccnCfgKeyT::HCCN_MULTI_QP_UDP_PORTS:
             hccnKey = HccnCfgKey::HCCN_CFG_MULTI_QP_UDP_PORTS;
+            break;
+        case HccnCfgKeyT::HCCN_RESV_MEM_INFO:
+            hccnKey = HccnCfgKey::HCCN_CFG_RESV_MEM_INFO;
             break;
         default:
             HCCL_ERROR("[HrtRaGetHccnCfg]not support key[%d]", key);

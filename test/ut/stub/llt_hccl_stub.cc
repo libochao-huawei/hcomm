@@ -39,6 +39,7 @@
 
 #include "adapter_rts.h"
 #include "adapter_hal.h"
+#include "hcomm_res_defs.h"
 
 #include "runtime/rt_error_codes.h"
 #include "mmpa_api.h"
@@ -88,7 +89,18 @@ constexpr u64 GIGABYTE_TO_BYTE = 1024ULL * 1024ULL * 1024ULL;
  * 宏定义                                       *
  *----------------------------------------------*/
 
-static s32 stub_log_level = DLOG_ERROR;
+static s32 GetLogLevelFromEnv()
+{
+    const char* env = getenv("HCCL_UT_LOG_LEVEL");
+    if (env != nullptr) {
+        int val = atoi(env);
+        if (val >= 0 && val <= 3) {
+            return val;
+        }
+    }
+    return DLOG_ERROR;
+}
+static s32 stub_log_level = GetLogLevelFromEnv();
 static u32 FailureDeviceId = 0xFFFFFFFF;
 static tasktype_e FailureTaskType = TASK_TYPE_RESERVED;
 static std::mutex taskFailCallbackMapMutex;
@@ -3514,7 +3526,6 @@ stream_class::stream_class(s32 device_id) : deviceId_(device_id), streamId_(-1),
  */
 stream_class::~stream_class()
 {
-    HCCL_INFO("HCCL TEST stream_class xigou1");
     try
     {
         // 退出信息记录, 方便问题定位
@@ -5481,6 +5492,12 @@ aclError aclmdlRIDestroyRegisterCallback(aclmdlRI modelRI, aclrtCallback func, v
  * 所以需要在 UT 的桩代码文件 test/ut/stub/llt_hccl_stub.cc 中添加该函数的桩实现
  */
 namespace hccl {
+HcclResult LoadBinaryFromFile(const char *binPath, aclrtBinaryLoadOptionType optionType, uint32_t cpuKernelMode,
+    aclrtBinHandle &binHandle)
+{
+    return HCCL_SUCCESS;
+}
+
 HcclResult GetCustomKernelFilePath(std::string &binaryPath)
 {
     binaryPath = "./";

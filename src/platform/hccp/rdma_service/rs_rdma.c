@@ -1626,6 +1626,9 @@ STATIC int RsInitMemPool(struct RsQpCb *qpCb)
     memAttr.recv_qp_depth = qpCb->rxDepth;
     memAttr.recv_cq_depth = (unsigned int)qpCb->recvCqDepth;
     memAttr.recv_sge_num = qpCb->recvSgeNum;
+    memAttr.use_resv_mem = qpCb->useResvMem;
+    memAttr.resv_mem_pool_id = qpCb->resvMemPoolId;
+    memAttr.ctx = qpCb->rdevCb->ibCtx;
 
     ret = RsRoceInitMemPool(&memAttr, &qpCb->memResp.memData, qpCb->rdevCb->rsCb->chipId);
     if (ret != 0) {
@@ -1811,6 +1814,8 @@ STATIC int RsQpcbInitWithAttrs(struct RsRdevCb *rdevCb, struct RsQpCb *qpCb,
     qpCb->aiOpSupport = qpNorm->aiOpSupport;
     qpCb->grpId = rdevCb->rsCb->grpId;
     qpCb->cqCstmFlag = qpNorm->extAttrs.dataPlaneFlag.bs.cqCstm;
+    qpCb->useResvMem = qpNorm->extAttrs.cstmFlag.bs.useResvMem;
+    qpCb->resvMemPoolId = qpNorm->extAttrs.resvMemPoolId;
 
     ret = RsEpollCtl(rdevCb->rsCb->connCb.epollfd, EPOLL_CTL_ADD, qpCb->channel->fd, EPOLLIN | EPOLLRDHUP);
 #ifndef CA_CONFIG_LLT
@@ -2048,18 +2053,11 @@ create_qp_err:
     return ret;
 }
 
-STATIC void RsQpRelease(struct RsQpCb *qpCb)
+void RsMrRelease(struct RsQpCb *qpCb)
 {
     struct RsMrCb *mrTmp2 = NULL;
     struct RsMrCb *mrTmp = NULL;
 
-    RS_PTHREAD_MUTEX_LOCK(&qpCb->rdevCb->rdevMutex);
-    RsListDel(&qpCb->list);
-    RS_PTHREAD_MUTEX_ULOCK(&qpCb->rdevCb->rdevMutex);
-    RsIbvAckCqEvents(qpCb->ibSendCq, qpCb->numSendCqEvents);
-    RsIbvAckCqEvents(qpCb->ibRecvCq, qpCb->numRecvCqEvents);
-
-    // dereg mr
     RS_PTHREAD_MUTEX_LOCK(&qpCb->qpMutex);
     RS_LIST_GET_HEAD_ENTRY(mrTmp, mrTmp2, &qpCb->mrList, list, struct RsMrCb);
     for (; (&mrTmp->list) != &qpCb->mrList;
@@ -2080,6 +2078,18 @@ STATIC void RsQpRelease(struct RsQpCb *qpCb)
         mrTmp = NULL;
     }
     RS_PTHREAD_MUTEX_ULOCK(&qpCb->qpMutex);
+}
+
+STATIC void RsQpRelease(struct RsQpCb *qpCb)
+{
+    RS_PTHREAD_MUTEX_LOCK(&qpCb->rdevCb->rdevMutex);
+    RsListDel(&qpCb->list);
+    RS_PTHREAD_MUTEX_ULOCK(&qpCb->rdevCb->rdevMutex);
+    RsIbvAckCqEvents(qpCb->ibSendCq, qpCb->numSendCqEvents);
+    RsIbvAckCqEvents(qpCb->ibRecvCq, qpCb->numRecvCqEvents);
+
+    // dereg mr
+    RsMrRelease(qpCb);
 }
 
 RS_ATTRI_VISI_DEF int RsQpDestroy(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn)
@@ -2861,8 +2871,9 @@ RS_ATTRI_VISI_DEF int RsCreateSrq(unsigned int phyId, unsigned int rdevIndex, st
     struct RsRdevCb *rdevCb = NULL;
     struct RsCqContext *cqContext = NULL;
 
-    CHK_PRT_RETURN(attr == NULL || phyId >= RS_MAX_DEV_NUM,
-        hccp_err("param err, NULL pointer or phyId:%u >= [%d]", phyId, RS_MAX_DEV_NUM), -EINVAL);
+    CHK_PRT_RETURN(attr == NULL || attr->context == NULL || attr->ibRecvCq == NULL || attr->ibSrq == NULL ||
+        phyId >= RS_MAX_DEV_NUM, hccp_err("param err, NULL pointer or phyId:%u >= [%d]", phyId, RS_MAX_DEV_NUM),
+        -EINVAL);
 
     ret = RsQueryRdevCb(phyId, rdevIndex, &rdevCb);
     CHK_PRT_RETURN(ret, hccp_err("rs_query_rdev_cb phyId[%u] rdev_index[%u], ret %d", phyId, rdevIndex, ret), ret);
@@ -2925,7 +2936,6 @@ RS_ATTRI_VISI_DEF int RsDestroySrq(unsigned int phyId, unsigned int rdevIndex, s
     struct CqAttr cqAttr = {0};
     struct RsCqContext *cqContext = *attr->context;
     cqAttr.qpContext = attr->context;
-
     RsIbvAckCqEvents(cqContext->ibSrqCq, cqContext->numRecvCqEvents);
 
     // 销毁srq cq

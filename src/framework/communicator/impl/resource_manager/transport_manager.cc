@@ -412,6 +412,18 @@ HcclResult TransportManager::CreateBatchSendRecvLinks(const std::string &tag, co
         HCCL_DEBUG("[CreateBatchSendRecvLinks]transportRequest.inputMemType[%d] transportRequest.outputMemType[%d], isBackup[%d]",
             transportRequest.inputMemType, transportRequest.outputMemType, isBackup);
 
+        if (isGroupMode_) { // Group 批量send/recv，切分cclbuffer
+            ret = AllocSliceMem(inputMem, outputMem, transportRequest.remoteUserRank);
+            if (ret != HCCL_SUCCESS) {
+                HCCL_ERROR("[CreateBatchSendRecvLinks]AllocSliceMem failed");
+                linkPoolPara.linkResults[currentIdx] = ret;
+                linkPoolPara.abortFlag = true;
+                return ret;
+            }
+            HCCL_INFO("[%s]AllocSliceMem success, inputMem ptr[%p], size[%llu], outputMem ptr[%p], size[%llu], remote[%u]",
+                __func__, inputMem.ptr(), inputMem.size(), outputMem.ptr(), outputMem.size(), transportRequest.remoteUserRank);
+        }
+
         IndOpMem indOpMem;
         if (isIndOp) {
             indOpMem = transMem.indOpMem;
