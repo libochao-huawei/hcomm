@@ -329,7 +329,7 @@ RS_ATTRI_VISI_DEF int RsGetSecRandom(unsigned int *value);
 // note: The FIRST invocation of this function MAY throw exceptions for each process
 RS_ATTRI_VISI_DEF enum ProductType RsGetProductType(int devId);
 RS_ATTRI_VISI_DEF int RsGetInterfaceVersion(unsigned int opcode, unsigned int *version);
-RS_ATTRI_VISI_DEF int RsPrctlByResvMem(bool usrResvMem, unsigned int resvMemPoolId, const char *threadName);
+RS_ATTRI_VISI_DEF int RsPrctlByResvMem(bool useResvMem, unsigned int resvMemPoolId, const char *threadName);
 
 static inline bool RsIsTlvSupported(void)
 {

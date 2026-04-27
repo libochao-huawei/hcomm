@@ -2162,7 +2162,7 @@ RA_ADP_ATTRI_VISI_DEF int HccpInit(struct hccpInitPara *initPara)
 
     CHK_PRT_RETURN(initPara == NULL, hccp_err("initPara is NULL"), -EINVAL);
     ret = RsPrctlByResvMem(initPara->useResvMem, initPara->resvMemPoolId, "main");
-    CHK_PRT_RETURN(ret != 0, hccp_err("RsPrctlByResvMem failed, ret:%d"), ret);
+    CHK_PRT_RETURN(ret != 0, hccp_err("RsPrctlByResvMem failed, ret:%d", ret), ret);
     chipId = initPara->chipId;
     pid = initPara->pid;
     hdcType = initPara->hdcType;
