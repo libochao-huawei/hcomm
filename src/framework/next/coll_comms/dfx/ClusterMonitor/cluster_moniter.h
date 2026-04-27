@@ -104,12 +104,13 @@ struct CqeErrInfo{
     uint16_t CqeRemoterstatus;
     std::string CqeLocalEid; 
     std::string CqeRemoteEid;
+    std::string CqeRemoteInsId;
 };
 
 class ClusterMonitor {
 public:
     static ClusterMonitor& GetInstance();
-    void GetCqeErrInfo(u32 RemoteDeviceId, u32 LocDeviceId, uint16_t status, std::string LocalEid, std::string RemoteEid);
+    void GetCqeErrInfo(u32 RemoteDeviceId, u32 LocDeviceId, uint16_t status, std::string LocalEid, std::string RemoteEid, std::string RemoteInsId);
     ClusterMonitor() = default;
     ~ClusterMonitor() = default;
 private:
