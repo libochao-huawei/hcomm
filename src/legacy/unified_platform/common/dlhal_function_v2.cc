@@ -44,6 +44,9 @@ HcclResult DlHalFunctionV2::DlHalFunctionEschedInit()
 		"drvQueryProcessHostPid");
 	CHK_SMART_PTR_NULL(dlHalDrvQueryProcessHostPid);
 
+	dlHalGetDeviceInfo = (drvError_t(*)(uint32_t, int32_t, int32_t, int64_t *))dlsym(handle_, "halGetDeviceInfo");
+    CHK_SMART_PTR_NULL(dlHalGetDeviceInfo);
+
 	HCCL_INFO("DlHalFunction::DlHalFunctionEschedInit end");
 
 	return HCCL_SUCCESS;

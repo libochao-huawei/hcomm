@@ -47,7 +47,7 @@ public:
     HcclResult TaskProfRegister(ProfCallbackTemplate profCallback);
 private:
     HcclResult WriteFlag(uint8_t *flagPtr, uint8_t newFlag) const;
-    HcclResult ReadFlag(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t *srcFlagPtr, uint8_t &flag) const;
+    HcclResult ReadFlag(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t &flag) const;
     HcclResult ReadTaskType(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t *srcTaskTypePtr, std::string &taskTypeStr) const;
     HcclResult ExecuteTask(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t *srcPtr, std::string taskTypeStr);
     HcclResult SynchronizeControlInfo(uint8_t *ctrlHdr, uint64_t hdrLen);
@@ -58,7 +58,7 @@ private:
     void       *npu2dpuMem_{nullptr};
     void       *dpu2npuMem_{nullptr};
     int32_t shmemSize_{0};
-    int32_t dataSize_{0};
+    int32_t leftSize_{0}; // npu2dpuMem_中除去控制信息后剩余的可用空间大小
     void       *hostMem_{nullptr};
     int32_t hostMemSize_{0};
 };
