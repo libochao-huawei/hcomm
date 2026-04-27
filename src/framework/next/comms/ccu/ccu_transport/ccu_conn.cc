@@ -513,7 +513,7 @@ HcclResult CcuConnection::Describe(std::string &dfxMsg)
 {
     uint16_t udpSport = 0xFFFF; // 无法获取实际的udpSport，使用0xFFFF表示未知
     if (tpProtocol_ == TpProtocol::RTP) {
-        uint32_t attrBitmap = 8195;
+        uint32_t attrBitmap = 8192;
         struct TpAttr tpAttr {0};
         uint32_t attrBitmap = 1 << 13; // 13对应dataUdpSrcport
         EXCEPTION_HANDLE_BEGIN
@@ -528,8 +528,6 @@ HcclResult CcuConnection::Describe(std::string &dfxMsg)
         }
         EXCEPTION_HANDLE_END
         udpSport = tpAttr.dataUdpSrcport;
-        retryTimesInit = tpAttr.retryTimesInit;
-        at = tpAttr.at;
     }
     udpSport = udpSport & 0xFF;
 
@@ -550,8 +548,8 @@ HcclResult CcuConnection::Describe(std::string &dfxMsg)
     Hccl::Eid rmtEid = rmtAddr.GetReverseEid();
 
     std::string dfxStr = Hccl::StringFormat("chip id[%u] die id[%u] func_id[%u] jetty id[%s] "
-        "local %s remote %s udp sport[%u] retryTimesInit[%u] at[%u]",
-        devLogicId_, dieId_, funcId_, jettyIds.c_str(), locEid.Describe().c_str(), rmtEid.Describe().c_str(), udpSport, retryTimesInit, at);
+        "local %s remote %s udp sport[%u]",
+        devLogicId_, dieId_, funcId_, jettyIds.c_str(), locEid.Describe().c_str(), rmtEid.Describe().c_str(), udpSport);
     dfxMsg += dfxStr;
     HCCL_INFO("[CcuConnection::%s] %s", __func__, dfxStr.c_str());
     return HcclResult::HCCL_SUCCESS;
