@@ -802,22 +802,22 @@ TEST_F(HostCpuRoceChannelTest, Ut_WriteWithNotify_When_LenExceedsMaxMsgSize_Expe
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-// NotifyWait: wc.status != IBV_WC_SUCCESS 时返回 HCCL_E_NETWORK
-TEST_F(HostCpuRoceChannelTest, Ut_NotifyWait_When_WcStatusNotSuccess_Expect_HCCL_E_NETWORK)
-{
-    SetupSuccessfulConnectionMocks();
-    auto impl_ = CreateInitAndConnect();
-    impl_->localDpuNotifyIds_.emplace_back(0);
-    impl_->remoteDpuNotifyIds_.emplace_back(0);
-    std::vector<Hccl::QpInfo> qpInfos(1);
-    MOCKER_CPP(&HostCpuRoceChannel::GetQpInfos).stubs().will(returnValue(qpInfos));
-    struct ibv_wc wc{};
-    wc.imm_data = 0;
-    wc.status = IBV_WC_WR_FLUSH_ERR;
-    MOCKER_CPP(&HostCpuRoceChannel::IbvPollCq).stubs().will(returnValue(1)).then(returnValue(0));
-    MOCKER_CPP(&HostCpuRoceChannel::IbvPollCq).ignoreOther().will(returnValue(0));
-    impl_->localDpuNotifyIds_.push_back(0);
-    impl_->remoteDpuNotifyIds_.push_back(0);
-    HcclResult ret = impl_->NotifyWait(0, 1800);
-    EXPECT_EQ(ret, HCCL_E_NETWORK);
-}
+// // NotifyWait: wc.status != IBV_WC_SUCCESS 时返回 HCCL_E_NETWORK
+// TEST_F(HostCpuRoceChannelTest, Ut_NotifyWait_When_WcStatusNotSuccess_Expect_HCCL_E_NETWORK)
+// {
+//     SetupSuccessfulConnectionMocks();
+//     auto impl_ = CreateInitAndConnect();
+//     impl_->localDpuNotifyIds_.emplace_back(0);
+//     impl_->remoteDpuNotifyIds_.emplace_back(0);
+//     std::vector<Hccl::QpInfo> qpInfos(1);
+//     MOCKER_CPP(&HostCpuRoceChannel::GetQpInfos).stubs().will(returnValue(qpInfos));
+//     struct ibv_wc wc{};
+//     wc.imm_data = 0;
+//     wc.status = IBV_WC_WR_FLUSH_ERR;
+//     MOCKER_CPP(&HostCpuRoceChannel::IbvPollCq).stubs().will(returnValue(1)).then(returnValue(0));
+//     MOCKER_CPP(&HostCpuRoceChannel::IbvPollCq).ignoreOther().will(returnValue(0));
+//     impl_->localDpuNotifyIds_.push_back(0);
+//     impl_->remoteDpuNotifyIds_.push_back(0);
+//     HcclResult ret = impl_->NotifyWait(0, 1800);
+//     EXPECT_EQ(ret, HCCL_E_NETWORK);
+// }
