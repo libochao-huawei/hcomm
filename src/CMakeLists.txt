@@ -352,7 +352,7 @@ if(NOT BUILD_OPEN_PROJECT)
 endif()
 
 if(DEVICE_MODE)
-    set(HCCD_TAR_DIR ${HCCL_BASE_DIR}/../build_hccd/hccd_tar_pkg/lib64)
+    set(HCCD_TAR_DIR ${BUILD_HCCD_DIR}/hccd_tar_pkg/lib64)
     add_custom_command(
         TARGET hccd
         POST_BUILD

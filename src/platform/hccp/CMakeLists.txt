@@ -90,8 +90,8 @@ install(TARGETS  hccp_service.bin
 
 add_dependencies(hccp_service.bin rs)
 if(DEVICE_MODE)
-    set(HCCP_TAR_DIR ${HCCL_BASE_DIR}/../build_device/tar_pkg/)
-    set(GENERATE_HASH_SCRIPT ${HCCL_BASE_DIR}/../scripts/sign/generate_hash.sh)
+    set(HCCP_TAR_DIR ${BUILD_DEVICE_DIR}/tar_pkg/)
+    set(GENERATE_HASH_SCRIPT ${HCOMM_DIR}/scripts/sign/generate_hash.sh)
     add_custom_command(
         TARGET hccp_service.bin
         POST_BUILD
