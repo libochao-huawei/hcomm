@@ -124,36 +124,49 @@ HcclResult CcuConnection::UpdateInitStatus()
 {
     switch (innerStatus_) {
         case InnerStatus::INIT:
-        case InnerStatus::JETTY_CREATING: {
-            auto ret = CreateJetty();
-            if (ret == HcclResult::HCCL_E_AGAIN) {
-                innerStatus_ = InnerStatus::JETTY_CREATING;
-                break; // 状态不改变退出，下轮状态机进入继续执行
-            }
-            CHK_RET(ret);
+        case InnerStatus::TP_INFO_GETTING: {
+            // 1. GetTpInfo always comes first to ensure TP timeout info is retrieved
+            //    before Jetty creation (Jetty timeout depends on TP timeout).
+            auto retTp = GetTpInfo();
 
-            ret = GetTpInfo(); // 不退出继续调用下个异步接口
-            if (ret == HcclResult::HCCL_E_AGAIN) {
-                innerStatus_ = InnerStatus::TP_INFO_GETTING;
+            // 2. CTP Optimization: CreateJetty has no dependency on TP info for timeout,
+            //    so we can parallelize the asynchronous calls to speed up the process.
+            //    Note: CreateJetty is idempotent; if already finished, it returns success.
+            if (tpProtocol_ == TpProtocol::CTP) {
+                (void)CreateJetty();
+            }
+
+            // 3. Check if GetTpInfo is done
+            if (retTp == HcclResult::HCCL_E_AGAIN) {
+                // GetTpInfo pending.
+                // For CTP: Even if CreateJetty succeeded, we stay here until GetTpInfo completes.
+                // For TP: We must wait for TP info.
                 break;
             }
-            CHK_RET(ret);
-            // 如果有缓存的tp信息，可以直接完成
-            innerStatus_ = InnerStatus::EXCHANGEABLE;
-            status_      = CcuConnStatus::EXCHANGEABLE;
-            break;
-        }
-        case InnerStatus::TP_INFO_GETTING: {
-            auto ret = GetTpInfo(); // 不退出继续调用下个异步接口
-            if (ret == HcclResult::HCCL_E_AGAIN) {
-                break; // 状态不改变退出，下轮状态机进入继续执行
-            }
-            CHK_RET(ret);
+            CHK_RET(retTp);
 
+            // 4. GetTpInfo succeeded. Transition to JETTY_CREATING.
+            //    If it was CTP, CreateJetty might have already completed (checked in next state).
+            //    If it was TP, we will call CreateJetty for the first time in the next state.
+            innerStatus_ = InnerStatus::JETTY_CREATING;
+            break;
+        }
+        
+        case InnerStatus::JETTY_CREATING: {
+            // Core responsibility: Drive CreateJetty to completion.
+            // Idempotent: If CTP already finished it in the previous state, this returns success.
+            auto retJetty = CreateJetty();
+            if (retJetty == HcclResult::HCCL_E_AGAIN) {
+                break; // Still creating, wait for next round
+            }
+            CHK_RET(retJetty);
+
+            // Both GetTpInfo (checked in prev state) and CreateJetty (checked here) succeeded
             innerStatus_ = InnerStatus::EXCHANGEABLE;
             status_      = CcuConnStatus::EXCHANGEABLE;
             break;
         }
+        
         default:
             return ReturnErrorStatus(std::string(__func__));
     }
