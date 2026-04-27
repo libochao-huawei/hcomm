@@ -545,6 +545,10 @@ void TaskExceptionHandler::ProcessCcuException(const rtExceptionInfo_t* exceptio
     for (uint32_t i = 0; i < ccuExDetailInfo.ccuMissionNum; ++i) { // ccuExDetailInfo.ccuMissionNum为1
         const auto& missionInfo = ccuExDetailInfo.missionInfo[i]; // 异常mission
         uint16_t status = static_cast<uint16_t>(missionInfo.status) << BYTE | missionInfo.subStatus;
+        RPT_INPUT_ERR(true, "EI0018", std::vector<std::string>({"localServerId", "localDeviceId", "localDeviceIp",
+            "remoteServerId", "remoteDeviceId", "remoteDeviceIp"}),
+            std::vector<std::string>({"", std::to_string(deviceId), std::to_string(missionInfo.dieId), "",
+                std::to_string(taskInfo.taskParam_.taskPara.Ccu.executeId), ""}));
         PrintCcuErrorInfo(deviceId, status, taskInfo);
         // 打印寄存器信息
         PrintPanicLogInfo(missionInfo.panicLog);
@@ -707,6 +711,12 @@ void ReportErrorMsg(const TaskInfo &exceptionTaskInfo, const string &groupRankCo
                 exceptionTaskInfo.GetBaseInfo().c_str(), (exceptionTaskInfo.GetParaInfo()).c_str(),
                 ""})
         );
+    } else if (exceptionTaskInfo.taskParam_.taskType == TaskParamType::TASK_SDMA) {
+        HCCL_ERROR("[ReportErrorMsg] ET0012.");
+        RPT_INPUT_ERR(true, "EI0012", std::vector<std::string>({"remote_rankid", "base_information",
+            "task_information", "group_rank_content"}), std::vector<std::string>({
+                std::to_string(exceptionTaskInfo.remoteRank_), exceptionTaskInfo.GetBaseInfo().c_str(),
+                (exceptionTaskInfo.GetParaInfo()).c_str(), ""}));
     } else if (exceptionTaskInfo.taskParam_.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY 
         || exceptionTaskInfo.taskParam_.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY
         || exceptionTaskInfo.taskParam_.taskType == TaskParamType::TASK_UB_INLINE_WRITE
