@@ -293,9 +293,8 @@ else()
     )
 endif()
 
-
-include(framework/ccl_kernel_plf.cmake)
-
+# 添加 ccl_kernel_plf 库，在 device 侧使用
+include(platform/ccl_kernel_plf.cmake)
 
 # 将子目录添加到构建过程
 add_subdirectory(framework)
