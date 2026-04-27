@@ -821,9 +821,9 @@ HcclResult DevUbConnection::Describe(std::string &dfxMsg)
     udpSport = tpAttr.dataUdpSrcport;
     udpSport = udpSport & 0xFF;
 
-    std::string log = StringFormat(" retryTimesInit:%hhu, at:%hhu, vlan_id:%hhu, vlan_en:%hhu, dscp:%hhu, at_times:%u, "
+    std::string log = StringFormat(" retryTimesInit:%hhu, at:%hhu, vlanId:%hhu, vlanEn:%hhu, dscp:%hhu, atTimes:%u, "
         "sl:%hhu, ttl:%hhu, ackUdpSrcport:%hhu, dataUdpSrcport:%hhu, udpSrcportRange:%hhu, sprayEn:%hhu, udpGlobalEn:%hhu",
-        tpAttr.retryTimesInit, tpAttr.at, tpAttr.vlan_id, tpAttr.vlan_en, tpAttr.dscp, tpAttr.at_times, tpAttr.sl,
+        tpAttr.retryTimesInit, tpAttr.at, tpAttr.vlanId, tpAttr.vlanEn, tpAttr.dscp, tpAttr.atTimes, tpAttr.sl,
         tpAttr.ttl, tpAttr.ackUdpSrcport, tpAttr.dataUdpSrcport, tpAttr.udpSrcportRange, tpAttr.sprayEn, tpAttr.udpGlobalEn);
 
     std::string dfxStr = StringFormat("chip id[%u] die id[%u] func id[%u] jetty id[%u] "
