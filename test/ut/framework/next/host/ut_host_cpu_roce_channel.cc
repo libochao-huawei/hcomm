@@ -23,23 +23,20 @@
 using namespace hcomm;
 
 struct IbvPollCqTestControl {
-    bool enabled = false;
     int returnValue = 0;
     int status = IBV_WC_SUCCESS;
     uint32_t immData = 0;
-}
+};
 
 IbvPollCqTestControl g_ibvPollCqControl;
 
 extern "c" {
-int ibv_poll_cq(struct ibv_cq *cq, int num_entries, struct ibv_wc *wc);
-}
-
 int mock_ibv_poll_cq(struct ibv_cq *cq, int num_entries, struct ibv_wc *wc)
 {
     wc->status = static_cast<ibv_wc_status>(g_ibvPollCqControl.status);
     wc->imm_data = g_ibvPollCqControl.immData;
     return g_ibvPollCqControl.returnValue;
+}
 }
 
 #define ibv_poll_cq mock_ibv_poll_cq
@@ -843,4 +840,5 @@ TEST_F(HostCpuRoceChannelTest, Ut_NotifyWait_When_IbvPollCqStatusNotSuccess_Expe
     MOCKER_CPP(&HostCpuRoceChannel::IbvPostRecv).stubs().will(returnValue(HCCL_SUCCESS));
     HcclResult ret = impl_->NotifyWait(0, 1800);
     EXPECT_EQ(ret, HCCL_E_NETWORK);
+    g_ibvPollCqControl.status = IBV_WC_SUCCESS;
 }
