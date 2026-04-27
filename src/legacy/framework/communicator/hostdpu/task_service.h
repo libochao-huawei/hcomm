@@ -22,9 +22,9 @@ using CallbackTemplate = std::function<int32_t(uint64_t, int32_t)>;
  * 1. 使用共享 HBM 内存传递任务信息和数据
  * 2. 内存布局(shmemPtr_)分为两块等长区域：
  *    - NPU -> DPU (npu2dpuShmem)
- * +----------  ------+---------------------------+-------------------+------------------+
- * |  flag (uint8_t)  | taskType (256字节定长空间) | msgId (uint32_t)  |      data        |
- * +-----------  -----+---------------------------+-------------------+------------------+
+ * +------------------+---------------------------+-------------------+---------------------+--------+
+ * |  flag (uint8_t)  | taskType (256字节定长空间) | msgId (uint32_t)  | dataSize (uint32_t) | data   |
+ * +------------------+---------------------------+-------------------+---------------------+--------+
  *    - DPU -> NPU (dpu2npuShmem)
  * +-----------------+----------------------------+-------------------+
  * |  flag (uint8_t)  | taskType (256字节定长空间) | msgId (uint32_t)  |
@@ -43,17 +43,16 @@ public:
     HcclResult TaskUnRegister(std::string taskType);
 private:
     HcclResult WriteFlag(uint8_t *flagPtr, uint8_t newFlag) const;
-    HcclResult ReadFlag(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t *srcFlagPtr, uint8_t &flag) const;
-    HcclResult ReadTaskType(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t *srcTaskTypePtr, std::string &taskTypeStr) const;
-    HcclResult ExecuteTask(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t *srcPtr, std::string taskTypeStr);
-    HcclResult SynchronizeControlInfo(uint8_t *ctrlHdr, uint64_t hdrLen);
-    HcclResult ProcessTaskOk(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t *srcFlagPtr, uint8_t *srcTaskTypePtr);
+    HcclResult ReadFlag(uint8_t *srcFlagPtr, uint8_t &flag) const;
+    HcclResult ReadTaskType(uint8_t *srcTaskTypePtr, std::string &taskTypeStr) const;
+    HcclResult ExecuteTask(uint8_t *srcPtr, std::string taskTypeStr);
+    HcclResult SynchronizeControlInfo();
 private:
     std::unordered_map<std::string, CallbackTemplate> callbacks_;
     void       *npu2dpuMem_{nullptr};
     void       *dpu2npuMem_{nullptr};
     int32_t shmemSize_{0};
-    int32_t dataSize_{0};
+    int32_t leftSize_{0}; // 剩余的数据区大小
     void       *hostMem_{nullptr};
     int32_t hostMemSize_{0};
 };
