@@ -15,7 +15,6 @@
 #include "task_info.h"
 #include "aicpu_launch_manager.h"
 #include "profiling_handler_lite.h"
-#include "aicpu_indop_env.h"
 using namespace std;
 
 namespace hccl {
