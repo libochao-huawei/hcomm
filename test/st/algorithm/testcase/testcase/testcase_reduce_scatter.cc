@@ -2338,3 +2338,47 @@ TEST_F(ReduceScatterTest, reduce_scatter_910_93_pipeline_doubleRing_3SuperPod)
     ret = checker.Check(checkerOpParam, topoMeta);
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
 }
+
+TEST_F(ReduceScatterTest, reduce_scatter_910_93_pipeline_singleRing_2SuperPod_7rankPerServer)
+{
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta;
+    gen.GenTopoMeta(topoMeta, 2, 1, 7);
+
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
+    checkerOpParam.tag = "ReduceScatter";
+    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_93;
+    checkerOpParam.DataDes.count = 524288;
+    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
+    checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
+    checkerOpParam.algName = "ReduceScatterPipelineFor91093Executor";
+
+    Checker checker;
+    HcclResult ret;
+    ret = checker.Check(checkerOpParam, topoMeta);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(ReduceScatterTest, reduce_scatter_910_93_pipeline_singleRing_3SuperPod_7rankPerServer)
+{
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta;
+    gen.GenTopoMeta(topoMeta, 3, 1, 7);
+
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
+    checkerOpParam.tag = "ReduceScatter";
+    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_93;
+    checkerOpParam.DataDes.count = 1048576;
+    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_BFP16;
+    checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
+    checkerOpParam.algName = "ReduceScatterPipelineFor91093Executor";
+
+    Checker checker;
+    HcclResult ret;
+    ret = checker.Check(checkerOpParam, topoMeta);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}
