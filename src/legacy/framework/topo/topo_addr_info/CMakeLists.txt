@@ -5,7 +5,7 @@ add_library(topoaddrinfo SHARED
     src/hal.c
     src/topo.c
     src/host_rdma.c
-    src/pcie_nic.c
+    src/rdma_hca.c
     src/eid_util.c
     src/rank_info_types.c
     src/topo_addr_info.c
