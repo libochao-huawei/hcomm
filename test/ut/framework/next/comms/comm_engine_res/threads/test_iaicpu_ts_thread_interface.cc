@@ -21,35 +21,30 @@ using namespace Hccl;
 
 class TestIAicpuTsThread : public BaseInit {
 public:
-    void SetUp() override {
+    void SetUp() override
+    {
         BaseInit::SetUp();
 
-        uint32_t id = 1;
-        uint32_t sqIds = 2;
-        uint32_t phyId = 3;
-        uint32_t logicCqids = 4;
-
-        aicpuThread.StreamLiteInit(id, sqIds, phyId, logicCqids);
-
-        HcclResult ret = HCCL_SUCCESS; 
-        ret = aicpuThread.GetStreamLitePtr(&streamLitePtr);
-        EXPECT_EQ(HCCL_SUCCESS, ret);
+        streamLitePtr = aicpuThread.GetStreamLitePtr();
         EXPECT_NE(nullptr, streamLitePtr);
 
         rtsqPtr = static_cast<StreamLite *>(streamLitePtr)->GetRtsq();
         EXPECT_NE(nullptr, rtsqPtr);
 
         MOCKER_CPP_VIRTUAL(*rtsqPtr, &RtsqBase::LaunchTask).stubs().will(ignoreReturnValue());
-        MOCKER_CPP_VIRTUAL(*rtsqPtr, &RtsqBase::NotifyWait, void (RtsqBase::*)(uint32_t, uint32_t)).stubs().will(ignoreReturnValue());
+        MOCKER_CPP_VIRTUAL(*rtsqPtr, &RtsqBase::NotifyWait, void(RtsqBase::*)(uint32_t, uint32_t))
+            .stubs()
+            .will(ignoreReturnValue());
         MOCKER_CPP_VIRTUAL(*rtsqPtr, &RtsqBase::NotifyRecordLoc).stubs().will(ignoreReturnValue());
         MOCKER_CPP_VIRTUAL(*rtsqPtr, &RtsqBase::SdmaCopy).stubs().will(ignoreReturnValue());
         MOCKER_CPP_VIRTUAL(*rtsqPtr, &RtsqBase::SdmaReduce).stubs().will(ignoreReturnValue());
     }
-    void TearDown() override {
+    void TearDown() override
+    {
         BaseInit::TearDown();
         GlobalMockObject::verify();
     }
-    IAicpuTsThread aicpuThread;
+    IAicpuTsThread aicpuThread{1, 2, 3, 4};
     void *streamLitePtr{nullptr};
     RtsqBase *rtsqPtr{nullptr};
 };
@@ -65,39 +60,15 @@ TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_LaunchTask_When_Inited_Expect_Succe
 }
 
 /**
- * 测试 IAicpuTsThread LaunchTask 未初始化时调用
- * 验证：未初始化时调用 LaunchTask 能正确处理错误
- */
-TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_LaunchTask_When_NotInited_Expect_NoCrash)
-{
-    IAicpuTsThread aicpuThread;
-    // 不应该崩溃，只是打印错误日志
-    EXPECT_NO_THROW(aicpuThread.LaunchTask());
-}
-
-/**
  * 测试 IAicpuTsThread NotifyWait 正常执行
  * 验证：初始化后调用 NotifyWait 返回成功
  */
 TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_NotifyWait_When_Inited_Expect_Success)
 {
     uint32_t notifyId = 100;
-    
+
     HcclResult ret = aicpuThread.NotifyWait(notifyId);
     EXPECT_EQ(HCCL_SUCCESS, ret);
-}
-
-/**
- * 测试 IAicpuTsThread NotifyWait 未初始化时调用
- * 验证：未初始化时返回错误码
- */
-TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_NotifyWait_When_NotInited_Expect_Return_Nullptr)
-{
-    IAicpuTsThread aicpuThread;
-    uint32_t notifyId = 100;
-
-    HcclResult ret = aicpuThread.NotifyWait(notifyId);
-    EXPECT_EQ(HCCL_E_PTR, ret);
 }
 
 /**
@@ -110,19 +81,6 @@ TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_NotifyRecordLoc_When_Inited_Expect_
 
     HcclResult ret = aicpuThread.NotifyRecordLoc(notifyId);
     EXPECT_EQ(HCCL_SUCCESS, ret);
-}
-
-/**
- * 测试 IAicpuTsThread NotifyRecordLoc 未初始化时调用
- * 验证：未初始化时返回错误码
- */
-TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_NotifyRecordLoc_When_NotInited_Expect_Return_Nullptr)
-{
-    IAicpuTsThread aicpuThread;
-    uint32_t notifyId = 200;
-
-    HcclResult ret = aicpuThread.NotifyRecordLoc(notifyId);
-    EXPECT_EQ(HCCL_E_PTR, ret);
 }
 
 /**
@@ -154,33 +112,17 @@ TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_SdmaCopy_When_SizeExceedMax_Expect_
 }
 
 /**
- * 测试 IAicpuTsThread SdmaCopy 未初始化时调用
- * 验证：未初始化时返回错误码
- */
-TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_SdmaCopy_When_NotInited_Expect_Return_Nullptr)
-{
-    IAicpuTsThread aicpuThread;
-    uint64_t dstAddr = 0x1000;
-    uint64_t srcAddr = 0x2000;
-    uint64_t sizeByte = 1024;
-
-    HcclResult ret = aicpuThread.SdmaCopy(dstAddr, srcAddr, sizeByte);
-    EXPECT_EQ(HCCL_E_PTR, ret);
-}
-
-/**
  * 测试 IAicpuTsThread SdmaReduce 正常执行（DataType=INT8, ReduceOp=SUM）
  * 验证：初始化后调用 SdmaReduce 返回成功
  */
 TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_SdmaReduce_INT8_SUM_When_Inited_Expect_Success)
 {
-    IAicpuTsThread aicpuThread;
-    aicpuThread.StreamLiteInit(1, 2, 3, 4);
+    IAicpuTsThread aicpuThread(1, 2, 3, 4);;
     uint64_t dstAddr = 0x1000;
     uint64_t srcAddr = 0x2000;
     uint64_t sizeByte = 1024;
-    uint32_t dataTypeRaw = 0;   // INT8
-    uint32_t reduceOpRaw = 0;   // SUM
+    uint32_t dataTypeRaw = 0; // INT8
+    uint32_t reduceOpRaw = 0; // SUM
 
     HcclResult ret = aicpuThread.SdmaReduce(dstAddr, srcAddr, sizeByte, dataTypeRaw, reduceOpRaw);
     EXPECT_EQ(HCCL_SUCCESS, ret);
@@ -192,13 +134,12 @@ TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_SdmaReduce_INT8_SUM_When_Inited_Exp
  */
 TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_SdmaReduce_FP16_PROD_When_Inited_Expect_Success)
 {
-    IAicpuTsThread aicpuThread;
-    aicpuThread.StreamLiteInit(1, 2, 3, 4);
+    IAicpuTsThread aicpuThread(1, 2, 3, 4);;
     uint64_t dstAddr = 0x1000;
     uint64_t srcAddr = 0x2000;
     uint64_t sizeByte = 1024;
-    uint32_t dataTypeRaw = 3;   // FP16
-    uint32_t reduceOpRaw = 1;   // PROD
+    uint32_t dataTypeRaw = 3; // FP16
+    uint32_t reduceOpRaw = 1; // PROD
 
     HcclResult ret = aicpuThread.SdmaReduce(dstAddr, srcAddr, sizeByte, dataTypeRaw, reduceOpRaw);
     EXPECT_EQ(HCCL_SUCCESS, ret);
@@ -210,13 +151,12 @@ TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_SdmaReduce_FP16_PROD_When_Inited_Ex
  */
 TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_SdmaReduce_FP32_MAX_When_Inited_Expect_Success)
 {
-    IAicpuTsThread aicpuThread;
-    aicpuThread.StreamLiteInit(1, 2, 3, 4);
+    IAicpuTsThread aicpuThread(1, 2, 3, 4);;
     uint64_t dstAddr = 0x1000;
     uint64_t srcAddr = 0x2000;
     uint64_t sizeByte = 1024;
-    uint32_t dataTypeRaw = 4;   // FP32
-    uint32_t reduceOpRaw = 2;   // MAX
+    uint32_t dataTypeRaw = 4; // FP32
+    uint32_t reduceOpRaw = 2; // MAX
 
     HcclResult ret = aicpuThread.SdmaReduce(dstAddr, srcAddr, sizeByte, dataTypeRaw, reduceOpRaw);
     EXPECT_EQ(HCCL_SUCCESS, ret);
@@ -228,13 +168,12 @@ TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_SdmaReduce_FP32_MAX_When_Inited_Exp
  */
 TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_SdmaReduce_INT32_MIN_When_Inited_Expect_Success)
 {
-    IAicpuTsThread aicpuThread;
-    aicpuThread.StreamLiteInit(1, 2, 3, 4);
+    IAicpuTsThread aicpuThread(1, 2, 3, 4);;
     uint64_t dstAddr = 0x1000;
     uint64_t srcAddr = 0x2000;
     uint64_t sizeByte = 1024;
-    uint32_t dataTypeRaw = 2;   // INT32
-    uint32_t reduceOpRaw = 3;   // MIN
+    uint32_t dataTypeRaw = 2; // INT32
+    uint32_t reduceOpRaw = 3; // MIN
 
     HcclResult ret = aicpuThread.SdmaReduce(dstAddr, srcAddr, sizeByte, dataTypeRaw, reduceOpRaw);
     EXPECT_EQ(HCCL_SUCCESS, ret);
@@ -246,13 +185,12 @@ TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_SdmaReduce_INT32_MIN_When_Inited_Ex
  */
 TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_SdmaReduce_When_SizeExceedMax_Expect_Return_Para_Error)
 {
-    IAicpuTsThread aicpuThread;
-    aicpuThread.StreamLiteInit(1, 2, 3, 4);
+    IAicpuTsThread aicpuThread(1, 2, 3, 4);;
     uint64_t dstAddr = 0x1000;
     uint64_t srcAddr = 0x2000;
     uint64_t sizeByte = static_cast<uint64_t>(std::numeric_limits<uint32_t>::max()) + 1;
-    uint32_t dataTypeRaw = 0;   // INT8
-    uint32_t reduceOpRaw = 0;   // SUM
+    uint32_t dataTypeRaw = 0; // INT8
+    uint32_t reduceOpRaw = 0; // SUM
 
     HcclResult ret = aicpuThread.SdmaReduce(dstAddr, srcAddr, sizeByte, dataTypeRaw, reduceOpRaw);
     EXPECT_EQ(HCCL_E_PARA, ret);
@@ -264,12 +202,11 @@ TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_SdmaReduce_When_SizeExceedMax_Expec
  */
 TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_SdmaReduce_When_InvalidDataType_Expect_Return_Para_Error)
 {
-    IAicpuTsThread aicpuThread;
-    aicpuThread.StreamLiteInit(1, 2, 3, 4);
+    IAicpuTsThread aicpuThread(1, 2, 3, 4);;
     uint64_t dstAddr = 0x1000;
     uint64_t srcAddr = 0x2000;
     uint64_t sizeByte = 1024;
-    uint32_t dataTypeRaw = 100;  // 不支持的数据类型
+    uint32_t dataTypeRaw = 100; // 不支持的数据类型
     uint32_t reduceOpRaw = 0;   // SUM
 
     HcclResult ret = aicpuThread.SdmaReduce(dstAddr, srcAddr, sizeByte, dataTypeRaw, reduceOpRaw);
@@ -282,33 +219,15 @@ TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_SdmaReduce_When_InvalidDataType_Exp
  */
 TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_SdmaReduce_When_InvalidReduceOp_Expect_Return_Para_Error)
 {
-    IAicpuTsThread aicpuThread;
-    aicpuThread.StreamLiteInit(1, 2, 3, 4);
+    IAicpuTsThread aicpuThread(1, 2, 3, 4);;
     uint64_t dstAddr = 0x1000;
     uint64_t srcAddr = 0x2000;
     uint64_t sizeByte = 1024;
     uint32_t dataTypeRaw = 0;   // INT8
-    uint32_t reduceOpRaw = 100;  // 不支持的操作类型
+    uint32_t reduceOpRaw = 100; // 不支持的操作类型
 
     HcclResult ret = aicpuThread.SdmaReduce(dstAddr, srcAddr, sizeByte, dataTypeRaw, reduceOpRaw);
     EXPECT_EQ(HCCL_E_PARA, ret);
-}
-
-/**
- * 测试 IAicpuTsThread SdmaReduce 未初始化时调用
- * 验证：未初始化时返回错误码
- */
-TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_SdmaReduce_When_NotInited_Expect_Return_Nullptr)
-{
-    IAicpuTsThread aicpuThread;
-    uint64_t dstAddr = 0x1000;
-    uint64_t srcAddr = 0x2000;
-    uint64_t sizeByte = 1024;
-    uint32_t dataTypeRaw = 0;   // INT8
-    uint32_t reduceOpRaw = 0;   // SUM
-
-    HcclResult ret = aicpuThread.SdmaReduce(dstAddr, srcAddr, sizeByte, dataTypeRaw, reduceOpRaw);
-    EXPECT_EQ(HCCL_E_PTR, ret);
 }
 
 /**
@@ -317,39 +236,10 @@ TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_SdmaReduce_When_NotInited_Expect_Re
  */
 TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_GetStreamLitePtr_When_Inited_Expect_Success)
 {
-    IAicpuTsThread aicpuThread;
-    aicpuThread.StreamLiteInit(1, 2, 3, 4);
-    void *streamLitePtr = nullptr;
+    IAicpuTsThread aicpuThread(1, 2, 3, 4);;
+    void *streamLitePtr = aicpuThread.GetStreamLitePtr();
 
-    HcclResult ret = aicpuThread.GetStreamLitePtr(&streamLitePtr);
-    EXPECT_EQ(HCCL_SUCCESS, ret);
     EXPECT_NE(nullptr, streamLitePtr);
-}
-
-/**
- * 测试 IAicpuTsThread GetStreamLitePtr 未初始化时调用
- * 验证：未初始化时返回错误码
- */
-TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_GetStreamLitePtr_When_NotInited_Expect_Return_Ptr_Error)
-{
-    IAicpuTsThread aicpuThread;
-    void *streamLitePtr = nullptr;
-
-    HcclResult ret = aicpuThread.GetStreamLitePtr(&streamLitePtr);
-    EXPECT_EQ(HCCL_E_PTR, ret);
-}
-
-/**
- * 测试 IAicpuTsThread GetStreamLitePtr 传入空指针
- * 验证：传入空指针时返回错误码
- */
-TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_GetStreamLitePtr_When_NullPtr_Expect_Return_Ptr_Error)
-{
-    IAicpuTsThread aicpuThread;
-    aicpuThread.StreamLiteInit(1, 2, 3, 4);
-
-    HcclResult ret = aicpuThread.GetStreamLitePtr(nullptr);
-    EXPECT_EQ(HCCL_E_PTR, ret);
 }
 
 /**
@@ -358,27 +248,10 @@ TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_GetStreamLitePtr_When_NullPtr_Expec
  */
 TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_GetSqId_When_Inited_Expect_Success)
 {
-    IAicpuTsThread aicpuThread;
-    aicpuThread.StreamLiteInit(1, 2, 3, 4);
-    uint32_t sqId = 0;
-
-    HcclResult ret = aicpuThread.GetSqId(sqId);
-    EXPECT_EQ(HCCL_SUCCESS, ret);
+    IAicpuTsThread aicpuThread(1, 2, 3, 4);;
+    uint32_t sqId = aicpuThread.GetSqId();
     // sqId 应该被正确设置
     EXPECT_EQ(2, sqId);
-}
-
-/**
- * 测试 IAicpuTsThread GetSqId 未初始化时调用
- * 验证：未初始化时返回错误码
- */
-TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_GetSqId_When_NotInited_Expect_Return_Ptr_Error)
-{
-    IAicpuTsThread aicpuThread;
-    uint32_t sqId = 0;
-
-    HcclResult ret = aicpuThread.GetSqId(sqId);
-    EXPECT_EQ(HCCL_E_PTR, ret);
 }
 
 /**
@@ -387,20 +260,8 @@ TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_GetSqId_When_NotInited_Expect_Retur
  */
 TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_Destructor_When_Inited_Expect_NoMemoryLeak)
 {
-    IAicpuTsThread *aicpuThread = new IAicpuTsThread();
-    aicpuThread->StreamLiteInit(1, 2, 3, 4);
+    IAicpuTsThread *aicpuThread = new IAicpuTsThread(1, 2, 3, 4);
     // 不应该发生内存泄漏
-    EXPECT_NO_THROW(delete aicpuThread);
-}
-
-/**
- * 测试 IAicpuTsThread 析构函数在 StreamLite 未初始化时的行为
- * 验证：析构时不会崩溃
- */
-TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_Destructor_When_NotInited_Expect_NoCrash)
-{
-    IAicpuTsThread *aicpuThread = new IAicpuTsThread();
-    // 不应该发生崩溃
     EXPECT_NO_THROW(delete aicpuThread);
 }
 
@@ -410,13 +271,12 @@ TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_Destructor_When_NotInited_Expect_No
  */
 TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_SdmaReduce_FP8E4M3_When_Inited_Expect_Success)
 {
-    IAicpuTsThread aicpuThread;
-    aicpuThread.StreamLiteInit(1, 2, 3, 4);
+    IAicpuTsThread aicpuThread(1, 2, 3, 4);;
     uint64_t dstAddr = 0x1000;
     uint64_t srcAddr = 0x2000;
     uint64_t sizeByte = 256;
-    uint32_t dataTypeRaw = 15;  // FP8E4M3
-    uint32_t reduceOpRaw = 0;    // SUM
+    uint32_t dataTypeRaw = 15; // FP8E4M3
+    uint32_t reduceOpRaw = 0;  // SUM
 
     HcclResult ret = aicpuThread.SdmaReduce(dstAddr, srcAddr, sizeByte, dataTypeRaw, reduceOpRaw);
     EXPECT_EQ(HCCL_SUCCESS, ret);
@@ -428,13 +288,12 @@ TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_SdmaReduce_FP8E4M3_When_Inited_Expe
  */
 TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_SdmaReduce_FP8E5M2_When_Inited_Expect_Success)
 {
-    IAicpuTsThread aicpuThread;
-    aicpuThread.StreamLiteInit(1, 2, 3, 4);
+    IAicpuTsThread aicpuThread(1, 2, 3, 4);;
     uint64_t dstAddr = 0x1000;
     uint64_t srcAddr = 0x2000;
     uint64_t sizeByte = 256;
-    uint32_t dataTypeRaw = 16;  // FP8E5M2
-    uint32_t reduceOpRaw = 0;   // SUM
+    uint32_t dataTypeRaw = 16; // FP8E5M2
+    uint32_t reduceOpRaw = 0;  // SUM
 
     HcclResult ret = aicpuThread.SdmaReduce(dstAddr, srcAddr, sizeByte, dataTypeRaw, reduceOpRaw);
     EXPECT_EQ(HCCL_SUCCESS, ret);
@@ -446,36 +305,13 @@ TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_SdmaReduce_FP8E5M2_When_Inited_Expe
  */
 TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_SdmaReduce_BFP16_When_Inited_Expect_Success)
 {
-    IAicpuTsThread aicpuThread;
-    aicpuThread.StreamLiteInit(1, 2, 3, 4);
+    IAicpuTsThread aicpuThread(1, 2, 3, 4);;
     uint64_t dstAddr = 0x1000;
     uint64_t srcAddr = 0x2000;
     uint64_t sizeByte = 512;
-    uint32_t dataTypeRaw = 11;  // BFP16
-    uint32_t reduceOpRaw = 1;   // PROD
+    uint32_t dataTypeRaw = 11; // BFP16
+    uint32_t reduceOpRaw = 1;  // PROD
 
     HcclResult ret = aicpuThread.SdmaReduce(dstAddr, srcAddr, sizeByte, dataTypeRaw, reduceOpRaw);
     EXPECT_EQ(HCCL_SUCCESS, ret);
-}
-
-/**
- * 测试 IAicpuTsThread 多次初始化覆盖
- * 验证：可以多次调用 StreamLiteInit，后续初始化会覆盖之前的
- */
-TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_StreamLiteInit_MultipleTimes_Expect_Success)
-{
-    IAicpuTsThread aicpuThread;
-
-    // 第一次初始化
-    aicpuThread.StreamLiteInit(1, 2, 3, 4);
-    void *streamLitePtr1 = nullptr;
-    aicpuThread.GetStreamLitePtr(&streamLitePtr1);
-
-    // 第二次初始化
-    aicpuThread.StreamLiteInit(10, 20, 30, 40);
-    void *streamLitePtr2 = nullptr;
-    aicpuThread.GetStreamLitePtr(&streamLitePtr2);
-
-    // 两次获得的指针应该不同（因为是新的 StreamLite）
-    EXPECT_NE(streamLitePtr1, streamLitePtr2);
 }

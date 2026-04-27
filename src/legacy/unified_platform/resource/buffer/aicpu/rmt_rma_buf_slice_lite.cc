@@ -16,30 +16,6 @@ RmtRmaBufSliceLite::RmtRmaBufSliceLite(u64 addr, u64 size, u32 rkey, u32 tokenId
 {
     HCCL_INFO("RmtRmaBufSliceLite::RmtRmaBufSliceLite:%s", Describe().c_str());
 }
-u64 RmtRmaBufSliceLite::GetAddr() const
-{
-    return addr_;
-}
-
-u64 RmtRmaBufSliceLite::GetSize() const
-{
-    return size_;
-}
-
-u32 RmtRmaBufSliceLite::GetRkey() const
-{
-    return rkey_;
-}
-
-u32 RmtRmaBufSliceLite::GetTokenId() const
-{
-    return tokenId_;
-}
-
-u32 RmtRmaBufSliceLite::GetTokenValue() const
-{
-    return tokenValue_;
-}
 
 std::string RmtRmaBufSliceLite::Describe() const
 {
