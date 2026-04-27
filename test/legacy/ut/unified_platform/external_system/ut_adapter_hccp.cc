@@ -1016,3 +1016,63 @@ TEST_F(AdapterHccpTest, HrtRaGetEidByIp_empty_input_ok)
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_TRUE(eidAddrList.empty());
 }
+
+TEST_F(AdapterHccpTest, ut_HrtGetUboeFlagEnable_VersionEnough_Expect_Success)
+{
+    u32 devPhyId = 1;
+    u32 mock_version = GET_UBOE_FLAG_ENABLE_VERSION;
+    MOCKER(RaGetInterfaceVersion)
+        .stubs()
+        .with(any(), any(), outBoundP(&mock_version, sizeof(s32)))
+        .will(returnValue(0));
+
+    HcclResult ret = HrtGetUboeFlagEnable(devPhyId);
+    
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(AdapterHccpTest, ut_HrtGetUboeFlagEnable_When_VersionNotEnough_Expect_NotSupport)
+{
+    u32 devPhyId = 1;
+    u32 mock_version = GET_UBOE_FLAG_ENABLE_VERSION - 1;
+    MOCKER(RaGetInterfaceVersion)
+        .stubs()
+        .with(any(), any(), outBoundP(&mock_version, sizeof(s32)))
+        .will(returnValue(0));
+    
+    HcclResult ret = HrtGetUboeFlagEnable(devPhyId);
+    
+    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
+}
+
+TEST_F(AdapterHccpTest, ut_HrtGetUboeFlagEnable_When_RaGetInterfaceFailed_Expect_E_INTERNAL)
+{
+    u32 devPhyId = 1;
+    MOCKER(RaGetInterfaceVersion).stubs().will(returnValue(-1));
+    HcclResult ret = HrtGetUboeFlagEnable(devPhyId);
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+}
+
+TEST_F(AdapterHccpTest, ut_HrtCheckUboeSupported_When_DevFeatureBitSet_Expect_True)
+{
+    u32 devFeature = 1 << UBOE_DEV_FLAG_RIGHT_SHIFT;
+    bool result = HrtCheckUboeSupported(devFeature);
+    EXPECT_TRUE(result);
+    
+    // 测试其他位也有值的情况
+    devFeature = (1 << UBOE_DEV_FLAG_RIGHT_SHIFT) | 0xFFFF;
+    result = HrtCheckUboeSupported(devFeature);
+    EXPECT_TRUE(result);
+}
+
+TEST_F(AdapterHccpTest, ut_HrtCheckUboeSupported_When_DevFeatureBitNotSet_Expect_False)
+{
+    u32 devFeature = 0;
+    bool result = HrtCheckUboeSupported(devFeature);
+    EXPECT_FALSE(result);
+    
+    // 测试只有其他位被设置，但UBOE位未设置
+    devFeature = 0xFFFFFFFF & ~(1 << UBOE_DEV_FLAG_RIGHT_SHIFT);
+    result = HrtCheckUboeSupported(devFeature);
+    EXPECT_FALSE(result);
+}
