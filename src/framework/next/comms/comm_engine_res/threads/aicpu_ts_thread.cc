@@ -12,7 +12,6 @@
 #include "hccl_common.h"
 #include "aicpu/aicpu_hccl_sqcq.h"
 #include "types/dev_type.h"
-#include "profiling_handler_lite.h"
 
 namespace hccl {
 AicpuTsThread::AicpuTsThread(StreamType streamType, uint32_t notifyNum, const NotifyLoadType notifyLoadType)
@@ -444,14 +443,6 @@ bool AicpuTsThread::GetMaster() const {
 
 void AicpuTsThread::SetIsMaster(bool isMaster) {
     isMaster_ = isMaster;
-}
-
-bool AicpuTsThread::IsReportTask()
-{
-    bool profilingL1 = Hccl::ProfilingHandlerLite::GetInstance().GetProfL1State();
-    bool ret = taskExceptionReport_ && profilingL1;
-    HCCL_DEBUG("[%s]ret[%d], taskExceptionReport_[%d], L1[%d]",  __func__, ret, taskExceptionReport_, profilingL1);
-    return ret;
 }
 
 HcclResult AicpuTsThread::SupplementNotify(uint32_t notifyNum)
