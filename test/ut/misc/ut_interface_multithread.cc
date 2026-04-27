@@ -53,10 +53,12 @@ class MultiThreadNpuGpu : public testing::Test {
 protected:
     static void SetUpTestCase()
     {
+        ClearRdevNicInfo();
         std::cout << "MultiThreadNpuGpu SetUP" << std::endl;
     }
     static void TearDownTestCase()
     {
+        ClearRdevNicInfo();
         std::cout << "MultiThreadNpuGpu TearDown" << std::endl;
     }
 
