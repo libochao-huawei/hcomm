@@ -159,6 +159,28 @@ uint16_t SwitchUBCqeErrCodeToTsErrCode(u32 cqeErrCode){
     }
 }
 
+static std::string GetSdmaErrorDesc(u32 errorCode)
+{
+    switch (errorCode) {
+        case RT_SDMA_DATAERR:
+            return "read HBM return ERROR";
+        case RT_SDMA_COMPERR:
+            return "write copy timeout or address decode ERROR";
+        case RT_SDMA_COMPDATAERR:
+            return "read copy timeout or read HBM return ERROR";
+        default:
+            return "unknown SDMA ERROR";
+    }
+}
+
+static void ReportSdmaError(u32 localDeviceId, u32 errorCode)
+{
+    std::string errorInfo = "error_code=" + std::to_string(errorCode) + ", description=" + GetSdmaErrorDesc(errorCode);
+    RPT_INPUT_ERR(true, "EI0012", std::vector<std::string>({"remote_rankid", "base_information",
+        "task_information", "group_rank_content"}),
+        std::vector<std::string>({"", std::to_string(localDeviceId), errorInfo, ""}));
+}
+
 HcclResult SendTaskExceptionByMBox(const u32 localDeviceId, const u32 notifyId, const u32 tsId,
     const s32 userStreamId, const rtLogicCqReport_t* exceptionInfo)
 {
@@ -187,25 +209,7 @@ HcclResult SendTaskExceptionByMBox(const u32 localDeviceId, const u32 notifyId, 
         aicpuSqe.u.aicpu_record.ret_code = SwitchUBCqeErrCodeToTsErrCode(exceptionInfo->errorCode & 0xFF);
     } else {
         aicpuSqe.u.aicpu_record.ret_code = SwitchSdmaCqeErrCodeToTsErrCode(exceptionInfo->errorCode);
-        std::string sdmaErrDesc;
-        switch (exceptionInfo->errorCode) {
-            case RT_SDMA_DATAERR:
-                sdmaErrDesc = "read HBM return ERROR";
-                break;
-            case RT_SDMA_COMPERR:
-                sdmaErrDesc = "write copy timeout or address decode ERROR";
-                break;
-            case RT_SDMA_COMPDATAERR:
-                sdmaErrDesc = "read copy timeout or read HBM return ERROR";
-                break;
-            default:
-                sdmaErrDesc = "unknown SDMA ERROR";
-                break;
-        }
-        std::string errorInfo = "error_code=" + std::to_string(exceptionInfo->errorCode) + ", description=" + sdmaErrDesc;
-        RPT_INPUT_ERR(true, "EI0012", std::vector<std::string>({"remote_rankid", "base_information",
-            "task_information", "group_rank_content"}),
-            std::vector<std::string>({"", std::to_string(localDeviceId), errorInfo, ""}));
+        ReportSdmaError(localDeviceId, exceptionInfo->errorCode);
     }
 
     struct event_summary event;
