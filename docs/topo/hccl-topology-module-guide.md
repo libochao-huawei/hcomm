@@ -1799,74 +1799,128 @@ HcclResult AllGatherInterServerDualPlane(const OpParam &param,
 
 ### B. JSON 配置文件示例
 
-#### rankTable.json（简化的 2 Server × 8 卡示例）
+> 📌 **来源说明**：本节示例取自 hcomm 仓库的测试用例文件，路径如下：
+> - rankTable.json：`hcomm/test/legacy/st/algorithm/testcase/function_ut_testcase/common_files/1d_2p_mesh_topo/ranktable.json`
+> - topoFile.json：`hcomm/test/legacy/st/algorithm/testcase/function_ut_testcase/common_files/1d_2p_mesh_topo/topo.json`
+>
+> 以下为 2 卡全互联（1DMESH）场景的精简示例，展示实际配置文件中的字段名称与嵌套结构。更大规模集群（如 16 卡、64 卡）的结构与此一致，仅 rank_list / peer_list / edge_list 条目更多。
+
+#### rankTable.json（2 卡示例）
 
 ```json
 {
-  "server_list": [
-    {
-      "rank_id": 0,
-      "device_id": 0,
-      "device_ip": "192.168.1.0",
-      "server_id": "0",
-      "rank_size": 8,
-      "control_port": 60001,
-      "level0": {
-        "net_type": "mesh_1d",
-        "net_id": "server_0",
-        "rank_address": [
-          {"ip": "192.168.1.0", "port": "60001", "plane_id": "0"},
-          ...
-        ]
-      },
-      "level1": {
-        "net_type": "clos",
-        "net_id": "clos_0",
-        "rank_address": [
-          {"ip": "10.0.0.0", "port": "60001", "plane_id": "0"},
-          {"ip": "10.0.1.0", "port": "60001", "plane_id": "1"}
-        ]
-      },
-      "control_plane": {
-        "addr_type": "IPV4",
-        "ip_addr": "192.168.1.0",
-        "listen_port": 60001
-      }
-    },
-    ...
-  ]
+    "version": "2.0",
+    "rank_count": 2,
+    "rank_list": [
+        {
+            "rank_id": 0,
+            "device_id": 0,
+            "local_id": 0,
+            "level_list": [
+                {
+                    "net_layer": 0,
+                    "net_instance_id": "az0-rack0",
+                    "net_type": "TOPO_FILE_DESC",
+                    "net_attr": "",
+                    "rank_addr_list": [
+                        {
+                            "addr_type": "IPV4",
+                            "addr": "223.0.0.28",
+                            "ports": ["0/0"]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "rank_id": 1,
+            "local_id": 1,
+            "device_id": 1,
+            "level_list": [
+                {
+                    "net_layer": 0,
+                    "net_instance_id": "az0-rack0",
+                    "net_type": "TOPO_FILE_DESC",
+                    "net_attr": "",
+                    "rank_addr_list": [
+                        {
+                            "addr_type": "IPV4",
+                            "addr": "223.0.0.10",
+                            "ports": ["0/1"]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
 }
 ```
 
-#### topoFile.json（物理拓扑描述，简化示例）
+**字段说明**：
+
+| 字段 | 说明 |
+|------|------|
+| `version` | 配置文件版本号，当前为 "2.0" |
+| `rank_count` | Rank 总数 |
+| `rank_list` | Rank 信息列表，每个元素代表一张 NPU 卡 |
+| `rank_id` | 全局唯一的 Rank 编号 |
+| `device_id` | 设备 ID |
+| `local_id` | 设备在 Server 内的本地编号 |
+| `level_list` | 网络层级列表，数组结构，支持多层拓扑 |
+| `net_layer` | 层级编号，从 0 开始 |
+| `net_instance_id` | 网络实例标识（如机架/机柜名称） |
+| `net_type` | 网络类型，`TOPO_FILE_DESC` 表示由 topo 文件描述拓扑 |
+| `rank_addr_list` | 该 Rank 在该层的通信地址列表 |
+| `addr_type` | 地址类型：`IPV4` / `EID` 等 |
+| `addr` | 通信地址（IP 或 EID） |
+| `ports` | 端口列表，格式为 `"device_id/port_id"` |
+
+#### topoFile.json（2 卡全互联示例）
 
 ```json
 {
-  "version": "1.0",
-  "peer_count": 16,
-  "edge_count": 64,
-  "peers": [
-    {"local_id": 0},
-    {"local_id": 1},
-    ...
-  ],
-  "edges": [
-    {
-      "net_layer": 0,
-      "link_type": "PEER2PEER",
-      "topo_type": "MESH_1D",
-      "topo_inst_id": 0,
-      "protocols": ["UB_CTP"],
-      "local_a": 0,
-      "local_a_ports": ["port_0"],
-      "local_b": 1,
-      "local_b_ports": ["port_1"],
-      "position": "DEVICE"
-    },
-    ...
-  ]
+    "version": "2.0",
+    "peer_count": 2,
+    "peer_list": [
+        {"local_id": 0},
+        {"local_id": 1}
+    ],
+    "edge_count": 1,
+    "edge_list": [
+        {
+            "net_layer": 0,
+            "link_type": "PEER2PEER",
+            "topo_type": "1DMESH",
+            "topo_instance_id": 0,
+            "topo_attr": "",
+            "local_a": 0,
+            "local_a_ports": ["0/2"],
+            "local_b": 1,
+            "local_b_ports": ["0/5"],
+            "protocols": ["UB_CTP", "UB_MEM"],
+            "position": "DEVICE"
+        }
+    ]
 }
 ```
+
+**字段说明**：
+
+| 字段 | 说明 |
+|------|------|
+| `version` | 配置文件版本号 |
+| `hardware_type` | 硬件类型（大规模示例中会出现，如 "Atlas 550"） |
+| `peer_count` | Peer（NPU 卡）总数 |
+| `peer_list` | Peer 列表，仅包含 `local_id` |
+| `edge_count` | 链路（Edge）总数 |
+| `edge_list` | 链路列表，描述两卡之间的物理连接 |
+| `net_layer` | 所属网络层级 |
+| `link_type` | 链路类型，`PEER2PEER` 表示点对点直连 |
+| `topo_type` | 拓扑类型，如 `1DMESH`（一维全互联） |
+| `topo_instance_id` | 拓扑实例 ID，用于区分同一层内的多个子拓扑 |
+| `local_a` / `local_b` | 链路两端的 local_id |
+| `local_a_ports` / `local_b_ports` | 链路两端使用的端口 |
+| `protocols` | 支持的传输协议，常见值：`UB_CTP`、`UB_MEM` |
 
 ### C. 术语表
 
