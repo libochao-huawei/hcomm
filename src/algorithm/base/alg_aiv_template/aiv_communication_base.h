@@ -380,7 +380,6 @@ public:
 
         useDoubleBuffer_ = useDoubleBuffer;
         numBlocks_ = numBlocks;
-        blockIdx_ = GetBlockIdx();
 
         localOffset = (rankSize_ * NUM_BLOCKS_FOUR_PER_RANK_A3 * FLAG_BUF_NUM) * FLAG_SIZE;
         multiOffset = MAX_NUM_BLOCKS * DOUBLE * FLAG_SIZE+ localOffset;
@@ -429,7 +428,6 @@ public:
         dataType_ = args->dataType;
         unitSize_ = args->unitSize;
         numBlocks_ = args->numBlocks;
-        blockIdx_ = GetBlockIdx();
  
         pipe.InitBuffer(localFlagBuf, UB_FLAG_SIZE_4);
         localSetTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_ONE_OFFSET);
@@ -520,7 +518,6 @@ public:
         reduceOp_ = reduceOp;
         useDoubleBuffer_ = useDoubleBuffer;
         numBlocks_ = numBlocks;
-        blockIdx_ = GetBlockIdx();
         tag_ = tag;
 
         localOffset = (rankSize_ * NUM_BLOCKS_FOUR_PER_RANK_A3 * FLAG_BUF_NUM) * FLAG_SIZE;
@@ -673,7 +670,7 @@ public:
     int32_t tag_;
     int32_t numBlocks_;
     int32_t logLevel_;
-    uint32_t blockIdx_;
+    uint32_t blockIdx_ = GetBlockIdx(); // 在构造函数中初始化，以免漏初始化
 
     bool useDoubleBuffer_;
 
