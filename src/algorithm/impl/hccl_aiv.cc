@@ -644,7 +644,7 @@ HcclResult LaunchSyncKernel(aclrtLaunchKernelCfg &cfg, AivKernelArgs &aivKernelA
 
     aclrtFuncHandle funcHandle;
     s8* stubFunc = GetStubFunc(HcclCMDType::HCCL_CMD_INVALID, HcclDataType::HCCL_DATA_TYPE_RESERVED);
-    ret = GetKernelFunc(funcHandle, stubFunc);
+    HcclResult ret = GetKernelFunc(funcHandle, stubFunc);
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[AIV][Barrier] errNo[0x%016llx] GetKernelFunc failed, "
         "return[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret), HCCL_E_RUNTIME);
     
@@ -662,7 +662,7 @@ HcclResult LaunchSyncKernel(aclrtLaunchKernelCfg &cfg, AivKernelArgs &aivKernelA
         HCCL_ERROR_CODE(HCCL_E_RUNTIME), aclRet), HCCL_E_RUNTIME);
     
     struct TaskParaGeneral taskParaGeneral;
-    u8* flagAddr = static_cast<u8 *>(aivKernelArgs.buffersOut[aivKernelArgs.rank]);
+    u8* flagAddr = static_cast<u8 *>(const_cast<void*>(aivKernelArgs.buffersOut[aivKernelArgs.rank]));
     TaskParaAiv taskParaAiv(HcclCMDType::HCCL_CMD_INVALID, step, 0, aivKernelArgs.rankSize, aivKernelArgs.rankSize, -1, flagAddr, aivKernelArgs.rank);
     taskParaGeneral.isMainStream = true;
     taskParaGeneral.stream = stream;
@@ -686,7 +686,6 @@ HcclResult ClearAivSyncBuf(void** cclBuffersOut, const AivResourceArgs &resource
         CHK_PRT_RET(numBlocks < rankSize,
             HCCL_ERROR("[ClearAivSyncBuf]aivCore[%u] is invalid, at least need [%u].", numBlocks, rankSize), HCCL_E_PARA);
 
-        HcclResult ret = HcclResult::HCCL_E_PARA;
         aclrtLaunchKernelCfg cfg;
         aclrtLaunchKernelAttr attr[AIV_ATTRNUM_THREE];
         attr[0].id = ACL_RT_LAUNCH_KERNEL_ATTR_SCHEM_MODE;
