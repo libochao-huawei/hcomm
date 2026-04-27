@@ -154,13 +154,17 @@ static HcclResult FindOneUsableEid(const uint32_t devLogicId, const uint8_t dieI
     std::string name;
     bool findFlag = false;
     u32 devPhyId = HrtGetDevicePhyIdByIndex(devLogicId);
+
+    // 如果无法查询设备是否为uboe设备，报错退出
+    CHK_RET(HrtGetUboeFlagEnable(devPhyId));
+
     auto &rdmaHandleMgr = RdmaHandleManager::GetInstance();
     // 当前结论，需要选择可以申请到Tp handle的eid
     for (auto &eidInfo : eidInfoList) {
-        if (eidInfo.dieId != dieId) {
+        // 如果是UBOE设备，则跳过
+        if (HrtCheckUboeSupported(eidInfo.devFeature) || (eidInfo.dieId != dieId)) {
             continue;
         }
-
         const RdmaHandle rdmaHandle = rdmaHandleMgr.GetByIp(devPhyId, eidInfo.ipAddress);
         const bool rtpEnable = rdmaHandleMgr.GetRtpEnable(rdmaHandle);
         if (rtpEnable) {
