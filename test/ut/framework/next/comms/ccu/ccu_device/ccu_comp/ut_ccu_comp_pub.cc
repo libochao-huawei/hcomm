@@ -150,6 +150,10 @@ TEST_F(CcuCompPubTest, Ut_CcuMissionMgr_Alloc_ReqType_Not_Supported)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
+/*
+    hello
+*/
+
 TEST_F(CcuCompPubTest, Ut_CcuMissionMgr_Alloc_HandleBlockRes_Unavailable)
 {
     // 获取单例，不手动创建 → 不崩溃
