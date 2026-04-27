@@ -270,6 +270,7 @@ file(CREATE_LINK "../hcomm/hcomm_res_defs.h" "$ENV{DESTDIR}${CMAKE_INSTALL_PREFI
         pkg_inc/hccl/hccl_ex.h
         pkg_inc/hccl/hccl_one_sided_services.h
         pkg_inc/hccl/hccl_res_expt.h
+        pkg_inc/hccl/hccl_res_exp.h
         pkg_inc/hccl/hcom.h
         pkg_inc/hccl/hccl_diag.h
         pkg_inc/hccl/hcomm_diag.h
