@@ -23,9 +23,11 @@ namespace hcomm {
 
 namespace {
 
-constexpr uint32_t kTpAttrSlAvailableBit = 12U;
-// URMA 头文件仅定义 tp_attr bitmap 0–11；bit12 由驱动扩展。为 false 时走 RaGetTpAttrAsync。
-static constexpr bool kSkipRaGetTpAttrStubSlAvailable = true;
+// urma_api.h 公开 tp_attr_bitmap 仅 0–11（至 ttl）。若扩展位按 ttl 后「每个成员各占 1 位」递增（与 RS 一致）：
+// 12=ack_udp_srcport，13=data_udp_srcport，14=udp_srcport_range，15=spray_en，16=udp_global_en，17=reserve_0，18=sl_bitmap。
+// 若 Get 后 sl_bitmap 仍为 0，请以 RS/URMA 文档为准改本常量（例如合并位域为一扩展位时编号会前移）。
+constexpr uint32_t kTpAttrSlAvailableBit = 18U;
+static constexpr bool kSkipRaGetTpAttrStubSlAvailable = false;
 // hccp_tp.h：TpAttr.sl 对应 bitmap bit 10；经 RaCtxSetTpAttr → urma_set_tp_attr 写回当前 tpHandle（与 mappedJettyPriority 独立）
 static constexpr uint32_t kTpAttrBitmapSl = (1U << 10U);
 
@@ -56,8 +58,7 @@ static uint32_t SlValueAtRankInMask16(uint32_t mask, uint32_t rank)
 
 static uint16_t ReadSlAvailableMask16(const struct TpAttr &attr)
 {
-    return static_cast<uint16_t>(static_cast<uint8_t>(attr.reserved[0])) |
-        (static_cast<uint16_t>(static_cast<uint8_t>(attr.reserved[1])) << 8);
+    return static_cast<uint16_t>(attr.sl_bitmap);
 }
 
 static bool ApplyUbcQosTpSlPolicy(const GetTpInfoParam &param, uint32_t nTp, uint16_t slMask,
@@ -102,7 +103,7 @@ static bool ApplyUbcQosTpSlPolicy(const GetTpInfoParam &param, uint32_t nTp, uin
         mappedSlOut, param.slLevelCount);
     return true;
 }
-/*
+
 static HcclResult CommitMappedSlToTpAttr(const uint32_t devPhyId, const CommAddr &locCommAddr, uint64_t tpHandle,
     uint32_t mappedSl)
 {
@@ -129,7 +130,7 @@ static HcclResult CommitMappedSlToTpAttr(const uint32_t devPhyId, const CommAddr
         static_cast<unsigned>(mappedSl & 0xFU));
     return HcclResult::HCCL_SUCCESS;
 }
-*/
+
 } // namespace
 
 TpMgr &TpMgr::GetInstance(const uint32_t devicePhyId)
@@ -364,9 +365,8 @@ HcclResult TpMgr::StartGetTpAttrForFirstTp(const GetTpInfoParam &param, RequestC
     reqCtx.tpAttrBitmap = (1U << kTpAttrSlAvailableBit);
 
     if (kSkipRaGetTpAttrStubSlAvailable) {
-        // sl_available 低 16bit：仅 bit1–3 置 1 → 0x000E，表示 SL 1/2/3 可用
-        reqCtx.tpAttr.reserved[0] = 0x0EU;
-        reqCtx.tpAttr.reserved[1] = 0x00U;
+        // sl_bitmap 低 16bit：仅 bit1–3 置 1 → 0x000E，表示 SL 1/2/3 可用
+        reqCtx.tpAttr.sl_bitmap = 0x000EU;
         reqCtx.handle = 0;
         reqCtx.phase = ReqPhase::WAIT_TP_ATTR;
         return HcclResult::HCCL_SUCCESS;
@@ -407,11 +407,9 @@ HcclResult TpMgr::HandleCompletedRequest(RequestCtx reqCtx, const GetTpInfoParam
     const struct HccpTpInfo *baseInfoPtr = reinterpret_cast<const struct HccpTpInfo *>(reqCtx.dataBuffer.data());
     uint16_t slMask = ReadSlAvailableMask16(reqCtx.tpAttr);
     uint32_t mPop = PopCount16(slMask);
-    HCCL_INFO("[TpMgr][%s] after get_tp_attr: slMask[0x%04x] mPop[%u] reserved[0/1][%u,%u] tpAttrBitmap[0x%x] param[%s].",
-        __func__, static_cast<unsigned>(slMask), mPop,
-        static_cast<unsigned>(static_cast<uint8_t>(reqCtx.tpAttr.reserved[0])),
-        static_cast<unsigned>(static_cast<uint8_t>(reqCtx.tpAttr.reserved[1])), reqCtx.tpAttrBitmap,
-        param.Describe().c_str());
+    HCCL_INFO("[TpMgr][%s] after get_tp_attr: slMask[0x%04x] mPop[%u] sl_bitmap[0x%x] tpAttrBitmap[0x%x] param[%s].",
+        __func__, static_cast<unsigned>(slMask), mPop, static_cast<unsigned>(reqCtx.tpAttr.sl_bitmap),
+        reqCtx.tpAttrBitmap, param.Describe().c_str());
     if (mPop == 0U) {
         HCCL_ERROR("[TpMgr][%s] sl_available mask empty after get_tp_attr, param[%s].", __func__,
             param.Describe().c_str());
@@ -438,7 +436,7 @@ HcclResult TpMgr::HandleCompletedRequest(RequestCtx reqCtx, const GetTpInfoParam
     tmpTpInfo.mappedJettyPriority = mappedSl & 0xFU;
     tmpTpInfo.hasMappedJettyPriority = true;
 
-    // CHK_RET(CommitMappedSlToTpAttr(devPhyId_, param.locAddr, tmpTpInfo.tpHandle, mappedSl)); set tp attr 等待接口
+    CHK_RET(CommitMappedSlToTpAttr(devPhyId_, param.locAddr, tmpTpInfo.tpHandle, mappedSl)); set tp attr 等待接口
     HCCL_INFO("[TpMgr][%s] tp qos mapping ok: tpHandle[%llu] tpListIndex[%u] mappedSl[%u] jettyPriority[%u] qos[%u] param[%s].",
         __func__, tmpTpInfo.tpHandle, tpListIndex, static_cast<unsigned>(mappedSl & 0xFU), tmpTpInfo.mappedJettyPriority,
         param.qos & 0xFFU, param.Describe().c_str());
