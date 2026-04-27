@@ -41,7 +41,7 @@ HcclResult InsTempAlltoAllMesh::CalcRes(AlgTempResReq &tempResReq)
         resReqIter->second = rank2PathNumMap_.at(remoteRank);
         maxPathNum = std::max(maxPathNum, rank2PathNumMap_.at(remoteRank)); // 每个rank的远端搬运最多需要pathNum条流
     }
-    tempResReq.queNum = 1 + maxPathNum * ALLTOALLV_DIRECT_FULLMESH_CONCURRENT_SIZE; 
+    tempResReq.queNum = 1 + maxPathNum * std::min(ALLTOALLV_DIRECT_FULLMESH_CONCURRENT_SIZE, tempRankSize_); 
     tempResReq.streamNum = tempResReq.queNum;
     tempResReq.queNotifys = CreateMasterSlaveQueNotifiesRequest(tempResReq.queNum);
 
