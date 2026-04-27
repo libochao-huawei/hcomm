@@ -49,6 +49,51 @@ TEST_F(HcclBroadcastTest, Ut_HcclBroadcast_When_DataIsNull_Expect_ReturnIsHCCL_E
     UT_UNSET_SENDBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
 }
 
+TEST_F(HcclBroadcastTest, Ut_HcclBroadcast_When_GroupModeAndBufIsNull_Expect_ReturnIsHCCL_E_PTR)
+{
+    hcclGroupDepth = 1;
+    UT_SET_SENDBUF_COUNT(0, HCCL_COM_DATA_SIZE);
+    int root = 0;
+    UT_COMM_CREATE_DEFAULT(comm);
+    UT_STREAM_CREATE_DEFAULT(stream);
+
+    HcclResult ret = HcclBroadcastInner(sendBuf, count, HCCL_DATA_TYPE_INT8, root, comm, stream);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+
+    hcclGroupDepth = 0;
+    UT_UNSET_SENDBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
+}
+
+TEST_F(HcclBroadcastTest, Ut_HcclBroadcast_When_GroupModeAndCommIsNull_Expect_ReturnIsHCCL_E_PTR)
+{
+    hcclGroupDepth = 1;
+    UT_SET_SENDBUF_COUNT(HCCL_COM_DATA_SIZE, HCCL_COM_DATA_SIZE);
+    int root = 0;
+    Ut_Device_Set(0);
+    UT_STREAM_CREATE_DEFAULT(stream);
+
+    HcclResult ret = HcclBroadcastInner(sendBuf, count, HCCL_DATA_TYPE_INT8, root, comm, stream);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+
+    hcclGroupDepth = 0;
+    UT_UNSET_SENDBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
+}
+
+TEST_F(HcclBroadcastTest, Ut_HcclBroadcast_When_GroupModeAndStreamIsNull_Expect_ReturnIsHCCL_E_PTR)
+{
+    hcclGroupDepth = 1;
+    UT_SET_SENDBUF_COUNT(HCCL_COM_DATA_SIZE, HCCL_COM_DATA_SIZE);
+    int root = 0;
+    UT_COMM_CREATE_DEFAULT(comm);
+
+    HcclResult ret = HcclBroadcastInner(sendBuf, count, HCCL_DATA_TYPE_INT8, root, comm, nullptr);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+
+    hcclGroupDepth = 0;
+    Ut_Comm_Destroy(comm);
+    UT_UNSET_SENDBUF();
+}
+
 TEST_F(HcclBroadcastTest, Ut_HcclBroadcast_When_CountIsZero_Expect_ReturnIsHCCL_SUCCESS)
 {
     UT_SET_SENDBUF_COUNT(0, 0);

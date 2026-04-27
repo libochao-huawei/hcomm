@@ -172,3 +172,33 @@ TEST_F(HcclScatterTest, Ut_HcclScatter_When_2Server4Rank_Expect_ReturnIsHCCL_SUC
 
     UT_UNSET_SENDBUF_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
 }
+
+TEST_F(HcclScatterTest, Ut_HcclScatter_When_GroupModeAndRecvBufIsNull_Expect_ReturnIsHCCL_E_PTR)
+{
+    hcclGroupDepth = 1;
+    UT_SET_SENDBUF_RECVBUF_COUNT(rankNum * HCCL_COM_DATA_SIZE, 0, HCCL_COM_DATA_SIZE);
+    u32 root = 0;
+    UT_COMM_CREATE_DEFAULT(comm);
+    UT_STREAM_CREATE_DEFAULT(stream);
+
+    HcclResult ret = HcclScatterInner(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, root, comm, stream);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+
+    hcclGroupDepth = 0;
+    UT_UNSET_SENDBUF_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
+}
+
+TEST_F(HcclScatterTest, Ut_HcclScatter_When_GroupModeAndCommIsNull_Expect_ReturnIsHCCL_E_PTR)
+{
+    hcclGroupDepth = 1;
+    UT_SET_SENDBUF_RECVBUF_COUNT(rankNum * HCCL_COM_DATA_SIZE, HCCL_COM_DATA_SIZE, HCCL_COM_DATA_SIZE);
+    u32 root = 0;
+    Ut_Device_Set(0);
+    UT_STREAM_CREATE_DEFAULT(stream);
+
+    HcclResult ret = HcclScatterInner(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, root, comm, stream);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+
+    hcclGroupDepth = 0;
+    UT_UNSET_SENDBUF_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
+}

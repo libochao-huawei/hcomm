@@ -136,6 +136,43 @@ TEST_F(HcclReduceScatterVTest, Ut_HcclReduceScatterV_When_RecvBufIsNullAndRecvCo
     UT_UNSET_SENDBUFV_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
 }
 
+TEST_F(HcclReduceScatterVTest, Ut_HcclReduceScatterV_When_GroupModeAndSendBufIsNull_Expect_ReturnIsHCCL_E_PTR)
+{
+    hcclGroupDepth = 1;
+    UT_SET_SENDBUFV_RECVBUF_COUNT(0,
+        1, HCCL_COM_DATA_SIZE,
+        1, 0,
+        HCCL_COM_DATA_SIZE,
+        HCCL_COM_DATA_SIZE);
+    UT_COMM_CREATE_DEFAULT(comm);
+    UT_STREAM_CREATE_DEFAULT(stream);
+
+    HcclResult ret = HcclReduceScatterVInner(sendBuf, sendCounts, sendDispls, recvBuf, recvCount,
+        HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+
+    hcclGroupDepth = 0;
+    UT_UNSET_SENDBUFV_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
+}
+
+TEST_F(HcclReduceScatterVTest, Ut_HcclReduceScatterV_When_GroupModeAndCommIsNull_Expect_ReturnIsHCCL_E_PTR)
+{
+    hcclGroupDepth = 1;
+    UT_SET_SENDBUFV_RECVBUF_COUNT(HCCL_COM_DATA_SIZE,
+        1, HCCL_COM_DATA_SIZE,
+        1, 0,
+        HCCL_COM_DATA_SIZE,
+        HCCL_COM_DATA_SIZE);
+    Ut_Device_Set(0);
+    UT_STREAM_CREATE_DEFAULT(stream);
+
+    HcclResult ret = HcclReduceScatterVInner(sendBuf, sendCounts, sendDispls, recvBuf, recvCount, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+
+    hcclGroupDepth = 0;
+    UT_UNSET_SENDBUFV_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
+}
+
 TEST_F(HcclReduceScatterVTest, Ut_HcclReduceScatterV_When_RecvCountIsTooLarge_Expect_ReturnIsHCCL_E_PARA)
 {
     UT_SET_SENDBUFV_RECVBUF_COUNT(HCCL_COM_DATA_SIZE,

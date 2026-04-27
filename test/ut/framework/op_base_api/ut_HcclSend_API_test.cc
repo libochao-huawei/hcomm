@@ -62,6 +62,36 @@ TEST_F(HcclSendTest, Ut_HcclSend_When_CountIsZero_Expect_ReturnIsHCCL_SUCCESS)
     UT_UNSET_SENDBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
 }
 
+TEST_F(HcclSendTest, Ut_HcclSend_When_GroupModeAndSendBufIsNull_Expect_ReturnIsHCCL_E_PTR)
+{
+    hcclGroupDepth = 1;
+    UT_SET_SENDBUF_COUNT(0, HCCL_COM_DATA_SIZE);
+    int destRank = 1;
+    UT_COMM_CREATE_DEFAULT(comm);
+    UT_STREAM_CREATE_DEFAULT(stream);
+
+    HcclResult ret = HcclSendInner(sendBuf, count, HCCL_DATA_TYPE_INT8, destRank, comm, stream);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+
+    hcclGroupDepth = 0;
+    UT_UNSET_SENDBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
+}
+
+TEST_F(HcclSendTest, Ut_HcclSend_When_GroupModeAndCommIsNull_Expect_ReturnIsHCCL_E_PTR)
+{
+    hcclGroupDepth = 1;
+    UT_SET_SENDBUF_COUNT(HCCL_COM_DATA_SIZE, HCCL_COM_DATA_SIZE);
+    int destRank = 1;
+    Ut_Device_Set(0);
+    UT_STREAM_CREATE_DEFAULT(stream);
+
+    HcclResult ret = HcclSendInner(sendBuf, count, HCCL_DATA_TYPE_INT8, destRank, comm, stream);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+
+    hcclGroupDepth = 0;
+    UT_UNSET_SENDBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
+}
+
 TEST_F(HcclSendTest, Ut_HcclSend_When_RootIsInvalid_Expect_ReturnIsHCCL_SUCCESS)
 {
     UT_SET_SENDBUF_COUNT(HCCL_COM_DATA_SIZE, HCCL_COM_DATA_SIZE);
