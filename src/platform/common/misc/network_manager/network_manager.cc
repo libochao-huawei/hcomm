@@ -1110,7 +1110,7 @@ HcclResult NetworkManager::StopAllDeviceNicSockets()
     }
 
     raResourceInfo_.nicSocketMap.clear();
-    return  HCCL_SUCCESS; // stop socket。port 数清零时自动关闭socket
+    return HCCL_SUCCESS;
 }
 
 HcclResult NetworkManager::StopAllDeviceVnicSockets()
