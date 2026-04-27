@@ -256,11 +256,49 @@ namespace hccl
         return communicator_->GetInstSizeListByNetLayer(netLayer, instSizeList, listSize);
     }
 
+    HcclResult hcclComm::GetTopoInstsByLayer(uint32_t netLayer, uint32_t **topoInsts, uint32_t *topoInstNum)
+    {
+        return communicator_->GetTopoInstsByLayer(netLayer, topoInsts, topoInstNum);
+    }
+
+    HcclResult hcclComm::GetTopoType(uint32_t netLayer, uint32_t topoInstId, CommTopo *topoType)
+    {
+        return communicator_->GetTopoType(netLayer, topoInstId, topoType);
+    }
+
+    HcclResult hcclComm::GetRanksByTopoInst(uint32_t netLayer, uint32_t topoInstId, uint32_t **ranks, uint32_t *rankNum)
+    {
+        return communicator_->GetRanksByTopoInst(netLayer, topoInstId, ranks, rankNum);
+    }
+
+    HcclResult hcclComm::GetEndpointNum(uint32_t netLayer, uint32_t topoInstId, uint32_t *num)
+    {
+        return communicator_->GetEndpointNum(netLayer, topoInstId, num);
+    }
+
+    HcclResult hcclComm::GetEndpointDesc(uint32_t netLayer, uint32_t topoInstId, uint32_t *descNum, EndpointDesc *endpointDesc)
+    {
+        return communicator_->GetEndpointDesc(netLayer, topoInstId, descNum, endpointDesc);
+    }
+
     HcclResult hcclComm::GetRankGraph(GraphType type, void **graph, uint32_t *len)
     {
         return communicator_->GetRankGraph(type, graph, len);
     }
 
+    uint32_t hcclComm::GetConnectMode()
+    {
+        return communicator_->GetConnectMode();
+    }
+
+    void *hcclComm::GetMyRank()
+    {
+        return (void *)communicator_->GetMyRank();
+    }
+    HcclResult hcclComm::GetDevMemWorkSpace(const std::string &memTag, uint64_t *size, void **addr, bool *newCreated)
+    {
+        return communicator_->GetDevMemWorkSpace(memTag, size, addr, newCreated);
+    }
     HcclResult hcclComm::GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank,
         CommLink **linkList, uint32_t *listSize)
     {
@@ -397,7 +435,6 @@ namespace hccl
     HcclComm hcclComm::GetCommunicatorV2()
     {
         if (collComm_ == nullptr) {
-            HCCL_ERROR("[HcclComm][GetCommunicatorV2]collComm_ is nullptr");
             return nullptr;
         }
         return collComm_->GetCommunicatorV2();
