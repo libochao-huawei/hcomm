@@ -8,9 +8,41 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 
+# 定义 ccl_kernel 动态链接库，在 device 侧使用
 if((NOT BUILD_OPEN_PROJECT) OR KERNEL_MODE)
     add_library(ccl_kernel SHARED)
 
+    # 预处理宏定义
+    set(CCL_KERNEL_COMPILE_DEFINITIONS
+        HCCD
+        CCL_KERNEL_AICPU
+    )
+    target_compile_definitions(ccl_kernel PRIVATE ${CCL_KERNEL_COMPILE_DEFINITIONS})
+
+    # 编译选项
+    set(CCL_KERNEL_COMPILE_OPTIONS
+        -Werror
+        -Wfloat-equal
+        -Wall
+        -fno-common
+        -fstack-protector-strong
+        -fno-strict-aliasing
+        -pipe
+        -O3
+        -std=c++14
+    )
+    target_compile_options(ccl_kernel PRIVATE ${CCL_KERNEL_COMPILE_OPTIONS})
+
+    # 链接选项
+    set(CCL_KERNEL_LINK_OPTIONS
+        -Wl,-z,relro
+        -Wl,-z,now
+        -Wl,-z,noexecstack
+        -s
+    )
+    target_link_options(ccl_kernel PRIVATE ${CCL_KERNEL_LINK_OPTIONS})
+
+    # 指定ccl_kernel所需源文件
     set(CCL_KERNEL_SRC_LIST
         ${HCOMM_DIR}/src/algorithm/impl/alg_env_config.cc
         ${HCOMM_DIR}/src/algorithm/impl/coll_alg_utils.cc
@@ -262,7 +294,7 @@ if((NOT BUILD_OPEN_PROJECT) OR KERNEL_MODE)
         ${HCOMM_DIR}/src/algorithm/impl/coll_executor/coll_reduce_scatter/coll_reduce_scatter_order_preserved_executor.cc
         ${HCOMM_DIR}/src/algorithm/impl/coll_executor/coll_reduce_scatter/coll_reduce_scatter_ars_for_910_93_executor.cc
         ${HCOMM_DIR}/src/algorithm/impl/coll_executor/coll_reduce_scatter/coll_reduce_scatter_order_preserved_for_910_93_executor.cc
-        
+
         ${HCOMM_DIR}/src/algorithm/impl/coll_executor/coll_reduce_scatter_v/coll_reduce_scatter_v_executor.cc
         ${HCOMM_DIR}/src/algorithm/impl/coll_executor/coll_reduce_scatter_v/coll_reduce_scatter_v_aiv_big_count_executor.cc
         ${HCOMM_DIR}/src/algorithm/impl/coll_executor/coll_reduce_scatter_v/coll_reduce_scatter_v_mesh_aiv_smallcount_executor.cc
@@ -323,7 +355,7 @@ if((NOT BUILD_OPEN_PROJECT) OR KERNEL_MODE)
         ${HCOMM_DIR}/src/common/health/rank_consistentcy_checker.cc
         ${HCOMM_DIR}/src/common/stream/stream_utils_aicpu.cc
 
-        #framework
+        # framework
         ${HCOMM_DIR}/src/framework/communicator/impl/independent_op/hccl_independent_rank_graph.cc
         ${HCOMM_DIR}/src/framework/communicator/impl/one_sided_service/i_hccl_one_sided_service.cc
     )
@@ -331,30 +363,7 @@ if((NOT BUILD_OPEN_PROJECT) OR KERNEL_MODE)
         ${CCL_KERNEL_SRC_LIST}
     )
 
-    target_compile_options(ccl_kernel PRIVATE
-        -Werror
-        -Wfloat-equal
-        -Wall
-        -fno-common
-        -fstack-protector-strong
-        -fno-strict-aliasing
-        -pipe
-        -O3
-        -std=c++14
-    )
-
-    target_link_options(ccl_kernel PRIVATE
-        -Wl,-z,relro
-        -Wl,-z,now
-        -Wl,-z,noexecstack
-        -s
-    )
-
-    target_compile_definitions(ccl_kernel PRIVATE
-        HCCD
-        CCL_KERNEL_AICPU
-    )
-
+    # 指定ccl_kernel所需包含文件搜索路径
     set(CCL_KERNEL_INCLUDE_LIST
         ${HCOMM_DIR}/include/hccl
         ${HCOMM_DIR}/src/pub_inc
@@ -427,7 +436,7 @@ if((NOT BUILD_OPEN_PROJECT) OR KERNEL_MODE)
         ${HCOMM_DIR}/src/framework/communicator/impl/independent_op/channel
         ${HCOMM_DIR}/src/framework/communicator/impl/independent_op/channel/device
         ${HCOMM_DIR}/src/framework/communicator/impl/independent_op/data_api
-    
+
         ${HCOMM_DIR}/src/algorithm/base/alg_template/temp_all_gather
         ${HCOMM_DIR}/src/algorithm/base/alg_template/temp_all_reduce
         ${HCOMM_DIR}/src/algorithm/base/alg_template/temp_alltoall
@@ -448,6 +457,7 @@ if((NOT BUILD_OPEN_PROJECT) OR KERNEL_MODE)
         ${HCOMM_DIR}/src/platform/resource/transport/host/
         ${HCOMM_DIR}/src/platform/resource/transport/
         ${HCOMM_DIR}/src/platform/resource/notify/
+        ${HCOMM_DIR}/src/platform/resource/dispatcher_ctx
         ${HCOMM_DIR}/src/platform/task
         ${HCOMM_DIR}/src/platform/common
         ${HCOMM_DIR}/src/platform/common/unique
@@ -456,17 +466,6 @@ if((NOT BUILD_OPEN_PROJECT) OR KERNEL_MODE)
         ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
 
         ${RDMA_CORE_INCLUDE_DIR}
-        ${HCOMM_DIR}/src/platform/
-        ${HCOMM_DIR}/src/platform/inc/
-        ${HCOMM_DIR}/src/platform/inc/adapter
-        ${HCOMM_DIR}/src/platform/resource/transport/heterog/
-        ${HCOMM_DIR}/src/platform/resource/transport/host/
-        ${HCOMM_DIR}/src/platform/resource/transport/
-        ${HCOMM_DIR}/src/platform/resource/notify/
-        ${HCOMM_DIR}/src/platform/resource/dispatcher_ctx
-        ${HCOMM_DIR}/src/platform/task
-        ${HCOMM_DIR}/src/platform/common
-        ${HCOMM_DIR}/src/platform/common/unique
         ${hccl_include_list}
         ${HCOMM_DIR}/include
         ${HCOMM_DIR}/include/hccl
@@ -519,7 +518,6 @@ if((NOT BUILD_OPEN_PROJECT) OR KERNEL_MODE)
         ${HCOMM_DIR}/src/framework/next/coll_comms/communicator/aicpu
         ${HCOMM_DIR}/src/framework/next/coll_comms/dfx
     )
-
     target_include_directories(ccl_kernel PRIVATE
         ${CCL_KERNEL_INCLUDE_LIST}
     )
@@ -529,6 +527,7 @@ if((NOT BUILD_OPEN_PROJECT) OR KERNEL_MODE)
     add_subdirectory(device)
 endif()
 
+# 非OPEN模式下额外配置
 if(NOT BUILD_OPEN_PROJECT)
     target_include_directories(ccl_kernel PRIVATE
         ${HCOMM_DIR}/include/hccl
@@ -551,15 +550,15 @@ if(NOT BUILD_OPEN_PROJECT)
         ${TOP_DIR}/atc/opcompiler/ascendc_compiler/api/include
         ${TOP_DIR}/abl/atrace/inc/utrace
         ${TOP_DIR}/runtime/include/external
- 	    ${TOP_DIR}/runtime/include/external/acl
- 	    ${TOP_DIR}/runtime/pkg_inc
- 	    ${TOP_DIR}/runtime/pkg_inc/runtime
- 	    ${TOP_DIR}/runtime/pkg_inc/profiling
- 	    ${TOP_DIR}/runtime/pkg_inc/trace
- 	    ${TOP_DIR}/runtime/pkg_inc/base
- 	    ${TOP_DIR}/runtime/pkg_inc/aicpu_sched
+        ${TOP_DIR}/runtime/include/external/acl
+        ${TOP_DIR}/runtime/pkg_inc
+        ${TOP_DIR}/runtime/pkg_inc/runtime
+        ${TOP_DIR}/runtime/pkg_inc/profiling
+        ${TOP_DIR}/runtime/pkg_inc/trace
+        ${TOP_DIR}/runtime/pkg_inc/base
+        ${TOP_DIR}/runtime/pkg_inc/aicpu_sched
         ${TOP_DIR}/asc/asc-devkit
- 	    ${TOP_DIR}/asc/asc-devkit/include/adv_api/hccl/internal
+        ${TOP_DIR}/asc/asc-devkit/include/adv_api/hccl/internal
 
         # orion
         ${TOP_DIR}/ace/comop/inc
@@ -579,16 +578,18 @@ if(NOT BUILD_OPEN_PROJECT)
 
         ${HCOMM_DIR}/src/platform/hccp/inc
         ${HCOMM_DIR}/src/platform/hccp/inc/network
-	    ${HCOMM_DIR}/pkg_inc/
+        ${HCOMM_DIR}/pkg_inc/
         ${HCOMM_DIR}/pkg_inc/hccl/
 
         ${HCOMM_DIR}/src/framework
- 	    ${HCOMM_DIR}/src/framework/common
- 	    ${HCOMM_DIR}/src/framework/common/src
- 	    ${HCOMM_DIR}/src/framework/common/src/mgr
- 	    ${HCOMM_DIR}/src/framework/communicator
- 	    ${HCOMM_DIR}/src/framework/communicator/impl/independent_op/resource/engine
+        ${HCOMM_DIR}/src/framework/common
+        ${HCOMM_DIR}/src/framework/common/src
+        ${HCOMM_DIR}/src/framework/common/src/mgr
+        ${HCOMM_DIR}/src/framework/communicator
+        ${HCOMM_DIR}/src/framework/communicator/impl/independent_op/resource/engine
     )
+
+    # 链接库
     target_link_libraries(ccl_kernel PRIVATE
         $<BUILD_INTERFACE:intf_pub_cxx14>
         $<BUILD_INTERFACE:mmpa_headers>
@@ -609,11 +610,13 @@ if(NOT BUILD_OPEN_PROJECT)
         ofed_headers
     )
 
+    # 安装
     install(TARGETS ccl_kernel LIBRARY
         DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL
     )
 endif()
 
+# OPEN模式下KERNEL模式额外链接配置
 if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
     if(BUILD_OPEN_PROJECT)
         set(CMAKE_CXX_FLAGS "")
@@ -657,6 +660,7 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
     endif()
 endif()
 
+# DEVICE模式下KERNEL模式额外配置：定义 aicpu_custom 动态链接库
 if(DEVICE_MODE AND KERNEL_MODE)
     set(CCL_KERNEL_TAR_DIR ${BUILD_DEVICE_DIR}/ccl_kernel_tar_pkg/aicpu_kernels_device)
     add_custom_command(
@@ -669,12 +673,15 @@ if(DEVICE_MODE AND KERNEL_MODE)
         COMMENT "Copying libccl_kernel_plf.so libccl_kernel.so to ${CCL_KERNEL_TAR_DIR}"
     )
 
+    # 预处理宏定义
     set(AICPU_CUSTOM_COMPILE_DEFINITIONS
         HCCD
         CCL_KERNEL_AICPU
         OPEN_BUILD_PROJECT
         -D_GLIBCXX_USE_CXX11_ABI=1
     )
+
+    # 链接库
     set(AICPU_CUSTOM_LINK_LIBRARIES
         -Wl,--no-as-needed
         ascend_hal
@@ -689,14 +696,8 @@ if(DEVICE_MODE AND KERNEL_MODE)
         -lpthread
     )
 
-    add_library(aicpu_custom SHARED)
-    get_target_property(CCL_KERNEL_ALL_SOURCES ccl_kernel SOURCES)
-    if(CCL_KERNEL_ALL_SOURCES)
-        list(REMOVE_DUPLICATES CCL_KERNEL_ALL_SOURCES)
-        target_sources(aicpu_custom PRIVATE ${CCL_KERNEL_ALL_SOURCES})
-    endif()
-    target_compile_definitions(aicpu_custom PRIVATE ${AICPU_CUSTOM_COMPILE_DEFINITIONS})
-    target_compile_options(aicpu_custom PRIVATE
+    # 编译选项
+    set(AICPU_CUSTOM_COMPILE_OPTIONS
         -Werror
         -Wfloat-equal
         -Wall
@@ -707,12 +708,25 @@ if(DEVICE_MODE AND KERNEL_MODE)
         -O3
         -std=c++14
     )
-    target_link_options(aicpu_custom PRIVATE
+
+    # 链接选项
+    set(AICPU_CUSTOM_LINK_OPTIONS
         -Wl,-z,relro
         -Wl,-z,now
         -Wl,-z,noexecstack
         -s
     )
+
+    add_library(aicpu_custom SHARED)
+    get_target_property(CCL_KERNEL_ALL_SOURCES ccl_kernel SOURCES)
+    if(CCL_KERNEL_ALL_SOURCES)
+        list(REMOVE_DUPLICATES CCL_KERNEL_ALL_SOURCES)
+        target_sources(aicpu_custom PRIVATE ${CCL_KERNEL_ALL_SOURCES})
+    endif()
+    target_compile_definitions(aicpu_custom PRIVATE ${AICPU_CUSTOM_COMPILE_DEFINITIONS})
+    target_compile_options(aicpu_custom PRIVATE ${AICPU_CUSTOM_COMPILE_OPTIONS})
+    target_link_options(aicpu_custom PRIVATE ${AICPU_CUSTOM_LINK_OPTIONS})
+
     target_include_directories(aicpu_custom PRIVATE
         ${CCL_KERNEL_INCLUDE_LIST}
         ${ORION_HEAD_LIST}
@@ -721,7 +735,11 @@ if(DEVICE_MODE AND KERNEL_MODE)
         ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/
     )
     target_link_libraries(aicpu_custom PRIVATE ${AICPU_CUSTOM_LINK_LIBRARIES})
+
+    # 设置依赖
     add_dependencies(aicpu_custom ccl_kernel ccl_kernel_plf_a aicpu_custom_json)
+
+    # 设置 aicpu_custom 输出文件名
     set_target_properties(aicpu_custom PROPERTIES
         OUTPUT_NAME aicpu_custom
         PREFIX "lib"
@@ -735,6 +753,7 @@ if(DEVICE_MODE AND KERNEL_MODE)
     )
 endif()
 
+# OPEN + DEVICE + KERNEL 模式下打包
 if(BUILD_OPEN_PROJECT AND DEVICE_MODE AND KERNEL_MODE)
     set(CCL_KERNEL_TAR_LIBS
         ${BUILD_DEVICE_DIR}/ccl_kernel_tar_pkg/aicpu_kernels_device/libccl_kernel_plf.so
