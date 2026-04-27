@@ -351,7 +351,10 @@ void UbTransportLiteImpl::Post(u32 index, const StreamLite &stream)
 
     HCCL_INFO("UbTransportLiteImpl::Post notifyId[0x%llx], pi=%u", rmtBuffSliceLite.GetAddr(), connOut.pi);
 
-    CHK_PRT_RET_NULL(!IsReportTask(), HCCL_DEBUG("[%s]IsReportTask false, skip report", __func__));
+    if (!IsReportTask()) {
+        HCCL_DEBUG("[%s]IsReportTask false, skip report", __func__);
+        return;
+    }
 
     TaskParam taskParam{};
     taskParam.taskType                 = TaskParamType::TASK_UB_INLINE_WRITE;
@@ -388,7 +391,10 @@ void UbTransportLiteImpl::WaitWithTimeout(u32 index, const StreamLite &stream, u
     auto notifyId = locNotifyVec[index]->GetId();
     stream.GetRtsq()->NotifyWait(notifyId, timeout);
 
-    CHK_PRT_RET_NULL(!IsReportTask(), HCCL_DEBUG("[%s]IsReportTask false, skip report", __func__));
+    if (!IsReportTask()) {
+        HCCL_DEBUG("[%s]IsReportTask false, skip report", __func__);
+        return;
+    }
 
     TaskParam taskParam{};
     taskParam.taskType                 = TaskParamType::TASK_NOTIFY_WAIT;
@@ -407,7 +413,10 @@ void UbTransportLiteImpl::WaitWithTimeout(u32 index, const StreamLite &stream, u
 void UbTransportLiteImpl::ProfilingProcess(void *src, void *dst, u64 size, const StreamLite &stream,
                                            DmaOp dmaOp, u32 taskId)
 {
-    CHK_PRT_RET_NULL(!IsReportTask(), HCCL_DEBUG("[%s]IsReportTask false, skip report", __func__));
+    if (!IsReportTask()) {
+        HCCL_DEBUG("[%s]IsReportTask false, skip report", __func__);
+        return;
+    }
 
     TaskParam taskParam{};
     taskParam.taskType = TaskParamType::TASK_UB;
@@ -433,7 +442,10 @@ void UbTransportLiteImpl::ProfilingProcess(void *src, void *dst, u64 size, const
 void UbTransportLiteImpl::ReduceProfilingProcess(void *src, void *dst, u64 size,
                                                  const ReduceIn &reduceIn, const StreamLite &stream, u32 taskId)
 {
-    CHK_PRT_RET_NULL(!IsReportTask(), HCCL_DEBUG("[%s]IsReportTask false, skip report", __func__));
+    if (!IsReportTask()) {
+        HCCL_DEBUG("[%s]IsReportTask false, skip report", __func__);
+        return;
+    }
 
     TaskParam taskParam {};
     taskParam.taskType = TaskParamType::TASK_UB_REDUCE_INLINE;
@@ -605,7 +617,10 @@ void UbTransportLiteImpl::WriteWithNotify(const RmaBufferLite &loc, const Buffer
                                 rmtNotifySliceLite, stream, notifyData);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
-    CHK_PRT_RET_NULL(!IsReportTask(), HCCL_DEBUG("[%s]IsReportTask false, skip report", __func__));
+    if (!IsReportTask()) {
+        HCCL_DEBUG("[%s]IsReportTask false, skip report", __func__);
+        return;
+    }
 
     TaskParam taskParam{};
     taskParam.taskType              = TaskParamType::TASK_WRITE_WITH_NOTIFY;
@@ -646,7 +661,10 @@ void UbTransportLiteImpl::WriteReduceWithNotify(const RmaBufferLite &loc, const 
                                       notifyData);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
-    CHK_PRT_RET_NULL(!IsReportTask(), HCCL_DEBUG("[%s]IsReportTask false, skip report", __func__));
+    if (!IsReportTask()) {
+        HCCL_DEBUG("[%s]IsReportTask false, skip report", __func__);
+        return;
+    }
 
     TaskParam taskParam{};
     taskParam.taskType                 = TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY;
