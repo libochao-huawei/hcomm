@@ -131,3 +131,37 @@ TEST_F(CcuCompPubTest, Ut_CcuCleanDieCkesWhenUnderlyingFailsExpectFailure) {
     auto ret = CcuCleanDieCkes(0, 1);
     EXPECT_EQ(ret, HcclResult::HCCL_E_INTERNAL);
 }
+
+// ===================== 覆盖你修改的2行代码 =====================
+TEST_F(CcuCompPubTest, Ut_CcuResBatchAllocator_Alloc_ReqType_Not_Multiple_Die)
+{
+    CcuResBatchAllocator allocator;
+    uint32_t handleKey = 0;
+    MissionReq missionReq = {};
+    MissionResInfo info;
+
+    // 触发第 1 个红色分支：reqType != FUSION_MULTIPLE_DIE
+    missionReq.reqType = FUSION_SINGLE_DIE;
+
+    HcclResult ret = allocator.Alloc(handleKey, missionReq, info);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(CcuCompPubTest, Ut_CcuResBatchAllocator_Alloc_HandleBlockRes_Unavailable)
+{
+    CcuResBatchAllocator allocator;
+    uint32_t handleKey = 0;
+    MissionReq missionReq = {};
+    MissionResInfo info;
+
+    missionReq.reqType = FUSION_MULTIPLE_DIE;
+
+    // Mock 触发第 2 个红色分支
+    MOCK_METHOD(HandleBlockRes, HCCLResult,
+        (uint32_t, uint32_t, BlockStrategy, std::vector<Block>&, std::vector<ResInfo>&));
+    EXPECT_CALL(HandleBlockRes(_, _, _, _, _))
+        .willOnce(Return(HCCL_E_UNAVAIL));
+
+    HcclResult ret = allocator.Alloc(handleKey, missionReq, info);
+    EXPECT_EQ(ret, HCCL_E_UNAVAIL);
+}
