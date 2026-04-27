@@ -27,6 +27,7 @@ public:
     std::function<drvError_t(unsigned int, struct event_summary *)> dlHalEschedSubmitEvent;
     std::function<drvError_t(int, unsigned int *, unsigned int *,
         unsigned int *, unsigned int *)> dlHalDrvQueryProcessHostPid;
+    std::function<drvError_t(uint32_t, int32_t, int32_t, int64_t *)> dlHalGetDeviceInfo;
 
 protected:
 private:
