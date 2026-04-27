@@ -822,7 +822,7 @@ void Interpret(const AivInstruction &aivInstruction, const CommunicatorImpl &com
     if((aivOpArgs.aivTag & AIV_LOW_16_BITS) == 1 && (aivOpArgs.aivTag >> AIV_TAG_MOVE_LEFT_BITS) == 1){
         void* buffersInAddrSrc;
         u64 buffersIn[MAX_RANK_SIZE_] = {};
-        buffersIn[comm.GetMyRank()] =  comm.GetCclBuffer()->GetAddr();
+        buffersIn[comm.GetMyRank()] = comm.GetCurrentCollOperator()->scratchMem->GetAddr();
         auto ubMemLink2TransportMap = comm.GetUbMemoryTransportMgr()->GetRmtRankId2RmtIpcRmaBufList();
         for (auto ubMemLink2TransportIter : ubMemLink2TransportMap) {
             auto rmtRank = ubMemLink2TransportIter.first;

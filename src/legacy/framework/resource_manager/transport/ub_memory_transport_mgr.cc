@@ -104,7 +104,7 @@ HcclResult UbMemoryTransportMgr::CreateTransportByLink(const LinkData &link)
     }
 
     std::unique_ptr<UbMemoryTransport> transport = make_unique<UbMemoryTransport>(
-        comm->GetCclBuffer(), comm->GetAivTagBuffer(), comm->GetAivOffloadTagBuffer(), socket, comm->GetDeviceLogicId());
+        comm->GetCurrentCollOperator()->scratchMem, comm->GetAivTagBuffer(), comm->GetAivOffloadTagBuffer(), socket, comm->GetDeviceLogicId());
 
     if (transport->Init() != HcclResult::HCCL_SUCCESS) {
         HCCL_ERROR("[UbMemoryTransportMgr][%s] transport init fail, link %s", __func__, link.Describe().c_str());
