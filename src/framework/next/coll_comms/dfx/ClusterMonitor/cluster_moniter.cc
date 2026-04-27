@@ -71,18 +71,19 @@ void ClusterMonitor::ProcessExceptionEvent()
     }
     return;
 }
-void GetCqeErrInfo(unsigned int RemoteDeviceId, unsigned int LocDeviceId, unsigned short int status, std::string LocalEid, std::string RemoteEid)
+void GetCqeErrInfo(unsigned int RemoteDeviceId, unsigned int LocDeviceId, unsigned short int status, std::string LocalEid, std::string RemoteEid, std::string RemoteInsId)
 {
-    return ClusterMonitor::GetInstance().GetCqeErrInfo(RemoteDeviceId, LocDeviceId, status, LocalEid, RemoteEid);
+    return ClusterMonitor::GetInstance().GetCqeErrInfo(RemoteDeviceId, LocDeviceId, status, LocalEid, RemoteEid, RemoteInsId);
 }
 
-void ClusterMonitor::GetCqeErrInfo(u32 RemoteDeviceId, u32 LocDeviceId, uint16_t status, std::string LocalEid, std::string RemoteEid)
+void ClusterMonitor::GetCqeErrInfo(u32 RemoteDeviceId, u32 LocDeviceId, uint16_t status, std::string LocalEid, std::string RemoteEid, std::string RemoteInsId)
 {
     CqeErrInfo_.CqeRemotedeviceId = RemoteDeviceId;
     CqeErrInfo_.CqeLocaldeviceId = LocDeviceId;
     CqeErrInfo_.CqeRemoterstatus = status;
     CqeErrInfo_.CqeLocalEid = LocalEid;
     CqeErrInfo_.CqeRemoteEid = RemoteEid;
+    CqeErrInfo_.CqeRemoteInsId = RemoteInsId;
     // if (CqeErrInfo_.CqeRemoterstatus != 0) {
     //    SetStatus(uid_, uid_, HeartBeatStatus::HEARTBEAT_CQE_EXCEPTION);//从远端获取的remoteRankId需要转换为Uid_类型
     //    HCCL_RUN_INFO("[%s][%s]local rank [%s]: crimer rank [%s] status[%d] by informer rank [%d]",
@@ -94,7 +95,7 @@ void ClusterMonitor::GetCqeErrInfo(u32 RemoteDeviceId, u32 LocDeviceId, uint16_t
 
 __attribute__((constructor)) void ClusterMonitorCallBackInit()
 {
-    //hcomm::RegisterGetAicpuRemoteRankIdCallBackHcomm(GetCqeErrInfo);
+    hcomm::RegisterGetAicpuCqeErrInfoCallBackHcomm(GetCqeErrInfo);
     hcomm::RegisterGetCcuCqeErrInfoCallBackHcomm(GetCqeErrInfo);
 }
 
