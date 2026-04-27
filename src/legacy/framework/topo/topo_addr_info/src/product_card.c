@@ -45,6 +45,7 @@ static  int ProcessRoceLayer(int npu_id, NetLayer* layer)
     AddrSetIP(&addr, ip_addr);
     errno_t ret = strcpy_s(addr.plane_id, MAX_PLANE_ID_LEN, "plane0");
     AddrAddPort(&addr, "d2h");
+    NetLayerAddAddr(layer, &addr);
     return ret;
 }
 

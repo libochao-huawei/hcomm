@@ -7,10 +7,11 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#ifndef _PCIE_NIC_
-#define _PCIE_NIC_
+#ifndef _TOPO_ADDR_INFO_RDMA_HCA_H_
+#define _TOPO_ADDR_INFO_RDMA_HCA_H_
 
 #include <stdio.h>
+#include "hal.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,10 +19,29 @@ extern "C" {
 
 int GetNpuRoceIp(int phy_id, char* ipaddr, size_t addrLen);
 
-int GetIpByIfName(const char* ifname, char* ip, size_t addrLen);
+int IsSamePcieSwitch(const char* pciePath1, const char* pciePath2);
+
+int IsNpuAndNicInSamePcieSwitch(NPU *npu, HCA *nic);
+
+/**
+ * 扫描所有HCA
+ * @param nics HCA数组指针
+ * @param maxNicNum 最大HCA数量
+ * @param nicNum 扫描到的HCA数量指针
+ * @return 0 成功，-1 失败0
+ */
+int ScanHca(HCA *nics, int maxNicNum, int *nicNum);
+
+/**
+ * 从文件中读取整数,用来读取numa
+ * @param path 文件路径
+ * @param value 读取的整数指针
+ * @return 0 成功，-1 失败0
+*/
+int ReadIntFromFile(const char* path, int *value);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // _PCIE_NIC_
+#endif // _TOPO_ADDR_INFO_RDMA_HCA_H_
