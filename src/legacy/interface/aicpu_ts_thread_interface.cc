@@ -198,7 +198,7 @@ HcclResult IAicpuTsThread::WriteValue(uint64_t addr, uint16_t value) const
     RtsqBase *rtsqA5 = nullptr;
     CHK_RET(GetRtsqWithNullCheck(streamLiteVoidPtr_, rtsqA5));
 
-    HCCL_INFO("[IAicpuTsThread::%s] @ Stream id [%u], addr [%llx], value [%u]",
+    HCCL_INFO("[IAicpuTsThread::%s] at Stream id [%u], addr [%llx], value [%u]",
         __func__,
         static_cast<StreamLite *>(streamLiteVoidPtr_)->GetId(),
         addr,
