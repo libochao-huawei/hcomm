@@ -7,53 +7,58 @@
 #include "ccu_types.h"
 #include "ccu_data_utils.hpp"
 #include "ccu_data_api_impl.h"
+#include "ccu_variable.hpp"
 
-class CcuVariable;
+namespace ccu {
 
-class CcuAddress final {
+class Address final {
 public:
-    explicit CcuAddress() {}
+    explicit Address() {}
 
-    CcuAddress(const CcuAddress& other) {
+    Address(const Address& other) {
         this->handle = other.handle;
     }
 
-    void operator=(const CcuAddress& other) const{
+    void operator=(const Address& other) const {
         auto ret = CcuAddressAssignAddr(this->handle, other.handle);
         if (ret != CcuResult::CCU_SUCCESS) {
             throw "todo: failed";
         }
     }
 
-    void operator=(CcuAddress&& other) {
+    void operator=(Address&& other) {
         this->handle = other.handle;
     }
 
-    void operator=(uint64_t immediate) const{
+    void operator=(uint64_t immediate) const {
         auto ret = CcuAddressAssignImm(this->handle, immediate);
         if (ret != CcuResult::CCU_SUCCESS) {
             throw "todo: failed";
         }
     }
-    void operator=(const CcuVariable &var) const{
+
+    void operator=(const Variable &var) const {
         auto ret = CcuAddressAssignVar(this->handle, var.handle);
         if (ret != CcuResult::CCU_SUCCESS) {
             throw "todo: failed";
         }
     }
-    void operator=(CcuArithmeticOperator<CcuAddress, CcuAddress> op) const {
+
+    void operator=(CcuArithmeticOperator<Address, Address> op) const {
         auto ret = CcuAddressAddAddrToAddr(this->handle, op.lhs.handle, op.rhs.handle);
         if (ret != CcuResult::CCU_SUCCESS) {
             throw "todo: failed";
         }
     }
-    void operator=(CcuArithmeticOperator<CcuAddress, CcuVariable> op) const{
+
+    void operator=(CcuArithmeticOperator<Address, Variable> op) const {
         auto ret = CcuAddressAddVarToAddr(this->handle, op.lhs.handle, op.rhs.handle);
         if (ret != CcuResult::CCU_SUCCESS) {
             throw "todo: failed";
         }
     }
-    void operator=(CcuArithmeticOperator<CcuVariable, CcuAddress> op) const{
+
+    void operator=(CcuArithmeticOperator<Variable, Address> op) const {
         auto ret = CcuAddressAddVarToAddr(this->handle, op.rhs.handle, op.lhs.handle);
         if (ret != CcuResult::CCU_SUCCESS) {
             throw "todo: failed";
@@ -61,27 +66,24 @@ public:
     }
 
     // addr + addr
-    CcuArithmeticOperator<CcuAddress, CcuAddress> operator+(const CcuAddress &that) const {
-        return CcuArithmeticOperator<CcuAddress, CcuAddress>(
-            *this, that, CcuArithmeticOperatorType::ADDITION);
+    CcuArithmeticOperator<Address, Address> operator+(const Address &that) const {
+        return CcuArithmeticOperator<Address, Address>(*this, that, CcuArithmeticOperatorType::ADDITION);
     }
 
     // addr + variable
-    CcuArithmeticOperator<CcuAddress, CcuVariable> operator+(const CcuVariable &var) const{
-        return CcuArithmeticOperator<CcuAddress, CcuVariable>(
-            *this, var, CcuArithmeticOperatorType::ADDITION);
+    CcuArithmeticOperator<Address, Variable> operator+(const Variable &var) const {
+        return CcuArithmeticOperator<Address, Variable>(*this, var, CcuArithmeticOperatorType::ADDITION);
     }
 
-
-    void operator+=(const CcuVariable &var) const{
+    void operator+=(const Variable &var) const {
         auto ret = CcuAddressAddAssignVar(this->handle, var.handle);
         if (ret != CcuResult::CCU_SUCCESS) {
             throw "todo: failed";
         }
     }
 
-    // // addr += addr
-    void operator+=(const CcuAddress &other) const{
+    // addr += addr
+    void operator+=(const Address &other) const {
         auto ret = CcuAddressAddAddrToAddr(this->handle, this->handle, other.handle);
         if (ret != CcuResult::CCU_SUCCESS) {
             throw "todo: failed";
@@ -92,13 +94,14 @@ public:
 };
 
 // variable + addr（交换律）
-inline CcuArithmeticOperator<CcuVariable, CcuAddress> operator+(const CcuVariable &var, const CcuAddress &addr) {
-    return CcuArithmeticOperator<CcuVariable, CcuAddress>(var, addr, CcuArithmeticOperatorType::ADDITION);
+inline CcuArithmeticOperator<Variable, Address> operator+(const Variable &var, const Address &addr) {
+    return CcuArithmeticOperator<Variable, Address>(var, addr, CcuArithmeticOperatorType::ADDITION);
 }
 
-template <> inline void CcuArithmeticOperator<CcuAddress, CcuAddress>::Check() const {}
-template <> inline void CcuArithmeticOperator<CcuAddress, CcuVariable>::Check() const {}
-template <> inline void CcuArithmeticOperator<CcuVariable, CcuAddress>::Check() const {}
+} // namespace ccu
 
+template <> inline void CcuArithmeticOperator<ccu::Address, ccu::Address>::Check() const {}
+template <> inline void CcuArithmeticOperator<ccu::Address, ccu::Variable>::Check() const {}
+template <> inline void CcuArithmeticOperator<ccu::Variable, ccu::Address>::Check() const {}
 
 #endif // CCU_ADDRESS_HPP

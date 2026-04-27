@@ -17,18 +17,11 @@
 namespace ccu {
 
 // ==================== 类型别名 ====================
-using Variable  = ::CcuVariable;
-using Address   = ::CcuAddress;
-using Event     = ::CcuEvent;
-using Buffer    = ::CcuBuffer;
-using LocalAddr = ::CcuLocalAddr;
-using RemoteAddr = ::CcuRemoteAddr;
-using CondExpr  = ::CcuCondExpr;
 
 using Loop           = ::CcuLoop;
 using LoopGroup      = ::CcuLoopGroup;
 using LoopExecutors  = ::CcuLoopExecutors;
-using LoopConfig     = ::CcuLoopConfig; 
+using LoopConfig     = ::CcuLoopConfig;
 using LoopGroupConfig = ::CcuLoopGroupConfig;
 
 // ==================== 资源创建 ====================
