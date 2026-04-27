@@ -3,8 +3,11 @@
 //#include "../taskException/host/hcclCommTaskException.h"
 #include "hcclCommTaskException.h"
 #include "ccuTaskException.h"
+#include "env_config.h"
 
 namespace hcomm {
+constexpr u32 HEARTBEAT_INTERVAL = 1000; 
+constexpr u32 JITTER_TIME = 300; // 关键事件允许的误差事件范围±300s。误差来源：EVENT和NOTIFY差异、传播耗时、计时误差    
 HcclResult ret;
 ClusterMonitor &ClusterMonitor::GetInstance()
 {
@@ -71,6 +74,92 @@ void ClusterMonitor::ProcessExceptionEvent()
     }
     return;
 }
+
+bool ClusterMonitor::IsKeyEvent(HeartBeatFrame &event, HcclUs curTime, const std::string &group)
+{
+    bool ret = false;
+    s64 intervalTime = DURATION_US(curTime - event.TOARelative).count() / (TIME_S_TO_MS * ONE_MILLISECOND_OF_USLEEP);
+    s32 hcclExecTimeout = Hccl::EnvConfig::GetInstance().GetRtsConfig().GetExecTimeOut();
+    s64 execTimeout = hcclExecTimeout;
+    s64 detectionTime = 0;
+    switch (event.status) {
+        case HeartBeatStatus::HEARTBEAT_LOST:
+            detectionTime = (lostThreshold_ * HEARTBEAT_INTERVAL) / TIME_S_TO_MS;
+            break;
+        case HeartBeatStatus::HEARTBEAT_CQE_ERR:
+            detectionTime = 0;
+            break;
+        default:
+            return false; // 当前不支持的事件，不做处理和展现
+    }
+    ret = ((execTimeout - intervalTime - detectionTime) < JITTER_TIME) &&
+        ((intervalTime + detectionTime - execTimeout) < JITTER_TIME);
+    return ret;
+}
+
+void ClusterMonitor::MakeErrMsg(std::queue<HeartBeatFrame> &keyEvents, std::vector<std::string> &errStatusVec)
+{
+    while (keyEvents.size() > 0) {
+        auto &tmp = keyEvents.front();
+        std::string crimerStr = FormatUId(tmp.crimer);
+        std::string informerStr = FormatUId(tmp.informer);
+
+        std::string headStr = "[" + LOG_KEYWORDS_TASK_EXEC + "][" + LOG_KEYWORDS_HEARTBEAT_EVETN + "]" +
+            "Cluster Exception Location[IP/ID]:[";
+
+        time_t tm = std::chrono::system_clock::to_time_t(tmp.TOASystem);
+        std::string timeStr(ctime(&tm));
+        if (!timeStr.empty()) { // ctime()函数自带换行符，需要去掉
+            timeStr.pop_back();
+        }
+        timeStr = ", Arrival Time:[" + timeStr + "]";
+
+        std::string errStr = ", ExceptionType:";
+        std::string reasonStr = ", Possible Reason:";
+        switch (tmp.status) {
+            case HeartBeatStatus::HEARTBEAT_LOST:
+                errStr = errStr + "[Heartbeat Lost Occurred]";
+                reasonStr = reasonStr + "1. Process has exited, 2. Network Disconnected";
+                errStr =
+                    headStr + crimerStr + "]" + timeStr + ", Discoverer:[" + informerStr + "]" + errStr + reasonStr;
+                break;
+            case HeartBeatStatus::HEARTBEAT_CQE_ERR:
+                errStr = errStr + "[Error cqe Occurred]";
+                reasonStr = reasonStr + "1.Network Disconnected, 2.Remote Rank Coredown";
+                errStr = headStr + crimerStr + "]" + timeStr + errStr + reasonStr;
+                break;
+            default:
+                errStr = " Unknown";
+        }
+        errStatusVec.emplace_back(errStr);
+        keyEvents.pop();
+    }
+}
+
+std::vector<std::string> ClusterMonitor::PrintEvents(std::map<HeartBeatStatus, std::queue<HeartBeatFrame>> &keyEvents)
+{
+    std::vector<std::string> errStatusVec;
+    // 打印优先级 opretry not support > error cqe > stuck > lost
+    MakeErrMsg(keyEvents[HeartBeatStatus::HEARTBEAT_CQE_ERR], errStatusVec);
+    MakeErrMsg(keyEvents[HeartBeatStatus::HEARTBEAT_LOST], errStatusVec);
+    return errStatusVec;
+}
+
+std::vector<std::string> ClusterMonitor::GetErrStatusVec(const std::string &group)
+{
+    std::unique_lock<std::mutex> lock(ProcessLock_);
+    HcclUs curTime = TIME_NOW();
+    std::map<HeartBeatStatus, std::queue<HeartBeatFrame>> keyEvents;
+    while (errStatusQueue_.size() > 0) {
+        auto &tmp = errStatusQueue_.front();
+        if (IsKeyEvent(tmp, curTime, group)) { // 非关键事件不处理
+            keyEvents[tmp.status].push(tmp);
+        }
+        errStatusQueue_.pop();
+    }
+    return PrintEvents(keyEvents);
+}
+
 void GetCqeErrInfo(unsigned int RemoteDeviceId, unsigned int LocDeviceId, unsigned short int status, std::string LocalEid, std::string RemoteEid, std::string RemoteInsId)
 {
     return ClusterMonitor::GetInstance().GetCqeErrInfo(RemoteDeviceId, LocDeviceId, status, LocalEid, RemoteEid, RemoteInsId);
