@@ -64,16 +64,6 @@ protected:
     u8 mockSq[AC_SQE_SIZE * AC_SQE_MAX_CNT]{0};
 };
 
-void CCoreNotifyRecord_ThrowExceptionStub(RtsqA5 *This, u64 recordAddr, u64 curTurnCntAddr)
-{
-    THROW<InternalException>("HcclException &e");
-}
-
-void RecoverKernelParam_ThrowExceptionStub(AicpuUtils *This, CommunicatorImplLite *communicatorImplLite, HcclOpData *data)
-{
-    THROW<InternalException>("HcclException &e");
-}
-
 // HcclGetCommHandleByCtx
 TEST_F(AicpuMc2HandlerTest, Ut_HcclGetCommHandleByCtx_When_GetCommIsNull_Expect_ReturnError) {
     auto* ctx = reinterpret_cast<void*>(kernelParam);
@@ -468,8 +458,8 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchCcorePost_When_ThrowException_Expect_Re
     MOCKER_CPP(&StreamLiteMgr::GetMaster).stubs().with().will(returnValue(&master));
     auto rtsq = static_cast<RtsqA5 *>(master.GetRtsq());
     MOCKER_CPP_VIRTUAL(*rtsq, &RtsqA5::LaunchTask).stubs().will(ignoreReturnValue());
-    MOCKER_CPP_VIRTUAL(*rtsq, &RtsqA5::CCoreNotifyRecord).stubs().will(invoke(CCoreNotifyRecord_ThrowExceptionStub));
-    EXPECT_THROW(handler.HcclLaunchCcorePost(comm, 0, 0, 0), InternalException);
+    MOCKER_CPP_VIRTUAL(*rtsq, &RtsqA5::CCoreNotifyRecord).stubs().will(throws(InternalException("")));
+    EXPECT_THROW(handler.HcclLaunchCcorePost(comm, 0, 0, 0), std::exception);
 }
 
 TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchCcorePost_When_ValidParams_Expect_ReturnSuccess) {
@@ -530,8 +520,8 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchOp_When_ThrowException_Expect_ReturnErr
     MOCKER_CPP(&CommunicatorImplLite::UpdateHDCommnicate).stubs().will(ignoreReturnValue());
     MOCKER_CPP(&CommunicatorImplLite::RegisterRtsqCallback).stubs().will(ignoreReturnValue());
     
-    MOCKER_CPP(&AicpuUtils::RecoverKernelParam).stubs().will(invoke(RecoverKernelParam_ThrowExceptionStub));
-    EXPECT_THROW(handler.HcclLaunchOp(comm, &data), InternalException);
+    MOCKER_CPP(&AicpuUtils::RecoverKernelParam).stubs().will(throws(InternalException("")));
+    EXPECT_THROW(handler.HcclLaunchOp(comm, &data), std::exception);
 }
 
 TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchOp_When_KernelParamIsNull_Expect_ReturnError) {

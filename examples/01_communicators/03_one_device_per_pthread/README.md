@@ -31,6 +31,10 @@
 - <term>Atlas A2 训练系列产品</term>
 - <term>Atlas 训练系列产品</term> / <term>Atlas 推理系列产品</term>
 
+### 软件依赖
+
+本样例运行依赖安装CANN ops算子包，详细安装步骤可参见 [源码构建](../../../docs/build.md) 中的 “安装CANN软件包” 章节。
+
 ### 配置环境变量
 
 ```bash

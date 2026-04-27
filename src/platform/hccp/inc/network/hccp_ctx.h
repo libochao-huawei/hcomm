@@ -115,7 +115,9 @@ struct DevBaseAttr {
         } ub;
     };
 
-    uint32_t resv[16U];
+    uint32_t maxReadSize;
+    uint32_t maxWriteSize;
+    uint32_t resv[14U];
 };
 
 struct HccpMemInfo {

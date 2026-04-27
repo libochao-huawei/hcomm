@@ -24,10 +24,10 @@ static uint32_t RoundUpToNextPowerOfTwo(uint32_t num)
 
     num--;
     num |= num >> 1;
-    num |= num >> SHIFT_2BITS;
-    num |= num >> SHIFT_4BITS;
-    num |= num >> SHIFT_8BITS;
-    num |= num >> SHIFT_16BITS;
+    num |= num >> Hccl::SHIFT_2BITS;
+    num |= num >> Hccl::SHIFT_4BITS;
+    num |= num >> Hccl::SHIFT_8BITS;
+    num |= num >> Hccl::SHIFT_16BITS;
     return num + 1;
 }
 

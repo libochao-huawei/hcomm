@@ -22,6 +22,9 @@ namespace hcomm {
 EndpointPair::~EndpointPair() 
 {
     for (auto &channels : channelHandles_) {
+        if (channels.second.empty()) {
+            continue;
+        }
         (void)ChannelProcess::ChannelDestroy(channels.second.data(), channels.second.size());
     }
 }
@@ -96,7 +99,7 @@ HcclResult EndpointPair::CreateChannel(EndpointHandle endpointHandle, CommEngine
         HcommChannelDesc *channelDescs, ChannelHandle *channels)
 {
     if (channelHandles_.find(engine) == channelHandles_.end() || channelHandles_[engine].size() <= reuseIdx) {
-        CHK_RET(static_cast<HcclResult>(
+        CHK_RET_UNAVAIL(static_cast<HcclResult>(
             HcommCollectiveChannelCreate(endpointHandle, engine, channelDescs, 1, channels)));
         channelHandles_[engine].push_back(channels[0]);
         return HCCL_SUCCESS;
@@ -107,6 +110,31 @@ HcclResult EndpointPair::CreateChannel(EndpointHandle endpointHandle, CommEngine
         CHK_RET(static_cast<HcclResult>(HcommChannelUpdateMemInfo(channelDescs->memHandles + 1, channelDescs->memHandleNum - 1, channels[0])));
     }
     return HCCL_SUCCESS;
+}
+
+// 找到对应的channelhandle，调用HcommChannelDestroy销毁平台层对象，并删除channelHandles_中的channelHandle元素
+HcclResult EndpointPair::DestroyChannel(CommEngine engine, u32 reuseIdx)
+{
+    if (IsChannelNotExist(engine, reuseIdx)) {
+        HCCL_WARNING("EndpointPair::DestroyChannel: engine[%d] reuseIdx[%u], channelHandle size[%u],"
+                     "channel not found, skip destroy channel", engine, reuseIdx, channelHandles_[engine].size());
+        return HCCL_SUCCESS;
+    }
+    HCCL_INFO("EndpointPair::DestroyChannel: engine[%d] reuseIdx[%u], channelHandle size[%u],"
+              "start destroy channel", engine, reuseIdx, channelHandles_[engine].size());
+    ChannelHandle channelHandle = channelHandles_[engine][reuseIdx];
+    CHK_RET(static_cast<HcclResult>(HcommChannelDestroy(&channelHandle, 1)));
+    // 去掉channelHandles_中reuseIdx位置的channelHandle
+    channelHandles_[engine].erase(channelHandles_[engine].begin() + reuseIdx);
+    HCCL_INFO("EndpointPair::DestroyChannel: engine[%d] reuseIdx[%u] destroy channel success,"
+              "channelHandle size[%u]", engine, reuseIdx, channelHandles_[engine].size());
+    return HCCL_SUCCESS;
+}
+
+// 检查channel是否存在，channel不存在则返回true
+bool EndpointPair::IsChannelNotExist(CommEngine engine, u32 reuseIdx)
+{
+    return channelHandles_.find(engine) == channelHandles_.end() || channelHandles_[engine].size() <= reuseIdx;
 }
 
 const std::unordered_map<CommEngine, std::vector<ChannelHandle>>& EndpointPair::GetChannelHandles()

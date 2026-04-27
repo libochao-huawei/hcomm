@@ -3471,6 +3471,7 @@ TEST_F(CommunicatorImplTest, Ut_CheckRankGraphAddrs_When_GetDevEidList_Not_Enoug
 
     CommunicatorImpl comm;
     comm.devLogicId = 0;
+    comm.myRank = 0;
     HcclCommConfig config;
     CommParams params;
 

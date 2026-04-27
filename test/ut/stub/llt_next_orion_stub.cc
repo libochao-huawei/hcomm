@@ -158,7 +158,20 @@ bool RdmaHandleManager::GetRtpEnable(RdmaHandle rdmaHandle)
 {
     return true;
 }
- 
+
+HcclResult RdmaHandleManager::GetEidByIpv4Addr(const IpAddress& addr, IpAddress& eidAddr)
+{
+    Hccl::IpAddress ip("0000:0000:0000:0000:0000:0000:c0a8:0367", AF_INET6);
+    eidAddr = ip;
+    return HCCL_SUCCESS;
+}
+
+void RdmaHandleManager::UboeIpv4ToEid(const IpAddress& ipV4Address, IpAddress& eidAddress, u32 devPhyId)
+{
+    Hccl::IpAddress ip("0000:0000:0000:0000:0000:0000:c0a8:0367", AF_INET6);
+    eidAddress = ip;
+}
+
 SocketStatus Socket::GetAsyncStatus()
 {
     return SocketStatus::OK;
@@ -2217,6 +2230,16 @@ std::string CollOpToString(const BaseCollOperator &collOp)
 std::shared_ptr<TaskInfo>  MirrorTaskManagerLite::GetTaskInfo(u32 streamId, u32 taskId) const
 {
     return nullptr;
+}
+
+HcclResult HcclCommunicator::SetAccelerator(HcclAccelerator hcclAccelerator, bool isCcuMsAvailable)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommunicator::SetAccelerator(int32_t accelerator, bool isCcuMsAvailable)
+{
+    return HCCL_SUCCESS;
 }
 
 }  // namespace Hccl

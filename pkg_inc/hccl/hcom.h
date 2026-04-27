@@ -153,15 +153,6 @@ using rtStream_t = void *;
 HcclResult HcomGetRankSize(const char *group, u32 *rankSize);
 
 /**
- * @brief Get the rank number of this rank's server within the group.
- *
- * @param group A string identifying the group name.
- * @param localRankSize A pointer identifying the rank number.
- * @return HcclResult
- */
-HcclResult HcomGetLocalRankSize(const char *group, u32 *localRankSize);
-
-/**
  * @brief Get the rank id of this rank.
  *
  * @param group A string identifying the group name.
@@ -169,35 +160,6 @@ HcclResult HcomGetLocalRankSize(const char *group, u32 *localRankSize);
  * @return HcclResult
  */
 HcclResult HcomGetRankId(const char *group, u32 *rankId);
-
-/**
- * @brief Get the local rank id of this rank's server within the group.
- *
- * @param group A string identifying the group name.
- * @param localRankId A pointer identifying the local rank id.
- * @return HcclResult
- */
-HcclResult HcomGetLocalRankId(const char *group, u32 *localRankId);
-
-/**
- * @brief Get the world rank id according to the group rank id.
- *
- * @param group A string identifying the group name.
- * @param groupRank An integer(u32) identifying the group rank id.
- * @param worldRank A pointer identifying the world rank id.
- * @return HcclResult
- */
-HcclResult HcomGetWorldRankFromGroupRank(const char *group, u32 groupRank, u32 *worldRank);
-
-/**
- * @brief Get the group rank id according to the world rank id.
- *
- * @param worldRank An integer(u32) identifying the world rank id.
- * @param group A string identifying the group name.
- * @param groupRank A pointer identifying the group rank id.
- * @return HcclResult
- */
-HcclResult HcomGetGroupRankFromWorldRank(u32 worldRank, const char *group, u32 *groupRank);
 
 /**
  * @brief Create group.
@@ -218,26 +180,6 @@ HcclResult HcomCreateGroup(const char *group, u32 rankNum, u32 *rankIds);
 HcclResult HcomDestroyGroup(const char *group);
 
 /**
- * @brief Set the gradient split strategy with in the group, according to gradient index.
- *
- * @param group A string identifying the group name.
- * @param segmentNum An integer(u32) identifying the segments number of gradients.
- * @param IdxList A list identifying the index of end gradient in each segment.
- * @return HcclResult
- */
-extern HcclResult HcomSetGradFusionByIndex(const char *group, u32 segmentNum, const u32 *inputIdxList);
-
-/**
- * @brief Set the gradient split strategy with in the group, according to gradient data size.
- *
- * @param group A string identifying the group name.
- * @param segmentNum An integer(u32) identifying the segments number of gradients.
- * @param sizeList A list identifying the percent of each segment.
- * @return HcclResult
- */
-extern HcclResult HcomSetGradFusionBySize(const char *group, u32 segmentNum, const float *sizeList);
-
-/**
  * @brief optimizer offload CPU-side hcom init.
  *
  * @param rankTable A string identifying the rank table.
@@ -255,14 +197,13 @@ extern HcclResult HcomDestroy(void);
 
 extern HcclResult HcomGetCommHandleByGroup(const char *group, HcclComm *commHandle);
 
+HcclResult HcomGetGroupNameByOpBase(s64 opBaseHcom, char **groupname);
 HcclResult GetGroupNameByOpBaseHcom(s64 opBaseHcom, char **groupname);
 
 HcclResult HcomCreateComResourceByComm(HcclComm comm, u32 streamMode, bool isOpbaseMode,
     void** commContext, bool isMC2 = false);
 
 void HcomTopoInfoRegCallback(HcclResult (*p1)(const char *, uint32_t), void (*p2)(const char *));
-
-HcclResult HcomGetandClearOverFlowTasks(const char *group, hccl::HcclDumpInfo **hcclDumpInfoPtr, s32 *len);
 
 HcclWorkflowMode HcomGetWorkflowMode();
 
