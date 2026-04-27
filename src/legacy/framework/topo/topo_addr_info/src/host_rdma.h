@@ -18,6 +18,8 @@ extern "C" {
 
 int GetNpuHostRdmaIp(int npu_id, char* ip_addr, size_t ip_addr_len);
 
+int GetIpByIfName(const char* ifname, char* ip, size_t addrLen);
+
 #ifdef __cplusplus
 }
 #endif

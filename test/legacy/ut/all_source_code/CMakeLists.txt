@@ -290,7 +290,7 @@ target_sources(hccl_v2_utest
         ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/src/eid_util.c
         ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/src/hal.c
         ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/src/host_rdma.c
-        ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/src/pcie_nic.c
+        ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/src/rdma_hca.c
         ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/src/product_card.c
         ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/src/product_server.c
         ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/src/product_pod.c
