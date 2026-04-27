@@ -45,6 +45,36 @@ HcclResult CommAddrToIpAddress(const CommAddr &commAddr, Hccl::IpAddress &ipAddr
     return HCCL_SUCCESS;
 }
 
+bool IsLittleEndian() {
+    int x = 1;
+    return *(char*)&x == 1;
+}
+
+HcclResult CommAddrToIpv4Address(const CommAddr &commAddr, Hccl::IpAddress &ipAddr)
+{
+    if (commAddr.type != COMM_ADDR_TYPE_EID) {
+        HCCL_ERROR("[%s] failed, comm address type[%d] is not supported.", __func__, commAddr.type);
+        return HCCL_E_NOT_SUPPORT;
+    }
+
+    const uint8_t *last8 = &commAddr.eid[COMM_ADDR_EID_LEN - 8];
+
+    uint8_t ipv4Bytes[4];
+    memcpy(ipv4Bytes, last8 + 4, 4);
+
+    struct in_addr ipv4Addr;
+    memcpy(&ipv4Addr.s_addr, ipv4Bytes, 4);
+
+    Hccl::BinaryAddr binAddr;
+    binAddr.addr = ipv4Addr;
+    int32_t family = AF_INET;
+
+    ipAddr = Hccl::IpAddress(binAddr, family, commAddr.eid);
+
+    HCCL_INFO("[%s] ipAddress[%s]", __func__, ipAddr.Describe().c_str());
+    return HCCL_SUCCESS;
+}
+
 HcclResult IpAddressToCommAddr(const Hccl::IpAddress &ipAddr, CommAddr &commAddr)
 {
     int32_t family = ipAddr.GetFamily();
@@ -150,6 +180,35 @@ HcclResult EndpointDescPairToLinkData(const EndpointDesc &locEp, const EndpointD
         linkProtocol, 
         locDevPhyId, rmtDevPhyId,
         locAddr, rmtAddr, reuseIdx
+    );
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult HostUrmaEndpointDescPairToLinkData(const EndpointDesc &locEp, const EndpointDesc &rmtEp, Hccl::LinkData &linkData)
+{
+    Hccl::PortDeploymentType portDeploymentType = Hccl::PortDeploymentType::INVALID;
+    CHK_RET(EndpointLocTypeToPortDeploymentType(locEp.loc.locType, portDeploymentType));
+
+    Hccl::LinkProtocol linkProtocol = Hccl::LinkProtocol::INVALID;
+    CHK_RET(CommProtocolToLinkProtocol(locEp.protocol, linkProtocol));
+
+    Hccl::IpAddress locAddr{};
+    Hccl::IpAddress rmtAddr{};
+
+    CHK_RET(CommAddrToIpv4Address(locEp.commAddr, locAddr));
+    CHK_RET(CommAddrToIpv4Address(rmtEp.commAddr, rmtAddr));
+
+    uint32_t locDevPhyId = locEp.loc.device.devPhyId;
+    uint32_t rmtDevPhyId = rmtEp.loc.device.devPhyId;
+
+    // 开源开放架构下comms层级不感知通信域层级的rank信息
+    // 当前复用orion数据结构故使用devId替换
+    linkData = Hccl::LinkData(
+        portDeploymentType,
+        linkProtocol,
+        locDevPhyId, rmtDevPhyId,
+        locAddr, rmtAddr
     );
 
     return HCCL_SUCCESS;
