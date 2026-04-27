@@ -851,7 +851,7 @@ void Interpret(const AivInstruction &aivInstruction, const CommunicatorImpl &com
                 reinterpret_cast<void *>(comm.GetAivOffloadTagBuffer()->GetAddr() + AIV_FLAG_CLEAR_OFFSET);
         bool isAivClearEnable = comm.GetAivClearEnable();
         if (isAivClearEnable) {
-            HrtMemcpy(buffersInAddr, AIV_FLAG_AREA_SIZE, buffersInAddrSrc, AIV_FLAG_AREA_SIZE, RT_MEMCPY_DEVICE_TO_DEVICE);
+            HrtMemAsyncCopy(buffersInAddr, AIV_FLAG_AREA_SIZE, buffersInAddrSrc, AIV_FLAG_AREA_SIZE, ACL_MEMCPY_DEVICE_TO_DEVICE, stream.GetPtr());
         }
     }
 
