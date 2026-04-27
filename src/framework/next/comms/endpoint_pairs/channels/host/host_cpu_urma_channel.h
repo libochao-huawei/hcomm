@@ -1,44 +1,41 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
-#ifndef AICPU_TS_URMA_CHANNEL_H
-#define AICPU_TS_URMA_CHANNEL_H
+* Copyright (c) 2025 Huawei Technologies Co., Ltd.
+* This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+* CANN Open Software License Agreement Version 2.0 (the "License").
+* Please refer to the License for details. You may not use this file except in compliance with the License.
+* THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+* INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+* See LICENSE in the root of the software repository for the full text of the License.
+*/
+#ifndef HOST_CPU_URMA_CHANNEL_H
+#define HOST_CPU_URMA_CHANNEL_H
 
 #include "../channel.h"
-#include "../../sockets/socket_mgr.h"
+#include <mutex>
+#include "urma_types.h"
 
 // Orion
 #include "../../../../../../legacy/unified_platform/resource/socket/socket.h"
-#include "../../../../../../legacy/framework/resource_manager/socket/socket_manager.h"
 #include "../../../../../../legacy/unified_platform/pub_inc/buffer_key.h"
+#include "../../sockets/socket_mgr.h"
 #include "rma_connection.h"
 #include "ub_mem_transport.h"
-#include "dev_ub_connection.h"
+#include "host_ub_connection.h"
 #include "ub_local_notify.h"
+#include "aicpu_res_package_helper.h"
 
 namespace hcomm {
 
-class AicpuTsUrmaChannel : public Channel {
+constexpr uint64_t MAX_JETTY_WR_DATA_LEN = 256 * 1024 * 1024;  // 256MB
+
+class HostCpuUrmaChannel : public Channel {
 public:
-    AicpuTsUrmaChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc);
+    HostCpuUrmaChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc);
 
     HcclResult Init() override;
     HcclResult GetNotifyNum(uint32_t *notifyNum) const override;
     HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags) override;
     ChannelStatus GetStatus() override;
-    HcclResult GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum) override;
-    HcclResult UpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum) override;
-
-    HcclResult H2DResPack(std::vector<char>& buffer);
-
-    virtual HcclResult Clean() override;
-    virtual HcclResult Resume() override;
 
     // 数据面接口
     HcclResult NotifyRecord(const uint32_t remoteNotifyIdx) override;
@@ -47,18 +44,20 @@ public:
     HcclResult Write(void *dst, const void *src, uint64_t len) override;
     HcclResult Read(void *dst, const void *src, uint64_t len) override;
     HcclResult ChannelFence() override;
+    HcclResult ChannelFenceTest();
+
+    virtual HcclResult Clean() override;
+    virtual HcclResult Resume() override;
 
 private:
-    HcclResult Makebufs(HcommMemHandle *memHandles, uint32_t memHandleNum, std::vector<std::shared_ptr<Hccl::Buffer>> &bufs);
     HcclResult ParseInputParam();
     HcclResult BuildAttr();
+    HcclResult StartListen();
+    HcclResult BuildSocket();
     HcclResult BuildConnection();
     HcclResult BuildNotify();
-    HcclResult BuildBuffer(std::vector<std::shared_ptr<Hccl::Buffer>> &bufs);
+    HcclResult BuildBuffer();
     HcclResult BuildUbMemTransport();
-    HcclResult BuildSocket();
-
-    HcclResult PackOpData(std::vector<char> &data);
 
 private:
     // --------------------- 入参 ---------------------
@@ -71,22 +70,35 @@ private:
     EndpointDesc                                                remoteEp_{};
     uint32_t                                                    notifyNum_{0};
     std::vector<std::shared_ptr<Hccl::Buffer>>                  bufs_{};
-    std::vector<std::shared_ptr<Hccl::Buffer>>                  bufsTemp{}; // channel 复用时暂存新增 buffer
 
     // --------------------- 具体成员 ---------------------
     Hccl::Socket*                                               socket_{nullptr};
+    std::unique_ptr<SocketMgr>                                  socketMgr_{nullptr};
     RdmaHandle                                                  rdmaHandle_{nullptr};
     std::unique_ptr<Hccl::UbMemTransport>                       memTransport_{nullptr};
     Hccl::BaseMemTransport::Attribution                         attr_{};
     Hccl::BaseMemTransport::CommonLocRes                        commonRes_{};
-    std::vector<Hccl::LocalRmaBuffer *>                         bufferVecTemp_; // channel 复用时暂存新增 rmaBuffer
-    std::vector<std::unique_ptr<Hccl::DevUbConnection>>         connections_{};
+    std::vector<std::unique_ptr<Hccl::HostUbConnection>>        connections_{};
     std::vector<std::unique_ptr<Hccl::LocalUbRmaBuffer>>        localRmaBuffers_{};
-    std::vector<std::unique_ptr<Hccl::UbLocalNotify>>           localNotifies_{};
     std::unique_ptr<Hccl::Socket>                               serverSocket_;
-    std::unique_ptr<SocketMgr>                                  socketMgr_{nullptr};
+
+    HcclResult PrepareNotifyWrResource(const uint32_t remoteNotifyIdx, urma_jfs_wr_t &notifyRecordWr);
+    HcclResult PrepareWriteWrResource(const void *dst, const void *src, const uint64_t len, const uint32_t remoteNotifyIdx,
+                                    urma_jfs_wr_t &writeWithNotifyWr);
+
+    HcclResult GetLocSeg(const void *addr, const size_t size, u64 *seg);
+
+    urma_jfc_t jfc_;
+    urma_jetty_t jetty_;
+    urma_target_jetty_t tjetty_;
+    uint32_t wqeNum_{0};
+    bool fenceFlag_{false};
+
+    std::mutex jfcMutex_;
+    std::mutex fenceMutex_;
+    bool Onetime_{false};
 };
 
 } // namespace hcomm
 
-#endif // AICPU_TS_URMA_CHANNEL_H
+#endif // HOST_CPU_URMA_CHANNEL_H
