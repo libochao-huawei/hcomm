@@ -9,7 +9,7 @@
  */
 
 #include "types.h"
-#include "runtime/rts/rts_device.h"
+#include "rt_external_device.h"
 #include "acl/acl_rt.h"
 
 rtError_t rtOpenNetService(const rtNetServiceOpenArgs *args)
