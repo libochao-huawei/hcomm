@@ -69,6 +69,11 @@ HcclResult CollAllGatherMidCountFor91093Executor::CalcLevel2CommInfo(TransportMe
 u64 CollAllGatherMidCountFor91093Executor::CalcLoopMaxCount(const u64 cclBuffSize, const u32 unitSize)
 {
     u64 maxCountPerLoop = cclBuffSize / topoAttr_.userRankSize / HCCL_MIN_SLICE_ALIGN_910_93 / unitSize * HCCL_MIN_SLICE_ALIGN_910_93;
+    if (cclBuffSize != 0 && maxCountPerLoop == 0) {
+        maxCountPerLoop = cclBuffSize / topoAttr_.userRankSize / unitSize;
+        HCCL_INFO("[CollAllGatherMidCountFor91093Executor][CalcLoopMaxCount]" \
+            "using default maxCountPerLoop[%llu] as CCLBuffSize / unitSize", maxCountPerLoop);
+    }
     if (maxCountPerLoop == 0) {
         HCCL_ERROR("[CollAllGatherMidCountFor91093Executor][CalcLoopMaxCount] cclbuffer size is too small");
     }
