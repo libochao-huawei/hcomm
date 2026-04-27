@@ -2053,11 +2053,18 @@ create_qp_err:
     return ret;
 }
 
-void RsMrRelease(struct RsQpCb *qpCb)
+STATIC void RsQpRelease(struct RsQpCb *qpCb)
 {
     struct RsMrCb *mrTmp2 = NULL;
     struct RsMrCb *mrTmp = NULL;
 
+    RS_PTHREAD_MUTEX_LOCK(&qpCb->rdevCb->rdevMutex);
+    RsListDel(&qpCb->list);
+    RS_PTHREAD_MUTEX_ULOCK(&qpCb->rdevCb->rdevMutex);
+    RsIbvAckCqEvents(qpCb->ibSendCq, qpCb->numSendCqEvents);
+    RsIbvAckCqEvents(qpCb->ibRecvCq, qpCb->numRecvCqEvents);
+
+    // dereg mr
     RS_PTHREAD_MUTEX_LOCK(&qpCb->qpMutex);
     RS_LIST_GET_HEAD_ENTRY(mrTmp, mrTmp2, &qpCb->mrList, list, struct RsMrCb);
     for (; (&mrTmp->list) != &qpCb->mrList;
@@ -2078,18 +2085,6 @@ void RsMrRelease(struct RsQpCb *qpCb)
         mrTmp = NULL;
     }
     RS_PTHREAD_MUTEX_ULOCK(&qpCb->qpMutex);
-}
-
-STATIC void RsQpRelease(struct RsQpCb *qpCb)
-{
-    RS_PTHREAD_MUTEX_LOCK(&qpCb->rdevCb->rdevMutex);
-    RsListDel(&qpCb->list);
-    RS_PTHREAD_MUTEX_ULOCK(&qpCb->rdevCb->rdevMutex);
-    RsIbvAckCqEvents(qpCb->ibSendCq, qpCb->numSendCqEvents);
-    RsIbvAckCqEvents(qpCb->ibRecvCq, qpCb->numRecvCqEvents);
-
-    // dereg mr
-    RsMrRelease(qpCb);
 }
 
 RS_ATTRI_VISI_DEF int RsQpDestroy(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn)

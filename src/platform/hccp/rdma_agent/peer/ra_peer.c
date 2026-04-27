@@ -20,7 +20,6 @@
 #include "ra_rs_comm.h"
 #include "ra_rs_err.h"
 #include "rs.h"
-#include "ra_peer_nda.h"
 #include "ra_peer.h"
 #include "rs_common_inner.h"
 
@@ -879,14 +878,13 @@ STATIC int RaPeerSingleQpDestroy(struct RaQpHandle *qpPeer)
 
 int RaPeerQpDestroy(struct RaQpHandle *qpPeer)
 {
-    if (qpPeer->loopbackQpHandle != NULL) {
-        RaPeerLoopbackQpDestroy(qpPeer);
-        return 0;
-    } else if (qpPeer->directFlag != DIRECT_FLAG_NOTSUPP) {
-        return RaPeerNdaQpDestroy(qpPeer);
-    } else {
+    if (qpPeer->loopbackQpHandle == NULL) {
         return RaPeerSingleQpDestroy(qpPeer);
     }
+
+    RaPeerLoopbackQpDestroy(qpPeer);
+
+    return 0;
 }
 
 int RaPeerSendWr(struct RaQpHandle *qpPeer, struct SendWr *wr, struct SendWrRsp *wrRsp)
