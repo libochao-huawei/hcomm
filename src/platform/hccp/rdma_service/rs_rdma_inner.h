@@ -75,7 +75,9 @@ struct RsRdevCb {
     struct ibv_pd *ibPd;
     struct ibv_context *ibCtx;
     struct ibv_device **devList;
+
     struct ibv_context_extend *ibCtxEx;
+    int directFlag;
 
     struct RsListHead qpList;
     struct RsListHead typicalMrList;
