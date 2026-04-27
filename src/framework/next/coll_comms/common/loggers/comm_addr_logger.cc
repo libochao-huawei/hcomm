@@ -33,7 +33,7 @@ std::string CommAddrLogger::GetTypeString(CommAddrType type)
     }
 }
 
-std::string CommAddrLogger::ConvertIPv4(const struct in_addr& addr)
+std::string ConvertIPv4(const struct in_addr& addr)
 {
     std::array<char, INET_ADDRSTRLEN> buffer;
     const char* result = inet_ntop(AF_INET, &addr, buffer.data(), buffer.size());
@@ -44,7 +44,7 @@ std::string CommAddrLogger::ConvertIPv4(const struct in_addr& addr)
     return std::string(result);
 }
 
-std::string CommAddrLogger::ConvertIPv6(const struct in6_addr& addr6)
+std::string ConvertIPv6(const struct in6_addr& addr6)
 {
     std::array<char, INET6_ADDRSTRLEN> buffer;
     const char* result = inet_ntop(AF_INET6, &addr6, buffer.data(), buffer.size());
@@ -55,12 +55,12 @@ std::string CommAddrLogger::ConvertIPv6(const struct in6_addr& addr6)
     return std::string(result);
 }
 
-std::string CommAddrLogger::ConvertID(uint32_t id)
+std::string ConvertID(uint32_t id)
 {
     return "id:0x" + std::to_string(id);
 }
 
-std::string CommAddrLogger::ConvertEID(const uint8_t eid[16])
+std::string ConvertEID(const uint8_t eid[16])
 {
     // 模仿 Eid::Describe 的格式
     // 输出：eid[xxxxxxxxxxxxxxxx:xxxxxxxxxxxxxxxx]
@@ -88,6 +88,32 @@ std::string CommAddrLogger::ConvertEID(const uint8_t eid[16])
         return "conversion failed";
     }
     return std::string(buffer);
+}
+
+std::string CommAddr2Str(const CommAddr commAddr)
+{
+    // 输出：eid[xxxxxxxxxxxxxxxx:xxxxxxxxxxxxxxxx], AF=v4/v6, addr=xxx.xxx.xxx.xxx, scopeId=0x0]
+    std::string desc = "AF=";
+
+    switch (commAddr.type) {
+        case COMM_ADDR_TYPE_IP_V4:
+            desc += "v4, addr=" + ConvertIPv4(commAddr.addr);
+            break;
+        case COMM_ADDR_TYPE_IP_V6:
+            desc += "v6, addr=" + ConvertIPv6(commAddr.addr6);
+            break;
+        case COMM_ADDR_TYPE_ID:
+            desc += "id:" + ConvertID(commAddr.id);
+            break;
+        case COMM_ADDR_TYPE_EID:
+            desc += ConvertEID(commAddr.eid);
+            break;
+        default:
+            desc += "Unknown]";
+            break;
+    }
+
+    return desc;
 }
 
 std::string CommAddrLogger::ToString(const CommAddr& commAddr)
