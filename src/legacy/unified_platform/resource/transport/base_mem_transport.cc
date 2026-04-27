@@ -59,6 +59,24 @@ bool BaseMemTransport::IsSocketReady()
     return false;
 }
 
+bool BaseMemTransport::IsSyncSocketReady()
+{
+    if (socket == nullptr) {
+        MACRO_THROW(InternalException, StringFormat("%s socket is nullptr, please check", GetLinkDescInfo().c_str()));
+    }
+    SocketStatus socketStatus = socket->GetStatus();
+    HCCL_DEBUG("[HostCpuRoceChannel::CheckSocketStatus] socket status = %s", socketStatus.Describe().c_str());
+    if (socketStatus == SocketStatus::OK) {
+        baseStatus = TransportStatus::SOCKET_OK;
+        return true;
+    } else if (socketStatus == SocketStatus::TIMEOUT) {
+        baseStatus = TransportStatus::SOCKET_TIMEOUT;
+        return false;
+    }
+
+    return false;
+}
+
 void BaseMemTransport::NotifyVecPack(BinaryStream &binaryStream)
 {
     binaryStream << notifyNum;
