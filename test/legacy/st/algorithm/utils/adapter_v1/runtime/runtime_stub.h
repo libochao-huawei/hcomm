@@ -2,7 +2,6 @@
 #define RUNTIME_STUB_H
 
 #include "base.h"
-#include "runtime/base.h"
 #include "hccl_common.h"
 #include "hccl_ip_address.h"
 #include "adapter_error_manager_pub.h"
@@ -14,7 +13,6 @@
 #include <string>
 #include "rank_info_recorder.h"
 #include "acl/acl_rt.h"
-#include "runtime/rts/rts_kernel.h"
 
 using namespace std;
 using namespace hccl;
