@@ -706,5 +706,9 @@ HcclResult HrtRaGetEidByIp(RdmaHandle handle, const vector<IpAddress>& ipV4AddrL
 
 HcclResult HrtRaSetTpAttrAsync(RdmaHandle handle, uint64_t tpHandle, uint32_t attrBitmap, TpAttr& attr, RequestHandle& reqHandle);
 HcclResult HrtRaGetTpAttrAsync(RdmaHandle handle, uint64_t tpHandle, uint32_t& attrBitmap, TpAttr& attr, RequestHandle& reqHandle);
+
+HcclResult HrtGetUboeFlagEnable(const u32 devPhyId, bool &uboeFlagValid);
+bool HrtCheckUboeSupported(const u32 devFeature);
+
 } // namespace Hccl
 #endif // HCCLV2_ADAPTER_HCCP_H

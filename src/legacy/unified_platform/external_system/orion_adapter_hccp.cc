@@ -43,6 +43,9 @@ constexpr u32 RA_TLV_REQUEST_UNAVAIL = 128308;
 constexpr u32 ROCE_ENOMEM_RET = 328100;
 constexpr u32 GET_TLS_ENABLE_OPCODE = 95;
 constexpr u32 GET_TLS_ENABLE_VERSION = 1;
+constexpr u32 GET_UBOE_FLAG_ENABLE_OPCODE = 57;
+constexpr u32 GET_UBOE_FLAG_ENABLE_VERSION = 2;
+constexpr u32 UBOE_DEV_FLAG_RIGHT_SHIFT = 19;
 
 const std::unordered_map<HrtNetworkMode, NetworkMode, EnumClassHash> HRT_NETWORK_MODE_MAP
     = {{HrtNetworkMode::PEER, NetworkMode::NETWORK_PEER_ONLINE}, {HrtNetworkMode::HDC, NetworkMode::NETWORK_OFFLINE}};
@@ -2666,6 +2669,30 @@ HcclResult HrtRaGetTpAttrAsync(RdmaHandle handle, uint64_t tpHandle, uint32_t& a
     CHK_RET(WaitRequestResult(raReqHandle, reqHandle));
     HCCL_INFO("[HrtRaGetTpAttrAsync] success, reqHandle[%llu]", reqHandle);
     return HCCL_SUCCESS;
+}
+
+HcclResult HrtGetUboeFlagEnable(const u32 devPhyId, bool &uboeFlagValid)
+{
+    u32 uboeVersion = 0;
+    s32 versionRet = RaGetInterfaceVersion(devPhyId, GET_UBOE_FLAG_ENABLE_OPCODE, &uboeVersion);
+    CHK_PRT_RET(versionRet != 0, 
+        HCCL_ERROR("[%s] RaGetInterfaceVersion failed, devPhyId=%u, versionRet=%d", __func__, devPhyId, versionRet), 
+            HCCL_E_PARA);
+
+    if (uboeVersion < GET_UBOE_FLAG_ENABLE_VERSION) {
+        HCCL_ERROR("[%s] this package does not support to get uboe flag, "
+            "please change new package. uboeVersion[%u].", __func__, uboeVersion);
+        uboeFlagValid = false;
+    } else {
+        uboeFlagValid = true;
+    }
+    return HCCL_SUCCESS;
+}
+
+bool HrtCheckUboeSupported(const u32 devFeature)
+{
+    // 设备特性位掩码, 右移取UBOE标志位, 值为1表示支持
+    return (devFeature >> UBOE_DEV_FLAG_RIGHT_SHIFT) & 1;
 }
 
 } // namespace Hccl
