@@ -143,5 +143,11 @@ void RaUbFreeTokenIdHandle(RdmaHandle handle, TokenIdHandle tokenIdHandle)
 void HrtRaSocketGetVnicIpInfos(u32 phyId, DeviceIdType deviceIdType, u32 deviceId, IpAddress &vnicIP)
 {}
 
+HcclResult HrtGetUboeFlagEnable(const u32 devPhyId, bool &uboeFlagValid)
+{
+    uboeFlagValid = true;
+    return HCCL_SUCCESS;
+}
+
 }
 
