@@ -40,6 +40,7 @@ struct DevEidInfo {
     uint32_t dieId{0};
     uint32_t chipId{0};
     uint32_t funcId{0};
+    uint32_t devFeature{0};
 };
 
 HcclResult IpAddressToHccpEid(const Hccl::IpAddress &ipAddr, Eid &eid);
@@ -167,5 +168,8 @@ HcclResult HccpUbTpImportJettyAsync(const CtxHandle ctxHandle,
     void *&remQpHandle, RequestHandle &reqHandle);
 
 HcclResult HccpRaCustomChannel(HrtNetworkMode mode, uint32_t phyId, void *customIn, void *customOut);
+
+HcclResult HccpGetUboeFlagEnable(const u32 devPhyId, bool &uboeFlagValid);
+bool HccpCheckUboeSupported(const u32 devFeature);
 } // namespace hcomm
 #endif // HCOMM_ADAPTER_HCCP_H

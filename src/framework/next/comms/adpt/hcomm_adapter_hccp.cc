@@ -19,6 +19,10 @@
 
 namespace hcomm {
 
+constexpr u32 GET_UBOE_FLAG_ENABLE_OPCODE = 57;
+constexpr u32 GET_UBOE_FLAG_ENABLE_VERSION = 2;
+constexpr u32 UBOE_DEV_FLAG_RIGHT_SHIFT = 19;
+
 HcclResult IpAddressToHccpEid(const Hccl::IpAddress &ipAddr, Eid &eid)
 {
     HCCL_INFO("EID ipAddr[%s]", ipAddr.Describe().c_str());
@@ -501,4 +505,29 @@ HcclResult RaBatchQueryJettyStatus(const std::vector<JettyHandle> &jettyHandles,
     }
     return HCCL_SUCCESS;
 }
+
+HcclResult HccpGetUboeFlagEnable(const u32 devPhyId, bool &uboeFlagValid)
+{
+    u32 uboeVersion = 0;
+    s32 versionRet = RaGetInterfaceVersion(devPhyId, GET_UBOE_FLAG_ENABLE_OPCODE, &uboeVersion);
+    CHK_PRT_RET(versionRet != 0,
+        HCCL_ERROR("[%s] RaGetInterfaceVersion failed, devPhyId=%u, versionRet=%d", __func__, devPhyId, versionRet),
+            HCCL_E_PARA);
+
+    if (uboeVersion < GET_UBOE_FLAG_ENABLE_VERSION) {
+        HCCL_ERROR("[%s] this package does not support to get uboe flag, "
+            "please change new package. uboeVersion[%u].", __func__, uboeVersion);
+        uboeFlagValid = false;
+    } else {
+        uboeFlagValid = true;
+    }
+    return HCCL_SUCCESS;
+}
+
+bool HccpCheckUboeSupported(const u32 devFeature)
+{
+    // 设备特性位掩码, 右移取UBOE标志位, 值为1表示支持
+    return (devFeature >> UBOE_DEV_FLAG_RIGHT_SHIFT) & 1;
+}
+
 } // namespace hcomm

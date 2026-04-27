@@ -1016,3 +1016,85 @@ TEST_F(AdapterHccpTest, HrtRaGetEidByIp_empty_input_ok)
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_TRUE(eidAddrList.empty());
 }
+
+TEST_F(AdapterHccpTest, ut_HccpGetUboeFlagEnable_When_RaGetInterfaceVersion+SuccAndVersionEnough_Expect_SuccessAndFlagValid)
+{
+    u32 devPhyId = 1;
+    bool uboeFlagValid = false;
+    
+    MOCKER(RaGetInterfaceVersion)
+        .stubs()
+        .will(returnValue(0))
+        .with(eq(devPhyId), eq(GET_UBOE_FLAG_ENABLE_OPCODE), any())
+        .after(doInvoke([&uboeFlagValid](u32, u32, s32* version) {
+            if (version != nullptr) {
+                *version = GET_UBOE_FLAG_ENABLE_VERSION;  // 满足版本要求
+            }
+        }));
+    
+    HcclResult ret = HrtGetUboeFlagEnable(devPhyId, uboeFlagValid);
+    
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_TRUE(uboeFlagValid);
+}
+
+TEST_F(AdapterHccpTest, ut_HccpGetUboeFlagEnable_When_RaGetInterfaceVersionSucc_ButVersionNotEnough_Expect_SuccessButFlagInvalid)
+{
+    u32 devPhyId = 1;
+    bool uboeFlagValid = true;  // 初始化为true，应被函数改为false
+    
+    MOCKER(RaGetInterfaceVersion)
+        .stubs()
+        .will(returnValue(0))
+        .with(eq(devPhyId), eq(GET_UBOE_FLAG_ENABLE_OPCODE), any())
+        .after(doInvoke([](u32, u32, s32* version) {
+            if (version != nullptr) {
+                *version = GET_UBOE_FLAG_ENABLE_VERSION - 1;  // 版本不满足
+            }
+        }));
+    
+    HcclResult ret = HrtGetUboeFlagEnable(devPhyId, uboeFlagValid);
+    
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(uboeFlagValid, false);
+}
+
+TEST_F(AdapterHccpTest, ut_HccpGetUboeFlagEnable_When_RaGetInterfaceVersionFailed_Expect_Error)
+{
+    u32 devPhyId = 1;
+    bool uboeFlagValid = false;
+    int mockErrorCode = -1;
+    
+    MOCKER(RaGetInterfaceVersion)
+        .stubs()
+        .will(returnValue(mockErrorCode))
+        .with(eq(devPhyId), eq(GET_UBOE_FLAG_ENABLE_OPCODE), any());
+    
+    HcclResult ret = HrtGetUboeFlagEnable(devPhyId, uboeFlagValid);
+    
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(AdapterHccpTest, ut_HccpCheckUboeSupported_When_DevFeatureBitSet_Expect_True)
+{
+    u32 devFeature = 1 << UBOE_DEV_FLAG_RIGHT_SHIFT;
+    bool result = HrtCheckUboeSupported(devFeature);
+    EXPECT_TRUE(result);
+    
+    // 测试其他位也有值的情况
+    devFeature = (1 << UBOE_DEV_FLAG_RIGHT_SHIFT) | 0xFFFF;
+    result = HrtCheckUboeSupported(devFeature);
+    EXPECT_TRUE(result);
+}
+
+TEST_F(AdapterHccpTest, ut_HccpCheckUboeSupported_When_DevFeatureBitNotSet_Expect_False)
+{
+    u32 devFeature = 0;
+    bool result = HrtCheckUboeSupported(devFeature);
+    EXPECT_FALSE(result);
+    
+    // 测试只有其他位被设置，但UBOE位未设置
+    devFeature = 0xFFFFFFFF & ~(1 << UBOE_DEV_FLAG_RIGHT_SHIFT);
+    result = HrtCheckUboeSupported(devFeature);
+    EXPECT_FALSE(result);
+}
