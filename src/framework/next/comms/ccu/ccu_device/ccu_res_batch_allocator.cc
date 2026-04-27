@@ -767,7 +767,7 @@ HcclResult CcuResBatchAllocator::CcuMissionMgr::Alloc(const uintptr_t handleKey,
     MissionReqType reqType = missionReq.reqType;
     constexpr MissionReqType defaultReqType = MissionReqType::FUSION_MULTIPLE_DIE;
     if (missionReq.reqType != MissionReqType::FUSION_MULTIPLE_DIE) {
-        HCCL_WARNING("[CcuMissionMgr][%s] mission reqType[%d], mission resouces "
+        HCCL_WARNING("[CcuMissionMgr][%s] mission reqType[%d], mission resources "
             "now only support %d.", __func__, reqType,
             defaultReqType);
         reqType = MissionReqType::FUSION_MULTIPLE_DIE;
@@ -783,7 +783,7 @@ HcclResult CcuResBatchAllocator::CcuMissionMgr::Alloc(const uintptr_t handleKey,
     std::vector<ResInfo> resInfos;
     auto ret = HandleBlockRes(handleKey, reqNum, stragtegy_, blocks_, resInfos);
     if (ret == HcclResult::HCCL_E_UNAVAIL) {
-        HCCL_WARNING("[CcuMissionMgr][%s] failed, mission block resources are unavaiable, "
+        HCCL_WARNING("[CcuMissionMgr][%s] failed, mission block resources are unavailable, "
             "reqNum[%u], stragtegy[%u], reqType[%d].", __func__, reqNum, stragtegy_,
             reqType);
         DumpBlockResInfo(ResType::MISSION, blocks_);

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
- * Description: ccu represnetation context implementation file
+ * Description: ccu representation context implementation file
  * Author: sunzhepeng
  * Create: 2024-06-17
  */
