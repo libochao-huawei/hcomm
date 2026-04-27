@@ -910,6 +910,9 @@ HcclResult NetworkManager::CreateRdmaHandle(const HcclIpAddress &ipAddr, bool is
             }
             // device-roce需要开启rdmalite
             RdmaSupportLite(sock.nicRdmaHandle);
+            HCCL_INFO("[CreateRdmaHandle] deviceLogicId[%d] devicePhyId[%u] ip[%s] nicSocketMap size[%zu] refCount[%d]",
+                deviceLogicId_, devicePhyId_, ipAddr.GetReadableAddress(),
+                raResourceInfo_.nicSocketMap.size(), deviceNicInitRef_.Count());
             break;
         }
         case HcclNetDevDeployment::HCCL_NETDEV_DEPLOYMENT_HOST:
@@ -962,14 +965,24 @@ HcclResult NetworkManager::RdmaSupportLite(RdmaHandle rdmaHandle)
 HcclResult NetworkManager::StopRdmaHandle(const HcclIpAddress &ipAddr, HcclNetDevDeployment netDevDeployment)
 {
     // rdma没有socket 没有listen
+    HCCL_INFO("[StopRdmaHandle] deviceLogicId[%d] devicePhyId[%u] ip[%s] nicSocketMap size[%zu] refCount[%d]",
+        deviceLogicId_, devicePhyId_, ipAddr.GetReadableAddress(),
+        raResourceInfo_.nicSocketMap.size(), deviceNicInitRef_.Count());
 
     // 销毁socket
     switch (netDevDeployment) {
         case HcclNetDevDeployment::HCCL_NETDEV_DEPLOYMENT_DEVICE:{
             auto it = raResourceInfo_.nicSocketMap.find(ipAddr);
-            CHK_PRT_RET(it == raResourceInfo_.nicSocketMap.end(),
-                HCCL_ERROR("[Stop][NicsSocket]ip[%s] is not found in nicSocketMap.", ipAddr.GetReadableAddress()),
-                HCCL_E_INTERNAL);
+            if (it == raResourceInfo_.nicSocketMap.end()) {
+                HCCL_WARNING("[Stop][NicsSocket]ip[%s] not found in nicSocketMap, may already cleaned.",
+                    ipAddr.GetReadableAddress());
+                // 打印 nicSocketMap 中所有 IP 用于诊断
+                for (const auto& pair : raResourceInfo_.nicSocketMap) {
+                    HCCL_INFO("[StopRdmaHandle] nicSocketMap contains: ip[%s] rdmaHandle[%p] socketHandle[%p]",
+                        pair.first.GetReadableAddress(), pair.second.nicRdmaHandle, pair.second.nicSocketHandle);
+                }
+                return HCCL_SUCCESS;
+            }
             IpSocket &ipSock = it->second;
             if (ipSock.nicRdmaHandle != nullptr && HrtRaRdmaDeInit(ipSock.nicRdmaHandle, notifyType_)) {
             HCCL_ERROR("[Stop][rmda]NIC rdev deInit not successfully, notifyType_[%d]", notifyType_);
@@ -1110,7 +1123,7 @@ HcclResult NetworkManager::StopAllDeviceNicSockets()
     }
 
     raResourceInfo_.nicSocketMap.clear();
-    return  HCCL_SUCCESS; // stop socket。port 数清零时自动关闭socket
+    return HCCL_SUCCESS;
 }
 
 HcclResult NetworkManager::StopAllDeviceVnicSockets()
