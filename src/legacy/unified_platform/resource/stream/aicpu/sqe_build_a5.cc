@@ -8,176 +8,14 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "sqe_build_a5.h"
-#include "sqe_v82.h"
-#include "log.h"
 #include "communicator_impl_lite_manager.h"
 
 namespace Hccl {
-
-constexpr u32 LOW_BITS = 16;
 
 u32 GetKernelExecTimeoutFromEnvConfig()
 {
     const u32 envTimeout  = CommunicatorImplLiteMgr::GetInstance().GetEnvConfig().hcclExecTimeout;
     return envTimeout;
-}
-
-void BuildA5SqeNotifyWait(u32 streamId, u32 taskId, u32 notifyId, uint8_t * const sqeIn)
-{
-    BuildA5SqeNotifyWait(streamId, taskId, notifyId, GetKernelExecTimeoutFromEnvConfig(), sqeIn);
-}
-
-void BuildA5SqeNotifyWait(u32 streamId, u32 taskId, u32 notifyId, u32 timeout, uint8_t * const sqeIn)
-{
-    (void) streamId;
-    Rt91095StarsNotifySqe *sqe = (Rt91095StarsNotifySqe *)sqeIn;
-
-    sqe->kernelCredit      = RT_STARS_NEVER_TIMEOUT_KERNEL_CREDIT;
-    sqe->header.type       = static_cast<uint8_t>(Rt91095StarsSqeType::RT_91095_SQE_TYPE_NOTIFY_WAIT);
-    sqe->cntFlag           = false;
-    sqe->clrFlag           = true;
-    sqe->subType           = static_cast<uint16_t>(Rt91095NotifySubType::NOTIFY_SUB_TYPE_SINGLE_NOTIFY_WAIT);
-    sqe->header.rtStreamId = static_cast<uint16_t>(taskId);
-    sqe->header.taskId     = static_cast<uint16_t>(taskId >> LOW_BITS);
-    sqe->header.wrCqe      = 1U;
-    sqe->notifyId          = notifyId;
-    sqe->timeout           = timeout;
-
-    HCCL_INFO("[SQE]NotifyWait: notifyId=%lu, timeout=%us, streamId=%u, taskId=%u", notifyId, sqe->timeout, streamId, taskId);
-}
-
-void BuildA5SqeNotifyRecord(u32 streamId, u32 taskId, u32 notifyId, uint8_t * const sqeIn)
-{
-    (void) streamId;
-    Rt91095StarsNotifySqe *sqe = (Rt91095StarsNotifySqe *)sqeIn;
-    sqe->header.type       = static_cast<uint8_t>(Rt91095StarsSqeType::RT_91095_SQE_TYPE_NOTIFY_RECORD);
-    sqe->kernelCredit      = RT_STARS_DEFAULT_KERNEL_CREDIT;
-    sqe->subType           = static_cast<uint16_t>(Rt91095NotifySubType::NOTIFY_SUB_TYPE_SINGLE_NOTIFY_RECORD);
-    sqe->header.rtStreamId = static_cast<uint16_t>(taskId);
-    sqe->header.taskId     = static_cast<uint16_t>(taskId >> LOW_BITS);
-    sqe->header.wrCqe      = 1U;
-    sqe->notifyId          = notifyId;
-
-    HCCL_INFO("[SQE]NotifyRecord: notifyId=%lu, streamId=%u, taskId=%u", notifyId, streamId, taskId);
-}
-
-void BuildA5SqeCnt1toNNotifyRecord(u32 streamId, u32 taskId, u32 notifyId, u32 cntValue, uint8_t * const sqeIn)
-{
-    (void) streamId;
-    Rt91095StarsNotifySqe *sqe = (Rt91095StarsNotifySqe *)sqeIn;
-    sqe->header.type = static_cast<uint8_t>(Rt91095StarsSqeType::RT_91095_SQE_TYPE_NOTIFY_RECORD);
-    sqe->kernelCredit = RT_STARS_DEFAULT_KERNEL_CREDIT;
-    sqe->clrFlag = false;
-    sqe->cntFlag = true;
-    sqe->recordModeBit = 0x0U; //rtCntNotifyRecordMode_t::RECORD_STORE_MODE
-    sqe->subType = static_cast<uint16_t>(Rt91095NotifySubType::NOTIFY_SUB_TYPE_COUNT_NOTIFY_RECORD);
-    sqe->header.rtStreamId = static_cast<uint16_t>(taskId);
-    sqe->header.taskId = static_cast<uint16_t>(taskId >> LOW_BITS);
-    sqe->header.wrCqe  = 1U;
-    sqe->notifyId = notifyId;
-    sqe->cntValue = cntValue;
-}
-
-void BuildA5SqeCnt1toNNotifyWait(u32 streamId, u32 taskId, u32 notifyId, u32 cntValue, uint8_t * const sqeIn)
-{
-    (void) streamId;
-    Rt91095StarsNotifySqe *sqe = (Rt91095StarsNotifySqe *)sqeIn;
-    sqe->kernelCredit = RT_STARS_NEVER_TIMEOUT_KERNEL_CREDIT;
-    sqe->header.type = static_cast<uint8_t>(Rt91095StarsSqeType::RT_91095_SQE_TYPE_NOTIFY_WAIT);
-    sqe->cntFlag = true;
-    sqe->clrFlag = true;
-    sqe->bitmap = 1U;
-    sqe->subType = static_cast<uint16_t>(Rt91095NotifySubType::NOTIFY_SUB_TYPE_COUNT_NOTIFY_WAIT);
-    sqe->header.rtStreamId = static_cast<uint16_t>(taskId);
-    sqe->header.taskId = static_cast<uint16_t>(taskId >> LOW_BITS);    
-    sqe->header.wrCqe  = 1U;
-    sqe->notifyId = notifyId;
-    sqe->cntValue = cntValue;
-}
-
-void BuildA5SqeCntNto1NotifyRecord(u32 streamId, u32 taskId, u32 notifyId, u32 cntValue, uint8_t * const sqeIn)
-{
-    (void) streamId;
-    Rt91095StarsNotifySqe *sqe = (Rt91095StarsNotifySqe *)sqeIn;
-    sqe->header.type = static_cast<uint8_t>(Rt91095StarsSqeType::RT_91095_SQE_TYPE_NOTIFY_RECORD);
-    sqe->kernelCredit = RT_STARS_DEFAULT_KERNEL_CREDIT;
-    sqe->clrFlag = false;
-    sqe->cntFlag = true;
-    sqe->recordModeBit = 0x2U; // rtCntNotifyRecordMode_t::RECORD_WRITE_BIT_MODE
-    sqe->subType = static_cast<uint16_t>(Rt91095NotifySubType::NOTIFY_SUB_TYPE_COUNT_NOTIFY_RECORD);
-    sqe->header.rtStreamId = static_cast<uint16_t>(taskId);
-    sqe->header.taskId = static_cast<uint16_t>(taskId >> LOW_BITS);   
-    sqe->header.wrCqe  = 1U;
-    sqe->notifyId = notifyId; 
-    sqe->cntValue = cntValue;
-}
-
-void BuildA5SqeCntNto1NotifyWait(u32 streamId, u32 taskId, u32 notifyId, u32 cntValue, uint8_t * const sqeIn)
-{
-    (void) streamId;
-    Rt91095StarsNotifySqe *sqe = (Rt91095StarsNotifySqe *)sqeIn;
-    sqe->kernelCredit = RT_STARS_NEVER_TIMEOUT_KERNEL_CREDIT;
-    sqe->header.type = static_cast<uint8_t>(Rt91095StarsSqeType::RT_91095_SQE_TYPE_NOTIFY_WAIT);
-    sqe->cntFlag = true;
-    sqe->clrFlag = true;
-    sqe->waitModeBit = 0x1U; // rtCntNotifyWaitMode_t::WAIT_EQUAL_MODE
-    sqe->subType = static_cast<uint16_t>(Rt91095NotifySubType::NOTIFY_SUB_TYPE_COUNT_NOTIFY_WAIT);
-    sqe->header.rtStreamId = static_cast<uint16_t>(taskId);
-    sqe->header.taskId = static_cast<uint16_t>(taskId >> LOW_BITS);
-    sqe->header.wrCqe  = 1U;
-    sqe->notifyId = notifyId;
-    sqe->cntValue = cntValue;
-}
-
-void SetSqeHeaderTaskFields(void* sqe, u32 taskId) 
-{
-    auto header = reinterpret_cast<Rt91095StarsSqeHeader*>(sqe);
-    header->rtStreamId     = static_cast<uint16_t>(taskId);
-    header->taskId         = static_cast<uint16_t>(taskId >> 16);
-}
-
-void BuildA5SqeSdmaCopy(u32 streamId, u32 taskId, u64 dstAddr, u64 srcAddr, u32 size, u32 partId, u32 opcode,
-                        uint8_t * const sqeIn)
-{
-    Rt91095StarsMemcpySqe *sqe = (Rt91095StarsMemcpySqe *)sqeIn;
-    SetSqeHeaderTaskFields(sqe, taskId);
-    sqe->header.type           = static_cast<uint8_t>(Rt91095StarsSqeType::RT_91095_SQE_TYPE_SDMA);
-    sqe->opcode                = opcode; // opcode为非0，代表 SDMA Reduce Copy; 0代表SDMA Copy
-    sqe->kernelCredit          = RT_STARS_DEFAULT_KERNEL_CREDIT;
-    sqe->sssv                  = 1U;
-    sqe->dssv                  = 1U;
-    sqe->sns                   = 1U;
-    sqe->dns                   = 1U;
-    sqe->mapamPartId           = partId; // 这里走的memcpy，如果走withcfg,需要传入qoscfg
-    sqe->header.wrCqe          = 1U;
-
-    sqe->u.strideMode0.lengthMove  = size;
-    sqe->u.strideMode0.srcAddrLow  = static_cast<uint32_t>(srcAddr & 0x00000000ffffffffU);
-    sqe->u.strideMode0.srcAddrHigh = static_cast<uint32_t>((srcAddr & 0xffffffff00000000U) >> 32); // 高 32bit
-    sqe->u.strideMode0.dstAddrLow  = static_cast<uint32_t>(dstAddr & 0x00000000ffffffffU);
-    sqe->u.strideMode0.dstAddrHigh = static_cast<uint32_t>((dstAddr & 0xffffffff00000000U) >> 32); // 高 32bit
-
-    HCCL_INFO("[SQE]Memcpy: size=%u, srcAddr=0x%llx, dstAddr=0x%llx, partId=%u, opcode=%u, streamId=%u, taskId=%u",
-               size, srcAddr, dstAddr, partId, opcode, streamId, taskId);
-}
-
-void BuildA5SqeUbDbSend(u32 streamId, u32 taskId, const UbJettyLiteId &jettyLiteId, u16 piValue, uint8_t * const sqeIn)
-{
-    (void)streamId;
-    Rt91095StarsUbdmaDBmodeSqe *sqe = (Rt91095StarsUbdmaDBmodeSqe *)sqeIn;
-    SetSqeHeaderTaskFields(sqe, taskId);
-    sqe->header.type = static_cast<uint8_t>(Rt91095StarsSqeType::RT_91095_SQE_TYPE_UBDMA);
-
-    sqe->mode              = Rt91095UbDmaSqeMode::RT_91095_SQE_DOORBELL_MODE;
-    sqe->kernelCredit      = RT_STARS_DEFAULT_KERNEL_CREDIT;
-
-    sqe->doorbellNum = 1U;
-    sqe->jettyId1    = jettyLiteId.GetJettyId();
-    sqe->funcId1     = jettyLiteId.GetFuncId();
-    sqe->piValue1    = piValue;
-    sqe->dieId1      = jettyLiteId.GetDieId();
-    HCCL_INFO("[SQE]UbDmaSend: dieId=%u, funcId=%u, jettyid=%u, piValue=%u, streamId=%u, taskId=%u",
-              jettyLiteId.GetDieId(), jettyLiteId.GetFuncId(), jettyLiteId.GetJettyId(), piValue, streamId, taskId);
 }
 
 namespace 
@@ -315,26 +153,5 @@ void BuildA5SqeCCoreNotifyRecord(u32 streamId, u32 taskId, u64 writeAddr, u64 va
         "ISA=%08x %08x %08x %08x %08x",
         writeAddr, valueAddr, streamId, taskId,
         sqe->ldrImm, sqe->llwi1, sqe->lhwi1, sqe->sw, sqe->nop[0]);
-}
-
-void BuildA5SqeP2pWriteValue(u32 streamId, u32 taskId, u64 remoteAddr, u32 writeValue, uint8_t * const sqeIn)
-{
-    Rt91095StarsWriteValueSqe *sqe  = (Rt91095StarsWriteValueSqe *)sqeIn;
-    sqe->header.type                = static_cast<uint8_t>(Rt91095StarsSqeType::RT_91095_SQE_TYPE_WRITE_VALUE);
-
-    sqe->kernelCredit               = RT_STARS_DEFAULT_KERNEL_CREDIT;
-    sqe->header.rtStreamId          = streamId;
-    sqe->header.taskId              = taskId;
-
-    sqe->writeAddrLow               = remoteAddr & MASK_32_BIT;
-    sqe->writeAddrHigh              = (remoteAddr >> UINT32_BIT_NUM) & MASK_17_BIT;
-
-    sqe->awsize                     = RtStarsWriteValueSizeType::RT_STARS_WRITE_VALUE_SIZE_TYPE_32BIT; // writeValue 为 4 byte
-    sqe->writeValuePart[0]          = writeValue; // 写对端Notify时，writeValue应当为1
-
-    sqe->va                         = 1; // 写对端notify的va地址而非phy地址
-
-    HCCL_INFO("P2P WriteValueSqe streamId %u, taskId %u, remoteAddr %p, writeValue %llu",
-        streamId, taskId, remoteAddr, writeValue);
 }
 } // namespace Hccl
