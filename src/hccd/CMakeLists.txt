@@ -41,6 +41,32 @@ target_sources(hccd PRIVATE
     ${HCOMM_DIR}/src/common/debug/config/config_log.cc
 )
 
+# 头文件搜索路径
+target_include_directories(hccd PRIVATE
+    ${HCOMM_DIR}/include
+    ${HCOMM_DIR}/include/hccl
+    ${HCOMM_DIR}/pkg_inc
+    ${HCOMM_DIR}/pkg_inc/hccl
+    ${HCOMM_DIR}/src/common/debug/profiling/inc
+    ${HCOMM_DIR}/src/common/debug/profiling/inc/host
+    ${HCOMM_DIR}/src/common/debug/config
+    ${HCOMM_DIR}/src/platform/hccp/inc
+    ${HCOMM_DIR}/src/platform/hccp/inc/network
+    ${HCOMM_DIR}/src/algorithm/pub_inc
+    ${HCOMM_DIR}/src/algorithm/impl
+    ${HCOMM_DIR}/src/framework/common/src/aicpu
+    ${RDMA_CORE_INCLUDE_DIR}
+    ${THIRD_PARTY_NLOHMANN_PATH}
+)
+
+# 添加 legacy 目录下的头文件搜索路径
+FILE(GLOB_RECURSE LEGACY_SOURCE_LIST LIST_DIRECTORIES TRUE ${HCOMM_DIR}/src/legacy/*)
+foreach(legacy_dir ${LEGACY_SOURCE_LIST})
+    if(IS_DIRECTORY ${legacy_dir})
+        target_include_directories(hccd PRIVATE ${legacy_dir})
+    endif()
+endforeach()
+
 # 定义预处理宏
 target_compile_definitions(hccd PRIVATE
     HCCD
@@ -73,24 +99,12 @@ if(BUILD_OPEN_PROJECT)
     )
 
     target_include_directories(hccd PRIVATE
-        ${HCOMM_DIR}/include
-        ${HCOMM_DIR}/include/hccl
-        ${HCOMM_DIR}/pkg_inc
-        ${HCOMM_DIR}/pkg_inc/hccl
-        ${HCOMM_DIR}/src/platform/hccp/inc
-        ${HCOMM_DIR}/src/platform/hccp/inc/network
-        ${HCOMM_DIR}/src/legacy/interface
-        ${RDMA_CORE_INCLUDE_DIR}
-
         # runtime头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/
-
         # mmpa头文件
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/mmpa/
-
         # driver头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
-
         # 包间接口
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/
@@ -100,10 +114,6 @@ if(BUILD_OPEN_PROJECT)
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
-
-        ${HCOMM_DIR}/../externel_depends/tsch/
-
-        ${THIRD_PARTY_NLOHMANN_PATH}
     )
 
     target_link_directories(hccd PRIVATE
@@ -123,25 +133,14 @@ else()
     target_include_directories(hccd PRIVATE
         ${TOP_DIR}/inc
         ${TOP_DIR}/inc/driver
-        ${TOP_DIR}/runtime/include/external
         ${TOP_DIR}/inc/aicpu/
-        ${TOP_DIR}/abl/msprof/inc
-        ${TOP_DIR}/hcomm/src/framework/common/src
-        ${TOP_DIR}/ace/npuruntime/inc
-        ${TOP_DIR}/ace/npuruntime/inc/runtime
-
-        ${TOP_DIR}/open_source/json/include
-        ${TOP_DIR}/hcomm/
-        ${TOP_DIR}/hcomm/include/hccl/
-        ${TOP_DIR}/hcomm/pkg_inc
-        ${TOP_DIR}/hcomm/pkg_inc/hccl
-        ${TOP_DIR}/hcomm/src/platform/hccp/inc
-        ${TOP_DIR}/hcomm/src/platform/hccp/inc/network
-        ${TOP_DIR}/hcomm-legacy/src/platform/legacy/inc
+        ${TOP_DIR}/runtime/include/external
         ${TOP_DIR}/runtime/include/external
         ${TOP_DIR}/runtime/pkg_inc/aicpu_sched
         ${TOP_DIR}/runtime/pkg_inc/profiling
         ${TOP_DIR}/runtime/pkg_inc/runtime
+        ${TOP_DIR}/abl/msprof/inc
+        ${TOP_DIR}/open_source/json/include
     )
 
     target_link_libraries(hccd
@@ -163,24 +162,6 @@ else()
         LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL
     )
 endif()
-
-# 头文件搜索路径
-target_include_directories(hccd PRIVATE
-    ${HCOMM_SRC_INCLUDE_LIST}
-    ${HCOMM_DIR}/src/algorithm/pub_inc
-    ${HCOMM_DIR}/src/algorithm/impl
-    ${HCOMM_DIR}/src/common/debug/profiling/inc
-    ${HCOMM_DIR}/src/common/debug/profiling/inc/host
-    ${HCOMM_DIR}/src/common/debug/config
-    ${HCOMM_DIR}/src/framework/common/src/aicpu
-)
-# 添加 legacy 目录下的头文件搜索路径
-FILE(GLOB_RECURSE LEGACY_SOURCE_LIST LIST_DIRECTORIES TRUE ${HCOMM_DIR}/src/legacy/*)
-foreach(legacy_dir ${LEGACY_SOURCE_LIST})
-    if(IS_DIRECTORY ${legacy_dir})
-        target_include_directories(hccd PRIVATE ${legacy_dir})
-    endif()
-endforeach()
 
 # 设置依赖关系
 add_dependencies(hccd json)
