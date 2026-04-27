@@ -1318,7 +1318,9 @@ typedef union urma_get_tp_cfg_flag {
         uint32_t uboe            : 1;
         uint32_t pre_defined     : 1;
         uint32_t dynamic_defined : 1;
-        uint32_t reserved        : 26;
+        uint32_t udp             : 5;
+        uint32_t group_id        : 15;
+        uint32_t reserved        : 6;
     } bs;
     uint32_t value;
 } urma_get_tp_cfg_flag_t;
