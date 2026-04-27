@@ -26,11 +26,11 @@ constexpr uint8_t  MEMORY_DEVIDE           = 2;
 TaskService::TaskService(void *deviceMem, int32_t deviceMemSize, void *hostMem, int32_t hostMemSize)
     : npu2dpuMem_(deviceMem), shmemSize_(deviceMemSize / MEMORY_DEVIDE), hostMem_(hostMem), hostMemSize_(hostMemSize)
 {
-    int32_t controlSize = sizeof(uint8_t) + sizeof(char) * TASKTYPE_ADDR_LENGTH + sizeof(uint32_t);
+    int32_t controlSize = sizeof(uint8_t) + sizeof(char) * TASKTYPE_ADDR_LENGTH + sizeof(uint32_t) + sizeof(uint32_t);
     if (shmemSize_ < controlSize) {
-        dataSize_ = 0;
+        hostSize_ = 0;
     } else {
-        dataSize_ = shmemSize_ - controlSize;
+        hostSize_ = shmemSize_ - controlSize;
     }
     dpu2npuMem_ = static_cast<uint8_t *>(npu2dpuMem_) + shmemSize_;
 }
@@ -123,15 +123,29 @@ HcclResult TaskService::ExecuteTask(uint8_t *srcPtr, std::string taskTypeStr)
         return HCCL_E_NOT_FOUND;
     }
 
+    // copy dataSize
+    uint32_t dataSize{0};
+    uint8_t *dataSizePtr = srcPtr + sizeof(uint8_t) + (sizeof(char) * TASKTYPE_ADDR_LENGTH) + sizeof(uint32_t);
+    aclError ret = aclrtMemcpy(&dataSize, sizeof(dataSize), dataSizePtr, sizeof(dataSize), aclrtMemcpyKind::ACL_MEMCPY_DEVICE_TO_HOST);
+    if (ret != ACL_SUCCESS) {
+        HCCL_ERROR("[TaskService::%s] dataSize memcpy failed: %d", __func__, ret);
+        return HCCL_E_RUNTIME;
+    }
+
+    if (dataSize > hostSize_) {
+        HCCL_ERROR("[TaskService::%s] dataSize[%u] larger than hostMemSize[%d]", __func__, dataSize, hostMemSize_);
+        return HCCL_E_INTERNAL;
+    }
+
     // copy data
-    uint8_t *dataPtr = srcPtr + sizeof(uint8_t) + (sizeof(char) * TASKTYPE_ADDR_LENGTH) + sizeof(uint32_t);
-    aclError ret     = aclrtMemcpy(hostMem_, dataSize_, dataPtr, dataSize_, aclrtMemcpyKind::ACL_MEMCPY_DEVICE_TO_HOST);
+    uint8_t *dataPtr = dataSizePtr + sizeof(uint32_t);
+    ret     = aclrtMemcpy(hostMem_, dataSize, dataPtr, dataSize, aclrtMemcpyKind::ACL_MEMCPY_DEVICE_TO_HOST);
     if (ret != ACL_SUCCESS) {
         HCCL_ERROR("control data memcpy failed: %d", ret);
         return HCCL_E_RUNTIME;
     }
 
-    if (itFunc->second(reinterpret_cast<uint64_t>(hostMem_), dataSize_) != 0) {
+    if (itFunc->second(reinterpret_cast<uint64_t>(hostMem_), dataSize) != 0) {
         return HCCL_E_INTERNAL;
     }
     return HCCL_SUCCESS;
@@ -168,12 +182,12 @@ HcclResult TaskService::TaskRun()
     CHK_PTR_NULL(dpu2npuMem_);
     HCCL_INFO("[TaskService::%s] TaskService{npu2dpuMem:%p; dpu2npuMem:%p; hostMem:%p}", __func__, npu2dpuMem_,
               dpu2npuMem_, hostMem_);
-    if (dataSize_ == 0) {
-        HCCL_ERROR("[TaskService::%s] dataSize[%d] illegal", __func__, dataSize_);
+    if (hostSize_ == 0) {
+        HCCL_ERROR("[TaskService::%s] dataSize[%d] illegal", __func__, hostSize_);
         return HCCL_E_INTERNAL;
     }
-    if (dataSize_ > hostMemSize_) {
-        HCCL_ERROR("[TaskService::%s] hostMemSize[%d] less than dataSize[%d]", __func__, hostMemSize_, dataSize_);
+    if (hostSize_ > hostMemSize_) {
+        HCCL_ERROR("[TaskService::%s] hostMemSize[%d] less than dataSize[%d]", __func__, hostMemSize_, hostSize_);
         return HCCL_E_INTERNAL;
     }
     uint8_t flag{0};
