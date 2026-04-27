@@ -26,6 +26,10 @@ public:
             .stubs()
             .with(any())
             .will(returnValue(HCCL_SUCCESS));
+        MOCKER(taskAppend)
+            .stubs()
+            .with(any(), any())
+            .will(returnValue(HCCL_SUCCESS));
     }
     void TearDown() override {
         BaseInit::TearDown();
@@ -170,5 +174,35 @@ TEST_F(HcclScatterTest, Ut_HcclScatter_When_2Server4Rank_Expect_ReturnIsHCCL_SUC
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
 
+    UT_UNSET_SENDBUF_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
+}
+
+TEST_F(HcclScatterTest, Ut_HcclScatter_When_GroupModeSuccess_Expect_ReturnIsHCCL_SUCCESS)
+{
+    UT_SET_SENDBUF_RECVBUF_COUNT(rankNum * HCCL_COM_DATA_SIZE, HCCL_COM_DATA_SIZE, HCCL_COM_DATA_SIZE);
+    u32 root = 0;
+    UT_COMM_CREATE_DEFAULT(comm);
+    UT_STREAM_CREATE_DEFAULT(stream);
+    hcclGroupDepth = 1;
+
+    HcclResult ret = HcclScatterInner(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, root, comm, stream);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    hcclGroupDepth = 0;
+    UT_UNSET_SENDBUF_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
+}
+
+TEST_F(HcclScatterTest, Ut_HcclScatter_When_GroupModeAndCountIsZero_Expect_ReturnIsHCCL_SUCCESS)
+{
+    hcclGroupDepth = 1;
+    UT_SET_SENDBUF_RECVBUF_COUNT(rankNum * HCCL_COM_DATA_SIZE, 0, 0);
+    u32 root = 0;
+    UT_COMM_CREATE_DEFAULT(comm);
+    UT_STREAM_CREATE_DEFAULT(stream);
+
+    HcclResult ret = HcclScatterInner(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, root, comm, stream);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    hcclGroupDepth = 0;
     UT_UNSET_SENDBUF_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
 }

@@ -30,6 +30,10 @@ public:
             .stubs()
             .with(any())
             .will(returnValue(HCCL_SUCCESS));
+        MOCKER(taskAppend)
+            .stubs()
+            .with(any(), any())
+            .will(returnValue(HCCL_SUCCESS));
     }
     void TearDown() override {
         BaseInit::TearDown();
@@ -129,6 +133,25 @@ TEST_F(HcclAlltoAllVTest, Ut_HcclAlltoAllV_When_SendCountsZero_Expect_ReturnIsHC
     HcclResult ret = HcclAlltoAllVInner(sendBuf, sendCounts, sendDispls, HCCL_DATA_TYPE_INT8, recvBuf, recvCounts, recvDispls, HCCL_DATA_TYPE_INT8, comm, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
+    UT_UNSET_SENDBUFV_RECVBUFV_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
+}
+
+TEST_F(HcclAlltoAllVTest, Ut_HcclAlltoAllV_When_GroupModeSuccess_Expect_ReturnIsHCCL_SUCCESS)
+{
+    UT_SET_SENDBUFV_RECVBUFV(HCCL_COM_DATA_SIZE,
+        1, HCCL_COM_DATA_SIZE,
+        1, 0,
+        HCCL_COM_DATA_SIZE,
+        1, HCCL_COM_DATA_SIZE,
+        1, 0);
+    UT_COMM_CREATE_DEFAULT(comm);
+    UT_STREAM_CREATE_DEFAULT(stream);
+    hcclGroupDepth = 1;
+
+    HcclResult ret = HcclAlltoAllVInner(sendBuf, sendCounts, sendDispls, HCCL_DATA_TYPE_INT8, recvBuf, recvCounts, recvDispls, HCCL_DATA_TYPE_INT8, comm, stream);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    hcclGroupDepth = 0;
     UT_UNSET_SENDBUFV_RECVBUFV_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
 }
 
