@@ -177,7 +177,7 @@ RS_ATTRI_VISI_DEF int RsPrctlByResvMem(bool useResvMem, unsigned int resvMemPool
     }
 
     ret = snprintf_s(processName, TASK_COMM_LEN, TASK_COMM_LEN - 1, "hccp_rsv%u_%s", resvMemPoolId, threadName);
-    CHK_PRT_RETURN(ret <= 0, hccp_err("snprintf_s unsuccessful, ret:%d threadName:%s", ret, threadName), -EIO);
+    CHK_PRT_RETURN(ret <= 0, hccp_err("snprintf_s failed, ret:%d threadName:%s", ret, threadName), -EIO);
     ret = prctl(PR_SET_NAME, (unsigned long)processName);
     CHK_PRT_RETURN(ret != 0, hccp_err("prctl failed, ret:%d threadName:%s processName:%s",
         ret, threadName, processName), ret);
