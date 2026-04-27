@@ -318,6 +318,7 @@ HcclResult hcclComm::AllGather(const std::string &tag, void *inputPtr, void *out
     CHK_PTR_NULL(outputPtr);
     CHK_PTR_NULL(stream);
 
+
     CHK_PRT_RET(tag.empty(), HCCL_ERROR("[HcclComm][AllGather]errNo[0x%016llx] AllGather tag length is 0",
         HCCL_ERROR_CODE(HCCL_E_PARA)), HCCL_E_PARA);
 
