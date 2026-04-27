@@ -107,4 +107,10 @@ private:
 
 } // namespace hccl
 
+namespace MyRankUtils {
+
+HcommChannelDesc ChannelDescHccl2Hcomm(const HcclChannelDesc &hcclDesc);
+
+} // namespace MyRankUtils  
+
 #endif // MY_RANK_H
