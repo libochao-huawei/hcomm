@@ -24,6 +24,7 @@
 #include "exception_handler.h"
 #include "adapter_rts_common.h"
 #include "ccu_error_info_v1.h"
+#include "orion_adapter_hccp.h"
 
 namespace hcomm {
 
@@ -408,9 +409,10 @@ HcclResult CcuComponent::CreateAndImportLoopJettys(const uint8_t dieId,
     Hccl::IpAddress ipAddr{};
     CHK_RET(CommAddrToIpAddress(commAddr, ipAddr));
 
+    Hccl::CqCreateInfo cqInfo{0};
     auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
     const auto ctxHandle = static_cast<CtxHandle>(rdmaHandleMgr.GetByIp(devPhyId_, ipAddr));
-    const auto _jfcHandle = rdmaHandleMgr.GetJfcHandle(ctxHandle, Hccl::HrtUbJfcMode::CCU_POLL);
+    const auto _jfcHandle = rdmaHandleMgr.GetJfcHandle(ctxHandle, cqInfo, Hccl::HrtUbJfcMode::CCU_POLL);
     const JfcHandle jfcHandle = reinterpret_cast<JfcHandle>(_jfcHandle);
 
     const auto &rmaBufferIter = ccuRmaBufferMap_.find(dieId);

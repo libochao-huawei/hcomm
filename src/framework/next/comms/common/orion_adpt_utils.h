@@ -20,6 +20,7 @@
 namespace hcomm {
 
 HcclResult CommAddrToIpAddress(const CommAddr &commAddr, Hccl::IpAddress &ipAddr);
+HcclResult CommAddrToIpv4Address(const CommAddr &commAddr, Hccl::IpAddress &ipAddr);
 HcclResult IpAddressToCommAddr(const Hccl::IpAddress &ipAddr, CommAddr &commAddr);
 HcclResult CommProtocolToLinkProtocol(CommProtocol commProtocol, Hccl::LinkProtocol &linkProtocol);
 Hccl::LinkData BuildDefaultLinkData();
@@ -28,6 +29,7 @@ HcclResult EndpointDescPairToLinkData(const EndpointDesc &locEp, const EndpointD
 HcclResult EndpointDescPairToLinkDataWithRankIds(const uint32_t myRank, const uint32_t rmtRank,
     const EndpointDesc &locEp, const EndpointDesc &rmtEp, Hccl::LinkData &linkData, uint32_t devicePhyId, uint32_t remoteDevicePhyId,
     u32 reuseIdx = 0);
+HcclResult HostUrmaEndpointDescPairToLinkData(const EndpointDesc &locEp, const EndpointDesc &rmtEp, Hccl::LinkData &linkData);
 
 } // namespace hcomm
 
