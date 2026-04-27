@@ -58,7 +58,7 @@ private:
     void       *npu2dpuMem_{nullptr};
     void       *dpu2npuMem_{nullptr};
     int32_t shmemSize_{0};
-    int32_t dataSize_{0};
+    int32_t leftSize_{0};
     void       *hostMem_{nullptr};
     int32_t hostMemSize_{0};
 };
