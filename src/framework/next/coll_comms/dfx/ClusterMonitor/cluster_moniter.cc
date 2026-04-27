@@ -1,6 +1,8 @@
 #include "cluster_moniter.h"
 #include "hccl_common.h"
-#include "../taskException/host/hcclCommTaskException.h"
+//#include "../taskException/host/hcclCommTaskException.h"
+#include "hcclCommTaskException.h"
+#include "ccuTaskException.h"
 
 namespace hcomm {
 HcclResult ret;
@@ -69,31 +71,32 @@ void ClusterMonitor::ProcessExceptionEvent()
     }
     return;
 }
-void GetRemoteRankId(unsigned int rankId, unsigned short int status, std::string LocalEid, std::string RemoteEid)
+void GetCqeErrInfo(unsigned int RemoteDeviceId, unsigned int LocDeviceId, unsigned short int status, std::string LocalEid, std::string RemoteEid)
 {
-    return ClusterMonitor::GetInstance().GetRemoteRankId(rankId, status, LocalEid, RemoteEid);
+    return ClusterMonitor::GetInstance().GetCqeErrInfo(RemoteDeviceId, LocDeviceId, status, LocalEid, RemoteEid);
 }
 
-void ClusterMonitor::GetRemoteRankId(u32 rankId, uint16_t status, std::string LocalEid, std::string RemoteEid)
+void ClusterMonitor::GetCqeErrInfo(u32 RemoteDeviceId, u32 LocDeviceId, uint16_t status, std::string LocalEid, std::string RemoteEid)
 {
-    CqeErrInfo_.CqeRemoterankId = rankId;
+    CqeErrInfo_.CqeRemotedeviceId = RemoteDeviceId;
+    CqeErrInfo_.CqeLocaldeviceId = LocDeviceId;
     CqeErrInfo_.CqeRemoterstatus = status;
     CqeErrInfo_.CqeLocalEid = LocalEid;
     CqeErrInfo_.CqeRemoteEid = RemoteEid;
-    if (CqeErrInfo_.CqeRemoterstatus != 0) {
-       SetStatus(uid_, uid_, HeartBeatStatus::HEARTBEAT_CQE_EXCEPTION);//从远端获取的remoteRankId需要转换为Uid_类型
-       HCCL_RUN_INFO("[%s][%s]local rank [%s]: crimer rank [%s] status[%d] by informer rank [%d]",
-            LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_HEARTBEAT_EVETN.c_str(), FormatUId(uid_).c_str(),
-            FormatUId(uid_).c_str(), CqeErrInfo_.CqeRemoterstatus, CqeErrInfo_.CqeRemoterankId);
-    }
+    // if (CqeErrInfo_.CqeRemoterstatus != 0) {
+    //    SetStatus(uid_, uid_, HeartBeatStatus::HEARTBEAT_CQE_EXCEPTION);//从远端获取的remoteRankId需要转换为Uid_类型
+    //    HCCL_RUN_INFO("[%s][%s]local rank [%s]: crimer rank [%s] status[%d] by informer rank [%d]",
+    //         LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_HEARTBEAT_EVETN.c_str(), FormatUId(uid_).c_str(),
+    //         FormatUId(uid_).c_str(), CqeErrInfo_.CqeRemoterstatus, CqeErrInfo_.CqeRemoterankId);
+    // }
     return;
 }
 
 __attribute__((constructor)) void ClusterMonitorCallBackInit()
 {
-    hcomm::RegisterGetAicpuRemoteRankIdCallBackHcomm(GetRemoteRankId);
+    //hcomm::RegisterGetAicpuRemoteRankIdCallBackHcomm(GetCqeErrInfo);
+    hcomm::RegisterGetCcuCqeErrInfoCallBackHcomm(GetCqeErrInfo);
 }
-
 
 
 }

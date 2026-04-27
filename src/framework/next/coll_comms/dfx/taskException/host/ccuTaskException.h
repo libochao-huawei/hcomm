@@ -24,6 +24,9 @@
 namespace hcomm {
 using RdmaHandle = void*;
 
+using GetCcuCqeErrInfoCallBackHcomm = void (*)(u32 RemoteDeviceId, u32 locDeviceId, uint16_t status, std::string LocalEid, std::string RemoteEid); // 获取远端rankId的回调函数类型
+void RegisterGetCcuCqeErrInfoCallBackHcomm(GetCcuCqeErrInfoCallBackHcomm); // 注册获取远端rankId的回调函数
+
 class CcuTaskException {
 public:
     CcuTaskException() = default;
@@ -106,9 +109,10 @@ private:
     
     static uint64_t GetCcuGSAValue(int32_t deviceId, uint32_t dieId, uint32_t gsaId);
     static uint16_t GetMSIdPerDie(uint16_t msId) { return msId & 0x7fff; }
-    static void GetCqeErrorInfo(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId);
+    static void GetCqeErrorInfo(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 locDeviceId, uint8_t missionStatus);
     static u32 GetCqeErrDeviceIdByRankId(hccl::CollComm* collComm, uint32_t rankid);
     static std::string GetCqeErrNetInstanceByRankId(hccl::CollComm* collComm, uint32_t rankid);
+    static void ClusterMoniterGetCcuCqeErrInfo(u32 RemoteDeviceId, u32 locDeviceId, uint16_t status, std::string LocalEid, std::string RemoteEid);
 };
 } // namespace hcomm
 
