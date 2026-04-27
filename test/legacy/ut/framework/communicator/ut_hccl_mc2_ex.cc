@@ -46,6 +46,11 @@ protected:
         kernelParam->comm.idIndex = 0;
         kernelParam->comm.devType = DevType::DEV_TYPE_950;
         kernelParam->op.algOperator.opMode = OpMode::OPBASE;
+
+        MOCKER_CPP(&RtsqBase::QuerySqBaseAddr).stubs().with(any()).will(returnValue(reinterpret_cast<u64>(&mockSq)));
+        MOCKER_CPP(&RtsqBase::QuerySqDepth).stubs().with(any()).will(returnValue(static_cast<u32>(AC_SQE_MAX_CNT)));
+        MOCKER_CPP(&RtsqBase::QuerySqStatusByType).stubs().with(any()).will(returnValue(static_cast<u32>(0)));
+        MOCKER_CPP(&RtsqBase::ConfigSqStatusByType).stubs();
         std::cout << "A Test case in HcclMc2ExTest SetUp" << std::endl;
     }
 
@@ -197,9 +202,6 @@ TEST_F(HcclMc2ExTest, Ut_HcclGetTaskStatus_When_TaskIsNormal_Expect_ReturnNormal
 
 // HcclCheckFinishByStream
 TEST_F(HcclMc2ExTest, Ut_HcclCheckFinishByStream_When_StreamIsFinished_Expect_ReturnSuccess) {
-    MOCKER_CPP(&RtsqBase::QuerySqBaseAddr).stubs().with(any()).will(returnValue(reinterpret_cast<u64>(&mockSq)));
-    MOCKER_CPP(&RtsqBase::QuerySqStatusByType).stubs().with(any()).will(returnValue(static_cast<u32>(0)));
-    MOCKER_CPP(&RtsqBase::ConfigSqStatusByType).stubs();
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
     vector<char> masterBuff = {
         0x00, 0x00, 0x00, 0x00,  // id
@@ -234,9 +236,7 @@ TEST_F(HcclMc2ExTest, Ut_HcclCheckFinishByStream_When_StreamIsFinished_Expect_Re
 }
 
 TEST_F(HcclMc2ExTest, Ut_HcclCheckFinishByStream_When_StreamIsRunning_Expect_ReturnUnavail) {
-    MOCKER_CPP(&RtsqBase::QuerySqBaseAddr).stubs().with(any()).will(returnValue(reinterpret_cast<u64>(&mockSq)));
-    MOCKER_CPP(&RtsqBase::QuerySqStatusByType).stubs().with(any()).will(returnValue(static_cast<u32>(0)));
-    MOCKER_CPP(&RtsqBase::ConfigSqStatusByType).stubs();
+
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
     vector<char> masterBuff = {
         0x00, 0x00, 0x00, 0x00,  // id
@@ -272,9 +272,6 @@ TEST_F(HcclMc2ExTest, Ut_HcclCheckFinishByStream_When_StreamIsRunning_Expect_Ret
 
 // HcclLaunchCcoreWait
 TEST_F(HcclMc2ExTest, Ut_HcclLaunchCcoreWait_When_ValidParams_Expect_ReturnSuccess) {
-    MOCKER_CPP(&RtsqBase::QuerySqBaseAddr).stubs().with(any()).will(returnValue(reinterpret_cast<u64>(&mockSq)));
-    MOCKER_CPP(&RtsqBase::QuerySqStatusByType).stubs().with(any()).will(returnValue(static_cast<u32>(0)));
-    MOCKER_CPP(&RtsqBase::ConfigSqStatusByType).stubs();
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
     vector<char> masterBuff = {
         0x00, 0x00, 0x00, 0x00,  // id
@@ -310,9 +307,6 @@ TEST_F(HcclMc2ExTest, Ut_HcclLaunchCcoreWait_When_ValidParams_Expect_ReturnSucce
 
 // HcclLaunchCcorePost
 TEST_F(HcclMc2ExTest, Ut_HcclLaunchCcorePost_When_ValidParams_Expect_ReturnSuccess) {
-    MOCKER_CPP(&RtsqBase::QuerySqBaseAddr).stubs().with(any()).will(returnValue(reinterpret_cast<u64>(&mockSq)));
-    MOCKER_CPP(&RtsqBase::QuerySqStatusByType).stubs().with(any()).will(returnValue(static_cast<u32>(0)));
-    MOCKER_CPP(&RtsqBase::ConfigSqStatusByType).stubs();
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
     vector<char> masterBuff = {
         0x00, 0x00, 0x00, 0x00,  // id

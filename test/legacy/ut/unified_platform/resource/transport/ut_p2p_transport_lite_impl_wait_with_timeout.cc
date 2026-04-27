@@ -16,6 +16,7 @@
 #include "p2p_transport_lite_impl.h"
 #include "stream_lite.h"
 #include "rtsq_a5.h"
+#include "sqe.h"
 #include "ascend_hal.h"
 #include "drv_api_exception.h"
 #undef private
@@ -38,6 +39,7 @@ protected:
     {
         MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910A2));
         MOCKER_CPP(&RtsqBase::QuerySqBaseAddr).stubs().with(any()).will(returnValue(reinterpret_cast<u64>(&mockSq)));
+        MOCKER_CPP(&RtsqBase::QuerySqDepth).stubs().with(any()).will(returnValue(static_cast<u32>(AC_SQE_MAX_CNT)));
         MOCKER_CPP(&RtsqBase::QuerySqStatusByType).stubs().with(any()).will(returnValue(static_cast<u32>(0)));
         MOCKER_CPP(&RtsqBase::ConfigSqStatusByType).stubs();
         std::cout << "A Test case in P2PTransportLiteImplWaitWithTimeoutTest SetUp" << std::endl;
