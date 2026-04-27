@@ -12,7 +12,7 @@
 namespace hcomm {
 
 struct AicpuIndopEnv {
-    bool taskExceptionEnable{false};
+    bool taskExceptionEnable{true};
 };
 
 static AicpuIndopEnv g_aicpuIndopEnv;

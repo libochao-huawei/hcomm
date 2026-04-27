@@ -16,6 +16,7 @@
 #include "internal_exception.h"
 #include "sal.h"
 #include "communicator_impl_lite_manager.h"
+#include "profiling_handler_lite.h"
 
 namespace Hccl {
 constexpr u32 UB_WQE_BB_SIZE       = 64;  // 一个WQE BB是64Byte
@@ -349,12 +350,8 @@ void UbTransportLiteImpl::Post(u32 index, const StreamLite &stream)
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
     HCCL_INFO("UbTransportLiteImpl::Post notifyId[0x%llx], pi=%u", rmtBuffSliceLite.GetAddr(), connOut.pi);
- 
-    if (callback_ == nullptr && newCallback_ == nullptr)
-    {
-        HCCL_WARNING("[UbTransportLiteImpl] callback_ is nullptr.");
-        return;
-    }
+
+    CHK_PRT_RET_NULL(!IsReportTask(), HCCL_DEBUG("[%s]IsReportTask false, skip report", __func__));
 
     TaskParam taskParam{};
     taskParam.taskType                 = TaskParamType::TASK_UB_INLINE_WRITE;
@@ -779,5 +776,15 @@ void UbTransportLiteImpl::SetFenceConfig(SqeConfigLite &cfg)
         cfg.compOrder = UB_COMPLETION;
     }
     fence_ = false;
+}
+
+bool UbTransportLiteImpl::IsReportTask()
+{
+    bool profilingL1 = ProfilingHandlerLite::GetInstance().GetProfL1State();
+    bool ret = taskExceptionEnable_ && profilingL1 &&
+        (callback_ != nullptr || newCallback_ != nullptr);
+    HCCL_DEBUG("[%s]ret[%d], taskExceptionEnable_[%d], L1[%d], callback_[%p], newCallback_[%p]",
+        __func__, ret, taskExceptionEnable_, profilingL1, callback_, newCallback_);
+    return ret;
 }
 } // namespace Hccl
