@@ -9,9 +9,12 @@
 # -----------------------------------------------------------------------------------------------------------
 cmake_minimum_required(VERSION 3.16.0)
 option(BUILD_OPEN_PROJECT "Build open hcomm project." ON)
-message(STATUS "DEVICE_MODE=${DEVICE_MODE}")
 message(STATUS "BUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}")
+message(STATUS "CANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH}")
+message(STATUS "DEVICE_MODE=${DEVICE_MODE}")
 message(STATUS "AARCH_MODE=${AARCH_MODE}")
+
+set(HCOMM_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 if((BUILD_OPEN_PROJECT AND DEVICE_MODE) OR AARCH_MODE)
     # need to switch
