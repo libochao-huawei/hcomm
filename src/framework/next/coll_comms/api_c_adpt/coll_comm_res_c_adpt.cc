@@ -357,9 +357,8 @@ HcclResult HcclCcuKernelRegisterFinish(HcclComm comm)
     return HcclResult::HCCL_SUCCESS;
 }
 
-static HcclResult LaunchCcuTasks(const hcomm::CcuTaskParam &param, const aclrtStream stream, Hccl::TaskParam &taskParam)
+static HcclResult LaunchCcuTasks(const hcomm::CcuTaskParam &param, const aclrtStream stream)
 {
-    taskParam.beginTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
     const uint32_t execTimeOutSec = Hccl::EnvConfig::GetInstance().GetRtsConfig().GetExecTimeOut();
     rtCcuTaskInfo_t taskInfo{};
     taskInfo.dieId       = param.dieId;
@@ -379,7 +378,6 @@ static HcclResult LaunchCcuTasks(const hcomm::CcuTaskParam &param, const aclrtSt
         constexpr std::size_t TOKEN_VALUE_INDEX = 2; // 与算法约束token index为 2
         if (i == TOKEN_VALUE_INDEX) { continue; }
         HCCL_INFO("[%s] arg[%lu] = %lu", __func__, i, taskInfo.args[i]);
-        taskParam.taskPara.Ccu.costumArgs[i] = taskInfo.args[i];
     }
 
     auto ret = rtCCULaunch(&taskInfo, stream);
@@ -387,8 +385,6 @@ static HcclResult LaunchCcuTasks(const hcomm::CcuTaskParam &param, const aclrtSt
         HCCL_ERROR("[%s] failed to launch ccu, ret[%d]", __func__, ret);
         return HcclResult::HCCL_E_RUNTIME;
     }
-    taskParam.endTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
-
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -414,7 +410,7 @@ HcclResult SaveDfxTaskInfo(const HcclComm comm, const Hccl::TaskParam &taskParam
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclReportCcuProfilingInfo(uint64_t execId, hcomm::CcuProfilingInfo *profilingArray, size_t infoNum,
+HcclResult HcclReportCcuProfilingInfo(const hcomm::CcuTaskParam &param, uint64_t execId, hcomm::CcuProfilingInfo *profilingArray, size_t infoNum,
                                         const HcclComm comm, Hccl::TaskParam &taskParam, bool isMaster)
 {
     if (infoNum == 0) {
@@ -424,18 +420,6 @@ HcclResult HcclReportCcuProfilingInfo(uint64_t execId, hcomm::CcuProfilingInfo *
     CHK_PTR_NULL(profilingArray);
     auto hcclComm = static_cast<hccl::hcclComm*>(comm);
     CHK_PTR_NULL(hcclComm);
-
-    // 设置任务参数的基本信息
-    taskParam.taskPara.Ccu.dieId     = profilingArray[0].dieId;
-    taskParam.taskPara.Ccu.missionId = profilingArray[0].missionId;
-    taskParam.taskPara.Ccu.execMissionId = profilingArray[0].missionId;
-    taskParam.taskPara.Ccu.instrId   = profilingArray[0].instrId; // TODO: 值怎么给？
-    taskParam.taskPara.Ccu.executeId = execId;
-    taskParam.taskPara.Ccu.ccuKernelHandle = execId;
-    taskParam.isMaster = isMaster;
-    HCCL_INFO("[%s]dieId[%u], missionId[%u], execMissionId[%u], instrId[%u], executeId[%u], ccuKernelHandle[%u]",
-        __func__, taskParam.taskPara.Ccu.dieId, taskParam.taskPara.Ccu.missionId, taskParam.taskPara.Ccu.execMissionId,
-        taskParam.taskPara.Ccu.instrId, taskParam.taskPara.Ccu.executeId, taskParam.taskPara.Ccu.ccuKernelHandle);
 
     // 处理每个性能信息条目
     for (size_t i = 0; i < infoNum; ++i) {
@@ -471,7 +455,7 @@ HcclResult HcclReportCcuProfilingInfo(uint64_t execId, hcomm::CcuProfilingInfo *
         dst.inputDataType = src.inputDataType;
         dst.outputDataType = src.outputDataType;
         dst.dataSize = src.dataSize;
-        dst.ckeId = src.ckeId;
+        dst.ckeId = src.ckeId; 
         dst.mask = src.mask;
         HCCL_INFO("src.name %s, dst.name %s", src.name.c_str(), dst.name.c_str());
         (void)memcpy_s(dst.channelId, sizeof(dst.channelId), src.channelId, sizeof(src.channelId));
@@ -492,6 +476,24 @@ HcclResult HcclReportCcuProfilingInfo(uint64_t execId, hcomm::CcuProfilingInfo *
     HCCL_DEBUG("[%s]dieId[%u]", __func__, taskParam.taskPara.Ccu.dieId);
     CHK_RET(SaveDfxTaskInfo(comm, taskParam));
     return HCCL_SUCCESS;
+}
+
+Hccl::TaskParam ConstructCcuTaskParam(const hcomm::CcuTaskParam &ccuParam, const CcuKernelHandle kernelHandle,
+    u64 beginTime, u64 endTime, bool isMaster)
+{
+    Hccl::TaskParam taskParam{};
+    taskParam.taskType = Hccl::TaskParamType::TASK_CCU;
+    taskParam.taskPara.Ccu.dieId     = ccuParam.dieId;
+    taskParam.taskPara.Ccu.missionId = ccuParam.missionId;
+    taskParam.taskPara.Ccu.execMissionId = ccuParam.missionId;
+    taskParam.taskPara.Ccu.instrId   = ccuParam.instStartId;
+    taskParam.taskPara.Ccu.executeId = kernelHandle;
+    taskParam.taskPara.Ccu.ccuKernelHandle = kernelHandle;
+    taskParam.isMaster = isMaster;
+    HCCL_INFO("[%s]dieId[%u], missionId[%u], execMissionId[%u], instrId[%u], executeId[%u], ccuKernelHandle[%u]",
+        __func__, taskParam.taskPara.Ccu.dieId, taskParam.taskPara.Ccu.missionId, taskParam.taskPara.Ccu.execMissionId,
+        taskParam.taskPara.Ccu.instrId, taskParam.taskPara.Ccu.executeId, taskParam.taskPara.Ccu.ccuKernelHandle);
+    return taskParam;
 }
 
 HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
@@ -528,12 +530,12 @@ HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
     CHK_RET(kernel->GetCcuProfilingInfo(*ccuTaskArgs, allCcuProfilingInfo));
 
     for (size_t idx = 0; idx < ccuParams.size(); ++idx) {
-        Hccl::TaskParam taskParam{};
-        taskParam.taskType = Hccl::TaskParamType::TASK_CCU;
-
-        CHK_RET(LaunchCcuTasks(ccuParams[idx], streamPtr, taskParam));
+        u64 beginTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
+        CHK_RET(LaunchCcuTasks(ccuParams[idx], streamPtr));
+        u64 endTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
+        Hccl::TaskParam taskParam = ConstructCcuTaskParam(ccuParams[idx], kernelHandle, beginTime, endTime, rtsThread->GetMaster());
         size_t infoNum = (idx + 1 == ccuParams.size()) ? allCcuProfilingInfo.size() : 1;
-        CHK_RET(HcclReportCcuProfilingInfo(kernelHandle, allCcuProfilingInfo.data(), infoNum, comm, taskParam,
+        CHK_RET(HcclReportCcuProfilingInfo(ccuParams[idx], kernelHandle, allCcuProfilingInfo.data(), infoNum, comm, taskParam,
             rtsThread->GetMaster()));
     }
 
