@@ -17,11 +17,6 @@ public:
     __aicore__ inline AivSync910B() {}
     __aicore__ inline void SyncBarrier(int32_t tag);
     __aicore__ inline void ClearGM();
-    __aicore__ inline void LocalRecord(uint32_t tag, uint32_t waitBlock, AivNotifyType notifyType, bool ifSet = true);
-    __aicore__ inline void LocalWait(uint32_t tag, AivNotifyType notifyType, bool ifClear = false);
-    __aicore__ inline void localMultiRecord(uint32_t tag, int32_t blockGroup, AivNotifyType notifyType);
-    __aicore__ inline void LocalMultiWaitRecord(uint32_t tag, AivNotifyType notifyType, int32_t blockGroup, bool ifClear);
-    __aicore__ inline void SyncAllCycle(AivNotifyType notifyType);
     __aicore__ inline void Process(int32_t tag);
 };
 
@@ -47,83 +42,15 @@ __aicore__ inline void AivSync910B::ClearGM()
     CpGM2GM(GM_OUT[rank_] + blockOffset, GM_OUT[rank_] + blockOffset + emptyOffset, blockCount);
 }
 
-__aicore__ inline void AivSync910B::LocalRecord(uint32_t tag, uint32_t waitBlock, AivNotifyType notifyType, bool ifSet)
-{
-    int32_t recordOffset = localOffset + waitBlock * FLAG_SIZE + (int32_t(notifyType) % 3)* MAX_NUM_BLOCKS * FLAG_SIZE +
-        (int32_t(notifyType) / 3) * 2560 * 1024;
-    __gm__ int32_t *ctrlFlagGM = (__gm__ int32_t *)(GM_OUT[rank_]  + recordOffset);
-    SetSignalValue(ctrlFlagGM, localSetTensor, tag, ifSet);
-}
-
-__aicore__ inline void AivSync910B::LocalWait(uint32_t tag, AivNotifyType notifyType, bool ifClear)
-{
-    int32_t waitOffset = localOffset + blockIdx_ * FLAG_SIZE + (int32_t(notifyType) % 3)* MAX_NUM_BLOCKS * FLAG_SIZE +
-        (int32_t(notifyType) / 3) * 2560 * 1024;
-    __gm__ int32_t *ctrlFlagGM = (__gm__ int32_t *)(GM_OUT[rank_]  + waitOffset );
-    WaitSignalValue(ctrlFlagGM, localCheckTensor, tag);
-    PipeBarrier<PIPE_ALL>();
-    if (ifClear) {
-        SetSignalValue(ctrlFlagGM, localSetTensor, 0);
-    }  
-}
-
-__aicore__ inline void AivSync910B::localMultiRecord(uint32_t tag, int32_t blockGroup, AivNotifyType notifyType)
-{ 
-    localSetTensor.SetValue(0, tag);
-    SyncFunc<HardEvent::S_MTE3>();
-    for (int32_t i = 0; i < blockGroup; i++) {
-        LocalRecord(tag, blockIdx_ + i, notifyType, false);
-    }
-}
-
-__aicore__ inline void AivSync910B::LocalMultiWaitRecord(uint32_t tag, AivNotifyType notifyType, int32_t blockGroup, bool ifClear)
-{ 
-    int32_t waitOffset = localOffset + (int32_t(notifyType) % 3)* MAX_NUM_BLOCKS * FLAG_SIZE +
-        (int32_t(notifyType) / 3) * 2560 * 1024;
-    __gm__ int32_t *ctrlFlagGM = (__gm__ int32_t *)(GM_OUT[rank_]  + waitOffset);
-    GlobalTensor<int32_t> globalTensor;
-    globalTensor.SetGlobalBuffer(ctrlFlagGM, UB_FLAG_PAD_COUNT * blockGroup);
-
-    while (true) {
-        DataCopy(localCheckTensor, globalTensor, UB_FLAG_PAD_COUNT * blockGroup);
-        SyncFunc<HardEvent::MTE2_S>();
-        int32_t sum = 0;
-        for (int32_t i = 1; i < blockGroup; i++) {
-            sum += localCheckTensor.GetValue(UB_FLAG_PAD_COUNT * i);
-        } 
-        if (sum == (blockGroup - 1) * tag) {
-            break;
-        }
-    }
-    PipeBarrier<PIPE_ALL>();
-    if (!ifClear) {
-        localMultiRecord(tag + 1, blockGroup, notifyType);
-    } else {
-        localMultiRecord(0, blockGroup, notifyType);
-    }
-    return;
-}
-
-__aicore__ inline void AivSync910B::SyncAllCycle(AivNotifyType notifyType)
-{
-    LocalRecord(1, blockIdx_, notifyType);
-    if (blockIdx_ == 0) {
-        LocalMultiWaitRecord(1, notifyType, rankSize_, false);
-    } 
-    LocalWait(IDX_2, notifyType, true);
-}
-
 __aicore__ inline void AivSync910B::Process(int32_t tag)
 {
-    SyncBarrier(1);
-    PipeBarrier<PIPE_ALL>();
-    SyncAllCycle(AivNotifyType::ClearACK);
-    PipeBarrier<PIPE_ALL>();
-    ClearGM();
-    PipeBarrier<PIPE_ALL>();
-    SyncAllCycle(AivNotifyType::ClearDataSingal);
-    PipeBarrier<PIPE_ALL>();
-    SyncBarrier(IDX_2);
+    if (tag == 1) {
+        SyncBarrier(1);
+    } else if (tag == IDX_2) {
+        ClearGM();
+    } else if (tag == IDX_3) {
+        SyncBarrier(IDX_2);
+    }
 }
 
 __aicore__ inline void aiv_sync_910b_inner(KERNEL_ARGS_DEF)
