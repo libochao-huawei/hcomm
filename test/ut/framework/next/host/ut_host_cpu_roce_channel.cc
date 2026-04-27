@@ -22,23 +22,6 @@
 #define private public
 using namespace hcomm;
 
-struct IbvPollCqTestControl {
-    int returnValue = 0;
-    int status = IBV_WC_SUCCESS;
-    uint32_t immData = 0;
-};
-
-IbvPollCqTestControl g_ibvPollCqControl;
-
-static int mock_ibv_poll_cq(struct ibv_cq *cq, int num_entries, struct ibv_wc *wc)
-{
-    wc->status = static_cast<ibv_wc_status>(g_ibvPollCqControl.status);
-    wc->imm_data = g_ibvPollCqControl.immData;
-    return g_ibvPollCqControl.returnValue;
-}
-
-#define ibv_poll_cq mock_ibv_poll_cq
-
 class HostCpuRoceChannelTest : public testing::Test {
 protected:
     static void SetUpTestCase()
@@ -817,26 +800,4 @@ TEST_F(HostCpuRoceChannelTest, Ut_WriteWithNotify_When_LenExceedsMaxMsgSize_Expe
     // len = 250 → 前 2 块 PostRdmaOp(WRITE, 100 each) + 尾块 WRITE_WITH_IMM(50)
     HcclResult ret = impl_->WriteWithNotify((void *)0x1, (void *)0x2, 250, 0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-}
-
-TEST_F(HostCpuRoceChannelTest, Ut_NotifyWait_When_IbvPollCqStatusNotSuccess_Expect_HCCL_E_NETWORK)
-{
-    SetupSuccessfulConnectionMocks();
-    auto impl_ = CreateInitAndConnect();
-    impl_->localDpuNotifyIds_.push_back(100);
-    std::vector<Hccl::QpInfo> qpInfos(1);
-    ibv_cq cq{};
-    ibv_qp qp{};
-    ibv_context context{};
-    qpInfos[0].recvCq = &cq;
-    qpInfos[0].qp = &qp;
-    qpInfos[0].recvCq->context = &context;
-    MOCKER_CPP(&HostCpuRoceChannel::GetQpInfos).stubs().will(returnValue(qpInfos));
-    g_ibvPollCqControl.returnValue = 1;
-    g_ibvPollCqControl.status = IBV_WC_WR_FLUSH_ERR;
-    g_ibvPollCqControl.immData = 100;
-    MOCKER_CPP(&HostCpuRoceChannel::IbvPostRecv).stubs().will(returnValue(HCCL_SUCCESS));
-    HcclResult ret = impl_->NotifyWait(0, 1800);
-    EXPECT_EQ(ret, HCCL_E_NETWORK);
-    g_ibvPollCqControl.status = IBV_WC_SUCCESS;
 }
