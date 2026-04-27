@@ -254,7 +254,7 @@ function make_ut_gov() {
     mkdir -p ${CURRENT_DIR}/cov
     lcov --ignore-errors mismatch,corrupt,empty,inconsistent,negative \
          -c \
-         -d ${BUILD_DIR}/test/ut/ \ 
+         -d ${BUILD_DIR}/test/ut/ \
          -d ${BUILD_DIR}/test/legacy/ut/ \
          -o cov/coverage.info \
          -rc geninfo_unexecuted_blocks=1
