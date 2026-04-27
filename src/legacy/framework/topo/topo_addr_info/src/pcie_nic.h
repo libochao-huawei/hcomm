@@ -11,6 +11,7 @@
 #define _PCIE_NIC_
 
 #include <stdio.h>
+#include "hal.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,7 +19,21 @@ extern "C" {
 
 int GetNpuRoceIp(int phy_id, char* ipaddr, size_t addrLen);
 
-int GetIpByIfName(const char* ifname, char* ip, size_t addrLen);
+int isSamePcieSwitch(NPU *npu, HCA *nic);
+
+/**
+ * 扫描所有HCA
+ */
+int scanHca(HCA *nics, int *nic_len);
+
+
+/**
+ * 从文件中读取整数,用来读取numa
+ * @param path 文件路径
+ * @param value 读取的整数指针
+ * @return 0 成功，-1 失败0
+*/
+int readIntFromFile(const char* path, int *value);
 
 #ifdef __cplusplus
 }
