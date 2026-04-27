@@ -154,7 +154,7 @@ HcclResult CcuUrmaChannel::Init()
     CHK_RET(EndpointDescPairToLinkData(locEndpointDesc, channelDesc_.remoteEndpoint, linkData));
 
     if (channelDesc_.memHandleNum == 0) {
-        HCCL_ERROR("[CcuUrmaChannel][%s] failed, unsupport memHandleNum[%u].",
+        HCCL_ERROR("[CcuUrmaChannel][%s] failed, unsupported memHandleNum[%u].",
             __func__, channelDesc_.memHandleNum);
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
