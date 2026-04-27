@@ -187,8 +187,8 @@ STATIC int RsNdaMemcpy(void *dst, size_t dstSize, void *src, size_t srcSize, uin
 
 STATIC void *RsNdaDbMmapHostVa(struct RsNdaCb *ndaCb, struct doorbell_map_desc *desc)
 {
-    uint64_t alignHva = AlignDown(desc->hva, RA_RS_4K_PAGE_SIZE);
-    uint64_t alignSize = AlignUp(desc->size, RA_RS_4K_PAGE_SIZE);
+    uint64_t alignHva = AlignDown(desc->hva, (uint64_t)RA_RS_4K_PAGE_SIZE);
+    uint64_t alignSize = AlignUp(desc->size, (uint64_t)RA_RS_4K_PAGE_SIZE);
     struct NdaPcieDbCb *ndaDbCb = NULL;
     unsigned int logicId = 0;
     void *dbDva = NULL;
@@ -297,7 +297,7 @@ STATIC void *RsNdaDbMmap(struct doorbell_map_desc *desc)
 
 STATIC int RsNdaDbUnmapHostVa(struct RsNdaCb *ndaCb, void *ptr, struct doorbell_map_desc *desc)
 {
-    uint64_t alignHva = AlignDown(desc->hva, RA_RS_4K_PAGE_SIZE);
+    uint64_t alignHva = AlignDown(desc->hva, (uint64_t)RA_RS_4K_PAGE_SIZE);
     struct NdaPcieDbCb *ndaDbCb = NULL;
     unsigned int logicId = 0;
     int ret = 0;
