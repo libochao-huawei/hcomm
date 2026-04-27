@@ -49,6 +49,40 @@ static std::mutex g_BinHandleMtx;
 using namespace hcomm;
 static HcommEndpointMap g_EndpointMap;
 
+HcommResult CheckUbAttr(HcommChannelDesc &channelDesc)
+{
+    if (channelDesc.remoteEndpoint.protocol != COMM_PROTOCOL_UBC_CTP
+        && channelDesc.remoteEndpoint.protocol != COMM_PROTOCOL_UBC_TP
+        && channelDesc.remoteEndpoint.protocol != COMM_PROTOCOL_UBOE) {
+        return HCCL_SUCCESS;
+    }
+
+    // check sqDepth
+    if (channelDesc.ubAttr.sqDepth == 0) {
+        return HCCL_SUCCESS;
+    }
+
+    if (channelDesc.ubAttr.sqDepth < 16 || channelDesc.ubAttr.sqDepth > 256) {
+        HCCL_ERROR("[%s] invalid ubAttr.sqDepth[%u], should be 0 or >= 16 and <= 256.", __func__, channelDesc.ubAttr.sqDepth);
+        return HCCL_E_PARA;
+    }
+
+    // channelDesc.ubAttr.sqDepth调整到2的整数次幂
+    auto GetNextPowerOfTwo = [](uint32_t n) -> uint32_t {
+        n--;
+        n |= n >> 1;
+        n |= n >> 2;
+        n |= n >> 4;
+        n |= n >> 8;
+        n |= n >> 16;
+        return n + 1;
+    };
+
+    channelDesc.ubAttr.sqDepth = GetNextPowerOfTwo(channelDesc.ubAttr.sqDepth);
+
+    return HCCL_SUCCESS;
+}
+
 namespace {
 HcommResult ProcessHcommResPackReq(const HcommChannelDesc &channelDesc, HcommChannelDesc &channelDescFinal)
 {
@@ -106,6 +140,10 @@ HcommResult NormalizeHcommChannelDescs(HcommChannelDesc *channelDescs, uint32_t 
         ret = ProcessHcommResPackReq(channelDescs[idx], channelDescFinal);
         if (ret != HCOMM_SUCCESS) {
             HCCL_ERROR("[%s] failed to normalize channelDesc[%u], ret[%d].", __func__, idx, ret);
+            return ret;
+        }
+        ret = CheckUbAttr(channelDescFinal);
+        if (ret != HCOMM_SUCCESS) {
             return ret;
         }
         channelDescFinals.push_back(channelDescFinal);
@@ -355,6 +393,7 @@ HcommResult HcommChannelCreate(EndpointHandle endpointHandle, CommEngine engine,
         targetChannels));
     CHK_RET(ChannelProcess::ConnectChannels(targetChannels, channelNum, engine));
     CHK_RET(EnsureKernelBinLoaded(engine));
+    // INNOTODO: 这里为什么使用的是Normalize前的channelDescs
     CHK_RET(ChannelProcess::SaveChannels(targetChannels, channels, channelDescs, channelNum, engine, g_BinHandle));
 
     return HCCL_SUCCESS;
