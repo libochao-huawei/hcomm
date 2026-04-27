@@ -326,12 +326,15 @@ namespace hccl
             commAicpuParam_.kfcStatusTransferD2HParams));
         commAicpuParam_.userRank = collComm_->GetMyRankId();
         commAicpuParam_.userRankSize = collComm_->GetRankSize();
+        commAicpuParam_.envConfig.taskExceptionEnable =
+            Hccl::EnvConfig::GetInstance().GetLogConfig().GetDfsConfig().taskExceptionEnable;
         const auto opExpansionMode = GetCollCommOpExpansionMode(collComm_.get());
         HCCL_RUN_INFO("[%s]success, commId[%s], deviceLogicId[%u], devicePhyId[%u], devType[%u], "
-            "userRank[%u], userRankSize[%u], opExpansionMode[%u].",
+            "userRank[%u], userRankSize[%u], opExpansionMode[%u], taskExceptionEnable[%d].",
             __func__, collComm_->GetCommId().c_str(), commAicpuParam_.deviceLogicId, commAicpuParam_.devicePhyId,
-            commAicpuParam_.deviceType, commAicpuParam_.userRank, commAicpuParam_.userRankSize, opExpansionMode);
-        
+            commAicpuParam_.deviceType, commAicpuParam_.userRank, commAicpuParam_.userRankSize, opExpansionMode,
+            commAicpuParam_.envConfig.taskExceptionEnable);
+
         const char *opModeEnv = getenv("HCCL_CCU_CUSTOM_OP_MODE");
         if (opModeEnv != nullptr && strcmp(opModeEnv, "1") == 0) {
             // 当前需要支持coll comm与legacy comm混跑，coll comm确定加速模式后，需要设置comm加速模式
