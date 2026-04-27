@@ -228,11 +228,8 @@ HcclResult MyRank::BatchCreateSockets(const HcclChannelDesc* channelDescs, uint3
         CHK_RET(rankPair->GetEndpointPair(endpointDescPair, endpointPair));
         CHK_PTR_NULL(endpointPair);
 
-        hcommDescs[i] = MyRankUtils::ChannelDescHccl2Hcomm(channelDescs[i]);
-
         uint32_t listenPort = 0;
         CHK_RET(QueryListenPort(rankId_, remoteRank, localEndpointDesc, remoteEndpointDesc, listenPort, hcommDescs[i]));
-
 
         if (reuseSocketIdxMap.find(rankPair) == reuseSocketIdxMap.end()) {
             std::unordered_map<hcomm::EndpointPair*, u32> endpointPair2Idx{};
@@ -535,6 +532,19 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
     ChannelHandle* hostChannelHandleList = hostChannelHandles.data();
 
     std::vector<HcommChannelDesc> hcommDescs(channelNum);
+    for (u32 i = 0; i < channelNum; ++i)
+        hcommDescs[i] = MyRankUtils::ChannelDescHccl2Hcomm(channelDescs[i]);
+        if (engine == COMM_ENGINE_CCU) {
+            if (opExpansionMode_ == CCU_MS_MODE) {
+                hcommDescs[i].ubAttr.sqDepth = 128;
+            } else if (opExpansionMode_ == CCU_SCHED_MODE) {
+                hcommDescs[i].ubAttr.sqDepth = 16;
+            } else {
+                HCCL_ERROR("[%s] unexpected op expansion mode[%u] for ccu,", __func__, opExpansionMode_);
+                return HCCL_E_INTERNAL;
+            }
+        } 
+    }
 
     CHK_RET(BatchCreateSockets(channelDescs, channelNum, commTag, hcommDescs));
     CHK_RET_UNAVAIL(BatchCreateChannels(engine, channelDescs, channelNum, hcommDescs, hostChannelHandleList));
