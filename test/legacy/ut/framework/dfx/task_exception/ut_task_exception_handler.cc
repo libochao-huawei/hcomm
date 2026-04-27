@@ -834,3 +834,116 @@ TEST_F(TaskExceptionHandlerTest, test_process_mc2)
 
     TaskExceptionHandler::Process(&exceptionInfo);
 }
+
+TEST_F(TaskExceptionHandlerTest, Ut_ProcessAivException_When_Normal_Expect_PrintInfo)
+{
+    // 初始化AIV任务信息
+    shared_ptr<TaskInfo> taskInfo = InitTaskInfo();
+    taskInfo->taskParam_.taskType = TaskParamType::TASK_AIV;
+    taskInfo->taskParam_.taskPara.Aiv.cmdType = HcclCMDType::HCCL_CMD_ALLGATHER;
+    taskInfo->taskParam_.taskPara.Aiv.tag = 2;
+    taskInfo->taskParam_.taskPara.Aiv.rank = 3;
+    taskInfo->taskParam_.taskPara.Aiv.rankSize = 4;
+    taskInfo->taskParam_.taskPara.Aiv.count = 5;
+    taskInfo->taskParam_.taskPara.Aiv.numBlocks = 6;
+    taskInfo->taskParam_.taskPara.Aiv.dataType = HcclDataType::HCCL_DATA_TYPE_FP32;
+    taskInfo->taskParam_.beginTime = 123456789;
+    
+    // 模拟flag内存
+    int32_t flagMemData[] = {10, 0, 0, 0, 20, 0, 0, 0, 30, 0, 0, 0};
+    size_t flagMemSize = sizeof(flagMemData);
+    taskInfo->taskParam_.taskPara.Aiv.flagMem = flagMemData;
+    taskInfo->taskParam_.taskPara.Aiv.flagMemSize = flagMemSize;
+
+    // 打桩GlobalMirrorTasks
+    GlobalMirrorTasks &globalMirrorTasks = GlobalMirrorTasks::Instance();
+    MirrorTaskManager mirrorTaskManager(0, &globalMirrorTasks, 1);
+    mirrorTaskManager.AddTaskInfo(taskInfo);
+
+    // 打桩ACL函数
+    void* mockFlagBuff = malloc(flagMemSize);
+    MOCKER(aclrtMallocHost).stubs().will(returnValue(ACL_SUCCESS));
+    MOCKER(aclrtMemcpy).stubs().will(returnValue(ACL_SUCCESS));
+    MOCKER(aclrtFreeHost).stubs().will(returnValue(ACL_SUCCESS));
+
+    // 打桩PrintAivPreviousTaskException
+    MOCKER(TaskExceptionHandler::PrintAivPreviousTaskException).stubs();
+
+    // 构造异常信息
+    rtExceptionInfo_t exceptionInfo{};
+    exceptionInfo.deviceid = 0;
+    exceptionInfo.streamid = 0;
+    exceptionInfo.taskid = 0;
+
+    // 调用ProcessAivException
+    TaskExceptionHandler handler(0);
+    handler.ProcessAivException(&exceptionInfo, *taskInfo);
+
+    // 清理
+    globalMirrorTasks.DestroyQueue(0, 0);
+    if (mockFlagBuff) {
+        free(mockFlagBuff);
+    }
+}
+
+TEST_F(TaskExceptionHandlerTest, Ut_ProcessAivException_When_MallocFailure_Expect_ReturnEarly)
+{
+    // 初始化AIV任务信息
+    shared_ptr<TaskInfo> taskInfo = InitTaskInfo();
+    taskInfo->taskParam_.taskType = TaskParamType::TASK_AIV;
+    taskInfo->taskParam_.taskPara.Aiv.cmdType = HcclCMDType::HCCL_CMD_ALLGATHER;
+    taskInfo->taskParam_.taskPara.Aiv.flagMemSize = 1024;
+
+    // 打桩GlobalMirrorTasks
+    GlobalMirrorTasks &globalMirrorTasks = GlobalMirrorTasks::Instance();
+    MirrorTaskManager mirrorTaskManager(0, &globalMirrorTasks, 1);
+    mirrorTaskManager.AddTaskInfo(taskInfo);
+
+    // 打桩aclrtMallocHost失败
+    MOCKER(aclrtMallocHost).stubs().will(returnValue(ACL_ERROR_BAD_ALLOC));
+
+    // 构造异常信息
+    rtExceptionInfo_t exceptionInfo{};
+    exceptionInfo.deviceid = 0;
+    exceptionInfo.streamid = 0;
+    exceptionInfo.taskid = 0;
+
+    // 调用ProcessAivException
+    TaskExceptionHandler handler(0);
+    handler.ProcessAivException(&exceptionInfo, *taskInfo);
+
+    // 清理
+    globalMirrorTasks.DestroyQueue(0, 0);
+}
+
+TEST_F(TaskExceptionHandlerTest, Ut_ProcessAivException_When_MemcpyFailure_Expect_ReturnEarly)
+{
+    // 初始化AIV任务信息
+    shared_ptr<TaskInfo> taskInfo = InitTaskInfo();
+    taskInfo->taskParam_.taskType = TaskParamType::TASK_AIV;
+    taskInfo->taskParam_.taskPara.Aiv.cmdType = HcclCMDType::HCCL_CMD_ALLGATHER;
+    taskInfo->taskParam_.taskPara.Aiv.flagMemSize = 1024;
+
+    // 打桩GlobalMirrorTasks
+    GlobalMirrorTasks &globalMirrorTasks = GlobalMirrorTasks::Instance();
+    MirrorTaskManager mirrorTaskManager(0, &globalMirrorTasks, 1);
+    mirrorTaskManager.AddTaskInfo(taskInfo);
+
+    // 打桩aclrtMallocHost成功，但aclrtMemcpy失败
+    MOCKER(aclrtMallocHost).stubs().will(returnValue(ACL_SUCCESS));
+    MOCKER(aclrtMemcpy).stubs().will(returnValue(ACL_ERROR_RT_MEMORY_FREE));
+    MOCKER(aclrtFreeHost).stubs().will(returnValue(ACL_SUCCESS));
+
+    // 构造异常信息
+    rtExceptionInfo_t exceptionInfo{};
+    exceptionInfo.deviceid = 0;
+    exceptionInfo.streamid = 0;
+    exceptionInfo.taskid = 0;
+
+    // 调用ProcessAivException
+    TaskExceptionHandler handler(0);
+    handler.ProcessAivException(&exceptionInfo, *taskInfo);
+
+    // 清理
+    globalMirrorTasks.DestroyQueue(0, 0);
+}
