@@ -36,6 +36,7 @@ set(hccl_include_list
     ${HCCL_BASE_DIR}/algorithm/base/inc
     ${HCCL_BASE_DIR}/algorithm/pub_inc
     ${HCCL_BASE_DIR}/pub_inc
+    ${HCCL_BASE_DIR}/pub_inc/inner
     ${HCCL_BASE_DIR}/pub_inc/new
     ${HCCL_BASE_DIR}/algorithm/base/alg_aiv_template
     ${HCCL_BASE_DIR}/algorithm/base/alg_template

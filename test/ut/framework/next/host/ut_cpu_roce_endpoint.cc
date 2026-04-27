@@ -75,19 +75,18 @@ TEST_F(CpuRoceEndpointTest, Ut_When_wrongIp_EXPECT_Return_128003)
     EXPECT_EQ(ret, 1);
 }
 
-// Device
-TEST_F(CpuRoceEndpointTest, Ut_When_Endpoint_LocType_Device_Expect_Return_HCCL_E_PARA)
+// Unsupported protocol/location pairing (CreateEndpoint else branch), e.g. UBC_TP requires DEVICE.
+TEST_F(CpuRoceEndpointTest, Ut_When_Protocol_UbcTp_LocType_Host_Expect_Return_HCCL_E_PARA)
 {
     Hccl::IpAddress   localIp("1.0.0.0");
     EndpointDesc endpointDesc;
-    endpointDesc.protocol = COMM_PROTOCOL_ROCE;
+    endpointDesc.protocol = COMM_PROTOCOL_UBC_TP;
     endpointDesc.commAddr.type = COMM_ADDR_TYPE_IP_V4;
     endpointDesc.commAddr.addr = localIp.GetBinaryAddress().addr;
-    endpointDesc.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
-    void* endpointHandle = malloc(sizeof(hcomm::CpuRoceEndpoint));
+    endpointDesc.loc.locType = ENDPOINT_LOC_TYPE_HOST;
+    void* endpointHandle{nullptr};
     HcommResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
     EXPECT_EQ(ret, HCCL_E_PARA);
-    free(endpointHandle);
 }
 
 // RdmaHandle初始化失败
