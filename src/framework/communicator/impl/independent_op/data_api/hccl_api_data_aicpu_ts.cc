@@ -35,6 +35,9 @@ bool IsBatchLaunchMode() {
 }
 
 void AddThread(ThreadHandle thread) {
+    if (LIKELY(g_threadLaunchCtx.IsBatchAddMode())) {
+        return;
+    }
     g_threadLaunchCtx.AddThread(thread);
 }
 
@@ -769,6 +772,17 @@ int32_t HcommSetLaunchMode(const char *launchTag, HcommLaunchMode mode)
 int32_t HcommBatchModeStart(const char *batchTag)
 {
     return HcommSetLaunchMode(batchTag, HCOMM_LAUNCH_MODE_BATCH);
+}
+
+int32_t HcommBatchModeStartWithThreads(const char *batchTag, ThreadHandle *threads, uint32_t threadCount)
+{
+    CHK_PTR_NULL(threads);
+    g_threadLaunchCtx.SetBatchAddMode(true);
+    HcommSetLaunchMode(batchTag, HCOMM_LAUNCH_MODE_BATCH);
+    for (uint32_t i = 0; i < threadCount; ++i) {
+        AddThread(threads[i]);
+    }
+    return HCCL_SUCCESS;
 }
 
 int32_t HcommBatchModeEnd(const char *batchTag)
