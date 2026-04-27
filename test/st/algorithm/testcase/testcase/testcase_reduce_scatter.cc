@@ -2428,3 +2428,106 @@ TEST_F(ReduceScatterTest, reduce_scatter_910_93_pipeline_doubleRing_multiSuperPo
     ret = checker.Check(checkerOpParam, topoMeta);
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
 }
+
+TEST_F(ReduceScatterTest, reduce_scatter_910_93_pipeline_doubleRing_fullPipeline_4blocks)
+{
+    constexpr u32 p = 2, s = 1, r = 8, rankSize = p * s * r; // 16
+    constexpr u32 buffSizeMB = 1, unitSize = 4; // INT32
+    // countDataPerLoop = inCCLbufferSize / rankSize / 128 * 128 / unitSize / 2(double-buffer)
+    constexpr u64 countDataPerLoop = buffSizeMB * 1024 * 1024 / rankSize / 128 * 128 / unitSize / 2; // 8192
+    // numBlockTotal = 4 (even, matches SD 3.5.2.3 example), numLoopTotal = 5
+    // count = 4 * countDataPerLoop, all blocks equal size (countDataLastLoop == countDataPerLoop)
+
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta;
+    gen.GenTopoMeta(topoMeta, p, s, r);
+
+    setenv("HCCL_BUFFSIZE", std::to_string(buffSizeMB).c_str(), 1);
+
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
+    checkerOpParam.tag = "ReduceScatter";
+    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_93;
+    checkerOpParam.DataDes.count = 4 * countDataPerLoop;
+    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
+    checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
+    checkerOpParam.algName = "ReduceScatterPipelineFor91093Executor";
+
+    Checker checker;
+    HcclResult ret;
+    ret = checker.Check(checkerOpParam, topoMeta);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+
+    unsetenv("HCCL_BUFFSIZE");
+}
+
+TEST_F(ReduceScatterTest, reduce_scatter_910_93_pipeline_doubleRing_fullPipeline_4blocks_lastSmall_multiServer)
+{
+    constexpr u32 p = 2, s = 2, r = 8, rankSize = p * s * r; // 32
+    constexpr u32 buffSizeMB = 1, unitSize = 4; // INT32
+    // countDataPerLoop = inCCLbufferSize / rankSize / 128 * 128 / unitSize / 2(double-buffer)
+    constexpr u64 countDataPerLoop = buffSizeMB * 1024 * 1024 / rankSize / 128 * 128 / unitSize / 2; // 4096
+    constexpr u64 numFullBlocks = 3;
+    constexpr u64 countDataLastLoop = countDataPerLoop / 2; // 2048
+    // numBlockTotal = numFullBlocks + 1 = 4 (even), numLoopTotal = 5
+    // last block: blockIdx=3, 3%2==1 → bufferB
+
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta;
+    gen.GenTopoMeta(topoMeta, p, s, r);
+
+    setenv("HCCL_BUFFSIZE", std::to_string(buffSizeMB).c_str(), 1);
+
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
+    checkerOpParam.tag = "ReduceScatter";
+    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_93;
+    checkerOpParam.DataDes.count = numFullBlocks * countDataPerLoop + countDataLastLoop;
+    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
+    checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
+    checkerOpParam.algName = "ReduceScatterPipelineFor91093Executor";
+
+    Checker checker;
+    HcclResult ret;
+    ret = checker.Check(checkerOpParam, topoMeta);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+
+    unsetenv("HCCL_BUFFSIZE");
+}
+
+TEST_F(ReduceScatterTest, reduce_scatter_910_93_pipeline_doubleRing_fullPipeline_3blocks_lastSmall_multiServer)
+{
+    constexpr u32 p = 2, s = 2, r = 8, rankSize = p * s * r; // 32
+    constexpr u32 buffSizeMB = 1, unitSize = 4; // INT32
+    // countDataPerLoop = inCCLbufferSize / rankSize / 128 * 128 / unitSize / 2(double-buffer)
+    constexpr u64 countDataPerLoop = buffSizeMB * 1024 * 1024 / rankSize / 128 * 128 / unitSize / 2; // 4096
+    constexpr u64 numFullBlocks = 2;
+    constexpr u64 countDataLastLoop = countDataPerLoop / 4; // 1024
+    // numBlockTotal = numFullBlocks + 1 = 3 (odd), numLoopTotal = 4
+    // last block: blockIdx=2, 2%2==0 → bufferA (complements 4-block case whose last uses bufferB)
+
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta;
+    gen.GenTopoMeta(topoMeta, p, s, r);
+
+    setenv("HCCL_BUFFSIZE", std::to_string(buffSizeMB).c_str(), 1);
+
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
+    checkerOpParam.tag = "ReduceScatter";
+    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_93;
+    checkerOpParam.DataDes.count = numFullBlocks * countDataPerLoop + countDataLastLoop;
+    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
+    checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
+    checkerOpParam.algName = "ReduceScatterPipelineFor91093Executor";
+
+    Checker checker;
+    HcclResult ret;
+    ret = checker.Check(checkerOpParam, topoMeta);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+
+    unsetenv("HCCL_BUFFSIZE");
+}
