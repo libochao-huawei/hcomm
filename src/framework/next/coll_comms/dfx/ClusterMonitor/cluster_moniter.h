@@ -99,7 +99,8 @@ inline std::string GetHeartBeatStatusStr(HeartBeatStatus  status)
 }
 
 struct CqeErrInfo{
-    u32 CqeRemoterankId;
+    u32 CqeRemotedeviceId;
+    u32 CqeLocaldeviceId;
     uint16_t CqeRemoterstatus;
     std::string CqeLocalEid; 
     std::string CqeRemoteEid;
@@ -108,7 +109,7 @@ struct CqeErrInfo{
 class ClusterMonitor {
 public:
     static ClusterMonitor& GetInstance();
-    void GetRemoteRankId(u32 rankId, uint16_t status, std::string LocalEid, std::string RemoteEid);
+    void GetCqeErrInfo(u32 RemoteDeviceId, u32 LocDeviceId, uint16_t status, std::string LocalEid, std::string RemoteEid);
     ClusterMonitor() = default;
     ~ClusterMonitor() = default;
 private:

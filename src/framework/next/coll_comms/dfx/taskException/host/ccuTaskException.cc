@@ -32,6 +32,8 @@
 
 #include "net_instance.h"
 
+#include "hccl_communicator.h"
+
 namespace hcomm {
 
 using namespace std;
@@ -123,6 +125,22 @@ struct ccumDfxInfo {
 std::mutex g_channelMapMutex;
 std::unordered_map<uint16_t, uint64_t> g_channelIdToHandle;
 bool isGetCqeErrInfo = false; // 是否已获取过CQE错误信息，获取过后再次获取的概率较小，且获取过程可能较慢，因此设置标志位避免重复获取
+
+GetCcuCqeErrInfoCallBackHcomm g_getCqeErrInfoCallBack = nullptr;
+void RegisterGetCcuCqeErrInfoCallBackHcomm(GetCcuCqeErrInfoCallBackHcomm p1)
+{
+    g_getCqeErrInfoCallBack = p1;
+    //HCCL_INFO("RegisterGetRemoteRankIdCallBackHcomm success, callback[%p]", callback);
+    return;
+}
+void CcuTaskException::ClusterMoniterGetCcuCqeErrInfo(u32 RemoteDeviceId, u32 locDeviceId, uint16_t status, std::string LocalEid, std::string RemoteEid)
+{
+    if (g_getCqeErrInfoCallBack != nullptr) {
+        g_getCqeErrInfoCallBack(RemoteDeviceId, locDeviceId, status, LocalEid, RemoteEid);
+    }
+    return;
+}
+
 void CcuTaskException::ProcessCcuException(const rtExceptionInfo_t* exceptionInfo, const Hccl::TaskInfo& taskInfo)
 {
     auto deviceId = exceptionInfo->deviceid;
@@ -887,37 +905,43 @@ HcclResult CcuTaskException::GetCcuErrorMsg(int32_t deviceId, uint16_t missionSt
 u32 CcuTaskException::GetCqeErrDeviceIdByRankId(hccl::CollComm* collComm, uint32_t rankid)
 {
     CHK_PTR_NULL(collComm);
-    auto rankGraph = static_cast<Hccl::RankGraph *>collComm->GetRankGraph();
-    CHK_PTR_NULL(rankGraph);
-     auto peer = rankGraph->GetPeer(rankid);
-    // CHK_PTR_NULL(peer);
-    // u32 deviceId = peer->GetDeviceId();
-    u32 deviceId =0;
+    auto commV2 = collComm->GetCommunicatorV2();
+    CHK_PTR_NULL(commV2);
+    Hccl::HcclCommunicator *hcclCommunicator = static_cast<Hccl::HcclCommunicator *>(commV2);
+    void **rankGraph = nullptr;
+    hcclCommunicator->GetRankGraphV2(*rankGraph);
+    Hccl::RankGraph *rankGraphv2 = static_cast<Hccl::RankGraph *>(*rankGraph);
+    auto peer = rankGraphv2->GetPeer(rankid);
+    CHK_PTR_NULL(peer);
+    u32 deviceId = peer->GetDeviceId();
     return deviceId;
 }
 
 std::string CcuTaskException::GetCqeErrNetInstanceByRankId(hccl::CollComm* collComm, uint32_t rankid)
 {
     //CHK_PTR_NULL(collComm);
-    auto *rankGraph = collComm->GetRankGraph();
-    //CHK_PTR_NULL(rankGraph);
-    const NetInstance *netInstance = rankGraph->GetNetInstanceByRankId(0, rankid);
-    //CHK_PTR_NULL(netInstance);
+    auto commV2 = collComm->GetCommunicatorV2();
+    //CHK_PTR_NULL(commV2);
+    Hccl::HcclCommunicator *hcclCommunicator = static_cast<Hccl::HcclCommunicator *>(commV2);
+    void **rankGraph = nullptr;
+    hcclCommunicator->GetRankGraphV2(*rankGraph);
+    Hccl::RankGraph *rankGraphv2 = static_cast<Hccl::RankGraph *>(*rankGraph);
+    const Hccl::NetInstance *netInstance = rankGraphv2->GetNetInstanceByRankId(0, rankid);
+   // CHK_PTR_NULL(netInstance);
     std::string netInstanceId = netInstance->GetNetInstId();
     return netInstanceId;
 }
 
-void CcuTaskException::GetCqeErrorInfo(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId)
+void CcuTaskException::GetCqeErrorInfo(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 locDeviceId, uint8_t missionStatus)
 {
-    auto pair = GetAddrPairByChannelId(ccuErrorInfo.msg.waitSignal.channelId[0], taskInfo, deviceId);
-    RankId remoteRankId = GetRankIdByChannelId(ccuErrorInfo.msg.waitSignal.channelId[0], taskInfo, deviceId);
-
+    auto pair = GetAddrPairByChannelId(ccuErrorInfo.msg.waitSignal.channelId[0], taskInfo, locDeviceId);
+    RankId remoteRankId = GetRankIdByChannelId(ccuErrorInfo.msg.waitSignal.channelId[0], taskInfo, locDeviceId);
     hccl::CollComm *collComm = static_cast<hccl::CollComm*>(taskInfo.dfxOpInfo_->comm_);
-    string netInstanceId = GetCqeErrNetInstanceByRankId(collComm, remoteRankId);
-    u32 errDeviceId = GetCqeErrDeviceIdByRankId(collComm, remoteRankId);
-    string srcEid = pair.first.Describe();
-    string dstEid = pair.second.Describe();
-    
+    u32 RemoteDeviceId = GetCqeErrDeviceIdByRankId(collComm, remoteRankId);
+    std::string netInstanceId = GetCqeErrNetInstanceByRankId(collComm, remoteRankId);
+    std::string srcEid = pair.first.Describe();
+    std::string dstEid = pair.second.Describe();
+    ClusterMoniterGetCcuCqeErrInfo(RemoteDeviceId, locDeviceId, missionStatus, srcEid, dstEid);
     return;
 }
 
@@ -937,7 +961,7 @@ void CcuTaskException::PrintCcuErrorInfo(uint32_t deviceId, uint16_t status, con
         PrintCcuUbRegisters(errorInfos, static_cast<s32>(deviceId), taskInfo);
         if (isGetCqeErrInfo) {
             isGetCqeErrInfo = false; // 只获取一次CQE错误信息，避免重复获取
-            GetCqeErrorInfo(errorInfos[0], taskInfo, deviceId);
+            GetCqeErrorInfo(errorInfos[0], taskInfo, deviceId, missionStatus);
         }
     }
 }
