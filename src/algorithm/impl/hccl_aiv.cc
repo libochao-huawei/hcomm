@@ -36,6 +36,9 @@ constexpr u32 RANK_FIVE = 5;
 constexpr u32 RANK_SIX = 6;
 constexpr u32 RANK_SEVEN = 7;
 constexpr u32 MAX_ARGS_SIZE_A3_STRUCT = 9;
+constexpr u32 STEP_ONE = 1;
+constexpr u32 STEP_TWO = 2;
+constexpr u32 STEP_THREE = 3;
 
 constexpr u32 AIV_BUFFER_PING_PONG_FACTOR = 2;
 
@@ -634,13 +637,44 @@ HcclResult BarrierForMulServer(const AivResourceArgs &resourceArgs, s32 step, co
     return HCCL_SUCCESS;
 }
 
+HcclResult LaunchSyncKernel(aclrtLaunchKernelCfg &cfg, AivKernelArgs &aivKernelArgs, rtStream_t stream, s32 step, const std::string& comm)
+{
+    aclrtFuncHandle funcHandle;
+    s8* stubFunc = GetStubFunc(HcclCMDType::HCCL_CMD_INVALID, HcclDataType::HCCL_DATA_TYPE_RESERVED);
+    ret = GetKernelFunc(funcHandle, stubFunc);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[AIV][Barrier] errNo[0x%016llx] GetKernelFunc failed, "
+        "return[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret), HCCL_E_RUNTIME);
+    
+    aivKernelArgs.tag = step;
+    aclError aclRet = aclrtLaunchKernelWithHostArgs(funcHandle, aivKernelArgs.rankSize, stream,
+        &cfg, &aivKernelArgs, sizeof(aivKernelArgs), nullptr, 0);
+    if (aclRet == ACL_ERROR_RT_INVALID_HANDLE) {
+        aclError aclGetRet = aclrtBinaryGetFunction(g_binHandleMap[HcclCMDType::HCCL_CMD_INVALID], g_aivNameMap[stubFunc].c_str(), &funcHandle);
+        CHK_PRT_RET(aclGetRet != ACL_SUCCESS, HCCL_ERROR("[RegisterBinaryKernel]errNo[0x%016llx] get function from binary error.", aclRet),
+            HCCL_E_NOT_FOUND);
+        aclRet = aclrtLaunchKernelWithHostArgs(funcHandle, aivKernelArgs.rankSize, stream,
+            &cfg, &aivKernelArgs, sizeof(aivKernelArgs), nullptr, 0);
+    }
+    CHK_PRT_RET(aclRet != ACL_SUCCESS, HCCL_ERROR("[RegisterBinaryKernel]errNo[0x%016llx] aclrtLaunchKernelWithHostArgs error[%d].",
+        HCCL_ERROR_CODE(HCCL_E_RUNTIME), aclRet), HCCL_E_RUNTIME);
+    
+    struct TaskParaGeneral taskParaGeneral;
+    u8* flagAddr = static_cast<u8 *>(aivKernelArgs.buffersOut[aivKernelArgs.rank]);
+    TaskParaAiv taskParaAiv(HcclCMDType::HCCL_CMD_INVALID, step, 0, aivKernelArgs.rankSize, aivKernelArgs.rankSize, -1, flagAddr, aivKernelArgs.rank);
+    taskParaGeneral.isMainStream = true;
+    taskParaGeneral.stream = stream;
+    taskParaGeneral.beginTime = beginTime;
+    taskParaGeneral.aiv = taskParaAiv;
+
+    AlgWrap::GetInstance().TaskAivProfiler(comm, taskParaGeneral);
+    return HCCL_SUCCESS;
+}
+
 HcclResult ClearAivSyncBuf(void** cclBuffersOut, const AivResourceArgs &resourceArgs, const AivTopoArgs &topoArgs, AivAlgArgs algArgs)
 {
     if (algArgs.argsType == KernelArgsType::ARGS_TYPE_SERVER && (topoArgs.devType != DevType::DEV_TYPE_910_93 || topoArgs.serverNum == 1)) {
-        u32 rank = topoArgs.rank;
         u32 rankSize = topoArgs.rankSize;
         rtStream_t stream = resourceArgs.stream;
-        s32 step = 1;
         const std::string& comm = topoArgs.identify;
         u32 numBlocks = resourceArgs.numBlocks;
         s32 execTimeOut = algArgs.execTimeOut;
@@ -652,7 +686,6 @@ HcclResult ClearAivSyncBuf(void** cclBuffersOut, const AivResourceArgs &resource
         uint64_t beginTime = 0;
         SetAivProfilingInfoBeginTime(beginTime);
 
-        u8* flagAddr = nullptr;
         HcclResult ret = HcclResult::HCCL_E_PARA;
         aclrtLaunchKernelCfg cfg;
         aclrtLaunchKernelAttr attr[AIV_ATTRNUM_THREE];
@@ -666,40 +699,15 @@ HcclResult ClearAivSyncBuf(void** cclBuffersOut, const AivResourceArgs &resource
         cfg.numAttrs = AIV_ATTRNUM_THREE;
         cfg.attrs = attr;
 
-        flagAddr = static_cast<u8 *>(cclBuffersOut[rank]);
         AivKernelArgs aivKernelArgs {
-            cclBuffersOut, cclBuffersOut, nullptr, nullptr, rank, rankSize, 0,
-            HcclDataType::HCCL_DATA_TYPE_RESERVED, HcclReduceOp::HCCL_REDUCE_RESERVED, 0, step, rankSize
+            cclBuffersOut, cclBuffersOut, nullptr, nullptr, topoArgs.rank, rankSize, 0,
+            HcclDataType::HCCL_DATA_TYPE_RESERVED, HcclReduceOp::HCCL_REDUCE_RESERVED, 0, 0, rankSize
         };
 
-        aclrtFuncHandle funcHandle;
-        s8* stubFunc = GetStubFunc(HcclCMDType::HCCL_CMD_INVALID, HcclDataType::HCCL_DATA_TYPE_RESERVED);
-        ret = GetKernelFunc(funcHandle, stubFunc);
-        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[AIV][Barrier] errNo[0x%016llx] GetKernelFunc failed, "
-            "return[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret), HCCL_E_RUNTIME);
-
-        aclError aclRet = aclrtLaunchKernelWithHostArgs(funcHandle, rankSize, stream,
-            &cfg, &aivKernelArgs, sizeof(aivKernelArgs), nullptr, 0);
-        if (aclRet == ACL_ERROR_RT_INVALID_HANDLE) {
-            aclError aclGetRet = aclrtBinaryGetFunction(g_binHandleMap[HcclCMDType::HCCL_CMD_INVALID], g_aivNameMap[stubFunc].c_str(), &funcHandle);
-            CHK_PRT_RET(aclGetRet != ACL_SUCCESS, HCCL_ERROR("[RegisterBinaryKernel]errNo[0x%016llx] get function from binary error.", aclRet),
-                HCCL_E_NOT_FOUND);
-            aclRet = aclrtLaunchKernelWithHostArgs(funcHandle, rankSize, stream,
-                &cfg, &aivKernelArgs, sizeof(aivKernelArgs), nullptr, 0);
-        }
-        CHK_PRT_RET(aclRet != ACL_SUCCESS, HCCL_ERROR("[RegisterBinaryKernel]errNo[0x%016llx] aclrtLaunchKernelWithHostArgs error[%d].",
-            HCCL_ERROR_CODE(HCCL_E_RUNTIME), aclRet), HCCL_E_RUNTIME);
-        
-        struct TaskParaGeneral taskParaGeneral;
-        TaskParaAiv taskParaAiv(HcclCMDType::HCCL_CMD_INVALID, step, 0, rankSize, rankSize, -1, flagAddr, rank);
-        taskParaGeneral.isMainStream = true;
-        taskParaGeneral.stream = stream;
-        taskParaGeneral.beginTime = beginTime;
-        taskParaGeneral.aiv = taskParaAiv;
-
-        AlgWrap::GetInstance().TaskAivProfiler(comm, taskParaGeneral);
+        CHK_RET(LaunchSyncKernel(cfg, aivKernelArgs, stream, STEP_ONE, comm));
+        CHK_RET(LaunchSyncKernel(cfg, aivKernelArgs, stream, STEP_TWO, comm));
+        CHK_RET(LaunchSyncKernel(cfg, aivKernelArgs, stream, STEP_THREE, comm));
     }
-
     HCCL_INFO("[AIV][ClearAivSyncBuf] clearaiv done.");
     return HCCL_SUCCESS;
 }
