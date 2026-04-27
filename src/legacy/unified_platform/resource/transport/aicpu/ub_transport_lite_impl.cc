@@ -388,11 +388,7 @@ void UbTransportLiteImpl::WaitWithTimeout(u32 index, const StreamLite &stream, u
     auto notifyId = locNotifyVec[index]->GetId();
     stream.GetRtsq()->NotifyWait(notifyId, timeout);
 
-    if (callback_ == nullptr && newCallback_ == nullptr)
-    {
-        HCCL_WARNING("[UbTransportLiteImpl] callback_ is nullptr.");
-        return;
-    }
+    CHK_PRT_RET_NULL(!IsReportTask(), HCCL_DEBUG("[%s]IsReportTask false, skip report", __func__));
 
     TaskParam taskParam{};
     taskParam.taskType                 = TaskParamType::TASK_NOTIFY_WAIT;
@@ -411,11 +407,7 @@ void UbTransportLiteImpl::WaitWithTimeout(u32 index, const StreamLite &stream, u
 void UbTransportLiteImpl::ProfilingProcess(void *src, void *dst, u64 size, const StreamLite &stream,
                                            DmaOp dmaOp, u32 taskId)
 {
-    if (callback_ == nullptr && newCallback_ == nullptr)
-    {
-        HCCL_WARNING("[UbTransportLiteImpl] callback_ is nullptr.");
-        return;
-    }
+    CHK_PRT_RET_NULL(!IsReportTask(), HCCL_DEBUG("[%s]IsReportTask false, skip report", __func__));
 
     TaskParam taskParam{};
     taskParam.taskType = TaskParamType::TASK_UB;
@@ -441,11 +433,7 @@ void UbTransportLiteImpl::ProfilingProcess(void *src, void *dst, u64 size, const
 void UbTransportLiteImpl::ReduceProfilingProcess(void *src, void *dst, u64 size,
                                                  const ReduceIn &reduceIn, const StreamLite &stream, u32 taskId)
 {
-    if (callback_ == nullptr && newCallback_ == nullptr)
-    {
-        HCCL_WARNING("[UbTransportLiteImpl] callback_ is nullptr.");
-        return;
-    }
+    CHK_PRT_RET_NULL(!IsReportTask(), HCCL_DEBUG("[%s]IsReportTask false, skip report", __func__));
 
     TaskParam taskParam {};
     taskParam.taskType = TaskParamType::TASK_UB_REDUCE_INLINE;
@@ -617,11 +605,7 @@ void UbTransportLiteImpl::WriteWithNotify(const RmaBufferLite &loc, const Buffer
                                 rmtNotifySliceLite, stream, notifyData);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
-    if (callback_ == nullptr && newCallback_ == nullptr)
-    {
-        HCCL_WARNING("[UbTransportLiteImpl] callback_ is nullptr.");
-        return;
-    }
+    CHK_PRT_RET_NULL(!IsReportTask(), HCCL_DEBUG("[%s]IsReportTask false, skip report", __func__));
 
     TaskParam taskParam{};
     taskParam.taskType              = TaskParamType::TASK_WRITE_WITH_NOTIFY;
@@ -662,11 +646,7 @@ void UbTransportLiteImpl::WriteReduceWithNotify(const RmaBufferLite &loc, const 
                                       notifyData);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
-    if (callback_ == nullptr && newCallback_ == nullptr)
-    {
-        HCCL_WARNING("[UbTransportLiteImpl] callback_ is nullptr.");
-        return;
-    }
+    CHK_PRT_RET_NULL(!IsReportTask(), HCCL_DEBUG("[%s]IsReportTask false, skip report", __func__));
 
     TaskParam taskParam{};
     taskParam.taskType                 = TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY;
