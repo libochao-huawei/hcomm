@@ -161,4 +161,24 @@ HcclResult SocketMgr::GetSocket(const Hccl::SocketConfig &socketConfig, Hccl::So
     return HCCL_SUCCESS;
 }
 
+HcclResult SocketMgr::DestroySocket(Hccl::Socket* socket)
+{
+    if (socket == nullptr ) {
+        HCCL_WARNING("[DestroySocket] socket is nullptr, nothing to destroy.");
+        return HCCL_SUCCESS;
+    }
+
+    for (auto it = socketMap_.begin(); it != socketMap_.end(); ++it) {
+        if (it->second.get() == socket) {
+            HCCL_INFO("[DestroySocket] Erasing socket with tag[%s] from socketMap.", it->first.GetHccpTag().c_str());
+            socketMap_.erase(it);
+            break;
+        }
+    }
+
+    EXECEPTION_CATCH(socket->Destroy(),
+        HCCL_ERROR("[DestroySocket] Destroy failed for socket with tag[%s].", socket->Describe().c_str()));
+    return HCCL_SUCCESS;
+}
+
 } // namespace hcomm

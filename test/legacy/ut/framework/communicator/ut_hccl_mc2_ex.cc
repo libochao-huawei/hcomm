@@ -101,11 +101,11 @@ TEST_F(HcclMc2ExTest, Ut_HcclLaunchCcorePost_When_CommIsNull_Expect_ReturnError)
 
 TEST_F(HcclMc2ExTest, Ut_HcclLaunchOp_When_CommIsNull_Expect_ReturnError) {
     HcclOpData data;
-    data.opType = HCCL_CMD_ALLREDUCE;
-    data.dataType = HCCL_DATA_TYPE_INT16;
+    data.opType = HcclCMDType::HCCL_CMD_ALLREDUCE;
+    data.dataType = HcclDataType::HCCL_DATA_TYPE_INT16;
     data.dataCount = 536870912;
-    data.reduceOp = HCCL_REDUCE_MIN;
-    
+    data.reduceOp = HcclReduceOp::HCCL_REDUCE_MIN;
+
     data.input = 0x1000000;
     data.output = 0x2000000;
     EXPECT_EQ(HCCL_E_PTR, ::HcclLaunchOp(nullptr, &data));

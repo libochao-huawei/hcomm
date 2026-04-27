@@ -519,7 +519,7 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchOp_When_ThrowException_Expect_ReturnErr
     data.reduceOp = HcclReduceOp::HCCL_REDUCE_MIN;
     data.input = 0x1000000;
     data.output = 0x2000000;
-    kernelParam->op.algOperator.opType = OP_TYPE_MAP.at(HCCL_CMD_ALLREDUCE);
+    kernelParam->op.algOperator.opType = OP_TYPE_MAP.at(HcclCMDType::HCCL_CMD_ALLREDUCE);
     AicpuUtils::GetInstance().kernelParam_ = kernelParam;
     AicpuUtils::GetInstance().kernelParamMap_[0] = AicpuUtils::GetInstance().kernelParam_;
     MOCKER_CPP(&CommunicatorImplLite::UpdateLocBuffer).stubs().with(any()).will(ignoreReturnValue());
@@ -539,11 +539,11 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchOp_When_KernelParamIsNull_Expect_Return
     AicpuUtils::GetInstance().kernelParam_ = nullptr;
     AicpuUtils::GetInstance().kernelParamMap_ = {};
     HcclOpData data;
-    data.opType = HCCL_CMD_ALLREDUCE;
-    data.dataType = HCCL_DATA_TYPE_INT16;
-    data.outputDataType = HCCL_DATA_TYPE_INT16;
+    data.opType = HcclCMDType::HCCL_CMD_ALLREDUCE;
+    data.dataType = HcclDataType::HCCL_DATA_TYPE_INT16;
+    data.outputDataType = HcclDataType::HCCL_DATA_TYPE_INT16;
     data.dataCount = 536870912;
-    data.reduceOp = HCCL_REDUCE_MIN;
+    data.reduceOp = HcclReduceOp::HCCL_REDUCE_MIN;
     data.input = 0x1000000;
     data.output = 0x2000000;
     EXPECT_EQ(HCCL_E_PTR, handler.HcclLaunchOp(comm, &data));
@@ -552,14 +552,14 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchOp_When_KernelParamIsNull_Expect_Return
 TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchOp_When_OpTypeMismatch_Expect_ReturnError) {
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
     HcclOpData data;
-    data.opType = HCCL_CMD_ALLREDUCE;
-    data.dataType = HCCL_DATA_TYPE_INT16;
-    data.outputDataType = HCCL_DATA_TYPE_INT16;
+    data.opType = HcclCMDType::HCCL_CMD_ALLREDUCE;
+    data.dataType = HcclDataType::HCCL_DATA_TYPE_INT16;
+    data.outputDataType = HcclDataType::HCCL_DATA_TYPE_INT16;
     data.dataCount = 536870912;
-    data.reduceOp = HCCL_REDUCE_MIN;
+    data.reduceOp = HcclReduceOp::HCCL_REDUCE_MIN;
     data.input = 0x1000000;
     data.output = 0x2000000;
-    kernelParam->op.algOperator.opType = OP_TYPE_MAP.at(HCCL_CMD_ALLREDUCE);
+    kernelParam->op.algOperator.opType = OP_TYPE_MAP.at(HcclCMDType::HCCL_CMD_ALLREDUCE);
     AicpuUtils::GetInstance().kernelParam_ = kernelParam;
     AicpuUtils::GetInstance().kernelParamMap_[0] = AicpuUtils::GetInstance().kernelParam_;
     MOCKER_CPP(&CommunicatorImplLite::UpdateLocBuffer).stubs().with(any()).will(ignoreReturnValue());
@@ -580,7 +580,7 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchOp_When_ALLREDUCE_Expect_ReturnSuccess)
     data.reduceOp = HcclReduceOp::HCCL_REDUCE_MIN;
     data.input = 0x1000000;
     data.output = 0x2000000;
-    kernelParam->op.algOperator.opType = OP_TYPE_MAP.at(HCCL_CMD_ALLREDUCE);
+    kernelParam->op.algOperator.opType = OP_TYPE_MAP.at(HcclCMDType::HCCL_CMD_ALLREDUCE);
     AicpuUtils::GetInstance().kernelParam_ = kernelParam;
     AicpuUtils::GetInstance().kernelParamMap_[0] = AicpuUtils::GetInstance().kernelParam_;
     MOCKER_CPP(&CommunicatorImplLite::UpdateLocBuffer).stubs().with(any()).will(ignoreReturnValue());
@@ -606,7 +606,7 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchOp_When_ALLTOALL_Expect_ReturnSuccess) 
     data.all2AllDataDes.recvType = HcclDataType::HCCL_DATA_TYPE_INT8;
     data.all2AllDataDes.sendCount = 1;
     data.all2AllDataDes.recvCount = 1;
-    kernelParam->op.algOperator.opType = OP_TYPE_MAP.at(HCCL_CMD_ALLTOALL);
+    kernelParam->op.algOperator.opType = OP_TYPE_MAP.at(HcclCMDType::HCCL_CMD_ALLTOALL);
     AicpuUtils::GetInstance().kernelParam_ = kernelParam;
     AicpuUtils::GetInstance().kernelParamMap_[0] = AicpuUtils::GetInstance().kernelParam_;
     MOCKER_CPP(&CommunicatorImplLite::UpdateLocBuffer).stubs().with(any()).will(ignoreReturnValue());
@@ -638,7 +638,7 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchOp_When_ALLTOALLV_Expect_ReturnSuccess)
     data.all2AllVDataDes.sdispls = (void*)sdispls;
     data.all2AllVDataDes.recvCounts = (void*)recvCounts;
     data.all2AllVDataDes.rdispls = (void*)rdispls;
-    kernelParam->op.algOperator.opType = OP_TYPE_MAP.at(HCCL_CMD_ALLTOALLV);
+    kernelParam->op.algOperator.opType = OP_TYPE_MAP.at(HcclCMDType::HCCL_CMD_ALLTOALLV);
     AicpuUtils::GetInstance().kernelParam_ = kernelParam;
     AicpuUtils::GetInstance().kernelParamMap_[0] = AicpuUtils::GetInstance().kernelParam_;
     MOCKER_CPP(&CommunicatorImplLite::UpdateLocBuffer).stubs().with(any()).will(ignoreReturnValue());
@@ -665,7 +665,7 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchOp_When_ALLTOALLVC_Expect_ReturnSuccess
     data.all2AllVCDataDes.recvType = HcclDataType::HCCL_DATA_TYPE_INT8;
 	uint64_t sendCountMatrixTmp = 0;
 	data.all2AllVCDataDes.sendCountMatrix = &sendCountMatrixTmp;
-    kernelParam->op.algOperator.opType = OP_TYPE_MAP.at(HCCL_CMD_ALLTOALLVC);
+    kernelParam->op.algOperator.opType = OP_TYPE_MAP.at(HcclCMDType::HCCL_CMD_ALLTOALLVC);
     AicpuUtils::GetInstance().kernelParam_ = kernelParam;
     AicpuUtils::GetInstance().kernelParamMap_[0] = AicpuUtils::GetInstance().kernelParam_;
     MOCKER_CPP(&CommunicatorImplLite::UpdateLocBuffer).stubs().with(any()).will(ignoreReturnValue());
@@ -692,11 +692,11 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchOp_When_REDUCE_SCATTER_V_Expect_ReturnS
     data.dataCount = 536870912;
     data.input = 0x1000000;
     data.output = 0x2000000;
-    data.reduceOp = HCCL_REDUCE_SUM;
+    data.reduceOp = HcclReduceOp::HCCL_REDUCE_SUM;
     data.vDataDes.dataType = HcclDataType::HCCL_DATA_TYPE_FP32;
     data.vDataDes.counts = (void*)counts.data();
     data.vDataDes.displs = (void*)displs.data();
-    kernelParam->op.algOperator.opType = OP_TYPE_MAP.at(HCCL_CMD_REDUCE_SCATTER_V);
+    kernelParam->op.algOperator.opType = OP_TYPE_MAP.at(HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V);
     AicpuUtils::GetInstance().kernelParam_ = kernelParam;
     AicpuUtils::GetInstance().kernelParamMap_[0] = AicpuUtils::GetInstance().kernelParam_;
     MOCKER_CPP(&CommunicatorImplLite::UpdateLocBuffer).stubs().with(any()).will(ignoreReturnValue());

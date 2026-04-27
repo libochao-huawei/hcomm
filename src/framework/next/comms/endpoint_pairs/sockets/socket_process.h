@@ -46,7 +46,7 @@ private:
 
     std::atomic<bool> isInit_{false};
     std::unordered_map<Hccl::IpAddress, std::unique_ptr<Hccl::Socket>> serverSocketMap_{};
-    std::unordered_map<std::string, std::pair<std::unique_ptr<Hccl::Socket>, u32>> tag2socketMap_{};
+    std::unordered_map<std::string, std::pair<Hccl::Socket *, u32>> tag2socketMap_{};
     std::unordered_map<Hccl::Socket *, std::string> socket2TagMap_{};
     std::unique_ptr<SocketMgr> socketMgr_{};
     u32 devicePhyId_{0};

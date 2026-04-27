@@ -254,6 +254,7 @@ RaSocketFdHandleParam HrtRaBlockGetOneSocket(u32 role, RaSocketGetParam &param);
 
 void HrtRaSocketBlockSend(const FdHandle fdHandle, const void *data, u32 sendSize);
 bool HrtRaSocketNonBlockSend(const FdHandle fdHandle, void *data, u64 size, u64 *sentSize);
+bool HrtRaSocketNonBlockRecv(const FdHandle fdHandle, void *data, u64 size, u64 *recvSize);
 void HrtRaSocketBlockRecv(const FdHandle fdHandle, void *data, u32 size);
 
 vector<std::pair<std::string, IpAddress>> HrtGetHostIf(u32 devPhyId);

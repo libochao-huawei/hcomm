@@ -21,6 +21,7 @@ set(src_to_test_list
     comms/comm_engine_res/threads/test_iaicpu_ts_thread_interface.cc
     comms/comm_engine_res/threads/test_thread_api.cc
     comms/endpoint_pairs/ut_endpoint_pair.cc
+    comms/endpoint_pairs/socket/ut_socket_process_test.cc
     comms/api_c_adpt/ut_hcomm_c_adpt.cc
     coll_comms/rank/ut_my_rank.cc
     coll_comms/rank/comm_mems/test_getHcclBuffer_api.cc

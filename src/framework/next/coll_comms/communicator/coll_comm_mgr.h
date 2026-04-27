@@ -34,7 +34,7 @@ public:
 private:
     static CollCommMgr *instance_;
     std::unordered_map<std::string, CollComm *> allCollComms_;
-    static ClusterMonitor clusterMonitor_[MAX_MODULE_DEVICE_NUMS];
+    static ClusterMonitor *clusterMonitor_[MAX_MODULE_DEVICE_NUMS];
 
     std::mutex mutex_;
 };

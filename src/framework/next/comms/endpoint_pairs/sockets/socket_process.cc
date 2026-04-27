@@ -39,11 +39,11 @@ SocketProcess::~SocketProcess()
         }
     }
 
-    for (auto iter = tag2socketMap_.begin(); iter != tag2socketMap_.end(); ++iter) {
+    for (auto iter = tag2socketMap_.begin(); iter != tag2socketMap_.end();) {
         if (iter->second.first != nullptr) {
-            iter->second.first->Destroy();
+            DestroySocketHandle(iter->second.first);
         }
-        iter->second.second = 0;
+        iter = tag2socketMap_.erase(iter);  // erase 返回下一个迭代器
     }
 
     serverSocketMap_.clear();
@@ -60,24 +60,31 @@ HcclResult SocketProcess::DestroySocketHandle(HcclCommSocketHandle socketHandle)
         return HCCL_E_PARA;
     }
 
-    if (socket2TagMap_.find(socket) == socket2TagMap_.end()
-        || tag2socketMap_.find(socket2TagMap_[socket]) == tag2socketMap_.end()) {
+    auto socket2TagIter = socket2TagMap_.find(socket);
+    if (socket2TagIter == socket2TagMap_.end()) {
         HCCL_ERROR("[SocketProcess][%s] socket not found, please check", __func__);
         return HCCL_E_NOT_FOUND;
     }
 
-    string socketTag = socket2TagMap_[socket];
-    if (tag2socketMap_[socketTag].second > 0) {
-        tag2socketMap_[socketTag].second--;
-        HCCL_INFO("[SocketProcess][%s] socket with tag[%s] still has %u users, not destroy.", __func__,
-            socketTag.c_str(), tag2socketMap_[socketTag].second);
-    } else {
-        HCCL_INFO("[SocketProcess][%s] destroy socket with tag[%s].", __func__, socketTag.c_str());
-        EXECEPTION_CATCH(socket->Destroy(),
-            HCCL_ERROR("[SocketProcess][%s] Destroy failed socket with tag[%s].", __func__, socketTag.c_str()));
-        tag2socketMap_.erase(socketTag);
-        socket2TagMap_.erase(socket);
+    string socketTag = socket2TagIter->second;
+    auto tag2socketIter = tag2socketMap_.find(socketTag);
+    if (tag2socketIter == tag2socketMap_.end()) {
+        HCCL_ERROR("[SocketProcess][%s] socketTag not found, please check", __func__);
+        return HCCL_E_NOT_FOUND;
     }
+
+    if (tag2socketIter->second.second > 0) {
+        tag2socketIter->second.second--;
+        HCCL_INFO("[SocketProcess][%s] socket with tag[%s] refCnt: %u", __func__, socketTag.c_str(), 
+            tag2socketIter->second.second);
+        return HCCL_SUCCESS;
+    }
+
+    HCCL_DEBUG("[SocketProcess][%s] destroy socket with tag[%s]", __func__, socketTag.c_str());
+    Hccl::Socket* rawSocket = tag2socketIter->second.first;
+    tag2socketMap_.erase(tag2socketIter);
+    socket2TagMap_.erase(socket2TagIter);
+    CHK_RET(socketMgr_->DestroySocket(rawSocket));
 
     return HCCL_SUCCESS;
 }
@@ -92,7 +99,7 @@ HcclResult SocketProcess::GetSocket(HcclCommSocketDesc *socketDesc, HcclCommSock
     Hccl::IpAddress remoteIpaddr{};
     CHK_RET(CommAddrToIpAddress(socketDesc->remoteEndpoint.commAddr, remoteIpaddr));
 
-    string socketTag = string(socketDesc->tag) + "_" + localIpaddr.GetIpStr() + "_" + remoteIpaddr.GetIpStr();
+    string socketTag = string(socketDesc->tag) + "_" + localIpaddr.GetIpStr().c_str() + "_" + remoteIpaddr.GetIpStr().c_str();
     HCCL_INFO("[SocketProcess][%s] socket with tag[%s].", __func__, socketTag.c_str());
     if (tag2socketMap_.find(socketTag) == tag2socketMap_.end()) {
         CHK_RET(BuildSocket(socketDesc, socketTag));
@@ -102,15 +109,16 @@ HcclResult SocketProcess::GetSocket(HcclCommSocketDesc *socketDesc, HcclCommSock
             tag2socketMap_[socketTag].second);
     }
 
-    socketHandle = static_cast<HcclCommSocketHandle>(tag2socketMap_[socketTag].first.get());
+    socketHandle = static_cast<HcclCommSocketHandle>(tag2socketMap_[socketTag].first);
+    HCCL_INFO("[SocketProcess][%s] socketHandle = %p", __func__, socketHandle);
     return HCCL_SUCCESS;
 }
 
 HcclResult SocketProcess::GetStatus(HcclCommSocketHandle socketHandle, HcclCommSocketStatus &socketStatus)
 {
     Hccl::Socket *socket = static_cast<Hccl::Socket *>(socketHandle);
-    if (socket == nullptr) {
-        HCCL_ERROR("[SocketProcess][%s] socket is nullptr, please check", __func__);
+    if (socket == nullptr || socket2TagMap_.find(socket) == socket2TagMap_.end()) {
+        HCCL_ERROR("[SocketProcess][%s] socket is nullptr or not found, please check", __func__);
         return HCCL_E_PARA;
     }
 
@@ -129,9 +137,13 @@ HcclResult SocketProcess::GetStatus(HcclCommSocketHandle socketHandle, HcclCommS
 HcclResult SocketProcess::SendNoBlock(HcclCommSocketHandle socketHandle, void *sendbuffer, u64 sendSize, u64 *&sentSize)
 {
     Hccl::Socket *socket = static_cast<Hccl::Socket *>(socketHandle);
-    if (socket == nullptr || sentSize == nullptr || sendbuffer == nullptr) {
+    if (socket == nullptr || socket2TagMap_.find(socket) == socket2TagMap_.end()) {
+        HCCL_ERROR("[SocketProcess][%s] socket is nullptr or not found, please check", __func__);
+        return HCCL_E_PARA;
+    }
+    if (sentSize == nullptr || sendbuffer == nullptr) {
         HCCL_ERROR(
-            "[SocketProcess][%s] socket is nullptr or sentSize is nullptr or sendbuffer is nullptr, please check",
+            "[SocketProcess][%s] sentSize is nullptr or sendbuffer is nullptr, please check",
             __func__);
         return HCCL_E_PARA;
     }
@@ -150,9 +162,13 @@ HcclResult SocketProcess::RecvNoBlock(
     HcclCommSocketHandle socketHandle, void *recvBuffer, u64 recvSize, u64 *&recvedSize)
 {
     Hccl::Socket *socket = static_cast<Hccl::Socket *>(socketHandle);
-    if (socket == nullptr || recvBuffer == nullptr || recvedSize == nullptr) {
+    if (socket == nullptr || socket2TagMap_.find(socket) == socket2TagMap_.end()) {
+        HCCL_ERROR("[SocketProcess][%s] socket is nullptr or not found, please check", __func__);
+        return HCCL_E_PARA;
+    }
+    if (recvBuffer == nullptr || recvedSize == nullptr) {
         HCCL_ERROR(
-            "[SocketProcess][%s] socket is nullptr or recvBuffer is nullptr or recvedSize is nullptr, please check",
+            "[SocketProcess][%s] recvBuffer is nullptr or recvedSize is nullptr, please check",
             __func__);
         return HCCL_E_PARA;
     }
@@ -174,6 +190,7 @@ HcclResult SocketProcess::Init()
     }
 
     isInit_ = true;
+    EXECEPTION_CATCH(socketMgr_ = std::make_unique<SocketMgr>(), return HCCL_E_PTR);
     s32 devLogicId;
     CHK_RET(hrtGetDevice(&devLogicId));
     CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_));
@@ -213,11 +230,12 @@ HcclResult SocketProcess::BuildSocket(HcclCommSocketDesc *socketDesc, const std:
             return HCCL_E_PARA);
         HCCL_INFO("[SocketProcess][%s] listen_socket_info[%s]", __func__, serverSocketMap_[ipaddr]->Describe().c_str());
         EXECEPTION_CATCH(serverSocketMap_[ipaddr]->Listen(), return HCCL_E_INTERNAL);
-    } else {
-        HCCL_INFO("[SocketProcess][%s] ip[%s] has been listening.", __func__, ipaddr.GetIpStr().c_str());
-        return HCCL_SUCCESS;
     }
+    HCCL_INFO("[SocketProcess][%s] ip[%s] has been listening.", __func__, ipaddr.GetIpStr().c_str());
 
+    // 还没有tcp的protocol，先默认用ROCE协议构建linkData
+    socketDesc->localEndpoint.protocol = CommProtocol::COMM_PROTOCOL_ROCE;
+    socketDesc->remoteEndpoint.protocol = CommProtocol::COMM_PROTOCOL_ROCE;
     Hccl::LinkData linkData = BuildDefaultLinkData();
     CHK_RET(EndpointDescPairToLinkData(socketDesc->localEndpoint, socketDesc->remoteEndpoint, linkData));
     HCCL_INFO("[SocketProcess][%s] built linkData: %s", __func__, linkData.Describe().c_str());
@@ -226,7 +244,7 @@ HcclResult SocketProcess::BuildSocket(HcclCommSocketDesc *socketDesc, const std:
         = Hccl::SocketConfig(linkData, string(socketDesc->tag), ConvertToHcclSocketRole(socketDesc->role));
     Hccl::Socket *socket = nullptr;
     CHK_RET(socketMgr_->GetSocket(socketConfig, socket));
-    tag2socketMap_[socketTag].first = std::unique_ptr<Hccl::Socket>(socket);
+    tag2socketMap_[socketTag].first = socket;
     tag2socketMap_[socketTag].second = 0;
     socket2TagMap_[socket] = socketTag;
 
