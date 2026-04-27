@@ -76,6 +76,7 @@ private:
     HcclResult GetLocalTlsStatus(Hccl::TlsStatus &tlsStatus) const;
 
     HcclResult TryInitCcuInstance();
+    HcclResult ConfigSqDepthByExpansionMode(CommEngine engine, HcommChannelDesc& hcommDesc);
     HcclResult DestroyNewChannels(CommEngine engine, const HcclChannelDesc* channelDescs);
 
     aclrtBinHandle binHandle_{nullptr};
@@ -106,5 +107,11 @@ private:
 };
 
 } // namespace hccl
+
+namespace MyRankUtils {
+
+HcommChannelDesc ChannelDescHccl2Hcomm(const HcclChannelDesc &hcclDesc);
+
+} // namespace MyRankUtils  
 
 #endif // MY_RANK_H
