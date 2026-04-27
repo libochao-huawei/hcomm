@@ -13,8 +13,9 @@
  #include "urma_endpoint.h"
  #include "ub_mem_endpoint.h"
  #include "uboe_endpoint.h"
+ #include "cpu_urma_endpoint.h"
 
- namespace hcomm{
+namespace hcomm{
 static bool IsProtocolSupported(CommProtocol protocol)
 {
     switch (protocol) {
@@ -46,8 +47,14 @@ HcclResult Endpoint::CreateEndpoint(const EndpointDesc &endpointDesc, std::uniqu
         HCCL_ERROR("[%s]endpointDesc.protocol [%d] is not supported.", __func__, endpointDesc.protocol);
     }
 
+    HCCL_INFO("[%s]endpointDesc.protocol [%d] endpointDesc.loc.locType [%d].", __func__, endpointDesc.protocol, endpointDesc.loc.locType);
+
     if (endpointDesc.protocol == COMM_PROTOCOL_ROCE && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_HOST) {
         EXECEPTION_CATCH(endpointPtr = std::make_unique<CpuRoceEndpoint>(endpointDesc), return HCCL_E_PTR);
+    } else if (endpointDesc.protocol == COMM_PROTOCOL_UBC_TP && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_HOST) {
+        EXECEPTION_CATCH(endpointPtr = std::make_unique<CpuUrmaEndpoint>(endpointDesc), return HCCL_E_PTR);
+    } else if (endpointDesc.protocol == COMM_PROTOCOL_UBC_CTP && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_HOST) {
+        EXECEPTION_CATCH(endpointPtr = std::make_unique<CpuUrmaEndpoint>(endpointDesc), return HCCL_E_PTR);
     } else if (endpointDesc.protocol == COMM_PROTOCOL_UBC_TP && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
         EXECEPTION_CATCH(endpointPtr = std::make_unique<UrmaEndpoint>(endpointDesc), return HCCL_E_PTR);
     } else if (endpointDesc.protocol == COMM_PROTOCOL_UBC_CTP && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
