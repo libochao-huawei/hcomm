@@ -630,7 +630,7 @@ void TaskExceptionHost::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo,
             lock.lock();
             g_commHadCallbackArrayV2[exceptionInfo->deviceid] = true;
         } else {
-            HCCL_WARNING("PrintAicpuErrorMessage No Vaild errorMessage!");
+            HCCL_WARNING("PrintAicpuErrorMessage No Valid errorMessage!");
         }
     } else {
         HCCL_INFO("PrintAicpuErrorMessage streamId[%u] is not found.", exceptionInfo->streamid);
