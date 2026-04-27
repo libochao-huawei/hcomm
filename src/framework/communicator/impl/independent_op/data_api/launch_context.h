@@ -24,6 +24,8 @@ public:
     HcclResult SetLaunchMode(const char* launchTag, HcommLaunchMode mode);
     void AddThread(ThreadHandle thread);
     bool IsBatchLaunchMode() const;
+    inline void SetBatchAddMode(bool isBatchAddMode) { isBatchAddMode_ = isBatchAddMode; }
+    inline bool IsBatchAddMode() const { return isBatchAddMode_; }
 
 private:
     HcclResult HandleBatchMode();
@@ -34,6 +36,7 @@ private:
     std::unordered_map<std::string, std::unordered_set<ThreadHandle>> launchModeMap_;
     std::mutex mtx_;
     HcommLaunchMode mode_ = HCOMM_LAUNCH_MODE_EAGER;
+    bool isBatchAddMode_ = false;  // 是否在批量模式下添加线程，true表示在批量模式下添加线程，false表示在非批量模式下添加线程
 };
 
 #endif
