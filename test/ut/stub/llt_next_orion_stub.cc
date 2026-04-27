@@ -144,7 +144,7 @@ RdmaHandleManager &RdmaHandleManager::GetInstance()
     return rdmaHandleManager;
 }
  
-JfcHandle RdmaHandleManager::GetJfcHandle(RdmaHandle rdmaHandle, HrtUbJfcMode jfcMode)
+JfcHandle RdmaHandleManager::GetJfcHandle(RdmaHandle rdmaHandle, CqCreateInfo& cqInfo,HrtUbJfcMode jfcMode)
 {
     return 0x12345678;
 }
