@@ -9,6 +9,7 @@
  */
 #include "coll_comm_mgr.h"
 #include "ns_recovery/task_abort_handler.h"
+#include "cluster_monitor.h"
 
 namespace hccl {
 
@@ -42,6 +43,16 @@ void CollCommMgr::UnRegisteCollComm(CollComm* collComm)
 std::unordered_map<std::string, CollComm*> CollCommMgr::GetAllCollComms()
 {
     return allCollComms_;
+}
+
+ClusterMonitor &CollCommMgr::GetClusterMonitor(s32 deviceLogicId)
+{
+    if (static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUMS) {
+        HCCL_WARNING("[ClusterMonitor][%s]deviceLogicId[%d] >= %u, invalid",
+            __func__, deviceLogicId, MAX_MODULE_DEVICE_NUMS);
+        return clusterMonitor_[0];
+    }
+    return clusterMonitor_[deviceLogicId];
 }
 
 }
