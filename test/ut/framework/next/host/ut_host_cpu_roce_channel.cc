@@ -31,6 +31,10 @@ struct IbvPollCqTestControl {
 
 IbvPollCqTestControl g_ibvPollCqControl;
 
+extern "c" {
+int ibv_poll_cq(struct ibv_cq *cq, int num_entries, struct ibv_wc *wc);
+}
+
 int mock_ibv_poll_cq(struct ibv_cq *cq, int num_entries, struct ibv_wc *wc)
 {
     wc->status = static_cast<ibv_wc_status>(g_ibvPollCqControl.status);
@@ -39,10 +43,6 @@ int mock_ibv_poll_cq(struct ibv_cq *cq, int num_entries, struct ibv_wc *wc)
 }
 
 #define ibv_poll_cq mock_ibv_poll_cq
-
-extern "c" {
-int ibv_poll_cq(struct ibv_cq *cq, int num_entries, struct ibv_wc *wc);
-}
 
 class HostCpuRoceChannelTest : public testing::Test {
 protected:
