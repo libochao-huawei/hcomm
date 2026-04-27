@@ -44,13 +44,14 @@ HcclResult AivTempReduceScatterMesh1D::CalcRes(AlgTempResReq &tempResReq)
 
 HcclResult AivTempReduceScatterMesh1D::CalNumBlocks(u32& numBlocks, u64 dataSize, u32 numBlocksLimit)
 {
-    numBlocks = numBlocksLimit;
-    if (dataSize < REDUCE_SCATTER_SMALL_COUNT_512KB) { // 小数据量，走原来极致低时延的流程
-        constexpr uint32_t stepNum = 2;
-        if (numBlocks > stepNum * tempRankSize_) {
-            numBlocks = stepNum * tempRankSize_;
-        }
-    }
+    // numBlocks = numBlocksLimit;
+    // if (dataSize < REDUCE_SCATTER_SMALL_COUNT_512KB) { // 小数据量，走原来极致低时延的流程
+    //     constexpr uint32_t stepNum = 2;
+    //     if (numBlocks > stepNum * tempRankSize_) {
+    //         numBlocks = stepNum * tempRankSize_;
+    //     }
+    // }
+    numBlocks = 3;
     HCCL_INFO("[AivTempReduceScatterMesh1D] Actually use core num[%u]", numBlocks);
     return HcclResult::HCCL_SUCCESS;
 }
