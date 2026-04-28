@@ -214,9 +214,9 @@ public:
         }
     }
 
-    __aicore__ inline void Process(int32_t sliceId)
-    {
-        curTag_ = (static_cast<uint32_t>(tag_) << AIV_TAG_MOVE_RIGHT_BITS) | (sliceId & LOW_16_BITS);
+    __aicore__ inline void Process(int32_t tag)	 
+     {	 
+         tag_ = tag;
         if (block_idx >= useBlocks_) {
             return;
         }
@@ -233,7 +233,7 @@ public:
             } else {
                 flagOffset = (rank_ - 1) * useBlocks_ + block_idx;
             }
-            Record(root_, flagOffset, curTag_);
+            Record(root_, flagOffset, tag_);
         } else {
             // 本地拷贝：将自身core负责的Input数据搬运至本地Output上
             if (sliceLen_ > 0) {
@@ -247,7 +247,7 @@ public:
                 }
                 // 读同步：阻塞读取本地数据同步标志位，当前aivTag等于读取值时，继续步骤
                 uint64_t flagOffset = sliceIdx * useBlocks_ + block_idx;
-                WaitFlag(rank_, flagOffset, curTag_);
+                WaitFlag(rank_, flagOffset, tag_);
                 // 本地规约：将本地ScratchBuffer上的数据Reduce到本地OutputBuffer上
                 if (sliceLen_ > 0) {
                     srcOffset_ = reinterpret_cast<uint64_t>(GM_IN[root_]) + sliceIdx * dataSize_ + offsetSize_;
@@ -290,11 +290,11 @@ __aicore__ inline void AivReduceV2Mesh1D(EXTERN_KERNEL_ARGS_DEF_V2)
     AivReduceMesh1DTwoShot<T> op;
     op.Init(KERNEL_CLASS_INIT, true);
     SyncAll<true>();
-    if (op.IsFirstOP(sliceId)) {
+    if (op.IsFirstOP(tag)) {
         op.BarrierForFirstOP();
     }
     SyncAll<true>();
-    op.InitCoreInfo(sliceId);
+    op.InitCoreInfo(tag);
     op.ReduceScatter();
     op.GatherToRoot();
     SyncAll<true>();
