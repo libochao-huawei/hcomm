@@ -200,12 +200,12 @@ CcuResult CcuAddressAddAssignVar(CcuAddressHandle addr, CcuVariableHandle var)
 }
 
 //参数加载类 相关接口
-CcuResult CcuLoadArg(CcuVariableHandle varHandle)
+CcuResult CcuLoadArg(CcuVariableHandle varHandle, uint32_t argId)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
     auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
     CCU_CHK_PTR_NULL(kernel);
-    CCU_CHK_RET(kernel->LoadArg(varHandle));
+    CCU_CHK_RET(kernel->LoadArg(varHandle, argId));
     return CcuResult::CCU_SUCCESS;
 }
 
