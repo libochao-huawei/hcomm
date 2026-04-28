@@ -161,6 +161,48 @@ public:
         CcuConditionType condType, const char *label);
     CcuResult IfElse(const char *label);
     CcuResult IfEnd(const char *label);
+
+    // 控制流标签栈嵌套类型：作为 CcuKernel 的成员，与 kernel 同生命周期。
+    // 同包消费者（ccu_kernel.cc 自身）直接通过下面的访问器使用；跨包
+    // 消费者（上层宏 / 业务 C API）通过 ccu_data_api_impl.h 中的
+    // _CcuIfStack* / _CcuDoWhileStack* extern "C" 接口操作，C 接口内部
+    // 转发到 CcuKernelMgr::GetCurrentKernel() 的成员栈。
+
+    struct IfLabelStack {
+        static constexpr int MAX_DEPTH = 16;
+
+        enum class BodyState { InBody, BodyDone };
+
+        struct Entry {
+            const char *label{nullptr};
+            BodyState   state{BodyState::InBody};
+        };
+
+        Entry entries[MAX_DEPTH]{};
+        int   top{0};
+
+        void        Push(const char *label);
+        void        MarkBodyDone();
+        const char *PopForElse();
+        bool        TopIsClosable() const;
+        const char *Pop();
+    };
+
+    struct DoWhileLabelStack {
+        static constexpr int MAX_DEPTH = 16;
+
+        const char *entries[MAX_DEPTH]{};
+        int         top{0};
+
+        void        Push(const char *label);
+        const char *PopForWhile();
+    };
+
+    IfLabelStack      &GetIfLabelStack()      { return ifLabelStack_; }
+    DoWhileLabelStack &GetDoWhileLabelStack() { return doWhileLabelStack_; }
+
+    void FlushClosablePendingIfs();
+    void Append(std::shared_ptr<CcuRep::CcuRepBase> rep) override;
     CcuResult WhileBegin(CcuVariableHandle var, uint64_t immediate,
         CcuConditionType condType, const char *label);
     CcuResult WhileEnd(const char *label);
@@ -212,6 +254,12 @@ private:
     std::unordered_map<std::string, PendingIfContext> pendingIfCtx_{};
     std::unordered_map<std::string, PendingWhileContext> pendingWhileCtx_{};
     std::unordered_map<std::string, PendingDoWhileContext> pendingDoWhileCtx_{};
+
+    // 控制流标签栈实例（生命周期 = kernel 生命周期）。
+    IfLabelStack      ifLabelStack_;
+    DoWhileLabelStack doWhileLabelStack_;
+
+    bool isFlushing_ = false;
 
     std::unordered_map<CcuEventHandle, CcuRep::CompletedEvent> ccuEventMap_{};
 
