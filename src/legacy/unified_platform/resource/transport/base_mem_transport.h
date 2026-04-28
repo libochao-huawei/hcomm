@@ -233,6 +233,7 @@ protected:
     void SetBaseStatusReady();
 
     bool IsSocketReady();
+    bool IsSyncSocketReady();
 
     void NotifyVecPack(BinaryStream &binaryStream);
 
