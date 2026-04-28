@@ -36,5 +36,6 @@ add_custom_command(
 )
 
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/dist/hccl-0.1.0-py3-none-any.whl
-    DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL
+    DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
 )

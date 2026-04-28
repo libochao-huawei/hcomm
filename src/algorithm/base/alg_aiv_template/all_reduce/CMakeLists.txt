@@ -704,38 +704,47 @@ else()
    )
 endif()
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_all_reduce_op.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_all_reduce_op.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_int8.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_int8.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_int16.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_int16.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_int32.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_int32.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_float16.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_float16.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_float32.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_float32.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_bfloat16.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_bfloat16.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_sk_ar_deter.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_sk_ar_deter.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_sk_ar_crossnode.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_sk_ar_crossnode.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
