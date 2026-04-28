@@ -18,6 +18,7 @@
 #include "rma_conn_exception.h"
 #include "rdma_handle_manager.h"
 #include "exchange_ub_conn_dto.h"
+#include "adapter_rts_common.h"
 
 namespace Hccl {
 
