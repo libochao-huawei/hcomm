@@ -265,8 +265,9 @@ HcclResult HcclCommAicpu::InitZeroCopyExchanger(const HcclOpResParam *commParam)
             // NS快恢场景，需要提前终止
             HcclOpExecFSM fsmState = HcclOpExecFSM::HCCL_OP_EXEC_FSM_INIT;
             KfcError errorCode = KfcError::kNone;
+            SetCommRecoveryFlag(true);
             UpdateOpExecStatus(fsmState, KfcStatus::kStoplaunch, errorCode, 0);
-            HCCL_INFO("[HcclCommAicpu][nSecStopFunc] need stop launch");
+            HCCL_RUN_INFO("[HcclCommAicpu][nSecStopFunc] need stop launch");
             return true;
         } else {
             return true;
