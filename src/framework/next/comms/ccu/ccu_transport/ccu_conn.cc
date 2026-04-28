@@ -514,21 +514,10 @@ HcclResult CcuConnection::Describe(std::string &dfxMsg)
     if (tpProtocol_ == TpProtocol::RTP) {
         struct TpAttr tpAttr {0};
         uint32_t attrBitmap = 1 << 13; // 13对应dataUdpSrcport
-        try {
+        TRY_CATCH_PRINT_ERROR(
             u32 devicePhyId = Hccl::HrtGetDevicePhyIdByIndex(devLogicId_);
-            HcclResult res = Hccl::HrtRaGetTpAttrAsync(devicePhyId, ctxHandle_, tpInfo_.tpHandle, attrBitmap, tpAttr, reqHandles_[0]);
-            if (res != HcclResult::HCCL_SUCCESS) {
-                if (res == HcclResult::HCCL_E_NOT_SUPPORT)
-                {
-                    HCCL_ERROR("[CcuConnection::%s] this package does not support RaCtxGetTpAttr for device,"
-                        " please change new package", __func__);
-                }
-                return res;
-            }
-        } catch (Hccl::HcclException &e) {
-            HCCL_ERROR("[CcuConnection::%s] %s", __func__, e.what());
-            return HCCL_E_NETWORK;
-        }
+            CHK_RET(Hccl::HrtRaGetTpAttrAsync(devicePhyId, ctxHandle_, tpInfo_.tpHandle, attrBitmap, tpAttr, reqHandles_[0]));
+        )
         udpSport = tpAttr.dataUdpSrcport;
     }
     udpSport = udpSport & 0xFF;
