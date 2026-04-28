@@ -521,7 +521,7 @@ HcclResult CcuConnection::Describe(std::string &dfxMsg)
                     " please change new package", __func__);
                 return ret;
             } else if (ret != HCCL_SUCCESS) {
-                HCCL_ERROR("[DevUbConnection::%s] failed, call HrtRaGetTpAttrAsync fails, hccl result[%d]", __func__, ret);
+                HCCL_ERROR("[DevUbConnection::%s] failed, hccl result[%d]", __func__, ret);
                 return ret;
             }
         )
