@@ -127,7 +127,7 @@ public:
             return true;
         }
         // 引用计数大于0，不删除
-        HCCL_RUN_INFO("Memory reference count is larger than 0, (used by other RemoteRank), do not deregister memory."
+        HCCL_INFO("Memory reference count is larger than 0, (used by other RemoteRank), do not deregister memory."
              "current memory reference count[%llu], %s.", it->second.ref, key.ToString().c_str());
         return false; 
     }
