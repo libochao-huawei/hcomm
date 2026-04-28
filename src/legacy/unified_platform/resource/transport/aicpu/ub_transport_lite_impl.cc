@@ -352,7 +352,6 @@ void UbTransportLiteImpl::Post(u32 index, const StreamLite &stream)
     HCCL_INFO("UbTransportLiteImpl::Post notifyId[0x%llx], pi=%u", rmtBuffSliceLite.GetAddr(), connOut.pi);
 
     if (!IsReportTask()) {
-        HCCL_DEBUG("[%s]IsReportTask false, skip report", __func__);
         return;
     }
 
@@ -392,7 +391,6 @@ void UbTransportLiteImpl::WaitWithTimeout(u32 index, const StreamLite &stream, u
     stream.GetRtsq()->NotifyWait(notifyId, timeout);
 
     if (!IsReportTask()) {
-        HCCL_DEBUG("[%s]IsReportTask false, skip report", __func__);
         return;
     }
 
@@ -414,7 +412,6 @@ void UbTransportLiteImpl::ProfilingProcess(void *src, void *dst, u64 size, const
                                            DmaOp dmaOp, u32 taskId)
 {
     if (!IsReportTask()) {
-        HCCL_DEBUG("[%s]IsReportTask false, skip report", __func__);
         return;
     }
 
@@ -443,7 +440,6 @@ void UbTransportLiteImpl::ReduceProfilingProcess(void *src, void *dst, u64 size,
                                                  const ReduceIn &reduceIn, const StreamLite &stream, u32 taskId)
 {
     if (!IsReportTask()) {
-        HCCL_DEBUG("[%s]IsReportTask false, skip report", __func__);
         return;
     }
 
@@ -618,7 +614,6 @@ void UbTransportLiteImpl::WriteWithNotify(const RmaBufferLite &loc, const Buffer
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
     if (!IsReportTask()) {
-        HCCL_DEBUG("[%s]IsReportTask false, skip report", __func__);
         return;
     }
 
@@ -662,7 +657,6 @@ void UbTransportLiteImpl::WriteReduceWithNotify(const RmaBufferLite &loc, const 
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
     if (!IsReportTask()) {
-        HCCL_DEBUG("[%s]IsReportTask false, skip report", __func__);
         return;
     }
 
@@ -778,11 +772,7 @@ void UbTransportLiteImpl::SetFenceConfig(SqeConfigLite &cfg)
 
 bool UbTransportLiteImpl::IsReportTask()
 {
-    bool profilingL1 = ProfilingHandlerLite::GetInstance().GetProfL1State();
-    bool ret = taskExceptionEnable_ && profilingL1 &&
-        (callback_ != nullptr || newCallback_ != nullptr);
-    HCCL_DEBUG("[%s]ret[%d], taskExceptionEnable_[%d], L1[%d], callback_[%p], newCallback_[%p]",
-        __func__, ret, taskExceptionEnable_, profilingL1, callback_, newCallback_);
-    return ret;
+    return (taskExceptionEnable_ || ProfilingHandlerLite::GetInstance().GetProfL1State()) &&
+           (callback_ != nullptr || newCallback_ != nullptr);
 }
 } // namespace Hccl

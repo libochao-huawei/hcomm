@@ -305,7 +305,9 @@ Thread *Thread::FindThreadByCommEngine(CommEngine commEngine)
 
 HcclResult Thread::ReportAicpuNotifyWaitTask(u64 notifyId, u64 beginTime, u32 taskId, u32 sqId) const
 {
-    CHK_PRT_RET(!IsReportTask(), HCCL_DEBUG("[%s]IsReportTask false, skip", __func__), HCCL_SUCCESS);
+    if (!IsReportTask()) {
+        return HCCL_SUCCESS;
+    }
     Hccl::TaskParam taskParam{};
     taskParam.taskType                 = Hccl::TaskParamType::TASK_NOTIFY_WAIT;
     taskParam.beginTime                = beginTime;
@@ -322,7 +324,6 @@ HcclResult Thread::ReportAicpuNotifyWaitTask(u64 notifyId, u64 beginTime, u32 ta
 HcclResult Thread::ReportHostNotifyWaitTask(u64 notifyId, u64 beginTime, bool isMaster) const
 {
 #ifndef CCL_KERNEL_AICPU
-    CHK_PRT_RET(!IsReportTask(), HCCL_DEBUG("[%s]IsReportTask false, skip", __func__), HCCL_SUCCESS);
     Hccl::TaskParam taskParam{};
     taskParam.taskType                 = Hccl::TaskParamType::TASK_NOTIFY_WAIT;
     taskParam.beginTime                = beginTime;
@@ -344,7 +345,9 @@ HcclResult Thread::ReportHostNotifyWaitTask(u64 notifyId, u64 beginTime, bool is
 
 HcclResult Thread::ReportAicpuNotifyRecordTask(u64 notifyId, u64 beginTime, u32 taskId, u32 sqId) const
 {
-    CHK_PRT_RET(!IsReportTask(), HCCL_DEBUG("[%s]IsReportTask false, skip", __func__), HCCL_SUCCESS);
+    if (!IsReportTask()) {
+        return HCCL_SUCCESS;
+    }
     Hccl::TaskParam taskParam{};
     taskParam.taskType                 = Hccl::TaskParamType::TASK_NOTIFY_RECORD;
     taskParam.beginTime                = beginTime;
@@ -361,7 +364,6 @@ HcclResult Thread::ReportAicpuNotifyRecordTask(u64 notifyId, u64 beginTime, u32 
 HcclResult Thread::ReportHostNotifyRecordTask(u64 notifyId, u64 beginTime, bool isMaster) const
 {
 #ifndef CCL_KERNEL_AICPU
-    CHK_PRT_RET(!IsReportTask(), HCCL_DEBUG("[%s]IsReportTask false, skip", __func__), HCCL_SUCCESS);
     Hccl::TaskParam taskParam{};
     taskParam.taskType                 = Hccl::TaskParamType::TASK_NOTIFY_RECORD;
     taskParam.beginTime                = beginTime;
@@ -385,7 +387,6 @@ HcclResult Thread::ReportHostNotifyRecordTask(u64 notifyId, u64 beginTime, bool 
 HcclResult Thread::ReportHostLocalCopyTask(void *dst, const void *src, uint64_t sizeByte, u64 beginTime, bool isMaster) const
 {
 #ifndef CCL_KERNEL_AICPU
-    CHK_PRT_RET(!IsReportTask(), HCCL_DEBUG("[%s]IsReportTask false, skip", __func__), HCCL_SUCCESS);
     Hccl::TaskParam taskParam{};
     taskParam.taskType                 = Hccl::TaskParamType::TASK_SDMA;
     taskParam.beginTime                = beginTime;
@@ -410,7 +411,9 @@ HcclResult Thread::ReportHostLocalCopyTask(void *dst, const void *src, uint64_t 
 
 HcclResult Thread::ReportAicpuLocalCopyTask(void *dst, const void *src, uint64_t sizeByte, u64 beginTime, u32 taskId,u32 sqId) const
 {
-    CHK_PRT_RET(!IsReportTask(), HCCL_DEBUG("[%s]IsReportTask false, skip", __func__), HCCL_SUCCESS);
+    if (!IsReportTask()) {
+        return HCCL_SUCCESS;
+    }
     Hccl::TaskParam taskParam{};
     taskParam.taskType              = Hccl::TaskParamType::TASK_SDMA;
     taskParam.beginTime             = beginTime;
@@ -431,7 +434,9 @@ HcclResult Thread::ReportAicpuLocalCopyTask(void *dst, const void *src, uint64_t
 HcclResult Thread::ReportAicpuLocalReduceTask(void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType,
     HcommReduceOp reduceOp, u64 beginTime, u32 taskId,u32 sqId) const
 {
-    CHK_PRT_RET(!IsReportTask(), HCCL_DEBUG("[%s]IsReportTask false, skip", __func__), HCCL_SUCCESS);
+    if (!IsReportTask()) {
+        return HCCL_SUCCESS;
+    }
     Hccl::TaskParam taskParam{};
     taskParam.taskType = Hccl::TaskParamType::TASK_REDUCE_INLINE;
     taskParam.beginTime = beginTime;
@@ -453,7 +458,6 @@ HcclResult Thread::ReportHostLocalReduceTask(void *dst, const void *src, uint64_
     HcommReduceOp reduceOp, u64 beginTime, bool isMaster) const
 {
 #ifndef CCL_KERNEL_AICPU
-    CHK_PRT_RET(!IsReportTask(), HCCL_DEBUG("[%s]IsReportTask false, skip", __func__), HCCL_SUCCESS);
     Hccl::TaskParam taskParam{};
     taskParam.taskType                 = Hccl::TaskParamType::TASK_REDUCE_INLINE;
     taskParam.beginTime                = beginTime;
@@ -480,9 +484,7 @@ HcclResult Thread::ReportHostLocalReduceTask(void *dst, const void *src, uint64_
 bool Thread::IsReportTask() const
 {
 #ifdef CCL_KERNEL_AICPU
-    bool ret = hcomm::GetTaskExceptionEnable() && Hccl::ProfilingHandlerLite::GetInstance().GetProfL1State();
-    HCCL_DEBUG("[%s]ret[%d], taskExceptionEnable[%d], L1[%d]",  __func__, ret, hcomm::GetTaskExceptionEnable(),
-        Hccl::ProfilingHandlerLite::GetInstance().GetProfL1State());
+    bool ret = hcomm::GetTaskExceptionEnable() || Hccl::ProfilingHandlerLite::GetInstance().GetProfL1State();
     return ret;
 #endif
     return true;

@@ -56,8 +56,8 @@ public:
     void                         UpdateProfSwitch();
     void                         SetProL0On(bool val);
     void                         SetProL1On(bool val);
-    bool                         GetProfL0State() const;
-    bool                         GetProfL1State() const;
+    inline bool                  GetProfL0State() const { return enableHcclL0_; }
+    inline bool                  GetProfL1State() const { return enableHcclL1_; }
 
 private:
     explicit ProfilingHandlerLite();
