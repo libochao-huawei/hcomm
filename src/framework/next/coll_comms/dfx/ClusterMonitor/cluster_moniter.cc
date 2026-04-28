@@ -60,6 +60,18 @@ void ClusterMonitor::RecvFrameOutCheck()
         }
     return;
 }
+
+HcclResult ClusterMonitor::FormatUID(std::string instanceId, u32 localId, UIDType &uid)
+{
+    s32 ret = snprintf_s(uid.id, sizeof(uid.id), sizeof(uid.id) - 1, "%s%s%s",
+ 	         instanceId.c_str(), "/", std::to_string(localId).c_str());
+ 	     CHK_PRT_RET((ret == -1),
+ 	         HCCL_ERROR("[%s] snprintf_s failed, errno:%d, error:%s",
+ 	             __func__, errno, strerror(errno)), HCCL_E_SYSCALL);
+    return HCCL_SUCCESS;
+}
+
+
 void ClusterMonitor::ProcessExceptionEvent()
 {
      while (errRankQueue_.size() > 0) {
@@ -175,10 +187,15 @@ void GetCqeErrInfo(unsigned int RemoteLocalIdId, unsigned int LocDeviceId, unsig
 void ClusterMonitor::GetCqeErrInfo(u32 RemoteLocalIdId, uint16_t status, std::string LocalEid, std::string RemoteEid, std::string RemoteInsId)
 {
     CqeErrInfo_.CqeRemoteLocalId = RemoteLocalIdId;
-    CqeErrInfo_.CqeRemoterstatus = status;
+    CqeErrInfo_.Cqestatus = status;
     CqeErrInfo_.CqeLocalEid = LocalEid;
     CqeErrInfo_.CqeRemoteEid = RemoteEid;
     CqeErrInfo_.CqeRemoteInsId = RemoteInsId;
+    UIDType remoteUid = {0};
+    UIDType localUid = myRankUid_;
+    CHK_RET_NULL(FormatUID(CqeErrInfo_.CqeRemoteInsId, CqeErrInfo_.CqeRemoteLocalId, remoteUid));
+    SetStatus(localUid, remoteUid, HeartBeatStatus::HEARTBEAT_CQE_ERR);
+
     // if (CqeErrInfo_.CqeRemoterstatus != 0) {
     //    SetStatus(uid_, uid_, HeartBeatStatus::HEARTBEAT_CQE_EXCEPTION);//从远端获取的remoteRankId需要转换为Uid_类型
     //    HCCL_RUN_INFO("[%s][%s]local rank [%s]: crimer rank [%s] status[%d] by informer rank [%d]",
