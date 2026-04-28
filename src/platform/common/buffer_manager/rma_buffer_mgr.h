@@ -111,6 +111,7 @@ public:
         return std::make_pair(false, BufferType{}); // 未找到
     }
 
+    // 返回第一个找到的key的全集或超集
     std::pair<bool, BufferType> DirectFind(const KeyType& key) const 
     {
         auto it = intervalTree_.begin();

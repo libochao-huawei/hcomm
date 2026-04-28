@@ -60,6 +60,7 @@ HcclResult UbRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void 
         }
     }
 
+    // 重新构造key确保注册到计数器的key和接口返回的memHandle对应
     hccl::BufferKey<uintptr_t, u64> actualRegKey(localUbRmaBuffer->GetAddr(),
         static_cast<uint64_t>(localUbRmaBuffer->GetSize()));
 
