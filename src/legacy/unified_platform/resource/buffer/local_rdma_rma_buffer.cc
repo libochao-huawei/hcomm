@@ -30,7 +30,7 @@ LocalRdmaRmaBuffer::LocalRdmaRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle r
         THROW<InvalidParamsException>("[%s] failed, param error.", __func__);
     }
     // 注册内存
-    struct MrInfoT mrInfo;
+    struct MrInfoT mrInfo = {};
     mrInfo.addr   = reinterpret_cast<void *>(bufAddr);
     mrInfo.size   = bufSize;
     mrInfo.access = RA_ACCESS_REMOTE_WRITE | RA_ACCESS_LOCAL_WRITE | RA_ACCESS_REMOTE_READ;

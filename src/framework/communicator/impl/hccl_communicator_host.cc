@@ -7551,7 +7551,7 @@ namespace hccl
             uint64_t workspace;     // 消息区地址
         };
 
-        struct ApiParamDef apiParam;
+        struct ApiParamDef apiParam = {};
         apiParam.x1 = reinterpret_cast<uint64_t>(inputPtr);
         apiParam.gatherOut = reinterpret_cast<uint64_t>(outputPtr);
         apiParam.context = addr;
