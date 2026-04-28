@@ -447,8 +447,9 @@ HcclResult CcuTransport::BufferInfoUnpack(Hccl::BinaryStream &binaryStream)
 {
     u32 rmtBufferNum{0};
     binaryStream >> rmtBufferNum;
-    CHK_PRT_RET(rmtBufferNum > MAX_BUFFER_NUM,
-        HCCL_ERROR("[CcuTransport][BufferInfoUnpack] rmtBufferNum[%u] exceeds limit[%u]", rmtBufferNum, MAX_BUFFER_NUM),
+    CHK_PRT_RET(rmtBufferNum == 0 || rmtBufferNum > MAX_BUFFER_NUM,
+        HCCL_ERROR("[CcuTransport][BufferInfoUnpack] rmtBufferNum[%u] is zero or exceeds limit[%u]",
+            rmtBufferNum, MAX_BUFFER_NUM),
         HCCL_E_PARA);
     HCCL_INFO("[CcuTransport][BufferInfoUnpack] rmtBufferNum[%u]", rmtBufferNum);
     for (u32 pos = 0; pos < rmtBufferNum; ++pos) {
