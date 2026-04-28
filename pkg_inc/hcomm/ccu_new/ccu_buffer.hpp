@@ -5,20 +5,23 @@
 #include <type_traits>
 #include "ccu_types.h"
 
-class CcuBuffer final {
-public:
-    explicit CcuBuffer() {}
+namespace ccu {
 
-    CcuBuffer(const CcuBuffer& other) {
+class Buffer final {
+public:
+    explicit Buffer() {}
+
+    Buffer(const Buffer& other) {
         this->handle = other.handle;
     }
 
-    void operator=(CcuBuffer&& other) {
+    void operator=(Buffer&& other) {
         this->handle = other.handle;
     }
 
     CcuBufferHandle handle{0};
 };
 
+} // namespace ccu
 
 #endif // CCU_BUFFER_HPP

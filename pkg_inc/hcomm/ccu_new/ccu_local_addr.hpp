@@ -6,26 +6,29 @@
 #include "ccu_variable.hpp"
 #include "ccu_address.hpp"
 
-class CcuLocalAddr final {
+namespace ccu {
+
+class LocalAddr final {
 public:
-    explicit CcuLocalAddr() {}
+    explicit LocalAddr() {}
 
-    CcuLocalAddr(const CcuLocalAddr& other) {
+    LocalAddr(const LocalAddr& other) {
         this->handle = other.handle;
         this->addr.handle = other.addr.handle;
         this->token.handle = other.token.handle;
     }
 
-    void operator=(CcuLocalAddr&& other) {
+    void operator=(LocalAddr&& other) {
         this->handle = other.handle;
         this->addr.handle = other.addr.handle;
         this->token.handle = other.token.handle;
     }
 
-    CcuAddress addr;
-    CcuVariable token;
+    Address addr;
+    Variable token;
     CcuLocalAddrHandle handle{0};
 };
 
+} // namespace ccu
 
 #endif // CCU_LOCAL_ADDR_HPP

@@ -158,7 +158,8 @@ HcclResult CcuKernel::SelectDie()
 CcuResult CcuKernel::GeneTaskParams(uint64_t *taskArgs, uint32_t argsNum,
     std::vector<CcuTaskParam> &taskParams)
 {
-    if (argsNum != loadArgIndex_) {
+    const uint32_t expectedMask = (argsNum >= 32) ? 0xFFFFFFFFu : ((argsNum == 0) ? 0u : ((1u << argsNum) - 1));
+    if (loadArgUsedMask_ != expectedMask) { 
         HCCL_ERROR("[CcuKernel][%s] failed, args number does not match the Load instruction, "
             "argsNum = %d, loadArgInstr= %u", __func__, argsNum, loadArgIndex_);
         return CcuResult::CCU_E_INTERNAL;
@@ -499,13 +500,21 @@ CcuResult CcuKernel::WriteVariableWithNotify(const ChannelHandle channel, CcuVar
 
 
 //加载类 相关接口
-CcuResult  CcuKernel::LoadArg(CcuVariableHandle varHandle)
+CcuResult  CcuKernel::LoadArg(CcuVariableHandle varHandle, uint32_t argId)
 {
+    if (argId >= CCU_SQE_ARGS_LEN) {
+        HCCL_ERROR("[CcuKernel][LoadArg] argId %u out of range [0, %u)",
+            argId, CCU_SQE_ARGS_LEN);
+        return HCCL_TO_CCU_RET(HCCL_E_PARA);
+    }
+    const uint32_t bit = (1u << argId);
+
+
     CcuRep::Variable *var{nullptr};
     CCU_CHK_RET(GetVariableByHandle(varHandle,&var));
     auto loadArgRep = std::make_shared<CcuRep::CcuRepLoadArg>(*var, loadArgIndex_ % CCU_SQE_ARGS_LEN);
     Append(loadArgRep);
-    loadArgIndex_++;
+    loadArgUsedMask_ |= bit;
     return CcuResult::CCU_SUCCESS;
 }
 
@@ -1626,7 +1635,7 @@ CcuResult CcuKernel::LoopGroupAddLoopFromVar(CcuLoopGroup group,
     grpDesc.addedLoops.insert(loop);
     grpDesc.loopCount++;
 
-    CcuRep::CcuRepLoopGroupBundle::LoopEntry entry{};
+    CcuRep::CcuRepLoopGroupBundle::LoopEntry entry;
     entry.executorId = static_cast<uint16_t>(pool[loopIdx].Id());
     entry.repLoopBlock = loopDesc.repLoopBlock;
     entry.loopParamVar = CcuRep::Variable(*loopParamVarPtr);
