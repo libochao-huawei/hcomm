@@ -53,6 +53,7 @@ struct queueBuf {
     uint64_t base;
     uint32_t entryCnt;
     uint32_t entrySize;
+    uint64_t resv[4];
 };
 
 struct queueInfo {
@@ -60,6 +61,7 @@ struct queueInfo {
     struct iovec dbrPiVa;
     struct iovec dbrCiVa;
     struct iovec dbHwVa;
+    uint64_t resv[4];
 };
 
 struct NdaCqInfo {
