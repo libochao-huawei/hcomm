@@ -18,10 +18,10 @@
  * Macro wrappers for structured control flow
  * ---------------------------------------------------------------------------
  *
- * Condition expressions use C++ operator overloads on CcuVariable:
+ * Condition expressions use C++ operator overloads on ccu::Variable:
  *
- *   counter != limit   →  CcuCondExpr{&counter, limit, CCU_CONDITION_NE}
- *   var == expected     →  CcuCondExpr{&var, expected, CCU_CONDITION_EQ}
+ *   counter != limit   →  ccu::CondExpr{&counter, limit, CCU_CONDITION_NE}
+ *   var == expected     →  ccu::CondExpr{&var, expected, CCU_CONDITION_EQ}
  *
  * CCU_WHILE — while loop (condition-first):
  *
@@ -87,7 +87,7 @@
     CCU_WHILE_IMPL(expr, uid)
 
 #define CCU_WHILE_IMPL(expr, uid)                                           \
-    for (CcuCondExpr uid##_ce = (expr),                                     \
+    for (ccu::CondExpr uid##_ce = (expr),                                     \
              *uid##_p = &uid##_ce;                                          \
          uid##_p != nullptr;                                                \
          uid##_p = nullptr)                                                 \
@@ -128,7 +128,7 @@
     CCU_IF_IMPL(expr, uid)
 
 #define CCU_IF_IMPL(expr, uid)                                              \
-    for (CcuCondExpr uid##_ce = (expr),                                     \
+    for (ccu::CondExpr uid##_ce = (expr),                                     \
              *uid##_p = &uid##_ce;                                          \
          uid##_p != nullptr;                                                \
          uid##_p = nullptr)                                                 \
