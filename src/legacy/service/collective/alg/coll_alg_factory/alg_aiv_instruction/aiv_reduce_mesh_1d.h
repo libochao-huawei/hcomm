@@ -9,7 +9,7 @@
  */
 
 #include "aiv_communication_base_v2.h"
- 
+
 using namespace AscendC;
 
 template<typename T>
@@ -39,9 +39,9 @@ public:
         return dividend / divisor + ((dividend % divisor != 0) ? 1 : 0);
     }
 
-    __aicore__ inline void InitCoreInfo(uint32_t tag)
+    __aicore__ inline void InitCoreInfo(int32_t sliceId)
     {
-        curTag = static_cast<int32_t>(tag);
+        curTag = (static_cast<uint32_t>(tag_) << AIV_TAG_MOVE_RIGHT_BITS) | (sliceId & LOW_16_BITS);
         uint64_t dataCount = len_;
         coreNumPerRank = numBlocks_ / (rankSize_ + 1);
         coreNumFirstStage = coreNumPerRank * rankSize_;
@@ -194,8 +194,8 @@ public:
         dataSize_ = len_ * sizeof(T);
         // 小数据量情况下，缩减实际使用核数
         useBlocks_ = (dataSize_ + DATA_SLICE_NUM - 1) / DATA_SLICE_NUM;
-        if (useBlocks_ > numBlocks_) {
-            useBlocks_ = numBlocks_;
+        if (useBlocks_ > rankSize_) {
+            useBlocks_ = rankSize_;
         }
         if (block_idx >= useBlocks_) {
             return;
@@ -214,9 +214,9 @@ public:
         }
     }
 
-    __aicore__ inline void Process(int32_t tag)
+    __aicore__ inline void Process(int32_t sliceId)
     {
-        tag_ = tag;
+        curTag_ = (static_cast<uint32_t>(tag_) << AIV_TAG_MOVE_RIGHT_BITS) | (sliceId & LOW_16_BITS);
         if (block_idx >= useBlocks_) {
             return;
         }
@@ -233,7 +233,7 @@ public:
             } else {
                 flagOffset = (rank_ - 1) * useBlocks_ + block_idx;
             }
-            Record(root_, flagOffset, tag_);
+            Record(root_, flagOffset, curTag_);
         } else {
             // 本地拷贝：将自身core负责的Input数据搬运至本地Output上
             if (sliceLen_ > 0) {
@@ -247,7 +247,7 @@ public:
                 }
                 // 读同步：阻塞读取本地数据同步标志位，当前aivTag等于读取值时，继续步骤
                 uint64_t flagOffset = sliceIdx * useBlocks_ + block_idx;
-                WaitFlag(rank_, flagOffset, tag_);
+                WaitFlag(rank_, flagOffset, curTag_);
                 // 本地规约：将本地ScratchBuffer上的数据Reduce到本地OutputBuffer上
                 if (sliceLen_ > 0) {
                     srcOffset_ = reinterpret_cast<uint64_t>(GM_IN[root_]) + sliceIdx * dataSize_ + offsetSize_;
@@ -258,7 +258,7 @@ public:
             }
         }
     }
- 
+
     __aicore__ inline void SplitData(uint64_t dataLen, uint64_t& sliceLen, uint64_t& offsetLen)
     {
         uint64_t sliceLenMin = dataLen / useBlocks_;
@@ -272,6 +272,7 @@ public:
             offsetLen = remainLen * (sliceLenMin + 1) + (block_idx - remainLen) * sliceLenMin;
         }
     }
+
     uint64_t useBlocks_;
     uint64_t dataSize_;
     uint64_t sliceLen_;
@@ -280,34 +281,22 @@ public:
     uint64_t srcOffset_;
     uint64_t dstOffset_;
 };
- 
+
 template<typename T>
 __aicore__ inline void AivReduceV2Mesh1D(EXTERN_KERNEL_ARGS_DEF_V2)
 {
     constexpr static uint64_t TWO_SHOT_SLICE_NUM = 256 * 1024;
     (void)extraArgs;
-    if(len * sizeof(T) < TWO_SHOT_SLICE_NUM){
-        AivReduceMesh1D<T> op;
-        op.Init(KERNEL_CLASS_INIT, true);
-        op.InitCoreInfo();
-        SyncAll<true>();
-        if (block_idx == 0 && tag >> AIV_TAG_MOVE_RIGHT_BITS == 1 && (tag & LOW_16_BITS) == 1) {
-            op.BarrierForFirstOP();
-        }
-        SyncAll<true>();
-        op.Process(tag);
-        op.BarrierAll();
-    } else {
-        AivReduceMesh1DTwoShot<T> op;
-        op.Init(KERNEL_CLASS_INIT, true);
-        SyncAll<true>(); 
-        if (block_idx == 0 && tag >> AIV_TAG_MOVE_RIGHT_BITS == 1 && (tag & LOW_16_BITS) == 1) {
-            op.BarrierForFirstOP();
-        }
-        SyncAll<true>();
-        op.InitCoreInfo(tag);
-        op.ReduceScatter();
-        op.GatherToRoot();    
-        op.BarrierAll();    
+    AivReduceMesh1DTwoShot<T> op;
+    op.Init(KERNEL_CLASS_INIT, true);
+    SyncAll<true>();
+    if (op.IsFirstOP(sliceId)) {
+        op.BarrierForFirstOP();
     }
+    SyncAll<true>();
+    op.InitCoreInfo(sliceId);
+    op.ReduceScatter();
+    op.GatherToRoot();
+    SyncAll<true>();
+    op.BarrierAll();
 }
