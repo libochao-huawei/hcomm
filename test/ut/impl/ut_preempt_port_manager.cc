@@ -253,7 +253,7 @@ TEST_F(HcclPreemptPortManagerTest, ut_PreemptPortInRange_AllPortsOccupied_HostNi
         .stubs().will(returnValue(HCCL_E_UNAVAIL));
 
     HcclIpAddress remoteIp{"10.10.10.10"};
-    HcclIpAddress localIp{"10.10.10.01"};
+    HcclIpAddress localIp{"10.10.10.1"};
     std::vector<HcclSocketPortRange> portRange;
     HcclSocketPortRange range = {50000, 50000};
     portRange.push_back(range);
@@ -265,15 +265,10 @@ TEST_F(HcclPreemptPortManagerTest, ut_PreemptPortInRange_AllPortsOccupied_HostNi
 
     PreemptPortManager& ppm = PreemptPortManager::GetInstance(0);
     IpPortRef hostPortRef;
-    hostPortRef.insert({"10.10.10.02", std::make_pair(5000, Referenced())});
+    hostPortRef.insert({"10.10.10.2", std::make_pair(5000, Referenced())});
 
-    bool caught = false;
-    try {
-        ppm.PreemptPortInRange(hostPortRef, listenSocket, NICDeployment::NIC_DEPLOYMENT_HOST, portRange, usePort);
-    } catch (const Hccl::InvalidParamsException &e) {
-        caught = true;
-    }
-    EXPECT_TRUE(caught);
+    HcclResult ret = ppm.PreemptPortInRange(hostPortRef, listenSocket, NICDeployment::NIC_DEPLOYMENT_HOST, portRange, usePort);
+    EXPECT_EQ(ret, HCCL_E_UNAVAIL);
 }
 
 TEST_F(HcclPreemptPortManagerTest, ut_PreemptPortInRange_AllPortsOccupied_NpuNic)
@@ -282,7 +277,7 @@ TEST_F(HcclPreemptPortManagerTest, ut_PreemptPortInRange_AllPortsOccupied_NpuNic
         .stubs().will(returnValue(HCCL_E_UNAVAIL));
 
     HcclIpAddress remoteIp{"10.10.10.10"};
-    HcclIpAddress localIp{"10.10.10.01"};
+    HcclIpAddress localIp{"10.10.10.1"};
     std::vector<HcclSocketPortRange> portRange;
     HcclSocketPortRange range = {50000, 50000};
     portRange.push_back(range);
@@ -294,13 +289,8 @@ TEST_F(HcclPreemptPortManagerTest, ut_PreemptPortInRange_AllPortsOccupied_NpuNic
 
     PreemptPortManager& ppm = PreemptPortManager::GetInstance(0);
     IpPortRef hostPortRef;
-    hostPortRef.insert({"10.10.10.02", std::make_pair(5000, Referenced())});
+    hostPortRef.insert({"10.10.10.2", std::make_pair(5000, Referenced())});
 
-    bool caught = false;
-    try {
-        ppm.PreemptPortInRange(hostPortRef, listenSocket, NICDeployment::NIC_DEPLOYMENT_HOST, portRange, usePort);
-    } catch (const Hccl::InvalidParamsException &e) {
-        caught = true;
-    }
-    EXPECT_TRUE(caught);
+    HcclResult ret = ppm.PreemptPortInRange(hostPortRef, listenSocket, NICDeployment::NIC_DEPLOYMENT_HOST, portRange, usePort);
+    EXPECT_EQ(ret, HCCL_E_UNAVAIL);
 }
