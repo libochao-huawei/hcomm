@@ -30,6 +30,25 @@ TEST_F(TestHcommEngineCtx, Ut_TestHcommEngineCtxCreate_When_CPUEngine_Return_HCC
     (void)HcommEngineCtxDestroy(COMM_ENGINE_CPU, ctx);
 }
 
+TEST_F(TestHcommEngineCtx, Ut_TestHcommEngineCtxCreate_When_CPUAndMemsetFailed_Return_HCCL_E_INTERNAL)
+{
+    void* ctx = nullptr;
+    void* mallocAddr = malloc(size);
+    ASSERT_NE(mallocAddr, nullptr);
+
+    MOCKER(::malloc)
+        .stubs()
+        .will(returnValue(mallocAddr));
+
+    MOCKER(::memset_s)
+        .stubs()
+        .will(returnValue(1));
+
+    HcommResult ret = HcommEngineCtxCreate(COMM_ENGINE_CPU, 1024, &ctx);
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+    free(mallocAddr);
+}
+
 TEST_F(TestHcommEngineCtx, Ut_TestHcommEngineCtxCreate_When_SizeZero_Return_HCCL_Success)
 {
     void* ctx = nullptr;
