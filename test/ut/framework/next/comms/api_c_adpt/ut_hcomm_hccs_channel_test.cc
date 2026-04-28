@@ -10,6 +10,34 @@
 
 #include "../../ut_hcomm_base.h"
 
+using namespace hcomm;
+namespace {
+HcclResult StubHcclSocketAcceptForEp(hccl::HcclSocket * /*self*/, const std::string & /*tag*/,
+std::shared_ptr<hccl::HcclSocket> &socket, u32 /*acceptTimeOut*/)
+{
+    socket = std::make_shared<hccl::HcclSocket>(static_cast<HcclNetDevCtx>(nullptr), 16666);
+    return HCCL_SUCCESS;
+}
+
+HcclResult StubHcclNetDevOpenForEp(const HcclNetDevInfos *info, HcclNetDev *netDev)
+{
+    static hccl::NetDevContext kNetDevCtx;
+    static bool initialized = false;
+    if (!initialized) {
+        hccl::HcclIpAddress localIp;
+        (void)localIp.SetReadableAddress("127.0.0.1");
+        kNetDevCtx.Init(NicType::DEVICE_NIC_TYPE, 0, 0, localIp);
+        initialized = true;
+    }
+    *netDev = reinterpret_cast<HcclNetDev>(&kNetDevCtx);
+    return HCCL_SUCCESS;
+}
+
+HcclResult StubHcclNetDevCloseForEp(HcclNetDev /*netDev*/)
+{
+    return HCCL_SUCCESS;
+}
+
 class TestHcommHccsChannel : public TestHcommCAdptBase {
 public:
     void SetUp() override {
@@ -112,4 +140,5 @@ TEST_F(TestHcommHccsChannel, Ut_TestHcommChannelCreate_When_DescsNullptr_Return_
     EXPECT_EQ(ret, HCCL_SUCCESS);
     ret = HcommMemUnreg(endpointHandle2, memHandle2);
     EXPECT_EQ(ret, HCCL_SUCCESS);
+}
 }

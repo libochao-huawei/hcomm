@@ -11,6 +11,43 @@
 #include "endpoint.h"
 #include "adapter_rts.h"
 
+using namespace hcomm;
+
+namespace {
+ HcclResult StubHrtGetDeviceWriteZeroEp(s32 *deviceLogicId)
+{
+    if (deviceLogicId != nullptr) {
+        *deviceLogicId = 0;
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult StubHcclSocketAcceptForEp(hccl::HcclSocket * /*self*/, const std::string & /*tag*/,
+    std::shared_ptr<hccl::HcclSocket> &socket, u32 /*acceptTimeOut*/)
+{
+    socket = std::make_shared<hccl::HcclSocket>(static_cast<HcclNetDevCtx>(nullptr), 16666);
+    return HCCL_SUCCESS;
+}
+
+HcclResult StubHcclNetDevOpenForEp(const HcclNetDevInfos *info, HcclNetDev *netDev)
+{
+    static hccl::NetDevContext kNetDevCtx;
+    static bool initialized = false;
+    if (!initialized) {
+        hccl::HcclIpAddress localIp;
+        (void)localIp.SetReadableAddress("127.0.0.1");
+        kNetDevCtx.Init(NicType::DEVICE_NIC_TYPE, 0, 0, localIp);
+        initialized = true;
+    }
+    *netDev = reinterpret_cast<HcclNetDev>(&kNetDevCtx);
+    return HCCL_SUCCESS;
+}
+
+HcclResult StubHcclNetDevCloseForEp(HcclNetDev /*netDev*/)
+{
+    return HCCL_SUCCESS;
+}
+
 class AiCpuTsHccsEndpointTest : public testing::Test {
 protected:
     static void SetUpTestCase()
@@ -25,6 +62,12 @@ protected:
 
     virtual void SetUp()
     {
+        MOCKER(hrtGetDevice).stubs().with(any()).will(invoke(StubHrtGetDeviceWriteZeroEp));
+        MOCKER(hrtGetDevicePhyIdByIndex).stubs().with(any(), outBound(0U)).will(returnValue(HCCL_SUCCESS));
+        MOCKER(HcclNetDevOpen).stubs().will(invoke(StubHcclNetDevOpenForEp));
+        MOCKER(HcclNetDevClose).stubs().will(invoke(StubHcclNetDevCloseForEp));
+        MOCKER_CPP(&hccl::HcclSocket::Accept).stubs().will(invoke(StubHcclSocketAcceptForEp));
+
         std::cout << "A Test case in AiCpuTsHccsEndpointTest SetUP" << std::endl;
     }
 
@@ -284,3 +327,4 @@ TEST_F(AiCpuTsHccsEndpointTest, Ut_When_export_import_Expect_Return_SUCCESS)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
+}
