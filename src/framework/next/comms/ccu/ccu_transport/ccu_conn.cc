@@ -24,7 +24,6 @@
 #include "rdma_handle_manager.h"
 #include "orion_adapter_rts.h"
 #include "orion_adapter_hccp.h"
-#include "adapter_rts_common.h"
 
 namespace hcomm {
 
@@ -515,9 +514,8 @@ HcclResult CcuConnection::Describe(std::string &dfxMsg)
     if (tpProtocol_ == TpProtocol::RTP) {
         struct TpAttr tpAttr {0};
         uint32_t attrBitmap = 1 << 13; // 13对应dataUdpSrcport
-        u32 devicePhyId = 0;
-        CHK_RET(hrtGetDevicePhyIdByIndex(devLogicId_, &devicePhyId));
         try {
+            u32 devicePhyId = Hccl::HrtGetDevicePhyIdByIndex(devLogicId_);
             HcclResult res = Hccl::HrtRaGetTpAttrAsync(devicePhyId, ctxHandle_, tpInfo_.tpHandle, attrBitmap, tpAttr, reqHandles_[0]);
             if (res != HcclResult::HCCL_SUCCESS) {
                 if (res == HcclResult::HCCL_E_NOT_SUPPORT)
