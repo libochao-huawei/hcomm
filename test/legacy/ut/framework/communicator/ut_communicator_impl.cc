@@ -3453,6 +3453,30 @@ TEST_F(CommunicatorImplTest, Ut_GetInfo_When_endpointDecsNull_Return_Hccl_E_PTR)
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
+void MockForInitAndLaunchDpuKernel()
+{
+    MOCKER(aclrtGetCurrentContext).stubs().with(any()).will(returnValue(ACL_SUCCESS));
+    MOCKER(aclrtSetCurrentContext).stubs().with(any()).will(returnValue(ACL_SUCCESS));
+    MOCKER(aclrtDestroyStreamForce).stubs().with(any()).will(returnValue(ACL_SUCCESS));
+    MOCKER(HrtSetXpuDevice).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER(HrtResetXpuDevice).stubs().with(any()).will(returnValue(HCCL_E_RUNTIME));
+    MOCKER_CPP(&CommunicatorImpl::WaitDpuKernelThreadTerminate).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CommunicatorImpl::CreateWorkspaceBuf).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CommunicatorImpl::PrepareDpuKernelResource).stubs().will(returnValue(HCCL_SUCCESS));
+}
+
+TEST_F(CommunicatorImplTest, Ut_InitAndLaunchDpuKernel_When_LaunchFailed_Expect_Return_HCCL_E_INTERNAL)
+{
+    CommunicatorImpl comm;
+    comm.devPhyId = 0;
+    comm.isDpuKernelLaunched = true;
+    MockForInitAndLaunchDpuKernel();
+    MOCKER_CPP(&CommunicatorImpl::LaunchDpuKernel).stubs().will(returnValue(HCCL_E_INTERNAL));
+    HcclResult ret = comm.InitAndLaunchDpuKernel();
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+    GlobalMockObject::verify();
+}
+
 TEST_F(CommunicatorImplTest, Ut_When_DestroyDpuKernelResource_Expect_DpuStream_Uninit_Failed)
 {
     CommunicatorImpl comm;
@@ -3471,14 +3495,7 @@ TEST_F(CommunicatorImplTest, Ut_When_DestroyDpuKernelResource_Expect_ResetDpuDev
     CommunicatorImpl comm;
     comm.devPhyId = 0;
     comm.isDpuKernelLaunched = true;
-    MOCKER(aclrtGetCurrentContext).stubs().with(any()).will(returnValue(ACL_SUCCESS));
-    MOCKER(aclrtSetCurrentContext).stubs().with(any()).will(returnValue(ACL_SUCCESS));
-    MOCKER(aclrtDestroyStreamForce).stubs().with(any()).will(returnValue(ACL_SUCCESS));
-    MOCKER(HrtSetXpuDevice).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER(HrtResetXpuDevice).stubs().with(any()).will(returnValue(HCCL_E_RUNTIME));
-    MOCKER_CPP(&CommunicatorImpl::WaitDpuKernelThreadTerminate).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&CommunicatorImpl::CreateWorkspaceBuf).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&CommunicatorImpl::PrepareDpuKernelResource).stubs().will(returnValue(HCCL_SUCCESS));
+    MockForInitAndLaunchDpuKernel();
     MOCKER_CPP(&CommunicatorImpl::LaunchDpuKernel).stubs().will(returnValue(HCCL_SUCCESS));
     HcclResult ret = comm.InitAndLaunchDpuKernel();
     EXPECT_EQ(ret, HCCL_SUCCESS);
