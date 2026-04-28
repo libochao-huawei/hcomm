@@ -9,15 +9,67 @@
  */
 
 #include "../../ut_hcomm_base.h"
+#include "hccl_net_dev.h"
+#include "hccl_network.h"
+#include "hccl_socket.h"
+#include "network_manager_pub.h"
+#include "reged_mems/reged_mem_mgr.h"
+
+using namespace hcomm;
+namespace {
+HcclResult StubHrtGetDeviceWriteZeroEp(s32 *deviceLogicId)
+{
+    if (deviceLogicId != nullptr) {
+        *deviceLogicId = 0;
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult StubHcclSocketAcceptForEp(hccl::HcclSocket * /*self*/, const std::string & /*tag*/,
+    std::shared_ptr<hccl::HcclSocket> &socket, u32 /*acceptTimeOut*/)
+{
+    socket = std::make_shared<hccl::HcclSocket>(static_cast<HcclNetDevCtx>(nullptr), 16666);
+    return HCCL_SUCCESS;
+}
+
+HcclResult StubHcclNetDevOpenForEp(const HcclNetDevInfos *info, HcclNetDev *netDev)
+{
+    static hccl::NetDevContext kNetDevCtx;
+    static bool initialized = false;
+    if (!initialized) {
+        hccl::HcclIpAddress localIp;
+        (void)localIp.SetReadableAddress("127.0.0.1");
+        kNetDevCtx.Init(NicType::DEVICE_NIC_TYPE, 0, 0, localIp);
+        initialized = true;
+    }
+    *netDev = reinterpret_cast<HcclNetDev>(&kNetDevCtx);
+    return HCCL_SUCCESS;
+}
+
+HcclResult StubHcclNetDevCloseForEp(HcclNetDev /*netDev*/)
+{
+    return HCCL_SUCCESS;
+}
 
 class TestHcommHccsChannel : public TestHcommCAdptBase {
 public:
     void SetUp() override {
         TestHcommCAdptBase::SetUp();
+        MOCKER(hrtGetDevice).stubs().with(any()).will(invoke(StubHrtGetDeviceWriteZeroEp));
+        MOCKER(hrtGetDevicePhyIdByIndex).stubs().with(any(), outBound(0U)).will(returnValue(HCCL_SUCCESS));
+        MOCKER(HcclNetDevOpen).stubs().will(invoke(StubHcclNetDevOpenForEp));
+        MOCKER(HcclNetDevClose).stubs().will(invoke(StubHcclNetDevCloseForEp));
+        MOCKER(&hccl::HcclSocket::Accept).stubs().will(invoke(StubHcclSocketAcceptForEp));
+ 
+        MOCKER_CPP(&MemNameRepository::SetIpcMem, HcclResult(MemNameRepository::*)(void *, u64, u8 *, u32)).stubs().will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&MemNameRepository::FindIpcMem).stubs().will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&MemNameRepository::OpenIpcMem).stubs().will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&MemNameRepository::CloseIpcMem).stubs().will(returnValue(HCCL_SUCCESS));
     }
     void TearDown() override {
         TestHcommCAdptBase::TearDown();
     }
+
     void SetEndpointDesc(uint32_t id, uint32_t devPhyId, EndpointDesc &endpointDesc)
     {
         endpointDesc.protocol = COMM_PROTOCOL_HCCS;
@@ -112,4 +164,5 @@ TEST_F(TestHcommHccsChannel, Ut_TestHcommChannelCreate_When_DescsNullptr_Return_
     EXPECT_EQ(ret, HCCL_SUCCESS);
     ret = HcommMemUnreg(endpointHandle2, memHandle2);
     EXPECT_EQ(ret, HCCL_SUCCESS);
+}
 }
