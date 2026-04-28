@@ -334,6 +334,8 @@ public:
 
     __aicore__ inline void WaitFlag(uint32_t targetRank, uint64_t flag_offset, int32_t curTag);
 
+    __aicore__ inline void WaitFlags(uint32_t targetRank, uint64_t flag_offset, uint32_t flagCount, int32_t curTag);
+
     __aicore__ inline void Record(uint32_t targetRank, uint64_t flag_offset, int32_t curTag);
 
     __aicore__ inline void Barrier(uint32_t step);
@@ -411,11 +413,38 @@ __aicore__ inline void AivCommBase::WaitFlag(uint32_t targetRank, uint64_t flag_
 {
     d2hGlobal.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t *>(GM_OUT[targetRank] + flag_offset * UB_ALIGN_SIZE));
     while (true) {
-        AscendC::Nop<1000>();
         DataCopyGM2UB(localTagTensor, d2hGlobal, UB_ALIGN_SIZE / sizeof(int32_t));
         pipe_barrier(PIPE_ALL);
         if (localTagTensor.GetValue(0) == curTag) {
             break;
+        }
+    }
+}
+
+__aicore__ inline void AivCommBase::WaitFlags(uint32_t targetRank, uint64_t flag_offset, uint32_t flagCount, int32_t curTag)
+{
+    if (flagCount == 0) {
+        return;
+    }
+
+    GlobalTensor<int32_t> flagsGlobal;
+    flagsGlobal.SetGlobalBuffer(
+        reinterpret_cast<__gm__ int32_t *>(GM_OUT[targetRank] + flag_offset * UB_ALIGN_SIZE),
+        flagCount * (UB_ALIGN_SIZE / sizeof(int32_t)));
+    LocalTensor<int32_t> flagsLocal = localFlagBuf.GetWithOffset<int32_t>(
+        flagCount * (UB_ALIGN_SIZE / sizeof(int32_t)), FLAG_ONE_OFFSET);
+
+    bool allReady = false;
+    while (!allReady) {
+        DataCopyGM2UB(flagsLocal, flagsGlobal, flagCount * (UB_ALIGN_SIZE / sizeof(int32_t)));
+        pipe_barrier(PIPE_ALL);
+
+        allReady = true;
+        for (uint32_t idx = 0; idx < flagCount; ++idx) {
+            if (flagsLocal.GetValue(idx * (UB_ALIGN_SIZE / sizeof(int32_t))) != curTag) {
+                allReady = false;
+                break;
+            }
         }
     }
 }
