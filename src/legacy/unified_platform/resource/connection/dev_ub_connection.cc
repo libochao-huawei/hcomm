@@ -814,9 +814,23 @@ HcclResult DevUbConnection::Describe(std::string &dfxMsg)
     uint16_t udpSport = 0xFFFF; // 无法获取实际的udpSport，使用0xFFFF表示未知
     if (tpProtocol == TpProtocol::TP) {
         struct TpAttr tpAttr {0};
-        uint32_t attrBitmap = 8192;
-        u32 devicePhyId = HrtGetDevicePhyIdByIndex(devLogicId);
-        CHK_RET(HrtRaGetTpAttrAsync(devicePhyId, rdmaHandle, tpInfo.tpHandle, attrBitmap, tpAttr, reqHandle));
+        uint32_t attrBitmap = 1 << 13; // 13对应dataUdpSrcport
+        u32 devicePhyId = 0;
+        CHK_RET(hrtGetDevicePhyIdByIndex(devLogicId, &devicePhyId));
+        try {
+            HcclResult res = HrtRaGetTpAttrAsync(devicePhyId, rdmaHandle, tpInfo.tpHandle, attrBitmap, tpAttr, reqHandle);
+            if (res != HcclResult::HCCL_SUCCESS) {
+                if (res == HcclResult::HCCL_E_NOT_SUPPORT)
+                {
+                    HCCL_ERROR("[DevUbConnection::%s] this package does not support RaCtxGetTpAttr for device,"
+                        " please change new package", __func__);
+                }
+                return res;
+            }
+        } catch (NetworkApiException &e) {
+            HCCL_ERROR("[DevUbConnection::%s] %s", __func__, e.what());
+            return HCCL_E_NETWORK;
+        }
         udpSport = tpAttr.dataUdpSrcport;
     }
     udpSport = udpSport & 0xFF;

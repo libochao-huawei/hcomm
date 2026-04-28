@@ -513,8 +513,25 @@ HcclResult CcuConnection::Describe(std::string &dfxMsg)
     uint16_t udpSport = 0xFFFF; // 无法获取实际的udpSport，使用0xFFFF表示未知
     if (tpProtocol_ == TpProtocol::RTP) {
         struct TpAttr tpAttr {0};
-        uint32_t attrBitmap = 8192;
-        u32 devicePhyId = Hccl::HrtGetDevicePhyIdByIndex(devLogicId_);
+        uint32_t attrBitmap = 1 << 13; // 13对应dataUdpSrcport
+        u32 devicePhyId = 0;
+        CHK_RET(hrtGetDevicePhyIdByIndex(devLogicId_, &devicePhyId));
+        try {
+            HcclResult res = Hccl::HrtRaGetTpAttrAsync(devicePhyId, ctxHandle_, tpInfo_.tpHandle, attrBitmap, tpAttr, reqHandles_[0]);
+            if (res != HcclResult::HCCL_SUCCESS) {
+                if (res == HcclResult::HCCL_E_NOT_SUPPORT)
+                {
+                    HCCL_ERROR("[CcuConnection::%s] this package does not support RaCtxGetTpAttr for device,"
+                        " please change new package", __func__);
+                }
+                return res;
+            }
+        } catch (NetworkApiException &e) {
+            HCCL_ERROR("[CcuConnection::%s] %s", __func__, e.what());
+            return HCCL_E_NETWORK;
+        }
+        udpSport = tpAttr.dataUdpSrcport;
+
         CHK_RET(Hccl::HrtRaGetTpAttrAsync(devicePhyId, ctxHandle_, tpInfo_.tpHandle, attrBitmap, tpAttr, reqHandles_[0]));
         udpSport = tpAttr.dataUdpSrcport;
     }
@@ -527,8 +544,8 @@ HcclResult CcuConnection::Describe(std::string &dfxMsg)
     }
 
     Hccl::IpAddress locAddr{}, rmtAddr{};
-    (void)CommAddrToIpAddress(locAddr_, locAddr);
-    (void)CommAddrToIpAddress(rmtAddr_, rmtAddr);
+    CHK_RET((void)CommAddrToIpAddress(locAddr_, locAddr));
+    CHK_RET((void)CommAddrToIpAddress(rmtAddr_, rmtAddr));
     Hccl::Eid locEid = locAddr.GetReverseEid();
     Hccl::Eid rmtEid = rmtAddr.GetReverseEid();
 
