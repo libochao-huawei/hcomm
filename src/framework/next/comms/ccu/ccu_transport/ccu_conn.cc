@@ -531,9 +531,6 @@ HcclResult CcuConnection::Describe(std::string &dfxMsg)
             return HCCL_E_NETWORK;
         }
         udpSport = tpAttr.dataUdpSrcport;
-
-        CHK_RET(Hccl::HrtRaGetTpAttrAsync(devicePhyId, ctxHandle_, tpInfo_.tpHandle, attrBitmap, tpAttr, reqHandles_[0]));
-        udpSport = tpAttr.dataUdpSrcport;
     }
     udpSport = udpSport & 0xFF;
 
