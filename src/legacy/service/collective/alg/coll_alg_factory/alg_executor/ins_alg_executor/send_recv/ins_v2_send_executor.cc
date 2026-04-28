@@ -180,33 +180,41 @@ HcclResult InsV2SendExecutor::ExecAiv(const CollAlgOperator &op,
     std::vector<LinkData> allLinks;
     allLinks.emplace_back(sendLinkData);
 
-    sliceId_++; // 自动增长sliceId，传入aivTag
+    u64 loopTimes = op.dataCount / maxScratchDataCount + static_cast<u64>(op.dataCount % maxScratchDataCount != 0);
+    u64 processedDataCount = 0;
+    for (u64 loop = 0; loop < loopTimes; loop++) {
+        sliceId_++; // 自动增长sliceId，传入aivTag
+        u64 currDataCount = (loop == loopTimes - 1) ? op.dataCount - processedDataCount : maxScratchDataCount;
+        HCCL_INFO("[InsV2SendExecutor][ExecAiv] myRank[%u], loop[%llu] sliceId_[%llu] currDataCount[%llu], processedDataCount[%llu]",
+            myRank_, loop, sliceId_, currDataCount, processedDataCount);
 
-    AivOpArgs aivSendArgs;
-    aivSendArgs.cmdType = HcclCMDType::HCCL_CMD_SEND;
-    aivSendArgs.input = 0; // 里面，这里会和起始地址累加起来作为input，device侧怎么拿到地址的呢？
-    aivSendArgs.output = 0;
-    aivSendArgs.rank = u32(myRank_);
-    aivSendArgs.sendRecvRemoteRank = op.sendRecvRemoteRank;
-    aivSendArgs.rankSize = rankSize_;
-    aivSendArgs.count = op.dataCount; // 需要传输的数据量
-    aivSendArgs.dataType = op.dataType;
-    aivSendArgs.aivTag = sliceId_;  // 传入aivTag，Lauch时重新组装为aivTag
-    aivSendArgs.isOpBase = (opMode_ == OpMode::OPBASE);
-    aivSendArgs.xRankSize = rankSize_;
-    aivSendArgs.yRankSize = 0;
-    aivSendArgs.zRankSize = 0;
-    CHK_RET(CalNumBlocks(aivSendArgs.numBlocks, 0, op.numBlocksLimit));
+        AivOpArgs aivSendArgs;
+        aivSendArgs.cmdType = HcclCMDType::HCCL_CMD_SEND;
+        aivSendArgs.input = processedDataCount * dataElemSize;
+        aivSendArgs.output = 0;
+        aivSendArgs.rank = u32(myRank_);
+        aivSendArgs.sendRecvRemoteRank = op.sendRecvRemoteRank;
+        aivSendArgs.rankSize = rankSize_;
+        aivSendArgs.count = currDataCount; // 需要传输的数据量
+        aivSendArgs.dataType = op.dataType;
+        aivSendArgs.aivTag = sliceId_;  // 传入aivTag，Lauch时重新组装为aivTag
+        aivSendArgs.isOpBase = (opMode_ == OpMode::OPBASE);
+        aivSendArgs.xRankSize = rankSize_;
+        aivSendArgs.yRankSize = 0;
+        aivSendArgs.zRankSize = 0;
+        CHK_RET(CalNumBlocks(aivSendArgs.numBlocks, 0, op.numBlocksLimit));
 
-    aivSendArgs.inputSliceStride = maxScratchDataCount; // 这里用来保存scratch的大小
-    aivSendArgs.outputSliceStride = 0;
-    aivSendArgs.repeatNum = 1; // 不重复
-    aivSendArgs.inputRepeatStride = 0;
-    aivSendArgs.outputRepeatStride = 0;
+        aivSendArgs.inputSliceStride = 0;
+        aivSendArgs.outputSliceStride = 0;
+        aivSendArgs.repeatNum = 1; // 不重复
+        aivSendArgs.inputRepeatStride = 0;
+        aivSendArgs.outputRepeatStride = 0;
 
-    std::unique_ptr<Instruction> aivInsSendMesh1D = std::make_unique<AivInstruction>(allLinks, aivSendArgs);
+        std::unique_ptr<Instruction> aivInsSendMesh1D = std::make_unique<AivInstruction>(allLinks, aivSendArgs);
 
-    insQue->Append(std::move(aivInsSendMesh1D));
+        insQue->Append(std::move(aivInsSendMesh1D));
+        processedDataCount += currDataCount;
+    }
 
     HCCL_INFO("[InsV2SendExecutor][ExecAiv] end: rank[%d]", myRank_);
     return HcclResult::HCCL_SUCCESS;

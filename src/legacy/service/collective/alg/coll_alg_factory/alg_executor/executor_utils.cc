@@ -209,7 +209,21 @@ HcclResult SetPathNumMapByRankGraphMultiLevel(const RankGraph *rankGraph, std::v
                 continue;
             }
             std::vector<NetInstance::Path> tmpPaths = rankGraph->GetPaths(levelNumIdx, myRank_, rankIdx);
-            rank2PathNumMap[levelNumIdx][rankIdx] = tmpPaths.size();
+            auto pathNum = 0;
+            for (const auto &path : tmpPaths) {
+                bool isWithPice = false;
+                for (const auto &link : path.links) {
+                    if (*link.GetLinkProtocols().begin() == LinkProtocol::PCIE) {
+                        isWithPice = true;
+                        break;
+                    }
+                }
+                if (!isWithPice) {
+                    pathNum++;
+                }
+            }
+            rank2PathNumMap[levelNumIdx][rankIdx] = pathNum;
+            HCCL_INFO("[%s]levelNumIdx[%u] rankIdx[%u] pathNum[%u]", __func__, levelNumIdx, rankIdx, pathNum);
         }
     }
     if(rank2PathNumMap.size() == 0){
@@ -237,7 +251,21 @@ HcclResult SetPathNumMapByRankGraphMultiLevel(const RankGraph *rankGraph, std::v
                 levelFlag = 0;
                 break;
             }
-            rank2PathNumMap[rankIdx] = tmpPaths.size();
+            auto pathNum = 0;
+            for (const auto &path : tmpPaths) {
+                bool isWithPice = false;
+                for (const auto &link : path.links) {
+                    if (*link.GetLinkProtocols().begin() == LinkProtocol::PCIE) {
+                        isWithPice = true;
+                        break;
+                    }
+                }
+                if (!isWithPice) {
+                    pathNum++;
+                }
+            }
+            rank2PathNumMap[rankIdx] = pathNum;
+            HCCL_INFO("[%s]rankIdx[%u] pathNum[%u]", __func__, rankIdx, pathNum);
         }
         if(levelFlag){
             break;
@@ -256,9 +284,16 @@ HcclResult SetPathNumMapByLinkMgrMultiLevel(ConnectedLinkMgr *linkMgr, std::vect
         rank2PathNumMap.emplace_back();
         for (auto rankIdx : virtRanks_[levelNumIdx]) {
             auto links = linkMgr->GetLinks(levelNumIdx, rankIdx);
-            if(links.size()!=0){
-                rank2PathNumMap[levelNumIdx][rankIdx]=links.size();
+            auto linkNum = 0;
+            for (const auto& link : links) {
+                if (link.GetLinkProtocol() != LinkProtocol::PCIE) {
+                    linkNum++;
+                }
             }
+            if (linkNum != 0){
+                rank2PathNumMap[levelNumIdx][rankIdx] = linkNum;
+            }
+            HCCL_INFO("[%s]levelNumIdx[%u] rankIdx[%u] linkNum[%u]", __func__, levelNumIdx, rankIdx, linkNum);
         }
     }
     if(rank2PathNumMap.size() == 0){
@@ -272,9 +307,16 @@ HcclResult SetPathNumMapByLinkMgrMultiLevel(ConnectedLinkMgr *linkMgr, std::vect
     RankId myRank_, map<u32, u32>&rank2PathNumMap){
     for(u32 rankIdx:virtRanks_){
         auto links = linkMgr->GetLinks(rankIdx);
-        if(links.size()!=0){
-            rank2PathNumMap[rankIdx]=links.size();
+        auto linkNum = 0;
+        for (const auto& link : links) {
+            if (link.GetLinkProtocol() != LinkProtocol::PCIE) {
+                linkNum++;
+            }
         }
+        if (linkNum != 0){
+            rank2PathNumMap[rankIdx] = linkNum;
+        }
+        HCCL_INFO("[%s]rankIdx[%u] linkNum[%u]", __func__, rankIdx, linkNum);
     }
     if(rank2PathNumMap.size() == 0){
         HCCL_ERROR("No path to all remoteRank");
