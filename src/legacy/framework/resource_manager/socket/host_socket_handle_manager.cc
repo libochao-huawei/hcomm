@@ -37,7 +37,7 @@ SocketHandle HostSocketHandleManager::Create(DevId devicePhyId, const IpAddress 
     std::lock_guard<std::mutex> lock(socketHandleLock);
 
     if (isDestroy) {
-        HCCL_WARNING("[HostSocketHandleManager::%s] devicePhyId[%u] HostSocketHandleManager has been detroy", __func__, devicePhyId);
+        HCCL_WARNING("[HostSocketHandleManager::%s] devicePhyId[%u] HostSocketHandleManager has been destroy", __func__, devicePhyId);
         return nullptr;
     }
 
