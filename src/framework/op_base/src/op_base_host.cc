@@ -73,7 +73,7 @@ HcclResult HcclAllReduceInner(void *sendBuf, void *recvBuf, uint64_t count, Hccl
                          HcclReduceOp op, HcclComm comm, aclrtStream stream)
 {
     if (hcclGroupDepth > 0) {
-        struct hcclOpInfo info;
+        struct hcclOpInfo info = {};
         info.coll = HcclCMDType::HCCL_CMD_ALLREDUCE;
         info.sendbuff = static_cast<const void *>(sendBuf);
         info.recvbuff = static_cast<const void *>(recvBuf);

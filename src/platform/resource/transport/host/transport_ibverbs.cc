@@ -664,7 +664,7 @@ HcclResult TransportIbverbs::CreateSingleQp(s32 qpMode) // 根据socket个数创
         u32 udpSport = machinePara_.srcPorts.empty()? 0 : machinePara_.srcPorts[0];
         CHK_RET(CreateOneQp(qpMode, HCCL_QPS_PER_CONNECTION_DEFAULT, qpHandle, combineAiQpInfo_.aiQpInfo,
             machinePara_.isAicpuModeEn, udpSport));
-        CombineQpHandle tmpCombineQpHandle;
+        CombineQpHandle tmpCombineQpHandle = {};
         tmpCombineQpHandle.qpHandle = qpHandle;
         combineQpHandles_.push_back(tmpCombineQpHandle);
     }

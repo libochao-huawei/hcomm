@@ -133,8 +133,8 @@ HcclResult FlushManager::ExecuteRdmaRead(ibv_qp *loopbackqp0, ibv_cq *cq, ibv_se
 
     HCCL_DEBUG("[ExecuteRdmaRead] RDMA_READ posted successfully. Starting polling for completion...");
     ibv_wc wc{};
-    struct timespec start;
-    struct timespec current;
+    struct timespec start = {};
+    struct timespec current = {};
     clock_gettime(CLOCK_MONOTONIC, &start);
     int count = 1;
     while (true) {

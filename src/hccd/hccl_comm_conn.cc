@@ -139,7 +139,7 @@ HcclResult HcclCommConn::Listen(int backLog)
     }
 
     CHK_PTR_NULL(socketHandle_);
-    struct SocketListenInfoT serverInfo;
+    struct SocketListenInfoT serverInfo = {};
     serverInfo.socketHandle = socketHandle_;
     serverInfo.port = localAddr_.info.tcp.port;
     HCCL_RUN_INFO("HcclCommConn Listen localIpv4Addr[%s],  port[%u]",
@@ -157,7 +157,7 @@ HcclResult HcclCommConn::Listen(int backLog)
 
 HcclResult HcclCommConn::StopListen()
 {
-    struct SocketListenInfoT serverInfo;
+    struct SocketListenInfoT serverInfo = {};
     serverInfo.socketHandle = socketHandle_;
     serverInfo.port = localAddr_.info.tcp.port;
     CHK_RET(hrtRaSocketListenStop(&serverInfo, 1));
@@ -249,7 +249,7 @@ HcclResult HcclCommConn::Accept(HcclAddr &acceptAddr, HcclCommConn *&acceptConn)
 
     if (isNeedCreditAdd) {
         // 当建链成功、qp交换信息返回不可恢复错误、触发防吊死三种情况都需要进程accept credit add
-        struct SocketListenInfoT serverInfo;
+        struct SocketListenInfoT serverInfo = {};
         serverInfo.socketHandle = socketHandle_;
         serverInfo.port = localAddr_.info.tcp.port;
         CHK_RET(hrtRaSocketAcceptCreditAdd(&serverInfo, 1, creditNum));

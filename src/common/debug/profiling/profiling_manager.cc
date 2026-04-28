@@ -433,7 +433,7 @@ HcclResult ProfilingManager::CallMsprofReportMultiThreadInfo(const std::vector<u
         return HCCL_SUCCESS;
     }
 
-    struct MsprofMultiThread threadInfo;
+    struct MsprofMultiThread threadInfo = {};
     uint64_t timeStamp = hrtMsprofSysCycleTime();
     uint32_t totalSize = tidInfo.size();
     uint32_t currentSize;
@@ -457,7 +457,7 @@ HcclResult ProfilingManager::CallMsprofReportMultiThreadInfo(const std::vector<u
 
 HcclResult ProfilingManager::CallMsprofReportContextIdInfo(u32 ctxIdMax) const
 {
-    struct MsprofContextIdInfo ctxInfo;
+    struct MsprofContextIdInfo ctxInfo = {};
     ctxInfo.ctxIdNum = 2; // 因HCCL ctxId连续，固定上报2个：开始：0； 结束：ctxIdMax
     ctxInfo.ctxIds[0] = 0;
     ctxInfo.ctxIds[1] = ctxIdMax;
