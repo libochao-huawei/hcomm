@@ -134,6 +134,7 @@ HcclResult CreateAndInitTsRoceTransport(const HcommDeviceInfo &deviceInfo, Dispa
         (void)DestroyDispatcherCtx(dctxPtr, commId);
         return tr;
     }
+    link->EnableUseOneDoorbell();
     outLink = std::move(link);
     return HCCL_SUCCESS;
 }
