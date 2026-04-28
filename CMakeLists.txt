@@ -298,6 +298,7 @@ file(CREATE_LINK "../hcomm/hcomm_res_defs.h" "$ENV{DESTDIR}${CMAKE_INSTALL_PREFI
         pkg_inc/hcomm/ccu_new/ccu_data_api_impl.h
         pkg_inc/hcomm/ccu_new/ccu_data_utils.hpp
         pkg_inc/hcomm/ccu_new/ccu_event.hpp
+        pkg_inc/hcomm/ccu_new/ccu_if_label_stack.hpp
         pkg_inc/hcomm/ccu_new/ccu_local_addr.hpp
         pkg_inc/hcomm/ccu_new/ccu_loop_macro.h
         pkg_inc/hcomm/ccu_new/ccu_remote_addr.hpp

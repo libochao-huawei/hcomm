@@ -20,7 +20,7 @@ CcuResult CcuLoopAddDemoKernel(CcuKernelArg arg)
     using namespace ccu;
     auto *args = static_cast<CcuLoopAddKernelArg *>(arg);
 
-    CcuVariable r1{}, r2{}, r3{}, r4{}, r5{}, r6{}, numA{}, numB{};
+    ccu::Variable r1{}, r2{}, r3{}, r4{}, r5{}, r6{}, numA{}, numB{};
 
     CCU_CHK_RET(Alloc(&r1));
     CCU_CHK_RET(Alloc(&r2));
@@ -43,7 +43,7 @@ CcuResult CcuLoopAddDemoKernel(CcuKernelArg arg)
     // ========== Loop 1: param bindings ==========
     CcuLoop loop1;
     CCU_LOOP(loop1) {
-        CcuVariable formalA{}, formalB{}, formalResult{};
+        ccu::Variable formalA{}, formalB{}, formalResult{};
         CCU_CHK_RET(Alloc(&formalA));
         CCU_CHK_RET(Alloc(&formalB));
         CCU_CHK_RET(Alloc(&formalResult));
@@ -80,7 +80,7 @@ CcuResult CcuLoopAddDemoKernel(CcuKernelArg arg)
     // ========== Loop 3: with offsets and param bindings ==========
     CcuLoop loop3;
     CCU_LOOP(loop3) {
-        CcuVariable formalX{}, formalY{}, formalOut{};
+        ccu::Variable formalX{}, formalY{}, formalOut{};
         CCU_CHK_RET(Alloc(&formalX));
         CCU_CHK_RET(Alloc(&formalY));
         CCU_CHK_RET(Alloc(&formalOut));
@@ -106,8 +106,8 @@ CcuResult CcuLoopAddDemoKernel(CcuKernelArg arg)
     CcuLoopConfig cfg3 = {.addrOffset = 4096, .loopIterNum = 4};
     CCU_CHK_RET(AddLoop(group2, loop3, &cfg3));
 
-    // ========== LoopGroup 3 (var-based): CcuVariable-based group & loop ==========
-    CcuVariable varLoopParam{}, varParallel{}, varOffset{};
+    // ========== LoopGroup 3 (var-based): ccu::Variable-based group & loop ==========
+    ccu::Variable varLoopParam{}, varParallel{}, varOffset{};
     CCU_CHK_RET(Alloc(&varLoopParam));
     CCU_CHK_RET(Alloc(&varParallel));
     CCU_CHK_RET(Alloc(&varOffset));
