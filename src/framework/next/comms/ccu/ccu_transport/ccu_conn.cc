@@ -516,7 +516,14 @@ HcclResult CcuConnection::Describe(std::string &dfxMsg)
         uint32_t attrBitmap = 1 << 13; // 13对应dataUdpSrcport
         TRY_CATCH_PRINT_ERROR(
             u32 devicePhyId = Hccl::HrtGetDevicePhyIdByIndex(devLogicId_);
-            CHK_RET(Hccl::HrtRaGetTpAttrAsync(devicePhyId, ctxHandle_, tpInfo_.tpHandle, attrBitmap, tpAttr, reqHandles_[0]));
+            if (ret == HCCL_E_NOT_SUPPORT) {
+                HCCL_ERROR("[DevUbConnection::%s] failed, this package does not support RaGetTpAttrAsync for device,"
+                    " please change new package", __func__);
+                return ret;
+            } else if (ret != HCCL_SUCCESS) {
+                HCCL_ERROR("[DevUbConnection::%s] failed, call HrtRaGetTpAttrAsync fails, hccl result[%d]", __func__, ret);
+                return ret;
+            }
         )
         udpSport = tpAttr.dataUdpSrcport;
     }
