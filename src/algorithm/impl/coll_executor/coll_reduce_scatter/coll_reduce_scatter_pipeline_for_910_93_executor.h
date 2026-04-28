@@ -23,7 +23,6 @@ public:
 private:
     // 由 RunLoop 构建，传入 RunL0L1Phase、RunL2Phase
     struct PipelineLoopContext {
-        ReduceType reduceType;
         u64 countDataPerLoop;
         u64 countDataLastLoop;
         u64 sizeDataPerLoop;
@@ -42,7 +41,7 @@ private:
     HcclResult RunLoop(OpParam &param, AlgResourceResponse &algRes) override;
     // 由 RunLoop 调用
     HcclResult BuildPipelineLoopContext(OpParam &param, AlgResourceResponse &algRes,
-        const u32 unitSize, const ReduceType &reduceType, PipelineLoopContext &ctx);
+        const u32 unitSize, PipelineLoopContext &ctx);
     // 由 RunLoop 调用
     HcclResult WaitForRemainingL2Signals(const OpParam &param, u64 numBlockTotal,
         Stream &streamL0L1, const std::shared_ptr<LocalNotify> &notifyL2toL0L1);
@@ -66,9 +65,9 @@ private:
     HcclResult RunL2Phase(OpParam &param, const PipelineLoopContext &ctx,
         u64 blockIdx, Stream &streamL2);
 
-    HcclResult RunLevel0To1(OpParam &param, const ReduceType &reduceType, ExecMem &execMem, Stream &streamL0L1,
+    HcclResult RunLevel0To1(OpParam &param, ExecMem &execMem, Stream &streamL0L1,
         const u64 baseOffset);
-    HcclResult RunLevel2(OpParam &param, const ReduceType &reduceType, ExecMem &execMem, Stream &streamL2,
+    HcclResult RunLevel2(OpParam &param, ExecMem &execMem, Stream &streamL2,
         const u64 baseOffset);
     HcclResult KernelRunLevel0To1(const OpParam &param, ExecMem &execMem, Stream &streamL0L1,
         const u64 baseOffset);

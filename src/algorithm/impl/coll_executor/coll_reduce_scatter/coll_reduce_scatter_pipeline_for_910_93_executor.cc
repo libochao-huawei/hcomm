@@ -46,16 +46,13 @@ HcclResult CollReduceScatterPipelineFor91093Executor::RunLoop(
     }
 
     const u32 unitSize = SIZE_TABLE[param.DataDes.dataType];
-    const ReduceType reduceType = ((param.reduceType != HCCL_REDUCE_PROD) &&
-        (param.DataDes.dataType != HCCL_DATA_TYPE_INT64)) ?
-        ReduceType::INLINE_REDUCE : ReduceType::TBE_REDUCE;
 
     Stream streamL0L1 = param.stream;
     Stream streamL2 = algResResp_->slaveStreams.back();
     auto notifyL0L1toL2 = algResResp_->notifiesAux.back();
     auto notifyL2toL0L1 = algResResp_->notifiesMain.back();
     PipelineLoopContext ctx;
-    CHK_RET(BuildPipelineLoopContext(param, algRes, unitSize, reduceType, ctx));
+    CHK_RET(BuildPipelineLoopContext(param, algRes, unitSize, ctx));
 
     HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][RunLoop] "
         "streamL2[%p] notifyL0L1toL2[%p] notifyL2toL0L1[%p]",
@@ -86,7 +83,7 @@ HcclResult CollReduceScatterPipelineFor91093Executor::RunLoop(
 // 由 RunLoop 调用
 HcclResult CollReduceScatterPipelineFor91093Executor::BuildPipelineLoopContext(
     OpParam &param, AlgResourceResponse &algRes, const u32 unitSize,
-    const ReduceType &reduceType, PipelineLoopContext &ctx)
+    PipelineLoopContext &ctx)
 {
     u8 *curInputPtr = static_cast<u8 *>(param.inputPtr);
     u8 *curOutputPtr = static_cast<u8 *>(param.outputPtr);
@@ -103,7 +100,6 @@ HcclResult CollReduceScatterPipelineFor91093Executor::BuildPipelineLoopContext(
     const u64 countDataLastLoop = countDataLastLoopTemp > 0 ? countDataLastLoopTemp : countDataPerLoop;
     const u64 cclInputSizeHalved = algRes.cclInputMem.size() / 2;
     const u64 cclOutputSizeHalved = algRes.cclOutputMem.size() / 2;
-    ctx.reduceType = reduceType;
     ctx.countDataPerLoop = countDataPerLoop;
     ctx.countDataLastLoop = countDataLastLoop;
     ctx.sizeDataPerLoop = countDataPerLoop * unitSize;
@@ -156,7 +152,7 @@ HcclResult CollReduceScatterPipelineFor91093Executor::RunL0L1Phase(
     execMem.outputPtr = ctx.curOutputPtr + blockIdx * ctx.sizeDataPerLoop;
 
     const u64 bufferBaseOffset = useBufferA ? 0 : ctx.cclInputSizeHalved;
-    CHK_RET(RunLevel0To1(param, ctx.reduceType, execMem, streamL0L1, bufferBaseOffset));
+    CHK_RET(RunLevel0To1(param, execMem, streamL0L1, bufferBaseOffset));
     return HCCL_SUCCESS;
 }
 
@@ -178,7 +174,7 @@ HcclResult CollReduceScatterPipelineFor91093Executor::RunL2Phase(
     execMem.outputPtr = ctx.curOutputPtr + blockIdx * ctx.sizeDataPerLoop;
 
     const u64 l2BaseOffset = useBufferA ? 0 : ctx.cclInputSizeHalved;
-    CHK_RET(RunLevel2(param, ctx.reduceType, execMem, streamL2, l2BaseOffset));
+    CHK_RET(RunLevel2(param, execMem, streamL2, l2BaseOffset));
     return HCCL_SUCCESS;
 }
 
@@ -206,10 +202,9 @@ HcclResult CollReduceScatterPipelineFor91093Executor::GetLevel2CommInfo(
 }
 
 HcclResult CollReduceScatterPipelineFor91093Executor::RunLevel0To1(
-    OpParam &param, const ReduceType &reduceType, ExecMem &execMem, Stream &streamL0L1,
+    OpParam &param, ExecMem &execMem, Stream &streamL0L1,
     const u64 baseOffset)
 {
-    (void)reduceType;
     SliceExecMemIfNeeded(param, execMem);
 
     HCCL_CONFIG_INFO(HCCL_ALG,
@@ -224,10 +219,9 @@ HcclResult CollReduceScatterPipelineFor91093Executor::RunLevel0To1(
 }
 
 HcclResult CollReduceScatterPipelineFor91093Executor::RunLevel2(
-    OpParam &param, const ReduceType &reduceType, ExecMem &execMem, Stream &streamL2,
+    OpParam &param, ExecMem &execMem, Stream &streamL2,
     const u64 baseOffset)
 {
-    (void)reduceType;
     SliceExecMemIfNeeded(param, execMem);
 
     HCCL_CONFIG_INFO(HCCL_ALG,
