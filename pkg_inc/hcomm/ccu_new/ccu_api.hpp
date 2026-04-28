@@ -89,13 +89,13 @@ inline CcuResult LoadVar(uint64_t addr, Variable* v, uint32_t num) {
 // ==================== 本地拷贝（3 种重载） ====================
 
 // LocalAddr → LocalAddr,LocalAddr → Buffer,Buffer → LocalAddr
-inline CcuResult LocalCopyNb(LocalAddr dst, LocalAddr src,Variable len, Event event) { return CcuLocalCopyMemToMem(dst.handle, src.handle, len.handle, event.handle); }
-inline CcuResult LocalCopyNb(Buffer dst, LocalAddr src, Variable len, Event event) { return CcuLocalCopyMemToBuffer(dst.handle, src.handle, len.handle, event.handle); }
-inline CcuResult LocalCopyNb(LocalAddr dst, Buffer src,Variable len, Event event) { return CcuLocalCopyBufferToMem(dst.handle, src.handle, len.handle, event.handle); }
+inline CcuResult LocalCopy(LocalAddr dst, LocalAddr src,Variable len, Event event) { return CcuLocalCopyMemToMem(dst.handle, src.handle, len.handle, event.handle); }
+inline CcuResult LocalCopy(Buffer dst, LocalAddr src, Variable len, Event event) { return CcuLocalCopyMemToBuffer(dst.handle, src.handle, len.handle, event.handle); }
+inline CcuResult LocalCopy(LocalAddr dst, Buffer src,Variable len, Event event) { return CcuLocalCopyBufferToMem(dst.handle, src.handle, len.handle, event.handle); }
 
 // ==================== 本地 Reduce ====================
-inline CcuResult LocalReduceNb(LocalAddr dst, LocalAddr src,Variable len, HcclDataType dataType, HcclReduceOp opType, Event event) { return CcuLocalMemReduce(dst.handle, src.handle, len.handle, dataType, opType, event.handle); }
-inline CcuResult LocalReduceNb(Buffer* buffers, uint32_t count, HcclDataType dataType, HcclDataType outputDataType, HcclReduceOp opType, Variable len, Event event) 
+inline CcuResult LocalReduce(LocalAddr dst, LocalAddr src,Variable len, HcclDataType dataType, HcclReduceOp opType, Event event) { return CcuLocalMemReduce(dst.handle, src.handle, len.handle, dataType, opType, event.handle); }
+inline CcuResult LocalReduce(Buffer* buffers, uint32_t count, HcclDataType dataType, HcclDataType outputDataType, HcclReduceOp opType, Variable len, Event event) 
 { 
     if (buffers == nullptr || count == 0) {
         return CcuResult::CCU_E_PARA;
@@ -110,20 +110,20 @@ inline CcuResult LocalReduceNb(Buffer* buffers, uint32_t count, HcclDataType dat
 // ==================== 远端读====================
 
 // 远端读 LocalAddr ← RemoteAddr
-inline CcuResult ReadNb(ChannelHandle ch, LocalAddr local, RemoteAddr remote, Variable len, Event event) { return CcuReadMemToMem(ch, local.handle, remote.handle, len.handle, event.handle); }
+inline CcuResult Read(ChannelHandle ch, LocalAddr local, RemoteAddr remote, Variable len, Event event) { return CcuReadMemToMem(ch, local.handle, remote.handle, len.handle, event.handle); }
 // 远端读 Buffer ← RemoteAddr
-inline CcuResult ReadNb(ChannelHandle ch, Buffer local, RemoteAddr remote, Variable len, Event event) { return CcuReadMemToBuffer(ch, local.handle, remote.handle, len.handle, event.handle); }
+inline CcuResult Read(ChannelHandle ch, Buffer local, RemoteAddr remote, Variable len, Event event) { return CcuReadMemToBuffer(ch, local.handle, remote.handle, len.handle, event.handle); }
 // 远端读 LocalAddr ← RemoteAddr Reduce (Reduce)
-inline CcuResult ReadReduceNb(ChannelHandle ch, LocalAddr local, RemoteAddr remote, Variable len, HcclDataType dataType, HcclReduceOp opType, Event event) { return CcuReadMemToMemReduce(ch, local.handle, remote.handle, len.handle, dataType, opType, event.handle); }
+inline CcuResult ReadReduce(ChannelHandle ch, LocalAddr local, RemoteAddr remote, Variable len, HcclDataType dataType, HcclReduceOp opType, Event event) { return CcuReadMemToMemReduce(ch, local.handle, remote.handle, len.handle, dataType, opType, event.handle); }
 
 // ==================== 远端写 ====================
 
 // LocalAddr → RemoteAddr
-inline CcuResult WriteNb(ChannelHandle ch, RemoteAddr remote, LocalAddr local,  Variable len, Event event){ return CcuWriteMemToMem(ch, remote.handle, local.handle, len.handle, event.handle); }
+inline CcuResult Write(ChannelHandle ch, RemoteAddr remote, LocalAddr local,  Variable len, Event event){ return CcuWriteMemToMem(ch, remote.handle, local.handle, len.handle, event.handle); }
 // Buffer → RemoteAddr
-inline CcuResult WriteNb(ChannelHandle ch, RemoteAddr remote, Buffer local, Variable len, Event event) { return CcuWriteBufferToMem(ch, remote.handle, local.handle, len.handle, event.handle); }
+inline CcuResult Write(ChannelHandle ch, RemoteAddr remote, Buffer local, Variable len, Event event) { return CcuWriteBufferToMem(ch, remote.handle, local.handle, len.handle, event.handle); }
 // LocalAddr → RemoteAddr Reduce (Reduce)
-inline CcuResult WriteReduceNb(ChannelHandle ch, RemoteAddr remote, LocalAddr local, Variable len, HcclDataType dataType, HcclReduceOp opType, Event event){ return CcuWriteMemToMemReduce(ch, remote.handle, local.handle, len.handle, dataType, opType, event.handle);}
+inline CcuResult WriteReduce(ChannelHandle ch, RemoteAddr remote, LocalAddr local, Variable len, HcclDataType dataType, HcclReduceOp opType, Event event){ return CcuWriteMemToMemReduce(ch, remote.handle, local.handle, len.handle, dataType, opType, event.handle);}
 
 // ==================== Loop ====================
 
