@@ -22,11 +22,11 @@
 
     假设一个AI Server中有8张卡，8张卡分成4个通信域，每个通信域中的两张卡之间通信，如下图所示。
 
-    ![通信域划分示例](figures/通信域划分示例.png)
+    ![通信域划分示例](figures/comm_domain_split.png)
 
     获取rootInfo信息并进行集合通信初始化的流程如下图所示。
 
-    ![单线程循环调用示例](figures/单线程循环调用示例.png)
+    ![单线程循环调用示例](figures/single_thread_loop_call_example.png)
 
     首先在一个线程中通过切换Device创建4个rootInfo信息，并存入一个长度为4的数组中。rootInfo信息获取完成后，起4个线程，分别调用HcclCommInitRootInfo或者HcclCommInitRootInfoConfig接口（上图中以HcclCommInitRootInfo接口示意）根据不同的rootInfo信息进行通信域初始化。
 

@@ -29,7 +29,7 @@ HcommResult：接口成功返回HCCL_SUCCESS，其他失败。
 
 ## 约束说明
 
-无
+支持的通信协议包括：RoCE、UBC_TP、UBC_CTP、UBoE。
 
 ## 调用示例
 

@@ -32,7 +32,8 @@ HcommResult：接口成功返回0，其他失败。
 
 ## 约束说明
 
-HcommChannelDesc结构体必须调用该接口进行初始化。
+- HcommChannelDesc结构体必须调用该接口进行初始化。
+- 支持的通信协议包括：RoCE、UBC_TP、UBC_CTP、UBoE。
 
 ## 调用示例
 

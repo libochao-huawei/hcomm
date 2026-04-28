@@ -36,6 +36,7 @@ HcommResult：接口成功返回0，其他失败。
 
 - channelList数组长度需要与listNum 参数一致。
 - statusList\[i\]与channelList\[i\]一一对应，表示第i个通道的状态。
+- 支持的通信协议包括：RoCE、UBC_TP、UBC_CTP、UBoE。
 
 ## 调用示例
 

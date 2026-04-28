@@ -13,7 +13,7 @@
 
 给定通信域和拓扑层级编号，返回该层级下本rank所在拓扑实例的所有rank编号列表以及rank数量。
 
-![拓扑模型](figures/拓扑模型.png)
+![拓扑模型](figures/topo_model.png)
 
 以上述拓扑模型为例：
 
