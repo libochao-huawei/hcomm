@@ -186,7 +186,8 @@ add_subdirectory(base)
 add_subdirectory(impl)
 
 install(TARGETS hccl_alg
-    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL
+    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
 )
 
 if(NOT BUILD_OPEN_PROJECT)

@@ -921,54 +921,67 @@ else()
    )
 endif()
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_all_to_all_op.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_all_to_all_op.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_all_to_all_v_op.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_all_to_all_v_op.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_all_to_all_vc_op.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_all_to_all_vc_op.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_int8.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_int8.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_int16.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_int16.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_int32.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_int32.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_float16.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_float16.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_float32.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_float32.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_bfloat16.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_bfloat16.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_uint8.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_uint8.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_uint16.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_uint16.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_uint32.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_uint32.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_sk_a2a_crossnode.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_sk_a2a_crossnode.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
