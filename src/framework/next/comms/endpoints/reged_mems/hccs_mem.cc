@@ -38,7 +38,10 @@ HcclResult HccsRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, voi
 {
     HCCL_INFO("[%s] Begin", __FUNCTION__);
     CHK_PTR_NULL(memHandle);
-
+    CHK_PTR_NULL(mem.addr);
+    CHK_PRT_RET(mem.size == 0, HCCL_ERROR("[%s] mem size is zero", __func__), HCCL_E_PARA);
+    CHK_PRT_RET(mem.type == COMM_MEM_TYPE_INVALID, 
+        HCCL_ERROR("[%s] invalid mem type [%d]", __func__, mem.type), HCCL_E_PARA);
     HCCL_INFO("[%s] addr[%p] size[%u] start", __FUNCTION__, mem.addr, mem.size);
 
     NetDevContext *netDevCtx = static_cast<NetDevContext *>(netDevCtx_);

@@ -7,9 +7,52 @@
 #include "ip_address.h"
 #include "hccp.h"
 #include "buffer.h"
-#include "network_api_exception.h"
 #include "endpoint.h"
 #include "adapter_rts.h"
+#include "hccl_net_dev.h"
+#include "hccl_network.h"
+#include "hccl_socket.h"
+#include "network_manager_pub.h"
+#include "reged_mems/reged_mem_mgr.h"
+#include "mem_name_repository_pub.h"
+
+using namespace hcomm;
+using namespace hccl;
+
+namespace {
+HcclResult StubHrtGetDeviceWriteZeroEp(s32 *deviceLogicId)
+{
+    if (deviceLogicId != nullptr) {
+        *deviceLogicId = 0;
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult StubHcclSocketAcceptForEp(hccl::HcclSocket * /*self*/, const std::string & /*tag*/,
+    std::shared_ptr<hccl::HcclSocket> &socket, u32 /*acceptTimeOut*/)
+{
+    socket = std::make_shared<hccl::HcclSocket>(static_cast<HcclNetDevCtx>(nullptr), 16666);
+    return HCCL_SUCCESS;
+}
+
+HcclResult StubHcclNetDevOpenForEp(const HcclNetDevInfos *info, HcclNetDev *netDev)
+{
+    static hccl::NetDevContext kNetDevCtx;
+    static bool initialized = false;
+    if (!initialized) {
+        hccl::HcclIpAddress localIp;
+        (void)localIp.SetReadableAddress("127.0.0.1");
+        kNetDevCtx.Init(NicType::DEVICE_NIC_TYPE, 0, 0, localIp);
+        initialized = true;
+    }
+    *netDev = reinterpret_cast<HcclNetDev>(&kNetDevCtx);
+    return HCCL_SUCCESS;
+}
+
+HcclResult StubHcclNetDevCloseForEp(HcclNetDev /*netDev*/)
+{
+    return HCCL_SUCCESS;
+}
 
 class AiCpuTsHccsEndpointTest : public testing::Test {
 protected:
@@ -25,6 +68,17 @@ protected:
 
     virtual void SetUp()
     {
+        MOCKER(hrtGetDevice).stubs().with(any()).will(invoke(StubHrtGetDeviceWriteZeroEp));
+        MOCKER(hrtGetDevicePhyIdByIndex).stubs().with(any(), outBound(0U)).will(returnValue(HCCL_SUCCESS));
+        MOCKER(HcclNetDevOpen).stubs().will(invoke(StubHcclNetDevOpenForEp));
+        MOCKER(HcclNetDevClose).stubs().will(invoke(StubHcclNetDevCloseForEp));
+        MOCKER(&hccl::HcclSocket::Accept).stubs().will(invoke(StubHcclSocketAcceptForEp));
+ 
+        MOCKER_CPP(&MemNameRepository::SetIpcMem, HcclResult(MemNameRepository::*)(void *, u64, u8 *, u32)).stubs().will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&MemNameRepository::FindIpcMem).stubs().will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&MemNameRepository::OpenIpcMem).stubs().will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&MemNameRepository::CloseIpcMem).stubs().will(returnValue(HCCL_SUCCESS));
+
         std::cout << "A Test case in AiCpuTsHccsEndpointTest SetUP" << std::endl;
     }
 
@@ -186,8 +240,8 @@ TEST_F(AiCpuTsHccsEndpointTest, Ut_When_Unregister_Wrong_Handle_Expect_Return_Er
     ret = CreateHccsEndpoint(1, 1, endpointDesc2, &endpointHandle2);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    CommMem mem1 = CreateCommMem((void*)0x01, 10, COMM_MEM_TYPE_DEVICE);
-    CommMem mem2 = CreateCommMem((void*)0x02, 20, COMM_MEM_TYPE_DEVICE);
+    CommMem mem1 = CreateCommMem((void*)0x01, 4, COMM_MEM_TYPE_DEVICE);
+    CommMem mem2 = CreateCommMem((void*)0x20, 4, COMM_MEM_TYPE_DEVICE);
     void *memHandle1, *memHandle2;
 
     // 在第一个endpoint上注册内存
@@ -246,8 +300,8 @@ TEST_F(AiCpuTsHccsEndpointTest, Ut_When_export_import_Expect_Return_SUCCESS)
     ret = CreateHccsEndpoint(1, 1, endpointDesc2, &endpointHandle2);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    CommMem mem1 = CreateCommMem((void*)0x01, 10, COMM_MEM_TYPE_DEVICE);
-    CommMem mem2 = CreateCommMem((void*)0x02, 20, COMM_MEM_TYPE_DEVICE);
+    CommMem mem1 = CreateCommMem((void*)0x01, 4, COMM_MEM_TYPE_DEVICE);
+    CommMem mem2 = CreateCommMem((void*)0x20, 4, COMM_MEM_TYPE_DEVICE);
     void *memHandle1, *memHandle2;
 
     // 在第一个endpoint上注册内存
@@ -284,3 +338,4 @@ TEST_F(AiCpuTsHccsEndpointTest, Ut_When_export_import_Expect_Return_SUCCESS)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
+}
