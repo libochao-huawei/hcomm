@@ -76,15 +76,18 @@ private:
      */
     static std::string ConvertIPv4(const struct in_addr& addr);
 
+
     /**
      * @brief IPv6 地址转换辅助函数
      */
     static std::string ConvertIPv6(const struct in6_addr& addr6);
 
+
     /**
      * @brief ID 类型转换辅助函数
      */
     static std::string ConvertID(uint32_t id);
+
 
     /**
      * @brief EID 类型转换辅助函数
