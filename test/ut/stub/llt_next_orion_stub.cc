@@ -117,6 +117,7 @@
 #include "rts_cnt_notify.h"
 #include "rts_1ton_cnt_notify.h"
 #include "ipc_local_notify.h"
+#include "host_ub_connection.h"
 
 namespace Hccl {
 
@@ -144,7 +145,7 @@ RdmaHandleManager &RdmaHandleManager::GetInstance()
     return rdmaHandleManager;
 }
  
-JfcHandle RdmaHandleManager::GetJfcHandle(RdmaHandle rdmaHandle, HrtUbJfcMode jfcMode)
+JfcHandle RdmaHandleManager::GetJfcHandle(RdmaHandle rdmaHandle, CqCreateInfo& cqInfo,HrtUbJfcMode jfcMode)
 {
     return 0x12345678;
 }
@@ -1211,6 +1212,16 @@ HcclResult UbMemTransport::Init()
 HcclResult UbMemTransport::DeInit() const
 {
 
+    return HCCL_SUCCESS;
+}
+
+TransportStatus UbMemTransport::GetSyncStatus()
+{
+    return TransportStatus::READY;
+}
+
+HcclResult UbMemTransport::GetRemoteSeg(const void* addr, u64 len, u64 *seg)
+{
     return HCCL_SUCCESS;
 }
 
@@ -2552,4 +2563,251 @@ HcclResult HcclGetCclBuffer(HcclComm comm, uintptr_t &cclBufferAddr, size_t &ccl
 HcclResult HcclGetRankGraphV2(HcclComm *comm, void **rankGraph)
 {
     return HCCL_SUCCESS;
+}
+
+namespace Hccl {
+HostUbConnection::HostUbConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
+                                const OpMode opMode, const HrtUbJfcMode jfcMode)
+    : RmaConnection(nullptr, RmaConnType::UB), rdmaHandle(rdmaHandle), locAddr(locAddr), rmtAddr(rmtAddr),
+    opMode(opMode), jfcMode(jfcMode), rmtEid(rmtAddr.GetReverseEid()), locEid(locAddr.GetReverseEid())
+{
+}
+
+HostUbTpConnection::HostUbTpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
+                                    const OpMode opMode, const HrtUbJfcMode jfcMode)
+    : HostUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, jfcMode)
+{
+    tpProtocol = TpProtocol::TP;
+}
+
+HostUbCtpConnection::HostUbCtpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
+                                    const OpMode opMode, const HrtUbJfcMode jfcMode)
+    : HostUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, jfcMode)
+{
+    tpProtocol = TpProtocol::CTP;
+}
+
+std::vector<char> HostUbConnection::GetUniqueId() const
+{
+    std::vector<char> result;
+    return result;
+}
+
+void HostUbConnection::SetCqInfo(HcclAiRMACQ &cq)
+{
+}
+
+void HostUbConnection::SetWqInfo(HcclAiRMAWQ &wq)
+{
+}
+
+void HostUbConnection::Connect()
+{
+    GetStatus();
+}
+
+RmaConnStatus HostUbConnection::GetStatus()
+{
+    return RmaConnStatus::READY;
+}
+
+std::unique_ptr<Serializable> HostUbConnection::GetExchangeDto()
+{
+    return nullptr;
+}
+
+void HostUbConnection::ParseRmtExchangeDto(const Serializable &rmtDto)
+{
+}
+
+void HostUbConnection::ImportRmtDto()
+{
+}
+
+void HostUbConnection::ThrowAbnormalStatus(std::string funcName)
+{
+}
+
+bool HostUbConnection::CheckRequestResult()
+{
+}
+
+void HostUbConnection::CreateJetty()
+{
+}
+
+void HostUbConnection::SetJettyInfo()
+{
+}
+
+bool HostUbConnection::GetTpInfo()
+{
+    return true;
+}
+
+void HostUbConnection::GenerateLocalPsn()
+{
+}
+
+void HostUbConnection::ImportJetty()
+{
+}
+
+void HostUbConnection::SetImportInfo()
+{
+    return;
+}
+
+void HostUbConnection::ReleaseTp()
+{
+}
+
+void HostUbConnection::ReleaseResource()
+{
+}
+
+HostUbConnection::~HostUbConnection()
+{
+}
+
+// Suspend接口当前已不使用，由框架调用触发析构流程
+bool HostUbConnection::Suspend()
+{
+    return true;
+}
+
+std::unique_ptr<BaseTask> HostUbConnection::ConstructTaskUbSend(const HrtRaUbSendWrRespParam &sendWrResp,
+                                                            const SqeConfig              &config)
+{
+    return nullptr;
+}
+
+void HostUbConnection::ProcessSlices(const MemoryBuffer &loc, const MemoryBuffer &rmt,
+                                    std::function<void(const MemoryBuffer &, const MemoryBuffer &, u32)> processOneSlice,
+                                    DataType                                                             dataType) const
+{
+    return;
+}
+
+void HostUbConnection::ProcessSlicesWithNotify(
+    const MemoryBuffer &loc, const MemoryBuffer &rmt,
+    std::function<void(const MemoryBuffer &, const MemoryBuffer &, u32)> processOneSlice,
+    std::function<void(const MemoryBuffer &, const MemoryBuffer &)> processOneSliceWithNotify, DataType dataType) const
+{
+    return;
+}
+
+unique_ptr<BaseTask> HostUbConnection::PrepareRead(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
+                                                const SqeConfig &config)
+{
+    return nullptr;
+}
+
+unique_ptr<BaseTask> HostUbConnection::PrepareReadReduce(const MemoryBuffer &remoteMemBuf,
+                                                        const MemoryBuffer &localMemBuf, DataType dataType,
+                                                        ReduceOp reduceOp, const SqeConfig &config)
+{
+    return nullptr;
+}
+
+unique_ptr<BaseTask> HostUbConnection::PrepareWrite(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
+                                                const SqeConfig &config)
+{
+    return nullptr;
+}
+
+unique_ptr<BaseTask> HostUbConnection::PrepareWriteReduce(const MemoryBuffer &remoteMemBuf,
+                                                        const MemoryBuffer &localMemBuf, DataType dataType,
+                                                        ReduceOp reduceOp, const SqeConfig &config)
+{
+    return nullptr;
+}
+
+unique_ptr<BaseTask> HostUbConnection::PrepareInlineWrite(const MemoryBuffer &remoteMemBuf, u64 data,
+                                                        const SqeConfig &config)
+{
+    return nullptr;
+}
+
+unique_ptr<BaseTask> HostUbConnection::PrepareWriteWithNotify(const MemoryBuffer &remoteMemBuf,
+                                                            const MemoryBuffer &localMemBuf, u64 data,
+                                                            const MemoryBuffer &remoteNotifyMemBuf,
+                                                            const SqeConfig    &config)
+{
+    return nullptr;
+}
+
+unique_ptr<BaseTask> HostUbConnection::PrepareWriteReduceWithNotify(const MemoryBuffer &remoteMemBuf,
+                                                                const MemoryBuffer &localMemBuf, DataType dataType,
+                                                                ReduceOp reduceOp, u64 data,
+                                                                const MemoryBuffer &remoteNotifyMemBuf,
+                                                                const SqeConfig    &config)
+{
+    return nullptr;
+}
+
+string HostUbConnection::Describe() const
+{
+    return "";
+}
+
+void HostUbConnection::AddNop(const Stream &stream)
+{
+    return;
+}
+
+HrtUbJfcMode HostUbConnection::GetUbJfcMode() const
+{
+    return jfcMode;
+}
+
+JettyHandle& HostUbConnection::GetJettyHandle()
+{
+    return jettyHandle_;
+}
+
+JettyHandle&  HostUbConnection::GetRemoteJettyHandle()
+{
+    return remoteJettyHandle_;
+}
+
+RdmaHandle&  HostUbConnection::GetRdmaHandle()
+{
+    return rdmaHandle;
+}
+
+u32 HostUbConnection::GetPiVal() const
+{
+    return piVal;
+}
+
+u32 HostUbConnection::GetCiVal() const
+{
+    return ciVal;
+}
+
+u32 HostUbConnection::GetSqDepth() const
+{
+    return sqDepth;
+}
+
+uint64_t HostUbConnection::GetCqVa() const
+{
+    return cqInfo_.va;
+}
+
+u64 HostUbConnection::GetJettyVa() const
+{
+    return jettyVa_;
+}
+
+JettyHandle HostUbConnection::GetTJettyVa() const
+{
+    return remoteJettyVa_;
+}
+
+void HostUbConnection::UpdateCiVal(u32 ci)
+{
+    ciVal = ci;
+}
 }

@@ -38,6 +38,7 @@ public:
     static TpManager &GetInstance(const int32_t deviceLogicId);
     void Init();
     HcclResult GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo);
+    HcclResult GetHostTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo);
     // unimport jetty 会 URMA 销毁 tp 资源，hccl 配套删除记录
     HcclResult ReleaseTpInfo(const RaUbGetTpInfoParam &param, const TpInfo &tpInfo);
 
@@ -95,6 +96,7 @@ private:
 
     bool FindAndGetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo);
     void StartGetTpInfoListRequest(const RaUbGetTpInfoParam &param, RequestCtx &reqCtx) const;
+    void StartGetHostTpInfoListRequest(const RaUbGetTpInfoParam &param, RequestCtx &reqCtx) const;
     HcclResult HandleCompletedRequest(const RequestCtx reqCtx, const RaUbGetTpInfoParam &param,
         TpInfo &tpInfo);
 
