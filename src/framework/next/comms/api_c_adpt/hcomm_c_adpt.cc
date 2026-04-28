@@ -483,7 +483,12 @@ HcommResult HcommEngineCtxCreate(CommEngine engine, uint64_t size, void **ctx)
         || engine == COMM_ENGINE_CCU) {
         *ctx = malloc(size);
         CHK_PTR_NULL(*ctx);
-        CHK_SAFETY_FUNC_RET(memset_s(*ctx, size, 0, size));
+        auto ret = memset_s(*ctx, size, 0, size);
+        if (ret != EOK) {
+            HCCL_ERROR("[%s] memset_s failed, ret[%d]", __func__, ret);
+            free(*ctx);
+            return HCCL_E_INTERNAL;
+        }
     } else if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS
         || engine == COMM_ENGINE_AIV) {
         CHK_RET(hrtMalloc(ctx, size));
