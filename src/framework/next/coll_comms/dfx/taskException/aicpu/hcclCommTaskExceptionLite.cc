@@ -15,6 +15,7 @@
 #include "task_struct_v2.h"
 #include "dlhal_function_v2.h"
 #include "read_write_lock.h"
+#include "aicpu_indop_env.h"
 
 namespace hcomm {
 constexpr u32 RT_SDMA_COMPERR = 0x9; // A3 sdma error类型为0x9时，表示写拷贝发生超时代答，或者数据搬移时地址译码错误
@@ -131,6 +132,10 @@ HcclResult HcclCommTaskExceptionLite::GetThreadCqe(hccl::Thread* thread, rtLogic
 
 HcclResult HcclCommTaskExceptionLite::ProcessCqe(CollCommAicpu *aicpuComm, const rtLogicCqReport_t &exceptionInfo)
 {
+    if (hcomm::GetTaskExceptionEnable() == false) {
+        HCCL_ERROR("[TaskException][AICPU]taskException enable is false, skip print taskException");
+        return HCCL_SUCCESS;
+    }
     CHK_PTR_NULL(aicpuComm);
 
     // exceptionInfo->taskId和exceptionInfo->streamId拼成sqeId

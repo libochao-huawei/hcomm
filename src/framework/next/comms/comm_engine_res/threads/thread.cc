@@ -484,8 +484,7 @@ HcclResult Thread::ReportHostLocalReduceTask(void *dst, const void *src, uint64_
 bool Thread::IsReportTask() const
 {
 #ifdef CCL_KERNEL_AICPU
-    bool ret = hcomm::GetTaskExceptionEnable() || Hccl::ProfilingHandlerLite::GetInstance().GetProfL1State();
-    return ret;
+    return hcomm::GetTaskExceptionEnable() || Hccl::ProfilingHandlerLite::GetInstance().GetProfL1State();
 #endif
     return true;
 }
