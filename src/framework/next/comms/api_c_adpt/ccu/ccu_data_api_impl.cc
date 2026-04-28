@@ -87,10 +87,6 @@ CcuResult CcuBlockVariableAlloc(CcuVariableHandle *varHandles, uint32_t count)
 //     CCU_CHK_RET(kernel->BlockAddressAlloc(addrHandles, count));
 //     return CcuResult::CCU_SUCCESS;
 // }
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/xkp_ccu_c
 CcuResult CcuBlockEventAlloc(CcuEventHandle *eventHandles, uint32_t count)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
@@ -99,10 +95,6 @@ CcuResult CcuBlockEventAlloc(CcuEventHandle *eventHandles, uint32_t count)
     CCU_CHK_RET(kernel->BlockEventAlloc(eventHandles, count));
     return CcuResult::CCU_SUCCESS;
 }
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/xkp_ccu_c
 CcuResult CcuBlockBufferAlloc(CcuBufferHandle *bufHandles, uint32_t count)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
@@ -111,10 +103,6 @@ CcuResult CcuBlockBufferAlloc(CcuBufferHandle *bufHandles, uint32_t count)
     CCU_CHK_RET(kernel->BlockBufferAlloc(bufHandles, count));
     return CcuResult::CCU_SUCCESS;
 }
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/xkp_ccu_c
 CcuResult CcuVariableCreateByChannel(ChannelHandle channel, uint32_t varIndex, CcuVariableHandle *varHandle)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
