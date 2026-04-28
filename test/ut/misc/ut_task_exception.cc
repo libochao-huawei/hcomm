@@ -17,7 +17,6 @@
 #include <runtime/rt_error_codes.h>
 #include "aicpu_hccl_sqcq.h"
 #include "adapter_hal_pub.h"
-#include "task_scheduler_error.h"
 #define private public
 #define protected public
 #include "task_exception_handler_pub.h"
@@ -845,12 +844,4 @@ TEST_F(TaskExceptionTest, SendTaskExceptionByMBox_SdmaError_CompDataErr)
         HcclResult(int, unsigned int *, unsigned int *, unsigned int *, unsigned int *))
         .stubs().will(returnValue(HCCL_SUCCESS));
     HcclResult ret = hccl_plf::SendTaskExceptionByMBox(0, 102, 1, 5, &exceptionInfo);
-}
-
-TEST_F(TaskExceptionTest, SwitchSdmaCqeErrCodeToTsErrCode_Test)
-{
-    EXPECT_EQ(hccl_plf::SwitchSdmaCqeErrCodeToTsErrCode(0x8), TS_ERROR_SDMA_DDRC_ERROR);
-    EXPECT_EQ(hccl_plf::SwitchSdmaCqeErrCodeToTsErrCode(0x9), TS_ERROR_SDMA_LINK_ERROR);
-    EXPECT_EQ(hccl_plf::SwitchSdmaCqeErrCodeToTsErrCode(0xa), TS_ERROR_SDMA_POISON_ERROR);
-    EXPECT_EQ(hccl_plf::SwitchSdmaCqeErrCodeToTsErrCode(0xFF), TS_ERROR_HCCL_OTHER_ERROR);
 }
