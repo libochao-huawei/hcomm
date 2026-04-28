@@ -140,6 +140,8 @@ TEST_F(CcuTransportTest, ut_CcuTransport_UpdateMemInfo_When_Normal_Expect_Return
 
     ret = ccuTransport->UpdateMemInfo(bufferVecTemp);
     EXPECT_EQ(ret, HCCL_SUCCESS);
+    ccuTransport->recvData_ = ccuTransport->sendData_;
+
     hcomm::CcuTransport::CclBufferInfo &bufInfo = ccuTransport->locBufferInfos_[1];
     const char* src = bufInfo.memTag.data();
     std::string tagCopy(src, strnlen(src, HCCL_RES_TAG_MAX_LEN));
@@ -169,4 +171,58 @@ TEST_F(CcuTransportTest, ut_CcuTransport_UpdateMemInfo_When_bufferNumIs0_Expect_
     std::vector<hcomm::CcuTransport::CclBufferInfo> bufferVecTemp{};
     HcclResult ret = ccuTransport.UpdateMemInfo(bufferVecTemp);
     EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(CcuTransportTest, ut_CcuTransport_BufferInfoUnpack_When_rmtBufferNumIsZero_Expect_ReturnHCCL_E_PARA)
+{
+    std::unique_ptr<hcomm::CcuConnection> ccuConnection{nullptr};
+    std::vector<hcomm::CcuTransport::CclBufferInfo> bufferInfos{hcomm::CcuTransport::CclBufferInfo{}};
+    hcomm::CcuTransport ccuTransport{fakeSocket_, std::move(ccuConnection), bufferInfos};
+
+    Hccl::BinaryStream binaryStream;
+    u32 rmtBufferNumZero = 0;
+    binaryStream << rmtBufferNumZero;
+
+    HcclResult ret = ccuTransport.BufferInfoUnpack(binaryStream);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(CcuTransportTest, ut_CcuTransport_BufferInfoUnpack_When_rmtBufferNumExceedsLimit_Expect_ReturnHCCL_E_PARA)
+{
+    std::unique_ptr<hcomm::CcuConnection> ccuConnection{nullptr};
+    std::vector<hcomm::CcuTransport::CclBufferInfo> bufferInfos{hcomm::CcuTransport::CclBufferInfo{}};
+    hcomm::CcuTransport ccuTransport{fakeSocket_, std::move(ccuConnection), bufferInfos};
+
+    Hccl::BinaryStream binaryStream;
+    u32 rmtBufferNumExceeds = 30001;
+    binaryStream << rmtBufferNumExceeds;
+
+    HcclResult ret = ccuTransport.BufferInfoUnpack(binaryStream);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(CcuTransportTest, ut_CcuTransport_BufferInfoUnpack_When_Normal_Expect_ReturnHCCL_SUCCESS)
+{
+    std::unique_ptr<hcomm::CcuConnection> ccuConnection{nullptr};
+    std::vector<hcomm::CcuTransport::CclBufferInfo> bufferInfos{hcomm::CcuTransport::CclBufferInfo{}};
+    hcomm::CcuTransport ccuTransport{fakeSocket_, std::move(ccuConnection), bufferInfos};
+
+    Hccl::BinaryStream binaryStream;
+    u32 rmtBufferNum = 2;
+    binaryStream << rmtBufferNum;
+
+    for (u32 i = 0; i < rmtBufferNum; ++i) {
+        hcomm::CcuTransport::CclBufferInfo bufferInfo;
+        bufferInfo.addr = 0x10000000 + i;
+        bufferInfo.size = 4096 + i;
+        bufferInfo.tokenId = i;
+        bufferInfo.tokenValue = i + 1;
+        bufferInfo.type = CommMemType::COMM_MEM_TYPE_DEVICE;
+        bufferInfo.Pack(binaryStream);
+    }
+
+    HcclResult ret = ccuTransport.BufferInfoUnpack(binaryStream);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(ccuTransport.rmtBufferInfos_.size(), rmtBufferNum);
+    EXPECT_EQ(ccuTransport.remoteUserMemTag_.size(), rmtBufferNum);
 }
