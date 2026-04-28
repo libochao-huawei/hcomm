@@ -257,7 +257,6 @@ function make_ut_gov() {
          -d ${BUILD_DIR}/test/ut/ \
          -d ${BUILD_DIR}/test/legacy/ut/ \
          -o cov/coverage.info \
-         -rc geninfo_unexecuted_blocks=1
 
     lcov --ignore-errors unused -r cov/coverage.info */src/platform/hccp/external_depends/* -o cov/coverage.info
     lcov --ignore-errors unused -e cov/coverage.info */src/algorithm/* */src/common/* */src/hccd/* */src/legacy/* */src/framework/* */src/platform/* */src/pub_inc/* -o cov/coverage.info
