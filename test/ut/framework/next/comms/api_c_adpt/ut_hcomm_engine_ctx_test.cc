@@ -16,6 +16,7 @@ public:
         TestHcommCAdptBase::SetUp();
     }
     void TearDown() override {
+        GlobalMockObject::verify();
         TestHcommCAdptBase::TearDown();
     }
 };
@@ -28,6 +29,18 @@ TEST_F(TestHcommEngineCtx, Ut_TestHcommEngineCtxCreate_When_CPUEngine_Return_HCC
     EXPECT_NE(ctx, nullptr);
 
     (void)HcommEngineCtxDestroy(COMM_ENGINE_CPU, ctx);
+}
+
+TEST_F(TestHcommEngineCtx, Ut_TestHcommEngineCtxCreate_When_CPUAndMemsetFailed_Return_HCCL_E_INTERNAL)
+{
+    MOCKER(::memset_s)
+        .stubs()
+        .with(any())
+        .will(returnValue(1));
+
+    void* ctx = nullptr;
+    HcommResult ret = HcommEngineCtxCreate(COMM_ENGINE_CPU, 1024, &ctx);
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
 }
 
 TEST_F(TestHcommEngineCtx, Ut_TestHcommEngineCtxCreate_When_SizeZero_Return_HCCL_Success)
