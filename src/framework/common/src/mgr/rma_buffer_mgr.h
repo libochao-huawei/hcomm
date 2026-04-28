@@ -116,7 +116,7 @@ public:
     std::pair<bool, BufferType> DirectFind(const KeyType& key) const 
     {
         auto it = intervalTree_.begin();
-        while (it != intervalTree_.end()) {
+        while (it->first == key || it != intervalTree_.end()) {
             if (it->first.IsSuperset(key)) {
                 return std::make_pair(true, it->second.buffer);
             }
