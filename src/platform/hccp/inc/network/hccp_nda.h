@@ -11,7 +11,6 @@
 #ifndef HCCP_NDA_H
 #define HCCP_NDA_H
 
-#include <sys/uio.h>
 #include <infiniband/verbs.h>
 #include <stdint.h>
 #include "hccp_common.h"
@@ -49,17 +48,24 @@ struct NdaCqInitAttr {
     struct NdaOps *ops;
 };
 
+struct iovAddrDesc {
+    void *iovBase;
+    size_t iovLen;
+};
+
 struct queueBuf {
     uint64_t base;
     uint32_t entryCnt;
     uint32_t entrySize;
+    uint64_t resv[4];
 };
 
 struct queueInfo {
     struct queueBuf qBuf;
-    struct iovec dbrPiVa;
-    struct iovec dbrCiVa;
-    struct iovec dbHwVa;
+    struct iovAddrDesc dbrPiVa;
+    struct iovAddrDesc dbrCiVa;
+    struct iovAddrDesc dbHwVa;
+    uint64_t resv[4];
 };
 
 struct NdaCqInfo {
