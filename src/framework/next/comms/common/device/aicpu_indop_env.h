@@ -16,7 +16,7 @@
 
 namespace hcomm {
 
-const void SetTaskExceptionEnable(bool taskExceptionEnable);
+void SetTaskExceptionEnable(bool taskExceptionEnable);
 
 const bool& GetTaskExceptionEnable();
 
