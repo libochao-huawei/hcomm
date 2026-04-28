@@ -17,15 +17,20 @@
 extern "C" {
 __attribute__((visibility("default"))) uint32_t RunAicpuDfxOpInfoInitV2(void *args)
 {
-    HCCL_RUN_INFO("RunAicpuDfxOpInfoInitV2 start.");
-    CHK_PRT_RET(args == nullptr, HCCL_ERROR("[%s]args is null.", __func__), HCCL_E_PARA);
+    HCCL_RUN_INFO("YYYYYY hcomm dfx [RunAicpuDfxOpInfoInitV2] start, args[%p]", args);
+    CHK_PRT_RET(args == nullptr, HCCL_ERROR("YYYYYY hcomm dfx [%s]args is null.", __func__), HCCL_E_PARA);
     struct InitTask {
         u64 context;
         char commTag[256];
     };
     InitTask *ctxArgs = reinterpret_cast<InitTask *>(args);
-    CHK_PRT_RET(ctxArgs == nullptr, HCCL_ERROR("[%s]ctxArgs is null.", __func__), HCCL_E_PARA);
+    CHK_PRT_RET(ctxArgs == nullptr, HCCL_ERROR("YYYYYY hcomm dfx [%s]ctxArgs is null.", __func__), HCCL_E_PARA);
     HcclDfxOpInfo *dfxOpInfo = reinterpret_cast<HcclDfxOpInfo *>(ctxArgs->context);
-    return AicpuIndopProcess::AicpuDfxOpInfoInit(dfxOpInfo, ctxArgs->commTag);
+    HCCL_RUN_INFO("YYYYYY hcomm dfx [RunAicpuDfxOpInfoInitV2] decoded, ctxArgs[%p], context[0x%llx], "
+        "commTag[%s], dfxOpInfo[%p]", ctxArgs, static_cast<unsigned long long>(ctxArgs->context),
+        ctxArgs->commTag, dfxOpInfo);
+    uint32_t ret = AicpuIndopProcess::AicpuDfxOpInfoInit(dfxOpInfo, ctxArgs->commTag);
+    HCCL_RUN_INFO("YYYYYY hcomm dfx [RunAicpuDfxOpInfoInitV2] end, ret[%u]", ret);
+    return ret;
 }
 }

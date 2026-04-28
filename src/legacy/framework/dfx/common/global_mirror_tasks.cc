@@ -135,17 +135,24 @@ std::map<u32, std::unique_ptr<TaskInfoQueue>>::iterator GlobalMirrorTasks::End(u
 
 HcclResult GlobalMirrorTasks::FindTaskInfo(u32 devId, u32 streamId, u32 taskId, std::shared_ptr<TaskInfo> &curTask) const
 {
+    HCCL_INFO("YYYYYY hcomm host dfx [GlobalMirrorTasks::FindTaskInfo] start, devId[%u], streamId(sqId)[%u], "
+        "taskId(sqeId)[%u]", devId, streamId, taskId);
     HCCL_INFO("[%s]start, devId[%u] streamId(sqId)[%u] taskId(sqeId)[%u].", __func__, devId, streamId, taskId);
-    CHK_PRT_RET(devId >= DEVICE_MAX_NUM, HCCL_ERROR("[%s]fail, devId[%u] out of range.", __func__, devId), HCCL_E_PARA);
+    CHK_PRT_RET(devId >= DEVICE_MAX_NUM,
+        HCCL_ERROR("YYYYYY hcomm host dfx [%s]fail, devId[%u] out of range.", __func__, devId), HCCL_E_PARA);
 
     const TaskInfoQueueMap &devMap = taskMaps_[devId];
     auto streamIterator = devMap.find(streamId);
     if (streamIterator == devMap.end()) { // rts回调时不会判断异常task是否HCCL task，索引不到可能是其他组件task，此处不打印ERROR日志
+        HCCL_RUN_INFO("YYYYYY hcomm host dfx [%s]devId[%u] streamId(sqId)[%u] do not found, devMapSize[%llu].",
+            __func__, devId, streamId, static_cast<unsigned long long>(devMap.size()));
         HCCL_RUN_INFO("[%s]devId[%u] streamId(sqId)[%u] do not found.", __func__, devId, streamId);
         return HCCL_E_NOT_FOUND;
     }
 
     TaskInfoQueue* queue = streamIterator->second.get();
+    HCCL_INFO("YYYYYY hcomm host dfx [GlobalMirrorTasks::FindTaskInfo] stream found, devId[%u], streamId[%u], "
+        "queue[%p], devMapSize[%llu]", devId, streamId, queue, static_cast<unsigned long long>(devMap.size()));
     CHK_PTR_NULL(queue);
 
     auto FindTask = [taskId](const std::shared_ptr<TaskInfo> &taskInfo) {
@@ -154,12 +161,17 @@ HcclResult GlobalMirrorTasks::FindTaskInfo(u32 devId, u32 streamId, u32 taskId, 
 
     auto task = queue->Find(FindTask);
     if (*task == *queue->End()) {
+        HCCL_RUN_INFO("YYYYYY hcomm host dfx [%s]devId[%u] streamId(sqId)[%u] taskId(sqeId)[%u] do not found.",
+            __func__, devId, streamId, taskId);
         HCCL_RUN_INFO("[%s]devId[%u] streamId(sqId)[%u] taskId(sqeId)[%u] do not found.",
             __func__, devId, streamId, taskId);
         return HCCL_E_NOT_FOUND;
     };
 
     curTask = *(*task);
+    HCCL_INFO("YYYYYY hcomm host dfx [GlobalMirrorTasks::FindTaskInfo] success, devId[%u], streamId(sqId)[%u], "
+        "taskId(sqeId)[%u], curTask[%p], dfxOpInfo[%p]", devId, streamId, taskId, curTask.get(),
+        curTask->dfxOpInfo_.get());
     HCCL_INFO("[%s]success, devId[%u] streamId(sqId)[%u] taskId(sqeId)[%u].", __func__, devId, streamId, taskId);
     return HCCL_SUCCESS;
 }

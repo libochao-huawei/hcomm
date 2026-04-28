@@ -21,35 +21,52 @@ HcclCommDfxLite::HcclCommDfxLite() {
 
 // HcclCommDfxLite初始化流程 - 修改为返回HcclResult类型
 HcclResult HcclCommDfxLite::Init(u32 deviceId, const std::string& commTag) {
+    HCCL_INFO("YYYYYY hcomm dfx [HcclCommDfxLite::Init] start, deviceId[%u], commTag[%s], this[%p], file[%s]",
+        deviceId, commTag.c_str(), this, __FILE__);
     HCCL_INFO("[HcclCommDfxLite][Init] Init begin deviceId[%u], commTag[%s]", deviceId, commTag.c_str());
     deviceId_ = deviceId;
     commTag_ = commTag;
     /*1. 如果mirrorTaskManagerLite_为空，则创建新的MirrorTaskManager
     注意：实际实现中应该避免这种情况，CommunicatorImplLite应该传入已经存在的MirrorTaskManager*/
     EXECEPTION_CATCH(mirrorTaskManagerLite_ = std::make_unique<Hccl::MirrorTaskManagerLite>(), return HCCL_E_PTR);
+    HCCL_INFO("YYYYYY hcomm dfx [HcclCommDfxLite::Init] mirrorTaskManagerLite[%p]",
+        mirrorTaskManagerLite_.get());
 
     // 2. 创建Profiling管理类
     EXECEPTION_CATCH(profilingImpl_ = std::make_unique<HcclCommProfilingLite>(deviceId_, mirrorTaskManagerLite_.get()), return HCCL_E_PTR);
+    HCCL_INFO("YYYYYY hcomm dfx [HcclCommDfxLite::Init] profilingImpl[%p], mirrorTaskManagerLite[%p]",
+        profilingImpl_.get(), mirrorTaskManagerLite_.get());
 
     // 3. 注册回调到单例
     addTaskCallback_ = [this](u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle) {
         return this->AddTaskInfoCallback(streamId, taskId, taskParam, handle);
     };
+    HCCL_INFO("YYYYYY hcomm dfx [HcclCommDfxLite::Init] success, deviceId_[%u], commTag_[%s], this[%p], "
+        "mirrorTaskManagerLite[%p]", deviceId_, commTag_.c_str(), this, mirrorTaskManagerLite_.get());
     HCCL_INFO("[HcclCommDfxLite][Init] Init success");
     return HCCL_SUCCESS; // 初始化成功返回成功码
 }
 
 HcclResult HcclCommDfxLite::AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle)
 {
+    HCCL_INFO("YYYYYY hcomm dfx [HcclCommDfxLite::AddTaskInfoCallback] start, this[%p], commTag[%s], "
+        "streamId[%u], taskId[%u], handle[0x%llx], mirrorTaskManagerLite[%p]", this, commTag_.c_str(), streamId,
+        taskId, static_cast<unsigned long long>(handle), mirrorTaskManagerLite_.get());
     CHK_SMART_PTR_NULL(mirrorTaskManagerLite_);
     u32 remoteRankId = INVALID_UINT;
     if (handle != INVALID_U64) {
         CHK_RET(GetChannelRemoteRankId(commTag_, handle, remoteRankId));
     }
+    HCCL_INFO("YYYYYY hcomm dfx [HcclCommDfxLite::AddTaskInfoCallback] remoteRankId[%u], handle[0x%llx]",
+        remoteRankId, static_cast<unsigned long long>(handle));
     std::shared_ptr<Hccl::TaskInfo> taskInfo{nullptr};
     EXECEPTION_CATCH(taskInfo = std::make_shared<Hccl::TaskInfo>(streamId, taskId,
         remoteRankId, taskParam, mirrorTaskManagerLite_->GetCurrDfxOpInfo()), return HCCL_E_PTR);
+    HCCL_INFO("YYYYYY hcomm dfx [HcclCommDfxLite::AddTaskInfoCallback] AddTaskInfo begin, taskInfo[%p]",
+        taskInfo.get());
     EXECEPTION_CATCH(mirrorTaskManagerLite_->AddTaskInfo(taskInfo), return HCCL_E_PTR);
+    HCCL_INFO("YYYYYY hcomm dfx [HcclCommDfxLite::AddTaskInfoCallback] AddTaskInfo end, taskInfo[%p]",
+        taskInfo.get());
     HCCL_INFO("[%s]taskInfo: %s", __func__, taskInfo->Describe().c_str());
     return HCCL_SUCCESS;
 }
@@ -69,6 +86,8 @@ HcclResult HcclCommDfxLite::UpdateProfStat() {
 
 void HcclCommDfxLite::AddChannelRemoteRankId(const std::string& commTag, u64 handle, u32 remoteRankId) {
     rwLockLite_.writeLock();
+    HCCL_INFO("YYYYYY hcomm dfx [HcclCommDfxLite::AddChannelRemoteRankId] commTag[%s], handle[0x%llx], "
+        "remoteRankId[%u]", commTag.c_str(), static_cast<unsigned long long>(handle), remoteRankId);
     HCCL_INFO("[HcclCommDfxLite][AddChannelRemoteRankId] commTag:[%s], handle:[%lu], remoteRankId:[%u]",
         commTag.c_str(), handle, remoteRankId);
     channelRemoteRankIdLite_[commTag][handle] = remoteRankId;
@@ -77,18 +96,26 @@ void HcclCommDfxLite::AddChannelRemoteRankId(const std::string& commTag, u64 han
 // 在channelRemoteRankIdLite_表中对remoteRankId进行查找
 HcclResult HcclCommDfxLite::GetChannelRemoteRankId(const std::string& commTag, u64 handle, u32& remoteRankId) {
     rwLockLite_.readLock();
+    HCCL_INFO("YYYYYY hcomm dfx [HcclCommDfxLite::GetChannelRemoteRankId] start, commTag[%s], handle[0x%llx]",
+        commTag.c_str(), static_cast<unsigned long long>(handle));
     if (channelRemoteRankIdLite_.find(commTag) == channelRemoteRankIdLite_.end()) {
         rwLockLite_.readUnlock();
+        HCCL_ERROR("YYYYYY hcomm dfx [HcclCommDfxLite::GetChannelRemoteRankId] commTag not found, commTag[%s]",
+            commTag.c_str());
         HCCL_ERROR("[HcclCommDfxLite]commTag:[%s] not found", commTag.c_str());
         return HCCL_E_PARA;
     }
     if (channelRemoteRankIdLite_[commTag].find(handle) == channelRemoteRankIdLite_[commTag].end()) {
+        HCCL_ERROR("YYYYYY hcomm dfx [HcclCommDfxLite::GetChannelRemoteRankId] handle not found, commTag[%s], "
+            "handle[0x%llx]", commTag.c_str(), static_cast<unsigned long long>(handle));
         HCCL_ERROR("[HcclCommDfxLite]handle not found,commTag:[%s], handle:[%lu]", commTag.c_str(), handle);
         rwLockLite_.readUnlock();
         return HCCL_E_PARA;
     }
     remoteRankId = channelRemoteRankIdLite_[commTag][handle];
     rwLockLite_.readUnlock();
+    HCCL_INFO("YYYYYY hcomm dfx [HcclCommDfxLite::GetChannelRemoteRankId] end, commTag[%s], handle[0x%llx], "
+        "remoteRankId[%u]", commTag.c_str(), static_cast<unsigned long long>(handle), remoteRankId);
     return HCCL_SUCCESS;
 }
 

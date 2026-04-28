@@ -171,17 +171,27 @@ HcclResult AicpuIndopProcess::AicpuIndOpChannelInit(HcclChannelUrmaRes *commPara
         "commParam->uniqueIdSize[%u]", __func__, commParam->channelList, commParam->listNum, commParam->uniqueIdAddr,
         commParam->uniqueIdSize);
 
+    HCCL_INFO("YYYYYY hcomm  AicpuIndOpChannelInit build group begin, commParam[%p], hcomId[%s]", commParam,
+        commParam->hcomId);
     std::string group = commParam->hcomId;
+    HCCL_INFO("YYYYYY hcomm  AicpuIndOpChannelInit build group end, group[%s]", group.c_str());
+    HCCL_INFO("YYYYYY hcomm  AicpuIndOpChannelInit AicpuGetCommMgrbyGroup begin, group[%s]", group.c_str());
     CollCommAicpuMgr *collCommAicpuMgr = AicpuIndopProcess::AicpuGetCommMgrbyGroup(group);
+    HCCL_INFO("YYYYYY hcomm  AicpuIndOpChannelInit AicpuGetCommMgrbyGroup end, group[%s], collCommAicpuMgr[%p]",
+        group.c_str(), collCommAicpuMgr);
     CHK_PRT_RET(collCommAicpuMgr == nullptr, HCCL_ERROR("%s collCommAicpuMgr is null, group[%s]", __func__, group.c_str()), HCCL_E_PTR);
 
+    HCCL_INFO("YYYYYY hcomm  AicpuIndOpChannelInit AllocChannelResource begin, group[%s], collCommAicpuMgr[%p]",
+        group.c_str(), collCommAicpuMgr);
     HcclResult ret = collCommAicpuMgr->AllocChannelResource(commParam);
-    HCCL_INFO("YYYYYY hcomm  run AllocChannelResource end");
+    HCCL_INFO("YYYYYY hcomm  AicpuIndOpChannelInit AllocChannelResource end, group[%s], ret[%d]", group.c_str(), ret);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[AicpuIndopProcess][AicpuIndOpChannelInit]errNo[0x%016llx] Failed to init channels group[%s]",
         HCCL_ERROR_CODE(ret), group.c_str()), ret);
 
+    HCCL_INFO("YYYYYY hcomm  AicpuIndOpChannelInit AicpuReleaseCommMgrbyGroup begin, group[%s]", group.c_str());
     AicpuReleaseCommMgrbyGroup(group);
+    HCCL_INFO("YYYYYY hcomm  AicpuIndOpChannelInit AicpuReleaseCommMgrbyGroup end, group[%s]", group.c_str());
     HCCL_INFO("[AicpuIndopProcess][%s] aicpuTask End.", __func__);
 
     return HCCL_SUCCESS;
@@ -266,12 +276,17 @@ HcclResult AicpuIndopProcess::AicpuDestroyCommbyGroup(const std::string &group)
 
 HcclResult AicpuIndopProcess::AicpuDfxOpInfoInit(HcclDfxOpInfo *aicpuDfxInfo, const std::string& commTag)
 {
+    HCCL_INFO("YYYYYY hcomm dfx [AicpuDfxOpInfoInit] start, aicpuDfxInfo[%p], commTag[%s], g_hcclComm[%p]",
+        aicpuDfxInfo, commTag.c_str(), g_hcclComm);
     CHK_PTR_NULL(aicpuDfxInfo);
-    HCCL_INFO("[%s]group[%s]", __func__, commTag.c_str());
+    HCCL_INFO("YYYYYY hcomm dfx [%s]group[%s]", __func__, commTag.c_str());
     // 获取device侧的通信域
-    CHK_PRT_RET(g_hcclComm == nullptr, HCCL_ERROR("%s g_hcclComm is null, commTag[%s]", __func__, commTag.c_str()), HCCL_E_PTR);
+    CHK_PRT_RET(g_hcclComm == nullptr,
+        HCCL_ERROR("YYYYYY hcomm dfx %s g_hcclComm is null, commTag[%s]", __func__, commTag.c_str()), HCCL_E_PTR);
     CollCommAicpu* collComm = g_hcclComm->GetCollCommAicpu();
     CHK_PTR_NULL(collComm);
+    HCCL_INFO("YYYYYY hcomm dfx [AicpuDfxOpInfoInit] got collComm[%p], identifier[%s]", collComm,
+        collComm->GetIdentifier().c_str());
 
     // HcclDfxOpInfo 转为DfxOpInfo
     std::shared_ptr<Hccl::DfxOpInfo> dfxOpInfoOnce = ConvertToDfxOpInfo(*aicpuDfxInfo);
@@ -286,13 +301,19 @@ HcclResult AicpuIndopProcess::AicpuDfxOpInfoInit(HcclDfxOpInfo *aicpuDfxInfo, co
         dfxOpInfoOnce->op_.opTag = collComm->GetIdentifier();
     }
     dfxOpInfoOnce->op_.myRank = static_cast<Hccl::RankId>(collComm->GetTopoInfo().userRank);
+    HCCL_INFO("YYYYYY hcomm dfx [AicpuDfxOpInfoInit] converted dfxOpInfo[%p], opIndex[%u], groupName[%s], "
+        "rankSize[%u], myRank[%d]", dfxOpInfoOnce.get(), dfxOpInfoOnce->opIndex_,
+        dfxOpInfoOnce->groupName_.c_str(), dfxOpInfoOnce->rankSize_, dfxOpInfoOnce->op_.myRank);
 
     // 注册
     HcclCommDfxLite* hcclCommDfxLite = collComm->GetHcclCommDfxLite();
     CHK_PTR_NULL(hcclCommDfxLite);
     Hccl::MirrorTaskManagerLite* mirrorTaskMgrLite = hcclCommDfxLite->GetMirrorTaskManagerLite();
     CHK_PTR_NULL(mirrorTaskMgrLite);
+    HCCL_INFO("YYYYYY hcomm dfx [AicpuDfxOpInfoInit] SetCurrDfxOpInfo begin, hcclCommDfxLite[%p], "
+        "mirrorTaskMgrLite[%p], dfxOpInfo[%p]", hcclCommDfxLite, mirrorTaskMgrLite, dfxOpInfoOnce.get());
     mirrorTaskMgrLite->SetCurrDfxOpInfo(dfxOpInfoOnce);
+    HCCL_INFO("YYYYYY hcomm dfx [AicpuDfxOpInfoInit] end, commTag[%s]", commTag.c_str());
     return HCCL_SUCCESS;
 }
 
@@ -329,10 +350,15 @@ HcclResult AicpuIndopProcess::ReportAllTasks(const std::string &group)
 
 HcclResult AicpuIndopProcess::UpdateTask(const std::string &group)
 {
+    HCCL_INFO("YYYYYY hcomm dfx [UpdateTask] start, group[%s], g_hcclComm[%p]", group.c_str(), g_hcclComm);
     CHK_PTR_NULL(g_hcclComm);
     CollCommAicpu* collCommAicpu = g_hcclComm->GetCollCommAicpu();
     CHK_PTR_NULL(collCommAicpu);
     HcclCommDfxLite* hcclCommDfxLite = collCommAicpu->GetHcclCommDfxLite();
-    CHK_RET(hcclCommDfxLite->UpdateProfStat());
+    HCCL_INFO("YYYYYY hcomm dfx [UpdateTask] UpdateProfStat begin, group[%s], collCommAicpu[%p], "
+        "hcclCommDfxLite[%p]", group.c_str(), collCommAicpu, hcclCommDfxLite);
+    HcclResult ret = hcclCommDfxLite->UpdateProfStat();
+    HCCL_INFO("YYYYYY hcomm dfx [UpdateTask] UpdateProfStat end, group[%s], ret[%d]", group.c_str(), ret);
+    CHK_RET(ret);
     return HCCL_SUCCESS;
 }

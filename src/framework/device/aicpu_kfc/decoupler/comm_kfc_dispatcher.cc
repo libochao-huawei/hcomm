@@ -183,17 +183,28 @@ HcclResult GroupServerProcess(std::vector<AscCommServerInfo> &serverList, u32 gr
 
 u32 CommKfcDispatcher::Run(void *args[], u32 ctxNum)
 {
+    HCCL_INFO("YYYYYY hcomm mc2 [CommKfcDispatcher::Run] start, args[%p], ctxNum[%u], file[%s]", args, ctxNum,
+        __FILE__);
     std::vector<AscCommServerInfo> serverList{};
     CHK_RET(CreateServerList(args, ctxNum, serverList));
+    HCCL_INFO("YYYYYY hcomm mc2 [CommKfcDispatcher::Run] CreateServerList end, serverListSize[%llu]",
+        static_cast<unsigned long long>(serverList.size()));
 
     u32 finishCnt = 0U;
     u32 expectSeqNum = 0U;
     while (finishCnt != serverList.size()) {
         for (u32 i = 0U; i < serverList.size(); ++i) {
             HcclResult ret = GroupServerProcess(serverList, i, expectSeqNum, finishCnt);
+            if (ret != HCCL_SUCCESS) {
+                HCCL_ERROR("YYYYYY hcomm mc2 [CommKfcDispatcher::Run] GroupServerProcess ret[%d], index[%u], "
+                    "expectSeqNum[%u], finishCnt[%u], serverListSize[%llu]", ret, i, expectSeqNum, finishCnt,
+                    static_cast<unsigned long long>(serverList.size()));
+            }
             CHK_RET(serverList[i].serverIns.ErrorDfxProcess(ret));
         }
     }
 
+    HCCL_INFO("YYYYYY hcomm mc2 [CommKfcDispatcher::Run] end, finishCnt[%u], serverListSize[%llu]", finishCnt,
+        static_cast<unsigned long long>(serverList.size()));
     return HCCL_SUCCESS;
 }
