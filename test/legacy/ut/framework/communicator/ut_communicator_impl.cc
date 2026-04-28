@@ -3471,6 +3471,8 @@ TEST_F(CommunicatorImplTest, Ut_CheckRankGraphAddrs_When_GetDevEidList_Not_Enoug
 
     CommunicatorImpl comm;
     comm.devLogicId = 0;
+    comm.devPhyId = 0;
+    comm.myRank = 0;
     HcclCommConfig config;
     CommParams params;
 
@@ -3522,7 +3524,7 @@ TEST_F(CommunicatorImplTest, Ut_When_DestroyDpuKernelResource_Expect_ResetDpuDev
     MOCKER(HrtSetXpuDevice).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER(HrtResetXpuDevice).stubs().with(any()).will(returnValue(HCCL_E_RUNTIME));
     MOCKER_CPP(&CommunicatorImpl::WaitDpuKernelThreadTerminate).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&CommunicatorImpl::CreateWorkspaceBuf).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CommunicatorImpl::GetKFCWorkSpaceVA).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CommunicatorImpl::PrepareDpuKernelResource).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CommunicatorImpl::LaunchDpuKernel).stubs().will(returnValue(HCCL_SUCCESS));
     HcclResult ret = comm.InitAndLaunchDpuKernel();
@@ -3596,4 +3598,163 @@ TEST_F(TryFastCcuLaunchTest, Ut_TryFastCcuLaunch_When_OpNoSupportFastLaunch_Expe
     fakeOpParams.opType = OpType::ALLGATHERV;
     // then
     EXPECT_EQ(fakeComm.TryFastCcuLaunch(fakeOpParams, fakeStreamPtr), false);
+}
+
+namespace Hccl {
+HcclResult HrtHalGetDeviceInfo(uint32_t devId, int32_t moduleType, int32_t infoType, int64_t *value);
+}
+
+extern "C" {
+int halHostRegister(void *src_ptr, unsigned long long size, unsigned int flag, unsigned int devid, void **dst_ptr);
+int halHostUnregister(void *src_ptr, unsigned int devid);
+}
+
+namespace {
+// Constants matching driver definitions (ascend_hal.h)
+constexpr int32_t DRV_ERROR_NONE = 0;
+constexpr int32_t DRV_ERROR_INNER_ERR = 7;
+} // anonymous namespace
+
+TEST_F(CommunicatorImplTest, Ut_GetKFCWorkSpaceVA_When_CacheHitSizeMatch_Expect_Success)
+{
+    uint64_t size = 1024;
+    void *addr = nullptr;
+    bool newCreated = true;
+    std::string tag = "DPUTAG";
+
+    auto buf = DevBuffer::Create(static_cast<uintptr_t>(0x1000), size);
+    ASSERT_NE(buf, nullptr);
+    fakeComm.tagWorkspaceVAMap_.insert({tag, buf});
+
+    auto ret = fakeComm.GetKFCWorkSpaceVA(tag, &size, &addr, &newCreated);
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(addr, reinterpret_cast<void *>(0x1000));
+    EXPECT_FALSE(newCreated);
+}
+
+TEST_F(CommunicatorImplTest, Ut_GetKFCWorkSpaceVA_When_CacheHitSizeMismatch_Expect_ParaError)
+{
+    uint64_t size = 2048;
+    void *addr = nullptr;
+    bool newCreated = true;
+    std::string tag = "DPUTAG";
+
+    auto buf = DevBuffer::Create(static_cast<uintptr_t>(0x1000), 1024);
+    ASSERT_NE(buf, nullptr);
+    fakeComm.tagWorkspaceVAMap_.insert({tag, buf});
+
+    auto ret = fakeComm.GetKFCWorkSpaceVA(tag, &size, &addr, &newCreated);
+
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(CommunicatorImplTest, Ut_GetKFCWorkSpaceVA_When_CacheHitNewCreatedNull_Expect_Success)
+{
+    uint64_t size = 1024;
+    void *addr = nullptr;
+    std::string tag = "DPUTAG";
+
+    auto buf = DevBuffer::Create(static_cast<uintptr_t>(0x1000), size);
+    ASSERT_NE(buf, nullptr);
+    fakeComm.tagWorkspaceVAMap_.insert({tag, buf});
+
+    auto ret = fakeComm.GetKFCWorkSpaceVA(tag, &size, &addr, nullptr);
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(addr, reinterpret_cast<void *>(0x1000));
+}
+
+TEST_F(CommunicatorImplTest, Ut_GetKFCWorkSpaceVA_When_PciePath_Expect_Success)
+{
+    GlobalMockObject::verify();
+    uint64_t size = 1024;
+    void *addr = nullptr;
+    bool newCreated = false;
+    std::string tag = "DPUTAG";
+
+    int64_t connType = 0;// HOST_DEVICE_CONNECT_TYPE_PCIE
+    void* stubRegAddr = reinterpret_cast<void *>(0xBEEF0000);
+    MOCKER(HrtHalGetDeviceInfo).stubs().with(any(), any(), any(), outBoundP(&connType))
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER(HrtMalloc).stubs().with(any(), any())
+        .will(returnValue(reinterpret_cast<void *>(0x2000)));
+    MOCKER(halHostRegister).stubs().with(any(), any(), any(), any(), outBoundP(&stubRegAddr))
+        .will(returnValue(DRV_ERROR_NONE));
+
+    auto ret = fakeComm.GetKFCWorkSpaceVA(tag, &size, &addr, &newCreated);
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_NE(addr, nullptr);
+    EXPECT_TRUE(newCreated);
+    EXPECT_EQ(fakeComm.va_, reinterpret_cast<void *>(0x2000));
+}
+
+TEST_F(CommunicatorImplTest, Ut_GetKFCWorkSpaceVA_When_PcieHalHostRegisterFail_Expect_DrvError)
+{
+    GlobalMockObject::verify();
+    uint64_t size = 1024;
+    void *addr = nullptr;
+    bool newCreated = true;
+    std::string tag = "DPUTAG";
+
+    MOCKER(HrtMalloc).stubs().with(any(), any())
+        .will(returnValue(reinterpret_cast<void *>(0x2000)));
+    int64_t connType = 0;// HOST_DEVICE_CONNECT_TYPE_PCIE
+    void* stubRegAddr = reinterpret_cast<void *>(0xBEEF0000);
+    MOCKER(HrtHalGetDeviceInfo).stubs().with(any(), any(), any(), outBoundP(&connType))
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER(halHostRegister).stubs().with(any(), any(), any(), any(), any())
+        .will(returnValue(DRV_ERROR_INNER_ERR));
+    MOCKER(HrtFree).stubs();
+
+    auto ret = fakeComm.GetKFCWorkSpaceVA(tag, &size, &addr, &newCreated);
+
+    EXPECT_EQ(ret, HCCL_E_DRV);
+    auto iter = fakeComm.tagWorkspaceVAMap_.find(tag);
+    EXPECT_EQ(iter, fakeComm.tagWorkspaceVAMap_.end());
+}
+
+TEST_F(CommunicatorImplTest, Ut_GetKFCWorkSpaceVA_When_UbPath_Expect_Success)
+{
+    GlobalMockObject::verify();
+    uint64_t size = 1024;
+    void *addr = nullptr;
+    bool newCreated = false;
+    std::string tag = "DPUTAG";
+    int64_t connType = 2;// HOST_DEVICE_CONNECT_TYPE_UB
+
+    void* stubRegAddr = reinterpret_cast<void *>(0xBEEF0000);
+
+    MOCKER(HrtHalGetDeviceInfo).stubs().with(any(), any(), any(), outBoundP(&connType))
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER(halHostRegister).stubs().with(any(), any(), any(), any(), outBoundP(&stubRegAddr))
+        .will(returnValue(DRV_ERROR_NONE));
+
+    auto ret = fakeComm.GetKFCWorkSpaceVA(tag, &size, &addr, &newCreated);
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_NE(addr, nullptr);
+    EXPECT_TRUE(newCreated);
+    EXPECT_NE(fakeComm.va_, nullptr);
+    // free the malloc'd memory allocated by GetKFCWorkSpaceVA in UB path
+    free(fakeComm.va_);
+    fakeComm.va_ = nullptr;
+}
+
+TEST_F(CommunicatorImplTest, Ut_GetKFCWorkSpaceVA_When_UnsupportedConnectType_Expect_NotSupport)
+{
+    GlobalMockObject::verify();
+    uint64_t size = 1024;
+    void *addr = nullptr;
+    bool newCreated = true;
+    std::string tag = "DPUTAG";
+    int64_t connType = 1;// HOST_DEVICE_CONNECT_TYPE_HCCS;// unsupported connect type
+
+    MOCKER(HrtHalGetDeviceInfo).stubs().with(any(), any(), any(), outBoundP(&connType))
+        .will(returnValue(HCCL_SUCCESS));
+
+    auto ret = fakeComm.GetKFCWorkSpaceVA(tag, &size, &addr, &newCreated);
+
+    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
 }

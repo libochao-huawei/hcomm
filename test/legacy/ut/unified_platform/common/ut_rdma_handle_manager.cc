@@ -195,6 +195,7 @@ TEST_F(RdmaHandleManagerTest, CreateUbConn_Returns_DevUbTpConnection)
 
     // minimal CommunicatorImpl 放入 manager（构造函数只保存引用）
     CommunicatorImpl impl;
+    impl.devPhyId = 0;
     impl.currentCollOperator = std::make_unique<CollOperator>();
     RmaConnManager rmaConnManager(impl);
 
