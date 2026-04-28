@@ -19,6 +19,7 @@
 #include "adapter_rts.h"
 
 #include "hccp_ctx.h"
+#include "exception_util.h"
 
 #include "buffer.h"
 #include "local_ub_rma_buffer.h"
