@@ -515,7 +515,6 @@ HcclResult CcuConnection::Describe(std::string &dfxMsg)
     if (tpProtocol_ == TpProtocol::RTP) {
         struct TpAttr tpAttr {0};
         uint32_t attrBitmap = 1 << 13; // 13对应dataUdpSrcport
-<<<<<<< HEAD
         EXCEPTION_HANDLE_BEGIN
         HcclResult ret = Hccl::HrtRaGetTpAttrAsync(devPhyId_, ctxHandle_, tpInfo_.tpHandle, attrBitmap, tpAttr, reqHandles_[0]);
         if (ret == HCCL_E_NOT_SUPPORT) {
@@ -527,27 +526,6 @@ HcclResult CcuConnection::Describe(std::string &dfxMsg)
             return ret;
         }
         EXCEPTION_HANDLE_END
-=======
-        u32 devicePhyId = 0;
-        CHK_RET(hrtGetDevicePhyIdByIndex(devLogicId_, &devicePhyId));
-        try {
-            HcclResult res = Hccl::HrtRaGetTpAttrAsync(devicePhyId, ctxHandle_, tpInfo_.tpHandle, attrBitmap, tpAttr, reqHandles_[0]);
-            if (res != HcclResult::HCCL_SUCCESS) {
-                if (res == HcclResult::HCCL_E_NOT_SUPPORT)
-                {
-                    HCCL_ERROR("[CcuConnection::%s] this package does not support RaCtxGetTpAttr for device,"
-                        " please change new package", __func__);
-                }
-                return res;
-            }
-        } catch (NetworkApiException &e) {
-            HCCL_ERROR("[CcuConnection::%s] %s", __func__, e.what());
-            return HCCL_E_NETWORK;
-        }
-        udpSport = tpAttr.dataUdpSrcport;
-
-        CHK_RET(Hccl::HrtRaGetTpAttrAsync(devicePhyId, ctxHandle_, tpInfo_.tpHandle, attrBitmap, tpAttr, reqHandles_[0]));
->>>>>>> support ub comm log
         udpSport = tpAttr.dataUdpSrcport;
     }
     udpSport = udpSport & 0xFF;
@@ -563,13 +541,8 @@ HcclResult CcuConnection::Describe(std::string &dfxMsg)
     std::string jettyIds = oss.str();
 
     Hccl::IpAddress locAddr{}, rmtAddr{};
-<<<<<<< HEAD
     CHK_RET(CommAddrToIpAddress(locAddr_, locAddr));
     CHK_RET(CommAddrToIpAddress(rmtAddr_, rmtAddr));
-=======
-    CHK_RET((void)CommAddrToIpAddress(locAddr_, locAddr));
-    CHK_RET((void)CommAddrToIpAddress(rmtAddr_, rmtAddr));
->>>>>>> support ub comm log
     Hccl::Eid locEid = locAddr.GetReverseEid();
     Hccl::Eid rmtEid = rmtAddr.GetReverseEid();
 
