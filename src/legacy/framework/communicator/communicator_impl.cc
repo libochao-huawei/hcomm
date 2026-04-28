@@ -3271,7 +3271,6 @@ HcclResult CommunicatorImpl::InitAndLaunchDpuKernel()
         HCCL_ERROR("[CommunicatorImpl::InitCommResource] Alloc Share HBM Failed");
         return HCCL_E_RUNTIME;
     }
-    hostShareBuf = malloc(SHARE_HBM_MEMORY_SIZE);
     // 设置XPU
     HCCL_INFO("[CommunicatorImpl::%s] Switch to Dpu Ctx", __func__);
     if (aclrtGetCurrentContext(&npuContext) != ACL_SUCCESS) {
@@ -3291,13 +3290,21 @@ HcclResult CommunicatorImpl::InitAndLaunchDpuKernel()
     aclrtFuncHandle funcHandle;
     CHK_RET(PrepareDpuKernelResource(funcHandle));
 
+    hostShareBuf = malloc(SHARE_HBM_MEMORY_SIZE);
+
     // 下发
-    CHK_RET(LaunchDpuKernel(funcHandle));
+    HcclResult ret = LaunchDpuKernel(funcHandle);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[CommunicatorImpl::%s] Launch Dpu Kernel Failed", __func__);
+        free(hostShareBuf);
+        return ret;
+    }
 
     // 切换回当前Ctx
     HCCL_INFO("[CommunicatorImpl::%s] Switch to Npu Ctx", __func__);
     if (ACL_SUCCESS != aclrtSetCurrentContext(npuContext)) {
         HCCL_ERROR("[CommunicatorImpl::%s] Reset Current Ctx Failed", __func__);
+        free(hostShareBuf);
         return HCCL_E_INTERNAL;
     }
 
