@@ -176,7 +176,7 @@ HcclResult RankConsistentcyChecker::CheckFrameRecv(const u8 *recvBuf, u32 recvBu
     CHK_PRT_RET(recvBufLen < sizeof(HcclCheckInfo),
         HCCL_ERROR("[RankConsistentcyChecker][CheckFrameRecv] errNo[0x%016llx] recvBufLen[%u]is less than "
         "check info[%zu].", HCCL_ERROR_CODE(HCCL_E_INTERNAL), recvBufLen, sizeof(HcclCheckInfo)), HCCL_E_PARA);
-    
+
     HcclCheckInfo checkInfoRecv;	 
     // 对固定长度的全局数组变量，结构体变量进行初始化和拷贝，可以不用检查初始化安全函数返回值	 
     (void)memset_s(&checkInfoRecv, sizeof(HcclCheckInfo), 0, sizeof(HcclCheckInfo));	 
@@ -199,7 +199,6 @@ HcclResult RankConsistentcyChecker::CheckFrameRecv(const u8 *recvBuf, u32 recvBu
  
     HCCL_INFO("[RankConsistentcyChecker][CheckFrameRecv] check success, len of frame[%u], len of check data[%zu].", 
         recvBufLen, sizeof(checkInfo));
-    
     return HCCL_SUCCESS;
 }
 
@@ -216,8 +215,6 @@ void RankConsistentcyChecker::ClearCheckInfo()
     // 相关规范的例外场景，对固定数组的memset_s可以不判断返回值
     (void)memset_s(cannVersion_, MAX_CANN_VERSION_LEN + 1, 0, MAX_CANN_VERSION_LEN + 1);
     protocolType_ = ProtocolType::RESERVED;
-    subCommInfoRecorded_ = false;
-    (void)memset_s(&subCommInfo_, sizeof(subCommInfo_), 0, sizeof(subCommInfo_));
     return;
 }
 
@@ -316,91 +313,6 @@ u64 RankConsistentcyChecker::GetHcommInfoLength()
 {
     // Hcomm基础信息 不包含ccrInfoOp和cmdInfo（HCCL算子信息）
     return sizeof(HcclCRCInfo) + sizeof(ProtocolType) + MAX_CANN_VERSION_LEN + 1;
-}
-
-HcclResult RankConsistentcyChecker::CheckHcommInfo(const u8 *recvBuf, u32 recvBufLen, const std::string &tag)
-{
-    CHK_PTR_NULL(recvBuf);
-
-    u64 hcommInfoLen = GetHcommInfoLength();
-    CHK_PRT_RET(recvBufLen < hcommInfoLen, HCCL_ERROR("[RankConsistentcyChecker][CheckHcommInfo] recvBufLen[%u] < hcommInfoLen[%llu]", 
-        recvBufLen, hcommInfoLen), HCCL_E_PARA);
-    
-    // 解析接收到的Hcomm基础信息
-    HcclCRCInfo recvCrcInfoGlobal;
-    ProtocolType recvProtocolType;
-    char recvVersion[MAX_CANN_VERSION_LEN + 1] = {0};
-    u32 offset = 0;
-    (void)memcpy_s(&recvCrcInfoGlobal, sizeof(HcclCRCInfo), recvBuf + offset, sizeof(HcclCRCInfo));
-    offset += sizeof(HcclCRCInfo);
-    (void)memcpy_s(&recvProtocolType, sizeof(recvProtocolType), recvBuf + offset, sizeof(recvProtocolType));
-    offset += sizeof(recvProtocolType);
-    (void)memcpy_s(recvVersion, MAX_CANN_VERSION_LEN + 1, recvBuf + offset, MAX_CANN_VERSION_LEN + 1);
-
-    // 生成本地Hcomm基础信息
-    HcclCRCInfo localCrcInfoGlobal;
-    localCrcInfoGlobal.configFileExist_ = configFileExist_;
-    localCrcInfoGlobal.crcNum = crcTable_.size();
-    for (u32 i = 0; i < localCrcInfoGlobal.crcNum; i++) {
-        localCrcInfoGlobal.crcArray[i] = crcTable_[i];
-    }
-
-    // 对比环境变量CRC
-    bool isDiff = false;
-    static const std::vector<std::string> ENV_VAR_NAMES = {
-        "HCCL_ALGO",
-        "HCCL_BUFFSIZE",
-        "HCCL_OP_EXPANSION_MODE",
-        "HCCL_RDMA_QPS_PER_CONNECTION",
-        "HCCL_MULTI_QP_THRESHOLD"
-    };
-    if (localCrcInfoGlobal.crcNum != recvCrcInfoGlobal.crcNum) {
-        HCCL_ERROR("[RankConsistentcyChecker][CheckHcommInfo] CRC count mismatch: local[%u], remote[%u]", 
-            localCrcInfoGlobal.crcNum, recvCrcInfoGlobal.crcNum);
-        isDiff = true;
-    } else {
-        for (u32 i = 0; i < localCrcInfoGlobal.crcNum; i++) {
-            if (localCrcInfoGlobal.crcArray[i] != recvCrcInfoGlobal.crcArray[i]) {
-                std::string envVarName = ENV_VAR_NAMES[i];
-                HCCL_ERROR("[RankConsistentcyChecker][CheckHcommInfo] Env var Crc mismatch:%s local[0x%x], remote[0x%x]", 
-                    envVarName, localCrcInfoGlobal.crcArray[i], recvCrcInfoGlobal.crcArray[i]);
-                RPT_INPUT_ERR(true, "EI0005", 
-                    std::vector<std::string>({"ccl_op", "group", "para_name", "local_para", "remote_para"}), 
-                    std::vector<std::string>({"N/A", tag, "envVarName", 
-                        std::to_string(localCrcInfoGlobal.crcArray[i]), std::to_string(recvCrcInfoGlobal.crcArray[i])}));
-                isDiff = true;
-            }
-        }
-    }
-
-    // 对比协议类型
-    if (protocolType_ != recvProtocolType) {
-        HCCL_ERROR("[RankConsistentcyChecker][CheckHcommInfo] ProtocolType count mismatch: local[%d], remote[%d]", 
-            static_cast<s32>(protocolType_), static_cast<s32>(recvProtocolType));
-        RPT_INPUT_ERR(true, "EI0005", 
-            std::vector<std::string>({"ccl_op", "group", "para_name", "local_para", "remote_para"}), 
-            std::vector<std::string>({"N/A", tag, "protocolType", 
-                std::to_string(static_cast<s32>(protocolType_)), std::to_string(static_cast<s32>(recvProtocolType))}));
-        isDiff = true;
-    }
-
-    // 对比CANN版本（仅在版本校验开关打开时）
-    if (cannVerCheckSwitch_) {
-        std::string localVersion(cannVersion_);
-        std::string remoteVersion(recvVersion);
-        if (localVersion.empty() || remoteVersion.empty()) {
-            HCCL_WARNING("[RankConsistentcyChecker][CheckHcommInfo] CANN version is empty. local[%s], remote[%s]",  
-                localVersion.c_str(), remoteVersion.c_str());
-        } else if (localVersion != remoteVersion) {
-            HCCL_ERROR("[RankConsistentcyChecker][CheckHcommInfo] CANN version mismatch: local[%s], remote[%s]", 
-                localVersion.c_str(), remoteVersion.c_str());
-            RPT_INPUT_ERR(true, "EI0008", 
-                std::vector<std::string>({"local_version", "remote_version"}), 
-                std::vector<std::string>({localVersion, remoteVersion}));
-            isDiff = true;
-        }
-    }
-    return isDiff ? HCCL_E_PARA : HCCL_SUCCESS;
 }
 
 // private
@@ -549,11 +461,11 @@ HcclResult RankConsistentcyChecker::GenerateCheckFrame(HcclCheckInfo &checkInfo,
     // 添加CRC字段到校验帧
     u32 crcLen = crcTable_.size();
     checkInfo.crcInfoGlobal.configFileExist_ = configFileExist_;
-    if (crcLen != 0) {	 
-        CHK_PRT_RET(crcLen > MAX_CRC_LEN,	 
-            HCCL_ERROR("[RankConsistentcyChecker][GenerateCheckFrame]crc num[%u] is too big.", crcLen),	 
-            HCCL_E_INTERNAL); 
-        checkInfo.crcInfoGlobal.crcNum = crcLen; 
+    if (crcLen != 0) {
+        CHK_PRT_RET(crcLen > MAX_CRC_LEN,
+            HCCL_ERROR("[RankConsistentcyChecker][GenerateCheckFrame]crc num[%u] is too big.", crcLen),
+            HCCL_E_INTERNAL);
+        checkInfo.crcInfoGlobal.crcNum = crcLen;
         CHK_RET(GetCrc(crcLen, &checkInfo.crcInfoGlobal.crcArray[0]));
     }
     // 添加CMD参数信息到校验帧

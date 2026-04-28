@@ -822,7 +822,6 @@ HcclResult MyRank::BatchExchangeAndCheckConsistency(
             HCCL_E_INTERNAL);
 
         // ====== 第一阶段：交换Hcomm基础校验帧（HcclCheckInfo）并比对 ======
-
         // 生成本端Hcomm基础校验帧
         std::vector<u8> sendBuf(baseCheckInfoLen, 0);
         CHK_RET(checker.GetCheckFrame(sendBuf.data(), baseCheckInfoLen, commTag));
@@ -895,7 +894,6 @@ HcclResult MyRank::BatchExchangeAndCheckConsistency(
         CHK_RET(checker.CheckFrameRecv(recvBuf.data(), static_cast<u32>(baseCheckInfoLen), commTag));
 
         // ====== 第二阶段：Hcomm信息校验通过后，交换HCCL算子信息 ======
-
         bool hasExchangeInfo = hcclComm->IsExchangeInfoReady();
         u32 localExchangeInfoLen = hasExchangeInfo ? hcclComm->GetExchangeInfoLen() : 0;
 

@@ -139,7 +139,6 @@ public:
 
     HcclResult RecordEnvVarCrc();
     HcclResult RecordSubCommPara(u32 parentCommCrc, uint32_t rankNum, const uint32_t *rankIds, uint64_t subCommId);
-    HcclResult CheckHcommInfo(const u8 *recvBuf, u32 recvBufLen, const std::string &tag);
     u64 GetHcommInfoLength();
 
 private:
