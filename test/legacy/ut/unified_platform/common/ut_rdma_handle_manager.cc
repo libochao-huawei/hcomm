@@ -108,9 +108,10 @@ TEST_F(RdmaHandleManagerTest, rdma_handle_manager_get_jfc)
 {
     RdmaHandle rdmaHandle = nullptr;
     HrtUbJfcMode mode;
-    EXPECT_THROW(RdmaHandleManager::GetInstance().GetJfcHandle(rdmaHandle, mode), InvalidParamsException);
+    struct Hccl::CqCreateInfo cqInfo;
+    EXPECT_THROW(RdmaHandleManager::GetInstance().GetJfcHandle(rdmaHandle, cqInfo, mode), InvalidParamsException);
     rdmaHandle = new RdmaHandle();
-    EXPECT_THROW(RdmaHandleManager::GetInstance().GetJfcHandle(rdmaHandle, mode), InvalidParamsException);
+    EXPECT_THROW(RdmaHandleManager::GetInstance().GetJfcHandle(rdmaHandle, cqInfo, mode), InvalidParamsException);
 
 
     RdmaHandle rdmaHandle2 = nullptr;
