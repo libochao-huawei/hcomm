@@ -41,112 +41,173 @@ u64 CollReduceScatterPipelineFor91093Executor::CalcLoopMaxCount(const u32 unitSi
 HcclResult CollReduceScatterPipelineFor91093Executor::RunLoop(
     OpParam &param, AlgResourceResponse &algRes)
 {
+    if (param.DataDes.count == 0) {
+        return HCCL_SUCCESS;
+    }
+
     const u32 unitSize = SIZE_TABLE[param.DataDes.dataType];
     const ReduceType reduceType = ((param.reduceType != HCCL_REDUCE_PROD) &&
         (param.DataDes.dataType != HCCL_DATA_TYPE_INT64)) ?
         ReduceType::INLINE_REDUCE : ReduceType::TBE_REDUCE;
 
-    const u64 cclInputSizeHalved = algRes.cclInputMem.size() / 2;
-    DeviceMem cclInputAMem = algRes.cclInputMem.range(0, cclInputSizeHalved);
-    DeviceMem cclInputBMem = algRes.cclInputMem.range(cclInputSizeHalved, cclInputSizeHalved);
+    Stream streamL0L1 = param.stream;
+    Stream streamL2 = algResResp_->slaveStreams.back();
+    auto notifyL0L1toL2 = algResResp_->notifiesAux.back();
+    auto notifyL2toL0L1 = algResResp_->notifiesMain.back();
+    PipelineLoopContext ctx;
+    CHK_RET(BuildPipelineLoopContext(param, algRes, unitSize, reduceType, ctx));
 
-    const u64 cclOutputSizeHalved = algRes.cclOutputMem.size() / 2;
-    DeviceMem cclOutputAMem = algRes.cclOutputMem.range(0, cclOutputSizeHalved);
-    DeviceMem cclOutputBMem = algRes.cclOutputMem.range(cclOutputSizeHalved, cclOutputSizeHalved);
+    HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][RunLoop] "
+        "streamL2[%p] notifyL0L1toL2[%p] notifyL2toL0L1[%p]",
+        streamL2.ptr(), notifyL0L1toL2.get(), notifyL2toL0L1.get());
 
+    const u64 numLoopTotal = ctx.numBlockTotal + 1;
+    for (u64 i = 0; i < numLoopTotal; ++i) {
+        if (i < ctx.numBlockTotal) {
+            if (i >= 2) {
+                CHK_RET(LocalNotify::Wait(streamL0L1, dispatcher_, notifyL2toL0L1, INVALID_VALUE_STAGE));
+            }
+            CHK_RET(RunL0L1Phase(param, ctx, i, streamL0L1));
+            CHK_RET(LocalNotify::Post(streamL0L1, dispatcher_, notifyL0L1toL2, INVALID_VALUE_STAGE));
+        }
+
+        if (i >= 1 && i <= ctx.numBlockTotal) {
+            CHK_RET(LocalNotify::Wait(streamL2, dispatcher_, notifyL0L1toL2, INVALID_VALUE_STAGE));
+            CHK_RET(RunL2Phase(param, ctx, i - 1, streamL2));
+            CHK_RET(LocalNotify::Post(streamL2, dispatcher_, notifyL2toL0L1, INVALID_VALUE_STAGE));
+        }
+    }
+
+    CHK_RET(WaitForRemainingL2Signals(param, ctx.numBlockTotal, streamL0L1, notifyL2toL0L1));
+    HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][RunLoop] Pipeline run success");
+    return HCCL_SUCCESS;
+}
+
+// 由 RunLoop 调用
+HcclResult CollReduceScatterPipelineFor91093Executor::BuildPipelineLoopContext(
+    OpParam &param, AlgResourceResponse &algRes, const u32 unitSize,
+    const ReduceType &reduceType, PipelineLoopContext &ctx)
+{
     u8 *curInputPtr = static_cast<u8 *>(param.inputPtr);
     u8 *curOutputPtr = static_cast<u8 *>(param.outputPtr);
     CHK_PTR_NULL(curInputPtr);
     CHK_PTR_NULL(curOutputPtr);
 
-    if (param.DataDes.count == 0) {
-        return HCCL_SUCCESS;
-    }
-
     const u64 countDataPerLoop = CalcLoopMaxCount(unitSize);
     CHK_PRT_RET(countDataPerLoop == 0,
-        HCCL_ERROR("[CollReduceScatterPipelineFor91093Executor][RunLoop]"
-            "countDataPerLoop is zero."),
+        HCCL_ERROR("[CollReduceScatterPipelineFor91093Executor][BuildPipelineLoopContext]"
+            " countDataPerLoop is zero."),
         HCCL_E_INTERNAL);
 
     const u64 countDataLastLoopTemp = param.DataDes.count % countDataPerLoop;
     const u64 countDataLastLoop = countDataLastLoopTemp > 0 ? countDataLastLoopTemp : countDataPerLoop;
-    const u64 sizeDataPerLoop = countDataPerLoop * unitSize;
-    const u64 numBlockTotal = (param.DataDes.count - countDataLastLoop) / countDataPerLoop + 1;
-    const u64 numLoopTotal = numBlockTotal + 1;
+    const u64 cclInputSizeHalved = algRes.cclInputMem.size() / 2;
+    const u64 cclOutputSizeHalved = algRes.cclOutputMem.size() / 2;
+    ctx.reduceType = reduceType;
+    ctx.countDataPerLoop = countDataPerLoop;
+    ctx.countDataLastLoop = countDataLastLoop;
+    ctx.sizeDataPerLoop = countDataPerLoop * unitSize;
+    ctx.numBlockTotal = (param.DataDes.count - countDataLastLoop) / countDataPerLoop + 1;
+    ctx.cclInputSizeHalved = cclInputSizeHalved;
+    ctx.cclInputAMem = algRes.cclInputMem.range(0, cclInputSizeHalved);
+    ctx.cclInputBMem = algRes.cclInputMem.range(cclInputSizeHalved, cclInputSizeHalved);
+    ctx.cclOutputAMem = algRes.cclOutputMem.range(0, cclOutputSizeHalved);
+    ctx.cclOutputBMem = algRes.cclOutputMem.range(cclOutputSizeHalved, cclOutputSizeHalved);
+    ctx.curInputPtr = curInputPtr;
+    ctx.curOutputPtr = curOutputPtr;
 
-    Stream streamL0L1 = param.stream;
-    Stream streamL2 = algResResp_->slaveStreams.back();
-    auto notifyL0L1toL2 = algResResp_->notifiesAux.back();
-    auto notifyL2toL0L1 = algResResp_->notifiesMain.back();
-
-    HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][RunLoop] "
+    HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][BuildPipelineLoopContext] "
         "tag[%s] numBlockTotal[%llu] numLoopTotal[%llu] countDataPerLoop[%llu] countDataLastLoop[%llu]",
-        param.tag.c_str(), numBlockTotal, numLoopTotal, countDataPerLoop, countDataLastLoop);
-    HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][RunLoop] "
-        "streamL2[%p] notifyL0L1toL2[%p] notifyL2toL0L1[%p]",
-        streamL2.ptr(), notifyL0L1toL2.get(), notifyL2toL0L1.get());
+        param.tag.c_str(), ctx.numBlockTotal, ctx.numBlockTotal + 1, ctx.countDataPerLoop, ctx.countDataLastLoop);
+    return HCCL_SUCCESS;
+}
 
-    for (u64 i = 0; i < numLoopTotal; ++i) {
-        if (i < numBlockTotal) {
-            HCCL_CONFIG_INFO(HCCL_ALG,
-                "[CollReduceScatterPipelineFor91093Executor][RunLoop] loop[%llu/%llu] blockIdx[%llu] useBufferA[%d]",
-                i, numLoopTotal, i, (i % 2 == 0));
-
-            if (i >= 2) {
-                CHK_RET(LocalNotify::Wait(streamL0L1, dispatcher_, notifyL2toL0L1, INVALID_VALUE_STAGE));
-            }
-
-            const bool useBufferA = (i % 2 == 0);
-            const bool isLastBlock = (i == numBlockTotal - 1);
-            ExecMem execMem;
-            execMem.count = isLastBlock ? countDataLastLoop : countDataPerLoop;
-            execMem.inputMem = useBufferA ? cclInputAMem : cclInputBMem;
-            execMem.outputMem = useBufferA ? cclOutputAMem : cclOutputBMem;
-            execMem.scratchMem = execMem.outputMem;
-            execMem.inputPtr = curInputPtr + i * sizeDataPerLoop;
-            execMem.outputPtr = curOutputPtr + i * sizeDataPerLoop;
-
-            const u64 bufferBaseOffset = useBufferA ? 0 : cclInputSizeHalved;
-            CHK_RET(RunLevel0To1(param, reduceType, execMem, streamL0L1, bufferBaseOffset));
-
-            CHK_RET(LocalNotify::Post(streamL0L1, dispatcher_, notifyL0L1toL2, INVALID_VALUE_STAGE));
-        }
-
-        if (i >= 1 && i <= numBlockTotal) {
-            HCCL_CONFIG_INFO(HCCL_ALG,
-                "[CollReduceScatterPipelineFor91093Executor][RunLoop] loop[%llu/%llu] blockIdx[%llu] L2 phase",
-                i, numLoopTotal, i - 1);
-
-            CHK_RET(LocalNotify::Wait(streamL2, dispatcher_, notifyL0L1toL2, INVALID_VALUE_STAGE));
-
-            const u64 prevIdx = i - 1;
-            const bool prevUseBufferA = (prevIdx % 2 == 0);
-            const bool isLastBlock = (prevIdx == numBlockTotal - 1);
-            ExecMem execMem;
-            execMem.count = isLastBlock ? countDataLastLoop : countDataPerLoop;
-            execMem.inputMem = prevUseBufferA ? cclInputAMem : cclInputBMem;
-            execMem.outputMem = prevUseBufferA ? cclOutputAMem : cclOutputBMem;
-            execMem.scratchMem = execMem.outputMem;
-            execMem.inputPtr = curInputPtr + prevIdx * sizeDataPerLoop;
-            execMem.outputPtr = curOutputPtr + prevIdx * sizeDataPerLoop;
-
-            const u64 l2BaseOffset = prevUseBufferA ? 0 : cclInputSizeHalved;
-            CHK_RET(RunLevel2(param, reduceType, execMem, streamL2, l2BaseOffset));
-
-            CHK_RET(LocalNotify::Post(streamL2, dispatcher_, notifyL2toL0L1, INVALID_VALUE_STAGE));
-        }
-    }
-
+// 由 RunLoop 调用
+HcclResult CollReduceScatterPipelineFor91093Executor::WaitForRemainingL2Signals(
+    const OpParam &param, u64 numBlockTotal, Stream &streamL0L1,
+    const std::shared_ptr<LocalNotify> &notifyL2toL0L1)
+{
     const u64 remainingSignals = (numBlockTotal >= 2) ? 2 : numBlockTotal;
     for (u64 s = 0; s < remainingSignals; ++s) {
         HcclResult ret = LocalNotify::Wait(streamL0L1, dispatcher_, notifyL2toL0L1, INVALID_VALUE_STAGE);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[CollReduceScatterPipelineFor91093Executor][RunLoop] PostSync wait error, tag[%s]",
-                param.tag.c_str()), ret);
+            HCCL_ERROR("[CollReduceScatterPipelineFor91093Executor][WaitForRemainingL2Signals] "
+                "PostSync wait error, tag[%s]", param.tag.c_str()), ret);
     }
+    return HCCL_SUCCESS;
+}
 
-    HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][RunLoop] Pipeline run success");
+// 由 RunLoop 循环体调用
+HcclResult CollReduceScatterPipelineFor91093Executor::RunL0L1Phase(
+    OpParam &param, const PipelineLoopContext &ctx, u64 blockIdx, Stream &streamL0L1)
+{
+    HCCL_CONFIG_INFO(HCCL_ALG,
+        "[CollReduceScatterPipelineFor91093Executor][RunL0L1Phase] blockIdx[%llu] useBufferA[%d]",
+        blockIdx, (blockIdx % 2 == 0));
+
+    const bool useBufferA = (blockIdx % 2 == 0);
+    const bool isLastBlock = (blockIdx == ctx.numBlockTotal - 1);
+    ExecMem execMem;
+    execMem.count = isLastBlock ? ctx.countDataLastLoop : ctx.countDataPerLoop;
+    execMem.inputMem = useBufferA ? ctx.cclInputAMem : ctx.cclInputBMem;
+    execMem.outputMem = useBufferA ? ctx.cclOutputAMem : ctx.cclOutputBMem;
+    execMem.scratchMem = execMem.outputMem;
+    execMem.inputPtr = ctx.curInputPtr + blockIdx * ctx.sizeDataPerLoop;
+    execMem.outputPtr = ctx.curOutputPtr + blockIdx * ctx.sizeDataPerLoop;
+
+    const u64 bufferBaseOffset = useBufferA ? 0 : ctx.cclInputSizeHalved;
+    CHK_RET(RunLevel0To1(param, ctx.reduceType, execMem, streamL0L1, bufferBaseOffset));
+    return HCCL_SUCCESS;
+}
+
+// 由 RunLoop 循环体调用
+HcclResult CollReduceScatterPipelineFor91093Executor::RunL2Phase(
+    OpParam &param, const PipelineLoopContext &ctx, u64 blockIdx, Stream &streamL2)
+{
+    HCCL_CONFIG_INFO(HCCL_ALG,
+        "[CollReduceScatterPipelineFor91093Executor][RunL2Phase] blockIdx[%llu] L2 phase", blockIdx);
+
+    const bool useBufferA = (blockIdx % 2 == 0);
+    const bool isLastBlock = (blockIdx == ctx.numBlockTotal - 1);
+    ExecMem execMem;
+    execMem.count = isLastBlock ? ctx.countDataLastLoop : ctx.countDataPerLoop;
+    execMem.inputMem = useBufferA ? ctx.cclInputAMem : ctx.cclInputBMem;
+    execMem.outputMem = useBufferA ? ctx.cclOutputAMem : ctx.cclOutputBMem;
+    execMem.scratchMem = execMem.outputMem;
+    execMem.inputPtr = ctx.curInputPtr + blockIdx * ctx.sizeDataPerLoop;
+    execMem.outputPtr = ctx.curOutputPtr + blockIdx * ctx.sizeDataPerLoop;
+
+    const u64 l2BaseOffset = useBufferA ? 0 : ctx.cclInputSizeHalved;
+    CHK_RET(RunLevel2(param, ctx.reduceType, execMem, streamL2, l2BaseOffset));
+    return HCCL_SUCCESS;
+}
+
+// 由 RunLevel0To1、RunLevel2 调用
+void CollReduceScatterPipelineFor91093Executor::SliceExecMemIfNeeded(
+    const OpParam &param, ExecMem &execMem)
+{
+    if (CCLMemSlice_) {
+        u32 unitSize = SIZE_TABLE[param.DataDes.dataType];
+        u64 curSize = execMem.count * unitSize;
+        u32 sliceNum = topoAttr_.userRankSize;
+        execMem.inputMem = execMem.inputMem.range(0, curSize * sliceNum);
+        execMem.outputMem = execMem.outputMem.range(0, curSize);
+    }
+}
+
+// 由 KernelRunLevel0To1、KernelRunLevel2 调用
+HcclResult CollReduceScatterPipelineFor91093Executor::GetLevel2CommInfo(
+    SubCommInfo &level2CommInfo, bool &isSelectAHC)
+{
+    isSelectAHC = (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC ||
+        algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC_BROKE);
+    if (isSelectAHC) {
+        level2CommInfo = logicalLevel1CommInfo_;
+        level2CommInfo.localRankSize = 1;
+    } else {
+        CHK_RET(CheckCommSize(COMM_LEVEL2, COMM_INDEX_0 + 1));
+        level2CommInfo = GetSubCommInfo(COMM_LEVEL2, COMM_INDEX_0);
+    }
     return HCCL_SUCCESS;
 }
 
@@ -155,14 +216,7 @@ HcclResult CollReduceScatterPipelineFor91093Executor::RunLevel0To1(
     const u64 baseOffset)
 {
     (void)reduceType;
-    u32 unitSize = SIZE_TABLE[param.DataDes.dataType];
-    u64 curSize = execMem.count * unitSize;
-
-    if (CCLMemSlice_) {
-        u32 sliceNum = topoAttr_.userRankSize;
-        execMem.inputMem = execMem.inputMem.range(0, curSize * sliceNum);
-        execMem.outputMem = execMem.outputMem.range(0, curSize);
-    }
+    SliceExecMemIfNeeded(param, execMem);
 
     HCCL_CONFIG_INFO(HCCL_ALG,
         "[CollReduceScatterPipelineFor91093Executor][RunLevel0To1] chunk starts");
@@ -180,14 +234,7 @@ HcclResult CollReduceScatterPipelineFor91093Executor::RunLevel2(
     const u64 baseOffset)
 {
     (void)reduceType;
-    u32 unitSize = SIZE_TABLE[param.DataDes.dataType];
-    u64 curSize = execMem.count * unitSize;
-
-    if (CCLMemSlice_) {
-        u32 sliceNum = topoAttr_.userRankSize;
-        execMem.inputMem = execMem.inputMem.range(0, curSize * sliceNum);
-        execMem.outputMem = execMem.outputMem.range(0, curSize);
-    }
+    SliceExecMemIfNeeded(param, execMem);
 
     HCCL_CONFIG_INFO(HCCL_ALG,
         "[CollReduceScatterPipelineFor91093Executor][RunLevel2] chunk starts");
@@ -259,23 +306,13 @@ HcclResult CollReduceScatterPipelineFor91093Executor::DoubleRingReduceScatter(
     u32 ringNum = multRingsSliceZero.size();
     CHK_RET(CheckCommSize(COMM_LEVEL0, ringNum));
 
-    SubCommInfo level0ZeroCommInfo = GetSubCommInfo(COMM_LEVEL0, COMM_INDEX_0);
-    auto nicList = topoAttr_.nicList;
-    std::vector<std::vector<u32>> multiRingsOrder =
-        GetRingsOrderByTopoType(level0ZeroCommInfo.localRankSize, topoType_, nicList);
-
     u64 reduceAttr = GetReduceAttr(inputMem, outputMem, dataType, reductionOp);
-
     SubCommInfo level0RingCommInfo = GetSubCommInfo(COMM_LEVEL0, COMM_INDEX_0);
 
     std::vector<std::vector<Slice>> userMemInputSlicesOfDoubleRing;
-    CHK_RET(CollectMultiRingsUserMemSlices(ringNum, dataType,
-        opInfo, multRingsSliceZero,
-        multiRingsOrder, multRingsUserMemSlice,
-        userMemInputSlicesOfDoubleRing));
-
     std::vector<std::vector<u32>> rankOrders;
-    CHK_RET(CollectMultiRingsRankOrder(ringNum, multiRingsOrder, rankOrders));
+    CHK_RET(PrepareDoubleRingSlices(ringNum, dataType, opInfo, multRingsSliceZero,
+        multRingsUserMemSlice, userMemInputSlicesOfDoubleRing, rankOrders));
 
     std::unique_ptr<AlgTemplateBase> tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
         TemplateType::TEMPLATE_REDUCESCATTER_DB_RING, dispatcher_);
@@ -316,6 +353,25 @@ HcclResult CollReduceScatterPipelineFor91093Executor::DoubleRingReduceScatter(
     return HCCL_SUCCESS;
 }
 
+// 由 DoubleRingReduceScatter 调用
+HcclResult CollReduceScatterPipelineFor91093Executor::PrepareDoubleRingSlices(
+    u32 ringNum, const HcclDataType dataType, const HcomCollOpInfo *opInfo,
+    const std::vector<std::vector<Slice>> &multRingsSliceZero,
+    const std::vector<std::vector<Slice>> &multRingsUserMemSlice,
+    std::vector<std::vector<Slice>> &userMemInputSlicesOfDoubleRing,
+    std::vector<std::vector<u32>> &rankOrders)
+{
+    SubCommInfo level0ZeroCommInfo = GetSubCommInfo(COMM_LEVEL0, COMM_INDEX_0);
+    auto nicList = topoAttr_.nicList;
+    std::vector<std::vector<u32>> multiRingsOrder =
+        GetRingsOrderByTopoType(level0ZeroCommInfo.localRankSize, topoType_, nicList);
+    CHK_RET(CollectMultiRingsUserMemSlices(ringNum, dataType,
+        opInfo, multRingsSliceZero, multiRingsOrder, multRingsUserMemSlice,
+        userMemInputSlicesOfDoubleRing));
+    CHK_RET(CollectMultiRingsRankOrder(ringNum, multiRingsOrder, rankOrders));
+    return HCCL_SUCCESS;
+}
+
 // 拆分自 CollReduceScatterRingFor91093Executor::KernelRun 的 L0+L1 部分
 HcclResult CollReduceScatterPipelineFor91093Executor::KernelRunLevel0To1(
     const OpParam &param, ExecMem &execMem, Stream &streamL0L1, const u64 baseOffset)
@@ -339,17 +395,9 @@ HcclResult CollReduceScatterPipelineFor91093Executor::KernelRunLevel0To1(
         ringNum = LEVEL0_PLANE_NUM_IN_NPRING_SINGLE;
     }
 
-    bool isSelectAHC = (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC ||
-        algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC_BROKE);
-
+    bool isSelectAHC = false;
     SubCommInfo level2CommInfo;
-    if (isSelectAHC) {
-        level2CommInfo = logicalLevel1CommInfo_;
-        level2CommInfo.localRankSize = 1;
-    } else {
-        CHK_RET(CheckCommSize(COMM_LEVEL2, COMM_INDEX_0 + 1));
-        level2CommInfo = GetSubCommInfo(COMM_LEVEL2, COMM_INDEX_0);
-    }
+    CHK_RET(GetLevel2CommInfo(level2CommInfo, isSelectAHC));
     const u32 level2RankSize = level2CommInfo.localRankSize;
     const u32 level1RankSize = logicalLevel1CommInfo_.localRankSize;
 
@@ -377,58 +425,70 @@ HcclResult CollReduceScatterPipelineFor91093Executor::KernelRunLevel0To1(
         &opInfoByReduceScatterDMAreduce, multRingsUserMemSlice, disableDMAReduce));
 
     if (level1RankSize > 1) {
-        u64 reduceAttr = GetReduceAttr(execMem.inputMem, execMem.scratchMem, dataType, param.reduceType);
-        std::unique_ptr<AlgTemplateBase> level1TempAlg;
-
-        std::vector<Slice> level1DataSegsSlice;
-        CHK_RET(CalLevel1DataSegsSlice(execMem, param, logicalLevel1plane_, commIndex, sliceNum, level1RankSize,
-            level2RankSize, perDataSize, level1DataSegsSlice));
-
-        if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RING) {
-            level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
-                TemplateType::TEMPLATE_REDUCESCATTER_RING, dispatcher_);
-            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_RING in COMM_LEVEL1", __func__);
-            CHK_SMART_PTR_NULL(level1TempAlg);
-            CHK_RET(level1TempAlg->Prepare(reduceAttr));
-        } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB) {
-            level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
-                TemplateType::TEMPLATE_REDUCESCATTER_NB, dispatcher_);
-            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_NB in COMM_LEVEL1", __func__);
-            CHK_SMART_PTR_NULL(level1TempAlg);
-            CHK_RET(level1TempAlg->Prepare(reduceAttr));
-        } else if (isSelectAHC) {
-            std::vector<std::vector<std::vector<u32>>> globalSubGroups;
-            std::map<AHCConcOpType, TemplateType> ahcAlgOption;
-            CHK_RET(topoMatcher_->GetGlobalSubGroups(logicalLevel1plane_, globalSubGroups));
-            topoMatcher_->GetAHCAlgOption(ahcAlgOption);
-            if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC) {
-                level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
-                    TemplateType::TEMPLATE_REDUCESCATTER_AHC, dispatcher_);
-                HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_AHC in COMM_LEVEL1", __func__);
-            } else {
-                level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
-                    TemplateType::TEMPLATE_REDUCESCATTER_AHC_BROKE, dispatcher_);
-                HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_AHC_BROKE in COMM_LEVEL1", __func__);
-            }
-            CHK_SMART_PTR_NULL(level1TempAlg);
-            CHK_RET(level1TempAlg->Prepare(execMem.count, globalSubGroups, ahcAlgOption));
-            CHK_RET(level1TempAlg->Prepare(reduceAttr));
-        } else {
-            level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
-                TemplateType::TEMPLATE_REDUCESCATTER_NHR, dispatcher_);
-            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_NHR in COMM_LEVEL1", __func__);
-            CHK_SMART_PTR_NULL(level1TempAlg);
-            CHK_RET(level1TempAlg->Prepare(reduceAttr, false));
-        }
-
-        CHK_RET(level1TempAlg->Prepare(execMem.inputMem, execMem.inputMem, execMem.scratchMem, execMem.count,
-            dataType, streamL0L1, param.reduceType, LEVEL0_BRIDGE_RANK_ID, level1DataSegsSlice, baseOffset));
-        CHK_RET(level1TempAlg->RegisterProfiler(
-            (level1RankSize << PROF_RANKSIZE_OFFSET_OF_PLANEID) + logicalLevel1CommInfo_.localRank,
-            PROF_STAGE_2, HCCL_EXEC_STEP_NOT_SET, streamL0L1));
-        CHK_RET(RunTemplate(level1TempAlg, logicalLevel1CommInfo_));
+        CHK_RET(SelectAndRunLevel1Template(param, execMem, streamL0L1, baseOffset,
+            commIndex, sliceNum, level1RankSize, level2RankSize, perDataSize, isSelectAHC));
     }
 
+    return HCCL_SUCCESS;
+}
+
+// 由 KernelRunLevel0To1 调用
+HcclResult CollReduceScatterPipelineFor91093Executor::SelectAndRunLevel1Template(
+    const OpParam &param, ExecMem &execMem, Stream &streamL0L1, u64 baseOffset,
+    u32 commIndex, u32 sliceNum, u32 level1RankSize, u32 level2RankSize,
+    u32 perDataSize, bool isSelectAHC)
+{
+    const HcclDataType dataType = param.GetDataType();
+    u64 reduceAttr = GetReduceAttr(execMem.inputMem, execMem.scratchMem, dataType, param.reduceType);
+    std::unique_ptr<AlgTemplateBase> level1TempAlg;
+
+    std::vector<Slice> level1DataSegsSlice;
+    CHK_RET(CalLevel1DataSegsSlice(execMem, param, logicalLevel1plane_, commIndex, sliceNum, level1RankSize,
+        level2RankSize, perDataSize, level1DataSegsSlice));
+
+    if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RING) {
+        level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
+            TemplateType::TEMPLATE_REDUCESCATTER_RING, dispatcher_);
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_RING in COMM_LEVEL1", __func__);
+        CHK_SMART_PTR_NULL(level1TempAlg);
+        CHK_RET(level1TempAlg->Prepare(reduceAttr));
+    } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB) {
+        level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
+            TemplateType::TEMPLATE_REDUCESCATTER_NB, dispatcher_);
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_NB in COMM_LEVEL1", __func__);
+        CHK_SMART_PTR_NULL(level1TempAlg);
+        CHK_RET(level1TempAlg->Prepare(reduceAttr));
+    } else if (isSelectAHC) {
+        std::vector<std::vector<std::vector<u32>>> globalSubGroups;
+        std::map<AHCConcOpType, TemplateType> ahcAlgOption;
+        CHK_RET(topoMatcher_->GetGlobalSubGroups(logicalLevel1plane_, globalSubGroups));
+        topoMatcher_->GetAHCAlgOption(ahcAlgOption);
+        if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC) {
+            level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
+                TemplateType::TEMPLATE_REDUCESCATTER_AHC, dispatcher_);
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_AHC in COMM_LEVEL1", __func__);
+        } else {
+            level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
+                TemplateType::TEMPLATE_REDUCESCATTER_AHC_BROKE, dispatcher_);
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_AHC_BROKE in COMM_LEVEL1", __func__);
+        }
+        CHK_SMART_PTR_NULL(level1TempAlg);
+        CHK_RET(level1TempAlg->Prepare(execMem.count, globalSubGroups, ahcAlgOption));
+        CHK_RET(level1TempAlg->Prepare(reduceAttr));
+    } else {
+        level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
+            TemplateType::TEMPLATE_REDUCESCATTER_NHR, dispatcher_);
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_NHR in COMM_LEVEL1", __func__);
+        CHK_SMART_PTR_NULL(level1TempAlg);
+        CHK_RET(level1TempAlg->Prepare(reduceAttr, false));
+    }
+
+    CHK_RET(level1TempAlg->Prepare(execMem.inputMem, execMem.inputMem, execMem.scratchMem, execMem.count,
+        dataType, streamL0L1, param.reduceType, LEVEL0_BRIDGE_RANK_ID, level1DataSegsSlice, baseOffset));
+    CHK_RET(level1TempAlg->RegisterProfiler(
+        (level1RankSize << PROF_RANKSIZE_OFFSET_OF_PLANEID) + logicalLevel1CommInfo_.localRank,
+        PROF_STAGE_2, HCCL_EXEC_STEP_NOT_SET, streamL0L1));
+    CHK_RET(RunTemplate(level1TempAlg, logicalLevel1CommInfo_));
     return HCCL_SUCCESS;
 }
 
@@ -442,55 +502,14 @@ HcclResult CollReduceScatterPipelineFor91093Executor::KernelRunLevel2(
     const HcclDataType dataType = param.GetDataType();
     CHK_RET(SalGetDataTypeSize(dataType, perDataSize));
 
-    bool isSelectAHC = (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC ||
-        algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC_BROKE);
-
+    bool isSelectAHC = false;
     SubCommInfo level2CommInfo;
-    if (isSelectAHC) {
-        level2CommInfo = logicalLevel1CommInfo_;
-        level2CommInfo.localRankSize = 1;
-    } else {
-        CHK_RET(CheckCommSize(COMM_LEVEL2, COMM_INDEX_0 + 1));
-        level2CommInfo = GetSubCommInfo(COMM_LEVEL2, COMM_INDEX_0);
-    }
+    CHK_RET(GetLevel2CommInfo(level2CommInfo, isSelectAHC));
     const u32 level2RankSize = level2CommInfo.localRankSize;
 
     if (level2RankSize > 1) {
-        u64 reduceAttr = GetReduceAttr(execMem.inputMem, execMem.scratchMem, dataType, param.reduceType);
-
-        std::vector<Slice> level2DataSegsSlice;
-        CHK_RET(CalLevel2DataSegsSlice(execMem, param, level2RankSize, perDataSize, level2DataSegsSlice));
-
-        std::unique_ptr<AlgTemplateBase> level2TempAlg;
-        if (algType_.algoLevel2 == AlgTypeLevel2::ALG_LEVEL2_NB) {
-            level2TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
-                TemplateType::TEMPLATE_REDUCESCATTER_NB, dispatcher_);
-            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_NB in COMM_LEVEL2", __func__);
-            CHK_SMART_PTR_NULL(level2TempAlg);
-            CHK_RET(level2TempAlg->Prepare(reduceAttr));
-        } else if (algType_.algoLevel2 == AlgTypeLevel2::ALG_LEVEL2_NHR) {
-            level2TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
-                TemplateType::TEMPLATE_REDUCESCATTER_NHR, dispatcher_);
-            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_NHR in COMM_LEVEL2", __func__);
-            CHK_SMART_PTR_NULL(level2TempAlg);
-            CHK_RET(level2TempAlg->Prepare(reduceAttr, false));
-            if (algoAttr_.isSupportAtomicWrite) {
-                level2TempAlg->CloseBarrier();
-            }
-        } else {
-            level2TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
-                TemplateType::TEMPLATE_REDUCESCATTER_RING, dispatcher_);
-            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_RING in COMM_LEVEL2", __func__);
-            CHK_SMART_PTR_NULL(level2TempAlg);
-            CHK_RET(level2TempAlg->Prepare(reduceAttr));
-        }
-
-        CHK_RET(level2TempAlg->Prepare(execMem.inputMem, execMem.inputMem, execMem.scratchMem, execMem.count,
-            dataType, streamL2, param.reduceType, LEVEL0_BRIDGE_RANK_ID, level2DataSegsSlice, baseOffset));
-        CHK_RET(level2TempAlg->RegisterProfiler(
-            (level2RankSize << PROF_RANKSIZE_OFFSET_OF_PLANEID) + level2CommInfo.localRank,
-            PROF_STAGE_2, HCCL_EXEC_STEP_NOT_SET, streamL2));
-        CHK_RET(RunTemplate(level2TempAlg, level2CommInfo));
+        CHK_RET(SelectAndRunLevel2Template(param, execMem, streamL2, baseOffset,
+            level2CommInfo, level2RankSize, perDataSize));
     }
 
     HcomCollOpInfo opInfo = GetHcomCollOpInfo(param, execMem);
@@ -505,6 +524,50 @@ HcclResult CollReduceScatterPipelineFor91093Executor::KernelRunLevel2(
         CHK_RET(HcclD2DMemcpyAsync(dispatcher_, execMem.outputMem, srcMem, streamL2));
     }
 
+    return HCCL_SUCCESS;
+}
+
+// 由 KernelRunLevel2 调用
+HcclResult CollReduceScatterPipelineFor91093Executor::SelectAndRunLevel2Template(
+    const OpParam &param, ExecMem &execMem, Stream &streamL2, u64 baseOffset,
+    const SubCommInfo &level2CommInfo, u32 level2RankSize, u32 perDataSize)
+{
+    const HcclDataType dataType = param.GetDataType();
+    u64 reduceAttr = GetReduceAttr(execMem.inputMem, execMem.scratchMem, dataType, param.reduceType);
+
+    std::vector<Slice> level2DataSegsSlice;
+    CHK_RET(CalLevel2DataSegsSlice(execMem, param, level2RankSize, perDataSize, level2DataSegsSlice));
+
+    std::unique_ptr<AlgTemplateBase> level2TempAlg;
+    if (algType_.algoLevel2 == AlgTypeLevel2::ALG_LEVEL2_NB) {
+        level2TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
+            TemplateType::TEMPLATE_REDUCESCATTER_NB, dispatcher_);
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_NB in COMM_LEVEL2", __func__);
+        CHK_SMART_PTR_NULL(level2TempAlg);
+        CHK_RET(level2TempAlg->Prepare(reduceAttr));
+    } else if (algType_.algoLevel2 == AlgTypeLevel2::ALG_LEVEL2_NHR) {
+        level2TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
+            TemplateType::TEMPLATE_REDUCESCATTER_NHR, dispatcher_);
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_NHR in COMM_LEVEL2", __func__);
+        CHK_SMART_PTR_NULL(level2TempAlg);
+        CHK_RET(level2TempAlg->Prepare(reduceAttr, false));
+        if (algoAttr_.isSupportAtomicWrite) {
+            level2TempAlg->CloseBarrier();
+        }
+    } else {
+        level2TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
+            TemplateType::TEMPLATE_REDUCESCATTER_RING, dispatcher_);
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_RING in COMM_LEVEL2", __func__);
+        CHK_SMART_PTR_NULL(level2TempAlg);
+        CHK_RET(level2TempAlg->Prepare(reduceAttr));
+    }
+
+    CHK_RET(level2TempAlg->Prepare(execMem.inputMem, execMem.inputMem, execMem.scratchMem, execMem.count,
+        dataType, streamL2, param.reduceType, LEVEL0_BRIDGE_RANK_ID, level2DataSegsSlice, baseOffset));
+    CHK_RET(level2TempAlg->RegisterProfiler(
+        (level2RankSize << PROF_RANKSIZE_OFFSET_OF_PLANEID) + level2CommInfo.localRank,
+        PROF_STAGE_2, HCCL_EXEC_STEP_NOT_SET, streamL2));
+    CHK_RET(RunTemplate(level2TempAlg, level2CommInfo));
     return HCCL_SUCCESS;
 }
 
