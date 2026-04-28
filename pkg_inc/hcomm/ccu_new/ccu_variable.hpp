@@ -18,71 +18,74 @@
 #include "ccu_data_utils.hpp"
 #include "ccu_data_api_impl.h"
 
-class CcuVariable;
+namespace ccu {
 
-struct CcuCondExpr {
-    CcuVariable *var;
+class Variable;
+
+struct CondExpr {
+    Variable *var;
     uint64_t imm;
     CcuConditionType cond;
 };
 
-class CcuVariable final {
+class Variable final {
 public:
-    explicit CcuVariable() {}
+    explicit Variable() {}
 
-    CcuVariable(const CcuVariable& other) {
+    Variable(const Variable& other) {
         this->handle = other.handle;
     }
 
-    void operator=(const CcuVariable& other) const{
+    void operator=(const Variable& other) const {
         auto ret = CcuVariableAssignVar(this->handle, other.handle);
         if (ret != CcuResult::CCU_SUCCESS) {
             throw "todo: failed";
         }
     }
-    
 
-    void operator=(CcuVariable&& other) {
+    void operator=(Variable&& other) {
         this->handle = other.handle;
     }
 
-    void operator=(uint64_t immediate) const{
+    void operator=(uint64_t immediate) const {
         auto ret = CcuVariableAssignImm(this->handle, immediate);
         if (ret != CcuResult::CCU_SUCCESS) {
             throw "todo: failed";
         }
     }
 
-    void operator=(CcuArithmeticOperator<CcuVariable, CcuVariable> op) const{
+    void operator=(CcuArithmeticOperator<Variable, Variable> op) const {
         auto ret = CcuVariableAddVarToVar(this->handle, op.lhs.handle, op.rhs.handle);
         if (ret != CcuResult::CCU_SUCCESS) {
             throw "todo: failed";
         }
     }
 
-    void operator+=(const CcuVariable &other) const{
+    void operator+=(const Variable &other) const {
         auto ret = CcuVariableAddVarToVar(this->handle, this->handle, other.handle);
         if (ret != CcuResult::CCU_SUCCESS) {
             throw "todo: failed";
         }
     }
 
-    CcuArithmeticOperator<CcuVariable, CcuVariable> operator+(const CcuVariable &that) const {
-        return CcuArithmeticOperator<CcuVariable, CcuVariable>(*this, that, CcuArithmeticOperatorType::ADDITION);
+    CcuArithmeticOperator<Variable, Variable> operator+(const Variable &that) const {
+        return CcuArithmeticOperator<Variable, Variable>(*this, that, CcuArithmeticOperatorType::ADDITION);
     }
 
-    CcuCondExpr operator==(uint64_t immediate) {
-        return CcuCondExpr{this, immediate, CCU_CONDITION_EQ};
+    CondExpr operator==(uint64_t immediate) {
+        return CondExpr{this, immediate, CCU_CONDITION_EQ};
     }
 
-    CcuCondExpr operator!=(uint64_t immediate) {
-        return CcuCondExpr{this, immediate, CCU_CONDITION_NE};
+    CondExpr operator!=(uint64_t immediate) {
+        return CondExpr{this, immediate, CCU_CONDITION_NE};
     }
 
     CcuVariableHandle handle{0};
 };
 
-template <> inline void CcuArithmeticOperator<CcuVariable, CcuVariable>::Check() const
+} // namespace ccu
+
+template <> inline void CcuArithmeticOperator<ccu::Variable, ccu::Variable>::Check() const
 {
 }
 

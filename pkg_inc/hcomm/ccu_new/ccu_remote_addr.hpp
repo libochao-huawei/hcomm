@@ -6,25 +6,29 @@
 #include "ccu_variable.hpp"
 #include "ccu_address.hpp"
 
-class CcuRemoteAddr final {
+namespace ccu {
+
+class RemoteAddr final {
 public:
-    explicit CcuRemoteAddr() {}
+    explicit RemoteAddr() {}
 
-    CcuRemoteAddr(const CcuRemoteAddr& other) {
+    RemoteAddr(const RemoteAddr& other) {
         this->handle = other.handle;
         this->addr.handle = other.addr.handle;
         this->token.handle = other.token.handle;
     }
 
-    void operator=(CcuRemoteAddr&& other) {
+    void operator=(RemoteAddr&& other) {
         this->handle = other.handle;
         this->addr.handle = other.addr.handle;
         this->token.handle = other.token.handle;
     }
 
-    CcuAddress addr;
-    CcuVariable token;
+    Address addr;
+    Variable token;
     CcuRemoteAddrHandle handle{0};
 };
+
+} // namespace ccu
 
 #endif // CCU_REMOTE_ADDR_HPP
