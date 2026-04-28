@@ -230,6 +230,7 @@ public:
     HcclResult GetLocalCclBuffer(void **addr, uint64_t *size);
     HcclResult GetDevMemWorkSpace(const std::string &memTag, uint64_t *size, void **addr, bool *newCreated);
     HcclResult CreateWorkspaceBuf(const char *memTag, uint64_t *size, bool *newCreated);
+    HcclResult GetKFCWorkSpaceVA(const std::string &memTag, uint64_t *size, void **addr, bool *newCreated);
 
     bool IsWorldGroup() const;
 
@@ -472,6 +473,10 @@ private:
     bool isFirstBarrier = true;
     // Dpu Kernel Launch 申请的共享内存
     void* hostShareBuf{nullptr};
+    void* va_{nullptr};
+    void* accessVA_{nullptr};
+    int64_t connectType_{0};
+    std::unordered_map<std::string, std::shared_ptr<DevBuffer>> tagWorkspaceVAMap_;
     aclrtStream dpuStream;
     aclrtContext dpuContext;
     aclrtContext npuContext;
