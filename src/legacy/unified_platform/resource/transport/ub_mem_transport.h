@@ -33,6 +33,8 @@ public:
 
     TransportStatus GetStatus() override;
 
+    TransportStatus GetSyncStatus();
+
     std::vector<char> GetUniqueId() override;
 
     std::vector<char> GetUniqueIdV2();
@@ -77,6 +79,9 @@ public:
     HcclResult GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum);
     HcclResult CheckSocketStatus();
     HcclResult UpdateMemInfo(std::vector<LocalRmaBuffer *> &bufferVecTemp);
+
+    // hostUb使用
+    HcclResult GetRemoteSeg(const void* addr, u64 len, u64 *seg);
 
     HcclResult Init();
     HcclResult DeInit() const;
@@ -129,6 +134,13 @@ private:
 
     void SendFinish();
     void RecvFinish();
+
+    void SendDataSizeSync();
+    void RecvDataSizeSync();
+    void SendExchangeDataSync();
+    void RecvExchangeDataSync();
+    void SendFinishSync();
+    void RecvFinishSync();
 
     void BufferVecPack(BinaryStream &binaryStream, std::vector<LocalRmaBuffer *> &bufferVec,
         std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &tagVec);
