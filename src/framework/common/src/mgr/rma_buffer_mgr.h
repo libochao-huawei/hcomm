@@ -112,7 +112,7 @@ public:
         return std::make_pair(false, BufferType{}); // 未找到
     }
 
-    std::pair<bool, BufferType> Find(const KeyType& key) const 
+    std::pair<bool, BufferType> DirectFind(const KeyType& key) const 
     {
         auto it = intervalTree_.begin();
         while (it != intervalTree_.end()) {
