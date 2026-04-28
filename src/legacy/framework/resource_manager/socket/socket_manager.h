@@ -18,7 +18,7 @@
 #include <functional>
 #include <memory>
 
-#include "socket.h"
+#include "../../unified_platform/resource/socket/socket.h"
 #include "virtual_topo.h"
 #include "socket_config.h"
 #include "env_func.h"

@@ -14,7 +14,7 @@
 #include "ub_local_notify.h"
 #include "local_ub_rma_buffer.h"
 #include "sal.h"
-#include "dlprof_func.h"
+#include "../../common/dlprof_func.h"
 #include "user_remote_mem_getter.h"
 #include "exception_util.h"
 #include "env_config/env_config.h"
