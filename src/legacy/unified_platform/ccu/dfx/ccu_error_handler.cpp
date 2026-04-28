@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <adapter_error_manager_pub.h>
 #include "ccu_error_handler.h"
 #include "ccu_context_mgr_imp.h"
 #include "orion_adapter_hccp.h"
@@ -16,6 +17,8 @@
 namespace Hccl {
 using namespace std;
 using namespace CcuRep;
+constexpr uint8_t CCUM_EXECUTE_ERROR = 0X09;
+constexpr uint8_t CCU_MISSION_TASK_KILLED = 0X02;
 
 const map<uint8_t, string> MISSION_STATUS_MAP{
     {0x01, "Unsupported Opcode(0x01)"},      {0x02, "Local Operation Error(0x02)"},
@@ -203,7 +206,7 @@ void CcuErrorHandler::GenStatusInfo(const ErrorInfoBase &baseInfo, vector<CcuErr
     const auto taskInformation = Hccl::StringFormat("currentInsId[%u], status[%u]", baseInfo.currentInsId, baseInfo.status);
     const uint8_t highPart  = (baseInfo.status >> 8) & 0xFF; // 高8位
     const uint8_t lowPart   = baseInfo.status & 0xFF;        // 低8位
-    if (highPart == 0x09 && lowPart == 0x02) {
+    if (highPart == CCUM_EXECUTE_ERROR && lowPart == CCU_MISSION_TASK_KILLED) {
         RPT_INPUT_ERR(true,
             "EI0002",
             std::vector<std::string>({"remote_rankid", "base_information", "task_information", "group_rank_content"}),

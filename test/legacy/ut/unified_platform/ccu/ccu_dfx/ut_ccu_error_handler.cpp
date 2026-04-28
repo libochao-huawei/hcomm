@@ -152,7 +152,7 @@ TEST_F(CcuErrorHandlerTest, test_gen_status_info)
     errorInfo.clear();
     baseInfo.status = 0x0902;
     CcuErrorHandler::GenStatusInfo(baseInfo, errorInfo);
-    EXPECT_EQ(string(errorInfo[0].msg.mission.missionError), "CCUM Execute Error(0x09), Remote Access Abort(0x02)");
+    EXPECT_EQ(string(errorInfo[0].msg.mission.missionError), "CCUM Execute Error(0x09), CCU Mission Task Killed(0x02)");
 
     errorInfo.clear();
     baseInfo.status = 0x0A07;
