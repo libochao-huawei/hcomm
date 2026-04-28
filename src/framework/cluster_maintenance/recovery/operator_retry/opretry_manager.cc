@@ -170,13 +170,16 @@ HcclResult OpRetryManager::AddLinkInfoByIdentifier(s32 deviceLogicID, const std:
 {
     return OpretryLinkManage::GetInstance(deviceLogicID).AddLinkInfoByIdentifier(identifier, newTag, remoteRankList, incre);
 }
- 
+
 HcclResult OpRetryManager::GetLinkInfoByIdentifier(s32 deviceLogicID, const std::string &identifier, 
-        const std::string &newTag, std::vector<u32> &remoteRankList)
+    const std::string &newTag, std::vector<u32> &remoteRankList, bool isGetGroupAllRemoteRank)
 {
+    if (isGetGroupAllRemoteRank) {
+        return OpretryLinkManage::GetInstance(deviceLogicID).GetLinkInfoByIdentifier(identifier, remoteRankList);
+    }
     return OpretryLinkManage::GetInstance(deviceLogicID).GetLinkInfoByIdentifier(identifier, newTag, remoteRankList);
 }
- 
+
 HcclResult OpRetryManager::DeleteLinkInfoByIdentifier(s32 deviceLogicID, const std::string &identifier)
 {
     return OpretryLinkManage::GetInstance(deviceLogicID).DeleteLinkInfoByIdentifier(identifier);
