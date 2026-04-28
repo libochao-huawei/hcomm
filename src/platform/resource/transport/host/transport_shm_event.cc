@@ -217,7 +217,7 @@ HcclResult TransportShmEvent::ExchangeSignalMesg()
     if (deviceLogicId_ == HOST_DEVICE_ID) {
         // ps
         // EVENT start
-        NotifyMsg notifyMsg;
+        NotifyMsg notifyMsg = {};
         CHK_RET(CreateIpcSignal(remoteIsendDoneNotify_, notifyMsg.remoteIsendDoneNotify));
         CHK_RET(CreateIpcSignal(remoteImrecvDoneNotify_, notifyMsg.remoteImrecvDoneNotify));
         CHK_RET(hrtRaSocketBlockSend(fdHandle_, &notifyMsg, sizeof(notifyMsg)));
@@ -236,7 +236,7 @@ HcclResult TransportShmEvent::ExchangeSignalMesg()
     } else {
         // worker
         // EVENT start
-        NotifyMsg notifyMsg;
+        NotifyMsg notifyMsg = {};
         CHK_RET(hrtRaSocketBlockRecv(fdHandle_, &notifyMsg, sizeof(notifyMsg)));
         std::vector<u8> isendDoneNotify(notifyMsg.remoteIsendDoneNotify,
             notifyMsg.remoteIsendDoneNotify + NOTIFY_INFO_LENGTH);

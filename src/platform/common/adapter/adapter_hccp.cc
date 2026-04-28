@@ -3033,7 +3033,7 @@ HcclResult SnapShotSaveAction(s32 networkMode, u32 devicePhyId, HcclSaveSnapShot
 HcclResult SnapShotRestoreAction(s32 networkMode, u32 devicePhyId)
 {
     HCCL_INFO("%s networkMode[%d], devicePhyId[%u]", __func__, networkMode, devicePhyId);
-    struct RaInfo raInfo;
+    struct RaInfo raInfo = {};
     raInfo.mode = networkMode;
     raInfo.phyId = devicePhyId;
     s32 ret = DlRaFunction::GetInstance().dlRaRestoreSnapShot(&raInfo);

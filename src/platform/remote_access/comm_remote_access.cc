@@ -370,7 +370,7 @@ HcclResult CommRemoteAccess::CreateInterServerLinks()
                 cliConn[connLoop].remoteIp.addr = iter->second[idx].GetBinaryAddress().addr;
                 cliConn[connLoop].remoteIp.addr6 = iter->second[idx].GetBinaryAddress().addr6;
                 /* 插入建链状态的指示 */
-                LinkStatus_t linkInfo;
+                LinkStatus_t linkInfo = {};
                 linkInfo.userRank = iter->first;
                 linkInfo.status = SOCKET_CONNECT_NO_CONNECTION;
                 linkInfo.isLinked = false;
@@ -472,7 +472,7 @@ HcclResult CommRemoteAccess::CreateInterClientLinks()
         }
         /* 插入建链状态的指示 */
         for (auto iter = dstInterClientMap_.begin(); iter != dstInterClientMap_.end(); iter++) {
-            LinkStatus_t linkInfo;
+            LinkStatus_t linkInfo = {};
             linkInfo.userRank = iter->first;
             linkInfo.status = SOCKET_CONNECT_NO_CONNECTION;
             linkInfo.isLinked = false;

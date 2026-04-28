@@ -91,7 +91,7 @@ HcclResult HDCommunicate::VerifyDeviceMemoryRegisterSupport()
 
 struct HDCommunicateParams HDCommunicate::GetCommunicateParams() const
 {
-    struct HDCommunicateParams params;
+    struct HDCommunicateParams params = {};
     params.hostAddr = reinterpret_cast<u64>(reinterpret_cast<void *>(hostMem->GetAddr()));
     params.deviceAddr = reinterpret_cast<u64>(reinterpret_cast<void *>(devMem->GetAddr()));
     params.readCacheAddr = reinterpret_cast<u64>(readCacheAddr);

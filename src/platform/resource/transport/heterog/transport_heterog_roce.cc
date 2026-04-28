@@ -1443,7 +1443,7 @@ HcclResult TransportHeterogRoce::ExchangeSignalMesg()
     if (deviceLogicId_ == HOST_DEVICE_ID) {
         // ps
         // Notify start
-        HcclRdmaSignalInfo remoteRdmaSignal[REMOTE_RDMA_SIGNAL_SIZE];
+        HcclRdmaSignalInfo remoteRdmaSignal[REMOTE_RDMA_SIGNAL_SIZE] = {};
         CHK_RET(hrtRaSocketBlockRecv(fdHandle_, remoteRdmaSignal,
             sizeof(HcclRdmaSignalInfo) * REMOTE_RDMA_SIGNAL_SIZE));
         CHK_RET(RecoverNotifyMsg(remoteRdmaSignal, REMOTE_RDMA_SIGNAL_SIZE));

@@ -125,7 +125,7 @@ HcclResult TransportDeviceRoceMem::AddOpFence(const MemDetails &localFenceMem, c
 HcclResult TransportDeviceRoceMem::DoorBellSend(Stream &stream, u64 dbInfo, u32 wrDataLen, bool fence)
 {
     HCCL_DEBUG("[DoorBellSend] dbIndex[%#x] dbInfo[%#llx] remoteRankId[%u]", qpInfo_.dbIndex, dbInfo, remoteRankId_);
-    RdmaTaskInfo rdmaInfo;
+    RdmaTaskInfo rdmaInfo = {};
     WrInformation wrInfo;
     wrInfo.notifyId = 0;
     wrInfo.wrData.memList.len = wrDataLen;

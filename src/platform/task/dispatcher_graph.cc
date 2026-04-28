@@ -98,7 +98,7 @@ HcclResult DispatcherGraph::LaunchTasksEx(Stream &stream, std::vector<Stream> &s
     disableFfts_ = true;
     // 调用回调来保存task信息
     if (callback_ != nullptr) {
-        struct TaskPara taskPara;
+        struct TaskPara taskPara = {};
         taskPara.type = TaskType::TASK_GRAPH_LAUNCH;
         taskPara.stream = stream.ptr();
         taskPara.isMainStream = stream.IsMainStream();
@@ -130,7 +130,7 @@ HcclResult DispatcherGraph::SignalTaskParaSave(HcclRtNotify signal, Stream &stre
         CHK_RET(GetNotifyDfxInfo(signal, userRank, offset, remoteUserRank, notifyID));
         // 调用回调来保存task信息
         hccl::TaskParaNotify para(notifyID, stage, remoteUserRank, (ctxIdx - 1));
-        struct TaskPara taskPara;
+        struct TaskPara taskPara = {};
         taskPara.stream = stream.ptr();
         taskPara.isMainStream = stream.IsMainStream();
         taskPara.beginTime = beginTime;
@@ -145,7 +145,7 @@ HcclResult DispatcherGraph::SignalTaskParaSave(HcclRtNotify signal, Stream &stre
         u64 notifyID;
         CHK_RET(GetNotifyDfxInfo(signal, userRank, offset, remoteUserRank, notifyID));
         hccl::TaskParaNotify para(notifyID, stage, remoteUserRank, (ctxIdx - 1));
-        struct TaskPara taskPara;
+        struct TaskPara taskPara = {};
         taskPara.stream = stream.ptr();
         taskPara.isMainStream = stream.IsMainStream();
         taskPara.beginTime = beginTime;

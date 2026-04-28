@@ -163,7 +163,7 @@ HcclResult TransportRemoteAccess::CreateNotify()
 
 HcclResult TransportRemoteAccess::GetRemoteNotifyInfo()
 {
-    NotifyMsg mrMsg;
+    NotifyMsg mrMsg = {};
     s32 sRet = memset_s(&mrMsg, sizeof(NotifyMsg), 0, sizeof(NotifyMsg));
     CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[Get][NotifyInfo]errNo[0x%016llx]get remote addr, memory set 0 failed. "\
         "params: destMaxSize[%zu], count[%zu]", HCCL_ERROR_CODE(HCCL_E_MEMORY), \

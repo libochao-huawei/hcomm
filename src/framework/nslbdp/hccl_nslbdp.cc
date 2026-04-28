@@ -179,7 +179,7 @@ void hcclNslbDp::SplitString(const std::string& identifier, std::vector<std::str
 /* 将IP转换成U32值 */
 u32 hcclNslbDp::ipToUint32(const std::string& ipAddress)
 {
-    struct sockaddr_in sa;
+    struct sockaddr_in sa = {};
     inet_pton(AF_INET, ipAddress.c_str(), &(sa.sin_addr));
     return ntohl(sa.sin_addr.s_addr); // Convert to host byte order
 }
