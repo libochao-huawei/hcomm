@@ -14,7 +14,7 @@ set(hccl_utest_inter_hcom_list
     ut_hccl_comm_910B_reducescatter.cc
     ut_hccl_comm_910B.cc
     ut_hccl_comm.cc
-    # ut_hcom.cc
+    ut_hcom.cc
     # ut_hccl_kernel_info.cc
     # ut_hccl_graph_optimizer.cc
 )
