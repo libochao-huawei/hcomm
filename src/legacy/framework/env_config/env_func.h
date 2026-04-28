@@ -61,9 +61,10 @@ struct SocketIfName {
 
 struct DfsConfig {
     bool taskExceptionEnable{true};
+    bool clusterHeartBeatEnable{true};
     DfsConfig() = default;
-    DfsConfig(bool taskException)
-        : taskExceptionEnable(taskException){};
+    DfsConfig(bool taskException, bool clusterHeartBeatEnable)
+        : taskExceptionEnable(taskException), clusterHeartBeatEnable(clusterHeartBeatEnable){};
 };
 
 enum class NpuProtoType {

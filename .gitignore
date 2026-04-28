@@ -1,0 +1,10 @@
+build.log
+build/
+build_device/
+openssl-host-src/
+third_party/
+.vscode/
+build_hccd/
+openssl-device-src/
+scripts/sign/__pycache__/
+build_out/
