@@ -159,7 +159,6 @@ int32_t CcuRepContext::AddProfiling(const std::string &name, uint32_t mask)
     ccuProfilingInfoCache.name  = name;
     ccuProfilingInfoCache.ckeId = INVALID_CKE_ID;
     ccuProfilingInfoCache.mask  = mask;
-    ccuProfilingInfoCache.dieId     = GetDieId();
     CHK_SAFETY_FUNC_RET(memset_s(ccuProfilingInfoCache.channelId, sizeof(ccuProfilingInfoCache.channelId), INVALID_VALUE_CHANNELID,
         sizeof(ccuProfilingInfoCache.channelId)));
 
@@ -182,7 +181,6 @@ int32_t CcuRepContext::AddProfiling(const ChannelHandle channel, const std::stri
                             INVALID_VALUE_CHANNELID, sizeof(ccuProfilingInfoCache.channelId)));
     ccuProfilingInfoCache.channelId[0] = channelImpl->GetChannelId();
     ccuProfilingInfoCache.channelHandle[0] = channel;
-    ccuProfilingInfoCache.dieId     = GetDieId();
 
     HCCL_INFO("[%s]channelHandle[0x%llx], name[%s], signalIndex[%u], mask[%u], type[%d], ckeId[%u], channelId[%u]",
         __func__, channel, name.c_str(), signalIndex, mask, ccuProfilingInfoCache.type, ccuProfilingInfoCache.ckeId,
@@ -200,7 +198,6 @@ int32_t CcuRepContext::AddProfiling(const ChannelHandle *channels, uint32_t chan
     ccuProfilingInfoCache.inputDataType  = 0xFF; // 0xFF 无效值
     ccuProfilingInfoCache.outputDataType = 0xFF; // 0xFF 无效值
     ccuProfilingInfoCache.missionId      = GetMissionId();
-    ccuProfilingInfoCache.dieId     = GetDieId();
 
     CHK_SAFETY_FUNC_RET(memset_s(ccuProfilingInfoCache.channelId, sizeof(ccuProfilingInfoCache.channelId),
                                 INVALID_VALUE_CHANNELID, sizeof(ccuProfilingInfoCache.channelId)));
@@ -237,7 +234,6 @@ int32_t CcuRepContext::AddProfiling(const ChannelHandle *channels, uint32_t chan
     ccuProfilingInfoCache.inputDataType  = dataType;
     ccuProfilingInfoCache.outputDataType = outputDataType;
     ccuProfilingInfoCache.missionId      = GetMissionId();
-    ccuProfilingInfoCache.dieId     = GetDieId();
     
     CHK_SAFETY_FUNC_RET(memset_s(ccuProfilingInfoCache.channelId, sizeof(ccuProfilingInfoCache.channelId),
                                     INVALID_VALUE_CHANNELID, sizeof(ccuProfilingInfoCache.channelId)));

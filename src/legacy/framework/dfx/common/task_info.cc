@@ -221,7 +221,7 @@ string TaskInfo::GetIndopDataInfo() const
 
     const auto &opInfo = this->dfxOpInfo_;
     return Hccl::StringFormat("opIndex[%u], algTag[%s], count[%llu], reduceType[%s], dataType[%s], "\
-        "input: ptr[0x%llx] size[%llu], output: ptr[0x%llx] size[%llu], cclbuffer: ptr[0x%llx] size[%llu]",
+        "input: ptr[0x%llx] size[%llu], output: ptr[0x%llx] size[%llu]",
         opInfo->opIndex_,
         opInfo->algTag_.c_str(),
         opInfo->op_.dataCount,
@@ -230,9 +230,7 @@ string TaskInfo::GetIndopDataInfo() const
         opInfo->op_.inputMem == nullptr ? 0 : static_cast<u64>(opInfo->op_.inputMem->GetAddr()),
         opInfo->op_.inputMem == nullptr ? 0 : opInfo->op_.inputMem->GetSize(),
         opInfo->op_.outputMem == nullptr ? 0 : static_cast<u64>(opInfo->op_.outputMem->GetAddr()),
-        opInfo->op_.outputMem == nullptr ? 0 : opInfo->op_.outputMem->GetSize(),
-        opInfo->op_.scratchMem == nullptr ? 0 : static_cast<u64>(opInfo->op_.scratchMem->GetAddr()),
-        opInfo->op_.scratchMem == nullptr ? 0 : opInfo->op_.scratchMem->GetSize());
+        opInfo->op_.outputMem == nullptr ? 0 : opInfo->op_.outputMem->GetSize());
 }
 
 } // namespace Hccl

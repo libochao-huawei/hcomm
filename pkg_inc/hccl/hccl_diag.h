@@ -65,17 +65,16 @@ struct HcclDfxOpInfo {
     uint32_t            root = ~0U;
     char                algTag[HCOMM_ALG_TAG_LENGTH]; // 算法名 = "算子类型 + 通信域id + 选择的算法"
     CommEngine          engine = COMM_ENGINE_RESERVED;
-    uint64_t            inputMemAddr = 0;
-    uint64_t            inputMemSize = 0;
-    uint64_t            outputMemAddr = 0;
-    uint64_t            outputMemSize = 0;
-    uint64_t            cclMemAddr = 0;
-    uint64_t            cclMemSize = 0;
     //task_exception
     uint64_t            cpuTsThread = 0; // host侧算子主流的threadhandle
     uint32_t            cpuWaitAicpuNotifyIdx = ~0U; // host wait device notifyIdx
     uint32_t            cpuWaitAicpuNotifyId = ~0U; // host wait device notifyId
-    int8_t              reserve[128]; // 预留扩展字段
+    // 算子内存信息
+    uint64_t            inputMemAddr = 0;
+    uint64_t            inputMemSize = 0;
+    uint64_t            outputMemAddr = 0;
+    uint64_t            outputMemSize = 0;
+    int8_t              reserve[96]; // 预留扩展字段
 };
 
 #ifdef __cplusplus

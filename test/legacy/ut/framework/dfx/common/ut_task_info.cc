@@ -227,9 +227,8 @@ TEST_F(TaskInfoTest, test_GetIndopDataInfo)
     taskInfo.dfxOpInfo_->op_.dataType = DataType::INT32;
     taskInfo.dfxOpInfo_->op_.inputMem = std::make_shared<Hccl::Buffer>(0x1, 11);
     taskInfo.dfxOpInfo_->op_.outputMem = std::make_shared<Hccl::Buffer>(0x2, 22);
-    taskInfo.dfxOpInfo_->op_.scratchMem = std::make_shared<Hccl::Buffer>(0x3, 33);
     EXPECT_EQ(taskInfo.GetIndopDataInfo(), "opIndex[1], algTag[allreduce_test], count[1024], reduceType[ReduceOp::SUM], dataType[DataType::INT32], "\
-        "input: ptr[0x1] size[11], output: ptr[0x2] size[22], cclbuffer: ptr[0x3] size[33]");
+        "input: ptr[0x1] size[11], output: ptr[0x2] size[22]");
 
     taskInfo.dfxOpInfo_ = nullptr;
     EXPECT_EQ(taskInfo.GetIndopDataInfo(), "");
