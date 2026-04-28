@@ -18,7 +18,7 @@
 #include "rdma_handle_manager.h"
 
 #include "eid_info_mgr.h"
-#include "ccu_res_specs.h"
+#include "../../../ccu_res_specs.h"
 #include "ccu_channel_ctx_mgr_v1.h"
 
 #include "exception_handler.h"
