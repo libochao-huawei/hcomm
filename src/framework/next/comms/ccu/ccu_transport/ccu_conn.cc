@@ -524,7 +524,7 @@ HcclResult CcuConnection::Describe(std::string &dfxMsg)
                 HCCL_ERROR("[DevUbConnection::%s] failed, hccl result[%d]", __func__, ret);
                 return ret;
             }
-        )
+        );
         udpSport = tpAttr.dataUdpSrcport;
     }
     udpSport = udpSport & 0xFF;
