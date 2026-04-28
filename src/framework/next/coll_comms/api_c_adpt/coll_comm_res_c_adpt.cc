@@ -20,6 +20,7 @@
 #include "../comms/ccu/ccu_kernel/ccu_kernel_mgr.h"
 #include "rt_external.h"
 #include "hccl_ccu_res.h"
+#include "cluster_monitor_c_adpt.h"
 
 using namespace hccl;
 /**
@@ -260,6 +261,7 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
             return HcclResult::HCCL_E_PARA;
         }
         
+        CHK_RET(HcclRegisterToClusterMonitor(comm));
         CHK_RET_UNAVAIL(myRank->CreateChannels(engine, commTag, channelDescFinals.data(), channelNum, channels));
         if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
             HCCL_INFO("[HcclChannelAcquire] ReportChannelAicpuKernel start");
