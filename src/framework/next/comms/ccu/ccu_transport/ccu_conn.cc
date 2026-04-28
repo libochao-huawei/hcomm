@@ -537,7 +537,7 @@ HcclResult CcuConnection::Describe(std::string &dfxMsg)
     }
 
     Hccl::IpAddress locAddr{}, rmtAddr{};
-    CHK_RET(CommAddrToIpAddress(locAddr_, locAddr));1
+    CHK_RET(CommAddrToIpAddress(locAddr_, locAddr));
     CHK_RET(CommAddrToIpAddress(rmtAddr_, rmtAddr));
     Hccl::Eid locEid = locAddr.GetReverseEid();
     Hccl::Eid rmtEid = rmtAddr.GetReverseEid();
