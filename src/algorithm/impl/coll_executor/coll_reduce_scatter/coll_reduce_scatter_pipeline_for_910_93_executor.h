@@ -57,7 +57,7 @@ private:
     void SliceExecMemIfNeeded(const OpParam &param, ExecMem &execMem);
 
     // 由 KernelRunLevel0To1、KernelRunLevel2 调用
-    HcclResult GetLevel2CommInfo(SubCommInfo &level2CommInfo, bool &isSelectAHC);
+    HcclResult GetLevel2CommInfo(SubCommInfo &level2CommInfo);
 
     // 由 RunLoop 循环体调用
     HcclResult RunL0L1Phase(OpParam &param, const PipelineLoopContext &ctx,
@@ -86,7 +86,7 @@ private:
     // 由 KernelRunLevel0To1 调用
     HcclResult SelectAndRunLevel1Template(const OpParam &param, ExecMem &execMem,
         Stream &streamL0L1, u64 baseOffset, u32 commIndex, u32 sliceNum,
-        u32 level1RankSize, u32 level2RankSize, u32 perDataSize, bool isSelectAHC);
+        u32 level1RankSize, u32 level2RankSize, u32 perDataSize);
 
     // 由 KernelRunLevel2 调用
     HcclResult SelectAndRunLevel2Template(const OpParam &param, ExecMem &execMem,

@@ -196,18 +196,12 @@ void CollReduceScatterPipelineFor91093Executor::SliceExecMemIfNeeded(
 }
 
 // 由 KernelRunLevel0To1、KernelRunLevel2 调用
+// Pipeline 约束 !isAHCAlgo，AHC 分支不可达，直接走 COMM_LEVEL2。
 HcclResult CollReduceScatterPipelineFor91093Executor::GetLevel2CommInfo(
-    SubCommInfo &level2CommInfo, bool &isSelectAHC)
+    SubCommInfo &level2CommInfo)
 {
-    isSelectAHC = (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC ||
-        algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC_BROKE);
-    if (isSelectAHC) {
-        level2CommInfo = logicalLevel1CommInfo_;
-        level2CommInfo.localRankSize = 1;
-    } else {
-        CHK_RET(CheckCommSize(COMM_LEVEL2, COMM_INDEX_0 + 1));
-        level2CommInfo = GetSubCommInfo(COMM_LEVEL2, COMM_INDEX_0);
-    }
+    CHK_RET(CheckCommSize(COMM_LEVEL2, COMM_INDEX_0 + 1));
+    level2CommInfo = GetSubCommInfo(COMM_LEVEL2, COMM_INDEX_0);
     return HCCL_SUCCESS;
 }
 
@@ -395,9 +389,8 @@ HcclResult CollReduceScatterPipelineFor91093Executor::KernelRunLevel0To1(
         ringNum = LEVEL0_PLANE_NUM_IN_NPRING_SINGLE;
     }
 
-    bool isSelectAHC = false;
     SubCommInfo level2CommInfo;
-    CHK_RET(GetLevel2CommInfo(level2CommInfo, isSelectAHC));
+    CHK_RET(GetLevel2CommInfo(level2CommInfo));
     const u32 level2RankSize = level2CommInfo.localRankSize;
     const u32 level1RankSize = logicalLevel1CommInfo_.localRankSize;
 
@@ -426,7 +419,7 @@ HcclResult CollReduceScatterPipelineFor91093Executor::KernelRunLevel0To1(
 
     if (level1RankSize > 1) {
         CHK_RET(SelectAndRunLevel1Template(param, execMem, streamL0L1, baseOffset,
-            commIndex, sliceNum, level1RankSize, level2RankSize, perDataSize, isSelectAHC));
+            commIndex, sliceNum, level1RankSize, level2RankSize, perDataSize));
     }
 
     return HCCL_SUCCESS;
@@ -436,7 +429,7 @@ HcclResult CollReduceScatterPipelineFor91093Executor::KernelRunLevel0To1(
 HcclResult CollReduceScatterPipelineFor91093Executor::SelectAndRunLevel1Template(
     const OpParam &param, ExecMem &execMem, Stream &streamL0L1, u64 baseOffset,
     u32 commIndex, u32 sliceNum, u32 level1RankSize, u32 level2RankSize,
-    u32 perDataSize, bool isSelectAHC)
+    u32 perDataSize)
 {
     const HcclDataType dataType = param.GetDataType();
     u64 reduceAttr = GetReduceAttr(execMem.inputMem, execMem.scratchMem, dataType, param.reduceType);
@@ -457,23 +450,6 @@ HcclResult CollReduceScatterPipelineFor91093Executor::SelectAndRunLevel1Template
             TemplateType::TEMPLATE_REDUCESCATTER_NB, dispatcher_);
         HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_NB in COMM_LEVEL1", __func__);
         CHK_SMART_PTR_NULL(level1TempAlg);
-        CHK_RET(level1TempAlg->Prepare(reduceAttr));
-    } else if (isSelectAHC) {
-        std::vector<std::vector<std::vector<u32>>> globalSubGroups;
-        std::map<AHCConcOpType, TemplateType> ahcAlgOption;
-        CHK_RET(topoMatcher_->GetGlobalSubGroups(logicalLevel1plane_, globalSubGroups));
-        topoMatcher_->GetAHCAlgOption(ahcAlgOption);
-        if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC) {
-            level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
-                TemplateType::TEMPLATE_REDUCESCATTER_AHC, dispatcher_);
-            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_AHC in COMM_LEVEL1", __func__);
-        } else {
-            level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
-                TemplateType::TEMPLATE_REDUCESCATTER_AHC_BROKE, dispatcher_);
-            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_AHC_BROKE in COMM_LEVEL1", __func__);
-        }
-        CHK_SMART_PTR_NULL(level1TempAlg);
-        CHK_RET(level1TempAlg->Prepare(execMem.count, globalSubGroups, ahcAlgOption));
         CHK_RET(level1TempAlg->Prepare(reduceAttr));
     } else {
         level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
@@ -502,9 +478,8 @@ HcclResult CollReduceScatterPipelineFor91093Executor::KernelRunLevel2(
     const HcclDataType dataType = param.GetDataType();
     CHK_RET(SalGetDataTypeSize(dataType, perDataSize));
 
-    bool isSelectAHC = false;
     SubCommInfo level2CommInfo;
-    CHK_RET(GetLevel2CommInfo(level2CommInfo, isSelectAHC));
+    CHK_RET(GetLevel2CommInfo(level2CommInfo));
     const u32 level2RankSize = level2CommInfo.localRankSize;
 
     if (level2RankSize > 1) {
