@@ -382,6 +382,11 @@ int RsGetInterfaceVersion(unsigned int opcode, unsigned int *version)
     return 0;
 }
 
+int RsPrctlByResvMem(bool usrResvMem, unsigned int resvMemPoolId, const char *threadName)
+{
+    return 0;
+}
+
 int RsNotifyCfgSet(unsigned int devId, unsigned long long va, unsigned long long size)
 {
 	return 0;
