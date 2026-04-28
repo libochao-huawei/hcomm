@@ -138,9 +138,8 @@ public:
     void SetCheckCannVersionSwitch(const bool cannVerCheckSwitch);
 
     HcclResult RecordEnvVarCrc();
-    HcclResult RecordSubCommPara(uint32_t rankNum, const uint32_t *rankIds, uint64_t subCommId, const char *parentCommIdentifier);
+    HcclResult RecordSubCommPara(u32 parentCommCrc, uint32_t rankNum, const uint32_t *rankIds, uint64_t subCommId);
     HcclResult CheckHcommInfo(const u8 *recvBuf, u32 recvBufLen, const std::string &tag);
-    HcclResult CheckHcclOpInfo(const u8 *recvBuf, u32 recvBufLen, const std::string &tag);
     u64 GetHcommInfoLength();
 
 private:

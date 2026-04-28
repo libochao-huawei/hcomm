@@ -27,7 +27,7 @@ HcclResult hcclComm::AddExchangeInfo(void* data, uint32_t length)
         HCCL_ERROR("[AddExchangeInfo] memcpy_s failed, ret[%d]", sRet), HCCL_E_MEMORY);
     exchangeInfoLen_ = length;
     exchangeInfoReady_ = true;
-    
+    HCCL_INFO("[AddExchangeInfo] success, length[%u].", length);
     return HCCL_SUCCESS;
 }
 
@@ -49,7 +49,7 @@ HcclResult hcclComm::GetExchangeInfo(uint32_t remoteRank, void* data, uint32_t &
 
     // 读后清除
     remoteExchangeInfoMap_.erase(iter);
-
+    HCCL_INFO("[GetExchangeInfo] success, remoteRank[%u], length[%u].", remoteRank, length);
     return HCCL_SUCCESS;
 }
 
@@ -60,6 +60,7 @@ HcclResult hcclComm::StoreRemoteExchangeInfo(uint32_t remoteRank, const std::vec
     infoEntry.data = data;
     infoEntry.length = static_cast<uint32_t>(data.size());
     remoteExchangeInfoMap_[remoteRank] = std::move(infoEntry);
+    HCCL_INFO("[StoreRemoteExchangeInfo] success, remoteRank[%u], length[%u].", remoteRank, entry.length);
     return HCCL_SUCCESS;
 }
 
@@ -69,6 +70,7 @@ void hcclComm::ClearExchangeInfoState()
     exchangeInfoReady_ = false;
     exchangeInfoBuf_.clear();
     exchangeInfoLen_ = 0;
+    HCCL_INFO("[ClearExchangeInfoState] exchange info state cleared.");
 }
 
 bool hcclComm::IsExchangeInfoReady() const

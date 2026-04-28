@@ -9,7 +9,7 @@
  */
 
 #include "hccl_comm_pub.h"
-#include "hccl/hccl_res_exp.h"
+#include "hccl/hccl_res_expt.h"
 
 using namespace hccl;
 
@@ -26,7 +26,6 @@ HcclResult HcclCommGetExchangeInfo(HcclComm comm, uint32_t remoteRank, void* dat
 {
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(data);
-    CHK_PRT_RET(length == 0, HCCL_ERROR("[HcclCommGetExchangeInfo] length is 0."), HCCL_E_PARA);
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     return hcclComm->GetExchangeInfo(remoteRank, data, length);
 }

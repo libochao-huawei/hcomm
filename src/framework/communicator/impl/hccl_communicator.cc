@@ -362,16 +362,6 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    TransportManager* HcclCommunicator::GetTransportManager()
-    {
-        return transportManager_.get();
-    }
-
-    TransportManager* HcclCommunicator::GetIndptOpTransportManager()
-    {
-        return indptOpTransportManager_.get();
-    }
-
     HcclResult HcclCommunicator::InitMemoryManager()
     {
         if (IsOneSidedIdentifier(identifier_)) {

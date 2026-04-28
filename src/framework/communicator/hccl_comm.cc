@@ -130,8 +130,6 @@ HcclResult hcclComm::init(HcclCommParams &params, const CommConfig &commConfig, 
 
     CHK_RET(communicator_->AtomicInitSet());                  /* 初始化竞争, 只允许被初始化一次 */
     ret = communicator_->Init(params, rankTable);  /* 初始化实例, 失败则重新开放初始化竞争 */
-    communicator_->GetTransportManager()->SetHcclComm(this);
-    communicator_->GetIndptOpTransportManager()->SetHcclComm(this);
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[HcclComm][Init]errNo[0x%016llx] hccl initialize failed", HCCL_ERROR_CODE(ret));
         communicator_->AtomicInitClear();
@@ -185,8 +183,6 @@ HcclResult hcclComm::init(HcclCommParams &params, const CommConfig &commConfig, 
     CHK_RET(communicator_->CheckDeviceType(params.deviceType));                /* 芯片类型检查 */
     CHK_RET(communicator_->AtomicInitSet());                                 /* 初始化竞争, 只允许被初始化一次 */
     ret = communicator_->Init(params, rankList, groupCommonData); /* 初始化实例, 失败则重新开放初始化竞争 */
-    communicator_->GetTransportManager()->SetHcclComm(this);
-    communicator_->GetIndptOpTransportManager()->SetHcclComm(this);
     if (ret != HCCL_SUCCESS) {
         communicator_->AtomicInitClear();
         HCCL_ERROR("[HcclComm][Init]errNo[0x%016llx] hccl initialize failed", HCCL_ERROR_CODE(ret));
