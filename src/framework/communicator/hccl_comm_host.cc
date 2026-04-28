@@ -308,19 +308,11 @@ namespace hccl
         CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(commAicpuParam_.deviceLogicId), commAicpuParam_.devicePhyId));
         CHK_RET(hrtGetDeviceType(devType_));
         commAicpuParam_.deviceType = static_cast<u32>(devType_);
-        std::string jsonPath;
-        CHK_RET(GetKernelFilePath(jsonPath));
-        jsonPath += "ccl_kernel.json";
-   
-        HcclResult retCode = LoadBinaryFromFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0, binHandle_);
-        CHK_PRT_RET(retCode != HCCL_SUCCESS,
-            HCCL_ERROR("[InitCollComm]errNo[0x%016llx]load aicpu file fail, path[%s] optionType[%u]"
-                       "cpuKernelMode[%u].", retCode, jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0),
-            retCode);
+        CHK_RET(InitBinHandle());
         CHK_PTR_NULL(commV2);
 
         EXECEPTION_CATCH(collComm_ = std::make_unique<CollComm>(commV2, userRank, commName, callbacks),
-        return HCCL_E_PTR);
+            return HCCL_E_PTR);
 
         CHK_RET(collComm_->Init(rankGraph, binHandle_, cclBuffer, config));
         CHK_RET(collComm_->GetHDCommunicate(commAicpuParam_.kfcControlTransferH2DParams,
@@ -344,6 +336,20 @@ namespace hccl
             CHK_RET(commImplV2->SetAccelerator(static_cast<int32_t>(opExpansionMode), isCcuMsAvailable));
         }
 
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult hcclComm::InitBinHandle()
+    {
+        std::string jsonPath;
+        CHK_RET(GetKernelFilePath(jsonPath));
+        jsonPath += "ccl_kernel.json";
+   
+        HcclResult retCode = LoadBinaryFromFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0, binHandle_);
+        CHK_PRT_RET(retCode != HCCL_SUCCESS,
+            HCCL_ERROR("[InitCollComm]errNo[0x%016llx]load aicpu file fail, path[%s] optionType[%u]"
+                       "cpuKernelMode[%u].", retCode, jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0),
+            retCode);
         return HCCL_SUCCESS;
     }
 
