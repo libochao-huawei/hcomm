@@ -74,3 +74,24 @@ __attribute__((visibility("default"))) uint32_t RunAicpuThreadSupplementNotify(v
     return AicpuThreadProcess::AicpuThreadSupplementNotify(param);
 }
 }
+
+namespace hcomm {
+
+struct AicpuIndopEnv {
+    bool taskExceptionEnable{true};
+};
+
+static AicpuIndopEnv g_aicpuIndopEnv;
+
+inline const void SetTaskExceptionEnable(bool taskExceptionEnable)
+{
+    g_aicpuIndopEnv.taskExceptionEnable = taskExceptionEnable;
+    HCCL_INFO("[%s] taskExceptionEnable[%d]", __func__, taskExceptionEnable);
+}
+
+inline const bool& GetTaskExceptionEnable()
+{
+    return g_aicpuIndopEnv.taskExceptionEnable;
+}
+
+}  // namespace hccl

@@ -52,6 +52,8 @@ public:
     HcclResult GetSqHeadAndTail(uint32_t& sqHead, uint32_t& sqTail);
     bool GetMaster() const override;
     void SetIsMaster(bool isMaster) override;
+    void SetTaskExceptionEnable(bool flag) { taskExceptionEnable_ = flag; }
+
 private:
     bool isMaster_{false};
     struct HcclStreamInfo {
@@ -74,6 +76,7 @@ private:
 #ifdef CCL_KERNEL_AICPU
     HcclResult BuildComStreamInfo(const HcclStreamInfo &streamInfo, HcclComStreamInfo &comStreamInfo) const;
 #endif
+    bool IsReportTask() const;
 
     // 成员变量（适配 AICPU-TS）
     bool isDeviceSide_ = false;
@@ -88,6 +91,7 @@ private:
     DeviceMem sqCqeContext_;
     DevType devType_ = DevType::DEV_TYPE_COUNT;
     std::unique_ptr<Hccl::IAicpuTsThread> pImpl_{nullptr};
+    bool taskExceptionEnable_{true};
 };
 
 }  // namespace hccl
