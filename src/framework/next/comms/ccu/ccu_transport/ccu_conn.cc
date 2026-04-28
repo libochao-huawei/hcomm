@@ -18,7 +18,6 @@
 #include "adapter_rts.h"
 
 #include "hccp_ctx.h"
-#include "exception_util.h"
 
 #include "buffer.h"
 #include "local_ub_rma_buffer.h"
@@ -515,18 +514,18 @@ HcclResult CcuConnection::Describe(std::string &dfxMsg)
     if (tpProtocol_ == TpProtocol::RTP) {
         struct TpAttr tpAttr {0};
         uint32_t attrBitmap = 1 << 13; // 13对应dataUdpSrcport
-        TRY_CATCH_PRINT_ERROR(
-            u32 devicePhyId = Hccl::HrtGetDevicePhyIdByIndex(devLogicId_);
-            HcclResult ret = Hccl::HrtRaGetTpAttrAsync(devicePhyId, ctxHandle_, tpInfo_.tpHandle, attrBitmap, tpAttr, reqHandles_[0]);
-            if (ret == HCCL_E_NOT_SUPPORT) {
-                HCCL_ERROR("[DevUbConnection::%s] failed, this package does not support RaGetTpAttrAsync for device,"
-                    " please change new package", __func__);
-                return ret;
-            } else if (ret != HCCL_SUCCESS) {
-                HCCL_ERROR("[DevUbConnection::%s] failed, hccl result[%d]", __func__, ret);
-                return ret;
-            }
-        );
+        EXCEPTION_HANDLE_BEGIN
+        u32 devicePhyId = Hccl::HrtGetDevicePhyIdByIndex(devLogicId_);
+        HcclResult ret = Hccl::HrtRaGetTpAttrAsync(devicePhyId, ctxHandle_, tpInfo_.tpHandle, attrBitmap, tpAttr, reqHandles_[0]);
+        if (ret == HCCL_E_NOT_SUPPORT) {
+            HCCL_ERROR("[DevUbConnection::%s] failed, this package does not support RaGetTpAttrAsync for device,"
+                " please change new package", __func__);
+            return ret;
+        } else if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[DevUbConnection::%s] failed, hccl result[%d]", __func__, ret);
+            return ret;
+        }
+        EXCEPTION_HANDLE_END
         udpSport = tpAttr.dataUdpSrcport;
     }
     udpSport = udpSport & 0xFF;
@@ -538,7 +537,7 @@ HcclResult CcuConnection::Describe(std::string &dfxMsg)
     }
 
     Hccl::IpAddress locAddr{}, rmtAddr{};
-    CHK_RET(CommAddrToIpAddress(locAddr_, locAddr));
+    CHK_RET(CommAddrToIpAddress(locAddr_, locAddr));1
     CHK_RET(CommAddrToIpAddress(rmtAddr_, rmtAddr));
     Hccl::Eid locEid = locAddr.GetReverseEid();
     Hccl::Eid rmtEid = rmtAddr.GetReverseEid();
