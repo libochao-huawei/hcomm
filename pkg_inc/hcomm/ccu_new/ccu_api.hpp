@@ -17,18 +17,11 @@
 namespace ccu {
 
 // ==================== 类型别名 ====================
-using Variable  = ::CcuVariable;
-using Address   = ::CcuAddress;
-using Event     = ::CcuEvent;
-using Buffer    = ::CcuBuffer;
-using LocalAddr = ::CcuLocalAddr;
-using RemoteAddr = ::CcuRemoteAddr;
-using CondExpr  = ::CcuCondExpr;
 
 using Loop           = ::CcuLoop;
 using LoopGroup      = ::CcuLoopGroup;
 using LoopExecutors  = ::CcuLoopExecutors;
-using LoopConfig     = ::CcuLoopConfig; 
+using LoopConfig     = ::CcuLoopConfig;
 using LoopGroupConfig = ::CcuLoopGroupConfig;
 
 // ==================== 资源创建 ====================
@@ -86,8 +79,8 @@ inline CcuResult NotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint
 inline CcuResult WriteVariableWithNotify(ChannelHandle channel, Variable var,uint32_t remoteVarIdx, uint32_t remoteNotifyIdx, uint32_t mask=1){ return CcuWriteVariableWithNotify(channel, var.handle, remoteVarIdx, remoteNotifyIdx, mask); }
 
 // ==================== 加载 ====================
-inline CcuResult LoadArg(Variable v) {
-    return CcuLoadArg(v.handle);
+inline CcuResult LoadArg(Variable v, uint32_t argId) {
+    return CcuLoadArg(v.handle, argId);
 }
 inline CcuResult LoadVar(uint64_t addr, Variable* v, uint32_t num) {
     return CcuLoadVar(addr, v[0].handle, num);

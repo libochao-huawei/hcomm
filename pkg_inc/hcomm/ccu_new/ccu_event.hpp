@@ -17,12 +17,14 @@
 #include "ccu_types.h"
 #include "ccu_data_api_impl.h"
 
-class CcuEvent;
+namespace ccu {
 
-class CcuEventMask {
+class Event;
+
+class EventMask {
 public:
-    explicit CcuEventMask(CcuEventHandle* owner) : ownerHandle_(owner) {}
-    void operator=(uint32_t newMask) const{
+    explicit EventMask(CcuEventHandle* owner) : ownerHandle_(owner) {}
+    void operator=(uint32_t newMask) const {
         auto ret = CcuSetMask(*ownerHandle_, newMask);
         if (ret != CcuResult::CCU_SUCCESS) {
             throw "todo: failed";
@@ -32,13 +34,13 @@ private:
     CcuEventHandle* ownerHandle_;
 };
 
-class CcuEvent final {
+class Event final {
 public:
-    explicit CcuEvent() : mask(&handle) {}
+    explicit Event() : mask(&handle) {}
 
-    CcuEvent(const CcuEvent& other) : handle(other.handle), mask(&handle) {}
+    Event(const Event& other) : handle(other.handle), mask(&handle) {}
 
-    void operator=(CcuEvent&& other) {
+    void operator=(Event&& other) {
         this->handle = other.handle;
     }
 
@@ -48,9 +50,11 @@ public:
             throw "todo: failed";
         }
     }
- 
+
     CcuEventHandle handle{0};
-    CcuEventMask mask;
+    EventMask mask;
 };
+
+} // namespace ccu
 
 #endif // CCU_EVENT_HPP
