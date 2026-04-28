@@ -314,7 +314,7 @@ static CcuResult InitResource(ReduceScatterContext &ctx)
 
     // Engine pool for loop groups: up to RS_MAX_RANK_SIZE parallel copies
     // inside each loop body, plus headroom for multi-loop groups.
-    CCU_CHK_RET(ccu::CreateBlockExecutor(&ctx.enginePool, RS_MAX_RANK_SIZE + 1));
+    CCU_CHK_RET(ccu::CreateLoopExecutor(&ctx.enginePool, RS_MAX_RANK_SIZE + 1));
 
     ctx.resourceAllocated = false;
     ctx.loopRegistered    = false;
@@ -529,8 +529,8 @@ static CcuResult ReduceLoopGroup(ReduceScatterContext &ctx,
         offsetCfg = GetOffsetParam(ctx.moConfig.memSlice, ctx.moConfig.msInterleave, 1);
 
         CcuLoopGroup group;
-        CCU_CHK_RET(ccu::LoopGroupCreate(&group, &paraCfg, &offsetCfg, ctx.enginePool));
-        CCU_CHK_RET(ccu::LoopGroupAddLoop(group, ctx.reduceLoops[0], &loopParam));
+        CCU_CHK_RET(ccu::CreateLoopGroup(&group, &paraCfg, &offsetCfg, ctx.enginePool));
+        CCU_CHK_RET(ccu::AddLoop(group, ctx.reduceLoops[0], &loopParam));
     }
 
     // n+p 部分
@@ -599,9 +599,9 @@ static CcuResult ReduceLoopGroup(ReduceScatterContext &ctx,
         offsetCfg = GetOffsetParam(ctx.moConfig.memSlice, ctx.moConfig.msInterleave, 1);
 
         CcuLoopGroup group;
-        CCU_CHK_RET(ccu::LoopGroupCreate(&group, &goSize.parallelParam, &offsetCfg, ctx.enginePool));
-        CCU_CHK_RET(ccu::LoopGroupAddLoop(group, ctx.reduceLoops[0], &loopCfg0));
-        CCU_CHK_RET(ccu::LoopGroupAddLoop(group, ctx.reduceLoops[1], &loopCfg1));
+        CCU_CHK_RET(ccu::CreateLoopGroup(&group, &goSize.parallelParam, &offsetCfg, ctx.enginePool));
+        CCU_CHK_RET(ccu::AddLoop(group, ctx.reduceLoops[0], &loopCfg0));
+        CCU_CHK_RET(ccu::AddLoop(group, ctx.reduceLoops[1], &loopCfg1));
     }
 
     return CCU_SUCCESS;
