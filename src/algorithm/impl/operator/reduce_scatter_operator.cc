@@ -560,6 +560,13 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
         return HCCL_E_NOT_SUPPORT;
     }
     HCCL_INFO("[SelectAlgfor91093] ReduceScatter SelectAlgfor91093 is algName [%s]", algName.c_str());
+    
+    HCCL_INFO("[SelectAlgfor91093] isOpbase[%d] superPodNum_[%u] isAHCAlgo[%d] multiSuperPodDiffDeviceNumMode_[%d] "
+        "isSupportInlineReduce[%d] topoType_[%d] pipelineBlockSize[%llu] dataSize[%llu]",
+        isOpbase, superPodNum_, isAHCAlgo, multiSuperPodDiffDeviceNumMode_,
+        isSupportInlineReduce, topoType_,
+        commInputSize / deviceNumPerAggregation_ / HCCL_MIN_SLICE_ALIGN * HCCL_MIN_SLICE_ALIGN / 2,
+        dataSize);
     return HCCL_SUCCESS;
 }
 
