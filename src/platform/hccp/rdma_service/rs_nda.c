@@ -495,6 +495,7 @@ STATIC int RsNdaCqCreateEx(struct RsRdevCb *rdevCb, struct ibv_cq_init_attr_exte
 
     info->cq = cqExt->cq;
     (void)memcpy_s(&info->cqInfo, sizeof(struct queue_info), &cqExt->cq_info, sizeof(struct queue_info));
+
     *ibvCqExt = cqExt;
 
     return 0;
