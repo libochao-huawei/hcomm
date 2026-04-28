@@ -95,7 +95,6 @@ set(orion_list
     ${HCCL_CODE_ROOT}/src/legacy/common/exception/exception_defination.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/aicpu/ub_transport_lite_impl.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/aicpu/p2p_transport_lite_impl.cc
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/ub_mem_transport.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/buffer.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/aicpu/rma_buf_slice_lite.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/notify/aicpu/notify_lite.cc
@@ -115,8 +114,6 @@ set(orion_list
     ${HCCL_CODE_ROOT}/src/legacy/framework/env_config/base_config.cc
     ${HCCL_CODE_ROOT}/src/legacy/framework/env_config/env_config.cc
     ${HCCL_CODE_ROOT}/src/legacy/framework/env_config/env_func.cc
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/host_ub_connection.cc
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/socket/socket.cc
 )
 
 set(hccl_list
@@ -189,8 +186,6 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/framework/op_base/src/
     ${HCCL_CODE_ROOT}/src/framework/group
     ${HCCL_CODE_ROOT}/src/framework/nslbdp/
-
-    ${HCCL_CODE_ROOT}/src/legacy/framework/resource_manager/socket
     ${HCCL_CODE_ROOT}/src/platform/
     ${HCCL_CODE_ROOT}/src/platform/common/
     ${HCCL_CODE_ROOT}/src/platform/common/unique
@@ -317,6 +312,8 @@ target_include_directories(hccl_llt  PRIVATE
 
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/aicpu
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/stream/aicpu
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/socket
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/common/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aicpu
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/host
@@ -350,6 +347,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/socket/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/aicpu
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/ccu_device/
     ${HCCL_CODE_ROOT}/src/legacy/service/collective
     ${HCCL_CODE_ROOT}/src/legacy/framework/communicator
     ${HCCL_CODE_ROOT}/src/legacy/interface
@@ -374,6 +372,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/api_c_adpt/
+
 
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/server_socket/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/reged_mems/

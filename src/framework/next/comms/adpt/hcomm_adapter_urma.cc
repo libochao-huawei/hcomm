@@ -26,7 +26,7 @@ HcclResult HrtUrmaPostJettySendWr(urma_jetty_t *jetty, urma_jfs_wr_t *wr, urma_j
     urma_status_t ret = DlUrmaFunction::GetInstance().dlUrmaPostJettySendWr(jetty, wr, bad_wr);
     if (ret != 0) {
         HCCL_ERROR("HrtUrmaPostJettySendWr failed. ret:[%d]", ret);
-        return HCCL_E_INTERNAL;
+        return HCCL_E_NETWORK;
     }
     return HCCL_SUCCESS;
 }

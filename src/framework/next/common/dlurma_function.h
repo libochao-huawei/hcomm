@@ -36,7 +36,7 @@ public:
     }
 protected:
 private:
-    void *handle_;
+    void *handle_{nullptr};
     std::mutex handleMutex_;
     DlUrmaFunction(const DlUrmaFunction&);
     DlUrmaFunction &operator=(const DlUrmaFunction&);
