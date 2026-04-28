@@ -493,10 +493,6 @@ public:
     HcclResult DeregisterWindow(HcclCommSymWindow winHandle);
     HcclResult InitSymmetricMemory();
     HcclResult GetCommSymWin(void* ptr, size_t size, HcclCommSymWindow *winHandle, size_t *offset);
-
-    TransportManager* GetTransportManager();
-    TransportManager* GetIndptOpTransportManager();
-
 private:
 
     bool IsEnableRoce();
@@ -649,7 +645,6 @@ private:
     HcclResult HandleExistAlgResource(const std::string& newTag, const std::string& algName,
         HcclCMDType opType, const OpParam& opParam, std::unique_ptr<CollAlgOperator>& algOperator,
         bool selectAivAlg, bool aicpuUnfoldModeFor910B, bool needRecreateAlltoallComm);
-    
     u32 deviceNumPerServer_;
     HcclDispatcher dispatcher_; // dispatcher放到最后析构
     DispatcherCtxPtr dispatcherCtx_{nullptr};

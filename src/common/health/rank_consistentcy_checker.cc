@@ -177,35 +177,29 @@ HcclResult RankConsistentcyChecker::CheckFrameRecv(const u8 *recvBuf, u32 recvBu
         HCCL_ERROR("[RankConsistentcyChecker][CheckFrameRecv] errNo[0x%016llx] recvBufLen[%u]is less than "
         "check info[%zu].", HCCL_ERROR_CODE(HCCL_E_INTERNAL), recvBufLen, sizeof(HcclCheckInfo)), HCCL_E_PARA);
     
-    // 校验Hcomm基础信息
-    u64 hcommInfoLen = GetHcommInfoLength();
-    CHK_PRT_RET(recvBufLen < hcommInfoLen, 
-        HCCL_ERROR("[RankConsistentcyChecker][CheckFrameRecv] recvBufLen[%u] < hcommInfoLen[%u]", 
-            recvBufLen, hcommInfoLen), HCCL_E_PARA);
+    HcclCheckInfo checkInfoRecv;	 
+    // 对固定长度的全局数组变量，结构体变量进行初始化和拷贝，可以不用检查初始化安全函数返回值	 
+    (void)memset_s(&checkInfoRecv, sizeof(HcclCheckInfo), 0, sizeof(HcclCheckInfo));	 
+    (void)memcpy_s(&checkInfoRecv, sizeof(HcclCheckInfo), recvBuf, sizeof(HcclCheckInfo));	 
+ 
+    HcclCheckInfo checkInfo;	 
+    CHK_RET(GenerateCheckFrame(checkInfo, tag));	 
+    if (checkInfo.cmdInfo.cmdType == HcclCMDType::HCCL_CMD_SEND) {	 
+        checkInfo.cmdInfo.cmdType = HcclCMDType::HCCL_CMD_RECEIVE;	 
+        checkInfo.cmdInfo.rank = checkInfo.cmdInfo.selfRank;	 
+    } else if (checkInfo.cmdInfo.cmdType == HcclCMDType::HCCL_CMD_RECEIVE) {	 
+        checkInfo.cmdInfo.cmdType = HcclCMDType::HCCL_CMD_SEND;	 
+        checkInfo.cmdInfo.rank = checkInfo.cmdInfo.selfRank;	 
+    }	 
 
-    HcclResult ret = CheckHcommInfo(recvBuf, hcommInfoLen, tag);
-    if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[RankConsistentcyChecker][CheckFrameRecv] Hcom basic info check failed, tag[%s]", 
-            tag.c_str());
-        return ret;
-    }
-    HCCL_INFO("[RankConsistentcyChecker][CheckFrameRecv] Hcomm basic info check passed, tag[%s]", tag.c_str());
-
-    // 校验HCCL算子信息
-    // 检查是否包含HCCL算子信息
-    if (recvBufLen > hcommInfoLen) {
-        u32 hcclOpInfoLen = recvBufLen - hcommInfoLen;
-        ret = CheckHcclOpInfo(recvBuf + hcommInfoLen, hcclOpInfoLen, tag);
-        if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[RankConsistentcyChecker][CheckFrameRecv] HCCL operator info check failed, tag[%s]", 
-                tag.c_str());
-            return ret;
-        }
-        HCCL_INFO("[RankConsistentcyChecker][CheckFrameRecv] HCCL operator info check passed, tag[%s]", tag.c_str());
-    }
-
-    HCCL_INFO("[RankConsistentcyChecker][CheckFrameRecv] check success, len of frame[%u], tag[%s].",
-        recvBufLen, tag.c_str());
+    checkInfo.cmdInfo.selfRank = 0; // 自身的子group rank 不做校验	 
+    if (CompareFrame(checkInfo, checkInfoRecv)) {	 
+        return HCCL_E_INTERNAL; 
+    } 
+ 
+    HCCL_INFO("[RankConsistentcyChecker][CheckFrameRecv] check success, len of frame[%u], len of check data[%zu].", 
+        recvBufLen, sizeof(checkInfo));
+    
     return HCCL_SUCCESS;
 }
 
@@ -267,41 +261,54 @@ HcclResult RankConsistentcyChecker::RecordEnvVarCrc()
         "HCCL_MULTI_QP_THRESHOLD"
     };
 
-    crcTable_.clear();
-    for (const auto &envVar : ENV_VAR_NAMES) {
-        const char *value = getenv(envVar.c_str());
-        std::string envStr = envVar + "=" + (value != nullptr ? value : "");
+    for (const auto &varName : envVarNames) {
+        const char *envValue = std::getenv(varName.c_str());
+        // 环境变量未设置或值为空字符串时，跳过不记录CRC
+        if (envValue == nullptr || envValue[0] == '\0') {
+            HCCL_DEBUG("[RecordEnvVarCrc] env[%s] not set or empty, skip.", varName.c_str());
+            continue;
+        }
         u32 crc = 0;
-        CHK_RET(CalcStringCrc(envStr.c_str(), crc));
-        crcTable_.push_back(crc);
-        HCCL_INFO("[RankConsistentcyChecker][RecordEnvVarCrc] %s, crc[0x%x]", envStr.c_str(), crc);
+        HcclResult ret = CalcStringCrc(envValue, crc);
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[RecordEnvVarCrc] CalcStringCrc failed for env[%s].", varName.c_str()), ret);
+        CHK_RET(AddCrc(crc));
+        HCCL_DEBUG("[RecordEnvVarCrc] env[%s]=[%s], crc[0x%08x] recorded.", varName.c_str(), envValue, crc);
     }
+    HCCL_INFO("[RecordEnvVarCrc] total crc count[%zu].", crcTable_.size());
 
     return HCCL_SUCCESS;
 }
 
-HcclResult RankConsistentcyChecker::RecordSubCommPara(uint32_t rankNum, const uint32_t *rankIds, uint64_t subCommId, const char *parentCommIdentifier)
+HcclResult RankConsistentcyChecker::RecordSubCommPara(u32 parentCommCrc, uint32_t rankNum,
+    const uint32_t *rankIds, uint64_t subCommId)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    CHK_PRT_RET(rankNum == 0, HCCL_ERROR("[RankConsistentcyChecker][RecordSubCommPara] rankNum is 0."), HCCL_E_PARA);
-    CHK_PRT_RET(rankNum > MAX_SUB_COMM_RANK_NUM, HCCL_ERROR("[RankConsistentcyChecker][RecordSubCommPara] rankNum exceeds max[%u].", 
-        MAX_SUB_COMM_RANK_NUM), HCCL_E_PARA);
-    CHK_PTR_NULL(rankIds);
 
-    subCommInfo_.rankNum = rankNum;
-    subCommInfo_.subCommId = subCommId;
-    subCommInfo_.valid = 1;
+    // 将子通信域的四个关键参数计算CRC，追加到crcTable_中参与建链时一致性校验
+    // 1. 父通信域identifier的CRC
+    CHK_RET(AddCrc(parentCommCrc));
+    HCCL_DEBUG("[RecordSubCommPara] parentCommCrc[0x%08x] recorded.", parentCommCrc);
 
-    // 拷贝父通信域标识符
-    if (parentCommIdentifier != nullptr) {
-        s32 sRet = memcpy_s(subCommInfo_.parentCommIdentifier, MAX_COMM_IDENTIFIER_LEN + 1, parentCommIdentifier, strlen(parentCommIdentifier));
-        CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[RankConsistentcyChecker][RecordSubCommPara] memcpy_s parentCommIdentifier failed, ret[%d]", sRet), HCCL_E_MEMORY);
-    }
+    // 2. rankNum的CRC
+    u32 rankNumCrc = 0;
+    CHK_RET(CalcRawDataCrc(&rankNum, sizeof(rankNum), rankNumCrc));
+    CHK_RET(AddCrc(rankNumCrc));
+    HCCL_DEBUG("[RecordSubCommPara] rankNum[%u], crc[0x%08x] recorded.", rankNum, rankNumCrc);
 
-    s32 sRet = memcpy_s(subCommInfo_.rankIds, sizeof(subCommInfo_.rankIds), rankIds, rankNum * sizeof(u32));
-    CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[RankConsistentcyChecker][RecordSubCommPara] memcpy_s rankIds failed, ret[%d]", sRet), HCCL_E_MEMORY);
+    // 3. rankIds数组的CRC
+    u32 rankIdsCrc = 0;
+    CHK_RET(CalcRawDataCrc(rankIds, rankNum * sizeof(uint32_t), rankIdsCrc));
+    CHK_RET(AddCrc(rankIdsCrc));
+    HCCL_DEBUG("[RecordSubCommPara] rankIds crc[0x%08x] recorded.", rankIdsCrc);
 
-    subCommInfoRecorded_ = true;
+    // 4. subCommId的CRC
+    u32 subCommIdCrc = 0;
+    CHK_RET(CalcRawDataCrc(&subCommId, sizeof(subCommId), subCommIdCrc));
+    CHK_RET(AddCrc(subCommIdCrc));
+    HCCL_DEBUG("[RecordSubCommPara] subCommId[%llu], crc[0x%08x] recorded.", subCommId, subCommIdCrc);
+
+    HCCL_INFO("[RecordSubCommPara] success, total crc count[%zu].", crcTable_.size());
     return HCCL_SUCCESS;
 }
 
@@ -393,55 +400,6 @@ HcclResult RankConsistentcyChecker::CheckHcommInfo(const u8 *recvBuf, u32 recvBu
             isDiff = true;
         }
     }
-    return isDiff ? HCCL_E_PARA : HCCL_SUCCESS;
-}
-
-HcclResult RankConsistentcyChecker::CheckHcclOpInfo(const u8 *recvBuf, u32 recvBufLen, const std::string &tag)
-{
-    CHK_PTR_NULL(recvBuf);
-
-    // 生成本地HCCL算子校验信息
-    HcclCheckInfo localCheckInfo;
-    CHK_PRT(GenerateCheckFrame(localCheckInfo, tag));
-
-    // 解析接收到的HCCL算子信息
-    HcclCRCInfo recvCrcInfoOp;
-    HcclCMDInfo recvCmdInfo;
-
-    u32 offset = 0;
-    (void)memcpy_s(&recvCrcInfoOp, sizeof(HcclCRCInfo), recvBuf + offset, sizeof(HcclCRCInfo));
-    offset += sizeof(HcclCRCInfo);
-    (void)memcpy_s(&recvCmdInfo, sizeof(HcclCMDInfo), recvBuf + offset, sizeof(HcclCMDInfo));
-    
-    // 比对算子CRC信息
-    bool isDiff = CompareCrcInfo(localCheckInfo.cmdInfo, localCheckInfo.crcInfoOp, recvCrcInfoOp);
-    if (isDiff) {
-        HCCL_ERROR("[RankConsistentcyChecker][CheckHcclOpInfo] Op CRC check fail");
-        RPT_INPUT_ERR(true, "EI0005", 
-            std::vector<std::string>({"reason"}), 
-            std::vector<std::string>({"Op CRC check fail"}));
-    }
-
-    // 处理Send/Recv的cmdType交换
-    if (localCheckInfo.cmdInfo.cmdType == HcclCMDType::HCCL_CMD_SEND) {
-        localCheckInfo.cmdInfo.cmdType = HcclCMDType::HCCL_CMD_RECEIVE;
-        localCheckInfo.cmdInfo.rank = localCheckInfo.cmdInfo.selfRank;
-    } else if (localCheckInfo.cmdInfo.cmdType == HcclCMDType::HCCL_CMD_RECEIVE) {
-        localCheckInfo.cmdInfo.cmdType = HcclCMDType::HCCL_CMD_SEND;
-        localCheckInfo.cmdInfo.rank = localCheckInfo.cmdInfo.selfRank;
-    }
-    localCheckInfo.cmdInfo.selfRank = 0;
-
-    // 比对CMD参数信息
-    if (!CompareSection(reinterpret_cast<char_t *>(&localCheckInfo.cmdInfo), 
-        reinterpret_cast<char_t *>(&recvCmdInfo), sizeof(HcclCMDInfo))) {
-        HCCL_ERROR("[RankConsistentcyChecker][CheckHcclOpInfo] CMD check fail");
-        RPT_INPUT_ERR(true, "EI0005", 
-            std::vector<std::string>({"reason"}), 
-            std::vector<std::string>({"CMD check fail"}));
-        isDiff = true;
-    }
-
     return isDiff ? HCCL_E_PARA : HCCL_SUCCESS;
 }
 
@@ -552,7 +510,6 @@ HcclResult RankConsistentcyChecker::RecordOpPara(HcclCMDType opCMD, const std::s
     return HCCL_SUCCESS;
 }
 
-
 HcclResult RankConsistentcyChecker::GetOpParaByTag(const std::string &tag, HcclCMDInfo &CMDInfoOutput)
 {
     auto getResult = cmdInfoMap_.find(tag);
@@ -590,10 +547,14 @@ HcclResult RankConsistentcyChecker::GenerateCheckFrame(HcclCheckInfo &checkInfo,
     (void)memset_s(&checkInfo, checkInfoLen, 0, checkInfoLen);
 
     // 添加CRC字段到校验帧
+    u32 crcLen = crcTable_.size();
     checkInfo.crcInfoGlobal.configFileExist_ = configFileExist_;
-    checkInfo.crcInfoGlobal.crcNum = crcTable_.size();
-    for (u32 i = 0; i < checkInfo.crcInfoGlobal.crcNum; i++) {
-        checkInfo.crcInfoGlobal.crcArray[i] = crcTable_[i];
+    if (crcLen != 0) {	 
+        CHK_PRT_RET(crcLen > MAX_CRC_LEN,	 
+            HCCL_ERROR("[RankConsistentcyChecker][GenerateCheckFrame]crc num[%u] is too big.", crcLen),	 
+            HCCL_E_INTERNAL); 
+        checkInfo.crcInfoGlobal.crcNum = crcLen; 
+        CHK_RET(GetCrc(crcLen, &checkInfo.crcInfoGlobal.crcArray[0]));
     }
     // 添加CMD参数信息到校验帧
     {
@@ -622,13 +583,6 @@ HcclResult RankConsistentcyChecker::GenerateCheckFrame(HcclCheckInfo &checkInfo,
     // 910* 不会配置isTcpMode，因此910*在此处的待校验值是一致的
     checkInfo.protocolType = protocolType_;
     HCCL_INFO("[RankConsistentcyChecker][GenerateCheckFrame] loc protocolType is [%d].", checkInfo.protocolType);
-
-    // 添加子通信域参数校验信息
-    if (subCommInfoRecorded_) {
-        s32 sRet = memcpy_s(&checkInfo.subCommInfo, sizeof(HcclSubCommInfo), &subCommInfo_, sizeof(HcclSubCommInfo));
-        CHK_PRT_RET(sRet != EOK, 
-            HCCL_ERROR("[RankConsistentcyChecker][GenerateCheckFrame] memcpy_s subCommInfo failed, ret[%d]", sRet), HCCL_E_MEMORY);
-    }
 
     return HCCL_SUCCESS;
 }
@@ -811,13 +765,6 @@ bool RankConsistentcyChecker::CompareFrame(HcclCheckInfo &checkInfo, HcclCheckIn
             bIsDiff = true;
         }
     }
-
-    // 子通信域参数一致性校验
-    if (CompareSubCommInfo(checkInfo.subCommInfo, checkInfoRecv.subCommInfo)) {
-        HCCL_ERROR("[RankConsistentcyChecker][CompareFrame]errNo[0x%016llx] SubCommInfo check fail", HCCL_ERROR_CODE(HCCL_E_INTERNAL));
-        bIsDiff = true;
-    }
-
     return bIsDiff;
 }
 

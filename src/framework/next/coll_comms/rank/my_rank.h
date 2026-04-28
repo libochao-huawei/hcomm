@@ -24,6 +24,7 @@
 #include "hdc_pub.h"
 #include "rank_graph.h"
 #include "orion_adapter_hccp.h"
+#include "hccl_comm_pub.h"
 
 #include "../../comms/comm_engine_res/ccu/ccu_res_container.h"
 
@@ -51,7 +52,14 @@ public:
     }
 
     HcclResult CreateChannels(CommEngine engine, const std::string &commTag, 
-        const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle *channels);
+        const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle *channels，hcclComm *hcclComm = nullptr);
+
+    HcclResult BatchExchangeAndCheckConsistency(
+        const HcclChannelDesc* channelDescs,
+        const HcommChannelDesc* hcommDescs,
+        uint32_t channelNum,
+        const std::string &commTag,
+        hcclComm *hcclComm)
     
     HcclResult ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, uint64_t *size);
     HcclResult ChannelGetRemoteMem(ChannelHandle channel, CommMem **remoteMem, char ***memTag, uint32_t *memNum);

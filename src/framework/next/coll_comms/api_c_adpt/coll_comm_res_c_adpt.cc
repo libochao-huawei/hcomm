@@ -252,6 +252,10 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
         const std::string &commTag = hcclComm->GetIdentifier();
         hccl::MyRank* myRank = collComm->GetMyRank();
         CHK_PTR_NULL(myRank);
+
+        s32 deviceLogicId = 0;
+        (void)hrtGetDeviceRefresh(&deviceLogicId);
+        RankConsistentcyChecker::GetInstance(deviceLogicId).RecordEnvVarCrc();
  
         const uint32_t opExpansionMode = myRank->GetOpExpansionMode();
         if (!CheckCommEngine(engine, opExpansionMode)) {
@@ -260,7 +264,8 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
             return HcclResult::HCCL_E_PARA;
         }
         
-        CHK_RET_UNAVAIL(myRank->CreateChannels(engine, commTag, channelDescFinals.data(), channelNum, channels));
+        CHK_RET_UNAVAIL(myRank->CreateChannels(engine, commTag, channelDescFinals.data(), channelNum, channels, hcclComm));
+        hcclComm->ClearExchangeInfoState();
         if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
             HCCL_INFO("[HcclChannelAcquire] ReportChannelAicpuKernel start");
             HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
@@ -286,8 +291,6 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
            __func__, hcclComm->GetIdentifier().c_str(), engine, channelNum, ret);
         return ret;
     }
-    
-    hcclComm->ClearExchangeInfoState();
  
     HCCL_RUN_INFO("[%s] acquire channel success, group[%s], engine[%d], channelNum[%llu], ret[%d]", 
         __func__, hcclComm->GetIdentifier().c_str(), engine, channelNum, ret);
