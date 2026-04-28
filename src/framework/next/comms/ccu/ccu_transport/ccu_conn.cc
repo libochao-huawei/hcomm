@@ -25,7 +25,6 @@
 #include "rdma_handle_manager.h"
 #include "orion_adapter_rts.h"
 #include "orion_adapter_hccp.h"
-#include "adapter_rts_common.h"
 
 namespace hcomm {
 
