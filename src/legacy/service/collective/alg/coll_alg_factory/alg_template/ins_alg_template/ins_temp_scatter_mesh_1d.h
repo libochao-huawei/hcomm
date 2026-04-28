@@ -39,9 +39,9 @@ public:
 private:
     HcclResult RunMesh(TemplateDataParams &tempAlgParams,
                     ResLinks &tempResLinks, std::vector<InsQuePtr> &tempInsQues);
-    HcclResult RunMeshTx(u32 myAlgRank, u32 repeatTimes, TemplateDataParams &tempAlgParams,
+    HcclResult RunMeshTx(u32 myAlgRank, u32 repeatTimes, const TemplateDataParams &tempAlgParams,
                     ResLinks &tempResLinks, std::vector<InsQuePtr> &tempInsQues);
-    HcclResult RunMeshRx(u32 myAlgRank, u32 repeatTimes, TemplateDataParams &tempAlgParams,
+    HcclResult RunMeshRx(u32 myAlgRank, u32 repeatTimes, const TemplateDataParams &tempAlgParams,
                     ResLinks &tempResLinks, std::vector<InsQuePtr> &tempInsQues);
     HcclResult PreCopy(TemplateDataParams &tempAlgParams, std::vector<InsQuePtr> &tempInsQues);
     HcclResult PostCopy(const TemplateDataParams &tempAlgParams, std::vector<InsQuePtr> &tempInsQues);

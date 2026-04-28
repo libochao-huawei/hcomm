@@ -201,8 +201,9 @@ HcclResult CalcLinkInfo(const RankId myRank, const RankGraph *rankGraph, const L
 }
 
 HcclResult SetPathNumMapByRankGraphMultiLevel(const RankGraph *rankGraph, std::vector<std::vector<RankId>>&virtRanks_,
-     RankId myRank_, std::vector<map<u32, u32>>&rank2PathNumMap){
-    for (uint64_t levelNumIdx = 0; levelNumIdx < 2; levelNumIdx++) {
+    RankId myRank_, std::vector<map<u32, u32>>&rank2PathNumMap){
+    uint64_t levelNum = 2;
+    for (uint64_t levelNumIdx = 0; levelNumIdx < levelNum; levelNumIdx++) {
         rank2PathNumMap.emplace_back();
         for (auto rankIdx : virtRanks_[levelNumIdx]) {
             if (rankIdx == myRank_) {
@@ -218,8 +219,6 @@ HcclResult SetPathNumMapByRankGraphMultiLevel(const RankGraph *rankGraph, std::v
     }
     return HcclResult::HCCL_SUCCESS;
 }
-
-
 
 HcclResult SetPathNumMapByRankGraphMultiLevel(const RankGraph *rankGraph, std::vector<RankId>&virtRanks_,
     RankId myRank_, std::map<u32, u32>&rank2PathNumMap){
@@ -250,9 +249,11 @@ HcclResult SetPathNumMapByRankGraphMultiLevel(const RankGraph *rankGraph, std::v
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult SetPathNumMapByLinkMgrMultiLevel(ConnectedLinkMgr *linkMgr, std::vector<std::vector<RankId>>&virtRanks_,
+HcclResult SetPathNumMapByLinkMgrMultiLevel(ConnectedLinkMgr*linkMgr, std::vector<std::vector<RankId>>&virtRanks_,
      RankId myRank_, std::vector<map<u32, u32>>&rank2PathNumMap){
-    for (uint64_t levelNumIdx = 0; levelNumIdx < 2; levelNumIdx++) {
+    (void) myRank_;
+    uint64_t levelNum = 2;
+    for (uint64_t levelNumIdx = 0; levelNumIdx < levelNum; levelNumIdx++) {
         rank2PathNumMap.emplace_back();
         for (auto rankIdx : virtRanks_[levelNumIdx]) {
             auto links = linkMgr->GetLinks(levelNumIdx, rankIdx);
@@ -268,8 +269,9 @@ HcclResult SetPathNumMapByLinkMgrMultiLevel(ConnectedLinkMgr *linkMgr, std::vect
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult SetPathNumMapByLinkMgrMultiLevel(ConnectedLinkMgr *linkMgr, std::vector<RankId>&virtRanks_,
+HcclResult SetPathNumMapByLinkMgrMultiLevel(ConnectedLinkMgr*linkMgr, std::vector<RankId>&virtRanks_,
     RankId myRank_, map<u32, u32>&rank2PathNumMap){
+    (void) myRank_;
     for(u32 rankIdx:virtRanks_){
         auto links = linkMgr->GetLinks(rankIdx);
         if(links.size()!=0){

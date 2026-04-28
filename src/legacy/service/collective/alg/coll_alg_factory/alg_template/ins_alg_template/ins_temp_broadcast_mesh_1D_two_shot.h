@@ -28,7 +28,7 @@ public:
 
     std::string Describe() const override
     {
-        return StringFormat("Template of broadcase Mesh two shot with tempRankSize [%u].", tempRankSize_);
+        return StringFormat("Template of broadcast Mesh two shot with tempRankSize [%u].", tempRankSize_);
     }
 
     HcclResult GenExtIns(const TempFuncs &tempFuncs, const TemplateDataParams &templateDataParams,

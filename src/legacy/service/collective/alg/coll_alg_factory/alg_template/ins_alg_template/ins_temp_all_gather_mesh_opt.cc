@@ -142,7 +142,6 @@ HcclResult InsTempAllGatherMesh1DOpt::LocalCopyToScratch(InsQuePtr tempInsQue)
         }
     }
     return HcclResult::HCCL_SUCCESS;
-
 }
 
 HcclResult InsTempAllGatherMesh1DOpt::RunMesh(const u32 myAlgRank, const std::vector<RankId> &vTopo,

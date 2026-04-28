@@ -50,7 +50,7 @@ public:
 
     virtual HcclResult GenExtIns(const TempFuncs &tempFuncs, const TemplateDataParams &templateDataParams, 
         const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues);
-    HcclResult setPathNumMap(const std::map<u32, u32> &rank2PathNumMap);
+    HcclResult setPathNumMap(const std::map<u32, u32> &rank2PathNumMap) const;
     
 protected:
     void IncSliceId();

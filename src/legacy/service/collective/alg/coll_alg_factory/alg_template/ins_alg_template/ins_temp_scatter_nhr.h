@@ -37,8 +37,8 @@ public:
                          ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues);
     u32 CalcScratchMultiple(BufferType inBuffType, BufferType outBuffType) const;
 private:
-    HcclResult PreCopy(TemplateDataParams &templateDataParams, std::vector<InsQuePtr> &tempInsQues);
-    HcclResult PostCopy(TemplateDataParams &templateDataParams, std::vector<InsQuePtr> &tempInsQues);
+    HcclResult PreCopy(const TemplateDataParams &templateDataParams, std::vector<InsQuePtr> &tempInsQues);
+    HcclResult PostCopy(const TemplateDataParams &templateDataParams, std::vector<InsQuePtr> &tempInsQues);
     HcclResult RunNHR(TemplateDataParams &templateDataParams, ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues) const;
     HcclResult BatchSend(AicpuNHRStepInfo &stepInfo, const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues, TemplateDataParams &templateDataParams, u32 repeat) const;
     HcclResult BatchRecv(AicpuNHRStepInfo &stepInfo, const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues, TemplateDataParams &templateDataParams, u32 repeat) const;
