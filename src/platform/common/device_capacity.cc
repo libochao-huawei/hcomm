@@ -50,7 +50,8 @@ bool IsSupportAIVCopy(HcclDataType dataType)
 {
     return (dataType == HCCL_DATA_TYPE_FP16 || dataType == HCCL_DATA_TYPE_INT16 || dataType == HCCL_DATA_TYPE_UINT16 ||
         dataType == HCCL_DATA_TYPE_FP32 || dataType == HCCL_DATA_TYPE_INT32 || dataType == HCCL_DATA_TYPE_UINT32 ||
-        dataType == HCCL_DATA_TYPE_INT8 || dataType == HCCL_DATA_TYPE_UINT8 || dataType == HCCL_DATA_TYPE_BFP16);
+        dataType == HCCL_DATA_TYPE_INT8 || dataType == HCCL_DATA_TYPE_UINT8 || dataType == HCCL_DATA_TYPE_BFP16 ||
+        dataType == HCCL_DATA_TYPE_INT64 || dataType == HCCL_DATA_TYPE_UINT64);
 }
 
 bool IsSupportAIVReduce(HcclDataType dataType, HcclReduceOp op)

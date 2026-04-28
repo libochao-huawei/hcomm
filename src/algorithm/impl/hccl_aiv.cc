@@ -109,6 +109,8 @@ static std::vector<AivKernelInfo> g_allgatherAivKernelInfoList = {
     {"aiv_all_gather_int8_t", HcclDataType::HCCL_DATA_TYPE_INT8},
     {"aiv_all_gather_uint8_t", HcclDataType::HCCL_DATA_TYPE_UINT8},
     {"aiv_all_gather_bfloat16_t", HcclDataType::HCCL_DATA_TYPE_BFP16},
+    {"aiv_all_gather_int64_t", HcclDataType::HCCL_DATA_TYPE_INT64},
+    {"aiv_all_gather_uint64_t", HcclDataType::HCCL_DATA_TYPE_UINT64},
     {"aiv_all_gather_cn_half", HcclDataType::HCCL_DATA_TYPE_FP16, KernelArgsType::ARGS_TYPE_SIMPLE},
     {"aiv_all_gather_cn_int16_t", HcclDataType::HCCL_DATA_TYPE_INT16, KernelArgsType::ARGS_TYPE_SIMPLE},
     {"aiv_all_gather_cn_uint16_t", HcclDataType::HCCL_DATA_TYPE_UINT16, KernelArgsType::ARGS_TYPE_SIMPLE},
@@ -118,6 +120,8 @@ static std::vector<AivKernelInfo> g_allgatherAivKernelInfoList = {
     {"aiv_all_gather_cn_int8_t", HcclDataType::HCCL_DATA_TYPE_INT8, KernelArgsType::ARGS_TYPE_SIMPLE},
     {"aiv_all_gather_cn_uint8_t", HcclDataType::HCCL_DATA_TYPE_UINT8, KernelArgsType::ARGS_TYPE_SIMPLE},
     {"aiv_all_gather_cn_bfloat16_t", HcclDataType::HCCL_DATA_TYPE_BFP16, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_all_gather_cn_int64_t", HcclDataType::HCCL_DATA_TYPE_INT64, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_all_gather_cn_uint64_t", HcclDataType::HCCL_DATA_TYPE_UINT64, KernelArgsType::ARGS_TYPE_SIMPLE},
 };
 static std::string g_allgatherAivBinaryName = "hccl_aiv_all_gather_op.o";
 
@@ -131,6 +135,8 @@ static std::vector<AivKernelInfo> g_broadcastAivKernelInfoList = {
     {"aiv_broadcast_int8_t", HcclDataType::HCCL_DATA_TYPE_INT8},
     {"aiv_broadcast_uint8_t", HcclDataType::HCCL_DATA_TYPE_UINT8},
     {"aiv_broadcast_bfloat16_t", HcclDataType::HCCL_DATA_TYPE_BFP16},
+    {"aiv_broadcast_int64_t", HcclDataType::HCCL_DATA_TYPE_INT64},
+    {"aiv_broadcast_uint64_t", HcclDataType::HCCL_DATA_TYPE_UINT64},
 };
 static std::string g_broadcastAivBinaryName = "hccl_aiv_broadcast_op.o";
 
@@ -144,6 +150,8 @@ static std::vector<AivKernelInfo> g_alltoallAivKernelInfoList = {
     {"aiv_all_to_all_int8_t", HcclDataType::HCCL_DATA_TYPE_INT8},
     {"aiv_all_to_all_uint8_t", HcclDataType::HCCL_DATA_TYPE_UINT8},
     {"aiv_all_to_all_bfloat16_t", HcclDataType::HCCL_DATA_TYPE_BFP16},
+    {"aiv_all_to_all_int64_t", HcclDataType::HCCL_DATA_TYPE_INT64},
+    {"aiv_all_to_all_uint64_t", HcclDataType::HCCL_DATA_TYPE_UINT64},
 };
 static std::string g_alltoallAivBinaryName = "hccl_aiv_all_to_all_op.o";
 
@@ -157,6 +165,8 @@ static std::vector<AivKernelInfo> g_alltoallvAivKernelInfoList = {
     {"aiv_all_to_all_v_int8_t", HcclDataType::HCCL_DATA_TYPE_INT8},
     {"aiv_all_to_all_v_uint8_t", HcclDataType::HCCL_DATA_TYPE_UINT8},
     {"aiv_all_to_all_v_bfloat16_t", HcclDataType::HCCL_DATA_TYPE_BFP16},
+    {"aiv_all_to_all_v_int64_t", HcclDataType::HCCL_DATA_TYPE_INT64},
+    {"aiv_all_to_all_v_uint64_t", HcclDataType::HCCL_DATA_TYPE_UINT64},
     {"aiv_all_to_all_v_sp_half", HcclDataType::HCCL_DATA_TYPE_FP16, KernelArgsType::ARGS_TYPE_SUPERPOD},
     {"aiv_all_to_all_v_sp_int16_t", HcclDataType::HCCL_DATA_TYPE_INT16, KernelArgsType::ARGS_TYPE_SUPERPOD},
     {"aiv_all_to_all_v_sp_uint16_t", HcclDataType::HCCL_DATA_TYPE_UINT16, KernelArgsType::ARGS_TYPE_SUPERPOD},
@@ -166,6 +176,8 @@ static std::vector<AivKernelInfo> g_alltoallvAivKernelInfoList = {
     {"aiv_all_to_all_v_sp_int8_t", HcclDataType::HCCL_DATA_TYPE_INT8, KernelArgsType::ARGS_TYPE_SUPERPOD},
     {"aiv_all_to_all_v_sp_uint8_t", HcclDataType::HCCL_DATA_TYPE_UINT8, KernelArgsType::ARGS_TYPE_SUPERPOD},
     {"aiv_all_to_all_v_sp_bfloat16_t", HcclDataType::HCCL_DATA_TYPE_BFP16, KernelArgsType::ARGS_TYPE_SUPERPOD},
+    {"aiv_all_to_all_v_sp_int64_t", HcclDataType::HCCL_DATA_TYPE_INT64, KernelArgsType::ARGS_TYPE_SUPERPOD},
+    {"aiv_all_to_all_v_sp_uint64_t", HcclDataType::HCCL_DATA_TYPE_UINT64, KernelArgsType::ARGS_TYPE_SUPERPOD},
 };
 static std::string g_alltoallvAivBinaryName = "hccl_aiv_all_to_all_v_op.o";
 
@@ -179,6 +191,8 @@ static std::vector<AivKernelInfo> g_alltoallvcAivKernelInfoList = {
     {"aiv_all_to_all_vc_int8_t", HcclDataType::HCCL_DATA_TYPE_INT8},
     {"aiv_all_to_all_vc_uint8_t", HcclDataType::HCCL_DATA_TYPE_UINT8},
     {"aiv_all_to_all_vc_bfloat16_t", HcclDataType::HCCL_DATA_TYPE_BFP16},
+    {"aiv_all_to_all_vc_int64_t", HcclDataType::HCCL_DATA_TYPE_INT64},
+    {"aiv_all_to_all_vc_uint64_t", HcclDataType::HCCL_DATA_TYPE_UINT64},
 };
 static std::string g_alltoallvcAivBinaryName = "hccl_aiv_all_to_all_vc_op.o";
 
@@ -202,6 +216,8 @@ static std::vector<AivKernelInfo> g_allgathervAivKernelInfoList = {
     {"aiv_all_gather_v_int8_t", HcclDataType::HCCL_DATA_TYPE_INT8},
     {"aiv_all_gather_v_uint8_t", HcclDataType::HCCL_DATA_TYPE_UINT8},
     {"aiv_all_gather_v_bfloat16_t", HcclDataType::HCCL_DATA_TYPE_BFP16},
+    {"aiv_all_gather_v_int64_t", HcclDataType::HCCL_DATA_TYPE_INT64},
+    {"aiv_all_gather_v_uint64_t", HcclDataType::HCCL_DATA_TYPE_UINT64},
 };
 static std::string g_allgathervAivBinaryName = "hccl_aiv_all_gather_v_op.o";
 
