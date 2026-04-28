@@ -349,7 +349,7 @@ void RankInfoDetectClient::VerifyRankTable()
 
 HcclResult RankInfoDetectClient::GetLocalTlsStatus(TlsStatus &tlsStatus) const
 {
-    struct RaInfo raInfo;
+    struct RaInfo raInfo = {};
     raInfo.mode = NetworkMode::NETWORK_OFFLINE;
     raInfo.phyId = devPhyId_;
     return HrtRaGetTlsStatus(&raInfo, tlsStatus);

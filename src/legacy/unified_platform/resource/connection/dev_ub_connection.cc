@@ -915,7 +915,7 @@ HcclResult DevUbConnection::Ipv4ToIpArray(const char *ipv4Str, uint8_t ipArr[16U
     }
 
     // inet_pton: 将点分十进制IP转为网络字节序的二进制(sip: 128 bit->16字节，IPv4填充后4字节，后12字节留0)
-    struct in_addr addr;
+    struct in_addr addr = {};
     int ret = inet_pton(AF_INET, ipv4Str, &addr);
     if (ret != 1) {
         HCCL_ERROR("[DevUbConnection::%s] Failed to convert the ipv4Str[%s] to ipArr.", __func__, ipv4Str);

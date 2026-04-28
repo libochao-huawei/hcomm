@@ -26,6 +26,7 @@ set(src_to_test_list
     ut_HcclReduceScatter_API_test.cc
     ut_HcomGetCommHandleByGroup_API_test.cc
     ut_op_base_misc_test.cc
+    ut_hccl_op_info_test.cc
 )
 
 add_executable(hccl_utest_framework_op_base_api ${src_to_test_list})
