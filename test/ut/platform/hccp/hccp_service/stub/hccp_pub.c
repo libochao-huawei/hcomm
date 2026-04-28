@@ -11,11 +11,14 @@
 #include <stdlib.h>
 #include <sys/time.h>
 #include "hccp_pub.h"
+#include "ra_adp.h"
 #include "rs.h"
-int HccpInit(unsigned int chipId, pid_t pid, int hdcType, unsigned int whiteListStatus)
+
+int HccpInit(struct hccpInitPara *initPara)
 {
 	return 0;
 }
+
 int HccpDeinit(unsigned int chipId)
 {
 	return 0;
