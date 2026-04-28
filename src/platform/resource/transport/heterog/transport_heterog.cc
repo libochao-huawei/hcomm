@@ -201,7 +201,7 @@ HcclResult TransportHeterog::CheckRecvScatterEnvelope(void *buf[], int count[], 
     CHK_RET(CheckTransportEndPointInfo(envelope.envelope.epParam.src, envelope.envelope.epParam.dst));
 
     u32 recvSize = 0;
-    u32 envelopSize = envelope.envelope.transData.count * SIZE_TABLE[envelope.envelope.transData.dataType];
+    u64 envelopSize = envelope.envelope.transData.count * SIZE_TABLE[envelope.envelope.transData.dataType];
     for (s32 i = 0; i < bufCount; i++) {
         if ((reinterpret_cast<u64>(buf[i]) == 0) && ((bufCount != 0) || (envelope.envelope.transData.count != 0))) {
             HCCL_ERROR("[Check][RecvEnvelope]Imrecv buffer[%p] or count[%llu] is invalid",
@@ -212,7 +212,7 @@ HcclResult TransportHeterog::CheckRecvScatterEnvelope(void *buf[], int count[], 
     }
 
     if (recvSize < envelopSize) {
-        HCCL_ERROR("[Check][RecvEnvelope] recvSize[%u Byte] is less than envelop total Size[%u Byte]", recvSize, envelopSize);
+        HCCL_ERROR("[Check][RecvEnvelope] recvSize[%u Byte] is less than envelop total Size[%llu Byte]", recvSize, envelopSize);
         return HCCL_E_PARA;
     }
     if (datatype != envelope.envelope.transData.dataType) {

@@ -3054,6 +3054,8 @@ HcclResult HcomCalcOpOnline(HcomOpParam *hcomOpParam, HcomResResponse *hcomResRe
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[GetOp][WorkspaceMemSize]op[%s]: get data size failed. ret[%d]",
         sCollectiveType.c_str(), ret), ret);
 
+    HcomCheckCount(hcomOpParam->count);
+
     u64 opDataSize = dataTypeSize * hcomOpParam->count;
 
     CHK_RET(HcomGetWorkspaceSubStreamNum(hcomOpParam->group, streamNum, opDataSize, hcomOpParam->dataType,
