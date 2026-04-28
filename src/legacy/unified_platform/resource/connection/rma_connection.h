@@ -126,7 +126,7 @@ public:
 
     virtual HcclResult Describe(std::string &dfxMsg)
     {
-        MACRO_THROW(NotSupportException, StringFormat("not support."));
+        return HcclResult::HCCL_E_NOT_SUPPORT;
     }
 protected:
     RmaConnStatus status;
