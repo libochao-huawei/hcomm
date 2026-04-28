@@ -211,7 +211,7 @@ ChannelStatus CcuUrmaChannel::GetStatus()
             HCCL_ERROR("[CcuUrmaChannel][%s] Describe channel info failed", __func__);
             out = ChannelStatus::FAILED;
         } else {
-            channelInfo.append(" TA[RM]");
+            channelInfo.append(" TA[RM]"); // 目前TA只支持RM
             HCCL_RUN_INFO("%s", channelInfo.c_str());
         }
         isFirstPrintChannelInfo_ = false;
