@@ -35,6 +35,9 @@ bool IsBatchLaunchMode() {
 }
 
 void AddThread(ThreadHandle thread) {
+    if (LIKELY(g_threadLaunchCtx.IsBatchAddMode())) {
+        return;
+    }
     g_threadLaunchCtx.AddThread(thread);
 }
 
@@ -768,12 +771,31 @@ int32_t HcommSetLaunchMode(const char *launchTag, HcommLaunchMode mode)
 
 int32_t HcommBatchModeStart(const char *batchTag)
 {
+    CHK_PTR_NULL(batchTag);
     return HcommSetLaunchMode(batchTag, HCOMM_LAUNCH_MODE_BATCH);
+}
+
+int32_t HcommBatchModeStartWithThreads(const char *batchTag, ThreadHandle *threads, uint32_t threadCount)
+{
+    CHK_PTR_NULL(batchTag);
+    CHK_PTR_NULL(threads);
+    int32_t ret = HcommSetLaunchMode(batchTag, HCOMM_LAUNCH_MODE_BATCH);
+    if (ret != HCCL_SUCCESS) {
+        return ret;
+    }
+    for (uint32_t i = 0; i < threadCount; ++i) {
+        AddThread(threads[i]);
+    }
+    g_threadLaunchCtx.SetBatchAddMode(true);
+    return HCCL_SUCCESS;
 }
 
 int32_t HcommBatchModeEnd(const char *batchTag)
 {
-    return HcommSetLaunchMode(batchTag, HCOMM_LAUNCH_MODE_EAGER);
+    CHK_PTR_NULL(batchTag);
+    int ret = HcommSetLaunchMode(batchTag, HCOMM_LAUNCH_MODE_EAGER);
+    g_threadLaunchCtx.SetBatchAddMode(false);
+    return ret;
 }
 
 int32_t HcommAcquireComm(const char* commId)

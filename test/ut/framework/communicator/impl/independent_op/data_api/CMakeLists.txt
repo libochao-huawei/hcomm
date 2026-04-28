@@ -9,6 +9,7 @@
 # -----------------------------------------------------------------------------------------------------------
 set(src_to_test_list
     main.cc
+    ut_aicpu_ts_HcommBatchModeStartWithThreads.cc
     ut_aicpu_ts_HcommLocalCopyOnThread.cc
     ut_aicpu_ts_HcommLocalReduceOnThread.cc
     ut_aicpu_ts_HcommThreadNotifyRecordOnThread.cc
