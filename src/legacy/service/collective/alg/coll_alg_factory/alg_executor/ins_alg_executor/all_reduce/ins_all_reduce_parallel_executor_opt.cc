@@ -10,8 +10,6 @@
 
 #include "ins_all_reduce_parallel_executor_opt.h"
 
-#include <cmath>
-
 #include "log.h"
 
 #include "ins_coll_alg_registry.h"
@@ -544,12 +542,12 @@ HcclResult InsAllReduceParallelExecutorV2<AlgTopoMatch, InsAlgTemplate0, InsAlgT
     maxCountPerLoop1 = std::min(dataCount1, maxCountPerLoop1);
 
     u32 loopTimes0  = 0;
-    if (maxCountPerLoop0) {
+    if (maxCountPerLoop0 != 0) {
         loopTimes0 = dataCount0 / maxCountPerLoop0 + ((dataCount0 % maxCountPerLoop0 == 0) ? 0 : 1);
     }
     
     u32 loopTimes1 = 0;
-    if (maxCountPerLoop1) {
+    if (maxCountPerLoop1 != 0) {
         loopTimes1 = dataCount1 / maxCountPerLoop1 + ((dataCount1 % maxCountPerLoop1 == 0) ? 0 : 1);
     } 
     u32 loopTimes = std::max(loopTimes0, loopTimes1);

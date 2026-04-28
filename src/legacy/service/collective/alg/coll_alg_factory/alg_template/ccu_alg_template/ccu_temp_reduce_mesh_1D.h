@@ -38,7 +38,6 @@ public:
                          const std::vector<InsQuePtr> &tempInsQues) const;
     void InitReduceInfo(const ReduceOp &reduceOp, const DataType &dataType);
 
-
 private:
     DataType dataType_;
     ReduceOp reduceOp_;
