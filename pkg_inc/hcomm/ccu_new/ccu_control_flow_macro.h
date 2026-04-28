@@ -19,10 +19,10 @@
  * Macro wrappers for structured control flow
  * ---------------------------------------------------------------------------
  *
- * Condition expressions use C++ operator overloads on CcuVariable:
+ * Condition expressions use C++ operator overloads on ccu::Variable:
  *
- *   counter != limit   →  CcuCondExpr{&counter, limit, CCU_CONDITION_NE}
- *   var == expected     →  CcuCondExpr{&var, expected, CCU_CONDITION_EQ}
+ *   counter != limit   →  ccu::CondExpr{&counter, limit, CCU_CONDITION_NE}
+ *   var == expected     →  ccu::CondExpr{&var, expected, CCU_CONDITION_EQ}
  *
  * CCU_WHILE — single brace block, label auto-generated:
  *
@@ -60,7 +60,7 @@
 
 /**
  * CCU_WHILE — wraps CcuWhileBegin / CcuWhileEnd around a brace block.
- * Accepts a CcuCondExpr produced by operator== / operator!= on CcuVariable.
+ * Accepts a ccu::CondExpr produced by operator== / operator!= on ccu::Variable.
  * Label is auto-generated via __COUNTER__ so the user never sees it.
  */
 #define CCU_WHILE(expr)                                                     \
@@ -70,7 +70,7 @@
     CCU_WHILE_IMPL(expr, uid)
 
 #define CCU_WHILE_IMPL(expr, uid)                                           \
-    for (CcuCondExpr uid##_ce = (expr),                                     \
+    for (ccu::CondExpr uid##_ce = (expr),                                     \
              *uid##_p = &uid##_ce;                                          \
          uid##_p != nullptr;                                                \
          uid##_p = nullptr)                                                 \
@@ -95,7 +95,7 @@
     CCU_IF_IMPL(expr, uid)
 
 #define CCU_IF_IMPL(expr, uid)                                              \
-    for (CcuCondExpr uid##_ce = (expr),                                     \
+    for (ccu::CondExpr uid##_ce = (expr),                                     \
              *uid##_p = &uid##_ce;                                          \
          uid##_p != nullptr;                                                \
          uid##_p = nullptr)                                                 \
@@ -136,7 +136,7 @@
     CCU_IF_ONLY_IMPL(expr, uid)
 
 #define CCU_IF_ONLY_IMPL(expr, uid)                                         \
-    for (CcuCondExpr uid##_ce = (expr),                                     \
+    for (ccu::CondExpr uid##_ce = (expr),                                     \
              *uid##_p = &uid##_ce;                                          \
          uid##_p != nullptr;                                                \
          uid##_p = nullptr)                                                 \
@@ -149,7 +149,7 @@
 
 /**
  * CCU_DO_WHILE — wraps CcuDoWhileBegin / CcuDoWhileEnd around a brace block.
- * Accepts a CcuCondExpr. The body is always executed once, then the condition
+ * Accepts a ccu::CondExpr. The body is always executed once, then the condition
  * is checked to decide whether to loop back.
  * Label is auto-generated via __COUNTER__.
  */
@@ -160,7 +160,7 @@
     CCU_DO_WHILE_IMPL(expr, uid)
 
 #define CCU_DO_WHILE_IMPL(expr, uid)                                        \
-    for (CcuCondExpr uid##_ce = (expr),                                     \
+    for (ccu::CondExpr uid##_ce = (expr),                                     \
              *uid##_p = &uid##_ce;                                          \
          uid##_p != nullptr;                                                \
          uid##_p = nullptr)                                                 \
