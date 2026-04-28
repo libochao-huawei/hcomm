@@ -66,6 +66,21 @@ typedef enum {
     HCOMM_DATA_TYPE_RESERVED = 255 /**< reserved */
 } HcommDataType;
 
+typedef enum {
+    HCOMM_TRANSFER_TYPE_INVALID = -1, /**< invalid transfer type */
+    HCOMM_TRANSFER_TYPE_WRITE = 0,    /**< write operation */
+    HCOMM_TRANSFER_TYPE_READ = 1,     /**< read operation */
+} HcommTransferType;
+
+typedef struct {
+    uint64_t len;                   /**< data length (bytes) */
+    void *dst;                      /**< destination memory address */
+    void *src;                      /**< source memory address */
+    HcommTransferType transType;    /**< transfer type */
+    HcommReduceOp reduceOp;         /**< reduce operation (not supported yet) */
+    HcommDataType dataType;         /**< data type (not supported yet) */
+} HcommBatchTransferDesc;
+
 /**
  * @defgroup 数据面编程接口
  * @{
@@ -239,6 +254,17 @@ extern int32_t HcommReadOnThread(
  */
 extern int32_t HcommReadReduceOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t count,
     HcommDataType dataType, HcommReduceOp reduceOp);
+
+/**
+ * @brief 批量传输操作
+ * @param[in] thread 线程句柄
+ * @param[in] channel 通道句柄
+ * @param[in] transferDescs 批量传输描述符数组
+ * @param[in] transferDescNum 批量传输描述符数量
+ * @return int32_t 执行结果，0表示成功
+ */
+extern int32_t HcommBatchTransferOnThread(ThreadHandle thread, ChannelHandle channel,
+    HcommBatchTransferDesc *transferDescs, uint32_t transferDescNum);
 
 /**
  * @brief 单边写操作
