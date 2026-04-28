@@ -90,6 +90,58 @@ std::string CommAddrLogger::ConvertEID(const uint8_t eid[16])
     return std::string(buffer);
 }
 
+std::string CommAddr2Str(const CommAddr commAddr)
+{
+    // 输出：eid[xxxxxxxxxxxxxxxx:xxxxxxxxxxxxxxxx], AF=v4/v6, addr=xxx.xxx.xxx.xxx, scopeId=0x0]
+    std::string desc = "AF=";
+
+    switch (commAddr.type) {
+        case COMM_ADDR_TYPE_IP_V4:
+            desc += "v4, addr=" + ConvertIPv4(commAddr.addr);
+            break;
+        case COMM_ADDR_TYPE_IP_V6:
+            desc += "v6, addr=" + ConvertIPv6(commAddr.addr6);
+            break;
+        case COMM_ADDR_TYPE_ID:
+            desc += "id:" + ConvertID(commAddr.id);
+            break;
+        case COMM_ADDR_TYPE_EID:
+            desc += ConvertEID(commAddr.eid);
+            break;
+        default:
+            desc += "Unknown]";
+            break;
+    }
+
+    return desc;
+}
+
+std::string CommAddr2Str(const CommAddr commAddr)
+{
+    // 输出：eid[xxxxxxxxxxxxxxxx:xxxxxxxxxxxxxxxx], AF=v4/v6, addr=xxx.xxx.xxx.xxx, scopeId=0x0]
+    std::string desc = "AF=";
+
+    switch (commAddr.type) {
+        case COMM_ADDR_TYPE_IP_V4:
+            desc += "v4, addr=" + ConvertIPv4(commAddr.addr);
+            break;
+        case COMM_ADDR_TYPE_IP_V6:
+            desc += "v6, addr=" + ConvertIPv6(commAddr.addr6);
+            break;
+        case COMM_ADDR_TYPE_ID:
+            desc += "id:" + ConvertID(commAddr.id);
+            break;
+        case COMM_ADDR_TYPE_EID:
+            desc += ConvertEID(commAddr.eid);
+            break;
+        default:
+            desc += "Unknown]";
+            break;
+    }
+
+    return desc;
+}
+
 std::string CommAddrLogger::ToString(const CommAddr& commAddr)
 {
     // 模仿 IpAddress::Describe 的格式
