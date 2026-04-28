@@ -559,24 +559,8 @@ CcuResult CcuLoopGroupAddLoopFromVar(CcuLoopGroup group,
     return CcuResult::CCU_SUCCESS;
 }
 
-/* =========================================================================
- * 控制流标签栈 C 接口（_CcuIfStack* / _CcuDoWhileStack*）
- *
- * 上层 ccu_control_flow_macro.h 中的 CCU_IF / CCU_ELSE / CCU_DO / CCU_WHILE
- * 等宏在调用现场展开时使用这些 C 接口操作标签栈。栈实体是
- * hcomm::CcuKernel 的嵌套 struct 成员（CcuKernel::IfLabelStack /
- * CcuKernel::DoWhileLabelStack），由底层 ccu_kernel 模块持有。本文件
- * 作为上层 C ABI 适配层，负责拿当前线程绑定的 kernel 实例后，转发到
- * kernel 的 C++ 接口。
- *
- * 约定：当 GetCurrentKernel() 为空（理论上不该发生——宏只在算法构图期
- * 内被调用）时，打 HCCL_ERROR 后忽略，避免破坏现场。
- *   _CcuDoWhileStackPopForWhile 例外：CCU_WHILE 宏每次进入都会无条件
- *   调用它做 do-while 模式判别，正常路径上"不是 do-while"也会调到，
- *   此时返回 nullptr 是合法语义；并且为了避免在没有 current kernel 的
- *   极端边界产生日志风暴，这里保持沉默。
- * ========================================================================= */
-
+//控制流标签栈 C 接口（_CcuIfStack* / _CcuDoWhileStack*）
+ 
 void _CcuIfStackPush(const char *label)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
@@ -586,7 +570,7 @@ void _CcuIfStackPush(const char *label)
             label != nullptr ? label : "(null)");
         return;
     }
-    kernel->GetIfLabelStack().Push(label);
+    kernel->IfLabelStackPush(label);
 }
 
 void _CcuIfStackMarkBodyDone()
@@ -597,7 +581,7 @@ void _CcuIfStackMarkBodyDone()
         HCCL_ERROR("[_CcuIfStackMarkBodyDone] no current kernel");
         return;
     }
-    kernel->GetIfLabelStack().MarkBodyDone();
+    kernel->IfLabelStackMarkBodyDone();
 }
 
 const char *_CcuIfStackPopForElse()
@@ -608,29 +592,7 @@ const char *_CcuIfStackPopForElse()
         HCCL_ERROR("[_CcuIfStackPopForElse] no current kernel");
         return nullptr;
     }
-    return kernel->GetIfLabelStack().PopForElse();
-}
-
-bool _CcuIfStackTopIsClosable()
-{
-    const uint32_t devLogicId = HcclGetThreadDeviceId();
-    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
-    if (kernel == nullptr) {
-        HCCL_ERROR("[_CcuIfStackTopIsClosable] no current kernel");
-        return false;
-    }
-    return kernel->GetIfLabelStack().TopIsClosable();
-}
-
-const char *_CcuIfStackPop()
-{
-    const uint32_t devLogicId = HcclGetThreadDeviceId();
-    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
-    if (kernel == nullptr) {
-        HCCL_ERROR("[_CcuIfStackPop] no current kernel");
-        return nullptr;
-    }
-    return kernel->GetIfLabelStack().Pop();
+    return kernel->IfLabelStackPopForElse();
 }
 
 void _CcuDoWhileStackPush(const char *label)
@@ -642,7 +604,7 @@ void _CcuDoWhileStackPush(const char *label)
             label != nullptr ? label : "(null)");
         return;
     }
-    kernel->GetDoWhileLabelStack().Push(label);
+    kernel->DoWhileLabelStackPush(label);
 }
 
 const char *_CcuDoWhileStackPopForWhile()
@@ -653,5 +615,5 @@ const char *_CcuDoWhileStackPopForWhile()
         // 见上方注释：CCU_WHILE 每次都会调本函数做模式判别，保持沉默。
         return nullptr;
     }
-    return kernel->GetDoWhileLabelStack().PopForWhile();
+    return kernel->DoWhileLabelStackPopForWhile();
 }

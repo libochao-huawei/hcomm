@@ -84,24 +84,14 @@ extern CcuResult CcuWriteBufferToMem(ChannelHandle channel, CcuRemoteAddrHandle 
 extern CcuResult CcuWriteMemToMemReduce(ChannelHandle channel, CcuRemoteAddrHandle remoteHandle, CcuLocalAddrHandle localHandle, CcuVariableHandle len, HcclDataType dataType, HcclReduceOp opType, CcuEventHandle event);
 
 /*========== 控制流操作 ==========*/
-extern CcuResult CcuIfBegin(CcuVariableHandle var, uint64_t immediate,
-    CcuConditionType condType, const char *label);
-
+extern CcuResult CcuIfBegin(CcuVariableHandle var, uint64_t immediate, CcuConditionType condType, const char *label);
 extern CcuResult CcuIfElse(const char *label);
-
 extern CcuResult CcuIfEnd(const char *label);
-
 extern CcuResult CcuFlushPendingIfs();
-
-extern CcuResult CcuWhileBegin(CcuVariableHandle var, uint64_t immediate,
-    CcuConditionType condType, const char *label);
-
+extern CcuResult CcuWhileBegin(CcuVariableHandle var, uint64_t immediate, CcuConditionType condType, const char *label);
 extern CcuResult CcuWhileEnd(const char *label);
-
 extern CcuResult CcuDoWhileBegin(const char *label);
-
-extern CcuResult CcuDoWhileEnd(CcuVariableHandle var, uint64_t immediate,
-    CcuConditionType condType, const char *label);
+extern CcuResult CcuDoWhileEnd(CcuVariableHandle var, uint64_t immediate, CcuConditionType condType, const char *label);
 
 /*
  * 控制流宏内部使用的标签栈接口（以 _ 前缀标识为内部 API，
@@ -111,8 +101,6 @@ extern CcuResult CcuDoWhileEnd(CcuVariableHandle var, uint64_t immediate,
 extern void _CcuIfStackPush(const char *label);
 extern void _CcuIfStackMarkBodyDone();
 extern const char *_CcuIfStackPopForElse();
-extern bool _CcuIfStackTopIsClosable();
-extern const char *_CcuIfStackPop();
 
 extern void _CcuDoWhileStackPush(const char *label);
 extern const char *_CcuDoWhileStackPopForWhile();
