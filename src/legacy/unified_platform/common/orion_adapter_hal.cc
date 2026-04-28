@@ -29,4 +29,18 @@ HcclResult HrtHalDrvQueryProcessHostPid(int pid, unsigned int *chipId, unsigned 
     return HCCL_SUCCESS;
 }
 
+HcclResult HrtHalGetDeviceInfo(uint32_t devId, int32_t moduleType, int32_t infoType, int64_t *value)
+{
+    // 参数有效性检查
+    CHK_PTR_NULL(value);
+    CHK_RET(DlHalFunctionV2::GetInstance().DlHalFunctionInit());
+    HCCL_INFO("Entry-HrtHalGetDeviceInfo");
+    drvError_t ret = DlHalFunctionV2::GetInstance().dlHalGetDeviceInfo(devId, moduleType, infoType, value);
+    CHK_PRT_RET(ret == DRV_ERROR_NOT_SUPPORT, HCCL_WARNING("HrtHalGetDeviceInfo not support"
+        "return[%d].", HCCL_ERROR_CODE(DRV_ERROR_NOT_SUPPORT), ret), HCCL_E_NOT_SUPPORT);
+    CHK_PRT_RET(ret != DRV_ERROR_NONE, HCCL_ERROR("errNo[0x%016llx] HrtHalGetDeviceInfo fail,"
+        "return[%d].", HCCL_ERROR_CODE(HCCL_E_DRV), ret), HCCL_E_DRV);
+    return HCCL_SUCCESS;
+}
+
 }

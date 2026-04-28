@@ -21,9 +21,9 @@ constexpr uint32_t SYNC_WAIT_TIMEOUT_SECONDS = 205;
 constexpr size_t MSG_TAG_SIZE_BYTE = 256;
 
 // Msg 数据格式如下（单位：字节）：
-// +----------+--------------+-----------+-----------------+
-// | flag [1] | msgTag [256] | msgId [4] | data [sizeByte] |
-// +----------+--------------+-----------+-----------------+
+// +----------+--------------+-----------+---------------------+-----------------+
+// | flag [1] | msgTag [256] | msgId [4] | dataSize (uint32_t) | data [sizeByte] |
+// +----------+--------------+-----------+---------------------+-----------------+
 // ^
 // handle
 
@@ -40,17 +40,23 @@ int32_t HcommSendRequest(MsgHandle handle, const char *msgTag, const void *src, 
     HCCL_INFO("[%s] START. msgHandle[0x%llx], msgTag[%s], src[0x%llx], sizeByte[%zu].", __func__, handle, msgTag, src, sizeByte);
 
     static uint32_t s_msgId{0};
+    uint32_t dataSize = static_cast<uint32_t>(sizeByte);
     const uint8_t flagWriteValue{1};
     uint8_t *const dstFlagPtr = dstOnDevShmem;
     uint8_t *const dstMsgTagPtr = dstFlagPtr + sizeof(flagWriteValue);
     uint8_t *const dstMsgIdPtr = dstMsgTagPtr + MSG_TAG_SIZE_BYTE;
-    uint8_t *const dstDataPtr = dstMsgIdPtr + sizeof(s_msgId);
+    uint8_t *const dstDataSizePtr = dstMsgIdPtr + sizeof(s_msgId);
+    uint8_t *const dstDataPtr = dstDataSizePtr + sizeof(dataSize);
     errno_t ret = EOK;
 
     HCCL_INFO("[%s] Writing %zu bytes data from src to shared mem START.", __func__, sizeByte);
     ret = memcpy_s(dstDataPtr, sizeByte, src, sizeByte);
     CHK_PRT_RET(ret != EOK, HCCL_ERROR("[%s][memcpy_s] Writing data ERROR[%d].", __func__, ret), HCCL_E_INTERNAL);
     HCCL_INFO("[%s] Writing %zu bytes data from src to shared mem SUCCESS.", __func__, sizeByte);
+
+    HCCL_INFO("[%s] Writing %zu bytes dataSize to shared mem START. dataSize = %u.", __func__, sizeof(dataSize), dataSize);
+    ret = memcpy_s(dstDataSizePtr, sizeof(dataSize), &dataSize, sizeof(dataSize));
+    CHK_PRT_RET(ret != EOK, HCCL_ERROR("[%s][memcpy_s] Writing dataSize ERROR[%d].", __func__, ret), HCCL_E_INTERNAL);
 
     HCCL_INFO("[%s] Writing %zu bytes msgId to shared mem START. msgId = %u.", __func__, sizeof(s_msgId), s_msgId);
     ret = memcpy_s(dstMsgIdPtr, sizeof(s_msgId), &s_msgId, sizeof(s_msgId));
@@ -61,6 +67,8 @@ int32_t HcommSendRequest(MsgHandle handle, const char *msgTag, const void *src, 
     ret = memcpy_s(dstMsgTagPtr, MSG_TAG_SIZE_BYTE, msgTag, MSG_TAG_SIZE_BYTE);
     CHK_PRT_RET(ret != EOK, HCCL_ERROR("[%s][memcpy_s] Writing msgTag ERROR[%d].", __func__, ret), HCCL_E_INTERNAL);
     HCCL_INFO("[%s] Writing %zu bytes msgTag to shared mem SUCCESS.", __func__, MSG_TAG_SIZE_BYTE);
+
+    asm volatile("dmb sy" ::: "memory"); // 确保之前的内存写入对其他线程可见
 
     HCCL_INFO("[%s] Setting flag = 1 on shared mem START.", __func__);
     ret = memcpy_s(dstFlagPtr, sizeof(flagWriteValue), &flagWriteValue, sizeof(flagWriteValue));

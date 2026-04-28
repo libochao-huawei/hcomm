@@ -22,9 +22,9 @@ using CallbackTemplate = std::function<int32_t(uint64_t, int32_t)>;
  * 1. 使用共享 HBM 内存传递任务信息和数据
  * 2. 内存布局(shmemPtr_)分为两块等长区域：
  *    - NPU -> DPU (npu2dpuShmem)
- * +----------  ------+---------------------------+-------------------+------------------+
- * |  flag (uint8_t)  | taskType (256字节定长空间) | msgId (uint32_t)  |      data        |
- * +-----------  -----+---------------------------+-------------------+------------------+
+ * +------------------+---------------------------+-------------------+---------------------+--------+
+ * |  flag (uint8_t)  | taskType (256字节定长空间) | msgId (uint32_t)  | dataSize (uint32_t) | data   |
+ * +------------------+---------------------------+-------------------+---------------------+--------+
  *    - DPU -> NPU (dpu2npuShmem)
  * +-----------------+----------------------------+-------------------+
  * |  flag (uint8_t)  | taskType (256字节定长空间) | msgId (uint32_t)  |
@@ -52,7 +52,7 @@ private:
     void       *npu2dpuMem_{nullptr};
     void       *dpu2npuMem_{nullptr};
     int32_t shmemSize_{0};
-    int32_t dataSize_{0};
+    int32_t hostSize_{0};
     void       *hostMem_{nullptr};
     int32_t hostMemSize_{0};
 };

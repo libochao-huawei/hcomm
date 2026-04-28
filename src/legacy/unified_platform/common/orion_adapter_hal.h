@@ -17,6 +17,6 @@ namespace Hccl
     
 HcclResult HrtHalDrvQueryProcessHostPid(int pid, unsigned int *chipId, unsigned int *vfid,
     unsigned int *hostPid, unsigned int *cpType);
-
+HcclResult HrtHalGetDeviceInfo(uint32_t devId, int32_t moduleType, int32_t infoType, int64_t *value);
 }
 #endif
