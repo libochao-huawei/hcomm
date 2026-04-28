@@ -819,7 +819,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_NotifyWait_When_WcStatusNotSuccess_Expect_HCCL
     MOCKER_CPP(&HostCpuRoceChannel::GetQpInfos).stubs().will(returnValue(qpInfos));
     MOCKER_CPP(&HostCpuRoceChannel::IbvPollCq).stubs().will(returnValue(1)).then(returnValue(0));
 
-    HcclResult ret = impl_->NotifyWait(0, 1800);
+    HcclResult ret = impl_->HostCpuRoceChannel::NotifyWait(0, 1800);
     EXPECT_EQ(ret, HCCL_E_NETWORK);
     GlobalMockObject::verify();
 }
