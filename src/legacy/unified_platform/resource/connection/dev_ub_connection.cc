@@ -827,7 +827,7 @@ HcclResult DevUbConnection::Describe(std::string &dfxMsg)
                 }
                 return res;
             }
-        } catch (NetworkApiException &e) {
+        } catch (HcclException &e) {
             HCCL_ERROR("[DevUbConnection::%s] %s", __func__, e.what());
             return HCCL_E_NETWORK;
         }

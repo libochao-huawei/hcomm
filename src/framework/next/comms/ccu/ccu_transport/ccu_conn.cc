@@ -526,7 +526,7 @@ HcclResult CcuConnection::Describe(std::string &dfxMsg)
                 }
                 return res;
             }
-        } catch (NetworkApiException &e) {
+        } catch (Hccl::HcclException &e) {
             HCCL_ERROR("[CcuConnection::%s] %s", __func__, e.what());
             return HCCL_E_NETWORK;
         }
