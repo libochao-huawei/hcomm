@@ -140,6 +140,7 @@ static void MoveResourcesToDie(CcuRepResource &res, uint32_t targetDieId)
 
 HcclResult CcuKernel::SelectDie()
 {
+    FlushClosablePendingIfs();
     uint32_t dieId{0};
     CHK_RET(GetDieIdByChannels(channels_, dieId));
     CHK_PRT_RET(dieId >= CCU_MAX_IODIE_NUM,
@@ -400,10 +401,10 @@ CcuResult CcuKernel::BlockBufferAlloc(CcuBufferHandle *bufHandles, uint32_t coun
 }
 CcuResult CcuKernel::VariableCreateByChannel(ChannelHandle channel, uint32_t varIndex, CcuVariableHandle *varHandle)
 {
-    CcuRep::Variable *variable{nullptr};
-    CCU_CHK_RET(CreateVariable(channel, varIndex, variable));
+    CcuRep::Variable var(this);
+    CCU_CHK_RET(CreateVariable(channel, varIndex, &var));
     CcuVariableHandle handle = ccuVarMap_.size();
-    ccuVarMap_.emplace(handle, *variable);
+    ccuVarMap_.emplace(handle, var);
     *varHandle = handle;
     return CcuResult::CCU_SUCCESS;
 }
@@ -700,6 +701,27 @@ CcuResult CcuKernel::WriteMemToMemReduce(ChannelHandle channel, CcuRemoteAddrHan
     CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
     auto ret = WriteReduceNb(channel, *remote, *local, *len, dataType, opType, *event);
     return HCCL_TO_CCU_RET(ret);
+}
+
+void CcuKernel::FlushClosablePendingIfs()
+{
+    if (isFlushing_) {
+        return;
+    }
+    isFlushing_ = true;
+    while (ifLabelStack_.TopIsClosable()) {
+        const char *lbl = ifLabelStack_.Pop();
+        if (lbl != nullptr) {
+            (void)IfEnd(lbl);
+        }
+    }
+    isFlushing_ = false;
+}
+
+void CcuKernel::Append(std::shared_ptr<CcuRep::CcuRepBase> rep)
+{
+    FlushClosablePendingIfs();
+    CcuRep::CcuRepContext::Append(rep);
 }
 
 CcuResult CcuKernel::IfBegin(CcuVariableHandle varHandle, uint64_t immediate,
@@ -1971,6 +1993,79 @@ HcclResult CcuKernel::AddCcuProfiling(const ChannelHandle *channels, uint32_t ch
     CHK_PTR_NULL(channels);
     CHK_RET(AddProfilingInfo(channels, channelNum, dataType, outputDataType, opType, opName));
     return HCCL_SUCCESS;
+}
+
+/* =========================================================================
+ * 控制流标签栈实体
+ *
+ * IfLabelStack / DoWhileLabelStack 是 CcuKernel 的嵌套 struct，作为成员
+ * 存在，与所属 kernel 同生命周期。下面的方法实现以及 namespace 之外的
+ * extern "C" 内部 API 只服务于这一目的：
+ *   - 同包消费者（本文件 FlushClosablePendingIfs 等）通过成员直接调用；
+ *   - 跨包消费者（上层宏 / 业务 C API）通过 _CcuIfStack* /
+ *     _CcuDoWhileStack* C 接口转发到 GetCurrentKernel() 的成员栈。
+ * ========================================================================= */
+
+void CcuKernel::IfLabelStack::Push(const char *label)
+{
+    if (top >= MAX_DEPTH) {
+        HCCL_ERROR("[CcuKernel::IfLabelStack][Push] stack overflow, MAX_DEPTH=%d, label=%s",
+            MAX_DEPTH, label != nullptr ? label : "(null)");
+        return;
+    }
+    entries[top].label = label;
+    entries[top].state = BodyState::InBody;
+    ++top;
+}
+
+void CcuKernel::IfLabelStack::MarkBodyDone()
+{
+    if (top <= 0) {
+        HCCL_ERROR("[CcuKernel::IfLabelStack][MarkBodyDone] stack is empty");
+        return;
+    }
+    entries[top - 1].state = BodyState::BodyDone;
+}
+
+const char *CcuKernel::IfLabelStack::PopForElse()
+{
+    if (top <= 0 || entries[top - 1].state != BodyState::BodyDone) {
+        return nullptr;
+    }
+    --top;
+    return entries[top].label;
+}
+
+bool CcuKernel::IfLabelStack::TopIsClosable() const
+{
+    return top > 0 && entries[top - 1].state == BodyState::BodyDone;
+}
+
+const char *CcuKernel::IfLabelStack::Pop()
+{
+    if (top <= 0) {
+        return nullptr;
+    }
+    --top;
+    return entries[top].label;
+}
+
+void CcuKernel::DoWhileLabelStack::Push(const char *label)
+{
+    if (top >= MAX_DEPTH) {
+        HCCL_ERROR("[CcuKernel::DoWhileLabelStack][Push] stack overflow, MAX_DEPTH=%d, label=%s",
+            MAX_DEPTH, label != nullptr ? label : "(null)");
+        return;
+    }
+    entries[top++] = label;
+}
+
+const char *CcuKernel::DoWhileLabelStack::PopForWhile()
+{
+    if (top <= 0) {
+        return nullptr;
+    }
+    return entries[--top];
 }
 
 }; // namespace hcomm
