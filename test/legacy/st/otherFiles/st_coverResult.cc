@@ -383,6 +383,23 @@ TEST(AdapterHccpTest, HrtHrtRaRdmaInit_NOK)
     delete[] num;
 }
 
+TEST_F(AdapterHccpTest, HrtHrtRaRdmaInit_return_HCCP_ELINKDOWN_NOK)
+{
+    // Given
+    u32       *num        = new u32[1];
+    RdmaHandle rdmaHandle = static_cast<void *>(num);
+    MOCKER(RaRdevInit)
+        .stubs()
+        .with(any(), any(), any(), outBoundP(&rdmaHandle, sizeof(rdmaHandle)))
+        .will(returnValue(HCCP_ELINKDOWN));
+
+    struct RaInterface rdevInfo;
+    // when
+
+    EXPECT_THROW(HrtRaRdmaInit(HrtNetworkMode::HDC, rdevInfo), NetworkApiException);
+    delete[] num;
+}
+
 TEST(AdapterHccpTest, HrtGetHosIf_nok_ra_get_ifaddrs_error)
 {
     unsigned int fakeNum = 1;

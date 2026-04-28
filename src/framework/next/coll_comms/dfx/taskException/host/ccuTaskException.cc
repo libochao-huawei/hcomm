@@ -258,9 +258,20 @@ void CcuTaskException::GenStatusInfo(const ErrorInfoBase &baseInfo, vector<CcuEr
     CcuErrorInfo errorMsg{};
     errorMsg.type = CcuErrorType::MISSION;
     errorMsg.SetBaseInfo(CcuRep::CcuRepType::BASE, baseInfo.dieId, baseInfo.missionId, baseInfo.currentInsId);
-
+    const auto baseInformation = Hccl::StringFormat("dieId[%u], missionId[%u]", baseInfo.dieId, baseInfo.missionId);
+    const auto taskInformation = Hccl::StringFormat("currentInsId[%u], status[%u]", baseInfo.currentInsId, baseInfo.status);
     const uint8_t highPart  = (baseInfo.status >> 8) & 0xFF; // 高8位
     const uint8_t lowPart   = baseInfo.status & 0xFF;        // 低8位
+    if (highPart == 0x09 && lowPart == 0x02) {
+        RPT_INPUT_ERR(true,
+            "EI0002",
+            std::vector<std::string>({"remote_rankid", "base_information", "task_information", "group_rank_content"}),
+            std::vector<std::string>({
+                std::to_string(baseInfo.deviceId),
+                baseInformation.c_str(), taskInformation.c_str(),
+                ""})
+        );
+    }
     const string  statusMsg = StatusCode2Str(highPart, lowPart);
     const auto    sRet
         = strncpy_s(errorMsg.msg.mission.missionError, MISSION_STATUS_MSG_LEN, statusMsg.c_str(), statusMsg.length());

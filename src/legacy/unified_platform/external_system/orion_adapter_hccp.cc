@@ -878,6 +878,11 @@ RdmaHandle HrtRaRdmaInit(HrtNetworkMode netMode, RaInterface &in)
     rdevInfo.family   = in.address.GetFamily();
     rdevInfo.localIp = IpAddressToHccpIpAddr(in.address);
     s32 ret           = RaRdevInit(mode, notifyType, rdevInfo, &rdmaHandle);
+    RPT_INPUT_ERR(ret == HCCP_ELINKDOWN,
+        "EI0009",
+        vector<string>({"device_id", "reason"}),
+        vector<string>({std::to_string(rdevInfo.phyId), "The network port is down"})
+    );
     if (ret != 0 || (rdmaHandle == nullptr)) {
         MACRO_THROW(NetworkApiException, StringFormat("[Init][RaRdma]errNo[0x%016llx] rdma init fail. call RaRdevInit failed, Input params: phyId=%u, mode=%u, return: ret[%d]",
             HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), in.phyId, mode, ret));
