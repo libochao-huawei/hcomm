@@ -255,7 +255,7 @@ function make_ut_gov() {
             LCOV_FILTER_IGNORE_FLAGS="--ignore-errors unused"
             LCOV_RUNTIME_CONFIGURATION_FLAGS="-rc geninfo_unexecuted_blocks=1"
         else
-            LCOV_IGNORE_FLAGS=""
+            LCOV_CAPTURE_IGNORE_FLAGS=""
             LCOV_FILTER_IGNORE_FLAGS=""
             LCOV_RUNTIME_CONFIGURATION_FLAGS=""
         fi
@@ -268,7 +268,7 @@ function make_ut_gov() {
     rm -rf ${CURRENT_DIR}/cov
     mkdir -p ${CURRENT_DIR}/cov
 
-    lcov -c ${LCOV_IGNORE_FLAGS}
+    lcov -c ${LCOV_CAPTURE_IGNORE_FLAGS} \
          -d ${BUILD_DIR}/test/ut/ \
          -d ${BUILD_DIR}/test/legacy/ut/ \
          -o cov/coverage.info \
