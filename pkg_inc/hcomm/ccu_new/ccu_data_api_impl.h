@@ -16,7 +16,10 @@
 #include "ccu_types.h"
 #include "hcomm_primitives.h"
 #ifdef __cplusplus
+#include <cstdbool>
 extern "C" {
+#else
+#include <stdbool.h>
 #endif // __cplusplus
 
 //Alloc 相关接口
@@ -88,6 +91,8 @@ extern CcuResult CcuIfElse(const char *label);
 
 extern CcuResult CcuIfEnd(const char *label);
 
+extern CcuResult CcuFlushPendingIfs();
+
 extern CcuResult CcuWhileBegin(CcuVariableHandle var, uint64_t immediate,
     CcuConditionType condType, const char *label);
 
@@ -97,6 +102,20 @@ extern CcuResult CcuDoWhileBegin(const char *label);
 
 extern CcuResult CcuDoWhileEnd(CcuVariableHandle var, uint64_t immediate,
     CcuConditionType condType, const char *label);
+
+/*
+ * 控制流宏内部使用的标签栈接口（以 _ 前缀标识为内部 API，
+ * 仅供 ccu_control_flow_macro.h 中的 CCU_IF / CCU_ELSE / CCU_DO / CCU_WHILE
+ * 等宏在调用现场展开时使用）。
+ */
+extern void _CcuIfStackPush(const char *label);
+extern void _CcuIfStackMarkBodyDone();
+extern const char *_CcuIfStackPopForElse();
+extern bool _CcuIfStackTopIsClosable();
+extern const char *_CcuIfStackPop();
+
+extern void _CcuDoWhileStackPush(const char *label);
+extern const char *_CcuDoWhileStackPopForWhile();
 
 /*========== 循环操作 ==========*/
 extern CcuResult CcuCreateBlockExecutor(CcuLoopExecutors *pool, uint32_t count);

@@ -12,7 +12,6 @@
 #define CCU_CONTROL_FLOW_MACRO_H
 
 #include "ccu_variable.hpp"
-#include "ccu_if_label_stack.hpp"
 #include "ccu_data_api_impl.h"
 
 /* ---------------------------------------------------------------------------
@@ -24,33 +23,42 @@
  *   counter != limit   →  CcuCondExpr{&counter, limit, CCU_CONDITION_NE}
  *   var == expected     →  CcuCondExpr{&var, expected, CCU_CONDITION_EQ}
  *
- * CCU_WHILE — single brace block, label auto-generated:
+ * CCU_WHILE — while loop (condition-first):
  *
  *   CCU_WHILE(counter != limit) {
  *       accumulator = accumulator + step;
  *       counter = counter + one;
  *   }
  *
- * CCU_DO_WHILE — body executes at least once, then condition is checked:
+ * CCU_DO / CCU_WHILE — do-while loop (body-first, condition-last):
  *
- *   CCU_DO_WHILE(counter != limit) {
+ *   CCU_DO {
  *       accumulator = accumulator + step;
  *       counter = counter + one;
- *   }
+ *   } CCU_WHILE(counter != limit);
  *
- * CCU_IF / CCU_ELSE — label auto-generated, passed via TLS stack:
+ * CCU_WHILE is polymorphic: when preceded by CCU_DO it acts as the
+ * closing condition of a do-while; otherwise it is a standard while.
+ * The dispatch is done at runtime via the do-while TLS label stack
+ * (_CcuDoWhileStackPopForWhile).
  *
+ * CCU_DO_WHILE — retained as compatibility alias for CCU_DO + CCU_WHILE.
+ *
+ * CCU_IF / CCU_ELSE — unified interface. CCU_ELSE is optional:
+ *
+ *   // With else:
  *   CCU_IF(var == expected) {
  *       // then-block
  *   } CCU_ELSE {
  *       // else-block
  *   }
  *
- * CCU_IF_ONLY — if-without-else, self-closing (no CCU_ELSE needed):
- *
- *   CCU_IF_ONLY(var == expected) {
+ *   // Without else (previously required CCU_IF_ONLY):
+ *   CCU_IF(var == expected) {
  *       // then-block
  *   }
+ *
+ * CCU_IF_ONLY — retained as compatibility alias for CCU_IF.
  * --------------------------------------------------------------------------- */
 
 #define CCU_CONCAT_INNER(a, b) a##b
@@ -59,9 +67,18 @@
 #define CCU_STRINGIFY(x)       CCU_STRINGIFY_INNER(x)
 
 /**
- * CCU_WHILE — wraps CcuWhileBegin / CcuWhileEnd around a brace block.
- * Accepts a CcuCondExpr produced by operator== / operator!= on CcuVariable.
- * Label is auto-generated via __COUNTER__ so the user never sees it.
+ * CCU_WHILE — polymorphic while macro.
+ *
+ * Normal while mode (no preceding CCU_DO):
+ *   Wraps CcuWhileBegin / CcuWhileEnd around the brace block that follows.
+ *
+ * Do-while mode (preceded by CCU_DO):
+ *   The body has already been executed inside CCU_DO { ... }.
+ *   CCU_WHILE pops the pending do-while label from TLS and emits
+ *   CcuDoWhileEnd. The for-loop body is empty (terminated by ';').
+ *
+ * Dispatch is done at runtime: a non-null result from
+ * _CcuDoWhileStackPopForWhile() means do-while mode.
  */
 #define CCU_WHILE(expr)                                                     \
     CCU_WHILE_EXPAND(expr, CCU_CONCAT(__ccu_wh_, __COUNTER__))
@@ -74,19 +91,35 @@
              *uid##_p = &uid##_ce;                                          \
          uid##_p != nullptr;                                                \
          uid##_p = nullptr)                                                 \
-    for (int uid##_rc = (int)CcuWhileBegin(uid##_ce.var->handle,            \
-                 uid##_ce.imm, uid##_ce.cond, CCU_STRINGIFY(uid)),          \
+    for (const char *uid##_dwLbl = _CcuDoWhileStackPopForWhile(),           \
+             *uid##_sen = (const char *)1;                                  \
+         uid##_sen != nullptr;                                              \
+         uid##_sen = nullptr)                                               \
+    for (int uid##_rc = (uid##_dwLbl != nullptr)                            \
+                 ? (int)CCU_SUCCESS                                         \
+                 : (int)CcuWhileBegin(uid##_ce.var->handle,                 \
+                       uid##_ce.imm, uid##_ce.cond, CCU_STRINGIFY(uid)),    \
              uid##_done = 0;                                                \
          uid##_rc == (int)CCU_SUCCESS && !uid##_done;                       \
          uid##_done = 1,                                                    \
-             uid##_rc = (int)CcuWhileEnd(CCU_STRINGIFY(uid)))
+             uid##_rc = (uid##_dwLbl != nullptr)                            \
+                 ? (int)CcuDoWhileEnd(uid##_ce.var->handle,                 \
+                       uid##_ce.imm, uid##_ce.cond, uid##_dwLbl)            \
+                 : (int)CcuWhileEnd(CCU_STRINGIFY(uid)))
 
 /**
- * CCU_IF / CCU_ELSE — label is auto-generated and passed between the two
- * macros via CcuIfLabelStack (thread-local). CCU_IF pushes the label;
- * CCU_ELSE pops it.
+ * CCU_IF — unified if macro. Uses delayed-close strategy:
+ *   - On entry: emits CcuIfBegin first (which may flush prior BodyDone
+ *     entries via Append), then pushes label to the if TLS label stack
+ *     (state = InBody) via _CcuIfStackPush.
+ *   - On body completion (inner for-loop increment): marks stack top
+ *     as BodyDone. The actual CcuIfEnd is NOT emitted here.
+ *   - Closure happens in one of three ways:
+ *     (a) A subsequent CCU_ELSE pops the entry and takes over;
+ *     (b) Any subsequent CcuKernel::Append auto-flushes BodyDone entries;
+ *     (c) Kernel finalize flushes any remaining entries.
  *
- *   CCU_IF(var == expected) { ... } CCU_ELSE { ... }
+ * CCU_ELSE is optional. If omitted, the if is closed automatically.
  */
 #define CCU_IF(expr)                                                        \
     CCU_IF_EXPAND(expr, CCU_CONCAT(__ccu_if_, __COUNTER__))
@@ -99,11 +132,14 @@
              *uid##_p = &uid##_ce;                                          \
          uid##_p != nullptr;                                                \
          uid##_p = nullptr)                                                 \
-    for (int uid##_push = (CcuIfLabelStack::Push(CCU_STRINGIFY(uid)), 0),   \
-             uid##_rc = (int)CcuIfBegin(uid##_ce.var->handle,               \
-                 uid##_ce.imm, uid##_ce.cond, CCU_STRINGIFY(uid));          \
-         uid##_rc == (int)CCU_SUCCESS && uid##_push == 0;                   \
-         uid##_push = 1)
+    for (int uid##_rc =                                                     \
+             (int)CcuIfBegin(uid##_ce.var->handle, uid##_ce.imm,            \
+                 uid##_ce.cond, CCU_STRINGIFY(uid)),                        \
+             uid##_done = (_CcuIfStackPush(CCU_STRINGIFY(uid)), 0);         \
+         uid##_rc == (int)CCU_SUCCESS && uid##_done == 0;                   \
+         uid##_done = 1,                                                    \
+             ((void)CcuFlushPendingIfs(),                                   \
+              _CcuIfStackMarkBodyDone(), (void)0))
 
 #define CCU_ELSE                                                            \
     CCU_ELSE_EXPAND(CCU_CONCAT(__ccu_el_, __COUNTER__))
@@ -112,63 +148,44 @@
     CCU_ELSE_IMPL(uid)
 
 #define CCU_ELSE_IMPL(uid)                                                  \
-    for (const char *uid##_lbl = CcuIfLabelStack::Pop(),                    \
-             *uid##_end = uid##_lbl;                                        \
-         uid##_end != nullptr;                                              \
-         uid##_end = nullptr)                                               \
+    for (const char *uid##_lbl = _CcuIfStackPopForElse(),                   \
+             *uid##_sen = uid##_lbl;                                        \
+         uid##_sen != nullptr;                                              \
+         uid##_sen = nullptr)                                               \
     for (int uid##_rc = (int)CcuIfElse(uid##_lbl),                          \
              uid##_done = 0;                                                \
          uid##_rc == (int)CCU_SUCCESS && !uid##_done;                       \
          uid##_done = 1,                                                    \
              uid##_rc = (int)CcuIfEnd(uid##_lbl))
 
+
 /**
- * CCU_IF_ONLY — if-without-else, self-closing. Wraps CcuIfBegin, the user
- * body, CcuIfElse, and CcuIfEnd in a single macro expansion. No CCU_ELSE
- * is needed.
+ * CCU_DO — opens a do-while block. Must be closed by CCU_WHILE(expr);
  *
- *   CCU_IF_ONLY(var == expected) { ... }
+ *   CCU_DO {
+ *       // body (always executes at least once)
+ *   } CCU_WHILE(counter != limit);
+ *
+ * Internally: calls CcuDoWhileBegin on entry. The label is pushed onto
+ * the do-while TLS label stack (_CcuDoWhileStackPush) only AFTER the
+ * body finishes (in the for-loop step expression). This deferred push
+ * prevents any CCU_WHILE inside the body from incorrectly consuming the
+ * pending label and being misidentified as the closing condition. The
+ * subsequent CCU_WHILE pops the label and calls CcuDoWhileEnd instead
+ * of CcuWhileBegin/CcuWhileEnd.
  */
-#define CCU_IF_ONLY(expr)                                                   \
-    CCU_IF_ONLY_EXPAND(expr, CCU_CONCAT(__ccu_io_, __COUNTER__))
+#define CCU_DO                                                              \
+    CCU_DO_EXPAND(CCU_CONCAT(__ccu_dw_, __COUNTER__))
 
-#define CCU_IF_ONLY_EXPAND(expr, uid)                                       \
-    CCU_IF_ONLY_IMPL(expr, uid)
+#define CCU_DO_EXPAND(uid)                                                  \
+    CCU_DO_IMPL(uid)
 
-#define CCU_IF_ONLY_IMPL(expr, uid)                                         \
-    for (CcuCondExpr uid##_ce = (expr),                                     \
-             *uid##_p = &uid##_ce;                                          \
-         uid##_p != nullptr;                                                \
-         uid##_p = nullptr)                                                 \
-    for (int uid##_rc = (int)CcuIfBegin(uid##_ce.var->handle,               \
-                 uid##_ce.imm, uid##_ce.cond, CCU_STRINGIFY(uid)),          \
-             uid##_done = 0;                                                \
-         uid##_rc == (int)CCU_SUCCESS && !uid##_done;                       \
-         uid##_done = 1,                                                    \
-             uid##_rc = (int)CcuIfEnd(CCU_STRINGIFY(uid)))
-
-/**
- * CCU_DO_WHILE — wraps CcuDoWhileBegin / CcuDoWhileEnd around a brace block.
- * Accepts a CcuCondExpr. The body is always executed once, then the condition
- * is checked to decide whether to loop back.
- * Label is auto-generated via __COUNTER__.
- */
-#define CCU_DO_WHILE(expr)                                                  \
-    CCU_DO_WHILE_EXPAND(expr, CCU_CONCAT(__ccu_dw_, __COUNTER__))
-
-#define CCU_DO_WHILE_EXPAND(expr, uid)                                      \
-    CCU_DO_WHILE_IMPL(expr, uid)
-
-#define CCU_DO_WHILE_IMPL(expr, uid)                                        \
-    for (CcuCondExpr uid##_ce = (expr),                                     \
-             *uid##_p = &uid##_ce;                                          \
-         uid##_p != nullptr;                                                \
-         uid##_p = nullptr)                                                 \
+#define CCU_DO_IMPL(uid)                                                    \
     for (int uid##_rc = (int)CcuDoWhileBegin(CCU_STRINGIFY(uid)),           \
              uid##_done = 0;                                                \
          uid##_rc == (int)CCU_SUCCESS && !uid##_done;                       \
          uid##_done = 1,                                                    \
-             uid##_rc = (int)CcuDoWhileEnd(uid##_ce.var->handle,            \
-                 uid##_ce.imm, uid##_ce.cond, CCU_STRINGIFY(uid)))
+             _CcuDoWhileStackPush(CCU_STRINGIFY(uid)))
+
 
 #endif // CCU_CONTROL_FLOW_MACRO_H
