@@ -101,7 +101,7 @@ inline std::string GetHeartBeatStatusStr(HeartBeatStatus  status)
 struct CqeErrInfo{
     u32 CqeLocalId;
     u32 CqeRemoteLocalId;
-    uint16_t CqeRemoterstatus;
+    uint16_t Cqestatus;
     std::string CqeLocalEid; 
     std::string CqeRemoteEid;
     std::string CqeRemoteInsId;
@@ -116,6 +116,8 @@ public:
     bool IsKeyEvent(HeartBeatFrame &event, HcclUs curTime);
     std::vector<std::string> PrintEvents(std::map<HeartBeatStatus, std::queue<HeartBeatFrame>> &keyEvents);
     void MakeErrMsg(std::queue<HeartBeatFrame> &keyEvents, std::vector<std::string> &errStatusVec);
+    HcclResult FormatUID(std::string instanceId, u32 localId, UIDType &uid);
+
     ClusterMonitor() = default;
     ~ClusterMonitor() = default;
 private:
@@ -141,6 +143,7 @@ private:
     std::queue<HeartBeatFrame> errStatusQueue_;
     CqeErrInfo CqeErrInfo_;
     std::mutex ProcessLock_;
+    UIDType  myRankUid_;
 };
 }
 
