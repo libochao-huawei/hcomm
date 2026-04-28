@@ -37,6 +37,7 @@ using namespace hccl;
 class CollCommAicpu {
 public:
     HcclResult InitAicpuIndOp(CommAicpuParam *commAicpuParam);
+    void InitIndopEnv(CommAicpuParam *commAicpuParam);
     HcclResult InitThreads(ThreadMgrAicpuParam *param);
     HcclResult AllocChannelResource(HcclChannelUrmaRes *commParam);
     HcclResult NotifyFree(NotifyMgrAicpuParam *param);
