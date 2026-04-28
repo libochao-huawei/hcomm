@@ -38,7 +38,10 @@ HcclResult HccsRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, voi
 {
     HCCL_INFO("[%s] Begin", __FUNCTION__);
     CHK_PTR_NULL(memHandle);
-
+    CHK_PTR_NULL(mem.addr);
+    CHK_PRT_RET(mem.size == 0, HCCL_ERROR("[%s] mem size is zero", __func__), HCCL_E_PARA);
+    CHK_PRT_RET(mem.type == COMM_MEM_TYPE_INVALID, 
+        HCCL_ERROR("[%s] invalid mem type [%d]", __func__, mem.type), HCCL_E_PARA);
     HCCL_INFO("[%s] addr[%p] size[%u] start", __FUNCTION__, mem.addr, mem.size);
 
     NetDevContext *netDevCtx = static_cast<NetDevContext *>(netDevCtx_);
@@ -68,9 +71,10 @@ HcclResult HccsRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, voi
         return HCCL_E_INTERNAL;
     }
 
+    *memHandle = static_cast<void *>(localIpcRmaBuffer.get());
+
     std::shared_ptr<hccl::LocalIpcRmaBuffer> &localBuffer = resultPair.first->second.buffer;
     CHK_SMART_PTR_NULL(localBuffer);
-    *memHandle = static_cast<void *>(localBuffer.get());
 
     // 已注册：输入key是表中某一最相近key的全集。 返回添加该key的迭代器，及false
     // 未注册：输入key是表中某一最相近key的空集。 返回添加成功的迭代器，及true
@@ -87,7 +91,7 @@ HcclResult HccsRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, voi
         HCCL_INFO(
                 "[HccsRegedMemMgr][RegisterMemory]Memory is already registered, just increase the reference count. Add key "
                 "{%p, %llu}", mem.addr, mem.size);;
-        return HCCL_E_AGAIN;
+        return HCCL_SUCCESS;
     }
 
     allRegisteredBuffers_.push_back(localBuffer);
@@ -126,13 +130,13 @@ HcclResult HccsRegedMemMgr::UnregisterMemory(void* memHandle)
         if ((*it).get() == localIpcRmaBuffer) {
             HCCL_INFO("[%s] addr[%p] size[%u] memHandle[%p] erase done", __FUNCTION__, addr, size, memHandle);
             it = allRegisteredBuffers_.erase(it);
-            break;
+            return HCCL_SUCCESS;
         }
     }
 
-    HCCL_INFO("[%s] addr[%p] size[%u] memHandle[%p] allRegisteredBuffers_.size[%d] done",
+    HCCL_INFO("[%s] addr[%p] size[%u] memHandle[%p] allRegisteredBuffers_.size[%d] Not Found",
         __FUNCTION__, addr, size, memHandle, allRegisteredBuffers_.size());
-    return HCCL_SUCCESS;
+    return HCCL_E_NOT_FOUND;
 }
 
 HcclResult HccsRegedMemMgr::SerializeToMemDesc(const EndpointDesc &endpointDesc, std::string &ipcRmaBufferDesc,
