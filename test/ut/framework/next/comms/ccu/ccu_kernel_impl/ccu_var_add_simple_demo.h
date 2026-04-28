@@ -141,11 +141,11 @@ CcuResult CcuLocalCopyKernel(CcuKernelArg arg)
     ccu::Variable len;
     ccu::Alloc(&len);
     len = 1024;
-    ccu::LocalCopyNb(buf, src, len, evt);
+    ccu::LocalCopy(buf, src, len, evt);
     ccu::WaitEvent(evt);
-    ccu::LocalCopyNb(dst, buf, len, evt);
+    ccu::LocalCopy(dst, buf, len, evt);
     ccu::WaitEvent(evt);
-    ccu::LocalCopyNb(dst, src, len, evt);
+    ccu::LocalCopy(dst, src, len, evt);
     ccu::WaitEvent(evt);
     return CcuResult::CCU_SUCCESS;
 }
@@ -164,11 +164,11 @@ CcuResult CcuLocalReduceKernel(CcuKernelArg arg)
     len = 1024;
     ccu::Event evt;
     ccu::Alloc(&evt);
-    ccu::LocalReduceNb(dst, src, len, HCCL_DATA_TYPE_FP16, HCCL_REDUCE_SUM, evt);
+    ccu::LocalReduce(dst, src, len, HCCL_DATA_TYPE_FP16, HCCL_REDUCE_SUM, evt);
     ccu::WaitEvent(evt);
     ccu::Buffer buf[2];
     ccu::BlockAlloc(buf, 2);
-    ccu::LocalReduceNb(buf, 2, HCCL_DATA_TYPE_FP16, HCCL_DATA_TYPE_FP16, HCCL_REDUCE_SUM, len, evt);
+    ccu::LocalReduce(buf, 2, HCCL_DATA_TYPE_FP16, HCCL_DATA_TYPE_FP16, HCCL_REDUCE_SUM, len, evt);
     ccu::WaitEvent(evt);
 
     return CcuResult::CCU_SUCCESS;
@@ -190,13 +190,13 @@ CcuResult CcuRemoteReadKernel(CcuKernelArg arg)
     len = 1024;
     ccu::Event evt;
     ccu::Alloc(&evt);
-    ccu::ReadNb(args->channelHandle, src, dst, len, evt);
+    ccu::Read(args->channelHandle, src, dst, len, evt);
     ccu::WaitEvent(evt);
     ccu::Buffer buf;
     ccu::BlockAlloc(&buf, 1);
-    ccu::ReadNb(args->channelHandle, buf, dst, len, evt);
+    ccu::Read(args->channelHandle, buf, dst, len, evt);
     ccu::WaitEvent(evt);
-    ccu::ReadReduceNb(args->channelHandle, src, dst, len, HCCL_DATA_TYPE_FP16, HCCL_REDUCE_SUM, evt);
+    ccu::ReadReduce(args->channelHandle, src, dst, len, HCCL_DATA_TYPE_FP16, HCCL_REDUCE_SUM, evt);
     ccu::WaitEvent(evt);
     return CcuResult::CCU_SUCCESS;
 }
@@ -219,11 +219,11 @@ CcuResult CcuRemoteWriteKernel(CcuKernelArg arg)
     dst.addr = 0x30000000;
     dst.token = 0x40000000;
 
-    ccu::WriteNb(args->channelHandle, dst, src, len, evt);
+    ccu::Write(args->channelHandle, dst, src, len, evt);
     ccu::WaitEvent(evt);
-    ccu::WriteNb(args->channelHandle, dst, buf, len, evt);
+    ccu::Write(args->channelHandle, dst, buf, len, evt);
     ccu::WaitEvent(evt);
-    ccu::WriteReduceNb(args->channelHandle, dst, src, len, HCCL_DATA_TYPE_FP16, HCCL_REDUCE_SUM, evt);
+    ccu::WriteReduce(args->channelHandle, dst, src, len, HCCL_DATA_TYPE_FP16, HCCL_REDUCE_SUM, evt);
     ccu::WaitEvent(evt);
     return CcuResult::CCU_SUCCESS;
 }
