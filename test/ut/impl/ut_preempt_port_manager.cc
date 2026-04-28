@@ -16,12 +16,14 @@
 #define protected public
 #include "hccl_common.h"
 #include "preempt_port_manager.h"
+#include "legacy/common/exception/invalid_params_exception.h"
 #undef private
 #undef protected
 
 
 using namespace hccl;
 using namespace std;
+using namespace Hccl;
 
 class HcclPreemptPortManagerTest : public testing::Test {
 protected:
@@ -259,7 +261,7 @@ TEST_F(HcclPreemptPortManagerTest, ut_PreemptPortInRange_AllPortsOccupied_HostNi
     std::shared_ptr<HcclSocket> listenSocket(new (std::nothrow)HcclSocket("my tag", nullptr, remoteIp, 0,
         HcclSocketRole::SOCKET_ROLE_SERVER));
     listenSocket->localIp_ = localIp;
-    listenSocket->nicType_ = NicType::HOST_NIC_TYPE;
+    listenSocket->socketType_ = NicType::HOST_NIC_TYPE;
 
     PreemptPortManager& ppm = PreemptPortManager::GetInstance(0);
     IpPortRef hostPortRef;
@@ -288,7 +290,7 @@ TEST_F(HcclPreemptPortManagerTest, ut_PreemptPortInRange_AllPortsOccupied_NpuNic
     std::shared_ptr<HcclSocket> listenSocket(new (std::nothrow)HcclSocket("my tag", nullptr, remoteIp, 0,
         HcclSocketRole::SOCKET_ROLE_SERVER));
     listenSocket->localIp_ = localIp;
-    listenSocket->nicType_ = NicType::VNIC_TYPE;
+    listenSocket->socketType_ = NicType::VNIC_TYPE;
 
     PreemptPortManager& ppm = PreemptPortManager::GetInstance(0);
     IpPortRef hostPortRef;
