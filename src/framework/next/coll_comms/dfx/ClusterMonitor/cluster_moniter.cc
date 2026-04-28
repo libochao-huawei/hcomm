@@ -3,20 +3,22 @@
 //#include "../taskException/host/hcclCommTaskException.h"
 #include "hcclCommTaskException.h"
 #include "ccuTaskException.h"
-#include "env_config.h"
+
+#include "../../env_config/env_config.h"
 
 namespace hcomm {
 constexpr u32 HEARTBEAT_INTERVAL = 1000; 
-constexpr u32 JITTER_TIME = 300; // 关键事件允许的误差事件范围±300s。误差来源：EVENT和NOTIFY差异、传播耗时、计时误差    
+constexpr u32 JITTER_TIME = 300; // 关键事件允许的误差事件范围±300s。误差来源：EVENT和NOTIFY差异、传播耗时、计时误差   
+constexpr u32 MAX_MODULE_DEVICE_NUM = 65;
 HcclResult ret;
-ClusterMonitor &ClusterMonitor::GetInstance()
+ClusterMonitor &ClusterMonitor::GetInstance(u32 deviceId)
 {
-    static ClusterMonitor hb;
-    // if (static_cast<u32>(deviceLogicID) >= MAX_MODULE_DEVICE_NUM) {
-    //     HCCL_WARNING("[Heartbeat][%s]deviceLogicID[%d] is invalid", __func__, deviceLogicID);
-    //     return hb[0];
-    // }
-    return hb;
+    static ClusterMonitor hb[MAX_MODULE_DEVICE_NUM];
+    if (static_cast<u32>(deviceId) >= MAX_MODULE_DEVICE_NUM) {
+        HCCL_WARNING("[Heartbeat][%s]deviceId[%d] is invalid", __func__, deviceId);
+        return hb[0];
+    }
+    return hb[deviceId];
 }
 
 std::string ClusterMonitor::FormatUId(const UIDType &uid) const
@@ -75,11 +77,11 @@ void ClusterMonitor::ProcessExceptionEvent()
     return;
 }
 
-bool ClusterMonitor::IsKeyEvent(HeartBeatFrame &event, HcclUs curTime, const std::string &group)
+bool ClusterMonitor::IsKeyEvent(HeartBeatFrame &event, HcclUs curTime)
 {
     bool ret = false;
     s64 intervalTime = DURATION_US(curTime - event.TOARelative).count() / (TIME_S_TO_MS * ONE_MILLISECOND_OF_USLEEP);
-    s32 hcclExecTimeout = Hccl::EnvConfig::GetInstance().GetRtsConfig().GetExecTimeOut();
+    const s32 hcclExecTimeout = Hccl::EnvConfig::GetInstance().GetRtsConfig().GetExecTimeOut();
     s64 execTimeout = hcclExecTimeout;
     s64 detectionTime = 0;
     switch (event.status) {
@@ -145,14 +147,14 @@ std::vector<std::string> ClusterMonitor::PrintEvents(std::map<HeartBeatStatus, s
     return errStatusVec;
 }
 
-std::vector<std::string> ClusterMonitor::GetErrStatusVec(const std::string &group)
+std::vector<std::string> ClusterMonitor::GetErrStatusVec()
 {
     std::unique_lock<std::mutex> lock(ProcessLock_);
     HcclUs curTime = TIME_NOW();
     std::map<HeartBeatStatus, std::queue<HeartBeatFrame>> keyEvents;
     while (errStatusQueue_.size() > 0) {
         auto &tmp = errStatusQueue_.front();
-        if (IsKeyEvent(tmp, curTime, group)) { // 非关键事件不处理
+        if (IsKeyEvent(tmp, curTime)) { // 非关键事件不处理
             keyEvents[tmp.status].push(tmp);
         }
         errStatusQueue_.pop();
@@ -160,15 +162,19 @@ std::vector<std::string> ClusterMonitor::GetErrStatusVec(const std::string &grou
     return PrintEvents(keyEvents);
 }
 
-void GetCqeErrInfo(unsigned int RemoteDeviceId, unsigned int LocDeviceId, unsigned short int status, std::string LocalEid, std::string RemoteEid, std::string RemoteInsId)
+std::vector<std::string> GetErrStatusVec(s32 deviceLogicID)
 {
-    return ClusterMonitor::GetInstance().GetCqeErrInfo(RemoteDeviceId, LocDeviceId, status, LocalEid, RemoteEid, RemoteInsId);
+    return ClusterMonitor::GetInstance(deviceLogicID).GetErrStatusVec();
 }
 
-void ClusterMonitor::GetCqeErrInfo(u32 RemoteDeviceId, u32 LocDeviceId, uint16_t status, std::string LocalEid, std::string RemoteEid, std::string RemoteInsId)
+void GetCqeErrInfo(unsigned int RemoteLocalIdId, unsigned int LocDeviceId, unsigned short int status, std::string LocalEid, std::string RemoteEid, std::string RemoteInsId)
 {
-    CqeErrInfo_.CqeRemotedeviceId = RemoteDeviceId;
-    CqeErrInfo_.CqeLocaldeviceId = LocDeviceId;
+    return ClusterMonitor::GetInstance(LocDeviceId).GetCqeErrInfo(RemoteLocalIdId, status, LocalEid, RemoteEid, RemoteInsId);
+}
+
+void ClusterMonitor::GetCqeErrInfo(u32 RemoteLocalIdId, uint16_t status, std::string LocalEid, std::string RemoteEid, std::string RemoteInsId)
+{
+    CqeErrInfo_.CqeRemoteLocalId = RemoteLocalIdId;
     CqeErrInfo_.CqeRemoterstatus = status;
     CqeErrInfo_.CqeLocalEid = LocalEid;
     CqeErrInfo_.CqeRemoteEid = RemoteEid;
@@ -186,6 +192,8 @@ __attribute__((constructor)) void ClusterMonitorCallBackInit()
 {
     hcomm::RegisterGetAicpuCqeErrInfoCallBackHcomm(GetCqeErrInfo);
     hcomm::RegisterGetCcuCqeErrInfoCallBackHcomm(GetCqeErrInfo);
+    hcomm::RegisterAicpuGetErrStatusVecCallBack(GetErrStatusVec);
+    hcomm::RegisterCcuGetErrStatusVecCallBack(GetErrStatusVec);
 }
 
 
