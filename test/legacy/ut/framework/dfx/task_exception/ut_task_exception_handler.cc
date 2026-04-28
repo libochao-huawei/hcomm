@@ -318,7 +318,7 @@ TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_read)
     ccuErrorInfo.msg.transMem.channelId = 1;
 
     auto msg = TaskExceptionHandler::GetCcuErrorMsgByType(ccuErrorInfo, *taskInfo);
-    EXPECT_EQ(msg, "InstrId[65535]: Read Memory[0x000000000000aaaa] To Memory[0x000000000000cccc], Len[0], Set sem[11] with mask[0x0010], remoteRankId[100], srcEID[IpAddress[eid[0000000000000000:0000000000000000], AF=v4, addr=0.0.0.0]], dstEID[IpAddress[eid[0000000000000000:0000000000000000], AF=v4, addr=0.0.0.0]] ccu transMem Len[0]B > 256MB or is zero, not support!");
+    EXPECT_EQ(msg, "InstrId[65535]: Read Memory[0x000000000000aaaa] To Memory[0x000000000000cccc], Len[0], Set sem[11] with mask[0x0010], remoteRankId[100], srcEID[IpAddress[eid[0000000000000000:0000000000000000], AF=IPv4, addr=0.0.0.0]], dstEID[IpAddress[eid[0000000000000000:0000000000000000], AF=IPv4, addr=0.0.0.0]] ccu transMem Len[0]B > 256MB or is zero, not support!");
 }
 
 TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_write)
@@ -339,7 +339,7 @@ TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_write)
     ccuErrorInfo.msg.transMem.channelId = 1;
 
     auto msg = TaskExceptionHandler::GetCcuErrorMsgByType(ccuErrorInfo, *taskInfo);
-    EXPECT_EQ(msg, "InstrId[65535]: Write Memory[0x000000000000cccc] to Memory[0x000000000000aaaa], Len[0], Set sem[11] with mask[0x0010], remoteRankId[100], srcEID[IpAddress[eid[0000000000000000:0000000000000000], AF=v4, addr=0.0.0.0]], dstEID[IpAddress[eid[0000000000000000:0000000000000000], AF=v4, addr=0.0.0.0]] ccu transMem Len[0]B > 256MB or is zero, not support!");
+    EXPECT_EQ(msg, "InstrId[65535]: Write Memory[0x000000000000cccc] to Memory[0x000000000000aaaa], Len[0], Set sem[11] with mask[0x0010], remoteRankId[100], srcEID[IpAddress[eid[0000000000000000:0000000000000000], AF=IPv4, addr=0.0.0.0]], dstEID[IpAddress[eid[0000000000000000:0000000000000000], AF=IPv4, addr=0.0.0.0]] ccu transMem Len[0]B > 256MB or is zero, not support!");
 }
 
 TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_local_cpy)
@@ -399,7 +399,7 @@ TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_buf_read)
     ccuErrorInfo.msg.bufTransMem.channelId = 1;
 
     auto msg = TaskExceptionHandler::GetCcuErrorMsgByType(ccuErrorInfo, *taskInfo);
-    EXPECT_EQ(msg, "InstrId[65535]: Read Rmt Mem[0x000000000000aaaa] To CcuBuffer[10], Len[0], sem[11], mask[0x0010], remoteRankId[100], srcEID[IpAddress[eid[0000000000000000:0000000000000000], AF=v4, addr=0.0.0.0]], dstEID[IpAddress[eid[0000000000000000:0000000000000000], AF=v4, addr=0.0.0.0]] ccu transMem Len[0]B > 256MB or is zero, not support!");
+    EXPECT_EQ(msg, "InstrId[65535]: Read Rmt Mem[0x000000000000aaaa] To CcuBuffer[10], Len[0], sem[11], mask[0x0010], remoteRankId[100], srcEID[IpAddress[eid[0000000000000000:0000000000000000], AF=IPv4, addr=0.0.0.0]], dstEID[IpAddress[eid[0000000000000000:0000000000000000], AF=IPv4, addr=0.0.0.0]] ccu transMem Len[0]B > 256MB or is zero, not support!");
 }
 
 TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_buf_write)
@@ -419,7 +419,7 @@ TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_buf_write)
     ccuErrorInfo.msg.bufTransMem.channelId = 1;
 
     auto msg = TaskExceptionHandler::GetCcuErrorMsgByType(ccuErrorInfo, *taskInfo);
-    EXPECT_EQ(msg, "InstrId[65535]: Write CcuBuffer[10] To Rmt Mem[0x000000000000aaaa], Len[0], sem[11], mask[0x0010], remoteRankId[100], srcEID[IpAddress[eid[0000000000000000:0000000000000000], AF=v4, addr=0.0.0.0]], dstEID[IpAddress[eid[0000000000000000:0000000000000000], AF=v4, addr=0.0.0.0]] ccu transMem Len[0]B > 256MB or is zero, not support!");
+    EXPECT_EQ(msg, "InstrId[65535]: Write CcuBuffer[10] To Rmt Mem[0x000000000000aaaa], Len[0], sem[11], mask[0x0010], remoteRankId[100], srcEID[IpAddress[eid[0000000000000000:0000000000000000], AF=IPv4, addr=0.0.0.0]], dstEID[IpAddress[eid[0000000000000000:0000000000000000], AF=IPv4, addr=0.0.0.0]] ccu transMem Len[0]B > 256MB or is zero, not support!");
 }
 
 TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_buf_loc_read)
@@ -833,4 +833,117 @@ TEST_F(TaskExceptionHandlerTest, test_process_mc2)
     MOCKER(HrtRaCustomChannel).stubs();
 
     TaskExceptionHandler::Process(&exceptionInfo);
+}
+
+TEST_F(TaskExceptionHandlerTest, Ut_ProcessAivException_When_Normal_Expect_PrintInfo)
+{
+    // 初始化AIV任务信息
+    shared_ptr<TaskInfo> taskInfo = InitTaskInfo();
+    taskInfo->taskParam_.taskType = TaskParamType::TASK_AIV;
+    taskInfo->taskParam_.taskPara.Aiv.cmdType = HcclCMDType::HCCL_CMD_ALLGATHER;
+    taskInfo->taskParam_.taskPara.Aiv.tag = 2;
+    taskInfo->taskParam_.taskPara.Aiv.rank = 3;
+    taskInfo->taskParam_.taskPara.Aiv.rankSize = 4;
+    taskInfo->taskParam_.taskPara.Aiv.count = 5;
+    taskInfo->taskParam_.taskPara.Aiv.numBlocks = 6;
+    taskInfo->taskParam_.taskPara.Aiv.dataType = HcclDataType::HCCL_DATA_TYPE_FP32;
+    taskInfo->taskParam_.beginTime = 123456789;
+    
+    // 模拟flag内存
+    int32_t flagMemData[] = {10, 0, 0, 0, 20, 0, 0, 0, 30, 0, 0, 0};
+    size_t flagMemSize = sizeof(flagMemData);
+    taskInfo->taskParam_.taskPara.Aiv.flagMem = flagMemData;
+    taskInfo->taskParam_.taskPara.Aiv.flagMemSize = flagMemSize;
+
+    // 打桩GlobalMirrorTasks
+    GlobalMirrorTasks &globalMirrorTasks = GlobalMirrorTasks::Instance();
+    MirrorTaskManager mirrorTaskManager(0, &globalMirrorTasks, 1);
+    mirrorTaskManager.AddTaskInfo(taskInfo);
+
+    // 打桩ACL函数
+    void* mockFlagBuff = malloc(flagMemSize);
+    MOCKER(aclrtMallocHost).stubs().will(returnValue(ACL_SUCCESS));
+    MOCKER(aclrtMemcpy).stubs().will(returnValue(ACL_SUCCESS));
+    MOCKER(aclrtFreeHost).stubs().will(returnValue(ACL_SUCCESS));
+
+    // 打桩PrintAivPreviousTaskException
+    MOCKER(TaskExceptionHandler::PrintAivPreviousTaskException).stubs();
+
+    // 构造异常信息
+    rtExceptionInfo_t exceptionInfo{};
+    exceptionInfo.deviceid = 0;
+    exceptionInfo.streamid = 0;
+    exceptionInfo.taskid = 0;
+
+    // 调用ProcessAivException
+    TaskExceptionHandler handler(0);
+    handler.ProcessAivException(&exceptionInfo, *taskInfo);
+
+    // 清理
+    globalMirrorTasks.DestroyQueue(0, 0);
+    if (mockFlagBuff) {
+        free(mockFlagBuff);
+    }
+}
+
+TEST_F(TaskExceptionHandlerTest, Ut_ProcessAivException_When_MallocFailure_Expect_ReturnEarly)
+{
+    // 初始化AIV任务信息
+    shared_ptr<TaskInfo> taskInfo = InitTaskInfo();
+    taskInfo->taskParam_.taskType = TaskParamType::TASK_AIV;
+    taskInfo->taskParam_.taskPara.Aiv.cmdType = HcclCMDType::HCCL_CMD_ALLGATHER;
+    taskInfo->taskParam_.taskPara.Aiv.flagMemSize = 1024;
+
+    // 打桩GlobalMirrorTasks
+    GlobalMirrorTasks &globalMirrorTasks = GlobalMirrorTasks::Instance();
+    MirrorTaskManager mirrorTaskManager(0, &globalMirrorTasks, 1);
+    mirrorTaskManager.AddTaskInfo(taskInfo);
+
+    // 打桩aclrtMallocHost失败
+    MOCKER(aclrtMallocHost).stubs().will(returnValue(ACL_ERROR_BAD_ALLOC));
+
+    // 构造异常信息
+    rtExceptionInfo_t exceptionInfo{};
+    exceptionInfo.deviceid = 0;
+    exceptionInfo.streamid = 0;
+    exceptionInfo.taskid = 0;
+
+    // 调用ProcessAivException
+    TaskExceptionHandler handler(0);
+    handler.ProcessAivException(&exceptionInfo, *taskInfo);
+
+    // 清理
+    globalMirrorTasks.DestroyQueue(0, 0);
+}
+
+TEST_F(TaskExceptionHandlerTest, Ut_ProcessAivException_When_MemcpyFailure_Expect_ReturnEarly)
+{
+    // 初始化AIV任务信息
+    shared_ptr<TaskInfo> taskInfo = InitTaskInfo();
+    taskInfo->taskParam_.taskType = TaskParamType::TASK_AIV;
+    taskInfo->taskParam_.taskPara.Aiv.cmdType = HcclCMDType::HCCL_CMD_ALLGATHER;
+    taskInfo->taskParam_.taskPara.Aiv.flagMemSize = 1024;
+
+    // 打桩GlobalMirrorTasks
+    GlobalMirrorTasks &globalMirrorTasks = GlobalMirrorTasks::Instance();
+    MirrorTaskManager mirrorTaskManager(0, &globalMirrorTasks, 1);
+    mirrorTaskManager.AddTaskInfo(taskInfo);
+
+    // 打桩aclrtMallocHost成功，但aclrtMemcpy失败
+    MOCKER(aclrtMallocHost).stubs().will(returnValue(ACL_SUCCESS));
+    MOCKER(aclrtMemcpy).stubs().will(returnValue(ACL_ERROR_RT_MEMORY_FREE));
+    MOCKER(aclrtFreeHost).stubs().will(returnValue(ACL_SUCCESS));
+
+    // 构造异常信息
+    rtExceptionInfo_t exceptionInfo{};
+    exceptionInfo.deviceid = 0;
+    exceptionInfo.streamid = 0;
+    exceptionInfo.taskid = 0;
+
+    // 调用ProcessAivException
+    TaskExceptionHandler handler(0);
+    handler.ProcessAivException(&exceptionInfo, *taskInfo);
+
+    // 清理
+    globalMirrorTasks.DestroyQueue(0, 0);
 }

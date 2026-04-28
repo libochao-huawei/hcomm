@@ -37,32 +37,32 @@ __aicore__ inline void AivAllReduceMid910B::Process(GM_ADDR input, GM_ADDR outpu
     __gm__ T *outputGm = (__gm__ T *)output;
     uint32_t dataOffset = (tag % 2 == 0) ? 0 : AIV_PING_PONG_SIZE;
     __gm__ T *cclGmSelf = (__gm__ T *)(GM_IN[rank_] + dataOffset);
-    __gm__ T *cclGmOther = (__gm__ T *)(GM_IN[GetBlockIdx()] + dataOffset);
+    __gm__ T *cclGmOther = (__gm__ T *)(GM_IN[blockIdx_] + dataOffset);
 
     int32_t OffSet = ifPingpong ? pingpongOffset:0;
     int32_t clearOffset = multiOffset + DOUBLE * DOUBLE * NUM_BLOCKS_FOUR_PER_RANK_A3 * ATOMIC_FLAG_SIZE + 
 	    DOUBLE * NUM_BLOCKS_FOUR_PER_RANK_A3 * ATOMIC_FLAG_SIZE +
               (NUM_BLOCKS_FOUR_PER_RANK_A3) * ATOMIC_FLAG_SIZE;
 
-    if (GetBlockIdx() == rank_) {
+    if (blockIdx_ == rank_) {
         SetSignalValue((__gm__ int32_t *)(GM_OUT[rank_] + OffSet + clearOffset), localSetTensor, 0); 
         PipeBarrier<PIPE_ALL>();
     }
 
     // LocalCopy
-    uint64_t gmOffset = GetBlockIdx() * avgLengthPerSlice;
+    uint64_t gmOffset = blockIdx_ * avgLengthPerSlice;
 
-    count = CalActualCount(GetBlockIdx(), sliceCount, avgLengthPerSlice, tailLength);
+    count = CalActualCount(blockIdx_, sliceCount, avgLengthPerSlice, tailLength);
     CpGM2GM(cclGmSelf + gmOffset, inputGm + gmOffset, count);
     PipeBarrier<PIPE_ALL>();
 
     
-    if (GetBlockIdx() == rank_) {
+    if (blockIdx_ == rank_) {
         Record1vN(tag, CommPattern::intraRank, AivNotifyType::DataSignal, 0, ifPingpong);
     } else {
-        Record(tag, GetBlockIdx(), AivNotifyType::DataSignal, 0, ifPingpong);
+        Record(tag, blockIdx_, AivNotifyType::DataSignal, 0, ifPingpong);
         WaitNv1(tag, rank_, AivNotifyType::DataSignal, 0, ifPingpong);
-        Wait(tag, GetBlockIdx(), AivNotifyType::DataSignal, 0, ifPingpong);
+        Wait(tag, blockIdx_, AivNotifyType::DataSignal, 0, ifPingpong);
 
         count = CalActualCount(rank_, sliceCount, avgLengthPerSlice, tailLength);
 
@@ -78,11 +78,11 @@ __aicore__ inline void AivAllReduceMid910B::Process(GM_ADDR input, GM_ADDR outpu
     }
 
     // 每个aiv读相应对端的flag
-    WaitSignalValue((__gm__ int32_t *)(GM_OUT[GetBlockIdx()] + OffSet + clearOffset), localCheckTensor, (rankSize_ - 1) * tag);
+    WaitSignalValue((__gm__ int32_t *)(GM_OUT[blockIdx_] + OffSet + clearOffset), localCheckTensor, (rankSize_ - 1) * tag);
 
     // AllGather
-    gmOffset = GetBlockIdx() * avgLengthPerSlice;
-    count = CalActualCount(GetBlockIdx(), sliceCount, avgLengthPerSlice, tailLength);
+    gmOffset = blockIdx_ * avgLengthPerSlice;
+    count = CalActualCount(blockIdx_, sliceCount, avgLengthPerSlice, tailLength);
 
     PipeBarrier<PIPE_ALL>();
     CpGM2GM(outputGm + gmOffset, cclGmOther + gmOffset, count);

@@ -974,7 +974,6 @@ HcclResult HcclGetCommNameV2(HcclComm commHandle, char *commName)
 
 HcclResult HcclGetRankSizeV2(HcclComm comm, uint32_t *rankSize)
 {
-    HCCL_RUN_INFO("Entry-HcclGetRankSize V950");
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(rankSize);
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
@@ -1740,7 +1739,7 @@ HcclResult HcclCommInitRootInfoV2(
     /* 接口交互信息日志 */
     s32 deviceLogicId = HcclGetThreadDeviceId();
     s32 devPhyId = HrtGetDevicePhyIdByIndex(deviceLogicId);
-    HCCL_RUN_INFO("Entry-Entry-HcclCommInitRootInfo V950, ranks[%u], rank[%u], rootinfo: host ip[%s] port[%u] "\
+    HCCL_RUN_INFO("Entry-HcclCommInitRootInfo V950, ranks[%u], rank[%u], rootinfo: host ip[%s] port[%u] "\
         "netMode[%s] identifier[%s], deviceLogicId[%d], devPhyId[%d]", nRanks, rank, rootHandle.ip, rootHandle.listenPort,
         rootHandle.netMode.Describe().c_str(), identifier.c_str(), deviceLogicId, devPhyId);
 

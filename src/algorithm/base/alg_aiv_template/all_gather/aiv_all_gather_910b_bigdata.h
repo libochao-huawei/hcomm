@@ -39,7 +39,7 @@ __aicore__ inline void AivAllGatherBig910B::ClearFlag(uint32_t flagOffsetBase)
     // 用10个flag
     uint32_t flagOffsetCount = flagOffsetBase;
     __gm__ int32_t *ctrlFlagsGM = (__gm__ int32_t *)(GM_OUT[rank_] + flagOffsetBase + rank_ * FLAG_SIZE);
-    if (GetBlockIdx() < rankSize_ && GetBlockIdx() == rank_) {
+    if (blockIdx_ < rankSize_ && blockIdx_ == rank_) {
         SetSignalValue(ctrlFlagsGM, localSetTensor, 0);
     }
 }
@@ -96,7 +96,7 @@ __aicore__ inline void AivAllGatherBig910B::Process(GM_ADDR input, GM_ADDR outpu
     uint32_t avgSizePerSlice = avgLengthPerSlice * sizeof(T);
 
     uint32_t blockNumPerGroup = rankSize_;
-    uint32_t targetRank = GetBlockIdx() >= rankSize_ ? GetBlockIdx() - rankSize_ : GetBlockIdx();
+    uint32_t targetRank = blockIdx_ >= rankSize_ ? blockIdx_ - rankSize_ : blockIdx_;
 
     // 用10个flag
     __gm__ T *inputGm = (__gm__ T *)input;
@@ -104,9 +104,9 @@ __aicore__ inline void AivAllGatherBig910B::Process(GM_ADDR input, GM_ADDR outpu
     __gm__ T *cclGmSelf = (__gm__ T *)(GM_IN[rank_]);
     __gm__ T *cclGmOther = (__gm__ T *)(GM_IN[targetRank]);
 
-    if (GetBlockIdx() < blockNumPerGroup) {
+    if (blockIdx_ < blockNumPerGroup) {
         int32_t outputOffset = targetRank * totalLen;
-        if (GetBlockIdx() == rank_) {
+        if (blockIdx_ == rank_) {
             CpGM2GMWithFlagWrap(cclGmSelf, inputGm, avgLengthPerSlice, rank_, 8, tag);
             // 所有对端都取走数据
             PipeBarrier<PIPE_ALL>();
@@ -134,7 +134,7 @@ __aicore__ inline void AivAllGatherBig910B::ProcessSingleRanksizeCore(GM_ADDR in
 {
     uint32_t avgLengthPerSlice = len;
     uint32_t avgSizePerSlice = avgLengthPerSlice * sizeof(T);
-    uint32_t targetRank = GetBlockIdx();
+    uint32_t targetRank = blockIdx_;
 
     // 用10个flag
     __gm__ T *inputGm = (__gm__ T *)input;
@@ -143,7 +143,7 @@ __aicore__ inline void AivAllGatherBig910B::ProcessSingleRanksizeCore(GM_ADDR in
     __gm__ T *cclGmOther = (__gm__ T *)(GM_IN[targetRank]);
 
     int32_t outputOffset = targetRank * totalLen;
-    if (GetBlockIdx() == rank_) {
+    if (blockIdx_ == rank_) {
         CpGM2GMWithFlagWrap(cclGmSelf, inputGm, avgLengthPerSlice, rank_, 8, tag);
         PipeBarrier<PIPE_ALL>();
         CpGM2GM(outputGm + rank_ * totalLen, inputGm, avgLengthPerSlice);

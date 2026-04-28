@@ -215,8 +215,8 @@ CcuMissionContext CcuTaskException::GetCcuMissionContext(int32_t deviceId, uint3
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s]hrtGetDevicePhyIdByIndex fail, deviceId[%s]", __func__, deviceId), missionCtx);
 
-    struct CustomChannelInfoIn  inBuff{};
-    struct CustomChannelInfoOut outBuff{};
+    CustomChannelInfoIn  inBuff{};
+    CustomChannelInfoOut outBuff{};
 
     inBuff.op                          = CcuOpcodeType::CCU_U_OP_GET_MISSION_CTX;
     inBuff.data.dataInfo.udieIdx       = dieId;
@@ -273,8 +273,8 @@ void CcuTaskException::GenStatusInfo(const ErrorInfoBase &baseInfo, vector<CcuEr
 
 uint16_t CcuTaskException::GetCcuCKEValue(int32_t deviceId, uint32_t dieId, uint32_t ckeId)
 {
-    struct CustomChannelInfoIn  inBuff{};
-    struct CustomChannelInfoOut outBuff{};
+    CustomChannelInfoIn  inBuff{};
+    CustomChannelInfoOut outBuff{};
     u32 devicePhyId = 0;
     HcclResult ret = hrtGetDevicePhyIdByIndex(deviceId, devicePhyId);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
@@ -349,8 +349,8 @@ uint64_t CcuTaskException::GetCcuGSAValue(int32_t deviceId, uint32_t dieId, uint
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s]hrtGetDevicePhyIdByIndex fail, deviceId[%s]", __func__, deviceId), INVALID_U64);
 
-    struct CustomChannelInfoIn  inBuff{};
-    struct CustomChannelInfoOut outBuff{};
+    CustomChannelInfoIn  inBuff{};
+    CustomChannelInfoOut outBuff{};
 
     inBuff.op                          = CcuOpcodeType::CCU_U_OP_GET_GSA;
     inBuff.data.dataInfo.udieIdx       = dieId;
@@ -375,8 +375,8 @@ uint64_t CcuTaskException::GetCcuXnValue(int32_t deviceId, uint32_t dieId, uint3
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s]hrtGetDevicePhyIdByIndex fail, deviceId[%s]", __func__, deviceId), INVALID_U64);
 
-    struct CustomChannelInfoIn  inBuff{};
-    struct CustomChannelInfoOut outBuff{};
+    CustomChannelInfoIn  inBuff{};
+    CustomChannelInfoOut outBuff{};
 
     inBuff.op                          = CcuOpcodeType::CCU_U_OP_GET_XN;
     inBuff.data.dataInfo.udieIdx       = dieId;
@@ -698,8 +698,8 @@ CcuLoopContext CcuTaskException::GetCcuLoopContext(int32_t deviceId, uint32_t di
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s]hrtGetDevicePhyIdByIndex fail, deviceId[%s],ret[%d]", __func__, deviceId, ret), loopCtx);
 
-    struct CustomChannelInfoIn  inBuff{};
-    struct CustomChannelInfoOut outBuff{};
+    CustomChannelInfoIn  inBuff{};
+    CustomChannelInfoOut outBuff{};
 
     inBuff.op                          = CcuOpcodeType::CCU_U_OP_GET_LOOP_CTX;
     inBuff.data.dataInfo.udieIdx       = dieId;

@@ -11,8 +11,8 @@
 #include "../rank/my_rank.h"
 #include "hccl_comm_pub.h"
 #include "exception_handler.h"
-#include "env_config.h"
-#include "../../../../legacy/framework/env_config/env_config.h"
+#include "config/env_config.h"
+#include "env_config/env_config.h"
 #include "../common/loggers/channel_logger.h"  // 日志记录器
 
 #include "hcom_common.h"
@@ -260,7 +260,7 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
             return HcclResult::HCCL_E_PARA;
         }
         
-        CHK_RET(myRank->CreateChannels(engine, commTag, channelDescFinals.data(), channelNum, channels));
+        CHK_RET_UNAVAIL(myRank->CreateChannels(engine, commTag, channelDescFinals.data(), channelNum, channels));
         if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
             HCCL_INFO("[HcclChannelAcquire] ReportChannelAicpuKernel start");
             HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
@@ -360,7 +360,7 @@ HcclResult HcclCcuKernelRegisterFinish(HcclComm comm)
 static HcclResult LaunchCcuTasks(const std::vector<hcomm::CcuTaskParam> &params, const aclrtStream stream, Hccl::TaskParam &taskParam)
 {
     taskParam.beginTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
-    constexpr uint32_t defaultTimeOutSec = 120; // 当前未支持从环境变量配置
+    const uint32_t execTimeOutSec = Hccl::EnvConfig::GetInstance().GetRtsConfig().GetExecTimeOut();
     for (auto it = params.begin(); it != params.end(); ++it) {
         rtCcuTaskInfo_t taskInfo{};
         taskInfo.dieId       = it->dieId;
@@ -369,7 +369,7 @@ static HcclResult LaunchCcuTasks(const std::vector<hcomm::CcuTaskParam> &params,
         taskInfo.instCnt     = it->instCnt;
         taskInfo.key         = it->key;
         taskInfo.argSize     = it->argSize;
-        taskInfo.timeout     = defaultTimeOutSec;
+        taskInfo.timeout     = execTimeOutSec;
         std::copy(std::begin(it->args), std::end(it->args), std::begin(taskInfo.args));
         
         HCCL_INFO("[%s] start ccu task, dieId[%u] missionId[%u] instStartId[%u] instCnt[%u], "

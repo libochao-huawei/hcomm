@@ -129,7 +129,6 @@ if(BUILD_OPEN_PROJECT)
 else()
     target_include_directories(hccl_alg PRIVATE
         ${TOP_DIR}/abl/msprof/inc
-        ${TOP_DIR}/runtime/src/dfx/adump/inc/adump
         ${TOP_DIR}/ace/npuruntime/inc
         ${TOP_DIR}/metadef/pkg_inc
         ${TOP_DIR}/metadef/inc/external/
@@ -187,7 +186,8 @@ add_subdirectory(base)
 add_subdirectory(impl)
 
 install(TARGETS hccl_alg
-    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL
+    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
 )
 
 if(NOT BUILD_OPEN_PROJECT)

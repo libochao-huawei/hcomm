@@ -52,6 +52,7 @@ public:
     BaseSelector &SetDeviceNumPerSever(u32 deviceNumPerSever);
     BaseSelector &SetServerNum(u32 serverNum);
     BaseSelector &SetOpConfig(OpExecuteConfig opConfig);
+    BaseSelector &SetIsMc2(bool isMc2);
 
     RankGraph *GetVirtualTopo();
     DevType      GetDevType();
@@ -112,6 +113,7 @@ protected:
     std::string  severId_;
     u32          deviceNumPerSever_;
     u32          serverNum_;
+    bool         isMc2_{false};
 };
 
 } // namespace Hccl

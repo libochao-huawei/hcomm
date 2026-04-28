@@ -54,7 +54,13 @@ struct TpAttr {
     uint8_t atTimes : 5; // corresponding bitmap bit: 9
     uint8_t sl : 4; // corresponding bitmap bit: 10
     uint8_t ttl; // corresponding bitmap bit: 11
-    uint8_t reserved[78];
+    uint16_t ackUdpSrcport; // corresponding bitmap bit: 12
+    uint16_t dataUdpSrcport; // corresponding bitmap bit: 13
+    uint8_t udpSrcportRange : 4; // corresponding bitmap bit: 14
+    uint8_t sprayEn : 1; // corresponding bitmap bit: 15
+    uint8_t udpGlobalEn : 1; // corresponding bitmap bit: 16
+    uint8_t reserve0 : 2;
+    uint8_t reserved[73];
 };
 #pragma pack()
 

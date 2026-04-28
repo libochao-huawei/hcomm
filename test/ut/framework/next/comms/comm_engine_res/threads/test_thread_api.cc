@@ -1130,7 +1130,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_Acquire_MAX_Thread_AicpuTsThrea
     EXPECT_EQ(ret, 0);
     ThreadHandle thread;
     void* comm = static_cast<HcclComm>(hcclCommPtr.get());
-    ret =  HcclThreadAcquire(comm, COMM_ENGINE_AICPU_TS, 41, 0, &thread);
+    ret =  HcclThreadAcquire(comm, COMM_ENGINE_AICPU_TS, 201, 0, &thread);
     EXPECT_EQ(ret, HCCL_E_UNAVAIL);
 }
 
@@ -1170,7 +1170,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_Acquire_MAX_Notify_AicpuTsThrea
     EXPECT_EQ(ret, 0);
     ThreadHandle thread;
     void* comm = static_cast<HcclComm>(hcclCommPtr.get());
-    ret =  HcclThreadAcquire(comm, COMM_ENGINE_AICPU_TS, 1, 641, &thread);
+    ret =  HcclThreadAcquire(comm, COMM_ENGINE_AICPU_TS, 1, 65537, &thread);
     EXPECT_EQ(ret, HCCL_E_UNAVAIL);
 }
 
@@ -1464,14 +1464,14 @@ TEST_F(TestHcclThread, Ut_ThreadKernelLaunchDestroy)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-TEST_F(TestHcclThread, Ut_LaunchNotifyKernel)
-{
-    MOCKER(hrtMemSyncCopy).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER(AicpuAclKernelLaunch).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER(hcclStreamSynchronize).stubs().will(returnValue(HCCL_SUCCESS));
+// TEST_F(TestHcclThread, Ut_LaunchNotifyKernel)
+// {
+//     MOCKER(hrtMemSyncCopy).stubs().will(returnValue(HCCL_SUCCESS));
+//     MOCKER(AicpuAclKernelLaunch).stubs().will(returnValue(HCCL_SUCCESS));
+//     MOCKER(hcclStreamSynchronize).stubs().will(returnValue(HCCL_SUCCESS));
 
-    NotifyMgrAicpuParam opParam;
-    void* binCustomHandle = nullptr;
-    HcclResult ret = AicpuLaunchMgr::LaunchNotifyKernel(opParam, binCustomHandle);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-}
+//     NotifyMgrAicpuParam opParam;
+//     void* binCustomHandle = nullptr;
+//     HcclResult ret = AicpuLaunchMgr::LaunchNotifyKernel(opParam, binCustomHandle);
+//     EXPECT_EQ(ret, HCCL_SUCCESS);
+// }

@@ -76,7 +76,7 @@ __aicore__ inline void AivAll2All91093::Process(GM_ADDR buffIn0, GM_ADDR buffOut
     }
 
     // 最后一个核做localcopy
-    if (GetBlockIdx() == numBlocks_ - 1) {
+    if (blockIdx_ == numBlocks_ - 1) {
         CpGM2GM(outputGM + rank_ * len, inputGM + rank_ * len, len);
     }
 }

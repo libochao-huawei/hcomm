@@ -169,7 +169,8 @@ void ExecutorTracer::StopLaunchCommandHandle(AicpuComContext *const ctx)
                         (void)hcclAicpu->BackGroundSetStatus(KfcStatus::kStoplaunch);
                         hcclAicpu->SetCommRecoveryFlag(true);
                         hcclAicpu->SetNsStopLaunchStatus(true);
-                        HCCL_DEBUG("[NsRecovery][backGround]send in aicpu environment");
+                        HCCL_RUN_INFO("[NsRecovery][backGround]group[%s] send in aicpu environment",
+                            hcclAicpu->GetGroupName().c_str());
                     }
                 }
             }
@@ -365,7 +366,7 @@ void ExecutorTracer::HandleAICPUCommand(hccl::HcclCommAicpu *const commInfo){
     if (iter == commandAicpuHandles.cend()) {
         return;
     }
-    HCCL_DEBUG("Start to run aicpu command %ld", cmd);
+    HCCL_RUN_INFO("Group[%s] start to run aicpu command %ld", commInfo->GetGroupName().c_str(), cmd);
     iter->second(commInfo);
 }
 

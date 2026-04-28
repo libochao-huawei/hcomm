@@ -52,20 +52,20 @@ LocalJettyCtxData BuildJettyCtxData(const uint8_t dieId, const uint32_t pfeId,
     data.tokenValueIsValid = TOKEN_VALUE_IS_VALIDE;
     
     data.tokenIdLow = jettyCfg.dbTokenId & MASK_TK_ID_LOW;
-    data.tokenIdHigh = (jettyCfg.dbTokenId >> SHIFT_8BITS) & MASK_TK_ID_HIGH; // tokenId右移8位
+    data.tokenIdHigh = (jettyCfg.dbTokenId >> Hccl::SHIFT_8BITS) & MASK_TK_ID_HIGH; // tokenId右移8位
     
     data.tokenValueLow = jettyCfg.dbTokenValue & MASK_TK_VALUE_LOW;
     data.tokenValueMiddle =
-        (jettyCfg.dbTokenValue >> SHIFT_4BITS) & MASK_TK_VALUE_MID; // tokenValue右移4位
+        (jettyCfg.dbTokenValue >> Hccl::SHIFT_4BITS) & MASK_TK_VALUE_MID; // tokenValue右移4位
     data.tokenValueHigh =
-        (jettyCfg.dbTokenValue >> SHIFT_20BITS) & MASK_TK_VALUE_HIGH; // tokenValue右移20位
+        (jettyCfg.dbTokenValue >> Hccl::SHIFT_20BITS) & MASK_TK_VALUE_HIGH; // tokenValue右移20位
     
     const uint16_t wqeBBShift = Log2OfPowerOfTwo(jettyInfo.sqDepth * CCU_WQE_NUM_PER_SQE);
     data.sqeBasicBlockLeftShifts = wqeBBShift;
 
     const uint16_t wqeBBIdx = jettyInfo.wqeBBStartId;
     data.startWqeBasicBlockIdxLow = wqeBBIdx & MASK_WQEBB_IDX_LOW;
-    data.startWqeBasicBlockIdxHigh = (wqeBBIdx >> SHIFT_4BITS) & MASK_WQEBB_IDX_HIGH; // 右移4位
+    data.startWqeBasicBlockIdxHigh = (wqeBBIdx >> Hccl::SHIFT_4BITS) & MASK_WQEBB_IDX_HIGH; // 右移4位
     
     data.pi = CCU_HARDWARE_DEFAULT_VALUE;
     data.ci = CCU_HARDWARE_DEFAULT_VALUE;
@@ -101,8 +101,8 @@ HcclResult ConfigJettyCtxData(const uint8_t dieId, const uint32_t devPhyId,
 {
     const uint32_t jettyNum = jettyCtxData.size(); // 分配与配置前校验已保证不为0
     const RaInfo info{NetworkMode::NETWORK_OFFLINE, devPhyId};
-    struct CustomChannelInfoIn  inBuff{};
-    struct CustomChannelInfoOut outBuff{};
+    CustomChannelInfoIn  inBuff{};
+    CustomChannelInfoOut outBuff{};
 
     inBuff.op = CcuOpcodeType::CCU_U_OP_SET_JETTY_CTX;
     (void)memset_s(inBuff.data.raw, sizeof(inBuff.data.raw), 0, sizeof(inBuff.data.raw));

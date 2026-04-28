@@ -954,19 +954,20 @@ HcclResult SwitchNicAgentSendSwitchInfo::ProcessEvent(RetryContext* retryCtx)
 
 HcclResult ResumeAgentCheckLink::ProcessEvent(RetryContext* retryCtx)
 {
+    // 快恢阶段需要获取通信域内所有使用RDMA链路的rank列表, isGetGroupAllRemoteRank为true
     if (!retryCtx->isChangeLinkInfoInit_) {
-        CHK_RET(InitChangeLinkInfo(retryCtx));
+        CHK_RET(InitChangeLinkInfo(retryCtx, false, true));
         retryCtx->isChangeLinkInfoInit_ = true;
     } else {
         // BatchSendRecv算子增量建链场景
-        CHK_RET(InitChangeLinkInfo(retryCtx, true));
+        CHK_RET(InitChangeLinkInfo(retryCtx, true, true));
     }
-     
+
     CHK_RET(SetTransportStatusForStop(retryCtx));
     RetryState nextState = RETRY_RESUME_STATE_AGENT_CHANGE_LINK;
     HCCL_RUN_INFO("[OpRetry][Agent]OpRetryAgentWaitResume, start to check link");
     // 获取当前主备网口状态，并且回复Server
-    CHK_RET(GetLinkPortStatus(retryCtx, retryCtx->linkPortStatus_));
+    CHK_RET(GetLinkPortStatus(retryCtx, retryCtx->linkPortStatus_, true));
     HcclResult ret = IssueLinkPortCheckResult(retryCtx->agentSocket_, retryCtx->linkPortStatus_);
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[OpRetry][Agent]ResumeAgentCheckLink IssueResponse fail"), ret);
     CHK_RET(CreateOpRetryAgentByState(nextState, retryCtx));

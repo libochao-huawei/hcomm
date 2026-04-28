@@ -542,14 +542,16 @@ HcclResult OpRetryBase::Recv(std::shared_ptr<HcclSocket> socket, void *data, u64
     return HCCL_SUCCESS;
 }
 
-HcclResult OpRetryBase::InitChangeLinkInfo(RetryContext* retryCtx, bool incre)
+HcclResult OpRetryBase::InitChangeLinkInfo(RetryContext* retryCtx, bool incre, bool isGetGroupAllRemoteRank)
 {
     std::string newTag = std::string(reinterpret_cast<const char*>(retryCtx->localRetryInfo_.opInfo.opId.newTag));
     std::vector<u32> rankList;
-    auto ret = OpRetryManager::GetLinkInfoByIdentifier(retryCtx->deviceLogicId_, retryCtx->group_, newTag, rankList);
+    auto ret = OpRetryManager::GetLinkInfoByIdentifier(retryCtx->deviceLogicId_, retryCtx->group_, newTag,
+        rankList, isGetGroupAllRemoteRank);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[OpRetry][Agent]GetLinkPortStatus failed: deviceLogicId[%d], identify[%s], tag[%s]", 
-        retryCtx->deviceLogicId_, retryCtx->group_.c_str(), newTag.c_str()), ret);
+        HCCL_ERROR("[OpRetry][Agent][InitChangeLinkInfo] GetLinkInfoByIdentifier failed: deviceLogicId[%d], "
+        "identify[%s], tag[%s], isGetGroupAllRemoteRank[%d]", retryCtx->deviceLogicId_,
+        retryCtx->group_.c_str(), newTag.c_str(), isGetGroupAllRemoteRank), ret);
     if (retryCtx->localRetryInfo_.opInfo.opId.isSendRecv) {
         // send/recv场景下仅需校验对端
         auto remoteRank = retryCtx->localRetryInfo_.rankId == retryCtx->localRetryInfo_.opInfo.opId.detRank ? 
@@ -595,17 +597,20 @@ HcclResult OpRetryBase::InitChangeLinkInfo(RetryContext* retryCtx, bool incre)
     return HCCL_SUCCESS;
 }
 
-HcclResult OpRetryBase::GetLinkPortStatus(RetryContext* retryCtx, LinkPortStatus &linkPortStatus)
+HcclResult OpRetryBase::GetLinkPortStatus(RetryContext* retryCtx, LinkPortStatus &linkPortStatus,
+    bool isGetGroupAllRemoteRank)
 {
     std::string newTag = std::string(reinterpret_cast<const char*>(retryCtx->localRetryInfo_.opInfo.opId.newTag));
     HCCL_RUN_INFO("[OpRetry][Agent]begin to GetLinkPortStatus from: deviceLogicId[%d], identifier[%s] tag[%s]",
         retryCtx->deviceLogicId_, retryCtx->group_.c_str(), newTag.c_str());
 
     std::vector<u32> rankList;
-    auto ret = OpRetryManager::GetLinkInfoByIdentifier(retryCtx->deviceLogicId_, retryCtx->group_, newTag, rankList);
+    auto ret = OpRetryManager::GetLinkInfoByIdentifier(retryCtx->deviceLogicId_, retryCtx->group_, newTag,
+        rankList, isGetGroupAllRemoteRank);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[OpRetry][Agent]GetLinkPortStatus failed: deviceLogicId[%d], identify[%s], tag[%s]", 
-            retryCtx->deviceLogicId_, retryCtx->group_.c_str(), newTag.c_str()), ret);
+        HCCL_ERROR("[OpRetry][Agent][GetLinkPortStatus] GetLinkInfoByIdentifier failed: deviceLogicId[%d], "
+        "identify[%s], tag[%s], isGetGroupAllRemoteRank[%d]", retryCtx->deviceLogicId_, retryCtx->group_.c_str(),
+        newTag.c_str(), isGetGroupAllRemoteRank), ret);
     if (retryCtx->localRetryInfo_.opInfo.opId.isSendRecv) {
         // send/recv场景下仅需校验对端
         auto remoteRank = retryCtx->localRetryInfo_.rankId == retryCtx->localRetryInfo_.opInfo.opId.detRank ? 

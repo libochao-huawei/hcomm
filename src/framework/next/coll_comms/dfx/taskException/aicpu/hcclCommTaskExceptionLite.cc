@@ -22,6 +22,7 @@ constexpr u32 RT_SDMA_COMPDATAERR = 0xa; // A3 sdma error类型为0xa时，表�
 constexpr u32 RT_SDMA_DATAERR = 0x8; // A3 sdma error类型为0x8时，表示读HBM返回ERROR
 constexpr u32 RT_UB_LOCAL_OPERATIOINERR = 0x2; // A5 ub error类型为0x2时，表示UB本端返回ERROR
 constexpr u32 RT_UB_REMOTE_OPERATIOINERR = 0x3; // A5 ub error类型为0x3时，表示UB远端返回ERROR
+constexpr u32 RT_UB_LINK_FAILEDERR = 0x5; // A5 ub error类型为0x5时，表示网络异常，taack超时
 
 constexpr uint32_t TASK_CONTEXT_SIZE = 50; // task 执行失败时打印谦虚task信息的数量
 constexpr uint32_t TASK_CONTEXT_INFO_SIZE = LOG_TMPBUF_SIZE - 50; // task 执行失败时打印前序task信息的长度限制
@@ -322,9 +323,11 @@ HcclResult HcclCommTaskExceptionLite::SendTaskExceptionByMBox(const u32 notifyId
 uint16_t HcclCommTaskExceptionLite::SwitchUBCqeErrCodeToTsErrCode(u32 cqeErrCode) {
     switch (cqeErrCode) {
         case RT_UB_LOCAL_OPERATIOINERR:
-            return TS_ERROR_LOCAL_MEM_ERROR;
+            return TS_ERROR_HCCL_OP_UB_DDRC_FAILED;
         case RT_UB_REMOTE_OPERATIOINERR:
-            return TS_ERROR_REMOTE_MEM_ERROR;
+            return TS_ERROR_HCCL_OP_UB_POISON_FAILED;
+        case RT_UB_LINK_FAILEDERR:
+            return TS_ERROR_HCCL_OP_UB_LINK_FAILED;
         default:
             return TS_ERROR_HCCL_OTHER_ERROR;
     }
@@ -351,22 +354,20 @@ HcclResult HcclCommTaskExceptionLite::PrintTaskContextInfo(CollCommAicpu *aicpuC
         HCCL_ERROR("[%s]GetQueue nullptr, devId[%u], sqId[%u].", __func__, devId_, sqId), HCCL_E_PARA);
 
     auto func = [taskId] (const std::shared_ptr<Hccl::TaskInfo>& task) { return task->taskId_ == taskId; };
-    auto taskItorPtr = queue->Find(func);
-    CHK_PRT_RET(taskItorPtr == nullptr || *taskItorPtr == *queue->End(),
+    auto taskIterPtr = queue->Find(func);
+    CHK_PRT_RET(taskIterPtr == nullptr || *taskIterPtr == *queue->End(),
         HCCL_ERROR("[%s]exception task not found, devId[%u], sqId[%u], taskId[%u]", __func__, devId_, sqId, taskId),
         HCCL_E_PARA);
 
     // 找到当前异常task的前50个task(至多)
     std::vector<std::shared_ptr<Hccl::TaskInfo>> taskContext {};
-    for (uint32_t i = 0; i < TASK_CONTEXT_SIZE && *taskItorPtr != *queue->Begin(); ++i, --(*taskItorPtr)) {
-        if ((**taskItorPtr)->taskId_ > taskId) {
+    for (uint32_t i = 0; i < TASK_CONTEXT_SIZE && *taskIterPtr != *queue->Begin(); ++i, --(*taskIterPtr)) {
+        if ((**taskIterPtr)->taskId_ > taskId) {
             HCCL_ERROR("[%s]prev taskId[%u] is bigger than err taskId[%u], stop traversal",
-                __func__, (**taskItorPtr)->taskId_, taskId);
+                __func__, (**taskIterPtr)->taskId_, taskId);
             break;
         }
-        if ((**taskItorPtr)->taskId_ != taskId) {
-            taskContext.emplace_back(**taskItorPtr);
-        }
+        taskContext.emplace_back(**taskIterPtr);
     }
 
     HCCL_ERROR("[TaskException][AICPU]context sequence before error task is "
@@ -417,13 +418,11 @@ std::string HcclCommTaskExceptionLite::GetOpDataInfo(const Hccl::TaskInfo& taskI
     }
 
     const auto &opInfo = taskInfo.dfxOpInfo_;
-    return Hccl::StringFormat("opIndex[%u], algTag[%s], count[%llu], reduceType[%s], src[0x%llx], dst[0x%llx], dataType[%s]",
+    return Hccl::StringFormat("opIndex[%u], algTag[%s], count[%llu], reduceType[%s], dataType[%s]",
         opInfo->opIndex_,
         opInfo->algTag_.c_str(),
         opInfo->op_.dataCount,
         opInfo->op_.reduceOp.Describe().c_str(),
-        opInfo->op_.inputMem == nullptr ? 0 : static_cast<u64>(opInfo->op_.inputMem->GetAddr()),
-        opInfo->op_.outputMem == nullptr ? 0 : static_cast<u64>(opInfo->op_.outputMem->GetAddr()),
         opInfo->op_.dataType.Describe().c_str());
 }
 

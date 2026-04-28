@@ -15,6 +15,7 @@
 #include "exception_util.h"
 #include "internal_exception.h"
 #include "sal.h"
+#include "communicator_impl_lite_manager.h"
 
 namespace Hccl {
 constexpr u32 UB_WQE_BB_SIZE       = 64;  // 一个WQE BB是64Byte
@@ -86,12 +87,6 @@ void UbTransportLiteImpl::Init(std::vector<char> &uniqueId)
     std::vector<char> connUniqueIds;
     binaryStream >> connUniqueIds;
     ParseConnVec(connUniqueIds);
-}
-
-HcclResult UbTransportLiteImpl::SetAddTaskInfoCallback(std::function<HcclResult(u32, u32, const TaskParam&, u64)> callback) {
-    CHK_PTR_NULL(callback);
-    newCallback_ = callback;
-    return HCCL_SUCCESS;
 }
 
 UbTransportLiteImpl::~UbTransportLiteImpl()
@@ -275,7 +270,7 @@ RmtRmaBufSliceLite UbTransportLiteImpl::GetRmtRmaBufSliceLite(const RmaBufferLit
     return RmtRmaBufSliceLite(lite.GetAddr(), lite.GetSize(), 0, lite.GetTokenId() , lite.GetTokenValue());
 }
 
-HcclResult UbTransportLiteImpl::BuildLocRmaBufferLite(const uintptr_t addr, const size_t size, RmaBufferLite &rmaBufferLite) const
+HcclResult UbTransportLiteImpl::BuildLocRmaBufferLite(const uintptr_t addr, const size_t size, RmaBufferLite &rmaBufferLite)
 {
     HCCL_INFO("[UbTransportLiteImpl::%s] start to find addr[0x%llx], size[0x%llx] in locBufferVec, whose size is %zu. ",
         __func__, addr, size, locBufferVec.size());
@@ -387,9 +382,14 @@ void UbTransportLiteImpl::Post(u32 index, const StreamLite &stream)
 
 void UbTransportLiteImpl::Wait(u32 index, const StreamLite &stream)
 {
+    WaitWithTimeout(index, stream, CommunicatorImplLiteMgr::GetInstance().GetEnvConfig().hcclExecTimeout);
+}
+
+void UbTransportLiteImpl::WaitWithTimeout(u32 index, const StreamLite &stream, u32 timeout)
+{
     auto taskId   = stream.GetRtsq()->GetTaskId();
     auto notifyId = locNotifyVec[index]->GetId();
-    BuildNotifyWaitTask(stream, notifyId);
+    stream.GetRtsq()->NotifyWait(notifyId, timeout);
 
     if (callback_ == nullptr && newCallback_ == nullptr)
     {

@@ -8,8 +8,11 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "ra_rs_comm.h"
+#include <sys/prctl.h>
+#include "securec.h"
 #include "dl_ibverbs_function.h"
+#include "ra_rs_comm.h"
+#include "rs_common_inner.h"
 #include "rs.h"
 
 struct OpcodeInterfaceInfo gInterfaceInfoList[] = {
@@ -92,17 +95,17 @@ struct OpcodeInterfaceInfo gInterfaceInfoList[] = {
 #endif
     {RA_RS_GET_TLS_ENABLE, 1},
     {RA_RS_GET_SEC_RANDOM, 1},
-    {RA_RS_GET_HCCN_CFG, 2},
+    {RA_RS_GET_HCCN_CFG, 3},
     {RA_RS_GET_ROCE_API_VERSION, 0},
     {RA_RS_GET_DEV_EID_INFO_NUM, 1},
-    {RA_RS_GET_DEV_EID_INFO_LIST, 1},
-    {RA_RS_CTX_INIT, 1},
-    {RA_RS_CTX_GET_ASYNC_EVENTS, 1},
+    {RA_RS_GET_DEV_EID_INFO_LIST, 2},
+    {RA_RS_CTX_INIT, 2},
+    {RA_RS_CTX_GET_ASYNC_EVENTS, 2},
     {RA_RS_CTX_DEINIT, 1},
     {RA_RS_GET_EID_BY_IP, 1},
     {RA_RS_GET_TP_INFO_LIST, 1},
-    {RA_RS_GET_TP_ATTR, 1},
-    {RA_RS_SET_TP_ATTR, 1},
+    {RA_RS_GET_TP_ATTR, 2},
+    {RA_RS_SET_TP_ATTR, 2},
     {RA_RS_CTX_TOKEN_ID_ALLOC, 1},
     {RA_RS_CTX_TOKEN_ID_FREE, 1},
     {RA_RS_LMEM_REG, 1},
@@ -126,6 +129,7 @@ struct OpcodeInterfaceInfo gInterfaceInfoList[] = {
     {RA_RS_CTX_UPDATE_CI, 1},
     {RA_RS_CTX_GET_AUX_INFO, 1},
     {RA_RS_CTX_GET_CR_ERR_INFO_LIST, 1},
+    {RA_RS_CTX_GET_UB_CONTEXT, 1},
 
     // inner opcode version
     {RA_RS_HDC_SESSION_CLOSE, 1},
@@ -156,5 +160,26 @@ RS_ATTRI_VISI_DEF int RsGetInterfaceVersion(unsigned int opcode, unsigned int *v
     }
 
     *version = interfaceVersion;
+    return 0;
+}
+
+RS_ATTRI_VISI_DEF int RsPrctlByResvMem(bool useResvMem, unsigned int resvMemPoolId, const char *threadName)
+{
+    char processName[TASK_COMM_LEN] = {0};
+    int ret;
+
+    if (!useResvMem) {
+        // not using resv memory, return success regardless of the result
+        ret = snprintf_s(processName, TASK_COMM_LEN, TASK_COMM_LEN - 1, "hccp_%s", threadName);
+        CHK_PRT_RETURN(ret <= 0, hccp_warn("snprintf_s unsuccessful, ret:%d threadName:%s", ret, threadName), 0);
+        (void)prctl(PR_SET_NAME, (unsigned long)processName);
+        return 0;
+    }
+
+    ret = snprintf_s(processName, TASK_COMM_LEN, TASK_COMM_LEN - 1, "hccp_rsv%u_%s", resvMemPoolId, threadName);
+    CHK_PRT_RETURN(ret <= 0, hccp_err("snprintf_s failed, ret:%d threadName:%s", ret, threadName), -EIO);
+    ret = prctl(PR_SET_NAME, (unsigned long)processName);
+    CHK_PRT_RETURN(ret != 0, hccp_err("prctl failed, ret:%d threadName:%s processName:%s",
+        ret, threadName, processName), ret);
     return 0;
 }

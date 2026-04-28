@@ -96,10 +96,14 @@
 #define URMA_JFS_DB_ADDR 0x000e
 #define URMA_JFS_DB_STATUS 0x000f
 #define URMA_JFS_PI_TYPE 0x0011
+#define URMA_JFS_FULL_CTX 0x0013
 
 #define URMA_JFC_CQE_BASE_ADDR 0x2006
 #define URMA_JFC_ID 0x2007
 #define URMA_JFC_DB_ADDR 0x2008
+#define URMA_JFC_FULL_CTX 0x200d
+
+#define URMA_JETTY_FULL_CTX 0x3007
 
 /* operation information */
 typedef enum urma_place_order {

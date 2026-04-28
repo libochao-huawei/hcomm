@@ -474,7 +474,7 @@ void OpRetryServerWaitResp::PrintAgentInfoAfterFail(std::map<u32, HcclAgentRetry
 HcclResult OpRetryServerCheckOp::ProcessEvent(RetryContext* retryCtx)
 {
     HcclResult ret = CheckRetryInfo(*retryCtx);
-    RetryState nextState = (ret == HCCL_SUCCESS) ? RETRY_STATE_CMD_CAN_RETRY : RETRY_STATE_SERVER_RETRY_FAIL;
+    RetryState nextState = (ret == HCCL_SUCCESS) ? RETRY_STATE_CMD_CHECK_LINK : RETRY_STATE_SERVER_RETRY_FAIL;
 
     if (ret == HCCL_E_OPRETRY_FAIL) {
         HCCL_RUN_INFO("[OpRetry][Server][CheckRetryInfo] Opname is Inconsistent, RETRY_CONSTRAINT, ret[%u]", ret);
@@ -831,6 +831,7 @@ HcclResult OpRetryServerWaitResume::ProcessEvent(RetryContext *retryCtx)
         return HCCL_SUCCESS;
     }
     if (!retryCtx->isServerStateWaitResume_ && retryCtx->haveCommEnableBackupLink_) {
+        HCCL_RUN_INFO("[OpRetry][Server]OpRetryServerWaitResume, start to send cmd");
         for (auto &it : retryCtx->serverSockets_) {
             const u32 &agentId = it.first;
             RetryCommandInfo commandInfo;

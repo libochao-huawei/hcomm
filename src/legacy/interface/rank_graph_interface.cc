@@ -52,6 +52,18 @@ namespace Hccl {
         return HCCL_SUCCESS;
     }
 
+    HcclResult IRankGraph::GetDeviceId(uint32_t rankId, uint32_t *deviceId)
+    {
+        CHK_PTR_NULL(rankGraphPtr_);
+        RankGraph *rankGraph = static_cast<RankGraph *>(rankGraphPtr_);
+        if (rankGraph->GetPeer(rankId) == nullptr) {
+            HCCL_ERROR("[GetPeer] rankGraph peer is null!");
+            return HCCL_E_PTR;
+        }
+        *deviceId = rankGraph->GetPeer(rankId)->GetDeviceId();
+        return HCCL_SUCCESS;
+    }
+
     HcclResult IRankGraph::GetNetLayers(uint32_t** netLayers, uint32_t* netLayerNum)
     {
         CHK_PTR_NULL(rankGraphPtr_);
@@ -361,7 +373,7 @@ namespace Hccl {
         Hccl::TopoType type;
         HcclResult ret = rankGraph->GetTopoType(netLayer, topoInstId, type);
         if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[IRankGraph::GetTopoType] Failed to get topo type at netLayer [%u] ret=%d", ret);
+            HCCL_ERROR("[IRankGraph::GetTopoType] Failed to get topo type at netLayer [%u] topoInstId [%u] ret=%d", netLayer, topoInstId, ret);
             return ret;
         }
         static const std::unordered_map<Hccl::TopoType, CommTopo> topoTypeMap = {
@@ -391,7 +403,7 @@ namespace Hccl {
         u32 num = 0;
         auto ret = rankGraph->GetRanksByTopoInst(netLayer, topoInstId, ranksVec_, num);
         if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[IRankGraph::GetRanksByTopoInst] Failed to get topo type at netLayer [%u] ret=%d", ret);
+            HCCL_ERROR("[IRankGraph::GetRanksByTopoInst] Failed to get ranks at netLayer [%u] topoInstId [%u] ret=%d", netLayer, topoInstId, ret);
             return ret;
         }
         *ranks = ranksVec_.data();
