@@ -114,7 +114,7 @@ public:
     CcuResult VariableCreateByChannel(ChannelHandle channel, uint32_t varIndex, CcuVariableHandle *varHandle);
 
     //参数加载类 相关接口
-    CcuResult LoadArg(CcuVariableHandle varHandle);
+    CcuResult LoadArg(CcuVariableHandle varHandle, uint32_t argId);
     CcuResult LoadVar(uint64_t addr, CcuVariableHandle varHandle, uint32_t num);
 
 
@@ -226,6 +226,8 @@ private:
 
     CcuResult GetRemoteAddrByHandle(CcuRemoteAddrHandle handle, CcuRep::RemoteAddr **remoteAddr);
     std::unordered_map<CcuRemoteAddrHandle, CcuRep::RemoteAddr> ccuRemoteAddrMap_{};
+
+    uint32_t loadArgUsedMask_{0}; // 记录已经加载的参数
 
 protected:
     // 子类实现
