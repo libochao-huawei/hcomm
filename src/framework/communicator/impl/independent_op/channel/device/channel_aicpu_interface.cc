@@ -15,6 +15,7 @@
 extern "C" {
 __attribute__((visibility("default"))) uint32_t RunAicpuIndOpChannelInit(void *args)
 {
+    HCCL_INFO("YYYYYY hcomm run RunAicpuIndOpChannelInit");
     CHK_PRT_RET(args == nullptr, HCCL_ERROR("[%s]args is null.", __func__), HCCL_E_PARA);
     struct InitTask {
         u64 context;
@@ -23,6 +24,11 @@ __attribute__((visibility("default"))) uint32_t RunAicpuIndOpChannelInit(void *a
     InitTask *ctxArgs = reinterpret_cast<InitTask *>(args);
     HcclIndOpChannelRemoteResV3 *commParam = reinterpret_cast<HcclIndOpChannelRemoteResV3 *>(ctxArgs->context);
     CHK_PRT_RET(commParam == nullptr, HCCL_ERROR("[%s]commParam is null.", __func__), HCCL_E_PARA);
+
+    HCCL_INFO("YYYYYY hcomm commParam hcomId:%s, channelTag:%s, engine:%u, localUserRank:%u",
+        commParam->hcomId, commParam->channelTag, commParam->engine, commParam->localUserRank
+    );
+
     return AicpuHcclProcess::AicpuIndOpChannelInit(commParam);
 }
 }
