@@ -177,27 +177,27 @@ HcclResult RankConsistentcyChecker::CheckFrameRecv(const u8 *recvBuf, u32 recvBu
         HCCL_ERROR("[RankConsistentcyChecker][CheckFrameRecv] errNo[0x%016llx] recvBufLen[%u]is less than "
         "check info[%zu].", HCCL_ERROR_CODE(HCCL_E_INTERNAL), recvBufLen, sizeof(HcclCheckInfo)), HCCL_E_PARA);
 
-    HcclCheckInfo checkInfoRecv;	 
-    // 对固定长度的全局数组变量，结构体变量进行初始化和拷贝，可以不用检查初始化安全函数返回值	 
-    (void)memset_s(&checkInfoRecv, sizeof(HcclCheckInfo), 0, sizeof(HcclCheckInfo));	 
-    (void)memcpy_s(&checkInfoRecv, sizeof(HcclCheckInfo), recvBuf, sizeof(HcclCheckInfo));	 
+    HcclCheckInfo checkInfoRecv;
+    // 对固定长度的全局数组变量，结构体变量进行初始化和拷贝，可以不用检查初始化安全函数返回值
+    (void)memset_s(&checkInfoRecv, sizeof(HcclCheckInfo), 0, sizeof(HcclCheckInfo));
+    (void)memcpy_s(&checkInfoRecv, sizeof(HcclCheckInfo), recvBuf, sizeof(HcclCheckInfo));
  
-    HcclCheckInfo checkInfo;	 
-    CHK_RET(GenerateCheckFrame(checkInfo, tag));	 
-    if (checkInfo.cmdInfo.cmdType == HcclCMDType::HCCL_CMD_SEND) {	 
-        checkInfo.cmdInfo.cmdType = HcclCMDType::HCCL_CMD_RECEIVE;	 
-        checkInfo.cmdInfo.rank = checkInfo.cmdInfo.selfRank;	 
-    } else if (checkInfo.cmdInfo.cmdType == HcclCMDType::HCCL_CMD_RECEIVE) {	 
-        checkInfo.cmdInfo.cmdType = HcclCMDType::HCCL_CMD_SEND;	 
-        checkInfo.cmdInfo.rank = checkInfo.cmdInfo.selfRank;	 
-    }	 
+    HcclCheckInfo checkInfo;
+    CHK_RET(GenerateCheckFrame(checkInfo, tag));
+    if (checkInfo.cmdInfo.cmdType == HcclCMDType::HCCL_CMD_SEND) {
+        checkInfo.cmdInfo.cmdType = HcclCMDType::HCCL_CMD_RECEIVE; 
+        checkInfo.cmdInfo.rank = checkInfo.cmdInfo.selfRank;
+    } else if (checkInfo.cmdInfo.cmdType == HcclCMDType::HCCL_CMD_RECEIVE) {
+        checkInfo.cmdInfo.cmdType = HcclCMDType::HCCL_CMD_SEND;
+        checkInfo.cmdInfo.rank = checkInfo.cmdInfo.selfRank;
+    }
 
-    checkInfo.cmdInfo.selfRank = 0; // 自身的子group rank 不做校验	 
-    if (CompareFrame(checkInfo, checkInfoRecv)) {	 
-        return HCCL_E_INTERNAL; 
-    } 
+    checkInfo.cmdInfo.selfRank = 0; // 自身的子group rank 不做校验
+    if (CompareFrame(checkInfo, checkInfoRecv)) {
+        return HCCL_E_INTERNAL;
+    }
  
-    HCCL_INFO("[RankConsistentcyChecker][CheckFrameRecv] check success, len of frame[%u], len of check data[%zu].", 
+    HCCL_INFO("[RankConsistentcyChecker][CheckFrameRecv] check success, len of frame[%u], len of check data[%zu].",
         recvBufLen, sizeof(checkInfo));
     return HCCL_SUCCESS;
 }
@@ -307,12 +307,6 @@ HcclResult RankConsistentcyChecker::RecordSubCommPara(u32 parentCommCrc, uint32_
 
     HCCL_INFO("[RecordSubCommPara] success, total crc count[%zu].", crcTable_.size());
     return HCCL_SUCCESS;
-}
-
-u64 RankConsistentcyChecker::GetHcommInfoLength()
-{
-    // Hcomm基础信息 不包含ccrInfoOp和cmdInfo（HCCL算子信息）
-    return sizeof(HcclCRCInfo) + sizeof(ProtocolType) + MAX_CANN_VERSION_LEN + 1;
 }
 
 // private

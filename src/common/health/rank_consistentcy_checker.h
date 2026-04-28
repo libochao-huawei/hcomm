@@ -139,7 +139,6 @@ public:
 
     HcclResult RecordEnvVarCrc();
     HcclResult RecordSubCommPara(u32 parentCommCrc, uint32_t rankNum, const uint32_t *rankIds, uint64_t subCommId);
-    u64 GetHcommInfoLength();
 
 private:
     explicit RankConsistentcyChecker();
