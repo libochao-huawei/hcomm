@@ -495,6 +495,10 @@ STATIC int RsNdaCqCreateEx(struct RsRdevCb *rdevCb, struct ibv_cq_init_attr_exte
 
     info->cq = cqExt->cq;
     (void)memcpy_s(&info->cqInfo, sizeof(struct queue_info), &cqExt->cq_info, sizeof(struct queue_info));
+    hccp_err("ibvcqextend dbr_pi_va:0x%llx dbr_ci_va:0x%llx db_hw_va:0x%llx", (uint64_t)cqExt->cq_info.dbr_pi_va.iov_base, (uint64_t)cqExt->cq_info.dbr_ci_va.iov_base, (uint64_t)cqExt->cq_info.db_hw_va.iov_base);
+    hccp_err("info->cqInfo dbr_pi_va:0x%llx dbr_ci_va:0x%llx db_hw_va:0x%llx", (uint64_t)info->cqInfo.dbrPiVa.iovBase, (uint64_t)info->cqInfo.dbrCiVa.iovBase, (uint64_t)info->cqInfo.dbHwVa.iovBase);
+    hccp_err("resv 0:0x%llx 1:0x%llx 2:0x%llx 3:0x%llx", info->cqInfo.qBuf.resv[0], info->cqInfo.qBuf.resv[1], info->cqInfo.qBuf.resv[2], info->cqInfo.qBuf.resv[3]);
+    
     *ibvCqExt = cqExt;
 
     return 0;
