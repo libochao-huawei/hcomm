@@ -170,3 +170,31 @@ TEST_F(CcuTransportTest, ut_CcuTransport_UpdateMemInfo_When_bufferNumIs0_Expect_
     HcclResult ret = ccuTransport.UpdateMemInfo(bufferVecTemp);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
+
+TEST_F(CcuTransportTest, ut_CcuTransport_BufferInfoUnpack_When_rmtBufferNumIsZero_Expect_ReturnHCCL_E_PARA)
+{
+    std::unique_ptr<hcomm::CcuConnection> ccuConnection{nullptr};
+    std::vector<hcomm::CcuTransport::CclBufferInfo> bufferInfos{hcomm::CcuTransport::CclBufferInfo{}};
+    hcomm::CcuTransport ccuTransport{fakeSocket_, std::move(ccuConnection), bufferInfos};
+
+    Hccl::BinaryStream binaryStream;
+    u32 rmtBufferNumZero = 0;
+    binaryStream << rmtBufferNumZero;
+
+    HcclResult ret = ccuTransport.BufferInfoUnpack(binaryStream);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(CcuTransportTest, ut_CcuTransport_BufferInfoUnpack_When_rmtBufferNumExceedsLimit_Expect_ReturnHCCL_E_PARA)
+{
+    std::unique_ptr<hcomm::CcuConnection> ccuConnection{nullptr};
+    std::vector<hcomm::CcuTransport::CclBufferInfo> bufferInfos{hcomm::CcuTransport::CclBufferInfo{}};
+    hcomm::CcuTransport ccuTransport{fakeSocket_, std::move(ccuConnection), bufferInfos};
+
+    Hccl::BinaryStream binaryStream;
+    u32 rmtBufferNumExceeds = 30001;
+    binaryStream << rmtBufferNumExceeds;
+
+    HcclResult ret = ccuTransport.BufferInfoUnpack(binaryStream);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
