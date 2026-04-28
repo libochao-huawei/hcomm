@@ -378,6 +378,16 @@ extern int32_t HcommChannelNotifyWait(ChannelHandle channel, uint32_t localNotif
 extern int32_t HcommBatchModeStart(const char *batchTag);
 
 /**
+ * @brief 批量模式执行开始，支持指定线程列表
+ * @param batchTag 批量Id
+ * @param threads 线程句柄列表
+ * @param threadCount 线程数量
+ * @return int32_t 执行结果状态码
+ * @note Start和End及中间的批量任务需要在同一个线程上执行
+ */
+extern int32_t HcommBatchModeStartWithThreads(const char *batchTag, ThreadHandle *threads, uint32_t threadCount);
+
+/**
  * @brief 批量模式执行结束
  * @param batchTag 批量Id
  * @return int32_t 执行结果状态码
