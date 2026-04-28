@@ -61,7 +61,7 @@ HcclResult UbRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void 
     }
 
     hccl::BufferKey<uintptr_t, u64> actualRegKey(localUbRmaBuffer->GetAddr(),
-        static_cast<uint64_t(localUbRmaBuffer->GetSize()));
+        static_cast<uint64_t>(localUbRmaBuffer->GetSize()));
 
     // 注册到LocalUbRmaBuffer计数器
     auto resultPair = localUbRmaBufferMgr_->AddWithoutCheck(actualRegKey, localUbRmaBuffer);
