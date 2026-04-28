@@ -18,7 +18,6 @@
 #include "rma_conn_exception.h"
 #include "rdma_handle_manager.h"
 #include "exchange_ub_conn_dto.h"
-#include "adapter_rts_common.h"
 
 namespace Hccl {
 
@@ -816,9 +815,8 @@ HcclResult DevUbConnection::Describe(std::string &dfxMsg)
     if (tpProtocol == TpProtocol::TP) {
         struct TpAttr tpAttr {0};
         uint32_t attrBitmap = 1 << 13; // 13对应dataUdpSrcport
-        u32 devicePhyId = 0;
-        CHK_RET(hrtGetDevicePhyIdByIndex(devLogicId, &devicePhyId));
         try {
+            u32 devicePhyId = HrtGetDevicePhyIdByIndex(devLogicId);
             HcclResult res = HrtRaGetTpAttrAsync(devicePhyId, rdmaHandle, tpInfo.tpHandle, attrBitmap, tpAttr, reqHandle);
             if (res != HcclResult::HCCL_SUCCESS) {
                 if (res == HcclResult::HCCL_E_NOT_SUPPORT)
