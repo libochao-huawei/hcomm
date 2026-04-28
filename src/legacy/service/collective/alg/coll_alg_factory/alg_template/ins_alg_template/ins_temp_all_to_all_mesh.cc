@@ -35,7 +35,7 @@ HcclResult InsTempAlltoAllMesh::CalcRes(AlgTempResReq &tempResReq)
     for (auto resReqIter = linkReq.begin(); resReqIter != linkReq.end(); resReqIter++) {
         auto remoteRank = resReqIter->first;
         if (rank2PathNumMap_.find(remoteRank) == rank2PathNumMap_.end() || rank2PathNumMap_.at(remoteRank) == 0) {
-            HCCL_ERROR("No path to remoteRank[%u]", remoteRank);
+            HCCL_ERROR("No path to remoteRank[%d]", remoteRank);
             return HcclResult::HCCL_E_INTERNAL;
         }
         resReqIter->second = rank2PathNumMap_.at(remoteRank);

@@ -29,7 +29,7 @@ public:
 
     std::string Describe() const override
     {
-        return StringFormat("Template of broadcase NHR with tempRankSize [%u].", tempRankSize_);
+        return StringFormat("Template of broadcast NHR with tempRankSize [%u].", tempRankSize_);
     }
 
     HcclResult GenExtIns(const TempFuncs &tempFuncs, const TemplateDataParams &templateDataParams,

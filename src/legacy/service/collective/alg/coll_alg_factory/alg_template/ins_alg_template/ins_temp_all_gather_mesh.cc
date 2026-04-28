@@ -34,7 +34,7 @@ HcclResult InsTempAllGatherMesh1D::CalcRes(AlgTempResReq &tempResReq)
     for (auto resReqIter = linkReq.begin(); resReqIter != linkReq.end(); resReqIter++) {
         auto remoteRank = resReqIter->first;
         if (rank2PathNumMap_.find(remoteRank) == rank2PathNumMap_.end() || rank2PathNumMap_[remoteRank] == 0) {
-            HCCL_ERROR("[InsTempAllGatherMesh1D] No path to remoteRank[%u]", remoteRank);
+            HCCL_ERROR("[InsTempAllGatherMesh1D] No path to remoteRank[%d]", remoteRank);
             return HcclResult::HCCL_E_INTERNAL;
         }
         if (pathNum == 0) {
@@ -42,7 +42,7 @@ HcclResult InsTempAllGatherMesh1D::CalcRes(AlgTempResReq &tempResReq)
         } else if (rank2PathNumMap_[remoteRank] != pathNum) {
             HCCL_ERROR("[InsTempAllGatherMesh1D] Inconsistency pathNum to remoteRanks, Previous consistent "
                        "pathNum=[%u], mismatched "
-                       "remoteRank=[%u], pathNum=[%u]",
+                       "remoteRank=[%d], pathNum=[%u]",
                 pathNum, remoteRank, rank2PathNumMap_[remoteRank]);
             return HcclResult::HCCL_E_INTERNAL;
         }
@@ -222,7 +222,7 @@ HcclResult InsTempAllGatherMesh1D::RunMesh(
             HcclResult::HCCL_E_INTERNAL);
         // SingleRunMesh函数中会自动移动curInsQues队列下标
         CHK_PRT_RET(SingleRunMesh(myAlgRank, connectedRank, tempInsQues, queIdx),
-            HCCL_ERROR("[SingleRunMesh] myAlgRank=%d, connectedRank=%u", myAlgRank, connectedRank),
+            HCCL_ERROR("[SingleRunMesh] myAlgRank=%u, connectedRank=%d", myAlgRank, connectedRank),
             HcclResult::HCCL_E_INTERNAL);
     }
     return HcclResult::HCCL_SUCCESS;

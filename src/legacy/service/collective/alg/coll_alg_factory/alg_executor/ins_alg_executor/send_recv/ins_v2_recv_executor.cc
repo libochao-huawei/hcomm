@@ -169,7 +169,7 @@ HcclResult InsV2RecvExecutor::ExecAiv(const CollAlgOperator &op,
                                           LinkData      &recvLinkData,
                                           InsQuePtr              insQue)
 {
-    HCCL_INFO("[InsV2RecvExecutor][ExecAiv] start: rank is %d, count is %u, dataType is %u, srcRank is %u",
+    HCCL_INFO("[InsV2RecvExecutor][ExecAiv] start: rank is %d, count is %u, dataType is %u, srcRank is %d",
         myRank_, op.dataCount, static_cast<u32>(op.dataType), op.sendRecvRemoteRank);
 
     u64 transportBoundDataSize = UB_MAX_DATA_SIZE;
