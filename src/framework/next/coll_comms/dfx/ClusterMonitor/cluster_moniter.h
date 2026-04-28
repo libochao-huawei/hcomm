@@ -99,20 +99,21 @@ inline std::string GetHeartBeatStatusStr(HeartBeatStatus  status)
 }
 
 struct CqeErrInfo{
-    u32 CqeRemotedeviceId;
-    u32 CqeLocaldeviceId;
+    u32 CqeLocalId;
+    u32 CqeRemoteLocalId;
     uint16_t CqeRemoterstatus;
     std::string CqeLocalEid; 
     std::string CqeRemoteEid;
     std::string CqeRemoteInsId;
+    std::string CqeLocalInsId;
 };
 
 class ClusterMonitor {
 public:
-    static ClusterMonitor& GetInstance();
-    void GetCqeErrInfo(u32 RemoteDeviceId, u32 LocDeviceId, uint16_t status, std::string LocalEid, std::string RemoteEid, std::string RemoteInsId);
-    std::vector<std::string> GetErrStatusVec(const std::string &group);
-    bool IsKeyEvent(HeartBeatFrame &event, HcclUs curTime, const std::string &group);
+    static ClusterMonitor& GetInstance(u32 deviceId);
+    void GetCqeErrInfo(u32 RemoteLocalId, uint16_t status, std::string LocalEid, std::string RemoteEid, std::string RemoteInsId);
+    std::vector<std::string> GetErrStatusVec();
+    bool IsKeyEvent(HeartBeatFrame &event, HcclUs curTime);
     std::vector<std::string> PrintEvents(std::map<HeartBeatStatus, std::queue<HeartBeatFrame>> &keyEvents);
     void MakeErrMsg(std::queue<HeartBeatFrame> &keyEvents, std::vector<std::string> &errStatusVec);
     ClusterMonitor() = default;
