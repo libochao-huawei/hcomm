@@ -200,7 +200,7 @@ HcclResult AicpuTsUrmaChannel::BuildSocket()
     HCCL_INFO("[AicpuTsUrmaChannel][%s] socket ptr is NULL, rebuildSocket", __func__);
 
     Hccl::IpAddress ipaddr{};
-    CHK_RET(CommAddrToIpAddress(localEp_.commAddr, ipaddr));
+    CHK_RET(CommAddrToAddress(localEp_.commAddr, ipaddr));
     Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::UB);
     Hccl::PortData localPort = Hccl::PortData(static_cast<Hccl::RankId>(localEp_.loc.device.devPhyId), type, 0, ipaddr);
     Hccl::SocketHandle socketHandle = Hccl::SocketHandleManager::GetInstance().Create(localEp_.loc.device.devPhyId, localPort);
@@ -341,4 +341,41 @@ HcclResult AicpuTsUrmaChannel::UpdateMemInfo(HcommMemHandle *memHandles, uint32_
     bufs_.insert(bufs_.end(), bufsTemp.begin(), bufsTemp.end());
     return memTransport_->UpdateMemInfo(bufferVecTemp_);
 }
+HcclResult AicpuTsUrmaChannel::NotifyRecord(const uint32_t remoteNotifyIdx)
+{
+    HCCL_INFO("[AicpuTsUrmaChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult AicpuTsUrmaChannel::NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout)
+{
+    HCCL_INFO("[AicpuTsUrmaChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult AicpuTsUrmaChannel::WriteWithNotify(void *dst, const void *src, const uint64_t len, uint32_t remoteNotifyIdx)
+{
+    HCCL_INFO("[AicpuTsUrmaChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult AicpuTsUrmaChannel::Write(void *dst, const void *src, uint64_t len)
+{
+    HCCL_INFO("[AicpuTsUrmaChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult AicpuTsUrmaChannel::Read(void *dst, const void *src, uint64_t len)
+{
+    HCCL_INFO("[AicpuTsUrmaChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult AicpuTsUrmaChannel::ChannelFence()
+{
+    HCCL_INFO("[AicpuTsUrmaChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+
 } // namespace hcomm
