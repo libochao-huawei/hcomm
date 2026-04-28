@@ -22,6 +22,7 @@
 #include "aicpu_daemon_service.h"
 #include "hcclCommTaskExceptionLite.h"
 #include "coll_comm_aicpu_destroy_func.h"
+#include "aicpu_indop_env.h"
 
 constexpr u32 NOTIFY_SIZE_EIGHT = 8;
  HcclResult __attribute__((weak)) HcommChannelRegisterDfx(ChannelHandle channel, 

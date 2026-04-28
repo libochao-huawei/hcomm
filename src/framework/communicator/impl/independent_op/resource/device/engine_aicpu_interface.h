@@ -20,12 +20,4 @@ __attribute__((visibility("default"))) uint32_t RunAicpuThreadInit(void *args);
 __attribute__((visibility("default"))) uint32_t RunAicpuThreadDestroy(void *args);
 __attribute__((visibility("default"))) uint32_t RunAicpuThreadSupplementNotify(void* args);
 }
-
-namespace hcomm {
-
-const void SetTaskExceptionEnable(bool taskExceptionEnable);
-const bool& GetTaskExceptionEnable();
-
-}
-
 #endif // CHANNEL_AICPU_INTERFACE_H
