@@ -42,6 +42,8 @@ public:
     // Local Data Plane Functions
     HcclResult LocalNotifyWait(uint32_t notifyId) const override;
     HcclResult LocalNotifyRecord(uint32_t notifyId) const override;
+    HcclResult LocalNotifyWait(uint32_t notifyId, uint32_t timeout) const override;
+    HcclResult LocalNotifyRecord(ThreadHandle dstThread, uint32_t dstNotifyIdx) const override;
 
     HcclResult LocalCopy(void *dst, const void *src, uint64_t sizeByte) const override;
     HcclResult LocalReduce(

@@ -35,17 +35,47 @@ target_compile_definitions(ccl_cpu PRIVATE
 )
 
 target_include_directories(ccl_cpu PRIVATE
+    ${hccl_include_list}
     ${CMAKE_CURRENT_SOURCE_DIR}/base/inc
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${HCCL_BASE_DIR}/../pkg_inc
+    ${HCCL_BASE_DIR}/../pkg_inc/hccl
+    ${HCCL_BASE_DIR}/../include
+    ${HCCL_BASE_DIR}/../include/hccl
     ${HCCL_BASE_DIR}/include/
     ${HCCL_BASE_DIR}/include/hccl
     ${HCCL_BASE_DIR}/pkg_inc
-    ${HCCL_BASE_DIR}/src/pub_inc
-    ${HCCL_BASE_DIR}/src/pub_inc/hccl
+    ${HCCL_BASE_DIR}/pub_inc
+    ${HCCL_BASE_DIR}/pub_inc/hccl
+    ${HCCL_BASE_DIR}/legacy/framework/communicator/hostdpu
+    ${HCCL_BASE_DIR}/legacy/unified_platform/pub_inc
+    ${HCCL_BASE_DIR}/legacy/common
+    ${HCCL_BASE_DIR}/legacy/common/types
+    ${HCCL_BASE_DIR}/legacy/common/utils
+    ${HCCL_BASE_DIR}/legacy/common/exception
+    ${HCCL_BASE_DIR}/legacy/framework/communicator/aicpu
+    ${HCCL_BASE_DIR}/legacy/unified_platform/resource/stream/aicpu
+    ${HCCL_BASE_DIR}/legacy/unified_platform/resource/buffer
+    ${HCCL_BASE_DIR}/legacy/unified_platform/resource/buffer/aicpu
+    ${HCCL_BASE_DIR}/legacy/unified_platform/resource/notify
+    ${HCCL_BASE_DIR}/legacy/unified_platform/resource/notify/aicpu
+    ${HCCL_BASE_DIR}/legacy/unified_platform/resource/connection/aicpu
+    ${HCCL_BASE_DIR}/legacy/framework/dfx/common
+    ${HCCL_BASE_DIR}/legacy/framework/dfx/profiling
+    ${HCCL_BASE_DIR}/legacy/unified_platform/external_system
+    ${HCCL_BASE_DIR}/legacy/service/collective
+    ${HCCL_BASE_DIR}/common/debug/profiling/inc
+    ${HCCL_BASE_DIR}/framework/next/comms/comm_engine_res
+    ${ASCEND_CANN_PACKAGE_ENV_PATH}/include/driver
+    ${ASCEND_CANN_PACKAGE_ENV_PATH}/pkg_inc/driver
+    ${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/driver
+    ${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/pkg_inc/driver
     ${ASCEND_CANN_PACKAGE_PATH}/include
     ${ASCEND_CANN_PACKAGE_PATH}/include/hccl
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/

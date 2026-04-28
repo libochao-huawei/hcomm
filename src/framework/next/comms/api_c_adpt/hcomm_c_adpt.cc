@@ -523,7 +523,7 @@ HcclResult HcommThreadAllocWithConfig(CommEngine engine, uint32_t threadNum, con
         if (ret != HCCL_SUCCESS ) {
             HCCL_ERROR("[HcommThreadAlloc] Failed to create thread index %u", i);
             if (i != 0) {
-                CHK_RET(HcommThreadFree(threads, i));
+                CHK_RET(static_cast<HcclResult>(HcommThreadFree(threads, i)));
             }
             return ret;
         }
@@ -531,7 +531,7 @@ HcclResult HcommThreadAllocWithConfig(CommEngine engine, uint32_t threadNum, con
         if (ret != HCCL_SUCCESS ) {
             HCCL_ERROR("[HcommThreadAlloc] Failed to init thread index %u", i);
             if (i != 0) {
-                CHK_RET(HcommThreadFree(threads, i));
+                CHK_RET(static_cast<HcclResult>(HcommThreadFree(threads, i)));
             }
             return ret;
         }

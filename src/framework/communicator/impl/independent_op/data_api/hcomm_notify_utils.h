@@ -22,6 +22,15 @@ using string = std::string;
 using exception = std::exception;
 using HcclException = Hccl::HcclException;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+int32_t HcommRequestServiceOnThread(ThreadHandle dstThreadHandle, ThreadServiceHandle serviceHandle,
+    const void *args, uint64_t argsSizeByte);
+#ifdef __cplusplus
+}
+#endif
+
 namespace hccl {
 
 enum class NotifyRecordOpType {

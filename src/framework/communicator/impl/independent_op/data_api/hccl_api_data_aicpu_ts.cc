@@ -1018,9 +1018,9 @@ int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel)
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
     if (threadPtr->IsDeviceA5()) {
-        auto *const transportLitePtr = reinterpret_cast<Hccl::BaseTransportLiteImpl *>(channel);
-        CHK_PTR_NULL(transportLitePtr);
-        CHK_RET(transportLitePtr->Fence());
+        auto *const ubTransportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
+        CHK_PTR_NULL(ubTransportLitePtr);
+        CHK_RET(ubTransportLitePtr->Fence());
     }
 
     return HCCL_SUCCESS;
