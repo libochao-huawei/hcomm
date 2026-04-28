@@ -411,6 +411,7 @@ __aicore__ inline void AivCommBase::WaitFlag(uint32_t targetRank, uint64_t flag_
 {
     d2hGlobal.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t *>(GM_OUT[targetRank] + flag_offset * UB_ALIGN_SIZE));
     while (true) {
+        AscendC::Nop<1000>();
         DataCopyGM2UB(localTagTensor, d2hGlobal, UB_ALIGN_SIZE / sizeof(int32_t));
         pipe_barrier(PIPE_ALL);
         if (localTagTensor.GetValue(0) == curTag) {

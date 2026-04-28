@@ -87,6 +87,14 @@ public:
             ProducerOne(p);
         }
 
+        if (static_cast<uint32_t>(GetBlockIdx()) == 0) {
+            for (uint32_t idx = 0; idx < rankSizeU32_; ++idx) {
+                WaitFlag(rank_, static_cast<uint64_t>(idx), curTag_);
+            }
+        }
+
+        SyncAll<true>();
+
         for (uint32_t c = consumerBegin_; c < consumerEnd_; ++c) {
             ConsumerOne(c);
         }
@@ -148,7 +156,7 @@ private:
 
         for (uint32_t idx = 0; idx < rankSizeU32_; ++idx) {
             const uint32_t rankIdx = (idx + consumerId) % rankSizeU32_;
-            WaitFlag(rank_, static_cast<uint64_t>(rankIdx), curTag_);
+            // WaitFlag(rank_, static_cast<uint64_t>(rankIdx), curTag_);
             __gm__ T *src = reinterpret_cast<__gm__ T *>(inputOffVec_[idx]);
             __gm__ T *dst = reinterpret_cast<__gm__ T *>(outputOffset_);
             if (idx == 0) {
