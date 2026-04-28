@@ -376,3 +376,17 @@ TEST_F(CcuTransportTest, Ut_AppendRes_UNAVAIL_When_AppendXn_Return_UNAVAIL)
 
     EXPECT_EQ(transport->AppendRes(1, 1), unavailResult);
 }
+
+TEST_F(CcuTransportTest, Ut_BufferInfoUnpack_When_rmtBufferNumIsZero_Expect_Return_PARA)
+{
+    auto transportRes = MockMakeCcuTransport(true, true);
+    auto transport = get<0>(transportRes).get();
+    EXPECT_EQ(transport->Init(), HcclResult::HCCL_SUCCESS);
+
+    Hccl::BinaryStream binaryStream;
+    u32 rmtBufferNumZero = 0;
+    binaryStream << rmtBufferNumZero;
+
+    HcclResult result = transport->BufferInfoUnpack(binaryStream);
+    EXPECT_EQ(result, HcclResult::HCCL_E_PARA);
+}
