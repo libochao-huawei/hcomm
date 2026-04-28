@@ -851,7 +851,7 @@ HcclResult HostCpuRoceChannel::PostRdmaOp(const char *caller, ibv_wr_opcode opco
 
     // 2. 构造 WR 并发送
     struct ibv_send_wr wr{};
-    struct ibv_sge sg;
+    struct ibv_sge sg = {};
     BuildRdmaWr(caller, opcode, localAddr, remoteAddr, len, localIdx, rmtIdx, wr, sg);
     CHK_RET(PostAndCheckSend(caller, wr));
 

@@ -49,7 +49,7 @@ using namespace Hccl;
 std::mutex g_commInfoV2CtxMutex;
 
 u64 GetFileSize(const std::string& path) {
-    struct stat fileStat;
+    struct stat fileStat = {};
     if (stat(path.c_str(), &fileStat) != 0) 
     {
         HCCL_ERROR("[GetFileSize] Get file stat failed , file path:%s", path.c_str());
