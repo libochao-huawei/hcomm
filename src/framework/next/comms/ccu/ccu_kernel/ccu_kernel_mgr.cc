@@ -89,7 +89,7 @@ CcuResult CcuKernelMgr::Register(
     currKernel_ = std::make_unique<CcuKernel>(); // 重置待注册kernel
 
     CCU_CHK_RET(ccuKernelFunc(kernelArg)); // 执行算法流程，生成rep和计算资源占用
-
+    currKernel_->FlushClosablePendingIfs(); // 处理未闭合的if
     CCU_CHK_RET(currKernel_->SelectDie()); // 先处理rep，后选择die
 
     CCU_CHK_RET(AllocRes(resPack));
