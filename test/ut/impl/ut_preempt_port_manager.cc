@@ -16,7 +16,7 @@
 #define protected public
 #include "hccl_common.h"
 #include "preempt_port_manager.h"
-#include "legacy/common/exception/invalid_params_exception.h"
+#include "invalid_params_exception.h"
 #undef private
 #undef protected
 
