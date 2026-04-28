@@ -16,6 +16,9 @@
 
 namespace hcomm {
 
+u64 eidLastEightNum = 8;
+u64 ipv4Length = 4;
+
 HcclResult CommAddrToIpAddress(const CommAddr &commAddr, Hccl::IpAddress &ipAddr)
 {
     if (commAddr.type != COMM_ADDR_TYPE_IP_V4 && commAddr.type != COMM_ADDR_TYPE_IP_V6 && commAddr.type != COMM_ADDR_TYPE_EID) {
@@ -42,6 +45,33 @@ HcclResult CommAddrToIpAddress(const CommAddr &commAddr, Hccl::IpAddress &ipAddr
 
     binAddr.addr6 = commAddr.addr6;
     ipAddr = Hccl::IpAddress(binAddr, family);
+    return HCCL_SUCCESS;
+}
+
+HcclResult CommAddrToIpv4Address(const CommAddr &commAddr, Hccl::IpAddress &ipAddr)
+{
+    if (commAddr.type != COMM_ADDR_TYPE_EID) {
+        HCCL_ERROR("[%s] failed, comm address type[%d] is not supported.", __func__, commAddr.type);
+        return HCCL_E_NOT_SUPPORT;
+    }
+
+    const uint8_t *lastEightNum = &commAddr.eid[COMM_ADDR_EID_LEN - eidLastEightNum];
+
+    uint8_t ipv4Bytes[ipv4Length];
+    s32 sret = memcpy_s(ipv4Bytes, ipv4Length, lastEightNum + ipv4Length, ipv4Length);
+    CHK_PRT_RET(sret != EOK, HCCL_ERROR("memcpy failed. errorno[%d]:", sret), HCCL_E_MEMORY);
+
+    struct in_addr ipv4Addr;
+    sret = memcpy_s(&ipv4Addr.s_addr, ipv4Length, ipv4Bytes, ipv4Length);
+    CHK_PRT_RET(sret != EOK, HCCL_ERROR("memcpy failed. errorno[%d]:", sret), HCCL_E_MEMORY);
+
+    Hccl::BinaryAddr binAddr;
+    binAddr.addr = ipv4Addr;
+    int32_t family = AF_INET;
+
+    ipAddr = Hccl::IpAddress(binAddr, family, commAddr.eid);
+
+    HCCL_INFO("[%s] ipAddress[%s]", __func__, ipAddr.Describe().c_str());
     return HCCL_SUCCESS;
 }
 
@@ -150,6 +180,35 @@ HcclResult EndpointDescPairToLinkData(const EndpointDesc &locEp, const EndpointD
         linkProtocol, 
         locDevPhyId, rmtDevPhyId,
         locAddr, rmtAddr, reuseIdx
+    );
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult HostUrmaEndpointDescPairToLinkData(const EndpointDesc &locEp, const EndpointDesc &rmtEp, Hccl::LinkData &linkData)
+{
+    Hccl::PortDeploymentType portDeploymentType = Hccl::PortDeploymentType::INVALID;
+    CHK_RET(EndpointLocTypeToPortDeploymentType(locEp.loc.locType, portDeploymentType));
+
+    Hccl::LinkProtocol linkProtocol = Hccl::LinkProtocol::INVALID;
+    CHK_RET(CommProtocolToLinkProtocol(locEp.protocol, linkProtocol));
+
+    Hccl::IpAddress locAddr{};
+    Hccl::IpAddress rmtAddr{};
+
+    CHK_RET(CommAddrToIpv4Address(locEp.commAddr, locAddr));
+    CHK_RET(CommAddrToIpv4Address(rmtEp.commAddr, rmtAddr));
+
+    uint32_t locDevPhyId = locEp.loc.device.devPhyId;
+    uint32_t rmtDevPhyId = rmtEp.loc.device.devPhyId;
+
+    // 开源开放架构下comms层级不感知通信域层级的rank信息
+    // 当前复用orion数据结构故使用devId替换
+    linkData = Hccl::LinkData(
+        portDeploymentType,
+        linkProtocol,
+        locDevPhyId, rmtDevPhyId,
+        locAddr, rmtAddr
     );
 
     return HCCL_SUCCESS;
