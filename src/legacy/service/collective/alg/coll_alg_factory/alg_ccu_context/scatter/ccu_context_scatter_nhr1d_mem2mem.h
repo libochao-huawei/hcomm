@@ -34,6 +34,8 @@ private:
     void LoadArgs();
     void InitResources();
     void PreSync();
+    void PostSync();
+
     void AxisSync(uint32_t signalIndex);
     void DoScatterNHR();
     void DoScatterNHRSingleStep(const NHRStepInfo &nhrStepInfo);

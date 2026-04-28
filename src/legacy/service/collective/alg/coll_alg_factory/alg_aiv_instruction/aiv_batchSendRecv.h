@@ -168,18 +168,19 @@ public:
 
     __aicore__ inline void Process(uint32_t tag, ExtraArgs &extraArgs)
     {
+        uint32_t rankNum = 2;
         curTag = static_cast<int32_t>(tag);
 
         // 先去做自收发
         SelfSendRecv(extraArgs);
 
         // 接下来，一半的核send，一半的核recv
-        coreNumPerRank = numBlocks_ / 2;
+        coreNumPerRank = numBlocks_ / rankNum;
         if (coreNumPerRank < 1) { // 单核情况，暂不处理
             return;
         }
 
-        if (block_idx >= coreNumPerRank * 2) {
+        if (block_idx >= coreNumPerRank * rankNum) {
             return;
         }
 

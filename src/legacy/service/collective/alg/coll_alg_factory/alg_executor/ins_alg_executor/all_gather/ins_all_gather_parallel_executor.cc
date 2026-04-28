@@ -117,7 +117,6 @@ HcclResult InsAllGatherParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTem
     } else {
         HCCL_DEBUG("[InsAllGatherParallelExecutor] Rank[%d], CalcRes with detouring disabled."
                    "rankSizeLevel0[%u] rankSizeLevel1[%u]",
-                    __func__,
                     myRank_,
                     rankSizeLevel0_,
                     rankSizeLevel1_);
@@ -390,7 +389,6 @@ HcclResult InsAllGatherParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTem
     CHK_RET(SetPathNumMapByLinkMgrMultiLevel(linkMgr, virtRanks_, myRank_, rank2PathNumMap));
     tempAlgIntra.setPathNumMap(rank2PathNumMap[0]);
     tempAlgInter.setPathNumMap(rank2PathNumMap[1]);
-    
 
     // 计算算法模板所需资源
     CHK_RET(PrepareResForTemplate(linkMgr, tempAlgIntra, tempAlgInter));

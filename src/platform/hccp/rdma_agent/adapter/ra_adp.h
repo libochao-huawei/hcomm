@@ -42,6 +42,17 @@ struct RaHdcInitPara {
     unsigned int connectStatus;
     unsigned int threadStatus;  /* 0: sleep or init; 1: running; 2: destroying */
     char pidSign[PROCESS_RA_SIGN_LENGTH];
+    bool useResvMem;
+    unsigned int resvMemPoolId;
+};
+
+struct hccpInitPara {
+    unsigned int chipId;
+    pid_t pid;
+    int hdcType;
+    unsigned int whiteListStatus;
+    bool useResvMem;
+    unsigned int resvMemPoolId;
 };
 
 struct RaOpHandle {
@@ -51,7 +62,7 @@ struct RaOpHandle {
 };
 
 #define RA_ADP_ATTRI_VISI_DEF __attribute__ ((visibility ("default")))
-RA_ADP_ATTRI_VISI_DEF int HccpInit(unsigned int chipId, pid_t pid, int hdcType, unsigned int whiteListStatus);
+RA_ADP_ATTRI_VISI_DEF int HccpInit(struct hccpInitPara *initPara);
 RA_ADP_ATTRI_VISI_DEF int HccpDeinit(unsigned int chipId);
 
 #define HCCP_CHECK_PARAM_LEN(data_size, head_size, rcv_buf_len) do { \
