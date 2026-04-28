@@ -244,3 +244,61 @@ TEST_F(HcclPreemptPortManagerTest, ut_Release)
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
 }
+
+TEST_F(HcclPreemptPortManagerTest, ut_PreemptPortInRange_AllPortsOccupied_HostNic)
+{
+    MOCKER_CPP(&HcclSocket::Listen, HcclResult (HcclSocket::*)(u32 port))
+        .stubs().will(returnValue(HCCL_E_UNAVAIL));
+
+    HcclIpAddress remoteIp{"10.10.10.10"};
+    HcclIpAddress localIp{"10.10.10.01"};
+    std::vector<HcclSocketPortRange> portRange;
+    HcclSocketPortRange range = {50000, 50000};
+    portRange.push_back(range);
+    u32 usePort = 50000;
+    std::shared_ptr<HcclSocket> listenSocket(new (std::nothrow)HcclSocket("my tag", nullptr, remoteIp, 0,
+        HcclSocketRole::SOCKET_ROLE_SERVER));
+    listenSocket->localIp_ = localIp;
+    listenSocket->nicType_ = NicType::HOST_NIC_TYPE;
+
+    PreemptPortManager& ppm = PreemptPortManager::GetInstance(0);
+    IpPortRef hostPortRef;
+    hostPortRef.insert({"10.10.10.02", std::make_pair(5000, Referenced())});
+
+    bool caught = false;
+    try {
+        ppm.PreemptPortInRange(hostPortRef, listenSocket, NICDeployment::NIC_DEPLOYMENT_HOST, portRange, usePort);
+    } catch (const Hccl::InvalidParamsException &e) {
+        caught = true;
+    }
+    EXPECT_TRUE(caught);
+}
+
+TEST_F(HcclPreemptPortManagerTest, ut_PreemptPortInRange_AllPortsOccupied_NpuNic)
+{
+    MOCKER_CPP(&HcclSocket::Listen, HcclResult (HcclSocket::*)(u32 port))
+        .stubs().will(returnValue(HCCL_E_UNAVAIL));
+
+    HcclIpAddress remoteIp{"10.10.10.10"};
+    HcclIpAddress localIp{"10.10.10.01"};
+    std::vector<HcclSocketPortRange> portRange;
+    HcclSocketPortRange range = {50000, 50000};
+    portRange.push_back(range);
+    u32 usePort = 50000;
+    std::shared_ptr<HcclSocket> listenSocket(new (std::nothrow)HcclSocket("my tag", nullptr, remoteIp, 0,
+        HcclSocketRole::SOCKET_ROLE_SERVER));
+    listenSocket->localIp_ = localIp;
+    listenSocket->nicType_ = NicType::VNIC_TYPE;
+
+    PreemptPortManager& ppm = PreemptPortManager::GetInstance(0);
+    IpPortRef hostPortRef;
+    hostPortRef.insert({"10.10.10.02", std::make_pair(5000, Referenced())});
+
+    bool caught = false;
+    try {
+        ppm.PreemptPortInRange(hostPortRef, listenSocket, NICDeployment::NIC_DEPLOYMENT_HOST, portRange, usePort);
+    } catch (const Hccl::InvalidParamsException &e) {
+        caught = true;
+    }
+    EXPECT_TRUE(caught);
+}
