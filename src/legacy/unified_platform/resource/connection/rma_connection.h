@@ -126,7 +126,7 @@ public:
 
     virtual HcclResult Describe(std::string &dfxMsg)
     {
-        HCCL_ERROR("not support.");
+        HCCL_ERROR("[RmaConnection::%s] not support.", __func__);
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
 protected:
