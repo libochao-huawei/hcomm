@@ -41,7 +41,7 @@ target_include_directories(hccl_st_fwk PUBLIC
         ${TOP_DIR}/abl/atrace/inc/utrace
         ${TOP_DIR}/inc/common/util/error_manager/
         ${TOP_DIR}/metadef/inc/common/util/error_manager/
-        ${TOP_DIR}/abl/adump/inc/adump
+        ${TOP_DIR}/runtime/src/dfx/adump/inc/adump
         ${TOP_DIR}/metadef/inc/external
         ${TOP_DIR}/metadef/pkg_inc
         ${TOP_DIR}/ace/comop/inc/hccl/

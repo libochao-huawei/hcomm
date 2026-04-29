@@ -22,6 +22,7 @@ __attribute__((visibility("default"))) uint32_t RunAicpuIndOpChannelInit(void *a
     };
     InitTask *ctxArgs = reinterpret_cast<InitTask *>(args);
     HcclIndOpChannelRemoteResV3 *commParam = reinterpret_cast<HcclIndOpChannelRemoteResV3 *>(ctxArgs->context);
+    CHK_PRT_RET(commParam == nullptr, HCCL_ERROR("[%s]commParam is null.", __func__), HCCL_E_PARA);
     return AicpuHcclProcess::AicpuIndOpChannelInit(commParam);
 }
 }

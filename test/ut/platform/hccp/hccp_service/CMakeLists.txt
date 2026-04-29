@@ -10,15 +10,15 @@
 
 set(hccp_utest_list
     main.cc
-    stub/tsd.c 
-    stub/mm.c 
+    stub/tsd.c
+    stub/mm.c
     stub/hccp_pub.c
     ${SRC_DIR}/test/ut/platform/hccp/stub/ut_dispatch.cc
     ${SRC_DIR}/src/platform/hccp/hccp_service/param.c
     ${SRC_DIR}/src/platform/hccp/common/dl_hal_function.c
     ${SRC_DIR}/src/platform/hccp/common/ascend_hal_dl.c
     ${SRC_DIR}/src/platform/hccp/hccp_service/main.c
-    st_test.cc 
+    st_test.cc
     tc_hccp.c
     )
 
@@ -47,30 +47,35 @@ target_include_directories(hccp_utest PRIVATE
     ${SRC_DIR}/src/platform/hccp/external_depends/host_lite
     ${RDMA_CORE_INCLUDE_DIR}
     ${SRC_DIR}/src/platform/hccp/external_depends/rdma-core/providers/hns
-    ${SRC_DIR}/src/platform/hccp/external_depends/rdma-core/include	 
-    ${CANN_3RD_LIB_PATH}/json/include/	 
-    ${CANN_3RD_LIB_PATH}/gtest/include/	 
+    ${SRC_DIR}/src/platform/hccp/external_depends/rdma-core/include
+    ${CANN_3RD_LIB_PATH}/json/include/
+    ${CANN_3RD_LIB_PATH}/gtest/include/
     ${CANN_3RD_LIB_PATH}/mockcpp/include/
     ${CANN_3RD_LIB_PATH}/mockcpp/include/3rdparty/
     ${CANN_3RD_LIB_PATH}/boost/
 )
 
 target_compile_options(hccp_utest PRIVATE
-        -U_FORTIFY_SOURCE
- 	     -O0 -g --coverage -fprofile-arcs -ftest-coverage -fno-access-control
- 	     $<$<COMPILE_LANGUAGE:CXX>:-std=c++14>
- 	     -Wall
- 	     -Wextra
- 	     -Werror
- 	     -pedantic
- 	     -Wshadow
+    -U_FORTIFY_SOURCE
+    -O0 -g --coverage -fprofile-arcs -ftest-coverage -fno-access-control
+    $<$<COMPILE_LANGUAGE:CXX>:-std=c++14>
+    -Wall
+    -Wextra
+    -Werror
+    -pedantic
+    -Wshadow
+    $<$<BOOL:${ENABLE_ASAN}>:-fsanitize=address -fno-omit-frame-pointer -static-libasan -fsanitize=undefined -static-libubsan -fsanitize=leak -static-libtsan>
 )
 
 target_compile_definitions(hccp_utest PRIVATE
-    HNS_ROCE_LLT 
+    HNS_ROCE_LLT
     USE_DISPATCH_EXPECT
     CONFIG_CGROUP
     CONFIG_HCCP_LLT
+)
+
+target_link_options(hccp_utest PRIVATE
+    $<$<BOOL:${ENABLE_ASAN}>:-fsanitize=address -static-libasan -fsanitize=undefined -static-libubsan -fsanitize=leak -static-libtsan>
 )
 
 target_link_libraries(hccp_utest PRIVATE

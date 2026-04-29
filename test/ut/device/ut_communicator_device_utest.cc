@@ -20,6 +20,7 @@
 #include "hccl_communicator_attrs.h"
 #include "framework/aicpu_hccl_process.h"
 #include "framework/aicpu_kfc_process.h"
+#include "aicpu_hccl_common.h"
 #undef private
 #undef protected
 
@@ -529,4 +530,19 @@ TEST_F(Communicator_Device_UT, AicpuGetCommTest) {
     
     // 清理资源
     AicpuHcclProcess::AicpuDestoryCommbyGroup(groupName);
+}
+
+TEST_F(Communicator_Device_UT, Ut_WaitAsyncFlag_When_ParamIsNullptr_Expect_ReturnIsHCCL_E_PTR)
+{
+    MOCKER(GetCurCpuTimestamp)
+        .stubs()
+        .will(returnValue(static_cast<u64>(0)));
+    HcclResult ret = AicpuHcclProcess::WaitAsyncFlag(nullptr, 1, 0);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(Communicator_Device_UT, Ut_AicpuIndOpNotifyInit_When_ParamIsNullptr_Expect_ReturnIsHCCL_E_PTR)
+{
+    HcclResult ret = AicpuHcclProcess::AicpuIndOpNotifyInit(nullptr);
+    EXPECT_EQ(ret, HCCL_E_PTR);
 }

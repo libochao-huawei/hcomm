@@ -33,7 +33,9 @@ extern int64_t block_idx;
 extern int64_t numBlocks_;
 
 using half = int16_t;
+#ifndef __ARM_NEON
 using bfloat16_t = int16_t;
+#endif
 
 const uint8_t DEFAULT_DATA_COPY_NBURST = 1;
 const uint8_t DEFAULT_DATA_COPY_STRIDE = 0;
@@ -119,19 +121,12 @@ struct MemDetails {
 extern __aicore__ inline int64_t GetBlockIdx() {return block_idx;};
 extern __aicore__ inline int64_t GetBlockNum() {return numBlocks_;};
 extern __aicore__ inline int64_t GetSystemCycle() {return 0;};
-extern __aicore__ inline void InitDump(bool dump, uint8_t* dumpAddr, u32 dumpSize) {return;};
 extern __aicore__ inline void PRINTF(const char *__restrict format, ...) {
     va_list args;
     va_start(args, format);
     vprintf(format, args);
     va_end(args);
   };
-extern __aicore__ inline void PrintfImpl(DumpType dumpType, const char *__restrict format, ...) {
-    va_list args;
-    va_start(args, format);
-    vprintf(format, args);
-    va_end(args);
-};
 extern __aicore__ inline void trap() {return;};
 }
 

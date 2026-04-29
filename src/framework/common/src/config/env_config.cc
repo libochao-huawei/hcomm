@@ -242,7 +242,7 @@ HcclResult InitEnvParam()
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
         std::vector<std::string>({"value", "env", "expect"}),
-        std::vector<std::string>({envValue, "HCCL_DEBUG_CONFIG", "ALG,TASK,RESOURCE,AIV_OPS_EXC(optionally prefixed with'^'"}));
+        std::vector<std::string>({envValue, "HCCL_DEBUG_CONFIG", "ALG,TASK,RESOURCE(optionally prefixed with'^'"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init environment param, parse "
                    "HCCL_DEBUG_CONFIG failed. errorno[%d]",

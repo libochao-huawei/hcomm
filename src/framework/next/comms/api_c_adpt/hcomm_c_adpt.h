@@ -124,11 +124,6 @@ HcommResult HcommChannelUpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHa
 //     void *streamProfilingInfos, size_t infoNum,
 //     const HcclComm comm, Hccl::TaskParam &taskParam, bool isMaster);
 
-// todo: 不合理
-// HcclResult HcclReportCcuProfilingInfo(const ThreadHandle threadHandle, uint64_t execId,
-//     void *streamProfilingInfos, size_t infoNum,
-//     const HcclComm comm, Hccl::TaskParam &taskParam, bool isMaster);
-
 #ifdef __cplusplus
 }
 

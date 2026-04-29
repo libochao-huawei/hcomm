@@ -134,12 +134,6 @@ set(ASCEND_MOCKCPP_PACKAGE_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 #     message(FATAL_ERROR "${THIRD_PARTY_NLOHMANN_PATH} does not exist, please check the setting of THIRD_PARTY_NLOHMANN_PATH.")
 # endif()
 
-set(ASCEND_SDK_PACKAGE_PATH "${ASCEND_CANN_PACKAGE_PATH}")
-if (NOT EXISTS "${ASCEND_CANN_PACKAGE_PATH}/opensdk")
-    # 设置社区包sdk安装位置
-    set(ASCEND_SDK_PACKAGE_PATH "${ASCEND_CANN_PACKAGE_PATH}/../latest")
-endif()
-
 #execute_process(COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/cmake/scripts/check_version_compatiable.sh
 #                             ${ASCEND_CANN_PACKAGE_PATH}
 #                             hccl
@@ -164,11 +158,11 @@ set(HI_PYTHON                     "python3"                       CACHE   STRING
 message(STATUS "config.cmake KERNEL_MODE=${KERNEL_MODE} BUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}")
 message(STATUS "config.cmake PRODUCT=${PRODUCT} PRODUCT_SIDE=${PRODUCT_SIDE}")
 
-set(INSTALL_LIBRARY_DIR hcomm/lib64)
-set(INSTALL_INCLUDE_DIR hcomm/include)
-set(INSTALL_PKG_INCLUDE_DIR hcomm/pkg_inc)
-set(INSTALL_CCL_KERNEL_JSON_DIR hcomm/built-in/data/op/aicpu)
-set(INSTALL_DPU_KERNEL_JSON_DIR hcomm/built-in/data/op/dpu)
-set(INSTALL_DEVICE_TAR_DIR hcomm/Ascend/aicpu)
+set(INSTALL_LIBRARY_DIR ${CMAKE_SYSTEM_PROCESSOR}-linux/lib64)
+set(INSTALL_INCLUDE_DIR ${CMAKE_SYSTEM_PROCESSOR}-linux/include)
+set(INSTALL_PKG_INCLUDE_DIR ${CMAKE_SYSTEM_PROCESSOR}-linux/pkg_inc)
+set(INSTALL_CCL_KERNEL_JSON_DIR opp/built-in/op_impl/aicpu)
+set(INSTALL_DPU_KERNEL_JSON_DIR opp/built-in/op_impl/dpu)
+set(INSTALL_DEVICE_TAR_DIR compat)
 
 set(CMAKE_SKIP_RPATH TRUE)
