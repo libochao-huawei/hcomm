@@ -44,6 +44,7 @@ public:
     virtual HcclResult GetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum) = 0;
     virtual HcclResult GetInstRanksByNetLayer(uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum) = 0;
     virtual HcclResult GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize) = 0;
+    virtual HcclResult GetDeviceId(uint32_t rankId, uint32_t *deviceId) = 0;
 };
 }  // namespace hccl
 #endif

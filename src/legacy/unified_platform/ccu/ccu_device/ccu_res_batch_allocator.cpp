@@ -34,9 +34,9 @@ constexpr uint32_t CCUA_NUM = 4;
 
 CcuResBatchAllocator &CcuResBatchAllocator::GetInstance(const int32_t deviceLogicId)
 {
-    static CcuResBatchAllocator ccuResBatchAllocator[MAX_MODULE_DEVICE_NUM];
+    static CcuResBatchAllocator ccuResBatchAllocator[MAX_MODULE_DEVICE_NUM + 1];
 
-    if (deviceLogicId < 0 || static_cast<uint32_t>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM) {
+    if (deviceLogicId < 0 || static_cast<uint32_t>(deviceLogicId) > MAX_MODULE_DEVICE_NUM) {
         THROW<InvalidParamsException>("[CcuResBatchAllocator][%s] failed, "
             "devLogicId[%d] should be less than %u.",
             __func__, deviceLogicId, MAX_MODULE_DEVICE_NUM);
@@ -188,7 +188,7 @@ static bool CheckReqValid(const CcuResReq &req, int32_t devLogicId,
             req.continuousXnReq[i],
             req.xnReq[i],
             req.gsaReq[i],
-            req.missionReq.missionReq[i]
+            req.missionReq.req[i]
         };
 
         const bool ifReqEmpty = std::all_of(std::begin(reqs), std::end(reqs),
@@ -728,8 +728,8 @@ HcclResult CcuResBatchAllocator::CcuMissionMgr::PreAlloc(const int32_t devLogicI
 static uint32_t Check2DieMissionReqNum(const MissionReq &missionReq,
     const std::array<bool, MAX_CCU_IODIE_NUM> &dieEnableFlags)
 {
-    uint32_t die0ReqNum = missionReq.missionReq[0];
-    uint32_t die1ReqNum = missionReq.missionReq[1];
+    uint32_t die0ReqNum = missionReq.req[0];
+    uint32_t die1ReqNum = missionReq.req[1];
 
     if (dieEnableFlags[0] && dieEnableFlags[1]) {
         if (die0ReqNum != die1ReqNum) {
@@ -758,9 +758,8 @@ HcclResult CcuResBatchAllocator::CcuMissionMgr::Alloc(const uintptr_t handleKey,
     MissionReqType reqType = missionReq.reqType;
     constexpr MissionReqType defaultReqType = MissionReqType::FUSION_MULTIPLE_DIE;
     if (missionReq.reqType != MissionReqType::FUSION_MULTIPLE_DIE) {
-        HCCL_WARNING("[CcuMissionMgr][%s] mission reqType[%s], mission resouces "
-            "now only support %s.", __func__, reqType.Describe().c_str(),
-            defaultReqType.Describe().c_str());
+        HCCL_WARNING("[CcuMissionMgr][%s] mission reqType[%d], mission resouces "
+            "now only support %d.", __func__, reqType, defaultReqType);
         reqType = MissionReqType::FUSION_MULTIPLE_DIE;
     }
 
@@ -775,8 +774,8 @@ HcclResult CcuResBatchAllocator::CcuMissionMgr::Alloc(const uintptr_t handleKey,
     auto ret = HandleBlockRes(handleKey, reqNum, stragtegy, blocks, resInfos);
     if (ret != HcclResult::HCCL_SUCCESS) {
         HCCL_WARNING("[CcuMissionMgr][%s] failed, mission block resources are unavaiable, "
-            "reqNum[%u], stragtegy[%u], reqType[%s].", __func__, reqNum, stragtegy,
-            reqType.Describe().c_str());
+            "reqNum[%u], stragtegy[%u], reqType[%d].", __func__, reqNum, stragtegy,
+            reqType);
         DumpBlockResInfo(ResType::MISSION, blocks);
         return ret;
     }

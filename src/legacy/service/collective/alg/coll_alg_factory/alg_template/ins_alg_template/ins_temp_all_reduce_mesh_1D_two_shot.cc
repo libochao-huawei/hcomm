@@ -40,14 +40,14 @@ HcclResult InsTempAllReduceMesh1DTwoShot::CalcRes(AlgTempResReq &tempResReq)
     for (auto resReqIter = linkReq.begin(); resReqIter != linkReq.end(); resReqIter++) {
         auto remoteRank = resReqIter->first;
         if (rank2PathNumMap_.find(remoteRank) == rank2PathNumMap_.end() || rank2PathNumMap_[remoteRank] == 0) {
-            HCCL_ERROR("[InsTempAllReduceMesh1DTwoShot] No path to remoteRank[%u]", remoteRank);
+            HCCL_ERROR("[InsTempAllReduceMesh1DTwoShot] No path to remoteRank[%d]", remoteRank);
             return HcclResult::HCCL_E_INTERNAL;
         }
         if (pathNum == 0) {
             pathNum = rank2PathNumMap_[remoteRank];
         } else if (rank2PathNumMap_[remoteRank] != pathNum) {
             HCCL_ERROR("[InsTempAllReduceMesh1DTwoShot] Inconsistency pathNum to remoteRanks, Previous consistent pathNum=[%u], mismatched "
-                       "remoteRank=[%u], pathNum=[%u]",
+                       "remoteRank=[%d], pathNum=[%u]",
                 pathNum,
                 remoteRank,
                 rank2PathNumMap_[remoteRank]);
@@ -127,7 +127,7 @@ HcclResult InsTempAllReduceMesh1DTwoShot::GenExtIns(const TempFuncs &tempFuncs, 
 
     uint32_t linkNum = tempLinks.begin()->second.size();
     CHK_PRT_RET( tempInsQues.size() != tempVTopo_[0].size() * linkNum,
-        HCCL_ERROR("[InsTempAllReduceMesh1DTwoShot] RankSize [%d], linkNum_:[%u], tempInsQues size:[%zu],requiredQue Error.",
+        HCCL_ERROR("[InsTempAllReduceMesh1DTwoShot] RankSize [%lu], linkNum_:[%u], tempInsQues size:[%zu],requiredQue Error.",
             tempVTopo_[0].size(),
             linkNum,
             tempInsQues.size()),
@@ -302,7 +302,6 @@ HcclResult InsTempAllReduceMesh1DTwoShot::RunAllReduceAllgather(const RankSliceI
 
 RankId InsTempAllReduceMesh1DTwoShot::GetRankFromMap(const u32 rankIdx)
 {
-    
     RankId rank = -1;
     HCCL_INFO("[InsTempAllReduceMesh1DTwoShot] GetRankFromMap");
     for (auto &pair : tempVirtRankMap_) {

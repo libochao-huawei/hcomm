@@ -22,6 +22,7 @@ const u64 RDMA_SEND_MAX_SIZE = 0x80000000;
 // 节点内单个SDMA任务发送数据支持的最大数据量
 const u64 SDMA_SEND_MAX_SIZE = 0x100000000;
 constexpr u32 MAX_DEVICE_NUM_THIRTY_TWO = 32;
+constexpr u32 MAX_DEVICE_NUM_SIXTY_FIVE = 65;
 constexpr u32 MAX_DEVICE_NUM_SIXTEEN = 16;
     bool IsSupportAIVCopy(HcclDataType dataType);
     bool IsSupportAIVReduce(HcclDataType dataType, HcclReduceOp op);

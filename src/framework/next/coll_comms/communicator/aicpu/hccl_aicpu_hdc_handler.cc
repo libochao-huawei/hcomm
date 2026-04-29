@@ -26,7 +26,6 @@ HcclResult HcclAicpuHdcHandler::GetKfcCommand(Hccl::KfcCommand &cmd)
         HCCL_ERROR("[HcclAicpuHdcHandler][GetKfcCommand] h2dTransfer Get fail, ret[%d]", ret);
         return ret;
     }
-
     if (lastCmd_ != cmd) {
         HCCL_INFO("[HcclAicpuHdcHandler][GetKfcCommand] Get new KfcCommand[%u], last KfcCommand[%u]", cmd, lastCmd_);
         lastCmd_ = cmd;

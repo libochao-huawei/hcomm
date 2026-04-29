@@ -57,7 +57,7 @@ public:
     HcclResult ReleaseCke(const uint8_t dieId, const std::vector<ResInfo> &ckeInfos);
     HcclResult AllocXn(const uint8_t dieId, const uint32_t num, std::vector<ResInfo> &xnInfos);
     HcclResult ReleaseXn(const uint8_t dieId, const std::vector<ResInfo> &xnInfos);
-    std::array<bool, CCU_MAX_IODIE_NUM> GetDieEnableFlags() const;
+    const std::array<bool, CCU_MAX_IODIE_NUM> &GetDieEnableFlags() const;
 
     HcclResult CleanTaskKillState() const;
     HcclResult CleanDieCkes(const uint8_t dieId) const;

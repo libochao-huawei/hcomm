@@ -123,7 +123,7 @@ void CheckRes(CcuResRepository &ccuResRepo)
         }
         std::cout << std::endl;
 
-        std::cout << "Mission: ReqType: " << ccuResRepo.mission.reqType.Describe() << " ";
+        std::cout << "Mission: ReqType: " << (int)ccuResRepo.mission.reqType << " ";
         auto missionInfos = ccuResRepo.mission.mission[i];
         for (int j = 0; j < missionInfos.size(); j++) {
             std::cout << missionInfos[j].Describe() << ", ";
@@ -206,7 +206,7 @@ TEST_F(CcuResBatchAllocatorTest, Ut_AllocResHandle_When_CcuV1_Expect_Return_Ok)
 
     resReq.gsaReq[0] = 1024;
 
-    resReq.missionReq.missionReq[0] = {3};
+    resReq.missionReq.req[0] = {3};
 
     CcuResHandle handle;
     ret = allocater.AllocResHandle(resReq, handle);
@@ -264,7 +264,7 @@ TEST_F(CcuResBatchAllocatorTest, Ut_AllocResHandle_When_CcuV1AndResNumIsMaxNum_E
     resReq.ckeReq[0] = 832; // {832, 832};
     resReq.gsaReq[0] = 3072; // {3072, 3072};
     resReq.xnReq[0] = 3072; // {3072, 3072};
-    resReq.missionReq.missionReq[0] = 16; // {16, 16};
+    resReq.missionReq.req[0] = 16; // {16, 16};
 
     CcuResHandle handle;
     ret = allocater.AllocResHandle(resReq, handle);
@@ -299,7 +299,7 @@ TEST_F(CcuResBatchAllocatorTest, Ut_AllocResHandle_When_CcuV1AndResNumExceedsLef
 
     resReq.blockLoopEngineReq[0] = 1;
     resReq.loopEngineReq[0] = 2;
-    resReq.missionReq.missionReq[0] = 2;
+    resReq.missionReq.req[0] = 2;
     
     resReq.blockCkeReq[0] = 65; // {65, 0};
     resReq.ckeReq[0] = 129; // {129, 0};
@@ -307,8 +307,8 @@ TEST_F(CcuResBatchAllocatorTest, Ut_AllocResHandle_When_CcuV1AndResNumExceedsLef
     // 1. 资源申请超过了一半，故第二次申请资源会不足
     resReq.blockMsReq[0] = 64 * 13; // {64 * 13, 0};
 
-    resReq.missionReq.missionReq[0] = 3; // {3, 3};
-    resReq.missionReq.missionReq[1] = 2; // 会选用较多的，即 3
+    resReq.missionReq.req[0] = 3; // {3, 3};
+    resReq.missionReq.req[1] = 2; // 会选用较多的，即 3
 
     CcuResHandle handle;
     ret = allocater.AllocResHandle(resReq, handle);
@@ -329,7 +329,7 @@ TEST_F(CcuResBatchAllocatorTest, Ut_AllocResHandle_When_CcuV1AndResNumExceedsLef
 
     // 3. 申请超过mission规格的mission
     resReq = {}; // 重置错误的请求
-    resReq.missionReq.missionReq[0] = 17;
+    resReq.missionReq.req[0] = 17;
     ret = allocater.AllocResHandle(resReq, errorHandle);
     EXPECT_NE(ret, HcclResult::HCCL_SUCCESS);
     EXPECT_EQ(errorHandle, nullptr);
@@ -340,7 +340,7 @@ TEST_F(CcuResBatchAllocatorTest, Ut_AllocResHandle_When_CcuV1AndResNumExceedsLef
 
     // 4. mission资源申请超过一半，故第二次申请资源会不足
     resReq = {};
-    resReq.missionReq.missionReq[0] = 9;
+    resReq.missionReq.req[0] = 9;
     ret = allocater.AllocResHandle(resReq, handle);
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
     EXPECT_NE(handle, nullptr);

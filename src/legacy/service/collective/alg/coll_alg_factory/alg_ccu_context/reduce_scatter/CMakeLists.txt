@@ -1,4 +1,4 @@
-target_sources(hccl_v2_native_alg_repo PRIVATE
+target_sources(hccl_v2 PRIVATE
         ccu_context_reduce_scatter_mesh1d.cc
         ccu_context_reduce_scatter_mesh1d_2die.cc
         ccu_context_reduce_scatter_mesh1d_detour.cc

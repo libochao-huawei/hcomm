@@ -20,8 +20,8 @@ namespace Hccl {
 
 CcuResSpecifications &CcuResSpecifications::GetInstance(const int32_t deviceLogicId)
 {
-    static CcuResSpecifications ccuResSpecifications[MAX_MODULE_DEVICE_NUM];
-    if (deviceLogicId < 0 || static_cast<uint32_t>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM) {
+    static CcuResSpecifications ccuResSpecifications[MAX_MODULE_DEVICE_NUM + 1];
+    if (deviceLogicId < 0 || static_cast<uint32_t>(deviceLogicId) > MAX_MODULE_DEVICE_NUM) {
         THROW<InvalidParamsException>(StringFormat("[CcuResSpecifications][GetInstance] Failed to get instance. "
             "devLogicId should be less than %u.", MAX_MODULE_DEVICE_NUM));
     }

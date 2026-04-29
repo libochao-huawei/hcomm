@@ -133,7 +133,8 @@ target_link_libraries(rs PRIVATE
 )
 
 install(TARGETS  rs
-    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
+    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
 )
 
 add_dependencies(rs crypto_static)

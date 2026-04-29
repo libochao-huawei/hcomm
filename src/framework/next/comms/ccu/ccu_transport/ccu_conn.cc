@@ -428,7 +428,7 @@ HcclResult CcuConnection::ConfigChannel()
     cfg.channelId = channelInfo_.channelId;
     Hccl::IpAddress rmtAddr{};
     CHK_RET(CommAddrToIpAddress(rmtAddr_, rmtAddr));
-    CHK_RET(IpAddressToReverseHccpEid(rmtAddr, cfg.remoteEid)); // 配置ccu硬件需要使用反向eid
+    CHK_RET(IpAddressToReverseHcclEid(rmtAddr, cfg.remoteEid)); // 配置ccu硬件需要使用反向eid
     cfg.tpn       = importJettyCtxs_[0].outParam.tpn; // tp handle复用所以tpn一致
     cfg.remoteCcuVa   = rmtCcuBufAddr_;
     cfg.memTokenId    = rmtCcuBufTokenId_;
