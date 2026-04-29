@@ -91,7 +91,7 @@ HcclResult TopoInfoExchangeServer::Setup()
         }
         u32 rankSize = connectSockets_.size();
         if (!isByMasterInfo_ && rankSize > TOPO_HIERARCHICAL_ENABLE_THRESHOLD) {
-            ret = HierarchicalSendRecv();
+            ret = HierarchicalSendRecv(failedAgentIdList);
             CHK_PRT_BREAK(ret != HCCL_SUCCESS,
                 HCCL_ERROR("[TopoInfoExchangeServer][Setup]HierarchicalSendRecv ranktable failed"), error = ret);
             HCCL_INFO("cluster topo exchange server HierarchicalSendRecv ranktable success.");
@@ -133,7 +133,7 @@ HcclResult TopoInfoExchangeServer::Setup()
     return error;
 }
 
-HcclResult TopoInfoExchangeServer::HierarchicalSendRecv()
+HcclResult TopoInfoExchangeServer::HierarchicalSendRecv(const std::string &failedAgentIdList)
 {
     TopoInfoExchangeDispather dispatcherGrpLeader(this);
     TopoInfoExchangeDispather dispatcherGrpLeaderPortInfo(this);
@@ -168,7 +168,7 @@ HcclResult TopoInfoExchangeServer::HierarchicalSendRecv()
     HCCL_INFO("cluster topo exchange server get rank basic info from all group leader success.");
 
     // root向GroupLeader广播全局ranktable
-    ret = dispatcherRankTable.BroadcastRankTable(grpLeaderSockets_, rankTable, "");
+    ret = dispatcherRankTable.BroadcastRankTable(grpLeaderSockets_, rankTable, failedAgentIdList);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[TopoInfoExchangeServer][Setup]Broadcast Rank Basic Infos failed"), ret);
     HCCL_INFO("cluster topo exchange server send rank basic info to all group leader success.");
@@ -229,7 +229,7 @@ HcclResult TopoInfoExchangeServer::RecvGroupLeaderPortInfo(
     return HCCL_SUCCESS;
 }
 
-HcclResult TopoInfoExchangeServer::SetupGroupLeader()
+HcclResult TopoInfoExchangeServer::SetupGroupLeader(const std::string &failedAgentIdList)
 {
     HcclResult ret;
     HcclResult error = HCCL_SUCCESS;
@@ -258,7 +258,7 @@ HcclResult TopoInfoExchangeServer::SetupGroupLeader()
         currentStep_--;
         HCCL_INFO("topo exchange client get rank basic info success.");
 
-        ret = dispatcher.BroadcastRankTable(connectSockets_, rankTable_, "");
+        ret = dispatcher.BroadcastRankTable(connectSockets_, rankTable_, failedAgentIdList);
         CHK_PRT_BREAK(ret != HCCL_SUCCESS,
             HCCL_ERROR("[TopoInfoExchangeServer][Setup]Broadcast Rank Basic Infos failed"), error = ret);
         HCCL_INFO("cluster topo exchange server send rank basic info to all agent success.");

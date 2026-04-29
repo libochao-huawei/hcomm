@@ -33,6 +33,11 @@ enum class TopoDetectResult {
     TOPO_CONNECT_FAILED = 1,
 };
 
+enum class TopoMsgType : int {
+    RANKTABLE = 0,
+    FAULT_INFO = 1
+};
+
 enum class BroadcastStage {
     Idle = 0,
     Started = 1,

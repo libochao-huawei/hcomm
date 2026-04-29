@@ -133,9 +133,25 @@ HcclResult TopoInfoExchangeBase::RecvClusterInfoMsg(std::shared_ptr<HcclSocket> 
     HcclIpAddress localHostIp;
     CHK_RET(GetLocalHostIP(localHostIp, devPhyId));
 
+    // 检查是否为临终遗言（故障通知），若是则直接退出，不解析 ranktable
+    int msgType = static_cast<int>(TopoMsgType::RANKTABLE);
+    if (jClusterJson.find(PROP_MSG_TYPE) != jClusterJson.end()) {
+        msgType = jClusterJson[PROP_MSG_TYPE].get<int>();
+    }
+
+    if (msgType == static_cast<int>(TopoMsgType::FAULT_INFO)) {
+        std::string faultInfo = jClusterJson.value("fault_info", "unknown");
+        HCCL_ERROR("[%s][%s] Received fault notification from root node, the following ranks failed to connect: %s. "
+                   "Aborting communicator initialization.",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_RANKTABLE_DETECT.c_str(),
+            faultInfo.c_str());
+        return HCCL_E_TOPO_FAULT;
+    }
+
     bool isRoot = (localHostIp == GetExternalInputMasterInfo().serverIp &&
         logicDevId == static_cast<s32>(GetExternalInputMasterInfo().serverDeviceId));
-    errormessage = "No rank in the communicator can connect to the root node within the timeout period. List of unconnected ranks: " + 
+    errormessage = "No rank in the communicator can connect to the root node within the timeout period. List of unconnected ranks: " +
                    std::string(jClusterJson["fault_info"].dump().c_str());
     if (!isRoot && jClusterJson.find("fault_type") != jClusterJson.end() &&
         jClusterJson.find("fault_info") != jClusterJson.end()) {

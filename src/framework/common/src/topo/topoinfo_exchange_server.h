@@ -32,7 +32,7 @@ public:
         std::shared_ptr<HcclSocket> grpLeaderToRoot, const std::string &identifier);
     ~TopoInfoExchangeServer() override;
     HcclResult Setup();
-    HcclResult SetupGroupLeader();
+    HcclResult SetupGroupLeader(const std::string &failedAgentIdList = "");
     HcclResult SetupByMasterInfo();
     HcclResult Teardown();
     HcclResult GetConnections(std::map<u32, std::shared_ptr<HcclSocket>> &connectSockets);
@@ -60,7 +60,7 @@ private:
     HcclResult SortRankList(RankTable_t &rankTable) const;
     HcclResult RecvRemoteAgentID(std::shared_ptr<HcclSocket> socket, std::string &agentID);
     HcclResult RecvRemoteRankNum(std::shared_ptr<HcclSocket> socket, u32 &remoteRankNum);
-    HcclResult HierarchicalSendRecv();
+    HcclResult HierarchicalSendRecv(const std::string &failedAgentIdList);
     HcclResult VerifyRemoteRankNum(u32 &previousRankNum, u32 remoteRankNum) const;
     HcclResult SendIdentify(std::shared_ptr<HcclSocket> socket, u32 identify) const;
     HcclResult DisplayConnectedRank(const std::map<std::string, std::shared_ptr<HcclSocket>> &connectSockets, u32 rankNum = 0);

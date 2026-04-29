@@ -130,6 +130,7 @@ using GroupLeader_t = struct tagGroupLeaderInfo {
     std::vector<HcclRankHandle> GroupLeaderList;
 };
 
+const std::string PROP_MSG_TYPE = "msg_type";
 const std::string PROP_STEP = "step";
 const std::string PROP_RANK_NUM = "rank_num";
 const std::string PROP_DEV_NUM = "device_num";

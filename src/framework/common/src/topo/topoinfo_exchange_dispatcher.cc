@@ -116,11 +116,14 @@ HcclResult TopoInfoExchangeDispather::PrepareResource(
     CHK_RET(topoInfoExchangeServer_->TopoInfoExchangeBase::Struct2Json(clusterInfo, basicJson));
     basicJson[PROP_STEP] = topoInfoExchangeServer_->TopoInfoExchangeBase::currentStep_;
     if (!failedAgentIdList.empty()) {
+        basicJson[PROP_MSG_TYPE] = static_cast<int>(TopoMsgType::FAULT_INFO);
         basicJson["fault_info"] = "[" + failedAgentIdList + "]";
         basicJson["fault_type"] = static_cast<int>(TopoDetectResult::TOPO_CONNECT_FAILED);
+    } else {
+        basicJson[PROP_MSG_TYPE] = static_cast<int>(TopoMsgType::RANKTABLE);
     }
     rankTableJson_ = basicJson.dump();
- 
+
     u32 socketIndex = 0;   // socket已经经过rankid（or serverip +deviceid排序）
     for (auto it : connectSockets) {
         FdContext fdcontext;

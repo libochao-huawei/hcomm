@@ -303,11 +303,16 @@ void RankInfoDetectClient::ParseRankTable(vector<char> &rankInfoMsg)
     u32 receivedStep;
     binStream >> receivedStep;
 
-    // 解析failedAgentIdList
+    // 解析failedAgentIdList（临终遗言）
     std::string failedAgentIdList;
     binStream >> failedAgentIdList;
     if (failedAgentIdList.size() > 0) {
-        HCCL_ERROR("[RankInfoDetectClient::%s] failedAgentIdList %s", __func__, failedAgentIdList.c_str());
+        HCCL_ERROR("[RankInfoDetectClient::%s] Received fault notification, "
+                   "the following ranks failed to connect: %s. Aborting communicator initialization.",
+                   __func__, failedAgentIdList.c_str());
+        THROW<InvalidParamsException>(StringFormat(
+            "[RankInfoDetectClient::%s] fault notification received, failed ranks: %s",
+            __func__, failedAgentIdList.c_str()));
     }
 
     HCCL_INFO("[RankInfoDetectClient::%s] end.", __func__);

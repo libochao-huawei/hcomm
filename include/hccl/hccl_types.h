@@ -46,6 +46,7 @@ typedef enum {
     HCCL_E_SUSPENDING = 22,         /**< error communicator suspending */
     HCCL_E_OPRETRY_FAIL = 23,       /**< retry constraint */
     HCCL_E_OOM = 24,                /**< out of memory */
+    HCCL_E_TOPO_FAULT = 25,         /**< topology detect fault notification received */
     HCCL_E_IN_STATUS = 1041,        /**< The error information is in the status. */
     HCCL_E_RESERVED                 /**< reserved */
 } HcclResult;
