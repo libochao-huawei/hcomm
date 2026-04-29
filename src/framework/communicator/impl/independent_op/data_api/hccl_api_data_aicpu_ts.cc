@@ -661,8 +661,55 @@ int32_t HcommBatchTransferOnThread(ThreadHandle thread, ChannelHandle channel,
     }
 
     if (threadPtr->IsDeviceA5()) {
-        HCCL_ERROR("[%s] A5 path is not supported.", __func__);
-        return HCCL_E_NOT_SUPPORT;
+        HCCL_DEBUG("[%s] Running on A5.", __func__);
+        auto *const transportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
+        CHK_PTR_NULL(transportLitePtr);
+        auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
+        CHK_PTR_NULL(streamLitePtr);
+
+        std::vector<Hccl::RmaBufSliceLite> writeLocBufs;
+        std::vector<Hccl::RmtRmaBufSliceLite> writeRmtBufs;
+        std::vector<Hccl::RmaBufSliceLite> readLocBufs;
+        std::vector<Hccl::RmtRmaBufSliceLite> readRmtBufs;
+
+        HcclResult ret = HCCL_SUCCESS;
+        for (uint32_t i = 0; i < transferDescNum; i++) {
+            Hccl::RmaBufferLite locRmaBuf;
+            if (transferDescs[i].transType == HCOMM_TRANSFER_TYPE_WRITE) {
+                ret = transportLitePtr->BuildLocRmaBufferLite(
+                    reinterpret_cast<uintptr_t>(transferDescs[i].src), transferDescs[i].len, locRmaBuf);
+                CHK_PRT_RET(ret != HCCL_SUCCESS,
+                    HCCL_ERROR("[%s] BuildLocRmaBufferLite failed for write desc[%u].", __func__, i), ret);
+                writeLocBufs.emplace_back(transportLitePtr->GetRmaBufSlicelite(locRmaBuf));
+                const Hccl::Buffer rmtBuf(reinterpret_cast<uintptr_t>(transferDescs[i].dst), transferDescs[i].len);
+                writeRmtBufs.emplace_back(transportLitePtr->GetRmtRmaBufSliceLite(rmtBuf));
+            } else {
+                ret = transportLitePtr->BuildLocRmaBufferLite(
+                    reinterpret_cast<uintptr_t>(transferDescs[i].dst), transferDescs[i].len, locRmaBuf);
+                CHK_PRT_RET(ret != HCCL_SUCCESS,
+                    HCCL_ERROR("[%s] BuildLocRmaBufferLite failed for read desc[%u].", __func__, i), ret);
+                readLocBufs.emplace_back(transportLitePtr->GetRmaBufSlicelite(locRmaBuf));
+                const Hccl::Buffer rmtBuf(reinterpret_cast<uintptr_t>(transferDescs[i].src), transferDescs[i].len);
+                readRmtBufs.emplace_back(transportLitePtr->GetRmtRmaBufSliceLite(rmtBuf));
+            }
+        }
+
+        if (!writeLocBufs.empty()) {
+            EXECEPTION_CATCH(transportLitePtr->BatchOneSidedWrite(writeLocBufs, writeRmtBufs, *streamLitePtr),
+                ret = HCCL_E_INTERNAL);
+            CHK_PRT_RET(ret != HCCL_SUCCESS,
+                HCCL_ERROR("[%s] BatchOneSidedWrite failed. writeNum[%u].", __func__, writeLocBufs.size()), ret);
+        }
+
+        if (!readLocBufs.empty()) {
+            EXECEPTION_CATCH(transportLitePtr->BatchOneSidedRead(readLocBufs, readRmtBufs, *streamLitePtr),
+                ret = HCCL_E_INTERNAL);
+            CHK_PRT_RET(ret != HCCL_SUCCESS,
+                HCCL_ERROR("[%s] BatchOneSidedRead failed. readNum[%u].", __func__, readLocBufs.size()), ret);
+        }
+
+        HCCL_INFO("[%s] SUCCESS on A5. writeNum[%u], readNum[%u].", __func__, writeLocBufs.size(), readLocBufs.size());
+        return HCCL_SUCCESS;
     }
 
     std::vector<hccl::Transport::Buffer> writeRemoteBufs;
