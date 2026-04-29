@@ -105,9 +105,6 @@ void ExecutorTracer::TaskMonitor(void)
     (void)AicpuHcclProcess::AicpuGetCommAll(aicpuCommInfo);
     for (auto &commInfo : aicpuCommInfo) {
         hccl::HcclCommAicpu *hcclAicpu = commInfo.second;
-        if (!hcclAicpu->GetCommInfoStatus()) { // 跳过已销毁的通信域
-            continue;
-        }
         (void)hcclAicpu->StreamTaskMonitor();
     }
     rwlock.readUnlock();
