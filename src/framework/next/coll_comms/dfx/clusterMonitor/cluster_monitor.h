@@ -20,6 +20,7 @@
 #include "log.h"
 #include "hccl/hccl_types.h"
 #include "hccl_common.h"
+#include "hccl_comm_socket_c_adpt.h"
 
 namespace hcomm {
 
@@ -100,15 +101,15 @@ struct ClusterMonitorFrame {
 };
 
 struct ClusterMonitorSocketCtx { // 原ConnInfo
-    HcommSocketDesc socketDesc;                   // 与对端连接的描述符
-    // hcomm::socketHandler  socketHandler        // TODO:socketHandler待引用头文件定义
+    HcclCommSocketDesc socketDesc;                // 与对端连接的描述符
+    HcclCommSocketHandle  socketHandler;          // 引用头文件定义
     std::queue<ClusterMonitorFrame> sendBuffer;   // 用来发送的帧队列
     u32 restSize = 0;                             // 剩余待发送的帧长度
     hccl::RingBuffer recvBuffer;                  // 用来接收的环形帧队列
     u32 lostNum = 0;                              // 丢失的心跳个数
     bool newConn = false;                         // 是否是新增的连接
     ClusterMonitorSocketCtx() {}
-    ClusterMonitorSocketCtx(HcommSocketDesc &socketDesc, bool newConn)
+    ClusterMonitorSocketCtx(HcclCommSocketDesc &socketDesc, bool newConn)
         : socketDesc(socketDesc), newConn(newConn)
     {}
 };
@@ -147,16 +148,21 @@ public:
     void SetStatus(ClusterUIDType &crimer, ClusterUIDType &informer, ClusterMonitorStatus status, bool needBroadcast);
     void MonitorThread();
     HcclResult RunMonitorThread();
-    void SendFrame();
+    void SendFrame(ClusterUIDType &dst, ClusterUIDType &crimer, ClusterUIDType &informer, ClusterMonitorStatus status);
     void DelErrorSocket();
     void ProcessExceptionEvent();
     HcclResult RecvFrame(ClusterUIDType rem);
+    HcclResult ParseFrame(ClusterMonitorFrame &cmFrame, ClusterUIDType &src);
 
 private:
     ClusterMonitor() = default;
-    ~ClusterMonitor();
+    ~ClusterMonitor()= default;
     HcclResult GetRemEndpointDescs(HcclComm comm,
         std::map<uint32_t, std::vector<UidContext>> &uidctxs, uint32_t *netLayerNum);
+    
+    HcclResult CreateTransportHandle(ClusterMonitorSocketCtx &info);
+
+    void CreateLinkWithRemotePonit(std::string group, ClusterUIDType rem, ClusterMonitorSocketCtx needConnectRank);
 
     struct FrameStatus { // 专门用来给frame设置对应的状态
         ClusterMonitorStatus status = ClusterMonitorStatus::CLUSTER_MONITOR_OK;
@@ -210,6 +216,8 @@ private:
     
     // 保存错误的节点
     std::queue<ClusterUIDType> errRankQueue_;
+
+    std::atomic<bool> linkRunningStatus_{false};
 
 };
 } // namespace hcomm

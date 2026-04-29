@@ -554,6 +554,25 @@ bool HrtRaSocketNonBlockSend(const FdHandle fdHandle, void *data, u64 size, u64 
     }
 }
 
+bool HrtRaSocketNonBlockRecv(const FdHandle fdHandle, void *data, u64 size, u64 *recvSize)
+{
+    CHECK_NULLPTR(fdHandle, "[HrtRaSocketNonBlockRecv] fdHandle is nullptr!");
+    CHECK_NULLPTR(data, "[HrtRaSocketNonBlockRecv] data is nullptr!");
+    CHECK_NULLPTR(recvSize, "[HrtRaSocketNonBlockRecv] recvSize is nullptr!");
+    HCCL_INFO("[HrtRaSocketNonBlockRecv] Input params: fdHandle=%p,data=%p, size=%llu, recvSize=%llu", 
+        fdHandle, data, size, *recvSize); 
+    
+    s32 ret = RaSocketRecv(fdHandle, data, size, recvSize);
+    if (ret == 0 || ret == SOCK_EAGAIN) {
+        HCCL_INFO("[HrtRaSocketNonBlockRecv] ra socket recv, data[%p], size[%llu], recv size[%llu], ret[%d]", data, size, *recvSize, ret);
+        return true;
+    } else {
+        HCCL_ERROR("call RaSocketRecv failed, fdHandle=%p, data=%p, size=%llu, recvSize=%llu, ret[%d]",
+            fdHandle, data, size, *recvSize, ret);
+        return false;
+    }
+}
+
 void HrtRaSocketBlockRecv(const FdHandle fdHandle, void *data, u32 size)
 {
     auto                       startTime = std::chrono::steady_clock::now();

@@ -44,6 +44,13 @@ public:
                             link.GetRemoteAddr().GetIpStr() + "_" + link.GetLocalAddr().GetIpStr())
     {}
 
+    SocketConfig(const LinkData &link, const std::string &tag, SocketRole role)
+        : remoteRank(link.GetRemoteRankId()), link(link), tag(tag), role(role),
+        hccpTag(role == SocketRole::SERVER
+                    ? tag + "_" + link.GetLocalAddr().GetIpStr() + "_" + link.GetRemoteAddr().GetIpStr()
+                    : tag + "_" + link.GetRemoteAddr().GetIpStr() + "_" + link.GetLocalAddr().GetIpStr())
+    {}
+
     SocketConfig(const LinkData &link, const std::string &tag, bool noRankId)
         : remoteRank(link.GetRemoteRankId()), link(link), tag(tag),
         role(link.GetLocalAddr() < link.GetRemoteAddr() ? SocketRole::SERVER : SocketRole::CLIENT),
