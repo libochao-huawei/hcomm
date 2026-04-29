@@ -114,6 +114,7 @@ set(orion_list
     ${HCCL_CODE_ROOT}/src/legacy/framework/env_config/base_config.cc
     ${HCCL_CODE_ROOT}/src/legacy/framework/env_config/env_config.cc
     ${HCCL_CODE_ROOT}/src/legacy/framework/env_config/env_func.cc
+    ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/hostdpu/task_service.cc
 )
 
 set(hccl_list
