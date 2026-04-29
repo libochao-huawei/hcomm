@@ -59,7 +59,7 @@ public:
         const HcommChannelDesc* hcommDescs,
         uint32_t channelNum,
         const std::string &commTag,
-        hcclComm *hcclComm)
+        hcclComm *hcclComm);
     
     HcclResult ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, uint64_t *size);
     HcclResult ChannelGetRemoteMem(ChannelHandle channel, CommMem **remoteMem, char ***memTag, uint32_t *memNum);
