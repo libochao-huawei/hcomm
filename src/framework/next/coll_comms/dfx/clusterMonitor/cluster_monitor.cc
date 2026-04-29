@@ -309,9 +309,7 @@ void ClusterMonitor::CreateLinkWithRemotePonit(
     if (ret != HCCL_SUCCESS) {
         HCCL_RUN_WARNING("[CreateLinkWithRemote]CreateTransportHandle ret[%d], commId[%s], remote uid[%s].", ret,
             commId.c_str(), GetUID(rem).c_str());
-        if (deviceLogicId_ != static_cast<u32>(HOST_DEVICE_ID)) {
-            hrtResetDevice(deviceLogicId_);
-        }
+        hrtResetDevice(deviceLogicId_);
         return;
     }
     auto CREATE_LINK_TIMEOUT = std::chrono::seconds(GetExternalInputHcclLinkTimeOut());
@@ -374,9 +372,7 @@ void ClusterMonitor::CreateLinkWithRemotePonit(
             GetUID(myRankUid_).c_str(), GetUID(rem).c_str());
         break;
     }
-    if (deviceLogicId_ != static_cast<u32>(HOST_DEVICE_ID)) {
-        hrtResetDevice(deviceLogicId_);
-    }
+    hrtResetDevice(deviceLogicId_);
 
     HCCL_INFO("[%s] Thread [%s] end...", __func__, threadName.c_str());
     return;
