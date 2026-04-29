@@ -1,0 +1,362 @@
+# -----------------------------------------------------------------------------------------------------------
+# Copyright (c) 2026 Huawei Technologies Co., Ltd.
+# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+# CANN Open Software License Agreement Version 2.0 (the "License").
+# Please refer to the License for details. You may not use this file except in compliance with the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+# See LICENSE in the root of the software repository for the full text of the License.
+# -----------------------------------------------------------------------------------------------------------
+message(STATUS "ccl_kernel_plf KERNEL_MODE=${KERNEL_MODE}")
+message(STATUS "ccl_kernel_plf BUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}")
+message(STATUS "ccl_kernel_plf ASCEND_CANN_PACKAGE_PATH=${ASCEND_CANN_PACKAGE_PATH}")
+
+# 创建 ccl_kernel_plf共享库
+add_library(ccl_kernel_plf  SHARED)
+# 创建 ccl_kernel_plf_a静态库
+add_library(ccl_kernel_plf_a  STATIC)
+
+# 指定ccl_kernel_plf所需包含文件搜索路径
+if(BUILD_OPEN_PROJECT)
+    target_compile_definitions(ccl_kernel_plf PRIVATE
+        OPEN_BUILD_PROJECT)
+
+    target_compile_definitions(ccl_kernel_plf_a PRIVATE
+        OPEN_BUILD_PROJECT)
+
+    target_include_directories(ccl_kernel_plf PRIVATE
+        ${HCCL_BASE_DIR}/../include
+        ${HCCL_BASE_DIR}/../include/hccl
+        ${HCCL_BASE_DIR}/../pkg_inc
+        ${HCCL_BASE_DIR}/../pkg_inc/hccl
+        ${HCCL_BASE_DIR}/pub_inc
+        ${HCCL_BASE_DIR}/platform/hccp/inc
+        ${HCCL_BASE_DIR}/platform/hccp/inc/network
+        ${RDMA_CORE_INCLUDE_DIR}
+
+        # runtime头文件
+        ${ASCEND_CANN_PACKAGE_PATH}/include/
+
+        # mmpa头文件
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/mmpa/
+
+        # 包间接口
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/common/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
+
+        # driver头文件
+        ${ASCEND_CANN_PACKAGE_PATH}/include/driver
+
+        # 临时依赖头文件，待删除
+        ${HCCL_BASE_DIR}/../externel_depends/tsch/
+        ${RDMA_CORE_INCLUDE_DIR}
+
+        ${THIRD_PARTY_NLOHMANN_PATH}
+    )
+
+    target_include_directories(ccl_kernel_plf_a PRIVATE
+        ${HCCL_BASE_DIR}/../include
+        ${HCCL_BASE_DIR}/../include/hccl
+        ${HCCL_BASE_DIR}/../pkg_inc
+        ${HCCL_BASE_DIR}/../pkg_inc/hccl
+        ${HCCL_BASE_DIR}/pub_inc
+        ${HCCL_BASE_DIR}/platform/hccp/inc
+        ${HCCL_BASE_DIR}/platform/hccp/inc/network
+        ${RDMA_CORE_INCLUDE_DIR}
+
+        # runtime头文件
+        ${ASCEND_CANN_PACKAGE_PATH}/include/
+
+        # mmpa头文件
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/mmpa/
+
+        # driver头文件
+        ${ASCEND_CANN_PACKAGE_PATH}/include/driver
+
+        # 包间接口
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/common/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
+
+        # 临时依赖头文件，待删除
+        ${HCCL_BASE_DIR}/../externel_depends/tsch/
+        ${RDMA_CORE_INCLUDE_DIR}
+
+        ${THIRD_PARTY_NLOHMANN_PATH}
+    )
+
+    target_link_directories(ccl_kernel_plf PRIVATE
+        ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
+    )
+
+    target_link_directories(ccl_kernel_plf_a PRIVATE
+        ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
+    )
+else()
+    target_include_directories(ccl_kernel_plf PRIVATE
+        ${TOP_DIR}/inc
+        ${TOP_DIR}/inc/aicpu/tsd
+        ${TOP_DIR}/inc/driver
+        ${TOP_DIR}/runtime/include/external
+        ${TOP_DIR}/runtime/include/external/acl
+ 	    ${TOP_DIR}/runtime/include/driver
+ 	    ${TOP_DIR}/runtime/pkg_inc
+ 	    ${TOP_DIR}/runtime/pkg_inc/runtime
+ 	    ${TOP_DIR}/runtime/pkg_inc/profiling
+ 	    ${TOP_DIR}/runtime/pkg_inc/trace
+ 	    ${TOP_DIR}/runtime/pkg_inc/base
+ 	    ${TOP_DIR}/runtime/pkg_inc/aicpu_sched
+ 	    ${TOP_DIR}/runtime/src/runtime/platform/inc
+        ${TOP_DIR}/inc/external
+        ${TOP_DIR}/inc/aicpu/
+        ${TOP_DIR}/inc/aicpu/aicpu_schedule/aicpu_sharder
+        ${TOP_DIR}/abl/atrace/inc/utrace
+        ${TOP_DIR}/abl/msprof/inc
+        ${TOP_DIR}/runtime/src/dfx/adump/inc/adump
+        ${TOP_DIR}/inc/aicpu/common
+        ${TOP_DIR}/ace/csruntime/inc/tsch
+        ${TOP_DIR}/metadef
+        ${TOP_DIR}/metadef/inc
+        ${TOP_DIR}/metadef/pkg_inc
+        ${TOP_DIR}/metadef/inc/common
+        ${TOP_DIR}/metadef/inc/external
+    
+        ${TOP_DIR}/open_source/json/include
+        ${TOP_DIR}/hcomm/pkg_inc
+ 	    ${TOP_DIR}/hcomm/pkg_inc/hccl
+        ${TOP_DIR}/hcomm/src/
+        ${TOP_DIR}/hcomm/src/include/hccl/                      # ${ASCEND_CANN_PACKAGE_PATH}/include
+        ${TOP_DIR}/hcomm/src/platform
+        ${TOP_DIR}/hcomm/src/platform/hccp/inc
+        ${TOP_DIR}/hcomm/src/platform/hccp/inc/network
+
+        ${TOP_DIR}/hcomm-legacy/src/platform/legacy/inc
+    )
+
+    target_include_directories(ccl_kernel_plf_a PRIVATE
+        ${TOP_DIR}/inc
+        ${TOP_DIR}/inc/aicpu/tsd
+        ${TOP_DIR}/inc/driver
+        ${TOP_DIR}/runtime/include/external
+        ${TOP_DIR}/runtime/include/external/acl
+ 	    ${TOP_DIR}/runtime/include/driver
+ 	    ${TOP_DIR}/runtime/pkg_inc
+ 	    ${TOP_DIR}/runtime/pkg_inc/runtime
+ 	    ${TOP_DIR}/runtime/pkg_inc/profiling
+ 	    ${TOP_DIR}/runtime/pkg_inc/trace
+ 	    ${TOP_DIR}/runtime/pkg_inc/base
+ 	    ${TOP_DIR}/runtime/pkg_inc/aicpu_sched
+ 	    ${TOP_DIR}/runtime/src/runtime/platform/inc
+        ${TOP_DIR}/inc/external
+        ${TOP_DIR}/inc/aicpu/
+        ${TOP_DIR}/inc/aicpu/aicpu_schedule/aicpu_sharder
+        ${TOP_DIR}/abl/qos/qosmng
+        ${TOP_DIR}/abl/atrace/inc/utrace
+        ${TOP_DIR}/abl/msprof/inc
+        ${TOP_DIR}/inc/aicpu/common
+        ${TOP_DIR}/ace/csruntime/inc/tsch
+        ${TOP_DIR}/metadef
+        ${TOP_DIR}/metadef/inc
+        ${TOP_DIR}/metadef/pkg_inc
+        ${TOP_DIR}/metadef/inc/common
+        ${TOP_DIR}/metadef/inc/external
+
+        ${TOP_DIR}/open_source/json/include
+        ${TOP_DIR}/hcomm/pkg_inc
+ 	    ${TOP_DIR}/hcomm/pkg_inc/hccl
+        ${TOP_DIR}/hcomm/src/
+        ${TOP_DIR}/hcomm/src/include/hccl/                       # ${ASCEND_CANN_PACKAGE_PATH}/include
+        ${TOP_DIR}/hcomm/src/platform
+        ${TOP_DIR}/hcomm/src/platform/hccp/inc
+        ${TOP_DIR}/hcomm/src/platform/hccp/inc/network
+
+        ${TOP_DIR}/hcomm-legacy/src/platform/legacy/inc
+    )
+endif()
+
+add_dependencies(ccl_kernel_plf json)
+add_dependencies(hccd json)
+if(BUILD_OPEN_PROJECT)
+    add_dependencies(ccl_kernel_plf hccl_legacy)
+    add_dependencies(hccd hccl_legacy)
+endif()
+
+target_compile_definitions(ccl_kernel_plf PRIVATE
+    $<$<STREQUAL:${PRODUCT_SIDE},host>:_GLIBCXX_USE_CXX11_ABI=0>
+)
+
+target_compile_definitions(ccl_kernel_plf_a PRIVATE
+    $<$<STREQUAL:${PRODUCT_SIDE},host>:_GLIBCXX_USE_CXX11_ABI=0>
+)
+
+# 设置ccl_kernel_plf 包含文件列表
+set(ccl_kernel_plf_include_list
+    ${include_list}
+    ${HCCL_BASE_DIR}/hccl/hccl_comm/wrapper/notify/
+    ${HCCL_BASE_DIR}/common/debug/profiling/inc/aicpu
+    ${HCCL_BASE_DIR}/framework/common/src/aicpu
+)
+
+# 指定ccl_kernel_plf所需头文件搜索路径
+target_include_directories(ccl_kernel_plf PRIVATE
+    ${ccl_kernel_plf_include_list}
+)
+# 指定ccl_kernel_plf_a所需头文件搜索路径
+target_include_directories(ccl_kernel_plf_a PRIVATE
+    ${ccl_kernel_plf_include_list}
+)
+
+# 给ccl_kernel_plf添加编译选项
+target_compile_options(ccl_kernel_plf PRIVATE
+    -Werror
+    -Wall
+    -fno-common
+    -fno-strict-aliasing
+    -pipe
+    -O3
+    -std=c++14
+    -D_FORTIFY_SOURCE=2 -O2
+    -fstack-protector-all
+)
+
+# 给ccl_kernel_plf_a添加编译选项
+target_compile_options(ccl_kernel_plf_a PRIVATE
+    -Werror
+    -Wall
+    -fno-common
+    -fno-strict-aliasing
+    -pipe
+    -O3
+    -std=c++14
+    -ftrapv
+    -D_FORTIFY_SOURCE=2 -O2
+    -fPIC
+    -fstack-protector-all
+)
+# 为ccl_kernel_plf添加编译定义
+target_compile_definitions(ccl_kernel_plf PRIVATE
+    HCCD
+    CCL_KERNEL
+    CCL_KERNEL_AICPU
+    USE_AICORE_REDUCESUM
+    USE_AICORE_GATHERV2
+    USE_AICORE_GATHERV2_INFER
+)
+# 为ccl_kernel_plf_a添加编译定义
+target_compile_definitions(ccl_kernel_plf_a PRIVATE
+    HCCD
+    CCL_KERNEL
+    CCL_KERNEL_AICPU
+    USE_AICORE_REDUCESUM
+    USE_AICORE_GATHERV2
+    USE_AICORE_GATHERV2_INFER
+)
+# 向ccl_kernel_plf添加链接器选项
+target_link_options(ccl_kernel_plf PRIVATE
+    -Wl,-z,relro,-z,now,-z,noexecstack
+    -Wl,-Bsymbolic
+    -Wl,--exclude-libs,ALL
+    -s
+)
+# 向ccl_kernel_plf_a添加链接器选项
+target_link_options(ccl_kernel_plf_a PRIVATE
+    -Wl,-z,relro,-z,now,-z,noexecstack
+    -Wl,-Bsymbolic
+    -Wl,--exclude-libs,ALL
+)
+
+# 将库文件链接到目标ccl_kernel_plf  ccl_kernel_plf_a
+if(BUILD_OPEN_PROJECT)
+    target_link_libraries(ccl_kernel_plf
+        -Wl,--no-as-needed
+        c_sec
+        aicpu_sharder
+        mmpa
+        -Wl,--as-needed
+        -lrt
+        -ldl
+        -lpthread
+    )
+
+    target_link_libraries(ccl_kernel_plf_a
+        -Wl,--no-as-needed
+        c_sec
+        aicpu_sharder
+        mmpa
+        -Wl,--as-needed
+        -lrt
+        -ldl
+        -lpthread
+    )
+else()
+    target_link_libraries(ccl_kernel_plf
+        $<BUILD_INTERFACE:intf_pub_cxx14>
+        $<BUILD_INTERFACE:mmpa_headers>
+        $<BUILD_INTERFACE:msprof_headers>
+        $<BUILD_INTERFACE:slog_headers>
+        $<BUILD_INTERFACE:hccl_headers>
+        $<BUILD_INTERFACE:npu_runtime_headers>
+        $<BUILD_INTERFACE:atrace_headers>
+        $<BUILD_INTERFACE:kernel_tiling_headers>
+        -Wl,--no-as-needed
+        c_sec
+        aicpu_sharder
+        mmpa
+        -Wl,--as-needed
+        -lrt
+        -ldl
+        -lpthread
+        ofed_headers
+    )
+
+    target_link_libraries(ccl_kernel_plf_a PRIVATE
+        $<BUILD_INTERFACE:intf_pub_cxx14>
+        $<BUILD_INTERFACE:mmpa_headers>
+        $<BUILD_INTERFACE:msprof_headers>
+        $<BUILD_INTERFACE:slog_headers>
+        $<BUILD_INTERFACE:hccl_headers>
+        $<BUILD_INTERFACE:npu_runtime_headers>
+        $<BUILD_INTERFACE:atrace_headers>
+        $<BUILD_INTERFACE:kernel_tiling_headers>
+        -Wl,--no-as-needed
+        c_sec
+        aicpu_sharder
+        mmpa
+        -Wl,--as-needed
+        -lrt
+        -ldl
+        -lpthread
+        ofed_headers
+    )
+endif()
+
+# 指定ccl_kernel_plf构建完成后安装到指定的目标位置
+if(NOT BUILD_OPEN_PROJECT)
+    install(TARGETS  ccl_kernel_plf
+        LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
+        COMPONENT hcomm
+    )
+endif()
+# 设置ccl_kernel_plf_a输出文件的名字
+set_target_properties(ccl_kernel_plf_a
+    PROPERTIES
+    OUTPUT_NAME ccl_kernel_plf
+)
+# 指定ccl_kernel_plf_a构建完成后安装到指定的目标位置
+if(NOT BUILD_OPEN_PROJECT)
+    install(TARGETS  ccl_kernel_plf_a
+        ARCHIVE DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
+        COMPONENT hcomm
+    )
+endif()  
