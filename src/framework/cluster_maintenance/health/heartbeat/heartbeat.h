@@ -26,6 +26,8 @@
 #include "transport_pub.h"
 #include "topoinfo_struct.h"
 #include "comm_config_pub.h"
+#include "hcomm_adapter_hccp.h"
+
 namespace hccl {
 using RankId = u32;
 constexpr u32 BROADCAST_INTERVAL = 50; // 背景线程执行周期为50 ms
@@ -337,6 +339,8 @@ private:
     void AddInconsistentOpRecord(const std::string &identifier, const OpInfoDesc &localOpInfo, InconsistentType status,
         const std::string &localInfo, const std::string &remoteInfo);
     void CheckSnapshotStatus();
+    void PrintUbAsyncEventsContext(const struct AsyncEvent &event);
+    void ProcessUbAsyncEvents();
     struct Status {
         HeartBeatStatus status = HeartBeatStatus::HEARTBEAT_OK;
         UIDType informer;
@@ -407,6 +411,8 @@ private:
     std::mutex srTagMutex_;
     std::map<std::string, std::string> srTagMap_;//SR算子tag->identifier映射
     bool isPaused_ { false }; // heartbeat need to be paused when snapshot
+    CtxHandle ctxHandle_ {nullptr};
+    bool isProcessUbAsyncEvents_ { false };
 };
 } // namespace hccl
 
