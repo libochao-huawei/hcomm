@@ -142,6 +142,16 @@ HcclResult Heartbeat::Init(const RankInfo &locRank, const bool useSuperPodMode, 
     nicDeploy_ = locRank.nicDeploy;
     s32 hcclExecTimeOut = CommConfiger::GetInstance().GetCommConfigExecTimeOut(group);
     stuckDetectTime_ = std::max(hcclExecTimeOut / HCCL_STUCK_DETECT_TIME_BASE, HCCL_STUCK_DETECT_TIME_MIN);
+
+    int32_t devLogicId{0};    
+    uint32_t devPhyId{0};
+    Hccl::IpAddress ipAddr{};
+    devLogicId = HcclGetThreadDeviceId();
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(devLogicId), devPhyId));
+    auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
+    ctxHandle_ = rdmaHandleMgr.GetByIp(devPhyId, ipAddr);
+    // CHK_PTR_NULL(ctxHandle_);
+
     startSendRecvTask_ = true;
     sendRecvThread_.reset(new (std::nothrow) std::thread(&Heartbeat::HeartbeatStatusMonitor, this));
     CHK_SMART_PTR_NULL(sendRecvThread_);
@@ -2058,6 +2068,55 @@ void Heartbeat::CheckSnapshotStatus()
         isPaused_ = true;
         HCCL_RUN_INFO("[Heartbeat][CheckSnapshotStatus] detect snapshot pre-processing, heart is paused, "
             "deviceLogicId[%u].", deviceLogicId_);
+    }
+}
+
+void Heartbeat::PrintUbAsyncEventsContext(const struct AsyncEvent &event)
+{
+    unsigned int contextLine = 6;
+    unsigned int bytesPreLine = 4;
+    unsigned int bytesIndex = 0;
+    // CHK_PRT_CONT(contextLine * bytesPreLine > CONTEXT_MAX_LEN,
+    //     HCCL_ERROR("[Heartbeat][ProcessUbAsyncEvents] context data length exceeds maximum allowed size"));
+
+    HCCL_INFO("*************udma2 udma create active tp msg info(%u) CONTEXT INFO *************"); // 日志级别??
+    for (unsigned int i = 0; i < contextLine; ++i) {
+        uint32_t data = (static_cast<uint32_t>(event.context[bytesIndex + 3]) << 24)
+                        | (static_cast<uint32_t>(event.context[bytesIndex + 2]) << 16)
+                        | (static_cast<uint32_t>(event.context[bytesIndex + 1]) << 8)
+                        | (static_cast<uint32_t>(event.context[bytesIndex]));
+        bytesIndex += bytesPreLine;
+        HCCL_INFO("udma2 udma create active tp msg info(%u) CONTEXT[byte  %-u]: %08x", 100, bytesIndex, data); //数据格式不明确？？？
+    }
+    HCCL_INFO("**************************");
+}
+
+void Heartbeat::ProcessUbAsyncEvents()
+{
+    if (!isProcessUbAsyncEvents_) {
+        return;
+    }
+
+    // 版本校验?? 
+    if(0)
+    {
+        isProcessUbAsyncEvents_ = false;
+    }
+
+    unsigned int num = 0;
+    auto events = std::unique_ptr<struct AsyncEvent[]>(new (std::nothrow) struct AsyncEvent[ASYNC_EVENT_MAX_NUM]);
+    CHK_SMART_PTR_RET_NULL(events);
+
+    int ret = RaCtxGetAsyncEvents(ctxHandle_, events.get(), &num);
+    if (ret != 0) {
+        // RaCtxGetAsyncEvents返回有错误不打印?? 刷屏现象
+        return;
+    }
+
+    for (unsigned int i = 0; i < num; ++i) {
+        const auto &event = events[i];
+        PrintUbAsyncEventsContext(event);
+        isProcessUbAsyncEvents_ = false;
     }
 }
 

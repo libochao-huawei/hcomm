@@ -337,6 +337,8 @@ private:
     void AddInconsistentOpRecord(const std::string &identifier, const OpInfoDesc &localOpInfo, InconsistentType status,
         const std::string &localInfo, const std::string &remoteInfo);
     void CheckSnapshotStatus();
+    void PrintUbAsyncEventsContext(const struct AsyncEvent &event);
+    void ProcessUbAsyncEvents();
     struct Status {
         HeartBeatStatus status = HeartBeatStatus::HEARTBEAT_OK;
         UIDType informer;
@@ -407,6 +409,8 @@ private:
     std::mutex srTagMutex_;
     std::map<std::string, std::string> srTagMap_;//SR算子tag->identifier映射
     bool isPaused_ { false }; // heartbeat need to be paused when snapshot
+    CtxHandle ctxHandle_{nullptr};
+    bool isProcessUbAsyncEvents_ { true };
 };
 } // namespace hccl
 
