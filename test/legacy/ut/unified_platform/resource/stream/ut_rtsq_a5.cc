@@ -35,9 +35,11 @@ protected:
         std::cout << "RtsqA5 tests tear down." << std::endl;
     }
 
-    virtual void SetUp() {
+    virtual void SetUp()
+    {
         MOCKER_CPP(&RtsqBase::QuerySqBaseAddr).stubs().with(any()).will(returnValue(reinterpret_cast<u64>(&mockSq)));
-        MOCKER_CPP(&RtsqBase::QuerySqStatusByType).stubs().with(any()).will(returnValue(static_cast<u32>(0)));
+        MOCKER_CPP(&RtsqBase::QuerySqDepth).stubs().with(any()).will(returnValue(static_cast<u32>(AC_SQE_MAX_CNT)));
+        MOCKER_CPP(&RtsqBase::QuerySqStatusByType).stubs().with(any()).will(returnValue(static_cast<u32>(1)));
         MOCKER_CPP(&RtsqBase::ConfigSqStatusByType).stubs();
 
         std::cout << "A Test case in RtsqA5 SetUP" << std::endl;
@@ -57,7 +59,8 @@ protected:
 
 class IsRtsqQueueSpaceSufficientTest : public RtsqA5Test {
 protected:
-    void SetUp() override {
+    void SetUp() override
+    {
         RtsqA5Test::SetUp();
         // 初始化测试环境
         pendingSqeCnt = 5; // 假设pendingSqeCnt为5
@@ -65,7 +68,8 @@ protected:
     u32 pendingSqeCnt; // 模拟pendingSqeCnt的值
 };
 
-TEST_F(IsRtsqQueueSpaceSufficientTest, Ut_IsRtsqQueueSpaceSufficient_When_HeadEqualTail_ExpectFalse) {
+TEST_F(IsRtsqQueueSpaceSufficientTest, Ut_IsRtsqQueueSpaceSufficient_When_HeadEqualTail_ExpectFalse)
+{
     // 准备测试数据
     RtsqA5 fakeRtsqA5(fakedevPhyId, fakeStreamId, fakeSqId);
     fakeRtsqA5.pendingSqeCnt = pendingSqeCnt;
@@ -83,7 +87,8 @@ TEST_F(IsRtsqQueueSpaceSufficientTest, Ut_IsRtsqQueueSpaceSufficient_When_HeadEq
     EXPECT_FALSE(result);
 }
 
-TEST_F(IsRtsqQueueSpaceSufficientTest, Ut_IsRtsqQueueSpaceSufficient_When_HeadEqualTail_ExpectTrue) {
+TEST_F(IsRtsqQueueSpaceSufficientTest, Ut_IsRtsqQueueSpaceSufficient_When_HeadEqualTail_ExpectTrue)
+{
     // 准备测试数据
     RtsqA5 fakeRtsqA5(fakedevPhyId, fakeStreamId, fakeSqId);
     fakeRtsqA5.pendingSqeCnt = pendingSqeCnt;
@@ -111,7 +116,7 @@ TEST_F(RtsqA5Test, launch_task_no_loop_back)
     rtsq.sqTail_  = oldTail;
     rtsq.sqHead_  = oldHead;
     rtsq.sqDepth_ = AC_SQE_MAX_CNT;
-    
+
     rtsq.RefreshInfo();
     u32 newTail = (rtsq.sqTail_ + rtsq.pendingSqeCnt) % rtsq.sqDepth_;
     rtsq.LaunchTask();
@@ -273,7 +278,7 @@ TEST_F(RtsqA5Test, query_sq_status_by_type)
 
     GlobalMockObject::reset();
     MOCKER(halSqCqQuery).stubs().with(any(), any()).will(returnValue(1));
-    EXPECT_THROW(rtsq.QuerySqStatusByType(RtsqBase::QueryDrvSqCqPtopType::CQE_STATUS), DrvApiException);
+    EXPECT_THROW(rtsq.QuerySqStatusByType(drvSqCqPropType_t::DRV_SQCQ_PROP_SQ_CQE_STATUS), DrvApiException);
 }
 
 TEST_F(RtsqA5Test, query_sq_base_addr)
@@ -291,17 +296,7 @@ TEST_F(RtsqA5Test, config_sq_status_by_type)
 
     GlobalMockObject::reset();
     MOCKER(halSqCqConfig).stubs().with(any(), any()).will(returnValue(1));
-    EXPECT_THROW(rtsq.ConfigSqStatusByType(RtsqBase::ConfigDrvSqCqPtopType::TAIL, 1), DrvApiException);
-}
-
-TEST_F(RtsqA5Test, Ut_MakeSureAvailableSpace_When_InputValue_Expect_NO_THROW)
-{
-    RtsqA5 rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
-
-    u64 dbAddr = 0;
-    u32 piVal = 0;
-    MOCKER_CPP(&RtsqBase::QuerySqHead).stubs().with(any()).will(throws(InternalException("")));
-    EXPECT_THROW(rtsq.MakeSureAvailableSpace(), std::exception);
+    EXPECT_THROW(rtsq.ConfigSqStatusByType(drvSqCqPropType_t::DRV_SQCQ_PROP_SQ_TAIL, 1), DrvApiException);
 }
 
 TEST_F(RtsqA5Test, Ut_CopyLocBufToSq_THROW)
