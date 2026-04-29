@@ -67,6 +67,13 @@ target_include_directories(hccl_v2 PRIVATE
     ${HCCL_BASE_DIR}/pkg_inc
     #${HCCL_BASE_DIR}/pkg_inc/hccl/
     ${HCCL_BASE_DIR}/src/algorithm/pub_inc
+    ${HCCL_BASE_DIR}/src/legacy/common
+    ${HCCL_BASE_DIR}/src/legacy/common/types
+    ${HCCL_BASE_DIR}/src/legacy/common/utils
+    ${HCCL_BASE_DIR}/src/legacy/common/exception
+    ${HCCL_BASE_DIR}/src/legacy/framework/dfx/profiling
+    ${HCCL_BASE_DIR}/src/legacy/unified_platform/external_system
+    ${HCCL_BASE_DIR}/src/legacy/unified_platform/pub_inc
     ${HCCL_BASE_DIR}/src/algorithm/base/alg_template
     ${HCCL_BASE_DIR}/src/algorithm/base/communicator
     ${HCCL_BASE_DIR}/src/platform/hccp/inc/network
@@ -149,6 +156,13 @@ target_include_directories(ccl_dpu PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
     ${HCCL_V2_CODE_ROOT}/common/
+    ${HCCL_BASE_DIR}/src/legacy/common
+    ${HCCL_BASE_DIR}/src/legacy/common/types
+    ${HCCL_BASE_DIR}/src/legacy/common/utils
+    ${HCCL_BASE_DIR}/src/legacy/common/exception
+    ${HCCL_BASE_DIR}/src/legacy/framework/dfx/profiling
+    ${HCCL_BASE_DIR}/src/legacy/unified_platform/external_system
+    ${HCCL_BASE_DIR}/src/legacy/unified_platform/pub_inc
 )
 # 指定 ccl_dpu 的构建依赖关系
 add_dependencies(hccl_v2 ccl_dpu)
