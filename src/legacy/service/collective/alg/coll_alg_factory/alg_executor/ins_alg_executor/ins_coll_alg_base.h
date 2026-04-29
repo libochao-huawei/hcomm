@@ -55,7 +55,7 @@ public:
     void SetSendRecvRemoteRank(RankId sendRecvRemoteRank);
     virtual void SetOp(const CollAlgOperator &op);
 
-    // data Allign
+    // data Align
     void SetAllignSize(u64 allignSize);
     void EnableDataAllign(bool enableAllign);
 
@@ -132,7 +132,7 @@ protected:
     u64 dataSize_ = 0;
     u64 dataTypeSize_ = 0;
 
-    // data allignment
+    // data alignment
     bool enableAllign_ = false;
     u64 allignSize_ = 0;
 

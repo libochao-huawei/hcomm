@@ -14,11 +14,29 @@
 #include "stream_lite.h"
 #include "task_info.h"
 #include "aicpu_launch_manager.h"
+#include "adapter_rts_common.h"
 using namespace std;
 
 namespace hccl {
+
+struct DeviceThreadKey {
+    int32_t deviceId;
+    ThreadHandle handle;
+
+    bool operator==(const DeviceThreadKey& other) const {
+        return deviceId == other.deviceId && handle == other.handle;
+    }
+};
+
+struct DeviceThreadKeyHash {
+    std::size_t operator()(const DeviceThreadKey& key) const {
+        return std::hash<int32_t>()(key.deviceId) ^
+               (std::hash<ThreadHandle>()(key.handle) << 1);
+    }
+};
+
 static unordered_map<ThreadHandle, shared_ptr<Thread>> g_ThreadMap;
-static unordered_map<ThreadHandle, ThreadHandle> g_ThreadD2HMap;
+static unordered_map<DeviceThreadKey, ThreadHandle, DeviceThreadKeyHash> g_ThreadD2HMap;
 static mutex g_ThreadMapMtx;
 
 HcclResult CreateThread(CommEngine engine, StreamType streamType,
@@ -110,6 +128,9 @@ HcclResult ValidateThreadParams(uint32_t threadNum, uint32_t notifyNumPerThread)
 }
 
 HcclResult SaveThreads(const vector<shared_ptr<Thread>> &newThreads) {
+    int32_t deviceId = 0;
+    CHK_RET(hrtGetDevice(&deviceId));
+
     lock_guard<mutex> lock(g_ThreadMapMtx);
     for (const auto &threadPtr : newThreads) {
         ThreadHandle handle = reinterpret_cast<ThreadHandle>(threadPtr.get());
@@ -118,13 +139,14 @@ HcclResult SaveThreads(const vector<shared_ptr<Thread>> &newThreads) {
             HCCL_ERROR("[%s] thread handle already exists [0x%llx] in ThreadMap", __func__, handle);
             return HCCL_E_INTERNAL;
         }
-        if (g_ThreadD2HMap.find(handle) != g_ThreadD2HMap.end()) {
-            HCCL_ERROR("[%s] thread handle already exists [0x%llx] in g_ThreadD2HMap", __func__, handle);
+        DeviceThreadKey key{deviceId, handle};
+        if (g_ThreadD2HMap.find(key) != g_ThreadD2HMap.end()) {
+            HCCL_ERROR("[%s] thread handle already exists [0x%llx] in g_ThreadD2HMap, deviceId[%d]", __func__, handle, deviceId);
             return HCCL_E_INTERNAL;
         }
 
         g_ThreadMap.emplace(handle, threadPtr);
-        g_ThreadD2HMap.emplace(handle, handle);
+        g_ThreadD2HMap.emplace(key, handle);
     }
     return HCCL_SUCCESS;
 }
@@ -164,15 +186,17 @@ HcclResult CreateAndInitThreads(const ThreadCreateParams& params,
 HcclResult FillThreadD2HMap(ThreadHandle *deviceThreadHandles,
     ThreadHandle *hostThreadHandles, uint32_t listNum)
 {
+    int32_t deviceId = 0;
+    CHK_RET(hrtGetDevice(&deviceId));
+
     lock_guard<mutex> lock(g_ThreadMapMtx);
     for (uint32_t idx = 0; idx < listNum; idx++) {
         auto deviceThreadHandle = deviceThreadHandles[idx];
         auto hostThreadHandle = hostThreadHandles[idx];
-        HCCL_INFO("%s deviceThreadHandle[0x%llx], hostThreadHandle[0x%llx]",
-            __func__,
-            deviceThreadHandle,
-            hostThreadHandle);
-        g_ThreadD2HMap.emplace(deviceThreadHandle, hostThreadHandle);
+        HCCL_INFO("%s deviceId[%d], deviceThreadHandle[0x%llx], hostThreadHandle[0x%llx]",
+            __func__, deviceId, deviceThreadHandle, hostThreadHandle);
+        DeviceThreadKey key{deviceId, deviceThreadHandle};
+        g_ThreadD2HMap.emplace(key, hostThreadHandle);
     }
 
     return HCCL_SUCCESS;
@@ -216,39 +240,38 @@ HcclResult StoreThreadHandles(vector<shared_ptr<Thread>>& newThreads,
 static HcclResult FreeThreadHandlesLocked(const ThreadHandle *threads, uint32_t threadNum, 
     vector<ThreadHandle>& deviceHandles)
 {
+    int32_t deviceId = 0;
+    CHK_RET(hrtGetDevice(&deviceId));
+
     lock_guard<mutex> lock(g_ThreadMapMtx);
     for (uint32_t i = 0; i < threadNum; ++i) {
         const ThreadHandle inHandle = threads[i];
 
-        // 1) 先做 D2H 映射（统一销毁入口 handle）
-        auto itH = g_ThreadD2HMap.find(inHandle);
+        DeviceThreadKey key{deviceId, inHandle};
+        auto itH = g_ThreadD2HMap.find(key);
         if (itH == g_ThreadD2HMap.end()) {
             HCCL_ERROR(
-                "[%s] failed to find handle mapping in g_ThreadD2HMap, inHandle[0x%llx].", __func__, inHandle);
+                "[%s] failed to find handle mapping in g_ThreadD2HMap, deviceId[%d], inHandle[0x%llx].", __func__, deviceId, inHandle);
             return HcclResult::HCCL_E_NOT_FOUND;
         }
         const ThreadHandle mappedHandle = itH->second;
 
-        // 2) 从 ThreadMap 查找对应的thread对象
         auto itC = g_ThreadMap.find(mappedHandle);
         if (itC == g_ThreadMap.end()) {
-            HCCL_ERROR("[%s] failed to find thread in g_ThreadMap, inHandle[0x%llx], mappedHandle[0x%llx].",
-                __func__, inHandle, mappedHandle);
+            HCCL_ERROR("[%s] failed to find thread in g_ThreadMap, deviceId[%d], inHandle[0x%llx], mappedHandle[0x%llx].",
+                __func__, deviceId, inHandle, mappedHandle);
             return HcclResult::HCCL_E_NOT_FOUND;
         }
         if (inHandle != mappedHandle) {
-            // handle不相等表示inhandle为deviceHandle
             deviceHandles.push_back(inHandle); 
         }
 
-        // 3) 先 erase ThreadMap（unique_ptr 释放对象）
-        HCCL_INFO("[%s] erase thread: inHandle[0x%llx], mappedHandle[0x%llx], ptr[%p]",
-            __func__, inHandle, mappedHandle, itC->second.get());
+        HCCL_INFO("[%s] erase thread: deviceId[%d], inHandle[0x%llx], mappedHandle[0x%llx], ptr[%p]",
+            __func__, deviceId, inHandle, mappedHandle, itC->second.get());
         g_ThreadMap.erase(itC);
 
-        // 4) 清理 D2HMap 中所有指向 mappedHandle 的映射，避免残留导致后续查到“已销毁”
         for (auto it = g_ThreadD2HMap.begin(); it != g_ThreadD2HMap.end();) {
-            if (it->second == mappedHandle) {
+            if (it->second == mappedHandle && it->first.deviceId == deviceId) {
                 it = g_ThreadD2HMap.erase(it);
             } else {
                 ++it;

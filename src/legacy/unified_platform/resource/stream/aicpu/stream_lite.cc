@@ -13,6 +13,7 @@
 #include "rtsq_a5.h"
 namespace Hccl {
 
+// 这里不进行构造时的特殊处理，因为RtsqA5的构造不会抛出异常，唯一的可能是申请内存失败，此时抛出标准异常
 StreamLite::StreamLite(std::vector<char> &uniqueId)
 {
     BinaryStream binaryStream(uniqueId);
@@ -34,26 +35,6 @@ StreamLite::StreamLite(u32 id, u32 sqIds, u32 phyId, u32 cqIds) : id(id), sqId(s
 StreamLite::StreamLite(u32 id, u32 sqIds, u32 phyId, u32 cqIds, bool launchFlag) : id(id), sqId(sqIds), devPhyId(phyId), cqId(cqIds)
 {
     rtsq = std::make_unique<RtsqA5>(phyId, id, sqIds, launchFlag);
-}
-
-u32 StreamLite::GetId() const
-{
-    return id;
-}
-
-u32 StreamLite::GetSqId() const
-{
-    return sqId;
-}
-
-u32 StreamLite::GetCqId() const
-{
-    return cqId;
-}
-
-u32 StreamLite::GetDevPhyId() const
-{
-    return devPhyId;
 }
 
 RtsqBase *StreamLite::GetRtsq() const

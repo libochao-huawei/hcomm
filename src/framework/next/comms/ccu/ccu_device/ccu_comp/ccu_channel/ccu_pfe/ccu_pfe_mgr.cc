@@ -54,8 +54,8 @@ static HcclResult ConfigPfeTable(const uint32_t devPhyId, const uint8_t dieId, c
     const uint32_t pfeTableOffset = static_cast<uint32_t>(dieId) * pfeReservedNum + feId;
 
     const RaInfo info{NetworkMode::NETWORK_OFFLINE, devPhyId};
-    struct CustomChannelInfoIn  inBuff{};
-    struct CustomChannelInfoOut outBuff{};
+    CustomChannelInfoIn  inBuff{};
+    CustomChannelInfoOut outBuff{};
     inBuff.op                          = CcuOpcodeType::CCU_U_OP_SET_PFE;
     inBuff.data.dataInfo.udieIdx       = static_cast<uint32_t>(dieId);
     inBuff.data.dataInfo.dataArraySize = 1;

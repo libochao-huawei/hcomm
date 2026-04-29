@@ -17,7 +17,6 @@
 #include "rs_ctx_inner.h"
 
 #define WQEBB_NUM_PER_SQE 4ULL
-#define PAGE_4K 0x1000
 #define ALIGN_DOWN(x, a) ((x) & (~((a) - 1)))
 
 void RsUbCtxExtJettyCreate(struct RsCtxJettyCb *jettyCb, urma_jetty_cfg_t *jettyCfg);

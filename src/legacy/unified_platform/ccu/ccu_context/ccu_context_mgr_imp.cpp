@@ -43,9 +43,9 @@ CtxMgrImp::~CtxMgrImp()
 
 CtxMgrImp &CtxMgrImp::GetInstance(s32 deviceLogicId)
 {
-    static CtxMgrImp contextManager[MAX_MODULE_DEVICE_NUM];
+    static CtxMgrImp contextManager[MAX_MODULE_DEVICE_NUM + 1];
 
-    if (deviceLogicId < 0 || static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM) {
+    if (deviceLogicId < 0 || static_cast<u32>(deviceLogicId) > MAX_MODULE_DEVICE_NUM) {
         THROW<CcuApiException>("ProcessSharedResources failed deviceLogicId[%d]", deviceLogicId);
     }
 
@@ -257,7 +257,7 @@ HcclResult CtxMgrImp::GetResPackTotalResNum(const CcuResPack &resPack, CcuResReq
             totalRes.gsaReq[i] += GetResTotalNum(tmpResRepository.gsa[i]);
             totalRes.xnReq[i] += GetResTotalNum(tmpResRepository.xn[i]);
             totalRes.continuousXnReq[i] += GetResTotalNum(tmpResRepository.continuousXn[i]);
-            totalRes.missionReq.missionReq[i] += GetResTotalNum(tmpResRepository.mission.mission[i]);
+            totalRes.missionReq.req[i] += GetResTotalNum(tmpResRepository.mission.mission[i]);
         }
     }
 
@@ -300,9 +300,9 @@ void CtxMgrImp::MergeCcuResReq(CcuResReq &resReqA, const CcuResReq &resReqB) con
         resReqA.gsaReq[i] += resReqB.gsaReq[i];
         resReqA.xnReq[i] += resReqB.xnReq[i];
         resReqA.continuousXnReq[i] += resReqB.continuousXnReq[i];
-        resReqA.missionReq.missionReq[i] += resReqB.missionReq.missionReq[i];
+        resReqA.missionReq.req[i] += resReqB.missionReq.req[i];
 
-        if (resReqB.missionReq.missionReq[i] > 0) {
+        if (resReqB.missionReq.req[i] > 0) {
             resReqA.missionReq.reqType = resReqB.missionReq.reqType;
         }
     }
@@ -326,17 +326,17 @@ HcclResult CtxMgrImp::CompareResAndApplyAsNeeded(const CcuResReq &totalRes, cons
         needResReq.gsaReq[i]             = GetReqResNum(resReq.gsaReq[i], totalRes.gsaReq[i]);
         needResReq.xnReq[i]              = GetReqResNum(resReq.xnReq[i], totalRes.xnReq[i]);
         needResReq.continuousXnReq[i]    = GetReqResNum(resReq.continuousXnReq[i], totalRes.continuousXnReq[i]);
-        needResReq.missionReq.missionReq[i]
-            = GetReqResNum(resReq.missionReq.missionReq[i], totalRes.missionReq.missionReq[i]);
+        needResReq.missionReq.req[i]
+            = GetReqResNum(resReq.missionReq.req[i], totalRes.missionReq.req[i]);
 
-        if (needResReq.missionReq.missionReq[i] > 0) {
+        if (needResReq.missionReq.req[i] > 0) {
             needResReq.missionReq.reqType = resReq.missionReq.reqType;
         }
 
         if (needResReq.msReq[i] != 0 || needResReq.blockMsReq[i] != 0 || needResReq.ckeReq[i] != 0 || needResReq.blockCkeReq[i] != 0
                 || needResReq.loopEngineReq[i] != 0 || needResReq.blockLoopEngineReq[i] != 0 || needResReq.gsaReq[i] != 0
                 || needResReq.xnReq[i] != 0 || needResReq.continuousXnReq[i] != 0
-                || needResReq.missionReq.missionReq[i] != 0) {
+                || needResReq.missionReq.req[i] != 0) {
             isNeedAlloc = true;
         }
     }
@@ -708,13 +708,13 @@ void CtxMgrImp::DumpResReqInfo(const CcuResReq &totalRes) const
         if (totalRes.msReq[i] != 0 || totalRes.blockMsReq[i] != 0 || totalRes.ckeReq[i] != 0 || totalRes.blockCkeReq[i] != 0
                 || totalRes.loopEngineReq[i] != 0 || totalRes.blockLoopEngineReq[i] != 0 || totalRes.gsaReq[i] != 0
                 || totalRes.xnReq[i] != 0 || totalRes.continuousXnReq[i] != 0
-                ||totalRes.missionReq.missionReq[i] != 0) {
+                ||totalRes.missionReq.req[i] != 0) {
             HCCL_INFO("DumpResReqInfo: dieId[%u], msReq[%u], blockMsReq[%u], ckeReq[%u], blockCkeReq[%u], "
                        "loopEngineReq[%u], blockLoopEngineReq[%u], gsaReq[%u], xnReq[%u], continuousXnReq[%u], "
                        "missionReq[%u]",
                        i, totalRes.msReq[i], totalRes.blockMsReq[i], totalRes.ckeReq[i], totalRes.blockCkeReq[i],
                        totalRes.loopEngineReq[i], totalRes.blockLoopEngineReq[i], totalRes.gsaReq[i],
-                       totalRes.xnReq[i], totalRes.continuousXnReq[i], totalRes.missionReq.missionReq[i]);
+                       totalRes.xnReq[i], totalRes.continuousXnReq[i], totalRes.missionReq.req[i]);
         }
     }
 }

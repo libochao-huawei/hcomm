@@ -270,7 +270,7 @@ HcclResult CalcResLinksNHR(const RankId myRank, const u32 tempRankSize,
         u32 deltaRank = nSteps - 1 - currentStep;
         // send info
         sendToRank = tree[(myAlgRank + (1 << deltaRank)) % tempRankSize];
-        // recive Info
+        // receive Info
         recvFromRank = tree[(myAlgRank + tempRankSize - (1 << deltaRank)) % tempRankSize];
         tempResReq.links[sendToRank]   = 1;
         tempResReq.links[recvFromRank] = 1;
