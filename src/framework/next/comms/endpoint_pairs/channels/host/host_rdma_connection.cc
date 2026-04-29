@@ -244,7 +244,7 @@ HcclResult HostRdmaConnection::ModifyQp()
     return HCCL_SUCCESS;
 }
 
-RdmaConnStatus HostRdmaConnection::GetRdmaStatus()
+HostRdmaConnection::RdmaConnStatus HostRdmaConnection::GetRdmaStatus()
 {
     return rdmaConnStatus_;
 }
