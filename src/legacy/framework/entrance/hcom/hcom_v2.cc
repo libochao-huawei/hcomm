@@ -399,7 +399,7 @@ HcclResult HcomGetWorkspaceSubStreamNumV2(const char *group, u64 &streamNum, u64
     HcclOpType hcclOpType = static_cast<HcclOpType::Value>(optype);
     
     if (OP_TYPE_MAP.find(optype) ==  OP_TYPE_MAP.end()) {
-        HCCL_ERROR("[HcomGetWorkspaceSubStreamNumV2], not support opType[%s].", hcclOpType.Describe().c_str());
+        HCCL_ERROR("[HcomGetWorkspaceSubStreamNumV2], does not support opType[%s].", hcclOpType.Describe().c_str());
         return HCCL_E_PARA;
     }
     Hccl::CollOffloadOpResReq resReq{};
@@ -415,7 +415,7 @@ HcclResult HcomGetWorkspaceMemSizeV2(
 {
     HCCL_INFO("[%s] start.", __func__);
     if ((dataType < HCCL_DATA_TYPE_INT8) || (dataType > HCCL_DATA_TYPE_FP8E8M0)) {
-        HCCL_ERROR("[%s] not support data type[%s].", __func__, GetDataTypeEnumStrV2(dataType).c_str());
+        HCCL_ERROR("[%s] does not support data type[%s].", __func__, GetDataTypeEnumStrV2(dataType).c_str());
         return HCCL_E_PARA;
     }
 
@@ -425,7 +425,7 @@ HcclResult HcomGetWorkspaceMemSizeV2(
                 HCCL_E_NOT_FOUND);
  
     if (OP_TYPE_STR.find(opType) ==  OP_TYPE_STR.end()) {
-        HCCL_ERROR("[%s] not support opType[%s].", __func__, opType.c_str());
+        HCCL_ERROR("[%s] does not support opType[%s].", __func__, opType.c_str());
         return HCCL_E_PARA;
     }
     Hccl::CollOffloadOpResReq resReq{};
@@ -768,7 +768,7 @@ HcclResult HcomCalcTaskNumV2(HcomOpParam *hcomOpParam, u32 &taskNum)
     }
 
 	if (OP_TYPE_STR.find(hcomOpParam->opType) ==  OP_TYPE_STR.end()) {
-        HCCL_ERROR("[HcomCalcTaskNumV2], not support opType[%s].", hcomOpParam->opType);
+        HCCL_ERROR("[HcomCalcTaskNumV2], does not support opType[%s].", hcomOpParam->opType);
         return HCCL_E_PARA;
     }
     Hccl::OpType hcclOpType = OP_TYPE_STR.at(hcomOpParam->opType);
@@ -908,7 +908,10 @@ HcclResult HcclCommGraphAllGatherV2(const char *tag, void *inputPtr, void *outpu
     /* 通信域 */  
     Hccl::HcclCommunicator* hcclComm = reinterpret_cast<Hccl::HcclCommunicator*>(opBaseHcom);
     CHK_PTR_NULL(hcclComm);
- 
+
+    /* 入参校验 */
+    CHK_RET(HcomCheckOpParamV2(tag, inputCount, dataType, stream));
+
     /* 入参的正确性由HCCL确保 */
     Hccl::CollOpParams opParams = GetHcclOpParams(inputPtr, outputPtr, inputCount, dataType, Hccl::OpType::ALLGATHER);
     std::string opTag = tag;
@@ -932,7 +935,12 @@ HcclResult HcomGraphAllReduceV2(const char *tag, void *inputPtr, void *outputPtr
     /* 通信域 */  
     Hccl::HcclCommunicator* hcclComm = reinterpret_cast<Hccl::HcclCommunicator*>(opBaseHcom);
     CHK_PTR_NULL(hcclComm);
- 
+
+    /* 入参校验 */
+    CHK_RET(HcomCheckReductionOpV2(op));
+    CHK_RET(HcomCheckReduceDataTypeV2(dataType, op));
+    CHK_RET(HcomCheckOpParamV2(tag, count, dataType, stream));
+
     /* 入参的正确性由HCCL确保 */
     Hccl::CollOpParams opParams = GetHcclOpParams(inputPtr, outputPtr, count, dataType, Hccl::OpType::ALLREDUCE, op);
     std::string opTag = tag;
@@ -956,6 +964,8 @@ HcclResult HcomGraphReduceScatterV2(const char *tag, void *inputPtr, void *outpu
     /* 入参校验 */
     CHK_RET(HcomCheckReductionOpV2(op));
     CHK_RET(HcomCheckReduceDataTypeV2(dataType, op));
+    CHK_RET(HcomCheckOpParamV2(tag, count, dataType, stream));
+
     /* 通信域 */  
     Hccl::HcclCommunicator* hcclComm = reinterpret_cast<Hccl::HcclCommunicator*>(opBaseHcom);
     CHK_PTR_NULL(hcclComm);
@@ -982,7 +992,8 @@ HcclResult HcomGraphReduceV2(const char *tag, void *inputPtr, void *outputPtr, u
     /* 入参校验 */
     CHK_RET(HcomCheckReductionOpV2(op));
     CHK_RET(HcomCheckReduceDataTypeV2(dataType, op));
-    
+    CHK_RET(HcomCheckOpParamV2(tag, count, dataType, stream));
+
     /* 通信域 */
     Hccl::HcclCommunicator* hcclComm = reinterpret_cast<Hccl::HcclCommunicator*>(opBaseHcom);
     CHK_PTR_NULL(hcclComm);
@@ -1014,7 +1025,10 @@ HcclResult HcomGraphSendV2(const char *tag, void *inputPtr, u64 count, HcclDataT
     /* 通信域 */
     Hccl::HcclCommunicator* hcclComm = reinterpret_cast<Hccl::HcclCommunicator*>(opBaseHcom);
     CHK_PTR_NULL(hcclComm);
- 
+
+    /* 入参校验 */
+    CHK_RET(HcomCheckOpParamV2(tag, count, dataType, stream));
+
     /* 入参的正确性由HCCL确保 */
     Hccl::CollOpParams opParams = GetHcclOpParams(inputPtr, nullptr, count, dataType, Hccl::OpType::SEND);
     opParams.dstRank = destRank;
@@ -1038,7 +1052,10 @@ HcclResult HcomGraphReceiveV2(const char *tag, void *outputPtr, u64 count, HcclD
     /* 通信域 */
     Hccl::HcclCommunicator* hcclComm = reinterpret_cast<Hccl::HcclCommunicator*>(opBaseHcom);
     CHK_PTR_NULL(hcclComm);
- 
+
+    /* 入参校验 */
+    CHK_RET(HcomCheckOpParamV2(tag, count, dataType, stream));
+
     /* 入参的正确性由HCCL确保 */
     Hccl::CollOpParams opParams = GetHcclOpParams(nullptr, outputPtr, count, dataType, Hccl::OpType::RECV);
     opParams.dstRank = srcRank;
@@ -1061,7 +1078,10 @@ HcclResult HcomGraphBroadcastV2(const char *tag, void *ptr, u64 count, HcclDataT
     /* 通信域 */
     Hccl::HcclCommunicator* hcclComm = reinterpret_cast<Hccl::HcclCommunicator*>(opBaseHcom);
     CHK_PTR_NULL(hcclComm);
- 
+
+    /* 入参校验 */
+    CHK_RET(HcomCheckOpParamV2(tag, count, dataType, stream));
+
     /* 入参的正确性由HCCL确保 */
     u32 rankSize = INVALID_VALUE_RANKSIZE;
     CHK_RET(hcclComm->GetRankSize(&rankSize));
@@ -1139,7 +1159,7 @@ HcclResult HcomSupportDeterministicOptimV2(const char *group, bool &isDeterminis
             HCCL_ERROR("comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
             HCCL_E_NOT_FOUND);
     isDeterministicOptim = true;
-    HCCL_WARNING("HcomSupportDeterministicOptimV2 is not support at A5! set isDeterministicOptim to true.");
+    HCCL_WARNING("HcomSupportDeterministicOptimV2 does not support at A5! set isDeterministicOptim to true.");
     return HCCL_SUCCESS;
 }
 
@@ -1165,7 +1185,7 @@ HcclResult HcomSetQosCfgV2(const char *group, const u32 qosCfg)
             HCCL_ERROR("comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
             HCCL_E_NOT_FOUND);
     (void)qosCfg;
-    HCCL_WARNING("HcomSetQosCfgV2 is not support at A5!");
+    HCCL_WARNING("HcomSetQosCfgV2 does not support at A5!");
     return HCCL_SUCCESS;
 }
 
@@ -1183,7 +1203,7 @@ HcclResult HcomGraphSelectAlgV2(s64 comm, const char *group, HcclCMDType opType,
 
     HcclOpType hcclOpType = static_cast<HcclOpType::Value>(opType);
     if (OP_TYPE_MAP.find(opType) == OP_TYPE_MAP.end()) {
-        HCCL_ERROR("[HcomGraphSelectAlgV2], not support opType[%s].", hcclOpType.Describe().c_str());
+        HCCL_ERROR("[HcomGraphSelectAlgV2], does not support opType[%s].", hcclOpType.Describe().c_str());
         return HCCL_E_NOT_SUPPORT;
     }
     Hccl::OpType optype = OP_TYPE_MAP.at(opType);
@@ -1204,7 +1224,7 @@ HcclResult HcomSelectAlgV2(s64 comm, const char *group, HcclCMDType opType, u64 
 
     HcclOpType hcclOpType = static_cast<HcclOpType::Value>(opType);
     if (OP_TYPE_MAP.find(opType) == OP_TYPE_MAP.end()) {
-        HCCL_ERROR("[HcomSelectAlgV2], not support opType[%s].", hcclOpType.Describe().c_str());
+        HCCL_ERROR("[HcomSelectAlgV2], does not support opType[%s].", hcclOpType.Describe().c_str());
         return HCCL_E_NOT_SUPPORT;
     }
     Hccl::OpType optype = OP_TYPE_MAP.at(opType);
@@ -1233,25 +1253,25 @@ HcclResult HcomUnloadTaskV2(const std::string group, const char *tag)
 
 HcclResult HcclCommResetQosCfgV2()
 {
-    HCCL_WARNING("HcclCommResetQosCfgV2 is not support!");
+    HCCL_WARNING("HcclCommResetQosCfgV2 does not support!");
     return HCCL_SUCCESS;
 }
 
 HcclResult HcomResetQosCfgV2()
 {
-    HCCL_WARNING("HcomGetCommCCLBufferSizeV2 is not support!");
+    HCCL_WARNING("HcomGetCommCCLBufferSizeV2 does not support!");
     return HCCL_SUCCESS;
 }
 
 HcclResult HcclCommSetQosCfgV2()
 {
-    HCCL_WARNING("HcclCommSetQosCfgV2 is not support!");
+    HCCL_WARNING("HcclCommSetQosCfgV2 does not support!");
     return HCCL_SUCCESS;
 }
 
 HcclResult HcomGetCommCCLBufferSizeV2()
 {
-    HCCL_WARNING("HcomGetCommCCLBufferSizeV2 is not support!");
+    HCCL_WARNING("HcomGetCommCCLBufferSizeV2 does not support!");
     return HCCL_SUCCESS;
 }
 
@@ -1282,7 +1302,7 @@ HcclResult HcomCalcNumBlocksV2(const char *group, HcclCMDType opType, u64 count,
 
     HcclOpType hcclOpType = static_cast<HcclOpType::Value>(opType);
     if (OP_TYPE_MAP.find(opType) == OP_TYPE_MAP.end()) {
-        HCCL_ERROR("[HcomGraphSelectAlgV2], not support opType[%s].", hcclOpType.Describe().c_str());
+        HCCL_ERROR("[HcomGraphSelectAlgV2], does not support opType[%s].", hcclOpType.Describe().c_str());
         return HCCL_E_NOT_SUPPORT;
     }
     Hccl::OpType optype = OP_TYPE_MAP.at(opType);
@@ -1306,7 +1326,7 @@ HcclResult HcclGetAlgExecParamV2(const std::string &tag, const char *group, u64 
 
     HcclOpType hcclOpType = static_cast<HcclOpType::Value>(opType);
     if (OP_TYPE_MAP.find(opType) == OP_TYPE_MAP.end()) {
-        HCCL_ERROR("[HcomGraphSelectAlgV2], not support opType[%s].", hcclOpType.Describe().c_str());
+        HCCL_ERROR("[HcomGraphSelectAlgV2], does not support opType[%s].", hcclOpType.Describe().c_str());
         return HCCL_E_NOT_SUPPORT;
     }
     Hccl::OpType optype = OP_TYPE_MAP.at(opType);
@@ -1366,13 +1386,13 @@ HcclResult HcomMc2AiCpuStreamAllocAndGetV2(const char *group, u32 streamMode, rt
 
 HcclResult HcomSetAttachedStreamV2()
 {
-    HCCL_RUN_INFO("HcomSetAttachedStreamV2 is not support!");
+    HCCL_RUN_INFO("HcomSetAttachedStreamV2 does not support!");
     return HCCL_SUCCESS;
 }
 
 HcclResult HcomReleaseSubCommsV2()
 {
-    HCCL_RUN_INFO("HcomReleaseSubCommsV2 is not support!");
+    HCCL_RUN_INFO("HcomReleaseSubCommsV2 does not support!");
     return HCCL_SUCCESS;
 }
 

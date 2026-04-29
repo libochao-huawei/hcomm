@@ -300,6 +300,23 @@ TEST_F(AdapterHccpTest, HrtHrtRaRdmaInit_NOK)
     delete[] num;
 }
 
+TEST_F(AdapterHccpTest, HrtHrtRaRdmaInit_return_HCCP_ELINKDOWN_NOK)
+{
+    // Given
+    u32       *num        = new u32[1];
+    RdmaHandle rdmaHandle = static_cast<void *>(num);
+    MOCKER(RaRdevInit)
+        .stubs()
+        .with(any(), any(), any(), outBoundP(&rdmaHandle, sizeof(rdmaHandle)))
+        .will(returnValue(HCCP_ELINKDOWN));
+
+    struct RaInterface rdevInfo;
+    // when
+
+    EXPECT_THROW(HrtRaRdmaInit(HrtNetworkMode::HDC, rdevInfo), NetworkApiException);
+    delete[] num;
+}
+
 TEST_F(AdapterHccpTest, HrtRaQpCreate_NOK)
 {
     // Given
@@ -956,7 +973,7 @@ TEST_F(AdapterHccpTest, HrtRaGetEidByIp_ra_get_eid_by_ip_error)
 
     MOCKER(RaGetEidByIp).stubs().will(returnValue(1));
 
-    EXPECT_THROW(HrtRaGetEidByIp(handle, ipV4AddrList, eidAddrList), NetworkApiException);
+    EXPECT_EQ(HrtRaGetEidByIp(handle, ipV4AddrList, eidAddrList), HCCL_E_INTERNAL);
 }
 
 TEST_F(AdapterHccpTest, HrtRaGetEidByIp_count_mismatch_returns_internal)

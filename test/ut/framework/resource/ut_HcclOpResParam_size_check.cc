@@ -19,7 +19,7 @@ protected:
 
 TEST_F(HcclHcclOpResParamStructTest, TestHcclOpResParamSize)
 {
-    EXPECT_EQ(sizeof(HcclOpResParam), 2122720u);
+    EXPECT_EQ(sizeof(HcclOpResParam), 2123112u);
 }
 
 TEST_F(HcclHcclOpResParamStructTest, TestHcclOpResParamFieldOffsets)
@@ -54,9 +54,9 @@ TEST_F(HcclHcclOpResParamStructTest, TestHcclOpResParamFieldOffsets)
     EXPECT_EQ(offsetof(HcclOpResParam, zeroCopyTailPtr), offsetof(HcclOpResParam, zeroCopyHeadPtr) + 8u);
     EXPECT_EQ(offsetof(HcclOpResParam, zeroCopyRingBuffer), offsetof(HcclOpResParam, zeroCopyTailPtr) + 8u);
     EXPECT_EQ(offsetof(HcclOpResParam, zeroCopyIpcPtrs), offsetof(HcclOpResParam, zeroCopyRingBuffer) + 8u);
-    EXPECT_EQ(offsetof(HcclOpResParam, zeroCopyDevicePhyId), offsetof(HcclOpResParam, zeroCopyIpcPtrs) + 256u);
-    EXPECT_EQ(offsetof(HcclOpResParam, utraceStatusFlag), offsetof(HcclOpResParam, zeroCopyDevicePhyId) + 128u);
-    EXPECT_EQ(offsetof(HcclOpResParam, opCounterInfo), offsetof(HcclOpResParam, utraceStatusFlag) + 8u);
+    EXPECT_EQ(offsetof(HcclOpResParam, zeroCopyDevicePhyId), offsetof(HcclOpResParam, zeroCopyIpcPtrs) + 520u);
+    EXPECT_EQ(offsetof(HcclOpResParam, utraceStatusFlag), offsetof(HcclOpResParam, zeroCopyDevicePhyId) + 260u);
+    EXPECT_EQ(offsetof(HcclOpResParam, opCounterInfo), offsetof(HcclOpResParam, utraceStatusFlag) + 4u);
     EXPECT_EQ(offsetof(HcclOpResParam, hierarchicalAlgInfo), offsetof(HcclOpResParam, opCounterInfo) + 32u);
     EXPECT_EQ(offsetof(HcclOpResParam, localRes), offsetof(HcclOpResParam, hierarchicalAlgInfo) + 32u);
     EXPECT_EQ(offsetof(HcclOpResParam, debugConfig), offsetof(HcclOpResParam, localRes) + 3464u);

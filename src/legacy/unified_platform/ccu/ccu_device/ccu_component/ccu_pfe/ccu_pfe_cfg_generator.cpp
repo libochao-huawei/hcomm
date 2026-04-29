@@ -20,9 +20,9 @@ namespace Hccl {
 
 CcuPfeCfgGenerator &CcuPfeCfgGenerator::GetInstance(const int32_t deviceLogicId)
 {
-    static CcuPfeCfgGenerator ccuPfeCfgGenerator[MAX_MODULE_DEVICE_NUM];
+    static CcuPfeCfgGenerator ccuPfeCfgGenerator[MAX_MODULE_DEVICE_NUM + 1];
 
-    if (deviceLogicId < 0 || static_cast<uint32_t>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM) {
+    if (deviceLogicId < 0 || static_cast<uint32_t>(deviceLogicId) > MAX_MODULE_DEVICE_NUM) {
         THROW<InvalidParamsException>("[CcuPfeCfgGenerator][%s] failed to get instance, devLogicId[%d] "
             "should be less than %u.", __func__, deviceLogicId, MAX_MODULE_DEVICE_NUM);
     }

@@ -25,6 +25,7 @@ constexpr int32_t HCCL_STREAM_PRIORITY_LOW = 0;
 constexpr int32_t HCCL_STREAM_PRIORITY_HIGH = 0;
 constexpr uint32_t HCCL_SQE_MAX_CNT = 2048U; // 一次mc2算子一个流上最大下发sqe数量
 constexpr u32 HCCL_SQE_SIZE = 64U;
+constexpr uint32_t STREAM_MODE_STOP_ON_FAILURE = 1; // 配置流失败模式为遇错即停
 
 enum class StreamType {
     STREAM_TYPE_OFFLINE = 0,

@@ -49,7 +49,7 @@ public:
     void DestroyAll();
 
     HcclResult GetEidByIpv4Addr(const IpAddress& addr, IpAddress& eidAddr);
-    void UboeIpv4ToEid(const IpAddress& ipV4Address, IpAddress& eidAddress);
+    void UboeIpv4ToEid(const IpAddress& ipV4Address, IpAddress& eidAddress, u32 devPhyId);
 private:
     std::mutex managerMutex;
 

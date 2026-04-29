@@ -385,7 +385,7 @@ HcclResult DispatcherGraph::RdmaSend(u32 dbindex, u64 dbinfo, const struct SendW
         hccl::TaskParaDMA para(reinterpret_cast<void *>(static_cast<uintptr_t>(wr.bufList[0].addr)),
                             reinterpret_cast<void *>(static_cast<uintptr_t>(wr.dstAddr)),
                             wr.bufList[0].len, notifyID, hccl::LinkType::LINK_ROCE, RdmaType::RDMA_SEND_PAYLOAD,
-                            ctxIdx);
+                            (ctxIdx - 1));
         struct TaskPara taskPara;
         taskPara.stream = stream.ptr();
         taskPara.isMainStream = stream.IsMainStream();
@@ -401,7 +401,7 @@ HcclResult DispatcherGraph::RdmaSend(u32 dbindex, u64 dbinfo, const struct SendW
         hccl::TaskParaDMA para(reinterpret_cast<void *>(static_cast<uintptr_t>(wr.bufList[0].addr)),
                             reinterpret_cast<void *>(static_cast<uintptr_t>(wr.dstAddr)),
                             wr.bufList[0].len, notifyID, hccl::LinkType::LINK_ROCE, RdmaType::RDMA_SEND_PAYLOAD,
-                            ctxIdx);
+                            (ctxIdx - 1));
         struct TaskPara taskPara;
         taskPara.stream = stream.ptr();
         taskPara.isMainStream = stream.IsMainStream();
@@ -436,7 +436,7 @@ HcclResult DispatcherGraph::RdmaSend(u32 dbindex, u64 dbinfo, const struct SendW
         hccl::TaskParaDMA para(reinterpret_cast<void *>(static_cast<uintptr_t>(wr.bufList[0].addr)),
                             reinterpret_cast<void *>(static_cast<uintptr_t>(wr.dstAddr)),
                             wr.bufList[0].len, notifyID, hccl::LinkType::LINK_ROCE, RdmaType::RDMA_SEND_NOTIFY,
-                            ctxIdx);
+                            (ctxIdx - 1));
         struct TaskPara taskPara;
         taskPara.stream = stream.ptr();
         taskPara.isMainStream = stream.IsMainStream();
@@ -452,7 +452,7 @@ HcclResult DispatcherGraph::RdmaSend(u32 dbindex, u64 dbinfo, const struct SendW
         hccl::TaskParaDMA para(reinterpret_cast<void *>(static_cast<uintptr_t>(wr.bufList[0].addr)),
                             reinterpret_cast<void *>(static_cast<uintptr_t>(wr.dstAddr)),
                             wr.bufList[0].len, notifyID, hccl::LinkType::LINK_ROCE, RdmaType::RDMA_SEND_NOTIFY,
-                            ctxIdx);
+                            (ctxIdx - 1));
         struct TaskPara taskPara;
         taskPara.stream = stream.ptr();
         taskPara.isMainStream = stream.IsMainStream();

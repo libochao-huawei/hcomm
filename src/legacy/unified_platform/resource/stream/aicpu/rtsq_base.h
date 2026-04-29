@@ -20,6 +20,8 @@
 #include "reduce_in.h"
 #include "not_support_exception.h"
 #include "ub_jetty_lite.h"
+
+#include "ascend_hal.h"
 namespace aicpu {
 void __attribute__((weak)) __attribute__((visibility("default"))) GetSqeId(const uint32_t num, uint32_t &start, uint32_t &end);
 }
@@ -33,22 +35,22 @@ public:
 
     virtual void Reset();
 
-    virtual u32 GetSqDepth()
+    inline u32 GetSqDepth()
     {
         return sqDepth_;
     }
 
-    virtual u32 GetHead()
+    inline u32 GetHead()
     {
         return sqHead_;
     }
 
-    virtual u32 GetTail()
+    inline u32 GetTail()
     {
         return sqTail_;
     }
 
-    virtual u32 GetTaskId()
+    inline u32 GetTaskId()
     {
         return taskId_;
     }
@@ -233,11 +235,8 @@ private:
     u64 QuerySqBaseAddr();
     u32 QueryCqeStatus();
 
-    MAKE_ENUM(QueryDrvSqCqPtopType, HEAD, TAIL, DEPTH, CQE_STATUS)
-    u32 QuerySqStatusByType(QueryDrvSqCqPtopType givenType);
-
-    MAKE_ENUM(ConfigDrvSqCqPtopType, TAIL, DISABLE_TO_ENABLE)
-    void ConfigSqStatusByType(ConfigDrvSqCqPtopType givenType, u32 value);
+    u32 QuerySqStatusByType(drvSqCqPropType_t givenType);
+    void ConfigSqStatusByType(drvSqCqPropType_t givenType, u32 value);
 };
 
 } // namespace Hccl

@@ -23,7 +23,10 @@ public:
 
     HcclResult SetLaunchMode(const char* launchTag, HcommLaunchMode mode);
     void AddThread(ThreadHandle thread);
-    bool IsBatchLaunchMode() const;
+    inline bool IsBatchLaunchMode() const
+    {
+        return mode_ == HCOMM_LAUNCH_MODE_BATCH;
+    }
 
 private:
     HcclResult HandleBatchMode();
