@@ -61,6 +61,8 @@ struct RsCtxAsyncEventCb {
     struct RsUbDevCb *devCb;
     urma_async_event_t asyncEvent;
     unsigned int resId;
+    unsigned int len;
+    char context[CONTEXT_MAX_LEN];
     struct RsListHead list;
 };
 
@@ -129,6 +131,8 @@ struct RsCtxJettyCb {
     struct CtxQpShareInfo *qpShareInfoAddr;
     struct RsCrErrInfo crErrInfo;
     struct RsListHead list;
+    uint64_t scqIndex;
+    uint64_t rcqIndex;
 };
 
 struct RsTokenIdCb {

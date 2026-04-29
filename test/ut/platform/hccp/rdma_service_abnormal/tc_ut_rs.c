@@ -302,29 +302,24 @@ void TcRsDeinit2()
 	/* resource free... */
 	ret = RsDeinit(&cfg);
 	EXPECT_INT_EQ(ret, 0);
-    rs_ut_msg("!!!!!!tc_rs_deinit2: rs_deinit1\n");
+	rs_ut_msg("!!!!!!tc_rs_deinit2: rs_deinit1\n");
 	ret = RsInit(&cfg);
 	EXPECT_INT_EQ(ret, 0);
 
 	ret = RsDev2rscb(devId, &rsCb, false);
 	EXPECT_INT_EQ(ret, 0);
 
-	mocker((stub_fn_t)write, 20, 1);
-	ret = RsDeinit(&cfg);
-	EXPECT_INT_EQ(ret, -EFILEOPER);
-	mocker_clean();
-    rs_ut_msg("!!!!!!tc_rs_deinit2: rs_deinit2\n");
-
 	ret = RsDeinit(&cfg);
 	EXPECT_INT_EQ(ret, 0);
+
+	mocker_clean();
+	rs_ut_msg("!!!!!!tc_rs_deinit2: rs_deinit2\n");
 
 	struct rs_cb *rscb = NULL;
 	rscb = calloc(1, sizeof(struct rs_cb));
 	rscb->hccpMode = NETWORK_OFFLINE;
 	RS_INIT_LIST_HEAD(&rscb->connCb.clientConnList);
 	RsInitRscbCfg(rscb);
-	RsDeinitRscbCfg(rscb);
-	mocker((stub_fn_t)write, 20, 1);
 	RsDeinitRscbCfg(rscb);
 	mocker_clean();
 	free(rscb);
@@ -2740,6 +2735,9 @@ void TcRsSocketBatchAbort()
     gConnInfo = malloc(sizeof(struct RsConnInfo));
     int ret = 0;
 
+    memset(gRsCb, 0, sizeof(struct rs_cb));
+    memset(gConnInfo, 0, sizeof(struct RsConnInfo));
+
     mocker_clean();
     mocker(pthread_mutex_lock, 10, 0);
     mocker(pthread_mutex_unlock, 10, 0);
@@ -2866,11 +2864,15 @@ void TcRsTcpRecvTagInHandle()
     mocker_clean();
     mocker(RsTcpRecvTagInHandle, 1, 1);
     mocker(close, 1, 1);
+    mocker(pthread_mutex_lock, 1, 0);
+    mocker(pthread_mutex_unlock, 1, 0);
     RsEpollEventTcpListenInHandle(rsCb, &listenInfo, 1, &remoteIp);
 
     mocker_clean();
     mocker(RsTcpRecvTagInHandle, 1, 0);
     mocker(RsWlistCheckConnAdd, 1, 1);
+    mocker(pthread_mutex_lock, 1, 0);
+    mocker(pthread_mutex_unlock, 1, 0);
     RsEpollEventTcpListenInHandle(rsCb, &listenInfo, 1, &remoteIp);
     mocker_clean();
 

@@ -18,7 +18,6 @@ namespace Hccl {
 constexpr u64 REDUCE_AICPU_1D_MAX_DATA_SIZE = 16 * 1024 * 1024;
 constexpr u64 REDUCE_CCU_1D_MAX_DATA_SIZE = 64 * 1024 *1024;
 constexpr u64 REDUCE_CCU_1D_MAX_DATA_SIZE_INT8 = 16 * 1024 *1024;
-constexpr double DEFAULT_RANK_SIZE = 8.0;
 
 SelectorStatus ReduceAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo,
                                                     const CollAlgOperator &op,

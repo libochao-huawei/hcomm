@@ -24,7 +24,7 @@ template<typename T>
 __aicore__ inline void AivAll2AllVCNoLoop910B::Process(GM_ADDR input, GM_ADDR output, int32_t tag,
     ExtraArgs &extraArgs)
 {
-    uint32_t targetRank = (GetBlockIdx() >= rankSize_ ? GetBlockIdx() - rankSize_ : GetBlockIdx()); // 0-2*rankSize
+    uint32_t targetRank = (blockIdx_ >= rankSize_ ? blockIdx_ - rankSize_ : blockIdx_); // 0-2*rankSize
 
     // 内存准备
     __gm__ T *inputGM = (__gm__ T *)input;
@@ -32,14 +32,14 @@ __aicore__ inline void AivAll2AllVCNoLoop910B::Process(GM_ADDR input, GM_ADDR ou
     __gm__ T *cclGMSelf = (__gm__ T *)(GM_IN[rank_]);
     __gm__ T *cclGMOther = (__gm__ T *)(GM_IN[targetRank]);
     tag = tag << TAG_MOVE_LEFT_BITS;
-    if (GetBlockIdx() < rankSize_) { // 前rankSize个aiv负责userin->cclin
+    if (blockIdx_ < rankSize_) { // 前rankSize个aiv负责userin->cclin
         uint64_t localSendOffset = 0;
-        for (uint32_t i = 0; i < GetBlockIdx(); i++) {
+        for (uint32_t i = 0; i < blockIdx_; i++) {
             localSendOffset += extraArgs.sendCountMatrix[rank_ * rankSize_ + i];
         }
-        uint64_t localSendCount = extraArgs.sendCountMatrix[rank_ * rankSize_ + GetBlockIdx()];
+        uint64_t localSendCount = extraArgs.sendCountMatrix[rank_ * rankSize_ + blockIdx_];
 
-        CpGM2GMWithFlagWrap(cclGMSelf + localSendOffset, inputGM + localSendOffset, localSendCount, GetBlockIdx(), 16, tag);
+        CpGM2GMWithFlagWrap(cclGMSelf + localSendOffset, inputGM + localSendOffset, localSendCount, blockIdx_, 16, tag);
     } else { // 后rankSize个aiv负责cclother->usrout
         // 读对端数据前确认对端已进入本算子
         uint64_t remoteSendOffset = 0; // 远端ccl发送给本端output的数据偏移，远端卡号为GetBlockIdx()，可能为本rank

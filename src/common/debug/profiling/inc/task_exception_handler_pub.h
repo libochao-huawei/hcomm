@@ -168,7 +168,6 @@ private:
         u32 &index) const;
     HcclResult InsertRankInfo(std::string &tag) const;
     HcclResult InsertOpData(std::string &tag) const;
-    static void DumpAivPrintWorkSpace(const std::shared_ptr<std::deque<TaskInfo>> &taskQue);
     static void PrintTaskContextInfo(const std::shared_ptr<std::vector<CtxInfo>> &taskList, u32 contextId, std::string &stageErrInfo);
     static void PrintTaskContextInfo(const std::shared_ptr<std::deque<TaskInfo>> &taskQue, std::string &stageErrInfo);
     static void PrintTaskAivBuffer(const std::shared_ptr<std::deque<TaskInfo>> &taskQue);
