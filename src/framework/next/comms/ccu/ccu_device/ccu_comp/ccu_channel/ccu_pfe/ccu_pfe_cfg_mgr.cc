@@ -15,7 +15,7 @@
 
 #include "hccl_common.h"
 #include "eid_info_mgr.h"
-#include "ccu_res_specs.h"
+#include "../../../ccu_res_specs.h"
 #include "adapter_rts.h"
 
 namespace hcomm {

@@ -47,6 +47,11 @@ void TpManager::Init()
     initFlag = true;
 }
 
+void TpManager::SetIsHost()
+{
+    isHost = true;
+}
+
 bool TpManager::CheckRequestResult(RequestHandle &reqHandle) const
 {
     if (reqHandle == 0) {
@@ -100,9 +105,11 @@ HcclResult TpManager::GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo)
         return HcclResult::HCCL_E_AGAIN;
     }
 
-    auto &reqCtx = locReqCtxIter->second;
-    if (!CheckRequestResult(reqCtx.handle)) {
-        return HcclResult::HCCL_E_AGAIN;
+    if(!isHost) {
+        auto &reqCtx = locReqCtxIter->second;
+        if (!CheckRequestResult(reqCtx.handle)) {
+            return HcclResult::HCCL_E_AGAIN;
+        }
     }
 
     RequestCtx completedReqCtx = locReqCtxIter->second; // 深拷贝构造对象，与map解耦
@@ -158,12 +165,18 @@ bool TpManager::FindAndGetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo
 void TpManager::StartGetTpInfoListRequest(const RaUbGetTpInfoParam &param,
     TpManager::RequestCtx &reqCtx) const
 {
-    RdmaHandle rdmaHandle =
-        RdmaHandleManager::GetInstance().GetByIp(devPhyId, param.locAddr);
+    RdmaHandle rdmaHandle = isHost 
+        ? RdmaHandleManager::GetInstance().GetByAddr(devPhyId, LinkProtoType::UB, 
+                                param.locAddr, Hccl::PortDeploymentType::HOST_NET)
+        : RdmaHandleManager::GetInstance().GetByIp(devPhyId, param.locAddr);
     if (!rdmaHandle) {
         THROW<InternalException>("[TpManager][%s] can not find rdmaHandle, "
             "devPhyId[%u] locAddr[%s].", __func__, devPhyId,
             param.locAddr.Describe().c_str());
+    }
+    if (isHost) {
+        RaUbGetTpInfo(rdmaHandle, param, reqCtx.dataBuffer, reqCtx.tpInfoNum);
+        return;
     }
     reqCtx.handle = RaUbGetTpInfoAsync(rdmaHandle, param, reqCtx.dataBuffer,
         reqCtx.tpInfoNum);
