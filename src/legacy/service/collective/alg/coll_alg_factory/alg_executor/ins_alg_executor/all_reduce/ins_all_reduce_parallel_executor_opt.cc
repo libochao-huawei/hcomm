@@ -350,23 +350,12 @@ template <typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTempla
 void InsAllReduceParallelExecutorV2<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1, InsAlgTemplate2, InsAlgTemplate3>::GenRSIntraParams1(
     const u64 dataOffset, const u64 dataCount, const u64 scratchOff, TemplateDataParams &params) const
 {
-    u64 sliceCount = dataCount / rankSize_;
+    HCCL_INFO("InsAllReduceParallelExecutorV2 GenRSIntraParams1 start");
+    u64 dataCountTmp = (rankIdxLevel1_ != rankSizeLevel1_ - 1)
+                    ? dataCount / rankSize_ * rankSizeLevel0_
+                    : dataCount - dataCount / rankSize_ * rankSizeLevel0_ * (rankSizeLevel1_ - 1);
 
-    u64 totalSliceCount = (rankIdxLevel1_ != rankSizeLevel1_ - 1) 
-    ? sliceCount * rankSizeLevel0_ 
-    : (dataCount - sliceCount * rankSizeLevel0_ * (rankSizeLevel1_ - 1));
-    HCCL_INFO("InsAllReduceParallelExecutorV2 GenRSIntraParams1 begin");
-    u64 sliceCountTmp;
-    if(sliceCount != 0) {
-        sliceCountTmp = totalSliceCount / rankSizeLevel0_;
-    } else {
-        sliceCountTmp = totalSliceCount / rankSize_ * rankSizeLevel1_;
-    }
-
-    u64 tailSizeCount = totalSliceCount - sliceCountTmp * (rankSizeLevel0_ - 1);
-    HCCL_INFO("InsAllReduceParallelExecutorV2 GenRSIntraParams1 cal params ");
-    u64 sliceBytes = sliceCountTmp * dataTypeSize_;
-    u64 tailSize = tailSizeCount * dataTypeSize_;
+    u64 sliceBytes = sliceCount_ * dataTypeSize_;
     params.buffInfo.inBuffType      = BufferType::OUTPUT;
     params.buffInfo.outBuffType     = BufferType::OUTPUT;
     params.buffInfo.scratBuffType   = BufferType::SCRATCH;
@@ -379,7 +368,7 @@ void InsAllReduceParallelExecutorV2<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplat
     params.repeatNum            = 1;
     params.inputRepeatStride    = 0;
     params.outputRepeatStride   = 0;
-    params.tailSize = tailSize;
+    params.tailSize = (dataCountTmp - sliceCount_ * (rankSizeLevel0_ - 1)) * dataTypeSize_;
     HCCL_INFO("InsAllReduceParallelExecutorV2 GenRSIntraParams1 end");
 }
 
@@ -387,24 +376,12 @@ template <typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTempla
 void InsAllReduceParallelExecutorV2<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1, InsAlgTemplate2, InsAlgTemplate3>::GenAGIntraParams1(
     const u64 dataOffset, const u64 dataCount, const u64 scratchOff, TemplateDataParams &params) const
 {
-    u64 sliceCount = dataCount / rankSize_;
+    HCCL_INFO("InsAllReduceParallelExecutorV2 GenAGIntraParams1 start");
+    u64 dataCountTmp = (rankIdxLevel1_ != rankSizeLevel1_ - 1)
+                    ? dataCount / rankSize_ * rankSizeLevel0_
+                    : dataCount - dataCount / rankSize_ * rankSizeLevel0_ * (rankSizeLevel1_ - 1);
 
-    u64 totalSliceCount = (rankIdxLevel1_ != rankSizeLevel1_ - 1) 
-    ? sliceCount * rankSizeLevel0_ 
-    : (dataCount - sliceCount * rankSizeLevel0_ * (rankSizeLevel1_ - 1));
-
-    u64 sliceCountTmp;
-    if(sliceCount != 0) {
-        sliceCountTmp = totalSliceCount / rankSizeLevel0_;
-    } else {
-        sliceCountTmp = totalSliceCount / rankSize_ * rankSizeLevel1_;
-    }
-    
-    u64 tailSizeCount = totalSliceCount - sliceCountTmp * (rankSizeLevel0_ - 1);
-
-    u64 sliceBytes = sliceCountTmp * dataTypeSize_;
-    u64 tailSize = tailSizeCount * dataTypeSize_;
-
+    u64 sliceBytes = sliceCount_ * dataTypeSize_;
     params.buffInfo.inBuffType      = BufferType::OUTPUT;
     params.buffInfo.outBuffType     = BufferType::OUTPUT;
     params.buffInfo.scratBuffType   = BufferType::SCRATCH;
@@ -417,7 +394,7 @@ void InsAllReduceParallelExecutorV2<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplat
     params.repeatNum            = 1;
     params.inputRepeatStride    = 0;
     params.outputRepeatStride   = 0;
-    params.tailSize = tailSize;
+    params.tailSize = (dataCountTmp - sliceCount_ * (rankSizeLevel0_ - 1)) * dataTypeSize_;
     HCCL_INFO("InsAllReduceParallelExecutorV2 GenAGIntraParams1 end");
 }
 
@@ -467,6 +444,14 @@ HcclResult InsAllReduceParallelExecutorV2<AlgTopoMatch, InsAlgTemplate0, InsAlgT
     InsAlgTemplate1 tempAlgInterRS(myRank_, rankSizeLevel1_, vTopo_[1], virtRankMap_[1]);
     InsAlgTemplate2 tempAlgIntraAG(myRank_, rankSizeLevel0_, vTopo_[0], virtRankMap_[0]);
     InsAlgTemplate3 tempAlgInterAG(myRank_, rankSizeLevel1_, vTopo_[1], virtRankMap_[1]);
+
+    std::vector<map<u32, u32>> rank2PathNumMap;
+    HCCL_INFO("[InsAllReduceParallelExecutorV2] Orchestrate SetPathNumMap");
+    CHK_RET(SetPathNumMapByRankGraphMultiLevel(rankGraph, virtRanks_, myRank_, rank2PathNumMap));
+    tempAlgIntraRS.setPathNumMap(rank2PathNumMap[0]);
+    tempAlgInterRS.setPathNumMap(rank2PathNumMap[1]);
+    tempAlgIntraAG.setPathNumMap(rank2PathNumMap[0]);
+    tempAlgInterAG.setPathNumMap(rank2PathNumMap[1]);
 
     InitAlgCommonParams(tempAlgIntraRS, tempAlgInterRS, tempAlgIntraAG, tempAlgInterAG, op);
 
@@ -578,6 +563,12 @@ HcclResult InsAllReduceParallelExecutorV2<AlgTopoMatch, InsAlgTemplate0, InsAlgT
             currCount1 = (loopIndex == loopTimes - 1) ? (dataCount1 - loopIndex * maxCountPerLoop1) : maxCountPerLoop1;
             dataOffset1 = loopIndex * maxCountPerLoop1 * dataTypeSize_ + dataCount0 * dataTypeSize_;
         }
+
+        // 计算统一sliceCount数量
+        u64 totalSliceCount = currCount1 / rankSize_ * rankSizeLevel0_;
+        sliceCount_ = (currCount1 >= rankSize_) 
+                    ? totalSliceCount / rankSizeLevel0_ 
+                    : totalSliceCount / rankSize_ * rankSizeLevel1_;
         
         // ────────────── Phase 1: RS-1 ──────────────
         // 前半: 框内 Mesh RS,  后半: 框间 NHR RS
