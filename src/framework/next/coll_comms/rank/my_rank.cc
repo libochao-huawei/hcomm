@@ -18,7 +18,6 @@
 #include "env_config/env_config.h"
 #include "channel_process.h"
 #include "rank_consistentcy_checker.h"
-#include "socket.h"
 #include <set>
 
 using namespace hcomm;
@@ -816,7 +815,7 @@ HcclResult MyRank::BatchExchangeAndCheckConsistency(
         // 从hcommDescs获取socket和role
         HcommSocket rawSocket = hcommDescs[i].socket;
         HcommSocketRole role = hcommDescs[i].role;
-        Socket *socket = static_cast<Socket *>(rawSocket);
+        Hccl::Socket *socket = static_cast<Hccl::Socket *>(rawSocket);
         CHK_PRT_RET(socket == nullptr,
             HCCL_ERROR("[BatchExchangeAndCheckConsistency] socket is null for channel[%u] remoteRank[%u].",
                 i, remoteRank),
