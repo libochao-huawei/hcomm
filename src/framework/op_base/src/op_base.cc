@@ -1292,9 +1292,9 @@ HcclResult HcclCreateSubCommConfig(HcclComm *comm, uint32_t rankNum, uint32_t *r
             // 校验comm：通过identifier确保各rank的父通信域一致
             const std::string &parentIdentifier = hcclComm->GetIdentifier();
             u32 parentCrc = 0;
-            RankConsistentcyChecker::GetInstance().CalcStringCrc(parentIdentifier.c_str(), parentCrc);
+            CHK_RET(RankConsistentcyChecker::GetInstance().CalcStringCrc(parentIdentifier.c_str(), parentCrc));
             // 将parentCrc记录到RankConsistentcyChecker用于建链时校验
-            RankConsistentcyChecker::GetInstance().RecordSubCommPara(parentCrc, rankNum, rankIds, subCommId);
+            CHK_RET(RankConsistentcyChecker::GetInstance().RecordSubCommPara(parentCrc, rankNum, rankIds, subCommId));
 
             void* commV2 = hcclComm->GetCommunicatorV2();
             CHK_PTR_NULL(commV2);

@@ -250,6 +250,7 @@ void RankConsistentcyChecker::SetCheckCannVersionSwitch(const bool cannVerCheckS
 
 HcclResult RankConsistentcyChecker::RecordEnvVarCrc()
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     static const std::vector<std::string> ENV_VAR_NAMES = {
         "HCCL_ALGO",
         "HCCL_BUFFSIZE",

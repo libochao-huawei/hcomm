@@ -725,180 +725,272 @@ HcclResult MyRank::BatchExchangeAndCheckConsistency(
     auto &checker = RankConsistentcyChecker::GetInstance(deviceLogicId);
     u64 baseCheckInfoLen = checker.GetRankConsistentDataLength();
 
-    // 用于对remoteRank去重，同一remoteRank只校验一次
-    std::set<u32> checkedRanks;
+    // ====== 去重 + 区分新增/存量channel，仅新增channel参与交换 ======
+    std::set<u32> localDedup;  // 本轮channelNum内去重
+    std::vector<Hccl::Socket*> sockets;
+    std::vector<u32> remoteRanks;
+    std::vector<HcommSocketRole> roles;
 
     for (uint32_t i = 0; i < channelNum; i++) {
         u32 remoteRank = channelDescs[i].remoteRank;
-        // 跳过已校验的remoteRank
-        if (checkedRanks.find(remoteRank) != checkedRanks.end()) {
+        // 同一轮内去重
+        if (localDedup.find(remoteRank) != localDedup.end()) {
             continue;
         }
-        checkedRanks.insert(remoteRank);
+        localDedup.insert(remoteRank);
 
-        // 从hcommDescs获取socket和role
+        // 存量channel：已校验过的remoteRank跳过，仅新增channel参与交换
+        if (!hcclComm->IsNewRemoteRank(remoteRank)) {
+            HCCL_DEBUG("[BatchExchangeAndCheckConsistency] remoteRank[%u] already checked, skip.", remoteRank);
+            continue;
+        }
+
         HcommSocket rawSocket = hcommDescs[i].socket;
-        HcommSocketRole role = hcommDescs[i].role;
         Hccl::Socket *socket = static_cast<Hccl::Socket *>(rawSocket);
         CHK_PRT_RET(socket == nullptr,
             HCCL_ERROR("[BatchExchangeAndCheckConsistency] socket is null for channel[%u] remoteRank[%u].",
                 i, remoteRank),
             HCCL_E_INTERNAL);
 
-        // ====== 第一阶段：交换Hcomm基础校验帧（HcclCheckInfo）并比对 ======
-        // 生成本端Hcomm基础校验帧
-        std::vector<u8> sendBuf(baseCheckInfoLen, 0);
-        HCCL_INFO("[BatchExchangeAndCheckConsistency] baseCheckInfoLen=%llu",baseCheckInfoLen);
-        CHK_RET(checker.GetCheckFrame(sendBuf.data(), baseCheckInfoLen, commTag));
-
-        // 交换基础校验帧长度（4字节u32）
-        u32 localBaseLen = static_cast<u32>(baseCheckInfoLen);
-        u32 remoteBaseLen = 0;
-        bool sendRet = false;
-        bool recvRet = false;
-
-        if (role == HCOMM_SOCKET_ROLE_SERVER) {
-            recvRet = socket->Recv(&remoteBaseLen, sizeof(u32));
-            CHK_PRT_RET(!recvRet,
-                HCCL_ERROR("[BatchExchangeAndCheckConsistency] Recv baseLen failed for remoteRank[%u].",
-                    remoteRank),
-                HCCL_E_INTERNAL);
-            sendRet = socket->Send(&localBaseLen, sizeof(u32));
-            CHK_PRT_RET(!sendRet,
-                HCCL_ERROR("[BatchExchangeAndCheckConsistency] Send baseLen failed for remoteRank[%u].",
-                    remoteRank),
-                HCCL_E_INTERNAL);
-        } else {
-            sendRet = socket->Send(&localBaseLen, sizeof(u32));
-            CHK_PRT_RET(!sendRet,
-                HCCL_ERROR("[BatchExchangeAndCheckConsistency] Send baseLen failed for remoteRank[%u].",
-                    remoteRank),
-                HCCL_E_INTERNAL);
-            recvRet = socket->Recv(&remoteBaseLen, sizeof(u32));
-            CHK_PRT_RET(!recvRet,
-                HCCL_ERROR("[BatchExchangeAndCheckConsistency] Recv baseLen failed for remoteRank[%u].",
-                    remoteRank),
-                HCCL_E_INTERNAL);
-        }
-
-        // 校验对端基础帧长度一致性
-        CHK_PRT_RET(remoteBaseLen != localBaseLen,
-            HCCL_ERROR("[BatchExchangeAndCheckConsistency] remoteBaseLen[%u] != localBaseLen[%u] for remoteRank[%u], "
-                "HcclCheckInfo size mismatch.", remoteBaseLen, localBaseLen, remoteRank),
-            HCCL_E_INTERNAL);
-
-        // 交换基础校验帧数据
-        std::vector<u8> recvBuf(remoteBaseLen, 0);
-
-        if (role == HCOMM_SOCKET_ROLE_SERVER) {
-            recvRet = socket->Recv(recvBuf.data(), remoteBaseLen);
-            CHK_PRT_RET(!recvRet,
-                HCCL_ERROR("[BatchExchangeAndCheckConsistency] Recv base check frame failed for remoteRank[%u].",
-                    remoteRank),
-                HCCL_E_INTERNAL);
-            sendRet = socket->Send(sendBuf.data(), localBaseLen);
-            CHK_PRT_RET(!sendRet,
-                HCCL_ERROR("[BatchExchangeAndCheckConsistency] Send base check frame failed for remoteRank[%u].",
-                    remoteRank),
-                HCCL_E_INTERNAL);
-        } else {
-            sendRet = socket->Send(sendBuf.data(), localBaseLen);
-            CHK_PRT_RET(!sendRet,
-                HCCL_ERROR("[BatchExchangeAndCheckConsistency] Send base check frame failed for remoteRank[%u].",
-                    remoteRank),
-                HCCL_E_INTERNAL);
-            recvRet = socket->Recv(recvBuf.data(), remoteBaseLen);
-            CHK_PRT_RET(!recvRet,
-                HCCL_ERROR("[BatchExchangeAndCheckConsistency] Recv base check frame failed for remoteRank[%u].",
-                    remoteRank),
-                HCCL_E_INTERNAL);
-        }
-
-        // 比对Hcomm基础校验帧（环境变量CRC、通信域CRC、协议类型、CANN版本等）
-        // 比对失败时内部报EI0005（CRC/协议类型不一致）或EI0008（CANN版本不一致），返回HCCL_E_INTERNAL
-        CHK_RET(checker.CheckFrameRecv(recvBuf.data(), static_cast<u32>(baseCheckInfoLen), commTag));
-
-        // ====== 第二阶段：Hcomm信息校验通过后，交换HCCL算子信息 ======
-        bool hasExchangeInfo = hcclComm->IsExchangeInfoReady();
-        u32 localExchangeInfoLen = hasExchangeInfo ? hcclComm->GetExchangeInfoLen() : 0;
-
-        // 交换HCCL算子信息长度（4字节u32）
-        u32 remoteExchangeInfoLen = 0;
-
-        if (role == HCOMM_SOCKET_ROLE_SERVER) {
-            recvRet = socket->Recv(&remoteExchangeInfoLen, sizeof(u32));
-            CHK_PRT_RET(!recvRet,
-                HCCL_ERROR("[BatchExchangeAndCheckConsistency] Recv exchangeInfoLen failed for remoteRank[%u].",
-                    remoteRank),
-                HCCL_E_INTERNAL);
-            sendRet = socket->Send(&localExchangeInfoLen, sizeof(u32));
-            CHK_PRT_RET(!sendRet,
-                HCCL_ERROR("[BatchExchangeAndCheckConsistency] Send exchangeInfoLen failed for remoteRank[%u].",
-                    remoteRank),
-                HCCL_E_INTERNAL);
-        } else {
-            sendRet = socket->Send(&localExchangeInfoLen, sizeof(u32));
-            CHK_PRT_RET(!sendRet,
-                HCCL_ERROR("[BatchExchangeAndCheckConsistency] Send exchangeInfoLen failed for remoteRank[%u].",
-                    remoteRank),
-                HCCL_E_INTERNAL);
-            recvRet = socket->Recv(&remoteExchangeInfoLen, sizeof(u32));
-            CHK_PRT_RET(!recvRet,
-                HCCL_ERROR("[BatchExchangeAndCheckConsistency] Recv exchangeInfoLen failed for remoteRank[%u].",
-                    remoteRank),
-                HCCL_E_INTERNAL);
-        }
-
-        // 交换HCCL算子信息数据（SERVER先Recv再Send，CLIENT先Send再Recv，配对防死锁）
-        if (role == HCOMM_SOCKET_ROLE_SERVER) {
-            // SERVER: 先Recv对端数据
-            if (remoteExchangeInfoLen > 0) {
-                std::vector<u8> remoteUserData(remoteExchangeInfoLen, 0);
-                recvRet = socket->Recv(remoteUserData.data(), remoteExchangeInfoLen);
-                CHK_PRT_RET(!recvRet,
-                    HCCL_ERROR("[BatchExchangeAndCheckConsistency] Recv exchange info failed for remoteRank[%u].",
-                        remoteRank),
-                    HCCL_E_INTERNAL);
-                CHK_RET(hcclComm->StoreRemoteExchangeInfo(remoteRank, remoteUserData));
-            }
-            // 再Send本端数据
-            if (localExchangeInfoLen > 0) {
-                const std::vector<u8> &exchangeBuf = hcclComm->GetExchangeInfoBuf();
-                sendRet = socket->Send(exchangeBuf.data(), localExchangeInfoLen);
-                CHK_PRT_RET(!sendRet,
-                    HCCL_ERROR("[BatchExchangeAndCheckConsistency] Send exchange info failed for remoteRank[%u].",
-                        remoteRank),
-                    HCCL_E_INTERNAL);
-            }
-        } else {
-            // CLIENT: 先Send本端数据
-            if (localExchangeInfoLen > 0) {
-                const std::vector<u8> &exchangeBuf = hcclComm->GetExchangeInfoBuf();
-                sendRet = socket->Send(exchangeBuf.data(), localExchangeInfoLen);
-                CHK_PRT_RET(!sendRet,
-                    HCCL_ERROR("[BatchExchangeAndCheckConsistency] Send exchange info failed for remoteRank[%u].",
-                        remoteRank),
-                    HCCL_E_INTERNAL);
-            }
-            // 再Recv对端数据
-            if (remoteExchangeInfoLen > 0) {
-                std::vector<u8> remoteUserData(remoteExchangeInfoLen, 0);
-                recvRet = socket->Recv(remoteUserData.data(), remoteExchangeInfoLen);
-                CHK_PRT_RET(!recvRet,
-                    HCCL_ERROR("[BatchExchangeAndCheckConsistency] Recv exchange info failed for remoteRank[%u].",
-                        remoteRank),
-                    HCCL_E_INTERNAL);
-                CHK_RET(hcclComm->StoreRemoteExchangeInfo(remoteRank, remoteUserData));
-            }
-        }
-
-        HCCL_INFO("[BatchExchangeAndCheckConsistency] check passed for remoteRank[%u], "
-            "exchangeInfoLen local[%u] remote[%u].", remoteRank, localExchangeInfoLen, remoteExchangeInfoLen);
+        sockets.push_back(socket);
+        remoteRanks.push_back(remoteRank);
+        roles.push_back(hcommDescs[i].role);
     }
 
-    // 校验成功后清空本端交换信息状态
+    u32 uniqueCount = static_cast<u32>(sockets.size());
+
+    // 所有remoteRank均为存量channel，无需交换
+    if (uniqueCount == 0) {
+        HCCL_INFO("[BatchExchangeAndCheckConsistency] all remoteRanks already checked, skip exchange.");
+        return HCCL_SUCCESS;
+    }
+
+    // ====== 第一阶段：交换Hcomm基础校验帧（HcclCheckInfo）并比对 ======
+
+    // 生成本端Hcomm基础校验帧（所有remoteRank共用同一份）
+    std::vector<u8> sendBuf(baseCheckInfoLen, 0);
+    CHK_RET(checker.GetCheckFrame(sendBuf.data(), baseCheckInfoLen, commTag));
+
+    // --- 步骤1: batch级异步交换 baseLen ---
+    // SERVER: 先发起RecvAsync；CLIENT: 先发起SendAsync
+    u32 localBaseLen = static_cast<u32>(baseCheckInfoLen);
+    std::vector<u32> remoteBaseLens(uniqueCount, 0);
+
+    for (u32 i = 0; i < uniqueCount; i++) {
+        if (roles[i] == HCOMM_SOCKET_ROLE_SERVER) {
+            sockets[i]->RecvAsync(reinterpret_cast<u8*>(&remoteBaseLens[i]), sizeof(u32));
+        } else {
+            sockets[i]->SendAsync(reinterpret_cast<const u8*>(&localBaseLen), sizeof(u32));
+        }
+    }
+    CHK_RET(WaitAllAsyncComplete(sockets, remoteRanks));
+
+    // SERVER: 再发起SendAsync；CLIENT: 再发起RecvAsync
+    for (u32 i = 0; i < uniqueCount; i++) {
+        if (roles[i] == HCOMM_SOCKET_ROLE_SERVER) {
+            sockets[i]->SendAsync(reinterpret_cast<const u8*>(&localBaseLen), sizeof(u32));
+        } else {
+            sockets[i]->RecvAsync(reinterpret_cast<u8*>(&remoteBaseLens[i]), sizeof(u32));
+        }
+    }
+    CHK_RET(WaitAllAsyncComplete(sockets, remoteRanks));
+
+    // 校验对端基础帧长度一致性
+    for (u32 i = 0; i < uniqueCount; i++) {
+        CHK_PRT_RET(remoteBaseLens[i] != localBaseLen,
+            HCCL_ERROR("[BatchExchangeAndCheckConsistency] remoteBaseLen[%u] != localBaseLen[%u] for remoteRank[%u], "
+                "HcclCheckInfo size mismatch.", remoteBaseLens[i], localBaseLen, remoteRanks[i]),
+            HCCL_E_INTERNAL);
+    }
+
+    // --- 步骤2: batch级异步交换 base帧数据 ---
+    std::vector<std::vector<u8>> recvBufs(uniqueCount);
+    for (u32 i = 0; i < uniqueCount; i++) {
+        recvBufs[i].resize(remoteBaseLens[i], 0);
+    }
+
+    // SERVER: 先发起RecvAsync；CLIENT: 先发起SendAsync
+    for (u32 i = 0; i < uniqueCount; i++) {
+        if (roles[i] == HCOMM_SOCKET_ROLE_SERVER) {
+            sockets[i]->RecvAsync(recvBufs[i].data(), remoteBaseLens[i]);
+        } else {
+            sockets[i]->SendAsync(sendBuf.data(), localBaseLen);
+        }
+    }
+    CHK_RET(WaitAllAsyncComplete(sockets, remoteRanks));
+
+    // SERVER: 再发起SendAsync；CLIENT: 再发起RecvAsync
+    for (u32 i = 0; i < uniqueCount; i++) {
+        if (roles[i] == HCOMM_SOCKET_ROLE_SERVER) {
+            sockets[i]->SendAsync(sendBuf.data(), localBaseLen);
+        } else {
+            sockets[i]->RecvAsync(recvBufs[i].data(), remoteBaseLens[i]);
+        }
+    }
+    CHK_RET(WaitAllAsyncComplete(sockets, remoteRanks));
+
+    // 比对Hcomm基础校验帧
+    for (u32 i = 0; i < uniqueCount; i++) {
+        HcclResult checkRet = checker.CheckFrameRecv(recvBufs[i].data(), static_cast<u32>(baseCheckInfoLen), commTag);
+        if (checkRet != HCCL_SUCCESS) {
+            (void)CheckSubCommParaDetailed(recvBufs[i].data(), baseCheckInfoLen, commTag, checker);
+            return checkRet;
+        }
+    }
+
+    // ====== 第二阶段：Hcomm信息校验通过后，交换HCCL算子信息 ======
+    bool hasExchangeInfo = hcclComm->IsExchangeInfoReady();
+    u32 localExchangeInfoLen = hasExchangeInfo ? hcclComm->GetExchangeInfoLen() : 0;
+
+    // --- 步骤3: batch级异步交换 infoLen ---
+    std::vector<u32> remoteExchangeInfoLens(uniqueCount, 0);
+
+    for (u32 i = 0; i < uniqueCount; i++) {
+        if (roles[i] == HCOMM_SOCKET_ROLE_SERVER) {
+            sockets[i]->RecvAsync(reinterpret_cast<u8*>(&remoteExchangeInfoLens[i]), sizeof(u32));
+        } else {
+            sockets[i]->SendAsync(reinterpret_cast<const u8*>(&localExchangeInfoLen), sizeof(u32));
+        }
+    }
+    CHK_RET(WaitAllAsyncComplete(sockets, remoteRanks));
+
+    for (u32 i = 0; i < uniqueCount; i++) {
+        if (roles[i] == HCOMM_SOCKET_ROLE_SERVER) {
+            sockets[i]->SendAsync(reinterpret_cast<const u8*>(&localExchangeInfoLen), sizeof(u32));
+        } else {
+            sockets[i]->RecvAsync(reinterpret_cast<u8*>(&remoteExchangeInfoLens[i]), sizeof(u32));
+        }
+    }
+    CHK_RET(WaitAllAsyncComplete(sockets, remoteRanks));
+
+    // --- 步骤4: batch级异步交换 info数据 ---
+    // SERVER: 先Recv对端数据；CLIENT: 先Send本端数据
+    std::vector<std::vector<u8>> remoteUserDatas(uniqueCount);
+
+    for (u32 i = 0; i < uniqueCount; i++) {
+        if (roles[i] == HCOMM_SOCKET_ROLE_SERVER) {
+            if (remoteExchangeInfoLens[i] > 0) {
+                remoteUserDatas[i].resize(remoteExchangeInfoLens[i], 0);
+                sockets[i]->RecvAsync(remoteUserDatas[i].data(), remoteExchangeInfoLens[i]);
+            }
+        } else {
+            if (localExchangeInfoLen > 0) {
+                const std::vector<u8> &exchangeBuf = hcclComm->GetExchangeInfoBuf();
+                sockets[i]->SendAsync(exchangeBuf.data(), localExchangeInfoLen);
+            }
+        }
+    }
+    // 只轮询有实际异步操作的socket
+    {
+        std::vector<Hccl::Socket*> activeSockets;
+        std::vector<u32> activeRanks;
+        for (u32 i = 0; i < uniqueCount; i++) {
+            bool isActive = (roles[i] == HCOMM_SOCKET_ROLE_SERVER && remoteExchangeInfoLens[i] > 0) ||
+                            (roles[i] != HCOMM_SOCKET_ROLE_SERVER && localExchangeInfoLen > 0);
+            if (isActive) {
+                activeSockets.push_back(sockets[i]);
+                activeRanks.push_back(remoteRanks[i]);
+            }
+        }
+        if (!activeSockets.empty()) {
+            CHK_RET(WaitAllAsyncComplete(activeSockets, activeRanks));
+        }
+    }
+
+    // SERVER: 再Send本端数据；CLIENT: 再Recv对端数据
+    for (u32 i = 0; i < uniqueCount; i++) {
+        if (roles[i] == HCOMM_SOCKET_ROLE_SERVER) {
+            if (localExchangeInfoLen > 0) {
+                const std::vector<u8> &exchangeBuf = hcclComm->GetExchangeInfoBuf();
+                sockets[i]->SendAsync(exchangeBuf.data(), localExchangeInfoLen);
+            }
+        } else {
+            if (remoteExchangeInfoLens[i] > 0) {
+                remoteUserDatas[i].resize(remoteExchangeInfoLens[i], 0);
+                sockets[i]->RecvAsync(remoteUserDatas[i].data(), remoteExchangeInfoLens[i]);
+            }
+        }
+    }
+    {
+        std::vector<Hccl::Socket*> activeSockets;
+        std::vector<u32> activeRanks;
+        for (u32 i = 0; i < uniqueCount; i++) {
+            bool isActive = (roles[i] == HCOMM_SOCKET_ROLE_SERVER && localExchangeInfoLen > 0) ||
+                            (roles[i] != HCOMM_SOCKET_ROLE_SERVER && remoteExchangeInfoLens[i] > 0);
+            if (isActive) {
+                activeSockets.push_back(sockets[i]);
+                activeRanks.push_back(remoteRanks[i]);
+            }
+        }
+        if (!activeSockets.empty()) {
+            CHK_RET(WaitAllAsyncComplete(activeSockets, activeRanks));
+        }
+    }
+
+    // 存储对端交换信息
+    for (u32 i = 0; i < uniqueCount; i++) {
+        if (remoteExchangeInfoLens[i] > 0 && !remoteUserDatas[i].empty()) {
+            CHK_RET(hcclComm->StoreRemoteExchangeInfo(remoteRanks[i], remoteUserDatas[i]));
+        }
+    }
+
+    HCCL_INFO("[BatchExchangeAndCheckConsistency] all[%u] new ranks check passed, "
+        "exchangeInfoLen local[%u].", uniqueCount, localExchangeInfoLen);
+
+    // 校验成功后：标记新增channel的remoteRank为已校验，清空本端交换信息状态
+    for (u32 i = 0; i < uniqueCount; i++) {
+        hcclComm->MarkRemoteRankChecked(remoteRanks[i]);
+    }
     hcclComm->ClearExchangeInfoState();
 
+    return HCCL_SUCCESS;
+}
+
+HcclResult MyRank::WaitAllAsyncComplete(
+    const std::vector<Hccl::Socket*> &sockets,
+    const std::vector<u32> &remoteRanks)
+{
+    auto timeout = std::chrono::seconds(Hccl::EnvConfig::GetInstance().GetSocketConfig().GetLinkTimeOut());
+    auto startTime = std::chrono::steady_clock::now();
+    std::vector<bool> done(sockets.size(), false);
+    uint32_t doneCount = 0;
+
+    while (doneCount < sockets.size()) {
+        for (size_t i = 0; i < sockets.size(); i++) {
+            if (done[i]) {
+                continue;
+            }
+            Hccl::SocketStatus status = sockets[i]->GetAsyncStatus();
+            if (status == Hccl::SocketStatus::OK) {
+                done[i] = true;
+                doneCount++;
+                continue;
+            }
+            if (status == Hccl::SocketStatus::TIMEOUT) {
+                auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::steady_clock::now() - startTime).count();
+                HCCL_ERROR("[WaitAllAsyncComplete] socket timeout for remoteRank[%u], elapsed[%lld]ms.",
+                    remoteRanks[i], elapsed);
+                return HCCL_E_TIMEOUT;
+            }
+        }
+        if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now() - startTime).count();
+            for (size_t i = 0; i < sockets.size(); i++) {
+                if (!done[i]) {
+                    HCCL_ERROR("[WaitAllAsyncComplete] wall-clock timeout for remoteRank[%u], elapsed[%lld]ms.",
+                        remoteRanks[i], elapsed);
+                }
+            }
+            return HCCL_E_TIMEOUT;
+        }
+    }
+
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now() - startTime).count();
+    HCCL_INFO("[WaitAllAsyncComplete] all[%zu] sockets completed, elapsed[%lld]ms.",
+        sockets.size(), elapsed);
     return HCCL_SUCCESS;
 }
 
