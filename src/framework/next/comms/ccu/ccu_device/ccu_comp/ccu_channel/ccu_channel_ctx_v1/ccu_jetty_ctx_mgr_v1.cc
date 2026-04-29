@@ -6,7 +6,7 @@
 
 #include "ccu_jetty_ctx_mgr_v1.h"
 
-#include "ccu_res_specs.h"
+#include "../../../ccu_res_specs.h"
 
 namespace hcomm {
 
