@@ -30,6 +30,10 @@
 - <term>Atlas A2 训练系列产品</term>
 - <term>Atlas 训练系列产品</term> / <term>Atlas 推理系列产品</term>
 
+### 软件依赖
+
+本样例运行依赖安装CANN ops算子包，详细安装步骤可参见 [源码构建](../../../docs/build.md) 中的 “安装CANN软件包” 章节。
+
 ### 安装 MPI
 
 本样例依赖 MPI 软件在每个 Device 上拉起进程，所以执行本样例前需要安装 MPI，详细安装步骤可参见配套版本的 [《HCCL 性能测试工具用户指南》][1] 中的 “MPI安装与配置” 章节。

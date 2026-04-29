@@ -48,7 +48,8 @@ HcclResult CollAllReduceSmallCountAivRdmaExecutor::CalcCommInfo(std::vector<Leve
     CHK_RET(CalcLevel1CommInfo(inputType, outputType, opTransport));
 
     // aiv+rdma小数据量在server间使用HD通信域，并在多机A+X场景下当未设置使用RDMA时，默认使用PCIE
-    if (topoMatcher_->GetExternalInputIntraRoceSwitch() == 0) {
+    bool isSingleAX = topoAttr_.serverNum == 1 && topoAttr_.moduleNum == 2;    // A+X单机跨module
+    if (topoMatcher_->GetExternalInputIntraRoceSwitch() == 0 && isSingleAX) {
         std::vector<SingleSubCommTransport> &commTransportLevel1 = opTransport[COMM_LEVEL1];
         for (u32 ringIndex = 0; ringIndex < commTransportLevel1.size(); ringIndex++) {
             for (auto &transportRequest : commTransportLevel1[ringIndex].transportRequests) {
@@ -251,6 +252,9 @@ HcclResult CollAllReduceSmallCountAivRdmaExecutor::KernelRun(const OpParam &para
     algArgs.execTimeOutSet = true;
     struct AivProfilingInfo aivProfilingInfo;
     aivProfilingInfo.counter = opCounter_;
+    if (aivClearEnable_) {
+        CHK_RET(ClearAivSyncBuf(flagBuffers, resourceArgs, topoArgs, algArgs));
+    }
  
     CHK_RET(ExecuteKernelLaunch(opArgs, topoArgs, resourceArgs, algArgs, aivProfilingInfo));
  

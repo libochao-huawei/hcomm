@@ -12,7 +12,7 @@
 - pip3 >= 20.3.0
 - setuptools >= 45.0.0
 - wheel >= 0.34.0
-- gcc >= 7.3.0
+- gcc & g++ : 7.3.0 至 13.3.x
 - cmake >= 3.16.0
 - pkg-config >= 0.29.1（用于编译rdma-core）
 - ccache（可选，用于提高二次编译速度）
@@ -229,3 +229,4 @@ bash build.sh --ut
 | protobuf      | 25.1                   | [protobuf-25.1.tar.gz](https://gitcode.com/cann-src-third-party/protobuf/releases/download/v25.1/protobuf-25.1.tar.gz)                                                                                      |
 | rdma-core      | v42.7-h1                   | [rdma-core-42.7.tar.gz](https://gitcode.com/cann-src-third-party/rdma-core/releases/download/v42.7-h1/rdma-core-42.7.tar.gz)                                                                                      |
 | rdma-core-patch      | v42.7-h1                   | [rdma-core-42.7.patch](https://gitcode.com/cann-src-third-party/rdma-core/releases/download/v42.7-h1/rdma-core-42.7.patch)|
+| cann-cmake     | master-001            | [cmake-master-001.tar.gz](https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/cmake/cmake-master-001.tar.gz) |

@@ -245,6 +245,7 @@ void TaskExceptionHandler::ProcessAivException(rtExceptionInfo_t* exceptionInfo,
     aclRet = aclrtMemcpy(flag_buff_temp, taskInfo.taskParam_.taskPara.Aiv.flagMemSize, taskInfo.taskParam_.taskPara.Aiv.flagMem, taskInfo.taskParam_.taskPara.Aiv.flagMemSize, ACL_MEMCPY_DEVICE_TO_HOST);
     if (aclRet != ACL_SUCCESS) {
         HCCL_ERROR("[TaskExceptionHandler] [%s] error[%d].", __func__, aclRet);
+        aclrtFreeHost(flag_buff_temp);
         return;
     }
 
@@ -295,7 +296,7 @@ void TaskExceptionHandler::PrintAivPreviousTaskException(rtExceptionInfo_t *exce
     }
 
     HCCL_ERROR("[TaskExceptionHandler][AIV]Task run failed, para information is "
-               "deviceId[%u] streamId[%u], TaskId[%u], task info before failed task is:",
+               "deviceId[%u] streamId[%u], TaskId[%u].",
                exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid);
 
     for (uint32_t i = 0; i < TASK_CONTEXT_SIZE && *taskItorPtr != *queue->Begin(); --(*taskItorPtr)) {

@@ -127,6 +127,21 @@ STATIC int HccpParseBackupPhyid(const char *input, struct HccpInitParam *param)
     return 0;
 }
 
+STATIC int HccpParseResvMemPoolId(const char *input, struct HccpInitParam *param)
+{
+    int ret;
+
+    ret = HccpParamParseId(input, (int *)(void *)&param->resvMemPoolId);
+    if (ret != 0) {
+        hccp_warn("parse resvMemPoolId unsuccessful ret:%d", ret);
+        return 0;
+    }
+
+    hccp_info("resvMemPoolId from TSD is [%u]", param->resvMemPoolId);
+    param->useResvMem = true;
+    return 0;
+}
+
 int HccpParamParse(int argc, char *argv[], struct HccpInitParam *param)
 {
     static struct option longOpts[] = {
@@ -137,6 +152,7 @@ int HccpParamParse(int argc, char *argv[], struct HccpInitParam *param)
         {HDC_TYPE_PREFIX, required_argument, NULL, HCCP_ARGC_HDC_TYPE},
         {WHITE_LIST_STATUS_PREFIX, required_argument, NULL, HCCP_ARGC_WHITE_LIST_STATUS},
         {BACKUP_PHYID_PREFIX, required_argument, NULL, HCCP_ARGC_BACKUP_PHYID},
+        {RESV_MEM_POOL_ID_PREFIX, required_argument, NULL, HCCP_ARGC_RESV_MEM_POOL_ID},
         {0, no_argument, NULL, HCCP_ARGC_NUM},
     };
     static struct ParamHandle paramHandles[] = {
@@ -147,6 +163,7 @@ int HccpParamParse(int argc, char *argv[], struct HccpInitParam *param)
         {HccpParseHdcType, false, HCCP_ARGC_HDC_TYPE},
         {HccpParseWhiteListStatus, false, HCCP_ARGC_WHITE_LIST_STATUS},
         {HccpParseBackupPhyid, false, HCCP_ARGC_BACKUP_PHYID},
+        {HccpParseResvMemPoolId, false, HCCP_ARGC_RESV_MEM_POOL_ID},
         {NULL, false, HCCP_ARGC_NUM},
     };
     const char *optstring = "";
@@ -158,6 +175,7 @@ int HccpParamParse(int argc, char *argv[], struct HccpInitParam *param)
     param->hdcType = HDC_SERVICE_TYPE_RDMA;
     param->whiteListStatus = WHITE_LIST_ENABLE;
     param->backupFlag = false;
+    param->useResvMem = false;
 
     while (getopt_long(argc, argv, optstring, longOpts, &optIdx) != -1) {
         // unrecognized option, skip to parse

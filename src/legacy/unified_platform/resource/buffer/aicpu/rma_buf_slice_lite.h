@@ -18,13 +18,25 @@ class RmaBufSliceLite {
 public:
     RmaBufSliceLite(u64 addr, u64 size, u32 lkey, u32 tokenId);
 
-    u64 GetAddr() const;
+    inline u64 GetAddr() const
+    {
+        return addr_;
+    }
 
-    u64 GetSize() const;
+    inline u64 GetSize() const
+    {
+        return size_;
+    }
 
-    u32 GetLkey() const;
+    inline u32 GetLkey() const
+    {
+        return lkey_;
+    }
 
-    u32 GetTokenId() const;
+    inline u32 GetTokenId() const
+    {
+        return tokenId_;
+    }
 
     std::string Describe() const;
 

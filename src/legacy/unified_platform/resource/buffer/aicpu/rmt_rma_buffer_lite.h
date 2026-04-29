@@ -25,15 +25,26 @@ public:
 
     RmtRmaBufSliceLite GetRmtRmaBufSliceLite(u64 offset, u64 sliceSize) const;
 
-    u64 GetAddr() const;
-
-    u64 GetSize() const;
-
-    u32 GetTokenId() const;
-
-    u32 GetTokenValue() const;
-
-    u32 GetRkey() const;
+    inline u64 GetAddr() const
+    {
+        return addr_;
+    }
+    inline u64 GetSize() const
+    {
+        return size_;
+    }
+    inline u32 GetTokenId() const
+    {
+        return tokenId_;
+    }
+    inline u32 GetTokenValue() const
+    {
+        return tokenValue_;
+    }
+    inline u32 GetRkey() const
+    {
+        return rkey_;
+    }
 
     std::string Describe() const;
 

@@ -42,6 +42,9 @@ private:
     void Register() const;
 };
 
+uint16_t SwitchUBCqeErrCodeToTsErrCode(u32 cqeErrCode);
+uint16_t SwitchSdmaCqeErrCodeToTsErrCode(u32 cqeErrCode);
+
 } // namespace Hccl
 
 #endif // HCCL_TASK_EXCEPTION_HANDLER_LITE_H

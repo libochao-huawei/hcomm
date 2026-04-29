@@ -26,30 +26,30 @@ __aicore__ inline void AivAll2AllSmall910B::Process(GM_ADDR input, GM_ADDR outpu
     __gm__ T *inputGM = (__gm__ T *)input;
     __gm__ T *outputGM = (__gm__ T *)output;
     __gm__ T *cclGMSelf = (__gm__ T *)(GM_IN[rank_]);
-    __gm__ T *cclGMOther = (__gm__ T *)(GM_IN[GetBlockIdx()]);
+    __gm__ T *cclGMOther = (__gm__ T *)(GM_IN[blockIdx_]);
  
     // 共使用2组flag
     uint32_t initAckFlagOffset = 0;
     uint32_t finalAckFlagOffset = rankSize_ * FLAG_SIZE;
  
     uint64_t srcOffset = rank_ * len;
-    uint64_t dstOffset = GetBlockIdx() * len;
+    uint64_t dstOffset = blockIdx_ * len;
  
-    if (GetBlockIdx() != rank_) {
+    if (blockIdx_ != rank_) {
         CpGM2GM(cclGMSelf + dstOffset, inputGM + dstOffset, len);
  
         PipeBarrier<PIPE_ALL>();
  
-        Record(tag, GetBlockIdx(), AivNotifyType::ACK);
-        Wait(tag, GetBlockIdx(), AivNotifyType::ACK);
+        Record(tag, blockIdx_, AivNotifyType::ACK);
+        Wait(tag, blockIdx_, AivNotifyType::ACK);
  
         PipeBarrier<PIPE_ALL>();
  
         CpGM2GM(outputGM + dstOffset, cclGMOther + srcOffset, len);
  
         PipeBarrier<PIPE_ALL>();
-        Record(tag, GetBlockIdx(), AivNotifyType::DataSignal);
-        Wait(tag, GetBlockIdx(), AivNotifyType::DataSignal);
+        Record(tag, blockIdx_, AivNotifyType::DataSignal);
+        Wait(tag, blockIdx_, AivNotifyType::DataSignal);
     } else {
         CpGM2GM(outputGM + dstOffset, inputGM + srcOffset, len);
     }

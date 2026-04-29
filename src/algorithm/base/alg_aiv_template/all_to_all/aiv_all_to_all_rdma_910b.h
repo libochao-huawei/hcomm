@@ -24,27 +24,27 @@ template<typename T>
 __aicore__ inline void AivAll2AllRdma910B::Process(GM_ADDR input, GM_ADDR output, int32_t tag,
     int64_t sendCount, int32_t serverNum)
 {
-    if (GetBlockIdx() >= rankSize_) {
+    if (blockIdx_ >= rankSize_) {
         return ;
     }
-    uint32_t targetRank = GetBlockIdx(); // 每个aicore处理的rank
+    uint32_t targetRank = blockIdx_; // 每个aicore处理的rank
 
     // 内存准备
     __gm__ T *inputGM = (__gm__ T *)input;
     __gm__ T *cclGMOther = (__gm__ T *)(GM_IN[targetRank]);
 
-    if (GetBlockIdx() == rank_) {
+    if (blockIdx_ == rank_) {
         // 前同步，记录当前rank就绪
         Record1vN(tag, CommPattern::interRank); 
     } else {
 
     // 检查对端就绪 & 跨片拷贝
-    	WaitNv1(tag, GetBlockIdx());
+    	WaitNv1(tag, blockIdx_);
     }
     pipe_barrier(PIPE_ALL);
 
     for (uint32_t i = 0; i < serverNum; i++) {
-        uint64_t toRank = i * rankSize_ + GetBlockIdx(); // toRank表示rank给对端同一平面的rank的发送数据进行遍历
+        uint64_t toRank = i * rankSize_ + blockIdx_; // toRank表示rank给对端同一平面的rank的发送数据进行遍历
         uint64_t remoteRank = i * rankSize_ + rank_; // remoteRank表示对端根据重排后计算的数据偏移
 
         uint64_t rdmaSendLocalOffset = toRank * sendCount;
@@ -56,10 +56,10 @@ __aicore__ inline void AivAll2AllRdma910B::Process(GM_ADDR input, GM_ADDR output
     // 末尾同步
     // 本卡已完成GetBlockIdx()号对端上的rank号的数据发送
     pipe_barrier(PIPE_ALL);
-    Record(tag, GetBlockIdx(), AivNotifyType::DataSignal);
+    Record(tag, blockIdx_, AivNotifyType::DataSignal);
     pipe_barrier(PIPE_ALL);
     // 检查本卡上是否已接收到所有对端发送的数据
-    Wait(tag, GetBlockIdx(), AivNotifyType::DataSignal);
+    Wait(tag, blockIdx_, AivNotifyType::DataSignal);
 
     return ;
 }

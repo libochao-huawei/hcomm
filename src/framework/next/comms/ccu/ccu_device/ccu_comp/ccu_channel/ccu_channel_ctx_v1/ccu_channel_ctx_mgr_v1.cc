@@ -95,32 +95,32 @@ static ChannelCtxDataV1 BuildChannelCtxDataV1(const ChannelCfg &cfg,
     (void)memcpy_s(&data.eidRaw[0], URMA_EID_LEN, &cfg.remoteEid, URMA_EID_LEN);
 
     data.vtpLow              = cfg.tpn & MASK_VTP_LOW;
-    data.vtpHigh             = ((cfg.tpn & MASK_VTP) >> SHIFT_16BITS) & MASK_VTP_HIGH;
+    data.vtpHigh             = ((cfg.tpn & MASK_VTP) >> Hccl::SHIFT_16BITS) & MASK_VTP_HIGH;
     
     data.srcPfeId            = static_cast<uint16_t>(feId);
 
     data.startJettyIdLow     = startTaJettyId & MASK_START_JETTY_ID_LOW;
-    data.startJettyIdHigh    = (startTaJettyId >> SHIFT_4BITS) & MASK_START_JETTY_ID_HIGH;
+    data.startJettyIdHigh    = (startTaJettyId >> Hccl::SHIFT_4BITS) & MASK_START_JETTY_ID_HIGH;
 
     // 写入硬件减 1，cfgs的数量一定小于jetty规格数，不会超过uint8_t范围
     uint8_t jettyNum         = static_cast<uint8_t>(cfg.jettyCfgs.size()) - 1;
     data.jettyNumLow         = jettyNum & MASK_JETTY_NUM_LOW;
-    data.jettyNumHigh        = (jettyNum >> SHIFT_4BITS) & MASK_JETTY_NUM_HIGH;
+    data.jettyNumHigh        = (jettyNum >> Hccl::SHIFT_4BITS) & MASK_JETTY_NUM_HIGH;
 
     data.ioDieId             = static_cast<uint16_t>(dieId);
 
     data.dstTokenIdLow       = cfg.memTokenId & MASK_TOKEN_ID_LOW;
-    data.dstTokenIdHigh      = (cfg.memTokenId >> SHIFT_12BITS) & MASK_TOKEN_ID_HIGH;
+    data.dstTokenIdHigh      = (cfg.memTokenId >> Hccl::SHIFT_12BITS) & MASK_TOKEN_ID_HIGH;
 
     data.dstTokenValueLow    = cfg.memTokenValue & MASK_TOKEN_VALUE_LOW;
-    data.dstTokenValueMiddle = (cfg.memTokenValue >> SHIFT_8BITS) & MASK_TOKEN_VALUE_MID;
-    data.dstTokenValueHigh   = (cfg.memTokenValue >> SHIFT_24BITS) & MASK_TOKEN_VALUE_HIGH;
+    data.dstTokenValueMiddle = (cfg.memTokenValue >> Hccl::SHIFT_8BITS) & MASK_TOKEN_VALUE_MID;
+    data.dstTokenValueHigh   = (cfg.memTokenValue >> Hccl::SHIFT_24BITS) & MASK_TOKEN_VALUE_HIGH;
 
     uint64_t dstVa           = (cfg.remoteCcuVa >> REMOTE_CCU_VA_RIGHT_SHIFT_NUM);
     data.dstVaLow            = dstVa & MASK_VA_LOW;
-    data.dstVaMiddle         = (dstVa >> SHIFT_8BITS) & MASK_VA_MID;
-    data.dstVaHigh           = (dstVa >> SHIFT_24BITS) & MASK_VA_HIGH;
-    data.dstVaHigher         = (dstVa >> SHIFT_40BITS) & MASK_VA_HIGHER;
+    data.dstVaMiddle         = (dstVa >> Hccl::SHIFT_8BITS) & MASK_VA_MID;
+    data.dstVaHigh           = (dstVa >> Hccl::SHIFT_24BITS) & MASK_VA_HIGH;
+    data.dstVaHigher         = (dstVa >> Hccl::SHIFT_40BITS) & MASK_VA_HIGHER;
     data.dstTokenValueValid  = TOKEN_VALUE_VALID;
     return data;
 }
@@ -154,8 +154,8 @@ static HcclResult ConfigChannelCtxDataV1(const uint32_t devPhyId, const uint8_t 
     const uint32_t channelId, const ChannelCtxDataV1 &channelCtxData)
 {
     const RaInfo info{NetworkMode::NETWORK_OFFLINE, devPhyId};
-    struct CustomChannelInfoIn  inBuff{};
-    struct CustomChannelInfoOut outBuff{};
+    CustomChannelInfoIn  inBuff{};
+    CustomChannelInfoOut outBuff{};
 
     constexpr uint32_t dataArraySize   = 1; // 每次配置1个Channel
     inBuff.op                          = CcuOpcodeType::CCU_U_OP_SET_CHANNEL;
