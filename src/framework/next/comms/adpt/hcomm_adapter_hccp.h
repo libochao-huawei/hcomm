@@ -144,7 +144,7 @@ using HrtRaUbJettyImportedOutParam = struct HrtRaUbJettyImportedOutParamDef {
     u32               tpn{0};
 };
 
-MAKE_ENUM(TpProtocol, CTP, RTP);
+MAKE_ENUM(TpProtocol, CTP, RTP, UBOE);
 
 struct JettyImportCfg {
     u64 localTpHandle{0};
