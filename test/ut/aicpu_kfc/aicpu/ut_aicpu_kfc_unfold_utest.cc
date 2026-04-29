@@ -549,7 +549,8 @@ HcclResult TestConstructHcclOpResParam(HcclOpResParam &paramTask, std::vector<vo
     static char lockBuffer[128];
     paramTask.lockAddr = reinterpret_cast<u64>(lockBuffer);
 
-    for (int i = 0; i < MAX_MODULE_DEVICE_NUM; i++) {
+    // 适配HcclOpResParam零拷贝数据结构变更
+    for (int i = 0; i < MAX_MODULE_DEVICE_NUM_A3; i++) {
         paramTask.zeroCopyIpcPtrs[i] = 0x0;
     }
     return HCCL_SUCCESS;
