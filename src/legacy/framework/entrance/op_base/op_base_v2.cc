@@ -938,13 +938,6 @@ HcclResult HcclCreateSubCommConfigV2(const HcclComm *comm, uint32_t rankNum, uin
         return ret;
     }
 
-    // 记录子通信域参数到一致性校验器（包含父通信域标识符）
-    ret = RankConsistentcyChecker::GetInstance().RecordSubCommPara(randNum, 
-        rankIds, subCommId, globalComm->GetIdentifier().c_str());
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s]errNo[0x%016llx] record subcomm para failed, rankNum[%u], subCommId[%llu], parentComm[%s].", 
-            __func__, HCCL_ERROR_CODE(ret)), rankNum, subCommId, globalComm->GetIdentifier().c_str());
-
     /* 关键状态记录 */
     HCCL_RUN_INFO("[Create][Group]create group[%s] success, deviceLogicId[%d], devPhyId[%d], take time [%lld]us",
         subCommIdStr.c_str(), logicDevId, devPhyId, DURATION_US(TIME_NOW() - startut));
