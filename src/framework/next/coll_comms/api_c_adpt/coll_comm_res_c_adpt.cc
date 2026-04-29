@@ -256,7 +256,7 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
 
         s32 deviceLogicId = 0;
         ret = hrtGetDeviceRefresh(&deviceLogicId);
-        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HcclChannelAcquire]cannot get device logic id, ret[%d].", ret), HCCN_E_FAIL);
+        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HcclChannelAcquire]cannot get device logic id, ret[%d].", ret), HCCL_E_PARA);
         RankConsistentcyChecker::GetInstance(deviceLogicId).RecordEnvVarCrc();
  
         const uint32_t opExpansionMode = myRank->GetOpExpansionMode();
