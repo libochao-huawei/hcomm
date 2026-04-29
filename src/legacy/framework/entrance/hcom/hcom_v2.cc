@@ -908,7 +908,10 @@ HcclResult HcclCommGraphAllGatherV2(const char *tag, void *inputPtr, void *outpu
     /* 通信域 */  
     Hccl::HcclCommunicator* hcclComm = reinterpret_cast<Hccl::HcclCommunicator*>(opBaseHcom);
     CHK_PTR_NULL(hcclComm);
- 
+
+    /* 入参校验 */
+    CHK_RET(HcomCheckOpParamV2(tag, inputCount, dataType, stream));
+
     /* 入参的正确性由HCCL确保 */
     Hccl::CollOpParams opParams = GetHcclOpParams(inputPtr, outputPtr, inputCount, dataType, Hccl::OpType::ALLGATHER);
     std::string opTag = tag;
@@ -932,7 +935,12 @@ HcclResult HcomGraphAllReduceV2(const char *tag, void *inputPtr, void *outputPtr
     /* 通信域 */  
     Hccl::HcclCommunicator* hcclComm = reinterpret_cast<Hccl::HcclCommunicator*>(opBaseHcom);
     CHK_PTR_NULL(hcclComm);
- 
+
+    /* 入参校验 */
+    CHK_RET(HcomCheckReductionOpV2(op));
+    CHK_RET(HcomCheckReduceDataTypeV2(dataType, op));
+    CHK_RET(HcomCheckOpParamV2(tag, count, dataType, stream));
+
     /* 入参的正确性由HCCL确保 */
     Hccl::CollOpParams opParams = GetHcclOpParams(inputPtr, outputPtr, count, dataType, Hccl::OpType::ALLREDUCE, op);
     std::string opTag = tag;
@@ -956,6 +964,8 @@ HcclResult HcomGraphReduceScatterV2(const char *tag, void *inputPtr, void *outpu
     /* 入参校验 */
     CHK_RET(HcomCheckReductionOpV2(op));
     CHK_RET(HcomCheckReduceDataTypeV2(dataType, op));
+    CHK_RET(HcomCheckOpParamV2(tag, count, dataType, stream));
+
     /* 通信域 */  
     Hccl::HcclCommunicator* hcclComm = reinterpret_cast<Hccl::HcclCommunicator*>(opBaseHcom);
     CHK_PTR_NULL(hcclComm);
@@ -982,7 +992,8 @@ HcclResult HcomGraphReduceV2(const char *tag, void *inputPtr, void *outputPtr, u
     /* 入参校验 */
     CHK_RET(HcomCheckReductionOpV2(op));
     CHK_RET(HcomCheckReduceDataTypeV2(dataType, op));
-    
+    CHK_RET(HcomCheckOpParamV2(tag, count, dataType, stream));
+
     /* 通信域 */
     Hccl::HcclCommunicator* hcclComm = reinterpret_cast<Hccl::HcclCommunicator*>(opBaseHcom);
     CHK_PTR_NULL(hcclComm);
@@ -1014,7 +1025,10 @@ HcclResult HcomGraphSendV2(const char *tag, void *inputPtr, u64 count, HcclDataT
     /* 通信域 */
     Hccl::HcclCommunicator* hcclComm = reinterpret_cast<Hccl::HcclCommunicator*>(opBaseHcom);
     CHK_PTR_NULL(hcclComm);
- 
+
+    /* 入参校验 */
+    CHK_RET(HcomCheckOpParamV2(tag, count, dataType, stream));
+
     /* 入参的正确性由HCCL确保 */
     Hccl::CollOpParams opParams = GetHcclOpParams(inputPtr, nullptr, count, dataType, Hccl::OpType::SEND);
     opParams.dstRank = destRank;
@@ -1038,7 +1052,10 @@ HcclResult HcomGraphReceiveV2(const char *tag, void *outputPtr, u64 count, HcclD
     /* 通信域 */
     Hccl::HcclCommunicator* hcclComm = reinterpret_cast<Hccl::HcclCommunicator*>(opBaseHcom);
     CHK_PTR_NULL(hcclComm);
- 
+
+    /* 入参校验 */
+    CHK_RET(HcomCheckOpParamV2(tag, count, dataType, stream));
+
     /* 入参的正确性由HCCL确保 */
     Hccl::CollOpParams opParams = GetHcclOpParams(nullptr, outputPtr, count, dataType, Hccl::OpType::RECV);
     opParams.dstRank = srcRank;
@@ -1061,7 +1078,10 @@ HcclResult HcomGraphBroadcastV2(const char *tag, void *ptr, u64 count, HcclDataT
     /* 通信域 */
     Hccl::HcclCommunicator* hcclComm = reinterpret_cast<Hccl::HcclCommunicator*>(opBaseHcom);
     CHK_PTR_NULL(hcclComm);
- 
+
+    /* 入参校验 */
+    CHK_RET(HcomCheckOpParamV2(tag, count, dataType, stream));
+
     /* 入参的正确性由HCCL确保 */
     u32 rankSize = INVALID_VALUE_RANKSIZE;
     CHK_RET(hcclComm->GetRankSize(&rankSize));
