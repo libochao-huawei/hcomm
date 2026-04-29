@@ -195,12 +195,11 @@ HcclResult ProcessHcclResPackReq(const HcclChannelDesc &channelDesc, HcclChannel
     return HCCL_SUCCESS;
 }
 
-constexpr uint32_t DEFAULT_MODE = 0;
-constexpr uint32_t CCU_MS_MODE = 5;
-constexpr uint32_t CCU_SCHE_MODE = 6;
-
 bool CheckCommEngine(const CommEngine engine, const uint32_t opExpansionMode)
 {
+    constexpr uint32_t DEFAULT_MODE = 0;
+    constexpr uint32_t CCU_MS_MODE = 5;
+    constexpr uint32_t CCU_SCHE_MODE = 6;
     if (engine == CommEngine::COMM_ENGINE_CCU) {
         return opExpansionMode == DEFAULT_MODE
             || opExpansionMode == CCU_MS_MODE
