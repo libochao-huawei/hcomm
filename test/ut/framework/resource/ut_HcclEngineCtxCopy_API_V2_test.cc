@@ -69,6 +69,7 @@ protected:
 
 TEST_F(HcclEngineCtxCopyV2Test, Ut_HcclEngineCtxCopyV2_When_Overflow_Expect_Return_EPARA)
 {
+    unsetenv("HCCL_DFS_CONFIG");
     std::shared_ptr<hccl::hcclComm>hcclCommPtr;
     std::shared_ptr<Hccl::RankGraph>rankGraphV2;
     void* comm;

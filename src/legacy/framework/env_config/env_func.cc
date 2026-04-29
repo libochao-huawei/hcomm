@@ -779,8 +779,8 @@ std::vector<std::string> SplitDfsConfig(const std::string &str, char delimiter)
 
 DfsConfig CastDfsConfig(const std::string &dfsConfigEnv)
 {
-    constexpr std::size_t                              DFS_CONFIG_ITEM_NUM = 2;
-    const std::array<std::string, DFS_CONFIG_ITEM_NUM> taskExceptionName   = {"task_exception","connection_fault_detction_time"}; // HCCL_DFS_CONFIG A3和A5实现不同，遗留
+    constexpr std::size_t                              DFS_CONFIG_ITEM_NUM = 1;
+    const std::array<std::string, DFS_CONFIG_ITEM_NUM> taskExceptionName   = {"task_exception"};
     bool                                               taskExceptionEnable = true;
     std::string                                        dfsConfigEnvCopy    = dfsConfigEnv;
     dfsConfigEnvCopy.erase(std::remove(dfsConfigEnvCopy.begin(), dfsConfigEnvCopy.end(), ' '), dfsConfigEnvCopy.end());
