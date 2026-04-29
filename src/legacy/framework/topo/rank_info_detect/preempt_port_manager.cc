@@ -114,18 +114,14 @@ void PreemptPortManager::PreemptPortInRange(const std::shared_ptr<Socket> &liste
     // 所有端口范围内的端口都已经被占用，没有可用的端口，抢占监听失败
     std::string errormessage = "The IP address " + ipAddr +
                               " and port " + std::to_string(usePort) + " have already been bound.";
+    RPT_INPUT_ERR(true, "EI0019", std::vector<std::string>({"reason"}),
+        std::vector<std::string>({errormessage}));
     std::string portRangeStr = GetRangeStr(portRange);
     HCCL_ERROR("[PreemptPortManager::%s] Complete polling of socket port range:%s", __func__, portRangeStr.c_str());
     HCCL_ERROR("[PreemptPortManager::%s] All ports in socket port range are bound already. "
         "no available port to listen. Please check the ports status, or change the port range to listen on.", __func__);
     NicType nicType = listenSocket->GetNicType();
     if (nicType == NicType::HOST_NIC_TYPE) {
-        RPT_INPUT_ERR(true, "EI0019", std::vector<std::string>({"reason"}),
-            std::vector<std::string>({errormessage}));
-    } else {
-        RPT_INPUT_ERR(true, "EI0020", std::vector<std::string>({"reason"}),
-         std::vector<std::string>({errormessage}));
-    }
     std::string envName = nicType == NicType::HOST_NIC_TYPE ? 
         "HCCL_HOST_SOCKET_PORT_RANGE" : "HCCL_NPU_SOCKET_PORT_RANGE";
     HCCL_ERROR("NOTICE: Users need to make sure ports in %s are available for HCCL."
