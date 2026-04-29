@@ -40,6 +40,7 @@ HcclResult StubHcclNetDevOpenForEp(const HcclNetDevInfos *info, HcclNetDev *netD
     static uint32_t id = 0;
     static hccl::NetDevContext kNetDevCtx[MAX_MODULE_DEVICE_NUM];
     static bool initialized[MAX_MODULE_DEVICE_NUM] = {false};
+    id++;
     if (!initialized[id]) {
         hccl::HcclIpAddress localIp;
         (void)localIp.SetReadableAddress("127.0.0.1");
