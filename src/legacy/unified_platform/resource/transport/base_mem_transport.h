@@ -208,6 +208,11 @@ public:
         attr.opAcceState = opAcceState;
     }
 
+    void SetIsHost()
+    {
+        isHost_ = true;
+    }
+
     string GetLinkDescInfo();
     string DescribeSocket() const;
 protected:
@@ -229,6 +234,7 @@ protected:
     u32 bufferNum{0};
     u32 connNum{0};
     u32 exchangeDataSize{0}; // 交换的消息大小
+    bool isHost_{false};
 
     void SetBaseStatusReady();
 

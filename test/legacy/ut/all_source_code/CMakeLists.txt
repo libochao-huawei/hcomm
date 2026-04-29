@@ -108,6 +108,7 @@ target_sources(hccl_v2_utest
         ${HCCL_V2_CODE_ROOT}/unified_platform/resource/connection/rma_connection.cc
         ${HCCL_V2_CODE_ROOT}/unified_platform/resource/connection/dev_rdma_connection.cc
         ${HCCL_V2_CODE_ROOT}/unified_platform/resource/connection/p2p_connection.cc
+        ${HCCL_V2_CODE_ROOT}/unified_platform/resource/connection/host_ub_connection.cc
         ${HCCL_V2_CODE_ROOT}/unified_platform/resource/connection/dev_ub_connection.cc
         ${HCCL_V2_CODE_ROOT}/unified_platform/resource/connection/rma_connection.cc
 
