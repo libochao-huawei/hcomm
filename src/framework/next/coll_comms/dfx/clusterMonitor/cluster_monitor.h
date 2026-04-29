@@ -140,7 +140,7 @@ public:
 
 private:
     ClusterMonitor() = default;
-    ~ClusterMonitor();
+    ~ClusterMonitor() = default;
     struct FrameStatus { // 专门用来给frame设置对应的状态
         ClusterMonitorStatus status = ClusterMonitorStatus::CLUSTER_MONITOR_OK;
         ClusterUIDType informer;

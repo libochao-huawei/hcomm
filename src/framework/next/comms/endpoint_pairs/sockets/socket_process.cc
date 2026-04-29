@@ -33,23 +33,23 @@ SocketProcess &SocketProcess::GetInstance(s32 deviceLogicId)
 
 SocketProcess::~SocketProcess()
 {
+    isInit_ = false;
+
+    unique_lock<std::mutex> lock(mutex_);
     for (auto &socketItem : serverSocketMap_) {
         if (socketItem.second != nullptr) {
             socketItem.second->Destroy();
         }
     }
-
-    for (auto iter = tag2socketMap_.begin(); iter != tag2socketMap_.end();) {
-        if (iter->second.first != nullptr) {
-            DestroySocketHandle(iter->second.first);
-        }
-        iter = tag2socketMap_.erase(iter);  // erase 返回下一个迭代器
-    }
-
     serverSocketMap_.clear();
+
+    for (auto &item : tag2socketMap_) {
+        if (item.second.first != nullptr) {
+            socketMgr_->DestroySocket(item.second.first);
+        }
+    }
     tag2socketMap_.clear();
     socket2TagMap_.clear();
-    isInit_ = false;
 }
 
 HcclResult SocketProcess::DestroySocketHandle(HcclCommSocketHandle socketHandle)
@@ -60,6 +60,7 @@ HcclResult SocketProcess::DestroySocketHandle(HcclCommSocketHandle socketHandle)
         return HCCL_E_PARA;
     }
 
+    unique_lock<std::mutex> lock(mutex_);
     auto socket2TagIter = socket2TagMap_.find(socket);
     if (socket2TagIter == socket2TagMap_.end()) {
         HCCL_ERROR("[SocketProcess][%s] socket not found, please check", __func__);
@@ -94,6 +95,11 @@ HcclResult SocketProcess::GetSocket(HcclCommSocketDesc *socketDesc, HcclCommSock
     CHK_PTR_NULL(socketDesc);
     CHK_RET(Init());
 
+    if (!isInit_) {
+        HCCL_ERROR("[SocketProcess][%s] SocketProcess not initialized, device may be destroyed", __func__);
+        return HCCL_E_INTERNAL;
+    }
+
     Hccl::IpAddress localIpaddr{};
     CHK_RET(CommAddrToIpAddress(socketDesc->localEndpoint.commAddr, localIpaddr));
     Hccl::IpAddress remoteIpaddr{};
@@ -101,6 +107,7 @@ HcclResult SocketProcess::GetSocket(HcclCommSocketDesc *socketDesc, HcclCommSock
 
     string socketTag = string(socketDesc->tag) + "_" + localIpaddr.GetIpStr().c_str() + "_" + remoteIpaddr.GetIpStr().c_str();
     HCCL_INFO("[SocketProcess][%s] socket with tag[%s].", __func__, socketTag.c_str());
+    unique_lock<std::mutex> lock(mutex_);
     if (tag2socketMap_.find(socketTag) == tag2socketMap_.end()) {
         CHK_RET(BuildSocket(socketDesc, socketTag));
     } else {
@@ -148,7 +155,7 @@ HcclResult SocketProcess::SendNoBlock(HcclCommSocketHandle socketHandle, void *s
         return HCCL_E_PARA;
     }
 
-    bool result = socket->ISend(reinterpret_cast<u8 *>(sendbuffer), sizeof(sendSize), *sentSize);
+    bool result = socket->ISend(reinterpret_cast<u8 *>(sendbuffer), sendSize, *sentSize);
     if (!result) {
         HCCL_ERROR("[SocketProcess::%s] Send size[%llu] of data failed.", __func__, sendSize);
         return HCCL_E_TCP_TRANSFER;
@@ -173,7 +180,7 @@ HcclResult SocketProcess::RecvNoBlock(
         return HCCL_E_PARA;
     }
 
-    bool result = socket->IRecv(reinterpret_cast<u8 *>(recvBuffer), sizeof(recvSize), *recvedSize);
+    bool result = socket->IRecv(reinterpret_cast<u8 *>(recvBuffer), recvSize, *recvedSize);
     if (!result) {
         HCCL_ERROR("[SocketProcess::%s] Recv size[%llu] of data failed.", __func__, recvSize);
         return HCCL_E_TCP_TRANSFER;
