@@ -28,7 +28,7 @@ namespace hcomm {
 
 static std::unordered_map<int32_t, std::shared_ptr<CcuDrvHandle>> ccuDrvHandleMap;
 static std::mutex ccuDrvHandleMutex;
-static bool ccuDriverInitAaginFlag = false; // 记录每个进程CCU驱动是否重复拉起
+static bool ccuDriverInitAgainFlag = false; // 记录每个进程CCU驱动是否重复拉起
 
 CcuResult CcuInitFeature(const int32_t devLogicId, std::shared_ptr<CcuDrvHandle> &ccuDrvHandle)
 {
@@ -40,7 +40,7 @@ CcuResult CcuInitFeature(const int32_t devLogicId, std::shared_ptr<CcuDrvHandle>
 
     std::lock_guard<std::mutex> lock(ccuDrvHandleMutex);
     // ccu驱动已重复拉起失败时，直接返回，在锁保护内返回
-    if (ccuDriverInitAaginFlag) {
+    if (ccuDriverInitAgainFlag) {
         return CcuResult::CCU_E_DRV_BUSY;
     }
 
@@ -60,7 +60,7 @@ CcuResult CcuInitFeature(const int32_t devLogicId, std::shared_ptr<CcuDrvHandle>
         HCCL_RUN_WARNING("[%s] failed but passed, devLogicId[%d] ccu driver has been "
             "inited by another process, this process will not try to init anymore.",
             __func__, devLogicId);
-        ccuDriverInitAaginFlag = true; // 记录该进程ccu驱动已拉起失败
+        ccuDriverInitAgainFlag = true; // 记录该进程ccu驱动已拉起失败
         drvHandle = nullptr; // 主动置空触发资源销毁，控制释放时序
         return ret;
     }
@@ -106,7 +106,7 @@ CcuResult CcuAllocResHandleByInsType(int32_t deviceLogicId,
     CcuInstanceType ccuInsType, CcuResHandle &resHandle)
 {
     if (ccuInsType >= CcuInstanceType::CCU_UNUSED) {
-        HCCL_ERROR("todo: add log");
+        HCCL_ERROR("[%s] failed, invalid ccuInsType.", __func__);
         return CcuResult::CCU_E_PARA;
     }
 

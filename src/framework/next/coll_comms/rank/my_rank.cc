@@ -162,9 +162,8 @@ HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint3
     opExpansionMode_ = opExpansionMode;
     if (opExpansionMode_ == DEFAULT_MODE) {
         // 环境变量模块已处理，当用户未配置时，输出ccu sched模式
-        // todo: 需要考虑主动触发parse
         auto accelerator = Hccl::EnvConfig::GetInstance().GetAlgoConfig().GetHcclAccelerator();
-        HCCL_INFO("[MyRank][%s] set op expansion mode by env[%s].",
+        HCCL_RUN_INFO("[MyRank][%s] set op expansion mode by env[%s].",
             __func__, accelerator.Describe().c_str());
         opExpansionMode_ = static_cast<uint32_t>(accelerator);
     }

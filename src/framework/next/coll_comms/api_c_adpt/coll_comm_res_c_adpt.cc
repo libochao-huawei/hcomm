@@ -11,7 +11,8 @@
 #include "../rank/my_rank.h"
 #include "hccl_comm_pub.h"
 #include "exception_handler.h"
-#include "env_config.h"
+#include "config/env_config.h"
+#include "env_config/env_config.h"
 #include "../common/loggers/channel_logger.h"  // 日志记录器
 
 #include "hcom_common.h"
