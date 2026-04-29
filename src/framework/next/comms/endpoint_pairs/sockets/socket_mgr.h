@@ -27,6 +27,7 @@ public:
     ~SocketMgr() {};
 
     HcclResult GetSocket(const Hccl::SocketConfig &socketConfig, Hccl::Socket*& socket);
+    HcclResult DestroySocket(Hccl::Socket* socket);
 
 private:
     HcclResult Init();
