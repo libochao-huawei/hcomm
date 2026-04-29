@@ -292,8 +292,20 @@ void RankInfoDetectClient::ParseRankTable(vector<char> &rankInfoMsg)
 {
     HCCL_INFO("[RankInfoDetectClient::%s] start.", __func__);
 
-    // 消息格式: [ranktable大小(u32, 4字节)][ranktable数据(n字节)][step(4字节)][failedAgentIdList]
+    // 消息格式: [failedAgentIdList][ranktable大小(u32, 4字节)][ranktable数据(n字节)][step(4字节)]
     BinaryStream binStream(rankInfoMsg);
+
+    // 优先解析failedAgentIdList（临终遗言），若有故障则直接退出，不解析后续ranktable
+    std::string failedAgentIdList;
+    binStream >> failedAgentIdList;
+    if (failedAgentIdList.size() > 0) {
+        HCCL_ERROR("[RankInfoDetectClient::%s] Received fault notification (last words) from root node, "
+                   "the following ranks failed to connect: %s. Aborting communicator initialization.",
+                   __func__, failedAgentIdList.c_str());
+        THROW<InvalidParamsException>(StringFormat(
+            "[RankInfoDetectClient::%s] fault notification received, failed ranks: %s",
+            __func__, failedAgentIdList.c_str()));
+    }
 
     // 解析localRankInfo
     rankTable_ = RankTableInfo(binStream);
@@ -302,18 +314,6 @@ void RankInfoDetectClient::ParseRankTable(vector<char> &rankInfoMsg)
     // 解析step
     u32 receivedStep;
     binStream >> receivedStep;
-
-    // 解析failedAgentIdList（临终遗言）
-    std::string failedAgentIdList;
-    binStream >> failedAgentIdList;
-    if (failedAgentIdList.size() > 0) {
-        HCCL_ERROR("[RankInfoDetectClient::%s] Received fault notification, "
-                   "the following ranks failed to connect: %s. Aborting communicator initialization.",
-                   __func__, failedAgentIdList.c_str());
-        THROW<InvalidParamsException>(StringFormat(
-            "[RankInfoDetectClient::%s] fault notification received, failed ranks: %s",
-            __func__, failedAgentIdList.c_str()));
-    }
 
     HCCL_INFO("[RankInfoDetectClient::%s] end.", __func__);
 }
