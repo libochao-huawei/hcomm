@@ -120,7 +120,7 @@ HcclResult TopoInfoExchangeDispather::PrepareResource(
         basicJson["fault_type"] = static_cast<int>(TopoDetectResult::TOPO_CONNECT_FAILED);
     }
     rankTableJson_ = basicJson.dump();
- 
+
     u32 socketIndex = 0;   // socket已经经过rankid（or serverip +deviceid排序）
     for (auto it : connectSockets) {
         FdContext fdcontext;

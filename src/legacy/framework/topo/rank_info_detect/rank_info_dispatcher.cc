@@ -103,11 +103,13 @@ void RankInfoDispather::PrepareResource(const std::unordered_map<std::string, st
                   NetworkApiException, "create epoll event error.");
     epollCreate_ = true;
 
+    // 消息格式: [failedAgentIdList][ranktable大小(u32)][ranktable数据(n字节)][step(4字节)]
+    // 将failedAgentIdList放在最前面，使客户端能优先检查临终遗言
     BinaryStream binaryStream;
+    binaryStream << failedAgentIdList;
     clusterInfo.GetBinStream(true, binaryStream);
     binaryStream << step;
-    binaryStream << failedAgentIdList;
-    
+
     binaryStream.Dump(rankTableMsg_);
 
     for (auto &it : connectSockets) {

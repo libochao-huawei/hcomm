@@ -135,7 +135,7 @@ HcclResult TopoInfoExchangeBase::RecvClusterInfoMsg(std::shared_ptr<HcclSocket> 
 
     bool isRoot = (localHostIp == GetExternalInputMasterInfo().serverIp &&
         logicDevId == static_cast<s32>(GetExternalInputMasterInfo().serverDeviceId));
-    errormessage = "No rank in the communicator can connect to the root node within the timeout period. List of unconnected ranks: " + 
+    errormessage = "No rank in the communicator can connect to the root node within the timeout period. List of unconnected ranks: " +
                    std::string(jClusterJson["fault_info"].dump().c_str());
     if (!isRoot && jClusterJson.find("fault_type") != jClusterJson.end() &&
         jClusterJson.find("fault_info") != jClusterJson.end()) {
