@@ -44,7 +44,7 @@ union GetTpCfgFlag {
 
 #pragma pack(1)
 /** 与 ubengine `urma_tp_attr_value_t` 布局、`#pragma pack(1)` 一致（HCCP 侧字段名为驼峰），供 RsUbGetTpAttr / RsUbSetTpAttr 与 URMA 强转。 */
-struct TpAttr {
+struct   TpAttr {
     uint8_t retry_times_init : 3;
     uint8_t at : 5;
     uint8_t sip[16U];

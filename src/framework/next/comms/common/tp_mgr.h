@@ -132,11 +132,17 @@ private:
     InfoCtxMap rtpInfoMap_;
     ReqCtxMap  rtpReqMap_;
 
+    InfoCtxMap uboeInfoMap_;
+    ReqCtxMap  uboeReqMap_;
+
     std::mutex ctpInfoMutex_;
     std::mutex ctpReqMutex_;
 
     std::mutex rtpInfoMutex_;
     std::mutex rtpReqMutex_;
+
+    std::mutex uboeInfoMutex_;
+    std::mutex uboeReqMutex_;
 };
 
 } // namespace hcomm

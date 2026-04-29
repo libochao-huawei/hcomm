@@ -176,7 +176,7 @@ static HcclResult CheckRequestResult(RequestHandle &reqHandle)
 
 HcclResult CheckTpProtocol(const TpProtocol tpProtocol)
 {
-    if (tpProtocol != TpProtocol::CTP && tpProtocol != TpProtocol::RTP) {
+    if (tpProtocol != TpProtocol::CTP && tpProtocol != TpProtocol::RTP && tpProtocol != TpProtocol::UBOE) {
         HCCL_ERROR("[TpMgr][%s] failed, tpProtocol[%d] is not supported.", __func__, tpProtocol);
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
@@ -315,6 +315,7 @@ static HcclResult GetTpInfoListAsync(const CtxHandle ctxHandle, const GetTpInfoP
     struct GetTpCfg cfg {};
     cfg.flag.bs.rtp = tpProtocol == TpProtocol::RTP ? 1 : 0;
     cfg.flag.bs.ctp = tpProtocol == TpProtocol::CTP ? 1 : 0;
+    cfg.flag.bs.uboe = tpProtocol == TpProtocol::UBOE ? 1 : 0;
     cfg.transMode = TransportModeT::CONN_RM;
     CHK_RET(IpAddressToHccpEid(locAddr, cfg.localEid));
     HCCL_INFO("RaUbGetTpInfoAsync cfg.local_eid[subnetPrefix[%016llx], interfaceId[%016llx]]",
@@ -362,7 +363,7 @@ HcclResult TpMgr::StartGetTpAttrForFirstTp(const GetTpInfoParam &param, RequestC
 {
     EXCEPTION_HANDLE_BEGIN
     (void)memset_s(&reqCtx.tpAttr, sizeof(reqCtx.tpAttr), 0, sizeof(reqCtx.tpAttr));
-    reqCtx.tpAttrBitmap = (1U << kTpAttrSlAvailableBit);
+    reqCtx.tpAttrBitmap = (1U << kTpAttrSlAvailableBit) | (1U << 10U); // 获取sl和slBitmap
 
     if (kSkipRaGetTpAttrStubSlAvailable) {
         // slBitmap 低 16bit：仅 bit1–3 置 1 → 0x000E，表示 SL 1/2/3 可用
@@ -405,10 +406,12 @@ HcclResult TpMgr::HandleCompletedRequest(RequestCtx reqCtx, const GetTpInfoParam
     }
 
     const struct HccpTpInfo *baseInfoPtr = reinterpret_cast<const struct HccpTpInfo *>(reqCtx.dataBuffer.data());
-    uint16_t slMask = ReadSlAvailableMask16(reqCtx.tpAttr);
-    uint32_t mPop = PopCount16(slMask);
-    HCCL_INFO("[TpMgr][%s] after get_tp_attr: slMask[0x%04x] mPop[%u] slBitmap[0x%x] tpAttrBitmap[0x%x] param[%s].",
-        __func__, static_cast<unsigned>(slMask), mPop, static_cast<unsigned>(reqCtx.tpAttr.slBitmap),
+    uint16_t tpAttr = ReadSlAvailableMask16(reqCtx.tpAttr);
+    uint32_t mPop = PopCount16(tpAttr);
+    HCCL_INFO("[TpMgr][%s] after get_tp_attr: slMask[0x%04x] mPop[%u] tpAttrSl[%u] slBitmap[0x%x] tpAttrBitmap[0x%x] "
+              "param[%s].",
+        __func__, static_cast<unsigned>(tpAttr), mPop, static_cast<unsigned>(reqCtx.tpAttr.sl & 0xFU),
+        static_cast<unsigned>(reqCtx.tpAttr.slBitmap),
         reqCtx.tpAttrBitmap, param.Describe().c_str());
     if (mPop == 0U) {
         HCCL_ERROR("[TpMgr][%s] sl_available mask empty after get_tp_attr, param[%s].", __func__,
@@ -422,9 +425,9 @@ HcclResult TpMgr::HandleCompletedRequest(RequestCtx reqCtx, const GetTpInfoParam
 
     uint32_t tpListIndex = 0;
     uint32_t mappedSl = 0;
-    if (!ApplyUbcQosTpSlPolicy(param, tpInfoNum, slMask, tpListIndex, mappedSl)) {
+    if (!ApplyUbcQosTpSlPolicy(param, tpInfoNum, tpAttr, tpListIndex, mappedSl)) {
         HCCL_ERROR("[TpMgr][%s] ApplyUbcQosTpSlPolicy failed, param[%s] nTp[%u] mSl[%u] mask[%u].", __func__,
-            param.Describe().c_str(), tpInfoNum, mSl, static_cast<unsigned>(slMask));
+            param.Describe().c_str(), tpInfoNum, mSl, static_cast<unsigned>(tpAttr));
         return HcclResult::HCCL_E_INTERNAL;
     }
     if (tpListIndex >= tpInfoNum) {
@@ -437,9 +440,11 @@ HcclResult TpMgr::HandleCompletedRequest(RequestCtx reqCtx, const GetTpInfoParam
     tmpTpInfo.hasMappedJettyPriority = true;
 
     CHK_RET(CommitMappedSlToTpAttr(devPhyId_, param.locAddr, tmpTpInfo.tpHandle, mappedSl));
-    HCCL_INFO("[TpMgr][%s] tp qos mapping ok: tpHandle[%llu] tpListIndex[%u] mappedSl[%u] jettyPriority[%u] qos[%u] param[%s].",
-        __func__, tmpTpInfo.tpHandle, tpListIndex, static_cast<unsigned>(mappedSl & 0xFU), tmpTpInfo.mappedJettyPriority,
-        param.qos & 0xFFU, param.Describe().c_str());
+    HCCL_INFO("[TpMgr][%s] tp qos mapping ok: tpHandle[%llu] tpListIndex[%u] tpAttrSl[%u] mappedSl[%u] "
+              "jettyPriority[%u] qos[%u] param[%s].",
+        __func__, tmpTpInfo.tpHandle, tpListIndex, static_cast<unsigned>(reqCtx.tpAttr.sl & 0xFU),
+        static_cast<unsigned>(mappedSl & 0xFU), tmpTpInfo.mappedJettyPriority, param.qos & 0xFFU,
+        param.Describe().c_str());
 
     Hccl::IpAddress locAddr{};
     Hccl::IpAddress rmtAddr{};
@@ -458,22 +463,58 @@ HcclResult TpMgr::HandleCompletedRequest(RequestCtx reqCtx, const GetTpInfoParam
 
 TpMgr::InfoCtxMap &TpMgr::GetInfoCtxMap(const TpProtocol tpProtocol)
 {
-    return tpProtocol == TpProtocol::CTP ? ctpInfoMap_ : rtpInfoMap_;
+    switch (tpProtocol) {
+        case TpProtocol::CTP:
+            return ctpInfoMap_;
+        case TpProtocol::RTP:
+            return rtpInfoMap_;
+        case TpProtocol::UBOE:
+            return uboeInfoMap_;
+        default:
+            return rtpInfoMap_;
+    }
 }
 
 TpMgr::ReqCtxMap &TpMgr::GetReqCtxMap(const TpProtocol tpProtocol)
 {
-    return tpProtocol == TpProtocol::CTP ? ctpReqMap_ : rtpReqMap_;
+    switch (tpProtocol) {
+        case TpProtocol::CTP:
+            return ctpReqMap_;
+        case TpProtocol::RTP:
+            return rtpReqMap_;
+        case TpProtocol::UBOE:
+            return uboeReqMap_;
+        default:
+            return rtpReqMap_;
+    }
 }
 
 std::mutex &TpMgr::GetInfoCtxMutex(const TpProtocol tpProtocol)
 {
-    return tpProtocol == TpProtocol::CTP ? ctpInfoMutex_ : rtpInfoMutex_;
+    switch (tpProtocol) {
+        case TpProtocol::CTP:
+            return ctpInfoMutex_;
+        case TpProtocol::RTP:
+            return rtpInfoMutex_;
+        case TpProtocol::UBOE:
+            return uboeInfoMutex_;
+        default:
+            return rtpInfoMutex_;
+    }
 }
 
 std::mutex &TpMgr::GetReqCtxMutex(const TpProtocol tpProtocol)
 {
-    return tpProtocol == TpProtocol::CTP ? ctpReqMutex_ : rtpReqMutex_;
+    switch (tpProtocol) {
+        case TpProtocol::CTP:
+            return ctpReqMutex_;
+        case TpProtocol::RTP:
+            return rtpReqMutex_;
+        case TpProtocol::UBOE:
+            return uboeReqMutex_;
+        default:
+            return rtpReqMutex_;
+    }
 }
 
 } // namespace hcomm
