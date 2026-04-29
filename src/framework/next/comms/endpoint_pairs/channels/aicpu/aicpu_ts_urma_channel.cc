@@ -120,7 +120,7 @@ HcclResult AicpuTsUrmaChannel::BuildConnection()
     param.locAddr = localEp_.commAddr;
     param.rmtAddr = remoteEp_.commAddr;
     param.tpProtocol = (protocol == Hccl::LinkProtocol::UB_CTP) ? TpProtocol::CTP : TpProtocol::RTP;
-    param.qos = (channelDesc_.ubcAttr.qos > 7U) ? EnvConfig::UB_QOS_DEFAULT : (channelDesc_.ubcAttr.qos & 7U);
+    param.qos = (channelDesc_.ubAttr.qos > 7U) ? EnvConfig::UB_QOS_DEFAULT : (channelDesc_.ubAttr.qos & 7U);
     param.slLevelCount = 0;
     param.loopFirstTpLowestSl = false;
 

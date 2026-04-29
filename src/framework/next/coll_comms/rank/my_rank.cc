@@ -38,7 +38,7 @@ HcommChannelDesc ChannelDescHccl2Hcomm(const HcclChannelDesc &hcclDesc)
         hcommDesc.roceAttr.tc = hcclDesc.roceAttr.tc;
     } else if (hcclDesc.channelProtocol == COMM_PROTOCOL_UBC_CTP ||
                hcclDesc.channelProtocol == COMM_PROTOCOL_UBC_TP) {
-        hcommDesc.ubcAttr.qos = hcclDesc.ubcAttr.qos;
+        hcommDesc.ubAttr.qos = hcclDesc.ubAttr.qos;
     }
     return hcommDesc;
 }
