@@ -40,7 +40,7 @@ HcclResult UbRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void 
 
     // LocalUbRmaBuffer构造函数存在注册动作，在调用该构造函数前需检查是否注册过
     hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(mem.addr), mem.size);
-    auto findPair = localUbRmaBufferMgr_->Find(tempKey);
+    auto findPair = localUbRmaBufferMgr_->DirectFind(tempKey);
     if(findPair.first) {
         localUbRmaBuffer = findPair.second;
     } else {
@@ -59,9 +59,13 @@ HcclResult UbRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void 
                 return HCCL_E_PTR);
         }
     }
-    
+
+    // 重新构造key确保注册到计数器的key和接口返回的memHandle对应
+    hccl::BufferKey<uintptr_t, u64> actualRegKey(localUbRmaBuffer->GetAddr(),
+        static_cast<uint64_t>(localUbRmaBuffer->GetSize()));
+
     // 注册到LocalUbRmaBuffer计数器
-    auto resultPair = localUbRmaBufferMgr_->AddWithoutCheck(tempKey, localUbRmaBuffer);
+    auto resultPair = localUbRmaBufferMgr_->AddWithoutCheck(actualRegKey, localUbRmaBuffer);
 
     std::shared_ptr<Hccl::LocalUbRmaBuffer> &localBuffer = resultPair.first->second.buffer;
     CHK_SMART_PTR_NULL(localBuffer);
