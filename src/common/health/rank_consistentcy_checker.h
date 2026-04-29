@@ -52,14 +52,6 @@ using HcclCRCInfo = struct TagHcclCRCInfo {
 };
 
 constexpr u32 MAX_SUB_COMM_RANK_NUM = 4096;
-constexpr u32 MAX_COMM_IDENTIFIER_LEN = 128;  //通信域标识符最大长度
-using HcclSubCommInfo = struct TagHcclSubCommInfo {
-    u32 rankNum{0};                                                     // 子通信域rank数量
-    u32 rankIds[MAX_SUB_COMM_RANK_NUM] = {0};                           // 子通信域rankID列表
-    u64 subCommId{INVALID_SUBCOMM_ID};                                  // 子通信域ID
-    char parentCommIdentifier[MAX_COMM_IDENTIFIER_LEN + 1] = {0};       // 父通信域唯一标识符
-    u32 valid{0};                                                       // 是否有效(1:有效, 0:无效/未设置)
-};
 
 using HcclCheckInfo = struct TagHcclCheckInfo {
     HcclCRCInfo crcInfoGlobal;
@@ -67,7 +59,6 @@ using HcclCheckInfo = struct TagHcclCheckInfo {
     HcclCMDInfo cmdInfo;
     ProtocolType protocolType = ProtocolType::RESERVED;
     char version[MAX_CANN_VERSION_LEN + 1] = {0};
-    HcclSubCommInfo subCommInfo;
 };
 
 enum class HcclCrcRecordType {
@@ -169,8 +160,6 @@ private:
     HcclResult GetCrc(u32 num, u32 *crcAddr);
     HcclResult CalcRawDataCrc(const void *ptr, u64 length, u32 &crc);
 
-    bool CompareSubCommInfo(HcclSubCommInfo &localInfo, HcclSubCommInfo &remoteInfo);
-
     // 要校验的内容
     std::unordered_map<std::string, HcclCMDInfo> cmdInfoMap_;
     std::unordered_map<std::string, std::map<HcclCrcRecordType, u32>> crcRecords_; // CRC校验码记录
@@ -187,8 +176,6 @@ private:
     ProtocolType protocolType_ = ProtocolType::RESERVED;
     std::vector<u32> crcTable_;
     std::mutex mutex_;
-    HcclSubCommInfo subCommInfo_;
-    bool subCommInfoRecorded_ = false;
 };
 }
 #endif  // RANK_CONSISTENTCY_CHECKER_H
