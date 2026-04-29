@@ -227,6 +227,8 @@ TEST_F(CollServiceDeviceModeTest, test_init_LoadWithOffloadMode)
     OpType opType = OpType::ALLREDUCE;
     auto stream = std::make_unique<Stream>();
     fakeComm.currentCollOperator->opMode = OpMode::OFFLOAD;
+    std::shared_ptr<Buffer> buffer = DevBuffer::Create(0x100, 10);
+    fakeComm.currentCollOperator->scratchMem = buffer;
     EXPECT_NO_THROW(service->LoadWithOffloadMode(*fakeComm.currentCollOperator, std::move(stream)));
 
     CollOffloadOpResReq resReq;
@@ -653,7 +655,8 @@ TEST_F(CollServiceDeviceModeTest, test_init_ReLoadWithOpBasedMode_Offload)
     auto stream = std::make_unique<Stream>();
 
     service->ccuInsPreprocessor.resAllocSuccess = false;
-
+    std::shared_ptr<Buffer> buffer = DevBuffer::Create(0x100, 10);
+ 	fakeComm.currentCollOperator->scratchMem = buffer;
     EXPECT_THROW(service->LoadWithOffloadMode(*fakeComm.currentCollOperator, std::move(stream)), NotSupportException);
 }
 

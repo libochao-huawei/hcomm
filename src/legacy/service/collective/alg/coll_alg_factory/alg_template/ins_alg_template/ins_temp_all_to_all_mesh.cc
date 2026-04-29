@@ -61,7 +61,7 @@ HcclResult InsTempAlltoAllMesh::GetScratchBufferInfo(const u64 &scratchBufferSiz
 {
     // 需要变更为CCU/AICPU均只加载scratchSize
     u32 concurrentSendRecvNum = (tempRankSize_ > ALLTOALLV_DIRECT_FULLMESH_CONCURRENT_SIZE) ?
-        ALLTOALLV_DIRECT_FULLMESH_CONCURRENT_SIZE : tempRankSize_; // 最多跟这么多个对端同时通信（8个）
+        ALLTOALLV_DIRECT_FULLMESH_CONCURRENT_SIZE : tempRankSize_;
     // scratch 不需要分两份，userIn直接一步到对端 scratch buffer
     u64 maxTmpMemSize = scratchBufferSize;
     u32 typeSize = DataTypeSizeGet(dataType);
@@ -236,16 +236,33 @@ HcclResult InsTempAlltoAllMesh::CalcCommRankSetforOneLoop(u32 roundIdx, const u3
 
 HcclResult InsTempAlltoAllMesh::CopySendDataToScratch(u32 step, const std::vector<u32> &commRanks,
                                                       std::unordered_map<u32, UsrData> &sendSliceInfo,
+                                                      const ResLinks &tempLinks,
                                                       std::vector<InsQuePtr>           &queues) const
 {
+    HCCL_INFO("[InsTempAlltoAllMesh] CopySendDataToScratch");
+    u32 queueId = 0;
     for(u32 i = 0 ; i < commRanks.size(); i++) {
         u32 remoteRank = commRanks[i];
+        HCCL_INFO("remoteRank = %u", remoteRank);
+        u32 linkNum = rank2PathNumMap_.at(remoteRank);
+        std::vector<LinkData>links = tempLinks.at(remoteRank);
+        std::vector<float> dataSplitRate(linkNum);
+        CHK_RET(CalcDataSplitRateForLinks(links, dataSplitRate));
         UsrData &currSendSliceInfo = sendSliceInfo[remoteRank];
-        if (step < currSendSliceInfo.usrInSlices.size()) {
-            DataSlice &userInSlice = currSendSliceInfo.usrInSlices[step];
-            DataSlice &sendScratchSlice = currSendSliceInfo.scratchInSlices[step];
-            InsQuePtr queue = queues[i];
-            CHK_RET(LocalCopy(queue, userInSlice, sendScratchSlice));
+        for(u32 j = 0; j < linkNum; j++)
+        {   
+            InsQuePtr queue = queues[queueId];
+            queueId++;
+            HCCL_INFO("queueId=%u",queueId);
+            if (step < currSendSliceInfo.usrInSlices.size()) {
+                DataSlice &userInSliceAllLinks = currSendSliceInfo.usrInSlices[step];
+                DataSlice &sendScratchSliceAllLinks = currSendSliceInfo.scratchInSlices[step];
+                DataSlice userInSlice = CalcDataSliceForLinks(userInSliceAllLinks, dataSplitRate, j, dataType_);
+                DataSlice sendScratchSlice = CalcDataSliceForLinks(sendScratchSliceAllLinks, dataSplitRate, j, dataType_);
+                
+                InsQuePtr queue = queues[i];
+                CHK_RET(LocalCopy(queue, userInSlice, sendScratchSlice));
+            }
         }
     }
     return HcclResult::HCCL_SUCCESS;
@@ -280,54 +297,54 @@ HcclResult InsTempAlltoAllMesh::SendRecvData(u32 step, const std::vector<u32> &c
         std::vector<DataSlice> &currReadDstSlices = (dmaMode_ == DmaMode::GET) ? currReadSliceInfo.usrOutSlices : currReadSliceInfo.scratchOutSlices;
         for(u32 j = 0; j < linkNum; j++)
         {
-        InsQuePtr queue = queues[queuesId];
-        queuesId++;
-        
-        LinkData link = tempLinks.at(remoteRank)[j];
-        if (step < currSendSrcSlices.size() && step < currReadSrcSlices.size()) {
-            DataSlice &sendSrcSliceAllLinks = currSendSrcSlices[step];
-            DataSlice &sendDstSliceAllLinks = currSendDstSlices[step];
-            DataSlice sendSrcSlice = CalcDataSliceForLinks(sendSrcSliceAllLinks, dataSplitRate, j, dataType_);
-            DataSlice sendDstSlice = CalcDataSliceForLinks(sendDstSliceAllLinks, dataSplitRate, j, dataType_);
-            std::vector<DataSlice> sendSrcSliceVec = {sendSrcSlice};
-            std::vector<DataSlice> sendDstSliceVec = {sendDstSlice};
-            SlicesList sendDataSlice(sendSrcSliceVec, sendDstSliceVec);
-            DataSlice &recvSrcSliceAllLinks = currReadSrcSlices[step];
-            DataSlice &recvDstSliceAllLinks = currReadDstSlices[step];
-            DataSlice recvSrcSlice = CalcDataSliceForLinks(recvSrcSliceAllLinks, dataSplitRate, j, dataType_);
-            DataSlice recvDstSlice = CalcDataSliceForLinks(recvDstSliceAllLinks, dataSplitRate, j, dataType_);
-            std::vector<DataSlice> recvSrcSliceVec = {recvSrcSlice};
-            std::vector<DataSlice> recvDstSliceVec = {recvDstSlice};
-            SlicesList recvDataSlice(recvSrcSliceVec, recvDstSliceVec);
-            TxRxSlicesList  sendRecvSlice(sendDataSlice, recvDataSlice);
+            InsQuePtr queue = queues[queuesId];
+            queuesId++;
 
-            TxRxLinks sendRecvLinks(link, link);
-            SendRecvInfo sendRecvInfo(sendRecvLinks, sendRecvSlice);
-            CHK_RET(SendRecv(sendRecvInfo, queue, 0, true, dmaMode_));
-            HCCL_DEBUG("[InsTempAlltoAllMesh][SendRecvData] step[%u], commRank[%u], remoteRank[%d] run send and recv.", step, i, remoteRank);
-        } else if (step < currSendSrcSlices.size()) {
-            DataSlice &sendSrcSliceAllLinks = currSendSrcSlices[step];
-            DataSlice &sendDstSliceAllLinks = currSendDstSlices[step];
-            DataSlice sendSrcSlice = CalcDataSliceForLinks(sendSrcSliceAllLinks, dataSplitRate, j, dataType_);
-            DataSlice sendDstSlice = CalcDataSliceForLinks(sendDstSliceAllLinks, dataSplitRate, j, dataType_);
-            std::vector<DataSlice> sendSrcSliceVec = {sendSrcSlice};
-            std::vector<DataSlice> sendDstSliceVec = {sendDstSlice};
-            SlicesList sendDataSlice(sendSrcSliceVec, sendDstSliceVec);
-            DataInfo sendDataInfo(link, sendDataSlice);
-            CHK_RET(Send(sendDataInfo, queue));
-            HCCL_DEBUG("[InsTempAlltoAllMesh][SendRecvData] step[%u], commRank[%u], remoteRank[%d] run send.", step, i, remoteRank);
-        } else if (step < currReadSrcSlices.size()) {
-            DataSlice &recvSrcSliceAllLinks = currReadSrcSlices[step];
-            DataSlice &recvDstSliceAllLinks = currReadDstSlices[step];
-            DataSlice recvSrcSlice = CalcDataSliceForLinks(recvSrcSliceAllLinks, dataSplitRate, j, dataType_);
-            DataSlice recvDstSlice = CalcDataSliceForLinks(recvDstSliceAllLinks, dataSplitRate, j, dataType_);
-            std::vector<DataSlice> recvSrcSliceVec = {recvSrcSlice};
-            std::vector<DataSlice> recvDstSliceVec = {recvDstSlice};
-            SlicesList recvDataSlice(recvSrcSliceVec, recvDstSliceVec);
-            DataInfo recvDataInfo(link, recvDataSlice);
-            CHK_RET(Recv(recvDataInfo, queue));
-            HCCL_DEBUG("[InsTempAlltoAllMesh][SendRecvData] step[%u], commRank[%u], remoteRank[%d] run recv.", step, i, remoteRank);
-        }
+            LinkData link = tempLinks.at(remoteRank)[j];
+            if (step < currSendSrcSlices.size() && step < currReadSrcSlices.size()) {
+                DataSlice &sendSrcSliceAllLinks = currSendSrcSlices[step];
+                DataSlice &sendDstSliceAllLinks = currSendDstSlices[step];
+                DataSlice sendSrcSlice = CalcDataSliceForLinks(sendSrcSliceAllLinks, dataSplitRate, j, dataType_);
+                DataSlice sendDstSlice = CalcDataSliceForLinks(sendDstSliceAllLinks, dataSplitRate, j, dataType_);
+                std::vector<DataSlice> sendSrcSliceVec = {sendSrcSlice};
+                std::vector<DataSlice> sendDstSliceVec = {sendDstSlice};
+                SlicesList sendDataSlice(sendSrcSliceVec, sendDstSliceVec);
+                DataSlice &recvSrcSliceAllLinks = currReadSrcSlices[step];
+                DataSlice &recvDstSliceAllLinks = currReadDstSlices[step];
+                DataSlice recvSrcSlice = CalcDataSliceForLinks(recvSrcSliceAllLinks, dataSplitRate, j, dataType_);
+                DataSlice recvDstSlice = CalcDataSliceForLinks(recvDstSliceAllLinks, dataSplitRate, j, dataType_);
+                std::vector<DataSlice> recvSrcSliceVec = {recvSrcSlice};
+                std::vector<DataSlice> recvDstSliceVec = {recvDstSlice};
+                SlicesList recvDataSlice(recvSrcSliceVec, recvDstSliceVec);
+                TxRxSlicesList  sendRecvSlice(sendDataSlice, recvDataSlice);
+
+                TxRxLinks sendRecvLinks(link, link);
+                SendRecvInfo sendRecvInfo(sendRecvLinks, sendRecvSlice);
+                CHK_RET(SendRecv(sendRecvInfo, queue, 0, true, dmaMode_));
+                HCCL_DEBUG("[InsTempAlltoAllMesh][SendRecvData] step[%u], commRank[%u], remoteRank[%d] run send and recv.", step, i, remoteRank);
+            } else if (step < currSendSrcSlices.size()) {
+                DataSlice &sendSrcSliceAllLinks = currSendSrcSlices[step];
+                DataSlice &sendDstSliceAllLinks = currSendDstSlices[step];
+                DataSlice sendSrcSlice = CalcDataSliceForLinks(sendSrcSliceAllLinks, dataSplitRate, j, dataType_);
+                DataSlice sendDstSlice = CalcDataSliceForLinks(sendDstSliceAllLinks, dataSplitRate, j, dataType_);
+                std::vector<DataSlice> sendSrcSliceVec = {sendSrcSlice};
+                std::vector<DataSlice> sendDstSliceVec = {sendDstSlice};
+                SlicesList sendDataSlice(sendSrcSliceVec, sendDstSliceVec);
+                DataInfo sendDataInfo(link, sendDataSlice);
+                CHK_RET(Send(sendDataInfo, queue));
+                HCCL_DEBUG("[InsTempAlltoAllMesh][SendRecvData] step[%u], commRank[%u], remoteRank[%d] run send.", step, i, remoteRank);
+            } else if (step < currReadSrcSlices.size()) {
+                DataSlice &recvSrcSliceAllLinks = currReadSrcSlices[step];
+                DataSlice &recvDstSliceAllLinks = currReadDstSlices[step];
+                DataSlice recvSrcSlice = CalcDataSliceForLinks(recvSrcSliceAllLinks, dataSplitRate, j, dataType_);
+                DataSlice recvDstSlice = CalcDataSliceForLinks(recvDstSliceAllLinks, dataSplitRate, j, dataType_);
+                std::vector<DataSlice> recvSrcSliceVec = {recvSrcSlice};
+                std::vector<DataSlice> recvDstSliceVec = {recvDstSlice};
+                SlicesList recvDataSlice(recvSrcSliceVec, recvDstSliceVec);
+                DataInfo recvDataInfo(link, recvDataSlice);
+                CHK_RET(Recv(recvDataInfo, queue));
+                HCCL_DEBUG("[InsTempAlltoAllMesh][SendRecvData] step[%u], commRank[%u], remoteRank[%d] run recv.", step, i, remoteRank);
+            }
         }
     }
     return HcclResult::HCCL_SUCCESS;
@@ -335,16 +352,31 @@ HcclResult InsTempAlltoAllMesh::SendRecvData(u32 step, const std::vector<u32> &c
 
 HcclResult InsTempAlltoAllMesh::CopyRecvDataFromScratch(u32 step, const std::vector<u32> &commRanks,
                                                         std::unordered_map<u32, UsrData> &readSliceInfo,
+                                                        const ResLinks &tempLinks,
                                                         std::vector<InsQuePtr>           &queues) const
 {
+    HCCL_INFO("[InsTempAlltoAllMesh] CopyRecvDataFromScratch");
+    u32 queueId = 0;
     for(u32 i = 0 ; i < commRanks.size(); i++) {
         u32 remoteRank = commRanks[i];
+        HCCL_INFO("remoteRank = %u", remoteRank);
+        u32 linkNum = rank2PathNumMap_.at(remoteRank);
+        std::vector<LinkData>links = tempLinks.at(remoteRank);
+        std::vector<float> dataSplitRate(linkNum);
+        CHK_RET(CalcDataSplitRateForLinks(links, dataSplitRate));
         UsrData &currReadSliceInfo = readSliceInfo[remoteRank];
-        if (step < currReadSliceInfo.scratchOutSlices.size()) {
-            DataSlice &recvScratchSlice = currReadSliceInfo.scratchOutSlices[step];
-            DataSlice &userOutSlice = currReadSliceInfo.usrOutSlices[step];
-            InsQuePtr queue = queues[i];
-            CHK_RET(LocalCopy(queue, recvScratchSlice, userOutSlice));
+        for(u32 j = 0; j < linkNum; j++)
+        {   
+            InsQuePtr queue = queues[queueId];
+            queueId++;
+            HCCL_INFO("queueId=%u",queueId);
+            if (step < currReadSliceInfo.scratchOutSlices.size()) {
+                DataSlice &recvScratchSliceAllLinks = currReadSliceInfo.scratchOutSlices[step];
+                DataSlice &userOutSliceAllLinks = currReadSliceInfo.usrOutSlices[step];
+                DataSlice recvScratchSlice = CalcDataSliceForLinks(recvScratchSliceAllLinks, dataSplitRate, j, dataType_);
+                DataSlice userOutSlice = CalcDataSliceForLinks(userOutSliceAllLinks, dataSplitRate, j, dataType_);
+                CHK_RET(LocalCopy(queue, recvScratchSlice, userOutSlice));
+            }
         }
     }
     return HcclResult::HCCL_SUCCESS;
@@ -362,9 +394,9 @@ HcclResult InsTempAlltoAllMesh::RunSendRecvBufferLoop(u32 step, const std::vecto
 
     if (dmaMode_ == DmaMode::PUT) {
         CHK_RET(SendRecvData(step, commRanks, sendSliceInfoMap, recvSliceInfoMap, tempLinks, queues));
-        CHK_RET(CopyRecvDataFromScratch(step, commRanks, recvSliceInfoMap, queues));
+        CHK_RET(CopyRecvDataFromScratch(step, commRanks, recvSliceInfoMap, tempLinks, queues));
     } else if (dmaMode_ == DmaMode::GET) {
-        CHK_RET(CopySendDataToScratch(step, commRanks, sendSliceInfoMap, queues));
+        CHK_RET(CopySendDataToScratch(step, commRanks, sendSliceInfoMap, tempLinks, queues));
         CHK_RET(SendRecvData(step, commRanks, sendSliceInfoMap, recvSliceInfoMap, tempLinks, queues));
     }
 

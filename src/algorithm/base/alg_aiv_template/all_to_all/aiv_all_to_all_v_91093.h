@@ -126,7 +126,7 @@ __aicore__ inline void AivAll2AllV91093::Process(GM_ADDR buffIn0, GM_ADDR buffOu
     }
 
     // 最后一个核做localcopy
-    if (GetBlockIdx() == numBlocks_ - 1) {
+    if (blockIdx_ == numBlocks_ - 1) {
         uint64_t sendCount = extraArgs->sendCounts[rank_];
         uint64_t sendOffset = extraArgs->sendDispls[rank_];
         uint64_t recvOffset = extraArgs->recvDispls[rank_];

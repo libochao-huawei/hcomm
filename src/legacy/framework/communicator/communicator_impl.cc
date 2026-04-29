@@ -146,9 +146,6 @@ void CommunicatorImpl::InitCommResource(const CommParams &commParams)
     InitStreamManager();
     InitPreResource();
     InitSocketManager();
-    if (ranktableInfo != nullptr) {
-        SocketManager::SetDeviceServerListenPortMap(ranktableInfo->GetRankDeviceListenPortMap());
-    }
     InitRmaConnManager();
     InitDataBufferManager();
     InitNotifyFixedValue();
@@ -339,6 +336,7 @@ HcclResult CommunicatorImpl::CreateSubComm(const CommParams &subCommParams, cons
             std::unique_ptr<RankGraph> subRankGraph = rankGraph->CreateSubRankGraph(rankIds);
             // 初始化子通信域
             CHK_RET(subCommImpl->Init(subCommParams, subRankGraph, devLogicId));
+            subCommImpl->GetSocketManager().SetDeviceServerListenPortMap(GetSocketManager().GetSubCommDeviceServerListenPortMap(rankIds));
             return HcclResult::HCCL_SUCCESS;
         } else {
             std::string msg = StringFormat("CreateSubComm fail, communicator has not been initialized, please check.");
@@ -360,6 +358,7 @@ HcclResult CommunicatorImpl::CreateSubComm(const CommParams &subCommParams, cons
             HCCL_INFO("[%s]rankIds size[%u], rankIdsVec size[%u]", __func__, rankIds.size(), subCommImpl->rankIdsVec.size());
             // 初始化子通信域
             CHK_RET(subCommImpl->Init(subCommParams, subRankGraph, subConfig, devLogicId));
+            subCommImpl->GetSocketManager().SetDeviceServerListenPortMap(GetSocketManager().GetSubCommDeviceServerListenPortMap(rankIds));
             return HcclResult::HCCL_SUCCESS;
         } else {
             std::string msg = StringFormat("CreateSubComm fail, communicator has not been initialized, please check.");
@@ -448,7 +447,7 @@ bool CommunicatorImpl::TryFastCcuLaunch(const CollOpParams &opParams, aclrtStrea
         CovertToCurrentCollOperator(id, opParams, OpMode::OPBASE);
         dfxOpInfo->op_           = *GetCurrentCollOperator();
         dfxOpInfo->tag_          = dfxOpInfo->op_.opTag;
-        dfxOpInfo->algType_      = AlgType{AlgType::MESH}.Describe();
+        dfxOpInfo->algType_      = GetCurAlgName().c_str();
         dfxOpInfo->commIndex_    = GetIdIndex();
         dfxOpInfo->comm_         = this;
         dfxOpInfo->beginTime_    = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
@@ -506,6 +505,15 @@ void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtS
 
     if (params.insType == CcuInstType::CCU_ALLTOALLV_MESH_1D_DIRECT) {
         FillAllToAllVArgs(opParams, ccuParams);
+    } else if (params.insType == CcuInstType::CCU_ALLTOALL_MESH_1D_2DIE ||
+               params.insType == CcuInstType::CCU_ALLGATHER_MESH_1D_2DIE ||
+               params.insType == CcuInstType::CCU_REDUCE_SCATTER_MESH_1D_2DIE) {
+        for (std::size_t i = 0; i < params.totalCounts; ++i) {
+            (void)memcpy_s(&ccuParams[i].args[0], sizeof(ccuParams[i].args[0]), &opParams.sendBuf,
+                    sizeof(ccuParams[i].args[0]));
+            (void)memcpy_s(&ccuParams[i].args[1], sizeof(ccuParams[i].args[1]), &opParams.recvBuf,
+                    sizeof(ccuParams[i].args[1]));
+        }
     } else {
         (void)memcpy_s(&ccuParams[0].args[0], sizeof(ccuParams[0].args[0]), &opParams.sendBuf,
                     sizeof(ccuParams[0].args[0]));
@@ -1298,7 +1306,7 @@ void CommunicatorImpl::InitRankGraph(const string &ranktableM)
     InitRankGraph(rankTableInfo);
 }
 
-std::string CommunicatorImpl::GetTopoFilePath() const
+std::string CommunicatorImpl::GetTopoFilePath()
 {
     HCCL_INFO("[CommunicatorImpl::%s] start.", __func__);
 
@@ -1313,6 +1321,8 @@ std::string CommunicatorImpl::GetTopoFilePath() const
         TRY_CATCH_THROW(InvalidParamsException, msgRankTopoFile, topoFilePath = GetJsonProperty(parseJson, "topo_file_path"););
     } else {
         const size_t bufSize = 1024;
+        auto devLogicId  = HrtGetDevice();
+        auto devPhyId = HrtGetDevicePhyIdByIndex(devLogicId);
         std::vector<char> buffer(bufSize, '\0');
         int result = TopoAddrInfoGetTopoFilePath(devPhyId, buffer.data(), buffer.size());
         CHK_PRT_THROW(result != 0,
@@ -1344,13 +1354,6 @@ void CommunicatorImpl::InitRankGraph(const RankTableInfo &ranktable)
     for (auto link : fullLinks) {
         HCCL_RUN_INFO("[CommunicatorImpl][InitRankGraph] link[%s]", link.Describe().c_str());
     }
-}
-
-HcclResult CommunicatorImpl::InitDeviceListenPort(u32 &linstenPort) const
-{
-    std::vector<LinkData> fullLinks = GetFullMeshLinks();
-    TRY_CATCH_RETURN(GetSocketManager().ServerInitAll(fullLinks, linstenPort));
-    return HCCL_SUCCESS;
 }
 
 void CommunicatorImpl::InitRankGraph(std::unique_ptr<RankGraph> &inputRankGraph)
@@ -1547,6 +1550,9 @@ void CommunicatorImpl::DeInitPreResource()
 void CommunicatorImpl::InitSocketManager()
 {
     socketManager = std::make_unique<SocketManager>(*this, myRank, devPhyId, devLogicId);
+    if (ranktableInfo != nullptr) {
+        socketManager->SetDeviceServerListenPortMap(ranktableInfo->GetRankDeviceListenPortMap());
+    }
 }
 
 void CommunicatorImpl::InitRmaConnManager()

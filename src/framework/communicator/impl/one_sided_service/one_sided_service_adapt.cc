@@ -542,6 +542,7 @@ HcclResult HcclRegisterGlobalMem(const HcclMem* mem, void** memHandle)
     RPT_INPUT_ERR(mem == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcclRegisterGlobalMem", "nullptr", "mem", "non-null pointer"}));
     CHK_PTR_NULL(mem);
+    CHK_PTR_NULL(memHandle);
 
     HCCL_RUN_INFO("Entry-%s:mem[%p]", __func__, mem);
 

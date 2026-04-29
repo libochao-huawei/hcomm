@@ -89,6 +89,10 @@ void HcclAicpuUtils::PrintHcclCombinOpParam(const HccCommResParamTask &commParam
 
 void HcclAicpuUtils::PrintHcclOpResParam(const HcclOpResParam *resParam)
 {
+    if (resParam == nullptr) {
+        HCCL_ERROR("[%s] resParam is nullptr", __func__);
+        return;
+    }
     HCCL_INFO("HcclOpResParam.rankId %u", resParam->localUsrRankId);
     HCCL_INFO("HcclOpResParam.rankNum %u", resParam->rankSize);
 
@@ -120,6 +124,7 @@ void HcclAicpuUtils::PrintHcclOpResParam(const HcclOpResParam *resParam)
 HcclResult HcclAicpuUtils::Getkey(const AicpuComContext &ctx, u32 remoteRankId, const void *userAddr,
     u64 length, u32 &outKey, int32_t keyType)
 {
+    CHK_PTR_NULL(userAddr);
     HCCL_INFO("[HcclAicpuUtils][Getkey] addr[%p] len[%llu]", userAddr, length);
     u64 inAddr = reinterpret_cast<u64>(userAddr);
     MemDetails inputMem = (keyType == LOCAL) ? ctx.ibversData[remoteRankId].localInputMem : ctx.ibversData[remoteRankId].remoteInputMem;

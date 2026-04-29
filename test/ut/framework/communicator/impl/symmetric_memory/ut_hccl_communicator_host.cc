@@ -188,3 +188,58 @@ TEST_F(HcclCommunicatorHostTest, Ut_IsSupportSymmetricMemory_When_FindSymmetricW
     EXPECT_EQ(retBool, false);
     GlobalMockObject::verify();
 }
+
+class TestHcclCommunicator {
+public:
+    HcclResult AicpuInitOpTilingDataBuf(const OpParam &opParam, const HcclCMDType &opType, 
+        const std::string &kernelName, const AicpuOpTiling opTilingInfo, u64 dynamicDataSize) {
+        MOCKER_CPP(&HcclCommunicator::InitAndCheckAicpuOrderNotify).stubs().will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&HcclCommunicator::BuildHierarchicalAlgOption).stubs().will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&HcclCommunicator::UpdateOpIndex).stubs().will(returnValue(0));
+        MOCKER_CPP(&HcclCommunicator::GetOrderLaunchMode).stubs().will(returnValue(0));
+        MOCKER_CPP(&HcclCommunicator::AicpuInitOpTilingDataFromOpParam).stubs().will(returnValue(HCCL_SUCCESS));
+        
+        return hcclCommunicator->AicpuInitOpTilingDataBuf(opParam, opType, kernelName, opTilingInfo, dynamicDataSize);
+    }
+    
+    HcclCommunicator* hcclCommunicator;
+};
+
+TEST_F(HcclCommunicatorHostTest, Ut_SetDynamicTilingData_When_A2GroupSendRecv_Expect_SkipIsDirectRemoteRank) {
+    std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
+    hcclCommunicator->rankInfoList_.resize(2);
+    hcclCommunicator->realUserRank_ = 0;
+    hcclCommunicator->deviceType_ = DevType::DEV_TYPE_910B;
+    hcclCommunicator->isGroupMode_ = true;
+    hcclCommunicator->userRankSize_ = 2;
+    
+    OpParam opParam;
+    opParam.opType = HcclCMDType::HCCL_CMD_BATCH_SEND_RECV;
+    opParam.BatchSendRecvDataDes.itemNum = 1;
+    
+    HcclSendRecvItem sendRecvInfo;
+    opParam.BatchSendRecvDataDes.sendRecvItemsPtr = &sendRecvInfo;
+    
+    u8 isDirectRemoteRank[2] = {1, 0};
+    opParam.BatchSendRecvDataDes.isDirectRemoteRank = isDirectRemoteRank;
+    
+    AicpuOpTiling opTilingInfo;
+    opTilingInfo.algName = "test_alg";
+    opTilingInfo.newTag = "test_new_tag";
+    opTilingInfo.floatOverflowMode = 0;
+    opTilingInfo.dumpDebug = 0;
+    
+    std::string kernelName = "test_kernel";
+    u64 dynamicDataSize = 0;
+    
+    TestHcclCommunicator testComm;
+    testComm.hcclCommunicator = hcclCommunicator.get();
+
+    HcclResult ret = testComm.AicpuInitOpTilingDataBuf(opParam, HcclCMDType::HCCL_CMD_BATCH_SEND_RECV, kernelName, opTilingInfo, dynamicDataSize);
+    
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    EXPECT_EQ(hcclCommunicator->deviceType_, DevType::DEV_TYPE_910B);
+    EXPECT_EQ(hcclCommunicator->isGroupMode_, true);
+    EXPECT_EQ(hcclCommunicator->userRankSize_, 2);
+}

@@ -64,6 +64,7 @@ set(HCOMM_PUBLIC_INCLUDE_LIST
     ${HCOMM_CODE_ROOT}/src/pub_inc/inner
     ${HCOMM_CODE_ROOT}/pub_inc
     ${HCOMM_CODE_ROOT}/pub_inc/hccl
+    ${HCOMM_CODE_ROOT}/pkg_inc/hccl
 )
 
 set(HCOMM_PLATFORM_INCLUDE_LIST

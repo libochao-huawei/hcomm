@@ -9,8 +9,9 @@
         <version>package/hcomm/version.xml</version>
         <parallel>true</parallel>
         <check_features>true</check_features>
+        <copy_all>true</copy_all>
     </package_info>
-    <generate_info value="hcomm_version.h" dst_path="share/info/hcomm" install_path="$(TARGET_ENV)/include/version" install_mod="440" install_type="devel" generator="version_header">
+    <generate_info value="hcomm_version.h" dst_path="$(TARGET_ENV)/include/version" install_path="$(TARGET_ENV)/include/version" install_mod="440" install_type="devel" generator="version_header">
        <HCOMM_VERSION>$(ASCEND_VER)</HCOMM_VERSION>
        <HCOMM_TIMESTAMP>$(TIMESTAMP_NO)</HCOMM_TIMESTAMP>
     </generate_info>
@@ -23,7 +24,7 @@
         <file value="script" entity="true"/>
         <file value="version.info" dst_path="share/info/hcomm" install_path="share/info/hcomm"/>
     </file_info>
-    <block_info dependtree="false" dst_path="hcomm" block_conf_path="ascend">
+    <block_info dependtree="false" dst_path="" block_conf_path="ascend">
         <block name="EngineeringCommon"/>
         <block name="EngineeringFiles"/>
         <block name="CommLib"/>

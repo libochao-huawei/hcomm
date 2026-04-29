@@ -69,6 +69,13 @@ public:
         (void)stream;
     }
 
+    virtual void WaitWithTimeout(u32 index, const StreamLite &stream, u32 timeout)
+    {
+        (void)index;
+        (void)stream;
+        (void)timeout;
+    }
+
     virtual void Read(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream)
     {
         (void)loc;

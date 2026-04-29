@@ -28,6 +28,9 @@ void RankInfoDetectClient::Setup(RankTableInfo &rankTable)
     RankTableInfo localRankTable{};
     ConstructRankTable(localRankTable);
 
+    // 若启用单卡多进程抢占端口则执行
+    SocketManager::ServerInitAll(localRankTable.ranks[0]);
+
     // 2. 连接root节点
     Connect();
 
@@ -38,23 +41,6 @@ void RankInfoDetectClient::Setup(RankTableInfo &rankTable)
     SendLocalRankTable(localRankTable);
     
     // 5. 接收完整rankTable
-    RecvRankTable();
-    rankTable = rankTable_;
-}
-
-void RankInfoDetectClient::Update(u32 devicePort, RankTableInfo &rankTable)
-{
-    // 1. 构造localRankTable
-    RankTableInfo localRankTable{};
-    ConstructRankTable(localRankTable);
-    for(auto &rank : localRankTable.ranks) {
-        rank.devicePort = devicePort;
-    }
-
-    // 2. 发送给root节点
-    SendLocalRankTable(localRankTable);
-    
-    // 3. 接收完整rankTable
     RecvRankTable();
     rankTable = rankTable_;
 }

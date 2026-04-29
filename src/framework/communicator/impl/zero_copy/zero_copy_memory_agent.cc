@@ -230,6 +230,11 @@ void ZeroCopyMemoryAgent::RequestBatchSendAsync()
             continue;
         }
 
+        if (mapDevPhyIdconnectedSockets_.find(kv.first) == mapDevPhyIdconnectedSockets_.end()) {
+            HCCL_ERROR("[ZeroCopyMemoryAgent][RequestBatchSendAsync] remote[%u] not found in"
+                "mapDevPhyIdconnectedSockets_", kv.first);
+            continue;
+        }
         auto &socket = mapDevPhyIdconnectedSockets_[kv.first];
         if (sendMgr.sentSize_ == 0) {  // 非断点续传
             if (sendMgr.hasReq_[0] && sendMgr.hasReq_[1]) {  // 合并发送
@@ -272,6 +277,11 @@ void ZeroCopyMemoryAgent::CheckBatchSendAsyncResult()
             continue;
         }
 
+        if (mapDevPhyIdconnectedSockets_.find(kv.first) == mapDevPhyIdconnectedSockets_.end()) {
+            HCCL_ERROR("[ZeroCopyMemoryAgent][CheckBatchSendAsyncResult] remote[%u] not found in"
+                "mapDevPhyIdconnectedSockets_", kv.first);
+            continue;
+        }
         auto &socket = mapDevPhyIdconnectedSockets_[kv.first];
         ret = socket->GetAsyncReqResult(sendMgr.lastSendHandle_, lastSendRet);
         if (ret != HCCL_SUCCESS) {
@@ -310,6 +320,11 @@ void ZeroCopyMemoryAgent::RequestBatchRecvAsync()
             continue;
         }
 
+        if (mapDevPhyIdconnectedSockets_.find(kv.first) == mapDevPhyIdconnectedSockets_.end()) {
+            HCCL_ERROR("[ZeroCopyMemoryAgent][RequestBatchRecvAsync] remote[%u] not found in"
+                "mapDevPhyIdconnectedSockets_", kv.first);
+            continue;
+        }
         auto &socket = mapDevPhyIdconnectedSockets_[kv.first];
         std::vector<u8> &req = recvMgr.receivedData_[recvMgr.recvIndex_];
         recvMgr.lastRecvSize_ = 0;  // 用于ra上报接收的数据量
@@ -331,7 +346,12 @@ void ZeroCopyMemoryAgent::CheckBatchRecvAsyncResult()
             continue;
         }
 
-        auto socket = mapDevPhyIdconnectedSockets_[kv.first];
+        if (mapDevPhyIdconnectedSockets_.find(kv.first) == mapDevPhyIdconnectedSockets_.end()) {
+            HCCL_ERROR("[ZeroCopyMemoryAgent][CheckBatchRecvAsyncResult] remote[%u] not found in"
+                "mapDevPhyIdconnectedSockets_", kv.first);
+            continue;
+        }
+        auto &socket = mapDevPhyIdconnectedSockets_[kv.first];
         ret = socket->GetAsyncReqResult(recvMgr.lastRecvHandle_, lastRecvRet);
         if (ret != HCCL_SUCCESS) {
             CHK_PRT_CONT(ret != HCCL_E_AGAIN,
@@ -412,6 +432,11 @@ void ZeroCopyMemoryAgent::RequestBatchRecvSync()
             continue;
         }
 
+        if (mapDevPhyIdconnectedSockets_.find(kv.first) == mapDevPhyIdconnectedSockets_.end()) {
+            HCCL_ERROR("[ZeroCopyMemoryAgent][RequestBatchRecvSync] remote[%u] not found in"
+                "mapDevPhyIdconnectedSockets_", kv.first);
+            continue;
+        }
         auto &socket = mapDevPhyIdconnectedSockets_[kv.first];
         std::vector<u8> &req = recvMgr.receivedData_[0];
         recvMgr.lastRecvSize_ = 0;

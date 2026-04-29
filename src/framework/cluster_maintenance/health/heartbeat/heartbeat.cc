@@ -222,6 +222,8 @@ HcclResult Heartbeat::RegisterRanks(DevType devType, const RankInfo &locRank, st
 {
     HCCL_INFO("[%s] group[%s] isUsedRdma[%d], isNeedNic[%d], RegisterRanks Start.", __func__, group.c_str(), isUsedRdma,
         isNeedNic);
+    // 线程锁，防止多线程同时Init
+    std::unique_lock<std::mutex> lock(ProcessLock_);
     auto iter = groupMap_.find(group);
     if (iter != groupMap_.end()) {
         HCCL_INFO("group[%s] has Registered, skip.", group.c_str());
@@ -234,6 +236,7 @@ HcclResult Heartbeat::RegisterRanks(DevType devType, const RankInfo &locRank, st
 
     // 刷新uid_，防止不同通信域下serverId不一致问题
     uid_ = GetUId(locRank);
+    lock.unlock();
 
     std::unique_lock<std::mutex> mapLock(ctxMapMutex_);
     if (devicePhyId_ != static_cast<u32>(HOST_DEVICE_ID) && rankInfos.size() > 1 && vnicIp_.IsInvalid()) {
@@ -278,7 +281,7 @@ HcclResult Heartbeat::RegisterRanks(DevType devType, const RankInfo &locRank, st
     }
     mapLock.unlock();
 
-    std::unique_lock<std::mutex> lock(ProcessLock_);
+    lock.lock();
     for (const auto& remRank : rankInfos) {
         UIDType rem = GetUId(remRank);
         rankId2StatusMap_.insert(rem, Status());

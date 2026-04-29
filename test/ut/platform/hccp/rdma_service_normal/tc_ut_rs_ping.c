@@ -170,7 +170,7 @@ int RsPongFindTargetNodeStub2(struct RsPingCtxCb *pingCb, struct PingQpInfo *tar
 int RsPongFindAllocTargetNodeStub(struct RsPingCtxCb *pingCb, struct PingQpInfo *target,
     struct RsPongTargetInfo **node)
 {
-    struct RsPongTargetInfo tmpNode = { 0 };
+    static struct RsPongTargetInfo tmpNode = { 0 };
 
     *node = &tmpNode;
 

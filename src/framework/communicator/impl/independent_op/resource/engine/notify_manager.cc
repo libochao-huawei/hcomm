@@ -55,7 +55,7 @@ HcclResult NotifyManager::ParseBinNotifys(const std::string& uniqueIdStr,
         iss.read(reinterpret_cast<char_t *>(&notifyNum), sizeof(notifyNum));
         CHK_RET(InitNotifys(iss, notifyNum, newNotifys));
     }
-    HCCL_RUN_INFO("[NotifyManager][%s] recover success, notifyNum[%u], notifyType[%u], uniqueIdSize[%s]",
+    HCCL_RUN_INFO("[NotifyManager][%s] recover success, notifyNum[%zu], notifyType[%d], uniqueIdSize[%zu]",
         __func__, notifyNum, loadType, uniqueIdStr.size());
     return HCCL_SUCCESS;
 }

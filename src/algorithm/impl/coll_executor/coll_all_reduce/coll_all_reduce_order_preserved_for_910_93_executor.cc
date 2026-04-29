@@ -56,6 +56,15 @@ HcclResult CollAllReduceOrderPreservedFor91093Executor::CalcStreamNum(u32& strea
     u32 devNumInlocalPod = 0;
     u32 rankIdxInPod = 0;
     CHK_RET(topoMatcher_->GetLocalSuperPodRankSize(topoAttr_.userRank, devNumInlocalPod, rankIdxInPod));
+
+    if (devNumInlocalPod == 1) {
+        u32 level2StreamNum = std::min(CalReduceStreamNum(topoAttr_.superPodNum) - 1, DEVICE_FOUR);
+        streamNum = level2StreamNum;
+        HCCL_INFO("[%s]tag[%s] single rank per module, level2StreamNum[%u], streamNum[%u]",
+            __func__, tag_.c_str(), level2StreamNum, streamNum);
+        return HCCL_SUCCESS;
+    }
+
     // all2allStreamNum条流给alltoall
     u32 all2allStreamNum = std::min(devNumInlocalPod, DEVICE_EIGHT);
     // reduceStreamNum主流分给alltoall，从流给LocalReduce使用
@@ -145,6 +154,14 @@ void CollAllReduceOrderPreservedFor91093Executor::CalGroupSlices(const OpParam &
 HcclResult CollAllReduceOrderPreservedFor91093Executor::RunReduceScatterLevel1(const OpParam &param, ExecMem &execMem,
     SubCommInfo &level1CommInfo)
 {
+    if (level1CommInfo.localRankSize == 1) {
+        all2allOffset_ = topoAttr_.superPodNum > 1 ? 1 : 0;
+        HCCL_INFO("[%s] single rank per module, skip L1 AllToAll and LocalReduce, tag[%s]",
+            __func__, tag_.c_str());
+        CHK_RET(RunReduceScatterLevel1SingleRank(param, execMem, level1CommInfo));
+        return HCCL_SUCCESS;
+    }
+
     // 切分数据(ReduceScatter分组，记录每组的起始偏移和大小)
     GroupSlicesInfo groupSlicesInfoLevel1;
     for (u32 groupId = 0; groupId < topoAttr_.superPodNum; groupId++) {
@@ -181,6 +198,18 @@ HcclResult CollAllReduceOrderPreservedFor91093Executor::RunReduceScatterLevel1(c
     return HCCL_SUCCESS;
 }
 
+HcclResult CollAllReduceOrderPreservedFor91093Executor::RunReduceScatterLevel1SingleRank(const OpParam &param,
+    ExecMem &execMem, SubCommInfo &level1CommInfo)
+{
+    u64 size = execMem.count * SIZE_TABLE[param.DataDes.dataType];
+
+    DeviceMem srcMem = DeviceMem::create(execMem.inputPtr, size);
+    DeviceMem dstMem = scratchMemFlag_ ? execMem.scratchMem.range(0, size) : execMem.inputMem.range(0, size);
+    CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dstMem, srcMem, const_cast<Stream&>(param.stream)));
+
+    return HCCL_SUCCESS;
+}
+
 HcclResult CollAllReduceOrderPreservedFor91093Executor::RunReduceScatterLevel2(const OpParam &param, ExecMem &execMem,
     SubCommInfo &level1CommInfo)
 {
@@ -208,9 +237,10 @@ HcclResult CollAllReduceOrderPreservedFor91093Executor::RunReduceScatterLevel2(c
     CHK_SMART_PTR_NULL(level2TempAlg);
 
     u32 level1LastRank = level1Ranksize - 1;
+    bool isUseCclIn = level1Ranksize == 1 || commIndex == level1LastRank - 1;
     CHK_RET(level2TempAlg->Prepare(execMem.inputMem, outputMem, param.stream, algResResp_->slaveStreams,
         algResResp_->notifiesMain, algResResp_->notifiesAux, memInfo, param.reduceType,
-        param.DataDes.dataType, commIndex == level1LastRank - 1, commIndex == level1LastRank, true));
+        param.DataDes.dataType, isUseCclIn, commIndex == level1LastRank, true));
     
     CHK_RET(level2TempAlg->RegisterProfiler((level1Ranksize << PROF_RANKSIZE_OFFSET_OF_PLANEID) +
         level1CommInfo.localRank, PROF_STAGE_2, HCCL_EXEC_STEP_NOT_SET, param.stream));

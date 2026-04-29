@@ -294,6 +294,8 @@ HcclResult ChannelManager::ParseChannelRemoteDataToMem(const OpCommTransport &op
         __func__, channelParam.listNum, singleSubCommTransport.links.size()), HCCL_E_PARA);
     // 分配 HcclIndOpChannelRemoteResV2 内存，需要手动释放
     channelParam.remoteResV2 = static_cast<HcclIndOpChannelRemoteResV2*>(malloc(channelParam.listNum * sizeof(HcclIndOpChannelRemoteResV2)));
+    CHK_PRT_RET(channelParam.remoteResV2 == nullptr,
+        HCCL_ERROR("[%s]channelParam.remoteResV2 is null.", __func__), HCCL_E_MEMORY);
     u32 linkIdx = 0;
     for (auto &transportRequest : singleSubCommTransport.transportRequests) {
         auto &tempLink = singleSubCommTransport.links[linkIdx];

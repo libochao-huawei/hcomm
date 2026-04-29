@@ -39,6 +39,7 @@ CcuContextAllToAllMesh1D2Die::CcuContextAllToAllMesh1D2Die(const CcuCtxArg      
     if (ctxArg->dimSize_.size() > 0) {
         rankSize_ = ctxArg->dimSize_[0];
     }
+    bitNumPerCKE_ = ctxArg->bitNum_;
 }
 
 void CcuContextAllToAllMesh1D2Die::InitResource()
@@ -80,10 +81,8 @@ void CcuContextAllToAllMesh1D2Die::InitResource()
     }
 
     logicRankSize = withMyRank_ ? transports.size() + 1 : transports.size();
-    uint16_t logicId       = rankId_ % logicRankSize; // topo为 2 * n
-    selfBit       = 1 << logicId;
-    allBit        = withMyRank_ ? ((1 << logicRankSize) - 1) & (~(1 << logicId)) : (1 << logicRankSize) - 1;
-
+    signalNum_    = (rankSize_ + bitNumPerCKE_ - 1) / bitNumPerCKE_;
+    HCCL_INFO("[CcuContextAlltoAll2Die] CtxArg: rankId_[%u], rankSize_[%u], signalNum_[%u]", rankId_, rankSize_, signalNum_);
     return;
 }
 
@@ -104,28 +103,74 @@ void CcuContextAllToAllMesh1D2Die::LoadArgs()
 
 void CcuContextAllToAllMesh1D2Die::PreSync()
 {
-    for (auto t : transports) {
-        // （transport, param, paramID, SemID, mask）
-        WriteVariableWithSignal(*t, output_[virRankSize - 1], OUPUT_XN_ID, CKE_IDX_1,
-                                selfBit); // index = 1，传递output信息
-        WriteVariableWithSignal(*t, token_[virRankSize - 1], TOKEN_XN_ID, CKE_IDX_2,
-                                selfBit); // index = 2，传递token信息
+    if (withMyRank_) {
+        uint16_t logicId = rankId_ % logicRankSize;
+        selfBit = 1 << logicId;
+        allBit = ((1 << logicRankSize) - 1) & (~(1 << logicId));
+        for (auto t : transports) {
+            // （transport, param, paramID, SemID, mask）
+            WriteVariableWithSignal(*t, output_[virRankSize - 1], OUPUT_XN_ID, CKE_IDX_1,
+                                    selfBit); // index = 1，传递output信息
+            WriteVariableWithSignal(*t, token_[virRankSize - 1], TOKEN_XN_ID, CKE_IDX_2,
+                                    selfBit); // index = 2，传递token信息
+        }
+        GroupWait(*transportGroup, CKE_IDX_1, allBit); // index = 1，传递output信息
+        GroupWait(*transportGroup, CKE_IDX_2, allBit); // index = 2，传递token信息
+    } else {
+        uint16_t selfSignalId = rankId_ / bitNumPerCKE_;
+        uint16_t selfBit      = 1 << (rankId_ % bitNumPerCKE_);
+        for (auto t : transports) {
+            // （transport, param, paramID, SemID, mask）
+            WriteVariableWithSignal(*t, output_[virRankSize - 1], OUPUT_XN_ID, selfSignalId + signalNum_ * CKE_IDX_1,
+                                    selfBit); // index = 1，传递output信息
+            WriteVariableWithSignal(*t, token_[virRankSize - 1], TOKEN_XN_ID, selfSignalId + signalNum_ * CKE_IDX_2,
+                                    selfBit); // index = 2，传递token信息
+        }
+        std::vector<uint16_t> waitBitVector(signalNum_, 0);
+        for (uint16_t sId = 0; sId < waitBitVector.size(); sId++) {
+            waitBitVector[sId] = (1 << bitNumPerCKE_) - 1;
+            if (sId == selfSignalId) {
+                waitBitVector[sId] = 0;
+            }
+            GroupWait(*transportGroup, sId + signalNum_ * CKE_IDX_1, waitBitVector[sId]); // index = 1，传递output信息
+            GroupWait(*transportGroup, sId + signalNum_ * CKE_IDX_2, waitBitVector[sId]); // index = 2，传递token信息
+        }
     }
-
-    GroupWait(*transportGroup, CKE_IDX_1, allBit); // index = 1，传递output信息
-    GroupWait(*transportGroup, CKE_IDX_2, allBit); // index = 2，传递token信息
     return;
 }
 
 void CcuContextAllToAllMesh1D2Die::PostSync()
 {
-    for (auto t : transports) {
-        if (t == nullptr) {
-            THROW<NullPtrException>(StringFormat("CcuContextAllToAllMesh1D2Die::Algorithm transport ptr is null"));
+    if (withMyRank_) {
+        uint16_t logicId = rankId_ % logicRankSize;
+        selfBit = 1 << logicId;
+        allBit = ((1 << logicRankSize) - 1) & (~(1 << logicId));
+        for (auto t : transports) {
+            if (t == nullptr) {
+                THROW<NullPtrException>(StringFormat("CcuContextAllToAllMesh1D2Die::Algorithm transport ptr is null"));
+            }
+            RemotePost(*t, CKE_IDX_0, selfBit);
         }
-        RemotePost(*t, CKE_IDX_0, selfBit);
+        GroupWait(*transportGroup, CKE_IDX_0, allBit);
+    } else {
+        uint16_t selfSignalId = rankId_ / bitNumPerCKE_;
+        uint16_t selfBit      = 1 << (rankId_ % bitNumPerCKE_);
+        for (auto t : transports) {
+            if (t == nullptr) {
+                THROW<NullPtrException>(StringFormat("CcuContextAllToAllMesh1D2Die::Algorithm transport ptr is null"));
+            }
+            RemotePost(*t, selfSignalId + signalNum_ * CKE_IDX_0, selfBit);
+        }
+        std::vector<uint16_t> waitBitVector(signalNum_, 0);
+        for (uint16_t sId = 0; sId < waitBitVector.size(); sId++) {
+            waitBitVector[sId] = (1 << bitNumPerCKE_) - 1;
+            if (sId == selfSignalId) {
+                waitBitVector[sId] = 0;
+            }
+            GroupWait(*transportGroup, CKE_IDX_0, allBit);
+        }
     }
-    GroupWait(*transportGroup, CKE_IDX_0, allBit);
+    
     return;
 }
 
@@ -158,7 +203,6 @@ void CcuContextAllToAllMesh1D2Die::DoRepeatAllToAll()
         dst[r].token = token_[r];
 
         src[r].addr = input_[virRankSize - 1];
-
         dst[r].addr = output_[r];
         dst[r].addr += outputoffset_;
         for(uint64_t i = 0; i < dstRank; i++){
@@ -166,20 +210,38 @@ void CcuContextAllToAllMesh1D2Die::DoRepeatAllToAll()
         }
     }
 
-    uint64_t allBit_ = withMyRank_ ? ((1 << logicRankSize) - 1) & (~(1 << transports.size())) : (1 << logicRankSize) - 1;
-    // 创建CKE，源端保序
-    CcuRep::MaskSignal locMask = CreateMaskSignal();
     //  all2all 数据搬运
     u32 transportIdx = 0;
-    for (uint64_t r = 0; r < logicRankSize; r++) {
-        if (withMyRank_ && r == logicRankSize - 1) {
-            LocalCopyByLoopGroup(dst[r], src[r]);
-            continue;
+    if (withMyRank_) {
+        uint64_t allBit_ = withMyRank_ ? ((1 << logicRankSize) - 1) & (~(1 << transports.size())) : (1 << logicRankSize) - 1;
+        CcuRep::MaskSignal locMask = CreateMaskSignal();
+        for (uint64_t r = 0; r < logicRankSize; r++) {
+            if (withMyRank_ && r == logicRankSize - 1) {
+                LocalCopyByLoopGroup(dst[r], src[r]);
+                continue;
+            }
+            Write(*transports[transportIdx], dst[r], src[r], sliceSize_, locMask, 1 << r);
+            transportIdx++;
         }
-        Write(*transports[transportIdx], dst[r], src[r], sliceSize_, locMask, 1 << r);
-        transportIdx++;
+        LocalWait(locMask, allBit_);
+    } else {
+        vector<CcuRep::MaskSignal> locMask;
+        uint16_t signalNum = logicRankSize / bitNumPerCKE_;
+        std::vector<uint16_t> waitBitVector(signalNum, 0);
+        for (uint16_t sId = 0; sId < signalNum; sId++) {
+            locMask.push_back(CreateMaskSignal());
+        }
+        for (uint16_t r = 0; r < logicRankSize; r++) {
+            uint16_t rmtSignalId = r / bitNumPerCKE_;
+            uint16_t rmtSignalBit = 1 << (r % bitNumPerCKE_);
+            Write(*transports[transportIdx], dst[r], src[r], sliceSize_, locMask[rmtSignalId], rmtSignalBit);
+            transportIdx++;
+        }
+        for (uint16_t sId = 0; sId < signalNum; sId++) {
+            waitBitVector[sId] = (1 << bitNumPerCKE_) - 1;
+            LocalWait(locMask[sId], waitBitVector[sId]);
+        }
     }
-    LocalWait(locMask, allBit_);
 }
 
 void CcuContextAllToAllMesh1D2Die::CreateLocalCopyLoop()

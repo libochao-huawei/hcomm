@@ -96,6 +96,7 @@ HCOMM通信基础库采用分层解耦的设计思路，将通信能力划分为
 ## 📖 学习教程
 
 HCCL提供了使用指南、通信算子开发指南、技术文章、培训视频，详细可参见 [HCCL 参考资料](./docs/README.md)。
+此外，HCCL还提供了QuickStart指南、常见FAQ等wiki，详细可参见 [WIKI](https://gitcode.com/cann/hcomm/wiki)。
 
 ## 📝 相关信息
 
