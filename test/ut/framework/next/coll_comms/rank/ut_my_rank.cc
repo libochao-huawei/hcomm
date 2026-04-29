@@ -8,6 +8,7 @@
 #include "my_rank.h"
 #include "channel_process.h"
 #include "base_config.h"
+#include "ccu_primitives.h"
 #define private public
 using namespace hccl;
 

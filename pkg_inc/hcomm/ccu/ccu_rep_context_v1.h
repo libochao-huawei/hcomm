@@ -14,7 +14,6 @@
 #include "hcomm_primitives.h"
 #include "ccu_rep_base_v1.h"
 #include "ccu_rep_block_v1.h"
-#include "ccu_kernel_arg.h"
 
 #include "ccu_common.h"
 
@@ -66,7 +65,7 @@ public:
     // 平台层内部使用
     std::shared_ptr<CcuRep::CcuRepBlock> CurrentBlock();
     void                                 SetCurrentBlock(std::shared_ptr<CcuRep::CcuRepBlock> repBlock);
-    void                                 Append(std::shared_ptr<CcuRep::CcuRepBase> rep);
+    virtual void                         Append(std::shared_ptr<CcuRep::CcuRepBase> rep);
     const std::vector<std::shared_ptr<CcuRep::CcuRepBase>> &GetRepSequence();
     std::shared_ptr<CcuRep::CcuRepBase> GetRepByInstrId(uint16_t instrId);
     void DumpReprestation();
