@@ -107,8 +107,16 @@ void RankInfoDispather::PrepareResource(const std::unordered_map<std::string, st
     BinaryStream binaryStream;
     clusterInfo.GetBinStream(true, binaryStream);
     binaryStream << step;
-    binaryStream << failedAgentIdList;
-    
+    // 构造故障帧
+    if (!failedAgentIdList.empty()) {
+        nlohmann::json faultJson;
+        faultJson["fault_info"] = "Failed to connect agent[" + failedAgentIdList + "]";
+        faultJson["fault_type"] = static_cast<int>(FaultType::CONNECT_FAILED);
+        binaryStream << faultJson.dump();
+    } else {
+        binaryStream << std::string("");
+    }
+
     binaryStream.Dump(rankTableMsg_);
 
     for (auto &it : connectSockets) {

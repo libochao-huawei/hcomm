@@ -23,6 +23,8 @@
 
 namespace Hccl {
 
+const u32 RANKINFO_DETECT_AGENT_WAIT_ERROR_BROADCAST_TIME = 20;
+
 class RankInfoDetectClient {
 public:
     RankInfoDetectClient(u32 devPhyId, u32 rankSize, u32 rankId, const std::shared_ptr<Socket> &clientSocket)
