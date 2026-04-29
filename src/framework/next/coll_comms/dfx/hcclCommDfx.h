@@ -29,10 +29,11 @@ public:
     explicit HcclCommDfx();
 
     // 初始化DFX系统
-    HcclResult Init(u32 deviceId, const std::string& comTag);
+    HcclResult Init(u32 deviceId, const std::string& comTag, u32 myRankId);
 
     // 注册回调函数
     HcclResult AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle);
+    HcclResult AddDpuTaskInfoCallback(const Hccl::TaskParam &taskParam, u64 handle);
 
     // 获取MirrorTaskManager
     Hccl::MirrorTaskManager* GetMirrorTaskManager() const;
@@ -49,19 +50,37 @@ public:
     static void AddChannelRemoteRankId(const std::string& commTag, u64 handle, u32 remoteRankId);
     // 在channelRemoteRankId_表中对remoteRankId进行查找
     static HcclResult GetChannelRemoteRankId(const std::string& commTag, u64 handle, u32& remoteRankId);
+    // 根据streamId获取taskId，每次调用后taskId自增1，大于65535时回环到0
+    static u32 GetTaskId(u32 streamId);
     std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> GetCallback() {
         return setAddTaskCallback_;
     }
+    std::function<HcclResult(const Hccl::TaskParam&, u64)> GetDpuCallback() {
+        return setAddDpuTaskCallback_;
+    }
     HcclResult ReportKernel(uint64_t beginTime, const std::string& commTag, const std::string& kernelName, uint32_t threadId);
+
+
+    void SetDpuStreamId(u32 dpuStreamId);
+    void SetAicpuTaskIdAndStreamId(u32 taskId, u32 streamId) {
+        aicpuTaskId_ = taskId;
+        aicpuStreamId_ = streamId;
+    }
 private:
     std::unique_ptr<Hccl::MirrorTaskManager> mirrorTaskManager_;
     std::unique_ptr<HcclCommProfiling> profiling_;
     static std::unordered_map<std::string,std::unordered_map<u64, u32> > channelRemoteRankId_;
+    static std::unordered_map<u32, u32> streamIdToTaskId_;
     static ReadWriteLockBase baseLock_; // 基类锁成员
     static ReadWriteLock rwLock_; // 读写锁
     std::string commTag_;
     u32 deviceId_{0};
+    u32 myRankId_{0};
+    u32 dpuStreamId_{110};
+    u32 aicpuTaskId_{INVALID_UINT};
+    u32 aicpuStreamId_{INVALID_UINT};
     std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> setAddTaskCallback_;
+    std::function<HcclResult(const Hccl::TaskParam&, u64)> setAddDpuTaskCallback_;
 };
 
 } // namesapce hccl
