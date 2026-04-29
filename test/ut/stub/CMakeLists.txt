@@ -114,6 +114,7 @@ set(orion_list
     ${HCCL_CODE_ROOT}/src/legacy/framework/env_config/base_config.cc
     ${HCCL_CODE_ROOT}/src/legacy/framework/env_config/env_config.cc
     ${HCCL_CODE_ROOT}/src/legacy/framework/env_config/env_func.cc
+    ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/hostdpu/task_service.cc
 )
 
 set(hccl_list
@@ -397,7 +398,6 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/reps/loop
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/reps/sync
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/reps/translator
-
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/profiling
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/profiling/aicpu
@@ -414,6 +414,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/
     ${HCCL_CODE_ROOT}/src/legacy/framework/resource_manager/stream
     ${HCCL_CODE_ROOT}/src/legacy/interface/
+    ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/hostdpu
 
 )
 
