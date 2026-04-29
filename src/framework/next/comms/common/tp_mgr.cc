@@ -176,7 +176,7 @@ static HcclResult CheckRequestResult(RequestHandle &reqHandle)
 
 HcclResult CheckTpProtocol(const TpProtocol tpProtocol)
 {
-    if (tpProtocol != TpProtocol::CTP && tpProtocol != TpProtocol::RTP) {
+    if (tpProtocol != TpProtocol::CTP && tpProtocol != TpProtocol::RTP && tpProtocol != TpProtocol::UBOE) {
         HCCL_ERROR("[TpMgr][%s] failed, tpProtocol[%d] is not supported.", __func__, tpProtocol);
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
@@ -315,6 +315,7 @@ static HcclResult GetTpInfoListAsync(const CtxHandle ctxHandle, const GetTpInfoP
     struct GetTpCfg cfg {};
     cfg.flag.bs.rtp = tpProtocol == TpProtocol::RTP ? 1 : 0;
     cfg.flag.bs.ctp = tpProtocol == TpProtocol::CTP ? 1 : 0;
+    cfg.flag.bs.uboe = tpProtocol == TpProtocol::UBOE ? 1 : 0;
     cfg.transMode = TransportModeT::CONN_RM;
     CHK_RET(IpAddressToHccpEid(locAddr, cfg.localEid));
     HCCL_INFO("RaUbGetTpInfoAsync cfg.local_eid[subnetPrefix[%016llx], interfaceId[%016llx]]",
@@ -458,22 +459,58 @@ HcclResult TpMgr::HandleCompletedRequest(RequestCtx reqCtx, const GetTpInfoParam
 
 TpMgr::InfoCtxMap &TpMgr::GetInfoCtxMap(const TpProtocol tpProtocol)
 {
-    return tpProtocol == TpProtocol::CTP ? ctpInfoMap_ : rtpInfoMap_;
+    switch (tpProtocol) {
+        case TpProtocol::CTP:
+            return ctpInfoMap_;
+        case TpProtocol::RTP:
+            return rtpInfoMap_;
+        case TpProtocol::UBOE:
+            return uboeInfoMap_;
+        default:
+            return rtpInfoMap_;
+    }
 }
 
 TpMgr::ReqCtxMap &TpMgr::GetReqCtxMap(const TpProtocol tpProtocol)
 {
-    return tpProtocol == TpProtocol::CTP ? ctpReqMap_ : rtpReqMap_;
+    switch (tpProtocol) {
+        case TpProtocol::CTP:
+            return ctpReqMap_;
+        case TpProtocol::RTP:
+            return rtpReqMap_;
+        case TpProtocol::UBOE:
+            return uboeReqMap_;
+        default:
+            return rtpReqMap_;
+    }
 }
 
 std::mutex &TpMgr::GetInfoCtxMutex(const TpProtocol tpProtocol)
 {
-    return tpProtocol == TpProtocol::CTP ? ctpInfoMutex_ : rtpInfoMutex_;
+    switch (tpProtocol) {
+        case TpProtocol::CTP:
+            return ctpInfoMutex_;
+        case TpProtocol::RTP:
+            return rtpInfoMutex_;
+        case TpProtocol::UBOE:
+            return uboeInfoMutex_;
+        default:
+            return rtpInfoMutex_;
+    }
 }
 
 std::mutex &TpMgr::GetReqCtxMutex(const TpProtocol tpProtocol)
 {
-    return tpProtocol == TpProtocol::CTP ? ctpReqMutex_ : rtpReqMutex_;
+    switch (tpProtocol) {
+        case TpProtocol::CTP:
+            return ctpReqMutex_;
+        case TpProtocol::RTP:
+            return rtpReqMutex_;
+        case TpProtocol::UBOE:
+            return uboeReqMutex_;
+        default:
+            return rtpReqMutex_;
+    }
 }
 
 } // namespace hcomm
