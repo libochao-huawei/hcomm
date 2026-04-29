@@ -378,6 +378,7 @@ TEST_F(HcclImplAlgTestDoubleRingConcurrent, ut_CollReduceScatterDoubleRingConcur
 
     unsetenv("HCCL_INTER_HCCS_DISABLE");
     setenv("HCCL_ALGO", "level0:NA;level1:NA;level2:ring", 1);
+    setenv("HCCL_DEBUG_CONFIG", "AIV_OPS_EXC", 1);
     ret = InitEnvVarParam();
     ret = InitEnvParam();
 

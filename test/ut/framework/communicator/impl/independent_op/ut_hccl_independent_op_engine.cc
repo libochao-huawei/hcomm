@@ -59,9 +59,9 @@ TEST_F(HcclIndependentOpEngineTest, Ut_HcclThreadAcquire_When_Param_Is_Invalid_E
     EXPECT_EQ(ret, HCCL_E_PARA);
     ret = HcclThreadAcquire(comm, CommEngine::COMM_ENGINE_CPU_TS , 2, 1, threads);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    ret = HcclThreadAcquire(comm, CommEngine::COMM_ENGINE_CPU_TS , 39, 1, threads);
+    ret = HcclThreadAcquire(comm, CommEngine::COMM_ENGINE_CPU_TS , 199, 1, threads);
     EXPECT_EQ(ret, HCCL_E_UNAVAIL);
-    ret = HcclThreadAcquire(comm, CommEngine::COMM_ENGINE_CPU_TS , 1, 640, threads);
+    ret = HcclThreadAcquire(comm, CommEngine::COMM_ENGINE_CPU_TS , 1, 65536, threads);
     EXPECT_EQ(ret, HCCL_E_UNAVAIL);
 }
 
@@ -149,7 +149,7 @@ TEST_F(HcclIndependentOpEngineTest, Ut_HcclThreadAcquire_When_Alloced_Threads_Mo
     }
 
     ThreadHandle thread3[2] = {0};
-    ret = HcclThreadAcquire(comm, g_hostEngine, 1, 639, thread3);
+    ret = HcclThreadAcquire(comm, g_hostEngine, 1, 65535, thread3);
     EXPECT_EQ(ret, HCCL_E_UNAVAIL);
 }
 
@@ -157,7 +157,7 @@ TEST_F(HcclIndependentOpEngineTest, Ut_HcclThreadAcquire_When_Alloced_Threads_Mo
 TEST_F(HcclIndependentOpEngineTest, Ut_HcclThreadAcquire_When_Alloced_Notify_Morethan_Quota_Expect_Unavailable)
 {
     ThreadHandle thread1[2] = {0};
-    HcclResult ret = HcclThreadAcquire(comm, g_hostEngine, 2, 650, thread1);
+    HcclResult ret = HcclThreadAcquire(comm, g_hostEngine, 2, 100000, thread1);
     EXPECT_EQ(ret, HCCL_E_UNAVAIL);
 }
 

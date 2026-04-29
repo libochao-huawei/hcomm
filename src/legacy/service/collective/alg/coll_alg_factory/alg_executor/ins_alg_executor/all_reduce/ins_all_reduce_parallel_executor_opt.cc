@@ -20,9 +20,9 @@
 #include "topo_match_concurr_mesh_nhr.h"
 #include "alg_data_trans_wrapper.h"
 
-#include "ins_temp_reduce_scatter_mesh_1D_opt.h"
+#include "ins_temp_reduce_scatter_mesh_1D.h"
 
-#include "ins_temp_all_gather_mesh_opt.h"
+#include "ins_temp_all_gather_mesh.h"
 
 namespace Hccl {
 constexpr u64 MAX_OFFLOAD_SCRATCH_SIZE = 200 * 1024 * 1024;  // 200M
@@ -66,6 +66,14 @@ HcclResult InsAllReduceParallelExecutorV2<AlgTopoMatch, InsAlgTemplate0, InsAlgT
 
     CHK_RET(intraTempAlgAG.CalcRes(resReqIntraAG));
     CHK_RET(interTempAlgAG.CalcRes(resReqInterAG));
+    // 设置链路信息
+    std::vector<map<u32, u32>> rank2PathNumMap;
+    HCCL_INFO("[InsAllReduceParallelExecutorV2] CalcResOffload SetPathNumMap");
+    CHK_RET(SetPathNumMapByRankGraphMultiLevel(rankGraph, virtRanks_, myRank_, rank2PathNumMap));
+    intraTempAlgRS.setPathNumMap(rank2PathNumMap[0]);
+    interTempAlgRS.setPathNumMap(rank2PathNumMap[1]);
+    intraTempAlgAG.setPathNumMap(rank2PathNumMap[0]);
+    interTempAlgAG.setPathNumMap(rank2PathNumMap[1]);
 
     // 算法从流数量 = Σ(temp的que数量 + temp的从流数量 * temp调用次数) - 算法主流数量
     resReq.requiredSubQueNum = std::max((resReqIntraAG.queNum + resReqInterAG.queNum), (resReqIntraRS.queNum + resReqInterRS.queNum)) - 1;
@@ -90,6 +98,15 @@ HcclResult InsAllReduceParallelExecutorV2<AlgTopoMatch, InsAlgTemplate0, InsAlgT
     InsAlgTemplate1 tempAlgRSInter(myRank_, rankSizeLevel1_, vTopo_[1], virtRankMap_[1]);
     InsAlgTemplate2 tempAlgAGIntra(myRank_, rankSizeLevel0_, vTopo_[0], virtRankMap_[0]);
     InsAlgTemplate3 tempAlgAGInter(myRank_, rankSizeLevel1_, vTopo_[1], virtRankMap_[1]);
+
+    // 设置链路信息
+    std::vector<map<u32, u32>> rank2PathNumMap;
+    HCCL_INFO("[InsAllReduceParallelExecutorV2] CalcResOffload SetPathNumMap");
+    CHK_RET(SetPathNumMapByRankGraphMultiLevel(rankGraph, virtRanks_, myRank_, rank2PathNumMap));
+    tempAlgRSIntra.setPathNumMap(rank2PathNumMap[0]);
+    tempAlgRSInter.setPathNumMap(rank2PathNumMap[1]);
+    tempAlgAGIntra.setPathNumMap(rank2PathNumMap[0]);
+    tempAlgAGInter.setPathNumMap(rank2PathNumMap[1]);
 
     // 计算各模板资源需求
     AlgTempResReq resReqRSIntra, resReqRSInter, resReqAGIntra, resReqAGInter;
@@ -486,6 +503,14 @@ HcclResult InsAllReduceParallelExecutorV2<AlgTopoMatch, InsAlgTemplate0, InsAlgT
     InsAlgTemplate2 tempAlgIntraAG(myRank_, rankSizeLevel0_, vTopo_[0], virtRankMap_[0]);
     InsAlgTemplate3 tempAlgInterAG(myRank_, rankSizeLevel1_, vTopo_[1], virtRankMap_[1]);
 
+    std::vector<map<u32, u32>> rank2PathNumMap;
+    HCCL_INFO("[InsAllReduceParallelExecutorV2] Orchestrate SetPathNumMap");
+    CHK_RET(SetPathNumMapByLinkMgrMultiLevel(linkMgr, virtRanks_, myRank_, rank2PathNumMap));
+    tempAlgIntraRS.setPathNumMap(rank2PathNumMap[0]);
+    tempAlgInterRS.setPathNumMap(rank2PathNumMap[1]);
+    tempAlgIntraAG.setPathNumMap(rank2PathNumMap[0]);
+    tempAlgInterAG.setPathNumMap(rank2PathNumMap[1]);
+
     InitAlgCommonParams(tempAlgIntraRS, tempAlgInterRS, tempAlgIntraAG, tempAlgInterAG, op);
 
     // 计算算法模板所需资源
@@ -503,15 +528,18 @@ HcclResult InsAllReduceParallelExecutorV2<AlgTopoMatch, InsAlgTemplate0, InsAlgT
     std::vector<float> dataSplitSize;
     GetParallelDataSplitRate(dataSplitSize);
     u64 alignedSize = 16 * 1024;  // 16K 对齐
+    u64 UB_DATA_SIZE_LIMIT = static_cast<u64>(UB_MAX_DATA_SIZE) * rankSize_ / rankSizeLevel0_;
 
     u64 dataCount0 = (static_cast<u64>((dataCount_ * dataSplitSize[0])) / rankSize_) * rankSize_;
     u64 dataCount1 = dataCount_ - dataCount0;
 
     u64 scratchSize0 = (static_cast<u64>(maxTmpMemSize_ *  dataSplitSize[0])  / alignedSize / dataTypeSize_) * alignedSize * dataTypeSize_;
+    scratchSize0 = std::min(scratchSize0, UB_DATA_SIZE_LIMIT);
     u64 maxCountPerLoop0 = scratchSize0 / dataTypeSize_ / rankSize_ * rankSize_;
     maxCountPerLoop0 = std::min(dataCount0, maxCountPerLoop0);
 
     u64 scratchSize1 = ((maxTmpMemSize_ - scratchSize0) / alignedSize / dataTypeSize_) * alignedSize * dataTypeSize_;
+    scratchSize1 = std::min(scratchSize1, UB_DATA_SIZE_LIMIT);
     u64 maxCountPerLoop1 = scratchSize1 / dataTypeSize_ / rankSize_ * rankSize_;
     maxCountPerLoop1 = std::min(dataCount1, maxCountPerLoop1);
 
@@ -607,5 +635,5 @@ HcclResult InsAllReduceParallelExecutorV2<AlgTopoMatch, InsAlgTemplate0, InsAlgT
 
 // 算法注册
 INS_REGISTER_IMPL_BY_FOUR_TEMPS(OpType::ALLREDUCE, InsAllReduceFourTemplateMesh1DNHR, InsAllReduceParallelExecutorV2,
-    TopoMatchMeshNHR, InsTempReduceScatterMesh1DOpt, InsTempReduceScatterMesh1DOpt, InsTempAllGatherMesh1DOpt, InsTempAllGatherMesh1DOpt);
+    TopoMatchMeshNHR, InsTempReduceScatterMesh1D, InsTempReduceScatterMesh1D, InsTempAllGatherMesh1D, InsTempAllGatherMesh1D);
 }

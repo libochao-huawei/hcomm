@@ -31,6 +31,7 @@ private:
     HcclResult CalcTransportMemType(TransportMemType &inputType, TransportMemType &outputType);
     void CalGroupSlices(const OpParam &param, const ExecMem &execMem);
     void CalcSizePerBlock(const OpParam &param, ExecMem &execMem);
+    HcclResult RunReduceScatterLevel0SingleRank(const OpParam &param, ExecMem &execMem, SubCommInfo &level0CommInfo);
 
     /* *************** 算法编排 *************** */
     bool IsHugeData(const u64 curSize) override;

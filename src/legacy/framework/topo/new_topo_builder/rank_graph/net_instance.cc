@@ -186,7 +186,7 @@ HcclResult NetInstance::GetTopoType(const u32 topoInstId, TopoType& topoType) co
     }
 
     HCCL_ERROR("[NetInstance::GetTopoType] Failed to find TopoInstance with ID: %u", topoInstId);
-    return HCCL_E_INTERNAL;
+    return HCCL_E_PARA;
 }
 
 HcclResult NetInstance::GetRanksByTopoInst(const u32 topoInstId, std::vector<u32>& ranks, u32& rankNum) const
@@ -199,7 +199,7 @@ HcclResult NetInstance::GetRanksByTopoInst(const u32 topoInstId, std::vector<u32
         return HCCL_SUCCESS;
     }
     HCCL_ERROR("[NetInstance::GetRanksByTopoInst] Failed to find ranks with ID: %u", topoInstId);
-    return HCCL_E_INTERNAL;
+    return HCCL_E_PARA;
 }
 
 string NetInstance::Describe() const

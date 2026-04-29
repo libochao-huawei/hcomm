@@ -5314,6 +5314,9 @@ TEST_F(HcomTest, ut_HcclCommGraphAllGather)
     .will(returnValue(HCCL_SUCCESS));
 
     int ret = HCCL_SUCCESS;
+    ret = HcclCommGraphAllGather("tag", sendbuf, recv, 10, HCCL_DATA_TYPE_INT8, 0, stream);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+
     ret = HcclCommGraphAllGather("tag", sendbuf, recv, 10, HCCL_DATA_TYPE_INT8, opBaseHcom, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
@@ -5361,6 +5364,9 @@ TEST_F(HcomTest, ut_HcclCommGraphAllReduce)
     MOCKER_CPP(&hcclComm::GetAlgType)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
+
+    ret = HcclCommGraphAllReduce("tag", sendbuf, recv, 10, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, 0, stream);
+    EXPECT_EQ(ret, HCCL_E_PTR);
 
     ret = HcclCommGraphAllReduce("tag", sendbuf, recv, 10, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, opBaseHcom, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -5414,6 +5420,9 @@ TEST_F(HcomTest, ut_HcclCommGraphReduce)
     MOCKER_CPP(&hcclComm::GetAlgType)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
+
+    ret = HcclCommGraphReduce("tag", sendbuf, recv, 10, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, 0, 0, stream);
+    EXPECT_EQ(ret, HCCL_E_PTR);
 
     ret = HcclCommGraphReduce("tag", sendbuf, recv, 10, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, 0, opBaseHcom, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -5470,6 +5479,9 @@ TEST_F(HcomTest, ut_HcclCommGraphBroadcast)
 
     MOCKER_CPP(&hcclComm::GetNumBlocks).stubs().will(returnValue(HCCL_SUCCESS));
 
+    ret = HcclCommGraphBroadcast("tag", sendbuf, 10, HCCL_DATA_TYPE_INT8, 0, 0, stream);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+
     ret = HcclCommGraphBroadcast("tag", sendbuf, 10, HCCL_DATA_TYPE_INT8, 0, opBaseHcom, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
@@ -5522,6 +5534,9 @@ TEST_F(HcomTest, ut_HcclCommGraphReduceScatter)
     MOCKER_CPP(&hcclComm::GetGroupRank)
     .expects(atMost(1))
     .will(returnValue(0));
+
+    ret = HcclCommGraphReduceScatter("tag", sendbuf, recv, 10, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, 0, stream);
+    EXPECT_EQ(ret, HCCL_E_PTR);
 
     ret = HcclCommGraphReduceScatter("tag", sendbuf, recv, 10, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, opBaseHcom, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -5588,6 +5603,9 @@ TEST_F(HcomTest, ut_HcclCommGraphSendRecv)
     .expects(atMost(1))
     .will(returnValue(0));
 
+    ret = HcclCommGraphSend("tag", sendbuf, 10, HCCL_DATA_TYPE_INT8, 8,0, 0, stream);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+
     ret = HcclCommGraphSend("tag", sendbuf, 10, HCCL_DATA_TYPE_INT8, 8,0, opBaseHcom, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
@@ -5619,6 +5637,9 @@ TEST_F(HcomTest, ut_HcclCommGraphSendRecv)
     MOCKER_CPP(&hcclComm::GetAlgType)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
+
+    ret = HcclCommGraphReceive("tag", recv, 10, HCCL_DATA_TYPE_INT8, 8,0, 0, stream);
+    EXPECT_EQ(ret, HCCL_E_PTR);
 
     ret = HcclCommGraphReceive("tag", recv, 10, HCCL_DATA_TYPE_INT8, 8,0, opBaseHcom, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -12686,4 +12707,39 @@ TEST_F(HcomTest, ut_group_fail_test)
     std::shared_ptr<hcclComm> groupComm = nullptr;
     HcclResult ret = comm.CreateGroup(group, groupRank, userRank, groupRanks, groupComm);
     EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(HcomTest, ut_HcomGetInitStatus_When_ParamIsNullptr_Expect_ReturnIsHCCL_E_PTR)
+{
+    HcclResult ret = HcomGetInitStatus(nullptr);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(HcomTest, ut_HclCommGraphSetWorkspaceResource_When_ParamIsNullptr_Expect_ReturnIsHCCL_E_PTR)
+{
+    std::string tag = "tag";
+    std::vector<rtStream_t> stream;
+    HcclResult ret = HcclCommGraphSetWorkspaceResource(tag, 0, stream, nullptr, 0);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(HcomTest, ut_HcomGetSplitStrategy_When_ParamIsNullptr_Expect_ReturnIsHCCL_E_PTR)
+{
+    std::string group = "group_name_0";
+    struct model_feature feature;
+    feature.model_name = reinterpret_cast<const char*>(0x1234);
+    feature.gradient_size = reinterpret_cast<float*>(0x1234);
+    feature.gradient_time = reinterpret_cast<float*>(0x1234);
+    HcclResult ret = HcomGetSplitStrategy(group.c_str(), feature, nullptr, nullptr, nullptr,
+        GradSplitForceMode::FORCE_NONE, OriginalGraphShapeType::KNOWN_SHAPE);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+
+    u32 ptr = 0;
+    ret = HcomGetSplitStrategy(group.c_str(), feature, &ptr, nullptr, nullptr,
+        GradSplitForceMode::FORCE_NONE, OriginalGraphShapeType::KNOWN_SHAPE);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+
+    ret = HcomGetSplitStrategy(group.c_str(), feature, &ptr, &ptr, nullptr,
+        GradSplitForceMode::FORCE_NONE, OriginalGraphShapeType::KNOWN_SHAPE);
+    EXPECT_EQ(ret, HCCL_E_PTR);
 }

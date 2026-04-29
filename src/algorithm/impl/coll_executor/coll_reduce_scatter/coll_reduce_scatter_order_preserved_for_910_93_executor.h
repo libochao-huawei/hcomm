@@ -36,6 +36,7 @@ private:
     HcclResult KernelRun(const OpParam &param, ExecMem &execMem) override;
     HcclResult RunReduceScatterLevel1(const OpParam &param, ExecMem &execMem, SubCommInfo &level1CommInfo);
     HcclResult RunReduceScatterLevel2(const OpParam &param, ExecMem &execMem, SubCommInfo &level1CommInfo);
+    HcclResult RunReduceScatterLevel1SingleRank(const OpParam &param, ExecMem &execMem, SubCommInfo &level1CommInfo);
 
     u32 all2allOffset_ = 0;
 };
