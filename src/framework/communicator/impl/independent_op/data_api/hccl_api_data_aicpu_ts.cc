@@ -649,7 +649,6 @@ int32_t HcommBatchTransferOnThread(ThreadHandle thread, ChannelHandle channel,
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
-
     for (uint32_t i = 0; i < transferDescNum; i++) {
         if (transferDescs[i].reduceOp != HCOMM_REDUCE_RESERVED ||
             transferDescs[i].dataType != HCOMM_DATA_TYPE_RESERVED) {
@@ -669,8 +668,53 @@ int32_t HcommBatchTransferOnThread(ThreadHandle thread, ChannelHandle channel,
     }
 
     if (threadPtr->IsDeviceA5()) {
-        HCCL_ERROR("[%s] A5 path is not supported.", __func__);
-        return HCCL_E_NOT_SUPPORT;
+        HCCL_DEBUG("[%s] Running on A5.", __func__);
+        auto *const transportLitePtr = reinterpret_cast<Hccl::BaseTransportLiteImpl *>(channel);
+        CHK_PTR_NULL(transportLitePtr);
+        auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
+        CHK_PTR_NULL(streamLitePtr);
+
+        std::vector<Hccl::RmaBufferLite> locBufs;
+        std::vector<Hccl::Buffer> rmtBufs;
+        std::vector<Hccl::BaseTransportLiteImpl::TransferOp> transferOps;
+        locBufs.reserve(transferDescNum);
+        rmtBufs.reserve(transferDescNum);
+        transferOps.reserve(transferDescNum);
+
+        HcclResult ret = HCCL_SUCCESS;
+        for (uint32_t i = 0; i < transferDescNum; i++) {
+            Hccl::RmaBufferLite locRmaBuf;
+            Hccl::TransferType transType;
+            uintptr_t locAddr = 0;
+            uintptr_t rmtAddr = 0;
+
+            if (transferDescs[i].transType == HCOMM_TRANSFER_TYPE_WRITE) {
+                transType = Hccl::TransferType::WRITE;
+                locAddr = reinterpret_cast<uintptr_t>(transferDescs[i].src);
+                rmtAddr = reinterpret_cast<uintptr_t>(transferDescs[i].dst);
+            } else {
+                transType = Hccl::TransferType::READ;
+                locAddr = reinterpret_cast<uintptr_t>(transferDescs[i].dst);
+                rmtAddr = reinterpret_cast<uintptr_t>(transferDescs[i].src);
+            }
+
+            ret = transportLitePtr->BuildLocRmaBufferLite(locAddr, transferDescs[i].len, locRmaBuf);
+            CHK_PRT_RET(ret != HCCL_SUCCESS,
+                HCCL_ERROR("[%s] BuildLocRmaBufferLite failed for desc[%u].", __func__, i), ret);
+
+            locBufs.push_back(locRmaBuf);
+            rmtBufs.emplace_back(rmtAddr, transferDescs[i].len);
+            Hccl::ReduceIn reduceIn{Hccl::DataType::INVALID, Hccl::ReduceOp::INVALID};
+            transferOps.push_back({transType, reduceIn});
+        }
+
+        EXECEPTION_CATCH(transportLitePtr->BatchTransfer(locBufs, rmtBufs, transferOps, *streamLitePtr),
+            ret = HCCL_E_INTERNAL);
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[%s] BatchTransfer failed. transferDescNum[%u].", __func__, transferDescNum), ret);
+
+        HCCL_INFO("[%s] SUCCESS on A5. transferDescNum[%u], writeNum[%u], readNum[%u].", __func__, transferDescNum);
+        return HCCL_SUCCESS;
     }
 
     std::vector<hccl::Transport::Buffer> writeRemoteBufs;
