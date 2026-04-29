@@ -51,8 +51,6 @@ using HcclCRCInfo = struct TagHcclCRCInfo {
     u32 crcArray[MAX_CRC_LEN] = {0};
 };
 
-constexpr u32 MAX_SUB_COMM_RANK_NUM = 4096;
-
 using HcclCheckInfo = struct TagHcclCheckInfo {
     HcclCRCInfo crcInfoGlobal;
     HcclCRCInfo crcInfoOp;

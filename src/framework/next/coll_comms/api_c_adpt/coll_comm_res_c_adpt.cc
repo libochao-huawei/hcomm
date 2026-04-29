@@ -266,7 +266,7 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
         }
         
         CHK_RET_UNAVAIL(myRank->CreateChannels(engine, commTag, channelDescFinals.data(), channelNum, channels, hcclComm));
-        hcclComm->ClearExchangeInfoState();
+        
         if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
             HCCL_INFO("[HcclChannelAcquire] ReportChannelAicpuKernel start");
             HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
