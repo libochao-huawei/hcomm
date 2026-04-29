@@ -7,6 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
+#include <set>
 #include "my_rank.h"
 #include "hcomm_c_adpt.h"
 #include "hcomm_res.h"
@@ -18,7 +19,7 @@
 #include "env_config/env_config.h"
 #include "channel_process.h"
 #include "rank_consistentcy_checker.h"
-#include <set>
+#include "hccl_comm_pub.h"
 
 using namespace hcomm;
 
