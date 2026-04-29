@@ -60,7 +60,7 @@ HcclResult hcclComm::StoreRemoteExchangeInfo(uint32_t remoteRank, const std::vec
     infoEntry.data = data;
     infoEntry.length = static_cast<uint32_t>(data.size());
     remoteExchangeInfoMap_[remoteRank] = std::move(infoEntry);
-    HCCL_INFO("[StoreRemoteExchangeInfo] success, remoteRank[%u], length[%u].", remoteRank, entry.length);
+    HCCL_INFO("[StoreRemoteExchangeInfo] success, remoteRank[%u], length[%u].", remoteRank, infoEntry.length);
     return HCCL_SUCCESS;
 }
 
