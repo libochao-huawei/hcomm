@@ -283,7 +283,7 @@ HcclResult HcclCommAicpu::InitZeroCopyExchanger(const HcclOpResParam *commParam)
 
     // 通信域第一次初始化时，如果IPC内存有不为空的则认为是使能该特性
     isZeroCopy_ = false;
-    for (u32 i = 0; i < MAX_MODULE_DEVICE_NUM; ++i) {
+    for (u32 i = 0; i < MAX_MODULE_DEVICE_NUM_A3; ++i) {
         if (commParam->zeroCopyIpcPtrs[i] != 0) {
             isZeroCopy_ = true;
             break;

@@ -612,6 +612,8 @@ struct AicpuCustomParam {
     TaskExceptionParam taskExceptionParam; // 故障上报信息
 };
 
+// 注意，本数据结构整体均被MC2不同算子使用
+// MC2使用便宜量访问整个数据结构，不能调整任意的位置，长度等信息
 struct HcclOpResParam {
     // 本地资源
     HcclMC2WorkSpace mc2WorkSpace;
@@ -640,7 +642,6 @@ struct HcclOpResParam {
     u32 remoteResNum;                            // 有效的remoteResNum
     RemoteResPtr remoteRes[AICPU_MAX_RANK_NUM];  // 数组指针，指向HcclRankRelationResV2，下标为remoteUserRankId
 
-    // 以下可以修改
     // communicate retry
     hccl::HDCommunicateParams kfcControlTransferH2DParams;
     hccl::HDCommunicateParams kfcStatusTransferD2HParams;
@@ -652,8 +653,8 @@ struct HcclOpResParam {
     u64 zeroCopyHeadPtr;
     u64 zeroCopyTailPtr;
     u64 zeroCopyRingBuffer;
-    u64 zeroCopyIpcPtrs[MAX_MODULE_DEVICE_NUM];               // 保存集合通信时每个对端的输入输出内存地址
-    u32 zeroCopyDevicePhyId[MAX_MODULE_DEVICE_NUM];           // 保存每个rank对应的物理卡Id
+    u64 zeroCopyIpcPtrs[MAX_MODULE_DEVICE_NUM_A3];               // 保存集合通信时每个对端的输入输出内存地址
+    u32 zeroCopyDevicePhyId[MAX_MODULE_DEVICE_NUM_A3];           // 保存每个rank对应的物理卡Id
 
     bool utraceStatusFlag;
 
@@ -667,6 +668,7 @@ struct HcclOpResParam {
     u64 aicpuCustomParamAddr;
     u64 aicpuCustomParamSize;
 
+    // 外部mc2等算子使用偏移量访问
     MemDetails userMemRes[MAX_RANK_NUM_A3];     // 下标为rank id
     u32 userMemType = 0;                             // 0:CCL Buffer; 1:user Mem
 
@@ -679,6 +681,7 @@ struct HcclOpResParam {
     // 读取HCCL_ENTRY_LOG_ENABLE环境变量，用于增加算子kernel展开信息
     bool opEntry{false};
     uint32_t hcclSdmaQos; //HCCL SDMA QOS TAG
+    // 外部mc2等算子跨框AIV场景使用
     u64 sizeOfAiRMAInfo = 0; // sizeof(HcclAiRMAInfo), 用于内存校验
     u64 aiRMAInfo = 0; // HcclAiRMAInfo* 单个结构体指针
 };
