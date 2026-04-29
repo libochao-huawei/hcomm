@@ -934,3 +934,31 @@ TEST_F(DevUbConnectionTest, Ut_CreateJetty_When_CorrectParams_ReturnIsOk)
     devUbCtpConn.SetJettyInfo();
     EXPECT_EQ(devUbCtpConn.sqBuffVa, expectSqBuffVa);
 }
+
+TEST_F(DevUbConnectionTest, Ut_Describe_Tp_Mode)
+{
+    // construct DevUbConnection
+    RdmaHandle rdmaHandle = (void *)0x1000000;
+
+    BasePortType portType(PortDeploymentType::DEV_NET, ConnectProtoType::UB);
+    LinkData     linkData(portType, 10, 11, 10, 11);
+    linkData.localAddr_ = IpAddress("10.0.0.1");
+    linkData.remoteAddr_ = IpAddress("10.0.0.2");
+    linkData.linkProtocol_ = LinkProtocol::UB_TP;
+    std::string tag = "test";
+
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(0)));
+    MOCKER(HrtRaGetTpAttrAsync).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+    DevUbTpConnection devUbConnection(rdmaHandle, linkData.GetLocalAddr(), linkData.GetRemoteAddr(), OpMode::OPBASE);
+
+    std::string testDfx = "";
+    HcclResult ret = devUbConnection.Describe(testDfx);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+
+    GlobalMockObject::verify();
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(0)));
+    MOCKER(HrtRaGetTpAttrAsync).stubs().will(returnValue(HcclResult::HCCL_E_NOT_SUPPORT)).then(returnValue(HcclResult::HCCL_E_INTERNAL));
+    devUbConnection.Describe(testDfx);
+    devUbConnection.Describe(testDfx);
+    EXPECT_NE(ret, HcclResult::HCCL_SUCCESS);
+}
