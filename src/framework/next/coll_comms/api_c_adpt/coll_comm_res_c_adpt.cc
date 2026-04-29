@@ -256,9 +256,8 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
  
         const uint32_t opExpansionMode = myRank->GetOpExpansionMode();
         if (!CheckCommEngine(engine, opExpansionMode)) {
-            HCCL_ERROR("[%s] failed. CCU engine[%d] requires opExpansionMode in {%u, %u, %u}, "
- 	            "but coll comm[%p] has opExpansionMode[%d]", __func__, engine, DEFAULT_MODE, 
-                CCU_MS_MODE, CCU_SCHE_MODE, hcclComm, opExpansionMode);
+            HCCL_ERROR("[%s] failed. coll comm[%p] opExpansionMode[%d] is not supported by CCU engine[%d]", 
+                __func__, hcclComm, opExpansionMode, engine);
             return HcclResult::HCCL_E_PARA;
         }
         
