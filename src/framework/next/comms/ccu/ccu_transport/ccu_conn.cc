@@ -515,8 +515,7 @@ HcclResult CcuConnection::Describe(std::string &dfxMsg)
         struct TpAttr tpAttr {0};
         uint32_t attrBitmap = 1 << 13; // 13对应dataUdpSrcport
         EXCEPTION_HANDLE_BEGIN
-        u32 devicePhyId = Hccl::HrtGetDevicePhyIdByIndex(devLogicId_);
-        HcclResult ret = Hccl::HrtRaGetTpAttrAsync(devicePhyId, ctxHandle_, tpInfo_.tpHandle, attrBitmap, tpAttr, reqHandles_[0]);
+        HcclResult ret = Hccl::HrtRaGetTpAttrAsync(devPhyId_, ctxHandle_, tpInfo_.tpHandle, attrBitmap, tpAttr, reqHandles_[0]);
         if (ret == HCCL_E_NOT_SUPPORT) {
             HCCL_ERROR("[DevUbConnection::%s] failed, this package does not support RaGetTpAttrAsync for device,"
                 " please change new package", __func__);
