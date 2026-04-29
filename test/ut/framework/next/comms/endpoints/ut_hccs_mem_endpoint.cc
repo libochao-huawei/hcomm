@@ -15,16 +15,38 @@
 #include "network_manager_pub.h"
 #include "reged_mems/reged_mem_mgr.h"
 #include "mem_name_repository_pub.h"
+#include "global_net_dev_manager.h"
 
 using namespace hcomm;
 using namespace hccl;
 
 namespace {
-HcclResult StubHrtGetDeviceWriteZeroEp(s32 *deviceLogicId)
+static s32 deviceCurLogicId_ = 0;
+static s32 deviceCurPhyId_ = 0;
+
+void StubSetDevice(s32 deviceLogicId)
+{
+    deviceCurLogicId_ = deviceLogicId;
+    deviceCurPhyId_ = deviceLogicId;
+}
+
+HcclResult StubHrtGetDevice(s32 *deviceLogicId)
 {
     if (deviceLogicId != nullptr) {
-        *deviceLogicId = 0;
+        *deviceLogicId = deviceCurLogicId_;
     }
+    return HCCL_SUCCESS;
+}
+
+HcclResult StubHrtGetDevicePhyIdByIndex(u32 deviceLogicId, u32 &devicePhyId, bool isRefresh)
+{
+    devicePhyId = deviceLogicId;
+    return HCCL_SUCCESS;
+}
+
+HcclResult StubHrtGetDeviceIndexByPhyId(u32 devicePhyId, u32 &deviceLogicId)
+{
+    deviceLogicId = devicePhyId;
     return HCCL_SUCCESS;
 }
 
@@ -40,6 +62,7 @@ HcclResult StubHcclNetDevOpenForEp(const HcclNetDevInfos *info, HcclNetDev *netD
     static uint32_t id = 0;
     static hccl::NetDevContext kNetDevCtx[MAX_MODULE_DEVICE_NUM];
     static bool initialized[MAX_MODULE_DEVICE_NUM] = {false};
+    id++;
     if (!initialized[id]) {
         hccl::HcclIpAddress localIp;
         (void)localIp.SetReadableAddress("127.0.0.1");
@@ -47,6 +70,30 @@ HcclResult StubHcclNetDevOpenForEp(const HcclNetDevInfos *info, HcclNetDev *netD
         initialized[id] = true;
     }
     *netDev = reinterpret_cast<HcclNetDev>(&kNetDevCtx[id]);
+    return HCCL_SUCCESS;
+}
+
+HcclResult StubGetDeviceVnicIP(u32 devicePhyId, u32 superDeviceId, hccl::HcclIpAddress &vnicIP)
+{
+    std::string ip = "127.0.0." + std::to_string(devicePhyId + 1);
+    (void)vnicIP.SetReadableAddress(ip);
+    return HCCL_SUCCESS;
+}
+
+HcclResult StubHcclNetOpenDev(
+    HcclNetDevCtx *netDevCtx, NicType nicType, s32 devicePhyId, s32 deviceLogicId, hccl::HcclIpAddress localIp,
+    hccl::HcclIpAddress backupIp)
+{
+    static hccl::NetDevContext kNetDevCtx[MAX_MODULE_DEVICE_NUM];
+    static bool initialized[MAX_MODULE_DEVICE_NUM] = {false};
+    if (!initialized[devicePhyId]) {
+        hccl::HcclIpAddress localIp;
+        std::string ip = "127.0.0." + std::to_string(devicePhyId + 1);
+        (void)localIp.SetReadableAddress(ip);
+        kNetDevCtx[devicePhyId].Init(NicType::VNIC_TYPE, 0, 0, localIp);
+        initialized[devicePhyId] = true;
+    }
+    *netDevCtx = reinterpret_cast<HcclNetDev>(&kNetDevCtx[devicePhyId]);
     return HCCL_SUCCESS;
 }
 
@@ -69,12 +116,15 @@ protected:
 
     virtual void SetUp()
     {
-        MOCKER(hrtGetDevice).stubs().with(any()).will(invoke(StubHrtGetDeviceWriteZeroEp));
-        MOCKER(hrtGetDevicePhyIdByIndex).stubs().with(any(), outBound(0U)).will(returnValue(HCCL_SUCCESS));
+        MOCKER(hrtGetDevice).stubs().with(any()).will(invoke(StubHrtGetDevice));
+        MOCKER(hrtGetDevicePhyIdByIndex).stubs().with(any(), outBound(0U)).will(invoke(StubHrtGetDevicePhyIdByIndex));
+        MOCKER(hrtGetDeviceIndexByPhyId).stubs().with(any(), outBound(0U)).will(invoke(StubHrtGetDeviceIndexByPhyId));
         MOCKER(HcclNetDevOpen).stubs().will(invoke(StubHcclNetDevOpenForEp));
+        MOCKER(HcclNetOpenDev).stubs().will(invoke(StubHcclNetOpenDev));
         MOCKER(HcclNetDevClose).stubs().will(invoke(StubHcclNetDevCloseForEp));
         MOCKER(&hccl::HcclSocket::Accept).stubs().will(invoke(StubHcclSocketAcceptForEp));
  
+        MOCKER_CPP(&GlobalNetDevMgr::GetDeviceVnicIP).stubs().will(invoke(StubGetDeviceVnicIP));
         MOCKER_CPP(&MemNameRepository::SetIpcMem, HcclResult(MemNameRepository::*)(void *, u64, u8 *, u32)).stubs().will(returnValue(HCCL_SUCCESS));
         MOCKER_CPP(&MemNameRepository::FindIpcMem).stubs().will(returnValue(HCCL_SUCCESS));
         MOCKER_CPP(&MemNameRepository::OpenIpcMem).stubs().will(returnValue(HCCL_SUCCESS));
@@ -122,6 +172,7 @@ TEST_F(AiCpuTsHccsEndpointTest, Ut_When_Register_Memory_NORMAL_Expect_Return_SUC
 {
     void* endpointHandle{nullptr};
     EndpointDesc endpointDesc;
+    StubSetDevice(0);
     HcommResult ret = CreateHccsEndpoint(0, 0, endpointDesc, &endpointHandle);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
@@ -132,6 +183,9 @@ TEST_F(AiCpuTsHccsEndpointTest, Ut_When_Register_Memory_NORMAL_Expect_Return_SUC
     EXPECT_EQ(ret, HCCL_SUCCESS);
     ret = HcommMemUnreg(endpointHandle, memHandle);
     EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    ret = HcommEndpointDestroy(&endpointHandle);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
 // 解注册空MemHandle
@@ -139,12 +193,16 @@ TEST_F(AiCpuTsHccsEndpointTest, Ut_When_Unregister_Without_Register_Expect_Retur
 {
     void* endpointHandle{nullptr};
     EndpointDesc endpointDesc;
+    StubSetDevice(0);
     HcommResult ret = CreateHccsEndpoint(0, 0, endpointDesc, &endpointHandle);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     void* invalidMemHandle = nullptr;
     ret = HcommMemUnreg(endpointHandle, invalidMemHandle);
     EXPECT_EQ(ret, HCCL_E_PTR);
+
+    ret = HcommEndpointDestroy(&endpointHandle);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
 // 一次reg多次unreg
@@ -152,6 +210,7 @@ TEST_F(AiCpuTsHccsEndpointTest, Ut_When_Double_Unregister_After_Register_Expect_
 {
     void* endpointHandle{nullptr};
     EndpointDesc endpointDesc;
+    StubSetDevice(0);
     HcommResult ret = CreateHccsEndpoint(0, 0, endpointDesc, &endpointHandle);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
@@ -169,6 +228,9 @@ TEST_F(AiCpuTsHccsEndpointTest, Ut_When_Double_Unregister_After_Register_Expect_
     // 第二次注销同一个memHandle，应该失败
     ret = HcommMemUnreg(endpointHandle, memHandle);
     EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
+
+    ret = HcommEndpointDestroy(&endpointHandle);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
 // 注册空指针内存
@@ -176,6 +238,7 @@ TEST_F(AiCpuTsHccsEndpointTest, Ut_When_Register_Null_Memory_Expect_Return_Error
 {
     void* endpointHandle{nullptr};
     EndpointDesc endpointDesc;
+    StubSetDevice(0);
     HcommResult ret = CreateHccsEndpoint(0, 0, endpointDesc, &endpointHandle);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
@@ -184,6 +247,9 @@ TEST_F(AiCpuTsHccsEndpointTest, Ut_When_Register_Null_Memory_Expect_Return_Error
 
     ret = HcommMemReg(endpointHandle, "memTag", &mem, &memHandle);
     EXPECT_EQ(ret, HCCL_E_PTR);
+
+    ret = HcommEndpointDestroy(&endpointHandle);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
 // 注册大小为0的内存
@@ -191,6 +257,7 @@ TEST_F(AiCpuTsHccsEndpointTest, Ut_When_Register_Zero_Size_Memory_Expect_Return_
 {
     void* endpointHandle{nullptr};
     EndpointDesc endpointDesc;
+    StubSetDevice(0);
     HcommResult ret = CreateHccsEndpoint(0, 0, endpointDesc, &endpointHandle);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
@@ -199,6 +266,9 @@ TEST_F(AiCpuTsHccsEndpointTest, Ut_When_Register_Zero_Size_Memory_Expect_Return_
 
     ret = HcommMemReg(endpointHandle, "memTag", &mem, &memHandle);
     EXPECT_EQ(ret, HCCL_E_PARA);
+
+    ret = HcommEndpointDestroy(&endpointHandle);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
 // 注册无效内存类型
@@ -206,6 +276,7 @@ TEST_F(AiCpuTsHccsEndpointTest, Ut_When_Register_Invalid_MemType_Expect_Return_E
 {
     void* endpointHandle{nullptr};
     EndpointDesc endpointDesc;
+    StubSetDevice(0);
     HcommResult ret = CreateHccsEndpoint(0, 0, endpointDesc, &endpointHandle);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
@@ -214,6 +285,9 @@ TEST_F(AiCpuTsHccsEndpointTest, Ut_When_Register_Invalid_MemType_Expect_Return_E
 
     ret = HcommMemReg(endpointHandle, "memTag", &mem, &memHandle);
     EXPECT_EQ(ret, HCCL_E_PARA);
+
+    ret = HcommEndpointDestroy(&endpointHandle);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
 // 注销空指针
@@ -221,23 +295,29 @@ TEST_F(AiCpuTsHccsEndpointTest, Ut_When_Unregister_Null_Handle_Expect_Return_Err
 {
     void* endpointHandle{nullptr};
     EndpointDesc endpointDesc;
+    StubSetDevice(0);
     HcommResult ret = CreateHccsEndpoint(0, 0, endpointDesc, &endpointHandle);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     // 使用nullptr注销
     ret = HcommMemUnreg(endpointHandle, nullptr);
     EXPECT_EQ(ret, HCCL_E_PTR);
+
+    ret = HcommEndpointDestroy(&endpointHandle);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
 TEST_F(AiCpuTsHccsEndpointTest, Ut_When_Unregister_Wrong_Handle_Expect_Return_Error)
 {
     void* endpointHandle1{nullptr};
     EndpointDesc endpointDesc;
+    StubSetDevice(0);
     HcommResult ret = CreateHccsEndpoint(0, 0, endpointDesc, &endpointHandle1);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     void* endpointHandle2{nullptr};
     EndpointDesc endpointDesc2;
+    StubSetDevice(1);
     ret = CreateHccsEndpoint(1, 1, endpointDesc2, &endpointHandle2);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
@@ -246,10 +326,12 @@ TEST_F(AiCpuTsHccsEndpointTest, Ut_When_Unregister_Wrong_Handle_Expect_Return_Er
     void *memHandle1, *memHandle2;
 
     // 在第一个endpoint上注册内存
+    StubSetDevice(0);
     ret = HcommMemReg(endpointHandle1, "memTag1", &mem1, &memHandle1);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     
     // 在第二个endpoint上注册内存
+    StubSetDevice(1);
     ret = HcommMemReg(endpointHandle2, "memTag2", &mem2, &memHandle2);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     
@@ -266,6 +348,12 @@ TEST_F(AiCpuTsHccsEndpointTest, Ut_When_Unregister_Wrong_Handle_Expect_Return_Er
     EXPECT_EQ(ret, HCCL_SUCCESS);
     ret = HcommMemUnreg(endpointHandle2, memHandle2);
     EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    ret = HcommEndpointDestroy(&endpointHandle);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    ret = HcommEndpointDestroy(&endpointHandle2);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
 // 重复内存注册重复销毁
@@ -273,6 +361,8 @@ TEST_F(AiCpuTsHccsEndpointTest, Ut_When_Double_Register_Unregister_Memory_Expect
 {
     void* endpointHandle{nullptr};
     EndpointDesc endpointDesc;
+    
+    StubSetDevice(0);
     HcommResult ret = CreateHccsEndpoint(0, 0, endpointDesc, &endpointHandle);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
@@ -287,17 +377,22 @@ TEST_F(AiCpuTsHccsEndpointTest, Ut_When_Double_Register_Unregister_Memory_Expect
     EXPECT_EQ(ret, HCCL_SUCCESS);
     ret = HcommMemUnreg(endpointHandle, memHandle);
     EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    ret = HcommEndpointDestroy(&endpointHandle);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
 TEST_F(AiCpuTsHccsEndpointTest, Ut_When_export_import_Expect_Return_SUCCESS)
 {
     void* endpointHandle1{nullptr};
     EndpointDesc endpointDesc;
+    StubSetDevice(0);
     HcommResult ret = CreateHccsEndpoint(0, 0, endpointDesc, &endpointHandle1);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     void* endpointHandle2{nullptr};
     EndpointDesc endpointDesc2;
+    StubSetDevice(1);
     ret = CreateHccsEndpoint(1, 1, endpointDesc2, &endpointHandle2);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
@@ -336,6 +431,12 @@ TEST_F(AiCpuTsHccsEndpointTest, Ut_When_export_import_Expect_Return_SUCCESS)
     ret = HcommMemUnreg(endpointHandle1, memHandle1);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     ret = HcommMemUnreg(endpointHandle2, memHandle2);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    ret = HcommEndpointDestroy(&endpointHandle);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    ret = HcommEndpointDestroy(&endpointHandle2);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
