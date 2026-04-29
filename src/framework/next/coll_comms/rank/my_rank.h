@@ -52,7 +52,7 @@ public:
     }
 
     HcclResult CreateChannels(CommEngine engine, const std::string &commTag, 
-        const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle *channels，hcclComm *hcclComm = nullptr);
+        const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle *channels, hcclComm *hcclComm = nullptr);
 
     HcclResult BatchExchangeAndCheckConsistency(
         const HcclChannelDesc* channelDescs,
