@@ -17,6 +17,11 @@
 
 namespace Hccl {
 
+// 临终遗言故障类型
+enum class FaultType : int {
+    CONNECT_FAILED = 1
+};
+
 // HcclRootHandleV2 定义
 constexpr u32     IP_ADDRESS_BUFFER_LEN           = 64;
 const std::string RANK_INFO_DETECT_TAG            = "rank_info_detect_default_tag";

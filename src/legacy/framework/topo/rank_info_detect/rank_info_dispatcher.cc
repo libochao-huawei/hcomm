@@ -23,6 +23,7 @@
 #include "env_config.h"
 #include "hccp_common.h"
 #include "network_api_exception.h"
+#include "json_parser.h"
 
 namespace Hccl {
 
@@ -103,10 +104,18 @@ void RankInfoDispather::PrepareResource(const std::unordered_map<std::string, st
                   NetworkApiException, "create epoll event error.");
     epollCreate_ = true;
 
-    // 消息格式: [failedAgentIdList][ranktable大小(u32)][ranktable数据(n字节)][step(4字节)]
-    // 将failedAgentIdList放在最前面，使客户端能优先检查临终遗言
+    // 消息格式: [faultFrame][ranktable大小(u32)][ranktable数据(n字节)][step(4字节)]
+    // faultFrame: 空字符串表示无故障，否则为JSON格式的故障帧 {"fault_info":"1,2,3","fault_type":1}
+    // 将临终遗言放在最前面，使客户端能优先检查故障
     BinaryStream binaryStream;
-    binaryStream << failedAgentIdList;
+    if (!failedAgentIdList.empty()) {
+        nlohmann::json faultJson;
+        faultJson["fault_info"] = failedAgentIdList;
+        faultJson["fault_type"] = static_cast<int>(FaultType::CONNECT_FAILED);
+        binaryStream << faultJson.dump();
+    } else {
+        binaryStream << std::string("");
+    }
     clusterInfo.GetBinStream(true, binaryStream);
     binaryStream << step;
 

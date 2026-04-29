@@ -292,19 +292,23 @@ void RankInfoDetectClient::ParseRankTable(vector<char> &rankInfoMsg)
 {
     HCCL_INFO("[RankInfoDetectClient::%s] start.", __func__);
 
-    // 消息格式: [failedAgentIdList][ranktable大小(u32, 4字节)][ranktable数据(n字节)][step(4字节)]
+    // 消息格式: [faultFrame][ranktable大小(u32, 4字节)][ranktable数据(n字节)][step(4字节)]
+    // faultFrame: 空字符串=无故障；非空则JSON格式 {"fault_info":"1,2,3","fault_type":1}
     BinaryStream binStream(rankInfoMsg);
 
-    // 优先解析failedAgentIdList（临终遗言），若有故障则直接退出，不解析后续ranktable
-    std::string failedAgentIdList;
-    binStream >> failedAgentIdList;
-    if (failedAgentIdList.size() > 0) {
+    // 优先解析临终遗言，若有故障则直接退出，不解析后续ranktable
+    std::string faultFrame;
+    binStream >> faultFrame;
+    if (!faultFrame.empty()) {
+        nlohmann::json faultJson = nlohmann::json::parse(faultFrame);
+        int faultType = faultJson["fault_type"].get<int>();
+        std::string faultInfo = faultJson["fault_info"].get<std::string>();
         HCCL_ERROR("[RankInfoDetectClient::%s] Received fault notification (last words) from root node, "
-                   "the following ranks failed to connect: %s. Aborting communicator initialization.",
-                   __func__, failedAgentIdList.c_str());
+                   "fault_type[%d], failed ranks: %s. Aborting communicator initialization.",
+                   __func__, faultType, faultInfo.c_str());
         THROW<InvalidParamsException>(StringFormat(
-            "[RankInfoDetectClient::%s] fault notification received, failed ranks: %s",
-            __func__, failedAgentIdList.c_str()));
+            "[RankInfoDetectClient::%s] fault notification received, fault_type[%d], failed ranks: %s",
+            __func__, faultType, faultInfo.c_str()));
     }
 
     // 解析localRankInfo
