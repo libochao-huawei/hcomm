@@ -22,7 +22,6 @@
 #define PRODUCT_MESH_LEVEL (0)
 #define PRODUCT_CLOS_LEVEL (1)
 #define PRODUCT_ROCE_LEVEL (3)
-#define MAX_MESH_PORT_ID (9)
 
 /* 用于识别FE*/
 #define MAX_UE_IN_LEVEL (2)
@@ -34,8 +33,6 @@ typedef struct stUEInfo {
     int dieId;
     int feId;
     int type;
-    int portNum;
-    int ports[MAX_PORT_NUM];
 }UEInfo;
 
 typedef int (*GetNetInstanceIdFunc)(int npu_id, const struct dcmi_spod_info *spodInfo, char *netInstanceId, int netInstanceIdLen);
@@ -80,8 +77,8 @@ static const NetInfo g_netInfoList[] = {
                 .ueNum = 2,
                 .instanceIdFunc = GetNetInstanceIdForOS,
                 .ueList = {
-                    {.dieId = UDIE_1, .feId = 3, .type =UE_TYPE_MESH, .portNum = 0}, 
-                    {.dieId = UDIE_1, .feId = 2, .type =UE_TYPE_CLOS, .portNum = 4, .ports = {4,5,6,7}},
+                    {.dieId = UDIE_1, .feId = 3, .type =UE_TYPE_MESH}, 
+                    {.dieId = UDIE_1, .feId = 2, .type =UE_TYPE_CLOS}
                 }
             },
         },
@@ -96,7 +93,7 @@ static const NetInfo g_netInfoList[] = {
                 .ueNum = 1,
                 .instanceIdFunc = GetNetInstanceIdForPod,
                 .ueList = {
-                    {.dieId = UDIE_1, .feId = 5, .type = UE_TYPE_MESH, .portNum = 0},
+                    {.dieId = UDIE_1, .feId = 5, .type = UE_TYPE_MESH},
                 }
             },
             { // level 1 为超平面
@@ -105,7 +102,7 @@ static const NetInfo g_netInfoList[] = {
                 .ueNum = 1,
                 .instanceIdFunc = GetNetInstanceIdForSuperPod,
                 .ueList = { // 8口scaleup
-                    {.dieId = UDIE_0, .feId = 3, .type =UE_TYPE_CLOS, .portNum = 8, .ports = {1,2,3,4,5,6,7,8}},
+                    {.dieId = UDIE_0, .feId = 3, .type =UE_TYPE_CLOS},
                 },
             },
         },
@@ -117,13 +114,12 @@ static const NetInfo g_netInfoList[] = {
             {
                 .level = 0, .netType = NET_TYPE_TOPO_FILE_DESC, .ueNum = 1,
                 .instanceIdFunc = GetNetInstanceIdForPod,
-                .ueList = { {.dieId = UDIE_1, .feId = 5, .type = UE_TYPE_MESH, .portNum = 0}, }
+                .ueList = { {.dieId = UDIE_1, .feId = 5, .type = UE_TYPE_MESH}, }
             },
             {
                 .level = 1, .netType = NET_TYPE_CLOS, .ueNum = 1,
                 .instanceIdFunc = GetNetInstanceIdForSuperPod,
-                .ueList = { {.dieId = UDIE_0, .feId = 3, .type =UE_TYPE_CLOS, .portNum = 8,
-                    .ports = {1,2,3,4,5,6,7,8}}, },
+                .ueList = { {.dieId = UDIE_0, .feId = 3, .type =UE_TYPE_CLOS} },
             },
         },
    },
@@ -137,7 +133,7 @@ static const NetInfo g_netInfoList[] = {
                 .ueNum = 1,
                 .instanceIdFunc = GetNetInstanceIdForOS,
                 .ueList = {
-                    {.dieId = UDIE_1, .feId = 5, .type = UE_TYPE_MESH, .portNum = 0},
+                    {.dieId = UDIE_1, .feId = 5, .type = UE_TYPE_MESH},
                 }
             }
         },
@@ -149,7 +145,7 @@ static const NetInfo g_netInfoList[] = {
             {
                 .level = 0, .netType = NET_TYPE_TOPO_FILE_DESC, .ueNum = 1,
                 .instanceIdFunc = GetNetInstanceIdForOS,
-                .ueList = { {.dieId = UDIE_1, .feId = 5, .type = UE_TYPE_MESH, .portNum = 0}, }
+                .ueList = { {.dieId = UDIE_1, .feId = 5, .type = UE_TYPE_MESH} }
             }
         },
    },
@@ -161,15 +157,15 @@ static const NetInfo g_netInfoList[] = {
                 .level = 0,
                 .ueNum = 1,
                 .ueList = {
-                    {.dieId = 1, .feId = 5, .type = UE_TYPE_MESH, .portNum = 0},
+                    {.dieId = 1, .feId = 5, .type = UE_TYPE_MESH},
                 }
             },
             {
                 .level = 1,
                 .ueNum = 2,
                 .ueList = {
-                    {.dieId = 0, .feId = 3, .type =UE_TYPE_CLOS, .portNum = 8, .ports = {4,5,6,7}},
-                    {.dieId = 1, .feId = 2, .type =UE_TYPE_CLOS, .portNum = 8, .ports = {5,6}},
+                    {.dieId = 0, .feId = 3, .type =UE_TYPE_CLOS },
+                    {.dieId = 1, .feId = 2, .type =UE_TYPE_CLOS },
                 }
             },
         },
@@ -214,11 +210,10 @@ const NetInfo *GetNetInfo(unsigned int mainBoardId)
  * @param spod_info: spod信息
  * @return int: 0 成功
  */
-static int LayerAddMesh(NetLayer *layer, UBEntity *ue, int dieId)
+static int LayerAddMesh(NetLayer *layer, UBEntity *ue)
 {
     for (unsigned int j = 0; j < ue->eidNum; ++j) {
-        int phyPortId = UrmaEidGetPortId(&ue->eidList[j].eid);
-        if (phyPortId > MAX_MESH_PORT_ID) {
+        if (UrmaEidIsPortGroup(&ue->eidList[j].eid)) {
             continue;
         }
         Addr addr;
@@ -226,8 +221,10 @@ static int LayerAddMesh(NetLayer *layer, UBEntity *ue, int dieId)
         AddrSetEID(&addr, &ue->eidList[j].eid);
         char port[MAX_PORT_LEN] = {0};
         char planeId[MAX_PLANE_ID_LEN] = {0};
+        int portId = UrmaEidGetPortId(&ue->eidList[j].eid);
+        int dieId = UrmaEidGetDieId(&ue->eidList[j].eid);
         // topo中端口从0开始编，CNA中需要规避全0，从1开始
-        sprintf_s(port, MAX_PORT_LEN, "%d/%d", dieId, (phyPortId - 1));
+        sprintf_s(port, MAX_PORT_LEN, "%d/%d", dieId, portId);
         sprintf_s(planeId, sizeof(planeId), "plane_%d", dieId);
         AddrAddPort(&addr, port);
         AddrSetPlaneId(&addr, planeId);
@@ -236,20 +233,25 @@ static int LayerAddMesh(NetLayer *layer, UBEntity *ue, int dieId)
     return 0;
 }
 
-static int LayerAddClos(NetLayer *layer, UBEntity *ue, int dieId, const UEInfo *ueInfo)
+static int LayerAddClos(NetLayer *layer, UBEntity *ue)
 {
-    int portGroupIdx = UBEntityGetServerPortGroupIdx(ue);
+    int portGroupIdx = UBEntityGetPortGroupIdx(ue);
     if (portGroupIdx < 0) {
         return -1;
     }
+    int dieId = UrmaEidGetDieId(&ue->eidList[portGroupIdx].eid);
     Addr addr;
     memset_s(&addr, sizeof(Addr), 0x00, sizeof(Addr));
     AddrSetEID(&addr, &ue->eidList[portGroupIdx].eid);
-    for (int j = 0; j < ueInfo->portNum; ++j) {
+    for (unsigned int i = 0 ; i < ue->eidNum; ++i) {
+        if (UrmaEidIsPortGroup(&ue->eidList[i].eid)) {
+            continue;
+        }
         char port[MAX_PORT_LEN] = {0};
-        sprintf_s(port, MAX_PORT_LEN, "%d/%d", dieId, ueInfo->ports[j]);
+        sprintf_s(port, MAX_PORT_LEN, "%d/%d", dieId, UrmaEidGetPortId(&ue->eidList[i].eid));
         AddrAddPort(&addr, port);
     }
+
     char planeId[MAX_PLANE_ID_LEN] = {0};
     sprintf_s(planeId, sizeof(planeId), "plane_%d", dieId);
     AddrSetPlaneId(&addr, planeId);
@@ -267,7 +269,7 @@ static int LayerAddClos(NetLayer *layer, UBEntity *ue, int dieId, const UEInfo *
 UBEntity *GetUBEntityByFilter(UEList *ueList, int dieId, int ueId)
 {
     for (unsigned int i = 0; i < ueList->ueNum; i++) {
-        int die = UrmaEidGetServerDieId(&ueList->ueList[i].eidList[0].eid);
+        int die = UrmaEidGetDieId(&ueList->ueList[i].eidList[0].eid);
         int fe = UBEntityGetId(&ueList->ueList[i]);
         if (die == dieId && fe == ueId) {
             return &ueList->ueList[i];
@@ -301,9 +303,9 @@ static int ProcessLayer(int npuId, NetLayer *layer, UEList *ueList, const LevelI
             continue;
         }
         if (type == UE_TYPE_MESH) {
-            LayerAddMesh(layer, ue, die);
+            LayerAddMesh(layer, ue);
         } else if (type == UE_TYPE_CLOS) {
-            LayerAddClos(layer, ue, die, &levelInfo->ueList[i]);
+            LayerAddClos(layer, ue);
         }
     }
     return 0;

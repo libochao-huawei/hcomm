@@ -40,6 +40,13 @@ int EidGetFeId(const char *eid_str);
 int EidGetPortId(const char *eid_str, int* port_id);
 int EidGetDieId(const char *eid_str, int* die_id);
 
+
+//标卡
+int UrmaEidGetDieIdForCard(dcmi_urma_eid_t *eid);
+int UrmaEidGetPortIdForCard(dcmi_urma_eid_t *eid);
+
+
+//服务器和PoD
 int UrmaEidGetFeId(dcmi_urma_eid_t *eid);
 int UrmaEidGetPortId(dcmi_urma_eid_t *eid);
 int UrmaEidGetDieId(dcmi_urma_eid_t *eid);
@@ -59,15 +66,19 @@ int EidGetFeId(const char *eidhexstr);
  */
 int GetMaxFeId(dcmi_urma_eid_info_t *eidList, size_t eid_cnt);
 
+/**
+ * 获取UBEntity ID
+ */
 int UBEntityGetId(UBEntity *ue);
 
-int UBEntityGetServerPortGroupIdx(UBEntity *ue);
+/**
+ * 获取UBEntity的die ID, 一个UBEntity只属于一个iodie
+ */
+int UBEntityGetDieId(UBEntity *ue);
 
-int UrmaEidGetServerDieId(dcmi_urma_eid_t *eid);
+int UBEntityGetPortGroupIdx(UBEntity *ue);
 
-int UrmaEidGetPodDieId(dcmi_urma_eid_t *eid);
-
-int UBGetMaxEntityId(UEList *ueList);
+int UBGetMaxEntityId(UEList *ueList, int dieId);
 
 #ifdef __cplusplus
 }
