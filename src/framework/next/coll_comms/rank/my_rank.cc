@@ -18,6 +18,7 @@
 #include "env_config/env_config.h"
 #include "channel_process.h"
 #include "rank_consistentcy_checker.h"
+#include "socket.h"
 #include <set>
 
 using namespace hcomm;
@@ -791,7 +792,7 @@ HcclResult MyRank::Resume()
 
 HcclResult MyRank::BatchExchangeAndCheckConsistency(
     const HcclChannelDesc* channelDescs,
-    const HcommChannelDesc* hcommDescs,
+    const std::vector<HcommChannelDesc> &hcommDescs,
     uint32_t channelNum,
     const std::string &commTag,
     hcclComm *hcclComm)
