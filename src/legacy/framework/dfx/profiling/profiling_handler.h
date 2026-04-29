@@ -27,7 +27,7 @@ constexpr unsigned int MSPROF_REPORT_CCU_WAIT_SIGNAL_INFO = 15U;
 constexpr unsigned int MSPROF_REPORT_CCU_GROUP_INFO = 16U;
 constexpr uint8_t   INVALID_TYPE_VALUE = 0xFF; // reduceOpType、inputDataType、outputDataType非法值
 
-MAKE_ENUM(ProfTaskType, TASK_HCCL_INFO);
+MAKE_ENUM(ProfTaskType, TASK_HCCL_INFO, TASK_DPU_HCCL_INFO);
 
 struct MsprofCcuTaskInfo {
     uint8_t version;
@@ -92,6 +92,7 @@ struct HCCLReportData {
     uint64_t ts;
     uint32_t type;
     MsprofHcclInfo profInfo;
+    MsprofDpuHcclTrack dpuProfInfo;
     std::string tag;
     std::string groupName;
 };
@@ -185,7 +186,7 @@ private:
     void ReportStoragedAdditionInfo();
 
     void GetHCCLReportData(const TaskInfo &taskInfo, HCCLReportData &hcclReportData) const;
-    void CallAddtionInfo( HCCLReportData& hcclReportData) const;
+    void CallAddtionInfo(HCCLReportData &hcclReportData, void *data, u32 len, ProfTaskType taskType) const;
 
     void ReportCcuInfo(const TaskInfo &taskInfo) const;
     void GetCcuTaskInfo(const TaskInfo &taskInfo, const CcuProfilingInfo &info) const;
