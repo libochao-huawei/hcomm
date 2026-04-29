@@ -45,7 +45,7 @@ DevUbConnection::DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &l
         jfcHandle = RdmaHandleManager::GetInstance().GetJfcHandleAndCqInfo(rdmaHandle, cqInfo_, jfcMode);
     }
     else {
-        jfcHandle = RdmaHandleManager::GetInstance().GetJfcHandle(rdmaHandle, jfcMode);
+        jfcHandle = RdmaHandleManager::GetInstance().GetJfcHandle(rdmaHandle, cqInfo_, jfcMode);
     }
 
     sqDepth = OPBASED_UB_SQ_DEPTH_MAX;
