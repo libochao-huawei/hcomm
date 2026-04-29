@@ -30,6 +30,9 @@ constexpr uint32_t kTpAttrSlAvailableBit = 18U;
 static constexpr bool kSkipRaGetTpAttrStubSlAvailable = false;
 // hccp_tp.h：TpAttr.sl 对应 bitmap bit 10；经 RaCtxSetTpAttr → urma_set_tp_attr 写回当前 tpHandle（与 mappedJettyPriority 独立）
 static constexpr uint32_t kTpAttrBitmapSl = (1U << 10U);
+// urma_api：bit 8 = dscp；扩展位在 slBitmap(18) 之后递增至 dscpConfigMode（与 urma_tp_attr_value_t 成员顺序一致）
+static constexpr uint32_t kTpAttrBitmapDscp = (1U << 8U);
+static constexpr uint32_t kTpAttrDscpConfigModeBit = 19U;
 
 static uint32_t PopCount16(uint32_t mask)
 {
@@ -131,6 +134,33 @@ static HcclResult CommitMappedSlToTpAttr(const uint32_t devPhyId, const CommAddr
     return HcclResult::HCCL_SUCCESS;
 }
 
+static HcclResult CommitUboeDscpToTpAttr(const uint32_t devPhyId, const CommAddr &locCommAddr, uint64_t tpHandle,
+    uint8_t dscp)
+{
+    if (tpHandle == 0U) {
+        HCCL_ERROR("[TpMgr][CommitUboeDscpToTpAttr] tpHandle is 0");
+        return HcclResult::HCCL_E_INTERNAL;
+    }
+    Hccl::IpAddress locAddr{};
+    CHK_RET(CommAddrToIpAddress(locCommAddr, locAddr));
+    const CtxHandle ctxHandle =
+        static_cast<CtxHandle>(Hccl::RdmaHandleManager::GetInstance().GetByIp(devPhyId, locAddr));
+    CHK_PTR_NULL(ctxHandle);
+
+    struct TpAttr tpDscpAttr {};
+    tpDscpAttr.dscp = static_cast<uint8_t>(dscp & 0x3FU);
+
+    const s32 ret = RaCtxSetTpAttr(ctxHandle, tpHandle, kTpAttrBitmapDscp, &tpDscpAttr);
+    if (ret != 0) {
+        HCCL_ERROR("[TpMgr][CommitUboeDscpToTpAttr] RaCtxSetTpAttr failed ret[%d] tpHandle[%llu] dscp[%u].", ret,
+            tpHandle, static_cast<unsigned>(tpDscpAttr.dscp));
+        return HcclResult::HCCL_E_NETWORK;
+    }
+    HCCL_INFO("[TpMgr][CommitUboeDscpToTpAttr] RaCtxSetTpAttr ok tpHandle[%llu] dscp[%u].", tpHandle,
+        static_cast<unsigned>(tpDscpAttr.dscp));
+    return HcclResult::HCCL_SUCCESS;
+}
+
 } // namespace
 
 TpMgr &TpMgr::GetInstance(const uint32_t devicePhyId)
@@ -148,11 +178,6 @@ TpMgr &TpMgr::GetInstance(const uint32_t devicePhyId)
     tpMgr[devPhyId].devPhyId_ = devPhyId;
 
     return tpMgr[devPhyId];
-}
-
-TpMgr::QosKey TpMgr::TpInfoCacheQos(const GetTpInfoParam &param)
-{
-    return param.qos & 0xFFU;
 }
 
 static HcclResult CheckRequestResult(RequestHandle &reqHandle)
@@ -200,7 +225,7 @@ HcclResult TpMgr::GetTpInfo(const GetTpInfoParam &param, TpInfo &tpInfo)
     CHK_RET(CommAddrToIpAddress(param.locAddr, locAddr));
     CHK_RET(CommAddrToIpAddress(param.rmtAddr, rmtAddr));
 
-    const QosKey qosKey = TpInfoCacheQos(param);
+    const QosKey qosKey = param.qos & 0xFFU;
     auto &rmtMap = reqCtxMap[locAddr];
     auto &qosMap = rmtMap[rmtAddr];
     auto it = qosMap.find(qosKey);
@@ -245,7 +270,7 @@ HcclResult TpMgr::ReleaseTpInfo(const GetTpInfoParam &param, const TpInfo &tpInf
     CHK_RET(CommAddrToIpAddress(param.locAddr, locAddr));
     CHK_RET(CommAddrToIpAddress(param.rmtAddr, rmtAddr));
 
-    const QosKey qosKey = TpInfoCacheQos(param);
+    const QosKey qosKey = param.qos & 0xFFU;
     std::lock_guard<std::mutex> lock(GetInfoCtxMutex(param.tpProtocol));
     auto &infoMap = GetInfoCtxMap(param.tpProtocol);
     auto &locInfoMap = infoMap[locAddr];
@@ -286,7 +311,7 @@ HcclResult TpMgr::FindAndGetTpInfo(const GetTpInfoParam &param, TpInfo &tpInfo)
     CHK_RET(CommAddrToIpAddress(param.locAddr, locAddr));
     CHK_RET(CommAddrToIpAddress(param.rmtAddr, rmtAddr));
 
-    const QosKey qosKey = TpInfoCacheQos(param);
+    const QosKey qosKey = param.qos & 0xFFU;
     std::lock_guard<std::mutex> lock(GetInfoCtxMutex(param.tpProtocol));
     auto &infoMap = GetInfoCtxMap(param.tpProtocol);
     auto &locInfoMap = infoMap[locAddr];
@@ -363,11 +388,15 @@ HcclResult TpMgr::StartGetTpAttrForFirstTp(const GetTpInfoParam &param, RequestC
 {
     EXCEPTION_HANDLE_BEGIN
     (void)memset_s(&reqCtx.tpAttr, sizeof(reqCtx.tpAttr), 0, sizeof(reqCtx.tpAttr));
-    reqCtx.tpAttrBitmap = (1U << kTpAttrSlAvailableBit);
+    reqCtx.tpAttrBitmap = (1U << kTpAttrSlAvailableBit) | kTpAttrBitmapSl;
+    if (param.tpProtocol == TpProtocol::UBOE) {
+        reqCtx.tpAttrBitmap |= kTpAttrBitmapDscp | (1U << kTpAttrDscpConfigModeBit);
+    }
 
     if (kSkipRaGetTpAttrStubSlAvailable) {
         // slBitmap 低 16bit：仅 bit1–3 置 1 → 0x000E，表示 SL 1/2/3 可用
         reqCtx.tpAttr.slBitmap = 0x000EU;
+        reqCtx.tpAttr.dscpConfigMode = 1; // stub 下跳过 UBOE 业务面写 dscp
         reqCtx.handle = 0;
         reqCtx.phase = ReqPhase::WAIT_TP_ATTR;
         return HcclResult::HCCL_SUCCESS;
@@ -408,9 +437,11 @@ HcclResult TpMgr::HandleCompletedRequest(RequestCtx reqCtx, const GetTpInfoParam
     const struct HccpTpInfo *baseInfoPtr = reinterpret_cast<const struct HccpTpInfo *>(reqCtx.dataBuffer.data());
     uint16_t slMask = ReadSlAvailableMask16(reqCtx.tpAttr);
     uint32_t mPop = PopCount16(slMask);
-    HCCL_INFO("[TpMgr][%s] after get_tp_attr: slMask[0x%04x] mPop[%u] slBitmap[0x%x] tpAttrBitmap[0x%x] param[%s].",
+    HCCL_INFO("[TpMgr][%s] after get_tp_attr: slMask[0x%04x] mPop[%u] slBitmap[0x%x] dscp[%u] dscpConfigMode[%u] "
+              "tpAttrBitmap[0x%x] param[%s].",
         __func__, static_cast<unsigned>(slMask), mPop, static_cast<unsigned>(reqCtx.tpAttr.slBitmap),
-        reqCtx.tpAttrBitmap, param.Describe().c_str());
+        static_cast<unsigned>(reqCtx.tpAttr.dscp & 0x3FU),
+        static_cast<unsigned>(reqCtx.tpAttr.dscpConfigMode & 1U), reqCtx.tpAttrBitmap, param.Describe().c_str());
     if (mPop == 0U) {
         HCCL_ERROR("[TpMgr][%s] sl_available mask empty after get_tp_attr, param[%s].", __func__,
             param.Describe().c_str());
@@ -438,6 +469,13 @@ HcclResult TpMgr::HandleCompletedRequest(RequestCtx reqCtx, const GetTpInfoParam
     tmpTpInfo.hasMappedJettyPriority = true;
 
     CHK_RET(CommitMappedSlToTpAttr(devPhyId_, param.locAddr, tmpTpInfo.tpHandle, mappedSl));
+    if (param.tpProtocol == TpProtocol::UBOE && reqCtx.tpAttr.dscpConfigMode == 0) {
+        const uint8_t dscpBefore = static_cast<uint8_t>(reqCtx.tpAttr.dscp & 0x3FU);
+        uint8_t dscp = 33U;
+        CHK_RET(CommitUboeDscpToTpAttr(devPhyId_, param.locAddr, tmpTpInfo.tpHandle, dscp));
+        HCCL_INFO("[TpMgr][%s] UBOE dscp updated: tpHandle[%llu] dscpBefore[%u] dscpAfter[%u].", __func__,
+            tmpTpInfo.tpHandle, static_cast<unsigned>(dscpBefore), static_cast<unsigned>(dscp));
+    }
     HCCL_INFO("[TpMgr][%s] tp qos mapping ok: tpHandle[%llu] tpListIndex[%u] mappedSl[%u] jettyPriority[%u] qos[%u] param[%s].",
         __func__, tmpTpInfo.tpHandle, tpListIndex, static_cast<unsigned>(mappedSl & 0xFU), tmpTpInfo.mappedJettyPriority,
         param.qos & 0xFFU, param.Describe().c_str());
@@ -446,7 +484,7 @@ HcclResult TpMgr::HandleCompletedRequest(RequestCtx reqCtx, const GetTpInfoParam
     Hccl::IpAddress rmtAddr{};
     CHK_RET(CommAddrToIpAddress(param.locAddr, locAddr));
     CHK_RET(CommAddrToIpAddress(param.rmtAddr, rmtAddr));
-    const QosKey qosKey = TpInfoCacheQos(param);
+    const QosKey qosKey = param.qos & 0xFFU;
 
     std::lock_guard<std::mutex> lock(GetInfoCtxMutex(param.tpProtocol));
     auto &infoMap = GetInfoCtxMap(param.tpProtocol);

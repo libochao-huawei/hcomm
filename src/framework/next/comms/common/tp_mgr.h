@@ -115,8 +115,6 @@ private:
     HcclResult StartGetTpAttrForFirstTp(const GetTpInfoParam &param, RequestCtx &reqCtx) const;
     HcclResult HandleCompletedRequest(RequestCtx reqCtx, const GetTpInfoParam &param, TpInfo &tpInfo);
 
-    static QosKey TpInfoCacheQos(const GetTpInfoParam &param);
-
     InfoCtxMap &GetInfoCtxMap(const TpProtocol tpProtocol);
     ReqCtxMap  &GetReqCtxMap(const TpProtocol tpProtocol);
     std::mutex &GetInfoCtxMutex(const TpProtocol tpProtocol);
