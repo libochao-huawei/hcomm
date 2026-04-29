@@ -953,13 +953,13 @@ TEST_F(DevUbConnectionTest, Ut_Describe_Tp_Mode)
 
     std::string testDfx = "";
     HcclResult ret = devUbConnection.Describe(testDfx);
-    // EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
 
     GlobalMockObject::verify();
     MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(0)));
     MOCKER(HrtRaGetTpAttrAsync).stubs().will(returnValue(HcclResult::HCCL_E_NOT_SUPPORT)).then(returnValue(HcclResult::HCCL_E_INTERNAL));
     ret = devUbConnection.Describe(testDfx);
-    // EXPECT_NE(ret, HcclResult::HCCL_SUCCESS);
+    EXPECT_NE(ret, HcclResult::HCCL_SUCCESS);
     ret = devUbConnection.Describe(testDfx);
-    // EXPECT_NE(ret, HcclResult::HCCL_SUCCESS);
+    EXPECT_NE(ret, HcclResult::HCCL_SUCCESS);
 }
