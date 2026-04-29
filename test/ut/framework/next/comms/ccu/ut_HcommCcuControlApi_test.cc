@@ -174,12 +174,10 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRegister_When_AllFine_Expect_Ret
     const auto &handlePair = MockCcuChannelConnect(srcDevPhyId, dstDevPhyId, srcIp, dstIp, commEngine);
 
     // 构造CcuKernel实现
-    CcuKernelFunc demoFunc = CcuNestedIfInnerElseDemoKernel;
-    CcuNestedIfInnerElseDemoKernelArg demoArg{};
-    demoArg.outerVal = 1;
-    demoArg.outerExpected = 1;
-    demoArg.innerVal = 2;
-    demoArg.innerExpected = 2;
+    CcuKernelFunc demoFunc = CcuLoopAddDemoKernel;
+    CcuLoopAddKernelArg demoArg{};
+    demoArg.numA = 1;
+    demoArg.numB = 2;
     
     auto kernelFunc = reinterpret_cast<void *>(demoFunc);
     auto kernelArg = static_cast<CcuKernelArg>(&demoArg);
