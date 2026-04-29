@@ -44,6 +44,8 @@ HcommChannelDesc ChannelDescHccl2Hcomm(const HcclChannelDesc &hcclDesc)
 
 namespace hccl {
 
+constexpr uint32_t UNREUSE_CHANNEL_IDX = 0xFFFFFFFF;
+
 MyRank::MyRank(aclrtBinHandle binHandle, uint32_t rankId, const CommConfig& config, const ManagerCallbacks& callbacks, RankGraph* rankGraph)
     : binHandle_(binHandle), rankId_(rankId), config_(config), callbacks_(callbacks), rankGraph_(rankGraph)
 {
@@ -120,6 +122,24 @@ HcclResult MyRank::TryInitCcuInstance()
     return HcclResult::HCCL_SUCCESS;
 }
 
+HcclResult MyRank::GetDevicePortInternal(uint32_t rank, uint32_t *devPort)
+{
+    CHK_PTR_NULL(devPort);
+    CHK_PTR_NULL(rankGraph_);
+
+    DevType devType;
+    CHK_RET(hrtGetDeviceType(devType));
+    // v1 模式 (mode_ == 0): 强制转换为 RankGraphV1 调用 GetDevicePort
+    // v2 模式 (mode_ != 0): 使用 rankGraph_->GetDevicePort()
+    if (devType == DevType::DEV_TYPE_910B) {
+        RankGraphV1* rankGraphV1 = static_cast<RankGraphV1*>(rankGraph_);
+        CHK_RET(rankGraphV1->GetDevicePort(rank, devPort));
+    } else {
+        CHK_RET(rankGraph_->GetDevicePort(rank, devPort));
+    }
+    return HCCL_SUCCESS;
+}
+
 HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint32_t rankNum)
 {
     // EXCEPTION_HANDLE_BEGIN
@@ -169,13 +189,12 @@ HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint3
     return HCCL_SUCCESS;
 }
 
-HcclResult MyRank::QueryListenPort(uint32_t localRank, uint32_t remoteRank, const EndpointDesc &localEndpointDesc, 
+HcclResult MyRank::QueryListenPort(uint32_t localRank, uint32_t remoteRank, const EndpointDesc &localEndpointDesc,
         const EndpointDesc &remoteEndpointDesc, uint32_t &listenPort, HcommChannelDesc &hcommDesc)
 {
     // 查询rmtRankId对应的devPort
     uint32_t rmtPort = 0;
-    CHK_PTR_NULL(rankGraph_);
-    CHK_RET(rankGraph_->GetDevicePort(remoteRank, &rmtPort));
+    CHK_RET(GetDevicePortInternal(remoteRank, &rmtPort));
     if (rmtPort > Hccl::MAX_VALUE_DEVICEPORT) {
         HCCL_ERROR("[%s] Invalid port[%u] of Rank[%u]", __func__, rmtPort, remoteRank);
         return HCCL_E_PARA;
@@ -187,7 +206,7 @@ HcclResult MyRank::QueryListenPort(uint32_t localRank, uint32_t remoteRank, cons
     CHK_RET(CommAddrToIpAddress(remoteEndpointDesc.commAddr, remoteIpAddr));
     if (localIpAddr < remoteIpAddr) {
         // 查询localRankId对应的devPort
-        CHK_RET(rankGraph_->GetDevicePort(localRank, &listenPort));
+        CHK_RET(GetDevicePortInternal(localRank, &listenPort));
         hcommDesc.role = HcommSocketRole::HCOMM_SOCKET_ROLE_SERVER;
         if (listenPort > Hccl::MAX_VALUE_DEVICEPORT) {
             HCCL_ERROR("[%s] Invalid port[%u] of Rank[%u]", __func__, listenPort, localRank);
@@ -340,8 +359,7 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
 
         // 启动监听
         uint32_t listenPort = 0;
-        CHK_PTR_NULL(rankGraph_);
-        CHK_RET(rankGraph_->GetDevicePort(localRank, &listenPort));
+        CHK_RET(GetDevicePortInternal(localRank, &listenPort));
         CHK_RET(static_cast<HcclResult>(HcommEndpointStartListen(epHandle, listenPort, nullptr)));
 
         HCCL_INFO("[%s][%u/%u] remoteRank[%u] epHandle[%p] protocol[%d]",
@@ -393,11 +411,18 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
         } else if (reuseChannelIdxMap[rankPair][engine].find(endpointPair) == reuseChannelIdxMap[rankPair][engine].end()) {
             reuseChannelIdxMap[rankPair][engine].emplace(endpointPair, 0);
         }
+
         u32& reuseIdx = reuseChannelIdxMap[rankPair][engine][endpointPair];
-        
         bool isNewChannel = endpointPair->IsChannelNotExist(engine, reuseIdx);
+
+        u32 idx = reuseIdx;
+        /* hostNIC -- DeviceNic（transport不复用link/Channel） */
+        if (localEndpointDesc.loc.locType != remoteEndpointDesc.loc.locType) {
+            idx = UNREUSE_CHANNEL_IDX;
+        }
+
         // CreateChannel 返回 HCCL_E_UNAVAIL 表示资源不足创建失败
-        ret = endpointPair->CreateChannel(epHandle, engine, reuseIdx, &hcommDescs[i], channelHandles + i);
+        ret = endpointPair->CreateChannel(epHandle, engine, idx, &hcommDescs[i], channelHandles + i);
         if (ret == HCCL_E_TIMEOUT || ret == HCCL_E_INTERNAL) {
             Hccl::TlsStatus tlsStatus = Hccl::TlsStatus::UNKNOWN;
             CHK_PRT_CONT(GetLocalTlsStatus(tlsStatus),
@@ -419,7 +444,9 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
             HCCL_ERROR("[%s] failed to create channel, channelIndex[%u], remoteRank[%u], engine[%d], reuseIndex[%u]",
                 __func__, i + 1, remoteRank, engine, reuseIdx),
             ret);
-        reuseIdx++;
+        if (idx != UNREUSE_CHANNEL_IDX) {
+            reuseIdx++;
+        }
 
         HCCL_INFO("[%s][%u/%u] channel created successfully, remoteRank[%u], channelHandle[%p]",
             __func__, i + 1, channelNum, remoteRank, channelHandles[i]);
