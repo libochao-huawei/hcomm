@@ -7,21 +7,48 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-
 #include "../../ut_hcomm_base.h"
 #include "hccl_net_dev.h"
 #include "hccl_network.h"
 #include "hccl_socket.h"
 #include "network_manager_pub.h"
 #include "reged_mems/reged_mem_mgr.h"
+#include "mem_name_repository_pub.h"
+#include "global_net_dev_manager.h"
+#include "transport_p2p_pub.h"
+#include "transport_device_p2p_pub.h"
+
 
 using namespace hcomm;
+using namespace hccl;
+
 namespace {
-HcclResult StubHrtGetDeviceWriteZeroEp(s32 *deviceLogicId)
+static s32 deviceCurLogicId_ = 0;
+static s32 deviceCurPhyId_ = 0;
+
+void StubSetDevice(s32 deviceLogicId)
+{
+    deviceCurLogicId_ = deviceLogicId;
+    deviceCurPhyId_ = deviceLogicId;
+}
+
+HcclResult StubHrtGetDevice(s32 *deviceLogicId)
 {
     if (deviceLogicId != nullptr) {
-        *deviceLogicId = 0;
+        *deviceLogicId = deviceCurLogicId_;
     }
+    return HCCL_SUCCESS;
+}
+
+HcclResult StubHrtGetDevicePhyIdByIndex(u32 deviceLogicId, u32 &devicePhyId, bool isRefresh)
+{
+    devicePhyId = deviceLogicId;
+    return HCCL_SUCCESS;
+}
+
+HcclResult StubHrtGetDeviceIndexByPhyId(u32 devicePhyId, u32 &deviceLogicId)
+{
+    deviceLogicId = devicePhyId;
     return HCCL_SUCCESS;
 }
 
@@ -32,39 +59,56 @@ HcclResult StubHcclSocketAcceptForEp(hccl::HcclSocket * /*self*/, const std::str
     return HCCL_SUCCESS;
 }
 
-HcclResult StubHcclNetDevOpenForEp(const HcclNetDevInfos *info, HcclNetDev *netDev)
+HcclResult StubGetDeviceVnicIP(u32 devicePhyId, u32 superDeviceId, hccl::HcclIpAddress &vnicIP)
 {
-    static hccl::NetDevContext kNetDevCtx;
-    static bool initialized = false;
-    if (!initialized) {
-        hccl::HcclIpAddress localIp;
-        (void)localIp.SetReadableAddress("127.0.0.1");
-        kNetDevCtx.Init(NicType::DEVICE_NIC_TYPE, 0, 0, localIp);
-        initialized = true;
-    }
-    *netDev = reinterpret_cast<HcclNetDev>(&kNetDevCtx);
+    std::string ip = "127.0.0." + std::to_string(devicePhyId + 1);
+    (void)vnicIP.SetReadableAddress(ip);
     return HCCL_SUCCESS;
 }
 
-HcclResult StubHcclNetDevCloseForEp(HcclNetDev /*netDev*/)
+HcclResult StubHcclNetOpenDev(
+    HcclNetDevCtx *netDevCtx, NicType nicType, s32 devicePhyId, s32 deviceLogicId, hccl::HcclIpAddress localIp,
+    hccl::HcclIpAddress backupIp)
 {
+    static hccl::NetDevContext kNetDevCtx[MAX_MODULE_DEVICE_NUM];
+    static bool initialized[MAX_MODULE_DEVICE_NUM] = {false};
+    if (!initialized[devicePhyId]) {
+        hccl::HcclIpAddress localIp;
+        std::string ip = "127.0.0." + std::to_string(devicePhyId + 1);
+        (void)localIp.SetReadableAddress(ip);
+        kNetDevCtx[devicePhyId].Init(NicType::VNIC_TYPE, 0, 0, localIp);
+        initialized[devicePhyId] = true;
+    }
+    *netDevCtx = reinterpret_cast<HcclNetDev>(&kNetDevCtx[devicePhyId]);
     return HCCL_SUCCESS;
 }
+
+void StubHcclNetCloseDev(HcclNetDevCtx netDevCtx)
+{
+}
+
+#define TEST_HCOMM_HCCS_CHANNEL_BUF_LEN (8 * 1024 * 1024)
 
 class TestHcommHccsChannel : public TestHcommCAdptBase {
 public:
     void SetUp() override {
         TestHcommCAdptBase::SetUp();
-        MOCKER(hrtGetDevice).stubs().with(any()).will(invoke(StubHrtGetDeviceWriteZeroEp));
-        MOCKER(hrtGetDevicePhyIdByIndex).stubs().with(any(), outBound(0U)).will(returnValue(HCCL_SUCCESS));
-        MOCKER(HcclNetDevOpen).stubs().will(invoke(StubHcclNetDevOpenForEp));
-        MOCKER(HcclNetDevClose).stubs().will(invoke(StubHcclNetDevCloseForEp));
+        MOCKER(hrtGetDevice).stubs().with(any()).will(invoke(StubHrtGetDevice));
+        MOCKER(hrtGetDevicePhyIdByIndex).stubs().with(any(), outBound(0U)).will(invoke(StubHrtGetDevicePhyIdByIndex));
+        MOCKER(hrtGetDeviceIndexByPhyId).stubs().with(any(), outBound(0U)).will(invoke(StubHrtGetDeviceIndexByPhyId));
+        MOCKER(HcclNetOpenDev).stubs().will(invoke(StubHcclNetOpenDev));
+        MOCKER(HcclNetCloseDev).stubs().will(invoke(StubHcclNetCloseDev));
         MOCKER(&hccl::HcclSocket::Accept).stubs().will(invoke(StubHcclSocketAcceptForEp));
- 
+        MOCKER_CPP(&hccl::HcclSocket::Send, HcclResult(hccl::HcclSocket::*)(const void *, u64)).stubs().will(invoke(StubHcclSocketSend));
+        MOCKER_CPP(&hccl::HcclSocket::Recv, HcclResult(hccl::HcclSocket::*)(void *, u32, u32)).stubs().will(invoke(StubHcclSocketRecv));
+
+        MOCKER_CPP(&GlobalNetDevMgr::GetDeviceVnicIP).stubs().will(invoke(StubGetDeviceVnicIP));
         MOCKER_CPP(&MemNameRepository::SetIpcMem, HcclResult(MemNameRepository::*)(void *, u64, u8 *, u32)).stubs().will(returnValue(HCCL_SUCCESS));
         MOCKER_CPP(&MemNameRepository::FindIpcMem).stubs().will(returnValue(HCCL_SUCCESS));
         MOCKER_CPP(&MemNameRepository::OpenIpcMem).stubs().will(returnValue(HCCL_SUCCESS));
         MOCKER_CPP(&MemNameRepository::CloseIpcMem).stubs().will(returnValue(HCCL_SUCCESS));
+
+        socket_data_len = 0;
     }
     void TearDown() override {
         TestHcommCAdptBase::TearDown();
@@ -94,17 +138,40 @@ public:
         SetEndpointDesc(id, devPhyId, endpointDesc);
         return HcommEndpointCreate(&endpointDesc, endpointHandle);
     }
+
+    static HcclResult StubHcclSocketSend(const void *data, u64 size) 
+    {
+        (void)memcpy_s(socket_data, TEST_HCOMM_HCCS_CHANNEL_BUF_LEN, data, size);
+        socket_data_len = size;
+    }
+
+    static HcclResult StubHcclSocketRecv(void *recvBuf, u32 recvBufLen, u32 timeout = 0)
+    {
+        (void)timeout;
+        (void)memcpy_s(recvBuf, socket_data_len, socket_data, socket_data_len);
+        recvBufLen = socket_data_len;
+        socket_data_len;
+    }
+
+private:
+    static u32 socket_data_len;
+    static u8 socket_data[TEST_HCOMM_HCCS_CHANNEL_BUF_LEN];
 };
+
+u32 TestHcommHccsChannel::socket_data_len;
+u8 TestHcommHccsChannel::socket_data[TEST_HCOMM_HCCS_CHANNEL_BUF_LEN];
 
 TEST_F(TestHcommHccsChannel, Ut_TestHcommChannelCreate_When_DescsNullptr_Return_HCCL_E_PTR)
 {
     void* endpointHandle1{nullptr};
     EndpointDesc endpointDesc;
+    StubSetDevice(0);
     HcommResult ret = CreateHccsEndpoint(0, 0, endpointDesc, &endpointHandle1);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     void* endpointHandle2{nullptr};
     EndpointDesc endpointDesc2;
+    StubSetDevice(1);
     ret = CreateHccsEndpoint(1, 1, endpointDesc2, &endpointHandle2);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
@@ -140,6 +207,7 @@ TEST_F(TestHcommHccsChannel, Ut_TestHcommChannelCreate_When_DescsNullptr_Return_
     HcommChannelDesc channelDesc;
     HcommChannelDescInit(&channelDesc, 1);
     channelDesc.remoteEndpoint = endpointDesc2;
+    StubSetDevice(0);
     ret = HcommChannelCreate(endpointHandle1, COMM_ENGINE_AICPU, &channelDesc, 1, channels);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
@@ -147,6 +215,7 @@ TEST_F(TestHcommHccsChannel, Ut_TestHcommChannelCreate_When_DescsNullptr_Return_
     HcommChannelDesc channelDesc2;
     HcommChannelDescInit(&channelDesc2, 1);
     channelDesc2.remoteEndpoint = endpointDesc;
+    StubSetDevice(1);
     ret = HcommChannelCreate(endpointHandle2, COMM_ENGINE_AICPU, &channelDesc2, 1, channels2);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
