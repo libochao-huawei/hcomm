@@ -38,6 +38,7 @@ LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle rdmaH
     reqReg     = HrtRaUbLocalMemReg(rdmaHandle, lmemReg);
     keySize    = reqReg.keySize;
     memHandle  = reqReg.handle;
+    segVa      = reqReg.targetSegVa;
     memcpy_s(key, HRT_UB_MEM_KEY_MAX_LEN, reqReg.key, HRT_UB_MEM_KEY_MAX_LEN);
 
     HCCL_INFO("[LocalUbRmaBuffer::%s] end, rdmaHandle[%p], lmemHandle[0x%llx], keySize[%u]", __func__, rdmaHandle,
@@ -97,6 +98,7 @@ std::unique_ptr<Serializable> LocalUbRmaBuffer::GetExchangeDto()
         tokenId,
         keySize);
     (void)memcpy_s(dto->key, HRT_UB_MEM_KEY_MAX_LEN, key, HRT_UB_MEM_KEY_MAX_LEN);
+    dto->segVa = segVa;
     return std::unique_ptr<Serializable>(dto.release());
 }
 

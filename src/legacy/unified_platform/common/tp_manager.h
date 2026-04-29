@@ -40,9 +40,11 @@ public:
     HcclResult GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo);
     // unimport jetty 会 URMA 销毁 tp 资源，hccl 配套删除记录
     HcclResult ReleaseTpInfo(const RaUbGetTpInfoParam &param, const TpInfo &tpInfo);
+    void SetIsHost();
 
 private:
     bool initFlag{false};
+    bool isHost{false};
     uint32_t devLogicId{0};
     uint32_t devPhyId{0};
 

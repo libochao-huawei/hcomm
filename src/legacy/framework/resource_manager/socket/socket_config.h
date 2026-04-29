@@ -70,6 +70,21 @@ public:
         }
     }
 
+    SocketConfig(const LinkData &link, const uint32_t listenPort, const std::string &tag, const bool isServer)
+        : link(link), listeningPort(listenPort), tag(tag)
+    {
+        remoteRank = link.GetRemoteRankId();
+        role = isServer ? SocketRole::SERVER : SocketRole::CLIENT;
+
+        if (role == SocketRole::SERVER) { // server: tag_local_remote
+            hccpTag = tag + "_" + link.GetLocalAddr().GetIpStr() + "_" + link.GetRemoteAddr().GetIpStr() +
+                      "_" + to_string(listenPort);
+        } else { // client: tag_remote_local
+            hccpTag = tag + "_" + link.GetRemoteAddr().GetIpStr() + "_" + link.GetLocalAddr().GetIpStr() +
+                      "_" + to_string(listenPort);
+        }
+    }
+
     SocketRole GetRole() const
     {
         return role;
