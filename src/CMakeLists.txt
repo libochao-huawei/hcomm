@@ -25,6 +25,7 @@ target_include_directories(hccl_headers INTERFACE
     $<INSTALL_INTERFACE:include/hccl/external/hccl>
 )
 
+
 if(BUILD_OPEN_PROJECT)
     message(STATUS "open TOP_DIR = ${TOP_DIR}")
     set(HCCL_BASE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/)
