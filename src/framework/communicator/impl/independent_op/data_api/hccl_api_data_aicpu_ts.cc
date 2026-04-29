@@ -636,6 +636,83 @@ int32_t HcommReadReduceOnThread(ThreadHandle thread, ChannelHandle channel, void
     return HCCL_SUCCESS;
 }
 
+int32_t HcommBatchTransferOnThread(ThreadHandle thread, ChannelHandle channel,
+    HcommBatchTransferDesc *transferDescs, uint32_t transferDescNum)
+{
+    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], transferDescNum[%u].",
+        __func__, thread, channel, transferDescNum);
+
+    CHK_PTR_NULL(transferDescs);
+    CHK_PRT_RET(transferDescNum == 0,
+        HCCL_ERROR("[%s] transferDescNum is 0.", __func__), HCCL_E_PARA);
+    AddThread(thread);
+
+    Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
+    CHK_PTR_NULL(threadPtr);
+
+    for (uint32_t i = 0; i < transferDescNum; i++) {
+        if (transferDescs[i].reduceOp != HCOMM_REDUCE_RESERVED ||
+            transferDescs[i].dataType != HCOMM_DATA_TYPE_RESERVED) {
+            HCCL_ERROR("[%s] reduceOp or dataType is set, but batch reduce is not supported. "
+                "desc[%u]: reduceOp[%d], dataType[%d]",
+                __func__, i, transferDescs[i].reduceOp, transferDescs[i].dataType);
+            return HCCL_E_NOT_SUPPORT;
+        }
+        if (transferDescs[i].transType != HCOMM_TRANSFER_TYPE_WRITE &&
+            transferDescs[i].transType != HCOMM_TRANSFER_TYPE_READ) {
+            HCCL_ERROR("[%s] Invalid transType[%d] in desc[%u].",
+                __func__, transferDescs[i].transType, i);
+            return HCCL_E_PARA;
+        }
+        CHK_PTR_NULL(transferDescs[i].dst);
+        CHK_PTR_NULL(transferDescs[i].src);
+    }
+
+    if (threadPtr->IsDeviceA5()) {
+        HCCL_ERROR("[%s] A5 path is not supported.", __func__);
+        return HCCL_E_NOT_SUPPORT;
+    }
+
+    std::vector<hccl::Transport::Buffer> writeRemoteBufs;
+    std::vector<hccl::Transport::Buffer> writeLocalBufs;
+    std::vector<hccl::Transport::Buffer> readLocalBufs;
+    std::vector<hccl::Transport::Buffer> readRemoteBufs;
+
+    for (uint32_t i = 0; i < transferDescNum; i++) {
+        if (transferDescs[i].transType == HCOMM_TRANSFER_TYPE_WRITE) {
+            writeRemoteBufs.emplace_back(transferDescs[i].dst, transferDescs[i].len);
+            writeLocalBufs.emplace_back(transferDescs[i].src, transferDescs[i].len);
+        } else {
+            readLocalBufs.emplace_back(transferDescs[i].dst, transferDescs[i].len);
+            readRemoteBufs.emplace_back(transferDescs[i].src, transferDescs[i].len);
+        }
+    }
+
+    Stream *stream = GetStream(thread);
+    CHK_PTR_NULL(stream);
+    hccl::Transport *transport = reinterpret_cast<hccl::Transport *>(channel);
+    CHK_PTR_NULL(transport);
+
+    HcclResult ret = HCCL_SUCCESS;
+    if (!writeRemoteBufs.empty()) {
+        ret = transport->BatchWriteAsync(writeRemoteBufs, writeLocalBufs, *stream);
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[%s] BatchWriteAsync failed. writeNum[%u].",
+                __func__, writeRemoteBufs.size()), ret);
+    }
+
+    if (!readRemoteBufs.empty()) {
+        ret = transport->BatchReadAsync(readLocalBufs, readRemoteBufs, *stream);
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[%s] BatchReadAsync failed. readNum[%u].",
+                __func__, readRemoteBufs.size()), ret);
+    }
+
+    HCCL_INFO("[%s] SUCCESS. writeNum[%u], readNum[%u].",
+        __func__, writeRemoteBufs.size(), readRemoteBufs.size());
+    return HCCL_SUCCESS;
+}
+
 int32_t HcommWriteNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len)
 {
     HCCL_DEBUG("[%s] thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].", __func__, thread, channel, dst, src, len);
