@@ -75,19 +75,16 @@ void hcclComm::ClearExchangeInfoState()
 
 bool hcclComm::IsExchangeInfoReady() const
 {
-    std::lock_guard<std::mutex> lock(exchangeInfoMutex_);
     return exchangeInfoReady_;
 }
 
 const std::vector<u8>& hcclComm::GetExchangeInfoBuf() const
 {
-    std::lock_guard<std::mutex> lock(exchangeInfoMutex_);
     return exchangeInfoBuf_;
 }
 
 uint32_t hcclComm::GetExchangeInfoLen() const
 {
-    std::lock_guard<std::mutex> lock(exchangeInfoMutex_);
     return exchangeInfoLen_;
 }
 
@@ -98,6 +95,7 @@ bool hcclComm::IsNewRemoteRank(uint32_t remoteRank) const
 
 void hcclComm::MarkRemoteRankChecked(uint32_t remoteRank)
 {
+    std::lock_guard<std::mutex> lock(exchangeInfoMutex_);
     checkedRemoteRanks_.insert(remoteRank);
     HCCL_DEBUG("[MarkRemoteRankChecked] remoteRank[%u] marked as checked.", remoteRank);
 }
