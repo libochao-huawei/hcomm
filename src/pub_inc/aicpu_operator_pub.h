@@ -613,7 +613,7 @@ struct AicpuCustomParam {
 };
 
 // 注意，本数据结构整体均被MC2不同算子使用
-// MC2使用便宜量访问整个数据结构，不能调整任意的位置，长度等信息
+// MC2使用偏移量访问整个数据结构，不能调整任意的位置，长度等信息
 struct HcclOpResParam {
     // 本地资源
     HcclMC2WorkSpace mc2WorkSpace;
