@@ -27,7 +27,7 @@ public:
     void operator=(uint32_t newMask) const {
         auto ret = CcuSetMask(*ownerHandle_, newMask);
         if (ret != CcuResult::CCU_SUCCESS) {
-            throw "todo: failed";
+            throw "CcuSetMask: failed";
         }
     }
 private:
@@ -47,7 +47,7 @@ public:
     void setMask(uint32_t mask) const {
         auto ret = CcuSetMask(this->handle, mask);
         if (ret != CcuResult::CCU_SUCCESS) {
-            throw "todo: failed";
+            throw "CcuSetMask: failed";
         }
     }
 
