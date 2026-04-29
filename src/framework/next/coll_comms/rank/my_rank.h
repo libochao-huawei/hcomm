@@ -30,6 +30,7 @@
 
 namespace hccl {
 class hcclComm;
+class Socket;
 
 /**
  * @note 职责：管理当前通信域下本Rank的信息和通信资源
@@ -85,6 +86,8 @@ private:
 
     HcclResult TryInitCcuInstance();
     HcclResult DestroyNewChannels(CommEngine engine, const HcclChannelDesc* channelDescs);
+    HcclResult WaitAllAsyncComplete(const std::vector<Hccl::Socket*> &sockets,
+        const std::vector<u32> &remoteRanks);
 
     aclrtBinHandle binHandle_{nullptr};
     uint32_t rankId_{};
