@@ -112,6 +112,37 @@ HcclResult TpManager::GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo)
     return HandleCompletedRequest(std::move(completedReqCtx), param, tpInfo);
 }
 
+HcclResult TpManager::GetHostTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo)
+{
+    const auto &tpProtocol = param.tpProtocol;
+    CHK_RET(CheckTpProtocol(tpProtocol));
+    if (FindAndGetTpInfo(param, tpInfo)) {
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    std::unique_lock<std::mutex> reqCtxLock(GetReqCtxMutex(tpProtocol));
+
+    auto &reqCtxMap = GetReqCtxMap(tpProtocol);
+    const auto &locAddr = param.locAddr;
+    const auto &rmtAddr = param.rmtAddr;
+    auto &locReqCtxMap = reqCtxMap[locAddr];
+    auto locReqCtxIter = locReqCtxMap.find(rmtAddr);
+    if (locReqCtxIter == locReqCtxMap.end()) {
+        HCCL_INFO("[TpManager][%s] get new tpInfo, param[%s].", __func__,
+            param.Describe().c_str());
+
+        RequestCtx &reqCtx = locReqCtxMap[rmtAddr];
+        StartGetHostTpInfoListRequest(param, reqCtx);
+        return HcclResult::HCCL_E_AGAIN;
+    }
+
+    RequestCtx completedReqCtx = locReqCtxIter->second; // 深拷贝构造对象，与map解耦
+    locReqCtxMap.erase(locReqCtxIter); // 删除已经完成的请求，避免下次申请错误复用
+    reqCtxLock.unlock();
+
+    return HandleCompletedRequest(std::move(completedReqCtx), param, tpInfo);
+}
+
 HcclResult TpManager::ReleaseTpInfo(const RaUbGetTpInfoParam &param, const TpInfo &tpInfo)
 {
     std::lock_guard<std::mutex> lock(GetInfoCtxMutex(param.tpProtocol));
@@ -168,6 +199,22 @@ void TpManager::StartGetTpInfoListRequest(const RaUbGetTpInfoParam &param,
     reqCtx.handle = RaUbGetTpInfoAsync(rdmaHandle, param, reqCtx.dataBuffer,
         reqCtx.tpInfoNum);
 }
+
+void TpManager::StartGetHostTpInfoListRequest(const RaUbGetTpInfoParam &param,
+    TpManager::RequestCtx &reqCtx) const
+{
+    RdmaHandle rdmaHandle =
+        RdmaHandleManager::GetInstance().GetByAddr(devPhyId, LinkProtoType::UB, 
+            param.locAddr, Hccl::PortDeploymentType::HOST_NET);
+    if (!rdmaHandle) {
+        THROW<InternalException>("[TpManager][%s] can not find rdmaHandle, "
+            "devPhyId[%u] locAddr[%s].", __func__, devPhyId,
+            param.locAddr.Describe().c_str());
+    }
+
+    RaUbGetTpInfo(rdmaHandle, param, reqCtx.dataBuffer, reqCtx.tpInfoNum);
+}
+
 
 inline TpInfo ParseTpInfo(const struct HccpTpInfo *infoPtr)
 {
