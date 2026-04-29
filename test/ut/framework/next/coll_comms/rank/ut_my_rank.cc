@@ -603,8 +603,8 @@ TEST_F(MyRankTest, ut_SetMemHandles_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
 
 TEST_F(MyRankTest, ut_Get_CommProtocol_And_CommEngine_String_By_Enum)
 {
-    std::string protocolStr = GetCommProtocolEnumStr(COMM_PROTOCOL_HCCS);
-    std::string engineStr = GetCommEngineEnumStr(COMM_ENGINE_CPU);
+    std::string protocolStr = MyRankUtils::GetCommProtocolEnumStr(COMM_PROTOCOL_HCCS);
+    std::string engineStr = MyRankUtils::GetCommEngineEnumStr(COMM_ENGINE_CPU);
     EXPECT_EQ(protocolStr, "HCCS");
     EXPECT_EQ(engineStr, "CPU");
 }
