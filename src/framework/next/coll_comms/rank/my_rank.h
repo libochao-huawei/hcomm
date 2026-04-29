@@ -56,7 +56,7 @@ public:
 
     HcclResult BatchExchangeAndCheckConsistency(
         const HcclChannelDesc* channelDescs,
-        const HcommChannelDesc* hcommDescs,
+        const std::vector<HcommChannelDesc> &hcommDescs,
         uint32_t channelNum,
         const std::string &commTag,
         hcclComm *hcclComm);
