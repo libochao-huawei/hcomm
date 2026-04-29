@@ -748,6 +748,7 @@ HcclResult MyRank::BatchExchangeAndCheckConsistency(
         // ====== 第一阶段：交换Hcomm基础校验帧（HcclCheckInfo）并比对 ======
         // 生成本端Hcomm基础校验帧
         std::vector<u8> sendBuf(baseCheckInfoLen, 0);
+        HCCL_INFO("[BatchExchangeAndCheckConsistency] baseCheckInfoLen=%llu",baseCheckInfoLen);
         CHK_RET(checker.GetCheckFrame(sendBuf.data(), baseCheckInfoLen, commTag));
 
         // 交换基础校验帧长度（4字节u32）
