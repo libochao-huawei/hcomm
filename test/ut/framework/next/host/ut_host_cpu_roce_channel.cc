@@ -818,7 +818,16 @@ TEST_F(HostCpuRoceChannelTest, Ut_NotifyWait_When_WcStatusNotSuccess_Expect_HCCL
     qpInfos[0].sendCq->context = &context;
     qpInfos[0].recvCq = &cq;
     MOCKER_CPP(&HostCpuRoceChannel::GetQpInfos).stubs().will(returnValue(qpInfos));
-    MOCKER_CPP(&HostCpuRoceChannel::IbvPollCq).stubs().will(returnValue(1)).then(returnValue(0));
+    struct ibv_wc wc;
+    wc.status = IBV_WC_WR_FLUSH_ERR;
+    wc.imm_data = 0;
+    MOCKER_CPP(&HostCpuRoceChannel::IbvPollCq).stubs()
+        .will(invoke([&wc](ibv_cq* cq, uint32_t numEntries, ibv_wc* out_wc) {
+            if (out_wc != nullptr) {
+                *out_wc = wc;
+            }
+            return 1;
+        }));
 
     HcclResult ret = impl_->HostCpuRoceChannel::NotifyWait(0, 1800);
     EXPECT_EQ(ret, HCCL_E_NETWORK);
