@@ -168,7 +168,7 @@ HcclResult FlushManager::ExecuteRdmaRead(ibv_qp *loopbackqp0, ibv_cq *cq, ibv_se
                 HCCL_ERROR("[ExecuteRdmaRead] RDMA_READ operation failed: status=%d, wr_id=%llu", wc.status, wc.wr_id);
                 RPT_INPUT_ERR(true, "EI0013", std::vector<std::string>({"localServerId", "localDeviceId",
                     "localDeviceIp", "remoteServerId", "remoteDeviceId", "remoteDeviceIp"}),
-                    std::vector<std::string>({"", "", "", "", "", ""}));
+                    std::vector<std::string>({"", "", "", "", "", std::to_string(wc.status)}));
                 return HCCL_E_NETWORK;
             }
         }

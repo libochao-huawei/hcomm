@@ -816,6 +816,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_NotifyWait_When_WcStatusNotSuccess_Expect_HCCL
     qpInfos[0].sendCq = &cq;
     qpInfos[0].qp = &qp;
     qpInfos[0].sendCq->context = &context;
+    qpInfos[0].recvCq = &cq;
     MOCKER_CPP(&HostCpuRoceChannel::GetQpInfos).stubs().will(returnValue(qpInfos));
     MOCKER_CPP(&HostCpuRoceChannel::IbvPollCq).stubs().will(returnValue(1)).then(returnValue(0));
 

@@ -58,8 +58,8 @@ void RankInfoDetectClient::CheckStatus()
     auto startTime = std::chrono::steady_clock::now();
     auto timeout   = std::chrono::seconds(EnvConfig::GetInstance().GetSocketConfig().GetLinkTimeOut());
 
-    bool isTimeout = ((std::chrono::steady_clock::now() - startTime) >= timeout);
     while (true) {
+        bool isTimeout = ((std::chrono::steady_clock::now() - startTime) >= timeout);
         if (isTimeout) {
             HCCL_ERROR("[RankInfoDetectClient::%s] get connected status socket timeout! timeout[%lld s]", __func__, timeout);
             RPT_INPUT_ERR(isTimeout, "EI0015", std::vector<std::string>({"error_reason"}),
