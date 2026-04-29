@@ -21,12 +21,16 @@
 #include "enum_factory.h"
 #include "hccl_rank_graph.h"
 
+// 支持新老通信域混跑，引入legacy数据结构
+#include "unified_platform/pub_inc/ccu/ccu_dev_mgr.h"
+
 namespace hcomm {
 
 MAKE_ENUM(CcuEngine, CCU_MS, CCU_SCHE);
 
 using CcuResHandle = void *;
 
+// 不复用legacy数据结构，对上层支持CommAddr，不使用Hccl::IpAddress
 struct CcuChannelPara {
     CommAddr commAddr{};
     uint32_t channelNum{0};
@@ -40,25 +44,37 @@ struct CcuChannelPara {
     }
 };
 
-MAKE_ENUM(CcuJettyType, CCUM_CACHED_JETTY, INVALID_JETTY);
+using CcuJettyType = Hccl::CcuJettyType;
+/* 开源自定义算子CCU设备管理实现，当前支持新老通信域混跑，
+ * 暂时改用legacy数据结构，避免反向依赖
+ * MAKE_ENUM(CcuJettyType, CCUM_CACHED_JETTY, INVALID_JETTY);
+ */
 
-struct CcuJettyInfo {
-    CcuJettyType jettyType{CcuJettyType::INVALID_JETTY};
-    uint16_t jettyCtxId{0};
-    uint16_t taJettyId{0};
+using CcuJettyInfo = Hccl::CcuJettyInfo;
+/* 开源自定义算子CCU设备管理实现，当前支持新老通信域混跑，
+ * 暂时改用legacy数据结构，避免反向依赖
+ * struct CcuJettyInfo {
+ *     CcuJettyType jettyType{CcuJettyType::INVALID_JETTY};
+ *     uint16_t jettyCtxId{0};
+ *     uint16_t taJettyId{0};
 
-    uint32_t sqDepth{0};
-    uint32_t wqeBBStartId{0};
+ *     uint32_t sqDepth{0};
+ *     uint32_t wqeBBStartId{0};
 
-    uint64_t sqBufVa{0};
-    uint32_t sqBufSize{0};
-};
+ *     uint64_t sqBufVa{0};
+ *     uint32_t sqBufSize{0};
+ * };
+ */
 
-struct CcuChannelInfo {
-    uint32_t channelId{0};
-    uint8_t dieId{0};
-    std::vector<CcuJettyInfo> jettyInfos;
-};
+using CcuChannelInfo = Hccl::CcuChannelInfo;
+/* 开源自定义算子CCU设备管理实现，当前支持新老通信域混跑，
+ * 暂时改用legacy数据结构，避免反向依赖
+ * struct CcuChannelInfo {
+ *     uint32_t channelId{0};
+ *     uint8_t dieId{0};
+ *     std::vector<CcuJettyInfo> jettyInfos;
+ * };
+ */
 
 /**
  * @brief 启用CCU特性，初始化CCU平台层
@@ -78,6 +94,17 @@ HcclResult CcuInitFeature(const int32_t devLogicId, std::shared_ptr<CcuDrvHandle
  * @note 资源不足时返回HCCL_E_UNAVIL，其余非HCCL_SUCCESS结果属于错误
  */
 HcclResult CcuDeinitFeature(const int32_t devLogicId);
+
+/**
+ * @brief 申请批量ccu channel资源
+ *
+ * @param deviceLogicId device逻辑ID
+ * @param dieId ccu channel 所属的 IO Die 编号
+ * @param enableFlag 出参，表示该die是否启用
+ * @return HcclResult 返回HcclResult类型的结果
+ * @note dieId越界时返回HCCL_E_PARA
+ */
+HcclResult CcuGetDieEnableInfo(int32_t deviceLogicId, uint8_t dieId, bool &enableFlag);
 
 /**
  * @brief 按加速引擎模式申请批量资源

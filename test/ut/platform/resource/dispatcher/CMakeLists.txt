@@ -10,6 +10,7 @@
 set(hccl_utest_platform_dispatcher_list
     main.cc
     ut_aicpu_dispatcher_utest.cc
+    ut_dispatcher_graph.cc
 )
 add_executable(hccl_utest_platform_dispatcher  ${hccl_utest_platform_dispatcher_list})
 

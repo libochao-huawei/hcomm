@@ -131,6 +131,7 @@ enum OpType {
     RA_RS_CTX_GET_CR_ERR_INFO_LIST = 108,
     RA_RS_CTX_GET_ASYNC_EVENTS = 109,
     RA_RS_TLV_INIT = 110,
+    RA_RS_CTX_GET_UB_CONTEXT = 111,
     RA_RS_EXTER_OP_MAX_NUM,
 
     // 上面opcode是对部opcode,下面是内部opcode
@@ -282,6 +283,7 @@ struct RsQpResp {
     unsigned int psn;
     unsigned int gidIdx;
     union ibv_gid gid;
+    int directFlag;
 };
 
 struct RaRsDevInfo {
@@ -309,6 +311,11 @@ struct TlvRequestMsgHead {
     unsigned int offset;
 };
 
+enum {
+    CONTEXT_TYPE_JETTY = 0,
+    CONTEXT_TYPE_JFC = 1,
+};
+
 #define RA_THREAD_TRY_TIME 500
 #define RA_THREAD_SLEEP_TIME 2000
 #define RA_CONNECT_TRY_TIME (500 * 120)
@@ -325,7 +332,7 @@ struct TlvRequestMsgHead {
 #define MAX_IP_INFO_NUM 128
 #define MAX_IP_INFO_NUM_V1 256
 #define MAX_SGE_NUM 16
-#define RA_RS_PING_BUFFER_ALIGN_4K_PAGE_SIZE 4096U
+#define RA_RS_4K_PAGE_SIZE 0x1000
 #define HCCN_CFG_MSG_DATA_LEN 2048U
 #define MAX_TLV_MSG_DATA_LEN 2048U
 

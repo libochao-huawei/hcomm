@@ -59,3 +59,6 @@ target_link_libraries(hccl_alg_analyzer_test PRIVATE
     -lrt
     -ldl
 )
+
+enable_testing()
+add_test(NAME hccl_alg_analyzer_test COMMAND hccl_alg_analyzer_test)

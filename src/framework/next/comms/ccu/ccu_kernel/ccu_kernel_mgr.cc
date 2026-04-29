@@ -20,10 +20,6 @@ namespace hcomm {
 
 CcuKernelMgr::~CcuKernelMgr()
 {
-    if (!initializedFlag_) {
-        return;
-    }
-
     if (instructionLoadDevMem_) {
         HCCL_RUN_INFO("[CcuKernelMgr][~CcuKernelMgr]: deviceLogicId[%d], free addr[%p]",
             devLogicId_, instructionLoadDevMem_);
@@ -36,7 +32,7 @@ CcuKernelMgr::~CcuKernelMgr()
 
 CcuKernelMgr &CcuKernelMgr::GetInstance(const int32_t deviceLogicId)
 {
-    static CcuKernelMgr kernelManager[MAX_MODULE_DEVICE_NUM];
+    static CcuKernelMgr kernelManager[MAX_MODULE_DEVICE_NUM + 1];
 
     int32_t devLogicId = deviceLogicId;
     if (devLogicId < 0 || static_cast<uint32_t>(devLogicId) >= MAX_MODULE_DEVICE_NUM) {
@@ -56,6 +52,16 @@ HcclResult CcuKernelMgr::Init()
         return HcclResult::HCCL_SUCCESS;
     }
 
+    for (uint8_t dieId = 0; dieId < CCU_MAX_IODIE_NUM; dieId++) {
+        bool enableFlag = false;
+        CHK_RET(CcuGetDieEnableInfo(devLogicId_, dieId, enableFlag));
+        if (!enableFlag) {
+            continue;
+        }
+
+        CHK_RET(InstantiationTranslator(dieId));
+    }
+
     initializedFlag_ = true;
     kernelMap_.clear();
     return HcclResult::HCCL_SUCCESS;
@@ -68,8 +74,8 @@ HcclResult CcuKernelMgr::Deinit()
     translatorResPack.handles.clear();
     initializedFlag_ = false;
     kernelMap_.clear();
-    translators.clear();
-    referenceMgrs.clear();
+    translators.clear(); // 包括清理ccu资源
+    referenceMgrs.clear(); // 包括清理ccu资源
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -248,7 +254,6 @@ static HcclResult AllocInstrRes(std::unique_ptr<CcuKernel> &kernel, const int32_
 HcclResult CcuKernelMgr::AllocRes(std::unique_ptr<CcuKernel> &kernel, CcuResPack &resPack)
 {
     CHK_RET(kernel->Init());
-    CHK_RET(InstantiationTranslator(kernel->GetDieId()));
 
     CcuResReq leftRes{};
     GetResNumFromResPack(resPack, leftRes);
@@ -632,8 +637,8 @@ HcclResult CcuKernelMgr::LoadInstruction(const CcuRep::CcuInstrInfo &instrInfo, 
     CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(devLogicId_), devPhyId));
 
     const RaInfo info{NetworkMode::NETWORK_OFFLINE, devPhyId};
-    struct CustomChannelInfoIn  inBuff{};
-    struct CustomChannelInfoOut outBuff{};
+    CustomChannelInfoIn  inBuff{};
+    CustomChannelInfoOut outBuff{};
 
     // 设置操作码和通道数据
     inBuff.op                          = CcuOpcodeType::CCU_U_OP_SET_INSTRUCTION;

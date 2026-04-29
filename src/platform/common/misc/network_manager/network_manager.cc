@@ -414,7 +414,7 @@ HcclResult NetworkManager::HeterogInit(u32 devId, const HcclIpAddress &ipAddr, u
     if (!GetExternalInputHcclIsTcpMode()) {
         ret = InitRdmaHandle(devId, ipAddr);
         if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[HeterogInit] InitRdmaHandle fail, ret[%d], destory resource.", ret);
+            HCCL_ERROR("[HeterogInit] InitRdmaHandle fail, ret[%d], destroy resource.", ret);
             hrtRaSocketDeInit(socketHandle);
             HrtRaDeInit(&config);
             return ret;
@@ -423,7 +423,7 @@ HcclResult NetworkManager::HeterogInit(u32 devId, const HcclIpAddress &ipAddr, u
 
     ret = HeterogStartListen(ipAddr, port);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[HeterogInit] HeterogStartListen fail, ret[%d], destory resource.", ret);
+        HCCL_ERROR("[HeterogInit] HeterogStartListen fail, ret[%d], destroy resource.", ret);
         if (!GetExternalInputHcclIsTcpMode()) {
             auto& ipSock = raResourceInfo_.nicSocketMap[ipAddr];
             if (ipSock.nicRdmaHandle != nullptr) {
@@ -967,9 +967,11 @@ HcclResult NetworkManager::StopRdmaHandle(const HcclIpAddress &ipAddr, HcclNetDe
     switch (netDevDeployment) {
         case HcclNetDevDeployment::HCCL_NETDEV_DEPLOYMENT_DEVICE:{
             auto it = raResourceInfo_.nicSocketMap.find(ipAddr);
-            CHK_PRT_RET(it == raResourceInfo_.nicSocketMap.end(),
-                HCCL_ERROR("[Stop][NicsSocket]ip[%s] is not found in nicSocketMap.", ipAddr.GetReadableAddress()),
-                HCCL_E_INTERNAL);
+            if (it == raResourceInfo_.nicSocketMap.end()) {
+                HCCL_WARNING("[Stop][NicsSocket]ip[%s] not found in nicSocketMap, may already cleaned.",
+                    ipAddr.GetReadableAddress());
+                return HCCL_SUCCESS;
+            }
             IpSocket &ipSock = it->second;
             if (ipSock.nicRdmaHandle != nullptr && HrtRaRdmaDeInit(ipSock.nicRdmaHandle, notifyType_)) {
             HCCL_ERROR("[Stop][rmda]NIC rdev deInit not successfully, notifyType_[%d]", notifyType_);
@@ -1007,7 +1009,7 @@ HcclResult NetworkManager::StopRdmaHandle(const HcclIpAddress &ipAddr, HcclNetDe
     }
 
     HCCL_INFO("[NetworkManager] [StopRdmaHandle] devicePhyId_[%u] StopRdmaHandle success ip [%s]", devicePhyId_, ipAddr.GetReadableAddress());
-    return HCCL_SUCCESS;
+    return HCCL_SUCCESS; // stop socket。port 数清零时自动关闭socket
 }
 
 HcclResult NetworkManager::StopNicSocketHandle(const HcclIpAddress &ipAddr)
@@ -1110,7 +1112,7 @@ HcclResult NetworkManager::StopAllDeviceNicSockets()
     }
 
     raResourceInfo_.nicSocketMap.clear();
-    return  HCCL_SUCCESS; // stop socket。port 数清零时自动关闭socket
+    return HCCL_SUCCESS;
 }
 
 HcclResult NetworkManager::StopAllDeviceVnicSockets()

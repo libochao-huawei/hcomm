@@ -5,6 +5,8 @@
 #include "ccu_comp.h"
 #include "hccl_common.h"
 
+#include "unified_platform/ccu/ccu_device/ccu_component/ccu_component.h"
+
 using namespace hcomm;
 
 class CcuCompPubTest : public testing::Test {
@@ -29,15 +31,19 @@ protected:
     // Helpers to stub CcuComponent member functions
     void StubSetTaskKill(const HcclResult ret) {
         MOCKER_CPP(&CcuComponent::SetTaskKill).stubs().will(returnValue(ret));
+        MOCKER_CPP(&Hccl::CcuComponent::SetTaskKill).stubs().will(returnValue(ret));
     }
     void StubSetTaskKillDone(const HcclResult ret) {
         MOCKER_CPP(&CcuComponent::SetTaskKillDone).stubs().will(returnValue(ret));
+        MOCKER_CPP(&Hccl::CcuComponent::SetTaskKillDone).stubs().will(returnValue(ret));
     }
     void StubCleanTaskKillState(const HcclResult ret) {
         MOCKER_CPP(&CcuComponent::CleanTaskKillState).stubs().will(returnValue(ret));
+        MOCKER_CPP(&Hccl::CcuComponent::CleanTaskKillState).stubs().will(returnValue(ret));
     }
     void StubCleanDieCkes(const HcclResult ret) {
         MOCKER_CPP(&CcuComponent::CleanDieCkes).stubs().with(any()).will(returnValue(ret));
+        MOCKER_CPP(&Hccl::CcuComponent::CleanDieCkes).stubs().with(any()).will(returnValue(ret));
     }
 };
 

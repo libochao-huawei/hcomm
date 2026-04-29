@@ -143,7 +143,7 @@ using nslb_msg = struct nslb_msg {
     unsigned int length;
     std::string data;
 
-    nslb_msg() : type(INVALID_UINT), length(INVALID_UINT), data("") {}
+    nslb_msg() : type(INVALID_UINT), length(0), data("") {}
 };
 
 class hcclNslbDp {

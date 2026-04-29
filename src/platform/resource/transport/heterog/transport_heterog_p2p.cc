@@ -543,7 +543,7 @@ HcclResult TransportHeterogP2P::TxAsync(std::vector<TxMemoryInfo>& txMems, Strea
                 dstMemSize - mem.dstOffset);
             DeviceMem srcDevMem = DeviceMem::create(const_cast<void *>(mem.src), mem.len);
             /* 增加hccl 数据传输时数据地址和size记录 */
-            HCCL_DEBUG("HCCL_KEY_INFO: srcAddr=[%p],srcSize=[%llu],dstAddr=[%p],dstSize=[%llu]", srcDevMem.ptr(),
+            HCCL_INFO("HCCL_KEY_INFO: srcAddr=[%p],srcSize=[%llu],dstAddr=[%p],dstSize=[%llu]", srcDevMem.ptr(),
                 srcDevMem.size(), dstDevMem.ptr(), dstDevMem.size());
             CHK_RET(hrtDrvMemCpy(dstDevMem.ptr(), dstDevMem.size(), srcDevMem.ptr(), srcDevMem.size()));
         }

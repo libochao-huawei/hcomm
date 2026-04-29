@@ -18,9 +18,9 @@ namespace Hccl {
 
 CcuEidInfo &CcuEidInfo::GetInstance(int32_t logicDeviceId)
 {
-    static CcuEidInfo ccuEidInfo[MAX_MODULE_DEVICE_NUM];
+    static CcuEidInfo ccuEidInfo[MAX_MODULE_DEVICE_NUM + 1];
 
-    if (static_cast<u32>(logicDeviceId) >= MAX_MODULE_DEVICE_NUM) {
+    if (static_cast<u32>(logicDeviceId) > MAX_MODULE_DEVICE_NUM) {
         HCCL_WARNING("[CcuEidInfo] GetInstance failed, logicDeviceId=%d, ret=%d", logicDeviceId, HCCL_E_PARA);
         return ccuEidInfo[0];
     }
