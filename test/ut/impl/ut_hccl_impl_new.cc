@@ -454,7 +454,7 @@ TEST_F(HcclImplTest, ut_HcclCommunicator_BuildZeroCopyParamSuccess_When_ZeroCopy
     std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
     EXPECT_NE(hcclCommunicator, nullptr);
 
-    void *fakePtr = 0x12345678; // 给定非空的地址用于打桩控制条件
+    void *fakePtr = (void*)0x12345678; // 给定非空的地址用于打桩控制条件
     u64 fakeSize = 50;
     auto deviceMem = DeviceMem(fakePtr, fakeSize);
     hcclCommunicator->zeroCopyLocalBuffer_ = std::move(deviceMem);
@@ -478,7 +478,7 @@ TEST_F(HcclImplTest, ut_HcclCommunicator_BuildZeroCopyParamFailed_When_GetRingBu
     std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
     EXPECT_NE(hcclCommunicator, nullptr);
 
-    void *fakePtr = 0x12345678; // 给定非空的地址用于打桩控制条件
+    void *fakePtr = (void*)0x12345678; // 给定非空的地址用于打桩控制条件
     u64 fakeSize = 50;
     auto deviceMem = DeviceMem(fakePtr, fakeSize);
     hcclCommunicator->zeroCopyLocalBuffer_ = std::move(deviceMem);
