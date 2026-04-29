@@ -127,6 +127,11 @@ bool Socket::ISend(void *data, u64 size, u64& compSize) const
     return HrtRaSocketNonBlockSend(fdHandle, data, size, &compSize);
 }
 
+bool Socket::IRecv(void *data, u64 size, u64& compSize) const
+{
+    return HrtRaSocketNonBlockRecv(fdHandle, data, size, &compSize);
+}
+
 void Socket::Destroy()
 {
     isDestroyed = true;
