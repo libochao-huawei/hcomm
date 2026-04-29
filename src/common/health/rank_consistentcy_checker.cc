@@ -284,29 +284,36 @@ HcclResult RankConsistentcyChecker::RecordSubCommPara(u32 parentCommCrc, uint32_
     std::lock_guard<std::mutex> lock(mutex_);
 
     // 将子通信域的四个关键参数计算CRC，追加到crcTable_中参与建链时一致性校验
+    // 同时存入subCommParaCrcs_，供A5路径CheckSubCommParaDetailed精确比对
+
     // 1. 父通信域identifier的CRC
     CHK_RET(AddCrc(parentCommCrc));
+    subCommParaCrcs_.push_back(parentCommCrc);
     HCCL_DEBUG("[RecordSubCommPara] parentCommCrc[0x%08x] recorded.", parentCommCrc);
 
     // 2. rankNum的CRC
     u32 rankNumCrc = 0;
     CHK_RET(CalcRawDataCrc(&rankNum, sizeof(rankNum), rankNumCrc));
     CHK_RET(AddCrc(rankNumCrc));
+    subCommParaCrcs_.push_back(rankNumCrc);
     HCCL_DEBUG("[RecordSubCommPara] rankNum[%u], crc[0x%08x] recorded.", rankNum, rankNumCrc);
 
     // 3. rankIds数组的CRC
     u32 rankIdsCrc = 0;
     CHK_RET(CalcRawDataCrc(rankIds, rankNum * sizeof(uint32_t), rankIdsCrc));
     CHK_RET(AddCrc(rankIdsCrc));
+    subCommParaCrcs_.push_back(rankIdsCrc);
     HCCL_DEBUG("[RecordSubCommPara] rankIds crc[0x%08x] recorded.", rankIdsCrc);
 
     // 4. subCommId的CRC
     u32 subCommIdCrc = 0;
     CHK_RET(CalcRawDataCrc(&subCommId, sizeof(subCommId), subCommIdCrc));
     CHK_RET(AddCrc(subCommIdCrc));
+    subCommParaCrcs_.push_back(subCommIdCrc);
     HCCL_DEBUG("[RecordSubCommPara] subCommId[%llu], crc[0x%08x] recorded.", subCommId, subCommIdCrc);
 
-    HCCL_INFO("[RecordSubCommPara] success, total crc count[%zu].", crcTable_.size());
+    HCCL_INFO("[RecordSubCommPara] success, total crc count[%zu], subCommParaCrcs count[%zu].",
+        crcTable_.size(), subCommParaCrcs_.size());
     return HCCL_SUCCESS;
 }
 

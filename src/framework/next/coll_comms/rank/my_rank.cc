@@ -1071,5 +1071,83 @@ HcclResult MyRank::WaitAllAsyncComplete(
     return HCCL_SUCCESS;
 }
 
+HcclResult MyRank::CheckSubCommParaDetailed(const u8 *recvBuf, u64 baseCheckInfoLen,
+    const std::string &commTag, RankConsistentcyChecker &checker)
+{
+    // 获取本端子通信域参数CRC（由RecordSubCommPara记录）
+    const std::vector<u32> &localSubCommCrcs = checker.GetSubCommParaCrcs();
+    if (localSubCommCrcs.empty()) {
+        // RecordSubCommPara未被调用，无需精确比对
+        HCCL_DEBUG("[CheckSubCommParaDetailed] subCommParaCrcs is empty, skip.");
+        return HCCL_SUCCESS;
+    }
+
+    // 从recvBuf反序列化对端HcclCheckInfo，提取crcInfoGlobal
+    HcclCheckInfo remoteCheckInfo;
+    (void)memset_s(&remoteCheckInfo, sizeof(HcclCheckInfo), 0, sizeof(HcclCheckInfo));
+    if (baseCheckInfoLen < sizeof(HcclCheckInfo)) {
+        HCCL_ERROR("[CheckSubCommParaDetailed] baseCheckInfoLen[%llu] < sizeof(HcclCheckInfo)[%zu].",
+            baseCheckInfoLen, sizeof(HcclCheckInfo));
+        return HCCL_E_INTERNAL;
+    }
+    (void)memcpy_s(&remoteCheckInfo, sizeof(HcclCheckInfo), recvBuf, sizeof(HcclCheckInfo));
+
+    // 生成本端校验帧以获取本端crcInfoGlobal.crcNum
+    HcclCheckInfo localCheckInfo;
+    (void)memset_s(&localCheckInfo, sizeof(HcclCheckInfo), 0, sizeof(HcclCheckInfo));
+    HcclResult ret = checker.GetCheckFrame(reinterpret_cast<u8*>(&localCheckInfo), sizeof(HcclCheckInfo), commTag);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[CheckSubCommParaDetailed] GetCheckFrame failed.");
+        return HCCL_E_INTERNAL;
+    }
+
+    u32 localCrcNum = localCheckInfo.crcInfoGlobal.crcNum;
+    u32 remoteCrcNum = remoteCheckInfo.crcInfoGlobal.crcNum;
+
+    // 两端crcNum必须一致（环境变量CRC个数 + 子通信域CRC个数应相同）
+    if (localCrcNum != remoteCrcNum) {
+        HCCL_ERROR("[CheckSubCommParaDetailed] localCrcNum[%u] != remoteCrcNum[%u], cannot compare.",
+            localCrcNum, remoteCrcNum);
+        return HCCL_E_INTERNAL;
+    }
+
+    // 子通信域CRC在crcArray中的起始索引 = crcNum - subCommParaCrcs.size()
+    u32 subCommCount = static_cast<u32>(localSubCommCrcs.size());
+    if (subCommCount > localCrcNum) {
+        HCCL_ERROR("[CheckSubCommParaDetailed] subCommCount[%u] > crcNum[%u], invalid state.",
+            subCommCount, localCrcNum);
+        return HCCL_E_INTERNAL;
+    }
+    u32 startIdx = localCrcNum - subCommCount;
+
+    static const char* subCommParaNames[] = {
+        "sub_comm_parentIdentifier",
+        "sub_comm_rankNum",
+        "sub_comm_rankIds",
+        "sub_comm_subCommId"
+    };
+
+    bool foundDiff = false;
+    for (u32 j = 0; j < subCommCount && j < 4; j++) {
+        u32 idx = startIdx + j;
+        if (idx >= MAX_CRC_LEN) {
+            break;
+        }
+        u32 localCrc = localCheckInfo.crcInfoGlobal.crcArray[idx];
+        u32 remoteCrc = remoteCheckInfo.crcInfoGlobal.crcArray[idx];
+        if (localCrc != remoteCrc) {
+            HCCL_ERROR("[CheckSubCommParaDetailed] sub comm parameter mismatch: "
+                "para_name[%s], local_crc[0x%08x], remote_crc[0x%08x].",
+                subCommParaNames[j], localCrc, remoteCrc);
+            foundDiff = true;
+        }
+    }
+
+    if (foundDiff) {
+        return HCCL_E_INTERNAL;
+    }
+    return HCCL_SUCCESS;
+}
+
 } // namespace hccl
 
