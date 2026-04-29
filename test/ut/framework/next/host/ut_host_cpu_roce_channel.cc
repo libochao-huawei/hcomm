@@ -22,6 +22,15 @@
 #define private public
 using namespace hcomm;
 
+static struct ibv_wc g_mockFlushWc = {0};
+inline int StubIbvPollFlushErr(ibv_cq* cq, uint32_t numEntries, ibv_wc* out_wc)
+{
+    if (out_wc != nullptr) {
+        *out_wc = g_mockFlushWc;
+    }
+    return 1;
+}
+
 class HostCpuRoceChannelTest : public testing::Test {
 protected:
     static void SetUpTestCase()
@@ -821,13 +830,9 @@ TEST_F(HostCpuRoceChannelTest, Ut_NotifyWait_When_WcStatusNotSuccess_Expect_HCCL
     struct ibv_wc wc;
     wc.status = IBV_WC_WR_FLUSH_ERR;
     wc.imm_data = 0;
-    MOCKER_CPP(&HostCpuRoceChannel::IbvPollCq).stubs()
-        .will(invoke([&wc](ibv_cq* cq, uint32_t numEntries, ibv_wc* out_wc) {
-            if (out_wc != nullptr) {
-                *out_wc = wc;
-            }
-            return 1;
-        }));
+    g_mockFlushWc.status = IBV_WC_WR_FLUSH_ERR;
+    g_mockFlushWc.imm_data = 0;
+    MOCKER_CPP(&HostCpuRoceChannel::IbvPollCq).stubs().will(invoke(StubIbvPollFlushErr));
 
     HcclResult ret = impl_->HostCpuRoceChannel::NotifyWait(0, 1800);
     EXPECT_EQ(ret, HCCL_E_NETWORK);
