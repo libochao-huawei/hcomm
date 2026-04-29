@@ -159,7 +159,7 @@ std::vector<std::string> ClusterMonitor::PrintEvents(std::map<HeartBeatStatus, s
     return errStatusVec;
 }
 
-std::vector<std::string> ClusterMonitor::GetErrStatusVec()
+std::vector<std::string> ClusterMonitor::GetErrStatusVecFromCluserMonitor()
 {
     std::unique_lock<std::mutex> lock(ProcessLock_);
     HcclUs curTime = TIME_NOW();
@@ -174,19 +174,19 @@ std::vector<std::string> ClusterMonitor::GetErrStatusVec()
     return PrintEvents(keyEvents);
 }
 
-std::vector<std::string> GetErrStatusVec(s32 deviceLogicID)
+std::vector<std::string> GetErrStatusVecFromCluserMonitor(s32 deviceLogicID)
 {
-    return ClusterMonitor::GetInstance(deviceLogicID).GetErrStatusVec();
+    return ClusterMonitor::GetInstance(deviceLogicID).GetErrStatusVecFromCluserMonitor();
 }
 
-void GetCqeErrInfo(unsigned int RemoteLocalIdId, unsigned int LocDeviceId, unsigned short int status, std::string LocalEid, std::string RemoteEid, std::string RemoteInsId)
+void GetCqeErrInfoFromTaskException(unsigned int RemoteLocalIdId, unsigned int LocDeviceId, unsigned short int status, std::string LocalEid, std::string RemoteEid, std::string RemoteInsId)
 {
-    return ClusterMonitor::GetInstance(LocDeviceId).GetCqeErrInfo(RemoteLocalIdId, status, LocalEid, RemoteEid, RemoteInsId);
+    return ClusterMonitor::GetInstance(LocDeviceId).GetCqeErrInfoFromTaskException(RemoteLocalIdId, status, LocalEid, RemoteEid, RemoteInsId);
 }
 
-void ClusterMonitor::GetCqeErrInfo(u32 RemoteLocalIdId, uint16_t status, std::string LocalEid, std::string RemoteEid, std::string RemoteInsId)
+void ClusterMonitor::GetCqeErrInfoFromTaskException(u32 RemoteLocalId, uint16_t status, std::string LocalEid, std::string RemoteEid, std::string RemoteInsId)
 {
-    CqeErrInfo_.CqeRemoteLocalId = RemoteLocalIdId;
+    CqeErrInfo_.CqeRemoteLocalId = RemoteLocalId;
     CqeErrInfo_.Cqestatus = status;
     CqeErrInfo_.CqeLocalEid = LocalEid;
     CqeErrInfo_.CqeRemoteEid = RemoteEid;
@@ -207,10 +207,10 @@ void ClusterMonitor::GetCqeErrInfo(u32 RemoteLocalIdId, uint16_t status, std::st
 
 __attribute__((constructor)) void ClusterMonitorCallBackInit()
 {
-    hcomm::RegisterGetAicpuCqeErrInfoCallBackHcomm(GetCqeErrInfo);
-    hcomm::RegisterGetCcuCqeErrInfoCallBackHcomm(GetCqeErrInfo);
-    hcomm::RegisterAicpuGetErrStatusVecCallBack(GetErrStatusVec);
-    hcomm::RegisterCcuGetErrStatusVecCallBack(GetErrStatusVec);
+    hcomm::RegisterGetAicpuCqeErrInfoCallBackHcomm(GetCqeErrInfoFromTaskException);
+    hcomm::RegisterGetCcuCqeErrInfoCallBackHcomm(GetCqeErrInfoFromTaskException);
+    hcomm::RegisterAicpuGetErrStatusVecCallBack(GetErrStatusVecFromCluserMonitor);
+    hcomm::RegisterCcuGetErrStatusVecCallBack(GetErrStatusVecFromCluserMonitor);
 }
 
 

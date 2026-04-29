@@ -337,7 +337,9 @@ void CcuTaskException::GenStatusInfo(const ErrorInfoBase &baseInfo, vector<CcuEr
         );
     }
     const string  statusMsg = StatusCode2Str(highPart, lowPart);
+    
     string ClusterMonitorErrMsg = CcuGetAndPrintClusterMonitorErr(baseInfo.deviceId);
+
     const auto    sRet
         = strncpy_s(errorMsg.msg.mission.missionError, MISSION_STATUS_MSG_LEN, statusMsg.c_str(), statusMsg.length());
     if (sRet != EOK) {
