@@ -298,16 +298,10 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/stream
     ${HCCL_CODE_ROOT}/src/legacy/interface/
     ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/aicpu/profiling
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/dfx/
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/ccu_representation/reps/common/
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/ccu_device/
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/ccu_device/ccu_component/
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/ccu_device/ccu_component/ccu_channel/
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/ccu_context/
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/pub_inc/ccu/
-
-    # ccu 头文件
+    # ccu next 头文件（必须放在 legacy/unified_platform/ccu 之前，
+    # 否则 ccu_res_pack.h / ccu_res_specs.h / ccu_res_batch_allocator.h
+    # 等同名头文件会被解析到 legacy 版（Hccl namespace），
+    # 而 next 代码在 hcomm namespace 下使用裸名，会编译报错）
     ${HCCL_CODE_ROOT}/src/framework/next/comms/adpt/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/common/
 
@@ -322,8 +316,16 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aiv/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_kernel/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_instance/
-
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/reps/arithmetic/
+
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/dfx/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/ccu_representation/reps/common/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/ccu_device/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/ccu_device/ccu_component/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/ccu_device/ccu_component/ccu_channel/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/ccu_context/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/pub_inc/ccu/
 )
 
 add_subdirectory(stub)
