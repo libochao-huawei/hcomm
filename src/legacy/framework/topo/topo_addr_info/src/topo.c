@@ -138,7 +138,13 @@ int TopoGetFilePath(unsigned mainboard_id, char* buf_size, size_t buf_len)
             break;
         case MAIN_BOARD_ID_SERVER_TYPE1:
         case MAIN_BOARD_ID_SERVER_8PMESH:
+        case MAIN_BOARD_ID_SERVER_8PMESH_UBOE:
+        case MAIN_BOARD_ID_SERVER_8PMESH_NOSP:
+        case MAIN_BOARD_ID_SERVER_8PMESH_NOSP_UBOE:
             ret = sprintf_s(buf_size, buf_len, "%s/%s", driver_install_path, "driver/topo/950/atlas_850_1.json");
+            break;
+        case MAIN_BOARD_ID_SERVER_UBX:
+            ret = sprintf_s(buf_size, buf_len, "%s/%s", driver_install_path, "driver/topo/950/atlas_850_3.json");
             break;
         default:
             break;

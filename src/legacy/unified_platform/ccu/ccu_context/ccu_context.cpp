@@ -249,14 +249,14 @@ CcuResReq CcuContext::GetResourceRequest()
     req.continuousXnReq[dieId]    = res.continuousVariable[dieId].size();
 
     req.missionReq.reqType           = MissionReqType::FUSION_MULTIPLE_DIE;
-    req.missionReq.missionReq[dieId] = 1;
+    req.missionReq.req[dieId] = 1;
 
     auto info
         = StringFormat("resource request: dieId[%u], ms[%u], blockMs[%u], cke[%u], blockCke[%u], "
                        "loopEngine[%u], blockLoopEngine[%u], gsa[%u], xn[%u], continuous xn[%u], missionId[%u]",
                        dieId, req.msReq[dieId], req.blockMsReq[dieId], req.ckeReq[dieId], req.blockCkeReq[dieId],
                        req.loopEngineReq[dieId], req.blockLoopEngineReq[dieId], req.gsaReq[dieId], req.xnReq[dieId],
-                       req.continuousXnReq[dieId], req.missionReq.missionReq[dieId]);
+                       req.continuousXnReq[dieId], req.missionReq.req[dieId]);
 
     HCCL_INFO("%s", info.c_str());
 

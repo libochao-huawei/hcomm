@@ -947,7 +947,7 @@ STATIC int RsRdevCbInit(struct rdev rdevInfo, struct RsRdevCb *rdevCb, struct rs
     return 0;
 
 free_nda_cb:
-    RsFreeNdaCb(rdevCb);
+    RsDeinitNdaCb(rdevCb);
 unmmap_ai_db:
 #ifdef CUSTOM_INTERFACE
     if (RsIsCustomInterfaceSupported()) {
@@ -1165,7 +1165,7 @@ RS_ATTRI_VISI_DEF int RsRdevDeinit(unsigned int phyId, unsigned int notifyType, 
 
     RsIbvDeallocPd(rdevCb->ibPd);
 
-    RsFreeNdaCb(rdevCb);
+    RsDeinitNdaCb(rdevCb);
 
     RsIbvCloseDevice(rdevCb->ibCtx);
 

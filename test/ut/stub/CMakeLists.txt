@@ -30,6 +30,8 @@ set(hccl_llt_stub
     ${HCCL_LLT_ROOT}/stub/llt_next_orion_stub.cc
     ${HCCL_LLT_ROOT}/stub/llt_next_hccp_stub.cc
     ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_rank_graph.cc
+
+    ${HCCL_LLT_ROOT}/stub/llt_next_orion_ccu_stub.cc
 )
 
 file(GLOB_RECURSE ALGORITHM_SOURCES "${HCCL_CODE_ROOT}/src/algorithm/*.cc")
@@ -96,11 +98,15 @@ set(orion_list
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/buffer.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/aicpu/rma_buf_slice_lite.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/notify/aicpu/notify_lite.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/notify/rts_notify.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/notify/ipc_remote_notify.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/aicpu/rma_buffer_lite.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/aicpu/rma_conn_lite.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/aicpu/rmt_rma_buf_slice_lite.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/aicpu/ub_conn_lite.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/aicpu/ub_conn_lite_mgr.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/stream/stream.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/task/task.cc
     ${HCCL_CODE_ROOT}/src/legacy/interface/rank_graph_interface.cc
     ${HCCL_CODE_ROOT}/src/legacy/framework/topo/new_topo_builder/rank_graph/rank_graph.cc
     ${HCCL_CODE_ROOT}/src/legacy/framework/topo/new_topo_builder/rank_graph/net_instance.cc
@@ -325,12 +331,14 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/pub_inc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/
     ${HCCL_CODE_ROOT}/src/legacy/framework/env_config
     ${HCCL_CODE_ROOT}/src/legacy/service/collective/primitive
     ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/aicpu
     ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/aicpu/inc
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/sockets
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/notify/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/notify/aicpu
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/mem
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/mem
@@ -345,6 +353,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
 
     #next
+    ${HCCL_CODE_ROOT}/src/framework/next/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads/slaves/
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms

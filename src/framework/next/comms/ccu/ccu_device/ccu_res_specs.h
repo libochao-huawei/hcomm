@@ -71,6 +71,10 @@ struct CcuResSpecInfo {
     uint32_t dieNum{CCU_MAX_IODIE_NUM};
 };
 
+MAKE_ENUM(HcclMainboardId, MAINBOARD_POD, MAINBOARD_A_K_SERVER, MAINBOARD_A_X_SERVER, MAINBOARD_PCIE_STD,
+          MAINBOARD_RSV, MAINBOARD_EQUIPMENT, MAINBOARD_EVB, MAINBOARD_OTHERS);
+HcclResult CcuGetMainboardId(uint32_t deviceLogicId, HcclMainboardId &hcclMainboardId);
+
 class CcuResSpecifications {
 public:
     static CcuResSpecifications& GetInstance(const int32_t deviceLogicId);

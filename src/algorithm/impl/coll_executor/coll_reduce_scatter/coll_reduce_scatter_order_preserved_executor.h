@@ -37,7 +37,7 @@ private:
     HcclResult RunReduceScatterLevel0(const OpParam &param, ExecMem &execMem, SubCommInfo &level0CommInfo);
     HcclResult RunReduceScatterLevel0HD(const OpParam &param, ExecMem &execMem, SubCommInfo &level0CommInfo);
     HcclResult RunReduceScatterLevel1(const OpParam &param, ExecMem &execMem, SubCommInfo &level0CommInfo);
-    HcclResult RunReduceScatterLevel0SingleRank(const OpParam &param, ExecMem &execMem, SubCommInfo &level0CommInfo);
+    HcclResult RunReduceScatterLevel0SingleRank(const OpParam &param, ExecMem &execMem, const SubCommInfo &level0CommInfo) const;
 
     u32 all2allOffset_ = 0;
     bool isUseHDAlg_ = false;

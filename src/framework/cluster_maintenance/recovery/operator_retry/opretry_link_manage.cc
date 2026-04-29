@@ -26,6 +26,7 @@ OpretryLinkManage::~OpretryLinkManage()
 {
     isDeInit_ = true;
     allRemoteRankList_.clear();
+    groupAllRemoteRankList_.clear();
 }
 
 HcclResult OpretryLinkManage::AddLinkInfoByIdentifier(const std::string &identifier, const std::string &newTag, 
@@ -37,6 +38,7 @@ HcclResult OpretryLinkManage::AddLinkInfoByIdentifier(const std::string &identif
         const auto &tagIt = identifierIt->second.find(newTag);
         if (tagIt == identifierIt->second.end()) {
             identifierIt->second.emplace(newTag, remoteRankList);
+            groupAllRemoteRankList_[identifier].insert(remoteRankList.begin(), remoteRankList.end());
         } else if (incre) {
             // 增量建链场景
             for (auto remoteRank: remoteRankList) {
@@ -44,6 +46,7 @@ HcclResult OpretryLinkManage::AddLinkInfoByIdentifier(const std::string &identif
                     tagIt->second.push_back(remoteRank);
                 }
             }
+            groupAllRemoteRankList_[identifier].insert(remoteRankList.begin(), remoteRankList.end());
         } else {
             // tag已存在，则不重复添加
             HCCL_INFO("[OpretryLinkManage][AddLinkInfoByIdentifier]identifier[%s] newTag[%s] is already add", 
@@ -53,6 +56,8 @@ HcclResult OpretryLinkManage::AddLinkInfoByIdentifier(const std::string &identif
     } else {
         std::unordered_map<std::string, std::vector<u32>> tmp = {{newTag, remoteRankList}};
         allRemoteRankList_.emplace(identifier, tmp);
+        std::unordered_set<u32> remoteRankSet(remoteRankList.begin(), remoteRankList.end());
+        groupAllRemoteRankList_.emplace(identifier, remoteRankSet);
     }
     return HCCL_SUCCESS;
 }
@@ -80,12 +85,30 @@ HcclResult OpretryLinkManage::GetLinkInfoByIdentifier(const std::string &identif
     return HCCL_SUCCESS;
 }
 
+HcclResult OpretryLinkManage::GetLinkInfoByIdentifier(const std::string &identifier, std::vector<u32> &remoteRankList)
+{
+    std::unique_lock<std::mutex> lock(opretryLinkMutex_);
+    const auto &identifierIt = groupAllRemoteRankList_.find(identifier);
+    if (identifierIt != groupAllRemoteRankList_.end()) {
+        remoteRankList.assign(identifierIt->second.begin(), identifierIt->second.end());
+        HCCL_RUN_INFO("[OpretryLinkManage][GetLinkInfoByIdentifier]identifier[%s] get success", identifier.c_str());
+        return HCCL_SUCCESS;
+    } else {
+        HCCL_ERROR("[OpretryLinkManage]identifier[%s] not found, please add it before", identifier.c_str());
+        return HCCL_E_PARA;
+    }
+    return HCCL_SUCCESS;
+}
+
 HcclResult OpretryLinkManage::DeleteLinkInfoByIdentifier(const std::string &identifier)
 {
     CHK_PRT_RET(isDeInit_ == true, HCCL_WARNING("OpretryLinkManage has been destroyed"), HCCL_SUCCESS);
     std::unique_lock<std::mutex> lock(opretryLinkMutex_);
     if (allRemoteRankList_.find(identifier) != allRemoteRankList_.end()) {
         allRemoteRankList_.erase(identifier);
+    }
+    if (groupAllRemoteRankList_.find(identifier) != groupAllRemoteRankList_.end()) {
+        groupAllRemoteRankList_.erase(identifier);
     }
     return HCCL_SUCCESS;
 }

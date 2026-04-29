@@ -64,10 +64,10 @@ std::vector<std::vector<RankId>>&virtRanks_, RankId myRank_, std::vector<map<u32
 HcclResult SetPathNumMapByRankGraphMultiLevel(const RankGraph *rankGraph,
 std::vector<RankId>&virtRanks_, RankId myRank_, std::map<u32, u32>&rank2PathNumMap);
     
-HcclResult SetPathNumMapByLinkMgrMultiLevel(ConnectedLinkMgr *linkMgr, 
+HcclResult SetPathNumMapByLinkMgrMultiLevel(ConnectedLinkMgr*linkMgr, 
 std::vector<std::vector<RankId>>&virtRanks_, RankId myRank_, std::vector<map<u32, u32>>&rank2PathNumMap);
 
-HcclResult SetPathNumMapByLinkMgrMultiLevel(ConnectedLinkMgr *linkMgr, std::vector<RankId>&virtRanks_,
+HcclResult SetPathNumMapByLinkMgrMultiLevel(ConnectedLinkMgr*linkMgr, std::vector<RankId>&virtRanks_,
 RankId myRank_, map<u32, u32>&rank2PathNumMap);
 
 

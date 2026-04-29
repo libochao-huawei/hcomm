@@ -34,7 +34,9 @@ public:
         
         connLocalCntNotifyManager = std::make_unique<ConnLocalCntNotifyManager>(this);
 
-        queueNotifyManager = std::make_unique<QueueNotifyManager>(*this);
+        aicpuQueueNotifyManager_ = std::make_unique<QueueNotifyManager>(*this);
+
+        ccuQueueNotifyManager_ = std::make_unique<QueueNotifyManager>(*this);
 
         queueWaitGroupCntNotifyManager = std::make_unique<QueueWaitGroupCntNotifyManager>();
 
@@ -77,9 +79,14 @@ public:
         return *remoteRmaBufManager.get();
     }
 
-    QueueNotifyManager &GetQueueNotifyManager() const override
+    QueueNotifyManager &GetAicpuQueueNotifyManager() const override
     {
-        return *queueNotifyManager.get();
+        return *aicpuQueueNotifyManager_.get();
+    }
+
+    QueueNotifyManager &GetCcuQueueNotifyManager() const override
+    {
+        return *ccuQueueNotifyManager_.get();
     }
 
     RmaConnManager &GetRmaConnManager() const override
@@ -128,7 +135,8 @@ private:
     std::unique_ptr<DataBufManager>            dataBufferManager;
     std::unique_ptr<LocalRmaBufManager>        localRmaBufManager;
     std::unique_ptr<RemoteRmaBufManager>       remoteRmaBufManager;
-    std::unique_ptr<QueueNotifyManager>        queueNotifyManager;
+    unique_ptr<QueueNotifyManager>             aicpuQueueNotifyManager_;
+    unique_ptr<QueueNotifyManager>             ccuQueueNotifyManager_;
     std::unique_ptr<ConnLocalNotifyManager>    connLocalNotifyManager;
     std::unique_ptr<ConnLocalCntNotifyManager> connLocalCntNotifyManager;
     std::unique_ptr<StreamManager>             streamManager;
