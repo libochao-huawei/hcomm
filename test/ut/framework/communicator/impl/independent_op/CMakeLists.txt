@@ -14,6 +14,7 @@ set(src_to_test_list
     ut_hccl_independent_op_channel.cc
     ${HCCL_CODE_ROOT}/test/ut/framework/communicator/hccl_api_base_test.cc
     ut_hccl_independent_op_mem.cc
+    ut_thread_manager.cc
 )
 
 add_executable(hccl_utest_framework_independent_op ${src_to_test_list})
