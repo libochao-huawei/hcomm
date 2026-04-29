@@ -600,3 +600,11 @@ TEST_F(MyRankTest, ut_SetMemHandles_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
     EXPECT_EQ(memInfo0->bufferHandle, (void*)0x100);
     EXPECT_EQ(memInfo1->bufferHandle, (void*)0x101);
 }
+
+TEST_F(MyRankTest, ut_Get_CommProtocol_And_CommEngine_String_By_Enum)
+{
+    std::string protocolStr = GetCommProtocolEnumStr(COMM_PROTOCOL_HCCS);
+    std::string engineStr = GetCommEngineEnumStr(COMM_ENGINE_CPU);
+    EXPECT_EQ(protocolStr, "HCCS");
+    EXPECT_EQ(engineStr, "CPU");
+}
