@@ -42,6 +42,11 @@ public:
     virtual HcclResult Clean() override;
     virtual HcclResult Resume() override;
 
+    HcommChannelKind GetChannelKind() const override
+    {
+        return HcommChannelKind::AICPU_TS_UBOE;
+    }
+
 private:
     MAKE_ENUM(UboeRmtBufType, NOTIFY, BUFFER)
     using RemoteBufferVec = std::vector<std::unique_ptr<Hccl::RemoteUbRmaBuffer>>;
