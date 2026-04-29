@@ -107,7 +107,12 @@ HcclResult InsTempReduceScatterMesh1D::PostCopy(
             repeatIdx * tempAlgParams.inputRepeatStride + rankIdx * tempAlgParams.inputSliceStride, sliceSize);
         DataSlice outputSlice = DataSlice(tempAlgParams.buffInfo.outBuffType, tempAlgParams.buffInfo.outBuffBaseOff + 
             repeatIdx * tempAlgParams.outputRepeatStride, sliceSize);
-        CHK_RET(LocalCopy(tempInsQues[0], myRankSlice, outputSlice));
+        // myRankSlice与outputSlice一致就不进行LocalCopy
+        if (!(tempAlgParams.buffInfo.inBuffType == tempAlgParams.buffInfo.outBuffType 
+            && myRankSlice.GetOffset() == outputSlice.GetOffset())) {
+            CHK_RET(LocalCopy(tempInsQues[0], myRankSlice, outputSlice));
+        }
+        
         // 把其他卡的数据input累加到output
         for (u32 tmpRank = 0; tmpRank < tempRankSize_; tmpRank++) {
             if (tmpRank != rankIdx) {
