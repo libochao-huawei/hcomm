@@ -319,3 +319,49 @@ TEST_F(HostRdmaConnectionTest, Ut_RaSetQpAttrRetryCnt_Fail)
     HcclResult ret = conn.CreateQp();
     EXPECT_EQ(ret, HCCL_E_NETWORK);
 }
+
+TEST_F(HostRdmaConnectionTest, Ut_GetRdmaStatus_ReturnCorrectStatus)
+{
+    DevType devType = DevType::DEV_TYPE_950;
+    MOCKER(hrtGetDeviceType).stubs()
+                            .with(outBound(devType))
+                            .will(returnValue(HCCL_SUCCESS));
+    MOCKER(Hccl::HrtRaCreateQpWithCq).stubs()
+                                .with(any(), any(), any(), any(), any(), any(), any())
+                                .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&Hccl::Socket::GetStatus).stubs().will(returnValue((Hccl::SocketStatus)Hccl::SocketStatus::OK));
+    char targetChipVer[Hccl::CHIP_VERSION_MAX_LEN] = "Ascend910_9591";
+    MOCKER(Hccl::HrtGetSocVer)
+        .stubs()
+        .with(outBoundP(&targetChipVer[0], sizeof(targetChipVer)), any())
+        .will(returnValue(RT_ERROR_NONE));
+
+    RdmaHandle rdmaHandle = (void *)0x1000000;
+    hcomm::HostRdmaConnection conn(fakeSocket, rdmaHandle);
+
+    // 初始状态为 CLOSED
+    EXPECT_EQ(hcomm::HostRdmaConnection::RdmaConnStatus::CLOSED, conn.GetRdmaStatus());
+
+    // Init 后状态为 INIT
+    HcclResult ret = conn.Init();
+    EXPECT_EQ(HCCL_SUCCESS, ret);
+    EXPECT_EQ(hcomm::HostRdmaConnection::RdmaConnStatus::INIT, conn.GetRdmaStatus());
+
+    // CreateQp 后状态为 QP_CREATED
+    ret = conn.CreateQp();
+    EXPECT_EQ(HCCL_SUCCESS, ret);
+    EXPECT_EQ(hcomm::HostRdmaConnection::RdmaConnStatus::QP_CREATED, conn.GetRdmaStatus());
+
+    // ModifyQp 后状态为 QP_MODIFIED
+    std::unique_ptr<Hccl::Serializable> locQpAttrserial;
+    ret = conn.GetExchangeDto(locQpAttrserial);
+    EXPECT_EQ(HCCL_SUCCESS, ret);
+    ret = conn.ParseRmtExchangeDto(*locQpAttrserial);
+    EXPECT_EQ(HCCL_SUCCESS, ret);
+    conn.ModifyQp();
+    EXPECT_EQ(hcomm::HostRdmaConnection::RdmaConnStatus::QP_MODIFIED, conn.GetRdmaStatus());
+
+    // DestroyQp 后状态为 CLOSED
+    conn.DestroyQp();
+    EXPECT_EQ(hcomm::HostRdmaConnection::RdmaConnStatus::CLOSED, conn.GetRdmaStatus());
+}
