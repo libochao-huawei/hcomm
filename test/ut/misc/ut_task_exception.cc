@@ -20,7 +20,6 @@
 #define private public
 #define protected public
 #include "task_exception_handler_pub.h"
-#include "task_exception_handler_lite.h"
 #include "heartbeat.h"
 #undef protected
 #undef private
