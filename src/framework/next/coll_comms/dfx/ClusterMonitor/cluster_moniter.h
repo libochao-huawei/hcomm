@@ -72,6 +72,7 @@ struct HeartBeatFrame {
     HeartBeatStatus status = HeartBeatStatus::HEARTBEAT_OK;
     HcclUs TOARelative; // time of arrival (Relative)
     HcclSystemTime TOASystem; // time of arrival (System)
+    //CqeErrInfo cqeErrInfo;
     HeartBeatFrame() {}
     HeartBeatFrame(UIDType &crimer, UIDType &informer, HeartBeatStatus status, HcclUs TOARelativeIn,
         HcclSystemTime TOASystemIn)
@@ -86,6 +87,8 @@ struct HeartBeatFrame {
 const std::map<HeartBeatStatus, std::string> HEARTBEAT_STATUS_STR_MAP{
     {HeartBeatStatus::HEARTBEAT_OK, "OK"},
     {HeartBeatStatus::HEARTBEAT_LOST, "LOST"},
+    {HeartBeatStatus::HEARTBEAT_EXCEPTION, "EXCEPTION"},
+    {HeartBeatStatus::HEARTBEAT_CQE_ERR, "CQE ERROR"}
 };
 
 inline std::string GetHeartBeatStatusStr(HeartBeatStatus  status)
@@ -99,10 +102,10 @@ inline std::string GetHeartBeatStatusStr(HeartBeatStatus  status)
 }
 
 struct CqeErrInfo{
-    u32 CqeLocalId;
-    u32 CqeRemoteLocalId;
-    uint16_t Cqestatus;
-    std::string CqeLocalEid; 
+    u32 CqeLocalId = 0;
+    u32 CqeRemoteLocalId = 0;
+    uint16_t Cqestatus = 0;
+    std::string CqeLocalEid;
     std::string CqeRemoteEid;
     std::string CqeRemoteInsId;
     std::string CqeLocalInsId;
@@ -111,8 +114,8 @@ struct CqeErrInfo{
 class ClusterMonitor {
 public:
     static ClusterMonitor& GetInstance(u32 deviceId);
-    void GetCqeErrInfo(u32 RemoteLocalId, uint16_t status, std::string LocalEid, std::string RemoteEid, std::string RemoteInsId);
-    std::vector<std::string> GetErrStatusVec();
+    void GetCqeErrInfoFromTaskException(u32 RemoteLocalId, uint16_t status, std::string LocalEid, std::string RemoteEid, std::string RemoteInsId);
+    std::vector<std::string> GetErrStatusVecFromCluserMonitor();
     bool IsKeyEvent(HeartBeatFrame &event, HcclUs curTime);
     std::vector<std::string> PrintEvents(std::map<HeartBeatStatus, std::queue<HeartBeatFrame>> &keyEvents);
     void MakeErrMsg(std::queue<HeartBeatFrame> &keyEvents, std::vector<std::string> &errStatusVec);
