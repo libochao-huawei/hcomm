@@ -624,6 +624,15 @@ int32_t HcommThreadRegisterDfx(ThreadHandle thread, std::function<HcclResult(u32
     return HCCL_SUCCESS;
 }
 
+int32_t HcommDpuChannelRegisterDfx(ChannelHandle channel, std::function<HcclResult(const Hccl::TaskParam&, u64)> callback) {
+    HCCL_INFO("[HcommDpuChannelRegisterDfx] Init begin");
+    auto *const hostCpuRoceChannelPtr = reinterpret_cast<hcomm::HostCpuRoceChannel *>(channel);
+    CHK_PTR_NULL(hostCpuRoceChannelPtr);
+    CHK_RET(hostCpuRoceChannelPtr->SetDfxCallback(callback));
+    HCCL_INFO("[HcommDpuChannelRegisterDfx] Init success");
+    return HCCL_SUCCESS;
+}
+
 int32_t HcommAcquireComm(const char* commId)
 {
     CHK_PTR_NULL(commId);
@@ -802,6 +811,8 @@ HcclResult HcclReportAicpuKernel(HcclComm comm, uint64_t beginTime, char* kernel
     uint32_t taskId = INVALID_UINT;
     uint32_t streamId = INVALID_UINT;
     CHK_RET(hrtGetTaskIdAndStreamID(taskId, streamId));
+    HCCL_INFO("[%s] taskId[%u], streamId[%u].", __func__, taskId, streamId);
+    hcclCommDfx->SetAicpuTaskIdAndStreamId(taskId, streamId);
     CHK_RET(hcclCommDfx->AddTaskInfoCallback(streamId, taskId, taskParam, INVALID_U64));
     HCCL_INFO("[HcclReportAicpuKernel] HcclReportAicpuKernel sucess");
     return HCCL_SUCCESS;
