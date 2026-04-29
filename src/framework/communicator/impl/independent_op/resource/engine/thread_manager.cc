@@ -427,7 +427,7 @@ HcclResult ThreadMgr::ThreadExportToCommEngineAicpu(uint32_t threadNum, const Th
         CHK_RET(GetExportedThread(threads[i], dstCommEngine, exportedThread, handle));
         if (exportedThread != nullptr) {
             exportedThreads[i] = reinterpret_cast<ThreadHandle>(exportedThread);
-            HCCL_RUN_INFO("%s]Exported Thread[%p] ", __func__, exportedThread);
+            HCCL_INFO("%s]Exported Thread[%p] ", __func__, exportedThread);
             continue;
         } else {
             hostThreads.push_back(handle);
