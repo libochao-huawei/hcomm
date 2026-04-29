@@ -76,6 +76,8 @@ public:
     HcclResult Clean();
     HcclResult Resume(std::vector<char> &uniqueId);
 
+    RmtRmaBufSliceLite GetRmtRmaBufSliceLite(const Buffer &rmtBuf);
+    RmaBufSliceLite GetRmaBufSlicelite(const RmaBufferLite &lite) const;
 private:
     u32 notifyNum{0};
     u32 bufferNum{0};
@@ -117,9 +119,7 @@ private:
     LocUbBufLiteVec locBufferVec;
 
     RmtRmaBufSliceLite GetRmtNotifySliceLite(u32 index);
-    RmtRmaBufSliceLite GetRmtRmaBufSliceLite(const Buffer &rmtBuf);
 
-    RmaBufSliceLite GetRmaBufSlicelite(const RmaBufferLite &lite) const;
     RmtRmaBufSliceLite GetRmtRmaBufSliceLite(const RmaBufferLite &lite) const;
 
     std::vector<std::unique_ptr<NotifyLite>> locNotifyVec;
