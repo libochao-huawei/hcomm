@@ -44,7 +44,8 @@ private:
         const u32 unitSize, PipelineLoopContext &ctx);
     // 由 RunLoop 调用
     HcclResult WaitForRemainingL2Signals(const OpParam &param, u64 numBlockTotal,
-        Stream &streamL0L1, const std::shared_ptr<LocalNotify> &notifyL2toL0L1);
+        Stream &streamL0L1, const std::shared_ptr<LocalNotify> &notifyL2toL0L1A,
+        const std::shared_ptr<LocalNotify> &notifyL2toL0L1B);
     HcclResult RunIntraSeverReduceScatter(const std::string &tag, DeviceMem &inputMem, DeviceMem &outputMem,
         const u64 count, const HcclDataType &dataType, const HcclReduceOp &reductionOp,
         const std::vector<std::vector<Slice>> &multRingsSliceZero, const Stream &stream, s32 profStage,
