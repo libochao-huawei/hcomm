@@ -24,6 +24,7 @@
 #include "hdc_pub.h"
 #include "rank_graph.h"
 #include "orion_adapter_hccp.h"
+#include "hccl_comm_pub.h"
 
 #include "../../comms/comm_engine_res/ccu/ccu_res_container.h"
 
@@ -56,7 +57,7 @@ public:
 
     HcclResult BatchExchangeAndCheckConsistency(
         const HcclChannelDesc* channelDescs,
-        const std::vector<HcommChannelDesc> &hcommDescs,
+        std::vector<HcommChannelDesc> &hcommDescs,
         uint32_t channelNum,
         const std::string &commTag,
         hcclComm *hcclComm);
