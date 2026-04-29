@@ -195,11 +195,12 @@ HcclResult ProcessHcclResPackReq(const HcclChannelDesc &channelDesc, HcclChannel
     return HCCL_SUCCESS;
 }
 
+constexpr uint32_t DEFAULT_MODE = 0;
+constexpr uint32_t CCU_MS_MODE = 5;
+constexpr uint32_t CCU_SCHE_MODE = 6;
+
 bool CheckCommEngine(const CommEngine engine, const uint32_t opExpansionMode)
 {
-    constexpr uint32_t DEFAULT_MODE = 0;
-    constexpr uint32_t CCU_MS_MODE = 5;
-    constexpr uint32_t CCU_SCHE_MODE = 6;
     if (engine == CommEngine::COMM_ENGINE_CCU) {
         return opExpansionMode == DEFAULT_MODE
             || opExpansionMode == CCU_MS_MODE
@@ -255,8 +256,9 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
  
         const uint32_t opExpansionMode = myRank->GetOpExpansionMode();
         if (!CheckCommEngine(engine, opExpansionMode)) {
-            HCCL_ERROR("[%s] failed. CCU engine[%d] requires opExpansionMode in {0, 5, 6}, "
- 	            "but coll comm[%p] has opExpansionMode[%d]", __func__, engine, hcclComm, opExpansionMode);
+            HCCL_ERROR("[%s] failed. CCU engine[%d] requires opExpansionMode in {%u, %u, %u}, "
+ 	            "but coll comm[%p] has opExpansionMode[%d]", __func__, engine, DEFAULT_MODE, 
+                CCU_MS_MODE, CCU_SCHE_MODE, hcclComm, opExpansionMode);
             return HcclResult::HCCL_E_PARA;
         }
         
