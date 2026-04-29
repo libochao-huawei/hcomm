@@ -117,36 +117,26 @@ HcclResult TaskExceptionHost::PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHa
 void TaskExceptionHost::Process(rtExceptionInfo_t* exceptionInfo)
 {
     if (exceptionInfo == nullptr) {
-        HCCL_ERROR("YYYYYY hcomm host dfx [%s]fail, exceptionInfo is nullptr", __func__);
         HCCL_ERROR("[%s]fail, exceptionInfo is nullptr", __func__);
         return;
     }
 
-    HCCL_RUN_INFO("YYYYYY hcomm host dfx [TaskExceptionHost::Process] start, exceptionInfo[%p], deviceid[%u], "
-        "streamid[%u], taskid[%u]", exceptionInfo, exceptionInfo->deviceid, exceptionInfo->streamid,
-        exceptionInfo->taskid);
     std::shared_ptr<Hccl::TaskInfo> curTask = nullptr;
     HcclResult ret = Hccl::GlobalMirrorTasks::Instance().FindTaskInfo(exceptionInfo->deviceid, exceptionInfo->streamid,
         exceptionInfo->taskid, curTask);
-    CHK_PRT_RET(ret == HCCL_E_NOT_FOUND,
-        HCCL_RUN_WARNING("YYYYYY hcomm host dfx [%s]FindTaskInfo not found, deviceid[%u] streamid[%u] taskid[%u].",
+    CHK_PRT_RET(ret == HCCL_E_NOT_FOUND, HCCL_RUN_WARNING("[%s]FindTaskInfo not found, deviceid[%u] streamid[%u] taskid[%u].",
         __func__, exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid),);
 
     CHK_PRT_RET(curTask == nullptr || ret != HCCL_SUCCESS,
-        HCCL_ERROR("YYYYYY hcomm host dfx [%s]FindTaskInfo fail, curTask[%p], ret[%d], deviceid[%u], "
-            "streamid[%u], taskid[%u].",
+        HCCL_ERROR("[%s]FindTaskInfo fail, curTask[%p], ret[%d], deviceid[%u], streamid[%u], taskid[%u].",
             __func__, curTask.get(), ret, exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid),);
 
     if (curTask->dfxOpInfo_ == nullptr) {
-        HCCL_ERROR("YYYYYY hcomm host dfx [%s]fail, dfxOpInfo is nullptr, curTask[%p]", __func__, curTask.get());
         HCCL_ERROR("[%s]fail, dfxOpInfo is nullptr", __func__);
         return;
     }
 
     bool isIndop_ = curTask->dfxOpInfo_->isIndop_;
-    HCCL_INFO("YYYYYY hcomm host dfx [TaskExceptionHost::Process] task found, curTask[%p], dfxOpInfo[%p], "
-        "isIndop[%d], taskType[%s]", curTask.get(), curTask->dfxOpInfo_.get(), isIndop_,
-        curTask->taskParam_.taskType.Describe().c_str());
     HCCL_INFO("[%s]isIndop_[%d], taskType[%s]", __func__, isIndop_, curTask->taskParam_.taskType.Describe().c_str());
     if (!isIndop_) {
         Hccl::TaskExceptionHandler::Process(exceptionInfo);

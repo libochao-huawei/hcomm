@@ -17,7 +17,6 @@
 #include "hcclCommDfx.h"
 #include "env_config/env_config.h"
 #include "aicpu_ts_p2p_channel.h"
-#include "adapter_rts.h"
 
 namespace hcomm {
 
@@ -261,16 +260,11 @@ static HcclResult FillChannelParam(HcclChannelUrmaRes &channelParam,
     channelParam.uniqueIdAddr = static_cast<void *>(devicePackBuf.ptr());
     channelParam.uniqueIdSize = totalListNum;
     channelParam.channelSizeAddr = static_cast<void *>(channelSizeAddr.ptr());
-    HCCL_INFO("YYYYYY hcomm host FillChannelParam resource filled, commTag[%s], listNum[%u], totalListNum[%u], "
-        "deviceChannelList[%p], devicePackBuf[%p], channelSizeAddr[%p]", commTag.c_str(), listNum, totalListNum,
-        deviceChannelList.ptr(), devicePackBuf.ptr(), channelSizeAddr.ptr());
 
     CHK_RET(hrtGetDevice(&channelParam.deviceLogicId));
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
     channelParam.deviceType = static_cast<u32>(devType);
-    HCCL_INFO("YYYYYY hcomm host FillChannelParam device info, deviceLogicId[%d], deviceType[%u]",
-        channelParam.deviceLogicId, channelParam.deviceType);
 
     return HCCL_SUCCESS;
 }
@@ -280,64 +274,31 @@ static HcclResult LaunchKernel(const HcclChannelUrmaRes &channelParam,
 {
     hccl::Stream localStream = hccl::Stream(hccl::StreamType::STREAM_TYPE_ONLINE);
     constexpr u32 aicpuStreamMode = 1;
-    HCCL_INFO("YYYYYY hcomm host LaunchKernel begin, kernelName[%s], localStream[%p], binHandle[%p], "
-        "channelParamSize[%llu]", kernelName.c_str(), localStream.ptr(), binHandle,
-        static_cast<unsigned long long>(sizeof(channelParam)));
-    HcclResult ret = hrtStreamSetMode(localStream.ptr(), aicpuStreamMode);
-    HCCL_INFO("YYYYYY hcomm host LaunchKernel hrtStreamSetMode end, kernelName[%s], ret[%d]", kernelName.c_str(), ret);
-    CHK_RET(ret);
-    uint32_t sqId = 0;
-    uint32_t cqId = 0;
-    uint32_t logicCqId = 0;
-    HcclResult sqRet = hrtStreamGetSqid(localStream.ptr(), &sqId);
-    HcclResult cqRet = hrtStreamGetCqid(localStream.ptr(), &cqId, &logicCqId);
-    HCCL_INFO("YYYYYY hcomm host LaunchKernel stream ids, kernelName[%s], stream[%p], sqRet[%d], sqId[%u], "
-        "cqRet[%d], cqId[%u], logicCqId[%u]", kernelName.c_str(), localStream.ptr(), sqRet, sqId, cqRet, cqId,
-        logicCqId);
+    CHK_RET(hrtStreamSetMode(localStream.ptr(), aicpuStreamMode));
 
     // 拷贝 channelParam 到 device
     hccl::DeviceMem addr = hccl::DeviceMem::alloc(sizeof(channelParam));
     CHK_PTR_NULL(addr.ptr());
-    HCCL_INFO("YYYYYY hcomm host LaunchKernel alloc device channelParam, kernelName[%s], addr[%p]", kernelName.c_str(),
-        addr.ptr());
 
-    ret = hrtMemSyncCopy(addr.ptr(),
+    CHK_RET(hrtMemSyncCopy(addr.ptr(),
         sizeof(channelParam),
         &channelParam,
         sizeof(channelParam),
-        HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE);
-    HCCL_INFO("YYYYYY hcomm host LaunchKernel copy channelParam H2D end, kernelName[%s], ret[%d], addr[%p]",
-        kernelName.c_str(), ret, addr.ptr());
-    CHK_RET(ret);
+        HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
     
     uint64_t context = reinterpret_cast<uint64_t>(addr.ptr());
-    HCCL_INFO("YYYYYY hcomm host LaunchKernel AicpuAclKernelLaunch begin, kernelName[%s], context[0x%llx], "
-        "paramChannelList[%p], paramUniqueIdAddr[%p], paramUniqueIdSize[%u], paramChannelSizeAddr[%p], "
-        "paramRemoteRankList[%p], paramListNum[%u]", kernelName.c_str(), static_cast<unsigned long long>(context),
-        channelParam.channelList, channelParam.uniqueIdAddr, channelParam.uniqueIdSize, channelParam.channelSizeAddr,
-        channelParam.remoteRankList, channelParam.listNum);
 
-    ret = hccl::AicpuAclKernelLaunch(localStream.ptr(),
+    CHK_RET(hccl::AicpuAclKernelLaunch(localStream.ptr(),
         reinterpret_cast<void *>(&context),
         sizeof(context),
         binHandle,
         kernelName,
         true,
-        NOTIFY_DEFAULT_WAIT_TIME);
-    HCCL_INFO("YYYYYY hcomm host LaunchKernel AicpuAclKernelLaunch end, kernelName[%s], ret[%d], stream[%p], "
-        "sqId[%u], cqId[%u], logicCqId[%u]", kernelName.c_str(), ret, localStream.ptr(), sqId, cqId, logicCqId);
-    CHK_RET(ret);
+        NOTIFY_DEFAULT_WAIT_TIME));
 
-    HCCL_INFO("YYYYYY hcomm host LaunchKernel hcclStreamSynchronize begin, kernelName[%s], localStream[%p], "
-        "sqId[%u], cqId[%u], logicCqId[%u]", kernelName.c_str(), localStream.ptr(), sqId, cqId, logicCqId);
-    ret = hcclStreamSynchronize(localStream.ptr(), 60);
-    HCCL_INFO("YYYYYY hcomm host LaunchKernel hcclStreamSynchronize end, kernelName[%s], ret[%d], "
-        "localStream[%p], sqId[%u], cqId[%u], logicCqId[%u]", kernelName.c_str(), ret, localStream.ptr(), sqId,
-        cqId, logicCqId);
-    CHK_RET(ret);
+    CHK_RET(hcclStreamSynchronize(localStream.ptr(), 60));
 
     HCCL_INFO("[%s] kernel[%s] launch success.", __func__, kernelName.c_str());
-    HCCL_INFO("YYYYYY hcomm host LaunchKernel end, kernelName[%s]", kernelName.c_str());
     return HCCL_SUCCESS;
 }
 
@@ -350,9 +311,6 @@ HcclResult ChannelProcess::LaunchChannelKernelCommon(ChannelHandle *channelHandl
     CHK_PRT_RET((listNum == 0), HCCL_ERROR("[%s]Invalid listNum, listNum[%u]", __func__, listNum), HCCL_E_PARA);
 
     HCCL_RUN_INFO("[%s] listNum[%u], commTag[%s]", __func__, listNum, commTag.c_str());
-    HCCL_INFO("YYYYYY hcomm host LaunchChannelKernelCommon begin, kernelName[%s], commTag[%s], listNum[%u], "
-        "channelHandles[%p], hostChannelHandles[%p], hcommDesc[%p], needProfiling[%d]", kernelName.c_str(),
-        commTag.c_str(), listNum, channelHandles, hostChannelHandles, hcommDesc, needProfiling);
     std::vector<std::vector<char>> hostPackBuffers(listNum);
     HcclChannelUrmaRes channelParam{};
     CHK_SAFETY_FUNC_RET(memset_s(&channelParam, sizeof(channelParam), 0, sizeof(channelParam)));
@@ -373,62 +331,39 @@ HcclResult ChannelProcess::LaunchChannelKernelCommon(ChannelHandle *channelHandl
         }
         totalListNum += hostPackBuffers[index].size();
         channelSizeVec.push_back(hostPackBuffers[index].size());
-        HCCL_INFO("YYYYYY hcomm host LaunchChannelKernelCommon pack index[%u], protocol[%d], hostChannelHandle[0x%llx], "
-            "packSize[%llu], totalListNum[%u]", index, static_cast<int>(hcommDesc[index].remoteEndpoint.protocol),
-            static_cast<unsigned long long>(hostChannelHandles[index]),
-            static_cast<unsigned long long>(hostPackBuffers[index].size()), totalListNum);
     }
     HCCL_INFO("[%s] totalListNum[%llu]", __func__, totalListNum);
 
     // 分配连续的host内存，将序列化的地址放入其中
     hccl::HostMem hostPackBuf = hccl::HostMem::alloc(totalListNum);
     CHK_PTR_NULL(hostPackBuf.ptr());
-    HCCL_INFO("YYYYYY hcomm host LaunchChannelKernelCommon hostPackBuf alloc, ptr[%p], totalListNum[%u]",
-        hostPackBuf.ptr(), totalListNum);
     CHK_RET(CombineHostMemory(hostPackBuffers, hostPackBuf));
-    HCCL_INFO("YYYYYY hcomm host LaunchChannelKernelCommon CombineHostMemory end, hostPackBuf[%p]", hostPackBuf.ptr());
     hccl::DeviceMem devicePackBuf = hccl::DeviceMem::alloc(totalListNum);
     CHK_PTR_NULL(devicePackBuf.ptr());
-    HCCL_INFO("YYYYYY hcomm host LaunchChannelKernelCommon devicePackBuf alloc, ptr[%p], totalListNum[%u]",
-        devicePackBuf.ptr(), totalListNum);
 
     // 将host侧序列化内容拷贝到device侧内存中
-    HcclResult ret = hrtMemSyncCopy(devicePackBuf.ptr(),
+    CHK_RET(hrtMemSyncCopy(devicePackBuf.ptr(),
         totalListNum,
         hostPackBuf.ptr(),
         totalListNum,
-        HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE);
-    HCCL_INFO("YYYYYY hcomm host LaunchChannelKernelCommon devicePackBuf H2D copy end, ret[%d], dst[%p], src[%p], "
-        "size[%u]", ret, devicePackBuf.ptr(), hostPackBuf.ptr(), totalListNum);
-    CHK_RET(ret);
+        HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
 
     hccl::DeviceMem channelSizeAddr = hccl::DeviceMem::alloc(channelSizeVec.size() * sizeof(u32));
     CHK_PTR_NULL(channelSizeAddr.ptr());
-    HCCL_INFO("YYYYYY hcomm host LaunchChannelKernelCommon channelSizeAddr alloc, ptr[%p], count[%llu]",
-        channelSizeAddr.ptr(), static_cast<unsigned long long>(channelSizeVec.size()));
 
-    ret = hrtMemSyncCopy(channelSizeAddr.ptr(),
+    CHK_RET(hrtMemSyncCopy(channelSizeAddr.ptr(),
         channelSizeVec.size() * sizeof(u32),
         channelSizeVec.data(),
         channelSizeVec.size() * sizeof(u32),
-        HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE);
-    HCCL_INFO("YYYYYY hcomm host LaunchChannelKernelCommon channelSizeAddr H2D copy end, ret[%d], ptr[%p], bytes[%llu]",
-        ret, channelSizeAddr.ptr(), static_cast<unsigned long long>(channelSizeVec.size() * sizeof(u32)));
-    CHK_RET(ret);
+        HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
     // 为device侧的channelList分配内存
     hccl::DeviceMem deviceChannelList = hccl::DeviceMem::alloc(listNum * sizeof(ChannelHandle));
     CHK_PTR_NULL(deviceChannelList.ptr());
-    HCCL_INFO("YYYYYY hcomm host LaunchChannelKernelCommon deviceChannelList alloc, ptr[%p], bytes[%llu]",
-        deviceChannelList.ptr(), static_cast<unsigned long long>(listNum * sizeof(ChannelHandle)));
 
     // 填充channelParam参数
-    ret = FillChannelParam(channelParam, commTag, deviceChannelList, devicePackBuf, listNum, totalListNum,
-        channelSizeAddr);
-    HCCL_INFO("YYYYYY hcomm host LaunchChannelKernelCommon FillChannelParam end, ret[%d], paramChannelList[%p], "
-        "paramUniqueIdAddr[%p], paramChannelSizeAddr[%p]", ret, channelParam.channelList, channelParam.uniqueIdAddr,
-        channelParam.channelSizeAddr);
-    CHK_RET(ret);
-    
+    CHK_RET(FillChannelParam(channelParam, commTag, deviceChannelList, devicePackBuf,
+        listNum, totalListNum, channelSizeAddr));
+
     // profiling信息
     hccl::DeviceMem remoteRankList = hccl::DeviceMem::alloc(listNum * sizeof(u32));
     CHK_PTR_NULL(remoteRankList.ptr());
@@ -437,50 +372,26 @@ HcclResult ChannelProcess::LaunchChannelKernelCommon(ChannelHandle *channelHandl
     if (needProfiling) {
         for ( u32 i = 0; i < listNum; ++i) {
             CHK_RET(hccl::HcclCommDfx::GetChannelRemoteRankId(commTag, hostChannelHandles[i], remoteRankIdList[i]));
-            HCCL_INFO("YYYYYY hcomm host LaunchChannelKernelCommon remoteRankList host index[%u], "
-                "hostChannelHandle[0x%llx], remoteRank[%u]", i,
-                static_cast<unsigned long long>(hostChannelHandles[i]), remoteRankIdList[i]);
         }
         // 通过安全的内存拷贝将主机内存数据传输到设备内存
-        ret = hrtMemSyncCopy(remoteRankList.ptr(), listNum * sizeof(u32), remoteRankIdList.data(),
-                listNum * sizeof(u32), HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE);
-        HCCL_INFO("YYYYYY hcomm host LaunchChannelKernelCommon remoteRankList H2D copy end, ret[%d], ptr[%p], "
-            "bytes[%llu]", ret, remoteRankList.ptr(), static_cast<unsigned long long>(listNum * sizeof(u32)));
-        CHK_RET(ret);
+        CHK_RET(hrtMemSyncCopy(remoteRankList.ptr(), listNum * sizeof(u32), remoteRankIdList.data(),
+                listNum * sizeof(u32), HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
         channelParam.remoteRankList = static_cast<u32 *>(remoteRankList.ptr());
-        HCCL_INFO("YYYYYY hcomm host LaunchChannelKernelCommon channelParam.remoteRankList set, ptr[%p]",
-            channelParam.remoteRankList);
     }
 
     // 调用抽离的通用内核启动函数
-    ret = LaunchKernel(channelParam, binHandle, kernelName);
-    HCCL_INFO("YYYYYY hcomm host LaunchChannelKernelCommon LaunchKernel end, kernelName[%s], ret[%d]",
-        kernelName.c_str(), ret);
-    CHK_RET(ret);
+    CHK_RET(LaunchKernel(channelParam, binHandle, kernelName));
 
     // 将device侧的channelList拷贝回host侧的channelList
-    HCCL_INFO("YYYYYY hcomm host LaunchChannelKernelCommon channelList D2H copy begin, dst[%p], src[%p], bytes[%llu]",
-        channelHandles, deviceChannelList.ptr(), static_cast<unsigned long long>(listNum * sizeof(ChannelHandle)));
-    ret = hrtMemSyncCopy(channelHandles,
+    CHK_RET(hrtMemSyncCopy(channelHandles,
         listNum * sizeof(ChannelHandle),
         deviceChannelList.ptr(),
         listNum * sizeof(ChannelHandle),
-        HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_DEVICE_TO_HOST);
-    HCCL_INFO("YYYYYY hcomm host LaunchChannelKernelCommon channelList D2H copy end, ret[%d]", ret);
-    CHK_RET(ret);
-    for (u32 i = 0; i < listNum && i < 4; ++i) {
-        HCCL_INFO("YYYYYY hcomm host LaunchChannelKernelCommon channelHandles[%u]=[0x%llx], hostChannelHandles[%u]=[0x%llx]",
-            i, static_cast<unsigned long long>(channelHandles[i]), i,
-            static_cast<unsigned long long>(hostChannelHandles[i]));
-    }
+        HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_DEVICE_TO_HOST));
 
-    ret = FillChannelD2HMap(channelHandles, hostChannelHandles, listNum);
-    HCCL_INFO("YYYYYY hcomm host LaunchChannelKernelCommon FillChannelD2HMap end, ret[%d]", ret);
-    CHK_RET(ret);
+    CHK_RET(FillChannelD2HMap(channelHandles, hostChannelHandles, listNum));
 
     HCCL_INFO("[%s] channel kernel launch success.", __func__);
-    HCCL_INFO("YYYYYY hcomm host LaunchChannelKernelCommon end, kernelName[%s], commTag[%s]", kernelName.c_str(),
-        commTag.c_str());
     return HCCL_SUCCESS;
 }
 

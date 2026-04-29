@@ -571,9 +571,7 @@ constexpr u32 GROUP_DYN_FLAG = 23U;
 constexpr u32 GROUP_TILING_MAGIC_NUM = 99U;
 __attribute__((visibility("default"))) uint32_t RunAicpuKfcSrvLaunch(void *args[])
 {
-    HCCL_INFO("YYYYYY hcomm mc2 [RunAicpuKfcSrvLaunch] start, args[%p], file[%s]", args, __FILE__);
     if (args == nullptr) {
-        HCCL_ERROR("YYYYYY hcomm mc2 [RunAicpuKfcSrvLaunch] args is null.");
         HCCL_ERROR("args is null.");
         return HCCL_E_PARA;
     }
@@ -581,22 +579,12 @@ __attribute__((visibility("default"))) uint32_t RunAicpuKfcSrvLaunch(void *args[
     uint64_t desc_value = u64(args[DESC_POS]);
     uint64_t *desc_addr = &desc_value;
     CommKfcParamDesc *desc = reinterpret_cast<CommKfcParamDesc*>(desc_addr);
-    HCCL_INFO("YYYYYY hcomm mc2 [RunAicpuKfcSrvLaunch] desc decoded, desc[%p], descValue[0x%llx], version[%llu], "
-        "itemNum[%llu], tilingOff[%llu], isDyn[%llu]", desc, static_cast<unsigned long long>(desc_value),
-        static_cast<unsigned long long>(desc->version), static_cast<unsigned long long>(desc->itemNum),
-        static_cast<unsigned long long>(desc->tilingOff), static_cast<unsigned long long>(desc->isDyn));
     AicpuKfcUtils::PrintHcclCommParamDesc(*desc);
     if (desc->version == DECOUPLED_CTX_VER) {
-        HCCL_INFO("YYYYYY hcomm mc2 [RunAicpuKfcSrvLaunch] decoupled path begin, itemNum[%llu]",
-            static_cast<unsigned long long>(desc->itemNum));
-        uint32_t ret = CommKfcDispatcher::Run(&(args[1]), desc->itemNum);
-        HCCL_INFO("YYYYYY hcomm mc2 [RunAicpuKfcSrvLaunch] decoupled path end, ret[%u]", ret);
-        return ret;
+        return CommKfcDispatcher::Run(&(args[1]), desc->itemNum);
     }
     void *tiling = reinterpret_cast<void *>(args[desc->tilingOff]);
     if (tiling == nullptr) {
-        HCCL_ERROR("YYYYYY hcomm mc2 [RunAicpuKfcSrvLaunch] tiling is null, tilingOff[%llu]",
-            static_cast<unsigned long long>(desc->tilingOff));
         HCCL_ERROR("tiling is null.");
         return HCCL_E_PARA;
     }
@@ -605,8 +593,6 @@ __attribute__((visibility("default"))) uint32_t RunAicpuKfcSrvLaunch(void *args[
     bool profL0Open = dfx::ProfilingManager::IsProfL0On();
     HCCL_INFO("profL1Open:%d, profL0Open:%d", profL1Open, profL0Open);
     const uint32_t ver = MC2TilingGetVer(tiling);
-    HCCL_INFO("YYYYYY hcomm mc2 [RunAicpuKfcSrvLaunch] legacy tiling path, tiling[%p], tilingVersion[%u], "
-        "profL1Open[%d], profL0Open[%d]", tiling, ver, profL1Open, profL0Open);
     HCCL_INFO("Start RunAicpuKfcSrvLaunch with tiling version %u.", ver);
     uint32_t ret;
     switch (ver) {

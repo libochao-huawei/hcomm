@@ -527,8 +527,6 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
 
     HCCL_INFO("[CreateChannels][Enter] engine[%d] commTag[%s] channelNum[%u] rankId[%u]",
         engine, commTag.c_str(), channelNum, rankId_);
-    HCCL_INFO("YYYYYY hcomm host channel [MyRank::CreateChannels] begin, engine[%d], commTag[%s], "
-        "channelNum[%u], rankId[%u], binHandle[%p]", engine, commTag.c_str(), channelNum, rankId_, binHandle_);
 
     // 参数检查
     CHK_RET(CheckChannelParam(engine, channelDescs, channelNum));
@@ -549,43 +547,19 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
 
     if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
         // 新增：添加 kernelLaunchAicpuCommInit 调用
-        bool aicpuCommState = callbacks_.getAicpuCommState();
-        HCCL_INFO("YYYYYY hcomm host channel [MyRank::CreateChannels] aicpu engine branch, engine[%d], "
-            "commTag[%s], channelNum[%u], getAicpuCommState[%d]", engine, commTag.c_str(), channelNum,
-            static_cast<int>(aicpuCommState));
-        if (!aicpuCommState) {
-            HCCL_INFO("YYYYYY hcomm host channel [MyRank::CreateChannels] kernelLaunchAicpuCommInit begin, "
-                "commTag[%s], rankId[%u]", commTag.c_str(), rankId_);
+        if (!callbacks_.getAicpuCommState()) {
+            HCCL_INFO("MyRank::%s kernelLaunchAicpuCommInit start.", __func__);
             HcclResult ret = callbacks_.kernelLaunchAicpuCommInit();
-            HCCL_INFO("YYYYYY hcomm host channel [MyRank::CreateChannels] kernelLaunchAicpuCommInit end, "
-                "commTag[%s], ret[%d]", commTag.c_str(), ret);
             CHK_PRT_RET(ret != HCCL_SUCCESS,
                 HCCL_ERROR("[%s] kernelLaunchAicpuCommInit failed, return [%d].", __func__, ret), ret);
             callbacks_.setAicpuCommState(true);
-            HCCL_INFO("YYYYYY hcomm host channel [MyRank::CreateChannels] setAicpuCommState true, commTag[%s]",
-                commTag.c_str());
         }
         HcommChannelDesc* hcommDesc = hcommDescs.data();
-        for (u32 i = 0; i < channelNum && i < 4; ++i) {
-            HCCL_INFO("YYYYYY hcomm host channel [MyRank::CreateChannels] before ChannelKernelLaunchForComm "
-                "index[%u], hostChannelHandle[0x%llx], remoteRank[%u], protocol[%d], notifyNum[%u], memHandleNum[%u]",
-                i, static_cast<unsigned long long>(hostChannelHandleList[i]), channelDescs[i].remoteRank,
-                static_cast<int>(hcommDesc[i].remoteEndpoint.protocol), hcommDesc[i].notifyNum,
-                hcommDesc[i].memHandleNum);
-        }
-        HCCL_INFO("YYYYYY hcomm host channel [MyRank::CreateChannels] ChannelKernelLaunchForComm begin, "
-            "commTag[%s], channelNum[%u], channelHandles[%p], hostChannelHandleList[%p], hcommDesc[%p], binHandle[%p]",
-            commTag.c_str(), channelNum, channelHandles, hostChannelHandleList, hcommDesc, binHandle_);
-        HcclResult ret = ChannelProcess::ChannelKernelLaunchForComm(channelHandles, hostChannelHandleList, hcommDesc,
-            channelNum, commTag, binHandle_);
-        HCCL_INFO("YYYYYY hcomm host channel [MyRank::CreateChannels] ChannelKernelLaunchForComm end, "
-            "commTag[%s], ret[%d]", commTag.c_str(), ret);
-        CHK_RET(ret);
+        CHK_RET(ChannelProcess::ChannelKernelLaunchForComm(channelHandles, hostChannelHandleList, hcommDesc,
+            channelNum, commTag, binHandle_));
 
         // ns recovery
         nsRecoveryProcessor_->AddNsRecoveryData(engine, channelHandles, hostChannelHandleList, channelNum, commTag);
-        HCCL_INFO("YYYYYY hcomm host channel [MyRank::CreateChannels] AddNsRecoveryData end, commTag[%s], "
-            "channelNum[%u]", commTag.c_str(), channelNum);
 
         return HCCL_SUCCESS;
     }

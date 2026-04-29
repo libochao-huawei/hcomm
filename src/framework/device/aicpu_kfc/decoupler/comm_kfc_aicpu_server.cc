@@ -188,23 +188,15 @@ HcclResult CommKfcAicpuServer::CheckTimeOut(u32 msgPos)
         return HCCL_SUCCESS;
     }
     const bool error = (timeout_ >= TIMEOUT_ERROR_THRESHOLD);
-    HCCL_RUN_INFO("YYYYYY hcomm mc2 [CommKfcAicpuServer::CheckTimeOut] timeout hit, groupIdx[%u], msgPos[%u], "
-        "timeout[%u], hardError[%d]", groupIdx_, msgPos, timeout_, error);
     HcclResult ret;
     if (error) {
-        HCCL_ERROR("YYYYYY hcomm mc2 [CommKfcAicpuServer::CheckTimeOut] hard timeout, groupIdx[%u], timeout[%u], "
-            "msgPos[%u]", groupIdx_, timeout_, msgPos);
         HCCL_ERROR("Group %u: timeout %u seconds at message pos %u.", groupIdx_, timeout_, msgPos);
         ret = HCCL_E_TIMEOUT;
     } else {
-        HCCL_RUN_INFO("YYYYYY hcomm mc2 [CommKfcAicpuServer::CheckTimeOut] soft timeout, groupIdx[%u], "
-            "timeout[%u], msgPos[%u]", groupIdx_, timeout_, msgPos);
         HCCL_RUN_INFO("Group %u: timeout %u seconds at message pos %u.", groupIdx_, timeout_, msgPos);
         ret = HCCL_E_AGAIN;
     }
     timeout_ *= 2U;
-    HCCL_RUN_INFO("YYYYYY hcomm mc2 [CommKfcAicpuServer::CheckTimeOut] end, ret[%d], nextTimeout[%u]", ret,
-        timeout_);
     return ret;
 }
 

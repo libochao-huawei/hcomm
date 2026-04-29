@@ -18,25 +18,12 @@
 extern "C" {
 __attribute__((visibility("default"))) uint32_t RunAicpuIndOpChannelInitV2(void *args)
 {
-    HCCL_RUN_INFO("YYYYYY hcomm RunAicpuIndOpChannelInitV2 start, args[%p]", args);
+    HCCL_RUN_INFO("RunAicpuIndOpChannelInitV2 start.");
     CHK_PTR_NULL(args);
     uint64_t devAddr = *reinterpret_cast<uint64_t*>(args);
     HcclChannelUrmaRes *commParam = reinterpret_cast<HcclChannelUrmaRes *>(devAddr);
-    HCCL_RUN_INFO("YYYYYY hcomm RunAicpuIndOpChannelInitV2 devAddr[0x%llx], commParam[%p], "
-        "sizeof(HcclChannelUrmaRes)[%llu]", static_cast<unsigned long long>(devAddr), commParam,
-        static_cast<unsigned long long>(sizeof(HcclChannelUrmaRes)));
-    if (commParam != nullptr) {
-        HCCL_RUN_INFO("YYYYYY hcomm RunAicpuIndOpChannelInitV2 param hcomId[%s], listNum[%u], channelList[%p], "
-            "uniqueIdAddr[%p], uniqueIdSize[%u], channelSizeAddr[%p], remoteRankList[%p], remoteRankId[%p], "
-            "deviceLogicId[%d], deviceType[%u]", commParam->hcomId, commParam->listNum, commParam->channelList,
-            commParam->uniqueIdAddr, commParam->uniqueIdSize, commParam->channelSizeAddr, commParam->remoteRankList,
-            commParam->remoteRankId, commParam->deviceLogicId, commParam->deviceType);
-    }
     CHK_PTR_NULL(commParam);
-    HCCL_RUN_INFO("YYYYYY hcomm RunAicpuIndOpChannelInitV2 call AicpuIndOpChannelInit begin");
-    uint32_t ret = AicpuIndopProcess::AicpuIndOpChannelInit(commParam);
-    HCCL_RUN_INFO("YYYYYY hcomm RunAicpuIndOpChannelInitV2 call AicpuIndOpChannelInit end, ret[%u]", ret);
-    return ret;
+    return AicpuIndopProcess::AicpuIndOpChannelInit(commParam);
 }
 
 __attribute__((visibility("default"))) uint32_t RunAicpuChannelInitV2(void *args)

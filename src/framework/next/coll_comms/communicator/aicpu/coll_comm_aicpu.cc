@@ -135,105 +135,56 @@ HcclResult CollCommAicpu::RegisterThreadAddDfxTaskInfo(ThreadHandle thread)
 
 HcclResult CollCommAicpu::AllocChannelResource(HcclChannelUrmaRes *commParam)
 {
-    HCCL_INFO("YYYYYY hcomm CollCommAicpu AllocChannelResource begin, commParam[%p]", commParam);
     HCCL_INFO("[CollCommAicpu][%s] deviceLogicId[%d], devicePhyId[%u], deviceType[%d], commParam->channelList[%p], "
-              "commParam->listNum[%u], commParam->uniqueIdAddr[%p], commParam->uniqueIdSize[%u], "
-              "commParam->channelSizeAddr[%p], commParam->remoteRankList[%p], commParam->remoteRankId[%p]",
+              "commParam->listNum[%u], commParam->uniqueIdAddr[%p], commParam->uniqueIdSize[%u]",
               __func__, topoInfo_.deviceLogicId, topoInfo_.devicePhyId, topoInfo_.deviceType, commParam->channelList,
-              commParam->listNum, commParam->uniqueIdAddr, commParam->uniqueIdSize, commParam->channelSizeAddr,
-              commParam->remoteRankList, commParam->remoteRankId);
-    HCCL_INFO("YYYYYY hcomm CollCommAicpu AllocChannelResource InitUrmaChannel begin, commParam[%p]", commParam);
-    HcclResult ret = InitUrmaChannel(commParam);
-    HCCL_INFO("YYYYYY hcomm CollCommAicpu AllocChannelResource InitUrmaChannel end, ret[%d]", ret);
-    CHK_RET(ret);
-    HCCL_INFO("YYYYYY hcomm CollCommAicpu AllocChannelResource end, commParam[%p]", commParam);
+              commParam->listNum, commParam->uniqueIdAddr, commParam->uniqueIdSize);
+    CHK_RET(InitUrmaChannel(commParam));
     return HCCL_SUCCESS;
 }
 
 HcclResult CollCommAicpu::ProcessUrmaRes(HcclChannelUrmaRes *commParam, bool isInit)
 {
-    HCCL_INFO("YYYYYY hcomm CollCommAicpu ProcessUrmaRes begin, commParam[%p], isInit[%d]", commParam, isInit);
     HCCL_INFO("[CollCommAicpu][%s] commParam->uniqueIdAddr[%p], commParam->uniqueIdSize[%u]",
         __func__, commParam->uniqueIdAddr, commParam->uniqueIdSize);
     ChannelHandle* channelList = reinterpret_cast<ChannelHandle*>(commParam->channelList);
     u8* currentSrcAddr = reinterpret_cast<u8*>(commParam->uniqueIdAddr);
     u32* addSize = reinterpret_cast<u32*>(commParam->channelSizeAddr);
-    HCCL_INFO("YYYYYY hcomm CollCommAicpu ProcessUrmaRes ptrs, channelList[%p], currentSrcAddr[%p], addSize[%p], "
-        "remoteRankList[%p], listNum[%u]", channelList, currentSrcAddr, addSize, commParam->remoteRankList,
-        commParam->listNum);
     CHK_PTR_NULL(channelList);
     CHK_PTR_NULL(currentSrcAddr);
     CHK_PTR_NULL(addSize);
 
     for (u32 index = 0; index < commParam->listNum; index++) {
-        u32 currentAddSize = *addSize;
-        HCCL_INFO("YYYYYY hcomm CollCommAicpu ProcessUrmaRes index[%u] begin, currentSrcAddr[%p], addSizePtr[%p], "
-            "addSizeVal[%u], channelListSlot[%p]", index, currentSrcAddr, addSize, currentAddSize,
-            &channelList[index]);
-        std::vector<char> data(currentAddSize);
+        std::vector<char> data(*addSize);
 
         // 计算地址块的偏移
-        HCCL_INFO("YYYYYY hcomm CollCommAicpu ProcessUrmaRes index[%u] memcpy begin, dataPtr[%p], dataSize[%llu], "
-            "src[%p], copySize[%u]", index, data.data(), static_cast<unsigned long long>(data.size()),
-            currentSrcAddr, currentAddSize);
-        CHK_SAFETY_FUNC_RET(memcpy_s(data.data(), data.size(), currentSrcAddr, currentAddSize));
-        HCCL_INFO("YYYYYY hcomm CollCommAicpu ProcessUrmaRes index[%u] memcpy end", index);
-        currentSrcAddr += currentAddSize;
+        CHK_SAFETY_FUNC_RET(memcpy_s(data.data(), data.size(), currentSrcAddr, *addSize));
+        currentSrcAddr += *addSize;
         addSize++;
         // 反序列化得到device侧transport对象
         Hccl::AicpuResPackageHelper helper;
-        HCCL_INFO("YYYYYY hcomm CollCommAicpu ProcessUrmaRes index[%u] ParsePackedData begin, dataSize[%llu]",
-            index, static_cast<unsigned long long>(data.size()));
         auto dataVec = helper.ParsePackedData(data);
-        HCCL_INFO("YYYYYY hcomm CollCommAicpu ProcessUrmaRes index[%u] ParsePackedData end, dataVecSize[%llu]",
-            index, static_cast<unsigned long long>(dataVec.size()));
 
         Hccl::AicpuResMgrType resType = Hccl::AicpuResMgrType::STREAM; // 待修改
         if (static_cast<u32>(resType) >= dataVec.size()) {
             HCCL_ERROR("[CollCommAicpu][%s] fail, resType[%d], dataVec size[%u]", __func__, resType, dataVec.size());
             return HCCL_E_PARA;
         }
-        HCCL_INFO("YYYYYY hcomm CollCommAicpu ProcessUrmaRes index[%u] STREAM dataSize[%llu]", index,
-            static_cast<unsigned long long>(dataVec[resType].data.size()));
 
         ChannelHandle channelHandle{0};
         if (isInit) {
-            HCCL_INFO("YYYYYY hcomm CollCommAicpu ProcessUrmaRes index[%u] ParsePackData begin", index);
-            HcclResult ret = ParsePackData(dataVec[resType].data, channelHandle);
-            HCCL_INFO("YYYYYY hcomm CollCommAicpu ProcessUrmaRes index[%u] ParsePackData end, ret[%d], "
-                "channelHandle[0x%llx]", index, ret, static_cast<unsigned long long>(channelHandle));
-            CHK_RET(ret);
+            CHK_RET(ParsePackData(dataVec[resType].data, channelHandle));
             // 恢复出的channelHandle回填到commParam中
             channelList[index] = channelHandle;
-            HCCL_INFO("YYYYYY hcomm CollCommAicpu ProcessUrmaRes index[%u] write channelList end, "
-                "channelHandle[0x%llx]", index, static_cast<unsigned long long>(channelHandle));
-            HCCL_INFO("YYYYYY hcomm CollCommAicpu ProcessUrmaRes index[%u] RegisterChannelAddDfxTaskInfo begin, "
-                "channelHandle[0x%llx]", index, static_cast<unsigned long long>(channelHandle));
-            ret = RegisterChannelAddDfxTaskInfo(channelHandle);
-            HCCL_INFO("YYYYYY hcomm CollCommAicpu ProcessUrmaRes index[%u] RegisterChannelAddDfxTaskInfo end, ret[%d]",
-                index, ret);
-            CHK_RET(ret);
-            if (commParam->remoteRankList != nullptr) {
-                HCCL_INFO("YYYYYY hcomm CollCommAicpu ProcessUrmaRes index[%u] AddChannelRemoteRankId begin, "
-                    "remoteRank[%u]", index, commParam->remoteRankList[index]);
-            } else {
-                HCCL_INFO("YYYYYY hcomm CollCommAicpu ProcessUrmaRes index[%u] AddChannelRemoteRankId begin, "
-                    "remoteRankList is null", index);
-            }
+            CHK_RET(RegisterChannelAddDfxTaskInfo(channelHandle));
             HcclCommDfxLite::AddChannelRemoteRankId(identifier_, channelHandle, commParam->remoteRankList[index]);
-            HCCL_INFO("YYYYYY hcomm CollCommAicpu ProcessUrmaRes index[%u] AddChannelRemoteRankId end", index);
         } else {
             channelHandle = channelList[index];
-            HCCL_INFO("YYYYYY hcomm CollCommAicpu ProcessUrmaRes index[%u] Resume path, channelHandle[0x%llx]",
-                index, static_cast<unsigned long long>(channelHandle));
             if (!ubTransportMap_.count(channelHandle)) {
                 HCCL_ERROR("[CollCommAicpu][%s] fail, resType[%d], current ChannelHandle nullptr", __func__, resType);
                 return HCCL_E_PARA;
             }
-            HCCL_INFO("YYYYYY hcomm CollCommAicpu ProcessUrmaRes index[%u] ResumePackData begin", index);
-            HcclResult ret = ResumePackData(dataVec[resType].data, channelHandle);
-            HCCL_INFO("YYYYYY hcomm CollCommAicpu ProcessUrmaRes index[%u] ResumePackData end, ret[%d]", index, ret);
-            CHK_RET(ret);
+            CHK_RET(ResumePackData(dataVec[resType].data, channelHandle));
         }
         
         // 打印
@@ -241,7 +192,6 @@ HcclResult CollCommAicpu::ProcessUrmaRes(HcclChannelUrmaRes *commParam, bool isI
             __func__, index, currentSrcAddr, commParam->channelSizeAddr, channelHandle);
     }
 
-    HCCL_INFO("YYYYYY hcomm CollCommAicpu ProcessUrmaRes end, commParam[%p], isInit[%d]", commParam, isInit);
     return HCCL_SUCCESS;
 }
 
@@ -252,52 +202,37 @@ HcclResult CollCommAicpu::InitUrmaChannel(HcclChannelUrmaRes *commParam)
 
 HcclResult CollCommAicpu::ParsePackData(std::vector<char> &data, ChannelHandle &handle)
 {
-    HCCL_INFO("YYYYYY hcomm CollCommAicpu ParsePackData begin, dataPtr[%p], dataSize[%llu]", data.data(),
-        static_cast<unsigned long long>(data.size()));
     HCCL_DEBUG("[CollCommAicpu][%s] data: ptr[%p], size[%u]", __func__, data.data(), data.size());
     Hccl::BinaryStream binaryStream(data);
 
     std::vector<char> transpUniqueId;
-    HCCL_INFO("YYYYYY hcomm CollCommAicpu ParsePackData read transpUniqueId begin");
     binaryStream >> transpUniqueId;
-    HCCL_INFO("YYYYYY hcomm CollCommAicpu ParsePackData read transpUniqueId end, transpUniqueIdSize[%llu]",
-        static_cast<unsigned long long>(transpUniqueId.size()));
 
     Hccl::BinaryStream binaryStreamForType(transpUniqueId);
-    u32 transType = 0;
-    HCCL_INFO("YYYYYY hcomm CollCommAicpu ParsePackData read transType begin");
+    u32 transType;
     binaryStreamForType >> transType;
-    HCCL_INFO("YYYYYY hcomm CollCommAicpu ParsePackData read transType end, transType[%u]", transType);
     HCCL_INFO("[CollCommAicpu][ParsePackData] transType[%u]", transType);
     // TODO TransportType
     if (transType == Hccl::TransportType::UB) {
-        HCCL_INFO("YYYYYY hcomm CollCommAicpu ParsePackData make UbTransportLiteImpl begin");
         std::unique_ptr<Hccl::UbTransportLiteImpl> ubTransportLiteImpl;
         EXECEPTION_CATCH((ubTransportLiteImpl = std::make_unique<Hccl::UbTransportLiteImpl>(transpUniqueId)),
             return HCCL_E_PTR);
         CHK_SMART_PTR_NULL(ubTransportLiteImpl);
         handle = reinterpret_cast<uint64_t>(ubTransportLiteImpl.get());
         ubTransportMap_.insert({handle, std::move(ubTransportLiteImpl)});
-        HCCL_INFO("YYYYYY hcomm CollCommAicpu ParsePackData make UbTransportLiteImpl end, handle[0x%llx]",
-            static_cast<unsigned long long>(handle));
     } else if (transType == Hccl::TransportType::P2P) {
-        HCCL_INFO("YYYYYY hcomm CollCommAicpu ParsePackData make P2PTransportLiteImpl begin");
         std::unique_ptr<Hccl::P2PTransportLiteImpl> p2pTransportLiteImpl;
         EXECEPTION_CATCH((p2pTransportLiteImpl = std::make_unique<Hccl::P2PTransportLiteImpl>(transpUniqueId)),
             return HCCL_E_PTR);
         CHK_SMART_PTR_NULL(p2pTransportLiteImpl);
         handle = reinterpret_cast<uint64_t>(p2pTransportLiteImpl.get());
         p2pTransportMap_.insert({handle, std::move(p2pTransportLiteImpl)});
-        HCCL_INFO("YYYYYY hcomm CollCommAicpu ParsePackData make P2PTransportLiteImpl end, handle[0x%llx]",
-            static_cast<unsigned long long>(handle));
         // TODO 是否需要缓存用于NsRecovery
     } else {
         HCCL_ERROR("[CollCommAicpu][ParsePackData] unsupported transportType[%u]", transType);
         return HCCL_E_INTERNAL;
     }
 
-    HCCL_INFO("YYYYYY hcomm CollCommAicpu ParsePackData end, handle[0x%llx]",
-        static_cast<unsigned long long>(handle));
     return HCCL_SUCCESS;
 }
 
