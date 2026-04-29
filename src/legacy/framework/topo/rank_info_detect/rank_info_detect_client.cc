@@ -59,9 +59,13 @@ void RankInfoDetectClient::CheckStatus()
     auto timeout   = std::chrono::seconds(EnvConfig::GetInstance().GetSocketConfig().GetLinkTimeOut());
 
     while (true) {
-        CHK_PRT_THROW((std::chrono::steady_clock::now() - startTime) >= timeout,
-                  HCCL_ERROR("[RankInfoDetectClient::%s] get connected status socket timeout! timeout[%lld s]", __func__, timeout),
-                  TimeoutException, "client get connection timeout");
+        if (UNLIKELY((std::chrono::steady_clock::now() - startTime) >= timeout)) {
+            HCCL_ERROR("[RankInfoDetectClient::%s] get connected status socket timeout! timeout[%lld s]",
+                __func__, timeout);
+            // 建链超时后，sleep 20s
+            sleep(RANKINFO_DETECT_AGENT_WAIT_ERROR_BROADCAST_TIME);
+            throw TimeoutException("client get connection timeout");
+        }
 
         if (clientSocket_->GetStatus() == SocketStatus::OK) {
             HCCL_DEBUG("[RankInfoDetectClient::%s] client get socket connection success.", __func__);
@@ -307,6 +311,7 @@ void RankInfoDetectClient::ParseRankTable(vector<char> &rankInfoMsg)
     std::string failedAgentIdList;
     binStream >> failedAgentIdList;
     if (failedAgentIdList.size() > 0) {
+        // 建链失败时 root 节点发来的临终遗言
         HCCL_ERROR("[RankInfoDetectClient::%s] failedAgentIdList %s", __func__, failedAgentIdList.c_str());
     }
 
