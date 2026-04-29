@@ -20,6 +20,7 @@
 #include "../comms/ccu/ccu_kernel/ccu_kernel_mgr.h"
 #include "rt_external.h"
 #include "hccl_ccu_res.h"
+#include "rank_consistentcy_checker.h"
 
 using namespace hccl;
 /**
