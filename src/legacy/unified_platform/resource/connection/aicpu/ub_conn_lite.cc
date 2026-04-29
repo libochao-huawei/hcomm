@@ -54,10 +54,10 @@ void UbConnLite::FillCommSqe(UdmaSqeCommon *sqe, const RmtRmaBufSliceLite &rmt, 
 
     sqe->se           = 1; // 表示是否使能solicited event
     sqe->rmtJettyType = 1; // 00 JFR  01:JETTY  10:jettyGroup 11:reserved
-    s32 ret           = memcpy_s(sqe->rmtEid, RMT_EID_BYTE_SIZE, rmtEid_.raw, RAW_SIZE);
+    s32 ret           = memcpy_sp(sqe->rmtEid, RMT_EID_BYTE_SIZE, rmtEid_.raw, RAW_SIZE);
     if (UNLIKELY(ret != 0)) {
         HCCL_ERROR("UbConnLite::FillCommSqe FillCommSqe memcpy failed, ret=%d", ret);
-        THROW<InternalException>(StringFormat("UbConnLite::FillCommSqe memcpy_s failed, ret = %d", ret));
+        THROW<InternalException>(StringFormat("UbConnLite::FillCommSqe memcpy_sp failed, ret = %d", ret));
     }
 
     sqe->sgeNum        = 1;
@@ -97,20 +97,15 @@ void UbConnLite::ProcessSlices(const RmaBufSliceLite &loc, const RmtRmaBufSliceL
                                std::function<void(const RmaBufSliceLite &, const RmtRmaBufSliceLite &, u32)> processOneSlice,
                                DataType                                                                      dataType) const
 {
-    HCCL_INFO("[UbConnLite::%s] start", __func__);
-
     // reduce操作需要保证切片大小是数据类型大小的整数倍
     u64 sliceSize = UB_DMA_MAX_READ_WEITE_SIZE;
-    if (dataType != DataType::INVALID) {
-        u32 dataTypeSize = DATA_TYPE_SIZE_MAP.at(dataType);
-        sliceSize        = UB_DMA_MAX_READ_WEITE_SIZE / dataTypeSize * dataTypeSize;
-    }
 
     u64 locBufSize    = loc.GetSize();
     u64 sliceNum      = locBufSize / sliceSize;
     u64 lastSliceSize = locBufSize % sliceSize;
 
     u64 totalSize = sliceNum * sliceSize;
+
     if (UNLIKELY(loc.GetAddr() > UINT64_MAX - totalSize || rmt.GetAddr() > UINT64_MAX - totalSize)) {
         THROW<InternalException>("integer overflow occurs");
     }
@@ -223,7 +218,7 @@ void UbConnLite::ProcessOneWqe(UdmaSqeWrite *sqe, UdmaSqOpcode opCode, const Str
     if (!dwqeCacheLocked_) {
         auto ret = memcpy_sp(va, SQE_SIZE_64, sqe, SQE_SIZE_64);
         if (UNLIKELY(ret != 0)) {
-            THROW<InternalException>(StringFormat("[UbConnLite::%s] memcpy_s failed, ret = %d", __func__, ret));
+            THROW<InternalException>(StringFormat("[UbConnLite::%s] memcpy_sp failed, ret = %d", __func__, ret));
         }
     }
 
@@ -501,10 +496,10 @@ void UbConnLite::FillBatchOneWqe(const RmaBufSliceLite &loc, const RmtRmaBufSlic
     HCCL_INFO("UbConnLite BatchWrite cp data to va %llu, pi %u", sqVa_, pi);
     u8 *va = reinterpret_cast<u8 *>(sqVa_ + sqOffset * SQE_SIZE_64);
     if (dwqeCacheLocked_ == false) {
-        auto ret = memcpy_s(va, SQE_SIZE_64, &sqe, sizeof(UdmaSqeWrite));
+        auto ret = memcpy_sp(va, SQE_SIZE_64, &sqe, sizeof(UdmaSqeWrite));
         if (UNLIKELY(ret != 0)) {
             HCCL_ERROR("UbConnLite::BatchWrite FillCommSqe memcpy failed, ret=%d", ret);
-            THROW<InternalException>(StringFormat("UbConnLite::BatchWrite memcpy_s failed, ret = %d", ret));
+            THROW<InternalException>(StringFormat("UbConnLite::BatchWrite memcpy_sp failed, ret = %d", ret));
         }
     }
     HCCL_INFO("UbConnLite BatchWrite cp data to va end va(%p)", va);
@@ -607,8 +602,8 @@ UbConnLite::UbConnLite(const UbConnLiteParam &liteParam)
     jfcPollMode_     = liteParam.jfcPollMode;
     tpn_             = liteParam.tpn;
 
-    (void)memcpy_s(rmtEid_.raw, URMA_EID_LEN, liteParam.rmtEid.raw, URMA_EID_LEN);
-    (void)memcpy_s(locEid_.raw, URMA_EID_LEN, liteParam.locEid.raw, URMA_EID_LEN);
+    (void)memcpy_sp(rmtEid_.raw, URMA_EID_LEN, liteParam.rmtEid.raw, URMA_EID_LEN);
+    (void)memcpy_sp(locEid_.raw, URMA_EID_LEN, liteParam.locEid.raw, URMA_EID_LEN);
     HCCL_INFO("%s", Describe().c_str());
 }
 

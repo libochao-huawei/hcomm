@@ -1844,7 +1844,8 @@ STATIC void *RaPthread(void *arg)
     ret = pthread_detach(pthread_self());
     CHK_PRT_RETURN(ret, hccp_err("pthread detach failed ret %d", ret), NULL);
 
-    (void)prctl(PR_SET_NAME, (unsigned long)"hccp_ra");
+    ret = RsPrctlByResvMem(gHdcInitPara.useResvMem, gHdcInitPara.resvMemPoolId, "ra");
+    CHK_PRT_RETURN(ret != 0, hccp_err("RsPrctlByResvMem failed, ret:%d", ret), NULL);
 
     RA_PTHREAD_MUTEX_LOCK(&gHdcInitPara.mutex);
     gHdcInitPara.threadStatus = THREAD_RUNNING;
@@ -2124,14 +2125,16 @@ STATIC int HccpSetAffinity(unsigned int chipId)
     return 0;
 }
 
-STATIC int RaHwInit(unsigned int chipId, pid_t pid)
+STATIC int RaHwInit(struct hccpInitPara *initPara)
 {
     int ret;
     pthread_t tidp;
     int timeout = RA_THREAD_TRY_TIME;
 
-    gHdcInitPara.chipId = chipId;
-    gHdcInitPara.hostTgid = pid;
+    gHdcInitPara.chipId = initPara->chipId;
+    gHdcInitPara.hostTgid = initPara->pid;
+    gHdcInitPara.useResvMem = initPara->useResvMem;
+    gHdcInitPara.resvMemPoolId = initPara->resvMemPoolId;
 
     ret = pthread_create(&tidp, NULL, (void *)RaHwHdcInit, NULL);
     CHK_PRT_RETURN(ret, hccp_err("Create pthread failed, ret(%d) ", ret), -ESYSFUNC);
@@ -2147,19 +2150,28 @@ STATIC int RaHwInit(unsigned int chipId, pid_t pid)
     return 0;
 }
 
-RA_ADP_ATTRI_VISI_DEF int HccpInit(unsigned int chipId, pid_t pid, int hdcType, unsigned int whiteListStatus)
+RA_ADP_ATTRI_VISI_DEF int HccpInit(struct hccpInitPara *initPara)
 {
+    unsigned int whiteListStatus;
     struct timeval start, end;
     float timeCost = 0.0;
+    unsigned int chipId;
     int ret, retTmp;
+    int hdcType;
+    pid_t pid;
 
-    hccp_info("hccp[%u] hdc_type[%d] white_list_status[%u] init start", chipId, hdcType, whiteListStatus);
+    CHK_PRT_RETURN(initPara == NULL, hccp_err("initPara is NULL"), -EINVAL);
+    ret = RsPrctlByResvMem(initPara->useResvMem, initPara->resvMemPoolId, "main");
+    CHK_PRT_RETURN(ret != 0, hccp_err("RsPrctlByResvMem failed, ret:%d", ret), ret);
+    chipId = initPara->chipId;
+    pid = initPara->pid;
+    hdcType = initPara->hdcType;
+    whiteListStatus = initPara->whiteListStatus;
+    hccp_info("hccp[%u] hdc_type[%d] white_list_status[%u] useResvMem[%d] init start",
+        chipId, hdcType, whiteListStatus, initPara->useResvMem);
 
     ret = DlHalInit();
-    if (ret != 0) {
-        hccp_err("dl_hal_init failed, ret = %d", ret);
-        return ret;
-    }
+    CHK_PRT_RETURN(ret != 0, hccp_err("dl_hal_init failed, ret:%d", ret), ret);
 
     ret = HccpSetAffinity(chipId);
     if (ret != 0) {
@@ -2181,7 +2193,7 @@ RA_ADP_ATTRI_VISI_DEF int HccpInit(unsigned int chipId, pid_t pid, int hdcType, 
         goto out;
     }
 
-    ret = RaHwInit(chipId, pid);
+    ret = RaHwInit(initPara);
     if (ret != 0) {
         hccp_err("ra_init failed, ret(%d) ", ret);
         goto hw_init_err;

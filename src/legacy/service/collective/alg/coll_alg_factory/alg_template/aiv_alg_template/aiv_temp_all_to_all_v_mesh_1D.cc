@@ -79,6 +79,10 @@ HcclResult AivTempAlltoAllVMesh1D::GenExtIns(const TempFuncs &tempFuncs, const T
         aivAlltoAllVArgs.extraArgs.sendDispls[i] = static_cast<u64 *>(op_.all2AllVDataDes.sdispls)[i];
         aivAlltoAllVArgs.extraArgs.recvCounts[i] = static_cast<u64 *>(op_.all2AllVDataDes.recvCounts)[i];
         aivAlltoAllVArgs.extraArgs.recvDispls[i] = static_cast<u64 *>(op_.all2AllVDataDes.rdispls)[i];
+        HCCL_INFO("[AivTempAlltoAllVMesh1D] rank is [%llu], iter is [%llu], sendCounts is [%llu], sendDispls is [%llu], "
+            "recvCounts is [%llu], recvDispls is [%llu]",
+            u64(myRank_), i, aivAlltoAllVArgs.extraArgs.sendCounts[i], aivAlltoAllVArgs.extraArgs.sendDispls[i],
+            aivAlltoAllVArgs.extraArgs.recvCounts[i], aivAlltoAllVArgs.extraArgs.recvDispls[i]);
     }
 
     for (u32 i = 0; i < tempVTopo_[0].size(); i++){

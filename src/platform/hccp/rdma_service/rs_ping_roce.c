@@ -255,7 +255,7 @@ STATIC int RsPingCommonInitMrCb(struct rs_cb *rscb, struct RsPingCtxCb *pingCb, 
     CHK_PRT_RETURN(ret != 0, hccp_err("pthread_mutex_init mr_cb mutex failed, ret:%d", ret), ret);
 
     flag = ((unsigned long)pingCb->logicDevid << BUFF_FLAGS_DEVID_OFFSET) | BUFF_SP_SVM;
-    ret = DlHalBuffAllocAlignEx(mrCb->len, RA_RS_4K_PAGE_SIZE, flag,
+    ret = DlHalBuffAllocAlignEx(mrCb->len, (unsigned int)RA_RS_4K_PAGE_SIZE, flag,
         (int)rscb->grpId, (void **)&mrCb->addr);
     if (ret != 0) {
         hccp_err("DlHalBuffAllocAlignEx failed, length:0x%llx, dev_id:0x%x, flag:0x%lx, grpId:%u, ret:%d",

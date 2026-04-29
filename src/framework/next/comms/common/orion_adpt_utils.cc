@@ -92,6 +92,22 @@ HcclResult CommProtocolToLinkProtocol(CommProtocol commProtocol, Hccl::LinkProto
     return HCCL_SUCCESS;
 }
 
+HcclResult CommAddrTypeToHcclAddressType(CommAddrType commAddrType, HcclAddressType &hcclAddressType)
+{
+    switch (commAddrType) {
+        case COMM_ADDR_TYPE_IP_V4:
+            hcclAddressType = HCCL_ADDR_TYPE_IP_V4;
+            break;
+        case COMM_ADDR_TYPE_IP_V6:
+            hcclAddressType = HCCL_ADDR_TYPE_IP_V6;
+            break;
+        default:
+            HCCL_ERROR("[%s] Invaild CommAddrType[%u]", __func__, commAddrType);
+            return HCCL_E_NOT_FOUND;
+    }
+    return HCCL_SUCCESS;
+}
+
 Hccl::LinkData BuildDefaultLinkData()
 {
     Hccl::PortDeploymentType portDeploymentType = Hccl::PortDeploymentType::HOST_NET;

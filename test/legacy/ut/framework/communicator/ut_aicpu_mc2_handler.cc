@@ -39,7 +39,8 @@ protected:
     }
 
 protected:
-    void SetUp() override {
+    void SetUp() override
+    {
         // 初始化代码
         kernelParam = new HcclKernelParamLite();
         communicatorImplLite = new CommunicatorImplLite(0);
@@ -47,10 +48,17 @@ protected:
         kernelParam->comm.idIndex = 0;
         kernelParam->comm.devType = DevType::DEV_TYPE_950;
         kernelParam->op.algOperator.opMode = OpMode::OPBASE;
+
+        MOCKER_CPP(&RtsqBase::QuerySqBaseAddr).stubs().with(any()).will(returnValue(reinterpret_cast<u64>(&mockSq)));
+        MOCKER_CPP(&RtsqBase::QuerySqDepth).stubs().with(any()).will(returnValue(static_cast<u32>(AC_SQE_MAX_CNT)));
+        MOCKER_CPP(&RtsqBase::QuerySqStatusByType).stubs().with(any()).will(returnValue(static_cast<u32>(1)));
+        MOCKER_CPP(&RtsqBase::ConfigSqStatusByType).stubs();
+
         std::cout << "A Test case in AicpuMc2HandlerTest SetUp" << std::endl;
     }
 
-    void TearDown() override {
+    void TearDown() override
+    {
         // 清理代码
         GlobalMockObject::verify();
         delete kernelParam;
@@ -105,7 +113,7 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclGetCommHandleByCtx_When_CommIsFree_Expect_Ret
 TEST_F(AicpuMc2HandlerTest, Ut_HcclReleaseComm_When_ValidParams_Expect_ReturnSuccess) {
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
     handler.HcclReleaseComm(comm);
-    EXPECT_EQ(false,communicatorImplLite->IsUsed());
+    EXPECT_EQ(false, communicatorImplLite->IsUsed());
 }
 
 // HcclGetTaskStatus
@@ -113,9 +121,12 @@ extern "C" {
 drvError_t halCqReportRecv(uint32_t devId, struct halReportRecvInfo *info)
 {
     return DRV_ERROR_NONE;
-}}
+}
+}
 
-int Mocker_GetReporterInfo_Normal(TaskExceptionFunc *This, const StreamLite *curStream,std::shared_ptr<halReportRecvInfo> recvInfo) {
+int Mocker_GetReporterInfo_Normal(
+    TaskExceptionFunc *This, const StreamLite *curStream, std::shared_ptr<halReportRecvInfo> recvInfo)
+{
     recvInfo->type = static_cast<drvSqCqType_t>(DRV_LOGIC_TYPE);
     recvInfo->tsId = 0;
     recvInfo->report_cqe_num = 1;
@@ -131,7 +142,9 @@ int Mocker_GetReporterInfo_Normal(TaskExceptionFunc *This, const StreamLite *cur
     return 0;
 }
 
-int Mocker_GetReporterInfo_Error(TaskExceptionFunc *This, const StreamLite *curStream,std::shared_ptr<halReportRecvInfo> recvInfo) {
+int Mocker_GetReporterInfo_Error(
+    TaskExceptionFunc *This, const StreamLite *curStream, std::shared_ptr<halReportRecvInfo> recvInfo)
+{
     recvInfo->type = static_cast<drvSqCqType_t>(DRV_LOGIC_TYPE);
     recvInfo->tsId = 0;
     recvInfo->report_cqe_num = 1;
@@ -147,7 +160,9 @@ int Mocker_GetReporterInfo_Error(TaskExceptionFunc *This, const StreamLite *curS
     return 0;
 }
 
-int Mocker_GetReporterInfo_Continue(TaskExceptionFunc *This, const StreamLite *curStream, std::shared_ptr<halReportRecvInfo> recvInfo) {
+int Mocker_GetReporterInfo_Continue(
+    TaskExceptionFunc *This, const StreamLite *curStream, std::shared_ptr<halReportRecvInfo> recvInfo)
+{
     recvInfo->type = static_cast<drvSqCqType_t>(DRV_LOGIC_TYPE);
     recvInfo->tsId = 0;
     recvInfo->report_cqe_num = 1;
@@ -165,7 +180,7 @@ int Mocker_GetReporterInfo_Continue(TaskExceptionFunc *This, const StreamLite *c
 
 TEST_F(AicpuMc2HandlerTest, Ut_HcclGetTaskStatus_When_TaskHasException_Expect_ReturnErrorStatus) {
     MOCKER_CPP(&TaskExceptionFunc::GetReporterInfo).stubs().with(any()).will(invoke(Mocker_GetReporterInfo_Error));
-    
+
     vector<char> masterBuff = {
         0x00, 0x00, 0x00, 0x00,  // id
         0x00, 0x00, 0x00, 0x01,  // sqId
@@ -173,11 +188,7 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclGetTaskStatus_When_TaskHasException_Expect_Re
         0x00, 0x00, 0x00, 0x01   // cqId
     };
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
-    HcclTaskStatus status=HcclTaskStatus::HCCL_NORMAL_STATUS;
-
-    MOCKER_CPP(&RtsqBase::QuerySqBaseAddr).stubs().with(any()).will(returnValue(reinterpret_cast<u64>(&mockSq)));
-    MOCKER_CPP(&RtsqBase::QuerySqStatusByType).stubs().with(any()).will(returnValue(static_cast<u32>(0)));
-    MOCKER_CPP(&RtsqBase::ConfigSqStatusByType).stubs();
+    HcclTaskStatus status = HcclTaskStatus::HCCL_NORMAL_STATUS;
 
     communicatorImplLite->GetStreamLiteMgr()->streams.push_back(std::make_unique<StreamLite>(masterBuff));
     EXPECT_EQ(HCCL_SUCCESS, handler.HcclGetTaskStatus(comm, &status));
@@ -194,14 +205,10 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclGetTaskStatus_When_TaskIsNormal_Expect_Return
         0x00, 0x00, 0x00, 0x01   // cqId
     };
 
-    MOCKER_CPP(&RtsqBase::QuerySqBaseAddr).stubs().with(any()).will(returnValue(reinterpret_cast<u64>(&mockSq)));
-    MOCKER_CPP(&RtsqBase::QuerySqStatusByType).stubs().with(any()).will(returnValue(static_cast<u32>(0)));
-    MOCKER_CPP(&RtsqBase::ConfigSqStatusByType).stubs();
-
     communicatorImplLite->GetStreamLiteMgr()->streams.push_back(std::make_unique<StreamLite>(masterBuff));
 
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
-    HcclTaskStatus status=HcclTaskStatus::HCCL_NORMAL_STATUS;
+    HcclTaskStatus status = HcclTaskStatus::HCCL_NORMAL_STATUS;
     EXPECT_EQ(HCCL_SUCCESS, handler.HcclGetTaskStatus(comm, &status));
     EXPECT_EQ(HcclTaskStatus::HCCL_NORMAL_STATUS, status);
 }
@@ -219,10 +226,9 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclCheckFinishByStream_When_MasterIsNull_Expect_
     EXPECT_EQ(HCCL_E_PTR, handler.HcclCheckFinishByStream(comm));
 }
 
-TEST_F(AicpuMc2HandlerTest, Ut_HcclCheckFinishByStream_When_StreamIsFinished_Expect_ReturnSuccess) {
-    MOCKER_CPP(&RtsqBase::QuerySqBaseAddr).stubs().with(any()).will(returnValue(reinterpret_cast<u64>(&mockSq)));
-    MOCKER_CPP(&RtsqBase::QuerySqStatusByType).stubs().with(any()).will(returnValue(static_cast<u32>(0)));
-    MOCKER_CPP(&RtsqBase::ConfigSqStatusByType).stubs();
+TEST_F(AicpuMc2HandlerTest, Ut_HcclCheckFinishByStream_When_StreamIsFinished_Expect_ReturnSuccess)
+{
+    
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
     vector<char> masterBuff = {
         0x00, 0x00, 0x00, 0x00,  // id
@@ -256,10 +262,8 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclCheckFinishByStream_When_StreamIsFinished_Exp
     EXPECT_EQ(HCCL_SUCCESS, handler.HcclCheckFinishByStream(comm));
 }
 
-TEST_F(AicpuMc2HandlerTest, Ut_HcclCheckFinishByStream_When_StreamIsRunning_Expect_ReturnUnavail) {
-    MOCKER_CPP(&RtsqBase::QuerySqBaseAddr).stubs().with(any()).will(returnValue(reinterpret_cast<u64>(&mockSq)));
-    MOCKER_CPP(&RtsqBase::QuerySqStatusByType).stubs().with(any()).will(returnValue(static_cast<u32>(0)));
-    MOCKER_CPP(&RtsqBase::ConfigSqStatusByType).stubs();
+TEST_F(AicpuMc2HandlerTest, Ut_HcclCheckFinishByStream_When_StreamIsRunning_Expect_ReturnUnavail)
+{
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
     vector<char> masterBuff = {
         0x00, 0x00, 0x00, 0x00,  // id
@@ -320,9 +324,6 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclPrintTaskExceptionAllComm_When_MasterIsNull_E
         0x00, 0x00, 0x00, 0x01,  // devPhyId
         0x00, 0x00, 0x00, 0x01   // cqId
     };
-    MOCKER_CPP(&RtsqBase::QuerySqBaseAddr).stubs().with(any()).will(returnValue(reinterpret_cast<u64>(&mockSq)));
-    MOCKER_CPP(&RtsqBase::QuerySqStatusByType).stubs().with(any()).will(returnValue(static_cast<u32>(0)));
-    MOCKER_CPP(&RtsqBase::ConfigSqStatusByType).stubs();
 
     StreamLite master(masterBuff);
     MOCKER_CPP(&StreamLiteMgr::SizeOfSlaves).stubs().will(returnValue(static_cast<u32>(0)));
@@ -348,10 +349,6 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclPrintTaskExceptionAllComm_When_RtsqIsNull_Exp
         0x00, 0x00, 0x00, 0x02   // cqId
     };
 
-    MOCKER_CPP(&RtsqBase::QuerySqBaseAddr).stubs().with(any()).will(returnValue(reinterpret_cast<u64>(&mockSq)));
-    MOCKER_CPP(&RtsqBase::QuerySqStatusByType).stubs().with(any()).will(returnValue(static_cast<u32>(0)));
-    MOCKER_CPP(&RtsqBase::ConfigSqStatusByType).stubs();
-
     StreamLite master(masterBuff);
     StreamLite slave(slaveBuff);
     MOCKER_CPP(&StreamLiteMgr::GetMaster).stubs().will(returnValue(&master));
@@ -359,10 +356,9 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclPrintTaskExceptionAllComm_When_RtsqIsNull_Exp
     handler.HcclPrintTaskExceptionAllComm(comm);
 }
 
-TEST_F(AicpuMc2HandlerTest, Ut_HcclPrintTaskExceptionAllComm_When_ReportIsInvalid_Expect_Return) {
-    MOCKER_CPP(&RtsqBase::QuerySqBaseAddr).stubs().with(any()).will(returnValue(reinterpret_cast<u64>(&mockSq)));
-    MOCKER_CPP(&RtsqBase::QuerySqStatusByType).stubs().with(any()).will(returnValue(static_cast<u32>(0)));
-    MOCKER_CPP(&RtsqBase::ConfigSqStatusByType).stubs();
+TEST_F(AicpuMc2HandlerTest, Ut_HcclPrintTaskExceptionAllComm_When_ReportIsInvalid_Expect_Return)
+{
+    
 
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
     vector<CommunicatorImplLite *> v;
@@ -389,10 +385,8 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclPrintTaskExceptionAllComm_When_ReportIsInvali
 }
 
 // HcclLaunchCcoreWait
-TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchCcoreWait_When_ValidParams_Expect_ReturnSuccess) {
-    MOCKER_CPP(&RtsqBase::QuerySqBaseAddr).stubs().with(any()).will(returnValue(reinterpret_cast<u64>(&mockSq)));
-    MOCKER_CPP(&RtsqBase::QuerySqStatusByType).stubs().with(any()).will(returnValue(static_cast<u32>(0)));
-    MOCKER_CPP(&RtsqBase::ConfigSqStatusByType).stubs();
+TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchCcoreWait_When_ValidParams_Expect_ReturnSuccess)
+{
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
     vector<char> masterBuff = {
         0x00, 0x00, 0x00, 0x00,  // id
@@ -421,15 +415,13 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchCcoreWait_When_ValidParams_Expect_Retur
     MOCKER_CPP(&StreamLiteMgr::GetMaster).stubs().with().will(returnValue(&master));
     auto rtsq = static_cast<RtsqA5 *>(master.GetRtsq());
     MOCKER_CPP_VIRTUAL(*rtsq, &RtsqA5::LaunchTask).stubs().will(ignoreReturnValue());
-    
+
     EXPECT_EQ(HCCL_SUCCESS, handler.HcclLaunchCcoreWait(comm, 0, 0, 0, false));
 }
 
 // HcclLaunchCcorePost
-TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchCcorePost_When_ThrowException_Expect_ReturnError) {
-    MOCKER_CPP(&RtsqBase::QuerySqBaseAddr).stubs().with(any()).will(returnValue(reinterpret_cast<u64>(&mockSq)));
-    MOCKER_CPP(&RtsqBase::QuerySqStatusByType).stubs().with(any()).will(returnValue(static_cast<u32>(0)));
-    MOCKER_CPP(&RtsqBase::ConfigSqStatusByType).stubs();
+TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchCcorePost_When_ThrowException_Expect_ReturnError)
+{
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
     vector<char> masterBuff = {
         0x00, 0x00, 0x00, 0x00,  // id
@@ -462,10 +454,8 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchCcorePost_When_ThrowException_Expect_Re
     EXPECT_THROW(handler.HcclLaunchCcorePost(comm, 0, 0, 0), std::exception);
 }
 
-TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchCcorePost_When_ValidParams_Expect_ReturnSuccess) {
-    MOCKER_CPP(&RtsqBase::QuerySqBaseAddr).stubs().with(any()).will(returnValue(reinterpret_cast<u64>(&mockSq)));
-    MOCKER_CPP(&RtsqBase::QuerySqStatusByType).stubs().with(any()).will(returnValue(static_cast<u32>(0)));
-    MOCKER_CPP(&RtsqBase::ConfigSqStatusByType).stubs();
+TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchCcorePost_When_ValidParams_Expect_ReturnSuccess)
+{
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
     vector<char> masterBuff = {
         0x00, 0x00, 0x00, 0x00,  // id
@@ -653,8 +643,8 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchOp_When_ALLTOALLVC_Expect_ReturnSuccess
     data.output = 0x2000000;
     data.all2AllVCDataDes.sendType = HcclDataType::HCCL_DATA_TYPE_INT8;
     data.all2AllVCDataDes.recvType = HcclDataType::HCCL_DATA_TYPE_INT8;
-	uint64_t sendCountMatrixTmp = 0;
-	data.all2AllVCDataDes.sendCountMatrix = &sendCountMatrixTmp;
+    uint64_t sendCountMatrixTmp = 0;
+    data.all2AllVCDataDes.sendCountMatrix = &sendCountMatrixTmp;
     kernelParam->op.algOperator.opType = OP_TYPE_MAP.at(HCCL_CMD_ALLTOALLVC);
     AicpuUtils::GetInstance().kernelParam_ = kernelParam;
     AicpuUtils::GetInstance().kernelParamMap_[0] = AicpuUtils::GetInstance().kernelParam_;

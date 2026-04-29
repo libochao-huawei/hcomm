@@ -247,14 +247,34 @@ function build_ut() {
 }
 
 function make_ut_gov() {
+# Detect lcov version and set appropriate ignore errors flags
+    detect_lcov_flags() {
+        LCOV_VERSION=$(lcov --version 2>/dev/null | head -n1 | sed 's/.*LCOV version //' | cut -d. -f1)
+        if [[ "${LCOV_VERSION}" -ge 2 ]]; then
+            LCOV_CAPTURE_IGNORE_FLAGS="--ignore-errors mismatch,corrupt,empty,inconsistent,negative,unused"
+            LCOV_FILTER_IGNORE_FLAGS="--ignore-errors unused"
+            LCOV_RUNTIME_CONFIGURATION_FLAGS="-rc geninfo_unexecuted_blocks=1"
+        else
+            LCOV_CAPTURE_IGNORE_FLAGS=""
+            LCOV_FILTER_IGNORE_FLAGS=""
+            LCOV_RUNTIME_CONFIGURATION_FLAGS=""
+        fi
+    }
+
   if [[ "X$ENABLE_UT" = "Xon" && "X$ENABLE_GCOV" = "Xon" ]]; then
+    detect_lcov_flags
     echo "Generated coverage statistics, please wait..."
     cd ${CURRENT_DIR}
     rm -rf ${CURRENT_DIR}/cov
     mkdir -p ${CURRENT_DIR}/cov
-    lcov -c -d ${BUILD_DIR}/test/ut/ -d ${BUILD_DIR}/test/legacy/ut/ -o cov/coverage.info
-    lcov -r cov/coverage.info */src/platform/hccp/external_depends/* -o cov/coverage.info
-    lcov -e cov/coverage.info */src/algorithm/* */src/common/* */src/hccd/* */src/legacy/* */src/framework/* */src/platform/* */src/pub_inc/* -o cov/coverage.info
+
+    lcov -c ${LCOV_CAPTURE_IGNORE_FLAGS} \
+         -d ${BUILD_DIR}/test/ut/ \
+         -d ${BUILD_DIR}/test/legacy/ut/ \
+         -o cov/coverage.info \
+         ${LCOV_RUNTIME_CONFIGURATION_FLAGS}
+    lcov ${LCOV_FILTER_IGNORE_FLAGS} -r cov/coverage.info */src/platform/hccp/external_depends/* -o cov/coverage.info
+    lcov ${LCOV_FILTER_IGNORE_FLAGS} -e cov/coverage.info */src/algorithm/* */src/common/* */src/hccd/* */src/legacy/* */src/framework/* */src/platform/* */src/pub_inc/* -o cov/coverage.info
 
     cd ${CURRENT_DIR}/cov
     genhtml coverage.info

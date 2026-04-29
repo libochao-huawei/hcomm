@@ -305,9 +305,9 @@ HcclResult BaseSelector::CalcLevel0TopoShape(TopoInfo &topoInfo) const
 
     auto &topoInstNum = level0TopoInstDetails.topoInstNum;
     auto &rankNumForTopoType = level0TopoInstDetails.rankNumForTopoType;
-    HCCL_INFO("[%s]topoInstNum[%d]", __func__, topoInstNum);
+    HCCL_INFO("[%s]topoInstNum[%u]", __func__, topoInstNum);
     for (const auto &iter: rankNumForTopoType) {
-        HCCL_INFO("[%s]topoType[%d] size[%d]", __func__, iter.first, iter.second.size());
+        HCCL_INFO("[%s]topoType[%d] size[%lu]", __func__, iter.first, iter.second.size());
     }
 
     if (topoInstNum == 1 && rankNumForTopoType[TopoType::MESH_1D].size() == 1) {
@@ -361,7 +361,7 @@ HcclResult BaseSelector::CalcLevel0TopoShape(TopoInfo &topoInfo) const
         topoInfo.level0Shape = Level0Shape::MESH_2D;
         return HCCL_SUCCESS;
     }
-    HCCL_ERROR("Unkown topo for level 0, topoInstNum[%u]", topoInstNum);
+    HCCL_ERROR("Unknown topo for level 0, topoInstNum[%u]", topoInstNum);
     return HCCL_E_INTERNAL;
 }
 
@@ -512,7 +512,7 @@ bool BaseSelector::IsLevel0PcieMix() const
         }
         std::vector<NetInstance::Path> paths = rankGraph_->GetPaths(netLayer, myRank_, rankId);
         CHK_PRT_RET(paths.size() == 0 || paths[0].links.size() == 0,
-            HCCL_INFO("[BaseSelector][Is2DieFullMesh], Can not find path from Local[%u] to Rmt[%u], in netLayer %u. "
+            HCCL_INFO("[BaseSelector][IsLevel0PcieMix], Can not find path from Local[%d] to Rmt[%d], in netLayer %u. "
                       "Topo is not mesh",
                 myRank_,
                 rankId,

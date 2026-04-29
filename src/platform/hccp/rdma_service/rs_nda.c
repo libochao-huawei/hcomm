@@ -187,8 +187,8 @@ STATIC int RsNdaMemcpy(void *dst, size_t dstSize, void *src, size_t srcSize, uin
 
 STATIC void *RsNdaDbMmapHostVa(struct RsNdaCb *ndaCb, struct doorbell_map_desc *desc)
 {
-    uint64_t alignHva = AlignDown(desc->hva, RA_RS_4K_PAGE_SIZE);
-    uint64_t alignSize = AlignUp(desc->size, RA_RS_4K_PAGE_SIZE);
+    uint64_t alignHva = AlignDown(desc->hva, (uint64_t)RA_RS_4K_PAGE_SIZE);
+    uint64_t alignSize = AlignUp(desc->size, (uint64_t)RA_RS_4K_PAGE_SIZE);
     struct NdaPcieDbCb *ndaDbCb = NULL;
     unsigned int logicId = 0;
     void *dbDva = NULL;
@@ -227,7 +227,7 @@ STATIC void RsNdaMapPrivPrepare(struct doorbell_map_desc *desc, struct NdaUbResM
 {
     resMapIn->guid_l = desc->ub_res.guid_l;
     resMapIn->guid_h = desc->ub_res.guid_h;
-    resMapIn->db_idx = desc->ub_res.bits.offset / RA_RS_4K_PAGE_SIZE;
+    resMapIn->db_idx = desc->ub_res.bits.offset / (uint64_t )RA_RS_4K_PAGE_SIZE;
     resMapIn->db_num = 1;
     return;
 }
@@ -267,7 +267,7 @@ STATIC void *RsNdaDbMmapUbRes(struct RsNdaCb *ndaCb, struct doorbell_map_desc *d
         return NULL;
     }
 
-    ndaGuidCb->dva = resInfoOut.va + (desc->ub_res.bits.offset % RA_RS_4K_PAGE_SIZE);
+    ndaGuidCb->dva = resInfoOut.va + (desc->ub_res.bits.offset % (uint64_t)RA_RS_4K_PAGE_SIZE);
     ndaGuidCb->guidL = desc->ub_res.guid_l;
     ndaGuidCb->guidH = desc->ub_res.guid_h;
     ndaGuidCb->guidIdx = ndaCb->ndaUbCb.ndaDbGuidCnt;
@@ -297,7 +297,7 @@ STATIC void *RsNdaDbMmap(struct doorbell_map_desc *desc)
 
 STATIC int RsNdaDbUnmapHostVa(struct RsNdaCb *ndaCb, void *ptr, struct doorbell_map_desc *desc)
 {
-    uint64_t alignHva = AlignDown(desc->hva, RA_RS_4K_PAGE_SIZE);
+    uint64_t alignHva = AlignDown(desc->hva, (uint64_t)RA_RS_4K_PAGE_SIZE);
     struct NdaPcieDbCb *ndaDbCb = NULL;
     unsigned int logicId = 0;
     int ret = 0;
@@ -485,6 +485,19 @@ STATIC void RsNdaCqInitExPrepare(struct NdaCqInitAttr *attr, struct RsNdaCb *nda
     RsNdaInitExOps(ndaCb, attr->dmaMode, attr->ops, &cqInitAttrEx->ops);
 }
 
+STATIC void RsNdaFillQueueInfo(struct queue_info *extendInfo, struct queueInfo *info)
+{
+    info->qBuf.base = extendInfo->qbuf.base;
+    info->qBuf.entryCnt = extendInfo->qbuf.entry_cnt;
+    info->qBuf.entrySize = extendInfo->qbuf.entry_size;
+    info->dbrPiVa.iovBase = extendInfo->dbr_pi_va.iov_base;
+    info->dbrPiVa.iovLen = extendInfo->dbr_pi_va.iov_len;
+    info->dbrCiVa.iovBase = extendInfo->dbr_ci_va.iov_base;
+    info->dbrCiVa.iovLen = extendInfo->dbr_ci_va.iov_len;
+    info->dbHwVa.iovBase = extendInfo->db_hw_va.iov_base;
+    info->dbHwVa.iovLen = extendInfo->db_hw_va.iov_len;
+}
+
 STATIC int RsNdaCqCreateEx(struct RsRdevCb *rdevCb, struct ibv_cq_init_attr_extend *cqInitAttrEx,
     struct NdaCqInfo *info, void **ibvCqExt)
 {
@@ -493,10 +506,9 @@ STATIC int RsNdaCqCreateEx(struct RsRdevCb *rdevCb, struct ibv_cq_init_attr_exte
     cqExt = RsNdaIbvCreateCqExtend(rdevCb->ibCtxEx, cqInitAttrEx);
     CHK_PRT_RETURN(cqExt == NULL, hccp_err("RsNdaCreateCqExtend failed, errno:%d", errno), -ENOMEM);
 
+    RsNdaFillQueueInfo(&cqExt->cq_info, &info->cqInfo);
     info->cq = cqExt->cq;
-    (void)memcpy_s(&info->cqInfo, sizeof(struct queue_info), &cqExt->cq_info, sizeof(struct queue_info));
     *ibvCqExt = cqExt;
-
     return 0;
 }
 
@@ -618,8 +630,8 @@ STATIC int RsNdaQpCreateEx(struct RsQpCb *qpCb, struct ibv_qp_init_attr_extend *
     }
 
     info->qp = qpCb->ibQp;
-    (void)memcpy_s(&info->sqInfo, sizeof(struct queue_info), &qpCb->ibQpEx->sq_info, sizeof(struct queue_info));
-    (void)memcpy_s(&info->rqInfo, sizeof(struct queue_info), &qpCb->ibQpEx->rq_info, sizeof(struct queue_info));
+    RsNdaFillQueueInfo(&qpCb->ibQpEx->sq_info, &info->sqInfo);
+    RsNdaFillQueueInfo(&qpCb->ibQpEx->rq_info, &info->rqInfo);
     hccp_info("chip_id:%u, rdevIndex:%u, qp:%d create succ", rdevCb->rsCb->chipId, rdevCb->rdevIndex,
         qpCb->qpInfoLo.qpn);
     return ret;

@@ -28,6 +28,7 @@ Stream::Stream(bool deviceUsed, bool isMaster) : selfOwned(true), devUsed(device
             cqId = HrtStreamGetCqId(ptr);
         } else {
             ptr = HrtStreamCreateWithFlags(HCCL_STREAM_PRIORITY_HIGH, ACL_STREAM_FAST_LAUNCH | ACL_STREAM_FAST_SYNC);
+            HrtStreamSetMode(ptr, STREAM_MODE_STOP_ON_FAILURE);
         }
         id = static_cast<u32>(HrtGetStreamId(ptr));
         InitDevPhyId();
