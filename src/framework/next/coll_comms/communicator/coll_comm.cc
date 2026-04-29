@@ -32,6 +32,10 @@ CollComm::~CollComm()
 {
     CollCommMgr::GetInstance()->UnRegisteCollComm(this); 
     HCCL_INFO("[CollComm][~CollComm] collComm deinit");
+    // dpu的兜底上报
+    if (hcclCommDfx_ != nullptr) {  // 添加检查
+        hcclCommDfx_->ReportAllTasks(true);
+    }
     (void)DestroyAicpuComm();
 }
 
@@ -86,7 +90,7 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
  	if (!hcclCommDfx_) {
         EXECEPTION_CATCH(hcclCommDfx_ = std::make_unique<HcclCommDfx>(), return HCCL_E_PTR);
  	}
- 	CHK_RET(hcclCommDfx_->Init(deviceLogicId_, commId_));
+ 	CHK_RET(hcclCommDfx_->Init(deviceLogicId_, commId_, rankId_));
     CHK_RET(InitTaskExceptionHandler());
 
     CHK_RET(InitKfcAndRegisterCollComm());
