@@ -288,7 +288,7 @@ void TaskExceptionHost::ProcessException(rtExceptionInfo_t* exceptionInfo, const
         HCCL_ERROR("[TaskExceptionHost][ProcessException] exceptionInfo is nullptr.");
         return;
     }
-    PrintAicpuErrorMessage(exceptionInfo, taskInfo);
+    PrintAicpuErrorMessage(exceptionInfo);
     GetAicpuCqeErrInfo(exceptionInfo, taskInfo);
     HCCL_ERROR("[TaskExceptionHost][%s]Task from HCCL run failed.", __func__);
     if (taskInfo.taskParam_.taskType == Hccl::TaskParamType::TASK_NOTIFY_WAIT) {
@@ -541,7 +541,7 @@ void GetTaskParam(Hccl::TaskParam &taskParam, const Hccl::ErrorMessageReport &er
     }
 }
 
-void TaskExceptionHost::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo, const Hccl::TaskInfo& taskInfo)
+void TaskExceptionHost::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo)
 {
     Hccl::ErrorMessageReport errorMessage;
     unique_lock<std::mutex> lock(g_commHadCallbackArrayMutexV2);
