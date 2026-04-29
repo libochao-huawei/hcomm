@@ -117,9 +117,9 @@ protected:
     void SetupOneValidQpInfoMock()
     {  
         std::vector<Hccl::QpInfo> qpInfos(1);
-        ibv_cq cq{};
-        ibv_qp qp{};
-        ibv_context context{};
+        static ibv_cq cq{};
+        static ibv_qp qp{};
+        static ibv_context context{};
         qpInfos[0].sendCq = &cq;
         qpInfos[0].qp = &qp;
         qpInfos[0].sendCq->context = &context;

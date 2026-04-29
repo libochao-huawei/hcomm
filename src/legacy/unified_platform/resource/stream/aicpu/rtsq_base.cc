@@ -12,6 +12,7 @@
 #include "log.h"
 #include "drv_api_exception.h"
 #include "exception_util.h"
+#include "internal_exception.h"
 #include <unordered_map>
 namespace Hccl {
 
@@ -28,6 +29,10 @@ RtsqBase::RtsqBase(u32 devPhyId, u32 streamId, u32 sqId) : devPhyId_(devPhyId), 
     sqTail_     = QuerySqTail();
     sqDepth_    = QuerySqDepth();
     sqBaseAddr_ = QuerySqBaseAddr();
+
+    if (sqDepth_ == 0) {
+        THROW<InternalException>("sqDepth_ cannot be zero.");
+    }
     HCCL_INFO("%s, %s", __func__, GetHwSqDescribe().c_str());
 }
 
@@ -50,25 +55,19 @@ std::string RtsqBase::GetHwSqDescribe()
                         taskId_);
 }
 
-u32 RtsqBase::QuerySqStatusByType(QueryDrvSqCqPtopType givenType)
+u32 RtsqBase::QuerySqStatusByType(drvSqCqPropType_t givenType)
 {
-    const std::unordered_map<QueryDrvSqCqPtopType, drvSqCqPropType_t, std::EnumClassHash> DrvSqCqPtopTypeMap = {
-        {QueryDrvSqCqPtopType::HEAD, drvSqCqPropType_t::DRV_SQCQ_PROP_SQ_HEAD},
-        {QueryDrvSqCqPtopType::TAIL, drvSqCqPropType_t::DRV_SQCQ_PROP_SQ_TAIL},
-        {QueryDrvSqCqPtopType::DEPTH, drvSqCqPropType_t::DRV_SQCQ_PROP_SQ_DEPTH},
-        {QueryDrvSqCqPtopType::CQE_STATUS, drvSqCqPropType_t::DRV_SQCQ_PROP_SQ_CQE_STATUS},
-    };
     halSqCqQueryInfo  queryInfo;
-    drvSqCqPropType_t type = DrvSqCqPtopTypeMap.at(givenType);
+
     queryInfo.tsId         = 0;
     queryInfo.sqId         = sqId_;
     queryInfo.cqId         = 0;
     queryInfo.type         = DRV_NORMAL_TYPE;
-    queryInfo.prop         = type;
+    queryInfo.prop         = givenType;
     drvError_t ret = halSqCqQuery(localDevId_, &queryInfo);
     if (ret != 0) {
-        std::string formatStr = StringFormat("RtsqBase::%s call halSqCqQuery failed, localDevId %u, ret %d, givenType=%s",
-                                             __func__, localDevId_, ret, givenType.Describe().c_str());
+        std::string formatStr = StringFormat("RtsqBase::%s call halSqCqQuery failed, localDevId %u, ret %d, givenType=%u",
+                                             __func__, localDevId_, ret, givenType);
         THROW<DrvApiException>(formatStr);
     }
 
@@ -97,57 +96,48 @@ u64 RtsqBase::QuerySqBaseAddr()
 
 u32 RtsqBase::QuerySqHead()
 {
-    return QuerySqStatusByType(QueryDrvSqCqPtopType::HEAD);
+    return QuerySqStatusByType(drvSqCqPropType_t::DRV_SQCQ_PROP_SQ_HEAD);
 }
-
 u32 RtsqBase::QuerySqTail()
 {
-    return QuerySqStatusByType(QueryDrvSqCqPtopType::TAIL);
+    return QuerySqStatusByType(drvSqCqPropType_t::DRV_SQCQ_PROP_SQ_TAIL);
 }
-
 u32 RtsqBase::QuerySqDepth()
 {
-    return QuerySqStatusByType(QueryDrvSqCqPtopType::DEPTH);
+    return QuerySqStatusByType(drvSqCqPropType_t::DRV_SQCQ_PROP_SQ_DEPTH);
 }
-
 u32 RtsqBase::QueryCqeStatus()
 {
-    return QuerySqStatusByType(QueryDrvSqCqPtopType::CQE_STATUS);
+    return QuerySqStatusByType(drvSqCqPropType_t::DRV_SQCQ_PROP_SQ_CQE_STATUS);
 }
 
-void RtsqBase::ConfigSqStatusByType(ConfigDrvSqCqPtopType givenType, u32 value)
+void RtsqBase::ConfigSqStatusByType(drvSqCqPropType_t givenType, u32 value)
 {
-    const std::unordered_map<ConfigDrvSqCqPtopType, drvSqCqPropType_t, std::EnumClassHash> ConfigDrvSqCqPtopTypeMap
-        = {{ConfigDrvSqCqPtopType::TAIL, drvSqCqPropType_t::DRV_SQCQ_PROP_SQ_TAIL},
-           {ConfigDrvSqCqPtopType::DISABLE_TO_ENABLE, drvSqCqPropType_t::DRV_SQCQ_PROP_SQ_DISABLE_TO_ENABLE}};
     halSqCqConfigInfo configInfo;
     configInfo.tsId     = 0;
     configInfo.sqId     = sqId_;
     configInfo.cqId     = 0;
     configInfo.type     = DRV_NORMAL_TYPE;
-    configInfo.prop     = ConfigDrvSqCqPtopTypeMap.at(givenType);
+    configInfo.prop     = givenType;
     configInfo.value[0] = value;
 
-    HCCL_INFO("RtsqBase::%s start, givenType=%s", __func__, givenType.Describe().c_str());
     drvError_t ret = halSqCqConfig(localDevId_, &configInfo);
-    if (ret != 0) {
+    if (UNLIKELY(ret != 0)) {
         std::string formatStr
             = StringFormat("RtsqBase::%s call halSqCqConfig failed, localDevId %u, ret %d", __func__, localDevId_, ret);
         THROW<DrvApiException>(formatStr);
     }
-    HCCL_INFO("RtsqBase::%s end", __func__);
 }
 
 void RtsqBase::ConfigSqTail(u32 value)
 {
     HCCL_INFO("RtsqBase::%s, value=%u", __func__, value);
-    ConfigSqStatusByType(ConfigDrvSqCqPtopType::TAIL, value);
+    ConfigSqStatusByType(drvSqCqPropType_t::DRV_SQCQ_PROP_SQ_TAIL, value);
 }
-
 void RtsqBase::ConfigDisableToEnable(u32 value)
 {
     HCCL_INFO("RtsqBase::%s, value=%u", __func__, value);
-    ConfigSqStatusByType(ConfigDrvSqCqPtopType::DISABLE_TO_ENABLE, value);
+    ConfigSqStatusByType(drvSqCqPropType_t::DRV_SQCQ_PROP_SQ_DISABLE_TO_ENABLE, value);
 }
 
 HcclResult RtsqBase::SetTaskIdBySqeId()
