@@ -45,7 +45,8 @@ LocalRmaBuffer *LocalRmaBufManager::Reg(const string &opTag, BufferType bufferTy
         HCCL_ERROR("input buffer is null");
         return nullptr;
     }
-    HCCL_INFO("LocalRmaBufManager::Reg, buffer[%s]", buffer->Describe().c_str());
+    HCCL_INFO("LocalRmaBufManager::Reg, buffer[%s], opTag[%s], bufferType[%u], portData[%s]",
+        buffer->Describe().c_str(), opTag.c_str(), bufferType, portData.Describe().c_str());
     if (IsExist(opTag, portData, bufferType)) {
         string msg = StringFormat("opTag=%s bufferType=%s, buffer=%s already reg to portData=%s", opTag.c_str(),
                                   bufferType.Describe().c_str(),
@@ -84,7 +85,8 @@ LocalRmaBuffer *LocalRmaBufManager::Get(const string &opTag, const PortData &por
         HCCL_INFO("[LocalRmaBufManager][%s] LocalUbRmaBuffer[%s]", __func__, bufs[opTag][portData][bufferType]->Describe().c_str());
         return bufs[opTag][portData][bufferType].get();
     }
-    HCCL_WARNING("LocalRmaBuffer doesn't exist.");
+    HCCL_WARNING("LocalRmaBuffer doesn't exist:opTag[%s], bufferType[%u], portData[%s]",
+        opTag.c_str(), bufferType, portData.Describe().c_str());
     return nullptr;
 }
 
