@@ -258,7 +258,7 @@ HcclResult RankConsistentcyChecker::RecordEnvVarCrc()
         "HCCL_MULTI_QP_THRESHOLD"
     };
 
-    for (const auto &varName : envVarNames) {
+    for (const auto &varName : ENV_VAR_NAMES) {
         const char *envValue = std::getenv(varName.c_str());
         // 环境变量未设置或值为空字符串时，跳过不记录CRC
         if (envValue == nullptr || envValue[0] == '\0') {
