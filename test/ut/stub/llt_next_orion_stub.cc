@@ -788,6 +788,11 @@ std::vector<DevUbConnection *> GetStarsPollUbConns(const std::vector<RmaConnecti
     return ubConns;
 }
 
+HcclResult DevUbConnection::Describe(std::string &dfxMsg){
+    dfxMsg = "DevUbConnectionTest";
+    return HCCL_SUCCESS;
+}
+
 bool IfNeedUpdatingUbCi(const std::vector<DevUbConnection *> &ubConns)
 {
 
@@ -1211,6 +1216,12 @@ HcclResult UbMemTransport::Init()
 HcclResult UbMemTransport::DeInit() const
 {
 
+    return HCCL_SUCCESS;
+}
+
+HcclResult UbMemTransport::Describe(std::string &dfxMsg)
+{
+    dfxMsg = "UbMemTransportTest";
     return HCCL_SUCCESS;
 }
 
