@@ -121,7 +121,6 @@ void PreemptPortManager::PreemptPortInRange(const std::shared_ptr<Socket> &liste
     HCCL_ERROR("[PreemptPortManager::%s] All ports in socket port range are bound already. "
         "no available port to listen. Please check the ports status, or change the port range to listen on.", __func__);
     NicType nicType = listenSocket->GetNicType();
-    if (nicType == NicType::HOST_NIC_TYPE) {
     std::string envName = nicType == NicType::HOST_NIC_TYPE ? 
         "HCCL_HOST_SOCKET_PORT_RANGE" : "HCCL_NPU_SOCKET_PORT_RANGE";
     HCCL_ERROR("NOTICE: Users need to make sure ports in %s are available for HCCL."
