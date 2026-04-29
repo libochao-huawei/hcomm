@@ -659,7 +659,7 @@ int32_t ProfilingHandler::CommandHandle(uint32_t rtType, void *data, uint32_t le
             instance_.StopSubscribe(); 
             break;
         default:
-            HCCL_RUN_INFO("[Profiling][CommandHandle] Unexcepeted behaviour.");
+            HCCL_RUN_INFO("[Profiling][CommandHandle] Unexpected behaviour.");
     }
     return HCCL_SUCCESS;
 }
