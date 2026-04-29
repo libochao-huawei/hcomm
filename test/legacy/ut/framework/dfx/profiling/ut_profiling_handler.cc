@@ -156,12 +156,23 @@ TEST_F(ProfilingHandlerTest, ReportHcclTaskDetails_test)
     delete comm;
 }
 
-TEST_F(ProfilingHandlerTest, CommandHandle_test){
+TEST_F(ProfilingHandlerTest, ut_CommandHandle_When_ParamIsNullptr_Expect_ReturnHCCL_E_PARA){
     ProfilingHandler &handler = Hccl::ProfilingHandler::GetInstance();
     uint32_t rtType = 0;
     void* data = nullptr; 
     uint32_t len = 0;
     auto ret = handler.CommandHandle(rtType, data, len);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(ProfilingHandlerTest, ut_CommandHandle_When_TypeIsUnexpected_Expect_ReturnHCCL_SUCCESS){
+    ProfilingHandler &handler = Hccl::ProfilingHandler::GetInstance();
+    uint32_t rtType = 1;
+    rtProfCommandHandle_t data{};
+    data.type = 0;
+    uint32_t len = 0;
+    auto ret = handler.CommandHandle(rtType, static_cast<void*>(&data), len);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
 TEST_F(ProfilingHandlerTest, GetHCCLReportData_test){
