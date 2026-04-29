@@ -26,6 +26,7 @@
 #include "hcomm_diag.h"
 #include "hccl_api_data_aicpu_ts.h"
 #include "hccl_diag.h"
+#include "hcclCommOp.h"
 
 using namespace hccl;
 thread_local LaunchContext g_threadLaunchCtx;
