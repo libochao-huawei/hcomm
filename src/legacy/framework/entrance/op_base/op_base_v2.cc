@@ -937,7 +937,6 @@ HcclResult HcclCreateSubCommConfigV2(const HcclComm *comm, uint32_t rankNum, uin
         *subComm = nullptr;
         return ret;
     }
-
     /* 关键状态记录 */
     HCCL_RUN_INFO("[Create][Group]create group[%s] success, deviceLogicId[%d], devPhyId[%d], take time [%lld]us",
         subCommIdStr.c_str(), logicDevId, devPhyId, DURATION_US(TIME_NOW() - startut));
