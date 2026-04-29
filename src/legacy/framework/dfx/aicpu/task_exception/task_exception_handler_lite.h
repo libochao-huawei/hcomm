@@ -44,6 +44,8 @@ private:
 
 uint16_t SwitchUBCqeErrCodeToTsErrCode(u32 cqeErrCode);
 uint16_t SwitchSdmaCqeErrCodeToTsErrCode(u32 cqeErrCode);
+HcclResult SendTaskExceptionByMBox(const u32 localDeviceId, const u32 notifyId, const u32 tsId,
+    const s32 userStreamId, const rtLogicCqReport_t* exceptionInfo);
 
 } // namespace Hccl
 
