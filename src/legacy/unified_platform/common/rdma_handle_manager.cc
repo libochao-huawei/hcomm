@@ -131,8 +131,9 @@ RdmaHandle RdmaHandleManager::GetByAddr(u32 devPhyId, const LinkProtoType &local
         if (localProtocolType == LinkProtoType::RDMA) {
             res = Create(devPhyId, localProtocolType, localIp, type);
         } else if (localProtocolType == LinkProtoType::UB) {
-            HrtRaUbCtxInitParam in(HrtNetworkMode::HDC, devPhyId, localIp);
-            res                                          = HrtRaUbCtxInit(in);
+            HrtNetworkMode mode = (type == Hccl::PortDeploymentType::DEV_NET) ? HrtNetworkMode::HDC : HrtNetworkMode::PEER;
+	        HrtRaUbCtxInitParam in(mode, devPhyId, localIp);
+            res                 = HrtRaUbCtxInit(in);
             rdmaHandleMap[devPhyId][localProtocolType][localIp] = res;
             tokenInfoMap[res] = std::make_unique<TokenInfoManager>(devPhyId, res);
             HCCL_INFO("Create one rdmahandle [%p], devPhyId [%u], portAddr [%s]",
@@ -168,7 +169,7 @@ RdmaHandle RdmaHandleManager::GetByIp(u32 devPhyId, const IpAddress &localIp)
     return res;
 }
 
-JfcHandle RdmaHandleManager::GetJfcHandle(RdmaHandle rdmaHandle, HrtUbJfcMode jfcMode)
+JfcHandle RdmaHandleManager::GetJfcHandle(RdmaHandle rdmaHandle, CqCreateInfo& cqInfo, HrtUbJfcMode jfcMode)
 {
     std::lock_guard<std::mutex> lock(managerMutex);
 
@@ -176,8 +177,8 @@ JfcHandle RdmaHandleManager::GetJfcHandle(RdmaHandle rdmaHandle, HrtUbJfcMode jf
         THROW<InvalidParamsException>("[RdmaHandleManager][GetJfcHandle]rdmaHandle is nullptr, please check input.");
     }
 
-    if (jfcMode != HrtUbJfcMode::STARS_POLL && jfcMode != HrtUbJfcMode::CCU_POLL) {
-        THROW<InvalidParamsException>("[RdmaHandleManager][GetJfcHandle]jfcMode[%s] is not STARS_POLL or CCU_POLL, "
+    if (jfcMode != HrtUbJfcMode::STARS_POLL && jfcMode != HrtUbJfcMode::CCU_POLL && jfcMode != HrtUbJfcMode::NORMAL) {
+        THROW<InvalidParamsException>("[RdmaHandleManager][GetJfcHandle]jfcMode[%s] is not STARS_POLL or CCU_POLL or NORMAL, "
             "please check input.", jfcMode.Describe().c_str());
     }
 
@@ -186,7 +187,7 @@ JfcHandle RdmaHandleManager::GetJfcHandle(RdmaHandle rdmaHandle, HrtUbJfcMode jf
         return jfcHandleMap[rdmaHandle][jfcMode];
     }
 
-    jfcHandleMap[rdmaHandle][jfcMode] = HrtRaUbCreateJfc(rdmaHandle, jfcMode);
+    jfcHandleMap[rdmaHandle][jfcMode] = HrtRaUbCreateJfc(rdmaHandle, cqInfo, jfcMode);
     return jfcHandleMap[rdmaHandle][jfcMode];
 }
 
