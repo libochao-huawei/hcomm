@@ -447,3 +447,40 @@ TEST_F(HcclImplTest, Ut_SplitBsrData_When_countEqualZero_Expect_ReturnIsHCCL_SUC
     EXPECT_EQ(hostSendRecvInfo.size(), 0);
     GlobalMockObject::verify();
 }
+
+TEST_F(HcclImplTest, ut_HcclCommunicator_BuildZeroCopyParamSuccess_When_ZeroCopyLocalBuffer_Is_Not_Nullptr_Expect_Return_Success)
+{
+    MOCKER_CPP(&ZeroCopyMemoryAgent::GetRingBufferAddr).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+    std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
+    EXPECT_NE(hcclCommunicator, nullptr);
+
+    void *fakePtr = 0x12345678; // 给定非空的地址用于打桩控制条件
+    u64 fakeSize = 50;
+    auto deviceMem = DeviceMem(fakePtr, fakeSize);
+    hcclCommunicator->zeroCopyLocalBuffer_ = std::move(deviceMem);
+    EXPECT_EQ(hcclCommunicator->BuildZeroCopyParam(), HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(HcclImplTest, ut_HcclCommunicator_BuildZeroCopyParamFailed_When_ZeroCopyLocalBuffer_Is_Nullptr_Expect_Return_Success)
+{
+    std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
+    EXPECT_NE(hcclCommunicator, nullptr);
+
+    auto deviceMem = DeviceMem(); // 生成空的地址用于打桩控制条件
+    hcclCommunicator->zeroCopyLocalBuffer_ = std::move(deviceMem);
+    EXPECT_EQ(hcclCommunicator->BuildZeroCopyParam(), HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(HcclImplTest, ut_HcclCommunicator_BuildZeroCopyParamFailed_When_GetRingBufferAddr_Failed_Expect_Return_E_INTERNAL)
+{
+    // 控制内部流程失败返回特定返回码
+    MOCKER_CPP(&ZeroCopyMemoryAgent::GetRingBufferAddr).stubs().will(returnValue(HcclResult::HCCL_E_INTERNAL));
+    std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
+    EXPECT_NE(hcclCommunicator, nullptr);
+
+    void *fakePtr = 0x12345678; // 给定非空的地址用于打桩控制条件
+    u64 fakeSize = 50;
+    auto deviceMem = DeviceMem(fakePtr, fakeSize);
+    hcclCommunicator->zeroCopyLocalBuffer_ = std::move(deviceMem);
+    EXPECT_EQ(hcclCommunicator->BuildZeroCopyParam(), HcclResult::HCCL_E_INTERNAL);
+}
