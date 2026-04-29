@@ -432,7 +432,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_Rdma_Conn_Failed_Expect_ERROR)
     EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::CONN_OK);
     EXPECT_EQ(status, ChannelStatus::READY);
 
-    // 交换过程实际没有进行，因此对端数据为空
+    // 交换过程实际没有进行,因此对端数据为空
     HcclResult ret = impl_->NotifyRecord(0);
     EXPECT_EQ(ret, HCCL_E_PARA);
     ret = impl_->NotifyWait(0, 1800);
@@ -494,7 +494,8 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_PrepareWriteWrResource_Expect_SUCCESS)
     struct ibv_send_wr sendWr{};
     struct ibv_sge sge{};
     sendWr.sg_list = &sge;
-    HcclResult ret = impl_->PrepareWriteWrResource((void*)0x0001, (void*)0x0002, 10, 0, sendWr);
+    Hccl::TaskParam taskParam{};
+    HcclResult ret = impl_->PrepareWriteWrResource((void*)0x0001, (void*)0x0002, 10, 0, sendWr, taskParam);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
@@ -744,7 +745,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_WriteAndReadAndWriteWithNotify_When_MaxMsgSize
 {
     DevType devType = DevType::DEV_TYPE_950;
     MOCKER(hrtGetDeviceType).stubs().with(outBound(devType)).will(returnValue(HCCL_SUCCESS));
-    // construct，不调用 Init，maxMsgSize_ 保持默认值 0
+    // construct,不调用 Init,maxMsgSize_ 保持默认值 0
     auto impl_ = std::make_unique<hcomm::HostCpuRoceChannel>(endpointHandle, channelDesc);
     EXPECT_EQ(impl_->maxMsgSize_, 0u);
     // Write
@@ -800,4 +801,97 @@ TEST_F(HostCpuRoceChannelTest, Ut_WriteWithNotify_When_LenExceedsMaxMsgSize_Expe
     // len = 250 → 前 2 块 PostRdmaOp(WRITE, 100 each) + 尾块 WRITE_WITH_IMM(50)
     HcclResult ret = impl_->WriteWithNotify((void *)0x1, (void *)0x2, 250, 0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+// 测试 GetCommAddrString - 正常情况
+TEST_F(HostCpuRoceChannelTest, Ut_GetCommAddrString_When_Normal_Expect_ReturnValidString)
+{
+    auto impl_ = CreateInitAndConnect();
+    EndpointDesc ep{};
+    ep.commAddr.type = COMM_ADDR_TYPE_IP_V4;
+    Hccl::IpAddress ip("192.168.1.1");
+    ep.commAddr.addr = ip.GetBinaryAddress().addr;
+    ep.commAddr.port = 12345;
+    
+    std::string addrStr = impl_->GetCommAddrString(ep);
+    EXPECT_FALSE(addrStr.empty());
+    EXPECT_TRUE(addrStr.find("192.168.1.1") != std::string::npos);
+}
+
+// 测试 GetCommAddrString - IPv6 地址
+TEST_F(HostCpuRoceChannelTest, Ut_GetCommAddrString_When_IPv6_Expect_ReturnValidString)
+{
+    auto impl_ = CreateInitAndConnect();
+    EndpointDesc ep{};
+    ep.commAddr.type = COMM_ADDR_TYPE_IP_V6;
+    
+    std::string addrStr = impl_->GetCommAddrString(ep);
+    EXPECT_FALSE(addrStr.empty());
+}
+
+// 测试 SetDfxCallback - 正常设置
+TEST_F(HostCpuRoceChannelTest, Ut_SetDfxCallback_When_Normal_Expect_SetSuccess)
+{
+    auto impl_ = CreateInitAndConnect();
+    bool callbackCalled = false;
+    
+    std::function<HcclResult(const Hccl::TaskParam&, u64)> callback = 
+        [&callbackCalled](const Hccl::TaskParam& param, u64 handle) -> HcclResult {
+            callbackCalled = true;
+            return HCCL_SUCCESS;
+        };
+    
+    HcclResult ret = impl_->SetDfxCallback(callback);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    // 验证回调已设置
+    auto storedCallback = impl_->GetDfxCallback();
+    EXPECT_TRUE(storedCallback != nullptr);
+}
+
+// 测试 SetDfxCallback - 调用设置的回调
+TEST_F(HostCpuRoceChannelTest, Ut_SetDfxCallback_When_CallCallback_Expect_CallbackInvoked)
+{
+    auto impl_ = CreateInitAndConnect();
+    bool callbackCalled = false;
+    
+    std::function<HcclResult(const Hccl::TaskParam&, u64)> callback = 
+        [&callbackCalled](const Hccl::TaskParam& param, u64 handle) -> HcclResult {
+            callbackCalled = true;
+            return HCCL_SUCCESS;
+        };
+    
+    impl_->SetDfxCallback(callback);
+    
+    auto storedCallback = impl_->GetDfxCallback();
+    Hccl::TaskParam taskParam{};
+    HcclResult ret = storedCallback(taskParam, 12345);
+    
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_TRUE(callbackCalled);
+}
+
+// 测试 GetDfxCallback - 未设置时返回空
+TEST_F(HostCpuRoceChannelTest, Ut_GetDfxCallback_When_NotSet_Expect_ReturnEmpty)
+{
+    auto impl_ = CreateInitAndConnect();
+    
+    // 默认应该没有回调
+    auto callback = impl_->GetDfxCallback();
+    // 如果没有设置,应该是一个空的 function 对象
+    EXPECT_TRUE(!callback);
+}
+
+// 测试 GetCommAddrString - 端口为 0
+TEST_F(HostCpuRoceChannelTest, Ut_GetCommAddrString_When_PortZero_Expect_ReturnValidString)
+{
+    auto impl_ = CreateInitAndConnect();
+    EndpointDesc ep{};
+    ep.commAddr.type = COMM_ADDR_TYPE_IP_V4;
+    Hccl::IpAddress ip("10.0.0.1");
+    ep.commAddr.addr = ip.GetBinaryAddress().addr;
+    ep.commAddr.port = 0;
+    
+    std::string addrStr = impl_->GetCommAddrString(ep);
+    EXPECT_FALSE(addrStr.empty());
 }
