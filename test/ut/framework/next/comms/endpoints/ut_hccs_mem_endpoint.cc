@@ -40,6 +40,7 @@ HcclResult StubHcclNetDevOpenForEp(const HcclNetDevInfos *info, HcclNetDev *netD
     static uint32_t id = 0;
     static hccl::NetDevContext kNetDevCtx[MAX_MODULE_DEVICE_NUM];
     static bool initialized[MAX_MODULE_DEVICE_NUM] = {false};
+    id++;
     if (!initialized[id]) {
         hccl::HcclIpAddress localIp;
         (void)localIp.SetReadableAddress("127.0.0.1");
@@ -47,6 +48,24 @@ HcclResult StubHcclNetDevOpenForEp(const HcclNetDevInfos *info, HcclNetDev *netD
         initialized[id] = true;
     }
     *netDev = reinterpret_cast<HcclNetDev>(&kNetDevCtx[id]);
+    return HCCL_SUCCESS;
+}
+
+HcclResult StubHcclNetOpenDev(
+    HcclNetDevCtx *netDevCtx, NicType nicType, s32 devicePhyId, s32 deviceLogicId, hccl::HcclIpAddress localIp,
+    hccl::HcclIpAddress backupIp)
+{
+    static uint32_t id = 0;
+    static hccl::NetDevContext kNetDevCtx[MAX_MODULE_DEVICE_NUM];
+    static bool initialized[MAX_MODULE_DEVICE_NUM] = {false};
+    id++;
+    if (!initialized[id]) {
+        hccl::HcclIpAddress localIp;
+        (void)localIp.SetReadableAddress("127.0.0.1");
+        kNetDevCtx[id].Init(NicType::VNIC_TYPE, 0, 0, localIp);
+        initialized[id] = true;
+    }
+    *netDevCtx = reinterpret_cast<HcclNetDev>(&kNetDevCtx[id]);
     return HCCL_SUCCESS;
 }
 
@@ -72,6 +91,7 @@ protected:
         MOCKER(hrtGetDevice).stubs().with(any()).will(invoke(StubHrtGetDeviceWriteZeroEp));
         MOCKER(hrtGetDevicePhyIdByIndex).stubs().with(any(), outBound(0U)).will(returnValue(HCCL_SUCCESS));
         MOCKER(HcclNetDevOpen).stubs().will(invoke(StubHcclNetDevOpenForEp));
+        MOCKER(HcclNetOpenDev).stubs().will(invoke(StubHcclNetOpenDev));
         MOCKER(HcclNetDevClose).stubs().will(invoke(StubHcclNetDevCloseForEp));
         MOCKER(&hccl::HcclSocket::Accept).stubs().will(invoke(StubHcclSocketAcceptForEp));
  
