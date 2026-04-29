@@ -26,6 +26,7 @@ set(src_to_test_list
     ut_HcclReduceScatter_API_test.cc
     ut_HcomGetCommHandleByGroup_API_test.cc
     ut_op_base_misc_test.cc
+    ut_op_base_v2_test.cc
 )
 
 add_executable(hccl_utest_framework_op_base_api ${src_to_test_list})
@@ -33,6 +34,7 @@ add_executable(hccl_utest_framework_op_base_api ${src_to_test_list})
 #头文件搜索路径
 target_include_directories(hccl_utest_framework_op_base_api PRIVATE
     ${UT_COMMON_INCLUDE_LIST}
+    ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/hostdpu
 )
 
 target_compile_definitions(hccl_utest_framework_op_base_api PRIVATE
