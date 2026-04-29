@@ -137,4 +137,10 @@ void HrtDeviceAbortRegCallBack(aclrtDeviceTaskAbortCallback callback, void *args
 {
     return;
 }
+
+HcclResult HrtRaGetTpAttrAsync(u32 phyId, RdmaHandle handle, uint64_t tpHandle, uint32_t& attrBitmap, TpAttr& attr, RequestHandle& reqHandle)
+{
+    return HCCL_SUCCESS;
+}
+
 } // namespace Hccl
