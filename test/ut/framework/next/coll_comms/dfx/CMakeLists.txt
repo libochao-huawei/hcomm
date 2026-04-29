@@ -13,6 +13,7 @@ set(src_to_test_list
     ut_HcommCcuProfiling_test.cc
     ut_HcommAivProfiling_test.cc
     ut_hcclCommTaskExceptionLite.cc
+    ut_hcclCommDfx.cc
 )
 
 add_executable(hccl_utest_test_dfx_resource ${src_to_test_list})
