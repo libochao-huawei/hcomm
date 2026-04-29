@@ -126,6 +126,7 @@ aclError aclrtCntNotifyWaitWithTimeout(aclrtCntNotify cntNotify, aclrtStream str
 
 aclError aclrtCreateStream(aclrtStream *stream)
 {
+    *stream = reinterpret_cast<void *>(0x12345678);
     return ACL_SUCCESS;
 }
 

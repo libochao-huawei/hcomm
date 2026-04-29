@@ -57,6 +57,7 @@ public:
 private:
     static constexpr int32_t HCCL_STREAM_PRIORITY_LOW  = 5;
     static constexpr int32_t HCCL_STREAM_PRIORITY_HIGH = 5;
+    static constexpr int32_t STREAM_MODE_STOP_ON_FAILURE = 1; // 配置流失败模式为遇错即停
 
     aclrtStream ptr;
     u32        id{0};
