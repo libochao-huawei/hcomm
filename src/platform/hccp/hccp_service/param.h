@@ -26,7 +26,6 @@
 #define HDC_TYPE_PREFIX                "hdcType"
 #define WHITE_LIST_STATUS_PREFIX       "whiteListStatus"
 #define BACKUP_PHYID_PREFIX            "backupPhyId"
-#define RESV_MEM_POOL_ID_PREFIX        "resvMemPoolId"
 
 #define HCCP_CMD_MAX_LEN  128
 #define HCCP_KEY_EXPIRED  127
@@ -39,8 +38,7 @@ enum {
     HCCP_ARGC_HDC_TYPE = 4,
     HCCP_ARGC_WHITE_LIST_STATUS = 5,
     HCCP_ARGC_BACKUP_PHYID = 6,
-    HCCP_ARGC_RESV_MEM_POOL_ID = 7,
-    HCCP_ARGC_NUM = 8,
+    HCCP_ARGC_NUM = 7,
 };
 
 struct HccpInitParam {
@@ -52,8 +50,6 @@ struct HccpInitParam {
     unsigned int whiteListStatus;
     bool backupFlag;
     unsigned int backupChipId;
-    bool useResvMem;
-    unsigned int resvMemPoolId;
 };
 
 struct ParamHandle {
