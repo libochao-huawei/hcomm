@@ -66,8 +66,30 @@ enum class ClusterMonitorStatus {
 };
 
 struct ErrorCqeInfo {
-    // TODO:待填写
+    u32 CqeLocalId = 0;
+    u32 CqeRemoteLocalId = 0;
+    uint16_t Cqestatus = 0;
+    std::string CqeLocalEid;
+    std::string CqeRemoteEid;
+    std::string CqeRemoteInsId;
+    std::string CqeLocalInsId;
 };
+const std::map<ClusterMonitorStatus, std::string> CLUSTER_MONITOR_STATUS_STR_MAP{
+    {ClusterMonitorStatus::CLUSTER_MONITOR_OK, "OK"},
+    {ClusterMonitorStatus::CLUSTER_MONITOR_LOST, "LOST"},
+    {ClusterMonitorStatus::CLUSTER_MONITOR_NOTIFY, "NOTIFY"},
+    {ClusterMonitorStatus::CLUSTER_MONITOR_CQE_ERR, "CQE ERROR"}
+};
+
+inline std::string GetClusterMonitorStatusStr(ClusterMonitorStatus  status)
+{
+    auto iter = CLUSTER_MONITOR_STATUS_STR_MAP.find(status);
+    if (iter == CLUSTER_MONITOR_STATUS_STR_MAP.end()) {
+        return "Unknown";
+    } else {
+        return iter->second;
+    }
+}
 
 
 /**
@@ -157,6 +179,12 @@ public:
     HcclResult RecvFrame(ClusterUIDType rem);
     HcclResult ParseFrame(ClusterMonitorFrame &cmFrame, ClusterUIDType &src);
     HcclResult DeInit();
+    static ClusterMonitor& GetInstance(u32 deviceId);
+    void GetCqeErrInfoFromTaskException(u32 RemoteLocalId, uint16_t status, std::string LocalEid, std::string RemoteEid, std::string RemoteInsId);
+    std::vector<std::string> GetErrStatusVecFromCluserMonitor();
+    bool IsKeyEvent(ClusterMonitorFrame &event, HcclUs curTime);
+    std::vector<std::string> PrintEvents(std::map<ClusterMonitorStatus, std::queue<ClusterMonitorFrame>> &keyEvents);
+    void MakeErrMsg(std::queue<ClusterMonitorFrame> &keyEvents, std::vector<std::string> &errStatusVec);
 
 private:
     ClusterMonitor() = default;
@@ -167,7 +195,8 @@ private:
     HcclResult CreateTransportHandle(ClusterMonitorSocketCtx &info);
 
     void CreateLinkWithRemotePonit(std::string group, ClusterUIDType rem, ClusterMonitorSocketCtx needConnectRank);
-
+    void RecvFrameOutCheck();
+    
     struct FrameStatus { // 专门用来给frame设置对应的状态
         ClusterMonitorStatus status = ClusterMonitorStatus::CLUSTER_MONITOR_OK;
         ClusterUIDType informer;
@@ -222,6 +251,10 @@ private:
     std::queue<ClusterUIDType> errRankQueue_;
 
     std::atomic<bool> linkRunningStatus_{false};
+
+       
+    std::mutex ProcessLock_;
+    ErrorCqeInfo CqeErrInfo_;
 
 };
 } // namespace hcomm
