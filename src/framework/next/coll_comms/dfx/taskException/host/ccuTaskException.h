@@ -19,6 +19,7 @@
 #include "ccu_rep_context_v1.h"
 #include "ccu_dev_mgr_pub.h"
 #include "ccu_jetty_.h"
+#include "coll_comm.h"
 
 namespace hcomm {
 using RdmaHandle = void*;

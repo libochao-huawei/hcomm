@@ -494,10 +494,6 @@ void ClusterMonitor::DelErrorSocket()
     // TODO:处理socket错误的句柄
 }
 
-void ClusterMonitor::ProcessExceptionEvent()
-{
-    // TODO:处理error cqe
-}
 
 void ClusterMonitor::SetStatus(ClusterUIDType &crimer, ClusterUIDType &informer,
     ClusterMonitorStatus status, bool needBroadcast)
