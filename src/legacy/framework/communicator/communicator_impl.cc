@@ -2601,6 +2601,7 @@ void CommunicatorImpl::InitOneSidedService()
 u32 CommunicatorImpl::GetUsedChannelCount(u32 dieId)
 {
     CHECK_NULLPTR(collService, "collService is nullptr!");
+    if (!GetOpCcuFeatureFlag()) { return 0; }
     CcuJettyMgr *ccuJettyMgr = dynamic_cast<CollServiceDeviceMode *>(collService)
                                 ->GetCcuInsPreprocessor()
                                 ->GetCcuComm()
