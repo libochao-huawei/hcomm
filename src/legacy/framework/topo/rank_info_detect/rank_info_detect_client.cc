@@ -137,9 +137,9 @@ void CheckRootInfoJson(const nlohmann::json &parseJson)
     if (version != "2.0") {
         RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({"value", "variable", "expect"}),
             std::vector<std::string>({version, "version", "2.0"}));
+        HCCL_ERROR("[%s] failed with version [%s] is not \"2.0\".", __func__ , version.c_str());
+        THROW<InvalidParamsException>("version error");
     }
-    CHK_PRT_THROW(version != "2.0", HCCL_ERROR("[%s] failed with version [%s] is not \"2.0\".", __func__ , version.c_str()),
-                  InvalidParamsException, "version error");
     
     // parser topo_file_path
     std::string topoFilePath{};
@@ -152,10 +152,9 @@ void CheckRootInfoJson(const nlohmann::json &parseJson)
     if (isInvalidPath) {
         RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({"value", "variable", "expect"}),
             std::vector<std::string>({topoFilePath, "topo_file_path", "vaild path"}));
+        HCCL_ERROR("[%s] topo_file_path[%s] is not a valid real path", __func__, topoFilePath.c_str());
+        THROW<InvalidParamsException>("topo_file_path error");
     }
-    CHK_PRT_THROW(isInvalidPath,
-            HCCL_ERROR("[%s] topo_file_path[%s] is not a valid real path", __func__, topoFilePath.c_str()),
-            InvalidParamsException, "topo_file_path error");
 
     // parser rank_count
     u32         rankCount{};
@@ -173,11 +172,10 @@ void CheckRootInfoJson(const nlohmann::json &parseJson)
     if (isRankCountMismatch) {
         RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({"value", "variable", "expect"}),
             std::vector<std::string>({std::to_string(rankCount), "rankCount", std::to_string(rankJsons.size())}));
+        HCCL_ERROR("[%s] failed with rankCount is not equal to rank_list size."
+            "rankCount[%u], ranks.size[%u]", __func__, rankCount, rankJsons.size());
+        THROW<InvalidParamsException>("rankCount error");
     }
-    CHK_PRT_THROW(isRankCountMismatch, 
-                  HCCL_ERROR("[%s] failed with rankCount is not equal to rank_list size."
-                             "rankCount[%u], ranks.size[%u]", __func__, rankCount, rankJsons.size()),
-                  InvalidParamsException, "rankCount error");
 }
 
 void RankInfoDetectClient::ConstructRankTable(RankTableInfo &localRankTable)
@@ -298,10 +296,9 @@ void RankInfoDetectClient::RecvRankTableMsg(vector<char> &rankInfoMsg)
     if (!recvSuccess) {
         RPT_INPUT_ERR(true, "EI0015", std::vector<std::string>({"error_reason"}),
             std::vector<std::string>({"recv ranktable message failed"}));
+        HCCL_ERROR("RankInfoDetectClient::%s, recv rankTable error.", __func__);
+        THROW<SocketException>("client recv fail");
     }
-    CHK_PRT_THROW(!recvSuccess,
-        HCCL_ERROR("RankInfoDetectClient::%s, recv rankTable error.", __func__),
-        SocketException, "client recv fail");
 
     // 以vector<char>格式保存
     rankInfoMsg.resize(revMsgLen);
@@ -368,10 +365,9 @@ void RankInfoDetectClient::VerifyRankTable()
     if (ret != HCCL_SUCCESS) {
         RPT_INPUT_ERR(true, "EI0016", std::vector<std::string>({ "value", "variable", "expect" }),
             std::vector<std::string>({"fail", "tls_consistency", "success"}));
+        HCCL_ERROR("[RankInfoDetectClient::%s] tls consistency verify failed, ret[%d]", __func__, ret);
+        THROW<InvalidParamsException>("tls consistency verify failed");
     }
-    CHK_PRT_THROW(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[RankInfoDetectClient::%s] tls consistency verify failed, ret[%d]", __func__, ret),
-        InvalidParamsException, "tls consistency verify failed");
 
     HCCL_INFO("[RankInfoDetectClient::%s] end.", __func__);
 }

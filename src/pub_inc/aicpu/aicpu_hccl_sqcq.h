@@ -716,6 +716,5 @@ extern HcclResult DeviceQuery(const uint32_t devId, const uint32_t step, const u
 namespace hccl_plf {
     HcclResult SendTaskExceptionByMBox(const u32 localDeviceId, const u32 notifyId, const u32 tsId,
         const s32 userStreamId, const u32 cqeErrCode);
-    uint16_t SwitchSdmaCqeErrCodeToTsErrCode(u32 cqeErrCode);
 }
 #endif  // __AICPU_HCCL_SQCQ_H__

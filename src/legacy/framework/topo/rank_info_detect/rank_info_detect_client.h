@@ -63,7 +63,5 @@ private:
     void TearDown();
 };
 
-void CheckRootInfoJson(const nlohmann::json &parseJson);
-
 } // namespace Hccl
 #endif // HCCLV2_RANK_INFO_DETECT_CLIENT_H
