@@ -13,6 +13,7 @@
 
 #include "hccl_tbe_task.h"
 #include "graph_ctx_mgr_common.h"
+#include "rt_external.h"
 
 HcclResult HcclTbeTaskInit(int32_t deviceLogicId)
 {
@@ -69,6 +70,11 @@ void* GetGraphCtxV2(void *graphMgr, const char *key, uint32_t keyLen)
 }
 
 HcclResult LaunchGraph(void *graphMgr, void *streamPtr, void *ctx, uint32_t timeout, uint32_t *ctxNum)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult LaunchGraphWithTaskInfo(void *graphMgr, void *streamPtr, void *ctx, uint32_t timeout, uint32_t *ctxNum, rtFftsPlusTaskInfo_t *task)
 {
     return HCCL_SUCCESS;
 }
