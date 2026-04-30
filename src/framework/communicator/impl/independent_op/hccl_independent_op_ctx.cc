@@ -200,6 +200,6 @@ HcclResult HcclEngineCtxDestroy(HcclComm comm, const char *ctxTag, CommEngine en
         return ret;
     }
     HCCL_RUN_INFO("[%s] success, ctxTag[%s], engine[%s], group[%s]", 
-        __func__, ctxTagTmp, enGetEnumToString(COMMENGINE_STATUS_STR_MAP, engine)gine, hcclComm->GetIdentifier().c_str());
+        __func__, ctxTagTmp, enGetEnumToString(COMMENGINE_STATUS_STR_MAP, engine), gine, hcclComm->GetIdentifier().c_str());
     return HCCL_SUCCESS;
 }
