@@ -25,6 +25,8 @@
 
 using namespace hccl;
 
+u64 DevAicpuTsRoceChannel::commSeq_{0};
+
 DevAicpuTsRoceChannel::~DevAicpuTsRoceChannel()
 {
     for (auto &pair : slots_) {
@@ -91,10 +93,6 @@ HcclResult OpenDispatcherForTsRoce(const HcommDeviceInfo &deviceInfo, char *comm
     CHK_PRT_RET(outDevId == INVALID_UINT,
         HCCL_ERROR("[DevAicpuTsRoceChannel][Create] invalid devId for logicId[%d]", deviceInfo.deviceLogicId),
         HCCL_E_PARA);
-
-    int nc = snprintf_s(commId, commIdLen, commIdLen - 1U, "hcomm_ts_roce_%d_%llu", deviceInfo.deviceLogicId,
-        static_cast<unsigned long long>(commIdLen));
-    CHK_PRT_RET(nc < 0, HCCL_ERROR("[DevAicpuTsRoceChannel][Create] snprintf_s failed"), HCCL_E_INTERNAL);
 
     DispatcherCtxPtr dctxPtr = nullptr;
     CHK_RET(CreateDispatcherCtx(&dctxPtr, outDevId, commId));
