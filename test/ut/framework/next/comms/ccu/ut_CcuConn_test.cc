@@ -20,11 +20,10 @@
 
 #include "port.h"
 #include "socket.h"
-#include "ccu_jetty.h"
+#include "ccu_jetty_.h"
 #include "orion_adapter_hccp.h"
 #include "orion_adapter_rts.h"
 #include "rdma_handle_manager.h"
-#include "hccl_common_v2.h"
 #include "internal_exception.h"
 #include "hccl_types.h"
 
@@ -60,7 +59,7 @@ protected:
 
 };
 
-pair<unique_ptr<hcomm::CcuConnection>, vector<unique_ptr<hcomm::CcuJetty>>> MockMakeCcuConnection(TpProtocol tpProtocol)
+pair<unique_ptr<hcomm::CcuConnection>, vector<unique_ptr<hcomm::CcuJetty>>> MockMakeCcuConnection(hcomm::TpProtocol tpProtocol)
 {
     constexpr uint64_t fakeMemAddr = 0x12345678;
 
@@ -68,8 +67,13 @@ pair<unique_ptr<hcomm::CcuConnection>, vector<unique_ptr<hcomm::CcuJetty>>> Mock
     const uint64_t fakeSqBufVa = fakeMemAddr;
     const uint32_t fakeSqBufSize = 1024;
     const uint32_t fakeSqDepth = 4;
-    const IpAddress locAddr{"1.1.1.1"};
-    const IpAddress rmtAddr{"2.2.2.2"};
+    const IpAddress locAddrIp{"1.1.1.1"};
+    CommAddr locAddr{};
+    CommAddr rmtAddr{};
+    locAddr.type = CommAddrType::COMM_ADDR_TYPE_IP_V4;
+    rmtAddr.type = CommAddrType::COMM_ADDR_TYPE_IP_V4;
+    locAddr.addr.s_addr = 0;
+    rmtAddr.addr.s_addr = 0;
 
     hcomm::CcuChannelInfo channelInfo;
     channelInfo.channelId = 1;
@@ -86,7 +90,7 @@ pair<unique_ptr<hcomm::CcuConnection>, vector<unique_ptr<hcomm::CcuJetty>>> Mock
         jettyInfo.sqBufVa = fakeSqBufVa + i;
         jettyInfo.sqBufSize = fakeSqBufSize + i;
         channelInfo.jettyInfos.push_back(jettyInfo);
-        auto ccuJetty = make_unique<hcomm::CcuJetty>(locAddr, jettyInfo);
+        auto ccuJetty = make_unique<hcomm::CcuJetty>(locAddrIp, jettyInfo);
         ccuJettyPtrs.emplace_back(ccuJetty.get());
         ccuJettys.emplace_back(std::move(ccuJetty));
     }
@@ -107,7 +111,7 @@ TEST_F(CcuConnTest, Ut_GetStatus_When_CreateAndImportJettySuccess_Expect_Return_
     auto connection = resPair.first.get();
 
     std::string testDfxMsg = "";
-    HcclResult ret = connection.describe(testDfxMsg);
+    HcclResult ret = connection->Describe(testDfxMsg);
     MOCKER(HrtRaGetTpAttrAsync).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
     connection->Describe(testDfxMsg);
     GlobalMockObject::verify();
