@@ -1,0 +1,117 @@
+#include "gtest/gtest.h"
+#include "mockcpp/mokc.h"
+#include <mockcpp/mockcpp.hpp>
+#include "cpu_urma_endpoint.h"
+#include "hcomm_res.h"
+#include "hcomm_c_adpt.h"
+#include "rdma_handle_manager.h"
+#include "ip_address.h"
+#include "hccp.h"
+#include "buffer.h"
+#include "endpoint.h"
+#include "urma_mem.h"
+#include "adapter_rts_common.h"
+#include "server_socket_manager.h"
+#include "hccp_peer_manager.h"
+
+#define private public
+using namespace hcomm;
+
+namespace {
+class FakeRegedMemMgrForEndpointUt : public RegedMemMgr {
+public:
+    HcclResult RegisterMemory(HcommMem, const char *, void **memHandle) override
+    {
+        *memHandle = reinterpret_cast<void *>(0x42ULL);
+        return HCCL_SUCCESS;
+    }
+    HcclResult UnregisterMemory(void *) override
+    {
+        return HCCL_SUCCESS;
+    }
+};
+}
+
+class CpuUrmaEndpointTest : public testing::Test {
+protected:
+    static void SetUpTestCase()
+    {
+        std::cout << "CpuUrmaEndpointTest tests set up." << std::endl;
+    }
+
+    static void TearDownTestCase()
+    {
+        std::cout << "CpuUrmaEndpointTest tests tear down." << std::endl;
+    }
+
+    virtual void SetUp()
+    {
+        std::cout << "A Test case in CpuUrmaEndpointTest SetUP" << std::endl;
+        Hccl::IpAddress localIp("1.0.0.0");
+        endpointDesc.protocol = COMM_PROTOCOL_UBC_CTP;
+        endpointDesc.commAddr.type = COMM_ADDR_TYPE_IP_V4;
+        endpointDesc.commAddr.addr = localIp.GetBinaryAddress().addr;
+        endpointDesc.loc.locType = ENDPOINT_LOC_TYPE_HOST;
+        rdmaHandle = (void*)0x1000000;
+        
+        MOCKER(hrtGetDevice).stubs().will(returnValue(HCCL_SUCCESS));
+        MOCKER(hrtGetDevicePhyIdByIndex).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
+        MOCKER(&Hccl::RdmaHandleManager::GetByAddr).stubs().will(returnValue(rdmaHandle));
+        MOCKER(RaSocketSetWhiteListStatus).stubs().will(returnValue(0));
+    }
+
+    virtual void TearDown()
+    {
+        GlobalMockObject::verify();
+        std::cout << "A Test case in CpuUrmaEndpointTest TearDown" << std::endl;
+    }
+
+    EndpointDesc endpointDesc{};
+    RdmaHandle rdmaHandle{nullptr};
+};
+
+TEST_F(CpuUrmaEndpointTest, Ut_When_Normal_Init_Expect_HCCL_SUCCESS)
+{
+    auto endpoint = std::make_unique<CpuUrmaEndpoint>(endpointDesc);
+    EXPECT_EQ(endpoint->Init(), HCCL_SUCCESS);
+}
+
+TEST_F(CpuUrmaEndpointTest, Ut_When_ServerSocketListen_Normal_Expect_HCCL_SUCCESS)
+{
+    auto endpoint = std::make_unique<CpuUrmaEndpoint>(endpointDesc);
+    EXPECT_EQ(endpoint->Init(), HCCL_SUCCESS);
+    MOCKER_CPP(&hcomm::ServerSocketManager::ServerSocketStartListen).stubs().will(returnValue(HCCL_SUCCESS));
+    EXPECT_EQ(endpoint->ServerSocketListen(60001), HCCL_SUCCESS);
+}
+
+TEST_F(CpuUrmaEndpointTest, Ut_When_ServerSocketStopListen_Normal_Expect_HCCL_SUCCESS)
+{
+    auto endpoint = std::make_unique<CpuUrmaEndpoint>(endpointDesc);
+    EXPECT_EQ(endpoint->Init(), HCCL_SUCCESS);
+    MOCKER_CPP(&hcomm::ServerSocketManager::ServerSocketStopListen).stubs().will(returnValue(HCCL_SUCCESS));
+    EXPECT_EQ(endpoint->ServerSocketStopListen(60001), HCCL_SUCCESS);
+}
+
+TEST_F(CpuUrmaEndpointTest, Ut_When_RegisterMemory_Normal_Expect_HCCL_SUCCESS)
+{
+    auto endpoint = std::make_unique<CpuUrmaEndpoint>(endpointDesc);
+    EXPECT_EQ(endpoint->Init(), HCCL_SUCCESS);
+
+    endpoint->regedMemMgr_ = std::make_shared<FakeRegedMemMgrForEndpointUt>();
+    HcommMem mem;
+    mem.type = COMM_MEM_TYPE_HOST;
+    mem.addr = reinterpret_cast<void *>(0x1000U);
+    mem.size = 10;
+    void* memHandle = nullptr;
+    EXPECT_EQ(endpoint->RegisterMemory(mem, "test", &memHandle), HCCL_SUCCESS);
+}
+
+TEST_F(CpuUrmaEndpointTest, Ut_When_UnregisterMemory_Normal_Expect_HCCL_SUCCESS)
+{
+    auto endpoint = std::make_unique<CpuUrmaEndpoint>(endpointDesc);
+    EXPECT_EQ(endpoint->Init(), HCCL_SUCCESS);
+
+    endpoint->regedMemMgr_ = std::make_shared<FakeRegedMemMgrForEndpointUt>();
+    void* memHandle = (void*)0x12345678;
+    EXPECT_EQ(endpoint->UnregisterMemory(memHandle), HCCL_SUCCESS);
+}
