@@ -177,7 +177,7 @@ class HostNetPortType : public BasePortType {
 public:
     HostNetPortType(ConnectProtoType proto) : BasePortType(PortDeploymentType::HOST_NET)
     {
-        if (proto != ConnectProtoType::TCP && proto != ConnectProtoType::RDMA) {
+        if (proto != ConnectProtoType::TCP && proto != ConnectProtoType::RDMA && proto != ConnectProtoType::UB) {
             THROW<InvalidParamsException>(StringFormat("HostNetPortType::HostNetPortType proto invalid"));
         }
         proto_ = proto;
