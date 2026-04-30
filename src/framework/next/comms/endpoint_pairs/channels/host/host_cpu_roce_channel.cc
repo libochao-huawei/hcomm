@@ -683,8 +683,8 @@ HcclResult HostCpuRoceChannel::NotifyWait(const uint32_t localNotifyIdx, const u
                 RPT_INPUT_ERR(true, "EI0013", std::vector<std::string>({"localServerId", "localDeviceId", "localDeviceIp",
                     "remoteServerId", "remoteDeviceId", "remoteDeviceIp"}),
                     std::vector<std::string>({std::to_string(localEp_.loc.device.serverIdx), std::to_string(localEp_.loc.device.devPhyId),
-                        localIp.GetReadableAddress, std::to_string(remoteEp_.loc.device.serverIdx),
-                        std::to_string(remoteEp_.loc.device.devPhyId), remoteIp.GetReadableAddress}));
+                        localIp.GetIpStr(), std::to_string(remoteEp_.loc.device.serverIdx),
+                        std::to_string(remoteEp_.loc.device.devPhyId), remoteIp.GetIpStr()}));
                 return HCCL_E_NETWORK;
             }
             HCCL_INFO("[HostCpuRoceChannel::NotifyWait] poll cq success");
