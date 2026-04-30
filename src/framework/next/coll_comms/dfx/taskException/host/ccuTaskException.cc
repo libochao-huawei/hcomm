@@ -195,6 +195,7 @@ void CcuTaskException::ProcessCcuException(const rtExceptionInfo_t* exceptionInf
     HCCL_ERROR("[CcuTaskException]Task run failed, opData information is %s.", taskInfo.GetOpInfo().c_str());
     CHK_PRT(InitChannelMap(deviceId, taskInfo.taskParam_.taskPara.Ccu.ccuKernelHandle));
     auto& ccuExDetailInfo = exceptionInfo->expandInfo.u.ccuInfo;
+    isGetCqeErrInfo = true;
     for (uint32_t i = 0; i < ccuExDetailInfo.ccuMissionNum; ++i) { // ccuExDetailInfo.ccuMissionNum为1
         const auto& missionInfo = ccuExDetailInfo.missionInfo[i]; // 异常mission
         uint16_t status = static_cast<uint16_t>(missionInfo.status) << BYTE | missionInfo.subStatus;
@@ -333,7 +334,7 @@ void CcuTaskException::GenStatusInfo(const ErrorInfoBase &baseInfo, vector<CcuEr
             std::vector<std::string>({"remote_rankid", "base_information", "task_information", "group_rank_content"}),
             std::vector<std::string>({
                 std::to_string(baseInfo.deviceId),
-                baseInformation.c_str(), taskInformation.c_str(),
+                baseInformation.c_str(), (taskInformation + ClusterMonitorErrMsg).c_str(),
                 ""})
         );
     }
@@ -1021,7 +1022,7 @@ void CcuTaskException::PrintCcuErrorInfo(uint32_t deviceId, uint16_t status, con
         PrintCcuUbRegisters(errorInfos, static_cast<s32>(deviceId), taskInfo);
         if (isGetCqeErrInfo) {
             isGetCqeErrInfo = false; // 只获取一次CQE错误信息，避免重复获取
-            GetCcuCqeErrorInfo(errorInfos[0], taskInfo, deviceId, missionStatus);
+            GetCcuCqeErrorInfo(errorInfos[0], taskInfo, deviceId, missionStatus);//添加注释errorInfos[0]对应missionStatus异常
         }
     }
 }

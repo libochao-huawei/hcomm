@@ -893,7 +893,7 @@ std::vector<std::string> ClusterMonitor::GetErrStatusVecFromCluserMonitor()
     std::map<ClusterMonitorStatus, std::queue<ClusterMonitorFrame>> keyEvents;
     while (errStatusQueue_.size() > 0) {
         auto &tmp = errStatusQueue_.front();
-        if (IsKeyEvent(tmp, curTime)) { // 非关键事件不处理
+        if (IsKeyEvent(tmp, curTime)) { // 本次迭代不使用关键事件判断
             keyEvents[tmp.status].push(tmp);
         }
         errStatusQueue_.pop();
