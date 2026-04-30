@@ -113,7 +113,7 @@ void CommunicatorImplLite::CreateCollAlgComponentLite()
 
 void CommunicatorImplLite::UnfoldOp(HcclKernelParamLite *kernelParam)
 {
-    opIndex_ = kernelParam->comm.opIndex_;
+    opIndex = kernelParam->comm.opIndex;
     uint64_t beginTime = ProfGetCurCpuTimestamp();
     profilingReporterLite->UpdateProfStat();
     UpdateCommParam(kernelParam);
@@ -136,7 +136,7 @@ void CommunicatorImplLite::UnfoldOp(HcclKernelParamLite *kernelParam)
         HCCL_INFO("CommunicatorImplLite::UnfoldOpBase DevType is DEV_TYPE_950.");
         insExecutor->ExecuteV82(*insQueue);
         profilingReporterLite->ReportAllTasks();
-        ProfilingHandlerLite::GetInstance().ReportHcclOpInfo(*mirrorTaskMgrLite->GetCurrDfxOpInfo());
+        ProfilingHandlerLite::GetInstance().ReportHcclOpInfo(*mirrorTaskMgr->GetCurrDfxOpInfo());
     } else if (devType == DevType::DEV_TYPE_910A2) {
         HCCL_INFO("CommunicatorImplLite::UnfoldOpBase DevType is DEV_TYPE_910A2.");
         insExecutor->Execute(*insQueue);
@@ -471,11 +471,11 @@ void CommunicatorImplLite::SetDfxOpInfo(uint64_t beginTime)
     dfxopInfo->beginTime_    = beginTime;
     dfxopInfo->comm_         = this;
     dfxopInfo->commId_       = commId;
- 	dfxopInfo->opIndex_      = opIndex_;
+ 	dfxopInfo->opIndex_      = opIndex;
  	dfxopInfo->headOpCounterAddr_ = opCounterAddr + size;
  	dfxopInfo->tailOpCounterAddr_ = opCounterAddr + size * 2;
     CHECK_NULLPTR(streamLiteMgr->GetMaster(), "[SetDfxOpInfo]master stream is nullptr!");
-    mirrorTaskMgrLite->SetCurrDfxOpInfo(dfxopInfo);
+    mirrorTaskMgr->SetCurrDfxOpInfo(dfxopInfo);
 }
 
 void CommunicatorImplLite::CreateOneSidedComponentLite()

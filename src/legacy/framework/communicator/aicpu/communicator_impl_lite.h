@@ -91,9 +91,9 @@ public:
         return opCounterAddr;
     }
 
-    MirrorTaskManagerLite *GetMirrorTaskMgrLite() override
+    MirrorTaskManager *GetMirrorTaskMgr() override
     {
-        return mirrorTaskMgrLite.get();
+        return mirrorTaskMgr.get();
     }
     
     string GetId() const
@@ -228,11 +228,12 @@ private:
     std::unique_ptr<ConnectedLinkMgr>        connectedLinkMgr        = std::make_unique<ConnectedLinkMgr>();
     std::unique_ptr<PrimTranslator>          primTranslator          = std::make_unique<PrimTranslator>();
     std::unique_ptr<InsExecutor>             insExecutor             = std::make_unique<InsExecutor>(this);
-    std::unique_ptr<MirrorTaskManagerLite>   mirrorTaskMgrLite       = std::make_unique<MirrorTaskManagerLite>();
+    std::unique_ptr<MirrorTaskManager>           mirrorTaskMgr
+        = std::make_unique<MirrorTaskManager>(0, &GlobalMirrorTasks::Instance(), true);
     std::unique_ptr<ProfilingReporterLite> profilingReporterLite
-        = std::make_unique<ProfilingReporterLite>(mirrorTaskMgrLite.get(), &ProfilingHandlerLite::GetInstance());
+        = std::make_unique<ProfilingReporterLite>(mirrorTaskMgr.get(), &ProfilingHandlerLite::GetInstance());
 
-    std::unique_ptr<MemTransportLiteMgr> transportLiteMgr = std::make_unique<MemTransportLiteMgr>( mirrorTaskMgrLite.get());
+    std::unique_ptr<MemTransportLiteMgr> transportLiteMgr = std::make_unique<MemTransportLiteMgr>( mirrorTaskMgr.get());
 
     std::unique_ptr<HostDeviceSyncNotifyLiteMgr> hostDeviceSyncNotifyLiteMgr
         = std::make_unique<HostDeviceSyncNotifyLiteMgr>();
@@ -255,7 +256,7 @@ private:
     u64 scratchSize{0};
     u64 locBuffer[BufferType::__COUNT__]{};
     u64 opCounterAddr{0};
-    u32 opIndex_;
+    u32 opIndex;
     std::string commId;
     bool isUpdateComm {false};
     CollOperator currentOp;

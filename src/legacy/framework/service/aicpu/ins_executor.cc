@@ -55,8 +55,13 @@ void InsExecutor::AddOpCounter(const StreamLite &stream, bool isHead) const
     taskParam.taskPara.Reduce.linkType = DfxLinkType::ONCHIP;
     taskParam.taskPara.Reduce.reduceOp = HcclReduceOp::HCCL_REDUCE_SUM;
     taskParam.taskPara.Reduce.dataType = HcclDataType::HCCL_DATA_TYPE_FP32;
+<<<<<<< HEAD
     auto taskInfo = std::make_shared<TaskInfo>(stream.GetSqId(), taskId, INVALID_VALUE_RANKID, taskParam);
     resMgrFetcher_->GetMirrorTaskMgrLite()->AddTaskInfo(taskInfo);
+=======
+    auto taskInfo = std::make_shared<TaskInfo>(stream.GetId(), taskId, INVALID_VALUE_RANKID, taskParam);
+    resMgrFetcher_->GetMirrorTaskMgr()->AddTaskInfo(taskInfo);
+>>>>>>> parent of 89f42041 (Aicpu Dfx Fix)
 }
 
 void InsExecutor::ExecuteV82(const InsQueue &insQueue, bool isMc2)

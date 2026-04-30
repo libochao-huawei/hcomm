@@ -1600,6 +1600,7 @@ MirrorTaskManager::~MirrorTaskManager()
 {
 }
 
+<<<<<<< HEAD
 MirrorTaskManagerLite::MirrorTaskManagerLite()
 {
 }
@@ -1637,6 +1638,8 @@ TaskInfoQueue *MirrorTaskManagerLite::GetQueue(u32 streamId) const
 MirrorTaskManagerLite::~MirrorTaskManagerLite()
 {
 }
+=======
+>>>>>>> parent of 89f42041 (Aicpu Dfx Fix)
 ProfilingHandler::ProfilingHandler()
 {
 }
@@ -1975,12 +1978,18 @@ void ProfilingReporter::CallReportMc2CommInfo(const u32 kfcStreamId, const std::
 
 std::array<ProfilingReporter::lastPosesMap, 65> ProfilingReporter::allLastPoses_{};
 
+<<<<<<< HEAD
 ProfilingReporterLite::ProfilingReporterLite(
     MirrorTaskManagerLite *mirrorTaskMgrLite, ProfilingHandlerLite *profilingHandlerLite, bool isIndop)
     : mirrorTaskMgrLite_(mirrorTaskMgrLite),
       profilingHandlerLite_(profilingHandlerLite)
 {
 }
+=======
+ProfilingReporterLite::ProfilingReporterLite(MirrorTaskManager *mirrorTaskMgr, ProfilingHandlerLite *profilingHandlerLite, bool isIndop)
+    : mirrorTaskMgr_(mirrorTaskMgr), profilingHandlerLite_(profilingHandlerLite)
+{}
+>>>>>>> parent of 89f42041 (Aicpu Dfx Fix)
 
 ProfilingReporterLite::~ProfilingReporterLite()
 {
