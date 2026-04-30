@@ -19,6 +19,7 @@ class TestHcclThread : public BaseInit {
 public:
     void SetUp() override {
         BaseInit::SetUp();
+        unsetenv("HCCL_DFS_CONFIG");
     }
     void TearDown() override {
         BaseInit::TearDown();
