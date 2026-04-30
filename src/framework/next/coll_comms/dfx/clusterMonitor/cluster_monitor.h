@@ -195,7 +195,6 @@ private:
     HcclResult CreateTransportHandle(ClusterMonitorSocketCtx &info);
 
     void CreateLinkWithRemotePonit(std::string group, ClusterUIDType rem, ClusterMonitorSocketCtx needConnectRank);
-    void RecvFrameOutCheck();
     
     struct FrameStatus { // 专门用来给frame设置对应的状态
         ClusterMonitorStatus status = ClusterMonitorStatus::CLUSTER_MONITOR_OK;
