@@ -317,6 +317,11 @@ HcclResult RankConsistentcyChecker::RecordSubCommPara(u32 parentCommCrc, uint32_
     return HCCL_SUCCESS;
 }
 
+const std::vector<u32>& RankConsistentcyChecker::GetSubCommParaCrcs()
+{
+    return subCommParaCrcs_;
+}
+
 // private
 HcclResult RankConsistentcyChecker::RecordOpPara(HcclCMDType opCMD, const std::string &tag, u64 count,
     HcclDataType dataType, HcclReduceOp op, u32 root, u32 rank, u32 srTag, u32 selfRank, u64 inCclBufferSize,
