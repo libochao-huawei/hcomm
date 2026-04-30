@@ -8,3 +8,4 @@
 - [HcommChannelNotifyWaitOnThread](HcommChannelNotifyWaitOnThread.md)  
 - [HcommWriteWithNotifyOnThread](HcommWriteWithNotifyOnThread.md)  
 - [HcommWriteReduceWithNotifyOnThread](HcommWriteReduceWithNotifyOnThread.md)  
+- [HcommChannelFenceOnThread](HcommChannelFenceOnThread.md)
