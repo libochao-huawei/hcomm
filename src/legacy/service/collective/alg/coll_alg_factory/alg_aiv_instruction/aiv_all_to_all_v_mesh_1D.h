@@ -26,9 +26,19 @@ public:
         return CeilDiv(cclDataBytes, UB_ALIGN_SIZE) * UB_ALIGN_SIZE;
     }
 
-    __aicore__ inline void RecordCclFlag(uint32_t targetRank, uint64_t flagOffset, int32_t tag)
+    __aicore__ inline uint64_t GetReadyFlagAreaOffset()
     {
-        d2hGlobal.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t *>(GM_IN[targetRank] + GetFlagAreaOffset() +
+        return GetFlagAreaOffset();
+    }
+
+    __aicore__ inline uint64_t GetAckFlagAreaOffset()
+    {
+        return GetReadyFlagAreaOffset() + coreCount * UB_ALIGN_SIZE;
+    }
+
+    __aicore__ inline void RecordReadyFlag(uint32_t targetRank, uint64_t flagOffset, int32_t tag)
+    {
+        d2hGlobal.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t *>(GM_IN[targetRank] + GetReadyFlagAreaOffset() +
             flagOffset * UB_ALIGN_SIZE));
         localTagTensor.SetValue(0, tag);
         pipe_barrier(PIPE_ALL);
@@ -36,9 +46,34 @@ public:
         pipe_barrier(PIPE_ALL);
     }
 
-    __aicore__ inline void WaitCclFlag(uint32_t targetRank, uint64_t flagOffset, int32_t tag)
+    __aicore__ inline void WaitReadyFlag(uint32_t targetRank, uint64_t flagOffset, int32_t tag)
     {
-        d2hGlobal.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t *>(GM_IN[targetRank] + GetFlagAreaOffset() +
+        d2hGlobal.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t *>(GM_IN[targetRank] + GetReadyFlagAreaOffset() +
+            flagOffset * UB_ALIGN_SIZE));
+        while (true) {
+            int64_t st = AscendC::GetSystemCycle();
+            while (AscendC::GetSystemCycle() - st < 3000) {}
+            DataCopyGM2UB(localTagTensor, d2hGlobal, UB_ALIGN_SIZE / sizeof(int32_t));
+            pipe_barrier(PIPE_ALL);
+            if (localTagTensor.GetValue(0) == tag) {
+                break;
+            }
+        }
+    }
+
+    __aicore__ inline void RecordAckFlag(uint32_t targetRank, uint64_t flagOffset, int32_t tag)
+    {
+        d2hGlobal.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t *>(GM_IN[targetRank] + GetAckFlagAreaOffset() +
+            flagOffset * UB_ALIGN_SIZE));
+        localTagTensor.SetValue(0, tag);
+        pipe_barrier(PIPE_ALL);
+        DataCopyUB2GM(d2hGlobal, localTagTensor, UB_ALIGN_SIZE / sizeof(int32_t));
+        pipe_barrier(PIPE_ALL);
+    }
+
+    __aicore__ inline void WaitAckFlag(uint32_t targetRank, uint64_t flagOffset, int32_t tag)
+    {
+        d2hGlobal.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t *>(GM_IN[targetRank] + GetAckFlagAreaOffset() +
             flagOffset * UB_ALIGN_SIZE));
         while (true) {
             int64_t st = AscendC::GetSystemCycle();
@@ -96,12 +131,12 @@ public:
             return;
         }
         uint64_t flag_offset = block_idx;
-        WaitCclFlag(rank_, flag_offset, 0);
+        WaitAckFlag(rank_, flag_offset, loopTag - 1);
 
         CpGM2GM((__gm__ T *)sendOutputOffset, (__gm__ T *)sendInputOffset, sendCurCount);
         PipeBarrier<PIPE_ALL>();
 
-        RecordCclFlag(rank_, flag_offset, loopTag);
+        RecordReadyFlag(rank_, flag_offset, loopTag);
     }
 
     __aicore__ inline void Consumer(int32_t loopTag)
@@ -110,12 +145,12 @@ public:
             return;
         }
         uint64_t flag_offset = rank_ * coreNumPerRank + coreIndex;
-        WaitCclFlag(targetRank, flag_offset, loopTag);
+        WaitReadyFlag(targetRank, flag_offset, loopTag);
 
         CpGM2GM((__gm__ T *)recvOutputOffset, (__gm__ T *)recvInputOffset, recvCurCount);
         PipeBarrier<PIPE_ALL>(); // 核内自己的同步
 
-        RecordCclFlag(targetRank, flag_offset, 0);
+        RecordAckFlag(targetRank, flag_offset, loopTag);
     }
 
     __aicore__ inline void Process(uint64_t len, uint32_t tag, ExtraArgs &extraArgs)
@@ -134,8 +169,9 @@ public:
         curTag = static_cast<int32_t>(tag);
         cclBufferCountPerRank = len;
 
-        // 在 ccl buffer 尾部预留独立 flag 区，避免与 alltoallv 数据区重叠。
-        RecordCclFlag(rank_, block_idx, 0);
+        // 在 ccl buffer 尾部预留 ready/ack 双 flag 区，避免与 alltoallv 数据区重叠。
+        RecordReadyFlag(rank_, block_idx, 0);
+        RecordAckFlag(rank_, block_idx, curTag - 1);
         PipeBarrier<PIPE_ALL>();
 
         // 这里根据ccl buffer的大小去做循环
