@@ -399,7 +399,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/reps/translator
 
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx
-    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/clusterMonitor
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/cluster_monitor
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/profiling
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/profiling/aicpu
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/profiling/host

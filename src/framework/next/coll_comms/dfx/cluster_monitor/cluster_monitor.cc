@@ -28,11 +28,11 @@ constexpr u32 MAX_SENDBUFF_SIZE = 3072; // SendBuff[dst] 最大数量
 constexpr u32 JITTER_TIME = 300; // 关键事件允许的误差事件范围±300s。误差来源：EVENT和NOTIFY差异、传播耗时、计时误差   
 constexpr u32 MAX_MODULE_DEVICE_NUM = 65;
 
-HcclResult ClusterMonitor::FormatUID(ClusterUidCtxt ctxt, ClusterUIDType &uid)
+HcclResult ClusterMonitor::FormatUID(ClusterUIDCxt cxt, ClusterUIDType &uid)
 {
     // 构造唯一的uid: netInstanceId + local_id
     s32 ret = snprintf_s(uid.id, sizeof(uid.id), sizeof(uid.id) - 1, "%s/%s",
-        ctxt.netInstId.c_str(), std::to_string(ctxt.localId).c_str());
+        cxt.netInstId.c_str(), std::to_string(cxt.localId).c_str());
     CHK_PRT_RET((ret == -1),
         HCCL_ERROR("[%s] snprintf_s failed, errno:%d, error:%s",
             __func__, errno, strerror(errno)), HCCL_E_SYSCALL);
@@ -46,8 +46,8 @@ std::string ClusterMonitor::GetUID(const ClusterUIDType &uid) const
 }
 
 HcclResult ClusterMonitor::GetRemEndpointDescs(HcclComm comm,
-    std::map<uint32_t, std::vector<UidContext>> &uidctxs,
-    uint32_t *netLayerNum)
+    std::map<uint32_t, std::vector<UIDContext>> &uidCtxs,
+    std::vector<uint32_t> &netLayersVector)
 {
     // 将所有远端的rank都加入到状态维护map中
     auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
@@ -57,18 +57,22 @@ HcclResult ClusterMonitor::GetRemEndpointDescs(HcclComm comm,
     Hccl::HcclCommunicator* commV2 = static_cast<Hccl::HcclCommunicator*>(collComm->GetCommunicatorV2());
     CHK_PTR_NULL(commV2); // 获取到legacy communicator，说明v2通信域
     void *rankGraphPtr = nullptr;
-    commV2->GetRankGraphV2(rankGraphPtr);
+    CHK_RET(commV2->GetRankGraphV2(rankGraphPtr));
     CHK_PTR_NULL(rankGraphPtr);
 
+    // 获取netLayer信息存入到netLayersVector中
     uint32_t *netLayers = nullptr;
-    CHK_RET(HcclRankGraphGetLayers(commV2, &netLayers, netLayerNum));
-    if (*netLayerNum == 0) {
+    uint32_t netLayerNum = 0;
+    CHK_RET(HcclRankGraphGetLayers(commV2, &netLayers, &netLayerNum));
+    if (netLayerNum == 0) {
         HCCL_ERROR("[%s] no netLayer in RankGraph", __func__);
         return HCCL_E_NOT_SUPPORT;
     }
+    netLayersVector.assign(netLayers, netLayers + netLayerNum);
+    std::sort(netLayersVector.begin(), netLayersVector.end());
+
     auto myRankId = collComm->GetMyRankId();
     Hccl::RankGraph *rankGraph = static_cast<Hccl::RankGraph*>(rankGraphPtr);
-    std::vector<uint32_t> netLayersVector(netLayers, netLayers + *netLayerNum);
     std::set<uint32_t> rankIdsSet; // 存放通信域的唯一标识ranks，防止在netLayer>=1的时候，查到了netLayer=0已经存放的ranks
     for (auto netLayer : netLayersVector) {
         uint32_t *RanksPerLayer = nullptr;
@@ -76,30 +80,29 @@ HcclResult ClusterMonitor::GetRemEndpointDescs(HcclComm comm,
         HcclRankGraphGetRanksByLayer(comm, netLayer, &RanksPerLayer, &rankNum); // 获取每层netLayer的所有rank
         for (uint32_t rankIdx = 0; rankIdx < rankNum; rankIdx++) {
             uint32_t rankId = RanksPerLayer[rankIdx];
-            if (rankIdsSet.find(rankId) != rankIdsSet.end()) { // rankSet维护了所有的ranks，如果已经加到Set说明该rank已经在更低的netLayer层级加入
-                continue;
+            if (rankIdsSet.find(rankId) != rankIdsSet.end()) {
+                continue; // rankSet维护了所有的ranks，如果已经加到Set说明该rank已经在更低的netLayer层级加入
             }
             rankIdsSet.insert(rankId);
             auto *netInstance = rankGraph->GetNetInstanceByRankId(0, rankId); // 查询对应rankId在netLayer=0的netInsId
             CHK_PTR_NULL(netInstance); // 有可能netInstance为空
             auto netInstanceId = netInstance->GetNetInstId();
             auto localId = rankGraph->GetLocalId(rankId); // 根据rank查localId
-            ClusterUidCtxt uidCtxt(netInstanceId, localId);
+            ClusterUIDCxt uidcxt(netInstanceId, localId);
             ClusterUIDType uid{};
-            CHK_RET(FormatUID(uidCtxt, uid));
+            CHK_RET(FormatUID(uidcxt, uid));
             if (myRankId == rankId) {
-                myRankUid_ = uid;
+                myRankUID_ = uid;
                 localId_ = localId;
             }
             uid2FrameStatusMap_.insert(uid, FrameStatus());
             commIdMap_[collComm->GetCommId()].insert(std::make_pair(uid, false)); //初始状态均为未连接，包含自己
-            if (uidctxs.find(netLayer) == uidctxs.end()) {
-                uidctxs.insert(std::make_pair(netLayer, std::vector<UidContext>()));
+            if (uidCtxs.find(netLayer) == uidCtxs.end()) {
+                uidCtxs.insert(std::make_pair(netLayer, std::vector<UIDContext>()));
             }
-            UidContext uidCtx(uid, netLayer, rankId, localId);
-            uidctxs[netLayer].emplace_back(uidCtx);
-            HCCL_INFO("commId[%s] insert remoteUID[%s]",
-                collComm->GetCommId().c_str(), GetUID(uid).c_str());
+            UIDContext uidCtx(uid, netLayer, rankId, localId);
+            uidCtxs[netLayer].emplace_back(uidCtx);
+            HCCL_INFO("commId[%s] insert remoteUID[%s]", collComm->GetCommId().c_str(), GetUID(uid).c_str());
         }
     }
 
@@ -119,20 +122,20 @@ std::string ClusterMonitor::FormatConnTag(HcommSocketRole role,
     return tag;
 }
 
-HcclResult ClusterMonitor::InsertClusterMonitorCxt(HcclComm comm, UidContext remoteCtx,
+HcclResult ClusterMonitor::InsertClusterMonitorCxt(HcclComm comm, UIDContext remoteCtx,
     std::map<ClusterUIDType, ClusterMonitorSocketCtx> &needConnectRank)
 {
     bool newConn = true;
     HcclCommSocketDesc socketDesc{};
-    auto remoteUid = remoteCtx.uid;
+    auto remoteUID = remoteCtx.uid;
     auto remoteRank = remoteCtx.rankId;
     auto netLayer = remoteCtx.netLayer;
 
     std::unique_lock<std::mutex> lock(threadLock_);
-    if (monitorLinkStatusMap_.find(remoteUid) == monitorLinkStatusMap_.end()) {
-        monitorLinkStatusMap_[remoteUid] = MonitorLinkStatus::MONITOR_LINK_NOT_START;
-    } else if (monitorLinkStatusMap_[remoteUid] == MonitorLinkStatus::MONITOR_LINK_BUILDING ||
-        monitorLinkStatusMap_[remoteUid] == MonitorLinkStatus::MONITOR_LINK_COMPLETED) {
+    if (monitorLinkStatusMap_.find(remoteUID) == monitorLinkStatusMap_.end()) {
+        monitorLinkStatusMap_[remoteUID] = MonitorLinkStatus::MONITOR_LINK_NOT_START;
+    } else if (monitorLinkStatusMap_[remoteUID] == MonitorLinkStatus::MONITOR_LINK_BUILDING ||
+        monitorLinkStatusMap_[remoteUID] == MonitorLinkStatus::MONITOR_LINK_COMPLETED) {
         newConn = false;// 说明之前已经有remoteUID在建链
     }
 
@@ -151,7 +154,7 @@ HcclResult ClusterMonitor::InsertClusterMonitorCxt(HcclComm comm, UidContext rem
     CommLink *links = nullptr;
     uint32_t linkNum = 0;
     CHK_RET(HcclRankGraphGetLinks(comm, netLayer, myRankId, remoteRank, &links, &linkNum));
-    if (linkNum == 0) {
+    if (linkNum == 0) { // TODO:如果没有查询到任何链接，是否需要报错？
         HCCL_ERROR("[%s]no links betwen myRank[%u] to remoteRankId[%u]", __func__, myRankId, remoteRank);
         return HCCL_E_PARA;
     }
@@ -174,24 +177,24 @@ HcclResult ClusterMonitor::InsertClusterMonitorCxt(HcclComm comm, UidContext rem
         socketDesc.listenPort = (uint16_t)rmtPort; // socketDesc.port中填对端端口号(此场景下对端端口号也就是监听端口号)
     }
     // socket建链需要心跳专用的tag，用来区分业务的socket以及心跳的sockt
-    std::string tag = FormatConnTag(socketDesc.role, std::make_pair(myRankUid_, remoteUid));
+    std::string tag = FormatConnTag(socketDesc.role, std::make_pair(myRankUID_, remoteUID));
     errno_t ret = memcpy_s(socketDesc.tag, sizeof(socketDesc.tag), tag.c_str(), tag.size());
     CHK_PRT_RET((ret != EOK),
         HCCL_ERROR("[%s] memcpy_s failed, errno:%d, error:%s", __func__, errno, strerror(errno)), HCCL_E_SYSCALL);
     socketDesc.localEndpoint = links[0].srcEndpointDesc;
     socketDesc.remoteEndpoint = links[0].dstEndpointDesc;
     ClusterMonitorSocketCtx ctx(socketDesc, newConn);
-    needConnectRank.insert(std::make_pair(remoteUid, ctx));
+    needConnectRank.insert(std::make_pair(remoteUID, ctx));
 
     return HCCL_SUCCESS;
 }
 
-HcclResult ClusterMonitor::GetSamePlaneRank(HcclComm comm, std::vector<UidContext> singlePlaneCtx,
+HcclResult ClusterMonitor::GetSamePlaneRank(HcclComm comm, std::vector<UIDContext> singlePlaneCtx,
     std::map<ClusterUIDType, ClusterMonitorSocketCtx> &needConnectRank)
 {
     uint32_t index = 0;
     for (; index < singlePlaneCtx.size();index++) {
-        if (singlePlaneCtx[index].uid == this->myRankUid_) { // 找出myRank在vector中的下标
+        if (singlePlaneCtx[index].uid == this->myRankUID_) { // 找出myRank在vector中的下标
             break;
         }
     }
@@ -215,25 +218,25 @@ HcclResult ClusterMonitor::GetSamePlaneRank(HcclComm comm, std::vector<UidContex
 
 HcclResult ClusterMonitor::GetConnectRank(HcclComm comm,
     std::map<ClusterUIDType, ClusterMonitorSocketCtx> &needConnectRank,
-    std::map<uint32_t, std::vector<UidContext>> uidctxs, uint32_t netLayerNum)
+    std::map<uint32_t, std::vector<UIDContext>> uidCtxs, std::vector<uint32_t> &netLayersVector)
 {
-    if (netLayerNum == 0) {
+    if (netLayersVector.empty()) {
         return HCCL_SUCCESS;
     }
 
-    std::vector<UidContext> layer0CommLinks; // 需要存入UidContext，待后续查出对应的port/remoteUid
+    std::vector<UIDContext> layer0CommLinks; // 需要存入UIDContext，待后续查出对应的port/remoteUID
     // 先处理netLayer=0，按照netLayer=0全局唯一的localId升序排列，在level0不需要考虑host网卡的场景，host网卡只会在level1及以上的层级
-    std::sort(uidctxs[0].begin(), uidctxs[0].end(), [&](const UidContext& a, const UidContext& b) {
-        return a.localId < b.localId;
+    std::sort(uidCtxs[0].begin(), uidCtxs[0].end(), [&](const UIDContext& a, const UIDContext& b) {
+        return a.localId < b.localId; // map在最开始加入的时候就按照localId
     });
-    for (auto it = uidctxs[0].begin(); it != uidctxs[0].end(); ++it) {
+    for (auto it = uidCtxs[0].begin(); it != uidCtxs[0].end(); ++it) {
         layer0CommLinks.push_back(*it); // netLayer为0
     }
 
     // 从layer=1开始，将commLinks存入vector中，找到所有与当前localId相同的节点
-    std::vector<UidContext> highLayerCommLinks;
-    for (uint32_t netLayer = 1; netLayer < netLayerNum; netLayer++) {
-        for (auto it = uidctxs[netLayer].begin(); it != uidctxs[netLayer].end(); ++it) {
+    std::vector<UIDContext> highLayerCommLinks;
+    for (uint32_t netLayer = 1; netLayer < netLayersVector.size(); netLayer++) {
+        for (auto it = uidCtxs[netLayersVector[netLayer]].begin(); it != uidCtxs[netLayersVector[netLayer]].end(); ++it) {
             if (it->localId == this->localId_) {
                 // 在跨server、跨pod、跨超节点的场景，统一拿到local，打平处理为同一个平面，类似layer=0的情况
                 // 由于A5上的devPhyId在64卡的场景下8个[0,7]，所以使用localId
@@ -268,20 +271,20 @@ void ClusterMonitor::CreateHBLinksAsync()
     linksLock.unlock();
     while (!connInfoQueue.empty()) {
         const std::string commId = std::get<0>(connInfoQueue.front());
-        const ClusterUIDType &remUid = std::get<1>(connInfoQueue.front());
+        const ClusterUIDType &remUID = std::get<1>(connInfoQueue.front());
         ClusterMonitorSocketCtx &connInfo = std::get<2>(connInfoQueue.front());
-        auto it = linkThreadMap_.find(remUid);
+        auto it = linkThreadMap_.find(remUID);
         if (it != linkThreadMap_.end() && it->second->joinable()) {
             it->second->join();
             HCCL_INFO("[CreateMonitorLinksAsync] monitor link thread has been joined. commId[%s], remote uid[%s].",
-                commId.c_str(), GetUID(remUid).c_str());
+                commId.c_str(), GetUID(remUID).c_str());
         }
-        linkThreadMap_[remUid].reset(
-            new (std::nothrow) std::thread(&ClusterMonitor::CreateLinkWithRemotePonit, this, commId, remUid, connInfo));
-        if (linkThreadMap_[remUid] == nullptr) {
+        linkThreadMap_[remUID].reset(
+            new (std::nothrow) std::thread(&ClusterMonitor::CreateLinkWithRemotePonit, this, commId, remUID, connInfo));
+        if (linkThreadMap_[remUID] == nullptr) {
             HCCL_RUN_WARNING("commId[%s] establish rank[%s] to rank[%s] heartbeat connection failed. Reason: "
                             "create thread failed.",
-                commId.c_str(), GetUID(myRankUid_).c_str(), GetUID(remUid).c_str());
+                commId.c_str(), GetUID(myRankUID_).c_str(), GetUID(remUID).c_str());
         }
         connInfoQueue.pop();
     }
@@ -324,7 +327,7 @@ void ClusterMonitor::CreateLinkWithRemotePonit(
         if ((std::chrono::steady_clock::now() - startTime) >= CREATE_LINK_TIMEOUT) {
             HCCL_RUN_WARNING("establish rank[%s] to rank[%s] connection failed. Reason: link timeout,"
                             "timeout[%llds], the HCCL_CONNECT_TIMEOUT may be insufficient. commId[%s].",
-                GetUID(myRankUid_).c_str(), GetUID(rem).c_str(), CREATE_LINK_TIMEOUT, commId.c_str());
+                GetUID(myRankUID_).c_str(), GetUID(rem).c_str(), CREATE_LINK_TIMEOUT, commId.c_str());
             break;
         }
 
@@ -333,7 +336,7 @@ void ClusterMonitor::CreateLinkWithRemotePonit(
         if (ret != HCCL_SUCCESS) {
             HCCL_RUN_WARNING(
                 "establish rank[%s] to rank[%s] connection failed. Reason: get socket status[%d] failed, commId[%s]",
-                GetUID(myRankUid_).c_str(), GetUID(rem).c_str(), status, commId.c_str());
+                GetUID(myRankUID_).c_str(), GetUID(rem).c_str(), status, commId.c_str());
             HcclCommSocketDestroy(needConnectRank.socketHandler);
             break;
         }
@@ -341,7 +344,7 @@ void ClusterMonitor::CreateLinkWithRemotePonit(
         if (status == HcclCommSocketStatus::SOCKET_TIMEOUT) {
             HCCL_RUN_WARNING(
                 "establish rank[%s] to rank[%s] connection failed. Reason: get socket status timeout, commId[%s]",
-                GetUID(myRankUid_).c_str(), GetUID(rem).c_str(), commId.c_str());
+                GetUID(myRankUID_).c_str(), GetUID(rem).c_str(), commId.c_str());
             HcclCommSocketDestroy(needConnectRank.socketHandler);
             break;
         } else if (status == HcclCommSocketStatus::SOCKET_CONNECTING) {
@@ -353,7 +356,7 @@ void ClusterMonitor::CreateLinkWithRemotePonit(
         if (commIdMap_.find(commId) == commIdMap_.end()) {
             HCCL_RUN_WARNING(
                 "establish rank[%s] to rank[%s] connection failed. Reason: commId[%s] has been Unregistered.",
-                GetUID(myRankUid_).c_str(), GetUID(rem).c_str(), commId.c_str());
+                GetUID(myRankUID_).c_str(), GetUID(rem).c_str(), commId.c_str());
             HcclCommSocketDestroy(needConnectRank.socketHandler);
             lock.unlock();
             break;
@@ -365,7 +368,7 @@ void ClusterMonitor::CreateLinkWithRemotePonit(
         if (uid2SocketRefMap_[rem].recvBuffer.Init(BASE_NUMBER * frameSize) != HCCL_SUCCESS) { // 2倍帧长，确保不会溢出
             HCCL_RUN_WARNING(
                 "establish rank[%s] to rank[%s] connection failed. Reason: socket recv buffer init failed. commId[%s].",
-                GetUID(myRankUid_).c_str(), GetUID(rem).c_str(), commId.c_str());
+                GetUID(myRankUID_).c_str(), GetUID(rem).c_str(), commId.c_str());
             HcclCommSocketDestroy(needConnectRank.socketHandler);
             uid2SocketRefMap_.erase(rem);
             lock.unlock();
@@ -375,7 +378,7 @@ void ClusterMonitor::CreateLinkWithRemotePonit(
         commIdMap_[commId][rem] = true; // 更新状态为已连接
         lock.unlock();
         HCCL_RUN_INFO("commId:[%s], establish rank[%s] to rank[%s] heartbeat connection success.", commId.c_str(),
-            GetUID(myRankUid_).c_str(), GetUID(rem).c_str());
+            GetUID(myRankUID_).c_str(), GetUID(rem).c_str());
         break;
     }
     hrtResetDevice(deviceLogicId_);
@@ -387,7 +390,7 @@ void ClusterMonitor::CreateLinkWithRemotePonit(
 void ClusterMonitor::SendFrame(
     ClusterUIDType &dst, ClusterUIDType &crimer, ClusterUIDType &informer, ClusterMonitorStatus status)
 {
-    ClusterMonitorFrame cmFrame(myRankUid_, dst, crimer, informer, status);
+    ClusterMonitorFrame cmFrame(myRankUID_, dst, crimer, informer, status);
     if (uid2SocketRefMap_[dst].sendBuffer.size() > 0) {
         if (status != ClusterMonitorStatus::CLUSTER_MONITOR_OK
             && uid2SocketRefMap_[dst].sendBuffer.size() < MAX_SENDBUFF_SIZE) {
@@ -408,7 +411,7 @@ void ClusterMonitor::SendFrame(
                 uid2SocketRefMap_[dst].sendBuffer.pop();
                 uid2SocketRefMap_[dst].restSize = sizeof(ClusterMonitorFrame);
                 HCCL_DEBUG("[Heartbeat][SendFrame] Send Success, from [%s] to [%s] about [%s] by [%s] status[%d]",
-                    GetUID(myRankUid_).c_str(), GetUID(dst).c_str(), GetUID(crimer).c_str(), GetUID(informer).c_str(),
+                    GetUID(myRankUID_).c_str(), GetUID(dst).c_str(), GetUID(crimer).c_str(), GetUID(informer).c_str(),
                     status);
             } else {
                 uid2SocketRefMap_[dst].restSize = uid2SocketRefMap_[dst].restSize - compSize;
@@ -426,11 +429,11 @@ void ClusterMonitor::SendFrame(
         }
         if (compSize == expectSize) {
             HCCL_DEBUG("[Heartbeat][SendFrame] Send Success, from [%s] to [%s] about [%s] by [%s] status[%d]",
-                GetUID(myRankUid_).c_str(), GetUID(dst).c_str(), GetUID(crimer).c_str(), GetUID(informer).c_str(), status);
+                GetUID(myRankUID_).c_str(), GetUID(dst).c_str(), GetUID(crimer).c_str(), GetUID(informer).c_str(), status);
         } else {
             HCCL_DEBUG("[Heartbeat][SendFrame] Send Not Complete, from [%s] to [%s] about [%s] by [%s] status[%d], \
                 expectSize[%u], compSize[%u]",
-                GetUID(myRankUid_).c_str(), GetUID(dst).c_str(), GetUID(crimer).c_str(), GetUID(informer).c_str(), status,
+                GetUID(myRankUID_).c_str(), GetUID(dst).c_str(), GetUID(crimer).c_str(), GetUID(informer).c_str(), status,
                 expectSize, compSize);
             uid2SocketRefMap_[dst].restSize = expectSize - compSize;
             uid2SocketRefMap_[dst].sendBuffer.push(cmFrame);
@@ -466,8 +469,8 @@ HcclResult ClusterMonitor::RecvFrame(ClusterUIDType rem)
 
 HcclResult ClusterMonitor::ParseFrame(ClusterMonitorFrame &cmFrame, ClusterUIDType &src)
 {
-    if (cmFrame.src != src || cmFrame.dst != myRankUid_) {
-        HCCL_WARNING("rank[%s] recv wrong frame", GetUID(myRankUid_).c_str());
+    if (cmFrame.src != src || cmFrame.dst != myRankUID_) {
+        HCCL_WARNING("rank[%s] recv wrong frame", GetUID(myRankUID_).c_str());
         return HCCL_E_INTERNAL;
     }
 
@@ -476,14 +479,13 @@ HcclResult ClusterMonitor::ParseFrame(ClusterMonitorFrame &cmFrame, ClusterUIDTy
         GetUID(cmFrame.informer).c_str(), cmFrame.status);
 
     // 能够收到进程卡住表示心跳是正常的
-    if (cmFrame.status == ClusterMonitorStatus::CLUSTER_MONITOR_OK
-        || cmFrame.status == ClusterMonitorStatus::CLUSTER_MONITOR_STUCK) { // 去掉stuck的判断
+    if (cmFrame.status == ClusterMonitorStatus::CLUSTER_MONITOR_OK) { // 去掉stuck的判断
         uid2SocketRefMap_[src].lostNum = 0;
     }
 
     // 只有心跳非正常时才需要打印TRACE
     if (cmFrame.status != ClusterMonitorStatus::CLUSTER_MONITOR_OK) {
-        // SetStatus(cmFrame.crimer, cmFrame.informer, cmFrame.status);  设置异常状态
+        SetStatus(cmFrame.crimer, cmFrame.informer, cmFrame.status);  // 设置异常状态
     }
 
     return HCCL_SUCCESS;
@@ -491,7 +493,22 @@ HcclResult ClusterMonitor::ParseFrame(ClusterMonitorFrame &cmFrame, ClusterUIDTy
 
 void ClusterMonitor::DelErrorSocket()
 {
-    // TODO:处理socket错误的句柄
+    for (auto rem : errorSocket_) {
+        HCCL_RUN_INFO("rank[%s] Try to Send/recv HeartBeat to rank[%s]", GetUID(myRankUID_).c_str(),
+            GetUID(rem).c_str());
+        uid2FrameStatusMap_.erase(rem);
+        if (uid2SocketRefMap_.has(rem)) {
+            // if (uid2SocketRefMap_[rem].socket->GetLocalRole() == HcclSocketRole::SOCKET_ROLE_SERVER &&
+            //     listenSocketMap_.find(uid2SocketRefMap_[rem].socket->GetLocalIp()) != listenSocketMap_.end()) {
+            //     listenSocketMap_[uid2SocketRefMap_[rem].socket->GetLocalIp()]->DelWhiteList(
+            //         uid2SocketRefMap_[rem].wlistInfosVec);
+            // }
+            // uid2SocketRefMap_[rem].socket->Close();
+            while (uid2SocketRefMap_.erase(rem)) {
+            };
+        }
+    }
+    errorSocket_.clear();
 }
 
 
@@ -510,9 +527,9 @@ void ClusterMonitor::SetStatus(ClusterUIDType &crimer, ClusterUIDType &informer,
         if (errStatusQueue_.size() > EVENT_MAX_CNT) {
             errStatusQueue_.pop();
         }
-        // HCCL_RUN_INFO("[%s][%s]local rank [%s]: crimer rank [%s] status[%s] by informer rank [%s]",
-        //     LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_HEARTBEAT_EVETN.c_str(), FormatUId(uid_).c_str(),
-        //     FormatUId(crimer).c_str(), GetHeartBeatStatusStr(status).c_str(), FormatUId(informer).c_str());
+        HCCL_RUN_INFO("[%s][%s]local rank [%s]: crimer rank [%s] status[%s] by informer rank [%s]",
+            LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_TASK_EXEC.c_str(), GetUID(myRankUID_).c_str(),
+            GetUID(crimer).c_str(), GetClusterMonitorStatusStr(status).c_str(), GetUID(informer).c_str());
     }
 }
 
@@ -522,7 +539,7 @@ void ClusterMonitor::MonitorThread()
     SetThreadName("Hccl_HeartBeat");
 
     hrtSetDevice(deviceLogicId_);
-    HcclResult ret;
+    HcclResult ret = HCCL_SUCCESS;
     uint32_t count = 0;
     while (clusterMonitorThreadFlag_) {
         CreateHBLinksAsync(); // 内部起线程对所有的socket进行异步建链
@@ -533,7 +550,7 @@ void ClusterMonitor::MonitorThread()
             for (auto iter = uid2SocketRefMap_.begin(); iter != uid2SocketRefMap_.end(); iter++) {
                 ClusterUIDType rem = iter->first;
                 uid2SocketRefMap_[rem].lostNum++;
-                SendFrame(rem, myRankUid_, myRankUid_, ClusterMonitorStatus::CLUSTER_MONITOR_OK); // 先发送心跳帧，触发对端回复，才能准确地判断链路状态
+                SendFrame(rem, myRankUID_, myRankUID_, ClusterMonitorStatus::CLUSTER_MONITOR_OK); // 先发送心跳帧，触发对端回复，才能准确地判断链路状态
             }
             DelErrorSocket(); // 处理socket错误的句柄
         }
@@ -544,7 +561,7 @@ void ClusterMonitor::MonitorThread()
             if (ret == HCCL_E_INTERNAL) {
                 errorSocket_.push_back(rem);
             } else if (uid2SocketRefMap_[rem].lostNum >= lostThreshold_) {
-                SetStatus(rem, myRankUid_, ClusterMonitorStatus::CLUSTER_MONITOR_LOST, true);
+                SetStatus(rem, myRankUID_, ClusterMonitorStatus::CLUSTER_MONITOR_LOST);
             }
         }
         DelErrorSocket(); // 处理socket错误的句柄
@@ -600,21 +617,19 @@ HcclResult ClusterMonitor::RegisterToClusterMonitor(HcclComm comm)
         return HCCL_SUCCESS;
     }
 
-    // 对象中的私有成员变量赋值
-    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(collComm->GetDeviceLogicId()), devicePhyId_));
-
     if (!initialized_) {
         // 开始起监控线程
         CHK_RET(RunMonitorThread());
     }
+    lock.unlock();
 
-    // 存放所有节点的rankId/localId/netLayer/uid
-    std::map<uint32_t, std::vector<UidContext>> uidctxs;
-    uint32_t netLayerNum = 0;
+    // 存放所有节点的
+    std::map<uint32_t, std::vector<UIDContext>> uidCtxs;
+    std::vector<uint32_t> netLayersVector;
 
     // 获取从myRank出发，所有的对端，并维护commIdMap_及uid2FrameStatusMap_
     lock.lock();
-    CHK_RET(GetRemEndpointDescs(comm, uidctxs, &netLayerNum));
+    CHK_RET(GetRemEndpointDescs(comm, uidCtxs, netLayersVector));
     lock.unlock();
 
     // 解析heartbeat环境变量，如果配置为off则不去注册对应的rank
@@ -627,7 +642,7 @@ HcclResult ClusterMonitor::RegisterToClusterMonitor(HcclComm comm)
 
     // 从所有连接中，选择双ring环，存放到needConnectRank
     std::map<ClusterUIDType, ClusterMonitorSocketCtx> needConnectRank;
-    CHK_RET(GetConnectRank(comm, needConnectRank, uidctxs, netLayerNum));
+    CHK_RET(GetConnectRank(comm, needConnectRank, uidCtxs, netLayersVector));
 
     // 将双ring环的pair放入clusterLinkContext_管理多个通信域
     std::unique_lock<std::mutex> linkCtxlock(clusertMonitorLinkMtx_);
@@ -701,7 +716,7 @@ HcclResult ClusterMonitor::DeInit()
 
 HcclResult ClusterMonitor::UnRegisterToClusterMonitor(hccl::CollComm* collComm)
 {
-    CHK_PRT_RET(initialized_ == false, HCCL_WARNING("Heartbeat has been destroyed"), HCCL_SUCCESS);
+    CHK_PRT_RET(initialized_ == false, HCCL_WARNING("Heartbeat has been destroyed, or not initialized"), HCCL_SUCCESS);
     std::set<ClusterUIDType> remInQueue;
     std::unique_lock<std::mutex> linkCtxlock(clusertMonitorLinkMtx_);
     const std::string &commId = collComm->GetCommId();
@@ -803,13 +818,13 @@ void ClusterMonitor::GetCqeErrInfoFromTaskException(u32 RemoteLocalId, uint16_t 
     CqeErrInfo_.CqeLocalEid = LocalEid;
     CqeErrInfo_.CqeRemoteEid = RemoteEid;
     CqeErrInfo_.CqeRemoteInsId = RemoteInsId;
-    ClusterUidCtxt remoteUidctxt(RemoteInsId, RemoteLocalId);
-    ClusterUIDType localUid = myRankUid_;
-    ClusterUIDType remoteUid = {0};
-    CHK_RET_NULL(FormatUID(remoteUidctxt, remoteUid));
-    SetStatus(localUid, remoteUid, ClusterMonitorStatus::CLUSTER_MONITOR_CQE_ERR, true);
+    ClusterUIDCxt remoteUIDcxt(RemoteInsId, RemoteLocalId);
+    ClusterUIDType localUID = myRankUID_;
+    ClusterUIDType remoteUID = {0};
+    CHK_RET_NULL(FormatUID(remoteUIDcxt, remoteUID));
+    SetStatus(localUID, remoteUID, ClusterMonitorStatus::CLUSTER_MONITOR_CQE_ERR, true);
     // if (CqeErrInfo_.CqeRemoterstatus != 0) {
-    //    SetStatus(uid_, uid_, ClusterMonitorStatus::CLUSTER_MONITOR_CQE_EXCEPTION);//从远端获取的remoteRankId需要转换为Uid_类型
+    //    SetStatus(uid_, uid_, ClusterMonitorStatus::CLUSTER_MONITOR_CQE_EXCEPTION);//从远端获取的remoteRankId需要转换为UID_类型
     //    HCCL_RUN_INFO("[%s][%s]local rank [%s]: crimer rank [%s] status[%d] by informer rank [%d]",
     //         LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_HEARTBEAT_EVETN.c_str(), GetUID(uid_).c_str(),
     //         GetUID(uid_).c_str(), CqeErrInfo_.CqeRemoterstatus, CqeErrInfo_.CqeRemoterankId);

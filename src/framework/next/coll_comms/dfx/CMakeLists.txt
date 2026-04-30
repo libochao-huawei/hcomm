@@ -29,4 +29,4 @@ endif()
 
 add_subdirectory(profiling)
 add_subdirectory(taskException)
-add_subdirectory(clusterMonitor)
+add_subdirectory(cluster_monitor)

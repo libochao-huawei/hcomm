@@ -27,17 +27,17 @@ namespace hcomm {
 constexpr u32 OPINFO_SEND_NUM_BY_TAG = 500;   // 一次心跳帧发送的算子信息个数
 constexpr u32 OPINFO_TAG_QUEUE_NUM = 10;   // 一次心跳帧发送的算子信息个数
 
-using ClusterUIDType = struct HcclClusterMonitorUid {
+using ClusterUIDType = struct HcclClusterMonitorUID {
     char id[2048] = {0}; // netInstanceId + localId 最大不超过2048字节
-    bool operator == (const HcclClusterMonitorUid &that) const
+    bool operator == (const HcclClusterMonitorUID &that) const
     {
         return std::string(this->id) == std::string(that.id);
     }
-    bool operator != (const HcclClusterMonitorUid &that) const
+    bool operator != (const HcclClusterMonitorUID &that) const
     {
         return std::string(this->id) != std::string(that.id);
     }
-    bool operator < (const HcclClusterMonitorUid &that) const
+    bool operator < (const HcclClusterMonitorUID &that) const
     {
         return std::string(this->id) < std::string(that.id);
     }
@@ -45,9 +45,9 @@ using ClusterUIDType = struct HcclClusterMonitorUid {
 }
 
 namespace std {
-template <> class hash<hcomm::HcclClusterMonitorUid> {
+template <> class hash<hcomm::HcclClusterMonitorUID> {
 public:
-    size_t operator () (const hcomm::HcclClusterMonitorUid &uid) const
+    size_t operator () (const hcomm::HcclClusterMonitorUID &uid) const
     {
         return hash<string>()(string(uid.id));
     }
@@ -91,20 +91,6 @@ inline std::string GetClusterMonitorStatusStr(ClusterMonitorStatus  status)
     }
 }
 
-
-/**
- * @brief Socket描述参数
- * @note 结构体末尾扩展需要自增版本号，并补充兼容处理逻辑。
- */
-struct HcommSocketDesc {
-    CommAbiHeader header;            ///< ABI头部，包含版本等信息
-    EndpointDesc localEndpoint;      ///< 本端网络设备端侧描述
-    EndpointDesc remoteEndpoint;     ///< 远端网络设备端侧描述
-    std::string  tag;                /**< tag used for whitelist must ended by '\0' */
-    HcommSocketRole role;            ///< 本端角色(SERVER或CLIENT)
-    uint16_t port;                   ///< 监听端口或目标端口
-};
-
 struct ClusterMonitorFrame {
     ClusterUIDType src; // 心跳建链的本端
     ClusterUIDType dst; // 心跳建链的远端
@@ -114,6 +100,7 @@ struct ClusterMonitorFrame {
     ClusterMonitorStatus status = ClusterMonitorStatus::CLUSTER_MONITOR_OK;
     HcclUs TOARelative; // time of arrival (Relative)
     HcclSystemTime TOASystem; // time of arrival (System)
+    char reserved[256] = {0}; // 预留字段，存储其他信息
     ClusterMonitorFrame() {}
     ClusterMonitorFrame(ClusterUIDType &crimer, ClusterUIDType &informer, ClusterMonitorStatus status, HcclUs TOARelativeIn,
         HcclSystemTime TOASystemIn)
@@ -139,22 +126,22 @@ struct ClusterMonitorSocketCtx { // 原ConnInfo
     {}
 };
 
-struct UidContext {
+struct UIDContext {
     ClusterUIDType uid;
     uint32_t    netLayer{0};
     uint32_t    rankId{0};
     uint32_t    localId{0}; // 用来netLayer=0的时候排序使用
-    UidContext() {}
-    UidContext(ClusterUIDType &uid, uint32_t netLayer, uint32_t rankId, uint32_t localId)
+    UIDContext() {}
+    UIDContext(ClusterUIDType &uid, uint32_t netLayer, uint32_t rankId, uint32_t localId)
         : uid(uid), netLayer(netLayer), rankId(rankId), localId(localId)
     {}
 };
 
-struct ClusterUidCtxt {
+struct ClusterUIDCxt {
     std::string     netInstId;
     uint32_t        localId;
-    ClusterUidCtxt() {}
-    ClusterUidCtxt(std::string &netInstId, uint32_t localId)
+    ClusterUIDCxt() {}
+    ClusterUIDCxt(std::string &netInstId, uint32_t localId)
         : netInstId(netInstId), localId(localId)
     {}
 };
@@ -163,14 +150,15 @@ class ClusterMonitor {
 public:
     HcclResult RegisterToClusterMonitor(HcclComm comm);
     HcclResult UnRegisterToClusterMonitor(hccl::CollComm* collComm);
-    HcclResult FormatUID(ClusterUidCtxt ctxt, ClusterUIDType &uid);
+    HcclResult FormatUID(ClusterUIDCxt ctxt, ClusterUIDType &uid);
     std::string GetUID(const ClusterUIDType &uid) const;
     std::string FormatConnTag(HcommSocketRole role, std::pair<ClusterUIDType, ClusterUIDType> uidPair);
-    HcclResult InsertClusterMonitorCxt(HcclComm comm, UidContext remoteCtx, std::map<ClusterUIDType, ClusterMonitorSocketCtx> &needConnectRank);
-    HcclResult GetSamePlaneRank(HcclComm comm, std::vector<UidContext> singlePlaneCtx, std::map<ClusterUIDType, ClusterMonitorSocketCtx> &needConnectRank);
-    HcclResult GetConnectRank(HcclComm comm, std::map<ClusterUIDType, ClusterMonitorSocketCtx> &needConnectRank, std::map<uint32_t, std::vector<UidContext>> uidctxs, uint32_t netLayerNum);
+    HcclResult InsertClusterMonitorCxt(HcclComm comm, UIDContext remoteCtx, std::map<ClusterUIDType, ClusterMonitorSocketCtx> &needConnectRank);
+    HcclResult GetSamePlaneRank(HcclComm comm, std::vector<UIDContext> singlePlaneCtx, std::map<ClusterUIDType, ClusterMonitorSocketCtx> &needConnectRank);
+    HcclResult GetConnectRank(HcclComm comm, std::map<ClusterUIDType, ClusterMonitorSocketCtx> &needConnectRank, std::map<uint32_t,
+        std::vector<UIDContext>> uidctxs, std::vector<uint32_t> &netLayersVector);
     void CreateHBLinksAsync();
-    void SetStatus(ClusterUIDType &crimer, ClusterUIDType &informer, ClusterMonitorStatus status, bool needBroadcast);
+    void SetStatus(ClusterUIDType &crimer, ClusterUIDType &informer, ClusterMonitorStatus status, bool needBroadcast = true);
     void MonitorThread();
     HcclResult RunMonitorThread();
     void SendFrame(ClusterUIDType &dst, ClusterUIDType &crimer, ClusterUIDType &informer, ClusterMonitorStatus status);
@@ -189,8 +177,8 @@ public:
 private:
     ClusterMonitor() = default;
     ~ClusterMonitor()= default;
-    HcclResult GetRemEndpointDescs(HcclComm comm,
-        std::map<uint32_t, std::vector<UidContext>> &uidctxs, uint32_t *netLayerNum);
+    HcclResult GetRemEndpointDescs(HcclComm comm, std::map<uint32_t, std::vector<UIDContext>> &uidCtxs,
+        std::vector<uint32_t> &netLayersVector);
     
     HcclResult CreateTransportHandle(ClusterMonitorSocketCtx &info);
 
@@ -209,10 +197,9 @@ private:
         MONITOR_LINK_COMPLETED,
     };
 
-    uint32_t        devicePhyId_;
     uint32_t        localId_;
     s32             deviceLogicId_{0};
-    ClusterUIDType  myRankUid_;
+    ClusterUIDType  myRankUID_;
 
     bool clusterMonitorThreadFlag_ = false;
     std::unique_ptr<std::thread> clusterMonitorThread_;
