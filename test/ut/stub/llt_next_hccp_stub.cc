@@ -143,4 +143,9 @@ HcclResult HrtRaGetTpAttrAsync(u32 phyId, RdmaHandle handle, uint64_t tpHandle, 
     return HCCL_SUCCESS;
 }
 
+int RaCtxGetTpInfoList(void *ctxHandle, struct GetTpCfg *cfg, struct HccpTpInfo infoList[],
+    unsigned int *num)
+{
+    return 0;
+}
 } // namespace Hccl
