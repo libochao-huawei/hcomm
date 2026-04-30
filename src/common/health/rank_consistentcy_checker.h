@@ -175,7 +175,7 @@ private:
     ProtocolType protocolType_ = ProtocolType::RESERVED;
     std::vector<u32> crcTable_;
     std::mutex mutex_;
-    std::vector<u32> subCommParaCrcs_
+    std::vector<u32> subCommParaCrcs_;
 };
 }
 #endif  // RANK_CONSISTENTCY_CHECKER_H
