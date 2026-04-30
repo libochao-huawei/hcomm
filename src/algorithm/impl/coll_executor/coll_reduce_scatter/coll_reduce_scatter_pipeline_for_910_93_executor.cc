@@ -14,6 +14,23 @@
 namespace hccl {
 namespace {
 constexpr u32 PIPELINE_NOTIFY_NUM = 2;
+
+template <typename Notify>
+auto GetLocalNotifyId(Notify &notify, int) -> decltype(notify.GetNotifyIdx())
+{
+    return notify.GetNotifyIdx();
+}
+
+template <typename Notify>
+u32 GetLocalNotifyId(Notify &notify, long)
+{
+    return notify.notifyId_;
+}
+
+u32 GetLocalNotifyId(const std::shared_ptr<LocalNotify> &notify)
+{
+    return GetLocalNotifyId(*notify, 0);
+}
 }
 
 CollReduceScatterPipelineFor91093Executor::
@@ -68,8 +85,8 @@ HcclResult CollReduceScatterPipelineFor91093Executor::RunLoop(
     }
     HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][RunLoop] "
         "fwdNotifyAId[%u] fwdNotifyBId[%u] bwdNotifyAId[%u] bwdNotifyBId[%u]",
-        notifyL0L1toL2A->notifyId_, notifyL0L1toL2B->notifyId_,
-        notifyL2toL0L1A->notifyId_, notifyL2toL0L1B->notifyId_);
+        GetLocalNotifyId(notifyL0L1toL2A), GetLocalNotifyId(notifyL0L1toL2B),
+        GetLocalNotifyId(notifyL2toL0L1A), GetLocalNotifyId(notifyL2toL0L1B));
 
     auto getForwardNotify = [&](u64 blockIdx) -> std::shared_ptr<LocalNotify> {
         return (blockIdx % PIPELINE_NOTIFY_NUM == 0) ? notifyL0L1toL2A : notifyL0L1toL2B;
@@ -85,21 +102,21 @@ HcclResult CollReduceScatterPipelineFor91093Executor::RunLoop(
                 auto backwardNotify = getBackwardNotify(i);
                 HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][RunLoop] "
                     "before L0L1 wait blockIdx[%llu] streamId[%d] notifyId[%u]",
-                    i, streamL0L1.id(), backwardNotify->notifyId_);
+                    i, streamL0L1.id(), GetLocalNotifyId(backwardNotify));
                 CHK_RET(LocalNotify::Wait(streamL0L1, dispatcher_, backwardNotify, INVALID_VALUE_STAGE));
                 HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][RunLoop] "
                     "after L0L1 wait blockIdx[%llu] streamId[%d] notifyId[%u]",
-                    i, streamL0L1.id(), backwardNotify->notifyId_);
+                    i, streamL0L1.id(), GetLocalNotifyId(backwardNotify));
             }
             CHK_RET(RunL0L1Phase(param, ctx, i, streamL0L1));
             auto forwardNotify = getForwardNotify(i);
             HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][RunLoop] "
                 "before L0L1 post blockIdx[%llu] streamId[%d] notifyId[%u]",
-                i, streamL0L1.id(), forwardNotify->notifyId_);
+                i, streamL0L1.id(), GetLocalNotifyId(forwardNotify));
             CHK_RET(LocalNotify::Post(streamL0L1, dispatcher_, forwardNotify, INVALID_VALUE_STAGE));
             HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][RunLoop] "
                 "after L0L1 post blockIdx[%llu] streamId[%d] notifyId[%u]",
-                i, streamL0L1.id(), forwardNotify->notifyId_);
+                i, streamL0L1.id(), GetLocalNotifyId(forwardNotify));
         }
 
         if (i >= 1 && i <= ctx.numBlockTotal) {
@@ -107,20 +124,20 @@ HcclResult CollReduceScatterPipelineFor91093Executor::RunLoop(
             auto forwardNotify = getForwardNotify(blockIdx);
             HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][RunLoop] "
                 "before L2 wait blockIdx[%llu] streamId[%d] notifyId[%u]",
-                blockIdx, streamL2.id(), forwardNotify->notifyId_);
+                blockIdx, streamL2.id(), GetLocalNotifyId(forwardNotify));
             CHK_RET(LocalNotify::Wait(streamL2, dispatcher_, forwardNotify, INVALID_VALUE_STAGE));
             HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][RunLoop] "
                 "after L2 wait blockIdx[%llu] streamId[%d] notifyId[%u]",
-                blockIdx, streamL2.id(), forwardNotify->notifyId_);
+                blockIdx, streamL2.id(), GetLocalNotifyId(forwardNotify));
             CHK_RET(RunL2Phase(param, ctx, blockIdx, streamL2));
             auto backwardNotify = getBackwardNotify(blockIdx);
             HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][RunLoop] "
                 "before L2 post blockIdx[%llu] streamId[%d] notifyId[%u]",
-                blockIdx, streamL2.id(), backwardNotify->notifyId_);
+                blockIdx, streamL2.id(), GetLocalNotifyId(backwardNotify));
             CHK_RET(LocalNotify::Post(streamL2, dispatcher_, backwardNotify, INVALID_VALUE_STAGE));
             HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][RunLoop] "
                 "after L2 post blockIdx[%llu] streamId[%d] notifyId[%u]",
-                blockIdx, streamL2.id(), backwardNotify->notifyId_);
+                blockIdx, streamL2.id(), GetLocalNotifyId(backwardNotify));
         }
     }
 
