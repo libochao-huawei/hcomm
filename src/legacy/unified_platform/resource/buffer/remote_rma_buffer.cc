@@ -141,6 +141,7 @@ RemoteUbRmaBuffer::RemoteUbRmaBuffer(RdmaHandle rdmaHandle1, const Serializable 
     if (keySize != 0) {
         auto res        = HrtRaUbRemoteMemImport(rdmaHandle1, key, keySize, tokenValue);
         memHandle       = res.handle;
+        segVa = res.targetSegVa;
     } else {
         HCCL_INFO("[RemoteUbRmaBuffer] key is 0, do not need to import memory");
         memHandle = 0;
@@ -150,8 +151,8 @@ RemoteUbRmaBuffer::RemoteUbRmaBuffer(RdmaHandle rdmaHandle1, const Serializable 
 
 string RemoteUbRmaBuffer::Describe() const
 {
-    return StringFormat("RemoteUbRmaBuffer[rdmaHandle=%p, addr=0x%llx, size=0x%llx, memHandle=%p]",
-                        rdmaHandle, addr, size, memHandle);
+    return StringFormat("RemoteUbRmaBuffer[rdmaHandle=%p, addr=0x%llx, size=0x%llx, memHandle=%p segVa=%llu]",
+                        rdmaHandle, addr, size, memHandle, segVa);
 }
 
 } // namespace Hccl

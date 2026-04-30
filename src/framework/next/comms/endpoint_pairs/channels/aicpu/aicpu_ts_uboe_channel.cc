@@ -775,4 +775,40 @@ HcclResult AicpuTsUboeChannel::GetUserRemoteMem(CommMem **remoteMem, char ***mem
     return HCCL_SUCCESS;
 }
 
+HcclResult AicpuTsUboeChannel::NotifyRecord(const uint32_t remoteNotifyIdx)
+{
+    HCCL_INFO("[AicpuTsUboeChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult AicpuTsUboeChannel::NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout)
+{
+    HCCL_INFO("[AicpuTsUboeChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult AicpuTsUboeChannel::WriteWithNotify(void *dst, const void *src, const uint64_t len, uint32_t remoteNotifyIdx)
+{
+    HCCL_INFO("[AicpuTsUboeChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult AicpuTsUboeChannel::Write(void *dst, const void *src, uint64_t len)
+{
+    HCCL_INFO("[AicpuTsUboeChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult AicpuTsUboeChannel::Read(void *dst, const void *src, uint64_t len)
+{
+    HCCL_INFO("[AicpuTsUboeChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult AicpuTsUboeChannel::ChannelFence()
+{
+    HCCL_INFO("[AicpuTsUboeChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
 } // namespace hcomm

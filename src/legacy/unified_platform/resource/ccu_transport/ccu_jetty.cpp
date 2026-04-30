@@ -29,10 +29,11 @@ CcuJetty::CcuJetty(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo)
     : ipAddr_(ipAddr), jettyInfo_(jettyInfo)
 {
     devLogicId_ = HrtGetDevice();
+    Hccl::CqCreateInfo cqInfo{0};
     uint32_t devPhyId = HrtGetDevicePhyIdByIndex(devLogicId_);
     auto &rdmaHandleMgr = RdmaHandleManager::GetInstance();
     rdmaHandle_ = rdmaHandleMgr.GetByIp(devPhyId, ipAddr);
-    const auto jfcHandle = rdmaHandleMgr.GetJfcHandle(rdmaHandle_, HrtUbJfcMode::CCU_POLL);
+    const auto jfcHandle = rdmaHandleMgr.GetJfcHandle(rdmaHandle_, cqInfo, HrtUbJfcMode::CCU_POLL);
     const auto &tokenInfo = rdmaHandleMgr.GetTokenIdInfo(rdmaHandle_);
     const auto tokenIdHandle = tokenInfo.first;
     const auto tokenValue = GetUbToken();
