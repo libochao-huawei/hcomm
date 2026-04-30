@@ -70,7 +70,7 @@ static uint16_t ReadSlAvailableMask16(const struct TpAttr &attr)
 static bool ApplyUbcQosTpSlPolicy(const GetTpInfoParam &param, uint32_t nTp, uint16_t slMask,
     uint32_t &tpListIndexOut, uint32_t &mappedSlOut)
 {
-    const uint32_t slAvailableCnt = CalSlAvailableCnt(slMask); // slMask 里为 1 的 bit 个数 = 可用 SL 档位数
+    uint32_t slAvailableCnt = CalSlAvailableCnt(slMask); // slMask 里为 1 的 bit 个数 = 可用 SL 档位数
     if (slAvailableCnt == 0U) {
         return false;
     }
