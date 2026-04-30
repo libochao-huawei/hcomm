@@ -26,6 +26,7 @@
 #include "orion_adapter_hccp.h"
 
 #include "../../comms/comm_engine_res/ccu/ccu_res_container.h"
+#include "reg_mem_manager.h"
 
 
 namespace hccl {
@@ -41,6 +42,8 @@ public:
     HcclResult Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint32_t rankNum);
 
     CommMems* GetCommMems() const { return commMems_.get(); }
+
+    RegMemMgr* GetRegMemMgr() const { return regMemMgr_.get(); }
 
     EngineCtxs* GetEngineCtxs() const { return engineCtxs_.get(); }
 
@@ -89,6 +92,7 @@ private:
     std::unique_ptr<hcomm::EndpointMgr> endpointMgr_{nullptr};
     std::unique_ptr<CommMems> commMems_{nullptr};
     std::unique_ptr<EngineCtxs> engineCtxs_{nullptr};
+    std::unique_ptr<RegMemMgr> regMemMgr_{nullptr};
 
     // 当前CommEngineResMgr复用a3代码，为不影响a3流程，先将ccu资源管理放在MyRank
     std::unique_ptr<hcomm::CcuResContainer> ccuResContainer_{nullptr};
