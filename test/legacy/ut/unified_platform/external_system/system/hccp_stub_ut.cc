@@ -742,3 +742,9 @@ int RaGetTpAttrAsync(void *ctxHandle, uint64_t tpHandle, uint32_t *attrBitmap, s
 {
     return 0;
 }
+
+int RaCtxGetTpInfoList(void *ctxHandle, struct GetTpCfg *cfg, struct HccpTpInfo infoList[],
+    unsigned int *num)
+{
+    return 0;
+}
