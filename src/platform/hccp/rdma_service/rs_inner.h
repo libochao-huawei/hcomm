@@ -563,9 +563,6 @@ struct rs_cb {
     unsigned int grpId;
     pid_t hostPid;
     bool grpSetupFlag;
-
-    void *ndaCb;
-    int ndaCbRefCnt;
 };
 
 extern __thread struct rs_cb *gRsCb;

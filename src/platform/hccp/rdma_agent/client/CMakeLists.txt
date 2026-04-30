@@ -12,7 +12,6 @@ set(ra_list
     async/ra_comm.c
     async/ra_socket.c
     async/ra_ctx.c
-    ra_nda.c
     ra_ctx.c
     ra_host.c
     ra_common.c
