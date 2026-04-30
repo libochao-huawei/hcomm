@@ -144,30 +144,6 @@ HcclResult GetOptionalU32Field(const nlohmann::json &obj, const char *propName, 
     return ParseU32FromJsonValue(*iter, propName, value);
 }
 
-std::string DeriveServerId(const RankInfo_t &rankInfo)
-{
-    for (const auto &levelInfo : rankInfo.levelList) {
-        if (levelInfo.netLayer == 0 && !levelInfo.netInstanceId.empty()) {
-            auto pos = levelInfo.netInstanceId.find('_');
-            return (pos == std::string::npos) ? levelInfo.netInstanceId : levelInfo.netInstanceId.substr(0, pos);
-        }
-        if (levelInfo.netLayer == 1 && !levelInfo.netInstanceId.empty()) {
-            return levelInfo.netInstanceId;
-        }
-    }
-    return "default_server";
-}
-
-std::string DeriveGroupId(const RankInfo_t &rankInfo)
-{
-    for (const auto &levelInfo : rankInfo.levelList) {
-        if (levelInfo.netLayer == 1 && !levelInfo.netInstanceId.empty()) {
-            return levelInfo.netInstanceId;
-        }
-    }
-    return "default_group";
-}
-
 void SynthesizeLevelList(RankInfo_t &rankInfo)
 {
     rankInfo.levelList.clear();

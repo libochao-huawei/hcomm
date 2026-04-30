@@ -76,9 +76,6 @@ set(hccl_list
     ${FRAMEWORK_HOST_SOURCES}
     ${ALGORITHM_SOURCES}
     ${PLATFORM_SOURCES}
-    ${HCCL_CODE_ROOT}/src/framework/common/src/topo/plane_transformer/plane_transformer_factory.cc
-    ${HCCL_CODE_ROOT}/src/framework/common/src/topo/plane_transformer/plane_transformer_nb.cc
-    ${HCCL_CODE_ROOT}/src/framework/common/src/topo/plane_transformer/plane_transformer_recursive_hd.cc
 )
 
 add_library(hccl_llt SHARED  ${hccl_list})

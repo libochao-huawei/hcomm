@@ -15,7 +15,6 @@
 #include "comm_base_pub.h"
 #include "hccl_impl_pub.h"
 #include "coll_alg_param.h"
-#include "topoinfo_plane_transformer.h"
 #include <numeric>
 
 

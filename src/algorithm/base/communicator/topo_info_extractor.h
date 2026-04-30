@@ -82,8 +82,8 @@ private:
      * @brief 在 OXC 路线下恢复组内平面 `COMM_LAYERED_LEVEL1`。
      *
      * @details
-     * 当前阶段只恢复 Level1/Level2 的基础 OXC 语义，不重新依赖
-     * `RegroupAndSelectAlgo / ReparseGroupedPlane / TransformPlaneByAlgo`。
+     * 当前阶段只恢复 Level1/Level2 的基础 OXC 语义，不再依赖额外的
+     * plane transformer 辅助链。
      * 这里直接基于 `COMM_LEVEL1` 与缓存 subgroup 构造当前 rank 所属的组内平面。
      *
      * @return HcclResult
@@ -94,8 +94,8 @@ private:
      *
      * @details
      * 当前阶段只恢复组间平面的基础拼接语义：从每个 subgroup 中取当前 rank
-     * 相同组内位置的成员构成组间平面；不恢复 `ReparseGroupedPlane` 与
-     * `TransformPlaneByAlgo` 驱动的 netplane 重算与最终重排。
+     * 相同组内位置的成员构成组间平面；不额外恢复基于辅助 helper 的
+     * netplane 重算与最终重排。
      *
      * @return HcclResult
      */
