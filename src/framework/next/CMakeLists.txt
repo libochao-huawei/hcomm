@@ -9,6 +9,7 @@
 # -----------------------------------------------------------------------------------------------------------
 add_subdirectory(coll_comms)
 add_subdirectory(comms)
+add_subdirectory(common)
 # add_subdirectory(comm_primitives)
 
 target_include_directories(hcomm PRIVATE

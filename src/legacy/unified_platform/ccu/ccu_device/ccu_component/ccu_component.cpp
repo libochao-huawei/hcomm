@@ -380,9 +380,10 @@ JettyImportCfg GetJettyImportCfg(const TpInfo &tpInfo, const uint32_t &psn)
 HcclResult CcuComponent::CreateAndImportLoopJettys(const uint8_t dieId, const IpAddress &ipAddr,
     const vector<JettyInfo> &jettyInfos)
 {
+    Hccl::CqCreateInfo cqInfo{0};
     auto &rdmaHandleMgr = RdmaHandleManager::GetInstance();
     const auto rdmaHandle = rdmaHandleMgr.GetByIp(devPhyId, ipAddr);
-    const auto jfcHandle = rdmaHandleMgr.GetJfcHandle(rdmaHandle, HrtUbJfcMode::CCU_POLL);
+    const auto jfcHandle = rdmaHandleMgr.GetJfcHandle(rdmaHandle, cqInfo, HrtUbJfcMode::CCU_POLL);
 
     const auto &rmaBufferIter = localCcuRmaBufferMap.find(dieId);
     CHK_PRT_RET(rmaBufferIter == localCcuRmaBufferMap.end(),
