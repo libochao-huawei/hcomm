@@ -63,7 +63,7 @@ HcommResMgr& HcommResMgr::GetInstance(const uint32_t devicePhyId)
     HccpTlvHdcMgr::GetInstance(devicePhyId);
     TpMgr::GetInstance(devicePhyId);
     CcuComponent::GetInstance(devicePhyId);
-    CcuResBatchAllocator::GetInstance(devicePhyId);
+    Hccl::CcuResBatchAllocator::GetInstance(devicePhyId);
     CcuKernelMgr::GetInstance(devicePhyId);
 
     static HcommResMgr hcommResMgrs[MAX_MODULE_DEVICE_NUM + 1];
