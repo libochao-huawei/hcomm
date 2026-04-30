@@ -86,6 +86,19 @@ public:
         InitBinaryAddr(ip);
     }
 
+    explicit IpAddress(const union BinaryAddr &ip, s32 family, const uint8_t* eid)
+    : family_(family)
+    {
+        binaryAddr_ = ip;
+        if (eid != nullptr) {
+            // 安全复制原始EID
+            s32 sRet = memcpy_s(eid_.raw, sizeof(eid_.raw), eid, URMA_EID_LEN);
+            if (sRet != 0) {
+                THROW<InternalException>("[IpAddress]memcpy_s failed when setting original EID");
+            }
+        }
+    }
+
     explicit IpAddress(const union BinaryAddr &ip, s32 family, s32 scopeID = 0) : family_(family), scopeID_(scopeID)
     {
         binaryAddr_ = ip;

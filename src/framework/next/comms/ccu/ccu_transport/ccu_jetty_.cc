@@ -20,6 +20,7 @@
 // 当前复用orion数据结构
 #include "rdma_handle_manager.h"
 #include "local_ub_rma_buffer.h"
+#include "orion_adapter_hccp.h"
 
 namespace hcomm {
 
@@ -45,10 +46,11 @@ HcclResult CcuJetty::Init()
     EXCEPTION_HANDLE_BEGIN
     devLogicId_ = HcclGetThreadDeviceId();
     uint32_t devPhyId{0};
+    Hccl::CqCreateInfo cqInfo{0};
     CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(devLogicId_), devPhyId));
     auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
     ctxHandle_ = rdmaHandleMgr.GetByIp(devPhyId, ipAddr_);
-    const auto _jfcHandle = rdmaHandleMgr.GetJfcHandle(ctxHandle_, Hccl::HrtUbJfcMode::CCU_POLL);
+    const auto _jfcHandle = rdmaHandleMgr.GetJfcHandle(ctxHandle_, cqInfo, Hccl::HrtUbJfcMode::CCU_POLL);
     const JfcHandle jfcHandle = reinterpret_cast<JfcHandle>(_jfcHandle);
     const auto &tokenInfo = rdmaHandleMgr.GetTokenIdInfo(ctxHandle_);
     const auto _tokenIdHandle = tokenInfo.first;
