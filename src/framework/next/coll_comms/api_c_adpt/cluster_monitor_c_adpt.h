@@ -22,13 +22,6 @@ extern "C" {
  */
 HcclResult HcclRegisterToClusterMonitor(HcclComm comm);
 
-HcclResult HcclUnRegisterToClusterMonitor(HcclComm comm);
-/**
- * @note 非对外接口声明示例
- * @code {.c}
- * HcclResult HcclRegisterToClusterMonitor(HcclComm comm);
- * @endcode
- */
 #ifdef __cplusplus
 }
 #endif

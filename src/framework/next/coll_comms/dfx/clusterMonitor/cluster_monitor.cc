@@ -15,7 +15,7 @@
 #include "log.h"
 
 namespace hcomm {
-constexpr u32 EVENT_MAX_CNT = 5000;          // 防止内存泄漏，同时不能太短，防止正常事件被冲掉
+constexpr u32 EVENT_MAX_CNT = 5000;             // 防止内存泄漏，同时不能太短，防止正常事件被冲掉
 constexpr u32 HEARTBEAT_INTERVAL = 1000;                                 // 心跳帧发送周期为1000 ms
 constexpr u32 BROADCAST_INTERVAL = 50; // 背景线程执行周期为50 ms
 constexpr u32 HEARTBEAT_COUNT = HEARTBEAT_INTERVAL / BROADCAST_INTERVAL; // 心跳帧发送间隔数
@@ -252,11 +252,11 @@ void ClusterMonitor::CreateHBLinksAsync()
     std::queue<std::tuple<std::string, ClusterUIDType, ClusterMonitorSocketCtx>> connInfoQueue;
     for (auto &pair : clusterLinkContext_) {
         const std::string &commId = pair.first;
-        auto &groupConnInfoQueue = pair.second;
-        while (!groupConnInfoQueue.empty()) {
+        auto &commIdConnInfoQueue = pair.second;
+        while (!commIdConnInfoQueue.empty()) {
             connInfoQueue.push(
-                std::make_tuple(commId, groupConnInfoQueue.front().first, groupConnInfoQueue.front().second));
-            groupConnInfoQueue.pop();
+                std::make_tuple(commId, commIdConnInfoQueue.front().first, commIdConnInfoQueue.front().second));
+            commIdConnInfoQueue.pop();
         }
     }
     linksLock.unlock();
@@ -267,13 +267,13 @@ void ClusterMonitor::CreateHBLinksAsync()
         auto it = linkThreadMap_.find(remUid);
         if (it != linkThreadMap_.end() && it->second->joinable()) {
             it->second->join();
-            HCCL_INFO("[CreateMonitorLinksAsync] monitor link thread has been joined. Group[%s], remote uid[%s].",
+            HCCL_INFO("[CreateMonitorLinksAsync] monitor link thread has been joined. commId[%s], remote uid[%s].",
                 commId.c_str(), GetUID(remUid).c_str());
         }
         linkThreadMap_[remUid].reset(
             new (std::nothrow) std::thread(&ClusterMonitor::CreateLinkWithRemotePonit, this, commId, remUid, connInfo));
         if (linkThreadMap_[remUid] == nullptr) {
-            HCCL_RUN_WARNING("Group[%s] establish rank[%s] to rank[%s] heartbeat connection failed. Reason: "
+            HCCL_RUN_WARNING("commId[%s] establish rank[%s] to rank[%s] heartbeat connection failed. Reason: "
                             "create thread failed.",
                 commId.c_str(), GetUID(myRankUid_).c_str(), GetUID(remUid).c_str());
         }
@@ -302,7 +302,7 @@ void ClusterMonitor::CreateLinkWithRemotePonit(
     // 给当前线程添加名字
     const std::string threadName = "hb" + GetUID(rem);
     SetThreadName(threadName);
-    HCCL_INFO("[Heartbeat][CreateLinkWithRemote] Group[%s], thread[%s] start...", commId.c_str(), threadName.c_str());
+    HCCL_INFO("[Heartbeat][CreateLinkWithRemote] commId[%s], thread[%s] start...", commId.c_str(), threadName.c_str());
     hrtSetDevice(deviceLogicId_);
 
     HcclResult ret = CreateTransportHandle(needConnectRank);
@@ -648,7 +648,7 @@ HcclResult ClusterMonitor::RegisterToClusterMonitor(HcclComm comm)
             // 若newConn=false，说明不是新增的连接
             // 1. 通信域找不到，2.通信域内能找到但还没有连接，计数++
             uid2SocketRefMap_.ref(item.first);
-            // HCCL_RUN_INFO("commId:[%s], establish rank[%s] to rank[%s] heartbeat connection success.", group.c_str(),
+            // HCCL_RUN_INFO("commId:[%s], establish rank[%s] to rank[%s] heartbeat connection success.", commId.c_str(),
             //     FormatUId(uid_).c_str(), FormatUId(item.first).c_str());
             commIdMap_[commId][item.first] = true; // 认为通信域中对应的连接已经建立
         }
@@ -659,9 +659,107 @@ HcclResult ClusterMonitor::RegisterToClusterMonitor(HcclComm comm)
     return HCCL_SUCCESS;
 }
 
-HcclResult ClusterMonitor::UnRegisterToClusterMonitor(HcclComm comm)
+HcclResult ClusterMonitor::DeInit()
 {
+    HCCL_INFO("[%s] heartbeat deinit begin.", __func__);
+    isDeInit_ = true;
+    clusterMonitorThreadFlag_ = false;
+    linkThreadRunning_ = false;
+
+    if (clusterMonitorThread_) {
+        if (clusterMonitorThread_->joinable()) {
+            clusterMonitorThread_->join();
+        }
+    }
+    {
+        std::unique_lock<std::mutex> lock(threadLock_);
+        for (auto iter = uid2SocketRefMap_.begin(); iter != uid2SocketRefMap_.end(); iter++) {
+            // if (iter->second.socket->GetLocalRole() == HcclSocketRole::SOCKET_ROLE_SERVER) {
+            //     CHK_PRT_RET(listenSocketMap_.find(iter->second.socket->GetLocalIp()) == listenSocketMap_.end(),
+            //         HCCL_ERROR("ip[%s] listenSocketMap is not found",
+            //         iter->second.socket->GetLocalIp().GetReadableAddress()),
+            //         HCCL_E_NOT_FOUND);
+            //     listenSocketMap_[iter->second.socket->GetLocalIp()]->DelWhiteList(iter->second.wlistInfosVec);
+            // }
+            // iter->second.socket->Close();
+        }
+        uid2SocketRefMap_.clear();
+        uid2FrameStatusMap_.clear();
+    }
+    std::queue<ClusterMonitorFrame> empty;
+    std::swap(errStatusQueue_, empty);
+
+    // std::unique_lock<std::mutex> mapLock(ctxMapMutex_);
+    // listenSocketMap_.clear();
+    // mapLock.unlock();
+
+    initialized_ = false;
+    HCCL_INFO("[%s] heartbeat deinit end.", __func__);
     return HCCL_SUCCESS;
 }
 
-}// namespace hccl
+HcclResult ClusterMonitor::UnRegisterToClusterMonitor(hccl::CollComm* collComm)
+{
+    CHK_PRT_RET(initialized_ == false, HCCL_WARNING("Heartbeat has been destroyed"), HCCL_SUCCESS);
+    std::set<ClusterUIDType> remInQueue;
+    std::unique_lock<std::mutex> linkCtxlock(clusertMonitorLinkMtx_);
+    const std::string &commId = collComm->GetCommId();
+    if (clusterLinkContext_.find(commId) != clusterLinkContext_.end()) {
+        while (!clusterLinkContext_[commId].empty()) {
+            remInQueue.insert(clusterLinkContext_[commId].front().first); // uid出队存入set中
+            clusterLinkContext_[commId].pop();
+        }
+    }
+    clusterLinkContext_.erase(commId);
+    linkCtxlock.unlock();
+
+    {
+        std::unique_lock<std::mutex> lock(threadLock_);
+
+        for (const auto &rem : remInQueue) {
+            if (monitorLinkStatusMap_[rem] == MonitorLinkStatus::MONITOR_LINK_BUILDING) {
+                monitorLinkStatusMap_[rem] = MonitorLinkStatus::MONITOR_LINK_NOT_START;
+                HCCL_INFO("[%s] commId[%s] rem[%s] is in clusterLinkContext_ deque. Status change to not start", __func__,
+                    commId.c_str(), GetUID(rem).c_str());
+            }
+        }
+        auto iter = commIdMap_.find(commId);
+        if (iter == commIdMap_.end()) {
+            HCCL_INFO("commId[%s] hasn't Registered, skip", commId.c_str());
+            return HCCL_SUCCESS;
+        }
+
+        for (const auto& remRank : commIdMap_[commId]) {
+            ClusterUIDType rem = remRank.first;
+            uid2FrameStatusMap_.erase(rem);
+            if (remRank.second) {
+                if (uid2SocketRefMap_.count(rem) == 1) {
+                    // if (uid2SocketRefMap_[rem].socket->GetLocalRole() == HcclSocketRole::SOCKET_ROLE_SERVER) {
+                    //     CHK_PRT_RET(listenSocketMap_.find(uid2SocketRefMap_[rem].socket->GetLocalIp()) ==
+                    //         listenSocketMap_.end(),
+                    //         HCCL_ERROR("ip[%s] listenSocketMap is not found",
+                    //         uid2SocketRefMap_[rem].socket->GetLocalIp().GetReadableAddress()),
+                    //         HCCL_E_NOT_FOUND);
+                    //     listenSocketMap_[uid2SocketRefMap_[rem].socket->GetLocalIp()]->DelWhiteList(
+                    //         uid2SocketRefMap_[rem].wlistInfosVec);
+                    // }
+                    // uid2SocketRefMap_[rem].socket->Close();
+                    monitorLinkStatusMap_[rem] = MonitorLinkStatus::MONITOR_LINK_NOT_START;
+                }
+                HCCL_INFO("[%s]commId[%s] socket erase remote:%s", __func__, commId.c_str(), GetUID(rem).c_str());
+                uid2SocketRefMap_.erase(rem);
+            }
+            HCCL_INFO("[%s]commId[%s] status erase remote:%s", __func__, commId.c_str(), GetUID(rem).c_str());
+        }
+        commIdMap_.erase(iter);
+        HCCL_INFO("[%s]commId[%s] UnregisterRanks Completed.", __func__, commId.c_str());
+    }
+
+    if (commIdMap_.size() == 0) {
+        HCCL_RUN_INFO("[%s]Entry HeartBeat DeInit.", __func__);
+        CHK_RET(DeInit());
+    }
+    return HCCL_SUCCESS;
+}
+
+} // namespace hcomm

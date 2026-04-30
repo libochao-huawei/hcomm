@@ -33,8 +33,3 @@ HcclResult HcclRegisterToClusterMonitor(HcclComm comm)
     HCCL_RUN_INFO("%s Success", __func__);
     return HCCL_SUCCESS;
 }
-
-HcclResult HcclUnRegiterToClusterMonitor(HcclComm comm)
-{
-    return HCCL_SUCCESS;
-}

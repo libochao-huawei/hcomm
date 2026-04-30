@@ -30,7 +30,7 @@ CollComm::CollComm(void * comm, uint32_t rankId, const std::string &commName, co
 
 CollComm::~CollComm()
 {
-    CollCommMgr::GetInstance()->UnRegisteCollComm(this); 
+    CollCommMgr::GetInstance()->UnRegisteCollComm(this);
     HCCL_INFO("[CollComm][~CollComm] collComm deinit");
     (void)DestroyAicpuComm();
 }
