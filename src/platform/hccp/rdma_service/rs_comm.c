@@ -8,11 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include <sys/prctl.h>
-#include "securec.h"
-#include "dl_ibverbs_function.h"
 #include "ra_rs_comm.h"
-#include "rs_common_inner.h"
+#include "dl_ibverbs_function.h"
 #include "rs.h"
 
 struct OpcodeInterfaceInfo gInterfaceInfoList[] = {
@@ -160,26 +157,5 @@ RS_ATTRI_VISI_DEF int RsGetInterfaceVersion(unsigned int opcode, unsigned int *v
     }
 
     *version = interfaceVersion;
-    return 0;
-}
-
-RS_ATTRI_VISI_DEF int RsPrctlByResvMem(bool useResvMem, unsigned int resvMemPoolId, const char *threadName)
-{
-    char processName[TASK_COMM_LEN] = {0};
-    int ret;
-
-    if (!useResvMem) {
-        // not using resv memory, return success regardless of the result
-        ret = snprintf_s(processName, TASK_COMM_LEN, TASK_COMM_LEN - 1, "hccp_%s", threadName);
-        CHK_PRT_RETURN(ret <= 0, hccp_warn("snprintf_s unsuccessful, ret:%d threadName:%s", ret, threadName), 0);
-        (void)prctl(PR_SET_NAME, (unsigned long)processName);
-        return 0;
-    }
-
-    ret = snprintf_s(processName, TASK_COMM_LEN, TASK_COMM_LEN - 1, "hccp_rsv%u_%s", resvMemPoolId, threadName);
-    CHK_PRT_RETURN(ret <= 0, hccp_err("snprintf_s failed, ret:%d threadName:%s", ret, threadName), -EIO);
-    ret = prctl(PR_SET_NAME, (unsigned long)processName);
-    CHK_PRT_RETURN(ret != 0, hccp_err("prctl failed, ret:%d threadName:%s processName:%s",
-        ret, threadName, processName), ret);
     return 0;
 }

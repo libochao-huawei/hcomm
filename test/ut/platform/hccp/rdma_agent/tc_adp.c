@@ -127,15 +127,8 @@ void TcAdpEnvInit()
 void TcCommonTest()
 {
     unsigned int devid = 0;
-    struct hccpInitPara initPara = {
-        .chipId = devid,
-        .pid = gHostTgid,
-        .hdcType = HDC_SERVICE_TYPE_RDMA,
-        .whiteListStatus = WHITE_LIST_ENABLE,
-        .useResvMem = false,
-    };
     AddTestMsg(RA_RS_HDC_SESSION_CLOSE, sizeof(union OpHdcCloseData));
-    int ret = HccpInit(&initPara);
+    int ret = HccpInit(devid, gHostTgid, HDC_SERVICE_TYPE_RDMA, WHITE_LIST_ENABLE);
     EXPECT_INT_EQ(ret , 0);
     sleep(1);
     ret = HccpDeinit(devid);
@@ -148,28 +141,21 @@ void TcHccpInitFail()
 {
     unsigned int devid = 0;
     pid_t hostTgid = 0;
-    struct hccpInitPara initPara = {
-        .chipId = devid,
-        .pid = hostTgid,
-        .hdcType = HDC_SERVICE_TYPE_RDMA,
-        .whiteListStatus = WHITE_LIST_ENABLE,
-        .useResvMem = false,
-    };
     mocker_clean();
     mocker((stub_fn_t)sched_setaffinity, 1, -1);
-    int ret = HccpInit(&initPara);
+    int ret = HccpInit(devid, hostTgid, HDC_SERVICE_TYPE_RDMA, WHITE_LIST_ENABLE);
     EXPECT_INT_NE(ret, 0);
 
     mocker_clean();
     mocker((stub_fn_t)sched_setaffinity, 10, 0);
     mocker((stub_fn_t)pthread_create, 1, -1);
-    ret = HccpInit(&initPara);
+    ret = HccpInit(devid, hostTgid, HDC_SERVICE_TYPE_RDMA, WHITE_LIST_ENABLE);
     ret = HccpDeinit(devid);
     EXPECT_INT_EQ(ret, 0);
 
     mocker_clean();
     mocker((stub_fn_t)pthread_create, 10, 0);
-    ret = HccpInit(&initPara);
+    ret = HccpInit(devid, hostTgid, HDC_SERVICE_TYPE_RDMA, WHITE_LIST_ENABLE);
     EXPECT_INT_NE(ret, 0);
     ret = HccpDeinit(devid);
     EXPECT_INT_EQ(ret, 0);
@@ -178,7 +164,7 @@ void TcHccpInitFail()
     mocker((stub_fn_t)pthread_detach, 1, -1);
     mocker((stub_fn_t)RsInit, 1, -1);
     AddTestMsg(RA_RS_HDC_SESSION_CLOSE, sizeof(union OpSocketCloseData));
-    ret = HccpInit(&initPara);
+    ret = HccpInit(devid, hostTgid, HDC_SERVICE_TYPE_RDMA, WHITE_LIST_ENABLE);
     EXPECT_INT_EQ(gCurrentMsgIndex, 0);
     EXPECT_INT_NE(ret, 0);
     ret = HccpDeinit(devid);
@@ -187,8 +173,7 @@ void TcHccpInitFail()
     mocker_clean();
     MsgClear();
     AddTestMsg(RA_RS_HDC_SESSION_CLOSE, sizeof(union OpSocketCloseData));
-    initPara.chipId = RA_MAX_PHY_ID_NUM;
-    ret = HccpInit(&initPara);
+    ret = HccpInit(RA_MAX_PHY_ID_NUM , hostTgid, HDC_SERVICE_TYPE_RDMA, WHITE_LIST_ENABLE);
     EXPECT_INT_EQ(gCurrentMsgIndex, 0);
     EXPECT_INT_NE(ret, 0);
 
@@ -196,8 +181,7 @@ void TcHccpInitFail()
     MsgClear();
     mocker((stub_fn_t)drvHdcServerCreate, 1, -1);
     AddTestMsg(RA_RS_HDC_SESSION_CLOSE, sizeof(union OpSocketCloseData));
-    initPara.chipId = devid;
-    ret = HccpInit(&initPara);
+    ret = HccpInit(devid , hostTgid, HDC_SERVICE_TYPE_RDMA, WHITE_LIST_ENABLE);
     EXPECT_INT_EQ(gCurrentMsgIndex, 0);
     EXPECT_INT_NE(ret, 0);
 
