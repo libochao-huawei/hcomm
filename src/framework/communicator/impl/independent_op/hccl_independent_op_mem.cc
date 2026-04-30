@@ -50,9 +50,9 @@ HcclResult HcclCommMemReg(HcclComm comm, const char *memTag, const CommMem *mem,
             CHK_PTR_NULL(collComm);
             auto myRank = collComm->GetMyRank();
             CHK_PTR_NULL(myRank);
-            CommMems* commMem = myRank->GetCommMems();
-            HcclResult ret = HCCL_SUCCESS;
-            ret = commMem->CommRegMem(std::string(memTag), *mem, memHandle);
+            RegMemMgr* regMemMgr = myRank->GetRegMemMgr();
+            CHK_PTR_NULL(regMemMgr);
+            HcclResult ret = regMemMgr->RegisterMemory(*mem, memTag, memHandle);
             CHK_PRT_RET(ret != HCCL_SUCCESS,
                 HCCL_ERROR("[HcclCommMemReg]Bind failed. memTag[%s], ret[%d]", memTag, ret), ret);
             HCCL_INFO("[HcclCommMemReg] success: raw handle[%p]", *memHandle);

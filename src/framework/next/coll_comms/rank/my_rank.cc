@@ -134,6 +134,9 @@ HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint3
 
     EXECEPTION_CATCH(engineCtxs_ = std::make_unique<EngineCtxs>(), return HCCL_E_PTR);
 
+    // 注册内存管理器
+    EXECEPTION_CATCH(regMemMgr_ = std::make_unique<RegMemMgr>(this), return HCCL_E_PTR);
+
     // 通信域配置config优先级更高，当配置默认展开模式时，读取环境变量配置
     opExpansionMode_ = opExpansionMode;
     if (opExpansionMode_ == DEFAULT_MODE) {
