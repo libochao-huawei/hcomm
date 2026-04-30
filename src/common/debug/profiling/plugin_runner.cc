@@ -77,7 +77,7 @@ template void PluginRunner::operator ()<TaskParaDMA>(rtStream_t, TaskType, const
 template void PluginRunner::operator ()<TaskParaReduce>(rtStream_t, TaskType, const TaskParaReduce&) const;
 template void PluginRunner::operator ()<TaskParaNotify>(rtStream_t, TaskType, const TaskParaNotify&) const;
 
-void PluginRunner::operator () (rtStream_t stream) const
+void PluginRunner::operator () (rtStream_t stream, const void *descBuf, size_t descBufLen) const
 {
     u32 threadLastTaskID = 0;
     u32 threadLastStreamID = 0;
@@ -96,9 +96,9 @@ void PluginRunner::operator () (rtStream_t stream) const
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[PluginRunner][Operator]rtGet stream id fail. return[%d]", ret),);
         u32 castStreamID = static_cast<u32>(streamID);
-        profiler_->Save(castStreamID, threadLastStreamID, threadLastTaskID);
+        profiler_->Save(castStreamID, threadLastStreamID, threadLastTaskID, descBuf, descBufLen);
     } else {
-        profiler_->Save(threadLastStreamID, threadLastTaskID);
+        profiler_->Save(threadLastStreamID, threadLastTaskID, descBuf, descBufLen);
     }
 }
 

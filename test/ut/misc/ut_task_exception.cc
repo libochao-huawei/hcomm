@@ -11,6 +11,7 @@
 #include "gtest/gtest.h"
 #include <mockcpp/mockcpp.hpp>
 #include <stdio.h>
+#include <vector>
 #include <sys/time.h> /* 获取时间 */
 #include "hccl/base.h"
 #include <hccl/hccl_types.h>
@@ -737,7 +738,6 @@ TEST_F(TaskExceptionTest, St_PrintCommAivInfo_When_AivGroup_Size_No_Zero_Expect_
     taskExceptionHandler.aivGroupIndexMap_[deviceLogicId].clear();
     GlobalMockObject::verify();
 }
-
 
 TEST_F(TaskExceptionTest, St_PrintCommAivInfo_When_AivGroup_Size_100_Expect_Print_Multi_Aiv_May_Execution_Stuck)
 {
