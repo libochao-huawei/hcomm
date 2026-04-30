@@ -40,7 +40,7 @@ public:
     void TaskRecordProfiler(ProfilerType profilerType, HcclRtStream stream, TaskParaNotify &para);
     void TaskWaitProfiler(ProfilerType profilerType, HcclRtStream stream, TaskParaNotify &para);
     void TaskAivProfiler(ProfilerType profilerType, HcclRtStream stream, TaskParaAiv &para);
-    void TaskProfiler(ProfilerType profilerType, HcclRtStream stream);
+    void TaskProfiler(ProfilerType profilerType, HcclRtStream stream, const void *descBuf = nullptr, size_t descBufLen = 0);
     void TaskProfiler(ProfilerType profilerType, TaskParaHost &para);
     void TaskProfilerHandle(void *param, u32 length);
     void TaskAivProfilerHandle(void *param, u32 length);
