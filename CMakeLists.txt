@@ -13,12 +13,6 @@ message(STATUS "DEVICE_MODE=${DEVICE_MODE}")
 message(STATUS "BUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}")
 message(STATUS "AARCH_MODE=${AARCH_MODE}")
 
-find_program(CCACHE_PROGRAM ccache)
-if(CCACHE_PROGRAM)
-    set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
-    set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
-endif()
-
 if((BUILD_OPEN_PROJECT AND DEVICE_MODE) OR AARCH_MODE)
     # need to switch
     set(CMAKE_SYSTEM_NAME Linux)
@@ -44,17 +38,19 @@ execute_process(
     OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 message(STATUS "当前系统架构: ${SYSTEM_ARCH}")
+
+# 引入CANN/cmake库
+include(cmake/fetch_cann_cmake.cmake)
+
 project(hcomm)
 
+# 引入CANN/cmake库，初始化
+init_cann_project()
+
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_FLAGS_RELEASE "")
 set(CMAKE_CXX_FLAGS_RELEASE "")
-
-set(CMAKE_CXX_COMPILE_OBJECT
-    "<CMAKE_CXX_COMPILER> <DEFINES> -D__FILE__='\"$(notdir $(abspath <SOURCE>))\"' -Wno-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>"
-)
-set(CMAKE_C_COMPILE_OBJECT
-    "<CMAKE_C_COMPILER> <DEFINES> -D__FILE__='\"$(notdir $(abspath <SOURCE>))\"' -Wno-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>"
-)
 
 # 获取 CPU 核心数
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
@@ -104,7 +100,7 @@ elseif(BUILD_OPEN_PROJECT)
     include(cmake/func.cmake)
     include(version.cmake)
     if(ENABLE_OPEN_SRC)
- 	    check_pkg_build_deps("hcomm")
+        check_pkg_build_deps("hcomm")
     endif()
     add_version_info_targets()
     pack_built_in()
@@ -122,10 +118,6 @@ elseif(BUILD_OPEN_PROJECT)
 
     set(HCOMM_HEAD
         include/hcomm_primitives.h
-    )
-
-    set(HCCL_JSON
-        cmake/scripts/ccl_kernel.json
     )
 
     if(DEVICE_MODE)
@@ -213,25 +205,33 @@ elseif(BUILD_OPEN_PROJECT)
         )
         install(FILES ${BUILD_DEVICE_DIR}/signatures/cann-hcomm-compat.tar.gz
             DESTINATION ${INSTALL_DEVICE_TAR_DIR} OPTIONAL
+            COMPONENT hcomm
+            PERMISSIONS OWNER_READ GROUP_READ
         )
         install(FILES ${BUILD_DEVICE_DIR}/signatures/aicpu_hcomm.tar.gz
-            DESTINATION ${INSTALL_DEVICE_TAR_DIR} OPTIONAL
+            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
+            COMPONENT hcomm
         )
         install(FILES ${BUILD_HCCD_DIR}/signatures/cann-hccd-compat.tar.gz
             DESTINATION ${INSTALL_DEVICE_TAR_DIR} OPTIONAL
+            COMPONENT hcomm
+            PERMISSIONS OWNER_READ GROUP_READ
         )
         install(FILES ${BUILD_DEVICE_DIR}/src/framework/libaicpu_custom.so
-            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
+            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel ${INSTALL_OPTIONAL}
+            COMPONENT hcomm
         )
         install(FILES ${BUILD_DEVICE_DIR}/src/framework/libaicpu_custom.json
-            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
+            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel ${INSTALL_OPTIONAL}
+            COMPONENT hcomm
         )
 
         add_custom_target(install_ccl_kernel DEPENDS
             ${BUILD_DEVICE_DIR}/src/framework/libccl_kernel.so
         )
         install(FILES ${BUILD_DEVICE_DIR}/src/framework/libccl_kernel.so
-            DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL
+            DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/devlib/device ${INSTALL_OPTIONAL}
+            COMPONENT hcomm
         )
         add_dependencies(install_tar hcomm)
         add_dependencies(install_ccl_kernel hcomm)
@@ -239,31 +239,27 @@ elseif(BUILD_OPEN_PROJECT)
 
     install(FILES
         ${HCCL_HEAD}
-        ${HCCL_JSON}
-        DESTINATION ${INSTALL_INCLUDE_DIR}/hccl/ OPTIONAL
+        DESTINATION ${INSTALL_INCLUDE_DIR}/hccl/ ${INSTALL_OPTIONAL}
+        COMPONENT hcomm
     )
-    install(FILES
-        ${HCOMM_HEAD}
-        DESTINATION ${INSTALL_INCLUDE_DIR}/ OPTIONAL
-    )
+    if(NOT BUILD_OPEN_PROJECT)
+        install(FILES 
+            ${HCOMM_HEAD} 
+            DESTINATION ${INSTALL_INCLUDE_DIR}/ ${INSTALL_OPTIONAL}
+            COMPONENT hcomm 
+        )
+    endif()
     install(FILES
         include/hcomm_primitives.h
-        DESTINATION ${INSTALL_INCLUDE_DIR}/hcomm/ OPTIONAL
+        DESTINATION ${INSTALL_INCLUDE_DIR}/hcomm/ ${INSTALL_OPTIONAL}
+        COMPONENT hcomm
     )
     install(FILES
         include/hcomm_res.h
         include/hcomm_res_defs.h
-        DESTINATION ${INSTALL_INCLUDE_DIR}/hcomm/ OPTIONAL
+        DESTINATION ${INSTALL_INCLUDE_DIR}/hcomm/ ${INSTALL_OPTIONAL}
+        COMPONENT hcomm
     )
-    install(CODE [[
-file(MAKE_DIRECTORY "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/hcomm/include/hccl")
-file(REMOVE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/hcomm/include/hcomm_primitives.h")
-file(REMOVE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/hcomm/include/hccl/hcomm_primitives.h")
-file(CREATE_LINK "../hcomm/hcomm_primitives.h" "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/hcomm/include/hccl/hcomm_primitives.h" SYMBOLIC)
-file(REMOVE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/hcomm/include/hcomm_res_defs.h")
-file(REMOVE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/hcomm/include/hccl/hcomm_res_defs.h")
-file(CREATE_LINK "../hcomm/hcomm_res_defs.h" "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/hcomm/include/hccl/hcomm_res_defs.h" SYMBOLIC)
-]])
 
     set(HCCL_PKG_HEAD
         pkg_inc/hccl/base.h
@@ -280,7 +276,8 @@ file(CREATE_LINK "../hcomm/hcomm_res_defs.h" "$ENV{DESTDIR}${CMAKE_INSTALL_PREFI
     )
     install(FILES
         ${HCCL_PKG_HEAD}
-        DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hccl/ OPTIONAL
+        DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hccl/ ${INSTALL_OPTIONAL}
+        COMPONENT hcomm
     )
     set(HCCL_PKG_CCU_HEAD
         pkg_inc/hcomm/ccu/ccu_assist_pub.h
@@ -319,13 +316,15 @@ file(CREATE_LINK "../hcomm/hcomm_res_defs.h" "$ENV{DESTDIR}${CMAKE_INSTALL_PREFI
     )
     install(FILES
         ${HCCL_PKG_CCU_HEAD}
-        DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hcomm/ccu/ OPTIONAL
+        DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hcomm/ccu/ ${INSTALL_OPTIONAL}
+        COMPONENT hcomm
     )
     set(HCOMM_PKG_HEAD
         pkg_inc/hcomm/hcomm_primitives_expt.h
     )
     install(FILES
         ${HCOMM_PKG_HEAD}
-        DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hcomm/ OPTIONAL
+        DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hcomm/ ${INSTALL_OPTIONAL}
+        COMPONENT hcomm
     )
 endif()

@@ -124,6 +124,25 @@ void CcuContextScatterNHR1DMem2Mem::PreSync()
     HCCL_INFO("[CcuContextScatterNHR1DMem2Mem] PreSync end");
 }
 
+void CcuContextScatterNHR1DMem2Mem::PostSync()
+{
+    uint16_t selfSignalId = rankId_ / RANK_NUM_PER_CKE;
+    uint16_t selfBit      = 1 << (rankId_ % RANK_NUM_PER_CKE);
+    for (auto &t : transports) {
+        RemotePost(*t, selfSignalId + signalNum_ * CKE_IDX_0, selfBit);
+    }
+    std::vector<uint16_t> waitBitVector(signalNum_, 0);
+    for (auto &pair : indexMap_) {
+        uint16_t pairSignalId       = pair.first / RANK_NUM_PER_CKE;
+        uint16_t pairBit            = 1 << (pair.first % RANK_NUM_PER_CKE);
+        waitBitVector[pairSignalId] = waitBitVector[pairSignalId] | pairBit;
+    }
+    for (uint32_t sId = 0; sId < waitBitVector.size(); sId++) {
+        GroupWait(*transportGroup, sId + signalNum_ * CKE_IDX_0, waitBitVector[sId]);
+    }
+    HCCL_INFO("[CcuContextScatterNHR1DMem2Mem] PostSync run finished");
+}
+
 void CcuContextScatterNHR1DMem2Mem::AxisSync(uint32_t signalIndex)
 {
     const uint32_t DIE_NUM = 2;
@@ -219,7 +238,7 @@ void CcuContextScatterNHR1DMem2Mem::DoScatterNHRSingleStep(const NHRStepInfo &nh
         uint16_t      recvSignalId  = nhrStepInfo.fromRank / RANK_NUM_PER_CKE;
         uint16_t      recvBit       = 1 << (nhrStepInfo.fromRank % RANK_NUM_PER_CKE);
         RemoteWait(*recvTransport, recvSignalId + signalNum_ * CKE_IDX_3,
-                   recvBit); // 后同步，等待通知写入完毕，不需要前同步
+                   recvBit); // 后同步，等待通知写入完毕
     }
     if (sendSliceIdxList.size() != 0) {
         u32          &toRankIdx     = indexMap_[nhrStepInfo.toRank];
@@ -247,7 +266,7 @@ void CcuContextScatterNHR1DMem2Mem::DoScatterNHRSingleStep(const NHRStepInfo &nh
             dstMem_.addr += ScratchOffset_[sendSliceIdx];
             DoSendRecvSlice(nhrStepInfo.toRank, srcMem_, dstMem_, i % RANK_NUM_PER_CKE);
         }
-        RemotePost(*sendTransport, selfSignalId + signalNum_ * CKE_IDX_3, selfBit, true); // 后同步,通知写入完毕,不需要前同步
+        RemotePost(*sendTransport, selfSignalId + signalNum_ * CKE_IDX_3, selfBit, true); // 后同步,通知写入完毕
     }
     HCCL_INFO("[DoScatterNHRSingleStep] rank %u step %u, toRank=%u, fromRank=%u, nSlice=%lu", rankId_, nhrStepInfo.step,
                nhrStepInfo.toRank, nhrStepInfo.fromRank, sendSliceIdxList.size());
@@ -296,6 +315,8 @@ void CcuContextScatterNHR1DMem2Mem::Algorithm()
         AxisSync(FST_AXIS_ID);
     PreSync();
     DoScatterNHR();
+    PostSync();
+
     if (axisSize_ > 1)
         AxisSync(SEC_AXIS_ID);
 

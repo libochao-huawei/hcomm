@@ -1,0 +1,163 @@
+/**
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
+#include "gtest/gtest.h"
+#include <mockcpp/mockcpp.hpp>
+#include <securec.h>
+#include <string>
+#include <vector>
+
+#include "hccl_network.h"
+#include "local_rdma_rma_buffer.h"
+
+#define private public
+#include "aicpu_ts_roce_mem.h"
+#undef private
+
+using namespace hcomm;
+
+class AicpuTsRoceRegedMemMgrTest : public testing::Test {
+protected:
+    void TearDown() override { GlobalMockObject::verify(); }
+};
+
+TEST_F(AicpuTsRoceRegedMemMgrTest, Ut_RegisterMemory_When_NetDevNull_Returns_E_PTR)
+{
+    AicpuTsRoceRegedMemMgr mgr(nullptr, nullptr);
+    HcommMem mem{};
+    mem.addr = reinterpret_cast<void *>(0x1000U);
+    mem.size = 4096U;
+    mem.type = COMM_MEM_TYPE_DEVICE;
+    void *handle = nullptr;
+    EXPECT_EQ(mgr.RegisterMemory(mem, "t", &handle), HCCL_E_PTR);
+}
+
+TEST_F(AicpuTsRoceRegedMemMgrTest, Ut_MemoryExport_When_MemHandleNull_Returns_E_PTR)
+{
+    AicpuTsRoceRegedMemMgr mgr(nullptr, nullptr);
+    EndpointDesc ep{};
+    void *desc = nullptr;
+    uint32_t len = 0;
+    EXPECT_EQ(mgr.MemoryExport(ep, nullptr, &desc, &len), HCCL_E_PTR);
+}
+
+TEST_F(AicpuTsRoceRegedMemMgrTest, Ut_MemoryExport_When_MemDescOutNull_Returns_E_PTR)
+{
+    AicpuTsRoceRegedMemMgr mgr(nullptr, nullptr);
+    EndpointDesc ep{};
+    void *fake = reinterpret_cast<void *>(0x1);
+    uint32_t len = 0;
+    EXPECT_EQ(mgr.MemoryExport(ep, fake, nullptr, &len), HCCL_E_PTR);
+}
+
+TEST_F(AicpuTsRoceRegedMemMgrTest, Ut_MemoryImport_When_DescTooShort_Returns_E_PARA)
+{
+    AicpuTsRoceRegedMemMgr mgr(nullptr, nullptr);
+    char buf[4] = {};
+    HcommMem out{};
+    EXPECT_EQ(mgr.MemoryImport(buf, sizeof(buf), &out), HCCL_E_PARA);
+}
+
+TEST_F(AicpuTsRoceRegedMemMgrTest, Ut_MemoryImport_When_OutMemNull_Returns_E_PTR)
+{
+    AicpuTsRoceRegedMemMgr mgr(nullptr, nullptr);
+    char buf[sizeof(EndpointDesc)] = {};
+    EXPECT_EQ(mgr.MemoryImport(buf, sizeof(buf), nullptr), HCCL_E_PTR);
+}
+
+TEST_F(AicpuTsRoceRegedMemMgrTest, Ut_MemoryUnimport_When_MemDescNull_Returns_E_PTR)
+{
+    AicpuTsRoceRegedMemMgr mgr(nullptr, nullptr);
+    EXPECT_EQ(mgr.MemoryUnimport(nullptr, sizeof(EndpointDesc)), HCCL_E_PTR);
+}
+
+TEST_F(AicpuTsRoceRegedMemMgrTest, Ut_GetAllMemHandles_When_CountOutNull_Returns_E_PTR)
+{
+    AicpuTsRoceRegedMemMgr mgr(nullptr, nullptr);
+    void *handles = nullptr;
+    EXPECT_EQ(mgr.GetAllMemHandles(&handles, nullptr), HCCL_E_PTR);
+}
+
+TEST_F(AicpuTsRoceRegedMemMgrTest, Ut_GetAllMemDetails_When_NetDevNull_Returns_E_PTR)
+{
+    AicpuTsRoceRegedMemMgr mgr(nullptr, nullptr);
+    std::vector<RoceMemDetails> local;
+    std::vector<RoceMemDetails> remote;
+    EXPECT_EQ(mgr.GetAllMemDetails(local, remote), HCCL_E_PTR);
+}
+
+TEST_F(AicpuTsRoceRegedMemMgrTest, Ut_GetAllMemHandles_When_NoRecords_Returns_SUCCESS)
+{
+    AicpuTsRoceRegedMemMgr mgr(nullptr, nullptr);
+    void *handles = reinterpret_cast<void *>(0xdeadbeefULL);
+    uint32_t n = 99U;
+    ASSERT_EQ(mgr.GetAllMemHandles(&handles, &n), HCCL_SUCCESS);
+    EXPECT_EQ(n, 0U);
+    EXPECT_EQ(handles, nullptr);
+}
+
+TEST_F(AicpuTsRoceRegedMemMgrTest, Ut_UnregisterMemory_When_MemHandleNull_Returns_E_PTR)
+{
+    AicpuTsRoceRegedMemMgr mgr(nullptr, nullptr);
+    EXPECT_EQ(mgr.UnregisterMemory(nullptr), HCCL_E_PTR);
+}
+
+TEST_F(AicpuTsRoceRegedMemMgrTest, Ut_MemoryUnimport_When_RemoteMgrMissing_Returns_NOT_FOUND)
+{
+    AicpuTsRoceRegedMemMgr mgr(nullptr, nullptr);
+    EndpointDesc ep{};
+    ep.protocol = COMM_PROTOCOL_ROCE;
+    ep.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
+    std::vector<char> buf(sizeof(EndpointDesc));
+    ASSERT_EQ(memcpy_s(buf.data(), buf.size(), &ep, sizeof(ep)), EOK);
+    EXPECT_EQ(mgr.MemoryUnimport(buf.data(), static_cast<uint32_t>(buf.size())), HCCL_E_NOT_FOUND);
+}
+
+TEST_F(AicpuTsRoceRegedMemMgrTest, Ut_GetParamsFromMemDesc_WhenValid_Returns_SUCCESS)
+{
+    AicpuTsRoceRegedMemMgr mgr(nullptr, nullptr);
+    EndpointDesc ep{};
+    ep.protocol = COMM_PROTOCOL_ROCE;
+    ep.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
+    const std::string rdmaBlob = "rdma-serialized-bytes";
+    std::vector<char> buf;
+    buf.insert(buf.end(), rdmaBlob.begin(), rdmaBlob.end());
+    std::vector<char> tail(sizeof(EndpointDesc));
+    ASSERT_EQ(memcpy_s(tail.data(), tail.size(), &ep, sizeof(ep)), EOK);
+    buf.insert(buf.end(), tail.begin(), tail.end());
+
+    EndpointDesc outEp{};
+    std::string outRdma;
+    ASSERT_EQ(mgr.GetParamsFromMemDesc(buf.data(), static_cast<uint32_t>(buf.size()), outEp, outRdma), HCCL_SUCCESS);
+    EXPECT_EQ(outRdma, rdmaBlob);
+    EXPECT_EQ(std::memcmp(&outEp, &ep, sizeof(EndpointDesc)), 0);
+}
+
+TEST_F(AicpuTsRoceRegedMemMgrTest, Ut_RegisterMemory_WithNetDev_MockLocalRdmaInit_ThenAgain_Returns_SUCCESS)
+{
+    MOCKER_CPP(&hccl::LocalRdmaRmaBuffer::Init).stubs().will(returnValue(HCCL_SUCCESS));
+
+    hccl::HcclIpAddress localIp;
+    ASSERT_EQ(localIp.SetReadableAddress("127.0.0.1"), HCCL_SUCCESS);
+    hccl::NetDevContext netCtx;
+    ASSERT_EQ(netCtx.Init(NicType::DEVICE_NIC_TYPE, 0, 0, localIp), HCCL_SUCCESS);
+
+    AicpuTsRoceRegedMemMgr mgr(reinterpret_cast<HcclNetDev>(&netCtx), nullptr);
+    HcommMem mem{};
+    mem.addr = reinterpret_cast<void *>(0x9000ULL);
+    mem.size = 4096U;
+    mem.type = COMM_MEM_TYPE_DEVICE;
+    void *h1 = nullptr;
+    ASSERT_EQ(mgr.RegisterMemory(mem, "t", &h1), HCCL_SUCCESS);
+    ASSERT_NE(h1, nullptr);
+
+    void *h2 = nullptr;
+    EXPECT_EQ(mgr.RegisterMemory(mem, "t", &h2), HCCL_SUCCESS);
+}

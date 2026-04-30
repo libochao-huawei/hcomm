@@ -48,6 +48,11 @@ HcclResult RankGraphV2::GetRankGraphInfo(GraphType type, void **graph, uint32_t 
     return pImpl->GetRankGraphInfo(graph, len);
 }
 
+HcclResult RankGraphV2::GetDeviceId(uint32_t rankId, uint32_t *deviceId)
+{
+    return pImpl->GetDeviceId(rankId, deviceId);
+}
+
 HcclResult RankGraphV2::GetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum)
 {
     return pImpl->GetNetLayers(netLayers, netLayerNum);

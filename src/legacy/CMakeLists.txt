@@ -56,7 +56,6 @@ target_include_directories(hccl_v2 PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
@@ -98,13 +97,13 @@ ENDIF ()
 #        -fno-strict-aliasing
 #        -pipe
 #        -O3
- 
+
 #        -Wextra
 #        -Wno-unused-parameter
 #        -Wno-missing-field-initializers
 #        -Wfloat-equal
 #)
- 
+
 target_compile_options(hccl_v2 PRIVATE
     -Werror
     -Wfloat-equal
@@ -143,7 +142,6 @@ target_include_directories(ccl_dpu PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/include/hccl
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
@@ -201,7 +199,12 @@ target_link_libraries(ccl_dpu
 
 # 指定 ccl_dpu 构建完成后安装到指定的目标位置
 install(TARGETS  ccl_dpu
-    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL
+    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
+)
+install(TARGETS  ccl_dpu
+    LIBRARY DESTINATION ${INSTALL_DPU_KERNEL_JSON_DIR} ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
 )
 
 # 需要链接的库，后需增加
@@ -214,7 +217,6 @@ target_link_libraries(hccl_v2 PRIVATE
     runtime
     ascendcl
     error_manager
-    hccl_v2_alg_frame
     ccl_dpu
     tsdclient
     ra
@@ -227,14 +229,8 @@ ENDIF ()
 # 将hccl编译出的动态库加入CANN的安装包
 IF (NOT DEFINED ENV{HCCL_LOCAL_BUILD})
 install(TARGETS hccl_v2
-    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL)
-install(TARGETS hccl_v2_native_alg_repo
-    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL)
-install(TARGETS hccl_v2_alg_frame
-    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL)
-
-install(TARGETS hccl_v2
-    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL
+    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
 )
 
 ENDIF ()

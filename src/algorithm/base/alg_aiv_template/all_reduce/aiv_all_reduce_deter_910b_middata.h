@@ -43,12 +43,12 @@ public:
 
 __aicore__ inline void AivAllReduceDeterMid910B::EndSync(int32_t tag)
 {
-    uint32_t targetRank = GetBlockIdx() % rankSize_;
+    uint32_t targetRank = blockIdx_ % rankSize_;
 
     int64_t flagOffsetBasic = seperateOffset + BASE_FLAG_OFFSET * AIV_ALL_REDUCE_DETER_910B_MIDDATA;
     uint32_t flagOffset = (((tag % 2 == 0) ? 3 : 9) * rankSize_ * FLAG_SIZE) + flagOffsetBasic;
 
-    if (GetBlockIdx() < rankSize_) {
+    if (blockIdx_ < rankSize_) {
         if (targetRank != rank_) {
             PipeBarrier<PIPE_ALL>();
             SetSignalValue((__gm__ int32_t *)(GM_OUT[targetRank] + flagOffset + rank_ * FLAG_SIZE), localSetTensor, tag);
@@ -225,7 +225,7 @@ __aicore__ inline void AivAllReduceDeterMid910B::Process(GM_ADDR input, GM_ADDR 
 {
     int64_t curCount = len;
     int64_t blockNumPerGroup = rankSize_;
-    int64_t x = GetBlockIdx() % blockNumPerGroup;
+    int64_t x = blockIdx_ % blockNumPerGroup;
     int64_t avgDataNum = curCount / rankSize_;
     int64_t lastDataNum = curCount - (rankSize_ - 1) * avgDataNum;
     int64_t flagOffsetBasic = seperateOffset + BASE_FLAG_OFFSET * AIV_ALL_REDUCE_DETER_910B_MIDDATA;
@@ -243,13 +243,13 @@ __aicore__ inline void AivAllReduceDeterMid910B::Process(GM_ADDR input, GM_ADDR 
     int64_t flagOffset3stCount = flagOffsetBase + (DOUBLE * rankSize_ + x) * FLAG_SIZE;
  
     // 第一组 先从input拷贝到cclbuffer
-    if (GetBlockIdx() < blockNumPerGroup) {
+    if (blockIdx_ < blockNumPerGroup) {
         int64_t dataCntSize = (x == rankSize_ - 1) ? lastDataNum : avgDataNum;
         CpGM2GMWithFlagWrap(cclGMSelf + x * avgDataNum, inputGM + x * avgDataNum, dataCntSize,
                             (__gm__ int32_t *)(GM_OUT[rank_] + flagOffset1stCount), 8, tag);
     } 
     // 第二组 拷贝cclbuffer前半部分到cllbuffer后半部分
-    else if (blockNumPerGroup<=GetBlockIdx() && GetBlockIdx() < DOUBLE * blockNumPerGroup) {
+    else if (blockNumPerGroup<=blockIdx_ && blockIdx_ < DOUBLE * blockNumPerGroup) {
         __gm__ int32_t *flagCntDoneOtner = (__gm__ int32_t *)(GM_OUT[x] + flagOffsetBase + (rank_)* FLAG_SIZE);
         __gm__ int32_t *flagCntSelf = (__gm__ int32_t *)(GM_OUT[rank_] + flagOffset2stCount);
         if (x == 0) {
@@ -281,7 +281,7 @@ __aicore__ inline void AivAllReduceDeterMid910B::Process(GM_ADDR input, GM_ADDR 
     }
 
     // 第2组搬运cclbuffer到output
-    if (blockNumPerGroup<=GetBlockIdx() && GetBlockIdx() < DOUBLE * blockNumPerGroup) {
+    if (blockNumPerGroup<=blockIdx_ && blockIdx_ < DOUBLE * blockNumPerGroup) {
         int32_t lastOpCore = rankSize_ - 1;
         if (rankSize_ >= DETERMINISTIC_RANKSIZE) {
             lastOpCore = rankSize_ > DETERMINISTIC_RANKSIZE ? DETERMINISTIC_RANKSIZE : DOUBLE;
@@ -299,7 +299,7 @@ __aicore__ inline void AivAllReduceDeterMid910B::ProcessSingleRanksizeCore(GM_AD
 {
     int64_t curCount = len;
     int64_t blockNumPerGroup = rankSize_;
-    int64_t x = GetBlockIdx() % blockNumPerGroup;
+    int64_t x = blockIdx_ % blockNumPerGroup;
     int64_t avgDataNum = curCount / rankSize_;
     int64_t lastDataNum = curCount - (rankSize_ - 1) * avgDataNum;
     int64_t flagOffsetBasic = seperateOffset + BASE_FLAG_OFFSET * AIV_ALL_REDUCE_DETER_910B_MIDDATA;

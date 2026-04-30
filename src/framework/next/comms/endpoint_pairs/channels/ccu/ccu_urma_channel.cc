@@ -71,6 +71,7 @@ static HcclResult CreateCcuTransport(UrmaEndpoint *ccuEndpoint,
     auto ret = HcclResult::HCCL_SUCCESS;
     auto *channelCtxPool = ccuEndpoint->GetCcuChannelCtxPool();
     CHK_PTR_NULL(channelCtxPool);
+    // 申请ccu channel ctx， jetty ctx，wqebb，可能资源不足，需要回退
     ret = channelCtxPool->PrepareCreate({linkData});
     if (ret == HCCL_E_UNAVAIL) {
         HCCL_WARNING("[CcuUrmaChannel][%s] prepare ccu channel ctx failed, "
@@ -103,6 +104,7 @@ static HcclResult CreateCcuTransport(UrmaEndpoint *ccuEndpoint,
     CHK_RET(BuildBufferInfos(memHandles, memHandleNum, bufferInfos));
 
     // 调用底层的创建函数 (CcuCreateTransport 通常是全局函数或静态函数)
+    // 申请 xn cke可能失败，需要回退
     ret = CcuCreateTransport(socket, connectionInfo, bufferInfos, impl);
     if (ret == HCCL_E_UNAVAIL) {
         HCCL_WARNING("[CcuUrmaChannel][%s] failed, ccu resources unavailable.", __func__);
@@ -163,7 +165,7 @@ HcclResult CcuUrmaChannel::Init()
         __func__);
     HCCL_WARNING("[CcuUrmaChannel][%s] now only support to exchange hccl buffer.",
         __func__);
-    CHK_RET(CreateCcuTransport(ccuEndpoint, linkData, socket,
+    CHK_RET_UNAVAIL(CreateCcuTransport(ccuEndpoint, linkData, socket,
         channelDesc_.memHandles, channelDesc_.memHandleNum, impl_));
 
     hcclBufferInfoPtr_.reset(new (std::nothrow) HcclMem());

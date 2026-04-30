@@ -12,6 +12,7 @@ set(src_to_test_list
     hccl_api_base_test.cc
     ut_HcommCcuProfiling_test.cc
     ut_HcommAivProfiling_test.cc
+    ut_hcclCommTaskExceptionLite.cc
 )
 
 add_executable(hccl_utest_test_dfx_resource ${src_to_test_list})
@@ -19,6 +20,7 @@ add_executable(hccl_utest_test_dfx_resource ${src_to_test_list})
 #头文件搜索路径
 target_include_directories(hccl_utest_test_dfx_resource PRIVATE
     ${UT_COMMON_INCLUDE_LIST}
+    ${HCCL_CODE_ROOT}/externel_depends/tsch
 )
  
 target_compile_definitions(hccl_utest_test_dfx_resource PRIVATE

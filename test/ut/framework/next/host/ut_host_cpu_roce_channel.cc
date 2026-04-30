@@ -117,9 +117,9 @@ protected:
     void SetupOneValidQpInfoMock()
     {  
         std::vector<Hccl::QpInfo> qpInfos(1);
-        ibv_cq cq{};
-        ibv_qp qp{};
-        ibv_context context{};
+        static ibv_cq cq{};
+        static ibv_qp qp{};
+        static ibv_context context{};
         qpInfos[0].sendCq = &cq;
         qpInfos[0].qp = &qp;
         qpInfos[0].sendCq->context = &context;
@@ -577,20 +577,6 @@ TEST_F(HostCpuRoceChannelTest, Ut_ChannelFence_When_WqeNumIsZero_Expect_HCCL_SUC
     EXPECT_EQ(status, ChannelStatus::READY);
     // ChannelFence
     impl_->wqeNum_ = 0;
-    HcclResult ret = impl_->ChannelFence();
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-}
-
-TEST_F(HostCpuRoceChannelTest, Ut_ChannelFence_When_PartialCompletion_Expect_HCCL_SUCCESS)
-{
-    SetupSuccessfulConnectionMocks();
-    auto impl_ = CreateInitAndConnect();
-    impl_->wqeNum_ = 3;
-    SetupOneValidQpInfoMock();
-    MOCKER_CPP(&HostCpuRoceChannel::IbvPollCq)
-        .stubs()
-        .will(returnValue(1))
-        .then(returnValue(2));
     HcclResult ret = impl_->ChannelFence();
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }

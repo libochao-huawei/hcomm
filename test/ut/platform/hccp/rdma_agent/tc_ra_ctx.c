@@ -2046,3 +2046,92 @@ void TcRaPeerCtxSetTpAttr()
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 }
+
+void TcRaCtxGetJettyContext()
+{
+    uint8_t context[CONTEXT_MAX_LEN];
+    struct RaCtxQpHandle qpHandle = {0};
+    struct RaCtxHandle ctxHandle = {0};
+    struct RaCtxOps ctxOps = {0};
+    unsigned int len = 0;
+    int ret = 0;
+
+    mocker_clean();
+    ret = RaCtxGetJettyContext(NULL, NULL, NULL);
+    EXPECT_INT_EQ(ret, 128103);
+
+    ret = RaCtxGetJettyContext(&qpHandle, NULL, NULL);
+    EXPECT_INT_EQ(ret, 128103);
+
+    ret = RaCtxGetJettyContext(&qpHandle, context, NULL);
+    EXPECT_INT_EQ(ret, 128103);
+
+    ret = RaCtxGetJettyContext(&qpHandle, context, &len);
+    EXPECT_INT_EQ(ret, 128103);
+
+    len = CONTEXT_MAX_LEN;
+    ret = RaCtxGetJettyContext(&qpHandle, context, &len);
+    EXPECT_INT_EQ(ret, 128103);
+
+    ctxHandle.ctxOps = NULL;
+    qpHandle.ctxHandle = &ctxHandle;
+    ret = RaCtxGetJettyContext(&qpHandle, context, &len);
+    EXPECT_INT_EQ(ret, 128103);
+    mocker_clean();
+
+    mocker(RaHdcCtxGetJettyContext, 1, -EINVAL);
+    ctxHandle.ctxOps = &gRaHdcCtxOps;
+    ret = RaCtxGetJettyContext(&qpHandle, context, &len);
+    EXPECT_INT_EQ(ret, 128103);
+    mocker_clean();
+
+    mocker(RaHdcCtxGetJettyContext, 1, 0);
+    ctxHandle.ctxOps = &gRaHdcCtxOps;
+    ret = RaCtxGetJettyContext(&qpHandle, context, &len);
+    EXPECT_INT_EQ(ret, 0);
+    mocker_clean();
+}
+
+void TcRaHdcCtxGetJettyContext()
+{
+    struct RaCtxQpHandle qpHandle = {0};
+    uint8_t context[CONTEXT_MAX_LEN];
+    unsigned int len = 0;
+    int ret = 0;
+
+    mocker_clean();
+    mocker(RaHdcProcessMsg, 1, -1);
+    ret = RaHdcCtxGetJettyContext(&qpHandle, context, &len);
+    EXPECT_INT_EQ(ret, -1);
+    mocker_clean();
+
+    mocker(RaHdcProcessMsg, 1, 0);
+    mocker(memcpy_s, 1, -1);
+    ret = RaHdcCtxGetJettyContext(&qpHandle, context, &len);
+    EXPECT_INT_EQ(ret, -ESAFEFUNC);
+    mocker_clean();
+
+    mocker(RaHdcProcessMsg, 1, 0);
+    mocker(memcpy_s, 1, 0);
+    ret = RaHdcCtxGetJettyContext(&qpHandle, context, &len);
+    EXPECT_INT_EQ(ret, 0);
+    mocker_clean();
+}
+
+void TcRaPeerCtxGetJettyContext()
+{
+    struct RaCtxQpHandle qpHandle = {0};
+    uint8_t context[CONTEXT_MAX_LEN];
+    unsigned int len = 0;
+    int ret = 0;
+
+    mocker_clean();
+    ret = RaPeerCtxGetJettyContext(&qpHandle, context, &len);
+    EXPECT_INT_EQ(ret, 0);
+    mocker_clean();
+
+    mocker(RsCtxGetUbContext, 1, -1);
+    ret = RaPeerCtxGetJettyContext(&qpHandle, context, &len);
+    EXPECT_INT_EQ(ret, -1);
+    mocker_clean();
+}

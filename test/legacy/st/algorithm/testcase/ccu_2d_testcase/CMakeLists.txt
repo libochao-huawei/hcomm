@@ -55,3 +55,6 @@ target_sources(legacy_alg_ccu_2d_testcase
         testcase_alltoall_ccu_2d.cc
         testcase_alltoallv_ccu_2d.cc
 )
+
+enable_testing()
+add_test(NAME legacy_alg_ccu_2d_testcase COMMAND legacy_alg_ccu_2d_testcase)

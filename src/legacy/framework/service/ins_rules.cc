@@ -341,7 +341,7 @@ void Interpret(const InsLocalPostTo &insLocalPostTo, CommunicatorImpl &comm, con
 
     if (insLocalPostTo.GetNotifyType() == NotifyType::NORMAL) {
         auto notify
-            = RtsNotifyGet(comm.GetQueueNotifyManager(), insLocalPostTo.GetPostQid(), insLocalPostTo.GetWaitQid(),
+            = RtsNotifyGet(comm.GetCcuQueueNotifyManager(), insLocalPostTo.GetPostQid(), insLocalPostTo.GetWaitQid(),
                                  insLocalPostTo.GetTopicId(), insLocalPostTo.Describe());
         notify->Post(stream);
         notifyID = notify->GetId();
@@ -375,7 +375,7 @@ void Interpret(const InsLocalWaitFrom &insLocalWaitFrom, CommunicatorImpl &comm,
     u64 notifyID;
 
     if (insLocalWaitFrom.GetNotifyType() == NotifyType::NORMAL) {
-        auto notify = RtsNotifyGet(comm.GetQueueNotifyManager(), insLocalWaitFrom.GetPostQid(),
+        auto notify = RtsNotifyGet(comm.GetCcuQueueNotifyManager(), insLocalWaitFrom.GetPostQid(),
                                                      insLocalWaitFrom.GetWaitQid(), insLocalWaitFrom.GetTopicId(),
                                                      insLocalWaitFrom.Describe());
         notify->Wait(stream, taskConfig.GetNotifyWaitTime());
@@ -851,7 +851,7 @@ void Interpret(const AivInstruction &aivInstruction, const CommunicatorImpl &com
                 reinterpret_cast<void *>(comm.GetAivOffloadTagBuffer()->GetAddr() + AIV_FLAG_CLEAR_OFFSET);
         bool isAivClearEnable = comm.GetAivClearEnable();
         if (isAivClearEnable) {
-            HrtMemcpy(buffersInAddr, AIV_FLAG_AREA_SIZE, buffersInAddrSrc, AIV_FLAG_AREA_SIZE, RT_MEMCPY_DEVICE_TO_DEVICE);
+            HrtMemAsyncCopy(buffersInAddr, AIV_FLAG_AREA_SIZE, buffersInAddrSrc, AIV_FLAG_AREA_SIZE, ACL_MEMCPY_DEVICE_TO_DEVICE, stream.GetPtr());
         }
     }
 

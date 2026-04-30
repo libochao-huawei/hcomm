@@ -111,7 +111,6 @@ public:
         return std::make_unique<CcuTaskArgAllToAllMesh1D>(inputAddr_, outputAddr_, sliceSize_, token_, srcOffset_, dstOffset_, srcStride_);
     }
 
-
 private:
     CcuInstType instType_ = CcuInstType::CCU_ALLTOALL_MESH_1D_DIRECT;
     std::vector<uint64_t> dimSize_;

@@ -1,4 +1,4 @@
-target_sources(hccl_v2_alg_frame PRIVATE
+target_sources(hccl_v2 PRIVATE
         execute_selector.cc
         base_selector.cc
         mc2_selector.cc

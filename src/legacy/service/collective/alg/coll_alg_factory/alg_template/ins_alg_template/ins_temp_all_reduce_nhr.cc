@@ -37,14 +37,14 @@ HcclResult InsTempAllReduceNHR::CalcRes(AlgTempResReq &tempResReq)
     for (auto resReqIter = linkReq.begin(); resReqIter != linkReq.end(); resReqIter++) {
         auto remoteRank = resReqIter->first;
         if (rank2PathNumMap_.find(remoteRank) == rank2PathNumMap_.end() || rank2PathNumMap_[remoteRank] == 0) {
-            HCCL_ERROR("[InsTempAllReduceNHR] No path to remoteRank[%u]", remoteRank);
+            HCCL_ERROR("[InsTempAllReduceNHR] No path to remoteRank[%d]", remoteRank);
             return HcclResult::HCCL_E_INTERNAL;
         }
         if (pathNum == 0) {
             pathNum = rank2PathNumMap_[remoteRank];
         } else if (rank2PathNumMap_[remoteRank] != pathNum) {
             HCCL_ERROR("[InsTempAllReduceNHR] Inconsistency pathNum to remoteRanks, Previous consistent pathNum=[%u], mismatched "
-                       "remoteRank=[%u], pathNum=[%u]",
+                       "remoteRank=[%d], pathNum=[%u]",
                 pathNum,
                 remoteRank,
                 rank2PathNumMap_[remoteRank]);

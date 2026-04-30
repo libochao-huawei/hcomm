@@ -75,7 +75,7 @@ void AicpuStreamManager::AllocFreeStream()
 
 HcclResult AicpuStreamManager::CaptureFreeStream(const Stream *mainStream, const Stream *slaveStream) const
 {
-    HCCL_RUN_INFO("[AicpuStreamManager][%s] mainStream[%u] slaveStream[%u]",
+    HCCL_DEBUG("[AicpuStreamManager][%s] mainStream[%u] slaveStream[%u]",
         __func__, mainStream->GetId(), slaveStream->GetId());
     rtModel_t rtModel = nullptr;
     bool isCapture = false;
@@ -85,7 +85,7 @@ HcclResult AicpuStreamManager::CaptureFreeStream(const Stream *mainStream, const
         CHK_PTR_NULL(rtModel);
         CHK_RET(GetModelId(rtModel, modelId));
         CHK_RET(AddStreamToModel(slaveStream->GetPtr(), rtModel));
-        HCCL_RUN_INFO("[AicpuStreamManager][%s] Add freeStream[%u] to model[%u] success, mainStream[%u]",
+        HCCL_INFO("[AicpuStreamManager][%s] Add freeStream[%u] to model[%u] success, mainStream[%u]",
             __func__, slaveStream->GetId(), modelId, mainStream->GetId());
     }
     return HCCL_SUCCESS;

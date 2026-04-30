@@ -228,7 +228,7 @@ TEST_F(GlobalMirrorTasksTest, GlobalMirrorTasks_FindTaskInfo_taskId_not_found)
     u32 cirStmId = 0;
     u32 cirTaskId = 5;
     u32 vecStmId = 1;
-    u32 vecTaskId = 6;;
+    u32 vecTaskId = 6;
     
     //Then
     CheckFindTaskInfoTaskIdNotFound(devId, cirStmId, cirTaskId, QueueType::Circular_Queue, globalMirrorTasks);
