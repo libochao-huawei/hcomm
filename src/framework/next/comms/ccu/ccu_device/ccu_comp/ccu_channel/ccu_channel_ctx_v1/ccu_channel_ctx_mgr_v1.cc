@@ -13,7 +13,7 @@
 #include <vector>
 #include <string>
 
-#include "ccu_res_specs.h"
+#include "../../../ccu_res_specs.h"
 #include "hcomm_adapter_hccp.h"
 
 namespace hcomm {

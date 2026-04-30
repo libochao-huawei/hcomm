@@ -34,18 +34,18 @@ public:
 
     void Serialize(Hccl::BinaryStream &stream) override
     {
-        stream << addr << size << memType << memTag << tokenValue << tokenId << keySize << key;
+        stream << addr << size << memType << memTag << tokenValue << tokenId << keySize << key << segVa;
     }
 
     void Deserialize(Hccl::BinaryStream &stream) override
     {
-        stream >> addr >> size >> memType >> memTag >> tokenValue >> tokenId >> keySize >> key;
+        stream >> addr >> size >> memType >> memTag >> tokenValue >> tokenId >> keySize >> key >> segVa;
     }
 
     std::string Describe() const override
     {
         return StringFormat(
-            "ExchangeUbBufferDto[addr=0x%llx, size=0x%llx keySize=%u memTag %s]", addr, size, keySize, memTag.c_str());
+            "ExchangeUbBufferDto[addr=0x%llx, size=0x%llx keySize=%u memTag %s segVa=%llu]", addr, size, keySize, memTag.c_str(), segVa);
     }
 
     u64 addr{0};
@@ -56,6 +56,7 @@ public:
     u32 tokenValue{0};
     u32 tokenId{0};
     u32 keySize{0};
+    u64 segVa{0};
 };
 
 } // namespace Hccl
