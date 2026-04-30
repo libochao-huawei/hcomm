@@ -273,6 +273,8 @@ struct TaskParaHost {
 
 struct TaskParaGraphLaunch {
     u32 ctxNum{0};
+    const void *descBuf{nullptr};
+    size_t descBufLen{0};
 };
 
 // aicpu展开模式当前下到流上的所有task profiling信息
