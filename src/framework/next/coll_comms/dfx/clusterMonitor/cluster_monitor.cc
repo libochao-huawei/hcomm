@@ -14,6 +14,9 @@
 #include "env_config/env_config.h"
 #include "log.h"
 
+#include "hcclCommTaskException.h"
+#include "ccuTaskException.h"
+
 namespace hcomm {
 constexpr u32 EVENT_MAX_CNT = 5000;             // 防止内存泄漏，同时不能太短，防止正常事件被冲掉
 constexpr u32 HEARTBEAT_INTERVAL = 1000;                                 // 心跳帧发送周期为1000 ms
@@ -21,6 +24,9 @@ constexpr u32 BROADCAST_INTERVAL = 50; // 背景线程执行周期为50 ms
 constexpr u32 HEARTBEAT_COUNT = HEARTBEAT_INTERVAL / BROADCAST_INTERVAL; // 心跳帧发送间隔数
 constexpr u32 BASE_NUMBER = 2;
 constexpr u32 MAX_SENDBUFF_SIZE = 3072; // SendBuff[dst] 最大数量
+
+constexpr u32 JITTER_TIME = 300; // 关键事件允许的误差事件范围±300s。误差来源：EVENT和NOTIFY差异、传播耗时、计时误差   
+constexpr u32 MAX_MODULE_DEVICE_NUM = 65;
 
 HcclResult ClusterMonitor::FormatUID(ClusterUidCtxt ctxt, ClusterUIDType &uid)
 {
@@ -760,5 +766,172 @@ HcclResult ClusterMonitor::UnRegisterToClusterMonitor(hccl::CollComm* collComm)
     }
     return HCCL_SUCCESS;
 }
+
+ClusterMonitor &ClusterMonitor::GetInstance(u32 deviceId)
+{
+    static ClusterMonitor hb[MAX_MODULE_DEVICE_NUM];
+    if (static_cast<u32>(deviceId) >= MAX_MODULE_DEVICE_NUM) {
+        HCCL_WARNING("[Heartbeat][%s]deviceId[%d] is invalid", __func__, deviceId);
+        return hb[0];
+    }
+    return hb[deviceId];
+}
+
+void ClusterMonitor::RecvFrameOutCheck()
+{
+    for (auto iter = uid2SocketRefMap_.begin(); iter != uid2SocketRefMap_.end(); iter++) {
+            ClusterUIDType rem = iter->first;
+            //HCCL_DEBUG("rank[%s] Try to Recv from rank[%s]", GetUID(uid_).c_str(), GetUID(rem).c_str());
+            HcclResult ret =  RecvFrame(rem);
+            if (ret == HCCL_E_INTERNAL) {
+                errorSocket_.push_back(rem);
+            } else if (uid2SocketRefMap_[rem].lostNum >= lostThreshold_) {
+                SetStatus(rem, myRankUid_, ClusterMonitorStatus::CLUSTER_MONITOR_LOST, true);
+            }
+        }
+    return;
+}
+
+void ClusterMonitor::ProcessExceptionEvent()
+{
+     while (errRankQueue_.size() > 0) {
+        ClusterUIDType cur = errRankQueue_.front();
+        uid2FrameStatusMap_[cur].needBroadcast = false;
+        for (auto iterRem = uid2SocketRefMap_.begin(); iterRem != uid2SocketRefMap_.end(); iterRem++) {
+            ClusterUIDType rem = iterRem->first;
+            if (rem != uid2FrameStatusMap_[cur].informer &&
+                uid2FrameStatusMap_[rem].status == ClusterMonitorStatus::CLUSTER_MONITOR_OK) {
+                (void)SendFrame(rem, cur, uid2FrameStatusMap_[cur].informer, uid2FrameStatusMap_[cur].status);        
+            }
+        }
+        errRankQueue_.pop();
+    }
+    return;
+}
+
+
+void GetCqeErrInfoFromTaskException(unsigned int RemoteLocalIdId, unsigned int LocDeviceId, unsigned short int status, std::string LocalEid, std::string RemoteEid, std::string RemoteInsId)
+{
+    return ClusterMonitor::GetInstance(LocDeviceId).GetCqeErrInfoFromTaskException(RemoteLocalIdId, status, LocalEid, RemoteEid, RemoteInsId);
+}
+
+void ClusterMonitor::GetCqeErrInfoFromTaskException(u32 RemoteLocalId, uint16_t status, std::string LocalEid, std::string RemoteEid, std::string RemoteInsId)
+{
+    CqeErrInfo_.CqeRemoteLocalId = RemoteLocalId;
+    CqeErrInfo_.Cqestatus = status;
+    CqeErrInfo_.CqeLocalEid = LocalEid;
+    CqeErrInfo_.CqeRemoteEid = RemoteEid;
+    CqeErrInfo_.CqeRemoteInsId = RemoteInsId;
+    ClusterUidCtxt remoteUidctxt(RemoteInsId, RemoteLocalId);
+    ClusterUIDType localUid = myRankUid_;
+    ClusterUIDType remoteUid = {0};
+    CHK_RET_NULL(FormatUID(remoteUidctxt, remoteUid));
+    SetStatus(localUid, remoteUid, ClusterMonitorStatus::CLUSTER_MONITOR_CQE_ERR, true);
+    // if (CqeErrInfo_.CqeRemoterstatus != 0) {
+    //    SetStatus(uid_, uid_, ClusterMonitorStatus::CLUSTER_MONITOR_CQE_EXCEPTION);//从远端获取的remoteRankId需要转换为Uid_类型
+    //    HCCL_RUN_INFO("[%s][%s]local rank [%s]: crimer rank [%s] status[%d] by informer rank [%d]",
+    //         LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_HEARTBEAT_EVETN.c_str(), GetUID(uid_).c_str(),
+    //         GetUID(uid_).c_str(), CqeErrInfo_.CqeRemoterstatus, CqeErrInfo_.CqeRemoterankId);
+    // }
+    return;
+}
+bool ClusterMonitor::IsKeyEvent(ClusterMonitorFrame &event, HcclUs curTime)
+{
+    bool ret = false;
+    s64 intervalTime = DURATION_US(curTime - event.TOARelative).count() / (TIME_S_TO_MS * ONE_MILLISECOND_OF_USLEEP);
+    const s32 hcclExecTimeout = Hccl::EnvConfig::GetInstance().GetRtsConfig().GetExecTimeOut();
+    s64 execTimeout = hcclExecTimeout;
+    s64 detectionTime = 0;
+    switch (event.status) {
+        case ClusterMonitorStatus::CLUSTER_MONITOR_LOST:
+            detectionTime = (lostThreshold_ * HEARTBEAT_INTERVAL) / TIME_S_TO_MS;
+            break;
+        case ClusterMonitorStatus::CLUSTER_MONITOR_CQE_ERR:
+            detectionTime = 0;
+            break;
+        default:
+            return false; // 当前不支持的事件，不做处理和展现
+    }
+    ret = ((execTimeout - intervalTime - detectionTime) < JITTER_TIME) &&
+        ((intervalTime + detectionTime - execTimeout) < JITTER_TIME);
+    return ret;
+}
+
+void ClusterMonitor::MakeErrMsg(std::queue<ClusterMonitorFrame> &keyEvents, std::vector<std::string> &errStatusVec)
+{
+    while (keyEvents.size() > 0) {
+        auto &tmp = keyEvents.front();
+        std::string crimerStr = GetUID(tmp.crimer);
+        std::string informerStr = GetUID(tmp.informer);
+
+        std::string headStr = "[" + LOG_KEYWORDS_TASK_EXEC + "][" + LOG_KEYWORDS_HEARTBEAT_EVETN + "]" +
+            "Cluster Exception Location[IP/ID]:[";
+
+        time_t tm = std::chrono::system_clock::to_time_t(tmp.TOASystem);
+        std::string timeStr(ctime(&tm));
+        if (!timeStr.empty()) { // ctime()函数自带换行符，需要去掉
+            timeStr.pop_back();
+        }
+        timeStr = ", Arrival Time:[" + timeStr + "]";
+
+        std::string errStr = ", ExceptionType:";
+        std::string reasonStr = ", Possible Reason:";
+        switch (tmp.status) {
+            case ClusterMonitorStatus::CLUSTER_MONITOR_LOST:
+                errStr = errStr + "[Heartbeat Lost Occurred]";
+                reasonStr = reasonStr + "1. Process has exited, 2. Network Disconnected";
+                errStr =
+                    headStr + crimerStr + "]" + timeStr + ", Discoverer:[" + informerStr + "]" + errStr + reasonStr;
+                break;
+            case ClusterMonitorStatus::CLUSTER_MONITOR_CQE_ERR:
+                errStr = errStr + "[Error cqe Occurred]";
+                reasonStr = reasonStr + "1.Network Disconnected, 2.Remote Rank Coredown";
+                errStr = headStr + crimerStr + "]" + timeStr + errStr + reasonStr;
+                break;
+            default:
+                errStr = " Unknown";
+        }
+        errStatusVec.emplace_back(errStr);
+        keyEvents.pop();
+    }
+}
+
+std::vector<std::string> ClusterMonitor::PrintEvents(std::map<ClusterMonitorStatus, std::queue<ClusterMonitorFrame>> &keyEvents)
+{
+    std::vector<std::string> errStatusVec;
+    // 打印优先级 opretry not support > error cqe > stuck > lost
+    MakeErrMsg(keyEvents[ClusterMonitorStatus::CLUSTER_MONITOR_CQE_ERR], errStatusVec);
+    MakeErrMsg(keyEvents[ClusterMonitorStatus::CLUSTER_MONITOR_LOST], errStatusVec);
+    return errStatusVec;
+}
+
+std::vector<std::string> ClusterMonitor::GetErrStatusVecFromCluserMonitor()
+{
+    std::unique_lock<std::mutex> lock(ProcessLock_);
+    HcclUs curTime = TIME_NOW();
+    std::map<ClusterMonitorStatus, std::queue<ClusterMonitorFrame>> keyEvents;
+    while (errStatusQueue_.size() > 0) {
+        auto &tmp = errStatusQueue_.front();
+        if (IsKeyEvent(tmp, curTime)) { // 非关键事件不处理
+            keyEvents[tmp.status].push(tmp);
+        }
+        errStatusQueue_.pop();
+    }
+    return PrintEvents(keyEvents);
+}
+
+std::vector<std::string> GetErrStatusVecFromCluserMonitor(s32 deviceLogicID)
+{
+    return ClusterMonitor::GetInstance(deviceLogicID).GetErrStatusVecFromCluserMonitor();
+}
+
+__attribute__((constructor)) void ClusterMonitorCallBackInit()
+{
+    hcomm::RegisterGetAicpuCqeErrInfoCallBackHcomm(GetCqeErrInfoFromTaskException);
+    hcomm::RegisterGetCcuCqeErrInfoCallBackHcomm(GetCqeErrInfoFromTaskException);
+    hcomm::RegisterAicpuGetErrStatusVecCallBack(GetErrStatusVecFromCluserMonitor);
+    hcomm::RegisterCcuGetErrStatusVecCallBack(GetErrStatusVecFromCluserMonitor);
+}
+
 
 } // namespace hcomm
