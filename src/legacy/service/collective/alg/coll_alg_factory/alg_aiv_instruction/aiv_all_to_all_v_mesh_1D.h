@@ -20,6 +20,37 @@ public:
     __aicore__ inline AivAlltoAllVMesh1D() {
     }
 
+    __aicore__ inline uint64_t GetFlagAreaOffset() const
+    {
+        uint64_t cclDataBytes = cclBufferCountPerRank * rankSize_ * sizeof(T);
+        return CeilDiv(cclDataBytes, UB_ALIGN_SIZE) * UB_ALIGN_SIZE;
+    }
+
+    __aicore__ inline void RecordCclFlag(uint32_t targetRank, uint64_t flagOffset, int32_t tag)
+    {
+        d2hGlobal.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t *>(GM_IN[targetRank] + GetFlagAreaOffset() +
+            flagOffset * UB_ALIGN_SIZE));
+        localTagTensor.SetValue(0, tag);
+        pipe_barrier(PIPE_ALL);
+        DataCopyUB2GM(d2hGlobal, localTagTensor, UB_ALIGN_SIZE / sizeof(int32_t));
+        pipe_barrier(PIPE_ALL);
+    }
+
+    __aicore__ inline void WaitCclFlag(uint32_t targetRank, uint64_t flagOffset, int32_t tag)
+    {
+        d2hGlobal.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t *>(GM_IN[targetRank] + GetFlagAreaOffset() +
+            flagOffset * UB_ALIGN_SIZE));
+        while (true) {
+            int64_t st = AscendC::GetSystemCycle();
+            while (AscendC::GetSystemCycle() - st < 3000) {}
+            DataCopyGM2UB(localTagTensor, d2hGlobal, UB_ALIGN_SIZE / sizeof(int32_t));
+            pipe_barrier(PIPE_ALL);
+            if (localTagTensor.GetValue(0) == tag) {
+                break;
+            }
+        }
+    }
+
     __aicore__ inline void InitCoreInfo(uint64_t len, ExtraArgs &extraArgsPerLoop)
     {
         targetRank = block_idx / coreNumPerRank; // 每个核负责哪个rank的数据
@@ -54,32 +85,37 @@ public:
         recvOutputOffset = output_ + (extraArgsPerLoop.recvDispls[targetRank] + innerDispls) * sizeof(T);
     }
 
-    __aicore__ inline void Producer()
+    __aicore__ inline int32_t GetLoopTag(uint64_t loop) const
+    {
+        return curTag + static_cast<int32_t>(loop);
+    }
+
+    __aicore__ inline void Producer(int32_t loopTag)
     {
         if (sendCurCount == 0) {
             return;
         }
         uint64_t flag_offset = block_idx;
-        WaitFlag(rank_, flag_offset, 0);
+        WaitCclFlag(rank_, flag_offset, 0);
 
         CpGM2GM((__gm__ T *)sendOutputOffset, (__gm__ T *)sendInputOffset, sendCurCount);
         PipeBarrier<PIPE_ALL>();
 
-        Record(rank_, flag_offset, curTag);
+        RecordCclFlag(rank_, flag_offset, loopTag);
     }
 
-    __aicore__ inline void Consumer()
+    __aicore__ inline void Consumer(int32_t loopTag)
     {
         if (recvCurCount == 0) {
             return;
         }
         uint64_t flag_offset = rank_ * coreNumPerRank + coreIndex;
-        WaitFlag(targetRank, flag_offset, curTag);
+        WaitCclFlag(targetRank, flag_offset, loopTag);
 
         CpGM2GM((__gm__ T *)recvOutputOffset, (__gm__ T *)recvInputOffset, recvCurCount);
         PipeBarrier<PIPE_ALL>(); // 核内自己的同步
 
-        Record(targetRank, flag_offset, 0);
+        RecordCclFlag(targetRank, flag_offset, 0);
     }
 
     __aicore__ inline void Process(uint64_t len, uint32_t tag, ExtraArgs &extraArgs)
@@ -98,8 +134,8 @@ public:
         curTag = static_cast<int32_t>(tag);
         cclBufferCountPerRank = len;
 
-        // 运行过程中用到的所有flag，先置为0，后面会复用
-        Record(rank_, block_idx, 0);
+        // 在 ccl buffer 尾部预留独立 flag 区，避免与 alltoallv 数据区重叠。
+        RecordCclFlag(rank_, block_idx, 0);
         PipeBarrier<PIPE_ALL>();
 
         // 这里根据ccl buffer的大小去做循环
@@ -110,11 +146,12 @@ public:
         }
 
         uint64_t processedDataCount = 0;
-        // 每张卡的loopTimes可能是不一样的
+        // alltoallv 各卡 loopTimes 可以不同，轮间通过 loopTag 避免 flag ABA。
         uint64_t loopTimes = maxSendOrRecvDataCount / cclBufferCountPerRank +
             static_cast<uint64_t>(maxSendOrRecvDataCount % cclBufferCountPerRank != 0);
         for (uint64_t loop = 0; loop < loopTimes; loop++) {
             ExtraArgs extraArgsPerLoop;
+            int32_t loopTag = GetLoopTag(loop);
             uint64_t currDataCount = (loop == loopTimes - 1) ? maxSendOrRecvDataCount - processedDataCount : cclBufferCountPerRank;
             for (uint64_t i = 0; i < rankSize_; i++) {
                 if (extraArgs.sendCounts[i] > processedDataCount) {
@@ -135,11 +172,8 @@ public:
             }
 
             InitCoreInfo(cclBufferCountPerRank, extraArgsPerLoop);
-            Producer(); // 写数据
-            Consumer(); // 读数据
-            if (loop != loopTimes - 1) {
-                BarrierAll();
-            }
+            Producer(loopTag); // 写数据
+            Consumer(loopTag); // 读数据
             processedDataCount += currDataCount;
         }
     }
