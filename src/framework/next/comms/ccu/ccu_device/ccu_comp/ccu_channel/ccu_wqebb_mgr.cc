@@ -10,7 +10,7 @@
 
 #include "ccu_wqebb_mgr.h"
 
-#include "ccu_res_specs.h"
+#include "../../ccu_res_specs.h"
 
 namespace hcomm {
 
