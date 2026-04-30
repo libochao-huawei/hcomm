@@ -773,21 +773,6 @@ ClusterMonitor &ClusterMonitor::GetInstance(u32 deviceId)
     return hb[deviceId];
 }
 
-void ClusterMonitor::RecvFrameOutCheck()
-{
-    for (auto iter = uid2SocketRefMap_.begin(); iter != uid2SocketRefMap_.end(); iter++) {
-            ClusterUIDType rem = iter->first;
-            //HCCL_DEBUG("rank[%s] Try to Recv from rank[%s]", GetUID(uid_).c_str(), GetUID(rem).c_str());
-            HcclResult ret =  RecvFrame(rem);
-            if (ret == HCCL_E_INTERNAL) {
-                errorSocket_.push_back(rem);
-            } else if (uid2SocketRefMap_[rem].lostNum >= lostThreshold_) {
-                SetStatus(rem, myRankUid_, ClusterMonitorStatus::CLUSTER_MONITOR_LOST, true);
-            }
-        }
-    return;
-}
-
 void ClusterMonitor::ProcessExceptionEvent()
 {
      while (errRankQueue_.size() > 0) {
