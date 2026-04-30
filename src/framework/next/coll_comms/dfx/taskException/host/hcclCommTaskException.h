@@ -18,6 +18,7 @@
 #include "error_message_v2.h"
 #include "orion_adapter_hccp.h"
 #include "rdma_handle_manager.h"
+#include "coll_comm.h"
 
 namespace hcomm {
 using RdmaHandle = void*;
