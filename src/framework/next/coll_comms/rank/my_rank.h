@@ -31,6 +31,7 @@
 namespace hccl {
 class hcclComm;
 class Socket;
+class RankConsistentcyChecker;
 
 /**
  * @note 职责：管理当前通信域下本Rank的信息和通信资源
@@ -79,7 +80,7 @@ private:
 
     HcclResult TryInitCcuInstance();
     HcclResult DestroyNewChannels(CommEngine engine, const HcclChannelDesc* channelDescs);
-    
+
     HcclResult BatchExchangeAndCheckConsistency(
         const HcclChannelDesc* channelDescs,
         const std::vector<HcommChannelDesc> &hcommDescs,
