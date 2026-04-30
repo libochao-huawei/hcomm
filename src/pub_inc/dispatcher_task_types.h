@@ -300,6 +300,8 @@ struct TaskPara {
     bool isMainStream{false};
     u64 beginTime{0};
     bool isFftsDispatcher{false};
+    void *descBuf{nullptr};
+    size_t descBufLen{0};
     union {
         struct TaskParaDMA dma;
         struct TaskParaReduce reduce;
