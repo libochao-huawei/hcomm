@@ -781,7 +781,7 @@ namespace hccl
             return HCCL_SUCCESS;
         }
 
-        for (u32 i = 0; i < MAX_MODULE_DEVICE_NUM_A3; ++i) {
+        for (u32 i = 0; i < AICPU_ZERO_COPY_MAX_DEVICE_NUM_A3; ++i) {
             opResPara_.zeroCopyIpcPtrs[i] = reinterpret_cast<u64>(zeroCopyIpcPtrs_[i]);
         }
 

@@ -653,8 +653,8 @@ struct HcclOpResParam {
     u64 zeroCopyHeadPtr;
     u64 zeroCopyTailPtr;
     u64 zeroCopyRingBuffer;
-    u64 zeroCopyIpcPtrs[MAX_MODULE_DEVICE_NUM_A3];               // 保存集合通信时每个对端的输入输出内存地址
-    u32 zeroCopyDevicePhyId[MAX_MODULE_DEVICE_NUM_A3];           // 保存每个rank对应的物理卡Id
+    u64 zeroCopyIpcPtrs[AICPU_ZERO_COPY_MAX_DEVICE_NUM_A3];               // 保存集合通信时每个对端的输入输出内存地址
+    u32 zeroCopyDevicePhyId[AICPU_ZERO_COPY_MAX_DEVICE_NUM_A3];           // 保存每个rank对应的物理卡Id
 
     bool utraceStatusFlag;
 
