@@ -103,6 +103,31 @@ TEST_F(DispatcherGraph_UT, RdmaSendPayloadTaskParaDma)
     EXPECT_TRUE(callbackCalled);
 }
 
+void TestCallbackEmpty(void *userPtr, void *taskPara, unsigned int size)
+{
+    callbackCalled = true;
+    return ;
+}
+
+TEST_F(DispatcherGraph_UT, RdmaSendNotifyTaskParaDma)
+{
+    hccl::DispatcherGraph dispatcher(0);
+    hccl::Stream stream;
+    std::vector<hccl::Stream> subStreams;
+
+    dispatcher.disableFfts_ = false;
+    dispatcher.callback_ = TestCallbackEmpty;
+
+    MOCKER(DispatcherPub::GetMsprofSysCycleTime)
+        .stubs()
+        .will(returnValue(0));
+
+    auto ret = dispatcher.LaunchTasksEx(stream, subStreams);
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_TRUE(callbackCalled);
+}
+
 TEST_F(DispatcherGraph_UT, RdmaSendNotifyTaskParaDma)
 {
     hccl::DispatcherGraph dispatcher(0);

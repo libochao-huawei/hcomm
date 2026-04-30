@@ -794,16 +794,12 @@ bool TaskExceptionHandler::DealExceptionCtx(rtExceptionInfo *exceptionInfo)
     if (!FindAndValidateContext(exceptionInfo)) {
         return false;
     }
-	
-	auto mapIt = opCtxInfo[exceptionInfo->deviceid].find(exceptionInfo->streamid);
-	auto &queIt = mapIt->second;
-	auto fftsOpInfo = *(queIt->front().first);
-    auto exceptionCtxInfo = (*(queIt->front().second))[0];
 
-    auto logKeywordL2 = exceptionCtxInfo.taskType == TaskType::TASK_NOTIFY_WAIT ? LOG_KEYWORDS_TIMEOUT : LOG_KEYWORDS_RUN_FAILED;
-    auto stageErrInfo = "[" + LOG_KEYWORDS_TASK_EXEC + "][" + logKeywordL2 + "][" + LOG_KEYWORDS_HOST + "]";
+	FFTSOpInfo fftsOpInfo;
+    CtxInfo exceptionCtxInfo;
+    std::string stageErrInfo = "";
 
-    if (!ProcessContext(exceptionInfo, stageErrInfo)) {
+    if (!ProcessContext(exceptionInfo, stageErrInfo, fftsOpInfo, exceptionCtxInfo)) {
         return false;
     }
 
@@ -860,12 +856,35 @@ bool TaskExceptionHandler::FindAndValidateContext(rtExceptionInfo *exceptionInfo
     return true;
 }
 
-bool TaskExceptionHandler::ProcessContext(rtExceptionInfo *exceptionInfo, std::string &stageErrInfo)
+void TaskExceptionHandler::PrintFftsCtxInfo(FFTSOpInfo &fftsOpInfo)
+{
+    // 按照每个task占用128字节打印ffts的子图信息
+    if (fftsOpInfo.descBuf != nullptr && fftsOpInfo.descBufLen > 0) {
+        HCCL_ERROR("==========FftsPlusTask-begin-context, ctx_addr=%p, descBuflen=%u, ctx_num=%lu==========",
+            fftsOpInfo.descBuf, fftsOpInfo.descBufLen, fftsOpInfo.descBufLen / 128UL);
+        for (uint32_t i = 0U; i < (fftsOpInfo.descBufLen / 128UL); i++) {
+            HCCL_ERROR("stream_id=%d, task_id=%u, FftsPlusTask context_id=%u:",
+                fftsOpInfo.streamID, fftsOpInfo.taskID, i);
+            uint32_t *buf = reinterpret_cast<uint32_t *>(fftsOpInfo.descBuf.get()) + (i * 32U);
+            for (uint32_t j = 0U; j < 32U; j += 8) {
+                HCCL_ERROR("context_id=%u, buf[%02u-%02u]=%08x %08x %08x %08x %08x %08x %08x %08x.",
+                    i, j, (j + 7U),
+                    buf[j], buf[j + 1U], buf[j + 2U], buf[j + 3U],
+                    buf[j + 4U], buf[j + 5U], buf[j + 6U], buf[j + 7U]);
+            }
+        }
+        HCCL_ERROR("==========FftsPlusTask-end-context==========");
+    }
+    return ;
+}
+
+bool TaskExceptionHandler::ProcessContext(rtExceptionInfo *exceptionInfo, std::string &stageErrInfo,
+    FFTSOpInfo &fftsOpInfo, CtxInfo &exceptionCtxInfo)
 {
     auto mapIt = opCtxInfo[exceptionInfo->deviceid].find(exceptionInfo->streamid);
 	auto &queIt = mapIt->second;
-    auto fftsOpInfo = *(queIt->front().first);
-    auto exceptionCtxInfo = (*(queIt->front().second))[0];
+    fftsOpInfo = *(queIt->front().first);
+    exceptionCtxInfo = (*(queIt->front().second))[0];
     uint16_t invalidCtxid = 65535;
     bool ctxFound = false;
 
@@ -890,6 +909,11 @@ bool TaskExceptionHandler::ProcessContext(rtExceptionInfo *exceptionInfo, std::s
             queIt->pop_back();
         }
     }
+
+    auto logKeywordL2 = exceptionCtxInfo.taskType == TaskType::TASK_NOTIFY_WAIT ? LOG_KEYWORDS_TIMEOUT : LOG_KEYWORDS_RUN_FAILED;
+    stageErrInfo = "[" + LOG_KEYWORDS_TASK_EXEC + "][" + logKeywordL2 + "][" + LOG_KEYWORDS_HOST + "]";
+
+    PrintFftsCtxInfo(fftsOpInfo);
 
     if (!ctxFound) {
         return false;
@@ -1589,7 +1613,7 @@ HcclResult TaskExceptionHandler::Save(u32 &streamID, u32 &taskID, TaskType &task
     return Save(streamID, streamID, taskID, taskType, para);
 }
 
-HcclResult TaskExceptionHandler::Save(u32 captureStreamID, u32 streamID, u32 taskID)
+HcclResult TaskExceptionHandler::Save(u32 captureStreamID, u32 streamID, u32 taskID, const void *descBuf, size_t descBufLen)
 {
     u32 maxDeviceNum;
     CHK_RET(GetMaxDevNum(maxDeviceNum));
@@ -1605,7 +1629,7 @@ HcclResult TaskExceptionHandler::Save(u32 captureStreamID, u32 streamID, u32 tas
     ProfilerBase::GetSubmittedOpCnt(index);
 
     if (GetExternalInputTaskExceptionSwitch() == 1) {
-        CHK_RET(InsertOpCtxInfo(streamID, taskID, tag, algType, index));
+        CHK_RET(InsertOpCtxInfo(streamID, taskID, tag, algType, index, descBuf, descBufLen));
     } else {
         CHK_RET(InsertOpMap(streamID, taskID, tag, algType, index));
     }
@@ -1614,9 +1638,9 @@ HcclResult TaskExceptionHandler::Save(u32 captureStreamID, u32 streamID, u32 tas
     return HCCL_SUCCESS;
 }
 
-HcclResult TaskExceptionHandler::Save(u32 &streamID, u32 &taskID)
+HcclResult TaskExceptionHandler::Save(u32 &streamID, u32 &taskID, const void *descBuf, size_t descBufLen)
 {
-    return Save(streamID, streamID, taskID);
+    return Save(streamID, streamID, taskID, descBuf, descBufLen);
 }
 
 HcclResult TaskExceptionHandler::SaveToLog(const TaskParaHost &paraHost)
@@ -1676,7 +1700,7 @@ HcclResult TaskExceptionHandler::InsertOpMap(u32 &streamID, u32 &taskID, string 
     return HCCL_SUCCESS;
 }
 HcclResult TaskExceptionHandler::InsertOpCtxInfo(u32 &streamID, u32 &taskID, string &tag,
-    AlgType &algType, u32 &index) const
+    AlgType &algType, u32 &index, const void *descBuf, size_t descBufLen) const
 {
     FFTSOpInfo tmpOpInfo;
     char *tmpAddr = new (std::nothrow) char[tag.size() + 1]();
@@ -1687,6 +1711,13 @@ HcclResult TaskExceptionHandler::InsertOpCtxInfo(u32 &streamID, u32 &taskID, str
     tmpOpInfo.taskID = taskID;
     tmpOpInfo.algType = algType;
     tmpOpInfo.index = index;
+    if (descBuf != nullptr && descBufLen > 0) {
+        char *tmpDescBuf = new (std::nothrow) char[descBufLen + 1]();
+        CHK_PTR_NULL(tmpDescBuf);
+        tmpOpInfo.descBuf.reset(tmpDescBuf, default_delete<char[]>());
+        CHK_SAFETY_FUNC_RET(memcpy_sp(tmpOpInfo.descBuf.get(), descBufLen + 1, descBuf, descBufLen));
+        tmpOpInfo.descBufLen = descBufLen;
+    }
     std::shared_ptr<FFTSOpInfo> tmpOpInfoPtr = nullptr;
     EXECEPTION_CATCH((tmpOpInfoPtr = std::make_shared<FFTSOpInfo>()), return HCCL_E_PTR);
     *tmpOpInfoPtr = tmpOpInfo;
