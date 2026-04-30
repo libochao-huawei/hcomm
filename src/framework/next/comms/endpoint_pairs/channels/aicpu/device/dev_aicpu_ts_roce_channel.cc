@@ -25,6 +25,8 @@
 
 using namespace hccl;
 
+u64 DevAicpuTsRoceChannel::commSeq_{0};
+
 DevAicpuTsRoceChannel::~DevAicpuTsRoceChannel()
 {
     for (auto &pair : slots_) {
