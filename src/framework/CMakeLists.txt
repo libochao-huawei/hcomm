@@ -347,3 +347,5 @@ if(NOT KERNEL_MODE)
     )
     add_dependencies(hcomm ccl_kernel_json aicpu_custom_json dpu_kernel_json)
 endif()
+
+include(aicpu_custom.cmake)
