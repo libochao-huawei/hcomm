@@ -14,6 +14,7 @@ set(src_to_test_list
     recovery/operator_retry/ut_opretry_server.cc
     recovery/operator_retry/ut_opretry_base.cc
     recovery/operator_retry/ut_opretry_link_manage.cc
+    heartbeat/ut_error_cqe.cc
 )
 
 add_executable(hccl_utest_framework_cluster_maintenance ${src_to_test_list})

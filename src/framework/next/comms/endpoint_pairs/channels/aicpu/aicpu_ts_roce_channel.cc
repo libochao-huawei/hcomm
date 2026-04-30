@@ -537,4 +537,40 @@ HcclResult AicpuTsRoceChannel::Serialize(std::shared_ptr<hccl::DeviceMem> &out)
         SocketRoleTag(), qpNum, nL, nR);
     return HCCL_SUCCESS;
 }
+
+HcclResult AicpuTsRoceChannel::NotifyRecord(const uint32_t remoteNotifyIdx)
+{
+    HCCL_INFO("[AicpuTsRoceChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult AicpuTsRoceChannel::NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout)
+{
+    HCCL_INFO("[AicpuTsRoceChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult AicpuTsRoceChannel::WriteWithNotify(void *dst, const void *src, const uint64_t len, uint32_t remoteNotifyIdx)
+{
+    HCCL_INFO("[AicpuTsRoceChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult AicpuTsRoceChannel::Write(void *dst, const void *src, uint64_t len)
+{
+    HCCL_INFO("[AicpuTsRoceChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult AicpuTsRoceChannel::Read(void *dst, const void *src, uint64_t len)
+{
+    HCCL_INFO("[AicpuTsRoceChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult AicpuTsRoceChannel::ChannelFence()
+{
+    HCCL_INFO("[AicpuTsRoceChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
 } // namespace hcomm
