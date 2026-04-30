@@ -742,6 +742,8 @@ if(DEVICE_MODE AND KERNEL_MODE)
     target_include_directories(aicpu_custom PRIVATE
         ${CCL_KERNEL_INCLUDE_LIST}
         ${ORION_HEAD_LIST}
+        ${ASCEND_CANN_PACKAGE_PATH}/include/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
     )
     target_link_directories(aicpu_custom PRIVATE
         ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/
