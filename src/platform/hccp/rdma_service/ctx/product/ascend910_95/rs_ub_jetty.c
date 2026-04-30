@@ -86,6 +86,8 @@ STATIC void RsMunmapJettyVa(struct RsCtxJettyCb *jettyCb)
     (void)RsResAddrMunmap(jettyCb, &vaInfo);
 }
 
+#define PAGE_SIZE_4K 4096U
+
 STATIC int RsMmapJettyVa(struct RsCtxJettyCb *jettyCb)
 {
     struct res_map_info_out jettyVaInfoOut = {0};
@@ -94,6 +96,12 @@ STATIC int RsMmapJettyVa(struct RsCtxJettyCb *jettyCb)
     struct UdmaVaInfo dbVaInfo = {0};
     uint64_t dbOffset = 0;
     int ret = 0;
+    uint64_t aligndown1 = 0;
+    uint64_t aligndown2 = 0;
+    uint64_t subone1 = 0;
+    uint64_t subone2 = 0;
+    uint64_t abssubone1 = 0;
+    uint64_t abssubone2 = 0;
 
     jettyVaInfo.resType = RES_ADDR_TYPE_HCCP_URMA_JETTY;
     jettyVaInfo.va = jettyCb->sqBuffVa;
@@ -106,6 +114,21 @@ STATIC int RsMmapJettyVa(struct RsCtxJettyCb *jettyCb)
 
     dbVaInfo.resType = RES_ADDR_TYPE_HCCP_URMA_DB;
     dbVaInfo.va = ALIGN_DOWN(jettyCb->dbAddr, RA_RS_4K_PAGE_SIZE);
+
+    subone1 = SUB_ONE(RA_RS_4K_PAGE_SIZE);
+    subone2 = SUB_ONE(PAGE_SIZE_4K);
+    abssubone1 = ABS_SUB_ONE(RA_RS_4K_PAGE_SIZE);
+    abssubone2 = ABS_SUB_ONE(PAGE_SIZE_4K);
+    aligndown1 = ALIGN_DOWN(jettyCb->dbAddr, RA_RS_4K_PAGE_SIZE);
+    aligndown2 = ALIGN_DOWN(jettyCb->dbAddr, PAGE_SIZE_4K);
+    hccp_err("subone1:0x%llx", subone1);
+    hccp_err("subone2:0x%llx", subone2);
+    hccp_err("abssubone1:0x%llx", abssubone1);
+    hccp_err("abssubone2:0x%llx", abssubone2);
+    hccp_err("aligndown1:0x%llx", aligndown1);
+    hccp_err("aligndown2:0x%llx", aligndown2);
+    hccp_err("dbAddr:0x%llx", jettyCb->dbAddr);
+
     dbOffset = jettyCb->dbAddr - dbVaInfo.va;
     dbVaInfo.len = sizeof(uint64_t);
     dbVaInfo.pid = getpid();

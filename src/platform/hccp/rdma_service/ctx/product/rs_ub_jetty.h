@@ -18,6 +18,8 @@
 
 #define WQEBB_NUM_PER_SQE 4ULL
 #define ALIGN_DOWN(x, a) ((x) & (~((a) - 1)))
+#define SUB_ONE(a) ((a) - 1)
+#define ABS_SUB_ONE(a) (~((a) - 1))
 
 void RsUbCtxExtJettyCreate(struct RsCtxJettyCb *jettyCb, urma_jetty_cfg_t *jettyCfg);
 void RsUbCtxExtJettyDelete(struct RsCtxJettyCb *jettyCb);
