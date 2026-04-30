@@ -22,6 +22,8 @@ constexpr u64 TBE_REDUCE_MAX_COUNT = INT32_MAX;
 
 __attribute__((weak)) HcclResult GraphAddRecordTaskWithSignalAddr(void *fftsPubInfo, void *ctx, uint32_t streamId,
     void *signal, bool inchip, u64 signalAddr, uint32_t *ctxIdx);
+__attribute__((weak)) HcclResult LaunchGraphWithTaskInfo(void *fftsPubInfo, void *streamPtr, void *ctx,
+    uint32_t timeout, uint32_t *ctxNum, rtFftsPlusTaskInfo_t *task);
 
 namespace hccl {
 DispatcherGraph::DispatcherGraph(const s32 deviceLogicId)
@@ -94,7 +96,16 @@ HcclResult DispatcherGraph::LaunchTasksEx(Stream &stream, std::vector<Stream> &s
         timeout = execTimeOut_ ;
     }
     u32 ctxNum;
-    CHK_RET(LaunchGraph(fftsPubInfo_, stream.ptr(), fftsCtxsPtr, timeout, &ctxNum));
+    const void *descBuf = nullptr;
+    size_t descBufLen = 0;
+    rtFftsPlusTaskInfo_t task = {};
+    if (LaunchGraphWithTaskInfo != nullptr) {
+        CHK_RET(LaunchGraphWithTaskInfo(fftsPubInfo_, stream.ptr(), fftsCtxsPtr, timeout, &ctxNum, &task));
+        descBuf = task->descBuf;
+        descBufLen = task->descBufLen;
+    } else {
+        CHK_RET(LaunchGraph(fftsPubInfo_, stream.ptr(), fftsCtxsPtr, timeout, &ctxNum));
+    }
     disableFfts_ = true;
     // 调用回调来保存task信息
     if (callback_ != nullptr) {
@@ -104,6 +115,8 @@ HcclResult DispatcherGraph::LaunchTasksEx(Stream &stream, std::vector<Stream> &s
         taskPara.isMainStream = stream.IsMainStream();
         taskPara.beginTime = beginTime;
         taskPara.graphLaunch.ctxNum = ctxNum;
+        taskPara.descBuf = descBuf;
+        taskPara.descBufLen = descBufLen;
         callback_(callBackUserPtr_, (void *)&taskPara, sizeof(struct TaskPara));
     }
 
