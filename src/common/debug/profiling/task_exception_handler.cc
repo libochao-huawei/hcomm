@@ -99,6 +99,9 @@ array<std::mutex, MAX_MODULE_DEVICE_NUM> TaskExceptionHandler::opMapMutex;
 array<std::map<int, shared_ptr<std::deque<std::pair<std::shared_ptr<FFTSOpInfo>, \
     std::shared_ptr<std::vector<CtxInfo>>>>>>, MAX_MODULE_DEVICE_NUM> TaskExceptionHandler::opCtxInfo;
 array<std::mutex, MAX_MODULE_DEVICE_NUM> TaskExceptionHandler::opCtxInfoMutex;
+array<std::map<int, std::shared_ptr<std::deque<std::shared_ptr<FFTSCtxInfo>>>>, \
+    MAX_MODULE_DEVICE_NUM> TaskExceptionHandler::opFFTSCtxInfo;
+array<std::mutex, MAX_MODULE_DEVICE_NUM> TaskExceptionHandler::opFFTSCtxInfoMutex;
 array<std::vector<CtxInfo>, MAX_MODULE_DEVICE_NUM> TaskExceptionHandler::ctxInfoArray;
 array<std::mutex, MAX_MODULE_DEVICE_NUM> TaskExceptionHandler::ctxInfoVectorMutex;
 array<std::map<const std::string, std::pair<const std::string, std::shared_ptr<GroupRankInfo>>>, \
@@ -773,16 +776,12 @@ bool TaskExceptionHandler::DealExceptionCtx(rtExceptionInfo *exceptionInfo)
     if (!FindAndValidateContext(exceptionInfo)) {
         return false;
     }
-	
-	auto mapIt = opCtxInfo[exceptionInfo->deviceid].find(exceptionInfo->streamid);
-	auto &queIt = mapIt->second;
-	auto fftsOpInfo = *(queIt->front().first);
-    auto exceptionCtxInfo = (*(queIt->front().second))[0];
 
-    auto logKeywordL2 = exceptionCtxInfo.taskType == TaskType::TASK_NOTIFY_WAIT ? LOG_KEYWORDS_TIMEOUT : LOG_KEYWORDS_RUN_FAILED;
-    auto stageErrInfo = "[" + LOG_KEYWORDS_TASK_EXEC + "][" + logKeywordL2 + "][" + LOG_KEYWORDS_HOST + "]";
+	FFTSOpInfo fftsOpInfo;
+    CtxInfo exceptionCtxInfo;
+    std::string stageErrInfo = "";
 
-    if (!ProcessContext(exceptionInfo, stageErrInfo)) {
+    if (!ProcessContext(exceptionInfo, stageErrInfo, fftsOpInfo, exceptionCtxInfo)) {
         return false;
     }
 
@@ -839,12 +838,13 @@ bool TaskExceptionHandler::FindAndValidateContext(rtExceptionInfo *exceptionInfo
     return true;
 }
 
-bool TaskExceptionHandler::ProcessContext(rtExceptionInfo *exceptionInfo, std::string &stageErrInfo)
+bool TaskExceptionHandler::ProcessContext(rtExceptionInfo *exceptionInfo, std::string &stageErrInfo,
+    FFTSOpInfo &fftsOpInfo, CtxInfo &exceptionCtxInfo)
 {
     auto mapIt = opCtxInfo[exceptionInfo->deviceid].find(exceptionInfo->streamid);
 	auto &queIt = mapIt->second;
-    auto fftsOpInfo = *(queIt->front().first);
-    auto exceptionCtxInfo = (*(queIt->front().second))[0];
+    fftsOpInfo = *(queIt->front().first);
+    exceptionCtxInfo = (*(queIt->front().second))[0];
     uint16_t invalidCtxid = 65535;
     bool ctxFound = false;
 
@@ -868,6 +868,26 @@ bool TaskExceptionHandler::ProcessContext(rtExceptionInfo *exceptionInfo, std::s
         } else {
             queIt->pop_back();
         }
+    }
+
+    auto logKeywordL2 = exceptionCtxInfo.taskType == TaskType::TASK_NOTIFY_WAIT ? LOG_KEYWORDS_TIMEOUT : LOG_KEYWORDS_RUN_FAILED;
+    stageErrInfo = "[" + LOG_KEYWORDS_TASK_EXEC + "][" + logKeywordL2 + "][" + LOG_KEYWORDS_HOST + "]";
+
+    if (fftsOpInfo.descBuf != nullptr && fftsOpInfo.descBufLen > 0) {
+        HCCL_ERROR("==========FftsPlusTask-begin-context, ctx_addr=%p, descBuflen=%u, ctx_num=%lu==========",
+            fftsOpInfo.descBuf, fftsOpInfo.descBufLen, fftsOpInfo.descBufLen / 128UL);
+        for (uint32_t i = 0U; i < (fftsOpInfo.descBufLen / 128UL); i++) {
+            HCCL_ERROR("stream_id=%d, task_id=%u, FftsPlusTask context_id=%u:",
+                fftsOpInfo.streamID, fftsOpInfo.taskID, i);
+            uint32_t *buf = reinterpret_cast<uint32_t *>(*(fftsOpInfo.descBuf)) + (i * 32U);
+            for (uint32_t j = 0U; j < 32U; j += 8) {
+                HCCL_ERROR("context_id=%u, buf[%02u-%02u]=%08x %08x %08x %08x %08x %08x %08x %08x.",
+                    i, j, (j + 7U),
+                    buf[j], buf[j + 1U], buf[j + 2U], buf[j + 3U],
+                    buf[j + 4U], buf[j + 5U], buf[j + 6U], buf[j + 7U]);
+            }
+        }
+        HCCL_ERROR("==========FftsPlusTask-end-context==========");
     }
 
     if (!ctxFound) {
@@ -928,6 +948,46 @@ bool TaskExceptionHandler::DealExceptionOp(rtExceptionInfo *exceptionInfo)
                 "unknown", exceptionOpInfo.GetBaseInfoStr().c_str(), errMsg.c_str(), groupRankContentInfo.c_str()})
         );
     }
+    return true;
+}
+
+bool TaskExceptionHandler::DealExceptionFFTSCtx(rtExceptionInfo *exceptionInfo)
+{
+    std::unique_lock<std::mutex> lock(opFFTSCtxInfoMutex[exceptionInfo->deviceid]);
+    bool taskFound = false;
+    auto mapIt = opFFTSCtxInfo[exceptionInfo->deviceid].find(exceptionInfo->streamid);
+    CHK_PRT_RET(mapIt == opFFTSCtxInfo[exceptionInfo->deviceid].end(),
+        HCCL_RUN_INFO("stream not found. the fail op is not from HCCL. streamid[%u]", exceptionInfo->streamid), false);
+    auto &queIt = mapIt->second;
+    CHK_PRT_RET(queIt->size() == 0, HCCL_ERROR("[TaskExceptionHandler][Callback] opFFTSCtxInfo queue size 0"), false);
+    auto exceptionFFTSCtxInfo = queIt->back();
+    while (queIt->size() > 0) {
+        if (exceptionInfo->taskid == queIt->back()->taskID) {
+            exceptionFFTSCtxInfo = queIt->back();
+            taskFound = true;   // 从后往前匹配最后下发的相同taskId
+            break;
+        }
+        queIt->pop_back();
+    }
+    if (!taskFound || exceptionFFTSCtxInfo->descBuf == nullptr || exceptionFFTSCtxInfo->descBufLen == 0) {
+        return false;
+    }
+    queIt->clear();
+
+    HCCL_ERROR("==========FftsPlusTask-begin-context, ctx_addr=%p, descBuflen=%u, ctx_num=%lu==========",
+        exceptionFFTSCtxInfo->descBuf, exceptionFFTSCtxInfo->descBufLen, exceptionFFTSCtxInfo->descBufLen / 128UL);
+    for (uint32_t i = 0U; i < (exceptionFFTSCtxInfo->descBufLen / 128UL); i++) {
+        HCCL_ERROR("stream_id=%d, task_id=%u, FftsPlusTask context_id=%u:",
+            exceptionFFTSCtxInfo->streamID, exceptionFFTSCtxInfo->taskID, i);
+        uint32_t *buf = reinterpret_cast<uint32_t *>(exceptionFFTSCtxInfo->descBuf) + (i * 32U);
+        for (uint32_t j = 0U; j < 32U; j += 8) {
+            HCCL_ERROR("context_id=%u, buf[%02u-%02u]=%08x %08x %08x %08x %08x %08x %08x %08x.",
+                i, j, (j + 7U),
+                buf[j], buf[j + 1U], buf[j + 2U], buf[j + 3U],
+                buf[j + 4U], buf[j + 5U], buf[j + 6U], buf[j + 7U]);
+        }
+    }
+    HCCL_ERROR("==========FftsPlusTask-end-context==========");
     return true;
 }
 
@@ -1375,6 +1435,7 @@ void TaskExceptionHandler::Callback(rtExceptionInfo *exceptionInfo)
         } else {
             DealExceptionOp(exceptionInfo);      // 算子粒度
         }
+        DealExceptionFFTSCtx(exceptionInfo);     // 打印FFTS子图context信息
     } else {
         DealExceptionTask(exceptionInfo);
     }
@@ -1568,7 +1629,7 @@ HcclResult TaskExceptionHandler::Save(u32 &streamID, u32 &taskID, TaskType &task
     return Save(streamID, streamID, taskID, taskType, para);
 }
 
-HcclResult TaskExceptionHandler::Save(u32 captureStreamID, u32 streamID, u32 taskID)
+HcclResult TaskExceptionHandler::Save(u32 captureStreamID, u32 streamID, u32 taskID, const void *descBuf, size_t descBufLen)
 {
     u32 maxDeviceNum;
     CHK_RET(GetMaxDevNum(maxDeviceNum));
@@ -1588,14 +1649,20 @@ HcclResult TaskExceptionHandler::Save(u32 captureStreamID, u32 streamID, u32 tas
     } else {
         CHK_RET(InsertOpMap(streamID, taskID, tag, algType, index));
     }
+    if (descBuf != nullptr && descBufLen > 0 && GetExternalInputTaskExceptionSwitch() == 2) {
+        // 当descBuf不为空时，保存ffts+子图信息作为维测手段
+        // HcclUs startut = TIME_NOW();
+        CHK_RET(InsertOpFFTSCtxInfo(streamID, taskID, descBuf, descBufLen));
+        // HCCL_RUN_INFO("InsertOpFFTSCtxInfo success, take time [%lld]us.", DURATION_US(TIME_NOW() - startut));
+    }
     CHK_RET(InsertRankInfo(tag));
     CHK_RET(InsertOpData(tag));
     return HCCL_SUCCESS;
 }
 
-HcclResult TaskExceptionHandler::Save(u32 &streamID, u32 &taskID)
+HcclResult TaskExceptionHandler::Save(u32 &streamID, u32 &taskID, const void *descBuf, size_t descBufLen)
 {
-    return Save(streamID, streamID, taskID);
+    return Save(streamID, streamID, taskID, descBuf, descBufLen);
 }
 
 HcclResult TaskExceptionHandler::SaveToLog(const TaskParaHost &paraHost)
@@ -1655,7 +1722,7 @@ HcclResult TaskExceptionHandler::InsertOpMap(u32 &streamID, u32 &taskID, string 
     return HCCL_SUCCESS;
 }
 HcclResult TaskExceptionHandler::InsertOpCtxInfo(u32 &streamID, u32 &taskID, string &tag,
-    AlgType &algType, u32 &index) const
+    AlgType &algType, u32 &index, const void *descBuf, size_t descBufLen) const
 {
     FFTSOpInfo tmpOpInfo;
     char *tmpAddr = new (std::nothrow) char[tag.size() + 1]();
@@ -1666,6 +1733,13 @@ HcclResult TaskExceptionHandler::InsertOpCtxInfo(u32 &streamID, u32 &taskID, str
     tmpOpInfo.taskID = taskID;
     tmpOpInfo.algType = algType;
     tmpOpInfo.index = index;
+    if (descBuf != nullptr && descBufLen > 0) {
+        char *tmpDescBuf = new (std::nothrow) char[descBufLen + 1]();
+        CHK_PTR_NULL(tmpDescBuf);
+        tmpOpInfo->descBuf.reset(tmpDescBuf, default_delete<char[]>());
+        CHK_SAFETY_FUNC_RET(memcpy_sp(tmpOpInfo->descBuf, descBufLen + 1, descBuf, descBufLen));
+        tmpOpInfo->descBufLen = descBufLen;
+    }
     std::shared_ptr<FFTSOpInfo> tmpOpInfoPtr = nullptr;
     EXECEPTION_CATCH((tmpOpInfoPtr = std::make_shared<FFTSOpInfo>()), return HCCL_E_PTR);
     *tmpOpInfoPtr = tmpOpInfo;
@@ -1692,6 +1766,49 @@ HcclResult TaskExceptionHandler::InsertOpCtxInfo(u32 &streamID, u32 &taskID, str
         }
     }
     ctxInfoArray[deviceLogicId_].clear();
+    return HCCL_SUCCESS;
+}
+
+HcclResult TaskExceptionHandler::InsertOpFFTSCtxInfo(u32 &streamID, u32 &taskID, const void *descBuf, size_t descBufLen) const
+{
+    // HcclUs time1 = TIME_NOW();
+    std::shared_ptr<FFTSCtxInfo> tmpCTXInfo = nullptr;
+    EXECEPTION_CATCH((tmpCTXInfo = std::make_shared<FFTSCtxInfo>()), return HCCL_E_PTR);
+    tmpCTXInfo->streamID = streamID;
+    tmpCTXInfo->taskID = taskID;
+    // HcclUs time2 = TIME_NOW();
+    if (descBuf != nullptr && descBufLen > 0) {
+        tmpCTXInfo->descBuf = new (std::nothrow) char[descBufLen + 1]();
+        CHK_SAFETY_FUNC_RET(memcpy_sp(tmpCTXInfo->descBuf, descBufLen + 1, descBuf, descBufLen));
+        tmpCTXInfo->descBufLen = descBufLen;
+    }
+    // HcclUs time3 = TIME_NOW();
+    std::unique_lock<std::mutex> infoLock(opFFTSCtxInfoMutex[deviceLogicId_]); // 防止存入和读取冲突
+    auto tempDeque = opFFTSCtxInfo[deviceLogicId_].find(streamID);
+    if (tempDeque == opFFTSCtxInfo[deviceLogicId_].end()) {
+        // HcclUs time4 = TIME_NOW();
+        CHK_PRT_RET(opFFTSCtxInfo[deviceLogicId_].size() >= maxStrCount, HCCL_ERROR("[Insert][opFFTSCtxInfo]Map size is "
+            "bigger than max stream count[%u]. stream add fail", maxStrCount), HCCL_E_INTERNAL);
+        std::shared_ptr<std::deque<std::shared_ptr<FFTSCtxInfo>>> tmpCTXInfoQue = nullptr;
+        EXECEPTION_CATCH((tmpCTXInfoQue = std::make_shared<std::deque<std::shared_ptr<FFTSCtxInfo>>>()), return HCCL_E_PTR);
+        tmpCTXInfoQue->push_back(tmpCTXInfo);
+        opFFTSCtxInfo[deviceLogicId_].insert({ streamID, tmpCTXInfoQue });
+        // HcclUs time5 = TIME_NOW();
+        // HCCL_RUN_INFO("InsertOpFFTSCtxInfo time:[%lld] [%lld] [%lld] [%lld] size[%u]", DURATION_US(time2 - time1), DURATION_US(time3 - time2), DURATION_US(time4 - time3), DURATION_US(time5 - time4), descBufLen);
+    } else {
+        // HcclUs time4 = TIME_NOW();
+        tempDeque->second->push_back(tmpCTXInfo);
+        if (tempDeque->second->size() > maxTaskCount) {
+            auto tmpCTXInfoItem = tempDeque->second->front();
+            if (tmpCTXInfoItem->descBuf != nullptr) {
+                delete[] static_cast<char *>(tmpCTXInfoItem->descBuf);
+                tmpCTXInfoItem->descBuf = nullptr;
+            }
+            tempDeque->second->pop_front();
+        }
+        // HcclUs time5 = TIME_NOW();
+        // HCCL_RUN_INFO("InsertOpFFTSCtxInfo time:[%lld] [%lld] [%lld] [%lld] size[%u]", DURATION_US(time2 - time1), DURATION_US(time3 - time2), DURATION_US(time4 - time3), DURATION_US(time5 - time4), descBufLen);
+    }
     return HCCL_SUCCESS;
 }
 
