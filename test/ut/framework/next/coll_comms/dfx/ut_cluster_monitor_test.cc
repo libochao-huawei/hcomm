@@ -17,7 +17,7 @@
 #include <cstring>
 #include "hccl_types.h"
 #define private public
-#include "dfx/clusterMonitor/cluster_monitor.h"
+#include "dfx/cluster_monitor/cluster_monitor.h"
 #undef private
 #include "hccl_comm_socket_c_adpt.h"
 
