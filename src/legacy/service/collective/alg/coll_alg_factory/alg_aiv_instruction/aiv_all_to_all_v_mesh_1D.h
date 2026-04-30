@@ -20,7 +20,7 @@ public:
     __aicore__ inline AivAlltoAllVMesh1D() {
     }
 
-    __aicore__ inline uint64_t GetFlagAreaOffset() const
+    __aicore__ inline uint64_t GetFlagAreaOffset()
     {
         uint64_t cclDataBytes = cclBufferCountPerRank * rankSize_ * sizeof(T);
         return CeilDiv(cclDataBytes, UB_ALIGN_SIZE) * UB_ALIGN_SIZE;
