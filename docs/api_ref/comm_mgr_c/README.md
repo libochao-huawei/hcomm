@@ -1,7 +1,7 @@
 # 通信域创建与管理接口（C语言）
 
 - [数据类型定义<a name="sub_menu"></a>](./data_type_definition/README.md)
-- [通信域管理](通信域管理.md)
+- [通信域管理](comm_mgmt.md)
   - [HcclCommInitClusterInfo](HcclCommInitClusterInfo.md)
   - [HcclCommInitClusterInfoConfig](HcclCommInitClusterInfoConfig.md)
   - [HcclGetRootInfo](HcclGetRootInfo.md)
@@ -27,19 +27,19 @@
   - [HcclGetCommAsyncError](HcclGetCommAsyncError.md)
   - [HcclGetErrorString](HcclGetErrorString.md)
 
-  - [零拷贝](零拷贝.md)
-    - [使用前必读](零拷贝功能使用前必读.md)
+  - [零拷贝](zero_copy.md)
+    - [使用前必读](zero_copy_readme.md)
     - [HcclCommSetMemoryRange](HcclCommSetMemoryRange.md)
     - [HcclCommUnsetMemoryRange](HcclCommUnsetMemoryRange.md)
     - [HcclCommActivateCommMemory](HcclCommActivateCommMemory.md)
     - [HcclCommDeactivateCommMemory](HcclCommDeactivateCommMemory.md)
 
-  - [对称内存](对称内存.md)
+  - [对称内存](symmetric_mem.md)
     - [HcclCommSymWinRegister](HcclCommSymWinRegister.md)
     - [HcclCommSymWinDeregister](HcclCommSymWinDeregister.md)
     - [HcclCommSymWinGet](HcclCommSymWinGet.md)
     - [HcclSymWinGetPeerPointer](HcclSymWinGetPeerPointer.md)
 
-- [组调用](组调用.md)
+- [组调用](group_call.md)
   - [HcclGroupStart](HcclGroupStart.md)
   - [HcclGroupEnd](HcclGroupEnd.md)

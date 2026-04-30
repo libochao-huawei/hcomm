@@ -1,6 +1,6 @@
 # HCCL API (python)
 
-- [简介](简介.md)
+- [简介](intro.md)
 - [hccl.manage.api](hccl-manage-api.md)
   - [create_group](create_group.md)
   - [destroy_group](destroy_group.md)
@@ -15,6 +15,6 @@
   - [set_split_strategy_by_idx](set_split_strategy_by_idx.md)
   - [set_split_strategy_by_size](set_split_strategy_by_size.md)
 
-- [样例代码](样例代码.md)
-  - [代码示例](代码示例.md)
-  - [样例执行](样例执行.md)
+- [样例代码](sample_code.md)
+  - [代码示例](code_example.md)
+  - [样例执行](sample_exec.md)
