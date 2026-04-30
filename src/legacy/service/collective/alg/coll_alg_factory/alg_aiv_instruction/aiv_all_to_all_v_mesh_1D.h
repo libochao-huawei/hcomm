@@ -20,6 +20,37 @@ public:
     __aicore__ inline AivAlltoAllVMesh1D() {
     }
 
+    __aicore__ inline uint64_t GetFlagAreaOffset() const
+    {
+        uint64_t cclDataBytes = cclBufferCountPerRank * rankSize_ * sizeof(T);
+        return CeilDiv(cclDataBytes, UB_ALIGN_SIZE) * UB_ALIGN_SIZE;
+    }
+
+    __aicore__ inline void RecordCclFlag(uint32_t targetRank, uint64_t flagOffset, int32_t curTag)
+    {
+        d2hGlobal.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t *>(GM_IN[targetRank] + GetFlagAreaOffset() +
+            flagOffset * UB_ALIGN_SIZE));
+        localTagTensor.SetValue(0, curTag);
+        pipe_barrier(PIPE_ALL);
+        DataCopyUB2GM(d2hGlobal, localTagTensor, UB_ALIGN_SIZE / sizeof(int32_t));
+        pipe_barrier(PIPE_ALL);
+    }
+
+    __aicore__ inline void WaitCclFlag(uint32_t targetRank, uint64_t flagOffset, int32_t curTag)
+    {
+        d2hGlobal.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t *>(GM_IN[targetRank] + GetFlagAreaOffset() +
+            flagOffset * UB_ALIGN_SIZE));
+        while (true) {
+            int64_t st = AscendC::GetSystemCycle();
+            while (AscendC::GetSystemCycle() - st < 3000) {}
+            DataCopyGM2UB(localTagTensor, d2hGlobal, UB_ALIGN_SIZE / sizeof(int32_t));
+            pipe_barrier(PIPE_ALL);
+            if (localTagTensor.GetValue(0) == curTag) {
+                break;
+            }
+        }
+    }
+
     __aicore__ inline void InitCoreInfo(uint64_t len, ExtraArgs &extraArgsPerLoop)
     {
         targetRank = block_idx / coreNumPerRank; // 每个核负责哪个rank的数据
@@ -60,12 +91,12 @@ public:
             return;
         }
         uint64_t flag_offset = block_idx;
-        WaitFlag(rank_, flag_offset, 0);
+        WaitCclFlag(rank_, flag_offset, 0);
 
         CpGM2GM((__gm__ T *)sendOutputOffset, (__gm__ T *)sendInputOffset, sendCurCount);
         PipeBarrier<PIPE_ALL>();
 
-        Record(rank_, flag_offset, curTag);
+        RecordCclFlag(rank_, flag_offset, curTag);
     }
 
     __aicore__ inline void Consumer()
@@ -74,12 +105,12 @@ public:
             return;
         }
         uint64_t flag_offset = rank_ * coreNumPerRank + coreIndex;
-        WaitFlag(targetRank, flag_offset, curTag);
+        WaitCclFlag(targetRank, flag_offset, curTag);
 
         CpGM2GM((__gm__ T *)recvOutputOffset, (__gm__ T *)recvInputOffset, recvCurCount);
         PipeBarrier<PIPE_ALL>(); // 核内自己的同步
 
-        Record(targetRank, flag_offset, 0);
+        RecordCclFlag(targetRank, flag_offset, 0);
     }
 
     __aicore__ inline void Process(uint64_t len, uint32_t tag, ExtraArgs &extraArgs)
@@ -98,8 +129,8 @@ public:
         curTag = static_cast<int32_t>(tag);
         cclBufferCountPerRank = len;
 
-        // 运行过程中用到的所有flag，先置为0，后面会复用
-        Record(rank_, block_idx, 0);
+        // 在ccl buffer尾部预留独立flag区，避免与alltoallv数据区重叠。
+        RecordCclFlag(rank_, block_idx, 0);
         PipeBarrier<PIPE_ALL>();
 
         // 这里根据ccl buffer的大小去做循环
