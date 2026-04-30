@@ -42,6 +42,14 @@ public:
     virtual HcclResult Clean() override;
     virtual HcclResult Resume() override;
 
+    // 数据面接口
+    HcclResult WriteWithNotify(void *dst, const void *src, const uint64_t len, uint32_t remoteNotifyIdx) override;
+    HcclResult NotifyRecord(const uint32_t remoteNotifyIdx) override;
+    HcclResult NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout) override;
+    HcclResult Write(void *dst, const void *src, uint64_t len) override;
+    HcclResult Read(void *dst, const void *src, uint64_t len) override;
+    HcclResult ChannelFence() override;
+
 private:
     MAKE_ENUM(UboeRmtBufType, NOTIFY, BUFFER)
     using RemoteBufferVec = std::vector<std::unique_ptr<Hccl::RemoteUbRmaBuffer>>;
