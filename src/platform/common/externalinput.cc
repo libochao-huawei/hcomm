@@ -1516,11 +1516,11 @@ HcclResult ParseTaskExceptionSwitch()
         HCCL_ERROR_CODE(HCCL_E_PARA), MAX_LEN_OF_DIGIT_ENV, HCCL_E_PARA), HCCL_E_PARA);
     CHK_RET(IsAllDigit(taskExceptionSwitchEnv.c_str()));
     CHK_RET(SalStrToULong(taskExceptionSwitchEnv.c_str(), HCCL_BASE_DECIMAL, taskExceptionSwitchConfig));
-    if ((taskExceptionSwitchConfig != 0) && (taskExceptionSwitchConfig != 1)) {
-        HCCL_ERROR("[Get][TaskExceptionSwitch]environmental digit variable error, taskExceptionSwitchConfig[%u]",
-            taskExceptionSwitchConfig);
-        return HCCL_E_PARA;
-    }
+    // if ((taskExceptionSwitchConfig != 0) && (taskExceptionSwitchConfig != 1)) {
+    //     HCCL_ERROR("[Get][TaskExceptionSwitch]environmental digit variable error, taskExceptionSwitchConfig[%u]",
+    //         taskExceptionSwitchConfig);
+    //     return HCCL_E_PARA;
+    // }
     HCCL_RUN_INFO("[HCCL_ENV] HCCL_DIAGNOSE_ENABLE set by environment to [%u]", taskExceptionSwitchConfig);
     g_externalInput.taskExceptionSwitch = taskExceptionSwitchConfig;
     return HCCL_SUCCESS;

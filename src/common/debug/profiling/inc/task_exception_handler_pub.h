@@ -117,8 +117,18 @@ struct FFTSOpInfo {
     std::shared_ptr<char> tag;
     AlgType algType;
     u32 index;
+    std::shared_ptr<char> descBuf = nullptr;
+    size_t descBufLen = 0;
     std::string GetBaseInfoStr();
 };
+
+struct FFTSCtxInfo {
+    u32 streamID;
+    u32 taskID;
+    void *descBuf;
+    size_t descBufLen;
+};
+
 struct CtxInfo {
 TaskType taskType;
 AlgType algType;
@@ -131,6 +141,7 @@ union {
 CtxInfo(TaskType &taskType, const TaskParaDMA &para);
 CtxInfo(TaskType &taskType, const TaskParaReduce &para);
 CtxInfo(TaskType &taskType, const TaskParaNotify &para);
+CtxInfo() = default;
 std::string GetCtxBaseInfoStr(); // 防止tag字符串过长，base信息和para信息分开打印
 std::string GetCtxParaInfoStr();
 std::string GetCtxParaDMA();
@@ -150,12 +161,12 @@ public:
     HcclResult Save(u32 &streamID, u32 &taskID, TaskType &taskType, const TaskParaReduce &para) override;
     HcclResult Save(u32 &streamID, u32 &taskID, TaskType &taskType, const TaskParaNotify &para) override;
     HcclResult Save(u32 streamID, u32 taskID, const TaskParaAiv &para) override;
-    HcclResult Save(u32 &streamID, u32 &taskID) override;
+    HcclResult Save(u32 &streamID, u32 &taskID, const void *descBuf = nullptr, size_t descBufLen = 0) override;
     HcclResult SaveToLog(const TaskParaHost &paraHost) override;
     HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID, TaskType &taskType, const TaskParaDMA &para) override;
     HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID, TaskType &taskType, const TaskParaReduce &para) override;
     HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID, TaskType &taskType, const TaskParaNotify &para) override;
-    HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID) override;
+    HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID, const void *descBuf = nullptr, size_t descBufLen = 0) override;
     HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID, const TaskParaAiv &para) override;
     static void Callback(rtExceptionInfo *exceptionInfo);
     HcclResult Run(const StepData &stepData) override;
@@ -165,7 +176,8 @@ private:
     HcclResult InsertTaskMap(u32 &streamID, TaskInfo &tmpTaskInfo) const;
     HcclResult InsertOpMap(u32 &streamID, u32 &taskID, std::string &tag, AlgType &algType, u32 &index) const;
     HcclResult InsertOpCtxInfo(u32 &streamID, u32 &taskID, std::string &tag, AlgType &algType,
-        u32 &index) const;
+        u32 &index, const void *descBuf, size_t descBufLen) const;
+    HcclResult InsertOpFFTSCtxInfo(u32 &streamID, u32 &taskID, const void *descBuf, size_t descBufLen) const;
     HcclResult InsertRankInfo(std::string &tag) const;
     HcclResult InsertOpData(std::string &tag) const;
     static void PrintTaskContextInfo(const std::shared_ptr<std::vector<CtxInfo>> &taskList, u32 contextId, std::string &stageErrInfo);
@@ -180,12 +192,13 @@ private:
     static bool DealExceptionOp(rtExceptionInfo *exceptionInfo);
     static bool DealExceptionTask(rtExceptionInfo *exceptionInfo);
     static bool DealExceptionCtx(rtExceptionInfo *exceptionInfo);
+    static bool DealExceptionFFTSCtx(rtExceptionInfo *exceptionInfo);
     static bool DealExceptionOpData(rtExceptionInfo *exceptionInfo, std::string &tag, bool isFftsPlus,
         u32 index, std::string &stageErrInfo);
     static bool DealExceptionGroupRank(rtExceptionInfo *exceptionInfo, std::string &tag, bool isFftsPlus,
         std::string &groupRankContentInfo, std::string &stageErrInfo);
     static bool FindAndValidateContext(rtExceptionInfo *exceptionInfo);
-    static bool ProcessContext(rtExceptionInfo *exceptionInfo, std::string &stageErrInfo);
+    static bool ProcessContext(rtExceptionInfo *exceptionInfo, std::string &stageErrInfo, FFTSOpInfo &fftsOpInfo, CtxInfo &exceptionCtxInfo);
     static void PrintAicpuErrorMessage(rtExceptionInfo *exceptionInfo, bool &isExistAicpuError);
     static void PrintGroupErrorMessage(ErrorMessageReport &errorMessage, TaskInfo &exceptionTaskInfo,
         std::string &groupRankContent, std::string &stageErrInfo);
@@ -198,6 +211,9 @@ private:
     static std::array<std::map<int, std::shared_ptr<std::deque<std::pair<std::shared_ptr<FFTSOpInfo>, \
         std::shared_ptr<std::vector<CtxInfo>>>>>>, MAX_MODULE_DEVICE_NUM> opCtxInfo;
     static std::array<std::mutex, MAX_MODULE_DEVICE_NUM> opCtxInfoMutex;
+    static std::array<std::map<int, std::shared_ptr<std::deque<std::shared_ptr<FFTSCtxInfo>>>>, \
+        MAX_MODULE_DEVICE_NUM> opFFTSCtxInfo;
+    static std::array<std::mutex, MAX_MODULE_DEVICE_NUM> opFFTSCtxInfoMutex;
     static std::array<std::vector<CtxInfo>, MAX_MODULE_DEVICE_NUM> ctxInfoArray;
     static std::array<std::mutex, MAX_MODULE_DEVICE_NUM> ctxInfoVectorMutex;
     static std::array<std::map<const std::string, std::pair<const std::string, std::shared_ptr<GroupRankInfo>>>, \
