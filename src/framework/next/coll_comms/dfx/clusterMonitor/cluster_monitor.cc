@@ -577,7 +577,6 @@ HcclResult ClusterMonitor::RunMonitorThread()
 
 HcclResult ClusterMonitor::RegisterToClusterMonitor(HcclComm comm)
 {
-    // TODO:请注意：如果是send-recv算子要单独处理对端
     CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
     auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
     CHK_PTR_NULL(hcclComm);

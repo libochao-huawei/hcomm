@@ -20,7 +20,7 @@
 #include "../comms/ccu/ccu_kernel/ccu_kernel_mgr.h"
 #include "rt_external.h"
 #include "hccl_ccu_res.h"
-#include "cluster_monitor_c_adpt.h"
+#include "coll_comm_mgr.h"
 
 using namespace hccl;
 /**
@@ -212,6 +212,23 @@ bool CheckCommEngine(const CommEngine engine, const uint32_t opExpansionMode)
 
 constexpr uint32_t CHANNEL_NUM_MAX = 1024 * 1024;  // channel的默认限制最大为1024 * 1024
 
+HcclResult RegisterToClusterMonitor(HcclComm comm)
+{
+    HCCL_INFO("[%s] START, comm[%p].", __func__, comm);
+    CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
+    auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
+    CHK_PTR_NULL(hcclComm);
+    if (!hcclComm->IsCommunicatorV2()) {
+        HCCL_ERROR("comm is not support [%s]", __func__);
+        return HCCL_E_NOT_SUPPORT;
+    }
+    hccl::CollComm* collComm = hcclComm->GetCollComm();
+    CHK_PTR_NULL(collComm);
+    CHK_RET(CollCommMgr::GetInstance()->GetClusterMonitor(collComm->GetDeviceLogicId()).RegisterToClusterMonitor(comm));
+    HCCL_RUN_INFO("%s Success", __func__);
+    return HCCL_SUCCESS;
+}
+
 HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine, 
     const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle* channels)
 {
@@ -262,7 +279,7 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
         }
 
         if (engine != CommEngine::COMM_ENGINE_CPU) { // host dpu场景暂不支持cluster monitor
-            CHK_RET(HcclRegisterToClusterMonitor(comm));
+            CHK_RET(RegisterToClusterMonitor(comm));
         }
 
         CHK_RET_UNAVAIL(myRank->CreateChannels(engine, commTag, channelDescFinals.data(), channelNum, channels));
