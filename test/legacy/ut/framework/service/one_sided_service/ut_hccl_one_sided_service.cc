@@ -263,7 +263,6 @@ TEST_F(HcclOneSidedServiceTest, test_BatchGet_BatchPut)
     u32 descNum = 1;
 
     rtStream_t stream = nullptr;
-    MOCKER(aclrtCreateStreamWithConfig).stubs().with(outBoundP(&stream, sizeof(stream))).will(returnValue(ACL_SUCCESS));
     fakeCommA.hostDeviceSyncNotifyManager = std::make_unique<HostDeviceSyncNotifyManager>();
 
     fakeCommA.InitStreamManager();

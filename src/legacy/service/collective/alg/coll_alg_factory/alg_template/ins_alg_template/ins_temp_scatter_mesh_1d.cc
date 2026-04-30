@@ -33,7 +33,7 @@ HcclResult InsTempScatterMesh1D::CalcRes(AlgTempResReq &tempResReq)
     for (auto resReqIter = linkReq.begin(); resReqIter != linkReq.end(); resReqIter++) {
         auto remoteRank = resReqIter->first;
         if (rank2PathNumMap_.find(remoteRank) == rank2PathNumMap_.end() || rank2PathNumMap_[remoteRank] == 0) {
-            HCCL_ERROR("[InsTempScatterMesh1D] No path to remoteRank[%u]", remoteRank);
+            HCCL_ERROR("[InsTempScatterMesh1D] No path to remoteRank[%d]", remoteRank);
             return HcclResult::HCCL_E_INTERNAL;
         }
         if (pathNum == 0) {
@@ -41,7 +41,7 @@ HcclResult InsTempScatterMesh1D::CalcRes(AlgTempResReq &tempResReq)
         } else if (rank2PathNumMap_[remoteRank] != pathNum) {
             HCCL_ERROR("[InsTempScatterMesh1D] Inconsistency pathNum to remoteRanks, Previous consistent pathNum=[%u], "
                        "mismatched "
-                       "remoteRank=[%u], pathNum=[%u]",
+                       "remoteRank=[%d], pathNum=[%u]",
                 pathNum, remoteRank, rank2PathNumMap_[remoteRank]);
             return HcclResult::HCCL_E_INTERNAL;
         }
@@ -123,7 +123,7 @@ uint64_t InsTempScatterMesh1D::GetExpandedMode() const
     return 1;
 }
 
-HcclResult InsTempScatterMesh1D::RunMeshTx(u32 myAlgRank, u32 repeatTimes, TemplateDataParams &tempAlgParams,
+HcclResult InsTempScatterMesh1D::RunMeshTx(u32 myAlgRank, u32 repeatTimes, const TemplateDataParams &tempAlgParams,
     ResLinks &tempResLinks, std::vector<InsQuePtr> &tempInsQues)
 {
     // root卡需要将发送的数据刷新为尾部数据长度,保护一下tailSize=0认为没有
@@ -177,7 +177,7 @@ HcclResult InsTempScatterMesh1D::RunMeshTx(u32 myAlgRank, u32 repeatTimes, Templ
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult InsTempScatterMesh1D::RunMeshRx(u32 myAlgRank, u32 repeatTimes, TemplateDataParams &tempAlgParams,
+HcclResult InsTempScatterMesh1D::RunMeshRx(u32 myAlgRank, u32 repeatTimes, const TemplateDataParams &tempAlgParams,
     ResLinks &tempResLinks, std::vector<InsQuePtr> &tempInsQues)
 {
     u64 srcOffset = buffInfo_.inBuffType == BufferType::SCRATCH
@@ -276,7 +276,7 @@ HcclResult InsTempScatterMesh1D::PostCopy(const TemplateDataParams &tempAlgParam
     if (isZeroCopy_ || buffInfo_.outBuffType == BufferType::SCRATCH) {
         return HCCL_SUCCESS;
     }
-    if (buffInfo_.outBuffType == BufferType::OUTPUT && ((u32)myRank_ == root_)) {
+    if (buffInfo_.outBuffType == BufferType::OUTPUT && (static_cast<u32>(myRank_) == root_)) {
         return HCCL_SUCCESS;
     }
     u32 myAlgRank;

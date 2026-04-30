@@ -130,7 +130,7 @@ private:
     CollAlgOperator op_;
     std::vector<std::vector<RankId>> tempVTopo_;
     bool withMyRank_{false};
-    u32 bitNum_;
+    u32 bitNum_{0};
 };
 
 }

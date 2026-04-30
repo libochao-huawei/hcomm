@@ -77,7 +77,7 @@ HcclResult HcclRankGraphGetLinks(HcclComm comm, uint32_t netLayer, uint32_t srcR
             RankGraph* rankGraph = nullptr;
             CHK_RET(GetRankGraphFromComm(comm, &rankGraph));
             CHK_RET(rankGraph->GetLinks(netLayer, srcRank, dstRank, links, linkNum));
-            HCCL_RUN_INFO("HcclRankGraphGetLinks success, linkNum [%u]", *linkNum);
+            HCCL_INFO("HcclRankGraphGetLinks success, linkNum [%u]", *linkNum);
             return HCCL_SUCCESS;
         }());
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);  
@@ -103,7 +103,7 @@ HcclResult HcclRankGraphGetLayers(HcclComm comm, uint32_t** netLayers, uint32_t*
         RankGraph* rankGraph = nullptr;
         CHK_RET(GetRankGraphFromComm(comm, &rankGraph));
         CHK_RET(rankGraph->GetNetLayers(netLayers, netLayerNum));
-        HCCL_RUN_INFO("HcclRankGraphGetLayers success, netLayerNum [%u]", *netLayerNum);
+        HCCL_INFO("HcclRankGraphGetLayers success, netLayerNum [%u]", *netLayerNum);
         return HCCL_SUCCESS;
     }());
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm*>(comm);
@@ -126,7 +126,7 @@ HcclResult HcclRankGraphGetTopoTypeByLayer(HcclComm comm, uint32_t netLayer, Com
             RankGraph* rankGraph = nullptr;
             CHK_RET(GetRankGraphFromComm(comm, &rankGraph));
             CHK_RET(rankGraph->GetInstTopoTypeByNetLayer(netLayer, topoType));
-            HCCL_RUN_INFO("HcclRankGraphGetTopoTypeByLayer success, topoType [%d]", *topoType);
+            HCCL_INFO("HcclRankGraphGetTopoTypeByLayer success, topoType [%d]", *topoType);
             return HCCL_SUCCESS;
         }());
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
@@ -150,7 +150,7 @@ HcclResult HcclRankGraphGetRankSizeByLayer(HcclComm comm, uint32_t netLayer, uin
         RankGraph* rankGraph = nullptr;
         CHK_RET(GetRankGraphFromComm(comm, &rankGraph));
         CHK_RET(rankGraph->GetInstSizeByNetLayer(netLayer, rankNum));
-        HCCL_RUN_INFO("HcclRankGraphGetRankSizeByLayer success, rankNum [%u]", *rankNum);
+        HCCL_INFO("HcclRankGraphGetRankSizeByLayer success, rankNum [%u]", *rankNum);
         return HCCL_SUCCESS;
     }());
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
@@ -174,7 +174,7 @@ HcclResult HcclRankGraphGetRanksByLayer(HcclComm comm, uint32_t netLayer, uint32
             RankGraph* rankGraph = nullptr;
             CHK_RET(GetRankGraphFromComm(comm, &rankGraph));
             CHK_RET(rankGraph->GetInstRanksByNetLayer(netLayer, ranks, rankNum));
-            HCCL_RUN_INFO("HcclRankGraphGetRanksByLayer success, rankNum [%u]", *rankNum);
+            HCCL_INFO("HcclRankGraphGetRanksByLayer success, rankNum [%u]", *rankNum);
             return HCCL_SUCCESS;
         }());
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
@@ -198,7 +198,7 @@ HcclResult HcclRankGraphGetInstSizeListByLayer(HcclComm comm, uint32_t netLayer,
             RankGraph* rankGraph = nullptr;
             CHK_RET(GetRankGraphFromComm(comm, &rankGraph));
             CHK_RET(rankGraph->GetInstSizeListByNetLayer(netLayer, instSizeList, listSize));
-            HCCL_RUN_INFO("HcclRankGraphGetInstSizeListByLayer success, listSize [%u]", *listSize);
+            HCCL_INFO("HcclRankGraphGetInstSizeListByLayer success, listSize [%u]", *listSize);
             return HCCL_SUCCESS;
         }());
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
@@ -222,7 +222,7 @@ HcclResult HcclRankGraphGetTopoInstsByLayer(HcclComm comm, uint32_t netLayer, ui
             CHK_RET(GetRankGraphFromComm(comm, &rankGraph));
             RankGraphV2* rankGraphV2 = static_cast<RankGraphV2*>(rankGraph);
             CHK_RET(rankGraphV2->GetTopoInstsByLayer(netLayer, topoInsts, topoInstNum));
-            HCCL_RUN_INFO("HcclRankGraphGetTopoInstsByLayer success, topoInstNum [%u]", *topoInstNum);
+            HCCL_INFO("HcclRankGraphGetTopoInstsByLayer success, topoInstNum [%u]", *topoInstNum);
             return HCCL_SUCCESS;
         }());
     HCCL_ERROR("[%s] Failed to execute, only A5 is supported", __func__);
@@ -239,7 +239,7 @@ HcclResult HcclRankGraphGetTopoType(HcclComm comm, uint32_t netLayer, uint32_t t
             CHK_RET(GetRankGraphFromComm(comm, &rankGraph));
             RankGraphV2* rankGraphV2 = static_cast<RankGraphV2*>(rankGraph);
             CHK_RET(rankGraphV2->GetTopoType(netLayer, topoInstId, topoType));
-            HCCL_RUN_INFO("HcclRankGraphGetTopoType success, topoType [%d]", *topoType);
+            HCCL_INFO("HcclRankGraphGetTopoType success, topoType [%d]", *topoType);
             return HCCL_SUCCESS;
         }());
     HCCL_ERROR("[%s] Failed to execute, only A5 is supported", __func__);
@@ -257,7 +257,7 @@ HcclResult HcclRankGraphGetRanksByTopoInst(HcclComm comm, uint32_t netLayer, uin
             CHK_RET(GetRankGraphFromComm(comm, &rankGraph));
             RankGraphV2* rankGraphV2 = static_cast<RankGraphV2*>(rankGraph);
             CHK_RET(rankGraphV2->GetRanksByTopoInst(netLayer, topoInstId, ranks, rankNum));
-            HCCL_RUN_INFO("HcclRankGraphGetRanksByTopoInst success, rankNum [%u]", *rankNum);
+            HCCL_INFO("HcclRankGraphGetRanksByTopoInst success, rankNum [%u]", *rankNum);
             return HCCL_SUCCESS;
         }());
     HCCL_ERROR("[%s] Failed to execute, only A5 is supported", __func__);
@@ -274,7 +274,7 @@ HcclResult HcclRankGraphGetEndpointNum(HcclComm comm, uint32_t layer, uint32_t t
             CHK_RET(GetRankGraphFromComm(comm, &rankGraph));
             RankGraphV2* rankGraphV2 = static_cast<RankGraphV2*>(rankGraph);
             CHK_RET(rankGraphV2->GetEndpointNum(layer, topoInstId, num));
-            HCCL_RUN_INFO("HcclRankGraphGetEndpointNum success, num [%u]", *num);
+            HCCL_INFO("HcclRankGraphGetEndpointNum success, num [%u]", *num);
             return HCCL_SUCCESS;
         }());
     HCCL_ERROR("[%s] Failed to execute, only A5 is supported", __func__);
@@ -292,7 +292,7 @@ HcclResult HcclRankGraphGetEndpointDesc(HcclComm comm, uint32_t layer, uint32_t 
             CHK_RET(GetRankGraphFromComm(comm, &rankGraph));
             RankGraphV2* rankGraphV2 = static_cast<RankGraphV2*>(rankGraph);
             CHK_RET(rankGraphV2->GetEndpointDesc(layer, topoInstId, descNum, endpointDesc));
-            HCCL_RUN_INFO("HcclRankGraphGetEndpointDesc success");
+            HCCL_INFO("HcclRankGraphGetEndpointDesc success");
             return HCCL_SUCCESS;
         }());
     HCCL_ERROR("[%s] Failed to execute, only A5 is supported", __func__);
@@ -310,7 +310,7 @@ HcclResult HcclRankGraphGetEndpointInfo(HcclComm comm, uint32_t rankId, const En
             CHK_RET(GetRankGraphFromComm(comm, &rankGraph));
             RankGraphV2* rankGraphV2 = static_cast<RankGraphV2*>(rankGraph);
             CHK_RET(rankGraphV2->GetEndpointInfo(rankId, endpointDesc, endpointAttr, infoLen, info));
-            HCCL_RUN_INFO("HcclRankGraphGetEndpointInfo success");
+            HCCL_INFO("HcclRankGraphGetEndpointInfo success");
             return HCCL_SUCCESS;
         }());
     HCCL_ERROR("[%s] Failed to execute, only A5 is supported", __func__);
