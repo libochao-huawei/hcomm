@@ -125,6 +125,7 @@ set(hccl_include_list
 
     ${HCCL_BASE_DIR}/framework/next/comms/ccu/ccu_transport/
     ${HCCL_BASE_DIR}/framework/next/comms/ccu/ccu_kernel
+    ${HCCL_BASE_DIR}/framework/next/comms/common/device/
 )
 
 target_include_directories(hcomm PRIVATE
