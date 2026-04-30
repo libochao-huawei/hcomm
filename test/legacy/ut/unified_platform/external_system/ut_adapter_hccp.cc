@@ -446,7 +446,8 @@ TEST_F(AdapterHccpTest, HrtRaUbRemoteMemUnimport_ok)
 TEST_F(AdapterHccpTest, HrtRaUbCreateJfc_ok)
 {
     RdmaHandle handle = reinterpret_cast<RdmaHandle>(0x123);
-    u64 result = HrtRaUbCreateJfc(handle, HrtUbJfcMode::NORMAL);
+    struct Hccl::CqCreateInfo cqInfo;
+    u64 result = HrtRaUbCreateJfc(handle, cqInfo, HrtUbJfcMode::NORMAL);
     EXPECT_EQ(0, result);
 }
 
