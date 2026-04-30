@@ -35,7 +35,7 @@ std::string GetEnumToString(const MapType& mappingMap, typename MapType::key_typ
     if (iter != mappingMap.end()) {
         return iter->second;
     } else {
-        return  "Unknown"
+        return  "Unknown";
     }
 }
 }
