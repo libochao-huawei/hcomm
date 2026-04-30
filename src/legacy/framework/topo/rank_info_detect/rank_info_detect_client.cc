@@ -59,9 +59,13 @@ void RankInfoDetectClient::CheckStatus()
     auto timeout   = std::chrono::seconds(EnvConfig::GetInstance().GetSocketConfig().GetLinkTimeOut());
 
     while (true) {
-        CHK_PRT_THROW((std::chrono::steady_clock::now() - startTime) >= timeout,
-                  HCCL_ERROR("[RankInfoDetectClient::%s] get connected status socket timeout! timeout[%lld s]", __func__, timeout),
-                  TimeoutException, "client get connection timeout");
+        bool isTimeout = ((std::chrono::steady_clock::now() - startTime) >= timeout);
+        if (isTimeout) {
+            HCCL_ERROR("[RankInfoDetectClient::%s] get connected status socket timeout! timeout[%lld s]", __func__, timeout);
+            RPT_INPUT_ERR(isTimeout, "EI0015", std::vector<std::string>({"error_reason"}),
+                std::vector<std::string>({"socket connection timeout"}));
+            THROW<TimeoutException>("client get connection timeout");
+        }
 
         if (clientSocket_->GetStatus() == SocketStatus::OK) {
             HCCL_DEBUG("[RankInfoDetectClient::%s] client get socket connection success.", __func__);
@@ -130,6 +134,10 @@ void CheckRootInfoJson(const nlohmann::json &parseJson)
     std::string version{};
     std::string msgVersion   = "error occurs when parser rootinfo object of propName \"version\"";
     TRY_CATCH_THROW(InvalidParamsException, msgVersion, version = GetJsonProperty(parseJson, "version"););
+    if (version != "2.0") {
+        RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({"value", "variable", "expect"}),
+            std::vector<std::string>({version, "version", "2.0"}));
+    }
     CHK_PRT_THROW(version != "2.0", HCCL_ERROR("[%s] failed with version [%s] is not \"2.0\".", __func__ , version.c_str()),
                   InvalidParamsException, "version error");
     
@@ -140,7 +148,12 @@ void CheckRootInfoJson(const nlohmann::json &parseJson)
     
     // check topo_file_path
     char resolvedPath[PATH_MAX] = {0};
-    CHK_PRT_THROW(realpath(topoFilePath.c_str(), resolvedPath) == nullptr,
+    bool isInvalidPath = (realpath(topoFilePath.c_str(), resolvedPath) == nullptr);
+    if (isInvalidPath) {
+        RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({"value", "variable", "expect"}),
+            std::vector<std::string>({topoFilePath, "topo_file_path", "vaild path"}));
+    }
+    CHK_PRT_THROW(isInvalidPath,
             HCCL_ERROR("[%s] topo_file_path[%s] is not a valid real path", __func__, topoFilePath.c_str()),
             InvalidParamsException, "topo_file_path error");
 
@@ -156,7 +169,12 @@ void CheckRootInfoJson(const nlohmann::json &parseJson)
                          GetJsonPropertyList(parseJson, "rank_list", rankJsons););
     
     // check rank_count
-    CHK_PRT_THROW(rankCount != rankJsons.size(), 
+    bool isRankCountMismatch = (rankCount != rankJsons.size());
+    if (isRankCountMismatch) {
+        RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({"value", "variable", "expect"}),
+            std::vector<std::string>({std::to_string(rankCount), "rankCount", std::to_string(rankJsons.size())}));
+    }
+    CHK_PRT_THROW(isRankCountMismatch, 
                   HCCL_ERROR("[%s] failed with rankCount is not equal to rank_list size."
                              "rankCount[%u], ranks.size[%u]", __func__, rankCount, rankJsons.size()),
                   InvalidParamsException, "rankCount error");
@@ -276,7 +294,12 @@ void RankInfoDetectClient::RecvRankTableMsg(vector<char> &rankInfoMsg)
     u64 revMsgLen = 0;
     std::unique_ptr<HostBuffer> msg = std::make_unique<HostBuffer>(MAX_BUFFER_LEN);
     char *msgAddr = reinterpret_cast<char *>(msg->GetAddr());
-    CHK_PRT_THROW(!socketAgent_.RecvMsg(msgAddr, revMsgLen),
+    bool recvSuccess = socketAgent_.RecvMsg(msgAddr, revMsgLen);
+    if (!recvSuccess) {
+        RPT_INPUT_ERR(true, "EI0015", std::vector<std::string>({"error_reason"}),
+            std::vector<std::string>({"recv ranktable message failed"}));
+    }
+    CHK_PRT_THROW(!recvSuccess,
         HCCL_ERROR("RankInfoDetectClient::%s, recv rankTable error.", __func__),
         SocketException, "client recv fail");
 
@@ -332,6 +355,8 @@ void RankInfoDetectClient::VerifyRankTable()
 
     // 校验rankCount符合预期
     if (rankTable_.rankCount != rankSize_) {
+        RPT_INPUT_ERR(true, "EI0015", std::vector<std::string>({"error_reason"}),
+            std::vector<std::string>({"rank_count does not match rankSize"}));
         THROW<InvalidParamsException>(StringFormat("[RankInfoDetectClient::%s] rank_count[%u] does not match"
             " rankSize_[%u].", __func__, rankTable_.rankCount, rankSize_));
     }
@@ -340,6 +365,10 @@ void RankInfoDetectClient::VerifyRankTable()
     rankTable_.Check();
     // TLS开关一致性校验
     HcclResult ret = VerifyTlsConsistency();
+    if (ret != HCCL_SUCCESS) {
+        RPT_INPUT_ERR(true, "EI0016", std::vector<std::string>({"error_reason"}),
+            std::vector<std::string>({"tls consistency verify failed"}));
+    }
     CHK_PRT_THROW(ret != HCCL_SUCCESS,
         HCCL_ERROR("[RankInfoDetectClient::%s] tls consistency verify failed, ret[%d]", __func__, ret),
         InvalidParamsException, "tls consistency verify failed");
