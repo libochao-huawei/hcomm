@@ -11,6 +11,7 @@
 #include "gtest/gtest.h"
 #include <mockcpp/mockcpp.hpp>
 #include <stdio.h>
+#include <vector>
 #include <sys/time.h> /* 获取时间 */
 #include "hccl/base.h"
 #include <hccl/hccl_types.h>
@@ -738,6 +739,31 @@ TEST_F(TaskExceptionTest, St_PrintCommAivInfo_When_AivGroup_Size_No_Zero_Expect_
     GlobalMockObject::verify();
 }
 
+TEST_F(TaskExceptionTest, ut_TaskInfo_InsertAndDealOpFFTSCtxInfo)
+{
+    u32 deviceLogicId = 0;
+    TaskExceptionHandler taskExceptionHandler(deviceLogicId);
+
+    HcclResult ret;
+    ret = taskExceptionHandler.Init();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    u32 streamID = 0;
+    u32 taskID = 0;
+    std::string tag = "test_tag";
+    std::vector<u32> tmpData = {32, 0};
+    const void *descBuf = tmpData.data();
+    size_t descBufLen = 128;
+
+    ret = taskExceptionHandler.InsertOpFFTSCtxInfo(streamID, taskID, tag, descBuf, descBufLen);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    taskID = 1;
+    ret = taskExceptionHandler.InsertOpFFTSCtxInfo(streamID, taskID, tag, descBuf, descBufLen);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    rtExceptionInfo rtExceptionInfo1{0, 0, 0, 0, 0};
+    TaskExceptionHandler::DealExceptionFFTSCtx(&rtExceptionInfo1);
+    taskExceptionHandler.Flush();
+}
 
 TEST_F(TaskExceptionTest, St_PrintCommAivInfo_When_AivGroup_Size_100_Expect_Print_Multi_Aiv_May_Execution_Stuck)
 {
