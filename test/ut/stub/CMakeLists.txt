@@ -319,6 +319,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints
     ${HCCL_CODE_ROOT}/src/framework/next/comms/api_c_adpt
     ${HCCL_CODE_ROOT}/src/framework/next/comms/common
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/common/device
     ${HCCL_CODE_ROOT}/src/legacy/common
     ${HCCL_CODE_ROOT}/src/legacy/framework/resource_manager/socket
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/stream/aicpu/

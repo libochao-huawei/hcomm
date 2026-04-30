@@ -423,6 +423,7 @@ private:
     void PrintSubmittedOpCnt(const std::string &tag, HcclResult ret);
     HcclResult ReleaseChannel();
     void BinaryUnLoad();
+    HcclResult InitBinHandle();
     DeviceMem indirectInCCLbuffer_; /* 保存inCCLbuffer指针的地址 */
     DeviceMem indirectOutCCLbuffer_; /* 保存outCCLbuffer_指针的地址 */
     u64 inCCLbufferSize_;

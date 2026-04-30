@@ -260,7 +260,10 @@ HcclResult AicpuIndopProcess::AicpuDestroyCommbyGroup(const std::string &group)
 HcclResult AicpuIndopProcess::AicpuDfxOpInfoInit(HcclDfxOpInfo *aicpuDfxInfo, const std::string& commTag)
 {
     CHK_PTR_NULL(aicpuDfxInfo);
-    HCCL_INFO("[%s]group[%s]", __func__, commTag.c_str());
+    HCCL_INFO("[%s]group[%s], algTag[%s], profiling L0[%d], L1[%d]", __func__, commTag.c_str(), aicpuDfxInfo->algTag,
+        Hccl::ProfilingHandlerLite::GetInstance().GetProfL0State(),
+        Hccl::ProfilingHandlerLite::GetInstance().GetProfL1State());
+
     // 获取device侧的通信域
     CHK_PRT_RET(g_hcclComm == nullptr, HCCL_ERROR("%s g_hcclComm is null, commTag[%s]", __func__, commTag.c_str()), HCCL_E_PTR);
     CollCommAicpu* collComm = g_hcclComm->GetCollCommAicpu();

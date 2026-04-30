@@ -22,6 +22,7 @@
 #include "aicpu_daemon_service.h"
 #include "hcclCommTaskExceptionLite.h"
 #include "coll_comm_aicpu_destroy_func.h"
+#include "aicpu_indop_env.h"
 
 constexpr u32 NOTIFY_SIZE_EIGHT = 8;
  HcclResult __attribute__((weak)) HcommChannelRegisterDfx(ChannelHandle channel, 
@@ -48,6 +49,28 @@ HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
     CHK_RET(hrtDrvGetLocalDevIDByHostDevID(topoInfo_.devicePhyId, &devId_));
     CHK_RET(dfx_.Init(devId_, identifier_));
     CHK_RET(RegisterProfCallBack());
+    CHK_RET(InitHDCommunicate(commAicpuParam));
+
+    EXECEPTION_CATCH(nsRecoveryLitePtr_ = std::make_shared<NsRecoveryLite>(), return HCCL_E_PTR);
+    nsRecoveryLitePtr_->Init(kfcControlTransferH2D_, kfcStatusTransferD2H_);
+
+    CHK_RET(Hccl::DlHalFunctionV2::GetInstance().DlHalFunctionInit());
+
+    commStatus_ = HcclCommStatus::HCCL_COMM_STATUS_READY;
+
+    static std::once_flag initBackGround;
+    std::call_once(initBackGround, [this]() { this->InitBackGroundThread();} );
+
+    static std::once_flag initEnv;
+    std::call_once(initEnv, [this, commAicpuParam]() { this->InitIndopEnv(commAicpuParam);} );
+    HCCL_RUN_INFO("[%s]success, group[%s], deviceLogicId[%u], devicePhyId[%u], deviceType[%u], rankSize[%u] "\
+        "userRank[%u], devId[%u]", __func__, identifier_.c_str(), topoInfo_.deviceLogicId, topoInfo_.devicePhyId,
+        topoInfo_.deviceType, topoInfo_.userRankSize, topoInfo_.userRank, devId_);
+    return HCCL_SUCCESS;
+}
+
+HcclResult CollCommAicpu::InitHDCommunicate(CommAicpuParam *commAicpuParam)
+{
     if (commAicpuParam->kfcControlTransferH2DParams.buffLen != 0 && kfcControlTransferH2D_ == nullptr) {
         EXECEPTION_CATCH((kfcControlTransferH2D_ = std::make_shared<hccl::HDCommunicate>()), return HCCL_E_PTR);
         CHK_SMART_PTR_NULL(kfcControlTransferH2D_);
@@ -58,20 +81,13 @@ HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
         CHK_SMART_PTR_NULL(kfcStatusTransferD2H_);
         CHK_RET(kfcStatusTransferD2H_->InitDevice(commAicpuParam->kfcStatusTransferD2HParams));
     }
-
-    EXECEPTION_CATCH(nsRecoveryLitePtr_ = std::make_shared<NsRecoveryLite>(), return HCCL_E_PTR);
-    nsRecoveryLitePtr_->Init(kfcControlTransferH2D_, kfcStatusTransferD2H_);
-
-    CHK_RET(Hccl::DlHalFunctionV2::GetInstance().DlHalFunctionInit());
-
-    commStatus_ = HcclCommStatus::HCCL_COMM_STATUS_READY;
-
-    static std::once_flag onceFlag;
-    std::call_once(onceFlag, [this]() { this->InitBackGroundThread();} );
-    HCCL_RUN_INFO("[%s]success, group[%s], deviceLogicId[%u], devicePhyId[%u], deviceType[%u], rankSize[%u] "\
-        "userRank[%u], devId[%u]", __func__, identifier_.c_str(), topoInfo_.deviceLogicId, topoInfo_.devicePhyId,
-        topoInfo_.deviceType, topoInfo_.userRankSize, topoInfo_.userRank, devId_);
     return HCCL_SUCCESS;
+}
+
+void CollCommAicpu::InitIndopEnv(CommAicpuParam *commAicpuParam)
+{
+    hcomm::SetTaskExceptionEnable(commAicpuParam->envConfig.taskExceptionEnable);
+    HCCL_RUN_INFO("[%s]Env: taskExceptionEnable[%d]", __func__, commAicpuParam->envConfig.taskExceptionEnable);
 }
 
 void CollCommAicpu::SetCommmStatus(HcclCommStatus status)
@@ -218,6 +234,7 @@ HcclResult CollCommAicpu::ParsePackData(std::vector<char> &data, ChannelHandle &
         EXECEPTION_CATCH((ubTransportLiteImpl = std::make_unique<Hccl::UbTransportLiteImpl>(transpUniqueId)),
             return HCCL_E_PTR);
         CHK_SMART_PTR_NULL(ubTransportLiteImpl);
+        ubTransportLiteImpl->SetTaskExceptionEnable(hcomm::GetTaskExceptionEnable());
         handle = reinterpret_cast<uint64_t>(ubTransportLiteImpl.get());
         ubTransportMap_.insert({handle, std::move(ubTransportLiteImpl)});
     } else if (transType == Hccl::TransportType::P2P) {
