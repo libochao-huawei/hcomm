@@ -41,6 +41,36 @@ protected:
         std::cout << "A Test case in GlobalMirrorTasks TearDown" << std::endl;
         GlobalMockObject::verify();
     }
+private:
+    void CreateTaskAndAddTask(u32 devId, u32 streamId, u32 taskId, QueueType type, GlobalMirrorTasks &globalMirrorTasks)
+    {
+        TaskParam taskParam{};
+        std::shared_ptr<DfxOpInfo> dfxOpInfo = std::make_shared<DfxOpInfo>();
+        std::shared_ptr<TaskInfo> taskInfo = std::make_shared<TaskInfo>(streamId, taskId, 0, taskParam, dfxOpInfo);
+        globalMirrorTasks.CreateQueue(devId, streamId, type);
+        globalMirrorTasks.GetQueue(devId, streamId)->Append(taskInfo);
+    }
+
+    void CheckFindTaskInfoSuccess(u32 devId, u32 streamId, u32 taskId, QueueType type, GlobalMirrorTasks &globalMirrorTasks)
+    {
+        std::shared_ptr<TaskInfo> curTask = nullptr;
+        CreateTaskAndAddTask(devId, streamId, taskId, type, globalMirrorTasks);
+
+        HcclResult ret = globalMirrorTasks.FindTaskInfo(devId, streamId, taskId, curTask);
+        EXPECT_EQ(ret, HCCL_SUCCESS);
+        EXPECT_NE(curTask, nullptr);
+        EXPECT_EQ(curTask->taskId_, taskId);
+    }
+
+    void CheckFindTaskInfoTaskIdNotFound(u32 devId, u32 streamId, u32 taskId, QueueType type, GlobalMirrorTasks &globalMirrorTasks)
+    {
+        std::shared_ptr<TaskInfo> curTask = nullptr;
+        CreateTaskAndAddTask(devId, streamId, taskId, type, globalMirrorTasks);
+
+        u32 fakeTaskId = taskId + 1;
+        HcclResult ret = globalMirrorTasks.FindTaskInfo(devId, streamId, fakeTaskId, curTask);
+        EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
+    }
 };
 
 TEST_F(GlobalMirrorTasksTest, GlobalMirrorTasks_GetQueue_1)
@@ -192,34 +222,30 @@ TEST_F(GlobalMirrorTasksTest, GlobalMirrorTasks_FindTaskInfo_streamId_not_found)
 
 TEST_F(GlobalMirrorTasksTest, GlobalMirrorTasks_FindTaskInfo_taskId_not_found)
 {
+    // when
     GlobalMirrorTasks &globalMirrorTasks = GlobalMirrorTasks::Instance();
-    std::shared_ptr<TaskInfo> curTask = nullptr;
-
-    globalMirrorTasks.CreateQueue(0, 0, QueueType::Circular_Queue);
-
-    TaskParam taskParam{};
-    std::shared_ptr<DfxOpInfo> dfxOpInfo = std::make_shared<DfxOpInfo>();
-    std::shared_ptr<TaskInfo> taskInfo = std::make_shared<TaskInfo>(0, 1, 0, taskParam, dfxOpInfo);
-    globalMirrorTasks.GetQueue(0, 0)->Append(taskInfo);
-
-    HcclResult ret = globalMirrorTasks.FindTaskInfo(0, 0, 0, curTask);
-    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
+    u32 devId = 0;
+    u32 cirStmId = 0;
+    u32 cirTaskId = 5;
+    u32 vecStmId = 1;
+    u32 vecTaskId = 6;;
+    
+    //Then
+    CheckFindTaskInfoTaskIdNotFound(devId, cirStmId, cirTaskId, QueueType::Circular_Queue, globalMirrorTasks);
+    CheckFindTaskInfoTaskIdNotFound(devId, vecStmId, vecTaskId, QueueType::Vector_Queue, globalMirrorTasks);
 }
 
 TEST_F(GlobalMirrorTasksTest, GlobalMirrorTasks_FindTaskInfo_success)
 {
+    // when
     GlobalMirrorTasks &globalMirrorTasks = GlobalMirrorTasks::Instance();
-    std::shared_ptr<TaskInfo> curTask = nullptr;
+    u32 devId = 0;
+    u32 cirStmId = 0;
+    u32 cirTaskId = 5;
+    u32 vecStmId = 1;
+    u32 vecTaskId = 6;
 
-    globalMirrorTasks.CreateQueue(0, 0, QueueType::Circular_Queue);
-
-    TaskParam taskParam{};
-    std::shared_ptr<DfxOpInfo> dfxOpInfo = std::make_shared<DfxOpInfo>();
-    std::shared_ptr<TaskInfo> taskInfo = std::make_shared<TaskInfo>(0, 5, 0, taskParam, dfxOpInfo);
-    globalMirrorTasks.GetQueue(0, 0)->Append(taskInfo);
-
-    HcclResult ret = globalMirrorTasks.FindTaskInfo(0, 0, 5, curTask);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_NE(curTask, nullptr);
-    EXPECT_EQ(curTask->taskId_, 5);
+    //Then
+    CheckFindTaskInfoSuccess(devId, cirStmId, cirTaskId, QueueType::Circular_Queue, globalMirrorTasks);
+    CheckFindTaskInfoSuccess(devId, vecStmId, vecTaskId, QueueType::Vector_Queue, globalMirrorTasks);
 }
