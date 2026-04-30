@@ -89,23 +89,12 @@ STATIC int HccpSetLogInfo(struct HccpInitParam *param)
     return 0;
 }
 
-STATIC void HccpSetInitPara(struct HccpInitParam *param, struct hccpInitPara *initPara)
-{
-    initPara->chipId = param->chipId;
-    initPara->pid = param->pid;
-    initPara->hdcType = param->hdcType;
-    initPara->whiteListStatus = param->whiteListStatus;
-    initPara->useResvMem = param->useResvMem;
-    initPara->resvMemPoolId = param->resvMemPoolId;
-}
-
 #ifndef CONFIG_HCCP_LLT
 int main(int argc, char *argv[])
 #else
 int llt_main(int argc, char *argv[])
 #endif
 {
-    struct hccpInitPara initPara = {0};
     struct HccpInitParam param = {0};
     enum ProductType productType;
     struct timeval start, end;
@@ -142,8 +131,7 @@ int llt_main(int argc, char *argv[])
 
     RsGetCurTime(&start);
 
-    HccpSetInitPara(&param, &initPara);
-    ret = HccpInit(&initPara);
+    ret = HccpInit(param.chipId, param.pid, param.hdcType, param.whiteListStatus);
     if (ret) {
         hccp_err("hccp init error[%d]", ret);
         goto hccp_init_fail;
