@@ -11,6 +11,7 @@
 set(BASE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../comm)
 set(ra_peer_list
     ra_peer.c
+    ra_peer_nda.c
     ra_peer_socket.c
     ra_peer_ctx.c
     ${BASE_DIR}/ra_comm.c

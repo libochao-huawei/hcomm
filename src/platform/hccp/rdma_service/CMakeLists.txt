@@ -18,11 +18,13 @@ set(rs_list
     rs_ping_roce.c
     rs_socket.c
     rs_rdma.c
+    rs_nda.c
     rs_comm.c
     rs_drv_sensor.c
     rs_drv_rdma.c
     rs_drv_socket.c
     dl_ibverbs_function.c
+    dl_nda_function.c
     hccp_dl.c
     ctx/dl_net_function.c
     ctx/dl_ccu_function.c
