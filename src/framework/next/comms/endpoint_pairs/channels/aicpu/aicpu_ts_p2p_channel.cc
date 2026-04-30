@@ -214,27 +214,7 @@ HcclResult AicpuTsP2pChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum
 
 ChannelStatus AicpuTsP2pChannel::GetStatus()
 {
-    Hccl::TransportStatus transportStatus = memTransport_->GetStatus();
-    ChannelStatus out = ChannelStatus::INIT;
-    switch (transportStatus) {
-        case Hccl::TransportStatus::INIT:
-            out = ChannelStatus::INIT;
-            break;
-        case Hccl::TransportStatus::SOCKET_OK:
-            out = ChannelStatus::SOCKET_OK;
-            break;
-        case Hccl::TransportStatus::SOCKET_TIMEOUT:
-            out = ChannelStatus::SOCKET_TIMEOUT;
-            break;
-        case Hccl::TransportStatus::READY:
-            out = ChannelStatus::READY;
-            break;
-        default:
-            HCCL_ERROR("[AicpuTsP2pChannel][%s] Invalid TransportStatus[%d]", __func__, transportStatus);
-            out = ChannelStatus::FAILED;
-            break;
-    }
-    return out;
+    return Channel::TransportStatusToChannelStatus(memTransport_->GetStatus());
 }
 
 HcclResult AicpuTsP2pChannel::SetModuleDataName(Hccl::ModuleData &module, const std::string &name)
@@ -303,4 +283,41 @@ HcclResult AicpuTsP2pChannel::UpdateMemInfo(HcommMemHandle *memHandles, uint32_t
     HCCL_WARNING("[AicpuTsP2pChannel][%s] P2PTransport does not support UpdateMemInfo.", __func__);
     return HCCL_SUCCESS;
 }
+
+HcclResult AicpuTsP2pChannel::NotifyRecord(const uint32_t remoteNotifyIdx)
+{
+    HCCL_INFO("[AicpuTsP2pChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult AicpuTsP2pChannel::NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout)
+{
+    HCCL_INFO("[AicpuTsP2pChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult AicpuTsP2pChannel::WriteWithNotify(void *dst, const void *src, const uint64_t len, uint32_t remoteNotifyIdx)
+{
+    HCCL_INFO("[AicpuTsP2pChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult AicpuTsP2pChannel::Write(void *dst, const void *src, uint64_t len)
+{
+    HCCL_INFO("[AicpuTsP2pChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult AicpuTsP2pChannel::Read(void *dst, const void *src, uint64_t len)
+{
+    HCCL_INFO("[AicpuTsP2pChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult AicpuTsP2pChannel::ChannelFence()
+{
+    HCCL_INFO("[AicpuTsP2pChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
 } // namespace hcomm

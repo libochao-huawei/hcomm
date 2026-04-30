@@ -154,6 +154,7 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/platform/hccp/inc/
         ${HCCL_BASE_DIR}/platform/resource/dispatcher_ctx
         ${HCCL_BASE_DIR}/platform/hccp/inc/network
+        ${URMA_INCLUDE_DIR}
 
         ${HCCL_BASE_DIR}/platform/inc/adapter
         

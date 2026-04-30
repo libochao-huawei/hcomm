@@ -42,6 +42,9 @@ set(src_to_test_list
     host/ut_host_cpu_roce_channel.cc
     host/ut_host_rdma_connection.cc
     host/ut_server_socket_manager.cc
+    host/ut_cpu_urma_endpoint.cc
+    host/ut_host_cpu_urma_channel.cc
+    host/ut_host_ub_connection.cc
     comms/endpoints/ut_ub_mem_endpoint.cc
     comms/endpoints/reged_mems/ut_roce_mem_test.cc
     comms/endpoints/reged_mems/ut_urma_mem_test.cc

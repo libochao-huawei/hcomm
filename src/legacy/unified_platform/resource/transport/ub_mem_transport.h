@@ -79,6 +79,9 @@ public:
     HcclResult CheckSocketStatus();
     HcclResult UpdateMemInfo(std::vector<LocalRmaBuffer *> &bufferVecTemp);
 
+    // hostUb使用
+    HcclResult GetRemoteSeg(const void* addr, u64 len, u64 *seg);
+
     HcclResult Init();
     HcclResult DeInit() const;
 
