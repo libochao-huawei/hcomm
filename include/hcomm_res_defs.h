@@ -15,6 +15,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <arpa/inet.h>
+#include <unordered_map>
 #include "securec.h"
 
 #ifdef __cplusplus
@@ -66,6 +67,16 @@ typedef enum {
     COMM_ENGINE_AIV = 4,          ///< AIV引擎
     COMM_ENGINE_CCU = 5,          ///< CCU引擎
 } CommEngine;
+
+const std::unordered_map<CommEngine, std::string> COMMENGINE_STATUS_STR_MAP {
+    {CommEngine::COMM_ENGINE_RESERVED, "COMM_ENGINE_RESERVED"},
+    {CommEngine::COMM_ENGINE_CPU, "COMM_ENGINE_CPU"},
+    {CommEngine::COMM_ENGINE_CPU_TS, "COMM_ENGINE_CPU_TS"},
+    {CommEngine::COMM_ENGINE_AICPU, "COMM_ENGINE_AICPU"},
+    {CommEngine::COMM_ENGINE_AICPU_TS, "COMM_ENGINE_AICPU_TS"},
+    {CommEngine::COMM_ENGINE_AIV, "COMM_ENGINE_AIV"},
+    {CommEngine::COMM_ENGINE_CCU, "COMM_ENGINE_CCU"}
+};
 
 /**
  * @brief 通信协议类型枚举
