@@ -12,6 +12,7 @@ target_sources(hccl_v2 PRIVATE
         p2p_connection.cc
         dev_rdma_connection.cc
         dev_ub_connection.cc
+        host_ub_connection.cc
 )
 
 add_subdirectory(ub_ci_updater)
