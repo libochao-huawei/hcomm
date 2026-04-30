@@ -1848,10 +1848,6 @@ namespace hccl
         AivSuperKernelArgs aivSuperKernelArgs;
         SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
 
-        void *sendAlgParamMemPtr = nullptr;
-        // alloc device 地址
-        hrtMalloc(&sendAlgParamMemPtr, sizeof(AivSuperKernelArgs));
-        HCCL_INFO("SPK sendalgparam %p.", sendAlgParamMemPtr);
         OpParam param;
         param.DataDes.count = count;
         param.DataDes.dataType = dataType;
@@ -1917,10 +1913,20 @@ namespace hccl
         // clearenable
         //  拷贝到Device
         SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
-        CHK_RET(hrtMemSyncCopy(
-            sendAlgParamMemPtr, sizeof(AivSuperKernelArgs),
-            &aivSuperKernelArgs, sizeof(AivSuperKernelArgs),
-            HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
+
+        void *sendAlgParamMemPtr = nullptr;
+        // alloc device 地址
+        CHK_RET(hrtMalloc(&sendAlgParamMemPtr, sizeof(AivSuperKernelArgs)));
+        HCCL_INFO("SPK sendalgparam %p.", sendAlgParamMemPtr);
+
+        HcclResult hcclRet = hrtMemSyncCopy(sendAlgParamMemPtr, sizeof(AivSuperKernelArgs),
+                                            &aivSuperKernelArgs, sizeof(AivSuperKernelArgs),
+                                            HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE);
+        if (hcclRet != HCCL_SUCCESS) {
+            HCCL_ERROR("[HcclCommunicator][%s]hrtMemSyncCopy error, ret[%d]", __func__, hcclRet);
+            CHK_RET(hrtFree(sendAlgParamMemPtr));
+            return hcclRet;
+        }
         commContext = sendAlgParamMemPtr;
         len = sizeof(AivSuperKernelArgs);
         return HCCL_SUCCESS;
@@ -4155,6 +4161,9 @@ namespace hccl
         CHK_RET(RegisterDfxInfo(opParam, algType, resMap_[newTag].slaveStreams, selectAivAlg));
         // 头计数
         CHK_RET(StarsCounter(dispatcher_, opParam.stream, HEAD, opParam.aicpuUnfoldMode, retryEnable_, selectAivAlg));
+        if (aivClearEnable_) {
+            CHK_RET(ClearAivSyncBuf(cacheInfo.buffersOut, cacheInfo.resourceArgs, cacheInfo.topoArgs, cacheInfo.algArgs));
+        }
         u64 dataSize = (opParam.opType == HcclCMDType::HCCL_CMD_ALLTOALL ?
             opParam.All2AllDataDes.sendCount * SIZE_TABLE[opParam.All2AllDataDes.sendType] : 0);
         if (opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V || opType == HcclCMDType::HCCL_CMD_ALLGATHER_V ||

@@ -1109,8 +1109,11 @@ void CommunicatorImpl::ConvertCollOperatorMem(const CollOpParams &opParams, u64 
     HCCL_INFO("[CommunicatorImpl][%s] end.", __func__);
 }
 
-void CommunicatorImpl::ConvertCollOperatorMemV(const CollOpParams &opParams)
+void CommunicatorImpl::ConvertCollOperatorMemV(const CollOpParams &opParams, bool isHcomSelectAlg)
 {
+    if (isHcomSelectAlg) {
+        return; // isHcomSeletAlg表示是否为图插件接口进来，若是跳过该步。未来aiv支持reducescatterv/allgatherv算子时，改处需做对应适配。
+    }
     HCCL_INFO("[CommunicatorImpl::%s] start, opType[%s]", __func__, opParams.opType.Describe().c_str());
     u64 size = DataTypeSizeGet(opParams.dataType) * opParams.count;
 
@@ -1176,7 +1179,7 @@ void CommunicatorImpl::CovertToCurrentCollOperator(std::string &opTag, const Col
             currentCollOperator->vDataDes.counts = opParams.vDataDes.counts;
             currentCollOperator->vDataDes.displs = opParams.vDataDes.displs;
             currentCollOperator->vDataDes.dataType = opParams.vDataDes.dataType;
-            ConvertCollOperatorMemV(opParams);
+            ConvertCollOperatorMemV(opParams, isHcomSelectAlg);
         } else {
             u64 size = DataTypeSizeGet(opParams.dataType) * opParams.count;
             if (size != 0) {
@@ -1386,6 +1389,7 @@ void CommunicatorImpl::InitDataBufferManager()
 
     if (rankSize > 1) {
         aivOffloadTagBuffer = std::move(DevBuffer::CreateHugePageBuf(HCCL_AIV_OFFLOAD_TAG_BUFFER_SIZE));
+        HrtMemset(reinterpret_cast<void*>(aivOffloadTagBuffer->GetAddr()), aivOffloadTagBuffer->GetSize(), aivOffloadTagBuffer->GetSize());
         cclBuffer = std::move(DevBuffer::CreateHugePageBuf(scratchBufSize));
         HCCL_RUN_INFO(
             "[CommunicatorImpl][InitDataBufferManager] cclBuffer create, commId[%s], addr[%llu], size[%llu]M",
@@ -1394,6 +1398,7 @@ void CommunicatorImpl::InitDataBufferManager()
         u64 aivTagBufSize = HCCL_CCL_AIV_TAG_BUFFER_SIZE * HCCL_CCL_COMM_FIXED_CALC_BUFFER_SIZE;
         HCCL_INFO("[CommunicatorImpl][InitDataBufferManager] aivTagBufSize[%llu]M", aivTagBufSize / HCCL_CCL_COMM_FIXED_CALC_BUFFER_SIZE);
         aivTagBuffer = std::move(DevBuffer::CreateHugePageBuf(aivTagBufSize));
+        HrtMemset(reinterpret_cast<void*>(aivTagBuffer->GetAddr()), aivTagBuffer->GetSize(), aivTagBuffer->GetSize());
         CreateCommCclBuf();
     }
     dataBufferManager = std::make_unique<DataBufManager>();
@@ -1405,7 +1410,9 @@ void CommunicatorImpl::InitDataBufferManager()
 
 void CommunicatorImpl::InitNotifyManager()
 {
-    queueNotifyManager = std::make_unique<QueueNotifyManager>(*this);
+    aicpuQueueNotifyManager_ = std::make_unique<QueueNotifyManager>(*this);
+
+    ccuQueueNotifyManager_ = std::make_unique<QueueNotifyManager>(*this);
 
     queueWaitGroupCntNotifyManager = std::make_unique<QueueWaitGroupCntNotifyManager>();
 
@@ -1478,8 +1485,8 @@ void CommunicatorImpl::InitHccpHdc() const
 
 void CommunicatorImpl::TryInitCcuFeature()
 {
-    const char *indOp = getenv("HCCL_INDEPENDENT_OP");
-    if (indOp != nullptr && strcmp(indOp, "") != 0) {
+    const char *opModeEnv = getenv("HCCL_CCU_CUSTOM_OP_MODE");
+    if (opModeEnv != nullptr && strcmp(opModeEnv, "1") == 0) {
         TpManager::GetInstance(devLogicId).Init();
         HCCL_RUN_INFO("[CommunicatorImpl][%s] passed, "
             "will use open source ccu feature.", __func__);
@@ -1670,10 +1677,16 @@ RemoteRmaBufManager &CommunicatorImpl::GetRemoteRmaBufManager() const
     return *remoteRmaBufManager;
 }
 
-QueueNotifyManager &CommunicatorImpl::GetQueueNotifyManager() const
+QueueNotifyManager &CommunicatorImpl::GetAicpuQueueNotifyManager() const
 {
-    CHECK_NULLPTR(queueNotifyManager, "queueNotifyManager is nullptr!");
-    return *queueNotifyManager;
+    CHECK_NULLPTR(aicpuQueueNotifyManager_, "aicpuQueueNotifyManager is nullptr!");
+    return *aicpuQueueNotifyManager_;
+}
+
+QueueNotifyManager &CommunicatorImpl::GetCcuQueueNotifyManager() const
+{
+    CHECK_NULLPTR(ccuQueueNotifyManager_, "ccuQueueNotifyManager is nullptr!");
+    return *ccuQueueNotifyManager_;
 }
 
 ConnLocalNotifyManager &CommunicatorImpl::GetConnLocalNotifyManager() const
@@ -2588,6 +2601,8 @@ void CommunicatorImpl::InitOneSidedService()
 u32 CommunicatorImpl::GetUsedChannelCount(u32 dieId)
 {
     CHECK_NULLPTR(collService, "collService is nullptr!");
+    if (!GetOpCcuFeatureFlag()) { return 0; } // 防止非ccu模式进入
+    CHECK_NULLPTR(dynamic_cast<CollServiceDeviceMode *>(collService), "CollServiceDeviceMode is nullptr!");
     CcuJettyMgr *ccuJettyMgr = dynamic_cast<CollServiceDeviceMode *>(collService)
                                 ->GetCcuInsPreprocessor()
                                 ->GetCcuComm()
@@ -2736,6 +2751,15 @@ HcclResult CommunicatorImpl::SetAccelerator(HcclAccelerator hcclAccelerator, boo
     }
     HcclMainboardId hcclMainboardId;
     CHK_RET(HrtGetMainboardId(devLogicId, hcclMainboardId));
+
+    // 开启新流程时，仅mc2场景走回legacy通信域，此时不允许使用ms模式
+    const char *opModeEnv = getenv("HCCL_CCU_CUSTOM_OP_MODE");
+    if (opModeEnv != nullptr && strcmp(opModeEnv, "1") == 0) {
+        HCCL_WARNING("[CommunicatorImpl][%s] legacy communicator not support ccu ms mode for mc2.",
+            __func__);
+        isCcuMsAvailable = false;
+    }
+
     switch (hcclAccelerator) {
         case HcclAccelerator::CCU_MS:
             if (hcclMainboardId == HcclMainboardId::MAINBOARD_PCIE_STD) { // 标卡环境下配置CCU_MS加速模式拦截报错
@@ -2769,10 +2793,6 @@ HcclResult CommunicatorImpl::SetAccelerator(HcclAccelerator hcclAccelerator, boo
         default:
             HCCL_ERROR("[SetAccelerator] hcclAccelerator[%s] internal error", hcclAccelerator.Describe().c_str());
             return HCCL_E_INTERNAL;
-    }
-    if (commAccelerator == AcceleratorState::AICPU_TS && IsCommWithPCIEProtocol() && HrtGetDeviceCount() > 8) {
-        // 当通信域存在PCIE链路且当前环境节点数大于8卡时，暂不支持aicpu展开，仅支持aiv展开
-        commAccelerator = AcceleratorState::AIV_ONLY;
     }
     OpExecuteConfig inCommExecuteConfig;
     inCommExecuteConfig.accState = commAccelerator;

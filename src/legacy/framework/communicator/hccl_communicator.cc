@@ -342,6 +342,17 @@ HcclResult HcclCommunicator::SetAccelerator(HcclAccelerator hcclAccelerator, boo
     return HcclResult::HCCL_SUCCESS;
 }
 
+HcclResult HcclCommunicator::SetAccelerator(int32_t accelerator, bool isCcuMsAvailable)
+{
+    if (accelerator < static_cast<int32_t>(HcclAccelerator::DEFAULT) || accelerator > static_cast<int32_t>(HcclAccelerator::AICPU)) {
+        HCCL_ERROR("[HcclCommunicator][SetAccelerator] Invalid accelerator value [%d], valid range is [0,7]", accelerator);
+        return HCCL_E_NOT_SUPPORT;
+    }
+    HcclAccelerator hcclAccelerator = static_cast<HcclAccelerator::Value>(accelerator);
+    CHK_RET(SetAccelerator(hcclAccelerator, isCcuMsAvailable));
+    return HcclResult::HCCL_SUCCESS;
+}
+
 HcclResult HcclCommunicator::GetAccelerator(int32_t* accelerator) const
 {
     CHK_RET(pimpl->GetAccelerator(accelerator));

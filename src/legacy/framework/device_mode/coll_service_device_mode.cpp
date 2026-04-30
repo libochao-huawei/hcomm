@@ -207,7 +207,8 @@ shared_ptr<InsQueue> CollServiceDeviceMode::Orchestrate(const CollAlgOperator &o
 {
     HCCL_INFO("[CollServiceDeviceMode::%s] start.", __func__);
     u64 tmpMemSize = 0;
-    if (op.opMode == OpMode::OPBASE) {
+    if (op.opMode == OpMode::OPBASE || comm->GetOpExecuteConfig().accState == AcceleratorState::AIV 
+    || comm->GetOpExecuteConfig().accState == AcceleratorState::AIV_ONLY) {
         tmpMemSize = comm->GetBufferSize();
     } else if (op.scratchMem != nullptr) {
         tmpMemSize = op.scratchMem->GetSize();

@@ -54,3 +54,6 @@ target_sources(legacy_alg_ccu_1d_hf16p_testcase
         testcase_reduce_scatter_hf.cc
         ${UTILS_DIR}/common/virtual_topo_stub/virtual_topo_stub.cc
 )
+
+enable_testing()
+add_test(NAME legacy_alg_ccu_1d_hf16p_testcase COMMAND legacy_alg_ccu_1d_hf16p_testcase)

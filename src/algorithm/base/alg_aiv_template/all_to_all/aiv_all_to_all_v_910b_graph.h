@@ -24,7 +24,7 @@ template<typename T>
 __aicore__ inline void AivAll2AllVGraph910B::Process(GM_ADDR input, GM_ADDR output, int32_t tag,
     ExtraArgs &extraArgs)
 {
-    uint32_t targetRank = GetBlockIdx(); // 0-rankSize
+    uint32_t targetRank = blockIdx_; // 0-rankSize
 
     // 内存准备
     __gm__ T *inputGM = (__gm__ T *)input;

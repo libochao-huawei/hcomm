@@ -191,7 +191,7 @@ HcclResult CcuAlgTemplateBase::CalNumBlocks(u32& numBlocks, u64 dataSize, u32 nu
     return HCCL_SUCCESS;
 }
 
-HcclResult CcuAlgTemplateBase::setPathNumMap(const std::map<u32, u32> &rank2PathNumMap)
+HcclResult CcuAlgTemplateBase::setPathNumMap(const std::map<u32, u32> &rank2PathNumMap) const
 {
     (void)rank2PathNumMap;
     HCCL_WARNING("[CcuAlgTemplateBase] Unsupported interface of setPathNumMap!");

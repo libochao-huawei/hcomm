@@ -149,7 +149,7 @@ private:
     CcuInstType                      instType_ = CcuInstType::CCU_REDUCE_MESH_1D_TWO_SHOT_MEM2MEM;
     std::vector<uint64_t>            dimSize_;
     uint32_t                         rankId_{0};
-    uint32_t                         rootId_;
+    uint32_t                         rootId_{0};
     CollAlgOperator                  op_;
     std::vector<std::vector<RankId>> tempVTopo_;
     uint64_t                         inputAddr_{0};

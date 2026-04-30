@@ -2044,19 +2044,17 @@ TEST_F(HcomTest, Ut_HcomGetCommCCLBufferSizeV2_When_Call_Expect_Success)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-TEST_F(HcomTest, ut_HcomGraphSelectAlgV2_When_Normal_Expect_ReturnHCCL_SUCCESS)
+void ExecuteHcomSelectV2Success(std::vector<HcclCMDType> hcomSupportOpType, AcceleratorState accelerator = AcceleratorState::CCU_SCHED)
 {
-    SetupCommonCommInfo();
-
     auto& commInfoV2 = CommManager::GetInstance(0).GetCommInfoV2();
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm = commInfoV2.pComm;
     hcclComm->pimpl->myRank = 0;
     hcclComm->pimpl->rankSize = 2;
     hcclComm->pimpl->status = CommStatus::COMM_READY;
+    hcclComm->pimpl->commExecuteConfig.accState = accelerator;
 
     s64 comm = reinterpret_cast<s64>(hcclComm.get());
     char group[256] = "hccl_world_group";
-    HcclCMDType opType = HcclCMDType::HCCL_CMD_ALLREDUCE;
     u64 count = 1024; 
     HcclDataType dataType = HCCL_DATA_TYPE_INT8;
     HcclReduceOp op = HCCL_REDUCE_SUM;
@@ -2067,11 +2065,45 @@ TEST_F(HcomTest, ut_HcomGraphSelectAlgV2_When_Normal_Expect_ReturnHCCL_SUCCESS)
     MOCKER_CPP(&CommunicatorImpl::ExecAlgSelect).defaults().with(any()).will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER_CPP(&CommunicatorImpl::ReportProfInfo).defaults().with(any()).will(ignoreReturnValue());
 
-    HcclResult ret = HcomGraphSelectAlgV2(comm, group, opType, count, dataType, op, aivCoreLimit, ifAiv, algName);
-    EXPECT_EQ(HCCL_SUCCESS, ret);
+    for (auto opType : hcomSupportOpType) { // 不同加速模式支持的算子类型不同
+        HcclResult ret = HcomGraphSelectAlgV2(comm, group, opType, count, dataType, op, aivCoreLimit, ifAiv, algName);
+        EXPECT_EQ(HCCL_SUCCESS, ret);
 
-    ret = HcomSelectAlgV2(comm, group, opType, count, dataType, op, aivCoreLimit, ifAiv, algName);
-    EXPECT_EQ(HCCL_SUCCESS, ret);
+        ret = HcomSelectAlgV2(comm, group, opType, count, dataType, op, aivCoreLimit, ifAiv, algName);
+        EXPECT_EQ(HCCL_SUCCESS, ret);
+    }
+}
+
+TEST_F(HcomTest, ut_HcomGraphSelectAlgV2_When_Ccu_Expect_ReturnHCCL_SUCCESS)
+{
+    SetupCommonCommInfo();
+
+    std::vector<HcclCMDType> ccuHcomSupportOpType = {HcclCMDType::HCCL_CMD_BROADCAST, HcclCMDType::HCCL_CMD_ALLREDUCE,
+    HcclCMDType::HCCL_CMD_REDUCE, HcclCMDType::HCCL_CMD_ALLGATHER, HcclCMDType::HCCL_CMD_REDUCE_SCATTER,
+    HcclCMDType::HCCL_CMD_ALLTOALLV, HcclCMDType::HCCL_CMD_ALLTOALL, 
+    HcclCMDType::HCCL_CMD_ALLGATHER_V, HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V};
+    ExecuteHcomSelectV2Success(ccuHcomSupportOpType);
+}
+
+TEST_F(HcomTest, ut_HcomGraphSelectAlgV2_When_Aicpu_Expect_ReturnHCCL_SUCCESS)
+{
+    SetupCommonCommInfo();
+
+    std::vector<HcclCMDType> aicpuHcomSupportOpType = {HcclCMDType::HCCL_CMD_BROADCAST, HcclCMDType::HCCL_CMD_ALLREDUCE,
+    HcclCMDType::HCCL_CMD_REDUCE, HcclCMDType::HCCL_CMD_ALLGATHER, HcclCMDType::HCCL_CMD_REDUCE_SCATTER,
+    HcclCMDType::HCCL_CMD_ALLTOALLV, HcclCMDType::HCCL_CMD_ALLTOALL, 
+    HcclCMDType::HCCL_CMD_ALLTOALLVC, HcclCMDType::HCCL_CMD_SEND, HcclCMDType::HCCL_CMD_RECEIVE};
+    ExecuteHcomSelectV2Success(aicpuHcomSupportOpType, AcceleratorState::AICPU_TS);
+}
+
+TEST_F(HcomTest, ut_HcomGraphSelectAlgV2_When_Aiv_Expect_ReturnHCCL_SUCCESS)
+{
+    SetupCommonCommInfo();
+
+    std::vector<HcclCMDType> aivHcomSupportOpType = {HcclCMDType::HCCL_CMD_BROADCAST, HcclCMDType::HCCL_CMD_ALLREDUCE,
+    HcclCMDType::HCCL_CMD_REDUCE, HcclCMDType::HCCL_CMD_ALLGATHER, HcclCMDType::HCCL_CMD_REDUCE_SCATTER,
+    HcclCMDType::HCCL_CMD_ALLTOALLV, HcclCMDType::HCCL_CMD_ALLTOALL, HcclCMDType::HCCL_CMD_SCATTER};
+    ExecuteHcomSelectV2Success(aivHcomSupportOpType, AcceleratorState::AIV);
 }
 
 TEST_F(HcomTest, ut_HcomGraphSelectAlgV2_When_UnNormal_Expect_ReturnError)

@@ -18,3 +18,5 @@ set(src_list
 target_sources(hcomm PRIVATE
     ${src_list}
 )
+
+add_subdirectory(device)
