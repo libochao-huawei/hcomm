@@ -442,6 +442,50 @@ TEST_F(TaskExceptionTest, ut_task_exception_callback__cqe_heartbeat)
     taskExceptionHandler.Callback(&rtExceptionInfo1);
 }
 #endif
+TEST_F(TaskExceptionTest, ut_TaskInfo_ffts_context)
+{
+    u32 deviceLogicId = 0;
+    TaskExceptionHandler taskExceptionHandler(deviceLogicId);
+
+    MOCKER(GetExternalInputTaskExceptionSwitch)
+    .stubs()
+    .will(returnValue(1));    
+
+    HcclResult ret;
+    ret = taskExceptionHandler.Init();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    u32 streamID = 0;
+    u32 taskID = 0;
+    std::string tag = "test_tag";
+    TaskType taskType = TaskType::TASK_RDMA;
+    TaskParaNotify taskParaNotify;
+    string str;
+    AlgType algType = AlgType::Reserved();
+
+    u32 index = 0;
+    TaskInfo taskInfo1(streamID, taskID, tag, taskType, algType, index, taskParaNotify);
+    str = taskInfo1.GetBaseInfoStr();
+    TaskParaDMA taskParaDMA;
+    taskType = TaskType::TASK_RDMA;
+    ret = taskExceptionHandler.Save(streamID, taskID, taskType, taskParaDMA);
+
+    std::vector<uint32_t> descData = {32, 1};
+    size_t descBufLen = 128;
+    ret = taskExceptionHandler.Save(streamID, taskID, descData.data(), descBufLen);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    rtExceptionExpandInfo_t expandInfo;
+    expandInfo.u.fftsPlusInfo.contextId = 0;
+    expandInfo.type = tagRtExceptionExpandType::RT_EXCEPTION_FFTS_PLUS;
+    rtExceptionInfo rtExceptionInfo1;
+    rtExceptionInfo1.streamid = streamID;
+    rtExceptionInfo1.expandInfo = expandInfo;
+    rtExceptionInfo1.deviceid = 0;
+    rtExceptionInfo1.taskid = taskID;
+    TaskExceptionHandler::DealExceptionCtx(&rtExceptionInfo1);
+    taskExceptionHandler.Flush();
+}
+
 TEST_F(TaskExceptionTest, ut_TaskInfo_GetBaseInfoStr)
 {
     u32 deviceLogicId = 0;
