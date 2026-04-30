@@ -24,7 +24,7 @@ public:
     template <typename T>
     void operator () (rtStream_t stream, TaskType taskType, const T &para) const;
     void operator () (rtStream_t stream, const TaskParaAiv &paraAiv) const;
-    void operator () (rtStream_t stream) const; // FFTS+ launch
+    void operator () (rtStream_t stream, const void *descBuf = nullpter, size_t descBufLen = 0) const; // FFTS+ launch
     void operator () (const TaskParaHost &paraHost) const;
     void operator () (const StepData &stepData);
 protected:
