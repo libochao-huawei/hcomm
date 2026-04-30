@@ -286,28 +286,14 @@ __aicore__ inline void AivReduceV2Mesh1D(EXTERN_KERNEL_ARGS_DEF_V2)
 {
     constexpr static uint64_t TWO_SHOT_SLICE_NUM = 256 * 1024;
     (void)extraArgs;
-    if(len * sizeof(T) < TWO_SHOT_SLICE_NUM){
-        AivReduceMesh1D<T> op;
-        op.Init(KERNEL_CLASS_INIT, true);
-        op.InitCoreInfo();
-        SyncAll<true>();
-        if (block_idx == 0 && tag >> AIV_TAG_MOVE_RIGHT_BITS == 1 && (tag & LOW_16_BITS) == 1) {
-            op.BarrierForFirstOP();
-        }
-        SyncAll<true>();
-        op.Process(tag);
-        op.BarrierAll();
-    } else {
-        AivReduceMesh1DTwoShot<T> op;
-        op.Init(KERNEL_CLASS_INIT, true);
-        SyncAll<true>(); 
-        if (block_idx == 0 && tag >> AIV_TAG_MOVE_RIGHT_BITS == 1 && (tag & LOW_16_BITS) == 1) {
-            op.BarrierForFirstOP();
-        }
-        SyncAll<true>();
-        op.InitCoreInfo(tag);
-        op.ReduceScatter();
-        op.GatherToRoot();    
-        op.BarrierAll();    
+    AivReduceMesh1D<T> op;
+    op.Init(KERNEL_CLASS_INIT, true);
+    op.InitCoreInfo();
+    SyncAll<true>();
+    if (block_idx == 0 && tag >> AIV_TAG_MOVE_RIGHT_BITS == 1 && (tag & LOW_16_BITS) == 1) {
+        op.BarrierForFirstOP();
     }
+    SyncAll<true>();
+    op.Process(tag);
+    op.BarrierAll();
 }

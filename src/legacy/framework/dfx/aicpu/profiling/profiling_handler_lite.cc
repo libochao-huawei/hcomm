@@ -308,21 +308,6 @@ void ProfilingHandlerLite::SetProL0On(bool val)
     enableHcclL0_ = val;
 }
 
-bool ProfilingHandlerLite::GetProfL0State() const
-{
-    if (!enableHcclL0_) {
-        return false;
-    }
-    return true;
-}
-bool ProfilingHandlerLite::GetProfL1State() const
-{
-    if (!enableHcclL1_) {
-        return false;
-    }
-    return true;
-}
-
 uint64_t ProfilingHandlerLite::GetProfHashId(const char *name, uint32_t len) const
 {
     if (name == nullptr || len == 0) {

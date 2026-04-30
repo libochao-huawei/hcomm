@@ -35,13 +35,13 @@ HcclResult InsTempAlltoAllMesh::CalcRes(AlgTempResReq &tempResReq)
     for (auto resReqIter = linkReq.begin(); resReqIter != linkReq.end(); resReqIter++) {
         auto remoteRank = resReqIter->first;
         if (rank2PathNumMap_.find(remoteRank) == rank2PathNumMap_.end() || rank2PathNumMap_.at(remoteRank) == 0) {
-            HCCL_ERROR("No path to remoteRank[%u]", remoteRank);
+            HCCL_ERROR("No path to remoteRank[%d]", remoteRank);
             return HcclResult::HCCL_E_INTERNAL;
         }
         resReqIter->second = rank2PathNumMap_.at(remoteRank);
         maxPathNum = std::max(maxPathNum, rank2PathNumMap_.at(remoteRank)); // 每个rank的远端搬运最多需要pathNum条流
     }
-    tempResReq.queNum = 1 + maxPathNum * ALLTOALLV_DIRECT_FULLMESH_CONCURRENT_SIZE; 
+    tempResReq.queNum = 1 + maxPathNum * std::min(ALLTOALLV_DIRECT_FULLMESH_CONCURRENT_SIZE, tempRankSize_); 
     tempResReq.streamNum = tempResReq.queNum;
     tempResReq.queNotifys = CreateMasterSlaveQueNotifiesRequest(tempResReq.queNum);
 

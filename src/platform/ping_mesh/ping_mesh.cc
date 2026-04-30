@@ -529,8 +529,8 @@ inline HcclResult RpingTargetAttrInit(PingTargetInfo &target, RpingInput input, 
     return HCCL_SUCCESS;
 }
 
-HcclResult PingMesh::RpingResultInfoInit(PingTargetResult *resultInfo, std::map<std::string, PingQpInfo> rdmaInfoMaps,
-    RpingInput *input, u32 targetNum)
+HcclResult PingMesh::RpingResultInfoInit(PingTargetResult *resultInfo,
+    UniversalConcurrentMap<std::string, PingQpInfo> &rdmaInfoMaps, RpingInput *input, u32 targetNum)
 {
     u32 addressType = 0;
     HcclResult addrTypeRet = GetAddrType(&addressType);
@@ -539,7 +539,7 @@ HcclResult PingMesh::RpingResultInfoInit(PingTargetResult *resultInfo, std::map<
         return HCCL_E_PARA;
     }
     for (u32 i = 0; i < targetNum; i++) {
-        if (rdmaInfoMaps.find(std::string(input[i].dip.GetReadableIP())) == rdmaInfoMaps.end()) {
+        if (!rdmaInfoMaps.Find(std::string(input[i].dip.GetReadableIP())).second) {
             HCCL_WARNING("[HCCN][RpingResultInfoInit]Target[%s] info doesn't exist.", input[i].dip.GetReadableIP());
             continue;
         }
@@ -601,13 +601,13 @@ inline void LogRecordbyTimes(int &count)
 
 inline void RemoveMapInfo(RpingInput *input, u32 targetNum, 
                           std::map<std::string, std::shared_ptr<HcclSocket>> &socketMaps,
-                          std::map<std::string, PingQpInfo> &rdmaInfoMaps,
-                          std::map<std::string, u32> &payloadLenMap)
+                          UniversalConcurrentMap<std::string, PingQpInfo> &rdmaInfoMaps,
+                          UniversalConcurrentMap<std::string, u32> &payloadLenMap)
 {
     for (u32 i = 0; i < targetNum; i++) {
         socketMaps.erase(std::string(input[i].dip.GetReadableIP()));
-        rdmaInfoMaps.erase(std::string(input[i].dip.GetReadableIP()));
-        payloadLenMap.erase(std::string(input[i].dip.GetReadableIP()));
+        rdmaInfoMaps.Erase(std::string(input[i].dip.GetReadableIP()));
+        payloadLenMap.Erase(std::string(input[i].dip.GetReadableIP()));
     }
 }
 
@@ -669,10 +669,12 @@ HcclResult PingMesh::RpingSendInitInfo(u32 deviceId, u32 port, HcclIpAddress ipA
 HcclResult PingMesh::RpingRecvTargetInfo(void *clientNetCtx, u32 port, HcclIpAddress ipAddr, PingInitInfo &recvInfo, u32 timeout)
 {
     // 确认是否添加过该IP
+    std::unique_lock<std::mutex> lock(socketMapsMtx_);
     if (socketMaps_.find(std::string(ipAddr.GetReadableIP())) != socketMaps_.end()) {
         HCCL_WARNING("[HCCN][RpingRecvTargetInfo]IP address[%s] has already exist.", ipAddr.GetReadableIP());
         return HCCL_SUCCESS;
     }
+    lock.unlock();
     // socket建链 这里的建链流程与init里的侦听动作应当使用同一套接口
     std::string tag = "PingMesh" + std::string(ipAddr.GetReadableIP());
     HCCL_INFO("[HCCN][RpingRecvTargetInfo]socket tag[%s].", tag.c_str());
@@ -716,6 +718,7 @@ HcclResult PingMesh::RpingRecvTargetInfo(void *clientNetCtx, u32 port, HcclIpAdd
     HCCL_INFO("[HCCN][RpingRecvTargetInfo]Server[%s] info received success.", ipAddr.GetReadableIP());
 
     // 记录socket
+    lock.lock();
     socketMaps_.insert({std::string(ipAddr.GetReadableIP()), socket});
 
     return HCCL_SUCCESS;
@@ -941,6 +944,7 @@ HcclResult PingMesh::HccnRpingDeinit(u32 deviceId)
     }
 
     // 清空map
+    std::unique_lock<std::mutex> lock(socketMapsMtx_);
     for (auto &socket: socketMaps_) {
         if (socket.second->DeInit() != HCCL_SUCCESS) {
             HCCL_WARNING("[HCCN][HccnRpingDeinit]socket deinit failed");
@@ -948,9 +952,10 @@ HcclResult PingMesh::HccnRpingDeinit(u32 deviceId)
     }
     socketMaps_.clear();
     HCCL_INFO("[HCCN][HccnRpingDeinit]Socket map clear.");
-    rdmaInfoMaps_.clear();
+    lock.unlock();
+    rdmaInfoMaps_.Clear();
     HCCL_INFO("[HCCN][HccnRpingDeinit]Rdma info map clear.");
-    payloadLenMap_.clear();
+    payloadLenMap_.Clear();
     HCCL_INFO("[HCCN][HccnRpingDeinit]payloadLen map clear.");
 
     // 关闭socket链路
@@ -999,16 +1004,16 @@ HcclResult PingMesh::HccnTargetAttrInter(u32 targetNumInter, RpingInput *inputIn
             break;
         }
         PingQpInfo *rdmaInfo = &(recvInfo.client);
-        if (rdmaInfoMaps_.find(std::string(inputInter[i].dip.GetReadableIP())) != rdmaInfoMaps_.end()) {
+        if (rdmaInfoMaps_.Find(std::string(inputInter[i].dip.GetReadableIP())).second) {
             HCCL_RUN_INFO("[HCCN][HccnRpingAddTarget]Target[%s] has already added.", inputInter[i].dip.GetReadableIP());
             continue;
         }
-        rdmaInfoMaps_.insert(std::pair<std::string, PingQpInfo>(std::string(inputInter[i].dip.GetReadableIP()), recvInfo.client));
-        if (payloadLenMap_.find(std::string(inputInter[i].dip.GetReadableIP())) != payloadLenMap_.end()) {
+        rdmaInfoMaps_.Emplace(std::pair<std::string, PingQpInfo>(std::string(inputInter[i].dip.GetReadableIP()), recvInfo.client));
+        if (payloadLenMap_.Find(std::string(inputInter[i].dip.GetReadableIP())).second) {
             HCCL_RUN_INFO("[HCCN][HccnRpingAddTarget]Target[%s] has already added.", inputInter[i].dip.GetReadableIP());
             continue;
         }
-        payloadLenMap_.insert(std::pair<std::string, u32>(std::string(inputInter[i].dip.GetReadableIP()), inputInter[i].len));
+        payloadLenMap_.Emplace(std::pair<std::string, u32>(std::string(inputInter[i].dip.GetReadableIP()), inputInter[i].len));
         if (addressType == HCCN_RPING_ADDR_TYPE_IP) {
             ret = RpingTargetAttrInit(targetInter[0], inputInter[i], rdmaInfo, true);
         }
@@ -1065,6 +1070,7 @@ HcclResult PingMesh::HccnTarRemoveAttrInter(u32 targetNumInter, RpingInput *inpu
     }
     for (u32 i = 0; i < targetNumInter; i++) {
         // 删除链路
+        std::unique_lock<std::mutex> lock(socketMapsMtx_);
         if (socketMaps_.find(std::string(inputInter[i].dip.GetReadableIP())) == socketMaps_.end()) {
             HCCL_ERROR("[HCCN][HccnRpingRemoveTarget]Socket[%s] doesn't exist.", inputInter[i].dip.GetReadableIP());
             retInter = HCCL_E_NOT_FOUND;
@@ -1076,12 +1082,13 @@ HcclResult PingMesh::HccnTarRemoveAttrInter(u32 targetNumInter, RpingInput *inpu
             HCCL_ERROR("[HCCN][HccnRpingRemoveTarget]Socket[%u][%s] deinit failed, ret[%d].", i, inputInter[i].dip.GetReadableIP(), retInter);
             break;
         }
-        if (rdmaInfoMaps_.find(std::string(inputInter[i].dip.GetReadableIP())) == rdmaInfoMaps_.end()) {
+        lock.unlock();
+        if (!rdmaInfoMaps_.Find(std::string(inputInter[i].dip.GetReadableIP())).second) {
             HCCL_ERROR("[HCCN][HccnRpingRemoveTarget]Target[%s] doesn't exist.", inputInter[i].dip.GetReadableIP());
             retInter = HCCL_E_NOT_FOUND;
             break;
         }
-        if (payloadLenMap_.find(std::string(inputInter[i].dip.GetReadableIP())) == payloadLenMap_.end()) {
+        if (!payloadLenMap_.Find(std::string(inputInter[i].dip.GetReadableIP())).second) {
             HCCL_ERROR("[HCCN][HccnRpingRemoveTarget]Target[%s] doesn't exist.", inputInter[i].dip.GetReadableIP());
             retInter = HCCL_E_NOT_FOUND;
             break;
@@ -1132,7 +1139,9 @@ HcclResult PingMesh::HccnRpingRemoveTarget(u32 deviceId, u32 targetNum, RpingInp
     HCCL_INFO("[HCCN][HccnRpingRemoveTarget]Device[%u] remove targetNum %u success.", deviceId, targetNum);
 
     // 清除需要删掉的socket和rdma信息
+    std::unique_lock<std::mutex> lock(socketMapsMtx_);
     RemoveMapInfo(input, targetNum, socketMaps_, rdmaInfoMaps_, payloadLenMap_);
+    lock.unlock();
     if (rpingTargetNum_ <= 0) { // 目标数量小于等于0时, 记录的目标数量设为0,  切回初始化完成状态
         rpingTargetNum_ = 0;
         rpingState_ = RpingState::INITED;
@@ -1145,6 +1154,7 @@ HcclResult PingMesh::HccnRpingGetTarget(u32 deviceId, u32 targetNum, RpingInput 
 {
     CHK_PTR_NULL(input);
     CHK_PTR_NULL(targetStat);
+    std::unique_lock<std::mutex> lock(socketMapsMtx_);
     for (u32 i = 0; i < targetNum; i++) {
         //查询链路状态
         if (socketMaps_.find(std::string(input[i].dip.GetReadableIP())) == socketMaps_.end()) {
@@ -1289,7 +1299,7 @@ HcclResult PingMesh::HccnRpingRefillPayloadHead(u8 *originalHead, u32 payloadNum
             HCCL_ERROR("[HCCN][HccnRpingRefillPayloadHead]Memcpy ret %d, dst:%p, dstMax:%u, src:%p, length:%u",
             memRet, head->dstIp, IP_ADDRESS_BUFFER_LEN, dstIp.GetReadableIP(), ipAddrStrLen), HCCL_E_MEMORY);
         // 填充payloadLen
-        if (payloadLenMap_.find(dstIp.GetReadableIP()) != payloadLenMap_.end()) {
+        if (payloadLenMap_.Find(dstIp.GetReadableIP()).second) {
             head->payloadLen = payloadLenMap_[dstIp.GetReadableIP()];
         }
         //填充addrtype
@@ -1342,7 +1352,7 @@ HcclResult PingMesh::HccnRpingRefillUbPayloadHead(u8 *originalHead, u32 payloadN
             HCCL_ERROR("[HCCN][HccnRpingRefillUbPayloadHead]Exchange eid fail. ret %d, dst:%p, dstMax:%u, src:%p, length:%u",
             memRet, head->dstEid, URMA_EID_LEN, dstEidAddress.Describe().c_str(), dstEidAddrStrLen), HCCL_E_MEMORY);
         // 填充payloadLen
-        if (payloadLenMap_.find(dstEidAddress.Describe()) != payloadLenMap_.end()) {
+        if (payloadLenMap_.Find(dstEidAddress.Describe()).second) {
             head->payloadLen = payloadLenMap_[dstEidAddress.Describe()];
         }
         //填充times

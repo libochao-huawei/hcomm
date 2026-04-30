@@ -10,11 +10,12 @@
 
 #include "ut_aicpu_ts_base.h"
 #include "ub_transport_lite_impl.h"
+#include "exception_util.h"
+#include "hccl_exception.h"
 
 using namespace hccl;
 
-class UtAicpuTsHcommWriteOnThread : public UtAicpuTsBase
-{
+class UtAicpuTsHcommWriteOnThread : public UtAicpuTsBase {
 protected:
     static void SetUpTestCase()
     {
@@ -74,6 +75,15 @@ TEST_F(UtAicpuTsHcommWriteOnThread, Ut_HcommWriteOnThread_When_BuildLocRmaBuffer
         .with(any(), any(), any())
         .will(returnValue(HCCL_E_INTERNAL));
 
+    res = HcommWriteOnThread(thread, devHandle, dst, src, len);
+    EXPECT_EQ(res, HCCL_E_INTERNAL);
+}
+
+TEST_F(UtAicpuTsHcommWriteOnThread, Ut_HcommWriteOnThread_When_GetRmtRmaBufSliceLite_Throw_Expect_ReturnIsHCCL_E_INTERNAL)
+{
+    MOCKER_CPP_VIRTUAL(transportDev, &Hccl::UbTransportLiteImpl::Write)
+        .stubs()
+        .will(throws(Hccl::InternalException("test exception")));
     res = HcommWriteOnThread(thread, devHandle, dst, src, len);
     EXPECT_EQ(res, HCCL_E_INTERNAL);
 }

@@ -53,7 +53,6 @@ public:
     HcclResult GetExchangeDto(std::unique_ptr<Hccl::Serializable> &serial);
     HcclResult ParseRmtExchangeDto(const Hccl::Serializable &rmtDto); // 解析收到的远端序列化数据
     HcclResult ModifyQp();
-    RdmaConnStatus GetRdmaStatus();
 
     ~HostRdmaConnection();
 

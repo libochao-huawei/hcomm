@@ -32,7 +32,6 @@ set(ASCEND_CANN_INCLUDE_LIST
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/hccl
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling
     ${ASCEND_CANN_PACKAGE_PATH}/include
     ${ASCEND_CANN_PACKAGE_PATH}/include/driver
@@ -64,6 +63,7 @@ set(HCOMM_PUBLIC_INCLUDE_LIST
     ${HCOMM_CODE_ROOT}/src/pub_inc/inner
     ${HCOMM_CODE_ROOT}/pub_inc
     ${HCOMM_CODE_ROOT}/pub_inc/hccl
+    ${HCOMM_CODE_ROOT}/pkg_inc/hccl
 )
 
 set(HCOMM_PLATFORM_INCLUDE_LIST
@@ -143,6 +143,7 @@ set(HCOMM_FRAMEWORK_INCLUDE_LIST
     ${HCOMM_CODE_FRAMEWORK}/communicator/impl/independent_op/rank_graph
     ${HCOMM_CODE_FRAMEWORK}/communicator/impl/independent_op/resource/engine
 
+    ${HCOMM_CODE_FRAMEWORK}/next/
     ${HCOMM_CODE_FRAMEWORK}/next/comms/comm_engine_res/threads
     ${HCOMM_CODE_FRAMEWORK}/next/comms/comm_engine_res/threads/slaves/
     ${HCOMM_CODE_FRAMEWORK}/next/coll_comms
@@ -188,6 +189,7 @@ set(HCOMM_FRAMEWORK_INCLUDE_LIST
 )
 
 set(HCOMM_LEGACY_INCLUDE_LIST
+    ${HCOMM_CODE_LEGACY}
     ${HCOMM_CODE_LEGACY}/interface
     ${HCOMM_CODE_LEGACY}/common
     ${HCOMM_CODE_LEGACY}/common/utils
@@ -210,7 +212,13 @@ set(HCOMM_LEGACY_INCLUDE_LIST
     ${HCOMM_CODE_LEGACY}/unified_platform
     ${HCOMM_CODE_LEGACY}/unified_platform/external_system
     ${HCOMM_CODE_LEGACY}/unified_platform/common
+    ${HCOMM_CODE_LEGACY}/unified_platform/ccu/
+    ${HCOMM_CODE_LEGACY}/unified_platform/ccu/ccu_device/
+    ${HCOMM_CODE_LEGACY}/unified_platform/ccu/ccu_device/ccu_component/
+    ${HCOMM_CODE_LEGACY}/unified_platform/ccu/ccu_device/ccu_component/ccu_channel/
+    ${HCOMM_CODE_LEGACY}/unified_platform/ccu/ccu_context/
     ${HCOMM_CODE_LEGACY}/unified_platform/pub_inc
+    ${HCOMM_CODE_LEGACY}/unified_platform/pub_inc/ccu/
     ${HCOMM_CODE_LEGACY}/unified_platform/resource
     ${HCOMM_CODE_LEGACY}/unified_platform/resource/transport
     ${HCOMM_CODE_LEGACY}/unified_platform/resource/transport/aicpu

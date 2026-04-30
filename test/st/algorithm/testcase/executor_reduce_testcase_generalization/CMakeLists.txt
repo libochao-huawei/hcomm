@@ -56,3 +56,6 @@ target_sources(executor_reduce_hccl_test
     main.cc
     ../testcase/testcase_utils.cc
 )
+
+enable_testing()
+add_test(NAME executor_reduce_hccl_test COMMAND executor_reduce_hccl_test)

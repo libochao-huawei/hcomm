@@ -11,9 +11,9 @@
 #define private public
 #define protected public
 
-#include "ccu_res_batch_allocator.h"
+#include "comms/ccu/ccu_device/ccu_res_batch_allocator.h"
 #include "ccu_pfe_cfg_mgr.h"
-#include "ccu_res_specs.h"
+#include "comms/ccu/ccu_device/ccu_res_specs.h"
 #include "ccu_comp.h"
 
 #include "hcomm_adapter_hccp.h"

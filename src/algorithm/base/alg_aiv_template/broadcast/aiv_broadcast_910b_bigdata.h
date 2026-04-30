@@ -28,10 +28,10 @@ public:
 
 __aicore__ inline void AivBroadcastBig910B::WaitRecordSync(int32_t tag, uint32_t root)
 {
-    int32_t targetRank = (GetBlockIdx() < root) ? GetBlockIdx() : (GetBlockIdx() + 1);
+    int32_t targetRank = (blockIdx_ < root) ? blockIdx_ : (blockIdx_ + 1);
     int32_t nowTag = tag >> TAG_MOVE_LEFT_BITS;
     bool ifPingpong = (nowTag % 2 == 0);
-    if ((rank_ < root && GetBlockIdx() == rank_) || (rank_ > root && GetBlockIdx() == rank_ - 1)){
+    if ((rank_ < root && blockIdx_ == rank_) || (rank_ > root && blockIdx_ == rank_ - 1)){
         for (uint32_t remoteRank = 0; remoteRank < rankSize_; remoteRank += 1) {
             if (remoteRank == root || remoteRank == rank_) {
                 continue;
@@ -56,7 +56,7 @@ __aicore__ inline void AivBroadcastBig910B::Process(
     GM_ADDR input, GM_ADDR output, uint64_t len, int32_t tag, uint32_t root)
 {
     uint64_t blockNumPerGroup = rankSize_ - 1;  // 每组使用ranksize-1个核
-    if (GetBlockIdx() >= blockNumPerGroup) {
+    if (blockIdx_ >= blockNumPerGroup) {
         return;
     }
     uint64_t ubLength = UB_MAX_DATA_SIZE / sizeof(T);
@@ -65,13 +65,13 @@ __aicore__ inline void AivBroadcastBig910B::Process(
     __gm__ T *cclGMRoot = (__gm__ T *)(GM_IN[root]);   // root卡的cclbuffer
     __gm__ T *cclGMSelf = (__gm__ T *)(GM_IN[rank_]);  // 当前卡的cclbuffer
     __gm__ T *outputGM = (__gm__ T *)output;
-    int32_t targetRank = (GetBlockIdx() < root) ? GetBlockIdx() : (GetBlockIdx() + 1);
-    for (uint64_t curIndex = GetBlockIdx(); curIndex < blockTotal; curIndex += blockNumPerGroup) {
+    int32_t targetRank = (blockIdx_ < root) ? blockIdx_ : (blockIdx_ + 1);
+    for (uint64_t curIndex = blockIdx_; curIndex < blockTotal; curIndex += blockNumPerGroup) {
         uint64_t dataOffset = curIndex * ubLength;
         uint64_t curCount = (curIndex == blockTotal - 1) ? (len - dataOffset) : ubLength;
-        if ((rank_ < root && GetBlockIdx() == rank_) || (rank_ > root && GetBlockIdx() == rank_ - 1)) {
+        if ((rank_ < root && blockIdx_ == rank_) || (rank_ > root && blockIdx_ == rank_ - 1)) {
             // 从root的cclbuffer搬数据到自己的cclbuffer
-            __gm__ int32_t *ctrlFlagGM = (__gm__ int32_t *)(GM_OUT[root]+ countOffset + GetBlockIdx() * FLAG_SIZE);
+            __gm__ int32_t *ctrlFlagGM = (__gm__ int32_t *)(GM_OUT[root]+ countOffset + blockIdx_ * FLAG_SIZE);
             WaitSignalGEValue(ctrlFlagGM, localCheckGETensor, tag + curIndex);
             PipeBarrier<PIPE_ALL>();
             GlobalTensor<T> inputGT;
@@ -85,21 +85,21 @@ __aicore__ inline void AivBroadcastBig910B::Process(
             inOutQue.EnQue(localIn);
             LocalTensor<T> localOut = inOutQue.DeQue<T>();
             DataCopyUB2GM(cclGT[0], localOut, curCount);
-            CountRecord(tag, curIndex, GetBlockIdx());
+            CountRecord(tag, curIndex, blockIdx_);
             PipeBarrier<PIPE_ALL>();
             DataCopyUB2GM(outputGT[0], localOut, curCount);
             inOutQue.FreeTensor(localOut);
         } else if(rank_ != root) {
             // 从对应卡的cclbuffer拉数据到自己的output
             __gm__ T *cclGMOther = (__gm__ T *)(GM_IN[targetRank]);       // targetRank号卡的cclbuffer
-            __gm__ int32_t *ctrlFlagGM = (__gm__ int32_t *)(GM_OUT[targetRank]+ countOffset + GetBlockIdx() * FLAG_SIZE);
+            __gm__ int32_t *ctrlFlagGM = (__gm__ int32_t *)(GM_OUT[targetRank]+ countOffset + blockIdx_ * FLAG_SIZE);
             WaitSignalGEValue(ctrlFlagGM, localCheckGETensor, tag + curIndex);
             PipeBarrier<PIPE_ALL>();
             CpGM2GM(outputGM + dataOffset, cclGMOther + dataOffset, curCount);
         } else {
             // 把root卡的数据搬到root的cclbuffer
             CpGM2GM(cclGMRoot + dataOffset, inputGM + dataOffset, curCount);
-            CountRecord(tag, curIndex, GetBlockIdx());
+            CountRecord(tag, curIndex, blockIdx_);
             PipeBarrier<PIPE_ALL>();
         }
     }
@@ -119,20 +119,20 @@ __aicore__ inline void AivBroadcastBig910B::Process2Rank(
     __gm__ T *cclGMSelf = (__gm__ T *)(GM_IN[rank_]);  // 当前卡的cclbuffer
     __gm__ T *outputGM = (__gm__ T *)output;
  
-    if(GetBlockIdx() >= rankSize_){
+    if(blockIdx_ >= rankSize_){
         return;
     }
-    for (uint64_t curIndex = GetBlockIdx(); curIndex < blockTotal; curIndex += rankSize_) {
+    for (uint64_t curIndex = blockIdx_; curIndex < blockTotal; curIndex += rankSize_) {
         uint64_t dataOffset = curIndex * ubLength;
         uint64_t curCount = (curIndex == blockTotal - 1) ? (len - dataOffset) : ubLength;
         if (rank_ == root) {
             // 把root数据拷贝到自己的cclbuffer
             CpGM2GM(cclGMRoot + dataOffset, inputGM + dataOffset, curCount);
             // 告诉另一张卡可以读取数据了
-            CountRecord(tag, curIndex, GetBlockIdx());
+            CountRecord(tag, curIndex, blockIdx_);
             PipeBarrier<PIPE_ALL>();
         } else {
-            __gm__ int32_t *ctrlFlagGM = (__gm__ int32_t *)(GM_OUT[root]+ countOffset + GetBlockIdx() * FLAG_SIZE);
+            __gm__ int32_t *ctrlFlagGM = (__gm__ int32_t *)(GM_OUT[root]+ countOffset + blockIdx_ * FLAG_SIZE);
             WaitSignalGEValue(ctrlFlagGM, localCheckGETensor, tag + curIndex);
             PipeBarrier<PIPE_ALL>();
             CpGM2GM(outputGM + dataOffset, cclGMRoot + dataOffset, curCount);
@@ -142,14 +142,14 @@ __aicore__ inline void AivBroadcastBig910B::Process2Rank(
     bool ifPingpong = (nowTag % 2 == 0);
     if (rank_ == root) {
         int32_t anotherRank = (root == 0) ? 1 : 0;
-        if(GetBlockIdx() == 0) {
+        if(blockIdx_ == 0) {
             Wait(tag, anotherRank, AivNotifyType::Done, 0, ifPingpong);
         } else {
             Wait(tag, anotherRank, AivNotifyType::DataSignal, 0, ifPingpong);
         }
         PipeBarrier<PIPE_ALL>();
     } else {
-        if(GetBlockIdx() == 0) {
+        if(blockIdx_ == 0) {
             Record(tag, root, AivNotifyType::Done, 0, ifPingpong);
         } else {
             Record(tag, root, AivNotifyType::DataSignal, 0, ifPingpong);
