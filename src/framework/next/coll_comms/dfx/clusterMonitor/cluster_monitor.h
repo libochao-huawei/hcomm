@@ -137,7 +137,7 @@ struct ClusterUidCtxt {
 class ClusterMonitor {
 public:
     HcclResult RegisterToClusterMonitor(HcclComm comm);
-    HcclResult UnRegisterToClusterMonitor(HcclComm comm);
+    HcclResult UnRegisterToClusterMonitor(hccl::CollComm* collComm);
     HcclResult FormatUID(ClusterUidCtxt ctxt, ClusterUIDType &uid);
     std::string GetUID(const ClusterUIDType &uid) const;
     std::string FormatConnTag(HcommSocketRole role, std::pair<ClusterUIDType, ClusterUIDType> uidPair);
@@ -153,6 +153,7 @@ public:
     void ProcessExceptionEvent();
     HcclResult RecvFrame(ClusterUIDType rem);
     HcclResult ParseFrame(ClusterMonitorFrame &cmFrame, ClusterUIDType &src);
+    HcclResult DeInit();
 
 private:
     ClusterMonitor() = default;
@@ -200,7 +201,7 @@ private:
     
     // 通信域名称为key, 一个通信域有多个待连接心跳的connInfo，存储到该结构体，待monitor线程轮询拿到, 原hbLinkConnInfo_
     std::map<std::string, std::queue<std::pair<ClusterUIDType, ClusterMonitorSocketCtx>>> clusterLinkContext_{};
-    std::mutex clusertMonitorLinkMtx_;
+    std::mutex clusertMonitorLinkMtx_; // 用来锁住clusterLinkContext_，原clusterLinkContext_
     
     // 存储UID与监控连接状态的map, NOT_START/BUILDING/COMPILETED，原rankId2LinkStatusMap_
     std::map<ClusterUIDType, MonitorLinkStatus> monitorLinkStatusMap_;

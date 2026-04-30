@@ -260,8 +260,11 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
                 "but commEngine is [%d].", __func__, hcclComm, opExpansionMode, engine);
             return HcclResult::HCCL_E_PARA;
         }
-        
-        CHK_RET(HcclRegisterToClusterMonitor(comm));
+
+        if (engine != CommEngine::COMM_ENGINE_CPU) { // host dpu场景暂不支持cluster monitor
+            CHK_RET(HcclRegisterToClusterMonitor(comm));
+        }
+
         CHK_RET_UNAVAIL(myRank->CreateChannels(engine, commTag, channelDescFinals.data(), channelNum, channels));
         if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
             HCCL_INFO("[HcclChannelAcquire] ReportChannelAicpuKernel start");
