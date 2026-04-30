@@ -104,6 +104,8 @@ HcclResult DispatcherGraph::LaunchTasksEx(Stream &stream, std::vector<Stream> &s
         taskPara.isMainStream = stream.IsMainStream();
         taskPara.beginTime = beginTime;
         taskPara.graphLaunch.ctxNum = ctxNum;
+        taskPara.descBuf = nullptr;
+        taskPara.descBufLen = 0;
         callback_(callBackUserPtr_, (void *)&taskPara, sizeof(struct TaskPara));
     }
 
