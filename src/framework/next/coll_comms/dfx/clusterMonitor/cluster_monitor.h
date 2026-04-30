@@ -24,6 +24,9 @@
 
 namespace hcomm {
 
+constexpr u32 OPINFO_SEND_NUM_BY_TAG = 500;   // 一次心跳帧发送的算子信息个数
+constexpr u32 OPINFO_TAG_QUEUE_NUM = 10;   // 一次心跳帧发送的算子信息个数
+
 using ClusterUIDType = struct HcclClusterMonitorUid {
     char id[2048] = {0}; // netInstanceId + localId 最大不超过2048字节
     bool operator == (const HcclClusterMonitorUid &that) const
