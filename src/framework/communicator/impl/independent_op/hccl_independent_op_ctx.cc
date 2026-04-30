@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <unordered_map>
 #include "hccl/hccl_res.h"
 #include "independent_op_context_manager.h"
 #include "log.h"
@@ -20,6 +21,16 @@
 using namespace hccl;
 
 const char *COMM_RESERVE_CTX_TAG = "";
+
+const std::unordered_map<CommEngine, std::string> COMMENGINE_STATUS_STR_MAP {
+    {CommEngine::COMM_ENGINE_RESERVED, "COMM_ENGINE_RESERVED"},
+    {CommEngine::COMM_ENGINE_CPU, "COMM_ENGINE_CPU"},
+    {CommEngine::COMM_ENGINE_CPU_TS, "COMM_ENGINE_CPU_TS"},
+    {CommEngine::COMM_ENGINE_AICPU, "COMM_ENGINE_AICPU"},
+    {CommEngine::COMM_ENGINE_AICPU_TS, "COMM_ENGINE_AICPU_TS"},
+    {CommEngine::COMM_ENGINE_AIV, "COMM_ENGINE_AIV"},
+    {CommEngine::COMM_ENGINE_CCU, "COMM_ENGINE_CCU"}
+};
 
 HcclResult HcclEngineCtxCreate(HcclComm comm, const char *ctxTag, CommEngine engine, uint64_t size, void **ctx)
 {
@@ -200,6 +211,6 @@ HcclResult HcclEngineCtxDestroy(HcclComm comm, const char *ctxTag, CommEngine en
         return ret;
     }
     HCCL_RUN_INFO("[%s] success, ctxTag[%s], engine[%s], group[%s]", 
-        __func__, ctxTagTmp, enGetEnumToString(COMMENGINE_STATUS_STR_MAP, engine)gine, hcclComm->GetIdentifier().c_str());
+        __func__, ctxTagTmp, GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine), hcclComm->GetIdentifier().c_str());
     return HCCL_SUCCESS;
 }
