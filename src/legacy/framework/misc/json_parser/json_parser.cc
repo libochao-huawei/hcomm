@@ -87,7 +87,7 @@ void GetJsonPropertyList(const nlohmann::json &obj, const char *propName, nlohma
     listObj = obj.at(propName);
     if (!listObj.is_array()) {
         RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "value", "variable" ,"expect" }),
-            std::vector<std::string>({std::to_string(value), std::string(propName), "array"}));
+            std::vector<std::string>({std::string(listObj.type_name()), std::string(propName), "array"}));
         THROW<InvalidParamsException>(StringFormat("[Get][GetJsonPropertyList]errNo[0x%016llx]:json object "
                                                 "property value of Name \"%s\" is not list!",
                                                 HCOM_ERROR_CODE(HcclResult::HCCL_E_PARA), propName));
