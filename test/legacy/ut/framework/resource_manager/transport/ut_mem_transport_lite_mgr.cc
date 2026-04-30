@@ -167,8 +167,8 @@ protected:
 
 TEST_F(MemTransportLiteMgrTest, test_get_and_reset)
 {
-    MirrorTaskManagerLite mirrorTaskMgrLite;
-    MemTransportLiteMgr liteMgr(&mirrorTaskMgrLite);
+    MirrorTaskManager mirrorTaskMgr(0, &GlobalMirrorTasks::Instance(), true);
+    MemTransportLiteMgr liteMgr(&mirrorTaskMgr);
     LinkData linkData(BasePortType(PortDeploymentType::DEV_NET, ConnectProtoType::UB), 0, 1, 0, 1);
 
     EXPECT_EQ(liteMgr.GetOpbase(linkData), nullptr);
@@ -191,8 +191,8 @@ TEST_F(MemTransportLiteMgrTest, test_parse_opbase_packed_data)
     std::vector<char> packedData;
     binaryStream.Dump(packedData);
 
-    MirrorTaskManagerLite mirrorTaskMgrLite;
-    MemTransportLiteMgr liteMgr(&mirrorTaskMgrLite);
+    MirrorTaskManager mirrorTaskMgr(0, &GlobalMirrorTasks::Instance(), true);
+    MemTransportLiteMgr liteMgr(&mirrorTaskMgr);
 
     liteMgr.ParseOpbasePackedData(packedData);
 }
@@ -213,8 +213,8 @@ TEST_F(MemTransportLiteMgrTest, test_parse_offload_packed_data)
     std::vector<char> packedData;
     binaryStream.Dump(packedData);
 
-    MirrorTaskManagerLite mirrorTaskMgrLite;
-    MemTransportLiteMgr liteMgr(&mirrorTaskMgrLite);
+    MirrorTaskManager mirrorTaskMgr(0, &GlobalMirrorTasks::Instance(), true);
+    MemTransportLiteMgr liteMgr(&mirrorTaskMgr);
 
     const string opTag = "opTag";
     EXPECT_NO_THROW(liteMgr.ParseOffloadPackedData(opTag, packedData)); 
@@ -245,7 +245,7 @@ TEST_F(MemTransportLiteMgrTest, test_parse_all_packed_data)
     std::vector<char> packedData;
     binaryStream.Dump(packedData);
 
-    MirrorTaskManagerLite mirrorTaskMgrLite;
-    MemTransportLiteMgr liteMgr(&mirrorTaskMgrLite);
+    MirrorTaskManager mirrorTaskMgr(0, &GlobalMirrorTasks::Instance(), true);
+    MemTransportLiteMgr liteMgr(&mirrorTaskMgr);
     EXPECT_NO_THROW(liteMgr.ParseAllPackedData(packedData)); 
 }

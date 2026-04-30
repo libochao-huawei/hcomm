@@ -12,20 +12,9 @@
 #define HCCL_DFX_COMMON_H
 
 #include "hccl/base.h"
-#include "circular_queue.h"
-#include "vector_queue.h"
-#include "queue.h"
-#include "task_info.h"
 
 namespace Hccl {
 constexpr u32 DEVICE_MAX_NUM = 32;
-constexpr u32 MAX_CIRCULAR_QUEUE_LENGTH = 2048;
-
-MAKE_ENUM(QueueType, Circular_Queue, Vector_Queue)
-
-using TaskInfoQueue    = Queue<std::shared_ptr<TaskInfo>>;
-using TaskInfoQueueMap = std::map<u32, std::unique_ptr<TaskInfoQueue>>;
-
 }  // namespace Hccl
 
 #endif //HCCL_DFX_COMMON_H

@@ -10,21 +10,25 @@
 #ifndef HCCL_PROFILING_REPORTER_LITE_H
 #define HCCL_PROFILING_REPORTER_LITE_H
 #include "profiling_handler_lite.h"
-#include "mirror_task_manager_lite.h"
+#include "mirror_task_manager.h"
 #include "circular_queue.h"
  
 namespace Hccl {
 class ProfilingReporterLite {
 public:
-    explicit ProfilingReporterLite(MirrorTaskManagerLite *mirrorTaskMgrLite, ProfilingHandlerLite *profilingHandlerLite, bool isIndop = false);
+    explicit ProfilingReporterLite(MirrorTaskManager *mirrorTaskMgr, ProfilingHandlerLite *profilingHandlerLite, bool isIndop = false);
     virtual ~ProfilingReporterLite();
     void Init() const;
     void ReportAllTasks();
     void UpdateProfStat() const;
 
 private:
+<<<<<<< HEAD
     void UpdateAllLastPos();
     MirrorTaskManagerLite                                                         *mirrorTaskMgrLite_{nullptr};
+=======
+    MirrorTaskManager                                                         *mirrorTaskMgr_{nullptr};
+>>>>>>> parent of 89f42041 (Aicpu Dfx Fix)
     ProfilingHandlerLite                                                      *profilingHandlerLite_{nullptr};
     std::map<u32, std::shared_ptr<Queue<std::shared_ptr<TaskInfo>>::Iterator>> lastPoses_{};
 };

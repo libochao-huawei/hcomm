@@ -1600,43 +1600,6 @@ MirrorTaskManager::~MirrorTaskManager()
 {
 }
 
-MirrorTaskManagerLite::MirrorTaskManagerLite()
-{
-}
-
-void MirrorTaskManagerLite::RegFullyCallBack(std::function<void(const std::string &, u32)> callBack)
-{
-}
-
-void MirrorTaskManagerLite::RegFullyCallBack(std::function<void()> callBack)
-{
-}
-
-void MirrorTaskManagerLite::AddTaskInfo(std::shared_ptr<TaskInfo> taskInfo)
-{
-}
-
-bool MirrorTaskManagerLite::IsStaticGraphMode(const CollOperator &collOperator) const
-{
-    return false;
-}
-
-void MirrorTaskManagerLite::SetCurrDfxOpInfo(std::shared_ptr<DfxOpInfo> dfxOpInfo)
-{
-}
-
-std::shared_ptr<DfxOpInfo> MirrorTaskManagerLite::GetCurrDfxOpInfo() const
-{
-    return nullptr;
-}
-
-TaskInfoQueue *MirrorTaskManagerLite::GetQueue(u32 streamId) const
-{
-}
-
-MirrorTaskManagerLite::~MirrorTaskManagerLite()
-{
-}
 ProfilingHandler::ProfilingHandler()
 {
 }
@@ -1975,12 +1938,9 @@ void ProfilingReporter::CallReportMc2CommInfo(const u32 kfcStreamId, const std::
 
 std::array<ProfilingReporter::lastPosesMap, 65> ProfilingReporter::allLastPoses_{};
 
-ProfilingReporterLite::ProfilingReporterLite(
-    MirrorTaskManagerLite *mirrorTaskMgrLite, ProfilingHandlerLite *profilingHandlerLite, bool isIndop)
-    : mirrorTaskMgrLite_(mirrorTaskMgrLite),
-      profilingHandlerLite_(profilingHandlerLite)
-{
-}
+ProfilingReporterLite::ProfilingReporterLite(MirrorTaskManager *mirrorTaskMgr, ProfilingHandlerLite *profilingHandlerLite, bool isIndop)
+    : mirrorTaskMgr_(mirrorTaskMgr), profilingHandlerLite_(profilingHandlerLite)
+{}
 
 ProfilingReporterLite::~ProfilingReporterLite()
 {
