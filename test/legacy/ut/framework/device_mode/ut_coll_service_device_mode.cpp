@@ -955,7 +955,7 @@ TEST_F(CollServiceDeviceModeTest, ut_alloc_cnt_notify_for_single_queue_with_loca
     CommunicatorImpl comm;
     auto queueNotifyManager = std::make_unique<QueueNotifyManager>(comm);
     CollServiceDeviceMode service(&comm);
-    comm.queueNotifyManager = std::move(queueNotifyManager);
+    comm.ccuQueueNotifyManager_ = std::move(queueNotifyManager);
 
     InsQueue insQueue;
     auto insLocalPostTo = std::make_unique<InsLocalPostTo>(1);
@@ -971,7 +971,7 @@ TEST_F(CollServiceDeviceModeTest, ut_alloc_cnt_notify_for_single_queue_with_loca
     CommunicatorImpl comm;
     auto queueNotifyManager = std::make_unique<QueueNotifyManager>(comm);
     CollServiceDeviceMode service(&comm);
-    comm.queueNotifyManager = std::move(queueNotifyManager);
+    comm.ccuQueueNotifyManager_ = std::move(queueNotifyManager);
 
     InsQueue insQueue;
     auto insLocalWaitFrom = std::make_unique<InsLocalWaitFrom>(1);

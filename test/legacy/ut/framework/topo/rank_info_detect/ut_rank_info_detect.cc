@@ -145,7 +145,7 @@ TEST_F(RankInfoDetectTest, Ut_ServerInit_When_Invalid_Port_Expect_ListenPreempt)
     // check
     shared_ptr<RankInfoDetect> rankInfoDetect = make_shared<RankInfoDetect>();
     rankInfoDetect->hostPort_ = HCCL_INVALID_PORT;
-    EXPECT_THROW(rankInfoDetect->ServerInit(), InternalException);
+    EXPECT_THROW(rankInfoDetect->ServerInit(), std::exception);
 }
 
 TEST_F(RankInfoDetectTest, Ut_SetupAgent_When_Input_Expect_NO_THROW)

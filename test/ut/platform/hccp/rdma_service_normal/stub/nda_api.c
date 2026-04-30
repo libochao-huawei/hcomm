@@ -56,12 +56,33 @@ struct ibv_qp_extend *ibv_create_qp_extend(struct ibv_context_extend *context,
     struct ibv_qp_init_attr_extend *qp_init_attr)
 {
     struct ibv_qp_extend *qp_extend = NULL;
+	static unsigned int qpn = 0;
+	struct ibv_qp *qp = NULL;
+
+	qp = malloc(sizeof(struct ibv_qp));
+	if (NULL == qp) {
+		return NULL;
+	}
+	memset(qp, 0, sizeof(struct ibv_qp));
+
+	qp->pd = qp_init_attr->pd;
+	qp->state = IBV_QPS_RESET;
+	qp->qp_type = qp_init_attr->attr.qp_type;
+	qp->send_cq = qp_init_attr->attr.send_cq;
+	qp->recv_cq = qp_init_attr->attr.recv_cq;
+	qp->context = qp_init_attr->pd->context;
+
+	qp->qp_num = qpn;
+	qpn++;
 
     qp_extend = malloc(sizeof(struct ibv_qp_extend));
     if (NULL == qp_extend) {
+        free(qp);
+        qp = NULL;
         return NULL;
     }
     memset(qp_extend, 0, sizeof(struct ibv_qp_extend));
+    qp_extend->qp = qp;
 
     return qp_extend;
 }
@@ -70,13 +91,23 @@ struct ibv_cq_extend *ibv_create_cq_extend(struct ibv_context_extend *context,
     struct ibv_cq_init_attr_extend *cq_init_attr)
 {
     struct ibv_cq_extend *cq_extend = NULL;
+	struct ibv_cq *cq = NULL;
+
+	cq = malloc(sizeof(struct ibv_cq));
+	if (NULL == cq) {
+		return NULL;
+	}
+	memset(cq, 0, sizeof(struct ibv_cq));
 
     cq_extend = malloc(sizeof(struct ibv_cq_extend));
     if (NULL == cq_extend) {
+        free(cq);
+        cq = NULL;
         return NULL;
     }
     memset(cq_extend, 0, sizeof(struct ibv_cq_extend));
 
+    cq_extend->cq = cq;
     return cq_extend;
 }
 
@@ -97,7 +128,12 @@ struct ibv_srq_extend *ibv_create_srq_extend(struct ibv_context_extend *context,
 int ibv_destroy_qp_extend(struct ibv_context_extend *context, struct ibv_qp_extend *qp_extend)
 {
     if (qp_extend != NULL) {
+        if (qp_extend->qp != NULL) {
+            free(qp_extend->qp);
+            qp_extend->qp = NULL;
+        }
         free(qp_extend);
+        qp_extend = NULL;
     }
 
     return 0;
@@ -106,6 +142,10 @@ int ibv_destroy_qp_extend(struct ibv_context_extend *context, struct ibv_qp_exte
 int ibv_destroy_cq_extend(struct ibv_context_extend *context, struct ibv_cq_extend *cq_extend)
 {
     if (cq_extend != NULL) {
+        if (cq_extend->cq != NULL) {
+            free(cq_extend->cq);
+            cq_extend->cq = NULL;
+        }
         free(cq_extend);
     }
 

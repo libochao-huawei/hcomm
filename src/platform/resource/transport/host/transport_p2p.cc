@@ -1136,7 +1136,7 @@ HcclResult TransportP2p::TxAsync(UserMemType dstMemType, u64 dstOffset, const vo
         DeviceMem dstDevMem(static_cast<s8 *>(dstMemPtr) + dstOffset, len);
         DeviceMem srcDevMem(const_cast<void *>(src), len);
         /* 增加hccl 数据传输时数据地址和size记录 */
-        HCCL_DEBUG("HCCL_KEY_INFO: srcAddr=[%p],srcSize=[%llu],dstAddr=[%p],dstSize=[%llu]", srcDevMem.ptr(),
+        HCCL_INFO("HCCL_KEY_INFO: srcAddr=[%p],srcSize=[%llu],dstAddr=[%p],dstSize=[%llu]", srcDevMem.ptr(),
             srcDevMem.size(), dstDevMem.ptr(), dstDevMem.size());
         CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dstDevMem, srcDevMem, stream, machinePara_.remoteWorldRank,
             transportAttr_.linkType));
@@ -1161,7 +1161,7 @@ HcclResult TransportP2p::TxData(UserMemType dstMemType, u64 dstOffset, const voi
         DeviceMem dstDevMem(static_cast<s8 *>(dstMemPtr) + dstOffset, len);
         DeviceMem srcDevMem(const_cast<void *>(src), len);
         /* 增加hccl 数据传输时数据地址和size记录 */
-        HCCL_DEBUG("HCCL_KEY_INFO: srcAddr=[%p],srcSize=[%llu],dstAddr=[%p],dstSize=[%llu]", srcDevMem.ptr(),
+        HCCL_INFO("HCCL_KEY_INFO: srcAddr=[%p],srcSize=[%llu],dstAddr=[%p],dstSize=[%llu]", srcDevMem.ptr(),
             srcDevMem.size(), dstDevMem.ptr(), dstDevMem.size());
         CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dstDevMem, srcDevMem, stream, machinePara_.remoteWorldRank,
             transportAttr_.linkType));
@@ -1200,7 +1200,7 @@ HcclResult TransportP2p::TxAsync(std::vector<TxMemoryInfo>& txMems, Stream &stre
             DeviceMem dstDevMem(static_cast<s8 *>(dstMemPtr) + mem.dstOffset, mem.len);
             DeviceMem srcDevMem(const_cast<void *>(mem.src), mem.len);
             /* 增加hccl 数据传输时数据地址和size记录 */
-            HCCL_DEBUG("HCCL_KEY_INFO: srcAddr=[%p],srcSize=[%llu],dstAddr=[%p],dstSize=[%llu]", srcDevMem.ptr(),
+            HCCL_INFO("HCCL_KEY_INFO: srcAddr=[%p],srcSize=[%llu],dstAddr=[%p],dstSize=[%llu]", srcDevMem.ptr(),
                 srcDevMem.size(), dstDevMem.ptr(), dstDevMem.size());
             CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dstDevMem, srcDevMem, stream, machinePara_.remoteWorldRank,
                 transportAttr_.linkType));
@@ -1494,7 +1494,7 @@ HcclResult TransportP2p::WriteSync(
 {
     DeviceMem remoteDevMem(const_cast<void *>(remoteBuf.addr), remoteBuf.size);
     DeviceMem localDevMem(const_cast<void *>(localBuf.addr), localBuf.size);
-    HCCL_DEBUG("HCCL_KEY_INFO: localAddr=[%p],localSize=[%llu],remoteAddr=[%p],remoteSize=[%llu]", localDevMem.ptr(),
+    HCCL_INFO("HCCL_KEY_INFO: localAddr=[%p],localSize=[%llu],remoteAddr=[%p],remoteSize=[%llu]", localDevMem.ptr(),
         localDevMem.size(), remoteDevMem.ptr(), remoteDevMem.size());
     CHK_RET(HcclD2DMemcpyAsync(dispatcher_, remoteDevMem, localDevMem,
         stream, machinePara_.remoteWorldRank, transportAttr_.linkType));
@@ -1506,7 +1506,7 @@ HcclResult TransportP2p::WriteAsync(
 {
     DeviceMem remoteDevMem(const_cast<void *>(remoteBuf.addr), remoteBuf.size);
     DeviceMem localDevMem(const_cast<void *>(localBuf.addr), localBuf.size);
-    HCCL_DEBUG("HCCL_KEY_INFO: localAddr=[%p],localSize=[%llu],remoteAddr=[%p],remoteSize=[%llu]", localDevMem.ptr(),
+    HCCL_INFO("HCCL_KEY_INFO: localAddr=[%p],localSize=[%llu],remoteAddr=[%p],remoteSize=[%llu]", localDevMem.ptr(),
         localDevMem.size(), remoteDevMem.ptr(), remoteDevMem.size());
     CHK_RET(HcclD2DMemcpyAsync(dispatcher_, remoteDevMem, localDevMem,
         stream, machinePara_.remoteWorldRank, transportAttr_.linkType));
@@ -1516,7 +1516,7 @@ HcclResult TransportP2p::WriteAsync(
 HcclResult TransportP2p::WriteReduceAsync(struct Transport::Buffer &remoteBuf,
     struct Transport::Buffer &localBuf, const HcclDataType datatype, HcclReduceOp redOp, Stream &stream)
 {
-    HCCL_DEBUG("HCCL_KEY_INFO: localAddr=[%p],localSize=[%llu],remoteAddr=[%p],remoteSize=[%llu]", localBuf.addr,
+    HCCL_INFO("HCCL_KEY_INFO: localAddr=[%p],localSize=[%llu],remoteAddr=[%p],remoteSize=[%llu]", localBuf.addr,
         localBuf.size, remoteBuf.addr, remoteBuf.size);
 
     u64 reduceAttr = 0;
@@ -1541,7 +1541,7 @@ HcclResult TransportP2p::ReadSync(
 {
     DeviceMem remoteDevMem(const_cast<void *>(remoteBuf.addr), remoteBuf.size);
     DeviceMem localDevMem(const_cast<void *>(localBuf.addr), localBuf.size);
-    HCCL_DEBUG("HCCL_KEY_INFO: localAddr=[%p],localSize=[%llu],remoteAddr=[%p],remoteSize=[%llu]", localDevMem.ptr(),
+    HCCL_INFO("HCCL_KEY_INFO: localAddr=[%p],localSize=[%llu],remoteAddr=[%p],remoteSize=[%llu]", localDevMem.ptr(),
         localDevMem.size(), remoteDevMem.ptr(), remoteDevMem.size());
     CHK_RET(HcclD2DMemcpyAsync(dispatcher_, localDevMem, remoteDevMem,
         stream, machinePara_.remoteWorldRank, transportAttr_.linkType));
@@ -1551,7 +1551,7 @@ HcclResult TransportP2p::ReadSync(
 HcclResult TransportP2p::ReadReduceSync(struct Transport::Buffer &localBuf, struct Transport::Buffer &remoteBuf,
     const HcclDataType datatype, HcclReduceOp redOp, Stream &stream)
 {
-    HCCL_DEBUG("HCCL_KEY_INFO: localAddr=[%p],localSize=[%llu],remoteAddr=[%p],remoteSize=[%llu]", localBuf.addr,
+    HCCL_INFO("HCCL_KEY_INFO: localAddr=[%p],localSize=[%llu],remoteAddr=[%p],remoteSize=[%llu]", localBuf.addr,
         localBuf.size, remoteBuf.addr, remoteBuf.size);
 
     u64 reduceAttr = 0;

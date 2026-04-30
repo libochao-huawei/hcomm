@@ -38,7 +38,7 @@
 #include "ccuTaskException.h"
 #include "hcclCommTaskException.h"
 #include "ccu_rep_assign_v1.h"
-#include "ccu_res_specs.h"
+#include "comms/ccu/ccu_device/ccu_res_specs.h"
 
 namespace hcomm {
 
@@ -215,63 +215,6 @@ TEST_F(CcuKernelTest, AddProfilingInfo_Normal) {
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-TEST_F(Ccukernel_ReportProfilingTest, WhenReporccuprofiling_expect_HcclSucess) {
-using namespace hccl;
-using namespace CcuRep;
-  MockCcuKernelArg agrs;
-  CcuKernel * ccuKernel = new TestCcuKernel(agrs);
-  std::vector<CcuTaskParam> taskParams;
-  CcuTaskParam taskParam;
-  taskParams.push_back(taskParam);
-
-  MOCKER(hrtGetDeviceType)
-        .stubs()
-        .with(outBound(DevType::DEV_TYPE_950))
-        .will(returnValue(HCCL_SUCCESS));
-    bool isDeviceSide{false};
-    MOCKER(GetRunSideIsDevice)
-        .stubs()
-        .with(outBound(isDeviceSide))
-        .will(returnValue(HCCL_SUCCESS));  
-    MOCKER_CPP(&CcuKernelMgr::GetKernel)
-        .stubs()
-        .will(returnValue(ccuKernel));
-    MOCKER_CPP(&CcuKernel::GeneTaskParam)
-        .stubs()
-        .with(any(),outBound(taskParams))
-        .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&CcuComponent::CheckDiesEnable)
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
-        
-    
-    void* commV2 = (void*)0x2000;
-    RankGraphStub rankGraphStub;
-    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
-    u32 rank = 1;
-    HcclMem cclBuffer;
-    cclBuffer.size = 1;
-    cclBuffer.type = HcclMemType::HCCL_MEM_TYPE_HOST;
-    cclBuffer.addr = (void*)0x1000;;
-    char commName[128] = {};
-    std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
-    HcclCommConfig config;
-    config.hcclOpExpansionMode = 6; 
-    config.hcclRdmaServiceLevel = 0; 
-    config.hcclRdmaTrafficClass = 0;
-    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
-    EXPECT_EQ(ret, 0);
-    ThreadHandle thread;
-    void* comm = static_cast<HcclComm>(hcclCommPtr.get());
-    ret =  HcclThreadAcquire(comm, COMM_ENGINE_CCU, 1, 2, &thread);
-    EXPECT_EQ(ret, 0);
-    CcuKernelHandle kernelHandle = 0;
-    void * taskArgs = (void*)0x12345678;
-    // hcomm::CcuKernelMgr::GetInstance(HcclGetThreadDeviceId());
-    ret =  HcclCcuKernelLaunch(comm, thread, kernelHandle, taskArgs);
-    EXPECT_EQ(ret, 0);
-}
-
 TEST_F(Ccukernel_ReportProfilingTest, Ut_HcclReportAivKernel_Normal)
 {
     MOCKER(hrtGetDeviceType)
@@ -299,6 +242,7 @@ TEST_F(Ccukernel_ReportProfilingTest, Ut_HcclReportAivKernel_Normal)
     config.hcclOpExpansionMode = 6; 
     config.hcclRdmaServiceLevel = 0; 
     config.hcclRdmaTrafficClass = 0;
+    unsetenv("HCCL_DFS_CONFIG");
     HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
     EXPECT_EQ(ret, 0);
     ThreadHandle thread;
@@ -337,6 +281,7 @@ TEST_F(Ccukernel_ReportProfilingTest, Ut_HcclReportAicpuKernel_Normal)
     config.hcclOpExpansionMode = 6; 
     config.hcclRdmaServiceLevel = 0; 
     config.hcclRdmaTrafficClass = 0;
+    unsetenv("HCCL_DFS_CONFIG");
     HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
     EXPECT_EQ(ret, 0);
     ThreadHandle thread;

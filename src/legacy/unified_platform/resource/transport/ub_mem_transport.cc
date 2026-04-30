@@ -915,7 +915,6 @@ HcclResult UbMemTransport::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, c
 {
     CHK_PRT_RET(!remoteMem, HCCL_ERROR("[GetRemoteMem] remoteMem is nullptr"), HCCL_E_PARA);
     CHK_PRT_RET(!memNum, HCCL_ERROR("[GetRemoteMem] memNum is nullptr"), HCCL_E_PARA);
-    HCCL_RUN_INFO("GetRemoteMem begin");
  
     *remoteMem = nullptr;
     *memNum = 0;
@@ -944,7 +943,6 @@ HcclResult UbMemTransport::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, c
 
     *memNum = totalCount;
     *remoteMem = remoteMemsPtr_.get();
-    HCCL_RUN_INFO("GetRemoteMem end");
     return HCCL_SUCCESS;
 }
 

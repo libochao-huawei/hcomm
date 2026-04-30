@@ -40,7 +40,7 @@ template<typename T>
 __aicore__ inline void AivAllReduce91093::ProcessSmall(GM_ADDR input, GM_ADDR output, uint64_t len, int32_t tag)
 {
     uint32_t blockNumPerGroup = numBlocks_ / rankSize_; // numBlocks_需要能被rankSize_整除
-    uint32_t blockIdxInGroup = GetBlockIdx() % blockNumPerGroup;
+    uint32_t blockIdxInGroup = blockIdx_ % blockNumPerGroup;
 
     uint32_t padCount = UB_ALIGN_SIZE / sizeof(T);
     uint64_t avgLengthPerBlock = CeilDiv(len, blockNumPerGroup);
@@ -50,7 +50,7 @@ __aicore__ inline void AivAllReduce91093::ProcessSmall(GM_ADDR input, GM_ADDR ou
 
     uint64_t count = CalActualCount(blockIdxInGroup, sliceCount, avgLengthPerSlice, tailLength);
     uint64_t blockOffset = blockIdxInGroup * avgLengthPerSlice;
-    uint32_t dstRank = GetBlockIdx() / blockNumPerGroup;
+    uint32_t dstRank = blockIdx_ / blockNumPerGroup;
     bool ifPingpong = (tag % 2 == 0);
     uint32_t dataOffset = (tag % 2 == 0) ? AIV_INIT_OFFSET : AIV_PING_PONG_SIZE;
 
@@ -119,8 +119,8 @@ template<typename T>
 __aicore__ inline void AivAllReduce91093::ProcessBig(GM_ADDR input, GM_ADDR output, uint64_t len, int32_t tag)
 {
     uint32_t blockNumPerGroup = numBlocks_ / rankSize_; 
-    uint32_t blockIdxInGroup = GetBlockIdx() % blockNumPerGroup;
-    uint32_t dstRank = GetBlockIdx() / blockNumPerGroup;
+    uint32_t blockIdxInGroup = blockIdx_ % blockNumPerGroup;
+    uint32_t dstRank = blockIdx_ / blockNumPerGroup;
     uint32_t padCount = UB_ALIGN_SIZE / sizeof(T);
 
     uint64_t avgLengthPerBlock = CeilDiv(len, numBlocks_);

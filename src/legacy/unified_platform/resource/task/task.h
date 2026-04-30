@@ -18,6 +18,8 @@
 #include "orion_adapter_rts.h"
 #include "rts_cnt_notify.h"
 #include "rts_1ton_cnt_notify.h"
+#include "ipc_local_notify.h"
+#include "ipc_remote_notify.h"
 
 namespace Hccl {
 using namespace std;

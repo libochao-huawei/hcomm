@@ -58,3 +58,6 @@ target_sources(executor_pipeline_hccl_test
     ../testcase/testcase_utils.cc
     testcase_all_to_all_A3_pipeline.cc
 )
+
+enable_testing()
+add_test(NAME executor_pipeline_hccl_test COMMAND executor_pipeline_hccl_test)

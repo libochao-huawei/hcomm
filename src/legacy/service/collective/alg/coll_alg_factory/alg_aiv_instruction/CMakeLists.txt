@@ -1949,166 +1949,207 @@ else()
  
 endif()
  
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_op_910_95.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_op_910_95.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_oneshot_int8.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_oneshot_int8.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_oneshot_int16.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_oneshot_int16.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_oneshot_int32.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_oneshot_int32.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_oneshot_float16.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_oneshot_float16.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_oneshot_float32.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_oneshot_float32.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_oneshot_bfloat16.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_oneshot_bfloat16.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_twoshot_int8.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_twoshot_int8.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_twoshot_int16.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_twoshot_int16.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_twoshot_int32.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_twoshot_int32.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_twoshot_float16.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_twoshot_float16.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_twoshot_float32.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_twoshot_float32.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_twoshot_bfloat16.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_twoshot_bfloat16.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_mesh_1d_int8.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_mesh_1d_int8.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_mesh_1d_int16.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_mesh_1d_int16.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_mesh_1d_int32.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_mesh_1d_int32.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_mesh_1d_float16.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_mesh_1d_float16.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_mesh_1d_float32.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_mesh_1d_float32.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_mesh_1d_bfloat16.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_mesh_1d_bfloat16.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_int8.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_int8.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_int16.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_int16.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_int32.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_int32.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_float16.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_float16.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_float32.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_float32.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_bfloat16.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_bfloat16.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_uint8.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_uint8.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_uint16.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_uint16.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_uint32.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_uint32.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_int64.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_int64.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_uint64.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_uint64.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_int8.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_int8.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_int16.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_int16.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_int32.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_int32.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_float16.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_float16.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_float32.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_float32.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_bfloat16.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_bfloat16.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_uint8.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_uint8.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_uint16.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_uint16.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_uint32.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_uint32.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_int64.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_int64.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_uint64.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_uint64.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )

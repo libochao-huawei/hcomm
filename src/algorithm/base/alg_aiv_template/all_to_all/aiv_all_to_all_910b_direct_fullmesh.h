@@ -26,7 +26,7 @@ __aicore__ inline void AivAll2All910BDirectFullMesh::Process(GM_ADDR input, GM_A
      int32_t serverNum, uint64_t rmaInfo, uint64_t len)
 {
     // 内存准备
-    if (GetBlockIdx() >= 2 * serverNum) {
+    if (blockIdx_ >= 2 * serverNum) {
         return;
     }
     uint32_t rankPerSever = rankSize_ / serverNum;
@@ -35,11 +35,11 @@ __aicore__ inline void AivAll2All910BDirectFullMesh::Process(GM_ADDR input, GM_A
     uint64_t ubDataBaseOffset = 2 * BUFFER_AREA; //数据开始存储的偏移
     __gm__ T *inputGM = (__gm__ T *)input;
     __gm__ T *outputGM = (__gm__ T *)output;
-    if(GetBlockIdx() < serverNum) {
+    if(blockIdx_ < serverNum) {
         __gm__ T *cclGMInSelf = (__gm__ T *)(GM_IN_RDMA[rank_] + ubDataBaseOffset);
         for(uint32_t i = 0; i < rankPerSever; i++) {
         // 前serverNum个核负责发数据
-            uint32_t targetRank = GetBlockIdx() + i * serverNum;
+            uint32_t targetRank = blockIdx_ + i * serverNum;
             uint64_t srcOffset = targetRank * len; // 要发送的数据偏移是srcOffset;
             uint64_t dstOffset = rank_ * len; //第rank号卡会发数据到对应的CCL的dstOffset位置上;
             if(targetRank == rank_) {
@@ -72,7 +72,7 @@ __aicore__ inline void AivAll2All910BDirectFullMesh::Process(GM_ADDR input, GM_A
         __gm__ T *cclGMOutSelf = (__gm__ T *)(GM_OUT_RDMA[rank_] + ubDataBaseOffset);
         for(uint32_t i = 0; i < rankPerSever; i++) {
             // 后serverNum个核负责将数据从cclOut搬到usrOut
-            uint32_t sourceRank = GetBlockIdx() % serverNum + i * serverNum; // 从哪个卡收数据
+            uint32_t sourceRank = blockIdx_ % serverNum + i * serverNum; // 从哪个卡收数据
             if(sourceRank == rank_) {
                 continue;
             }

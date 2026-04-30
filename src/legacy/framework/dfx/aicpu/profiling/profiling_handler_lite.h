@@ -56,6 +56,8 @@ public:
     void                         UpdateProfSwitch();
     void                         SetProL0On(bool val);
     void                         SetProL1On(bool val);
+    inline bool                  GetProfL0State() const { return enableHcclL0_; }
+    inline bool                  GetProfL1State() const { return enableHcclL1_; }
 
 private:
     explicit ProfilingHandlerLite();
@@ -64,8 +66,6 @@ private:
     bool IsProfOn(uint64_t feature) const;
     bool IsProfSwitchOn(ProfilingLevel level);
     bool IsL1fromOffToOn();
-    bool GetProfL0State() const;
-    bool GetProfL1State() const;
 
     uint64_t GetProfHashId(const char *name, uint32_t len) const;
     void DumpTaskDetails(const MsprofAicpuHcclTaskInfo& taskDetailsInfos, const TaskInfo &taskInfo) const;

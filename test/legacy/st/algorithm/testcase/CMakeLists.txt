@@ -84,13 +84,36 @@ target_link_libraries(hccl_orion_alg_test PRIVATE
 set(test_case_list
 )
 
-add_subdirectory(legacy_alg_testcase)
-add_subdirectory(aicpu_2d_testcase)
 # add_subdirectory(aiv_1d_testcase)
-add_subdirectory(ccu_1d_testcase_part1)
-add_subdirectory(ccu_1d_testcase_part2)
-add_subdirectory(ccu_reduce_testcase)
-add_subdirectory(ccu_1d_hf16p_testcase)
-# 2D用例跳过
-add_subdirectory(ccu_2d_testcase)
-add_subdirectory(function_ut_testcase)
+
+if("all" IN_LIST ST_TASKS OR "legacy_all_testcase" IN_LIST ST_TASKS OR "legacy_alg_testcase" IN_LIST ST_TASKS)
+    add_subdirectory(legacy_alg_testcase)
+endif()
+
+if("all" IN_LIST ST_TASKS OR "legacy_all_testcase" IN_LIST ST_TASKS OR "legacy_aicpu_2d_testcase" IN_LIST ST_TASKS)
+    add_subdirectory(aicpu_2d_testcase)
+endif()
+
+if("all" IN_LIST ST_TASKS OR "legacy_all_testcase" IN_LIST ST_TASKS OR "legacy_ccu_1d_testcase_part1" IN_LIST ST_TASKS)
+    add_subdirectory(ccu_1d_testcase_part1)
+endif()
+
+if("all" IN_LIST ST_TASKS OR "legacy_all_testcase" IN_LIST ST_TASKS OR "legacy_ccu_1d_testcase_part2" IN_LIST ST_TASKS)
+    add_subdirectory(ccu_1d_testcase_part2)
+endif()
+
+if("all" IN_LIST ST_TASKS OR "legacy_all_testcase" IN_LIST ST_TASKS OR "legacy_alg_ccu_reduce" IN_LIST ST_TASKS)
+    add_subdirectory(ccu_reduce_testcase)
+endif()
+
+if("all" IN_LIST ST_TASKS OR "legacy_all_testcase" IN_LIST ST_TASKS OR "legacy_ccu_1d_hf16p_testcase" IN_LIST ST_TASKS)
+    add_subdirectory(ccu_1d_hf16p_testcase)
+endif()
+
+if("all" IN_LIST ST_TASKS OR "legacy_all_testcase" IN_LIST ST_TASKS OR "legacy_ccu_2d_testcase" IN_LIST ST_TASKS)
+    add_subdirectory(ccu_2d_testcase)
+endif()
+
+if("all" IN_LIST ST_TASKS OR "legacy_all_testcase" IN_LIST ST_TASKS OR "legacy_function_ut_testcase" IN_LIST ST_TASKS)
+    add_subdirectory(function_ut_testcase)
+endif()

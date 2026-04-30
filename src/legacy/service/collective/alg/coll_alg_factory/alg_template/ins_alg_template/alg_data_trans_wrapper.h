@@ -356,7 +356,7 @@ HcclResult SendRecvReduceThruMultiLinks(const std::vector<SendRecvReduceInfo> &s
                                         std::vector<InsQuePtr> &queues, u32 topicId = 0, bool needNetFinAck = true,
                                         DmaMode dmaMode = DmaMode::DEFAULT);
 
-// auxilary functions
+// auxiliary functions
 HcclResult GetDMAMode(const DmaMode setMode, const PortDeploymentType linkPortType, DmaMode &mode);
 bool       IsContinuousSlice(const DataSlice &nxtSlice, const DataSlice &currSlice);
 

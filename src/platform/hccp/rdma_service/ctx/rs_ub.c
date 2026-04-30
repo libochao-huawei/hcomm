@@ -139,9 +139,13 @@ STATIC int RsUbFillInfoByEidList(urma_device_t *currDev, unsigned int *index, st
     unsigned int totalNum)
 {
     urma_eid_info_t *eidList = NULL;
+    urma_device_attr_t attr = {0};
     unsigned int eidNum = 0;
     unsigned int j;
     int ret = 0;
+
+    ret = RsUrmaQueryDevice(currDev, &attr);
+    CHK_PRT_RETURN(ret != 0, hccp_err("RsUrmaQueryDevice failed, ret:%d, errno:%d", ret, errno), -EOPENSRC);
 
     eidList = RsUrmaGetEidList(currDev, &eidNum);
     // normal case, should continue to get eid_list from the rest of device
@@ -161,6 +165,7 @@ STATIC int RsUbFillInfoByEidList(urma_device_t *currDev, unsigned int *index, st
             hccp_err("rs_ub_fill_dev_eid_info_list failed, index:%u, ret:%d", *index, ret);
             goto free_eid_list;
         }
+        totalList[*index].devFeature = attr.dev_cap.feature.value;
         *index += 1;
     }
 
@@ -259,6 +264,8 @@ STATIC int RsUbGetDevAttr(struct RsUbDevCb *devCb, struct DevBaseAttr *devAttr, 
     devAttr->rqMaxSge = attr.dev_cap.max_jfr_sge;
     devAttr->ub.maxJfsInlineLen = attr.dev_cap.max_jfs_inline_len;
     devAttr->ub.maxJfsRsge = attr.dev_cap.max_jfs_rsge;
+    devAttr->maxReadSize = attr.dev_cap.max_read_size;
+    devAttr->maxWriteSize = attr.dev_cap.max_write_size;
     devAttr->ub.rmTpCap.value = attr.dev_cap.rm_tp_cap.value;
     devAttr->ub.rcTpCap.value = attr.dev_cap.rc_tp_cap.value;
     devAttr->ub.umTpCap.value = attr.dev_cap.um_tp_cap.value;
@@ -275,9 +282,9 @@ STATIC int RsUbGetDevAttr(struct RsUbDevCb *devCb, struct DevBaseAttr *devAttr, 
     *devIndex = RsGenerateDevIndex(devCb->rscb->devCnt, devAttr->ub.dieId, devAttr->ub.funcId);
     devCb->index = *devIndex;
 
-    hccp_info("max_jetty:%u, maxJfsInlineLen:%u, max_jfs_depth:%u, max_jfr_depth:%u, max_jfs_sge:%u, max_jfr_sge:%u",
-        attr.dev_cap.max_jetty, devAttr->ub.maxJfsInlineLen, devAttr->sqMaxDepth,
-        devAttr->rqMaxDepth, devAttr->sqMaxSge, devAttr->rqMaxSge);
+    hccp_info("max_jetty:%u, maxJfsInlineLen:%u, sqMaxDepth:%u, rqMaxDepth:%u, sqMaxSge:%u, rqMaxSge:%u "
+        "maxReadSize:%u maxWriteSize:%u", attr.dev_cap.max_jetty, devAttr->ub.maxJfsInlineLen, devAttr->sqMaxDepth,
+        devAttr->rqMaxDepth, devAttr->sqMaxSge, devAttr->rqMaxSge, devAttr->maxReadSize, devAttr->maxWriteSize);
     return 0;
 }
 
@@ -1755,6 +1762,8 @@ int RsUbCtxJettyCreate(struct RsUbDevCb *devCb, struct CtxQpAttr *attr, struct Q
     }
 
     RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
+    jettyCb->scqIndex = attr->scqIndex;
+    jettyCb->rcqIndex = attr->rcqIndex;
     RsListAddTail(&jettyCb->list, &devCb->jettyList);
     devCb->jettyCnt++;
     RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);

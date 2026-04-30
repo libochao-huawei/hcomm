@@ -39,7 +39,7 @@ template<typename T>
 __aicore__ inline void AivAll2AllV910B::ProcessAllToAllV910B(GM_ADDR input, GM_ADDR output, int32_t tag,
     uint64_t bufferSize, ExtraArgs &extraArgs, bool isAlltoAllVC)
 {
-    uint32_t targetRank = (GetBlockIdx() >= rankSize_ ? GetBlockIdx() - rankSize_ : GetBlockIdx()); // 0-2*rankSize
+    uint32_t targetRank = (blockIdx_ >= rankSize_ ? blockIdx_ - rankSize_ : blockIdx_); // 0-2*rankSize
 
     // 每张卡的CCLBuffer大小为bufferSize，平均分给ranksize块，每块的大小
     uint64_t avgBufferSize = bufferSize / rankSize_;
@@ -54,18 +54,18 @@ __aicore__ inline void AivAll2AllV910B::ProcessAllToAllV910B(GM_ADDR input, GM_A
     __gm__ T *cclGMOther = (__gm__ T *)(GM_IN[targetRank]);
     tag = tag << TAG_MOVE_LEFT_BITS;
 
-    if (GetBlockIdx() < rankSize_) { // 前rankSize个aiv负责userin->cclin
+    if (blockIdx_ < rankSize_) { // 前rankSize个aiv负责userin->cclin
         uint64_t localSendOffset = 0;
         if (isAlltoAllVC) {
-            for (uint32_t i = 0; i < GetBlockIdx(); i++) {
+            for (uint32_t i = 0; i < blockIdx_; i++) {
                 localSendOffset += extraArgs.sendCountMatrix[rank_ * rankSize_ + i];
             }
         } else {
             localSendOffset = extraArgs.sendDispls[targetRank];
         }
-        uint64_t localSendCount = isAlltoAllVC ? extraArgs.sendCountMatrix[rank_ * rankSize_ + GetBlockIdx()]
+        uint64_t localSendCount = isAlltoAllVC ? extraArgs.sendCountMatrix[rank_ * rankSize_ + blockIdx_]
                                 : extraArgs.sendCounts[targetRank];
-        uint64_t localRecvOffset = avgBufferCount * GetBlockIdx(); // userin搬到ccl的偏移
+        uint64_t localRecvOffset = avgBufferCount * blockIdx_; // userin搬到ccl的偏移
 
         GlobalTensor<T> inputGT;
         inputGT.SetGlobalBuffer(inputGM + localSendOffset, localSendCount);
@@ -106,7 +106,7 @@ __aicore__ inline void AivAll2AllV910B::ProcessAllToAllV910B(GM_ADDR input, GM_A
                 set_flag(PIPE_MTE3, PIPE_S, EVENT_ID0);
                 wait_flag(PIPE_MTE3, PIPE_S, EVENT_ID0);
 
-                CountRecord(tag, curBatchCount, GetBlockIdx());
+                CountRecord(tag, curBatchCount, blockIdx_);
             }
         }
         PipeBarrier<PIPE_ALL>();

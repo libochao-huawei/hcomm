@@ -43,6 +43,8 @@ public:
 
     void Wait(u32 index, const StreamLite &stream) override;
 
+    void WaitWithTimeout(u32 index, const StreamLite &stream, u32 timeout) override;
+
     void Read(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream) override;
 
     void Write(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream) override;
@@ -68,18 +70,19 @@ public:
     void BatchTransfer(const std::vector<RmaBufferLite> &loc, const std::vector<Buffer> &rmt,
                         const std::vector<TransferOp> &transferOp, const StreamLite &stream) override;
 
-    HcclResult BuildLocRmaBufferLite(const uintptr_t addr, const size_t size, RmaBufferLite &rmaBufferLite) const;
+    HcclResult BuildLocRmaBufferLite(const uintptr_t addr, const size_t size, RmaBufferLite &rmaBufferLite) override;
     HcclResult Fence();
 
     HcclResult Clean();
     HcclResult Resume(std::vector<char> &uniqueId);
+    void SetTaskExceptionEnable(bool flag) { taskExceptionEnable_ = flag; }
 
-    HcclResult SetAddTaskInfoCallback(std::function<HcclResult(u32, u32, const TaskParam&, u64)> callback); // 自定义算子流程上报task的Callback
 private:
     u32 notifyNum{0};
     u32 bufferNum{0};
     u32 connNum{0};
     bool fence_{false};
+    bool taskExceptionEnable_{true};
 
     struct RmtUbBufLite {
         u64         addr;
@@ -152,6 +155,8 @@ private:
     void CheckConnVec(const std::string &desc);
 
     void SetFenceConfig(SqeConfigLite &cfg);
+
+    bool IsReportTask();
 };
 
 } // namespace Hccl

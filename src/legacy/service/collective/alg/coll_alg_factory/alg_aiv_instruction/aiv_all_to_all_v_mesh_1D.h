@@ -137,6 +137,9 @@ public:
             InitCoreInfo(cclBufferCountPerRank, extraArgsPerLoop);
             Producer(); // 写数据
             Consumer(); // 读数据
+            if (loop != loopTimes - 1) {
+                BarrierAll();
+            }
             processedDataCount += currDataCount;
         }
     }

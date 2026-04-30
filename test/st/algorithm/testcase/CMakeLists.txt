@@ -180,7 +180,18 @@ target_link_libraries(hccl_alg_test PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/lib64/libc_sec.so
 )
 
-add_subdirectory(testcase)
-add_subdirectory(executor_testcase_generalization)
-add_subdirectory(executor_reduce_testcase_generalization)
-add_subdirectory(executor_alltoall_A3_pipeline_testcase)
+if("all" IN_LIST ST_TASKS OR "open_hccl_test" IN_LIST ST_TASKS)
+    add_subdirectory(testcase)
+endif()
+
+if("all" IN_LIST ST_TASKS OR "executor_hccl_test" IN_LIST ST_TASKS)
+    add_subdirectory(executor_testcase_generalization)
+endif()
+
+if("all" IN_LIST ST_TASKS OR "executor_reduce_hccl_test" IN_LIST ST_TASKS)
+    add_subdirectory(executor_reduce_testcase_generalization)
+endif()
+
+if("all" IN_LIST ST_TASKS OR "executor_pipeline_hccl_test" IN_LIST ST_TASKS)
+    add_subdirectory(executor_alltoall_A3_pipeline_testcase)
+endif()
