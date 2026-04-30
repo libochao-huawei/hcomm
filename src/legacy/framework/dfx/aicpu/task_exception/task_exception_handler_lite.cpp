@@ -173,12 +173,15 @@ static std::string GetSdmaErrorDesc(u32 errorCode)
     }
 }
 
-static void ReportSdmaError(u32 localDeviceId, u32 errorCode)
+static void ReportSdmaError(u32 localDeviceId, u32 notifyId, u32 tsId, s32 userStreamId, u32 errorCode)
 {
-    std::string errorInfo = "error_code=" + std::to_string(errorCode) + ", description=" + GetSdmaErrorDesc(errorCode);
+    std::string baseInfo = "localDeviceId=" + std::to_string(localDeviceId);
+    std::string taskInfo = "notifyId= " + std::to_string(notifyId) + ", tsId=" + std::to_string(tsId) + 
+        ", streamId=" + std::to_string(userStreamId) + ", error_code=" + std::to_string(errorCode) +
+        ", description=" + GetSdmaErrorDesc(errorCode);
     RPT_INPUT_ERR(true, "EI0012", std::vector<std::string>({"remote_rankid", "base_information",
         "task_information", "group_rank_content"}),
-        std::vector<std::string>({"", std::to_string(localDeviceId), errorInfo, ""}));
+        std::vector<std::string>({"N/A", baseInfo, taskInfo, "N/A"}));
 }
 
 HcclResult SendTaskExceptionByMBox(const u32 localDeviceId, const u32 notifyId, const u32 tsId,
@@ -209,7 +212,7 @@ HcclResult SendTaskExceptionByMBox(const u32 localDeviceId, const u32 notifyId, 
         aicpuSqe.u.aicpu_record.ret_code = SwitchUBCqeErrCodeToTsErrCode(exceptionInfo->errorCode & 0xFF);
     } else {
         aicpuSqe.u.aicpu_record.ret_code = SwitchSdmaCqeErrCodeToTsErrCode(exceptionInfo->errorCode);
-        ReportSdmaError(localDeviceId, exceptionInfo->errorCode);
+        ReportSdmaError(localDeviceId, notifyId, tsId, userStreamId, exceptionInfo->errorCode);
     }
 
     struct event_summary event;

@@ -44,8 +44,8 @@ u32 GetJsonPropertyUInt(const nlohmann::json &obj, const char *propName, bool re
 
     s64 value = obj.at(propName).get<s64>();
     if (value < 0 || value > UINT32_MAX) {
-        RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({"config"}),
-            std::vector<std::string>({std::string(propName)}));
+        RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "value", "variable" ,"expect" }),
+            std::vector<std::string>({std::to_string(value), std::string(propName), "0 ~ UINT32_MAX"}));
         THROW<InvalidParamsException>(StringFormat("[Get][JsonPropertyUInt]errNo[0x%016llx]:json object "
                                         "property value of Name[%s] should be an unsigned 32-bit integer but acutally not!",
                                         HCOM_ERROR_CODE(HcclResult::HCCL_E_PARA), propName));
@@ -66,8 +66,8 @@ s32 GetJsonPropertySInt(const nlohmann::json &obj, const char *propName, bool re
 
     s64 value = obj.at(propName).get<s64>();
     if (value < INT_MIN || value > INT_MAX) {
-        RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({"config"}),
-            std::vector<std::string>({std::string(propName)}));
+        RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "value", "variable" ,"expect" }),
+            std::vector<std::string>({std::to_string(value), std::string(propName), "0 ~ INT_MAX"}));
         THROW<InvalidParamsException>(StringFormat("[Get][JsonPropertySInt]errNo[0x%016llx]:json object "
                                                 "property value of Name[%s] is not signed number!",
                                                 HCOM_ERROR_CODE(HcclResult::HCCL_E_PARA), propName));
@@ -86,8 +86,8 @@ void GetJsonPropertyList(const nlohmann::json &obj, const char *propName, nlohma
 
     listObj = obj.at(propName);
     if (!listObj.is_array()) {
-        RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({"config"}),
-            std::vector<std::string>({std::string(propName)}));
+        RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "value", "variable" ,"expect" }),
+            std::vector<std::string>({std::to_string(value), std::string(propName), "array"}));
         THROW<InvalidParamsException>(StringFormat("[Get][GetJsonPropertyList]errNo[0x%016llx]:json object "
                                                 "property value of Name \"%s\" is not list!",
                                                 HCOM_ERROR_CODE(HcclResult::HCCL_E_PARA), propName));
