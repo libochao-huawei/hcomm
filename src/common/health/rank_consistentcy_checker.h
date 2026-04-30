@@ -128,6 +128,7 @@ public:
 
     HcclResult RecordEnvVarCrc();
     HcclResult RecordSubCommPara(u32 parentCommCrc, uint32_t rankNum, const uint32_t *rankIds, uint64_t subCommId);
+    const std::vector<u32>& GetSubCommParaCrcs();
 
 private:
     explicit RankConsistentcyChecker();
@@ -174,6 +175,7 @@ private:
     ProtocolType protocolType_ = ProtocolType::RESERVED;
     std::vector<u32> crcTable_;
     std::mutex mutex_;
+    std::vector<u32> subCommParaCrcs_
 };
 }
 #endif  // RANK_CONSISTENTCY_CHECKER_H
