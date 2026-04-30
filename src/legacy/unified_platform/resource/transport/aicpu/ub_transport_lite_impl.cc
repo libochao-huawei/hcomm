@@ -16,6 +16,7 @@
 #include "internal_exception.h"
 #include "sal.h"
 #include "communicator_impl_lite_manager.h"
+#include "profiling_handler_lite.h"
 
 namespace Hccl {
 constexpr u32 UB_WQE_BB_SIZE       = 64;  // 一个WQE BB是64Byte
@@ -349,10 +350,8 @@ void UbTransportLiteImpl::Post(u32 index, const StreamLite &stream)
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
     HCCL_INFO("UbTransportLiteImpl::Post notifyId[0x%llx], pi=%u", rmtBuffSliceLite.GetAddr(), connOut.pi);
- 
-    if (callback_ == nullptr && newCallback_ == nullptr)
-    {
-        HCCL_WARNING("[UbTransportLiteImpl] callback_ is nullptr.");
+
+    if (!IsReportTask()) {
         return;
     }
 
@@ -390,13 +389,11 @@ void UbTransportLiteImpl::WaitWithTimeout(u32 index, const StreamLite &stream, u
     auto notifyId = locNotifyVec[index]->GetId();
     stream.GetRtsq()->NotifyWait(notifyId, timeout);
 
-    auto taskId   = stream.GetRtsq()->GetTaskId();
-    if (callback_ == nullptr && newCallback_ == nullptr)
-    {
-        HCCL_WARNING("[UbTransportLiteImpl] callback_ is nullptr.");
+    if (!IsReportTask()) {
         return;
     }
 
+    auto taskId   = stream.GetRtsq()->GetTaskId();
     TaskParam taskParam{};
     taskParam.taskType                 = TaskParamType::TASK_NOTIFY_WAIT;
     taskParam.beginTime                = ProfGetCurCpuTimestamp();
@@ -414,9 +411,7 @@ void UbTransportLiteImpl::WaitWithTimeout(u32 index, const StreamLite &stream, u
 void UbTransportLiteImpl::ProfilingProcess(void *src, void *dst, u64 size, const StreamLite &stream,
                                            DmaOp dmaOp, u32 taskId)
 {
-    if (callback_ == nullptr && newCallback_ == nullptr)
-    {
-        HCCL_WARNING("[UbTransportLiteImpl] callback_ is nullptr.");
+    if (!IsReportTask()) {
         return;
     }
 
@@ -444,9 +439,7 @@ void UbTransportLiteImpl::ProfilingProcess(void *src, void *dst, u64 size, const
 void UbTransportLiteImpl::ReduceProfilingProcess(void *src, void *dst, u64 size,
                                                  const ReduceIn &reduceIn, const StreamLite &stream, u32 taskId)
 {
-    if (callback_ == nullptr && newCallback_ == nullptr)
-    {
-        HCCL_WARNING("[UbTransportLiteImpl] callback_ is nullptr.");
+    if (!IsReportTask()) {
         return;
     }
 
@@ -613,9 +606,7 @@ void UbTransportLiteImpl::WriteWithNotify(const RmaBufferLite &loc, const Buffer
                                 rmtNotifySliceLite, stream, notifyData);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
-    if (callback_ == nullptr && newCallback_ == nullptr)
-    {
-        HCCL_WARNING("[UbTransportLiteImpl] callback_ is nullptr.");
+    if (!IsReportTask()) {
         return;
     }
 
@@ -657,13 +648,12 @@ void UbTransportLiteImpl::WriteReduceWithNotify(const RmaBufferLite &loc, const 
                                       notifyData);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
-    auto taskId = stream.GetRtsq()->GetTaskId();
-    if (callback_ == nullptr && newCallback_ == nullptr)
-    {
-        HCCL_WARNING("[UbTransportLiteImpl] callback_ is nullptr.");
+
+    if (!IsReportTask()) {
         return;
     }
 
+    auto taskId = stream.GetRtsq()->GetTaskId();
     TaskParam taskParam{};
     taskParam.taskType                 = TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY;
     taskParam.beginTime                = ProfGetCurCpuTimestamp();
@@ -757,5 +747,11 @@ void UbTransportLiteImpl::SetFenceConfig(SqeConfigLite &cfg)
         cfg.compOrder = UB_COMPLETION;
     }
     fence_ = false;
+}
+
+bool UbTransportLiteImpl::IsReportTask()
+{
+    return (taskExceptionEnable_ || ProfilingHandlerLite::GetInstance().GetProfL1State()) &&
+           (callback_ != nullptr || newCallback_ != nullptr);
 }
 } // namespace Hccl

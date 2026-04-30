@@ -1926,15 +1926,6 @@ void ProfilingHandlerLite::SetProL0On(bool val)
 {
 }
 
-bool ProfilingHandlerLite::GetProfL0State() const
-{
-    return true;
-}
-bool ProfilingHandlerLite::GetProfL1State() const
-{
-    return true;
-}
-
 uint64_t ProfilingHandlerLite::GetProfHashId(const char *name, uint32_t len) const
 {
     return 0;
