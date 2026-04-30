@@ -11,14 +11,31 @@
 #ifndef REG_MEM_MANAGER_H
 #define REG_MEM_MANAGER_H
 
+#include <array>
+#include <utility>
+#include <vector>
+#include "hcomm_res_defs.h"
+#include "hccl/hccl_res.h"
+
 namespace hccl {
+
+class MyRank;
+
+struct RegMemInfo {
+    CommMem mem{};
+    std::array<char, HCCL_RES_TAG_MAX_LEN> memTag{};
+};
 
 class RegMemMgr {
 public:
-    RegMemMgr() = default;
+    explicit RegMemMgr(MyRank *myRank) : myRank_(myRank) {}
     ~RegMemMgr() = default;
 
+    HcclResult RegisterMemory(CommMem mem, const char *memTag, HcommMemHandle *memHandle);
+
 private:
+    MyRank *myRank_{nullptr};
+    std::vector<std::pair<HcommMemHandle, RegMemInfo>> memInfoVec_{};
 };
 
 }

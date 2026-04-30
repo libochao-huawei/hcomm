@@ -78,7 +78,6 @@ private:
     aclrtBinHandle binHandle_ = nullptr;
 
     // 管理器
-    RegMemMgr regMemMgr_;
     CommMemMgr commMemMgr_;
     CommEngineResMgr engineResMgr_;
     ContextManager contextMgr_;
