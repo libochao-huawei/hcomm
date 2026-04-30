@@ -137,4 +137,10 @@ void HrtDeviceAbortRegCallBack(aclrtDeviceTaskAbortCallback callback, void *args
 {
     return;
 }
+
+int RaCtxGetTpInfoList(void *ctxHandle, struct GetTpCfg *cfg, struct HccpTpInfo infoList[],
+    unsigned int *num)
+{
+    return 0;
+}
 } // namespace Hccl
