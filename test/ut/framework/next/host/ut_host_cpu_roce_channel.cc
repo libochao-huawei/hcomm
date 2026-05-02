@@ -807,93 +807,99 @@ TEST_F(HostCpuRoceChannelTest, Ut_WriteWithNotify_When_LenExceedsMaxMsgSize_Expe
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-// // 测试 GetCommAddrString - 正常情况
-// TEST_F(HostCpuRoceChannelTest, Ut_GetCommAddrString_When_Normal_Expect_ReturnValidString)
-// {
-//     auto impl_ = CreateInitAndConnect();
-//     EndpointDesc ep{};
-//     ep.commAddr.type = COMM_ADDR_TYPE_IP_V4;
-//     Hccl::IpAddress ip("192.168.1.1");
-//     ep.commAddr.addr = ip.GetBinaryAddress().addr;
+// 测试 GetCommAddrString - 正常情况
+TEST_F(HostCpuRoceChannelTest, Ut_GetCommAddrString_When_Normal_Expect_ReturnValidString)
+{
+    SetupSuccessfulConnectionMocks();
+    auto impl_ = CreateInitAndConnect();
+    EndpointDesc ep{};
+    ep.commAddr.type = COMM_ADDR_TYPE_IP_V4;
+    Hccl::IpAddress ip("192.168.1.1");
+    ep.commAddr.addr = ip.GetBinaryAddress().addr;
     
-//     std::string addrStr = impl_->GetCommAddrString(ep);
-//     EXPECT_FALSE(addrStr.empty());
-//     EXPECT_TRUE(addrStr.find("192.168.1.1") != std::string::npos);
-// }
+    std::string addrStr = impl_->GetCommAddrString(ep);
+    EXPECT_FALSE(addrStr.empty());
+    EXPECT_TRUE(addrStr.find("192.168.1.1") != std::string::npos);
+}
 
-// // 测试 GetCommAddrString - IPv6 地址
-// TEST_F(HostCpuRoceChannelTest, Ut_GetCommAddrString_When_IPv6_Expect_ReturnValidString)
-// {
-//     auto impl_ = CreateInitAndConnect();
-//     EndpointDesc ep{};
-//     ep.commAddr.type = COMM_ADDR_TYPE_IP_V6;
+// 测试 GetCommAddrString - IPv6 地址
+TEST_F(HostCpuRoceChannelTest, Ut_GetCommAddrString_When_IPv6_Expect_ReturnValidString)
+{
+    SetupSuccessfulConnectionMocks();
+    auto impl_ = CreateInitAndConnect();
+    EndpointDesc ep{};
+    ep.commAddr.type = COMM_ADDR_TYPE_IP_V6;
     
-//     std::string addrStr = impl_->GetCommAddrString(ep);
-//     EXPECT_FALSE(addrStr.empty());
-// }
+    std::string addrStr = impl_->GetCommAddrString(ep);
+    EXPECT_FALSE(addrStr.empty());
+}
 
-// // 测试 SetDfxCallback - 正常设置
-// TEST_F(HostCpuRoceChannelTest, Ut_SetDfxCallback_When_Normal_Expect_SetSuccess)
-// {
-//     auto impl_ = CreateInitAndConnect();
-//     bool callbackCalled = false;
+// 测试 SetDfxCallback - 正常设置
+TEST_F(HostCpuRoceChannelTest, Ut_SetDfxCallback_When_Normal_Expect_SetSuccess)
+{
+    SetupSuccessfulConnectionMocks();
+    auto impl_ = CreateInitAndConnect();
+    bool callbackCalled = false;
     
-//     std::function<HcclResult(const Hccl::TaskParam&, u64)> callback = 
-//         [&callbackCalled](const Hccl::TaskParam& param, u64 handle) -> HcclResult {
-//             callbackCalled = true;
-//             return HCCL_SUCCESS;
-//         };
+    std::function<HcclResult(const Hccl::TaskParam&, u64)> callback = 
+        [&callbackCalled](const Hccl::TaskParam& param, u64 handle) -> HcclResult {
+            callbackCalled = true;
+            return HCCL_SUCCESS;
+        };
     
-//     HcclResult ret = impl_->SetDfxCallback(callback);
-//     EXPECT_EQ(ret, HCCL_SUCCESS);
+    HcclResult ret = impl_->SetDfxCallback(callback);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
     
-//     // 验证回调已设置
-//     auto storedCallback = impl_->GetDfxCallback();
-//     EXPECT_TRUE(storedCallback != nullptr);
-// }
+    // 验证回调已设置
+    auto storedCallback = impl_->GetDfxCallback();
+    EXPECT_TRUE(storedCallback != nullptr);
+}
 
-// // 测试 SetDfxCallback - 调用设置的回调
-// TEST_F(HostCpuRoceChannelTest, Ut_SetDfxCallback_When_CallCallback_Expect_CallbackInvoked)
-// {
-//     auto impl_ = CreateInitAndConnect();
-//     bool callbackCalled = false;
+// 测试 SetDfxCallback - 调用设置的回调
+TEST_F(HostCpuRoceChannelTest, Ut_SetDfxCallback_When_CallCallback_Expect_CallbackInvoked)
+{
+    SetupSuccessfulConnectionMocks();
+    auto impl_ = CreateInitAndConnect();
+    bool callbackCalled = false;
     
-//     std::function<HcclResult(const Hccl::TaskParam&, u64)> callback = 
-//         [&callbackCalled](const Hccl::TaskParam& param, u64 handle) -> HcclResult {
-//             callbackCalled = true;
-//             return HCCL_SUCCESS;
-//         };
+    std::function<HcclResult(const Hccl::TaskParam&, u64)> callback = 
+        [&callbackCalled](const Hccl::TaskParam& param, u64 handle) -> HcclResult {
+            callbackCalled = true;
+            return HCCL_SUCCESS;
+        };
     
-//     impl_->SetDfxCallback(callback);
+    impl_->SetDfxCallback(callback);
     
-//     auto storedCallback = impl_->GetDfxCallback();
-//     Hccl::TaskParam taskParam{};
-//     HcclResult ret = storedCallback(taskParam, 12345);
+    auto storedCallback = impl_->GetDfxCallback();
+    Hccl::TaskParam taskParam{};
+    HcclResult ret = storedCallback(taskParam, 12345);
     
-//     EXPECT_EQ(ret, HCCL_SUCCESS);
-//     EXPECT_TRUE(callbackCalled);
-// }
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_TRUE(callbackCalled);
+}
 
-// // 测试 GetDfxCallback - 未设置时返回空
-// TEST_F(HostCpuRoceChannelTest, Ut_GetDfxCallback_When_NotSet_Expect_ReturnEmpty)
-// {
-//     auto impl_ = CreateInitAndConnect();
+// 测试 GetDfxCallback - 未设置时返回空
+TEST_F(HostCpuRoceChannelTest, Ut_GetDfxCallback_When_NotSet_Expect_ReturnEmpty)
+{
+    SetupSuccessfulConnectionMocks();
+    auto impl_ = CreateInitAndConnect();
     
-//     // 默认应该没有回调
-//     auto callback = impl_->GetDfxCallback();
-//     // 如果没有设置,应该是一个空的 function 对象
-//     EXPECT_TRUE(!callback);
-// }
+    // 默认应该没有回调
+    auto callback = impl_->GetDfxCallback();
+    // 如果没有设置,应该是一个空的 function 对象
+    EXPECT_TRUE(!callback);
+}
 
-// // 测试 GetCommAddrString - 端口为 0
-// TEST_F(HostCpuRoceChannelTest, Ut_GetCommAddrString_When_PortZero_Expect_ReturnValidString)
-// {
-//     auto impl_ = CreateInitAndConnect();
-//     EndpointDesc ep{};
-//     ep.commAddr.type = COMM_ADDR_TYPE_IP_V4;
-//     Hccl::IpAddress ip("10.0.0.1");
-//     ep.commAddr.addr = ip.GetBinaryAddress().addr;
+// 测试 GetCommAddrString - 端口为 0
+TEST_F(HostCpuRoceChannelTest, Ut_GetCommAddrString_When_PortZero_Expect_ReturnValidString)
+{
+    SetupSuccessfulConnectionMocks();
+    auto impl_ = CreateInitAndConnect();
+    EndpointDesc ep{};
+    ep.commAddr.type = COMM_ADDR_TYPE_IP_V4;
+    Hccl::IpAddress ip("10.0.0.1");
+    ep.commAddr.addr = ip.GetBinaryAddress().addr;
     
-//     std::string addrStr = impl_->GetCommAddrString(ep);
-//     EXPECT_FALSE(addrStr.empty());
-// }
+    std::string addrStr = impl_->GetCommAddrString(ep);
+    EXPECT_FALSE(addrStr.empty());
+}
