@@ -398,7 +398,6 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/reps/loop
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/reps/sync
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/reps/translator
-
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/profiling
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/profiling/aicpu
