@@ -344,6 +344,114 @@ TEST_F(ProfilingHandlerTest, GetHCCLReportData4_test){
     delete comm;
 }
 
+// 测试 GetHCCLReportData - TASK_DPU_INLINE_WRITE 类型
+TEST_F(ProfilingHandlerTest, GetHCCLReportData_DpuInlineWrite_test){
+    ProfilingHandler &handler = Hccl::ProfilingHandler::GetInstance();
+    GlobalMirrorTasks &globalMirrorTasks = GlobalMirrorTasks::Instance();
+    MirrorTaskManager mirrorTaskManager(0, &globalMirrorTasks, 0);
+    // 初始化TaskParam - TASK_DPU_INLINE_WRITE 使用 DMA 参数
+    TaskParam taskParam = {.taskType = TaskParamType::TASK_DPU_INLINE_WRITE,
+        .beginTime = 100,
+        .endTime = 200,
+        .aicpuTaskId = 12345,
+        .npuDevId = 0,
+        .taskPara = {.DMA = {.src = (void*)0x1000, .dst = (void*)0x2000, .size = 1024, .notifyID = 1, .linkType = Hccl::DfxLinkType::PCIE}}};
+    // 初始化dfxOpInfo
+    std::shared_ptr<DfxOpInfo> dfxOpInfo = std::make_shared<DfxOpInfo>();
+    CollOperator op;
+    op.opType = OpType::ALLREDUCE;
+    op.staticAddr = false;
+    dfxOpInfo->op_ = op;
+    CommunicatorImpl* comm  = new CommunicatorImpl;
+    dfxOpInfo->comm_ = comm;
+    mirrorTaskManager.SetCurrDfxOpInfo(dfxOpInfo);
+    std::shared_ptr<TaskInfo> taskInfo = std::make_shared<TaskInfo>(3, 0, 0, taskParam, dfxOpInfo);
+    HCCLReportData hcclReportData;
+    handler.GetHCCLReportData(*taskInfo, hcclReportData);
+    delete comm;
+}
+
+// 测试 GetHCCLReportData - TASK_DPU_WRITE_WITH_NOTIFY 类型
+TEST_F(ProfilingHandlerTest, GetHCCLReportData_DpuWriteWithNotify_test){
+    ProfilingHandler &handler = Hccl::ProfilingHandler::GetInstance();
+    GlobalMirrorTasks &globalMirrorTasks = GlobalMirrorTasks::Instance();
+    MirrorTaskManager mirrorTaskManager(0, &globalMirrorTasks, 0);
+    // 初始化TaskParam - TASK_DPU_WRITE_WITH_NOTIFY 使用 DMA 参数
+    TaskParam taskParam = {.taskType = TaskParamType::TASK_DPU_WRITE_WITH_NOTIFY,
+        .beginTime = 100,
+        .endTime = 200,
+        .aicpuTaskId = 12346,
+        .npuDevId = 1,
+        .taskPara = {.DMA = {.src = (void*)0x3000, .dst = (void*)0x4000, .size = 2048, .notifyID = 2, .linkType = Hccl::DfxLinkType::ROCE}}};
+    // 初始化dfxOpInfo
+    std::shared_ptr<DfxOpInfo> dfxOpInfo = std::make_shared<DfxOpInfo>();
+    CollOperator op;
+    op.opType = OpType::ALLREDUCE;
+    op.staticAddr = false;
+    dfxOpInfo->op_ = op;
+    CommunicatorImpl* comm  = new CommunicatorImpl;
+    dfxOpInfo->comm_ = comm;
+    mirrorTaskManager.SetCurrDfxOpInfo(dfxOpInfo);
+    std::shared_ptr<TaskInfo> taskInfo = std::make_shared<TaskInfo>(4, 1, 0, taskParam, dfxOpInfo);
+    HCCLReportData hcclReportData;
+    handler.GetHCCLReportData(*taskInfo, hcclReportData);
+    delete comm;
+}
+
+// 测试 GetHCCLReportData - TASK_DPU_NOTIFY_WAIT 类型
+TEST_F(ProfilingHandlerTest, GetHCCLReportData_DpuNotifyWait_test){
+    ProfilingHandler &handler = Hccl::ProfilingHandler::GetInstance();
+    GlobalMirrorTasks &globalMirrorTasks = GlobalMirrorTasks::Instance();
+    MirrorTaskManager mirrorTaskManager(0, &globalMirrorTasks, 0);
+    // 初始化TaskParam - TASK_DPU_NOTIFY_WAIT 使用 Notify 参数
+    TaskParam taskParam = {.taskType = TaskParamType::TASK_DPU_NOTIFY_WAIT,
+        .beginTime = 100,
+        .endTime = 200,
+        .aicpuTaskId = 12347,
+        .npuDevId = 2,
+        .taskPara = {.Notify = {.notifyID = 3, .value = 456}}};
+    // 初始化dfxOpInfo
+    std::shared_ptr<DfxOpInfo> dfxOpInfo = std::make_shared<DfxOpInfo>();
+    CollOperator op;
+    op.opType = OpType::ALLREDUCE;
+    op.staticAddr = false;
+    dfxOpInfo->op_ = op;
+    CommunicatorImpl* comm  = new CommunicatorImpl;
+    dfxOpInfo->comm_ = comm;
+    mirrorTaskManager.SetCurrDfxOpInfo(dfxOpInfo);
+    std::shared_ptr<TaskInfo> taskInfo = std::make_shared<TaskInfo>(5, 2, 0, taskParam, dfxOpInfo);
+    HCCLReportData hcclReportData;
+    handler.GetHCCLReportData(*taskInfo, hcclReportData);
+    delete comm;
+}
+
+// 测试 GetHCCLReportData - TASK_DPU_CHANNEL_FENCE 类型
+TEST_F(ProfilingHandlerTest, GetHCCLReportData_DpuChannelFence_test){
+    ProfilingHandler &handler = Hccl::ProfilingHandler::GetInstance();
+    GlobalMirrorTasks &globalMirrorTasks = GlobalMirrorTasks::Instance();
+    MirrorTaskManager mirrorTaskManager(0, &globalMirrorTasks, 0);
+    // 初始化TaskParam - TASK_DPU_CHANNEL_FENCE 使用 Notify 参数
+    TaskParam taskParam = {.taskType = TaskParamType::TASK_DPU_CHANNEL_FENCE,
+        .beginTime = 100,
+        .endTime = 200,
+        .aicpuTaskId = 12348,
+        .npuDevId = 3,
+        .taskPara = {.Notify = {.notifyID = 4, .value = 789}}};
+    // 初始化dfxOpInfo
+    std::shared_ptr<DfxOpInfo> dfxOpInfo = std::make_shared<DfxOpInfo>();
+    CollOperator op;
+    op.opType = OpType::ALLREDUCE;
+    op.staticAddr = false;
+    dfxOpInfo->op_ = op;
+    CommunicatorImpl* comm  = new CommunicatorImpl;
+    dfxOpInfo->comm_ = comm;
+    mirrorTaskManager.SetCurrDfxOpInfo(dfxOpInfo);
+    std::shared_ptr<TaskInfo> taskInfo = std::make_shared<TaskInfo>(6, 3, 0, taskParam, dfxOpInfo);
+    HCCLReportData hcclReportData;
+    handler.GetHCCLReportData(*taskInfo, hcclReportData);
+    delete comm;
+}
+
 TEST_F(ProfilingHandlerTest, GetCcuWaitSignalInfo_test){
     ProfilingHandler &handler = Hccl::ProfilingHandler::GetInstance();
     bool cachedReq = true;
