@@ -653,6 +653,8 @@ void SubmitCcuInsGroupTasks(const CcuInstruction &ccuInstruction, CommunicatorIm
         .taskType  = TaskParamType::TASK_CCU,
         .beginTime = 0,
         .endTime   = 0,
+        .aicpuTaskId = 0,
+        .npuDevId = 0,
         .isMaster = false,
         .taskPara  = {
             .Ccu = {
@@ -736,6 +738,8 @@ static void SubmitCcuTasks(const CcuInstruction &ccuInstruction, CommunicatorImp
         .taskType  = TaskParamType::TASK_CCU,
         .beginTime = 0,
         .endTime   = 0,
+        .aicpuTaskId = 0,
+        .npuDevId = 0,
         .isMaster = false,
         .taskPara  = {
             .Ccu = {
@@ -781,6 +785,8 @@ static void ReportAivTaskInfo(const CommunicatorImpl &comm, AivOpArgs &aivOpArgs
         .taskType  = TaskParamType::TASK_AIV,
         .beginTime = aivOpArgs.beginTime,
         .endTime   = DlProfFunction::GetInstance().dlMsprofSysCycleTime(),
+        .aicpuTaskId = 0,
+        .npuDevId = 0,
         .isMaster = isMaster,
         .taskPara  = {
             .Aiv = {

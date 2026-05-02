@@ -119,6 +119,7 @@ enum class ProfTaskType {
     TASK_MULTI_THREAD,
     TASK_LAUNCH_FFTS_TASK,
     TASK_AIV,
+    TASK_DPU_HCCL_INFO, // 用于区分DPU侧上报的HCCL信息和Host侧上报的HCCL信息
 
     TASK_ISET_LOOKUP_RESPONSE,
     TASK_WAIT_SOME,
@@ -172,6 +173,7 @@ enum class ProfTaskType {
 
 const std::map<ProfTaskType, std::string> PROF_TASK_OP_NAME = {
     {ProfTaskType::TASK_HCCL_INFO, "hccl_info"},
+    {ProfTaskType::TASK_DPU_HCCL_INFO, "dpu_hccl_info"},
     {ProfTaskType::TASK_SDMA, "Memcpy"},
     {ProfTaskType::TASK_RDMA, "RDMASend"},
     {ProfTaskType::TASK_REDUCE_INLINE, "Reduce_Inline"},
