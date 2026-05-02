@@ -20,7 +20,7 @@ namespace Hccl {
 MAKE_ENUM(HcclWorkflowMode, HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB = 0, HCCL_WORKFLOW_MODE_OP_BASE = 1,
           HCCL_WORKFLOW_MODE_RESERVED)
  
-MAKE_ENUM(SimpleTaskType, SDMA = 0, RDMA, LOCAL, UB)
+MAKE_ENUM(SimpleTaskType, SDMA = 0, RDMA, LOCAL, UB, ROCE)
 
 MAKE_ENUM(TaskRole, DST = 0, SRC)
 
@@ -42,6 +42,12 @@ const std::map<TaskParamType, std::string> PROF_TASK_OP_NAME_V2 = {
     {TaskParamType::TASK_AICPU_KERNEL, "AicpuKernel"},
     {TaskParamType::TASK_AICPU_REDUCE, "Aicpu_Reduce"},
     {TaskParamType::TASK_AIV, "AivKernel"},
+    {TaskParamType::TASK_DPU_KERNEL, "DpuKernel"},
+    {TaskParamType::TASK_DPU_THREAD_FENCE, "Dpu_ThreadFence"},
+    {TaskParamType::TASK_DPU_CHANNEL_FENCE, "Dpu_ChannelFence"},
+    {TaskParamType::TASK_DPU_INLINE_WRITE, "Dpu_Notify_Record"},
+    {TaskParamType::TASK_DPU_NOTIFY_WAIT, "Dpu_Notify_Wait"},
+    {TaskParamType::TASK_DPU_WRITE_WITH_NOTIFY, "Dpu_Write_With_Notify"},
 };
 
 inline std::string GetProfTaskOpNameV2(TaskParamType type)
