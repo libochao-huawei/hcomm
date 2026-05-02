@@ -1694,7 +1694,7 @@ void ProfilingHandler::ReportHcclTaskDetails(const TaskInfo &taskInfo, bool cach
 {
 }
 
-void ProfilingHandler::CallAddtionInfo(HCCLReportData &hcclReportData) const
+void ProfilingHandler::CallAddtionInfo(HCCLReportData &hcclReportData, void *data, u32 len, ProfTaskType taskType) const
 {
 }
 
@@ -2501,4 +2501,9 @@ HcclResult HcclGetCclBuffer(
 HcclResult HcclGetRankGraphV2(HcclComm *comm, void **rankGraph)
 {
     return HCCL_SUCCESS;
+}
+
+int32_t HcommChannelRegisterDfx(ChannelHandle channel, std::function<HcclResult(unsigned int, unsigned int, const Hccl::TaskParam&, unsigned long long)> callback)
+{
+    return 0;
 }
