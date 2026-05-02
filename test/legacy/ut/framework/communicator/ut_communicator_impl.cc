@@ -3607,8 +3607,8 @@ TEST_F(CommunicatorImplTest, Ut_SaveDpuStreamId_When_Normal_Expect_ReturnSuccess
     aclrtStream fakeStream = (aclrtStream)0x12345678;
     comm.dpuStream = fakeStream;
     // mock HrtGetStreamId 返回固定值
-    s32 fakeStreamId = 42;
-    MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(fakeStreamId));
+    s32 fakeStreamId = 0;
+    MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
 
     HcclResult ret = comm.SaveDpuStreamId();
     EXPECT_EQ(ret, HCCL_SUCCESS);

@@ -927,7 +927,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_GetCommAddrString_When_EIDType_Expect_ReturnEi
     ep.commAddr.type = COMM_ADDR_TYPE_EID;
     // 设置 EID 值: 00:11:22:33:44:55:66:77:88:99:aa:bb:cc:dd:ee:ff
     for (uint32_t i = 0; i < COMM_ADDR_EID_LEN; ++i) {
-        ep.commAddr.eid[i] = static_cast<uint8_t>(i);
+        ep.commAddr.eid[i] = static_cast<uint8_t>(i * 0x11);
     }
 
     std::string addrStr = impl_->GetCommAddrString(ep);
