@@ -17,6 +17,7 @@
 #include "circular_queue.h"
 #include "task_info.h"
 #include "global_mirror_tasks.h"
+#include <mutex>
 
 namespace Hccl {
 
@@ -37,7 +38,7 @@ public:
 public:
     std::unordered_map<u32, TaskInfoQueue *>::iterator Begin();
     std::unordered_map<u32, TaskInfoQueue *>::iterator End();
-
+    std::mutex &GetTaskMutex() { return profMutex; }
     ~MirrorTaskManager();
 
 private:
@@ -51,7 +52,7 @@ private:
     std::shared_ptr<DfxOpInfo>     currDfxOpInfo_;
     std::function<void()>          fullyCallBack_;
     std::function<void(const std::string&, u32)>          fullyNewCallBack_;
-
+    std::mutex                      profMutex;
 private:
     bool      IsStaticGraphMode(const CollOperator &collOperator) const;
     QueueType GetQueueType() const;
