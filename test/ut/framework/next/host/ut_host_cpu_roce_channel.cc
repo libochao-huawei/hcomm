@@ -899,7 +899,62 @@ TEST_F(HostCpuRoceChannelTest, Ut_GetCommAddrString_When_PortZero_Expect_ReturnV
     ep.commAddr.type = COMM_ADDR_TYPE_IP_V4;
     Hccl::IpAddress ip("10.0.0.1");
     ep.commAddr.addr = ip.GetBinaryAddress().addr;
-    
+
     std::string addrStr = impl_->GetCommAddrString(ep);
     EXPECT_FALSE(addrStr.empty());
+}
+
+// 测试 GetCommAddrString - COMM_ADDR_TYPE_ID 类型
+TEST_F(HostCpuRoceChannelTest, Ut_GetCommAddrString_When_IDType_Expect_ReturnIdString)
+{
+    SetupSuccessfulConnectionMocks();
+    auto impl_ = CreateInitAndConnect();
+    EndpointDesc ep{};
+    ep.commAddr.type = COMM_ADDR_TYPE_ID;
+    ep.commAddr.id = 12345;
+
+    std::string addrStr = impl_->GetCommAddrString(ep);
+    EXPECT_FALSE(addrStr.empty());
+    EXPECT_EQ(addrStr, "12345");
+}
+
+// 测试 GetCommAddrString - COMM_ADDR_TYPE_EID 类型
+TEST_F(HostCpuRoceChannelTest, Ut_GetCommAddrString_When_EIDType_Expect_ReturnEidString)
+{
+    SetupSuccessfulConnectionMocks();
+    auto impl_ = CreateInitAndConnect();
+    EndpointDesc ep{};
+    ep.commAddr.type = COMM_ADDR_TYPE_EID;
+    // 设置 EID 值: 00:11:22:33:44:55:66:77:88:99:aa:bb:cc:dd:ee:ff
+    for (uint32_t i = 0; i < COMM_ADDR_EID_LEN; ++i) {
+        ep.commAddr.eid[i] = static_cast<uint8_t>(i);
+    }
+
+    std::string addrStr = impl_->GetCommAddrString(ep);
+    EXPECT_FALSE(addrStr.empty());
+    EXPECT_EQ(addrStr, "00:11:22:33:44:55:66:77:88:99:aa:bb:cc:dd:ee:ff");
+}
+
+// 测试 GetCommAddrString - COMM_ADDR_TYPE_RESERVED 类型
+TEST_F(HostCpuRoceChannelTest, Ut_GetCommAddrString_When_ReservedType_Expect_ReturnReservedString)
+{
+    SetupSuccessfulConnectionMocks();
+    auto impl_ = CreateInitAndConnect();
+    EndpointDesc ep{};
+    ep.commAddr.type = COMM_ADDR_TYPE_RESERVED;
+
+    std::string addrStr = impl_->GetCommAddrString(ep);
+    EXPECT_EQ(addrStr, "Reserved/Unknown");
+}
+
+// 测试 GetCommAddrString - 未知类型 (default分支)
+TEST_F(HostCpuRoceChannelTest, Ut_GetCommAddrString_When_UnknownType_Expect_ReturnReservedString)
+{
+    SetupSuccessfulConnectionMocks();
+    auto impl_ = CreateInitAndConnect();
+    EndpointDesc ep{};
+    ep.commAddr.type = static_cast<CommAddrType>(99); // 未知类型
+
+    std::string addrStr = impl_->GetCommAddrString(ep);
+    EXPECT_EQ(addrStr, "Reserved/Unknown");
 }
