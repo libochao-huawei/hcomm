@@ -55,6 +55,9 @@ public:
     HcclResult ChannelFence();
     HcclResult GetHcclBuffer(void*& addr, uint64_t& size);
 
+private:
+    HcclResult WaitForFenceCompletion();
+
     virtual HcclResult Clean() override;
     virtual HcclResult Resume() override;
 

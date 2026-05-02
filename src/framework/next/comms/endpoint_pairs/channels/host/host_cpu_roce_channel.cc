@@ -727,7 +727,6 @@ HcclResult HostCpuRoceChannel::NotifyRecord(const uint32_t remoteNotifyIdx)
 
 HcclResult HostCpuRoceChannel::NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout)
 {
-    HCCL_INFO("[HostCpuRoceChannel::NotifyWait] NotifyWait start");
     Hccl::TaskParam taskParam{};
     taskParam.beginTime                = hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
     if (localNotifyIdx >= localDpuNotifyIds_.size()) {
@@ -1053,12 +1052,8 @@ HcclResult HostCpuRoceChannel::FindRemoteBuffer(const uint64_t addr, const uint6
     return HCCL_E_NOT_FOUND;
 }
 
-HcclResult HostCpuRoceChannel::ChannelFence()
+HcclResult HostCpuRoceChannel::WaitForFenceCompletion()
 {
-    std::lock_guard<std::mutex> lock(sendCq_mutex);
-    Hccl::TaskParam taskParam{};
-    taskParam.beginTime                = hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
-    HCCL_INFO("[HostCpuRoceChannel::%s] ChannelFence start, wqeNum_=%u", __func__, wqeNum_);
     if (wqeNum_ == 0) {
         fenceFlag_ = true;
         HCCL_INFO("[HostCpuRoceChannel::%s] SUCCESS. wqeNum_[%u].", __func__, wqeNum_);
@@ -1108,11 +1103,24 @@ HcclResult HostCpuRoceChannel::ChannelFence()
     wqeNum_ = 0; // 所有的wqe都已经完成，重置计数器
     fenceFlag_ = true;
     HCCL_INFO("[HostCpuRoceChannel::%s] SUCCESS. wqeNum_[%u].", __func__, wqeNum_);
-    
-    taskParam.taskType                 = Hccl::TaskParamType::TASK_DPU_CHANNEL_FENCE;
+    return HCCL_SUCCESS;
+}
+
+HcclResult HostCpuRoceChannel::ChannelFence()
+{
+    std::lock_guard<std::mutex> lock(sendCq_mutex);
+    Hccl::TaskParam taskParam{};
+    taskParam.beginTime = hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
+    HCCL_INFO("[HostCpuRoceChannel::%s] ChannelFence start, wqeNum_=%u", __func__, wqeNum_);
+    HcclResult ret = WaitForFenceCompletion();
+    if (ret != HCCL_SUCCESS) {
+        return ret;
+    }
+
+    taskParam.taskType = Hccl::TaskParamType::TASK_DPU_CHANNEL_FENCE;
     taskParam.taskPara.Notify.notifyID = INVALID_U64;
-    taskParam.taskPara.Notify.value    = 1;
-    taskParam.endTime  = hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
+    taskParam.taskPara.Notify.value = 1;
+    taskParam.endTime = hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
     if (dfxCallback_ != nullptr) {
         dfxCallback_(taskParam, reinterpret_cast<u64>(this));
     }
