@@ -220,13 +220,10 @@ HcclResult AicpuTsThread::LocalNotifyWait(uint32_t notifyId) const
 HcclResult AicpuTsThread::LocalNotifyRecord(uint32_t notifyId) const
 {
     u64 beginTime = ProfGetCurCpuTimestamp();
+    u32 taskId = GetTaskId();
 
     CHK_RET(pImpl_->NotifyRecordLoc(notifyId));
 
-    void *streamLitePtr = GetStreamLitePtr();
-    Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(streamLitePtr);
-    Hccl::RtsqBase *rtsq = streamLite->GetRtsq();
-    u32 taskId = rtsq->GetTaskId();
     CHK_RET(ReportAicpuNotifyRecordTask(notifyId, beginTime, taskId, streamLite->GetSqId()));
     return HCCL_SUCCESS;
 }
@@ -240,13 +237,10 @@ HcclResult AicpuTsThread::LocalNotifyRecord(ThreadHandle dstThread, uint32_t dst
 HcclResult AicpuTsThread::LocalNotifyWait(uint32_t notifyId, uint32_t timeout) const
 {
     u64 beginTime = ProfGetCurCpuTimestamp();
+    u32 taskId = GetTaskId();
 
     CHK_RET(pImpl_->NotifyWait(notifyId, timeout));
 
-    void *streamLitePtr = GetStreamLitePtr();
-    Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(streamLitePtr);
-    Hccl::RtsqBase *rtsq = streamLite->GetRtsq();
-    u32 taskId = rtsq->GetTaskId();
     CHK_RET(ReportAicpuNotifyWaitTask(notifyId, beginTime, taskId, streamLite->GetSqId()));
     
     return HCCL_SUCCESS;
@@ -255,15 +249,12 @@ HcclResult AicpuTsThread::LocalNotifyWait(uint32_t notifyId, uint32_t timeout) c
 HcclResult AicpuTsThread::LocalCopy(void *dst, const void *src, uint64_t sizeByte) const
 {
     u64 beginTime = ProfGetCurCpuTimestamp();
+    u32 taskId = GetTaskId();
     
     uint64_t dstAddr = reinterpret_cast<uint64_t>(dst);
     uint64_t srcAddr = reinterpret_cast<uint64_t>(src);
     CHK_RET(pImpl_->SdmaCopy(dstAddr, srcAddr, sizeByte));
 
-    void *streamLitePtr = GetStreamLitePtr();
-    Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(streamLitePtr);
-    Hccl::RtsqBase *rtsq = streamLite->GetRtsq();
-    u32 taskId = rtsq->GetTaskId();
     CHK_RET(ReportAicpuLocalCopyTask(dst, src, sizeByte, beginTime, taskId, streamLite->GetSqId()));
     return HCCL_SUCCESS;
 }
@@ -272,6 +263,7 @@ HcclResult AicpuTsThread::LocalReduce(
     void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType, HcommReduceOp reduceOp) const
 {
     u64 beginTime = ProfGetCurCpuTimestamp();
+    u32 taskId = GetTaskId();
 
     uint64_t dstAddr = reinterpret_cast<uint64_t>(dst);
     uint64_t srcAddr = reinterpret_cast<uint64_t>(src);
@@ -280,10 +272,6 @@ HcclResult AicpuTsThread::LocalReduce(
 
     CHK_RET(pImpl_->SdmaReduce(dstAddr, srcAddr, sizeByte, dataTypeRaw, reduceOpRaw));
 
-    void *streamLitePtr = GetStreamLitePtr();
-    Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(streamLitePtr);
-    Hccl::RtsqBase *rtsq = streamLite->GetRtsq();
-    u32 taskId = rtsq->GetTaskId();
     CHK_RET(
         ReportAicpuLocalReduceTask(dst, src, sizeByte, dataType, reduceOp, beginTime, taskId, streamLite->GetSqId()));
     return HCCL_SUCCESS;
@@ -386,6 +374,14 @@ HcclResult AicpuTsThread::GetSqHeadAndTail(uint32_t &sqHead, uint32_t &sqTail)
     CHK_RET(QuerySqStatusByType(devId_, sqIds, DRV_SQCQ_PROP_SQ_HEAD, sqHead));
 #endif
     return HCCL_SUCCESS;
+}
+
+uint32_t AicpuTsThread::GetTaskId() const
+{
+    void *streamLitePtr = GetStreamLitePtr();
+    Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(streamLitePtr);
+    Hccl::RtsqBase *rtsq = streamLite->GetRtsq();
+    return rtsq->GetTaskId();
 }
 
 bool AicpuTsThread::GetMaster() const
