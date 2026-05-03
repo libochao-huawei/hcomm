@@ -93,3 +93,26 @@ TEST_F(CcuMicroCodeTest, Test)
         HCCL_INFO("index[%d]: %s", i, instrStr[i].c_str());
     }
 }
+
+TEST_F(CcuMicroCodeTest, ParseInstr_UnsupportedInstrHeader)
+{
+    CcuInstr ccuInstr = {};
+    ccuInstr.header.header = 0xFFFF;
+    std::string result = ParseInstr(&ccuInstr);
+    EXPECT_TRUE(result.find("Unsupported instruction with header") != std::string::npos);
+    EXPECT_TRUE(result.find("0xffff") != std::string::npos);
+}
+
+TEST_F(CcuMicroCodeTest, ParseMSList_CountExceedsMax)
+{
+    CcuInstr ccuInstr = {};
+    ccuInstr.header.header = InstrHeader(REDUCE_TYPE, ADD_CODE).header;
+    ccuInstr.v1.add.count = 7;
+    uint16_t msId[CCU_REDUCE_MAX_MS] = {0};
+    for (uint16_t i = 0; i < CCU_REDUCE_MAX_MS; i++) {
+        msId[i] = i;
+    }
+    AddInstr(&ccuInstr, msId, 7, 0, 0, 0, 0x1, 0, 0xff, 1, 0);
+    std::string result = ParseInstr(&ccuInstr);
+    EXPECT_TRUE(result.find("MS[]") != std::string::npos);
+}

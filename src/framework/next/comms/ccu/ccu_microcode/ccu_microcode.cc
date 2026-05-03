@@ -1053,6 +1053,9 @@ static std::unordered_map<uint16_t, ParseInstrFunc> g_parseInstrSqeMap = {
 
 std::string ParseInstr(const CcuInstr *instr)
 {
+    if (g_parseInstrSqeMap.find(instr->header.header) == g_parseInstrSqeMap.end()) {
+        return Hccl::StringFormat("Unsupported instruction with header: 0x%04x", instr->header.header);
+    }
     return g_parseInstrSqeMap[instr->header.header](instr);
 }
 

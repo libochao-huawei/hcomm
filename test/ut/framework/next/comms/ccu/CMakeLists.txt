@@ -12,6 +12,9 @@ set(src_to_test_list
     main.cc
     hccl_api_base_test.cc
     ut_CcuComponent_test.cc
+    ut_ccu_microcode.cc
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_microcode/ccu_microcode.cc
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_microcode/ccu_assist.cc
 )
 
 add_executable(hccl_utest_comms_ccu_features ${src_to_test_list})

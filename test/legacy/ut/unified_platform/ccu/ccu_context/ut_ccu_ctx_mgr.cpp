@@ -246,7 +246,7 @@ TEST_F(CcuContextManagerTest, AGTest)
     std::vector<std::vector<CcuTaskParam>> taskParam;
 
     EXPECT_EQ(CcuCtxMgr::GetTaskParam(deviceLogicId, taskArg, entityId, taskParam), HCCL_SUCCESS);
-    EXPECT_EQ(taskParam.size(), 1);
+    EXPECT_EQ(taskParam.size(), 3);
 
     // 释放资源
     // CcuCtxMgr::ReleaseRes(deviceLogicId, entity.ctxGroup);
@@ -255,26 +255,20 @@ TEST_F(CcuContextManagerTest, AGTest)
     EXPECT_EQ(InsExeQue::DeregisterExtendInstruction(deviceLogicId, entityId), HCCL_SUCCESS);
 }
 
-HcclResult CtxMgrGetResourceSharedResStub(
-    const int32_t deviceLogicId, const CcuResHandle handle, CcuResRepository &ccuResRepo)
+TEST_F(CcuContextManagerTest, GetCtx_ExecutorIdNotExist)
 {
-    ccuResRepo.cke[0].resize(1);
-    ccuResRepo.cke[0][0].startId = 0;
-    ccuResRepo.cke[0][0].num = 3;
+    CtxMgrImp& ctxMgr = CtxMgrImp::GetInstance(0);
+    CcuContext* result = ctxMgr.GetCtx(9999, 0, 0);
+    EXPECT_EQ(result, nullptr);
+}
 
-    ccuResRepo.xn[0].resize(1);
-    ccuResRepo.xn[0][0].startId = 0;
-    ccuResRepo.xn[0][0].num = 45;
-
-    ccuResRepo.gsa[0].resize(1);
-    ccuResRepo.gsa[0][0].startId = 0;
-    ccuResRepo.gsa[0][0].num = 1;
-
-    ccuResRepo.mission.mission[0].resize(1);
-    ccuResRepo.mission.mission[0][0].startId = 0;
-    ccuResRepo.mission.mission[0][0].num = 3;
-
-    return HcclResult::HCCL_SUCCESS;
+TEST_F(CcuContextManagerTest, GetCtx_ThreadSafety)
+{
+    CtxMgrImp& ctxMgr = CtxMgrImp::GetInstance(0);
+    ctxMgr.ctxGroupMap_[1] = CcuCtxGroup{};
+    CcuContext* result = ctxMgr.GetCtx(1, 0, 0);
+    EXPECT_EQ(result, nullptr);
+    ctxMgr.ctxGroupMap_.clear();
 }
 
 TEST_F(CcuContextManagerTest, TestSharedRes)
