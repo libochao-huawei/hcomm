@@ -254,38 +254,66 @@ HcclResult AicpuTsThread::LocalNotifyWait(uint32_t notifyId, uint32_t timeout) c
 
 HcclResult AicpuTsThread::LocalCopy(void *dst, const void *src, uint64_t sizeByte) const
 {
-    u64 beginTime = ProfGetCurCpuTimestamp();
-    
-    uint64_t dstAddr = reinterpret_cast<uint64_t>(dst);
-    uint64_t srcAddr = reinterpret_cast<uint64_t>(src);
-    CHK_RET(pImpl_->SdmaCopy(dstAddr, srcAddr, sizeByte));
-
     void *streamLitePtr = GetStreamLitePtr();
     Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(streamLitePtr);
     Hccl::RtsqBase *rtsq = streamLite->GetRtsq();
-    u32 taskId = rtsq->GetTaskId();
-    CHK_RET(ReportAicpuLocalCopyTask(dst, src, sizeByte, beginTime, taskId, streamLite->GetSqId()));
+
+    uint64_t dstAddr = reinterpret_cast<uint64_t>(dst);
+    uint64_t srcAddr = reinterpret_cast<uint64_t>(src);
+    uint8_t *dstByte = static_cast<uint8_t *>(dst);
+    uint8_t *srcByte = static_cast<uint8_t *>(const_cast<void *>(src));
+
+    uint64_t maxSize = 4 * 1024 * 1024 * 1024; // 4GB
+    uint64_t realSize = sizeByte;
+    uint64_t remainSize = sizeByte;
+    uint64_t doneSize = 0;
+    while (remainSize > 0) {
+        u64 beginTime = ProfGetCurCpuTimestamp();
+        u32 taskId = rtsq->GetTaskId();
+
+        realSize = (remainSize > maxSize) ? maxSize : remainSize;
+        CHK_RET(pImpl_->SdmaCopy(dstAddr + doneSize, srcAddr + doneSize, realSize));
+        doneSize += realSize;
+        remainSize -= realSize;
+
+        CHK_RET(ReportAicpuLocalCopyTask(
+            dstByte + doneSize, srcByte + doneSize, realSize, beginTime, taskId, streamLite->GetSqId()));
+    }
+
     return HCCL_SUCCESS;
 }
 
 HcclResult AicpuTsThread::LocalReduce(
     void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType, HcommReduceOp reduceOp) const
 {
-    u64 beginTime = ProfGetCurCpuTimestamp();
-
-    uint64_t dstAddr = reinterpret_cast<uint64_t>(dst);
-    uint64_t srcAddr = reinterpret_cast<uint64_t>(src);
-    uint32_t dataTypeRaw = static_cast<uint32_t>(dataType);
-    uint32_t reduceOpRaw = static_cast<uint32_t>(reduceOp);
-
-    CHK_RET(pImpl_->SdmaReduce(dstAddr, srcAddr, sizeByte, dataTypeRaw, reduceOpRaw));
-
     void *streamLitePtr = GetStreamLitePtr();
     Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(streamLitePtr);
     Hccl::RtsqBase *rtsq = streamLite->GetRtsq();
-    u32 taskId = rtsq->GetTaskId();
-    CHK_RET(
-        ReportAicpuLocalReduceTask(dst, src, sizeByte, dataType, reduceOp, beginTime, taskId, streamLite->GetSqId()));
+
+    uint64_t dstAddr = reinterpret_cast<uint64_t>(dst);
+    uint64_t srcAddr = reinterpret_cast<uint64_t>(src);
+    uint8_t *dstByte = static_cast<uint8_t *>(dst);
+    uint8_t *srcByte = static_cast<uint8_t *>(const_cast<void *>(src));
+    uint32_t dataTypeRaw = static_cast<uint32_t>(dataType);
+    uint32_t reduceOpRaw = static_cast<uint32_t>(reduceOp);
+
+    uint64_t maxSize = 4 * 1024 * 1024 * 1024; // 4GB
+    uint64_t realSize = sizeByte;
+    uint64_t remainSize = sizeByte;
+    uint64_t doneSize = 0;
+    while (remainSize > 0) {
+        u64 beginTime = ProfGetCurCpuTimestamp();
+        u32 taskId = rtsq->GetTaskId();
+
+        realSize = (remainSize > maxSize) ? maxSize : remainSize;
+        CHK_RET(pImpl_->SdmaReduce(dstAddr + doneSize, srcAddr + doneSize, realSize, dataTypeRaw, reduceOpRaw));
+        doneSize += realSize;
+        remainSize -= realSize;
+
+        CHK_RET(ReportAicpuLocalReduceTask(dstByte + doneSize, srcByte + doneSize, realSize, dataType, reduceOp,
+            beginTime, taskId, streamLite->GetSqId()));
+    }
+
     return HCCL_SUCCESS;
 }
 
