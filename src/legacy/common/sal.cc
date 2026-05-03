@@ -87,7 +87,7 @@ u64 SalGetCurrentTimestamp()
 
 u64 GetCurAicpuTimestamp()
 {
-    struct timespec timestamp;
+    struct timespec timestamp = {};
     (void)clock_gettime(1, &timestamp);
     return static_cast<u64>((timestamp.tv_sec * 1000000000U) + (timestamp.tv_nsec));
 }

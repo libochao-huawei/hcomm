@@ -20,8 +20,8 @@
 #define protected public
 #endif
 
-#include "transport_ibverbs.h"
-#include "transport_ibverbs_pub.h"
+#include "transport_device_ibverbs.h"
+#include "transport_device_ibverbs_pub.h"
 #include "mem_host_pub.h"
 #include "mem_device_pub.h"
 #include "sal.h"
@@ -36,49 +36,37 @@
 using namespace std;
 using namespace hccl;
 
-class TransportIbverbs_UT : public testing::Test
+class TransportDeviceIbverbs_UT : public testing::Test
 {
 protected:
     static void SetUpTestCase()
     {
-        std::cout << "\033[36m--TransportIbverbs_UT SetUP--\033[0m" << std::endl;
+        std::cout << "\033[36m--TransportDeviceIbverbs_UT SetUP--\033[0m" << std::endl;
     }
     static void TearDownTestCase()
     {
-        std::cout << "\033[36m--TransportIbverbs_UT TearDown--\033[0m" << std::endl;
+        std::cout << "\033[36m--TransportDeviceIbverbs_UT TearDown--\033[0m" << std::endl;
     }
     virtual void SetUp()
     {
-        dispatcher = new (std::nothrow) DispatcherPub(s32(0));
-        std::unique_ptr<NotifyPool> notifyPoolTemp;
-        notifyPoolTemp.reset(new (std::nothrow) NotifyPool());
-        notifyPool = std::move(notifyPoolTemp);
-        machinePara.deviceLogicId = 0;
-        if (deviceMem.ptr() == nullptr) {
-            DeviceMem::alloc(deviceMem, devSize);
-        }
-        machinePara.inputMem = deviceMem;
     }
     virtual void TearDown()
     {
-        std::cout << "A Test TearDown" << std::endl;
-        delete dispatcher;
-        if (deviceMem.ptr() != nullptr){
-            deviceMem.free();
-        }
         GlobalMockObject::verify();
     }
-
-    DispatcherPub *dispatcher;
-    std::unique_ptr<NotifyPool> notifyPool = nullptr;
-    MachinePara machinePara;
-    DeviceMem deviceMem;
-    std::chrono::milliseconds timeout = std::chrono::milliseconds(3000);
-    int devSize = 1024;
 };
 
-TEST_F(TransportIbverbs_UT, TransportIbverbs_Constructor)
+TEST_F(TransportDeviceIbverbs_UT, TransportDeviceIbverbs_Constructor)
 {
-    std::shared_ptr<TransportIbverbs> ibverbs = std::make_shared<TransportIbverbs>(dispatcher, notifyPool, machinePara, timeout);
+    DispatcherPub dispatcherTemp(s32(0));
+    std::unique_ptr<NotifyPool> notifyPoolTemp;
+    notifyPoolTemp.reset(new (std::nothrow) NotifyPool());
+    MachinePara machineParaTemp;
+    machineParaTemp.deviceLogicId = 0;
+    TransportDeviceIbverbsData transDevIbverbsData;
+    std::chrono::milliseconds timeout = std::chrono::milliseconds(3000);
+    
+    std::shared_ptr<TransportDeviceIbverbs> ibverbs = std::make_shared<TransportDeviceIbverbs>(
+        &dispatcherTemp, notifyPoolTemp, machineParaTemp, timeout, transDevIbverbsData);
     EXPECT_NE(ibverbs, nullptr);
 }

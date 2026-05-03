@@ -190,7 +190,7 @@ HcclResult HcclSocket::AddWhiteList(std::vector<SocketWlistInfo> &wlistInfoVec)
 
     std::vector<struct SocketWlistInfoT> wlistInfosVec;
     for (auto remote : wlistInfoVec) {
-        struct SocketWlistInfoT wlistInfo = {0};
+        struct SocketWlistInfoT wlistInfo = {};
         wlistInfo.connLimit = remote.connLimit;
         wlistInfo.remoteIp.addr = remote.remoteIp.addr;
         wlistInfo.remoteIp.addr6 = remote.remoteIp.addr6;
@@ -215,7 +215,7 @@ HcclResult HcclSocket::DelWhiteList(std::vector<SocketWlistInfo> &wlistInfoVec)
 
     std::vector<struct SocketWlistInfoT> wlistInfosVec;
     for (auto remote : wlistInfoVec) {
-        struct SocketWlistInfoT wlistInfo = {0};
+        struct SocketWlistInfoT wlistInfo = {};
         wlistInfo.connLimit = remote.connLimit;
         wlistInfo.remoteIp.addr = remote.remoteIp.addr;
         wlistInfo.remoteIp.addr6 = remote.remoteIp.addr6;
@@ -298,7 +298,7 @@ void HcclSocket::Close()
             HCCL_WARNING("[Close] socket's fdHandle is null, do not need close.");
             return;
         }
-        SocketCloseInfoT closeInfo = {0};
+        SocketCloseInfoT closeInfo = {};
         closeInfo.socketHandle = nicSocketHandle_;
         closeInfo.fdHandle = fdHandle_;
         closeInfo.disuseLinger = static_cast<s32>(forceClose_);
@@ -470,7 +470,7 @@ HcclResult HcclSocket::Send(const std::string &sendMsg)
 {
     CHK_PTR_NULL(fdHandle_);
     u32 msgLen = sendMsg.length();
-    u8 buff[MAX_MSG_STR_LEN] = {0};
+    u8 buff[MAX_MSG_STR_LEN] = {};
     s32 sRet = strcpy_s(reinterpret_cast<char *>(buff), MAX_MSG_STR_LEN, sendMsg.c_str());
     if (sRet != 0) {
         HCCL_ERROR("[Send] Block send message length[%u] is illegal", msgLen);
@@ -486,7 +486,7 @@ HcclResult HcclSocket::Recv(std::string &recvMsg, u32 timeout)
 {
     CHK_PTR_NULL(fdHandle_);
     recvMsg.clear();
-    u8 recvBuf[MAX_MSG_STR_LEN] = {0};
+    u8 recvBuf[MAX_MSG_STR_LEN] = {};
     CHK_RET(hrtRaSocketBlockRecv(fdHandle_, reinterpret_cast<void *>(recvBuf), MAX_MSG_STR_LEN,
         [this]() -> bool { return this->GetStopFlag(); }, timeout));
     recvMsg.assign(reinterpret_cast<char *>(recvBuf));

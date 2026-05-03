@@ -281,7 +281,7 @@ HcclResult SalIsDirExist(const std::string &dir, s32 &status)
         status = 1;
         return HCCL_E_PARA;
     }
-    char realPath[PATH_MAX] = {0};
+    char realPath[PATH_MAX] = {};
     if (realpath(dir.c_str(), realPath) == nullptr) {
         // 如果错误码是文件不存在，记录状态，否则报错
         if (errno == ENOENT) {

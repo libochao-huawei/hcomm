@@ -37,7 +37,7 @@ bool CcuRepBufReduce::Translate(CcuInstr *&instr, uint16_t &instrId, const Trans
     // 这里需要注意，在数据格式膨胀的情况下，需要传入用来存放输出的MSId
     // 特别是2P场景，输入MS的数目为2，但是在8bit进，32bit出的场景，输出MS的数目为4
     // 传入的MS中已经包含了需要使用的输入输出的最大量，因此，这里应该直接去MS的size
-    uint16_t msId[CCU_REDUCE_MAX_MS] = {0};
+    uint16_t msId[CCU_REDUCE_MAX_MS] = {};
     for (uint16_t i = 0; i < mem.size(); i++) {
         msId[i] = mem[i].Id();
     }

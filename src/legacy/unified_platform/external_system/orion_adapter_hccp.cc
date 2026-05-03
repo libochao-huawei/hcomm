@@ -312,7 +312,7 @@ static void HRaSocketBatchClose(struct SocketCloseInfoT conn[], u32 num)
 void HrtRaSocketCloseOne(RaSocketCloseParam &in)
 {
     HCCL_INFO("[CloseOne][RaSocket] Input params: socketHandle=%p, fdHandle=%p", in.socketHandle, in.fdHandle);
-    struct SocketCloseInfoT closeInfo = {0};
+    struct SocketCloseInfoT closeInfo = {};
     closeInfo.fdHandle     = in.fdHandle;
     closeInfo.socketHandle = in.socketHandle;
 
@@ -755,7 +755,7 @@ void HrtRaSocketGetVnicIpInfos(u32 phyId, DeviceIdType deviceIdType, u32 deviceI
             deviceId, vnicIP.Describe().c_str());
         return;
     }
-    struct IpInfo vnicIpInfo;
+    struct IpInfo vnicIpInfo = {};
     (void)memset_s(&vnicIpInfo, sizeof(IpInfo), 0, sizeof(IpInfo));
     IdType idType = static_cast<IdType>(deviceIdType);
     auto ret = RaSocketGetVnicIpInfos(phyId, idType, &deviceId, 1, &vnicIpInfo);
@@ -806,7 +806,7 @@ std::vector<std::pair<std::string, IpAddress>> HrtGetHostIf(u32 devPhyId)
 {
     HCCL_INFO("[HrtGetHostIf] Input params: devPhyId=%u", devPhyId);
     std::vector<std::pair<std::string, IpAddress>> hostIfs;
-    struct RaGetIfattr                           config = {0};
+    struct RaGetIfattr                           config = {};
     config.phyId                                         = devPhyId;
     config.nicPosition                                   = static_cast<u32>(NetworkMode::NETWORK_PEER_ONLINE);
 
@@ -838,7 +838,7 @@ vector<IpAddress> HrtGetDeviceIp(u32 devicePhyId, NetworkMode netWorkMode)
 {
     HCCL_INFO("[HrtGetDeviceIp] Input params: devicePhyId=%u", devicePhyId);
     vector<IpAddress>     ipAddr;
-    struct RaGetIfattr  config = {0};
+    struct RaGetIfattr  config = {};
     config.phyId                = devicePhyId;
     config.nicPosition          = static_cast<u32>(netWorkMode);
 
@@ -1019,7 +1019,7 @@ int HrtGetRaQpStatus(QpHandle qpHandle)
 void HrtRaMrReg(QpHandle qpHandle, RaMrInfo &info)
 {
     CHECK_NULLPTR(qpHandle, "[HrtRaMrReg] qpHandle is nullptr!");
-    struct MrInfoT mrInfo;
+    struct MrInfoT mrInfo = {};
     mrInfo.addr = info.addr;
     mrInfo.size = info.size;
     mrInfo.access = info.access;
@@ -1035,7 +1035,7 @@ void HrtRaMrReg(QpHandle qpHandle, RaMrInfo &info)
 void HrtRaMrDereg(QpHandle qpHandle, RaMrInfo &info)
 {
     CHECK_NULLPTR(qpHandle, "[HrtRaMrDereg] qpHandle is nullptr!");
-    struct MrInfoT mrInfo;
+    struct MrInfoT mrInfo = {};
     mrInfo.addr = info.addr;
     mrInfo.size = info.size;
     mrInfo.access = info.access;
@@ -1085,13 +1085,13 @@ RaSendWrResp HrtRaSendOneWr(QpHandle qpHandle, HRaSendWr &in)
     bufList.addr = in.locAddr;
     bufList.len  = in.len;
 
-    struct SendWr wr;
+    struct SendWr wr = {};
     wr.op        = in.op;
     wr.dstAddr   = in.rmtAddr;
     wr.sendFlag = in.sendFlag;
     wr.bufNum   = 1; // 此处list只有一个，设置为1
     wr.bufList  = &bufList;
-    struct SendWrRsp opRsp;
+    struct SendWrRsp opRsp = {};
     HrtRaSendWr(qpHandle, &wr, &opRsp);
 
     return RaSendWrResp(opRsp.wqeTmp.sqIndex, opRsp.wqeTmp.wqeIndex, opRsp.db.dbIndex, opRsp.db.dbInfo);
@@ -1650,7 +1650,7 @@ static void ConstructSendWrReq(HrtRaUbSendWrReqParam &in, struct WrSgeList &sge,
 
 HrtRaUbSendWrRespParam HrtRaUbPostSend(JettyHandle jettyHandle, HrtRaUbSendWrReqParam &in)
 {
-    struct WrSgeList sge;
+    struct WrSgeList sge = {};
     struct SendWrData sendWr {};
 
     ConstructWrSge(in, sge);
@@ -1895,7 +1895,7 @@ RequestHandle RaSocketConnectOneAsync(RaSocketConnectParam &in)
 RequestHandle RaSocketCloseOneAsync(RaSocketCloseParam &in)
 {
     HCCL_INFO("[RaSocketCloseOneAsync] Input params: socketHandle=%p, fdHandle=%p", in.socketHandle, in.fdHandle);
-    struct SocketCloseInfoT closeInfo = {0};
+    struct SocketCloseInfoT closeInfo = {};
     closeInfo.fdHandle     = in.fdHandle;
     closeInfo.socketHandle = in.socketHandle;
 
@@ -2254,7 +2254,7 @@ void HrtRaGetSecRandom(u32 *value, u32 &devPhyId)
 {
     CHECK_NULLPTR(value, "[HrtRaGetSecRandom] value is nullptr!");
     HCCL_INFO("[HrtRaGetSecRandom] Input params: value=%u, devPhyId=%u", *value, devPhyId);
-    struct RaInfo raInfo;
+    struct RaInfo raInfo = {};
     raInfo.mode = HrtNetworkMode::HDC;
     raInfo.phyId = devPhyId;
 
@@ -2354,7 +2354,7 @@ HcclResult HrtRaDestroyCq(RdmaHandle rdmaHandle, CqInfo& cq)
 {
     CHK_PTR_NULL(rdmaHandle);
     HCCL_INFO("[HrtRaDestroyCq] Input params: rdmaHandle=%p, sq=%p, rq=%p, context=%p", rdmaHandle, cq.sq, cq.rq, cq.context);
-    struct CqAttr attr;
+    struct CqAttr attr = {};
     attr.qpContext = &cq.context;
     attr.ibSendCq = &cq.sq;
     attr.ibRecvCq = &cq.rq;
@@ -2372,7 +2372,7 @@ HcclResult HrtRaNormalQpCreate(RdmaHandle rdmaHandle, QpInfo& qp)
 {
     CHK_PTR_NULL(rdmaHandle);
     HCCL_INFO("[HrtRaNormalQpCreate] Input params: rdmaHandle=%p, context=%p", rdmaHandle, qp.context);
-    struct ibv_qp_init_attr ibQpAttr;
+    struct ibv_qp_init_attr ibQpAttr = {};
     CHK_SAFETY_FUNC_RET(memset_s(&ibQpAttr, sizeof(ibv_qp_init_attr), 0, sizeof(ibv_qp_init_attr)));
     ibQpAttr.qp_context= qp.context;
     ibQpAttr.send_cq = qp.sendCq;
