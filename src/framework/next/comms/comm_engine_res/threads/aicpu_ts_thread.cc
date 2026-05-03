@@ -252,41 +252,62 @@ HcclResult AicpuTsThread::LocalNotifyWait(uint32_t notifyId, uint32_t timeout) c
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsThread::LocalCopy(void *dst, const void *src, uint64_t sizeByte) const
+template <typename Operation, typename ReportOp>
+HcclResult AicpuTsThread::LocalProcess(
+    void *dst, const void *src, uint64_t sizeByte, Operation &&op, ReportOp &&reportOp) const
 {
-    u64 beginTime = ProfGetCurCpuTimestamp();
-    
-    uint64_t dstAddr = reinterpret_cast<uint64_t>(dst);
-    uint64_t srcAddr = reinterpret_cast<uint64_t>(src);
-    CHK_RET(pImpl_->SdmaCopy(dstAddr, srcAddr, sizeByte));
-
     void *streamLitePtr = GetStreamLitePtr();
     Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(streamLitePtr);
     Hccl::RtsqBase *rtsq = streamLite->GetRtsq();
-    u32 taskId = rtsq->GetTaskId();
-    CHK_RET(ReportAicpuLocalCopyTask(dst, src, sizeByte, beginTime, taskId, streamLite->GetSqId()));
+
+    uint64_t dstAddr = reinterpret_cast<uint64_t>(dst);
+    uint64_t srcAddr = reinterpret_cast<uint64_t>(src);
+    uint8_t *dstByte = static_cast<uint8_t *>(dst);
+    uint8_t *srcByte = static_cast<uint8_t *>(const_cast<void *>(src));
+
+    constexpr uint64_t maxSize = 4ULL * 1024 * 1024 * 1024;
+    uint64_t remainSize = sizeByte;
+    uint64_t doneSize = 0;
+
+    while (remainSize > 0) {
+        uint64_t realSize = std::min(remainSize, maxSize);
+        u64 beginTime = ProfGetCurCpuTimestamp();
+        u32 taskId = rtsq->GetTaskId();
+
+        CHK_RET(op(dstAddr + doneSize, srcAddr + doneSize, realSize));
+        CHK_RET(reportOp(dstByte + doneSize, srcByte + doneSize, realSize, beginTime, taskId, streamLite->GetSqId()));
+
+        doneSize += realSize;
+        remainSize -= realSize;
+    }
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsThread::LocalReduce(
-    void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType, HcommReduceOp reduceOp) const
+HcclResult AicpuTsThread::LocalCopy(void *dst, const void *src, uint64_t size) const
 {
-    u64 beginTime = ProfGetCurCpuTimestamp();
+    return LocalProcess(
+        dst, src, size,
+        [this](uint64_t dst, uint64_t src, uint64_t size) {
+            return pImpl_->SdmaCopy(dst, src, size);
+        },
+        [this](void *dst, const void *src, uint64_t size, uint64_t beginTime, uint32_t taskId, uint32_t sqId) {
+            return ReportAicpuLocalCopyTask(dst, src, size, beginTime, taskId, sqId);
+        });
+}
 
-    uint64_t dstAddr = reinterpret_cast<uint64_t>(dst);
-    uint64_t srcAddr = reinterpret_cast<uint64_t>(src);
+HcclResult AicpuTsThread::LocalReduce(
+    void *dst, const void *src, uint64_t size, HcommDataType dataType, HcommReduceOp reduceOp) const
+{
     uint32_t dataTypeRaw = static_cast<uint32_t>(dataType);
     uint32_t reduceOpRaw = static_cast<uint32_t>(reduceOp);
-
-    CHK_RET(pImpl_->SdmaReduce(dstAddr, srcAddr, sizeByte, dataTypeRaw, reduceOpRaw));
-
-    void *streamLitePtr = GetStreamLitePtr();
-    Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(streamLitePtr);
-    Hccl::RtsqBase *rtsq = streamLite->GetRtsq();
-    u32 taskId = rtsq->GetTaskId();
-    CHK_RET(
-        ReportAicpuLocalReduceTask(dst, src, sizeByte, dataType, reduceOp, beginTime, taskId, streamLite->GetSqId()));
-    return HCCL_SUCCESS;
+    return LocalProcess(
+        dst, src, size,
+        [this, &dataTypeRaw, &reduceOpRaw](uint64_t d, uint64_t s, uint64_t size) {
+            return pImpl_->SdmaReduce(d, s, size, dataTypeRaw, reduceOpRaw);
+        },
+        [this, &dataType, &reduceOp](void *dst, const void *src, uint64_t size, uint64_t beginTime, uint32_t taskId,uint32_t sqId) {
+            return ReportAicpuLocalReduceTask(dst, src, size, dataType, reduceOp, beginTime, taskId, sqId);
+        });
 }
 
 // Private functions
