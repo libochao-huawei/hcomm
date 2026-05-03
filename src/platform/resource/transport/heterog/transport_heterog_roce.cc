@@ -273,7 +273,7 @@ HcclResult TransportHeterogRoce::Iwrite(const TransData &sendData, const HcclEnv
         wr.rkey = envelope.key;
         wr.op = static_cast<u32>(RdmaOp::OP_WRITE);
         wr.sendFlag = RA_SEND_FENCE;
-        struct SendWrRsp opRsp = {0};
+        struct SendWrRsp opRsp = {};
         CHK_RET(HrtRaSendWrV2(dataQpInfo_.qpHandle, &wr, &opRsp, GetWorkflowMode()));
         CHK_RET(DoorBellSend(dataQpInfo_.qpMode, opRsp));
 

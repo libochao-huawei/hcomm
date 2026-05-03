@@ -19,7 +19,7 @@ namespace hccl {
 
 HcclResult HcclIpAddress::SetBianryAddress(s32 family, const union HcclInAddr &address)
 {
-    char buf[IP_ADDRESS_BUFFER_LEN] = {0};
+    char buf[IP_ADDRESS_BUFFER_LEN] = {};
     if (inet_ntop(family, &address, buf, sizeof(buf)) == nullptr) {
         if (family == AF_INET) {
             HCCL_ERROR("ip addr[0x%08x] is invalid IPv4 address.", address.addr.s_addr);

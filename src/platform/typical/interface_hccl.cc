@@ -79,7 +79,7 @@ HcclResult hcclCreateAscendQPWithAttr(AscendQPInfo* ascendQPInfo)
     CHK_RET(CheckDepth(ascendQPInfo->scq_depth));
     CHK_RET(CheckDepth(ascendQPInfo->rq_depth));
     CHK_RET(CheckDepth(ascendQPInfo->rcq_depth));
-    struct TypicalQp qpInfo;
+    struct TypicalQp qpInfo = {};
     QpConfigInfo qpConfigInfo{ascendQPInfo->sq_depth, ascendQPInfo->rq_depth, ascendQPInfo->scq_depth, ascendQPInfo->rcq_depth, 0, 0};
     u32 poolId;
     if (HCCL_SUCCESS == RdmaResourceManager::GetInstance().GetResvMemPoolIdByType(HCCN_RESV_MEM_TYPE_PDCCL, poolId)) {
@@ -129,7 +129,7 @@ HcclResult hcclModifyAscendQPEx(AscendQPInfo* localQPInfo, AscendQPInfo* remoteQ
         HCCL_ERROR("[hcclModifyAscendQPEx]The value of tc[%u] is not a multiple of 4.",
         qpQos->tc), HCCL_E_PARA);    
 
-    struct TypicalQp localQp;
+    struct TypicalQp localQp = {};
     localQp.qpn = localQPInfo->qpn;
     localQp.gidIdx = localQPInfo->gidIdx;
     for (uint32_t i = 0; i < GID_LENGTH; i++) {
@@ -155,7 +155,7 @@ HcclResult hcclDestroyAscendQP(AscendQPInfo* ascendQPInfo)
     s32 deviceLogicId = 0;
     CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
     CHK_PTR_NULL(ascendQPInfo);
-    struct TypicalQp qpInfo;
+    struct TypicalQp qpInfo = {};
     qpInfo.qpn = ascendQPInfo->qpn;
     qpInfo.gidIdx = ascendQPInfo->gidIdx;
     for (uint32_t i = 0; i < GID_LENGTH; i++) {
@@ -303,7 +303,7 @@ HcclResult HcclGetCqeErrInfoList(struct HcclErrCqeInfo *infoList, uint32_t *num)
         infoList[i].qpn = errCqeList[i].qpn;
         infoList[i].time = errCqeList[i].time;
         time_t tmpt = static_cast<time_t>(errCqeList[i].time.tv_sec);
-        struct tm errTime;
+        struct tm errTime = {};
         localtime_r(&tmpt, &errTime);
         HCCL_INFO("[HcclGetCqeErrInfoList] Err Cqe status[%d], qpn[%d], time[%04u-%02d-%02d %02d:%0d:%02d.%06u]", 
             errCqeList[i].status, errCqeList[i].qpn, errTime.tm_year + TIME_FROM_1900,

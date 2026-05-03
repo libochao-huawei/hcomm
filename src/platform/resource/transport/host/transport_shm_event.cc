@@ -169,7 +169,7 @@ HcclResult TransportShmEvent::SocketSend(std::string &message)
     }
 
     /* 使用socket发送，非阻塞。能确保写入发送缓冲区 */
-    u8 buff[MSG_BUFF_SIZE] = {0};
+    u8 buff[MSG_BUFF_SIZE] = {};
 
     s32 sRet = strncpy_s(reinterpret_cast<char *>(buff), msgLen, message.c_str(), message.size());
     CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[ExchangerNetwork][Send]errNo[0x%016llx]str copy failed, return[%d]. ",\
@@ -182,7 +182,7 @@ HcclResult TransportShmEvent::SocketRecv(std::string &message)
 {
     /* 检查入参，包括消息长度是否符合要求，目的rank是否合法，清理出参message */
     message.clear();
-    u8 buff[MSG_BUFF_SIZE] = {0};
+    u8 buff[MSG_BUFF_SIZE] = {};
     CHK_RET(hrtRaSocketBlockRecv(fdHandle_, buff, MSG_BUFF_SIZE));
 
     HCCL_DEBUG("socket deviceLogicId_[%d], msg_len[%u].", deviceLogicId_, MSG_BUFF_SIZE);
@@ -482,7 +482,7 @@ HcclResult TransportShmEvent::Close()
     }
     HCCL_INFO("[Socket][Close] linkTag[%s]", linkTag_.c_str());
     CHK_RET(DelSocketWhiteList());
-    SocketCloseInfoT closeInfo = {0};
+    SocketCloseInfoT closeInfo = {};
     closeInfo.socketHandle = socketHandle_;
     closeInfo.fdHandle = fdHandle_;
     if (hrtRaSocketBatchClose(&closeInfo, 1) != HCCL_SUCCESS) {

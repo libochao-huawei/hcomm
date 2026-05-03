@@ -257,7 +257,7 @@ HcclResult TransportRemoteAccess::RdmaDataTransport(const std::vector<HcomRemote
     std::vector<struct SendWrRsp> opRspVec(addressNum);
     struct SendWrlistDataExt *wr = wrVec.data();
     struct SendWrRsp *opRsp = opRspVec.data();
-    struct SgList list = {0};
+    struct SgList list = {};
     u64 length = addrInfos[0].length;
 
     HCCL_RUN_INFO("RdmaDataTransport begin, addressNum[%u], length[%u]", addressNum, length);
@@ -303,7 +303,7 @@ HcclResult TransportRemoteAccess::RdmaDataTransport(const std::vector<HcomRemote
 HcclResult TransportRemoteAccess::ReadRemoteNotifyBuffer()
 {
     HCCL_INFO("In TransportRemoteAccess ReadRemoteNotifyBuffer begin");
-    struct SgList list = {0};
+    struct SgList list = {};
     struct SendWr wr = {nullptr};
 
     // 构造wr信息
@@ -316,7 +316,7 @@ HcclResult TransportRemoteAccess::ReadRemoteNotifyBuffer()
     wr.op = RDMA_OP_READ; /* RDMA_WRITE: 0 */
     wr.sendFlag = RA_SEND_SIGNALED;
 
-    struct SendWrRsp opRsp = {0};
+    struct SendWrRsp opRsp = {};
     CHK_RET(HrtRaSendWr(handle_, &wr, &opRsp));
     HCCL_INFO("In TransportRemoteAccess ReadRemoteNotifyBuffer end");
     return HCCL_SUCCESS;

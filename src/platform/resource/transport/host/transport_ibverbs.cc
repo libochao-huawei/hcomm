@@ -664,7 +664,7 @@ HcclResult TransportIbverbs::CreateSingleQp(s32 qpMode) // 根据socket个数创
         u32 udpSport = machinePara_.srcPorts.empty()? 0 : machinePara_.srcPorts[0];
         CHK_RET(CreateOneQp(qpMode, HCCL_QPS_PER_CONNECTION_DEFAULT, qpHandle, combineAiQpInfo_.aiQpInfo,
             machinePara_.isAicpuModeEn, udpSport));
-        CombineQpHandle tmpCombineQpHandle;
+        CombineQpHandle tmpCombineQpHandle = {};
         tmpCombineQpHandle.qpHandle = qpHandle;
         combineQpHandles_.push_back(tmpCombineQpHandle);
     }
@@ -961,7 +961,7 @@ HcclResult TransportIbverbs::TxAsync(UserMemType dstMemType, u64 dstOffset,
 {
     std::vector<WqeInfo> wqeInfoVec;
     wqeInfoVec.reserve(WQE_RESERVE_LENGTH);
-    struct WrAuxInfo aux = {0};
+    struct WrAuxInfo aux = {};
     HCCL_DEBUG("TX src[%p] len[%llu] dstOffset[%llu]", src, len, dstOffset);
 
     if (src != nullptr) {
@@ -977,7 +977,7 @@ HcclResult TransportIbverbs::TxWithReduce(UserMemType dstMemType, u64 dstOffset,
 {
     std::vector<WqeInfo> wqeInfoVec;
     wqeInfoVec.reserve(WQE_RESERVE_LENGTH);
-    struct WrAuxInfo aux = {0};
+    struct WrAuxInfo aux = {};
     aux.dataType = RDMA_REDUCE_DATA_TYPE_TABLE[datatype];
     aux.reduceType = RDMA_REDUCE_OP_TYPE_TABLE[redOp];
     if (aux.dataType == static_cast<u32>(RdmaReduceDataType::RDMA_REDUCE_DATA_INVALID) ||
@@ -999,7 +999,7 @@ HcclResult TransportIbverbs::TxWithReduce(const std::vector<TxMemoryInfo> &txWit
 {
     std::vector<WqeInfo> wqeInfoVec;
     wqeInfoVec.reserve(WQE_RESERVE_LENGTH);
-    struct WrAuxInfo aux = {0};
+    struct WrAuxInfo aux = {};
     aux.dataType = RDMA_REDUCE_DATA_TYPE_TABLE[datatype];
     aux.reduceType = RDMA_REDUCE_OP_TYPE_TABLE[redOp];
     if (aux.dataType == static_cast<u32>(RdmaReduceDataType::RDMA_REDUCE_DATA_INVALID) ||
@@ -1175,7 +1175,7 @@ HcclResult TransportIbverbs::TxSendDataAndNotifyWithSingleQP(
         wqeInfoVec.back().wqeData.aux.notifyOffset = offset;
     } else {
         // 发送data notify同步信息
-        struct WrAuxInfo aux = {0};
+        struct WrAuxInfo aux = {};
         void *remoteNotifyaddr = remoteDataNotifyMsg_.addr;
         CHK_RET(AddWqeList(remoteNotifyaddr, notifyValueMem_[machinePara_.deviceLogicId].ptr(), notifySize_,
             WqeType::WQE_TYPE_DATA_NOTIFY, aux, wqeInfoVec));
@@ -1264,7 +1264,7 @@ HcclResult TransportIbverbs::TxSendDataAndNotifyWithMultiQP(std::vector<WqeInfo>
     }
     // 给每个QP最后增加一个属于该QP的DataNotify
     for (u32 qpIndex = 0; qpIndex < actualMultiQpNum; qpIndex++) {
-        struct WrAuxInfo aux = {0};
+        struct WrAuxInfo aux = {};
         void *remoteNotifyaddr = multiQpDataNotifyRemoteMemMsg_[qpIndex].addr;
         CHK_RET(AddWqeList(remoteNotifyaddr, notifyValueMem_[machinePara_.deviceLogicId].ptr(), notifySize_,
             WqeType::WQE_TYPE_DATA_NOTIFY, aux, multiQpWqeInfoVct[qpIndex]));
@@ -1280,7 +1280,7 @@ HcclResult TransportIbverbs::TxAsync(std::vector<TxMemoryInfo>& txMems, Stream &
 {
     std::vector<WqeInfo> wqeInfoVec;
     wqeInfoVec.reserve(WQE_RESERVE_LENGTH);
-    struct WrAuxInfo aux = {0};
+    struct WrAuxInfo aux = {};
 
     for (auto& mem : txMems) {
         HCCL_DEBUG("TX src[%p] len[%llu] dstOffset[%llu]", mem.src, mem.len, mem.dstOffset);
@@ -1453,8 +1453,8 @@ HcclResult TransportIbverbs::RdmaSendAsyncHostNIC(std::vector<WqeInfo> &wqeInfoV
     for (u32 index = 0; index < wqeInfoVec.size(); index++) {
         wqelistVec.push_back(wqeInfoVec[index].wqeData);
     }
-    struct SendWrRsp opRsp = {0};
-    struct SendWrlistDataExt wr = {0};
+    struct SendWrRsp opRsp = {};
+    struct SendWrlistDataExt wr = {};
     for (u32 i = 0; i < wqeInfoVec.size(); i++) {
         wr.memList.addr = wqelistVec[i].memList.addr;
         wr.memList.len = wqelistVec[i].memList.len;
@@ -1482,7 +1482,7 @@ HcclResult TransportIbverbs::RdmaSendAsync(struct SendWr &wr, Stream &stream, Wq
     u32 notifyId)
 {
     HcclResult ret;
-    struct SendWrRsp opRsp = {0};
+    struct SendWrRsp opRsp = {};
     if (!IsTemplateMode()) {
         currentQP_ = 0;
     } else {
@@ -1540,7 +1540,7 @@ HcclResult TransportIbverbs::RdmaSendAsyncHostNIC(struct SendWrlistDataExt &wr, 
     u64 notifyOffset)
 {
     HcclResult ret;
-    struct SendWrRsp opRsp = {0};
+    struct SendWrRsp opRsp = {};
     if (wqeType == WqeType::WQE_TYPE_DATA) {
             ret = dispatcher_->HostNicRdmaSend(combineQpHandles_[0].qpHandle, wr,
                 opRsp, stream, machinePara_.remoteWorldRank);
@@ -1589,7 +1589,7 @@ HcclResult TransportIbverbs::TxSendWqe(void *dstMemPtr, const void *srcMemPtr, u
                                        Stream &stream, WqeType wqeType)
 {
     if (machinePara_.nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE && !useAtomicWrite_) {
-        struct SgList list = {0};
+        struct SgList list = {};
         struct SendWr wr = {nullptr};
         // 构造wr信息
         list.addr = static_cast<u64>(reinterpret_cast<uintptr_t>(srcMemPtr));
@@ -1610,13 +1610,13 @@ HcclResult TransportIbverbs::TxSendWqe(void *dstMemPtr, const void *srcMemPtr, u
         // RDMA异步发送
         CHK_RET(RdmaSendAsync(wr, stream, wqeType, wqeDataOffset, notifyId));
     } else if (machinePara_.nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE && useAtomicWrite_) {
-        struct WrAuxInfo aux = {0};
+        struct WrAuxInfo aux = {};
         std::vector<WqeInfo> wqeInfoVec;
         CHK_RET(AddWqeList(dstMemPtr, srcMemPtr, srcMemSize, wqeType, aux, wqeInfoVec));
         CHK_RET(RdmaSendAsync(wqeInfoVec, stream, false));
         HCCL_DEBUG("TxSendWqe useAtomicWrite[%d]", useAtomicWrite_);
     } else {
-        struct SendWrlistDataExt wr = {0};
+        struct SendWrlistDataExt wr = {};
         // 构造wr信息
         wr.memList.addr = static_cast<u64>(reinterpret_cast<uintptr_t>(srcMemPtr));
         wr.memList.len = srcMemSize;
@@ -1641,7 +1641,7 @@ HcclResult TransportIbverbs::TxSendNotifyWqe(MemMsg& memMsg, const void *srcMemP
                                        Stream &stream)
 {
     if (machinePara_.nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE && !useAtomicWrite_) {
-        struct SgList list = {0};
+        struct SgList list = {};
         struct SendWr wr = {nullptr};
         // 构造wr信息
         list.addr = static_cast<u64>(reinterpret_cast<uintptr_t>(srcMemPtr));
@@ -1656,13 +1656,13 @@ HcclResult TransportIbverbs::TxSendNotifyWqe(MemMsg& memMsg, const void *srcMemP
         // RDMA异步发送
         CHK_RET(RdmaSendAsync(wr, stream, WqeType::WQE_TYPE_ACK_NOTIFY, memMsg.offset, memMsg.notifyId));
     } else if (machinePara_.nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE && useAtomicWrite_) {
-        struct WrAuxInfo aux = {0};
+        struct WrAuxInfo aux = {};
         std::vector<WqeInfo> wqeInfoVec;
         CHK_RET(AddWqeList(memMsg.addr, srcMemPtr, srcMemSize, WqeType::WQE_TYPE_ACK_NOTIFY, aux, wqeInfoVec));
         CHK_RET(RdmaSendAsync(wqeInfoVec, stream, false));
         HCCL_DEBUG("TxSendNotifyWqe useAtomicWrite[%d]", useAtomicWrite_);
     } else {
-        struct SendWrlistDataExt wr = {0};
+        struct SendWrlistDataExt wr = {};
         // 构造wr信息
         wr.memList.addr = static_cast<u64>(reinterpret_cast<uintptr_t>(srcMemPtr));
         wr.memList.len = srcMemSize;
@@ -2190,7 +2190,7 @@ HcclResult TransportIbverbs::RxPrepare(Stream &stream)
 HcclResult TransportIbverbs::TxData(UserMemType dstMemType, u64 dstOffset, const void *src, u64 len, Stream &stream)
 {
     std::vector<WqeInfo> wqeInfoVec;
-    struct WrAuxInfo aux = {0};
+    struct WrAuxInfo aux = {};
     HCCL_DEBUG("TX src[%p] len[%llu] dstOffset[%llu]", src, len, dstOffset);
 
     if (src != nullptr) {
@@ -2552,14 +2552,14 @@ HcclResult TransportIbverbs::WriteCommon(const void *remoteAddr, const void *loc
 HcclResult TransportIbverbs::WriteAsync(
     struct Transport::Buffer &remoteBuf, struct Transport::Buffer &localBuf, Stream &stream)
 {
-    struct WrAuxInfo aux = {0};
+    struct WrAuxInfo aux = {};
     return WriteCommon(remoteBuf.addr, localBuf.addr, remoteBuf.size, stream, WqeType::WQE_TYPE_DATA, aux);
 }
 
 HcclResult TransportIbverbs::WriteReduceAsync(struct Transport::Buffer &remoteBuf, struct Transport::Buffer &localBuf,
     const HcclDataType datatype, HcclReduceOp redOp, Stream &stream)
 {
-    struct WrAuxInfo aux = {0};
+    struct WrAuxInfo aux = {};
     aux.dataType = RDMA_REDUCE_DATA_TYPE_TABLE[datatype];
     aux.reduceType = RDMA_REDUCE_OP_TYPE_TABLE[redOp];
     if (aux.dataType == static_cast<u32>(RdmaReduceDataType::RDMA_REDUCE_DATA_INVALID) ||
@@ -2581,7 +2581,7 @@ HcclResult TransportIbverbs::WriteSync(
 HcclResult TransportIbverbs::ReadAsync(
     struct Transport::Buffer &localBuf, struct Transport::Buffer &remoteBuf, Stream &stream)
 {
-    struct WrAuxInfo aux = {0};
+    struct WrAuxInfo aux = {};
     return WriteCommon(remoteBuf.addr, localBuf.addr, remoteBuf.size, stream, WqeType::WQE_TYPE_READ_DATA, aux);
 }
 

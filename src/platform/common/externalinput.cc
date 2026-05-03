@@ -753,7 +753,7 @@ HcclResult ParseHcclWhitelistFilePath()
             return HCCL_E_PARA;
         }
         // 校验文件是否存在
-        char realFile[PATH_MAX] = {0};
+        char realFile[PATH_MAX] = {};
         if (realpath(filePath.c_str(), realFile) == nullptr) {
             HCCL_RUN_WARNING("[HCCL_ENV][Parse][HcclWhitelistFilePath]path %s is not a valid real path", filePath.c_str());
             g_externalInput.hcclWhiteListFile.clear();
@@ -780,7 +780,7 @@ HcclResult ParseMultiQpSrcPortConfigPath()
             return HCCL_E_PARA;
         }
         // 校验文件是否存在
-        char realFile[PATH_MAX] = {0};
+        char realFile[PATH_MAX] = {};
         if (realpath(filePath.c_str(), realFile) == nullptr) {
             HCCL_ERROR("[Parse][MultiQpSrcPortConfigPath]errNo[0x%016llx] path %s is not a valid real path",
                 HCOM_ERROR_CODE(HCCL_E_PARA), filePath.c_str());
@@ -1339,7 +1339,7 @@ std::string GetLocalRealPath(const std::string &path)
     if (path.empty()) {
         return "";
     }
-    char resolvedPath[PATH_MAX] = {0};
+    char resolvedPath[PATH_MAX] = {};
     if (realpath(path.c_str(), resolvedPath) == nullptr) {
         HCCL_WARNING("Failed to get real path for [%s], errno:%d", path.c_str(), errno);
         return "";
