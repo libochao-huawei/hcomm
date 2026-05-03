@@ -155,7 +155,7 @@ HcclResult RdmaResourceManager::GetCqeErrInfoByQpn(u32 qpn, struct HcclErrCqeInf
             errCqeList[i].status = cqeErrPerQP_[qpn].front().status;
             errCqeList[i].time = cqeErrPerQP_[qpn].front().time;
             time_t tmpt = static_cast<time_t>(errCqeList[i].time.tv_sec);
-            struct tm errTime;
+            struct tm errTime = {};
             localtime_r(&tmpt, &errTime);
             HCCL_INFO("[GetCqeErrInfoByQpn] Err Cqe status[%d], qpn[%d], time[%04u-%02d-%02d %02d:%0d:%02d.%06u]", 
                 errCqeList[i].status, errCqeList[i].qpn, errTime.tm_year + TIME_FROM_1900,

@@ -138,13 +138,13 @@ HcclResult TransportDirectNpu::LoadBinaryFromFile(const char *binPath, aclrtBina
         HCCL_ERROR("[LoadBinaryFromFile] binary path is nullptr"),
         HCCL_E_PTR);
 
-    char realPath[PATH_MAX] = {0};
+    char realPath[PATH_MAX] = {};
     CHK_PRT_RET(realpath(binPath, realPath) == nullptr,
         HCCL_ERROR("LoadBinaryFromFile: %s is not a valid real path, err[%d]", binPath, errno),
         HCCL_E_INTERNAL);
     HCCL_INFO("[LoadBinaryFromFile]realPath: %s", realPath);
 
-    aclrtBinaryLoadOptions loadOptions = {0};
+    aclrtBinaryLoadOptions loadOptions = {};
     aclrtBinaryLoadOption option;
     loadOptions.numOpt = 1;
     loadOptions.options = &option;

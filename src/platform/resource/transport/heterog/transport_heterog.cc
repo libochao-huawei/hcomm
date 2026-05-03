@@ -20,7 +20,7 @@ constexpr u32 SINGLE_WHITE_LIST_NUM = 1;
 constexpr u32 WAIT_LINK_BUILD_DELAY_TIME_US = 10;
 constexpr s32 MAX_LINK_NUM = 10;
 
-std::atomic<u32> TransportHeterog::rankTableCrc_ = {0};
+std::atomic<u32> TransportHeterog::rankTableCrc_ = {};
 TransportHeterog::TransportHeterog(const string &tag, HcclIpAddress &selfIp, HcclIpAddress &peerIp, u32 peerPort,
     u32 selfPort, const TransportResourceInfo &transportResourceInfo)
     : transTag_(tag),

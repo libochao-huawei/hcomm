@@ -1314,7 +1314,7 @@ HcclResult PingMesh::HccnRpingRefillUbPayloadHead(u8 *originalHead, u32 payloadN
 {
     for (u32 i = 0; i < payloadNum; i++) {
         RpingEidHead *EidHead = reinterpret_cast<RpingEidHead*>(originalHead);
-        RpingEidHead EidHeadTmp;
+        RpingEidHead EidHeadTmp = {};
         // 清零之前记录头信息
         errno_t memRet = memcpy_s(&EidHeadTmp, sizeof(RpingEidHead), EidHead, sizeof(RpingEidHead));
         CHK_PRT_RET(memRet != EOK,

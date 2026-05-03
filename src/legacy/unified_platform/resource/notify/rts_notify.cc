@@ -34,7 +34,7 @@ RtsNotify::~RtsNotify()
 
 std::string RtsNotify::SetIpcName() const
 {
-    char ipcName[RTS_IPC_MEM_NAME_LEN] = {0};
+    char ipcName[RTS_IPC_MEM_NAME_LEN] = {};
     HrtIpcSetNotifyName(handle, ipcName, RTS_IPC_MEM_NAME_LEN);
     return ipcName;
 }

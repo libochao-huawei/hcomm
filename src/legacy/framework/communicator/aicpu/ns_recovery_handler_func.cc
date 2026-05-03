@@ -99,7 +99,7 @@ constexpr u64 NSEC_PER_SEC = 1000000000U;
 
 inline u64 GetCurCpuTimestamp()
 {
-    struct timespec timestamp;
+    struct timespec timestamp = {};
     (void)clock_gettime(CLOCK_MONOTONIC_RAW, &timestamp);
     return static_cast<u64>((timestamp.tv_sec * NSEC_PER_SEC) + (timestamp.tv_nsec));
 }
@@ -118,7 +118,7 @@ HcclResult NsRecoveryHandlerFunc::DeviceQuery(const uint32_t devId, const uint32
         size_t ackCount = sizeof(ts_ctrl_msg_body_t);
         queryIn.type = OPERATION_TYPE::OP_QUERY_ABORT_STATUS;
         queryIn.u.query_task_info.choice = APP_ABORT_STS_QUERY_CHOICE::APP_ABORT_STS_QUERY_BY_PID;
-        struct tsdrv_ctrl_msg para;
+        struct tsdrv_ctrl_msg para = {};
         para.tsid = 0;
         para.msg_len = sizeof(ts_ctrl_msg_body_t);
         para.msg = static_cast<void*>(&queryIn);

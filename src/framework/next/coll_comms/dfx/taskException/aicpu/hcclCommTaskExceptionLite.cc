@@ -303,7 +303,7 @@ HcclResult HcclCommTaskExceptionLite::SendTaskExceptionByMBox(const u32 notifyId
         aicpuSqe.u.aicpu_record.ret_code = SwitchSdmaCqeErrCodeToTsErrCode(exceptionInfo.errorCode);
     }
 
-    struct event_summary event;
+    struct event_summary event = {};
     event.dst_engine = TS_CPU;
     event.policy = ONLY;
     event.pid = 0;

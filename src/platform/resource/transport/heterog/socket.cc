@@ -105,7 +105,7 @@ HcclResult Socket::Close()
     }
     HCCL_RUN_INFO("[Socket][Close] tag[%s]", tag_.c_str());
     CHK_RET(DelSocketWhiteList());
-    SocketCloseInfoT closeInfo = {0};
+    SocketCloseInfoT closeInfo = {};
     closeInfo.socketHandle = socketHandle_;
     closeInfo.fdHandle = fdHandle_;
     if (hrtRaSocketBatchClose(&closeInfo, 1) != HCCL_SUCCESS) {
@@ -168,7 +168,7 @@ HcclResult Socket::AddSocketWhiteList()
         return HCCL_SUCCESS;
     }
 
-    SocketWlistInfoT wlistInfo = {0};
+    SocketWlistInfoT wlistInfo = {};
     wlistInfo.connLimit = NIC_SOCKET_CONN_LIMIT;
     s32 sRet = memcpy_s(wlistInfo.tag, sizeof(wlistInfo.tag) - 1, tag_.c_str(), tag_.size());
     CHK_PRT_RET(sRet != EOK, HCCL_ERROR("memcpy_s failed, errorno[%d].", sRet), HCCL_E_MEMORY);
@@ -185,7 +185,7 @@ HcclResult Socket::DelSocketWhiteList()
         return HCCL_SUCCESS;
     }
 
-    SocketWlistInfoT wlistInfo = {0};
+    SocketWlistInfoT wlistInfo = {};
     wlistInfo.connLimit = NIC_SOCKET_CONN_LIMIT;
     s32 sRet = memcpy_s(wlistInfo.tag, sizeof(wlistInfo.tag) - 1, tag_.c_str(), tag_.size());
     CHK_PRT_RET(sRet != EOK, HCCL_ERROR("memcpy_s failed, errorno[%d].", sRet), HCCL_E_MEMORY);

@@ -231,7 +231,7 @@ HcclResult TransportRoce::Connect()
     if (machinePara_.localUserrank < machinePara_.remoteUserrank) {
         HcclRequestInfo* request = nullptr;
         s32 flag = HCCL_TEST_INCOMPLETED;
-        HcclStatus compState = {0};
+        HcclStatus compState = {};
         buffer.localUserrank = machinePara_.localUserrank;
         buffer.remoteUserrank = machinePara_.remoteUserrank;
         TransData sendData(reinterpret_cast<u64>(&buffer), reinterpret_cast<u64>(nullptr), sizeof(RoceRankInfo),
@@ -252,8 +252,8 @@ HcclResult TransportRoce::Connect()
         HcclRequestInfo* request = nullptr;
         s32 improbeFlag = HCCL_IMPROBE_INCOMPLETED;
         s32 testFlag = HCCL_TEST_INCOMPLETED;
-        HcclStatus status = {0};
-        HcclStatus compState = {0};
+        HcclStatus status = {};
+        HcclStatus compState = {};
         HcclMessageInfo *msg = nullptr;
         TransportEndPointInfo srcEp(0, machinePara_.remoteUserrank, 0);
         TransportEndPointInfo dstEp(0, machinePara_.localUserrank, 0);
@@ -832,7 +832,7 @@ HcclResult TransportRoce::Send(const SendRecvParam &sendParam)
 {
     CHK_PTR_NULL(sendParam.ptr);
     s32 flag = HCCL_TEST_INCOMPLETED;
-    HcclStatus compState = {0};
+    HcclStatus compState = {};
     HcclRequestInfo* request = nullptr;
     TransData sendData(
         reinterpret_cast<u64>(sendParam.ptr), reinterpret_cast<u64>(nullptr), sendParam.len, HCCL_DATA_TYPE_INT8);
@@ -861,7 +861,7 @@ HcclResult TransportRoce::WaitSendAsyncComplete(const SendRecvParam &sendParam)
 {
     CHK_PTR_NULL(sendParam.ptr);
     s32 flag = HCCL_TEST_INCOMPLETED;
-    HcclStatus compState = {0};
+    HcclStatus compState = {};
     HcclRequestInfo* request = sendParam.sendRequest;
 
     CHK_RET(Test(*request, flag, compState));
@@ -885,8 +885,8 @@ HcclResult TransportRoce::Recv(const SendRecvParam &recvParam)
     CHK_PTR_NULL(recvParam.ptr);
     s32 improbeFlag = HCCL_IMPROBE_INCOMPLETED;
     s32 TestFlag = HCCL_TEST_INCOMPLETED;
-    HcclStatus status = {0};
-    HcclStatus compState = {0};
+    HcclStatus status = {};
+    HcclStatus compState = {};
     HcclMessageInfo *msg = nullptr;
     TransportEndPointInfo srcEp(0, machinePara_.localUserrank, 0);
     TransportEndPointInfo dstEp(0, machinePara_.remoteUserrank, 0);
@@ -932,8 +932,8 @@ HcclResult TransportRoce::WaitSendAsyncCompleteAndRecv(const SendRecvParam &send
     CHK_PTR_NULL(recvParam.ptr);
     s32 improbeFlag = HCCL_IMPROBE_INCOMPLETED;
     s32 TestFlag = HCCL_TEST_INCOMPLETED;
-    HcclStatus compState = {0};
-    HcclStatus status = {0};
+    HcclStatus compState = {};
+    HcclStatus status = {};
     HcclRequestInfo* sendRequest = sendParam.sendRequest;
     TransportEndPointInfo srcEp(0, machinePara_.localUserrank, 0);
     TransportEndPointInfo dstEp(0, machinePara_.remoteUserrank, 0);
@@ -973,7 +973,7 @@ HcclResult TransportRoce::WaitSendAsyncCompleteAndRecv(const SendRecvParam &send
 
     // 重置TestFlag，保证Improbe不影响Test
     TestFlag = HCCL_TEST_INCOMPLETED;
-    compState = {0};
+    compState = {};
     CHK_RET(Test(*recvRequest, TestFlag, compState));
     CHK_PRT_RET(compState.error > 0, HCCL_ERROR("Test failed, compState.error[%d].", compState.error),
         HCCL_E_INTERNAL);

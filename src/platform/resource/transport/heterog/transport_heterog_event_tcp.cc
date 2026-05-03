@@ -175,7 +175,7 @@ HcclResult TransportHeterogEventTcp::Connect(u32 localUserRank, u32 remoteUserRa
     if (localUserRank < remoteUserRank) {
         HcclRequestInfo* request = nullptr;
         s32 flag = HCCL_TEST_INCOMPLETED;
-        HcclStatus compState = {0};
+        HcclStatus compState = {};
         buffer.localUserRank = localUserRank;
         buffer.remoteUserRank = remoteUserRank;
         TransData sendData(reinterpret_cast<u64>(&buffer), reinterpret_cast<u64>(nullptr), sizeof(TcpRankInfo),
@@ -195,8 +195,8 @@ HcclResult TransportHeterogEventTcp::Connect(u32 localUserRank, u32 remoteUserRa
         HcclRequestInfo* request = nullptr;
         s32 improbeFlag = HCCL_IMPROBE_INCOMPLETED;
         s32 testFlag = HCCL_TEST_INCOMPLETED;
-        HcclStatus status = {0};
-        HcclStatus compState = {0};
+        HcclStatus status = {};
+        HcclStatus compState = {};
         HcclMessageInfo *msg = nullptr;
         TransportEndPointInfo srcEp(0, remoteUserRank, BUILD_TRANS_TAG);
         TransportEndPointInfo dstEp(0, localUserRank, BUILD_TRANS_TAG);
