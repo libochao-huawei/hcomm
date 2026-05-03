@@ -261,9 +261,10 @@ HcclResult CpuTsThread::LocalNotifyWait(uint32_t notifyIdx, uint32_t timeOut) co
 HcclResult CpuTsThread::LocalCopy(void *dst, const void *src, uint64_t sizeByte) const
 {
 #ifndef CCL_KERNEL_AICPU
-    u64 beginTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
+
     HCCL_INFO("[%s]dst[%p], src[%p], sizeByte[%llu].", __func__, dst, src, sizeByte);
-    CHK_PRT_RET(!IsDeviceA5(), HCCL_ERROR("[CpuTsThread][%s]only support A5", __func__), HCCL_E_NOT_SUPPORT); // 只支持A5, 其他场景调用HcclLocalCopy
+    CHK_PRT_RET(!IsDeviceA5(), HCCL_ERROR("[CpuTsThread][%s]only support A5", __func__),
+        HCCL_E_NOT_SUPPORT); // 只支持A5, 其他场景调用HcclLocalCopy
 
     if (sizeByte == 0 || src == dst) {
         HCCL_INFO("[CpuTsThread][%s]skip, dst[%p] equals src[%p] or len[%llu] equals 0", __func__, dst, src, sizeByte);
@@ -272,10 +273,25 @@ HcclResult CpuTsThread::LocalCopy(void *dst, const void *src, uint64_t sizeByte)
 
     Stream *stream = GetStream();
     CHK_PTR_NULL(stream);
-    CHK_RET(hrtMemAsyncCopy(dst, sizeByte, src, sizeByte,
-        HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_DEVICE_TO_DEVICE, stream->ptr()));
-    
-    CHK_RET(ReportHostLocalCopyTask(dst, src, sizeByte, beginTime, isMaster_));
+
+    uint8_t *dstByte = static_cast<uint8_t *>(dst);
+    uint8_t *srcByte = static_cast<uint8_t *>(const_cast<void *>(src));
+
+    uint64_t maxSize = 4llu * 1024llu * 1024llu * 1024llu; // 4GB
+    uint64_t realSize = sizeByte;
+    uint64_t remainSize = sizeByte;
+    uint64_t doneSize = 0;
+    while (remainSize > 0) {
+        realSize = (remainSize > maxSize) ? maxSize : remainSize;
+
+        u64 beginTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
+        CHK_RET(hrtMemAsyncCopy(dstByte + doneSize, realSize, srcByte + doneSize, realSize,
+            HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_DEVICE_TO_DEVICE, stream->ptr()));
+        doneSize += realSize;
+        remainSize -= realSize;
+        CHK_RET(ReportHostLocalCopyTask(dstByte + doneSize, srcByte + doneSize, realSize, beginTime, isMaster_));
+    }
+
 #endif
     return HCCL_SUCCESS;
 }
@@ -284,10 +300,10 @@ HcclResult CpuTsThread::LocalReduce(
     void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType, HcommReduceOp reduceOp) const
 {
 #ifndef CCL_KERNEL_AICPU
-    u64 beginTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
-    HCCL_INFO("[%s]dst[%p], src[%p], sizeByte[%llu], dataType[%d], reduceOp[%d].",
-        __func__, dst, src, sizeByte, dataType, reduceOp);
-    CHK_PRT_RET(!IsDeviceA5(), HCCL_ERROR("[CpuTsThread][%s]only support A5", __func__), HCCL_E_NOT_SUPPORT); // 只支持A5, 其他场景调用HcclLocalCopyReduce
+    HCCL_INFO("[%s]dst[%p], src[%p], sizeByte[%llu], dataType[%d], reduceOp[%d].", __func__, dst, src, sizeByte,
+        dataType, reduceOp);
+    CHK_PRT_RET(!IsDeviceA5(), HCCL_ERROR("[CpuTsThread][%s]only support A5", __func__),
+        HCCL_E_NOT_SUPPORT); // 只支持A5, 其他场景调用HcclLocalCopyReduce
 
     auto dataTypeIt = hccl2rtDataTypeMap.find(static_cast<HcclDataType>(dataType));
     if (dataTypeIt == hccl2rtDataTypeMap.end()) {
@@ -295,7 +311,7 @@ HcclResult CpuTsThread::LocalReduce(
             GetDataTypeEnumStr(static_cast<HcclDataType>(dataType)).c_str());
         return HCCL_E_PARA;
     }
-    
+
     auto reduceOpIt = hccl2rtReduceOpMap.find(static_cast<HcclReduceOp>(reduceOp));
     if (reduceOpIt == hccl2rtReduceOpMap.end()) {
         HCCL_ERROR("[%s]reduceOp[%s] is not supported", __func__,
@@ -305,8 +321,26 @@ HcclResult CpuTsThread::LocalReduce(
 
     Stream *stream = GetStream();
     CHK_PTR_NULL(stream);
-    CHK_RET(hrtReduceAsync(dst, sizeByte, src, sizeByte, reduceOpIt->second, dataTypeIt->second, stream->ptr()));
-    CHK_RET(ReportHostLocalReduceTask(dst, src, sizeByte, dataType, reduceOp, beginTime, isMaster_));
+
+    uint8_t *dstByte = static_cast<uint8_t *>(dst);
+    uint8_t *srcByte = static_cast<uint8_t *>(const_cast<void *>(src));
+
+    uint64_t maxSize = 4llu * 1024llu * 1024llu * 1024llu; // 4GB
+    uint64_t realSize = sizeByte;
+    uint64_t remainSize = sizeByte;
+    uint64_t doneSize = 0;
+    while (remainSize > 0) {
+        realSize = (remainSize > maxSize) ? maxSize : remainSize;
+
+        u64 beginTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
+        CHK_RET(hrtReduceAsync(dstByte + doneSize, realSize, srcByte + doneSize, realSize, reduceOpIt->second,
+            dataTypeIt->second, stream->ptr()));
+        doneSize += realSize;
+        remainSize -= realSize;
+        CHK_RET(ReportHostLocalReduceTask(
+            dstByte + doneSize, srcByte + doneSize, realSize, dataType, reduceOp, beginTime, isMaster_));
+    }
+
 #endif
     return HCCL_SUCCESS;
 }
