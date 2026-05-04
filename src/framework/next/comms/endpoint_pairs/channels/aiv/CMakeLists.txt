@@ -11,6 +11,8 @@
 set(src_list
     aiv_ub_mem_channel.cc
     aiv_ub_mem_transport.cc
+    aiv_urma_channel.cc
+    aiv_urma_transport.cc
 )
 
 target_sources(hcomm PRIVATE

@@ -44,6 +44,7 @@ enum class HcommChannelKind : uint32_t {
     AICPU_TS_HCCS = 3U,
     CPU_ROCE = 4U,
     AIV_UB_MEM = 5U,
+    AIV_URMA = 6U,
 };
 
 /**
@@ -83,6 +84,9 @@ public:
                                     CommEngine engine, 
                                     HcommChannelDesc channelDesc,
                                     std::unique_ptr<Channel>& out);
+
+protected:
+    HcommChannelKind channelKind_{HcommChannelKind::INVALID};
 };
 
 } // namespace hcomm
