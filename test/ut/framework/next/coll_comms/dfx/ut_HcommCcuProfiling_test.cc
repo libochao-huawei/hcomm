@@ -42,6 +42,8 @@
 
 namespace hcomm {
 
+constexpr size_t CCU_CTX_RAW_CAPACITY = 64;
+
 // 模拟CcuUrmaChannel
 
 class MockCcuUrmaChannel {
@@ -369,6 +371,10 @@ TEST_F(CcuTaskExceptionTest, ProccessCcuException_Normal) {
         .ccuDetailInfo = nullptr
     };
     Hccl::TaskInfo taskInfo{1,2,3, taskParam, nullptr, true};
+    MOCKER(hrtGetDeviceType)
+        .stubs()
+        .with(outBound(DevType::DEV_TYPE_950))
+        .will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CcuComponent::CleanTaskKillState)
         .stubs()
         .will(returnValue(HCCL_SUCCESS));
@@ -451,6 +457,9 @@ struct CcumDfxInfoForTest {
 };
 
 TEST_F(CcuTaskExceptionTest, PrintPanicLogInfo_Normal) {
+    MOCKER(hrtGetDeviceType).stubs()
+        .with(outBound(DevType::DEV_TYPE_950))
+        .will(returnValue(HCCL_SUCCESS));
     uint8_t panicLog[128] = {};
     struct CcumDfxInfoForTest *info = reinterpret_cast<struct CcumDfxInfoForTest *>(panicLog);
     info->queryResult = 0; // success
@@ -467,9 +476,9 @@ TEST_F(CcuTaskExceptionTest, PrintPanicLogInfo_Normal) {
 
     // 调用函数
     EXPECT_NO_THROW(CcuTaskException::PrintPanicLogInfo(panicLog));
- 	 
+    GlobalMockObject::verify();
 }
- 	 
+
 TEST_F(CcuTaskExceptionTest, PrintPaniclogInfo) {
     EXPECT_NO_THROW(CcuTaskException::PrintPanicLogInfo(nullptr));
 }
@@ -525,8 +534,11 @@ TEST_F(CcuTaskExceptionTest, GetMissContectF) {
         .with(any(), any(), any(), any())
         .will(returnValue(HCCL_SUCCESS));
 
-    CcuMissionContext result = CcuTaskException::GetCcuMissionContext(0, 0, 0);
-    EXPECT_EQ(result.part0.value, 0u);
+    uint8_t raw[CCU_CTX_RAW_CAPACITY] = {0};
+    size_t copiedLen = 0;
+    EXPECT_EQ(CcuTaskException::GetCcuMissionContextRaw(0, 0, 0, raw, sizeof(raw), copiedLen), HCCL_SUCCESS);
+    EXPECT_EQ(copiedLen, CCU_CTX_RAW_CAPACITY);
+    EXPECT_EQ(raw[0], 0u);
 }
 
 TEST_F(CcuTaskExceptionTest, GetDevidFail) {
@@ -535,8 +547,12 @@ TEST_F(CcuTaskExceptionTest, GetDevidFail) {
         .with(any(), any())
         .will(returnValue(HCCL_E_PARA));
 
-    CcuMissionContext result = CcuTaskException::GetCcuMissionContext(0, 0, 0);
-    EXPECT_EQ(result.part0.value, 0u);
+    uint8_t raw[CCU_CTX_RAW_CAPACITY];
+    (void)memset_s(raw, sizeof(raw), 0xAA, sizeof(raw));
+    size_t copiedLen = 123;
+    EXPECT_EQ(CcuTaskException::GetCcuMissionContextRaw(0, 0, 0, raw, sizeof(raw), copiedLen), HCCL_E_PARA);
+    EXPECT_EQ(copiedLen, 0U);
+    EXPECT_EQ(raw[0], 0u);
 }
 
 TEST_F(CcuTaskExceptionTest, GetMissContectFail) {
@@ -549,8 +565,12 @@ TEST_F(CcuTaskExceptionTest, GetMissContectFail) {
         .with(any(), any(), any(), any())
         .will(returnValue(HCCL_E_PARA));
 
-    CcuMissionContext result = CcuTaskException::GetCcuMissionContext(0, 0, 0);
-    EXPECT_EQ(result.part0.value, 0u);
+    uint8_t raw[CCU_CTX_RAW_CAPACITY];
+    (void)memset_s(raw, sizeof(raw), 0xBB, sizeof(raw));
+    size_t copiedLen = 123;
+    EXPECT_EQ(CcuTaskException::GetCcuMissionContextRaw(0, 0, 0, raw, sizeof(raw), copiedLen), HCCL_E_PARA);
+    EXPECT_EQ(copiedLen, 0U);
+    EXPECT_EQ(raw[0], 0u);
 }
 
 constexpr uint64_t INVALID_U64_VAL = 18446744073709551615ULL;
@@ -663,8 +683,11 @@ TEST_F(CcuTaskExceptionTest, GetCcuLoopContext_Normal) {
         .with(any(), any(), any(), any())
         .will(returnValue(HCCL_SUCCESS));
 
-    CcuLoopContext result = CcuTaskException::GetCcuLoopContext(0, 0, 0);
-    EXPECT_EQ(result.part0.value, 0u);
+    uint8_t raw[CCU_CTX_RAW_CAPACITY] = {0};
+    size_t copiedLen = 0;
+    EXPECT_EQ(CcuTaskException::GetCcuLoopContextRaw(0, 0, 0, raw, sizeof(raw), copiedLen), HCCL_SUCCESS);
+    EXPECT_EQ(copiedLen, CCU_CTX_RAW_CAPACITY);
+    EXPECT_EQ(raw[0], 0u);
 }
 
 TEST_F(CcuTaskExceptionTest, GetCcuLoopContext_GetDevicePhyIdFail) {
@@ -672,8 +695,12 @@ TEST_F(CcuTaskExceptionTest, GetCcuLoopContext_GetDevicePhyIdFail) {
         .stubs()
         .with(any(), any())
         .will(returnValue(HCCL_E_PARA));
-    CcuLoopContext result = CcuTaskException::GetCcuLoopContext(0, 0, 0);
-    EXPECT_EQ(result.part0.value, 0u);
+    uint8_t raw[CCU_CTX_RAW_CAPACITY];
+    (void)memset_s(raw, sizeof(raw), 0xCC, sizeof(raw));
+    size_t copiedLen = 123;
+    EXPECT_EQ(CcuTaskException::GetCcuLoopContextRaw(0, 0, 0, raw, sizeof(raw), copiedLen), HCCL_E_PARA);
+    EXPECT_EQ(copiedLen, 0U);
+    EXPECT_EQ(raw[0], 0u);
 }
 
 TEST_F(CcuTaskExceptionTest, GenStatusInfo_Normal) {
