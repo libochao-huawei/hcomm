@@ -823,9 +823,14 @@ void ClusterMonitor::GetCqeErrInfoFromTaskException(u32 RemoteLocalId, uint16_t 
     ClusterUIDType remoteUID = {0};
     CHK_RET_NULL(FormatUID(remoteUIDcxt, remoteUID));
     SetStatus(localUID, remoteUID, ClusterMonitorStatus::CLUSTER_MONITOR_CQE_ERR, true);
-    time_t tm = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    time_t tmpt = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());
+    //  提取总微秒数
+    auto total_us = duration_us.count();
+    // 分离秒和微秒部分
+    auto microseconds = total_us % 1000000;
     struct tm *now;
-    now = localtime(&tm);
+    now = localtime(&tmpt);
     char errorLinkLogBuffer[LOG_TMPBUF_SIZE];
 
     s32 stringRet = snprintf_s(errorLinkLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE- 1U,
@@ -837,9 +842,9 @@ void ClusterMonitor::GetCqeErrInfoFromTaskException(u32 RemoteLocalId, uint16_t 
     if (now == nullptr) {
         HCCL_ERROR("[%s][%s][%s]localtime fail, cqe error status[%u], %s", LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_CQE_ERROR.c_str(), CqeErrInfo_.Cqestatus, errorLinkLogBuffer);
     } else {
-        HCCL_ERROR("[%s][%s][%s]cqe error status[%u], time:[%04u-%02d-%02d %02d:%0d:%02d], %s", LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_CQE_ERROR.c_str(), 
+        HCCL_ERROR("[%s][%s][%s]cqe error status[%u], time:[%04u-%02d-%02d %02d:%0d:%02d.%06u], %s", LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_CQE_ERROR.c_str(), 
         CqeErrInfo_.Cqestatus, now->tm_year + 1900, now->tm_mon + 1, now->tm_mday, now->tm_hour,
-        now->tm_min, now->tm_sec, errorLinkLogBuffer);
+        now->tm_min, now->tm_sec, microseconds, errorLinkLogBuffer);
     }   
     return;
 }
