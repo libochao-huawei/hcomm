@@ -170,7 +170,6 @@ public:
     static ClusterMonitor& GetInstance(u32 deviceId);
     void GetCqeErrInfoFromTaskException(u32 RemoteLocalId, uint16_t status, std::string LocalEid, std::string RemoteEid, std::string RemoteInsId);
     std::vector<std::string> GetErrStatusVecFromCluserMonitor();
-    bool IsKeyEvent(ClusterMonitorFrame &event, HcclUs curTime);
     std::vector<std::string> PrintEvents(std::map<ClusterMonitorStatus, std::queue<ClusterMonitorFrame>> &keyEvents);
     void MakeErrMsg(std::queue<ClusterMonitorFrame> &keyEvents, std::vector<std::string> &errStatusVec);
 
