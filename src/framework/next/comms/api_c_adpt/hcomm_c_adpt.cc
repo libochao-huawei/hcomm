@@ -16,6 +16,7 @@
 #include "hcomm_result_defs.h"
 #include "log.h"
 #include "hcomm_c_adpt.h"
+#include "hcomm/hcomm_res_entity_defs.h"
 #include "../endpoints/endpoint.h"
 #include "../endpoint_pairs/channels/channel.h"
 #include "thread.h"
@@ -38,7 +39,7 @@
 #include "param_check_pub.h"
 #include "channel_process.h"
 #include "launch_device.h"
-
+#include "aiv_urma_channel.h"
 
 namespace hcomm {
 static std::unordered_map<ThreadHandle, std::shared_ptr<hccl::Thread>> g_ThreadMap;
@@ -575,4 +576,79 @@ HcommResult HcommDfxKernelLaunch(const std::string &commTag, aclrtBinHandle binH
     HCCL_INFO("[%s] channel kernel launch success.", __func__);
 
     return HCCL_SUCCESS;
+}
+
+HcommResult HcommChannelGetPtrByHandle(const ChannelHandle *channelList, uint32_t listNum, ChannelPtr *channelPtr)
+{
+    HCCL_RUN_INFO("Entry-%s", __func__);
+    CHK_PTR_NULL(channelList);
+    CHK_PTR_NULL(channelPtr);
+    CHK_PRT_RET((listNum == 0), HCCL_ERROR("[%s] Invalid listNum, listNum[%u]", __func__, listNum), HCCL_E_PARA);
+
+    std::vector<void *> devEntityPtrs(listNum, nullptr);
+    std::vector<Channel *> channels(listNum, nullptr);
+
+    for (uint32_t i = 0; i < listNum; ++i) {
+        void *channel = nullptr;
+        const ChannelHandle channelHandle = channelList[i];
+
+        HcommResult hcommRet = HcommChannelGet(channelHandle, &channel);
+        CHK_PRT_RET(hcommRet != HCOMM_SUCCESS,
+            HCCL_ERROR("[%s] HcommChannelGet failed, idx[%u], ret[%d]", __func__, i, hcommRet),
+            HCCL_E_NOT_FOUND);
+
+        Channel *baseChannel = static_cast<Channel *>(channel);
+        CHK_PTR_NULL(baseChannel);
+
+        if (baseChannel->GetChannelKind() == HcommChannelKind::AICPU_TS_ROCE) {
+
+        } else if (baseChannel->GetChannelKind() == HcommChannelKind::AIV_URMA) {
+            AivUrmaChannel *aivUrmaChannel = dynamic_cast<AivUrmaChannel *>(baseChannel);
+            CHK_PTR_NULL(aivUrmaChannel);
+
+            HcclResult ret = aivUrmaChannel->BuildChannelEntityToDevice(&devEntityPtrs[i]);
+            CHK_PRT_RET(ret != HCCL_SUCCESS,
+                HCCL_ERROR("[%s] channel[%u] BuildChannelEntityToDevice failed, ret[%d]", __func__, i, ret), ret);
+        } else {
+            HCCL_ERROR("[%s] channel type not support, idx[%u], kind[%u]",
+                __func__, i, static_cast<uint32_t>(baseChannel->GetChannelKind()));
+            return HCCL_E_PARA;
+        }
+
+        CHK_PTR_NULL(devEntityPtrs[i]);
+        channels[i] = baseChannel;
+        HCCL_INFO("[%s] channel[%u] build dev entity success, devEntityPtr[%p]",
+            __func__, i, devEntityPtrs[i]);
+    }
+
+    if (listNum > UINT32_MAX / sizeof(void *)) {
+        HCCL_ERROR("[%s] ptrArraySize overflow, listNum[%u]", __func__, listNum);
+        return HCCL_E_PARA;
+    }
+
+    uint32_t ptrArraySize = listNum * sizeof(void *);
+    hccl::DeviceMem ptrArrayMem = hccl::DeviceMem::alloc(ptrArraySize);
+    CHK_PRT_RET(!ptrArrayMem,
+        HCCL_ERROR("[%s] DeviceMem::alloc for entity pointer array failed, size[%u]", __func__, ptrArraySize),
+        HCCL_E_MEMORY);
+    void *ptrArrayDevPtr = ptrArrayMem.ptr();
+
+    Hccl::HrtMemcpy(ptrArrayDevPtr, ptrArraySize, devEntityPtrs.data(), ptrArraySize,
+        Hccl::tagRtMemcpyKind::RT_MEMCPY_HOST_TO_DEVICE);
+
+    std::shared_ptr<hccl::DeviceMem> ptrArrayMemHolder;
+    EXECEPTION_CATCH(ptrArrayMemHolder = std::make_shared<hccl::DeviceMem>(std::move(ptrArrayMem)),
+        return HCCL_E_PTR);
+    for (Channel *channel : channels) {
+        if (channel != nullptr) {
+            channel->AddPtrArrayDevMem(ptrArrayMemHolder);
+        }
+    }
+
+    *channelPtr = ptrArrayDevPtr;
+
+    HCCL_RUN_INFO("[%s] success, ptrArrayDevPtr[%p], listNum[%u], ptrArraySize[%u]",
+        __func__, ptrArrayDevPtr, listNum, ptrArraySize);
+
+    return HCOMM_SUCCESS;
 }
