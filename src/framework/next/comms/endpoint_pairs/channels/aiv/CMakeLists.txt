@@ -11,8 +11,14 @@
 set(src_list
     aiv_ub_mem_channel.cc
     aiv_ub_mem_transport.cc
+    aiv_urma_channel.cc
+    aiv_urma_transport.cc
 )
 
 target_sources(hcomm PRIVATE
     ${src_list}
+)
+
+target_include_directories(hcomm PRIVATE
+    ${PROJECT_SOURCE_DIR}/src/legacy/unified_platform
 )
