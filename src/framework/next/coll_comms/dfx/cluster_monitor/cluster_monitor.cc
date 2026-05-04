@@ -86,9 +86,9 @@ HcclResult ClusterMonitor::GetRemEndpointDescs(HcclComm comm,
             rankIdsSet.insert(rankId);
             auto *netInstance = rankGraph->GetNetInstanceByRankId(0, rankId); // 查询对应rankId在netLayer=0的netInsId
             CHK_PTR_NULL(netInstance); // 有可能netInstance为空
-            auto netInstanceId = netInstance->GetNetInstId();
+            auto netInstId_ = netInstance->GetNetInstId();
             auto localId = rankGraph->GetLocalId(rankId); // 根据rank查localId
-            ClusterUIDCxt uidcxt(netInstanceId, localId);
+            ClusterUIDCxt uidcxt(netInstId_, localId);
             ClusterUIDType uid{};
             CHK_RET(FormatUID(uidcxt, uid));
             if (myRankId == rankId) {
@@ -823,14 +823,28 @@ void ClusterMonitor::GetCqeErrInfoFromTaskException(u32 RemoteLocalId, uint16_t 
     ClusterUIDType remoteUID = {0};
     CHK_RET_NULL(FormatUID(remoteUIDcxt, remoteUID));
     SetStatus(localUID, remoteUID, ClusterMonitorStatus::CLUSTER_MONITOR_CQE_ERR, true);
-    // if (CqeErrInfo_.CqeRemoterstatus != 0) {
-    //    SetStatus(uid_, uid_, ClusterMonitorStatus::CLUSTER_MONITOR_CQE_EXCEPTION);//从远端获取的remoteRankId需要转换为UID_类型
-    //    HCCL_RUN_INFO("[%s][%s]local rank [%s]: crimer rank [%s] status[%d] by informer rank [%d]",
-    //         LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_HEARTBEAT_EVETN.c_str(), GetUID(uid_).c_str(),
-    //         GetUID(uid_).c_str(), CqeErrInfo_.CqeRemoterstatus, CqeErrInfo_.CqeRemoterankId);
-    // }
+    time_t tm = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    struct tm *now;
+    now = localtime(&tm);
+    char errorLinkLogBuffer[LOG_TMPBUF_SIZE];
+    
+    s32 stringRet = snprintf_s(errorLinkLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE- 1U,
+        "localInfo{local instanceId[%s],LocalId[%d],localEid[%s]},remotrInfo{remote instanceId[%s],remoteLocalId[%d],remoteEid[%s]}",
+        netInstId_.c_str(),localId_,  CqeErrInfo_.CqeLocalEid.c_str(), CqeErrInfo_.CqeRemoteInsId.c_str(), CqeErrInfo_.CqeRemoteLocalId,
+        CqeErrInfo_.CqeRemoteEid.c_str());
+    CHK_PRT_CONT( stringRet < 0, HCCL_ERROR("[ClusterMonitor][GetCqeErrInfoFromTaskException]snprintf error when log cqe error info") );  
+    
+    if (now == nullptr) {
+        HCCL_ERROR("[%s][%s][%s]localtime fail, cqe error status[%u], %s", LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_CQE_ERROR.c_str(), CqeErrInfo_.Cqestatus, errorLinkLogBuffer);
+    } else {
+        HCCL_ERROR("[%s][%s][%s]cqe error status[%u], time:[%04u-%02d-%02d %02d:%0d:%02d], %s", LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_CQE_ERROR.c_str(), 
+        CqeErrInfo_.Cqestatus, now->tm_year + 1900, now->tm_mon + 1, now->tm_mday, now->tm_hour,
+        now->tm_min, now->tm_sec, errorLinkLogBuffer);
+    }   
     return;
 }
+
+
 bool ClusterMonitor::IsKeyEvent(ClusterMonitorFrame &event, HcclUs curTime)
 {
     bool ret = false;
