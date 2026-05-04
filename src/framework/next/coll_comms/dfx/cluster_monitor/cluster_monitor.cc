@@ -827,7 +827,7 @@ void ClusterMonitor::GetCqeErrInfoFromTaskException(u32 RemoteLocalId, uint16_t 
     struct tm *now;
     now = localtime(&tm);
     char errorLinkLogBuffer[LOG_TMPBUF_SIZE];
-    
+
     s32 stringRet = snprintf_s(errorLinkLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE- 1U,
         "localInfo{local instanceId[%s],LocalId[%d],localEid[%s]},remotrInfo{remote instanceId[%s],remoteLocalId[%d],remoteEid[%s]}",
         netInstId_.c_str(),localId_,  CqeErrInfo_.CqeLocalEid.c_str(), CqeErrInfo_.CqeRemoteInsId.c_str(), CqeErrInfo_.CqeRemoteLocalId,
@@ -844,28 +844,6 @@ void ClusterMonitor::GetCqeErrInfoFromTaskException(u32 RemoteLocalId, uint16_t 
     return;
 }
 
-
-bool ClusterMonitor::IsKeyEvent(ClusterMonitorFrame &event, HcclUs curTime)
-{
-    bool ret = false;
-    s64 intervalTime = DURATION_US(curTime - event.TOARelative).count() / (TIME_S_TO_MS * ONE_MILLISECOND_OF_USLEEP);
-    const s32 hcclExecTimeout = Hccl::EnvConfig::GetInstance().GetRtsConfig().GetExecTimeOut();
-    s64 execTimeout = hcclExecTimeout;
-    s64 detectionTime = 0;
-    switch (event.status) {
-        case ClusterMonitorStatus::CLUSTER_MONITOR_LOST:
-            detectionTime = (lostThreshold_ * HEARTBEAT_INTERVAL) / TIME_S_TO_MS;
-            break;
-        case ClusterMonitorStatus::CLUSTER_MONITOR_CQE_ERR:
-            detectionTime = 0;
-            break;
-        default:
-            return false; // 当前不支持的事件，不做处理和展现
-    }
-    ret = ((execTimeout - intervalTime - detectionTime) < JITTER_TIME) &&
-        ((intervalTime + detectionTime - execTimeout) < JITTER_TIME);
-    return ret;
-}
 
 void ClusterMonitor::MakeErrMsg(std::queue<ClusterMonitorFrame> &keyEvents, std::vector<std::string> &errStatusVec)
 {
@@ -918,13 +896,10 @@ std::vector<std::string> ClusterMonitor::PrintEvents(std::map<ClusterMonitorStat
 std::vector<std::string> ClusterMonitor::GetErrStatusVecFromCluserMonitor()
 {
     std::unique_lock<std::mutex> lock(ProcessLock_);
-    HcclUs curTime = TIME_NOW();
     std::map<ClusterMonitorStatus, std::queue<ClusterMonitorFrame>> keyEvents;
     while (errStatusQueue_.size() > 0) {
         auto &tmp = errStatusQueue_.front();
-        if (IsKeyEvent(tmp, curTime)) { // 本次迭代不使用关键事件判断
-            keyEvents[tmp.status].push(tmp);
-        }
+        keyEvents[tmp.status].push(tmp);
         errStatusQueue_.pop();
     }
     return PrintEvents(keyEvents);
