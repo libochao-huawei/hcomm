@@ -198,6 +198,7 @@ private:
     };
 
     uint32_t        localId_;
+    std::string     netInstId_;
     s32             deviceLogicId_{0};
     ClusterUIDType  myRankUID_;
 
