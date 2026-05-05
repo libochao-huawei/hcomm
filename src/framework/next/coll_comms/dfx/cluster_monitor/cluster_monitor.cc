@@ -16,6 +16,7 @@
 
 #include "hcclCommTaskException.h"
 #include "ccuTaskException.h"
+#include "coll_comm_mgr.h"
 
 namespace hcomm {
 constexpr u32 EVENT_MAX_CNT = 5000;             // 防止内存泄漏，同时不能太短，防止正常事件被冲掉
@@ -782,16 +783,6 @@ HcclResult ClusterMonitor::UnRegisterToClusterMonitor(hccl::CollComm* collComm)
     return HCCL_SUCCESS;
 }
 
-ClusterMonitor &ClusterMonitor::GetInstance(u32 deviceId)
-{
-    static ClusterMonitor hb[MAX_MODULE_DEVICE_NUM];
-    if (static_cast<u32>(deviceId) >= MAX_MODULE_DEVICE_NUM) {
-        HCCL_WARNING("[Heartbeat][%s]deviceId[%d] is invalid", __func__, deviceId);
-        return hb[0];
-    }
-    return hb[deviceId];
-}
-
 void ClusterMonitor::ProcessExceptionEvent()
 {
      while (errRankQueue_.size() > 0) {
@@ -812,7 +803,7 @@ void ClusterMonitor::ProcessExceptionEvent()
 
 void GetCqeErrInfoFromTaskException(unsigned int RemoteLocalIdId, unsigned int LocDeviceId, unsigned short int status, std::string LocalEid, std::string RemoteEid, std::string RemoteInsId)
 {
-    return ClusterMonitor::GetInstance(LocDeviceId).GetCqeErrInfoFromTaskException(RemoteLocalIdId, status, LocalEid, RemoteEid, RemoteInsId);
+    return hccl::CollCommMgr::GetInstance()->GetClusterMonitor(LocDeviceId).GetCqeErrInfoFromTaskException(RemoteLocalIdId, status, LocalEid, RemoteEid, RemoteInsId);
 }
 
 void ClusterMonitor::GetCqeErrInfoFromTaskException(u32 RemoteLocalId, uint16_t status, std::string LocalEid, std::string RemoteEid, std::string RemoteInsId)
@@ -916,7 +907,7 @@ std::vector<std::string> ClusterMonitor::GetErrStatusVecFromCluserMonitor()
 
 std::vector<std::string> GetErrStatusVecFromCluserMonitor(s32 deviceLogicID)
 {
-    return ClusterMonitor::GetInstance(deviceLogicID).GetErrStatusVecFromCluserMonitor();
+    return hccl::CollCommMgr::GetInstance()->GetClusterMonitor(deviceLogicID).GetErrStatusVecFromCluserMonitor();
 }
 
 __attribute__((constructor)) void ClusterMonitorCallBackInit()
