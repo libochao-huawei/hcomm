@@ -140,14 +140,14 @@ TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_SdmaCopy_When_Inited_Expect_Success
 }
 
 /**
- * 测试 IAicpuTsThread SdmaCopy sizeByte 超出 uint32_t 最大值
- * 验证：sizeByte 超出限制时返回参数错误
+ * 测试 IAicpuTsThread SdmaCopy sizeByte 超出4GB
+ * 验证：sizeByte 超出4GB时返回参数错误
  */
 TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_SdmaCopy_When_SizeExceedMax_Expect_Return_Para_Error)
 {
     uint64_t dstAddr = 0x1000;
     uint64_t srcAddr = 0x2000;
-    uint64_t sizeByte = static_cast<uint64_t>(std::numeric_limits<uint32_t>::max()) + 1;
+    uint64_t sizeByte = 0x100000001ULL;
 
     HcclResult ret = aicpuThread.SdmaCopy(dstAddr, srcAddr, sizeByte);
     EXPECT_EQ(HCCL_E_PARA, ret);
@@ -241,8 +241,8 @@ TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_SdmaReduce_INT32_MIN_When_Inited_Ex
 }
 
 /**
- * 测试 IAicpuTsThread SdmaReduce sizeByte 超出 uint32_t 最大值
- * 验证：sizeByte 超出限制时返回参数错误
+ * 测试 IAicpuTsThread SdmaReduce sizeByte 超出4GB
+ * 验证：sizeByte 超出4GB时返回参数错误
  */
 TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_SdmaReduce_When_SizeExceedMax_Expect_Return_Para_Error)
 {
@@ -250,7 +250,7 @@ TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_SdmaReduce_When_SizeExceedMax_Expec
     aicpuThread.StreamLiteInit(1, 2, 3, 4);
     uint64_t dstAddr = 0x1000;
     uint64_t srcAddr = 0x2000;
-    uint64_t sizeByte = static_cast<uint64_t>(std::numeric_limits<uint32_t>::max()) + 1;
+    uint64_t sizeByte = 0x100000001ULL;
     uint32_t dataTypeRaw = 0;   // INT8
     uint32_t reduceOpRaw = 0;   // SUM
 
