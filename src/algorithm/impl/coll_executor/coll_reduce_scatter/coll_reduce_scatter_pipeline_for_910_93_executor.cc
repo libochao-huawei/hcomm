@@ -71,10 +71,10 @@ HcclResult CollReduceScatterPipelineFor91093Executor::RunLoop(
     Stream streamL0L1 = param.stream;
     Stream streamL2 = algResResp_->slaveStreams.back();
     const u32 baseStreamNum = algResResp_->slaveStreams.size() - PIPELINE_NOTIFY_NUM;
-    auto notifyL0L1toL2A = algResResp_->notifiesAux[baseStreamNum];
-    auto notifyL0L1toL2B = algResResp_->notifiesAux[baseStreamNum + 1];
-    auto notifyL2toL0L1A = algResResp_->notifiesMain[baseStreamNum];
-    auto notifyL2toL0L1B = algResResp_->notifiesMain[baseStreamNum + 1];
+    auto notifyL0L1toL2A = algResResp_->notifiesMain[baseStreamNum];
+    auto notifyL0L1toL2B = algResResp_->notifiesMain[baseStreamNum + 1];
+    auto notifyL2toL0L1A = algResResp_->notifiesAux[baseStreamNum];
+    auto notifyL2toL0L1B = algResResp_->notifiesAux[baseStreamNum + 1];
     PipelineLoopContext ctx;
     CHK_RET(BuildPipelineLoopContext(param, algRes, unitSize, ctx));
 
