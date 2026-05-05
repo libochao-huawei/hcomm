@@ -10,7 +10,7 @@
 
 #include "gtest/gtest.h"
 #include <mockcpp/mockcpp.hpp>
-#include "json_parser.h"
+#include "legacy/framework/misc/json_parser/json_parser.h"
 
 #define __HCCL_SAL_GLOBAL_RES_INCLUDE__
 
