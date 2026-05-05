@@ -504,7 +504,7 @@ void ClusterMonitor::DelErrorSocket()
             GetUID(rem).c_str());
         uid2FrameStatusMap_.erase(rem);
         if (uid2SocketRefMap_.has(rem)) {
-            CHK_RET(SocketDestroy(uid2SocketRefMap_[rem].socketHandler));
+            SocketDestroy(uid2SocketRefMap_[rem].socketHandler);
             while (uid2SocketRefMap_.erase(rem)) {
             };
         }
@@ -757,6 +757,16 @@ HcclResult ClusterMonitor::UnRegisterToClusterMonitor(hccl::CollComm* collComm)
         CHK_RET(DeInit());
     }
     return HCCL_SUCCESS;
+}
+
+ClusterMonitor &ClusterMonitor::GetInstance(u32 deviceId)
+{
+    static ClusterMonitor hb[MAX_MODULE_DEVICE_NUM];
+    if (static_cast<u32>(deviceId) >= MAX_MODULE_DEVICE_NUM) {
+        HCCL_WARNING("[Heartbeat][%s]deviceId[%d] is invalid", __func__, deviceId);
+        return hb[0];
+    }
+    return hb[deviceId];
 }
 
 void ClusterMonitor::ProcessExceptionEvent()
