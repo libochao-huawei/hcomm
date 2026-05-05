@@ -130,7 +130,7 @@ TEST_F(SalTest, ut_DlTraceFunctionInit_ATrace_Failed_Expect_ReturnError)
 TEST_F(SalTest, GetJsonPorperty_When_PorpNameIsNullptr_Expect_Throw)
 {
     nlohmann::json obj = nlohmann::json::object();
-    EXPECT_THROW(Hccl::GetJsonProperty(obj, nullptr, true), NullPtrException);
+    EXPECT_THROW(Hccl::GetJsonProperty(obj, nullptr, true), Hccl::NullPtrException);
 }
 
 TEST_F(SalTest, GetJsonPorperty_When_NotRequired_Expect_Empty)
@@ -143,40 +143,40 @@ TEST_F(SalTest, GetJsonPorperty_When_NotRequired_Expect_Empty)
 TEST_F(SalTest, GetJsonPorperty_When_MissingProperty_Expect_Throw)
 {
     nlohmann::json obj = nlohmann::json::object();
-    EXPECT_THROW(Hccl::GetJsonProperty(obj, "missing", true), InvalidParamsException);
+    EXPECT_THROW(Hccl::GetJsonProperty(obj, "missing", true), Hccl::InvalidParamsException);
 }
 
 TEST_F(SalTest, GetJsonPorpertyUInt_When_MissingProperty_Expect_Throw)
 {
     nlohmann::json obj = nlohmann::json::object();
-    EXPECT_THROW(Hccl::GetJsonPropertyUInt(obj, "missing", true, 0), InvalidParamsException);
+    EXPECT_THROW(Hccl::GetJsonPropertyUInt(obj, "missing", true, 0), Hccl::InvalidParamsException);
 }
 
 TEST_F(SalTest, GetJsonPorpertyUInt_When_ValueExceedsUint32Max_Expect_Throw)
 {
     nlohmann::json obj;
     obj["test"] = INT64_MAX;
-    EXPECT_THROW(Hccl::GetJsonPropertyUInt(obj, "test", true, 0), InvalidParamsException);
+    EXPECT_THROW(Hccl::GetJsonPropertyUInt(obj, "test", true, 0), Hccl::InvalidParamsException);
 }
 
 TEST_F(SalTest, GetJsonPorpertySInt_When_MissingProperty_Expect_Throw)
 {
     nlohmann::json obj = nlohmann::json::object();
-    EXPECT_THROW(Hccl::GetJsonPropertySInt(obj, "missing", true, 0), InvalidParamsException);
+    EXPECT_THROW(Hccl::GetJsonPropertySInt(obj, "missing", true, 0), Hccl::InvalidParamsException);
 }
 
 TEST_F(SalTest, GetJsonPorpertySInt_When_ValueExceedsSint32Max_Expect_Throw)
 {
     nlohmann::json obj;
     obj["test"] = INT64_MAX;
-    EXPECT_THROW(Hccl::GetJsonPropertySInt(obj, "test", true, 0), InvalidParamsException);
+    EXPECT_THROW(Hccl::GetJsonPropertySInt(obj, "test", true, 0), Hccl::InvalidParamsException);
 }
 
 TEST_F(SalTest, GetJsonPorpertyList_When_MissingProperty_Expect_Throw)
 {
     nlohmann::json obj = nlohmann::json::object();
     nlohmann::json listObj;
-    EXPECT_THROW(Hccl::GetJsonPropertyList(obj, "missing", listObj), InvalidParamsException);
+    EXPECT_THROW(Hccl::GetJsonPropertyList(obj, "missing", listObj), Hccl::InvalidParamsException);
 }
 
 TEST_F(SalTest, GetJsonPorpertyList_When_NotArray_Expect_Throw)
@@ -184,5 +184,5 @@ TEST_F(SalTest, GetJsonPorpertyList_When_NotArray_Expect_Throw)
     nlohmann::json obj;
     obj["test"] = "not_array";
     nlohmann::json listObj;
-    EXPECT_THROW(Hccl::GetJsonPropertyList(obj, "test", listObj), InvalidParamsException);
+    EXPECT_THROW(Hccl::GetJsonPropertyList(obj, "test", listObj), Hccl::InvalidParamsException);
 }
