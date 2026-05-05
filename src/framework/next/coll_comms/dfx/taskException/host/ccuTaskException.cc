@@ -927,22 +927,7 @@ HcclResult CcuTaskException::PrintCcuUbRegisters(const std::vector<CcuErrorInfo>
     const Hccl::TaskInfo& taskInfo)
 {
     std::vector<CcuJetty *> ccuJettys;
-    const unordered_set<CcuRep::CcuRepType> REP_WITH_CHANNEL = {
-        {CcuRep::CcuRepType::REM_POST_SEM},
-        {CcuRep::CcuRepType::REM_WAIT_SEM},
-        {CcuRep::CcuRepType::REM_POST_VAR},
-        {CcuRep::CcuRepType::READ},
-        {CcuRep::CcuRepType::WRITE},
-        {CcuRep::CcuRepType::BUF_READ},
-        {CcuRep::CcuRepType::BUF_WRITE},
-    };
-
     for (const CcuErrorInfo& errorInfo : errorInfos) {
-        if (REP_WITH_CHANNEL.find(errorInfo.repType) == REP_WITH_CHANNEL.end()) {
-            HCCL_INFO("[%s]repType[%d] not found in REP_WITH_CHANNEL, skip", __func__, errorInfo.repType);
-            continue;
-        }
-
         std::pair<CcuChannelInfo, std::vector<CcuJetty *>> ctx;
         (void)GetCcuJettys(errorInfo, ctx);
         ccuJettys.insert(ccuJettys.end(), ctx.second.begin(), ctx.second.end());
@@ -970,12 +955,33 @@ HcclResult CcuTaskException::PrintCcuUbRegisters(const std::vector<CcuErrorInfo>
     return HCCL_SUCCESS;
 }
 
-HcclResult CcuTaskException::GetCcuJettys(const CcuErrorInfo& errorInfo,
-    std::pair<CcuChannelInfo, std::vector<CcuJetty *>> &ctx)
+HcclResult CcuTaskException::GetCcuJettys(const CcuErrorInfo& errorInfo, std::pair<CcuChannelInfo, std::vector<CcuJetty *>> &ctx)
 {
+    uint16_t channelId = INVALID_U16;
+    switch (errorInfo.repType)
+    {
+        case CcuRep::CcuRepType::REM_POST_SEM:
+        case CcuRep::CcuRepType::REM_WAIT_SEM:
+        case CcuRep::CcuRepType::REM_POST_VAR:
+            channelId = errorInfo.msg.waitSignal.channelId[0];
+            break;
+        case CcuRep::CcuRepType::READ:
+        case CcuRep::CcuRepType::WRITE:
+            channelId = errorInfo.msg.transMem.channelId;
+            break;
+        case CcuRep::CcuRepType::BUF_READ:
+        case CcuRep::CcuRepType::BUF_WRITE:
+            channelId = errorInfo.msg.bufTransMem.channelId;
+            break;
+        default:
+            HCCL_INFO("[%s]repType[%d] do not need tu get jetty, skip", __func__, errorInfo.repType);
+            return HCCL_SUCCESS;
+    }
+    HCCL_INFO("[%s]repType[%d], channelId[%u]", __func__, errorInfo.repType, channelId);
+
     // channelId -> channelHandle
     u64 channelHandle = INVALID_U64;
-    CHK_RET(GetCcuChannelHandleById(errorInfo.msg.transMem.channelId, channelHandle));
+    CHK_RET(GetCcuChannelHandleById(channelId, channelHandle));
 
     // channelHandle -> CcuUrmaChannel
     void *channelPtr{nullptr};
@@ -995,7 +1001,7 @@ HcclResult CcuTaskException::GetCcuJettys(const CcuErrorInfo& errorInfo,
     CHK_PTR_NULL(ccuChannelCtxPool);
 
     // CcuChannelCtxPool -> CcuJetty
-    auto channelIdKey = std::make_pair(errorInfo.dieId, errorInfo.msg.transMem.channelId);
+    auto channelIdKey = std::make_pair(errorInfo.dieId, channelId);
     CHK_RET(ccuChannelCtxPool->GetCcuChannelCtxById(channelIdKey, ctx));
     return HCCL_SUCCESS;
 }
