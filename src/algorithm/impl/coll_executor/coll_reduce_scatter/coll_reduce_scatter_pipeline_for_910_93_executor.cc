@@ -125,7 +125,7 @@ HcclResult CollReduceScatterPipelineFor91093Executor::RunLoop(
             HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][RunLoop] "
                 "before L2 wait blockIdx[%llu] streamId[%d] notifyId[%u]",
                 blockIdx, streamL2.id(), GetLocalNotifyId(forwardNotify));
-            CHK_RET(LocalNotify::Wait(streamL2, dispatcher_, forwardNotify, INVALID_VALUE_STAGE));
+            CHK_RET(LocalNotify::Wait(streamL2, dispatcher_, forwardNotify, INVALID_VALUE_STAGE, 80));
             HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][RunLoop] "
                 "after L2 wait blockIdx[%llu] streamId[%d] notifyId[%u]",
                 blockIdx, streamL2.id(), GetLocalNotifyId(forwardNotify));
@@ -196,7 +196,7 @@ HcclResult CollReduceScatterPipelineFor91093Executor::WaitForRemainingL2Signals(
     const u64 firstBlockIdx = numBlockTotal - remainingSignals;
     for (u64 blockIdx = firstBlockIdx; blockIdx < numBlockTotal; ++blockIdx) {
         auto notify = (blockIdx % PIPELINE_NOTIFY_NUM == 0) ? notifyL2toL0L1A : notifyL2toL0L1B;
-        HcclResult ret = LocalNotify::Wait(streamL0L1, dispatcher_, notify, INVALID_VALUE_STAGE);
+        HcclResult ret = LocalNotify::Wait(streamL0L1, dispatcher_, notify, INVALID_VALUE_STAGE, 120);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[CollReduceScatterPipelineFor91093Executor][WaitForRemainingL2Signals] "
                 "PostSync wait error, tag[%s] blockIdx[%llu]", param.tag.c_str(), blockIdx), ret);
