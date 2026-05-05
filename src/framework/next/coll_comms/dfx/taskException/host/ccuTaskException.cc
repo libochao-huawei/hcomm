@@ -84,6 +84,16 @@ const map<uint8_t, map<uint8_t, string>> MISSION_SUB_STATUS_MAP {
       {0x0c, "Read Local Mem Poison(0x0C)"}}},
 };
 
+const unordered_set<CcuRep::CcuRepType> REP_WITH_CHANNEL = {
+    {CcuRep::CcuRepType::REM_POST_SEM},
+    {CcuRep::CcuRepType::REM_WAIT_SEM},
+    {CcuRep::CcuRepType::REM_POST_VAR},
+    {CcuRep::CcuRepType::READ},
+    {CcuRep::CcuRepType::WRITE},
+    {CcuRep::CcuRepType::BUF_READ},
+    {CcuRep::CcuRepType::BUF_WRITE},
+};
+
 MAKE_ENUM(AuxInfoInType, AUX_INFO_IN_TYPE_CQE, AUX_INFO_IN_TYPE_AE, AUX_INFO_IN_TYPE_MAX);
 struct AuxInfoIn {
     AuxInfoInType auxInfoInType;
@@ -955,7 +965,7 @@ HcclResult CcuTaskException::PrintCcuUbRegisters(const std::vector<CcuErrorInfo>
     return HCCL_SUCCESS;
 }
 
-HcclResult CcuTaskException::GetCcuJettys(const CcuErrorInfo& errorInfo, std::pair<CcuChannelInfo, std::vector<CcuJetty *>> &ctx)
+uint16_t CcuTaskException::GetChannleIdByCcuErrorInfo(const CcuErrorInfo& errorInfo)
 {
     uint16_t channelId = INVALID_U16;
     switch (errorInfo.repType)
@@ -974,10 +984,20 @@ HcclResult CcuTaskException::GetCcuJettys(const CcuErrorInfo& errorInfo, std::pa
             channelId = errorInfo.msg.bufTransMem.channelId;
             break;
         default:
-            HCCL_INFO("[%s]repType[%d] do not need to get jetty, skip", __func__, errorInfo.repType);
-            return HCCL_SUCCESS;
+            HCCL_ERROR("[%s]repType[%d] does not have jetty", __func__, errorInfo.repType);
+            break;
     }
     HCCL_INFO("[%s]repType[%d], channelId[%u]", __func__, errorInfo.repType, channelId);
+    return channelId;
+}
+
+HcclResult CcuTaskException::GetCcuJettys(const CcuErrorInfo& errorInfo, std::pair<CcuChannelInfo, std::vector<CcuJetty *>> &ctx)
+{
+    if (REP_WITH_CHANNEL.find(errorInfo.repType) == REP_WITH_CHANNEL.end()) {
+        HCCL_INFO("[%s]repType[%d] does not need to get jettys, skip", __func__, errorInfo.repType);
+        return HCCL_SUCCESS;
+    }
+    uint16_t channelId = GetChannleIdByCcuErrorInfo(errorInfo);
 
     // channelId -> channelHandle
     u64 channelHandle = INVALID_U64;
