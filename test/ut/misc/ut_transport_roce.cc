@@ -447,7 +447,7 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_WaitCompletion)
 
 TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_TaskExec)
 {
-    MOCKER_CPP(&TransportRoce::Send)
+    MOCKER_CPP(static_cast<HcclResult (hccl::TransportRoce::*)(const hccl::SendRecvParamDef&)>(&TransportRoce::Send))
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));

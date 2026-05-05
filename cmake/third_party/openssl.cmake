@@ -26,7 +26,11 @@ set(OPENSSL_FILE "openssl-openssl-3.0.9.tar.gz")
 set(OPENSSL_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/openssl/openssl-openssl-3.0.9.tar.gz")
 set(OPENSSL_PKG_PATH ${CANN_3RD_LIB_PATH}/${OPENSSL_FILE})
 set(OPENSSL_INSTALL_PATH ${CANN_3RD_LIB_PATH}/openssl-${PRODUCT_SIDE})
-set(OPENSSL_SRC_PATH ${PROJECT_SOURCE_DIR}/openssl-${PRODUCT_SIDE}-src)
+if(DEFINED OPENSSL_SRC_BASE_DIR)
+    set(OPENSSL_SRC_PATH ${OPENSSL_SRC_BASE_DIR}/openssl-${PRODUCT_SIDE}-src)
+else()
+    set(OPENSSL_SRC_PATH ${PROJECT_SOURCE_DIR}/openssl-${PRODUCT_SIDE}-src)
+endif()
 set(OPENSSL_INCLUDE_DIR
     ${OPENSSL_INSTALL_PATH}/include
     ${OPENSSL_SRC_PATH}/include

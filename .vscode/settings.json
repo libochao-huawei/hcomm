@@ -1,0 +1,57 @@
+{
+    "clangd.arguments": [
+        "--background-index",
+        "--clang-tidy",
+        "--completion-style=detailed",
+        "--header-insertion=never",
+        "--all-scopes-completion",
+        "--compile-commands-dir=/root/git/hcomm"
+    ],
+    "cmake.copyCompileCommands": "${workspaceFolder}/compile_commands.json",
+    "files.exclude": {
+        "**/.cache": true,
+        "**/.cache/**": true,
+        "compile_commands.json": true,
+        "build": true,
+        "build_*": true,
+        "build_out": true,
+        "output": true
+    },
+    "search.exclude": {
+        "**/.cache/**": true,
+        "compile_commands.json": true,
+        "build/**": true,
+        "build_*/**": true,
+        "build_out/**": true,
+        "output/**": true
+    },
+    "files.watcherExclude": {
+        "**/.cache/**": true,
+        "**/build/**": true,
+        "**/build_*/**": true,
+        "**/build_out/**": true,
+        "**/output/**": true
+    },
+    "editor.codeActionsOnSave": {
+        "source.fixAll.clangd": "explicit"
+    },
+    "[c]": {
+        "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
+        "editor.formatOnSave": false
+    },
+    "[cpp]": {
+        "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
+        "editor.formatOnSave": false
+    },
+    "files.associations": {
+        ".clang-tidy": "yaml",
+        ".clang-format": "yaml"
+    },
+    "C_Cpp.intelliSenseEngine": "disabled",
+    "C_Cpp.errorSquiggles": "disabled",
+    "cSpell.words": [
+        "Ccum",
+        "HCCL",
+        "hcomm"
+    ]
+}

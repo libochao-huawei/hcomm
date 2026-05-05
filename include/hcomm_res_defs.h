@@ -16,6 +16,10 @@
 #include <stdbool.h>
 #include <arpa/inet.h>
 #include "securec.h"
+#ifdef __cplusplus
+#include <functional>
+#include <cstring>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -285,6 +289,35 @@ static inline HcommResult HcommChannelDescInit(HcommChannelDesc *channelDesc, ui
 
 #ifdef __cplusplus
 }
+
+struct EndpointDescHash {
+    std::size_t operator()(EndpointDesc const &k) const noexcept {
+        std::size_t h1 = std::hash<int>()(k.protocol);
+        std::size_t h2 = 0;
+        for (size_t i = 0; i < sizeof(k.commAddr.raws); ++i) {
+            h2 = h2 * 31 + k.commAddr.raws[i];
+        }
+        return h1 ^ (h2 << 1);
+    }
+};
+
+struct EndpointDescEqual {
+    bool operator()(EndpointDesc const &a, EndpointDesc const &b) const noexcept {
+        if (a.protocol != b.protocol) {
+            return false;
+        }
+        if (memcmp(a.commAddr.raws, b.commAddr.raws, sizeof(a.commAddr.raws)) != 0) {
+            return false;
+        }
+        if (a.loc.locType != b.loc.locType) {
+            return false;
+        }
+        if (memcmp(a.loc.raws, b.loc.raws, sizeof(a.loc.raws)) != 0) {
+            return false;
+        }
+        return true;
+    }
+};
 #endif // __cplusplus
 
 #endif // HCOMM_RES_DEFS_H

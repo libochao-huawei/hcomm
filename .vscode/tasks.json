@@ -1,0 +1,273 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "cmake: configure pkg-device",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--preset",
+        "pkg-device"
+      ],
+      "group": "build",
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "cmake: build pkg-device",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "build-pkg-device",
+        "--parallel",
+        "8"
+      ],
+      "group": "build",
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "cmake: configure host-pkg",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--preset",
+        "host-pkg"
+      ],
+      "group": "build",
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "cmake: build host-pkg",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "build-host-pkg",
+        "--parallel",
+        "8"
+      ],
+      "group": "build",
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "hcomm: build --pkg (preset pipeline)",
+      "type": "shell",
+      "command": "echo",
+      "args": [
+        "Running pkg preset pipeline"
+      ],
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "cmake: configure pkg-device",
+        "cmake: build pkg-device",
+        "cmake: configure host-pkg",
+        "cmake: build host-pkg"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "cmake: configure full-device",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--preset",
+        "full-device"
+      ],
+      "group": "build",
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "cmake: build full-device",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "build-full-device",
+        "--parallel",
+        "8"
+      ],
+      "group": "build",
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "cmake: configure full-hccd",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--preset",
+        "full-hccd"
+      ],
+      "group": "build",
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "cmake: build full-hccd",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "build-full-hccd",
+        "--parallel",
+        "8"
+      ],
+      "group": "build",
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "cmake: configure host-full",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--preset",
+        "host-full"
+      ],
+      "group": "build",
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "cmake: build host-full",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "build-host-full",
+        "--parallel",
+        "8"
+      ],
+      "group": "build",
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "hcomm: build --full (preset pipeline)",
+      "type": "shell",
+      "command": "echo",
+      "args": [
+        "Running full preset pipeline"
+      ],
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "cmake: configure full-device",
+        "cmake: build full-device",
+        "cmake: configure full-hccd",
+        "cmake: build full-hccd",
+        "cmake: configure host-full",
+        "cmake: build host-full"
+      ],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "clang-tidy: disabled",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "HCOMM_CLANG_TIDY_DISABLE=1 HCOMM_CLANG_TIDY_SCOPE=changed bash scripts/clang_tidy_precommit.sh"
+      ],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "clang-tidy: changed files (check)",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "HCOMM_CLANG_TIDY_DISABLE=1 HCOMM_CLANG_TIDY_SCOPE=changed bash scripts/clang_tidy_precommit.sh"
+      ],
+      "group": "build",
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "clang-tidy: changed files (fix)",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "HCOMM_CLANG_TIDY_DISABLE=1 HCOMM_CLANG_TIDY_SCOPE=changed HCOMM_CLANG_TIDY_FIX=1 bash scripts/clang_tidy_precommit.sh"
+      ],
+      "group": "build",
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "clang-tidy: staged files (check)",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "HCOMM_CLANG_TIDY_DISABLE=1 HCOMM_CLANG_TIDY_SCOPE=staged bash scripts/clang_tidy_precommit.sh"
+      ],
+      "group": "build",
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "clang-tidy: staged files (fix)",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "HCOMM_CLANG_TIDY_DISABLE=1 HCOMM_CLANG_TIDY_SCOPE=staged HCOMM_CLANG_TIDY_FIX=1 bash scripts/clang_tidy_precommit.sh"
+      ],
+      "group": "build",
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "Run UT Under Valgrind",
+      "type": "shell",
+      "command": "/usr/bin/valgrind",
+      "args": [
+        "--tool=memcheck",
+        "--leak-check=full",
+        "--show-leak-kinds=all",
+        "--track-origins=yes",
+        "--error-exitcode=1",
+        "--log-file=valgrind.log",
+        "--",
+        "${command:cmake.launchTargetPath}",
+        "--gtest_filter=*",
+        "--gtest_break_on_failure"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    }
+  ]
+}

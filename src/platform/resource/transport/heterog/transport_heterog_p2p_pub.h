@@ -72,7 +72,7 @@ public:
     HcclResult RxAsync(UserMemType srcMemType, u64 srcOffset, void *dst, u64 len,
                                   Stream &stream) override;
     HcclResult RxAsync(std::vector<RxMemoryInfo>& rxMems, Stream &stream) override;
-
+    using TransportBase::GetRemoteMem;
     HcclResult GetRemoteMem(UserMemType memType, void **remotePtr, u64 &remoteMemSize);
 
     HcclResult ConnectAsync(u32& status) override;

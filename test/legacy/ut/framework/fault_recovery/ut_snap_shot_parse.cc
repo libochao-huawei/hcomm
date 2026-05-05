@@ -454,7 +454,7 @@ TEST_F(SnapShotParserTest, TestSuccessfulParse_ParseSnapshotToLocalBuff)
 TEST_F(SnapShotParserTest, test_binarystream_checkCrc)
 {
     BinaryStream bs;
-    char bytes[10] {0x92, 0x3e, 0x8e, 0x45, 0xa7, 0xc3, 0x4d, 0xff, 0x3e, 0xa3};
+    unsigned char bytes[10] {0x92, 0x3e, 0x8e, 0x45, 0xa7, 0xc3, 0x4d, 0xff, 0x3e, 0xa3};
     
     SnapShotParser& parser = SnapShotParser::GetInstance();
     for (auto byte : bytes) {
