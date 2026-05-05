@@ -953,11 +953,14 @@ static std::string ParseSyncXnInstr(const CcuInstr *instr)
 
 static std::string ParseMSList(const CcuInstr *instr)
 {
-    // 待实现，检查sqe类型
     uint16_t msId[CCU_REDUCE_MAX_MS];
     uint16_t count = instr->v1.add.count;
     for (uint16_t index = 0; index < CCU_REDUCE_MAX_MS; index++) {
         msId[index] = instr->v1.add.msId[index];
+    }
+
+    if (count + 2 > CCU_REDUCE_MAX_MS) {
+        return "MS[]";
     }
 
     std::string res = "MS[";
@@ -1053,6 +1056,9 @@ static std::unordered_map<uint16_t, ParseInstrFunc> g_parseInstrSqeMap = {
 
 std::string ParseInstr(const CcuInstr *instr)
 {
+    if (g_parseInstrSqeMap.find(instr->header.header) == g_parseInstrSqeMap.end()) {
+        return Hccl::StringFormat("Unsupported instruction with header: 0x%04x", instr->header.header);
+    }
     return g_parseInstrSqeMap[instr->header.header](instr);
 }
 
