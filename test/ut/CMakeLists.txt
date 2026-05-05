@@ -73,6 +73,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/group
     ${HCCL_CODE_ROOT}/src/framework/nslbdp/
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/api_c_adpt
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/cluster_monitor
 
     # src/platform 目录下头文件
     ${HCCL_CODE_ROOT}/src/platform/
@@ -177,6 +178,7 @@ set(UT_COMMON_INCLUDE_LIST
 
     # legacy include
     ${HCCL_CODE_ROOT}/src/legacy/
+    ${HCCL_CODE_ROOT}/src/legacy/include
     ${HCCL_CODE_ROOT}/src/legacy/common/
     ${HCCL_CODE_ROOT}/src/legacy/common/utils/
     ${HCCL_CODE_ROOT}/src/legacy/common/exception/

@@ -21,6 +21,7 @@
 #include "hccl/hccl_types.h"
 #include "hccl_common.h"
 #include "hccl_comm_socket_c_adpt.h"
+#include "hccl_communicator.h"
 
 namespace hcomm {
 
@@ -172,10 +173,10 @@ public:
     std::vector<std::string> GetErrStatusVecFromCluserMonitor();
     std::vector<std::string> PrintEvents(std::map<ClusterMonitorStatus, std::queue<ClusterMonitorFrame>> &keyEvents);
     void MakeErrMsg(std::queue<ClusterMonitorFrame> &keyEvents, std::vector<std::string> &errStatusVec);
-
-private:
     ClusterMonitor() = default;
     ~ClusterMonitor()= default;
+
+private:
     HcclResult GetRemEndpointDescs(HcclComm comm, std::map<uint32_t, std::vector<UIDContext>> &uidCtxs,
         std::vector<uint32_t> &netLayersVector);
     

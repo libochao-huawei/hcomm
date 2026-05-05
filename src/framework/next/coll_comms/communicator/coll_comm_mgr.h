@@ -14,6 +14,7 @@
 #include <memory>
 #include <mutex>
 #include <vector>
+#include <array>
 #include "coll_comm.h"
 #include "cluster_monitor.h"
 
@@ -32,7 +33,7 @@ public:
 private:
     static CollCommMgr* instance_;
     std::unordered_map<std::string, CollComm*> allCollComms_;
-    static hcomm::ClusterMonitor* clusterMonitor_[MAX_MODULE_DEVICE_NUM];
+    std::array<hcomm::ClusterMonitor, MAX_MODULE_DEVICE_NUM> clusterMonitor_;
 
     std::mutex mutex_;
 };
