@@ -323,7 +323,8 @@ void ClusterMonitor::CreateLinkWithRemotePonit(
         hrtResetDevice(deviceLogicId_);
         return;
     }
-    auto CREATE_LINK_TIMEOUT = std::chrono::seconds(GetExternalInputHcclLinkTimeOut());
+
+    auto CREATE_LINK_TIMEOUT = std::chrono::seconds(Hccl::EnvConfig::GetInstance().GetSocketConfig().GetLinkTimeOut());
     auto startTime = std::chrono::steady_clock::now();
     while (linkRunningStatus_.load()) {
         if ((std::chrono::steady_clock::now() - startTime) >= CREATE_LINK_TIMEOUT) {
@@ -503,12 +504,7 @@ void ClusterMonitor::DelErrorSocket()
             GetUID(rem).c_str());
         uid2FrameStatusMap_.erase(rem);
         if (uid2SocketRefMap_.has(rem)) {
-            // if (uid2SocketRefMap_[rem].socket->GetLocalRole() == HcclSocketRole::SOCKET_ROLE_SERVER &&
-            //     listenSocketMap_.find(uid2SocketRefMap_[rem].socket->GetLocalIp()) != listenSocketMap_.end()) {
-            //     listenSocketMap_[uid2SocketRefMap_[rem].socket->GetLocalIp()]->DelWhiteList(
-            //         uid2SocketRefMap_[rem].wlistInfosVec);
-            // }
-            // uid2SocketRefMap_[rem].socket->Close();
+            CHK_RET(SocketDestroy(uid2SocketRefMap_[rem].socketHandler));
             while (uid2SocketRefMap_.erase(rem)) {
             };
         }
@@ -695,24 +691,13 @@ HcclResult ClusterMonitor::DeInit()
     {
         std::unique_lock<std::mutex> lock(threadLock_);
         for (auto iter = uid2SocketRefMap_.begin(); iter != uid2SocketRefMap_.end(); iter++) {
-            // if (iter->second.socket->GetLocalRole() == HcclSocketRole::SOCKET_ROLE_SERVER) {
-            //     CHK_PRT_RET(listenSocketMap_.find(iter->second.socket->GetLocalIp()) == listenSocketMap_.end(),
-            //         HCCL_ERROR("ip[%s] listenSocketMap is not found",
-            //         iter->second.socket->GetLocalIp().GetReadableAddress()),
-            //         HCCL_E_NOT_FOUND);
-            //     listenSocketMap_[iter->second.socket->GetLocalIp()]->DelWhiteList(iter->second.wlistInfosVec);
-            // }
-            // iter->second.socket->Close();
+            CHK_RET(SocketDestroy(iter->second.socketHandler));
         }
         uid2SocketRefMap_.clear();
         uid2FrameStatusMap_.clear();
     }
     std::queue<ClusterMonitorFrame> empty;
     std::swap(errStatusQueue_, empty);
-
-    // std::unique_lock<std::mutex> mapLock(ctxMapMutex_);
-    // listenSocketMap_.clear();
-    // mapLock.unlock();
 
     initialized_ = false;
     HCCL_INFO("[%s] heartbeat deinit end.", __func__);
@@ -755,16 +740,7 @@ HcclResult ClusterMonitor::UnRegisterToClusterMonitor(hccl::CollComm* collComm)
             uid2FrameStatusMap_.erase(rem);
             if (remRank.second) {
                 if (uid2SocketRefMap_.count(rem) == 1) {
-                    // if (uid2SocketRefMap_[rem].socket->GetLocalRole() == HcclSocketRole::SOCKET_ROLE_SERVER) {
-                    //     CHK_PRT_RET(listenSocketMap_.find(uid2SocketRefMap_[rem].socket->GetLocalIp()) ==
-                    //         listenSocketMap_.end(),
-                    //         HCCL_ERROR("ip[%s] listenSocketMap is not found",
-                    //         uid2SocketRefMap_[rem].socket->GetLocalIp().GetReadableAddress()),
-                    //         HCCL_E_NOT_FOUND);
-                    //     listenSocketMap_[uid2SocketRefMap_[rem].socket->GetLocalIp()]->DelWhiteList(
-                    //         uid2SocketRefMap_[rem].wlistInfosVec);
-                    // }
-                    // uid2SocketRefMap_[rem].socket->Close();
+                    CHK_RET(SocketDestroy(uid2SocketRefMap_[rem].socketHandler));
                     monitorLinkStatusMap_[rem] = MonitorLinkStatus::MONITOR_LINK_NOT_START;
                 }
                 HCCL_INFO("[%s]commId[%s] socket erase remote:%s", __func__, commId.c_str(), GetUID(rem).c_str());
