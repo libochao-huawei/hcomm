@@ -125,7 +125,7 @@ HcclResult CollReduceScatterPipelineFor91093Executor::RunLoop(
             HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][RunLoop] "
                 "before L2 wait blockIdx[%llu] streamId[%d] notifyId[%u]",
                 blockIdx, streamL2.id(), GetLocalNotifyId(forwardNotify));
-            CHK_RET(LocalNotify::Wait(streamL2, dispatcher_, forwardNotify, INVALID_VALUE_STAGE));
+            CHK_RET(LocalNotify::Wait(streamL2, dispatcher_, forwardNotify, INVALID_VALUE_STAGE, 80));
             HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][RunLoop] "
                 "after L2 wait blockIdx[%llu] streamId[%d] notifyId[%u]",
                 blockIdx, streamL2.id(), GetLocalNotifyId(forwardNotify));
