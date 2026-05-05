@@ -191,3 +191,223 @@ TEST_F(ClusterMonitorTest, RecvMonitorFrame_test)
         EXPECT_EQ(ret, HCCL_SUCCESS);
     }
 }
+
+TEST_F(ClusterMonitorTest, Ut_GetCqeErrInfoFromTaskException_When_NormalInput_Expect_SetCqeErrInfo)
+{
+    std::string netInstId = "localInstance";
+    u32 localId = 0;
+    ClusterUIDCxt localUidCxt(netInstId, localId);
+    ClusterUIDType localUid;
+    g_monitor.FormatUID(localUidCxt, localUid);
+    g_monitor.myRankUID_ = localUid;
+    g_monitor.netInstId_ = netInstId;
+    g_monitor.localId_ = localId;
+
+    u32 remoteLocalId = 1;
+    uint16_t status = 1;
+    std::string localEid = "localEid";
+    std::string remoteEid = "remoteEid";
+    std::string remoteInsId = "remoteInsId";
+
+    g_monitor.GetCqeErrInfoFromTaskException(remoteLocalId, status, localEid, remoteEid, remoteInsId);
+
+    EXPECT_EQ(g_monitor.CqeErrInfo_.CqeRemoteLocalId, remoteLocalId);
+    EXPECT_EQ(g_monitor.CqeErrInfo_.Cqestatus, status);
+    EXPECT_EQ(g_monitor.CqeErrInfo_.CqeLocalEid, localEid);
+    EXPECT_EQ(g_monitor.CqeErrInfo_.CqeRemoteEid, remoteEid);
+    EXPECT_EQ(g_monitor.CqeErrInfo_.CqeRemoteInsId, remoteInsId);
+}
+
+TEST_F(ClusterMonitorTest, Ut_ProcessExceptionEvent_When_NormalQueue_Expect_SendFrames)
+{
+    std::string netInstId = "localInstance";
+    u32 localId = 0;
+    ClusterUIDCxt localUidCxt(netInstId, localId);
+    ClusterUIDType localUid;
+    g_monitor.FormatUID(localUidCxt, localUid);
+    g_monitor.myRankUID_ = localUid;
+
+    ClusterUIDType crimerUid;
+    std::string crimerInstId = "remoteInstance";
+    ClusterUIDCxt crimerCxt(crimerInstId, 1);
+    g_monitor.FormatUID(crimerCxt, crimerUid);
+
+    ClusterUIDType informerUid = localUid;
+
+    ClusterMonitor::FrameStatus frameStatus;
+    frameStatus.status = ClusterMonitorStatus::CLUSTER_MONITOR_LOST;
+    frameStatus.informer = informerUid;
+    frameStatus.needBroadcast = false;
+    g_monitor.uid2FrameStatusMap_.insert(crimerUid, frameStatus);
+
+    g_monitor.errRankQueue_.push(crimerUid);
+
+    ClusterUIDType otherUid;
+    std::string otherInstId = "otherInstance";
+    ClusterUIDCxt otherCxt(otherInstId, 2);
+    g_monitor.FormatUID(otherCxt, otherUid);
+
+    ClusterMonitorSocketCtx socketCtx;
+    socketCtx.socketHandler = nullptr;
+    g_monitor.uid2SocketRefMap_.insert(otherUid, socketCtx);
+
+    ClusterMonitor::FrameStatus otherStatus;
+    otherStatus.status = ClusterMonitorStatus::CLUSTER_MONITOR_OK;
+    g_monitor.uid2FrameStatusMap_.insert(otherUid, otherStatus);
+
+    MOCKER(SocketSendNb)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+
+    g_monitor.ProcessExceptionEvent();
+
+    EXPECT_TRUE(g_monitor.errRankQueue_.empty());
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(ClusterMonitorTest, Ut_ProcessExceptionEvent_When_EmptyQueue_Expect_Return)
+{
+    while (!g_monitor.errRankQueue_.empty()) {
+        g_monitor.errRankQueue_.pop();
+    }
+
+    g_monitor.ProcessExceptionEvent();
+
+    EXPECT_TRUE(g_monitor.errRankQueue_.empty());
+}
+
+TEST_F(ClusterMonitorTest, Ut_MakeErrMsg_When_LostStatus_Expect_GenerateCorrectMsg)
+{
+    std::queue<ClusterMonitorFrame> keyEvents;
+
+    ClusterUIDType crimerUid;
+    std::string crimerStr = "crimerInstance";
+    ClusterUIDCxt crimerCxt(crimerStr, 1);
+    g_monitor.FormatUID(crimerCxt, crimerUid);
+
+    ClusterUIDType informerUid;
+    std::string informerStr = "informerInstance";
+    ClusterUIDCxt informerCxt(informerStr, 2);
+    g_monitor.FormatUID(informerCxt, informerUid);
+
+    HcclUs relativeTime = std::chrono::steady_clock::now();
+    std::chrono::system_clock::time_point systemTime = std::chrono::system_clock::now();
+
+    ClusterMonitorFrame frame(crimerUid, informerUid, ClusterMonitorStatus::CLUSTER_MONITOR_LOST, relativeTime, systemTime);
+    keyEvents.push(frame);
+
+    std::vector<std::string> errStatusVec;
+    g_monitor.MakeErrMsg(keyEvents, errStatusVec);
+
+    EXPECT_EQ(errStatusVec.size(), 1);
+    EXPECT_TRUE(errStatusVec[0].find("Heartbeat Lost Occurred") != std::string::npos);
+}
+
+TEST_F(ClusterMonitorTest, Ut_MakeErrMsg_When_CqeErrStatus_Expect_GenerateCorrectMsg)
+{
+    std::queue<ClusterMonitorFrame> keyEvents;
+
+    ClusterUIDType crimerUid;
+    std::string crimerStr2 = "crimerInstance";
+    ClusterUIDCxt crimerCxt(crimerStr2, 1);
+    g_monitor.FormatUID(crimerCxt, crimerUid);
+
+    ClusterUIDType informerUid;
+    std::string informerStr2 = "informerInstance";
+    ClusterUIDCxt informerCxt(informerStr2, 2);
+    g_monitor.FormatUID(informerCxt, informerUid);
+
+    HcclUs relativeTime = std::chrono::steady_clock::now();
+    std::chrono::system_clock::time_point systemTime = std::chrono::system_clock::now();
+
+    ClusterMonitorFrame frame(crimerUid, informerUid, ClusterMonitorStatus::CLUSTER_MONITOR_CQE_ERR, relativeTime, systemTime);
+    keyEvents.push(frame);
+
+    std::vector<std::string> errStatusVec;
+    g_monitor.MakeErrMsg(keyEvents, errStatusVec);
+
+    EXPECT_EQ(errStatusVec.size(), 1);
+    EXPECT_TRUE(errStatusVec[0].find("Error cqe Occurred") != std::string::npos);
+}
+
+TEST_F(ClusterMonitorTest, Ut_MakeErrMsg_When_EmptyQueue_Expect_EmptyVec)
+{
+    std::queue<ClusterMonitorFrame> keyEvents;
+    std::vector<std::string> errStatusVec;
+
+    g_monitor.MakeErrMsg(keyEvents, errStatusVec);
+
+    EXPECT_EQ(errStatusVec.size(), 0);
+}
+
+TEST_F(ClusterMonitorTest, Ut_PrintEvents_When_NormalMap_Expect_ReturnVec)
+{
+    std::map<ClusterMonitorStatus, std::queue<ClusterMonitorFrame>> keyEvents;
+
+    ClusterUIDType crimerUid;
+    std::string crimerStr3 = "crimerInstance";
+    ClusterUIDCxt crimerCxt(crimerStr3, 1);
+    g_monitor.FormatUID(crimerCxt, crimerUid);
+
+    ClusterUIDType informerUid;
+    std::string informerStr3 = "informerInstance";
+    ClusterUIDCxt informerCxt(informerStr3, 2);
+    g_monitor.FormatUID(informerCxt, informerUid);
+
+    HcclUs relativeTime = std::chrono::steady_clock::now();
+    std::chrono::system_clock::time_point systemTime = std::chrono::system_clock::now();
+
+    ClusterMonitorFrame cqeFrame(crimerUid, informerUid, ClusterMonitorStatus::CLUSTER_MONITOR_CQE_ERR, relativeTime, systemTime);
+    keyEvents[ClusterMonitorStatus::CLUSTER_MONITOR_CQE_ERR].push(cqeFrame);
+
+    ClusterMonitorFrame lostFrame(crimerUid, informerUid, ClusterMonitorStatus::CLUSTER_MONITOR_LOST, relativeTime, systemTime);
+    keyEvents[ClusterMonitorStatus::CLUSTER_MONITOR_LOST].push(lostFrame);
+
+    auto result = g_monitor.PrintEvents(keyEvents);
+
+    EXPECT_GE(result.size(), 1);
+}
+
+TEST_F(ClusterMonitorTest, Ut_PrintEvents_When_EmptyMap_Expect_EmptyVec)
+{
+    std::map<ClusterMonitorStatus, std::queue<ClusterMonitorFrame>> keyEvents;
+
+    auto result = g_monitor.PrintEvents(keyEvents);
+
+    EXPECT_EQ(result.size(), 0);
+}
+
+TEST_F(ClusterMonitorTest, Ut_GetErrStatusVecFromCluserMonitor_When_Normal_Expect_ReturnVec)
+{
+    ClusterUIDType crimerUid;
+    std::string crimerStr4 = "crimerInstance";
+    ClusterUIDCxt crimerCxt(crimerStr4, 1);
+    g_monitor.FormatUID(crimerCxt, crimerUid);
+
+    ClusterUIDType informerUid;
+    std::string informerStr4 = "informerInstance";
+    ClusterUIDCxt informerCxt(informerStr4, 2);
+    g_monitor.FormatUID(informerCxt, informerUid);
+
+    HcclUs relativeTime = std::chrono::steady_clock::now();
+    std::chrono::system_clock::time_point systemTime = std::chrono::system_clock::now();
+
+    ClusterMonitorFrame frame(crimerUid, informerUid, ClusterMonitorStatus::CLUSTER_MONITOR_CQE_ERR, relativeTime, systemTime);
+    g_monitor.errStatusQueue_.push(frame);
+
+    auto result = g_monitor.GetErrStatusVecFromCluserMonitor();
+
+    EXPECT_EQ(g_monitor.errStatusQueue_.size(), 0);
+}
+
+TEST_F(ClusterMonitorTest, Ut_GetErrStatusVecFromCluserMonitor_When_EmptyQueue_Expect_EmptyVec)
+{
+    while (!g_monitor.errStatusQueue_.empty()) {
+        g_monitor.errStatusQueue_.pop();
+    }
+
+    auto result = g_monitor.GetErrStatusVecFromCluserMonitor();
+
+    EXPECT_EQ(result.size(), 0);
+}
