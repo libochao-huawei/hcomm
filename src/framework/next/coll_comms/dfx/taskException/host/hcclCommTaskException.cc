@@ -112,12 +112,25 @@ HcclResult TaskExceptionHost::PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHa
     }
     return HCCL_SUCCESS;
 }
-    
+
+bool IsMC2Exception(rtExceptionInfo_t* exceptionInfo)
+{
+    return exceptionInfo->expandInfo.type == RT_EXCEPTION_FUSION &&
+           exceptionInfo->expandInfo.u.fusionInfo.type == RT_FUSION_AICORE_CCU;
+}
 
 void TaskExceptionHost::Process(rtExceptionInfo_t* exceptionInfo)
 {
     if (exceptionInfo == nullptr) {
         HCCL_ERROR("[%s]fail, exceptionInfo is nullptr", __func__);
+        return;
+    }
+    HCCL_RUN_INFO("[TaskExceptionHost][%s], taskid[%u], streamid[%u], tid[%u], deviceid[%u], retcode[%u], type[%d]",
+        __func__, exceptionInfo->taskid, exceptionInfo->streamid, exceptionInfo->tid, exceptionInfo->deviceid,
+        exceptionInfo->retcode, exceptionInfo->expandInfo.type);
+
+    if (IsMC2Exception(exceptionInfo)) { // MC2 taskException 新流程暂未支持，回退到老流程
+        Hccl::TaskExceptionHandler::Process(exceptionInfo);
         return;
     }
 
