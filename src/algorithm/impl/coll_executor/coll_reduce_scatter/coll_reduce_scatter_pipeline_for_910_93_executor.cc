@@ -108,9 +108,9 @@ HcclResult CollReduceScatterPipelineFor91093Executor::RunLoop(
             CHK_RET(RunL0L1Phase(param, ctx, i, streamL0L1));
             auto forwardNotify = getForwardNotify(i);
             HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][RunLoop] "
-                "{Skipped} Record blockIdx[%llu] streamId[%d] notifyId[%u]",
+                "Record blockIdx[%llu] streamId[%d] notifyId[%u]",
                 i, streamL0L1.id(), GetLocalNotifyId(forwardNotify));
-            // CHK_RET(LocalNotify::Post(streamL0L1, dispatcher_, forwardNotify, INVALID_VALUE_STAGE));
+            CHK_RET(LocalNotify::Post(streamL0L1, dispatcher_, forwardNotify, INVALID_VALUE_STAGE));
         }
 
         if (i >= 1 && i <= ctx.numBlockTotal) {
@@ -120,8 +120,8 @@ HcclResult CollReduceScatterPipelineFor91093Executor::RunLoop(
                 "Wait blockIdx[%llu] streamId[%d] notifyId[%u]",
                 blockIdx, streamL2.id(), GetLocalNotifyId(forwardNotify));
             CHK_RET(LocalNotify::Wait(streamL2, dispatcher_, forwardNotify, INVALID_VALUE_STAGE, 80));
-            HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][RunLoop] RunL2 Skipped.");
-            // CHK_RET(RunL2Phase(param, ctx, blockIdx, streamL2));
+            // HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][RunLoop] RunL2 Skipped.");
+            CHK_RET(RunL2Phase(param, ctx, blockIdx, streamL2));
             auto backwardNotify = getBackwardNotify(blockIdx);
             HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][RunLoop] "
                 "Record blockIdx[%llu] streamId[%d] notifyId[%u]",
@@ -130,8 +130,8 @@ HcclResult CollReduceScatterPipelineFor91093Executor::RunLoop(
         }
     }
 
-    CHK_RET(WaitForRemainingL2Signals(param, ctx.numBlockTotal, streamL0L1,
-        notifyL2toL0L1A, notifyL2toL0L1B));
+    // CHK_RET(WaitForRemainingL2Signals(param, ctx.numBlockTotal, streamL0L1,
+    //     notifyL2toL0L1A, notifyL2toL0L1B));
     HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][RunLoop] Pipeline run success");
     return HCCL_SUCCESS;
 }
