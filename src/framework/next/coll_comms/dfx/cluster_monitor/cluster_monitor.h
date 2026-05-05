@@ -113,15 +113,15 @@ struct ClusterMonitorFrame {
 };
 
 struct ClusterMonitorSocketCtx { // 原ConnInfo
-    HcclCommSocketDesc socketDesc;                // 与对端连接的描述符
-    HcclCommSocketHandle  socketHandler;          // 引用头文件定义
+    SocketDesc socketDesc;                        // 与对端连接的描述符
+    SocketHandle  socketHandler;                  // 引用头文件定义
     std::queue<ClusterMonitorFrame> sendBuffer;   // 用来发送的帧队列
     u32 restSize = 0;                             // 剩余待发送的帧长度
     hccl::RingBuffer recvBuffer;                  // 用来接收的环形帧队列
     u32 lostNum = 0;                              // 丢失的心跳个数
     bool newConn = false;                         // 是否是新增的连接
     ClusterMonitorSocketCtx() {}
-    ClusterMonitorSocketCtx(HcclCommSocketDesc &socketDesc, bool newConn)
+    ClusterMonitorSocketCtx(SocketDesc &socketDesc, bool newConn)
         : socketDesc(socketDesc), newConn(newConn)
     {}
 };
@@ -161,7 +161,7 @@ public:
     void SetStatus(ClusterUIDType &crimer, ClusterUIDType &informer, ClusterMonitorStatus status, bool needBroadcast = true);
     void MonitorThread();
     HcclResult RunMonitorThread();
-    void SendFrame(ClusterUIDType &dst, ClusterUIDType &crimer, ClusterUIDType &informer, ClusterMonitorStatus status);
+    HcclResult SendFrame(ClusterUIDType &dst, ClusterUIDType &crimer, ClusterUIDType &informer, ClusterMonitorStatus status);
     void DelErrorSocket();
     void ProcessExceptionEvent();
     HcclResult RecvFrame(ClusterUIDType rem);

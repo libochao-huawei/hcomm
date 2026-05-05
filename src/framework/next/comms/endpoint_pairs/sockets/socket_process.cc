@@ -38,7 +38,7 @@ SocketProcess::~SocketProcess()
     unique_lock<std::mutex> lock(mutex_);
     for (auto &socketItem : serverSocketMap_) {
         if (socketItem.second != nullptr) {
-            socketItem.second->Destroy();
+            socketItem.second.get()->Destroy();
         }
     }
     serverSocketMap_.clear();
@@ -52,7 +52,7 @@ SocketProcess::~SocketProcess()
     socket2TagMap_.clear();
 }
 
-HcclResult SocketProcess::DestroySocketHandle(HcclCommSocketHandle socketHandle)
+HcclResult SocketProcess::DestroySocketHandle(SocketHandle socketHandle)
 {
     Hccl::Socket *socket = static_cast<Hccl::Socket *>(socketHandle);
     if (socket == nullptr) {
@@ -85,12 +85,13 @@ HcclResult SocketProcess::DestroySocketHandle(HcclCommSocketHandle socketHandle)
     Hccl::Socket* rawSocket = tag2socketIter->second.first;
     tag2socketMap_.erase(tag2socketIter);
     socket2TagMap_.erase(socket2TagIter);
+    CHK_RET(socketMgr_->DeleteWhiteList(rawSocket));
     CHK_RET(socketMgr_->DestroySocket(rawSocket));
 
     return HCCL_SUCCESS;
 }
 
-HcclResult SocketProcess::GetSocket(HcclCommSocketDesc *socketDesc, HcclCommSocketHandle &socketHandle)
+HcclResult SocketProcess::GetSocket(SocketDesc *socketDesc, SocketHandle &socketHandle)
 {
     CHK_PTR_NULL(socketDesc);
     CHK_RET(Init());
@@ -116,12 +117,12 @@ HcclResult SocketProcess::GetSocket(HcclCommSocketDesc *socketDesc, HcclCommSock
             tag2socketMap_[socketTag].second);
     }
 
-    socketHandle = static_cast<HcclCommSocketHandle>(tag2socketMap_[socketTag].first);
+    socketHandle = static_cast<SocketHandle>(tag2socketMap_[socketTag].first);
     HCCL_INFO("[SocketProcess][%s] socketHandle = %p", __func__, socketHandle);
     return HCCL_SUCCESS;
 }
 
-HcclResult SocketProcess::GetStatus(HcclCommSocketHandle socketHandle, HcclCommSocketStatus &socketStatus)
+HcclResult SocketProcess::GetStatus(SocketHandle socketHandle, SocketStates &socketStatus)
 {
     Hccl::Socket *socket = static_cast<Hccl::Socket *>(socketHandle);
     if (socket == nullptr || socket2TagMap_.find(socket) == socket2TagMap_.end()) {
@@ -131,17 +132,17 @@ HcclResult SocketProcess::GetStatus(HcclCommSocketHandle socketHandle, HcclCommS
 
     Hccl::SocketStatus status = socket->GetAsyncStatus();
     if (status == Hccl::SocketStatus::OK) {
-        socketStatus = HcclCommSocketStatus::SOCKET_OK;
+        socketStatus = SocketStates::SOCKET_OK;
     } else if (status == Hccl::SocketStatus::TIMEOUT) {
-        socketStatus = HcclCommSocketStatus::SOCKET_TIMEOUT;
+        socketStatus = SocketStates::SOCKET_TIMEOUT;
     } else {
-        socketStatus = HcclCommSocketStatus::SOCKET_CONNECTING;
+        socketStatus = SocketStates::SOCKET_CONNECTING;
     }
 
     return HCCL_SUCCESS;
 }
 
-HcclResult SocketProcess::SendNoBlock(HcclCommSocketHandle socketHandle, void *sendbuffer, u64 sendSize, u64 *&sentSize)
+HcclResult SocketProcess::SendNoBlock(SocketHandle socketHandle, void *sendbuffer, u64 sendSize, u64 *&sentSize)
 {
     Hccl::Socket *socket = static_cast<Hccl::Socket *>(socketHandle);
     if (socket == nullptr || socket2TagMap_.find(socket) == socket2TagMap_.end()) {
@@ -166,7 +167,7 @@ HcclResult SocketProcess::SendNoBlock(HcclCommSocketHandle socketHandle, void *s
 }
 
 HcclResult SocketProcess::RecvNoBlock(
-    HcclCommSocketHandle socketHandle, void *recvBuffer, u64 recvSize, u64 *&recvedSize)
+    SocketHandle socketHandle, void *recvBuffer, u64 recvSize, u64 *&recvedSize)
 {
     Hccl::Socket *socket = static_cast<Hccl::Socket *>(socketHandle);
     if (socket == nullptr || socket2TagMap_.find(socket) == socket2TagMap_.end()) {
@@ -219,36 +220,35 @@ Hccl::SocketRole SocketProcess::ConvertToHcclSocketRole(HcommSocketRole &hcommRo
     }
 }
 
-HcclResult SocketProcess::BuildSocket(HcclCommSocketDesc *socketDesc, const std::string &socketTag)
+HcclResult SocketProcess::BuildSocket(SocketDesc *socketDesc, const std::string &socketTag)
 {
     if (tag2socketMap_.find(socketTag) != tag2socketMap_.end()) {
         return HCCL_SUCCESS;
     }
 
-    Hccl::IpAddress ipaddr{};
-    CHK_RET(CommAddrToIpAddress(socketDesc->localEndpoint.commAddr, ipaddr));
-    if (serverSocketMap_.find(ipaddr) == serverSocketMap_.end()) {
-        Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::TCP);
-        Hccl::PortData localPort = Hccl::PortData(static_cast<Hccl::RankId>(devicePhyId_), type, 0, ipaddr);
-        Hccl::SocketHandle socketHandle = Hccl::SocketHandleManager::GetInstance().Create(devicePhyId_, localPort);
-        // 这里的NicType需要确认如何选择，先暂时写死为DEVICE_NIC_TYPE
-        EXECEPTION_CATCH(serverSocketMap_[ipaddr] = std::make_unique<Hccl::Socket>(socketHandle, ipaddr, 60001, ipaddr,
-                             "server", Hccl::SocketRole::SERVER, Hccl::NicType::DEVICE_NIC_TYPE),
-            return HCCL_E_PARA);
-        HCCL_INFO("[SocketProcess][%s] listen_socket_info[%s]", __func__, serverSocketMap_[ipaddr]->Describe().c_str());
-        EXECEPTION_CATCH(serverSocketMap_[ipaddr]->Listen(), return HCCL_E_INTERNAL);
-    }
-    HCCL_INFO("[SocketProcess][%s] ip[%s] has been listening.", __func__, ipaddr.GetIpStr().c_str());
-
-    // 还没有tcp的protocol，先默认用ROCE协议构建linkData
-    socketDesc->localEndpoint.protocol = CommProtocol::COMM_PROTOCOL_ROCE;
-    socketDesc->remoteEndpoint.protocol = CommProtocol::COMM_PROTOCOL_ROCE;
+    // 存疑CommProtocol还没有tcp的protocol，这里是别的协议吗？
     Hccl::LinkData linkData = BuildDefaultLinkData();
     CHK_RET(EndpointDescPairToLinkData(socketDesc->localEndpoint, socketDesc->remoteEndpoint, linkData));
     HCCL_INFO("[SocketProcess][%s] built linkData: %s", __func__, linkData.Describe().c_str());
-    bool noRankId = true;
     Hccl::SocketConfig socketConfig
         = Hccl::SocketConfig(linkData, string(socketDesc->tag), ConvertToHcclSocketRole(socketDesc->role));
+    auto localPort = socketConfig.link.GetLocalPort();
+
+    Hccl::IpAddress ipaddr{};
+    CHK_RET(CommAddrToIpAddress(socketDesc->localEndpoint.commAddr, ipaddr));
+    if (serverSocketMap_.find(localPort) == serverSocketMap_.end()) {
+        Hccl::SocketHandle serverSocketHandle = Hccl::SocketHandleManager::GetInstance().Get(devicePhyId_, localPort);
+        if (serverSocketHandle == nullptr) {
+            serverSocketHandle = Hccl::SocketHandleManager::GetInstance().Create(devicePhyId_, localPort);
+        }
+        EXECEPTION_CATCH(serverSocketMap_[localPort] = std::make_unique<Hccl::Socket>(
+            serverSocketHandle, ipaddr, socketDesc->listenPort, ipaddr, socketDesc->tag,
+            Hccl::SocketRole::SERVER, Hccl::NicType::DEVICE_NIC_TYPE), return HCCL_E_PARA);
+        HCCL_INFO("[%s] listen_socket_info[%s]", __func__, serverSocketMap_[localPort].get()->Describe().c_str());
+        EXECEPTION_CATCH(serverSocketMap_[localPort].get()->Listen(), return HCCL_E_INTERNAL);
+    }
+    HCCL_INFO("[SocketProcess][%s] ip[%s] has been listening.", __func__, ipaddr.GetIpStr().c_str());
+
     Hccl::Socket *socket = nullptr;
     CHK_RET(socketMgr_->GetSocket(socketConfig, socket));
     tag2socketMap_[socketTag].first = socket;

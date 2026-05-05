@@ -12,7 +12,7 @@
 #include "socket_process.h"
 #include "adapter_rts_common.h"
 
-HcclResult HcclCommSocketCreate(HcclCommSocketDesc *socketDesc, HcclCommSocketHandle *socketHandle)
+HcclResult SocketCreate(SocketDesc *socketDesc, SocketHandler *socketHandle)
 {
     CHK_PTR_NULL(socketDesc);
     CHK_PTR_NULL(socketHandle);
@@ -22,7 +22,7 @@ HcclResult HcclCommSocketCreate(HcclCommSocketDesc *socketDesc, HcclCommSocketHa
     return hcomm::SocketProcess::GetInstance(devLogicId).GetSocket(socketDesc, *socketHandle);
 }
 
-HcclResult HcclCommSocketDestroy(HcclCommSocketHandle socketHandle)
+HcclResult SocketDestroy(SocketHandler socketHandle)
 {
     CHK_PTR_NULL(socketHandle);
     s32 devLogicId;
@@ -30,7 +30,7 @@ HcclResult HcclCommSocketDestroy(HcclCommSocketHandle socketHandle)
     return hcomm::SocketProcess::GetInstance(devLogicId).DestroySocketHandle(socketHandle);
 }
 
-HcclResult HcclCommSocketGetStatus(HcclCommSocketHandle socketHandle, HcclCommSocketStatus *status)
+HcclResult SocketGetStatus(SocketHandler socketHandle, SocketStates *status)
 {
     CHK_PTR_NULL(socketHandle);
     CHK_PTR_NULL(status);
@@ -39,8 +39,8 @@ HcclResult HcclCommSocketGetStatus(HcclCommSocketHandle socketHandle, HcclCommSo
     return hcomm::SocketProcess::GetInstance(devLogicId).GetStatus(socketHandle, *status);
 }
 
-HcclResult HcclCommSocketSendNb(
-    HcclCommSocketHandle socketHandle, void *sendbuffer, uint64_t sendSize, uint64_t *sentSize)
+HcclResult SocketSendNb(
+    SocketHandler socketHandle, void *sendbuffer, uint64_t sendSize, uint64_t *sentSize)
 {
     CHK_PTR_NULL(socketHandle);
     CHK_PTR_NULL(sendbuffer);
@@ -51,8 +51,8 @@ HcclResult HcclCommSocketSendNb(
         .SendNoBlock(socketHandle, sendbuffer, sendSize, reinterpret_cast<u64 *&>(sentSize));
 }
 
-HcclResult HcclCommSocketRecvNb(
-    HcclCommSocketHandle socketHandle, void *recvBuffer, uint64_t recvSize, uint64_t *recvedSize)
+HcclResult SocketRecvNb(
+    SocketHandler socketHandle, void *recvBuffer, uint64_t recvSize, uint64_t *recvedSize)
 {
     CHK_PTR_NULL(socketHandle);
     CHK_PTR_NULL(recvBuffer);

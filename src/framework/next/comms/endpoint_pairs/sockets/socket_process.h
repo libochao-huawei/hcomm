@@ -23,18 +23,18 @@ public:
     static SocketProcess &GetInstance(s32 deviceLogicId);
     ~SocketProcess();
 
-    HcclResult DestroySocketHandle(HcclCommSocketHandle socketHandle);
+    HcclResult DestroySocketHandle(SocketHandle socketHandle);
 
-    HcclResult GetSocket(HcclCommSocketDesc *socketDesc, HcclCommSocketHandle &socketHandle);
+    HcclResult GetSocket(SocketDesc *socketDesc, SocketHandle &socketHandle);
 
     // 异步推动建链
-    HcclResult GetStatus(HcclCommSocketHandle socketHandle, HcclCommSocketStatus &socketStatus);
+    HcclResult GetStatus(SocketHandle socketHandle, SocketStates &socketStatus);
 
     // 发送数据接口
-    HcclResult SendNoBlock(HcclCommSocketHandle socketHandle, void *sendbuffer, u64 sendSize, u64 *&sentSize);
+    HcclResult SendNoBlock(SocketHandle socketHandle, void *sendbuffer, u64 sendSize, u64 *&sentSize);
 
     // 接收数据接口
-    HcclResult RecvNoBlock(HcclCommSocketHandle socketHandle, void *recvBuffer, u64 recvSize, u64 *&recvedSize);
+    HcclResult RecvNoBlock(SocketHandle socketHandle, void *recvBuffer, u64 recvSize, u64 *&recvedSize);
 
 private:
     HcclResult Init();
@@ -42,10 +42,10 @@ private:
     Hccl::SocketRole ConvertToHcclSocketRole(HcommSocketRole &hcommRole);
 
     // 创建socket句柄，建立通信通道
-    HcclResult BuildSocket(HcclCommSocketDesc *socketDesc, const std::string &socketTag);
+    HcclResult BuildSocket(SocketDesc *socketDesc, const std::string &socketTag);
 
     std::atomic<bool> isInit_{false};
-    std::unordered_map<Hccl::IpAddress, std::unique_ptr<Hccl::Socket>> serverSocketMap_{};
+    std::unordered_map<Hccl::PortData, std::unique_ptr<Hccl::Socket>> serverSocketMap_{};
     std::unordered_map<std::string, std::pair<Hccl::Socket *, u32>> tag2socketMap_{};
     std::unordered_map<Hccl::Socket *, std::string> socket2TagMap_{};
     std::unique_ptr<SocketMgr> socketMgr_{};

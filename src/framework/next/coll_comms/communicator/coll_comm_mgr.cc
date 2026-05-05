@@ -15,6 +15,7 @@ namespace hccl {
 
 CollCommMgr* CollCommMgr::instance_ = nullptr;
 static std::once_flag instanceFlag;
+hcomm::ClusterMonitor* CollCommMgr::clusterMonitor_[MAX_MODULE_DEVICE_NUM] = {nullptr};
 
 CollCommMgr* CollCommMgr::GetInstance() 
 {
@@ -26,12 +27,11 @@ CollCommMgr* CollCommMgr::GetInstance()
 
 hcomm::ClusterMonitor &CollCommMgr::GetClusterMonitor(s32 deviceLogicId)
 {
-    if (static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM) {
-        HCCL_WARNING("[ClusterMonitor][%s]deviceLogicId[%d] >= %u, invalid",
-            __func__, deviceLogicId, MAX_MODULE_DEVICE_NUM);
-        return clusterMonitor_[0];
+    if (clusterMonitor_[deviceLogicId] == nullptr) {
+        clusterMonitor_[deviceLogicId] = &hcomm::ClusterMonitor::GetInstance(deviceLogicId);
     }
-    return clusterMonitor_[deviceLogicId];
+
+    return *clusterMonitor_[deviceLogicId];
 }
 
 void CollCommMgr::RegisteCollComm(CollComm* collComm)

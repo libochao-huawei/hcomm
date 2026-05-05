@@ -137,4 +137,9 @@ void HrtDeviceAbortRegCallBack(aclrtDeviceTaskAbortCallback callback, void *args
 {
     return;
 }
+
+void HrtRaSocketWhiteListDel(SocketHandle socketHandle, vector<RaSocketWhitelist> &wlists)
+{
+    return;
+}
 } // namespace Hccl
