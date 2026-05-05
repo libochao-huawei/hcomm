@@ -23,12 +23,12 @@
 
 using namespace hcomm;
 
-class TestSocketProcess : public TestHcommCAdptBase {
+class SocketProcessTest : public TestHcommCAdptBase {
 public:
-    TestSocketProcess() {
+    SocketProcessTest() {
         InitSocketDesc();
     }
-    ~TestSocketProcess() {
+    ~SocketProcessTest() {
         if (socketHandle != nullptr) {
             hcomm::SocketProcess::GetInstance(0).DestroySocketHandle(socketHandle);
             socketHandle = nullptr;
@@ -49,89 +49,91 @@ public:
         struct in_addr localAddr;
         struct in_addr remoteAddr;
         inet_pton(AF_INET, "127.0.0.1", &localAddr);
-        TestSocketProcess::socketDesc.localEndpoint.commAddr.addr = localAddr;
+        SocketProcessTest::socketDesc.localEndpoint.commAddr.addr = localAddr;
+        SocketProcessTest::socketDesc.localEndpoint.protocol = CommProtocol::COMM_PROTOCOL_ROCE;
         inet_pton(AF_INET, "192.186.0.1", &remoteAddr);
-        TestSocketProcess::socketDesc.remoteEndpoint.commAddr.addr = remoteAddr;
-        s32 ret = memcpy_s(TestSocketProcess::socketDesc.tag, HCCL_SOCKET_TAG_LEN, testTag.c_str(), testTag.length() + 1);
+        SocketProcessTest::socketDesc.remoteEndpoint.commAddr.addr = remoteAddr;
+        SocketProcessTest::socketDesc.remoteEndpoint.protocol = CommProtocol::COMM_PROTOCOL_ROCE;
+        s32 ret = memcpy_s(SocketProcessTest::socketDesc.tag, HCCL_SOCKET_TAG_LEN, testTag.c_str(), testTag.length() + 1);
         EXPECT_EQ(ret, EOK);
-        TestSocketProcess::socketDesc.role = HCOMM_SOCKET_ROLE_CLIENT;
-        TestSocketProcess::socketDesc.listenPort = 8080;
+        SocketProcessTest::socketDesc.role = HCOMM_SOCKET_ROLE_CLIENT;
+        SocketProcessTest::socketDesc.listenPort = 8080;
     }
 
-    static HcclCommSocketHandle socketHandle;
-    static HcclCommSocketDesc socketDesc;
+    static SocketHandle socketHandle;
+    static SocketDesc socketDesc;
 };
 
-HcclCommSocketHandle TestSocketProcess::socketHandle = nullptr;
-HcclCommSocketDesc TestSocketProcess::socketDesc{};
+SocketHandle SocketProcessTest::socketHandle = nullptr;
+SocketDesc SocketProcessTest::socketDesc{};
 
-TEST_F(TestSocketProcess, Ut_TestGetSocket_When_Return_ERROR)
+TEST_F(SocketProcessTest, Ut_GetSocket_ERROR)
 {
-    HcclCommSocketDesc *tempSocketDesc = nullptr;
-    HcclCommSocketHandle tempSocketHandle = nullptr;
+    SocketDesc *tempSocketDesc = nullptr;
+    SocketHandle tempSocketHandle = nullptr;
     HcclResult ret = hcomm::SocketProcess::GetInstance(0).GetSocket(tempSocketDesc, tempSocketHandle);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
-TEST_F(TestSocketProcess, Ut_TestGetSocket_When_Return_Success)
+TEST_F(SocketProcessTest, Ut_GetSocket_Success)
 {
-    HcclResult ret = hcomm::SocketProcess::GetInstance(0).GetSocket(&TestSocketProcess::socketDesc, TestSocketProcess::socketHandle);
+    HcclResult ret = hcomm::SocketProcess::GetInstance(0).GetSocket(&SocketProcessTest::socketDesc, SocketProcessTest::socketHandle);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-TEST_F(TestSocketProcess, Ut_TestGetStatus_When_Return_ERROR)
+TEST_F(SocketProcessTest, Ut_GetStatus_ERROR)
 {
-    HcclCommSocketHandle tempSocketHandle = nullptr;
-    HcclCommSocketStatus socketStatus;
+    SocketHandle tempSocketHandle = nullptr;
+    SocketStates socketStatus;
     HcclResult ret = hcomm::SocketProcess::GetInstance(0).GetStatus(tempSocketHandle, socketStatus);
     EXPECT_EQ(ret, HCCL_E_PARA);
 
-    tempSocketHandle = reinterpret_cast<HcclCommSocketHandle>(0x1);
+    tempSocketHandle = reinterpret_cast<SocketHandle>(0x1);
     ret = hcomm::SocketProcess::GetInstance(0).GetStatus(tempSocketHandle, socketStatus);
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
-TEST_F(TestSocketProcess, Ut_TestGetStatus_When_Return_Success)
+TEST_F(SocketProcessTest, Ut_GetStatus_Success)
 {
     HcclResult ret;
-    HcclCommSocketStatus socketStatus;
-    if (TestSocketProcess::socketHandle == nullptr) {
-        ret = hcomm::SocketProcess::GetInstance(0).GetSocket(&TestSocketProcess::socketDesc, TestSocketProcess::socketHandle);
+    SocketStates socketStatus;
+    if (SocketProcessTest::socketHandle == nullptr) {
+        ret = hcomm::SocketProcess::GetInstance(0).GetSocket(&SocketProcessTest::socketDesc, SocketProcessTest::socketHandle);
         EXPECT_EQ(ret, HCCL_SUCCESS);
     }
-    while (TestSocketProcess::socketHandle != nullptr && socketStatus != HcclCommSocketStatus::SOCKET_OK) {
-        HcclResult ret = hcomm::SocketProcess::GetInstance(0).GetStatus(TestSocketProcess::socketHandle, socketStatus);
+    while (SocketProcessTest::socketHandle != nullptr && socketStatus != SocketStates::SOCKET_OK) {
+        HcclResult ret = hcomm::SocketProcess::GetInstance(0).GetStatus(SocketProcessTest::socketHandle, socketStatus);
         EXPECT_EQ(ret, HCCL_SUCCESS);
-        if (socketStatus == HcclCommSocketStatus::SOCKET_TIMEOUT) {
-            EXPECT_EQ(socketStatus, HcclCommSocketStatus::SOCKET_OK);
+        if (socketStatus == SocketStates::SOCKET_TIMEOUT) {
+            EXPECT_EQ(socketStatus, SocketStates::SOCKET_OK);
             break;
         } 
     }
 }
 
-TEST_F(TestSocketProcess, Ut_TestSendNoBlock_When_Return_ERROR)
+TEST_F(SocketProcessTest, Ut_SendNoBlock_ERROR)
 {
-    HcclCommSocketHandle tempSocketHandle = nullptr;
+    SocketHandle tempSocketHandle = nullptr;
     u64 sendbuffer = 123;
     u64 sendSize = sizeof(sendbuffer);
     u64 *sentSize = nullptr;
     HcclResult ret = hcomm::SocketProcess::GetInstance(0).SendNoBlock(tempSocketHandle, &sendbuffer, sendSize, sentSize);
     EXPECT_EQ(ret, HCCL_E_PARA);
 
-    tempSocketHandle = reinterpret_cast<HcclCommSocketHandle>(0x1);
+    tempSocketHandle = reinterpret_cast<SocketHandle>(0x1);
     ret = hcomm::SocketProcess::GetInstance(0).SendNoBlock(tempSocketHandle, &sendbuffer, sendSize, sentSize);
     EXPECT_EQ(ret, HCCL_E_PARA);
 
     void *errorBuffer = nullptr;
-    ret = hcomm::SocketProcess::GetInstance(0).SendNoBlock(TestSocketProcess::socketHandle, &errorBuffer, sendSize, sentSize);
+    ret = hcomm::SocketProcess::GetInstance(0).SendNoBlock(SocketProcessTest::socketHandle, &errorBuffer, sendSize, sentSize);
     EXPECT_EQ(ret, HCCL_E_PARA);    
 }
 
-TEST_F(TestSocketProcess, Ut_TestSendNoBlock_When_Return_SUCCESS)
+TEST_F(SocketProcessTest, Ut_SendNoBlock_Success)
 {
     HcclResult ret;
-    if (TestSocketProcess::socketHandle == nullptr) {
-        ret = hcomm::SocketProcess::GetInstance(0).GetSocket(&TestSocketProcess::socketDesc, TestSocketProcess::socketHandle);
+    if (SocketProcessTest::socketHandle == nullptr) {
+        ret = hcomm::SocketProcess::GetInstance(0).GetSocket(&SocketProcessTest::socketDesc, SocketProcessTest::socketHandle);
         EXPECT_EQ(ret, HCCL_SUCCESS);
     }
 
@@ -139,14 +141,14 @@ TEST_F(TestSocketProcess, Ut_TestSendNoBlock_When_Return_SUCCESS)
     u64 sendSize = sizeof(sendbuffer);
     u64 sentSize = 0;
     u64 *sentSizePtr = &sentSize;
-    ret = hcomm::SocketProcess::GetInstance(0).SendNoBlock(TestSocketProcess::socketHandle, &sendbuffer, sendSize, sentSizePtr);
+    ret = hcomm::SocketProcess::GetInstance(0).SendNoBlock(SocketProcessTest::socketHandle, &sendbuffer, sendSize, sentSizePtr);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(sendSize, *sentSizePtr);
 }
 
-TEST_F(TestSocketProcess, Ut_TestRecvNoBlock_When_Return_ERROR)
+TEST_F(SocketProcessTest, Ut_RecvNoBlock_ERROR)
 {
-    HcclCommSocketHandle tempSocketHandle = nullptr;
+    SocketHandle tempSocketHandle = nullptr;
     u64 recvbuffer = 0;
     u64 recvSize = sizeof(recvbuffer);
     u64 recvedSize = 0;
@@ -154,20 +156,20 @@ TEST_F(TestSocketProcess, Ut_TestRecvNoBlock_When_Return_ERROR)
     HcclResult ret = hcomm::SocketProcess::GetInstance(0).RecvNoBlock(tempSocketHandle, &recvbuffer, recvSize, recvedSizePtr);
     EXPECT_EQ(ret, HCCL_E_PARA);
 
-    tempSocketHandle = reinterpret_cast<HcclCommSocketHandle>(0x1);
+    tempSocketHandle = reinterpret_cast<SocketHandle>(0x1);
     ret = hcomm::SocketProcess::GetInstance(0).RecvNoBlock(tempSocketHandle, &recvbuffer, recvSize, recvedSizePtr);
     EXPECT_EQ(ret, HCCL_E_PARA);
 
     void *errorBuffer = nullptr;
-    ret = hcomm::SocketProcess::GetInstance(0).RecvNoBlock(TestSocketProcess::socketHandle, &errorBuffer, recvSize, recvedSizePtr);
+    ret = hcomm::SocketProcess::GetInstance(0).RecvNoBlock(SocketProcessTest::socketHandle, &errorBuffer, recvSize, recvedSizePtr);
     EXPECT_EQ(ret, HCCL_E_PARA);   
 }
 
-TEST_F(TestSocketProcess, Ut_TestRecvNoBlock_When_Return_HCCL_SUCCESS)
+TEST_F(SocketProcessTest, Ut_RecvNoBlock_Success)
 {
     HcclResult ret;
-    if (TestSocketProcess::socketHandle == nullptr) {
-        ret = hcomm::SocketProcess::GetInstance(0).GetSocket(&TestSocketProcess::socketDesc, TestSocketProcess::socketHandle);
+    if (SocketProcessTest::socketHandle == nullptr) {
+        ret = hcomm::SocketProcess::GetInstance(0).GetSocket(&SocketProcessTest::socketDesc, SocketProcessTest::socketHandle);
         EXPECT_EQ(ret, HCCL_SUCCESS);
     }
 
@@ -175,12 +177,12 @@ TEST_F(TestSocketProcess, Ut_TestRecvNoBlock_When_Return_HCCL_SUCCESS)
     u64 recvSize = sizeof(recvbuffer);
     u64 recvedSize = 0;
     u64 *recvedSizePtr = &recvedSize;
-    ret = hcomm::SocketProcess::GetInstance(0).RecvNoBlock(TestSocketProcess::socketHandle, &recvbuffer, recvSize, recvedSizePtr);
+    ret = hcomm::SocketProcess::GetInstance(0).RecvNoBlock(SocketProcessTest::socketHandle, &recvbuffer, recvSize, recvedSizePtr);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(recvSize, *recvedSizePtr);
 }
 
-TEST_F(TestSocketProcess, Ut_TestConvertToHcclSocketRole_W_Role)
+TEST_F(SocketProcessTest, Ut_ConvertToHcclSocketRole)
 {
     Hccl::SocketRole role;
     HcommSocketRole hcommRole;
@@ -197,7 +199,7 @@ TEST_F(TestSocketProcess, Ut_TestConvertToHcclSocketRole_W_Role)
     EXPECT_EQ(role, Hccl::SocketRole::CLIENT);
 }
 
-TEST_F(TestSocketProcess, Ut_TestGetInstance_When_DeviceLogicIdValid_Return_SocketProcessRef)
+TEST_F(SocketProcessTest, Ut_GetInstance_SocketProcessRef)
 {
     s32 deviceLogicId = 0;
     hcomm::SocketProcess &process1 = hcomm::SocketProcess::GetInstance(deviceLogicId);
@@ -205,7 +207,7 @@ TEST_F(TestSocketProcess, Ut_TestGetInstance_When_DeviceLogicIdValid_Return_Sock
     EXPECT_EQ(&process1, &process2);
 }
 
-TEST_F(TestSocketProcess, Ut_TestGetInstance_When_DeviceLogicIdInvalid_Return_FirstInstance)
+TEST_F(SocketProcessTest, Ut_GetInstance_FirstInstance)
 {
     s32 invalidDeviceLogicId = 999;
     hcomm::SocketProcess &process = hcomm::SocketProcess::GetInstance(invalidDeviceLogicId);
@@ -213,26 +215,26 @@ TEST_F(TestSocketProcess, Ut_TestGetInstance_When_DeviceLogicIdInvalid_Return_Fi
     EXPECT_EQ(&process, &expectedProcess);
 }
 
-TEST_F(TestSocketProcess, Ut_TestDestroySocketHandle_When_Return_ERROR)
+TEST_F(SocketProcessTest, Ut_DestroySocketHandle_ERROR)
 {
-    HcclCommSocketHandle tempSocketHandle = nullptr;
+    SocketHandle tempSocketHandle = nullptr;
     HcclResult ret = hcomm::SocketProcess::GetInstance(0).DestroySocketHandle(tempSocketHandle);
     EXPECT_EQ(ret, HCCL_E_PARA);
 
-    tempSocketHandle = reinterpret_cast<HcclCommSocketHandle>(0x1);
+    tempSocketHandle = reinterpret_cast<SocketHandle>(0x1);
     ret = hcomm::SocketProcess::GetInstance(0).DestroySocketHandle(tempSocketHandle);
     EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
 }
 
-TEST_F(TestSocketProcess, Ut_TestDestroySocketHandle_When_Return_SUCCESS)
+TEST_F(SocketProcessTest, Ut_DestroySocketHandle_Success)
 {
     HcclResult ret;
-    if (TestSocketProcess::socketHandle == nullptr) {
-        ret = hcomm::SocketProcess::GetInstance(0).GetSocket(&TestSocketProcess::socketDesc, TestSocketProcess::socketHandle);
+    if (SocketProcessTest::socketHandle == nullptr) {
+        ret = hcomm::SocketProcess::GetInstance(0).GetSocket(&SocketProcessTest::socketDesc, SocketProcessTest::socketHandle);
         EXPECT_EQ(ret, HCCL_SUCCESS);
     }
 
-    ret = hcomm::SocketProcess::GetInstance(0).DestroySocketHandle(TestSocketProcess::socketHandle);
+    ret = hcomm::SocketProcess::GetInstance(0).DestroySocketHandle(SocketProcessTest::socketHandle);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    TestSocketProcess::socketHandle = nullptr;
+    SocketProcessTest::socketHandle = nullptr;
 }

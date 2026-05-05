@@ -127,7 +127,7 @@ HcclResult ClusterMonitor::InsertClusterMonitorCxt(HcclComm comm, UIDContext rem
     std::map<ClusterUIDType, ClusterMonitorSocketCtx> &needConnectRank)
 {
     bool newConn = true;
-    HcclCommSocketDesc socketDesc{};
+    SocketDesc socketDesc{};
     auto remoteUID = remoteCtx.uid;
     auto remoteRank = remoteCtx.rankId;
     auto netLayer = remoteCtx.netLayer;
@@ -295,9 +295,9 @@ void ClusterMonitor::CreateHBLinksAsync()
 HcclResult ClusterMonitor::CreateTransportHandle(ClusterMonitorSocketCtx &info)
 {
     if (info.socketHandler == nullptr) {
-        HcclResult ret = HcclCommSocketCreate(&info.socketDesc, &info.socketHandler);
+        HcclResult ret = SocketCreate(&info.socketDesc, &info.socketHandler);
         if (ret != HCCL_SUCCESS) {
-            HCCL_WARNING("[CreateTransportHandle] HcclCommSocketCreate failed, ret[%d]", ret);
+            HCCL_WARNING("[CreateTransportHandle] SocketCreate failed, ret[%d]", ret);
             return HCCL_E_NETWORK;
         }
     } else {
@@ -332,23 +332,23 @@ void ClusterMonitor::CreateLinkWithRemotePonit(
             break;
         }
 
-        HcclCommSocketStatus status;
-        HcclResult ret = HcclCommSocketGetStatus(needConnectRank.socketHandler, &status);
+        SocketStates status;
+        HcclResult ret = SocketGetStatus(needConnectRank.socketHandler, &status);
         if (ret != HCCL_SUCCESS) {
             HCCL_RUN_WARNING(
                 "establish rank[%s] to rank[%s] connection failed. Reason: get socket status[%d] failed, commId[%s]",
                 GetUID(myRankUID_).c_str(), GetUID(rem).c_str(), status, commId.c_str());
-            HcclCommSocketDestroy(needConnectRank.socketHandler);
+            SocketDestroy(needConnectRank.socketHandler);
             break;
         }
 
-        if (status == HcclCommSocketStatus::SOCKET_TIMEOUT) {
+        if (status == SocketStates::SOCKET_TIMEOUT) {
             HCCL_RUN_WARNING(
                 "establish rank[%s] to rank[%s] connection failed. Reason: get socket status timeout, commId[%s]",
                 GetUID(myRankUID_).c_str(), GetUID(rem).c_str(), commId.c_str());
-            HcclCommSocketDestroy(needConnectRank.socketHandler);
+            SocketDestroy(needConnectRank.socketHandler);
             break;
-        } else if (status == HcclCommSocketStatus::SOCKET_CONNECTING) {
+        } else if (status == SocketStates::SOCKET_CONNECTING) {
             SaluSleep(ONE_MILLISECOND_OF_USLEEP);
             continue;
         }
@@ -358,7 +358,7 @@ void ClusterMonitor::CreateLinkWithRemotePonit(
             HCCL_RUN_WARNING(
                 "establish rank[%s] to rank[%s] connection failed. Reason: commId[%s] has been Unregistered.",
                 GetUID(myRankUID_).c_str(), GetUID(rem).c_str(), commId.c_str());
-            HcclCommSocketDestroy(needConnectRank.socketHandler);
+            SocketDestroy(needConnectRank.socketHandler);
             lock.unlock();
             break;
         }
@@ -370,7 +370,7 @@ void ClusterMonitor::CreateLinkWithRemotePonit(
             HCCL_RUN_WARNING(
                 "establish rank[%s] to rank[%s] connection failed. Reason: socket recv buffer init failed. commId[%s].",
                 GetUID(myRankUID_).c_str(), GetUID(rem).c_str(), commId.c_str());
-            HcclCommSocketDestroy(needConnectRank.socketHandler);
+            SocketDestroy(needConnectRank.socketHandler);
             uid2SocketRefMap_.erase(rem);
             lock.unlock();
             break;
@@ -388,7 +388,7 @@ void ClusterMonitor::CreateLinkWithRemotePonit(
     return;
 }
 
-void ClusterMonitor::SendFrame(
+HcclResult ClusterMonitor::SendFrame(
     ClusterUIDType &dst, ClusterUIDType &crimer, ClusterUIDType &informer, ClusterMonitorStatus status)
 {
     ClusterMonitorFrame cmFrame(myRankUID_, dst, crimer, informer, status);
@@ -401,12 +401,12 @@ void ClusterMonitor::SendFrame(
             ClusterMonitorFrame hbf = uid2SocketRefMap_[dst].sendBuffer.front();
             u64 sendDis = sizeof(ClusterMonitorFrame) - uid2SocketRefMap_[dst].restSize;
             u64 compSize = 0;
-            HcclResult ret = HcclCommSocketSendNb(uid2SocketRefMap_[dst].socketHandler,
+            HcclResult ret = SocketSendNb(uid2SocketRefMap_[dst].socketHandler,
                 (reinterpret_cast<char *>(&hbf) + sendDis), uid2SocketRefMap_[dst].restSize,
                 (reinterpret_cast<uint64_t *>(&compSize)));
             if (ret != HCCL_SUCCESS) {
-                HCCL_WARNING("[CreateTransportHandle] HcclCommSocketSendNb failed, ret[%d]", ret);
-                return;
+                HCCL_WARNING("[CreateTransportHandle] SocketSendNb failed, ret[%d]", ret);
+                return HCCL_E_INTERNAL;
             }
             if (uid2SocketRefMap_[dst].restSize == compSize) {
                 uid2SocketRefMap_[dst].sendBuffer.pop();
@@ -422,11 +422,11 @@ void ClusterMonitor::SendFrame(
     } else {
         u64 compSize = 0;
         u64 expectSize = sizeof(ClusterMonitorFrame);
-        HcclResult ret = HcclCommSocketSendNb(
+        HcclResult ret = SocketSendNb(
             uid2SocketRefMap_[dst].socketHandler, &cmFrame, expectSize, (reinterpret_cast<uint64_t *>(&compSize)));
         if (ret != HCCL_SUCCESS) {
-            HCCL_WARNING("[CreateTransportHandle] HcclCommSocketSendNb failed, ret[%d]", ret);
-            return;
+            HCCL_WARNING("[CreateTransportHandle] SocketSendNb failed, ret[%d]", ret);
+            return HCCL_E_INTERNAL;
         }
         if (compSize == expectSize) {
             HCCL_DEBUG("[Heartbeat][SendFrame] Send Success, from [%s] to [%s] about [%s] by [%s] status[%d]",
@@ -440,7 +440,7 @@ void ClusterMonitor::SendFrame(
             uid2SocketRefMap_[dst].sendBuffer.push(cmFrame);
         }
     }
-    return;
+    return HCCL_SUCCESS;
 }
 
 HcclResult ClusterMonitor::RecvFrame(ClusterUIDType rem)
@@ -448,9 +448,10 @@ HcclResult ClusterMonitor::RecvFrame(ClusterUIDType rem)
     ClusterMonitorFrame cmFrame;
     u64 compSize = 0;
     u64 expectSize = sizeof(ClusterMonitorFrame);
+    // 对此处while处理逻辑增加注释
     while (true) {
         compSize = 0;
-        HcclResult ret = HcclCommSocketRecvNb(
+        HcclResult ret = SocketRecvNb(
             uid2SocketRefMap_[rem].socketHandler, &cmFrame, expectSize, (reinterpret_cast<uint64_t *>(&compSize)));
         if (ret == HCCL_SUCCESS && compSize > 0) {
             uid2SocketRefMap_[rem].recvBuffer.PushSeg(reinterpret_cast<u8 *>(&cmFrame), compSize);
@@ -460,8 +461,10 @@ HcclResult ClusterMonitor::RecvFrame(ClusterUIDType rem)
                 CHK_RET(ParseFrame(cmFrame, rem));
             }
         } else if (ret == HCCL_E_INTERNAL) {
+            // 增加日志，方便排查recv失败的原因
             return HCCL_E_INTERNAL;
         } else {
+            // 增加注释
             break;
         }
     }
@@ -480,7 +483,7 @@ HcclResult ClusterMonitor::ParseFrame(ClusterMonitorFrame &cmFrame, ClusterUIDTy
         GetUID(cmFrame.informer).c_str(), cmFrame.status);
 
     // 能够收到进程卡住表示心跳是正常的
-    if (cmFrame.status == ClusterMonitorStatus::CLUSTER_MONITOR_OK) { // 去掉stuck的判断
+    if (cmFrame.status == ClusterMonitorStatus::CLUSTER_MONITOR_OK) {
         uid2SocketRefMap_[src].lostNum = 0;
     }
 

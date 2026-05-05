@@ -41,6 +41,7 @@ HcclResult SocketMgr::AddWhiteList(const Hccl::SocketConfig &socketConfig, const
     wlistInfo.connLimit = 1;
     wlistInfo.remoteIp = socketConfig.link.GetRemoteAddr();
     wlistInfo.tag = socketConfig.GetHccpTag();
+    handle2WhiteListMap_[socketHandle].push_back(wlistInfo);
 
     std::vector<Hccl::RaSocketWhitelist> wlistInfoVec;
     wlistInfoVec.clear();
@@ -158,6 +159,28 @@ HcclResult SocketMgr::GetSocket(const Hccl::SocketConfig &socketConfig, Hccl::So
     }
  
     socket = it->second.get();
+    return HCCL_SUCCESS;
+}
+
+HcclResult SocketMgr::DeleteWhiteList(Hccl::Socket* socket)
+{
+    CHK_PTR_NULL(socket);
+    auto iter = handle2WhiteListMap_.find(socket->GetFdHandle());
+    if (iter == handle2WhiteListMap_.end()) {
+        HCCL_WARNING("[DeleteWhiteList] socketHandle[%p] not found in handle2WhiteListMap_, nothing to delete.",
+            socket->GetFdHandle());
+        return HCCL_SUCCESS;
+    }
+
+    std::vector<Hccl::RaSocketWhitelist> &wlistInfoVec = iter->second;
+    if (wlistInfoVec.empty()) {
+        HCCL_WARNING("[DeleteWhiteList] socketHandle[%p] has empty white list, nothing to delete.", socket->GetFdHandle());
+        return HCCL_SUCCESS;
+    }
+
+    EXECEPTION_CATCH(Hccl::HrtRaSocketWhiteListDel(socket->GetFdHandle(), wlistInfoVec), return HCCL_E_INTERNAL);
+    handle2WhiteListMap_.erase(iter);
+
     return HCCL_SUCCESS;
 }
 

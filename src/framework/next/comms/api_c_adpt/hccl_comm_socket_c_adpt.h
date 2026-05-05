@@ -32,24 +32,24 @@ typedef struct {
     char tag[HCCL_SOCKET_TAG_LEN]; // 用户自定义标签,must end with '\0'
     HcommSocketRole role;          // socket角色：服务端或客户端
     uint16_t listenPort;           //< 本地监听端口，仅server端有效
-} HcclCommSocketDesc;              // HcclCommSocketDesc
+} SocketDesc;                      // SocketDesc
 
-typedef void *HcclCommSocketHandle;
+typedef void *SocketHandler;
+// 此处前缀改一下 取消掉HcclComm前缀
+enum SocketStates { SOCKET_OK, SOCKET_CONNECTING, SOCKET_TIMEOUT };
 
-enum HcclCommSocketStatus { SOCKET_OK, SOCKET_CONNECTING, SOCKET_TIMEOUT };
+HcclResult SocketCreate(
+    SocketDesc *socketDesc, SocketHandler *socketHandle); // HcclCommSocketCreate接口，创建socket连接
 
-HcclResult HcclCommSocketCreate(
-    HcclCommSocketDesc *socketDesc, HcclCommSocketHandle *socketHandle); // HcclCommSocketCreate接口，创建socket连接
+HcclResult SocketDestroy(SocketHandler socketHandle);
 
-HcclResult HcclCommSocketDestroy(HcclCommSocketHandle socketHandle);
+HcclResult SocketGetStatus(SocketHandler socketHandle, SocketStates *status);
 
-HcclResult HcclCommSocketGetStatus(HcclCommSocketHandle socketHandle, HcclCommSocketStatus *status);
+HcclResult SocketSendNb(
+    SocketHandler socketHandle, void *sendbuffer, uint64_t sendSize, uint64_t *sentSize);
 
-HcclResult HcclCommSocketSendNb(
-    HcclCommSocketHandle socketHandle, void *sendbuffer, uint64_t sendSize, uint64_t *sentSize);
-
-HcclResult HcclCommSocketRecvNb(
-    HcclCommSocketHandle socketHandle, void *recvBuffer, uint64_t recvSize, uint64_t *recvedSize);
+HcclResult SocketRecvNb(
+    SocketHandler socketHandle, void *recvBuffer, uint64_t recvSize, uint64_t *recvedSize);
 
 #ifdef __cplusplus
 }

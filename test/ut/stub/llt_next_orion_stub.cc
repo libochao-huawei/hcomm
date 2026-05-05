@@ -2181,6 +2181,11 @@ HcclResult HcclCommunicator::SetAccelerator(int32_t accelerator, bool isCcuMsAva
     return HCCL_SUCCESS;
 }
 
+HcclResult HcclCommunicator::GetRankGraphV2(void *&rankGraph)
+{
+    return HCCL_SUCCESS;
+}
+
 } // namespace Hccl
 
 namespace Hccl {
