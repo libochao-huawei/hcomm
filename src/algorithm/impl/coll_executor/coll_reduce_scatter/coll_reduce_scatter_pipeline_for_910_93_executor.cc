@@ -120,6 +120,10 @@ HcclResult CollReduceScatterPipelineFor91093Executor::RunLoop(
                 "Wait blockIdx[%llu] streamId[%d] notifyId[%u]",
                 blockIdx, streamL2.id(), GetLocalNotifyId(forwardNotify));
             CHK_RET(LocalNotify::Wait(streamL2, dispatcher_, forwardNotify, INVALID_VALUE_STAGE, 80));
+
+            HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][RunLoop] EmptyTask.");
+            CHK_RET(AlgTemplateBase::ExecEmptyTask(algRes.cclInputMem, algRes.cclOutputMem, streamL2, dispatcher_));
+
             // HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][RunLoop] RunL2 Skipped.");
             CHK_RET(RunL2Phase(param, ctx, blockIdx, streamL2));
             auto backwardNotify = getBackwardNotify(blockIdx);
@@ -130,8 +134,8 @@ HcclResult CollReduceScatterPipelineFor91093Executor::RunLoop(
         }
     }
 
-    // CHK_RET(WaitForRemainingL2Signals(param, ctx.numBlockTotal, streamL0L1,
-    //     notifyL2toL0L1A, notifyL2toL0L1B));
+    CHK_RET(WaitForRemainingL2Signals(param, ctx.numBlockTotal, streamL0L1,
+        notifyL2toL0L1A, notifyL2toL0L1B));
     HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][RunLoop] Pipeline run success");
     return HCCL_SUCCESS;
 }
