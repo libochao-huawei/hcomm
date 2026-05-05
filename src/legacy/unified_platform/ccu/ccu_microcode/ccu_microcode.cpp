@@ -962,6 +962,10 @@ static std::string ParseMSList(const CcuInstr *instr)
         msId[index] = instr->v1.add.msId[index];
     }
 
+    if (count + 2 > CCU_REDUCE_MAX_MS) {
+        return "MS[]";
+    }
+
     std::string res = "MS[";
     for (uint16_t i = 0; i < count + 2; i++) { // 循环范围 0~count + 2
         if (i == count + 1) {
@@ -1055,6 +1059,9 @@ static std::unordered_map<uint16_t, ParseInstrFunc> g_parseInstrSqeMap = {
 
 std::string ParseInstr(const CcuInstr *instr)
 {
+    if (g_parseInstrSqeMap.find(instr->header.header) == g_parseInstrSqeMap.end()) {
+        return StringFormat("Unsupported instruction with header: 0x%04x", instr->header.header);
+    }
     return g_parseInstrSqeMap[instr->header.header](instr);
 }
 
