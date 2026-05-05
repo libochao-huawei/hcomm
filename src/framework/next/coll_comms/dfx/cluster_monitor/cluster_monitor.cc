@@ -17,17 +17,10 @@
 #include "hcclCommTaskException.h"
 #include "ccuTaskException.h"
 #include "coll_comm_mgr.h"
+#include "heartbeat.h"
 
 namespace hcomm {
-constexpr u32 EVENT_MAX_CNT = 5000;             // 防止内存泄漏，同时不能太短，防止正常事件被冲掉
-constexpr u32 HEARTBEAT_INTERVAL = 1000;                                 // 心跳帧发送周期为1000 ms
-constexpr u32 BROADCAST_INTERVAL = 50; // 背景线程执行周期为50 ms
-constexpr u32 HEARTBEAT_COUNT = HEARTBEAT_INTERVAL / BROADCAST_INTERVAL; // 心跳帧发送间隔数
-constexpr u32 BASE_NUMBER = 2;
-constexpr u32 MAX_SENDBUFF_SIZE = 3072; // SendBuff[dst] 最大数量
-
-constexpr u32 JITTER_TIME = 300; // 关键事件允许的误差事件范围±300s。误差来源：EVENT和NOTIFY差异、传播耗时、计时误差   
-constexpr u32 MAX_MODULE_DEVICE_NUM = 65;
+constexpr u32 MAX_MODULE_DEVICE_NUM = 65; // 待删除
 
 HcclResult ClusterMonitor::FormatUID(ClusterUIDCxt cxt, ClusterUIDType &uid)
 {
@@ -368,7 +361,7 @@ void ClusterMonitor::CreateLinkWithRemotePonit(
         uid2SocketRefMap_.insert(rem, needConnectRank);
         // 心跳socket建链完成后，需要立即及激活其心跳收发能力
         auto frameSize = sizeof(ClusterMonitorFrame);
-        if (uid2SocketRefMap_[rem].recvBuffer.Init(BASE_NUMBER * frameSize) != HCCL_SUCCESS) { // 2倍帧长，确保不会溢出
+        if (uid2SocketRefMap_[rem].recvBuffer.Init(hccl::BASE_NUMBER * frameSize) != HCCL_SUCCESS) { // 2倍帧长，确保不会溢出
             HCCL_RUN_WARNING(
                 "establish rank[%s] to rank[%s] connection failed. Reason: socket recv buffer init failed. commId[%s].",
                 GetUID(myRankUID_).c_str(), GetUID(rem).c_str(), commId.c_str());
@@ -396,7 +389,7 @@ HcclResult ClusterMonitor::SendFrame(
     ClusterMonitorFrame cmFrame(myRankUID_, dst, crimer, informer, status);
     if (uid2SocketRefMap_[dst].sendBuffer.size() > 0) {
         if (status != ClusterMonitorStatus::CLUSTER_MONITOR_OK
-            && uid2SocketRefMap_[dst].sendBuffer.size() < MAX_SENDBUFF_SIZE) {
+            && uid2SocketRefMap_[dst].sendBuffer.size() < hccl::MAX_SENDBUFF_SIZE) {
             uid2SocketRefMap_[dst].sendBuffer.push(cmFrame);
         }
         while (uid2SocketRefMap_[dst].sendBuffer.size() > 0) {
@@ -525,7 +518,7 @@ void ClusterMonitor::SetStatus(ClusterUIDType &crimer, ClusterUIDType &informer,
         }
 
         errStatusQueue_.push(ClusterMonitorFrame(crimer, informer, status, TIME_NOW(), std::chrono::system_clock::now()));
-        if (errStatusQueue_.size() > EVENT_MAX_CNT) {
+        if (errStatusQueue_.size() > hccl::EVENT_MAX_CNT) {
             errStatusQueue_.pop();
         }
         HCCL_RUN_INFO("[%s][%s]local rank [%s]: crimer rank [%s] status[%s] by informer rank [%s]",
@@ -546,7 +539,7 @@ void ClusterMonitor::MonitorThread()
         CreateHBLinksAsync(); // 内部起线程对所有的socket进行异步建链
         threadLock_.lock();
         count++;
-        if (count >= HEARTBEAT_COUNT) {
+        if (count >= hccl::HEARTBEAT_COUNT) {
             count = 0;
             for (auto iter = uid2SocketRefMap_.begin(); iter != uid2SocketRefMap_.end(); iter++) {
                 ClusterUIDType rem = iter->first;
@@ -569,7 +562,7 @@ void ClusterMonitor::MonitorThread()
         ProcessExceptionEvent(); // 处理error cqe
         threadLock_.unlock();
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(BROADCAST_INTERVAL));
+        std::this_thread::sleep_for(std::chrono::milliseconds(hccl::BROADCAST_INTERVAL));
     }
 
     linkThreadRunning_ = false;
