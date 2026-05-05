@@ -86,14 +86,15 @@ HcclResult ClusterMonitor::GetRemEndpointDescs(HcclComm comm,
             rankIdsSet.insert(rankId);
             auto *netInstance = rankGraph->GetNetInstanceByRankId(0, rankId); // 查询对应rankId在netLayer=0的netInsId
             CHK_PTR_NULL(netInstance); // 有可能netInstance为空
-            auto netInstId_ = netInstance->GetNetInstId();
+            auto netInstanceId = netInstance->GetNetInstId();
             auto localId = rankGraph->GetLocalId(rankId); // 根据rank查localId
-            ClusterUIDCxt uidcxt(netInstId_, localId);
+            ClusterUIDCxt uidcxt(netInstanceId, localId);
             ClusterUIDType uid{};
             CHK_RET(FormatUID(uidcxt, uid));
             if (myRankId == rankId) {
                 myRankUID_ = uid;
                 localId_ = localId;
+                netInstId_ = netInstanceId;
             }
             uid2FrameStatusMap_.insert(uid, FrameStatus());
             commIdMap_[collComm->GetCommId()].insert(std::make_pair(uid, false)); //初始状态均为未连接，包含自己
