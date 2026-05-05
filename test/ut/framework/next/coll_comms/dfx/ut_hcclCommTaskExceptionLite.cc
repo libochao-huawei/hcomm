@@ -77,3 +77,18 @@ TEST_F(hcclCommTaskExceptionLiteTest, Ut_SwitchSdmaCqeErrCodeToTsErrCode_taskexc
     EXPECT_EQ(ret, HCCL_SUCCESS);
     hcomm::SetTaskExceptionEnable(true);
 }
+TEST_F(hcclCommTaskExceptionLiteTest, Ut_GetSdmaErrorDesc_When_RT_SDMA_DATAERR_Expect_CorrectDescription)
+{
+    HcclCommTaskExceptionLite::GetInstance().Init(0);
+    uint16_t ret = HcclCommTaskExceptionLite::GetInstance().SwitchSdmaCqeErrCodeToTsErrCode(RT_SDMA_DATAERR);
+    EXPECT_EQ(ret, TS_ERROR_SDMA_DDRC_ERROR);
+    
+    ret = HcclCommTaskExceptionLite::GetInstance().SwitchSdmaCqeErrCodeToTsErrCode(RT_SDMA_COMPERR);
+    EXPECT_EQ(ret, TS_ERROR_SDMA_LINK_ERROR);
+
+    ret = HcclCommTaskExceptionLite::GetInstance().SwitchSdmaCqeErrCodeToTsErrCode(RT_SDMA_COMPDATAERR);
+    EXPECT_EQ(ret, TS_ERROR_SDMA_POISON_ERROR);
+
+    ret = HcclCommTaskExceptionLite::GetInstance().SwitchSdmaCqeErrCodeToTsErrCode(0XFF);
+    EXPECT_EQ(ret, TS_ERROR_HCCL_OTHER_ERROR);
+}
