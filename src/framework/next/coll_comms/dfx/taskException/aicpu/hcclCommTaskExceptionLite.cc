@@ -296,11 +296,13 @@ HcclResult HcclCommTaskExceptionLite::SendTaskExceptionByMBox(const u32 notifyId
     aicpuSqe.ts_id = static_cast<uint8_t>(tsId);
     aicpuSqe.u.aicpu_record.fault_task_id = 0xffffffff;
 
-    const uint8_t ubErrorType = 1; // ub类型为1
-    if (exceptionInfo.errorType == ubErrorType) {
+    const uint8_t ubSqeType = 9; // UBDMA类型为9, SDMA类型为11
+    if (exceptionInfo.sqeType == ubSqeType) {
         aicpuSqe.u.aicpu_record.ret_code = SwitchUBCqeErrCodeToTsErrCode(exceptionInfo.errorCode & 0xFF);
-    } else {
+    } else if (exceptionInfo.sqeType == 11) {
         aicpuSqe.u.aicpu_record.ret_code = SwitchSdmaCqeErrCodeToTsErrCode(exceptionInfo.errorCode);
+    } else {
+        aicpuSqe.u.aicpu_record.ret_code = TS_ERROR_HCCL_OTHER_ERROR;
     }
 
     struct event_summary event;

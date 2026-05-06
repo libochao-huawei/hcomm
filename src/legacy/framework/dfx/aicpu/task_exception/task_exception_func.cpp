@@ -89,7 +89,7 @@ std::string TaskExceptionFunc::StringLogicCqReportInfo(const rtLogicCqReport_t &
     ss << "streamId :" << reportOfOne.streamId;
     ss << " taskId :" << reportOfOne.taskId;
     ss << " errorCode :" << reportOfOne.errorCode;
-    if (reportOfOne.errorType == 0b1) { // errorType等于1时, errorCode才按照UB的格式解析, 不等于1时可不关注errorCode
+    if (reportOfOne.sqeType == 9) { // sqeType等于9时, errorCode才按照UB的格式解析, 不等于9时可不关注errorCode
         const std::string errorStatus = CqeStatus2Str(reportOfOne.errorCode);
         ss << "(" << errorStatus << ")";
     }
