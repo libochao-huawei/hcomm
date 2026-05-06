@@ -203,8 +203,8 @@ elseif(BUILD_OPEN_PROJECT)
             ${BUILD_DEVICE_DIR}/signatures/cann-hcomm-compat.tar.gz
             ${BUILD_DEVICE_DIR}/signatures/aicpu_hcomm.tar.gz
             ${BUILD_HCCD_DIR}/signatures/cann-hccd-compat.tar.gz
-            ${BUILD_DEVICE_DIR}/src/framework/libaicpu_custom.so
-            ${BUILD_DEVICE_DIR}/src/framework/libaicpu_custom.json
+            ${BUILD_DEVICE_DIR}/src/libaicpu_custom.so
+            ${BUILD_DEVICE_DIR}/src/libaicpu_custom.json
         )
         install(FILES ${BUILD_DEVICE_DIR}/signatures/cann-hcomm-compat.tar.gz
             DESTINATION ${INSTALL_DEVICE_TAR_DIR} OPTIONAL
@@ -220,19 +220,19 @@ elseif(BUILD_OPEN_PROJECT)
             COMPONENT hcomm
             PERMISSIONS OWNER_READ GROUP_READ
         )
-        install(FILES ${BUILD_DEVICE_DIR}/src/framework/libaicpu_custom.so
+        install(FILES ${BUILD_DEVICE_DIR}/src/libaicpu_custom.so
             DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel ${INSTALL_OPTIONAL}
             COMPONENT hcomm
         )
-        install(FILES ${BUILD_DEVICE_DIR}/src/framework/libaicpu_custom.json
+        install(FILES ${BUILD_DEVICE_DIR}/src/libaicpu_custom.json
             DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel ${INSTALL_OPTIONAL}
             COMPONENT hcomm
         )
 
         add_custom_target(install_ccl_kernel DEPENDS
-            ${BUILD_DEVICE_DIR}/src/framework/libccl_kernel.so
+            ${BUILD_DEVICE_DIR}/src/libccl_kernel.so
         )
-        install(FILES ${BUILD_DEVICE_DIR}/src/framework/libccl_kernel.so
+        install(FILES ${BUILD_DEVICE_DIR}/src/libccl_kernel.so
             DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/devlib/device ${INSTALL_OPTIONAL}
             COMPONENT hcomm
         )

@@ -8,17 +8,6 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 if(DEVICE_MODE AND KERNEL_MODE)
-    set(CCL_KERNEL_TAR_DIR ${HCCL_BASE_DIR}/../build_device/ccl_kernel_tar_pkg/aicpu_kernels_device)
-    add_custom_command(
-        TARGET ccl_kernel
-        POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${CCL_KERNEL_TAR_DIR}
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ccl_kernel> ${CCL_KERNEL_TAR_DIR}
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ccl_kernel_plf> ${CCL_KERNEL_TAR_DIR}
-        COMMAND chmod 750 ${CCL_KERNEL_TAR_DIR}/lib*
-        COMMENT "Copying libccl_kernel_plf.so libccl_kernel.so to ${CCL_KERNEL_TAR_DIR}"
-    )
-
     set(AICPU_CUSTOM_COMPILE_DEFINITIONS
         HCCD
         CCL_KERNEL_AICPU
@@ -65,7 +54,7 @@ if(DEVICE_MODE AND KERNEL_MODE)
     )
     target_include_directories(aicpu_custom PRIVATE
         ${CCL_KERNEL_INCLUDE_LIST}
-        ${ORION_HEAD_LIST}
+        ${LEGACY_INCLUDE_LIST}
     )
     target_link_directories(aicpu_custom PRIVATE
         ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/
@@ -79,10 +68,6 @@ if(DEVICE_MODE AND KERNEL_MODE)
     )
     install(TARGETS aicpu_custom
         LIBRARY DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel ${INSTALL_OPTIONAL}
-        COMPONENT hcomm
-    )
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
-        DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel ${INSTALL_OPTIONAL}
         COMPONENT hcomm
     )
 endif()
