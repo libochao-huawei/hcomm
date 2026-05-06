@@ -68,6 +68,7 @@ HcclResult AivUbMemTransport::Init()
 HcclResult AivUbMemTransport::IsSocketReady(bool &isReady)
 {
     CHK_PTR_NULL(socket_);
+    EXCEPTION_HANDLE_BEGIN
     Hccl::SocketStatus socketStatus = socket_->GetAsyncStatus();
     if (socketStatus == Hccl::SocketStatus::OK) {
         baseStatus_ = Hccl::TransportStatus::SOCKET_OK;
@@ -76,6 +77,7 @@ HcclResult AivUbMemTransport::IsSocketReady(bool &isReady)
         baseStatus_ = Hccl::TransportStatus::SOCKET_TIMEOUT;
         isReady = false;
     }
+    EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
 
@@ -88,35 +90,64 @@ Hccl::TransportStatus AivUbMemTransport::GetStatus()
     }
 
     bool isReady = false;
-    IsSocketReady(isReady);
+    CHK_PRT_RET(
+        IsSocketReady(isReady) != HCCL_SUCCESS,
+        HCCL_ERROR("[%s] IsSocketReady failed, aivUbStatus_[%d], baseStatus_[%d]", __func__, aivUbStatus_, baseStatus_),
+        Hccl::TransportStatus::INVALID);
     if (!isReady) {
         return baseStatus_;
     }
     HCCL_INFO("%s aivUbStatus_[%d], baseStatus_[%d] start, aivUbStatus_::SOCKET_OK[%d]", 
         __func__, aivUbStatus_, baseStatus_, AivUbMemTransportStatus::SOCKET_OK);
+    HcclResult ret;
     switch (aivUbStatus_) {
         case AivUbMemTransportStatus::INIT:
             aivUbStatus_ = AivUbMemTransportStatus::SOCKET_OK;
             baseStatus_ = Hccl::TransportStatus::SOCKET_OK;
             break;
         case AivUbMemTransportStatus::SOCKET_OK:
-            SendDataSize();
+            ret = SendDataSize();
+            CHK_PRT_RET(
+                ret != HCCL_SUCCESS,
+                HCCL_ERROR("[%s] SendDataSize ret[%d], aivUbStatus_[%d], baseStatus_[%d]",
+                    __func__, ret, aivUbStatus_, baseStatus_),
+                Hccl::TransportStatus::INVALID);
             aivUbStatus_ = AivUbMemTransportStatus::SEND_DATA_SIZE;
             break;
         case AivUbMemTransportStatus::SEND_DATA_SIZE:
-            RecvDataSize();
+            ret = RecvDataSize();
+            CHK_PRT_RET(
+                ret != HCCL_SUCCESS,
+                HCCL_ERROR("[%s] RecvDataSize ret[%d], aivUbStatus_[%d], baseStatus_[%d]",
+                    __func__, ret, aivUbStatus_, baseStatus_),
+                Hccl::TransportStatus::INVALID);
             aivUbStatus_ = AivUbMemTransportStatus::RECV_DATA_SIZE;
             break;
         case AivUbMemTransportStatus::RECV_DATA_SIZE:
-            SendMemInfo();
+            ret = SendMemInfo();
+            CHK_PRT_RET(
+                ret != HCCL_SUCCESS,
+                HCCL_ERROR("[%s] SendMemInfo ret[%d], aivUbStatus_[%d], baseStatus_[%d]",
+                    __func__, ret, aivUbStatus_, baseStatus_),
+                Hccl::TransportStatus::INVALID);
             aivUbStatus_ = AivUbMemTransportStatus::SEND_MEM_INFO;
             break;
         case AivUbMemTransportStatus::SEND_MEM_INFO:
-            RecvMemInfo();
+            ret = RecvMemInfo();
+            CHK_PRT_RET(
+                ret != HCCL_SUCCESS,
+                HCCL_ERROR("[%s] RecvMemInfo ret[%d], aivUbStatus_[%d], baseStatus_[%d]",
+                    __func__, ret, aivUbStatus_, baseStatus_),
+                Hccl::TransportStatus::INVALID);
             aivUbStatus_ = AivUbMemTransportStatus::RECV_MEM_INFO;
             break;
         case AivUbMemTransportStatus::RECV_MEM_INFO:
-            RecvDataProcess();
+            ret = RecvDataProcess();
+            CHK_PRT_RET(
+                ret != HCCL_SUCCESS,
+                HCCL_ERROR("[%s] RecvDataProcess ret[%d], aivUbStatus_[%d], baseStatus_[%d]",
+                    __func__, ret, aivUbStatus_, baseStatus_),
+                Hccl::TransportStatus::INVALID);
             aivUbStatus_ = AivUbMemTransportStatus::RECV_MEM_FIN;
             break;
         case AivUbMemTransportStatus::RECV_MEM_FIN:
@@ -139,7 +170,9 @@ HcclResult AivUbMemTransport::SendDataSize()
     
     binaryStream.Dump(sendData_);
     u32 sendSize = sendData_.size();
+    EXCEPTION_HANDLE_BEGIN
     socket_->SendAsync(reinterpret_cast<u8 *>(&sendSize), sizeof(sendSize));
+    EXCEPTION_HANDLE_END
     HCCL_INFO("[%s] finished", __func__);
     return HCCL_SUCCESS;
 }
@@ -148,7 +181,9 @@ HcclResult AivUbMemTransport::RecvDataSize()
 {
     HCCL_INFO("[%s] start", __func__);
 
+    EXCEPTION_HANDLE_BEGIN
     socket_->RecvAsync(reinterpret_cast<u8 *>(&exchangeDataSize_), sizeof(exchangeDataSize_));
+    EXCEPTION_HANDLE_END
     HCCL_INFO("[%s] finished", __func__);
     return HCCL_SUCCESS;
 }
@@ -157,7 +192,9 @@ HcclResult AivUbMemTransport::SendMemInfo()
 {
     HCCL_INFO("[%s] start", __func__);
 
+    EXCEPTION_HANDLE_BEGIN
     socket_->SendAsync(reinterpret_cast<u8 *>(&sendData_[0]), sendData_.size());
+    EXCEPTION_HANDLE_END
     HCCL_INFO("[%s] finished", __func__);
     return HCCL_SUCCESS;
 }
@@ -186,7 +223,9 @@ void AivUbMemTransport::BufferPack(Hccl::BinaryStream &binaryStream, std::vector
 HcclResult AivUbMemTransport::RecvMemInfo()
 {
     recvData_.resize(exchangeDataSize_);
+    EXCEPTION_HANDLE_BEGIN
     socket_->RecvAsync(reinterpret_cast<u8 *>(&recvData_[0]), recvData_.size());
+    EXCEPTION_HANDLE_END
     // HCCL_INFO("recv data, size=%llu, data=%s", data.size(), Hccl::Bytes2hex(data.data(), data.size()).c_str());
     return HCCL_SUCCESS;
 }
@@ -197,7 +236,9 @@ HcclResult AivUbMemTransport::RecvDataProcess()
     rmtBufferVec_.clear();
     rmtRmaBufferVec_.clear();
     remoteUserMemTag_.clear();
+    EXCEPTION_HANDLE_BEGIN
     RmtBufferUnpackProc(binaryStream);
+    EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
 
@@ -369,7 +410,9 @@ HcclResult AivUbMemTransport::UpdateMemInfo(HcommMemHandle *memHandles, uint32_t
     CHK_RET(RecvMemInfo());
     CHK_RET(CheckSocketStatus());
     Hccl::BinaryStream recvStream(recvData_);
+    EXCEPTION_HANDLE_BEGIN
     RmtBufferUnpackProc(recvStream);
+    EXCEPTION_HANDLE_END
     localRmaBufferVec_.insert(localRmaBufferVec_.end(), locMemTemp_.begin(), locMemTemp_.end());
     localUserMemTag_.insert(localUserMemTag_.end(), locTagTemp_.begin(), locTagTemp_.end());
     // 流程中已有新增内存数量判断，故执行到此位置一定存在新增内存，需要将标识置位false，使得再次调用GetUserRemoteMem时重新构造缓存
