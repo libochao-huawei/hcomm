@@ -211,7 +211,7 @@ public:
     {
         return HCCL_SUCCESS;
     }
-    HcclResult RegisterMemory(HcommMem mem, const char *memTag, void **memHandle) override
+    HcclResult RegisterMemory(HcommMem mem, void **memHandle) override
     {
         return HCCL_SUCCESS;
     }
@@ -497,11 +497,10 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_GetRemoteMem_NullParam__Expect_HCCL_E_PTR
     // GetRemoteMem
     HcclMem *remoteMem;
     uint32_t memNum{11119999};
-    char *memTagsArray[10];
-    HcclResult ret = impl_->GetRemoteMem(&remoteMem, &memNum, memTagsArray);
+    HcclResult ret = impl_->GetRemoteMem(&remoteMem, &memNum);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(memNum, 0);
-    ret = impl_->GetRemoteMem(&remoteMem, (uint32_t *)nullptr, memTagsArray);
+    ret = impl_->GetRemoteMem(&remoteMem, (uint32_t*)nullptr);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
@@ -1774,7 +1773,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_RmtBufferVecUnpackProc_Success_Expect_HCCL_SUC
     binaryStream << rmtNum;
     u32 pos = 0;
     binaryStream << pos;
-    Hccl::ExchangeRdmaBufferDto dto(0x1000, 64, 1, "testBuffer");
+    Hccl::ExchangeRdmaBufferDto dto(0x1000, 64, 1);
     dto.Serialize(binaryStream);
 
     HcclResult ret = impl_->RmtBufferVecUnpackProc(binaryStream);

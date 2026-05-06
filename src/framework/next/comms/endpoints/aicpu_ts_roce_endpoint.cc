@@ -331,9 +331,9 @@ HcclResult AicpuTsRoceEndpoint::AcceptDataSocket(uint32_t port, const std::strin
     return it->second.socket->Accept(tag, outConnected, acceptTimeoutMs);
 }
 
-HcclResult AicpuTsRoceEndpoint::RegisterMemory(HcommMem mem, const char *memTag, void **memHandle)
+HcclResult AicpuTsRoceEndpoint::RegisterMemory(HcommMem mem, void **memHandle)
 {
-    CHK_RET(this->regedMemMgr_->RegisterMemory(mem, memTag, memHandle));
+    CHK_RET(this->regedMemMgr_->RegisterMemory(mem, memHandle));
     return HCCL_SUCCESS;
 }
 

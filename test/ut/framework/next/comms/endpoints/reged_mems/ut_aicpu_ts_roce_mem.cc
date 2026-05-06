@@ -36,7 +36,7 @@ TEST_F(AicpuTsRoceRegedMemMgrTest, Ut_RegisterMemory_When_NetDevNull_Returns_E_P
     mem.size = 4096U;
     mem.type = COMM_MEM_TYPE_DEVICE;
     void *handle = nullptr;
-    EXPECT_EQ(mgr.RegisterMemory(mem, "t", &handle), HCCL_E_PTR);
+    EXPECT_EQ(mgr.RegisterMemory(mem, &handle), HCCL_E_PTR);
 }
 
 TEST_F(AicpuTsRoceRegedMemMgrTest, Ut_MemoryExport_When_MemHandleNull_Returns_E_PTR)
@@ -155,9 +155,9 @@ TEST_F(AicpuTsRoceRegedMemMgrTest, Ut_RegisterMemory_WithNetDev_MockLocalRdmaIni
     mem.size = 4096U;
     mem.type = COMM_MEM_TYPE_DEVICE;
     void *h1 = nullptr;
-    ASSERT_EQ(mgr.RegisterMemory(mem, "t", &h1), HCCL_SUCCESS);
+    ASSERT_EQ(mgr.RegisterMemory(mem, &h1), HCCL_SUCCESS);
     ASSERT_NE(h1, nullptr);
 
     void *h2 = nullptr;
-    EXPECT_EQ(mgr.RegisterMemory(mem, "t", &h2), HCCL_SUCCESS);
+    EXPECT_EQ(mgr.RegisterMemory(mem, &h2), HCCL_SUCCESS);
 }

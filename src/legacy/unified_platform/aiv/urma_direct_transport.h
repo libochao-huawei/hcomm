@@ -34,6 +34,9 @@ public:
 
     RemoteUbRmaBuffer* GetRmtBuffer() const;
 
+protected:
+    const std::vector<RemoteRmaBuffer*>& GetRemoteRmaBufferVec() const override;
+
 private:
     RdmaHandle rdmaHandle;
 
