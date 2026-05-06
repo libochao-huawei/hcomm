@@ -8,19 +8,17 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef RS_COMMON_INNER_H
-#define RS_COMMON_INNER_H
+#ifndef __AICPU_INDOP_ENV_H__
+#define __AICPU_INDOP_ENV_H__
 
-#include "hccp_common.h"
+#include "hccl_types.h"
+#include "log.h"
 
-#define RS_MAX_IP_LEN       64          // IP地址(IPv4：点分十进制，IPv6 十六进制字符串)最大长度
-#define IPV6_S6_ADDR_SIZE   16          // IPv6 have 16 u6_addr8
-#define RS_MAX_DEV_NUM         64
+namespace hcomm {
 
-struct RsIpAddrInfo {
-    uint32_t family;
-    union HccpIpAddr binAddr;
-    char readAddr[RS_MAX_IP_LEN];
-};
+void SetTaskExceptionEnable(bool taskExceptionEnable);
 
-#endif // RS_COMMON_INNER_H
+const bool& GetTaskExceptionEnable();
+
+}
+#endif

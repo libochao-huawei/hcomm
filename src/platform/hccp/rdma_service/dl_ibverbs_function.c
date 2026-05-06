@@ -474,13 +474,10 @@ STATIC int RsHrnIbvApiInit(void)
 #ifndef CA_CONFIG_LLT
     gHrnOps.rsRoceSetQpLbValue = (int (*)(struct ibv_qp *qp, int lbValue))
         HccpDlsym(gHrnApiHandle, "roce_set_qp_lb_value");
-    DL_API_RET_IS_NULL_CHECK(gHrnOps.rsRoceSetQpLbValue, "roce_set_qp_lb_value");
     gHrnOps.rsRoceGetQpLbValue = (int (*)(struct ibv_qp *qp, int *lbValue))
         HccpDlsym(gHrnApiHandle, "roce_get_qp_lb_value");
-    DL_API_RET_IS_NULL_CHECK(gHrnOps.rsRoceGetQpLbValue, "roce_get_qp_lb_value");
     gHrnOps.rsRoceGetQpNum = (int (*)(struct ibv_context *context, int *qpNum))
         HccpDlsym(gHrnApiHandle, "roce_get_qp_num");
-    DL_API_RET_IS_NULL_CHECK(gHrnOps.rsRoceGetQpNum, "roce_get_qp_num");
 #endif
     return 0;
 }

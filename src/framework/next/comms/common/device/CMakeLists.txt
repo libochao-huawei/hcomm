@@ -9,14 +9,11 @@
 # -----------------------------------------------------------------------------------------------------------
 
 set(src_list
-    orion_adpt_utils.cc
-    hccp_tlv_hdc_mgr.cc
-    eid_info_mgr.cc
-    tp_mgr.cc
+    aicpu_indop_env.cc
 )
 
-target_sources(hcomm PRIVATE
-    ${src_list}
-)
-
-add_subdirectory(device)
+if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
+    target_sources(ccl_kernel PRIVATE
+        ${src_list}
+    )
+endif()
