@@ -184,7 +184,7 @@ static void ReportSdmaError(u32 localDeviceId, u32 notifyId, u32 tsId, s32 userS
         std::vector<std::string>({"N/A", baseInfo, taskInfo, "N/A"}));
 }
 
-HcclResult TaskExceptionHandlerLite::SendTaskExceptionByMBox(const u32 localDeviceId, const u32 notifyId, const u32 tsId,
+HcclResult SendTaskExceptionByMBox(const u32 localDeviceId, const u32 notifyId, const u32 tsId,
     const s32 userStreamId, const rtLogicCqReport_t* exceptionInfo)
 {
     HCCL_INFO("[SendTaskExceptionByMBox] SendTaskExceptionByMBox start.");
