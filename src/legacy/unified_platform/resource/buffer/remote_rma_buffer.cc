@@ -20,44 +20,27 @@ RemoteIpcRmaBuffer::RemoteIpcRmaBuffer() : RemoteRmaBuffer(RmaType::IPC), isOpen
 {
 }
 
-RemoteIpcRmaBuffer::RemoteIpcRmaBuffer(const Serializable &rmtDto) : RemoteRmaBuffer(RmaType::IPC), isOpened(false)
+RemoteIpcRmaBuffer::RemoteIpcRmaBuffer(const Serializable &rmtDto, bool isForceOpenMem) : RemoteRmaBuffer(RmaType::IPC)
 {
     const auto &dto = dynamic_cast<const ExchangeIpcBufferDto &>(rmtDto);
-    remotePid       = dto.pid;
+
     ipcAddr         = dto.addr;
     ipcOffset       = dto.offset;
     size            = dto.size;
-    memTag          = dto.memTag;
-    (void)memcpy_s(ipcName, RTS_IPC_MEM_NAME_LEN, dto.name, RTS_IPC_MEM_NAME_LEN);
-    HCCL_INFO("[RemoteIpcRmaBuffer][RemoteIpcRmaBuffer]ipcAddr[%llu] ipcOffset[%llu] ipcName[%s] memTag[%s]",
-              ipcAddr, ipcOffset, ipcName, memTag.c_str());
     myPid = HrtDeviceGetBareTgid();
-    if (myPid == remotePid) {
-        HCCL_INFO("RemoteIpcRmaBuffer: myPid is equal to remotePid, do not need to open memory");
-        HrtMemPrefetchToDevice(reinterpret_cast<void*>(ipcAddr + ipcOffset) , size);
-        addr = ipcAddr + ipcOffset;
-    } else {
-        HCCL_INFO("RemoteIpcRmaBuffer: open memory.");
+    remotePid       = dto.pid;
+    (void)memcpy_s(ipcName, RTS_IPC_MEM_NAME_LEN, dto.name, RTS_IPC_MEM_NAME_LEN);
+    HCCL_INFO("[RemoteIpcRmaBuffer][RemoteIpcRmaBuffer]ipcAddr[%llu] ipcOffset[%llu] ipcName[%s] ",
+              ipcAddr, ipcOffset, ipcName);
+    if(isForceOpenMem == true || myPid != remotePid){
         ipcPtr   = HrtIpcOpenMemory(ipcName);
         addr     = reinterpret_cast<uintptr_t>(ipcPtr) + ipcOffset;
         isOpened = true;
+    }else{
+        addr = ipcAddr + ipcOffset;
+        HrtMemPrefetchToDevice(reinterpret_cast<void*>(addr) , size);
+        isOpened = false;
     }
-}
-
-RemoteIpcRmaBuffer::RemoteIpcRmaBuffer(const Serializable &rmtDto, const string tag) : RemoteRmaBuffer(RmaType::IPC), isOpened(true)
-{
-    const auto &dto = dynamic_cast<const ExchangeIpcBufferDto &>(rmtDto);
-    HCCL_INFO("[RemoteIpcRmaBuffer][RemoteIpcRmaBuffer] dtoName[%s]", dto.name);
-    ipcAddr         = dto.addr;
-    ipcOffset       = dto.offset;
-    size            = dto.size;
-    memTag          = dto.memTag;
-    (void)memcpy_s(ipcName, RTS_IPC_MEM_NAME_LEN, dto.name, RTS_IPC_MEM_NAME_LEN);
-    HCCL_INFO("[RemoteIpcRmaBuffer][RemoteIpcRmaBuffer] tag[%s] ipcAddr[%llu] ipcOffset[%llu] ipcName[%s] memTag[%s]", tag.c_str(),
-              ipcAddr, ipcOffset, ipcName, memTag.c_str());
-    ipcPtr   = HrtIpcOpenMemory(ipcName);
-    addr     = reinterpret_cast<uintptr_t>(ipcPtr) + ipcOffset;
-    isOpened = true;
 }
 
 void RemoteIpcRmaBuffer::Close() const
@@ -97,8 +80,7 @@ RemoteRdmaRmaBuffer::RemoteRdmaRmaBuffer(RdmaHandle rdmaHandle, const Serializab
     addr = dto.addr;
     size = dto.size;
     rkey = dto.rkey;
-    memTag = dto.memTag;
-    HCCL_INFO("[RemoteRdmaRmaBuffer]addr = 0x%llx; size = 0x%llx; memTag = %s", addr, size, memTag.c_str());
+    HCCL_INFO("[RemoteRdmaRmaBuffer]addr = 0x%llx; size = 0x%llx", addr, size);
 }
 
 RemoteRdmaRmaBuffer::~RemoteRdmaRmaBuffer()
@@ -133,7 +115,6 @@ RemoteUbRmaBuffer::RemoteUbRmaBuffer(RdmaHandle rdmaHandle1, const Serializable 
     addr       = dto.addr;
     size       = dto.size;
     memType    = dto.memType;
-    memTag     = dto.memTag;
     tokenId    = dto.tokenId;
     tokenValue = dto.tokenValue;
     keySize    = dto.keySize;
