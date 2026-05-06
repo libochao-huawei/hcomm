@@ -54,17 +54,12 @@ HcclResult CollReduceScatterPipelineFor91093Executor::RunLoop(
     Stream streamL0L1 = param.stream;
     Stream streamL2 = algResResp_->slaveStreams.back();
     const u32 baseStreamNum = algResResp_->slaveStreams.size() - PIPELINE_NOTIFY_NUM;
-    auto notifyL0L1toL2A = algResResp_->notifiesAux[baseStreamNum];
-    auto notifyL0L1toL2B = algResResp_->notifiesAux[baseStreamNum + 1];
-    auto notifyL2toL0L1A = algResResp_->notifiesMain[baseStreamNum];
-    auto notifyL2toL0L1B = algResResp_->notifiesMain[baseStreamNum + 1];
+    auto notifyL0L1toL2A = algResResp_->notifiesMain[baseStreamNum];
+    auto notifyL0L1toL2B = algResResp_->notifiesMain[baseStreamNum + 1];
+    auto notifyL2toL0L1A = algResResp_->notifiesAux[baseStreamNum];
+    auto notifyL2toL0L1B = algResResp_->notifiesAux[baseStreamNum + 1];
     PipelineLoopContext ctx;
     CHK_RET(BuildPipelineLoopContext(param, algRes, unitSize, ctx));
-
-    HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][RunLoop] "
-        "streamL2[%p] fwdNotifyA[%p] fwdNotifyB[%p] bwdNotifyA[%p] bwdNotifyB[%p]",
-        streamL2.ptr(), notifyL0L1toL2A.get(), notifyL0L1toL2B.get(),
-        notifyL2toL0L1A.get(), notifyL2toL0L1B.get());
 
     auto getForwardNotify = [&](u64 blockIdx) -> std::shared_ptr<LocalNotify> {
         return (blockIdx % PIPELINE_NOTIFY_NUM == 0) ? notifyL0L1toL2A : notifyL0L1toL2B;
@@ -77,17 +72,21 @@ HcclResult CollReduceScatterPipelineFor91093Executor::RunLoop(
     for (u64 i = 0; i < numLoopTotal; ++i) {
         if (i < ctx.numBlockTotal) {
             if (i >= 2) {
-                CHK_RET(LocalNotify::Wait(streamL0L1, dispatcher_, getBackwardNotify(i), INVALID_VALUE_STAGE));
+                CHK_RET(LocalNotify::Wait(streamL0L1, dispatcher_, getBackwardNotify(i)));
             }
             CHK_RET(RunL0L1Phase(param, ctx, i, streamL0L1));
-            CHK_RET(LocalNotify::Post(streamL0L1, dispatcher_, getForwardNotify(i), INVALID_VALUE_STAGE));
+            CHK_RET(LocalNotify::Post(streamL0L1, dispatcher_, getForwardNotify(i)));
         }
 
         if (i >= 1 && i <= ctx.numBlockTotal) {
             const u64 blockIdx = i - 1;
-            CHK_RET(LocalNotify::Wait(streamL2, dispatcher_, getForwardNotify(blockIdx), INVALID_VALUE_STAGE));
+            CHK_RET(LocalNotify::Wait(streamL2, dispatcher_, getForwardNotify(blockIdx)));
             CHK_RET(RunL2Phase(param, ctx, blockIdx, streamL2));
-            CHK_RET(LocalNotify::Post(streamL2, dispatcher_, getBackwardNotify(blockIdx), INVALID_VALUE_STAGE));
+            CHK_RET(LocalNotify::Post(streamL2, dispatcher_, getBackwardNotify(blockIdx)));
+        }
+
+        if (!is310P3Common_) {
+            CHK_RET(LaunchTaskExtend(dispatcher_, param.stream, algResResp_->slaveStreams));
         }
     }
 
@@ -145,7 +144,7 @@ HcclResult CollReduceScatterPipelineFor91093Executor::WaitForRemainingL2Signals(
     const u64 firstBlockIdx = numBlockTotal - remainingSignals;
     for (u64 blockIdx = firstBlockIdx; blockIdx < numBlockTotal; ++blockIdx) {
         auto notify = (blockIdx % PIPELINE_NOTIFY_NUM == 0) ? notifyL2toL0L1A : notifyL2toL0L1B;
-        HcclResult ret = LocalNotify::Wait(streamL0L1, dispatcher_, notify, INVALID_VALUE_STAGE);
+        HcclResult ret = LocalNotify::Wait(streamL0L1, dispatcher_, notify);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[CollReduceScatterPipelineFor91093Executor][WaitForRemainingL2Signals] "
                 "PostSync wait error, tag[%s] blockIdx[%llu]", param.tag.c_str(), blockIdx), ret);
