@@ -18,6 +18,7 @@
 #include "ccuTaskException.h"
 #include "coll_comm_mgr.h"
 #include "heartbeat.h"
+#include "comm_addr_logger.h"
 
 namespace hcomm {
 constexpr u32 MAX_MODULE_DEVICE_NUM = 65; // 待删除
@@ -181,7 +182,12 @@ HcclResult ClusterMonitor::InsertClusterMonitorCxt(HcclComm comm, UIDContext rem
     socketDesc.remoteEndpoint = links[0].dstEndpointDesc;
     ClusterMonitorSocketCtx ctx(socketDesc, newConn);
     needConnectRank.insert(std::make_pair(remoteUID, ctx));
-
+    HCCL_INFO("CMTEST [%s] InsertClusterMonitorCxt for remoteUID[%s], role[%s], localEndpoint[commAddr:0x%llx], "
+        "remoteEndpoint[commAddr:0x%llx], tag[%s], listenPort [%u], newConn[%d]", __func__, GetUID(remoteUID).c_str(),
+        (socketDesc.role == HcommSocketRole::HCOMM_SOCKET_ROLE_SERVER) ? "SERVER" : "CLIENT",
+        hcomm::logger::CommAddrLogger::ToString(socketDesc.localEndpoint.commAddr).c_str(),
+        hcomm::logger::CommAddrLogger::ToString(socketDesc.remoteEndpoint.commAddr).c_str(),
+        socketDesc.tag, socketDesc.listenPort, newConn);
     return HCCL_SUCCESS;
 }
 
@@ -197,14 +203,16 @@ HcclResult ClusterMonitor::GetSamePlaneRank(HcclComm comm, std::vector<UIDContex
 
     uint32_t singlePlaneSize = singlePlaneCtx.size(); // 包含myRank自己，一个平面所有的节点
     if (singlePlaneSize <= 1) { // 待连接的节点个数为0或1，无需连接
-        HCCL_INFO("[%s] no need to connect", __func__);
+        HCCL_INFO("CMTEST [%s] no need to connect", __func__);
         return HCCL_SUCCESS;
     } else if (singlePlaneSize == 2) { // 待连接的节点个数为2，不需要双ring环，一条边就够了
         uint32_t nextIndex = (index + 1) % singlePlaneSize; // 算出与本Rank相连，对端的节点
+        HCCL_INFO("CMTEST [%s] singlePlaneSize is 2, only connect nextIndex[%u]", __func__, nextIndex);
         CHK_RET(InsertClusterMonitorCxt(comm, singlePlaneCtx[nextIndex], needConnectRank));
     } else {
         uint32_t nextIndex = (index + 1) % singlePlaneSize; // 算出与本Rank相连，右手的节点
         uint32_t preIndex = (index + singlePlaneSize - 1) % singlePlaneSize; // 算出与本Rank相连，左手或回绕环的节点
+        HCCL_INFO("CMTEST [%s] singlePlaneSize is %u, connect nextIndex[%u], preIndex[%u]", __func__, singlePlaneSize, nextIndex, preIndex);
         CHK_RET(InsertClusterMonitorCxt(comm, singlePlaneCtx[nextIndex], needConnectRank)); //以本rank为起点，环的右手
         CHK_RET(InsertClusterMonitorCxt(comm, singlePlaneCtx[preIndex], needConnectRank)); // 以本rank为起点，环的左手
     }
@@ -217,6 +225,7 @@ HcclResult ClusterMonitor::GetConnectRank(HcclComm comm,
     std::map<uint32_t, std::vector<UIDContext>> uidCtxs, std::vector<uint32_t> &netLayersVector)
 {
     if (netLayersVector.empty()) {
+        HCCL_INFO("CMTEST [%s] netLayersVector is empty, no netLayer in RankGraph", __func__);
         return HCCL_SUCCESS;
     }
 
@@ -227,6 +236,7 @@ HcclResult ClusterMonitor::GetConnectRank(HcclComm comm,
     });
     for (auto it = uidCtxs[0].begin(); it != uidCtxs[0].end(); ++it) {
         layer0CommLinks.push_back(*it); // netLayer为0
+        HCCL_INFO("CMTEST [%s] layer0CommLinks: localId[%u], remoteId[%u], netLayer[%u], UID[%s]", __func__, it->localId, it->rankId, it->netLayer, GetUID(it->uid).c_str());
     }
 
     // 从layer=1开始，将commLinks存入vector中，找到所有与当前localId相同的节点
@@ -237,6 +247,7 @@ HcclResult ClusterMonitor::GetConnectRank(HcclComm comm,
                 // 在跨server、跨pod、跨超节点的场景，统一拿到local，打平处理为同一个平面，类似layer=0的情况
                 // 由于A5上的devPhyId在64卡的场景下8个[0,7]，所以使用localId
                 highLayerCommLinks.push_back(*it);
+                HCCL_INFO("CMTEST [%s] highLayerCommLinks: localId[%u], remoteId[%u], netLayer[%u], UID[%s]", __func__, it->localId, it->rankId, it->netLayer, GetUID(it->uid).c_str());
             }
         }
     }

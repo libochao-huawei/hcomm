@@ -108,6 +108,7 @@ set(hccl_include_list
     ${HCCL_BASE_DIR}/framework/next/coll_comms/dfx/taskException/aicpu
     ${HCCL_BASE_DIR}/framework/next/coll_comms/dfx/taskException/host
     ${HCCL_BASE_DIR}/framework/next/coll_comms/dfx/cluster_monitor
+    ${HCCL_BASE_DIR}/framework/next/coll_comms/common/loggers
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/channels
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/channels/aicpu/
