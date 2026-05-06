@@ -16,6 +16,7 @@
 #define protected public
 #include "task_exception_func.h"
 #include "rtsq_base.h"
+#include "aicpu_hccl_sqcq.h"
 #undef private
 #undef protected
 
@@ -119,11 +120,12 @@ TEST_F(TaskExceptionFuncTest, StringLogicCqReportInfo_ShouldReturnCorrectString_
     EXPECT_EQ(instance.StringLogicCqReportInfo(report), "streamId :1 taskId :2 errorCode :3 errorType :33(pre_p/post_p error) sqeType :5 sqId :6 sqHead :7 matchFlag :0 dropFlag :1 errorBit :0 accError :1");
 
     report.errorType = 0b1;
+    report.sqeType = SqeType950::UBDMA_SQE;
     report.errorCode = 0x4;
-    EXPECT_EQ(instance.StringLogicCqReportInfo(report), "streamId :1 taskId :2 errorCode :4(Transaction Retry Counter Exceeded) errorType :1(exception) sqeType :5 sqId :6 sqHead :7 matchFlag :0 dropFlag :1 errorBit :0 accError :1");
+    EXPECT_EQ(instance.StringLogicCqReportInfo(report), "streamId :1 taskId :2 errorCode :4(Transaction Retry Counter Exceeded) errorType :1(exception) sqeType :9 sqId :6 sqHead :7 matchFlag :0 dropFlag :1 errorBit :0 accError :1");
 
     report.errorCode = 0xF;
-    EXPECT_EQ(instance.StringLogicCqReportInfo(report), "streamId :1 taskId :2 errorCode :15(Reserved) errorType :1(exception) sqeType :5 sqId :6 sqHead :7 matchFlag :0 dropFlag :1 errorBit :0 accError :1");
+    EXPECT_EQ(instance.StringLogicCqReportInfo(report), "streamId :1 taskId :2 errorCode :15(Reserved) errorType :1(exception) sqeType :9 sqId :6 sqHead :7 matchFlag :0 dropFlag :1 errorBit :0 accError :1");
 }
 
 TEST_F(TaskExceptionFuncTest, getTrailingZeros_ShouldReturnCorrectCount_WhenCalled)
