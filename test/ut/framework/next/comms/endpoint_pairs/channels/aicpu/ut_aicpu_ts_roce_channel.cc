@@ -39,7 +39,7 @@ public:
     {
         return HCCL_SUCCESS;
     }
-    HcclResult RegisterMemory(HcommMem, const char *, void **) override
+    HcclResult RegisterMemory(HcommMem, void **) override
     {
         return HCCL_SUCCESS;
     }
@@ -123,7 +123,7 @@ public:
     {
         return HCCL_SUCCESS;
     }
-    HcclResult RegisterMemory(HcommMem, const char *, void **) override
+    HcclResult RegisterMemory(HcommMem, void **) override
     {
         return HCCL_SUCCESS;
     }
@@ -201,9 +201,8 @@ TEST_F(AicpuTsRoceChannelTest, Ut_GetUserRemoteMem_Returns_NOT_SUPPORT) {
     HcommChannelDesc desc{};
     AicpuTsRoceChannel ch(reinterpret_cast<EndpointHandle>(0x1), desc);
     CommMem *remoteMem = nullptr;
-    char **memTag = nullptr;
     uint32_t memNum = 0;
-    EXPECT_EQ(ch.GetUserRemoteMem(&remoteMem, &memTag, &memNum), HCCL_E_NOT_SUPPORT);
+    EXPECT_EQ(ch.GetUserRemoteMem(&remoteMem, &memNum), HCCL_E_NOT_SUPPORT);
 }
 
 TEST_F(AicpuTsRoceChannelTest, Ut_Serialize_WithoutInit_Returns_INTERNAL) {
@@ -224,7 +223,7 @@ TEST_F(AicpuTsRoceChannelTest, Ut_GetRemoteMem_Returns_E_NOT_SUPPORT) {
     HcommChannelDesc desc{};
     AicpuTsRoceChannel ch(reinterpret_cast<EndpointHandle>(0x1), desc);
     uint32_t n = 0;
-    EXPECT_EQ(ch.GetRemoteMem(nullptr, &n, nullptr), HCCL_E_NOT_SUPPORT);
+    EXPECT_EQ(ch.GetRemoteMem(nullptr, &n), HCCL_E_NOT_SUPPORT);
 }
 
 TEST_F(AicpuTsRoceChannelTest, Ut_BuildSocketTagName_When_ValidIpv4_Returns_SUCCESS) {

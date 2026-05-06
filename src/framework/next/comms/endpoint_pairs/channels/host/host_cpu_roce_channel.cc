@@ -97,8 +97,8 @@ HcclResult HostCpuRoceChannel::ParseInputParam()
         HCCL_INFO("[HostCpuRoceChannel][%s] Got memHandleNum[%u].", __func__, memHandleNum);
         for (uint32_t i = 0; i < memHandleNum; ++i) {
             std::shared_ptr<Hccl::LocalRdmaRmaBuffer> &localRdmaBuffer = memHandles[i];
-            HCCL_INFO("[HostCpuRoceChannel][%s] Got memHandle No.%u: addr[0x%llx], size[0x%llx], memTag[%s].",
-                __func__, i, localRdmaBuffer->GetAddr(), localRdmaBuffer->GetSize(), localRdmaBuffer->GetBuf()->GetMemTag());
+            HCCL_INFO("[HostCpuRoceChannel][%s] Got memHandle No.%u: addr[0x%llx], size[0x%llx].",
+                __func__, i, localRdmaBuffer->GetAddr(), localRdmaBuffer->GetSize());
             localRmaBuffers_.emplace_back(localRdmaBuffer.get());
         }
     } else {
@@ -519,7 +519,7 @@ HcclResult HostCpuRoceChannel::ModifyQp() {
     return HCCL_SUCCESS;
 }
 
-HcclResult HostCpuRoceChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char** memTags)
+HcclResult HostCpuRoceChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum)
 {
     CHK_PRT_RET(remoteMem == nullptr, HCCL_ERROR("[GetRemoteMem] remoteMem is nullptr"), HCCL_E_PTR);
     CHK_PRT_RET(memNum == nullptr, HCCL_ERROR("[GetRemoteMem] memNum is nullptr"), HCCL_E_PTR);
@@ -539,7 +539,6 @@ HcclResult HostCpuRoceChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNu
         hcclMem->type = rmtRmaBuffer->GetMemType();
         hcclMem->addr = reinterpret_cast<void *>(rmtRmaBuffer->GetAddr());
         hcclMem->size = rmtRmaBuffer->GetSize();
-        memTags[i] = const_cast<char*>(rmtRmaBuffer->GetMemTag().c_str());
         remoteMem[i] = hcclMem.get();
         HCCL_INFO("[HostCpuRoceChannel::%s] rmtBuf[addr[%p], size[%llu]]", 
             __func__, remoteMem[i]->addr, remoteMem[i]->size);

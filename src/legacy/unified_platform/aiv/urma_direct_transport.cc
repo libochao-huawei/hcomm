@@ -337,4 +337,9 @@ TransportStatus UrmaDirectTransport::GetStatus()
     return baseStatus;
 }
 
+const std::vector<RemoteRmaBuffer*>& UrmaDirectTransport::GetRemoteRmaBufferVec() const
+{
+    return rmtRmaBufferVec;
+}
+
 } // namespace Hccl
