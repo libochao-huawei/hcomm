@@ -14,6 +14,7 @@ set(src_to_test_list
     ut_HcclAllGatherV_API_test.cc
     ut_HcclBatchSendRecv_API_test.cc
     ut_HcclCommInitClusterInfo_Oxc_API_test.cc
+    ut_HcclCommInitRootInfo_API_test.cc
     ut_HcclReduceScatterV_API_test.cc
     ut_HcclAllReduce_API_test.cc
     ut_HcclBroadcast_API_test.cc

@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <future>
 #include <map>
+#include <sstream>
 #include <string>
 #include <hccl/hccl_types.h>
 
@@ -54,6 +55,119 @@ const std::string HCCL_ALLTOALL = "ALLTOALL";
 const std::string HCCL_ALLTOALLV = "ALLTOALLV";
 const std::string HCCL_ALLTOALLVC = "ALLTOALLVC";
 
+namespace {
+const char *GetParserNameByVersion(const std::string &version)
+{
+    if (version == HCCL_CLUSTER_VERSION || version == SUPERPOD_CLUSTER_VERSION) {
+        return "concise";
+    }
+    if (version == HETEROG_CLUSTER_VERSION) {
+        return "heterog";
+    }
+    if (version == OXC_CLUSTER_VERSION) {
+        return "oxc";
+    }
+    if (version == "Standard") {
+        return "standard";
+    }
+    return "unknown";
+}
+
+std::string FormatRootInfoRankSummary(const RankInfo_t &rankInfo)
+{
+    std::ostringstream oss;
+    oss << "rank_id[" << rankInfo.rankId << "] "
+        << "server_id[" << rankInfo.serverId << "] "
+        << "device_id[" << rankInfo.deviceInfo.devicePhyId << "]";
+    if (!rankInfo.superPodId.empty()) {
+        oss << " super_pod_id[" << rankInfo.superPodId << "]";
+    }
+    if (rankInfo.superDeviceId != INVALID_UINT) {
+        oss << " super_device_id[" << rankInfo.superDeviceId << "]";
+    }
+    if (!rankInfo.oxcGroupId.empty()) {
+        oss << " group_id[" << rankInfo.oxcGroupId << "]";
+    }
+    return oss.str();
+}
+
+void LogRootInfoOverrideSummary(const RankTable_t &rankTable)
+{
+    HCCL_INFO("[RootInfo][RankTableOverride][Summary] version[%s] rank_num[%u] server_num[%u] device_num[%u].",
+        rankTable.version.c_str(), rankTable.rankNum, rankTable.serverNum, rankTable.deviceNum);
+    for (const auto &rankInfo : rankTable.rankList) {
+        HCCL_INFO("[RootInfo][RankTableOverride][Summary][Rank] %s.", FormatRootInfoRankSummary(rankInfo).c_str());
+    }
+}
+
+bool IsLocalRankEntryConsistent(const HcclCommParams &detectParams, const RankTable_t &detectRankTable,
+    const HcclBasicRankInfo &localRankInfo, const HcclCommParams &fileParams, const RankTable_t &rankTableFromFile,
+    std::string &reason)
+{
+    if (fileParams.rank != detectParams.rank || fileParams.rank != localRankInfo.rank) {
+        reason = "rank mismatch";
+        return false;
+    }
+    if (fileParams.logicDevId != detectParams.logicDevId || fileParams.logicDevId != localRankInfo.deviceLogicID) {
+        reason = "logic device mismatch";
+        return false;
+    }
+    if (rankTableFromFile.rankNum != detectParams.totalRanks || rankTableFromFile.rankNum != localRankInfo.rankSize) {
+        reason = "rank size mismatch";
+        return false;
+    }
+    auto rankIter = std::find_if(rankTableFromFile.rankList.begin(), rankTableFromFile.rankList.end(),
+        [&fileParams](const RankInfo_t &rankInfo) { return rankInfo.rankId == fileParams.rank; });
+    if (rankIter == rankTableFromFile.rankList.end()) {
+        reason = "rank not found in file ranktable";
+        return false;
+    }
+    auto detectRankIter = std::find_if(detectRankTable.rankList.begin(), detectRankTable.rankList.end(),
+        [&detectParams](const RankInfo_t &rankInfo) { return rankInfo.rankId == detectParams.rank; });
+    if (detectRankIter != detectRankTable.rankList.end() &&
+        !detectRankIter->serverId.empty() && !rankIter->serverId.empty() &&
+        detectRankIter->serverId != rankIter->serverId) {
+        reason = "serverId mismatch";
+        return false;
+    }
+    if (rankIter->deviceInfo.devicePhyId != static_cast<s32>(localRankInfo.devicePhysicID)) {
+        reason = "devicePhyId mismatch";
+        return false;
+    }
+    if (!rankIter->hostIp.IsInvalid() && !localRankInfo.hostIP.IsInvalid() && rankIter->hostIp != localRankInfo.hostIP) {
+        reason = "hostIp mismatch";
+        return false;
+    }
+    if (localRankInfo.superDeviceId != INVALID_UINT && rankIter->superDeviceId != INVALID_UINT &&
+        rankIter->superDeviceId != localRankInfo.superDeviceId) {
+        reason = "superDeviceId mismatch";
+        return false;
+    }
+    if (!localRankInfo.superPodId.empty() && !rankIter->superPodId.empty() &&
+        rankIter->superPodId != localRankInfo.superPodId) {
+        reason = "superPodId mismatch";
+        return false;
+    }
+    return true;
+}
+
+void LogRootInfoOverrideVersionDetail(const RankTable_t &rankTable)
+{
+    if (rankTable.version == OXC_CLUSTER_VERSION) {
+        HCCL_DEBUG("[RootInfo][RankTableOverride][Detail] version[%s] delegates to OXC parser detail logs.", rankTable.version.c_str());
+        return;
+    }
+    if (rankTable.version == SUPERPOD_CLUSTER_VERSION) {
+        for (const auto &rankInfo : rankTable.rankList) {
+            HCCL_DEBUG("[RootInfo][RankTableOverride][Detail][SuperPod] rank_id[%u] super_pod_id[%s] super_device_id[%u].",
+                rankInfo.rankId, rankInfo.superPodId.c_str(), rankInfo.superDeviceId);
+        }
+        return;
+    }
+    HCCL_DEBUG("[RootInfo][RankTableOverride][Detail] version[%s] has no extra specialized detail in this pass.", rankTable.version.c_str());
+}
+} // namespace
+
 /**
  * @brief 在主通信域初始化链路中注入 OXC world-comm 并行平面信息。
  * @param rank 当前 user rank。
@@ -92,6 +206,56 @@ HcclResult InjectWorldCommNetPlaneInfo(uint32_t rank, RankTable_t &rankTable, Co
     runtimeCommConfig.SetConfigNetPlane(rankIter->netPlaneId, netPlaneNum);
     HCCL_INFO("[OXC_HCOMM][InitCommClusterInfo] injected world-comm netPlaneId[%u] netPlaneNum[%u] for rank[%u].",
         rankIter->netPlaneId, netPlaneNum, rank);
+    return HCCL_SUCCESS;
+}
+
+HcclResult TryOverrideRootInfoRankTableFromFile(uint32_t rank, hccl::HcclCommParams &params,
+    hccl::RankTable_t &rankTable, const HcclBasicRankInfo &localRankInfo, std::string &rankTableM,
+    bool &overrideApplied)
+{
+    overrideApplied = false;
+    std::string rankTableFile = SalGetEnv("RANK_TABLE_FILE");
+    if (rankTableFile == "EmptyString" || rankTableFile.empty()) {
+        HCCL_INFO("[RootInfo][RankTableOverride] RANK_TABLE_FILE is not set, keep topo-detect rankTable.");
+        return HCCL_SUCCESS;
+    }
+
+    HCCL_INFO("[RootInfo][RankTableOverride] detected RANK_TABLE_FILE[%s].", rankTableFile.c_str());
+    std::string realFilePath;
+    HcclResult ret = HcomLoadRanktableFile(rankTableFile.c_str(), rankTableM, realFilePath);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[RootInfo][RankTableOverride] load ranktable file failed, path[%s] realPath[%s].",
+            rankTableFile.c_str(), realFilePath.c_str()), ret);
+
+    HCCL_INFO("[RootInfo][RankTableOverride] load ranktable file success, path[%s] realPath[%s].",
+        rankTableFile.c_str(), realFilePath.c_str());
+
+    hccl::HcclCommParams fileParams{};
+    hccl::RankTable_t rankTableFromFile{};
+    ret = CfgGetClusterInfo(rankTableM, to_string(rank), fileParams, rankTableFromFile,
+        GetExternalInputInterSuperPodRetryEnable(), params.deviceType);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[RootInfo][RankTableOverride] parse ranktable file failed, path[%s] realPath[%s].",
+            rankTableFile.c_str(), realFilePath.c_str()), ret);
+
+    HCCL_INFO("[RootInfo][RankTableOverride] parser dispatch version[%s] parser[%s].",
+        rankTableFromFile.version.c_str(), GetParserNameByVersion(rankTableFromFile.version));
+
+    std::string mismatchReason;
+    if (!IsLocalRankEntryConsistent(params, rankTable, localRankInfo, fileParams, rankTableFromFile, mismatchReason)) {
+        HCCL_WARNING("[RootInfo][RankTableOverride] reject override due to %s, keep topo-detect rankTable.",
+            mismatchReason.c_str());
+        return HCCL_SUCCESS;
+    }
+
+    rankTable = rankTableFromFile;
+    overrideApplied = true;
+    HCCL_INFO("[RootInfo][RankTableOverride] rankTable override applied using parser[%s].",
+        GetParserNameByVersion(rankTable.version));
+    LogRootInfoOverrideSummary(rankTable);
+    if (HcclCheckLogLevel(HCCL_LOG_DEBUG)) {
+        LogRootInfoOverrideVersionDetail(rankTable);
+    }
     return HCCL_SUCCESS;
 }
 
@@ -1162,6 +1326,8 @@ HcclResult InitCommRootInfo(const u32 nRanks, const u32 rank, const HcclRootHand
     hccl::HcclCommParams params;
     RankTable_t rankTable;
     HcclBasicRankInfo localRankInfo;
+    std::string overrideRankTableM;
+    bool overrideApplied = false;
 
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
@@ -1205,6 +1371,13 @@ HcclResult InitCommRootInfo(const u32 nRanks, const u32 rank, const HcclRootHand
                 "GetTopoDetectInfo error", HCCL_ERROR_CODE(ret)), errorFlag = true);
         }
 
+        ret = TryOverrideRootInfoRankTableFromFile(rank, params, rankTable, localRankInfo,
+            overrideRankTableM, overrideApplied);
+        CHK_PRT_BREAK(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[Init][CommRootInfo]errNo[0x%016llx] rootinfo ranktable override failed.",
+                HCCL_ERROR_CODE(ret)),
+            errorFlag = true);
+
         /* 初始化hccl comm */
 
         CHK_RET(DisplayRanktableInfo(rankTable));
@@ -1227,7 +1400,7 @@ HcclResult InitCommRootInfo(const u32 nRanks, const u32 rank, const HcclRootHand
             HCCL_ERROR("[InitCommRootInfo]errNo[0x%016llx] init work flow mode error", HCCL_ERROR_CODE(ret)),
             errorFlag = true);
 
-        ret = InitOtherInfo(params, nullptr);
+        ret = InitOtherInfo(params, overrideApplied ? overrideRankTableM.c_str() : nullptr);
         CHK_PRT_BREAK(ret != HCCL_SUCCESS,
             HCCL_ERROR("[InitCommRootInfo]errNo[0x%016llx] init other Info", HCCL_ERROR_CODE(ret)),
             errorFlag = true);
