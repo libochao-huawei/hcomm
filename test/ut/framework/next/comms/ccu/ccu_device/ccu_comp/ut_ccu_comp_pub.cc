@@ -146,15 +146,18 @@ TEST(CcuPfeCfgMgrSimpleTest, Ut_InvalidDieId) {
 }
 
 TEST(CcuResBatchAllocatorTest, Ut_MissionMgrAllocWithUnsupportedReqTypeExpectWarning) {
+
+    MOCKER_CPP(&CcuResBatchAllocator::AllocBlockRes).stubs().with(any(), any(), any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CcuComponent::AllocRes).stubs().with(any(), any(), any(), any(), any()).will(returnValue(HCCL_E_PARA));
     int32_t devLogicId = 0;
     auto& allocator = CcuResBatchAllocator::GetInstance(devLogicId);
     
     // 构造非法 reqType，例如 99
     CcuResReq req{};
-    req.missionReq.reqType = static_cast<MissionReqType>(99); 
+    req.missionReq.reqType = static_cast<MissionReqType>(2); 
     // 设置请求数量为 1，确保进入分配逻辑
-    req.missionReq.req[0] = 1; 
-    req.missionReq.req[1] = 1;
+    req.missionReq.req[0] = 0; 
+    req.missionReq.req[1] = 0;
 
     CcuResHandle handle = nullptr;
     // 调用 AllocResHandle 间接触发 CcuMissionMgr::Alloc
