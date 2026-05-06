@@ -17,7 +17,7 @@
 
 namespace hcomm {
 
-constexpr uint32_t TempServerListenPort = 60001;    // 临时固定监听端口，用于功能验证
+constexpr uint32_t TempServerListenPort = 60001; // 临时固定监听端口，用于功能验证
 
 HcclResult SocketMgr::Init()
 {
@@ -37,7 +37,8 @@ HcclResult SocketMgr::AddWhiteList(const Hccl::SocketConfig &socketConfig, const
     EXCEPTION_HANDLE_BEGIN
 
     // 1. 创建 wlistInfo 对象
-    Hccl::RaSocketWhitelist wlistInfo{};;
+    Hccl::RaSocketWhitelist wlistInfo{};
+    ;
     wlistInfo.connLimit = 1;
     wlistInfo.remoteIp = socketConfig.link.GetRemoteAddr();
     wlistInfo.tag = socketConfig.GetHccpTag();
@@ -46,7 +47,7 @@ HcclResult SocketMgr::AddWhiteList(const Hccl::SocketConfig &socketConfig, const
     wlistInfoVec.clear();
     wlistInfoVec.push_back(wlistInfo);
 
-     // 2. 加入白名单
+    // 2. 加入白名单
     Hccl::HrtRaSocketWhiteListAdd(socketHandle, wlistInfoVec);
 
     EXCEPTION_HANDLE_END
@@ -59,12 +60,12 @@ HcclResult SocketMgr::GetSocketHandle(const Hccl::SocketConfig &socketConfig, Hc
 
     // 加异常捕获
     auto localPort = socketConfig.link.GetLocalPort();
-    if (localPort.GetType() == Hccl::PortDeploymentType::DEV_NET) { 
+    if (localPort.GetType() == Hccl::PortDeploymentType::DEV_NET) {
         socketHandle = Hccl::SocketHandleManager::GetInstance().Get(devicePhyId_, localPort);
         if (socketHandle == nullptr) {
             socketHandle = Hccl::SocketHandleManager::GetInstance().Create(devicePhyId_, localPort);
         }
-    } else if (localPort.GetType() == Hccl::PortDeploymentType::HOST_NET){
+    } else if (localPort.GetType() == Hccl::PortDeploymentType::HOST_NET) {
         socketHandle = Hccl::HostSocketHandleManager::GetInstance().Get(devicePhyId_, localPort.GetAddr());
         if (socketHandle == nullptr) {
             socketHandle = Hccl::HostSocketHandleManager::GetInstance().Create(devicePhyId_, localPort.GetAddr());
@@ -75,12 +76,12 @@ HcclResult SocketMgr::GetSocketHandle(const Hccl::SocketConfig &socketConfig, Hc
         return HCCL_E_NOT_SUPPORT;
     }
     if (socketHandle == nullptr) {
-        HCCL_ERROR("[SocketMgr] socketHandle is nullptr, devicePhyId=%d, localPort[%s]",
-            devicePhyId_, localPort.Describe().c_str());
+        HCCL_ERROR("[SocketMgr] socketHandle is nullptr, devicePhyId=%d, localPort[%s]", devicePhyId_,
+            localPort.Describe().c_str());
         return HCCL_E_INTERNAL;
     }
-    HCCL_INFO("[SocketMgr][%s] socketHandle[%p] devicePhyId[%u] localPort[%s]",
-        __func__, socketHandle, devicePhyId_, localPort.Describe().c_str());
+    HCCL_INFO("[SocketMgr][%s] socketHandle[%p] devicePhyId[%u] localPort[%s]", __func__, socketHandle, devicePhyId_,
+        localPort.Describe().c_str());
 
     EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
@@ -90,40 +91,30 @@ HcclResult SocketMgr::CreateSocket(const Hccl::SocketConfig &socketConfig, const
 {
     EXCEPTION_HANDLE_BEGIN
 
-    Hccl::IpAddress  localIpAddress  = socketConfig.link.GetLocalAddr();
-    Hccl::IpAddress  remoteIpAddress = socketConfig.link.GetRemoteAddr();
-    Hccl::SocketRole socketRole      = socketConfig.GetRole();
-    std::string     hccpSocketTag   = socketConfig.GetHccpTag();
-    serverListenPort_               = socketConfig.listeningPort; // serverListenPort_这个变量似乎没用
-    
+    Hccl::IpAddress localIpAddress = socketConfig.link.GetLocalAddr();
+    Hccl::IpAddress remoteIpAddress = socketConfig.link.GetRemoteAddr();
+    Hccl::SocketRole socketRole = socketConfig.GetRole();
+    std::string hccpSocketTag = socketConfig.GetHccpTag();
+    serverListenPort_ = socketConfig.listeningPort; // serverListenPort_这个变量似乎没用
+
     std::unique_ptr<Hccl::Socket> tmpSocket = nullptr;
     if (socketConfig.link.GetType() == Hccl::PortDeploymentType::DEV_NET) {
         EXECEPTION_CATCH(
-            tmpSocket = std::make_unique<Hccl::Socket>(
-                socketHandle, localIpAddress, socketConfig.listeningPort,
-                remoteIpAddress, hccpSocketTag,
-                socketRole, Hccl::NicType::DEVICE_NIC_TYPE
-            ),
-            return HCCL_E_PTR
-        );
+            tmpSocket = std::make_unique<Hccl::Socket>(socketHandle, localIpAddress, socketConfig.listeningPort,
+                remoteIpAddress, hccpSocketTag, socketRole, Hccl::NicType::DEVICE_NIC_TYPE),
+            return HCCL_E_PTR);
         HCCL_INFO("[SocketMgr][%s] client_socket_info[%s]", __func__, tmpSocket->Describe().c_str());
         tmpSocket->ConnectAsync();
     } else if (socketConfig.link.GetType() == Hccl::PortDeploymentType::HOST_NET) {
         EXECEPTION_CATCH(
-            tmpSocket = std::make_unique<Hccl::Socket>(socketHandle,
-            localIpAddress,
-            socketConfig.listeningPort,
-            remoteIpAddress,
-            hccpSocketTag,
-            socketRole,
-            Hccl::NicType::HOST_NIC_TYPE),
-            return HCCL_E_PTR
-        );
+            tmpSocket = std::make_unique<Hccl::Socket>(socketHandle, localIpAddress, socketConfig.listeningPort,
+                remoteIpAddress, hccpSocketTag, socketRole, Hccl::NicType::HOST_NIC_TYPE),
+            return HCCL_E_PTR);
         HCCL_INFO("[SocketMgr][%s] client_socket_info[%s]", __func__, tmpSocket->Describe().c_str());
         tmpSocket->Connect();
     } else {
-        HCCL_ERROR(
-            "[SocketMgr] PortDeploymentType = %d, not support create socket.", socketConfig.link.GetType().Describe().c_str());
+        HCCL_ERROR("[SocketMgr] PortDeploymentType = %d, not support create socket.",
+            socketConfig.link.GetType().Describe().c_str());
         return HCCL_E_NOT_SUPPORT;
     }
 
@@ -133,14 +124,20 @@ HcclResult SocketMgr::CreateSocket(const Hccl::SocketConfig &socketConfig, const
     return HCCL_SUCCESS;
 }
 
-HcclResult SocketMgr::GetSocket(const Hccl::SocketConfig &socketConfig, Hccl::Socket*& socket)
+HcclResult SocketMgr::GetSocket(const Hccl::SocketConfig &socketConfig, Hccl::Socket *&socket)
 {
     CHK_RET(Init());
     // 1. 先查找
     auto it = socketMap_.find(socketConfig);
     if (it != socketMap_.end()) {
-        socket = it->second.get();
-        return HCCL_SUCCESS;
+        if (socketConfig.hostNic2DeviceNicMode_) {
+            socket = it->second.get();
+            socket->Destroy();
+            socketMap_.erase(it);
+        } else {
+            socket = it->second.get();
+            return HCCL_SUCCESS;
+        }
     }
 
     // 2. 不存在则创建
@@ -148,15 +145,14 @@ HcclResult SocketMgr::GetSocket(const Hccl::SocketConfig &socketConfig, Hccl::So
     CHK_RET(GetSocketHandle(socketConfig, socketHandle));
     CHK_RET(AddWhiteList(socketConfig, socketHandle));
     CHK_RET(CreateSocket(socketConfig, socketHandle));
- 
+
     // 3. 再次查找
     it = socketMap_.find(socketConfig);
     if (it == socketMap_.end()) {
-        HCCL_ERROR("[SocketMgr][%s] CreateSocket succeeded but socket not found",
-                   __func__);
+        HCCL_ERROR("[SocketMgr][%s] CreateSocket succeeded but socket not found", __func__);
         return HCCL_E_INTERNAL;
     }
- 
+
     socket = it->second.get();
     return HCCL_SUCCESS;
 }

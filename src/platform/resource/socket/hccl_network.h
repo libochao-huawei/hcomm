@@ -25,8 +25,12 @@ public:
     using LocalIpcRmaBufferMgr = RmaBufferMgr<BufferKey<uintptr_t, u64>, std::shared_ptr<LocalIpcRmaBuffer>>;
     using LocalRdmaRmaBufferMgr = RmaBufferMgr<BufferKey<uintptr_t, u64>, std::shared_ptr<LocalRdmaRmaBuffer>>;
 
-    NetDevContext() {}
-    ~NetDevContext() {}
+    NetDevContext()
+    {
+    }
+    ~NetDevContext()
+    {
+    }
     HcclResult Init(NicType nicType, s32 devicePhyId, s32 deviceLogicId, HcclIpAddress localIp,
         HcclIpAddress backupIp = HcclIpAddress(0));
     HcclResult Deinit();
@@ -87,12 +91,15 @@ public:
     {
         return protoType_;
     }
+    void SetProtoType(u32 proto)
+    {
+        protoType_ = (HcclProtoType)proto;
+    }
 
     std::shared_ptr<LocalIpcRmaBufferMgr> GetlocalIpcRmaBufferMgr()
     {
         if (!localIpcRmaBufferMgr_) {
-            EXECEPTION_CATCH((localIpcRmaBufferMgr_ = std::make_shared<LocalIpcRmaBufferMgr>()),
-                return nullptr);
+            EXECEPTION_CATCH((localIpcRmaBufferMgr_ = std::make_shared<LocalIpcRmaBufferMgr>()), return nullptr);
         }
         return localIpcRmaBufferMgr_;
     }
@@ -100,8 +107,7 @@ public:
     std::shared_ptr<LocalRdmaRmaBufferMgr> GetlocalRdmaRmaBufferMgr()
     {
         if (!localRdmaRmaBufferMgr_) {
-            EXECEPTION_CATCH((localRdmaRmaBufferMgr_ = std::make_shared<LocalRdmaRmaBufferMgr>()),
-                return nullptr);
+            EXECEPTION_CATCH((localRdmaRmaBufferMgr_ = std::make_shared<LocalRdmaRmaBufferMgr>()), return nullptr);
         }
         return localRdmaRmaBufferMgr_;
     }
@@ -117,13 +123,13 @@ private:
     SocketHandle hostSocketHandle_{nullptr};
     HcclProtoType protoType_{HCCL_PROTO_TYPE_RESERVED};
     HcclNetDevDeployment netDevDeployment_;
-    void *handle_ {nullptr};
+    void *handle_{nullptr};
     bool isBackup_;
     TlsStatus tlsStatus_ = TlsStatus::UNKNOWN;
     bool isNotNeedGetTlsStatus_ = false;
     std::shared_ptr<LocalIpcRmaBufferMgr> localIpcRmaBufferMgr_{nullptr};
     std::shared_ptr<LocalRdmaRmaBufferMgr> localRdmaRmaBufferMgr_{nullptr};
 };
-}
+} // namespace hccl
 
 #endif

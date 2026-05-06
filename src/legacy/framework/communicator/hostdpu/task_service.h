@@ -37,23 +37,26 @@ using CallbackTemplate = std::function<int32_t(uint64_t, int32_t)>;
 class TaskService {
 public:
     TaskService() = default;
-    TaskService(void* deviceMem, int32_t deviceMemSize, void* hostMem, int32_t hostMemSize);
+    TaskService(void *deviceMem, int32_t deviceMemSize, void *hostMem, int32_t hostMemSize);
     HcclResult TaskRun();
     HcclResult TaskRegister(std::string taskType, CallbackTemplate callback);
     HcclResult TaskUnRegister(std::string taskType);
+
 private:
     HcclResult WriteFlag(uint8_t *flagPtr, uint8_t newFlag) const;
-    HcclResult ReadFlag(uint8_t *srcFlagPtr, uint8_t &flag) const;
-    HcclResult ReadTaskType(uint8_t *srcTaskTypePtr, std::string &taskTypeStr) const;
-    HcclResult ExecuteTask(uint8_t *srcPtr, std::string taskTypeStr);
-    HcclResult SynchronizeControlInfo();
+    HcclResult ReadFlag(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t *srcFlagPtr, uint8_t &flag) const;
+    HcclResult ReadTaskType(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t *srcTaskTypePtr, std::string &taskTypeStr) const;
+    HcclResult ExecuteTask(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t *srcPtr, std::string taskTypeStr);
+    HcclResult SynchronizeControlInfo(uint8_t *ctrlHdr, uint64_t hdrLen);
+    HcclResult ProcessTaskOk(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t *srcFlagPtr, uint8_t *srcTaskTypePtr);
+
 private:
     std::unordered_map<std::string, CallbackTemplate> callbacks_;
-    void       *npu2dpuMem_{nullptr};
-    void       *dpu2npuMem_{nullptr};
+    void *npu2dpuMem_{nullptr};
+    void *dpu2npuMem_{nullptr};
     int32_t shmemSize_{0};
     int32_t dataSize_{0};
-    void       *hostMem_{nullptr};
+    void *hostMem_{nullptr};
     int32_t hostMemSize_{0};
 };
 } // namespace Hccl
