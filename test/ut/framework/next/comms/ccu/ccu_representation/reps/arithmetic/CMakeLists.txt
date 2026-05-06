@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------------------------------------
-# Copyright (c) 2025 Huawei Technologies Co., Ltd.
+# Copyright (c) 2026 Huawei Technologies Co., Ltd.
 # This program is free software, you can redistribute it and/or modify it under the terms and conditions of
 # CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -10,26 +10,25 @@
 
 set(src_to_test_list
     main.cc
-    hccl_api_base_test.cc
-    ut_CcuComponent_test.cc
-    ut_ccu_microcode.cc
+    ut_ccu_rep_arithmetic_test.cc
 )
 
-add_executable(hccl_utest_comms_ccu_features ${src_to_test_list})
+add_executable(hccl_utest_comms_ccu_rep_arithmetic ${src_to_test_list})
 
-#头文件搜索路径
-target_include_directories(hccl_utest_comms_ccu_features PRIVATE
+target_include_directories(hccl_utest_comms_ccu_rep_arithmetic PRIVATE
     ${UT_COMMON_INCLUDE_LIST}
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/reps/arithmetic
+    ${HCCL_CODE_ROOT}/pkg_inc/hcomm/ccu
 )
 
-target_compile_definitions(hccl_utest_comms_ccu_features PRIVATE
+target_compile_definitions(hccl_utest_comms_ccu_rep_arithmetic PRIVATE
     _GLIBCXX_USE_CXX11_ABI=0
     google=ascend_private
     -DOPEN_HCCL_TEST
     OPEN_BUILD_PROJECT
 )
 
-target_compile_options(hccl_utest_comms_ccu_features PRIVATE
+target_compile_options(hccl_utest_comms_ccu_rep_arithmetic PRIVATE
     -U_FORTIFY_SOURCE
     -fno-var-tracking-assignments
     -Os
@@ -37,11 +36,11 @@ target_compile_options(hccl_utest_comms_ccu_features PRIVATE
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
 )
 
-target_link_directories(hccl_utest_comms_ccu_features PRIVATE
+target_link_directories(hccl_utest_comms_ccu_rep_arithmetic PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/lib64
 )
 
-target_link_libraries(hccl_utest_comms_ccu_features PRIVATE
+target_link_libraries(hccl_utest_comms_ccu_rep_arithmetic PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -pthread
@@ -53,15 +52,7 @@ target_link_libraries(hccl_utest_comms_ccu_features PRIVATE
     -ldl
 )
 
-add_dependencies(hccl_utest_comms_ccu_features hccl_llt)
+add_dependencies(hccl_utest_comms_ccu_rep_arithmetic hccl_llt)
 
 enable_testing()
-add_test(NAME hccl_utest_comms_ccu_features COMMAND hccl_utest_comms_ccu_features)
-
-add_subdirectory(ccu_representation/reps/sync)
-add_subdirectory(ccu_representation/reps/control)
-add_subdirectory(ccu_representation/reps/common)
-add_subdirectory(ccu_representation/reps/data)
-add_subdirectory(ccu_representation/reps/arithmetic)
-add_subdirectory(ccu_representation/reps/loop)
-add_subdirectory(ccu_representation/interface)
+add_test(NAME hccl_utest_comms_ccu_rep_arithmetic COMMAND hccl_utest_comms_ccu_rep_arithmetic)
