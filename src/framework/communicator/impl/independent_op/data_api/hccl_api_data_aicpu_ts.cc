@@ -26,6 +26,7 @@
 #include "hcomm_diag.h"
 #include "hccl_api_data_aicpu_ts.h"
 #include "hccl_diag.h"
+#include "timer.h"
 
 using namespace hccl;
 thread_local LaunchContext g_threadLaunchCtx;
@@ -71,14 +72,19 @@ HcclResult HcclDfxRegOpInfoByCommId(char* commId, void* hcclDfxOpInfo)
 
 int32_t HcommLocalCopyOnThread(ThreadHandle thread, void *dst, const void *src, uint64_t len)
 {
-    HCCL_INFO("[%s] START. thread[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].", __func__, thread, dst, src, len);
+    FUNC_PERF;
 
-    CHK_PTR_NULL(dst);
-    CHK_PTR_NULL(src);
-    AddThread(thread);
+    {
+        PERF("AddThread");
 
-    Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
-    CHK_PTR_NULL(threadPtr);
+        HCCL_INFO("[%s] START. thread[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].", __func__, thread, dst, src, len);
+
+        CHK_PTR_NULL(dst);
+        CHK_PTR_NULL(src);
+        AddThread(thread);
+    }
+        Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
+        CHK_PTR_NULL(threadPtr);
 
     HcclResult ret = HCCL_SUCCESS;
     if (threadPtr->IsDeviceA5()) {
@@ -778,6 +784,7 @@ int32_t HcommBatchModeEnd(const char *batchTag)
 
 int32_t HcommAcquireComm(const char* commId)
 {
+    TimerLogger::GetInstance().Reset();
     CHK_PTR_NULL(commId);
     DevType deviceType;
     CHK_RET(hrtGetDeviceType(deviceType));
@@ -822,6 +829,7 @@ int32_t HcommReleaseComm(const char* commId)
     } else {
         AicpuIndopProcess::AicpuReleaseCommMgrbyGroup(commId);
     }
+    TimerLogger::GetInstance().DumpLogs();
     return HCCL_SUCCESS;
 }
 
