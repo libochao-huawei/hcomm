@@ -104,9 +104,8 @@ HcclResult AicpuTsRoceRegedMemMgr::GetOrCreateLocalRdmaRmaBuffer(hccl::NetDevCon
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsRoceRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void **memHandle)
+HcclResult AicpuTsRoceRegedMemMgr::RegisterMemory(HcommMem mem, void **memHandle)
 {
-    (void)memTag;
     HCCL_INFO("[%s] Begin", __FUNCTION__);
     CHK_PTR_NULL(netDev_);
     CHK_PTR_NULL(memHandle);
