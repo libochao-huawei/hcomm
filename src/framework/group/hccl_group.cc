@@ -148,7 +148,7 @@ static HcclResult asyncJobLaunch()
             if (jobsDone == false)
                 usleep(1);
         } while (jobsDone == false);
-
+        hcclInitJobs.clear();
         CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[asyncJobLaunch] fail!"), ret);
     }
     return HCCL_SUCCESS;

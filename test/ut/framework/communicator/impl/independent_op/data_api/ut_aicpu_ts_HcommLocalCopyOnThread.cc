@@ -68,3 +68,23 @@ TEST_F(UtAicpuTsHcommLocalCopyOnThread, Ut_HcommLocalCopyOnThread_When_Src_IsNul
     res = HcommLocalCopyOnThread(thread, dst, nullptr, len);
     EXPECT_EQ(res, HCCL_E_PTR);
 }
+
+TEST_F(UtAicpuTsHcommLocalCopyOnThread, Ut_HcommLocalCopyOnThread_When_SizeEquals4GB_Expect_ReturnIsHCCL_SUCCESS)
+{
+    uint64_t size4GB = 0x100000000ULL;
+    void *largeDst = reinterpret_cast<void *>(0x100000);
+    void *largeSrc = reinterpret_cast<void *>(0x200000);
+
+    res = HcommLocalCopyOnThread(thread, largeDst, largeSrc, size4GB);
+    EXPECT_EQ(res, HCCL_SUCCESS);
+}
+
+TEST_F(UtAicpuTsHcommLocalCopyOnThread, Ut_HcommLocalCopyOnThread_When_SizeExceeds4GB_Expect_ReturnIsHCCL_SUCCESS)
+{
+    uint64_t sizeExceeds4GB = 0x100000001ULL;
+    void *largeDst = reinterpret_cast<void *>(0x100000);
+    void *largeSrc = reinterpret_cast<void *>(0x200000);
+
+    res = HcommLocalCopyOnThread(thread, largeDst, largeSrc, sizeExceeds4GB);
+    EXPECT_EQ(res, HCCL_SUCCESS);
+}

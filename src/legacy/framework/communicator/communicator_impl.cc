@@ -1109,8 +1109,11 @@ void CommunicatorImpl::ConvertCollOperatorMem(const CollOpParams &opParams, u64 
     HCCL_INFO("[CommunicatorImpl][%s] end.", __func__);
 }
 
-void CommunicatorImpl::ConvertCollOperatorMemV(const CollOpParams &opParams)
+void CommunicatorImpl::ConvertCollOperatorMemV(const CollOpParams &opParams, bool isHcomSelectAlg)
 {
+    if (isHcomSelectAlg) {
+        return; // isHcomSeletAlg表示是否为图插件接口进来，若是跳过该步。未来aiv支持reducescatterv/allgatherv算子时，改处需做对应适配。
+    }
     HCCL_INFO("[CommunicatorImpl::%s] start, opType[%s]", __func__, opParams.opType.Describe().c_str());
     u64 size = DataTypeSizeGet(opParams.dataType) * opParams.count;
 
@@ -1176,7 +1179,7 @@ void CommunicatorImpl::CovertToCurrentCollOperator(std::string &opTag, const Col
             currentCollOperator->vDataDes.counts = opParams.vDataDes.counts;
             currentCollOperator->vDataDes.displs = opParams.vDataDes.displs;
             currentCollOperator->vDataDes.dataType = opParams.vDataDes.dataType;
-            ConvertCollOperatorMemV(opParams);
+            ConvertCollOperatorMemV(opParams, isHcomSelectAlg);
         } else {
             u64 size = DataTypeSizeGet(opParams.dataType) * opParams.count;
             if (size != 0) {
@@ -2598,6 +2601,8 @@ void CommunicatorImpl::InitOneSidedService()
 u32 CommunicatorImpl::GetUsedChannelCount(u32 dieId)
 {
     CHECK_NULLPTR(collService, "collService is nullptr!");
+    if (!GetOpCcuFeatureFlag()) { return 0; } // 防止非ccu模式进入
+    CHECK_NULLPTR(dynamic_cast<CollServiceDeviceMode *>(collService), "CollServiceDeviceMode is nullptr!");
     CcuJettyMgr *ccuJettyMgr = dynamic_cast<CollServiceDeviceMode *>(collService)
                                 ->GetCcuInsPreprocessor()
                                 ->GetCcuComm()
@@ -2788,10 +2793,6 @@ HcclResult CommunicatorImpl::SetAccelerator(HcclAccelerator hcclAccelerator, boo
         default:
             HCCL_ERROR("[SetAccelerator] hcclAccelerator[%s] internal error", hcclAccelerator.Describe().c_str());
             return HCCL_E_INTERNAL;
-    }
-    if (commAccelerator == AcceleratorState::AICPU_TS && IsCommWithPCIEProtocol() && HrtGetDeviceCount() > 8) {
-        // 当通信域存在PCIE链路且当前环境节点数大于8卡时，暂不支持aicpu展开，仅支持aiv展开
-        commAccelerator = AcceleratorState::AIV_ONLY;
     }
     OpExecuteConfig inCommExecuteConfig;
     inCommExecuteConfig.accState = commAccelerator;

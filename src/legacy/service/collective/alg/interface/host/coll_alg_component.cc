@@ -126,6 +126,7 @@ HcclResult CollAlgComponent::CalcResOffload(const OpType &opType, const u64 &dat
     CollAlgOperator op;
     op.opType    = opType;
     op.dataType = HcclDataTypeToDataType(dataType);
+    op.dataCount = dataSize / DataTypeSizeGet(op.dataType);
     CollAlgParams params;
     params.opExecuteConfig = opExecuteConfig;
     params.opMode = OpMode::OFFLOAD;

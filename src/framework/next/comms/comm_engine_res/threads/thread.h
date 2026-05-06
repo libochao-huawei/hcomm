@@ -116,7 +116,7 @@ protected:
         HcommReduceOp reduceOp, u64 beginTime, u32 taskId, u32 sqId) const;
     HcclResult ReportHostLocalReduceTask(void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType,
         HcommReduceOp reduceOp, u64 beginTime, bool isMaster) const;
-
+    bool IsReportTask() const;
 private:
     std::unordered_map<CommEngine, ThreadHandle> threadHandleMap_; // CPU_TS上的ThreadHandle与其他引擎上的ThreadHandle的映射
     std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback_; // 上报task信息的回调函数

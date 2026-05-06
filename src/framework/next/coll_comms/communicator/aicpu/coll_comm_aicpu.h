@@ -66,6 +66,10 @@ public:
     HcclResult Resume(HcclChannelUrmaRes *commParam);
 
 private:
+    // 初始化
+    void InitIndopEnv(CommAicpuParam *commAicpuParam);
+    HcclResult InitHDCommunicate(CommAicpuParam *commAicpuParam);
+
     HcclResult InitUrmaChannel(HcclChannelUrmaRes *commParam);
     HcclResult ParsePackData(std::vector<char> &data, ChannelHandle &handle);
     HcclResult RegisterChannelAddDfxTaskInfo(ChannelHandle channel);
