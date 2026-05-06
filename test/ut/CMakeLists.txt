@@ -186,6 +186,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/framework/
     ${HCCL_CODE_ROOT}/src/legacy/framework/service/aicpu
     ${HCCL_CODE_ROOT}/src/legacy/service/collective/instruction
+    ${HCCL_CODE_ROOT}/src/legacy/service/collective/alg/interface/device
     ${HCCL_CODE_ROOT}/src/legacy/framework/resource_manager/transport/aicpu/
     ${HCCL_CODE_ROOT}/src/legacy/framework/resource_manager/socket/
     ${HCCL_CODE_ROOT}/src/legacy/framework/resource_manager/notify/aicpu
