@@ -22,14 +22,14 @@
 #define private public
 using namespace hcomm;
 
-static struct ibv_wc g_mockFlushWc = {0};
-inline int StubIbvPollFlushErr(ibv_cq* cq, uint32_t numEntries, ibv_wc* out_wc)
-{
-    if (out_wc != nullptr) {
-        *out_wc = g_mockFlushWc;
-    }
-    return 1;
-}
+// static struct ibv_wc g_mockFlushWc = {0};
+// inline int StubIbvPollFlushErr(ibv_cq* cq, uint32_t numEntries, ibv_wc* out_wc)
+// {
+//     if (out_wc != nullptr) {
+//         *out_wc = g_mockFlushWc;
+//     }
+//     return 1;
+// }
 
 class HostCpuRoceChannelTest : public testing::Test {
 protected:
