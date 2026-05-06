@@ -48,7 +48,7 @@ public:
     {
         return HCCL_SUCCESS;
     }
-    HcclResult RegisterMemory(HcommMem, const char *, void **) override
+    HcclResult RegisterMemory(HcommMem, void **) override
     {
         return HCCL_SUCCESS;
     }

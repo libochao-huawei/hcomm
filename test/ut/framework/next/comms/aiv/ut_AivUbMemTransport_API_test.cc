@@ -118,15 +118,10 @@ TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_GetUserRemoteMem_When_Normal_
     rmtBuffer1->memType = HcclMemType::HCCL_MEM_TYPE_HOST;
     aivTransport->rmtBufferVec_.push_back(std::move(rmtBuffer1));
 
-    aivTransport->remoteUserMemTag_.push_back(BuildMemTagArray("cclBuffer"));
-    aivTransport->remoteUserMemTag_.push_back(BuildMemTagArray("buffer1"));
-
     CommMem *remoteMems;
-    char **memTags;
     u32 memNum;
-    HcclResult ret = aivTransport->GetUserRemoteMem(&remoteMems, &memTags, &memNum);
+    HcclResult ret = aivTransport->GetUserRemoteMem(&remoteMems, &memNum);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(std::string(memTags[0]), "buffer1");
     EXPECT_EQ(remoteMems[0].type, HcclMemType::HCCL_MEM_TYPE_HOST);
     EXPECT_EQ(remoteMems[0].addr, (void *)0x101);
     EXPECT_EQ(remoteMems[0].size, (uint64_t)0x101);
@@ -147,10 +142,8 @@ TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_UpdateMemInfo_When_Normal_Exp
     auto aivTransport = CreateAivTransport(desc);
     auto initMockBuffer = CreateLocalRmaBuffer(0x100, 0x100, 100);
     aivTransport->localRmaBufferVec_.push_back(reinterpret_cast<Hccl::LocalIpcRmaBuffer*>(initMockBuffer.get()));
-    aivTransport->localUserMemTag_.push_back(BuildMemTagArray("initBuffer"));
 
     size_t initialVecSize = aivTransport->localRmaBufferVec_.size();
-    size_t initialTagSize = aivTransport->localUserMemTag_.size();
 
     auto mockBuffer1 = CreateLocalRmaBuffer(0x1000, 0x1000, 1000);
     auto mockBuffer2 = CreateLocalRmaBuffer(0x2000, 0x2000, 2000);
@@ -166,9 +159,6 @@ TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_UpdateMemInfo_When_Normal_Exp
         reinterpret_cast<Hccl::LocalIpcRmaBuffer*>(mockBuffer1.get()));
     EXPECT_EQ(aivTransport->localRmaBufferVec_[initialVecSize + 1],
         reinterpret_cast<Hccl::LocalIpcRmaBuffer*>(mockBuffer2.get()));
-    EXPECT_EQ(aivTransport->localUserMemTag_.size(), initialTagSize + 2);
-    EXPECT_EQ(std::string(aivTransport->localUserMemTag_[initialTagSize].data()), "newBuffer1");
-    EXPECT_EQ(std::string(aivTransport->localUserMemTag_[initialTagSize + 1].data()), "newBuffer2");
 }
 
 TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_UpdateMemInfo_When_SocketTimeout_Expect_ReturnIsHCCL_E_TIMEOUT)

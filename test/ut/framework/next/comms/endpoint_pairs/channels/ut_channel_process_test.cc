@@ -128,9 +128,8 @@ TEST_F(TestChannelProcess, Ut_TestSaveChannels_When_ChannelNumZero_Return_HCCL_E
 // ChannelGetUserRemoteMem 空指针测试
 TEST_F(TestChannelProcess, Ut_TestChannelGetUserRemoteMem_When_RemoteMemNullptr_Return_HCCL_E_PTR)
 {
-    char** memTag = nullptr;
     uint32_t memNum = 0;
-    HcclResult ret = hcomm::ChannelProcess::ChannelGetUserRemoteMem(0, nullptr, &memTag, &memNum);
+    HcclResult ret = hcomm::ChannelProcess::ChannelGetUserRemoteMem(0, nullptr, &memNum);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
@@ -145,8 +144,7 @@ TEST_F(TestChannelProcess, Ut_TestChannelGetUserRemoteMem_When_MemTagNullptr_Ret
 TEST_F(TestChannelProcess, Ut_TestChannelGetUserRemoteMem_When_MemNumNullptr_Return_HCCL_E_PTR)
 {
     CommMem* remoteMem = nullptr;
-    char** memTag = nullptr;
-    HcclResult ret = hcomm::ChannelProcess::ChannelGetUserRemoteMem(0, &remoteMem, &memTag, nullptr);
+    HcclResult ret = hcomm::ChannelProcess::ChannelGetUserRemoteMem(0, &remoteMem, nullptr);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
