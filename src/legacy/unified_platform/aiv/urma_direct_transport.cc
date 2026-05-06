@@ -1,12 +1,12 @@
 /**
-* Copyright (c) 2025 Huawei Technologies Co., Ltd.
-* This program is free software, you can redistribute it and/or modify it under the terms and conditions of
-* CANN Open Software License Agreement Version 2.0 (the "License").
-* Please refer to the License for details. You may not use this file except in compliance with the License.
-* THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
-* INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
-* See LICENSE in the root of the software repository for the full text of the License.
-*/
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 #include "urma_direct_transport.h"
 #include "serializable.h"
 #include "exchange_ub_buffer_dto.h"
@@ -17,31 +17,35 @@
 #include "orion_adapter_hccp.h"
 
 namespace Hccl {
-constexpr u32    FINISH_MSG_SIZE             = 128;
+constexpr u32 FINISH_MSG_SIZE = 128;
 constexpr char_t FINISH_MSG[FINISH_MSG_SIZE] = "Ub Comm Pipe ready!";
 
 constexpr size_t RMT_BUFFER_VEC_SIZE = 3;
 constexpr size_t RMT_BUFFER_INDEX = 2;
-constexpr size_t CONN_NUM= 1;
-constexpr u32    WQE_SIZE = 64;
+constexpr size_t CONN_NUM = 1;
+constexpr u32 WQE_SIZE = 64;
 
 UrmaDirectTransport::UrmaDirectTransport(CommonLocRes &commonLocRes, Attribution &attr, const LinkData &linkData,
-                                        const Socket &socket, RdmaHandle rdmaHandle1)
-    : BaseMemTransport(commonLocRes, attr, linkData, socket, TransportType::UB), rdmaHandle(rdmaHandle1)
-{}
+    const Socket &socket, RdmaHandle rdmaHandle1)
+    : BaseMemTransport(commonLocRes, attr, linkData, socket, TransportType::UB),
+      rdmaHandle(rdmaHandle1)
+{
+}
 
-UrmaDirectTransport::UrmaDirectTransport(CommonLocRes &commonLocRes, Attribution &attr, const LinkData &linkData, 
-                                        const Socket &socket, RdmaHandle rdmaHandle1,
-                                        std::function<void(u32 streamId, u32 taskId, const TaskParam &taskParam)> callback)
-    : BaseMemTransport(commonLocRes, attr, linkData, socket, TransportType::UB, callback), rdmaHandle(rdmaHandle1)
-{}
+UrmaDirectTransport::UrmaDirectTransport(CommonLocRes &commonLocRes, Attribution &attr, const LinkData &linkData,
+    const Socket &socket, RdmaHandle rdmaHandle1,
+    std::function<void(u32 streamId, u32 taskId, const TaskParam &taskParam)> callback)
+    : BaseMemTransport(commonLocRes, attr, linkData, socket, TransportType::UB, callback),
+      rdmaHandle(rdmaHandle1)
+{
+}
 
-RemoteUbRmaBuffer* UrmaDirectTransport::GetRmtBuffer() const
+RemoteUbRmaBuffer *UrmaDirectTransport::GetRmtBuffer() const
 {
     HCCL_INFO("[%s] start", __func__);
     if (rmtBufferVec.size() != RMT_BUFFER_VEC_SIZE) {
-        THROW<InternalException>(
-            StringFormat("[%s] rmtBufferVec is not [%u], size[%u]", __func__,  rmtBufferVec.size(), RMT_BUFFER_VEC_SIZE));
+        THROW<InternalException>(StringFormat(
+            "[%s] rmtBufferVec is not [%u], size[%u]", __func__, rmtBufferVec.size(), RMT_BUFFER_VEC_SIZE));
     }
     auto rmtBuf = rmtBufferVec[RMT_BUFFER_INDEX].get();
     CHECK_NULLPTR(rmtBuf, "[UrmaDirectTransport::GetRmtBuffer] rmtBuf is nullptr!");
@@ -50,8 +54,8 @@ RemoteUbRmaBuffer* UrmaDirectTransport::GetRmtBuffer() const
 
 std::string UrmaDirectTransport::Describe() const
 {
-    string msg = StringFormat("UbMemTransport=[commonLocRes=%s, urmaStatus=%s, ",
-                            commonLocRes.Describe().c_str(), urmaStatus.Describe().c_str());
+    string msg = StringFormat("UbMemTransport=[commonLocRes=%s, urmaStatus=%s, ", commonLocRes.Describe().c_str(),
+        urmaStatus.Describe().c_str());
     msg += StringFormat("exchangeDataSize=%u, ", exchangeDataSize);
     return msg;
 }
@@ -59,8 +63,8 @@ std::string UrmaDirectTransport::Describe() const
 HcclAiRMAWQ UrmaDirectTransport::GetAiRMAWQ()
 {
     if (baseStatus != TransportStatus::READY) {
-        MACRO_THROW(InternalException, StringFormat(
-            "[UrmaDirectTransport::%s]transport status is not ready, please check, __func__"));
+        MACRO_THROW(InternalException,
+            StringFormat("[UrmaDirectTransport::%s]transport status is not ready, please check, __func__"));
     }
 
     HcclAiRMAWQ wq = {0};
@@ -68,8 +72,7 @@ HcclAiRMAWQ UrmaDirectTransport::GetAiRMAWQ()
 
     size_t connNum = commonLocRes.connVec.size();
     if (connNum != CONN_NUM) {
-        THROW<InternalException>("[UrmaDirectTransport::%s] connNum[%llu] is not [%llu]",
-            __func__, connNum, CONN_NUM);
+        THROW<InternalException>("[UrmaDirectTransport::%s] connNum[%llu] is not [%llu]", __func__, connNum, CONN_NUM);
     }
     auto conn = reinterpret_cast<DevUbCtpConnection *>(commonLocRes.connVec[0]);
     CHECK_NULLPTR(conn, StringFormat("[UrmaDirectTransport::%s] failed, connection pointer is nullptr", __func__));
@@ -77,7 +80,7 @@ HcclAiRMAWQ UrmaDirectTransport::GetAiRMAWQ()
 
     for (auto &it : commonLocRes.bufferVec) {
         if (it != nullptr) {
-            LocalUbRmaBuffer* localBuffer = dynamic_cast<LocalUbRmaBuffer*>(it);
+            LocalUbRmaBuffer *localBuffer = dynamic_cast<LocalUbRmaBuffer *>(it);
             CHECK_NULLPTR(localBuffer,
                 StringFormat("[UrmaDirectTransport::%s] failed, localBuffer pointer is nullptr", __func__));
             HCCL_INFO("get local buffer, %s", localBuffer->Describe().c_str());
@@ -92,20 +95,19 @@ HcclAiRMAWQ UrmaDirectTransport::GetAiRMAWQ()
             wq.rmtTokenValue = it->GetTokenValue();
         }
     }
-    
+
     return wq;
 }
 
 HcclAiRMACQ UrmaDirectTransport::GetAiRMACQ()
 {
     if (baseStatus != TransportStatus::READY) {
-        MACRO_THROW(InternalException, StringFormat(
-            "[UrmaDirectTransport::%s]transport status is not ready, please check, __func__"));
+        MACRO_THROW(InternalException,
+            StringFormat("[UrmaDirectTransport::%s]transport status is not ready, please check, __func__"));
     }
     size_t connNum = commonLocRes.connVec.size();
     if (connNum != CONN_NUM) {
-        THROW<InternalException>("[UrmaDirectTransport::%s] connNum[%llu] is not [%llu]",
-            __func__, connNum, CONN_NUM);
+        THROW<InternalException>("[UrmaDirectTransport::%s] connNum[%llu] is not [%llu]", __func__, connNum, CONN_NUM);
     }
     auto conn = reinterpret_cast<DevUbCtpConnection *>(commonLocRes.connVec[0]);
     CHECK_NULLPTR(conn, StringFormat("[UrmaDirectTransport::%s] failed, connection pointer is nullptr", __func__));
@@ -137,18 +139,18 @@ void UrmaDirectTransport::SendExchangeData()
 void UrmaDirectTransport::BufferVecPack(BinaryStream &binaryStream)
 {
     binaryStream << bufferNum;
-    HCCL_INFO("start pack %s bufferVec", transportType.Describe().c_str());
+    HCCL_INFO("UrmaDirectTransport start pack %s bufferVec", transportType.Describe().c_str());
     u32 pos = 0;
     for (auto &it : commonLocRes.bufferVec) {
         binaryStream << pos;
         if (it != nullptr) { // 非空的buffer，从buffer中获取 dto
             std::unique_ptr<Serializable> dto = it->GetExchangeDto();
             dto->Serialize(binaryStream);
-            HCCL_INFO("pack buffer pos=%u dto %s", pos, dto->Describe().c_str());
+            HCCL_INFO("UrmaDirectTransport pack buffer pos=%u dto %s", pos, dto->Describe().c_str());
         } else { // 空的buffer，dto所有字段为0(size=0)
             ExchangeUbBufferDto exchangeDto;
             exchangeDto.Serialize(binaryStream);
-            HCCL_INFO("pack buffer pos=%u, dto is null %s", pos, exchangeDto.Describe().c_str());
+            HCCL_INFO("UrmaDirectTransport pack buffer pos=%u, dto is null %s", pos, exchangeDto.Describe().c_str());
         }
         pos++;
     }
@@ -157,18 +159,16 @@ void UrmaDirectTransport::BufferVecPack(BinaryStream &binaryStream)
 bool UrmaDirectTransport::IsResReady()
 {
     for (auto &it : commonLocRes.connVec) {
-        CHECK_NULLPTR(it,
-            StringFormat("[UrmaDirectTransport::%s] failed, connection pointer is nullptr", __func__));
+        CHECK_NULLPTR(it, StringFormat("[UrmaDirectTransport::%s] failed, connection pointer is nullptr", __func__));
 
         RmaConnType connType = it->GetRmaConnType();
         if (connType != RmaConnType::UB) {
-            THROW<InternalException>("[UrmaDirectTransport::%s] connection type[%s] is not ub",
-                __func__, connType.Describe().c_str());
+            THROW<InternalException>(
+                "[UrmaDirectTransport::%s] connection type[%s] is not ub", __func__, connType.Describe().c_str());
         }
 
         auto status = it->GetStatus();
-        if (status != RmaConnStatus::EXCHANGEABLE &&
-            status != RmaConnStatus::READY) {
+        if (status != RmaConnStatus::EXCHANGEABLE && status != RmaConnStatus::READY) {
             return false;
         }
     }
@@ -191,8 +191,8 @@ bool UrmaDirectTransport::ConnVecUnpackProc(BinaryStream &binaryStream)
     binaryStream >> rmtConnNum;
     HCCL_INFO("start unpack conn %s connNum=%u, rmtConnNum=%u", GetLinkDescInfo().c_str(), connNum, rmtConnNum);
     if (connNum != rmtConnNum) {
-        MACRO_THROW(InvalidParamsException,
-                    StringFormat("connNum=%u is not equal to rmtConnNum=%u", connNum, rmtConnNum));
+        MACRO_THROW(
+            InvalidParamsException, StringFormat("connNum=%u is not equal to rmtConnNum=%u", connNum, rmtConnNum));
     }
 
     bool result = false; // 不需要发送 finish
@@ -203,8 +203,8 @@ bool UrmaDirectTransport::ConnVecUnpackProc(BinaryStream &binaryStream)
         rmtDto.Deserialize(binaryStream);
         HCCL_INFO("unpack connection pos=%u dto %s", pos, rmtDto.Describe().c_str());
         if (commonLocRes.connVec[i]->GetStatus() != RmaConnStatus::READY) {
-            HCCL_INFO("parse and import pos=%u, rmt dto to connection[%s]", pos,
-                    commonLocRes.connVec[i]->Describe().c_str());
+            HCCL_INFO(
+                "parse and import pos=%u, rmt dto to connection[%s]", pos, commonLocRes.connVec[i]->Describe().c_str());
             commonLocRes.connVec[i]->ParseRmtExchangeDto(rmtDto);
             commonLocRes.connVec[i]->ImportRmtDto();
             result = true; // connection 建链，需要发送finish
@@ -220,8 +220,8 @@ void UrmaDirectTransport::RmtBufferVecUnpackProc(u32 locNum, BinaryStream &binar
 
     HCCL_INFO("unpack BUFFER %s, locNum=%u, rmtNum=%u", GetLinkDescInfo().c_str(), locNum, rmtNum);
     if (rmtNum != locNum) {
-        MACRO_THROW(InvalidParamsException,
-                    StringFormat("BUFFER, locNum=%u is not equal to rmtNum=%u", locNum, rmtNum));
+        MACRO_THROW(
+            InvalidParamsException, StringFormat("BUFFER, locNum=%u is not equal to rmtNum=%u", locNum, rmtNum));
     }
 
     for (u32 i = 0; i < rmtNum; i++) {
@@ -250,7 +250,7 @@ void UrmaDirectTransport::RmtBufferVecUnpackProc(u32 locNum, BinaryStream &binar
 bool UrmaDirectTransport::RecvDataProcess()
 {
     HCCL_INFO("RecvDataProcess: link=%s, size=%llu, exchangeDataSize=%u", GetLinkDescInfo().c_str(), recvData.size(),
-            exchangeDataSize);
+        exchangeDataSize);
     BinaryStream binaryStream(recvData);
     HandshakeMsgUnpack(binaryStream);
     RmtBufferVecUnpackProc(bufferNum, binaryStream, rmtBufferVec);
@@ -335,6 +335,11 @@ TransportStatus UrmaDirectTransport::GetStatus()
             break;
     }
     return baseStatus;
+}
+
+const std::vector<RemoteRmaBuffer *> &UrmaDirectTransport::GetRemoteRmaBufferVec() const
+{
+    return rmtRmaBufferVec;
 }
 
 } // namespace Hccl

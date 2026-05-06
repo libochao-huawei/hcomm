@@ -48,7 +48,7 @@ public:
     {
         return HCCL_SUCCESS;
     }
-    HcclResult RegisterMemory(HcommMem, const char *, void **) override
+    HcclResult RegisterMemory(HcommMem, void **) override
     {
         return HCCL_SUCCESS;
     }
@@ -236,7 +236,7 @@ public:
         *notifyNum = 0U;
         return HCCL_SUCCESS;
     }
-    HcclResult GetRemoteMem(HcclMem **, uint32_t *, char **) override
+    HcclResult GetRemoteMem(HcclMem **, uint32_t *) override
     {
         return HCCL_SUCCESS;
     }
