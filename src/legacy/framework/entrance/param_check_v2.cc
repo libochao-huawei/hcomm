@@ -453,7 +453,7 @@ HcclResult HcomLoadRankTableFileV2(const char *clusterInfo, std::string &rankTab
     if (realpath(clusterInfo, resolvedPath) == nullptr) {
         std::string rankTablePath(clusterInfo);
         RPT_INPUT_ERR(true, "EI0004", std::vector<std::string>({"error_reason", "ranktable_path"}), 
-            std::vector<std::string>({rankTablePath, "The rankTable file path is not a valid real path or the permission is insufficient."}));
+            std::vector<std::string>({rankTablePath, "The rankTable file path does not exist, the permission is insufficient, or the JSON format is incorrect."}));
         HCCL_ERROR("RanktableRealPath: %s is not a valid real path", clusterInfo);
         return HCCL_E_PARA;
     }
