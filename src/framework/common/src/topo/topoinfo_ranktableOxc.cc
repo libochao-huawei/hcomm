@@ -14,6 +14,7 @@
 #include <array>
 #include <limits>
 #include <map>
+#include <sstream>
 #include <set>
 #include <unordered_map>
 #include <utility>
@@ -144,6 +145,70 @@ HcclResult GetOptionalU32Field(const nlohmann::json &obj, const char *propName, 
     return ParseU32FromJsonValue(*iter, propName, value);
 }
 
+std::string FormatPortsForLog(const std::vector<std::string> &ports)
+{
+    std::ostringstream oss;
+    oss << "[";
+    for (u32 index = 0; index < ports.size(); ++index) {
+        if (index != 0) {
+            oss << ",";
+        }
+        oss << ports[index];
+    }
+    oss << "]";
+    return oss.str();
+}
+
+u32 CountOxcGroupNum(const RankTable_t &rankTable)
+{
+    std::set<std::string> groupIds;
+    for (const auto &rankInfo : rankTable.rankList) {
+        if (!rankInfo.oxcGroupId.empty()) {
+            groupIds.insert(rankInfo.oxcGroupId);
+        }
+    }
+    return static_cast<u32>(groupIds.size());
+}
+
+void LogParsedOxcRankTableObservability(const RankTable_t &rankTable)
+{
+    const bool enableInfo = HcclCheckLogLevel(HCCL_LOG_INFO);
+    const bool enableDebug = HcclCheckLogLevel(HCCL_LOG_DEBUG);
+    if (!enableInfo && !enableDebug) {
+        return;
+    }
+
+    const u32 groupNum = CountOxcGroupNum(rankTable);
+    if (enableInfo) {
+        HCCL_INFO("[OXC_HCOMM][Parse][Summary] rank_num[%u] server_num[%u] super_pod_num[%u] group_num[%u].",
+            rankTable.rankNum, rankTable.serverNum, rankTable.superPodNum, groupNum);
+        for (const auto &rankInfo : rankTable.rankList) {
+            HCCL_INFO("[OXC_HCOMM][Parse][Summary][Rank] rank_id[%u] server_id[%s] super_pod_id[%s] super_device_id[%u] group_id[%s].",
+                rankInfo.rankId, rankInfo.serverId.c_str(), rankInfo.superPodId.c_str(),
+                rankInfo.superDeviceId, rankInfo.oxcGroupId.c_str());
+        }
+    }
+
+    if (enableDebug) {
+        for (const auto &rankInfo : rankTable.rankList) {
+            HCCL_DEBUG("[OXC_HCOMM][Parse][Detail][Rank] rank_id[%u] server_id[%s] super_pod_id[%s] super_device_id[%u] group_id[%s] level_source[synthesized].",
+                rankInfo.rankId, rankInfo.serverId.c_str(), rankInfo.superPodId.c_str(), rankInfo.superDeviceId,
+                rankInfo.oxcGroupId.c_str());
+            for (const auto &levelInfo : rankInfo.levelList) {
+                HCCL_DEBUG("[OXC_HCOMM][Parse][Detail][Level] rank_id[%u] net_layer[%u] net_type[%s] net_instance_id[%s].",
+                    rankInfo.rankId, levelInfo.netLayer, levelInfo.netType.c_str(), levelInfo.netInstanceId.c_str());
+                for (const auto &addrInfo : levelInfo.rankAddrList) {
+                    HCCL_DEBUG("[OXC_HCOMM][Parse][Detail][RankAddr] rank_id[%u] net_layer[%u] addr[%s] addr_type[%s] plane_id[%s] ports%s.",
+                        rankInfo.rankId, levelInfo.netLayer, addrInfo.addr.c_str(), addrInfo.addrType.c_str(),
+                        addrInfo.planeId.c_str(), FormatPortsForLog(addrInfo.ports).c_str());
+                }
+            }
+            HCCL_DEBUG("[OXC_HCOMM][Parse][Detail][Ports] rank_id[%u] device_port[%u] backup_device_port[%u].",
+                rankInfo.rankId, rankInfo.deviceInfo.port, rankInfo.deviceInfo.backupPort);
+        }
+    }
+}
+
 void SynthesizeLevelList(RankInfo_t &rankInfo)
 {
     rankInfo.levelList.clear();
@@ -238,6 +303,7 @@ HcclResult TopoinfoRanktableOxc::ParserClusterInfo(HcclCommParams &params, RankT
     CHK_RET(CheckRankListInfo(rankTable.rankList));
 
     if (IsTaskNumCalMode()) {
+        LogParsedOxcRankTableObservability(rankTable);
         return HCCL_SUCCESS;
     }
 
@@ -263,6 +329,7 @@ HcclResult TopoinfoRanktableOxc::ParserClusterInfo(HcclCommParams &params, RankT
     params.userRank = rankId;
     params.serverId = rankTable.rankList[rankId].serverId;
     params.totalRanks = rankTable.rankNum;
+    LogParsedOxcRankTableObservability(rankTable);
     return HCCL_SUCCESS;
 }
 

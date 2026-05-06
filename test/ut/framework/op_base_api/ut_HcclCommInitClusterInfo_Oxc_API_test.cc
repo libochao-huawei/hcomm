@@ -11,6 +11,32 @@
 #include "hccl_api_base_test.h"
 
 namespace {
+class ScopedStubLogLevel {
+public:
+    explicit ScopedStubLogLevel(s32 logLevel) : previousLevel_(log_level_get_stub())
+    {
+        log_level_set_stub(logLevel);
+    }
+
+    ~ScopedStubLogLevel()
+    {
+        log_level_set_stub(previousLevel_);
+    }
+
+private:
+    s32 previousLevel_;
+};
+
+std::string CaptureCfgGetClusterInfoStdout(const std::string &rankTable, const std::string &identify,
+    HcclCommParams &params, RankTable_t &rankTableInfo)
+{
+    testing::internal::CaptureStdout();
+    HcclResult ret = CfgGetClusterInfo(rankTable, identify, params, rankTableInfo);
+    std::string output = testing::internal::GetCapturedStdout();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    return output;
+}
+
 nlohmann::json BuildRankRef(const std::string &rankId)
 {
     return nlohmann::json::object({{"rank_id", rankId}});
@@ -412,6 +438,49 @@ TEST_F(HcclCommInitClusterInfoOxcA3Test, Ut_CfgGetClusterInfo_When_A3OxcRankTabl
     EXPECT_FALSE(rankTable.rankList[0].deviceInfo.backupDeviceIp[0].IsInvalid());
     EXPECT_EQ(rankTable.rankList[0].deviceInfo.port, 16666U);
     EXPECT_EQ(rankTable.rankList[0].deviceInfo.backupPort, 17666U);
+}
+
+TEST_F(HcclCommInitClusterInfoOxcA3Test,
+    Ut_CfgGetClusterInfo_When_A3OxcRankTable1_4_Expect_InfoLogSummaryWithoutFullDetail)
+{
+    ScopedStubLogLevel scopedLogLevel(DLOG_INFO);
+    HcclCommParams params;
+    RankTable_t rankTable;
+    nlohmann::json rankTableJson = BuildOxcA3RankTable();
+
+    std::string output = CaptureCfgGetClusterInfoStdout(rankTableJson.dump(), "0", params, rankTable);
+    EXPECT_NE(output.find("[OXC_HCOMM][Parse][Summary] rank_num[2] server_num[2] super_pod_num[2] group_num[2]."),
+        std::string::npos);
+    EXPECT_NE(output.find("[OXC_HCOMM][Parse][Summary][Rank] rank_id[0] server_id[server0] super_pod_id[pod0] super_device_id[100] group_id[group0]."),
+        std::string::npos);
+    EXPECT_NE(output.find("[OXC_HCOMM][Parse][Summary][Rank] rank_id[1] server_id[server1] super_pod_id[pod1] super_device_id[200] group_id[group1]."),
+        std::string::npos);
+    EXPECT_EQ(output.find("[OXC_HCOMM][Parse][Detail][Rank]"), std::string::npos);
+    EXPECT_EQ(output.find("level_list["), std::string::npos);
+    EXPECT_EQ(output.find("rank_addr_list["), std::string::npos);
+    EXPECT_EQ(output.find("device_port[16666]"), std::string::npos);
+}
+
+TEST_F(HcclCommInitClusterInfoOxcA3Test,
+    Ut_CfgGetClusterInfo_When_A3OxcRankTable1_4_Expect_DebugLogContainsFullDetail)
+{
+    ScopedStubLogLevel scopedLogLevel(DLOG_DEBUG);
+    HcclCommParams params;
+    RankTable_t rankTable;
+    nlohmann::json rankTableJson = BuildOxcA3RankTable();
+
+    std::string output = CaptureCfgGetClusterInfoStdout(rankTableJson.dump(), "0", params, rankTable);
+    EXPECT_NE(output.find("[OXC_HCOMM][Parse][Detail][Rank] rank_id[0] server_id[server0] super_pod_id[pod0] super_device_id[100] group_id[group0]"),
+        std::string::npos);
+    EXPECT_NE(output.find("level_source[synthesized]"), std::string::npos);
+    EXPECT_NE(output.find("[OXC_HCOMM][Parse][Detail][Level] rank_id[0] net_layer[0] net_type[TOPO_FILE_DESC] net_instance_id[server0-l0]."),
+        std::string::npos);
+    EXPECT_NE(output.find("[OXC_HCOMM][Parse][Detail][RankAddr] rank_id[0] net_layer[0] addr[server0] addr_type[IPV4] plane_id[server0-dev0] ports[]."),
+        std::string::npos);
+    EXPECT_NE(output.find("[OXC_HCOMM][Parse][Detail][RankAddr] rank_id[0] net_layer[1] addr[server0] addr_type[IPV4] plane_id[group0] ports[]."),
+        std::string::npos);
+    EXPECT_NE(output.find("[OXC_HCOMM][Parse][Detail][Ports] rank_id[0] device_port[16666] backup_device_port[17666]."),
+        std::string::npos);
 }
 
 TEST_F(HcclCommInitClusterInfoOxcA3Test,
