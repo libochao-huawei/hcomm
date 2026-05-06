@@ -40,7 +40,7 @@ target_compile_definitions(hccl_v2 PRIVATE
 target_include_directories(hccl_v2 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/base/inc
     ${HCCL_BASE_DIR}/src/pub_inc
-    ${HCCL_BASE_DIR}/src/pub_inc/hccl
+    ${HCCL_BASE_DIR}/src/pub_inc/aicpu
     ${HCCL_BASE_DIR}/include
     ${HCCL_BASE_DIR}/inc/adapter
     ${HCCL_BASE_DIR}/src/algorithm/impl/resource_manager
