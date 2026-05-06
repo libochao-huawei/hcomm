@@ -282,8 +282,8 @@ struct RsConnInfo {
      * Server return the tag to HCCL
      */
     char tag[SOCK_CONN_TAG_SIZE + SOCK_CONN_DEV_ID_SIZE];
-    uint32_t tagSyncTime;
-    uint32_t tagEintrTime;
+    uint32_t tagSyncTimes;
+    uint32_t tagEintrTimes;
 
     struct SocketErrInfo errInfo;
 
