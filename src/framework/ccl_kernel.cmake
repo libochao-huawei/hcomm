@@ -466,7 +466,6 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/platform/task
         ${HCCL_BASE_DIR}/platform/common
         ${HCCL_BASE_DIR}/platform/common/unique
-        ${hccl_include_list}
         ${HCCL_BASE_DIR}/../include
         ${HCCL_BASE_DIR}/../include/hccl
         ${HCCL_BASE_DIR}/../inc/hccl/hccl
@@ -525,7 +524,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${CCL_KERNEL_INCLUDE_LIST}
     )
 
-    target_include_directories(ccl_kernel PRIVATE ${ORION_HEAD_LIST})
+    target_include_directories(ccl_kernel PRIVATE ${LEGACY_DIR_LIST})
 
     add_subdirectory(device)
 endif()
