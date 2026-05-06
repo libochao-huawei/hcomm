@@ -4,7 +4,10 @@
 #include "ccu_dev_mgr_pub.h"
 #include "ccu_comp.h"
 #include "hccl_common.h"
-#include "ccu_res_batch_allocator.h"
+// #include "ccu_res_batch_allocator.h"
+
+// [新增] 添加 CcuPfeCfgMgr 的头文件
+#include "ccu_pfe_cfg_mgr.h" 
 
 #include "unified_platform/ccu/ccu_device/ccu_component/ccu_component.h"
 
@@ -169,3 +172,10 @@ TEST_F(CcuCompPubTest, Ut_CcuCleanDieCkesWhenUnderlyingFailsExpectFailure) {
 
 //     EXPECT_EQ(ret, HCCL_E_UNAVAIL);
 // }
+
+// [新增] 测试 CcuPfeCfgMgr::GetPfeJettyCtxCfg 当 dieId 无效时的行为
+TEST(CcuPfeCfgMgrSimpleTest, Ut_InvalidDieId) {
+    auto& mgr = CcuPfeCfgMgr::GetInstance(0);
+    // 传入无效 dieId，验证返回空向量以覆盖 warning 分支
+    EXPECT_TRUE(mgr.GetPfeJettyCtxCfg(CCU_MAX_IODIE_NUM).empty());
+}
