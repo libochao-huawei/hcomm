@@ -26,11 +26,10 @@ public:
         RECV_MEM_FIN, CONNECT_FAILED, SOCKET_TIMEOUT, READY);
     AivUbMemTransport(Hccl::Socket *socket, HcommChannelDesc &channelDesc);
     ~AivUbMemTransport() = default;
-    HcclResult FillTagVec(HcommMemHandle *memHandles, uint32_t bufferNum, std::vector<Hccl::LocalIpcRmaBuffer *> &bufferVec,
-        std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &tagVec);
+    HcclResult FillTagVec(HcommMemHandle *memHandles, uint32_t bufferNum, std::vector<Hccl::LocalIpcRmaBuffer *> &bufferVec);
     HcclResult Init();
     Hccl::TransportStatus GetStatus();
-    HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags);
+    HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum);
     HcclResult GetMemTag(char **memTag, uint32_t memNum);
     HcclResult GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum);
     HcclResult CheckSocketStatus();
@@ -48,8 +47,6 @@ private:
     
     std::vector<Hccl::LocalIpcRmaBuffer *>  localRmaBufferVec_{};
     std::vector<Hccl::LocalIpcRmaBuffer *>  locMemTemp_{};
-    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> localUserMemTag_{}; 
-    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> locTagTemp_{}; 
     std::vector<std::unique_ptr<Hccl::RemoteIpcRmaBuffer>> rmtBufferVec_{};
     std::vector<Hccl::RemoteRmaBuffer *> rmtRmaBufferVec_{};
     std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> remoteUserMemTag_{};
@@ -67,8 +64,7 @@ private:
     HcclResult SendMemInfo();
     HcclResult RecvMemInfo();
     HcclResult RecvDataProcess();
-    void BufferPack(Hccl::BinaryStream &binaryStream, std::vector<Hccl::LocalIpcRmaBuffer *> &bufferVec,
-        std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &localUserMemTag);
+    void BufferPack(Hccl::BinaryStream &binaryStream, std::vector<Hccl::LocalIpcRmaBuffer *> &bufferVec);
     void RmtBufferUnpackProc(Hccl::BinaryStream &binaryStream);
     HcclResult StateMachine();
 };

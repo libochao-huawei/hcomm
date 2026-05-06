@@ -23,10 +23,9 @@ AivUbMemTransport::AivUbMemTransport(Hccl::Socket *socket, HcommChannelDesc &cha
     channelDesc_(channelDesc) {}
 
 HcclResult AivUbMemTransport::FillTagVec(HcommMemHandle *memHandles, uint32_t bufferNum,
-    std::vector<Hccl::LocalIpcRmaBuffer *> &bufferVec, std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &tagVec)
+    std::vector<Hccl::LocalIpcRmaBuffer *> &bufferVec)
 {
     uint32_t totalBufferNum = localRmaBufferVec_.size() + bufferNum;
-    localUserMemTag_.reserve(totalBufferNum);
     if (UNLIKELY(totalBufferNum > MAX_BUFFER_NUM)) {
         HCCL_ERROR("[AivUbMemTransport][FillTagVec] totalBufferNum[%u] exceeds limit[%u]", totalBufferNum, MAX_BUFFER_NUM);
         return HCCL_E_PARA;
@@ -37,15 +36,6 @@ HcclResult AivUbMemTransport::FillTagVec(HcommMemHandle *memHandles, uint32_t bu
         auto localIpcRmaBuffer = reinterpret_cast<Hccl::LocalIpcRmaBuffer *>(locMemInfo->bufferHandle);
         CHK_PTR_NULL(localIpcRmaBuffer);
         bufferVec.push_back(localIpcRmaBuffer);
-        std::array<char, HCCL_RES_TAG_MAX_LEN> memTag{};
-        std::string tag = locMemInfo->memTag;
-        if (UNLIKELY(tag.size() >= HCCL_RES_TAG_MAX_LEN)) {
-            HCCL_ERROR("[AivUbMemTransport][FillTagVec] tagSize exceeds limit[%u]", HCCL_RES_TAG_MAX_LEN);
-            return HCCL_E_PARA;
-        }
-        CHK_SAFETY_FUNC_RET(memcpy_s(memTag.data(), memTag.size(), tag.c_str(), tag.size()));
-        HCCL_INFO("[AivUbMemTransport][FillTagVec] memHandleNum[%u] memTag[%s]", i, memTag.data());
-        tagVec.push_back(memTag);
     }
     return HCCL_SUCCESS;
 }
@@ -59,7 +49,7 @@ HcclResult AivUbMemTransport::Init()
         return HCCL_E_PARA;
     }
     HCCL_INFO("[AivUbMemTransport][Init] channelDesc_.memHandleNum: %u", bufferNum);
-    CHK_RET(FillTagVec(channelDesc_.memHandles, bufferNum, localRmaBufferVec_, localUserMemTag_));
+    CHK_RET(FillTagVec(channelDesc_.memHandles, bufferNum, localRmaBufferVec_));
 
     baseStatus_ = Hccl::TransportStatus::INIT;
     return HCCL_SUCCESS;
@@ -137,7 +127,7 @@ HcclResult AivUbMemTransport::SendDataSize()
     HCCL_INFO("[%s] start", __func__);
 
     Hccl::BinaryStream binaryStream;
-    BufferPack(binaryStream, localRmaBufferVec_, localUserMemTag_);
+    BufferPack(binaryStream, localRmaBufferVec_);
     
     binaryStream.Dump(sendData_);
     u32 sendSize = sendData_.size();
@@ -170,19 +160,11 @@ HcclResult AivUbMemTransport::SendMemInfo()
     return HCCL_SUCCESS;
 }
 
-void AivUbMemTransport::BufferPack(Hccl::BinaryStream &binaryStream, std::vector<Hccl::LocalIpcRmaBuffer *> &bufferVec,
-        std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &tagVec)
+void AivUbMemTransport::BufferPack(Hccl::BinaryStream &binaryStream, std::vector<Hccl::LocalIpcRmaBuffer *> &bufferVec)
 {
     u32 vecSize = bufferVec.size();
     binaryStream << vecSize;
     HCCL_RUN_INFO("BufferPack vecSize=%u", vecSize);
-
-    for (const auto& tag : tagVec) {
-        // 逐个字节传输
-        for (uint32_t i = 0; i < HCCL_RES_TAG_MAX_LEN; i++) {
-            binaryStream << static_cast<u8>(tag[i]);
-        }
-    }
 
     for (uint32_t i = 0; i < vecSize; ++i) {
         std::unique_ptr<Hccl::Serializable> dto = bufferVec[i]->GetExchangeDto();
@@ -206,7 +188,6 @@ HcclResult AivUbMemTransport::RecvDataProcess()
     Hccl::BinaryStream binaryStream(recvData_);
     rmtBufferVec_.clear();
     rmtRmaBufferVec_.clear();
-    remoteUserMemTag_.clear();
     EXCEPTION_HANDLE_BEGIN
     RmtBufferUnpackProc(binaryStream);
     EXCEPTION_HANDLE_END
@@ -218,20 +199,9 @@ void AivUbMemTransport::RmtBufferUnpackProc(Hccl::BinaryStream &binaryStream)
     u32 vecSize{0};
     binaryStream >> vecSize;
     HCCL_RUN_INFO("vecSize=%u", vecSize);
-    uint32_t totalBufferNum = remoteUserMemTag_.size() + vecSize;
-    if (UNLIKELY(totalBufferNum > MAX_BUFFER_NUM)) {
+    if (UNLIKELY(vecSize > MAX_BUFFER_NUM)) {
         EXCEPTION_THROW_IF_ERR(HCCL_E_PARA, "[AivUbMemTransport][RmtBufferUnpackProc] vecSize exceeds limit.");
     }
-
-    rmtTagTemp_.resize(vecSize);
-    for (auto& tag : rmtTagTemp_) {
-        for (uint32_t i = 0; i < HCCL_RES_TAG_MAX_LEN; i++) {
-            u8 byte;
-            binaryStream >> byte;
-            tag[i] = static_cast<char>(byte);
-        }
-    }
-    remoteUserMemTag_.insert(remoteUserMemTag_.end(), rmtTagTemp_.begin(), rmtTagTemp_.end());
 
     for (u32 pos = 0; pos < vecSize; ++pos) {
         Hccl::ExchangeIpcBufferDto dto;
@@ -251,12 +221,10 @@ void AivUbMemTransport::RmtBufferUnpackProc(Hccl::BinaryStream &binaryStream)
     }
 }
 
-HcclResult AivUbMemTransport::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags) 
+HcclResult AivUbMemTransport::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum) 
 {
     CHK_PRT_RET(!remoteMem, HCCL_ERROR("[GetRemoteMem] remoteMem is nullptr"), HCCL_E_PARA);
     CHK_PRT_RET(!memNum, HCCL_ERROR("[GetRemoteMem] memNum is nullptr"), HCCL_E_PARA);
-    CHK_PRT_RET(!memTags, HCCL_ERROR("[GetRemoteMem] memTags is nullptr"), HCCL_E_PARA);
-
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
 
     if (*memNum == 0) {
@@ -269,7 +237,6 @@ HcclResult AivUbMemTransport::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum
         remoteMems_[0].addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
         remoteMems_[0].size = rmtBuffer->GetSize();
         remoteMem[0] = &remoteMems_[0];
-        CHK_RET(GetMemTag(memTags, cclbufferNum));
     } else {
         // 只传用户注册内存
         uint32_t totalCount = rmtBufferVec_.size();
@@ -288,19 +255,6 @@ HcclResult AivUbMemTransport::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum
             remoteMems_[i].size = rmtBuffer->GetSize();
             remoteMem[i] = &remoteMems_[i];
         }
-        CHK_RET(GetMemTag(memTags, totalCount));
-    }
-    return HCCL_SUCCESS;
-}
-
-HcclResult AivUbMemTransport::GetMemTag(char **memTag, uint32_t memNum)
-{
-    for (uint32_t i = 0; i < memNum; i++) {
-        memTag[i] = const_cast<char*>(remoteUserMemTag_[i].data());
-        if (strlen(memTag[i]) >= HCCL_RES_TAG_MAX_LEN) {
-            memTag[i][HCCL_RES_TAG_MAX_LEN - 1] = '\0';
-        }
-        HCCL_INFO("[%s] memTag[%s]", __func__, memTag[i]);
     }
     return HCCL_SUCCESS;
 }
@@ -319,8 +273,8 @@ HcclResult AivUbMemTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memT
         remoteMemCtx.remoteUserMems[index].size = rmtBuffer->GetSize();
     };
     Hccl::RemoteMemCtx<std::unique_ptr<Hccl::RemoteIpcRmaBuffer>> remoteMemCtx{
-        userMemCount, cacheValid_, rmtBufferVec_, remoteUserMemTag_, remoteUserMems_, tagCopies_, tagPointers_,
-        cacheBuilder, remoteMem, memTags, memNum};
+        userMemCount, cacheValid_, rmtBufferVec_, remoteUserMems_, tagCopies_, tagPointers_,
+        cacheBuilder, remoteMem, memNum};
     CHK_RET(Hccl::GetRemoteUserMem(remoteMemCtx));
     return HCCL_SUCCESS;
 }
@@ -362,12 +316,11 @@ HcclResult AivUbMemTransport::UpdateMemInfo(HcommMemHandle *memHandles, uint32_t
         return HCCL_SUCCESS;
     }
     locMemTemp_.clear();
-    locTagTemp_.clear();
-    CHK_RET(FillTagVec(memHandles, memHandleNum, locMemTemp_, locTagTemp_));
+    CHK_RET(FillTagVec(memHandles, memHandleNum, locMemTemp_));
     HCCL_INFO("[AivUbMemTransport][UpdateMemInfo] bufferNum[%zu]", locMemTemp_.size());
     sendData_.clear();
     Hccl::BinaryStream sendStream;
-    BufferPack(sendStream, locMemTemp_, locTagTemp_);
+    BufferPack(sendStream, locMemTemp_);
     sendStream.Dump(sendData_);
     u32 sendSize = sendData_.size();
     EXCEPTION_HANDLE_BEGIN
@@ -383,7 +336,6 @@ HcclResult AivUbMemTransport::UpdateMemInfo(HcommMemHandle *memHandles, uint32_t
     Hccl::BinaryStream recvStream(recvData_);
     RmtBufferUnpackProc(recvStream);
     localRmaBufferVec_.insert(localRmaBufferVec_.end(), locMemTemp_.begin(), locMemTemp_.end());
-    localUserMemTag_.insert(localUserMemTag_.end(), locTagTemp_.begin(), locTagTemp_.end());
     // 流程中已有新增内存数量判断，故执行到此位置一定存在新增内存，需要将标识置位false，使得再次调用GetUserRemoteMem时重新构造缓存
     cacheValid_ = false;
     return HCCL_SUCCESS;

@@ -52,8 +52,7 @@ HcclResult BuildBufferInfos(HcommMemHandle *memHandles, uint32_t memHandleNum,
             static_cast<uint32_t>(locMemInfo->mem.size),
             locRmaBuffer->GetTokenId(),
             locRmaBuffer->GetTokenValue(),
-            locMemInfo->mem.type,
-            memTag);
+            locMemInfo->mem.type);
     }
     return HCCL_SUCCESS;
 }
@@ -268,12 +267,10 @@ HcclResult CcuUrmaChannel::GetNotifyNum(uint32_t *notifyNum) const
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult CcuUrmaChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags)
+HcclResult CcuUrmaChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum)
 {
     CHK_PTR_NULL(remoteMem);
     CHK_PTR_NULL(memNum);
-    CHK_PTR_NULL(memTags);
-
     *remoteMem = nullptr;
     *memNum = 0;
 
@@ -288,7 +285,6 @@ HcclResult CcuUrmaChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, c
 
     remoteMem[0] = hcclBufferInfoPtr_.get();
     *memNum = 1;
-    memTags[0] = const_cast<char *>(memTag_.c_str());
     return HcclResult::HCCL_SUCCESS;
 }
 

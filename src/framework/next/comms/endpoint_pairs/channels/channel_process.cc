@@ -577,7 +577,7 @@ HcclResult ChannelProcess::ChannelGetRemoteMem(ChannelHandle channelHandle, Comm
 
     return WithChannelByHandleLocked(channelHandle, [&](Channel &channel) -> HcclResult {
         // 锁内调用，避免 destroy 并发释放
-        channel.GetRemoteMem(remoteMemConverted, memNum, memTags);
+        channel.GetRemoteMem(remoteMemConverted, memNum);
         return HcclResult::HCCL_SUCCESS;
     });
 }

@@ -320,7 +320,6 @@ HcclResult CcuTransport::RecvDataProcess()
     CHK_RET(ConnInfoUnpackProc(binaryStream));
     CHK_RET(TransResUnpackProc(binaryStream));
     rmtBufferInfos_.clear();
-    remoteUserMemTag_.clear();
     CHK_RET(BufferInfoUnpack(binaryStream));
     return HcclResult::HCCL_SUCCESS;
 }
@@ -455,7 +454,6 @@ HcclResult CcuTransport::BufferInfoUnpack(Hccl::BinaryStream &binaryStream)
         CclBufferInfo rmtBufferInfo{};
         rmtBufferInfo.Unpack(binaryStream);
         rmtBufferInfos_.push_back(rmtBufferInfo);
-        remoteUserMemTag_.push_back(rmtBufferInfo.memTag);
     }
     return HcclResult::HCCL_SUCCESS;
 }
@@ -652,8 +650,8 @@ HcclResult CcuTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags, 
         remoteMemCtx.remoteUserMems[index].size = rmtBuffer.size;
     };
     Hccl::RemoteMemCtx<CclBufferInfo> remoteMemCtx{
-        userMemCount, cacheValid_, rmtBufferInfos_, remoteUserMemTag_, remoteUserMems_, tagCopies_, tagPointers_,
-        cacheBuilder, remoteMem, memTags, memNum};
+        userMemCount, cacheValid_, rmtBufferInfos_, remoteUserMems_, tagCopies_, tagPointers_,
+        cacheBuilder, remoteMem, memNum};
     CHK_RET(Hccl::GetRemoteUserMem(remoteMemCtx));
     return HcclResult::HCCL_SUCCESS;
 }

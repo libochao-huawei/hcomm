@@ -32,7 +32,7 @@ public:
 
     HcclResult Init() override;
     HcclResult GetNotifyNum(uint32_t *notifyNum) const override;
-    HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags) override;
+    HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum) override;
     ChannelStatus GetStatus() override;
     HcclResult GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum) override;
     HcclResult Serialize(std::shared_ptr<hccl::DeviceMem> &out) override;
