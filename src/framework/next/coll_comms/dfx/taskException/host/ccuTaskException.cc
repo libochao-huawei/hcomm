@@ -968,8 +968,7 @@ HcclResult CcuTaskException::PrintCcuUbRegisters(const std::vector<CcuErrorInfo>
 uint16_t CcuTaskException::GetChannleIdByCcuErrorInfo(const CcuErrorInfo& errorInfo)
 {
     uint16_t channelId = INVALID_U16;
-    switch (errorInfo.repType)
-    {
+    switch (errorInfo.repType) {
         case CcuRep::CcuRepType::REM_POST_SEM:
         case CcuRep::CcuRepType::REM_WAIT_SEM:
         case CcuRep::CcuRepType::REM_POST_VAR:
