@@ -150,7 +150,7 @@ void RankConsistentcyChecker::RecordProtocolType(ProtocolType protocolType)
 }
 
 HcclResult RankConsistentcyChecker::GetCheckFrame(u8 *destBuf, u64 maxDestBuf, const std::string &tag)
-{
+{   
     CHK_PTR_NULL(destBuf);
     // 要发送的校验帧
     HcclCheckInfo checkInfo;

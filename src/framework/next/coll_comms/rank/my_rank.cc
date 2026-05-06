@@ -765,178 +765,15 @@ HcclResult MyRank::BatchExchangeAndCheckConsistency(
         return HCCL_SUCCESS;
     }
 
-    // ====== 第一阶段：交换Hcomm基础校验帧（HcclCheckInfo）并比对 ======
-    // 生成本端Hcomm基础校验帧（所有remoteRank共用同一份）
-    std::vector<u8> sendBuf(baseCheckInfoLen, 0);
-    CHK_RET(checker.GetCheckFrame(sendBuf.data(), baseCheckInfoLen, commTag));
-
-    // --- 步骤1: batch级异步交换 baseLen ---
-    // SERVER: 先发起RecvAsync；CLIENT: 先发起SendAsync
-    u32 localBaseLen = static_cast<u32>(baseCheckInfoLen);
-    std::vector<u32> remoteBaseLens(uniqueCount, 0);
-
-    for (u32 i = 0; i < uniqueCount; i++) {
-        if (roles[i] == HCOMM_SOCKET_ROLE_SERVER) {
-            sockets[i]->RecvAsync(reinterpret_cast<u8*>(&remoteBaseLens[i]), sizeof(u32));
-        } else {
-            sockets[i]->SendAsync(reinterpret_cast<const u8*>(&localBaseLen), sizeof(u32));
-        }
-    }
-    CHK_RET(WaitAllAsyncComplete(sockets, remoteRanks));
-
-    // SERVER: 再发起SendAsync；CLIENT: 再发起RecvAsync
-    for (u32 i = 0; i < uniqueCount; i++) {
-        if (roles[i] == HCOMM_SOCKET_ROLE_SERVER) {
-            sockets[i]->SendAsync(reinterpret_cast<const u8*>(&localBaseLen), sizeof(u32));
-        } else {
-            sockets[i]->RecvAsync(reinterpret_cast<u8*>(&remoteBaseLens[i]), sizeof(u32));
-        }
-    }
-    CHK_RET(WaitAllAsyncComplete(sockets, remoteRanks));
-
-    // 校验对端基础帧长度一致性
-    for (u32 i = 0; i < uniqueCount; i++) {
-        CHK_PRT_RET(remoteBaseLens[i] != localBaseLen,
-            HCCL_ERROR("[BatchExchangeAndCheckConsistency] remoteBaseLen[%u] != localBaseLen[%u] for remoteRank[%u], "
-                "HcclCheckInfo size mismatch.", remoteBaseLens[i], localBaseLen, remoteRanks[i]),
-            HCCL_E_INTERNAL);
-    }
-
-    // --- 步骤2: batch级异步交换 base帧数据 ---
-    std::vector<std::vector<u8>> recvBufs(uniqueCount);
-    for (u32 i = 0; i < uniqueCount; i++) {
-        recvBufs[i].resize(remoteBaseLens[i], 0);
-    }
-
-    // SERVER: 先发起RecvAsync；CLIENT: 先发起SendAsync
-    for (u32 i = 0; i < uniqueCount; i++) {
-        if (roles[i] == HCOMM_SOCKET_ROLE_SERVER) {
-            sockets[i]->RecvAsync(recvBufs[i].data(), remoteBaseLens[i]);
-        } else {
-            sockets[i]->SendAsync(sendBuf.data(), localBaseLen);
-        }
-    }
-    CHK_RET(WaitAllAsyncComplete(sockets, remoteRanks));
-
-    // SERVER: 再发起SendAsync；CLIENT: 再发起RecvAsync
-    for (u32 i = 0; i < uniqueCount; i++) {
-        if (roles[i] == HCOMM_SOCKET_ROLE_SERVER) {
-            sockets[i]->SendAsync(sendBuf.data(), localBaseLen);
-        } else {
-            sockets[i]->RecvAsync(recvBufs[i].data(), remoteBaseLens[i]);
-        }
-    }
-    CHK_RET(WaitAllAsyncComplete(sockets, remoteRanks));
-
-    // 比对Hcomm基础校验帧
-    for (u32 i = 0; i < uniqueCount; i++) {
-        HcclResult checkRet = checker.CheckFrameRecv(recvBufs[i].data(), static_cast<u32>(baseCheckInfoLen), commTag);
-        if (checkRet != HCCL_SUCCESS) {
-            (void)CheckSubCommParaDetailed(recvBufs[i].data(), baseCheckInfoLen, commTag, checker);
-            return checkRet;
-        }
-    }
+    // ====== 第一阶段：交换Hcomm基础校验帧并比对 ======
+    CHK_RET(ExchangeAndCheckBaseFrame(sockets, remoteRanks, roles, uniqueCount,
+        baseCheckInfoLen, commTag, checker));
 
     // ====== 第二阶段：Hcomm信息校验通过后，交换HCCL算子信息 ======
-    bool hasExchangeInfo = hcclComm->IsExchangeInfoReady();
-    u32 localExchangeInfoLen = hasExchangeInfo ? hcclComm->GetExchangeInfoLen() : 0;
+    CHK_RET(ExchangeUserInfo(sockets, remoteRanks, roles, uniqueCount, hcclComm));
 
-    // --- 步骤3: batch级异步交换 infoLen ---
-    std::vector<u32> remoteExchangeInfoLens(uniqueCount, 0);
+    HCCL_INFO("[BatchExchangeAndCheckConsistency] all[%u] new ranks check passed.", uniqueCount);
 
-    for (u32 i = 0; i < uniqueCount; i++) {
-        if (roles[i] == HCOMM_SOCKET_ROLE_SERVER) {
-            sockets[i]->RecvAsync(reinterpret_cast<u8*>(&remoteExchangeInfoLens[i]), sizeof(u32));
-        } else {
-            sockets[i]->SendAsync(reinterpret_cast<const u8*>(&localExchangeInfoLen), sizeof(u32));
-        }
-    }
-    CHK_RET(WaitAllAsyncComplete(sockets, remoteRanks));
-
-    for (u32 i = 0; i < uniqueCount; i++) {
-        if (roles[i] == HCOMM_SOCKET_ROLE_SERVER) {
-            sockets[i]->SendAsync(reinterpret_cast<const u8*>(&localExchangeInfoLen), sizeof(u32));
-        } else {
-            sockets[i]->RecvAsync(reinterpret_cast<u8*>(&remoteExchangeInfoLens[i]), sizeof(u32));
-        }
-    }
-    CHK_RET(WaitAllAsyncComplete(sockets, remoteRanks));
-
-    // --- 步骤4: batch级异步交换 info数据 ---
-    // SERVER: 先Recv对端数据；CLIENT: 先Send本端数据
-    std::vector<std::vector<u8>> remoteUserDatas(uniqueCount);
-
-    for (u32 i = 0; i < uniqueCount; i++) {
-        if (roles[i] == HCOMM_SOCKET_ROLE_SERVER) {
-            if (remoteExchangeInfoLens[i] > 0) {
-                remoteUserDatas[i].resize(remoteExchangeInfoLens[i], 0);
-                sockets[i]->RecvAsync(remoteUserDatas[i].data(), remoteExchangeInfoLens[i]);
-            }
-        } else {
-            if (localExchangeInfoLen > 0) {
-                const std::vector<u8> &exchangeBuf = hcclComm->GetExchangeInfoBuf();
-                sockets[i]->SendAsync(exchangeBuf.data(), localExchangeInfoLen);
-            }
-        }
-    }
-    // 只轮询有实际异步操作的socket
-    {
-        std::vector<Hccl::Socket*> activeSockets;
-        std::vector<u32> activeRanks;
-        for (u32 i = 0; i < uniqueCount; i++) {
-            bool isActive = (roles[i] == HCOMM_SOCKET_ROLE_SERVER && remoteExchangeInfoLens[i] > 0) ||
-                            (roles[i] != HCOMM_SOCKET_ROLE_SERVER && localExchangeInfoLen > 0);
-            if (isActive) {
-                activeSockets.push_back(sockets[i]);
-                activeRanks.push_back(remoteRanks[i]);
-            }
-        }
-        if (!activeSockets.empty()) {
-            CHK_RET(WaitAllAsyncComplete(activeSockets, activeRanks));
-        }
-    }
-
-    // SERVER: 再Send本端数据；CLIENT: 再Recv对端数据
-    for (u32 i = 0; i < uniqueCount; i++) {
-        if (roles[i] == HCOMM_SOCKET_ROLE_SERVER) {
-            if (localExchangeInfoLen > 0) {
-                const std::vector<u8> &exchangeBuf = hcclComm->GetExchangeInfoBuf();
-                sockets[i]->SendAsync(exchangeBuf.data(), localExchangeInfoLen);
-            }
-        } else {
-            if (remoteExchangeInfoLens[i] > 0) {
-                remoteUserDatas[i].resize(remoteExchangeInfoLens[i], 0);
-                sockets[i]->RecvAsync(remoteUserDatas[i].data(), remoteExchangeInfoLens[i]);
-            }
-        }
-    }
-    {
-        std::vector<Hccl::Socket*> activeSockets;
-        std::vector<u32> activeRanks;
-        for (u32 i = 0; i < uniqueCount; i++) {
-            bool isActive = (roles[i] == HCOMM_SOCKET_ROLE_SERVER && localExchangeInfoLen > 0) ||
-                            (roles[i] != HCOMM_SOCKET_ROLE_SERVER && remoteExchangeInfoLens[i] > 0);
-            if (isActive) {
-                activeSockets.push_back(sockets[i]);
-                activeRanks.push_back(remoteRanks[i]);
-            }
-        }
-        if (!activeSockets.empty()) {
-            CHK_RET(WaitAllAsyncComplete(activeSockets, activeRanks));
-        }
-    }
-
-    // 存储对端交换信息
-    for (u32 i = 0; i < uniqueCount; i++) {
-        if (remoteExchangeInfoLens[i] > 0 && !remoteUserDatas[i].empty()) {
-            CHK_RET(hcclComm->StoreRemoteExchangeInfo(remoteRanks[i], remoteUserDatas[i]));
-        }
-    }
-
-    HCCL_INFO("[BatchExchangeAndCheckConsistency] all[%u] new ranks check passed, "
-        "exchangeInfoLen local[%u].", uniqueCount, localExchangeInfoLen);
-
-    // 校验成功后：标记新增channel的remoteRank为已校验，清空本端交换信息状态
     for (u32 i = 0; i < uniqueCount; i++) {
         hcclComm->MarkRemoteRankChecked(remoteRanks[i]);
     }
@@ -1067,6 +904,195 @@ HcclResult MyRank::CheckSubCommParaDetailed(const u8 *recvBuf, u64 baseCheckInfo
 
     if (foundDiff) {
         return HCCL_E_INTERNAL;
+    }
+    return HCCL_SUCCESS;
+}
+
+// 批量异步交换定长数据（SERVER先Recv再Send，CLIENT先Send再Recv，防死锁）
+HcclResult MyRank::BatchExchangeFixedData(
+    const std::vector<Hccl::Socket*> &sockets,
+    const std::vector<u32> &remoteRanks,
+    const std::vector<HcommSocketRole> &roles,
+    u32 uniqueCount,
+    const u8 *sendData, u32 sendLen,
+    u8 *recvData, u32 recvLen)
+{
+    // SERVER先Recv/CLIENT先Send
+    for (u32 i = 0; i < uniqueCount; i++) {
+        if (roles[i] == HCOMM_SOCKET_ROLE_SERVER) {
+            sockets[i]->RecvAsync(recvData + i * recvLen, recvLen);
+        } else {
+            sockets[i]->SendAsync(sendData, sendLen);
+        }
+    }
+    CHK_RET(WaitAllAsyncComplete(sockets, remoteRanks));
+
+    // SERVER再Send/CLIENT再Recv
+    for (u32 i = 0; i < uniqueCount; i++) {
+        if (roles[i] == HCOMM_SOCKET_ROLE_SERVER) {
+            sockets[i]->SendAsync(sendData, sendLen);
+        } else {
+            sockets[i]->RecvAsync(recvData + i * recvLen, recvLen);
+        }
+    }
+    CHK_RET(WaitAllAsyncComplete(sockets, remoteRanks));
+
+    return HCCL_SUCCESS;
+}
+
+// 第一阶段：交换Hcomm基础校验帧并比对
+HcclResult MyRank::ExchangeAndCheckBaseFrame(
+    const std::vector<Hccl::Socket*> &sockets,
+    const std::vector<u32> &remoteRanks,
+    const std::vector<HcommSocketRole> &roles,
+    u32 uniqueCount,
+    u64 baseCheckInfoLen,
+    const std::string &commTag,
+    RankConsistentcyChecker &checker)
+{
+    // 生成本端Hcomm基础校验帧
+    std::vector<u8> sendBuf(baseCheckInfoLen, 0);
+    CHK_RET(checker.GetCheckFrame(sendBuf.data(), baseCheckInfoLen, commTag));
+
+    // 交换baseLen
+    u32 localBaseLen = static_cast<u32>(baseCheckInfoLen);
+    std::vector<u32> remoteBaseLens(uniqueCount, 0);
+    CHK_RET(BatchExchangeFixedData(sockets, remoteRanks, roles, uniqueCount,
+        reinterpret_cast<const u8*>(&localBaseLen), sizeof(u32),
+        reinterpret_cast<u8*>(remoteBaseLens.data()), sizeof(u32)));
+
+    // 校验对端基础帧长度一致性
+    for (u32 i = 0; i < uniqueCount; i++) {
+        CHK_PRT_RET(remoteBaseLens[i] != localBaseLen,
+            HCCL_ERROR("[ExchangeAndCheckBaseFrame] remoteBaseLen[%u] != localBaseLen[%u] for remoteRank[%u], "
+                "HcclCheckInfo size mismatch.", remoteBaseLens[i], localBaseLen, remoteRanks[i]),
+            HCCL_E_INTERNAL);
+    }
+
+    // 交换base帧数据
+    std::vector<std::vector<u8>> recvBufs(uniqueCount);
+    for (u32 i = 0; i < uniqueCount; i++) {
+        recvBufs[i].resize(remoteBaseLens[i], 0);
+    }
+    // base帧长度各端可能不同，需逐个收发
+    for (u32 i = 0; i < uniqueCount; i++) {
+        if (roles[i] == HCOMM_SOCKET_ROLE_SERVER) {
+            sockets[i]->RecvAsync(recvBufs[i].data(), remoteBaseLens[i]);
+        } else {
+            sockets[i]->SendAsync(sendBuf.data(), localBaseLen);
+        }
+    }
+    CHK_RET(WaitAllAsyncComplete(sockets, remoteRanks));
+
+    for (u32 i = 0; i < uniqueCount; i++) {
+        if (roles[i] == HCOMM_SOCKET_ROLE_SERVER) {
+            sockets[i]->SendAsync(sendBuf.data(), localBaseLen);
+        } else {
+            sockets[i]->RecvAsync(recvBufs[i].data(), remoteBaseLens[i]);
+        }
+    }
+    CHK_RET(WaitAllAsyncComplete(sockets, remoteRanks));
+
+    // 比对Hcomm基础校验帧
+    for (u32 i = 0; i < uniqueCount; i++) {
+        HcclResult checkRet = checker.CheckFrameRecv(recvBufs[i].data(), static_cast<u32>(baseCheckInfoLen), commTag);
+        if (checkRet != HCCL_SUCCESS) {
+            (void)CheckSubCommParaDetailed(recvBufs[i].data(), baseCheckInfoLen, commTag, checker);
+            return checkRet;
+        }
+    }
+
+    return HCCL_SUCCESS;
+}
+
+// 第二阶段：交换HCCL算子信息
+HcclResult MyRank::ExchangeUserInfo(
+    const std::vector<Hccl::Socket*> &sockets,
+    const std::vector<u32> &remoteRanks,
+    const std::vector<HcommSocketRole> &roles,
+    u32 uniqueCount,
+    hcclComm *hcclComm)
+{
+    bool hasExchangeInfo = hcclComm->IsExchangeInfoReady();
+    u32 localExchangeInfoLen = hasExchangeInfo ? hcclComm->GetExchangeInfoLen() : 0;
+
+    // 交换infoLen
+    std::vector<u32> remoteExchangeInfoLens(uniqueCount, 0);
+    CHK_RET(BatchExchangeFixedData(sockets, remoteRanks, roles, uniqueCount,
+        reinterpret_cast<const u8*>(&localExchangeInfoLen), sizeof(u32),
+        reinterpret_cast<u8*>(remoteExchangeInfoLens.data()), sizeof(u32)));
+
+    // 交换info数据（长度可能不同，需逐个收发）
+    std::vector<std::vector<u8>> remoteUserDatas(uniqueCount);
+    // SERVER先Recv/CLIENT先Send
+    for (u32 i = 0; i < uniqueCount; i++) {
+        if (roles[i] == HCOMM_SOCKET_ROLE_SERVER) {
+            if (remoteExchangeInfoLens[i] > 0) {
+                remoteUserDatas[i].resize(remoteExchangeInfoLens[i], 0);
+                sockets[i]->RecvAsync(remoteUserDatas[i].data(), remoteExchangeInfoLens[i]);
+            }
+        } else {
+            if (localExchangeInfoLen > 0) {
+                const std::vector<u8> &exchangeBuf = hcclComm->GetExchangeInfoBuf();
+                sockets[i]->SendAsync(exchangeBuf.data(), localExchangeInfoLen);
+            }
+        }
+    }
+    CHK_RET(WaitActiveAsyncComplete(sockets, remoteRanks, roles, uniqueCount,
+        remoteExchangeInfoLens, localExchangeInfoLen, true));
+
+    // SERVER再Send/CLIENT再Recv
+    for (u32 i = 0; i < uniqueCount; i++) {
+        if (roles[i] == HCOMM_SOCKET_ROLE_SERVER) {
+            if (localExchangeInfoLen > 0) {
+                const std::vector<u8> &exchangeBuf = hcclComm->GetExchangeInfoBuf();
+                sockets[i]->SendAsync(exchangeBuf.data(), localExchangeInfoLen);
+            }
+        } else {
+            if (remoteExchangeInfoLens[i] > 0) {
+                remoteUserDatas[i].resize(remoteExchangeInfoLens[i], 0);
+                sockets[i]->RecvAsync(remoteUserDatas[i].data(), remoteExchangeInfoLens[i]);
+            }
+        }
+    }
+    CHK_RET(WaitActiveAsyncComplete(sockets, remoteRanks, roles, uniqueCount,
+        remoteExchangeInfoLens, localExchangeInfoLen, false));
+
+    // 存储对端交换信息
+    for (u32 i = 0; i < uniqueCount; i++) {
+        if (remoteExchangeInfoLens[i] > 0 && !remoteUserDatas[i].empty()) {
+            CHK_RET(hcclComm->StoreRemoteExchangeInfo(remoteRanks[i], remoteUserDatas[i]));
+        }
+    }
+
+    return HCCL_SUCCESS;
+}
+
+// 收集并等待有实际异步操作的socket子集
+HcclResult MyRank::WaitActiveAsyncComplete(
+    const std::vector<Hccl::Socket*> &sockets,
+    const std::vector<u32> &remoteRanks,
+    const std::vector<HcommSocketRole> &roles,
+    u32 uniqueCount,
+    const std::vector<u32> &remoteExchangeInfoLens,
+    u32 localExchangeInfoLen,
+    bool isFirstPass)
+{
+    std::vector<Hccl::Socket*> activeSockets;
+    std::vector<u32> activeRanks;
+    for (u32 i = 0; i < uniqueCount; i++) {
+        bool isActive = isFirstPass
+            ? (roles[i] == HCOMM_SOCKET_ROLE_SERVER && remoteExchangeInfoLens[i] > 0) ||
+              (roles[i] != HCOMM_SOCKET_ROLE_SERVER && localExchangeInfoLen > 0)
+            : (roles[i] == HCOMM_SOCKET_ROLE_SERVER && localExchangeInfoLen > 0) ||
+              (roles[i] != HCOMM_SOCKET_ROLE_SERVER && remoteExchangeInfoLens[i] > 0);
+        if (isActive) {
+            activeSockets.push_back(sockets[i]);
+            activeRanks.push_back(remoteRanks[i]);
+        }
+    }
+    if (!activeSockets.empty()) {
+        CHK_RET(WaitAllAsyncComplete(activeSockets, activeRanks));
     }
     return HCCL_SUCCESS;
 }
