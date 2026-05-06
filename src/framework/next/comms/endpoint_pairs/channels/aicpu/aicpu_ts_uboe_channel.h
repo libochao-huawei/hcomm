@@ -33,7 +33,7 @@ public:
 
     HcclResult Init() override;
     HcclResult GetNotifyNum(uint32_t *notifyNum) const override;
-    HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags) override;
+    HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum) override;
     ChannelStatus GetStatus() override;
     HcclResult GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum) override;
 
@@ -59,8 +59,6 @@ private:
     std::vector<char> GetUniqueIdV2();
     HcclResult PackOpData(std::vector<char> &data);
 
-    HcclResult FillTagVec(std::vector<Hccl::LocalRmaBuffer *> &bufferVec,
-        std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &localUserMemTag);
     bool IsSocketReady();
     bool IsResReady();
     bool IsConnsReady();
@@ -80,8 +78,7 @@ private:
 
     void EidPack();
     void NotifyVecPack(Hccl::BinaryStream &binaryStream);
-    void BufferVecPack(Hccl::BinaryStream &binaryStream, std::vector<Hccl::LocalRmaBuffer *> &bufferVec,
-        std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &tagVec);
+    void BufferVecPack(Hccl::BinaryStream &binaryStream, std::vector<Hccl::LocalRmaBuffer *> &bufferVec);
     void ConnVecPack(Hccl::BinaryStream &binaryStream);
     void RmtEidUnpackProc(Hccl::IpAddress& rmtAddr);
     void RmtBufferVecUnpackProc(u32 locNum, Hccl::BinaryStream &binaryStream,
@@ -127,9 +124,6 @@ private:
     u32 bufferNum_{0};
     u32 connNum_{0};
     u32 recvDataSize_{0};
-    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> localUserMemTag_{};
-    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> remoteUserMemTag_{};
-    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> rmtMemTagTemp_{};
 
     RemoteBufferVec rmtNotifyVec_;     // 远端 notify
     RemoteBufferVec rmtBufferVec_;     // 远端 buffer
