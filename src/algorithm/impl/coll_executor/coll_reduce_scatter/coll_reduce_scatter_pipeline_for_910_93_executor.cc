@@ -14,6 +14,7 @@
 namespace hccl {
 namespace {
 constexpr u32 PIPELINE_NOTIFY_NUM = 2;
+constexpr u32 PIPELINE_BUFFER_NUM = 2;
 }
 
 CollReduceScatterPipelineFor91093Executor::
@@ -35,10 +36,11 @@ HcclResult CollReduceScatterPipelineFor91093Executor::CalcStreamNum(u32 &streamN
 
 u64 CollReduceScatterPipelineFor91093Executor::CalcLoopMaxCount(const u32 unitSize)
 {
-    u64 baseMaxCount = CollReduceScatterRingFor91093Executor::CalcLoopMaxCount(unitSize);
-    u64 maxCountPerLoop = baseMaxCount / 2;
+    const u64 maxSizePerLoopUnaligned = inCCLbufferSize_ / topoAttr_.userRankSize / PIPELINE_BUFFER_NUM;
+    const u64 maxSizePerLoop = maxSizePerLoopUnaligned / HCCL_MIN_SLICE_ALIGN * HCCL_MIN_SLICE_ALIGN;
+    const u64 maxCountPerLoop = maxSizePerLoop / unitSize;
     HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][CalcLoopMaxCount] "
-        "maxCountPerLoop[%llu], baseMaxCount[%llu]", maxCountPerLoop, baseMaxCount);
+        "maxCountPerLoop[%llu], maxSizePerLoop[%llu]", maxCountPerLoop, maxSizePerLoop);
     return maxCountPerLoop;
 }
 
