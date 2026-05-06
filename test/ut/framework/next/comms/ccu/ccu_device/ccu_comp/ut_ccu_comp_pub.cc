@@ -8,6 +8,8 @@
 
 // [新增] 添加 CcuPfeCfgMgr 的头文件
 #include "ccu_pfe_cfg_mgr.h" 
+#include "ccu_res_batch_allocator.h"
+#include "ccu_res_specs.h"
 
 #include "unified_platform/ccu/ccu_device/ccu_component/ccu_component.h"
 
@@ -141,4 +143,49 @@ TEST(CcuPfeCfgMgrSimpleTest, Ut_InvalidDieId) {
     auto& mgr = CcuPfeCfgMgr::GetInstance(0);
     // 传入无效 dieId，验证返回空向量以覆盖 warning 分支
     EXPECT_TRUE(mgr.GetPfeJettyCtxCfg(CCU_MAX_IODIE_NUM).empty());
+}
+
+TEST(CcuResBatchAllocatorTest, Ut_MissionMgrAllocWithUnsupportedReqTypeExpectWarning) {
+    int32_t devLogicId = 0;
+    auto& allocator = CcuResBatchAllocator::GetInstance(devLogicId);
+    
+    // 构造非法 reqType，例如 99
+    CcuResReq req{};
+    req.missionReq.reqType = static_cast<MissionReqType>(99); 
+    // 设置请求数量为 1，确保进入分配逻辑
+    req.missionReq.req[0] = 1; 
+    req.missionReq.req[1] = 1;
+
+    CcuResHandle handle = nullptr;
+    // 调用 AllocResHandle 间接触发 CcuMissionMgr::Alloc
+    // 预期行为：记录警告日志，修正 reqType，继续执行
+    (void)allocator.AllocResHandle(req, handle);
+    
+    if (handle) {
+        allocator.ReleaseResHandle(handle);
+    }
+}
+
+/**
+ * 测试用例 2: 覆盖第 786 行 HCCL_WARNING 分支
+ * 场景: Mission 资源不足，HandleBlockRes 返回 HCCL_E_UNAVAIL
+ */
+TEST(CcuResBatchAllocatorTest, Ut_MissionMgrAllocWhenResourceUnavailableExpectHcclEUnavail) {
+    int32_t devLogicId = 0;
+    auto& allocator = CcuResBatchAllocator::GetInstance(devLogicId);
+    
+    // 构造一个请求大量 Mission 资源的 Req，超过预分配的大小
+    CcuResReq req{};
+    req.missionReq.reqType = MissionReqType::FUSION_MULTIPLE_DIE;
+    // 假设预分配的 block 很少，请求一个巨大的数量以触发 E_UNAVAIL
+    req.missionReq.req[0] = 10000; 
+    req.missionReq.req[1] = 10000;
+
+    CcuResHandle handle = nullptr;
+    
+    // 执行分配，预期返回 HCCL_E_UNAVAIL
+    auto ret = allocator.AllocResHandle(req, handle);
+    
+    EXPECT_EQ(ret, HcclResult::HCCL_E_UNAVAIL);
+    EXPECT_EQ(handle, nullptr);
 }
