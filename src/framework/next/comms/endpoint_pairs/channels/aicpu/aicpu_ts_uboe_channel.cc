@@ -42,7 +42,7 @@ HcclResult AicpuTsUboeChannel::Makebufs(HcommMemHandle *memHandles, uint32_t mem
         HCCL_INFO("[AicpuTsUboeChannel][%s] tag[%s]", __func__, locMemInfo->memTag);
         bufs.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
             reinterpret_cast<uintptr_t>(locMemInfo->mem.addr), locMemInfo->mem.size,
-            hccl::ConvertCommToHcclMemType(locMemInfo->mem.type), locMemInfo->memTag)
+            hccl::ConvertCommToHcclMemType(locMemInfo->mem.type))
         ));
     }
     return HCCL_SUCCESS;
@@ -73,13 +73,10 @@ HcclResult AicpuTsUboeChannel::ParseInputParam()
         HCCL_INFO("[AicpuTsUboeChannel][%s] Got memHandleNum[%u].", __func__, memHandleNum);
         for (uint32_t i = 0; i < memHandleNum; ++i) {
             std::shared_ptr<Hccl::LocalUbRmaBuffer> &localUbRmaBuffer = memHandles[i];
-            HCCL_INFO("[AicpuTsUboeChannel][%s] Got memHandle No.%u: addr[0x%llx], size[0x%llx], memTag[%s].",
-                __func__, i, localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize(),
-                localUbRmaBuffer->GetBuf()->GetMemTag().c_str());
+            HCCL_INFO("[AicpuTsUboeChannel][%s] Got memHandle No.%u: addr[0x%llx], size[0x%llx].",
+                __func__, i, localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize());
             bufs_.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
-                localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize(),
-                localUbRmaBuffer->GetBuf()->GetMemTag().c_str())
-            ));
+                localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize())));
         }
     } else {
         // 3. 从 channelDesc 的 memHandle，获得 bufs_
@@ -147,41 +144,6 @@ HcclResult AicpuTsUboeChannel::BuildNotify()
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsUboeChannel::FillTagVec(std::vector<Hccl::LocalRmaBuffer *> &bufferVec,
-    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &localUserMemTag)
-{
-    uint64_t bufferNum = bufferVec.size();
-    if (bufferNum == 0) {
-        HCCL_WARNING("[AicpuTsUboeChannel][FillTagVec] bufferNum is 0.");
-    }
-    if (bufferNum > MAX_BUFFER_NUM) {
-        HCCL_ERROR("[AicpuTsUboeChannel][FillTagVec] bufferNum[%u] exceeds limit[%u]", bufferNum, MAX_BUFFER_NUM);
-        return HCCL_E_PARA;
-    }
-    HCCL_INFO("[AicpuTsUboeChannel][FillTagVec] bufferNum[%u]", bufferNum);
-    localUserMemTag.clear();
-    uint32_t index = 0;
-    for (auto &localRmaBuffer : bufferVec) {
-        std::array<char, HCCL_RES_TAG_MAX_LEN> memTag{};
-        if (localRmaBuffer == nullptr) {
-            HCCL_ERROR("[AicpuTsUboeChannel][FillTagVec] localRmaBuffer is nullptr. memHandleNum[%u]", index);
-            return HCCL_E_PARA;
-        } else {
-            CHK_PTR_NULL(localRmaBuffer->GetBuf());
-            std::string tag = localRmaBuffer->GetBuf()->GetMemTag();
-            if (tag.size() >= HCCL_RES_TAG_MAX_LEN) {
-                HCCL_ERROR("[AicpuTsUboeChannel][FillTagVec] tagSize exceeds limit[%u]", HCCL_RES_TAG_MAX_LEN);
-                return HCCL_E_PARA;
-            }
-            CHK_SAFETY_FUNC_RET(memcpy_s(memTag.data(), memTag.size(), tag.c_str(), tag.size()));
-            HCCL_INFO("[AicpuTsUboeChannel][FillTagVec] memHandleNum[%u] memTag[%s]", index, memTag.data());
-        }
-        localUserMemTag.push_back(memTag);
-        index++;
-    }
-    return HCCL_SUCCESS;
-}
-
 HcclResult AicpuTsUboeChannel::BuildBuffer(std::vector<std::shared_ptr<Hccl::Buffer>> &bufs)
 {
     bufferVecTemp_.clear();
@@ -195,8 +157,6 @@ HcclResult AicpuTsUboeChannel::BuildBuffer(std::vector<std::shared_ptr<Hccl::Buf
         commonRes_.bufferVec.push_back(bufferPtr.get());
         localRmaBuffers_.push_back(std::move(bufferPtr));
     }
-    CHK_RET(FillTagVec(commonRes_.bufferVec, localUserMemTag_));
-
     return HCCL_SUCCESS;
 }
 
@@ -246,7 +206,7 @@ HcclResult AicpuTsUboeChannel::GetNotifyNum(uint32_t *notifyNum) const
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsUboeChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags)
+HcclResult AicpuTsUboeChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum)
 {
     // 不支持
     return HCCL_SUCCESS;
@@ -330,8 +290,7 @@ void AicpuTsUboeChannel::NotifyVecPack(Hccl::BinaryStream &binaryStream)
     }
 }
 
-void AicpuTsUboeChannel::BufferVecPack(Hccl::BinaryStream &binaryStream, std::vector<Hccl::LocalRmaBuffer *> &bufferVec,
-    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &tagVec)
+void AicpuTsUboeChannel::BufferVecPack(Hccl::BinaryStream &binaryStream, std::vector<Hccl::LocalRmaBuffer *> &bufferVec)
 {
     binaryStream << static_cast<u32>(bufferVec.size());
     u32 pos = 0;
@@ -350,13 +309,6 @@ void AicpuTsUboeChannel::BufferVecPack(Hccl::BinaryStream &binaryStream, std::ve
                 __func__, pos, exchangeDto.Describe().c_str());
         }
         pos++;
-    }
-
-    for (const auto& tag : tagVec) {
-        // 逐个字节传输
-        for (uint32_t i = 0; i < HCCL_RES_TAG_MAX_LEN; ++i) {
-            binaryStream << static_cast<u8>(tag[i]);
-        }
     }
 }
 
@@ -385,7 +337,7 @@ void AicpuTsUboeChannel::SendDataSize()
 
     Hccl::BinaryStream binaryStream;
     NotifyVecPack(binaryStream);
-    BufferVecPack(binaryStream, commonRes_.bufferVec, localUserMemTag_);
+    BufferVecPack(binaryStream, commonRes_.bufferVec);
     ConnVecPack(binaryStream);
 
     binaryStream.Dump(sendData_);
@@ -484,19 +436,6 @@ void AicpuTsUboeChannel::RmtBufferVecUnpackProc(u32 locNum, Hccl::BinaryStream &
             HCCL_INFO("unpack buffer pos=%u, rmtRmaBuffer=%s", pos, bufferVec.back()->Describe().c_str());
         }
     }
-
-    rmtMemTagTemp_.clear();
-    if (type == UboeRmtBufType::BUFFER) {
-        rmtMemTagTemp_.resize(rmtNum);
-        for (auto& tag : rmtMemTagTemp_) {
-            for (uint32_t i = 0; i < HCCL_RES_TAG_MAX_LEN; ++i) {
-                u8 byte;
-                binaryStream >> byte;
-                tag[i] = static_cast<char>(byte);
-            }
-        }
-    }
-    remoteUserMemTag_.insert(remoteUserMemTag_.end(), rmtMemTagTemp_.begin(), rmtMemTagTemp_.end());
 }
 
 bool AicpuTsUboeChannel::ConnVecUnpackProc(Hccl::BinaryStream &binaryStream)
@@ -769,7 +708,7 @@ HcclResult AicpuTsUboeChannel::Resume()
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsUboeChannel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum)
+HcclResult AicpuTsUboeChannel::GetUserRemoteMem(CommMem **remoteMem, uint32_t *memNum)
 {
     // 待适配
     return HCCL_SUCCESS;
