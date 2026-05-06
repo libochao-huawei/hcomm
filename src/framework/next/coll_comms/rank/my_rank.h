@@ -87,10 +87,39 @@ private:
         uint32_t channelNum,
         const std::string &commTag,
         hcclComm *hcclComm);
-    HcclResult WaitAllAsyncComplete(const std::vector<Hccl::Socket*> &sockets,
-        const std::vector<u32> &remoteRanks);
     HcclResult CheckSubCommParaDetailed(const u8 *recvBuf, u64 baseCheckInfoLen,
         const std::string &commTag, RankConsistentcyChecker &checker);
+    HcclResult WaitAllAsyncComplete(const std::vector<Hccl::Socket*> &sockets,
+        const std::vector<u32> &remoteRanks);
+    HcclResult BatchExchangeFixedData(
+        const std::vector<Hccl::Socket*> &sockets,
+        const std::vector<u32> &remoteRanks,
+        const std::vector<HcommSocketRole> &roles,
+        u32 uniqueCount,
+        const u8 *sendData, u32 sendLen,
+        u8 *recvData, u32 recvLen);
+    HcclResult ExchangeAndCheckBaseFrame(
+        const std::vector<Hccl::Socket*> &sockets,
+        const std::vector<u32> &remoteRanks,
+        const std::vector<HcommSocketRole> &roles,
+        u32 uniqueCount,
+        u64 baseCheckInfoLen,
+        const std::string &commTag,
+        RankConsistentcyChecker &checker);
+    HcclResult ExchangeUserInfo(
+        const std::vector<Hccl::Socket*> &sockets,
+        const std::vector<u32> &remoteRanks,
+        const std::vector<HcommSocketRole> &roles,
+        u32 uniqueCount,
+        hcclComm *hcclComm);
+    HcclResult WaitActiveAsyncComplete(
+        const std::vector<Hccl::Socket*> &sockets,
+        const std::vector<u32> &remoteRanks,
+        const std::vector<HcommSocketRole> &roles,
+        u32 uniqueCount,
+        const std::vector<u32> &remoteExchangeInfoLens,
+        u32 localExchangeInfoLen,
+        bool isFirstPass);
 
     aclrtBinHandle binHandle_{nullptr};
     uint32_t rankId_{};

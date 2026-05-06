@@ -201,7 +201,7 @@ TEST_F(RankConSistentTest, ut_crc)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-EST_F(RankConSistentTest, Ut_When_EnvMatch_Expect_Success)
+TEST_F(RankConSistentTest, Ut_When_EnvMatch_Expect_Success)
 {
     setenv("HCCL_ALGO", "level0", 1);
 

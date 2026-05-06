@@ -22,6 +22,7 @@
 #include "hccl_common.h"
 #include "common.h"
 #include "externalinput_pub.h"
+#include "env_config.h"
 
 namespace hccl {
 constexpr u32 DEFAULT_CRC = 0xFFFFFFFF;   // CRC默认值
@@ -176,6 +177,8 @@ private:
     std::vector<u32> crcTable_;
     std::mutex mutex_;
     std::vector<u32> subCommParaCrcs_;
+
+    bool inconsistentCheckFirstDone_ = false; //first模式下是否完成首次校验 
 };
 }
 #endif  // RANK_CONSISTENTCY_CHECKER_H
