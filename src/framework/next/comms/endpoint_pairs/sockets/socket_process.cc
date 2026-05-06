@@ -93,6 +93,7 @@ HcclResult SocketProcess::DestroySocketHandle(SocketHandle socketHandle)
 
 HcclResult SocketProcess::GetSocket(SocketDesc *socketDesc, SocketHandle &socketHandle)
 {
+    HCCL_INFO("[GetSocket] CMTEST start!!!!!!!!!");
     CHK_PTR_NULL(socketDesc);
     CHK_RET(Init());
 
@@ -186,8 +187,12 @@ HcclResult SocketProcess::RecvNoBlock(
         HCCL_ERROR("[SocketProcess::%s] Recv size[%llu] of data failed.", __func__, recvSize);
         return HCCL_E_TCP_TRANSFER;
     }
-    HCCL_INFO(
+
+    if (*recvedSize > 0) {
+        HCCL_INFO(
         "[SocketProcess::%s] Recv size[%llu] of data success. [%zu] bytes received.", __func__, recvSize, *recvedSize);
+    }
+    
     return HCCL_SUCCESS;
 }
 
@@ -202,6 +207,7 @@ HcclResult SocketProcess::Init()
     s32 devLogicId;
     CHK_RET(hrtGetDevice(&devLogicId));
     CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_));
+    HCCL_INFO("[SocketProcess] CMTEST Init devicePhyId_ = %d", devicePhyId_);
 
     return HCCL_SUCCESS;
 }
@@ -226,26 +232,27 @@ HcclResult SocketProcess::BuildSocket(SocketDesc *socketDesc, const std::string 
         return HCCL_SUCCESS;
     }
 
+    HCCL_INFO("[BuildSocket] CMTEST start!!!!!!!!!");
     // 存疑CommProtocol还没有tcp的protocol，这里是别的协议吗？
     Hccl::LinkData linkData = BuildDefaultLinkData();
     CHK_RET(EndpointDescPairToLinkData(socketDesc->localEndpoint, socketDesc->remoteEndpoint, linkData));
     HCCL_INFO("[SocketProcess][%s] built linkData: %s", __func__, linkData.Describe().c_str());
     Hccl::SocketConfig socketConfig
-        = Hccl::SocketConfig(linkData, string(socketDesc->tag), ConvertToHcclSocketRole(socketDesc->role));
-    auto localPort = socketConfig.link.GetLocalPort();
+        = Hccl::SocketConfig(linkData, string(socketDesc->tag), ConvertToHcclSocketRole(socketDesc->role), socketDesc->listenPort);
+    auto localListenPair = std::make_pair(socketConfig.link.GetLocalPort(), socketConfig.listeningPort);
 
     Hccl::IpAddress ipaddr{};
     CHK_RET(CommAddrToIpAddress(socketDesc->localEndpoint.commAddr, ipaddr));
-    if (serverSocketMap_.find(localPort) == serverSocketMap_.end()) {
-        Hccl::SocketHandle serverSocketHandle = Hccl::SocketHandleManager::GetInstance().Get(devicePhyId_, localPort);
+    if (serverSocketMap_.find(localListenPair) == serverSocketMap_.end()) {
+        Hccl::SocketHandle serverSocketHandle = Hccl::SocketHandleManager::GetInstance().Get(devicePhyId_, localListenPair.first);
         if (serverSocketHandle == nullptr) {
-            serverSocketHandle = Hccl::SocketHandleManager::GetInstance().Create(devicePhyId_, localPort);
+            serverSocketHandle = Hccl::SocketHandleManager::GetInstance().Create(devicePhyId_, localListenPair.first);
         }
-        EXECEPTION_CATCH(serverSocketMap_[localPort] = std::make_unique<Hccl::Socket>(
-            serverSocketHandle, ipaddr, socketDesc->listenPort, ipaddr, socketDesc->tag,
+        EXECEPTION_CATCH(serverSocketMap_[localListenPair] = std::make_unique<Hccl::Socket>(
+            serverSocketHandle, ipaddr, localListenPair.second, ipaddr, socketDesc->tag,
             Hccl::SocketRole::SERVER, Hccl::NicType::DEVICE_NIC_TYPE), return HCCL_E_PARA);
-        HCCL_INFO("[%s] listen_socket_info[%s]", __func__, serverSocketMap_[localPort].get()->Describe().c_str());
-        EXECEPTION_CATCH(serverSocketMap_[localPort].get()->Listen(), return HCCL_E_INTERNAL);
+        HCCL_INFO("[%s] listen_socket_info[%s]", __func__, serverSocketMap_[localListenPair].get()->Describe().c_str());
+        EXECEPTION_CATCH(serverSocketMap_[localListenPair].get()->Listen(), return HCCL_E_INTERNAL);
     }
     HCCL_INFO("[SocketProcess][%s] ip[%s] has been listening.", __func__, ipaddr.GetIpStr().c_str());
 
