@@ -535,8 +535,8 @@ void UbConnLite::BatchProcessOneSlice(const RmaBufSliceLite &loc, const RmtRmaBu
     }
 
     // 处理剩余的数据
-    if (remainingSize > 0 && isLastSlice) {
-        isLastWqe = true;
+    if (remainingSize > 0) {
+        isLastWqe = isLastSlice;
 
         RmaBufSliceLite    locTmp(loc.GetAddr() + offset, remainingSize, loc.GetLkey(), loc.GetTokenId());
         RmtRmaBufSliceLite rmtTmp(rmt.GetAddr() + offset, remainingSize, rmt.GetRkey(), rmt.GetTokenId(),
