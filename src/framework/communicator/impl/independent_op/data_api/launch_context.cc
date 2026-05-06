@@ -128,8 +128,8 @@ HcclResult LaunchContext::SetLaunchMode(const char* launchTag, HcommLaunchMode m
                 // 仅非缺省 tag 需要准备任务缓存
                 return CommTaskPrepare(const_cast<char*>(launchTag_.c_str()), launchTag_.length());
             }
-            return HCCL_SUCCESS;
 #endif
+            return HCCL_SUCCESS;
         case HCOMM_LAUNCH_MODE_EAGER:
             CHK_RET(HandleEagerMode());
             // 缺省 tag 模式下清理缓存
