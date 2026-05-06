@@ -55,7 +55,7 @@ public:
     }
      
     // 注册内存
-    virtual HcclResult RegisterMemory(HcommMem mem, const char *memTag, void **memHandle) = 0;
+    virtual HcclResult RegisterMemory(HcommMem mem, void **memHandle) = 0;
  
     // 注销内存
     virtual HcclResult UnregisterMemory(void* memHandle) = 0;

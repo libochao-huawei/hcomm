@@ -45,7 +45,8 @@ public:
     void WriteReduce(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice, const ReduceIn &reduceIn,
                      const Stream &stream) override;
 
-    HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags);
+protected:
+    const std::vector<RemoteRmaBuffer*>& GetRemoteRmaBufferVec() const override;
 
 private:
     MemoryBuffer GetLocMemBuffer(const RmaBufferSlice &locSlice) const;
@@ -81,9 +82,6 @@ private:
     std::vector<char> GetRmtNotifyUniqueIds() const;
     std::vector<char> GetLocBufferUniqueIds() const;
     std::vector<char> GetRmtBufferUniqueIds() const;
-
-    std::mutex      remoteMemsMutex_; // 远端内存列表互斥锁
-    std::unique_ptr<HcclMem[]> remoteMemsPtr_;
 };
 
 } // namespace Hccl
