@@ -66,6 +66,8 @@ void RankInfoDetectService::GetConnections()
     // 连接rankSize个client
     while (expectedSocketNum > 0) {
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
+            RPT_INPUT_ERR(true, "EI0015", std::vector<std::string>({"error_reason"}),
+                std::vector<std::string>({"server get sockets timeout"}));
             HCCL_ERROR("[RankInfoDetectService::%s] server get sockets timeout[%lld s]", __func__, timeout);
             break;
         }
@@ -93,6 +95,8 @@ void RankInfoDetectService::GetConnections()
             if (isFirstAcceptTimeOut) {
                 continue;
             }
+            RPT_INPUT_ERR(true, "EI0015", std::vector<std::string>({"error_reason"}),
+                std::vector<std::string>({"rank info detect server get socket timeout"}));
             HCCL_ERROR("[RankInfoDetectService::%s] rank info detect server get socket timeout[%lld s]", __func__, timeout);
             DisplayConnectingStatus(previousRankNum, expectedSocketNum);
             isFirstAcceptTimeOut = true;

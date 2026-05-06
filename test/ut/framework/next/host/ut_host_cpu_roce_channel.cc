@@ -22,6 +22,15 @@
 #define private public
 using namespace hcomm;
 
+// static struct ibv_wc g_mockFlushWc = {0};
+// inline int StubIbvPollFlushErr(ibv_cq* cq, uint32_t numEntries, ibv_wc* out_wc)
+// {
+//     if (out_wc != nullptr) {
+//         *out_wc = g_mockFlushWc;
+//     }
+//     return 1;
+// }
+
 class HostCpuRoceChannelTest : public testing::Test {
 protected:
     static void SetUpTestCase()
@@ -787,3 +796,31 @@ TEST_F(HostCpuRoceChannelTest, Ut_WriteWithNotify_When_LenExceedsMaxMsgSize_Expe
     HcclResult ret = impl_->WriteWithNotify((void *)0x1, (void *)0x2, 250, 0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
+
+// // NotifyWait: wc.status != IBV_WC_SUCCESS 时返回 HCCL_E_NETWORK
+// TEST_F(HostCpuRoceChannelTest, Ut_NotifyWait_When_WcStatusNotSuccess_Expect_HCCL_E_NETWORK)
+// {
+//     SetupSuccessfulConnectionMocks();
+//     auto impl_ = CreateInitAndConnect();
+//     impl_->localDpuNotifyIds_ = {0};
+//     impl_->remoteDpuNotifyIds_ = {0};
+//     std::vector<Hccl::QpInfo> qpInfos(1);
+//     ibv_cq cq{};
+//     ibv_qp qp{};
+//     ibv_context context{};
+//     qpInfos[0].sendCq = &cq;
+//     qpInfos[0].qp = &qp;
+//     qpInfos[0].sendCq->context = &context;
+//     qpInfos[0].recvCq = &cq;
+//     MOCKER_CPP(&HostCpuRoceChannel::GetQpInfos).stubs().will(returnValue(qpInfos));
+//     struct ibv_wc wc;
+//     wc.status = IBV_WC_WR_FLUSH_ERR;
+//     wc.imm_data = 0;
+//     g_mockFlushWc.status = IBV_WC_WR_FLUSH_ERR;
+//     g_mockFlushWc.imm_data = 0;
+//     MOCKER_CPP(&HostCpuRoceChannel::IbvPollCq).stubs().will(invoke(StubIbvPollFlushErr));
+
+//     HcclResult ret = impl_->HostCpuRoceChannel::NotifyWait(0, 1800);
+//     EXPECT_EQ(ret, HCCL_E_NETWORK);
+//     GlobalMockObject::verify();
+// }
