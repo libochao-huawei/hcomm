@@ -182,10 +182,12 @@ HcclResult SendTaskExceptionByMBox(const u32 localDeviceId, const u32 notifyId, 
     aicpuSqe.u.aicpu_record.fault_task_id = 0xffffffff;
 
     HCCL_ERROR("[SendTaskExceptionByMBox] exceptionInfo errorType[%u], errorCode[%u]", static_cast<u32>(exceptionInfo->errorType), exceptionInfo->errorCode);
-    if (exceptionInfo->errorType == 1) { // ub类型为1
+    if (exceptionInfo->sqeType == 9) { // UBDMA类型为9, SDMA类型为11
         aicpuSqe.u.aicpu_record.ret_code = SwitchUBCqeErrCodeToTsErrCode(exceptionInfo->errorCode & 0xFF);
-    } else {
+    } else if (exceptionInfo->sqeType == 11) {
         aicpuSqe.u.aicpu_record.ret_code = SwitchSdmaCqeErrCodeToTsErrCode(exceptionInfo->errorCode);
+    } else {
+        aicpuSqe.u.aicpu_record.ret_code = TS_ERROR_HCCL_OTHER_ERROR;
     }
 
     struct event_summary event;
