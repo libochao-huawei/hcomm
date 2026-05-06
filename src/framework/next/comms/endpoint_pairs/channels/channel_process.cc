@@ -108,6 +108,7 @@ HcclResult ChannelProcess::CreateChannelsLoop(EndpointHandle endpointHandle, Com
 
 HcclResult ChannelProcess::ChannelUpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum, ChannelHandle channelHandle)
 {
+    EXCEPTION_HANDLE_BEGIN
     int32_t deviceId = 0;
     CHK_RET(hrtGetDevice(&deviceId));
 
@@ -132,6 +133,7 @@ HcclResult ChannelProcess::ChannelUpdateMemInfo(HcommMemHandle *memHandles, uint
         return HcclResult::HCCL_E_INTERNAL;
     }
     CHK_RET(itC->second->UpdateMemInfo(memHandles, memHandleNum));
+    EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
 
