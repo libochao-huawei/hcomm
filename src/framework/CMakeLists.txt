@@ -85,6 +85,7 @@ set(hccl_include_list
     ${HCCL_BASE_DIR}/framework/op_base/src
     ${HCCL_BASE_DIR}/framework/group
 
+    ${HCCL_BASE_DIR}/common/
     ${HCCL_BASE_DIR}/common/health/
     ${HCCL_BASE_DIR}/common/stream/
     ${HCCL_BASE_DIR}/common/launch_device/
