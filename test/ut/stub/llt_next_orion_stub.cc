@@ -806,14 +806,7 @@ RemoteUbRmaBuffer::RemoteUbRmaBuffer(RdmaHandle rdmaHandle1, const Serializable 
 RemoteIpcRmaBuffer::RemoteIpcRmaBuffer() : RemoteRmaBuffer(RmaType::IPC), isOpened(true)
 {
 }
-
-RemoteIpcRmaBuffer::RemoteIpcRmaBuffer(const Serializable &rmtDto) : RemoteRmaBuffer(RmaType::IPC), isOpened(true)
-{
-}
-
-RemoteIpcRmaBuffer::RemoteIpcRmaBuffer(const Serializable &rmtDto, const string tag)
-    : RemoteRmaBuffer(RmaType::IPC),
-      isOpened(true)
+RemoteIpcRmaBuffer::RemoteIpcRmaBuffer(const Serializable &rmtDto, bool isForceOpenMem) : RemoteRmaBuffer(RmaType::IPC)
 {
 }
 
@@ -921,12 +914,6 @@ UbMemTransport::UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, co
 {
 }
 
-HcclResult UbMemTransport::FillTagVec(
-    std::vector<LocalRmaBuffer *> &bufferVec, std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &localUserMemTag)
-{
-    return HCCL_SUCCESS;
-}
-
 std::string UbMemTransport::Describe() const
 {
     return "msg";
@@ -1032,8 +1019,7 @@ bool UbMemTransport::RecvDataProcess()
     return ConnVecUnpackProc(binaryStream);
 }
 
-void UbMemTransport::BufferVecPack(BinaryStream &binaryStream, std::vector<LocalRmaBuffer *> &bufferVec,
-    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &localUserMemTag)
+void UbMemTransport::BufferVecPack(BinaryStream &binaryStream, std::vector<LocalRmaBuffer *> &bufferVec)
 {
 }
 
@@ -1125,12 +1111,12 @@ void UbMemTransport::SaveDfxTaskInfo(const TaskParam &taskParam)
 {
 }
 
-HcclResult UbMemTransport::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags)
+HcclResult UbMemTransport::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum)
 {
     return HCCL_SUCCESS;
 }
 
-HcclResult UbMemTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum)
+HcclResult UbMemTransport::GetUserRemoteMem(CommMem **remoteMem, uint32_t *memNum)
 {
     return HCCL_SUCCESS;
 }
@@ -2339,7 +2325,7 @@ P2PTransport::P2PTransport(
 {
 }
 
-HcclResult P2PTransport::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags)
+HcclResult P2PTransport::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum)
 {
     return HCCL_SUCCESS;
 }
