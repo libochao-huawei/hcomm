@@ -292,13 +292,9 @@ void RankInfoDetectClient::RecvRankTableMsg(vector<char> &rankInfoMsg)
     u64 revMsgLen = 0;
     std::unique_ptr<HostBuffer> msg = std::make_unique<HostBuffer>(MAX_BUFFER_LEN);
     char *msgAddr = reinterpret_cast<char *>(msg->GetAddr());
-    bool recvSuccess = socketAgent_.RecvMsg(msgAddr, revMsgLen);
-    if (!recvSuccess) {
-        RPT_INPUT_ERR(true, "EI0015", std::vector<std::string>({"error_reason"}),
-            std::vector<std::string>({"recv ranktable message failed"}));
-        HCCL_ERROR("RankInfoDetectClient::%s, recv rankTable error.", __func__);
-        THROW<SocketException>("client recv fail");
-    }
+    CHK_PRT_THROW(!socketAgent_.RecvMsg(msgAddr, revMsgLen),
+        HCCL_ERROR("RankInfoDetectClient::%s, recv rankTable error.", __func__),
+        SocketException, "client recv fail");
 
     // 以vector<char>格式保存
     rankInfoMsg.resize(revMsgLen);
@@ -352,8 +348,6 @@ void RankInfoDetectClient::VerifyRankTable()
 
     // 校验rankCount符合预期
     if (rankTable_.rankCount != rankSize_) {
-        RPT_INPUT_ERR(true, "EI0015", std::vector<std::string>({"error_reason"}),
-            std::vector<std::string>({"rank_count does not match rankSize"}));
         THROW<InvalidParamsException>(StringFormat("[RankInfoDetectClient::%s] rank_count[%u] does not match"
             " rankSize_[%u].", __func__, rankTable_.rankCount, rankSize_));
     }
