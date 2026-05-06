@@ -2666,7 +2666,7 @@ HcclResult HrtRaGetTpAttrAsync(u32 phyId, RdmaHandle handle, uint64_t tpHandle, 
     u32 tpAttrVersion = 0;
     s32 ret = RaGetInterfaceVersion(phyId, GET_TP_ATTR_OPCODE, &tpAttrVersion);
     if (ret != 0 || tpAttrVersion < GET_TP_ATTR_VERSION) {
-        HCCL_WARNING("this package does not support RaGetTpAttrAsync for device, please change new package, ret=%d, tpAttrVersion=%u.", ret, tpAttrVersion);
+        HCCL_ERROR("this package does not support RaGetTpAttrAsync for device, please change new package, ret=%d, tpAttrVersion=%u.", ret, tpAttrVersion);
         return HCCL_E_NOT_SUPPORT;
     }
     void *raReqHandle = nullptr;
