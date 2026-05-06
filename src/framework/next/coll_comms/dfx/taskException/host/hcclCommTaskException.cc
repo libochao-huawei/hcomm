@@ -77,7 +77,7 @@ void TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(s32 streamI
     GetAicpuTaskExceptionCallBackHcomm p1)
 {
    lock_guard<mutex> lock(g_communicatorCallbackMapMutexV2);
-   g_communicatorCallbackMapV2[deviceLogicId].emplace(streamId, p1);
+   g_communicatorCallbackMapV2[deviceLogicId][streamId] = p1;
    return ;
 }
 
