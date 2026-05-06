@@ -36,7 +36,7 @@ HcclResult AicpuTsUrmaChannel::Makebufs(HcommMemHandle *memHandles, uint32_t mem
         HCCL_INFO("[AicpuTsUrmaChannel][%s] tag[%s]", __func__, locMemInfo->memTag);
         bufs.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
             reinterpret_cast<uintptr_t>(locMemInfo->mem.addr), locMemInfo->mem.size,
-            hccl::ConvertCommToHcclMemType(locMemInfo->mem.type), locMemInfo->memTag)
+            hccl::ConvertCommToHcclMemType(locMemInfo->mem.type))
         ));
     }
     return HCCL_SUCCESS;
@@ -68,11 +68,10 @@ HcclResult AicpuTsUrmaChannel::ParseInputParam()
         HCCL_INFO("[AicpuTsUrmaChannel][%s] Got memHandleNum[%u].", __func__, memHandleNum);
         for (uint32_t i = 0; i < memHandleNum; ++i) {
             std::shared_ptr<Hccl::LocalUbRmaBuffer> &localUbRmaBuffer = memHandles[i];
-            HCCL_INFO("[AicpuTsUrmaChannel][%s] Got memHandle No.%u: addr[0x%llx], size[0x%llx], memTag[%s].",
-                __func__, i, localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize(), localUbRmaBuffer->GetBuf()->GetMemTag().c_str());
+            HCCL_INFO("[AicpuTsUrmaChannel][%s] Got memHandle No.%u: addr[0x%llx], size[0x%llx].",
+                __func__, i, localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize());
             bufs_.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
-                localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize(), localUbRmaBuffer->GetBuf()->GetMemTag().c_str())
-            ));
+                localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize())));
         }
     } else {
         // 3. 从 channelDesc 的 memHandle，获得 bufs_
@@ -245,9 +244,9 @@ HcclResult AicpuTsUrmaChannel::GetNotifyNum(uint32_t *notifyNum) const
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsUrmaChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags)
+HcclResult AicpuTsUrmaChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum)
 {
-    return memTransport_->GetRemoteMem(remoteMem, memNum, memTags);
+    return memTransport_->GetRemoteMem(remoteMem, memNum);
 }
 
 ChannelStatus AicpuTsUrmaChannel::GetStatus()
@@ -329,9 +328,9 @@ HcclResult AicpuTsUrmaChannel::Resume()
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsUrmaChannel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum)
+HcclResult AicpuTsUrmaChannel::GetUserRemoteMem(CommMem **remoteMem, uint32_t *memNum)
 {
-    return memTransport_->GetUserRemoteMem(remoteMem, memTag, memNum);
+    return memTransport_->GetUserRemoteMem(remoteMem, memNum);
 }
 
 HcclResult AicpuTsUrmaChannel::UpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum)
