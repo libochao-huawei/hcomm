@@ -473,7 +473,8 @@ void UbConnLite::CustomizeSqeByOneSidedComm(UdmaSqeCommon *sqe, bool isLostWqe) 
 void UbConnLite::FillBatchOneWqe(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, const SqeConfigLite &cfg,
                                  bool isLostWqe, u32 opCode, const StreamLite &stream)
 {
-    HCCL_INFO("UbConnLite FillBatchOneWqe start, loc[%s], rmt[%s]", loc.Describe().c_str(), rmt.Describe().c_str());
+    HCCL_INFO("UbConnLite FillBatchOneWqe start, loc[%s], rmt[%s], pi = %u, sqDepth_ = %u", loc.Describe().c_str(),
+        rmt.Describe().c_str(), pi, sqDepth_);
 
     u32 sqOffset = pi % sqDepth_;
     pi = pi + 1;
@@ -551,6 +552,7 @@ void UbConnLite::BatchCommDataProcess(const vector<RmaBufSliceLite> &loc, const 
     // 按照UDMA能力切分数据, 组装wqe
     for (u64 i = 0; i < siliceSize; i++) {
         BatchProcessOneSlice(loc[i], rmt[i], cfg, (i == (siliceSize - 1)), opCode, stream);
+        HCCL_INFO("BatchCommDataProcess after BatchProcessOneSlice, pi = %u, i = %lu, sliceSize = %lu",pi, i, siliceSize);
     }
 
     return;
