@@ -16,9 +16,7 @@ if(NOT DEFINED HCOMM_DIR)
     set(HCOMM_DIR "${CMAKE_CURRENT_SOURCE_DIR}/..")
 endif()
 
-# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_USE_CXX11_ABI=0")
-
-#组件间对外头文件目录
+# 组件间对外头文件目录
 add_library(hccl_headers INTERFACE)
 target_include_directories(hccl_headers INTERFACE
     $<BUILD_INTERFACE:${TOP_DIR}/hcomm/include>
@@ -39,12 +37,11 @@ else()
     set(HCCL_THIRD_PARTY_DIR ${TOP_DIR})
 endif()
 
-message(STATUS "ORION_MODE=${ORION_MODE}")
 set(ORION_REAL_PATH ${CMAKE_CURRENT_SOURCE_DIR}/legacy)
 set(HCOMM_REAL_PATH ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 #需要编译的文件list
-set(HCOMM_SRC_INCLUDE_LIST
+set(include_list
     ${HCCL_BASE_DIR}/pub_inc
     ${HCCL_BASE_DIR}/pub_inc/aicpu/
     ${HCCL_BASE_DIR}/pub_inc/inner
@@ -159,10 +156,13 @@ set(HCOMM_SRC_INCLUDE_LIST
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/sockets/
     ${HCCL_BASE_DIR}/framework/next/comms/endpoints/
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/
+
 )
 
-# 添加 ccl_kernel_plf 库，在 device 侧使用
+# 定义 ccl_kernel_plf 库，在 device 侧使用
 include(platform/ccl_kernel_plf.cmake)
+# 定义 ccl_kernel 库，在 device 侧使用
+include(framework/ccl_kernel.cmake)
 
 # 将子目录添加到构建过程
 add_subdirectory(framework)
@@ -170,3 +170,7 @@ add_subdirectory(hccd)
 add_subdirectory(algorithm)
 add_subdirectory(platform)
 add_subdirectory(common)
+
+# 定义 aicpu_hcomm 库，在 device 侧使用
+# 注意：aicpu_hcomm 依赖 ccl_kernel 的源文件u列表，因此需要再其后定义
+include(framework/aicpu_custom.cmake)
