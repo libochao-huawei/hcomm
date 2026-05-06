@@ -818,7 +818,7 @@ TEST_F(TaskExceptionTest, SendTaskExceptionByMBox_SdmaError_ElseBranch)
     MOCKER_CPP(&HrtHalDrvQueryProcessHostPid,
         HcclResult(int, unsigned int *, unsigned int *, unsigned int *, unsigned int *))
         .stubs().will(returnValue(HCCL_SUCCESS));
-    HcclResult ret = Hccl::SendTaskExceptionByMBox(localDeviceId, notifyId, tsId, userStreamId, &exceptionInfo);
+    HcclResult ret = Hccl::TaskExceptionHandlerLite::SendTaskExceptionByMBox(localDeviceId, notifyId, tsId, userStreamId, &exceptionInfo);
 }
 
 TEST_F(TaskExceptionTest, SendTaskExceptionByMBox_SdmaError_CompErr)
@@ -831,7 +831,7 @@ TEST_F(TaskExceptionTest, SendTaskExceptionByMBox_SdmaError_CompErr)
     MOCKER_CPP(&HrtHalDrvQueryProcessHostPid,
         HcclResult(int, unsigned int *, unsigned int *, unsigned int *, unsigned int *))
         .stubs().will(returnValue(HCCL_SUCCESS));
-    HcclResult ret = Hccl::SendTaskExceptionByMBox(0, 101, 1, 5, &exceptionInfo);
+    HcclResult ret = Hccl::TaskExceptionHandlerLite::SendTaskExceptionByMBox(0, 101, 1, 5, &exceptionInfo);
 }
 
 TEST_F(TaskExceptionTest, SendTaskExceptionByMBox_SdmaError_CompDataErr)
@@ -844,5 +844,5 @@ TEST_F(TaskExceptionTest, SendTaskExceptionByMBox_SdmaError_CompDataErr)
     MOCKER_CPP(&HrtHalDrvQueryProcessHostPid,
         HcclResult(int, unsigned int *, unsigned int *, unsigned int *, unsigned int *))
         .stubs().will(returnValue(HCCL_SUCCESS));
-    HcclResult ret = Hccl::SendTaskExceptionByMBox(0, 102, 1, 5, &exceptionInfo);
+    HcclResult ret = Hccl::TaskExceptionHandlerLite::SendTaskExceptionByMBox(0, 102, 1, 5, &exceptionInfo);
 }

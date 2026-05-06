@@ -303,7 +303,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/aicpu/profiling
     ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/aicpu/common
     ${HCCL_CODE_ROOT}/src/legacy/framework/resource_manager/stream
-    # ${HCCL_CODE_ROOT}/src/legacy/framework/resource_manager/stream/aicpu
+    ${HCCL_CODE_ROOT}/src/legacy/framework/resource_manager/stream/aicpu
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/stream
     ${HCCL_CODE_ROOT}/src/legacy/interface/
     ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/aicpu/profiling

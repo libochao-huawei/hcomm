@@ -37,6 +37,8 @@ private:
     // 私有拷贝构造函数和赋值运算符，防止拷贝
     TaskExceptionHandlerLite(const TaskExceptionHandlerLite &)            = delete;
     TaskExceptionHandlerLite &operator=(const TaskExceptionHandlerLite &) = delete;
+    HcclResult SendTaskExceptionByMBox(const u32 localDeviceId, const u32 notifyId, const u32 tsId,
+        const s32 userStreamId, const rtLogicCqReport_t* exceptionInfo);
 
     // 注册方法
     void Register() const;
@@ -44,8 +46,6 @@ private:
 
 uint16_t SwitchUBCqeErrCodeToTsErrCode(u32 cqeErrCode);
 uint16_t SwitchSdmaCqeErrCodeToTsErrCode(u32 cqeErrCode);
-HcclResult SendTaskExceptionByMBox(const u32 localDeviceId, const u32 notifyId, const u32 tsId,
-    const s32 userStreamId, const rtLogicCqReport_t* exceptionInfo);
 
 } // namespace Hccl
 
