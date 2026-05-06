@@ -11,6 +11,7 @@
 #include "ccu_conn.h"
 
 #include <random>
+#include <sstream>
 
 #include "hcom_common.h"
 #include "exception_handler.h"
@@ -518,7 +519,7 @@ HcclResult CcuConnection::Describe(std::string &dfxMsg)
         HcclResult ret = Hccl::HrtRaGetTpAttrAsync(devPhyId_, ctxHandle_, tpInfo_.tpHandle, attrBitmap, tpAttr, reqHandles_[0]);
         if (ret == HCCL_E_NOT_SUPPORT) {
             HCCL_ERROR("[DevUbConnection::%s] failed, this package does not support RaGetTpAttrAsync for device,"
-                " please change new package", __func__);
+                " please change new package. devPhyId_[%u]", __func__, devPhyId_);
             return ret;
         } else if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("[DevUbConnection::%s] failed, hccl result[%d]", __func__, ret);
@@ -529,11 +530,15 @@ HcclResult CcuConnection::Describe(std::string &dfxMsg)
     }
     udpSport = udpSport & 0xFF;
 
-    std::string jettyIds;
-    for (size_t i = 0; i < ccuJettys_.size(); i++) {
+    std::ostringstream oss;
+    for (size_t i = 0; i < ccuJettys_.size(); ++i) {
         uint16_t jettyId = ccuJettys_[i]->GetJettyedOutParam().id;
-        jettyIds += (i == 0 ? "" : ", ") + std::to_string(jettyId);
+        if (i != 0) {
+            oss << ", ";
+        }
+        oss << jettyId;
     }
+    std::string jettyIds = oss.str();
 
     Hccl::IpAddress locAddr{}, rmtAddr{};
     CHK_RET(CommAddrToIpAddress(locAddr_, locAddr));
