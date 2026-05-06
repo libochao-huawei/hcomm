@@ -148,10 +148,10 @@ STATIC int RsSslRecvTagInHandle(struct RsAcceptInfo *acceptInfo, struct RsConnIn
 
     RsGetCurTime(&startTime);
     while (expSize > 0 && size != 0) {
-        connTmp->tagSyncTime++;
+        connTmp->tagSyncTimes++;
         size = ssl_adp_read(acceptInfo->ssl, recvBuff, expSize);
         if ((size < 0) && (errno == EINTR)) {
-            connTmp->tagEintrTime++;
+            connTmp->tagEintrTimes++;
             continue;
         }
         expSize -= size;
@@ -161,7 +161,7 @@ STATIC int RsSslRecvTagInHandle(struct RsAcceptInfo *acceptInfo, struct RsConnIn
         if (timeCost >= RS_RECV_MAX_TIME) {
             hccp_run_info("recv tag time out, server:{%s:%u} client:%s tagSyncTime:%u tagEintrTime:%u",
                 acceptInfo->serverIpAddr.readAddr, acceptInfo->sockPort, acceptInfo->clientIpAddr.readAddr,
-                connTmp->tagSyncTime, connTmp->tagEintrTime);
+                connTmp->tagSyncTimes, connTmp->tagEintrTimes);
             return -ETIME;
         }
 
@@ -179,7 +179,7 @@ STATIC int RsSslRecvTagInHandle(struct RsAcceptInfo *acceptInfo, struct RsConnIn
 
     hccp_info("recv tag success, server:{%s:%u} client:%s timeCost:%fms tagSyncTime:%u tagEintrTime:%u",
         acceptInfo->serverIpAddr.readAddr, acceptInfo->sockPort, acceptInfo->clientIpAddr.readAddr, timeCost,
-        connTmp->tagSyncTime, connTmp->tagEintrTime);
+        connTmp->tagSyncTimes, connTmp->tagEintrTimes);
     return 0;
 }
 

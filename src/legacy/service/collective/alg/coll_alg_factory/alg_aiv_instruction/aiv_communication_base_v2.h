@@ -411,6 +411,8 @@ __aicore__ inline void AivCommBase::WaitFlag(uint32_t targetRank, uint64_t flag_
 {
     d2hGlobal.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t *>(GM_OUT[targetRank] + flag_offset * UB_ALIGN_SIZE));
     while (true) {
+        int64_t st = AscendC::GetSystemCycle();
+        while (AscendC::GetSystemCycle() - st < 3000) {}
         DataCopyGM2UB(localTagTensor, d2hGlobal, UB_ALIGN_SIZE / sizeof(int32_t));
         pipe_barrier(PIPE_ALL);
         if (localTagTensor.GetValue(0) == curTag) {
@@ -472,20 +474,19 @@ __aicore__ inline void AivCommBase::SyncCoreAll(int32_t curTag)
 __aicore__ inline void AivCommBase::BarrierAll()
 {
     SyncAll<true>();
-    int targetRank_ = GetBlockIdx();
-    while (targetRank_ < rankSize_) {
+    if (GetBlockIdx() == 0) {
+        pipe_barrier(PIPE_ALL);
+        for (int i = 0; i < rankSize_; i++) {
             uint64_t flag_offset = BASE_FLAG_OFFSET + rank_ * FLAG_SIZE;
-        Record(targetRank_, flag_offset / UB_ALIGN_SIZE, 1);
-        targetRank_ += block_num;
-    }
-    targetRank_ = GetBlockIdx();
-    while (targetRank_ < rankSize_) {
-        uint64_t flag_offset = BASE_FLAG_OFFSET + targetRank_ * FLAG_SIZE;
+            Record(i, flag_offset / UB_ALIGN_SIZE, 1);
+        }
+        pipe_barrier(PIPE_ALL);
+        for (int i = 0; i < rankSize_; i++) {
+            uint64_t flag_offset = BASE_FLAG_OFFSET + i * FLAG_SIZE;
             WaitFlag(rank_, flag_offset / UB_ALIGN_SIZE, 1);
             Record(rank_, flag_offset / UB_ALIGN_SIZE, 0);
-        targetRank_ += block_num;
+        }
     }
-    SyncAll<true>();
 }
 
 // 为sendRecv单独设计

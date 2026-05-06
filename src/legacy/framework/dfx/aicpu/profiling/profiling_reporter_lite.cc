@@ -18,12 +18,6 @@ ProfilingReporterLite::ProfilingReporterLite(MirrorTaskManagerLite *mirrorTaskMg
     }
     mirrorTaskMgrLite_        = mirrorTaskMgrLite;
     profilingHandlerLite_ = profilingHandlerLite;
-    if (isIndop == false) {
-        mirrorTaskMgrLite_->RegFullyCallBack([this]() {
-            ReportAllTasks();
-        });
-        return;
-    }
     mirrorTaskMgrLite_->RegFullyCallBack([this]() {
         ReportAllTasks();
     });
@@ -49,6 +43,12 @@ void ProfilingReporterLite::Init() const
 
 void ProfilingReporterLite::ReportAllTasks()
 {
+    if (ProfilingHandlerLite::GetInstance().GetProfL1State() == false) {
+        HCCL_DEBUG("[ProfilingReporterLite][ReportAllTasks] GetProfL1State is false, UpdateAllLastPos and skip report");
+        UpdateAllLastPos();
+        return;
+    }
+
     std::vector<TaskInfo> taskInfo;
     for (auto it = mirrorTaskMgrLite_->Begin(); it != mirrorTaskMgrLite_->End(); ++it) {
         u32                               streamId  = it->first;
@@ -87,6 +87,25 @@ void ProfilingReporterLite::ReportAllTasks()
 void ProfilingReporterLite::UpdateProfStat(void) const
 {
     ProfilingHandlerLite::GetInstance().UpdateProfSwitch();
+}
+
+void ProfilingReporterLite::UpdateAllLastPos()
+{
+    for (auto it = mirrorTaskMgrLite_->Begin(); it != mirrorTaskMgrLite_->End(); ++it) {
+        u32                               streamId  = it->first;
+        Queue<std::shared_ptr<TaskInfo>> *currQueue = it->second.get();
+        if (currQueue == nullptr) {
+            HCCL_WARNING("[ProfilingReporterLite][%s] currQueue is nullptr, continue to next task.", __func__);
+            continue;
+        }
+
+        auto endPos = currQueue->Tail();
+        if (endPos == nullptr) {
+            HCCL_WARNING("[ProfilingReporterLite][%s] endPos is nullptr, continue to next task.", __func__);
+            continue;
+        }
+        lastPoses_[streamId] = endPos;
+    }
 }
  
 } // namespace Hccl

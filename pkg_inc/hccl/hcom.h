@@ -262,10 +262,10 @@ bool HcomFindGroup(const char *group);
 
 #define TEMP_WEAK_DEF 1
 
+#define HCOM_SELECT_ALG_POINTER_MODE
 HcclResult HcomSelectAlg(s64 comm, const char *group, u64 count, void* counts,
     HcclDataType dataType, HcclReduceOp op, HcclCMDType opType, int32_t aivCoreLimit,
-    bool &ifAiv, char *algName);
-
+    bool *ifAiv, char *algName);
 
 HcclResult HcomCalcAivCoreNum(const char *group, HcclCMDType opType, u64 count, void* counts, HcclDataType dataType,
     int32_t aivCoreLimit, char *algName, u32 *numBlocks);
@@ -317,7 +317,6 @@ HcclResult HcomAlltoAllVC(const void *sendBuf, const void *sendCountMatrix, Hccl
 HcclResult HcomAllToAll(const void *sendBuf, u64 sendCount, HcclDataType sendType,
                         const void *recvBuf, u64 recvCount, HcclDataType recvType,
                         const char *group, rtStream_t stream, const char *tag);
-HcclResult HcomGetHcclComm(int64_t comm, std::string &group);
 HcclResult HcomGenerateCclOpTag(const char *opType, s64 hcomComm, const char *group, char *sTag);
 HcclResult HcomGetCommCCLBufferSize(const char *group, uint64_t &size);
 HcclResult HcomGetL0TopoTypeEx(const char *group, CommTopo *topoType, uint32_t flag);

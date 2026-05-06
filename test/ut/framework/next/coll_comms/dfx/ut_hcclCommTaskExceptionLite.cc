@@ -12,8 +12,11 @@
 #include "mockcpp/mokc.h"
 #include <mockcpp/mockcpp.hpp>
 #include "hccl_comm_pub.h"
+#define private public
 #include "hcclCommTaskExceptionLite.h"
+#undef private
 #include "task_scheduler_error.h"
+#include "aicpu_indop_env.h"
 
 using namespace hccl;
 using namespace hcomm;
@@ -63,4 +66,14 @@ TEST_F(hcclCommTaskExceptionLiteTest, Ut_SwitchSdmaCqeErrCodeToTsErrCode_When_No
 
     ret = HcclCommTaskExceptionLite::GetInstance().SwitchSdmaCqeErrCodeToTsErrCode(static_cast<u32>(123));
     EXPECT_EQ(ret, TS_ERROR_HCCL_OTHER_ERROR);
+}
+
+TEST_F(hcclCommTaskExceptionLiteTest, Ut_SwitchSdmaCqeErrCodeToTsErrCode_taskexception_disable)
+{
+    hcomm::SetTaskExceptionEnable(false);
+    HcclCommTaskExceptionLite::GetInstance().Init(0);
+    rtLogicCqReport_t exceptionInfo;
+    HcclResult ret = HcclCommTaskExceptionLite::GetInstance().ProcessCqe(nullptr, exceptionInfo);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    hcomm::SetTaskExceptionEnable(true);
 }

@@ -1340,7 +1340,7 @@ HcclResult HcclGetRootInfo(HcclRootInfo *rootInfo)
 
     // input check
     CHK_PTR_NULL(rootInfo);
-    HCCL_RUN_INFO("Entry-HcclGetRootInfo:rootInfo[%p], deviceLogicId[%d]", rootInfo, deviceLogicId);
+    HCCL_RUN_INFO("Entry-HcclGetRootInfo:rootInfo[%p], deviceLogicId[%d] ", rootInfo, deviceLogicId);
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcclGetRootInfoV2(rootInfo));
 #endif
