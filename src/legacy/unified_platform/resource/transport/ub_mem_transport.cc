@@ -70,7 +70,7 @@ HcclResult UbMemTransport::FillTagVec(std::vector<LocalRmaBuffer *> &bufferVec,
             HCCL_WARNING("[UbMemTransport][FillTagVec] localRmaBuffer is nullptr. memHandleNum[%u]", index);
         } else {
             CHK_PTR_NULL(localRmaBuffer->GetBuf());
-            std::string tag = localRmaBuffer->GetBuf()->GetMemTag();
+            std::string tag = "";
             if (UNLIKELY(tag.size() >= HCCL_RES_TAG_MAX_LEN)) {
                 HCCL_ERROR("[UbMemTransport][FillTagVec] tagSize exceeds limit[%u]", HCCL_RES_TAG_MAX_LEN);
                 return HCCL_E_PARA;
