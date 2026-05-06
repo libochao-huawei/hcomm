@@ -272,14 +272,18 @@ void ClusterMonitor::CreateHBLinksAsync()
         while (!commIdConnInfoQueue.empty()) {
             connInfoQueue.push(
                 std::make_tuple(commId, commIdConnInfoQueue.front().first, commIdConnInfoQueue.front().second));
+            HCCL_INFO("[CreateHBLinksAsync] CMTEST commIdConnInfoQueue commId = %s, ClusterUIDType = %d", commId.c_str(), commIdConnInfoQueue.front().first);
             commIdConnInfoQueue.pop();
         }
     }
     linksLock.unlock();
+    
     while (!connInfoQueue.empty()) {
         const std::string commId = std::get<0>(connInfoQueue.front());
         const ClusterUIDType &remUID = std::get<1>(connInfoQueue.front());
         ClusterMonitorSocketCtx &connInfo = std::get<2>(connInfoQueue.front());
+        HCCL_INFO("[CreateHBLinksAsync] CMTEST commId = %s, ClusterUIDType = %d", commId.c_str(), remUID);
+        connInfo.PrintSocketDesc("CreateHBLinksAsync");
         auto it = linkThreadMap_.find(remUID);
         if (it != linkThreadMap_.end() && it->second->joinable()) {
             it->second->join();
@@ -300,6 +304,8 @@ void ClusterMonitor::CreateHBLinksAsync()
 
 HcclResult ClusterMonitor::CreateTransportHandle(ClusterMonitorSocketCtx &info)
 {
+    HCCL_INFO("[CreateTransportHandle] CMTEST start!!!!!!!!");
+    info.PrintSocketDesc("CreateTransportHandle");
     if (info.socketHandler == nullptr) {
         HcclResult ret = SocketCreate(&info.socketDesc, &info.socketHandler);
         if (ret != HCCL_SUCCESS) {
@@ -318,12 +324,12 @@ void ClusterMonitor::CreateLinkWithRemotePonit(
     // 给当前线程添加名字
     const std::string threadName = "hb" + GetUID(rem);
     SetThreadName(threadName);
-    HCCL_INFO("[Heartbeat][CreateLinkWithRemote] commId[%s], thread[%s] start...", commId.c_str(), threadName.c_str());
+    HCCL_INFO("[Heartbeat][CreateLinkWithRemote] CMTEST commId[%s], thread[%s] start...", commId.c_str(), threadName.c_str());
     hrtSetDevice(deviceLogicId_);
 
     HcclResult ret = CreateTransportHandle(needConnectRank);
     if (ret != HCCL_SUCCESS) {
-        HCCL_RUN_WARNING("[CreateLinkWithRemote]CreateTransportHandle ret[%d], commId[%s], remote uid[%s].", ret,
+        HCCL_RUN_WARNING("[CreateLinkWithRemote] CreateTransportHandle ret[%d], commId[%s], remote uid[%s].", ret,
             commId.c_str(), GetUID(rem).c_str());
         hrtResetDevice(deviceLogicId_);
         return;
@@ -385,7 +391,7 @@ void ClusterMonitor::CreateLinkWithRemotePonit(
         monitorLinkStatusMap_[rem] = MonitorLinkStatus::MONITOR_LINK_COMPLETED;
         commIdMap_[commId][rem] = true; // 更新状态为已连接
         lock.unlock();
-        HCCL_RUN_INFO("commId:[%s], establish rank[%s] to rank[%s] heartbeat connection success.", commId.c_str(),
+        HCCL_RUN_INFO("CMTEST commId:[%s], establish rank[%s] to rank[%s] heartbeat connection success.", commId.c_str(),
             GetUID(myRankUID_).c_str(), GetUID(rem).c_str());
         break;
     }
@@ -398,6 +404,8 @@ void ClusterMonitor::CreateLinkWithRemotePonit(
 HcclResult ClusterMonitor::SendFrame(
     ClusterUIDType &dst, ClusterUIDType &crimer, ClusterUIDType &informer, ClusterMonitorStatus status)
 {
+    HCCL_INFO("CMTEST [%s] start dst[%s] crimer[%s] informer[%s] status[%d] ",
+        __func__, GetUID(dst).c_str(), GetUID(crimer).c_str(), GetUID(informer).c_str(), status);
     ClusterMonitorFrame cmFrame(myRankUID_, dst, crimer, informer, status);
     if (uid2SocketRefMap_[dst].sendBuffer.size() > 0) {
         if (status != ClusterMonitorStatus::CLUSTER_MONITOR_OK
@@ -455,7 +463,8 @@ HcclResult ClusterMonitor::RecvFrame(ClusterUIDType rem)
     ClusterMonitorFrame cmFrame;
     u64 compSize = 0;
     u64 expectSize = sizeof(ClusterMonitorFrame);
-    // 对此处while处理逻辑增加注释
+    // 此处while循环用于最大限度的从socket中读取数据，直到没有数据可读或者发生错误。
+    // 因为心跳帧较小，理论上一次recv就能读完。但为了兼容可能存在的粘包情况，增加循环读取的逻辑。
     while (true) {
         compSize = 0;
         HcclResult ret = SocketRecvNb(
@@ -468,10 +477,11 @@ HcclResult ClusterMonitor::RecvFrame(ClusterUIDType rem)
                 CHK_RET(ParseFrame(cmFrame, rem));
             }
         } else if (ret == HCCL_E_INTERNAL) {
-            // 增加日志，方便排查recv失败的原因
+            HCCL_WARNING("CMTEST SocketRecvNb recv rem[%s] fail", GetUID(rem).c_str());
             return HCCL_E_INTERNAL;
         } else {
-            // 增加注释
+            // 当没有数据可读时，SocketRecvNb会返回成功但compSize为0，此时退出循环，继续进行后续的心跳发送和异常处理等逻辑
+            HCCL_INFO("CMTEST SocketRecvNb recv rem[%s] no data available", GetUID(rem).c_str());
             break;
         }
     }
@@ -480,26 +490,29 @@ HcclResult ClusterMonitor::RecvFrame(ClusterUIDType rem)
 
 HcclResult ClusterMonitor::ParseFrame(ClusterMonitorFrame &cmFrame, ClusterUIDType &src)
 {
-    if (cmFrame.src != src || cmFrame.dst != myRankUID_) {
-        HCCL_WARNING("rank[%s] recv wrong frame", GetUID(myRankUID_).c_str());
-        return HCCL_E_INTERNAL;
-    }
-
-    HCCL_DEBUG("[ClusterMonitor][ParseMonitorFrame] Recv Success, from [%s] to [%s] about [%s] by [%s] state[%d]",
-        GetUID(cmFrame.src).c_str(), GetUID(cmFrame.dst).c_str(), GetUID(cmFrame.crimer).c_str(),
-        GetUID(cmFrame.informer).c_str(), cmFrame.status);
-
-    // 能够收到进程卡住表示心跳是正常的
-    if (cmFrame.status == ClusterMonitorStatus::CLUSTER_MONITOR_OK) {
-        uid2SocketRefMap_[src].lostNum = 0;
-    }
-
-    // 只有心跳非正常时才需要打印TRACE
-    if (cmFrame.status != ClusterMonitorStatus::CLUSTER_MONITOR_OK) {
-        SetStatus(cmFrame.crimer, cmFrame.informer, cmFrame.status);  // 设置异常状态
-    }
-
+    HCCL_INFO("CMTEST [%s] start rem[%s]", __func__, GetUID(src).c_str());
     return HCCL_SUCCESS;
+
+    // if (cmFrame.src != src || cmFrame.dst != myRankUID_) {
+    //     HCCL_WARNING("rank[%s] recv wrong frame", GetUID(myRankUID_).c_str());
+    //     return HCCL_E_INTERNAL;
+    // }
+
+    // HCCL_DEBUG("[ClusterMonitor][ParseMonitorFrame] Recv Success, from [%s] to [%s] about [%s] by [%s] state[%d]",
+    //     GetUID(cmFrame.src).c_str(), GetUID(cmFrame.dst).c_str(), GetUID(cmFrame.crimer).c_str(),
+    //     GetUID(cmFrame.informer).c_str(), cmFrame.status);
+
+    // // 能够收到进程卡住表示心跳是正常的
+    // if (cmFrame.status == ClusterMonitorStatus::CLUSTER_MONITOR_OK) {
+    //     uid2SocketRefMap_[src].lostNum = 0;
+    // }
+
+    // // 只有心跳非正常时才需要打印TRACE
+    // if (cmFrame.status != ClusterMonitorStatus::CLUSTER_MONITOR_OK) {
+    //     SetStatus(cmFrame.crimer, cmFrame.informer, cmFrame.status);  // 设置异常状态
+    // }
+
+    // return HCCL_SUCCESS;
 }
 
 void ClusterMonitor::DelErrorSocket()
@@ -609,6 +622,7 @@ HcclResult ClusterMonitor::RegisterToClusterMonitor(HcclComm comm)
     CHK_PTR_NULL(hcclComm);
     hccl::CollComm* collComm = hcclComm->GetCollComm();
     CHK_PTR_NULL(collComm);
+    deviceLogicId_ = collComm->GetDeviceLogicId();
 
     // 单rank无对端，不支持心跳检测
     const std::string &commId = collComm->GetCommId();

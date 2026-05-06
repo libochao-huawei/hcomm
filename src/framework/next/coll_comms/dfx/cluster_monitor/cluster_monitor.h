@@ -22,6 +22,8 @@
 #include "hccl_common.h"
 #include "hccl_comm_socket_c_adpt.h"
 #include "hccl_communicator.h"
+#include "../../common/loggers/comm_addr_logger.h"
+
 
 namespace hcomm {
 
@@ -125,6 +127,16 @@ struct ClusterMonitorSocketCtx { // 原ConnInfo
     ClusterMonitorSocketCtx(SocketDesc &socketDesc, bool newConn)
         : socketDesc(socketDesc), newConn(newConn)
     {}
+
+    void PrintSocketDesc(std::string tag) const
+    {
+        std::string localAddr = hcomm::logger::CommAddrLogger::ToString(socketDesc.localEndpoint.commAddr);
+        std::string remoteAddr = hcomm::logger::CommAddrLogger::ToString(socketDesc.remoteEndpoint.commAddr);
+        HCCL_INFO("[%s] CMTEST socketDesc: localEndpoint: {commAddr: %s, EndpointLocType: %d}, "
+            "remoteEndpoint: {commAddr: %s, EndpointLocType: %d}, tag: %s, role: %d, listenPort: %u",
+            tag.c_str(), localAddr.c_str(), socketDesc.localEndpoint.loc.locType, remoteAddr.c_str(),
+            socketDesc.remoteEndpoint.loc.locType, socketDesc.tag, socketDesc.role, socketDesc.listenPort);
+    }
 };
 
 struct UIDContext {
