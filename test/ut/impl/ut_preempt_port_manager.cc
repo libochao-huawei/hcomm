@@ -23,7 +23,6 @@
 
 using namespace hccl;
 using namespace std;
-using namespace Hccl;
 
 class HcclPreemptPortManagerTest : public testing::Test {
 protected:
