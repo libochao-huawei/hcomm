@@ -15,9 +15,6 @@
 #include "hccl/base.h"
 #include <hccl/hccl_types.h>
 #include <runtime/rt_error_codes.h>
-// #include "aicpu_hccl_sqcq.h"
-// #include "adapter_hal_pub.h"
-// #include "task_exception_handler_lite.h"
 #define private public
 #define protected public
 #include "task_exception_handler_pub.h"
@@ -802,47 +799,3 @@ TEST_F(TaskExceptionTest, St_DealExceptionTask_When_Comm_Has_Multi_Aiv_Expect_Pr
     GlobalMockObject::verify();
 }
 #endif
-
-// TEST_F(TaskExceptionTest, SendTaskExceptionByMBox_SdmaError_ElseBranch)
-// {
-//     rtLogicCqReport_t exceptionInfo{};
-//     exceptionInfo.errorType = 0;
-//     exceptionInfo.errorCode = 0x8;
-//     exceptionInfo.streamId = 5;
-
-//     const u32 localDeviceId = 0;
-//     const u32 notifyId = 100;
-//     const u32 tsId = 1;
-//     const s32 userStreamId = 5;
-
-//     MOCKER_CPP(&HrtHalDrvQueryProcessHostPid,
-//         HcclResult(int, unsigned int *, unsigned int *, unsigned int *, unsigned int *))
-//         .stubs().will(returnValue(HCCL_SUCCESS));
-//     HcclResult ret = SendTaskExceptionByMBox(localDeviceId, notifyId, tsId, userStreamId, &exceptionInfo);
-// }
-
-// TEST_F(TaskExceptionTest, SendTaskExceptionByMBox_SdmaError_CompErr)
-// {
-//     rtLogicCqReport_t exceptionInfo{};
-//     exceptionInfo.errorType = 2;
-//     exceptionInfo.errorCode = 0x9;
-//     exceptionInfo.streamId = 5;
-
-//     MOCKER_CPP(&HrtHalDrvQueryProcessHostPid,
-//         HcclResult(int, unsigned int *, unsigned int *, unsigned int *, unsigned int *))
-//         .stubs().will(returnValue(HCCL_SUCCESS));
-//     HcclResult ret = SendTaskExceptionByMBox(0, 101, 1, 5, &exceptionInfo);
-// }
-
-// TEST_F(TaskExceptionTest, SendTaskExceptionByMBox_SdmaError_CompDataErr)
-// {
-//     rtLogicCqReport_t exceptionInfo{};
-//     exceptionInfo.errorType = 3;
-//     exceptionInfo.errorCode = 0xa;
-//     exceptionInfo.streamId = 5;
-
-//     MOCKER_CPP(&HrtHalDrvQueryProcessHostPid,
-//         HcclResult(int, unsigned int *, unsigned int *, unsigned int *, unsigned int *))
-//         .stubs().will(returnValue(HCCL_SUCCESS));
-//     HcclResult ret = SendTaskExceptionByMBox(0, 102, 1, 5, &exceptionInfo);
-// }
