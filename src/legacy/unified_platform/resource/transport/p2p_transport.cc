@@ -483,7 +483,7 @@ std::vector<char> P2PTransport::GetRmtBufferUniqueIds() const
     return result;
 }
 
-HcclResult P2PTransport::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags) 
+HcclResult P2PTransport::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum) 
 {
     CHK_PRT_RET(!remoteMem, HCCL_ERROR("[GetRemoteMem] remoteMem is nullptr"), HCCL_E_PARA);
     CHK_PRT_RET(!memNum, HCCL_ERROR("[GetRemoteMem] memNum is nullptr"), HCCL_E_PARA);
@@ -509,9 +509,8 @@ HcclResult P2PTransport::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, cha
         remoteMemsPtr_[i].type = rmtRmaBuffer->GetMemType();
         remoteMemsPtr_[i].addr = reinterpret_cast<void *>(rmtRmaBuffer->GetAddr());
         remoteMemsPtr_[i].size = rmtRmaBuffer->GetSize();
-        memTags[i] = const_cast<char*>(rmtRmaBuffer->GetMemTag().c_str());
-        HCCL_INFO("[%s] addr[%p] size[%zu] rmtRmaBuffer[%p] memTags[%s]", 
-            __func__, reinterpret_cast<void *>(rmtRmaBuffer->GetAddr()), rmtRmaBuffer->GetSize(), rmtRmaBuffer.get(), memTags[i]);
+        HCCL_INFO("[%s] addr[%p] size[%zu] rmtRmaBuffer[%p]", 
+            __func__, reinterpret_cast<void *>(rmtRmaBuffer->GetAddr()), rmtRmaBuffer->GetSize(), rmtRmaBuffer.get());
     }
 
     *memNum = totalCount;
