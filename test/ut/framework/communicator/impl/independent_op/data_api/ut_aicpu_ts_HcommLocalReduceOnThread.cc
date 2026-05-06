@@ -70,3 +70,23 @@ TEST_F(UtAicpuTsHcommLocalReduceOnThread, Ut_HcommLocalReduceOnThread_When_Src_I
     res = HcommLocalReduceOnThread(thread, dst, nullptr, count, dataType, reduceOp);
     EXPECT_EQ(res, HCCL_E_PTR);
 }
+
+TEST_F(UtAicpuTsHcommLocalReduceOnThread, Ut_HcommLocalReduceOnThread_When_CountEquals4GB_Expect_ReturnIsHCCL_SUCCESS)
+{
+    uint64_t count4GB = 0x100000000ULL;
+    void *largeDst = reinterpret_cast<void *>(0x100000);
+    void *largeSrc = reinterpret_cast<void *>(0x200000);
+
+    res = HcommLocalReduceOnThread(thread, largeDst, largeSrc, count4GB, dataType, reduceOp);
+    EXPECT_EQ(res, HCCL_SUCCESS);
+}
+
+TEST_F(UtAicpuTsHcommLocalReduceOnThread, Ut_HcommLocalReduceOnThread_When_CountExceeds4GB_Expect_ReturnIsHCCL_SUCCESS)
+{
+    uint64_t countExceeds4GB = 0x100000001ULL;
+    void *largeDst = reinterpret_cast<void *>(0x100000);
+    void *largeSrc = reinterpret_cast<void *>(0x200000);
+
+    res = HcommLocalReduceOnThread(thread, largeDst, largeSrc, countExceeds4GB, dataType, reduceOp);
+    EXPECT_EQ(res, HCCL_SUCCESS);
+}
