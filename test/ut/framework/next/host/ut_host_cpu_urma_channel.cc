@@ -107,10 +107,9 @@ TEST_F(HostCpuUrmaChannelTest, Ut_When_GetRemoteMem_Expect_Success)
 
     HcclMem* remoteMem = nullptr;
     uint32_t memNum = 0;
-    char* memTags = nullptr;
     // GetRemoteMem depends on memTransport_, which is initialized in Init()
     // This test verifies the function can be called
-    EXPECT_NO_THROW(impl->GetRemoteMem(&remoteMem, &memNum, &memTags));
+    EXPECT_NO_THROW(impl->GetRemoteMem(&remoteMem, &memNum));
 }
 
 TEST_F(HostCpuUrmaChannelTest, Ut_When_Clean_Expect_NotSupport)

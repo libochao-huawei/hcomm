@@ -13,7 +13,7 @@
 #include "hccl/hccl_types.h"
 #include "hcomm_res_defs.h"
 #include "hccl_net_dev_defs.h"
-
+#include "socket/socket.h"
 // Orion
 #include "ip_address.h"
 #include "virtual_topo.h"
@@ -30,7 +30,7 @@ HcclResult EndpointDescPairToLinkData(const EndpointDesc &locEp, const EndpointD
 HcclResult EndpointDescPairToLinkDataWithRankIds(const uint32_t myRank, const uint32_t rmtRank,
     const EndpointDesc &locEp, const EndpointDesc &rmtEp, Hccl::LinkData &linkData, uint32_t devicePhyId, uint32_t remoteDevicePhyId,
     u32 reuseIdx = 0);
-
+HcclResult CheckSocketStatus(Hccl::Socket *socket);
 } // namespace hcomm
 
 #endif // ORION_ADPT_UTILS_H
