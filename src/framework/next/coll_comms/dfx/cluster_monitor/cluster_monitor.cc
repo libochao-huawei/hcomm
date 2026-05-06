@@ -43,6 +43,7 @@ HcclResult ClusterMonitor::GetRemEndpointDescs(HcclComm comm,
     std::map<uint32_t, std::vector<UIDContext>> &uidCtxs,
     std::vector<uint32_t> &netLayersVector)
 {
+    HCCL_INFO("CMTEST [%s] GetRemEndpointDescs begin.", __func__);
     // 将所有远端的rank都加入到状态维护map中
     auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
     CHK_PTR_NULL(hcclComm);
@@ -57,7 +58,7 @@ HcclResult ClusterMonitor::GetRemEndpointDescs(HcclComm comm,
     // 获取netLayer信息存入到netLayersVector中
     uint32_t *netLayers = nullptr;
     uint32_t netLayerNum = 0;
-    CHK_RET(HcclRankGraphGetLayers(commV2, &netLayers, &netLayerNum));
+    CHK_RET(HcclRankGraphGetLayers(comm, &netLayers, &netLayerNum));
     if (netLayerNum == 0) {
         HCCL_ERROR("[%s] no netLayer in RankGraph", __func__);
         return HCCL_E_NOT_SUPPORT;
@@ -579,6 +580,7 @@ void ClusterMonitor::MonitorThread()
 
 HcclResult ClusterMonitor::RunMonitorThread()
 {
+    HCCL_INFO("CMTEST [%s] Start ClusterMonitorThread.", __func__);
     clusterMonitorThreadFlag_ = true;
     clusterMonitorThread_.reset(new (std::nothrow) std::thread(&ClusterMonitor::MonitorThread, this));
     CHK_SMART_PTR_NULL(clusterMonitorThread_);
@@ -590,6 +592,7 @@ HcclResult ClusterMonitor::RunMonitorThread()
 
 HcclResult ClusterMonitor::RegisterToClusterMonitor(HcclComm comm)
 {
+    HCCL_INFO("CMTEST [%s] RegisterToClusterMonitor begin.", __func__);
     CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
     auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
     CHK_PTR_NULL(hcclComm);
@@ -617,7 +620,7 @@ HcclResult ClusterMonitor::RegisterToClusterMonitor(HcclComm comm)
     }
     lock.unlock();
 
-    // 存放所有节点的
+    // 存放所有节点的上下文
     std::map<uint32_t, std::vector<UIDContext>> uidCtxs;
     std::vector<uint32_t> netLayersVector;
 
