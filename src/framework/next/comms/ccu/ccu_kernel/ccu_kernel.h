@@ -368,7 +368,6 @@ private:
         CcuLoopGroupConfig config;
         uint64_t totalLoopNum{0};
         uint32_t loopCount{0};
-        std::unordered_set<CcuLoop> addedLoops;
         CcuRep::Variable parallelVar;
         CcuRep::Variable offsetVar;
         std::shared_ptr<CcuRep::CcuRepBase> bundleRep;
