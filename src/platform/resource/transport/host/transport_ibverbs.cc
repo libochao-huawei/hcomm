@@ -21,6 +21,9 @@
 #include "externalinput.h"
 #include "../host/transport_ibverbs.h"
 
+// 混合模式（RoCE Cross-Mode）公共类型定义
+#include "../../../../framework/next/comms/endpoint_pairs/channels/host/exchange_data_format.h"
+
 using namespace std;
 constexpr u32 RDMA_QP_EXPECT_STATUS_PAUSE = 5;
 constexpr u32 RDMA_QP_EXPECT_STATUS_CONNECTED = 1;
@@ -29,7 +32,7 @@ namespace hccl {
 std::array<DeviceMem, MAX_MODULE_DEVICE_NUM> TransportIbverbs::notifyValueMem_;
 std::array<std::mutex, MAX_MODULE_DEVICE_NUM> TransportIbverbs::notifyValueMutex_;
 std::array<Referenced, MAX_MODULE_DEVICE_NUM> TransportIbverbs::instanceRef_;
-UniversalConcurrentMap<u64, TransportIbverbs*> TransportIbverbs::g_qpn2IbversLinkMap_;
+UniversalConcurrentMap<u64, TransportIbverbs *> TransportIbverbs::g_qpn2IbversLinkMap_;
 bool TransportIbverbs::g_flag = false;
 bool TransportIbverbs::g_isSupCqeErrInfoListConfig = false;
 u32 TransportIbverbs::cqeErrQpn_ = 0;
@@ -41,15 +44,18 @@ constexpr u32 WQE_RESERVE_LENGTH = 4;
 
 constexpr u32 NOTIFY_VA_ALIGN_EIGHT = 8; // notifyVa地址8byte对齐
 
-TransportIbverbs::TransportIbverbs(DispatcherPub *dispatcher,
-                                   const std::unique_ptr<NotifyPool> &notifyPool,
-                                   MachinePara &machinePara,
-                                   std::chrono::milliseconds timeout)
+TransportIbverbs::TransportIbverbs(DispatcherPub *dispatcher, const std::unique_ptr<NotifyPool> &notifyPool,
+    MachinePara &machinePara, std::chrono::milliseconds timeout)
     : TransportNet(dispatcher, notifyPool, machinePara, timeout),
-      qpsPerConnection_(1), notifySize_(0), ackNotify_(nullptr), dataAckNotify_(nullptr),
+      qpsPerConnection_(1),
+      notifySize_(0),
+      ackNotify_(nullptr),
+      dataAckNotify_(nullptr),
       access_(RA_ACCESS_LOCAL_WRITE | RA_ACCESS_REMOTE_WRITE | RA_ACCESS_REMOTE_READ),
       workFlowMode_(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB),
-      sqeCounter_(0), currentQP_(0), qpMode_(machinePara.qpMode)
+      sqeCounter_(0),
+      currentQP_(0),
+      qpMode_(machinePara.qpMode)
 {
     dataNotify_ = nullptr;
     if (machinePara_.deviceLogicId >= 0 && (static_cast<u32>(machinePara_.deviceLogicId) < MAX_MODULE_DEVICE_NUM)) {
@@ -64,7 +70,7 @@ TransportIbverbs::~TransportIbverbs()
     (void)DeInit();
 
     if (machinePara_.deviceLogicId >= 0 && (static_cast<u32>(machinePara_.deviceLogicId) < MAX_MODULE_DEVICE_NUM)) {
-        if ( instanceRef_[machinePara_.deviceLogicId].Unref() == 0) {
+        if (instanceRef_[machinePara_.deviceLogicId].Unref() == 0) {
             std::unique_lock<std::mutex> lock(notifyValueMutex_[machinePara_.deviceLogicId]);
             notifyValueMem_[machinePara_.deviceLogicId].free();
         }
@@ -83,25 +89,25 @@ HcclResult TransportIbverbs::DeInit()
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportIbverbs::DeRegOneMR(QpHandle& qpHandle, MemMsg& memMsg)
+HcclResult TransportIbverbs::DeRegOneMR(QpHandle &qpHandle, MemMsg &memMsg)
 {
     struct MrInfoT mrInfo = {nullptr};
     mrInfo.addr = memMsg.addr;
     HcclResult ret = HrtRaMrDereg(qpHandle, &mrInfo);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("errNo[0x%016llx] in link lbv, In lbv exp deconstruct, mr dereg failed.",
-            HCCL_ERROR_CODE(ret)), ret);
+        HCCL_ERROR("errNo[0x%016llx] in link lbv, In lbv exp deconstruct, mr dereg failed.", HCCL_ERROR_CODE(ret)),
+        ret);
     return HCCL_SUCCESS;
 }
 
-void TransportIbverbs::DeRegMRForQPhandles(MemMsg& memMsg)
+void TransportIbverbs::DeRegMRForQPhandles(MemMsg &memMsg)
 {
     for (u32 j = 0; j < combineQpHandles_.size(); j++) {
         if (combineQpHandles_[j].qpHandle == nullptr) {
             continue;
         }
         (void)DeRegOneMR(combineQpHandles_[j].qpHandle, memMsg);
-    } 
+    }
     for (u32 j = 0; j < multiCombineQpHandles_.size(); j++) {
         if (multiCombineQpHandles_[j].qpHandle == nullptr) {
             continue;
@@ -116,8 +122,8 @@ HcclResult TransportIbverbs::DeRegMR()
     std::map<uintptr_t, s32> addrMap;
     for (s32 i = 0; i < static_cast<s32>(MemType::MEM_TYPE_RESERVED); i++) {
         if (memMsg_[i].mrRegFlag == REG_VALID) {
-            std::pair<std::map<uintptr_t, s32>::iterator, bool> res =
-                addrMap.insert(std::pair<uintptr_t, s32>(reinterpret_cast<uintptr_t>(memMsg_[i].addr), 0));
+            std::pair<std::map<uintptr_t, s32>::iterator, bool> res
+                = addrMap.insert(std::pair<uintptr_t, s32>(reinterpret_cast<uintptr_t>(memMsg_[i].addr), 0));
             if (res.second) {
                 DeRegMRForQPhandles(memMsg_[i]);
             }
@@ -126,18 +132,17 @@ HcclResult TransportIbverbs::DeRegMR()
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportIbverbs::DestroyQP(QpHandle& qpHandle)
+HcclResult TransportIbverbs::DestroyQP(QpHandle &qpHandle)
 {
     if (qpHandle != nullptr) {
-        struct QpAttr attr{};
+        struct QpAttr attr {};
         CHK_RET(hrtRaGetQpAttr(qpHandle, &attr));
 
         g_qpn2IbversLinkMap_.Erase(((static_cast<u64>(machinePara_.localDeviceId) << DEV_PHY_ID_BIT) | attr.qpn));
 
         HcclResult ret = HrtRaQpDestroy(qpHandle);
         if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("errNo[0x%016llx] in link lbv, lbv exp deconstruct, qp destroy failed.",
-                HCCL_ERROR_CODE(ret));
+            HCCL_ERROR("errNo[0x%016llx] in link lbv, lbv exp deconstruct, qp destroy failed.", HCCL_ERROR_CODE(ret));
         }
         qpHandle = nullptr;
     }
@@ -157,40 +162,36 @@ HcclResult TransportIbverbs::DestroyQP()
 
 HcclResult TransportIbverbs::Stop()
 {
-    HcclResult ret = hrtRaQpBatchModify(nicRdmaHandle_, &combineQpHandles_[0].qpHandle, combineQpHandles_.size(),
-        RDMA_QP_EXPECT_STATUS_PAUSE);
+    HcclResult ret = hrtRaQpBatchModify(
+        nicRdmaHandle_, &combineQpHandles_[0].qpHandle, combineQpHandles_.size(), RDMA_QP_EXPECT_STATUS_PAUSE);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("errNo[0x%016llx] in link lbv, ra qp modify stop fail.",
-            HCCL_ERROR_CODE(ret));
+        HCCL_ERROR("errNo[0x%016llx] in link lbv, ra qp modify stop fail.", HCCL_ERROR_CODE(ret));
         return HCCL_E_INTERNAL;
     }
     return HCCL_SUCCESS;
 }
- 
+
 HcclResult TransportIbverbs::Resume()
 {
-    HcclResult ret = hrtRaQpBatchModify(nicRdmaHandle_, &combineQpHandles_[0].qpHandle, combineQpHandles_.size(),
-                                        RDMA_QP_EXPECT_STATUS_CONNECTED);
+    HcclResult ret = hrtRaQpBatchModify(
+        nicRdmaHandle_, &combineQpHandles_[0].qpHandle, combineQpHandles_.size(), RDMA_QP_EXPECT_STATUS_CONNECTED);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("errNo[0x%016llx] in link lbv, ra qp modify resume fail.",
-            HCCL_ERROR_CODE(ret));
+        HCCL_ERROR("errNo[0x%016llx] in link lbv, ra qp modify resume fail.", HCCL_ERROR_CODE(ret));
         return HCCL_E_INTERNAL;
     }
     return HCCL_SUCCESS;
 }
- 
+
 HcclResult TransportIbverbs::Init()
 {
-    HCCL_INFO(
-        "machineType=[%d], serverId=[%s], localDeviceId=[%d], remoteDeviceId=[%d], "\
-        "localRank=[%u], localUserRank=[%u], remoteRank=[%u], remoteUserrank=[%u], "\
-        "deviceType=[%d], inputMem=[%p], outputMem=[%p], isAicpuModeEn[%d], notifyNum[%u], "\
-        "isIndOp[%d], custom exchange data size [%llu].",
+    HCCL_INFO("machineType=[%d], serverId=[%s], localDeviceId=[%d], remoteDeviceId=[%d], "
+              "localRank=[%u], localUserRank=[%u], remoteRank=[%u], remoteUserrank=[%u], "
+              "deviceType=[%d], inputMem=[%p], outputMem=[%p], isAicpuModeEn[%d], notifyNum[%u], "
+              "isIndOp[%d], custom exchange data size [%llu].",
         machinePara_.machineType, machinePara_.serverId.c_str(), machinePara_.localDeviceId,
         machinePara_.remoteDeviceId, machinePara_.localUserrank, machinePara_.localWorldRank,
-        machinePara_.remoteUserrank, machinePara_.remoteWorldRank,
-        machinePara_.deviceType, machinePara_.inputMem.ptr(), machinePara_.outputMem.ptr(),
-        machinePara_.isAicpuModeEn, machinePara_.notifyNum, machinePara_.isIndOp, 
+        machinePara_.remoteUserrank, machinePara_.remoteWorldRank, machinePara_.deviceType, machinePara_.inputMem.ptr(),
+        machinePara_.outputMem.ptr(), machinePara_.isAicpuModeEn, machinePara_.notifyNum, machinePara_.isIndOp,
         machinePara_.exchangeInfo.size());
     HcclUs startut = TIME_NOW();
 
@@ -228,7 +229,7 @@ HcclResult TransportIbverbs::Init()
     CHK_RET(InitQpConnect());
 
     HCCL_INFO("linkexp initialization success,Time:%lld us", DURATION_US(TIME_NOW() - startut));
-    
+
     CHK_RET(GetQpAttr());
     return HCCL_SUCCESS;
 }
@@ -238,25 +239,27 @@ HcclResult TransportIbverbs::GetQpAttr()
     char stackLogBuffer[LOG_TMPBUF_SIZE];
     s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
         "communicator[%s], local rank[%u], ip[%s], remote rank[%u], ip[%s], transporttype[%s]",
-        machinePara_.tag.c_str(), machinePara_.localUserrank, machinePara_.localIpAddr.GetReadableAddress(), 
-        machinePara_.remoteUserrank, machinePara_.remoteIpAddr.GetReadableAddress(), GetLinkTypeEnumStr(GetLinkType()).c_str());
-    CHK_PRT_RET(ret == -1, HCCL_ERROR("[GetQpAttr]errNo[0x%016llx] sal snprintf_s error", 
-        HCCL_ERROR_CODE(HCCL_E_INTERNAL)), HCCL_E_INTERNAL);
+        machinePara_.tag.c_str(), machinePara_.localUserrank, machinePara_.localIpAddr.GetReadableAddress(),
+        machinePara_.remoteUserrank, machinePara_.remoteIpAddr.GetReadableAddress(),
+        GetLinkTypeEnumStr(GetLinkType()).c_str());
+    CHK_PRT_RET(ret == -1,
+        HCCL_ERROR("[GetQpAttr]errNo[0x%016llx] sal snprintf_s error", HCCL_ERROR_CODE(HCCL_E_INTERNAL)),
+        HCCL_E_INTERNAL);
     std::string logInfo = "create hccl transport:" + std::string(stackLogBuffer);
-    for (u32 i = 0; i < combineQpHandles_.size(); i++){
-        struct QpAttr attr{};
+    for (u32 i = 0; i < combineQpHandles_.size(); i++) {
+        struct QpAttr attr {};
         CHK_RET(hrtRaGetQpAttr(combineQpHandles_[i].qpHandle, &attr));
-        HCCL_USER_CRITICAL_LOG("%s, rdma qpn[%u], rdma qp sport[%u], rdma TC[%u], rdma SL[%u]",
-            logInfo.c_str(), attr.qpn, attr.udpSport, machinePara_.tc, machinePara_.sl);
+        HCCL_USER_CRITICAL_LOG("%s, rdma qpn[%u], rdma qp sport[%u], rdma TC[%u], rdma SL[%u]", logInfo.c_str(),
+            attr.qpn, attr.udpSport, machinePara_.tc, machinePara_.sl);
     }
     if (UseMultiQp()) {
-        for (u32 i = 0; i < multiCombineQpHandles_.size(); i++){
-            struct QpAttr attr{};
+        for (u32 i = 0; i < multiCombineQpHandles_.size(); i++) {
+            struct QpAttr attr {};
             CHK_RET(hrtRaGetQpAttr(multiCombineQpHandles_[i].qpHandle, &attr));
-            HCCL_USER_CRITICAL_LOG("%s, rdma qpn[%u], rdma qp sport[%u], rdma TC[%u], rdma SL[%u]",
-                logInfo.c_str(), attr.qpn, attr.udpSport, machinePara_.tc, machinePara_.sl);
+            HCCL_USER_CRITICAL_LOG("%s, rdma qpn[%u], rdma qp sport[%u], rdma TC[%u], rdma SL[%u]", logInfo.c_str(),
+                attr.qpn, attr.udpSport, machinePara_.tc, machinePara_.sl);
         }
-    } 
+    }
     return HCCL_SUCCESS;
 }
 
@@ -272,8 +275,8 @@ HcclResult TransportIbverbs::IsUseQpCreateWithAttrs(bool &isUseQpCreateWithAttrs
 {
     isUseQpCreateWithAttrs = false;
     if (machinePara_.nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE) {
-        bool is910Bor91093 =
-            machinePara_.deviceType == DevType::DEV_TYPE_910B || machinePara_.deviceType == DevType::DEV_TYPE_910_93;
+        bool is910Bor91093
+            = machinePara_.deviceType == DevType::DEV_TYPE_910B || machinePara_.deviceType == DevType::DEV_TYPE_910_93;
         if (is910Bor91093 && (qpMode == OFFLINE_QP_MODE_EXT || qpMode == OPBASE_QP_MODE_EXT)) {
             isUseQpCreateWithAttrs = true;
         }
@@ -284,32 +287,34 @@ HcclResult TransportIbverbs::IsUseQpCreateWithAttrs(bool &isUseQpCreateWithAttrs
 HcclResult TransportIbverbs::FillExchangeDataTotalSize()
 {
     exchangeDataTotalSize_ = 0;
-    exchangeDataTotalSize_ += sizeof(u32);  // 首个内容放qp数量
+    exchangeDataTotalSize_ += sizeof(u32);     // 首个内容放qp数量
     if (UseMultiQp()) {
-        exchangeDataTotalSize_ += sizeof(u32);  // 再放个MultiQpThreshold
+        exchangeDataTotalSize_ += sizeof(u32); // 再放个MultiQpThreshold
     }
     if (machinePara_.userMemEnable) {
-        exchangeDataTotalSize_ += sizeof(MemMsg) * 2; // 2: output and input mem
-        exchangeDataTotalSize_ += sizeof(MemMsg) * 3; // 3: dataNotify_\ackNotify_\dataAckNotify_
+        exchangeDataTotalSize_ += sizeof(MemMsg) * 2;                     // 2: output and input mem
+        exchangeDataTotalSize_ += sizeof(MemMsg) * 3;                     // 3: dataNotify_\ackNotify_\dataAckNotify_
         if (UseMultiQp()) {
-            exchangeDataTotalSize_ += qpsPerConnection_ * sizeof(MemMsg);  // 多QP下新增协商内容
+            exchangeDataTotalSize_ += qpsPerConnection_ * sizeof(MemMsg); // 多QP下新增协商内容
         }
     }
-    exchangeDataTotalSize_ += machinePara_.exchangeInfo.size();
+    if (!isHybridMode_) {
+        exchangeDataTotalSize_ += machinePara_.exchangeInfo.size();
+    }
 
     // 4.新增notify资源统计
     // 单qp notify资源大小：1*notifyNum， 多qp notify资源大小：qpNum*notifyNum
-    exchangeDataTotalSize_ += qpsPerConnection_*sizeof(MemMsg) * notifyNum_;
+    exchangeDataTotalSize_ += qpsPerConnection_ * sizeof(MemMsg) * notifyNum_;
 
     // 5.新增和对端协商atomic write是否使能
     exchangeDataTotalSize_ += sizeof(u8);
 
-    if(machinePara_.isIndOp) {
+    if (machinePara_.isIndOp) {
         // 6. userDeviceMem数量\userDeviceMem\userHostMem数量\userHostMem
         exchangeDataTotalSize_ += sizeof(u32);
-        exchangeDataTotalSize_ += sizeof(MemMsg)*machinePara_.userDeviceMem.size();
+        exchangeDataTotalSize_ += sizeof(MemMsg) * machinePara_.userDeviceMem.size();
         exchangeDataTotalSize_ += sizeof(u32);
-        exchangeDataTotalSize_ += sizeof(MemMsg)*machinePara_.userHostMem.size();
+        exchangeDataTotalSize_ += sizeof(MemMsg) * machinePara_.userHostMem.size();
     }
 
     HCCL_DEBUG("[TransportIbverbs][FillExchangeDataTotalSize] exchangeDataTotalSize[%llu]", exchangeDataTotalSize_);
@@ -323,10 +328,11 @@ HcclResult TransportIbverbs::ConstructExchangeForSend()
     u64 exchangeDataBlankSize = exchangeDataTotalSize_;
     // 把qp对数量放在最前头，第一个做检验
     u32 qpNum = UseMultiQp() ? qpsPerConnection_ : 1;
-    s32 sRet = memcpy_s(exchangeDataPtr, sizeof(u32), reinterpret_cast<void*>(&qpNum), sizeof(u32));
+    s32 sRet = memcpy_s(exchangeDataPtr, sizeof(u32), reinterpret_cast<void *>(&qpNum), sizeof(u32));
     CHK_PRT_RET(sRet != EOK,
         HCCL_ERROR("[Set][LocalMem]errNo[0x%016llx] memory copy failed. errorno[%d], params:dstMaxSize[%zu],cnt[%zu]",
-        HCCL_ERROR_CODE(HCCL_E_MEMORY), sRet, sizeof(u32), sizeof(u32)), HCCL_E_MEMORY);
+            HCCL_ERROR_CODE(HCCL_E_MEMORY), sRet, sizeof(u32), sizeof(u32)),
+        HCCL_E_MEMORY);
     exchangeDataPtr += sizeof(u32);
     exchangeDataBlankSize -= sizeof(u32);
 
@@ -337,10 +343,7 @@ HcclResult TransportIbverbs::ConstructExchangeForSend()
         CHK_PRT_RET(sRet != EOK,
             HCCL_ERROR(
                 "[Set][LocalMem]errNo[0x%016llx] memory copy failed. errorno[%d], params:dstMaxSize[%zu],cnt[%zu]",
-                HCCL_ERROR_CODE(HCCL_E_MEMORY),
-                sRet,
-                sizeof(u32),
-                sizeof(u32)),
+                HCCL_ERROR_CODE(HCCL_E_MEMORY), sRet, sizeof(u32), sizeof(u32)),
             HCCL_E_MEMORY);
         exchangeDataPtr += sizeof(u32);
         exchangeDataBlankSize -= sizeof(u32);
@@ -350,20 +353,22 @@ HcclResult TransportIbverbs::ConstructExchangeForSend()
         CHK_RET(RegUserMem(MemType::USER_OUTPUT_MEM, exchangeDataPtr, exchangeDataBlankSize));
         CHK_RET(RegUserMem(MemType::USER_INPUT_MEM, exchangeDataPtr, exchangeDataBlankSize));
         if (machinePara_.isAicpuModeEn) {
-            CHK_RET(CreateNotifyBuffer(dataNotify_, MemType::DATA_NOTIFY_MEM,
-                exchangeDataPtr, exchangeDataBlankSize, NotifyLoadType::DEVICE_NOTIFY));
-            CHK_RET(CreateNotifyBuffer(ackNotify_, MemType::ACK_NOTIFY_MEM,
-                exchangeDataPtr, exchangeDataBlankSize, NotifyLoadType::DEVICE_NOTIFY));
-            CHK_RET(CreateNotifyBuffer(dataAckNotify_, MemType::DATA_ACK_NOTIFY_MEM,
-                exchangeDataPtr, exchangeDataBlankSize, NotifyLoadType::DEVICE_NOTIFY));
+            CHK_RET(CreateNotifyBuffer(dataNotify_, MemType::DATA_NOTIFY_MEM, exchangeDataPtr, exchangeDataBlankSize,
+                NotifyLoadType::DEVICE_NOTIFY));
+            CHK_RET(CreateNotifyBuffer(ackNotify_, MemType::ACK_NOTIFY_MEM, exchangeDataPtr, exchangeDataBlankSize,
+                NotifyLoadType::DEVICE_NOTIFY));
+            CHK_RET(CreateNotifyBuffer(dataAckNotify_, MemType::DATA_ACK_NOTIFY_MEM, exchangeDataPtr,
+                exchangeDataBlankSize, NotifyLoadType::DEVICE_NOTIFY));
         } else {
             CHK_RET(CreateNotifyBuffer(dataNotify_, MemType::DATA_NOTIFY_MEM, exchangeDataPtr, exchangeDataBlankSize));
             CHK_RET(CreateNotifyBuffer(ackNotify_, MemType::ACK_NOTIFY_MEM, exchangeDataPtr, exchangeDataBlankSize));
-            CHK_RET(CreateNotifyBuffer(dataAckNotify_, MemType::DATA_ACK_NOTIFY_MEM,
-                exchangeDataPtr, exchangeDataBlankSize));
+            CHK_RET(CreateNotifyBuffer(
+                dataAckNotify_, MemType::DATA_ACK_NOTIFY_MEM, exchangeDataPtr, exchangeDataBlankSize));
         }
     }
-    CHK_RET(ConstructExchangeDataForSend(exchangeDataPtr, exchangeDataBlankSize));
+    if (!isHybridMode_) {
+        CHK_RET(ConstructExchangeDataForSend(exchangeDataPtr, exchangeDataBlankSize));
+    }
     if (machinePara_.userMemEnable && UseMultiQp()) {
         for (u32 i = 0; i < qpsPerConnection_; i++) {
             std::shared_ptr<LocalIpcNotify> oneNotify;
@@ -371,8 +376,8 @@ HcclResult TransportIbverbs::ConstructExchangeForSend()
                 CHK_RET(CreateNotifyBuffer(oneNotify, MemType::MULTI_QP_DATA_NOTIFY_MEM, exchangeDataPtr,
                     exchangeDataBlankSize, NotifyLoadType::DEVICE_NOTIFY));
             } else {
-                CHK_RET(CreateNotifyBuffer(oneNotify, MemType::MULTI_QP_DATA_NOTIFY_MEM, exchangeDataPtr,
-                    exchangeDataBlankSize));
+                CHK_RET(CreateNotifyBuffer(
+                    oneNotify, MemType::MULTI_QP_DATA_NOTIFY_MEM, exchangeDataPtr, exchangeDataBlankSize));
             }
             multiQpDataNotify_.push_back(std::move(oneNotify));
         }
@@ -390,7 +395,8 @@ HcclResult TransportIbverbs::ConstructExchangeForSend()
     sRet = memcpy_s(exchangeDataPtr, sizeof(u8), reinterpret_cast<void *>(&localEnableAtomicWrite), sizeof(u8));
     CHK_PRT_RET(sRet != EOK,
         HCCL_ERROR("[Set][LocalMem]errNo[0x%016llx] memory copy failed. errorno[%d], params:dstMaxSize[%zu], cnt[%zu]",
-            HCCL_ERROR_CODE(HCCL_E_MEMORY), sRet, sizeof(bool), sizeof(bool)), HCCL_E_MEMORY);
+            HCCL_ERROR_CODE(HCCL_E_MEMORY), sRet, sizeof(bool), sizeof(bool)),
+        HCCL_E_MEMORY);
     exchangeDataPtr += sizeof(u8);
     exchangeDataBlankSize -= sizeof(u8);
 
@@ -411,19 +417,22 @@ HcclResult TransportIbverbs::ConstructExchangeForSend()
 
 HcclResult TransportIbverbs::ParseReceivedExchangeData()
 {
-    u8* exchangeDataPtr = exchangeDataForRecv_.data();
+    u8 *exchangeDataPtr = exchangeDataForRecv_.data();
     u64 exchangeDataBlankSize = exchangeDataTotalSize_;
 
     // 首先解析qp对数量，并作一致性校验
     u32 localQpNum = UseMultiQp() ? qpsPerConnection_ : 1;
     u32 remoteQpNum = 0;
-    s32 sRet = memcpy_s(reinterpret_cast<void*>(&remoteQpNum), sizeof(u32), exchangeDataPtr, sizeof(u32));
+    s32 sRet = memcpy_s(reinterpret_cast<void *>(&remoteQpNum), sizeof(u32), exchangeDataPtr, sizeof(u32));
     CHK_PRT_RET(sRet != EOK,
         HCCL_ERROR("[Get][RemoteMem]errNo[0x%016llx] memory copy failed. errorno[%d], params:dstMaxSize[%zu],cnt[%zu]",
-        HCCL_ERROR_CODE(HCCL_E_MEMORY), sRet, sizeof(u32), sizeof(u32)), HCCL_E_MEMORY);
-    CHK_PRT_RET(localQpNum != remoteQpNum, HCCL_ERROR("[TransportIbverbs][ParseReceivedExchangeData]"
-        "local qps[%u] not equal to remote qps[%u], rank:local[%u],remote[%u]", localQpNum, remoteQpNum,
-        machinePara_.localUserrank, machinePara_.remoteUserrank), HCCL_E_INTERNAL);
+            HCCL_ERROR_CODE(HCCL_E_MEMORY), sRet, sizeof(u32), sizeof(u32)),
+        HCCL_E_MEMORY);
+    CHK_PRT_RET(localQpNum != remoteQpNum,
+        HCCL_ERROR("[TransportIbverbs][ParseReceivedExchangeData]"
+                   "local qps[%u] not equal to remote qps[%u], rank:local[%u],remote[%u]",
+            localQpNum, remoteQpNum, machinePara_.localUserrank, machinePara_.remoteUserrank),
+        HCCL_E_INTERNAL);
     exchangeDataPtr += sizeof(u32);
     exchangeDataBlankSize -= sizeof(u32);
 
@@ -435,19 +444,13 @@ HcclResult TransportIbverbs::ParseReceivedExchangeData()
         CHK_PRT_RET(sRet != EOK,
             HCCL_ERROR(
                 "[Get][RemoteMem]errNo[0x%016llx] memory copy failed. errorno[%d], params:dstMaxSize[%zu],cnt[%zu]",
-                HCCL_ERROR_CODE(HCCL_E_MEMORY),
-                sRet,
-                sizeof(u32),
-                sizeof(u32)),
+                HCCL_ERROR_CODE(HCCL_E_MEMORY), sRet, sizeof(u32), sizeof(u32)),
             HCCL_E_MEMORY);
         CHK_PRT_RET(localmultiQpThreshold != remotemultiQpThreshold,
             HCCL_ERROR("[TransportIbverbs][ParseReceivedExchangeData]"
                        "local env HCCL_MULTI_QP_THRESHOLD[%u] not equal to remote env HCCL_MULTI_QP_THRESHOLD[%u], "
                        "rank:local[%u],remote[%u]",
-                localmultiQpThreshold,
-                remotemultiQpThreshold,
-                machinePara_.localUserrank,
-                machinePara_.remoteUserrank),
+                localmultiQpThreshold, remotemultiQpThreshold, machinePara_.localUserrank, machinePara_.remoteUserrank),
             HCCL_E_INTERNAL);
         exchangeDataPtr += sizeof(u32);
         exchangeDataBlankSize -= sizeof(u32);
@@ -461,14 +464,16 @@ HcclResult TransportIbverbs::ParseReceivedExchangeData()
             &remoteMemMsg_[static_cast<u32>(MemType::DATA_NOTIFY_MEM)], sizeof(MemMsg));
         CHK_PRT_RET(sret != EOK,
             HCCL_ERROR("[Get][RemoteMem]errNo[0x%016llx] In lbv exp init, memory copy failed. errorno[%d], "
-                    "params:destMaxSize[%zu],count[%zu]",
-            HCCL_ERROR_CODE(HCCL_E_MEMORY), sret, sizeof(MemMsg), sizeof(MemMsg)),
+                       "params:destMaxSize[%zu],count[%zu]",
+                HCCL_ERROR_CODE(HCCL_E_MEMORY), sret, sizeof(MemMsg), sizeof(MemMsg)),
             HCCL_E_MEMORY);
         CHK_RET(GetRemoteAddr(MemType::ACK_NOTIFY_MEM, exchangeDataPtr, exchangeDataBlankSize));
         CHK_RET(GetRemoteAddr(MemType::DATA_ACK_NOTIFY_MEM, exchangeDataPtr, exchangeDataBlankSize));
     }
 
-    CHK_RET(ParseExchangeData(exchangeDataPtr, exchangeDataBlankSize));
+    if (!isHybridMode_) {
+        CHK_RET(ParseExchangeData(exchangeDataPtr, exchangeDataBlankSize));
+    }
 
     if (machinePara_.userMemEnable && UseMultiQp()) {
         for (u32 i = 0; i < qpsPerConnection_; i++) {
@@ -490,7 +495,8 @@ HcclResult TransportIbverbs::ParseReceivedExchangeData()
     sRet = memcpy_s(reinterpret_cast<void *>(&remoteEnableAtomicWrite), sizeof(u8), exchangeDataPtr, sizeof(u8));
     CHK_PRT_RET(sRet != EOK,
         HCCL_ERROR("[Get][RemoteMem]errNo[0x%016llx] memory copy failed. errorno[%d], params:dstMaxSize[%zu], cnt[%zu]",
-            HCCL_ERROR_CODE(HCCL_E_MEMORY), sRet, sizeof(bool), sizeof(bool)), HCCL_E_MEMORY);
+            HCCL_ERROR_CODE(HCCL_E_MEMORY), sRet, sizeof(bool), sizeof(bool)),
+        HCCL_E_MEMORY);
     useAtomicWrite_ = machinePara_.enableAtomicWrite && (remoteEnableAtomicWrite != 0);
     HCCL_INFO("atomic write enable only when both the local and remote support, local[%d], remote[%d], result[%d]",
         machinePara_.enableAtomicWrite, remoteEnableAtomicWrite, useAtomicWrite_);
@@ -503,7 +509,8 @@ HcclResult TransportIbverbs::ParseReceivedExchangeData()
 
     if (exchangeDataBlankSize != 0) {
         HCCL_ERROR("[TransportIbverbs][ParseReceivedExchangeData] failed to Parse exchange Data \
-            exchangeDataBlankSize[%llu]", exchangeDataBlankSize);
+            exchangeDataBlankSize[%llu]",
+            exchangeDataBlankSize);
         return HCCL_E_INTERNAL;
     }
     HCCL_DEBUG("Parse Received ExchangeData success!");
@@ -512,15 +519,15 @@ HcclResult TransportIbverbs::ParseReceivedExchangeData()
 
 void TransportIbverbs::ModifyAtomicWriteAfterReduce(u32 &preWrOpcode, u64 wqeType, u32 &opcode, u32 &immData)
 {
-    bool isNotifyWqe = wqeType == static_cast<u64>(WqeType::WQE_TYPE_DATA_NOTIFY) ||
-                       wqeType == static_cast<u64>(WqeType::WQE_TYPE_ACK_NOTIFY) ||
-                       wqeType == static_cast<u64>(WqeType::WQE_TYPE_DATA_ACK_NOTIFY);
+    bool isNotifyWqe = wqeType == static_cast<u64>(WqeType::WQE_TYPE_DATA_NOTIFY)
+                       || wqeType == static_cast<u64>(WqeType::WQE_TYPE_ACK_NOTIFY)
+                       || wqeType == static_cast<u64>(WqeType::WQE_TYPE_DATA_ACK_NOTIFY);
     if (useAtomicWrite_ && preWrOpcode == RA_WR_RDMA_REDUCE_WRITE && isNotifyWqe) {
         opcode = RA_WR_RDMA_ATOMIC_WRITE;
         immData = machinePara_.isAicpuModeEn ? htobe32(0x1) : 0x1; // aicpu展开时，HCCL直调RoCE驱动，需进行字节序转换
     }
-    HCCL_DEBUG("%s preWrOpcode[%u] useAtomicWrite[%d] wqeType[%d] opcode[0x%x] immdata[%u]",
-        __func__, preWrOpcode, useAtomicWrite_, wqeType, opcode, immData);
+    HCCL_DEBUG("%s preWrOpcode[%u] useAtomicWrite[%d] wqeType[%d] opcode[0x%x] immdata[%u]", __func__, preWrOpcode,
+        useAtomicWrite_, wqeType, opcode, immData);
     preWrOpcode = opcode;
 }
 
@@ -528,41 +535,43 @@ u32 TransportIbverbs::GetQpsPerConnection()
 {
     u32 externalQps = std::max(static_cast<u32>(machinePara_.srcPorts.size()), 1U);
     s32 qpMode = GetQpMode();
-    if (GetWorkflowMode() != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
-        externalQps != HCCL_QPS_PER_CONNECTION_DEFAULT) {
-        HCCL_RUN_INFO("HCCL_RDMA_QPS_PER_CONNECTION is set to [%u] but it is not effective in offline mode.",
-            externalQps);
+    if (GetWorkflowMode() != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE
+        && externalQps != HCCL_QPS_PER_CONNECTION_DEFAULT) {
+        HCCL_RUN_INFO(
+            "HCCL_RDMA_QPS_PER_CONNECTION is set to [%u] but it is not effective in offline mode.", externalQps);
     } else if (qpMode != OPBASE_QP_MODE_EXT && externalQps > 1) {
         HCCL_RUN_INFO("HCCL_RDMA_QPS_PER_CONNECTION is set to [%u] but current devType[%d] does not support multi-QP.",
             externalQps, machinePara_.deviceType);
-        return 1;  // 非单算子模式仅支持单QP， QPS = 1
+        return 1; // 非单算子模式仅支持单QP， QPS = 1
     }
     if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
-        return externalQps;  // only work for opbase mode
+        return externalQps; // only work for opbase mode
     }
-    return 1;  // 非单算子模式仅支持单QP， QPS = 1
+    return 1;               // 非单算子模式仅支持单QP， QPS = 1
 }
 
 HcclResult TransportIbverbs::GetNicHandle()
 {
     RaResourceInfo raResourceInfo;
     CHK_RET(NetworkManager::GetInstance(machinePara_.deviceLogicId).GetRaResourceInfo(raResourceInfo));
-    std::map<HcclIpAddress, IpSocket> &tmpSocketMap = machinePara_.nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE ?
-        raResourceInfo.nicSocketMap : raResourceInfo.hostNetSocketMap;
- 
+    std::map<HcclIpAddress, IpSocket> &tmpSocketMap = machinePara_.nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE
+                                                          ? raResourceInfo.nicSocketMap
+                                                          : raResourceInfo.hostNetSocketMap;
+
     HcclIpAddress localIpAddr = machinePara_.localIpAddr;
- 
+
     // 获取 nicRdmaHandle
     auto itSocket = tmpSocketMap.find(localIpAddr);
     if (itSocket == tmpSocketMap.end()) {
-        HCCL_ERROR("[Get][NicHandle]In get nic handle, can not find socket handle, handle size[%u], "\
-            "local ip[%s]", tmpSocketMap.size(), localIpAddr.GetReadableAddress());
+        HCCL_ERROR("[Get][NicHandle]In get nic handle, can not find socket handle, handle size[%u], "
+                   "local ip[%s]",
+            tmpSocketMap.size(), localIpAddr.GetReadableAddress());
         return HCCL_E_PARA;
     }
- 
+
     nicRdmaHandle_ = itSocket->second.nicRdmaHandle;
     CHK_PTR_NULL(nicRdmaHandle_);
- 
+
     return HCCL_SUCCESS;
 }
 
@@ -581,36 +590,39 @@ HcclResult TransportIbverbs::CreateOneQp(
     CHK_RET(IsUseQpCreateWithAttrs(isUseQpCreateWithAttrs, qpMode));
     HcclResult ret;
     std::string useAicpuTitle = useAicpu ? std::string("aicpu ") : std::string("");
-    std::string qpInfo = useAicpuTitle + std::string("rank:") + std::to_string(machinePara_.localWorldRank) +
-        std::string(",localUserrank:") + std::to_string(machinePara_.localUserrank) +
-        std::string(",localIpAddr: ") + std::string(machinePara_.localIpAddr.GetReadableAddress()) +
-        std::string(",deviceLogicId:") + std::to_string(machinePara_.deviceLogicId);
-    struct QpExtAttrs attrs{};
+    std::string qpInfo = useAicpuTitle + std::string("rank:") + std::to_string(machinePara_.localWorldRank)
+                         + std::string(",localUserrank:") + std::to_string(machinePara_.localUserrank)
+                         + std::string(",localIpAddr: ") + std::string(machinePara_.localIpAddr.GetReadableAddress())
+                         + std::string(",deviceLogicId:") + std::to_string(machinePara_.deviceLogicId);
+    struct QpExtAttrs attrs {};
     // 判断是否为NORMALQP需要使用qpMode_; hostnic场景的qpmode也是NORMALQP
     if (useAicpu || qpMode_ == QPMode::NORMAL) {
         bool isWorkFlowLib = (workFlowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
         CHK_RET(ConstructQpAttrs(qpMode, attrs, machinePara_.queueDepthAttr, isWorkFlowLib));
         bool isA3Aicpu = machinePara_.isAicpuModeEn && (machinePara_.deviceType == DevType::DEV_TYPE_910_93);
-        if (isA3Aicpu && workFlowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && qpMode == OPBASE_QP_MODE_EXT) {
-            attrs.qpAttr.cap.max_send_wr = machinePara_.queueDepthAttr.sqDepth == INVALID_UINT ? AICPU_SQ_CQ_DEPTH : attrs.qpAttr.cap.max_send_wr;
-            attrs.cqAttr.sendCqDepth = machinePara_.queueDepthAttr.sendCqDepth == INVALID_UINT ? AICPU_SQ_CQ_DEPTH : attrs.cqAttr.sendCqDepth;
+        if (isA3Aicpu && workFlowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE
+            && qpMode == OPBASE_QP_MODE_EXT) {
+            attrs.qpAttr.cap.max_send_wr = machinePara_.queueDepthAttr.sqDepth == INVALID_UINT
+                                               ? AICPU_SQ_CQ_DEPTH
+                                               : attrs.qpAttr.cap.max_send_wr;
+            attrs.cqAttr.sendCqDepth = machinePara_.queueDepthAttr.sendCqDepth == INVALID_UINT
+                                           ? AICPU_SQ_CQ_DEPTH
+                                           : attrs.cqAttr.sendCqDepth;
         }
         // A3 aicpu图模式使用单个qp, qp深度为socket数量*128
-        bool isAicpuLib = machinePara_.isAicpuModeEn &&
-                            (machinePara_.deviceType == DevType::DEV_TYPE_910_93) &&
-                            (workFlowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
+        bool isAicpuLib = machinePara_.isAicpuModeEn && (machinePara_.deviceType == DevType::DEV_TYPE_910_93)
+                          && (workFlowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
         if (!UseMultiQp() && isAicpuLib) {
             attrs.qpAttr.cap.max_send_wr = machinePara_.sockets.size() * DEFAULT_OFFLINE_MAX_SEND_WR;
         } else if (UseMultiQp()) {
             MultiQpAdjustQpCapacity(attrs);
         }
-        HCCL_DEBUG("qp set max_send_wr %u, socket size %u, isWorkFlowLib %d",
-            attrs.qpAttr.cap.max_send_wr, machinePara_.sockets.size(), isWorkFlowLib);
+        HCCL_DEBUG("qp set max_send_wr %u, socket size %u, isWorkFlowLib %d", attrs.qpAttr.cap.max_send_wr,
+            machinePara_.sockets.size(), isWorkFlowLib);
 
         attrs.udpSport = udpSport;
         ret = hrtRaAiQpCreate(machinePara_.localDeviceId, nicRdmaHandle_, &attrs, &aiQpInfo, qpHandle);
-        HCCL_DEBUG(
-            "aiQpAddr:%llu db_index:%u, sq_index=%u", aiQpInfo.aiQpAddr, aiQpInfo.dbIndex, aiQpInfo.sqIndex);
+        HCCL_DEBUG("aiQpAddr:%llu db_index:%u, sq_index=%u", aiQpInfo.aiQpAddr, aiQpInfo.dbIndex, aiQpInfo.sqIndex);
         qpInfo = qpInfo + std::string(",sendCqDepth:") + std::to_string(attrs.cqAttr.sendCqDepth);
     } else if (!isUseQpCreateWithAttrs && qpsPerConnection == HCCL_QPS_PER_CONNECTION_DEFAULT) {
         ret = HrtRaQpCreate(nicRdmaHandle_, QP_FLAG_RC, qpMode, qpHandle);
@@ -619,9 +631,12 @@ HcclResult TransportIbverbs::CreateOneQp(
         return HCCL_E_PARA;
     } else {
         CHK_RET(ConstructQpAttrs(qpMode, attrs, machinePara_.queueDepthAttr));
-        if (machinePara_.deviceType == DevType::DEV_TYPE_910_93 && !machinePara_.isAicpuModeEn && workFlowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && qpMode == OPBASE_QP_MODE_EXT) {
-            attrs.qpAttr.cap.max_send_wr = machinePara_.queueDepthAttr.sqDepth == INVALID_UINT ? HOST_SQ_CQ_DEPTH : attrs.qpAttr.cap.max_send_wr;
-            attrs.cqAttr.sendCqDepth = machinePara_.queueDepthAttr.sendCqDepth == INVALID_UINT ? HOST_SQ_CQ_DEPTH : attrs.cqAttr.sendCqDepth;
+        if (machinePara_.deviceType == DevType::DEV_TYPE_910_93 && !machinePara_.isAicpuModeEn
+            && workFlowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && qpMode == OPBASE_QP_MODE_EXT) {
+            attrs.qpAttr.cap.max_send_wr
+                = machinePara_.queueDepthAttr.sqDepth == INVALID_UINT ? HOST_SQ_CQ_DEPTH : attrs.qpAttr.cap.max_send_wr;
+            attrs.cqAttr.sendCqDepth
+                = machinePara_.queueDepthAttr.sendCqDepth == INVALID_UINT ? HOST_SQ_CQ_DEPTH : attrs.cqAttr.sendCqDepth;
         }
         if (UseMultiQp()) {
             MultiQpAdjustQpCapacity(attrs);
@@ -630,12 +645,13 @@ HcclResult TransportIbverbs::CreateOneQp(
         ret = hrtRaQpCreateWithAttrs(nicRdmaHandle_, &attrs, qpHandle);
         qpInfo = qpInfo + std::string(",sendCqDepth:") + std::to_string(attrs.cqAttr.sendCqDepth);
     }
-    
-    RPT_ENV_ERR(ret != 0 || (qpHandle == nullptr), "EI0007", vector<string>({ "resource_type", "resource_info" }),
-        vector<string>({ "qp", qpInfo }));
 
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s]create qp failed, localDeviceId[%d], qpMode[%d]",
-        LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RESOURCE.c_str(), machinePara_.localDeviceId, qpMode),
+    RPT_ENV_ERR(ret != 0 || (qpHandle == nullptr), "EI0007", vector<string>({"resource_type", "resource_info"}),
+        vector<string>({"qp", qpInfo}));
+
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[%s][%s]create qp failed, localDeviceId[%d], qpMode[%d]", LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_RESOURCE.c_str(), machinePara_.localDeviceId, qpMode),
         HCCL_E_ROCE_CONNECT);
 
     // 表示没有通过config配置，则使用环境变量配置
@@ -645,7 +661,7 @@ HcclResult TransportIbverbs::CreateOneQp(
     // 配置RDMA Retry Cnt重传次数
     CHK_RET(SetQpAttrRetryCnt(qpHandle));
     // qpn map 插入
-    struct QpAttr attr{} ;
+    struct QpAttr attr {};
     CHK_RET(hrtRaGetQpAttr(qpHandle, &attr));
 
     g_qpn2IbversLinkMap_.Emplace(((static_cast<u64>(machinePara_.localDeviceId) << DEV_PHY_ID_BIT) | attr.qpn), this);
@@ -658,16 +674,15 @@ HcclResult TransportIbverbs::CreateSingleQp(s32 qpMode) // 根据socket个数创
 {
     u32 socketNum = 1;
     // A3 aicpu图模式只使用1个qp，qp深度为socketNum*128，最大不超过32K
-    bool isAicpuLib = machinePara_.isAicpuModeEn &&
-                        (machinePara_.deviceType == DevType::DEV_TYPE_910_93) &&
-                        (workFlowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
+    bool isAicpuLib = machinePara_.isAicpuModeEn && (machinePara_.deviceType == DevType::DEV_TYPE_910_93)
+                      && (workFlowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
     if (!UseMultiQp() && !isAicpuLib) {
         socketNum = machinePara_.sockets.size();
     }
     // 原来是 machinePara_.socketFdHandles 换成 machinePara_.sockets
     for (u32 i = 0; i < socketNum; i++) {
         QpHandle qpHandle = nullptr;
-        u32 udpSport = machinePara_.srcPorts.empty()? 0 : machinePara_.srcPorts[0];
+        u32 udpSport = machinePara_.srcPorts.empty() ? 0 : machinePara_.srcPorts[0];
         CHK_RET(CreateOneQp(qpMode, HCCL_QPS_PER_CONNECTION_DEFAULT, qpHandle, combineAiQpInfo_.aiQpInfo,
             machinePara_.isAicpuModeEn, udpSport));
         CombineQpHandle tmpCombineQpHandle;
@@ -686,11 +701,7 @@ HcclResult TransportIbverbs::CreateMultiQp(s32 qpMode, u32 qpsPerConnection)
         for (const auto &port : machinePara_.srcPorts) {
             QpHandle qpHandle = nullptr;
             AiQpInfo tmpAiQpInfo{};
-            CHK_RET(CreateOneQp(qpMode,
-                qpsPerConnection,
-                qpHandle,
-                tmpAiQpInfo,
-                machinePara_.isAicpuModeEn, port));
+            CHK_RET(CreateOneQp(qpMode, qpsPerConnection, qpHandle, tmpAiQpInfo, machinePara_.isAicpuModeEn, port));
             multiCombineQpHandles_.push_back(CombineQpHandle(qpHandle));
             combineAiQpInfos_.push_back(CombineQpInfo(tmpAiQpInfo));
         }
@@ -709,19 +720,25 @@ s32 TransportIbverbs::GetQpMode()
 
     if (machinePara_.nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE) {
         if (workFlowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
-            qpMode = (machinePara_.deviceType == DevType::DEV_TYPE_910B ||
-                machinePara_.deviceType == DevType::DEV_TYPE_910_93) ? OPBASE_QP_MODE_EXT : OPBASE_QP_MODE;
+            qpMode = (machinePara_.deviceType == DevType::DEV_TYPE_910B
+                         || machinePara_.deviceType == DevType::DEV_TYPE_910_93)
+                         ? OPBASE_QP_MODE_EXT
+                         : OPBASE_QP_MODE;
             // isCapture需要创建下沉QP
             qpMode = (qpMode == OPBASE_QP_MODE_EXT && qpMode_ == QPMode::OFFLOAD) ? OFFLINE_QP_MODE_EXT : qpMode;
             isCapture_ = (qpMode == OFFLINE_QP_MODE_EXT) ? true : false;
         } else {
-            qpMode = (machinePara_.deviceType == DevType::DEV_TYPE_910B ||
-                machinePara_.deviceType == DevType::DEV_TYPE_910_93) ? OFFLINE_QP_MODE_EXT : OFFLINE_QP_MODE;
+            qpMode = (machinePara_.deviceType == DevType::DEV_TYPE_910B
+                         || machinePara_.deviceType == DevType::DEV_TYPE_910_93)
+                         ? OFFLINE_QP_MODE_EXT
+                         : OFFLINE_QP_MODE;
         }
     }
     if (machinePara_.isAicpuModeEn) {
-        qpMode = (machinePara_.deviceType == DevType::DEV_TYPE_910B ||
-            machinePara_.deviceType == DevType::DEV_TYPE_910_93) ? OPBASE_QP_MODE_EXT : OPBASE_QP_MODE;
+        qpMode
+            = (machinePara_.deviceType == DevType::DEV_TYPE_910B || machinePara_.deviceType == DevType::DEV_TYPE_910_93)
+                  ? OPBASE_QP_MODE_EXT
+                  : OPBASE_QP_MODE;
     }
     return qpMode;
 }
@@ -754,6 +771,8 @@ HcclResult TransportIbverbs::InitQpConnect()
     /* 创建QP操作句柄 */
     qpsPerConnection_ = GetQpsPerConnection();
 
+    CHK_RET(ExchangeCapabilityHybrid());
+
     CHK_RET(CreateQp());
 
     CHK_RET(FillExchangeDataTotalSize());
@@ -768,14 +787,18 @@ HcclResult TransportIbverbs::InitQpConnect()
     HcclResult ret = defaultSocket_->Send(exchangeDataForSend_.data(), exchangeDataTotalSize_);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[TransportIbverbs][InitQpConnect] failed to send exchangeData exchangeDataTotalSize[%llu], "
-            "custom exchange data size [%llu].", exchangeDataTotalSize_, machinePara_.exchangeInfo.size()), ret);
+                   "custom exchange data size [%llu].",
+            exchangeDataTotalSize_, machinePara_.exchangeInfo.size()),
+        ret);
     HCCL_DEBUG("[TransportIbverbs]Seocket Send finished, exchangeDataTotalSize[%llu]", exchangeDataTotalSize_);
 
     exchangeDataForRecv_.resize(exchangeDataTotalSize_);
     ret = defaultSocket_->Recv(exchangeDataForRecv_.data(), exchangeDataTotalSize_);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[TransportIbverbs][InitQpConnect] failed to recv exchangeData exchangeDataTotalSize[%llu], "
-            "custom exchange data size [%llu].", exchangeDataTotalSize_, machinePara_.exchangeInfo.size()), ret);
+                   "custom exchange data size [%llu].",
+            exchangeDataTotalSize_, machinePara_.exchangeInfo.size()),
+        ret);
 
     HCCL_DEBUG("[TransportIbverbs][Init] Socket Data Recved");
 
@@ -822,7 +845,7 @@ HcclResult TransportIbverbs::ConnectSingleQp(std::function<bool()> needStop)
 HcclResult TransportIbverbs::ConnectMultiQp(u32 qpsPerConnection, std::function<bool()> needStop)
 {
     // 多QP下，复用同一个socket handle来modify QP, 此时需要串行创建
-    if (machinePara_.sockets.size() != 2) {  // 2：多QP下需要一个额外的Socket来做QP状态迁移同步
+    if (machinePara_.sockets.size() != 2) { // 2：多QP下需要一个额外的Socket来做QP状态迁移同步
         return HCCL_E_INTERNAL;
     }
     for (u32 i = 0; i < qpsPerConnection; i++) {
@@ -833,25 +856,26 @@ HcclResult TransportIbverbs::ConnectMultiQp(u32 qpsPerConnection, std::function<
         CHK_RET(machinePara_.sockets[1]->Recv(&remoteQpConnectReady, 1));
         std::string aicpu = machinePara_.isAicpuModeEn ? "aicpu" : "";
         CHK_PRT_RET(remoteQpConnectReady != localQpConnectReady,
-            HCCL_ERROR("[TransportIbverbs] %s multi Qp Connected checking failed! %u of %u QP",
-            aicpu.c_str(), (i + 1), qpsPerConnection), HCCL_E_NETWORK);
-        CHK_RET(HrtRaQpConnectAsync(multiCombineQpHandles_[i].qpHandle, machinePara_.sockets[0]->GetFdHandle(), needStop));
+            HCCL_ERROR("[TransportIbverbs] %s multi Qp Connected checking failed! %u of %u QP", aicpu.c_str(), (i + 1),
+                qpsPerConnection),
+            HCCL_E_NETWORK);
+        CHK_RET(
+            HrtRaQpConnectAsync(multiCombineQpHandles_[i].qpHandle, machinePara_.sockets[0]->GetFdHandle(), needStop));
         // 查询QP建链是否成功
         s32 qpStatus = 0;
         s32 raRet = 0;
         auto startTime = std::chrono::steady_clock::now();
-        HCCL_INFO("In link ibv, waiting for qp status ready... %u of %u %s QP",
-            (i + 1), multiCombineQpHandles_.size(), aicpu.c_str());
+        HCCL_INFO("In link ibv, waiting for qp status ready... %u of %u %s QP", (i + 1), multiCombineQpHandles_.size(),
+            aicpu.c_str());
         while (true) {
             if ((std::chrono::steady_clock::now() - startTime) >= timeout_) {
-                HCCL_ERROR("[Connect][Qp]get qp status timeout_=%lld, qp_status=%d, index[%u]",
-                    timeout_, qpStatus, i);
+                HCCL_ERROR("[Connect][Qp]get qp status timeout_=%lld, qp_status=%d, index[%u]", timeout_, qpStatus, i);
                 return HCCL_E_TIMEOUT;
             }
             raRet = hrtGetRaQpStatus(multiCombineQpHandles_[i].qpHandle, &qpStatus);
             if ((!raRet) && (qpStatus == 1)) { // 为1时，qp 建链成功
-                HCCL_INFO("In link ibv, %u of %u %s QP get status success.",
-                    (i + 1), multiCombineQpHandles_.size(), aicpu.c_str());
+                HCCL_INFO("In link ibv, %u of %u %s QP get status success.", (i + 1), multiCombineQpHandles_.size(),
+                    aicpu.c_str());
                 break;
             } else {
                 // qp建链需要时间，获取qp状态直至超时
@@ -864,9 +888,13 @@ HcclResult TransportIbverbs::ConnectMultiQp(u32 qpsPerConnection, std::function<
 
 HcclResult TransportIbverbs::ConnectQp()
 {
-    CHK_RET(ConnectSingleQp([this]() -> bool { return this->GetStopFlag(); }));
+    CHK_RET(ConnectSingleQp([this]() -> bool {
+        return this->GetStopFlag();
+    }));
     if (UseMultiQp()) {
-        CHK_RET(ConnectMultiQp(qpsPerConnection_, [this]() -> bool { return this->GetStopFlag(); }));
+        CHK_RET(ConnectMultiQp(qpsPerConnection_, [this]() -> bool {
+            return this->GetStopFlag();
+        }));
     }
     return HCCL_SUCCESS;
 }
@@ -877,8 +905,8 @@ HcclResult TransportIbverbs::Fence()
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportIbverbs::AddWqeList(void *dstMemPtr, const void *srcMemPtr, u64 srcMemSize,
-    WqeType wqeType, WrAuxInfo &aux, std::vector<WqeInfo> &wqeInfoVec)
+HcclResult TransportIbverbs::AddWqeList(void *dstMemPtr, const void *srcMemPtr, u64 srcMemSize, WqeType wqeType,
+    WrAuxInfo &aux, std::vector<WqeInfo> &wqeInfoVec)
 {
     WqeInfo wqeInfoTmp;
 
@@ -918,8 +946,8 @@ HcclResult TransportIbverbs::AddWqeList(void *dstMemPtr, const void *srcMemPtr, 
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportIbverbs::ConstructPayLoadWqe(void *dstMemPtr, const void *src, u64 len,
-    WqeType wqeType, WrAuxInfo &aux, std::vector<WqeInfo>& wqeInfoVec, u32 txSendDataTimes)
+HcclResult TransportIbverbs::ConstructPayLoadWqe(void *dstMemPtr, const void *src, u64 len, WqeType wqeType,
+    WrAuxInfo &aux, std::vector<WqeInfo> &wqeInfoVec, u32 txSendDataTimes)
 {
     HcclResult ret;
     // 发送数据Wqe
@@ -927,22 +955,23 @@ HcclResult TransportIbverbs::ConstructPayLoadWqe(void *dstMemPtr, const void *sr
         u64 txSendDataOffset = txSendDataIdx * RDMA_SEND_MAX_SIZE;
         u64 txSendDataSize = (txSendDataIdx == (txSendDataTimes - 1)) ? len - txSendDataOffset : RDMA_SEND_MAX_SIZE;
 
-        void* txdstMemPtr = reinterpret_cast<void *>(reinterpret_cast<char *>(dstMemPtr) +
-            txSendDataOffset);
+        void *txdstMemPtr = reinterpret_cast<void *>(reinterpret_cast<char *>(dstMemPtr) + txSendDataOffset);
 
-        const void* txsrcMemPtr = reinterpret_cast<const void *>(reinterpret_cast<const char *>(src) +
-            txSendDataOffset);
+        const void *txsrcMemPtr
+            = reinterpret_cast<const void *>(reinterpret_cast<const char *>(src) + txSendDataOffset);
         ret = AddWqeList(txdstMemPtr, txsrcMemPtr, txSendDataSize, wqeType, aux, wqeInfoVec);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[TransportIbverbs][TxAsync]errNo[0x%016llx] In lbv exp, add wqe list failed."\
-                "srcMemSize[%llu Byte]", HCCL_ERROR_CODE(ret), txSendDataSize), ret);
+            HCCL_ERROR("[TransportIbverbs][TxAsync]errNo[0x%016llx] In lbv exp, add wqe list failed."
+                       "srcMemSize[%llu Byte]",
+                HCCL_ERROR_CODE(ret), txSendDataSize),
+            ret);
     }
 
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportIbverbs::TxPayLoad(UserMemType dstMemType, u64 dstOffset, const void *src, u64 len,
-    WqeType wqeType, WrAuxInfo &aux, std::vector<WqeInfo>& wqeInfoVec)
+HcclResult TransportIbverbs::TxPayLoad(UserMemType dstMemType, u64 dstOffset, const void *src, u64 len, WqeType wqeType,
+    WrAuxInfo &aux, std::vector<WqeInfo> &wqeInfoVec)
 {
     void *dstMemPtr = nullptr;
     u64 dstMemSize = 0;
@@ -951,7 +980,8 @@ HcclResult TransportIbverbs::TxPayLoad(UserMemType dstMemType, u64 dstOffset, co
     CHK_RET(GetMemInfo(dstMemType, &dstMemPtr, &dstMemSize));
 
     if (dstOffset > dstMemSize) {
-        HCCL_ERROR("[TransportIbverbs][TxAsync]dst_mem_type=%d, dst_mem_ptr=%p, dst_offset=%llu, dst_mem_size=%llu Byte",
+        HCCL_ERROR(
+            "[TransportIbverbs][TxAsync]dst_mem_type=%d, dst_mem_ptr=%p, dst_offset=%llu, dst_mem_size=%llu Byte",
             dstMemType, dstMemPtr, dstOffset, dstMemSize);
         return HCCL_E_INTERNAL;
     }
@@ -962,8 +992,7 @@ HcclResult TransportIbverbs::TxPayLoad(UserMemType dstMemType, u64 dstOffset, co
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportIbverbs::TxAsync(UserMemType dstMemType, u64 dstOffset,
-                                     const void *src, u64 len, Stream &stream)
+HcclResult TransportIbverbs::TxAsync(UserMemType dstMemType, u64 dstOffset, const void *src, u64 len, Stream &stream)
 {
     std::vector<WqeInfo> wqeInfoVec;
     wqeInfoVec.reserve(WQE_RESERVE_LENGTH);
@@ -979,17 +1008,17 @@ HcclResult TransportIbverbs::TxAsync(UserMemType dstMemType, u64 dstOffset,
 }
 
 HcclResult TransportIbverbs::TxWithReduce(UserMemType dstMemType, u64 dstOffset, const void *src, u64 len,
-                                          const HcclDataType datatype, HcclReduceOp redOp, Stream &stream)
+    const HcclDataType datatype, HcclReduceOp redOp, Stream &stream)
 {
     std::vector<WqeInfo> wqeInfoVec;
     wqeInfoVec.reserve(WQE_RESERVE_LENGTH);
     struct WrAuxInfo aux = {0};
     aux.dataType = RDMA_REDUCE_DATA_TYPE_TABLE[datatype];
     aux.reduceType = RDMA_REDUCE_OP_TYPE_TABLE[redOp];
-    if (aux.dataType == static_cast<u32>(RdmaReduceDataType::RDMA_REDUCE_DATA_INVALID) ||
-        aux.reduceType == static_cast<u32>(RdmaReduceOpType::RDMA_REDUCE_OP_INVALID)) {
-        HCCL_ERROR("unsupported data type [%s] or Reduce type [%s]",
-            GetDataTypeEnumStr(datatype).c_str(), GetReduceOpEnumStr(redOp).c_str());
+    if (aux.dataType == static_cast<u32>(RdmaReduceDataType::RDMA_REDUCE_DATA_INVALID)
+        || aux.reduceType == static_cast<u32>(RdmaReduceOpType::RDMA_REDUCE_OP_INVALID)) {
+        HCCL_ERROR("unsupported data type [%s] or Reduce type [%s]", GetDataTypeEnumStr(datatype).c_str(),
+            GetReduceOpEnumStr(redOp).c_str());
         return HCCL_E_INTERNAL;
     }
 
@@ -1000,18 +1029,18 @@ HcclResult TransportIbverbs::TxWithReduce(UserMemType dstMemType, u64 dstOffset,
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportIbverbs::TxWithReduce(const std::vector<TxMemoryInfo> &txWithReduceMems,
-    const HcclDataType datatype, HcclReduceOp redOp, Stream &stream)
+HcclResult TransportIbverbs::TxWithReduce(
+    const std::vector<TxMemoryInfo> &txWithReduceMems, const HcclDataType datatype, HcclReduceOp redOp, Stream &stream)
 {
     std::vector<WqeInfo> wqeInfoVec;
     wqeInfoVec.reserve(WQE_RESERVE_LENGTH);
     struct WrAuxInfo aux = {0};
     aux.dataType = RDMA_REDUCE_DATA_TYPE_TABLE[datatype];
     aux.reduceType = RDMA_REDUCE_OP_TYPE_TABLE[redOp];
-    if (aux.dataType == static_cast<u32>(RdmaReduceDataType::RDMA_REDUCE_DATA_INVALID) ||
-        aux.reduceType == static_cast<u32>(RdmaReduceOpType::RDMA_REDUCE_OP_INVALID)) {
-        HCCL_ERROR("unsupported data type [%s] or Reduce type [%s]",
-            GetDataTypeEnumStr(datatype).c_str(), GetReduceOpEnumStr(redOp).c_str());
+    if (aux.dataType == static_cast<u32>(RdmaReduceDataType::RDMA_REDUCE_DATA_INVALID)
+        || aux.reduceType == static_cast<u32>(RdmaReduceOpType::RDMA_REDUCE_OP_INVALID)) {
+        HCCL_ERROR("unsupported data type [%s] or Reduce type [%s]", GetDataTypeEnumStr(datatype).c_str(),
+            GetReduceOpEnumStr(redOp).c_str());
         return HCCL_E_INTERNAL;
     }
 
@@ -1033,7 +1062,7 @@ bool TransportIbverbs::IsSupportTransportWithReduce()
     }
 }
 
-// 910A1 不支持write with notify; 
+// 910A1 不支持write with notify;
 // 910A2 由于PCIE through 和 write with notify 冲突，所以不支持write with Notify;
 bool TransportIbverbs::IsSupportRdmaNotify()
 {
@@ -1042,20 +1071,19 @@ bool TransportIbverbs::IsSupportRdmaNotify()
 
 bool TransportIbverbs::IsTemplateMode()
 {
-    if (workFlowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE ||
-        machinePara_.deviceType == DevType::DEV_TYPE_910B ||
-        machinePara_.deviceType == DevType::DEV_TYPE_910_93) {
-            return false;
+    if (workFlowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE
+        || machinePara_.deviceType == DevType::DEV_TYPE_910B || machinePara_.deviceType == DevType::DEV_TYPE_910_93) {
+        return false;
     } else {
         return true;
     }
 }
 
-HcclResult TransportIbverbs::GetIndOpRemoteMemDetails(MemDetails** remoteMem, uint32_t *memNum, HcclMemType memType)
+HcclResult TransportIbverbs::GetIndOpRemoteMemDetails(MemDetails **remoteMem, uint32_t *memNum, HcclMemType memType)
 {
     CHK_PRT_RET(remoteMem == nullptr, HCCL_ERROR("[%s] remoteMem is nullptr", __func__), HCCL_E_PARA);
     CHK_PRT_RET(memNum == nullptr, HCCL_ERROR("[%s] memNum is nullptr", __func__), HCCL_E_PARA);
- 
+
     *remoteMem = nullptr;
     *memNum = 0;
     uint32_t memCount;
@@ -1072,18 +1100,18 @@ HcclResult TransportIbverbs::GetIndOpRemoteMemDetails(MemDetails** remoteMem, ui
         return HCCL_SUCCESS;
     }
     // 外部需要手动释放内存
-    MemDetails* remoteMemDetails = static_cast<MemDetails*>(malloc(memCount * sizeof(MemDetails)));
+    MemDetails *remoteMemDetails = static_cast<MemDetails *>(malloc(memCount * sizeof(MemDetails)));
     CHK_PTR_NULL(remoteMemDetails);
     uint32_t index = 0;
     if (memType == HcclMemType::HCCL_MEM_TYPE_DEVICE) {
-        for (const auto& msg : remoteUserDeviceMemMsg_) {
+        for (const auto &msg : remoteUserDeviceMemMsg_) {
             remoteMemDetails[index].addr = reinterpret_cast<u64>(msg.addr);
             remoteMemDetails[index].size = msg.len;
             remoteMemDetails[index].key = msg.lkey;
             index++;
         }
     } else if (memType == HcclMemType::HCCL_MEM_TYPE_HOST) {
-        for (const auto& msg : remoteUserHostMemMsg_) {
+        for (const auto &msg : remoteUserHostMemMsg_) {
             remoteMemDetails[index].addr = reinterpret_cast<u64>(msg.addr);
             remoteMemDetails[index].size = msg.len;
             remoteMemDetails[index].key = msg.lkey;
@@ -1092,7 +1120,7 @@ HcclResult TransportIbverbs::GetIndOpRemoteMemDetails(MemDetails** remoteMem, ui
     }
     *memNum = memCount;
     *remoteMem = remoteMemDetails;
- 
+
     HCCL_DEBUG("[%s] Successfully returned %u remote memory regions", __func__, index);
     return HCCL_SUCCESS;
 }
@@ -1116,13 +1144,13 @@ HcclResult TransportIbverbs::GetIndOpRemoteMem(HcclMem **remoteMem, uint32_t *me
         remoteMemsPtr_ = std::make_unique<HcclMem[]>(totalCount);
         CHK_PTR_NULL(remoteMemsPtr_);
         uint32_t index = 0;
-        for (const auto& msg : remoteUserDeviceMemMsg_) {
+        for (const auto &msg : remoteUserDeviceMemMsg_) {
             remoteMemsPtr_[index].type = HcclMemType::HCCL_MEM_TYPE_DEVICE;
             remoteMemsPtr_[index].addr = msg.addr;
             remoteMemsPtr_[index].size = msg.len;
             index++;
         }
-        for (const auto& msg : remoteUserHostMemMsg_) {
+        for (const auto &msg : remoteUserHostMemMsg_) {
             remoteMemsPtr_[index].type = HcclMemType::HCCL_MEM_TYPE_HOST;
             remoteMemsPtr_[index].addr = msg.addr;
             remoteMemsPtr_[index].size = msg.len;
@@ -1198,12 +1226,12 @@ HcclResult TransportIbverbs::TxSendDataAndNotifyWithSingleQP(
 u32 TransportIbverbs::GetActualQpNum(u32 maxLength)
 {
     u32 actualMultiQpNum = 1;
-    const u32 KByteToByte = 1024;  // 1024 多QP阈值单位是KB
+    const u32 KByteToByte = 1024; // 1024 多QP阈值单位是KB
     if (maxLength / qpsPerConnection_ >= GetExternalInputMultiQpThreshold() * KByteToByte) {
         actualMultiQpNum = qpsPerConnection_;
     } else {
         u32 quotient = maxLength / (GetExternalInputMultiQpThreshold() * KByteToByte);
-        u32 remainder =  maxLength % (GetExternalInputMultiQpThreshold() * KByteToByte);
+        u32 remainder = maxLength % (GetExternalInputMultiQpThreshold() * KByteToByte);
         actualMultiQpNum = quotient + (remainder != 0 ? 1 : 0);
     }
 
@@ -1218,10 +1246,11 @@ HcclResult TransportIbverbs::TxSendDataAndNotify(std::vector<WqeInfo> &wqeInfoVe
             maxLength = wqeInfoVec[i].wqeData.memList.len;
         }
     }
-    
+
     u32 actualMultiQpNum = GetActualQpNum(maxLength);
 
-    HCCL_DEBUG("[TransportIbverbs][TxSendDataAndNotify] UseMultiQp[%d] MultiQpNum[%u] actualMultiQpNum[%u] maxLength[%u]",
+    HCCL_DEBUG(
+        "[TransportIbverbs][TxSendDataAndNotify] UseMultiQp[%d] MultiQpNum[%u] actualMultiQpNum[%u] maxLength[%u]",
         UseMultiQp(), qpsPerConnection_, actualMultiQpNum, maxLength);
     if (UseMultiQp() && actualMultiQpNum != 1 && actualMultiQpNum <= qpsPerConnection_ && maxLength != 0) {
         CHK_RET(TxSendDataAndNotifyWithMultiQP(wqeInfoVec, actualMultiQpNum, stream, useOneDoorbell));
@@ -1235,21 +1264,21 @@ std::vector<u32> TransportIbverbs::RdmaLengthSplit(u32 length, u32 splitNum)
 {
     // step 1, 先计算有多少个128 Byte
     u32 alignNum = length / RDMA_ADDR_ALIGNMENT;
-    u32 tailBytes = length % RDMA_ADDR_ALIGNMENT;  // 尾块简单处理，放在最后一个切分出来的块后面
+    u32 tailBytes = length % RDMA_ADDR_ALIGNMENT; // 尾块简单处理，放在最后一个切分出来的块后面
     // step 2, 将这128 Byte再分成 splitNum 分，每一份有多少个 128Byte
     u32 alignNumPerSplit = alignNum / splitNum;
-    u32 tailAlignNum = alignNum % splitNum;  // 尾块简单处理，放在最后一个切分出来的块后面
+    u32 tailAlignNum = alignNum % splitNum; // 尾块简单处理，放在最后一个切分出来的块后面
     std::vector<u32> vctSplittedLength(splitNum, 0);
     for (u32 i = 0; i < splitNum; i++) {
         u32 lengthTmp = alignNumPerSplit * RDMA_ADDR_ALIGNMENT;
         vctSplittedLength[i] = lengthTmp;
     }
-    vctSplittedLength[splitNum-1] += tailAlignNum * RDMA_ADDR_ALIGNMENT + tailBytes;
+    vctSplittedLength[splitNum - 1] += tailAlignNum * RDMA_ADDR_ALIGNMENT + tailBytes;
     return vctSplittedLength;
 }
 
-HcclResult TransportIbverbs::TxSendDataAndNotifyWithMultiQP(std::vector<WqeInfo>& wqeInfoVec, u32 actualMultiQpNum,
-    Stream &stream, bool useOneDoorbell)
+HcclResult TransportIbverbs::TxSendDataAndNotifyWithMultiQP(
+    std::vector<WqeInfo> &wqeInfoVec, u32 actualMultiQpNum, Stream &stream, bool useOneDoorbell)
 {
     // vector<WqeInfo> 是一个vector的原因是 单个wqe只能发2GB数据，如果超过2GB，就拆分到多个WqeInfo中了
     // 多QP下，对每个WqeInfo都进行多QP切分，然后在收发每一个QP的数据
@@ -1277,18 +1306,19 @@ HcclResult TransportIbverbs::TxSendDataAndNotifyWithMultiQP(std::vector<WqeInfo>
     }
     // useOneDoorbell 配置成true。最后一个payload去按doorbell
     for (u32 qpIndex = 0; qpIndex < actualMultiQpNum; qpIndex++) {
-        CHK_RET(RdmaSendAsync(multiQpWqeInfoVct[qpIndex], stream, true, qpIndex)); // 多QP使用同一个stream异步doorbell触发
+        CHK_RET(
+            RdmaSendAsync(multiQpWqeInfoVct[qpIndex], stream, true, qpIndex)); // 多QP使用同一个stream异步doorbell触发
     }
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportIbverbs::TxAsync(std::vector<TxMemoryInfo>& txMems, Stream &stream)
+HcclResult TransportIbverbs::TxAsync(std::vector<TxMemoryInfo> &txMems, Stream &stream)
 {
     std::vector<WqeInfo> wqeInfoVec;
     wqeInfoVec.reserve(WQE_RESERVE_LENGTH);
     struct WrAuxInfo aux = {0};
 
-    for (auto& mem : txMems) {
+    for (auto &mem : txMems) {
         HCCL_DEBUG("TX src[%p] len[%llu] dstOffset[%llu]", mem.src, mem.len, mem.dstOffset);
         CHK_PTR_NULL(mem.src);
         CHK_RET(TxPayLoad(mem.dstMemType, mem.dstOffset, mem.src, mem.len, WqeType::WQE_TYPE_DATA, aux, wqeInfoVec));
@@ -1298,31 +1328,34 @@ HcclResult TransportIbverbs::TxAsync(std::vector<TxMemoryInfo>& txMems, Stream &
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportIbverbs::TxWqeList(std::vector<WqeInfo> &wqeInfoVec, Stream &stream,
-    std::vector<struct SendWrRsp> &opRspVec, u32 multiQpIndex)
+HcclResult TransportIbverbs::TxWqeList(
+    std::vector<WqeInfo> &wqeInfoVec, Stream &stream, std::vector<struct SendWrRsp> &opRspVec, u32 multiQpIndex)
 {
     (void)stream;
     if (!IsTemplateMode()) {
         currentQP_ = 0;
     } else {
-        if (sqeCounter_ < (HCCP_SQ_TEMPLATE_CAPACITY + 1) &&
-            (sqeCounter_ + wqeInfoVec.size()) >= (HCCP_SQ_TEMPLATE_CAPACITY + 1)) {
+        if (sqeCounter_ < (HCCP_SQ_TEMPLATE_CAPACITY + 1)
+            && (sqeCounter_ + wqeInfoVec.size()) >= (HCCP_SQ_TEMPLATE_CAPACITY + 1)) {
             currentQP_++;
             sqeCounter_ = wqeInfoVec.size();
         } else {
             sqeCounter_ += wqeInfoVec.size();
         }
     }
-    CHK_PRT_RET(currentQP_ >= combineQpHandles_.size(), HCCL_ERROR("[TransportIbverbs][TxWqeList]errNo[0x%016llx] In lbv "\
-        "exp, qp idx[%u] is invalid.", HCCL_ERROR_CODE(HCCL_E_INTERNAL), currentQP_), HCCL_E_INTERNAL);
+    CHK_PRT_RET(currentQP_ >= combineQpHandles_.size(),
+        HCCL_ERROR("[TransportIbverbs][TxWqeList]errNo[0x%016llx] In lbv "
+                   "exp, qp idx[%u] is invalid.",
+            HCCL_ERROR_CODE(HCCL_E_INTERNAL), currentQP_),
+        HCCL_E_INTERNAL);
 
     HCCL_DEBUG("rdma tx send wqes: ra qp sqe counter:%u, current qp idx:%u", sqeCounter_, currentQP_);
 
     std::vector<SendWrlistDataExt> wqelisDatatVec;
     for (u32 index = 0; index < wqeInfoVec.size(); index++) {
         // 使能atomic write场景下，reduce的下一个notify的opcode要设置为atomic write
-        u32& preWrOpcode = multiQpIndex == RDMA_INVALID_QP_INDEX ?
-            combineQpHandles_[currentQP_].preWrOpcode : multiCombineQpHandles_[multiQpIndex].preWrOpcode;
+        u32 &preWrOpcode = multiQpIndex == RDMA_INVALID_QP_INDEX ? combineQpHandles_[currentQP_].preWrOpcode
+                                                                 : multiCombineQpHandles_[multiQpIndex].preWrOpcode;
         ModifyAtomicWriteAfterReduce(preWrOpcode, wqeInfoVec[index].wqeType, wqeInfoVec[index].wqeData.op,
             wqeInfoVec[index].wqeData.ext.immData);
 
@@ -1366,8 +1399,8 @@ HcclResult TransportIbverbs::TxWqeList(std::vector<WqeInfo> &wqeInfoVec, Stream 
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportIbverbs::SendWqeList(QpHandle qpHandle, u32 wqeNum, struct SendWrlistDataExt *wqelist,
-    struct SendWrRsp *opRsp)
+HcclResult TransportIbverbs::SendWqeList(
+    QpHandle qpHandle, u32 wqeNum, struct SendWrlistDataExt *wqelist, struct SendWrRsp *opRsp)
 {
     unsigned int completeNum = 0;
     HcclResult ret = HrtRaSendWrlistExt(qpHandle, wqelist, opRsp, wqeNum, &completeNum);
@@ -1377,8 +1410,8 @@ HcclResult TransportIbverbs::SendWqeList(QpHandle qpHandle, u32 wqeNum, struct S
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportIbverbs::RdmaSendAsync(std::vector<WqeInfo> &wqeInfoVec, Stream &stream,
-    bool useOneDoorbell, u32 multiQpIndex)
+HcclResult TransportIbverbs::RdmaSendAsync(
+    std::vector<WqeInfo> &wqeInfoVec, Stream &stream, bool useOneDoorbell, u32 multiQpIndex)
 {
     HcclResult ret;
 
@@ -1401,15 +1434,18 @@ HcclResult TransportIbverbs::RdmaSendAsync(std::vector<WqeInfo> &wqeInfoVec, Str
         wr.bufList = &wqelistVec.back().memList;
         wr.dstAddr = static_cast<u64>(wqelistVec.back().dstAddr);
         // 只敲一次doorbell时，len为所有非连续内存块长度总和+notify(4Bytes)
-        wr.bufList[0].len = std::accumulate(wqelistVec.begin(), wqelistVec.end(), 0llu,
-            [](u64 acc, auto wqelist) { return acc + wqelist.memList.len; });
+        wr.bufList[0].len = std::accumulate(wqelistVec.begin(), wqelistVec.end(), 0llu, [](u64 acc, auto wqelist) {
+            return acc + wqelist.memList.len;
+        });
 
         const u32 dbIndex = static_cast<u32>(opRspVec.back().db.dbIndex);
         const u64 dbInfo = static_cast<u64>(opRspVec.back().db.dbInfo);
         ret = dispatcher_->RdmaSend(dbIndex, dbInfo, wr, stream, machinePara_.remoteWorldRank, isCapture_);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[TransportIbverbs][RdmaSendAsync][useOneDoorbell]errNo[0x%016llx] In lbv exp op base mode, "\
-            "rdma send failed. dbIndex[%u] dbInfo[%llu]", HCCL_ERROR_CODE(ret), dbIndex, dbInfo), ret);
+            HCCL_ERROR("[TransportIbverbs][RdmaSendAsync][useOneDoorbell]errNo[0x%016llx] In lbv exp op base mode, "
+                       "rdma send failed. dbIndex[%u] dbInfo[%llu]",
+                HCCL_ERROR_CODE(ret), dbIndex, dbInfo),
+            ret);
         HCCL_INFO("[TransportIbverbs][RdmaSendAsync][useOneDoorbell] db_index[%u], db_info[%llu]", dbIndex, dbInfo);
         return HCCL_SUCCESS;
     }
@@ -1424,29 +1460,31 @@ HcclResult TransportIbverbs::RdmaSendAsync(std::vector<WqeInfo> &wqeInfoVec, Str
 
             // op base 模式下的发送接口
             if (wqeInfoVec[i].wqeType == static_cast<u64>(WqeType::WQE_TYPE_DATA)) {
-                ret = dispatcher_->RdmaSend(dbIndex, dbInfo, wr, stream,
-                    machinePara_.remoteWorldRank, isCapture_);
+                ret = dispatcher_->RdmaSend(dbIndex, dbInfo, wr, stream, machinePara_.remoteWorldRank, isCapture_);
             } else {
-                ret = dispatcher_->RdmaSend(dbIndex, dbInfo, wr, stream,
-                    machinePara_.remoteWorldRank, wqeInfoVec[i].wqeDataOffset, isCapture_);
+                ret = dispatcher_->RdmaSend(
+                    dbIndex, dbInfo, wr, stream, machinePara_.remoteWorldRank, wqeInfoVec[i].wqeDataOffset, isCapture_);
             }
             CHK_PRT_RET(ret != HCCL_SUCCESS,
-                HCCL_ERROR("[TransportIbverbs][RdmaSendAsync]errNo[0x%016llx] In lbv exp op base mode, "\
-                "rdma send failed. dbIndex[%u] dbInfo[%llu] wqe type[%llu] offset[%llu]", HCCL_ERROR_CODE(ret), dbIndex,
-                dbInfo, wqeInfoVec[i].wqeType, wqeInfoVec[i].wqeDataOffset), ret);
+                HCCL_ERROR("[TransportIbverbs][RdmaSendAsync]errNo[0x%016llx] In lbv exp op base mode, "
+                           "rdma send failed. dbIndex[%u] dbInfo[%llu] wqe type[%llu] offset[%llu]",
+                    HCCL_ERROR_CODE(ret), dbIndex, dbInfo, wqeInfoVec[i].wqeType, wqeInfoVec[i].wqeDataOffset),
+                ret);
         } else { // offline mode
             // 下沉模式
             if (wqeInfoVec[i].wqeType == static_cast<u64>(WqeType::WQE_TYPE_DATA)) {
-                ret = dispatcher_->RdmaSend(opRspVec[i].wqeTmp.sqIndex, opRspVec[i].wqeTmp.wqeIndex,
-                    wr, stream, machinePara_.remoteWorldRank);
+                ret = dispatcher_->RdmaSend(
+                    opRspVec[i].wqeTmp.sqIndex, opRspVec[i].wqeTmp.wqeIndex, wr, stream, machinePara_.remoteWorldRank);
             } else {
-                ret = dispatcher_->RdmaSend(opRspVec[i].wqeTmp.sqIndex, opRspVec[i].wqeTmp.wqeIndex,
-                    wr, stream, machinePara_.remoteWorldRank, wqeInfoVec[i].wqeDataOffset);
+                ret = dispatcher_->RdmaSend(opRspVec[i].wqeTmp.sqIndex, opRspVec[i].wqeTmp.wqeIndex, wr, stream,
+                    machinePara_.remoteWorldRank, wqeInfoVec[i].wqeDataOffset);
             }
             CHK_PRT_RET(ret != HCCL_SUCCESS,
-                HCCL_ERROR("[TransportIbverbs][RdmaSendAsync]errNo[0x%016llx] In lbv exp offline mode, "\
-                "rdma send failed. sq_index[%u] wqe_index[%u], offset[%llu]", HCCL_ERROR_CODE(ret),
-                opRspVec[i].wqeTmp.sqIndex, opRspVec[i].wqeTmp.wqeIndex, wqeInfoVec[i].wqeDataOffset), ret);
+                HCCL_ERROR("[TransportIbverbs][RdmaSendAsync]errNo[0x%016llx] In lbv exp offline mode, "
+                           "rdma send failed. sq_index[%u] wqe_index[%u], offset[%llu]",
+                    HCCL_ERROR_CODE(ret), opRspVec[i].wqeTmp.sqIndex, opRspVec[i].wqeTmp.wqeIndex,
+                    wqeInfoVec[i].wqeDataOffset),
+                ret);
         }
     }
     return HCCL_SUCCESS;
@@ -1470,22 +1508,22 @@ HcclResult TransportIbverbs::RdmaSendAsyncHostNIC(std::vector<WqeInfo> &wqeInfoV
         fence_ = false;
 
         if (wqeInfoVec[i].wqeType == static_cast<u64>(WqeType::WQE_TYPE_DATA)) {
-                ret = dispatcher_->HostNicRdmaSend(combineQpHandles_[0].qpHandle, wr,
-                    opRsp, stream, machinePara_.remoteWorldRank);
-            } else {
-                ret = dispatcher_->HostNicRdmaSend(combineQpHandles_[0].qpHandle, wr,
-                    opRsp, stream, machinePara_.remoteWorldRank,
-                    wqeInfoVec[i].wqeDataOffset);
-            }
+            ret = dispatcher_->HostNicRdmaSend(
+                combineQpHandles_[0].qpHandle, wr, opRsp, stream, machinePara_.remoteWorldRank);
+        } else {
+            ret = dispatcher_->HostNicRdmaSend(combineQpHandles_[0].qpHandle, wr, opRsp, stream,
+                machinePara_.remoteWorldRank, wqeInfoVec[i].wqeDataOffset);
+        }
         CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[TransportIbverbs][RdmaSendAsyncHostNIC]errNo[0x%016llx] In lbv exp offline " \
-            "mode, rdma send failed. sq_index[%u] wqe_index[%u], offset[%llu]", HCCL_ERROR_CODE(ret),
-            opRsp.wqeTmp.sqIndex, opRsp.wqeTmp.wqeIndex, wqeInfoVec[i].wqeDataOffset), ret);
+            HCCL_ERROR("[TransportIbverbs][RdmaSendAsyncHostNIC]errNo[0x%016llx] In lbv exp offline "
+                       "mode, rdma send failed. sq_index[%u] wqe_index[%u], offset[%llu]",
+                HCCL_ERROR_CODE(ret), opRsp.wqeTmp.sqIndex, opRsp.wqeTmp.wqeIndex, wqeInfoVec[i].wqeDataOffset),
+            ret);
     }
     return HCCL_SUCCESS;
 }
-HcclResult TransportIbverbs::RdmaSendAsync(struct SendWr &wr, Stream &stream, WqeType wqeType, u64 notifyOffset,
-    u32 notifyId)
+HcclResult TransportIbverbs::RdmaSendAsync(
+    struct SendWr &wr, Stream &stream, WqeType wqeType, u64 notifyOffset, u32 notifyId)
 {
     HcclResult ret;
     struct SendWrRsp opRsp = {0};
@@ -1499,10 +1537,12 @@ HcclResult TransportIbverbs::RdmaSendAsync(struct SendWr &wr, Stream &stream, Wq
             sqeCounter_++;
         }
     }
-    CHK_PRT_RET(currentQP_ >= combineQpHandles_.size(), HCCL_ERROR("[TransportIbverbs][RdmaSendAsync]errNo[0x%016llx] In "\
-        "lbv exp, qp idx[%u] is invalid.", HCCL_ERROR_CODE(HCCL_E_INTERNAL), currentQP_), HCCL_E_INTERNAL);
-    HCCL_DEBUG("rdma send async: ra qp sqe counter:%u, current qp idx:%u.",
-        sqeCounter_, currentQP_);
+    CHK_PRT_RET(currentQP_ >= combineQpHandles_.size(),
+        HCCL_ERROR("[TransportIbverbs][RdmaSendAsync]errNo[0x%016llx] In "
+                   "lbv exp, qp idx[%u] is invalid.",
+            HCCL_ERROR_CODE(HCCL_E_INTERNAL), currentQP_),
+        HCCL_E_INTERNAL);
+    HCCL_DEBUG("rdma send async: ra qp sqe counter:%u, current qp idx:%u.", sqeCounter_, currentQP_);
 
     CHK_RET(HrtRaSendWr(combineQpHandles_[currentQP_].qpHandle, &wr, &opRsp));
 
@@ -1510,55 +1550,59 @@ HcclResult TransportIbverbs::RdmaSendAsync(struct SendWr &wr, Stream &stream, Wq
         u32 dbIndex = static_cast<u32>(opRsp.db.dbIndex);
         u64 dbInfo = static_cast<u64>(opRsp.db.dbInfo);
         if (wqeType == WqeType::WQE_TYPE_DATA) {
-            ret = dispatcher_->RdmaSend(dbIndex, dbInfo, wr, stream,
-                machinePara_.remoteWorldRank, isCapture_);
+            ret = dispatcher_->RdmaSend(dbIndex, dbInfo, wr, stream, machinePara_.remoteWorldRank, isCapture_);
             CHK_PRT_RET(ret != HCCL_SUCCESS,
-                HCCL_ERROR("[TransportIbverbs][RdmaSendAsync]errNo[0x%016llx] In lbv exp op base mode, "\
-                "rdma send failed. dbIndex[%u] dbInfo[%llu]", HCCL_ERROR_CODE(ret), dbIndex, dbInfo), ret);
+                HCCL_ERROR("[TransportIbverbs][RdmaSendAsync]errNo[0x%016llx] In lbv exp op base mode, "
+                           "rdma send failed. dbIndex[%u] dbInfo[%llu]",
+                    HCCL_ERROR_CODE(ret), dbIndex, dbInfo),
+                ret);
         } else {
-            ret = dispatcher_->RdmaSend(dbIndex, dbInfo, wr, stream,
-                machinePara_.remoteWorldRank, notifyOffset, isCapture_);
+            ret = dispatcher_->RdmaSend(
+                dbIndex, dbInfo, wr, stream, machinePara_.remoteWorldRank, notifyOffset, isCapture_);
             CHK_PRT_RET(ret != HCCL_SUCCESS,
-                HCCL_ERROR("[TransportIbverbs][RdmaSendAsync]errNo[0x%016llx] In lbv exp op base mode, "\
-                "rdma send failed. dbIndex[%u] dbInfo[%llu], offset[%llu]", HCCL_ERROR_CODE(ret), dbIndex, dbInfo,
-                notifyOffset), ret);
+                HCCL_ERROR("[TransportIbverbs][RdmaSendAsync]errNo[0x%016llx] In lbv exp op base mode, "
+                           "rdma send failed. dbIndex[%u] dbInfo[%llu], offset[%llu]",
+                    HCCL_ERROR_CODE(ret), dbIndex, dbInfo, notifyOffset),
+                ret);
         }
     } else { // offline mode
         if (wqeType == WqeType::WQE_TYPE_DATA) {
-            ret = dispatcher_->RdmaSend(opRsp.wqeTmp.sqIndex, opRsp.wqeTmp.wqeIndex,
-                wr, stream, machinePara_.remoteWorldRank);
+            ret = dispatcher_->RdmaSend(
+                opRsp.wqeTmp.sqIndex, opRsp.wqeTmp.wqeIndex, wr, stream, machinePara_.remoteWorldRank);
             CHK_PRT_RET(ret != HCCL_SUCCESS,
-                HCCL_ERROR("[TransportIbverbs][RdmaSendAsync]errNo[0x%016llx] In lbv exp offline mode, "\
-                "rdma send failed. sq_index[%u] wqe_index[%u]", HCCL_ERROR_CODE(ret), opRsp.wqeTmp.sqIndex,
-                opRsp.wqeTmp.wqeIndex), ret);
+                HCCL_ERROR("[TransportIbverbs][RdmaSendAsync]errNo[0x%016llx] In lbv exp offline mode, "
+                           "rdma send failed. sq_index[%u] wqe_index[%u]",
+                    HCCL_ERROR_CODE(ret), opRsp.wqeTmp.sqIndex, opRsp.wqeTmp.wqeIndex),
+                ret);
         } else {
-            ret = dispatcher_->RdmaSend(opRsp.wqeTmp.sqIndex, opRsp.wqeTmp.wqeIndex,
-                wr, stream, machinePara_.remoteWorldRank, notifyOffset);
+            ret = dispatcher_->RdmaSend(
+                opRsp.wqeTmp.sqIndex, opRsp.wqeTmp.wqeIndex, wr, stream, machinePara_.remoteWorldRank, notifyOffset);
             CHK_PRT_RET(ret != HCCL_SUCCESS,
-                HCCL_ERROR("[TransportIbverbs][RdmaSendAsync]errNo[0x%016llx] In lbv exp offline mode, "\
-                "rdma send failed. sq_index[%u] wqe_index[%u], offset[%llu]", HCCL_ERROR_CODE(ret),
-                opRsp.wqeTmp.sqIndex, opRsp.wqeTmp.wqeIndex, notifyOffset), ret);
+                HCCL_ERROR("[TransportIbverbs][RdmaSendAsync]errNo[0x%016llx] In lbv exp offline mode, "
+                           "rdma send failed. sq_index[%u] wqe_index[%u], offset[%llu]",
+                    HCCL_ERROR_CODE(ret), opRsp.wqeTmp.sqIndex, opRsp.wqeTmp.wqeIndex, notifyOffset),
+                ret);
         }
     }
     return HCCL_SUCCESS;
 }
-HcclResult TransportIbverbs::RdmaSendAsyncHostNIC(struct SendWrlistDataExt &wr, Stream &stream, WqeType wqeType,
-    u64 notifyOffset)
+HcclResult TransportIbverbs::RdmaSendAsyncHostNIC(
+    struct SendWrlistDataExt &wr, Stream &stream, WqeType wqeType, u64 notifyOffset)
 {
     HcclResult ret;
     struct SendWrRsp opRsp = {0};
     if (wqeType == WqeType::WQE_TYPE_DATA) {
-            ret = dispatcher_->HostNicRdmaSend(combineQpHandles_[0].qpHandle, wr,
-                opRsp, stream, machinePara_.remoteWorldRank);
-        } else {
-            ret = dispatcher_->HostNicRdmaSend(combineQpHandles_[0].qpHandle, wr,
-                opRsp, stream, machinePara_.remoteWorldRank,
-                notifyOffset);
+        ret = dispatcher_->HostNicRdmaSend(
+            combineQpHandles_[0].qpHandle, wr, opRsp, stream, machinePara_.remoteWorldRank);
+    } else {
+        ret = dispatcher_->HostNicRdmaSend(
+            combineQpHandles_[0].qpHandle, wr, opRsp, stream, machinePara_.remoteWorldRank, notifyOffset);
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[TransportIbverbs][RdmaSendAsyncHostNIC]errNo[0x%016llx] In lbv exp offline mode, "\
-        "rdma send failed. sq_index[%u] wqe_index[%u], offset[%llu]", HCCL_ERROR_CODE(ret),
-        opRsp.wqeTmp.sqIndex, opRsp.wqeTmp.wqeIndex, notifyOffset), ret);
+        HCCL_ERROR("[TransportIbverbs][RdmaSendAsyncHostNIC]errNo[0x%016llx] In lbv exp offline mode, "
+                   "rdma send failed. sq_index[%u] wqe_index[%u], offset[%llu]",
+            HCCL_ERROR_CODE(ret), opRsp.wqeTmp.sqIndex, opRsp.wqeTmp.wqeIndex, notifyOffset),
+        ret);
 
     return HCCL_SUCCESS;
 }
@@ -1591,8 +1635,8 @@ HcclResult TransportIbverbs::GetWqeDataOffsetAndNotifyId(WqeType wqeType, u64 &w
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportIbverbs::TxSendWqe(void *dstMemPtr, const void *srcMemPtr, u64 srcMemSize,
-                                       Stream &stream, WqeType wqeType)
+HcclResult TransportIbverbs::TxSendWqe(
+    void *dstMemPtr, const void *srcMemPtr, u64 srcMemSize, Stream &stream, WqeType wqeType)
 {
     if (machinePara_.nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE && !useAtomicWrite_) {
         struct SgList list = {0};
@@ -1604,7 +1648,7 @@ HcclResult TransportIbverbs::TxSendWqe(void *dstMemPtr, const void *srcMemPtr, u
         wr.bufList = &list;
         wr.bufNum = 1; /* 此处list只有一个，设置为1 */
         wr.dstAddr = static_cast<u64>(reinterpret_cast<uintptr_t>(dstMemPtr));
-        wr.op = 0; /* RDMA_WRITE: 0 */
+        wr.op = 0;     /* RDMA_WRITE: 0 */
         wr.sendFlag = fence_ ? (RA_SEND_SIGNALED | RA_SEND_FENCE) : RA_SEND_SIGNALED;
         fence_ = false;
 
@@ -1643,8 +1687,7 @@ HcclResult TransportIbverbs::TxSendWqe(void *dstMemPtr, const void *srcMemPtr, u
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportIbverbs::TxSendNotifyWqe(MemMsg& memMsg, const void *srcMemPtr, u64 srcMemSize,
-                                       Stream &stream)
+HcclResult TransportIbverbs::TxSendNotifyWqe(MemMsg &memMsg, const void *srcMemPtr, u64 srcMemSize, Stream &stream)
 {
     if (machinePara_.nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE && !useAtomicWrite_) {
         struct SgList list = {0};
@@ -1655,7 +1698,7 @@ HcclResult TransportIbverbs::TxSendNotifyWqe(MemMsg& memMsg, const void *srcMemP
         wr.bufList = &list;
         wr.bufNum = 1; /* 此处list只有一个，设置为1 */
         wr.dstAddr = static_cast<u64>(reinterpret_cast<uintptr_t>(memMsg.addr));
-        wr.op = 0; /* RDMA_WRITE: 0 */
+        wr.op = 0;     /* RDMA_WRITE: 0 */
         wr.sendFlag = fence_ ? (RA_SEND_SIGNALED | RA_SEND_FENCE) : RA_SEND_SIGNALED;
         fence_ = false;
 
@@ -1686,32 +1729,33 @@ HcclResult TransportIbverbs::TxSendNotifyWqe(MemMsg& memMsg, const void *srcMemP
 HcclResult TransportIbverbs::RxAsync(UserMemType srcMemType, u64 srcOffset, void *dst, u64 len, Stream &stream)
 {
     u32 actualMultiQpNum = 1;
-    const u32 KByteToByte = 1024;  // 1024 多QP阈值单位是KB
+    const u32 KByteToByte = 1024; // 1024 多QP阈值单位是KB
     if (len / qpsPerConnection_ > GetExternalInputMultiQpThreshold() * KByteToByte) {
         actualMultiQpNum = qpsPerConnection_;
     } else {
         u32 quotient = len / (GetExternalInputMultiQpThreshold() * KByteToByte);
-        u32 remainder =  len % (GetExternalInputMultiQpThreshold() * KByteToByte);
+        u32 remainder = len % (GetExternalInputMultiQpThreshold() * KByteToByte);
         actualMultiQpNum = quotient + (remainder != 0 ? 1 : 0);
     }
     // 等待TS把任务处理完成
-    HCCL_DEBUG("[TransportIbverbs][RxAsync] UseMultiQp[%d] actualMultiQpNum[%u], RX dst[%p] len[%llu] srcOffset[%llu]", UseMultiQp(), actualMultiQpNum, dst, len, srcOffset);
+    HCCL_DEBUG("[TransportIbverbs][RxAsync] UseMultiQp[%d] actualMultiQpNum[%u], RX dst[%p] len[%llu] srcOffset[%llu]",
+        UseMultiQp(), actualMultiQpNum, dst, len, srcOffset);
     if (UseMultiQp() && actualMultiQpNum != 1 && actualMultiQpNum <= qpsPerConnection_ && len != 0) {
         for (u32 i = 0; i < actualMultiQpNum; i++) {
             CHK_RET(LocalIpcNotify::Wait(stream, dispatcher_, multiQpDataNotify_[i], INVALID_VALUE_STAGE,
                 NOTIFY_INVALID_WAIT_TIME, machinePara_.localUserrank, machinePara_.remoteWorldRank));
         }
     } else {
-        CHK_RET(LocalIpcNotify::Wait(stream, dispatcher_, dataNotify_, INVALID_VALUE_STAGE,
-            NOTIFY_INVALID_WAIT_TIME, machinePara_.localUserrank, machinePara_.remoteWorldRank));
+        CHK_RET(LocalIpcNotify::Wait(stream, dispatcher_, dataNotify_, INVALID_VALUE_STAGE, NOTIFY_INVALID_WAIT_TIME,
+            machinePara_.localUserrank, machinePara_.remoteWorldRank));
     }
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportIbverbs::RxAsync(std::vector<RxMemoryInfo>& rxMems, Stream &stream)
+HcclResult TransportIbverbs::RxAsync(std::vector<RxMemoryInfo> &rxMems, Stream &stream)
 {
     CHK_PRT_RET(rxMems.size() == 0, HCCL_ERROR("Invalid rxMem size[%u]", rxMems.size()), HCCL_E_PARA);
-    for (auto& mem : rxMems) {
+    for (auto &mem : rxMems) {
         HCCL_DEBUG("RX dst[%p] len[%llu] dstOffset[%llu]", mem.dst, mem.len, mem.srcOffset);
     }
     u32 maxLength = 0;
@@ -1742,8 +1786,7 @@ HcclResult TransportIbverbs::TxWaitDone(Stream &stream)
 HcclResult TransportIbverbs::TxAck(Stream &stream)
 {
     CHK_RET(TxSendWqe(remoteMemMsg_[static_cast<u32>(MemType::ACK_NOTIFY_MEM)].addr,
-        notifyValueMem_[machinePara_.deviceLogicId].ptr(), notifySize_,
-        stream, WqeType::WQE_TYPE_ACK_NOTIFY));
+        notifyValueMem_[machinePara_.deviceLogicId].ptr(), notifySize_, stream, WqeType::WQE_TYPE_ACK_NOTIFY));
     return HCCL_SUCCESS;
 }
 
@@ -1753,8 +1796,9 @@ HcclResult TransportIbverbs::RxAck(Stream &stream)
     HcclResult ret = LocalIpcNotify::Wait(stream, dispatcher_, ackNotify_, INVALID_VALUE_STAGE,
         NOTIFY_INVALID_WAIT_TIME, machinePara_.localUserrank, machinePara_.remoteWorldRank);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[TransportIbverbs][RxAck]errNo[0x%016llx] In lbv exp rx ack, signal wait failed. ",
-            HCCL_ERROR_CODE(ret)), ret);
+        HCCL_ERROR(
+            "[TransportIbverbs][RxAck]errNo[0x%016llx] In lbv exp rx ack, signal wait failed. ", HCCL_ERROR_CODE(ret)),
+        ret);
 
     return HCCL_SUCCESS;
 }
@@ -1766,9 +1810,10 @@ HcclResult TransportIbverbs::TxDataSignal(Stream &stream)
     HcclResult ret = TxSendWqe(remoteNotifyaddr, notifyValueMem_[machinePara_.deviceLogicId].ptr(), notifySize_, stream,
         WqeType::WQE_TYPE_DATA_NOTIFY);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[TransportIbverbs][TxDataSignal]errNo[0x%016llx] In ibv tx data signal, send notify "\
-        "wqe failed. dstMemPtr[%p], srcMemPtr[%p], srcMemSize[%llu Byte]", HCCL_ERROR_CODE(ret), remoteNotifyaddr,
-        notifyValueMem_[machinePara_.deviceLogicId].ptr(), notifySize_), ret);
+        HCCL_ERROR("[TransportIbverbs][TxDataSignal]errNo[0x%016llx] In ibv tx data signal, send notify "
+                   "wqe failed. dstMemPtr[%p], srcMemPtr[%p], srcMemSize[%llu Byte]",
+            HCCL_ERROR_CODE(ret), remoteNotifyaddr, notifyValueMem_[machinePara_.deviceLogicId].ptr(), notifySize_),
+        ret);
     // 每发送一个data notify wqe, count 自增
     return HCCL_SUCCESS;
 }
@@ -1776,30 +1821,30 @@ HcclResult TransportIbverbs::TxDataSignal(Stream &stream)
 HcclResult TransportIbverbs::RxDataSignal(Stream &stream)
 {
     /* 等待send_ready_event事件 */
-    CHK_RET(LocalIpcNotify::Wait(stream, dispatcher_, dataNotify_, INVALID_VALUE_STAGE,
-        NOTIFY_INVALID_WAIT_TIME, machinePara_.localUserrank, machinePara_.remoteWorldRank));
+    CHK_RET(LocalIpcNotify::Wait(stream, dispatcher_, dataNotify_, INVALID_VALUE_STAGE, NOTIFY_INVALID_WAIT_TIME,
+        machinePara_.localUserrank, machinePara_.remoteWorldRank));
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportIbverbs::CreateNotifyVectorBuffer(std::vector<std::shared_ptr<LocalIpcNotify>> &notifyVector,
-    u8*& exchangeDataPtr, u64& exchangeDataBlankSize)
+HcclResult TransportIbverbs::CreateNotifyVectorBuffer(
+    std::vector<std::shared_ptr<LocalIpcNotify>> &notifyVector, u8 *&exchangeDataPtr, u64 &exchangeDataBlankSize)
 {
-    NotifyLoadType notifyLoadType = machinePara_.isAicpuModeEn ?
-        NotifyLoadType::DEVICE_NOTIFY : NotifyLoadType::HOST_NOTIFY;
+    NotifyLoadType notifyLoadType
+        = machinePara_.isAicpuModeEn ? NotifyLoadType::DEVICE_NOTIFY : NotifyLoadType::HOST_NOTIFY;
     for (u32 i = 0; i < notifyNum_; i++) {
         std::shared_ptr<LocalIpcNotify> oneNotify;
-        CHK_RET(CreateNotifyBuffer(oneNotify, MemType::MUILT_NOTIFY_MEM, exchangeDataPtr,
-            exchangeDataBlankSize, notifyLoadType));
+        CHK_RET(CreateNotifyBuffer(
+            oneNotify, MemType::MUILT_NOTIFY_MEM, exchangeDataPtr, exchangeDataBlankSize, notifyLoadType));
         notifyVector.push_back(std::move(oneNotify));
     }
     return HCCL_SUCCESS;
 }
 
 HcclResult TransportIbverbs::CreateNotifyBuffer(std::shared_ptr<LocalIpcNotify> &localNotify, MemType notifyType,
-    u8*& exchangeDataPtr, u64& exchangeDataBlankSize, NotifyLoadType notifyLoadType)
+    u8 *&exchangeDataPtr, u64 &exchangeDataBlankSize, NotifyLoadType notifyLoadType)
 {
     u64 offset = 0;
-    u64 notifyBaseVa = 0;  // notify寄存器虚拟地址
+    u64 notifyBaseVa = 0; // notify寄存器虚拟地址
     u64 notifyTotalSize = 0;
     u32 notifyKey = 0;
 
@@ -1807,8 +1852,10 @@ HcclResult TransportIbverbs::CreateNotifyBuffer(std::shared_ptr<LocalIpcNotify> 
 
     /* 获取notify寄存器虚拟基地址、大小, 物理地址回传值为空 */
     struct MrInfoT mrInfo = {nullptr};
-    if (machinePara_.isAicpuModeEn || (machinePara_.nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE &&
-        machinePara_.deviceType != localDeviceType)) {
+    if (machinePara_.isAicpuModeEn
+        || (machinePara_.nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE
+            && machinePara_.deviceType != localDeviceType)
+        || isHybridMode_) {
         CHK_RET(HrtRaGetNotifyMrInfo(machinePara_.localDeviceId, nicRdmaHandle_, &mrInfo));
         notifyBaseVa = reinterpret_cast<u64>(mrInfo.addr);
         notifyTotalSize = mrInfo.size;
@@ -1816,8 +1863,9 @@ HcclResult TransportIbverbs::CreateNotifyBuffer(std::shared_ptr<LocalIpcNotify> 
     } else {
         u64 notifyBaseVaTmp = 0;
         notifyBaseVaTmp = notifyBaseVa;
-        CHK_RET(HrtRaGetNotifyBaseAddr(nicRdmaHandle_, &notifyBaseVa, &notifyTotalSize,
-            [this]() -> bool { return this->GetStopFlag(); }));
+        CHK_RET(HrtRaGetNotifyBaseAddr(nicRdmaHandle_, &notifyBaseVa, &notifyTotalSize, [this]() -> bool {
+            return this->GetStopFlag();
+        }));
         CHK_PRT_RET(((notifyBaseVaTmp != 0) && (notifyBaseVaTmp != notifyBaseVa)),
             HCCL_ERROR("[Create][NotifyBuffer]In lbv exp init, get base addr failed. notify base va has changed."),
             HCCL_E_INTERNAL);
@@ -1848,12 +1896,13 @@ HcclResult TransportIbverbs::CreateNotifyBuffer(std::shared_ptr<LocalIpcNotify> 
     u64 notifyVa = notifyBaseVa + offset;
     CHK_PRT_RET(machinePara_.enableAtomicWrite && (notifyVa % NOTIFY_VA_ALIGN_EIGHT != 0),
         HCCL_ERROR("%s notifyVa[0x%llx] not %u aligned, notifyBaseVa[0x%llx], offset[0x%llx], enableAtomicWrite[%d]",
-        __func__, notifyVa, NOTIFY_VA_ALIGN_EIGHT, notifyBaseVa, offset, machinePara_.enableAtomicWrite),
+            __func__, notifyVa, NOTIFY_VA_ALIGN_EIGHT, notifyBaseVa, offset, machinePara_.enableAtomicWrite),
         HCCL_E_INTERNAL);
 
-    HCCL_INFO("%s notifyBaseVa=0x%llx, notifyTotalSize=0x%x, offset=0x%llx, notifyVa=0x%llx machineType=%d, "\
-        "notify=%p, notifyType=%d, notifyId=%u, offsetAlignSize[%u]", __func__, notifyBaseVa, notifyTotalSize, offset,
-        notifyVa, machinePara_.machineType, notify, notifyType, localNotify->notifyId_, offsetAlignSize);
+    HCCL_INFO("%s notifyBaseVa=0x%llx, notifyTotalSize=0x%x, offset=0x%llx, notifyVa=0x%llx machineType=%d, "
+              "notify=%p, notifyType=%d, notifyId=%u, offsetAlignSize[%u]",
+        __func__, notifyBaseVa, notifyTotalSize, offset, notifyVa, machinePara_.machineType, notify, notifyType,
+        localNotify->notifyId_, offsetAlignSize);
 
     if (notifyType != MULTI_QP_DATA_NOTIFY_MEM) {
         /* notify地址注册为mr, 在roce驱动中注册 */
@@ -1869,7 +1918,7 @@ HcclResult TransportIbverbs::CreateNotifyBuffer(std::shared_ptr<LocalIpcNotify> 
 
         /* 拼接要发送的数据 */
         CHK_SAFETY_FUNC_RET(memcpy_s(exchangeDataPtr, exchangeDataBlankSize,
-            reinterpret_cast<void*>(&memMsg_[static_cast<u32>(notifyType)]), sizeof(MemMsg)));
+            reinterpret_cast<void *>(&memMsg_[static_cast<u32>(notifyType)]), sizeof(MemMsg)));
     } else {
         MemMsg memMsg;
         memMsg.mrRegFlag = 0;
@@ -1879,8 +1928,8 @@ HcclResult TransportIbverbs::CreateNotifyBuffer(std::shared_ptr<LocalIpcNotify> 
         memMsg.offset = offset;
         memMsg.notifyId = localNotify->notifyId_;
         multiQpDataNotifyMemMsg_.push_back(std::move(memMsg));
-        CHK_SAFETY_FUNC_RET(memcpy_s(exchangeDataPtr, exchangeDataBlankSize,
-            reinterpret_cast<void*>(&memMsg), sizeof(MemMsg)));
+        CHK_SAFETY_FUNC_RET(
+            memcpy_s(exchangeDataPtr, exchangeDataBlankSize, reinterpret_cast<void *>(&memMsg), sizeof(MemMsg)));
     }
 
     exchangeDataPtr += sizeof(MemMsg);
@@ -1889,7 +1938,7 @@ HcclResult TransportIbverbs::CreateNotifyBuffer(std::shared_ptr<LocalIpcNotify> 
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportIbverbs::RegUserMem(MemType memType, u8*& exchangeDataPtr, u64& exchangeDataBlankSize)
+HcclResult TransportIbverbs::RegUserMem(MemType memType, u8 *&exchangeDataPtr, u64 &exchangeDataBlankSize)
 {
     void *memPtr = nullptr;
     u64 memSize;
@@ -1934,7 +1983,7 @@ HcclResult TransportIbverbs::RegUserMem(MemType memType, u8*& exchangeDataPtr, u
     memMsg_[static_cast<u32>(memType)].lkey = mrInfo.lkey;
 
     CHK_SAFETY_FUNC_RET(memcpy_s(exchangeDataPtr, exchangeDataBlankSize,
-        reinterpret_cast<void*>(&memMsg_[static_cast<u32>(memType)]), sizeof(MemMsg)));
+        reinterpret_cast<void *>(&memMsg_[static_cast<u32>(memType)]), sizeof(MemMsg)));
 
     exchangeDataPtr += sizeof(MemMsg);
     exchangeDataBlankSize -= sizeof(MemMsg);
@@ -1944,8 +1993,8 @@ HcclResult TransportIbverbs::RegUserMem(MemType memType, u8*& exchangeDataPtr, u
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportIbverbs::RegCustomUserMemWithMsg(void *addr, u64 size, 
-    MemMsg &memMsg, u8 *&exchangeDataPtr, u64 &exchangeDataBlankSize)
+HcclResult TransportIbverbs::RegCustomUserMemWithMsg(
+    void *addr, u64 size, MemMsg &memMsg, u8 *&exchangeDataPtr, u64 &exchangeDataBlankSize)
 {
     struct MrInfoT mrInfo = {nullptr};
     mrInfo.addr = addr;
@@ -1966,8 +2015,8 @@ HcclResult TransportIbverbs::RegCustomUserMemWithMsg(void *addr, u64 size,
     memMsg.len = size;
     memMsg.lkey = mrInfo.lkey;
 
-    CHK_SAFETY_FUNC_RET(memcpy_s(exchangeDataPtr, exchangeDataBlankSize,
-        reinterpret_cast<void*>(&memMsg), sizeof(MemMsg)));
+    CHK_SAFETY_FUNC_RET(
+        memcpy_s(exchangeDataPtr, exchangeDataBlankSize, reinterpret_cast<void *>(&memMsg), sizeof(MemMsg)));
 
     exchangeDataPtr += sizeof(MemMsg);
     exchangeDataBlankSize -= sizeof(MemMsg);
@@ -1980,40 +2029,37 @@ HcclResult TransportIbverbs::RegCustomUserMemWithMsg(void *addr, u64 size,
 HcclResult TransportIbverbs::RegCustomUserMem(u8 *&exchangeDataPtr, u64 &exchangeDataBlankSize)
 {
     u32 deviceMemNum = machinePara_.userDeviceMem.size();
-    s32 sRet = memcpy_s(exchangeDataPtr, sizeof(u32), 
-        reinterpret_cast<void*>(&deviceMemNum), sizeof(u32));
+    s32 sRet = memcpy_s(exchangeDataPtr, sizeof(u32), reinterpret_cast<void *>(&deviceMemNum), sizeof(u32));
     CHK_PRT_RET(sRet != EOK,
         HCCL_ERROR("[Set][LocalMem]errNo[0x%016llx] memory copy failed. errorno[%d], params:dstMaxSize[%zu],cnt[%zu]",
-        HCCL_ERROR_CODE(HCCL_E_MEMORY), sRet, sizeof(u32), sizeof(u32)), HCCL_E_MEMORY);
+            HCCL_ERROR_CODE(HCCL_E_MEMORY), sRet, sizeof(u32), sizeof(u32)),
+        HCCL_E_MEMORY);
     exchangeDataPtr += sizeof(u32);
     exchangeDataBlankSize -= sizeof(u32);
 
     userDeviceMemMsg_.resize(deviceMemNum);
     for (u32 i = 0; i < deviceMemNum; i++) {
-        RegCustomUserMemWithMsg(machinePara_.userDeviceMem[i].ptr(), 
-            machinePara_.userDeviceMem[i].size(), userDeviceMemMsg_[i], 
-            exchangeDataPtr, exchangeDataBlankSize);
+        RegCustomUserMemWithMsg(machinePara_.userDeviceMem[i].ptr(), machinePara_.userDeviceMem[i].size(),
+            userDeviceMemMsg_[i], exchangeDataPtr, exchangeDataBlankSize);
     }
-    
+
     u32 hostMemNum = machinePara_.userHostMem.size();
-    sRet = memcpy_s(exchangeDataPtr, sizeof(u32), 
-        reinterpret_cast<void*>(&hostMemNum), sizeof(u32));
+    sRet = memcpy_s(exchangeDataPtr, sizeof(u32), reinterpret_cast<void *>(&hostMemNum), sizeof(u32));
     CHK_PRT_RET(sRet != EOK,
         HCCL_ERROR("[Set][LocalMem]errNo[0x%016llx] memory copy failed. errorno[%d], params:dstMaxSize[%zu],cnt[%zu]",
-        HCCL_ERROR_CODE(HCCL_E_MEMORY), sRet, sizeof(u32), sizeof(u32)), HCCL_E_MEMORY);
+            HCCL_ERROR_CODE(HCCL_E_MEMORY), sRet, sizeof(u32), sizeof(u32)),
+        HCCL_E_MEMORY);
     exchangeDataPtr += sizeof(u32);
     exchangeDataBlankSize -= sizeof(u32);
 
     userHostMemMsg_.resize(hostMemNum);
     for (u32 i = 0; i < hostMemNum; i++) {
-        RegCustomUserMemWithMsg(machinePara_.userHostMem[i].ptr(), 
-            machinePara_.userHostMem[i].size(), userHostMemMsg_[i], 
-            exchangeDataPtr, exchangeDataBlankSize);
+        RegCustomUserMemWithMsg(machinePara_.userHostMem[i].ptr(), machinePara_.userHostMem[i].size(),
+            userHostMemMsg_[i], exchangeDataPtr, exchangeDataBlankSize);
     }
 
     return HCCL_SUCCESS;
 }
-
 
 HcclResult TransportIbverbs::GetMemInfo(UserMemType memType, void **dstMemPtr, u64 *dstMemSize)
 {
@@ -2038,68 +2084,77 @@ HcclResult TransportIbverbs::GetMemInfo(UserMemType memType, void **dstMemPtr, u
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportIbverbs::GetRemoteAddr(MemType memType, u8*& exchangeDataPtr, u64& exchangeDataBlankSize)
+HcclResult TransportIbverbs::GetRemoteAddr(MemType memType, u8 *&exchangeDataPtr, u64 &exchangeDataBlankSize)
 {
     if (memType != MULTI_QP_DATA_NOTIFY_MEM) {
-        s32 sRet = memcpy_s(&remoteMemMsg_[static_cast<u32>(memType)],
-            sizeof(MemMsg), exchangeDataPtr, sizeof(MemMsg));
-        CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[Get][RemoteAddr]errNo[0x%016llx] In lbv exp get remote addr, "\
-            "memcpy failed. errorno[%d], params:destMaxSize[%zu],count[%zu]",
-            HCCL_ERROR_CODE(HCCL_E_MEMORY), sRet, sizeof(MemMsg), sizeof(MemMsg)), HCCL_E_MEMORY);
+        s32 sRet = memcpy_s(&remoteMemMsg_[static_cast<u32>(memType)], sizeof(MemMsg), exchangeDataPtr, sizeof(MemMsg));
+        CHK_PRT_RET(sRet != EOK,
+            HCCL_ERROR("[Get][RemoteAddr]errNo[0x%016llx] In lbv exp get remote addr, "
+                       "memcpy failed. errorno[%d], params:destMaxSize[%zu],count[%zu]",
+                HCCL_ERROR_CODE(HCCL_E_MEMORY), sRet, sizeof(MemMsg), sizeof(MemMsg)),
+            HCCL_E_MEMORY);
         CHK_PTR_NULL(remoteMemMsg_[static_cast<u32>(memType)].addr);
     } else {
         MemMsg memMsg;
         s32 sRet = memcpy_s(&memMsg, sizeof(MemMsg), exchangeDataPtr, sizeof(MemMsg));
-        CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[Get][RemoteAddr]errNo[0x%016llx] In lbv exp get remote addr, "\
-            "memcpy failed. errorno[%d], params:destMaxSize[%zu],count[%zu]",
-            HCCL_ERROR_CODE(HCCL_E_MEMORY), sRet, sizeof(MemMsg), sizeof(MemMsg)), HCCL_E_MEMORY);
+        CHK_PRT_RET(sRet != EOK,
+            HCCL_ERROR("[Get][RemoteAddr]errNo[0x%016llx] In lbv exp get remote addr, "
+                       "memcpy failed. errorno[%d], params:destMaxSize[%zu],count[%zu]",
+                HCCL_ERROR_CODE(HCCL_E_MEMORY), sRet, sizeof(MemMsg), sizeof(MemMsg)),
+            HCCL_E_MEMORY);
         CHK_PTR_NULL(memMsg.addr);
         multiQpDataNotifyRemoteMemMsg_.push_back(std::move(memMsg));
     }
 
     exchangeDataPtr += sizeof(MemMsg);
     exchangeDataBlankSize -= sizeof(MemMsg);
-    HCCL_INFO("GetRemoteAddr success: memType=%d, addr=%p len=%llu, notifyId=%u",
-        static_cast<int32_t>(memType), remoteMemMsg_[static_cast<u32>(memType)].addr,
-        remoteMemMsg_[static_cast<u32>(memType)].len, remoteMemMsg_[static_cast<u32>(memType)].notifyId);
+    HCCL_INFO("GetRemoteAddr success: memType=%d, addr=%p len=%llu, notifyId=%u", static_cast<int32_t>(memType),
+        remoteMemMsg_[static_cast<u32>(memType)].addr, remoteMemMsg_[static_cast<u32>(memType)].len,
+        remoteMemMsg_[static_cast<u32>(memType)].notifyId);
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportIbverbs::GetIndOpRemoteAddr(u8*& exchangeDataPtr, u64& exchangeDataBlankSize)
+HcclResult TransportIbverbs::GetIndOpRemoteAddr(u8 *&exchangeDataPtr, u64 &exchangeDataBlankSize)
 {
     u32 remoteDmemNum = 0;
-    s32 sRet = memcpy_s(reinterpret_cast<void*>(&remoteDmemNum), sizeof(u32), exchangeDataPtr, sizeof(u32));
+    s32 sRet = memcpy_s(reinterpret_cast<void *>(&remoteDmemNum), sizeof(u32), exchangeDataPtr, sizeof(u32));
     CHK_PRT_RET(sRet != EOK,
         HCCL_ERROR("[Get][RemoteMem]errNo[0x%016llx] memory copy failed. errorno[%d], params:dstMaxSize[%zu],cnt[%zu]",
-        HCCL_ERROR_CODE(HCCL_E_MEMORY), sRet, sizeof(u32), sizeof(u32)), HCCL_E_MEMORY);
+            HCCL_ERROR_CODE(HCCL_E_MEMORY), sRet, sizeof(u32), sizeof(u32)),
+        HCCL_E_MEMORY);
     exchangeDataPtr += sizeof(u32);
     exchangeDataBlankSize -= sizeof(u32);
 
     remoteUserDeviceMemMsg_.resize(remoteDmemNum);
     for (u32 i = 0; i < remoteDmemNum; i++) {
         sRet = memcpy_s(&remoteUserDeviceMemMsg_[i], sizeof(MemMsg), exchangeDataPtr, sizeof(MemMsg));
-        CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[Get][GetCustomRemoteAddr]errNo[0x%016llx] In lbv exp get remote addr, "\
-            "memcpy failed. errorno[%d], params:destMaxSize[%zu],count[%zu]",
-            HCCL_ERROR_CODE(HCCL_E_MEMORY), sRet, sizeof(MemMsg), sizeof(MemMsg)), HCCL_E_MEMORY);
+        CHK_PRT_RET(sRet != EOK,
+            HCCL_ERROR("[Get][GetCustomRemoteAddr]errNo[0x%016llx] In lbv exp get remote addr, "
+                       "memcpy failed. errorno[%d], params:destMaxSize[%zu],count[%zu]",
+                HCCL_ERROR_CODE(HCCL_E_MEMORY), sRet, sizeof(MemMsg), sizeof(MemMsg)),
+            HCCL_E_MEMORY);
         exchangeDataPtr += sizeof(MemMsg);
         exchangeDataBlankSize -= sizeof(MemMsg);
         CHK_PTR_NULL(remoteUserDeviceMemMsg_[i].addr);
     }
 
     u32 remoteHmemNum = 0;
-    sRet = memcpy_s(reinterpret_cast<void*>(&remoteHmemNum), sizeof(u32), exchangeDataPtr, sizeof(u32));
+    sRet = memcpy_s(reinterpret_cast<void *>(&remoteHmemNum), sizeof(u32), exchangeDataPtr, sizeof(u32));
     CHK_PRT_RET(sRet != EOK,
         HCCL_ERROR("[Get][RemoteMem]errNo[0x%016llx] memory copy failed. errorno[%d], params:dstMaxSize[%zu],cnt[%zu]",
-        HCCL_ERROR_CODE(HCCL_E_MEMORY), sRet, sizeof(u32), sizeof(u32)), HCCL_E_MEMORY);
+            HCCL_ERROR_CODE(HCCL_E_MEMORY), sRet, sizeof(u32), sizeof(u32)),
+        HCCL_E_MEMORY);
     exchangeDataPtr += sizeof(u32);
     exchangeDataBlankSize -= sizeof(u32);
 
     remoteUserHostMemMsg_.resize(remoteHmemNum);
     for (u32 i = 0; i < remoteHmemNum; i++) {
         sRet = memcpy_s(&remoteUserHostMemMsg_[i], sizeof(MemMsg), exchangeDataPtr, sizeof(MemMsg));
-        CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[Get][GetCustomRemoteAddr]errNo[0x%016llx] In lbv exp get remote addr, "\
-            "memcpy failed. errorno[%d], params:destMaxSize[%zu],count[%zu]",
-            HCCL_ERROR_CODE(HCCL_E_MEMORY), sRet, sizeof(MemMsg), sizeof(MemMsg)), HCCL_E_MEMORY);
+        CHK_PRT_RET(sRet != EOK,
+            HCCL_ERROR("[Get][GetCustomRemoteAddr]errNo[0x%016llx] In lbv exp get remote addr, "
+                       "memcpy failed. errorno[%d], params:destMaxSize[%zu],count[%zu]",
+                HCCL_ERROR_CODE(HCCL_E_MEMORY), sRet, sizeof(MemMsg), sizeof(MemMsg)),
+            HCCL_E_MEMORY);
         exchangeDataPtr += sizeof(MemMsg);
         exchangeDataBlankSize -= sizeof(MemMsg);
         CHK_PTR_NULL(remoteUserHostMemMsg_[i].addr);
@@ -2108,12 +2163,14 @@ HcclResult TransportIbverbs::GetIndOpRemoteAddr(u8*& exchangeDataPtr, u64& excha
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportIbverbs::GetRemoteNotifyAddr(u8*& exchangeDataPtr, u64& exchangeDataBlankSize, MemMsg& memMsg)
+HcclResult TransportIbverbs::GetRemoteNotifyAddr(u8 *&exchangeDataPtr, u64 &exchangeDataBlankSize, MemMsg &memMsg)
 {
     s32 sRet = memcpy_s(&memMsg, sizeof(MemMsg), exchangeDataPtr, sizeof(MemMsg));
-    CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[Get][GetRemoteNotifyAddr]errNo[0x%016llx] In lbv exp get remote addr, "\
-        "memcpy failed. errorno[%d], params:destMaxSize[%zu],count[%zu]",
-        HCCL_ERROR_CODE(HCCL_E_MEMORY), sRet, sizeof(MemMsg), sizeof(MemMsg)), HCCL_E_MEMORY);
+    CHK_PRT_RET(sRet != EOK,
+        HCCL_ERROR("[Get][GetRemoteNotifyAddr]errNo[0x%016llx] In lbv exp get remote addr, "
+                   "memcpy failed. errorno[%d], params:destMaxSize[%zu],count[%zu]",
+            HCCL_ERROR_CODE(HCCL_E_MEMORY), sRet, sizeof(MemMsg), sizeof(MemMsg)),
+        HCCL_E_MEMORY);
 
     exchangeDataPtr += sizeof(MemMsg);
     exchangeDataBlankSize -= sizeof(MemMsg);
@@ -2132,12 +2189,12 @@ HcclResult TransportIbverbs::CreateNotifyValueBuffer()
     if (notifyValueMem_[machinePara_.deviceLogicId].ptr() == nullptr) {
         u64 notifyVaule = 1; // notify值写1表示record
         CHK_RET(DeviceMem::alloc(notifyValueMem_[machinePara_.deviceLogicId], notifyValueSize_));
-        HCCL_DEBUG("create notify value buffer[%p], size[%u]", notifyValueMem_[machinePara_.deviceLogicId].ptr(),
-            notifySize_);
+        HCCL_DEBUG(
+            "create notify value buffer[%p], size[%u]", notifyValueMem_[machinePara_.deviceLogicId].ptr(), notifySize_);
 
         CHK_RET(hrtMemSyncCopy(notifyValueMem_[machinePara_.deviceLogicId].ptr(),
-            notifyValueMem_[machinePara_.deviceLogicId].size(), &notifyVaule,
-            notifySize_, HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
+            notifyValueMem_[machinePara_.deviceLogicId].size(), &notifyVaule, notifySize_,
+            HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
     }
     lock.unlock();
 
@@ -2145,11 +2202,11 @@ HcclResult TransportIbverbs::CreateNotifyValueBuffer()
     mrInfo.addr = notifyValueMem_[machinePara_.deviceLogicId].ptr();
     mrInfo.size = notifySize_;
     mrInfo.access = access_;
-    
+
     for (u32 i = 0; i < combineQpHandles_.size(); i++) {
         CHK_RET(HrtRaMrReg(combineQpHandles_[i].qpHandle, &mrInfo));
     }
-    
+
     if (UseMultiQp()) {
         for (u32 i = 0; i < qpsPerConnection_; i++) {
             CHK_RET(HrtRaMrReg(multiCombineQpHandles_[i].qpHandle, &mrInfo));
@@ -2183,7 +2240,8 @@ HcclResult TransportIbverbs::TxPrepare(Stream &stream)
         NOTIFY_INVALID_WAIT_TIME, machinePara_.localUserrank, machinePara_.remoteWorldRank);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[TransportIbverbs][TxPrepare]errNo[0x%016llx] In lbv exp rx ack, signal wait failed. ",
-            HCCL_ERROR_CODE(ret)), ret);
+            HCCL_ERROR_CODE(ret)),
+        ret);
 
     return HCCL_SUCCESS;
 }
@@ -2192,8 +2250,7 @@ HcclResult TransportIbverbs::TxPrepare(Stream &stream)
 HcclResult TransportIbverbs::RxPrepare(Stream &stream)
 {
     CHK_RET(TxSendWqe(remoteMemMsg_[static_cast<u32>(MemType::ACK_NOTIFY_MEM)].addr,
-        notifyValueMem_[machinePara_.deviceLogicId].ptr(), notifySize_,
-        stream, WqeType::WQE_TYPE_ACK_NOTIFY));
+        notifyValueMem_[machinePara_.deviceLogicId].ptr(), notifySize_, stream, WqeType::WQE_TYPE_ACK_NOTIFY));
     return HCCL_SUCCESS;
 }
 
@@ -2226,16 +2283,16 @@ HcclResult TransportIbverbs::TxDone(Stream &stream)
     CHK_RET(TxSendWqe(remoteMemMsg_[static_cast<u32>(MemType::DATA_NOTIFY_MEM)].addr,
         notifyValueMem_[machinePara_.deviceLogicId].ptr(), notifySize_, stream, WqeType::WQE_TYPE_DATA_NOTIFY));
     // 接收数据接收确认notify
-    CHK_RET(LocalIpcNotify::Wait(stream, dispatcher_, dataAckNotify_, INVALID_VALUE_STAGE,
-        NOTIFY_INVALID_WAIT_TIME, machinePara_.localUserrank, machinePara_.remoteWorldRank));
+    CHK_RET(LocalIpcNotify::Wait(stream, dispatcher_, dataAckNotify_, INVALID_VALUE_STAGE, NOTIFY_INVALID_WAIT_TIME,
+        machinePara_.localUserrank, machinePara_.remoteWorldRank));
     return HCCL_SUCCESS;
 }
 
 HcclResult TransportIbverbs::RxDone(Stream &stream)
 {
     // 接收数据接收确认notify
-    CHK_RET(LocalIpcNotify::Wait(stream, dispatcher_, dataNotify_, INVALID_VALUE_STAGE,
-        NOTIFY_INVALID_WAIT_TIME, machinePara_.localUserrank, machinePara_.remoteWorldRank));
+    CHK_RET(LocalIpcNotify::Wait(stream, dispatcher_, dataNotify_, INVALID_VALUE_STAGE, NOTIFY_INVALID_WAIT_TIME,
+        machinePara_.localUserrank, machinePara_.remoteWorldRank));
 
     // 发送数据接收确认notify
     CHK_RET(TxSendWqe(remoteMemMsg_[static_cast<u32>(MemType::DATA_ACK_NOTIFY_MEM)].addr,
@@ -2246,15 +2303,14 @@ HcclResult TransportIbverbs::RxDone(Stream &stream)
 HcclResult TransportIbverbs::PostReady(Stream &stream)
 {
     CHK_RET(TxSendWqe(remoteMemMsg_[static_cast<u32>(MemType::ACK_NOTIFY_MEM)].addr,
-        notifyValueMem_[machinePara_.deviceLogicId].ptr(), notifySize_,
-        stream, WqeType::WQE_TYPE_ACK_NOTIFY));
+        notifyValueMem_[machinePara_.deviceLogicId].ptr(), notifySize_, stream, WqeType::WQE_TYPE_ACK_NOTIFY));
     return HCCL_SUCCESS;
 }
 
 HcclResult TransportIbverbs::WaitReady(Stream &stream)
 {
-    CHK_RET(LocalIpcNotify::Wait(stream, dispatcher_, ackNotify_, INVALID_VALUE_STAGE,
-        NOTIFY_INVALID_WAIT_TIME, machinePara_.localUserrank, machinePara_.remoteWorldRank));
+    CHK_RET(LocalIpcNotify::Wait(stream, dispatcher_, ackNotify_, INVALID_VALUE_STAGE, NOTIFY_INVALID_WAIT_TIME,
+        machinePara_.localUserrank, machinePara_.remoteWorldRank));
     return HCCL_SUCCESS;
 }
 
@@ -2265,17 +2321,18 @@ HcclResult TransportIbverbs::PostFin(Stream &stream)
     HcclResult ret = TxSendWqe(remoteNotifyaddr, notifyValueMem_[machinePara_.deviceLogicId].ptr(), notifySize_, stream,
         WqeType::WQE_TYPE_DATA_NOTIFY);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[TransportIbverbs][PostFin]errNo[0x%016llx] In ibv tx data signal, send notify "\
-        "wqe failed. dstMemPtr[%p], srcMemPtr[%p], srcMemSize[%llu]", HCCL_ERROR_CODE(ret), remoteNotifyaddr,
-        notifyValueMem_[machinePara_.deviceLogicId].ptr(), notifySize_), ret);
+        HCCL_ERROR("[TransportIbverbs][PostFin]errNo[0x%016llx] In ibv tx data signal, send notify "
+                   "wqe failed. dstMemPtr[%p], srcMemPtr[%p], srcMemSize[%llu]",
+            HCCL_ERROR_CODE(ret), remoteNotifyaddr, notifyValueMem_[machinePara_.deviceLogicId].ptr(), notifySize_),
+        ret);
     // 每发送一个data notify wqe, count 自增
     return HCCL_SUCCESS;
 }
 
 HcclResult TransportIbverbs::WaitFin(Stream &stream)
 {
-    CHK_RET(LocalIpcNotify::Wait(stream, dispatcher_, dataNotify_, INVALID_VALUE_STAGE,
-        NOTIFY_INVALID_WAIT_TIME, machinePara_.localUserrank, machinePara_.remoteWorldRank));
+    CHK_RET(LocalIpcNotify::Wait(stream, dispatcher_, dataNotify_, INVALID_VALUE_STAGE, NOTIFY_INVALID_WAIT_TIME,
+        machinePara_.localUserrank, machinePara_.remoteWorldRank));
     return HCCL_SUCCESS;
 }
 
@@ -2288,8 +2345,8 @@ HcclResult TransportIbverbs::PostFinAck(Stream &stream)
 
 HcclResult TransportIbverbs::WaitFinAck(Stream &stream)
 {
-    CHK_RET(LocalIpcNotify::Wait(stream, dispatcher_, dataAckNotify_, INVALID_VALUE_STAGE,
-        NOTIFY_INVALID_WAIT_TIME, machinePara_.localUserrank, machinePara_.remoteWorldRank));
+    CHK_RET(LocalIpcNotify::Wait(stream, dispatcher_, dataAckNotify_, INVALID_VALUE_STAGE, NOTIFY_INVALID_WAIT_TIME,
+        machinePara_.localUserrank, machinePara_.remoteWorldRank));
     return HCCL_SUCCESS;
 }
 
@@ -2298,8 +2355,9 @@ HcclResult TransportIbverbs::Post(u32 notifyIdx, Stream &stream)
     // 校验notifyIdx有效性
     bool bRet = (notifyIdx >= notifyNum_);
     CHK_PRT_RET(bRet,
-        HCCL_ERROR("[TransportIbverbs][Post]notifyNum[%u], notifyIdx[%u] out of range[0, %u]", \
-        notifyNum_, notifyIdx, notifyNum_-1), HCCL_E_INTERNAL);
+        HCCL_ERROR("[TransportIbverbs][Post]notifyNum[%u], notifyIdx[%u] out of range[0, %u]", notifyNum_, notifyIdx,
+            notifyNum_ - 1),
+        HCCL_E_INTERNAL);
 
     // 每个QP发送一个指定idx的notify
     for (u32 i = 0; i < qpsPerConnection_; i++) {
@@ -2314,10 +2372,11 @@ HcclResult TransportIbverbs::Wait(u32 notifyIdx, Stream &stream, const u32 timeO
     // 校验notifyIdx有效性
     bool bRet = (notifyIdx >= notifyNum_);
     CHK_PRT_RET(bRet,
-        HCCL_ERROR("[TransportIbverbs][Wait]notifyNum[%u], notifyIdx[%u] out of range[0, %u]", \
-        notifyNum_, notifyIdx, notifyNum_-1), HCCL_E_INTERNAL);
+        HCCL_ERROR("[TransportIbverbs][Wait]notifyNum[%u], notifyIdx[%u] out of range[0, %u]", notifyNum_, notifyIdx,
+            notifyNum_ - 1),
+        HCCL_E_INTERNAL);
 
-    //每个qp接收一个指定idx的notify
+    // 每个qp接收一个指定idx的notify
     for (u32 i = 0; i < qpsPerConnection_; i++) {
         CHK_RET(LocalIpcNotify::Wait(stream, dispatcher_, userMultiQpLocalNotify_[i][notifyIdx], INVALID_VALUE_STAGE,
             timeOut, machinePara_.localUserrank, machinePara_.remoteWorldRank));
@@ -2349,8 +2408,7 @@ HcclResult TransportIbverbs::GetLocalRdmaNotify(std::vector<HcclSignalInfo> &rdm
             CHK_RET(multiQpDataNotify_[i]->GetNotifyData(signalInfo));
             rdmaNotify.push_back(signalInfo);
         }
-        HCCL_DEBUG("[TransportIbverbs][GetLocalRdmaNotify] resId[%llu] addr[%llu]",
-            rdmaNotify.back().resId,
+        HCCL_DEBUG("[TransportIbverbs][GetLocalRdmaNotify] resId[%llu] addr[%llu]", rdmaNotify.back().resId,
             rdmaNotify.back().addr);
     }
     return HCCL_SUCCESS;
@@ -2452,17 +2510,17 @@ HcclResult TransportIbverbs::GetAiQpInfo(std::vector<HcclQpInfoV2> &aiQpInfo)
 {
     aiQpInfo.resize(combineAiQpInfos_.size() + 1);
 
-    aiQpInfo[0].qpPtr   = combineAiQpInfo_.aiQpInfo.aiQpAddr;
+    aiQpInfo[0].qpPtr = combineAiQpInfo_.aiQpInfo.aiQpAddr;
     aiQpInfo[0].sqIndex = combineAiQpInfo_.aiQpInfo.sqIndex;
     aiQpInfo[0].dbIndex = combineAiQpInfo_.aiQpInfo.dbIndex;
-    HCCL_DEBUG("[TransportIbverbs][GetAiQpInfo] i[0] qpPtr[%llu] sqIndex[%u] dbIndex[%u]",
-        aiQpInfo[0].qpPtr, aiQpInfo[0].sqIndex, aiQpInfo[0].dbIndex);
+    HCCL_DEBUG("[TransportIbverbs][GetAiQpInfo] i[0] qpPtr[%llu] sqIndex[%u] dbIndex[%u]", aiQpInfo[0].qpPtr,
+        aiQpInfo[0].sqIndex, aiQpInfo[0].dbIndex);
     for (u32 i = 1, j = 0; i < aiQpInfo.size(); i++, j++) {
         aiQpInfo[i].qpPtr = combineAiQpInfos_[j].aiQpInfo.aiQpAddr;
         aiQpInfo[i].sqIndex = combineAiQpInfos_[j].aiQpInfo.sqIndex;
         aiQpInfo[i].dbIndex = combineAiQpInfos_[j].aiQpInfo.dbIndex;
-        HCCL_DEBUG("[TransportIbverbs][GetAiQpInfo] i[%u] qpPtr[%llu] sqIndex[%u] dbIndex[%u]",
-            i, aiQpInfo[i].qpPtr, aiQpInfo[i].sqIndex, aiQpInfo[i].dbIndex);
+        HCCL_DEBUG("[TransportIbverbs][GetAiQpInfo] i[%u] qpPtr[%llu] sqIndex[%u] dbIndex[%u]", i, aiQpInfo[i].qpPtr,
+            aiQpInfo[i].sqIndex, aiQpInfo[i].dbIndex);
     }
     return HCCL_SUCCESS;
 }
@@ -2471,8 +2529,11 @@ HcclResult TransportIbverbs::GetAiRMAQueueInfo(std::vector<HcclAiRMAQueueInfo> &
 {
     bool isSupport = false;
     CHK_RET(IsSupportAIVNormalQP(machinePara_.localDeviceId, isSupport));
-    CHK_PRT_RET(isSupport == false, HCCL_ERROR("[IsSupportCQCoverNormalQP]"
-        "devicePhyId[%u] not support" , machinePara_.localDeviceId), HCCL_E_NOT_SUPPORT);
+    CHK_PRT_RET(isSupport == false,
+        HCCL_ERROR("[IsSupportCQCoverNormalQP]"
+                   "devicePhyId[%u] not support",
+            machinePara_.localDeviceId),
+        HCCL_E_NOT_SUPPORT);
 
     u32 sl = GetExternalInputRdmaServerLevel();
     if (machinePara_.sl != HCCL_COMM_SERVICE_LEVEL_CONFIG_NOT_SET) {
@@ -2485,7 +2546,7 @@ HcclResult TransportIbverbs::GetAiRMAQueueInfo(std::vector<HcclAiRMAQueueInfo> &
     CopyAiWQInfo(aiRMAQueueInfo[0].rq, combineAiQpInfo_.aiQpInfo.dataPlaneInfo.rq, DBMode::SW_DB, sl);
     CopyAiCQInfo(aiRMAQueueInfo[0].scq, combineAiQpInfo_.aiQpInfo.dataPlaneInfo.scq, DBMode::SW_DB);
     CopyAiCQInfo(aiRMAQueueInfo[0].rcq, combineAiQpInfo_.aiQpInfo.dataPlaneInfo.rcq, DBMode::SW_DB);
- 
+
     // 预留多QP的能力; 当前主要是单QP场景
     for (u32 i = 1, j = 0; i < aiRMAQueueInfo.size(); i++, j++) {
         CopyAiWQInfo(aiRMAQueueInfo[i].sq, combineAiQpInfos_[j].aiQpInfo.dataPlaneInfo.sq, DBMode::HW_DB, sl);
@@ -2496,25 +2557,19 @@ HcclResult TransportIbverbs::GetAiRMAQueueInfo(std::vector<HcclAiRMAQueueInfo> &
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportIbverbs::WriteCommon(const void *remoteAddr, const void *localAddr, u64 length, Stream &stream,
-    WqeType wqeType, struct WrAuxInfo &aux)
+HcclResult TransportIbverbs::WriteCommon(
+    const void *remoteAddr, const void *localAddr, u64 length, Stream &stream, WqeType wqeType, struct WrAuxInfo &aux)
 {
     // 单qp & 多qp
     std::vector<WqeInfo> wqeInfoVec;
     wqeInfoVec.reserve(WQE_RESERVE_LENGTH);
-    HCCL_DEBUG("write localAddr[%p] remoteAddr[%p] len[%llu] remoteOffset[%llu]",
-        localAddr, remoteAddr, length);
+    HCCL_DEBUG("write localAddr[%p] remoteAddr[%p] len[%llu] remoteOffset[%llu]", localAddr, remoteAddr, length);
 
     if (localAddr != nullptr) {
         // 为保证单算子下不同数据量下子图的结构相同，zero byte message 时也需要下发task
         u32 txSendDataTimes = (length == 0) ? 1 : (length + RDMA_SEND_MAX_SIZE - 1) / RDMA_SEND_MAX_SIZE;
-        CHK_RET(ConstructPayLoadWqe(const_cast<void *>(remoteAddr),
-            const_cast<void *>(localAddr),
-            length,
-            wqeType,
-            aux,
-            wqeInfoVec,
-            txSendDataTimes));
+        CHK_RET(ConstructPayLoadWqe(const_cast<void *>(remoteAddr), const_cast<void *>(localAddr), length, wqeType, aux,
+            wqeInfoVec, txSendDataTimes));
     }
 
     u32 maxLength = 0;
@@ -2523,13 +2578,14 @@ HcclResult TransportIbverbs::WriteCommon(const void *remoteAddr, const void *loc
             maxLength = wqeInfoVec[i].wqeData.memList.len;
         }
     }
-    
+
     u32 actualMultiQpNum = GetActualQpNum(maxLength);
 
-    HCCL_DEBUG("[TransportIbverbs][TxSendDataAndNotify] UseMultiQp[%d] MultiQpNum[%u] actualMultiQpNum[%u] maxLength[%u]",
+    HCCL_DEBUG(
+        "[TransportIbverbs][TxSendDataAndNotify] UseMultiQp[%d] MultiQpNum[%u] actualMultiQpNum[%u] maxLength[%u]",
         UseMultiQp(), qpsPerConnection_, actualMultiQpNum, maxLength);
     if (UseMultiQp() && actualMultiQpNum != 1 && actualMultiQpNum <= qpsPerConnection_ && maxLength != 0) {
-            std::vector<std::vector<WqeInfo>> multiQpWqeInfoVct(actualMultiQpNum, wqeInfoVec);
+        std::vector<std::vector<WqeInfo>> multiQpWqeInfoVct(actualMultiQpNum, wqeInfoVec);
         for (u32 i = 0; i < wqeInfoVec.size(); i++) {
             WqeInfo tmpWqeInfo = wqeInfoVec[i];
             u32 curLen = tmpWqeInfo.wqeData.memList.len;
@@ -2547,7 +2603,8 @@ HcclResult TransportIbverbs::WriteCommon(const void *remoteAddr, const void *loc
 
         // useOneDoorbell 配置成true。最后一个payload去按doorbell
         for (u32 qpIndex = 0; qpIndex < actualMultiQpNum; qpIndex++) {
-            CHK_RET(RdmaSendAsync(multiQpWqeInfoVct[qpIndex], stream, true, qpIndex)); // 多QP使用同一个stream异步doorbell触发
+            CHK_RET(RdmaSendAsync(
+                multiQpWqeInfoVct[qpIndex], stream, true, qpIndex)); // 多QP使用同一个stream异步doorbell触发
         }
     } else {
         if (machinePara_.nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE) {
@@ -2572,10 +2629,10 @@ HcclResult TransportIbverbs::WriteReduceAsync(struct Transport::Buffer &remoteBu
     struct WrAuxInfo aux = {0};
     aux.dataType = RDMA_REDUCE_DATA_TYPE_TABLE[datatype];
     aux.reduceType = RDMA_REDUCE_OP_TYPE_TABLE[redOp];
-    if (aux.dataType == static_cast<u32>(RdmaReduceDataType::RDMA_REDUCE_DATA_INVALID) ||
-        aux.reduceType == static_cast<u32>(RdmaReduceOpType::RDMA_REDUCE_OP_INVALID)) {
-        HCCL_ERROR("unsupported data type [%s] or Reduce type [%s]",
-            GetDataTypeEnumStr(datatype).c_str(), GetReduceOpEnumStr(redOp).c_str());
+    if (aux.dataType == static_cast<u32>(RdmaReduceDataType::RDMA_REDUCE_DATA_INVALID)
+        || aux.reduceType == static_cast<u32>(RdmaReduceOpType::RDMA_REDUCE_OP_INVALID)) {
+        HCCL_ERROR("unsupported data type [%s] or Reduce type [%s]", GetDataTypeEnumStr(datatype).c_str(),
+            GetReduceOpEnumStr(redOp).c_str());
         return HCCL_E_INTERNAL;
     }
 
@@ -2628,8 +2685,8 @@ HcclResult TransportIbverbs::GetLocalNotify(std::vector<HcclSignalInfo> &localNo
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportIbverbs::GetTransportErrorCqe(const HcclNetDevCtx netDevCtx,
-    std::vector<std::pair<TransportBase*, CqeInfo>> &infos, u32 &num)
+HcclResult TransportIbverbs::GetTransportErrorCqe(
+    const HcclNetDevCtx netDevCtx, std::vector<std::pair<TransportBase *, CqeInfo>> &infos, u32 &num)
 {
     if (g_qpn2IbversLinkMap_.Size() == 0) {
         num = 0;
@@ -2642,15 +2699,15 @@ HcclResult TransportIbverbs::GetTransportErrorCqe(const HcclNetDevCtx netDevCtx,
     }
 
     CHK_PTR_NULL(netDevCtx);
-    s32 deviceLogicId       = (static_cast<NetDevContext *>(netDevCtx))->GetLogicId();
-    s32 devicePhyId         = (static_cast<NetDevContext *>(netDevCtx))->GetPhyId();
-    HcclIpAddress localIp   = (static_cast<NetDevContext *>(netDevCtx))->GetLocalIp();
-    NicType nicType         = (static_cast<NetDevContext *>(netDevCtx))->GetNicType();
+    s32 deviceLogicId = (static_cast<NetDevContext *>(netDevCtx))->GetLogicId();
+    s32 devicePhyId = (static_cast<NetDevContext *>(netDevCtx))->GetPhyId();
+    HcclIpAddress localIp = (static_cast<NetDevContext *>(netDevCtx))->GetLocalIp();
+    NicType nicType = (static_cast<NetDevContext *>(netDevCtx))->GetNicType();
     CHK_PRT_RET(nicType == NicType::HOST_NIC_TYPE,
         HCCL_WARNING("[TransportIbverbs][GetTransportErrorCqe] nicType[%d] not support", nicType), HCCL_SUCCESS);
     RaResourceInfo raResourceInfo;
     CHK_RET(NetworkManager::GetInstance(deviceLogicId).GetRaResourceInfo(raResourceInfo));
-    RdmaHandle rdmaHandle   = raResourceInfo.nicSocketMap[localIp].nicRdmaHandle;
+    RdmaHandle rdmaHandle = raResourceInfo.nicSocketMap[localIp].nicRdmaHandle;
     CHK_PTR_NULL(rdmaHandle);
 
     if (g_isSupCqeErrInfoListConfig) {
@@ -2687,17 +2744,16 @@ HcclResult TransportIbverbs::GetTransportErrorCqe(const HcclNetDevCtx netDevCtx,
 }
 
 void TransportIbverbs::ProcessCqeInfo(const s32 deviceId, const struct CqeErrInfo *infolist, const u32 cqeNum,
-    std::vector<std::pair<TransportBase*, CqeInfo>> &infos)
+    std::vector<std::pair<TransportBase *, CqeInfo>> &infos)
 {
     for (u32 i = 0; i < cqeNum; i++) {
         // localPhyId + qpn
         auto it = g_qpn2IbversLinkMap_.Find(((static_cast<u64>(deviceId) << DEV_PHY_ID_BIT) | infolist[i].qpn));
         if (it.second) {
-            TransportBase *ptr = reinterpret_cast<TransportBase*>(it.first->second);
-            infos.push_back(std::make_pair(
-                ptr,
-                CqeInfo(infolist[i].time, infolist[i].status, it.first->second->GetRemoteIp())));
-                cqeErrQpn_ = infolist[i].qpn;
+            TransportBase *ptr = reinterpret_cast<TransportBase *>(it.first->second);
+            infos.push_back(
+                std::make_pair(ptr, CqeInfo(infolist[i].time, infolist[i].status, it.first->second->GetRemoteIp())));
+            cqeErrQpn_ = infolist[i].qpn;
         } else {
             HCCL_RUN_WARNING("[GetTransportErrorCqe]get err failed, transport is not find.");
         }
@@ -2705,7 +2761,7 @@ void TransportIbverbs::ProcessCqeInfo(const s32 deviceId, const struct CqeErrInf
     return;
 }
 
-HcclIpAddress& TransportIbverbs::GetRemoteIp()
+HcclIpAddress &TransportIbverbs::GetRemoteIp()
 {
     return machinePara_.remoteIpAddr;
 }
@@ -2715,4 +2771,64 @@ HcclResult TransportIbverbs::GetTransportId(u32 &id)
     id = cqeErrQpn_;
     return HCCL_SUCCESS;
 }
-}  // namespace hccl
+
+HcclResult TransportIbverbs::ExchangeCapabilityHybrid()
+{
+    HCCL_INFO("[Hybrid][TransportIbverbs] Starting capability exchange");
+
+    // 1. 构造本地能力信息（使用公共头文件中的默认值）
+    using namespace hcomm;
+    RoCECapability localCap;
+    localCap.InitDefaults();
+    localCap.nicDeploy = NICDeployment::NIC_DEPLOYMENT_DEVICE;
+    localCap.commStack = CommStackType::COMM_STACK_TRANSPORT_IBVERBS;
+
+    // 2. 发送本地能力（合并为单次发送：totalLength已包含结构体大小）
+    CHK_RET(defaultSocket_->Send(&localCap, sizeof(localCap)));
+    HCCL_INFO("[Hybrid][TransportIbverbs] Sent capability, version=%u", localCap.version);
+
+    // 3. 接收对端能力（单次接收）
+    RoCECapability recvCap;
+    CHK_RET(defaultSocket_->Recv(&recvCap, sizeof(recvCap)));
+
+    // 4. 先检查魔数，如果不对可能是旧版本，需要回退
+    if (!RoCECapability::CheckMagic(reinterpret_cast<uint8_t *>(&recvCap), sizeof(recvCap))) {
+        HCCL_WARNING("[Hybrid][TransportIbverbs] Magic mismatch, peer may be old version. "
+                     "Falling back to native mode.");
+        // 回退到原生模式
+        isHybridMode_ = false;
+        return HCCL_SUCCESS;
+    }
+
+    // 5. 魔数正确，解析对端能力
+    RoCECapability remoteCap;
+    if (!remoteCap.Deserialize(reinterpret_cast<uint8_t *>(&recvCap), sizeof(recvCap))) {
+        HCCL_ERROR("[Hybrid][TransportIbverbs] Failed to deserialize capability");
+        return HCCL_E_PARA;
+    }
+
+    // 6. 校验字段有效性
+    if (!remoteCap.Validate()) {
+        HCCL_ERROR("[Hybrid][TransportIbverbs] Capability validation failed");
+        return HCCL_E_INTERNAL;
+    }
+
+    // 7. 版本兼容性处理（高版本兼容低版本）
+    if (remoteCap.version > ROCE_CAPABILITY_VERSION) {
+        // 对端版本更高，使用本地版本的功能集（最小公分母）
+        HCCL_INFO("[Hybrid][TransportIbverbs] Remote version %u > local %u, using local version features",
+            remoteCap.version, ROCE_CAPABILITY_VERSION);
+    } else if (remoteCap.version < ROCE_CAPABILITY_VERSION) {
+        // 对端版本更低，使用对端版本的功能集（向下兼容）
+        HCCL_INFO("[Hybrid][TransportIbverbs] Remote version %u < local %u, using remote version features",
+            remoteCap.version, ROCE_CAPABILITY_VERSION);
+    }
+
+    isHybridMode_ = (remoteCap.commStack == CommStackType::COMM_STACK_HOST_CPU_ROCE) ? true : false;
+    HCCL_INFO("[Hybrid][TransportIbverbs]Exchange mode success, Remote is %s",
+        isHybridMode_ ? "HostCpuRoceChannel" : "TransportIbverbs");
+
+    return HCCL_SUCCESS;
+}
+
+} // namespace hccl

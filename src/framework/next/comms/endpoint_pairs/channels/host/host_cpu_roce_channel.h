@@ -24,18 +24,21 @@
 #include "remote_rma_buffer.h"
 #include "host_rdma_connection.h"
 
+#include "exchange_data_format.h"
+#include "private_types.h"
+
 namespace hcomm {
 
 class HostCpuRoceChannel final : public Channel {
 public:
-    MAKE_ENUM(RdmaStatus, INIT, SOCKET_OK, QP_CREATED,  DATA_EXCHANGE, QP_MODIFIED, CONN_OK)
+    MAKE_ENUM(RdmaStatus, INIT, SOCKET_OK, CAP_EXCHANGED, QP_CREATED, DATA_EXCHANGE, QP_MODIFIED, CONN_OK)
 
     HostCpuRoceChannel(EndpointHandle endpointHandle, HcommChannelDesc channelDesc);
     ~HostCpuRoceChannel();
 
     HcclResult Init() override;
     HcclResult GetNotifyNum(uint32_t *notifyNum) const override;
-    HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char** memTags) override;
+    HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags) override;
     ChannelStatus GetStatus() override;
     HcclResult GetStatus(ChannelStatus &status);
 
@@ -48,10 +51,27 @@ public:
     HcclResult Write(void *dst, const void *src, uint64_t len);
     HcclResult Read(void *dst, const void *src, uint64_t len);
     HcclResult ChannelFence();
-    HcclResult GetHcclBuffer(void*& addr, uint64_t& size);
+    HcclResult GetHcclBuffer(void *&addr, uint64_t &size);
 
     virtual HcclResult Clean() override;
     virtual HcclResult Resume() override;
+    HcclResult ExchangeCapability();
+    HcclResult ExchangeDataHybird();
+    HcclResult GetRemoteAddrHybird(hccl::MemType memType, u8 *&data, u64 &size);
+    HcclResult ParseRecvExchangeDataHybird();
+    HcclResult BuildExchangeDataHybird();
+    HcclResult BuildExchangeDataLengthHybird();
+
+    HcclResult RegisterUserMemHybird();
+    HcclResult BuildNotifyWrHybird(const uint32_t remoteNotifyIdx, struct ibv_send_wr &notifRecordWr);
+    HcclResult WriteWithNotifyHybrid(void *dst, const void *src, uint64_t len, uint32_t remoteNotifyIdx);
+    HcclResult NotifyWaitHybrid(uint32_t localNotifyIdx, uint32_t timeout);
+
+    HcclResult CreateNotifyHybird(hccl::MemType notifyType, uint32_t notifyId);
+    HcclResult CreateNotifyValueBufferHybird();
+    HcclResult CreateNotifyBufferHybird(hccl::MemType notifyType, uint32_t notifyId, u8 *&data, u64 &size);
+    hccl::MemType NotifyIdToMemtypeHybird(uint32_t remoteNotifyIdx);
+    HcclResult ConnectSingleQpHybrid(std::function<bool()> needStop);
 
 private:
     HcclResult ParseInputParam();
@@ -79,13 +99,15 @@ private:
     std::vector<Hccl::QpInfo> GetQpInfos() const; // in Connection
 
     HcclResult IbvPostRecv() const;
-    HcclResult PrepareNotifyWrResource(const uint64_t len, const uint32_t remoteNotifyIdx, struct ibv_send_wr &notifyRecordWr) const;
-    HcclResult PrepareWriteWrResource(const void *dst, const void *src, const uint64_t len, const uint32_t remoteNotifyIdx,
-                                      struct ibv_send_wr &writeWithNotifyWr) const;
+    HcclResult PrepareNotifyWrResource(
+        const uint64_t len, const uint32_t remoteNotifyIdx, struct ibv_send_wr &notifyRecordWr) const;
+    HcclResult PrepareWriteWrResource(const void *dst, const void *src, const uint64_t len,
+        const uint32_t remoteNotifyIdx, struct ibv_send_wr &writeWithNotifyWr) const;
 
-    HcclResult PostRdmaOp(const char *caller, ibv_wr_opcode opcode, void *localAddr, const void *remoteAddr, uint64_t len);
+    HcclResult PostRdmaOp(
+        const char *caller, ibv_wr_opcode opcode, void *localAddr, const void *remoteAddr, uint64_t len);
     void BuildRdmaWr(const char *caller, ibv_wr_opcode opcode, void *localAddr, const void *remoteAddr, uint64_t len,
-                     size_t localIdx, size_t rmtIdx, struct ibv_send_wr &wr, struct ibv_sge &sg) const;
+        size_t localIdx, size_t rmtIdx, struct ibv_send_wr &wr, struct ibv_sge &sg) const;
     HcclResult PostAndCheckSend(const char *caller, struct ibv_send_wr &wr);
     HcclResult FindLocalBuffer(const uint64_t addr, const uint64_t len, size_t &targetIdx) const;
     HcclResult FindRemoteBuffer(const uint64_t addr, const uint64_t len, size_t &targetIdx) const;
@@ -127,6 +149,20 @@ private:
 
     std::mutex cq_mutex;
     std::mutex sendCq_mutex;
+
+    // ========== 混合模式（RoCE Cross-Mode）成员变量 ==========
+    // 1. 能力协商结果
+    RoCECapability remoteCap_;  // 对端能力
+    bool isHybridMode_ = false; // 是否为混合模式
+
+    uint32_t localNotifySize_;
+    uint32_t localNotifyAccess_;
+
+    std::array<hccl::MemMsg, static_cast<u32>(hccl::MemType::MEM_TYPE_RESERVED)> localMemMsg_;
+    std::array<hccl::MemMsg, static_cast<u32>(hccl::MemType::MEM_TYPE_RESERVED)> remoteMemMsg_;
+    uint64_t exchangeDataTotalSize_;
+    std::vector<uint8_t> exchangeDataForSend_;
+    std::vector<uint8_t> exchangeDataForRecv_;
 };
 
 } // namespace hcomm

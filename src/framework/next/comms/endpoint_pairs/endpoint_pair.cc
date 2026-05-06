@@ -19,7 +19,7 @@
 
 namespace hcomm {
 
-EndpointPair::~EndpointPair() 
+EndpointPair::~EndpointPair()
 {
     for (auto &channels : channelHandles_) {
         if (channels.second.empty()) {
@@ -36,8 +36,8 @@ HcclResult EndpointPair::Init()
     return HCCL_SUCCESS;
 }
 
-HcclResult EndpointPair::GetSocket(const std::string &socketTag, const uint32_t listenPort,
-    u32 reuseIdx, Hccl::Socket*& socket)
+HcclResult EndpointPair::GetSocket(
+    const std::string &socketTag, const uint32_t listenPort, u32 reuseIdx, Hccl::Socket *&socket)
 {
     Hccl::LinkData linkData = BuildDefaultLinkData();
     CHK_RET(EndpointDescPairToLinkData(localEndpointDesc_, remoteEndpointDesc_, linkData, reuseIdx));
@@ -50,8 +50,31 @@ HcclResult EndpointPair::GetSocket(const std::string &socketTag, const uint32_t 
     return HCCL_SUCCESS;
 }
 
-HcclResult EndpointPair::GetSocket(const uint32_t myRank, const uint32_t rmtRank,
-    const std::string &socketTag, u32 reuseIdx, const uint32_t listenPort, Hccl::Socket*& socket, uint32_t devicePhyId, uint32_t remoteDevicePhyId)
+HcclResult EndpointPair::GetSocketWithRank(const uint32_t myRank, const uint32_t rmtRank, const std::string &socketTag,
+    const uint32_t listenPort, u32 reuseIdx, Hccl::Socket *&socket)
+{
+    uint32_t connectMode = 0;
+    Hccl::LinkData linkData = BuildDefaultLinkData();
+    CHK_RET(EndpointDescPairToLinkData(localEndpointDesc_, remoteEndpointDesc_, linkData, reuseIdx));
+    std::string linkTag = socketTag;
+
+    if (localEndpointDesc_.loc.locType != remoteEndpointDesc_.loc.locType) {
+        connectMode = 1;
+    } else {
+        if (linkData.GetReuseIdx() != "0") {
+            linkTag += ("_" + linkData.GetReuseIdx());
+        }
+    }
+
+    /* A2: host nic(cpu roce channel) -- device nic(transport ibv)时，两边ip地址格式不一样，判断大小算法不匹配
+     * 修改成按照rank id大小判断server和client */
+    Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, listenPort, linkTag, connectMode, myRank, rmtRank);
+    CHK_RET(socketMgr_->GetSocket(socketConfig, socket));
+    return HCCL_SUCCESS;
+}
+
+HcclResult EndpointPair::GetSocket(const uint32_t myRank, const uint32_t rmtRank, const std::string &socketTag,
+    u32 reuseIdx, const uint32_t listenPort, Hccl::Socket *&socket, uint32_t devicePhyId, uint32_t remoteDevicePhyId)
 {
     // 临时方案：支持混跑新增，非Roce场景走orion socketMgr实现server socket复用
     if (localEndpointDesc_.loc.locType == EndpointLocType::ENDPOINT_LOC_TYPE_HOST) {
@@ -61,13 +84,13 @@ HcclResult EndpointPair::GetSocket(const uint32_t myRank, const uint32_t rmtRank
         } else {
             socketTagPrefix += "_" + std::to_string(rmtRank) + "_" + std::to_string(myRank);
         }
-        CHK_RET(this->GetSocket(socketTagPrefix, listenPort, reuseIdx, socket));
+        CHK_RET(this->GetSocketWithRank(myRank, rmtRank, socketTagPrefix, listenPort, reuseIdx, socket));
         return HCCL_SUCCESS;
     }
 
     Hccl::LinkData linkData = BuildDefaultLinkData();
-    CHK_RET(EndpointDescPairToLinkDataWithRankIds(myRank, rmtRank,
-        localEndpointDesc_, remoteEndpointDesc_, linkData, devicePhyId, remoteDevicePhyId, reuseIdx));
+    CHK_RET(EndpointDescPairToLinkDataWithRankIds(
+        myRank, rmtRank, localEndpointDesc_, remoteEndpointDesc_, linkData, devicePhyId, remoteDevicePhyId, reuseIdx));
 
     // 复用orion流程可能抛异常
     EXCEPTION_HANDLE_BEGIN
@@ -76,8 +99,8 @@ HcclResult EndpointPair::GetSocket(const uint32_t myRank, const uint32_t rmtRank
         uint32_t devPhyId{0};
         CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(devLogicId), devPhyId));
 
-        EXECEPTION_CATCH(socketMgrCompat_ =
-            std::make_unique<Hccl::SocketManager>(myRank, devPhyId, devLogicId, socketTag),
+        EXECEPTION_CATCH(
+            socketMgrCompat_ = std::make_unique<Hccl::SocketManager>(myRank, devPhyId, devLogicId, socketTag),
             return HCCL_E_PTR);
     }
 
@@ -96,18 +119,19 @@ HcclResult EndpointPair::GetSocket(const uint32_t myRank, const uint32_t rmtRank
 }
 
 HcclResult EndpointPair::CreateChannel(EndpointHandle endpointHandle, CommEngine engine, u32 reuseIdx,
-        HcommChannelDesc *channelDescs, ChannelHandle *channels)
+    HcommChannelDesc *channelDescs, ChannelHandle *channels)
 {
     if (channelHandles_.find(engine) == channelHandles_.end() || channelHandles_[engine].size() <= reuseIdx) {
-        CHK_RET_UNAVAIL(static_cast<HcclResult>(
-            HcommCollectiveChannelCreate(endpointHandle, engine, channelDescs, 1, channels)));
+        CHK_RET_UNAVAIL(
+            static_cast<HcclResult>(HcommCollectiveChannelCreate(endpointHandle, engine, channelDescs, 1, channels)));
         channelHandles_[engine].push_back(channels[0]);
         return HCCL_SUCCESS;
     }
 
     channels[0] = channelHandles_[engine][reuseIdx];
     if (channelDescs->memHandleNum > 1) {
-        CHK_RET(static_cast<HcclResult>(HcommChannelUpdateMemInfo(channelDescs->memHandles + 1, channelDescs->memHandleNum - 1, channels[0])));
+        CHK_RET(static_cast<HcclResult>(
+            HcommChannelUpdateMemInfo(channelDescs->memHandles + 1, channelDescs->memHandleNum - 1, channels[0])));
     }
     return HCCL_SUCCESS;
 }
@@ -117,17 +141,20 @@ HcclResult EndpointPair::DestroyChannel(CommEngine engine, u32 reuseIdx)
 {
     if (IsChannelNotExist(engine, reuseIdx)) {
         HCCL_WARNING("EndpointPair::DestroyChannel: engine[%d] reuseIdx[%u], channelHandle size[%u],"
-                     "channel not found, skip destroy channel", engine, reuseIdx, channelHandles_[engine].size());
+                     "channel not found, skip destroy channel",
+            engine, reuseIdx, channelHandles_[engine].size());
         return HCCL_SUCCESS;
     }
     HCCL_INFO("EndpointPair::DestroyChannel: engine[%d] reuseIdx[%u], channelHandle size[%u],"
-              "start destroy channel", engine, reuseIdx, channelHandles_[engine].size());
+              "start destroy channel",
+        engine, reuseIdx, channelHandles_[engine].size());
     ChannelHandle channelHandle = channelHandles_[engine][reuseIdx];
     CHK_RET(static_cast<HcclResult>(HcommChannelDestroy(&channelHandle, 1)));
     // 去掉channelHandles_中reuseIdx位置的channelHandle
     channelHandles_[engine].erase(channelHandles_[engine].begin() + reuseIdx);
     HCCL_INFO("EndpointPair::DestroyChannel: engine[%d] reuseIdx[%u] destroy channel success,"
-              "channelHandle size[%u]", engine, reuseIdx, channelHandles_[engine].size());
+              "channelHandle size[%u]",
+        engine, reuseIdx, channelHandles_[engine].size());
     return HCCL_SUCCESS;
 }
 
@@ -137,7 +164,7 @@ bool EndpointPair::IsChannelNotExist(CommEngine engine, u32 reuseIdx)
     return channelHandles_.find(engine) == channelHandles_.end() || channelHandles_[engine].size() <= reuseIdx;
 }
 
-const std::unordered_map<CommEngine, std::vector<ChannelHandle>>& EndpointPair::GetChannelHandles()
+const std::unordered_map<CommEngine, std::vector<ChannelHandle>> &EndpointPair::GetChannelHandles()
 {
     return channelHandles_;
 }
