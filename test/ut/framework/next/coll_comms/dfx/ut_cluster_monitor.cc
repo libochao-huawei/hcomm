@@ -20,6 +20,7 @@
 #include "dfx/cluster_monitor/cluster_monitor.h"
 #undef private
 #include "hccl_comm_socket_c_adpt.h"
+#include "base_config.h"
 
 using namespace hcomm;
 
@@ -40,8 +41,8 @@ ClusterMonitor ClusterMonitorTest::g_monitor;
 
 TEST_F(ClusterMonitorTest, CreateMonitorLinksAsync_test)
 {
+    setenv("HCCL_DFS_CONFIG", "task_exception:on", 1);
     s32 ret;
-
     SocketDesc socketDesc;
     std::string testTag = "monitor_test_tag";
     struct in_addr localAddr;
@@ -129,6 +130,7 @@ TEST_F(ClusterMonitorTest, CreateMonitorLinksAsync_test)
     g_monitor.clusterLinkContext_["comm2"].push(std::make_pair(uid2, context2));
     linksLock.unlock();
 
+    MOCKER_CPP(&Hccl::EnvSocketConfig::GetLinkTimeOut).stubs().with(any()).will(returnValue((s32)(5)));
     g_monitor.CreateHBLinksAsync();
 
     u32 uncompletedCount = 3;
