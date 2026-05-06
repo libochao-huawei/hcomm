@@ -107,7 +107,12 @@ Hccl::TransportStatus AivUbMemTransport::GetStatus()
     if (!isReady) {
         return baseStatus_;
     }
-    HCCL_INFO("%s aivUbStatus_[%d], baseStatus_[%d] start, aivUbStatus_::SOCKET_OK[%d]", 
+    return UpdateStatus();
+}
+
+Hccl::TransportStatus AivUbMemTransport::UpdateStatus()
+{
+    HCCL_INFO("%s aivUbStatus_[%d], baseStatus_[%d] start, aivUbStatus_::SOCKET_OK[%d]",
         __func__, aivUbStatus_, baseStatus_, AivUbMemTransportStatus::SOCKET_OK);
     HcclResult ret;
     switch (aivUbStatus_) {
