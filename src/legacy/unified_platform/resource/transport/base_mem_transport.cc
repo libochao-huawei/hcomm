@@ -187,4 +187,39 @@ void BaseMemTransport::CheckCommonLocRes(CommonLocRes &res)
     CheckLocConn(res);
 }
 
+HcclResult BaseMemTransport::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum)
+{
+    CHK_PRT_RET(!remoteMem, HCCL_ERROR("[GetRemoteMem] remoteMem is nullptr"), HCCL_E_PARA);
+    CHK_PRT_RET(!memNum, HCCL_ERROR("[GetRemoteMem] memNum is nullptr"), HCCL_E_PARA);
+
+    *remoteMem = nullptr;
+    *memNum = 0;
+
+    std::lock_guard<std::mutex> lock(remoteMemsMutex_);
+
+    const auto &rmaBufferVec = GetRemoteRmaBufferVec();
+    uint32_t totalCount = rmaBufferVec.size();
+    if (totalCount == 0) {
+        HCCL_INFO("[GetRemoteMem] No remote memory regions available");
+        return HCCL_SUCCESS;
+    }
+
+    remoteMemsPtr_.reset();
+    remoteMemsPtr_ = std::make_unique<HcclMem[]>(totalCount);
+    CHK_PTR_NULL(remoteMemsPtr_);
+
+    for (uint32_t i = 0; i < totalCount; i++) {
+        auto &rmtRmaBuffer = rmaBufferVec[i];
+        remoteMemsPtr_[i].type = rmtRmaBuffer->GetMemType();
+        remoteMemsPtr_[i].addr = reinterpret_cast<void *>(rmtRmaBuffer->GetAddr());
+        remoteMemsPtr_[i].size = rmtRmaBuffer->GetSize();
+        HCCL_INFO("[%s] addr[%p] size[%zu] rmtRmaBuffer[%p]", __func__,
+                  reinterpret_cast<void *>(rmtRmaBuffer->GetAddr()), rmtRmaBuffer->GetSize(), rmtRmaBuffer);
+    }
+
+    *memNum = totalCount;
+    *remoteMem = remoteMemsPtr_.get();
+    return HCCL_SUCCESS;
+}
+
 } // namespace Hccl
