@@ -44,6 +44,8 @@
 
 using namespace Hccl;
 
+void CheckRootInfoJson(const nlohmann::json &parseJson);
+
 std::string filePath{HCOMM_CODE_ROOT_DIR "/test/legacy/ut/framework/topo/rank_info_detect/rootinfo.json"};
 
 class RankInfoDetectClientTest : public testing::Test {
