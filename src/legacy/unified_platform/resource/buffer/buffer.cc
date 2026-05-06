@@ -27,23 +27,6 @@ Buffer::Buffer(uintptr_t addr, std::size_t size, HcclMemType memType) : addr_(ad
 {
 }
 
-Buffer::Buffer(uintptr_t addr, std::size_t size, HcclMemType memType, const char *memTag) : addr_(addr), size_(size), memType_(memType)
-{
-    if (memTag != nullptr) {
-        snprintf_s(mem_Tag_, sizeof(mem_Tag_), strlen(memTag), "%s", memTag);
-    } else {
-        mem_Tag_[0] = '\0'; // 初始化为空字符串
-    }
-}
-
-Buffer::Buffer(uintptr_t addr, std::size_t size, const char *memTag) : addr_(addr), size_(size)
-{
-    if (memTag != nullptr) {
-        snprintf_s(mem_Tag_, sizeof(mem_Tag_), strlen(memTag), "%s", memTag);
-    } else {
-        mem_Tag_[0] = '\0'; // 初始化为空字符串
-    }
-}
 uintptr_t Buffer::GetAddr() const
 {
     return addr_;
@@ -57,11 +40,6 @@ size_t Buffer::GetSize() const
 HcclMemType Buffer::GetMemType() const
 {
     return memType_;
-}
-
-const std::string Buffer::GetMemTag() const
-{
-    return mem_Tag_;
 }
 
 std::string Buffer::Describe() const

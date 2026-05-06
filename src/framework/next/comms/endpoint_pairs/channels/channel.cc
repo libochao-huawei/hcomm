@@ -75,7 +75,7 @@ std::unique_ptr<Channel> uniqueChannelPtr;
     return HCCL_SUCCESS;
 }
 
-HcclResult Channel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum)
+HcclResult Channel::GetUserRemoteMem(CommMem **remoteMem, uint32_t *memNum)
 {
     return HCCL_SUCCESS;
 }
