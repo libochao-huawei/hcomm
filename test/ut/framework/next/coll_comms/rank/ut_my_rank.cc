@@ -599,3 +599,131 @@ TEST_F(MyRankTest, ut_SetMemHandles_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
     EXPECT_EQ(memInfo0->bufferHandle, (void*)0x100);
     EXPECT_EQ(memInfo1->bufferHandle, (void*)0x101);
 }
+
+TEST_F(MyRankTest, Ut_WaitAllAsyncComplete_When_AllOk_Expect_Success)
+{
+    // mock Socket::GetAsyncStatus返回OK
+    MOCKER_CPP(&Hccl::Socket::GetAsyncStatus)
+        .stubs()
+        .will(returnValue(Hccl::SocketStatus::OK));
+
+    aclrtBinHandle binHandle;
+    CommConfig config;
+    ManagerCallbacks callbacks;
+    void *rankGraphPtr = (void*)0x114514;
+    std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
+    MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
+
+    // 构造socket列表（指针值仅用于mock匹配，不实际调用）
+    std::vector<Hccl::Socket*> sockets = {(Hccl::Socket*)0x1, (Hccl::Socket*)0x2};
+    std::vector<u32> remoteRanks = {1, 2};
+
+    HcclResult ret = myRank.WaitAllAsyncComplete(sockets, remoteRanks);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(MyRankTest, Ut_BatchExchange_When_NewRankConsistent_Expect_Success)
+{
+    hcclComm comm;
+    // rank 1为新增channel（不标记为checked）
+    EXPECT_TRUE(comm.IsNewRemoteRank(1));
+
+    // mock Socket异步接口：GetAsyncStatus返回OK
+    MOCKER_CPP(&Hccl::Socket::GetAsyncStatus)
+        .stubs()
+        .will(returnValue(Hccl::SocketStatus::OK));
+    // mock SendAsync/RecvAsync成功
+    MOCKER_CPP(&Hccl::Socket::SendAsync)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&Hccl::Socket::RecvAsync)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    // mock 超时配置
+    MOCKER_CPP(&Hccl::EnvSocketConfig::GetLinkTimeOut)
+        .stubs()
+        .will(returnValue((s32)30));
+
+    // mock CheckFrameRecv返回成功（Hcomm基础信息一致）
+    MOCKER_CPP(&RankConsistentcyChecker::CheckFrameRecv)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+
+    aclrtBinHandle binHandle;
+    CommConfig config;
+    ManagerCallbacks callbacks;
+    void *rankGraphPtr = (void*)0x114514;
+    std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
+    MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
+
+    HcclChannelDesc channelDescs[1];
+    channelDescs[0].remoteRank = 1;
+    HcommChannelDesc hcommDescs[1];
+    hcommDescs[0].socket = (HcommSocket)0x1;  // 非空socket
+    hcommDescs[0].role = HCOMM_SOCKET_ROLE_CLIENT;
+
+    HcclResult ret = myRank.BatchExchangeAndCheckConsistency(
+        channelDescs, hcommDescs, 1, "test_tag", &comm);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // 验证通过后rank 1被标记为已校验
+    EXPECT_FALSE(comm.IsNewRemoteRank(1));
+}
+
+// 异常用例：新增channel Hcomm校验不通过，不走HCCL算子信息交换
+TEST_F(MyRankTest, Ut_BatchExchange_When_HcommCheckFail_Expect_NoHcclExchange)
+{
+    hcclComm comm;
+
+    // 注入本端交换信息
+    u8 exchangeData[] = {0xDE, 0xAD, 0xBE, 0xEF};
+    comm.AddExchangeInfo(exchangeData, sizeof(exchangeData));
+    EXPECT_TRUE(comm.IsExchangeInfoReady());
+
+    // mock Socket异步接口
+    MOCKER_CPP(&Hccl::Socket::GetAsyncStatus)
+        .stubs()
+        .will(returnValue(Hccl::SocketStatus::OK));
+    MOCKER_CPP(&Hccl::Socket::SendAsync)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&Hccl::Socket::RecvAsync)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&Hccl::EnvSocketConfig::GetLinkTimeOut)
+        .stubs()
+        .will(returnValue((s32)30));
+
+    // mock CheckFrameRecv返回失败（Hcomm基础信息不一致）
+    MOCKER_CPP(&RankConsistentcyChecker::CheckFrameRecv)
+        .stubs()
+        .will(returnValue(HCCL_E_INTERNAL));
+    // mock CheckSubCommParaDetailed
+    MOCKER_CPP(&MyRank::CheckSubCommParaDetailed)
+        .stubs()
+        .will(returnValue(HCCL_E_INTERNAL));
+
+    aclrtBinHandle binHandle;
+    CommConfig config;
+    ManagerCallbacks callbacks;
+    void *rankGraphPtr = (void*)0x114514;
+    std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
+    MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
+
+    HcclChannelDesc channelDescs[1];
+    channelDescs[0].remoteRank = 1;
+    HcommChannelDesc hcommDescs[1];
+    hcommDescs[0].socket = (HcommSocket)0x1;
+    hcommDescs[0].role = HCOMM_SOCKET_ROLE_CLIENT;
+
+    HcclResult ret = myRank.BatchExchangeAndCheckConsistency(
+        channelDescs, hcommDescs, 1, "test_tag", &comm);
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+
+    // 验证：Hcomm校验失败后不进入第二阶段HCCL交换，
+    // 交换信息未被消费（IsExchangeInfoReady仍为true，未被ClearExchangeInfoState清空）
+    EXPECT_TRUE(comm.IsExchangeInfoReady());
+
+    // 验证：失败后remoteRank未被标记为已校验
+    EXPECT_TRUE(comm.IsNewRemoteRank(1));
+}

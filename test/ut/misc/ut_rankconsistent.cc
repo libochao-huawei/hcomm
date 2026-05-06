@@ -41,11 +41,24 @@ protected:
     virtual void SetUp()
     {
         std::cout << "A Test SetUP" << std::endl;
+        checker_ = &RankConsistentcyChecker::GetInstance(0);
+        checker_->ClearCheckInfo();
+        checker_->ClearCrcInfo();
     }
     virtual void TearDown()
     {
         std::cout << "A Test TearDown" << std::endl;
+        // 清理环境变量
+        unsetenv("HCCL_ALGO");
+        unsetenv("HCCL_BUFFSIZE");
+        unsetenv("HCCL_OP_EXPANSION_MODE");
+        unsetenv("HCCL_RDMA_QPS_PER_CONNECTION");
+        unsetenv("HCCL_MULTI_QP_THRESHOLD");
+        checker_->ClearCheckInfo();
+        checker_->ClearCrcInfo();
+        GlobalMockObject::verify();
     }
+    RankConsistentcyChecker *checker_;
 };
 
 #if 1 //这个用例其实没什么意义
@@ -186,4 +199,101 @@ TEST_F(RankConSistentTest, ut_crc)
 
     ret = consistentSrc.ClearCrcInfo();
     EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+EST_F(RankConSistentTest, Ut_When_EnvMatch_Expect_Success)
+{
+    setenv("HCCL_ALGO", "level0", 1);
+
+    // 本端记录
+    HcclResult ret = checker_->RecordEnvVarCrc();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // 生成校验帧
+    u64 baseLen = checker_->GetRankConsistentDataLength();
+    std::vector<u8> sendBuf(baseLen, 0);
+    ret = checker_->GetCheckFrame(sendBuf.data(), baseLen, "test_tag");
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // 同一checker校验（环境变量一致）
+    ret = checker_->CheckFrameRecv(sendBuf.data(), static_cast<u32>(baseLen), "test_tag");
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+// 异常用例：两端环境变量不一致，校验不通过
+TEST_F(RankConSistentTest, Ut_When_EnvMismatch_Expect_Fail)
+{
+    // 本端设置HCCL_ALGO=level0
+    setenv("HCCL_ALGO", "level0", 1);
+    HcclResult ret = checker_->RecordEnvVarCrc();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // 生成校验帧
+    u64 baseLen = checker_->GetRankConsistentDataLength();
+    std::vector<u8> sendBuf(baseLen, 0);
+    ret = checker_->GetCheckFrame(sendBuf.data(), baseLen, "test_tag");
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // 清空checker状态，模拟对端环境变量不同
+    checker_->ClearCheckInfo();
+    checker_->ClearCrcInfo();
+    setenv("HCCL_ALGO", "level1", 1);  // 对端HCCL_ALGO值不同
+    ret = checker_->RecordEnvVarCrc();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // 用对端checker校验本端帧（环境变量不一致）
+    ret = checker_->CheckFrameRecv(sendBuf.data(), static_cast<u32>(baseLen), "test_tag");
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+}
+
+TEST_F(RankConSistentTest, Ut_RecordSubCommPara_When_ParamsMatch_Expect_Success)
+{
+    setenv("HCCL_ALGO", "level0", 1);
+
+    // 本端记录
+    checker_->RecordEnvVarCrc();
+    u32 rankIds[] = {0, 1};
+    checker_->RecordSubCommPara(0xABCD, 2, rankIds, 100);
+
+    // 生成校验帧
+    u64 baseLen = checker_->GetRankConsistentDataLength();
+    std::vector<u8> sendBuf(baseLen, 0);
+    HcclResult ret = checker_->GetCheckFrame(sendBuf.data(), baseLen, "test_tag");
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // 同一checker校验（参数一致）
+    ret = checker_->CheckFrameRecv(sendBuf.data(), static_cast<u32>(baseLen), "test_tag");
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    unsetenv("HCCL_ALGO");
+}
+
+// 异常用例：两端子通信域参数不一致，校验不通过
+TEST_F(RankConSistentTest, Ut_RecordSubCommPara_When_ParamsMismatch_Expect_Fail)
+{
+    setenv("HCCL_ALGO", "level0", 1);
+
+    // 本端记录：subCommId=100
+    checker_->RecordEnvVarCrc();
+    u32 rankIds[] = {0, 1};
+    checker_->RecordSubCommPara(0xABCD, 2, rankIds, 100);
+
+    // 生成本端校验帧
+    u64 baseLen = checker_->GetRankConsistentDataLength();
+    std::vector<u8> sendBuf(baseLen, 0);
+    HcclResult ret = checker_->GetCheckFrame(sendBuf.data(), baseLen, "test_tag");
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // 清空checker状态，模拟对端参数不同：subCommId=200
+    checker_->ClearCheckInfo();
+    checker_->ClearCrcInfo();
+    setenv("HCCL_ALGO", "level0", 1);
+    checker_->RecordEnvVarCrc();
+    checker_->RecordSubCommPara(0xABCD, 2, rankIds, 200);  // subCommId不同
+
+    // 用对端checker校验本端帧（子通信域参数不一致）
+    ret = checker_->CheckFrameRecv(sendBuf.data(), static_cast<u32>(baseLen), "test_tag");
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+
+    unsetenv("HCCL_ALGO");
 }
