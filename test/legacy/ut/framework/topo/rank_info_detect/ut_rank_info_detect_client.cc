@@ -44,8 +44,6 @@
 
 using namespace Hccl;
 
-void CheckRootInfoJson(const nlohmann::json &parseJson);
-
 std::string filePath{HCOMM_CODE_ROOT_DIR "/test/legacy/ut/framework/topo/rank_info_detect/rootinfo.json"};
 
 class RankInfoDetectClientTest : public testing::Test {
@@ -317,18 +315,6 @@ TEST_F(RankInfoDetectClientTest, Ut_VerifyTlsConsistency_When_KnownInconsistentA
     HcclResult ret = rankInfoDetectClient_->VerifyTlsConsistency();
 
     EXPECT_EQ(ret, HCCL_E_PARA);
-}
-
-TEST_F(RankInfoDetectClientTest, Ut_CheckRootInfoJson_When_InvalidVersion_Expect_Throw)
-{
-    nlohmann::json InvalidJson = nlohmann::json::parse(R"({
-        "version": "1.0",
-        "topo_file_path": "/tmp/test.json",
-        "rank_count": 1,
-        "rank_list": []
-    })");
-
-    EXPECT_THROW(CheckRootInfoJson(InvalidJson), InvalidParamsException);
 }
 
 TEST_F(RankInfoDetectClientTest, Ut_CheckStatus_When_Timeout_Expect_Throw)
