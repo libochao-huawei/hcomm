@@ -759,12 +759,16 @@ struct CrErrInfo {
     uint32_t resv[2U];
 };
 
+#define CONTEXT_MAX_LEN 512U
+
 struct AsyncEvent {
     uint32_t resId;
     uint32_t eventType;
+    uint8_t context[CONTEXT_MAX_LEN];
+    unsigned int len;
 };
 
-#define ASYNC_EVENT_MAX_NUM 128U
+#define ASYNC_EVENT_MAX_NUM 4U
 
 /**
  * @ingroup libudma
