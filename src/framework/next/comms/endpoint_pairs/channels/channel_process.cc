@@ -162,7 +162,9 @@ HcclResult ChannelProcess::ChannelGetStatus(const ChannelHandle *channelList, ui
             return ret;
         }
         CHK_PRT_RET(
-            status == ChannelStatus::FAILED, HCCL_ERROR("[%s] FAILED, status[%d]", __func__, status), HCCL_E_NETWORK);
+            status == ChannelStatus::FAILED || status == ChannelStatus::INVALID,
+            HCCL_ERROR("[%s] FAILED, status[%d]", __func__, status),
+            HCCL_E_NETWORK);
 
         CHK_PRT_RET(status == ChannelStatus::SOCKET_TIMEOUT,
             HCCL_ERROR("[%s] TIMEOUT, status[%d]", __func__, status),
