@@ -1205,3 +1205,52 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_DeInit_tmp)
 
     GlobalMockObject::verify();
 }
+
+TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_Transport_BatchTransferAsync_NullPimpl_Returns_PTR)
+{
+    MachinePara machinePara;
+    std::chrono::milliseconds timeout;
+    HcclIpAddress invalidIp;
+    TransportRoce *rocePtr = new (std::nothrow) TransportRoce(nullptr, nullptr,
+        machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
+    EXPECT_NE(rocePtr, nullptr);
+
+    Transport link(rocePtr);
+    Stream stream;
+    HcommBatchTransferDesc transferDescs[1];
+    transferDescs[0].transType = HCOMM_TRANSFER_TYPE_WRITE;
+    transferDescs[0].write.dst = reinterpret_cast<void*>(0x1000);
+    transferDescs[0].write.src = reinterpret_cast<void*>(0x2000);
+    transferDescs[0].write.len = 1024;
+
+    // pimpl_为nullptr时返回HCCL_E_PTR
+    HcclResult ret = link.BatchTransferAsync(transferDescs, 1, stream);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_Transport_BatchTransferAsync_TransportBaseNotSupport_Returns_NOT_SUPPORT)
+{
+    MachinePara machinePara;
+    std::chrono::milliseconds timeout;
+    HcclIpAddress invalidIp;
+
+    TransportBase *basePtr = new (std::nothrow) TransportRoce(nullptr, nullptr,
+        machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
+    EXPECT_NE(basePtr, nullptr);
+
+    Transport link(basePtr);
+    Stream stream;
+    HcommBatchTransferDesc transferDescs[1];
+    transferDescs[0].transType = HCOMM_TRANSFER_TYPE_WRITE;
+    transferDescs[0].write.dst = reinterpret_cast<void*>(0x1000);
+    transferDescs[0].write.src = reinterpret_cast<void*>(0x2000);
+    transferDescs[0].write.len = 1024;
+
+    // TransportBase::BatchTransferAsync返回HCCL_E_NOT_SUPPORT
+    HcclResult ret = link.BatchTransferAsync(transferDescs, 1, stream);
+    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
+
+    GlobalMockObject::verify();
+}

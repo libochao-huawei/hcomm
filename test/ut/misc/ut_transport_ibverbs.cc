@@ -294,3 +294,59 @@ TEST_F(TransportIbverbsTest, Ut_FillExchangeDataTotalSize_UserMemEnableMultiQp_A
     const u64 extra = 8ULL * static_cast<u64>(sizeof(MemMsg));
     EXPECT_EQ(ib1.exchangeDataTotalSize_, s0 + extra);
 }
+
+TEST_F(TransportDeviceIbverbsTest, Ut_BatchTransferAsync_EmptyDescs_Returns_SUCCESS)
+{
+    MOCKER_CPP(&DlHnsFunction::DlHnsFunctionInit).stubs().will(returnValue(HCCL_SUCCESS));
+
+    HcclDispatcher dispatcherPtr = nullptr;
+    ASSERT_EQ(HcclDispatcherInit(DispatcherType::DISPATCHER_NORMAL, 0, &dispatcherPtr), HCCL_SUCCESS);
+    auto *dispatcher = reinterpret_cast<DispatcherPub *>(dispatcherPtr);
+
+    MachinePara machinePara{};
+    machinePara.deviceLogicId = 0;
+    TransportDeviceIbverbsData d{};
+    FillMinimalMemDetailsQpData(d);
+    std::chrono::milliseconds timeout{ 1 };
+
+    TransportDeviceIbverbs link(dispatcher, nullptr, machinePara, timeout, d);
+    ASSERT_EQ(link.Init(), HCCL_SUCCESS);
+
+    Stream stream;
+    HcommBatchTransferDesc transferDescs[1] = {};
+
+    HcclResult ret = link.BatchTransferAsync(transferDescs, 1, stream);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    ASSERT_EQ(HcclDispatcherDestroy(dispatcherPtr), HCCL_SUCCESS);
+}
+
+TEST_F(TransportDeviceIbverbsTest, Ut_BatchTransferAsync_NullPtr_Returns_PTR)
+{
+    MOCKER_CPP(&DlHnsFunction::DlHnsFunctionInit).stubs().will(returnValue(HCCL_SUCCESS));
+
+    HcclDispatcher dispatcherPtr = nullptr;
+    ASSERT_EQ(HcclDispatcherInit(DispatcherType::DISPATCHER_NORMAL, 0, &dispatcherPtr), HCCL_SUCCESS);
+    auto *dispatcher = reinterpret_cast<DispatcherPub *>(dispatcherPtr);
+
+    MachinePara machinePara{};
+    machinePara.deviceLogicId = 0;
+    TransportDeviceIbverbsData d{};
+    FillMinimalMemDetailsQpData(d);
+    std::chrono::milliseconds timeout{ 1 };
+
+    TransportDeviceIbverbs link(dispatcher, nullptr, machinePara, timeout, d);
+    ASSERT_EQ(link.Init(), HCCL_SUCCESS);
+
+    Stream stream;
+    HcommBatchTransferDesc transferDescs[1];
+    transferDescs[0].transType = HCOMM_TRANSFER_TYPE_WRITE;
+    transferDescs[0].write.dst = nullptr;
+    transferDescs[0].write.src = reinterpret_cast<void*>(static_cast<uintptr_t>(0x20000ULL));
+    transferDescs[0].write.len = 1024;
+
+    HcclResult ret = link.BatchTransferAsync(transferDescs, 1, stream);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+
+    ASSERT_EQ(HcclDispatcherDestroy(dispatcherPtr), HCCL_SUCCESS);
+}
