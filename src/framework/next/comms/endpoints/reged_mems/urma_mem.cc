@@ -26,7 +26,7 @@ UbRegedMemMgr::UbRegedMemMgr()
     localUbRmaBufferMgr_ = std::make_unique<LocalUbRmaBufferMgr>();
 }
 
-HcclResult UbRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void **memHandle)
+HcclResult UbRegedMemMgr::RegisterMemory(HcommMem mem, void **memHandle)
 {
     HCCL_INFO("[%s] Begin", __FUNCTION__);
     CHK_PTR_NULL(this->localUbRmaBufferMgr_);
@@ -47,17 +47,11 @@ HcclResult UbRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void 
         // 构造LocalUbRmaBuffer
         std::shared_ptr<Hccl::Buffer> localBufferPtr = nullptr;
         EXECEPTION_CATCH((localBufferPtr = std::make_shared<Hccl::Buffer>(reinterpret_cast<uintptr_t>(mem.addr),
-            mem.size, static_cast<HcclMemType>(mem.type), memTag)),
+            mem.size, static_cast<HcclMemType>(mem.type))),
             return HCCL_E_PTR);
 
-        if (memTag && (strcmp(memTag, "HcclBuffer") == 0)) {
-            EXECEPTION_CATCH((localUbRmaBuffer = std::make_shared<Hccl::LocalUbRmaBuffer>(localBufferPtr)),
-                return HCCL_E_PTR);
-        }
-        else {
-            EXECEPTION_CATCH((localUbRmaBuffer = std::make_shared<Hccl::LocalUbRmaBuffer>(localBufferPtr, this->rdmaHandle_)),
-                return HCCL_E_PTR);
-        }
+        EXECEPTION_CATCH((localUbRmaBuffer = std::make_shared<Hccl::LocalUbRmaBuffer>(localBufferPtr, this->rdmaHandle_)),
+            return HCCL_E_PTR);
     }
 
     // 重新构造key确保注册到计数器的key和接口返回的memHandle对应

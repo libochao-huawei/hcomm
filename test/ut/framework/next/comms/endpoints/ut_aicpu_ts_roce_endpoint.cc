@@ -62,7 +62,7 @@ HcclResult StubHcclSocketAcceptForEp(hccl::HcclSocket * /*self*/, const std::str
 
 class FakeRegedMemMgrForEndpointUt : public RegedMemMgr {
 public:
-    HcclResult RegisterMemory(HcommMem, const char *, void **memHandle) override
+    HcclResult RegisterMemory(HcommMem, void **memHandle) override
     {
         *memHandle = reinterpret_cast<void *>(0x42ULL);
         return HCCL_SUCCESS;
@@ -199,7 +199,7 @@ TEST_F(AicpuTsRoceEndpointTest, Ut_RegisterMemory_WhenMemHandleOutNull_Returns_P
     mem.addr = reinterpret_cast<void *>(0x1000U);
     mem.size = 4096U;
     mem.type = COMM_MEM_TYPE_DEVICE;
-    EXPECT_EQ(ep.RegisterMemory(mem, "t", nullptr), HCCL_E_PTR);
+    EXPECT_EQ(ep.RegisterMemory(mem, nullptr), HCCL_E_PTR);
 }
 
 TEST_F(AicpuTsRoceEndpointTest, Ut_RegisterMemory_Delegates_Returns_SUCCESS) {
@@ -216,7 +216,7 @@ TEST_F(AicpuTsRoceEndpointTest, Ut_RegisterMemory_Delegates_Returns_SUCCESS) {
     mem.size = 2048U;
     mem.type = COMM_MEM_TYPE_DEVICE;
     void *handle = nullptr;
-    ASSERT_EQ(ep.RegisterMemory(mem, "tag", &handle), HCCL_SUCCESS);
+    ASSERT_EQ(ep.RegisterMemory(mem, &handle), HCCL_SUCCESS);
     EXPECT_EQ(handle, reinterpret_cast<void *>(0x42ULL));
 }
 
