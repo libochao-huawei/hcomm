@@ -39,21 +39,12 @@ HcclResult BuildBufferInfos(HcommMemHandle *memHandles, uint32_t memHandleNum,
         auto locRmaBuffer = reinterpret_cast<Hccl::LocalUbRmaBuffer *>(locMemInfo->bufferHandle);
         CHK_PTR_NULL(locRmaBuffer);
         HCCL_INFO("[BuildBufferInfos] locRmaBuffer[%s]", locRmaBuffer->Describe().c_str());
-
-        std::array<char, HCCL_RES_TAG_MAX_LEN> memTag{};
-        std::string tag = locMemInfo->memTag;
-        if (UNLIKELY(tag.size() >= HCCL_RES_TAG_MAX_LEN)) {
-            HCCL_ERROR("[BuildBufferInfos] tagSize exceeds limit[%u]", HCCL_RES_TAG_MAX_LEN);
-            return HCCL_E_PARA;
-        }
-        CHK_SAFETY_FUNC_RET(memcpy_s(memTag.data(), memTag.size(), tag.c_str(), tag.size()));
         bufferInfos.emplace_back(
             reinterpret_cast<uintptr_t>(locMemInfo->mem.addr),
             static_cast<uint32_t>(locMemInfo->mem.size),
             locRmaBuffer->GetTokenId(),
             locRmaBuffer->GetTokenValue(),
-            locMemInfo->mem.type,
-            memTag);
+            locMemInfo->mem.type);
     }
     return HCCL_SUCCESS;
 }
@@ -268,12 +259,10 @@ HcclResult CcuUrmaChannel::GetNotifyNum(uint32_t *notifyNum) const
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult CcuUrmaChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags)
+HcclResult CcuUrmaChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum)
 {
     CHK_PTR_NULL(remoteMem);
     CHK_PTR_NULL(memNum);
-    CHK_PTR_NULL(memTags);
-
     *remoteMem = nullptr;
     *memNum = 0;
 
@@ -288,7 +277,6 @@ HcclResult CcuUrmaChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, c
 
     remoteMem[0] = hcclBufferInfoPtr_.get();
     *memNum = 1;
-    memTags[0] = const_cast<char *>(memTag_.c_str());
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -304,9 +292,9 @@ HcclResult CcuUrmaChannel::Resume()
     return HCCL_SUCCESS;
 }
 
-HcclResult CcuUrmaChannel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum)
+HcclResult CcuUrmaChannel::GetUserRemoteMem(CommMem **remoteMem, uint32_t *memNum)
 {
-    return impl_->GetUserRemoteMem(remoteMem, memTag, memNum);
+    return impl_->GetUserRemoteMem(remoteMem, memNum);
 }
 
 HcclResult CcuUrmaChannel::UpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum)

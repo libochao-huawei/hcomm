@@ -180,7 +180,7 @@ TEST_F(CpuRoceEndpointTest, Ut_When_Register_Memory_Fail_Expect_Return_HCCL_E_PT
     mem.type = COMM_MEM_TYPE_DEVICE;
     mem.addr = malloc(10);
     mem.size = 10;
-    ret = endpoint->RegisterMemory(mem, "HcclBuffer", nullptr);
+    ret = endpoint->RegisterMemory(mem, "HcclBuffer");
     EXPECT_EQ(ret, HCCL_E_PTR);
     free(mem.addr);
 }
