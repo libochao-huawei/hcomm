@@ -17,6 +17,8 @@
 #undef private
 #include "task_scheduler_error.h"
 #include "aicpu_indop_env.h"
+#include "adapter_hal_pub.h"
+#include "dlhal_function_v2.h"
 
 using namespace hccl;
 using namespace hcomm;
@@ -28,17 +30,31 @@ constexpr u32 RT_UB_LINK_FAILEDERR = 0x5;
 class hcclCommTaskExceptionLiteTest : public testing::Test
 {
 protected:
-    virtual void SetUp() override {}
+    virtual void SetUp() override
+    {
+        MOCKER(::getpid)
+            .stubs()
+            .will(returnValue(12345));
+        MOCKER(HrtHalDrvQueryProcessHostPid)
+            .stubs()
+            .will(returnValue(HCCL_SUCCESS));
+        Hccl::DlHalFunctionV2::GetInstance().dlHalEschedSubmitEvent = [](unsigned int, struct event_summary *) -> drvError_t {
+            return DRV_ERROR_NONE;
+        };
+        HcclCommTaskExceptionLite::GetInstance().Init(0);
+    }
 
     virtual void TearDown() override
     {
         GlobalMockObject::verify();
     }
+private:
+    u32 notifyId = 1;
+    u32 tsId = 2;
 };
 
 TEST_F(hcclCommTaskExceptionLiteTest, Ut_SwitchUBCqeErrCodeToTsErrCode_When_Normal_Expect_ReturnIsCorrect)
 {
-    HcclCommTaskExceptionLite::GetInstance().Init(0);
     uint16_t ret = HcclCommTaskExceptionLite::GetInstance().SwitchUBCqeErrCodeToTsErrCode(RT_UB_LOCAL_OPERATIOINERR);
     EXPECT_EQ(ret, TS_ERROR_HCCL_OP_UB_DDRC_FAILED);
     
@@ -54,7 +70,6 @@ TEST_F(hcclCommTaskExceptionLiteTest, Ut_SwitchUBCqeErrCodeToTsErrCode_When_Norm
 
 TEST_F(hcclCommTaskExceptionLiteTest, Ut_SwitchSdmaCqeErrCodeToTsErrCode_When_Normal_Expect_ReturnIsCorrect)
 {
-    HcclCommTaskExceptionLite::GetInstance().Init(0);
     uint16_t ret = HcclCommTaskExceptionLite::GetInstance().SwitchSdmaCqeErrCodeToTsErrCode(RT_SDMA_COMPERR);
     EXPECT_EQ(ret, TS_ERROR_SDMA_LINK_ERROR);
     
@@ -71,9 +86,38 @@ TEST_F(hcclCommTaskExceptionLiteTest, Ut_SwitchSdmaCqeErrCodeToTsErrCode_When_No
 TEST_F(hcclCommTaskExceptionLiteTest, Ut_SwitchSdmaCqeErrCodeToTsErrCode_taskexception_disable)
 {
     hcomm::SetTaskExceptionEnable(false);
-    HcclCommTaskExceptionLite::GetInstance().Init(0);
     rtLogicCqReport_t exceptionInfo;
     HcclResult ret = HcclCommTaskExceptionLite::GetInstance().ProcessCqe(nullptr, exceptionInfo);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     hcomm::SetTaskExceptionEnable(true);
+}
+
+TEST_F(hcclCommTaskExceptionLiteTest, Ut_SendTaskExceptionByMBox_When_UBSqeType_Expect_ReturnHCCL_SUCCESS)
+{
+    rtLogicCqReport_t exceptionInfo;
+    exceptionInfo.sqeType = static_cast<uint8_t>(SqeType950::UBDMA_SQE);
+    exceptionInfo.errorCode = RT_UB_LOCAL_OPERATIOINERR;
+
+    HcclResult ret = HcclCommTaskExceptionLite::GetInstance().SendTaskExceptionByMBox(notifyId, tsId, exceptionInfo);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(hcclCommTaskExceptionLiteTest, Ut_SendTaskExceptionByMBox_When_SDMASqeType_Expect_ReturnHCCL_SUCCESS)
+{
+    rtLogicCqReport_t exceptionInfo;
+    exceptionInfo.sqeType = static_cast<uint8_t>(SqeType950::SDMA_SQE);
+    exceptionInfo.errorCode = RT_SDMA_COMPERR;
+
+    HcclResult ret = HcclCommTaskExceptionLite::GetInstance().SendTaskExceptionByMBox(notifyId, tsId, exceptionInfo);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(hcclCommTaskExceptionLiteTest, Ut_SendTaskExceptionByMBox_When_OtherSqeType_Expect_ReturnHCCL_SUCCESS)
+{
+    rtLogicCqReport_t exceptionInfo;
+    exceptionInfo.sqeType = static_cast<uint8_t>(SqeType950::WRITE_VALUE_SQE);
+    exceptionInfo.errorCode = 123;
+
+    HcclResult ret = HcclCommTaskExceptionLite::GetInstance().SendTaskExceptionByMBox(notifyId, tsId, exceptionInfo);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
 }
