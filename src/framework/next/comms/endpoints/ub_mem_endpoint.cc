@@ -31,9 +31,9 @@ HcclResult UbMemEndpoint::ServerSocketListen(const uint32_t port)
     return HCCL_SUCCESS;
 }
 
-HcclResult UbMemEndpoint::RegisterMemory(HcommMem mem, const char *memTag, void **memHandle)
+HcclResult UbMemEndpoint::RegisterMemory(HcommMem mem, void **memHandle)
 {
-    CHK_RET(this->regedMemMgr_->RegisterMemory(mem, memTag, memHandle));
+    CHK_RET(this->regedMemMgr_->RegisterMemory(mem, memHandle));
     return HCCL_SUCCESS;
 }
 

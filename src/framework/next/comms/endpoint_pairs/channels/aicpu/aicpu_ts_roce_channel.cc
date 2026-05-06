@@ -377,10 +377,9 @@ HcclResult AicpuTsRoceChannel::GetNotifyNum(uint32_t *notifyNum) const
 }
 
 // 单边通信暂未使用，接口先保留但返回不支持
-HcclResult AicpuTsRoceChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags)
+HcclResult AicpuTsRoceChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum)
 {
     (void)remoteMem;
-    (void)memTags;
     (void)memNum;
     HCCL_DEBUG("[AicpuTsRoceChannel][%s] GetRemoteMem not supported for AICPU TS RoCE channel", SocketRoleTag());
     return HCCL_E_NOT_SUPPORT;
@@ -395,10 +394,9 @@ ChannelStatus AicpuTsRoceChannel::GetStatus()
 }
 
 // 单边通信暂未使用，接口先保留但返回不支持
-HcclResult AicpuTsRoceChannel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum)
+HcclResult AicpuTsRoceChannel::GetUserRemoteMem(CommMem **remoteMem, uint32_t *memNum)
 {
     (void)remoteMem;
-    (void)memTag;
     (void)memNum;
     HCCL_DEBUG("[AicpuTsRoceChannel][%s] GetUserRemoteMem not supported for AICPU TS RoCE channel", SocketRoleTag());
     return HCCL_E_NOT_SUPPORT;
