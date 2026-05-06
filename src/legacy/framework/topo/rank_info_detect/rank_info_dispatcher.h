@@ -90,6 +90,7 @@ private:
     RankInfoDetectService *rankInfoDetectServer_;
     u32 threadNum_{DEFAULT_THREAD_NUM};
     u32 rankNum_{0};
+    u32 testNum_{0};
     std::vector<std::thread> workerThreads_;
     std::queue<WorkerTask> taskQueue_;
     std::mutex taskQueueMutex_;

@@ -159,7 +159,7 @@ void RankInfoDispather::ProcessOneSendEvent(s32 epollFd, FdHandle &fdHanlde)
     s32 ctlType = EPOLL_CTL_DEL;
     if (ctx->txState.IsOk()) {
         sendDoneCount_++;
-        if (sendDoneCount_ == 6 || sendDoneCount_ == 8) {
+        if (testNum_ < 2) {
             ctlType = EPOLL_CTL_MOD;
             sendDoneCount_--;
         }
@@ -187,7 +187,7 @@ void RankInfoDispather::SendOnce()
                 InvalidParamsException, "send data error.");
         } else {
             sendDoneCount_++;
-            if (sendDoneCount_ == 2 || sendDoneCount_ == 4 || sendDoneCount_ == 6 || sendDoneCount_ == 8) {
+            if (testNum_ < 2) {
                 s32 ret = RaCtlEventHandle(epollFds_, it.first, EPOLL_CTL_ADD, RaEpollEvent::RA_EPOLLOUT_LET_ONESHOT);
                 CHK_PRT_THROW(ret != 0, HCCL_ERROR("[RankInfoDispather::%s]epoll_ctl add fd failed.", __func__),
                     InvalidParamsException, "send data error.");
@@ -238,6 +238,7 @@ void RankInfoDispather::ProcessSend()
             taskQueue_.push(std::bind(&RankInfoDispather::ProcessOneSendEvent, this, epollFds_, static_cast<void*>(eventInfos[i].fdHandle)));
             lck.unlock();
         }
+        testNum_++；
         // 唤醒处理
         WakeWoker();
     }
