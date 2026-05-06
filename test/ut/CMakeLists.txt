@@ -21,6 +21,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/pkg_inc/hcomm/ccu
 
     # src/pub_inc 目录下头文件
+    ${HCCL_CODE_ROOT}/src/common/
     ${HCCL_CODE_ROOT}/src/pub_inc
     ${HCCL_CODE_ROOT}/src/pub_inc/inner
     ${HCCL_CODE_ROOT}/src/pub_inc/aicpu
@@ -309,6 +310,7 @@ set(UT_COMMON_INCLUDE_LIST
     # ccu 头文件
     ${HCCL_CODE_ROOT}/src/framework/next/comms/adpt/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/common/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/common/device
 
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/pub_inc/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_device/

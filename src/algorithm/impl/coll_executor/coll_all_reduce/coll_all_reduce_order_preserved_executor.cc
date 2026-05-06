@@ -190,8 +190,9 @@ HcclResult CollAllReduceOrderPreservedExecutor::RunReduceScatterLevel0(const OpP
 }
 
 HcclResult CollAllReduceOrderPreservedExecutor::RunReduceScatterLevel0SingleRank(const OpParam &param,
-    ExecMem &execMem, SubCommInfo &level0CommInfo)
+    ExecMem &execMem, const SubCommInfo &level0CommInfo) const
 {
+    (void) level0CommInfo;
     u64 size = execMem.count * SIZE_TABLE[param.DataDes.dataType];
 
     DeviceMem srcMem = DeviceMem::create(execMem.inputPtr, size);

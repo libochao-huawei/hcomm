@@ -35,7 +35,7 @@ HcclResult InsTempScatterNHR::CalcRes(AlgTempResReq &tempResReq)
     for (auto resReqIter = linkReq.begin(); resReqIter != linkReq.end(); resReqIter++) {
         auto remoteRank = resReqIter->first;
         if (rank2PathNumMap_.find(remoteRank) == rank2PathNumMap_.end() || rank2PathNumMap_[remoteRank] == 0) {
-            HCCL_ERROR("[InsTempScatterNHR] No path to remoteRank[%u]", remoteRank);
+            HCCL_ERROR("[InsTempScatterNHR] No path to remoteRank[%d]", remoteRank);
             return HcclResult::HCCL_E_INTERNAL;
         }
         if (pathNum == 0) {
@@ -43,7 +43,7 @@ HcclResult InsTempScatterNHR::CalcRes(AlgTempResReq &tempResReq)
         } else if (rank2PathNumMap_[remoteRank] != pathNum) {
             HCCL_ERROR("[InsTempScatterNHR] Inconsistency pathNum to remoteRanks, Previous consistent pathNum=[%u], "
                        "mismatched "
-                       "remoteRank=[%u], pathNum=[%u]",
+                       "remoteRank=[%d], pathNum=[%u]",
                 pathNum, remoteRank, rank2PathNumMap_[remoteRank]);
             return HcclResult::HCCL_E_INTERNAL;
         }
@@ -64,7 +64,7 @@ uint64_t InsTempScatterNHR::GetExpandedMode() const
     return DeviceMode::AICPU;
 }
 
-HcclResult InsTempScatterNHR::PreCopy(TemplateDataParams &templateDataParams, std::vector<InsQuePtr> &tempInsQues)
+HcclResult InsTempScatterNHR::PreCopy(const TemplateDataParams &templateDataParams, std::vector<InsQuePtr> &tempInsQues)
 {
     if (u32(myRank_) != root_ || buffInfo_.inBuffType == BufferType::SCRATCH) {
         return HCCL_SUCCESS;
@@ -86,7 +86,7 @@ HcclResult InsTempScatterNHR::PreCopy(TemplateDataParams &templateDataParams, st
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult InsTempScatterNHR::PostCopy(TemplateDataParams &templateDataParams, std::vector<InsQuePtr> &tempInsQues)
+HcclResult InsTempScatterNHR::PostCopy(const TemplateDataParams &templateDataParams, std::vector<InsQuePtr> &tempInsQues)
 {
     u32 myAlgRank;
     GetAlgRank(myRank_, tempVTopo_[0], myAlgRank);

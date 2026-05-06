@@ -222,7 +222,7 @@ TEST_F(MyRankTest, Ut_Init_When_Default_Mode_Expect_Set_By_Env)
 // 测试Init时ccu驱动拉起失败回退到aicpu
 TEST_F(MyRankTest, Ut_Init_When_Ccu_Driver_Fail_Expect_Fallback_Aicpu)
 {
-    setenv("HCCL_INDEPENDENT_OP", "1", 1);
+    setenv("HCCL_CCU_CUSTOM_OP_MODE", "1", 1);
     MOCKER_CPP(&hcomm::CcuResContainer::ChangeMode).stubs().will(returnValue(HCCL_E_AGAIN));
 
     aclrtBinHandle binHandle;
@@ -238,13 +238,13 @@ TEST_F(MyRankTest, Ut_Init_When_Ccu_Driver_Fail_Expect_Fallback_Aicpu)
     uint32_t opExpansionModeMs = CCU_MS_MODE;
     EXPECT_EQ(myRank.Init(cclBuffer, opExpansionModeMs, 2), HCCL_SUCCESS);
     EXPECT_EQ(myRank.opExpansionMode_, AICPU_TS_MODE);
-    unsetenv("HCCL_INDEPENDENT_OP");
+    unsetenv("HCCL_CCU_CUSTOM_OP_MODE");
 }
 
 // 测试Init时ccu ms资源不足回退到sched
 TEST_F(MyRankTest, Ut_Init_When_Ccu_Ms_Insufficient_Expect_Fallback_Sched)
 {
-    setenv("HCCL_INDEPENDENT_OP", "1", 1);
+    setenv("HCCL_CCU_CUSTOM_OP_MODE", "1", 1);
     MOCKER_CPP(&hcomm::CcuResContainer::ChangeMode).stubs()
         .will(returnValue(HCCL_E_UNAVAIL))
         .then(returnValue(HCCL_SUCCESS));
@@ -262,13 +262,13 @@ TEST_F(MyRankTest, Ut_Init_When_Ccu_Ms_Insufficient_Expect_Fallback_Sched)
     uint32_t opExpansionModeMs = CCU_MS_MODE;
     EXPECT_EQ(myRank.Init(cclBuffer, opExpansionModeMs, 2), HCCL_SUCCESS);
     EXPECT_EQ(myRank.opExpansionMode_, CCU_SCHED_MODE);
-    unsetenv("HCCL_INDEPENDENT_OP");
+    unsetenv("HCCL_CCU_CUSTOM_OP_MODE");
 }
 
 // 测试Init时ccu ms和sched资源不足回退到aicpu
 TEST_F(MyRankTest, Ut_Init_When_Ccu_Ms_And_Sched_Insufficient_Expect_Fallback_Aicpu)
 {
-    setenv("HCCL_INDEPENDENT_OP", "1", 1);
+    setenv("HCCL_CCU_CUSTOM_OP_MODE", "1", 1);
     MOCKER_CPP(&hcomm::CcuResContainer::ChangeMode).stubs().will(returnValue(HCCL_E_UNAVAIL));
 
     aclrtBinHandle binHandle;
@@ -284,13 +284,13 @@ TEST_F(MyRankTest, Ut_Init_When_Ccu_Ms_And_Sched_Insufficient_Expect_Fallback_Ai
     uint32_t opExpansionModeMs = CCU_MS_MODE;
     EXPECT_EQ(myRank.Init(cclBuffer, opExpansionModeMs, 2), HCCL_SUCCESS);
     EXPECT_EQ(myRank.opExpansionMode_, AICPU_TS_MODE);
-    unsetenv("HCCL_INDEPENDENT_OP");
+    unsetenv("HCCL_CCU_CUSTOM_OP_MODE");
 }
 
 // 测试Init在申请资源时出现其他报错时失败
 TEST_F(MyRankTest, Ut_Init_When_Resource_Fail_Expect_Fail)
 {
-    setenv("HCCL_INDEPENDENT_OP", "1", 1);
+    setenv("HCCL_CCU_CUSTOM_OP_MODE", "1", 1);
     MOCKER_CPP(&hcomm::CcuResContainer::ChangeMode).stubs().will(returnValue(HCCL_E_PARA));
 
     aclrtBinHandle binHandle;
@@ -305,7 +305,7 @@ TEST_F(MyRankTest, Ut_Init_When_Resource_Fail_Expect_Fail)
 
     uint32_t opExpansionModeMs = CCU_MS_MODE;
     EXPECT_EQ(myRank.Init(cclBuffer, opExpansionModeMs, 2), HCCL_E_PARA);
-    unsetenv("HCCL_INDEPENDENT_OP");
+    unsetenv("HCCL_CCU_CUSTOM_OP_MODE");
 }
 
 // 测试BatchCreateChannels在资源不足时销毁新申请的channel

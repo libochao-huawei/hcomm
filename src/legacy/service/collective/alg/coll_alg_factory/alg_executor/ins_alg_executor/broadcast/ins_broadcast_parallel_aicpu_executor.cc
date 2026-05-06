@@ -55,7 +55,7 @@ template <typename T>
 HcclResult InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1, InsAlgTemplate2,
     InsAlgTemplate3>::CalcSingleAlgRes(InsAlgTemplate0 &intraScatter, InsAlgTemplate1 &interScatter,
     InsAlgTemplate2 &intraAllGather, InsAlgTemplate3 &interAllGather, T *type, AlgTempResReq &resReqIntraScatter,
-    AlgTempResReq &resReqInterScatter, AlgTempResReq &resReqIntraAllGather, AlgTempResReq &resReqInterAllGather)
+    AlgTempResReq &resReqInterScatter, AlgTempResReq &resReqIntraAllGather, AlgTempResReq &resReqInterAllGather) const
 {
     if (enableDetour_) {
         HCCL_DEBUG("[%s] Rank[%d], CalcRes with detouring enabled.", __func__, myRank_);

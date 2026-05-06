@@ -36,21 +36,7 @@ HcclResult OpExeCounter::InitCounter()
     if (refCount_ <= 0) {
         refCount_ = 0;
         int32_t defCount = 0;
-        if (headCountMem_ != nullptr) {
-            CHK_PRT(hrtFree(headCountMem_));
-            HCCL_WARNING("headCountMem_ should be nullptr");
-            headCountMem_ = nullptr;
-        }
-        if (tailCountMem_ != nullptr) {
-            CHK_PRT(hrtFree(tailCountMem_));
-            HCCL_WARNING("tailCountMem_ should be nullptr");
-            tailCountMem_ = nullptr;
-        }
-        if (addOneMem_ != nullptr) {
-            CHK_PRT(hrtFree(addOneMem_));
-            HCCL_WARNING("addOneMem_ should be nullptr");
-            addOneMem_ = nullptr;
-        }
+        ReleaseMemHandles();
         memSize_ = sizeof(int32_t);
         CHK_RET(hrtMalloc(&headCountMem_, memSize_));
         CHK_PTR_NULL(headCountMem_);
@@ -83,6 +69,7 @@ HcclResult OpExeCounter::DeInitCounter()
 {
     if (!isNeedOpCounter_) {
         HCCL_DEBUG("do not need add counter");
+        ReleaseMemHandles();
         return HCCL_SUCCESS;
     }
     refCount_--;
@@ -91,18 +78,7 @@ HcclResult OpExeCounter::DeInitCounter()
         CHK_RET(GetCounter(counter));
         HCCL_RUN_INFO("[OpExeCounter][DeInitCounter] head counter[%d], tail counter[%d]",
             counter.first, counter.second);
-        if (headCountMem_ != nullptr) {
-            CHK_PRT(hrtFree(headCountMem_));
-            headCountMem_ = nullptr;
-        }
-        if (tailCountMem_ != nullptr) {
-            CHK_PRT(hrtFree(tailCountMem_));
-            tailCountMem_ = nullptr;
-        }
-        if (addOneMem_ != nullptr) {
-            CHK_PRT(hrtFree(addOneMem_));
-            addOneMem_ = nullptr;
-        }
+        ReleaseMemHandles();
         isNeedOpCounter_= false;
         HCCL_RUN_INFO("free counter mem resource");
     }
@@ -178,6 +154,22 @@ HcclResult OpExeCounter::ClearOpCounterMem()
     CHK_RET(hrtMemSet(tailCountMem_, memSize_, memSize_));
     HCCL_DEBUG("[OpExeCounter][ClearOpCounterMem] headCountMem or tailCountMem is to success set 0");
     return HCCL_SUCCESS;
+}
+
+void OpExeCounter::ReleaseMemHandles()
+{
+    if (headCountMem_ != nullptr) {
+        CHK_PRT(hrtFree(headCountMem_));
+        headCountMem_ = nullptr;
+    }
+    if (tailCountMem_ != nullptr) {
+        CHK_PRT(hrtFree(tailCountMem_));
+        tailCountMem_ = nullptr;
+    }
+    if (addOneMem_ != nullptr) {
+        CHK_PRT(hrtFree(addOneMem_));
+        addOneMem_ = nullptr;
+    }
 }
 
 HcclResult FftsHeadCounter(const HcclDispatcher &dispatcher, Stream &stream)

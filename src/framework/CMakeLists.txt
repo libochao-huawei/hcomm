@@ -36,6 +36,7 @@ set(hccl_include_list
     ${HCCL_BASE_DIR}/algorithm/base/inc
     ${HCCL_BASE_DIR}/algorithm/pub_inc
     ${HCCL_BASE_DIR}/pub_inc
+    ${HCCL_BASE_DIR}/pub_inc/inner
     ${HCCL_BASE_DIR}/pub_inc/new
     ${HCCL_BASE_DIR}/algorithm/base/alg_aiv_template
     ${HCCL_BASE_DIR}/algorithm/base/alg_template
@@ -84,6 +85,7 @@ set(hccl_include_list
     ${HCCL_BASE_DIR}/framework/op_base/src
     ${HCCL_BASE_DIR}/framework/group
 
+    ${HCCL_BASE_DIR}/common/
     ${HCCL_BASE_DIR}/common/health/
     ${HCCL_BASE_DIR}/common/stream/
     ${HCCL_BASE_DIR}/common/launch_device/
@@ -124,6 +126,7 @@ set(hccl_include_list
 
     ${HCCL_BASE_DIR}/framework/next/comms/ccu/ccu_transport/
     ${HCCL_BASE_DIR}/framework/next/comms/ccu/ccu_kernel
+    ${HCCL_BASE_DIR}/framework/next/comms/common/device/
 )
 
 target_include_directories(hcomm PRIVATE
@@ -278,7 +281,8 @@ else()
 endif()
 
 install(TARGETS hcomm
-    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL
+    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
 )
 
 message(STATUS "framework KERNEL_MODE=${KERNEL_MODE}")
@@ -779,7 +783,6 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/common/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
@@ -920,7 +923,8 @@ if(NOT BUILD_OPEN_PROJECT)
     )
 
     install(TARGETS  ccl_kernel
-        LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
+        LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
+        COMPONENT hcomm
     )
 endif()
 add_subdirectory(common)
@@ -941,7 +945,8 @@ if(NOT KERNEL_MODE)
     )
     add_custom_target(ccl_kernel_json DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
-        DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/config OPTIONAL
+        DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/config ${INSTALL_OPTIONAL}
+        COMPONENT hcomm
     )
 
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
@@ -950,7 +955,8 @@ if(NOT KERNEL_MODE)
     )
     add_custom_target(aicpu_custom_json DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
-        DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
+        DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel ${INSTALL_OPTIONAL}
+        COMPONENT hcomm
     )
 
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/libccl_dpu.json
@@ -959,7 +965,8 @@ if(NOT KERNEL_MODE)
     )
     add_custom_target(dpu_kernel_json DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/libccl_dpu.json)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libccl_dpu.json
-        DESTINATION ${INSTALL_DPU_KERNEL_JSON_DIR} OPTIONAL
+        DESTINATION ${INSTALL_DPU_KERNEL_JSON_DIR} ${INSTALL_OPTIONAL}
+        COMPONENT hcomm
     )
     add_dependencies(hcomm ccl_kernel_json aicpu_custom_json dpu_kernel_json)
 endif()
@@ -1007,7 +1014,8 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
         )
         add_custom_target(aicpu_custom_json DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json)
         install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
-            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
+            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel ${INSTALL_OPTIONAL}
+            COMPONENT hcomm
         )
 
         target_link_directories(ccl_kernel PRIVATE
@@ -1087,9 +1095,11 @@ if(DEVICE_MODE AND KERNEL_MODE)
         SUFFIX ".so"
     )
     install(TARGETS aicpu_custom
-        LIBRARY DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
+        LIBRARY DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel ${INSTALL_OPTIONAL}
+        COMPONENT hcomm
     )
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
-        DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
+        DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel ${INSTALL_OPTIONAL}
+        COMPONENT hcomm
     )
 endif()

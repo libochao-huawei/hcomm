@@ -145,8 +145,8 @@ HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint3
     }
 
     // 仅自定义算子ccu流程初始化资源
-    const char *indOp = getenv("HCCL_INDEPENDENT_OP");
-    if ((indOp != nullptr && strcmp(indOp, "") != 0) && !ccuResContainer_ && rankNum != 1 &&
+    const char *opModeEnv = getenv("HCCL_CCU_CUSTOM_OP_MODE");
+    if ((opModeEnv != nullptr && strcmp(opModeEnv, "1") == 0) && !ccuResContainer_ && rankNum != 1 &&
         (opExpansionMode_ == CCU_MS_MODE || opExpansionMode_ == CCU_SCHED_MODE)) {
         const uint32_t originOpExpansionMode = opExpansionMode_; // 记录原始加速模式，避免中间执行修改后丢失
         ccuResContainer_.reset(new (std::nothrow)CcuResContainer());
@@ -584,9 +584,10 @@ HcclResult MyRank::ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, ui
     CHK_PTR_NULL(size);
 
     u32 memNum = 0;  // 接收内存块数量
-    /* 实现获取buffer Num的接口，此处Size为10的vector暂存 */
-    std::vector<CommMem *> remoteMemList(10);
-    std::vector<char *> memTags(10);
+    /* 实现获取buffer Num的接口，此处Size为500的vector暂存 */
+    // 临时方案，暂时写死大小，后续需定下正式修改方案整改
+    std::vector<CommMem *> remoteMemList(500);
+    std::vector<char *> memTags(500);
     CHK_RET(static_cast<HcclResult>(HcommChannelGetRemoteMem(channel, remoteMemList.data(), &memNum, memTags.data())));
 
     for (u32 i = 0; i < memNum; i++) {

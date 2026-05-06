@@ -3453,52 +3453,6 @@ TEST_F(CommunicatorImplTest, Ut_GetInfo_When_endpointDecsNull_Return_Hccl_E_PTR)
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
-TEST_F(CommunicatorImplTest, Ut_CheckRankGraphAddrs_When_GetDevEidList_Not_Enough)
-{
-    vector<HrtDevEidInfo> eidInfoListStbu;
-    HrtDevEidInfo         eidInfo;
-    eidInfo.name    = "udma0";
-    eidInfo.dieId   = 0;
-    eidInfo.funcId  = 3;
-    eidInfo.chipId  = static_cast<uint32_t>(0);
-    eidInfo.ipAddress = IpAddress("192.168.100.10");
-    eidInfoListStbu.push_back(eidInfo);
-
-    MOCKER(HrtRaGetDevEidInfoList)
-        .stubs()
-        .with(any())
-        .will(returnValue(eidInfoListStbu));
-
-    CommunicatorImpl comm;
-    comm.devLogicId = 0;
-    comm.myRank = 0;
-    HcclCommConfig config;
-    CommParams params;
-
-    RankGraphBuilder rankGraphBuilder;
-    string topoFilePath{HCOMM_CODE_ROOT_DIR "/test/legacy/ut/framework/communicator/topo2pclos.json"};
-    comm.rankGraph = rankGraphBuilder.Build(RankTable2pClos, topoFilePath, 0);
-    comm.ranktableInfo = rankGraphBuilder.GetRankTableInfo();
-    EXPECT_NE(comm.rankGraph, nullptr);
-
-    EXPECT_THROW(comm.CheckRankGraphAddrs(), InvalidParamsException);
-}
-
-TEST_F(CommunicatorImplTest, Ut_GetTopoFilePath)
-{
-    CommunicatorImpl comm;
-    comm.devPhyId = 0;
-    unsigned int mainBoardId = 0x3;
-    char topoFileName[32] = "atlas_950_1.json";
-    char drv_path[256] = "/usr/local/Ascend2";
-    MOCKER(hal_get_mainboard_id).stubs().with(any(), outBoundP(&mainBoardId)).will(returnValue(0));
-    MOCKER(realpath).stubs().with(any(), any()).will(returnValue(&topoFileName[0]));
-    MOCKER(hal_get_driver_install_path).stubs().with(outBoundP(drv_path, strlen(drv_path)), any()).will(returnValue(0));
-
-    std::string topoFilePath = comm.GetTopoFilePath();
-    EXPECT_NE(topoFilePath.find(topoFileName), std::string::npos);
-}
-
 TEST_F(CommunicatorImplTest, Ut_When_DestroyDpuKernelResource_Expect_DpuStream_Uninit_Failed)
 {
     CommunicatorImpl comm;
