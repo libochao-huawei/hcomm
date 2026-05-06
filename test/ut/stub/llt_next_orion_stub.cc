@@ -118,6 +118,7 @@
 #include "rts_1ton_cnt_notify.h"
 #include "ipc_local_notify.h"
 #include "host_ub_connection.h"
+#include "urma_api.h"
 
 namespace Hccl {
 
@@ -2710,9 +2711,9 @@ u32 HostUbConnection::GetSqDepth() const
     return sqDepth;
 }
 
-uint64_t HostUbConnection::GetCqVa() const
+uint64_t HostUbConnection::GetCqVa()
 {
-    return cqInfo_.va;
+    return 0;
 }
 
 u64 HostUbConnection::GetJettyVa() const
@@ -2720,9 +2721,9 @@ u64 HostUbConnection::GetJettyVa() const
     return jettyVa_;
 }
 
-JettyHandle HostUbConnection::GetTJettyVa() const
+JettyHandle HostUbConnection::GetTJettyVa()
 {
-    return remoteJettyVa_;
+    return 0;
 }
 
 void HostUbConnection::UpdateCiVal(u32 ci)

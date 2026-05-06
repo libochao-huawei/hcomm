@@ -560,17 +560,17 @@ u32 HostUbConnection::GetSqDepth() const
     return sqDepth;
 }
 
-uint64_t HostUbConnection::GetCqVa() const
+uint64_t HostUbConnection::GetCqVa()
 {
     return cqInfo_.va;
 }
 
-u64 HostUbConnection::GetJettyVa() const
+u64 HostUbConnection::GetJettyVa()
 {
     return jettyVa_;
 }
 
-JettyHandle HostUbConnection::GetTJettyVa() const
+JettyHandle HostUbConnection::GetTJettyVa()
 {
     return remoteJettyVa_;
 }

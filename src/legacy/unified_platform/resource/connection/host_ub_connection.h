@@ -72,9 +72,9 @@ public:
     u32          GetCiVal() const;
     u32          GetSqDepth() const;
 
-    uint64_t GetCqVa() const;
-    u64 GetJettyVa() const;
-    JettyHandle GetTJettyVa() const;
+    uint64_t GetCqVa();
+    u64 GetJettyVa();
+    JettyHandle GetTJettyVa();
 
 protected:
     TpProtocol     tpProtocol{TpProtocol::INVALID};
