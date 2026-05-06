@@ -16,9 +16,7 @@ if(NOT DEFINED HCOMM_DIR)
     set(HCOMM_DIR "${CMAKE_CURRENT_SOURCE_DIR}/..")
 endif()
 
-# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_USE_CXX11_ABI=0")
-
-#组件间对外头文件目录
+# 组件间对外头文件目录
 add_library(hccl_headers INTERFACE)
 target_include_directories(hccl_headers INTERFACE
     $<BUILD_INTERFACE:${TOP_DIR}/hcomm/include>
@@ -39,130 +37,120 @@ else()
     set(HCCL_THIRD_PARTY_DIR ${TOP_DIR})
 endif()
 
-message(STATUS "ORION_MODE=${ORION_MODE}")
 set(ORION_REAL_PATH ${CMAKE_CURRENT_SOURCE_DIR}/legacy)
 set(HCOMM_REAL_PATH ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
-#需要编译的文件list
-set(HCOMM_SRC_INCLUDE_LIST
-    ${HCCL_BASE_DIR}/pub_inc
-    ${HCCL_BASE_DIR}/pub_inc/aicpu/
-    ${HCCL_BASE_DIR}/pub_inc/inner
-    ${HCCL_BASE_DIR}/pub_inc/new
+set(hccl_include_list
+    ${HCOMM_DIR}/include/hccl
+    ${HCOMM_DIR}/src/algorithm/base/inc
+    ${HCOMM_DIR}/src/algorithm/pub_inc
+    ${HCOMM_DIR}/src/pub_inc
+    ${HCOMM_DIR}/src/pub_inc/inner
+    ${HCOMM_DIR}/src/pub_inc/new
+    ${HCOMM_DIR}/src/algorithm/base/alg_aiv_template
+    ${HCOMM_DIR}/src/algorithm/base/alg_template
+    ${HCOMM_DIR}/src/algorithm/base/mc2_handler
+    ${HCOMM_DIR}/src/algorithm/base/alg_template/component
+    ${HCOMM_DIR}/src/algorithm/base/communicator
+    ${HCOMM_DIR}/src/algorithm/base/communicator/legacy
+    ${HCOMM_DIR}/src/algorithm/impl
+    ${HCOMM_DIR}/src/algorithm/impl/legacy
+    ${HCOMM_DIR}/src/algorithm/impl/inc
+    ${HCOMM_DIR}/src/algorithm/impl/task
+    ${HCOMM_DIR}/src/algorithm/impl/resource_manager
+    ${HCOMM_DIR}/src/algorithm/impl/coll_executor
 
-    ${HCCL_BASE_DIR}/algorithm/base/inc
-    ${HCCL_BASE_DIR}/algorithm/pub_inc
-    ${HCCL_BASE_DIR}/algorithm/base/alg_aiv_template
-    ${HCCL_BASE_DIR}/algorithm/base/alg_template
-    ${HCCL_BASE_DIR}/algorithm/base/alg_template/component
-    ${HCCL_BASE_DIR}/algorithm/base/mc2_handler
-    ${HCCL_BASE_DIR}/algorithm/base/communicator
-    ${HCCL_BASE_DIR}/algorithm/impl
-    ${HCCL_BASE_DIR}/algorithm/impl/inc
-    ${HCCL_BASE_DIR}/algorithm/impl/legacy
-    ${HCCL_BASE_DIR}/algorithm/impl/legacy/operator
-    ${HCCL_BASE_DIR}/algorithm/base/communicator/legacy
-    ${HCCL_BASE_DIR}/algorithm/impl/resource_manager
-    ${HCCL_BASE_DIR}/algorithm/impl/task
-    ${HCCL_BASE_DIR}/algorithm/impl/operator
-    ${HCCL_BASE_DIR}/algorithm/impl/operator/registry
-    ${HCCL_BASE_DIR}/algorithm/impl/coll_executor
-    ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/registry
-    ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_send_receive
-    ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_reduce
-    ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_reduce/310P
-    ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_gather
-    ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_gather/310P
-    ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_gather_v
-    ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_reduce_scatter
-    ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_reduce_scatter/310P
-    ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_reduce_scatter_v
-    ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_reduce_scatter_v/310P
-    ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_to_all
-    ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_scatter
-    ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_all_gather
-    ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_all_reduce
-    ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_alltoall
-    ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_alltoallv
-    ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_broadcast
-    ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_reduce
-    ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_reduce_scatter
-    ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_scatter
-    ${HCCL_BASE_DIR}/algorithm/base/alg_template
-    ${HCCL_BASE_DIR}/algorithm/pub_inc
+    ${HCOMM_DIR}/src/framework/cluster_maintenance/health/heartbeat/
+    ${HCOMM_DIR}/src/framework/cluster_maintenance/recovery/operator_retry/
+    ${HCOMM_DIR}/src/framework/cluster_maintenance/detect/detect_connect_anomalies/
+    ${HCOMM_DIR}/src/framework/cluster_maintenance/snapshot/
+    ${HCOMM_DIR}/src/framework/cluster_maintenance/aclgraph/
+    ${HCOMM_DIR}/src/framework/common/src/
+    ${HCOMM_DIR}/src/framework/common/src/host
+    ${HCOMM_DIR}/src/framework/common/src/config
+    ${HCOMM_DIR}/src/framework/common/src/topo
+    ${HCOMM_DIR}/src/framework/common/src/task
+    ${HCOMM_DIR}/src/framework/common/src/exception
+    ${HCOMM_DIR}/src/framework/common/src/h2d_tlv
+    ${HCOMM_DIR}/src/framework/common/src/thread
+    ${HCOMM_DIR}/src/framework/common/src/h2d_dto
+    ${HCOMM_DIR}/src/framework/common/src/onesided_memory_management
+    ${HCOMM_DIR}/src/framework/common/src/mgr
+    ${HCOMM_DIR}/src/framework/communicator/impl/
+    ${HCOMM_DIR}/src/framework/communicator/impl/resource_manager
+    ${HCOMM_DIR}/src/framework/communicator/impl/one_sided_service
+    ${HCOMM_DIR}/src/framework/communicator/impl/zero_copy
+    ${HCOMM_DIR}/src/framework/communicator/impl/independent_op
+    ${HCOMM_DIR}/src/framework/communicator/impl/independent_op/rank_graph
+    ${HCOMM_DIR}/src/framework/communicator/impl/independent_op/resource/engine
+    ${HCOMM_DIR}/src/framework/communicator/impl/independent_op/channel
+    ${HCOMM_DIR}/src/framework/communicator/impl/independent_op/channel/device
 
-    ${HCCL_BASE_DIR}/common/health
-    ${HCCL_BASE_DIR}/common/debug/profiling/inc
-    ${HCCL_BASE_DIR}/common/debug/config/
-    ${HCCL_BASE_DIR}/common/stream
-    ${HCCL_BASE_DIR}/common/launch_device
+    ${HCOMM_DIR}/src/framework/hcom/
+    ${HCOMM_DIR}/src/framework/hcom/gradient_segment
+    ${HCOMM_DIR}/src/framework/inc/
+    ${HCOMM_DIR}/src/framework/
+    ${HCOMM_DIR}/src/framework/nslbdp/
+    ${HCOMM_DIR}/src/framework/op_base/src
+    ${HCOMM_DIR}/src/framework/group
 
-    ${HCCL_BASE_DIR}/framework/inc
-    ${HCCL_BASE_DIR}/framework/inc/hccd
-    ${HCCL_BASE_DIR}/framework/cluster_maintenance/health/heartbeat/
-    ${HCCL_BASE_DIR}/framework/cluster_maintenance/detect/detect_connect_anomalies/
-    ${HCCL_BASE_DIR}/framework/cluster_maintenance/recovery/operator_retry
-    ${HCCL_BASE_DIR}/framework/
-    ${HCCL_BASE_DIR}/framework/common/src/
-    ${HCCL_BASE_DIR}/framework/common/src/exception
-    ${HCCL_BASE_DIR}/framework/common/src/config
-    ${HCCL_BASE_DIR}/framework/common/src/task
-    ${HCCL_BASE_DIR}/framework/common/src/topo
-    ${HCCL_BASE_DIR}/framework/common/src/mgr
-    ${HCCL_BASE_DIR}/framework/hcom
-    ${HCCL_BASE_DIR}/framework/communicator/impl/
-    ${HCCL_BASE_DIR}/framework/communicator/impl/one_sided_service/
-    ${HCCL_BASE_DIR}/framework/communicator/impl/zero_copy
-    ${HCCL_BASE_DIR}/framework/communicator/impl/resource_manager
-    ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op
-    ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/rank_graph
-    ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/resource/engine
-    ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/channel
-    ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/channel/device
-    ${HCCL_BASE_DIR}/framework/next/comms/comm_engine_res/threads
-    ${HCCL_BASE_DIR}/framework/next/coll_comms/rank
-    ${HCCL_BASE_DIR}/framework/next/coll_comms/communicator
-    ${HCCL_BASE_DIR}/framework/next/coll_comms/communicator/aicpu
-    ${HCCL_BASE_DIR}/framework/op_base/src/
+    ${HCOMM_DIR}/src/common/
+    ${HCOMM_DIR}/src/common/health/
+    ${HCOMM_DIR}/src/common/stream/
+    ${HCOMM_DIR}/src/common/launch_device/
 
-    ${HCCL_BASE_DIR}/platform/
-    ${HCCL_BASE_DIR}/platform/inc
-    ${HCCL_BASE_DIR}/platform/inc/adapter
-    ${HCCL_BASE_DIR}/platform/inc/adapter/hccd
-    ${HCCL_BASE_DIR}/platform/resource/dispatcher_ctx
-    ${HCCL_BASE_DIR}/platform/common/
-    ${HCCL_BASE_DIR}/platform/common/unique
-    ${HCCL_BASE_DIR}/platform/common/buffer_manager
-    ${HCCL_BASE_DIR}/platform/common/unfold_cache
-    ${HCCL_BASE_DIR}/platform/resource/transport
-    ${HCCL_BASE_DIR}/platform/resource/transport/device
-    ${HCCL_BASE_DIR}/platform/resource/transport/host
-    ${HCCL_BASE_DIR}/platform/resource/transport/heterog
-    ${HCCL_BASE_DIR}/platform/resource/transport/onesided
-    ${HCCL_BASE_DIR}/platform/resource/transport/onesided/device
-    ${HCCL_BASE_DIR}/platform/resource/notify
-    ${HCCL_BASE_DIR}/platform/ping_mesh
-    ${HCCL_BASE_DIR}/platform/resource/socket
-    ${HCCL_BASE_DIR}/platform/task
-    ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
-    ${HCCL_BASE_DIR}/platform/typical
+    ${HCOMM_DIR}/src/platform/resource/socket
+    ${HCOMM_DIR}/src/platform/inc
+    ${HCOMM_DIR}/src/platform/inc/adapter
 
-    ${HCCL_BASE_DIR}/framework/next/coll_comms/rank_pairs
-    ${HCCL_BASE_DIR}/legacy/unified_platform/resource/transport
-    ${HCCL_BASE_DIR}/legacy/common/utils/
-    ${HCCL_BASE_DIR}/legacy/common/exception/
-    ${HCCL_BASE_DIR}/legacy/common/types/
-    ${HCCL_BASE_DIR}/legacy/common/
-    ${HCCL_BASE_DIR}/legacy/framework/resource_manager/socket/
-    ${HCCL_BASE_DIR}/legacy/unified_platform/external_system/
-    ${HCCL_BASE_DIR}/legacy/unified_platform/common/
-    ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/sockets/
-    ${HCCL_BASE_DIR}/framework/next/comms/endpoints/
-    ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/
+    ${HCOMM_DIR}/src/framework/next/comms/comm_engine_res/threads
+    ${HCOMM_DIR}/src/framework/next/comms/comm_engine_res/threads/slaves/
+    ${HCOMM_DIR}/src/framework/next/coll_comms/
+    ${HCOMM_DIR}/src/framework/next/coll_comms/communicator
+    ${HCOMM_DIR}/src/framework/next/coll_comms/rank
+    ${HCOMM_DIR}/src/framework/next/coll_comms/rank/comm_mems/
+    ${HCOMM_DIR}/src/framework/next/coll_comms/rank_pairs
+    ${HCOMM_DIR}/src/framework/next/coll_comms/dfx
+    ${HCOMM_DIR}/src/framework/next/coll_comms/dfx/profiling
+    ${HCOMM_DIR}/src/framework/next/coll_comms/dfx/profiling/aicpu
+    ${HCOMM_DIR}/src/framework/next/coll_comms/dfx/profiling/host
+    ${HCOMM_DIR}/src/framework/next/coll_comms/dfx/taskException
+    ${HCOMM_DIR}/src/framework/next/coll_comms/dfx/taskException/aicpu
+    ${HCOMM_DIR}/src/framework/next/coll_comms/dfx/taskException/host
+    ${HCOMM_DIR}/src/framework/next/comms/endpoint_pairs/channels
+    ${HCOMM_DIR}/src/framework/next/comms/endpoint_pairs/
+    ${HCOMM_DIR}/src/framework/next/comms/endpoint_pairs/channels/aicpu/
+    ${HCOMM_DIR}/src/framework/next/comms/endpoint_pairs/channels/aicpu/device/
+    ${HCOMM_DIR}/src/framework/next/comms/endpoints/server_socket/
+
+    # ccu 头文件
+    ${HCOMM_DIR}/src/framework/next/comms/adpt
+
+    ${HCOMM_DIR}/src/framework/next/comms/ccu/pub_inc/
+    ${HCOMM_DIR}/src/framework/next/comms/ccu/ccu_device/
+    ${HCOMM_DIR}/src/framework/next/comms/ccu/ccu_device/ccu_comp
+    ${HCOMM_DIR}/src/framework/next/comms/ccu/ccu_device/ccu_comp/ccu_channel
+    ${HCOMM_DIR}/src/framework/next/comms/ccu/ccu_device/ccu_comp/ccu_channel/ccu_pfe
+    ${HCOMM_DIR}/src/framework/next/comms/ccu/ccu_device/ccu_comp/ccu_channel/ccu_channel_ctx_v1
+
+    ${HCOMM_DIR}/src/framework/next/comms/ccu/ccu_transport/
+    ${HCOMM_DIR}/src/framework/next/comms/ccu/ccu_kernel
+    ${HCOMM_DIR}/src/framework/next/comms/common/device/
 )
 
-# 添加 ccl_kernel_plf 库，在 device 侧使用
+# 获取 src/legacy 所有子目录，用于设置头文件搜索路径
+set(LEGACY_INCLUDE_LIST)
+FILE(GLOB_RECURSE LEGACY_DIRS LIST_DIRECTORIES TRUE ${HCOMM_DIR}/src/legacy/*)
+foreach(dir ${LEGACY_DIRS})
+    if((IS_DIRECTORY ${dir}) AND (${dir} MATCHES "src/legacy") AND (NOT ${dir} MATCHES "src/legacy/mdpi"))
+        list(APPEND LEGACY_INCLUDE_LIST ${dir}) 
+    endif()
+endforeach()
+
+# 定义 ccl_kernel_plf 库，在 device 侧使用
 include(platform/ccl_kernel_plf.cmake)
+# 定义 ccl_kernel 库，在 device 侧使用
+include(framework/ccl_kernel.cmake)
 
 # 将子目录添加到构建过程
 add_subdirectory(framework)
@@ -170,3 +158,7 @@ add_subdirectory(hccd)
 add_subdirectory(algorithm)
 add_subdirectory(platform)
 add_subdirectory(common)
+
+# 定义 aicpu_hcomm 库，在 device 侧使用
+# 注意：aicpu_hcomm 依赖 ccl_kernel 的源文件u列表，因此需要再其后定义
+include(framework/aicpu_custom.cmake)
