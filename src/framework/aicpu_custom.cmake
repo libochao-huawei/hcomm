@@ -54,7 +54,7 @@ if(DEVICE_MODE AND KERNEL_MODE)
     )
     target_include_directories(aicpu_custom PRIVATE
         ${CCL_KERNEL_INCLUDE_LIST}
-        ${ORION_HEAD_LIST}
+        ${LEGACY_INCLUDE_LIST}
     )
     target_link_directories(aicpu_custom PRIVATE
         ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/
@@ -68,10 +68,6 @@ if(DEVICE_MODE AND KERNEL_MODE)
     )
     install(TARGETS aicpu_custom
         LIBRARY DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel ${INSTALL_OPTIONAL}
-        COMPONENT hcomm
-    )
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
-        DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel ${INSTALL_OPTIONAL}
         COMPONENT hcomm
     )
 endif()
