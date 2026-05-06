@@ -851,10 +851,10 @@ CcuResult CcuKernel::WhileBegin(CcuVariableHandle varHandle, uint64_t immediate,
     auto targetVar = CcuRep::CreateVariable(this);
     std::shared_ptr<CcuRep::CcuRepJumpBase> jump{nullptr};
     if (condType == CCU_CONDITION_EQ) {
-        jump = std::make_shared<CcuRep::CcuRepJumpEQ>(
+        jump = std::make_shared<CcuRep::CcuRepJumpNE>(
             endLabelStr, targetVar, *variable, immediate);
     } else if (condType == CCU_CONDITION_NE) {
-        jump = std::make_shared<CcuRep::CcuRepJumpNE>(
+        jump = std::make_shared<CcuRep::CcuRepJumpEQ>(
             endLabelStr, targetVar, *variable, immediate);
     } else {
         HCCL_ERROR("[%s] unsupported condition type: %d", __func__, condType);
@@ -1614,11 +1614,6 @@ CcuResult CcuKernel::LoopGroupAddLoop(CcuLoopGroup group,
         return CcuResult::CCU_E_LOOP_BODY_UNDEFINED;
     }
 
-    if (grpDesc.addedLoops.count(loop)) {
-        HCCL_ERROR("[CcuKernel::LoopGroupAddLoop] loop %lu already added to group %lu", loop, group);
-        return CcuResult::CCU_E_PARA;
-    }
-
     auto &pool = loopEnginePools_[grpDesc.enginePoolHandle];
     uint32_t loopIdx = grpDesc.loopCount;
     if (loopIdx >= pool.size()) {
@@ -1627,7 +1622,6 @@ CcuResult CcuKernel::LoopGroupAddLoop(CcuLoopGroup group,
         return CcuResult::CCU_E_PARA;
     }
 
-    grpDesc.addedLoops.insert(loop);
     grpDesc.loopCount++;
     grpDesc.totalLoopNum = grpDesc.loopCount;
 
@@ -1675,10 +1669,6 @@ CcuResult CcuKernel::LoopGroupAddLoopFromVar(CcuLoopGroup group,
         return CcuResult::CCU_E_LOOP_BODY_UNDEFINED;
     }
 
-    if (grpDesc.addedLoops.count(loop)) {
-        HCCL_ERROR("[CcuKernel::LoopGroupAddLoopFromVar] loop %lu already added to group %lu", loop, group);
-        return CcuResult::CCU_E_PARA;
-    }
 
     auto &pool = loopEnginePools_[grpDesc.enginePoolHandle];
     uint32_t loopIdx = grpDesc.loopCount;
@@ -1691,7 +1681,6 @@ CcuResult CcuKernel::LoopGroupAddLoopFromVar(CcuLoopGroup group,
     CcuRep::Variable *loopParamVarPtr = nullptr;
     CCU_CHK_RET(GetVariableByHandle(loopParamVarHandle, &loopParamVarPtr));
 
-    grpDesc.addedLoops.insert(loop);
     grpDesc.loopCount++;
 
     CcuRep::CcuRepLoopGroupBundle::LoopEntry entry;
