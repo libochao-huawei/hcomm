@@ -1342,6 +1342,84 @@ HcclResult TransportDeviceIbverbs::ReadAsync(
     return WriteCommon(remoteBuf.addr, localBuf.addr, remoteBuf.size, stream, WqeType::WQE_TYPE_READ_DATA, aux);
 }
 
+HcclResult TransportDeviceIbverbs::BatchWriteCommon(
+    std::vector<struct Transport::Buffer> &remoteBufs,
+    std::vector<struct Transport::Buffer> &localBufs,
+    Stream &stream,
+    WqeType wqeType)
+{
+    if (machinePara_.dctxPtr != nullptr) {
+        CHK_RET(SetDispatcherCtx(static_cast<DispatcherCtxPtr>(machinePara_.dctxPtr)));
+    }
+
+    CHK_PRT_RET(remoteBufs.size() != localBufs.size(),
+        HCCL_ERROR("[BatchWriteCommon]remoteBufs size[%u] != localBufs size[%u]",
+            remoteBufs.size(), localBufs.size()), HCCL_E_PARA);
+
+    if (remoteBufs.empty()) {
+        return HCCL_SUCCESS;
+    }
+
+    std::vector<WrInformation> wrInfoVec;
+    struct WrAuxInfo aux = {0};
+
+    for (size_t i = 0; i < remoteBufs.size(); i++) {
+        HCCL_DEBUG("[BatchWriteCommon] index[%u] localAddr[%p] remoteAddr[%p] len[%llu]",
+            i, localBufs[i].addr, remoteBufs[i].addr, remoteBufs[i].size);
+
+        if (localBufs[i].addr != nullptr) {
+            u64 length = remoteBufs[i].size;
+            u32 txSendDataTimes = (length == 0) ? 1 :
+                (length + RDMA_SEND_MAX_SIZE - 1) / RDMA_SEND_MAX_SIZE;
+
+            RdmaAddrKeyResolveParam resolve{};
+            resolve.remoteAddr = remoteBufs[i].addr;
+            resolve.localAddr = localBufs[i].addr;
+            resolve.length = length;
+            CHK_RET(ResolveRdmaAddrsAndKeys(resolve));
+
+            CHK_RET(ConstructPayLoadWqe(resolve.transRemoteAddr, resolve.dstKey,
+                resolve.transLocalAddr, resolve.srcKey,
+                length, wqeType, aux, wrInfoVec, txSendDataTimes));
+        }
+    }
+
+    u32 maxLength = 0;
+    for (u32 i = 0; i < wrInfoVec.size(); i++) {
+        if (wrInfoVec[i].wrData.memList.len > maxLength) {
+            maxLength = wrInfoVec[i].wrData.memList.len;
+        }
+    }
+
+    u32 actualMultiQpNum = GetActualQpNum(maxLength);
+    if (UseMultiQp() && actualMultiQpNum != 1 && actualMultiQpNum <= qpsPerConnection_ && maxLength != 0) {
+        std::vector<std::vector<WrInformation>> multiQpWqeInfoVec(actualMultiQpNum, wrInfoVec);
+        for (u32 qpIndex = 0; qpIndex < actualMultiQpNum; qpIndex++) {
+            CHK_RET(RdmaSendAsync(multiQpWqeInfoVec[qpIndex], stream, true, qpIndex));
+        }
+    } else {
+        CHK_RET(RdmaSendAsync(wrInfoVec, stream, true));
+    }
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult TransportDeviceIbverbs::BatchWriteAsync(
+    std::vector<struct Transport::Buffer> &remoteBufs,
+    std::vector<struct Transport::Buffer> &localBufs,
+    Stream &stream)
+{
+    return BatchWriteCommon(remoteBufs, localBufs, stream, WqeType::WQE_TYPE_DATA);
+}
+
+HcclResult TransportDeviceIbverbs::BatchReadAsync(
+    std::vector<struct Transport::Buffer> &localBufs,
+    std::vector<struct Transport::Buffer> &remoteBufs,
+    Stream &stream)
+{
+    return BatchWriteCommon(remoteBufs, localBufs, stream, WqeType::WQE_TYPE_READ_DATA);
+}
+
 HcclResult TransportDeviceIbverbs::WriteReduceAsync(struct Transport::Buffer &remoteBuf,
     struct Transport::Buffer &localBuf, const HcclDataType datatype, HcclReduceOp redOp, Stream &stream)
 {

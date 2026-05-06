@@ -294,3 +294,139 @@ TEST_F(TransportIbverbsTest, Ut_FillExchangeDataTotalSize_UserMemEnableMultiQp_A
     const u64 extra = 8ULL * static_cast<u64>(sizeof(MemMsg));
     EXPECT_EQ(ib1.exchangeDataTotalSize_, s0 + extra);
 }
+
+TEST_F(TransportDeviceIbverbsTest, Ut_BatchWriteAsync_EmptyBuffers_Returns_SUCCESS)
+{
+    MOCKER_CPP(&DlHnsFunction::DlHnsFunctionInit).stubs().will(returnValue(HCCL_SUCCESS));
+
+    HcclDispatcher dispatcherPtr = nullptr;
+    ASSERT_EQ(HcclDispatcherInit(DispatcherType::DISPATCHER_NORMAL, 0, &dispatcherPtr), HCCL_SUCCESS);
+    auto *dispatcher = reinterpret_cast<DispatcherPub *>(dispatcherPtr);
+
+    MachinePara machinePara{};
+    machinePara.deviceLogicId = 0;
+    TransportDeviceIbverbsData d{};
+    FillMinimalMemDetailsQpData(d);
+    std::chrono::milliseconds timeout{ 1 };
+
+    TransportDeviceIbverbs link(dispatcher, nullptr, machinePara, timeout, d);
+    ASSERT_EQ(link.Init(), HCCL_SUCCESS);
+
+    Stream stream;
+    std::vector<struct Transport::Buffer> remoteBufs;
+    std::vector<struct Transport::Buffer> localBufs;
+
+    HcclResult ret = link.BatchWriteAsync(remoteBufs, localBufs, stream);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    ASSERT_EQ(HcclDispatcherDestroy(dispatcherPtr), HCCL_SUCCESS);
+}
+
+TEST_F(TransportDeviceIbverbsTest, Ut_BatchWriteAsync_SizeMismatch_Returns_PARA)
+{
+    MOCKER_CPP(&DlHnsFunction::DlHnsFunctionInit).stubs().will(returnValue(HCCL_SUCCESS));
+
+    HcclDispatcher dispatcherPtr = nullptr;
+    ASSERT_EQ(HcclDispatcherInit(DispatcherType::DISPATCHER_NORMAL, 0, &dispatcherPtr), HCCL_SUCCESS);
+    auto *dispatcher = reinterpret_cast<DispatcherPub *>(dispatcherPtr);
+
+    MachinePara machinePara{};
+    machinePara.deviceLogicId = 0;
+    TransportDeviceIbverbsData d{};
+    FillMinimalMemDetailsQpData(d);
+    std::chrono::milliseconds timeout{ 1 };
+
+    TransportDeviceIbverbs link(dispatcher, nullptr, machinePara, timeout, d);
+    ASSERT_EQ(link.Init(), HCCL_SUCCESS);
+
+    Stream stream;
+    std::vector<struct Transport::Buffer> remoteBufs;
+    std::vector<struct Transport::Buffer> localBufs;
+
+    struct Transport::Buffer remoteBuf;
+    remoteBuf.addr = reinterpret_cast<void*>(static_cast<uintptr_t>(0x10000ULL));
+    remoteBuf.size = 1024;
+    remoteBufs.push_back(remoteBuf);
+
+    struct Transport::Buffer localBuf1;
+    struct Transport::Buffer localBuf2;
+    localBuf1.addr = reinterpret_cast<void*>(static_cast<uintptr_t>(0x20000ULL));
+    localBuf1.size = 512;
+    localBuf2.addr = reinterpret_cast<void*>(static_cast<uintptr_t>(0x30000ULL));
+    localBuf2.size = 512;
+    localBufs.push_back(localBuf1);
+    localBufs.push_back(localBuf2);
+
+    HcclResult ret = link.BatchWriteAsync(remoteBufs, localBufs, stream);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+
+    ASSERT_EQ(HcclDispatcherDestroy(dispatcherPtr), HCCL_SUCCESS);
+}
+
+TEST_F(TransportDeviceIbverbsTest, Ut_BatchReadAsync_EmptyBuffers_Returns_SUCCESS)
+{
+    MOCKER_CPP(&DlHnsFunction::DlHnsFunctionInit).stubs().will(returnValue(HCCL_SUCCESS));
+
+    HcclDispatcher dispatcherPtr = nullptr;
+    ASSERT_EQ(HcclDispatcherInit(DispatcherType::DISPATCHER_NORMAL, 0, &dispatcherPtr), HCCL_SUCCESS);
+    auto *dispatcher = reinterpret_cast<DispatcherPub *>(dispatcherPtr);
+
+    MachinePara machinePara{};
+    machinePara.deviceLogicId = 0;
+    TransportDeviceIbverbsData d{};
+    FillMinimalMemDetailsQpData(d);
+    std::chrono::milliseconds timeout{ 1 };
+
+    TransportDeviceIbverbs link(dispatcher, nullptr, machinePara, timeout, d);
+    ASSERT_EQ(link.Init(), HCCL_SUCCESS);
+
+    Stream stream;
+    std::vector<struct Transport::Buffer> localBufs;
+    std::vector<struct Transport::Buffer> remoteBufs;
+
+    HcclResult ret = link.BatchReadAsync(localBufs, remoteBufs, stream);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    ASSERT_EQ(HcclDispatcherDestroy(dispatcherPtr), HCCL_SUCCESS);
+}
+
+TEST_F(TransportDeviceIbverbsTest, Ut_BatchReadAsync_SizeMismatch_Returns_PARA)
+{
+    MOCKER_CPP(&DlHnsFunction::DlHnsFunctionInit).stubs().will(returnValue(HCCL_SUCCESS));
+
+    HcclDispatcher dispatcherPtr = nullptr;
+    ASSERT_EQ(HcclDispatcherInit(DispatcherType::DISPATCHER_NORMAL, 0, &dispatcherPtr), HCCL_SUCCESS);
+    auto *dispatcher = reinterpret_cast<DispatcherPub *>(dispatcherPtr);
+
+    MachinePara machinePara{};
+    machinePara.deviceLogicId = 0;
+    TransportDeviceIbverbsData d{};
+    FillMinimalMemDetailsQpData(d);
+    std::chrono::milliseconds timeout{ 1 };
+
+    TransportDeviceIbverbs link(dispatcher, nullptr, machinePara, timeout, d);
+    ASSERT_EQ(link.Init(), HCCL_SUCCESS);
+
+    Stream stream;
+    std::vector<struct Transport::Buffer> localBufs;
+    std::vector<struct Transport::Buffer> remoteBufs;
+
+    struct Transport::Buffer localBuf;
+    localBuf.addr = reinterpret_cast<void*>(static_cast<uintptr_t>(0x20000ULL));
+    localBuf.size = 1024;
+    localBufs.push_back(localBuf);
+
+    struct Transport::Buffer remoteBuf1;
+    struct Transport::Buffer remoteBuf2;
+    remoteBuf1.addr = reinterpret_cast<void*>(static_cast<uintptr_t>(0x10000ULL));
+    remoteBuf1.size = 512;
+    remoteBuf2.addr = reinterpret_cast<void*>(static_cast<uintptr_t>(0x30000ULL));
+    remoteBuf2.size = 512;
+    remoteBufs.push_back(remoteBuf1);
+    remoteBufs.push_back(remoteBuf2);
+
+    HcclResult ret = link.BatchReadAsync(localBufs, remoteBufs, stream);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+
+    ASSERT_EQ(HcclDispatcherDestroy(dispatcherPtr), HCCL_SUCCESS);
+}

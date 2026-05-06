@@ -1081,6 +1081,30 @@ HcclResult TransportBase::ReadReduceSync(struct Transport::Buffer &localBuf, str
     return HCCL_E_NOT_SUPPORT;
 }
 
+HcclResult TransportBase::BatchWriteAsync(
+    std::vector<struct Transport::Buffer> &remoteBufs,
+    std::vector<struct Transport::Buffer> &localBufs,
+    Stream &stream)
+{
+    static_cast<void>(remoteBufs);
+    static_cast<void>(localBufs);
+    static_cast<void>(stream);
+    HCCL_ERROR("[TransportBase][BatchWriteAsync]Does not support this interface.");
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult TransportBase::BatchReadAsync(
+    std::vector<struct Transport::Buffer> &localBufs,
+    std::vector<struct Transport::Buffer> &remoteBufs,
+    Stream &stream)
+{
+    static_cast<void>(localBufs);
+    static_cast<void>(remoteBufs);
+    static_cast<void>(stream);
+    HCCL_ERROR("[TransportBase][BatchReadAsync]Does not support this interface.");
+    return HCCL_E_NOT_SUPPORT;
+}
+
 HcclResult TransportBase::Fence()
 {
     return HCCL_E_NOT_SUPPORT;

@@ -1205,3 +1205,125 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_DeInit_tmp)
 
     GlobalMockObject::verify();
 }
+
+TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_Transport_BatchWriteAsync_NullPimpl_Returns_PTR)
+{
+    MachinePara machinePara;
+    std::chrono::milliseconds timeout;
+    HcclIpAddress invalidIp;
+    TransportRoce *rocePtr = new (std::nothrow) TransportRoce(nullptr, nullptr,
+        machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
+    EXPECT_NE(rocePtr, nullptr);
+
+    Transport link(rocePtr);
+    Stream stream;
+    std::vector<struct Transport::Buffer> remoteBufs;
+    std::vector<struct Transport::Buffer> localBufs;
+
+    struct Transport::Buffer remoteBuf;
+    struct Transport::Buffer localBuf;
+    remoteBuf.addr = reinterpret_cast<void*>(0x1000);
+    remoteBuf.size = 1024;
+    localBuf.addr = reinterpret_cast<void*>(0x2000);
+    localBuf.size = 1024;
+    remoteBufs.push_back(remoteBuf);
+    localBufs.push_back(localBuf);
+
+    // pimpl_为nullptr时返回HCCL_E_PTR
+    HcclResult ret = link.BatchWriteAsync(remoteBufs, localBufs, stream);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_Transport_BatchReadAsync_NullPimpl_Returns_PTR)
+{
+    MachinePara machinePara;
+    std::chrono::milliseconds timeout;
+    HcclIpAddress invalidIp;
+    TransportRoce *rocePtr = new (std::nothrow) TransportRoce(nullptr, nullptr,
+        machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
+    EXPECT_NE(rocePtr, nullptr);
+
+    Transport link(rocePtr);
+    Stream stream;
+    std::vector<struct Transport::Buffer> localBufs;
+    std::vector<struct Transport::Buffer> remoteBufs;
+
+    struct Transport::Buffer localBuf;
+    struct Transport::Buffer remoteBuf;
+    localBuf.addr = reinterpret_cast<void*>(0x2000);
+    localBuf.size = 1024;
+    remoteBuf.addr = reinterpret_cast<void*>(0x1000);
+    remoteBuf.size = 1024;
+    localBufs.push_back(localBuf);
+    remoteBufs.push_back(remoteBuf);
+
+    // pimpl_为nullptr时返回HCCL_E_PTR
+    HcclResult ret = link.BatchReadAsync(localBufs, remoteBufs, stream);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_Transport_BatchWriteAsync_TransportBaseNotSupport_Returns_NOT_SUPPORT)
+{
+    MachinePara machinePara;
+    std::chrono::milliseconds timeout;
+    HcclIpAddress invalidIp;
+
+    TransportBase *basePtr = new (std::nothrow) TransportRoce(nullptr, nullptr,
+        machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
+    EXPECT_NE(basePtr, nullptr);
+
+    Transport link(basePtr);
+    Stream stream;
+    std::vector<struct Transport::Buffer> remoteBufs;
+    std::vector<struct Transport::Buffer> localBufs;
+
+    struct Transport::Buffer remoteBuf;
+    struct Transport::Buffer localBuf;
+    remoteBuf.addr = reinterpret_cast<void*>(0x1000);
+    remoteBuf.size = 1024;
+    localBuf.addr = reinterpret_cast<void*>(0x2000);
+    localBuf.size = 1024;
+    remoteBufs.push_back(remoteBuf);
+    localBufs.push_back(localBuf);
+
+    // TransportBase::BatchWriteAsync返回HCCL_E_NOT_SUPPORT
+    HcclResult ret = link.BatchWriteAsync(remoteBufs, localBufs, stream);
+    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_Transport_BatchReadAsync_TransportBaseNotSupport_Returns_NOT_SUPPORT)
+{
+    MachinePara machinePara;
+    std::chrono::milliseconds timeout;
+    HcclIpAddress invalidIp;
+
+    TransportBase *basePtr = new (std::nothrow) TransportRoce(nullptr, nullptr,
+        machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
+    EXPECT_NE(basePtr, nullptr);
+
+    Transport link(basePtr);
+    Stream stream;
+    std::vector<struct Transport::Buffer> localBufs;
+    std::vector<struct Transport::Buffer> remoteBufs;
+
+    struct Transport::Buffer localBuf;
+    struct Transport::Buffer remoteBuf;
+    localBuf.addr = reinterpret_cast<void*>(0x2000);
+    localBuf.size = 1024;
+    remoteBuf.addr = reinterpret_cast<void*>(0x1000);
+    remoteBuf.size = 1024;
+    localBufs.push_back(localBuf);
+    remoteBufs.push_back(remoteBuf);
+
+    // TransportBase::BatchReadAsync返回HCCL_E_NOT_SUPPORT
+    HcclResult ret = link.BatchReadAsync(localBufs, remoteBufs, stream);
+    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
+
+    GlobalMockObject::verify();
+}
