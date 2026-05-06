@@ -5,10 +5,13 @@
 #include "rank_graph_interface.h"
 #include "rank_graph_v2.h"
 #include "hcomm_c_adpt.h"
-#include "my_rank.h"
 #include "channel_process.h"
 #include "base_config.h"
 #define private public
+#include "my_rank.h"
+#include "hccl_comm_pub.h"
+#include "rank_consistentcy_checker.h"
+#undef private
 using namespace hccl;
 
 class MyRankTest : public testing::Test {
@@ -605,7 +608,7 @@ TEST_F(MyRankTest, Ut_WaitAllAsyncComplete_When_AllOk_Expect_Success)
     // mock Socket::GetAsyncStatus返回OK
     MOCKER_CPP(&Hccl::Socket::GetAsyncStatus)
         .stubs()
-        .will(returnValue(Hccl::SocketStatus::OK));
+        .will(returnValue(Hccl::SocketStatus(Hccl::SocketStatus::OK)));
 
     aclrtBinHandle binHandle;
     CommConfig config;
@@ -628,10 +631,14 @@ TEST_F(MyRankTest, Ut_BatchExchange_When_NewRankConsistent_Expect_Success)
     // rank 1为新增channel（不标记为checked）
     EXPECT_TRUE(comm.IsNewRemoteRank(1));
 
+    MOCKER_CPP(&RankConsistentcyChecker::GetRankConsistentDataLength)
+        .stubs()
+        .will(returnValue(0ULL));
+
     // mock Socket异步接口：GetAsyncStatus返回OK
     MOCKER_CPP(&Hccl::Socket::GetAsyncStatus)
         .stubs()
-        .will(returnValue(Hccl::SocketStatus::OK));
+        .will(returnValue(Hccl::SocketStatus(Hccl::SocketStatus::OK)));
     // mock SendAsync/RecvAsync成功
     MOCKER_CPP(&Hccl::Socket::SendAsync)
         .stubs()
@@ -644,7 +651,9 @@ TEST_F(MyRankTest, Ut_BatchExchange_When_NewRankConsistent_Expect_Success)
         .stubs()
         .will(returnValue((s32)30));
 
-    // mock CheckFrameRecv返回成功（Hcomm基础信息一致）
+    MOCKER_CPP(&RankConsistentcyChecker::GetCheckFrame)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&RankConsistentcyChecker::CheckFrameRecv)
         .stubs()
         .will(returnValue(HCCL_SUCCESS));
@@ -658,12 +667,14 @@ TEST_F(MyRankTest, Ut_BatchExchange_When_NewRankConsistent_Expect_Success)
 
     HcclChannelDesc channelDescs[1];
     channelDescs[0].remoteRank = 1;
-    HcommChannelDesc hcommDescs[1];
-    hcommDescs[0].socket = (HcommSocket)0x1;  // 非空socket
-    hcommDescs[0].role = HCOMM_SOCKET_ROLE_CLIENT;
+    HcommChannelDesc hcommDesc;
+    hcommDesc.socket = (HcommSocket)0x1;  // 非空socket
+    hcommDesc.role = HCOMM_SOCKET_ROLE_CLIENT;
+    std::vector<HcommChannelDesc> hcommDescVec;
+    hcommDescVec.push_back(hcommDesc);
 
     HcclResult ret = myRank.BatchExchangeAndCheckConsistency(
-        channelDescs, hcommDescs, 1, "test_tag", &comm);
+        channelDescs, hcommDescVec, 1, "test_tag", &comm);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     // 验证通过后rank 1被标记为已校验
@@ -683,7 +694,7 @@ TEST_F(MyRankTest, Ut_BatchExchange_When_HcommCheckFail_Expect_NoHcclExchange)
     // mock Socket异步接口
     MOCKER_CPP(&Hccl::Socket::GetAsyncStatus)
         .stubs()
-        .will(returnValue(Hccl::SocketStatus::OK));
+        .will(returnValue(Hccl::SocketStatus(Hccl::SocketStatus::OK)));
     MOCKER_CPP(&Hccl::Socket::SendAsync)
         .stubs()
         .will(returnValue(HCCL_SUCCESS));
@@ -712,12 +723,14 @@ TEST_F(MyRankTest, Ut_BatchExchange_When_HcommCheckFail_Expect_NoHcclExchange)
 
     HcclChannelDesc channelDescs[1];
     channelDescs[0].remoteRank = 1;
-    HcommChannelDesc hcommDescs[1];
-    hcommDescs[0].socket = (HcommSocket)0x1;
-    hcommDescs[0].role = HCOMM_SOCKET_ROLE_CLIENT;
+    HcommChannelDesc hcommDesc;
+    hcommDesc.socket = (HcommSocket)0x1;  // 非空socket
+    hcommDesc.role = HCOMM_SOCKET_ROLE_CLIENT;
+    std::vector<HcommChannelDesc> hcommDescVec;
+    hcommDescVec.push_back(hcommDesc);
 
     HcclResult ret = myRank.BatchExchangeAndCheckConsistency(
-        channelDescs, hcommDescs, 1, "test_tag", &comm);
+        channelDescs, hcommDescVec, 1, "test_tag", &comm);
     EXPECT_EQ(ret, HCCL_E_INTERNAL);
 
     // 验证：Hcomm校验失败后不进入第二阶段HCCL交换，

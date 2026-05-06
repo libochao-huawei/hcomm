@@ -843,7 +843,6 @@ HcclResult MyRank::BatchExchangeAndCheckConsistency(
     }
 
     // ====== 第一阶段：交换Hcomm基础校验帧（HcclCheckInfo）并比对 ======
-
     // 生成本端Hcomm基础校验帧（所有remoteRank共用同一份）
     std::vector<u8> sendBuf(baseCheckInfoLen, 0);
     CHK_RET(checker.GetCheckFrame(sendBuf.data(), baseCheckInfoLen, commTag));
