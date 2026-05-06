@@ -20,7 +20,7 @@ using namespace hcomm;
 namespace {
 class FakeRegedMemMgrForEndpointUt : public RegedMemMgr {
 public:
-    HcclResult RegisterMemory(HcommMem, const char *, void **memHandle) override
+    HcclResult RegisterMemory(HcommMem, void **memHandle) override
     {
         *memHandle = reinterpret_cast<void *>(0x42ULL);
         return HCCL_SUCCESS;
@@ -119,7 +119,7 @@ TEST_F(CpuUrmaEndpointTest, Ut_When_RegisterMemory_Normal_Expect_HCCL_SUCCESS)
     mem.addr = reinterpret_cast<void *>(0x1000U);
     mem.size = 10;
     void* memHandle = nullptr;
-    EXPECT_EQ(endpoint->RegisterMemory(mem, "test", &memHandle), HCCL_SUCCESS);
+    EXPECT_EQ(endpoint->RegisterMemory(mem, &memHandle), HCCL_SUCCESS);
 }
 
 TEST_F(CpuUrmaEndpointTest, Ut_When_UnregisterMemory_Normal_Expect_HCCL_SUCCESS)

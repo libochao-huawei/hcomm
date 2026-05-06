@@ -64,9 +64,9 @@ HcclResult UboeEndpoint::ServerSocketStopListen(const uint32_t port)
     return HCCL_SUCCESS;
 }
 
-HcclResult UboeEndpoint::RegisterMemory(HcommMem mem, const char *memTag, void **memHandle)
+HcclResult UboeEndpoint::RegisterMemory(HcommMem mem, void **memHandle)
 {
-    CHK_RET(regedMemMgr_->RegisterMemory(mem, memTag, memHandle));
+    CHK_RET(regedMemMgr_->RegisterMemory(mem, memHandle));
     return HCCL_SUCCESS;
 }
 

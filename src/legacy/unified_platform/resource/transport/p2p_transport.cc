@@ -483,40 +483,9 @@ std::vector<char> P2PTransport::GetRmtBufferUniqueIds() const
     return result;
 }
 
-HcclResult P2PTransport::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags) 
+const std::vector<RemoteRmaBuffer*>& P2PTransport::GetRemoteRmaBufferVec() const
 {
-    CHK_PRT_RET(!remoteMem, HCCL_ERROR("[GetRemoteMem] remoteMem is nullptr"), HCCL_E_PARA);
-    CHK_PRT_RET(!memNum, HCCL_ERROR("[GetRemoteMem] memNum is nullptr"), HCCL_E_PARA);
-    HCCL_RUN_INFO("[P2PTransport]GetRemoteMem begin");
- 
-    *remoteMem = nullptr;
-    *memNum = 0;
- 
-    std::lock_guard<std::mutex> lock(remoteMemsMutex_);
- 
-    uint32_t totalCount = rmtBufferVec.size();
-    if (totalCount == 0) {
-        HCCL_INFO("[GetRemoteMem] No remote memory regions available");
-        return HCCL_SUCCESS;
-    }
-    // 释放之前的内存
-    remoteMemsPtr_.reset();  
-    remoteMemsPtr_ = std::make_unique<HcclMem[]>(totalCount);
-    CHK_PTR_NULL(remoteMemsPtr_);
-
-    for (uint32_t i = 0; i < totalCount; i++) {
-        auto& rmtRmaBuffer = rmtBufferVec[i];
-        remoteMemsPtr_[i].type = rmtRmaBuffer->GetMemType();
-        remoteMemsPtr_[i].addr = reinterpret_cast<void *>(rmtRmaBuffer->GetAddr());
-        remoteMemsPtr_[i].size = rmtRmaBuffer->GetSize();
-        memTags[i] = const_cast<char*>(rmtRmaBuffer->GetMemTag().c_str());
-        HCCL_INFO("[%s] addr[%p] size[%zu] rmtRmaBuffer[%p] memTags[%s]", 
-            __func__, reinterpret_cast<void *>(rmtRmaBuffer->GetAddr()), rmtRmaBuffer->GetSize(), rmtRmaBuffer.get(), memTags[i]);
-    }
-
-    *memNum = totalCount;
-    *remoteMem = remoteMemsPtr_.get();
-    HCCL_RUN_INFO("[P2PTransport]GetRemoteMem end, memNum[%u]", totalCount);
-    return HCCL_SUCCESS;
+    return rmtRmaBufferVec;
 }
+
 } // namespace Hccl
