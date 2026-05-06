@@ -525,9 +525,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${CCL_KERNEL_INCLUDE_LIST}
     )
 
-    target_include_directories(ccl_kernel PRIVATE ${ORION_HEAD_LIST})
-
-    add_subdirectory(device)
+    target_include_directories(ccl_kernel PRIVATE ${LEGACY_INCLUDE_LIST})
 endif()
 
 if(NOT BUILD_OPEN_PROJECT)
