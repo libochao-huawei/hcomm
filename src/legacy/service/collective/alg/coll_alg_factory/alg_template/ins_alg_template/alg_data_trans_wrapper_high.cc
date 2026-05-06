@@ -14,6 +14,10 @@
 namespace Hccl {
 HcclResult Send(const DataInfo &sendInfo, InsQuePtr queue, u32 topicId, bool needNetFinAck, DmaMode dmaMode)
 {
+    if (sendInfo.slices_.srcSlices_[0].size == 0) {
+        HCCL_DEBUG("[InsCollAlgFactory] [AlgDataTrans] Send: current send size is 0, do nothing.");
+        return HcclResult::HCCL_SUCCESS;
+    }
     CHK_RET(TxReady(sendInfo.link_, queue, topicId, dmaMode));
     CHK_RET(TxDataWithFin(sendInfo.link_, queue, sendInfo.slices_, topicId, dmaMode));
     if (needNetFinAck) {
@@ -25,6 +29,10 @@ HcclResult Send(const DataInfo &sendInfo, InsQuePtr queue, u32 topicId, bool nee
 
 HcclResult Recv(const DataInfo &recvInfo, InsQuePtr queue, u32 topicId, bool needNetFinAck, DmaMode dmaMode)
 {
+    if (recvInfo.slices_.srcSlices_[0].size == 0) {
+        HCCL_DEBUG("[InsCollAlgFactory] [AlgDataTrans] Recv: current recv size is 0, do nothing.");
+        return HcclResult::HCCL_SUCCESS;
+    }
     CHK_RET(RxReady(recvInfo.link_, queue, topicId, dmaMode));
     CHK_RET(RxDataWithFin(recvInfo.link_, queue, recvInfo.slices_, topicId, dmaMode));
     if (needNetFinAck) {

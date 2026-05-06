@@ -801,6 +801,10 @@ HcclResult LocalReduceSlices(InsQuePtr queue, const std::vector<DataSlice> &srcS
 
 HcclResult LocalCopy(InsQuePtr queue, const DataSlice &srcSlice, const DataSlice &dstSlice)
 {
+    if (srcSlice.slices_.srcSlices_[0].size == 0) {
+        HCCL_DEBUG("[InsCollAlgFactory] [AlgDataTrans] LocalCopy: src slice size is 0, do nothing.");
+        return HcclResult::HCCL_SUCCESS;
+    }
     CHK_PRT_RET(
         srcSlice.GetSize() != dstSlice.GetSize(),
         HCCL_ERROR(
