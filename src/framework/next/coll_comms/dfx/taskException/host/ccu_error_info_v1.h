@@ -89,8 +89,8 @@ struct CcuErrorInfo {
             uint16_t startInstrId;
             uint16_t endInstrId;
             uint16_t loopEngineId;
-            uint16_t loopCnt;           // 该Loop需要循环执行的次数
-            uint16_t loopCurrentCnt;    // 该Loop已经循环次数
+            uint16_t loopCnt;        // 该Loop需要循环执行的次数
+            uint16_t loopCurrentCnt; // 该Loop已经循环次数
             uint32_t addrStride;
         } loop;
 
@@ -112,9 +112,9 @@ struct CcuErrorInfo {
 };
 
 struct ErrorInfoBase {
-    int32_t  deviceId;
-    uint8_t  dieId;
-    uint8_t  missionId;
+    int32_t deviceId;
+    uint8_t dieId;
+    uint8_t missionId;
     uint16_t currentInsId;
     uint16_t status;
 };
@@ -193,27 +193,27 @@ struct CcuLoopContext {
         uint16_t value;
         struct {
             uint16_t waitLoopCkbitValue : 10;
-            uint16_t currentIns : 6;    // Current_ins [5:0]
+            uint16_t currentIns : 6; // Current_ins [5:0]
         };
     } part9;
 
     union {
         uint16_t value;
         struct {
-            uint16_t currentIns : 10;   // Current_ins [15:6]
-            uint16_t addrStride : 6;    // Addr_stride [5:0]
+            uint16_t currentIns : 10; // Current_ins [15:6]
+            uint16_t addrStride : 6;  // Addr_stride [5:0]
         };
     } part10;
 
     union {
         uint16_t value;
-        uint16_t addrStride;            // Addr_stride [21:6]
+        uint16_t addrStride; // Addr_stride [21:6]
     } part11;
 
     union {
         uint16_t value;
         struct {
-            uint16_t addrStride : 10;   // Addr_stride [31:22]
+            uint16_t addrStride : 10; // Addr_stride [31:22]
             uint16_t denyCnt : 6;
         };
     } part12;
@@ -222,14 +222,14 @@ struct CcuLoopContext {
         uint16_t value;
         struct {
             uint16_t denyCnt : 4;
-            uint16_t currentCnt : 12;   // Current_cnt [11:0]
+            uint16_t currentCnt : 12; // Current_cnt [11:0]
         };
     } part13;
 
     union {
         uint16_t value;
         struct {
-            uint16_t currentCnt : 1;    // Current_cnt [12]
+            uint16_t currentCnt : 1; // Current_cnt [12]
             uint16_t totalCnt : 13;
             uint16_t endIns : 2;
         };
@@ -263,7 +263,7 @@ struct CcuLoopContext {
 
     uint16_t GetCurrentIns() const
     {
-        return (part10.currentIns << 6) | (part9.currentIns);   // part10.currentIns为[15:6]位
+        return (part10.currentIns << 6) | (part9.currentIns); // part10.currentIns为[15:6]位
     }
 
     uint16_t GetCurrentCnt() const
@@ -274,8 +274,144 @@ struct CcuLoopContext {
     uint32_t GetAddrStride() const
     {
         const uint32_t low = static_cast<uint32_t>(part10.addrStride);
-        const uint32_t mid = static_cast<uint32_t>(part11.addrStride) << 6;     // part11.addrStride为[21:6]位
-        const uint32_t high = static_cast<uint32_t>(part12.addrStride) << 22;   // part12.addrStride为[31:22]位
+        const uint32_t mid = static_cast<uint32_t>(part11.addrStride) << 6;   // part11.addrStride为[21:6]位
+        const uint32_t high = static_cast<uint32_t>(part12.addrStride) << 22; // part12.addrStride为[31:22]位
+        return high | mid | low;
+    }
+};
+
+struct CcuLoopContextV2 {
+    union {
+        uint16_t value;
+        uint16_t xnOffset;
+    } part0;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t ckeOffset : 12;
+            uint16_t msOffset : 4;
+        };
+    } part1;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t msOffset : 7;
+            uint16_t addrOffset : 9;
+        };
+    } part2;
+
+    union {
+        uint16_t value;
+        uint16_t addrOffset;
+    } part3;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t addrOffset : 7;
+            uint16_t currentIns : 9;
+        };
+    } part4;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t currentIns : 7;
+            uint16_t addrStride : 9;
+        };
+    } part5;
+
+    union {
+        uint16_t value;
+        uint16_t addrStride;
+    } part6;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t addrStride : 7;
+            uint16_t loopWishCheckBit : 9;
+        };
+    } part7;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t loopWishCheckBit : 7;
+            uint16_t waitLoopCheckBit : 9;
+        };
+    } part8;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t waitLoopCheckBit : 7;
+            uint16_t waitLoopCheckBitVld : 1;
+            uint16_t loopMode : 1;
+            uint16_t denyCnt : 7;
+        };
+    } part9;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t denyCnt : 3;
+            uint16_t currentCnt : 13;
+        };
+    } part10;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t totalCnt : 13;
+            uint16_t endIns : 3;
+        };
+    } part11;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t endIns : 13;
+            uint16_t startIns : 3;
+        };
+    } part12;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t startIns : 13;
+            uint16_t missionId : 3;
+        };
+    } part13;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t missionId : 1;
+            uint16_t loopVld : 1;
+            uint16_t mprofileen : 1;
+            uint16_t reserved : 13;
+        };
+    } part14;
+    uint16_t reserved[17];
+
+    uint16_t GetCurrentIns() const
+    {
+        return (part5.currentIns << 9) | (part4.currentIns);
+    }
+
+    uint16_t GetCurrentCnt() const
+    {
+        return part10.currentCnt;
+    }
+
+    uint32_t GetAddrStride() const
+    {
+        const uint32_t low = static_cast<uint32_t>(part5.addrStride);
+        const uint32_t mid = static_cast<uint32_t>(part6.addrStride) << 9;
+        const uint32_t high = static_cast<uint32_t>(part7.addrStride) << 25;
         return high | mid | low;
     }
 };
@@ -347,22 +483,151 @@ struct CcuMissionContext {
 
     uint16_t GetStatus() const
     {
-        return (part3.status << 13) | (part2.status);   // part3.status为[15:13]位
+        return (part3.status << 13) | (part2.status); // part3.status为[15:13]位
     }
 
     uint16_t GetCurrentIns() const
     {
-        return (part5.currentIns << 11) | (part4.currentIns);   // part5.currentIns为[15:11]位
+        return (part5.currentIns << 11) | (part4.currentIns); // part5.currentIns为[15:11]位
     }
 
     uint16_t GetStartIns() const
     {
-        return (part7.startIns << 11) | (part6.startIns);    // part7.startIns[15:11]位
+        return (part7.startIns << 11) | (part6.startIns); // part7.startIns[15:11]位
     }
 
     uint16_t GetEndIns() const
     {
-        return (part6.endIns << 11) | (part5.endIns);     // part6.endIns[15:11]位
+        return (part6.endIns << 11) | (part5.endIns); // part6.endIns[15:11]位
+    }
+};
+
+struct CcuMissionContextV2 {
+    union {
+        uint16_t value;
+        uint16_t taskId;
+    } part0;
+
+    union {
+        uint16_t value;
+        uint16_t streamId;
+    } part1;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t taskKill : 1;
+            uint16_t dieId : 2;
+            uint16_t status : 13;
+        };
+    } part2;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t status : 3;
+            uint16_t counter : 10;
+            uint16_t denyCnt : 3;
+        };
+    } part3;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t denyCnt : 7;
+            uint16_t currentIns : 9;
+        };
+    } part4;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t currentIns : 7;
+            uint16_t endIns : 9;
+        };
+    } part5;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t endIns : 7;
+            uint16_t startIns : 9;
+        };
+    } part6;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t startIns : 7;
+            uint16_t profileEn : 1;
+            uint16_t missionVld : 1;
+            uint16_t cqeInfoPart1 : 7;
+        };
+    } part7;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t cqeInfoPart2;
+        };
+    } part8;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t cqeInfoPart3;
+        };
+    } part9;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t cqeInfoPart4;
+        };
+    } part10;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t cqeInfoPart5;
+        };
+    } part11;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t cqeInfoPart6;
+        };
+    } part12;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t cqeInfoPart7 : 9;
+            uint16_t reserved : 7;
+        };
+    } part13;
+
+    uint16_t reserved[18];
+
+    uint16_t GetStatus() const
+    {
+        return (part3.status << 13) | (part2.status);
+    }
+
+    uint16_t GetCurrentIns() const
+    {
+        return (part5.currentIns << 9) | (part4.currentIns);
+    }
+
+    uint16_t GetStartIns() const
+    {
+        return (part7.startIns << 9) | (part6.startIns);
+    }
+
+    uint16_t GetEndIns() const
+    {
+        return (part6.endIns << 9) | (part5.endIns);
     }
 };
 
