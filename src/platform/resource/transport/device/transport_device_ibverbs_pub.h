@@ -79,6 +79,9 @@ public:
     HcclResult ReadAsync(struct Transport::Buffer &localBuf, struct Transport::Buffer &remoteBuf,
         Stream &stream) override;
 
+    HcclResult BatchTransferAsync(HcommBatchTransferDesc *transferDescs, uint32_t descNum,
+        Stream &stream) override;
+
     HcclResult PostReady(Stream &stream);
     HcclResult WaitReady(Stream &stream);
 
@@ -118,6 +121,11 @@ public:
         WqeType wqeType, WrAuxInfo &aux, std::vector<WrInformation> &wrInfoVec, u32 txSendDataTimes);
     HcclResult WriteCommon(const void *remoteAddr, const void *localAddr, u64 length, Stream &stream,
         WqeType wqeType, struct WrAuxInfo &aux);
+    HcclResult BatchTransferImpl(HcommBatchTransferDesc *transferDescs, uint32_t descNum,
+        Stream &stream);
+    HcclResult ResolveTransferDesc(HcommBatchTransferDesc &desc,
+        const void *&remoteAddr, const void *&localAddr, u64 &length, WqeType &wqeType);
+    HcclResult SubmitWqeBatch(std::vector<WrInformation> &wrInfoVec, Stream &stream);
     bool UseMultiQp();
     HcclResult TxSendDataAndNotifyWithMultiQP(
         std::vector<WrInformation> &wqeInfoVec, u32 actualMultiQpNum, Stream &stream, bool useOneDoorbell);
