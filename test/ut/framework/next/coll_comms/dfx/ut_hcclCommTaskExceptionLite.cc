@@ -17,6 +17,8 @@
 #undef private
 #include "task_scheduler_error.h"
 #include "aicpu_indop_env.h"
+#include "adapter_hal_pub.h"
+#include "dlhal_function_v2.h"
 
 using namespace hccl;
 using namespace hcomm;
@@ -76,4 +78,108 @@ TEST_F(hcclCommTaskExceptionLiteTest, Ut_SwitchSdmaCqeErrCodeToTsErrCode_taskexc
     HcclResult ret = HcclCommTaskExceptionLite::GetInstance().ProcessCqe(nullptr, exceptionInfo);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     hcomm::SetTaskExceptionEnable(true);
+}
+
+TEST_F(hcclCommTaskExceptionLiteTest, Ut_SendTaskExceptionByMBox_When_UBSqeType_Expect_ReturnHCCL_SUCCESS)
+{
+    HcclCommTaskExceptionLite::GetInstance().Init(0);
+
+    MOCKER(::getpid)
+        .stubs()
+        .will(returnValue(12345));
+
+    MOCKER(HrtHalDrvQueryProcessHostPid)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER_CPP(&Hccl::DlHalFunctionV2::dlHalEschedSubmitEvent)
+        .stubs()
+        .will(returnValue(DRV_ERROR_NONE));
+
+    u32 notifyId = 1;
+    u32 tsId = 2;
+    rtLogicCqReport_t exceptionInfo;
+    exceptionInfo.sqeType = 9;
+    exceptionInfo.errorCode = RT_UB_LOCAL_OPERATIOINERR;
+
+    HcclResult ret = HcclCommTaskExceptionLite::GetInstance().SendTaskExceptionByMBox(notifyId, tsId, exceptionInfo);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(hcclCommTaskExceptionLiteTest, Ut_SendTaskExceptionByMBox_When_SDMASqeType_Expect_ReturnHCCL_SUCCESS)
+{
+    HcclCommTaskExceptionLite::GetInstance().Init(0);
+
+    MOCKER(::getpid)
+        .stubs()
+        .will(returnValue(12345));
+
+    MOCKER(HrtHalDrvQueryProcessHostPid)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER_CPP(&Hccl::DlHalFunctionV2::dlHalEschedSubmitEvent)
+        .stubs()
+        .will(returnValue(DRV_ERROR_NONE));
+
+    u32 notifyId = 1;
+    u32 tsId = 2;
+    rtLogicCqReport_t exceptionInfo;
+    exceptionInfo.sqeType = 11;
+    exceptionInfo.errorCode = RT_SDMA_COMPERR;
+
+    HcclResult ret = HcclCommTaskExceptionLite::GetInstance().SendTaskExceptionByMBox(notifyId, tsId, exceptionInfo);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(hcclCommTaskExceptionLiteTest, Ut_SendTaskExceptionByMBox_When_OtherSqeType_Expect_ReturnHCCL_SUCCESS)
+{
+    HcclCommTaskExceptionLite::GetInstance().Init(0);
+
+    MOCKER(::getpid)
+        .stubs()
+        .will(returnValue(12345));
+
+    MOCKER(HrtHalDrvQueryProcessHostPid)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER_CPP(&Hccl::DlHalFunctionV2::dlHalEschedSubmitEvent)
+        .stubs()
+        .will(returnValue(DRV_ERROR_NONE));
+
+    u32 notifyId = 1;
+    u32 tsId = 2;
+    rtLogicCqReport_t exceptionInfo;
+    exceptionInfo.sqeType = 99;
+    exceptionInfo.errorCode = 123;
+
+    HcclResult ret = HcclCommTaskExceptionLite::GetInstance().SendTaskExceptionByMBox(notifyId, tsId, exceptionInfo);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(hcclCommTaskExceptionLiteTest, Ut_SendTaskExceptionByMBox_When_DlHalSubmitFailed_Expect_ReturnHCCL_E_DRV)
+{
+    HcclCommTaskExceptionLite::GetInstance().Init(0);
+
+    MOCKER(::getpid)
+        .stubs()
+        .will(returnValue(12345));
+
+    MOCKER(HrtHalDrvQueryProcessHostPid)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER_CPP(&Hccl::DlHalFunctionV2::dlHalEschedSubmitEvent)
+        .stubs()
+        .will(returnValue(DRV_ERROR_NOT_SUPPORT));
+
+    u32 notifyId = 1;
+    u32 tsId = 2;
+    rtLogicCqReport_t exceptionInfo;
+    exceptionInfo.sqeType = 9;
+    exceptionInfo.errorCode = RT_UB_LOCAL_OPERATIOINERR;
+
+    HcclResult ret = HcclCommTaskExceptionLite::GetInstance().SendTaskExceptionByMBox(notifyId, tsId, exceptionInfo);
+    EXPECT_EQ(ret, HCCL_E_DRV);
 }
