@@ -35,7 +35,7 @@ public:
         return regedMemMgr_;
     }
 
-    HcclResult RegisterMemory(HcommMem mem, const char *memTag, void **memHandle) override;
+    HcclResult RegisterMemory(HcommMem mem, void **memHandle) override;
     HcclResult UnregisterMemory(void* memHandle) override;
     HcclResult MemoryExport(void *memHandle, void **memDesc, uint32_t *memDescLen) override;
     HcclResult MemoryImport(const void *memDesc, uint32_t descLen, HcommMem *outMem) override;

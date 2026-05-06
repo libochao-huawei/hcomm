@@ -26,9 +26,6 @@ public:
                    RdmaHandle rdmaHandle1, LocCntNotifyRes &locCntNotifyRes1,
                    std::function<void(u32 streamId, u32 taskId, const TaskParam &taskParam)> callback);
 
-    HcclResult FillTagVec(std::vector<LocalRmaBuffer *> &bufferVec,
-        std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &tagVec);
-
     std::string Describe() const override;
 
     TransportStatus GetStatus() override;
@@ -73,7 +70,7 @@ public:
         return static_cast<u32>(baseStatus);
     }
 
-    HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags);
+    HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum);
     HcclResult GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum);
     HcclResult CheckSocketStatus();
     HcclResult UpdateMemInfo(std::vector<LocalRmaBuffer *> &bufferVecTemp);
@@ -113,8 +110,6 @@ private:
     RemoteBufferVec rmtBufferVec;     // 远端 buffer
     RemoteBufferVec rmtCntNotifyVec;  // 远端 cnt Notify
     LocalBufferVec  locBufferVec;     // 本端 buffer
-    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> localUserMemTag_{};
-    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> locMemTagTemp_{};
     std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> remoteUserMemTag_{};
     std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> rmtMemTagTemp_{};
     bool                         cacheValid_ = false; // GetUserRemoteMem 的缓存标识
@@ -130,8 +125,7 @@ private:
     void SendFinish();
     void RecvFinish();
 
-    void BufferVecPack(BinaryStream &binaryStream, std::vector<LocalRmaBuffer *> &bufferVec,
-        std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &tagVec);
+    void BufferVecPack(BinaryStream &binaryStream, std::vector<LocalRmaBuffer *> &bufferVec);
     void CntNotifyVecPack(BinaryStream &binaryStream);
 
     void CntNotifyDescPack(BinaryStream &binaryStream);

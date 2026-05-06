@@ -109,9 +109,9 @@ HcclResult UrmaEndpoint::ServerSocketStopListen(const uint32_t port)
     return HCCL_SUCCESS;
 }
 
-HcclResult UrmaEndpoint::RegisterMemory(HcommMem mem, const char *memTag, void **memHandle)
+HcclResult UrmaEndpoint::RegisterMemory(HcommMem mem, void **memHandle)
 {
-    CHK_RET(this->regedMemMgr_->RegisterMemory(mem, memTag, memHandle));
+    CHK_RET(this->regedMemMgr_->RegisterMemory(mem, memHandle));
     return HCCL_SUCCESS;
 }
 

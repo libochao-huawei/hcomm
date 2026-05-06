@@ -42,7 +42,7 @@ HcclResult AicpuTsUboeChannel::Makebufs(HcommMemHandle *memHandles, uint32_t mem
         HCCL_INFO("[AicpuTsUboeChannel][%s] tag[%s]", __func__, locMemInfo->memTag);
         bufs.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
             reinterpret_cast<uintptr_t>(locMemInfo->mem.addr), locMemInfo->mem.size,
-            hccl::ConvertCommToHcclMemType(locMemInfo->mem.type), locMemInfo->memTag)
+            hccl::ConvertCommToHcclMemType(locMemInfo->mem.type))
         ));
     }
     return HCCL_SUCCESS;
@@ -73,13 +73,10 @@ HcclResult AicpuTsUboeChannel::ParseInputParam()
         HCCL_INFO("[AicpuTsUboeChannel][%s] Got memHandleNum[%u].", __func__, memHandleNum);
         for (uint32_t i = 0; i < memHandleNum; ++i) {
             std::shared_ptr<Hccl::LocalUbRmaBuffer> &localUbRmaBuffer = memHandles[i];
-            HCCL_INFO("[AicpuTsUboeChannel][%s] Got memHandle No.%u: addr[0x%llx], size[0x%llx], memTag[%s].",
-                __func__, i, localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize(),
-                localUbRmaBuffer->GetBuf()->GetMemTag().c_str());
+            HCCL_INFO("[AicpuTsUboeChannel][%s] Got memHandle No.%u: addr[0x%llx], size[0x%llx].",
+                __func__, i, localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize());
             bufs_.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
-                localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize(),
-                localUbRmaBuffer->GetBuf()->GetMemTag().c_str())
-            ));
+                localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize())));
         }
     } else {
         // 3. 从 channelDesc 的 memHandle，获得 bufs_
@@ -168,7 +165,7 @@ HcclResult AicpuTsUboeChannel::FillTagVec(std::vector<Hccl::LocalRmaBuffer *> &b
             return HCCL_E_PARA;
         } else {
             CHK_PTR_NULL(localRmaBuffer->GetBuf());
-            std::string tag = localRmaBuffer->GetBuf()->GetMemTag();
+            std::string tag = "";
             if (tag.size() >= HCCL_RES_TAG_MAX_LEN) {
                 HCCL_ERROR("[AicpuTsUboeChannel][FillTagVec] tagSize exceeds limit[%u]", HCCL_RES_TAG_MAX_LEN);
                 return HCCL_E_PARA;
@@ -195,8 +192,6 @@ HcclResult AicpuTsUboeChannel::BuildBuffer(std::vector<std::shared_ptr<Hccl::Buf
         commonRes_.bufferVec.push_back(bufferPtr.get());
         localRmaBuffers_.push_back(std::move(bufferPtr));
     }
-    CHK_RET(FillTagVec(commonRes_.bufferVec, localUserMemTag_));
-
     return HCCL_SUCCESS;
 }
 
@@ -246,7 +241,7 @@ HcclResult AicpuTsUboeChannel::GetNotifyNum(uint32_t *notifyNum) const
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsUboeChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags)
+HcclResult AicpuTsUboeChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum)
 {
     // 不支持
     return HCCL_SUCCESS;
@@ -330,8 +325,7 @@ void AicpuTsUboeChannel::NotifyVecPack(Hccl::BinaryStream &binaryStream)
     }
 }
 
-void AicpuTsUboeChannel::BufferVecPack(Hccl::BinaryStream &binaryStream, std::vector<Hccl::LocalRmaBuffer *> &bufferVec,
-    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &tagVec)
+void AicpuTsUboeChannel::BufferVecPack(Hccl::BinaryStream &binaryStream, std::vector<Hccl::LocalRmaBuffer *> &bufferVec)
 {
     binaryStream << static_cast<u32>(bufferVec.size());
     u32 pos = 0;
@@ -350,13 +344,6 @@ void AicpuTsUboeChannel::BufferVecPack(Hccl::BinaryStream &binaryStream, std::ve
                 __func__, pos, exchangeDto.Describe().c_str());
         }
         pos++;
-    }
-
-    for (const auto& tag : tagVec) {
-        // 逐个字节传输
-        for (uint32_t i = 0; i < HCCL_RES_TAG_MAX_LEN; ++i) {
-            binaryStream << static_cast<u8>(tag[i]);
-        }
     }
 }
 
@@ -385,7 +372,7 @@ void AicpuTsUboeChannel::SendDataSize()
 
     Hccl::BinaryStream binaryStream;
     NotifyVecPack(binaryStream);
-    BufferVecPack(binaryStream, commonRes_.bufferVec, localUserMemTag_);
+    BufferVecPack(binaryStream, commonRes_.bufferVec);
     ConnVecPack(binaryStream);
 
     binaryStream.Dump(sendData_);
