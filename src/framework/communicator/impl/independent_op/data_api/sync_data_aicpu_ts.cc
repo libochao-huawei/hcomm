@@ -21,15 +21,15 @@ constexpr uint32_t SYNC_WAIT_TIMEOUT_SECONDS = 205;
 constexpr size_t MSG_TAG_SIZE_BYTE = 256;
 
 // Msg 数据格式如下（单位：字节）：
-// +----------+--------------+-----------+-----------------+
-// | flag [1] | msgTag [256] | msgId [4] | data [sizeByte] |
-// +----------+--------------+-----------+-----------------+
+// +----------+--------------+-----------+---------------+-----------------+
+// | flag [1] | msgTag [256] | msgId [4] | data size [8] | data [sizeByte] |
+// +----------+--------------+-----------+---------------+-----------------+
 // ^
 // handle
 
 #ifdef __cplusplus
 extern "C" {
-#endif  // __cplusplus
+#endif // __cplusplus
 int32_t HcommSendRequest(MsgHandle handle, const char *msgTag, const void *src, size_t sizeByte, uint32_t *msgId)
 {
     uint8_t *const dstOnDevShmem = reinterpret_cast<uint8_t *>(handle);
@@ -37,7 +37,8 @@ int32_t HcommSendRequest(MsgHandle handle, const char *msgTag, const void *src, 
     CHK_PTR_NULL(msgTag);
     CHK_PTR_NULL(src);
 
-    HCCL_INFO("[%s] START. msgHandle[0x%llx], msgTag[%s], src[0x%llx], sizeByte[%zu].", __func__, handle, msgTag, src, sizeByte);
+    HCCL_INFO("[%s] START. msgHandle[0x%llx], msgTag[%s], src[0x%llx], sizeByte[%zu].", __func__, handle, msgTag, src,
+        sizeByte);
 
     static uint32_t s_msgId{0};
     const uint8_t flagWriteValue{1};
@@ -48,7 +49,8 @@ int32_t HcommSendRequest(MsgHandle handle, const char *msgTag, const void *src, 
     errno_t ret = EOK;
 
     HCCL_INFO("[%s] Writing %zu bytes data from src to shared mem START.", __func__, sizeByte);
-    ret = memcpy_s(dstDataPtr, sizeByte, src, sizeByte);
+    ret = memcpy_s(dstDataPtr, sizeof(sizeByte), &sizeByte, sizeof(sizeByte));
+    ret = memcpy_s(dstDataPtr + sizeof(sizeByte), sizeByte, src, sizeByte);
     CHK_PRT_RET(ret != EOK, HCCL_ERROR("[%s][memcpy_s] Writing data ERROR[%d].", __func__, ret), HCCL_E_INTERNAL);
     HCCL_INFO("[%s] Writing %zu bytes data from src to shared mem SUCCESS.", __func__, sizeByte);
 
@@ -68,7 +70,7 @@ int32_t HcommSendRequest(MsgHandle handle, const char *msgTag, const void *src, 
     HCCL_INFO("[%s] Setting flag = 1 on shared mem SUCCESS.", __func__);
 
     *msgId = s_msgId;
-    ++s_msgId;  // Auto goes back to 0 once it reaches UINT32_MAX
+    ++s_msgId; // Auto goes back to 0 once it reaches UINT32_MAX
 
     HCCL_INFO("[%s] SUCCESS. msgId[%u].", __func__, *msgId);
     return HCCL_SUCCESS;
@@ -101,8 +103,8 @@ int32_t HcommWaitResponse(MsgHandle handle, void *dst, size_t sizeByte, uint32_t
         if (flagReadValue == 1) {
             break;
         }
-        const auto elapsed =
-            std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - timeStart);
+        const auto elapsed
+            = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - timeStart);
         if (elapsed > timeoutSec) {
             HCCL_ERROR("[%s] Polling flag TIMEOUT.", __func__);
             return HCCL_E_TIMEOUT;
@@ -156,4 +158,4 @@ int32_t HcommThreadSynchronize(ThreadHandle thread)
 }
 #ifdef __cplusplus
 }
-#endif  // __cplusplus
+#endif // __cplusplus

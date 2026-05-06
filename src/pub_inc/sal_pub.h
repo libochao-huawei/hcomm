@@ -32,12 +32,12 @@ std::string SalGetEnv(const char *name); // deprecated, 环境变量读取统一
 
 #if HCOMM_T_DESC("库函数封装", true)
 constexpr int HCCL_BASE_DECIMAL = 10; // 10进制字符串转换
-constexpr int HCCL_BASE_HEX = 16; // 16进制字符串转换
+constexpr int HCCL_BASE_HEX = 16;     // 16进制字符串转换
 
-HcclResult  SalStrToInt(const std::string str, int base, s32 &val);
-HcclResult  SalStrToULong(const std::string str, int base, u32 &val);
-HcclResult  SalStrToULonglong(const std::string str, int base, u64 &val);
-HcclResult  SalStrToLonglong(const std::string str, int base, s64 &val);
+HcclResult SalStrToInt(const std::string str, int base, s32 &val);
+HcclResult SalStrToULong(const std::string str, int base, u32 &val);
+HcclResult SalStrToULonglong(const std::string str, int base, u64 &val);
+HcclResult SalStrToLonglong(const std::string str, int base, s64 &val);
 #endif
 
 #if HCOMM_T_DESC("跨进程处理函数", true)
@@ -72,7 +72,7 @@ constexpr u32 TIME_S_TO_MS = 1000;
 s64 SalGetSysTime();
 void SaluSleep(u32 usec);
 void SalSleep(u32 sec);
-HcclResult SalGetCurrentTimestamp(u64& timestamp);
+HcclResult SalGetCurrentTimestamp(u64 &timestamp);
 u64 GetCurAicpuTimestamp();
 
 using HcclUs = std::chrono::steady_clock::time_point;
@@ -80,10 +80,11 @@ using HcclUs = std::chrono::steady_clock::time_point;
 #define DURATION_US(x) (std::chrono::duration_cast<std::chrono::microseconds>(x))
 #define TAKE_TIME_US(x, y) (DURATION_US(x) - DURATION_US(y))
 #define TIME_NOW() ({ std::chrono::steady_clock::now(); })
-#define CHECK_WARNTIME(x, warntime) do { \
-    if ((x) > (warntime))                    \
-        HCCL_WARNING("over warning Time\n"); \
-} while (0)
+#define CHECK_WARNTIME(x, warntime) \
+    do { \
+        if ((x) > (warntime)) \
+            HCCL_WARNING("over warning Time\n"); \
+    } while (0)
 
 #ifdef TIME_PROFILING
 #define TIME_PRINT(x) \
@@ -116,7 +117,7 @@ constexpr s32 BUF_SIZE = 1024;
 constexpr size_t MEMCPY_THRESHOLD = 1024;
 s32 SalLog2(s32 data);
 #ifdef __cplusplus
-}  // extern "C"
+} // extern "C"
 #endif
 
 #if HCOMM_T_DESC("计算类型占用内存大小函数", true)
@@ -129,12 +130,12 @@ HcclResult FindLocalHostIP(std::vector<std::pair<std::string, hccl::HcclIpAddres
 std::string GetLocalServerId(std::string &serverId);
 bool IsGeneralServer();
 HcclResult IsHostUseDevNic(bool &isHdcMode);
+void SetHostUseDevNicFlag(bool isHdcMode);
 u32 GetNicPort(u32 devicePhyId, const std::vector<u32> &ranksPort, u32 userRank, bool isUseRanksPort);
 
 HcclResult IsAllDigit(const char *strNum);
 
 void SetThreadName(const std::string &threadStr);
-
 
 #ifndef CCL_LLT
 inline void AsmCntvc(uint64_t &cntvct)
@@ -156,4 +157,4 @@ inline u64 ProfGetCurCpuTimestamp()
 #endif
     return 0;
 }
-#endif  // HCCL_INC_SAL_H
+#endif // HCCL_INC_SAL_H

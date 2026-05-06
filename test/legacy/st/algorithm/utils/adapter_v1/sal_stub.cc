@@ -58,12 +58,14 @@ void SalSleep(u32 sec)
     }
 }
 
-HcclResult SalGetCurrentTimestamp(u64& timestamp)
+HcclResult SalGetCurrentTimestamp(u64 &timestamp)
 {
     struct timeval tv;
     int ret = gettimeofday(&tv, nullptr);
-    CHK_PRT_RET(ret != 0, HCCL_ERROR("[Get][tCurrentTimestamp]errNo[0x%016llx] get timestamp fail, return[%d].",
-        HCCL_ERROR_CODE(HCCL_E_SYSCALL), ret), HCCL_E_SYSCALL);
+    CHK_PRT_RET(ret != 0,
+        HCCL_ERROR("[Get][tCurrentTimestamp]errNo[0x%016llx] get timestamp fail, return[%d].",
+            HCCL_ERROR_CODE(HCCL_E_SYSCALL), ret),
+        HCCL_E_SYSCALL);
     timestamp = tv.tv_sec * 1000000 + tv.tv_usec; // 1000000: 单位转换 秒 -> 微秒
     return HCCL_SUCCESS;
 }
@@ -148,7 +150,7 @@ s32 SalSetEnv(const char *name, const char *value, int overwrite)
 s64 SalGetSysTime()
 {
     // 获取当前系统时间,将时分秒清零
-    time_t curTime = time(&curTime);  // time_t是一种时间类型，一般用来存放自1970年1月1日0点0时0分开始的秒数
+    time_t curTime = time(&curTime); // time_t是一种时间类型，一般用来存放自1970年1月1日0点0时0分开始的秒数
 
     return static_cast<s64>(curTime);
 }
@@ -161,16 +163,13 @@ HcclResult SalStrToInt(const std::string str, int base, s32 &val)
 {
     try {
         val = std::stoi(str, nullptr, base);
-    }
-    catch (std::invalid_argument&) {
+    } catch (std::invalid_argument &) {
         HCCL_ERROR("[Transform][StrToInt]strtoi invalid argument, str[%s] base[%d] val[%d]", str.c_str(), base, val);
         return HCCL_E_PARA;
-    }
-    catch (std::out_of_range&) {
+    } catch (std::out_of_range &) {
         HCCL_ERROR("[Transform][StrToInt]strtoi out of range, str[%s] base[%d] val[%d]", str.c_str(), base, val);
         return HCCL_E_PARA;
-    }
-    catch (...) {
+    } catch (...) {
         HCCL_ERROR("[Transform][StrToInt]strtoi catch errror, str[%s] base[%d] val[%d]", str.c_str(), base, val);
         return HCCL_E_PARA;
     }
@@ -182,16 +181,13 @@ HcclResult SalStrToDouble(const std::string str, double &val)
 {
     try {
         val = std::stod(str);
-    }
-    catch (std::invalid_argument&) {
+    } catch (std::invalid_argument &) {
         HCCL_ERROR("[Transform][StrToDouble]stod invalid argument, str[%s] val[%f]", str.c_str(), val);
         return HCCL_E_PARA;
-    }
-    catch (std::out_of_range&) {
+    } catch (std::out_of_range &) {
         HCCL_ERROR("[Transform][StrToDouble]stod out of range, str[%s] val[%f]", str.c_str(), val);
         return HCCL_E_PARA;
-    }
-    catch (...) {
+    } catch (...) {
         HCCL_ERROR("[Transform][StrToDouble]stod catch error, str[%s] val[%f]", str.c_str(), val);
         return HCCL_E_PARA;
     }
@@ -209,16 +205,13 @@ HcclResult SalStrToULong(const std::string str, int base, u32 &val)
         } else {
             val = static_cast<u32>(tmp);
         }
-    }
-    catch (std::invalid_argument&) {
+    } catch (std::invalid_argument &) {
         HCCL_ERROR("[Transform][StrToULong]stoul invalid argument, str[%s] base[%d] val[%u]", str.c_str(), base, val);
         return HCCL_E_PARA;
-    }
-    catch (std::out_of_range&) {
+    } catch (std::out_of_range &) {
         HCCL_ERROR("[Transform][StrToULong]stoul out of range, str[%s] base[%d] val[%u]", str.c_str(), base, val);
         return HCCL_E_PARA;
-    }
-    catch (...) {
+    } catch (...) {
         HCCL_ERROR("[Transform][StrToULong]stoul catch errror, str[%s] base[%d] val[%u]", str.c_str(), base, val);
         return HCCL_E_PARA;
     }
@@ -230,20 +223,17 @@ HcclResult SalStrToULonglong(const std::string str, int base, u64 &val)
 {
     try {
         val = std::stoull(str, nullptr, base);
-    }
-    catch (std::invalid_argument&) {
-        HCCL_ERROR("[Transform][StrToULonglong]stoull invalid argument, str[%s] base[%d] val[%llu]",
-            str.c_str(), base, val);
+    } catch (std::invalid_argument &) {
+        HCCL_ERROR(
+            "[Transform][StrToULonglong]stoull invalid argument, str[%s] base[%d] val[%llu]", str.c_str(), base, val);
         return HCCL_E_PARA;
-    }
-    catch (std::out_of_range&) {
-        HCCL_ERROR("[Transform][StrToULonglong]stoull out of range, str[%s] base[%d] val[%llu]",
-            str.c_str(), base, val);
+    } catch (std::out_of_range &) {
+        HCCL_ERROR(
+            "[Transform][StrToULonglong]stoull out of range, str[%s] base[%d] val[%llu]", str.c_str(), base, val);
         return HCCL_E_PARA;
-    }
-    catch (...) {
-        HCCL_ERROR("[Transform][StrToULonglong]stoull catch errror, str[%s] base[%d] val[%llu]",
-            str.c_str(), base, val);
+    } catch (...) {
+        HCCL_ERROR(
+            "[Transform][StrToULonglong]stoull catch errror, str[%s] base[%d] val[%llu]", str.c_str(), base, val);
         return HCCL_E_PARA;
     }
     return HCCL_SUCCESS;
@@ -254,20 +244,17 @@ HcclResult SalStrToLonglong(const std::string str, int base, s64 &val)
 {
     try {
         val = std::stoll(str, nullptr, base);
-    }
-    catch (std::invalid_argument&) {
-        HCCL_ERROR("[Transform][SalStrToLonglong]stoll invalid argument, str[%s] base[%d] val[%lld]",
-            str.c_str(), base, val);
+    } catch (std::invalid_argument &) {
+        HCCL_ERROR(
+            "[Transform][SalStrToLonglong]stoll invalid argument, str[%s] base[%d] val[%lld]", str.c_str(), base, val);
         return HCCL_E_PARA;
-    }
-    catch (std::out_of_range&) {
-        HCCL_ERROR("[Transform][SalStrToLonglong]stoll out of range, str[%s] base[%d] val[%lld]",
-            str.c_str(), base, val);
+    } catch (std::out_of_range &) {
+        HCCL_ERROR(
+            "[Transform][SalStrToLonglong]stoll out of range, str[%s] base[%d] val[%lld]", str.c_str(), base, val);
         return HCCL_E_PARA;
-    }
-    catch (...) {
-        HCCL_ERROR("[Transform][SalStrToLonglong]stoll catch errror, str[%s] base[%d] val[%lld]",
-            str.c_str(), base, val);
+    } catch (...) {
+        HCCL_ERROR(
+            "[Transform][SalStrToLonglong]stoll catch errror, str[%s] base[%d] val[%lld]", str.c_str(), base, val);
         return HCCL_E_PARA;
     }
     return HCCL_SUCCESS;
@@ -311,11 +298,10 @@ s32 SalLog2(s32 data)
 #if T_DESC("计算类型占用内存大小函数", true)
 HcclResult SalGetDataTypeSize(HcclDataType dataType, u32 &dataTypeSize)
 {
-    if ((dataType >= HCCL_DATA_TYPE_INT8) &&
-        (dataType < HCCL_DATA_TYPE_RESERVED)) {
+    if ((dataType >= HCCL_DATA_TYPE_INT8) && (dataType < HCCL_DATA_TYPE_RESERVED)) {
         dataTypeSize = SIZE_TABLE[dataType];
     } else {
-        HCCL_ERROR("[Get][DataTypeSize]errNo[0x%016llx] get date size failed. dataType[%s] is invalid.", \
+        HCCL_ERROR("[Get][DataTypeSize]errNo[0x%016llx] get date size failed. dataType[%s] is invalid.",
             HCOM_ERROR_CODE(HCCL_E_PARA), GetDataTypeEnumStr(dataType).c_str());
         return HCCL_E_PARA;
     }
@@ -332,15 +318,15 @@ void SalSetBitOne(u64 &value, u64 index)
 }
 #endif
 
-
 #if T_DESC("json处理函数", true)
 HcclResult SalParseInformation(nlohmann::json &parseInformation, const std::string &information)
 {
     try {
         parseInformation = nlohmann::json::parse(information);
     } catch (...) {
-        HCCL_ERROR("[Parse][Information] errNo[0x%016llx] load allocated resource to json fail. "\
-            "please check json input!", HCOM_ERROR_CODE(HCCL_E_PARA));
+        HCCL_ERROR("[Parse][Information] errNo[0x%016llx] load allocated resource to json fail. "
+                   "please check json input!",
+            HCOM_ERROR_CODE(HCCL_E_PARA));
         return HCCL_E_PARA;
     }
     return HCCL_SUCCESS;
@@ -394,8 +380,8 @@ bool FindHostIPByNicClass(const std::map<std::string, std::map<std::string, hccl
     return false;
 }
 
-HcclResult FindLocalHostIPByIfname(std::vector<std::pair<std::string, hccl::HcclIpAddress>> &ifInfos, s32 family,
-    hccl::HcclIpAddress &ip)
+HcclResult FindLocalHostIPByIfname(
+    std::vector<std::pair<std::string, hccl::HcclIpAddress>> &ifInfos, s32 family, hccl::HcclIpAddress &ip)
 {
     for (auto &ifInfo : ifInfos) {
         if (ifInfo.second.GetFamily() != family) {
@@ -404,30 +390,29 @@ HcclResult FindLocalHostIPByIfname(std::vector<std::pair<std::string, hccl::Hccl
         u32 matchLen = ifInfo.first.size();
         bool configIfNamesFlag = false;
         for (u32 i = 0; i < GetExternalInputHcclSocketIfName().configIfNames.size(); i++) {
-            matchLen = GetExternalInputHcclSocketIfName().searchExact ?
-                ifInfo.first.size() :
-                GetExternalInputHcclSocketIfName().configIfNames[i].size();
-            if (ifInfo.first.compare(0, matchLen, GetExternalInputHcclSocketIfName().configIfNames[i], 0,
-                matchLen) == 0) {
+            matchLen = GetExternalInputHcclSocketIfName().searchExact
+                           ? ifInfo.first.size()
+                           : GetExternalInputHcclSocketIfName().configIfNames[i].size();
+            if (ifInfo.first.compare(0, matchLen, GetExternalInputHcclSocketIfName().configIfNames[i], 0, matchLen)
+                == 0) {
                 configIfNamesFlag = true;
             }
         }
         if ((configIfNamesFlag) ^ (GetExternalInputHcclSocketIfName().searchNot)) {
             configIfNamesFlag = false;
             ip = ifInfo.second;
-            HCCL_RUN_INFO("get host ip success. name[%s] ip[%s]", ifInfo.first.c_str(),
-                ifInfo.second.GetReadableAddress());
+            HCCL_RUN_INFO(
+                "get host ip success. name[%s] ip[%s]", ifInfo.first.c_str(), ifInfo.second.GetReadableAddress());
             return HCCL_SUCCESS;
         }
     }
     return HCCL_E_NOT_FOUND;
 }
 
-HcclResult FindLocalHostIPByIfname(std::vector<std::pair<std::string, hccl::HcclIpAddress>> &ifInfos,
-    hccl::HcclIpAddress &ip)
+HcclResult FindLocalHostIPByIfname(
+    std::vector<std::pair<std::string, hccl::HcclIpAddress>> &ifInfos, hccl::HcclIpAddress &ip)
 {
-    s32 firstFamily = (GetExternalInputHcclSocketFamily() == -1) ? AF_INET :
-        GetExternalInputHcclSocketFamily();
+    s32 firstFamily = (GetExternalInputHcclSocketFamily() == -1) ? AF_INET : GetExternalInputHcclSocketFamily();
     HcclResult ret = FindLocalHostIPByIfname(ifInfos, firstFamily, ip);
     if (ret == HCCL_E_NOT_FOUND) {
         s32 family = (firstFamily == AF_INET) ? AF_INET6 : AF_INET;
@@ -436,8 +421,8 @@ HcclResult FindLocalHostIPByIfname(std::vector<std::pair<std::string, hccl::Hccl
     return ret;
 }
 
-HcclResult FindLocalHostIPDefault(std::vector<std::pair<std::string, hccl::HcclIpAddress>> &ifInfos, s32 family,
-    hccl::HcclIpAddress &ip)
+HcclResult FindLocalHostIPDefault(
+    std::vector<std::pair<std::string, hccl::HcclIpAddress>> &ifInfos, s32 family, hccl::HcclIpAddress &ip)
 {
     std::map<std::string, std::map<std::string, hccl::HcclIpAddress>> nicClassify;
     for (auto &ifInfo : ifInfos) {
@@ -445,11 +430,11 @@ HcclResult FindLocalHostIPDefault(std::vector<std::pair<std::string, hccl::HcclI
             continue;
         }
         if (ifInfo.first.find("lo") == 0) {
-            nicClassify["lo"].insert({ ifInfo.first, ifInfo.second });
+            nicClassify["lo"].insert({ifInfo.first, ifInfo.second});
         } else if (ifInfo.first.find("docker") == 0) {
-            nicClassify["docker"].insert({ ifInfo.first, ifInfo.second });
+            nicClassify["docker"].insert({ifInfo.first, ifInfo.second});
         } else {
-            nicClassify["normal"].insert({ ifInfo.first, ifInfo.second });
+            nicClassify["normal"].insert({ifInfo.first, ifInfo.second});
         }
         HCCL_DEBUG("ifname[%s] addr[%s]", ifInfo.first.c_str(), ifInfo.second.GetReadableAddress());
     }
@@ -467,11 +452,10 @@ HcclResult FindLocalHostIPDefault(std::vector<std::pair<std::string, hccl::HcclI
     return HCCL_E_NOT_FOUND;
 }
 
-HcclResult FindLocalHostIPDefault(std::vector<std::pair<std::string, hccl::HcclIpAddress>> &ifInfos,
-    hccl::HcclIpAddress &ip)
+HcclResult FindLocalHostIPDefault(
+    std::vector<std::pair<std::string, hccl::HcclIpAddress>> &ifInfos, hccl::HcclIpAddress &ip)
 {
-    s32 firstFamily = (GetExternalInputHcclSocketFamily() == -1) ? AF_INET :
-        GetExternalInputHcclSocketFamily();
+    s32 firstFamily = (GetExternalInputHcclSocketFamily() == -1) ? AF_INET : GetExternalInputHcclSocketFamily();
     HcclResult ret = FindLocalHostIPDefault(ifInfos, firstFamily, ip);
     if (ret == HCCL_E_NOT_FOUND) {
         s32 family = (firstFamily == AF_INET) ? AF_INET6 : AF_INET;
@@ -547,7 +531,7 @@ HcclResult IsAllDigit(const char *strNum)
     for (u32 index = 0; index < nLength; index++) {
         if (!isdigit(strNum[index])) {
             HCCL_ERROR("[Check][Isdigit]errNo[0x%016llx] In judge all digit, check isdigit failed."
-                "ensure that the number is an integer. strNum[%u] is [%d](Dec)",
+                       "ensure that the number is an integer. strNum[%u] is [%d](Dec)",
                 HCCL_ERROR_CODE(HCCL_E_PARA), index, strNum[index]);
             return HCCL_E_PARA;
         }
@@ -555,25 +539,24 @@ HcclResult IsAllDigit(const char *strNum)
     return HCCL_SUCCESS;
 }
 
-void SetThreadName(const std::string &threadStr){
+void SetThreadName(const std::string &threadStr)
+{
     s32 sRet = pthread_setname_np(pthread_self(), threadStr.c_str());
     CHK_PRT_CONT(sRet != 0, HCCL_WARNING("err[%d] link[%s] nameSet failed.", sRet, threadStr.c_str()));
 }
 
-HcclResult CheckHexUInt(const std::string& str)
+HcclResult CheckHexUInt(const std::string &str)
 {
-    if (str.length() != 10) {  // 有效的16进制无符号整型数如0xFFFFFFFF共10个字符
+    if (str.length() != 10) { // 有效的16进制无符号整型数如0xFFFFFFFF共10个字符
         HCCL_ERROR("[Check][HexUInt]string[%s] is not a valid hexadecimal uint value.", str.c_str());
         return HCCL_E_PARA;
     }
-    if (str.substr(0, 2) != "0x" && str.substr(0, 2) != "0X") {  // 字符串前两2个字符，有效的16进制数以0x或者0X开头
+    if (str.substr(0, 2) != "0x" && str.substr(0, 2) != "0X") { // 字符串前两2个字符，有效的16进制数以0x或者0X开头
         HCCL_ERROR("[Check][HexUInt]string[%s] is not a valid hexadecimal uint value.", str.c_str());
         return HCCL_E_PARA;
     }
-    for (int i = 2; i < 10; i++) {  // 从第2个字符到第10个字符判断是否是有效字符
-        if ((str[i] >= '0' && str[i] <= '9') ||
-            (str[i] >= 'a' && str[i] <= 'f') ||
-            (str[i] >= 'A' && str[i] <= 'F')) {
+    for (int i = 2; i < 10; i++) { // 从第2个字符到第10个字符判断是否是有效字符
+        if ((str[i] >= '0' && str[i] <= '9') || (str[i] >= 'a' && str[i] <= 'f') || (str[i] >= 'A' && str[i] <= 'F')) {
             continue;
         } else {
             HCCL_ERROR("[Check][HexUInt]string[%s] is not a valid hexadecimal uint value.", str.c_str());
@@ -586,6 +569,12 @@ HcclResult CheckHexUInt(const std::string& str)
 bool IsGeneralServer()
 {
     return false;
+}
+
+bool g_isHdcMode = true;
+void SetHostUseDevNicFlag(bool isHdcMode)
+{
+    g_isHdcMode = isHdcMode;
 }
 
 // 判断host侧是否需要使用device网卡
@@ -609,7 +598,7 @@ HcclResult IsHostUseDevNic(bool &isHdcMode)
     }
 
     // 在aiserver上判断该环境变量是否设置
-    isHdcMode = true;
+    isHdcMode = g_isHdcMode;
     HCCL_INFO("IsHostUseDevNic[%u]", isHdcMode);
 
     return HCCL_SUCCESS;
@@ -617,8 +606,8 @@ HcclResult IsHostUseDevNic(bool &isHdcMode)
 
 u32 GetNicPort(u32 devicePhyId, const std::vector<u32> &ranksPort, u32 userRank, bool isUseRanksPort)
 {
-    if (!ranksPort.size() || (userRank < ranksPort.size() && ranksPort[userRank] == HCCL_INVALID_PORT) ||
-        (!isUseRanksPort && !hccl::Is310PDevice())) {
+    if (!ranksPort.size() || (userRank < ranksPort.size() && ranksPort[userRank] == HCCL_INVALID_PORT)
+        || (!isUseRanksPort && !hccl::Is310PDevice())) {
         // 使用device nic时且无外部配置的port(ranksPort长度为0或者有port但为无效值)时，默认16666
         return HETEROG_CCL_PORT;
     }
@@ -630,7 +619,7 @@ u32 GetNicPort(u32 devicePhyId, const std::vector<u32> &ranksPort, u32 userRank,
     if (GetExternalInputHcclIfBasePort() == HCCL_INVALID_PORT) {
         HCCL_INFO("[Init][Nic] port is set to HOST_PARA_BASE_PORT");
         return (HOST_PARA_BASE_PORT + devicePhyId);
-    }else {
+    } else {
         return (GetExternalInputHcclIfBasePort() + HCCL_AISERVER_DEVICE_NUM + devicePhyId);
     }
     // peer及hdc模式下listen_start/batch_connect/listen_stop调用支持指定端口

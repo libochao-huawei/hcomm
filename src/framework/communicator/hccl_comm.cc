@@ -30,10 +30,18 @@ namespace hccl {
 RankTable_t g_hcclDefaultRankTable;
 
 hcclComm::hcclComm(u64 inCCLbufferSize, u64 outCCLbufferSize, std::string identifier, std::string cclBufferName)
-    : barrierSendBuf(nullptr), barrierRecvBuf(nullptr),
-      inCCLbufferSize_(inCCLbufferSize), outCCLbufferSize_(outCCLbufferSize),
-      deviceType_(DevType::DEV_TYPE_COUNT), isFirstBarrier_(true), identifier_(identifier), cclBuffName_(cclBufferName), isHeterogComm_(false),
-      isResetDevice_(false), isSpecialType_(false), communicator_(nullptr)
+    : barrierSendBuf(nullptr),
+      barrierRecvBuf(nullptr),
+      inCCLbufferSize_(inCCLbufferSize),
+      outCCLbufferSize_(outCCLbufferSize),
+      deviceType_(DevType::DEV_TYPE_COUNT),
+      isFirstBarrier_(true),
+      identifier_(identifier),
+      cclBuffName_(cclBufferName),
+      isHeterogComm_(false),
+      isResetDevice_(false),
+      isSpecialType_(false),
+      communicator_(nullptr)
 {
     indirectInCCLbuffer_ = DeviceMem();
     indirectOutCCLbuffer_ = DeviceMem();
@@ -125,32 +133,35 @@ HcclResult hcclComm::init(HcclCommParams &params, const CommConfig &commConfig, 
     /* 设置commConfig单例 */
     HcclResult ret = CommConfiger::GetInstance().SetCommConfig(commConfig, identifier_);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[hcclComm][init]errNo[0x%016llx] set commConfiger failed.",
-        HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
+        HCCL_ERROR("[hcclComm][init]errNo[0x%016llx] set commConfiger failed.", HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
 
-    CHK_RET(communicator_->AtomicInitSet());                  /* 初始化竞争, 只允许被初始化一次 */
-    ret = communicator_->Init(params, rankTable);  /* 初始化实例, 失败则重新开放初始化竞争 */
+    CHK_RET(communicator_->AtomicInitSet());      /* 初始化竞争, 只允许被初始化一次 */
+    ret = communicator_->Init(params, rankTable); /* 初始化实例, 失败则重新开放初始化竞争 */
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[HcclComm][Init]errNo[0x%016llx] hccl initialize failed", HCCL_ERROR_CODE(ret));
         communicator_->AtomicInitClear();
         return ret;
     }
     CHK_RET(ShareCCLbufferMgr::GetInstance().RecordShareCCLbuffer(cclBuffName_));
-    if (params.totalRanks != 1 ) {
+    if (params.totalRanks != 1) {
         CHK_RET(communicator_->InitCCLbuffer(inCCLbufferSize_, outCCLbufferSize_));
     }
 
-    HCCL_USER_CRITICAL_LOG("hcclCommInitInfo:commId[%s], rank[%u], totalRanks[%u], serverId[%s], deviceType[%d]," \
-        "logicDevId[%d], identifier[%s]", params.id.internal, params.rank, params.totalRanks, params.serverId.c_str(),
-        params.deviceType, params.logicDevId, params.identifier.c_str());
+    HCCL_USER_CRITICAL_LOG("hcclCommInitInfo:commId[%s], rank[%u], totalRanks[%u], serverId[%s], deviceType[%d],"
+                           "logicDevId[%d], identifier[%s]",
+        params.id.internal, params.rank, params.totalRanks, params.serverId.c_str(), params.deviceType,
+        params.logicDevId, params.identifier.c_str());
 
     InitIndependentOp();
+#ifndef CCL_KERNEL_AICPU
+    communicator_->InitMyRank();
+#endif
 
     return HCCL_SUCCESS;
 }
 
 HcclResult hcclComm::init(HcclCommParams &params, const CommConfig &commConfig, const std::vector<RankInfo> &rankList,
-                          WorldGroupInfo &groupCommonData)
+    WorldGroupInfo &groupCommonData)
 {
     UpdateIsHaveCpuRank(rankList);
     /* 强行将最后一个字符置0, 确保其可以做字符串操作 */
@@ -177,11 +188,10 @@ HcclResult hcclComm::init(HcclCommParams &params, const CommConfig &commConfig, 
     /* 设置commConfig单例 */
     HcclResult ret = CommConfiger::GetInstance().SetCommConfig(commConfig, identifier_);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[hcclComm][init]errNo[0x%016llx] set commConfiger failed.",
-        HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
+        HCCL_ERROR("[hcclComm][init]errNo[0x%016llx] set commConfiger failed.", HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
 
-    CHK_RET(communicator_->CheckDeviceType(params.deviceType));                /* 芯片类型检查 */
-    CHK_RET(communicator_->AtomicInitSet());                                 /* 初始化竞争, 只允许被初始化一次 */
+    CHK_RET(communicator_->CheckDeviceType(params.deviceType)); /* 芯片类型检查 */
+    CHK_RET(communicator_->AtomicInitSet());                    /* 初始化竞争, 只允许被初始化一次 */
     ret = communicator_->Init(params, rankList, groupCommonData); /* 初始化实例, 失败则重新开放初始化竞争 */
     if (ret != HCCL_SUCCESS) {
         communicator_->AtomicInitClear();
@@ -194,15 +204,18 @@ HcclResult hcclComm::init(HcclCommParams &params, const CommConfig &commConfig, 
 HcclResult hcclComm::SetQpQosAttr(u32 trafficClass, u32 serviceLevel)
 {
     // 校验config中TC的合法性
-    if (trafficClass == HCCL_COMM_TRAFFIC_CLASS_CONFIG_NOT_SET && serviceLevel == HCCL_COMM_SERVICE_LEVEL_CONFIG_NOT_SET) {
-        HCCL_INFO("[SetQpQosAttr]The TC and SL do not use the config configuration. " \
-            "It will use environment variables to configure. TC[%u], SL[%u]",
+    if (trafficClass == HCCL_COMM_TRAFFIC_CLASS_CONFIG_NOT_SET
+        && serviceLevel == HCCL_COMM_SERVICE_LEVEL_CONFIG_NOT_SET) {
+        HCCL_INFO("[SetQpQosAttr]The TC and SL do not use the config configuration. "
+                  "It will use environment variables to configure. TC[%u], SL[%u]",
             EnvConfig::GetExternalInputRdmaTrafficClass(), EnvConfig::GetExternalInputRdmaServerLevel());
         return HCCL_SUCCESS;
-    } else if (trafficClass != HCCL_COMM_TRAFFIC_CLASS_CONFIG_NOT_SET && serviceLevel == HCCL_COMM_SERVICE_LEVEL_CONFIG_NOT_SET) {
+    } else if (trafficClass != HCCL_COMM_TRAFFIC_CLASS_CONFIG_NOT_SET
+               && serviceLevel == HCCL_COMM_SERVICE_LEVEL_CONFIG_NOT_SET) {
         serviceLevel = EnvConfig::GetExternalInputRdmaServerLevel();
         HCCL_INFO("[SetQpQosAttr]The SL is not configured. It will use the environment value[%u]", serviceLevel);
-    } else if (trafficClass == HCCL_COMM_TRAFFIC_CLASS_CONFIG_NOT_SET && serviceLevel != HCCL_COMM_SERVICE_LEVEL_CONFIG_NOT_SET) {
+    } else if (trafficClass == HCCL_COMM_TRAFFIC_CLASS_CONFIG_NOT_SET
+               && serviceLevel != HCCL_COMM_SERVICE_LEVEL_CONFIG_NOT_SET) {
         trafficClass = EnvConfig::GetExternalInputRdmaTrafficClass();
         HCCL_INFO("[SetQpQosAttr]The TC is not configured. It will use the environment value[%u]", trafficClass);
     }
@@ -215,8 +228,8 @@ HcclResult hcclComm::SetQpQosAttr(u32 trafficClass, u32 serviceLevel)
     }
     // 若设置的RDMATrafficClass不是4的整数倍，则报错
     if (trafficClass % EnvConfig::HCCL_RDMA_TC_BASE != 0) {
-        HCCL_ERROR("[SetQpQosAttr]rdmaTrafficClass[%u] is not a multiple of [%u]",
-            trafficClass, EnvConfig::HCCL_RDMA_TC_BASE);
+        HCCL_ERROR(
+            "[SetQpQosAttr]rdmaTrafficClass[%u] is not a multiple of [%u]", trafficClass, EnvConfig::HCCL_RDMA_TC_BASE);
         return HCCL_E_PARA;
     }
 
@@ -234,11 +247,11 @@ HcclResult hcclComm::SetQpQosAttr(u32 trafficClass, u32 serviceLevel)
 }
 
 HcclResult hcclComm::CreateGroup(const std::string &group, const u32 &groupRank, const u32 &userRank,
-                                 const std::vector<u32> &groupRanks, std::shared_ptr<hcclComm> &groupComm)
+    const std::vector<u32> &groupRanks, std::shared_ptr<hcclComm> &groupComm)
 {
     // 增加输出日志关键字
-    HCCL_INFO("HCCL_KEY_INFO: group[%s], groupRank[%u], userRank[%u], groupComm[%p]", group.c_str(),
-        groupRank, userRank, groupComm.get());
+    HCCL_INFO("HCCL_KEY_INFO: group[%s], groupRank[%u], userRank[%u], groupComm[%p]", group.c_str(), groupRank,
+        userRank, groupComm.get());
 
     // 入参有消息校验
     if (group.length() == 0) {
@@ -260,11 +273,12 @@ HcclResult hcclComm::CreateGroup(const std::string &group, const u32 &groupRank,
     params.userRank = userRank;
     params.totalRanks = groupRanks.size();
     params.isHeterogComm = isHeterogComm_;
-    s32 iret = snprintf_s(params.id.internal, HCCL_ROOT_INFO_BYTES, HCCL_ROOT_INFO_BYTES - 1, "%s%s%s",
-                          id.internal, "-", group.c_str());
+    s32 iret = snprintf_s(
+        params.id.internal, HCCL_ROOT_INFO_BYTES, HCCL_ROOT_INFO_BYTES - 1, "%s%s%s", id.internal, "-", group.c_str());
 
-    CHK_PRT_RET((iret == -1), HCCL_ERROR("[Create][Group]errNo[0x%016llx] get group unique id failed",
-        HCCL_ERROR_CODE(HCCL_E_INTERNAL)), HCCL_E_INTERNAL);
+    CHK_PRT_RET((iret == -1),
+        HCCL_ERROR("[Create][Group]errNo[0x%016llx] get group unique id failed", HCCL_ERROR_CODE(HCCL_E_INTERNAL)),
+        HCCL_E_INTERNAL);
 
     WorldGroupInfo groupCommonData;
 
@@ -307,7 +321,7 @@ void hcclComm::PrintSubmittedOpCnt(const std::string &tag, HcclResult ret)
 }
 
 HcclResult hcclComm::AllGather(const std::string &tag, void *inputPtr, void *outputPtr, u64 inputCount,
-                               HcclDataType dataType, HcclRtStream stream, HcomCollOpInfo *opInfo)
+    HcclDataType dataType, HcclRtStream stream, HcomCollOpInfo *opInfo)
 {
     /* 增加输出日志关键字 */
     HCCL_INFO("HCCL_KEY_INFO: tag[%s], count[%llu], data_type[%s]", tag.c_str(), inputCount,
@@ -318,8 +332,9 @@ HcclResult hcclComm::AllGather(const std::string &tag, void *inputPtr, void *out
     CHK_PTR_NULL(outputPtr);
     CHK_PTR_NULL(stream);
 
-    CHK_PRT_RET(tag.empty(), HCCL_ERROR("[HcclComm][AllGather]errNo[0x%016llx] AllGather tag length is 0",
-        HCCL_ERROR_CODE(HCCL_E_PARA)), HCCL_E_PARA);
+    CHK_PRT_RET(tag.empty(),
+        HCCL_ERROR("[HcclComm][AllGather]errNo[0x%016llx] AllGather tag length is 0", HCCL_ERROR_CODE(HCCL_E_PARA)),
+        HCCL_E_PARA);
 
     CHK_RET(communicator_->CheckCount(inputCount));
     CHK_RET(communicator_->CheckDataType(dataType, false));
@@ -346,8 +361,9 @@ HcclResult hcclComm::AllGatherV(const std::string &tag, const void *sendBuf, u64
     CHK_PTR_NULL(recvCounts);
     CHK_PTR_NULL(rdispls);
 
-    CHK_PRT_RET(tag.empty(), HCCL_ERROR("[HcclComm][AllGatherV]errNo[0x%016llx] AllGather tag length is 0",
-        HCCL_ERROR_CODE(HCCL_E_PARA)), HCCL_E_PARA);
+    CHK_PRT_RET(tag.empty(),
+        HCCL_ERROR("[HcclComm][AllGatherV]errNo[0x%016llx] AllGather tag length is 0", HCCL_ERROR_CODE(HCCL_E_PARA)),
+        HCCL_E_PARA);
 
     CHK_RET(communicator_->CheckDataType(dataType, false));
     HcclResult ret = communicator_->AllGatherV(tag, sendBuf, sendCount, recvBuf, recvCounts, rdispls, dataType, stream);
@@ -359,12 +375,12 @@ HcclResult hcclComm::AllGatherV(const std::string &tag, const void *sendBuf, u64
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::AllGatherOutPlace(const std::string &tag, void *inputPtr, void *outputPtr, u64 inputCount,
-    HcclDataType dataType, HcclRtStream stream)
+HcclResult hcclComm::AllGatherOutPlace(
+    const std::string &tag, void *inputPtr, void *outputPtr, u64 inputCount, HcclDataType dataType, HcclRtStream stream)
 {
     /* 增加输出日志关键字 */
-    HCCL_INFO("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], count[%llu], data_type[%s]",
-        tag.c_str(), inputPtr, outputPtr, inputCount, GetDataTypeEnumStr(dataType).c_str());
+    HCCL_INFO("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], count[%llu], data_type[%s]", tag.c_str(),
+        inputPtr, outputPtr, inputCount, GetDataTypeEnumStr(dataType).c_str());
 
     /* * 入参检查 */
     CHK_RET(communicator_->CheckDataType(dataType, false));
@@ -377,24 +393,24 @@ HcclResult hcclComm::AllGatherOutPlace(const std::string &tag, void *inputPtr, v
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::AllGatherVOutPlace(const std::string &tag, void *inputPtr, void *outputPtr,
-    u64 inputCount, const void *outputCounts, const void *outputDispls, HcclDataType dataType, HcclRtStream stream)
+HcclResult hcclComm::AllGatherVOutPlace(const std::string &tag, void *inputPtr, void *outputPtr, u64 inputCount,
+    const void *outputCounts, const void *outputDispls, HcclDataType dataType, HcclRtStream stream)
 {
     /* 增加输出日志关键字 */
-    HCCL_INFO("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], counts[%llu], data_type[%d]",
-        tag.c_str(), inputPtr, outputPtr, outputCounts, dataType);
+    HCCL_INFO("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], counts[%llu], data_type[%d]", tag.c_str(),
+        inputPtr, outputPtr, outputCounts, dataType);
 
     /* * 入参检查 */
     CHK_RET(communicator_->CheckDataType(dataType, false));
-    CHK_RET(communicator_->AllGatherVOutPlace(tag, inputPtr, outputPtr, inputCount, outputCounts, outputDispls,
-        dataType, stream));
+    CHK_RET(communicator_->AllGatherVOutPlace(
+        tag, inputPtr, outputPtr, inputCount, outputCounts, outputDispls, dataType, stream));
 
     return HCCL_SUCCESS;
 }
 
 HcclResult hcclComm::AlltoAllV(const void *sendBuf, const void *sendCounts, const void *sdispls, HcclDataType sendType,
-                               const void *recvBuf, const void *recvCounts, const void *rdispls, HcclDataType recvType,
-                               rtStream_t stream, const std::string &tag)
+    const void *recvBuf, const void *recvCounts, const void *rdispls, HcclDataType recvType, rtStream_t stream,
+    const std::string &tag)
 {
     /* * 入参检查 */
     CHK_PTR_NULL(stream);
@@ -403,15 +419,16 @@ HcclResult hcclComm::AlltoAllV(const void *sendBuf, const void *sendCounts, cons
     CHK_PTR_NULL(recvCounts);
     CHK_PTR_NULL(rdispls);
 
-    CHK_PRT_RET(tag.empty(), HCCL_ERROR("[HcclComm][AlltoAllV]errNo[0x%016llx] AllToAllV tag length is 0",
-        HCCL_ERROR_CODE(HCCL_E_PARA)), HCCL_E_PARA);
+    CHK_PRT_RET(tag.empty(),
+        HCCL_ERROR("[HcclComm][AlltoAllV]errNo[0x%016llx] AllToAllV tag length is 0", HCCL_ERROR_CODE(HCCL_E_PARA)),
+        HCCL_E_PARA);
 
     CHK_RET(communicator_->CheckDataType(sendType, false));
 
     CHK_RET(communicator_->CheckDataType(recvType, false));
 
-    HcclResult ret = communicator_->AlltoAllV(sendBuf, sendCounts, sdispls, sendType, recvBuf, recvCounts, rdispls, recvType,
-        stream, tag);
+    HcclResult ret = communicator_->AlltoAllV(
+        sendBuf, sendCounts, sdispls, sendType, recvBuf, recvCounts, rdispls, recvType, stream, tag);
     if (ret != HCCL_SUCCESS) {
         PrintSubmittedOpCnt(tag, ret);
         return ret;
@@ -439,14 +456,15 @@ HcclResult hcclComm::AlltoAllVOutPlace(const void *sendBuf, const void *sendCoun
 }
 
 HcclResult hcclComm::AlltoAllVC(const void *sendBuf, const void *sendCountMatrix, HcclDataType sendType,
-                                const void *recvBuf, HcclDataType recvType, rtStream_t stream, const std::string &tag)
+    const void *recvBuf, HcclDataType recvType, rtStream_t stream, const std::string &tag)
 {
     /* * 入参检查 */
     CHK_PTR_NULL(stream);
     CHK_PTR_NULL(sendCountMatrix);
 
-    CHK_PRT_RET(tag.empty(), HCCL_ERROR("[HcclComm][AlltoAllVC]errNo[0x%016llx] AllToAllVC tag length is 0",
-        HCCL_ERROR_CODE(HCCL_E_PARA)), HCCL_E_PARA);
+    CHK_PRT_RET(tag.empty(),
+        HCCL_ERROR("[HcclComm][AlltoAllVC]errNo[0x%016llx] AllToAllVC tag length is 0", HCCL_ERROR_CODE(HCCL_E_PARA)),
+        HCCL_E_PARA);
 
     CHK_RET(communicator_->CheckDataType(sendType, false));
 
@@ -468,7 +486,8 @@ HcclResult hcclComm::AlltoAllVCOutPlace(const void *sendBuf, const void *sendCou
     CHK_RET(communicator_->CheckDataType(sendType, false));
     CHK_RET(communicator_->CheckDataType(recvType, false));
 
-    HcclResult ret = communicator_->AlltoAllVCOutPlace(sendBuf, sendCountMatrix, sendType, recvBuf, recvType, stream, tag);
+    HcclResult ret
+        = communicator_->AlltoAllVCOutPlace(sendBuf, sendCountMatrix, sendType, recvBuf, recvType, stream, tag);
     if (ret != HCCL_SUCCESS) {
         PrintSubmittedOpCnt(tag, ret);
         return ret;
@@ -483,8 +502,9 @@ HcclResult hcclComm::AlltoAll(const void *sendBuf, u64 sendCount, HcclDataType s
     /* * 入参检查 */
     CHK_PTR_NULL(communicator_);
 
-    CHK_PRT_RET(tag.empty(), HCCL_ERROR("[HcclComm][AlltoAll]errNo[0x%016llx] AllToAll tag length is 0",
-        HCCL_ERROR_CODE(HCCL_E_PARA)), HCCL_E_PARA);
+    CHK_PRT_RET(tag.empty(),
+        HCCL_ERROR("[HcclComm][AlltoAll]errNo[0x%016llx] AllToAll tag length is 0", HCCL_ERROR_CODE(HCCL_E_PARA)),
+        HCCL_E_PARA);
 
     CHK_RET(communicator_->CheckDataType(sendType, false));
 
@@ -497,20 +517,19 @@ HcclResult hcclComm::AlltoAll(const void *sendBuf, u64 sendCount, HcclDataType s
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::Broadcast(const std::string &tag, void *ptr, u64 count, HcclDataType dataType, u32 root,
-                               HcclRtStream stream)
+HcclResult hcclComm::Broadcast(
+    const std::string &tag, void *ptr, u64 count, HcclDataType dataType, u32 root, HcclRtStream stream)
 {
     /* 增加输出日志关键字 */
-    HCCL_INFO("HCCL_KEY_INFO:tag[%s], ptr[%p], count[%llu], data_type[%s], root[%u]",
-               tag.c_str(), ptr, count, GetDataTypeEnumStr(dataType).c_str(), root);
+    HCCL_INFO("HCCL_KEY_INFO:tag[%s], ptr[%p], count[%llu], data_type[%s], root[%u]", tag.c_str(), ptr, count,
+        GetDataTypeEnumStr(dataType).c_str(), root);
 
     /* * 入参检查 */
     CHK_PTR_NULL(stream);
     CHK_PTR_NULL(ptr);
 
     if (tag.empty()) {
-        HCCL_ERROR("[HcclComm][Broadcast]errNo[0x%016llx] broadcast tag length is 0",
-            HCCL_ERROR_CODE(HCCL_E_PARA));
+        HCCL_ERROR("[HcclComm][Broadcast]errNo[0x%016llx] broadcast tag length is 0", HCCL_ERROR_CODE(HCCL_E_PARA));
         return HCCL_E_PARA;
     }
 
@@ -528,8 +547,8 @@ HcclResult hcclComm::Broadcast(const std::string &tag, void *ptr, u64 count, Hcc
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::BroadcastOutPlace(const std::string &tag, void *ptr, u64 count, HcclDataType dataType, u32 root,
-    HcclRtStream stream)
+HcclResult hcclComm::BroadcastOutPlace(
+    const std::string &tag, void *ptr, u64 count, HcclDataType dataType, u32 root, HcclRtStream stream)
 {
     /* 增加输出日志关键字 */
     HCCL_INFO("HCCL_KEY_INFO:tag[%s], ptr[%p], count[%llu], data_type[%s], root[%u]", tag.c_str(), ptr, count,
@@ -555,8 +574,7 @@ HcclResult hcclComm::ScatterOutPlace(const std::string &tag, void *inputPtr, voi
         tag.c_str(), inputPtr, outputPtr, recvCount, GetDataTypeEnumStr(dataType).c_str(), root);
 
     if (tag.empty()) {
-        HCCL_ERROR("[HcclComm][Scatter]errNo[0x%016llx] scatter tag length is 0",
-            HCCL_ERROR_CODE(HCCL_E_PARA));
+        HCCL_ERROR("[HcclComm][Scatter]errNo[0x%016llx] scatter tag length is 0", HCCL_ERROR_CODE(HCCL_E_PARA));
         return HCCL_E_PARA;
     }
 
@@ -573,12 +591,12 @@ HcclResult hcclComm::ScatterOutPlace(const std::string &tag, void *inputPtr, voi
 }
 
 HcclResult hcclComm::ReduceScatter(const std::string &tag, void *inputPtr, void *outputPtr, u64 count,
-                                   HcclDataType dataType, HcclReduceOp op, HcclRtStream stream)
+    HcclDataType dataType, HcclReduceOp op, HcclRtStream stream)
 {
     /* 增加输出日志关键字 */
     HCCL_INFO("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], count[%llu], data_type[%s], "
-               "op[%s]", tag.c_str(), inputPtr, outputPtr, count, GetDataTypeEnumStr(dataType).c_str(),
-               GetReduceOpEnumStr(op).c_str());
+              "op[%s]",
+        tag.c_str(), inputPtr, outputPtr, count, GetDataTypeEnumStr(dataType).c_str(), GetReduceOpEnumStr(op).c_str());
 
     /* * 入参检查 */
     CHK_PTR_NULL(stream);
@@ -586,8 +604,9 @@ HcclResult hcclComm::ReduceScatter(const std::string &tag, void *inputPtr, void 
     CHK_PTR_NULL(outputPtr);
 
     if (tag.empty()) {
-        HCCL_ERROR("[HcclComm][ReduceScatter]errNo[0x%016llx] reduceScatter tag length is"\
-            "0", HCCL_ERROR_CODE(HCCL_E_PARA));
+        HCCL_ERROR("[HcclComm][ReduceScatter]errNo[0x%016llx] reduceScatter tag length is"
+                   "0",
+            HCCL_ERROR_CODE(HCCL_E_PARA));
         return HCCL_E_PARA;
     }
 
@@ -608,8 +627,8 @@ HcclResult hcclComm::ReduceScatterOutPlace(const std::string &tag, void *inputPt
     HcclDataType dataType, HcclReduceOp op, HcclRtStream stream)
 {
     /* 增加输出日志关键字 */
-    HCCL_INFO("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], count[%llu], data_type[%s], op[%s]",
-        tag.c_str(), inputPtr, outputPtr, count, GetDataTypeEnumStr(dataType).c_str(), GetReduceOpEnumStr(op).c_str());
+    HCCL_INFO("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], count[%llu], data_type[%s], op[%s]", tag.c_str(),
+        inputPtr, outputPtr, count, GetDataTypeEnumStr(dataType).c_str(), GetReduceOpEnumStr(op).c_str());
 
     /* * 入参检查 */
     CHK_RET(communicator_->CheckDataType(dataType, true));
@@ -623,15 +642,15 @@ HcclResult hcclComm::ReduceScatterOutPlace(const std::string &tag, void *inputPt
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::ReduceScatterV(const std::string &tag, void *inputPtr,
-    const void *inputCounts, const void *inputDispls, void *outputPtr, u64 outputCount,
-    HcclDataType dataType, HcclReduceOp op, HcclRtStream stream)
+HcclResult hcclComm::ReduceScatterV(const std::string &tag, void *inputPtr, const void *inputCounts,
+    const void *inputDispls, void *outputPtr, u64 outputCount, HcclDataType dataType, HcclReduceOp op,
+    HcclRtStream stream)
 {
     /* 增加输出日志关键字 */
-    HCCL_INFO("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], " \
-        "input_counts[%p], input_displs[%p], output_count[%llu], data_type[%s], op[%s]",
-        tag.c_str(), inputPtr, outputPtr, inputCounts, inputDispls, outputCount,
-        GetDataTypeEnumStr(dataType).c_str(), GetReduceOpEnumStr(op).c_str());
+    HCCL_INFO("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], "
+              "input_counts[%p], input_displs[%p], output_count[%llu], data_type[%s], op[%s]",
+        tag.c_str(), inputPtr, outputPtr, inputCounts, inputDispls, outputCount, GetDataTypeEnumStr(dataType).c_str(),
+        GetReduceOpEnumStr(op).c_str());
 
     /* * 入参检查 */
     CHK_PTR_NULL(stream);
@@ -639,13 +658,14 @@ HcclResult hcclComm::ReduceScatterV(const std::string &tag, void *inputPtr,
     CHK_PTR_NULL(outputPtr);
 
     if (tag.empty()) {
-        HCCL_ERROR("[HcclComm][ReduceScatterV]errNo[0x%016llx] reduceScatterV tag length is"\
-            "0", HCCL_ERROR_CODE(HCCL_E_PARA));
+        HCCL_ERROR("[HcclComm][ReduceScatterV]errNo[0x%016llx] reduceScatterV tag length is"
+                   "0",
+            HCCL_ERROR_CODE(HCCL_E_PARA));
         return HCCL_E_PARA;
     }
 
     // ReduceScatterV只支持inlinereduce，因此不支持int64类型
-    if(dataType == HCCL_DATA_TYPE_INT64) {
+    if (dataType == HCCL_DATA_TYPE_INT64) {
         HCCL_ERROR("[Check][DataType]errNo[0x%016llx] data type[%s] not supported.",
             HCCL_ERROR_CODE(HCCL_E_NOT_SUPPORT), GetDataTypeEnumStr(dataType).c_str());
         return HCCL_E_NOT_SUPPORT;
@@ -654,8 +674,8 @@ HcclResult hcclComm::ReduceScatterV(const std::string &tag, void *inputPtr,
     CHK_RET(communicator_->CheckDataType(dataType, true));
     CHK_RET(communicator_->CheckReduceDataType(dataType, op));
     CHK_RET(communicator_->CheckReductionOp(op));
-    HcclResult ret = communicator_->ReduceScatterV(tag, inputPtr, inputCounts, inputDispls,
-                        outputPtr, outputCount, dataType, op, stream);
+    HcclResult ret = communicator_->ReduceScatterV(
+        tag, inputPtr, inputCounts, inputDispls, outputPtr, outputCount, dataType, op, stream);
     if (ret != HCCL_SUCCESS) {
         PrintSubmittedOpCnt(tag, ret);
         return ret;
@@ -665,20 +685,20 @@ HcclResult hcclComm::ReduceScatterV(const std::string &tag, void *inputPtr,
 }
 
 HcclResult hcclComm::ReduceScatterVOutPlace(const std::string &tag, void *inputPtr, void *outputPtr,
-    const void *inputCounts, const void *inputDispls, u64 outputCount,
-    HcclDataType dataType, HcclReduceOp op, HcclRtStream stream)
+    const void *inputCounts, const void *inputDispls, u64 outputCount, HcclDataType dataType, HcclReduceOp op,
+    HcclRtStream stream)
 {
     /* 增加输出日志关键字 */
-    HCCL_INFO("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], " \
-        "input_counts[%llu], input_displs[%llu], output_count[%llu], data_type[%s], op[%s]",
-        tag.c_str(), inputPtr, outputPtr, inputCounts, inputDispls, outputCount,
-        GetDataTypeEnumStr(dataType).c_str(), GetReduceOpEnumStr(op).c_str());
+    HCCL_INFO("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], "
+              "input_counts[%llu], input_displs[%llu], output_count[%llu], data_type[%s], op[%s]",
+        tag.c_str(), inputPtr, outputPtr, inputCounts, inputDispls, outputCount, GetDataTypeEnumStr(dataType).c_str(),
+        GetReduceOpEnumStr(op).c_str());
 
     /* * 入参检查 */
     CHK_RET(communicator_->CheckDataType(dataType, true));
     CHK_RET(communicator_->CheckReduceDataType(dataType, op));
-    HcclResult ret = communicator_->ReduceScatterVOutPlace(tag, inputPtr, outputPtr,
-                        inputCounts, inputDispls, outputCount, dataType, op, stream);
+    HcclResult ret = communicator_->ReduceScatterVOutPlace(
+        tag, inputPtr, outputPtr, inputCounts, inputDispls, outputCount, dataType, op, stream);
     if (ret != HCCL_SUCCESS) {
         PrintSubmittedOpCnt(tag, ret);
         return ret;
@@ -687,13 +707,13 @@ HcclResult hcclComm::ReduceScatterVOutPlace(const std::string &tag, void *inputP
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::Reduce(const std::string &tag, void *inputPtr, void *outputPtr, u64 count,
-                            HcclDataType dataType, HcclReduceOp op, u32 root, HcclRtStream stream)
+HcclResult hcclComm::Reduce(const std::string &tag, void *inputPtr, void *outputPtr, u64 count, HcclDataType dataType,
+    HcclReduceOp op, u32 root, HcclRtStream stream)
 {
     /* 增加输出日志关键字 */
-    HCCL_INFO("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], count[%llu], data_type[%s], op[%s], root[%u]",\
-               tag.c_str(), inputPtr, outputPtr, count, GetDataTypeEnumStr(dataType).c_str(),
-               GetReduceOpEnumStr(op).c_str(), root);
+    HCCL_INFO("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], count[%llu], data_type[%s], op[%s], root[%u]",
+        tag.c_str(), inputPtr, outputPtr, count, GetDataTypeEnumStr(dataType).c_str(), GetReduceOpEnumStr(op).c_str(),
+        root);
 
     /* * 入参检查 */
     CHK_PTR_NULL(stream);
@@ -701,8 +721,7 @@ HcclResult hcclComm::Reduce(const std::string &tag, void *inputPtr, void *output
     CHK_PTR_NULL(outputPtr);
 
     if (tag.empty()) {
-        HCCL_ERROR("[HcclComm][Reduce]errNo[0x%016llx] reduce tag length is 0",
-            HCCL_ERROR_CODE(HCCL_E_PARA));
+        HCCL_ERROR("[HcclComm][Reduce]errNo[0x%016llx] reduce tag length is 0", HCCL_ERROR_CODE(HCCL_E_PARA));
         return HCCL_E_PARA;
     }
 
@@ -741,8 +760,8 @@ HcclResult hcclComm::ReduceOutPlace(const std::string &tag, void *inputPtr, void
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::BatchSendRecv(const std::string &tag, struct HcclSendRecvItemDef* sendRecvItemsPtr,
-    u32 itemNum, rtStream_t stream)
+HcclResult hcclComm::BatchSendRecv(
+    const std::string &tag, struct HcclSendRecvItemDef *sendRecvItemsPtr, u32 itemNum, rtStream_t stream)
 {
     HcclResult ret = communicator_->BatchSendRecv(tag, sendRecvItemsPtr, itemNum, stream);
     if (ret != HCCL_SUCCESS) {
@@ -753,19 +772,18 @@ HcclResult hcclComm::BatchSendRecv(const std::string &tag, struct HcclSendRecvIt
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::send(const std::string &tag, void *inputPtr, u64 count, HcclDataType dataType,
-                          u32 destRank, rtStream_t stream, u32 srTag, u32 localGroupRank)
+HcclResult hcclComm::send(const std::string &tag, void *inputPtr, u64 count, HcclDataType dataType, u32 destRank,
+    rtStream_t stream, u32 srTag, u32 localGroupRank)
 {
     /* 增加输出日志关键字 */
-    HCCL_INFO("HCCL_KEY_INFO: tag[%s], input_ptr[%p], count[%llu], data_type[%s], destRank[%u]",
-        tag.c_str(), inputPtr, count, GetDataTypeEnumStr(dataType).c_str(), destRank);
+    HCCL_INFO("HCCL_KEY_INFO: tag[%s], input_ptr[%p], count[%llu], data_type[%s], destRank[%u]", tag.c_str(), inputPtr,
+        count, GetDataTypeEnumStr(dataType).c_str(), destRank);
 
     /* 入参检查 */
     CHK_PTR_NULL(inputPtr);
 
     if (tag.empty()) {
-        HCCL_ERROR("[HcclComm][Send]errNo[0x%016llx] send tag length is 0",
-            HCCL_ERROR_CODE(HCCL_E_PARA));
+        HCCL_ERROR("[HcclComm][Send]errNo[0x%016llx] send tag length is 0", HCCL_ERROR_CODE(HCCL_E_PARA));
         return HCCL_E_PARA;
     }
 
@@ -781,12 +799,12 @@ HcclResult hcclComm::send(const std::string &tag, void *inputPtr, u64 count, Hcc
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::SendOutPlace(const std::string &tag, void *inputPtr, u64 count, HcclDataType dataType,
-    u32 destRank, rtStream_t stream)
+HcclResult hcclComm::SendOutPlace(
+    const std::string &tag, void *inputPtr, u64 count, HcclDataType dataType, u32 destRank, rtStream_t stream)
 {
     /* 增加输出日志关键字 */
-    HCCL_INFO("HCCL_KEY_INFO: tag[%s], input_ptr[%p], count[%llu], data_type[%s], destRank[%u],",
-        tag.c_str(), inputPtr, count, GetDataTypeEnumStr(dataType).c_str(), destRank);
+    HCCL_INFO("HCCL_KEY_INFO: tag[%s], input_ptr[%p], count[%llu], data_type[%s], destRank[%u],", tag.c_str(), inputPtr,
+        count, GetDataTypeEnumStr(dataType).c_str(), destRank);
 
     /* 入参检查 */
     CHK_RET(communicator_->CheckDataType(dataType, false));
@@ -800,12 +818,12 @@ HcclResult hcclComm::SendOutPlace(const std::string &tag, void *inputPtr, u64 co
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::ReceiveOutPlace(const std::string &tag, void *outputPtr, u64 count, HcclDataType dataType,
-    u32 srcRank, rtStream_t stream)
+HcclResult hcclComm::ReceiveOutPlace(
+    const std::string &tag, void *outputPtr, u64 count, HcclDataType dataType, u32 srcRank, rtStream_t stream)
 {
     /* 增加输出日志关键字 */
-    HCCL_INFO("HCCL_KEY_INFO: tag[%s], output_ptr[%p], count[%llu], data_type[%s], srcRank[%u]",
-        tag.c_str(), outputPtr, count, GetDataTypeEnumStr(dataType).c_str(), srcRank);
+    HCCL_INFO("HCCL_KEY_INFO: tag[%s], output_ptr[%p], count[%llu], data_type[%s], srcRank[%u]", tag.c_str(), outputPtr,
+        count, GetDataTypeEnumStr(dataType).c_str(), srcRank);
 
     /* * 入参检查 */
     CHK_RET(communicator_->CheckDataType(dataType, false));
@@ -819,18 +837,19 @@ HcclResult hcclComm::ReceiveOutPlace(const std::string &tag, void *outputPtr, u6
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::receive(const std::string &tag, void *outputPtr, u64 count, HcclDataType dataType,
-                             u32 srcRank, rtStream_t stream, u32 srTag, u32 localGroupRank)
+HcclResult hcclComm::receive(const std::string &tag, void *outputPtr, u64 count, HcclDataType dataType, u32 srcRank,
+    rtStream_t stream, u32 srTag, u32 localGroupRank)
 {
     /* 增加输出日志关键字 */
-    HCCL_INFO("HCCL_KEY_INFO: tag[%s], output_ptr[%p], count[%llu], data_type[%s], srcRank[%u]",
-               tag.c_str(), outputPtr, count, GetDataTypeEnumStr(dataType).c_str(), srcRank);
+    HCCL_INFO("HCCL_KEY_INFO: tag[%s], output_ptr[%p], count[%llu], data_type[%s], srcRank[%u]", tag.c_str(), outputPtr,
+        count, GetDataTypeEnumStr(dataType).c_str(), srcRank);
 
     /* * 入参检查 */
     CHK_PTR_NULL(outputPtr);
 
-    CHK_PRT_RET(tag.empty(), HCCL_ERROR("[HcclComm][Receive]errNo[0x%016llx] receive tag length is 0",
-        HCCL_ERROR_CODE(HCCL_E_PARA)), HCCL_E_PARA);
+    CHK_PRT_RET(tag.empty(),
+        HCCL_ERROR("[HcclComm][Receive]errNo[0x%016llx] receive tag length is 0", HCCL_ERROR_CODE(HCCL_E_PARA)),
+        HCCL_E_PARA);
 
     CHK_RET(communicator_->CheckCount(count));
     CHK_RET(communicator_->CheckDataType(dataType, false));
@@ -864,10 +883,11 @@ HcclResult hcclComm::GetUniqueId(HcclRootInfo *uniqueId)
     CHK_PTR_NULL(uniqueId);
 
     std::string uniqueIdGot = HcclCommunicator::GetUniqueId();
-    s32 ret = snprintf_s(uniqueId->internal, HCCL_ROOT_INFO_BYTES, HCCL_ROOT_INFO_BYTES - 1,
-                         "%s%s", "hccl-", uniqueIdGot.c_str());
-    CHK_PRT_RET((ret == -1), HCCL_ERROR("[Get][UniqueId]errNo[0x%016llx] get unique id failed,uniqueId[%p]",
-        HCCL_ERROR_CODE(ret), uniqueId), HCCL_E_MEMORY);
+    s32 ret = snprintf_s(
+        uniqueId->internal, HCCL_ROOT_INFO_BYTES, HCCL_ROOT_INFO_BYTES - 1, "%s%s", "hccl-", uniqueIdGot.c_str());
+    CHK_PRT_RET((ret == -1),
+        HCCL_ERROR("[Get][UniqueId]errNo[0x%016llx] get unique id failed,uniqueId[%p]", HCCL_ERROR_CODE(ret), uniqueId),
+        HCCL_E_MEMORY);
 
     return HCCL_SUCCESS;
 }
@@ -893,14 +913,14 @@ void hcclComm::ReleaseIndirectCCLbuf()
     indirectOutCCLbuffer_.free();
 }
 
-HcclResult hcclComm::GetIndirectInCCLbuf(void* &ptr, u64 &size)
+HcclResult hcclComm::GetIndirectInCCLbuf(void *&ptr, u64 &size)
 {
     ptr = indirectInCCLbuffer_.ptr();
     size = sizeof(uintptr_t);
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::GetIndirectOutCCLbuf(void* &ptr, u64 &size)
+HcclResult hcclComm::GetIndirectOutCCLbuf(void *&ptr, u64 &size)
 {
     ptr = indirectOutCCLbuffer_.ptr();
     size = sizeof(uintptr_t);
@@ -926,17 +946,14 @@ HcclResult hcclComm::CommCheckErrorCqe(HcclResult &result)
 HcclResult hcclComm::CommCheckOpInconsistentError(HcclResult &result)
 {
     CHK_RET(communicator_->GetOpInconsistentError(result));
- 
+
     return HCCL_SUCCESS;
 }
 
 HcclResult hcclComm::InitImpl(DevType deviceType, const CommConfig &commConfig)
 {
     HCCL_INFO("InitImpl Implementation isHeterogComm_[%d] isHaveCpuRank_[%d] deviceType[%d] isSpecialType_[%d]",
-        isHeterogComm_,
-        isHaveCpuRank_,
-        deviceType,
-        isSpecialType_);
+        isHeterogComm_, isHaveCpuRank_, deviceType, isSpecialType_);
 
     communicator_.reset(new (std::nothrow) HcclCommunicator(commConfig));
     CHK_SMART_PTR_NULL(communicator_);
@@ -974,13 +991,13 @@ HcclResult hcclComm::CreateBarrierMemory()
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::GetInCCLbuffer(void* &buffer, u64 &size)
+HcclResult hcclComm::GetInCCLbuffer(void *&buffer, u64 &size)
 {
     CHK_RET(communicator_->GetInCCLbuffer(buffer, size));
 
     return HCCL_SUCCESS;
 }
-HcclResult hcclComm::GetOutCCLbuffer(void* &buffer, u64 &size)
+HcclResult hcclComm::GetOutCCLbuffer(void *&buffer, u64 &size)
 {
     CHK_RET(communicator_->GetOutCCLbuffer(buffer, size));
 
@@ -1008,24 +1025,24 @@ HcclResult hcclComm::GetRankSize(u32 &rankSize)
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::HcclSelectAlg(HcclCMDType opType, u64 count, void* counts, HcclDataType dataType,
-    HcclReduceOp op, int32_t aivCoreLimit, bool &ifAiv, std::string &algName)
+HcclResult hcclComm::HcclSelectAlg(HcclCMDType opType, u64 count, void *counts, HcclDataType dataType, HcclReduceOp op,
+    int32_t aivCoreLimit, bool &ifAiv, std::string &algName)
 {
     return communicator_->HcclSelectAlg(opType, count, counts, dataType, op, aivCoreLimit, ifAiv, algName);
 }
 
-HcclResult hcclComm::HcclCalcNumBlocks(HcclCMDType opType, u64 count, void* counts, HcclDataType dataType, int32_t aivCoreLimit,
-        std::string &algName, u32 &numBlocks)
+HcclResult hcclComm::HcclCalcNumBlocks(HcclCMDType opType, u64 count, void *counts, HcclDataType dataType,
+    int32_t aivCoreLimit, std::string &algName, u32 &numBlocks)
 {
     return communicator_->HcclCalcNumBlocks(opType, count, counts, dataType, aivCoreLimit, algName, numBlocks);
 }
 
 HcclResult hcclComm::HcclGetAlgExecParam(const std::string &tag, u64 count, void *inputPtr, void *outputPtr,
-    HcclCMDType opType, bool clearEnable, HcclDataType dataType, HcclReduceOp op,
-    void *&commContext, u64 &len, u32 aivCoreLimit)
+    HcclCMDType opType, bool clearEnable, HcclDataType dataType, HcclReduceOp op, void *&commContext, u64 &len,
+    u32 aivCoreLimit)
 {
-    return communicator_->HcclGetAlgExecParam(tag, opType,  count, inputPtr, outputPtr, clearEnable, dataType, op,
-        commContext, len, aivCoreLimit);
+    return communicator_->HcclGetAlgExecParam(
+        tag, opType, count, inputPtr, outputPtr, clearEnable, dataType, op, commContext, len, aivCoreLimit);
 }
 
 HcclResult hcclComm::SetAicpuCommEngine(bool isAicpuCommEngine)
@@ -1033,13 +1050,13 @@ HcclResult hcclComm::SetAicpuCommEngine(bool isAicpuCommEngine)
     return communicator_->SetAicpuCommEngine(isAicpuCommEngine);
 }
 
-HcclResult hcclComm::GetWorkspaceSubStreamNum(u64 count, HcclDataType dataType, HcclReduceOp op, const std::string &algName,
-         u64 &streamNum, u64 dataSize, bool ifAiv, HcclCMDType optype) const
+HcclResult hcclComm::GetWorkspaceSubStreamNum(u64 count, HcclDataType dataType, HcclReduceOp op,
+    const std::string &algName, u64 &streamNum, u64 dataSize, bool ifAiv, HcclCMDType optype) const
 {
     return communicator_->GetWorkspaceSubStreamNum(count, dataType, op, algName, streamNum, dataSize, ifAiv, optype);
 }
-HcclResult hcclComm::GetWorkspaceMemSize(const std::string &opType, u64 count, HcclDataType dataType,
-    u32 &rankSize, u64 &size)
+HcclResult hcclComm::GetWorkspaceMemSize(
+    const std::string &opType, u64 count, HcclDataType dataType, u32 &rankSize, u64 &size)
 {
     return communicator_->GetWorkspaceMemSize(opType, count, dataType, rankSize, size, deviceType_);
 }
@@ -1050,14 +1067,14 @@ HcclResult hcclComm::GetAllReduceScratchSize(const u32 count, const HcclDataType
 }
 
 // 设定 workspace 资源
-HcclResult hcclComm::SetWorkspaceResource(const std::string &tag, void *memPtr, u64 maxSize,
-                                          std::vector<rtStream_t> &stream)
+HcclResult hcclComm::SetWorkspaceResource(
+    const std::string &tag, void *memPtr, u64 maxSize, std::vector<rtStream_t> &stream)
 {
     return communicator_->SetWorkspaceResource(tag, memPtr, maxSize, stream);
 }
 
-HcclResult hcclComm::CreateOpBasedResources(const HcclCMDType &opType, const std::string &tag,
-    const HcomCollOpInfo &opInfo)
+HcclResult hcclComm::CreateOpBasedResources(
+    const HcclCMDType &opType, const std::string &tag, const HcomCollOpInfo &opInfo)
 {
     return communicator_->CreateOpBasedResources(opType, tag, opInfo);
 }
@@ -1080,8 +1097,8 @@ HcclResult hcclComm::GetAlltoAllStagedWorkSpaceMemSize(u64 *sendCounts, u64 *sdi
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::GetAlltoAllStagedWorkSpaceMemSize(std::vector<SendRecvInfo> &allMeshAggregationSendRecvInfo,
-    u64 &memSize) const
+HcclResult hcclComm::GetAlltoAllStagedWorkSpaceMemSize(
+    std::vector<SendRecvInfo> &allMeshAggregationSendRecvInfo, u64 &memSize) const
 {
     CHK_RET(communicator_->GetAlltoAllStagedWorkSpaceMemSize(allMeshAggregationSendRecvInfo, memSize));
     return HCCL_SUCCESS;
@@ -1106,7 +1123,6 @@ HcclResult hcclComm::GetandClearOverFlowTasks(std::vector<HcclDumpInfo> &hcclDum
 
     return HCCL_SUCCESS;
 }
-
 
 HcclResult hcclComm::SetCommDispatcherCtx()
 {
@@ -1223,19 +1239,19 @@ HcclResult hcclComm::AllocComResourceByTiling(const std::string &algConfig, void
     return communicator_->AllocComResourceByTiling(algConfig, param);
 }
 
-HcclResult hcclComm::CreateCommResource(const std::string &tag, rtStream_t aiCpuStream, bool isOpbaseMode,
-        void **commContext, const std::string &algConfig)
+HcclResult hcclComm::CreateCommResource(
+    const std::string &tag, rtStream_t aiCpuStream, bool isOpbaseMode, void **commContext, const std::string &algConfig)
 {
     /* 增加输出日志关键字 */
-    HCCL_INFO("HCCL_KEY_INFO: CreateCommResource commContext[%p], isOpbaseMode[%u], algConfig[%s].",
-        commContext, isOpbaseMode, algConfig.c_str());
+    HCCL_INFO("HCCL_KEY_INFO: CreateCommResource commContext[%p], isOpbaseMode[%u], algConfig[%s].", commContext,
+        isOpbaseMode, algConfig.c_str());
 
     CHK_RET(communicator_->CreateCommResource(tag, aiCpuStream, isOpbaseMode, commContext, algConfig));
 
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::GetAicpuOpStreamNotify(HcclRtStream *opStream, u8 aicpuNotifyNum, void** aicpuNotify)
+HcclResult hcclComm::GetAicpuOpStreamNotify(HcclRtStream *opStream, u8 aicpuNotifyNum, void **aicpuNotify)
 {
     /* 增加输出日志关键字 */
     HCCL_INFO("HCCL_KEY_INFO: GetAicpuOpStreamNotify commContext[%p]", opStream);
@@ -1306,7 +1322,7 @@ HcclResult hcclComm::SetExecTimeOutConfig(const s32 execTimeOut)
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::SetAlgoConfig(const std::map<HcclCMDType, std::vector<HcclAlgoType>>& algoMap)
+HcclResult hcclComm::SetAlgoConfig(const std::map<HcclCMDType, std::vector<HcclAlgoType>> &algoMap)
 {
     CHK_RET(communicator_->SetAlgoConfig(algoMap));
     return HCCL_SUCCESS;
@@ -1391,7 +1407,7 @@ HcclResult hcclComm::UnsetMemoryRange(void *baseVirPtr)
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::ActivateCommMemory(void *virPtr, size_t size, size_t offset, void* handle, uint64_t flags)
+HcclResult hcclComm::ActivateCommMemory(void *virPtr, size_t size, size_t offset, void *handle, uint64_t flags)
 {
     CHK_SMART_PTR_NULL(communicator_);
     CHK_RET(communicator_->ActivateCommMemory(virPtr, size, offset, handle, flags));
@@ -1405,7 +1421,7 @@ HcclResult hcclComm::DeactivateCommMemory(void *virPtr)
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::GetNumBlocks(u32& numBlocks)
+HcclResult hcclComm::GetNumBlocks(u32 &numBlocks)
 {
     return communicator_->GetNumBlocks(numBlocks);
 }
@@ -1447,15 +1463,17 @@ HcclResult hcclComm::GetRemoteCCLBuf(uint32_t remoteRank, void **addr, uint64_t 
     CHK_RET(communicator_->GetRemoteCCLBuf(remoteRank, addr, size));
     return HCCL_SUCCESS;
 }
- 
-HcclResult hcclComm::SetGroupMode(bool isGroup){
+
+HcclResult hcclComm::SetGroupMode(bool isGroup)
+{
     isGroupMode_ = isGroup;
     CHK_SMART_PTR_NULL(communicator_);
     CHK_RET(communicator_->SetGroupMode(isGroup));
     return HCCL_SUCCESS;
 }
- 
-bool hcclComm::GetGroupMode(){
+
+bool hcclComm::GetGroupMode()
+{
     return isGroupMode_;
 }
 
@@ -1479,7 +1497,8 @@ HcclResult hcclComm::SetHcclQos(u32 hcclQos)
     // 校验config中QoS的合法性
     if (hcclQos == HCCL_COMM_QOS_CONFIG_NOT_SET) {
         HCCL_INFO("[SetHcclQos]The QoS do not use the config configuration. "
-                  "It will use environment variables to configure. QoS[%u]", EnvConfig::HCCL_QOS_DEFAULT);
+                  "It will use environment variables to configure. QoS[%u]",
+            EnvConfig::HCCL_QOS_DEFAULT);
         hcclQos_ = EnvConfig::HCCL_QOS_DEFAULT;
         communicator_->SetHcclQos(EnvConfig::HCCL_QOS_DEFAULT);
         return HCCL_SUCCESS;
@@ -1488,8 +1507,8 @@ HcclResult hcclComm::SetHcclQos(u32 hcclQos)
     // 若设置的hcclQos不在有效范围内，则使用默认值
     if (hcclQos < EnvConfig::HCCL_QOS_MIN || hcclQos > EnvConfig::HCCL_QOS_MAX) {
         HCCL_INFO("[SetHcclQos]hcclQos is invalid, expect[%u, %u], actual[%u]. "
-                  "It will use the default value. QoS[%u]", EnvConfig::HCCL_QOS_MIN, EnvConfig::HCCL_QOS_MAX, hcclQos,
-                   EnvConfig::HCCL_QOS_DEFAULT);
+                  "It will use the default value. QoS[%u]",
+            EnvConfig::HCCL_QOS_MIN, EnvConfig::HCCL_QOS_MAX, hcclQos, EnvConfig::HCCL_QOS_DEFAULT);
         hcclQos_ = EnvConfig::HCCL_QOS_DEFAULT;
         communicator_->SetHcclQos(EnvConfig::HCCL_QOS_DEFAULT);
         return HCCL_SUCCESS;
@@ -1507,7 +1526,7 @@ u32 hcclComm::GetHcclQos()
     return hcclQos_;
 }
 
-HcclResult hcclComm::RegisterWindow(void* ptr, size_t size, HcclCommSymWindow *winHandle)
+HcclResult hcclComm::RegisterWindow(void *ptr, size_t size, HcclCommSymWindow *winHandle)
 {
     CHK_SMART_PTR_NULL(communicator_);
     CHK_RET(communicator_->RegisterWindow(ptr, size, winHandle));
@@ -1521,7 +1540,7 @@ HcclResult hcclComm::DeregisterWindow(HcclCommSymWindow winHandle)
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::GetCommSymWin(void* ptr, size_t size, HcclCommSymWindow *winHandle, size_t *offset)
+HcclResult hcclComm::GetCommSymWin(void *ptr, size_t size, HcclCommSymWindow *winHandle, size_t *offset)
 {
     CHK_SMART_PTR_NULL(communicator_);
     CHK_RET(communicator_->GetCommSymWin(ptr, size, winHandle, offset));
@@ -1533,4 +1552,4 @@ aclrtBinHandle hcclComm::GetBinHandle()
     return binHandle_;
 }
 
-}  // namespace hccl
+} // namespace hccl
