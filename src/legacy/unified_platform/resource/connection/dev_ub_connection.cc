@@ -820,7 +820,7 @@ HcclResult DevUbConnection::Describe(std::string &dfxMsg)
             HcclResult ret = HrtRaGetTpAttrAsync(devicePhyId, rdmaHandle, tpInfo.tpHandle, attrBitmap, tpAttr, reqHandle);
             if (ret == HCCL_E_NOT_SUPPORT) {
                 HCCL_ERROR("[DevUbConnection::%s] this package does not support RaGetTpAttrAsync for device,"
-                    " please change new package", __func__);
+                    " please change new package, devicePhyId[%u]", __func__, devicePhyId);
                 return ret;
             } else if (ret != HCCL_SUCCESS) {
                 HCCL_ERROR("[DevUbConnection::%s] failed, hccl result[%d]", __func__, ret);
