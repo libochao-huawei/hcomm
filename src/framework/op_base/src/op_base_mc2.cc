@@ -275,6 +275,9 @@ HcclResult HcclGetOpArgs(void **opArgs)
 HcclResult HcclFreeOpArgs(void *opArgs)
 {
     CHK_PTR_NULL(opArgs);
+    // 因为只有在950环境下才需要调用HcclGetOpArgs，所以这里只在950环境下调用HcclFreeOpArgs
+    HCCL_INFO("[HcclFreeOpArgs] only in 950 env needs to free opArgs[%p], "
+               "non-950 env will return success directly", opArgs);
     HCCLV2_FUNC_RUN(HcclFreeOpArgsV2(opArgs));
     return HCCL_SUCCESS;
 }
@@ -282,6 +285,8 @@ HcclResult HcclFreeOpArgs(void *opArgs)
 HcclResult HcclSetOpSrcDataType(void *opArgs, uint8_t srcDataType)
 {
     CHK_PTR_NULL(opArgs);
+    HCCL_INFO("[HcclSetOpSrcDataType] only in 950 env needs to set srcDataType[%u], "
+               "non-950 env will return success directly", srcDataType);
     HCCLV2_FUNC_RUN(HcclSetOpSrcDataTypeV2(opArgs, srcDataType));
     return HCCL_SUCCESS;
 }
@@ -289,6 +294,8 @@ HcclResult HcclSetOpSrcDataType(void *opArgs, uint8_t srcDataType)
 HcclResult HcclSetOpDstDataType(void *opArgs, uint8_t dstDataType)
 {
     CHK_PTR_NULL(opArgs);
+    HCCL_INFO("[HcclSetOpDstDataType] only in 950 env needs to set dstDataType[%u], "
+               "non-950 env will return success directly", dstDataType);
     HCCLV2_FUNC_RUN(HcclSetOpDstDataTypeV2(opArgs, dstDataType));
     return HCCL_SUCCESS;
 }
@@ -296,6 +303,8 @@ HcclResult HcclSetOpDstDataType(void *opArgs, uint8_t dstDataType)
 HcclResult HcclSetOpReduceType(void *opArgs, uint32_t reduceType)
 {
     CHK_PTR_NULL(opArgs);
+    HCCL_INFO("[HcclSetOpReduceType] only in 950 env needs to set reduceType[%u], "
+               "non-950 env will return success directly", reduceType);
     HCCLV2_FUNC_RUN(HcclSetOpReduceTypeV2(opArgs, reduceType));
     return HCCL_SUCCESS;
 }
@@ -303,6 +312,8 @@ HcclResult HcclSetOpReduceType(void *opArgs, uint32_t reduceType)
 HcclResult HcclSetOpCount(void *opArgs, uint64_t count)
 {
     CHK_PTR_NULL(opArgs);
+    HCCL_INFO("[HcclSetOpCount] only in 950 env needs to set count[%llu], "
+               "non-950 env will return success directly", count);
     HCCLV2_FUNC_RUN(HcclSetOpCountV2(opArgs, count));
     return HCCL_SUCCESS;
 }
@@ -311,6 +322,8 @@ HcclResult HcclSetOpAlgConfig(void *opArgs, char *algConfig)
 {
     CHK_PTR_NULL(opArgs);
     CHK_PTR_NULL(algConfig);
+    HCCL_INFO("[HcclSetOpAlgConfig] only in 950 env needs to set algConfig[%s], "
+               "non-950 env will return success directly", algConfig);
     HCCLV2_FUNC_RUN(HcclSetOpAlgConfigV2(opArgs, algConfig));
     return HCCL_SUCCESS;
 }
@@ -318,6 +331,8 @@ HcclResult HcclSetOpAlgConfig(void *opArgs, char *algConfig)
 HcclResult HcclSetOpCommEngine(void *opArgs, uint8_t commEngine)
 {
     CHK_PTR_NULL(opArgs);
+    HCCL_INFO("[HcclSetOpCommEngine] only in 950 env needs to set commEngine[%u], "
+               "non-950 env will return success directly", commEngine);
     HCCLV2_FUNC_RUN(HcclSetOpCommEngineV2(opArgs, commEngine));
     return HCCL_SUCCESS;
 }
@@ -328,6 +343,8 @@ HcclResult HcclCommResPrepare(HcclComm comm, char *opName, void *opArgs, void **
     CHK_PTR_NULL(opName);
     CHK_PTR_NULL(opArgs);
     CHK_PTR_NULL(addr);
+    HCCL_INFO("[HcclCommResPrepare] only in 950 env needs to prepare commRes, "
+               "non-950 env will return success directly");
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
         CHK_RET(HcclCommResPrepareV2(hcclComm->GetCommunicatorV2(), opName, opArgs, addr));
@@ -342,6 +359,9 @@ HcclResult HcclDevMemAcquire(HcclComm comm, const char *memTag, uint64_t *size, 
     CHK_PTR_NULL(size);
     CHK_PTR_NULL(addr);
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+    HCCL_INFO("[HcclDevMemAcquire] only in 950 env needs to acquire dev mem, "
+               "non-950 env will return success directly. memTag[%s], size[%llu], addr[%p], newCreated[%p]", 
+               memTag, size, addr, newCreated);
     HCCLV2_FUNC_RUN(HcclDevMemAcquireV2(hcclComm->GetCommunicatorV2(), memTag, size, addr, newCreated));
     return HCCL_SUCCESS;
 }
