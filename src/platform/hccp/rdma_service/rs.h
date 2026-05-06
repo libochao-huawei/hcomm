@@ -244,6 +244,7 @@ RS_ATTRI_VISI_DEF int RsGetIfaddrsV2(struct InterfaceInfo interfaceInfos[], unsi
 RS_ATTRI_VISI_DEF int RsPeerGetIfaddrs(struct InterfaceInfo interfaceInfos[], unsigned int *num,
     unsigned int phyId);
 RS_ATTRI_VISI_DEF int RsGetVnicIp(unsigned int phyId, unsigned int *vnicIp);
+RS_ATTRI_VISI_DEF int RsGetInterfaceVersion(unsigned int opcode, unsigned int *version);
 RS_ATTRI_VISI_DEF int RsGetVnicIpInfos(unsigned int phyId, enum IdType type, unsigned int ids[], unsigned int num,
     struct IpInfo infos[]);
 RS_ATTRI_VISI_DEF int RsSocketSetScopeId(unsigned int devId, int scopeId);
@@ -327,8 +328,6 @@ RS_ATTRI_VISI_DEF int RsDrvGetRandomNum(int *randNum);
 RS_ATTRI_VISI_DEF int RsGetSecRandom(unsigned int *value);
 // note: The FIRST invocation of this function MAY throw exceptions for each process
 RS_ATTRI_VISI_DEF enum ProductType RsGetProductType(int devId);
-RS_ATTRI_VISI_DEF int RsGetInterfaceVersion(unsigned int opcode, unsigned int *version);
-RS_ATTRI_VISI_DEF int RsPrctlByResvMem(bool useResvMem, unsigned int resvMemPoolId, const char *threadName);
 
 static inline bool RsIsTlvSupported(void)
 {

@@ -91,7 +91,7 @@ private:
     void GenerateTlsStatusStr(std::string &tlsStatusStr,
         const std::unordered_map<std::string, std::vector<u32>> &tlsStatusRankMap);
     void ReportTlsConfigurationError(const std::string& tlsInconsistentTlsType,
-        const std::string& tlsInconsistentStr, const std::string& tlsUnknownRankStr);
+        const std::string& tlsInconsistentEnableStr, const std::string& tlsInconsistentDisableStr, const std::string& tlsUnknownRankStr);
     void PrintSocketTimeoutReasons(HcclIpAddress &serverIp, u32 port,std::shared_ptr<HcclSocket> &socket);
 
     bool HasRepeatedIP(const std::vector<HcclIpAddress> &deviceAIP, const std::vector<HcclIpAddress> &deviceBIP) const;

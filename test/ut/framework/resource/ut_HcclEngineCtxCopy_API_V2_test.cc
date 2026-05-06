@@ -61,6 +61,7 @@ protected:
         config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
         config.hcclRdmaTrafficClass = 0xFFFFFFFF; // 不配置RDMA Traffic Class
         config.hcclRdmaServiceLevel = 0xFFFFFFFF; // 不配置RDMA Service Level
+        unsetenv("HCCL_DFS_CONFIG");
         ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
         CollComm* collComm = hcclCommPtr->GetCollComm();
         comm = static_cast<HcclComm>(hcclCommPtr.get());
@@ -69,6 +70,7 @@ protected:
 
 TEST_F(HcclEngineCtxCopyV2Test, Ut_HcclEngineCtxCopyV2_When_Overflow_Expect_Return_EPARA)
 {
+    unsetenv("HCCL_DFS_CONFIG");
     std::shared_ptr<hccl::hcclComm>hcclCommPtr;
     std::shared_ptr<Hccl::RankGraph>rankGraphV2;
     void* comm;

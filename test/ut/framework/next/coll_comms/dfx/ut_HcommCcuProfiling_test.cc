@@ -242,6 +242,7 @@ TEST_F(Ccukernel_ReportProfilingTest, Ut_HcclReportAivKernel_Normal)
     config.hcclOpExpansionMode = 6; 
     config.hcclRdmaServiceLevel = 0; 
     config.hcclRdmaTrafficClass = 0;
+    unsetenv("HCCL_DFS_CONFIG");
     HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
     EXPECT_EQ(ret, 0);
     ThreadHandle thread;
@@ -280,6 +281,7 @@ TEST_F(Ccukernel_ReportProfilingTest, Ut_HcclReportAicpuKernel_Normal)
     config.hcclOpExpansionMode = 6; 
     config.hcclRdmaServiceLevel = 0; 
     config.hcclRdmaTrafficClass = 0;
+    unsetenv("HCCL_DFS_CONFIG");
     HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
     EXPECT_EQ(ret, 0);
     ThreadHandle thread;

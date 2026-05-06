@@ -49,6 +49,7 @@ TEST_F(HcclCommHostTest, Ut_ResumeWhenIsCommunicatorV2ExpectSuccess)
         .will(returnValue(HCCL_SUCCESS));
 
     HcclCommConfig config{};
+    unsetenv("HCCL_DFS_CONFIG");
     HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
@@ -93,6 +94,7 @@ TEST_F(HcclCommHostTest, Ut_ResumeWhenIsCommunicatorV2AndCollResumeFailsExpectEr
         .will(returnValue(HCCL_E_INTERNAL));
 
     HcclCommConfig config{};
+    unsetenv("HCCL_DFS_CONFIG");
     HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
@@ -136,6 +138,7 @@ TEST_F(HcclCommHostTest, Ut_GetCommStatusWhenIsCommunicatorV2ExpectCollStatus)
         .will(returnValue(HcclCommStatus::HCCL_COMM_STATUS_SUSPENDING));
 
     HcclCommConfig config{};
+    unsetenv("HCCL_DFS_CONFIG");
     HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
