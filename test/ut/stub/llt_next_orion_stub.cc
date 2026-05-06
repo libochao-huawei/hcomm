@@ -693,7 +693,8 @@ std::vector<DevUbConnection *> GetStarsPollUbConns(const std::vector<RmaConnecti
     return ubConns;
 }
 
-HcclResult DevUbConnection::Describe(std::string &dfxMsg){
+HcclResult DevUbConnection::Describe(std::string &dfxMsg)
+{
     dfxMsg = "DevUbConnectionTest";
     return HCCL_SUCCESS;
 }
