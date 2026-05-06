@@ -211,6 +211,10 @@ Socket::~Socket()
 {
 }
 
+void Socket::Destroy()
+{
+}
+
 std::size_t HashCombine(std::initializer_list<std::size_t> hashItem)
 {
     std::size_t res     = 17;

@@ -327,3 +327,74 @@ TEST_F(HcclCommunicatorHostTest, Ut_HcclGetAlgExecParam_When_Normal_Expect_Retur
     free(inputPtr);
     free(outputPtr);
 }
+TEST_F(HcclCommunicatorHostTest, Ut_CreateMyRank_Success_Expect_HCCL_SUCCESS)
+{
+    std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
+    hcclCommunicator->rankInfoList_.resize(2);
+    hcclCommunicator->realUserRank_ = 0;
+    hcclCommunicator->deviceType_ = DevType::DEV_TYPE_910B;
+
+    RankTable_t rankTable;
+    rankTable.nicDeploy = NICDeployment::NIC_DEPLOYMENT_HOST;
+    DeviceInfo_t deviceInfo;
+    deviceInfo.nicDeploy = NICDeployment::NIC_DEPLOYMENT_DEVICE;
+    RankInfo_t rankInfo;
+    rankInfo.rankId = 0;
+    rankInfo.deviceInfo = deviceInfo;
+    rankTable.rankList.push_back(rankInfo);
+    RankInfo_t rankInfo2;
+    rankInfo2.rankId = 1;
+    rankInfo2.deviceInfo = deviceInfo;
+    rankTable.rankList.push_back(rankInfo2);
+
+    HcclCommParams params;
+    params.rank = 0;
+    HcclTopoAttr topoAttr;
+
+    hcclCommunicator->commConfig_ = CommConfig();
+    hcclCommunicator->binHandle_ = nullptr;
+    hcclCommunicator->myRank_ = nullptr;
+
+    HcclResult ret = hcclCommunicator->CreateMyRank(params, rankTable, topoAttr);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_NE(hcclCommunicator->myRank_, nullptr);
+}
+
+TEST_F(HcclCommunicatorHostTest, Ut_InitMyRank_Success_Expect_HCCL_SUCCESS)
+{
+    std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
+    hcclCommunicator->rankInfoList_.resize(2);
+    hcclCommunicator->realUserRank_ = 0;
+    hcclCommunicator->deviceType_ = DevType::DEV_TYPE_910B;
+    hcclCommunicator->commConfig_ = CommConfig();
+    hcclCommunicator->binHandle_ = nullptr;
+    hcclCommunicator->userRankSize_ = 2;
+
+    RankTable_t rankTable;
+    rankTable.nicDeploy = NICDeployment::NIC_DEPLOYMENT_HOST;
+    DeviceInfo_t deviceInfo;
+    deviceInfo.nicDeploy = NICDeployment::NIC_DEPLOYMENT_DEVICE;
+    RankInfo_t rankInfo;
+    rankInfo.rankId = 0;
+    rankInfo.deviceInfo = deviceInfo;
+    rankTable.rankList.push_back(rankInfo);
+    RankInfo_t rankInfo2;
+    rankInfo2.rankId = 1;
+    rankInfo2.deviceInfo = deviceInfo;
+    rankTable.rankList.push_back(rankInfo2);
+
+    HcclCommParams params;
+    params.rank = 0;
+    HcclTopoAttr topoAttr;
+
+    hcclCommunicator->myRankConnectMode_ = 1;
+    MOCKER_CPP(&HcclCommunicator::CreateCommCCLbuffer).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&MyRank::Init).stubs().will(returnValue(HCCL_SUCCESS));
+
+    HcclResult retCreate = hcclCommunicator->CreateMyRank(params, rankTable, topoAttr);
+    EXPECT_EQ(retCreate, HCCL_SUCCESS);
+    EXPECT_NE(hcclCommunicator->myRank_, nullptr);
+
+    HcclResult ret = hcclCommunicator->InitMyRank();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
