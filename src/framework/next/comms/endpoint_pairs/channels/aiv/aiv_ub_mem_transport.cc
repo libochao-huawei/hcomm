@@ -141,9 +141,7 @@ HcclResult AivUbMemTransport::SendDataSize()
     
     binaryStream.Dump(sendData_);
     u32 sendSize = sendData_.size();
-    EXCEPTION_HANDLE_BEGIN
     socket_->SendAsync(reinterpret_cast<u8 *>(&sendSize), sizeof(sendSize));
-    EXCEPTION_HANDLE_END
     HCCL_INFO("[%s] finished", __func__);
     return HCCL_SUCCESS;
 }
@@ -152,9 +150,7 @@ HcclResult AivUbMemTransport::RecvDataSize()
 {
     HCCL_INFO("[%s] start", __func__);
 
-    EXCEPTION_HANDLE_BEGIN
     socket_->RecvAsync(reinterpret_cast<u8 *>(&exchangeDataSize_), sizeof(exchangeDataSize_));
-    EXCEPTION_HANDLE_END
     HCCL_INFO("[%s] finished", __func__);
     return HCCL_SUCCESS;
 }
@@ -163,9 +159,7 @@ HcclResult AivUbMemTransport::SendMemInfo()
 {
     HCCL_INFO("[%s] start", __func__);
 
-    EXCEPTION_HANDLE_BEGIN
     socket_->SendAsync(reinterpret_cast<u8 *>(&sendData_[0]), sendData_.size());
-    EXCEPTION_HANDLE_END
     HCCL_INFO("[%s] finished", __func__);
     return HCCL_SUCCESS;
 }
@@ -194,9 +188,7 @@ void AivUbMemTransport::BufferPack(Hccl::BinaryStream &binaryStream, std::vector
 HcclResult AivUbMemTransport::RecvMemInfo()
 {
     recvData_.resize(exchangeDataSize_);
-    EXCEPTION_HANDLE_BEGIN
     socket_->RecvAsync(reinterpret_cast<u8 *>(&recvData_[0]), recvData_.size());
-    EXCEPTION_HANDLE_END
     // HCCL_INFO("recv data, size=%llu, data=%s", data.size(), Hccl::Bytes2hex(data.data(), data.size()).c_str());
     return HCCL_SUCCESS;
 }
@@ -207,9 +199,7 @@ HcclResult AivUbMemTransport::RecvDataProcess()
     rmtBufferVec_.clear();
     rmtRmaBufferVec_.clear();
     remoteUserMemTag_.clear();
-    EXCEPTION_HANDLE_BEGIN
     RmtBufferUnpackProc(binaryStream);
-    EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
 
