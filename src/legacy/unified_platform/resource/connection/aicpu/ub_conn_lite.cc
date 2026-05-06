@@ -473,7 +473,8 @@ void UbConnLite::CustomizeSqeByOneSidedComm(UdmaSqeCommon *sqe, bool isLostWqe) 
 void UbConnLite::FillBatchOneWqe(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, const SqeConfigLite &cfg,
                                  bool isLostWqe, u32 opCode, const StreamLite &stream)
 {
-    HCCL_INFO("UbConnLite FillBatchOneWqe start, loc[%s], rmt[%s]", loc.Describe().c_str(), rmt.Describe().c_str());
+    HCCL_INFO("UbConnLite FillBatchOneWqe start, loc[%s], rmt[%s], pi = %u, sqDepth_ = %u", loc.Describe().c_str(),
+        rmt.Describe().c_str(), pi, sqDepth_);
 
     u32 sqOffset = pi % sqDepth_;
     pi = pi + 1;

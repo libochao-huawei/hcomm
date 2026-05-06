@@ -564,12 +564,15 @@ void UbTransportLiteImpl::BatchTransfer(const std::vector<RmaBufferLite> &loc, c
         } else if (transferOp[i].transType == TransferType::READ) {
             if (transferOp[i].reduceIn.reduceOp == ReduceOp::INVALID) {
                 connVec[0]->Read(localBuffer, remoteBuffer, cfg, stream, connOut); // 当前只有一个connection，对应一个jetty
+                HCCL_INFO("after read. loc.addr = %llx, rmt.addr = %llx, cfg.cqeEn = %u, out.pi = %u",
+                    localBuffer.GetAddr(), remoteBuffer.GetAddr(), cfg.cqeEn, connOut.pi);
             } else {
                 connVec[0]->ReadReduce(transferOp[i].reduceIn, localBuffer, remoteBuffer, stream, cfg, connOut);
             }
         }
     }
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
+    HCCL_INFO("[UbTransportLiteImpl::%s] pi = %u, insNum = %u", __func__, connOut.pi, insNum);
 
     auto taskId = stream.GetRtsq()->GetTaskId();
     u64 totalSize = 0;
