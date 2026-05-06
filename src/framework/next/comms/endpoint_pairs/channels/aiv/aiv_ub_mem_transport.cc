@@ -81,19 +81,29 @@ HcclResult AivUbMemTransport::IsSocketReady(bool &isReady)
     return HCCL_SUCCESS;
 }
 
+void AivUbMemTransport::CheckStatusFuncResult(string funcName, HcclResult ret)
+{
+    if (UNLIKELY(ret != HCCL_SUCCESS)) {
+        HCCL_ERROR("[%s] ret[%d], aivUbStatus_[%d], baseStatus_[%d]",
+            funcName.c_str(), ret, aivUbStatus_, baseStatus_);
+        baseStatus_ = Hccl::TransportStatus::INVALID;
+    }
+}
+
 Hccl::TransportStatus AivUbMemTransport::GetStatus()
 {
-    if (baseStatus_ == Hccl::TransportStatus::READY) {
+    if (baseStatus_ == Hccl::TransportStatus::READY || baseStatus_ == Hccl::TransportStatus::INVALID) {
         return baseStatus_;
     } else if (baseStatus_ == Hccl::TransportStatus::INIT) {
         aivUbStatus_ = AivUbMemTransportStatus::INIT;
     }
 
     bool isReady = false;
-    CHK_PRT_RET(
-        IsSocketReady(isReady) != HCCL_SUCCESS,
-        HCCL_ERROR("[%s] IsSocketReady failed, aivUbStatus_[%d], baseStatus_[%d]", __func__, aivUbStatus_, baseStatus_),
-        Hccl::TransportStatus::INVALID);
+    if (UNLIKELY(IsSocketReady(isReady) != HCCL_SUCCESS)) {
+        HCCL_ERROR("[%s] IsSocketReady fail, aivUbStatus_[%d], baseStatus_[%d]", __func__, aivUbStatus_, baseStatus_);
+        baseStatus_ = Hccl::TransportStatus::INVALID;
+        return baseStatus_;
+    }
     if (!isReady) {
         return baseStatus_;
     }
@@ -107,47 +117,27 @@ Hccl::TransportStatus AivUbMemTransport::GetStatus()
             break;
         case AivUbMemTransportStatus::SOCKET_OK:
             ret = SendDataSize();
-            CHK_PRT_RET(
-                ret != HCCL_SUCCESS,
-                HCCL_ERROR("[%s] SendDataSize ret[%d], aivUbStatus_[%d], baseStatus_[%d]",
-                    __func__, ret, aivUbStatus_, baseStatus_),
-                Hccl::TransportStatus::INVALID);
+            CheckStatusFuncResult("SendDataSize", ret);
             aivUbStatus_ = AivUbMemTransportStatus::SEND_DATA_SIZE;
             break;
         case AivUbMemTransportStatus::SEND_DATA_SIZE:
             ret = RecvDataSize();
-            CHK_PRT_RET(
-                ret != HCCL_SUCCESS,
-                HCCL_ERROR("[%s] RecvDataSize ret[%d], aivUbStatus_[%d], baseStatus_[%d]",
-                    __func__, ret, aivUbStatus_, baseStatus_),
-                Hccl::TransportStatus::INVALID);
+            CheckStatusFuncResult("RecvDataSize", ret);
             aivUbStatus_ = AivUbMemTransportStatus::RECV_DATA_SIZE;
             break;
         case AivUbMemTransportStatus::RECV_DATA_SIZE:
             ret = SendMemInfo();
-            CHK_PRT_RET(
-                ret != HCCL_SUCCESS,
-                HCCL_ERROR("[%s] SendMemInfo ret[%d], aivUbStatus_[%d], baseStatus_[%d]",
-                    __func__, ret, aivUbStatus_, baseStatus_),
-                Hccl::TransportStatus::INVALID);
+            CheckStatusFuncResult("SendMemInfo", ret);
             aivUbStatus_ = AivUbMemTransportStatus::SEND_MEM_INFO;
             break;
         case AivUbMemTransportStatus::SEND_MEM_INFO:
             ret = RecvMemInfo();
-            CHK_PRT_RET(
-                ret != HCCL_SUCCESS,
-                HCCL_ERROR("[%s] RecvMemInfo ret[%d], aivUbStatus_[%d], baseStatus_[%d]",
-                    __func__, ret, aivUbStatus_, baseStatus_),
-                Hccl::TransportStatus::INVALID);
+            CheckStatusFuncResult("RecvMemInfo", ret);
             aivUbStatus_ = AivUbMemTransportStatus::RECV_MEM_INFO;
             break;
         case AivUbMemTransportStatus::RECV_MEM_INFO:
             ret = RecvDataProcess();
-            CHK_PRT_RET(
-                ret != HCCL_SUCCESS,
-                HCCL_ERROR("[%s] RecvDataProcess ret[%d], aivUbStatus_[%d], baseStatus_[%d]",
-                    __func__, ret, aivUbStatus_, baseStatus_),
-                Hccl::TransportStatus::INVALID);
+            CheckStatusFuncResult("RecvDataProcess", ret);
             aivUbStatus_ = AivUbMemTransportStatus::RECV_MEM_FIN;
             break;
         case AivUbMemTransportStatus::RECV_MEM_FIN:

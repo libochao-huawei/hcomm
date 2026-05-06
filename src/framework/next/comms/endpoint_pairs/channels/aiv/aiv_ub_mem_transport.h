@@ -71,6 +71,7 @@ private:
         std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &localUserMemTag);
     void RmtBufferUnpackProc(Hccl::BinaryStream &binaryStream);
     HcclResult StateMachine();
+    void CheckStatusFuncResult(string funcName, HcclResult ret);
 };
 
 }  // namespace hcomm
