@@ -238,7 +238,7 @@ void RankInfoDispather::ProcessSend()
             taskQueue_.push(std::bind(&RankInfoDispather::ProcessOneSendEvent, this, epollFds_, static_cast<void*>(eventInfos[i].fdHandle)));
             lck.unlock();
         }
-        testNum_++；
+        testNum_++;
         // 唤醒处理
         WakeWoker();
     }
