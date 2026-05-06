@@ -21,6 +21,7 @@
 #include "topo_info.h"
 #include "rank_graph_builder.h"
 #include "orion_adapter_rts.h"
+#include "orion_adapter_hccp.h"
 #include "net_instance.h"
 #include "host_socket_handle_manager.h"
 #include "hccp_hdc_manager.h"
@@ -42,26 +43,12 @@
 #include "local_rdma_rma_buffer.h"
 #include "local_rma_buffer.h"
 #include "local_rdma_rma_buffer_manager.h"
- 
-#include "rdma_handle_manager.h"
-#include "socket/socket.h"
-#include "sal.h"
- 
-#include "buffer.h"
-#include "dev_buffer.h"
-#include "local_ub_rma_buffer.h"
-#include "socket_handle_manager.h"
-#include "base_config.h"
-#include "env_config.h"
-#include <initializer_list>
-#include "topo_info.h"
-#include "rank_graph_builder.h"
-#include "orion_adapter_rts.h"
-#include "net_instance.h"
-#include "host_socket_handle_manager.h"
-#include "base_config.h"
-
+#include "dev_capability.h"
+#include "rmt_rma_buffer_lite.h"
+#include "rts_notify.h"
+#include "rdma_local_notify.h"
 #include "../../../legacy/unified_platform/resource/buffer/local_ipc_rma_buffer.h"
+#include "../../../framework/next/comms/endpoint_pairs/channels/aicpu/device/aicpu_channel_process.h"
 
 #include "../../../legacy/framework/resource_manager/socket/socket_manager.h"
 
@@ -2147,12 +2134,72 @@ HcclResult CcuCleanDieCkes(const int32_t deviceLogicId, const uint8_t dieId)
     return HCCL_SUCCESS;
 }
 
-std::string CollOpToString(const BaseCollOperator &collOp)
+DevCapability::DevCapability()
 {
-    return "collOp";
 }
 
-std::shared_ptr<TaskInfo> MirrorTaskManagerLite::GetTaskInfo(u32 streamId, u32 taskId) const
+DevCapability &DevCapability::GetInstance()
+{
+    static DevCapability instance;
+    return instance;
+}
+
+void DevCapability::Init(DevType givenDevType)
+{
+}
+
+void DevCapability::Reset()
+{
+}
+
+RmtRmaBufferLite::RmtRmaBufferLite(u64 addr, u64 size)
+    : type_(RmaType::RDMA), addr_(addr), size_(size)
+{
+}
+
+RmtRmaBufferLite::RmtRmaBufferLite(u64 addr, u64 size, u32 rkey)
+    : type_(RmaType::RDMA), addr_(addr), size_(size), rkey_(rkey)
+{
+}
+
+RmtRmaBufferLite::RmtRmaBufferLite(u64 addr, u64 size, u32 tokenId, u32 tokenValue)
+    : type_(RmaType::UB), addr_(addr), size_(size), tokenId_(tokenId), tokenValue_(tokenValue)
+{
+}
+
+std::string RmtRmaBufferLite::Describe() const
+{
+    return "RmtRmaBufferLite";
+}
+
+RdmaLocalNotify::RdmaLocalNotify(RdmaHandle rdmaHandle, bool devUsed)
+    : BaseLocalNotify(RmaType::RDMA, devUsed), rdmaHandle(rdmaHandle)
+{
+}
+
+RdmaLocalNotify::~RdmaLocalNotify()
+{
+}
+
+void RdmaLocalNotify::Wait(const Stream &stream, u32 timeout) const
+{
+}
+
+void RdmaLocalNotify::Post(const Stream &stream) const
+{
+}
+
+string RdmaLocalNotify::Describe() const
+{
+    return "RdmaLocalNotify";
+}
+
+std::unique_ptr<Serializable> RdmaLocalNotify::GetExchangeDto()
+{
+    return nullptr;
+}
+
+std::shared_ptr<TaskInfo>  MirrorTaskManagerLite::GetTaskInfo(u32 streamId, u32 taskId) const
 {
     return nullptr;
 }
@@ -2167,9 +2214,37 @@ HcclResult HcclCommunicator::SetAccelerator(int32_t accelerator, bool isCcuMsAva
     return HCCL_SUCCESS;
 }
 
-} // namespace Hccl
+void HrtFree(void *devPtr)
+{
+}
 
-namespace Hccl {
+void HrtMemcpy(void *dst, uint64_t destMax, const void *src, uint64_t count, rtMemcpyKind_t kind)
+{
+}
+
+void HrtMemsetV2(void *dst, size_t destMax, int32_t value, size_t count)
+{
+}
+
+HcclResult HrtRaNdaQpCreate(RdmaHandle rdmaHandle, NdaOps *ndaOps, uint32_t dmaMode, NdaCqInfo *cqInfo, NdaQpInfo *qpInfo, QpHandle *qpHandle)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtRaNdaCqCreate(RdmaHandle rdmaHandle, NdaOps *ndaOps, uint32_t dmaMode, NdaCqInfo *cqInfo, CqHandle *cqHandle)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtRaNdaCqDestroy(RdmaHandle rdmaHandle, CqHandle cqHandle)
+{
+    return HCCL_SUCCESS;
+}
+
+void HrtRaQpDestroy(QpHandle qpHandle)
+{
+}
+
 class CommunicatorImplLite {
 public:
     CommunicatorImplLite(u32 commId) : commId_(commId)
@@ -2233,6 +2308,11 @@ CommunicatorImplLite *CommunicatorImplLiteMgr::Get(const u32 commIdIndex)
 std::vector<CommunicatorImplLite *> CommunicatorImplLiteMgr::GetAll()
 {
     return {};
+}
+
+std::string CollOpToString(const BaseCollOperator &collOp)
+{
+    return "collOp";
 }
 
 RtNotify_t HrtIpcOpenNotifyWithFlag(const char_t *name, uint32_t flags)
@@ -2389,15 +2469,6 @@ void P2PTransport::WriteReduce(
     const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice, const ReduceIn &reduceIn, const Stream &stream)
 {
     return;
-}
-
-DevCapability::DevCapability()
-{
-}
-DevCapability &DevCapability::GetInstance()
-{
-    static DevCapability devCapability;
-    return devCapability;
 }
 
 P2PConnection::P2PConnection(Socket *socket, const std::string &tag) : RmaConnection(socket, RmaConnType::P2P)
