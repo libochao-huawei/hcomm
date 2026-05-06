@@ -204,6 +204,15 @@ public:
     virtual HcclResult ReadReduceSync(struct Transport::Buffer &localBuf, struct Transport::Buffer &remoteBuf,
         const HcclDataType datatype, HcclReduceOp redOp, Stream &stream);
 
+    virtual HcclResult BatchWriteAsync(
+        std::vector<struct Transport::Buffer> &remoteBufs,
+        std::vector<struct Transport::Buffer> &localBufs,
+        Stream &stream);
+    virtual HcclResult BatchReadAsync(
+        std::vector<struct Transport::Buffer> &localBufs,
+        std::vector<struct Transport::Buffer> &remoteBufs,
+        Stream &stream);
+
     virtual HcclResult PostReady(Stream &stream);
     virtual HcclResult WaitReady(Stream &stream);
 

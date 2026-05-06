@@ -661,6 +661,11 @@ public:
     HcclResult ReadReduceSync(struct Buffer &localBuf, struct Buffer &remoteBuf,
         const HcclDataType datatype, HcclReduceOp redOp, Stream &stream);
 
+    HcclResult BatchWriteAsync(std::vector<struct Buffer> &remoteBufs,
+        std::vector<struct Buffer> &localBufs, Stream &stream);
+    HcclResult BatchReadAsync(std::vector<struct Buffer> &localBufs,
+        std::vector<struct Buffer> &remoteBufs, Stream &stream);
+
     HcclResult PostReady(Stream &stream);
     HcclResult WaitReady(Stream &stream);
 

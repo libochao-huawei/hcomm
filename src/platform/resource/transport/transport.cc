@@ -547,6 +547,20 @@ HcclResult Transport::ReadReduceSync(struct Buffer &localBuf, struct Buffer &rem
     return pimpl_->ReadReduceSync(localBuf, remoteBuf, datatype, redOp, stream);
 }
 
+HcclResult Transport::BatchWriteAsync(std::vector<struct Buffer> &remoteBufs,
+    std::vector<struct Buffer> &localBufs, Stream &stream)
+{
+    CHK_PTR_NULL(pimpl_);
+    return pimpl_->BatchWriteAsync(remoteBufs, localBufs, stream);
+}
+
+HcclResult Transport::BatchReadAsync(std::vector<struct Buffer> &localBufs,
+    std::vector<struct Buffer> &remoteBufs, Stream &stream)
+{
+    CHK_PTR_NULL(pimpl_);
+    return pimpl_->BatchReadAsync(localBufs, remoteBufs, stream);
+}
+
 HcclResult Transport::PostReady(Stream &stream)
 {
     CHK_PTR_NULL(pimpl_);
