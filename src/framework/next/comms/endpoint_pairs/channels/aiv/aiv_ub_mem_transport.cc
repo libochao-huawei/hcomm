@@ -68,7 +68,6 @@ HcclResult AivUbMemTransport::Init()
 HcclResult AivUbMemTransport::IsSocketReady(bool &isReady)
 {
     CHK_PTR_NULL(socket_);
-    EXCEPTION_HANDLE_BEGIN
     Hccl::SocketStatus socketStatus = socket_->GetAsyncStatus();
     if (socketStatus == Hccl::SocketStatus::OK) {
         baseStatus_ = Hccl::TransportStatus::SOCKET_OK;
@@ -77,7 +76,6 @@ HcclResult AivUbMemTransport::IsSocketReady(bool &isReady)
         baseStatus_ = Hccl::TransportStatus::SOCKET_TIMEOUT;
         isReady = false;
     }
-    EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
 
