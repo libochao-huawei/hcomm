@@ -15,9 +15,9 @@
 #include "hccl/base.h"
 #include <hccl/hccl_types.h>
 #include <runtime/rt_error_codes.h>
-#include "aicpu_hccl_sqcq.h"
-#include "adapter_hal_pub.h"
-#include "task_exception_handler_lite.h"
+// #include "aicpu_hccl_sqcq.h"
+// #include "adapter_hal_pub.h"
+// #include "task_exception_handler_lite.h"
 #define private public
 #define protected public
 #include "task_exception_handler_pub.h"
