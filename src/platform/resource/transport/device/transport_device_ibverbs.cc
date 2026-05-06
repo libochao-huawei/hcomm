@@ -1342,6 +1342,97 @@ HcclResult TransportDeviceIbverbs::ReadAsync(
     return WriteCommon(remoteBuf.addr, localBuf.addr, remoteBuf.size, stream, WqeType::WQE_TYPE_READ_DATA, aux);
 }
 
+HcclResult TransportDeviceIbverbs::ResolveTransferDesc(
+    HcommBatchTransferDesc &desc, const void *&remoteAddr,
+    const void *&localAddr, u64 &length, WqeType &wqeType)
+{
+    if (desc.transType == HCOMM_TRANSFER_TYPE_WRITE) {
+        CHK_PTR_NULL(desc.write.dst);
+        CHK_PTR_NULL(desc.write.src);
+        remoteAddr = desc.write.dst;
+        localAddr = desc.write.src;
+        length = desc.write.len;
+        wqeType = WqeType::WQE_TYPE_DATA;
+    } else if (desc.transType == HCOMM_TRANSFER_TYPE_READ) {
+        CHK_PTR_NULL(desc.read.dst);
+        CHK_PTR_NULL(desc.read.src);
+        remoteAddr = desc.read.src;
+        localAddr = desc.read.dst;
+        length = desc.read.len;
+        wqeType = WqeType::WQE_TYPE_READ_DATA;
+    } else {
+        HCCL_ERROR("[ResolveTransferDesc] Unsupported transType[%d].", desc.transType);
+        return HCCL_E_NOT_SUPPORT;
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult TransportDeviceIbverbs::SubmitWqeBatch(
+    std::vector<WrInformation> &wrInfoVec, Stream &stream)
+{
+    u32 maxLength = 0;
+    for (u32 i = 0; i < wrInfoVec.size(); i++) {
+        if (wrInfoVec[i].wrData.memList.len > maxLength) {
+            maxLength = wrInfoVec[i].wrData.memList.len;
+        }
+    }
+
+    u32 actualMultiQpNum = GetActualQpNum(maxLength);
+    if (UseMultiQp() && actualMultiQpNum != 1 && actualMultiQpNum <= qpsPerConnection_ && maxLength != 0) {
+        CHK_RET(TxSendDataAndNotifyWithMultiQP(wrInfoVec, actualMultiQpNum, stream, true));
+    } else {
+        CHK_RET(TxSendDataAndNotifyWithSingleQP(wrInfoVec, stream, true));
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult TransportDeviceIbverbs::BatchTransferImpl(
+    HcommBatchTransferDesc *transferDescs, uint32_t descNum, Stream &stream)
+{
+    if (machinePara_.dctxPtr != nullptr) {
+        CHK_RET(SetDispatcherCtx(static_cast<DispatcherCtxPtr>(machinePara_.dctxPtr)));
+    }
+
+    CHK_PTR_NULL(transferDescs);
+
+    std::vector<WrInformation> wrInfoVec;
+    struct WrAuxInfo aux = {0};
+
+    for (uint32_t i = 0; i < descNum; i++) {
+        const void *localAddr = nullptr;
+        const void *remoteAddr = nullptr;
+        u64 length = 0;
+        WqeType wqeType = WqeType::WQE_TYPE_DATA;
+
+        CHK_RET(ResolveTransferDesc(transferDescs[i], remoteAddr, localAddr, length, wqeType));
+
+        HCCL_DEBUG("[BatchTransferImpl] index[%u] localAddr[%p] remoteAddr[%p] len[%llu]",
+            i, localAddr, remoteAddr, length);
+
+        if (localAddr != nullptr) {
+            u32 txSendDataTimes = (length == 0) ? 1 :
+                (length + RDMA_SEND_MAX_SIZE - 1) / RDMA_SEND_MAX_SIZE;
+
+            RdmaAddrKeyResolveParam resolve{};
+            resolve.remoteAddr = remoteAddr;
+            resolve.localAddr = localAddr;
+            resolve.length = length;
+            CHK_RET(ResolveRdmaAddrsAndKeys(resolve));
+            CHK_RET(ConstructPayLoadWqe(resolve.transRemoteAddr, resolve.dstKey,
+                resolve.transLocalAddr, resolve.srcKey,
+                length, wqeType, aux, wrInfoVec, txSendDataTimes));
+        }
+    }
+
+    return SubmitWqeBatch(wrInfoVec, stream);
+}
+
+HcclResult TransportDeviceIbverbs::BatchTransferAsync(
+    HcommBatchTransferDesc *transferDescs, uint32_t descNum, Stream &stream)
+{
+    return BatchTransferImpl(transferDescs, descNum, stream);
+}
+
 HcclResult TransportDeviceIbverbs::WriteReduceAsync(struct Transport::Buffer &remoteBuf,
     struct Transport::Buffer &localBuf, const HcclDataType datatype, HcclReduceOp redOp, Stream &stream)
 {
