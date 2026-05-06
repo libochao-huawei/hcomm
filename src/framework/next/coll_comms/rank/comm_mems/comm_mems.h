@@ -83,7 +83,6 @@ private:
     std::unordered_map<std::string, TagRegistry> tagRegs_;
     // 每个tag 1个 CommMemInfo
     std::unordered_map<std::string, std::shared_ptr<CommMemInfo>> opBindings_;
-    std::unordered_map<void*, std::string> opReverseBindings_;
 };
 }  // namespace hccl
 

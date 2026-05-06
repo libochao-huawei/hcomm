@@ -11,6 +11,7 @@
 #define BASE_MEM_TRANSPORT_H
 
 #include <memory>
+#include <mutex>
 #include <unordered_map>
 
 #include "task.h"
@@ -193,6 +194,8 @@ public:
         MACRO_THROW(NotSupportException, StringFormat("not supported."));
     }
 
+    HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum);
+
     virtual vector<char> &GetLocalHandshakeMsg() // 返回本端握手消息
     {
         return attr.handshakeMsg;
@@ -219,6 +222,11 @@ protected:
     std::function<void(u32 streamId, u32 taskId, const TaskParam &taskParam)> callback;
 
     std::vector<RemoteRmaBuffer *> rmtRmaBufferVec;
+
+    std::unique_ptr<HcclMem[]> remoteMemsPtr_;
+    std::mutex remoteMemsMutex_;
+
+    virtual const std::vector<RemoteRmaBuffer*>& GetRemoteRmaBufferVec() const = 0;
 
     TransportStatus baseStatus{TransportStatus::INIT};
 

@@ -58,7 +58,7 @@ TEST_F(UrmaRegedMemMgrTest, ut_UbRegedMemMgr_URMA_When_Normal_Expect_ReturnIsHCC
     mem0.size = 100;
     std::string memTag0 = "buffer0";
     void *memHandle0 = nullptr;
-    HcclResult ret = ubRegedMemMgr.RegisterMemory(mem0, memTag0.c_str(), &memHandle0);
+    HcclResult ret = ubRegedMemMgr.RegisterMemory(mem0, &memHandle0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     HcommMem mem1;
@@ -67,7 +67,7 @@ TEST_F(UrmaRegedMemMgrTest, ut_UbRegedMemMgr_URMA_When_Normal_Expect_ReturnIsHCC
     mem1.size = 10;
     std::string memTag1 = "buffer0";
     void *memHandle1 = nullptr;
-    ret = ubRegedMemMgr.RegisterMemory(mem1, memTag1.c_str(), &memHandle1);
+    ret = ubRegedMemMgr.RegisterMemory(mem1, &memHandle1);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     ret = ubRegedMemMgr.UnregisterMemory(memHandle0);
