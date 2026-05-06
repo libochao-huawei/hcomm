@@ -3496,6 +3496,16 @@ int RaNormalQpDestroy(void *qp_handle)
     return 0;
 }
 
+int RaGetLbMax(void *rdevHandle, int *lbMax)
+{
+    return 0;
+}
+
+int RaSetQpLbValue(void *qpHandle, int lbValue)
+{
+    return 0;
+}
+
 int RaSetQpAttrQos(void *qpHandle, struct QosAttr *attr)
 {
     return 0;
