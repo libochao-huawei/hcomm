@@ -182,17 +182,17 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/common/exception/
     ${HCCL_CODE_ROOT}/src/legacy/common/types/
     ${HCCL_CODE_ROOT}/src/legacy/service/collective/primitive
-    # ${HCCL_CODE_ROOT}/src
+    ${HCCL_CODE_ROOT}/src
     ${HCCL_CODE_ROOT}/src/legacy/framework/
-    # ${HCCL_CODE_ROOT}/src/legacy/framework/service/aicpu
-    # ${HCCL_CODE_ROOT}/src/legacy/service/collective/instruction
-    # ${HCCL_CODE_ROOT}/src/legacy/service/collective/alg/interface/device
-    # ${HCCL_CODE_ROOT}/src/legacy/service/collective/alg/interface/host
-    # ${HCCL_CODE_ROOT}/src/legacy/service/collective/alg/selector
-    # ${HCCL_CODE_ROOT}/src/legacy/service/collective/alg/alg_registry
-    # ${HCCL_CODE_ROOT}/src/legacy/framework/resource_manager/transport/aicpu/
+    ${HCCL_CODE_ROOT}/src/legacy/framework/service/aicpu
+    ${HCCL_CODE_ROOT}/src/legacy/service/collective/instruction
+    ${HCCL_CODE_ROOT}/src/legacy/service/collective/alg/interface/device
+    ${HCCL_CODE_ROOT}/src/legacy/service/collective/alg/interface/host
+    ${HCCL_CODE_ROOT}/src/legacy/service/collective/alg/selector
+    ${HCCL_CODE_ROOT}/src/legacy/service/collective/alg/alg_registry
+    ${HCCL_CODE_ROOT}/src/legacy/framework/resource_manager/transport/aicpu/
     ${HCCL_CODE_ROOT}/src/legacy/framework/resource_manager/socket/
-    # ${HCCL_CODE_ROOT}/src/legacy/framework/resource_manager/notify/aicpu
+    ${HCCL_CODE_ROOT}/src/legacy/framework/resource_manager/notify/aicpu
     ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/
     ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/aicpu/
     ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/aicpu/daemon
