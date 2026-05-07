@@ -127,8 +127,10 @@ void EnvRdmaConfig::Parse()
     rdmaTimeOut.Parse();
     rdmaRetryCnt.Parse();
     multiQpThreshold.Parse();
+    printf("[ywj]%s:%u", __FUNCTION__, __LINE__);
     HCCL_RUN_INFO("[Init][EnvVarParam]Env config rdmaTrafficClass[%u], rdmaServerLevel[%u], rdmaTimeOut[%u], rdmaRetryCnt[%u]",
                   GetRdmaTrafficClass(), GetRdmaServerLevel(), GetRdmaTimeOut(), GetRdmaRetryCnt());
+    printf("[ywj]%s:%u", __FUNCTION__, __LINE__);
 }
 
 u32 EnvRdmaConfig::GetRdmaTrafficClass() const
