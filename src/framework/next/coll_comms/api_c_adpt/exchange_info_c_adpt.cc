@@ -29,3 +29,11 @@ HcclResult HcclCommGetExchangeInfo(HcclComm comm, uint32_t remoteRank, void* dat
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     return hcclComm->GetExchangeInfo(remoteRank, data, length);
 }
+
+HcclResult HcclResetExchangeInfoState(HcclComm comm)
+{
+    CHK_PTR_NULL(comm);
+    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    return hcclComm->ResetExchangeInfoState();
+}
+
