@@ -163,7 +163,7 @@ class ClusterMonitor {
 public:
     HcclResult RegisterToClusterMonitor(HcclComm comm);
     HcclResult UnRegisterToClusterMonitor(hccl::CollComm* collComm);
-    HcclResult FormatUID(ClusterUIDCxt ctxt, ClusterUIDType &uid);
+    ClusterUIDType FormatUID(ClusterUIDCxt ctxt);
     std::string GetUID(const ClusterUIDType &uid) const;
     std::string FormatConnTag(HcommSocketRole role, std::pair<ClusterUIDType, ClusterUIDType> uidPair);
     HcclResult InsertClusterMonitorCxt(HcclComm comm, UIDContext remoteCtx, std::map<ClusterUIDType, ClusterMonitorSocketCtx> &needConnectRank);
