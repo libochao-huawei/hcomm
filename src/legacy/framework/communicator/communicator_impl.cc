@@ -1558,7 +1558,9 @@ void CommunicatorImpl::InitSocketManager()
 {
     socketManager = std::make_unique<SocketManager>(*this, myRank, devPhyId, devLogicId);
     if (ranktableInfo != nullptr) {
-        socketManager->SetDeviceServerListenPortMap(ranktableInfo->GetRankDeviceListenPortMap());
+        auto rankIpPortMap = ranktableInfo->GetRankDeviceListenPortMap();
+        rankIpPortMap_ = std::make_shared<decltype(rankIpPortMap)>(std::move(rankIpPortMap));
+        socketManager->SetDeviceServerListenPortMap(*rankIpPortMap_);
     }
 }
 
@@ -3975,6 +3977,11 @@ HcclResult CommunicatorImpl::SaveDpuStreamId()
     dpuStreamId = HrtGetStreamId(dpuStream);
     HCCL_INFO("[CommunicatorImpl::SaveDpuStreamId] dpuStreamId_[%u]", dpuStreamId);
     return HCCL_SUCCESS;
+}
+
+std::shared_ptr<std::unordered_map<u32, std::unordered_map<IpAddress, u32>>> CommunicatorImpl::GetRankIpPortMap()
+{
+    return rankIpPortMap_;
 }
 
 } // namespace Hccl
