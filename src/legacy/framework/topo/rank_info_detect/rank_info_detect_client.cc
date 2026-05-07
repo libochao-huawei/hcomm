@@ -19,6 +19,7 @@
 #include "host_socket_handle_manager.h"
 #include "socket_manager.h"
 #include "topo_addr_info.h"
+#include "adapter_error_manager_pub.h"
 
 namespace Hccl {
 
