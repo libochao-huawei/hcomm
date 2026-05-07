@@ -231,7 +231,6 @@ HcclResult AicpuTsRoceChannelV2::GetStatus(ChannelStatus &status) {
             CHK_RET(ModifyQp());
             rdmaStatus_ = RdmaStatus::QP_MODIFIED;
         case RdmaStatus::QP_MODIFIED:
-            // ljy: Prepare Rqe
         default:
             rdmaStatus_ = RdmaStatus::CONN_OK;
             channelStatus_ = ChannelStatus::READY;
@@ -744,7 +743,7 @@ std::string AicpuTsRoceChannelV2::Describe() const
 
 std::vector<char> AicpuTsRoceChannelV2::GetLocalNotifyUniqueIds() const
 {
-    HCCL_INFO("start packing local notify uniqueIds");
+    HCCL_DEBUG("start packing local notify uniqueIds");
     std::vector<char> result(0);
     for (auto &it : localNotifies_) {
         HCCL_INFO("AicpuTsRoceChannelV2 local notify %s", it->Describe().c_str());
@@ -756,7 +755,7 @@ std::vector<char> AicpuTsRoceChannelV2::GetLocalNotifyUniqueIds() const
 
 std::vector<char> AicpuTsRoceChannelV2::GetRemoteNotifyUniqueIds() const
 {
-    HCCL_INFO("start packing remote notify uniqueIds");
+    HCCL_DEBUG("start packing remote notify uniqueIds");
     std::vector<char> result(0);
     Hccl::BinaryStream binaryStream;
     for (auto &it : remoteNotifies_) {
@@ -772,7 +771,7 @@ std::vector<char> AicpuTsRoceChannelV2::GetRemoteNotifyUniqueIds() const
 
 std::vector<char> AicpuTsRoceChannelV2::GetNotifyValueBufferUniqueIds() const
 {
-    HCCL_INFO("start packing notify value buffer uniqueIds");
+    HCCL_DEBUG("start packing notify value buffer uniqueIds");
     std::vector<char> uniqueId;
     uniqueId = GetSingleRmaBufferUniqueId(
         static_cast<uint64_t>(notifyValueBuffer_->GetAddr()), notifyValueBuffer_->GetSize(), notifyValueBuffer_->GetLkey());
@@ -793,7 +792,7 @@ std::vector<char> AicpuTsRoceChannelV2::GetSingleRmaBufferUniqueId(u64 addr, u64
 
 std::vector<char> AicpuTsRoceChannelV2::GetRmtBufferUniqueIds() const
 {
-    HCCL_INFO("start packing remote buffer uniqueIds");
+    HCCL_DEBUG("start packing remote buffer uniqueIds");
     std::vector<char> result(0);
     for (auto &it : rmtRmaBuffers_) {
         std::vector<char> uniqueId;
@@ -812,7 +811,7 @@ std::vector<char> AicpuTsRoceChannelV2::GetRmtBufferUniqueIds() const
 
 std::vector<char> AicpuTsRoceChannelV2::GetLocBufferUniqueIds() const
 {
-    HCCL_INFO("start packing local buffer uniqueIds");
+    HCCL_DEBUG("start packing local buffer uniqueIds");
     std::vector<char> result(0);
     for (auto &it : localRmaBuffers_) {
         std::vector<char> uniqueId;
@@ -831,7 +830,7 @@ std::vector<char> AicpuTsRoceChannelV2::GetLocBufferUniqueIds() const
 
 std::vector<char> AicpuTsRoceChannelV2::GetConnUniqueIds() const
 {
-    HCCL_INFO("start packing all conn uniqueIds");
+    HCCL_DEBUG("start packing all conn uniqueIds");
     std::vector<char> result(0);
     for (auto &it : connections_) {
         HCCL_INFO("AicpuTsRoceChannelV2 %s", it->Describe().c_str());
