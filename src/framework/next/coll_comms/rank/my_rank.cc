@@ -841,7 +841,7 @@ HcclResult MyRank::BatchExchangeAndCheckConsistency(
         return HCCL_SUCCESS;
     }
     
-    if (GetExternalInconsistentCheckSwitch()){
+    if (Hccl::EnvConfig::GetInstance().GetLogConfig().GetDfsConfig().rankConsistentState >= 0){
         // ====== 第一阶段：交换Hcomm基础校验帧并比对 ======
         CHK_RET(ExchangeAndCheckBaseFrame(sockets, remoteRanks, roles, uniqueCount,
             baseCheckInfoLen, commTag, checker));

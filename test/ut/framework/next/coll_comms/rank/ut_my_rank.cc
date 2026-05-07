@@ -627,8 +627,7 @@ TEST_F(MyRankTest, Ut_WaitAllAsyncComplete_When_AllOk_Expect_Success)
 
 TEST_F(MyRankTest, Ut_BatchExchange_When_NewRankConsistent_Expect_Success)
 {
-    setenv("HCCL_DFS_CONFIG", "task_exception:on", 1);
-    setenv("HCCL_DFS_CONFIG", "inconsistent_check:first", 1);
+    setenv("HCCL_DFS_CONFIG", "task_exception:on,inconsistent_check:first", 1);
     hcclComm comm;
     u8 exchangeData[] = {0xDE, 0xAD, 0xBE, 0xEF};
     comm.AddExchangeInfo(exchangeData, sizeof(exchangeData));
