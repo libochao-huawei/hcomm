@@ -22,16 +22,14 @@
 
 namespace hcomm {
 
-HcclResult ClusterMonitor::FormatUID(ClusterUIDCxt cxt, ClusterUIDType &uid)
+ClusterUIDType ClusterMonitor::FormatUID(ClusterUIDCxt cxt)
 {
+    ClusterUIDType uid{};
     // 构造唯一的uid: netInstanceId + local_id
-    s32 ret = snprintf_s(uid.id, sizeof(uid.id), sizeof(uid.id) - 1, "%s/%s",
+    (void)snprintf_s(uid.id, sizeof(uid.id), sizeof(uid.id) - 1, "%s/%s",
         cxt.netInstId.c_str(), std::to_string(cxt.localId).c_str());
-    CHK_PRT_RET((ret == -1),
-        HCCL_ERROR("[%s] snprintf_s failed, errno:%d, error:%s",
-            __func__, errno, strerror(errno)), HCCL_E_SYSCALL);
 
-    return HCCL_SUCCESS;
+    return uid;
 }
 
 std::string ClusterMonitor::GetUID(const ClusterUIDType &uid) const
@@ -84,8 +82,7 @@ HcclResult ClusterMonitor::GetRemEndpointDescs(HcclComm comm,
             auto netInstanceId = netInstance->GetNetInstId();
             auto localId = rankGraph->GetLocalId(rankId); // 根据rank查localId
             ClusterUIDCxt uidcxt(netInstanceId, localId);
-            ClusterUIDType uid{};
-            CHK_RET(FormatUID(uidcxt, uid));
+            ClusterUIDType uid = FormatUID(uidcxt);
             if (myRankId == rankId) {
                 myRankUID_ = uid;
                 localId_ = localId;
@@ -810,8 +807,7 @@ void ClusterMonitor::GetCqeErrInfoFromTaskException(u32 RemoteLocalId, uint16_t 
     CqeErrInfo_.CqeRemoteInsId = RemoteInsId;
     ClusterUIDCxt remoteUIDcxt(RemoteInsId, RemoteLocalId);
     ClusterUIDType localUID = myRankUID_;
-    ClusterUIDType remoteUID = {0};
-    CHK_RET_NULL(FormatUID(remoteUIDcxt, remoteUID));
+    ClusterUIDType remoteUID = FormatUID(remoteUIDcxt);
     SetStatus(localUID, remoteUID, ClusterMonitorStatus::CLUSTER_MONITOR_CQE_ERR, true);
     time_t tmpt = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch());

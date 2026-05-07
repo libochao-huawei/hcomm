@@ -443,10 +443,13 @@ static void PrepareUbSendWrReqParamForWriteOrRead(HrtRaUbSendWrReqParam &sendWrR
     sendWrReq.opcode     = sendWrOpCode;
     sendWrReq.size       = localMemBuf.size;
     sendWrReq.localAddr  = localMemBuf.addr;
-    sendWrReq.remoteAddr = remoteMemBuf.addr;
+    // sendWrReq.remoteAddr = remoteMemBuf.addr;
+    sendWrReq.remoteAddr = 123UL;  // 构造一个不存在的地址，测试error cqe场景
     sendWrReq.lmemHandle = localMemBuf.memHandle;
     sendWrReq.rmemHandle = remoteMemBuf.memHandle;
     sendWrReq.handle     = remoteJettyHandle;
+
+    HCCL_ERROR("%s make a error addr", __func__);
 
     // 打印入参
     HCCL_INFO("PrepareOneUbSendForRead params opCode=[%u], size=[%u], localAddr=[0x%llx], "
