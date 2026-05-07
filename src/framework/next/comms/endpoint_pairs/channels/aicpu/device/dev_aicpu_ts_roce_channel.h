@@ -40,7 +40,7 @@ private:
 
     std::unordered_map<ChannelHandle, RoceSlot> slots_;
     std::mutex mutex_;
-    u64 commSeq_{0};
+    static u64 commSeq_;
 };
 
 #endif // DEV_AICPU_TS_ROCE_CHANNEL_H

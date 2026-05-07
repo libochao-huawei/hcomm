@@ -2516,7 +2516,7 @@ namespace hccl
     HcclResult HcclCommunicator::GetTransportCqeErrors(const HcclNetDevCtx netDevCtx,
                                                        std::vector<ErrCqeInfo> &infos, u32 &num)
     {
-        if (netDevCtx == nullptr || linkResMap_.empty())
+        if (netDevCtx == nullptr)
         {
             return HCCL_SUCCESS;
         }
@@ -2537,8 +2537,11 @@ namespace hccl
             }
             else
             {
-                HCCL_RUN_WARNING("[GetTransportCqeErrors]get err failed, transport is not find, localIp[%s], remoteIp[%s]",
-                                 localIp.GetReadableAddress(), info.second.remoteIp.GetReadableAddress());
+                LinkInfo linkInfo;
+                linkInfo.localDevicePhyId = -1;
+                linkInfo.remoteDevicePhyId = -1;
+                infos.push_back(ErrCqeInfo(info.second, linkInfo, qpn));
+                HCCL_RUN_WARNING("[GetTransportCqeErrors]Transport linkInfo was not saved, only print CqeInfo");
             }
         }
         num = infos.size();

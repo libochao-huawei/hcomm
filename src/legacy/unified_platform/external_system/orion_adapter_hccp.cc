@@ -2680,4 +2680,18 @@ HcclResult HrtRaGetTpAttrAsync(u32 phyId, RdmaHandle handle, uint64_t tpHandle, 
     HCCL_INFO("[HrtRaGetTpAttrAsync] success, reqHandle[%llu]", reqHandle);
     return HCCL_SUCCESS;
 }
+
+HcclResult HrtGetUboeFlagEnable(const u32 devPhyId)
+{
+    u32 uboeVersion = 0;
+    s32 versionRet = RaGetInterfaceVersion(devPhyId, GET_UBOE_FLAG_ENABLE_OPCODE, &uboeVersion);
+    CHK_PRT_RET(versionRet != 0,
+        HCCL_ERROR("[%s] RaGetInterfaceVersion failed, devPhyId=%u, versionRet=%d", __func__, devPhyId, versionRet),
+            HCCL_E_INTERNAL);
+    CHK_PRT_RET(uboeVersion < GET_UBOE_FLAG_ENABLE_VERSION,
+        HCCL_ERROR("[%s] this package does not support to get uboe flag, "
+            "please change new package. uboeVersion[%u].", __func__, uboeVersion), HCCL_E_NOT_SUPPORT);
+    return HCCL_SUCCESS;
+}
+
 } // namespace Hccl

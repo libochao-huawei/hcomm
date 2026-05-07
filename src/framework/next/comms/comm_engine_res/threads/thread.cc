@@ -14,7 +14,10 @@
 #include "stream_lite.h"
 #include "task_info.h"
 #include "aicpu_launch_manager.h"
+#include "profiling_handler_lite.h"
+#include "aicpu_indop_env.h"
 #include "adapter_rts_common.h"
+
 using namespace std;
 
 namespace hccl {
@@ -326,6 +329,9 @@ Thread *Thread::FindThreadByCommEngine(CommEngine commEngine)
 
 HcclResult Thread::ReportAicpuNotifyWaitTask(u64 notifyId, u64 beginTime, u32 taskId, u32 sqId) const
 {
+    if (!IsReportTask()) {
+        return HCCL_SUCCESS;
+    }
     Hccl::TaskParam taskParam{};
     taskParam.taskType                 = Hccl::TaskParamType::TASK_NOTIFY_WAIT;
     taskParam.beginTime                = beginTime;
@@ -341,7 +347,7 @@ HcclResult Thread::ReportAicpuNotifyWaitTask(u64 notifyId, u64 beginTime, u32 ta
 
 HcclResult Thread::ReportHostNotifyWaitTask(u64 notifyId, u64 beginTime, bool isMaster) const
 {
-    #ifndef CCL_KERNEL_AICPU
+#ifndef CCL_KERNEL_AICPU
     Hccl::TaskParam taskParam{};
     taskParam.taskType                 = Hccl::TaskParamType::TASK_NOTIFY_WAIT;
     taskParam.beginTime                = beginTime;
@@ -357,12 +363,15 @@ HcclResult Thread::ReportHostNotifyWaitTask(u64 notifyId, u64 beginTime, bool is
     CHK_RET(callback_(streamId, taskId, taskParam, INVALID_U64));
     HCCL_INFO("[Thread][%s] streamId[%u], taskId[%u], notifyId[%llu], %s", __func__, streamId, taskId,
         notifyId, taskParam.Describe().c_str());
-    #endif
+#endif
     return HCCL_SUCCESS;
 }
 
 HcclResult Thread::ReportAicpuNotifyRecordTask(u64 notifyId, u64 beginTime, u32 taskId, u32 sqId) const
 {
+    if (!IsReportTask()) {
+        return HCCL_SUCCESS;
+    }
     Hccl::TaskParam taskParam{};
     taskParam.taskType                 = Hccl::TaskParamType::TASK_NOTIFY_RECORD;
     taskParam.beginTime                = beginTime;
@@ -426,6 +435,9 @@ HcclResult Thread::ReportHostLocalCopyTask(void *dst, const void *src, uint64_t 
 
 HcclResult Thread::ReportAicpuLocalCopyTask(void *dst, const void *src, uint64_t sizeByte, u64 beginTime, u32 taskId,u32 sqId) const
 {
+    if (!IsReportTask()) {
+        return HCCL_SUCCESS;
+    }
     Hccl::TaskParam taskParam{};
     taskParam.taskType              = Hccl::TaskParamType::TASK_SDMA;
     taskParam.beginTime             = beginTime;
@@ -446,6 +458,9 @@ HcclResult Thread::ReportAicpuLocalCopyTask(void *dst, const void *src, uint64_t
 HcclResult Thread::ReportAicpuLocalReduceTask(void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType,
     HcommReduceOp reduceOp, u64 beginTime, u32 taskId,u32 sqId) const
 {
+    if (!IsReportTask()) {
+        return HCCL_SUCCESS;
+    }
     Hccl::TaskParam taskParam{};
     taskParam.taskType = Hccl::TaskParamType::TASK_REDUCE_INLINE;
     taskParam.beginTime = beginTime;
@@ -488,6 +503,14 @@ HcclResult Thread::ReportHostLocalReduceTask(void *dst, const void *src, uint64_
         __func__, streamId, taskId, src, dst, sizeByte, dataType, reduceOp, taskParam.Describe().c_str());
 #endif
     return HCCL_SUCCESS;
+}
+
+bool Thread::IsReportTask() const
+{
+#ifdef CCL_KERNEL_AICPU
+    return hcomm::GetTaskExceptionEnable() || Hccl::ProfilingHandlerLite::GetInstance().GetProfL1State();
+#endif
+    return true;
 }
 
 }  // namespace hccl
