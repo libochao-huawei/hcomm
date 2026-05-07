@@ -706,5 +706,18 @@ HcclResult HrtRaGetEidByIp(RdmaHandle handle, const vector<IpAddress>& ipV4AddrL
 
 HcclResult HrtRaSetTpAttrAsync(RdmaHandle handle, uint64_t tpHandle, uint32_t attrBitmap, TpAttr& attr, RequestHandle& reqHandle);
 HcclResult HrtRaGetTpAttrAsync(RdmaHandle handle, uint64_t tpHandle, uint32_t& attrBitmap, TpAttr& attr, RequestHandle& reqHandle);
+
+constexpr u32 GET_UBOE_FLAG_ENABLE_OPCODE = 57;
+constexpr u32 GET_UBOE_FLAG_ENABLE_VERSION = 2;
+constexpr u32 UBOE_DEV_FLAG_RIGHT_SHIFT = 19;
+
+HcclResult HrtGetUboeFlagEnable(const u32 devPhyId);
+
+inline bool HrtCheckUboeSupported(const u32 devFeature)
+{
+    // 设备特性位掩码, 右移取UBOE标志位, 值为1表示支持
+    return (devFeature >> UBOE_DEV_FLAG_RIGHT_SHIFT) & 1;
+}
+
 } // namespace Hccl
 #endif // HCCLV2_ADAPTER_HCCP_H

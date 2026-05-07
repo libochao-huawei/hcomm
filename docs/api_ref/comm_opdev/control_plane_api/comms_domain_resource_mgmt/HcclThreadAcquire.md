@@ -1,0 +1,108 @@
+# HcclThreadAcquire
+
+## 产品支持情况
+
+- Ascend 950PR/Ascend 950DT：支持
+- Atlas A3 训练系列产品/Atlas A3 推理系列产品：支持
+- Atlas A2 训练系列产品/Atlas A2 推理系列产品：支持
+
+> [!NOTE]说明
+> 针对Atlas A2 训练系列产品/Atlas A2 推理系列产品，仅支持Atlas 800T A2 训练服务器、Atlas 900 A2 PoD 集群基础单元、Atlas 200T A2 Box16 异构子框。
+
+## 功能说明
+
+基于通信域获取通信线程。
+
+## 函数原型
+
+```c
+HcclResult HcclThreadAcquire(HcclComm comm, CommEngine engine, uint32_t threadNum, uint32_t notifyNumPerThread, ThreadHandle *threads)
+```
+
+## 参数说明
+
+| 参数名 | 输入/输出 | 描述 |
+| --- | --- | --- |
+| comm | 输入 | 通信域。<br>HcclComm类型的定义如下：<br>typedef void *HcclComm; |
+| engine | 输入 | 通信引擎类型。<br>CommEngine类型的定义可参见[CommEngine](../../datatype_definition/CommEngine.md)。 |
+| threadNum | 输入 | 通信线程数量。一个通信域内最多申请40条流。 |
+| notifyNumPerThread | 输入 | 每个通信线程中的同步资源（Notify）数量。一个通信域内最多申请640个同步资源。 |
+| threads | 输出 | 返回的通信线程句柄。需传入threadNum大小的ThreadHandle类型数组。<br>ThreadHandle类型的定义可参见[ThreadHandle](../../datatype_definition/ThreadHandle.md)。 |
+
+## 返回值
+
+[HcclResult](../../../comm_mgr_c/data_type_definition/HcclResult.md)：接口成功返回HCCL_SUCCESS，其他失败。
+
+## 约束说明
+
+返回的通信线程与同步资源由库内管理，调用者严禁释放。
+
+## 调用示例
+
+创建线程资源示例如下：
+
+```c
+HcclComm comm;
+CommEngine engine = COMM_ENGINE_AICPU_TS;
+ThreadHandle threads[5];
+// 申请5条流，每条流2个notify
+HcclThreadAcquire(comm, engine, 5, 2, threads);
+```
+
+同步Host线程资源示例如下：
+
+```c
+// 申请1条host流
+aclrtStream stream;
+aclrtCreateStream(&stream);
+// 根据申请的流创建CPU_TS类型thread
+ThreadHandle cpuThread;
+HcclThreadAcquireWithStream(comm, COMM_ENGINE_CPU_TS, streams, 1, &cpuThread);
+// 任务编排
+// ...
+// 流同步
+aclrtSynchronizeStream(stream);
+```
+
+同步AICPU线程资源示例如下：
+
+```c
+// --host侧调用流程--
+// 申请1条host流
+aclrtStream stream;
+aclrtCreateStream(&stream);
+// 根据申请的流创建CPU_TS类型thread
+ThreadHandle cpuThread;
+HcclThreadAcquireWithStream(comm, COMM_ENGINE_CPU_TS, streams, 1, &cpuThread);
+
+// 创建一个AICPU_TS类型的thread
+ThreadHandle aicpuThread;
+HcclThreadAcquire(comm, COMM_ENGINE_AICPU_TS, 1, 1, &aicpuThread);
+
+// 把创建的AICPU_TS类型的thread导出为CPU上可用的thread
+ThreadHandle exportedCpuThread;
+HcclThreadExportToCommEngine(comm, 1, &aicpuThread, COMM_ENGINE_CPU_TS, &exportedCpuThread);
+// 把创建的CPU类型的thread导出为AICPU上可用的thread
+ThreadHandle exportedAicpuThread;
+HcclThreadExportToCommEngine(comm, 1, &cpuThread, COMM_ENGINE_AICPU_TS, &exportedAicpuThread);
+
+// 发送同步信号
+HcommThreadNotifyRecordOnThread(cpuThread, exportedCpuThread, 0);
+// 下发kernel，把exportedAicpuThread，aicpuThread带到aicpu侧
+// ...
+uint32_t timeout = 1;
+// 等待同步信号
+HcommThreadNotifyWaitOnThread(cpuThread, 0, timeout);
+
+// --aicpu侧调用流程--
+// 等待同步信号
+uint32_t timeout = 1;
+HcommThreadNotifyWaitOnThread(aicpuThread, 0, timeout);
+// 任务编排，将任务下发到aicpuThread
+// ...
+// 发送同步信号
+HcommThreadNotifyRecordOnThread(aicpuThread, exportedAicpuThread, 0);
+
+// 流同步
+aclrtSynchronizeStream(stream);
+```

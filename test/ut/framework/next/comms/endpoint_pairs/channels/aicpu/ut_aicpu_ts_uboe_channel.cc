@@ -313,3 +313,10 @@ TEST_F(AicpuTsUboeChannelTest, Ut_H2DResPack_Packs_Data) {
 
     delete fakeSock;
 }
+
+TEST_F(AicpuTsUboeChannelTest, Ut_GetChannelKind_Returns_AICPU_TS_UBOE) {
+    HcommChannelDesc desc{};
+    EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
+    AicpuTsUboeChannel ch(ep, desc);
+    EXPECT_EQ(ch.GetChannelKind(), HcommChannelKind::AICPU_TS_UBOE);
+}
