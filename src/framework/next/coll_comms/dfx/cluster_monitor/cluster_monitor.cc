@@ -21,7 +21,6 @@
 #include "comm_addr_logger.h"
 
 namespace hcomm {
-constexpr u32 MAX_MODULE_DEVICE_NUM = 65; // 待删除
 
 HcclResult ClusterMonitor::FormatUID(ClusterUIDCxt cxt, ClusterUIDType &uid)
 {
@@ -546,7 +545,7 @@ void ClusterMonitor::SetStatus(ClusterUIDType &crimer, ClusterUIDType &informer,
             errStatusQueue_.pop();
         }
         HCCL_RUN_INFO("[%s][%s]local rank [%s]: crimer rank [%s] status[%s] by informer rank [%s]",
-            LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_TASK_EXEC.c_str(), GetUID(myRankUID_).c_str(),
+            LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_HEARTBEAT_EVETN.c_str(), GetUID(myRankUID_).c_str(),
             GetUID(crimer).c_str(), GetClusterMonitorStatusStr(status).c_str(), GetUID(informer).c_str());
     }
 }
@@ -777,16 +776,6 @@ HcclResult ClusterMonitor::UnRegisterToClusterMonitor(hccl::CollComm* collComm)
         CHK_RET(DeInit());
     }
     return HCCL_SUCCESS;
-}
-
-ClusterMonitor &ClusterMonitor::GetInstance(u32 deviceId)
-{
-    static ClusterMonitor hb[MAX_MODULE_DEVICE_NUM];
-    if (static_cast<u32>(deviceId) >= MAX_MODULE_DEVICE_NUM) {
-        HCCL_WARNING("[Heartbeat][%s]deviceId[%d] is invalid", __func__, deviceId);
-        return hb[0];
-    }
-    return hb[deviceId];
 }
 
 void ClusterMonitor::ProcessExceptionEvent()
