@@ -17,3 +17,12 @@ set(src_list
 target_sources(hcomm PRIVATE
     ${src_list}
 )
+
+if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
+    target_sources(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/i_hccl_one_sided_service.cc
+    )
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()

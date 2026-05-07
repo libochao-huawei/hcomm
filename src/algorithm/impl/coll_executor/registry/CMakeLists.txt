@@ -14,3 +14,12 @@ set(src_list
 target_sources(hccl_alg PRIVATE
     ${src_list}
 )
+
+if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
+    target_sources(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_alg_exec_registry.cc
+    )
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()

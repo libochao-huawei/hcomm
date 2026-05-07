@@ -13,7 +13,7 @@ target_sources(hccl_v2 PRIVATE
         ub_conn_lite_mgr.cc
 )
 
-if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
+if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
 target_sources(ccl_kernel PRIVATE
         rma_conn_lite.cc
         ub_conn_lite.cc
