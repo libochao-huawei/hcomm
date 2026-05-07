@@ -26,7 +26,7 @@ namespace hcomm {
  */
 class CcuInstance {
 public:
-    CcuInstance(CcuInstanceType insType) : insType_(insType) {};
+    explicit CcuInstance(CcuInstanceType insType) : insType_(insType) {};
     ~CcuInstance();
     CcuResult Init();
     CcuResult Reset();
