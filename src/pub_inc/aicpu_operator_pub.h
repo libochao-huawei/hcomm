@@ -612,6 +612,10 @@ struct AicpuCustomParam {
     TaskExceptionParam taskExceptionParam; // 故障上报信息
 };
 
+// kfcOpH2DRingBuffer_最大容纳的opH2D数量, 用于aicpu异步展开单算子
+// 注意: 每个opH2D对应一个OpAsyncUnfoldInfo (< 130 KiB) -> kfcOpH2DRingBuffer_ < 128 * 130 = 16.25 MiB
+constexpr u32 OP_H2D_RING_BUFFER_SIZE = 128;
+
 // 注意，本数据结构整体均被MC2不同算子使用
 // MC2使用偏移量访问整个数据结构，不能调整任意的位置，长度等信息
 struct HcclOpResParam {
@@ -645,6 +649,12 @@ struct HcclOpResParam {
     // communicate retry
     hccl::HDCommunicateParams kfcControlTransferH2DParams;
     hccl::HDCommunicateParams kfcStatusTransferD2HParams;
+    // HDC资源相关参数, 用于AICPU异步展开单算子
+    // 注意: kfcOpH2DRingBufferParams必须使用数组而不能使用vector, 因为hccl_communicator中会使用sizeof(HcclOpResParam)
+    // 分配DeviceMem opResDevicePara_并拷贝opResPara_
+    hccl::HDCommunicateParams kfcTailH2DParams;
+    hccl::HDCommunicateParams kfcHeadD2HParams;
+    hccl::HDCommunicateParams kfcOpH2DRingBufferParams[OP_H2D_RING_BUFFER_SIZE];
 
     u64 tinyMem;   // for all2all
     u64 tinyMemSize;
@@ -719,6 +729,7 @@ struct OpTilingData {
     u64 inputOffset = 0;
     u64 outputSymWindow;
     u64 outputOffset = 0;
+    uint64_t opBaseOpIdx = 0; // HCCL单算子模式下的算子索引 (异步展开只支持纯单算子模式)
 
     /******************可变长度数据区，如需新增字段请在这之前增加*******************/
     u64 length;   // 可变长度数据区长度
