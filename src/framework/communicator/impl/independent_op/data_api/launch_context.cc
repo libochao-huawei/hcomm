@@ -9,12 +9,15 @@
  */
 #include "launch_context.h"
 #include "new/hccl_primitive_local.h"
-
+#ifdef CCL_KERNEL_AICPU
+#include "timer.h"
+#define FUNCTION_TRACE FUNCTION_TRACE_AICPU
+#endif
 extern HcclResult CommTaskLaunch(ThreadHandle *threads, uint32_t threadNum); // host ffts+或aicpu stars使用"
 extern HcclResult CommTaskPrepare(char *key, uint32_t keyLen); // host ffts+使用
 
 void LaunchContext::AddThread(ThreadHandle thread)
-{
+{FUNCTION_TRACE;
     if (mode_ != HCOMM_LAUNCH_MODE_BATCH) {
         // 仅 BATCH 模式缓存线程
         return;
@@ -32,7 +35,7 @@ void LaunchContext::AddThread(ThreadHandle thread)
 }
 
 HcclResult LaunchContext::HandleEagerMode()
-{
+{FUNCTION_TRACE;
     auto it = launchModeMap_.find(launchTag_);
     if (it == launchModeMap_.end()) {
         HCCL_WARNING("[%s] launchTag[%s] not found.", __func__, launchTag_.c_str());
@@ -55,7 +58,7 @@ HcclResult LaunchContext::HandleEagerMode()
 
 
 HcclResult LaunchContext::HandleClear()
-{
+{FUNCTION_TRACE;
     auto it = launchModeMap_.find(launchTag_);
     if (it == launchModeMap_.end()) {
         HCCL_WARNING("[%s] launchTag[%s] not found.", __func__, launchTag_.c_str());
@@ -105,6 +108,7 @@ HcclResult LaunchContext::HandleClear()
  */
 HcclResult LaunchContext::SetLaunchMode(const char* launchTag, HcommLaunchMode mode)
 {
+{FUNCTION_TRACE;
     mode_ = mode;
     // 统一处理 launchTag
     bool defaultTag = (launchTag == nullptr);

@@ -22,6 +22,11 @@
 #include "profiling_command_handle_lite.h"
 #include "aicpu_indop_process.h"
 #endif
+
+#ifdef CCL_KERNEL_AICPU
+#include "timer.h"
+#define FUNCTION_TRACE FUNCTION_TRACE_AICPU
+#endif
 extern "C" {
 using namespace Hccl;
 
@@ -41,7 +46,7 @@ uint32_t SetOldA5CommToCommMgr(std::string group, Hccl::CommunicatorImplLite *co
 }
 
 uint32_t HcclKernelEntrance(void *args)
-{
+{FUNCTION_TRACE;
     if (args == nullptr) {
         HCCL_ERROR("HcclKernelEntrance Args is null.");
         return 1;

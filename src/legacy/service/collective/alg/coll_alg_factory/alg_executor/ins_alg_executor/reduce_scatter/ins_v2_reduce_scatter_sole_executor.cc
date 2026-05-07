@@ -27,6 +27,11 @@
 #include "ins_temp_reduce_scatter_aicpu_reduce_mesh_2D.h"
 #include "ccu_temp_reduce_scatter_mesh_1D_mem2mem.h"
 
+#ifdef CCL_KERNEL_AICPU
+#include "timer.h"
+#define FUNCTION_TRACE FUNCTION_TRACE_AICPU
+#endif
+
 namespace Hccl {
 constexpr u64 MAX_OFFLOAD_SCRATCH_SIZE = 200 * 1024 * 1024;  // 200M
 template <typename AlgTopoMatch, typename InsAlgTemplate>
@@ -116,7 +121,7 @@ HcclResult InsV2ReduceScatterSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchest
 template <typename AlgTopoMatch, typename InsAlgTemplate>
 HcclResult InsV2ReduceScatterSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate(const AlgTopoInfo &topoInfo,
     const CollAlgOperator &op, const CollAlgParams &params, ConnectedLinkMgr *linkMgr, InsQuePtr insQue)
-{
+{FUNCTION_TRACE;
     HCCL_INFO("[InsV2ReduceScatterSoleExecutor][Orchestrate] Orchestrate AICPU Start");
     CHK_RET(Init(op, params, insQue));
     CHK_RET(InitCommInfo(topoInfo));

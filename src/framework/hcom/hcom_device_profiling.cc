@@ -17,11 +17,14 @@
 #include "stream_pub.h"
 #ifdef CCL_KERNEL_AICPU
 #include "device/inc/profiling_manager_device.h"
+#include "timer.h"
+#define FUNCTION_TRACE FUNCTION_TRACE_AICPU
 #endif
 using namespace hccl;
 
 extern HcclResult HcommProfilingInit(ThreadHandle *threads, u32 threadNum)
-{
+{FUNCTION_TRACE;
+
 #ifdef CCL_KERNEL_AICPU
     bool profL0Open = dfx::ProfilingManager::IsProfL0On();
     bool profL1Open = dfx::ProfilingManager::IsProfL1On();
@@ -43,7 +46,8 @@ extern HcclResult HcommProfilingInit(ThreadHandle *threads, u32 threadNum)
 }
 
 extern HcclResult HcommProfilingReportMainStreamAndFirstTask(ThreadHandle thread)
-{
+{FUNCTION_TRACE;
+
 #ifdef CCL_KERNEL_AICPU
     bool profL0Open = dfx::ProfilingManager::IsProfL0On();
     bool profL1Open = dfx::ProfilingManager::IsProfL1On();
@@ -70,7 +74,8 @@ extern HcclResult HcommProfilingReportMainStreamAndFirstTask(ThreadHandle thread
 }
 
 extern HcclResult HcommProfilingReportMainStreamAndLastTask(ThreadHandle thread)
-{
+{FUNCTION_TRACE;
+
 #ifdef CCL_KERNEL_AICPU
     const SqeRingBuffer &sqeBuffer = GetStream(thread)->GetSqeContextPtr()->buffer;
     uint16_t TAIL_TASK = 1;
@@ -86,7 +91,8 @@ extern HcclResult HcommProfilingReportMainStreamAndLastTask(ThreadHandle thread)
 
 // device 侧的op
 extern HcclResult HcommProfilingReportDeviceHcclOpInfo(HcomProInfo profInfo)
-{
+{FUNCTION_TRACE;
+
 #ifdef CCL_KERNEL_AICPU
     MsprofAicpuHCCLOPInfo hcclOpInfo{0};
     hcclOpInfo.relay = 0; //目前全是false
@@ -114,7 +120,8 @@ extern HcclResult HcommProfilingReportDeviceHcclOpInfo(HcomProInfo profInfo)
 }
 
 extern HcclResult HcommProfilingEnd(ThreadHandle *threads, u32 threadNum)
-{
+{FUNCTION_TRACE;
+
     #ifdef CCL_KERNEL_AICPU
     // 上报task
     if (dfx::ProfilingManager::GetProfL1State()) {

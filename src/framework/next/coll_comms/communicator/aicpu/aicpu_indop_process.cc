@@ -12,6 +12,7 @@
 #include "coll_comm_aicpu_mgr.h"
 #include "hcclCommOp.h"
 #include "hcclCommDfxLite.h"
+#include "timer.h"
 
 using namespace hccl;
 
@@ -27,6 +28,7 @@ thread_local CollCommAicpuMgr *g_hcclComm = nullptr; // 记录当前线程通信
 
 HcclResult AicpuIndopProcess::AicpuIndOpCommInit(CommAicpuParam *commAicpuParam) {
     CHK_PTR_NULL(commAicpuParam);
+FUNCTION_TRACE_AICPU;
 
     CollCommAicpuMgr *commAicpuMgr = nullptr;
     HcclResult ret = HCCL_SUCCESS;
@@ -46,7 +48,8 @@ HcclResult AicpuIndopProcess::AicpuIndOpCommInit(CommAicpuParam *commAicpuParam)
 }
 
 HcclResult AicpuIndopProcess::AcquireAicpuCommMgr(const std::string &group, CollCommAicpuMgr **aicpuCommMgrPtr)
-{
+{FUNCTION_TRACE_AICPU;
+
     ReadWriteLock rwlock(g_commAicpuInfo.commAicpuMgrMapMutex);
     rwlock.writeLock();
     // 查找是否已存在该group的通信实例
@@ -75,7 +78,8 @@ HcclResult AicpuIndopProcess::AcquireAicpuCommMgr(const std::string &group, Coll
 }
 
 HcclResult AicpuIndopProcess::AicpuIndOpThreadInit(ThreadMgrAicpuParam *param)
-{
+{FUNCTION_TRACE_AICPU;
+
     CHK_PTR_NULL(param);
 
     std::string group = param->hcomId;
@@ -91,7 +95,8 @@ HcclResult AicpuIndopProcess::AicpuIndOpThreadInit(ThreadMgrAicpuParam *param)
 }
 
 CollCommAicpuMgr *AicpuIndopProcess::AicpuGetCommMgrbyGroup(const std::string &group)
-{
+{FUNCTION_TRACE_AICPU;
+
     HCCL_INFO("[AicpuIndopProcess][%s]start, group[%s]", __func__, group.c_str());
     auto startTime = std::chrono::steady_clock::now();
     constexpr u32 pollIntervalUs = 10; // 轮询间隔10us
@@ -133,7 +138,8 @@ CollCommAicpuMgr *AicpuIndopProcess::AicpuGetCommMgrbyGroup(const std::string &g
 }
 
 void AicpuIndopProcess::AicpuReleaseCommMgrbyGroup(const std::string &group)
-{
+{FUNCTION_TRACE_AICPU;
+
     ReadWriteLock rwlock(g_commAicpuInfo.commAicpuMgrMapMutex);
     rwlock.readLock();
     auto iter = g_commAicpuInfo.commMgrMap.find(group);
@@ -152,7 +158,8 @@ ReadWriteLockBase& AicpuIndopProcess::AicpuGetCommMutex()
 }
 
 HcclResult AicpuIndopProcess::AicpuIndOpChannelInit(HcclChannelUrmaRes *commParam)
-{
+{FUNCTION_TRACE_AICPU;
+
     CHK_PTR_NULL(commParam);
 
     HCCL_INFO("[AicpuIndopProcess][%s] commParam->channelList[%p], commParam->listNum[%u], commParam->uniqueIdAddr[%p], "
@@ -197,7 +204,8 @@ HcclResult AicpuIndopProcess::AicpuIndOpChannelUpdate(HcclChannelUrmaRes *commPa
 }
 
 HcclResult AicpuIndopProcess::AicpuIndOpNotifyInit(NotifyMgrAicpuParam *param)
-{
+{FUNCTION_TRACE_AICPU;
+
     CHK_PTR_NULL(param);
 
     std::string group = param->hcomId;
@@ -258,7 +266,8 @@ HcclResult AicpuIndopProcess::AicpuDestroyCommbyGroup(const std::string &group)
 }
 
 HcclResult AicpuIndopProcess::AicpuDfxOpInfoInit(HcclDfxOpInfo *aicpuDfxInfo, const std::string& commTag)
-{
+{FUNCTION_TRACE_AICPU;
+
     CHK_PTR_NULL(aicpuDfxInfo);
     HCCL_INFO("[%s]group[%s], algTag[%s], profiling L0[%d], L1[%d]", __func__, commTag.c_str(), aicpuDfxInfo->algTag,
         Hccl::ProfilingHandlerLite::GetInstance().GetProfL0State(),
@@ -293,7 +302,8 @@ HcclResult AicpuIndopProcess::AicpuDfxOpInfoInit(HcclDfxOpInfo *aicpuDfxInfo, co
 }
 
 HcclResult AicpuIndopProcess::ProfilingReportDeviceOp(const std::string &group)
-{
+{FUNCTION_TRACE_AICPU;
+
     HCCL_INFO("ProfilingReportDeviceOp group:%s", group.c_str());
     // 获取device侧的通信域
     CHK_PTR_NULL(g_hcclComm);
@@ -311,7 +321,8 @@ HcclResult AicpuIndopProcess::ProfilingReportDeviceOp(const std::string &group)
 }
 
 HcclResult AicpuIndopProcess::ReportAllTasks(const std::string &group)
-{
+{FUNCTION_TRACE_AICPU;
+
     CHK_PTR_NULL(g_hcclComm);
     CollCommAicpu* collCommAicpu = g_hcclComm->GetCollCommAicpu();
     CHK_PTR_NULL(collCommAicpu);
@@ -324,7 +335,8 @@ HcclResult AicpuIndopProcess::ReportAllTasks(const std::string &group)
 }
 
 HcclResult AicpuIndopProcess::UpdateTask(const std::string &group)
-{
+{FUNCTION_TRACE_AICPU;
+
     CHK_PTR_NULL(g_hcclComm);
     CollCommAicpu* collCommAicpu = g_hcclComm->GetCollCommAicpu();
     CHK_PTR_NULL(collCommAicpu);

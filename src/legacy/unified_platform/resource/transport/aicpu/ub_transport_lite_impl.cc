@@ -18,6 +18,14 @@
 #include "communicator_impl_lite_manager.h"
 #include "profiling_handler_lite.h"
 
+#ifndef CCL_KERNEL_AICPU
+    #include "log.h"
+#else
+    #include "aicpu/timer.h"
+    #define MY_TIMER(name) MY_TIMER_AICPU(name)
+    #define FUNCTION_TRACE FUNCTION_TRACE_AICPU
+#endif
+
 namespace Hccl {
 constexpr u32 UB_WQE_BB_SIZE       = 64;  // 一个WQE BB是64Byte
 constexpr u32 UB_WQE_MAX_SIZE      = 128; // 针对WriteWithNotify类型WQE，最大是128Byte
@@ -30,7 +38,7 @@ constexpr u8  UB_FENCE_ENABLED     = 1;    // fence使能
 UbTransportLiteImpl::UbTransportLiteImpl(
     std::vector<char> &uniqueId, std::function<void(u32 streamId, u32 taskId, const TaskParam &taskParam)> callback)
 {
-    callback_ = callback;
+    callback_ = nullptr;
     // [header...][notifyUniqueId...][rmtNotifyUniqueId...][rmtBufferUniqueIds...]
     BinaryStream binaryStream(uniqueId);
     u32          theType;
@@ -334,27 +342,40 @@ RmaBufSliceLite UbTransportLiteImpl::GetRmaBufSlicelite(const RmaBufferLite &lit
 void UbTransportLiteImpl::Post(u32 index, const StreamLite &stream)
 {
     SqeConfigLite cfg;
+    u32           inlineData = 1;
+    {
+    MY_TIMER("TransportLitePost_Step1");
     if (index == 1) { // PostFin场景
         cfg.cqeEn     = true;
         cfg.placeOdr  = UB_STRONG_ORDER;
         cfg.compOrder = UB_COMPLETION;
     }
-    u32           inlineData = 1;
-
+    }
     auto taskId = stream.GetRtsq()->GetTaskId();
     // 当前使用1个connection，下标为0 构建sqe
     auto rmtBuffSliceLite = GetRmtNotifySliceLite(index);
+    {
+    MY_TIMER("TransportLitePost_InlineWrite");
+    // 当前使用1个connection，下标为0
     connVec[0]->InlineWrite(reinterpret_cast<u8 *>(&inlineData), UB_INLINE_WRITE_SIZE, rmtBuffSliceLite,
                             cfg, stream, connOut);
+    }
+    {
     // 构建rts 的 sqe
+    MY_TIMER("TransportLitePost_BuildUbDbSendTask");
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
+    }
+    {
+    MY_TIMER("TransportLitePost_iscallback_");
     HCCL_INFO("UbTransportLiteImpl::Post notifyId[0x%llx], pi=%u", rmtBuffSliceLite.GetAddr(), connOut.pi);
 
     if (!IsReportTask()) {
         return;
     }
-
+    }
+    {
+        MY_TIMER("TransportLitePost_ExecuteTaskParam");
     TaskParam taskParam{};
     taskParam.taskType                 = TaskParamType::TASK_UB_INLINE_WRITE;
     taskParam.beginTime                = ProfGetCurCpuTimestamp();
@@ -376,7 +397,7 @@ void UbTransportLiteImpl::Post(u32 index, const StreamLite &stream)
     if (newCallback_ != nullptr) {
         newCallback_(stream.GetSqId(), taskId, taskParam, reinterpret_cast<u64>(this));
     }
-    
+    }
 }
 
 void UbTransportLiteImpl::Wait(u32 index, const StreamLite &stream)
@@ -485,18 +506,30 @@ void UbTransportLiteImpl::Read(const RmaBufferLite &loc, const Buffer &rmt, cons
 void UbTransportLiteImpl::Write(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream)
 {
     SqeConfigLite cfg;
+    {
+        MY_TIMER("UbTransport_Write_Step1");
     SetFenceConfig(cfg);
-    auto taskId = stream.GetRtsq()->GetTaskId();
+    }
 
     // 当前使用1个connection，下标为0
     auto locRmaBufSlicelite = GetRmaBufSlicelite(loc);
     auto rmtRmaBufSlicelite = GetRmtRmaBufSliceLite(rmt);
+    {
+        MY_TIMER("UbTransport_Write_->Write");
     connVec[0]->Write(locRmaBufSlicelite, rmtRmaBufSlicelite, cfg, stream, connOut);
+    }
+    {
+        MY_TIMER("UbTransport_BuildUbDbSendTask");
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
+    }
+    {
+        MY_TIMER("UbTransport_Write_TaskId");
+    auto taskId = stream.GetRtsq()->GetTaskId();
     ProfilingProcess(reinterpret_cast<void *>(locRmaBufSlicelite.GetAddr()),
                      reinterpret_cast<void *>(rmtRmaBufSlicelite.GetAddr()),
                      locRmaBufSlicelite.GetSize(), stream, DmaOp::HCCL_DMA_WRITE, taskId);
+    }
 }
 
 void UbTransportLiteImpl::ReadReduce(const RmaBufferLite &loc, const Buffer &rmt, const ReduceIn &reduceIn,

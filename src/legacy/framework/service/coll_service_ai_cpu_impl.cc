@@ -116,7 +116,7 @@ DevBuffer *CollServiceAiCpuImpl::OpBasedCollProcess(CollOperator &op, const std:
 }
 
 void CollServiceAiCpuImpl::LoadWithOpBasedModeNoRegister(CollOperator &op)
-{
+{FUNCTION_TRACE;
     RegisterOpbasedLocalRmaBuf(op.opTag);
 
     comm->GetAicpuStreamManager().AllocFreeStream();
@@ -134,7 +134,7 @@ void CollServiceAiCpuImpl::LoadWithOpBasedModeNoRegister(CollOperator &op)
 }
 
 void CollServiceAiCpuImpl::LoadWithOpBasedMode(CollOperator &op, unique_ptr<Stream> stream)
-{
+{FUNCTION_TRACE;
     RegisterOpBufToBufMgr(op);
     RegisterOpbasedStream(std::move(stream));
 
@@ -280,7 +280,7 @@ void CollServiceAiCpuImpl::SetOffloadBufferParam(HcclKernelLaunchParam &param, C
 }
 
 void CollServiceAiCpuImpl::SetHcclKernelLaunchParam(HcclKernelLaunchParam &param, CommunicatorImpl *comm, bool isLaunch)
-{
+{FUNCTION_TRACE;
     CollOperator op = *comm->GetCurrentCollOperator();
 
     param.kernel.comm.idIndex  = comm->GetIdIndex();
@@ -349,7 +349,7 @@ void CollServiceAiCpuImpl::SetDeviceEnvConfigParam(HcclKernelLaunchParam &param)
 
 void CollServiceAiCpuImpl::AicpuKernelEntranceLaunch(Stream &stream, const CollOperator &op, const string &algName,
                                              const DevBuffer *mem)
-{
+{FUNCTION_TRACE;
     HcclKernelLaunchParam param;
 
     s32 ret = strcpy_s(param.kernel.algName, sizeof(param.kernel.algName), algName.data());
@@ -381,7 +381,7 @@ void CollServiceAiCpuImpl::AicpuKernelEntranceLaunch(Stream &stream, const CollO
 }
 
 void CollServiceAiCpuImpl::AicpuKernelLaunch(HcclKernelLaunchParam &param, Stream &stream, OpMode opMode)
-{
+{FUNCTION_TRACE;
     param.kernel.op.userStreamId = stream.GetId();
     aclrtLaunchKernelCfg cfg;
 	aclrtLaunchKernelAttr attr;

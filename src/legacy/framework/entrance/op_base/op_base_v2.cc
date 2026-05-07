@@ -40,6 +40,13 @@
 
 using namespace std;
 using namespace Hccl;
+
+#ifndef CCL_KERNEL_AICPU
+uint64_t HcclTimer::timerCounter = 0;
+std::vector<TimerEntry> HcclTimer::timerEntries;
+HcclTimerDumper g_TimerDumper;
+#endif
+
 std::map<std::string, Hccl::HcclCommunicator *> g_hcclCommunicators[MAX_MODULE_DEVICE_NUM + 1];
 constexpr u32 HCCL_COMM_DEFAULT_BUFFERSIZE = 200;
 constexpr u32 MAX_CCU_MC2_SERVER_NUM       = 20;
@@ -2165,7 +2172,7 @@ HcclResult HcclRecvV2(
 
 HcclResult HcclReduceScatterV2(void *sendBuf, void *recvBuf, uint64_t recvCount, HcclDataType dataType, HcclReduceOp op,
     HcclComm comm, aclrtStream stream)
-{
+{FUNCTION_TRACE;
     HcclUs startut = TIME_NOW();
     bool isCapture;
     rtModel_t rtModel = nullptr;
