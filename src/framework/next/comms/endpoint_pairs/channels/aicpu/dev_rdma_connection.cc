@@ -171,6 +171,11 @@ HcclResult DevRdmaConnection::DestroyQp()
         qpHandle_ = nullptr;
     }
 
+    if (SqPi_ != nullptr) { Hccl::HrtFree(SqPi_); SqPi_ = nullptr; }
+    if (SqCi_ != nullptr) { Hccl::HrtFree(SqCi_); SqCi_ = nullptr; }
+    if (CqPi_ != nullptr) { Hccl::HrtFree(CqPi_); CqPi_ = nullptr; }
+    if (CqCi_ != nullptr) { Hccl::HrtFree(CqCi_); CqCi_ = nullptr; }
+
     rdmaConnStatus_ = RdmaConnStatus::CLOSED;
     return HCCL_SUCCESS;
 }
@@ -340,7 +345,7 @@ HcclResult DevRdmaConnection::BuildCqContext(CqContext* context)
 
 std::vector<char> DevRdmaConnection::GetSqUniqueId() const
 {
-    HCCL_INFO("start packing sq uniqueId");
+    HCCL_DEBUG("start packing sq uniqueId");
     struct QpAttr localQpAttr;
     s32 ret = RaGetQpAttr(qpHandle_, &localQpAttr);
     if (ret != 0) {
@@ -366,7 +371,7 @@ std::vector<char> DevRdmaConnection::GetSqUniqueId() const
 
 std::vector<char> DevRdmaConnection::GetCqUniqueId() const
 {
-    HCCL_INFO("start packing cq uniqueId");
+    HCCL_DEBUG("start packing cq uniqueId");
     Hccl::BinaryStream binaryStream;
     binaryStream << 0; // cqn
     binaryStream << ndaCqInfo_.cqInfo.qBuf.base; // cqVa
@@ -384,7 +389,7 @@ std::vector<char> DevRdmaConnection::GetCqUniqueId() const
 
 std::vector<char> DevRdmaConnection::GetUniqueId() const
 {
-    HCCL_INFO("start packing conn uniqueId");
+    HCCL_DEBUG("start packing conn uniqueId");
     Hccl::BinaryStream binaryStream;
     binaryStream << dmaMode_;
     binaryStream << GetSqUniqueId();
