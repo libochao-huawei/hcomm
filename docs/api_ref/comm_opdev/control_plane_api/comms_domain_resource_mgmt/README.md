@@ -1,0 +1,15 @@
+# 通信域资源管理
+
+- [HcclGetHcclBuffer](HcclGetHcclBuffer.md)  
+- [HcclThreadAcquire](HcclThreadAcquire.md)  
+- [HcclThreadAcquireWithStream](HcclThreadAcquireWithStream.md)  
+- [HcclThreadResGetInfo](HcclThreadResGetInfo.md)  
+- [HcclChannelDescInit](HcclChannelDescInit.md)  
+- [HcclChannelAcquire](HcclChannelAcquire.md)  
+- [HcclChannelGetHcclBuffer](HcclChannelGetHcclBuffer.md)  
+- [HcclChannelGetRemoteMems](HcclChannelGetRemoteMems.md)  
+- [HcclEngineCtxCreate](HcclEngineCtxCreate.md)  
+- [HcclEngineCtxGet](HcclEngineCtxGet.md)  
+- [HcclEngineCtxCopy](HcclEngineCtxCopy.md)  
+- [HcclEngineCtxDestroy](HcclEngineCtxDestroy.md)  
+- [HcclCommMemReg](HcclCommMemReg.md)  
