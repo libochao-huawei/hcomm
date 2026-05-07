@@ -26,6 +26,8 @@
 
 namespace Hccl {
 
+using RankIpPortMap = std::shared_ptr<std::unordered_map<u32, std::unordered_map<IpAddress, u32>>>;
+
 class CommunicatorImpl;
 class SocketManager {
 public:

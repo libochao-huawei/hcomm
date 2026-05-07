@@ -136,6 +136,7 @@ public:
     u32 GetRankInParentComm();
     HcclResult Mc2AiCpuStreamAllocAndGetV2(rtStream_t *aiCpuStream);
     HcclResult GetStreamId(u32 &streamId);
+    HcclResult GetRankIpPortMap(RankIpPortMap& RankIpPortMap);
  
 private:
     CommParams                        commParams;

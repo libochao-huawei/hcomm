@@ -103,6 +103,7 @@ private:
     HcclResult InitHDCommunicate();   
     HcclResult InitTaskExceptionHandler();
     HcclResult InitKfcAndRegisterCollComm();
+    HcclResult GetRankIpPortMap();
 
     void* comm_{nullptr};
     uint32_t rankId_{};
@@ -130,6 +131,7 @@ private:
 
     std::shared_ptr<HDCommunicate> kfcControlTransferH2D_{nullptr};
     std::shared_ptr<HDCommunicate> kfcStatusTransferD2H_{nullptr};
+    Hccl::RankIpPortMap rankIpPortMap_;
 };
 }  // namespace hccl
 
