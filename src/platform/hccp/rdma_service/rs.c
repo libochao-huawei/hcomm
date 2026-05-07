@@ -800,6 +800,7 @@ STATIC int RsGetIbCtxAndRdevIndex(struct rdev rdevInfo, struct RsRdevCb *rdevCb,
                 RsIbvCloseDevice(ibCtxTmp);
                 return ret;
             }
+            hccp_err("vendorId:0x%x vendor_part_id:0x%x", rdevCb->deviceAttr.vendor_id, rdevCb->deviceAttr.vendor_part_id);
             rdevCb->ibCtx = ibCtxTmp;
             return 0;
         } else if (ret == -EEXIST) {
