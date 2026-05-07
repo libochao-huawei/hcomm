@@ -45,25 +45,25 @@ union GetTpCfgFlag {
 #pragma pack(1)
 /** 与 ubengine `urma_tp_attr_value_t` 布局、`#pragma pack(1)` 一致（HCCP 侧字段名为驼峰），供 RsUbGetTpAttr / RsUbSetTpAttr 与 URMA 强转。 */
 struct TpAttr {
-    uint8_t retry_times_init : 3;
-    uint8_t at : 5;
-    uint8_t sip[16U];
-    uint8_t dip[16U];
-    uint8_t sma[6U];
-    uint8_t dma[6U];
-    uint16_t vlan_id : 12;
-    uint8_t vlan_en : 1;
-    uint8_t dscp : 6;
-    uint8_t at_times : 5;
-    uint8_t sl : 4;
-    uint8_t ttl;
-    uint16_t ack_udp_srcport;
-    uint16_t data_udp_srcport;
-    uint8_t udp_srcport_range : 4;
-    uint8_t spray_en : 1;
-    uint8_t udp_global_en : 1;
-    uint8_t reserve_0 : 2;
-    uint16_t slBitmap; /* RaGetTpAttr：若扩展位按成员递增，常见为 tp_attr_bitmap bit 18（见 tp_mgr kTpAttrSlAvailableBit） */
+    uint8_t retryTimesInit : 3; // corresponding bitmap bit: 0
+    uint8_t at : 5; // corresponding bitmap bit: 1
+    uint8_t sip[16U]; // corresponding bitmap bit: 2
+    uint8_t dip[16U]; // corresponding bitmap bit: 3
+    uint8_t sma[6U]; // corresponding bitmap bit: 4
+    uint8_t dma[6U]; // corresponding bitmap bit: 5
+    uint16_t vlanId : 12; // corresponding bitmap bit: 6
+    uint8_t vlanEn : 1; // corresponding bitmap bit: 7
+    uint8_t dscp : 6; // corresponding bitmap bit: 8
+    uint8_t atTimes : 5; // corresponding bitmap bit: 9
+    uint8_t sl : 4; // corresponding bitmap bit: 10
+    uint8_t ttl; // corresponding bitmap bit: 11
+    uint16_t ackUdpSrcport; // corresponding bitmap bit: 12
+    uint16_t dataUdpSrcport; // corresponding bitmap bit: 13
+    uint8_t udpSrcportRange : 4; // corresponding bitmap bit: 14
+    uint8_t sprayEn : 1; // corresponding bitmap bit: 15
+    uint8_t udpGlobalEn : 1; // corresponding bitmap bit: 16
+    uint8_t reserve0 : 2;
+    uint16_t slBitmap;
     uint8_t dscpConfigMode : 1;
     uint8_t reserve1 : 7;
     uint8_t reserved[70];
