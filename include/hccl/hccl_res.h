@@ -281,6 +281,15 @@ typedef aclrtStream ThreadResTypeStream;
  */
 extern HcclResult HcclThreadResGetInfo(HcclComm comm, ThreadHandle thread, ThreadResType resType, uint32_t infoLen, void **info);
 
+/**
+ * @brief 判断是否支持NDA特性
+ *
+ * @param[in] endpointDesc 网络设备端侧描述
+ * @param[out] isSupportNda 是否支持NDA特性
+ * @return HcclResult 执行结果状态码
+ */
+extern HcclResult HcclIsSupportNda(const EndpointDesc *endpointDesc, bool *isSupportNda);
+
 #ifdef __cplusplus
 }
 #endif  // __cplusplus

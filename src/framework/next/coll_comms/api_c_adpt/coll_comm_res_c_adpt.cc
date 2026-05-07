@@ -20,6 +20,9 @@
 #include "../comms/ccu/ccu_kernel/ccu_kernel_mgr.h"
 #include "rt_external.h"
 #include "hccl_ccu_res.h"
+#include "hccp_nda.h"
+#include "orion_adpt_utils.h"
+#include "hccp_peer_manager.h"
 
 using namespace hccl;
 /**
@@ -554,4 +557,34 @@ HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
                                         comm, taskParam, rtsThread->GetMaster()));
     EXCEPTION_HANDLE_END
     return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult HcclIsSupportNda(const EndpointDesc *endpointDesc, bool *isSupportNda)
+{
+    if (endpointDesc->protocol != COMM_PROTOCOL_ROCE || endpointDesc->loc.locType != ENDPOINT_LOC_TYPE_HOST) {
+        HCCL_INFO("[%s] not support NDA, protocol[%d], locType[%d]", __func__, endpointDesc->protocol, endpointDesc->loc.locType);
+        *isSupportNda = false;
+        return HCCL_SUCCESS;
+    }
+    
+    EXCEPTION_HANDLE_BEGIN
+    Hccl::IpAddress ipAddr{};
+    CHK_RET(hcomm::CommAddrToIpAddress(endpointDesc->commAddr, ipAddr));
+    s32 devId = 0;
+    CHK_RET(hrtGetDevice(&devId));
+    Hccl::HccpPeerManager::GetInstance().Init(devId);
+    u32 devPhyId = 0;
+    CHK_RET(hrtGetDevicePhyIdByIndex(devId, devPhyId));
+    auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
+    void *rdmaHandle = static_cast<void *>(
+        rdmaHandleMgr.GetByAddr(devPhyId, Hccl::LinkProtoType::RDMA, ipAddr, Hccl::PortDeploymentType::HOST_NET));
+    CHK_PTR_NULL(rdmaHandle);
+    s32 directFlag = 0;
+    s32 ret = RaNdaGetDirectFlag(rdmaHandle, &directFlag);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] failed to get directFlag, ret[%d]", __func__, ret), HCCL_E_INTERNAL);
+    *isSupportNda = (directFlag == DIRECT_FLAG_NOTSUPP) ? false : true;
+    HCCL_INFO("[%s] %s NDA, devId[%u], ipAddr[%s], rdmaHandle[%p], directFlag[%d]",
+        __func__, *isSupportNda ? "support" : "not support", devPhyId, ipAddr.Describe().c_str(), rdmaHandle, directFlag);
+    EXCEPTION_HANDLE_END
+    return HCCL_SUCCESS;
 }
