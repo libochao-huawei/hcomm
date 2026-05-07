@@ -132,6 +132,7 @@ set(include_list
     ${HCCL_BASE_DIR}/platform/common/unique
     ${HCCL_BASE_DIR}/platform/common/buffer_manager
     ${HCCL_BASE_DIR}/platform/common/unfold_cache
+    # ${HCCL_BASE_DIR}/platform/common/async_unfold_cache
     ${HCCL_BASE_DIR}/platform/resource/transport
     ${HCCL_BASE_DIR}/platform/resource/transport/device
     ${HCCL_BASE_DIR}/platform/resource/transport/host
