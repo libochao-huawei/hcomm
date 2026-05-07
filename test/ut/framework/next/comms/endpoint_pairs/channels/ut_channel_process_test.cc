@@ -179,3 +179,45 @@ TEST_F(TestChannelProcess, Ut_ChannelResume_NullList_Returns_E_PARA) {
     auto ret = hcomm::ChannelProcess::ChannelResume(nullptr, 1);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
+
+TEST_F(TestChannelProcess, Ut_LaunchChannelKernel_When_ChannelKindIsUBOE_CallsChannelKernelLaunchForBase) {
+    HcommChannelDesc hcommDescs[1] = {};
+    ChannelHandle deviceHandles[1] = {};
+
+    class FakeUboeChannel : public hcomm::Channel {
+    public:
+        hcomm::HcommChannelKind GetChannelKind() const override {
+            return hcomm::HcommChannelKind::AICPU_TS_UBOE;
+        }
+        HcclResult Init() override {
+            return HCCL_SUCCESS;
+        }
+        HcclResult GetNotifyNum(uint32_t *notifyNum) const override {
+            return HCCL_SUCCESS;
+        }
+        HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags) override {
+            return HCCL_SUCCESS;
+        }
+        hcomm::ChannelStatus GetStatus() override {
+            return hcomm::ChannelStatus::READY;
+        }
+        HcclResult Clean() override {
+            return HCCL_SUCCESS;
+        }
+        HcclResult Resume() override {
+            return HCCL_SUCCESS;
+        }
+    };
+
+    FakeUboeChannel fakeChannel;
+    ChannelHandle hostHandles[1] = {reinterpret_cast<ChannelHandle>(&fakeChannel)};
+
+    MOCKER_CPP(&hcomm::ChannelProcess::LaunchChannelKernelCommon,
+        HcclResult(ChannelHandle*, ChannelHandle*, HcommChannelDesc*, uint32_t, const std::string&, aclrtBinHandle, const std::string&, bool))
+        .stubs()
+        .with(any(), any(), any(), any(), any(), any(), any(), any())
+        .will(returnValue(HCCL_SUCCESS));
+
+    auto ret = hcomm::ChannelProcess::LaunchChannelKernel(deviceHandles, hostHandles, hcommDescs, 1, nullptr);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}

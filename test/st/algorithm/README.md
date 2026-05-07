@@ -6,7 +6,7 @@ HCCL算法分析器用于在离线环境中模拟HCCL算法的运行，验证算
 
 ## 原理介绍
 
-![](../../../docs/figures/algorithm_analyzer/principle.png)
+![](./figures/principle.png)
 
 **几个关键点：**
 
@@ -16,7 +16,7 @@ HCCL算法分析器用于在离线环境中模拟HCCL算法的运行，验证算
 
 ## 环境准备
 
-参照[源码构建](../../../docs/build.md)中的环境准备，源码下载，进行算法分析器编译前的准备工作。
+参照[源码构建](../../../docs/build/build.md)中的环境准备，源码下载，进行算法分析器编译前的准备工作。
 
 ## 用例编写
 
@@ -24,7 +24,7 @@ HCCL算法分析器用于在离线环境中模拟HCCL算法的运行，验证算
 
 一个算法checker用例分为5个步骤，分别如下图5个框框所示，接下来依次介绍下每个步骤的写法，以适应不同的算子需求。并介绍下出现问题之后，如何借助checker工具进行问题定位。
 
-![](../../../docs/figures/algorithm_analyzer/compile_testcase1.png)
+![](./figures/compile_testcase1.png)
 
 ### LLT用例各步骤详解
 
@@ -32,7 +32,7 @@ HCCL算法分析器用于在离线环境中模拟HCCL算法的运行，验证算
 
 - TopoMeta结构体介绍
 
-  ![](../../../docs/figures/algorithm_analyzer/compile_testcase2.png)
+  ![](./figures/compile_testcase2.png)
 
   checker：使用TopoMeta来表示一个拓扑结构，TopoMeta是一个三层vector结构。
 
@@ -50,11 +50,11 @@ HCCL算法分析器用于在离线环境中模拟HCCL算法的运行，验证算
 
   1. 指定超节点个数、服务器个数、每个服务器的卡数，然后利用RankTable_For_LLT类提供的GenTopoMeta函数来生成，适用于对称拓扑场景。
 
-     ![](../../../docs/figures/algorithm_analyzer/compile_testcase3.png)
+     ![](./figures/compile_testcase3.png)
 
   2. 对超节点、服务器、卡数等完全定制，适用非对称拓扑场景。如下图，TopoMeta中有一个超节点，超节点内有两个server，一个server有2张卡，一个server有3张卡
 
-     ![](../../../docs/figures/algorithm_analyzer/RE_1_1.png)
+     ![](./figures/RE_1_1.png)
 
 - rank table生成
 
@@ -70,11 +70,11 @@ HCCL算法分析器用于在离线环境中模拟HCCL算法的运行，验证算
 
   因为环境变量是进程级别的，一个LLT任务在同一个进程中执行，环境变量的使用可能会影响其他的用例执行。为了清理环境变量，目前在测试套中的TearDown函数中调用了清理环境变量的函数。
 
-  ![](../../../docs/figures/algorithm_analyzer/RE_2_2.png)
+  ![](./figures/RE_2_2.png)
 
   目前清理环境变量的函数会清理如下的环境变量，如果后续有新增的环境变量，需要在这个函数中进行补充。
 
-  ![](../../../docs/figures/algorithm_analyzer/compile_testcase6.png)
+  ![](./figures/compile_testcase6.png)
 
 #### 日志级别设置
 
@@ -84,7 +84,7 @@ HCCL算法分析器用于在离线环境中模拟HCCL算法的运行，验证算
 
         将checker日志级别设置为WARNING：
 
-        ![](../../../docs/figures/algorithm_analyzer/RE_3_1.png)
+        ![](./figures/RE_3_1.png)
 
    2. 通过环境变量设置日志级别
  
@@ -104,29 +104,29 @@ HCCL算法分析器用于在离线环境中模拟HCCL算法的运行，验证算
 
    当前设置环境变量的方式失效，用下面这种方法设置日志级别并打印。
 
-   ![](../../../docs/figures/algorithm_analyzer/compile_testcase8.png)
+   ![](./figures/compile_testcase8.png)
 
    打开DEBUG级别日志：
 
-   ```
+   ```bash
    export ASCEND_LOG_LEVEL=0
    ```
 
    打开INFO级别日志：
 
-   ```
+   ```bash
    export ASCEND_LOG_LEVEL=1
    ```
 
    打开WARNING级别日志：
 
-   ```
+   ```bash
    export ASCEND_LOG_LEVEL=2
    ```
 
    打开ERROR级别日志：
 
-   ```
+   ```bash
    export ASCEND_LOG_LEVEL=3
    ```
 
@@ -158,13 +158,13 @@ TestOpParam用来设置测试参数，下表介绍其主要使用的一些参数
 
 用例较多，仅需执行某个用例时，修改main.cc中用例名称即可。
 
-![](../../../docs/figures/algorithm_analyzer/RE_4.png)
+![](./figures/RE_4.png)
 
 ## 用例执行
 
 在源码仓根目录下，按如下命令，编译并执行算法分析器用例：
 
-```
+```bash
 # 编译所有测试套用例，并自动执行
 bash build.sh --st
 
@@ -187,7 +187,7 @@ bash build.sh --executor_pipeline_hccl_test
 
 用例执行结果如下所示：
 
-![](../../../docs/figures/algorithm_analyzer/result1.png)
+![](./figures/result1.png)
 
 各字段含义如下：
 
@@ -209,7 +209,7 @@ bash build.sh --executor_pipeline_hccl_test
 
 除上述场景以外，出现如下报错则认为task编排中有内存冲突的风险：
 
-```
+```text
 [1]there is memory use confilict in two SliceMemoryStatus
 [2]one is startAddr is 0, size  is 3200, status is WRITE.
 [3]another is startAddr is 0, size  is 3200, status is WRITE.
@@ -218,29 +218,29 @@ bash build.sh --executor_pipeline_hccl_test
 [6]check rank memory conflict failed for rank 0
 ```
 
--   第2、3句表示冲突的两个内存块的起始地址（startAddr）、大小（size）以及读写状态（status）。
+- 第2、3句表示冲突的两个内存块的起始地址（startAddr）、大小（size）以及读写状态（status）。
 
     status有READ和WRITE两个状态，READ表示该内存块正在被读，WRITE表示该内存块正在被写。被读和被写是抽象的内存操作语义，不仅仅是write task和read task。
 
     可能是READ状态的内存块包括localcopy任务的src，read任务的src，write任务的src；可能是WRITE状态的内存块包括localcopy任务的dst，read任务的dst，write任务的dst。
 
--   第4句表示冲突内存块的类型。
--   第5句说明了是哪两个task造成的内存冲突。
--   第6句说明了产生内存冲突的rank号。
+- 第4句表示冲突内存块的类型。
+- 第5句说明了是哪两个task造成的内存冲突。
+- 第6句说明了产生内存冲突的rank号。
 
 上述错误日志说明同时有两个task在往OUTPUT\_CCL类型的0\~3200的范围内执行写入操作。
 
 #### 定位方法
 
-1.  在调用Check函数前打开task打印开关。
+1. 在调用Check函数前打开task打印开关。
 
-    ```
+    ```text
     checker.EnableTaskPrint();
     ```
 
-2.  根据报错日志找到造成内存冲突的两个task，排查这两个task前后同步的编排。
+2. 根据报错日志找到造成内存冲突的两个task，排查这两个task前后同步的编排。
 
-    [问题现象](#zh-cn_topic_0000002306628476_section158963105533)中的错误日志说明同时有两个task在往OUTPUT\_CCL类型的0\~3200的范围内执行写入操作。
+    [问题现象](#问题现象)中的错误日志说明同时有两个task在往OUTPUT\_CCL类型的0\~3200的范围内执行写入操作。
 
 ### 语义校验失败定位方法
 
@@ -248,7 +248,7 @@ bash build.sh --executor_pipeline_hccl_test
 
 算法分析器中内存使用相对地址进行表示，由三个字段组成：内存类型、偏移地址offset、大小size，用结构体DataSlice表示：
 
-```
+```c
 class DataSlice {
 public:
     //  一些方法函数
@@ -264,7 +264,7 @@ private:
 
 集合通信算法在运行过程中会涉及复杂的数据搬运、规约操作，算法分析器用**BufferSemantic（语义）**记录**数据搬运关系**，其中有目的内存表达和多个源内存表达。目的内存通过成员变量startAddr和Size表示；源内存用结构体SrcBufDes表示，结构体定义如下：
 
-```
+```c
 struct BufferSemantic {
     u64                         startAddr;
     mutable u64                 size;       // 大小，源内存和目的内存共享相同的大小
@@ -284,17 +284,17 @@ struct SrcBufDes {
 
 下面已具体例子介绍什么是语义计算。
 
-1.  初始状态，有Rank0与Rank1两个Rank，有Input，Output两种内存类型。
+1. 初始状态，有Rank0与Rank1两个Rank，有Input，Output两种内存类型。
 
-    ![](../../../docs/figures/algorithm_analyzer/allgather.png)
+    ![](./figures/allgather.png)
 
-2.  状态一动作：将rank0的Input，偏移地址20，大小为30的数据块搬运到rank0的Output，偏移地址为35结果：在rank0的Output上产生了一个语义块，记录了本次搬运的信息。
+2. 状态一动作：将rank0的Input，偏移地址20，大小为30的数据块搬运到rank0的Output，偏移地址为35结果：在rank0的Output上产生了一个语义块，记录了本次搬运的信息。
 
-    ![](../../../docs/figures/algorithm_analyzer/allgather-0.png)
+    ![](./figures/allgather-0.png)
 
-3.  状态二动作：将rank1的Input，偏移地址70，大小为15的数据块搬运到rank0的Output，偏移地址为50结果：目的内存与现有的语义块有重叠，需要对现有的语义块进行拆分，产生两条语义块。
+3. 状态二动作：将rank1的Input，偏移地址70，大小为15的数据块搬运到rank0的Output，偏移地址为50结果：目的内存与现有的语义块有重叠，需要对现有的语义块进行拆分，产生两条语义块。
 
-    ![](../../../docs/figures/algorithm_analyzer/allgather-1.png)
+    ![](./figures/allgather-1.png)
 
 #### 结果校验
 
@@ -302,19 +302,19 @@ struct SrcBufDes {
 
 接下来以2 rank做AllGather举例，说明Rank0的Output内存中语义块的正常场景和异常场景。假设输入数据大小是100字节。
 
--   **正确场景：**
+- **正确场景：**
 
-    ![](../../../docs/figures/algorithm_analyzer/allgather-2.png)
+    ![](./figures/allgather-2.png)
 
--   **错误场景：**
+- **错误场景：**
 
-    ![](../../../docs/figures/algorithm_analyzer/allgather-3.png)
+    ![](./figures/allgather-3.png)
 
 #### 定位思路
 
 语义校验阶段可以发现两种类型的错误：
 
--   数据缺失。
--   数据来源错误。
+- 数据缺失。
+- 数据来源错误。
 
-扩展到规约场景，也有类似的问题，比如参与规约的rank数量缺失、参与规约的数据偏移地址不一样等。通常情况下，语义报错的时候会给出一定的提示信息。需要借助提示信息，并结合算法分析器打印的task序列进行具体分析，task打印信息添加方法可参见《集合通信源码定制开发指南》中的“编写checker用例”章节。
+扩展到规约场景，也有类似的问题，比如参与规约的rank数量缺失、参与规约的数据偏移地址不一样等。通常情况下，语义报错的时候会给出一定的提示信息。需要借助提示信息，并结合算法分析器打印的task序列进行具体分析。
