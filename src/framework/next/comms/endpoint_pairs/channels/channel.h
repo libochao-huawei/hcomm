@@ -45,6 +45,7 @@ enum class HcommChannelKind : uint32_t {
     CPU_ROCE = 4U,
     AIV_UB_MEM = 5U,
     AICPU_TS_UBOE = 6U,
+    AICPU_TS_ROCE_V2 = 7U,
 };
 
 /**
@@ -74,6 +75,8 @@ public:
 
     virtual HcclResult Clean()        = 0;
     virtual HcclResult Resume()       = 0;
+
+    virtual void SetPtrArrayDevPtr(std::shared_ptr<void> ptr) { (void)ptr; }
 
     virtual HcommChannelKind GetChannelKind() const;
     virtual HcclResult Serialize(std::shared_ptr<hccl::DeviceMem> &out);
