@@ -392,6 +392,8 @@ public:
         return dpuStreamId;
     }
 
+    std::unordered_map<u32, std::unordered_map<IpAddress, u32>> GetRanktableInfo();
+
 private:
     std::string                                id;
     static std::atomic<u32>                    globalIndex; // 全局通信域唯一一个index, 对应锁保护
@@ -600,6 +602,8 @@ private:
 
     // AICPU场景aclgraph专用
     HcclResult OffloadResourcePre(std::string &opTag, const CollOpParams &opParams);
+    
+    std::shared_ptr<std::unordered_map<u32, std::unordered_map<IpAddress, u32>>> rankIpPortMap_;
 };
 } // namespace Hccl
 

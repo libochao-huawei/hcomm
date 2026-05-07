@@ -43,6 +43,7 @@ CcuResBatchAllocator &CcuResBatchAllocator::GetInstance(const int32_t deviceLogi
     return ccuResBatchAllocator[devLogicId];
 }
 
+
 HcclResult CcuResBatchAllocator::Init()
 {
     if (initFlag_) {

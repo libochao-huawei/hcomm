@@ -102,6 +102,8 @@ HcclResult EndpointPair::GetSocket(const uint32_t myRank, const uint32_t rmtRank
         EXECEPTION_CATCH(socketMgrCompat_ =
             std::make_unique<Hccl::SocketManager>(myRank, devPhyId, devLogicId, socketTag),
             return HCCL_E_PTR);
+        CHK_PTR_NULL(rankIpPortMap_);
+        socketMgrCompat_->SetDeviceServerListenPortMap(*rankIpPortMap_);
     }
 
     socketMgrCompat_->BatchCreateSockets({linkData}); // 内部同时处理server端和connect端两类socket
