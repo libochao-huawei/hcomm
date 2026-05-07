@@ -8,92 +8,15 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 
-# 指定hccl编译为动态库
-add_library(hccl_v2 SHARED ""
-)
+# 定义 hccl_v2 动态链接库，在 host 侧使用
+add_library(hccl_v2 SHARED)
 
-# 自动找到项目内所有头文件
-FILE(GLOB_RECURSE sources_list LIST_DIRECTORIES TRUE ${HCCL_V2_CODE_ROOT}/*)
-
-foreach (dir ${sources_list})
-    IF ((IS_DIRECTORY ${dir} ) AND (${dir} MATCHES "src/legacy") AND (NOT ${dir} MATCHES "src/legacy/mdpi"))
-        target_include_directories(hccl_v2 PRIVATE ${dir})
-    endif ()
-endforeach ()
-
-# 添加项目外部头文件
+# 宏定义
 target_compile_definitions(hccl_v2 PRIVATE
     $<$<STREQUAL:${PRODUCT_SIDE},host>:_GLIBCXX_USE_CXX11_ABI=0>
-
 )
-
-target_include_directories(hccl_v2 PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/base/inc
-    ${HCCL_BASE_DIR}/src/pub_inc
-    ${HCCL_BASE_DIR}/src/pub_inc/hccl
-    ${HCCL_BASE_DIR}/include
-    ${HCCL_BASE_DIR}/inc/adapter
-    ${HCCL_BASE_DIR}/src/algorithm/impl/resource_manager
-
-    ${THIRD_PARTY_NLOHMANN_PATH}
-    ${ASCEND_CANN_PACKAGE_PATH}/include/
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/mmpa/
-    ${ASCEND_CANN_PACKAGE_PATH}/include/acl/
-    ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
-    ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api/
-    ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/
-
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling/
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
-
-    ${HCCL_BASE_DIR}/include/hccl/
-    ${HCCL_BASE_DIR}/pkg_inc
-    #${HCCL_BASE_DIR}/pkg_inc/hccl/
-    ${HCCL_BASE_DIR}/src/algorithm/pub_inc
-    ${HCCL_BASE_DIR}/src/algorithm/base/alg_template
-    ${HCCL_BASE_DIR}/src/algorithm/base/communicator
-    ${HCCL_BASE_DIR}/src/platform/hccp/inc/network
-    ${RDMA_CORE_INCLUDE_DIR}
-    ${HCCL_BASE_DIR}/src/platform/hccp/orion/hcomm_dev/inc/network
-    ${HCCL_BASE_DIR}/externel_depends/tsch
-)
-
-# 每个文件夹单独组织要参与编译的文件
-target_sources(hccl_v2
-        PRIVATE
-)
-
-add_subdirectory(common)
-add_subdirectory(framework)
-add_subdirectory(service)
-add_subdirectory(unified_platform)
-add_subdirectory(interface)
-
-IF (DEFINED ENV{HCCL_LOCAL_BUILD})
-    # add_subdirectory(aicpu) #当前未使用，注释
-ENDIF ()
 
 # 编译选项
-#target_compile_options(hccl_v2 PRIVATE
-#        -std=c++14
-#        -Werror
-#        -fno-common
-#        -fno-strict-aliasing
-#        -pipe
-#        -O3
-
-#        -Wextra
-#        -Wno-unused-parameter
-#        -Wno-missing-field-initializers
-#        -Wfloat-equal
-#)
-
 target_compile_options(hccl_v2 PRIVATE
     -Werror
     -Wfloat-equal
@@ -107,6 +30,7 @@ target_compile_options(hccl_v2 PRIVATE
     $<$<CONFIG:Debug>:-g>
 )
 
+# 链接选项
 target_link_options(hccl_v2 PRIVATE
     -Wl,-z,relro
     -Wl,-z,now
@@ -114,3 +38,75 @@ target_link_options(hccl_v2 PRIVATE
     -Wl,--build-id=none
     $<$<CONFIG:Release>:-s>
 )
+
+# 链接库
+target_link_libraries(hccl_v2 PRIVATE
+    -Wl,--no-as-needed
+    c_sec
+    unified_dlog
+    mmpa
+    runtime
+    ascendcl
+    error_manager
+    ccl_dpu
+    tsdclient
+    ra
+    -Wl,--as-needed
+    hccl_headers
+    topoaddrinfo
+)
+
+target_include_directories(hccl_v2 PRIVATE
+    ${LEGACY_INCLUDE_LIST}
+    ${CMAKE_CURRENT_SOURCE_DIR}/base/inc
+
+    ${HCOMM_DIR}/src/pub_inc
+    ${HCOMM_DIR}/src/pub_inc/hccl
+    ${HCOMM_DIR}/include
+    ${HCOMM_DIR}/inc/adapter
+    ${HCOMM_DIR}/src/algorithm/impl/resource_manager
+
+    ${HCOMM_DIR}/include/hccl/
+    ${HCOMM_DIR}/pkg_inc
+    ${HCOMM_DIR}/src/algorithm/pub_inc
+    ${HCOMM_DIR}/src/algorithm/base/alg_template
+    ${HCOMM_DIR}/src/algorithm/base/communicator
+    ${HCOMM_DIR}/src/platform/hccp/inc/network
+    ${HCOMM_DIR}/src/platform/hccp/orion/hcomm_dev/inc/network
+    ${HCOMM_DIR}/externel_depends/tsch
+
+    ${THIRD_PARTY_NLOHMANN_PATH}
+    ${RDMA_CORE_INCLUDE_DIR}
+)
+
+if(BUILD_OPEN_PROJECT)
+    target_include_directories(hccl_v2 PRIVATE
+        ${ASCEND_CANN_PACKAGE_PATH}/include/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/mmpa/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/acl/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/
+
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
+    )
+endif()
+
+# 将hccl编译出的动态库加入CANN的安装包
+install(TARGETS hccl_v2
+    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
+)
+
+add_subdirectory(common)
+add_subdirectory(framework)
+add_subdirectory(service)
+add_subdirectory(unified_platform)
+add_subdirectory(interface)
