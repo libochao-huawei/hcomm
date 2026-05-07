@@ -20,10 +20,13 @@
 #include "dlhal_function.h"
 #include "adapter_hal_pub.h"
 #include "dispatcher_aicpu.h"
+#include "aicpu_cache_utils.h"
 
 namespace hccl {
 constexpr uint64_t NANOSECOND_TO_SECOND = 1000000000U;
 constexpr uint16_t TURN_LEFT_SHIFT_BIT = 16;
+
+// 注意: 与async_unfold_cache_entry.cc中的HCCL_PER_LAUNCH_SQE_CNT保持一致
 constexpr uint32_t HCCL_PER_LAUNCH_SQE_CNT = 128U; // 每编排N个SQE，做一次launchtask
 
 #ifdef __cplusplus
@@ -509,7 +512,7 @@ HcclResult DispatcherAiCpu::LaunchNewTask(OpUnfoldCacheEntry *entryPtr, const st
                 uint8_t *sqePtr = sqeArray + sqeIdx * HCCL_SQE_SIZE;
                 const uint8_t sqeType = sqeTypeArray[sqeIdx];
                 PLF_CONFIG_DEBUG(PLF_TASK, "[DispatcherAicpu][LaunchNewTask] %uth cached SQE", sqeIdx);
-                CHK_RET(OpUnfoldCache::DumpSqeContent(sqePtr, sqeType));
+                CHK_RET(AicpuCacheUtils::DumpSqeContent(sqePtr, sqeType));
 
                 const AicpuDfxInfo& dfxinfo = sqeDfxInfoArray[sqeIdx];
                 PLF_CONFIG_DEBUG(PLF_TASK, "[DispatcherAicpu][LaunchNewTask] AicpuDfxInfo: remoteRank[%u] opRingBufferIdx[%u] notifyId[%u]",
@@ -752,7 +755,7 @@ HcclResult DispatcherAiCpu::LaunchTask(Stream &stream, bool isBlockLaunch)
                 PLF_CONFIG_DEBUG(PLF_TASK, "[DispatcherAicpu][LaunchTask] %uth dispatched SQE", sqeIdx);
             }
             
-            CHK_RET(OpUnfoldCache::DumpSqeContent(sqePtr, sqeType));
+            CHK_RET(AicpuCacheUtils::DumpSqeContent(sqePtr, sqeType));
 
             const AicpuDfxInfo& dfxinfo = sqeDfxInfoArray[sqeIdx];
             PLF_CONFIG_DEBUG(PLF_TASK, "[DispatcherAicpu][LaunchTask] AicpuDfxInfo: remoteRank[%u] opRingBufferIdx[%u] notifyId[%u]",
