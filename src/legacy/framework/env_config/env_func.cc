@@ -779,7 +779,7 @@ std::vector<std::string> SplitDfsConfig(const std::string &str, char delimiter)
 
 DfsConfig CastDfsConfig(const std::string &dfsConfigEnv)
 {
-    constexpr std::size_t                              DFS_CONFIG_ITEM_NUM = 1;
+    constexpr std::size_t                              DFS_CONFIG_ITEM_NUM = 2;
     const std::array<std::string, DFS_CONFIG_ITEM_NUM> taskExceptionName   = {"task_exception", "inconsistent_check"};
     bool                                               taskExceptionEnable = true;
     std::string                                        dfsConfigEnvCopy    = dfsConfigEnv;
