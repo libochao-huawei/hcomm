@@ -257,6 +257,13 @@ int32_t HcommWriteOnThread(ThreadHandle thread, ChannelHandle channel, void *dst
     return HCCL_SUCCESS;
 }
 
+int32_t HcommBatchTransfer(ThreadHandle thread, ChannelHandle channel, void **rmtList, void **locList,
+    uint64_t *lenList, uint32_t *rw, HcommDataType *dataType, HcommReduceOp *reduceOp, uint32_t count)
+{
+    HCCL_ERROR("[%s] Only support batch transfer on device", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
 int32_t HcommWriteReduceOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
     uint64_t count, HcommDataType dataType, HcommReduceOp reduceOp)
 {
