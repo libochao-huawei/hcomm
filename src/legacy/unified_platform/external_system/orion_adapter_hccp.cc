@@ -41,8 +41,10 @@ constexpr u32 MAX_CQ_DEPTH = 65535;
 constexpr u32 MAX_INLINE_DATA = 64;
 constexpr u32 RA_TLV_REQUEST_UNAVAIL = 128308;
 constexpr u32 ROCE_ENOMEM_RET = 328100;
+constexpr u32 GET_TP_ATTR_OPCODE = 106;
 constexpr u32 GET_TLS_ENABLE_OPCODE = 95;
 constexpr u32 GET_TLS_ENABLE_VERSION = 1;
+constexpr u32 GET_TP_ATTR_VERSION = 2;
 
 const std::unordered_map<HrtNetworkMode, NetworkMode, EnumClassHash> HRT_NETWORK_MODE_MAP
     = {{HrtNetworkMode::PEER, NetworkMode::NETWORK_PEER_ONLINE}, {HrtNetworkMode::HDC, NetworkMode::NETWORK_OFFLINE}};
@@ -2661,8 +2663,14 @@ HcclResult HrtRaSetTpAttrAsync(RdmaHandle handle, uint64_t tpHandle, uint32_t at
 HcclResult HrtRaGetTpAttrAsync(RdmaHandle handle, uint64_t tpHandle, uint32_t& attrBitmap, TpAttr& attr, RequestHandle& reqHandle)
 {
     HCCL_INFO("[HrtRaGetTpAttrAsync] begain, reqHandle[%llu]", reqHandle);
+    u32 tpAttrVersion = 0;
+    s32 ret = RaGetInterfaceVersion(u32 phyId, GET_TP_ATTR_OPCODE, &tpAttrVersion);
+    if (ret != 0 || tpAttrVersion < GET_TP_ATTR_VERSION) {
+        HCCL_ERROR("this package does not support RaGetTpAttrAsync for device, please change new package, ret=%d, tpAttrVersion=%u.", ret, tpAttrVersion);
+        return HCCL_E_NOT_SUPPORT;
+    }
     void *raReqHandle = nullptr;
-    s32 ret = RaGetTpAttrAsync(handle, tpHandle, &attrBitmap, &attr, &raReqHandle);
+    ret = RaGetTpAttrAsync(handle, tpHandle, &attrBitmap, &attr, &raReqHandle);
     if (ret != 0) {
         string msg = StringFormat("call RaGetTpAttrAsync failed, error code =%d.", ret);
         THROW<NetworkApiException>(msg);
