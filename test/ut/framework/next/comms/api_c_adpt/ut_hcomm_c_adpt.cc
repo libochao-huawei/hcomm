@@ -403,3 +403,15 @@ TEST_F(HcommCAdptTest, ut_HcommResMgrInit_MultiDevice_Expect_Success)
     EXPECT_EQ(ret1, HCCL_SUCCESS);
     EXPECT_EQ(ret2, HCCL_SUCCESS);
 }
+
+TEST_F(HcommCAdptTest, ut_HcommEndpointCheckFeature_When_SupportedFeature_Expect_True)
+{
+    EndpointDesc endpointDesc{};
+    (void)memset_s(&endpointDesc, sizeof(endpointDesc), 0, sizeof(endpointDesc));
+    endpointDesc.protocol = COMM_PROTOCOL_ROCE;
+    endpointDesc.loc.locType = ENDPOINT_LOC_TYPE_HOST;
+    bool value = false;
+    HcommResult ret = HcommEndpointCheckFeature(HCOMM_FEATURE_NDA, &endpointDesc, &value);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(value, true);
+}
