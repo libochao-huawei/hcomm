@@ -21,6 +21,7 @@
 #include "rt_external.h"
 #include "hccl_ccu_res.h"
 #include "hcclCommOp.h"
+
 using namespace hccl;
 /**
  * @note 职责：集合通信的通信域资源管理的C接口的C到C++适配
