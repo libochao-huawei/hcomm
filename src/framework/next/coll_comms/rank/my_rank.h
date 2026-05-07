@@ -89,6 +89,8 @@ private:
         hcclComm *hcclComm);
     HcclResult CheckSubCommParaDetailed(const u8 *recvBuf, u64 baseCheckInfoLen,
         const std::string &commTag, RankConsistentcyChecker &checker);
+    HcclResult CompareSubCommCrc(const HcclCheckInfo &localCheckInfo,
+        const HcclCheckInfo &remoteCheckInfo, size_t subCommCount);
     HcclResult WaitAllAsyncComplete(const std::vector<Hccl::Socket*> &sockets,
         const std::vector<u32> &remoteRanks);
     HcclResult BatchExchangeFixedData(
