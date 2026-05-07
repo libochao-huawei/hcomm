@@ -1435,8 +1435,10 @@ namespace hccl
         callbacks.getAicpuCommState = [this](){return 1;};
         callbacks.setAicpuCommState = [this](bool state){};
         callbacks.kernelLaunchAicpuCommInit = [this](){return HCCL_SUCCESS;};
+
+        std::unordered_map<u32, std::unordered_map<Hccl::IpAddress, u32>> rankListenPortMap{};
     
-        EXECEPTION_CATCH((myRank_ = std::make_unique<MyRank>(binHandle, rankId, commConfig, callbacks, &rankGraph_)),
+        EXECEPTION_CATCH((myRank_ = std::make_unique<MyRank>(binHandle, rankId, commConfig, callbacks, &rankGraph_, rankListenPortMap)),
             return HCCL_E_PTR);
     
         HCCL_INFO("[HcclCommunicator][CreateMyRank]Create myRank successfully for rank[%u]", rankId);

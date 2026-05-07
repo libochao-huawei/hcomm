@@ -135,6 +135,7 @@ public:
     u32 GetDeviceLogicId() const;
     u32 GetRankInParentComm();
     HcclResult Mc2AiCpuStreamAllocAndGetV2(rtStream_t *aiCpuStream);
+    std::unordered_map<u32, std::unordered_map<IpAddress, u32>> GetRanktableInfo();
  
 private:
     CommParams                        commParams;
