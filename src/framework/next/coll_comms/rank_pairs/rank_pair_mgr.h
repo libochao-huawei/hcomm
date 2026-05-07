@@ -20,8 +20,8 @@ using ChannelTable = std::unordered_map<RankIdPair, hcomm::EpChannelMap>;
 
 class RankPairMgr {
 public:
-    RankPairMgr(){};
-
+    RankPairMgr(const Hccl::RankIpPortMap& rankIpPortMap)
+    : rankIpPortMap_(rankIpPortMap) {};
     ~RankPairMgr() = default;
 
     HcclResult Get(RankIdPair rankIdPair, RankPair*& out);
@@ -29,6 +29,7 @@ public:
 
 private:
     std::unordered_map<RankIdPair, std::unique_ptr<RankPair>> rankPairMap_{};
+    Hccl::RankIpPortMap rankIpPortMap_;
 };
 
 } // namespace hccl
