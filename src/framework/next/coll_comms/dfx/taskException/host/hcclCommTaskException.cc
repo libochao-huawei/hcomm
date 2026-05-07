@@ -293,6 +293,7 @@ void TaskExceptionHost::ProcessException(rtExceptionInfo_t* exceptionInfo, const
     if (taskInfo.taskParam_.taskType == Hccl::TaskParamType::TASK_NOTIFY_WAIT) {
         PrintTaskContextInfo(exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid);
     }
+    std::string ClusterMonitorErrMsg = AicpuGetAndPrintClusterMonitorErr(exceptionInfo);
     HCCL_ERROR("[TaskExceptionHost]Task run failed, base information is deviceID:[%u], %s.",
         exceptionInfo->deviceid, taskInfo.GetBaseInfo().c_str());
     HCCL_ERROR("[TaskExceptionHost]Task run failed, para information is %s.", taskInfo.GetParaInfo().c_str());
