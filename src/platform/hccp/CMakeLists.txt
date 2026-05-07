@@ -50,11 +50,6 @@ if(NOT BUILD_OPEN_PROJECT)
     )
 endif()
 
-# c_sec、mmpa、unified_dlog动态库搜索路径
-target_link_directories(hccp_service.bin PRIVATE
-    ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/
-)
-
 target_compile_options(hccp_service.bin PRIVATE
     -Werror -Wall -fPIC -fPIE -rdynamic -fvisibility=hidden -fno-common -fsigned-char -fno-strict-aliasing -std=gnu11
     -fstack-protector-strong

@@ -199,10 +199,6 @@ if(BUILD_OPEN_PROJECT)
 
         ${THIRD_PARTY_NLOHMANN_PATH}
     )
-
-    target_link_directories(hccd PRIVATE
-        ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
-    )
 else()
     target_include_directories(hccd PRIVATE
         ${TOP_DIR}/inc
@@ -380,14 +376,6 @@ if(BUILD_OPEN_PROJECT)
         ${RDMA_CORE_INCLUDE_DIR}
 
         ${THIRD_PARTY_NLOHMANN_PATH}
-    )
-
-    target_link_directories(ccl_kernel_plf PRIVATE
-        ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
-    )
-
-    target_link_directories(ccl_kernel_plf_a PRIVATE
-        ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
     )
 else()
     target_include_directories(ccl_kernel_plf PRIVATE

@@ -92,11 +92,6 @@ if(NOT BUILD_OPEN_PROJECT)
     )
 endif()
 
-# c_sec、mmpa、unified_dlog动态库搜索路径
-target_link_directories(rs PRIVATE
-    ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/
-)
-
 target_compile_options(rs PRIVATE
     -Werror -fvisibility=hidden -fno-strict-aliasing -fsigned-char -fno-common -Wfloat-equal
     -Wextra -Wno-unused-parameter -std=gnu11

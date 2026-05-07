@@ -118,9 +118,6 @@ if(BUILD_OPEN_PROJECT)
         ${RDMA_CORE_INCLUDE_DIR}
     )
 
-    target_link_directories(hccl_plf PRIVATE
-        ${ASCEND_CANN_PACKAGE_PATH}/lib64
-    )
 else()
     target_include_directories(hccl_plf PRIVATE
         ${TOP_DIR}/abl/atrace/inc/utrace
