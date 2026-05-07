@@ -13,6 +13,7 @@
 #include "hccp_common.h"
 #include "enum_factory.h"
 #include "hccl_common.h"
+#include "mem_device_pub.h"
 #include "../host/exchange_rdma_conn_dto.h"
 #include "orion_adapter_hccp.h"
 #include "hcomm/hcomm_res_entity_defs.h"
@@ -88,10 +89,10 @@ private:
     QpAttrDto           locQpAttr_{};
     Hccl::QpInfo        qpInfo_{};
 
-    void*               SqPi_{nullptr};
-    void*               SqCi_{nullptr};
-    void*               CqPi_{nullptr};
-    void*               CqCi_{nullptr};
+    hccl::DeviceMem    SqPiMem_;
+    hccl::DeviceMem    SqCiMem_;
+    hccl::DeviceMem    CqPiMem_;
+    hccl::DeviceMem    CqCiMem_;
 };
 
 } // namespace hcomm
