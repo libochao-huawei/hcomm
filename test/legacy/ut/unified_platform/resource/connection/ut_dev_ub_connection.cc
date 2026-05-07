@@ -961,5 +961,5 @@ TEST_F(DevUbConnectionTest, Ut_Describe_Tp_Mode)
     ret = devUbConnection.Describe(testDfx);
     EXPECT_NE(ret, HcclResult::HCCL_SUCCESS);
     ret = devUbConnection.Describe(testDfx);
-    // EXPECT_NE(ret, HcclResult::HCCL_SUCCESS);
+    EXPECT_NE(ret, HcclResult::HCCL_SUCCESS);
 }
