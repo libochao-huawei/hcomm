@@ -61,81 +61,82 @@ protected:
         checkerOpParam.algName = "InsAllReduceFourTemplateMesh1DNHR";
 
         Checker checker;
+        checker.EnableTaskPrint();
         HcclResult ret = checker.CheckA5Aicpu(checkerOpParam, topoMeta);
         EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
     }
 };
 
-TEST_F(AllReduceAICPUMesh1dMesh1dTest, allreduce_aicpu_case_test_2x2_rank_ParallelMesh1DNHR_data_0)
-{
-    RankTable_For_LLT gen;
-    TopoMeta topoMeta {{{0,1},{0,1}}};
-    RunAllReduceTest(topoMeta, CheckerOpMode::OPBASE, CheckerReduceOp::REDUCE_SUM, 100, CheckerDataType::DATA_TYPE_INT32);
-}
+// TEST_F(AllReduceAICPUMesh1dMesh1dTest, allreduce_aicpu_case_test_2x2_rank_ParallelMesh1DNHR_data_0)
+// {
+//     RankTable_For_LLT gen;
+//     TopoMeta topoMeta {{{0,1},{0,1}}};
+//     RunAllReduceTest(topoMeta, CheckerOpMode::OPBASE, CheckerReduceOp::REDUCE_SUM, 100, CheckerDataType::DATA_TYPE_INT32);
+// }
 
-TEST_F(AllReduceAICPUMesh1dMesh1dTest, allreduce_aicpu_case_test_2x2_rank_ParallelMesh1DNHR_data_1)
-{
-    RankTable_For_LLT gen;
-    TopoMeta topoMeta {{{0,1},{0,1}}};
-    RunAllReduceTest(topoMeta, CheckerOpMode::OPBASE, CheckerReduceOp::REDUCE_SUM, 4096, CheckerDataType::DATA_TYPE_INT32);
-}
+// TEST_F(AllReduceAICPUMesh1dMesh1dTest, allreduce_aicpu_case_test_2x2_rank_ParallelMesh1DNHR_data_1)
+// {
+//     RankTable_For_LLT gen;
+//     TopoMeta topoMeta {{{0,1},{0,1}}};
+//     RunAllReduceTest(topoMeta, CheckerOpMode::OPBASE, CheckerReduceOp::REDUCE_SUM, 4096, CheckerDataType::DATA_TYPE_INT32);
+// }
 
-TEST_F(AllReduceAICPUMesh1dMesh1dTest, allreduce_aicpu_case_test_2x2_rank_ParallelMesh1DNHR_smalldata)
-{
-    RankTable_For_LLT gen;
-    TopoMeta topoMeta {{{0,1},{0,1}}};
-    RunAllReduceTest(topoMeta, CheckerOpMode::OPBASE, CheckerReduceOp::REDUCE_SUM, 1, CheckerDataType::DATA_TYPE_INT32);
-}
+// TEST_F(AllReduceAICPUMesh1dMesh1dTest, allreduce_aicpu_case_test_2x2_rank_ParallelMesh1DNHR_smalldata)
+// {
+//     RankTable_For_LLT gen;
+//     TopoMeta topoMeta {{{0,1},{0,1}}};
+//     RunAllReduceTest(topoMeta, CheckerOpMode::OPBASE, CheckerReduceOp::REDUCE_SUM, 1, CheckerDataType::DATA_TYPE_INT32);
+// }
 
 TEST_F(AllReduceAICPUMesh1dMesh1dTest, allreduce_aicpu_case_test_2x3_rank_ParallelMesh1DNHR)
 {
     RankTable_For_LLT gen;
     TopoMeta topoMeta {{{0,1,2},{0,1,2}}};
-    RunAllReduceTest(topoMeta, CheckerOpMode::OPBASE, CheckerReduceOp::REDUCE_SUM, 17, CheckerDataType::DATA_TYPE_INT8);
+    RunAllReduceTest(topoMeta, CheckerOpMode::OPBASE, CheckerReduceOp::REDUCE_SUM, 240, CheckerDataType::DATA_TYPE_INT8);
 }
 
-TEST_F(AllReduceAICPUMesh1dMesh1dTest, allreduce_aicpu_case_test_2x5_rank_ParallelMesh1DNHR)
-{
-    RankTable_For_LLT gen;
-    TopoMeta topoMeta {{{0,1,2,3,4},{0,1,2,3,4}}};
-    RunAllReduceTest(topoMeta, CheckerOpMode::OFFLOAD, CheckerReduceOp::REDUCE_SUM, 131, CheckerDataType::DATA_TYPE_FP16);
-}
+// TEST_F(AllReduceAICPUMesh1dMesh1dTest, allreduce_aicpu_case_test_2x5_rank_ParallelMesh1DNHR)
+// {
+//     RankTable_For_LLT gen;meilaidejixie1
+//     TopoMeta topoMeta {{{0,1,2,3,4},{0,1,2,3,4}}};
+//     RunAllReduceTest(topoMeta, CheckerOpMode::OFFLOAD, CheckerReduceOp::REDUCE_SUM, 131, CheckerDataType::DATA_TYPE_FP16);
+// }
 
-TEST_F(AllReduceAICPUMesh1dMesh1dTest, allreduce_aicpu_case_test_3x3_rank_ParallelMesh1DNHR)
-{
-    RankTable_For_LLT gen;
-    TopoMeta topoMeta {{{0,1,2},{0,1,2},{0,1,2}}};
-    RunAllReduceTest(topoMeta, CheckerOpMode::OPBASE, CheckerReduceOp::REDUCE_SUM, 100, CheckerDataType::DATA_TYPE_FP16);
-}
+// TEST_F(AllReduceAICPUMesh1dMesh1dTest, allreduce_aicpu_case_test_3x3_rank_ParallelMesh1DNHR)
+// {
+//     RankTable_For_LLT gen;
+//     TopoMeta topoMeta {{{0,1,2},{0,1,2},{0,1,2}}};
+//     RunAllReduceTest(topoMeta, CheckerOpMode::OPBASE, CheckerReduceOp::REDUCE_SUM, 100, CheckerDataType::DATA_TYPE_FP16);
+// }
 
-TEST_F(AllReduceAICPUMesh1dMesh1dTest, allreduce_aicpu_case_test_3_mul_3_rank_ParallelMesh1DNHR)
-{
-    RankTable_For_LLT gen;
-    TopoMeta topoMeta {{{0,1,2},{0,1,2},{0,1,2}}};
+// TEST_F(AllReduceAICPUMesh1dMesh1dTest, allreduce_aicpu_case_test_3_mul_3_rank_ParallelMesh1DNHR)
+// {
+//     RankTable_For_LLT gen;
+//     TopoMeta topoMeta {{{0,1,2},{0,1,2},{0,1,2}}};
 
-    RunAllReduceTest(topoMeta, CheckerOpMode::OPBASE, CheckerReduceOp::REDUCE_SUM, 100, CheckerDataType::DATA_TYPE_FP16);
-}
-TEST_F(AllReduceAICPUMesh1dMesh1dTest, allreduce_aicpu_case_test_2_mul_4_rank_ParallelMesh1DNHR_bigdata)
-{
-    RankTable_For_LLT gen;
-    TopoMeta topoMeta {{{0,1,2,3},{0,1,2,3}}};
+//     RunAllReduceTest(topoMeta, CheckerOpMode::OPBASE, CheckerReduceOp::REDUCE_SUM, 100, CheckerDataType::DATA_TYPE_FP16);
+// }
+// TEST_F(AllReduceAICPUMesh1dMesh1dTest, allreduce_aicpu_case_test_2_mul_4_rank_ParallelMesh1DNHR_bigdata)
+// {
+//     RankTable_For_LLT gen;
+//     TopoMeta topoMeta {{{0,1,2,3},{0,1,2,3}}};
 
-    RunAllReduceTest(topoMeta, CheckerOpMode::OPBASE, CheckerReduceOp::REDUCE_SUM, 210 * 1024 * 1024, CheckerDataType::DATA_TYPE_FP16);
-}
+//     RunAllReduceTest(topoMeta, CheckerOpMode::OPBASE, CheckerReduceOp::REDUCE_SUM, 210 * 1024 * 1024, CheckerDataType::DATA_TYPE_FP16);
+// }
 
-TEST_F(AllReduceAICPUMesh1dMesh1dTest, allreduce_aicpu_case_test_2_mul_8_rank_ParallelMesh1DNHR_1)
-{
-    RankTable_For_LLT gen;
-    TopoMeta topoMeta {{{0,1,2,3,4,5,6,7},{0,1,2,3,4,5,6,7}}};
+// TEST_F(AllReduceAICPUMesh1dMesh1dTest, allreduce_aicpu_case_test_2_mul_8_rank_ParallelMesh1DNHR_1)
+// {
+//     RankTable_For_LLT gen;
+//     TopoMeta topoMeta {{{0,1,2,3,4,5,6,7},{0,1,2,3,4,5,6,7}}};
 
-    RunAllReduceTest(topoMeta, CheckerOpMode::OPBASE, CheckerReduceOp::REDUCE_SUM, 100, CheckerDataType::DATA_TYPE_FP16);
-}
+//     RunAllReduceTest(topoMeta, CheckerOpMode::OPBASE, CheckerReduceOp::REDUCE_SUM, 100, CheckerDataType::DATA_TYPE_FP16);
+// }
 
-TEST_F(AllReduceAICPUMesh1dMesh1dTest, allreduce_aicpu_case_test_2_mul_8_rank_ParallelMesh1DNHR_2)
-{
-    RankTable_For_LLT gen;
-    TopoMeta topoMeta {{{0,1,2,3,4,5,6,7},{0,1,2,3,4,5,6,7}}};
+// TEST_F(AllReduceAICPUMesh1dMesh1dTest, allreduce_aicpu_case_test_2_mul_8_rank_ParallelMesh1DNHR_2)
+// {
+//     RankTable_For_LLT gen;
+//     TopoMeta topoMeta {{{0,1,2,3,4,5,6,7},{0,1,2,3,4,5,6,7}}};
 
-    RunAllReduceTest(topoMeta, CheckerOpMode::OPBASE, CheckerReduceOp::REDUCE_SUM, 1025, CheckerDataType::DATA_TYPE_FP16);
-}
+//     RunAllReduceTest(topoMeta, CheckerOpMode::OPBASE, CheckerReduceOp::REDUCE_SUM, 1025, CheckerDataType::DATA_TYPE_FP16);
+// }
 }

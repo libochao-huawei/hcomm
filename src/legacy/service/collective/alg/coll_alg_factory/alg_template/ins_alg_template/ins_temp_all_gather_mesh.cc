@@ -95,7 +95,6 @@ HcclResult InsTempAllGatherMesh1D::GenExtIns(const TempFuncs &tempFuncs, const T
     localInsQues.push_back(tempInsQues[0]);
     localInsQues.push_back(tempInsQues[tempInsQues.size() - 1]);
 
-    CHK_RET(LocalCopyToScratch(tempInsQues[0]));
     // 如果输入和输出内存是同一片地址则必须先拷贝完成再运算Mesh，否则的话提升性能同步并行
     if (tempAlgParams.buffInfo.inBuffType == tempAlgParams.buffInfo.outBuffType) {
         // 因为后续RunMesh会写Output，如果inBuffType和outBuffType先同步后拷贝会导致改写
@@ -145,32 +144,6 @@ HcclResult InsTempAllGatherMesh1D::LocalCopyToUsrOut(InsQuePtr tempInsQue)
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult InsTempAllGatherMesh1D::LocalCopyToScratch(InsQuePtr tempInsQue)
-{
-    u32 myAlgRank;
-    CHK_RET(GetAlgRank(myRank_, tempVTopo_[0], myAlgRank));
-    // 做个保护，tailSize填写为0就认为尾块是正常块
-    u64 tailSize = (tempAlgParams_.tailSize == 0) ? tempAlgParams_.sliceSize : tempAlgParams_.tailSize;
-    u64 sliceSize = (myAlgRank == tempRankSize_ - 1) ? tailSize : tempAlgParams_.sliceSize;
-
-    if (opMode_ == OpMode::OPBASE) {
-        for (u32 rpt = 0; rpt < tempAlgParams_.repeatNum; ++rpt) {
-            const u64 scratchRepeatStride = tempAlgParams_.sliceSize * (tempRankSize_ - 1) + tailSize;
-            const u64 inBaseOff = tempAlgParams_.buffInfo.inBuffBaseOff + rpt * tempAlgParams_.inputRepeatStride;
-            const u64 outBaseOff = tempAlgParams_.buffInfo.scratchBuffBaseOff + rpt * scratchRepeatStride;
-            const u64 inOff = tempAlgParams_.inputSliceStride * myAlgRank + inBaseOff;
-            const u64 outOff = tempAlgParams_.sliceSize * myAlgRank + outBaseOff;
-
-            DataSlice src(tempAlgParams_.buffInfo.inBuffType, inOff, sliceSize);
-            DataSlice dst(tempAlgParams_.buffInfo.scratBuffType, outOff, sliceSize);
-            HCCL_INFO("[InsTempAllGatherMesh1D] in:%s -> scratch:%s", src.Describe().c_str(), dst.Describe().c_str());
-
-            auto ins = std::make_unique<InsLocalCopy>(src, dst);
-            tempInsQue->Append(std::move(ins));
-        }
-    }
-    return HcclResult::HCCL_SUCCESS;
-}
 HcclResult InsTempAllGatherMesh1D::SingleRunMesh(
     const u32 myAlgRank, u32 connectedRank, std::vector<InsQuePtr> &tempInsQues, u32 &queIdx)
 {
@@ -232,21 +205,16 @@ void InsTempAllGatherMesh1D::PrepareLinkSlices(const u32 myAlgRank, const u32 co
     const std::vector<float> &dataSplitRate, const u32 linkIndex, std::vector<DataSlice> &txSrcSlices,
     std::vector<DataSlice> &txDstSlices, std::vector<DataSlice> &rxSrcSlices, std::vector<DataSlice> &rxDstSlices)
 {
-    BufferType writeType
-        = (opMode_ == OpMode::OPBASE) ? tempAlgParams_.buffInfo.scratBuffType : tempAlgParams_.buffInfo.inBuffType;
+    BufferType writeType = tempAlgParams_.buffInfo.inBuffType;
     for (u32 rpt = 0; rpt < tempAlgParams_.repeatNum; ++rpt) {
         const u64 inBaseOff = tempAlgParams_.buffInfo.inBuffBaseOff + rpt * tempAlgParams_.inputRepeatStride;
         const u64 outBaseOff = tempAlgParams_.buffInfo.outBuffBaseOff + rpt * tempAlgParams_.outputRepeatStride;
-        const u64 scratchRepeatStride = tempAlgParams_.sliceSize * (tempRankSize_ - 1) + tempAlgParams_.tailSize;
-        const u64 scratchBase = tempAlgParams_.buffInfo.scratchBuffBaseOff + rpt * scratchRepeatStride;
         u64 txInOffset = tempAlgParams_.inputSliceStride * myAlgRank + inBaseOff;
         u64 txOutOffset = tempAlgParams_.outputSliceStride * myAlgRank + outBaseOff;
-        u64 txScratchOffset = scratchBase + tempAlgParams_.sliceSize * myAlgRank;
-        u64 txDstOffset = (opMode_ == OpMode::OPBASE) ? txScratchOffset : txOutOffset;
+        u64 txDstOffset = txOutOffset;
         u64 rxInOffset = tempAlgParams_.inputSliceStride * connectedAlgRank + inBaseOff;
         u64 rxOutOffset = tempAlgParams_.outputSliceStride * connectedAlgRank + outBaseOff;
-        u64 rxScratchOffset = scratchBase + tempAlgParams_.sliceSize * connectedAlgRank;
-        u64 rxSrcOffset = (opMode_ == OpMode::OPBASE) ? rxScratchOffset : rxInOffset;
+        u64 rxSrcOffset = rxInOffset;
         u64 sendSliceSize = (myAlgRank == tempRankSize_ - 1) ? tempAlgParams_.tailSize : tempAlgParams_.sliceSize;
         u64 recvSliceSize
             = (connectedAlgRank == tempRankSize_ - 1) ? tempAlgParams_.tailSize : tempAlgParams_.sliceSize;

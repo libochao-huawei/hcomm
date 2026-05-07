@@ -41,7 +41,6 @@ public:
     }
 
 private:
-    HcclResult LocalCopyToScratch(InsQuePtr tempInsQue);
     HcclResult LocalCopyToUsrOut(InsQuePtr tempInsQue);
     HcclResult RunMesh(const u32 myAlgRank, const std::vector<RankId> &vTopo, std::vector<InsQuePtr> &tempInsQues);
     HcclResult SingleRunMesh(const u32 myAlgRank, u32 connectedRank, std::vector<InsQuePtr> &tempInsQues, u32 &queIdx);
