@@ -1,0 +1,82 @@
+# HcclChannelAcquire
+
+## 产品支持情况
+
+- Ascend 950PR/Ascend 950DT：支持
+- Atlas A3 训练系列产品/Atlas A3 推理系列产品：支持
+- Atlas A2 训练系列产品/Atlas A2 推理系列产品：支持
+
+> [!NOTE]说明
+> 针对Atlas A2 训练系列产品/Atlas A2 推理系列产品，仅支持Atlas 800T A2 训练服务器、Atlas 900 A2 PoD 集群基础单元、Atlas 200T A2 Box16 异构子框。
+
+## 功能说明
+
+基于通信域获取多个通信通道，如果通信域中没有对应的通信通道则直接创建。
+
+channel是否复用，依据commId + engine + remoterank + channelProtocol组成的channel唯一标识判断。
+
+## 函数原型
+
+```c
+HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine, const HcclChannelDesc *channelDescs, uint32_t channelNum, ChannelHandle *channels)
+```
+
+## 参数说明
+
+| 参数名 | 输入/输出 | 描述 |
+| --- | --- | --- |
+| comm | 输入 | 通信域句柄。<br>HcclComm类型的定义如下：<br>typedef void *HcclComm; |
+| engine | 输入 | 通信引擎类型。<br>CommEngine类型的定义可参见[CommEngine](../../datatype_definition/CommEngine.md)。 |
+| channelDescs | 输入 | 通信通道描述列表，列表长度为channelNum。<br>HcclChannelDesc类型的定义可参见[HcclChannelDesc](../../datatype_definition/HcclChannelDesc.md)，通过[HcclRankGraphGetLinks](../topo_info_query/HcclRankGraphGetLinks.md)函数获取。 |
+| channelNum | 输入 | 通信通道数量，channelNum的取值范围为(0, 1024 * 1024]。 |
+| channels | 输出 | 通信通道句柄列表，通信通道句柄列表长度为channelNum。 |
+
+## 返回值
+
+[HcclResult](../../../comm_mgr_c/data_type_definition/HcclResult.md)：接口成功返回HCCL_SUCCESS，其他失败。
+
+## 约束说明
+
+当前CommEngine配置为CCU时，不支持外部配置NotifyNum，默认分配8个CCU Notify。
+
+当前CommEngine配置为CCU时，不支持交换额外自定义内存，仅支持交换通信域的HcclBuffer。
+
+## 调用示例
+
+以批量通信通道为例：
+
+```c
+// 1. 调用 HcclRankGraphGetLinks 获取链路信息
+CommLink *linkList = nullptr;
+uint32_t listSize;
+CHK_RET(HcclRankGraphGetLinks(comm, netLayer, myRank, rank, &linkList, &listSize));
+
+// 2. 遍历每个 CommLink，填充 HcclChannelDesc
+uint32_t channelNum = listSize;
+std::vector<HcclChannelDesc> channelDescVec(channelNum);
+for (uint32_t idx = 0; idx < listSize; idx++) {
+  HcclChannelDesc channelDesc;
+  HcclChannelDescInit(&channelDesc, 1);
+  channelDesc.remoteRank = rank;
+
+  CommLink link = linkList[idx];
+
+  //  核心映射：从 CommLink 提取 Endpoint 信息
+  channelDesc.localEndpoint.protocol = link.srcEndpointDesc.protocol;
+  channelDesc.localEndpoint.commAddr = link.srcEndpointDesc.commAddr;
+  channelDesc.localEndpoint.loc    = link.srcEndpointDesc.loc;
+  channelDesc.remoteEndpoint.protocol = link.dstEndpointDesc.protocol;
+  channelDesc.remoteEndpoint.commAddr = link.dstEndpointDesc.commAddr;
+  channelDesc.remoteEndpoint.loc   = link.dstEndpointDesc.loc;
+  channelDesc.channelProtocol     = link.linkAttr.linkProtocol;
+  channelDesc.notifyNum = NORMAL_NOTIFY_NUM;
+
+  channelDescVec[idx] = channelDesc;
+}
+
+// 3. 批量创建 Channel
+HcclComm comm;
+CommEngine engine = CommEngine::COMM_ENGINE_CPU_TS;
+std::vector<ChannelHandle> channels(channelNum);
+HcclChannelAcquire(comm, engine, channelDescVec.data(), channelNum, channels.data());
+```
