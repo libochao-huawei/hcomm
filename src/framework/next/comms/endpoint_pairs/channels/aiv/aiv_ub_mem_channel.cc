@@ -62,7 +62,7 @@ ChannelStatus AivUbMemChannel::GetStatus()
             break;
         default:
             HCCL_ERROR("[AivUbMemChannel][%s] Invalid TransportStatus[%d]", __func__, transportStatus);
-            out = ChannelStatus::INVALID;
+            out = ChannelStatus::FAILED;
             break;
     }
     return out;
