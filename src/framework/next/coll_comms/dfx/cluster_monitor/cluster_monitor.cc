@@ -684,8 +684,8 @@ HcclResult ClusterMonitor::RegisterToClusterMonitor(HcclComm comm)
             // 若newConn=false，说明不是新增的连接
             // 1. 通信域找不到，2.通信域内能找到但还没有连接，计数++
             uid2SocketRefMap_.ref(item.first);
-            // HCCL_RUN_INFO("commId:[%s], establish rank[%s] to rank[%s] heartbeat connection success.", commId.c_str(),
-            //     FormatUId(uid_).c_str(), FormatUId(item.first).c_str());
+            HCCL_RUN_INFO("commId:[%s], establish rank[%s] to rank[%s] heartbeat connection success.", commId.c_str(),
+                GetUID(myRankUID_).c_str(), GetUID(item.first).c_str());
             commIdMap_[commId][item.first] = true; // 认为通信域中对应的连接已经建立
         }
     }
