@@ -76,7 +76,7 @@ public:
     virtual HcclResult Clean()        = 0;
     virtual HcclResult Resume()       = 0;
 
-    virtual void SetPtrArrayDevPtr(std::shared_ptr<void> ptr) { (void)ptr; }
+    virtual void SetPtrArrayDevPtr(std::shared_ptr<hccl::DeviceMem> ptr) { (void)ptr; }
 
     virtual HcommChannelKind GetChannelKind() const;
     virtual HcclResult Serialize(std::shared_ptr<hccl::DeviceMem> &out);
