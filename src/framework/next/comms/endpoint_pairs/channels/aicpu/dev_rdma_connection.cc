@@ -142,12 +142,12 @@ HcclResult DevRdmaConnection::CreateQp()
 
     // 云脉驱动没有提供软件写 PI/CI 的地址空间，需要手动创建
     if (dmaMode_ == QBUF_DMA_MODE_DEFAULT) {
-        SqPi_ = Hccl::HrtMalloc(sizeof(void*), static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH));
-        SqCi_ = Hccl::HrtMalloc(sizeof(void*), static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH));
-        CqPi_ = Hccl::HrtMalloc(sizeof(void*), static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH));
-        CqCi_ = Hccl::HrtMalloc(sizeof(void*), static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH));
-        CHK_PRT_RET(SqPi_ == nullptr || SqCi_ == nullptr || CqPi_ == nullptr || CqCi_ == nullptr,
-            HCCL_ERROR("%s HrtMalloc for SqPi_ or SqCi_ or CqPi_ or CqCi_ failed, size=%zu", __func__, sizeof(void*)),
+        SqPiMem_ = hccl::DeviceMem::alloc(sizeof(void*));
+        SqCiMem_ = hccl::DeviceMem::alloc(sizeof(void*));
+        CqPiMem_ = hccl::DeviceMem::alloc(sizeof(void*));
+        CqCiMem_ = hccl::DeviceMem::alloc(sizeof(void*));
+        CHK_PRT_RET(!SqPiMem_ || !SqCiMem_ || !CqPiMem_ || !CqCiMem_,
+            HCCL_ERROR("%s DeviceMem::alloc for SqPi_ or SqCi_ or CqPi_ or CqCi_ failed, size=%zu", __func__, sizeof(void*)),
             HCCL_E_MEMORY);
     }
 
@@ -171,10 +171,10 @@ HcclResult DevRdmaConnection::DestroyQp()
         qpHandle_ = nullptr;
     }
 
-    if (SqPi_ != nullptr) { Hccl::HrtFree(SqPi_); SqPi_ = nullptr; }
-    if (SqCi_ != nullptr) { Hccl::HrtFree(SqCi_); SqCi_ = nullptr; }
-    if (CqPi_ != nullptr) { Hccl::HrtFree(CqPi_); CqPi_ = nullptr; }
-    if (CqCi_ != nullptr) { Hccl::HrtFree(CqCi_); CqCi_ = nullptr; }
+    SqPiMem_ = hccl::DeviceMem();
+    SqCiMem_ = hccl::DeviceMem();
+    CqPiMem_ = hccl::DeviceMem();
+    CqCiMem_ = hccl::DeviceMem();
 
     rdmaConnStatus_ = RdmaConnStatus::CLOSED;
     return HCCL_SUCCESS;
@@ -287,8 +287,8 @@ HcclResult DevRdmaConnection::BuildSqContext(SqContext* context)
     context->contextInfo.rdmaSqContext.wqeSize = ndaQpInfo_.sqInfo.qBuf.entrySize;
     context->contextInfo.rdmaSqContext.depth = ndaQpInfo_.sqInfo.qBuf.entryCnt;
     if (dmaMode_ == QBUF_DMA_MODE_DEFAULT) {
-        context->contextInfo.rdmaSqContext.headAddr = reinterpret_cast<uint64_t >(SqPi_);
-        context->contextInfo.rdmaSqContext.tailAddr = reinterpret_cast<uint64_t >(SqCi_);
+        context->contextInfo.rdmaSqContext.headAddr = reinterpret_cast<uint64_t >(SqPiMem_.ptr());
+        context->contextInfo.rdmaSqContext.tailAddr = reinterpret_cast<uint64_t >(SqCiMem_.ptr());
     } else {
         context->contextInfo.rdmaSqContext.headAddr = reinterpret_cast<uint64_t >(ndaQpInfo_.sqInfo.dbrPiVa.iovBase);
         context->contextInfo.rdmaSqContext.tailAddr = reinterpret_cast<uint64_t >(ndaQpInfo_.sqInfo.dbrCiVa.iovBase);
@@ -322,8 +322,8 @@ HcclResult DevRdmaConnection::BuildCqContext(CqContext* context)
     context->contextInfo.rdmaCqContext.cqeSize = ndaCqInfo_.cqInfo.qBuf.entrySize;
     context->contextInfo.rdmaCqContext.cqDepth = ndaCqInfo_.cqInfo.qBuf.entryCnt;
     if (dmaMode_ == QBUF_DMA_MODE_DEFAULT) {
-        context->contextInfo.rdmaCqContext.headAddr = reinterpret_cast<uint64_t >(CqPi_);
-        context->contextInfo.rdmaCqContext.tailAddr = reinterpret_cast<uint64_t >(CqCi_);
+        context->contextInfo.rdmaCqContext.headAddr = reinterpret_cast<uint64_t >(CqPiMem_.ptr());
+        context->contextInfo.rdmaCqContext.tailAddr = reinterpret_cast<uint64_t >(CqCiMem_.ptr());
     } else {
         context->contextInfo.rdmaCqContext.headAddr = reinterpret_cast<uint64_t >(ndaCqInfo_.cqInfo.dbrPiVa.iovBase);
         context->contextInfo.rdmaCqContext.tailAddr = reinterpret_cast<uint64_t >(ndaCqInfo_.cqInfo.dbrCiVa.iovBase);
