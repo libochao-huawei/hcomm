@@ -156,6 +156,22 @@ extern int32_t HcommAclrtNotifyWaitOnThread(ThreadHandle thread, uint64_t notify
  */
 
 /**
+ * @brief 批量数据传输操作
+ * @param[in] thread 线程句柄
+ * @param[in] channel 通道句柄
+ * @param[out] dstList 目标地址列表
+ * @param[in] srcList 源地址列表
+ * @param[in] lenList 每个元素的长度列表
+ * @param[in] rw 读写操作标识列表（0=WRITE, 非0=READ）
+ * @param[in] dataType 数据类型列表
+ * @param[in] reduceOp 归约操作列表
+ * @param[in] count 传输元素数量
+ * @return HCCL_SUCCESS 成功，其他值表示失败
+ */
+extern int32_t HcommBatchTransfer(ThreadHandle thread, ChannelHandle channel, void **rmtList, void **locList,
+    uint64_t *lenList, uint32_t *rw, HcommDataType *dataType, HcommReduceOp *reduceOp, uint32_t count);
+
+/**
  * @brief 单边写操作
  * @param[in] thread 线程句柄
  * @param[in] channel 通道句柄
