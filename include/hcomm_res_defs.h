@@ -213,6 +213,9 @@ typedef struct {
         struct {
             uint32_t qos;            ///< HCCS QoS
         } hccsAttr;
+        struct {
+            uint32_t sqDepth;         ///< UB队列深度，0表示使用默认值
+        } ubAttr;
     };
 } HcommChannelDesc;
 
@@ -277,6 +280,7 @@ static inline HcommResult HcommChannelDescInit(HcommChannelDesc *channelDesc, ui
         if (EndpointDescInit(&channelDesc->remoteEndpoint, 1) != 0) {
             return hcommEInternal;
         }
+        channelDesc->ubAttr.sqDepth = 0;      // 0表示使用默认值
         ++channelDesc;
     }
 

@@ -209,7 +209,7 @@ void RankInfoDispather::ProcessSend()
                         HCCL_ERROR("[RankInfoDispather::%s] epoll_wait timeout.", __func__), TimeoutException, "epoll_wait timeout");
         
         // 等待epoll事件
-        s32 epollTimeout = lastEpollWaitFlag ? LAST_EPOLL_TIMEOUT_MS : EPOLL_TIMEOUT_MS;
+        s32 epollTimeout = lastEpollWaitFlag ? EPOLL_TIMEOUT_MS : EPOLL_TIMEOUT_MS;
         u32 eventsNum{0};
         HrtRaWaitEventHandle(epollFds_, eventInfos, epollTimeout, sendEvsCount, eventsNum);
 
@@ -229,6 +229,7 @@ void RankInfoDispather::ProcessSend()
         }
         // 唤醒处理
         WakeWoker();
+        std::this_thread::sleep_for(std::chrono::seconds(10));
     }
 
     CloseEpollFd();
