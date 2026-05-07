@@ -88,18 +88,19 @@ static HcclResult GetDieIdByChannel(const ChannelHandle channel, uint32_t &dieId
 static HcclResult GetDieIdByChannels(const std::unordered_set<ChannelHandle> &channels, uint32_t &dieId)
 {
     if (channels.empty()) {
-        std::array<bool, CCU_MAX_IODIE_NUM> dieEnableInfos{false, false};
         int32_t devLogicId = HcclGetThreadDeviceId();
-        (void)CcuGetDieEnableInfos(devLogicId, dieEnableInfos);
-        dieId = CCU_MAX_IODIE_NUM;
         for (uint32_t die = 0; die < CCU_MAX_IODIE_NUM; die++) {
-            if (dieEnableInfos[die]) {
+            bool enableFlag = false;
+            CHK_RET(static_cast<HcclResult>(CcuGetDieEnableInfo(devLogicId, die, enableFlag)));
+            if (enableFlag) {
                 dieId = die;
-                break;
+                return HcclResult::HCCL_SUCCESS;
             }
         }
 
-        return HcclResult::HCCL_SUCCESS;
+        HCCL_ERROR("[CcuKernel][%s] failed, all dies are disable, devLogicId[%d].",
+            __func__, devLogicId);
+        return HcclResult::HCCL_E_INTERNAL;
     }
 
     uint32_t firstDieId = 0;
@@ -154,7 +155,7 @@ HcclResult CcuKernel::SelectDie()
     return HcclResult::HCCL_SUCCESS;
 }
 
-CcuResult CcuKernel::GeneTaskParams(uint64_t *taskArgs, uint32_t argsNum,
+CcuResult CcuKernel::GeneTaskParams(const uint64_t *taskArgs, uint32_t argsNum,
     std::vector<CcuTaskParam> &taskParams)
 {
     const uint32_t expectedMask = (argsNum >= 32) ? 0xFFFFFFFFu : ((argsNum == 0) ? 0u : ((1u << argsNum) - 1));

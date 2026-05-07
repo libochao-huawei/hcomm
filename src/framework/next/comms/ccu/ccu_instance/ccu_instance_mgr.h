@@ -20,8 +20,6 @@
 
 namespace hcomm {
 
-using namespace CcuRep;
-
 class CcuInstanceMgr {
 public:
     static CcuInstanceMgr &GetInstance(const int32_t deviceLogicId);

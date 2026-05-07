@@ -10,8 +10,6 @@
 #ifndef CCU_RES_PACK_H
 #define CCU_RES_PACK_H
 
-#include "hccl_res.h"
-
 #include "ccu_types.h"
 #include "ccu_device_pub.h"
 
