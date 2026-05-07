@@ -47,7 +47,7 @@ private:
     std::vector<RmaBufferLite> locBufferVec_{};
     std::vector<RmtRmaBufferLite> rmtBufferVec_{};
     std::vector<std::vector<char>> connUniqueIdVec_{};
-    std::vector<std::unique_ptr<RdmaConnLite>> connVec_{};
+    std::vector<std::unique_ptr<DevRdmaConnLite>> connVec_{};
     std::unique_ptr<RmaBufferLite> notifyValueBuffer_{};
 
     RmaBufSliceLite GetRmaBufSlicelite(const RmaBufferLite &lite) const;
