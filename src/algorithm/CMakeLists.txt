@@ -185,6 +185,32 @@ endif()
 add_subdirectory(base)
 add_subdirectory(impl)
 
+
+
+# ccl_kernel include directories
+if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/base/inc
+        ${CMAKE_CURRENT_SOURCE_DIR}/pub_inc
+
+        ${HCCL_BASE_DIR}/platform/
+        ${HCCL_BASE_DIR}/platform/inc/
+        ${HCCL_BASE_DIR}/platform/inc/adapter
+        ${HCCL_BASE_DIR}/platform/resource/transport/heterog/
+        ${HCCL_BASE_DIR}/platform/resource/transport/host/
+        ${HCCL_BASE_DIR}/platform/resource/transport/
+        ${HCCL_BASE_DIR}/platform/resource/notify/
+        ${HCCL_BASE_DIR}/platform/resource/dispatcher_ctx
+        ${HCCL_BASE_DIR}/platform/task
+        ${HCCL_BASE_DIR}/platform/common
+        ${HCCL_BASE_DIR}/platform/common/unique
+        ${HCCL_BASE_DIR}/platform/common/unfold_cache
+
+        ${HCCL_BASE_DIR}/platform/hccp/inc/network/
+        ${HCCL_BASE_DIR}/platform/hccp/inc/
+    )
+endif()
+
 install(TARGETS hccl_alg
     LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
     COMPONENT hcomm

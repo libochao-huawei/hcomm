@@ -25,6 +25,23 @@ target_sources(hccl_alg PRIVATE
     ${src_list_pub}
 )
 
+if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
+    target_sources(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/alg_template_register.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/alg_template_base.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/nonuniform_hierarchical_ring_base.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/nonuniform_hierarchical_ring_v1_base.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/nonuniform_bruck_base.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/asymmetric_hierarchical_concatenate_base.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/asymmetric_hierarchical_concatenate_alg_template_base.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/asymmetric_hierarchical_concatenate_nslb.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/recursive_halvingdoubling_base.cc
+    )
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()
+
 add_subdirectory(component)
 add_subdirectory(temp_alltoall)
 add_subdirectory(temp_all_gather)

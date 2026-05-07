@@ -14,4 +14,20 @@ target_sources(hccl_alg PRIVATE
     ${src_list}
 )
 
+if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
+    target_sources(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_v_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_v_aiv_big_count_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_v_mesh_aiv_smallcount_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_v_mesh_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_v_mesh_opbase_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_v_ring_for_910_93_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_aligned_reduce_scatter_v_double_ring_for_910_93_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_v_fast_double_ring_for_910_93_executor.cc
+    )
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()
+
 add_subdirectory(310P)

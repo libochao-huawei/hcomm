@@ -147,18 +147,16 @@ foreach(dir ${LEGACY_DIRS})
     endif()
 endforeach()
 
-# 定义 ccl_kernel_plf 库，在 device 侧使用
-include(platform/ccl_kernel_plf.cmake)
-# 定义 ccl_kernel 库，在 device 侧使用
-include(framework/ccl_kernel.cmake)
-
 # 将子目录添加到构建过程
+add_subdirectory(platform)
 add_subdirectory(framework)
+add_subdirectory(legacy)
 add_subdirectory(hccd)
 add_subdirectory(algorithm)
-add_subdirectory(platform)
 add_subdirectory(common)
 
 # 定义 aicpu_hcomm 库，在 device 侧使用
-# 注意：aicpu_hcomm 依赖 ccl_kernel 的源文件u列表，因此需要再其后定义
-include(framework/aicpu_custom.cmake)
+# 注意：aicpu_hcomm 依赖 ccl_kernel 的源文件u列表，因此需要在其后定义
+if("${PRODUCT_SIDE}" STREQUAL "device")
+    include(framework/aicpu_custom.cmake)
+endif()
