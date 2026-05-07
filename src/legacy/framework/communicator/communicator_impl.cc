@@ -1559,6 +1559,7 @@ void CommunicatorImpl::InitSocketManager()
     socketManager = std::make_unique<SocketManager>(*this, myRank, devPhyId, devLogicId);
     if (ranktableInfo != nullptr) {
         socketManager->SetDeviceServerListenPortMap(ranktableInfo->GetRankDeviceListenPortMap());
+        rankListenPortMap_ = ranktableInfo->GetRankDeviceListenPortMap();
     }
 }
 
@@ -3970,6 +3971,10 @@ HcclResult CommunicatorImpl::Mc2AiCpuStreamAllocAndGetV2(rtStream_t *aiCpuStream
     *aiCpuStream = stream->GetPtr();
     HCCL_RUN_INFO("[CommunicatorImpl::Mc2AiCpuStreamAllocAndGetV2] success, stream %s", stream->Describe().c_str());
     return HCCL_SUCCESS;
+}
+
+std::unordered_map<u32, std::unordered_map<IpAddress, u32>> CommunicatorImpl::GetRanktableInfo() {
+    return rankListenPortMap_;
 }
 
 } // namespace Hccl

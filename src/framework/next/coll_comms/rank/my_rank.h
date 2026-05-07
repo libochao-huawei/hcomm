@@ -35,7 +35,8 @@ namespace hccl {
  */
 class MyRank {
 public:
-    MyRank(aclrtBinHandle binHandle, uint32_t rankId, const CommConfig& config, const ManagerCallbacks& callbacks, RankGraph* rankGraph);
+    MyRank(aclrtBinHandle binHandle, uint32_t rankId, const CommConfig& config, const ManagerCallbacks& callbacks, 
+        RankGraph* rankGraph, std::unordered_map<u32, std::unordered_map<IpAddress, u32>>& rankListenPortMap);
     ~MyRank();
 
     HcclResult Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint32_t rankNum);
@@ -103,6 +104,8 @@ private:
 
     // Ns recovery
     std::unique_ptr<NsRecoveryProcessor> nsRecoveryProcessor_{nullptr};
+
+    std::unordered_map<u32, std::unordered_map<Hccl::IpAddress, u32>> rankListenPortMap_{};
 };
 
 } // namespace hccl
