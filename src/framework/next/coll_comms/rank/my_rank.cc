@@ -856,8 +856,8 @@ HcclResult MyRank::BatchExchangeAndCheckConsistency(
         for (u32 i = 0; i < uniqueCount; i++) {
             hcclComm->MarkRemoteRankChecked(remoteRanks[i]);
         }
-        hcclComm->ClearExchangeInfoState();
     }
+    hcclComm->ResetExchangeInfoState();
 
     return HCCL_SUCCESS;
 }

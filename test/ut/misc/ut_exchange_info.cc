@@ -100,7 +100,7 @@ TEST_F(ExchangeInfoTest, Ut_EndToEnd_When_AddStoreGet_Expect_Consistent)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     // 3. 清空本端交换信息状态（模拟HcclChannelAcquire建链后清空）
-    hcclCommPtr->ClearExchangeInfoState();
+    hcclCommPtr->ResetExchangeInfoState();
     EXPECT_FALSE(hcclCommPtr->IsExchangeInfoReady());
 
     // 4. 获取对端交换信息

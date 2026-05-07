@@ -627,6 +627,7 @@ TEST_F(MyRankTest, Ut_WaitAllAsyncComplete_When_AllOk_Expect_Success)
 
 TEST_F(MyRankTest, Ut_BatchExchange_When_NewRankConsistent_Expect_Success)
 {
+    setenv("HCCL_DFS_CONFIG", "task_exception:on", 1);
     setenv("HCCL_DFS_CONFIG", "inconsistent_check:first", 1);
     hcclComm comm;
     u8 exchangeData[] = {0xDE, 0xAD, 0xBE, 0xEF};
@@ -682,6 +683,7 @@ TEST_F(MyRankTest, Ut_BatchExchange_When_NewRankConsistent_Expect_Success)
 
     // 验证通过后rank 1被标记为已校验
     EXPECT_FALSE(comm.IsNewRemoteRank(1));
+    unsetenv("HCCL_DFS_CONFIG");
 }
 
 // 异常用例：新增channel Hcomm校验不通过，不走HCCL算子信息交换
@@ -736,7 +738,7 @@ TEST_F(MyRankTest, Ut_BatchExchange_When_HcommCheckFail_Expect_NoHcclExchange)
     EXPECT_EQ(ret, HCCL_E_INTERNAL);
 
     // 验证：Hcomm校验失败后不进入第二阶段HCCL交换，
-    // 交换信息未被消费（IsExchangeInfoReady仍为true，未被ClearExchangeInfoState清空）
+    // 交换信息未被消费（IsExchangeInfoReady仍为true，未被ResetExchangeInfoState清空）
     EXPECT_TRUE(comm.IsExchangeInfoReady());
 
     // 验证：失败后remoteRank未被标记为已校验
