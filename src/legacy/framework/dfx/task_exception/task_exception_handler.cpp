@@ -546,6 +546,9 @@ void TaskExceptionHandler::ProcessCcuException(const rtExceptionInfo_t* exceptio
     for (uint32_t i = 0; i < ccuExDetailInfo.ccuMissionNum; ++i) { // ccuExDetailInfo.ccuMissionNum为1
         const auto& missionInfo = ccuExDetailInfo.missionInfo[i]; // 异常mission
         uint16_t status = static_cast<uint16_t>(missionInfo.status) << BYTE | missionInfo.subStatus;
+        RPT_INPUT_ERR(true, "EI0018", std::vector<std::string>({"localServerId", "localDeviceId", "localDeviceIp",
+            "remoteServerId", "remoteDeviceId", "remoteDeviceIp"}),
+            std::vector<std::string>({"", std::to_string(missionInfo.dieId), "", "", "", ""}));
         PrintCcuErrorInfo(deviceId, status, taskInfo);
         // 打印寄存器信息
         PrintPanicLogInfo(missionInfo.panicLog);
