@@ -780,7 +780,7 @@ std::vector<std::string> SplitDfsConfig(const std::string &str, char delimiter)
 DfsConfig CastDfsConfig(const std::string &dfsConfigEnv)
 {
     constexpr std::size_t                              DFS_CONFIG_ITEM_NUM = 1;
-    const std::array<std::string, DFS_CONFIG_ITEM_NUM> taskExceptionName   = {"task_exception"};
+    const std::array<std::string, DFS_CONFIG_ITEM_NUM> taskExceptionName   = {"task_exception", "inconsistent_check"};
     bool                                               taskExceptionEnable = true;
     std::string                                        dfsConfigEnvCopy    = dfsConfigEnv;
     dfsConfigEnvCopy.erase(std::remove(dfsConfigEnvCopy.begin(), dfsConfigEnvCopy.end(), ' '), dfsConfigEnvCopy.end());
@@ -804,6 +804,10 @@ DfsConfig CastDfsConfig(const std::string &dfsConfigEnv)
                 THROW<InvalidParamsException>(StringFormat(
                     "env[HCCL_DFS_CONFIG] please set task_exception to 'on' or 'off'.", taskException.c_str()));
             }
+        }else if (itemPair[0] == taskExceptionName[1]) {
+            auto taskException = itemPair[1];
+            if (taskException != "off" && taskException != "on" && taskException != "first") {
+                HCCL_ERROR("inconsistent_check value is illegal");
         }
     }
     DfsConfig config{taskExceptionEnable};
