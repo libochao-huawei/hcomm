@@ -389,6 +389,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_CreateQp_Failed_Expect_FAILED)
     void *memHandle = static_cast<void *>(localRdmaRmaBuffer.get());
     channelDesc.memHandles = &memHandle;
     channelDesc.memHandleNum = 1;
+    channelDesc.roceAttr.queueNum = 1;
     auto impl_ = std::make_unique<hcomm::HostCpuRoceChannel>(endpointHandle, channelDesc);
     // Init
     EXPECT_EQ(impl_->Init(), HCCL_SUCCESS);
@@ -462,6 +463,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_ModifyQp_Failed_Expect_FAILED)
     void *memHandle = static_cast<void *>(localRdmaRmaBuffer.get());
     channelDesc.memHandles = &memHandle;
     channelDesc.memHandleNum = 1;
+    channelDesc.roceAttr.queueNum = 1;
     auto impl_ = std::make_unique<hcomm::HostCpuRoceChannel>(endpointHandle, channelDesc);
     // Init
     EXPECT_EQ(impl_->Init(), HCCL_SUCCESS);
@@ -526,6 +528,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_Rdma_Conn_Failed_Expect_ERROR)
     channelDesc.memHandles = &memHandle;
     channelDesc.memHandleNum = 1;
     channelDesc.notifyNum = 4;
+    channelDesc.roceAttr.queueNum = 1;
     auto impl_ = std::make_unique<hcomm::HostCpuRoceChannel>(endpointHandle, channelDesc);
     // Init
     EXPECT_EQ(impl_->Init(), HCCL_SUCCESS);
@@ -632,6 +635,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_HostCpuRoceChannel_Pack_And_Unpack_Expect
     channelDesc.memHandles = &memHandle;
     channelDesc.memHandleNum = 1;
     channelDesc.notifyNum = 4;
+    channelDesc.roceAttr.queueNum = 1;
     auto impl_ = std::make_unique<hcomm::HostCpuRoceChannel>(endpointHandle, channelDesc);
     // Init
     EXPECT_EQ(impl_->Init(), HCCL_SUCCESS);

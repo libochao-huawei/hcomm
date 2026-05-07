@@ -181,7 +181,7 @@ HcclResult HostCpuRoceChannel::BuildConnection()
         HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, rdmaHandle_, lbMax),
         HCCL_E_NETWORK);
 
-    u32 loopTimes = 0;
+    u32 loopTimes;
     if (lbMax > 0) {
         if (channelDesc_.roceAttr.queueNum == 1) {
             loopTimes = lbMax;
