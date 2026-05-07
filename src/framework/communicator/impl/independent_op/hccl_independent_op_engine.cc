@@ -27,7 +27,8 @@ constexpr u32 MAX_EXPORT_THREAD_NUM = 40U;
 
 HcclResult HcclGetNotifyNumInThread(HcclComm comm, ThreadHandle thread,
     CommEngine engine, uint32_t *notifyNum)
-{
+{FUNCTION_TRACE;
+
     CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
     CHK_PRT_RET(!IsValidCommEngine(engine), 
         HCCL_ERROR("[%s] commEngine[%d] is invalid", __func__, static_cast<int32_t>(engine)), HCCL_E_PARA);
@@ -59,7 +60,8 @@ HcclResult HcclGetNotifyNumInThread(HcclComm comm, ThreadHandle thread,
 
 HcclResult HcclThreadAcquire(HcclComm comm, CommEngine engine, uint32_t threadNum,
     uint32_t notifyNumPerThread, ThreadHandle *threads)
-{
+{FUNCTION_TRACE;
+
     u64 beginTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
     CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
     CHK_PRT_RET(threads == nullptr,  HCCL_ERROR("[%s] threads is null", __func__), HCCL_E_PTR);
@@ -138,7 +140,8 @@ HcclResult HcclThreadAcquire(HcclComm comm, CommEngine engine, uint32_t threadNu
 
 HcclResult HcclThreadAcquireWithStream(HcclComm comm, CommEngine engine,
     aclrtStream stream, uint32_t notifyNum, ThreadHandle *thread)
-{
+{FUNCTION_TRACE;
+
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(stream);
     CHK_PTR_NULL(thread);
@@ -194,7 +197,8 @@ HcclResult HcclThreadAcquireWithStream(HcclComm comm, CommEngine engine,
 
 HcclResult HcclAllocNotify(HcclComm comm, CommEngine commEngine, ::NotifyType notifyType, uint32_t notifyNum,
     NotifyHandle **notifyHandleList)
-{
+{FUNCTION_TRACE;
+
     CHK_PRT_RET(comm == nullptr, HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PARA);
     CHK_PRT_RET(!IsValidCommEngine(commEngine), 
         HCCL_ERROR("[%s] commEngine[%u] is invalid", __func__, commEngine), HCCL_E_PARA);
@@ -246,7 +250,8 @@ HcclResult HcclAllocNotify(HcclComm comm, CommEngine commEngine, ::NotifyType no
 }
  
 HcclResult HcommFreeNotify(HcclComm comm, uint32_t notifyNum, NotifyHandle *notifyHandleList)
-{
+{FUNCTION_TRACE;
+
     CHK_PRT_RET(comm == nullptr, HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PARA);
     CHK_PRT_RET(notifyHandleList == nullptr, HCCL_ERROR("[%s] notifyHandleList is null", __func__), HCCL_E_PARA);
     CHK_PRT_RET(notifyNum > NOTIFY_MAX_NUM || notifyNum == 0, 
@@ -279,7 +284,8 @@ HcclResult HcommFreeNotify(HcclComm comm, uint32_t notifyNum, NotifyHandle *noti
 extern "C" {
 #endif
 HcclResult HcclThreadExportToCommEngine(HcclComm comm, uint32_t threadNum, const ThreadHandle *threads, CommEngine dstCommEngine, ThreadHandle *exportedThreads)
-{
+{FUNCTION_TRACE;
+
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(threads);
     CHK_PTR_NULL(exportedThreads);

@@ -9,9 +9,15 @@
  */
 
 #include "hcclCommOp.h"
+#ifdef CCL_KERNEL_AICPU
+#include "timer.h"
+#define FUNCTION_TRACE FUNCTION_TRACE_AICPU
+#endif
 namespace hccl {
 
 std::shared_ptr<Hccl::DfxOpInfo> ConvertToDfxOpInfo(const HcclDfxOpInfo& dfxOpInfo) {
+    FUNCTION_TRACE;
+    
     auto dfxOpInfoOnce = std::make_shared<Hccl::DfxOpInfo>();
     Hccl::CollOperator collOp{};
     collOp.opMode = static_cast<Hccl::OpMode::Value>(dfxOpInfo.opMode); 

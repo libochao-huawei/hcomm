@@ -10,10 +10,11 @@
 
 #include "hcomm_diag.h"
 #include "device/framework/aicpu_hccl_process.h"
-
+#include "timer.h"
 
 HcclResult HcommRegOpInfo(const char* commId, void* opInfo, size_t size)
-{
+{FUNCTION_TRACE_AICPU;
+
     CHK_PTR_NULL(commId);
     CHK_PTR_NULL(opInfo);
     CHK_RET(AicpuHcclProcess::AicpuRegOpInfo(opInfo, size));
@@ -22,7 +23,8 @@ HcclResult HcommRegOpInfo(const char* commId, void* opInfo, size_t size)
 }
 
 HcclResult HcommRegOpTaskException(const char* commId, HcommGetOpInfoCallback callback)
-{
+{FUNCTION_TRACE_AICPU;
+
     CHK_PTR_NULL(commId);
     CHK_PTR_NULL(callback);
     CHK_RET(AicpuHcclProcess::AicpuRegOpTaskException(callback));

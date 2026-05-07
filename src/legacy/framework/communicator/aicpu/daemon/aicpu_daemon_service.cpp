@@ -10,6 +10,9 @@
 #include "aicpu_daemon_service.h"
 #include "sal.h"
 #include "log.h"
+#ifdef CCL_KERNEL_AICPU
+#include "timer.h"
+#endif
 
 namespace Hccl {
 
@@ -48,6 +51,9 @@ void AicpuDaemonService::ServiceRun(void *info)
 
         SaluSleep(TEN_MILLISECOND_OF_USLEEP);
     }
+#ifdef CCL_KERNEL_AICPU
+    HcclTimerDumperAICPU::GetInstance().DumpTimerLogs();
+#endif
     HCCL_RUN_INFO("Exit back ground thread");
 }
 
