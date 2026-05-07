@@ -18,7 +18,6 @@
 #include "hcclCommDfx.h"
 #include "env_config/env_config.h"
 #include "channel_process.h"
-#include "rank_consistentcy_checker.h"
 #include "hccl_comm_pub.h"
 
 using namespace hcomm;
