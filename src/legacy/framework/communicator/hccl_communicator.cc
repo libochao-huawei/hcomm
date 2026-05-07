@@ -546,4 +546,9 @@ HcclResult HcclCommunicator::Mc2AiCpuStreamAllocAndGetV2(rtStream_t *aiCpuStream
     return pimpl->Mc2AiCpuStreamAllocAndGetV2(aiCpuStream);
 }
 
+std::shared_ptr<std::unordered_map<u32, std::unordered_map<IpAddress, u32>>> HcclCommunicator::GetRankIpPortMap()
+{
+    return pimpl->GetRankIpPortMap();
+}
+
 } // namespace Hccl
