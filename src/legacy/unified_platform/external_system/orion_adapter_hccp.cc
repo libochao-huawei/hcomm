@@ -2429,7 +2429,7 @@ HcclResult HrtRaNdaQpCreate(RdmaHandle rdmaHandle, NdaOps *ndaOps, uint32_t dmaM
     qpAttr.ops = ndaOps;
 
     s32 ret = RaNdaQpCreate(rdmaHandle, &qpAttr, qpInfo, qpHandle);
-    CHK_PRT_RET(ret != 0 || qpInfo != nullptr || qpHandle != nullptr,
+    CHK_PRT_RET(ret != 0 || qpInfo == nullptr || qpHandle == nullptr,
         HCCL_ERROR("[Create][NdaQp]errNo[0x%016llx] RaNdaQpCreate fail. return[%d], "
             "params: rdmaHandle[%p] dmaMode[%u]",
         HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, rdmaHandle, dmaMode), HCCL_E_NETWORK);
@@ -2459,7 +2459,7 @@ HcclResult HrtRaNdaCqCreate(RdmaHandle rdmaHandle, NdaOps *ndaOps, uint32_t dmaM
     cqAttr.ops = ndaOps;
 
     s32 ret = RaNdaCqCreate(rdmaHandle, &cqAttr, cqInfo, cqHandle);
-    CHK_PRT_RET(ret !=0 || cqInfo == nullptr || cqHandle == nullptr,
+    CHK_PRT_RET(ret != 0 || cqInfo == nullptr || cqHandle == nullptr,
         HCCL_ERROR("[Create][NdaCq]errNo[0x%016llx] RaNdaCqCreate fail. return[%d], "
             "params: rdmaHandle[%p] dmaMode[%u]",
         HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, rdmaHandle, dmaMode), HCCL_E_NETWORK);
