@@ -40,10 +40,10 @@ struct RdmaCqContextLite{
 };
 
 namespace Hccl {
-class RdmaConnLite {
+class DevRdmaConnLite {
 public:
-    explicit RdmaConnLite(std::vector<char>& uniqueId);
-    ~RdmaConnLite();
+    explicit DevRdmaConnLite(std::vector<char>& uniqueId);
+    ~DevRdmaConnLite();
 
     std::string Describe();
 
