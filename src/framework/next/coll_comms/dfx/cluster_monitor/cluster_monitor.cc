@@ -491,28 +491,27 @@ HcclResult ClusterMonitor::RecvFrame(ClusterUIDType rem)
 HcclResult ClusterMonitor::ParseFrame(ClusterMonitorFrame &cmFrame, ClusterUIDType &src)
 {
     HCCL_INFO("CMTEST [%s] start rem[%s]", __func__, GetUID(src).c_str());
+
+    if (cmFrame.src != src || cmFrame.dst != myRankUID_) {
+        HCCL_WARNING("rank[%s] recv wrong frame", GetUID(myRankUID_).c_str());
+        return HCCL_E_INTERNAL;
+    }
+
+    HCCL_DEBUG("[ClusterMonitor][ParseMonitorFrame] Recv Success, from [%s] to [%s] about [%s] by [%s] state[%d]",
+        GetUID(cmFrame.src).c_str(), GetUID(cmFrame.dst).c_str(), GetUID(cmFrame.crimer).c_str(),
+        GetUID(cmFrame.informer).c_str(), cmFrame.status);
+
+    // 能够收到进程卡住表示心跳是正常的
+    if (cmFrame.status == ClusterMonitorStatus::CLUSTER_MONITOR_OK) {
+        uid2SocketRefMap_[src].lostNum = 0;
+    }
+
+    // 只有心跳非正常时才需要打印TRACE
+    if (cmFrame.status != ClusterMonitorStatus::CLUSTER_MONITOR_OK) {
+        SetStatus(cmFrame.crimer, cmFrame.informer, cmFrame.status);  // 设置异常状态
+    }
+
     return HCCL_SUCCESS;
-
-    // if (cmFrame.src != src || cmFrame.dst != myRankUID_) {
-    //     HCCL_WARNING("rank[%s] recv wrong frame", GetUID(myRankUID_).c_str());
-    //     return HCCL_E_INTERNAL;
-    // }
-
-    // HCCL_DEBUG("[ClusterMonitor][ParseMonitorFrame] Recv Success, from [%s] to [%s] about [%s] by [%s] state[%d]",
-    //     GetUID(cmFrame.src).c_str(), GetUID(cmFrame.dst).c_str(), GetUID(cmFrame.crimer).c_str(),
-    //     GetUID(cmFrame.informer).c_str(), cmFrame.status);
-
-    // // 能够收到进程卡住表示心跳是正常的
-    // if (cmFrame.status == ClusterMonitorStatus::CLUSTER_MONITOR_OK) {
-    //     uid2SocketRefMap_[src].lostNum = 0;
-    // }
-
-    // // 只有心跳非正常时才需要打印TRACE
-    // if (cmFrame.status != ClusterMonitorStatus::CLUSTER_MONITOR_OK) {
-    //     SetStatus(cmFrame.crimer, cmFrame.informer, cmFrame.status);  // 设置异常状态
-    // }
-
-    // return HCCL_SUCCESS;
 }
 
 void ClusterMonitor::DelErrorSocket()

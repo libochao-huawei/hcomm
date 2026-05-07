@@ -95,14 +95,14 @@ inline std::string GetClusterMonitorStatusStr(ClusterMonitorStatus  status)
 }
 
 struct ClusterMonitorFrame {
-    ClusterUIDType src; // 心跳建链的本端
-    ClusterUIDType dst; // 心跳建链的远端
-    ClusterUIDType crimer; // 异常的节点
-    ClusterUIDType informer; // 把异常传输给自己的节点
-    ErrorCqeInfo   cqeInfo; // error cqe节点出现错误时，信息广播到其他节点
+    ClusterUIDType src{}; // 心跳建链的本端
+    ClusterUIDType dst{}; // 心跳建链的远端
+    ClusterUIDType crimer{}; // 异常的节点
+    ClusterUIDType informer{}; // 把异常传输给自己的节点
+    // ErrorCqeInfo   cqeInfo; // error cqe节点出现错误时，信息广播到其他节点
     ClusterMonitorStatus status = ClusterMonitorStatus::CLUSTER_MONITOR_OK;
-    HcclUs TOARelative; // time of arrival (Relative)
-    HcclSystemTime TOASystem; // time of arrival (System)
+    HcclUs TOARelative{}; // time of arrival (Relative)
+    HcclSystemTime TOASystem{}; // time of arrival (System)
     char reserved[256] = {0}; // 预留字段，存储其他信息
     ClusterMonitorFrame() {}
     ClusterMonitorFrame(ClusterUIDType &crimer, ClusterUIDType &informer, ClusterMonitorStatus status, HcclUs TOARelativeIn,

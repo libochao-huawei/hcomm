@@ -55,7 +55,7 @@ public:
     
     bool Listen(u32 &port);
     bool ISend(void *data, u64 size, u64& compSize) const;
-    bool IRecv(void *data, u64 size, u64& compSize) const;
+    HcclResult IRecv(void *data, u64 size, u64& compSize) const;
 
     bool IsListen() const
     {
