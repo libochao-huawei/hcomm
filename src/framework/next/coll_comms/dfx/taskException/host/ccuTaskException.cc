@@ -11,12 +11,8 @@
 #include <memory>
 #include "log.h"
 #include "coll_comm.h"
-#include "acl/acl_rt.h"
-#include "orion_adapter_hccp.h"
 #include <adapter_error_manager_pub.h>
-#include "op_type.h"
 #include "task_param.h"
-#include "ccu_rep_type.h"
 #include "ccu_kernel_mgr.h"
 #include "hcomm_c_adpt.h"
 #include "../../endpoint_pairs/channels/ccu/ccu_urma_channel.h"
@@ -37,7 +33,8 @@ namespace hcomm {
 
 using namespace std;
 constexpr int BYTE = 8;
-constexpr uint64_t CCU_MSG_256MB_LEN = 256 * 1024 * 1024; // CCU消息长度不能大于256MB
+constexpr size_t CCU_CTX_RAW_CAPACITY = 64;
+constexpr uint64_t CCU_MSG_256MB_LEN = 256ULL * 1024 * 1024; // CCU消息长度不能大于256MB
 constexpr uint16_t INVALID_U16 = 65535;
 constexpr uint8_t CCUM_EXECUTE_ERROR = 0X09;
 constexpr uint8_t CCU_MISSION_TASK_KILLED = 0X02;
@@ -59,7 +56,9 @@ const map<uint8_t, map<uint8_t, string>> MISSION_SUB_STATUS_MAP {
     {0x03,
      {{0x01, "Remote Unsupported Request(0x01)"},
       {0x02, "Remote Access Abort(0x02)"},
-      {0x04, "Remote Data Poison(0x04)"}}},
+               {0x04, "Remote Data Poison(0x04)"}}},
+    {0x07, {{0x01, "Overflow(0x01)"}, {0x02, "Underflow(0x02)"}, {0x04, "NaN(0x04)"}, {0x08, "Inf(0x08)"},
+               {0x09, "Inf Overflow(0x09)"}}},
     {0x09, {{0x01, "SQE instr and key not match(0x01)"}, {0x02, "CCU Mission Task Killed(0x02)"}}},
     {0x0A,
      {{0x01, "EXOKAY(0x01)"},
@@ -119,8 +118,7 @@ struct AuxInfoOut {
     uint32_t auxInfoNum{0};
 };
 
-struct ccumDfxInfo {
-    unsigned int queryResult; // 0:success, 1:fail
+struct CcumDfxCommonInfo {
     unsigned int ccumSqeRecvCnt;
     unsigned int ccumSqeSendCnt;
     unsigned int ccumMissionDfx;
@@ -132,6 +130,265 @@ struct ccumDfxInfo {
     unsigned int ccumCifSqeCnt;
     unsigned int ccumCifCqeCnt;
 };
+
+struct ccumDfxInfo {
+    unsigned int queryResult; // 0:success, 1:fail
+    CcumDfxCommonInfo commonInfo;
+};
+
+struct ccumDfxInfoV2 {
+    union {
+        struct {
+            unsigned int queryResult : 1; // 0:success, 1:fail
+            unsigned int sqeRecvCnt : 1;
+            unsigned int sqeSendCnt : 1;
+            unsigned int missionDfx : 1;
+            unsigned int sqeDropCnt : 1;
+            unsigned int sqeErrDropCnt : 1;
+            unsigned int secReg0 : 1;
+            unsigned int tifSqeCnt : 1;
+            unsigned int tifCqeCnt : 1;
+            unsigned int cifSqeCnt : 1;
+            unsigned int cifCqeCnt : 1;
+            unsigned int mcmDfx : 1;
+            unsigned int resv : 20;
+        } bs;
+        unsigned int validBits : 32;
+    };
+    union {
+        struct {
+            CcumDfxCommonInfo commonInfo;
+            unsigned int ccumMcmDfx;
+            unsigned int resv[20];
+        } dfxInfo;
+        unsigned int regVal[31];
+    };
+};
+
+struct CcuMissionInfo {
+    uint16_t currentIns;
+    uint16_t endIns;
+    uint16_t startIns;
+};
+
+struct CcuLoopInfo {
+    uint16_t currentCnt;
+    uint32_t addrStride;
+};
+
+struct CcuVersionOps {
+    const char *name;
+    void (*printCcumDfxInfo)(const void *rawData, std::ostringstream &oss);
+    HcclResult (*getMissionInfo)(const void *rawData, CcuMissionInfo *out);
+    HcclResult (*getLoopInfo)(const void *rawData, CcuLoopInfo *out);
+};
+
+static void PrintCcumDfxInfoV1(const void *rawData, std::ostringstream &oss)
+{
+    if (rawData == nullptr) {
+        oss << " [rawData is null]";
+        HCCL_ERROR("[PrintCcumDfxInfoV1] rawData is null");
+        return;
+    }
+    struct ccumDfxInfo info{};
+    const auto copyRet = memcpy_s(&info, sizeof(info), rawData, sizeof(info));
+    if (copyRet != EOK) {
+        oss << " [decode failed]";
+        HCCL_ERROR("[PrintCcumDfxInfoV1] memcpy_s failed, ret[%d]", copyRet);
+        return;
+    }
+    if (info.queryResult != 0U) {
+        HCCL_ERROR("get ccu dfx info fail, ccu dfx info not all correct");
+    }
+    oss << " SQE_RECV_CNT[" << info.commonInfo.ccumSqeRecvCnt << ']';
+    oss << " SQE_SEND_CNT[" << info.commonInfo.ccumSqeSendCnt << ']';
+    oss << " MISSION_DFX[" << info.commonInfo.ccumMissionDfx << ']';
+    oss << " TIF_SQE_CNT[" << info.commonInfo.ccumTifSqeCnt << ']';
+    oss << " TIF_CQE_CNT[" << info.commonInfo.ccumTifCqeCnt << ']';
+    oss << " CIF_SQE_CNT[" << info.commonInfo.ccumCifSqeCnt << ']';
+    oss << " CIF_CQE_CNT[" << info.commonInfo.ccumCifCqeCnt << ']';
+    oss << " SQE_DROP_CNT[" << info.commonInfo.ccumSqeDropCnt << ']';
+    oss << " SQE_ADDR_LEN_ERR_DROP_CNT[" << info.commonInfo.ccumSqeAddrLenErrDropCnt << ']';
+    oss << " ccumIsEnable[" << (info.commonInfo.lqcCcuSecReg0 & 1U) << ']';
+}
+
+static void PrintCcumDfxInfoV2(const void *rawData, std::ostringstream &oss)
+{
+    if (rawData == nullptr) {
+        oss << " [rawData is null]";
+        HCCL_ERROR("[PrintCcumDfxInfoV2] rawData is null");
+        return;
+    }
+    struct ccumDfxInfoV2 info{};
+    const auto copyRet = memcpy_s(&info, sizeof(info), rawData, sizeof(info));
+    if (copyRet != EOK) {
+        oss << " [decode failed]";
+        HCCL_ERROR("[PrintCcumDfxInfoV2] memcpy_s failed, ret[%d]", copyRet);
+        return;
+    }
+    if (info.bs.queryResult != 0U) {
+        HCCL_ERROR("get ccu dfx info fail, ccu dfx info not all correct");
+    }
+    auto dump = [&oss](const char *name, unsigned int value, bool hwValid) {
+        oss << ' ' << name << '[';
+        if (hwValid) {
+            oss << value;
+        } else {
+            oss << "INVALID(hw)";
+            HCCL_WARNING("[CCU DFX][V2] %s marked invalid by hw", name);
+        }
+        oss << ']';
+    };
+    dump("SQE_RECV_CNT", info.dfxInfo.commonInfo.ccumSqeRecvCnt, info.bs.sqeRecvCnt != 0U);
+    dump("SQE_SEND_CNT", info.dfxInfo.commonInfo.ccumSqeSendCnt, info.bs.sqeSendCnt != 0U);
+    dump("MISSION_DFX", info.dfxInfo.commonInfo.ccumMissionDfx, info.bs.missionDfx != 0U);
+    dump("TIF_SQE_CNT", info.dfxInfo.commonInfo.ccumTifSqeCnt, info.bs.tifSqeCnt != 0U);
+    dump("TIF_CQE_CNT", info.dfxInfo.commonInfo.ccumTifCqeCnt, info.bs.tifCqeCnt != 0U);
+    dump("CIF_SQE_CNT", info.dfxInfo.commonInfo.ccumCifSqeCnt, info.bs.cifSqeCnt != 0U);
+    dump("CIF_CQE_CNT", info.dfxInfo.commonInfo.ccumCifCqeCnt, info.bs.cifCqeCnt != 0U);
+    dump("SQE_DROP_CNT", info.dfxInfo.commonInfo.ccumSqeDropCnt, info.bs.sqeDropCnt != 0U);
+    dump("SQE_ADDR_LEN_ERR_DROP_CNT", info.dfxInfo.commonInfo.ccumSqeAddrLenErrDropCnt, info.bs.sqeErrDropCnt != 0U);
+    dump("ccumIsEnable", info.dfxInfo.commonInfo.lqcCcuSecReg0 & 1U, info.bs.secReg0 != 0U);
+    dump("MCM_DFX", info.dfxInfo.ccumMcmDfx, info.bs.mcmDfx != 0U);
+}
+
+static HcclResult GetCcuMissionInfoV1(const void *rawData, CcuMissionInfo *out)
+{
+    if (rawData == nullptr || out == nullptr) {
+        HCCL_ERROR("[GetCcuMissionInfoV1] invalid input: rawData=%p, out=%p", rawData, out);
+        return HCCL_E_PARA;
+    }
+    CcuMissionContext ctx{};
+    const auto copyRet = memcpy_s(&ctx, sizeof(ctx), rawData, sizeof(ctx));
+    if (copyRet != EOK) {
+        HCCL_ERROR("[GetCcuMissionInfoV1] memcpy_s failed, ret[%d]", copyRet);
+        return HCCL_E_INTERNAL;
+    }
+    out->currentIns = ctx.GetCurrentIns();
+    out->endIns = ctx.GetEndIns();
+    out->startIns = ctx.GetStartIns();
+    return HCCL_SUCCESS;
+}
+
+static HcclResult GetCcuLoopInfoV1(const void *rawData, CcuLoopInfo *out)
+{
+    if (rawData == nullptr || out == nullptr) {
+        HCCL_ERROR("[GetCcuLoopInfoV1] invalid input: rawData=%p, out=%p", rawData, out);
+        return HCCL_E_PARA;
+    }
+    CcuLoopContext ctx{};
+    const auto copyRet = memcpy_s(&ctx, sizeof(ctx), rawData, sizeof(ctx));
+    if (copyRet != EOK) {
+        HCCL_ERROR("[GetCcuLoopInfoV1] memcpy_s failed, ret[%d]", copyRet);
+        return HCCL_E_INTERNAL;
+    }
+    out->currentCnt = ctx.GetCurrentCnt();
+    out->addrStride = ctx.GetAddrStride();
+    return HCCL_SUCCESS;
+}
+
+static HcclResult GetCcuMissionInfoV2(const void *rawData, CcuMissionInfo *out)
+{
+    if (rawData == nullptr || out == nullptr) {
+        HCCL_ERROR("[GetCcuMissionInfoV2] invalid input: rawData=%p, out=%p", rawData, out);
+        return HCCL_E_PARA;
+    }
+
+    CcuMissionContextV2 ctx{};
+    const auto copyRet = memcpy_s(&ctx, sizeof(ctx), rawData, sizeof(ctx));
+    if (copyRet != EOK) {
+        HCCL_ERROR("[GetCcuMissionInfoV2] memcpy_s failed, ret[%d]", copyRet);
+        return HCCL_E_INTERNAL;
+    }
+    out->currentIns = ctx.GetCurrentIns();
+    out->endIns = ctx.GetEndIns();
+    out->startIns = ctx.GetStartIns();
+    return HCCL_SUCCESS;
+}
+
+static HcclResult GetCcuLoopInfoV2(const void *rawData, CcuLoopInfo *out)
+{
+    if (rawData == nullptr || out == nullptr) {
+        HCCL_ERROR("[GetCcuLoopInfoV2] invalid input: rawData=%p, out=%p", rawData, out);
+        return HCCL_E_PARA;
+    }
+
+    CcuLoopContextV2 ctx{};
+    const auto copyRet = memcpy_s(&ctx, sizeof(ctx), rawData, sizeof(ctx));
+    if (copyRet != EOK) {
+        HCCL_ERROR("[GetCcuLoopInfoV2] memcpy_s failed, ret[%d]", copyRet);
+        return HCCL_E_INTERNAL;
+    }
+    out->currentCnt = ctx.GetCurrentCnt();
+    out->addrStride = ctx.GetAddrStride();
+
+    return HCCL_SUCCESS;
+}
+
+enum class CcuSchemaVersion : uint8_t { CCU_SCHEMA_V1 = 0, CCU_SCHEMA_V2 = 1, CCU_SCHEMA_COUNT = 2 };
+
+static const CcuVersionOps CCU_V1_OPS = {
+    "CCU_V1",
+    PrintCcumDfxInfoV1,
+    GetCcuMissionInfoV1,
+    GetCcuLoopInfoV1,
+};
+
+static const CcuVersionOps CCU_V2_OPS = {
+    "CCU_V2",
+    PrintCcumDfxInfoV2,
+    GetCcuMissionInfoV2,
+    GetCcuLoopInfoV2,
+};
+
+static const CcuVersionOps *const CCU_OPS_TABLE[] = {
+    &CCU_V1_OPS, // [0] V1
+    &CCU_V2_OPS, // [1] V2
+};
+
+static HcclResult GetCcuSchemaVersion(CcuSchemaVersion &schemaVersion)
+{
+    DevType deviceType = DevType::DEV_TYPE_COUNT;
+    HcclResult ret = hrtGetDeviceType(deviceType);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[GetCcuSchemaVersion] hrtGetDeviceType failed, ret[%d].", ret);
+        return ret;
+    }
+    schemaVersion
+        = (deviceType == DevType::DEV_TYPE_950) ? CcuSchemaVersion::CCU_SCHEMA_V1 : CcuSchemaVersion::CCU_SCHEMA_V2;
+    return HCCL_SUCCESS;
+}
+
+static HcclResult ResolveCcuOps(CcuSchemaVersion schemaVersion, const CcuVersionOps *&ops)
+{
+    const uint8_t versionIdx = static_cast<uint8_t>(schemaVersion);
+    const size_t tableSize = sizeof(CCU_OPS_TABLE) / sizeof(CCU_OPS_TABLE[0]);
+    if (versionIdx >= tableSize || CCU_OPS_TABLE[versionIdx] == nullptr) {
+        HCCL_ERROR("[ResolveCcuOps] Invalid schema version[%u], table_size[%zu].", versionIdx, tableSize);
+        ops = nullptr;
+        return HCCL_E_INTERNAL;
+    }
+
+    ops = CCU_OPS_TABLE[versionIdx];
+    return HCCL_SUCCESS;
+}
+
+HcclResult GetCcuOps(const CcuVersionOps *&ops)
+{
+    ops = nullptr;
+    CcuSchemaVersion schemaVersion = CcuSchemaVersion::CCU_SCHEMA_COUNT;
+    const HcclResult ret = GetCcuSchemaVersion(schemaVersion);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[GetCcuOps] GetCcuSchemaVersion failed, ret[%d].", ret);
+        return ret;
+    }
+
+    const HcclResult resolveRet = ResolveCcuOps(schemaVersion, ops);
+    if (resolveRet != HCCL_SUCCESS) {
+        return resolveRet;
+    }
+    return HCCL_SUCCESS;
+}
 
 std::mutex g_channelMapMutex;
 std::unordered_map<uint16_t, uint64_t> g_channelIdToHandle;
@@ -193,6 +450,23 @@ void CcuTaskException::ClusterMoniterGetCcuCqeErrInfo(u32 RemoteLocalId, u32 loc
 }
 
 
+static void PrintPanicLogWithOps(const uint8_t *panicLog, const CcuVersionOps *ops)
+{
+    if (panicLog == nullptr) {
+        HCCL_ERROR("[CcuTaskException][PrintPanicLogWithOps] panicLog is nullptr.");
+        return;
+    }
+    if (ops == nullptr || ops->printCcumDfxInfo == nullptr) {
+        HCCL_ERROR("[CcuTaskException][PrintPanicLogWithOps] ops or printCcumDfxInfo is nullptr.");
+        return;
+    }
+    std::ostringstream oss;
+    oss << "[CCU DFX][ops=" << ops->name << "] CCU DFX INFO:";
+    ops->printCcumDfxInfo(panicLog, oss);
+    std::string logStr = oss.str();
+    HCCL_ERROR("%s", logStr.c_str());
+}
+
 void CcuTaskException::ProcessCcuException(const rtExceptionInfo_t* exceptionInfo, const Hccl::TaskInfo& taskInfo)
 {
     auto deviceId = exceptionInfo->deviceid;
@@ -205,12 +479,18 @@ void CcuTaskException::ProcessCcuException(const rtExceptionInfo_t* exceptionInf
     CHK_PRT(InitChannelMap(deviceId, taskInfo.taskParam_.taskPara.Ccu.ccuKernelHandle));
     auto& ccuExDetailInfo = exceptionInfo->expandInfo.u.ccuInfo;
     isGetCqeErrInfo = true;
+
+    const CcuVersionOps *ops = nullptr;
+    if (GetCcuOps(ops) != HCCL_SUCCESS) {
+        ops = nullptr;
+    }
+
     for (uint32_t i = 0; i < ccuExDetailInfo.ccuMissionNum; ++i) { // ccuExDetailInfo.ccuMissionNum为1
         const auto& missionInfo = ccuExDetailInfo.missionInfo[i]; // 异常mission
         uint16_t status = static_cast<uint16_t>(missionInfo.status) << BYTE | missionInfo.subStatus;
         PrintCcuErrorInfo(deviceId, status, taskInfo);
         // 打印寄存器信息
-        PrintPanicLogInfo(missionInfo.panicLog);
+        PrintPanicLogWithOps(missionInfo.panicLog, ops);
     }
 
     const int32_t devLogicId = static_cast<int32_t>(deviceId);
@@ -266,43 +546,234 @@ void CcuTaskException::PrintPanicLogInfo(const uint8_t *panicLog)
         HCCL_ERROR("[CcuTaskException][%s] panicLog is nullptr.", __func__);
         return;
     }
-    struct ccumDfxInfo *info = reinterpret_cast<struct ccumDfxInfo *>(const_cast<uint8_t*>(panicLog));
-    const uint16_t ccumIsEnable = info->lqcCcuSecReg0 & 1;
-    if (info->queryResult != 0) {
-        HCCL_ERROR("get ccu dfx info fail, ccu dfx info not all correct");
+
+    const CcuVersionOps *ops = nullptr;
+    if (GetCcuOps(ops) != HCCL_SUCCESS) {
+        HCCL_ERROR("[CcuTaskException][%s] Failed to get printer ops for ccum_dfxInfo", __func__);
+        return;
     }
-    HCCL_ERROR("CCU DFX INFO: SQE_RECV_CNT[%u] SQE_SEND_CNT[%u] MISSION_DFX[%u] "
-                "TIF_SQE_CNT[%u] TIF_CQE_CNT[%u] CIF_SQE_CNT[%u] CIF_CQE_CNT[%u] "
-                "SQE_DROP_CNT[%u] SQE_ADDR_LEN_ERR_DROP_CNT[%u] ccumIsEnable[%u] ",
-                info->ccumSqeRecvCnt, info->ccumSqeSendCnt, info->ccumMissionDfx,
-                info->ccumTifSqeCnt, info->ccumTifCqeCnt, info->ccumCifSqeCnt, info->ccumCifCqeCnt,
-                info->ccumSqeDropCnt, info->ccumSqeAddrLenErrDropCnt, ccumIsEnable);
+    PrintPanicLogWithOps(panicLog, ops);
 }
 
-CcuMissionContext CcuTaskException::GetCcuMissionContext(int32_t deviceId, uint32_t dieId, uint32_t missionId)
+namespace {
+HcclResult QueryCcuCtxRaw(int32_t deviceId, uint32_t dieId, uint32_t ctxId, CcuOpcodeType op, const char *tag,
+    uint8_t *buf, size_t bufLen, size_t &copiedLen)
 {
-    CcuMissionContext missionCtx{};
+    copiedLen = 0;
+    if (buf == nullptr || bufLen < CCU_CTX_RAW_CAPACITY) {
+        HCCL_ERROR("[%s] invalid buffer: buf=%p, bufLen=%zu, required=%zu", tag, buf, bufLen, CCU_CTX_RAW_CAPACITY);
+        return HCCL_E_PARA;
+    }
+    const auto memsetRet = memset_s(buf, bufLen, 0, bufLen);
+    if (memsetRet != EOK) {
+        HCCL_ERROR("[%s] memset_s failed, ret[%d]", tag, memsetRet);
+        return HCCL_E_INTERNAL;
+    }
 
     u32 devicePhyId = 0;
     HcclResult ret = hrtGetDevicePhyIdByIndex(deviceId, devicePhyId);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s]hrtGetDevicePhyIdByIndex fail, deviceId[%s]", __func__, deviceId), missionCtx);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[%s]hrtGetDevicePhyIdByIndex fail, deviceId[%d], ret[%d]", tag, deviceId, ret);
+        return ret;
+    }
 
-    CustomChannelInfoIn  inBuff{};
+    CustomChannelInfoIn inBuff{};
     CustomChannelInfoOut outBuff{};
-
-    inBuff.op                          = CcuOpcodeType::CCU_U_OP_GET_MISSION_CTX;
+    inBuff.op                          = op;
     inBuff.data.dataInfo.udieIdx       = dieId;
-    inBuff.offsetStartIdx              = missionId;
-    inBuff.data.dataInfo.dataArraySize = 1; // 读1个MissionContext
-    inBuff.data.dataInfo.dataLen       = sizeof(CcuMissionContext) * inBuff.data.dataInfo.dataArraySize;
+    inBuff.offsetStartIdx              = ctxId;
+    inBuff.data.dataInfo.dataArraySize = 1;
+    inBuff.data.dataInfo.dataLen       = CCU_CTX_RAW_CAPACITY;
 
     ret = HccpRaCustomChannel(HrtNetworkMode::HDC, devicePhyId, &inBuff, &outBuff);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]HccpRaCustomChannel fail, ret[%u]", tag, ret), ret);
+    const auto sret = memcpy_s(buf, bufLen, outBuff.data.dataInfo.dataArray, inBuff.data.dataInfo.dataLen);
+    CHK_PRT_RET(sret != EOK, HCCL_ERROR("[%s]memcpy_s failed, ret[%d]", tag, sret), HCCL_E_MEMORY);
+    copiedLen = inBuff.data.dataInfo.dataLen;
+    return HCCL_SUCCESS;
+}
+} // namespace
 
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]HccpRaCustomChannel fail, ret[%u]", __func__, ret), missionCtx);
-    auto sret = memcpy_s(&missionCtx, sizeof(missionCtx), outBuff.data.dataInfo.dataArray, inBuff.data.dataInfo.dataLen);
-    CHK_PRT_RET(sret != EOK, HCCL_ERROR("[%s]memcpy failed. errorno[%d]:", __func__, sret), missionCtx);
-    return missionCtx;
+using GetMissionRawFunc = HcclResult (*)(
+    int32_t deviceId, uint32_t dieId, uint32_t missionId, uint8_t *buf, size_t bufLen, size_t &copiedLen);
+using GenErrorInfoLoopGroupFunc = HcclResult (*)(const ErrorInfoBase &baseInfo,
+    std::shared_ptr<CcuRep::CcuRepBase> repBase, CcuRep::CcuRepContext &ctx, std::vector<CcuErrorInfo> &errorInfo);
+using GenErrorInfoByRepTypeFunc = void (*)(
+    const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRep::CcuRepBase> repBase, std::vector<CcuErrorInfo> &errorInfo);
+
+static HcclResult DecodeRawMissionInfo(const uint8_t *raw, CcuMissionInfo &out)
+{
+    const CcuVersionOps *ops = nullptr;
+    if (GetCcuOps(ops) != HCCL_SUCCESS) {
+        HCCL_ERROR("[DecodeRawMissionInfo] Failed to get ops for mission context");
+        return HCCL_E_INTERNAL;
+    }
+    if (ops->getMissionInfo == nullptr) {
+        HCCL_ERROR("[DecodeRawMissionInfo] getMissionInfo is nullptr, ops[%s]", ops->name);
+        return HCCL_E_INTERNAL;
+    }
+    return ops->getMissionInfo(raw, &out);
+}
+
+static HcclResult FetchAndDecodeLoopInfo(int32_t deviceId, uint32_t dieId, uint32_t loopCtxId, CcuLoopInfo &out)
+{
+    uint8_t loopRaw[CCU_CTX_RAW_CAPACITY] = {0};
+    size_t loopRawLen = 0;
+    if (QueryCcuCtxRaw(deviceId, dieId, loopCtxId, CcuOpcodeType::CCU_U_OP_GET_LOOP_CTX, "FetchAndDecodeLoopInfo",
+            loopRaw, sizeof(loopRaw), loopRawLen)
+        != HCCL_SUCCESS) {
+        HCCL_ERROR("[FetchAndDecodeLoopInfo] Failed to fetch loop raw context, deviceId[%d]", deviceId);
+        return HCCL_E_INTERNAL;
+    }
+    const CcuVersionOps *ops = nullptr;
+    if (GetCcuOps(ops) != HCCL_SUCCESS) {
+        HCCL_ERROR("[FetchAndDecodeLoopInfo] Failed to get ops for loop context");
+        return HCCL_E_INTERNAL;
+    }
+    if (ops->getLoopInfo == nullptr) {
+        HCCL_ERROR("[FetchAndDecodeLoopInfo] getLoopInfo is nullptr, ops[%s]", ops->name);
+        return HCCL_E_INTERNAL;
+    }
+    return ops->getLoopInfo(loopRaw, &out);
+}
+
+// 计算报错指令附近可用 Rep 的起始指令，提取自 GetCcuErrorMsg 以降低其圈复杂度
+static uint16_t FindSurroundingBeginInstr(CcuRep::CcuRepContext &ctx, uint16_t startIns, uint16_t currIns)
+{
+    uint16_t loopUpInstrNum = 10; // 出错指令前 10 条
+    uint16_t beginIns = (currIns < loopUpInstrNum)
+                            ? startIns
+                            : ((currIns - loopUpInstrNum) > startIns ? (currIns - loopUpInstrNum) : startIns);
+    // 从第一个非空 rep 开始
+    for (uint16_t instrId = currIns; instrId >= beginIns; instrId--) {
+        if (ctx.GetRepByInstrId(instrId) == nullptr) {
+            beginIns = instrId + 1;
+            break;
+        }
+    }
+    return beginIns;
+}
+
+static HcclResult ValidateAndDecodeMissionContext(int32_t deviceId, uint16_t missionStatus,
+    const Hccl::ParaCcu &ccuTaskParam, GetMissionRawFunc getMissionRaw, CcuMissionInfo &missionInfo)
+{
+    CHK_PRT_RET((deviceId < 0 || static_cast<u32>(deviceId) >= MAX_MODULE_DEVICE_NUM),
+        HCCL_ERROR("[CcuTaskException][GetCcuErrorMsg]deviceId[%d] error.", deviceId), HcclResult::HCCL_E_PARA);
+
+    if (missionStatus == 0) {
+        HCCL_ERROR(
+            "[CcuErrorHandler][%s] no err found, mission status is 0, deviceId[%d], dieId[%u], execMissionId[%u]",
+            __func__, deviceId, static_cast<u32>(ccuTaskParam.dieId), static_cast<u32>(ccuTaskParam.execMissionId));
+        return HCCL_E_PARA;
+    }
+
+    uint8_t missionRaw[CCU_CTX_RAW_CAPACITY] = {0};
+    size_t missionRawLen = 0;
+    if (getMissionRaw(
+            deviceId, ccuTaskParam.dieId, ccuTaskParam.execMissionId, missionRaw, sizeof(missionRaw), missionRawLen)
+        != HCCL_SUCCESS) {
+        HCCL_ERROR("[CcuErrorHandler][%s] Failed to fetch mission raw context, deviceId[%d]", __func__, deviceId);
+        return HCCL_E_INTERNAL;
+    }
+    if (DecodeRawMissionInfo(missionRaw, missionInfo) != HCCL_SUCCESS) {
+        HCCL_ERROR("[CcuErrorHandler][%s] Failed to decode mission info, deviceId[%d]", __func__, deviceId);
+        return HCCL_E_INTERNAL;
+    }
+    return HCCL_SUCCESS;
+}
+
+static HcclResult ResolveRepContextAndCurrentRep(int32_t deviceId, const Hccl::ParaCcu &ccuTaskParam, uint16_t currIns,
+    CcuRep::CcuRepContext *&ctx, std::shared_ptr<CcuRep::CcuRepBase> &rep, std::shared_ptr<CcuRep::CcuRepBase> &prevRep)
+{
+    auto &kernelMgr = hcomm::CcuKernelMgr::GetInstance(deviceId);
+    auto *kernel = kernelMgr.GetKernel(ccuTaskParam.ccuKernelHandle);
+    CHK_PRT_RET(kernel == nullptr,
+        HCCL_ERROR("[%s]GetKernel nullptr, deviceId[%u], ccuKernelHandle[0x%llx]", __func__, deviceId,
+            ccuTaskParam.ccuKernelHandle),
+        HCCL_E_PARA);
+
+    ctx = reinterpret_cast<CcuRep::CcuRepContext *>(kernel);
+    CHK_PRT_RET(ctx == nullptr,
+        HCCL_ERROR("CcuContext not found, deviceId[%d], dieId[%u], missionId[%u], executeId[%llu]", deviceId,
+            static_cast<u32>(ccuTaskParam.dieId), static_cast<u32>(ccuTaskParam.missionId), ccuTaskParam.executeId),
+        HCCL_E_PARA);
+
+    rep = ctx->GetRepByInstrId(currIns);
+    CHK_PRT_RET(rep == nullptr,
+        HCCL_ERROR("[CcuErrorHandler][%s] cannot find REP from current CcuContext, instrId[%u]", __func__, currIns),
+        HCCL_E_PARA);
+
+    prevRep = nullptr;
+    if (currIns > 0) {
+        prevRep = ctx->GetRepByInstrId(currIns - 1);
+    }
+
+    while (rep->Type() == CcuRep::CcuRepType::FUNC_BLOCK) {
+        auto blockRep = static_pointer_cast<CcuRepBlock>(rep);
+        rep = blockRep->GetRepByInstrId(currIns);
+        CHK_PRT_RET(rep == nullptr,
+            HCCL_ERROR(
+                "Failed to find REP from FuncBlock, instrId[%u], FuncBlock[%s]", currIns, blockRep->GetLabel().c_str()),
+            HcclResult::HCCL_E_PARA);
+    }
+    return HCCL_SUCCESS;
+}
+
+static HcclResult HandleCurrentRepErrorInfo(const ErrorInfoBase &baseInfo, CcuRep::CcuRepContext &ctx,
+    const std::shared_ptr<CcuRep::CcuRepBase> &rep, const std::shared_ptr<CcuRep::CcuRepBase> &prevRep,
+    GenErrorInfoLoopGroupFunc genLoopGroup, GenErrorInfoByRepTypeFunc genByRepType,
+    std::vector<CcuErrorInfo> &errorInfo)
+{
+    if ((prevRep != nullptr && prevRep->Type() == CcuRep::CcuRepType::LOOPGROUP)
+        || (rep->Type() == CcuRep::CcuRepType::LOOPGROUP)) {
+        CHK_RET(genLoopGroup(baseInfo, prevRep, ctx, errorInfo));
+        return HCCL_SUCCESS;
+    }
+
+    if (rep->Type() == CcuRep::CcuRepType::LOC_WAIT_EVENT || rep->Type() == CcuRep::CcuRepType::LOC_WAIT_NOTIFY) {
+        genByRepType(baseInfo, rep, errorInfo);
+        uint16_t actValue = errorInfo.back().msg.waitSignal.signalValue;
+        uint16_t expValue = errorInfo.back().msg.waitSignal.signalMask;
+        for (uint16_t i = 0; i < 16; ++i) { // CKE的bit数最多为16
+            uint16_t mask = 1 << i;         // 创建一个用于检查第 i 位的掩码
+            if ((expValue & mask) != 0 && (actValue & mask) == 0) {
+                HCCL_INFO("Do GenErrorInfoByRepType");
+            }
+        }
+        return HCCL_SUCCESS;
+    }
+
+    genByRepType(baseInfo, rep, errorInfo);
+    return HCCL_SUCCESS;
+}
+
+static void HandleSurroundingRepErrorInfo(int32_t deviceId, uint32_t execMissionId, const ErrorInfoBase &baseInfo,
+    CcuRep::CcuRepContext &ctx, uint16_t startIns, uint16_t endIns, uint16_t currIns,
+    GenErrorInfoByRepTypeFunc genByRepType, std::vector<CcuErrorInfo> &errorInfo)
+{
+    HCCL_ERROR("[CcuErrorHandler]device %d, execMissionId[%u], startIns[%u], endIns[%u], currIns[%u]", deviceId,
+        execMissionId, startIns, endIns, currIns);
+    if (endIns == currIns) {
+        HCCL_ERROR("[CcuErrorHandler]device %d SQE != CQE, endIns[%u], currIns[%u]", deviceId, endIns, currIns);
+    }
+
+    const uint16_t beginIns = FindSurroundingBeginInstr(ctx, startIns, currIns);
+    for (uint16_t instrId = beginIns; instrId <= currIns; instrId++) {
+        auto surroundingRep = ctx.GetRepByInstrId(instrId);
+        if (surroundingRep == nullptr) {
+            HCCL_WARNING(
+                "[CcuErrorHandler][%s] cannot find REP from current CcuContext, instrId[%u]", __func__, instrId);
+            continue;
+        }
+        genByRepType(baseInfo, surroundingRep, errorInfo);
+    }
+}
+
+HcclResult CcuTaskException::GetCcuMissionContextRaw(
+    int32_t deviceId, uint32_t dieId, uint32_t missionId, uint8_t *buf, size_t bufLen, size_t &copiedLen)
+{
+    return QueryCcuCtxRaw(deviceId, dieId, missionId, CcuOpcodeType::CCU_U_OP_GET_MISSION_CTX,
+        "GetCcuMissionContextRaw", buf, bufLen, copiedLen);
 }
 
 static string StatusCode2Str(uint8_t highPart, uint8_t lowPart)
@@ -775,29 +1246,11 @@ void CcuTaskException::GenErrorInfoByRepType(const ErrorInfoBase &baseInfo, shar
     }
 }
 
-CcuLoopContext CcuTaskException::GetCcuLoopContext(int32_t deviceId, uint32_t dieId, uint32_t loopCtxId)
+HcclResult CcuTaskException::GetCcuLoopContextRaw(
+    int32_t deviceId, uint32_t dieId, uint32_t loopCtxId, uint8_t *buf, size_t bufLen, size_t &copiedLen)
 {
-    CcuLoopContext loopCtx{};
-
-    u32 devicePhyId = 0;
-    HcclResult ret = hrtGetDevicePhyIdByIndex(deviceId, devicePhyId);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s]hrtGetDevicePhyIdByIndex fail, deviceId[%s],ret[%d]", __func__, deviceId, ret), loopCtx);
-
-    CustomChannelInfoIn  inBuff{};
-    CustomChannelInfoOut outBuff{};
-
-    inBuff.op                          = CcuOpcodeType::CCU_U_OP_GET_LOOP_CTX;
-    inBuff.data.dataInfo.udieIdx       = dieId;
-    inBuff.offsetStartIdx              = loopCtxId;
-    inBuff.data.dataInfo.dataArraySize = 1; // 读1个LoopContext
-    inBuff.data.dataInfo.dataLen       = sizeof(CcuLoopContext) * inBuff.data.dataInfo.dataArraySize;
-
-    ret = HccpRaCustomChannel(HrtNetworkMode::HDC, devicePhyId, &inBuff, &outBuff);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]HccpRaCustomChannel fail, ret[%u]", __func__, ret), loopCtx);
-    auto sret = memcpy_s(&loopCtx, sizeof(loopCtx), outBuff.data.dataInfo.dataArray, inBuff.data.dataInfo.dataLen);
-    CHK_PRT_RET(sret != EOK, HCCL_ERROR("[%s]memcpy failed. errorno[%d]:", __func__, sret), loopCtx);
-    return loopCtx;
+    return QueryCcuCtxRaw(deviceId, dieId, loopCtxId, CcuOpcodeType::CCU_U_OP_GET_LOOP_CTX, "GetCcuLoopContextRaw", buf,
+        bufLen, copiedLen);
 }
 
 HcclResult CcuTaskException::GenErrorInfoLoop(const ErrorInfoBase &baseInfo, CcuRep::CcuRepContext &ctx,
@@ -817,13 +1270,17 @@ HcclResult CcuTaskException::GenErrorInfoLoop(const ErrorInfoBase &baseInfo, Ccu
 
     LoopXm loopXm{};
     loopXm.value                     = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetLoopParam()->Id());
-    const auto ccuLoopContext        = GetCcuLoopContext(baseInfo.deviceId, baseInfo.dieId, loopXm.loopCtxId);
+    CcuLoopInfo loopInfo{};
+    if (FetchAndDecodeLoopInfo(baseInfo.deviceId, baseInfo.dieId, loopXm.loopCtxId, loopInfo) != HCCL_SUCCESS) {
+        HCCL_ERROR("[GenErrorInfoLoop] Failed to fetch/decode loop info, deviceId[%d]", baseInfo.deviceId);
+        return HCCL_E_INTERNAL;
+    }
     errorMsg.msg.loop.startInstrId   = rep->GetLoopBlock()->StartInstrId();
     errorMsg.msg.loop.endInstrId     = rep->GetLoopBlock()->StartInstrId() + rep->GetLoopBlock()->InstrCount() - 1;
     errorMsg.msg.loop.loopEngineId   = loopXm.loopCtxId;
     errorMsg.msg.loop.loopCnt        = static_cast<uint16_t>(loopXm.loopCnt);
-    errorMsg.msg.loop.loopCurrentCnt = ccuLoopContext.GetCurrentCnt();
-    errorMsg.msg.loop.addrStride     = ccuLoopContext.GetAddrStride();
+    errorMsg.msg.loop.loopCurrentCnt = loopInfo.currentCnt;
+    errorMsg.msg.loop.addrStride     = loopInfo.addrStride;
 
     errorInfo.push_back(errorMsg);
 
@@ -877,96 +1334,28 @@ HcclResult CcuTaskException::GetCcuErrorMsg(int32_t deviceId, uint16_t missionSt
             __func__, deviceId, static_cast<u32>(ccuTaskParam.dieId), static_cast<u32>(ccuTaskParam.missionId),
             static_cast<u32>(ccuTaskParam.execMissionId), ccuTaskParam.executeId);
 
-    // 入参校验
-    CHK_PRT_RET((deviceId < 0 || static_cast<u32>(deviceId) >= MAX_MODULE_DEVICE_NUM),
-        HCCL_ERROR("[CcuTaskException][GetCcuErrorMsg]deviceId[%d] error.", deviceId), HcclResult::HCCL_E_PARA);
+    CcuMissionInfo missionInfo{};
+    CHK_RET(
+        ValidateAndDecodeMissionContext(deviceId, missionStatus, ccuTaskParam, GetCcuMissionContextRaw, missionInfo));
 
-    const auto missionContext = GetCcuMissionContext(deviceId, ccuTaskParam.dieId, ccuTaskParam.execMissionId);
-    if (missionStatus == 0) {
-        HCCL_ERROR("[CcuErrorHandler][%s] no err found, mission status is 0, deviceId[%d], dieId[%u], execMissionId[%u]",
-            __func__, deviceId, static_cast<u32>(ccuTaskParam.dieId), static_cast<u32>(ccuTaskParam.execMissionId));
-        return HCCL_E_PARA;
-    }
-
-    auto &kernelMgr = hcomm::CcuKernelMgr::GetInstance(deviceId);
-    
-    auto *kernel = kernelMgr.GetKernel(ccuTaskParam.ccuKernelHandle);
-    CHK_PRT_RET(kernel == nullptr, HCCL_ERROR("[%s]GetKernel nullptr, deviceId[%u], ccuKernelHandle[0x%llx]",
-                __func__, deviceId, ccuTaskParam.ccuKernelHandle), HCCL_E_PARA);
-
-    CcuRep::CcuRepContext *ctx = reinterpret_cast<CcuRep::CcuRepContext *>(kernel);
-    CHK_PRT_RET(ctx == nullptr, HCCL_ERROR("CcuContext not found, deviceId[%d], dieId[%u], missionId[%u], executeId[%llu]",
-                               deviceId, static_cast<u32>(ccuTaskParam.dieId), static_cast<u32>(ccuTaskParam.missionId),
-                               ccuTaskParam.executeId), HCCL_E_PARA);
-    const uint16_t currIns = missionContext.GetCurrentIns();
-
-    auto rep = ctx->GetRepByInstrId(currIns);
-    CHK_PRT_RET(rep == nullptr, HCCL_ERROR("[CcuErrorHandler][%s] cannot find REP from current CcuContext, instrId[%u]",
-                                            __func__, currIns), HCCL_E_PARA);
-    auto prevRep = ctx->GetRepByInstrId(currIns - 1);
+    const uint16_t currIns = missionInfo.currentIns;
+    CcuRep::CcuRepContext *ctx = nullptr;
+    std::shared_ptr<CcuRep::CcuRepBase> rep = nullptr;
+    std::shared_ptr<CcuRep::CcuRepBase> prevRep = nullptr;
+    CHK_RET(ResolveRepContextAndCurrentRep(deviceId, ccuTaskParam, currIns, ctx, rep, prevRep));
 
     // 分类处理Rep, 返回异常信息
     ErrorInfoBase baseInfo{deviceId, ccuTaskParam.dieId, ccuTaskParam.missionId, currIns, missionStatus};
     GenStatusInfo(baseInfo, errorInfo);
+    CHK_RET(HandleCurrentRepErrorInfo(
+        baseInfo, *ctx, rep, prevRep, GenErrorInfoLoopGroup, GenErrorInfoByRepType, errorInfo));
 
-    // 处理Rep为FUNC_BLOCK的场景
-    while (rep->Type() == CcuRep::CcuRepType::FUNC_BLOCK) {
-        auto blockRep = static_pointer_cast<CcuRepBlock>(rep);
-        rep           = blockRep->GetRepByInstrId(currIns);
-        CHK_PRT_RET(rep == nullptr, HCCL_ERROR("Failed to find REP from FuncBlock, instrId[%u], FuncBlock[%s]", currIns,
-                                blockRep->GetLabel().c_str()), HcclResult::HCCL_E_PARA);
-    }
-
-    if ((prevRep != nullptr && prevRep->Type() == CcuRep::CcuRepType::LOOPGROUP) || (rep->Type() == CcuRep::CcuRepType::LOOPGROUP)) {
-        // 处理LoopGroup
-        CHK_RET(GenErrorInfoLoopGroup(baseInfo, prevRep, *ctx, errorInfo));
-    } else if (rep->Type() == CcuRep::CcuRepType::LOC_WAIT_EVENT || rep->Type() == CcuRep::CcuRepType::LOC_WAIT_NOTIFY) {
-        GenErrorInfoByRepType(baseInfo, rep, errorInfo);
-        uint16_t actValue = errorInfo.back().msg.waitSignal.signalValue;
-        uint16_t expValue = errorInfo.back().msg.waitSignal.signalMask;
-        for (uint16_t i = 0; i < 16; ++i) { // CKE的bit数最多为16
-            uint16_t mask = 1 << i; // 创建一个用于检查第 i 位的掩码
-            if ((expValue & mask) != 0 && (actValue & mask) == 0) {
-                HCCL_INFO("Do GenErrorInfoByRepType");
-            }
-        }
-    } else {
-        // 处理可直接解析的Rep
-        GenErrorInfoByRepType(baseInfo, rep, errorInfo);
-    }
-
-    const uint16_t endIns = missionContext.GetEndIns();
-    const uint16_t startIns = missionContext.GetStartIns();
-    // 获取异常指令对应的Rep
-    HCCL_ERROR("[CcuErrorHandler]device %d, execMissionId[%u], startIns[%u], endIns[%u], currIns[%u]",
-               deviceId, ccuTaskParam.execMissionId, startIns, endIns, currIns);
-    if (endIns == currIns) {
-        HCCL_ERROR("[CcuErrorHandler]device %d SQE != CQE, endIns[%u], currIns[%u]", deviceId, endIns, currIns);
-    }
-
-    // 安全地获取currIns - 10的值
-    uint16_t loopUpInstrNum = 10; // 获取出错指令前10条指令
-    uint16_t beginIns = (currIns < loopUpInstrNum) ? startIns : ((currIns - loopUpInstrNum) > startIns ? (currIns - loopUpInstrNum) : startIns); 
-    // 打印报错的前10条指令，并且从第一个非空rep开始
-    for (uint16_t instrId = currIns; instrId >= beginIns; instrId--) {
-        auto rep = ctx->GetRepByInstrId(instrId);
-        if (rep == nullptr) {
-           beginIns = instrId + 1;
-           break;
-        }
-    }
-    for (uint16_t instrId = beginIns; instrId <= currIns; instrId++) {
-        auto rep = ctx->GetRepByInstrId(instrId);
-        if (rep == nullptr) {
-            HCCL_WARNING("[CcuErrorHandler][%s] cannot find REP from current CcuContext, instrId[%u]", __func__, instrId);
-            continue;
-        }
-
-        GenErrorInfoByRepType(baseInfo, rep, errorInfo);
-    }
+    const uint16_t endIns = missionInfo.endIns;
+    const uint16_t startIns = missionInfo.startIns;
+    HandleSurroundingRepErrorInfo(deviceId, ccuTaskParam.execMissionId, baseInfo, *ctx, startIns, endIns, currIns,
+        GenErrorInfoByRepType, errorInfo);
     return HCCL_SUCCESS;
 }
-
 
 void CcuTaskException::GetCcuCqeErrRemoteLocalIdByRankId(hccl::CollComm* collComm, uint32_t rankid, u32 &remoteLocalId)
 {
@@ -1105,6 +1494,7 @@ HcclResult CcuTaskException::PrintCcuUbRegisters(const std::vector<CcuErrorInfo>
     CHK_PRT_RET(jettyNum == 0, HCCL_RUN_INFO("[%s]jettyNum[%u], skip", __func__, jettyNum), HCCL_SUCCESS);
 
     std::vector<JettyHandle> jettyHandles;
+    jettyHandles.reserve(jettyNum);
     for (auto &ccuJetty : ccuJettys) {
         jettyHandles.push_back(ccuJetty->GetJettyHandle());
     }
