@@ -25,8 +25,10 @@ endif()
 message(STATUS "HCCL_OPEN_CODE_BASE_DIR = ${HCCL_OPEN_CODE_BASE_DIR}")
 message(STATUS "HCCL_BASE_DIR = ${HCCL_BASE_DIR}")
 
-# 定义 hcomm
+# 定义 hcomm 库，在 host 侧使用
 include(hcomm.cmake)
+# 定义 ccl_kernel 库，在 device 侧使用
+include(ccl_kernel.cmake)
 
 # 添加子目录
 add_subdirectory(common)
