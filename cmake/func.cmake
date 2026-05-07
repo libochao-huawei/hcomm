@@ -257,3 +257,65 @@ function(add_version_info_targets)
         add_custom_target(version_${pkg_name}_info ALL DEPENDS ${CMAKE_BINARY_DIR}/version.${pkg_name}.info)
     endforeach()
 endfunction()
+
+# 将 cc 源文件的相对路径，转换为绝对路径
+function(to_absolute_path origin_sources origin_source_dir output_sources)
+    set(sources_list)
+    foreach(source_file ${${origin_sources}})
+        if(NOT IS_ABSOLUTE ${source_file} AND ${source_file} MATCHES "\\.(c|cc|cpp)$")
+            list(APPEND sources_list ${${origin_source_dir}}/${source_file})
+        else()
+            list(APPEND sources_list ${source_file})
+        endif()
+    endforeach()
+    set(${output_sources} ${sources_list} PARENT_SCOPE)
+endfunction()
+
+# 克隆 target
+function(target_clone origin_lib new_lib)
+    # 克隆源文件，同时将相对路径转换为绝对路径
+    get_target_property(sourceFiles ${origin_lib} SOURCES)
+    get_target_property(sourceDir ${origin_lib} SOURCE_DIR)
+    to_absolute_path(sourceFiles sourceDir absolute_sources_files)
+    target_sources(${new_lib} PRIVATE
+        ${absolute_sources_files}
+    )
+    # 克隆头文件搜索路径
+    get_target_property(includeDirs ${origin_lib} INCLUDE_DIRECTORIES)
+    target_include_directories(${new_lib} PRIVATE
+        ${includeDirs}
+    )
+    # 克隆链接库
+    get_target_property(linkLibs ${origin_lib} LINK_LIBRARIES)
+    target_link_libraries(${new_lib} PRIVATE
+        ${linkLibs}
+    )
+    # 克隆链接目录
+    get_target_property(linkDirs ${origin_lib} LINK_DIRECTORIES)
+    if(linkDirs)
+        target_link_directories(${new_lib} PRIVATE
+            ${linkDirs}
+        )
+    endif()
+    # 克隆宏定义
+    get_target_property(compileDefs ${origin_lib} COMPILE_DEFINITIONS)
+    if(compileDefs)
+        target_compile_definitions(${new_lib} PRIVATE
+            ${compileDefs}
+        )
+    endif()
+    # 克隆编译选项
+    get_target_property(compileOptions ${origin_lib} COMPILE_OPTIONS)
+    if(compileOptions)
+        target_compile_options(${new_lib} PRIVATE
+            ${compileOptions}
+        )
+    endif()
+    # 克隆链接选项
+    get_target_property(linkOpts ${origin_lib} LINK_OPTIONS)
+    if(linkOpts)
+        target_link_options(${new_lib} PRIVATE
+            ${linkOpts}
+        )
+    endif()
+endfunction()
