@@ -21,11 +21,16 @@ target_sources(hcomm PRIVATE
     task_abort_handler.cc
 )
 
-if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
+if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
     target_sources(ccl_kernel PRIVATE
         ${src_list}
         ${CMAKE_CURRENT_SOURCE_DIR}/hccl_communicator_device.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/hccl_communicator_attrs_device.cc
+    )
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/zero_copy
+        ${CMAKE_CURRENT_SOURCE_DIR}/resource_manager
     )
 endif()
 

@@ -21,6 +21,23 @@ target_sources(hccl_alg PRIVATE
     ${src_list}
 )
 
+if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
+    target_sources(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/alg_env_config.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_alg_utils.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/hccl_alg_device.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/hccl_aiv_device.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/topo_matcher.cc
+    )
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/inc
+        ${CMAKE_CURRENT_SOURCE_DIR}/legacy
+        ${CMAKE_CURRENT_SOURCE_DIR}/legacy/operator
+        ${CMAKE_CURRENT_SOURCE_DIR}/operator
+        ${CMAKE_CURRENT_SOURCE_DIR}/operator/registry
+    )
+endif()
+
 add_subdirectory(resource_manager)
 add_subdirectory(task)
 add_subdirectory(operator)

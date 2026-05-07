@@ -25,7 +25,7 @@ target_sources(hccl_v2 PRIVATE
     launch_device.cc
 )
 
-if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
+if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
 target_sources(ccl_kernel PRIVATE
     communicator_impl_lite_manager.cc
     communicator_impl_lite.cc

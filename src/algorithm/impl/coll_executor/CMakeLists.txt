@@ -18,6 +18,18 @@ target_sources(hccl_alg PRIVATE
     ${src_list}
 )
 
+if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
+    target_sources(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_executor_base.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_native_executor_base.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_comm_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/alg_profiling.cc
+    )
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()
+
 add_subdirectory(coll_all_gather)
 add_subdirectory(coll_all_gather_v)
 add_subdirectory(coll_all_reduce)

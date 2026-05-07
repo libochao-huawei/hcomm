@@ -7,7 +7,7 @@ target_sources(hccl_v2 PRIVATE
     address_info.cc
 )
 
-if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
+if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
 target_sources(ccl_kernel PRIVATE
     rank_level_info.cc
     rank_table_info.cc

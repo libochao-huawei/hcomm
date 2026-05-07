@@ -23,6 +23,15 @@ target_sources(hcomm PRIVATE
     ${src_list}
 )
 
+if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
+    target_sources(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/hccl_independent_rank_graph.cc
+    )
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()
+
 add_subdirectory(channel)
 add_subdirectory(data_api)
 add_subdirectory(resource)

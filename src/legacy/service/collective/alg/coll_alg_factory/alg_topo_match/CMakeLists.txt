@@ -19,7 +19,7 @@ target_sources(hccl_v2 PRIVATE
         topo_match_mesh_nhr_pcie.cc
 )
 
-if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
+if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
 target_sources(ccl_kernel PRIVATE
         topo_match_base.cc
         topo_match_concurr_mesh.cc
