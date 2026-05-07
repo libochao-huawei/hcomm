@@ -100,7 +100,10 @@ target_compile_definitions(ra_hdc PRIVATE
     LOG_HOST
 )
 
-install(TARGETS  ra_hdc
-    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
-    COMPONENT hcomm
-)
+# 安装
+if(PRODUCT_SIDE STREQUAL "host")
+    install(TARGETS ra_hdc
+        LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
+        COMPONENT hcomm
+    )
+endif()

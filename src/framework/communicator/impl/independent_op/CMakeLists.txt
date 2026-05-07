@@ -19,9 +19,25 @@ set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/hccl_independent_op_engine.cc
 )
  
-target_sources(hcomm PRIVATE
-    ${src_list}
-)
+if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${src_list}
+    )
+    target_include_directories(hcomm PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()
+
+if(TARGET ccl_kernel)
+    target_sources(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/hccl_independent_rank_graph.cc
+    )
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/resource
+        ${CMAKE_CURRENT_SOURCE_DIR}/resource/engine
+    )
+endif()
 
 add_subdirectory(channel)
 add_subdirectory(data_api)

@@ -7,15 +7,17 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-target_sources(hccl_v2
-        PRIVATE
-        coll_service_base.cc
-        coll_service_ai_cpu_impl.cc
-        coll_service_default_impl.cc
-        connections_builder.cc
-        ins_rules.cc
-        interpreter.cc
-)
+if(TARGET hccl_v2)
+    target_sources(hccl_v2
+            PRIVATE
+            coll_service_base.cc
+            coll_service_ai_cpu_impl.cc
+            coll_service_default_impl.cc
+            connections_builder.cc
+            ins_rules.cc
+            interpreter.cc
+    )
+endif()
 
 add_subdirectory(aicpu)
 add_subdirectory(one_sided_service)

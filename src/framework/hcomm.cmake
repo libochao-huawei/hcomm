@@ -39,28 +39,76 @@ target_link_options(hcomm PRIVATE
 )
 
 target_include_directories(hcomm PRIVATE
-    ${hccl_include_list}
-    ${LEGACY_INCLUDE_LIST}
-
     ${HCOMM_DIR}/include
     ${HCOMM_DIR}/include/hccl
-    ${HCOMM_DIR}/pkg_inc/
-    ${HCOMM_DIR}/pkg_inc/hccl/
+    ${HCOMM_DIR}/pkg_inc
+    ${HCOMM_DIR}/pkg_inc/hccl
     ${HCOMM_DIR}/pkg_inc/hcomm/ccu
     ${HCOMM_DIR}/src/pub_inc
-    ${HCOMM_DIR}/src/pub_inc/new/
-    ${HCOMM_DIR}/src/platform/common
-    ${HCOMM_DIR}/src/platform/legacy/inc
-    ${HCOMM_DIR}/src/platform/hccp/inc/
-    ${HCOMM_DIR}/src/platform/resource/dispatcher_ctx
-    ${HCOMM_DIR}/src/platform/hccp/inc/network
-    ${HCOMM_DIR}/src/platform/inc/adapter
+    ${HCOMM_DIR}/src/pub_inc/inner
+    ${HCOMM_DIR}/src/pub_inc/new
+
+    # src/framework 头文件
+    ${HCOMM_DIR}/src/framework
+    ${HCOMM_DIR}/src/framework/inc
+    ${HCOMM_DIR}/src/framework/common/src
+    ${HCOMM_DIR}/src/framework/common/src/config
+    ${HCOMM_DIR}/src/framework/common/src/mgr
+    ${HCOMM_DIR}/src/framework/common/src/hashtable
+    ${HCOMM_DIR}/src/framework/communicator/impl
+    ${HCOMM_DIR}/src/framework/communicator/impl/resource_manager
+    ${HCOMM_DIR}/src/framework/communicator/impl/one_sided_service
+    ${HCOMM_DIR}/src/framework/op_base/src
+
+    # src/framework/next 头文件
+    ${HCOMM_DIR}/src/framework/next/common
+    ${HCOMM_DIR}/src/framework/next/comms/ccu/pub_inc
+    ${HCOMM_DIR}/src/framework/next/comms/ccu/ccu_device
+    ${HCOMM_DIR}/src/framework/next/comms/ccu/ccu_device/ccu_comp
+    ${HCOMM_DIR}/src/framework/next/comms/ccu/ccu_device/ccu_comp/ccu_channel
+    ${HCOMM_DIR}/src/framework/next/comms/ccu/ccu_device/ccu_comp/ccu_channel/ccu_pfe
+    ${HCOMM_DIR}/src/framework/next/comms/ccu/ccu_device/ccu_comp/ccu_channel/ccu_channel_ctx_v1
+    ${HCOMM_DIR}/src/framework/next/comms/endpoint_pairs/channels/host
+
+    # src/common 头文件
     ${HCOMM_DIR}/src/common/debug/profiling/inc
     ${HCOMM_DIR}/src/common/debug/profiling/inc/host
     ${HCOMM_DIR}/src/common/debug/config
-    ${HCOMM_DIR}/src/legacy
-    ${HCOMM_DIR}/src/legacy/interface
-    ${HCOMM_DIR}/src/legacy/framework/topo/new_topo_builder/rank_graph
+    ${HCOMM_DIR}/src/common/stream
+    ${HCOMM_DIR}/src/common/launch_device
+
+    # src/algorithm 头文件
+    ${HCOMM_DIR}/src/algorithm/pub_inc
+    ${HCOMM_DIR}/src/algorithm/base/inc
+    ${HCOMM_DIR}/src/algorithm/base/alg_template
+    ${HCOMM_DIR}/src/algorithm/base/communicator
+    ${HCOMM_DIR}/src/algorithm/base/communicator/legacy
+    ${HCOMM_DIR}/src/algorithm/impl
+    ${HCOMM_DIR}/src/algorithm/impl/resource_manager
+    ${HCOMM_DIR}/src/algorithm/impl/task
+    ${HCOMM_DIR}/src/algorithm/impl/legacy
+    ${HCOMM_DIR}/src/algorithm/impl/coll_executor
+
+    # src/platform 头文件
+    ${HCOMM_DIR}/src/platform/inc
+    ${HCOMM_DIR}/src/platform/inc/adapter
+    ${HCOMM_DIR}/src/platform/common
+    ${HCOMM_DIR}/src/platform/resource/transport
+    ${HCOMM_DIR}/src/platform/resource/transport/heterog
+    ${HCOMM_DIR}/src/platform/resource/notify
+    ${HCOMM_DIR}/src/platform/resource/dispatcher_ctx
+    ${HCOMM_DIR}/src/platform/resource/socket
+    ${HCOMM_DIR}/src/platform/hccp/inc
+    ${HCOMM_DIR}/src/platform/hccp/inc/network
+    ${HCOMM_DIR}/src/platform/hccp/external_depends/ubengine
+
+    # src/legacy 头文件
+    ${LEGACY_INCLUDE_LIST}
+
+    # 三方件头文件
+    ${THIRD_PARTY_NLOHMANN_PATH}
+    ${RDMA_CORE_INCLUDE_DIR}
+    ${URMA_INCLUDE_DIR}
 )
 
 if(BUILD_OPEN_PROJECT)
@@ -70,11 +118,6 @@ if(BUILD_OPEN_PROJECT)
     )
 
     target_include_directories(hcomm PRIVATE
-        # 三方件头文件
-        ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
-        ${RDMA_CORE_INCLUDE_DIR}
-        ${THIRD_PARTY_NLOHMANN_PATH}
-
         # runtime头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/
         # mmpa头文件
@@ -94,6 +137,8 @@ if(BUILD_OPEN_PROJECT)
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
+        # 三方件头文件
+        ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
     )
 
     target_link_directories(hcomm PRIVATE

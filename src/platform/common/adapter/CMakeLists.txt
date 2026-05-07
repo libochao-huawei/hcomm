@@ -17,23 +17,31 @@ set(src_list
     adapter_trace.cc
 )
 
-target_sources(hccl_plf   PRIVATE
-    adapter_error_manager.cc
-    adapter_error_manager_pub_extend.cc
-    ${src_list}
-)
-target_sources(hccd   PRIVATE
-    adapter_hal.cc
-    adapter_hccp.cc
-    adapter_rts.cc
-    adapter_tdt.cc
-    adapter_verbs.cc
-)
+if(TARGET hccl_plf)
+    target_sources(hccl_plf   PRIVATE
+        adapter_error_manager.cc
+        adapter_error_manager_pub_extend.cc
+        ${src_list}
+    )
+endif()
+if(TARGET hccd)
+    target_sources(hccd   PRIVATE
+        adapter_hal.cc
+        adapter_hccp.cc
+        adapter_rts.cc
+        adapter_tdt.cc
+        adapter_verbs.cc
+    )
+endif()
 
-target_sources(ccl_kernel_plf PRIVATE
-    ${src_list}
-)
+if(TARGET ccl_kernel_plf)
+    target_sources(ccl_kernel_plf PRIVATE
+        ${src_list}
+    )
+endif()
 
-target_sources(ccl_kernel_plf_a  PRIVATE
-    ${src_list}
-)
+if(TARGET ccl_kernel_plf_a)
+    target_sources(ccl_kernel_plf_a  PRIVATE
+        ${src_list}
+    )
+endif()

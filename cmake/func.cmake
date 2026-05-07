@@ -8,6 +8,8 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 
+set(ROOT_DIR "${CMAKE_CURRENT_LIST_DIR}/..")
+
 # =============================================================================
 # Function: pack_targets_and_files
 #
@@ -149,7 +151,7 @@ function(sign_file)
     cmake_parse_arguments(
         ARG
         ""
-        "INPUT;CONFIG;RESULT_VAR"
+        "OUTPUT_TARGET;INPUT;CONFIG;RESULT_VAR"
         "DEPENDS"
         ${ARGN}
     )
@@ -193,9 +195,8 @@ function(sign_file)
         if(${EXT} STREQUAL ".sh")
             set(sign_cmd bash ${SIGN_SCRIPT} ${output_sig} ${ARG_CONFIG} ${sign_flag})
         elseif(${EXT} STREQUAL ".py")
-            set(root_dir ${CMAKE_SOURCE_DIR})
             message(STATUS "Detected +++VERSION_INFO: ${VERSION_INFO}")
-            set(sign_cmd python3 ${root_dir}/scripts/sign/add_header_sign.py ${signatures_dir} ${sign_flag} --bios_check_cfg=${ARG_CONFIG} --sign_script=${SIGN_SCRIPT} --version=${VERSION_INFO})
+            set(sign_cmd python3 ${ROOT_DIR}/scripts/sign/add_header_sign.py ${signatures_dir} ${sign_flag} --bios_check_cfg=${ARG_CONFIG} --sign_script=${SIGN_SCRIPT} --version=${VERSION_INFO})
         endif()
     else()
         set(sign_cmd )
@@ -207,7 +208,12 @@ function(sign_file)
     # Target name
     get_filename_component(sign_basename "${ARG_INPUT}" NAME_WE)
     string(MAKE_C_IDENTIFIER "${sign_basename}" safe_name)
-    set(sign_target "sign_${safe_name}")
+
+    if(ARG_OUTPUT_TARGET)
+        set(sign_target "${ARG_OUTPUT_TARGET}")
+    else()
+        set(sign_target "sign_${safe_name}")
+    endif()
 
     add_custom_command(
         OUTPUT "${output_sig}"
@@ -238,14 +244,15 @@ function(check_pkg_build_deps pkg_name)
     endif()
 endfunction()
 
-set(HOST_ONLY "false")
-if (NOT FULL_MODE)
-set(HOST_ONLY "true")
-endif()
-
 # 添加生成version.info的目标
 # 目标名格式为：version_${包名}_info
 function(add_version_info_targets)
+    if(ENABLE_DEVICE)
+        set(HOST_ONLY "false")
+    else()
+        set(HOST_ONLY "true")
+    endif()
+
     foreach(pkg_name ${CANN_VERSION_PACKAGES})
         add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/version.${pkg_name}.info
             COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_version_info.py --output ${CMAKE_BINARY_DIR}/version.${pkg_name}.info
@@ -256,66 +263,4 @@ function(add_version_info_targets)
         )
         add_custom_target(version_${pkg_name}_info ALL DEPENDS ${CMAKE_BINARY_DIR}/version.${pkg_name}.info)
     endforeach()
-endfunction()
-
-# 将 cc 源文件的相对路径，转换为绝对路径
-function(to_absolute_path origin_sources origin_source_dir output_sources)
-    set(sources_list)
-    foreach(source_file ${${origin_sources}})
-        if(NOT IS_ABSOLUTE ${source_file} AND ${source_file} MATCHES "\\.(c|cc|cpp)$")
-            list(APPEND sources_list ${${origin_source_dir}}/${source_file})
-        else()
-            list(APPEND sources_list ${source_file})
-        endif()
-    endforeach()
-    set(${output_sources} ${sources_list} PARENT_SCOPE)
-endfunction()
-
-# 克隆 target
-function(target_clone origin_lib new_lib)
-    # 克隆源文件，同时将相对路径转换为绝对路径
-    get_target_property(sourceFiles ${origin_lib} SOURCES)
-    get_target_property(sourceDir ${origin_lib} SOURCE_DIR)
-    to_absolute_path(sourceFiles sourceDir absolute_sources_files)
-    target_sources(${new_lib} PRIVATE
-        ${absolute_sources_files}
-    )
-    # 克隆头文件搜索路径
-    get_target_property(includeDirs ${origin_lib} INCLUDE_DIRECTORIES)
-    target_include_directories(${new_lib} PRIVATE
-        ${includeDirs}
-    )
-    # 克隆链接库
-    get_target_property(linkLibs ${origin_lib} LINK_LIBRARIES)
-    target_link_libraries(${new_lib} PRIVATE
-        ${linkLibs}
-    )
-    # 克隆链接目录
-    get_target_property(linkDirs ${origin_lib} LINK_DIRECTORIES)
-    if(linkDirs)
-        target_link_directories(${new_lib} PRIVATE
-            ${linkDirs}
-        )
-    endif()
-    # 克隆宏定义
-    get_target_property(compileDefs ${origin_lib} COMPILE_DEFINITIONS)
-    if(compileDefs)
-        target_compile_definitions(${new_lib} PRIVATE
-            ${compileDefs}
-        )
-    endif()
-    # 克隆编译选项
-    get_target_property(compileOptions ${origin_lib} COMPILE_OPTIONS)
-    if(compileOptions)
-        target_compile_options(${new_lib} PRIVATE
-            ${compileOptions}
-        )
-    endif()
-    # 克隆链接选项
-    get_target_property(linkOpts ${origin_lib} LINK_OPTIONS)
-    if(linkOpts)
-        target_link_options(${new_lib} PRIVATE
-            ${linkOpts}
-        )
-    endif()
 endfunction()
