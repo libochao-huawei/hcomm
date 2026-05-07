@@ -35,7 +35,9 @@ namespace hccl {
  */
 class MyRank {
 public:
-    MyRank(aclrtBinHandle binHandle, uint32_t rankId, const CommConfig& config, const ManagerCallbacks& callbacks, RankGraph* rankGraph);
+    MyRank(aclrtBinHandle binHandle, uint32_t rankId, const CommConfig& config,
+        const ManagerCallbacks& callbacks, RankGraph* rankGraph,
+        std::shared_ptr<std::unordered_map<u32, std::unordered_map<Hccl::IpAddress, u32>>> rankIpPortMap);
     ~MyRank();
 
     HcclResult Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint32_t rankNum);
@@ -106,6 +108,8 @@ private:
     std::unique_ptr<NsRecoveryProcessor> nsRecoveryProcessor_{nullptr};
     // 内部获取 port 的方法，根据 mode_ 区分 v1/v2
     HcclResult GetDevicePortInternal(uint32_t rank, uint32_t *devPort);
+
+    std::shared_ptr<std::unordered_map<u32, std::unordered_map<Hccl::IpAddress, u32>>> rankIpPortMap_;
 };
 
 } // namespace hccl

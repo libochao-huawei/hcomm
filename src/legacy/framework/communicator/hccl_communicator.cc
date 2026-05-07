@@ -552,4 +552,9 @@ HcclResult HcclCommunicator::GetStreamId(u32 &streamId)
     return HCCL_SUCCESS;
 }
 
+std::shared_ptr<std::unordered_map<u32, std::unordered_map<IpAddress, u32>>> HcclCommunicator::GetRankIpPortMap()
+{
+    return pimpl->GetRankIpPortMap();
+}
+
 } // namespace Hccl
