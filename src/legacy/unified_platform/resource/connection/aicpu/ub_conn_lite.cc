@@ -477,9 +477,9 @@ void UbConnLite::FillBatchOneWqe(const RmaBufSliceLite &loc, const RmtRmaBufSlic
 
     u32 sqOffset = pi % sqDepth_;
     pi = pi + 1;
-    if (UNLIKELY(pi > sqDepth_)) {
-        pi = pi % sqDepth_;
-    }
+    // if (UNLIKELY(pi >= sqDepth_)) {
+    //     pi = pi % sqDepth_;
+    // }
 
     // 写入wqe数据到out.data
     UdmaSqeWrite sqe{};
@@ -551,6 +551,8 @@ void UbConnLite::BatchCommDataProcess(const vector<RmaBufSliceLite> &loc, const 
     // 按照UDMA能力切分数据, 组装wqe
     for (u64 i = 0; i < siliceSize; i++) {
         BatchProcessOneSlice(loc[i], rmt[i], cfg, (i == (siliceSize - 1)), opCode, stream);
+        HCCL_INFO(
+            "BatchCommDataProcess after BatchProcessOneSlice, pi = %u, i = %lu, sliceSize = %lu", pi, i, siliceSize);
     }
 
     return;
