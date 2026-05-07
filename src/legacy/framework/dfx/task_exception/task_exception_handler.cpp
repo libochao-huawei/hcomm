@@ -548,8 +548,7 @@ void TaskExceptionHandler::ProcessCcuException(const rtExceptionInfo_t* exceptio
         uint16_t status = static_cast<uint16_t>(missionInfo.status) << BYTE | missionInfo.subStatus;
         RPT_INPUT_ERR(true, "EI0018", std::vector<std::string>({"localServerId", "localDeviceId", "localDeviceIp",
             "remoteServerId", "remoteDeviceId", "remoteDeviceIp"}),
-            std::vector<std::string>({"N/A", std::to_string(deviceId), std::to_string(missionInfo.dieId), "N/A",
-                std::to_string(taskInfo.taskParam_.taskPara.Ccu.executeId), "N/A"}));
+            std::vector<std::string>({"", std::to_string(missionInfo.dieId), "", "", "", ""}));
         PrintCcuErrorInfo(deviceId, status, taskInfo);
         // 打印寄存器信息
         PrintPanicLogInfo(missionInfo.panicLog);

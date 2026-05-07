@@ -181,7 +181,7 @@ static void ReportSdmaError(u32 localDeviceId, u32 notifyId, u32 tsId, s32 userS
         ", description=" + GetSdmaErrorDesc(errorCode);
     RPT_INPUT_ERR(true, "EI0012", std::vector<std::string>({"remote_rankid", "base_information",
         "task_information", "group_rank_content"}),
-        std::vector<std::string>({"N/A", baseInfo, taskInfo, "N/A"}));
+        std::vector<std::string>({"", baseInfo, taskInfo, ""}));
 }
 
 HcclResult SendTaskExceptionByMBox(const u32 localDeviceId, const u32 notifyId, const u32 tsId,

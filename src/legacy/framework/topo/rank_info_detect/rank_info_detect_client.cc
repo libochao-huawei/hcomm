@@ -63,7 +63,10 @@ void RankInfoDetectClient::CheckStatus()
         if (isTimeout) {
             HCCL_ERROR("[RankInfoDetectClient::%s] get connected status socket timeout! timeout[%lld s]", __func__, timeout);
             RPT_INPUT_ERR(isTimeout, "EI0015", std::vector<std::string>({"error_reason"}),
-                std::vector<std::string>({"socket connection timeout"}));
+                std::vector<std::string>({StringFormat("Receiving message from the root node timed out "
+                    "after %lld seconds. Timeout was set to %lld seconds. Check whether node %s reports an error.",
+                    static_cast<long long>(elapsed.count()), static_cast<long long>(timeout.count()),
+                    identifier_.c_str())}));
             THROW<TimeoutException>("client get connection timeout");
         }
 
@@ -356,14 +359,9 @@ void RankInfoDetectClient::VerifyRankTable()
     rankTable_.Check();
     // TLS开关一致性校验
     HcclResult ret = VerifyTlsConsistency();
-    if (ret != HCCL_SUCCESS) {
-        RPT_INPUT_ERR(true, "EI0016", std::vector<std::string>({ "value", "variable", "expect" }),
-            std::vector<std::string>({StringFormat("Value %s for config tls is invalid.", value),
-                StringFormat("Expected: All ranks are consistent."),
-                StringFormat("Current status: rankList for enabled tls: %s;"
-                    "rankList for disabled tls: %s:rankList for query failure tls: %s.", )}));
-        HCCL_ERROR("[RankInfoDetectClient::%s] tls consistency verify failed, ret[%d]", __func__, ret);
-        THROW<InvalidParamsException>("tls consistency verify failed");
+    CHK_PRT_THROW(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[RankInfoDetectClient::%s] tls consistency verify failed, ret[%d]", __func__, ret),
+        InvalidParamsException, "tls consistency verify failed");
     }
 
     HCCL_INFO("[RankInfoDetectClient::%s] end.", __func__);

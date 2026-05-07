@@ -26,6 +26,8 @@ std::string GetJsonProperty(const nlohmann::json &obj, const char *propName, boo
     if (!obj.contains(propName)) {
         RPT_INPUT_ERR(true, "EI0017", std::vector<std::string>({"config"}),
             std::vector<std::string>({std::string(propName)}));
+        THROW<InvalidParamsException>(StringFormat("[Get][JsonProperty] json object does not contain property[%s].",
+            propName));
     }
     std::string value = obj.at(propName).get<std::string>();
     return value;
@@ -40,6 +42,8 @@ u32 GetJsonPropertyUInt(const nlohmann::json &obj, const char *propName, bool re
     if (!obj.contains(propName)) {
         RPT_INPUT_ERR(true, "EI0017", std::vector<std::string>({"config"}),
             std::vector<std::string>({std::string(propName)}));
+        THROW<InvalidParamsException>(StringFormat("[Get][JsonPropertyUInt] json object does not contain property[%s].",
+            propName));
     }
 
     s64 value = obj.at(propName).get<s64>();
@@ -62,6 +66,8 @@ s32 GetJsonPropertySInt(const nlohmann::json &obj, const char *propName, bool re
     if (!obj.contains(propName)) {
         RPT_INPUT_ERR(true, "EI0017", std::vector<std::string>({"config"}),
             std::vector<std::string>({std::string(propName)}));
+        THROW<InvalidParamsException>(StringFormat("[Get][JsonPropertySInt] json object does not contain property[%s].",
+            propName));
     }
 
     s64 value = obj.at(propName).get<s64>();
@@ -82,6 +88,8 @@ void GetJsonPropertyList(const nlohmann::json &obj, const char *propName, nlohma
     if (!obj.contains(propName)) {
         RPT_INPUT_ERR(true, "EI0017", std::vector<std::string>({"config"}),
             std::vector<std::string>({std::string(propName)}));
+        THROW<InvalidParamsException>(StringFormat("[Get][JsonPropertyList] json object does not contain property[%s].",
+            propName));
     }
 
     listObj = obj.at(propName);
