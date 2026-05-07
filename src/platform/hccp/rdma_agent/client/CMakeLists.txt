@@ -62,15 +62,6 @@ if(NOT BUILD_OPEN_PROJECT)
     )
 endif()
 
-target_link_directories(ra PRIVATE
-    ${ASCEND_CANN_PACKAGE_PATH}/lib64
-)
-if (DEVICE_MODE)
-    target_link_directories(ra PRIVATE
-        ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
-    )
-endif()
-
 target_compile_options(ra PRIVATE
     -Werror -fvisibility=hidden -fno-strict-aliasing -fsigned-char -fno-common -std=gnu11 -Wextra
     -fstack-protector-strong
