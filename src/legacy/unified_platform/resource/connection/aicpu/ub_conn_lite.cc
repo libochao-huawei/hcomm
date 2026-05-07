@@ -477,7 +477,7 @@ void UbConnLite::FillBatchOneWqe(const RmaBufSliceLite &loc, const RmtRmaBufSlic
 
     u32 sqOffset = pi % sqDepth_;
     pi = pi + 1;
-    if (UNLIKELY(pi > sqDepth_)) {
+    if (UNLIKELY(pi >= sqDepth_)) {
         pi = pi % sqDepth_;
     }
 
