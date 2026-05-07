@@ -812,7 +812,7 @@ DfsConfig CastDfsConfig(const std::string &dfsConfigEnv)
             }else if (rankConsistent == "first")
             {
                 rankConsistentState = 0;   
-            }else if (taskrankConsistentException == "on")
+            }else if (rankConsistent == "on")
             {
                 rankConsistentState = 1;  
             }else {
