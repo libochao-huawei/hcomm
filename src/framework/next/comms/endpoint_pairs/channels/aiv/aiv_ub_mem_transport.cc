@@ -84,7 +84,7 @@ HcclResult AivUbMemTransport::IsSocketReady(bool &isReady)
 void AivUbMemTransport::CheckStatusFuncResult(std::string funcName, HcclResult ret)
 {
     if (UNLIKELY(ret != HCCL_SUCCESS)) {
-        HCCL_ERROR("[%s] ret[%d], aivUbStatus_[%d], baseStatus_[%d]",
+        HCCL_ERROR("[%s] fail ret[%d], aivUbStatus_[%d], baseStatus_[%d]",
             funcName.c_str(), ret, aivUbStatus_, baseStatus_);
         baseStatus_ = Hccl::TransportStatus::INVALID;
     }
