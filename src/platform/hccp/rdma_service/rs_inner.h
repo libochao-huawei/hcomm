@@ -566,6 +566,17 @@ struct rs_cb {
 
     void *ndaCb;
     int ndaCbRefCnt;
+
+    void *custom_ssl;
+};
+
+struct custom_ssl_cb {
+    EVP_PKEY *priv_pkey;
+    OSSL_PROVIDER *default_prov;
+    OSSL_PROVIDER *custom_prov;
+    EVP_PKEY *public_key;
+    EVP_PKEY *priv_key;
+    const char file_name[16];
 };
 
 extern __thread struct rs_cb *gRsCb;
