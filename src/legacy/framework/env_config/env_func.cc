@@ -808,6 +808,7 @@ DfsConfig CastDfsConfig(const std::string &dfsConfigEnv)
             auto taskException = itemPair[1];
             if (taskException != "off" && taskException != "on" && taskException != "first") {
                 HCCL_ERROR("inconsistent_check value is illegal");
+            }
         }
     }
     DfsConfig config{taskExceptionEnable};
