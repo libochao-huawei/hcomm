@@ -21,7 +21,7 @@ target_sources(hcomm PRIVATE
 )
 
 
-if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
+if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
     target_sources(ccl_kernel PRIVATE
         ${src_list}
     )

@@ -19,3 +19,17 @@ set(src_list
 target_sources(hccl_alg PRIVATE
     ${src_list}
 )
+
+if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
+    target_sources(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_mesh_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_ring_plus_hd_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_ring_for_910_93_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_comm_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_single_rank_executor.cc
+    )
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()
