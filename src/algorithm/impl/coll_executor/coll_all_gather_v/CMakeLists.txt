@@ -23,4 +23,15 @@ target_sources(hccl_alg PRIVATE
   ${src_list}
 )
 
+if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
+    target_sources(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_gather_v_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_gather_v_ring_for_910_93_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_aligned_all_gather_v_double_ring_for_910_93_executor.cc
+    )
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()
+
 add_subdirectory(310P)

@@ -19,3 +19,17 @@ set(src_list
 target_sources(hccl_alg PRIVATE
     ${src_list}
 )
+
+if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
+    target_sources(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_batch_send_recv_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_batch_send_recv_retry_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_batch_send_recv_group_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_send_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_receive_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_batch_write_executor.cc
+    )
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()

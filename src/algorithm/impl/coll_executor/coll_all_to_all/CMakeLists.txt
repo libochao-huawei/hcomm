@@ -29,4 +29,21 @@ target_sources(hccl_alg PRIVATE
     ${src_list}
 )
 
+if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
+    target_sources(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_to_all_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_to_all_executor_aicpu.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_to_all_single_rank_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_to_all_v_fullmesh_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_to_all_v_direct_fullmesh_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_to_all_symmetric_memory_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_to_all_v_2level_pipeline_excecutor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_to_all_v_continuous_pipeline_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_to_all_v_staged_executor.cc
+    )
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()
+
 add_subdirectory(310P)
