@@ -835,17 +835,19 @@ HcclResult MyRank::BatchExchangeAndCheckConsistency(
 
     u32 uniqueCount = static_cast<u32>(sockets.size());
 
-    // 所有remoteRank均为存量channel，无需交换
+    // 所有remoteRank均已校验，无需交换
     if (uniqueCount == 0) {
         HCCL_INFO("[BatchExchangeAndCheckConsistency] all remoteRanks already checked, skip exchange.");
         return HCCL_SUCCESS;
     }
-
-    if (hcclComm->GetExchangeInfoLen() > 0){
+    
+    if (GetExternalInconsistentCheckSwitch()){
         // ====== 第一阶段：交换Hcomm基础校验帧并比对 ======
         CHK_RET(ExchangeAndCheckBaseFrame(sockets, remoteRanks, roles, uniqueCount,
             baseCheckInfoLen, commTag, checker));
-    
+    }
+
+    if (hcclComm->GetExchangeInfoLen() > 0){
         // ====== 第二阶段：Hcomm信息校验通过后，交换HCCL算子信息 ======
         CHK_RET(ExchangeUserInfo(sockets, remoteRanks, roles, uniqueCount, hcclComm));
 
@@ -1138,7 +1140,6 @@ HcclResult MyRank::ExchangeUserInfo(
             CHK_RET(hcclComm->StoreRemoteExchangeInfo(remoteRanks[i], remoteUserDatas[i]));
         }
     }
-
     return HCCL_SUCCESS;
 }
 
