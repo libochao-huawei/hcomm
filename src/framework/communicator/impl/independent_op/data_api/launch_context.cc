@@ -107,7 +107,6 @@ HcclResult LaunchContext::HandleClear()
     launchTag 如果为 nullptr，表示缺省值，标识不需要缓存到 FFTS+子图。
  */
 HcclResult LaunchContext::SetLaunchMode(const char* launchTag, HcommLaunchMode mode)
-{
 {FUNCTION_TRACE;
     mode_ = mode;
     // 统一处理 launchTag
