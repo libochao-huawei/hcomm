@@ -3972,4 +3972,11 @@ HcclResult CommunicatorImpl::Mc2AiCpuStreamAllocAndGetV2(rtStream_t *aiCpuStream
     return HCCL_SUCCESS;
 }
 
+std::unordered_map<u32, std::unordered_map<IpAddress, u32>> CommunicatorImpl::GetRanktableInfo() {
+    if (ranktableInfo != nullptr) {
+        return ranktableInfo->GetRankDeviceListenPortMap();
+    }
+    return {};
+}
+
 } // namespace Hccl

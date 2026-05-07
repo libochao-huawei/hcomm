@@ -26,7 +26,7 @@ public:
 
     ~EndpointPairMgr() = default;
 
-    HcclResult Get(const EndpointDescPair &endpointDescPair, EndpointPair*& out);
+    HcclResult Get(const EndpointDescPair &endpointDescPair, EndpointPair*& out,  std::unordered_map<u32, std::unordered_map<IpAddress, u32>>& rankListenPortMap);
     EpChannelMap GetEpChannelMap();
 
 private:

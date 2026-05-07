@@ -22,7 +22,7 @@ HcclResult RankPairMgr::Get(RankIdPair rankIdPair, RankPair*& out)
 
     std::unique_ptr<RankPair> rankPair = nullptr;
     EXECEPTION_CATCH(
-        (rankPair = std::make_unique<RankPair>(rankIdPair)), 
+        (rankPair = std::make_unique<RankPair>(rankIdPair, rankListenPortMap_)), 
         return HCCL_E_PTR
     );
     CHK_SMART_PTR_NULL(rankPair);

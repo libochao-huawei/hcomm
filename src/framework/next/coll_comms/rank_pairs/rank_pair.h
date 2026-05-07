@@ -38,7 +38,7 @@ namespace hccl {
  */
 class RankPair {
 public:
-    RankPair(RankIdPair rankIdPair):
+    RankPair(RankIdPair rankIdPair, std::unordered_map<u32, std::unordered_map<IpAddress, u32>>& rankListenPortMap): rankListenPortMap_(rankListenPortMap)
         localRankId_(rankIdPair.first), remoteRankId_(rankIdPair.second) {}
     ~RankPair() = default;
 
@@ -50,6 +50,7 @@ private:
     RankId localRankId_{};
     RankId remoteRankId_{};
     std::unique_ptr<hcomm::EndpointPairMgr> endpointPairMgr_{};
+    std::unordered_map<u32, std::unordered_map<IpAddress, u32>> rankListenPortMap_{};
 };
 }
 

@@ -44,8 +44,9 @@ HcommChannelDesc ChannelDescHccl2Hcomm(const HcclChannelDesc &hcclDesc)
 
 namespace hccl {
 
-MyRank::MyRank(aclrtBinHandle binHandle, uint32_t rankId, const CommConfig& config, const ManagerCallbacks& callbacks, RankGraph* rankGraph)
-    : binHandle_(binHandle), rankId_(rankId), config_(config), callbacks_(callbacks), rankGraph_(rankGraph)
+MyRank::MyRank(aclrtBinHandle binHandle, uint32_t rankId, const CommConfig& config, const ManagerCallbacks& callbacks, 
+    RankGraph* rankGraph, std::unordered_map<u32, std::unordered_map<IpAddress, u32>> rankListenPortMap)
+    : binHandle_(binHandle), rankId_(rankId), config_(config), callbacks_(callbacks), rankGraph_(rankGraph), rankListenPortMap_(rankListenPortMap)
 {
 }
 
@@ -163,7 +164,7 @@ HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint3
     EXECEPTION_CATCH(endpointMgr_ = std::make_unique<hcomm::EndpointMgr>(), return HCCL_E_PTR);
 
     // rankPairMgr_初始化
-    EXECEPTION_CATCH(rankPairMgr_ = std::make_unique<RankPairMgr>(), return HCCL_E_PTR);
+    EXECEPTION_CATCH(rankPairMgr_ = std::make_unique<RankPairMgr>(rankListenPortMap_), return HCCL_E_PTR);
 
     // EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
