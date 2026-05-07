@@ -272,6 +272,21 @@ ChannelStatus AicpuTsUrmaChannel::GetStatus()
             out = ChannelStatus::INVALID;
             break;
     }
+
+    if (isFirstPrintChannelInfo_ && out == ChannelStatus::READY) {
+        std::string channelInfo = "create channel info:channel handle[";
+        channelInfo.append(std::to_string(reinterpret_cast<uint64_t>(this)));
+        channelInfo.append("] ");
+        HcclResult ret = memTransport_->Describe(channelInfo);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[AicpuTsUrmaChannel][%s] Describe channel info failed, ret=%d", __func__, ret);
+            out = ChannelStatus::FAILED;
+        } else {
+            channelInfo.append(" TA[RM]"); // 目前TA只支持RM
+            HCCL_RUN_INFO("%s", channelInfo.c_str());
+        }
+        isFirstPrintChannelInfo_ = false;
+    }
     return out;
 }
 

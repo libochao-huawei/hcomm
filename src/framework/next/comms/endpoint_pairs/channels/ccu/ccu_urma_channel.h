@@ -13,6 +13,7 @@
 
 #include <memory>
 #include <vector>
+#include <atomic>
 
 #include "../channel.h"
 
@@ -56,6 +57,7 @@ public:
     HcommChannelDesc GetChannelDesc() { return channelDesc_; }
 
 private:
+    std::atomic<bool> isFirstPrintChannelInfo_{true}; // 是否第一次打印通道建链信息，避免重复打印日志刷屏
     std::unique_ptr<CcuTransport> impl_{nullptr};
     EndpointHandle locEndpointHandle_{nullptr};
     HcommChannelDesc channelDesc_{};
