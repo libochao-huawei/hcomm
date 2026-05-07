@@ -136,6 +136,8 @@ HcclResult ChannelProcess::ChannelUpdateMemInfo(HcommMemHandle *memHandles, uint
         }
         channel = itC->second.get();
     }
+
+    // 不在锁内执行，避免单进程多线程场景卡死
     CHK_RET(channel->UpdateMemInfo(memHandles, memHandleNum));
     return HCCL_SUCCESS;
 }
