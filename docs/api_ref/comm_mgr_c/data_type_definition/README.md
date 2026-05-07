@@ -1,0 +1,17 @@
+# 数据类型定义
+
+- [HcclResult](HcclResult.md)
+- [HcclReduceOp](HcclReduceOp.md)
+- [HcclDataType](HcclDataType.md)
+- [HcclConfig](HcclConfig.md)
+- [HcclConfigValue](HcclConfigValue.md)
+- [HcclConfigType](HcclConfigType.md)
+- [HcclOpExpansionMode](HcclOpExpansionMode.md)
+- [HcclRootInfo](HcclRootInfo.md)
+- [HcclComm](HcclComm.md)
+- [HcclSendRecvType](HcclSendRecvType.md)
+- [HcclSendRecvItem](HcclSendRecvItem.md)
+- [HcclCommConfig](HcclCommConfig.md)
+- [HcclCommConfigCapability](HcclCommConfigCapability.md)
+- [HcclCommSymWindow](HcclCommSymWindow.md)
+- [HcclCommStatus](HcclCommStatus.md)

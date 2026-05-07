@@ -1,0 +1,48 @@
+# HcclRankGraphGetRanksByTopoInst
+
+## 产品支持情况
+
+- Ascend 950PR/Ascend 950DT：支持
+- Atlas A3 训练系列产品/Atlas A3 推理系列产品：不支持
+- Atlas A2 训练系列产品/Atlas A2 推理系列产品：不支持
+
+## 功能说明
+
+给定通信域和拓扑层级编号，查询当前rank对应的指定拓扑实例中包含的rank信息。
+
+## 函数原型
+
+```c
+HcclResult HcclRankGraphGetRanksByTopoInst(HcclComm comm, uint32_t netLayer, uint32_t topoInstId, uint32_t **ranks, uint32_t *rankNum)
+```
+
+## 参数说明
+
+| 参数名 | 输入/输出 | 描述 |
+| --- | --- | --- |
+| comm | 输入 | 通信域。<br>HcclComm类型的定义如下：<br>typedef void *HcclComm; |
+| netLayer | 输入 | 拓扑层级编号。 |
+| topoInstId | 输入 | 拓扑实例ID。（拓扑文件中存在的） |
+| ranks | 输出 | 对应拓扑实例中包含的rank列表。 |
+| rankNum | 输出 | 列表数量。 |
+
+## 返回值
+
+[HcclResult](../../../comm_mgr_c/data_type_definition/HcclResult.md)：接口成功返回HCCL_SUCCESS，其他失败。
+
+## 约束说明
+
+无
+
+## 调用示例
+
+```c
+ //8卡通信域，同一个8p Mesh
+HcclComm comm;
+uint32_t netlayer = 0;
+uint32_t topoInstId = 0;
+uint32_t *ranks;
+uint32_t rankNum;
+HcclRankGraphGetRanksByLayer( comm, netLayer, topoInstId,  &ranks, &rankNum )
+ // ranks = [0,1,2,…,7],  rankNum=8
+```

@@ -24,6 +24,8 @@ constexpr u32 RT_SDMA_DATAERR = 0x8; // A3 sdma error类型为0x8时，表示读
 constexpr u32 RT_UB_LOCAL_OPERATIOINERR = 0x2; // A5 ub error类型为0x2时，表示UB本端返回ERROR
 constexpr u32 RT_UB_REMOTE_OPERATIOINERR = 0x3; // A5 ub error类型为0x3时，表示UB远端返回ERROR
 constexpr u32 RT_UB_LINK_FAILEDERR = 0x5; // A5 ub error类型为0x5时，表示网络异常，taack超时
+constexpr uint8_t ubSqeType = 9; // A5 sqeType为9表示UBDMA任务
+constexpr uint8_t sdmaSqeType = 11; // A5 sqeType为11表示SDMA任务
 
 constexpr uint32_t TASK_CONTEXT_SIZE = 50; // task 执行失败时打印谦虚task信息的数量
 constexpr uint32_t TASK_CONTEXT_INFO_SIZE = LOG_TMPBUF_SIZE - 50; // task 执行失败时打印前序task信息的长度限制
@@ -296,11 +298,12 @@ HcclResult HcclCommTaskExceptionLite::SendTaskExceptionByMBox(const u32 notifyId
     aicpuSqe.ts_id = static_cast<uint8_t>(tsId);
     aicpuSqe.u.aicpu_record.fault_task_id = 0xffffffff;
 
-    const uint8_t ubErrorType = 1; // ub类型为1
-    if (exceptionInfo.errorType == ubErrorType) {
+    if (exceptionInfo.sqeType == ubSqeType) {
         aicpuSqe.u.aicpu_record.ret_code = SwitchUBCqeErrCodeToTsErrCode(exceptionInfo.errorCode & 0xFF);
-    } else {
+    } else if (exceptionInfo.sqeType == sdmaSqeType) {
         aicpuSqe.u.aicpu_record.ret_code = SwitchSdmaCqeErrCodeToTsErrCode(exceptionInfo.errorCode);
+    } else {
+        aicpuSqe.u.aicpu_record.ret_code = TS_ERROR_HCCL_OTHER_ERROR;
     }
 
     struct event_summary event;

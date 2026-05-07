@@ -114,6 +114,9 @@ void MockCcuNetworkDeviceDefault(int32_t devPhyId)
         .stubs()
         .will(invoke(RaGetDevEidInfoListStub));
 
+    MOCKER(hcomm::HccpGetUboeFlagEnable).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+    MOCKER(hcomm::HccpCheckUboeSupported).stubs().will(returnValue(false));
+
     MOCKER_CPP(&Hccl::RdmaHandleManager::GetByIp).stubs()
         .will(returnValue((void*)0x12345678)); // 大部分场景ctxHandle非空即可
 
