@@ -271,51 +271,87 @@ function(to_absolute_path origin_sources origin_source_dir output_sources)
     set(${output_sources} ${sources_list} PARENT_SCOPE)
 endfunction()
 
-# 克隆 target
-function(target_clone origin_lib new_lib)
+# 克隆 target 的属性到新 target，IGNORE_PROP 为需要跳过的属性名列表
+#
+# Usage:
+#   target_clone(ORIGIN ccl_kernel NEW aicpu_custom)
+#   target_clone(ORIGIN ccl_kernel NEW aicpu_custom IGNORE_PROP LINK_LIBRARIES)
+#   target_clone(ORIGIN ccl_kernel NEW aicpu_custom IGNORE_PROP SOURCES LINK_LIBRARIES)
+function(target_clone)
+    cmake_parse_arguments(ARG
+        ""
+        "ORIGIN;NEW"
+        "IGNORE_PROP"
+        ${ARGN}
+    )
+
+    if(NOT ARG_ORIGIN OR NOT ARG_NEW)
+        message(FATAL_ERROR "target_clone: ORIGIN or NEW is required")
+    endif()
+
     # 克隆源文件，同时将相对路径转换为绝对路径
-    get_target_property(sourceFiles ${origin_lib} SOURCES)
-    get_target_property(sourceDir ${origin_lib} SOURCE_DIR)
-    to_absolute_path(sourceFiles sourceDir absolute_sources_files)
-    target_sources(${new_lib} PRIVATE
-        ${absolute_sources_files}
-    )
+    if(NOT "SOURCES" IN_LIST ARG_IGNORE_PROP)
+        get_target_property(sourceFiles ${ARG_ORIGIN} SOURCES)
+        get_target_property(sourceDir ${ARG_ORIGIN} SOURCE_DIR)
+        to_absolute_path(sourceFiles sourceDir absolute_sources_files)
+        target_sources(${ARG_NEW} PRIVATE
+            ${absolute_sources_files}
+        )
+    endif()
+
     # 克隆头文件搜索路径
-    get_target_property(includeDirs ${origin_lib} INCLUDE_DIRECTORIES)
-    target_include_directories(${new_lib} PRIVATE
-        ${includeDirs}
-    )
+    if(NOT "INCLUDE_DIRECTORIES" IN_LIST ARG_IGNORE_PROP)
+        get_target_property(includeDirs ${ARG_ORIGIN} INCLUDE_DIRECTORIES)
+        target_include_directories(${ARG_NEW} PRIVATE
+            ${includeDirs}
+        )
+    endif()
+
     # 克隆链接库
-    get_target_property(linkLibs ${origin_lib} LINK_LIBRARIES)
-    target_link_libraries(${new_lib} PRIVATE
-        ${linkLibs}
-    )
+    if(NOT "LINK_LIBRARIES" IN_LIST ARG_IGNORE_PROP)
+        get_target_property(linkLibs ${ARG_ORIGIN} LINK_LIBRARIES)
+        target_link_libraries(${ARG_NEW} PRIVATE
+            ${linkLibs}
+        )
+    endif()
+
     # 克隆链接目录
-    get_target_property(linkDirs ${origin_lib} LINK_DIRECTORIES)
-    if(linkDirs)
-        target_link_directories(${new_lib} PRIVATE
-            ${linkDirs}
-        )
+    if(NOT "LINK_DIRECTORIES" IN_LIST ARG_IGNORE_PROP)
+        get_target_property(linkDirs ${ARG_ORIGIN} LINK_DIRECTORIES)
+        if(linkDirs)
+            target_link_directories(${ARG_NEW} PRIVATE
+                ${linkDirs}
+            )
+        endif()
     endif()
+
     # 克隆宏定义
-    get_target_property(compileDefs ${origin_lib} COMPILE_DEFINITIONS)
-    if(compileDefs)
-        target_compile_definitions(${new_lib} PRIVATE
-            ${compileDefs}
-        )
+    if(NOT "COMPILE_DEFINITIONS" IN_LIST ARG_IGNORE_PROP)
+        get_target_property(compileDefs ${ARG_ORIGIN} COMPILE_DEFINITIONS)
+        if(compileDefs)
+            target_compile_definitions(${ARG_NEW} PRIVATE
+                ${compileDefs}
+            )
+        endif()
     endif()
+
     # 克隆编译选项
-    get_target_property(compileOptions ${origin_lib} COMPILE_OPTIONS)
-    if(compileOptions)
-        target_compile_options(${new_lib} PRIVATE
-            ${compileOptions}
-        )
+    if(NOT "COMPILE_OPTIONS" IN_LIST ARG_IGNORE_PROP)
+        get_target_property(compileOptions ${ARG_ORIGIN} COMPILE_OPTIONS)
+        if(compileOptions)
+            target_compile_options(${ARG_NEW} PRIVATE
+                ${compileOptions}
+            )
+        endif()
     endif()
+
     # 克隆链接选项
-    get_target_property(linkOpts ${origin_lib} LINK_OPTIONS)
-    if(linkOpts)
-        target_link_options(${new_lib} PRIVATE
-            ${linkOpts}
-        )
+    if(NOT "LINK_OPTIONS" IN_LIST ARG_IGNORE_PROP)
+        get_target_property(linkOpts ${ARG_ORIGIN} LINK_OPTIONS)
+        if(linkOpts)
+            target_link_options(${ARG_NEW} PRIVATE
+                ${linkOpts}
+            )
+        endif()
     endif()
 endfunction()

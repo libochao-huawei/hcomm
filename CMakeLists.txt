@@ -8,52 +8,44 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 cmake_minimum_required(VERSION 3.16.0)
+include(cmake/fetch_cann_cmake.cmake)
+project(hcomm)
+
+# 初始化 CANN 项目配置
+init_cann_project()
+
 option(BUILD_OPEN_PROJECT "Build open hcomm project." ON)
 message(STATUS "BUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}")
 message(STATUS "CANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH}")
 message(STATUS "DEVICE_MODE=${DEVICE_MODE}")
 message(STATUS "AARCH_MODE=${AARCH_MODE}")
 
-set(HCOMM_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(HCOMM_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+set(HCC_TOOLCHAIN_DIR "${CUSTOM_ASCEND_CANN_PACKAGE_PATH}/toolkit/toolchain/hcc/")
+set(HCC_CXX_COMPILER  "${HCC_TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-g++")
+set(HCC_C_COMPILER    "${HCC_TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-gcc")
+set(HCC_C_AR          "${HCC_TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-ar")
 
-if((BUILD_OPEN_PROJECT AND DEVICE_MODE) OR AARCH_MODE)
-    # need to switch
+# 交叉编译场景（x86机器上编译arm包）
+if(AARCH_MODE)
+    message(STATUS "TOOLCHAIN_DIR=${HCC_TOOLCHAIN_DIR}")
     set(CMAKE_SYSTEM_NAME Linux)
     set(CMAKE_SYSTEM_PROCESSOR aarch64)
-    #Change the path to the absolute path of the cross compilation tool after the toolkit package is decompressed
-    # set cross compile toolchain dir
-    set(TOOLCHAIN_DIR ${CUSTOM_ASCEND_CANN_PACKAGE_PATH}/toolkit/toolchain/hcc/)
-    message(STATUS "TOOLCHAIN_DIR: ${TOOLCHAIN_DIR}")
-    if (NOT "x${TOOLCHAIN_DIR}" STREQUAL "x")
-        if (NOT IS_DIRECTORY ${TOOLCHAIN_DIR})
-            message(FATAL_ERROR "specify cross compile toolchain directory(${TOOLCHAIN_DIR}) is not exist")
-        endif()
-    endif()
-    # endif()
-    set(CMAKE_CXX_COMPILER ${TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-g++)
-    set(CMAKE_C_COMPILER   ${TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-gcc)
+    set(TOOLCHAIN_DIR      ${HCC_TOOLCHAIN_DIR})
+    set(CMAKE_CXX_COMPILER ${HCC_CXX_COMPILER})
+    set(CMAKE_C_COMPILER   ${HCC_C_COMPILER})
 endif()
 
-# 获取host架构
-execute_process(
-    COMMAND uname -m
-    OUTPUT_VARIABLE SYSTEM_ARCH
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-message(STATUS "当前系统架构: ${SYSTEM_ARCH}")
-
-# 引入CANN/cmake库
-include(cmake/fetch_cann_cmake.cmake)
-
-project(hcomm)
-
-# 引入CANN/cmake库，初始化
-init_cann_project()
-
+# 采用 C++14 标准
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_FLAGS_RELEASE "")
 set(CMAKE_CXX_FLAGS_RELEASE "")
+
+# 默认只编译 host 侧
+if(NOT DEFINED PRODUCT_SIDE)
+    set(PRODUCT_SIDE "host")
+endif()
 
 # 获取 CPU 核心数
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
@@ -90,7 +82,6 @@ if(ENABLE_TEST)
     include(cmake/third_party/mockcpp.cmake)
     include(cmake/third_party/rdma-core.cmake)
     add_subdirectory(test)
-    return()
 
 elseif(BUILD_OPEN_PROJECT)
     include(cmake/third_party/openssl.cmake)
@@ -102,13 +93,39 @@ elseif(BUILD_OPEN_PROJECT)
     include(cmake/package.cmake)
     include(cmake/func.cmake)
     include(version.cmake)
-    if(ENABLE_OPEN_SRC)
-        check_pkg_build_deps("hcomm")
-    endif()
+    check_pkg_build_deps("hcomm")
     add_version_info_targets()
     pack_built_in()
     add_subdirectory(src)
     add_subdirectory(python)
+
+    # Device 侧编译构建
+    if(ENABLE_BUILD_DEVICE)
+        include(ExternalProject)
+        ExternalProject_Add(hcomm_device
+            SOURCE_DIR ${HCOMM_ROOT_DIR}/cmake/device
+            BINARY_DIR ${CMAKE_BINARY_DIR}/device_build
+            CMAKE_ARGS
+                -DTOOLCHAIN_DIR=${HCC_TOOLCHAIN_DIR}
+                -DCMAKE_TOOLCHAIN_FILE=${HCOMM_ROOT_DIR}/cmake/aarch64-hcc-toolchain.cmake
+                -DCMAKE_C_COMPILER=${HCC_C_COMPILER}
+                -DCMAKE_CXX_COMPILER=${HCC_CXX_COMPILER}
+                -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+                -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
+                -DCMAKE_C_AR=${HCC_CXX_AR}
+                -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+                -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/device_install
+                -DASCEND_INSTALL_PATH=${ASCEND_INSTALL_PATH}
+                -DBUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}
+                -DDEVICE_MODE=ON
+                -DCANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH}
+                -DENABLE_SIGN=${ENABLE_SIGN}
+                -DCUSTOM_SIGN_SCRIPT=${CUSTOM_SIGN_SCRIPT}
+                -DVERSION_INFO=${VERSION_INFO}
+            INSTALL_COMMAND ${CMAKE_CPACK_COMMAND}
+            BUILD_ALWAYS TRUE
+        )
+    endif()
 
     set(HCCL_HEAD
         include/hccl/hccl_comm.h
