@@ -38,6 +38,9 @@
 #include "param_check_pub.h"
 #include "channel_process.h"
 #include "launch_device.h"
+#include "hccp_nda.h"
+#include "orion_adpt_utils.h"
+#include "hccp_peer_manager.h"
 
 
 namespace hcomm {
@@ -635,6 +638,47 @@ HcommResult HcommDfxKernelLaunch(const std::string &commTag, aclrtBinHandle binH
         hcclStreamSynchronize(localStream.ptr(), hccl::CommConfiger::GetInstance().GetCommConfigExecTimeOut(commTag)));
 
     HCCL_INFO("[%s] channel kernel launch success.", __func__);
+
+    return HCCL_SUCCESS;
+}
+
+HcommResult HcommEndpointCheckFeature(HcommFeatureType featureType, const EndpointDesc *endpointDesc, bool *value)
+{
+    CHK_PTR_NULL(endpointDesc);
+    CHK_PTR_NULL(value);
+
+    if (featureType == HCOMM_FEATURE_NDRA) {
+        if (endpointDesc->protocol != COMM_PROTOCOL_ROCE || endpointDesc->loc.locType != ENDPOINT_LOC_TYPE_HOST) {
+            HCCL_INFO("[%s] not support NDRA, protocol[%d], locType[%d]",
+                __func__, endpointDesc->protocol, endpointDesc->loc.locType);
+            *value = false;
+            return HCCL_SUCCESS;
+        }
+
+        EXCEPTION_HANDLE_BEGIN
+        Hccl::IpAddress ipAddr{};
+        CHK_RET(hcomm::CommAddrToIpAddress(endpointDesc->commAddr, ipAddr));
+        s32 devId = 0;
+        CHK_RET(hrtGetDevice(&devId));
+        Hccl::HccpPeerManager::GetInstance().Init(devId);
+        u32 devPhyId = 0;
+        CHK_RET(hrtGetDevicePhyIdByIndex(devId, devPhyId));
+        auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
+        void *rdmaHandle = static_cast<void *>(
+            rdmaHandleMgr.GetByAddr(devPhyId, Hccl::LinkProtoType::RDMA, ipAddr, Hccl::PortDeploymentType::HOST_NET));
+        CHK_PTR_NULL(rdmaHandle);
+        s32 directFlag = 0;
+        s32 ret = RaNdaGetDirectFlag(rdmaHandle, &directFlag);
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[%s] failed to get directFlag, ret[%d]", __func__, ret), HCCL_E_INTERNAL);
+        *value = (directFlag != DIRECT_FLAG_NOTSUPP);
+        HCCL_INFO("[%s] %s NDRA, devId[%u], ipAddr[%s], rdmaHandle[%p], directFlag[%d]",
+            __func__, *value ? "support" : "not support", devPhyId, ipAddr.Describe().c_str(), rdmaHandle, directFlag);
+        EXCEPTION_HANDLE_END
+    } else {
+        HCCL_INFO("[%s] unsupported featureType[%d]", __func__, featureType);
+        *value = false;
+    }
 
     return HCCL_SUCCESS;
 }
