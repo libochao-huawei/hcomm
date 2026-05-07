@@ -18,7 +18,7 @@ ENDIF ()
 set(HCCL_V2_CODE_ROOT ${ORION_REAL_PATH})
 set(HCCL_BASE_DIR ${HCOMM_REAL_PATH})
 
-
+include(hccl_v2.cmake)
 
 # 创建 ccl_dpu 共享动态库
 add_library(ccl_dpu SHARED)
