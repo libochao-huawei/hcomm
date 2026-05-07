@@ -37,7 +37,7 @@ message("Build third party library rdma-core")
 set(RDMA_CORE_NAME "rdma-core")
 set(RDMA_CORE_VERSION "42.7")
 set(RDMA_CORE_URL "https://gitcode.com/cann-src-third-party/rdma-core/releases/download/v42.7-h2/rdma-core-42.7.tar.gz")
-set(RDMA_CORE_PATCH_URL "https://gitcode.com/cann-src-third-party/rdma-core/releases/download/v42.7-h2/rdma-core-42.7.patch")
+set(RDMA_CORE_PATCH_URL "https://raw.gitcode.com/sz-Tang/rdma-core/blobs/92dddb684e95427e56e66607e1f6624974115146/rdma-core-42.7.patch")
 set(ROOT_BUILD_PATH "${CMAKE_SOURCE_DIR}/third_party")
 set(RDMA_CORE_SEARCH_PATHS "${CANN_3RD_LIB_PATH}/${RDMA_CORE_NAME}")
 set(RDMA_CORE_ROOT_DIR ${ROOT_BUILD_PATH}/rdma-core)
@@ -68,7 +68,7 @@ else()
         download_file(${RDMA_CORE_URL} ${RDMA_CORE_ARCHIVE_PATH} SHA256=aa935de1fcd07c42f7237b0284b5697b1ace2a64f2bcfca3893185bc91b8c74d)
 
         # -------------------------- dowloading patch --------------------------
-        download_file(${RDMA_CORE_PATCH_URL} ${RDMA_CORE_PATCH_PATH} SHA256=54ca56b3b68bc465a78dd5839cd7110610745c7152a1dc3a72b265deeebb905f)
+        download_file(${RDMA_CORE_PATCH_URL} ${RDMA_CORE_PATCH_PATH} SHA256=db66a723a4e9ed506767def7a8e21003485c92a3bb1aadb5e00aa6e1fc6d8427)
 
         # -------------------------- Extracting --------------------------
         message(STATUS "Extracting rdma-core...")
