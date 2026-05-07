@@ -620,6 +620,12 @@ HcclResult AicpuTsRoceChannelV2::BuildAndGetDevChannelEntity(void** devChannelEn
 {
     CHK_PTR_NULL(devChannelEntityPtr);
 
+    if (devChannelEntityPtr_ != nullptr) {
+        *devChannelEntityPtr = devChannelEntityPtr_;
+        HCCL_INFO("[AicpuTsRoceChannelV2::%s] already built, return cached devPtr=%p", __func__, devChannelEntityPtr_);
+        return HCCL_SUCCESS;
+    }
+
     ChannelEntity hostEntity{};
     hostEntity.abiHeader.version   = HCCL_CHANNEL_VERSION;
     hostEntity.abiHeader.magicWord = HCCL_CHANNEL_MAGIC_WORD;
@@ -674,6 +680,7 @@ HcclResult AicpuTsRoceChannelV2::BuildAndGetDevChannelEntity(void** devChannelEn
                      Hccl::tagRtMemcpyKind::RT_MEMCPY_HOST_TO_DEVICE);
 
     *devChannelEntityPtr = entityDevPtr;
+    devChannelEntityPtr_ = entityDevPtr;
     HCCL_INFO("[AicpuTsRoceChannelV2::%s] Success, devPtr=%p", __func__, entityDevPtr);
     return HCCL_SUCCESS;
 }
@@ -708,6 +715,7 @@ void AicpuTsRoceChannelV2::FreeDeviceMemories()
 {
     deviceMemories_.clear();
     ptrArrayDevPtr_.reset();
+    devChannelEntityPtr_ = nullptr;
 }
 
 void AicpuTsRoceChannelV2::SetPtrArrayDevPtr(std::shared_ptr<hccl::DeviceMem> ptr)
