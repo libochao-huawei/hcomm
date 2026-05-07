@@ -361,7 +361,6 @@ void RankInfoDetectClient::VerifyRankTable()
     CHK_PRT_THROW(ret != HCCL_SUCCESS,
         HCCL_ERROR("[RankInfoDetectClient::%s] tls consistency verify failed, ret[%d]", __func__, ret),
         InvalidParamsException, "tls consistency verify failed");
-    }
 
     HCCL_INFO("[RankInfoDetectClient::%s] end.", __func__);
 }
