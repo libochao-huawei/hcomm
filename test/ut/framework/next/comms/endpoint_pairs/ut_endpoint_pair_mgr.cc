@@ -41,9 +41,9 @@ TEST_F(EndpointPairMgrTest, GetEpChannelMap_ReturnsInsertedChannelHandles)
     remoteEp.loc.locType = ENDPOINT_LOC_TYPE_HOST;
 
     EndpointDescPair key = std::make_pair(localEp, remoteEp);
-
+    Hccl::RankIpPortMap rankIpPortMap;
     // Prepare an EndpointPair and populate its channelHandles_
-    auto epPtr = std::make_unique<EndpointPair>(localEp, remoteEp);
+    auto epPtr = std::make_unique<EndpointPair>(localEp, remoteEp, rankIpPortMap);
     // Directly set the internal channel handles (we accessed private via #define)
     epPtr->channelHandles_[COMM_ENGINE_CPU] = { (ChannelHandle)0x11, (ChannelHandle)0x22 };
 

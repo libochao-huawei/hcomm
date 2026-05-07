@@ -20,6 +20,7 @@ public:
         BaseInit::TearDown();
         GlobalMockObject::verify();
     }
+    Hccl::RankIpPortMap rankIpPortMap;
 };
 
 TEST_F(TestEndpointPair, Ut_EndpointPair_Construct_Expect_HCCL_SUCCESS)
@@ -39,7 +40,7 @@ TEST_F(TestEndpointPair, Ut_EndpointPair_Construct_Expect_HCCL_SUCCESS)
 
     MOCKER_CPP(&SocketMgr::GetSocket).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
 
-    EndpointPair endpointPair(localEndpointDesc, remoteEndpointDesc);
+    EndpointPair endpointPair(localEndpointDesc, remoteEndpointDesc, rankIpPortMap);
     HcclResult ret = endpointPair.Init();
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
@@ -67,7 +68,7 @@ TEST_F(TestEndpointPair, Ut_DestroyChannel_When_Channel_Not_Exist_Expect_SUCCESS
     Hccl::IpAddress remoteIp("192.168.100.101");
     remoteEndpointDesc.commAddr.addr = remoteIp.GetBinaryAddress().addr;
     remoteEndpointDesc.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
-    EndpointPair endpointPair(localEndpointDesc, remoteEndpointDesc);
+    EndpointPair endpointPair(localEndpointDesc, remoteEndpointDesc, rankIpPortMap);
     HcclResult ret = endpointPair.Init();
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(endpointPair.channelHandles_.size(), 0);
@@ -93,7 +94,7 @@ TEST_F(TestEndpointPair, Ut_DestroyChannel_When_Channel_Exist_Expect_SUCCESS)
     Hccl::IpAddress remoteIp("192.168.100.101");
     remoteEndpointDesc.commAddr.addr = remoteIp.GetBinaryAddress().addr;
     remoteEndpointDesc.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
-    EndpointPair endpointPair(localEndpointDesc, remoteEndpointDesc);
+    EndpointPair endpointPair(localEndpointDesc, remoteEndpointDesc, rankIpPortMap);
     HcclResult ret = endpointPair.Init();
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
