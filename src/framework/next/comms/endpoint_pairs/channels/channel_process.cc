@@ -134,6 +134,7 @@ HcclResult ChannelProcess::ChannelUpdateMemInfo(HcommMemHandle *memHandles, uint
                 mappedHandle);
             return HcclResult::HCCL_E_INTERNAL;
         }
+        channel = itC->second.get();
     }
     CHK_RET(channel->UpdateMemInfo(memHandles, memHandleNum));
     return HCCL_SUCCESS;
