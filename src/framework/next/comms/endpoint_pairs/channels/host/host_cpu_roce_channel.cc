@@ -176,7 +176,7 @@ HcclResult HostCpuRoceChannel::BuildSocket()
 
 HcclResult HostCpuRoceChannel::BuildConnection()
 {
-    int lbMax = 0;
+    int lbMax = 1;
     uint32_t ret = RaGetLbMax(rdmaHandle_, &lbMax);
     CHK_PRT_RET(ret != 0,
         HCCL_ERROR("[HostCpuRoceChannel::BuildConnection][GetLbMax]errNo[0x%016llx] RaGetLbMax fail. "
