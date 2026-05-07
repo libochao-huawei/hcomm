@@ -64,9 +64,8 @@ void RankInfoDetectClient::CheckStatus()
             HCCL_ERROR("[RankInfoDetectClient::%s] get connected status socket timeout! timeout[%lld s]", __func__, timeout);
             RPT_INPUT_ERR(isTimeout, "EI0015", std::vector<std::string>({"error_reason"}),
                 std::vector<std::string>({StringFormat("Receiving message from the root node timed out "
-                    "after %lld seconds. Timeout was set to %lld seconds. Check whether node %s reports an error.",
-                    static_cast<long long>(elapsed.count()), static_cast<long long>(timeout.count()),
-                    identifier_.c_str())}));
+                    "Timeout was set to %lld seconds. Check whether node rankId[%u] reports an error.",
+                    static_cast<long long>(timeout.count()), rankId_)}));
             THROW<TimeoutException>("client get connection timeout");
         }
 

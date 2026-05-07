@@ -67,10 +67,11 @@ void RankInfoDetectService::GetConnections()
     while (expectedSocketNum > 0) {
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
             RPT_INPUT_ERR(true, "EI0015", std::vector<std::string>({"error_reason"}),
-                std::vector<std::string>({StringFormat("Receiving message from the root node timed out "
-                    "after %lld seconds. Timeout was set to %lld seconds. Check whether node %s reports an error.",
-                    static_cast<long long>(elapsed.count()), static_cast<long long>(timeout.count()),
-                    identifier_.c_str())}));
+                std::vector<std::string>({StringFormat("Receiving message from the root node timed out. "
+                    "Timeout was set to %lld seconds. expected %u nodes, received %u nodes. "
+                    "Check whether worker nodes are reachable and report errors.",
+                    static_cast<long long>(timeout.count()),
+                    expectedSocketNum + previousRankNum, previousRankNum)}));
             HCCL_ERROR("[RankInfoDetectService::%s] server get sockets timeout[%lld s]", __func__, timeout);
             break;
         }
@@ -99,10 +100,11 @@ void RankInfoDetectService::GetConnections()
                 continue;
             }
             RPT_INPUT_ERR(true, "EI0015", std::vector<std::string>({"error_reason"}),
-                std::vector<std::string>({StringFormat("Receiving message from the root node timed out "
-                    "after %lld seconds. Timeout was set to %lld seconds. Check whether node %s reports an error.",
-                    static_cast<long long>(elapsed.count()), static_cast<long long>(timeout.count()),
-                    identifier_.c_str())}));
+                std::vector<std::string>({StringFormat("Receiving message from the root node timed out. "
+                    "Timeout was set to %lld seconds. expected %u nodes, received %u nodes. "
+                    "Check whether worker nodes are reachable and report errors.",
+                    static_cast<long long>(timeout.count()),
+                    expectedSocketNum + previousRankNum, previousRankNum)}));
             HCCL_ERROR("[RankInfoDetectService::%s] rank info detect server get socket timeout[%lld s]", __func__, timeout);
             DisplayConnectingStatus(previousRankNum, expectedSocketNum);
             isFirstAcceptTimeOut = true;

@@ -210,9 +210,8 @@ void RankInfoDispather::ProcessSend()
             HCCL_ERROR("[RankInfoDispather::%s] epoll_wait timeout.", __func__);
             RPT_INPUT_ERR(true, "EI0015", std::vector<std::string>({"error_reason"}),
                 std::vector<std::string>({StringFormat("Receiving message from the root node timed out "
-                    "after %lld seconds. Timeout was set to %lld seconds. Check whether node %s reports an error.",
-                    static_cast<long long>(elapsed.count()), static_cast<long long>(timeout.count()),
-                    identifier_.c_str())}));
+                    "Timeout was set to %lld seconds. Expected to send to %u nodes, completed %u nodes.",
+                    static_cast<long long>(timeout.count()), rankNum_, sendDoneCount_.load())}));
             THROW<TimeoutException>("epoll_wait timeout");
         }
         
