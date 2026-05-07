@@ -17,6 +17,11 @@
 #include "endpoint_map.h"
 #include "next/comms/endpoint_pairs/channels/aiv/aiv_urma_channel.h"
 #include "next/comms/endpoint_pairs/channels/aicpu/aicpu_ts_urma_channel.h"
+#include "orion_adpt_utils.h"
+#include "hccp_peer_manager.h"
+#include "rdma_handle_manager.h"
+#include "hccp_nda.h"
+#include "adapter_rts_common.h"
 
 using namespace hcomm;
 
@@ -424,3 +429,33 @@ TEST_F(HcommCAdptTest, ut_HcommEndpointGetListenPort_When_HandleInvalid_Expect_E
     EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
 }
 
+
+TEST_F(HcommCAdptTest, ut_HcommEndpointCheckFeature_When_SupportedFeature_Expect_True)
+{
+    EndpointDesc endpointDesc{};
+    (void)memset_s(&endpointDesc, sizeof(endpointDesc), 0, sizeof(endpointDesc));
+    endpointDesc.protocol = COMM_PROTOCOL_ROCE;
+    endpointDesc.loc.locType = ENDPOINT_LOC_TYPE_HOST;
+    endpointDesc.commAddr.type = COMM_ADDR_TYPE_IP_V4;
+
+    MOCKER(hcomm::CommAddrToIpAddress).stubs().will(returnValue(HCCL_SUCCESS));
+
+    s32 devId = 0;
+    MOCKER(hrtGetDevice).stubs().with(outBoundP(&devId)).will(returnValue(HCCL_SUCCESS));
+
+    MOCKER_CPP(&Hccl::HccpPeerManager::Init).stubs().with(any()).will(ignoreReturnValue());
+
+    u32 devPhyId = 0;
+    MOCKER(hrtGetDevicePhyIdByIndex).stubs().with(any(), outBound(devPhyId)).will(returnValue(HCCL_SUCCESS));
+
+    void *fakeRdmaHandle = reinterpret_cast<void *>(0x12345678);
+    MOCKER_CPP(&Hccl::RdmaHandleManager::GetByAddr).stubs().will(returnValue(fakeRdmaHandle));
+
+    s32 directFlag = DIRECT_FLAG_PCIE;
+    MOCKER(RaNdaGetDirectFlag).stubs().with(any(), outBoundP(&directFlag)).will(returnValue(0));
+
+    bool value = false;
+    HcommResult ret = HcommEndpointCheckFeature(HCOMM_FEATURE_NDA, &endpointDesc, &value);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(value, true);
+}

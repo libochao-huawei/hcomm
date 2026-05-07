@@ -46,6 +46,8 @@ extern HcommResult HcommChannelGetPtrByHandle(const ChannelHandle *channelList, 
 
 extern HcommResult HcommEndpointGetListenPort(EndpointHandle endpointHandle, uint32_t *port);
 
+extern HcommResult HcommEndpointCheckFeature(HcommFeatureType featureType, const EndpointDesc *endpointDesc, bool *value);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus
