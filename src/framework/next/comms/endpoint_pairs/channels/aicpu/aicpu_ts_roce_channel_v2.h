@@ -151,6 +151,7 @@ private:
     std::vector<ProtectionInfo>                             rmtBufProtecInfoList_{};
     std::vector<hccl::DeviceMem>                            deviceMemories_;
     std::shared_ptr<hccl::DeviceMem>                        ptrArrayDevPtr_;
+    void*                                                   devChannelEntityPtr_{nullptr};
 };
 
 } // namespace hcomm
