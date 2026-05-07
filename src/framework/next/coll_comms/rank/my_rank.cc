@@ -764,21 +764,21 @@ HcclResult MyRank::BatchExchangeAndCheckConsistency(
         return HCCL_SUCCESS;
     }
 
-    // ====== 第一阶段：交换Hcomm基础校验帧并比对 ======
-    CHK_RET(ExchangeAndCheckBaseFrame(sockets, remoteRanks, roles, uniqueCount,
-        baseCheckInfoLen, commTag, checker));
-    
     if (hcclComm->GetExchangeInfoLen() > 0){
+        // ====== 第一阶段：交换Hcomm基础校验帧并比对 ======
+        CHK_RET(ExchangeAndCheckBaseFrame(sockets, remoteRanks, roles, uniqueCount,
+            baseCheckInfoLen, commTag, checker));
+    
         // ====== 第二阶段：Hcomm信息校验通过后，交换HCCL算子信息 ======
         CHK_RET(ExchangeUserInfo(sockets, remoteRanks, roles, uniqueCount, hcclComm));
-    }
-    
-    HCCL_INFO("[BatchExchangeAndCheckConsistency] all[%u] new ranks check passed.", uniqueCount);
 
-    for (u32 i = 0; i < uniqueCount; i++) {
-        hcclComm->MarkRemoteRankChecked(remoteRanks[i]);
+        HCCL_INFO("[BatchExchangeAndCheckConsistency] all[%u] new ranks check passed.", uniqueCount);
+
+        for (u32 i = 0; i < uniqueCount; i++) {
+            hcclComm->MarkRemoteRankChecked(remoteRanks[i]);
+        }
+        hcclComm->ClearExchangeInfoState();
     }
-    hcclComm->ClearExchangeInfoState();
 
     return HCCL_SUCCESS;
 }
