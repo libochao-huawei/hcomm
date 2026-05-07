@@ -363,6 +363,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank/comm_mems/
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank_pairs
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/common/loggers
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aicpu/

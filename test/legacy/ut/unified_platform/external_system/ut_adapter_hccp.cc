@@ -248,6 +248,20 @@ TEST_F(AdapterHccpTest, Ut_HrtRaSocketTryListenOneStart_When_InValid_IP_Expect_T
     EXPECT_THROW(HrtRaSocketTryListenOneStart(listenInfo), NetworkApiException);
 }
 
+TEST_F(AdapterHccpTest, Ut_HrtRaSocketNonBlockRecvHeart_When_Input_normal_Expect_Return_Success)
+{
+    u64 recvbuffer = 0;
+    u64 recvedSizePtr = 1;
+    u64 fd = 0;
+    SocketHandle socketHandle = &fd;
+    MOCKER(RaSocketRecv).stubs().with(any(), any(), any(), outBoundP(&recvedSizePtr, sizeof(recvedSizePtr)))
+        .will(returnValue(0));
+
+    HcclResult ret = HrtRaSocketNonBlockRecvHeart(socketHandle, &recvbuffer, sizeof(recvbuffer), &recvedSizePtr);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(sizeof(recvbuffer), recvedSizePtr);
+}
+
 TEST_F(AdapterHccpTest, HrtRaSocketInit_OK)
 {
     // Given

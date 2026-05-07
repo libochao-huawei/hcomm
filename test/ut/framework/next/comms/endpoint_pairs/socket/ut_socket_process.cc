@@ -67,7 +67,7 @@ public:
 SocketHandle SocketProcessTest::socketHandle = nullptr;
 SocketDesc SocketProcessTest::socketDesc{};
 
-TEST_F(SocketProcessTest, Ut_GetSocket_ERROR)
+TEST_F(SocketProcessTest, Ut_GetSocket_When_NullptrInput_Expect_ReturnError)
 {
     SocketDesc *tempSocketDesc = nullptr;
     SocketHandle tempSocketHandle = nullptr;
@@ -75,13 +75,13 @@ TEST_F(SocketProcessTest, Ut_GetSocket_ERROR)
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
-TEST_F(SocketProcessTest, Ut_GetSocket_Success)
+TEST_F(SocketProcessTest, Ut_GetSocket_When_NormalInput_Expect_GetSocketHandle)
 {
     HcclResult ret = hcomm::SocketProcess::GetInstance(0).GetSocket(&SocketProcessTest::socketDesc, SocketProcessTest::socketHandle);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-TEST_F(SocketProcessTest, Ut_GetStatus_ERROR)
+TEST_F(SocketProcessTest, Ut_GetStatus_When_InvalidInput_Expect_ReturnError)
 {
     SocketHandle tempSocketHandle = nullptr;
     SocketStates socketStatus;
@@ -93,7 +93,7 @@ TEST_F(SocketProcessTest, Ut_GetStatus_ERROR)
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
-TEST_F(SocketProcessTest, Ut_GetStatus_Success)
+TEST_F(SocketProcessTest, Ut_GetStatus_When_NormalInput_Expect_GetSocketStatus)
 {
     HcclResult ret;
     SocketStates socketStatus;
@@ -111,7 +111,7 @@ TEST_F(SocketProcessTest, Ut_GetStatus_Success)
     }
 }
 
-TEST_F(SocketProcessTest, Ut_SendNoBlock_ERROR)
+TEST_F(SocketProcessTest, Ut_SendNoBlock_When_InvalidInput_Expect_ReturnError)
 {
     SocketHandle tempSocketHandle = nullptr;
     u64 sendbuffer = 123;
@@ -129,7 +129,7 @@ TEST_F(SocketProcessTest, Ut_SendNoBlock_ERROR)
     EXPECT_EQ(ret, HCCL_E_PARA);    
 }
 
-TEST_F(SocketProcessTest, Ut_SendNoBlock_Success)
+TEST_F(SocketProcessTest, Ut_SendNoBlock_When_NormalInput_Expect_SendData)
 {
     HcclResult ret;
     if (SocketProcessTest::socketHandle == nullptr) {
@@ -146,7 +146,7 @@ TEST_F(SocketProcessTest, Ut_SendNoBlock_Success)
     EXPECT_EQ(sendSize, *sentSizePtr);
 }
 
-TEST_F(SocketProcessTest, Ut_RecvNoBlock_ERROR)
+TEST_F(SocketProcessTest, Ut_RecvNoBlock_When_InvalidInput_Expect_ReturnError)
 {
     SocketHandle tempSocketHandle = nullptr;
     u64 recvbuffer = 0;
@@ -165,7 +165,7 @@ TEST_F(SocketProcessTest, Ut_RecvNoBlock_ERROR)
     EXPECT_EQ(ret, HCCL_E_PARA);   
 }
 
-TEST_F(SocketProcessTest, Ut_RecvNoBlock_Success)
+TEST_F(SocketProcessTest, Ut_RecvNoBlock_When_NormalInput_Expect_RecvData)
 {
     HcclResult ret;
     if (SocketProcessTest::socketHandle == nullptr) {
@@ -182,7 +182,7 @@ TEST_F(SocketProcessTest, Ut_RecvNoBlock_Success)
     EXPECT_EQ(recvSize, *recvedSizePtr);
 }
 
-TEST_F(SocketProcessTest, Ut_ConvertToHcclSocketRole)
+TEST_F(SocketProcessTest, Ut_ConvertToHcclSocketRole_When_NormalInput_Expect_ConvertRole)
 {
     Hccl::SocketRole role;
     HcommSocketRole hcommRole;
@@ -199,7 +199,7 @@ TEST_F(SocketProcessTest, Ut_ConvertToHcclSocketRole)
     EXPECT_EQ(role, Hccl::SocketRole::CLIENT);
 }
 
-TEST_F(SocketProcessTest, Ut_GetInstance_SocketProcessRef)
+TEST_F(SocketProcessTest, Ut_GetInstance_SocketProcessRef_When_CalledTwice_Expect_SameInstance)
 {
     s32 deviceLogicId = 0;
     hcomm::SocketProcess &process1 = hcomm::SocketProcess::GetInstance(deviceLogicId);
@@ -207,7 +207,7 @@ TEST_F(SocketProcessTest, Ut_GetInstance_SocketProcessRef)
     EXPECT_EQ(&process1, &process2);
 }
 
-TEST_F(SocketProcessTest, Ut_GetInstance_FirstInstance)
+TEST_F(SocketProcessTest, Ut_GetInstance_When_InvalidDeviceLogicId_Expect_ReturnDefaultInstance)
 {
     s32 invalidDeviceLogicId = 999;
     hcomm::SocketProcess &process = hcomm::SocketProcess::GetInstance(invalidDeviceLogicId);
@@ -215,7 +215,7 @@ TEST_F(SocketProcessTest, Ut_GetInstance_FirstInstance)
     EXPECT_EQ(&process, &expectedProcess);
 }
 
-TEST_F(SocketProcessTest, Ut_DestroySocketHandle_ERROR)
+TEST_F(SocketProcessTest, Ut_DestroySocketHandle_When_InvalidInput_Expect_ReturnError)
 {
     SocketHandle tempSocketHandle = nullptr;
     HcclResult ret = hcomm::SocketProcess::GetInstance(0).DestroySocketHandle(tempSocketHandle);
@@ -226,7 +226,7 @@ TEST_F(SocketProcessTest, Ut_DestroySocketHandle_ERROR)
     EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
 }
 
-TEST_F(SocketProcessTest, Ut_DestroySocketHandle_Success)
+TEST_F(SocketProcessTest, Ut_DestroySocketHandle_When_NormalInput_Expect_Success)
 {
     HcclResult ret;
     if (SocketProcessTest::socketHandle == nullptr) {
