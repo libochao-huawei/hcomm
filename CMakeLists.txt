@@ -305,7 +305,8 @@ elseif(BUILD_OPEN_PROJECT)
     )
     install(FILES
         ${HCCL_PKG_CCU_NEW_HEAD}
-        DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hcomm/ccu_new/ OPTIONAL
+        DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hcomm/ccu_new/ ${INSTALL_OPTIONAL}
+        COMPONENT hcomm
     )
     set(HCOMM_PKG_HEAD
         pkg_inc/hcomm/hcomm_primitives_expt.h
