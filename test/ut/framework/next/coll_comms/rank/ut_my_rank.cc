@@ -739,7 +739,7 @@ TEST_F(MyRankTest, Ut_BatchExchange_When_HcommCheckFail_Expect_NoHcclExchange)
     EXPECT_EQ(ret, HCCL_E_INTERNAL);
 
     // 验证：Hcomm校验失败后不进入第二阶段HCCL交换，
-    // 交换信息未被消费（IsExchangeInfoReady仍为true，未被ResetExchangeInfoState清空）
+    // 交换信息未被消费（IsExchangeInfoReady仍为true，未被ResetExchangeInfo清空）
     EXPECT_TRUE(comm.IsExchangeInfoReady());
 
     // 验证：失败后remoteRank未被标记为已校验

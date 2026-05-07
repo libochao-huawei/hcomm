@@ -418,7 +418,7 @@ public:
     HcclResult AddExchangeInfo(void *data, uint32_t length);
     HcclResult GetExchangeInfo(uint32_t remoteRank, void* data, uint32_t &length);
     HcclResult StoreRemoteExchangeInfo(uint32_t remoteRank, const std::vector<u8>& data);
-    void ResetExchangeInfoState();
+    void ResetExchangeInfo();
     bool IsExchangeInfoReady() const;
     const std::vector<u8>& GetExchangeInfoBuf() const;
     uint32_t GetExchangeInfoLen() const;
