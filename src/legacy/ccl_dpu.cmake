@@ -7,42 +7,22 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-# 创建 ccl_dpu 共享动态库
-add_library(ccl_dpu SHARED)
-# 指定 ccl_dpu 需要包含的文件搜索路径
+
+# 定义 ccl_dpu 动态链接库，在 host 侧使用
+add_library(ccl_dpu SHARED
+    ${CMAKE_CURRENT_SOURCE_DIR}/framework/communicator/hostdpu/dpu_kernel_entrance.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/framework/communicator/hostdpu/task_service.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/log.cc
+)
+
+# 宏定义
 target_compile_definitions(ccl_dpu PRIVATE
+    HCCD
+    OPEN_BUILD_PROJECT
     $<$<STREQUAL:${PRODUCT_SIDE},host>:_GLIBCXX_USE_CXX11_ABI=0>
 )
 
-target_include_directories(ccl_dpu PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/base/inc
-    ${HCCL_BASE_DIR}/include/
-    ${HCCL_BASE_DIR}/include/hccl
-    ${HCCL_BASE_DIR}/pkg_inc
-    ${HCCL_BASE_DIR}/src/pub_inc/hccl
-    ${ASCEND_CANN_PACKAGE_PATH}/include
-    ${ASCEND_CANN_PACKAGE_PATH}/include/hccl
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
-    ${HCCL_V2_CODE_ROOT}/common/
-)
-# 指定 ccl_dpu 的构建依赖关系
-add_dependencies(hccl_v2 ccl_dpu)
-# 指定源文件
-set(CCL_DPU_SRC_LIST
-    ${HCCL_V2_CODE_ROOT}/framework/communicator/hostdpu/dpu_kernel_entrance.cc
-    ${HCCL_V2_CODE_ROOT}/framework/communicator/hostdpu/task_service.cc
-    ${HCCL_V2_CODE_ROOT}/common/log.cc
-)
-target_sources(ccl_dpu PRIVATE
-    ${CCL_DPU_SRC_LIST}
-)
-
-# 指定 ccl_dpu 的编译选项
+# 编译选项
 target_compile_options(ccl_dpu PRIVATE
     -Werror
     -Wall
@@ -54,19 +34,16 @@ target_compile_options(ccl_dpu PRIVATE
     -fstack-protector-all
     $<$<CONFIG:Debug>:-g>
 )
-# 为 ccl_dpu 添加编译定义
-target_compile_definitions(ccl_dpu PRIVATE
-    HCCD
-    OPEN_BUILD_PROJECT
-)
-# 向 ccl_dpu 添加链接器选项
+
+# 链接选项
 target_link_options(ccl_dpu PRIVATE
     -Wl,-z,relro,-z,now,-z,noexecstack
     -Wl,-Bsymbolic
     -Wl,--exclude-libs,ALL
     $<$<CONFIG:Release>:-s>
 )
-# 将库文件链接到目标ccl_dpu
+
+# 链接库
 target_link_libraries(ccl_dpu
     -Wl,--no-as-needed
     c_sec
@@ -79,31 +56,34 @@ target_link_libraries(ccl_dpu
     -lpthread
 )
 
+# 头文件搜索路径
+target_include_directories(ccl_dpu PRIVATE
+    ${HCOMM_DIR}/src/include/
+    ${HCOMM_DIR}/src/include/hccl
+    ${HCOMM_DIR}/src/pkg_inc
+    ${CMAKE_CURRENT_SOURCE_DIR}/common
+    ${CMAKE_CURRENT_SOURCE_DIR}/base/inc
+)
+
+if(BUILD_OPEN_PROJECT)
+    target_include_directories(ccl_dpu PRIVATE
+        ${ASCEND_CANN_PACKAGE_PATH}/include
+        ${ASCEND_CANN_PACKAGE_PATH}/include/hccl
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
+    )
+endif()
+
 # 指定 ccl_dpu 构建完成后安装到指定的目标位置
-install(TARGETS  ccl_dpu
+install(TARGETS ccl_dpu
     LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
     COMPONENT hcomm
 )
-install(TARGETS  ccl_dpu
+install(TARGETS ccl_dpu
     LIBRARY DESTINATION ${INSTALL_DPU_KERNEL_JSON_DIR} ${INSTALL_OPTIONAL}
     COMPONENT hcomm
 )
-
-# 需要链接的库，后需增加
-IF (NOT DEFINED ENV{HCCL_LOCAL_BUILD})
-target_link_libraries(hccl_v2 PRIVATE
-    -Wl,--no-as-needed
-    c_sec
-    unified_dlog
-    mmpa
-    runtime
-    ascendcl
-    error_manager
-    ccl_dpu
-    tsdclient
-    ra
-    -Wl,--as-needed
-    hccl_headers
-    topoaddrinfo
-)
-ENDIF ()
