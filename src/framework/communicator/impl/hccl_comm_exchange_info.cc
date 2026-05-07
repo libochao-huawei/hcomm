@@ -64,13 +64,14 @@ HcclResult hcclComm::StoreRemoteExchangeInfo(uint32_t remoteRank, const std::vec
     return HCCL_SUCCESS;
 }
 
-void hcclComm::ResetExchangeInfo()
+HcclResult hcclComm::ResetExchangeInfo()
 {
     std::lock_guard<std::mutex> lock(exchangeInfoMutex_);
     exchangeInfoReady_ = false;
     exchangeInfoBuf_.clear();
     exchangeInfoLen_ = 0;
     HCCL_INFO("[ResetExchangeInfo] exchange info state cleared.");
+    return HCCL_SUCCESS;
 }
 
 bool hcclComm::IsExchangeInfoReady() const
