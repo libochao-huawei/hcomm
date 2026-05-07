@@ -44,9 +44,26 @@ TEST_F(AivUbMemTransportTest, Ut_GetStatus_When_SOCKET_OK_Expect_Success)
 
     aivTransport.baseStatus_ = Hccl::TransportStatus::SOCKET_OK;
     aivTransport.aivUbStatus_ = hcomm::AivUbMemTransport::AivUbMemTransportStatus::SOCKET_OK;
+    
+    MOCKER_CPP(&AivUbMemTransport::RmtBufferUnpackProc).stubs();
 
     EXPECT_EQ(aivTransport.GetStatus(), Hccl::TransportStatus::SOCKET_OK);
     EXPECT_EQ(aivTransport.aivUbStatus_, hcomm::AivUbMemTransport::AivUbMemTransportStatus::SEND_DATA_SIZE);
+
+    EXPECT_EQ(aivTransport.GetStatus(), Hccl::TransportStatus::SOCKET_OK);
+    EXPECT_EQ(aivTransport.aivUbStatus_, hcomm::AivUbMemTransport::AivUbMemTransportStatus::RECV_DATA_SIZE);
+
+    EXPECT_EQ(aivTransport.GetStatus(), Hccl::TransportStatus::SOCKET_OK);
+    EXPECT_EQ(aivTransport.aivUbStatus_, hcomm::AivUbMemTransport::AivUbMemTransportStatus::SEND_MEM_INFO);
+
+    EXPECT_EQ(aivTransport.GetStatus(), Hccl::TransportStatus::SOCKET_OK);
+    EXPECT_EQ(aivTransport.aivUbStatus_, hcomm::AivUbMemTransport::AivUbMemTransportStatus::RECV_MEM_INFO);
+
+    EXPECT_EQ(aivTransport.GetStatus(), Hccl::TransportStatus::SOCKET_OK);
+    EXPECT_EQ(aivTransport.aivUbStatus_, hcomm::AivUbMemTransport::AivUbMemTransportStatus::RECV_MEM_FIN);
+
+    EXPECT_EQ(aivTransport.GetStatus(), Hccl::TransportStatus::READY);
+    EXPECT_EQ(aivTransport.aivUbStatus_, hcomm::AivUbMemTransport::AivUbMemTransportStatus::READY);
 }
 
 TEST_F(AivUbMemTransportTest, Ut_GetStatus_When_RecvData_Fail_Expect_Status_Invalid)
