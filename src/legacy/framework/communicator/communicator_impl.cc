@@ -336,7 +336,10 @@ HcclResult CommunicatorImpl::CreateSubComm(const CommParams &subCommParams, cons
             std::unique_ptr<RankGraph> subRankGraph = rankGraph->CreateSubRankGraph(rankIds);
             // 初始化子通信域
             CHK_RET(subCommImpl->Init(subCommParams, subRankGraph, devLogicId));
-            subCommImpl->GetSocketManager().SetDeviceServerListenPortMap(GetSocketManager().GetSubCommDeviceServerListenPortMap(rankIds));
+            auto rankIpPortMap = GetSocketManager().GetSubCommDeviceServerListenPortMap(rankIds);
+            rankIpPortMapPtr = std::make_shared<decltype(rankIpPortMap)>(std::move(rankIpPortMap));
+            CHK_RET(subCommImpl->SetRankIpPortMap(rankIpPortMapPtr));
+            subCommImpl->GetSocketManager().SetDeviceServerListenPortMap(*rankIpPortMapPtr);
             return HcclResult::HCCL_SUCCESS;
         } else {
             std::string msg = StringFormat("CreateSubComm fail, communicator has not been initialized, please check.");
@@ -358,6 +361,7 @@ HcclResult CommunicatorImpl::CreateSubComm(const CommParams &subCommParams, cons
             HCCL_INFO("[%s]rankIds size[%u], rankIdsVec size[%u]", __func__, rankIds.size(), subCommImpl->rankIdsVec.size());
             // 初始化子通信域
             CHK_RET(subCommImpl->Init(subCommParams, subRankGraph, subConfig, devLogicId));
+
             subCommImpl->GetSocketManager().SetDeviceServerListenPortMap(GetSocketManager().GetSubCommDeviceServerListenPortMap(rankIds));
             return HcclResult::HCCL_SUCCESS;
         } else {
@@ -1558,7 +1562,9 @@ void CommunicatorImpl::InitSocketManager()
 {
     socketManager = std::make_unique<SocketManager>(*this, myRank, devPhyId, devLogicId);
     if (ranktableInfo != nullptr) {
-        socketManager->SetDeviceServerListenPortMap(ranktableInfo->GetRankDeviceListenPortMap());
+        auto rankIpPortMap = ranktableInfo->GetRankDeviceListenPortMap();
+        rankIpPortMap_ = std::make_shared<decltype(rankIpPortMap)>(std::move(rankIpPortMap));
+        socketManager->SetDeviceServerListenPortMap(*rankIpPortMap_);
     }
 }
 
@@ -3974,6 +3980,18 @@ HcclResult CommunicatorImpl::SaveDpuStreamId()
 {
     dpuStreamId = HrtGetStreamId(dpuStream);
     HCCL_INFO("[CommunicatorImpl::SaveDpuStreamId] dpuStreamId_[%u]", dpuStreamId);
+    return HCCL_SUCCESS;
+}
+
+std::shared_ptr<std::unordered_map<u32, std::unordered_map<IpAddress, u32>>> CommunicatorImpl::GetRankIpPortMap()
+{
+    return rankIpPortMap_;
+}
+
+HcclResult CommunicatorImpl::SetRankIpPortMap(std::shared_ptr<std::unordered_map<u32, std::unordered_map<IpAddress, u32>>> rankIpPortMap)
+{
+    CHK_PTR_NULL(rankIpPortMap);
+    rankIpPortMap_ = rankIpPortMap;
     return HCCL_SUCCESS;
 }
 
