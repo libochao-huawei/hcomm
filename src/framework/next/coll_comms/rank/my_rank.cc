@@ -845,7 +845,7 @@ HcclResult MyRank::BatchExchangeAndCheckConsistency(
     CHK_RET(ExchangeAndCheckBaseFrame(sockets, remoteRanks, roles, uniqueCount,
         baseCheckInfoLen, commTag, checker));
     
-    if (hcomm->GetExchangeInfoLen() > 0){
+    if (hcclComm->GetExchangeInfoLen() > 0){
         // ====== 第二阶段：Hcomm信息校验通过后，交换HCCL算子信息 ======
         CHK_RET(ExchangeUserInfo(sockets, remoteRanks, roles, uniqueCount, hcclComm));
     }
