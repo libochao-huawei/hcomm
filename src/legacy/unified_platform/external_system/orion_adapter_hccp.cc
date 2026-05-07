@@ -554,7 +554,7 @@ bool HrtRaSocketNonBlockSend(const FdHandle fdHandle, void *data, u64 size, u64 
     }
 }
 
-bool HrtRaSocketNonBlockRecv(const FdHandle fdHandle, void *data, u64 size, u64 *recvSize)
+HcclResult HrtRaSocketNonBlockRecv(const FdHandle fdHandle, void *data, u64 size, u64 *recvSize)
 {
     CHECK_NULLPTR(fdHandle, "[HrtRaSocketNonBlockRecv] fdHandle is nullptr!");
     CHECK_NULLPTR(data, "[HrtRaSocketNonBlockRecv] data is nullptr!");
@@ -563,14 +563,18 @@ bool HrtRaSocketNonBlockRecv(const FdHandle fdHandle, void *data, u64 size, u64 
         fdHandle, data, size, *recvSize); 
     
     s32 ret = RaSocketRecv(fdHandle, data, size, recvSize);
-    if (ret == 0 || ret == SOCK_EAGAIN) {
-        HCCL_INFO("[HrtRaSocketNonBlockRecv] ra socket recv, data[%p], size[%llu], recv size[%llu], ret[%d]", data, size, *recvSize, ret);
-        return true;
+    if (ret == 0) {
+        return HCCL_SUCCESS;
+    } else if (ret == SOCK_EAGAIN) {
+        return HCCL_E_AGAIN;
+    } else if (ret == SOCK_CLOSE) {
+        return HCCL_E_INTERNAL; //暂时用这个错误码表示hccp进程异常退出
     } else {
-        HCCL_ERROR("call RaSocketRecv failed, fdHandle=%p, data=%p, size=%llu, recvSize=%llu, ret[%d]",
-            fdHandle, data, size, *recvSize, ret);
-        return false;
+        HCCL_WARNING("[HrtRaSocketNonBlockRecv]ra socket recv failed, data[%p], size[%llu], "\
+            "recv[%llu], ret[%d], errno[%d][%s]", data, size, recvSize, ret, errno, strerror(errno));
+        return HCCL_E_TCP_TRANSFER;
     }
+    return HCCL_SUCCESS;
 }
 
 void HrtRaSocketBlockRecv(const FdHandle fdHandle, void *data, u32 size)

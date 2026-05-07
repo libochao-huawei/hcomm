@@ -182,16 +182,13 @@ HcclResult SocketProcess::RecvNoBlock(
         return HCCL_E_PARA;
     }
 
-    bool result = socket->IRecv(reinterpret_cast<u8 *>(recvBuffer), recvSize, *recvedSize);
-    if (!result) {
-        HCCL_ERROR("[SocketProcess::%s] Recv size[%llu] of data failed.", __func__, recvSize);
-        return HCCL_E_TCP_TRANSFER;
+    HcclResult result = socket->IRecv(reinterpret_cast<u8 *>(recvBuffer), recvSize, *recvedSize);
+    if (result == HCCL_E_AGAIN) {
+        return HCCL_SUCCESS; // 未收到数据，非错误
     }
 
-    if (*recvedSize > 0) {
-        HCCL_INFO(
-        "[SocketProcess::%s] Recv size[%llu] of data success. [%zu] bytes received.", __func__, recvSize, *recvedSize);
-    }
+    HCCL_DEBUG("[SocketProcess::%s] Recv size[%llu] of data success. [%zu] bytes received.",
+        __func__, recvSize, *recvedSize);
     
     return HCCL_SUCCESS;
 }
