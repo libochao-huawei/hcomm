@@ -185,8 +185,8 @@ void DevAicpuTsRoceChannelV2::ParseConnVec(std::vector<char> &data)
         auto              end   = start + connSizePerDto;
         std::vector<char> connUniqueId(start, end);
         connUniqueIdVec_.emplace_back(connUniqueId);
-        std::unique_ptr<RdmaConnLite> connLite;
-        connLite = std::make_unique<RdmaConnLite>(connUniqueId);
+        std::unique_ptr<DevRdmaConnLite> connLite;
+        connLite = std::make_unique<DevRdmaConnLite>(connUniqueId);
         HCCL_INFO("[DevAicpuTsRoceChannelV2::%s] idx=%u, %s", __func__, idx, connLite->Describe().c_str());
         connVec_.emplace_back(std::move(connLite));
     }

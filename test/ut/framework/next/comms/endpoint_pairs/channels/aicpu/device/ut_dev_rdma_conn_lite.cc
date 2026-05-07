@@ -52,7 +52,7 @@ static std::vector<char> BuildCqUniqueId(const RdmaCqContextLite &cqCtx)
     return result;
 }
 
-static std::vector<char> BuildRdmaConnLiteUniqueId(u32 dmaMode, const RdmaSqContextLite &sqCtx, const RdmaCqContextLite &cqCtx)
+static std::vector<char> BuildDevRdmaConnLiteUniqueId(u32 dmaMode, const RdmaSqContextLite &sqCtx, const RdmaCqContextLite &cqCtx)
 {
     BinaryStream binaryStream;
     binaryStream << dmaMode;
@@ -97,30 +97,30 @@ static RdmaCqContextLite MakeDefaultCqContext()
     return cq;
 }
 
-class RdmaConnLiteTest : public testing::Test {
+class DevRdmaConnLiteTest : public testing::Test {
 protected:
     static void SetUpTestCase()
     {
-        std::cout << "RdmaConnLiteTest tests set up." << std::endl;
+        std::cout << "DevRdmaConnLiteTest tests set up." << std::endl;
     }
 
     static void TearDownTestCase()
     {
-        std::cout << "RdmaConnLiteTest tests tear down." << std::endl;
+        std::cout << "DevRdmaConnLiteTest tests tear down." << std::endl;
     }
 
     virtual void SetUp()
     {
-        std::cout << "A Test case in RdmaConnLiteTest SetUP" << std::endl;
+        std::cout << "A Test case in DevRdmaConnLiteTest SetUP" << std::endl;
         sqCtx_ = MakeDefaultSqContext();
         cqCtx_ = MakeDefaultCqContext();
-        uniqueId_ = BuildRdmaConnLiteUniqueId(0, sqCtx_, cqCtx_);
+        uniqueId_ = BuildDevRdmaConnLiteUniqueId(0, sqCtx_, cqCtx_);
     }
 
     virtual void TearDown()
     {
         GlobalMockObject::verify();
-        std::cout << "A Test case in RdmaConnLiteTest TearDown" << std::endl;
+        std::cout << "A Test case in DevRdmaConnLiteTest TearDown" << std::endl;
     }
 
     RdmaSqContextLite sqCtx_{};
@@ -128,20 +128,20 @@ protected:
     std::vector<char> uniqueId_;
 };
 
-TEST_F(RdmaConnLiteTest, Ut_When_Construct_Expect_Success)
+TEST_F(DevRdmaConnLiteTest, Ut_When_Construct_Expect_Success)
 {
     std::cout << "Start Ut_When_Construct_Expect_Success" << std::endl;
     
-    RdmaConnLite connLite(uniqueId_);
+    DevRdmaConnLite connLite(uniqueId_);
     
     std::cout << "End Ut_When_Construct_Expect_Success" << std::endl;
 }
 
-TEST_F(RdmaConnLiteTest, Ut_When_Describe_Expect_NotEmpty)
+TEST_F(DevRdmaConnLiteTest, Ut_When_Describe_Expect_NotEmpty)
 {
     std::cout << "Start Ut_When_Describe_Expect_NotEmpty" << std::endl;
     
-    RdmaConnLite connLite(uniqueId_);
+    DevRdmaConnLite connLite(uniqueId_);
     
     std::string desc = connLite.Describe();
     EXPECT_FALSE(desc.empty());
@@ -149,22 +149,22 @@ TEST_F(RdmaConnLiteTest, Ut_When_Describe_Expect_NotEmpty)
     std::cout << "End Ut_When_Describe_Expect_NotEmpty" << std::endl;
 }
 
-TEST_F(RdmaConnLiteTest, Ut_When_DmaMode_Expect_Correct)
+TEST_F(DevRdmaConnLiteTest, Ut_When_DmaMode_Expect_Correct)
 {
     std::cout << "Start Ut_When_DmaMode_Expect_Correct" << std::endl;
     
-    RdmaConnLite connLite(uniqueId_);
+    DevRdmaConnLite connLite(uniqueId_);
     
     EXPECT_EQ(connLite.dmaMode_, 0u);
     
     std::cout << "End Ut_When_DmaMode_Expect_Correct" << std::endl;
 }
 
-TEST_F(RdmaConnLiteTest, Ut_When_SqContext_Expect_Valid)
+TEST_F(DevRdmaConnLiteTest, Ut_When_SqContext_Expect_Valid)
 {
     std::cout << "Start Ut_When_SqContext_Expect_Valid" << std::endl;
     
-    RdmaConnLite connLite(uniqueId_);
+    DevRdmaConnLite connLite(uniqueId_);
     
     EXPECT_EQ(connLite.sqContext.qpn, sqCtx_.qpn);
     EXPECT_EQ(connLite.sqContext.sqVa, sqCtx_.sqVa);
@@ -179,11 +179,11 @@ TEST_F(RdmaConnLiteTest, Ut_When_SqContext_Expect_Valid)
     std::cout << "End Ut_When_SqContext_Expect_Valid" << std::endl;
 }
 
-TEST_F(RdmaConnLiteTest, Ut_When_CqContext_Expect_Valid)
+TEST_F(DevRdmaConnLiteTest, Ut_When_CqContext_Expect_Valid)
 {
     std::cout << "Start Ut_When_CqContext_Expect_Valid" << std::endl;
     
-    RdmaConnLite connLite(uniqueId_);
+    DevRdmaConnLite connLite(uniqueId_);
     
     EXPECT_EQ(connLite.cqContext.cqn, cqCtx_.cqn);
     EXPECT_EQ(connLite.cqContext.cqVa, cqCtx_.cqVa);
@@ -197,19 +197,19 @@ TEST_F(RdmaConnLiteTest, Ut_When_CqContext_Expect_Valid)
     std::cout << "End Ut_When_CqContext_Expect_Valid" << std::endl;
 }
 
-TEST_F(RdmaConnLiteTest, Ut_When_DmaModeNonZero_Expect_Correct)
+TEST_F(DevRdmaConnLiteTest, Ut_When_DmaModeNonZero_Expect_Correct)
 {
     std::cout << "Start Ut_When_DmaModeNonZero_Expect_Correct" << std::endl;
     
-    std::vector<char> testId = BuildRdmaConnLiteUniqueId(1, sqCtx_, cqCtx_);
-    RdmaConnLite connLite(testId);
+    std::vector<char> testId = BuildDevRdmaConnLiteUniqueId(1, sqCtx_, cqCtx_);
+    DevRdmaConnLite connLite(testId);
     
     EXPECT_EQ(connLite.dmaMode_, 1u);
     
     std::cout << "End Ut_When_DmaModeNonZero_Expect_Correct" << std::endl;
 }
 
-TEST_F(RdmaConnLiteTest, Ut_When_LargeValues_Expect_Correct)
+TEST_F(DevRdmaConnLiteTest, Ut_When_LargeValues_Expect_Correct)
 {
     std::cout << "Start Ut_When_LargeValues_Expect_Correct" << std::endl;
     
@@ -234,8 +234,8 @@ TEST_F(RdmaConnLiteTest, Ut_When_LargeValues_Expect_Correct)
     cqMax.dbVa = UINT64_MAX;
     cqMax.dbMode = INT8_MAX;
 
-    std::vector<char> testId = BuildRdmaConnLiteUniqueId(2, sqMax, cqMax);
-    RdmaConnLite connLite(testId);
+    std::vector<char> testId = BuildDevRdmaConnLiteUniqueId(2, sqMax, cqMax);
+    DevRdmaConnLite connLite(testId);
     
     EXPECT_EQ(connLite.dmaMode_, 2u);
     EXPECT_EQ(connLite.sqContext.qpn, UINT32_MAX);
@@ -245,12 +245,12 @@ TEST_F(RdmaConnLiteTest, Ut_When_LargeValues_Expect_Correct)
 }
 
 
-TEST_F(RdmaConnLiteTest, Ut_When_MultipleInstances_Expect_Independent)
+TEST_F(DevRdmaConnLiteTest, Ut_When_MultipleInstances_Expect_Independent)
 {
     std::cout << "Start Ut_When_MultipleInstances_Expect_Independent" << std::endl;
     
-    RdmaConnLite connLite1(uniqueId_);
-    RdmaConnLite connLite2(uniqueId_);
+    DevRdmaConnLite connLite1(uniqueId_);
+    DevRdmaConnLite connLite2(uniqueId_);
     
     EXPECT_EQ(connLite1.dmaMode_, connLite2.dmaMode_);
     EXPECT_EQ(connLite1.sqContext.qpn, connLite2.sqContext.qpn);
@@ -259,7 +259,7 @@ TEST_F(RdmaConnLiteTest, Ut_When_MultipleInstances_Expect_Independent)
     std::cout << "End Ut_When_MultipleInstances_Expect_Independent" << std::endl;
 }
 
-TEST_F(RdmaConnLiteTest, Ut_When_DbModeSw_Expect_Correct)
+TEST_F(DevRdmaConnLiteTest, Ut_When_DbModeSw_Expect_Correct)
 {
     std::cout << "Start Ut_When_DbModeSw_Expect_Correct" << std::endl;
     
@@ -268,8 +268,8 @@ TEST_F(RdmaConnLiteTest, Ut_When_DbModeSw_Expect_Correct)
     RdmaCqContextLite cqSw = MakeDefaultCqContext();
     cqSw.dbMode = 1;
     
-    std::vector<char> testId = BuildRdmaConnLiteUniqueId(0, sqSw, cqSw);
-    RdmaConnLite connLite(testId);
+    std::vector<char> testId = BuildDevRdmaConnLiteUniqueId(0, sqSw, cqSw);
+    DevRdmaConnLite connLite(testId);
     
     EXPECT_EQ(connLite.sqContext.dbMode, 1);
     EXPECT_EQ(connLite.cqContext.dbMode, 1);
