@@ -155,6 +155,9 @@ extern int32_t HcommAclrtNotifyWaitOnThread(ThreadHandle thread, uint64_t notify
  * @{
  */
 
+extern int32_t HcommBatchTransfer(ThreadHandle thread, ChannelHandle channel, void *dstList, const void *srcList,
+    uint64_t *lenList, uint32_t *rw, HcommDataType *dataType, HcommReduceOp *reduceOp, uint32_t count);
+
 /**
  * @brief 单边写操作
  * @param[in] thread 线程句柄
