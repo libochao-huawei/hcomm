@@ -178,7 +178,7 @@ private:
     std::mutex mutex_;
     std::vector<u32> subCommParaCrcs_;
 
-    bool inconsistentCheckFirstDone_ = false; //first模式下是否完成首次校验 
+    bool inconsistentCheckFirstDone_ = false; // first/on模式下是否完成首次校验 
 };
 }
 #endif  // RANK_CONSISTENTCY_CHECKER_H

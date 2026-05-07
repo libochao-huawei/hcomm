@@ -739,6 +739,8 @@ HcclResult ParseDFSConfig()
         g_envConfig.inconsistentCheckSwitch = false;
     } else if (inconsistentCheckSwitch == "on") {
         g_envConfig.inconsistentCheckSwitch = true;
+    } else if (inconsistentCheckSwitch == "first") {
+        g_envConfig.inconsistentCheckSwitch = true;
     } else {
         HCCL_RUN_WARNING("[ParseDFSConfig] HCCL_DFS_CONFIG-inconsistent_check was configured to [%s], please configured to"\
             "'on' or 'off'", inconsistentCheckSwitch.c_str());
