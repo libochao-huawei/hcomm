@@ -16,6 +16,7 @@
 
 #include "ccu_log.h"
 #include "ccu_types.h"
+
 #include "hcom_common.h"
 #include "exception_handler.h"
 
@@ -27,15 +28,26 @@
 
 #include "env_config/env_config.h" // 暂时引用orion的环境变量处理模块
 
-CcuResult HcommCcuInsCreate(void *resDesc, CcuInsHandle *insHandle)
+#include "ccu_common.h"
+
+CcuResult HcommCcuInsCreate(const void *resDesc, uint32_t descNum, CcuInsHandle *insHandle)
 {
     CCU_CHK_PTR_NULL(resDesc);
     CCU_CHK_PTR_NULL(insHandle);
+    if (descNum != 1) {
+        HCCL_ERROR("[%s] failed, desc num[%u] is more than expected[1].",
+            __func__, descNum);
+        return CcuResult::CCU_E_PARA;
+    }
 
-    // 当前该接口未对外提供，内部使用优先基于instance类型
-    auto *insType = static_cast<CcuInstanceType *>(resDesc);
+    auto *resDescPtr = static_cast<const CcuResDesc *>(resDesc);
+    if (resDescPtr->dieId != hcomm::CCU_MAX_IODIE_NUM) {
+        HCCL_ERROR("[%s] failed, ccu instance cannot be created with die id now.", __func__);
+        return CcuResult::CCU_E_PARA;
+    }
+
     const uint32_t devLogicId = HcclGetThreadDeviceId();
-    CCU_CHK_RET(hcomm::CcuInstanceMgr::GetInstance(devLogicId).Create(*insType, *insHandle));
+    CCU_CHK_RET(hcomm::CcuInstanceMgr::GetInstance(devLogicId).Create(resDescPtr->insType, *insHandle));
 
     return CcuResult::CCU_SUCCESS;
 }
@@ -67,8 +79,8 @@ CcuResult HcommCcuKernelRegisterStart(CcuInsHandle insHandle)
 }
 
 CcuResult HcommCcuKernelRegister(CcuInsHandle insHandle,
-    char *kernelFuncName, void *kernelFunc, void *kernelArg,
-    CcuKernelHandle *kernelHandle)
+    const char *kernelFuncName, const void *kernelFunc,
+    const void *kernelArg, CcuKernelHandle *kernelHandle)
 {
     HCCL_RUN_INFO("Entry-%s", __func__);
     HcclUs startut = TIME_NOW();
@@ -86,16 +98,15 @@ CcuResult HcommCcuKernelRegister(CcuInsHandle insHandle,
     CCU_CHK_PTR_NULL(resPack);
 
     auto ccuKernelFunc = reinterpret_cast<CcuKernelFunc>(kernelFunc);
-    auto ccuKernelArg = static_cast<CcuKernelArg>(kernelArg);
+    const auto ccuKernelArg = const_cast<CcuKernelArg>(kernelArg);
 
     CcuKernelHandle newHandle{0};
-    // todo: 需要处理抛异常，当前hccl result与ccu result转换不方便
-    // EXCEPTION_HANDLE_BEGIN
+    CCU_EXCEPTION_HANDLE_BEGIN
     auto &kernelMgr = hcomm::CcuKernelMgr::GetInstance(devLogicId);
     CCU_CHK_RET(kernelMgr.Register(*resPack, kernelFuncName,
         ccuKernelFunc, ccuKernelArg, newHandle));
     CCU_CHK_RET(ccuIns->SaveKernel(newHandle));
-    // EXCEPTION_HANDLE_END
+    CCU_EXCEPTION_HANDLE_END
 
     *kernelHandle = newHandle;
     HCCL_INFO("[%s] success, take time [%lld]us.",
@@ -112,11 +123,10 @@ CcuResult HcommCcuKernelRegisterEnd(CcuInsHandle insHandle)
     const auto &newKernels = ccuIns->GetUntranslatedKernels();
 
     auto &kernelMgr = hcomm::CcuKernelMgr::GetInstance(devLogicId);
-    // todo: 需要处理抛异常，当前hccl result与ccu result转换不方便
     // 当前翻译内部流程可能抛异常
-    // EXCEPTION_HANDLE_BEGIN
+    CCU_EXCEPTION_HANDLE_BEGIN
     CCU_CHK_RET(kernelMgr.Translate(newKernels));
-    // EXCEPTION_HANDLE_END
+    CCU_EXCEPTION_HANDLE_END
 
     return CcuResult::CCU_SUCCESS;
 }
@@ -157,7 +167,7 @@ static HcclResult LaunchCcuTasks(const std::vector<hcomm::CcuTaskParam> &params,
 }
 
 CcuResult HcommCcuKernelLaunch(ThreadHandle threadHandle,
-    CcuKernelHandle kernelHandle, void *taskArgs, uint32_t argSize)
+    CcuKernelHandle kernelHandle, const void *taskArgs, uint32_t argSize)
 {
     HCCL_RUN_INFO("Entry-%s", __func__);
     const auto &startus = TIME_NOW();
@@ -181,12 +191,10 @@ CcuResult HcommCcuKernelLaunch(ThreadHandle threadHandle,
     auto *kernel = kernelMgr.GetKernel(kernelHandle);
     CCU_CHK_PTR_NULL(kernel);
 
-    // todo: 处理异常宏
-    // EXCEPTION_HANDLE_BEGIN
+    CCU_EXCEPTION_HANDLE_BEGIN
     std::vector<hcomm::CcuTaskParam> taskParams{};
     // todo: 需要处理dfx功能
-    auto ret = kernel->GeneTaskParams(static_cast<uint64_t *>(taskArgs),
-        argSize, taskParams);
+    auto ret = kernel->GeneTaskParams(static_cast<const uint64_t *>(taskArgs), argSize, taskParams);
     CHK_PRT_RET(ret != CcuResult::CCU_SUCCESS,
         HCCL_ERROR("[%s] failed, threadHandle[0x%llx] kernelHandle[0x%llx].",
             __func__, threadHandle, kernelHandle),
@@ -198,7 +206,7 @@ CcuResult HcommCcuKernelLaunch(ThreadHandle threadHandle,
     }
 
     CCU_CHK_RET(LaunchCcuTasks(taskParams, streamPtr));
-    // EXCEPTION_HANDLE_END
+    CCU_EXCEPTION_HANDLE_END
     HCCL_INFO("[%s] success, take time [%lld]us.",
         __func__, DURATION_US(TIME_NOW() - startus));
     return CcuResult::CCU_SUCCESS;

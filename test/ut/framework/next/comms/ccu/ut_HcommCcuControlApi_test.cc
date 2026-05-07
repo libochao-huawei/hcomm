@@ -159,10 +159,13 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRegister_When_AllFine_Expect_Ret
 
     // ccuInstance构建（正常在通信域创建中，本用例仅测试hcomm接口）
     constexpr auto MS_INS_TPYE = CcuInstanceType::CCU_MS;
-    auto insType = MS_INS_TPYE;
-    void *ccuResDesc = static_cast<void *>(&insType);
+
+    CcuResDesc resDesc{};
+    resDesc.dieId = hcomm::CCU_MAX_IODIE_NUM;
+    resDesc.insType = MS_INS_TPYE;
+    constexpr uint32_t descNum = 1;
     CcuInsHandle insHandle{0};
-    ccuRet = HcommCcuInsCreate(ccuResDesc, &insHandle);
+    ccuRet = HcommCcuInsCreate(static_cast<void *>(&resDesc), descNum, &insHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
     // 建链流程打桩

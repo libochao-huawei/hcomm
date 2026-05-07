@@ -81,7 +81,7 @@ public:
     uint32_t    GetInstrCount();
     void        SetCcuInstrInfo(const CcuRep::CcuInstrInfo &instrInfo);
 
-    CcuResult GeneTaskParams(uint64_t *taskArgs, uint32_t argNum,
+    CcuResult GeneTaskParams(const uint64_t *taskArgs, uint32_t argNum,
         std::vector<CcuTaskParam> &taskParams);
 
     // 该友元函数用于在context类外创建Variable并被context内的资源管理器管理
