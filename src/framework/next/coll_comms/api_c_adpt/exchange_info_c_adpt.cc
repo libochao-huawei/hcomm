@@ -36,4 +36,3 @@ HcclResult HcclResetExchangeInfoState(HcclComm comm)
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     return hcclComm->ResetExchangeInfoState();
 }
-
