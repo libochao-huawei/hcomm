@@ -290,15 +290,17 @@ std::unordered_map<HcommDataType, Hccl::DataType> mapHcommDataTypeToA5 = {
     {HcommDataType::HCOMM_DATA_TYPE_HIF8,    Hccl::DataType::HIF8},
     {HcommDataType::HCOMM_DATA_TYPE_FP8E4M3, Hccl::DataType::FP8E4M3},
     {HcommDataType::HCOMM_DATA_TYPE_FP8E5M2, Hccl::DataType::FP8E5M2},
-    {HcommDataType::HCOMM_DATA_TYPE_FP8E8M0, Hccl::DataType::FP8E8M0}
+    {HcommDataType::HCOMM_DATA_TYPE_FP8E8M0, Hccl::DataType::FP8E8M0},
 #endif
+    {HcommDataType::HCOMM_DATA_TYPE_RESERVED, Hccl::DataType::INVALID}
 };
 
 std::unordered_map<HcommReduceOp, Hccl::ReduceOp> mapHcommReduceOpToA5 = {
     {HcommReduceOp::HCOMM_REDUCE_SUM,  Hccl::ReduceOp::SUM},
     {HcommReduceOp::HCOMM_REDUCE_PROD, Hccl::ReduceOp::PROD},
     {HcommReduceOp::HCOMM_REDUCE_MAX,  Hccl::ReduceOp::MAX},
-    {HcommReduceOp::HCOMM_REDUCE_MIN,  Hccl::ReduceOp::MIN}};
+    {HcommReduceOp::HCOMM_REDUCE_MIN,  Hccl::ReduceOp::MIN},
+    {HcommReduceOp::HCOMM_REDUCE_RESERVED, Hccl::ReduceOp::INVALID}};
 
 inline HcclResult CheckDataTypeAndReduceOp(HcommDataType dataType, HcommReduceOp reduceOp)
 {
@@ -357,6 +359,68 @@ int32_t HcommWriteOnThread(ThreadHandle thread, ChannelHandle channel, void *dst
         HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].",
         __func__, thread, channel, dst, src, len), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
+    return HCCL_SUCCESS;
+}
+
+int32_t HcommBatchTransfer(ThreadHandle thread, ChannelHandle channel, void **rmtList, void **locList,
+    uint64_t *lenList, uint32_t *rw, HcommDataType *dataType, HcommReduceOp *reduceOp, uint32_t count)
+{
+    // BatchTransfer接口目前仅支持A5设备上的批量数据传输
+    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], rmtList[0x%llx], locList[0x%llx], lenList[0x%llx], rw[0x%llx], dataType[0x%llx], reduceOp[0x%llx], count[%u].",
+        __func__, thread, channel, rmtList, locList, lenList, rw, dataType, reduceOp, count);
+
+    CHK_PTR_NULL(rmtList);
+    CHK_PTR_NULL(locList);
+    CHK_PTR_NULL(lenList);
+    CHK_PTR_NULL(rw);
+    CHK_PTR_NULL(dataType);
+    CHK_PTR_NULL(reduceOp);
+
+    AddThread(thread);
+    Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
+    CHK_PTR_NULL(threadPtr);
+
+    if (!threadPtr->IsDeviceA5()) {
+        // 仅支持A5设备上的批量数据传输
+        HCCL_ERROR("[%s] Only support batch transfer on A5 device. thread[0x%llx].", __func__, thread);
+        return HCCL_E_NOT_SUPPORT;
+    }
+
+    auto *const ubTransportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
+    CHK_PTR_NULL(ubTransportLitePtr);
+    auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
+    CHK_PTR_NULL(streamLitePtr);
+
+    std::vector<Hccl::RmaBufferLite> locSlices;
+    std::vector<Hccl::Buffer> rmtSlices;
+    std::vector<Hccl::BaseTransportLiteImpl::TransferOp> transferOps;
+
+    locSlices.reserve(count);
+    rmtSlices.reserve(count);
+    transferOps.reserve(count);
+
+    for (uint32_t i = 0; i < count; i++) {
+        Hccl::RmaBufferLite locRmaBuf;
+        HcclResult ret = ubTransportLitePtr->BuildLocRmaBufferLite(reinterpret_cast<uintptr_t>(locList[i]), lenList[i], locRmaBuf);
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[%s] FAIL at BuildLocRmaBufferLite for index %u. thread[0x%llx], channel[0x%llx], rmt[0x%llx], loc[0x%llx], len[0x%llx], rw[%u], dataType[%d], reduceOp[%d].",
+            __func__, i, thread, channel, rmtList[i], locList[i], lenList[i], rw[i], dataType[i], reduceOp[i]), ret);
+        locSlices.push_back(locRmaBuf);
+        const Hccl::Buffer rmtBuf{reinterpret_cast<uintptr_t>(rmtList[i]), lenList[i]};
+        rmtSlices.push_back(rmtBuf);
+
+        ret = CheckDataTypeAndReduceOp(dataType[i], reduceOp[i]);
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[%s] FAIL at CheckDataTypeAndReduceOp for index %u. thread[0x%llx], channel[0x%llx], rmt[0x%llx], loc[0x%llx], len[0x%llx], rw[%u], dataType[%d], reduceOp[%d].",
+            __func__, i, thread, channel, rmtList[i], locList[i], lenList[i], rw[i], dataType[i], reduceOp[i]), ret);
+        Hccl::ReduceIn reduceIn{mapHcommDataTypeToA5.at(dataType[i]), mapHcommReduceOpToA5.at(reduceOp[i])};
+
+        transferOps.push_back(Hccl::BaseTransportLiteImpl::TransferOp{(rw[i] == 0) ? Hccl::TransferType::WRITE : Hccl::TransferType::READ, reduceIn});
+
+        HCCL_INFO("[%s] Prepared transfer op for index %u. thread[0x%llx], channel[0x%llx], rmt[0x%llx], loc[0x%llx], len[0x%llx], rw[%u], dataType[%d], reduceOp[%d].",
+            __func__, i, thread, channel, rmtList[i], locList[i], lenList[i], rw[i], dataType[i], reduceOp[i]);
+    }
+    EXECEPTION_CATCH(ubTransportLitePtr->BatchTransfer(locSlices, rmtSlices, transferOps, *streamLitePtr), return HCCL_E_INTERNAL);
     return HCCL_SUCCESS;
 }
 

@@ -557,15 +557,21 @@ void UbTransportLiteImpl::BatchTransfer(const std::vector<RmaBufferLite> &loc, c
 
         if (transferOp[i].transType == TransferType::WRITE) {
             if (transferOp[i].reduceIn.reduceOp == ReduceOp::INVALID) {
+                HCCL_INFO("BatchTransfer Write idx=%u, loc[%s], rmt[%s]", i, localBuffer.Describe().c_str(), remoteBuffer.Describe().c_str());
                 connVec[0]->Write(localBuffer, remoteBuffer, cfg, stream, connOut); // 当前只有一个connection，对应一个jetty
             } else {
+                HCCL_INFO("BatchTransfer WriteReduce idx=%u, loc[%s], rmt[%s], dataType[%s], reduceOp[%s]", i, localBuffer.Describe().c_str(),
+                          remoteBuffer.Describe().c_str(), transferOp[i].reduceIn.dataType.Describe().c_str(), transferOp[i].reduceIn.reduceOp.Describe().c_str());
                 connVec[0]->WriteReduce(transferOp[i].reduceIn.dataType, transferOp[i].reduceIn.reduceOp, localBuffer,
                     stream, remoteBuffer, cfg, connOut);
             }
         } else if (transferOp[i].transType == TransferType::READ) {
             if (transferOp[i].reduceIn.reduceOp == ReduceOp::INVALID) {
+                HCCL_INFO("BatchTransfer Read idx=%u, loc[%s], rmt[%s]", i, localBuffer.Describe().c_str(), remoteBuffer.Describe().c_str());
                 connVec[0]->Read(localBuffer, remoteBuffer, cfg, stream, connOut); // 当前只有一个connection，对应一个jetty
             } else {
+                HCCL_INFO("BatchTransfer ReadReduce idx=%u, loc[%s], rmt[%s], dataType[%s], reduceOp[%s]", i, localBuffer.Describe().c_str(),
+                          remoteBuffer.Describe().c_str(), transferOp[i].reduceIn.dataType.Describe().c_str(), transferOp[i].reduceIn.reduceOp.Describe().c_str());
                 connVec[0]->ReadReduce(transferOp[i].reduceIn, localBuffer, remoteBuffer, stream, cfg, connOut);
             }
         }
