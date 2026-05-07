@@ -49,7 +49,7 @@ protected:
         callbacks_.getAicpuCommState = []() { return false; };
         callbacks_.setAicpuCommState = [](bool) {};
         callbacks_.kernelLaunchAicpuCommInit = []() { return HCCL_SUCCESS; };
-        myRank_.reset(new MyRank(nullptr, 0, config_, callbacks_, nullptr));
+        myRank_.reset(new MyRank(nullptr, 0, config_, callbacks_, nullptr, nullptr));
         g_expectedTlsStatus = Hccl::TlsStatus::UNKNOWN;
     }
 
