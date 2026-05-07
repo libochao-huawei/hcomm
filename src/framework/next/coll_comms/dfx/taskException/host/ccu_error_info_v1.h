@@ -13,6 +13,7 @@
 #include <cstdint>
 #include "enum_factory.h"
 #include "ccu_rep_type_v1.h"
+#include "ccu_error_info_v2.h"
 
 namespace hcomm {
 constexpr uint32_t MISSION_STATUS_MSG_LEN = 64;
@@ -379,4 +380,4 @@ union LoopGroupXn {
 
 }; // namespace hcomm
 
-#endif // _CCU_REPRESENTATION_TYPE_H
+#endif // CCU_ERROR_INFO_V1_H

@@ -96,13 +96,15 @@ private:
     static uint64_t GetCcuXnValue(int32_t deviceId, uint32_t dieId, uint32_t xnId);
     static HcclResult GenErrorInfoLoop(const ErrorInfoBase &baseInfo, CcuRep::CcuRepContext &ctx, std::vector<CcuErrorInfo> &errorInfo);
     static void GenStatusInfo(const ErrorInfoBase &baseInfo, std::vector<CcuErrorInfo> &errorInfo);
-    static CcuLoopContext GetCcuLoopContext(int32_t deviceId, uint32_t dieId, uint32_t loopCtxId);
-    static CcuMissionContext GetCcuMissionContext(int32_t deviceId, uint32_t dieId, uint32_t missionId);
+    static HcclResult GetCcuMissionContextRaw(
+        int32_t deviceId, uint32_t dieId, uint32_t missionId, uint8_t *buf, size_t bufLen, size_t &copiedLen);
+    static HcclResult GetCcuLoopContextRaw(
+        int32_t deviceId, uint32_t dieId, uint32_t loopCtxId, uint8_t *buf, size_t bufLen, size_t &copiedLen);
     static HcclResult GetCcuErrorMsg(int32_t deviceId, uint16_t missionStatus, const Hccl::ParaCcu &ccuTaskParam,
         std::vector<CcuErrorInfo> &errorInfo);
     static void PrintPanicLogInfo(const uint8_t *panicLog);
     static uint16_t GetCcuCKEValue(int32_t deviceId, uint32_t dieId, uint32_t ckeId);
-    
+
     static uint64_t GetCcuGSAValue(int32_t deviceId, uint32_t dieId, uint32_t gsaId);
     static uint16_t GetMSIdPerDie(uint16_t msId) { return msId & 0x7fff; }
 };

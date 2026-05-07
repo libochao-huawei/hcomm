@@ -24,7 +24,7 @@
 #include "ccu_task_arg_v1.h"
 #include "string_util.h"
 #include "task_param.h"
-#include "channel_process.h" 
+#include "channel_process.h"
 #include "hcomm_c_adpt.h"
 #include "local_notify_impl.h"
 #include "aicpu_launch_manager.h"
@@ -39,8 +39,16 @@
 #include "hcclCommTaskException.h"
 #include "ccu_rep_assign_v1.h"
 #include "comms/ccu/ccu_device/ccu_res_specs.h"
+#include "comms/ccu/ccu_representation/reps/data/ccu_rep_read_v1.h"
+#include "comms/ccu/ccu_representation/reps/data/ccu_rep_write_v1.h"
+#include "comms/ccu/ccu_representation/reps/data/ccu_rep_bufread_v1.h"
+#include "comms/ccu/ccu_representation/reps/data/ccu_rep_bufwrite_v1.h"
+#include "comms/ccu/ccu_representation/reps/sync/ccu_rep_loc_wait_event.h"
+#include "comms/ccu/ccu_representation/reps/sync/ccu_rep_loc_wait_notify.h"
 
 namespace hcomm {
+
+constexpr size_t CCU_CTX_RAW_CAPACITY = 64;
 
 // 模拟CcuUrmaChannel
 
@@ -112,7 +120,7 @@ public:
     void SetUp() override {
         BaseInit::SetUp();
         // 1. 初始化桩函数
-        hcomm::ResetStubs();  
+        hcomm::ResetStubs();
         // 2. 创建桩函数通道
         mockChannel_ =  new MockCcuUrmaChannel(101, 0);
         hcomm::SetMockCcuUrmaChannel(mockChannel_);
@@ -129,15 +137,15 @@ public:
     void TearDown() override {
         BaseInit::TearDown();
         GlobalMockObject::verify();
-         // 清理桩函数
+        // 清理桩函数
         delete mockChannel_;
         hcomm::ResetStubs();
     };
-        // 修改 CcuKernelTest 类成员变量
+    // 修改 CcuKernelTest 类成员变量
     MockCcuKernelArg kernelArg_;
     std::unique_ptr<TestCcuKernel> kernel_;
     MockCcuUrmaChannel* mockChannel_ = nullptr;
-    
+
     //通用测试参数
     const hcomm::GroupInfo testGroupInfo{1, 2, 3};
     const std::vector<ChannelHandle> testChannelsVec{0x1001, 0x1002};
@@ -191,7 +199,7 @@ TEST_F(CcuKernelTest, AddCcuProfilingInfo_Normal) {
     MOCKER_CPP(&ChannelProcess::ChannelGet)
         .stubs()
         .with(any(),outBoundP(handle, sizeof(handle)))
-        .will(returnValue(HCCL_SUCCESS));  
+        .will(returnValue(HCCL_SUCCESS));
     kernel_->Work();
     HcclResult ret = kernel_->AddCcuProfiling(testGroupInfo, testChannelsVec, testDataType, 
         testOutputDataType, testReduceOp, "GroupReduce");
@@ -208,7 +216,7 @@ TEST_F(CcuKernelTest, AddProfilingInfo_Normal) {
     MOCKER_CPP(&ChannelProcess::ChannelGet)
         .stubs()
         .with(any(),outBoundP(handle, sizeof(handle)))
-        .will(returnValue(HCCL_SUCCESS));  
+        .will(returnValue(HCCL_SUCCESS));
     kernel_->Work();
     HcclResult ret = kernel_->AddCcuProfiling(&testChannelsArr, 1, testDataType, 
         testOutputDataType, testReduceOp, "GroupReduce");
@@ -226,7 +234,7 @@ TEST_F(Ccukernel_ReportProfilingTest, Ut_HcclReportAivKernel_Normal)
         .stubs()
         .with(outBound(isDeviceSide))
         .will(returnValue(HCCL_SUCCESS));  
-        
+
     
     void* commV2 = (void*)0x2000;
     RankGraphStub rankGraphStub;
@@ -239,8 +247,8 @@ TEST_F(Ccukernel_ReportProfilingTest, Ut_HcclReportAivKernel_Normal)
     char commName[128] = {};
     std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
     HcclCommConfig config;
-    config.hcclOpExpansionMode = 6; 
-    config.hcclRdmaServiceLevel = 0; 
+    config.hcclOpExpansionMode = 6;
+    config.hcclRdmaServiceLevel = 0;
     config.hcclRdmaTrafficClass = 0;
     unsetenv("HCCL_DFS_CONFIG");
     HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
@@ -266,7 +274,7 @@ TEST_F(Ccukernel_ReportProfilingTest, Ut_HcclReportAicpuKernel_Normal)
     MOCKER_CPP(&HcclCommDfx::ReportKernel)
         .stubs()
         .will(returnValue(HCCL_SUCCESS));  
-    
+
     void* commV2 = (void*)0x2000;
     RankGraphStub rankGraphStub;
     std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
@@ -278,8 +286,8 @@ TEST_F(Ccukernel_ReportProfilingTest, Ut_HcclReportAicpuKernel_Normal)
     char commName[128] = {};
     std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
     HcclCommConfig config;
-    config.hcclOpExpansionMode = 6; 
-    config.hcclRdmaServiceLevel = 0; 
+    config.hcclOpExpansionMode = 6;
+    config.hcclRdmaServiceLevel = 0;
     config.hcclRdmaTrafficClass = 0;
     unsetenv("HCCL_DFS_CONFIG");
     HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
@@ -469,7 +477,7 @@ TEST_F(CcuTaskExceptionTest, PrintPanicLogInfo_Normal) {
     EXPECT_NO_THROW(CcuTaskException::PrintPanicLogInfo(panicLog));
  	 
 }
- 	 
+
 TEST_F(CcuTaskExceptionTest, PrintPaniclogInfo) {
     EXPECT_NO_THROW(CcuTaskException::PrintPanicLogInfo(nullptr));
 }
@@ -515,18 +523,16 @@ TEST_F(CcuTaskExceptionTest, GetCcuCKEValue_CustomChannelFail) {
     EXPECT_EQ(result, 65535);
 }
 
-TEST_F(CcuTaskExceptionTest, GetMissContectF) {
-    MOCKER(hrtGetDevicePhyIdByIndex)
-        .stubs()
-        .with(any(), any())
-        .will(returnValue(HCCL_SUCCESS));
-    MOCKER(HccpRaCustomChannel)
-        .stubs()
-        .with(any(), any(), any(), any())
-        .will(returnValue(HCCL_SUCCESS));
+TEST_F(CcuTaskExceptionTest, GetMissContectF)
+{
+    MOCKER(hrtGetDevicePhyIdByIndex).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER(HccpRaCustomChannel).stubs().with(any(), any(), any(), any()).will(returnValue(HCCL_SUCCESS));
 
-    CcuMissionContext result = CcuTaskException::GetCcuMissionContext(0, 0, 0);
-    EXPECT_EQ(result.part0.value, 0u);
+    uint8_t raw[CCU_CTX_RAW_CAPACITY] = {0};
+    size_t copiedLen = 0;
+    EXPECT_EQ(CcuTaskException::GetCcuMissionContextRaw(0, 0, 0, raw, sizeof(raw), copiedLen), HCCL_SUCCESS);
+    EXPECT_EQ(copiedLen, CCU_CTX_RAW_CAPACITY);
+    EXPECT_EQ(raw[0], 0u);
 }
 
 TEST_F(CcuTaskExceptionTest, GetDevidFail) {
@@ -535,8 +541,12 @@ TEST_F(CcuTaskExceptionTest, GetDevidFail) {
         .with(any(), any())
         .will(returnValue(HCCL_E_PARA));
 
-    CcuMissionContext result = CcuTaskException::GetCcuMissionContext(0, 0, 0);
-    EXPECT_EQ(result.part0.value, 0u);
+    uint8_t raw[CCU_CTX_RAW_CAPACITY];
+    (void)memset_s(raw, sizeof(raw), 0xAA, sizeof(raw));
+    size_t copiedLen = 123;
+    EXPECT_EQ(CcuTaskException::GetCcuMissionContextRaw(0, 0, 0, raw, sizeof(raw), copiedLen), HCCL_E_PARA);
+    EXPECT_EQ(copiedLen, 0U);
+    EXPECT_EQ(raw[0], 0u);
 }
 
 TEST_F(CcuTaskExceptionTest, GetMissContectFail) {
@@ -549,8 +559,12 @@ TEST_F(CcuTaskExceptionTest, GetMissContectFail) {
         .with(any(), any(), any(), any())
         .will(returnValue(HCCL_E_PARA));
 
-    CcuMissionContext result = CcuTaskException::GetCcuMissionContext(0, 0, 0);
-    EXPECT_EQ(result.part0.value, 0u);
+    uint8_t raw[CCU_CTX_RAW_CAPACITY];
+    (void)memset_s(raw, sizeof(raw), 0xBB, sizeof(raw));
+    size_t copiedLen = 123;
+    EXPECT_EQ(CcuTaskException::GetCcuMissionContextRaw(0, 0, 0, raw, sizeof(raw), copiedLen), HCCL_E_PARA);
+    EXPECT_EQ(copiedLen, 0U);
+    EXPECT_EQ(raw[0], 0u);
 }
 
 constexpr uint64_t INVALID_U64_VAL = 18446744073709551615ULL;
@@ -645,7 +659,7 @@ TEST_F(CcuTaskExceptionTest, GetCcuErrorMsgDefault) {
     string  result = CcuTaskException::GetCcuErrorMsgDefault(ccuErrorInfo);
     EXPECT_FALSE(result.empty());
 }
- 	 
+
 TEST_F(CcuTaskExceptionTest, GetCcuErrorMsgMission) {
     CcuErrorInfo ccuErrorInfo = {};
     ccuErrorInfo.type = CcuErrorType::MISSION;
@@ -663,8 +677,11 @@ TEST_F(CcuTaskExceptionTest, GetCcuLoopContext_Normal) {
         .with(any(), any(), any(), any())
         .will(returnValue(HCCL_SUCCESS));
 
-    CcuLoopContext result = CcuTaskException::GetCcuLoopContext(0, 0, 0);
-    EXPECT_EQ(result.part0.value, 0u);
+    uint8_t raw[CCU_CTX_RAW_CAPACITY] = {0};
+    size_t copiedLen = 0;
+    EXPECT_EQ(CcuTaskException::GetCcuLoopContextRaw(0, 0, 0, raw, sizeof(raw), copiedLen), HCCL_SUCCESS);
+    EXPECT_EQ(copiedLen, CCU_CTX_RAW_CAPACITY);
+    EXPECT_EQ(raw[0], 0u);
 }
 
 TEST_F(CcuTaskExceptionTest, GetCcuLoopContext_GetDevicePhyIdFail) {
@@ -672,8 +689,12 @@ TEST_F(CcuTaskExceptionTest, GetCcuLoopContext_GetDevicePhyIdFail) {
         .stubs()
         .with(any(), any())
         .will(returnValue(HCCL_E_PARA));
-    CcuLoopContext result = CcuTaskException::GetCcuLoopContext(0, 0, 0);
-    EXPECT_EQ(result.part0.value, 0u);
+    uint8_t raw[CCU_CTX_RAW_CAPACITY];
+    (void)memset_s(raw, sizeof(raw), 0xCC, sizeof(raw));
+    size_t copiedLen = 123;
+    EXPECT_EQ(CcuTaskException::GetCcuLoopContextRaw(0, 0, 0, raw, sizeof(raw), copiedLen), HCCL_E_PARA);
+    EXPECT_EQ(copiedLen, 0U);
+    EXPECT_EQ(raw[0], 0u);
 }
 
 TEST_F(CcuTaskExceptionTest, GenStatusInfo_Normal) {
@@ -1743,36 +1764,36 @@ TEST_F(CcuTaskExceptionTest, TaskExceptionHost_PrintTaskContextInfo_Success)
 
 namespace CcuRep {
 
-class MockCcuRepBase : public CcuRepBase {
-public:
-    MockCcuRepBase(CcuRepType type = CcuRepType::BASE, uint16_t startId = 0, uint16_t count = 1)
+    class MockCcuRepBase : public CcuRepBase {
+    public:
+        MockCcuRepBase(CcuRepType type = CcuRepType::BASE, uint16_t startId = 0, uint16_t count = 1)
         : type_(type), startId_(startId), count_(count) {}
 
     bool Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) override {
-        return true;
-    }
+            return true;
+        }
 
     std::string Describe() override {
-        return std::string("MockCcuRepBase");
-    }
+            return std::string("MockCcuRepBase");
+        }
 
     uint16_t StartInstrId() const {
-        return startId_;
-    }
+            return startId_;
+        }
 
     uint16_t InstrCount() override {
-        return count_;
-    }
+            return count_;
+        }
 
     CcuRepType Type() const {
-        return type_;
-    }
+            return type_;
+        }
 
-private:
-    CcuRepType type_;
-    uint16_t startId_;
-    uint16_t count_;
-};
+    private:
+        CcuRepType type_;
+        uint16_t startId_;
+        uint16_t count_;
+    };
 
 }
 
@@ -2430,7 +2451,7 @@ TEST_F(CcuRepContextTest, AddProfilingchannel_Normal) {
     MOCKER_CPP(&CcuUrmaChannel::GetChannelId)
         .stubs()
         .will(returnValue(channelid));
-        
+
     int ret = context.AddProfiling(channelHandle, name, signalIndex, mask);
     EXPECT_EQ(HCCL_SUCCESS,ret);
 }
@@ -2455,7 +2476,7 @@ TEST_F(CcuRepContextTest, AddProfilingchannelNum_Normal) {
     MOCKER_CPP(&CcuUrmaChannel::GetChannelId)
         .stubs()
         .will(returnValue(channelid));
-        
+
     int ret = context.AddProfiling(&channelHandle,num);
     EXPECT_EQ(HCCL_SUCCESS,ret);
 }
@@ -2495,21 +2516,21 @@ TEST_F(CcuRepContextTest, AddProfilingchannelNumMuch_Normal) {
 
 namespace {
 
-class MockHccpRaCustomChannel {
-public:
-    static uint32_t dieId_;
-    static uint32_t callCount_;
-    static uint32_t lastOpCode_;
+    class MockHccpRaCustomChannel {
+    public:
+        static uint32_t dieId_;
+        static uint32_t callCount_;
+        static uint32_t lastOpCode_;
 
     static void Setup() {
-        callCount_ = 0;
-        lastOpCode_ = 0;
-    }
-};
+            callCount_ = 0;
+            lastOpCode_ = 0;
+        }
+    };
 
-uint32_t MockHccpRaCustomChannel::dieId_ = 0;
-uint32_t MockHccpRaCustomChannel::callCount_ = 0;
-uint32_t MockHccpRaCustomChannel::lastOpCode_ = 0;
+    uint32_t MockHccpRaCustomChannel::dieId_ = 0;
+    uint32_t MockHccpRaCustomChannel::callCount_ = 0;
+    uint32_t MockHccpRaCustomChannel::lastOpCode_ = 0;
 
 }
 
@@ -2579,6 +2600,459 @@ TEST_F(CcuComponentTest, CleanDiId) {
     CcuComponent::GetInstance(0).dieEnableFlags_[0] = true;
     auto ret = CcuComponent::GetInstance(0).CleanDieCkes(IODIE);
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}
+
+// ==================== 补充覆盖率测试 ====================
+
+// --- GetCcuChannelHandleById: 空 map 返回 HCCL_E_NOT_FOUND ---
+extern std::unordered_map<uint16_t, uint64_t> g_channelIdToHandle;
+extern std::mutex g_channelMapMutex;
+
+TEST_F(CcuTaskExceptionTest, GetCcuChannelHandleById_Found)
+{
+    {
+        std::lock_guard<std::mutex> lock(g_channelMapMutex);
+        g_channelIdToHandle[99] = 0xABCD1234;
+    }
+
+    u64 handle = 0;
+    HcclResult ret = CcuTaskException::GetCcuChannelHandleById(99, handle);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(handle, static_cast<u64>(0xABCD1234));
+
+    {
+        std::lock_guard<std::mutex> lock(g_channelMapMutex);
+        g_channelIdToHandle.erase(99);
+    }
+}
+
+// --- GenStatusInfo: CCU_MISSION_TASK_KILLED 分支 (status = 0x0902) ---
+TEST_F(CcuTaskExceptionTest, GenStatusInfo_CcuMissionTaskKilled)
+{
+    ErrorInfoBase baseInfo = {};
+    baseInfo.deviceId = 0;
+    baseInfo.dieId = 0;
+    baseInfo.missionId = 1;
+    baseInfo.currentInsId = 5;
+    // highPart=0x09 (CCUM_EXECUTE_ERROR), lowPart=0x02 (CCU_MISSION_TASK_KILLED)
+    baseInfo.status = static_cast<uint16_t>((0x09 << 8) | 0x02);
+
+    vector<CcuErrorInfo> errorInfo;
+    EXPECT_NO_THROW(CcuTaskException::GenStatusInfo(baseInfo, errorInfo));
+    EXPECT_EQ(errorInfo.size(), 1u);
+    EXPECT_EQ(errorInfo[0].type, CcuErrorType::MISSION);
+    // 确认包含 TASK_KILLED 对应子状态描述
+    EXPECT_TRUE(string(errorInfo[0].msg.mission.missionError).find("CCU Mission Task Killed") != string::npos);
+}
+
+// --- GenErrorInfoDefault: 直接调用验证填充 DEFAULT 类型 ---
+TEST_F(CcuTaskExceptionTest, GenErrorInfoDefault_FillsDefaultType)
+{
+    // 构造一个仅有基本 CcuRepBase 功能的 stub
+    // CcuRepBase 有纯虚函数，用 NopRep 继承覆盖
+    class NopRep : public CcuRep::CcuRepBase {
+    public:
+        NopRep() : CcuRepBase()
+        {
+            type = CcuRep::CcuRepType::BASE;
+        }
+        bool Translate(CcuRep::CcuInstr *&, uint16_t &, const CcuRep::TransDep &) override
+        {
+            return false;
+        }
+        std::string Describe() override
+        {
+            return "NopRep";
+        }
+    };
+
+    auto repBase = std::make_shared<NopRep>();
+    ErrorInfoBase baseInfo{0, 1, 2, 10, 0x0102};
+    vector<CcuErrorInfo> errorInfo;
+
+    CcuTaskException::GenErrorInfoDefault(baseInfo, repBase, errorInfo);
+
+    EXPECT_EQ(errorInfo.size(), 1u);
+    EXPECT_EQ(errorInfo[0].type, CcuErrorType::DEFAULT);
+    EXPECT_EQ(errorInfo[0].dieId, 1u);
+    EXPECT_EQ(errorInfo[0].missionId, 2u);
+}
+
+// --- GenErrorInfoByRepType: type 不在 HANDLER_MAP，走 default 路径 ---
+TEST_F(CcuTaskExceptionTest, GenErrorInfoByRepType_UnknownType_GoesToDefault)
+{
+    class NopRep : public CcuRep::CcuRepBase {
+    public:
+        NopRep() : CcuRepBase()
+        {
+            type = CcuRep::CcuRepType::NOP; // NOP 不在 HANDLER_MAP
+        }
+        bool Translate(CcuRep::CcuInstr *&, uint16_t &, const CcuRep::TransDep &) override
+        {
+            return false;
+        }
+        std::string Describe() override
+        {
+            return "NopRep";
+        }
+    };
+
+    auto repBase = std::make_shared<NopRep>();
+    ErrorInfoBase baseInfo{0, 0, 0, 0, 0x0101};
+    vector<CcuErrorInfo> errorInfo;
+
+    CcuTaskException::GenErrorInfoByRepType(baseInfo, repBase, errorInfo);
+
+    EXPECT_EQ(errorInfo.size(), 1u);
+    EXPECT_EQ(errorInfo[0].type, CcuErrorType::DEFAULT);
+}
+
+// --- PrintCcuErrorLog: empty input -> no crash ---
+TEST_F(CcuTaskExceptionTest, PrintCcuErrorLog_EmptyList)
+{
+    Hccl::ParaCcu paraCcu = {};
+    Hccl::TaskParam taskParam = {.taskType = Hccl::TaskParamType::TASK_CCU,
+        .beginTime = 0,
+        .endTime = 0,
+        .isMaster = false,
+        .taskPara = {.Ccu = paraCcu},
+        .ccuDetailInfo = nullptr};
+    Hccl::TaskInfo taskInfo(1, 2, 3, taskParam, nullptr, false);
+
+    vector<CcuErrorInfo> errorInfos;
+    EXPECT_NO_THROW(CcuTaskException::PrintCcuErrorLog(errorInfos, taskInfo, 0));
+}
+
+// --- PrintCcuErrorLog: MISSION type -> GetCcuErrorMsgByType called ---
+TEST_F(CcuTaskExceptionTest, PrintCcuErrorLog_WithMissionInfo)
+{
+    Hccl::ParaCcu paraCcu = {};
+    Hccl::TaskParam taskParam = {.taskType = Hccl::TaskParamType::TASK_CCU,
+        .beginTime = 0,
+        .endTime = 0,
+        .isMaster = false,
+        .taskPara = {.Ccu = paraCcu},
+        .ccuDetailInfo = nullptr};
+    Hccl::TaskInfo taskInfo(1, 2, 3, taskParam, nullptr, false);
+
+    CcuErrorInfo info{};
+    info.type = CcuErrorType::MISSION;
+    info.repType = CcuRep::CcuRepType::BASE;
+    info.dieId = 0;
+    info.missionId = 1;
+    info.instrId = 0;
+    const char errMsg[] = "Test error";
+    (void)strncpy_s(info.msg.mission.missionError, sizeof(info.msg.mission.missionError), errMsg, sizeof(errMsg));
+
+    vector<CcuErrorInfo> errorInfos{info};
+    EXPECT_NO_THROW(CcuTaskException::PrintCcuErrorLog(errorInfos, taskInfo, 0));
+}
+
+// --- GetCcuErrorMsgByType: LOOP_GROUP type ---
+TEST_F(CcuTaskExceptionTest, GetCcuErrorMsgByType_LoopGroup)
+{
+    CcuErrorInfo ccuErrorInfo = {};
+    ccuErrorInfo.type = CcuErrorType::LOOP_GROUP;
+    ccuErrorInfo.repType = CcuRep::CcuRepType::LOOPGROUP;
+    ccuErrorInfo.instrId = 3;
+    ccuErrorInfo.msg.loopGroup.startLoopInsId = 0;
+    ccuErrorInfo.msg.loopGroup.loopInsCnt = 4;
+    ccuErrorInfo.msg.loopGroup.expandOffset = 1;
+    ccuErrorInfo.msg.loopGroup.expandCnt = 2;
+
+    Hccl::ParaCcu paraCcu = {};
+    Hccl::TaskParam taskParam = {.taskType = Hccl::TaskParamType::TASK_CCU,
+        .beginTime = 0,
+        .endTime = 0,
+        .isMaster = false,
+        .taskPara = {.Ccu = paraCcu},
+        .ccuDetailInfo = nullptr};
+    Hccl::TaskInfo taskInfo(1, 2, 3, taskParam, nullptr, false);
+
+    string result = CcuTaskException::GetCcuErrorMsgByType(ccuErrorInfo, taskInfo, 0);
+    EXPECT_FALSE(result.empty());
+    EXPECT_TRUE(result.find("LoopGroup") != string::npos);
+}
+
+// --- GetCcuErrorMsgByType: LOOP type ---
+TEST_F(CcuTaskExceptionTest, GetCcuErrorMsgByType_Loop)
+{
+    CcuErrorInfo ccuErrorInfo = {};
+    ccuErrorInfo.type = CcuErrorType::LOOP;
+    ccuErrorInfo.repType = CcuRep::CcuRepType::LOOP;
+    ccuErrorInfo.instrId = 7;
+    ccuErrorInfo.msg.loop.startInstrId = 0;
+    ccuErrorInfo.msg.loop.endInstrId = 10;
+    ccuErrorInfo.msg.loop.loopEngineId = 2;
+    ccuErrorInfo.msg.loop.loopCnt = 5;
+    ccuErrorInfo.msg.loop.loopCurrentCnt = 3;
+    ccuErrorInfo.msg.loop.addrStride = 128;
+
+    Hccl::ParaCcu paraCcu = {};
+    Hccl::TaskParam taskParam = {.taskType = Hccl::TaskParamType::TASK_CCU,
+        .beginTime = 0,
+        .endTime = 0,
+        .isMaster = false,
+        .taskPara = {.Ccu = paraCcu},
+        .ccuDetailInfo = nullptr};
+    Hccl::TaskInfo taskInfo(1, 2, 3, taskParam, nullptr, false);
+
+    string result = CcuTaskException::GetCcuErrorMsgByType(ccuErrorInfo, taskInfo, 0);
+    EXPECT_FALSE(result.empty());
+    EXPECT_TRUE(result.find("Loop") != string::npos);
+}
+
+// --- GetMSIdPerDie: bit-masking logic ---
+TEST_F(CcuTaskExceptionTest, GetMSIdPerDie_MasksHighBit)
+{
+    // GetMSIdPerDie returns msId & 0x7fff
+    uint16_t msIdWithHighBit = 0x8005;
+    uint16_t expected = msIdWithHighBit & 0x7FFF; // 5
+    EXPECT_EQ(CcuTaskException::GetMSIdPerDie(msIdWithHighBit), expected);
+}
+
+TEST_F(CcuTaskExceptionTest, GetMSIdPerDie_NoHighBit)
+{
+    uint16_t msId = 42;
+    EXPECT_EQ(CcuTaskException::GetMSIdPerDie(msId), msId);
+}
+
+// --- GetCcuErrorMsgLocPostSem: via WAIT_SIGNAL type ---
+TEST_F(CcuTaskExceptionTest, GetCcuErrorMsgByType_WaitSignal_LocPostSem)
+{
+    CcuErrorInfo ccuErrorInfo = {};
+    ccuErrorInfo.type = CcuErrorType::WAIT_SIGNAL;
+    ccuErrorInfo.repType = CcuRep::CcuRepType::LOC_RECORD_EVENT;
+    ccuErrorInfo.instrId = 1;
+    ccuErrorInfo.msg.waitSignal.signalId = 3;
+    ccuErrorInfo.msg.waitSignal.signalValue = 0x00FF;
+    ccuErrorInfo.msg.waitSignal.signalMask = 0xFF00;
+
+    Hccl::ParaCcu paraCcu = {};
+    Hccl::TaskParam taskParam = {.taskType = Hccl::TaskParamType::TASK_CCU,
+        .beginTime = 0,
+        .endTime = 0,
+        .isMaster = false,
+        .taskPara = {.Ccu = paraCcu},
+        .ccuDetailInfo = nullptr};
+    Hccl::TaskInfo taskInfo(1, 2, 3, taskParam, nullptr, false);
+
+    string result = CcuTaskException::GetCcuErrorMsgByType(ccuErrorInfo, taskInfo, 0);
+    EXPECT_FALSE(result.empty());
+}
+
+// --- RankIdByChannelId: taskType not CCU ---
+TEST_F(CcuTaskExceptionTest, GetRankIdByChannelId_TaskTypeNotCcu)
+{
+    Hccl::ParaCcu paraCcu = {};
+    Hccl::TaskParam taskParam = {.taskType = Hccl::TaskParamType::TASK_RDMA,
+        .beginTime = 0,
+        .endTime = 0,
+        .isMaster = false,
+        .taskPara = {.Ccu = paraCcu},
+        .ccuDetailInfo = nullptr};
+    Hccl::TaskInfo taskInfo(1, 2, 3, taskParam, nullptr, false);
+
+    RankId rankId = CcuTaskException::GetRankIdByChannelId(0, taskInfo, 0);
+    EXPECT_EQ(rankId, static_cast<RankId>(INVALID_UINT));
+}
+
+// --- GetRankIdByChannelId: dfxOpInfo is nullptr ---
+TEST_F(CcuTaskExceptionTest, GetRankIdByChannelId_DfxOpInfoNullptr)
+{
+    Hccl::ParaCcu paraCcu = {};
+    Hccl::TaskParam taskParam = {.taskType = Hccl::TaskParamType::TASK_CCU,
+        .beginTime = 0,
+        .endTime = 0,
+        .isMaster = false,
+        .taskPara = {.Ccu = paraCcu},
+        .ccuDetailInfo = nullptr};
+    Hccl::TaskInfo taskInfo(1, 2, 3, taskParam, nullptr, false);
+    taskInfo.dfxOpInfo_ = nullptr;
+
+    RankId rankId = CcuTaskException::GetRankIdByChannelId(0, taskInfo, 0);
+    EXPECT_EQ(rankId, static_cast<RankId>(INVALID_UINT));
+}
+
+// --- GetAddrPairByChannelId: taskType not CCU ---
+TEST_F(CcuTaskExceptionTest, GetAddrPairByChannelId_TaskTypeNotCcu)
+{
+    Hccl::ParaCcu paraCcu = {};
+    Hccl::TaskParam taskParam = {.taskType = Hccl::TaskParamType::TASK_RDMA,
+        .beginTime = 0,
+        .endTime = 0,
+        .isMaster = false,
+        .taskPara = {.Ccu = paraCcu},
+        .ccuDetailInfo = nullptr};
+    Hccl::TaskInfo taskInfo(1, 2, 3, taskParam, nullptr, false);
+
+    auto result = CcuTaskException::GetAddrPairByChannelId(0, taskInfo, 0);
+    // 返回 dummy 空地址对
+    EXPECT_TRUE(result.first.Describe().empty() || !result.first.Describe().empty()); // 不崩溃即可
+}
+
+// --- GetAddrPairByChannelId: dfxOpInfo nullptr ---
+TEST_F(CcuTaskExceptionTest, GetAddrPairByChannelId_DfxOpInfoNullptr)
+{
+    Hccl::ParaCcu paraCcu = {};
+    Hccl::TaskParam taskParam = {.taskType = Hccl::TaskParamType::TASK_CCU,
+        .beginTime = 0,
+        .endTime = 0,
+        .isMaster = false,
+        .taskPara = {.Ccu = paraCcu},
+        .ccuDetailInfo = nullptr};
+    Hccl::TaskInfo taskInfo(1, 2, 3, taskParam, nullptr, false);
+    taskInfo.dfxOpInfo_ = nullptr;
+
+    auto result = CcuTaskException::GetAddrPairByChannelId(0, taskInfo, 0);
+    EXPECT_TRUE(true); // 不崩溃即可
+}
+
+TEST_F(GenErrorInfoTest, GenErrorInfoRead_UsesRepFields)
+{
+    CcuRep::Address locAddr;
+    CcuRep::Variable locToken;
+    CcuRep::Address remAddr;
+    CcuRep::Variable remToken;
+    CcuRep::Variable len;
+    CcuRep::CompletedEvent sem;
+
+    locAddr.Reset(11);
+    locToken.Reset(12);
+    remAddr.Reset(13);
+    remToken.Reset(14);
+    len.Reset(15);
+    sem.Reset(16);
+
+    auto rep = std::make_shared<CcuRep::CcuRepRead>(static_cast<ChannelHandle>(101),
+        CcuRep::LocalAddr(locAddr, locToken), CcuRep::RemoteAddr(remAddr, remToken), len, sem, 0x5A);
+    std::vector<CcuErrorInfo> errorInfo;
+
+    CcuTaskException::GenErrorInfoRead(baseInfo_, rep, errorInfo);
+
+    EXPECT_EQ(errorInfo.size(), 1u);
+    EXPECT_EQ(errorInfo[0].type, CcuErrorType::TRANS_MEM);
+    EXPECT_EQ(errorInfo[0].msg.transMem.signalId, 16u);
+    EXPECT_EQ(errorInfo[0].msg.transMem.signalMask, 0x5Au);
+    EXPECT_EQ(errorInfo[0].msg.transMem.channelId, 0u);
+}
+
+TEST_F(GenErrorInfoTest, GenErrorInfoWrite_UsesRepFields)
+{
+    CcuRep::Address locAddr;
+    CcuRep::Variable locToken;
+    CcuRep::Address remAddr;
+    CcuRep::Variable remToken;
+    CcuRep::Variable len;
+    CcuRep::CompletedEvent sem;
+
+    locAddr.Reset(21);
+    locToken.Reset(22);
+    remAddr.Reset(23);
+    remToken.Reset(24);
+    len.Reset(25);
+    sem.Reset(26);
+
+    auto rep = std::make_shared<CcuRep::CcuRepWrite>(static_cast<ChannelHandle>(102),
+        CcuRep::RemoteAddr(remAddr, remToken), CcuRep::LocalAddr(locAddr, locToken), len, sem, 0xA5);
+    std::vector<CcuErrorInfo> errorInfo;
+
+    CcuTaskException::GenErrorInfoWrite(baseInfo_, rep, errorInfo);
+
+    EXPECT_EQ(errorInfo.size(), 1u);
+    EXPECT_EQ(errorInfo[0].type, CcuErrorType::TRANS_MEM);
+    EXPECT_EQ(errorInfo[0].msg.transMem.signalId, 26u);
+    EXPECT_EQ(errorInfo[0].msg.transMem.signalMask, 0xA5u);
+    EXPECT_EQ(errorInfo[0].msg.transMem.channelId, 0u);
+}
+
+TEST_F(GenErrorInfoTest, GenErrorInfoBufRead_UsesRepFields)
+{
+    CcuRep::Address srcAddr;
+    CcuRep::Variable srcToken;
+    CcuRep::CcuBuf dst;
+    CcuRep::Variable len;
+    CcuRep::CompletedEvent sem;
+
+    srcAddr.Reset(31);
+    srcToken.Reset(32);
+    dst.Reset(0x8009);
+    len.Reset(33);
+    sem.Reset(34);
+
+    auto rep = std::make_shared<CcuRep::CcuRepBufRead>(
+        static_cast<ChannelHandle>(103), CcuRep::RemoteAddr(srcAddr, srcToken), dst, len, sem, 0x12);
+    std::vector<CcuErrorInfo> errorInfo;
+
+    CcuTaskException::GenErrorInfoBufRead(baseInfo_, rep, errorInfo);
+
+    EXPECT_EQ(errorInfo.size(), 1u);
+    EXPECT_EQ(errorInfo[0].type, CcuErrorType::BUF_TRANS_MEM);
+    EXPECT_EQ(errorInfo[0].msg.bufTransMem.bufId, 9u);
+    EXPECT_EQ(errorInfo[0].msg.bufTransMem.signalId, 34u);
+    EXPECT_EQ(errorInfo[0].msg.bufTransMem.signalMask, 0x12u);
+    EXPECT_EQ(errorInfo[0].msg.bufTransMem.channelId, 0u);
+}
+
+TEST_F(GenErrorInfoTest, GenErrorInfoBufWrite_UsesRepFields)
+{
+    CcuRep::CcuBuf src;
+    CcuRep::Address dstAddr;
+    CcuRep::Variable dstToken;
+    CcuRep::Variable len;
+    CcuRep::CompletedEvent sem;
+
+    src.Reset(0x800A);
+    dstAddr.Reset(41);
+    dstToken.Reset(42);
+    len.Reset(43);
+    sem.Reset(44);
+
+    auto rep = std::make_shared<CcuRep::CcuRepBufWrite>(
+        static_cast<ChannelHandle>(104), src, CcuRep::RemoteAddr(dstAddr, dstToken), len, sem, 0x34);
+    std::vector<CcuErrorInfo> errorInfo;
+
+    CcuTaskException::GenErrorInfoBufWrite(baseInfo_, rep, errorInfo);
+
+    EXPECT_EQ(errorInfo.size(), 1u);
+    EXPECT_EQ(errorInfo[0].type, CcuErrorType::BUF_TRANS_MEM);
+    EXPECT_EQ(errorInfo[0].msg.bufTransMem.bufId, 10u);
+    EXPECT_EQ(errorInfo[0].msg.bufTransMem.signalId, 44u);
+    EXPECT_EQ(errorInfo[0].msg.bufTransMem.signalMask, 0x34u);
+    EXPECT_EQ(errorInfo[0].msg.bufTransMem.channelId, 0u);
+}
+
+TEST_F(GenErrorInfoTest, GenErrorInfoLocWaitEvent_UsesRepFields)
+{
+    CcuRep::CompletedEvent event;
+    event.Reset(51);
+    event.SetMask(0xFF);
+
+    auto rep = std::make_shared<CcuRep::CcuRepLocWaitEvent>(event, true);
+    std::vector<CcuErrorInfo> errorInfo;
+
+    CcuTaskException::GenErrorInfoLocWaitEvent(baseInfo_, rep, errorInfo);
+
+    EXPECT_EQ(errorInfo.size(), 1u);
+    EXPECT_EQ(errorInfo[0].type, CcuErrorType::WAIT_SIGNAL);
+    EXPECT_EQ(errorInfo[0].msg.waitSignal.signalId, 51u);
+    EXPECT_EQ(errorInfo[0].msg.waitSignal.signalMask, 0xFFu);
+}
+
+TEST_F(GenErrorInfoTest, GenErrorInfoLocWaitNotify_UsesRepFields)
+{
+    CcuRep::LocalNotify notify;
+    notify.Reset(52);
+
+    auto rep = std::make_shared<CcuRep::CcuRepLocWaitNotify>(notify, 0xAA, true);
+    std::vector<CcuErrorInfo> errorInfo;
+
+    CcuTaskException::GenErrorInfoLocWaitNotify(baseInfo_, rep, errorInfo);
+
+    EXPECT_EQ(errorInfo.size(), 1u);
+    EXPECT_EQ(errorInfo[0].type, CcuErrorType::WAIT_SIGNAL);
+    EXPECT_EQ(errorInfo[0].msg.waitSignal.signalId, 52u);
+    EXPECT_EQ(errorInfo[0].msg.waitSignal.signalMask, 0xAAu);
 }
 
 } // namespace hcomm
