@@ -10,19 +10,32 @@
 
 #include "ccu_drv_handle.h"
 
-#include "log.h"
 #include "ccu_log.h"
 
 #include "hccp_tlv.h"
 #include "hccp_tlv_hdc_mgr.h"
 
-#include "ccu_res_specs.h"
-#include "ccu_pfe_cfg_mgr.h"
-#include "ccu_comp.h"
-#include "ccu_res_batch_allocator.h"
+/* 开源自定义算子CCU设备管理实现，当前支持新老通信域混跑，
+ * 暂时改用legacy数据结构，避免反向依赖
+ * #include "ccu_res_specs.h"
+ * #include "ccu_pfe_cfg_mgr.h"
+ * #include "ccu_comp.h"
+ * #include "ccu_res_batch_allocator.h"
+*/
+
 #include "ccu_kernel_mgr.h"
 
 #include "adapter_rts.h"
+
+// 支持ccu新老通信域混跑临时添加
+#include "unified_platform/ccu/ccu_device/ccu_res_specs.h"
+#include "unified_platform/ccu/ccu_device/ccu_component/ccu_component.h"
+#include "unified_platform/ccu/ccu_device/ccu_res_batch_allocator.h"
+#include "unified_platform/ccu/ccu_context/ccu_context_mgr_imp.h"
+#include "hccp_tlv_hdc_manager.h"
+#include "orion_adapter_hccp.h"
+
+#include "exception_handler.h"
 
 namespace hcomm {
 
@@ -30,7 +43,6 @@ static HcclResult HccpRaTlvRequest(const TlvHandle tlvHandle,
     const u32 tlvModuleType, const u32 tlvCcuMsgType)
 {
     CHK_PTR_NULL(tlvHandle);
-
     struct TlvMsg sendMsg {};
     struct TlvMsg recvMsg {};
     sendMsg.type = tlvCcuMsgType;
@@ -60,15 +72,23 @@ CcuResult CcuDrvHandle::Init()
 {
     HCCL_RUN_INFO("[CcuDrvHandle][%s], deviceLogicId: %d", __func__, devLogicId_);
     CCU_CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(devLogicId_), devPhyId_));
+    // 支持ccu新老通信域混跑
+    CCU_EXCEPTION_HANDLE_BEGIN
     // 初始化CCU平台层能力，有时序要求
-    // 当前走进A5通信域，暂时不需要主动拉起
-    auto &tlvHdcMgr = HccpTlvHdcMgr::GetInstance(devPhyId_);
-    CCU_CHK_RET(tlvHdcMgr.Init());
-    tlvHandle_ = tlvHdcMgr.GetHandle();
-    CCU_CHK_PTR_NULL(tlvHandle_);
+    // 当前走进A5通信域，暂时不需要主动拉起HDC通道
+    /* 为了支持ccu新老通信域混跑，暂时复用原有的tlv mgr，避免重复申请资源
+     * auto &tlvHdcMgr = HccpTlvHdcMgr::GetInstance(devPhyId_);
+     * CHK_RET(tlvHdcMgr.Init());
+     * tlvHandle_ = tlvHdcMgr.GetHandle();
+     */
 
+    tlvHandle_ = Hccl::HccpTlvHdcManager::GetInstance().GetTlvHandle(devLogicId_);
+    CCU_CHK_PTR_NULL(tlvHandle_);
+    // 拉起CCU驱动如果因其他进程占用重复拉起时，返回EAGAIN，日志检查返回值打印warning
     auto ret = HccpRaTlvRequest(tlvHandle_, TLV_MODULE_TYPE_CCU, MSG_TYPE_CCU_INIT);
     if (ret == HcclResult::HCCL_E_AGAIN) {
+        HCCL_RUN_WARNING("[%s] HccpRaTlvRequest ret[%d], repeat init ccu, deviceLogicId[%d].",
+            __func__, ret, devLogicId_);
         return CcuResult::CCU_E_DRV_BUSY;
     }
     if (ret != HcclResult::HCCL_SUCCESS) {
@@ -77,25 +97,50 @@ CcuResult CcuDrvHandle::Init()
         return CcuResult::CCU_E_DRV_INIT_FAILED;
     }
 
-    CCU_CHK_RET(CcuResSpecifications::GetInstance(devLogicId_).Init());
-    CCU_CHK_RET(CcuPfeCfgMgr::GetInstance(devLogicId_).Init());
-    CCU_CHK_RET(CcuComponent::GetInstance(devLogicId_).Init());
-    CCU_CHK_RET(CcuResBatchAllocator::GetInstance(devLogicId_).Init());
+    Hccl::CcuResSpecifications::GetInstance(devLogicId_).Init();
+    Hccl::CcuComponent::GetInstance(devLogicId_).Init();
+    Hccl::CcuResBatchAllocator::GetInstance(devLogicId_).Init();
+    Hccl::CtxMgrImp::GetInstance(devLogicId_).Init();
+    CCU_EXCEPTION_HANDLE_END
+
+    /* 为了支持ccu新老通信域混跑，暂时不启用开源数据结构
+     * CCU_CHK_RET(CcuResSpecifications::GetInstance(devLogicId_).Init());
+     * CCU_CHK_RET(CcuPfeCfgMgr::GetInstance(devLogicId_).Init());
+     * CCU_CHK_RET(CcuComponent::GetInstance(devLogicId_).Init());
+     * CCU_CHK_RET(CcuResBatchAllocator::GetInstance(devLogicId_).Init());
+     */
     CCU_CHK_RET(CcuKernelMgr::GetInstance(devLogicId_).Init());
 
     return CcuResult::CCU_SUCCESS;
 }
 
+static HcclResult CcuLegacyMgrDeinit(int32_t devLogicId)
+{
+    // 释放有时序要求
+    EXCEPTION_HANDLE_BEGIN
+    Hccl::CtxMgrImp::GetInstance(devLogicId).Deinit();
+    Hccl::CcuResBatchAllocator::GetInstance(devLogicId).Deinit();
+    Hccl::CcuComponent::GetInstance(devLogicId).Deinit();
+    Hccl::CcuResSpecifications::GetInstance(devLogicId).Deinit();
+    EXCEPTION_HANDLE_END
+
+    return HcclResult::HCCL_SUCCESS;
+}
+
 CcuResult CcuDrvHandle::Deinit()
 {
     // 释放流程不打断，不抛异常，尽量尝试释放所有资源
+    // 释放有时序要求
     HCCL_RUN_INFO("[CcuDrvHandle] start to deinit ccu driver, deviceLogicId[%d].", devLogicId_);
     (void)CcuKernelMgr::GetInstance(devLogicId_).Deinit();
-    (void)CcuResBatchAllocator::GetInstance(devLogicId_).Deinit();
-    (void)CcuComponent::GetInstance(devLogicId_).Deinit();
-    (void)CcuPfeCfgMgr::GetInstance(devLogicId_).Deinit();
-    (void)CcuResSpecifications::GetInstance(devLogicId_).Deinit();
+    /* 为了支持ccu新老通信域混跑，暂时不启用开源数据结构
+     * (void)CcuResBatchAllocator::GetInstance(devLogicId_).Deinit();
+     * (void)CcuComponent::GetInstance(devLogicId_).Deinit();
+     * (void)CcuPfeCfgMgr::GetInstance(devLogicId_).Deinit();
+     * (void)CcuResSpecifications::GetInstance(devLogicId_).Deinit();
+     */
 
+    (void)CcuLegacyMgrDeinit(devLogicId_);
     if (tlvHandle_ != 0) {
         (void)HccpRaTlvRequest(tlvHandle_, TLV_MODULE_TYPE_CCU, MSG_TYPE_CCU_UNINIT);
         tlvHandle_ = 0;

@@ -38,7 +38,15 @@ CcuResult CcuResPack::Init()
         return CcuResult::CCU_E_PARA;
     }
 
-    CCU_CHK_RET(CcuAllocResHandleByInsType(devLogicId_, insType_, resHandle_));
+    // 根据通信域算子展开模式申请资源
+    // 如果资源不足，返回HCCL_E_UNAVAIL，表示需要回退
+    auto ret = CcuAllocResHandleByInsType(devLogicId_, insType_, resHandle_);
+    if (ret == CcuResult::CCU_E_UNAVAIL) {
+        HCCL_RUN_WARNING("[%s] failed but passed, resource is not enough, "
+            "devLogicId[%d], ccuInsType[%d].", __func__, devLogicId_, insType_);
+        return ret;
+    }
+    CCU_CHK_RET(ret);
     CCU_CHK_RET(Reset());
     return CcuResult::CCU_SUCCESS;
 }

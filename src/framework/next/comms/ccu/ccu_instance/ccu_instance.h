@@ -19,8 +19,6 @@
 #include "ccu_drv_handle.h"
 #include "ccu_primitives.h"
 
-#include "ccu_kernel.h" // todo: 后续需要删除
-
 namespace hcomm {
 
 /**

@@ -25,13 +25,13 @@ extern HcclResult HcclCommQueryCcuIns(HcclComm comm,
 extern CcuResult HcommCcuKernelRegisterStart(CcuInsHandle insHandle);
 
 extern CcuResult HcommCcuKernelRegister(CcuInsHandle insHandle,
-    char *kernelFuncName, void *kernelFunc, void *kernelArg,
-    CcuKernelHandle *kernelHandle);
+    const char *kernelFuncName, const void *kernelFunc,
+    const void *kernelArg, CcuKernelHandle *kernelHandle);
 
 extern CcuResult HcommCcuKernelRegisterEnd(CcuInsHandle insHandle);
 
 extern CcuResult HcommCcuKernelLaunch(ThreadHandle threadHandle,
-    CcuKernelHandle kernelHandle, void *taskArgs, uint32_t argSize);
+    CcuKernelHandle kernelHandle, const void *taskArgs, uint32_t argSize);
 
 #ifdef __cplusplus
 }

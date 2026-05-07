@@ -1356,32 +1356,6 @@ HccpTlvHdcManager::~HccpTlvHdcManager()
 {
 }
 
-CcuComponent &CcuComponent::GetInstance(const int32_t deviceLogicId)
-{
-    static CcuComponent ccuComponent;
-    return ccuComponent;
-}
-
-CcuComponent::~CcuComponent()
-{
-}
-
-CcuResSpecifications &CcuResSpecifications::GetInstance(const int32_t deviceLogicId)
-{
-    static CcuResSpecifications ccuResSpecification;
-    return ccuResSpecification;
-}
-
-HcclResult CcuResSpecifications::GetGsaNum(const uint8_t dieId, uint32_t &gsaNum) const
-{
-    return HcclResult::HCCL_SUCCESS;
-}
-
-HcclResult CcuResSpecifications::GetInstructionNum(const uint8_t dieId, uint32_t &instrNum) const
-{
-    return HcclResult::HCCL_SUCCESS;
-}
-
 HccpPeerManager &HccpPeerManager::GetInstance()
 {
     static HccpPeerManager hccpPeerManager;
@@ -1396,40 +1370,6 @@ void HccpPeerManager::Init(s32 deviceLogicId)
 {
 }
 
-HcclResult CcuResSpecifications::GetXnNum(const uint8_t dieId, uint32_t &xnNum) const
-{
-    return HcclResult::HCCL_SUCCESS;
-}
-
-HcclResult CcuResSpecifications::GetLoopEngineNum(const uint8_t dieId, uint32_t &loopNum) const
-{
-    return HcclResult::HCCL_SUCCESS;
-}
-
-HcclResult CcuResSpecifications::GetMissionNum(const uint8_t dieId, uint32_t &missionNum) const
-{
-    return HcclResult::HCCL_SUCCESS;
-}
-
-HcclResult CcuResSpecifications::GetMsNum(const uint8_t dieId, uint32_t &msNum) const
-{
-    return HcclResult::HCCL_SUCCESS;
-}
-
-CtxMgrImp &CtxMgrImp::GetInstance(s32 deviceLogicId)
-{
-    static CtxMgrImp contextManager;
-    return contextManager;
-}
-
-CtxMgrImp::CtxMgrImp()
-{
-}
-
-CtxMgrImp::~CtxMgrImp()
-{
-}
-
 InnerNetDevManager &InnerNetDevManager::GetInstance()
 {
     static InnerNetDevManager instance;
@@ -1438,17 +1378,6 @@ InnerNetDevManager &InnerNetDevManager::GetInstance()
 
 InnerNetDev::~InnerNetDev()
 {
-}
-
-CcuResBatchAllocator &CcuResBatchAllocator::GetInstance(const int32_t deviceLogicId)
-{
-    static CcuResBatchAllocator ccuResBatchAllocator;
-    return ccuResBatchAllocator;
-}
-
-HcclResult CcuResSpecifications::GetCkeNum(const uint8_t dieId, uint32_t &ckeNum) const
-{
-    return HcclResult::HCCL_SUCCESS;
 }
 
 TpManager &TpManager::GetInstance(const int32_t deviceLogicId)

@@ -26,12 +26,17 @@
 #include "rdma_handle_manager.h"
 #include "hccp_ctx.h"
 
+#include "ccu_drv_handle_mock.h"
+#include "ccu_dev_mgr_mock.h"
+
 #undef protected
 #undef private
 
-
 HcclResult MockCcuResourcesDefault(int32_t devLogicId, hcomm::CcuVersion ccuVersion)
 {
+    MockCcuDrvHandle();
+    MockCcuDevMgr();
+
     auto &ccuResSpecs = hcomm::CcuResSpecifications::GetInstance(devLogicId);
     ccuResSpecs.initFlag_ = true;
     ccuResSpecs.ccuVersion_ = ccuVersion;

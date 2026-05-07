@@ -15,6 +15,8 @@ set(src_to_test_list
     ut_HcommCcuControlApi_test.cc
 
     mocks/ccu_device_mock_utils.cc
+    mocks/ccu_drv_handle_mock.cc
+    mocks/ccu_dev_mgr_mock.cc
 )
 
 add_executable(hccl_utest_comms_ccu_features ${src_to_test_list})
