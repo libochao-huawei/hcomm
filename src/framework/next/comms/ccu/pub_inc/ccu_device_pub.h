@@ -22,10 +22,14 @@
 #include "enum_factory.h"
 #include "hccl_rank_graph.h"
 
+// 支持新老通信域混跑，引入legacy数据结构
+#include "unified_platform/pub_inc/ccu/ccu_dev_mgr.h"
+
 namespace hcomm {
 
 using CcuResHandle = void *;
 
+// 不复用legacy数据结构，对上层支持CommAddr，不使用Hccl::IpAddress
 struct CcuChannelPara {
     CommAddr commAddr{};
     uint32_t channelNum{0};
@@ -39,33 +43,45 @@ struct CcuChannelPara {
     }
 };
 
-MAKE_ENUM(CcuJettyType, CCUM_CACHED_JETTY, INVALID_JETTY);
+using CcuJettyType = Hccl::CcuJettyType;
+/* 开源自定义算子CCU设备管理实现，当前支持新老通信域混跑，
+ * 暂时改用legacy数据结构，避免反向依赖
+ * MAKE_ENUM(CcuJettyType, CCUM_CACHED_JETTY, INVALID_JETTY);
+ */
 
-struct CcuJettyInfo {
-    CcuJettyType jettyType{CcuJettyType::INVALID_JETTY};
-    uint16_t jettyCtxId{0};
-    uint16_t taJettyId{0};
+using CcuJettyInfo = Hccl::CcuJettyInfo;
+/* 开源自定义算子CCU设备管理实现，当前支持新老通信域混跑，
+ * 暂时改用legacy数据结构，避免反向依赖
+ * struct CcuJettyInfo {
+ *     CcuJettyType jettyType{CcuJettyType::INVALID_JETTY};
+ *     uint16_t jettyCtxId{0};
+ *     uint16_t taJettyId{0};
 
-    uint32_t sqDepth{0};
-    uint32_t wqeBBStartId{0};
+ *     uint32_t sqDepth{0};
+ *     uint32_t wqeBBStartId{0};
 
-    uint64_t sqBufVa{0};
-    uint32_t sqBufSize{0};
-};
+ *     uint64_t sqBufVa{0};
+ *     uint32_t sqBufSize{0};
+ * };
+ */
 
-struct CcuChannelInfo {
-    uint32_t channelId{0};
-    uint8_t dieId{0};
-    std::vector<CcuJettyInfo> jettyInfos;
-};
+using CcuChannelInfo = Hccl::CcuChannelInfo;
+/* 开源自定义算子CCU设备管理实现，当前支持新老通信域混跑，
+ * 暂时改用legacy数据结构，避免反向依赖
+ * struct CcuChannelInfo {
+ *     uint32_t channelId{0};
+ *     uint8_t dieId{0};
+ *     std::vector<CcuJettyInfo> jettyInfos;
+ * };
+ */
 
 /**
  * @brief 启用CCU特性，初始化CCU平台层
  *
  * @param deviceLogicId 设备逻辑ID
  * @param ccuDrvHandle CCU驱动句柄
- * @return CcuResult 返回CcuResult类型的结果
- * @note todo: 时返回，其余非CCU_SUCCESS结果属于错误
+ * @return HcclResult 返回HcclResult类型的结果
+ * @note 资源不足时返回HCCL_E_UNAVIL，其余非HCCL_SUCCESS结果属于错误
  */
 CcuResult CcuInitFeature(const int32_t devLogicId, std::shared_ptr<CcuDrvHandle> &ccuDrvHandle);
 
@@ -79,18 +95,18 @@ CcuResult CcuInitFeature(const int32_t devLogicId, std::shared_ptr<CcuDrvHandle>
 CcuResult CcuDeinitFeature(const int32_t devLogicId);
 
 /**
- * @brief todo
+ * @brief 申请批量ccu channel资源
  *
- * @param deviceLogicId 设备逻辑ID
- * @param ccuEngine CCU通信引擎类型
- * @param resHandle 返回的CCU批量资源句柄
+ * @param deviceLogicId device逻辑ID
+ * @param dieId ccu channel 所属的 IO Die 编号
+ * @param enableFlag 出参，表示该die是否启用
  * @return HcclResult 返回HcclResult类型的结果
- * @note 资源不足时返回HCCL_E_UNAVIL，其余非HCCL_SUCCESS结果属于错误
+ * @note dieId越界时返回HCCL_E_PARA
  */
-CcuResult CcuGetDieEnableInfos(int32_t deviceLogicId, std::array<bool, CCU_MAX_IODIE_NUM> &enableInfos);
+CcuResult CcuGetDieEnableInfo(int32_t deviceLogicId, uint8_t dieId, bool &enableFlag);
 
 /**
- * @brief 按CCU实体模式申请批量资源
+ * @brief 按加速引擎模式申请批量资源
  *
  * @param deviceLogicId 设备逻辑ID
  * @param ccuEngine CCU通信引擎类型
@@ -107,8 +123,8 @@ CcuResult CcuAllocResHandleByInsType(int32_t deviceLogicId,
  * @param deviceLogicId 设备逻辑ID
  * @param resHandle 查询的CCU批量资源句柄
  * @param resRepo 返回的CCU批量资源信息
- * @return CcuResult 返回CcuResult类型的结果
- * @note todo:
+ * @return HcclResult 返回HcclResult类型的结果
+ * @note 资源句柄无法查找到时返回HCCL_E_NOT_FOUND，其余非HCCL_SUCCESS结果属于错误
  */
 CcuResult CcuCheckResource(const int32_t deviceLogicId,
     const CcuResHandle resHandle, CcuResRepository &resRepo);

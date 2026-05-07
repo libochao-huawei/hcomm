@@ -58,6 +58,16 @@ HcclResult CcuKernelMgr::Init()
         return HcclResult::HCCL_SUCCESS;
     }
 
+    for (uint8_t dieId = 0; dieId < CCU_MAX_IODIE_NUM; dieId++) {
+        bool enableFlag = false;
+        CHK_RET(static_cast<HcclResult>(CcuGetDieEnableInfo(devLogicId_, dieId, enableFlag)));
+        if (!enableFlag) {
+            continue;
+        }
+
+        CHK_RET(InstantiationTranslator(dieId));
+    }
+
     initializedFlag_ = true;
     kernelMap_.clear();
     return HcclResult::HCCL_SUCCESS;
@@ -76,8 +86,8 @@ HcclResult CcuKernelMgr::Deinit()
 }
 
 CcuResult CcuKernelMgr::Register(
-    CcuResPack &resPack, char *kernelFuncName,
-    CcuKernelFunc ccuKernelFunc, CcuKernelArg kernelArg,
+    CcuResPack &resPack, const char *kernelFuncName,
+    const CcuKernelFunc ccuKernelFunc, const CcuKernelArg kernelArg,
     CcuKernelHandle &kernelHandle)
 {
     (void)kernelFuncName;
@@ -261,8 +271,6 @@ static CcuResult AllocInstrRes(std::unique_ptr<CcuKernel> &kernel, const int32_t
 
 CcuResult CcuKernelMgr::AllocRes(CcuResPack &resPack)
 {
-    CCU_CHK_RET(InstantiationTranslator(currKernel_->GetDieId()));
-
     CcuResReq leftRes{};
     GetResNumFromResPack(resPack, leftRes);
 

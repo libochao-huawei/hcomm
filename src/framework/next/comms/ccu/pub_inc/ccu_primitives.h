@@ -26,6 +26,11 @@ typedef enum {
 } CcuInstanceType;
 
 // 以下接口当前平台层实现预埋，后续对外开放
+// 该数据结构当前内部使用，未对外
+struct CcuResDesc {
+    uint32_t dieId;
+    CcuInstanceType insType;
+};
 
 //todo: 注释待修改
 /**
@@ -36,7 +41,7 @@ typedef enum {
  * @return HcclResult 返回HcclResult类型的结果
  * @note 资源不足时返回HCCL_E_UNAVIL，其余非HCCL_SUCCESS结果属于错误
  */
-extern CcuResult HcommCcuInsCreate(void *resDesc, CcuInsHandle *insHandle);
+extern CcuResult HcommCcuInsCreate(const void *resDesc, uint32_t descNum, CcuInsHandle *insHandle);
 
 /**
  * @brief 关闭CCU特性，解初始化CCU平台层

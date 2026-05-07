@@ -12,8 +12,7 @@
 #define CCU_LOG_H
 
 #include "log.h"
-
-// todo: 需要适配资源不足
+#include "exception_handler.h"
 
 #define HCCL_TO_CCU_RET(hcclRet) static_cast<CcuResult>(hcclRet)
 
@@ -25,7 +24,7 @@
     do {                                              \
         CcuResult ccuRet = HCCL_TO_CCU_RET(call);                        \
         if (UNLIKELY(ccuRet != CCU_SUCCESS)) {                    \
-            if (ccuRet == CCU_E_AGAIN) {                \
+            if (ccuRet == CCU_E_AGAIN || ccuRet == CCU_E_DRV_BUSY) {                \
                 HCCL_WARNING("[%s]call trace: ccuRet -> %d", __func__, ccuRet); \
             } else if (ccuRet == CCU_E_UNAVAIL) { \
                 HCCL_WARNING("[%s]call trace: ccuRet resources are not unavailable -> %d", \
@@ -49,5 +48,11 @@
         }                                                                                                          \
     } while (0)
 
+// 宏定义，用于包装 C 接口函数的异常处理
+#define CCU_EXCEPTION_HANDLE_BEGIN try {
+#define CCU_EXCEPTION_HANDLE_END_INFO(func_name) } catch (...) { \
+    return HCCL_TO_CCU_RET(hccl::ExceptionHandler::HandleException(func_name)); }
+
+#define CCU_EXCEPTION_HANDLE_END CCU_EXCEPTION_HANDLE_END_INFO(__func__)
 
 #endif // CCU_LOG_H
