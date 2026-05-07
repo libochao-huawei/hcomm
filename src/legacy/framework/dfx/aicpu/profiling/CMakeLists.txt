@@ -12,7 +12,7 @@ target_sources(hccl_v2 PRIVATE
     profiling_reporter_lite.cc
 )
 
-if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
+if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
 target_sources(ccl_kernel PRIVATE
     profiling_handler_lite.cc
     profiling_reporter_lite.cc

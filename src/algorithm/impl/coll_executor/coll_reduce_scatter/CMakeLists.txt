@@ -44,4 +44,32 @@ target_sources(hccl_alg PRIVATE
     ${src_list}
 )
 
+if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
+    target_sources(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_comm_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_deter_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_fast_double_ring_for_910_93_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_aligned_reduce_scatter_double_ring_for_910_93_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_ring_for_910_93_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_mesh_dma_elimination.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_mesh_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_mesh_opbase_pipeline_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_ring_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_single_rank_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_semi_ring_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_mix_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_hccs_sio_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_ring_zerocopy_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_ring_zerocopy_exchange_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_ring_zerocopy_exchange_pipeline_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_order_preserved_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_ars_for_910_93_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_order_preserved_for_910_93_executor.cc
+    )
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()
+
 add_subdirectory(310P)

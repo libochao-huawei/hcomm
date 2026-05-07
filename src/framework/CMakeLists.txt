@@ -44,6 +44,45 @@ if(DEVICE_MODE)
     add_subdirectory(device)
 endif()
 
+# ccl_kernel include directories
+if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
+    target_include_directories(ccl_kernel PRIVATE
+        ${HCCL_BASE_DIR}/framework/inc
+        ${HCCL_BASE_DIR}/framework/cluster_maintenance/health/heartbeat/
+        ${HCCL_BASE_DIR}/framework/cluster_maintenance/detect/detect_connect_anomalies/
+        ${HCCL_BASE_DIR}/framework/cluster_maintenance/snapshot/
+        ${HCCL_BASE_DIR}/framework/cluster_maintenance/recovery/operator_retry
+        ${HCCL_BASE_DIR}/framework/common/src
+        ${HCCL_BASE_DIR}/framework/common/src/aicpu
+        ${HCCL_BASE_DIR}/framework/common/src/config
+        ${HCCL_BASE_DIR}/framework/common/src/task
+        ${HCCL_BASE_DIR}/framework/common/src/topo
+        ${HCCL_BASE_DIR}/framework/common/src/exception
+        ${HCCL_BASE_DIR}/framework/hcom
+        ${HCCL_BASE_DIR}/framework/op_base/src/
+        ${HCCL_BASE_DIR}/framework/device/
+        ${HCCL_BASE_DIR}/framework/device/aicpu_kfc
+        ${HCCL_BASE_DIR}/framework/device/aicpu_kfc/inc
+        ${HCCL_BASE_DIR}/framework/device/aicpu_kfc/dfx
+        ${HCCL_BASE_DIR}/framework/device/common
+        ${HCCL_BASE_DIR}/framework/device/inc
+        ${HCCL_BASE_DIR}/framework/device/framework
+        ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/
+        ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/resource
+        ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/thread
+        ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/rank_graph
+        ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/channel
+        ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/channel/device
+        ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/data_api
+        ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/sockets/
+        ${HCCL_BASE_DIR}/framework/next/comms/endpoints/
+        ${HCCL_BASE_DIR}/framework/next/comms/comm_engine_res/threads
+        ${HCCL_BASE_DIR}/framework/next/comms/comm_engine_res/threads/slaves/
+        ${HCCL_BASE_DIR}/framework/next/coll_comms/communicator/aicpu
+        ${HCCL_BASE_DIR}/framework/next/coll_comms/dfx
+    )
+endif()
+
 if(NOT KERNEL_MODE)
     SET(HCCL_CMAKE_DIR ${HCCL_OPEN_CODE_BASE_DIR}/../cmake/)
     message(STATUS "HCCL_CMAKE_DIR = ${HCCL_CMAKE_DIR}")
