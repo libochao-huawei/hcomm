@@ -645,10 +645,11 @@ HcclResult AicpuTsRoceChannelV2::BuildAndGetDevChannelEntity(void** devChannelEn
 
     deviceMemories_.clear();
 
-    void* entityDevPtr = Hccl::HrtMalloc(sizeof(ChannelEntity), static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH));
-    CHK_PRT_RET(entityDevPtr == nullptr,
-        HCCL_ERROR("[AicpuTsRoceChannelV2::%s] HrtMalloc for ChannelEntity failed", __func__), HCCL_E_MEMORY);
-    deviceMemories_.push_back(entityDevPtr);
+    hccl::DeviceMem entityDevMem = hccl::DeviceMem::alloc(sizeof(ChannelEntity));
+    CHK_PRT_RET(!entityDevMem,
+        HCCL_ERROR("[AicpuTsRoceChannelV2::%s] DeviceMem::alloc for ChannelEntity failed", __func__), HCCL_E_MEMORY);
+    deviceMemories_.push_back(std::move(entityDevMem));
+    void* entityDevPtr = deviceMemories_.back().ptr();
 
     ChannelEntity devEntity = hostEntity;
 
@@ -683,11 +684,12 @@ HcclResult AicpuTsRoceChannelV2::CopyArrayToDevice(const T* hostArray, uint32_t 
     }
 
     size_t arraySize = arrayNum * sizeof(T);
-    void* arrayDevPtr = Hccl::HrtMalloc(arraySize, static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH));
-    CHK_PRT_RET(arrayDevPtr == nullptr,
-        HCCL_ERROR("[AicpuTsRoceChannelV2::%s] HrtMalloc for %s failed, size=%zu", __func__, arrayName, arraySize),
+    hccl::DeviceMem arrayDevMem = hccl::DeviceMem::alloc(arraySize);
+    CHK_PRT_RET(!arrayDevMem,
+        HCCL_ERROR("[AicpuTsRoceChannelV2::%s] DeviceMem::alloc for %s failed, size=%zu", __func__, arrayName, arraySize),
         HCCL_E_MEMORY);
-    deviceMemories_.push_back(arrayDevPtr);
+    void* arrayDevPtr = arrayDevMem.ptr();
+    deviceMemories_.push_back(std::move(arrayDevMem));
 
     Hccl::HrtMemcpy(arrayDevPtr, arraySize, hostArray, arraySize,
                      Hccl::tagRtMemcpyKind::RT_MEMCPY_HOST_TO_DEVICE);
@@ -700,16 +702,11 @@ HcclResult AicpuTsRoceChannelV2::CopyArrayToDevice(const T* hostArray, uint32_t 
 
 void AicpuTsRoceChannelV2::FreeDeviceMemories()
 {
-    for (void* ptr : deviceMemories_) {
-        if (ptr != nullptr) {
-            Hccl::HrtFree(ptr);
-        }
-    }
     deviceMemories_.clear();
     ptrArrayDevPtr_.reset();
 }
 
-void AicpuTsRoceChannelV2::SetPtrArrayDevPtr(std::shared_ptr<void> ptr)
+void AicpuTsRoceChannelV2::SetPtrArrayDevPtr(std::shared_ptr<hccl::DeviceMem> ptr)
 {
     ptrArrayDevPtr_ = std::move(ptr);
 }
