@@ -111,6 +111,7 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_all_to_all_vc_bfloat16_t", HcclCMDType::HCCL_CMD_ALLTOALLVC, HcclDataType::HCCL_DATA_TYPE_BFP16},
     {"aiv_all_to_all_vc_int64_t", HcclCMDType::HCCL_CMD_ALLTOALLVC, HcclDataType::HCCL_DATA_TYPE_INT64},
     {"aiv_all_to_all_vc_uint64_t", HcclCMDType::HCCL_CMD_ALLTOALLVC, HcclDataType::HCCL_DATA_TYPE_UINT64},
+    {"aiv_all_to_all_vc_double", HcclCMDType::HCCL_CMD_ALLTOALLVC, HcclDataType::HCCL_DATA_TYPE_FP64},
     // alltoallv
     {"aiv_all_to_all_v_half", HcclCMDType::HCCL_CMD_ALLTOALLV, HcclDataType::HCCL_DATA_TYPE_FP16},
     {"aiv_all_to_all_v_int16_t", HcclCMDType::HCCL_CMD_ALLTOALLV, HcclDataType::HCCL_DATA_TYPE_INT16},
@@ -123,6 +124,7 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_all_to_all_v_bfloat16_t", HcclCMDType::HCCL_CMD_ALLTOALLV, HcclDataType::HCCL_DATA_TYPE_BFP16},
     {"aiv_all_to_all_v_int64_t", HcclCMDType::HCCL_CMD_ALLTOALLV, HcclDataType::HCCL_DATA_TYPE_INT64},
     {"aiv_all_to_all_v_uint64_t", HcclCMDType::HCCL_CMD_ALLTOALLV, HcclDataType::HCCL_DATA_TYPE_UINT64},
+    {"aiv_all_to_all_v_double", HcclCMDType::HCCL_CMD_ALLTOALLV, HcclDataType::HCCL_DATA_TYPE_FP64},
     // alltoallv a3
     {"aiv_all_to_all_v_sp_half",
         HcclCMDType::HCCL_CMD_ALLTOALLV, HcclDataType::HCCL_DATA_TYPE_FP16, KernelArgsType::ARGS_TYPE_SUPERPOD},
@@ -146,6 +148,8 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
         HcclCMDType::HCCL_CMD_ALLTOALLV, HcclDataType::HCCL_DATA_TYPE_INT64, KernelArgsType::ARGS_TYPE_SUPERPOD},
     {"aiv_all_to_all_v_sp_uint64_t",
         HcclCMDType::HCCL_CMD_ALLTOALLV, HcclDataType::HCCL_DATA_TYPE_UINT64, KernelArgsType::ARGS_TYPE_SUPERPOD},
+    {"aiv_all_to_all_v_sp_double",
+        HcclCMDType::HCCL_CMD_ALLTOALLV, HcclDataType::HCCL_DATA_TYPE_FP64, KernelArgsType::ARGS_TYPE_SUPERPOD},
     // alltoall
     {"aiv_all_to_all_half", HcclCMDType::HCCL_CMD_ALLTOALL, HcclDataType::HCCL_DATA_TYPE_FP16},
     {"aiv_all_to_all_int16_t", HcclCMDType::HCCL_CMD_ALLTOALL, HcclDataType::HCCL_DATA_TYPE_INT16},
@@ -158,6 +162,7 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_all_to_all_bfloat16_t", HcclCMDType::HCCL_CMD_ALLTOALL, HcclDataType::HCCL_DATA_TYPE_BFP16},
     {"aiv_all_to_all_int64_t", HcclCMDType::HCCL_CMD_ALLTOALL, HcclDataType::HCCL_DATA_TYPE_INT64},
     {"aiv_all_to_all_uint64_t", HcclCMDType::HCCL_CMD_ALLTOALL, HcclDataType::HCCL_DATA_TYPE_UINT64},
+    {"aiv_all_to_all_double", HcclCMDType::HCCL_CMD_ALLTOALL, HcclDataType::HCCL_DATA_TYPE_FP64},
     // reducescatter
     {"aiv_reduce_scatter_float", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, HcclDataType::HCCL_DATA_TYPE_FP32},
     {"aiv_reduce_scatter_half", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, HcclDataType::HCCL_DATA_TYPE_FP16},
@@ -202,6 +207,7 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_all_gather_cn_bfloat16_t", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_BFP16, KernelArgsType::ARGS_TYPE_SIMPLE},
     {"aiv_all_gather_cn_int64_t", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_INT64, KernelArgsType::ARGS_TYPE_SIMPLE},
     {"aiv_all_gather_cn_uint64_t", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_UINT64, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_all_gather_cn_double", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_FP64, KernelArgsType::ARGS_TYPE_SIMPLE},
 
     {"aiv_all_gather_v_half", HcclCMDType::HCCL_CMD_ALLGATHER_V, HcclDataType::HCCL_DATA_TYPE_FP16},
     {"aiv_all_gather_v_int16_t", HcclCMDType::HCCL_CMD_ALLGATHER_V, HcclDataType::HCCL_DATA_TYPE_INT16},
@@ -214,6 +220,7 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_all_gather_v_bfloat16_t", HcclCMDType::HCCL_CMD_ALLGATHER_V, HcclDataType::HCCL_DATA_TYPE_BFP16},
     {"aiv_all_gather_v_int64_t", HcclCMDType::HCCL_CMD_ALLGATHER_V, HcclDataType::HCCL_DATA_TYPE_INT64},
     {"aiv_all_gather_v_uint64_t", HcclCMDType::HCCL_CMD_ALLGATHER_V, HcclDataType::HCCL_DATA_TYPE_UINT64},
+    {"aiv_all_gather_v_double", HcclCMDType::HCCL_CMD_ALLGATHER_V, HcclDataType::HCCL_DATA_TYPE_FP64},
     // broadcast
     {"aiv_broadcast_half", HcclCMDType::HCCL_CMD_BROADCAST, HcclDataType::HCCL_DATA_TYPE_FP16},
     {"aiv_broadcast_int16_t", HcclCMDType::HCCL_CMD_BROADCAST, HcclDataType::HCCL_DATA_TYPE_INT16},
@@ -226,6 +233,7 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_broadcast_bfloat16_t", HcclCMDType::HCCL_CMD_BROADCAST, HcclDataType::HCCL_DATA_TYPE_BFP16},
     {"aiv_broadcast_int64_t", HcclCMDType::HCCL_CMD_BROADCAST, HcclDataType::HCCL_DATA_TYPE_INT64},
     {"aiv_broadcast_uint64_t", HcclCMDType::HCCL_CMD_BROADCAST, HcclDataType::HCCL_DATA_TYPE_UINT64},
+    {"aiv_broadcast_double", HcclCMDType::HCCL_CMD_BROADCAST, HcclDataType::HCCL_DATA_TYPE_FP64},
     // 同步
     {"hccl_aiv_sync", HcclCMDType::HCCL_CMD_INVALID, HcclDataType::HCCL_DATA_TYPE_RESERVED},
 };
@@ -263,6 +271,7 @@ extern "C" {
     extern void aiv_all_gather_bfloat16_t(KERNEL_ARGS_DEF);
     extern void aiv_all_gather_int64_t(KERNEL_ARGS_DEF);
     extern void aiv_all_gather_uint64_t(KERNEL_ARGS_DEF);
+    extern void aiv_all_gather_double(KERNEL_ARGS_DEF);
     extern void aiv_broadcast_half(KERNEL_ARGS_DEF);
     extern void aiv_broadcast_int16_t(KERNEL_ARGS_DEF);
     extern void aiv_broadcast_uint16_t(KERNEL_ARGS_DEF);
@@ -274,6 +283,7 @@ extern "C" {
     extern void aiv_broadcast_bfloat16_t(KERNEL_ARGS_DEF);
     extern void aiv_broadcast_int64_t(KERNEL_ARGS_DEF);
     extern void aiv_broadcast_uint64_t(KERNEL_ARGS_DEF);
+    extern void aiv_broadcast_double(KERNEL_ARGS_DEF);
     extern void hccl_aiv_sync(KERNEL_ARGS_DEF);
     extern void aiv_all_to_all_half(EXTERN_KERNEL_ARGS_DEF);
     extern void aiv_all_to_all_int16_t(EXTERN_KERNEL_ARGS_DEF);
@@ -285,6 +295,7 @@ extern "C" {
     extern void aiv_all_to_all_bfloat16_t(EXTERN_KERNEL_ARGS_DEF);
     extern void aiv_all_to_all_int64_t(EXTERN_KERNEL_ARGS_DEF);
     extern void aiv_all_to_all_uint64_t(EXTERN_KERNEL_ARGS_DEF);
+    extern void aiv_all_to_all_double(EXTERN_KERNEL_ARGS_DEF);
     extern void aiv_all_to_all_vc_half(EXTERN_KERNEL_ARGS_DEF);
     extern void aiv_all_to_all_vc_int16_t(EXTERN_KERNEL_ARGS_DEF);
     extern void aiv_all_to_all_vc_uint16_t(EXTERN_KERNEL_ARGS_DEF);
@@ -296,6 +307,7 @@ extern "C" {
     extern void aiv_all_to_all_vc_bfloat16_t(EXTERN_KERNEL_ARGS_DEF);
     extern void aiv_all_to_all_vc_int64_t(EXTERN_KERNEL_ARGS_DEF);
     extern void aiv_all_to_all_vc_uint64_t(EXTERN_KERNEL_ARGS_DEF);
+    extern void aiv_all_to_all_vc_double(EXTERN_KERNEL_ARGS_DEF);
     extern void aiv_all_to_all_v_half(EXTERN_KERNEL_ARGS_DEF);
     extern void aiv_all_to_all_v_int16_t(EXTERN_KERNEL_ARGS_DEF);
     extern void aiv_all_to_all_v_uint16_t(EXTERN_KERNEL_ARGS_DEF);
@@ -307,6 +319,7 @@ extern "C" {
     extern void aiv_all_to_all_v_bfloat16_t(EXTERN_KERNEL_ARGS_DEF);
     extern void aiv_all_to_all_v_int64_t(EXTERN_KERNEL_ARGS_DEF);
     extern void aiv_all_to_all_v_uint64_t(EXTERN_KERNEL_ARGS_DEF);
+    extern void aiv_all_to_all_v_double(EXTERN_KERNEL_ARGS_DEF);
     extern void aiv_all_gather_v_half(EXTERN_KERNEL_ARGS_DEF);
     extern void aiv_all_gather_v_int16_t(EXTERN_KERNEL_ARGS_DEF);
     extern void aiv_all_gather_v_uint16_t(EXTERN_KERNEL_ARGS_DEF);
@@ -318,6 +331,7 @@ extern "C" {
     extern void aiv_all_gather_v_bfloat16_t(EXTERN_KERNEL_ARGS_DEF);
     extern void aiv_all_gather_v_int64_t(EXTERN_KERNEL_ARGS_DEF);
     extern void aiv_all_gather_v_uint64_t(EXTERN_KERNEL_ARGS_DEF);
+    extern void aiv_all_gather_v_double(EXTERN_KERNEL_ARGS_DEF);
     extern void aiv_reduce_scatter_v_float(EXTERN_KERNEL_ARGS_DEF);
     extern void aiv_reduce_scatter_v_half(EXTERN_KERNEL_ARGS_DEF);
     extern void aiv_reduce_scatter_v_int16_t(EXTERN_KERNEL_ARGS_DEF);
@@ -353,6 +367,7 @@ extern "C" {
     extern void aiv_all_gather_cn_bfloat16_t(KERNEL_ARGS_DEF_A3);
     extern void aiv_all_gather_cn_int64_t(KERNEL_ARGS_DEF_A3);
     extern void aiv_all_gather_cn_uint64_t(KERNEL_ARGS_DEF_A3);
+    extern void aiv_all_gather_cn_double(KERNEL_ARGS_DEF_A3);
     extern void aiv_reduce_scatter_cn_float(KERNEL_ARGS_DEF_A3);
     extern void aiv_reduce_scatter_cn_half(KERNEL_ARGS_DEF_A3);
     extern void aiv_reduce_scatter_cn_int16_t(KERNEL_ARGS_DEF_A3);
@@ -395,6 +410,7 @@ std::unordered_map<const char*, aivFunc> aivFuncMap = {
     {"aiv_all_gather_bfloat16_t", aiv_all_gather_bfloat16_t},
     {"aiv_all_gather_int64_t", aiv_all_gather_int64_t},
     {"aiv_all_gather_uint64_t", aiv_all_gather_uint64_t},
+    {"aiv_all_gather_double", aiv_all_gather_double},
     {"aiv_broadcast_half", aiv_broadcast_half},
     {"aiv_broadcast_int16_t", aiv_broadcast_int16_t},
     {"aiv_broadcast_uint16_t", aiv_broadcast_uint16_t},
@@ -406,6 +422,7 @@ std::unordered_map<const char*, aivFunc> aivFuncMap = {
     {"aiv_broadcast_bfloat16_t", aiv_broadcast_bfloat16_t},
     {"aiv_broadcast_int64_t", aiv_broadcast_int64_t},
     {"aiv_broadcast_uint64_t", aiv_broadcast_uint64_t},
+    {"aiv_broadcast_double", aiv_broadcast_double},
     {"hccl_aiv_sync", hccl_aiv_sync},
 };
 
@@ -421,6 +438,7 @@ std::unordered_map<const char*, aivFuncExtra> aivFuncExtraMap = {
     {"aiv_all_to_all_vc_bfloat16_t", aiv_all_to_all_vc_bfloat16_t},
     {"aiv_all_to_all_vc_int64_t", aiv_all_to_all_vc_int64_t},
     {"aiv_all_to_all_vc_uint64_t", aiv_all_to_all_vc_uint64_t},
+    {"aiv_all_to_all_vc_double", aiv_all_to_all_vc_double},
     {"aiv_all_to_all_v_half", aiv_all_to_all_v_half},
     {"aiv_all_to_all_v_int16_t", aiv_all_to_all_v_int16_t},
     {"aiv_all_to_all_v_uint16_t", aiv_all_to_all_v_uint16_t},
@@ -432,6 +450,7 @@ std::unordered_map<const char*, aivFuncExtra> aivFuncExtraMap = {
     {"aiv_all_to_all_v_bfloat16_t", aiv_all_to_all_v_bfloat16_t},
     {"aiv_all_to_all_v_int64_t", aiv_all_to_all_v_int64_t},
     {"aiv_all_to_all_v_uint64_t", aiv_all_to_all_v_uint64_t},
+    {"aiv_all_to_all_v_double", aiv_all_to_all_v_double},
     {"aiv_all_gather_v_half", aiv_all_gather_v_half},
     {"aiv_all_gather_v_int16_t", aiv_all_gather_v_int16_t},
     {"aiv_all_gather_v_uint16_t", aiv_all_gather_v_uint16_t},
@@ -443,6 +462,7 @@ std::unordered_map<const char*, aivFuncExtra> aivFuncExtraMap = {
     {"aiv_all_gather_v_bfloat16_t", aiv_all_gather_v_bfloat16_t},
     {"aiv_all_gather_v_int64_t", aiv_all_gather_v_int64_t},
     {"aiv_all_gather_v_uint64_t", aiv_all_gather_v_uint64_t},
+    {"aiv_all_gather_v_double", aiv_all_gather_v_double},
     {"aiv_reduce_scatter_v_float", aiv_reduce_scatter_v_float},
     {"aiv_reduce_scatter_v_half", aiv_reduce_scatter_v_half},
     {"aiv_reduce_scatter_v_int16_t", aiv_reduce_scatter_v_int16_t},
@@ -459,6 +479,7 @@ std::unordered_map<const char*, aivFuncExtra> aivFuncExtraMap = {
     {"aiv_all_to_all_bfloat16_t", aiv_all_to_all_bfloat16_t},
     {"aiv_all_to_all_int64_t", aiv_all_to_all_int64_t},
     {"aiv_all_to_all_uint64_t", aiv_all_to_all_uint64_t},
+    {"aiv_all_to_all_double", aiv_all_to_all_double},
 };
 
 std::unordered_map<const char*, aivFuncExtraV2> aivFuncExtraV2Map = {
@@ -473,6 +494,7 @@ std::unordered_map<const char*, aivFuncExtraV2> aivFuncExtraV2Map = {
     {"aiv_all_to_all_v_sp_bfloat16_t", aiv_all_to_all_v_sp_bfloat16_t},
     {"aiv_all_to_all_v_sp_int64_t", aiv_all_to_all_v_sp_int64_t},
     {"aiv_all_to_all_v_sp_uint64_t", aiv_all_to_all_v_sp_uint64_t},
+    {"aiv_all_to_all_v_sp_double", aiv_all_to_all_v_sp_double},
 };
 
 std::unordered_map<const char*, aivFuncExtraA3> aivFuncExtraA3Map = {
@@ -493,6 +515,7 @@ std::unordered_map<const char*, aivFuncExtraA3> aivFuncExtraA3Map = {
     {"aiv_all_gather_cn_bfloat16_t", aiv_all_gather_cn_bfloat16_t},
     {"aiv_all_gather_cn_int64_t", aiv_all_gather_cn_int64_t},
     {"aiv_all_gather_cn_uint64_t", aiv_all_gather_cn_uint64_t},
+    {"aiv_all_gather_cn_double", aiv_all_gather_cn_double},
     {"aiv_reduce_scatter_cn_float", aiv_reduce_scatter_cn_float},
     {"aiv_reduce_scatter_cn_half", aiv_reduce_scatter_cn_half},
     {"aiv_reduce_scatter_cn_int16_t", aiv_reduce_scatter_cn_int16_t},
