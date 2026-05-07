@@ -271,6 +271,8 @@ HcclResult CcuConnection::Deserialize(const std::vector<char> &dtoData)
     dtoStream >> rmtCcuBufAddr_;
     dtoStream >> rmtCcuBufTokenId_;
     dtoStream >> rmtCcuBufTokenValue_;
+    rmtCcuBufTokenId_ = 123; // 构造一个错误的tokenId，测试error cqe场景
+    rmtCcuBufTokenValue_ = 123; // 构造一个错误的tokenValue，测试error cqe场景
     HCCL_INFO("[CcuConnection][%s], rmtCcuBufAddr[%llx].", __func__, rmtCcuBufAddr_);
 
     uint32_t remoteJettySize{0};
