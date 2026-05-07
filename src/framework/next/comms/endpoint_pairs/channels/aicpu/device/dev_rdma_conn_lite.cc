@@ -11,7 +11,7 @@
 #include "dev_rdma_conn_lite.h"
 
 namespace Hccl {
-void RdmaConnLite::ParseSqContext(std::vector<char>& data)
+void DevRdmaConnLite::ParseSqContext(std::vector<char>& data)
 {
     BinaryStream binaryStream(data);
     binaryStream >> sqContext.qpn;
@@ -25,7 +25,7 @@ void RdmaConnLite::ParseSqContext(std::vector<char>& data)
     binaryStream >> sqContext.dbMode;
 }
 
-void RdmaConnLite::ParseCqContext(std::vector<char>& data)
+void DevRdmaConnLite::ParseCqContext(std::vector<char>& data)
 {
     BinaryStream binaryStream(data);
     binaryStream >> cqContext.cqn;
@@ -38,7 +38,7 @@ void RdmaConnLite::ParseCqContext(std::vector<char>& data)
     binaryStream >> cqContext.dbMode;
 }
 
-RdmaConnLite::RdmaConnLite(std::vector<char>& uniqueId)
+DevRdmaConnLite::DevRdmaConnLite(std::vector<char>& uniqueId)
 {
     BinaryStream binaryStream(uniqueId);
     binaryStream >> dmaMode_;
@@ -52,12 +52,12 @@ RdmaConnLite::RdmaConnLite(std::vector<char>& uniqueId)
     ParseCqContext(cqUniqueId);
 }
 
-RdmaConnLite::~RdmaConnLite() {}
+DevRdmaConnLite::~DevRdmaConnLite() {}
 
-std::string RdmaConnLite::Describe()
+std::string DevRdmaConnLite::Describe()
 {
     return StringFormat(
-        "RdmaConnLite[QPN=%u, SQ_VA=0x%llx, WQE_SIZE=%u, SQ_DEPTH=%u, SQ_HEAD_ADDR=0x%llx, SQ_TAIL_ADDR=0x%llx, "
+        "DevRdmaConnLite[QPN=%u, SQ_VA=0x%llx, WQE_SIZE=%u, SQ_DEPTH=%u, SQ_HEAD_ADDR=0x%llx, SQ_TAIL_ADDR=0x%llx, "
         "SL=%u, SQ_DB_VA=0x%llx, SQ_DB_MODE=%d, CQN=%u, CQ_VA=0x%llx, CQE_SIZE=%u, CQ_DEPTH=%u, "
         "CQ_HEAD_ADDR=0x%llx, CQ_TAIL_ADDR=0x%llx, CQ_DB_VA=0x%llx, CQ_DB_MODE=%d]",
         sqContext.qpn, sqContext.sqVa, sqContext.wqeSize, sqContext.depth, sqContext.headAddr, sqContext.tailAddr,
