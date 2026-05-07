@@ -1348,10 +1348,17 @@ HcclResult TransportDeviceIbverbs::BatchWriteCommon(
     Stream &stream,
     WqeType wqeType)
 {
+    auto totalStartTime = std::chrono::steady_clock::now();
+    auto stageStartTime = std::chrono::steady_clock::now();
+
     if (machinePara_.dctxPtr != nullptr) {
         CHK_RET(SetDispatcherCtx(static_cast<DispatcherCtxPtr>(machinePara_.dctxPtr)));
     }
+    auto setCtxTime = std::chrono::duration_cast<std::chrono::microseconds>(
+        std::chrono::steady_clock::now() - stageStartTime).count();
+    HCCL_ERROR("[BatchWriteCommon] stage[SetDispatcherCtx] cost[%ld]us", setCtxTime);
 
+    stageStartTime = std::chrono::steady_clock::now();
     CHK_PRT_RET(remoteBufs.size() != localBufs.size(),
         HCCL_ERROR("[BatchWriteCommon]remoteBufs size[%u] != localBufs size[%u]",
             remoteBufs.size(), localBufs.size()), HCCL_E_PARA);
@@ -1363,6 +1370,11 @@ HcclResult TransportDeviceIbverbs::BatchWriteCommon(
     std::vector<WrInformation> wrInfoVec;
     struct WrAuxInfo aux = {0};
 
+    auto paramCheckTime = std::chrono::duration_cast<std::chrono::microseconds>(
+        std::chrono::steady_clock::now() - stageStartTime).count();
+    HCCL_ERROR("[BatchWriteCommon] stage[ParamCheck] cost[%ld]us", paramCheckTime);
+
+    stageStartTime = std::chrono::steady_clock::now();
     for (size_t i = 0; i < remoteBufs.size(); i++) {
         HCCL_DEBUG("[BatchWriteCommon] index[%u] localAddr[%p] remoteAddr[%p] len[%llu]",
             i, localBufs[i].addr, remoteBufs[i].addr, remoteBufs[i].size);
@@ -1383,7 +1395,11 @@ HcclResult TransportDeviceIbverbs::BatchWriteCommon(
                 length, wqeType, aux, wrInfoVec, txSendDataTimes));
         }
     }
+    auto buildWrInfoTime = std::chrono::duration_cast<std::chrono::microseconds>(
+        std::chrono::steady_clock::now() - stageStartTime).count();
+    HCCL_ERROR("[BatchWriteCommon] stage[BuildWrInfo] cost[%ld]us, bufCount[%zu]", buildWrInfoTime, remoteBufs.size());
 
+    stageStartTime = std::chrono::steady_clock::now();
     u32 maxLength = 0;
     for (u32 i = 0; i < wrInfoVec.size(); i++) {
         if (wrInfoVec[i].wrData.memList.len > maxLength) {
@@ -1392,6 +1408,12 @@ HcclResult TransportDeviceIbverbs::BatchWriteCommon(
     }
 
     u32 actualMultiQpNum = GetActualQpNum(maxLength);
+    auto calcQpTime = std::chrono::duration_cast<std::chrono::microseconds>(
+        std::chrono::steady_clock::now() - stageStartTime).count();
+    HCCL_ERROR("[BatchWriteCommon] stage[CalcQpNum] cost[%ld]us, maxLength[%u], actualMultiQpNum[%u]",
+        calcQpTime, maxLength, actualMultiQpNum);
+
+    stageStartTime = std::chrono::steady_clock::now();
     if (UseMultiQp() && actualMultiQpNum != 1 && actualMultiQpNum <= qpsPerConnection_ && maxLength != 0) {
         std::vector<std::vector<WrInformation>> multiQpWqeInfoVec(actualMultiQpNum, wrInfoVec);
         for (u32 qpIndex = 0; qpIndex < actualMultiQpNum; qpIndex++) {
@@ -1400,6 +1422,13 @@ HcclResult TransportDeviceIbverbs::BatchWriteCommon(
     } else {
         CHK_RET(RdmaSendAsync(wrInfoVec, stream, true));
     }
+    auto sendTime = std::chrono::duration_cast<std::chrono::microseconds>(
+        std::chrono::steady_clock::now() - stageStartTime).count();
+    HCCL_ERROR("[BatchWriteCommon] stage[RdmaSendAsync] cost[%ld]us", sendTime);
+
+    auto totalTime = std::chrono::duration_cast<std::chrono::microseconds>(
+        std::chrono::steady_clock::now() - totalStartTime).count();
+    HCCL_ERROR("[BatchWriteCommon] stage[Total] cost[%ld]us", totalTime);
 
     return HCCL_SUCCESS;
 }
