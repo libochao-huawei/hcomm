@@ -44,6 +44,8 @@ extern HcommResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadN
 
 extern HcommResult HcommChannelGetPtrByHandle(const ChannelHandle *channelList, uint32_t listNum, uint64_t *channelPtr);
 
+extern HcommResult HcommEndpointCheckFeature(HcommFeatureType featureType, const EndpointDesc *endpointDesc, bool *value);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus
