@@ -70,7 +70,7 @@ std::unique_ptr<Channel> uniqueChannelPtr;
             return HCCL_E_NOT_FOUND;
     }
     CHK_PTR_NULL(uniqueChannelPtr);
-    CHK_RET(uniqueChannelPtr->Init());
+    CHK_RET_UNAVAIL(uniqueChannelPtr->Init());
     channelPtr = std::move(uniqueChannelPtr);
     return HCCL_SUCCESS;
 }
