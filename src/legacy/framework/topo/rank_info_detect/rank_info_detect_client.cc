@@ -358,7 +358,10 @@ void RankInfoDetectClient::VerifyRankTable()
     HcclResult ret = VerifyTlsConsistency();
     if (ret != HCCL_SUCCESS) {
         RPT_INPUT_ERR(true, "EI0016", std::vector<std::string>({ "value", "variable", "expect" }),
-            std::vector<std::string>({"fail", "tls_consistency", "success"}));
+            std::vector<std::string>({StringFormat("Value %s for config tls is invalid.", value),
+                StringFormat("Expected: All ranks are consistent."),
+                StringFormat("Current status: rankList for enabled tls: %s;"
+                    "rankList for disabled tls: %s:rankList for query failure tls: %s.", )}));
         HCCL_ERROR("[RankInfoDetectClient::%s] tls consistency verify failed, ret[%d]", __func__, ret);
         THROW<InvalidParamsException>("tls consistency verify failed");
     }

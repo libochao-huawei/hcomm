@@ -315,7 +315,10 @@ void RankInfoDetect::WaitComplete(u32 listenPort, u32 listenStatus) const
             const auto elapsed = chrono::duration_cast<chrono::seconds>(chrono::steady_clock::now() - start);
             if (elapsed > timeout) {
                 RPT_INPUT_ERR(true, "EI0015", std::vector<std::string>({"error_reason"}),
-                    std::vector<std::string>({"wait port complete timeout"}));
+                    std::vector<std::string>({StringFormat("Receiving message from the root node timed out "
+                        "after %lld seconds. Timeout was set to %lld seconds. Check whether node %s reports an error.",
+                        static_cast<long long>(elapsed.count()), static_cast<long long>(timeout.count()),
+                        identifier_.c_str())}));
                 THROW<TimeoutException>(StringFormat("[RankInfoDetect::%s] wait port[%u] complete timeout[%lld s]",
                     __func__, listenPort, elapsed));
             }
