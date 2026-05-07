@@ -113,7 +113,7 @@ extern HcclResult HcclCommGetExchangeInfo(HcclComm comm, uint32_t remoteRank, vo
  * @param[in] comm 通信域句柄
  * @return HcclResult 执行结果状态码
  */
-extern HcclResult HcclResetExchangeInfo(HcclComm comm);
+extern HcclResult HcclCommResetExchangeInfo(HcclComm comm);
 
 #ifdef __cplusplus
 }
