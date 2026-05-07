@@ -108,6 +108,13 @@ extern HcclResult HcclCommAddExchangeInfo(HcclComm comm, void* data, uint32_t le
  */
 extern HcclResult HcclCommGetExchangeInfo(HcclComm comm, uint32_t remoteRank, void* data, uint32_t &length);
 
+/**
+ * @brief 重置交换信息状态
+ * @param[in] comm 通信域句柄
+ * @return HcclResult 执行结果状态码
+ */
+extern HcclResult HcclResetExchangeInfoState(HcclComm comm);
+
 #ifdef __cplusplus
 }
 #endif  // __cplusplus
