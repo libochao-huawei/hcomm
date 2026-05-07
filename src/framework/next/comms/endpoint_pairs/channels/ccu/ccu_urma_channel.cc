@@ -26,9 +26,7 @@ namespace hcomm {
 CcuUrmaChannel::CcuUrmaChannel(const EndpointHandle locEndpointHandle,
     const HcommChannelDesc &channelDesc)
     : locEndpointHandle_(locEndpointHandle),
-      channelDesc_(channelDesc)
-{
-}
+      channelDesc_(channelDesc) {}
 
 HcclResult BuildBufferInfos(HcommMemHandle *memHandles, uint32_t memHandleNum,
     std::vector<CcuTransport::CclBufferInfo> &bufferInfos)
