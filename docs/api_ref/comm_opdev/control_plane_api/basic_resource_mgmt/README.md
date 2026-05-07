@@ -1,0 +1,16 @@
+# 基础资源管理
+
+- [HcommEndpointCreate](HcommEndpointCreate.md)  
+- [HcommEndpointDestroy](HcommEndpointDestroy.md)  
+- [HcommMemReg](HcommMemReg.md)  
+- [HcommMemUnreg](HcommMemUnreg.md)  
+- [HcommMemExport](HcommMemExport.md)  
+- [HcommMemImport](HcommMemImport.md)  
+- [HcommMemUnimport](HcommMemUnimport.md)  
+- [HcommChannelDescInit](HcommChannelDescInit.md)  
+- [HcommChannelCreate](HcommChannelCreate.md)  
+- [HcommChannelGetStatus](HcommChannelGetStatus.md)  
+- [HcommChannelGetNotifyNum](HcommChannelGetNotifyNum.md)  
+- [HcommChannelDestroy](HcommChannelDestroy.md)  
+- [HcommThreadAlloc](HcommThreadAlloc.md)  
+- [HcommThreadFree](HcommThreadFree.md)  
