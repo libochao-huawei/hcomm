@@ -19,6 +19,7 @@
 #include "orion_adapter_rts.h"
 #include "preempt_port_manager.h"
 #include "host_socket_handle_manager.h"
+#include "adapter_error_manager_pub.h"
 
 namespace Hccl {
 
