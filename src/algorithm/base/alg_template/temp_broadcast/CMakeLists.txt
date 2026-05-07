@@ -22,3 +22,20 @@ set(src_list_pub
 target_sources(hccl_alg PRIVATE
     ${src_list_pub}
 )
+
+if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
+    target_sources(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/bcast_recursive_halvingdoubling.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/broadcast_ring.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/broadcast_star.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/broadcast_nhr_oneshot.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/broadcast_nhr.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/broadcast_nhr_v1.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/broadcast_nb.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/broadcast_nb_binary.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/broadcast_oneshot.cc
+    )
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()
