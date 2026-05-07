@@ -175,7 +175,7 @@ HcclResult AicpuTsRoceChannelV2::BuildNotifyValueBuffer()
     u32 notifysize = Hccl::DevCapability::GetInstance().GetNotifySize();
     EXECEPTION_CATCH((notifyValueMem_ = std::make_shared<Hccl::DevBuffer>(notifysize)),
         return HCCL_E_PTR);
-    HCCL_DEBUG("create notify value buffer[%p], size[%u]", notifyValueMem_, notifysize);
+    HCCL_DEBUG("create notify value buffer[%p], size[%u]", notifyValueMem_.get(), notifysize);
     u64 notifyValue = 1; // notify值写1表示record
     Hccl::HrtMemcpy(reinterpret_cast<void *>(notifyValueMem_->GetAddr()), notifyValueMem_->GetSize(), &notifyValue, notifysize,
             Hccl::tagRtMemcpyKind::RT_MEMCPY_HOST_TO_DEVICE);
@@ -628,6 +628,12 @@ HcclResult AicpuTsRoceChannelV2::BuildAndGetDevChannelEntity(void** devChannelEn
     hostEntity.engine   = GetCommEngine();
     hostEntity.protocol = GetCommProtocol();
 
+    locBufProtecInfoList_.clear();
+    rmtBufProtecInfoList_.clear();
+    sqContextList_.clear();
+    cqContextList_.clear();
+    deviceMemories_.clear();
+
     CHK_RET(GetNotifyNum(&hostEntity.localNotifyNum));
     CHK_RET(BuildAndGetLocNotifyInfo(&hostEntity.localNotifyAddr));
     hostEntity.remoteNotifyNum = hostEntity.localNotifyNum;
@@ -642,8 +648,6 @@ HcclResult AicpuTsRoceChannelV2::BuildAndGetDevChannelEntity(void** devChannelEn
     CHK_RET(BuildAndGetSqContext(&hostEntity.SqContextAddr));
     hostEntity.cqNum = hostEntity.sqNum;
     CHK_RET(BuildAndGetCqContext(&hostEntity.CqContextAddr));
-
-    deviceMemories_.clear();
 
     hccl::DeviceMem entityDevMem = hccl::DeviceMem::alloc(sizeof(ChannelEntity));
     CHK_PRT_RET(!entityDevMem,
