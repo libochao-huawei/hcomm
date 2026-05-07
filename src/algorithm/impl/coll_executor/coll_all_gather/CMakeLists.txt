@@ -14,4 +14,32 @@ target_sources(hccl_alg PRIVATE
   ${src_list}
 )
 
+if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
+    target_sources(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_gather_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_gather_comm_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_gather_ring_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_gather_ring_for_910_93_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_aligned_all_gather_double_ring_for_910_93_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_gather_mesh_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_gather_mesh_opbase_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_gather_mesh_opbase_pipeline_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_gather_single_rank_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_gather_small_count_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_gather_semi_ring_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_gather_mix_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_gather_hccs_sio_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_gather_ring_zerocopy_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_gather_ring_zerocopy_exchange_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_gather_ring_zerocopy_pipeline_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_gather_ars_for_910_93_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_gather_mid_count_for_910_93_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_gather_mesh_graph_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_gather_mesh_graph_pipeline_executor.cc
+    )
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()
+
 add_subdirectory(310P)
