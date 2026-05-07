@@ -671,19 +671,16 @@ HcommResult HcommChannelGetPtrByHandle(const ChannelHandle *channelList, uint32_
     }
 
     u32 ptrArraySize = listNum * sizeof(void*);
-    void* ptrArrayDevPtr = Hccl::HrtMalloc(ptrArraySize, static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH));
-    CHK_PRT_RET(ptrArrayDevPtr == nullptr,
-        HCCL_ERROR("%s HrtMalloc for entity pointer array failed, size=%u", __func__, ptrArraySize),
+    hccl::DeviceMem ptrArrayMem = hccl::DeviceMem::alloc(ptrArraySize);
+    CHK_PRT_RET(!ptrArrayMem,
+        HCCL_ERROR("%s DeviceMem::alloc for entity pointer array failed, size=%u", __func__, ptrArraySize),
         HCCL_E_MEMORY);
+    void* ptrArrayDevPtr = ptrArrayMem.ptr();
 
     Hccl::HrtMemcpy(ptrArrayDevPtr, ptrArraySize, devEntityPtrs.data(), ptrArraySize,
                      Hccl::tagRtMemcpyKind::RT_MEMCPY_HOST_TO_DEVICE);
 
-    auto ptrArrayShared = std::shared_ptr<void>(ptrArrayDevPtr, [](void* p) {
-        if (p != nullptr) {
-            Hccl::HrtFree(p);
-        }
-    });
+    auto ptrArrayShared = std::make_shared<hccl::DeviceMem>(std::move(ptrArrayMem));
     for (uint32_t i = 0; i < listNum; ++i) {
         if (channels[i] != nullptr) {
             // 按值传递 ptrArrayShared, 产生拷贝构造, 让每个 channel 持有一个引用计数。最后一个 channel 销毁后，ptrArrayShared 才释放。
