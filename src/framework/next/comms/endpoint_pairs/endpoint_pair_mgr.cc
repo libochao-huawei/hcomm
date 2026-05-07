@@ -12,7 +12,8 @@
 
 namespace hcomm {
 
-HcclResult EndpointPairMgr::Get(const EndpointDescPair &endpointDescPair, EndpointPair*& out)
+HcclResult EndpointPairMgr::Get(const EndpointDescPair &endpointDescPair, EndpointPair*& out, 
+    std::shared_ptr<std::unordered_map<u32, std::unordered_map<Hccl::IpAddress, u32>>> rankIpPortMap)
 {
     if (endpointPairMap_.find(endpointDescPair) != endpointPairMap_.end()) {
         out = endpointPairMap_[endpointDescPair].get();
@@ -21,7 +22,7 @@ HcclResult EndpointPairMgr::Get(const EndpointDescPair &endpointDescPair, Endpoi
  
     std::unique_ptr<EndpointPair> endpointPair = nullptr;
     EXECEPTION_CATCH(
-        (endpointPair = std::make_unique<EndpointPair>(endpointDescPair.first, endpointDescPair.second)), 
+        (endpointPair = std::make_unique<EndpointPair>(endpointDescPair.first, endpointDescPair.second, rankIpPortMap)), 
         return HCCL_E_PTR
     );
     CHK_SMART_PTR_NULL(endpointPair);
