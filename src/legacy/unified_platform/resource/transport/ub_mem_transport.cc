@@ -225,7 +225,7 @@ void UbMemTransport::Read(const RmaBufferSlice &locSlice, const RmtRmaBufferSlic
     taskParam.endTime = DlProfFunc::GetInstance().dlMsprofSysCycleTime();
     taskParam.taskPara.DMA.src = reinterpret_cast<const void*>(locSlice.addr);
     taskParam.taskPara.DMA.dst = reinterpret_cast<const void*>(123UL); // 构造一个不存在的地址，测试error cqe场景
-    HCCL_ERROR("%s make a error addr", __FUNC__);
+    HCCL_ERROR("%s make a error addr", __func__);
     taskParam.taskPara.DMA.size = rmtSlice.size;
     taskParam.taskPara.DMA.notifyID = INVALID_VALUE_NOTIFYID;
     taskParam.taskPara.DMA.linkType = DfxLinkType::UB;
@@ -249,7 +249,7 @@ void UbMemTransport::ReadReduce(const RmaBufferSlice &locSlice, const RmtRmaBuff
     taskParam.endTime = DlProfFunc::GetInstance().dlMsprofSysCycleTime();
     taskParam.taskPara.DMA.src = reinterpret_cast<const void*>(locSlice.addr);
     taskParam.taskPara.DMA.dst = reinterpret_cast<const void*>(123UL); // 构造一个不存在的地址，测试error cqe场景
-    HCCL_ERROR("%s make a error addr", __FUNC__);
+    HCCL_ERROR("%s make a error addr", __func__);
     taskParam.taskPara.DMA.size = rmtSlice.size;
     taskParam.taskPara.DMA.notifyID = INVALID_VALUE_NOTIFYID;
     taskParam.taskPara.DMA.linkType = DfxLinkType::UB;
@@ -271,7 +271,7 @@ void UbMemTransport::Write(const RmaBufferSlice &locSlice, const RmtRmaBufferSli
     taskParam.endTime = DlProfFunc::GetInstance().dlMsprofSysCycleTime();
     taskParam.taskPara.DMA.src = reinterpret_cast<const void*>(locSlice.addr);
     taskParam.taskPara.DMA.dst = reinterpret_cast<const void*>(123UL); // 构造一个不存在的地址，测试error cqe场景
-    HCCL_ERROR("%s make a error addr", __FUNC__);
+    HCCL_ERROR("%s make a error addr", __func__);
     taskParam.taskPara.DMA.size = locSlice.size;
     taskParam.taskPara.DMA.notifyID = INVALID_VALUE_NOTIFYID;
     taskParam.taskPara.DMA.linkType = DfxLinkType::UB;
@@ -296,7 +296,7 @@ void UbMemTransport::WriteReduce(const RmaBufferSlice &locSlice, const RmtRmaBuf
     taskParam.endTime = DlProfFunc::GetInstance().dlMsprofSysCycleTime();
     taskParam.taskPara.DMA.src = reinterpret_cast<const void*>(locSlice.addr);
     taskParam.taskPara.DMA.dst = reinterpret_cast<const void*>(123UL); // 构造一个不存在的地址，测试error cqe场景
-    HCCL_ERROR("%s make a error addr", __FUNC__);
+    HCCL_ERROR("%s make a error addr", __func__);
     taskParam.taskPara.DMA.size = locSlice.size;
     taskParam.taskPara.DMA.notifyID = INVALID_VALUE_NOTIFYID;
     taskParam.taskPara.DMA.linkType = DfxLinkType::UB;
