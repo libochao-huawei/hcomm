@@ -39,7 +39,7 @@ public:
 
 ClusterMonitor ClusterMonitorTest::g_monitor;
 
-TEST_F(ClusterMonitorTest, CreateMonitorLinksAsync_test)
+TEST_F(ClusterMonitorTest, Ut_CreateMonitorLinksAsync_When_NormalInput_Expect_CreateLinks)
 {
     setenv("HCCL_DFS_CONFIG", "task_exception:on", 1);
     s32 ret;
@@ -164,7 +164,7 @@ TEST_F(ClusterMonitorTest, CreateMonitorLinksAsync_test)
     EXPECT_EQ(uncompletedCount, 0);
 }
 
-TEST_F(ClusterMonitorTest, SendMonitorFrame_test)
+TEST_F(ClusterMonitorTest, Ut_SendMonitorFrame_When_NormalInput_Expect_SendFrame)
 {
     for (auto iter = g_monitor.uid2SocketRefMap_.begin(); iter != g_monitor.uid2SocketRefMap_.end(); iter++) {
         ClusterUIDType rem = iter->first;
@@ -174,7 +174,7 @@ TEST_F(ClusterMonitorTest, SendMonitorFrame_test)
     }
 }
 
-TEST_F(ClusterMonitorTest, RecvMonitorFrame_test)
+TEST_F(ClusterMonitorTest, Ut_RecvMonitorFrame_When_NormalInput_Expect_RecvFrame)
 {
     MOCKER_CPP(&ClusterMonitor::ParseFrame)
     .stubs()

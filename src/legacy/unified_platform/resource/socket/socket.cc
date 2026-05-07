@@ -127,9 +127,14 @@ bool Socket::ISend(void *data, u64 size, u64& compSize) const
     return HrtRaSocketNonBlockSend(fdHandle, data, size, &compSize);
 }
 
-HcclResult Socket::IRecv(void *data, u64 size, u64& compSize) const
+HcclResult Socket::ISendWithHeart(void *data, u64 size, u64& compSize) const
 {
-    return HrtRaSocketNonBlockRecv(fdHandle, data, size, &compSize);
+    return HrtRaSocketNonBlockSendHeart(fdHandle, data, size, &compSize);
+}
+
+HcclResult Socket::IRecvWithHeart(void *data, u64 size, u64& compSize) const
+{
+    return HrtRaSocketNonBlockRecvHeart(fdHandle, data, size, &compSize);
 }
 
 void Socket::Destroy()

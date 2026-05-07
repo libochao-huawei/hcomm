@@ -157,14 +157,14 @@ HcclResult SocketProcess::SendNoBlock(SocketHandle socketHandle, void *sendbuffe
         return HCCL_E_PARA;
     }
 
-    bool result = socket->ISend(reinterpret_cast<u8 *>(sendbuffer), sendSize, *sentSize);
-    if (!result) {
-        HCCL_ERROR("[SocketProcess::%s] Send size[%llu] of data failed.", __func__, sendSize);
-        return HCCL_E_TCP_TRANSFER;
+    HcclResult ret = socket->ISendWithHeart(reinterpret_cast<u8 *>(sendbuffer), sendSize, *sentSize);
+    if (ret == HCCL_E_AGAIN) {
+        return HCCL_SUCCESS;
     }
-    HCCL_INFO("[SocketProcess::%s] Send size[%llu] of data success. [%zu] bytes sent.", __func__, sendSize, *sentSize);
+    HCCL_DEBUG("[SocketProcess::%s] except send size[%llu]. actual [%zu] bytes sent.",
+        __func__, sendSize, *sentSize);
 
-    return HCCL_SUCCESS;
+    return ret;
 }
 
 HcclResult SocketProcess::RecvNoBlock(
@@ -182,15 +182,14 @@ HcclResult SocketProcess::RecvNoBlock(
         return HCCL_E_PARA;
     }
 
-    HcclResult result = socket->IRecv(reinterpret_cast<u8 *>(recvBuffer), recvSize, *recvedSize);
-    if (result == HCCL_E_AGAIN) {
+    HcclResult ret = socket->IRecvWithHeart(reinterpret_cast<u8 *>(recvBuffer), recvSize, *recvedSize);
+    if (ret == HCCL_E_AGAIN) {
         return HCCL_SUCCESS; // 未收到数据，非错误
     }
-
-    HCCL_DEBUG("[SocketProcess::%s] Recv size[%llu] of data success. [%zu] bytes received.",
+    HCCL_DEBUG("[SocketProcess::%s] except recv size[%llu]. actual [%zu] bytes received.",
         __func__, recvSize, *recvedSize);
     
-    return HCCL_SUCCESS;
+    return ret;
 }
 
 HcclResult SocketProcess::Init()
