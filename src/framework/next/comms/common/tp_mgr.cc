@@ -84,7 +84,9 @@ static bool ApplyUbcQosTpSlPolicy(const GetTpInfoParam &param, uint32_t nTp, uin
     }
     const uint32_t numGroups = std::min(8U, k);
     const uint32_t qos = param.qos & 7U;
-    const uint32_t groupIdx = (qos * numGroups) / 8U;
+    // K=3：8 档 QoS 按 3:2:3 → [0–2]/[3–4]/[5–7]；其余 k 仍用均匀分段
+    const uint32_t groupIdx =
+        (k == 3U) ? (qos < 3U ? 0U : (qos < 5U ? 1U : 2U)) : ((qos * numGroups) / 8U);
     const uint32_t slotIdx = (groupIdx * k) / numGroups;
     if (slotIdx >= k || slotIdx >= nTp) {
         return false;
