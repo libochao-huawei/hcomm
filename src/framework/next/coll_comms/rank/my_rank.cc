@@ -998,5 +998,34 @@ HcclResult MyRank::WaitAllAsyncComplete(
     return HCCL_SUCCESS;
 }
 
+// 收集并等待有实际异步操作的socket子集
+HcclResult MyRank::WaitActiveAsyncComplete(
+    const std::vector<Hccl::Socket*> &sockets,
+    const std::vector<u32> &remoteRanks,
+    const std::vector<HcommSocketRole> &roles,
+    u32 uniqueCount,
+    const std::vector<u32> &remoteExchangeInfoLens,
+    u32 localExchangeInfoLen,
+    bool isFirstPass)
+{
+    std::vector<Hccl::Socket*> activeSockets;
+    std::vector<u32> activeRanks;
+    for (u32 i = 0; i < uniqueCount; i++) {
+        bool isActive = isFirstPass
+            ? (roles[i] == HCOMM_SOCKET_ROLE_SERVER && remoteExchangeInfoLens[i] > 0) ||
+              (roles[i] != HCOMM_SOCKET_ROLE_SERVER && localExchangeInfoLen > 0)
+            : (roles[i] == HCOMM_SOCKET_ROLE_SERVER && localExchangeInfoLen > 0) ||
+              (roles[i] != HCOMM_SOCKET_ROLE_SERVER && remoteExchangeInfoLens[i] > 0);
+        if (isActive) {
+            activeSockets.push_back(sockets[i]);
+            activeRanks.push_back(remoteRanks[i]);
+        }
+    }
+    if (!activeSockets.empty()) {
+        CHK_RET(WaitAllAsyncComplete(activeSockets, activeRanks));
+    }
+    return HCCL_SUCCESS;
+}
+
 } // namespace hccl
 
