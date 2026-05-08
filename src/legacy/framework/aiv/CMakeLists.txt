@@ -10,6 +10,8 @@
 add_subdirectory(aiv_ins)
 add_subdirectory(aiv_mc2)
 
-target_sources(hccl_v2 PRIVATE
-        aiv_ins_preprocessor.cpp
-)
+if(TARGET hccl_v2)
+    target_sources(hccl_v2 PRIVATE
+            aiv_ins_preprocessor.cpp
+    )
+endif()

@@ -12,6 +12,8 @@ add_subdirectory(hcom_comm)
 add_subdirectory(op_base)
 add_subdirectory(one_sided_service)
 
-target_sources(hccl_v2 PRIVATE
-    param_check_v2.cc
-)
+if(TARGET hccl_v2)
+    target_sources(hccl_v2 PRIVATE
+        param_check_v2.cc
+    )
+endif()
