@@ -148,13 +148,13 @@ TEST(CcuPfeCfgMgrSimpleTest, Ut_InvalidDieId) {
 }
 
 TEST(CcuResBatchAllocatorTest, Ut_MissionMgrAllocWithUnsupportedReqTypeExpectWarning) {
-    hcomm CcuResBatchAllocator allocat{}; 
+    hcomm::CcuResBatchAllocator allocat{}; 
     uintptr_t handleKey = 0;
     MissionReq missionReq; 
     missionReq.reqType = MissionReqType::COMM_ENGINE_RESERVED; 
     misssionReq.req[0] = 0;
-    misssionReq.req[0] = 1;
-    MissionResInfo missionInfos{};
+    misssionReq.req[0] = 0;
+    MissionResInfo missionInfos;
     allocat.missionMgr_.Alloc(handleKey, missionReq, missionInfos);
 }
 
