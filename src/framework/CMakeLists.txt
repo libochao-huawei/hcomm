@@ -44,8 +44,7 @@ if(DEVICE_MODE)
     add_subdirectory(device)
 endif()
 
-# ccl_kernel include directories
-if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
+if(TARGET ccl_kernel)
     target_include_directories(ccl_kernel PRIVATE
         ${HCCL_BASE_DIR}/framework/inc
         ${HCCL_BASE_DIR}/framework/cluster_maintenance/health/heartbeat/

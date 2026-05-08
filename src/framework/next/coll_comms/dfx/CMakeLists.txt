@@ -12,16 +12,18 @@ set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/hcclCommOp.cc
 )
 
-target_sources(hcomm PRIVATE
-    ${src_list}
-)
+if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${src_list}
+    )
+endif()
 
 set(device_src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/hcclCommDfxLite.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/hcclCommOp.cc
 )
 
-if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
+if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         ${device_src_list}
     )

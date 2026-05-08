@@ -11,9 +11,11 @@ set(src_list
     my_rank.cc
 )
 
-target_sources(hcomm PRIVATE
-    ${src_list}
-)
+if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${src_list}
+    )
+endif()
 
 add_subdirectory(comm_mems)
 add_subdirectory(engine_ctxs)
