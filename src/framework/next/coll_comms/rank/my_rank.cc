@@ -863,7 +863,7 @@ HcclResult MyRank::ExchangeUserInfo(
         reinterpret_cast<u8*>(remoteExchangeInfoLens.data()), sizeof(u32)));
 
     // 交换info数据（长度可能不同，需逐个收发）
-    std::vector<std::vector<u8>> remoteUserDatas(uniqueCount);
+    std::vector<std::vector<u8>> remoteUserDatas(sockets.size());
     // SERVER先Recv/CLIENT先Send
     for (u32 i = 0; i < sockets.size(); i++) {
         if (roles[i] == HCOMM_SOCKET_ROLE_SERVER) {
@@ -878,7 +878,7 @@ HcclResult MyRank::ExchangeUserInfo(
         remoteExchangeInfoLens, localExchangeInfoLen, true));
 
     // SERVER再Send/CLIENT再Recv
-    for (u32 i = 0; i < uniqueCount; i++) {
+    for (u32 i = 0; i < sockets.size(); i++) {
         if (roles[i] == HCOMM_SOCKET_ROLE_SERVER) {
             const std::vector<u8> &exchangeBuf = hcclComm->GetExchangeInfoBuf();
             sockets[i]->SendAsync(exchangeBuf.data(), localExchangeInfoLen);
@@ -891,7 +891,7 @@ HcclResult MyRank::ExchangeUserInfo(
         remoteExchangeInfoLens, localExchangeInfoLen, false));
 
     // 存储对端交换信息
-    for (u32 i = 0; i < uniqueCount; i++) {
+    for (u32 i = 0; i < sockets.size(); i++) {
         if (remoteExchangeInfoLens[i] > 0 && !remoteUserDatas[i].empty()) {
             CHK_RET(hcclComm->StoreRemoteExchangeInfo(remoteRanks[i], remoteUserDatas[i]));
         }
