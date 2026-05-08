@@ -9,7 +9,7 @@
 # -----------------------------------------------------------------------------------------------------------
 set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/hccl_communicator.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/hccl_communicator_attrs.cc 
+    ${CMAKE_CURRENT_SOURCE_DIR}/hccl_communicator_attrs.cc
 )
 
 target_sources(hcomm PRIVATE
@@ -18,6 +18,7 @@ target_sources(hcomm PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/hccl_communicator_host.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/hccl_communicator_attrs_host.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/comm_topo_desc.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/hccl_dpu_manager.cc
     task_abort_handler.cc
 )
 
