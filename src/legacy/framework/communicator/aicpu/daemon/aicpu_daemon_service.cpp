@@ -24,11 +24,11 @@ AicpuDaemonService &AicpuDaemonService::GetInstance()
 
 void AicpuDaemonService::ServiceRun(void *info)
 {
-    HCCL_RUN_INFO("Start back ground thread");
+    HCCL_RUN_INFO("Start background thread");
     auto commandToBackGroud = static_cast<CommandToBackGroud *>(info);
     while (true) {
         if (*commandToBackGroud == CommandToBackGroud::Stop) {
-            HCCL_RUN_INFO("Back ground thread returned");
+            HCCL_RUN_INFO("Background thread returned");
             break;
         }
 
@@ -42,32 +42,32 @@ void AicpuDaemonService::ServiceRun(void *info)
         lock.unlock();
         
         if (needBreak) {
-            HCCL_RUN_INFO("Back ground thread needBreak");
+            HCCL_RUN_INFO("Background thread needBreak");
             break;
         }
 
         SaluSleep(TEN_MILLISECOND_OF_USLEEP);
     }
-    HCCL_RUN_INFO("Exit back ground thread");
+    HCCL_RUN_INFO("Exit background thread");
 }
 
 void AicpuDaemonService::ServiceStop(void *info) const
 {
     auto commandToBackGroud = static_cast<CommandToBackGroud *>(info);
     *commandToBackGroud     = CommandToBackGroud::Stop;
-    HCCL_INFO("Stop back ground thread");
+    HCCL_INFO("Stop background thread");
 }
 
 void AicpuDaemonService::Register(DaemonFunc *daemonFunc)
 {
     std::unique_lock<std::mutex> lock(mutexForFuncs_);
     daemonFuncs.push_back(daemonFunc);
-    HCCL_INFO("Back ground thread register daemonFunc");
+    HCCL_INFO("Background thread register daemonFunc");
 }
 
 void AicpuDaemonService::Break()
 {
     needBreak = true;
-    HCCL_INFO("Back ground thread received break");
+    HCCL_INFO("Background thread received break");
 }
 }
