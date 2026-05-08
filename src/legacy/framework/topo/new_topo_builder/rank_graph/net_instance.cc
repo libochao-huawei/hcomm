@@ -106,9 +106,10 @@ void NetInstance::AddPeer(const shared_ptr<Peer> &peer)
 
 void NetInstance::AddFabric(const shared_ptr<NetInstance::Fabric> &fabric)
 {
-    if (netType != NetType::CLOS && netType!= NetType::TOPO_FILE_DESC) {
+    if (netType != NetType::CLOS && netType != NetType::TOPO_FILE_DESC &&
+        netType != NetType::OCS_MESH) {
         THROW<NotSupportException>(StringFormat("[NetInstance::AddFabric] failed to add %s to %s, "
-                                                "only CLOS type NetInstance can add Fabrics.",
+                                                "only CLOS/TOPO_FILE_DESC/OCS_MESH type NetInstance can add Fabrics.",
                                                 fabric->Describe().c_str(), this->Describe().c_str()));
     }
 
@@ -624,6 +625,45 @@ bool NetInstance::ConnInterface::operator==(const NetInstance::ConnInterface &rh
 bool NetInstance::ConnInterface::operator!=(const NetInstance::ConnInterface &rhs) const
 {
     return !(rhs == *this);
+}
+
+vector<NetInstance::Path> OcsMeshNetInstance::GetPaths(const RankId srcRankId, const RankId dstRankId) const
+{
+    vector<NetInstance::Path> paths;
+    if (peers.count(srcRankId) == 0 || peers.count(dstRankId) == 0) {
+        HCCL_WARNING("[OcsMeshNetInstance::GetPaths] srcRankId or dstRankId not exist in netInstance, netInstId[%s].", netInstId.c_str());
+        return paths;
+    }
+    NodeId srcPeerId = peers.at(srcRankId)->GetNodeId();
+    NodeId dstPeerId = peers.at(dstRankId)->GetNodeId();
+    for (auto &fabric : fabrics) {
+        NodeId fabricId = fabric->GetNodeId();
+
+        NetInstance::Link srcToFabricLink;
+        vGraph.TraverseEdge(srcPeerId, fabricId, [&](shared_ptr<NetInstance::Link> edge) {
+            srcToFabricLink = *edge;
+            return;
+        });
+
+        NetInstance::Link fabricToDstLink;
+        vGraph.TraverseEdge(fabricId, dstPeerId, [&](shared_ptr<NetInstance::Link> edge) {
+            fabricToDstLink = *edge;
+            return;
+        });
+
+        if (!srcToFabricLink.IsEmpty() && !fabricToDstLink.IsEmpty()) {
+            CheckPortGroupSize(netLayer, srcToFabricLink, fabricToDstLink);
+            NetInstance::Path path;
+            path.links = {srcToFabricLink, fabricToDstLink};
+            paths.emplace_back(path);
+        } else {
+            HCCL_DEBUG("[OcsMeshNetInstance::GetPaths] from src[%s] to dst[%s] link by fabric[%s] not found.",
+                       peers.at(srcRankId)->Describe().c_str(), peers.at(dstRankId)->Describe().c_str(),
+                       fabric->Describe().c_str());
+        }
+    }
+
+    return paths;
 }
 
 } // namespace Hccl
