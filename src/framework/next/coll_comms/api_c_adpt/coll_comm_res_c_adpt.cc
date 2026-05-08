@@ -277,12 +277,12 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
                 __func__, hcclComm, opExpansionMode, engine);
             return HcclResult::HCCL_E_PARA;
         }
-
         if (engine != CommEngine::COMM_ENGINE_CPU) { // host dpu场景暂不支持cluster monitor
             CHK_RET(RegisterToClusterMonitor(comm));
         }
+        
+        CHK_RET_UNAVAIL(myRank->CreateChannels(engine, commTag, channelDescFinals.data(), channelNum, channels, hcclComm));
 
-        CHK_RET_UNAVAIL(myRank->CreateChannels(engine, commTag, channelDescFinals.data(), channelNum, channels));
         if (engine == COMM_ENGINE_CPU) {
             HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
             CHK_PTR_NULL(hcclCommDfx);
@@ -572,8 +572,23 @@ HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
     }
     std::vector<hcomm::CcuProfilingInfo> allCcuProfilingInfo;
     CHK_RET(kernel->GetCcuProfilingInfo(*ccuTaskArgs, allCcuProfilingInfo));
-    Hccl::TaskParam taskParam = {};
-    taskParam.taskType = Hccl::TaskParamType::TASK_CCU;
+    Hccl::TaskParam taskParam = {
+        .taskType  = Hccl::TaskParamType::TASK_CCU,
+        .beginTime = 0,
+        .endTime   = 0,
+        .isMaster = false,
+        .taskPara  = {
+            .Ccu = {
+                .dieId         = 0,
+                .missionId     = 0,
+                .execMissionId = 0,
+                .instrId       = 0,
+                .costumArgs    = {},
+                .executeId     = 0
+            }
+        },
+        .ccuDetailInfo  = nullptr
+    };
     CHK_RET(LaunchCcuTasks(ccuParams, streamPtr, taskParam));
     CHK_RET(HcclReportCcuProfilingInfo(threadHandle, kernelHandle, allCcuProfilingInfo.data(), allCcuProfilingInfo.size(),
                                         comm, taskParam, rtsThread->GetMaster()));
