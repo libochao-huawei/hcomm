@@ -10,11 +10,13 @@
 set(src_list)
 file(GLOB src_list "${CMAKE_CURRENT_SOURCE_DIR}/*.cc")
 
-target_sources(hccl_alg PRIVATE
-    ${src_list}
-)
+if(TARGET hccl_alg)
+    target_sources(hccl_alg PRIVATE
+        ${src_list}
+    )
+endif()
 
-if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
+if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_reduce_executor.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_reduce_single_rank_executor.cc
@@ -38,6 +40,9 @@ if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
         ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_reduce_mid_count_for_910_93_executor.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_reduce_order_preserved_for_910_93_executor.cc
     )
+endif()
+
+if(TARGET ccl_kernel)
     target_include_directories(ccl_kernel PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
     )

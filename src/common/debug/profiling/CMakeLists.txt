@@ -24,11 +24,13 @@ set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/dlrt_function.cc
 )
  
-target_sources(hccl_alg PRIVATE
-    ${src_list}
-)
+if(TARGET hccl_alg)
+    target_sources(hccl_alg PRIVATE
+        ${src_list}
+    )
+endif()
 
-if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
+if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/task_profiling.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/task_exception_handler.cc
@@ -45,6 +47,9 @@ if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
         ${CMAKE_CURRENT_SOURCE_DIR}/dlprof_function.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/dlrt_function.cc
     )
+endif()
+
+if(TARGET ccl_kernel)
     target_include_directories(ccl_kernel PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/inc

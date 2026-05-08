@@ -12,6 +12,8 @@ set(src_list
     ccu_urma_channel.cc
 )
 
-target_sources(hcomm PRIVATE
-    ${src_list}
-)
+if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${src_list}
+    )
+endif()

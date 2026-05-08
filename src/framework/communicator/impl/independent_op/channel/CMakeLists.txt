@@ -11,8 +11,10 @@ set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/channel_manager.cc
 )
 
-target_sources(hcomm PRIVATE
-    ${src_list}
-)
+if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${src_list}
+    )
+endif()
 
 add_subdirectory(device)

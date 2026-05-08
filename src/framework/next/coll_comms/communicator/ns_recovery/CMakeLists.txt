@@ -13,9 +13,11 @@ set(src_list
     ns_recovery.cc
 )
 
-target_sources(hcomm PRIVATE
-    ${src_list}
-)
+if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${src_list}
+    )
+endif()
 
 target_include_directories(hcomm PRIVATE
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/channels
