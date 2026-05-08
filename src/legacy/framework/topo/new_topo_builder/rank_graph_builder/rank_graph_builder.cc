@@ -665,8 +665,7 @@ void RankGraphBuilder::ReparseGroupedPlaneForOcsMesh()
             u32 planeIdx = 0;
             for (const auto &group : elecGroups) {
                 for (RankId rankId : group.second) {
-                    rankTable_->ranks[rankId].ocsPlaneId = planeIdx;
-                    rankTable_->ranks[rankId].ocsPlaneNum = totalGroups;
+                    rankGraph_->SetOcsMeshAttr(rankId, planeIdx, totalGroups);
                 }
                 planeIdx++;
             }
