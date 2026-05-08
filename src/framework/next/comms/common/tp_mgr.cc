@@ -424,7 +424,7 @@ static HcclResult GetTpInfoListAsync(const CtxHandle ctxHandle, const GetTpInfoP
     struct HccpTpInfo *info = reinterpret_cast<struct HccpTpInfo *>(out.data());
 
     void *raReqHandle = nullptr;
-    constexpr uint32_t TP_HANDLE_REQUEST_NUM = 1;
+    constexpr uint32_t TP_HANDLE_REQUEST_NUM = 8;
     num = TP_HANDLE_REQUEST_NUM; // 指定需要从管控面申请tp handle的数量, hccp 会返回实际个数
     const s32 ret = RaGetTpInfoListAsync(ctxHandle, &cfg, info, &num, &raReqHandle);
     if (ret != 0 || !raReqHandle) {
@@ -434,7 +434,7 @@ static HcclResult GetTpInfoListAsync(const CtxHandle ctxHandle, const GetTpInfoP
     }
 
     reqHandle = reinterpret_cast<RequestHandle>(raReqHandle);
-    HCCL_INFO("[%s] get request handle[%llu].", __func__, reqHandle);
+    HCCL_INFO("[%s] get request handle[%llu] tpNum[%u].", __func__, reqHandle, num);
     return HcclResult::HCCL_SUCCESS;
 }
 
