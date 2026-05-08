@@ -14,13 +14,24 @@ namespace hccl {
 ReadWriteLockBase HcclCommDfx::baseLock_;
 ReadWriteLock HcclCommDfx::rwLock_(HcclCommDfx::baseLock_);
 std::unordered_map<std::string,std::unordered_map<u64, u32> > HcclCommDfx::channelRemoteRankId_;
-HcclCommDfx::HcclCommDfx() {
+std::unordered_map<u32, u32> HcclCommDfx::streamIdToTaskId_;
+HcclCommDfx::HcclCommDfx() : alive_(std::make_shared<std::atomic<bool>>(true)) {
 }
 
-HcclResult HcclCommDfx::Init(u32 deviceId, const std::string& comTag) {
-    HCCL_INFO("[%s]deviceId[%u], comTag[%s]", __func__, deviceId, comTag.c_str());
+HcclCommDfx::~HcclCommDfx() {
+    // 先注销回调，避免后续调用
+    setAddTaskCallback_ = nullptr;
+    setAddDpuTaskCallback_ = nullptr;
+    if (alive_) {
+        alive_->store(false);
+    }
+}
+
+HcclResult HcclCommDfx::Init(u32 deviceId, const std::string& comTag, u32 myRankId) {
+    HCCL_INFO("[%s]deviceId[%u], comTag[%s], myRankId[%u]", __func__, deviceId, comTag.c_str(), myRankId);
     deviceId_ = deviceId;
     commTag_ = comTag;
+    myRankId_ = myRankId;
     // 1. 如果mirrorTaskManager_为空，则创建新的MirrorTaskManager
     if (!mirrorTaskManager_) {
         mirrorTaskManager_ = std::make_unique<Hccl::MirrorTaskManager>(deviceId_, &Hccl::GlobalMirrorTasks::Instance(), false);
@@ -29,9 +40,21 @@ HcclResult HcclCommDfx::Init(u32 deviceId, const std::string& comTag) {
     // 2. 创建Profiling管理类
     EXECEPTION_CATCH(profiling_ = std::make_unique<HcclCommProfiling>(deviceId_, mirrorTaskManager_.get()), return HCCL_E_PTR);
     
-    // 3. 注册回调到单例 RegisterProfilingCallback();
-    setAddTaskCallback_ = [this](u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle) {
+    // 3. 注册回调到单例，捕获alive_标志而非this指针，避免悬空指针
+    auto alive = alive_; // 捕获shared_ptr，延长生命周期
+    setAddTaskCallback_ = [alive, this](u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle) {
+        if (!alive || !alive->load()) {
+            HCCL_WARNING("[HcclCommDfx] Callback called after object destroyed, ignoring");
+            return HCCL_E_PTR;
+        }
         return this->AddTaskInfoCallback(streamId, taskId, taskParam, handle);
+    };
+    setAddDpuTaskCallback_ = [alive, this](const Hccl::TaskParam &taskParam, u64 handle) {
+        if (!alive || !alive->load()) {
+            HCCL_WARNING("[HcclCommDfx] DPU callback called after object destroyed, ignoring");
+            return HCCL_E_PTR;
+        }
+        return this->AddDpuTaskInfoCallback(taskParam, handle);
     };
     HCCL_INFO("[HcclCommDfx][Init] Init success");
     return HCCL_SUCCESS; // 初始化成功返回成功码
@@ -50,6 +73,16 @@ HcclResult HcclCommDfx::AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl
     EXECEPTION_CATCH(mirrorTaskManager_->AddTaskInfo(taskInfo), return HCCL_E_PTR);
     HCCL_INFO("[%s]taskInfo: %s", __func__, taskInfo->Describe().c_str());
     return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommDfx::AddDpuTaskInfoCallback(const Hccl::TaskParam &taskParam, u64 handle) {
+    u32 streamId = dpuStreamId_;
+    u32 taskId = GetTaskId(streamId);
+    Hccl::TaskParam localTaskParam = taskParam;
+    localTaskParam.aicpuTaskId = aicpuTaskId_;
+    localTaskParam.npuDevId = deviceId_;
+    HCCL_INFO("[%s] streamId[%u], taskId[%u], aicpuTaskId[%u], npuDevId[%u].", __func__, streamId, taskId, localTaskParam.aicpuTaskId, localTaskParam.npuDevId);
+    return AddTaskInfoCallback(streamId, taskId, localTaskParam, handle);
 }
 
 // HcclCommDfx接口实现 - 修改为返回HcclResult类型
@@ -114,6 +147,20 @@ HcclResult HcclCommDfx::ReportKernel(uint64_t beginTime, const std::string& comm
     CHK_PTR_NULL(profiling_);
     CHK_RET(profiling_->ReportKernel(beginTime, commTag, kernelName, threadId));
     return HCCL_SUCCESS; 
+}
+
+u32 HcclCommDfx::GetTaskId(u32 streamId)
+{
+    rwLock_.writeLock();
+    auto& taskIdRef = streamIdToTaskId_[streamId];
+    taskIdRef = (taskIdRef + 1) % 65536;
+    u32 retTaskId = taskIdRef; 
+    rwLock_.writeUnlock();
+    return retTaskId; 
+}
+
+void HcclCommDfx::SetDpuStreamId(u32 dpuStreamId) {
+    dpuStreamId_ = dpuStreamId;
 }
 
 }

@@ -20,7 +20,7 @@
 #include "../comms/ccu/ccu_kernel/ccu_kernel_mgr.h"
 #include "rt_external.h"
 #include "hccl_ccu_res.h"
-
+#include "hcclCommOp.h"
 using namespace hccl;
 /**
  * @note 职责：集合通信的通信域资源管理的C接口的C到C++适配
@@ -261,6 +261,18 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
         }
         
         CHK_RET_UNAVAIL(myRank->CreateChannels(engine, commTag, channelDescFinals.data(), channelNum, channels));
+        if (engine == COMM_ENGINE_CPU) {
+            HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
+            CHK_PTR_NULL(hcclCommDfx);
+            auto callback = hcclCommDfx->GetDpuCallback();
+            for (uint32_t idx = 0; idx < channelNum; idx++) {
+                int32_t ret = HcommDpuChannelRegisterDfx(channels[idx], callback);
+                CHK_PRT_RET(ret != HCCL_SUCCESS,
+                    HCCL_ERROR("[HcclChannelAcquire] Failed to register DFX callback for channel[%u], ret[%d]", idx, ret),
+                    static_cast<HcclResult>(ret));
+            }
+            HCCL_INFO("[HcclChannelAcquire] channelNum[%u] Register DFX callback for CPU channels success", channelNum);
+        }
         if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
             HCCL_INFO("[HcclChannelAcquire] ReportChannelAicpuKernel start");
             HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
@@ -542,6 +554,8 @@ HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
         .taskType  = Hccl::TaskParamType::TASK_CCU,
         .beginTime = 0,
         .endTime   = 0,
+        .aicpuTaskId = 0,
+        .npuDevId = 0,
         .isMaster = false,
         .taskPara  = {
             .Ccu = {

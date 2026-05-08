@@ -23,6 +23,7 @@
 #include "../../../../../../legacy/unified_platform/resource/buffer/local_rdma_rma_buffer.h"
 #include "remote_rma_buffer.h"
 #include "host_rdma_connection.h"
+#include "task_param.h"
 
 #include "exchange_data_format.h"
 #include "private_types.h"
@@ -44,6 +45,9 @@ public:
 
     std::string Describe() const;
 
+    HcclResult SetDfxCallback(std::function<HcclResult(const Hccl::TaskParam&, u64)> callback);
+    std::function<HcclResult(const Hccl::TaskParam&, u64)> GetDfxCallback() const;
+
     // 数据面调用verbs接口
     HcclResult NotifyRecord(const uint32_t remoteNotifyIdx) override;
     HcclResult NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout) override;
@@ -52,6 +56,9 @@ public:
     HcclResult Read(void *dst, const void *src, uint64_t len) override;
     HcclResult ChannelFence() override;
     HcclResult GetHcclBuffer(void*& addr, uint64_t& size);
+
+private:
+    HcclResult WaitForFenceCompletion();
 
     virtual HcclResult Clean() override;
     virtual HcclResult Resume() override;
@@ -99,9 +106,10 @@ private:
     std::vector<Hccl::QpInfo> GetQpInfos() const; // in Connection
 
     HcclResult IbvPostRecv() const;
-    HcclResult PrepareNotifyWrResource(const uint64_t len, const uint32_t remoteNotifyIdx, struct ibv_send_wr &notifyRecordWr) const;
+    HcclResult PrepareNotifyWrResource(const uint64_t len, const uint32_t remoteNotifyIdx, struct ibv_send_wr &notifyRecordWr,
+                                       Hccl::TaskParam &taskParam) const;
     HcclResult PrepareWriteWrResource(const void *dst, const void *src, const uint64_t len, const uint32_t remoteNotifyIdx,
-                                      struct ibv_send_wr &writeWithNotifyWr) const;
+                                      struct ibv_send_wr &writeWithNotifyWr, Hccl::TaskParam &taskParam) const;
 
     HcclResult PostRdmaOp(const char *caller, ibv_wr_opcode opcode, void *localAddr, const void *remoteAddr, uint64_t len);
     void BuildRdmaWr(const char *caller, ibv_wr_opcode opcode, void *localAddr, const void *remoteAddr, uint64_t len,
@@ -144,6 +152,8 @@ private:
     bool fenceFlag_{false};
 
     uint64_t maxMsgSize_{0};
+
+    std::function<HcclResult(const Hccl::TaskParam&, u64)> dfxCallback_;
 
     std::mutex cq_mutex;
     std::mutex sendCq_mutex;
