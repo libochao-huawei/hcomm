@@ -20,6 +20,7 @@
 #include "orion_adapter_hccp.h"
 #include <adapter_error_manager_pub.h>
 #include "hccl_common_v2.h"
+#include "hal.h"
 
 namespace Hccl {
 
@@ -546,9 +547,10 @@ void TaskExceptionHandler::ProcessCcuException(const rtExceptionInfo_t* exceptio
     for (uint32_t i = 0; i < ccuExDetailInfo.ccuMissionNum; ++i) { // ccuExDetailInfo.ccuMissionNum为1
         const auto& missionInfo = ccuExDetailInfo.missionInfo[i]; // 异常mission
         uint16_t status = static_cast<uint16_t>(missionInfo.status) << BYTE | missionInfo.subStatus;
+        auto [localServerId, localIp, remoteIp, remoteId] = GetCcuErrorIpInfo(deviceId, status, taskInfo)
         RPT_INPUT_ERR(true, "EI0018", std::vector<std::string>({"localServerId", "localDeviceId", "localDeviceIp",
             "remoteServerId", "remoteDeviceId", "remoteDeviceIp"}),
-            std::vector<std::string>({"", std::to_string(missionInfo.dieId), "", "", "", ""}));
+            std::vector<std::string>({"", std::to_string(deviceId), "", "", "", ""}));
         PrintCcuErrorInfo(deviceId, status, taskInfo);
         // 打印寄存器信息
         PrintPanicLogInfo(missionInfo.panicLog);
@@ -1160,6 +1162,30 @@ std::pair<IpAddress, IpAddress> TaskExceptionHandler::GetAddrPairByChannelId(uin
     const uint8_t dieId          = taskInfo.taskParam_.taskPara.Ccu.dieId;
     return collServiceCcu->GetCcuInsPreprocessor()->GetCcuComm()->GetCcuJettyMgr()->GetAddrPairByChannelId(
         dieId, channelId);
+}
+
+std::tuple<std::string, std::stding, std::string, std::string> TaskExceptionHandler::GetCcuErrorIpInfo(
+    uint32_t deviceId, uint16_t status, const TaskInfo& taskInfo)
+{
+    std::string localServerId = "";
+    std::string localIp = "";
+    std::string remoteIp = "";
+    std::string remoteId = "";
+
+    char serverIdBuf[64] = {0};
+    if (get_server_id(serverIdBuf, sizeof(serverIdBuf)) == 0) {
+        localServerId = serverIdBuf;
+    }
+
+    auto ccuDetailInfo = taskInfo.taskParam_ccuDetailInfo;
+    if (ccuDetailInfo != nullptr && !ccuDetailInfo->empty() && ccuDetailInfo->at(0).channelId[0] != INVALID_VALUE_CHANNELID) {
+        uint16_t channelId = ccuDetailInfo->at(0).channelId[0];
+        auto addrPair = GetAddrPairByChannelId(channelId, taskInfo);
+        localIp = addrPair.first.Describe();
+        remoteIp = addrPair.second.Describe();
+        remoteId = std::to_string(GetAddrPairByChannelId(channelId, taskInfo));
+    }
+    return std::make_tuple(localServerId, localIp, remoteIp, remoteId);
 }
 
 } // namespace Hccl
