@@ -731,6 +731,7 @@ HcclResult HcclCommInitClusterInfoWrapper(struct hcclAsyncJob* job_){
     [&]() -> HcclResult {
         CheckCcuMc2CompatMode();
         void *commV2 = nullptr;
+        GetHcclOpInfoCtx(); // 在legacy前先申明，避免在默认销毁流程时报错
         CHK_RET(HcclCommInitClusterInfoV2(clusterInfo, rank, &commV2));
         constexpr HcclCommConfig *config = nullptr; // 未配置为默认加速模式
         HcclResult ret = HcclCommInitCollComm(rank, &commV2, config, comm);
@@ -801,6 +802,7 @@ HcclResult HcclCommInitClusterInfo(const char *clusterInfo, uint32_t rank, HcclC
         [&]() -> HcclResult {
             CheckCcuMc2CompatMode();
             void *commV2 = nullptr;
+            GetHcclOpInfoCtx(); // 在legacy前先申明，避免在默认销毁流程时报错
             CHK_RET(HcclCommInitClusterInfoV2(clusterInfo, rank, &commV2));
             constexpr HcclCommConfig *config = nullptr; // 未配置为默认加速模式
             HcclResult ret = HcclCommInitCollComm(rank, &commV2, config, comm);
@@ -863,6 +865,7 @@ HcclResult HcclCommInitClusterInfoMemConfig(const char *rankTableString, uint32_
         [&]() -> HcclResult {
             CheckCcuMc2CompatMode();
             void *commV2 = nullptr;
+            GetHcclOpInfoCtx(); // 在legacy前先申明，避免在默认销毁流程时报错
             CHK_RET(HcclCommInitClusterInfoMemConfigV2(rankTableString, rank, config, &commV2));
             HcclResult ret = HcclCommInitCollComm(rank, &commV2, config, comm);
             if (ret != HCCL_SUCCESS) {
@@ -961,6 +964,7 @@ HcclResult HcclCommInitClusterInfoConfigWrapper(struct hcclAsyncJob* job_){
         [&]() -> HcclResult {
             CheckCcuMc2CompatMode();
             void *commV2 = nullptr;
+            GetHcclOpInfoCtx(); // 在legacy前先申明，避免在默认销毁流程时报错
             CHK_RET(HcclCommInitClusterInfoConfigV2(clusterInfo, rank, config, &commV2));
             HcclResult ret = HcclCommInitCollComm(rank, &commV2, config, comm);
             if (ret != HCCL_SUCCESS) {
@@ -1046,6 +1050,7 @@ HcclResult HcclCommInitClusterInfoConfig(const char *clusterInfo, uint32_t rank,
         [&]() -> HcclResult {
             CheckCcuMc2CompatMode();
             void *commV2 = nullptr;
+            GetHcclOpInfoCtx(); // 在legacy前先申明，避免在默认销毁流程时报错
             CHK_RET(HcclCommInitClusterInfoConfigV2(clusterInfo, rank, config, &commV2));
             HcclResult ret = HcclCommInitCollComm(rank, &commV2, config, comm);
             if (ret != HCCL_SUCCESS) {
@@ -1836,6 +1841,7 @@ HcclResult HcclCommInitRootInfoInner(uint32_t nRanks, const HcclRootInfo *rootIn
             CheckCcuMc2CompatMode();
             void *commV2 = nullptr;
             std::string fooidentifier;
+            GetHcclOpInfoCtx(); // 在legacy前先申明，避免在默认销毁流程时报错
             CHK_RET(HcclCommInitRootInfoV2(nRanks, rootInfo, rank, &commV2, fooidentifier));
             constexpr HcclCommConfig *config = nullptr; // 未配置为默认加速模式
             HcclResult ret = HcclCommInitCollComm(rank, &commV2, config, comm);
@@ -1961,6 +1967,7 @@ HcclResult HcclCommInitRootInfoConfigInner(uint32_t nRanks, const HcclRootInfo *
         [&]() -> HcclResult {
             CheckCcuMc2CompatMode();
             void *commV2 = nullptr;
+            GetHcclOpInfoCtx(); // 在legacy前先申明，避免在默认销毁流程时报错
             CHK_RET(HcclCommInitRootInfoConfigV2(nRanks, rootInfo, rank, config, &commV2));
             HcclResult ret = HcclCommInitCollComm(rank, &commV2, const_cast<HcclCommConfig *>(config), comm);
             if (ret != HCCL_SUCCESS) {
