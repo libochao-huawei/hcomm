@@ -550,7 +550,7 @@ void TaskExceptionHandler::ProcessCcuException(const rtExceptionInfo_t* exceptio
         auto [localServerId, localIp, remoteIp, remoteId] = GetCcuErrorIpInfo(deviceId, status, taskInfo)
         RPT_INPUT_ERR(true, "EI0018", std::vector<std::string>({"localServerId", "localDeviceId", "localDeviceIp",
             "remoteServerId", "remoteDeviceId", "remoteDeviceIp"}),
-            std::vector<std::string>({"", std::to_string(deviceId), "", "", "", ""}));
+            std::vector<std::string>({localServerId, std::to_string(deviceId), localIp, "", remoteId, remoteIp}));
         PrintCcuErrorInfo(deviceId, status, taskInfo);
         // 打印寄存器信息
         PrintPanicLogInfo(missionInfo.panicLog);
