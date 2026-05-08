@@ -838,7 +838,7 @@ HcclResult MyRank::ExchangeUserInfo(
     }
     // 交换infoLen
     std::vector<u32> remoteExchangeInfoLens(sockets.size(), 0);
-    CHK_RET(BatchExchangeFixedData(sockets, remoteRanks, roles, sockets.size(),
+    CHK_RET(BatchExchangeFixedData(sockets, remoteRanks, roles,
         reinterpret_cast<const u8*>(&localExchangeInfoLen), sizeof(u32),
         reinterpret_cast<u8*>(remoteExchangeInfoLens.data()), sizeof(u32)));
 
