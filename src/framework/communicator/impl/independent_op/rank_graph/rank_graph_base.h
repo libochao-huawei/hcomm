@@ -45,6 +45,8 @@ public:
     virtual HcclResult GetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum) = 0;
     virtual HcclResult GetInstRanksByNetLayer(uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum) = 0;
     virtual HcclResult GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize) = 0;
+    virtual u32 GetOcsPlaneId() const { return 0; }
+    virtual u32 GetOcsPlaneNum() const { return 0; }
 };
 }  // namespace hccl
 #endif

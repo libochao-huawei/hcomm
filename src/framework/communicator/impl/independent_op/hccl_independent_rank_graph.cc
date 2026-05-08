@@ -23,9 +23,9 @@
 
 using namespace hccl;
 
-static RankDesc g_cachedRankDesc;
-
 #ifndef CCL_KERNEL_AICPU
+
+static RankDesc g_cachedRankDesc;
 HcclResult HcclGetRankGraph(HcclComm comm, GraphType type, void **graph, uint32_t *len)
 {
     CHK_PTR_NULL(comm);
@@ -409,12 +409,12 @@ HcclResult HcclGetRankDescList(HcclComm comm, RankDesc **descList, uint32_t *des
             g_cachedRankDesc.netLayerNum++;
         }
 
-        // rank-table 关联字段：需通过 CollComm -> CommunicatorImpl ranktableInfo 获取
-        // 后续提交通过扩展 CollComm 或 hcclCommunicator 接口接入（serverIdx/elecGroupId/ocsPlaneId/ocsPlaneNum）
+        // ocsPlaneId/ocsPlaneNum 通过 RankGraph 链路获取
+        // serverIdx/elecGroupId 后续提交补充
         g_cachedRankDesc.serverIdx = 0;
         g_cachedRankDesc.elecGroupId = 0;
-        g_cachedRankDesc.ocsPlaneId = 0;
-        g_cachedRankDesc.ocsPlaneNum = 0;
+        g_cachedRankDesc.ocsPlaneId = rankGraph->GetOcsPlaneId();
+        g_cachedRankDesc.ocsPlaneNum = rankGraph->GetOcsPlaneNum();
 
         *descList = &g_cachedRankDesc;
         *descNum = 1;
