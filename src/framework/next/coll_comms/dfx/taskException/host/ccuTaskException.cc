@@ -966,22 +966,38 @@ void CcuTaskException::GetCcuCqeErrRemoteLocalIdByRankId(hccl::CollComm* collCom
         HCCL_ERROR("[GetCcuCqeErrRemoteLocalIdByRankId] collComm is nullptr");
         return;
     }
-    Hccl::HcclCommunicator *commV2 = static_cast<Hccl::HcclCommunicator *>(collComm->GetCommunicatorV2());
+    SaluSleep(10000); 
+    Hccl::HcclCommunicator* commV2 = static_cast<Hccl::HcclCommunicator *>(collComm->GetCommunicatorV2());
     if (commV2 == nullptr) {
         HCCL_ERROR("[GetCcuCqeErrRemoteLocalIdByRankId] commV2 is nullptr");
         return;
     }
     HCCL_ERROR("[GetCcuCqeErrRemoteLocalIdByRankId->commV2] start to get remote local id by rank id, rankId[%u]", rankid);
+    SaluSleep(10000); 
     void *rankGraph = nullptr;
     HcclResult ret = commV2->GetRankGraphV2(rankGraph);
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[GetCcuCqeErrRemoteLocalIdByRankId]GetRankGraphV2 failed, rankId[%u], ret[%d]", rankid, ret);
         return;
     }
+    SaluSleep(10000); 
+    if (rankGraph == nullptr) {
+        HCCL_ERROR("[GetCcuCqeErrRemoteLocalIdByRankId] rankGraph is nullptr for rankid[%u]", rankid);
+        return;
+    }
+    SaluSleep(10000); 
     HCCL_ERROR("[GetCcuCqeErrRemoteLocalIdByRankId->rankGraph] start to get remote local id by rank id, rankId[%u]", rankid);
+    SaluSleep(10000); 
     Hccl::RankGraph *rankGraphv2 = static_cast<Hccl::RankGraph *>(rankGraph);
+    if (rankGraphv2 == nullptr) {
+        HCCL_ERROR("[GetCcuCqeErrRemoteLocalIdByRankId] rankGraphv2 is nullptr for rankid[%u]", rankid);
+        return;
+    }
+    SaluSleep(10000); 
     HCCL_ERROR("[GetCcuCqeErrRemoteLocalIdByRankId->rankGraphv2] start to get remote local id by rank id, rankId[%u]", rankid);
+    SaluSleep(10000); 
     u32 LocalId = rankGraphv2->GetLocalId(rankid);
+    SaluSleep(10000); 
     HCCL_ERROR("[GetCcuCqeErrRemoteLocalIdByRankId->LocalId] start to get remote local id by rank id, LocalId[%u]", LocalId);
     RemoteLocalId = LocalId;
     return;
@@ -990,11 +1006,12 @@ void CcuTaskException::GetCcuCqeErrRemoteLocalIdByRankId(hccl::CollComm* collCom
 void CcuTaskException::GetCcuCqeErrNetInstanceByRankId(hccl::CollComm* collComm, uint32_t rankid, std::string &netInstanceId)
 {
     HCCL_ERROR("[GetCcuCqeErrNetInstanceByRankId] start to get net instance id by rank id, rankId[%u]", rankid);
+    SaluSleep(10000); /
     if (collComm == nullptr) {
         HCCL_ERROR("[GetCcuCqeErrNetInstanceByRankId] collComm is nullptr");
         return;
     }
-    Hccl::HcclCommunicator * commV2 = static_cast<Hccl::HcclCommunicator *>(collComm->GetCommunicatorV2());
+    Hccl::HcclCommunicator* commV2 = static_cast<Hccl::HcclCommunicator *>(collComm->GetCommunicatorV2());
     if (commV2 == nullptr) {
         HCCL_ERROR("[GetCcuCqeErrNetInstanceByRankId] commV2 is nullptr");
         return;
@@ -1020,6 +1037,7 @@ void CcuTaskException::GetCcuCqeErrorInfo(const CcuErrorInfo &ccuErrorInfo, cons
 {
     auto pair = GetAddrPairByChannelId(ccuErrorInfo.msg.waitSignal.channelId[0], taskInfo, locDeviceId);
     RankId remoteRankId = GetRankIdByChannelId(ccuErrorInfo.msg.waitSignal.channelId[0], taskInfo, locDeviceId);
+    HCCL_ERROR("[GetCcuCqeErrorInfo] start to get net instance id by rank id, remoteRankId[%u]", remoteRankId);
     hccl::CollComm *collComm = static_cast<hccl::CollComm*>(taskInfo.dfxOpInfo_->comm_);
     u32 RemoteLocalId = INVALID_VALUE_RANKID;
     GetCcuCqeErrRemoteLocalIdByRankId(collComm, remoteRankId, RemoteLocalId);
