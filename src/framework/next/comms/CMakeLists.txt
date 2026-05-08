@@ -24,12 +24,15 @@ if(TARGET hcomm)
         ${src_list}
     )
     target_include_directories(hcomm PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/common
+        ${CMAKE_CURRENT_SOURCE_DIR}/common/device
         ${CMAKE_CURRENT_SOURCE_DIR}/api_c_adpt
         ${CMAKE_CURRENT_SOURCE_DIR}/comm_engine_res
         ${CMAKE_CURRENT_SOURCE_DIR}/endpoint_pairs
         ${CMAKE_CURRENT_SOURCE_DIR}/endpoints
         ${CMAKE_CURRENT_SOURCE_DIR}/endpoints/reged_mems
         ${CMAKE_CURRENT_SOURCE_DIR}/endpoints/net_dev
+        ${CMAKE_CURRENT_SOURCE_DIR}/ccu/pub_inc
     )
 endif()

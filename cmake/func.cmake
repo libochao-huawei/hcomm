@@ -238,14 +238,15 @@ function(check_pkg_build_deps pkg_name)
     endif()
 endfunction()
 
-set(HOST_ONLY "false")
-if (NOT FULL_MODE)
-set(HOST_ONLY "true")
-endif()
-
 # 添加生成version.info的目标
 # 目标名格式为：version_${包名}_info
 function(add_version_info_targets)
+    if(${PRODUCT_SIDE} STREQUAL "host")
+        set(HOST_ONLY "true")
+    else()
+        set(HOST_ONLY "false")
+    endif()
+
     foreach(pkg_name ${CANN_VERSION_PACKAGES})
         add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/version.${pkg_name}.info
             COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_version_info.py --output ${CMAKE_BINARY_DIR}/version.${pkg_name}.info
