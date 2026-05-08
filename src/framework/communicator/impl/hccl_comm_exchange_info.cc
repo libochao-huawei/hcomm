@@ -63,7 +63,6 @@ HcclResult hcclComm::ResetExchangeInfo()
     std::lock_guard<std::mutex> lock(exchangeInfoMutex_);
     exchangeInfoBuf_.clear();
     exchangeInfoLen_ = 0;
-    remoteExchangeInfoMap_.clear();
     HCCL_INFO("[ResetExchangeInfo] exchange info state cleared.");
     return HCCL_SUCCESS;
 }
