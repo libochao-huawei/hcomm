@@ -42,7 +42,9 @@ typedef enum {
     COMM_TOPO_910_93 = 2,     ///< 910_93互联拓扑(带SIO)
     COMM_TOPO_310P = 3,       ///< 310P互联拓扑
     COMM_TOPO_A2AXSERVER = 4, ///< A2_AX_SERVER
-    COMM_TOPO_CUSTOM = 5      ///< 自定义
+    COMM_TOPO_CUSTOM = 5,     ///< 自定义
+    COMM_TOPO_OCS_MESH = 6,   ///< OCS光互联拓扑
+    COMM_TOPO_MAX = 7
 } CommTopo;
 
 /**
