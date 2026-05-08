@@ -16,11 +16,7 @@
 
 // 多个通信域能并发跑通信算子，一个通信域只绑定一个dispatch_ctx线程变量
 // 若不用通信域绑定线程变量，需要创建默认dispatch_ctx
-static std::unordered_map<std::string, DispatcherCtxPtr>& GetGlobalCtx()
-{
-    static std::unordered_map<std::string, DispatcherCtxPtr> g_ctx;
-    return g_ctx;
-}
+static std::unordered_map<std::string, DispatcherCtxPtr> g_ctx;
 std::mutex g_mtx; // 考虑已有的universal_map，或读写锁
 thread_local DispatcherCtxPtr gDispatcherCtx = nullptr;
 
@@ -32,8 +28,8 @@ bool FindDispatcherByCommId(DispatcherCtxPtr *ctx, const char* commId)
     }
     std::lock_guard<std::mutex> lock(g_mtx);
     std::string commIdkey = std::string(commId);
-    auto it = GetGlobalCtx().find(commIdkey);
-    if (it != GetGlobalCtx().end()) {
+    auto it = g_ctx.find(commIdkey);
+    if (it != g_ctx.end()) {
         *ctx = it->second;
         HCCL_INFO("[%s] commIdkey[%s] has been bound with ctx[%p]", __func__, commIdkey.c_str(), *ctx);
         return true;
@@ -51,10 +47,10 @@ bool DeleteDispatcherByCommId(const char* commId)
     }
     std::lock_guard<std::mutex> lock(g_mtx);
     std::string commIdkey = std::string(commId);
-    auto it = GetGlobalCtx().find(commIdkey);
-    if (it != GetGlobalCtx().end()) {
+    auto it = g_ctx.find(commIdkey);
+    if (it != g_ctx.end()) {
         HCCL_INFO("[%s] ctx[%p] has been bound by commId[%s]", __func__, it->second, commIdkey.c_str());
-        GetGlobalCtx().erase(it);
+        g_ctx.erase(it);
         return true;
     }
     HCCL_WARNING("[%s] ctx has not been bound by commId[%s]", __func__, commIdkey.c_str());
@@ -66,12 +62,12 @@ HcclResult BindDispatcherCtxWithComm(DispatcherCtxPtr ctx, const char* commId)
     CHK_PTR_NULL(commId);
     std::lock_guard<std::mutex> lock(g_mtx);
     std::string commIdkey = std::string(commId);
-    auto it = GetGlobalCtx().find(commIdkey);
-    if (it != GetGlobalCtx().end()) {
+    auto it = g_ctx.find(commIdkey);
+    if (it != g_ctx.end()) {
         HCCL_WARNING("[%s] commId[%s] has been bound", __func__, commIdkey.c_str());
         return HCCL_E_PARA;
     }
-    GetGlobalCtx()[commIdkey] = ctx;
+    g_ctx[commIdkey] = ctx;
     HCCL_INFO("[%s] ctx[%p] bind commId[%s] success", __func__, ctx, commIdkey.c_str());
     return HCCL_SUCCESS;
 }
@@ -114,10 +110,10 @@ HcclResult CreateDispatcherCtx(DispatcherCtxPtr *ctx, u32 devPhyId, const char* 
 bool DeleteCommIdByDispatcherCtx(DispatcherCtxPtr ctx)
 {
     std::lock_guard<std::mutex> lock(g_mtx);
-    for (const auto& pair : GetGlobalCtx()) {
+    for (const auto& pair : g_ctx) {
         if (pair.second == ctx) {
             HCCL_INFO("[%s] ctx[%p] bound with commId[%s], delete it", __func__, ctx, pair.first.c_str());
-            GetGlobalCtx().erase(pair.first);
+            g_ctx.erase(pair.first);
             return true;
         }
     }
