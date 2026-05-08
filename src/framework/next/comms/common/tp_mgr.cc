@@ -419,13 +419,13 @@ static HcclResult GetTpInfoListAsync(const CtxHandle ctxHandle, const GetTpInfoP
     HCCL_INFO("RaUbGetTpInfoAsync cfg.peer_eid[subnetPrefix[%016llx], interfaceId[%016llx]]",
         cfg.peerEid.in6.subnetPrefix, cfg.peerEid.in6.interfaceId);
 
-    // 与原版 GetTpInfoAsync 一致：只向管控面申请 1 个 tp，buffer 仅 1 个 HccpTpInfo
-    out.resize(sizeof(struct HccpTpInfo));
+    // buffer 须至少容纳本次请求的个数，避免 RS 按 num 写多条 HccpTpInfo 时越界破坏堆
+    constexpr uint32_t TP_HANDLE_REQUEST_NUM = 8;
+    out.resize(static_cast<size_t>(TP_HANDLE_REQUEST_NUM) * sizeof(struct HccpTpInfo));
     struct HccpTpInfo *info = reinterpret_cast<struct HccpTpInfo *>(out.data());
 
     void *raReqHandle = nullptr;
-    constexpr uint32_t TP_HANDLE_REQUEST_NUM = 8;
-    num = TP_HANDLE_REQUEST_NUM; // 指定需要从管控面申请tp handle的数量, hccp 会返回实际个数
+    num = TP_HANDLE_REQUEST_NUM; // 指定需要从管控面申请 tp handle 的上限；完成后 num 为实际个数
     const s32 ret = RaGetTpInfoListAsync(ctxHandle, &cfg, info, &num, &raReqHandle);
     if (ret != 0 || !raReqHandle) {
         HCCL_ERROR("[%s] failed, call interface error[%d] raReqHandle[%p], ctxHandle[%p] locAddr[%s] rmtAddr[%s].",
@@ -434,7 +434,7 @@ static HcclResult GetTpInfoListAsync(const CtxHandle ctxHandle, const GetTpInfoP
     }
 
     reqHandle = reinterpret_cast<RequestHandle>(raReqHandle);
-    HCCL_INFO("[%s] get request handle[%llu] tpNum[%u].", __func__, reqHandle, num);
+    HCCL_INFO("[%s] get request handle[%llu].", __func__, reqHandle);
     return HcclResult::HCCL_SUCCESS;
 }
 
