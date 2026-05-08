@@ -220,39 +220,61 @@ std::string TaskExceptionHost::GetGroupRankInfo(const Hccl::TaskInfo& taskInfo)
         communicator->GetCommId().c_str(), communicator->GetRankSize(), communicator->GetMyRankId());
 }
 
-u32 TaskExceptionHost::GetAicpuCqeErrRemoteLocalIdByRankId(hccl::CollComm* collComm, uint32_t rankid)
+void TaskExceptionHost::GetAicpuCqeErrRemoteLocalIdByRankId(hccl::CollComm* collComm, uint32_t rankid, u32 &RemoteLocalId)
 {
-    CHK_PTR_NULL(collComm);
+    if (collComm == nullptr) {
+        HCCL_ERROR("[GetAicpuCqeErrRemoteLocalIdByRankId]collComm is nullptr, rankId[%u]", rankid);
+        RemoteLocalId = INVALID_VALUE_RANKID;
+        return;
+    }
     auto commV2 = collComm->GetCommunicatorV2();
-    CHK_PTR_NULL(commV2);
+    if (commV2 == nullptr) {
+        HCCL_ERROR("[GetAicpuCqeErrRemoteLocalIdByRankId]commV2 is nullptr, rankId[%u]", rankid);
+        RemoteLocalId = INVALID_VALUE_RANKID;
+        return;
+    }
     Hccl::HcclCommunicator *hcclCommunicator = static_cast<Hccl::HcclCommunicator *>(commV2);
     void **rankGraph = nullptr;
     hcclCommunicator->GetRankGraphV2(*rankGraph);
     Hccl::RankGraph *rankGraphv2 = static_cast<Hccl::RankGraph *>(*rankGraph);
     u32 LocalId = rankGraphv2->GetLocalId(rankid);
-    return LocalId;
+    RemoteLocalId = LocalId;
+    return;
 }
 
-std::string TaskExceptionHost::GetAicpuCqeErrNetInstanceByRankId(hccl::CollComm* collComm, uint32_t rankid)
+void TaskExceptionHost::GetAicpuCqeErrNetInstanceByRankId(hccl::CollComm* collComm, uint32_t rankid, std::string &netInstanceId)
 {
-    //CHK_PTR_NULL(collComm);
+
+    if (collComm == nullptr) {
+        HCCL_ERROR("[GetAicpuCqeErrNetInstanceByRankId]collComm is nullptr, rankId[%u]", rankid);
+        netInstanceId = "";
+        return;
+    }
     auto commV2 = collComm->GetCommunicatorV2();
-    //CHK_PTR_NULL(commV2);
+
+    if (commV2 == nullptr) {
+        HCCL_ERROR("[GetAicpuCqeErrNetInstanceByRankId]commV2 is nullptr, rankId[%u]", rankid);
+        netInstanceId = "";
+        return;
+    }
     Hccl::HcclCommunicator *hcclCommunicator = static_cast<Hccl::HcclCommunicator *>(commV2);
     void **rankGraph = nullptr;
     hcclCommunicator->GetRankGraphV2(*rankGraph);
     Hccl::RankGraph *rankGraphv2 = static_cast<Hccl::RankGraph *>(*rankGraph);
     const Hccl::NetInstance *netInstance = rankGraphv2->GetNetInstanceByRankId(0, rankid);
    // CHK_PTR_NULL(netInstance);
-    std::string netInstanceId = netInstance->GetNetInstId();
-    return netInstanceId;
+    std::string netInsId = netInstance->GetNetInstId();
+    netInstanceId = netInsId;
+    return;
 }
 
 void TaskExceptionHost::GetAicpuCqeErrInfo(rtExceptionInfo_t* exceptionInfo, const Hccl::ErrorMessageReport &errorMessage, const Hccl::TaskInfo& taskInfo)
 {
     hccl::CollComm *collComm = static_cast<hccl::CollComm*>(taskInfo.dfxOpInfo_->comm_);
-    u32 RemoteLocalId = GetAicpuCqeErrRemoteLocalIdByRankId(collComm, errorMessage.remoteUserRank);
-    std::string netInstanceId = GetAicpuCqeErrNetInstanceByRankId(collComm, errorMessage.remoteUserRank);
+    u32 RemoteLocalId = INVALID_VALUE_RANKID;
+    GetAicpuCqeErrRemoteLocalIdByRankId(collComm, errorMessage.remoteUserRank, RemoteLocalId);
+    std::string netInstanceId = "";
+    GetAicpuCqeErrNetInstanceByRankId(collComm, errorMessage.remoteUserRank, netInstanceId);
     ClusterMoniterGetAicpuCqeErrInfo(RemoteLocalId, exceptionInfo->deviceid, errorMessage.ubCqeStatus, errorMessage.locEid.Describe(), errorMessage.rmtEid.Describe(), netInstanceId); // 上报AICPU CQE错误信息到集群监控
     return;
 }
