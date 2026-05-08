@@ -480,6 +480,7 @@ private:
     std::vector<u8> exchangeInfoBuf_;                                         // 本端待交换信息缓冲区
     uint32_t exchangeInfoLen_ = 0;                                            // 本端待交换数据长度
     std::unordered_map<uint32_t, ExchangeInfoEntry> remoteExchangeInfoMap_;   // 对端交换信息<remoteRank, data>
+};
 }  // namespace hccl
 
 using HcclCommPtr = std::shared_ptr<hccl::hcclComm>;
