@@ -13,9 +13,9 @@ if(TARGET ccl_kernel)
         hccl_aicpu_interface.cc
         hccl_aicpu_transport_interface.cc
     )
-endif()
-
-if(TARGET ccl_kernel)
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
 
     add_subdirectory(aicpu_kfc)
     add_subdirectory(common)
