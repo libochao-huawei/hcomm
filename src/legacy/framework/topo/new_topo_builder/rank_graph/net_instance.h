@@ -256,6 +256,16 @@ public:
     std::vector<Path> GetPaths(const RankId srcRankId, const RankId dstRankId) const override;
 };
 
+class OcsMeshNetInstance : public NetInstance {
+public:
+    OcsMeshNetInstance(const u32 netLayer, const std::string &netInstId)
+        : NetInstance(netLayer, netInstId, NetType::OCS_MESH) {};
+
+    ~OcsMeshNetInstance() override = default;
+
+    std::vector<Path> GetPaths(const RankId srcRankId, const RankId dstRankId) const override;
+};
+
 } // namespace Hccl
 
 #endif // NET_INSTANCE_H
