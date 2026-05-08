@@ -229,16 +229,11 @@ void TaskExceptionHost::GetAicpuCqeErrRemoteLocalIdByRankId(hccl::CollComm* coll
         RemoteLocalId = INVALID_VALUE_RANKID;
         return;
     }
-    auto commV2 = collComm->GetCommunicatorV2();
-    if (commV2 == nullptr) {
-        HCCL_ERROR("[GetAicpuCqeErrRemoteLocalIdByRankId]commV2 is nullptr, rankId[%u]", rankid);
-        RemoteLocalId = INVALID_VALUE_RANKID;
-        return;
-    }
-    Hccl::HcclCommunicator *hcclCommunicator = static_cast<Hccl::HcclCommunicator *>(commV2);
-    void **rankGraph = nullptr;
-    hcclCommunicator->GetRankGraphV2(*rankGraph);
-    Hccl::RankGraph *rankGraphv2 = static_cast<Hccl::RankGraph *>(*rankGraph);
+    Hccl::HcclCommunicator * commV2 = static_cast<Hccl::HcclCommunicator *>(collComm->GetCommunicatorV2());
+    CHK_PTR_NULL(commV2);
+    void *rankGraph = nullptr;
+    commV2->GetRankGraphV2(rankGraph);
+    Hccl::RankGraph *rankGraphv2 = static_cast<Hccl::RankGraph *>(rankGraph);
     u32 LocalId = rankGraphv2->GetLocalId(rankid);
     RemoteLocalId = LocalId;
     return;
