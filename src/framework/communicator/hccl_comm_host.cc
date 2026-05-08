@@ -291,11 +291,6 @@ namespace hccl
     {
         return communicator_->GetConnectMode();
     }
-
-    void *hcclComm::GetMyRank()
-    {
-        return (void *)communicator_->GetMyRank();
-    }
     HcclResult hcclComm::GetDevMemWorkSpace(const std::string &memTag, uint64_t *size, void **addr, bool *newCreated)
     {
         return communicator_->GetDevMemWorkSpace(memTag, size, addr, newCreated);
@@ -367,7 +362,7 @@ namespace hccl
             commAicpuParam_.envConfig.taskExceptionEnable);
 
         const char *opModeEnv = getenv("HCCL_CCU_CUSTOM_OP_MODE");
-        if (opModeEnv != nullptr && strcmp(opModeEnv, "1") == 0) {
+        if (opModeEnv != nullptr && strcmp(opModeEnv, "1") == 0 && commV2 != nullptr) {
             // 当前需要支持coll comm与legacy comm混跑，coll comm确定加速模式后，需要设置comm加速模式
             auto *commImplV2 = static_cast<Hccl::HcclCommunicator *>(commV2);
             constexpr bool isCcuMsAvailable = false; // 禁止legacy通信域使用ms模式，避免抢占过多coll comm ccu可用资源
@@ -448,6 +443,11 @@ namespace hccl
             return nullptr;
         }
         return collComm_->GetCommunicatorV2();
+    }
+
+    HcclCommunicator* hcclComm::GetHcclCommunicator()
+    {
+        return communicator_.get();
     }
 
     CollComm* hcclComm::GetCollComm() 

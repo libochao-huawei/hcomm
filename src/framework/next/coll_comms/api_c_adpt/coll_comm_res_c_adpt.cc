@@ -282,10 +282,17 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
             HCCL_INFO("[HcclChannelAcquire] ReportChannelAicpuKernel success");
         }
     } else {
-        hccl::MyRank *myRank = (hccl::MyRank *)hcclComm->GetMyRank();
-        if (hcclComm->GetConnectMode() && engine == COMM_ENGINE_CPU && myRank != nullptr) {
-            const std::string &commTag = hcclComm->GetIdentifier();
-            ret = myRank->CreateChannels(engine, commTag, channelDescFinals.data(), channelNum, channels);
+        hccl::CollComm* collComm = hcclComm->GetCollComm();
+        if (collComm != nullptr) {
+            hccl::MyRank *myRank = collComm->GetMyRank();
+            if (hcclComm->GetConnectMode() && engine == COMM_ENGINE_CPU && myRank != nullptr) {
+                const std::string &commTag = hcclComm->GetIdentifier();
+                ret = myRank->CreateChannels(engine, commTag, channelDescFinals.data(), channelNum, channels);
+            } else {
+                auto& channelMgr = hcclComm->GetIndependentOp().GetChannelManager();
+                ret = channelMgr.ChannelCommCreate(hcclComm->GetIdentifier(), engine,
+                    channelDescFinals.data(), channelNum, channels);
+            }
         } else {
             auto& channelMgr = hcclComm->GetIndependentOp().GetChannelManager();
             ret = channelMgr.ChannelCommCreate(hcclComm->GetIdentifier(), engine,

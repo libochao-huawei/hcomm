@@ -406,13 +406,15 @@ namespace hccl
         HcclTopoAttr topoAttr;
         attrCollector_.GetTopoAttr(topoAttr);
         CHK_RET(rankGraph_.Init(rankTable, topoAttr));
-        CHK_RET(CreateMyRank(params, rankTable, topoAttr));
         CHK_RET(SaveTopoDesc(params.identifier));
         CHK_RET(RegisterToSnapshot());
         CHK_RET(InitSymmetricMemory());
-        if (dpuManager_ != nullptr && myRankConnectMode_) { /* 当前只有hostnic--devicenic使用 */
+
+        (void)InitMyRankConnectMode(params, rankTable);
+        if (dpuManager_ != nullptr && myRankConnectMode_) { /* 当前只有host nic--device nic使用 */
             CHK_RET(dpuManager_->Init(identifier_, deviceLogicId_));
         }
+
         return HCCL_SUCCESS;
     }
 
@@ -1416,47 +1418,6 @@ namespace hccl
         return myRankConnectMode_;
     }
 
-    HcclResult HcclCommunicator::CreateMyRank(HcclCommParams &params, const RankTable_t &rankTable, HcclTopoAttr &topoAttr)
-    {
-        InitMyRankConnectMode(params, rankTable);
-
-        if (!myRankConnectMode_) {
-            return HCCL_SUCCESS;
-        }
-
-        CHK_PRT_RET(myRank_ != nullptr,
-            HCCL_ERROR("[HcclCommunicator][CreateMyRank]myRank already initialized"), HCCL_E_INTERNAL);
-
-        CommConfig commConfig = commConfig_;
-        aclrtBinHandle binHandle = binHandle_;
-        uint32_t rankId = params.rank;
-
-        ManagerCallbacks callbacks;
-        callbacks.getAicpuCommState = [this](){return 1;};
-        callbacks.setAicpuCommState = [this](bool state){};
-        callbacks.kernelLaunchAicpuCommInit = [this](){return HCCL_SUCCESS;};
-    
-        EXECEPTION_CATCH((myRank_ = std::make_unique<MyRank>(binHandle, rankId, commConfig, callbacks, &rankGraph_)),
-            return HCCL_E_PTR);
-    
-        HCCL_INFO("[HcclCommunicator][CreateMyRank]Create myRank successfully for rank[%u]", rankId);
-    
-        return HCCL_SUCCESS;
-    }
-
-    HcclResult HcclCommunicator::InitMyRank()
-    {
-        if (!myRankConnectMode_) {
-            return HCCL_SUCCESS;
-        }
-        CHK_RET(CreateCommCCLbuffer());
-        HcclMem cclBuffer = {HCCL_MEM_TYPE_DEVICE, cclBufferManager_.GetInCCLbuffer().ptr(),
-            cclBufferManager_.GetInCCLbuffer().size()};
-        CHK_RET(myRank_->Init(cclBuffer, 2, userRankSize_)); // 2: AICPU TS
-        HCCL_INFO("[HcclCommunicator][CreateMyRank]Init myRank successfully");
-        return HCCL_SUCCESS;
-    }
-
     bool HcclCommunicator::IsEnableBackupLink()
     {
         return deviceType_ == DevType::DEV_TYPE_910_93 && IsEnableRoce() && GetAicpuUnfoldConfig() && retryEnable_ &&
@@ -1840,6 +1801,11 @@ namespace hccl
     u32 HcclCommunicator::GetRankSize()
     {
         return userRankSize_;
+    }
+
+    u32 HcclCommunicator::GetRankInParentComm()
+    {
+        return rankInParentComm_;
     }
 
     bool HcclCommunicator::GetNicInitialized()
@@ -9037,6 +9003,11 @@ namespace hccl
         return rankGraph_.GetRankGraphInfo(type, graph, len);
     }
 
+    void* HcclCommunicator::GetRankGraphV1()
+    {
+        return static_cast<void*>(&rankGraph_);
+    }
+
     HcclResult HcclCommunicator::GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank,
         CommLink **linkList, uint32_t *listSize)
     {
@@ -9294,13 +9265,6 @@ namespace hccl
             return nullptr;
         }
         return binHandle_;
-    }
-    void *HcclCommunicator::GetMyRank()
-    {
-        if (myRank_ == nullptr) {
-            return nullptr;
-        }
-        return static_cast<void *>(myRank_.get());
     }
     HcclResult HcclCommunicator::GetDevMemWorkSpace(const std::string &memTag, uint64_t *size, void **addr,
         bool *newCreated)

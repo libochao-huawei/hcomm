@@ -376,6 +376,7 @@ public:
         HcclMem cclBuffer,const std::string &commName, HcclCommConfig *config);
 #endif
     void* GetCommunicatorV2();
+    HcclCommunicator* GetHcclCommunicator();
 #ifndef CCL_KERNEL_AICPU
     #ifndef HCCD
         CollComm* GetCollComm();
@@ -405,7 +406,6 @@ public:
     HcclResult GetRankGraph(GraphType type, void **graph, uint32_t *len);
     HcclResult GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank,
         CommLink **linkList, uint32_t *listSize);
-    void *GetMyRank();
     uint32_t GetConnectMode();
     HcclResult GetTopoInstsByLayer(uint32_t netLayer, uint32_t **topoInsts, uint32_t *topoInstNum);
     HcclResult GetTopoType(uint32_t netLayer, uint32_t topoInstId, CommTopo *topoType);

@@ -164,18 +164,14 @@ HcclResult MyRank::GetDevicePortInternal(uint32_t rank, uint32_t *devPort)
 {
     CHK_PTR_NULL(devPort);
     CHK_PTR_NULL(rankGraph_);
+    return rankGraph_->GetDevicePort(rank, devPort);
+}
 
-    DevType devType;
-    CHK_RET(hrtGetDeviceType(devType));
-    // v1 模式 (mode_ == 0): 强制转换为 RankGraphV1 调用 GetDevicePort
-    // v2 模式 (mode_ != 0): 使用 rankGraph_->GetDevicePort()
-    if (devType == DevType::DEV_TYPE_910B) {
-        RankGraphV1* rankGraphV1 = static_cast<RankGraphV1*>(rankGraph_);
-        CHK_RET(rankGraphV1->GetDevicePort(rank, devPort));
-    } else {
-        CHK_RET(rankGraph_->GetDevicePort(rank, devPort));
-    }
-    return HCCL_SUCCESS;
+HcclResult MyRank::GetDeviceIdInternal(uint32_t rankId, uint32_t *deviceId)
+{
+    CHK_PTR_NULL(deviceId);
+    CHK_PTR_NULL(rankGraph_);
+    return rankGraph_->GetDeviceId(rankId, deviceId);
 }
 
 HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint32_t rankNum)
@@ -300,8 +296,8 @@ HcclResult MyRank::BatchCreateSockets(const HcclChannelDesc* channelDescs, uint3
 
         uint32_t devicePhyId;
         uint32_t remoteDevicePhyId;
-        rankGraph_->GetDeviceId(rankId_, &devicePhyId);
-        rankGraph_->GetDeviceId(remoteRank, &remoteDevicePhyId);
+        GetDeviceIdInternal(rankId_, &devicePhyId);
+        GetDeviceIdInternal(remoteRank, &remoteDevicePhyId);
         HCCL_INFO("[MyRank][BatchCreateSockets] rankId_[%u] devicePhyId[%u]", rankId_, devicePhyId);
         HCCL_INFO("[MyRank][BatchCreateSockets] rankId_[%u] devicePhyId[%u]", remoteRank, remoteDevicePhyId);
 

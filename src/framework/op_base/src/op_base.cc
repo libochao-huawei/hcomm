@@ -700,6 +700,43 @@ HcclResult InitCommClusterInfo(std::string &rankTableM, const uint32_t rank, con
         hcclNslbDp::GetInstance().SetGlobalRank_RankTableExit(opBaseHcom.rankTable);
         hcclNslbDp::GetInstance().SendGlobalRankTable(rank);
     }
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    do {
+        hccl::HcclCommunicator* hcclComm = opBaseHcom.pComm->GetHcclCommunicator();
+        if (hcclComm == nullptr) {
+            HCCL_WARNING("[Init][CommClusterInfo] HcclCommunicator NULL, skip CollComm init");
+            break;
+        }
+
+        void* rankGraphV1 = nullptr;
+        rankGraphV1 = hcclComm->GetRankGraphV1();
+        if (rankGraphV1 == nullptr) {
+            HCCL_WARNING("[Init][CommClusterInfo] rankGraphV1 is nullptr, skip CollComm init");
+            break;
+        }
+
+        void* cclBufferAddr = nullptr;
+        std::size_t cclBufferSize = 0;
+        ret = hcclComm->GetInCCLbuffer(cclBufferAddr, cclBufferSize);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[Init][CommClusterInfo] GetInCCLbuffer failed, ret=%d", ret);
+            break;
+        }
+
+        HcclMem cclBuffer{};
+        cclBuffer.size = static_cast<uint64_t>(cclBufferSize);
+        cclBuffer.addr = cclBufferAddr;
+        cclBuffer.type = HcclMemType::HCCL_MEM_TYPE_DEVICE;
+        std::string commName = opBaseHcom.pComm->GetIdentifier();
+        constexpr HcclCommConfig* config = nullptr;
+        ret = opBaseHcom.pComm->InitCollComm(nullptr, rankGraphV1, rank, cclBuffer, commName, const_cast<HcclCommConfig*>(config));
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[Init][CommClusterInfo] InitCollComm failed, ret=%d", ret);
+            break;
+        }
+        HCCL_INFO("[Init][CommClusterInfo] CollComm init success for V1");
+    } while (0);
+#endif
     /* 关键状态记录 */
     HCCL_INFO("%s success, rankNum[%u], rank[%u], server[%s], device[%d].",
         __func__, opBaseHcom.rankTable.rankNum, rank, opBaseHcom.params.serverId.c_str(),

@@ -723,6 +723,13 @@ HcclResult RankGraphV1::GetEndpointDesc(uint32_t netLayer, uint32_t topoInstId, 
     return HCCL_SUCCESS;
 }
 
+HcclResult RankGraphV1::GetRankSize(uint32_t *rankSize)
+{
+    CHK_PTR_NULL(rankSize);
+    *rankSize = rankGraph_.size();
+    return HCCL_SUCCESS;
+}
+
 HcclResult RankGraphV1::GetDevicePort(const uint32_t rank, uint32_t *devPort)
 {
     CHK_PTR_NULL(devPort);
