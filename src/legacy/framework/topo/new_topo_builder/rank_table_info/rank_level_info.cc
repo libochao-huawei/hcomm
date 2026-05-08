@@ -47,6 +47,7 @@ void RankLevelInfo::Deserialize(const nlohmann::json &rankLevelInfoJson)
     }
 
     netAttr=rankLevelInfoJson.value<std::string>("net_attr", "");
+    elecGroupId = rankLevelInfoJson.value<u32>("elec_group_id", 0);
     
     if (rankLevelInfoJson.contains("net_type")){
     string      netTypeStr;
@@ -91,10 +92,11 @@ RankLevelInfo::RankLevelInfo(BinaryStream &binStream)
     u32 netTypeInt{0};
     binStream >> netTypeInt;
     netType = static_cast<NetType::Value>(netTypeInt);
+    binStream >> elecGroupId;
     size_t addrSize{0};
     binStream >> addrSize;
-    HCCL_INFO("[%s] net_layer[%u] net_instance_id[%s] netType[%s] addrs size[%u]", __func__, netLayer, netInstId.c_str(),
-              netType.Describe().c_str(), rankAddrs.size());
+    HCCL_INFO("[%s] net_layer[%u] net_instance_id[%s] netType[%s] elecGroupId[%u] addrs size[%u]", __func__, netLayer, netInstId.c_str(),
+              netType.Describe().c_str(), elecGroupId, rankAddrs.size());
     for (u32 i = 0; i < addrSize; i++) {
         AddressInfo addressInfo(binStream);
         rankAddrs.emplace_back(addressInfo);
@@ -111,9 +113,10 @@ RankLevelInfo::RankLevelInfo(BinaryStream &binStream)
 void RankLevelInfo::GetBinStream(BinaryStream &binStream) const
 {
     binStream << netLayer << netInstId <<netAttr<< static_cast<u32>(netType);
+    binStream << elecGroupId;
     binStream << rankAddrs.size();
-    HCCL_INFO("[%s] net_layer[%u] net_instance_id[%s] netType[%s] addrs size[%u]", __func__, netLayer, netInstId.c_str(),
-              netType.Describe().c_str(), rankAddrs.size());
+    HCCL_INFO("[%s] net_layer[%u] net_instance_id[%s] netType[%s] elecGroupId[%u] addrs size[%u]", __func__, netLayer, netInstId.c_str(),
+              netType.Describe().c_str(), elecGroupId, rankAddrs.size());
     if (rankAddrs.size() == 0) {
         return;
     }

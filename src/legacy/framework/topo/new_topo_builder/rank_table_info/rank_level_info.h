@@ -36,6 +36,7 @@ public:
     std::string              netInstId;
     NetType                  netType{NetType::CLOS};
     std::string              netAttr;
+    u32                      elecGroupId{0};
     std::vector<AddressInfo> rankAddrs;
     std::string              Describe() const;
     std::map<std::string, IpAddress> portAddrMap;
