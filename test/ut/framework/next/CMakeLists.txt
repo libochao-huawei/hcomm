@@ -40,6 +40,9 @@ set(src_to_test_list
     host/ut_host_cpu_roce_channel.cc
     host/ut_host_rdma_connection.cc
     host/ut_server_socket_manager.cc
+    host/ut_cpu_urma_endpoint.cc
+    host/ut_host_cpu_urma_channel.cc
+    host/ut_host_ub_connection.cc
     comms/endpoints/ut_ub_mem_endpoint.cc
     comms/endpoints/reged_mems/ut_roce_mem_test.cc
     comms/endpoints/reged_mems/ut_urma_mem_test.cc
@@ -53,6 +56,7 @@ set(src_to_test_list
     comms/endpoints/ut_aicpu_ts_roce_endpoint.cc
     comms/endpoint_pairs/channels/ccu/ut_ccu_urma_channel.cc
     comms/endpoint_pairs/channels/aiv/ut_aiv_ub_mem_channel.cc
+    comms/endpoint_pairs/channels/aiv/ut_aiv_ub_mem_transport.cc
     comms/endpoint_pairs/ut_endpoint_pair_mgr.cc
     comms/ccu/ccu_device/ccu_comp/ut_ccu_comp_pub.cc
     coll_comms/communicator/ns_recovery/aicpu/ut_ns_recovery_func_lite.cc

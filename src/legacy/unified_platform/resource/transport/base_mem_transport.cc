@@ -47,7 +47,7 @@ bool BaseMemTransport::IsSocketReady()
         MACRO_THROW(InternalException, StringFormat("%s socket is nullptr, please check", GetLinkDescInfo().c_str()));
     }
 
-    SocketStatus socketStatus = socket->GetAsyncStatus();
+    SocketStatus socketStatus = isHost_ ? socket->GetStatus() : socket->GetAsyncStatus();
     if (socketStatus == SocketStatus::OK) {
         baseStatus = TransportStatus::SOCKET_OK;
         return true;

@@ -634,6 +634,12 @@ std::string CcuTransport::Describe() const
     return description;
 }
 
+HcclResult CcuTransport::Describe(std::string &dfxMsg)
+{
+    CHK_RET(ccuConnection_->Describe(dfxMsg));
+    return HcclResult::HCCL_SUCCESS;
+}
+
 void CcuTransport::Clean()
 {
     transStatus_ = TransStatus::INIT;
