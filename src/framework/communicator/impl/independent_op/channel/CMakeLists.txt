@@ -17,4 +17,10 @@ if(TARGET hcomm)
     )
 endif()
 
+if(TARGET ccl_kernel)
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()
+
 add_subdirectory(device)

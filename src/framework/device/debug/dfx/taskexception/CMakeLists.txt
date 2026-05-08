@@ -15,4 +15,7 @@ if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         ${src_list}
     )
+    target_include_directories(ccl_kernel PRIVATE
+        ${HCCL_BASE_DIR}/framework/device/inc
+    )
 endif()

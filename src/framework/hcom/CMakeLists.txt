@@ -26,4 +26,7 @@ if(TARGET ccl_kernel)
     ${src_list}
     ${CMAKE_CURRENT_SOURCE_DIR}/hcom_device_profiling.cc
     )
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
 endif()

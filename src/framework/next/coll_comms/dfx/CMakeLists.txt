@@ -27,6 +27,9 @@ if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         ${device_src_list}
     )
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
 endif()
 
 add_subdirectory(profiling)
