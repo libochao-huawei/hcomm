@@ -42,6 +42,9 @@ set(src_to_test_list
     host/ut_host_cpu_roce_channel.cc
     host/ut_host_rdma_connection.cc
     host/ut_server_socket_manager.cc
+    host/ut_cpu_urma_endpoint.cc
+    host/ut_host_cpu_urma_channel.cc
+    host/ut_host_ub_connection.cc
     comms/endpoints/ut_ub_mem_endpoint.cc
     comms/endpoints/reged_mems/ut_roce_mem_test.cc
     comms/endpoints/reged_mems/ut_urma_mem_test.cc
@@ -64,6 +67,7 @@ set(src_to_test_list
     coll_comms/communicator/ns_recovery/ut_hccl_task_abort_handler.cc
     coll_comms/communicator/aicpu/ut_coll_comm_aicpu.cc
     coll_comms/communicator/ns_recovery/ut_ns_recovery.cc
+    comms/adpt/ut_hcomm_adapter_hccp_test.cc
 )
 
 add_executable(hccl_utest_test_next_resource ${src_to_test_list})

@@ -131,8 +131,6 @@ private:
     std::vector<RmaConnLite *> connVec;
 
     std::function<void(u32 streamId, u32 taskId, const TaskParam &taskParam)> callback_{nullptr};
-    
-    std::function<HcclResult(u32, u32, const TaskParam&, u64)> newCallback_{nullptr};
 
     void ProfilingProcess(void *src, void *dst, u64 size, const StreamLite &stream, DmaOp dmaOp,
                             u32 taskId);
