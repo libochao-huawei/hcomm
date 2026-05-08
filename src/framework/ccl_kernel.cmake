@@ -49,7 +49,6 @@ target_include_directories(ccl_kernel PRIVATE
     ${HCOMM_DIR}/externel_depends/tsch/
     ${HCOMM_DIR}/src/algorithm/pub_inc
 
-    ${hccl_include_list}
     ${LEGACY_INCLUDE_LIST}
     ${RDMA_CORE_INCLUDE_DIR}
     ${THIRD_PARTY_NLOHMANN_PATH}

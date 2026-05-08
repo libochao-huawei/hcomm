@@ -8,14 +8,14 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 
-if (DEVICE_MODE)
+if(${PRODUCT_SIDE} STREQUAL "device")
     add_subdirectory(stub_tsd)
     add_subdirectory(netco)
 endif()
 add_subdirectory(rdma_agent)
 add_subdirectory(rdma_service)
 
-if (NOT DEVICE_MODE)
+if(${PRODUCT_SIDE} STREQUAL "host")
     return()
 endif()
 
@@ -78,32 +78,13 @@ target_link_libraries(hccp_service.bin PRIVATE
     c_sec
     unified_dlog
     ra_adp
-    rs
+    rs_device
     mmpa
     tsd_eventclient
     -ldl
 )
 
-install(TARGETS  hccp_service.bin
+install(TARGETS hccp_service.bin
     RUNTIME DESTINATION ${INSTALL_RUNTIME_DIR} ${INSTALL_OPTIONAL}
     COMPONENT hcomm
 )
-
-add_dependencies(hccp_service.bin rs)
-if(DEVICE_MODE)
-    set(HCCP_TAR_DIR ${HCCL_BASE_DIR}/../build_device/tar_pkg/)
-    set(GENERATE_HASH_SCRIPT ${HCCL_BASE_DIR}/../scripts/sign/generate_hash.sh)
-    add_custom_command(
-        TARGET hccp_service.bin
-        POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${HCCP_TAR_DIR}
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:rs> ${HCCP_TAR_DIR}
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ra_adp> ${HCCP_TAR_DIR}
-		COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:net_co> ${HCCP_TAR_DIR}
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:hccp_service.bin> ${HCCP_TAR_DIR}
-        COMMAND ${CMAKE_COMMAND} -E copy ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/lib/lib* ${HCCP_TAR_DIR}
-        COMMAND chmod 750 ${HCCP_TAR_DIR}/lib*
-        COMMAND chmod 750 ${HCCP_TAR_DIR}/hccp_service.bin
-        COMMENT "Copying rs ra_adp net_co hccp_service.bin ascend_kms tls_adp to ${HCCP_TAR_DIR}"
-    )
-endif()
