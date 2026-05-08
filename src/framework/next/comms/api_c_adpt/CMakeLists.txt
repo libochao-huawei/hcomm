@@ -13,6 +13,8 @@ set(src_list
     hccl_comm_socket_c_adpt.cc
 )
  
-target_sources(hcomm PRIVATE
-    ${src_list}
-)
+if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${src_list}
+    )
+endif()
