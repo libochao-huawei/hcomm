@@ -117,6 +117,8 @@
 #include "rts_cnt_notify.h"
 #include "rts_1ton_cnt_notify.h"
 #include "ipc_local_notify.h"
+#include "host_ub_connection.h"
+#include "urma_api.h"
 
 namespace Hccl {
 
@@ -143,8 +145,8 @@ RdmaHandleManager &RdmaHandleManager::GetInstance()
     static RdmaHandleManager rdmaHandleManager;
     return rdmaHandleManager;
 }
-
-JfcHandle RdmaHandleManager::GetJfcHandle(RdmaHandle rdmaHandle, HrtUbJfcMode jfcMode)
+ 
+JfcHandle RdmaHandleManager::GetJfcHandle(RdmaHandle rdmaHandle, CqCreateInfo& cqInfo, HrtUbJfcMode jfcMode)
 {
     return 0x12345678;
 }
@@ -1185,6 +1187,10 @@ HcclResult UbMemTransport::DeInit() const
 HcclResult UbMemTransport::Describe(std::string &dfxMsg)
 {
     dfxMsg = "UbMemTransportTest";
+}
+
+HcclResult UbMemTransport::GetRemoteSeg(const void* addr, u64 len, u64 *seg)
+{
     return HCCL_SUCCESS;
 }
 
@@ -2544,4 +2550,60 @@ HcclResult HcclGetCclBuffer(
 HcclResult HcclGetRankGraphV2(HcclComm *comm, void **rankGraph)
 {
     return HCCL_SUCCESS;
+}
+
+namespace Hccl {
+
+std::pair<uint32_t, uint32_t> RdmaHandleManager::GetDieAndFuncId(RdmaHandle rdmaHandle)
+{
+    return {0, 0};
+}
+
+HcclResult TpManager::GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo)
+{
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult TpManager::ReleaseTpInfo(const RaUbGetTpInfoParam &param, const TpInfo &tpInfo)
+{
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HrtRaUbJettyCreatedOutParam HrtRaUbCreateJetty(RdmaHandle handle, const HrtRaUbCreateJettyParam &in)
+{
+    return HrtRaUbJettyCreatedOutParam{};
+}
+
+void HrtRaUbDestroyJetty(JettyHandle jettyHandle)
+{
+}
+
+HrtRaUbJettyImportedOutParam RaUbImportJetty(RdmaHandle handle, u8 *key, u32 keyLen, u32 tokenValue)
+{
+    return HrtRaUbJettyImportedOutParam{};
+}
+
+void HrtRaUbUnimportJetty(RdmaHandle handle, TargetJettyHandle targetJettyHandle)
+{
+}
+
+HrtRaUbJettyImportedOutParam RaUbTpImportJetty(RdmaHandle handle, u8 *key, u32 keyLen,
+    u32 tokenValue, const JettyImportCfg &jettyImportCfg)
+{
+    return HrtRaUbJettyImportedOutParam{};
+}
+
+void TpManager::SetIsHost()
+{
+}
+
+ReqHandleResult HrtRaGetAsyncReqResult(RequestHandle &reqHandle)
+{
+    return ReqHandleResult::COMPLETED;
+}
+
+HrtRaUbSendWrRespParam HrtRaUbPostSend(JettyHandle jettyHandle, HrtRaUbSendWrReqParam &in)
+{
+    return HrtRaUbSendWrRespParam{};
+}
 }
