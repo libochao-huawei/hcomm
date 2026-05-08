@@ -17,6 +17,7 @@
 #include "op_type.h"
 #include "task_exception_handler.h"
 #include "ccuTaskException.h"
+#include "hccl_types.h"
 
 namespace hcomm {
 
@@ -230,9 +231,18 @@ void TaskExceptionHost::GetAicpuCqeErrRemoteLocalIdByRankId(hccl::CollComm* coll
         return;
     }
     Hccl::HcclCommunicator * commV2 = static_cast<Hccl::HcclCommunicator *>(collComm->GetCommunicatorV2());
-    CHK_PTR_NULL(commV2);
+    if (commV2 == nullptr) {
+        HCCL_ERROR("[GetAicpuCqeErrRemoteLocalIdByRankId]commV2 is nullptr, rankId[%u]", rankid);
+        RemoteLocalId = INVALID_VALUE_RANKID;
+        return;
+    }
     void *rankGraph = nullptr;
-    commV2->GetRankGraphV2(rankGraph);
+    HcclResult ret =commV2->GetRankGraphV2(rankGraph);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[GetAicpuCqeErrRemoteLocalIdByRankId]GetRankGraphV2 failed, rankId[%u], ret[%d]", rankid, ret);
+        RemoteLocalId = INVALID_VALUE_RANKID;
+        return;
+    }
     Hccl::RankGraph *rankGraphv2 = static_cast<Hccl::RankGraph *>(rankGraph);
     u32 LocalId = rankGraphv2->GetLocalId(rankid);
     RemoteLocalId = LocalId;
@@ -247,17 +257,21 @@ void TaskExceptionHost::GetAicpuCqeErrNetInstanceByRankId(hccl::CollComm* collCo
         netInstanceId = "";
         return;
     }
-    auto commV2 = collComm->GetCommunicatorV2();
-
+    
+    Hccl::HcclCommunicator * commV2 = static_cast<Hccl::HcclCommunicator *>(collComm->GetCommunicatorV2());
     if (commV2 == nullptr) {
         HCCL_ERROR("[GetAicpuCqeErrNetInstanceByRankId]commV2 is nullptr, rankId[%u]", rankid);
         netInstanceId = "";
         return;
     }
-    Hccl::HcclCommunicator *hcclCommunicator = static_cast<Hccl::HcclCommunicator *>(commV2);
-    void **rankGraph = nullptr;
-    hcclCommunicator->GetRankGraphV2(*rankGraph);
-    Hccl::RankGraph *rankGraphv2 = static_cast<Hccl::RankGraph *>(*rankGraph);
+    void *rankGraph = nullptr;
+    HcclResult ret = commV2->GetRankGraphV2(rankGraph);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[GetAicpuCqeErrNetInstanceByRankId]GetRankGraphV2 failed, rankId[%u], ret[%d]", rankid, ret);
+        netInstanceId = "";
+        return;
+    }
+    Hccl::RankGraph *rankGraphv2 = static_cast<Hccl::RankGraph *>(rankGraph);
     const Hccl::NetInstance *netInstance = rankGraphv2->GetNetInstanceByRankId(0, rankid);
     if (netInstance == nullptr) {
         HCCL_ERROR("[GetAicpuCqeErrNetInstanceByRankId]netInstance is nullptr, rankId[%u]", rankid);
