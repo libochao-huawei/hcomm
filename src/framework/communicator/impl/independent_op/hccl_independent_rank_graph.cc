@@ -25,7 +25,6 @@ using namespace hccl;
 
 #ifndef CCL_KERNEL_AICPU
 
-static RankDesc g_cachedRankDesc;
 HcclResult HcclGetRankGraph(HcclComm comm, GraphType type, void **graph, uint32_t *len)
 {
     CHK_PTR_NULL(comm);
@@ -389,12 +388,10 @@ HcclResult HcclGetRankDescList(HcclComm comm, RankDesc **descList, uint32_t *des
         RankGraph* rankGraph = collComm->GetRankGraph();
         CHK_PTR_NULL(rankGraph);
 
-        // 默认初始化
-        (void)memset_s(&g_cachedRankDesc, sizeof(g_cachedRankDesc), 0, sizeof(g_cachedRankDesc));
+        auto &desc = hcclCommObj->GetCachedRankDesc();
 
-        // localId / superPodId: CollComm::GetRankGraph 返回 hccl::RankGraph*（基类），
-        // Hccl::RankGraph 的 GetPeer/GetNetInstanceByRankId 接口需通过扩展 CollComm 获得
-        // TODO: CollComm 新增 Hccl::RankGraph* 访问方法
+        // 默认初始化
+        (void)memset_s(&desc, sizeof(desc), 0, sizeof(desc));
 
         // netLayers
         uint32_t *netLayers = nullptr;
@@ -403,22 +400,22 @@ HcclResult HcclGetRankDescList(HcclComm comm, RankDesc **descList, uint32_t *des
         if (ret != HCCL_SUCCESS) {
             return ret;
         }
-        g_cachedRankDesc.netLayerNum = 0;
+        desc.netLayerNum = 0;
         for (uint32_t i = 0; i < netLayerNum && i < RANK_DESC_MAX_NET_LAYER; i++) {
-            g_cachedRankDesc.netLayers[i] = netLayers[i];
-            g_cachedRankDesc.netLayerNum++;
+            desc.netLayers[i] = netLayers[i];
+            desc.netLayerNum++;
         }
 
         // ocsPlaneId/ocsPlaneNum 通过 RankGraph 链路获取
         // serverIdx/elecGroupId 后续提交补充
-        g_cachedRankDesc.serverIdx = 0;
-        g_cachedRankDesc.elecGroupId = 0;
-        g_cachedRankDesc.ocsPlaneId = rankGraph->GetOcsPlaneId();
-        g_cachedRankDesc.ocsPlaneNum = rankGraph->GetOcsPlaneNum();
+        desc.serverIdx = 0;
+        desc.elecGroupId = 0;
+        desc.ocsPlaneId = rankGraph->GetOcsPlaneId();
+        desc.ocsPlaneNum = rankGraph->GetOcsPlaneNum();
 
-        *descList = &g_cachedRankDesc;
+        *descList = &desc;
         *descNum = 1;
-        HCCL_RUN_INFO("[%s] success, netLayerNum[%u]", __func__, g_cachedRankDesc.netLayerNum);
+        HCCL_RUN_INFO("[%s] success, netLayerNum[%u]", __func__, desc.netLayerNum);
         return HCCL_SUCCESS;
     }());
 
