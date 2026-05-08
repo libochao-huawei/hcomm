@@ -53,6 +53,7 @@ protected:
         std::string caseName = "analysis_result_" + std::string(test_info->test_case_name()) + "_" + std::string(test_info->name());
         Checker::SetDumpFileName(caseName);
         MOCKER(ExecuteKernelLaunch).stubs().will(returnValue(HCCL_SUCCESS));
+        MOCKER(ClearAivSyncBuf).stubs().will(returnValue(HCCL_SUCCESS));
     }
 
     virtual void TearDown()
@@ -254,6 +255,7 @@ TEST_F(AllReduceTest, allreduce_executor_test_loop)
 {
     MOCKER(ClearAivSyncBuf).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(ExecuteKernelLaunch).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(ClearAivSyncBuf).stubs().will(returnValue(HCCL_SUCCESS));
     RankTable_For_LLT gen;
     TopoMeta topoMeta;
     gen.GenTopoMeta(topoMeta, 1, 1, 8);
@@ -1305,6 +1307,7 @@ TEST_F(AllReduceTest, allreduce_aiv_a2_AllReduceMeshAivExecutor)
 {
     MOCKER(ClearAivSyncBuf).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(ExecuteKernelLaunch).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(ClearAivSyncBuf).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(GetExternalInputHcclAivMode).stubs().will(returnValue(true));
     RankTable_For_LLT gen;
     TopoMeta topoMeta;
@@ -1331,6 +1334,7 @@ TEST_F(AllReduceTest, allreduce_aiv_a3_graph_AllReduceMeshAivSmallCountExecutor)
 {
     MOCKER(ClearAivSyncBuf).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(ExecuteKernelLaunch).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(ClearAivSyncBuf).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(GetExternalInputHcclAivMode).stubs().will(returnValue(true));
     RankTable_For_LLT gen;
     TopoMeta topoMeta;
@@ -1725,6 +1729,7 @@ TEST_F(AllReduceTest, allreduce_aiv_determinstic_small_test)
     setenv("HCCL_OP_EXPANSION_MODE", "AIV", 1);
     MOCKER(ClearAivSyncBuf).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(ExecuteKernelLaunch).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(ClearAivSyncBuf).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(GetExternalInputHcclAivMode).stubs().will(returnValue(true));
 
     CheckerOpParam checkerOpParam;
@@ -1754,6 +1759,7 @@ TEST_F(AllReduceTest, allreduce_aiv_determinstic_test)
     setenv("HCCL_OP_EXPANSION_MODE", "AIV", 1);
     MOCKER(ClearAivSyncBuf).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(ExecuteKernelLaunch).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(ClearAivSyncBuf).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(GetExternalInputHcclAivMode).stubs().will(returnValue(true));
 
     CheckerOpParam checkerOpParam;
@@ -1783,6 +1789,7 @@ TEST_F(AllReduceTest, allreduce_aiv_determinstic_mid_test)
     setenv("HCCL_OP_EXPANSION_MODE", "AIV", 1);
     MOCKER(ClearAivSyncBuf).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(ExecuteKernelLaunch).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(ClearAivSyncBuf).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(GetExternalInputHcclAivMode).stubs().will(returnValue(true));
 
     CheckerOpParam checkerOpParam;
