@@ -166,8 +166,7 @@ HcclResult TopoinfoRanktablePartition::TransformRankInfo(const RankTable_t &clus
     perRankJson[PROP_SERVER_ID] = rankInfo.serverId;
     perRankJson[PROP_SUPER_POD_ID] = rankInfo.superPodId;
     perRankJson[PROP_SUPER_DEVICE_ID] = std::to_string(rankInfo.superDeviceId);
-    if (clusterInfo.nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE && rankInfo.deviceInfo.deviceIp.size() != 0 &&
-        !rankInfo.deviceInfo.deviceIp[0].IsInvalid()) {
+    if (rankInfo.deviceInfo.deviceIp.size() != 0 && !rankInfo.deviceInfo.deviceIp[0].IsInvalid()) {
         perRankJson[PROP_DEV_IP] = std::string(rankInfo.deviceInfo.deviceIp[0].GetReadableIP());
     }
     if (clusterInfo.nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE &&

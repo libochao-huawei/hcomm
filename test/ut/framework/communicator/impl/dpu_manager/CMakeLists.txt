@@ -9,31 +9,25 @@
 # -----------------------------------------------------------------------------------------------------------
 set(src_to_test_list
     main.cc
-    # ut_hccl_independent_rank_graph.cc
-    ut_hccl_independent_op_engine.cc
-    ut_hccl_independent_op_channel.cc
-    ut_rank_graph_v1.cc
-    ${HCCL_CODE_ROOT}/test/ut/framework/communicator/hccl_api_base_test.cc
-    ut_hccl_independent_op_mem.cc
-    ut_thread_manager.cc
+    ut_hccl_dpu_manager.cc
 )
 
-add_executable(hccl_utest_framework_independent_op ${src_to_test_list})
+add_executable(hccl_utest_dpu_manager ${src_to_test_list})
 
-#头文件搜索路径
-target_include_directories(hccl_utest_framework_independent_op PRIVATE
+# 头文件搜索路径
+target_include_directories(hccl_utest_dpu_manager PRIVATE
     ${UT_COMMON_INCLUDE_LIST}
     ${HCCL_CODE_ROOT}/test/ut/framework/communicator
 )
 
-target_compile_definitions(hccl_utest_framework_independent_op PRIVATE
+target_compile_definitions(hccl_utest_dpu_manager PRIVATE
     _GLIBCXX_USE_CXX11_ABI=0
     google=ascend_private
     -DOPEN_HCCL_TEST
     OPEN_BUILD_PROJECT
 )
 
-target_compile_options(hccl_utest_framework_independent_op PRIVATE
+target_compile_options(hccl_utest_dpu_manager PRIVATE
     -U_FORTIFY_SOURCE
     -fno-var-tracking-assignments
     -Os
@@ -41,10 +35,11 @@ target_compile_options(hccl_utest_framework_independent_op PRIVATE
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
 )
 
-target_link_directories(hccl_utest_framework_independent_op PRIVATE
+target_link_directories(hccl_utest_dpu_manager PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/lib64
 )
-target_link_libraries(hccl_utest_framework_independent_op PRIVATE
+
+target_link_libraries(hccl_utest_dpu_manager PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -pthread
@@ -55,7 +50,8 @@ target_link_libraries(hccl_utest_framework_independent_op PRIVATE
     -lrt
     -ldl
 )
-add_dependencies(hccl_utest_framework_independent_op hccl_llt)
+
+add_dependencies(hccl_utest_dpu_manager hccl_llt)
 
 enable_testing()
-add_test(NAME hccl_utest_framework_independent_op COMMAND hccl_utest_framework_independent_op)
+add_test(NAME hccl_utest_dpu_manager COMMAND hccl_utest_dpu_manager)
