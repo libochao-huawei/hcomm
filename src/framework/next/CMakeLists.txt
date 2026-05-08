@@ -12,6 +12,8 @@ add_subdirectory(comms)
 add_subdirectory(common)
 # add_subdirectory(comm_primitives)
 
-target_include_directories(hcomm PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/common
-)
+if(TARGET hcomm)
+    target_include_directories(hcomm PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/common
+    )
+endif()

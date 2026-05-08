@@ -8,24 +8,13 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 
-if(BUILD_OPEN_PROJECT)
-    message(STATUS "open CMAKE_CURRENT_SOURCE_DIR = ${CMAKE_CURRENT_SOURCE_DIR}")
-    set(HCCL_BASE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../)
-    set(HCCL_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../include/hccl)
-    message(STATUS "open HCCL_INC_DIR = ${HCCL_INC_DIR}")
-    set(HCCL_OPEN_CODE_BASE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../)
-    set(HCCL_THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../../../)
+if(${PRODUCT_SIDE} STREQUAL "host")
+    # 定义 hccl_plf 库，在 host 侧使用
+    include(hccl_plf.cmake)
 else()
-    message(STATUS "close TOP_DIR = ${TOP_DIR}")
-    set(HCCL_BASE_DIR ${TOP_DIR}/hcomm/src/)
-    set(HCCL_OPEN_CODE_BASE_DIR ${TOP_DIR}/hcomm/src/)
-    set(HCCL_THIRD_PARTY_DIR ${TOP_DIR})
+    # 定义 ccl_kernel_plf 库，在 device 侧使用
+    include(ccl_kernel_plf.cmake)
 endif()
-
-# 定义 hccl_plf 库，在 host 侧使用
-include(hccl_plf.cmake)
-# 定义 ccl_kernel_plf 库，在 device 侧使用
-include(ccl_kernel_plf.cmake)
 
 add_subdirectory(comm_primitive)
 add_subdirectory(common)
