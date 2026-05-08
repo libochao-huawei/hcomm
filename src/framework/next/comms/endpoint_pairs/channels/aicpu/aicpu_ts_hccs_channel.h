@@ -44,8 +44,6 @@ public:
     HcclResult Clean() override;
     HcclResult Resume() override;
 
-    u64 GetMyId() {return myId_;};
-
     // for launch channel kernel data
     HcclResult Serialize(std::shared_ptr<hccl::DeviceMem> &out) override;
     HcommChannelKind GetChannelKind() const override;
@@ -61,30 +59,31 @@ public:
 private:
     HcclResult ParseInputParam();
     HcclResult BuildConnection();
+    void DestroyConnection();
     HcclResult GetFirstIpByPhyId(u32 devicePhyId, u32 superDevId, hccl::HcclIpAddress &ip);
     HcclResult SetMachinePara(hccl::MachinePara &machinePara);
     void SetTransportParam(hccl::TransportPara &para);
     HcclResult TransportInit();
+    void TransportDeInit();
     HcclResult BuildHcclChannelHccsRes(HcclChannelHccsRes &channelHccsRes);
 
 private:
-    u64 myId_;
     // --------------------- 入参 ---------------------
     EndpointHandle                                              endpointHandle_{nullptr};
     HcommChannelDesc                                            channelDesc_;
 
     // --------------------- 转换参数 ---------------------
-    HcclNetDevCtx                                               netDevCtx_{nullptr};
     EndpointDesc                                                localEp_{};
     EndpointDesc                                                remoteEp_{};
     hccl::HcclIpAddress                                         localIp_;
     hccl::HcclIpAddress                                         remoteIp_;
     uint32_t                                                    notifyNum_{0};
-    AicpuTsHccsEndPoint                                         *localEpPtr_{nullptr};
+    AicpuTsHccsEndpoint                                         *localEpPtr_{nullptr};
     uint32_t                                                    serverPort_{AICPU_CHANNEL_DEFAULT_PORT};
     uint32_t                                                    socketTagIdx_;
+    bool                                                        serverInited_{false};
     // --------------------- 具体成员 ---------------------
-    std::shared_ptr<hccl::HcclSocket>                           socket_{};
+    std::shared_ptr<hccl::HcclSocket>                           socket_{nullptr};
     std::string                                                 socketTag_{};
     bool                                                        isSocketServer_{false};
     // for create TransportMem
