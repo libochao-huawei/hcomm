@@ -38,6 +38,14 @@ HcclResult StubHrtGetDevice(s32 *deviceLogicId)
     return HCCL_SUCCESS;
 }
 
+HcclResult StubHrtGetDeviceRefresh(s32 *deviceLogicId)
+{
+    if (deviceLogicId != nullptr) {
+        *deviceLogicId = deviceCurLogicId_;
+    }
+    return HCCL_SUCCESS;
+}
+
 HcclResult StubHrtGetDevicePhyIdByIndex(u32 deviceLogicId, u32 &devicePhyId, bool isRefresh)
 {
     devicePhyId = deviceLogicId;
@@ -100,6 +108,7 @@ protected:
     virtual void SetUp()
     {
         MOCKER(hrtGetDevice).stubs().with(any()).will(invoke(StubHrtGetDevice));
+        MOCKER(hrtGetDeviceRefresh).stubs().with(any()).will(invoke(StubHrtGetDeviceRefresh));
         MOCKER(hrtGetDevicePhyIdByIndex).stubs().with(any(), outBound(0U)).will(invoke(StubHrtGetDevicePhyIdByIndex));
         MOCKER(hrtGetDeviceIndexByPhyId).stubs().with(any(), outBound(0U)).will(invoke(StubHrtGetDeviceIndexByPhyId));
         MOCKER(HcclNetOpenDev).stubs().will(invoke(StubHcclNetOpenDev));
