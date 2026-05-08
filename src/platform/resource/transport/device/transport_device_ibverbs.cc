@@ -1343,10 +1343,8 @@ HcclResult TransportDeviceIbverbs::ReadAsync(
 }
 
 HcclResult TransportDeviceIbverbs::BatchWriteCommon(
-    std::vector<struct Transport::Buffer> &remoteBufs,
-    std::vector<struct Transport::Buffer> &localBufs,
-    Stream &stream,
-    WqeType wqeType)
+    struct Transport::Buffer *remoteBufs, struct Transport::Buffer *localBufs,
+    uint32_t bufNum, Stream &stream, WqeType wqeType)
 {
     auto totalStartTime = std::chrono::steady_clock::now();
     auto stageStartTime = std::chrono::steady_clock::now();
@@ -1359,13 +1357,8 @@ HcclResult TransportDeviceIbverbs::BatchWriteCommon(
     HCCL_ERROR("[BatchWriteCommon] stage[SetDispatcherCtx] cost[%ld]us", setCtxTime);
 
     stageStartTime = std::chrono::steady_clock::now();
-    CHK_PRT_RET(remoteBufs.size() != localBufs.size(),
-        HCCL_ERROR("[BatchWriteCommon]remoteBufs size[%u] != localBufs size[%u]",
-            remoteBufs.size(), localBufs.size()), HCCL_E_PARA);
-
-    if (remoteBufs.empty()) {
-        return HCCL_SUCCESS;
-    }
+    CHK_PRT_RET(bufNum == 0,
+        HCCL_ERROR("[BatchWriteCommon] bufNum is 0"), HCCL_E_PARA);
 
     std::vector<WrInformation> wrInfoVec;
     struct WrAuxInfo aux = {0};
@@ -1375,7 +1368,7 @@ HcclResult TransportDeviceIbverbs::BatchWriteCommon(
     HCCL_ERROR("[BatchWriteCommon] stage[ParamCheck] cost[%ld]us", paramCheckTime);
 
     stageStartTime = std::chrono::steady_clock::now();
-    for (size_t i = 0; i < remoteBufs.size(); i++) {
+    for (uint32_t i = 0; i < bufNum; i++) {
         HCCL_DEBUG("[BatchWriteCommon] index[%u] localAddr[%p] remoteAddr[%p] len[%llu]",
             i, localBufs[i].addr, remoteBufs[i].addr, remoteBufs[i].size);
 
@@ -1397,7 +1390,7 @@ HcclResult TransportDeviceIbverbs::BatchWriteCommon(
     }
     auto buildWrInfoTime = std::chrono::duration_cast<std::chrono::microseconds>(
         std::chrono::steady_clock::now() - stageStartTime).count();
-    HCCL_ERROR("[BatchWriteCommon] stage[BuildWrInfo] cost[%ld]us, bufCount[%zu]", buildWrInfoTime, remoteBufs.size());
+    HCCL_ERROR("[BatchWriteCommon] stage[BuildWrInfo] cost[%ld]us, bufCount[%u]", buildWrInfoTime, bufNum);
 
     stageStartTime = std::chrono::steady_clock::now();
     u32 maxLength = 0;
@@ -1434,19 +1427,17 @@ HcclResult TransportDeviceIbverbs::BatchWriteCommon(
 }
 
 HcclResult TransportDeviceIbverbs::BatchWriteAsync(
-    std::vector<struct Transport::Buffer> &remoteBufs,
-    std::vector<struct Transport::Buffer> &localBufs,
-    Stream &stream)
+    struct Transport::Buffer *remoteBufs, struct Transport::Buffer *localBufs,
+    uint32_t bufNum, Stream &stream)
 {
-    return BatchWriteCommon(remoteBufs, localBufs, stream, WqeType::WQE_TYPE_DATA);
+    return BatchWriteCommon(remoteBufs, localBufs, bufNum, stream, WqeType::WQE_TYPE_DATA);
 }
 
 HcclResult TransportDeviceIbverbs::BatchReadAsync(
-    std::vector<struct Transport::Buffer> &localBufs,
-    std::vector<struct Transport::Buffer> &remoteBufs,
-    Stream &stream)
+    struct Transport::Buffer *localBufs, struct Transport::Buffer *remoteBufs,
+    uint32_t bufNum, Stream &stream)
 {
-    return BatchWriteCommon(remoteBufs, localBufs, stream, WqeType::WQE_TYPE_READ_DATA);
+    return BatchWriteCommon(remoteBufs, localBufs, bufNum, stream, WqeType::WQE_TYPE_READ_DATA);
 }
 
 HcclResult TransportDeviceIbverbs::WriteReduceAsync(struct Transport::Buffer &remoteBuf,

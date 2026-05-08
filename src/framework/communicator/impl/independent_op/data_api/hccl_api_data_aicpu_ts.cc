@@ -646,21 +646,32 @@ int32_t HcommBatchTransferOnThread(ThreadHandle thread, ChannelHandle channel,
         return HCCL_E_NOT_SUPPORT;
     }
 
-    std::vector<hccl::Transport::Buffer> writeRemoteBufs;
-    std::vector<hccl::Transport::Buffer> writeLocalBufs;
-    std::vector<hccl::Transport::Buffer> readLocalBufs;
-    std::vector<hccl::Transport::Buffer> readRemoteBufs;
+    // 使用栈上固定数组避免 vector 动态分配/析构开销
+    constexpr uint32_t kMaxBatchSizeOnStack = 1024;
+    hccl::Transport::Buffer writeRemoteBufs[kMaxBatchSizeOnStack];
+    hccl::Transport::Buffer writeLocalBufs[kMaxBatchSizeOnStack];
+    hccl::Transport::Buffer readLocalBufs[kMaxBatchSizeOnStack];
+    hccl::Transport::Buffer readRemoteBufs[kMaxBatchSizeOnStack];
+    uint32_t writeNum = 0;
+    uint32_t readNum = 0;
+
     for (uint32_t i = 0; i < transferDescNum; i++) {
         if (transferDescs[i].transType == HCOMM_TRANSFER_TYPE_WRITE) {
             CHK_PTR_NULL(transferDescs[i].write.dst);
             CHK_PTR_NULL(transferDescs[i].write.src);
-            writeRemoteBufs.emplace_back(transferDescs[i].write.dst, transferDescs[i].write.len);
-            writeLocalBufs.emplace_back(transferDescs[i].write.src, transferDescs[i].write.len);
+            if (writeNum < kMaxBatchSizeOnStack) {
+                writeRemoteBufs[writeNum] = hccl::Transport::Buffer(transferDescs[i].write.dst, transferDescs[i].write.len);
+                writeLocalBufs[writeNum] = hccl::Transport::Buffer(transferDescs[i].write.src, transferDescs[i].write.len);
+                writeNum++;
+            }
         } else if (transferDescs[i].transType == HCOMM_TRANSFER_TYPE_READ) {
             CHK_PTR_NULL(transferDescs[i].read.dst);
             CHK_PTR_NULL(transferDescs[i].read.src);
-            readLocalBufs.emplace_back(transferDescs[i].read.dst, transferDescs[i].read.len);
-            readRemoteBufs.emplace_back(transferDescs[i].read.src, transferDescs[i].read.len);
+            if (readNum < kMaxBatchSizeOnStack) {
+                readLocalBufs[readNum] = hccl::Transport::Buffer(transferDescs[i].read.dst, transferDescs[i].read.len);
+                readRemoteBufs[readNum] = hccl::Transport::Buffer(transferDescs[i].read.src, transferDescs[i].read.len);
+                readNum++;
+            }
         } else {
             HCCL_ERROR("[%s] Invalid transType[%d] in desc[%u].",
                 __func__, transferDescs[i].transType, i);
@@ -674,22 +685,22 @@ int32_t HcommBatchTransferOnThread(ThreadHandle thread, ChannelHandle channel,
     CHK_PTR_NULL(transport);
 
     HcclResult ret = HCCL_SUCCESS;
-    if (!writeRemoteBufs.empty()) {
-        ret = transport->BatchWriteAsync(writeRemoteBufs, writeLocalBufs, *stream);
+    if (writeNum > 0) {
+        ret = transport->BatchWriteAsync(writeRemoteBufs, writeLocalBufs, writeNum, *stream);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[%s] BatchWriteAsync failed. writeNum[%u].",
-                __func__, writeRemoteBufs.size()), ret);
+                __func__, writeNum), ret);
     }
 
-    if (!readRemoteBufs.empty()) {
-        ret = transport->BatchReadAsync(readLocalBufs, readRemoteBufs, *stream);
+    if (readNum > 0) {
+        ret = transport->BatchReadAsync(readLocalBufs, readRemoteBufs, readNum, *stream);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[%s] BatchReadAsync failed. readNum[%u].",
-                __func__, readRemoteBufs.size()), ret);
+                __func__, readNum), ret);
     }
 
     HCCL_INFO("[%s] SUCCESS. writeNum[%u], readNum[%u].",
-        __func__, writeRemoteBufs.size(), readRemoteBufs.size());
+        __func__, writeNum, readNum);
     return HCCL_SUCCESS;
 }
 

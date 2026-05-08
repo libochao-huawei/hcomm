@@ -79,10 +79,10 @@ public:
     HcclResult ReadAsync(struct Transport::Buffer &localBuf, struct Transport::Buffer &remoteBuf,
         Stream &stream) override;
 
-    HcclResult BatchWriteAsync(std::vector<struct Transport::Buffer> &remoteBufs,
-        std::vector<struct Transport::Buffer> &localBufs, Stream &stream) override;
-    HcclResult BatchReadAsync(std::vector<struct Transport::Buffer> &localBufs,
-        std::vector<struct Transport::Buffer> &remoteBufs, Stream &stream) override;
+    HcclResult BatchWriteAsync(struct Transport::Buffer *remoteBufs, struct Transport::Buffer *localBufs,
+        uint32_t bufNum, Stream &stream) override;
+    HcclResult BatchReadAsync(struct Transport::Buffer *localBufs, struct Transport::Buffer *remoteBufs,
+        uint32_t bufNum, Stream &stream) override;
 
     HcclResult PostReady(Stream &stream);
     HcclResult WaitReady(Stream &stream);
@@ -123,8 +123,8 @@ public:
         WqeType wqeType, WrAuxInfo &aux, std::vector<WrInformation> &wrInfoVec, u32 txSendDataTimes);
     HcclResult WriteCommon(const void *remoteAddr, const void *localAddr, u64 length, Stream &stream,
         WqeType wqeType, struct WrAuxInfo &aux);
-    HcclResult BatchWriteCommon(std::vector<struct Transport::Buffer> &remoteBufs,
-        std::vector<struct Transport::Buffer> &localBufs, Stream &stream, WqeType wqeType);
+    HcclResult BatchWriteCommon(struct Transport::Buffer *remoteBufs, struct Transport::Buffer *localBufs,
+        uint32_t bufNum, Stream &stream, WqeType wqeType);
     bool UseMultiQp();
     HcclResult TxSendDataAndNotifyWithMultiQP(
         std::vector<WrInformation> &wqeInfoVec, u32 actualMultiQpNum, Stream &stream, bool useOneDoorbell);
