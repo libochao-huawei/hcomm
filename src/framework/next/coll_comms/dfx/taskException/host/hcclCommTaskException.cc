@@ -574,7 +574,7 @@ void TaskExceptionHost::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo)
 
             ReportErrorMsg(exceptionTaskInfo, groupRankContent, errorMessage, exceptionInfo);
 
-            if(errorMessage.taskType == Hccl::TaskParamType::TASK_UB && errorMessage.ubCqeStatus != 0) {
+            if (errorMessage.taskType == Hccl::TaskParamType::TASK_UB && errorMessage.ubCqeStatus != 0) {
                 GetAicpuCqeErrInfo(exceptionInfo, errorMessage, exceptionTaskInfo);
             }
             
