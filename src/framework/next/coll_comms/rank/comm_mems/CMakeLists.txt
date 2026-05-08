@@ -11,6 +11,8 @@ set(src_list
 comm_mems.cc
 )
 
-target_sources(hcomm PRIVATE
-    ${src_list}
-)
+if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${src_list}
+    )
+endif()

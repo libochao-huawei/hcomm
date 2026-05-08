@@ -11,6 +11,8 @@ set(src_list
     gradient_segment.cc
 )
 
-target_sources(hcomm PRIVATE
-    ${src_list}
-)
+if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${src_list}
+    )
+endif()

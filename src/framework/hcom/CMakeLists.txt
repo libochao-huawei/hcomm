@@ -11,15 +11,17 @@ set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/hcom_common.cc
 )
 
-target_sources(hcomm PRIVATE
-    ${src_list}
-    ${CMAKE_CURRENT_SOURCE_DIR}/hcom.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/hcom_host_profiling.cc
-)
+if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${src_list}
+        ${CMAKE_CURRENT_SOURCE_DIR}/hcom.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/hcom_host_profiling.cc
+    )
+endif()
 
 add_subdirectory(gradient_segment)
 
-if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
+if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
     ${src_list}
     ${CMAKE_CURRENT_SOURCE_DIR}/hcom_device_profiling.cc
