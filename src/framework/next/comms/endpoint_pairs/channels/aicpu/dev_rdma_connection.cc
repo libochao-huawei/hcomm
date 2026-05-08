@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "./dev_rdma_connection.h"
+#include "log.h"
 #include "orion_adapter_rts.h"
 #include "hccp.h"
 
@@ -57,6 +58,9 @@ static void *NdaAlloc(size_t size) {
 }
 
 static void NdaFree(void *ptr) {
+    if (ptr == nullptr) {
+        return;
+    }
     Hccl::HrtFree(ptr);
 }
 
@@ -123,7 +127,7 @@ void DevRdmaConnection::GetDmaMode() {
             break;
         }
         default: {
-            HCCL_ERROR("[GetDmaMode]Not support the directFlag, use default.");
+            HCCL_WARNING("[GetDmaMode]Not support the directFlag [%d], use default.", directFlag_);
             dmaMode_ = QBUF_DMA_MODE_MAX;
         }
     }
