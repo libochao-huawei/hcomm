@@ -17,7 +17,10 @@
 #include "binary_stream.h"
 #include "data_type.h"
 #include "communicator_impl_lite_manager.h"
+#ifdef CCL_KERNEL_AICPU
 #include "timer.h"
+#define FUNCTION_TRACE FUNCTION_TRACE_AICPU
+#endif
 
 constexpr u32 MAX_LOG_TIMEOUT_MS        = 500;
 namespace Hccl {

@@ -22,6 +22,7 @@
 #ifdef CCL_KERNEL_AICPU
 #include "hccl_api_data_aicpu_ts.h"
 #include "timer.h"
+#define FUNCTION_TRACE FUNCTION_TRACE_AICPU
 #endif
 
 namespace Hccl {

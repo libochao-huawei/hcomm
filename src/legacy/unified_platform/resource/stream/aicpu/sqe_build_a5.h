@@ -13,7 +13,10 @@
 #include "ub_jetty_lite.h"
 #include "sqe_v82.h"
 #include "log.h"
+#ifdef CCL_KERNEL_AICPU
 #include "timer.h"
+#define FUNCTION_TRACE FUNCTION_TRACE_AICPU
+#endif
 
 namespace Hccl {
 
