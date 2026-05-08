@@ -507,13 +507,7 @@ CcuResult CcuKernel::WriteVariableWithNotify(const ChannelHandle channel, CcuVar
 //加载类 相关接口
 CcuResult  CcuKernel::LoadArg(CcuVariableHandle varHandle, uint32_t argId)
 {
-    auto [it, inserted] = loadArgUsedSet_.insert(argId);
-    if (!inserted) {
-        HCCL_ERROR("[CcuKernel][LoadArg] argId %u already loaded", argId);
-        return HCCL_TO_CCU_RET(HCCL_E_PARA);
-    }
-
-
+    loadArgUsedSet_.insert(argId);
     CcuRep::Variable *var{nullptr};
     CCU_CHK_RET(GetVariableByHandle(varHandle,&var));
     auto loadArgRep = std::make_shared<CcuRep::CcuRepLoadArg>(*var, argId % CCU_SQE_ARGS_LEN);
