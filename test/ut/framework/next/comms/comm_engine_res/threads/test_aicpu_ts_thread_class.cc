@@ -258,3 +258,19 @@ TEST_F(TestAicpuTsThread, Ut_AicpuTsThread_Init_On_A5_Device_Get_StreamId_Notify
     ret = mainDevThread.SupplementNotify(notifyNum, notifyDesc);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
+
+TEST_F(TestAicpuTsThread, Ut_GetNotify_When_IndexOutOfRange_Expect_Return_Nullptr)
+{
+    bool isDeviceSide{false};
+    MOCKER(GetRunSideIsDevice)
+        .stubs()
+        .with(outBound(isDeviceSide))
+        .will(returnValue(HCCL_SUCCESS));
+
+    AicpuTsThread aicpuThread(StreamType::STREAM_TYPE_DEVICE, 2, NotifyLoadType::DEVICE_NOTIFY);
+    HcclResult ret = aicpuThread.Init();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    LocalNotify *notify = aicpuThread.GetNotify(5);
+    EXPECT_EQ(nullptr, notify);
+}
