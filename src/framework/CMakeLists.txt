@@ -85,6 +85,7 @@ set(hccl_include_list
     ${HCCL_BASE_DIR}/framework/op_base/src
     ${HCCL_BASE_DIR}/framework/group
 
+    ${HCCL_BASE_DIR}/common/
     ${HCCL_BASE_DIR}/common/health/
     ${HCCL_BASE_DIR}/common/stream/
     ${HCCL_BASE_DIR}/common/launch_device/
@@ -115,6 +116,7 @@ set(hccl_include_list
 
     # ccu 头文件
     ${HCCL_BASE_DIR}/framework/next/comms/adpt
+    ${HCCL_BASE_DIR}/framework/next/comms/api_c_adpt
 
     ${HCCL_BASE_DIR}/framework/next/comms/ccu/pub_inc/
     ${HCCL_BASE_DIR}/framework/next/comms/ccu/ccu_device/
@@ -220,6 +222,8 @@ else()
         ${HCCL_BASE_DIR}/pkg_inc
 
         ${TOP_DIR}/hcomm-legacy/src/platform/legacy/inc
+
+        ${HCCL_BASE_DIR}/../pkg_inc/hcomm/ccu
     )
 endif()
 
@@ -769,6 +773,8 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/framework/device/common
         ${HCCL_BASE_DIR}/framework/device/inc
         ${HCCL_BASE_DIR}/framework/device/framework
+
+        ${HCCL_BASE_DIR}/../pkg_inc/hcomm/ccu
 
         # runtime头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/
