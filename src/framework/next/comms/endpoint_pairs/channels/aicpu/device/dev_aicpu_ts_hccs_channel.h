@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __AICPU_CHANNEL_HCCS_PROCESS_H__
-#define __AICPU_CHANNEL_HCCS_PROCESS_H__
+#ifndef DEV_AICPU_TS_HCCS_CHANNEL_H
+#define DEV_AICPU_TS_HCCS_CHANNEL_H
 
 #include "common.h"
 #include "channel_param.h"
@@ -44,4 +44,4 @@ private:
 };
 }
 
-#endif // __AICPU_CHANNEL_HCCS_PROCESS_H__
+#endif // DEV_AICPU_TS_HCCS_CHANNEL_H
