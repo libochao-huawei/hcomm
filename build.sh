@@ -11,7 +11,6 @@ set -e
 
 CURRENT_DIR=$(dirname $(readlink -f ${BASH_SOURCE[0]}))
 BUILD_DIR=${CURRENT_DIR}/build
-BUILD_DEVICE_DIR="${CURRENT_DIR}/build_device"
 BUILD_OUTPUT_DIR=${CURRENT_DIR}/build_out
 OUTPUT_PATH="${CURRENT_DIR}/output"
 USER_ID=$(id -u)

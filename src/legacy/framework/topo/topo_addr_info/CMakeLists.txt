@@ -45,9 +45,8 @@ target_link_options(topoaddrinfo PRIVATE
 
 target_include_directories(topoaddrinfo PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${HCCL_BASE_DIR}/src/pub_inc
-    ${HCCL_BASE_DIR}/include
-    ${HCCL_BASE_DIR}/inc/adapter
+    ${HCOMM_DIR}/pub_inc
+    ${HCOMM_DIR}/include
     ${ASCEND_CANN_PACKAGE_PATH}/include/
     ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
