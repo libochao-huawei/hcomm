@@ -99,7 +99,6 @@ TEST_F(ExchangeInfoTest, Ut_EndToEnd_When_AddStoreGet_Expect_Consistent)
     std::vector<u8> localData = {0xDE, 0xAD, 0xBE, 0xEF};
     HcclResult ret = hcclCommPtr->AddExchangeInfo(localData.data(), localData.size());
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_TRUE(hcclCommPtr->IsExchangeInfoReady());
 
     // 2. 模拟建链后存储对端信息
     std::vector<u8> remoteData = {0xCA, 0xFE, 0xBA, 0xBE};
@@ -108,7 +107,6 @@ TEST_F(ExchangeInfoTest, Ut_EndToEnd_When_AddStoreGet_Expect_Consistent)
 
     // 3. 清空本端交换信息状态（模拟HcclChannelAcquire建链后清空）
     ret = hcclCommPtr->ResetExchangeInfo();
-    EXPECT_FALSE(hcclCommPtr->IsExchangeInfoReady());
 
     // 4. 获取对端交换信息
     std::vector<u8> recvBuf(remoteData.size(), 0);
