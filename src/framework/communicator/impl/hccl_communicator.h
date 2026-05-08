@@ -74,7 +74,7 @@ constexpr u32 CACHEMAP_MAXSIZE = 65536;
 constexpr float CACHEMAP_CLEARPERCENT = 0.1;
 constexpr u32 RDMA_NOTIFY_MIN_NUM = 3;
 constexpr u32 RDMA_NOTIFY_MAX_NUM = 8192;
-constexpr u32 COMM_LAYER_NUM_MAX = 2;
+constexpr u32 COMM_LAYER_NUM_MAX = 3;
 
 struct RemoteRes {
     u64 inbufferSize;

@@ -22,6 +22,7 @@ static constexpr uint32_t HCCL_ALG_PAIRWISE = (HCCL_ALG_MESH << 3U);
 enum class HcclTopoLevel {
     HCCL_TOPO_L0 = 0,
     HCCL_TOPO_L1,
+    HCCL_TOPO_L2,
     HCCL_TOPO_MAX,
 };
 

@@ -25,6 +25,7 @@ public:
     static constexpr uint32_t HCCL_NETLAYER_0 = 0;
     static constexpr uint32_t HCCL_NETLAYER_1 = 1;
     static constexpr uint32_t HCCL_NETLAYER_2 = 2;
+    static constexpr uint32_t HCCL_NETLAYER_3 = 3;
 
     RankGraph() = default;
     virtual ~RankGraph() = default;
