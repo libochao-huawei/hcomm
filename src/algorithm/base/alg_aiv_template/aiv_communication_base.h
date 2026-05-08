@@ -307,10 +307,6 @@ public:
 
         pipe.InitBuffer(flagInQue, AIV_PING_PONG_FACTOR_TWO, UB_FLAG_SIZE);
         InitOpCounter(headCountMem, tailCountMem, addOneMem, counterMemSize, isEnableCounter);
-        if (tag_ == 1) {
-            ClearSyncBuf();
-            pipe_barrier(PIPE_ALL);
-        }
     }
 
     __aicore__ inline void Init(GM_ADDR hiddenInput, uint64_t threshold, bool useDoubleBuffer = false)
