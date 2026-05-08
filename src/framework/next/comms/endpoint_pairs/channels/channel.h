@@ -29,6 +29,16 @@
 #include "ip_address.h"
 #include "topo_common_types.h"
 #include "virtual_topo.h"
+#include "exception_handler.h"
+#include "base_mem_transport.h"
+
+// 前向声明
+namespace Hccl {
+class LocalUbRmaBuffer;
+class LocalIpcRmaBuffer;
+class LocalRmaBuffer;
+class Buffer;
+}
 
 namespace hcomm {
 
@@ -67,9 +77,9 @@ public:
     // ------------------ 控制面接口 ------------------
     virtual HcclResult Init() = 0;
     virtual HcclResult GetNotifyNum(uint32_t *notifyNum) const = 0;
-    virtual HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags) = 0;
+    virtual HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum) = 0;
     virtual ChannelStatus GetStatus() = 0;
-    virtual HcclResult GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum);
+    virtual HcclResult GetUserRemoteMem(CommMem **remoteMem, uint32_t *memNum);
     virtual HcclResult UpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum);
 
     virtual HcclResult Clean()        = 0;
@@ -84,6 +94,76 @@ public:
                                     CommEngine engine, 
                                     HcommChannelDesc channelDesc,
                                     std::unique_ptr<Channel>& out);
+};
+
+/**
+ * @brief Channel Buffer 构建辅助类，用于消除子类中的重复代码
+ */
+class ChannelBufferHelper {
+public:
+    /**
+     * @brief 构建LocalUbRmaBuffer类型的buffer (用于AicpuTsUrmaChannel和AicpuTsUboeChannel)
+     * @tparam BufferPtrType LocalUbRmaBuffer的unique_ptr类型
+     * @tparam BufferVecType localRmaBuffers_的vector类型
+     * @param bufs 输入的buffer vector
+     * @param rdmaHandle RdmaHandle句柄
+     * @param bufferVecTemp bufferVecTemp_引用
+     * @param commonRes commonRes_引用
+     * @param localRmaBuffers localRmaBuffers_引用
+     * @return HcclResult HCCL_SUCCESS成功，其他失败
+     */
+    template<typename BufferPtrType, typename BufferVecType>
+    static HcclResult BuildUbRmaBuffers(
+        const std::vector<std::shared_ptr<Hccl::Buffer>> &bufs,
+        const Hccl::RdmaHandle &rdmaHandle,
+        std::vector<Hccl::LocalRmaBuffer*> &bufferVecTemp,
+        Hccl::BaseMemTransport::CommonLocRes &commonRes,
+        BufferVecType &localRmaBuffers)
+    {
+        bufferVecTemp.clear();
+        for (size_t i = 0; i < bufs.size(); i++) {
+            BufferPtrType bufferPtr = nullptr;
+            EXECEPTION_CATCH(
+                bufferPtr = std::make_unique<Hccl::LocalUbRmaBuffer>(bufs[i], rdmaHandle),
+                return HCCL_E_PTR
+            );
+            bufferVecTemp.push_back(bufferPtr.get());
+            commonRes.bufferVec.push_back(bufferPtr.get());
+            localRmaBuffers.push_back(std::move(bufferPtr));
+        }
+        return HCCL_SUCCESS;
+    }
+
+    /**
+     * @brief 构建LocalIpcRmaBuffer类型的buffer (用于AicpuTsP2pChannel)
+     * @tparam BufferPtrType LocalIpcRmaBuffer的unique_ptr类型
+     * @tparam BufferVecType localRmaBuffers_的vector类型
+     * @param bufs 输入的buffer vector
+     * @param bufferVecTemp bufferVecTemp_引用
+     * @param commonRes commonRes_引用
+     * @param localRmaBuffers localRmaBuffers_引用
+     * @return HcclResult HCCL_SUCCESS成功，其他失败
+     */
+    template<typename BufferPtrType, typename BufferVecType>
+    static HcclResult BuildIpcRmaBuffers(
+        const std::vector<std::shared_ptr<Hccl::Buffer>> &bufs,
+        std::vector<Hccl::LocalRmaBuffer*> &bufferVecTemp,
+        Hccl::BaseMemTransport::CommonLocRes &commonRes,
+        BufferVecType &localRmaBuffers)
+    {
+        bufferVecTemp.clear();
+        for (size_t i = 0; i < bufs.size(); i++) {
+            BufferPtrType bufferPtr = nullptr;
+            EXECEPTION_CATCH(
+                bufferPtr = std::make_unique<Hccl::LocalIpcRmaBuffer>(bufs[i]),
+                return HCCL_E_PTR
+            );
+            bufferVecTemp.push_back(bufferPtr.get());
+            commonRes.bufferVec.push_back(bufferPtr.get());
+            localRmaBuffers.push_back(std::move(bufferPtr));
+        }
+        return HCCL_SUCCESS;
+    }
 };
 
 } // namespace hcomm
