@@ -20,7 +20,6 @@ CollCommAicpuDestroyFunc &CollCommAicpuDestroyFunc::GetInstance()
 
 void CollCommAicpuDestroyFunc::Call()
 {
-    HCCL_INFO("[%s] Call display stopCall_[%d]", __func__, stopCall_);
     if (stopCall_ == true) {
         return;
     }
