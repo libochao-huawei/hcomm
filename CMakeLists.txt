@@ -117,7 +117,6 @@ elseif(BUILD_OPEN_PROJECT)
                 -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/device_install
                 -DASCEND_INSTALL_PATH=${ASCEND_INSTALL_PATH}
                 -DBUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}
-                -DDEVICE_MODE=ON
                 -DCANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH}
                 -DENABLE_SIGN=${ENABLE_SIGN}
                 -DCUSTOM_SIGN_SCRIPT=${CUSTOM_SIGN_SCRIPT}

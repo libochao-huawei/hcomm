@@ -16,6 +16,9 @@ if(TARGET hcomm)
         ${src_list}
         ${CMAKE_CURRENT_SOURCE_DIR}/env_config_host.cc
     )
+    target_include_directories(hcomm PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
 endif()
 
 if(TARGET ccl_kernel)

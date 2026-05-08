@@ -22,6 +22,9 @@ if(TARGET hcomm)
         ${CMAKE_CURRENT_SOURCE_DIR}/hccl_dpu_manager.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/task_abort_handler.cc
     )
+    target_include_directories(hcomm PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
 endif()
 
 if(TARGET ccl_kernel)
