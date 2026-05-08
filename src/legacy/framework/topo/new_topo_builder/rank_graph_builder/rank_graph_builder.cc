@@ -330,6 +330,24 @@ void RankGraphBuilder::BuildFromRankTable()
         }
     }
 
+    // 补充计算 serverIdx：按 A3_SERVER 层 netInstId 首次出现顺序分配
+    {
+        std::unordered_map<std::string, u32> serverInstIdToIdx;
+        u32 nextServerIdx = 0;
+        for (auto &rankInfo : rankTable_->ranks) {
+            for (const auto &levelInfo : rankInfo.rankLevelInfos) {
+                if (levelInfo.netType == NetType::A3_SERVER) {
+                    auto it = serverInstIdToIdx.find(levelInfo.netInstId);
+                    if (it == serverInstIdToIdx.end()) {
+                        serverInstIdToIdx[levelInfo.netInstId] = nextServerIdx++;
+                    }
+                    rankInfo.serverIdx = serverInstIdToIdx[levelInfo.netInstId];
+                    break;
+                }
+            }
+        }
+    }
+
     // 初始化innerRanks
     rankGraph_->InitInnerRanks();
 
@@ -607,11 +625,53 @@ void RankGraphBuilder::BuildRankGraph()
     // 添加绕路 绕路获取
     DetourService::GetInstance().InsertDetourLinks(rankGraph_.get(), rankTable_.get());
 
+    ReparseGroupedPlaneForOcsMesh();
+
     // 设置endpoint
     SetEndpointDesc();
 
     // 构造完成
     rankGraph_->InitFinish();
+}
+
+void RankGraphBuilder::ReparseGroupedPlaneForOcsMesh()
+{
+    for (const auto &netInstMap : tempNetInsts_) {
+        for (const auto &pair : netInstMap) {
+            const auto &netInst = pair.second;
+            if (netInst->GetNetType() != NetType::OCS_MESH) {
+                continue;
+            }
+
+            const auto &rankIds = netInst->GetRankIds();
+            if (rankIds.empty()) {
+                continue;
+            }
+
+            std::map<u32, std::vector<RankId>> elecGroups;
+            for (RankId rankId : rankIds) {
+                const auto &rankInfo = rankTable_->ranks[rankId];
+                u32 elecGroupId = 0;
+                for (const auto &levelInfo : rankInfo.rankLevelInfos) {
+                    if (levelInfo.netType == NetType::OCS_MESH) {
+                        elecGroupId = levelInfo.elecGroupId;
+                        break;
+                    }
+                }
+                elecGroups[elecGroupId].push_back(rankId);
+            }
+
+            u32 totalGroups = static_cast<u32>(elecGroups.size());
+            u32 planeIdx = 0;
+            for (const auto &group : elecGroups) {
+                for (RankId rankId : group.second) {
+                    rankTable_->ranks[rankId].ocsPlaneId = planeIdx;
+                    rankTable_->ranks[rankId].ocsPlaneNum = totalGroups;
+                }
+                planeIdx++;
+            }
+        }
+    }
 }
 
 std::unique_ptr<RankTableInfo> RankGraphBuilder::GetRankTableInfo()
