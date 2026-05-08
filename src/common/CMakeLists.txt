@@ -14,6 +14,15 @@ add_subdirectory(stream)
 add_subdirectory(launch_device)
 add_subdirectory(error_code)
 
+if(TARGET hcomm)
+    target_include_directories(hcomm PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/health
+        ${CMAKE_CURRENT_SOURCE_DIR}/stream
+        ${CMAKE_CURRENT_SOURCE_DIR}/launch_device
+    )
+endif()
+
 if(TARGET ccl_kernel)
     target_include_directories(ccl_kernel PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/debug/
