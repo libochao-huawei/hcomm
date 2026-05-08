@@ -9,12 +9,8 @@
 # -----------------------------------------------------------------------------------------------------------
 set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/hccl_communicator.cc
-<<<<<<< HEAD
-    ${CMAKE_CURRENT_SOURCE_DIR}/hccl_communicator_attrs.cc
-=======
     ${CMAKE_CURRENT_SOURCE_DIR}/hccl_communicator_attrs.cc 
     ${CMAKE_CURRENT_SOURCE_DIR}/hccl_comm_exchange_info.cc
->>>>>>> 449f9ff7 (rank间一致性校验)
 )
 
 target_sources(hcomm PRIVATE
