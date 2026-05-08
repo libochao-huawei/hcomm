@@ -17,7 +17,7 @@ init_cann_project()
 option(BUILD_OPEN_PROJECT "Build open hcomm project." ON)
 message(STATUS "BUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}")
 message(STATUS "CANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH}")
-message(STATUS "DEVICE_MODE=${DEVICE_MODE}")
+message(STATUS "ENABLE_BUILD_DEVICE=${ENABLE_BUILD_DEVICE}")
 message(STATUS "AARCH_MODE=${AARCH_MODE}")
 
 set(HCOMM_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -103,11 +103,11 @@ elseif(BUILD_OPEN_PROJECT)
     if(ENABLE_BUILD_DEVICE)
         include(ExternalProject)
         ExternalProject_Add(hcomm_device
-            SOURCE_DIR ${HCOMM_ROOT_DIR}/cmake/device
+            SOURCE_DIR ${HCOMM_DIR}/cmake/device
             BINARY_DIR ${CMAKE_BINARY_DIR}/device_build
             CMAKE_ARGS
                 -DTOOLCHAIN_DIR=${HCC_TOOLCHAIN_DIR}
-                -DCMAKE_TOOLCHAIN_FILE=${HCOMM_ROOT_DIR}/cmake/aarch64-hcc-toolchain.cmake
+                -DCMAKE_TOOLCHAIN_FILE=${HCOMM_DIR}/cmake/aarch64-hcc-toolchain.cmake
                 -DCMAKE_C_COMPILER=${HCC_C_COMPILER}
                 -DCMAKE_CXX_COMPILER=${HCC_CXX_COMPILER}
                 -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
@@ -139,123 +139,6 @@ elseif(BUILD_OPEN_PROJECT)
     set(HCOMM_HEAD
         include/hcomm_primitives.h
     )
-
-    if(DEVICE_MODE)
-        set(HCCP_TAR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_device/tar_pkg/)
-        set(CCL_KERNEL_TAR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_device/ccl_kernel_tar_pkg/)
-        set(HCCD_TAR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_hccd/hccd_tar_pkg/)
-
-        message(STATUS "Detected CUSTOM_SIGN_SCRIPT: ${CUSTOM_SIGN_SCRIPT}")
-        message(STATUS "Detected ENABLE_SIGN: ${ENABLE_SIGN}")
-        pack_targets_and_files(
-            OUTPUT_TARGET "generate_device_hccp_package"
-            OUTPUT "cann-hcomm-compat.tar.gz"
-            TARGETS hccp_service.bin
-            FILES  ${HCCP_TAR_DIR}/librs.so ${HCCP_TAR_DIR}/libra_adp.so ${HCCP_TAR_DIR}/libtls_adp.so ${HCCP_TAR_DIR}/libascend_kms.so ${HCCP_TAR_DIR}/libnet_co.so
-            MANIFEST "hccp_compat_bin_hash.cfg"
-        )
-        add_dependencies(generate_device_hccp_package hccp_service.bin)
-        sign_file(
-            INPUT "cann-hcomm-compat.tar.gz"
-            CONFIG "${CMAKE_CURRENT_SOURCE_DIR}/scripts/sign/hcomm_check_cfg.xml"
-            RESULT_VAR "cann-hcomm-compat_sign_file"
-            DEPENDS generate_device_hccp_package
-        )
-        add_dependencies(sign_cann_hcomm_compat generate_device_hccp_package)
-
-        set(HCCD_TAR_LIBS
-            ${HCCD_TAR_DIR}/lib64/libascend_kms.so
-            ${HCCD_TAR_DIR}/lib64/libhccd.so
-            ${HCCD_TAR_DIR}/lib64/libra_hdc.so
-            ${HCCD_TAR_DIR}/lib64/libra_peer.so
-            ${HCCD_TAR_DIR}/lib64/libra.so
-            ${HCCD_TAR_DIR}/lib64/librs.so
-            ${HCCD_TAR_DIR}/lib64/libtls_adp.so
-        )
-        pack_targets_and_files(
-            OUTPUT_TARGET "generate_device_hccd_package"
-            OUTPUT "cann-hccd-compat.tar.gz"
-            FILES ${HCCD_TAR_LIBS}
-            MANIFEST "bin_hash.cfg"
-            TAR_ROOT_DIR "lib64"
-        )
-        add_dependencies(generate_device_hccd_package hccd)
-        sign_file(
-            INPUT "cann-hccd-compat.tar.gz"
-            CONFIG "${CMAKE_CURRENT_SOURCE_DIR}/scripts/sign/hcomm_check_cfg.xml"
-            RESULT_VAR "cann-hccd-compat_sign_file"
-            DEPENDS generate_device_hccd_package
-        )
-        add_dependencies(sign_cann_hccd_compat generate_device_hccd_package)
-
-        if(KERNEL_MODE)
-            set(CCL_KERNEL_TAR_LIBS
-                ${CCL_KERNEL_TAR_DIR}/aicpu_kernels_device/libccl_kernel_plf.so
-                ${CCL_KERNEL_TAR_DIR}/aicpu_kernels_device/libccl_kernel.so
-            )
-            pack_targets_and_files(
-                OUTPUT_TARGET "generate_device_aicpu_package"
-                OUTPUT "aicpu_hcomm.tar.gz"
-                FILES ${CCL_KERNEL_TAR_LIBS}
-                MANIFEST "bin_hash.cfg"
-                TAR_ROOT_DIR "aicpu_kernels_device"
-            )
-            add_dependencies(generate_device_aicpu_package ccl_kernel)
-            sign_file(
-                INPUT "aicpu_hcomm.tar.gz"
-                CONFIG "${CMAKE_CURRENT_SOURCE_DIR}/scripts/sign/hcomm_check_cfg.xml"
-                RESULT_VAR "aicpu_hcomm_sign_file"
-                DEPENDS generate_device_aicpu_package
-            )
-            add_dependencies(sign_aicpu_hcomm generate_device_aicpu_package)
-        endif()
-    endif()
-
-    if (NOT DEVICE_MODE)
-        message(STATUS "Detected INSTALL_LIBRARY_DIR: ${INSTALL_LIBRARY_DIR}")
-
-        set(BUILD_DEVICE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_device/)
-        set(BUILD_HCCD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_hccd/)
-        add_custom_target(install_tar DEPENDS
-            ${BUILD_DEVICE_DIR}/signatures/cann-hcomm-compat.tar.gz
-            ${BUILD_DEVICE_DIR}/signatures/aicpu_hcomm.tar.gz
-            ${BUILD_HCCD_DIR}/signatures/cann-hccd-compat.tar.gz
-            ${BUILD_DEVICE_DIR}/src/libaicpu_custom.so
-            ${BUILD_DEVICE_DIR}/src/libaicpu_custom.json
-        )
-        install(FILES ${BUILD_DEVICE_DIR}/signatures/cann-hcomm-compat.tar.gz
-            DESTINATION ${INSTALL_DEVICE_TAR_DIR} OPTIONAL
-            COMPONENT hcomm
-            PERMISSIONS OWNER_READ GROUP_READ
-        )
-        install(FILES ${BUILD_DEVICE_DIR}/signatures/aicpu_hcomm.tar.gz
-            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
-            COMPONENT hcomm
-        )
-        install(FILES ${BUILD_HCCD_DIR}/signatures/cann-hccd-compat.tar.gz
-            DESTINATION ${INSTALL_DEVICE_TAR_DIR} OPTIONAL
-            COMPONENT hcomm
-            PERMISSIONS OWNER_READ GROUP_READ
-        )
-        install(FILES ${BUILD_DEVICE_DIR}/src/libaicpu_custom.so
-            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel ${INSTALL_OPTIONAL}
-            COMPONENT hcomm
-        )
-        install(FILES ${BUILD_DEVICE_DIR}/src/libaicpu_custom.json
-            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel ${INSTALL_OPTIONAL}
-            COMPONENT hcomm
-        )
-
-        add_custom_target(install_ccl_kernel DEPENDS
-            ${BUILD_DEVICE_DIR}/src/libccl_kernel.so
-        )
-        install(FILES ${BUILD_DEVICE_DIR}/src/libccl_kernel.so
-            DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/devlib/device ${INSTALL_OPTIONAL}
-            COMPONENT hcomm
-        )
-        add_dependencies(install_tar hcomm)
-        add_dependencies(install_ccl_kernel hcomm)
-    endif()
 
     install(FILES
         ${HCCL_HEAD}
