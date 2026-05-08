@@ -322,6 +322,8 @@ private:
     void RegisterRetryInfo(const std::string &commIdentifier, bool retryEnable, bool backupEnable);
     HcclResult InitNic(const NicType nicType, const s32 devicePhyId, const s32 deviceLogicId,
         const hccl::HcclIpAddress ip, const u32 port, const bool isBackUp = false);
+    HcclResult InitDeviceNic(const RankInfo &locRank, bool isNeedNic, u32 port);
+    HcclResult InitHostNic(const RankInfo &locRank, bool isNeedNic, u32 port);
     u32 GetPort(HcclSocketType type, u32 remoteUserRank, u32 remoteDeviceId);
     u32 GetHostPort(s32 devicePhyId);
     HcclResult PrepareConnect(ConnInfo &info);
