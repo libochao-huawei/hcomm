@@ -45,7 +45,6 @@ void RegisterGetAicpuCqeErrInfoCallBackHcomm(GetAicpuCqeErrInfoCallBackHcomm p1)
 
 void TaskExceptionHost::ClusterMoniterGetAicpuCqeErrInfo(u32 RemoteLocalId, u32 LocDeviceId, uint16_t status, string LocalEid, string RemoteEid, string RemoteInsId)
 {
-    HCCL_ERROR("[ClusterMoniterGetAicpuCqeErrInfo]start, RemoteLocalId[%u]", RemoteLocalId);
     if (g_getAicpuCqeErrInfoCallBack != nullptr) {
         g_getAicpuCqeErrInfoCallBack(RemoteLocalId, LocDeviceId, status, LocalEid, RemoteEid, RemoteInsId);
     }
@@ -224,7 +223,6 @@ std::string TaskExceptionHost::GetGroupRankInfo(const Hccl::TaskInfo& taskInfo)
 
 void TaskExceptionHost::GetAicpuCqeErrRemoteLocalIdByRankId(hccl::CollComm* collComm, uint32_t rankid, u32 &RemoteLocalId)
 {
-    HCCL_ERROR("[GetAicpuCqeErrRemoteLocalIdByRankId]start, rankId[%u]", rankid);
     if (collComm == nullptr) {
         HCCL_ERROR("[GetAicpuCqeErrRemoteLocalIdByRankId]collComm is nullptr, rankId[%u]", rankid);
         RemoteLocalId = INVALID_VALUE_RANKID;
@@ -251,7 +249,6 @@ void TaskExceptionHost::GetAicpuCqeErrRemoteLocalIdByRankId(hccl::CollComm* coll
 
 void TaskExceptionHost::GetAicpuCqeErrNetInstanceByRankId(hccl::CollComm* collComm, uint32_t rankid, std::string &netInstanceId)
 {
-    HCCL_ERROR("[GetAicpuCqeErrNetInstanceByRankId]start, rankId[%u]", rankid);
     if (collComm == nullptr) {
         HCCL_ERROR("[GetAicpuCqeErrNetInstanceByRankId]collComm is nullptr, rankId[%u]", rankid);
         netInstanceId = "";
@@ -285,7 +282,6 @@ void TaskExceptionHost::GetAicpuCqeErrNetInstanceByRankId(hccl::CollComm* collCo
 
 void TaskExceptionHost::GetAicpuCqeErrInfo(rtExceptionInfo_t* exceptionInfo, const Hccl::ErrorMessageReport &errorMessage, const Hccl::TaskInfo& taskInfo)
 {
-    HCCL_RUN_INFO("[GetAicpuCqeErrInfo] start, taskType[%d]", errorMessage.taskType);
     hccl::CollComm *collComm = static_cast<hccl::CollComm*>(taskInfo.dfxOpInfo_->comm_);
     u32 RemoteLocalId = INVALID_VALUE_RANKID;
     GetAicpuCqeErrRemoteLocalIdByRankId(collComm, errorMessage.remoteUserRank, RemoteLocalId);
@@ -613,7 +609,6 @@ void TaskExceptionHost::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo,
             ReportErrorMsg(exceptionTaskInfo, groupRankContent, errorMessage, exceptionInfo);
 
             if (errorMessage.ubCqeStatus != 0) {
-                HCCL_RUN_INFO("[PrintAicpuErrorMessage->GetAicpuCqeErrInfo] start, taskType[%d]", errorMessage.taskType);
                 GetAicpuCqeErrInfo(exceptionInfo, errorMessage, taskInfo);
             }
             
