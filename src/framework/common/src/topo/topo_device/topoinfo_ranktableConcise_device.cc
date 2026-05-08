@@ -184,3 +184,9 @@ HcclResult TopoinfoRanktableConcise::CheckSuperPodInfo(RankTable_t &clusterInfo)
 {
     return HCCL_E_NOT_SUPPORT;
 }
+
+HcclResult TopoinfoRanktableConcise::GetSingleNicInfo(const nlohmann::json &serverListObj, u32 objIndex,
+    RankTable_t &clusterInfo, RankInfo_t &rankinfo)
+{
+    return HCCL_E_NOT_SUPPORT;
+}
