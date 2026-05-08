@@ -778,6 +778,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/framework/device/framework
 
         ${HCCL_BASE_DIR}/../pkg_inc/hcomm/ccu
+        ${HCCL_BASE_DIR}/../pkg_inc/hcomm/ccu_new
 
         # runtime头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/
