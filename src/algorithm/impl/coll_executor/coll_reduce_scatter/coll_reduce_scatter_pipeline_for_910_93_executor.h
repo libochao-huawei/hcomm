@@ -40,6 +40,8 @@ private:
     u64 CalcLoopMaxCount(const u32 unitSize) override;
     HcclResult RunLoop(OpParam &param, AlgResourceResponse &algRes) override;
     // 由 RunLoop 调用
+    HcclResult InitPipelineLoopTask(OpParam &param, const PipelineLoopContext &ctx, u64 loopIdx, const u32 unitSize);
+    // 由 RunLoop 调用
     HcclResult BuildPipelineLoopContext(OpParam &param, AlgResourceResponse &algRes,
         const u32 unitSize, PipelineLoopContext &ctx);
     // 由 RunLoop 调用
@@ -60,20 +62,14 @@ private:
     HcclResult GetLevel2CommInfo(SubCommInfo &level2CommInfo);
 
     // 由 RunLoop 循环体调用
-    HcclResult RunL0L1Phase(OpParam &param, const PipelineLoopContext &ctx,
-        u64 blockIdx, Stream &streamL0L1);
+    HcclResult RunL0L1Phase(OpParam &param, const PipelineLoopContext &ctx, u64 blockIdx, Stream &streamL0L1);
     // 由 RunLoop 循环体调用
-    HcclResult RunL2Phase(OpParam &param, const PipelineLoopContext &ctx,
-        u64 blockIdx, Stream &streamL2);
+    HcclResult RunL2Phase(OpParam &param, const PipelineLoopContext &ctx, u64 blockIdx, Stream &streamL2);
 
-    HcclResult RunLevel0To1(OpParam &param, ExecMem &execMem, Stream &streamL0L1,
-        const u64 baseOffset);
-    HcclResult RunLevel2(OpParam &param, ExecMem &execMem, Stream &streamL2,
-        const u64 baseOffset);
-    HcclResult KernelRunLevel0To1(const OpParam &param, ExecMem &execMem, Stream &streamL0L1,
-        const u64 baseOffset);
-    HcclResult KernelRunLevel2(const OpParam &param, ExecMem &execMem, Stream &streamL2,
-        const u64 baseOffset);
+    HcclResult RunLevel0To1(OpParam &param, ExecMem &execMem, Stream &streamL0L1, const u64 baseOffset);
+    HcclResult RunLevel2(OpParam &param, ExecMem &execMem, Stream &streamL2, const u64 baseOffset);
+    HcclResult KernelRunLevel0To1(const OpParam &param, ExecMem &execMem, Stream &streamL0L1, const u64 baseOffset);
+    HcclResult KernelRunLevel2(const OpParam &param, ExecMem &execMem, Stream &streamL2, const u64 baseOffset);
 
     // 由 DoubleRingReduceScatter 调用
     HcclResult PrepareDoubleRingSlices(u32 ringNum, const HcclDataType dataType,

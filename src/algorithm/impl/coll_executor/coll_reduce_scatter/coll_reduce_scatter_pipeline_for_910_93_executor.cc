@@ -44,8 +44,7 @@ u64 CollReduceScatterPipelineFor91093Executor::CalcLoopMaxCount(const u32 unitSi
     return maxCountPerLoop;
 }
 
-HcclResult CollReduceScatterPipelineFor91093Executor::RunLoop(
-    OpParam &param, AlgResourceResponse &algRes)
+HcclResult CollReduceScatterPipelineFor91093Executor::RunLoop(OpParam &param, AlgResourceResponse &algRes)
 {
     if (param.DataDes.count == 0) {
         return HCCL_SUCCESS;
@@ -72,6 +71,7 @@ HcclResult CollReduceScatterPipelineFor91093Executor::RunLoop(
 
     const u64 numLoopTotal = ctx.numBlockTotal + 1;
     for (u64 i = 0; i < numLoopTotal; ++i) {
+        CHK_RET(InitPipelineLoopTask(param, ctx, i, unitSize));
         if (i < ctx.numBlockTotal) {
             if (i >= 2) {
                 CHK_RET(LocalNotify::Wait(streamL0L1, dispatcher_, getBackwardNotify(i)));
@@ -79,22 +79,43 @@ HcclResult CollReduceScatterPipelineFor91093Executor::RunLoop(
             CHK_RET(RunL0L1Phase(param, ctx, i, streamL0L1));
             CHK_RET(LocalNotify::Post(streamL0L1, dispatcher_, getForwardNotify(i)));
         }
-
         if (i >= 1 && i <= ctx.numBlockTotal) {
             const u64 blockIdx = i - 1;
             CHK_RET(LocalNotify::Wait(streamL2, dispatcher_, getForwardNotify(blockIdx)));
             CHK_RET(RunL2Phase(param, ctx, blockIdx, streamL2));
             CHK_RET(LocalNotify::Post(streamL2, dispatcher_, getBackwardNotify(blockIdx)));
         }
-
         if (!is310P3Common_) {
             CHK_RET(LaunchTaskExtend(dispatcher_, param.stream, algResResp_->slaveStreams));
         }
     }
 
-    CHK_RET(WaitForRemainingL2Signals(param, ctx.numBlockTotal, streamL0L1,
-        notifyL2toL0L1A, notifyL2toL0L1B));
+    CHK_RET(WaitForRemainingL2Signals(param, ctx.numBlockTotal, streamL0L1, notifyL2toL0L1A, notifyL2toL0L1B));
     HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][RunLoop] Pipeline run success");
+    return HCCL_SUCCESS;
+}
+
+// 由 RunLoop 调用
+HcclResult CollReduceScatterPipelineFor91093Executor::InitPipelineLoopTask(
+    OpParam &param, const PipelineLoopContext &ctx, u64 loopIdx, const u32 unitSize)
+{
+    if (is310P3Common_) {
+        return HCCL_SUCCESS;
+    }
+
+    const ReduceType reduceType = ((param.reduceType != HCCL_REDUCE_PROD) &&
+        (param.DataDes.dataType != HCCL_DATA_TYPE_INT64)) ? ReduceType::INLINE_REDUCE : ReduceType::TBE_REDUCE;
+    const u32 autoSelectedAlgTypeLevel1 = static_cast<u32>(algType_.algoLevel1);
+    const u8 deterministic = topoMatcher_->GetExternalInputHcclDeterministic();
+    const u64 metaBlockIdx = (loopIdx < ctx.numBlockTotal) ? loopIdx : (ctx.numBlockTotal - 1);
+    const bool metaLastBlock = (metaBlockIdx == ctx.numBlockTotal - 1);
+    const u64 metaCount = metaLastBlock ? ctx.countDataLastLoop : ctx.countDataPerLoop;
+    const u64 metaSize = metaCount * unitSize;
+    const bool hugeData = IsHugeData(metaSize, &param);
+    const bool smallData = IsSmallData(param.DataDes.count * unitSize, metaSize);
+    auto opMeta = HcclOpMetaInfo::GetOneForReduceScatter(autoSelectedAlgTypeLevel1, param.DataDes.dataType,
+        reduceType, hugeData, smallData, CopyPattern::BCOPY, false, deterministic, false);
+    CHK_RET(InitTask(dispatcher_, param.stream, opMeta.isEnableCache, opMeta.GetCacheKey()));
     return HCCL_SUCCESS;
 }
 
@@ -423,8 +444,8 @@ HcclResult CollReduceScatterPipelineFor91093Executor::KernelRunLevel0To1(
          algOpContext_.opRetryHandler.inPlaceSupportRetryStatus ==
             InplaceSupportRetryStatus::RETRY_1_ALLOW_NO_DMA_REDUCE_CASE2);
     std::vector<std::vector<Slice>> multRingsUserMemSlice;
-    CalUserMemDataSegsSlice(execMem, level0DataSegsSlice, multiStreamSlice, param, ringNum, sliceNum, level1RankSize,
-        level2RankSize, dataType, perDataSize, opInfoPtr, disableDMAReduce, multRingsUserMemSlice);
+    CHK_RET(CalUserMemDataSegsSlice(execMem, level0DataSegsSlice, multiStreamSlice, param, ringNum, sliceNum,
+        level1RankSize, level2RankSize, dataType, perDataSize, opInfoPtr, disableDMAReduce, multRingsUserMemSlice));
 
     HcomCollOpInfo opInfoByReduceScatterDMAreduce = *opInfoPtr;
     opInfoByReduceScatterDMAreduce.outputAddr = nullptr;

@@ -23,6 +23,7 @@ protected:
     u64 CalcTotalCount(const OpParam &param) const;
     HcclResult CalcStreamNum(u32& streamNum) override;
     u64 CalcLoopMaxCount(const u32 unitSize) override;
+    bool IsHugeData(const u64 curSize, OpParam *param = nullptr) override;
     virtual HcclResult RunIntraSeverReduceScatter(const std::string &tag, DeviceMem &inputMem, DeviceMem &outputMem,
         const u64 count, const HcclDataType &dataType, const HcclReduceOp &reductionOp,
         const std::vector<std::vector<Slice>> &multRingsSliceZero, const Stream &stream, s32 profStage,
@@ -62,7 +63,6 @@ private:
     HcclResult CalcTransportMemType(TransportMemType &inputType, TransportMemType &outputType);
 
     /* *************** 算法编排 *************** */
-    bool IsHugeData(const u64 curSize, OpParam *param = nullptr) override;
     HcclResult KernelRun(const OpParam &param, ExecMem &execMem) override;
     HcclResult Getlevel1CommRank(SubCommInfo& level1CommInfo) override;
     HcclResult SelectTempAlg(std::unique_ptr<AlgTemplateBase> &level1TempAlg, u32 level1RankSize) override;
