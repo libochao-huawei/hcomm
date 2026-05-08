@@ -1035,8 +1035,8 @@ void CcuTaskException::GetCcuCqeErrNetInstanceByRankId(hccl::CollComm* collComm,
 
 void CcuTaskException::GetCcuCqeErrorInfo(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 locDeviceId, uint8_t missionStatus)
 {
-    auto pair = GetAddrPairByChannelId(ccuErrorInfo.msg.waitSignal.channelId, taskInfo, locDeviceId);
-    RankId remoteRankId = GetRankIdByChannelId(ccuErrorInfo.msg.waitSignal.channelId, taskInfo, locDeviceId);
+    auto pair = GetAddrPairByChannelId(ccuErrorInfo.msg.waitSignal.channelId[0], taskInfo, locDeviceId);
+    RankId remoteRankId = GetRankIdByChannelId(ccuErrorInfo.msg.waitSignal.channelId[0], taskInfo, locDeviceId);
     HCCL_ERROR("[GetCcuCqeErrorInfo] start to get net instance id by rank id, remoteRankId[%u]", remoteRankId);
     hccl::CollComm *collComm = static_cast<hccl::CollComm*>(taskInfo.dfxOpInfo_->comm_);
     u32 RemoteLocalId = INVALID_VALUE_RANKID;
@@ -1071,7 +1071,11 @@ void CcuTaskException::PrintCcuErrorInfo(uint32_t deviceId, uint16_t status, con
         PrintCcuUbRegisters(errorInfos, static_cast<s32>(deviceId), taskInfo);
         if (isGetCqeErrInfo) {
             isGetCqeErrInfo = false; // 只获取一次CQE错误信息，避免重复获取
-            GetCcuCqeErrorInfo(errorInfos[0], taskInfo, deviceId, missionStatus);//添加注释errorInfos[0]对应missionStatus异常
+            for (const auto& errorInfo : errorInfos) {
+                GetCcuCqeErrorInfo(errorInfo, taskInfo, deviceId, missionStatus);//添加注释errorInfos[0]对应missionStatus异常
+                break;
+            }
+            
         }
     }
 }
