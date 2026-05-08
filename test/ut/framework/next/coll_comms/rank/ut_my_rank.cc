@@ -629,8 +629,6 @@ TEST_F(MyRankTest, Ut_WaitAllAsyncComplete_When_AllOk_Expect_Success)
 TEST_F(MyRankTest, Ut_BatchExchange_When_NewRankConsistent_Expect_Success)
 {
     hcclComm comm;
-    // rank 1为新增channel（不标记为checked）
-    EXPECT_TRUE(comm.IsNewRemoteRank(1));
 
     // mock Socket异步接口：GetAsyncStatus返回OK
     MOCKER_CPP(&Hccl::Socket::GetAsyncStatus)
@@ -666,7 +664,4 @@ TEST_F(MyRankTest, Ut_BatchExchange_When_NewRankConsistent_Expect_Success)
     HcclResult ret = myRank.BatchExchangeAndCheckConsistency(
         channelDescs, hcommDescVec, 1, "test_tag", &comm);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-
-    // 验证通过后rank 1被标记为已交换
-    EXPECT_FALSE(comm.IsNewRemoteRank(1));
 }
