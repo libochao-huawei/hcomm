@@ -12,12 +12,14 @@ set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/op_base_mc2.cc
 )
 
-target_sources(hcomm PRIVATE
-    ${src_list}
-    ${CMAKE_CURRENT_SOURCE_DIR}/op_base_host.cc
-)
+if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${src_list}
+        ${CMAKE_CURRENT_SOURCE_DIR}/op_base_host.cc
+    )
+endif()
 
-if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
+if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         ${src_list}
         ${CMAKE_CURRENT_SOURCE_DIR}/op_base_device.cc

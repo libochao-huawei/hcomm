@@ -11,9 +11,11 @@ add_subdirectory(utils)
 add_subdirectory(exception)
 add_subdirectory(error_manager)
 
-target_sources(hccl_v2 PRIVATE
-        log.cc
-        sal.cc
-        checkcrc.cc
-        stream_utils.cc
-)
+if(TARGET hccl_v2)
+    target_sources(hccl_v2 PRIVATE
+            log.cc
+            sal.cc
+            checkcrc.cc
+            stream_utils.cc
+    )
+endif()

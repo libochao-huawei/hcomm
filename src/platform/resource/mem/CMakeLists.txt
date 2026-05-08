@@ -15,23 +15,31 @@ set(src_list
     mem_mapping_manager.cc
 )
 
-target_sources(hccl_plf PRIVATE
-    ${src_list}
-    mem_mapping_manager_host.cc
-)
+if(TARGET hccl_plf)
+    target_sources(hccl_plf PRIVATE
+        ${src_list}
+        mem_mapping_manager_host.cc
+    )
+endif()
 
-target_sources(ccl_kernel_plf PRIVATE
-    ${src_list}
-    mem_mapping_manager_device.cc
-)
+if(TARGET ccl_kernel_plf)
+    target_sources(ccl_kernel_plf PRIVATE
+        ${src_list}
+        mem_mapping_manager_device.cc
+    )
+endif()
 
-target_sources(ccl_kernel_plf_a  PRIVATE
-    ${src_list}
-    mem_mapping_manager_device.cc
-)
+if(TARGET ccl_kernel_plf_a)
+    target_sources(ccl_kernel_plf_a  PRIVATE
+        ${src_list}
+        mem_mapping_manager_device.cc
+    )
+endif()
 
-target_sources(hccd  PRIVATE
-    heterog_mem_blocks_manager.cc
-    mem_device.cc
-    mem_host.cc
-)
+if(TARGET hccd)
+    target_sources(hccd  PRIVATE
+        heterog_mem_blocks_manager.cc
+        mem_device.cc
+        mem_host.cc
+    )
+endif()
