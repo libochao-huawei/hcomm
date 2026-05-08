@@ -390,7 +390,7 @@ struct CqCreateInfo {
     uint64_t swdbAddr;
 };
 
-JfcHandle HrtRaUbCreateJfc(RdmaHandle handle, HrtUbJfcMode mode);
+JfcHandle HrtRaUbCreateJfc(RdmaHandle handle, CqCreateInfo& cqInfo, HrtUbJfcMode mode);
 
 JfcHandle HrtRaUbCreateJfcUserCtl(RdmaHandle handle, CqCreateInfo& cqInfo);
 
@@ -607,6 +607,8 @@ using RaUbGetTpInfoParam = struct RaUbGetTpInfoParamDef {
 
 RequestHandle RaUbGetTpInfoAsync(const RdmaHandle rdmaHandle, const RaUbGetTpInfoParam &param, vector<char_t> &out, uint32_t &num);
 
+void RaUbGetTpInfo(const RdmaHandle rdmaHandle, const RaUbGetTpInfoParam &param, vector<char_t> &out, uint32_t &num);
+
 RequestHandle RaUbImportJettyAsync(const RdmaHandle rdmaHandle, const HrtRaUbJettyImportedInParam &in,
     vector<char_t> &out, void* &remQpHandle);
 RequestHandle RaUbTpImportJettyAsync(const RdmaHandle rdmaHandle, const HrtRaUbJettyImportedInParam &in,
@@ -707,7 +709,7 @@ HcclResult HrtGetCcuMemInfo(void* tlv_handle, uint32_t udieIdx, uint64_t memType
 HcclResult HrtRaGetEidByIp(RdmaHandle handle, const vector<IpAddress>& ipV4AddrList, vector<IpAddress>& eidAddrList);
 
 HcclResult HrtRaSetTpAttrAsync(RdmaHandle handle, uint64_t tpHandle, uint32_t attrBitmap, TpAttr& attr, RequestHandle& reqHandle);
-HcclResult HrtRaGetTpAttrAsync(RdmaHandle handle, uint64_t tpHandle, uint32_t& attrBitmap, TpAttr& attr, RequestHandle& reqHandle);
+HcclResult HrtRaGetTpAttrAsync(u32 phyId, RdmaHandle handle, uint64_t tpHandle, uint32_t& attrBitmap, TpAttr& attr, RequestHandle& reqHandle);
 
 constexpr u32 GET_UBOE_FLAG_ENABLE_OPCODE = 57;
 constexpr u32 GET_UBOE_FLAG_ENABLE_VERSION = 2;

@@ -14,7 +14,7 @@
 #include "ub_local_notify.h"
 #include "local_ub_rma_buffer.h"
 #include "sal.h"
-#include "dlprof_func.h"
+#include "../../common/dlprof_func.h"
 #include "user_remote_mem_getter.h"
 #include "exception_util.h"
 #include "env_config/env_config.h"
@@ -92,6 +92,15 @@ std::string UbMemTransport::Describe() const
     msg += StringFormat("exchangeDataSize=%u, ", exchangeDataSize);
     msg += StringFormat("rmtNotifyNum=%zu, rmtCntNotifyVecNum=%zu]", rmtNotifyVec.size(), rmtCntNotifyVec.size());
     return msg;
+}
+
+HcclResult UbMemTransport::Describe(std::string &dfxMsg)
+{
+    HCCL_INFO("UbMemTransport Describe connNum[%u]", connNum);
+    for (u32 i = 0; i < connNum; i++) {
+        CHK_RET(commonLocRes.connVec[i]->Describe(dfxMsg));
+    }
+    return HCCL_SUCCESS;
 }
 
 MemoryBuffer UbMemTransport::GetLocMemBuffer(const RmaBufferSlice &locSlice) const
@@ -532,7 +541,11 @@ void UbMemTransport::SendDataSize()
     u32 sendSize = sendData.size();
 
     // 发送数据包尺寸
-    socket->SendAsync(reinterpret_cast<u8 *>(&sendSize), sizeof(sendSize));
+    if (isHost_) {
+        socket->Send(reinterpret_cast<u8 *>(&sendSize), sizeof(sendSize));
+    } else {
+        socket->SendAsync(reinterpret_cast<u8 *>(&sendSize), sizeof(sendSize));
+    }
     HCCL_INFO("[UbMemTransport::%s] Send size[%u] of data success. [%zu] bytes sent.",
         __func__, sendSize, sizeof(sendSize));
 }
@@ -540,21 +553,33 @@ void UbMemTransport::SendDataSize()
 void UbMemTransport::RecvDataSize()
 {
     // 接收数据包尺寸
-    socket->RecvAsync(reinterpret_cast<u8 *>(&exchangeDataSize), sizeof(exchangeDataSize));
+    if (isHost_) {
+        socket->Recv(reinterpret_cast<u8 *>(&exchangeDataSize), sizeof(exchangeDataSize));
+    } else {
+        socket->RecvAsync(reinterpret_cast<u8 *>(&exchangeDataSize), sizeof(exchangeDataSize));
+    }
     HCCL_INFO("[UbMemTransport::%s] Receive size[%u] of data success. [%zu] bytes received.",
         __func__, exchangeDataSize, sizeof(exchangeDataSize));
 }
 
 void UbMemTransport::SendExchangeData()
 {
-    socket->SendAsync(reinterpret_cast<u8 *>(sendData.data()), sendData.size());
+    if (isHost_) {
+        socket->Send(reinterpret_cast<u8 *>(sendData.data()), sendData.size());
+    } else {
+        socket->SendAsync(reinterpret_cast<u8 *>(sendData.data()), sendData.size());
+    }
     HCCL_INFO("send data %s, size=%llu", GetLinkDescInfo().c_str(), sendData.size());
 }
 
 void UbMemTransport::RecvExchangeData()
 {
     recvData.resize(exchangeDataSize);
-    socket->RecvAsync(reinterpret_cast<u8 *>(recvData.data()), recvData.size());
+    if (isHost_) {
+        socket->Recv(reinterpret_cast<u8 *>(recvData.data()), recvData.size());
+    } else {
+        socket->RecvAsync(reinterpret_cast<u8 *>(recvData.data()), recvData.size());
+    }
 
     HCCL_INFO("recv data %s, size=%llu", GetLinkDescInfo().c_str(), recvData.size());
 }
@@ -731,7 +756,11 @@ void UbMemTransport::SendFinish()
 {
     HCCL_INFO("start send Finish Msg %s [%s]", GetLinkDescInfo().c_str(), FINISH_MSG);
     sendFinishMsg = std::vector<char>(FINISH_MSG, FINISH_MSG + FINISH_MSG_SIZE);
-    socket->SendAsync(reinterpret_cast<u8 *>(sendFinishMsg.data()), FINISH_MSG_SIZE);
+    if (isHost_) {
+        socket->Send(reinterpret_cast<u8 *>(sendFinishMsg.data()), FINISH_MSG_SIZE);
+    } else {
+        socket->SendAsync(reinterpret_cast<u8 *>(sendFinishMsg.data()), FINISH_MSG_SIZE);
+    }
     HCCL_INFO("end send Finish Msg %s [%s]", GetLinkDescInfo().c_str(), FINISH_MSG);
 }
 
@@ -739,7 +768,11 @@ void UbMemTransport::RecvFinish()
 {
     recvFinishMsg.resize(FINISH_MSG_SIZE);
     HCCL_INFO("start recv Finish Msg %s [%s]", GetLinkDescInfo().c_str(), FINISH_MSG);
-    socket->RecvAsync(reinterpret_cast<u8 *>(recvFinishMsg.data()), FINISH_MSG_SIZE);
+    if (isHost_) {
+        socket->Recv(reinterpret_cast<u8 *>(recvFinishMsg.data()), FINISH_MSG_SIZE);
+    } else {
+        socket->RecvAsync(reinterpret_cast<u8 *>(recvFinishMsg.data()), FINISH_MSG_SIZE);
+    }
     HCCL_INFO("end recv Finish Msg %s [%s]", GetLinkDescInfo().c_str(), FINISH_MSG);
 }
 
@@ -1068,6 +1101,29 @@ HcclResult UbMemTransport::Init()
 HcclResult UbMemTransport::DeInit() const
 {
     socket->Destroy();
+    return HCCL_SUCCESS;
+}
+
+HcclResult UbMemTransport::GetRemoteSeg(const void* addr, u64 len, u64 *seg)
+{
+    if (rmtBufferVec.empty()) {
+        HCCL_ERROR("[UbMemTransport::%s] rmtBufferVec is empty.", __func__);
+        return HCCL_E_INTERNAL;
+    }
+
+    bool isAddrInRange = false;
+    for (auto &it : rmtBufferVec) {
+        Buffer iterBuf(it->GetAddr(), it->GetSize());
+        if (iterBuf.Contains(reinterpret_cast<uintptr_t>(addr), len)) {
+            *seg = it->GetSegVa();
+            isAddrInRange = true;
+            break;
+        }
+    }
+
+    if (!isAddrInRange) {
+        return HCCL_E_INTERNAL;
+    }
     return HCCL_SUCCESS;
 }
 
