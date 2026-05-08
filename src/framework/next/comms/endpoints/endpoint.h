@@ -13,7 +13,6 @@
 #include <memory>
 #include <vector>
 #include <string>
-#include <atomic>
 #include "reged_mems/reged_mem_mgr.h"
 #include "hcomm_c_adpt.h"
 #include "socket/socket.h"
@@ -79,7 +78,6 @@ public:
 
 protected:
     static HcclResult CreateEndpointBase(const EndpointDesc &endpointDesc, std::unique_ptr<Endpoint> &endpointPtr);
-    static std::atomic<u64> allId_;
     void* ctxHandle_{nullptr};
     std::shared_ptr<RegedMemMgr> regedMemMgr_{};
     EndpointDesc endpointDesc_;
