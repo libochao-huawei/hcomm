@@ -10,33 +10,35 @@
 add_subdirectory(daemon)
 add_subdirectory(one_sided_component)
 
-target_sources(hccl_v2 PRIVATE
-    communicator_impl_lite_manager.cc
-    communicator_impl_lite.cc
-    aicpu_hdc_handler.cc
-    kernel_entrance.cc
-    aicpu_res_package_helper.cc
-    ns_recovery_handler_func.cc
-    aicpu_comm_destroy_func.cc
-    hdc_lite.cc
-    aicpu_mc2_handler.cc
-    hccl_mc2_ex.cc
-    aicpu_utils.cc
-    launch_device.cc
-)
+if(TARGET hccl_v2)
+    target_sources(hccl_v2 PRIVATE
+        communicator_impl_lite_manager.cc
+        communicator_impl_lite.cc
+        aicpu_hdc_handler.cc
+        kernel_entrance.cc
+        aicpu_res_package_helper.cc
+        ns_recovery_handler_func.cc
+        aicpu_comm_destroy_func.cc
+        hdc_lite.cc
+        aicpu_mc2_handler.cc
+        hccl_mc2_ex.cc
+        aicpu_utils.cc
+        launch_device.cc
+    )
+endif()
 
-if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
-target_sources(ccl_kernel PRIVATE
-    communicator_impl_lite_manager.cc
-    communicator_impl_lite.cc
-    kernel_entrance.cc
-    aicpu_res_package_helper.cc
-    aicpu_hdc_handler.cc
-    hdc_lite.cc
-    ns_recovery_handler_func.cc
-    aicpu_comm_destroy_func.cc
-    aicpu_mc2_handler.cc
-    hccl_mc2_ex.cc
-    aicpu_utils.cc
-)
+if(TARGET ccl_kernel)
+    target_sources(ccl_kernel PRIVATE
+        communicator_impl_lite_manager.cc
+        communicator_impl_lite.cc
+        kernel_entrance.cc
+        aicpu_res_package_helper.cc
+        aicpu_hdc_handler.cc
+        hdc_lite.cc
+        ns_recovery_handler_func.cc
+        aicpu_comm_destroy_func.cc
+        aicpu_mc2_handler.cc
+        hccl_mc2_ex.cc
+        aicpu_utils.cc
+    )
 endif()

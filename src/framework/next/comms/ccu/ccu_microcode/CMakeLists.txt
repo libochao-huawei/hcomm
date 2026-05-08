@@ -8,9 +8,11 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 
-target_sources(hcomm
-    PRIVATE
-    ccu_microcode.cc
-    ccu_microcode_v2_.cc
-    ccu_assist.cc
-)
+if(TARGET hcomm)
+    target_sources(hcomm
+        PRIVATE
+        ccu_microcode.cc
+        ccu_microcode_v2_.cc
+        ccu_assist.cc
+    )
+endif()
