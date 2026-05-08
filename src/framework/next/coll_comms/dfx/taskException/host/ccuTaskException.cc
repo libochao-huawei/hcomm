@@ -1006,7 +1006,7 @@ void CcuTaskException::GetCcuCqeErrRemoteLocalIdByRankId(hccl::CollComm* collCom
 void CcuTaskException::GetCcuCqeErrNetInstanceByRankId(hccl::CollComm* collComm, uint32_t rankid, std::string &netInstanceId)
 {
     HCCL_ERROR("[GetCcuCqeErrNetInstanceByRankId] start to get net instance id by rank id, rankId[%u]", rankid);
-    SaluSleep(10000); /
+    SaluSleep(10000); 
     if (collComm == nullptr) {
         HCCL_ERROR("[GetCcuCqeErrNetInstanceByRankId] collComm is nullptr");
         return;
