@@ -878,4 +878,21 @@ CommProtocol LinkProtocolToCommProtocol(const LinkProtocol &linkProtocol)
 
     return COMM_PROTOCOL_RESERVED;
 }
+
+void RankGraph::SetOcsMeshAttr(RankId rankId, u32 ocsPlaneId, u32 ocsPlaneNum)
+{
+    ocsMeshAttrMap_[rankId] = {ocsPlaneId, ocsPlaneNum};
+}
+
+u32 RankGraph::GetOcsPlaneId(RankId rankId) const
+{
+    auto it = ocsMeshAttrMap_.find(rankId);
+    return (it != ocsMeshAttrMap_.end()) ? it->second.ocsPlaneId : 0;
+}
+
+u32 RankGraph::GetOcsPlaneNum(RankId rankId) const
+{
+    auto it = ocsMeshAttrMap_.find(rankId);
+    return (it != ocsMeshAttrMap_.end()) ? it->second.ocsPlaneNum : 0;
+}
 } // namespace Hccl

@@ -29,6 +29,11 @@ using Level2Id2NetInst       = std::vector<std::unordered_map<std::string, std::
 using RankId2PeerMap         = std::unordered_map<RankId, std::shared_ptr<NetInstance::Peer>>;
 constexpr u32 MAX_NET_LAYER = 8;
 
+struct OcsMeshAttr {
+    u32 ocsPlaneId{0};
+    u32 ocsPlaneNum{0};
+};
+
 class RankGraph {
 public:
     explicit RankGraph(RankId myRank) : netInsts_(MAX_NET_LAYER), myRank_(myRank)
@@ -73,6 +78,11 @@ public:
     HcclResult GetEndpointInfo(uint32_t rankId, const EndpointDesc* endPointDesc, EndpointAttr endpointAttr,
                                      uint32_t infoLen, void* info) const;
 
+    // OCS mesh 并行平面属性
+    void SetOcsMeshAttr(RankId rankId, u32 ocsPlaneId, u32 ocsPlaneNum);
+    u32  GetOcsPlaneId(RankId rankId) const;
+    u32  GetOcsPlaneNum(RankId rankId) const;
+
     // 创建子虚拟拓扑
     std::unique_ptr<RankGraph> CreateSubRankGraph(const std::vector<u32> &rankIds) const; // 外部接口传入类型为u32
     // 打包接口
@@ -85,6 +95,7 @@ private:
     std::set<RankId> innerRanks_; 
     RankId           myRank_;
     bool             initFlag_{false};
+    std::unordered_map<RankId, OcsMeshAttr> ocsMeshAttrMap_;
 
     void CreateSubNetInstances(const std::vector<RankId> rankIds, Level2Id2NetInst &subNetInsts, 
                              RankId2PeerMap &peers, RankGraph *subRankGraph) const;
