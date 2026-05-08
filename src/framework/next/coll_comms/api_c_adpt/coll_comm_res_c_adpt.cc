@@ -283,7 +283,7 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
                 HCCL_ERROR("RegisterToClusterMonitor failed. group[%s], engine[%d], channelNum[%llu], ret[%d]", hcclComm->GetIdentifier().c_str(), engine, channelNum, ret), ret);
         }
 
-        ret = myRank->CreateChannels(engine, commTag, channelDescFinals.data(), channelNum, channels);
+        ret = myRank->CreateChannels(engine, commTag, channelDescFinals.data(), channelNum, channels, hcclComm);
         CHK_PRT_RET((ret == HCCL_E_AGAIN || ret == HCCL_E_UNAVAIL),
             HCCL_WARNING("CreateChannels group[%s], engine[%d] ret[%d]", commTag.c_str(), engine, ret), ret);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
@@ -572,8 +572,23 @@ HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
     }
     std::vector<hcomm::CcuProfilingInfo> allCcuProfilingInfo;
     CHK_RET(kernel->GetCcuProfilingInfo(*ccuTaskArgs, allCcuProfilingInfo));
-    Hccl::TaskParam taskParam = {};
-    taskParam.taskType = Hccl::TaskParamType::TASK_CCU;
+    Hccl::TaskParam taskParam = {
+        .taskType  = Hccl::TaskParamType::TASK_CCU,
+        .beginTime = 0,
+        .endTime   = 0,
+        .isMaster = false,
+        .taskPara  = {
+            .Ccu = {
+                .dieId         = 0,
+                .missionId     = 0,
+                .execMissionId = 0,
+                .instrId       = 0,
+                .costumArgs    = {},
+                .executeId     = 0
+            }
+        },
+        .ccuDetailInfo  = nullptr
+    };
     CHK_RET(LaunchCcuTasks(ccuParams, streamPtr, taskParam));
     CHK_RET(HcclReportCcuProfilingInfo(threadHandle, kernelHandle, allCcuProfilingInfo.data(), allCcuProfilingInfo.size(),
                                         comm, taskParam, rtsThread->GetMaster()));
