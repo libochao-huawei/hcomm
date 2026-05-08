@@ -17,6 +17,6 @@ if(TARGET ccl_kernel)
         ${src_list}
     )
     target_include_directories(ccl_kernel PRIVATE
-        ${HCCL_BASE_DIR}/framework/device/inc
+        ${HCOMM_DIR}/src/framework/device/inc
     )
 endif()
