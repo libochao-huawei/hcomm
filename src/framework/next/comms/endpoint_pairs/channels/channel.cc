@@ -95,7 +95,7 @@ ChannelStatus Channel::TransportStatusToChannelStatus(Hccl::TransportStatus ts)
             return ChannelStatus::READY;
         default:
             HCCL_ERROR("[Channel][%s] Invalid TransportStatus[%d]", __func__, ts);
-            return ChannelStatus::INVALID;
+            return ChannelStatus::FAILED;
     }
 }
 
