@@ -47,8 +47,6 @@ static bool IsSupported(const EndpointDesc &endpointDesc)
     return protocolSupported && locTypeSupported;
 }
 
-std::atomic<u64> Endpoint::allId_(0);
-
 Endpoint::Endpoint(const EndpointDesc &endpointDesc)
 {
     endpointDesc_ = endpointDesc;
@@ -85,7 +83,7 @@ if (endpointDesc.protocol == COMM_PROTOCOL_ROCE && endpointDesc.loc.locType == E
     } else if (endpointDesc.protocol == COMM_PROTOCOL_ROCE && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
         EXECEPTION_CATCH(endpointPtr = std::make_unique<AicpuTsRoceEndpoint>(endpointDesc), return HCCL_E_PTR);
     } else if (endpointDesc.protocol == COMM_PROTOCOL_HCCS && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
-        EXECEPTION_CATCH(endpointPtr = std::make_unique<AicpuTsHccsEndPoint>(endpointDesc), return HCCL_E_PTR);
+        EXECEPTION_CATCH(endpointPtr = std::make_unique<AicpuTsHccsEndpoint>(endpointDesc), return HCCL_E_PTR);
     } else {
         endpointPtr = nullptr;
         HCCL_ERROR("[%s] failed, endpointDesc.protocol [%d] and endpointDesc.loc.locType [%d] do not match.", 

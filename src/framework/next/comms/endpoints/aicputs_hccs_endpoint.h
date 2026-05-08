@@ -22,11 +22,11 @@ namespace hcomm {
 /**
  * @note 职责：AICPU_TS通信引擎+HCCS协议的通信设备EndPoint，管理通信设备上下文，以及设备上的注册内存。
  */
-class AicpuTsHccsEndPoint : public Endpoint {
+class AicpuTsHccsEndpoint : public Endpoint {
 public:
-    explicit AicpuTsHccsEndPoint(const EndpointDesc &endpointDesc);
+    explicit AicpuTsHccsEndpoint(const EndpointDesc &endpointDesc);
 
-    ~AicpuTsHccsEndPoint();
+    ~AicpuTsHccsEndpoint();
 
     HcclResult Init() override;
     HcclResult ServerSocketListen(const uint32_t port) override;
@@ -39,17 +39,13 @@ public:
     HcclResult MemoryGrant(const HcommMemGrantInfo *remoteGrantInfo) override;
 
     HcclResult GetAllMemHandles(void **memHandles, uint32_t *memHandleNum) override;
-    HcclNetDevCtx GetNetDevCtx() {return netDevCtx_;};
     HcclResult GetRemoteIpcRmaBuffer(std::vector<HcclMem> &remoteIpcRmaBufferVec);
     HcclResult GetRemoteIpcRmaBufferEx(std::vector<HcclMemEx> &remoteIpcRmaBufferVecEx);
     HcclResult GetLocalIpcRmaBufferEx(std::vector<HcclMemEx> &localIpcRmaBufferVecEx);
 
-    u64 GetMyId() {return myId_;};
 private:
-    HcclNetDevCtx netDevCtx_{};
     u32 serverPort_{AICPU_CHANNEL_DEFAULT_PORT};
     hccl::HcclIpAddress devIpAddr_;
-    u64 myId_;
 };
 }
 #endif // AICPUTS_HCCS_ENDPOINT_H

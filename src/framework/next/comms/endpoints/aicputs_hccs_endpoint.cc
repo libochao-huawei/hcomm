@@ -14,19 +14,17 @@
 #include "log.h"
 #include "adapter_rts_common.h"
 #include "net_dev/global_net_dev_manager.h"
-#include "hccs_mem.h"
+#include "hccs_reged_mem_mgr.h"
 
 using namespace hccl;
 
 namespace hcomm {
-AicpuTsHccsEndPoint::AicpuTsHccsEndPoint(const EndpointDesc &endpointDesc)
+AicpuTsHccsEndpoint::AicpuTsHccsEndpoint(const EndpointDesc &endpointDesc)
     : Endpoint(endpointDesc)
 {
-    myId_ = ++allId_;
-    HCCL_INFO("[AicpuTsHccsEndPoint][AicpuTsHccsEndPoint] myID[%lu]", myId_);
 }
 
-AicpuTsHccsEndPoint::~AicpuTsHccsEndPoint()
+AicpuTsHccsEndpoint::~AicpuTsHccsEndpoint()
 {
     if (!devIpAddr_.IsInvalid()) {
         hccl::GlobalNetDevMgr::GetInstance(endpointDesc_.loc.device.devPhyId).UnRefNetDevCtx(
@@ -34,7 +32,7 @@ AicpuTsHccsEndPoint::~AicpuTsHccsEndPoint()
     }
 }
 
-HcclResult AicpuTsHccsEndPoint::Init()
+HcclResult AicpuTsHccsEndpoint::Init()
 {
     HCCL_INFO("[%s]localEndpoint protocol[%d], type[%u], id[%u] locType[%u], devPhyId[%u], serverIdx[%u], "
         "superDevId[%u], superPodIdx[%u]",
@@ -43,96 +41,95 @@ HcclResult AicpuTsHccsEndPoint::Init()
         endpointDesc_.loc.device.superDevId, endpointDesc_.loc.device.superPodIdx);
 
     if (endpointDesc_.loc.locType != ENDPOINT_LOC_TYPE_DEVICE) {
-        HCCL_INFO("[AicpuTsHccsEndPoint][%s] AicpuTsHccsEndPoint not support host", __func__);
+        HCCL_INFO("[AicpuTsHccsEndpoint][%s] AicpuTsHccsEndpoint not support host", __func__);
         return HCCL_E_NOT_SUPPORT;
     }
 
     u32 devPhyId = endpointDesc_.loc.device.devPhyId;
     uint32_t superDevId = endpointDesc_.loc.device.superDevId;
     CHK_RET(GlobalNetDevMgr::GetDeviceVnicIP(devPhyId, superDevId, devIpAddr_));
-    HCCL_INFO("[AicpuTsHccsEndPoint]devPhyId[%u] superDevId[%u] devIpAddr_[%s] ",
+    HCCL_INFO("[AicpuTsHccsEndpoint]devPhyId[%u] superDevId[%u] devIpAddr_[%s] ",
         devPhyId, superDevId, devIpAddr_.GetReadableAddress());
 
+    HcclNetDevCtx netDevCtx;
     CHK_RET(hccl::GlobalNetDevMgr::GetInstance(endpointDesc_.loc.device.devPhyId).RefNetDevCtx(
-        NicType::VNIC_TYPE, devIpAddr_, serverPort_, netDevCtx_));
+        NicType::VNIC_TYPE, devIpAddr_, serverPort_, netDevCtx));
 
-    EXECEPTION_CATCH(regedMemMgr_ = std::make_unique<HccsRegedMemMgr>(netDevCtx_), return HCCL_E_PARA);
+    EXECEPTION_CATCH(regedMemMgr_ = std::make_shared<HccsRegedMemMgr>(netDevCtx), return HCCL_E_PARA);
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsHccsEndPoint::ServerSocketListen(const uint32_t port)
+HcclResult AicpuTsHccsEndpoint::ServerSocketListen(const uint32_t port)
 {
-    CHK_RET(hccl::GlobalNetDevMgr::GetInstance(endpointDesc_.loc.device.devPhyId).ServerInit(
-        netDevCtx_, serverPort_));
+    CHK_RET(hccl::GlobalNetDevMgr::GetInstance(endpointDesc_.loc.device.devPhyId).ServerInit(serverPort_));
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsHccsEndPoint::ServerSocketStopListen(const uint32_t port)
+HcclResult AicpuTsHccsEndpoint::ServerSocketStopListen(const uint32_t port)
 {
-    CHK_RET(hccl::GlobalNetDevMgr::GetInstance(endpointDesc_.loc.device.devPhyId).ServerDeInit(
-        netDevCtx_, port));
+    CHK_RET(hccl::GlobalNetDevMgr::GetInstance(endpointDesc_.loc.device.devPhyId).ServerDeInit(port));
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsHccsEndPoint::RegisterMemory(HcommMem mem, const char *memTag, void **memHandle)
+HcclResult AicpuTsHccsEndpoint::RegisterMemory(HcommMem mem, const char *memTag, void **memHandle)
 {
-    CHK_RET(this->regedMemMgr_->RegisterMemory(mem, memTag, memHandle));
+    CHK_RET(GetRegedMemMgr()->RegisterMemory(mem, memTag, memHandle));
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsHccsEndPoint::UnregisterMemory(void* memHandle)
+HcclResult AicpuTsHccsEndpoint::UnregisterMemory(void* memHandle)
 {
-    CHK_RET(this->regedMemMgr_->UnregisterMemory(memHandle));
+    CHK_RET(GetRegedMemMgr()->UnregisterMemory(memHandle));
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsHccsEndPoint::MemoryExport(void *memHandle, void **memDesc, uint32_t *memDescLen)
+HcclResult AicpuTsHccsEndpoint::MemoryExport(void *memHandle, void **memDesc, uint32_t *memDescLen)
 {
-    CHK_RET(this->regedMemMgr_->MemoryExport(this->endpointDesc_, memHandle, memDesc, memDescLen));
+    CHK_RET(GetRegedMemMgr()->MemoryExport(this->endpointDesc_, memHandle, memDesc, memDescLen));
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsHccsEndPoint::MemoryImport(const void *memDesc, uint32_t descLen, HcommMem *outMem)
+HcclResult AicpuTsHccsEndpoint::MemoryImport(const void *memDesc, uint32_t descLen, HcommMem *outMem)
 {
-    CHK_RET(this->regedMemMgr_->MemoryImport(memDesc, descLen, outMem));
+    CHK_RET(GetRegedMemMgr()->MemoryImport(memDesc, descLen, outMem));
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsHccsEndPoint::MemoryUnimport(const void *memDesc, uint32_t descLen)
+HcclResult AicpuTsHccsEndpoint::MemoryUnimport(const void *memDesc, uint32_t descLen)
 {
-    CHK_RET(this->regedMemMgr_->MemoryUnimport(memDesc, descLen));
+    CHK_RET(GetRegedMemMgr()->MemoryUnimport(memDesc, descLen));
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsHccsEndPoint::MemoryGrant(const HcommMemGrantInfo *remoteGrantInfo)
+HcclResult AicpuTsHccsEndpoint::MemoryGrant(const HcommMemGrantInfo *remoteGrantInfo)
 {
-    CHK_RET(this->regedMemMgr_->MemoryGrant(remoteGrantInfo));
+    CHK_RET(GetRegedMemMgr()->MemoryGrant(remoteGrantInfo));
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsHccsEndPoint::GetAllMemHandles(void **memHandles, uint32_t *memHandleNum)
+HcclResult AicpuTsHccsEndpoint::GetAllMemHandles(void **memHandles, uint32_t *memHandleNum)
 {
-    CHK_RET(this->regedMemMgr_->GetAllMemHandles(memHandles, memHandleNum));
+    CHK_RET(GetRegedMemMgr()->GetAllMemHandles(memHandles, memHandleNum));
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsHccsEndPoint::GetRemoteIpcRmaBuffer(std::vector<HcclMem> &remoteIpcRmaBufferVec)
+HcclResult AicpuTsHccsEndpoint::GetRemoteIpcRmaBuffer(std::vector<HcclMem> &remoteIpcRmaBufferVec)
 {
-    HccsRegedMemMgr *hccsRegedMemMgr = dynamic_cast<HccsRegedMemMgr *>(this->regedMemMgr_.get());
+    HccsRegedMemMgr *hccsRegedMemMgr = dynamic_cast<HccsRegedMemMgr *>(GetRegedMemMgr().get());
     CHK_RET(hccsRegedMemMgr->GetRemoteIpcRmaBuffer(remoteIpcRmaBufferVec));
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsHccsEndPoint::GetRemoteIpcRmaBufferEx(std::vector<HcclMemEx> &remoteIpcRmaBufferVecEx)
+HcclResult AicpuTsHccsEndpoint::GetRemoteIpcRmaBufferEx(std::vector<HcclMemEx> &remoteIpcRmaBufferVecEx)
 {
-    HccsRegedMemMgr *hccsRegedMemMgr = dynamic_cast<HccsRegedMemMgr *>(this->regedMemMgr_.get());
+    HccsRegedMemMgr *hccsRegedMemMgr = dynamic_cast<HccsRegedMemMgr *>(GetRegedMemMgr().get());
     CHK_RET(hccsRegedMemMgr->GetRemoteIpcRmaBufferEx(remoteIpcRmaBufferVecEx));
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsHccsEndPoint::GetLocalIpcRmaBufferEx(std::vector<HcclMemEx> &localIpcRmaBufferVecEx)
+HcclResult AicpuTsHccsEndpoint::GetLocalIpcRmaBufferEx(std::vector<HcclMemEx> &localIpcRmaBufferVecEx)
 {
-    HccsRegedMemMgr *hccsRegedMemMgr = dynamic_cast<HccsRegedMemMgr *>(this->regedMemMgr_.get());
+    HccsRegedMemMgr *hccsRegedMemMgr = dynamic_cast<HccsRegedMemMgr *>(GetRegedMemMgr().get());
     CHK_RET(hccsRegedMemMgr->GetLocalIpcRmaBufferEx(localIpcRmaBufferVecEx));
     return HCCL_SUCCESS;
 }

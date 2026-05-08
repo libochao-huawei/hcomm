@@ -33,8 +33,6 @@ namespace hcomm {
 AicpuTsHccsChannel::AicpuTsHccsChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc):
     endpointHandle_(endpointHandle), channelDesc_(channelDesc) 
 {
-    myId_ = ++allId_;
-    HCCL_INFO("[AicpuTsHccsChannel][AicpuTsHccsChannel] myID[%lu]", myId_);
 }
 
 AicpuTsHccsChannel::~AicpuTsHccsChannel()
@@ -44,16 +42,14 @@ AicpuTsHccsChannel::~AicpuTsHccsChannel()
         dispatcher_ = NULL;
     }
     GlobalNetDevMgr::GetInstance(localEp_.loc.device.devPhyId).CloseSocket(socket_);
-    (void)hccl::GlobalNetDevMgr::GetInstance(localEp_.loc.device.devPhyId).ServerDeInit(
-        netDevCtx_, serverPort_);
+    (void)hccl::GlobalNetDevMgr::GetInstance(localEp_.loc.device.devPhyId).ServerDeInit(serverPort_);
 }
 
 HcclResult AicpuTsHccsChannel::ParseInputParam()
 {
     CHK_RET(static_cast<HcclResult>(HcommEndpointGet(endpointHandle_, reinterpret_cast<void**>(&localEpPtr_))));
     CHK_PTR_NULL(localEpPtr_);
-    
-    netDevCtx_ = localEpPtr_->GetNetDevCtx();
+
     localEp_ = localEpPtr_->GetEndpointDesc();
 
     remoteEp_ = channelDesc_.remoteEndpoint;
@@ -102,8 +98,7 @@ HcclResult AicpuTsHccsChannel::BuildConnection()
 {
     /* delay start server here, uplayer may not call ServerSocketListen of endpoint,
     and here can get the port from channel desc*/
-    CHK_RET(hccl::GlobalNetDevMgr::GetInstance(localEp_.loc.device.devPhyId).ServerInit(
-        netDevCtx_, serverPort_));
+    CHK_RET(hccl::GlobalNetDevMgr::GetInstance(localEp_.loc.device.devPhyId).ServerInit(serverPort_));
 
     std::string localReadableAddress = localIp_.GetReadableAddress();
     std::string remoteReadableAddress = remoteIp_.GetReadableAddress();
@@ -115,11 +110,11 @@ HcclResult AicpuTsHccsChannel::BuildConnection()
     if (isSocketServer_) {
         GlobalNetDevMgr::MakeSocketTag(localIp_, serverPort_, remoteIp_, socketTag_, socketTagIdx_);
         CHK_RET(GlobalNetDevMgr::GetInstance(localEp_.loc.device.devPhyId).AcceptClient(
-            netDevCtx_, serverPort_, remoteIp_, socketTag_, socket_));
+            serverPort_, remoteIp_, socketTag_, socket_));
     } else {
         GlobalNetDevMgr::MakeSocketTag(remoteIp_, serverPort_, localIp_, socketTag_, socketTagIdx_);
         CHK_RET(GlobalNetDevMgr::GetInstance(localEp_.loc.device.devPhyId).ConnectToServer(
-            netDevCtx_, serverPort_, remoteIp_, serverPort_, socketTag_, socket_));
+            serverPort_, remoteIp_, serverPort_, socketTag_, socket_));
     }
     HCCL_INFO("[AicpuTsHccsChannel][BuildConnection] local devPhyId [%u] ip[%u] "
         "remote devPhyId[%u] ip[%s] socketTag_[%s]",

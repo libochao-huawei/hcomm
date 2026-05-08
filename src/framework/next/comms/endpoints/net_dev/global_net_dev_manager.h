@@ -38,12 +38,12 @@ public:
     HcclResult RefNetDevCtx(NicType nicType, const HcclIpAddress& ipAddr, u32 port, HcclNetDevCtx& netDevCtx);
     HcclResult UnRefNetDevCtx(NicType nicType, const HcclIpAddress& ipAddr, u32 port);
 
-    HcclResult ServerInit(const HcclNetDevCtx netDevCtx, u32 port);
-    HcclResult ServerDeInit(const HcclNetDevCtx netDevCtx, u32 port);
+    HcclResult ServerInit(u32 port);
+    HcclResult ServerDeInit(u32 port);
 
-    HcclResult ConnectToServer(const HcclNetDevCtx netDevCtx, uint32_t localPort, hccl::HcclIpAddress remoteIp,
+    HcclResult ConnectToServer(uint32_t localPort, hccl::HcclIpAddress remoteIp,
         uint32_t remotePort, std::string &socketTag, std::shared_ptr<hccl::HcclSocket> &socket);
-    HcclResult AcceptClient(const HcclNetDevCtx netDevCtx, uint32_t localPort, hccl::HcclIpAddress remoteIp,
+    HcclResult AcceptClient(uint32_t localPort, hccl::HcclIpAddress remoteIp,
         std::string &socketTag, std::shared_ptr<hccl::HcclSocket> &socket);
     void CloseSocket(std::shared_ptr<hccl::HcclSocket> &socket);
 
@@ -58,11 +58,6 @@ private:
     HcclResult WaitClientSocketLinkEstablished(const std::shared_ptr<hccl::HcclSocket> &socket, s32 timeoutSec);
 
 private:
-    u32 devicePhyId_{INVALID_UINT};
-    s32 deviceLogicId_{INVALID_INT};
-
-    bool isInited_{false};
-
     static std::map<PortInfo, std::pair<NicType, HcclNetDevCtx>> netDevCtxMap_;
     static std::map<PortInfo, Referenced> netDevCtxRefMap_;
     static std::mutex netDevCtxMtx_;
@@ -71,6 +66,12 @@ private:
     static std::mutex serverMapMutex_;
     static std::map<PortInfo, std::shared_ptr<hccl::HcclSocket>> serverSocketMap_;
     static std::map<PortInfo, Referenced> serverSocketRefMap_;
+
+    u32 devicePhyId_{INVALID_UINT};
+    s32 deviceLogicId_{INVALID_INT};
+
+    bool isInited_{false};
+    HcclNetDevCtx netDevCtx_{nullptr};
 };
 
 } // namespace hccl

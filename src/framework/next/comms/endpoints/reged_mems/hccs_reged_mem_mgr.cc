@@ -14,7 +14,7 @@
 #include "endpoint.h"
 #include "hccl_mem.h"
 #include "hccl_one_sided_data.h"
-#include "hccs_mem.h"
+#include "hccs_reged_mem_mgr.h"
 // for hccl_network.h
 #include "inner/local_rdma_rma_buffer.h"
 #include "inner/remote_rdma_rma_buffer.h"
