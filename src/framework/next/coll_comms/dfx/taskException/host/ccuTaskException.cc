@@ -1072,7 +1072,9 @@ void CcuTaskException::PrintCcuErrorInfo(uint32_t deviceId, uint16_t status, con
         if (isGetCqeErrInfo) {
             isGetCqeErrInfo = false; // 只获取一次CQE错误信息，避免重复获取
             for (const auto& errorInfo : errorInfos) {
-                GetCcuCqeErrorInfo(errorInfo, taskInfo, deviceId, missionStatus);//添加注释errorInfos[0]对应missionStatus异常
+                if (errorInfo.repType == CcuRep::CcuRepType::READ || errorInfo.repType == CcuRep::CcuRepType::WRITE || errorInfo.repType == CcuRep::CcuRepType::BUF_READ || errorInfo.repType == CcuRep::CcuRepType::BUF_WRITE) {
+                    GetCcuCqeErrorInfo(errorInfo, taskInfo, deviceId, missionStatus);//添加注释errorInfos[0]对应missionStatus异常
+                }
                 break;
             }
             
