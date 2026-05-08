@@ -61,9 +61,11 @@ struct SocketIfName {
 
 struct DfsConfig {
     bool taskExceptionEnable{true};
+    int32_t rankConsistentState{0}; // -1:off 0:first 1:on
     DfsConfig() = default;
-    DfsConfig(bool taskException)
-        : taskExceptionEnable(taskException){};
+    DfsConfig(bool taskException, int32_t consistentState)
+        : taskExceptionEnable(taskException),
+          rankConsistentState(consistentState){};
 };
 
 enum class NpuProtoType {
