@@ -104,6 +104,14 @@ private:
         u8 *recvData, u32 recvLen);
     HcclResult WaitAllAsyncComplete(const std::vector<Hccl::Socket*> &sockets,
         const std::vector<u32> &remoteRanks);
+    HcclResult WaitActiveAsyncComplete(
+        const std::vector<Hccl::Socket*> &sockets,
+        const std::vector<u32> &remoteRanks,
+        const std::vector<HcommSocketRole> &roles,
+        u32 uniqueCount,
+        const std::vector<u32> &remoteExchangeInfoLens,
+        u32 localExchangeInfoLen,
+        bool isFirstPass);
 
     aclrtBinHandle binHandle_{nullptr};
     uint32_t rankId_{};
