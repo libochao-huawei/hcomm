@@ -535,7 +535,10 @@ HcclResult TpMgr::HandleCompletedRequest(RequestCtx reqCtx, const GetTpInfoParam
     tmpTpInfo.mappedJettyPriority = mappedSl & 0xFU;
     tmpTpInfo.hasMappedJettyPriority = true;
 
-    CHK_RET(CommitMappedSlToTpAttr(devPhyId_, param.locAddr, tmpTpInfo.tpHandle, mappedSl));
+    // CTP 不向 TP 写回 SL；仅 RTP / UBOE 通过 RaCtxSetTpAttr 提交 mapped SL
+    if (param.tpProtocol == TpProtocol::RTP || param.tpProtocol == TpProtocol::UBOE) {
+        CHK_RET(CommitMappedSlToTpAttr(devPhyId_, param.locAddr, tmpTpInfo.tpHandle, mappedSl));
+    }
     if (param.tpProtocol == TpProtocol::UBOE && reqCtx.tpAttr.dscpConfigMode == 0) {
         const uint8_t dscpBefore = static_cast<uint8_t>(reqCtx.tpAttr.dscp & 0x3FU);
         const uint8_t qos = static_cast<uint8_t>(param.qos & 0xFFU);
