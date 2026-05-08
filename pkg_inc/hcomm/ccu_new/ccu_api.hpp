@@ -81,8 +81,8 @@ inline CcuResult CreateByChannel(ChannelHandle channel, uint32_t varIndex, Varia
 
 
 // ==================== 事件 ====================
-inline CcuResult RecordEvent(Event e)  { return CcuRecordEvent(e.handle); }
-inline CcuResult WaitEvent(Event e)    { return CcuWaitEvent(e.handle); }
+inline CcuResult EventRecord(Event e)  { return CcuEventRecord(e.handle); }
+inline CcuResult EventWait(Event e)    { return CcuEventWait(e.handle); }
 inline CcuResult SetMask(Event e, uint32_t mask=1) { return CcuSetMask(e.handle, mask); }
 inline CcuResult NotifyRecord(ChannelHandle channel, uint32_t remoteNotifyIdx, uint32_t mask=1){ return CcuNotifyRecord(channel, remoteNotifyIdx, mask); }
 inline CcuResult NotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask=1){ return CcuNotifyWait(channel, localNotifyIdx, mask); }
@@ -95,7 +95,9 @@ inline CcuResult LoadArg(Variable v, uint32_t argId) {
 inline CcuResult LoadVar(uint64_t addr, Variable* v, uint32_t num) {
     return CcuLoadVar(addr, v[0].handle, num);
 }
-
+inline CcuResult StoreVar(uint64_t addr, Variable* v, uint32_t num) {
+    return CcuStoreVar(addr, v[0].handle, num);
+}
 // ==================== 本地拷贝（3 种重载） ====================
 
 // LocalAddr → LocalAddr,LocalAddr → Buffer,Buffer → LocalAddr
