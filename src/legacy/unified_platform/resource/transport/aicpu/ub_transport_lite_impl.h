@@ -129,8 +129,8 @@ private:
     // N秒快恢需要清理的两个资源
     std::vector<std::vector<char>> connUniqueIdVec;
     std::vector<RmaConnLite *> connVec;
-    
-    std::function<HcclResult(u32, u32, const TaskParam&, u64)> newCallback_{nullptr};
+
+    std::function<void(u32 streamId, u32 taskId, const TaskParam &taskParam)> callback_{nullptr};
 
     void ProfilingProcess(void *src, void *dst, u64 size, const StreamLite &stream, DmaOp dmaOp,
                             u32 taskId);
