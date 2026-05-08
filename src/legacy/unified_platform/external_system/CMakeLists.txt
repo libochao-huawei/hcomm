@@ -7,9 +7,11 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-target_sources(hccl_v2 PRIVATE
-        orion_adapter_hccp.cc
-        orion_adapter_rts.cc
-        orion_adapter_tsd.cc
-        orion_adapter_trace.cc
-)
+if(TARGET hccl_v2)
+    target_sources(hccl_v2 PRIVATE
+            orion_adapter_hccp.cc
+            orion_adapter_rts.cc
+            orion_adapter_tsd.cc
+            orion_adapter_trace.cc
+    )
+endif()

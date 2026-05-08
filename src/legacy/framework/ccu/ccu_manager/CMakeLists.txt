@@ -7,11 +7,13 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-target_sources(hccl_v2 PRIVATE
-    ccu_jetty_mgr.cpp
-    ccu_transport_group_manager.cpp
-    ccu_transport_manager.cpp
-    ccu_respack_mgr.cpp
-    ccu_registered_ctx_mgr.cpp
-    ccu_ctx_creator_registry.cpp
-)
+if(TARGET hccl_v2)
+    target_sources(hccl_v2 PRIVATE
+        ccu_jetty_mgr.cpp
+        ccu_transport_group_manager.cpp
+        ccu_transport_manager.cpp
+        ccu_respack_mgr.cpp
+        ccu_registered_ctx_mgr.cpp
+        ccu_ctx_creator_registry.cpp
+    )
+endif()
