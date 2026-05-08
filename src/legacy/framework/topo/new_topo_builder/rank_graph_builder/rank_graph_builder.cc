@@ -383,6 +383,8 @@ std::shared_ptr<NetInstance> RankGraphBuilder::CreateNetInstance(const RankLevel
         netInst = std::make_shared<InnerNetInstance>(levelInfo.netLayer, levelInfo.netInstId);
     } else if (levelInfo.netType == NetType::CLOS) {
         netInst = std::make_shared<ClosNetInstance>(levelInfo.netLayer, levelInfo.netInstId);
+    } else if (levelInfo.netType == NetType::OCS_MESH) {
+        netInst = std::make_shared<OcsMeshNetInstance>(levelInfo.netLayer, levelInfo.netInstId);
     } else {
         THROW<NotSupportException>(StringFormat("[RankGraphBuilder][CreateNetInstance] netType: %s is not support", levelInfo.netType));
     }

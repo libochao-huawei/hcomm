@@ -507,6 +507,8 @@ std::shared_ptr<NetInstance> GetOrCreateNetInstance(u32 netLayer, const string &
             netInstance = std::make_shared<InnerNetInstance>(netLayer, netInstId);
         } else if (type == NetType::CLOS) {
             netInstance = std::make_shared<ClosNetInstance>(netLayer, netInstId);
+        } else if (type == NetType::OCS_MESH) {
+            netInstance = std::make_shared<OcsMeshNetInstance>(netLayer, netInstId);
         }
         netInsts[netLayer][netInstId] = netInstance;
         // netInstance添加到virtualTopo
