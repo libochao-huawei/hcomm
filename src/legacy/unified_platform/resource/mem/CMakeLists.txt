@@ -7,9 +7,11 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-target_sources(hccl_v2 PRIVATE
-        hccl_mem_v2.cc
-        hccl_mem.cc
-        local_ub_rma_buffer_manager.cc
-        local_rdma_rma_buffer_manager.cc
-)
+if(TARGET hccl_v2)
+    target_sources(hccl_v2 PRIVATE
+            hccl_mem_v2.cc
+            hccl_mem.cc
+            local_ub_rma_buffer_manager.cc
+            local_rdma_rma_buffer_manager.cc
+    )
+endif()

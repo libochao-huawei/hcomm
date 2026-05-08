@@ -8,8 +8,10 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 if(NOT CCL_FWK_LLT)
-target_sources(hccl_v2 PRIVATE
-    comm_manager.cc
-    communicator_callback.cc
-)
+if(TARGET hccl_v2)
+    target_sources(hccl_v2 PRIVATE
+        comm_manager.cc
+        communicator_callback.cc
+    )
+endif()
 endif()

@@ -15,8 +15,10 @@ set(src_list
     aicpu_ts_roce_channel.cc
 )
 
-target_sources(hcomm PRIVATE
-    ${src_list}
-)
+if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${src_list}
+    )
+endif()
 
 add_subdirectory(device)

@@ -49,7 +49,9 @@ aux_source_directory(util/. srcs)
 
 add_library(net_co SHARED)
 
-target_sources(net_co PRIVATE ${srcs})
+if(TARGET net_co)
+    target_sources(net_co PRIVATE ${srcs})
+endif()
 set(NETCO_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../netco/)
 
 set(bkf_dep_include

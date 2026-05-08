@@ -13,9 +13,11 @@ set(src_list
     channel_process.cc
 )
 
-target_sources(hcomm PRIVATE
-    ${src_list}
-)
+if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${src_list}
+    )
+endif()
 
 add_subdirectory(aicpu)
 add_subdirectory(host)
