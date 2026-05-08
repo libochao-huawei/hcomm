@@ -163,7 +163,6 @@ CcuResult CcuKernel::GeneTaskParams(const uint64_t *taskArgs, uint32_t argsNum,
             "argsNum = %u, loaded = %zu", __func__, argsNum, loadArgUsedSet_.size());
         return CcuResult::CCU_E_INTERNAL;
     }
-    // 进一步保证集合内容是 [0, argsNum) 的全集（拒绝 5 个但有 argId=100 这种）
     for (uint32_t i = 0; i < argsNum; ++i) {
         if (loadArgUsedSet_.count(i) == 0) {
             HCCL_ERROR("[CcuKernel][%s] failed, argId %u not loaded (argsNum=%u)",
