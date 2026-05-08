@@ -103,4 +103,14 @@ HcclResult RankGraphV2::GetEndpointInfo(uint32_t rankId, const EndpointDesc *end
  	return pImpl->GetEndpointInfo(rankId, endPointDesc, endpointAttr, infoLen, info);
 }
 
+u32 RankGraphV2::GetOcsPlaneId() const
+{
+    return pImpl->GetOcsPlaneId();
+}
+
+u32 RankGraphV2::GetOcsPlaneNum() const
+{
+    return pImpl->GetOcsPlaneNum();
+}
+
 };  // namespace hccl
