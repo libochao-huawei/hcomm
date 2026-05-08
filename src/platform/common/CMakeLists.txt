@@ -28,35 +28,43 @@ set(src_list
     read_write_lock.cc
 )
 
-target_sources(hccl_plf PRIVATE
-    ${src_list}
-    launch_aicpu.cc
-)
+if(TARGET hccl_plf)
+    target_sources(hccl_plf PRIVATE
+        ${src_list}
+        launch_aicpu.cc
+    )
+endif()
 
-target_sources(ccl_kernel_plf PRIVATE
-    ${src_list}
-)
+if(TARGET ccl_kernel_plf)
+    target_sources(ccl_kernel_plf PRIVATE
+        ${src_list}
+    )
+endif()
 
-target_sources(ccl_kernel_plf_a  PRIVATE
-    ${src_list}
-)
+if(TARGET ccl_kernel_plf_a)
+    target_sources(ccl_kernel_plf_a  PRIVATE
+        ${src_list}
+    )
+endif()
 
-target_sources(hccd PRIVATE
-    sal.cc
-    log.cc
-    dlra_function.cc
-    mr_manager.cc
-    externalinput.cc
-    dlhal_function.cc
-    hccl_ip_address.cc
-    hccl_dl.cc
-    device_capacity.cc
-    workflow.cc
-    dltdt_function.cc
-    dlprof_func.cc
-    dlibv_function.cc
-    dlhns_function.cc
-)
+if(TARGET hccd)
+    target_sources(hccd PRIVATE
+        sal.cc
+        log.cc
+        dlra_function.cc
+        mr_manager.cc
+        externalinput.cc
+        dlhal_function.cc
+        hccl_ip_address.cc
+        hccl_dl.cc
+        device_capacity.cc
+        workflow.cc
+        dltdt_function.cc
+        dlprof_func.cc
+        dlibv_function.cc
+        dlhns_function.cc
+    )
+endif()
 
 add_subdirectory(adapter)
 add_subdirectory(misc)

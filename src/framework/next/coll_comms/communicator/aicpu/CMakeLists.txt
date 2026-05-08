@@ -16,11 +16,12 @@ set(src_list
     coll_comm_aicpu_destroy_func.cc
 )
 
-if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
-    target_include_directories(ccl_kernel PRIVATE
-        ${HCCL_BASE_DIR}/framework/next/coll_comms/communicator/ns_recovery/aicpu
-    )
+if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         ${src_list}
+    )
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${HCOMM_DIR}/src/framework/next/coll_comms/communicator/ns_recovery/aicpu
     )
 endif()

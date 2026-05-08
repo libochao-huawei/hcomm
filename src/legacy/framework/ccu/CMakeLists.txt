@@ -11,7 +11,9 @@ add_subdirectory(ccu_ins)
 add_subdirectory(ccu_manager)
 add_subdirectory(ccu_mc2)
 
-target_sources(hccl_v2 PRIVATE
-        ccu_ins_preprocessor.cpp
-        ccu_communicator.cpp
-)
+if(TARGET hccl_v2)
+    target_sources(hccl_v2 PRIVATE
+            ccu_ins_preprocessor.cpp
+            ccu_communicator.cpp
+    )
+endif()

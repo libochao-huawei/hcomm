@@ -39,28 +39,23 @@ target_link_options(hcomm PRIVATE
 )
 
 target_include_directories(hcomm PRIVATE
-    ${hccl_include_list}
     ${LEGACY_INCLUDE_LIST}
+
+    # framework 头文件
+    ${CMAKE_CURRENT_SOURCE_DIR}/inc
+    ${CMAKE_CURRENT_SOURCE_DIR}
 
     ${HCOMM_DIR}/include
     ${HCOMM_DIR}/include/hccl
-    ${HCOMM_DIR}/pkg_inc/
-    ${HCOMM_DIR}/pkg_inc/hccl/
+    ${HCOMM_DIR}/pkg_inc
+    ${HCOMM_DIR}/pkg_inc/hccl
     ${HCOMM_DIR}/pkg_inc/hcomm/ccu
     ${HCOMM_DIR}/src/pub_inc
-    ${HCOMM_DIR}/src/pub_inc/new/
-    ${HCOMM_DIR}/src/platform/common
-    ${HCOMM_DIR}/src/platform/legacy/inc
-    ${HCOMM_DIR}/src/platform/hccp/inc/
-    ${HCOMM_DIR}/src/platform/resource/dispatcher_ctx
-    ${HCOMM_DIR}/src/platform/hccp/inc/network
-    ${HCOMM_DIR}/src/platform/inc/adapter
+    ${HCOMM_DIR}/src/pub_inc/inner
+    ${HCOMM_DIR}/src/pub_inc/new
     ${HCOMM_DIR}/src/common/debug/profiling/inc
     ${HCOMM_DIR}/src/common/debug/profiling/inc/host
     ${HCOMM_DIR}/src/common/debug/config
-    ${HCOMM_DIR}/src/legacy
-    ${HCOMM_DIR}/src/legacy/interface
-    ${HCOMM_DIR}/src/legacy/framework/topo/new_topo_builder/rank_graph
 )
 
 if(BUILD_OPEN_PROJECT)
