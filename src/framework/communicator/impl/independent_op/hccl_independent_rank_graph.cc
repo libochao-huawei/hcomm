@@ -23,6 +23,8 @@
 
 using namespace hccl;
 
+static RankDesc g_cachedRankDesc;
+
 #ifndef CCL_KERNEL_AICPU
 HcclResult HcclGetRankGraph(HcclComm comm, GraphType type, void **graph, uint32_t *len)
 {
@@ -372,6 +374,57 @@ HcclResult HcclGetRankId(HcclComm comm, uint32_t *rank)
     /* 关键状态记录 */
     HCCL_INFO("HcclGetRankId success, rankIdPtr[%p], rankId[%u]", rank, tmpRankId);
     return HCCL_SUCCESS;
+}
+
+HcclResult HcclGetRankDescList(HcclComm comm, RankDesc **descList, uint32_t *descNum)
+{
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(descList);
+    CHK_PTR_NULL(descNum);
+
+    HCCLV2_FUNC_RUN([&]() -> HcclResult {
+        hccl::hcclComm *hcclCommObj = static_cast<hccl::hcclComm *>(comm);
+        CollComm* collComm = hcclCommObj->GetCollComm();
+        CHK_PTR_NULL(collComm);
+        RankGraph* rankGraph = collComm->GetRankGraph();
+        CHK_PTR_NULL(rankGraph);
+
+        // 默认初始化
+        (void)memset_s(&g_cachedRankDesc, sizeof(g_cachedRankDesc), 0, sizeof(g_cachedRankDesc));
+
+        // localId / superPodId: CollComm::GetRankGraph 返回 hccl::RankGraph*（基类），
+        // Hccl::RankGraph 的 GetPeer/GetNetInstanceByRankId 接口需通过扩展 CollComm 获得
+        // TODO: CollComm 新增 Hccl::RankGraph* 访问方法
+
+        // netLayers
+        uint32_t *netLayers = nullptr;
+        uint32_t netLayerNum = 0;
+        HcclResult ret = rankGraph->GetNetLayers(&netLayers, &netLayerNum);
+        if (ret != HCCL_SUCCESS) {
+            return ret;
+        }
+        g_cachedRankDesc.netLayerNum = 0;
+        for (uint32_t i = 0; i < netLayerNum && i < RANK_DESC_MAX_NET_LAYER; i++) {
+            g_cachedRankDesc.netLayers[i] = netLayers[i];
+            g_cachedRankDesc.netLayerNum++;
+        }
+
+        // rank-table 关联字段：需通过 CollComm -> CommunicatorImpl ranktableInfo 获取
+        // 后续提交通过扩展 CollComm 或 hcclCommunicator 接口接入（serverIdx/elecGroupId/ocsPlaneId/ocsPlaneNum）
+        g_cachedRankDesc.serverIdx = 0;
+        g_cachedRankDesc.elecGroupId = 0;
+        g_cachedRankDesc.ocsPlaneId = 0;
+        g_cachedRankDesc.ocsPlaneNum = 0;
+
+        *descList = &g_cachedRankDesc;
+        *descNum = 1;
+        HCCL_RUN_INFO("[%s] success, netLayerNum[%u]", __func__, g_cachedRankDesc.netLayerNum);
+        return HCCL_SUCCESS;
+    }());
+
+    // V1 路径暂不支持
+    HCCL_ERROR("[%s] V1 path not supported for HcclGetRankDescList", __func__);
+    return HCCL_E_NOT_SUPPORT;
 }
 #endif
 
