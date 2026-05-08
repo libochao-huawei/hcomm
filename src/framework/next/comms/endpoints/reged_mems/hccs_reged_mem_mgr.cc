@@ -14,7 +14,7 @@
 #include "endpoint.h"
 #include "hccl_mem.h"
 #include "hccl_one_sided_data.h"
-#include "hccs_mem.h"
+#include "hccs_reged_mem_mgr.h"
 // for hccl_network.h
 #include "inner/local_rdma_rma_buffer.h"
 #include "inner/remote_rdma_rma_buffer.h"
@@ -94,7 +94,7 @@ HcclResult HccsRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, voi
         return HCCL_SUCCESS;
     }
 
-    allRegisteredBuffers_.push_back(localBuffer);
+    allRegisteredBuffers_.emplace_back(localBuffer);
 
     HCCL_INFO("[%s] addr[%p] size[%u] memHandle[%p] allRegisteredBuffers_.size[%d]done",
         __FUNCTION__, mem.addr, mem.size, *memHandle, allRegisteredBuffers_.size());
@@ -228,7 +228,7 @@ HcclResult HccsRegedMemMgr::AddMemDesc(const void *memDesc, uint32_t descLen,
     if(remoteIpcRmaBufferDescMgrs_[reinterpret_cast<uintptr_t>(memDesc)] != nullptr) {
         HCCL_ERROR("[HccsRegedMemMgr][%s] memDesc[%p] descLen[%u] addr[%p], size[%lu] has already been imported!",
             __FUNCTION__, memDesc, descLen, remoteIpcRmaBuffer->GetAddr(), remoteIpcRmaBuffer->GetSize());
-        return HCCL_E_AGAIN;
+        return HCCL_E_EXIST;
     }
     remoteIpcRmaBufferDescMgrs_[reinterpret_cast<uintptr_t>(memDesc)] = remoteIpcRmaBuffer;
 
@@ -239,7 +239,7 @@ HcclResult HccsRegedMemMgr::AddMemDesc(const void *memDesc, uint32_t descLen,
         remoteIpcRmaBufferDescMgrs_[reinterpret_cast<uintptr_t>(memDesc)] = nullptr;
         HCCL_ERROR("[HccsRegedMemMgr][%s] memDesc[%p] descLen[%u] addr[%p], size[%lu] has already been imported!",
             __FUNCTION__, memDesc, descLen, remoteIpcRmaBuffer->GetAddr(), remoteIpcRmaBuffer->GetSize());
-        return HCCL_E_AGAIN;
+        return HCCL_E_EXIST;
     }
 
     HCCL_INFO("[HccsRegedMemMgr][%s] memDesc[%p] descLen[%u] addr[%p], size[%lu] done", 
@@ -391,7 +391,7 @@ HcclResult HccsRegedMemMgr::GetRemoteIpcRmaBuffer(std::vector<HcclMem> &remoteIp
         mem.size = remoteIpcRmaBuffer->GetSize();
         mem.type = remoteIpcRmaBuffer->GetMemType() == RmaMemType::DEVICE ? HcclMemType::HCCL_MEM_TYPE_DEVICE :
             HcclMemType::HCCL_MEM_TYPE_HOST;
-        remoteIpcRmaBufferVec.push_back(mem);
+        remoteIpcRmaBufferVec.emplace_back(mem);
         HCCL_INFO("[HccsRegedMemMgr][GetRemoteIpcRmaBuffer]remote addr:%p, size[%lu], type[%u]",
             mem.addr, mem.size, static_cast<u32>(mem.type));
         it = remoteIpcRmaBufferMgr_.Next(it);
@@ -409,7 +409,7 @@ HcclResult HccsRegedMemMgr::GetRemoteIpcRmaBufferEx(std::vector<HcclMemEx> &remo
         mem.type = remoteIpcRmaBuffer->GetMemType() == RmaMemType::DEVICE ? HcclMemType::HCCL_MEM_TYPE_DEVICE :
             HcclMemType::HCCL_MEM_TYPE_HOST;
         mem.devAddr = remoteIpcRmaBuffer->GetDevAddr();
-        remoteIpcRmaBufferVecEx.push_back(mem);
+        remoteIpcRmaBufferVecEx.emplace_back(mem);
         HCCL_INFO("[HccsRegedMemMgr][GetRemoteIpcRmaBufferEx]remote addr:%p, size[%lu], type[%u], devAddr[%p]",
             mem.addr, mem.size, static_cast<u32>(mem.type), mem.devAddr);
         it = remoteIpcRmaBufferMgr_.Next(it);
@@ -431,7 +431,7 @@ HcclResult HccsRegedMemMgr::GetLocalIpcRmaBufferEx(std::vector<HcclMemEx> &local
         mem.type = localIpcRmaBuffer->GetMemType() == RmaMemType::DEVICE ? HcclMemType::HCCL_MEM_TYPE_DEVICE :
             HcclMemType::HCCL_MEM_TYPE_HOST;
         mem.devAddr = localIpcRmaBuffer->GetDevAddr();
-        localIpcRmaBufferVecEx.push_back(mem);
+        localIpcRmaBufferVecEx.emplace_back(mem);
         HCCL_INFO("[HccsRegedMemMgr][GetLocalIpcRmaBufferEx]local addr:%p, size[%lu], type[%u], devAddr[%p]",
             mem.addr, mem.size, static_cast<u32>(mem.type), mem.devAddr);
         it = localIpcRmaBufferMgr->Next(it);
