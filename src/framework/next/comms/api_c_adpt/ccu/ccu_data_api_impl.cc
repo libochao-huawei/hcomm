@@ -217,22 +217,30 @@ CcuResult CcuLoadVar(uint64_t addr, CcuVariableHandle varHandle, uint32_t num)
     CCU_CHK_RET(kernel->LoadVar(addr, varHandle, num));
     return CcuResult::CCU_SUCCESS;
 }
-
-//Event信号同步类 相关接口
-CcuResult CcuRecordEvent(CcuEventHandle eventHandle)
+CcuResult CcuStoreVar(uint64_t addr, CcuVariableHandle varHandle, uint32_t num)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
     auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
     CCU_CHK_PTR_NULL(kernel);
-    CCU_CHK_RET(kernel->RecordEvent(eventHandle));
+    CCU_CHK_RET(kernel->StoreVar(addr, varHandle, num));
     return CcuResult::CCU_SUCCESS;
 }
-CcuResult CcuWaitEvent(CcuEventHandle eventHandle)
+
+//Event信号同步类 相关接口
+CcuResult CcuEventRecord(CcuEventHandle eventHandle)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
     auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
     CCU_CHK_PTR_NULL(kernel);
-    CCU_CHK_RET(kernel->WaitEvent(eventHandle));
+    CCU_CHK_RET(kernel->EventRecord(eventHandle));
+    return CcuResult::CCU_SUCCESS;
+}
+CcuResult CcuEventWait(CcuEventHandle eventHandle)
+{
+    const uint32_t devLogicId = HcclGetThreadDeviceId();
+    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
+    CCU_CHK_PTR_NULL(kernel);
+    CCU_CHK_RET(kernel->EventWait(eventHandle));
     return CcuResult::CCU_SUCCESS;
 }
 CcuResult CcuSetMask(CcuEventHandle eventHandle, uint32_t mask)
