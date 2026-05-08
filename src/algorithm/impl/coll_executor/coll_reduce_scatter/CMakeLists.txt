@@ -40,11 +40,13 @@ set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_order_preserved_for_910_93_executor.cc
 )
 
-target_sources(hccl_alg PRIVATE
-    ${src_list}
-)
+if(TARGET hccl_alg)
+    target_sources(hccl_alg PRIVATE
+        ${src_list}
+    )
+endif()
 
-if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
+if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_comm_executor.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_deter_executor.cc

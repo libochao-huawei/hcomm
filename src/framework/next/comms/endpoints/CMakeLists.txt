@@ -17,9 +17,11 @@ set(src_list
     uboe_endpoint.cc
 )
 
-target_sources(hcomm PRIVATE
-    ${src_list}
-)
+if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${src_list}
+    )
+endif()
 
 add_subdirectory(reged_mems)
 add_subdirectory(server_socket)

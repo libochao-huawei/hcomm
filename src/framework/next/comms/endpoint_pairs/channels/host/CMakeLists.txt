@@ -14,6 +14,8 @@ set(src_list
     dpu_notify/dpu_notify_manager.cc
 )
 
-target_sources(hcomm PRIVATE
-    ${src_list}
-)
+if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${src_list}
+    )
+endif()

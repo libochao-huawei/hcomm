@@ -12,16 +12,18 @@ set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/hccl_communicator_attrs.cc 
 )
 
-target_sources(hcomm PRIVATE
-    ${src_list}
-    ${CMAKE_CURRENT_SOURCE_DIR}/aclgraph/zero_copy_acl_graph.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/hccl_communicator_host.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/hccl_communicator_attrs_host.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/comm_topo_desc.cc
-    task_abort_handler.cc
-)
+if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${src_list}
+        ${CMAKE_CURRENT_SOURCE_DIR}/aclgraph/zero_copy_acl_graph.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/hccl_communicator_host.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/hccl_communicator_attrs_host.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/comm_topo_desc.cc
+        task_abort_handler.cc
+    )
+endif()
 
-if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
+if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         ${src_list}
         ${CMAKE_CURRENT_SOURCE_DIR}/hccl_communicator_device.cc

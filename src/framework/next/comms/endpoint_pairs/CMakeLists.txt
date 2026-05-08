@@ -13,16 +13,15 @@ set(src_list
     endpoint_pair_mgr.cc
 )
 
-
-target_sources(hcomm PRIVATE
-    ${src_list}
-)
+if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${src_list}
+    )
+    target_include_directories(hcomm PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/channels
+        ${CMAKE_CURRENT_SOURCE_DIR}/sockets
+    )
+endif()
 
 add_subdirectory(channels)
 add_subdirectory(sockets)
-
-
-target_include_directories(hcomm PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/channels
-    ${CMAKE_CURRENT_SOURCE_DIR}/sockets
-)

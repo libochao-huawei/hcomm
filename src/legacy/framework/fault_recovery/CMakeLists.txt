@@ -7,7 +7,9 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-target_sources(hccl_v2 PRIVATE
-        recover_info.cc
-        snap_shot_parse.cc
-)
+if(TARGET hccl_v2)
+    target_sources(hccl_v2 PRIVATE
+            recover_info.cc
+            snap_shot_parse.cc
+    )
+endif()
