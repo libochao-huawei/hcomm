@@ -547,7 +547,8 @@ void TaskExceptionHandler::ProcessCcuException(const rtExceptionInfo_t* exceptio
     for (uint32_t i = 0; i < ccuExDetailInfo.ccuMissionNum; ++i) { // ccuExDetailInfo.ccuMissionNum为1
         const auto& missionInfo = ccuExDetailInfo.missionInfo[i]; // 异常mission
         uint16_t status = static_cast<uint16_t>(missionInfo.status) << BYTE | missionInfo.subStatus;
-        std::tuple<std::string, std::string, std::string, std::string> ipInfo = GetCcuErrorIpInfo(deviceId, status, taskInfo);
+        std::tuple<std::string, std::string, std::string, std::string> ipInfo = 
+            TaskExceptionHandler::GetCcuErrorIpInfo(deviceId, status, taskInfo);
         std::string localServerId = std::get<0>(ipInfo);
         std::string localIp = std::get<1>(ipInfo);
         std::string remoteIp = std::get<2>(ipInfo);
