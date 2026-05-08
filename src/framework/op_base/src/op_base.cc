@@ -4847,15 +4847,31 @@ int32_t HcclTaskRegister(HcclComm comm, const char *msgTag, Callback cb)
     CHK_PTR_NULL(comm);
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
     HcclComm commV2 = hcclComm->GetCommunicatorV2();
+    HcclResult ret;
     if (commV2 != nullptr) {
-        return HcclTaskRegisterV2(commV2, msgTag, cb);
+        ret =  HcclTaskRegisterV2(commV2, msgTag, cb);
+        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HcclTaskRegister] TaskRegisterV2 failed, ret[0x%016llx]", HCCL_ERROR_CODE(ret)), ret);
     } else {
         std::string commId = hcclComm->GetIdentifier();
         if (g_taskServiceMap.find(commId) == g_taskServiceMap.end()) {
             return HCCL_E_NOT_FOUND;
         }
-        return g_taskServiceMap[commId]->TaskRegister(msgTag, cb);
+        ret =  g_taskServiceMap[commId]->TaskRegister(msgTag, cb);
+        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HcclTaskRegister] TaskRegister failed, ret[0x%016llx]", HCCL_ERROR_CODE(ret)), ret);
     }
+    uint32_t dpuStreamId;
+    CHK_PTR_NULL(commV2);
+    ret = HcclGetDpuSteamIdV2(commV2, dpuStreamId);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HcclTaskRegister] GetDpuSteamIdV2 failed, ret[0x%016llx]", HCCL_ERROR_CODE(ret)), ret);
+    hccl::CollComm *collComm = hcclComm->GetCollComm();
+    CHK_PTR_NULL(collComm);
+    collComm->GetHcclCommDfx()->SetDpuStreamId(dpuStreamId);
+    auto profCallback = collComm->GetHcclCommDfx()->GetDpuCallback();
+    CHK_PTR_NULL(profCallback);
+    ret = HcclTaskRegisterProfV2(commV2, profCallback);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HcclTaskRegister] TaskProfRegister failed, ret[0x%016llx]", HCCL_ERROR_CODE(ret)), ret);
+    return ret;
+
 #endif
     return HCCL_E_NOT_SUPPORT;
 }
