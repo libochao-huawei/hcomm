@@ -130,8 +130,9 @@ void RankGraphBuilder::AddFabricInfo(u32 netLayer)
         THROW<NullPtrException>(StringFormat("[RankGraphBuilder][AddFabricInfo] rankGraph->GetNetInstanceByRankId is nullptr"));
     } 
 
-    if (netInst->GetNetType() != NetType::CLOS) {
-        THROW<NotSupportException>(StringFormat("[RankGraphBuilder][AddFabricInfo] NetInstance is not CLOS, not support add fabric."));
+    if (netInst->GetNetType() != NetType::CLOS &&
+        netInst->GetNetType() != NetType::OCS_MESH) {
+        THROW<NotSupportException>(StringFormat("[RankGraphBuilder][AddFabricInfo] NetInstance is not CLOS/OCS_MESH, not support add fabric."));
     }
     set<RankId> inRanks = netInst->GetRankIds();
     string      netInstId = netInst->GetNetInstId();
@@ -294,8 +295,10 @@ void RankGraphBuilder::BuildFromRankTable()
 
         // 构造当前rank的每个LevelInfo所在NetInstance, 添加 RankId 和 Peer
         for (const auto &levelInfo : rankInfo.rankLevelInfos) {
-            // 校验netLayer是否在topo中
-            CheckNetLayerFromPhyTopo(levelInfo.netLayer);
+            // OCS_MESH 复用 CLOS 物理端口，topo.json 无 layer 3 条目，跳过物理拓扑校验
+            if (levelInfo.netType != NetType::OCS_MESH) {
+                CheckNetLayerFromPhyTopo(levelInfo.netLayer);
+            }
             // rankLevelInfo.level、id对应NetInstance，若不存在则创建
             auto curNetInstance = GetOrCreateNetInstance(levelInfo.netLayer, levelInfo.netInstId, levelInfo.netType, tempNetInsts_, rankGraph_.get());
             if (curNetInstance == nullptr) {
