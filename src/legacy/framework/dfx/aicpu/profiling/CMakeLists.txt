@@ -7,15 +7,17 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-target_sources(hccl_v2 PRIVATE
-    profiling_handler_lite.cc
-    profiling_reporter_lite.cc
-)
+if(TARGET hccl_v2)
+    target_sources(hccl_v2 PRIVATE
+        profiling_handler_lite.cc
+        profiling_reporter_lite.cc
+    )
+endif()
 
-if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
-target_sources(ccl_kernel PRIVATE
-    profiling_handler_lite.cc
-    profiling_reporter_lite.cc
-    profiling_command_handle_lite.cc
-)
+if(TARGET ccl_kernel)
+    target_sources(ccl_kernel PRIVATE
+        profiling_handler_lite.cc
+        profiling_reporter_lite.cc
+        profiling_command_handle_lite.cc
+    )
 endif()

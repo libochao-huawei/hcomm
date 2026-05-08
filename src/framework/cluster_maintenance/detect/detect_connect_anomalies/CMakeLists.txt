@@ -11,13 +11,20 @@ set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/detect_connect_anomalies.cc
 )
 
+if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${src_list}
+    )
+    target_include_directories(hcomm PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()
 
-target_sources(hcomm PRIVATE
-    ${src_list}
-)
-
-if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
+if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         ${src_list}
+    )
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
     )
 endif()
