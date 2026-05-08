@@ -7,19 +7,21 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-target_sources(hccl_v2
-        PRIVATE
-        rma_buf_slice_lite.cc
-        rma_buffer_lite.cc
-        rmt_rma_buf_slice_lite.cc
-        rmt_rma_buffer_lite.cc
-)
+if(TARGET hccl_v2)
+    target_sources(hccl_v2
+            PRIVATE
+            rma_buf_slice_lite.cc
+            rma_buffer_lite.cc
+            rmt_rma_buf_slice_lite.cc
+            rmt_rma_buffer_lite.cc
+    )
+endif()
 
-if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
-target_sources(ccl_kernel PRIVATE
-        rma_buf_slice_lite.cc
-        rma_buffer_lite.cc
-        rmt_rma_buf_slice_lite.cc
-        rmt_rma_buffer_lite.cc
-)
+if(TARGET ccl_kernel)
+    target_sources(ccl_kernel PRIVATE
+            rma_buf_slice_lite.cc
+            rma_buffer_lite.cc
+            rmt_rma_buf_slice_lite.cc
+            rmt_rma_buffer_lite.cc
+    )
 endif()

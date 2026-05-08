@@ -12,6 +12,8 @@ set(src_list
     aicpu_hdc_utils.cc
 )
 
-target_sources(ccl_kernel PRIVATE
-    ${src_list}
-)
+if(TARGET ccl_kernel)
+    target_sources(ccl_kernel PRIVATE
+        ${src_list}
+    )
+endif()

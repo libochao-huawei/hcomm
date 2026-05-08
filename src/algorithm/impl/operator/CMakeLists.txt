@@ -24,8 +24,10 @@ set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/batch_write_operator.cc
 )
 
-target_sources(hccl_alg PRIVATE
-    ${src_list}
-)
+if(TARGET hccl_alg)
+    target_sources(hccl_alg PRIVATE
+        ${src_list}
+    )
+endif()
 
 add_subdirectory(registry)

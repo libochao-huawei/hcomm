@@ -8,9 +8,16 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 
-set(HCCL_BASE_DIR ${HCOMM_REAL_PATH})
+if(${PRODUCT_SIDE} STREQUAL "host")
+    # 添加 hccl_v2 链接库，host 侧使用
+    include(hccl_v2.cmake)
+    # 添加 ccl_dpu 链接库，host 侧使用
+    include(ccl_dpu.cmake)
+endif()
 
-# 添加 hccl_v2 链接库，host 侧使用
-include(hccl_v2.cmake)
-# 添加 ccl_dpu 链接库，host 侧使用
-include(ccl_dpu.cmake)
+# 添加子目录
+add_subdirectory(common)
+add_subdirectory(framework)
+add_subdirectory(service)
+add_subdirectory(unified_platform)
+add_subdirectory(interface)

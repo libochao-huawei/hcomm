@@ -7,15 +7,22 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-target_sources(hccl_alg PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/config_log.cc
-)
+if(TARGET hccl_alg)
+    target_sources(hccl_alg PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/config_log.cc
+    )
+endif()
 
-target_sources(hcomm PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/config_log.cc
-)
+if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/config_log.cc
+    )
+    target_include_directories(hcomm PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()
 
-if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
+if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/config_log.cc
     )

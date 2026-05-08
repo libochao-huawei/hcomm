@@ -13,17 +13,28 @@ set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/json_utils.cc
 )
 
-target_sources(hcomm PRIVATE
-    ${src_list}
-    ${CMAKE_CURRENT_SOURCE_DIR}/hccl_hash_utils.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/launch_aicpu.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/hccl_mem_alloc.cc
-)
+if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${src_list}
+        ${CMAKE_CURRENT_SOURCE_DIR}/hccl_hash_utils.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/launch_aicpu.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/hccl_mem_alloc.cc
+    )
+    target_include_directories(hcomm PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/host
+        ${CMAKE_CURRENT_SOURCE_DIR}/h2d_dto
+        ${CMAKE_CURRENT_SOURCE_DIR}/mgr
+    )
+endif()
 
-
-if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
+if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         ${src_list}
+    )
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/aicpu
     )
 endif()
 

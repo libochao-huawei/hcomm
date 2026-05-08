@@ -12,9 +12,9 @@ add_subdirectory(alg_template)
 add_subdirectory(alg_aiv_template)
 add_subdirectory(mc2_handler)
 
-# ccl_kernel include directories
-if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
+if(TARGET ccl_kernel)
     target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/inc
         ${CMAKE_CURRENT_SOURCE_DIR}/alg_aiv_template
     )
 endif()
