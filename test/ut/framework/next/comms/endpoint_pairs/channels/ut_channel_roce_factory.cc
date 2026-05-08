@@ -252,6 +252,30 @@ public:
     {
         return HCCL_SUCCESS;
     }
+        HcclResult NotifyRecord(uint32_t) override
+    {
+        return HCCL_E_NOT_SUPPORT;
+    }
+    HcclResult NotifyWait(uint32_t, uint32_t) override
+    {
+        return HCCL_E_NOT_SUPPORT;
+    }
+    HcclResult WriteWithNotify(void *, const void *, uint64_t, uint32_t) override
+    {
+        return HCCL_E_NOT_SUPPORT;
+    }
+    HcclResult Write(void *, const void *, uint64_t) override
+    {
+        return HCCL_E_NOT_SUPPORT;
+    }
+    HcclResult Read(void *, const void *, uint64_t) override
+    {
+        return HCCL_E_NOT_SUPPORT;
+    }
+    HcclResult ChannelFence() override
+    {
+        return HCCL_E_NOT_SUPPORT;
+    }
 };
 } // namespace
 

@@ -388,7 +388,7 @@ struct CqCreateInfo {
     uint64_t swdbAddr;
 };
 
-JfcHandle HrtRaUbCreateJfc(RdmaHandle handle, HrtUbJfcMode mode);
+JfcHandle HrtRaUbCreateJfc(RdmaHandle handle, CqCreateInfo& cqInfo, HrtUbJfcMode mode);
 
 JfcHandle HrtRaUbCreateJfcUserCtl(RdmaHandle handle, CqCreateInfo& cqInfo);
 
@@ -604,6 +604,8 @@ using RaUbGetTpInfoParam = struct RaUbGetTpInfoParamDef {
 };
 
 RequestHandle RaUbGetTpInfoAsync(const RdmaHandle rdmaHandle, const RaUbGetTpInfoParam &param, vector<char_t> &out, uint32_t &num);
+
+void RaUbGetTpInfo(const RdmaHandle rdmaHandle, const RaUbGetTpInfoParam &param, vector<char_t> &out, uint32_t &num);
 
 RequestHandle RaUbImportJettyAsync(const RdmaHandle rdmaHandle, const HrtRaUbJettyImportedInParam &in,
     vector<char_t> &out, void* &remQpHandle);
