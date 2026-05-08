@@ -1743,7 +1743,7 @@ void ProfilingHandler::ReportHcclTaskDetails(const TaskInfo &taskInfo, bool cach
 {
 }
 
-void ProfilingHandler::CallAddtionInfo(HCCLReportData &hcclReportData) const
+void ProfilingHandler::CallAddtionInfo(HCCLReportData &hcclReportData, void *data, u32 len, ProfTaskType taskType) const
 {
 }
 
@@ -2606,4 +2606,8 @@ HrtRaUbSendWrRespParam HrtRaUbPostSend(JettyHandle jettyHandle, HrtRaUbSendWrReq
 {
     return HrtRaUbSendWrRespParam{};
 }
+}
+int32_t HcommChannelRegisterDfx(ChannelHandle channel, std::function<HcclResult(unsigned int, unsigned int, const Hccl::TaskParam&, unsigned long long)> callback)
+{
+    return 0;
 }
