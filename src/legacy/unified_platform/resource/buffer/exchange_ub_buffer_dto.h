@@ -34,12 +34,12 @@ public:
 
     void Serialize(Hccl::BinaryStream &stream) override
     {
-        stream << addr << size << memType << memTag << tokenValue << tokenId << keySize << key;
+        stream << addr << size << memType << memTag << tokenValue << tokenId << keySize << key << segVa;
     }
 
     void Deserialize(Hccl::BinaryStream &stream) override
     {
-        stream >> addr >> size >> memType >> memTag >> tokenValue >> tokenId >> keySize >> key;
+        stream >> addr >> size >> memType >> memTag >> tokenValue >> tokenId >> keySize >> key >> segVa;
     }
 
     std::string Describe() const override
@@ -56,6 +56,7 @@ public:
     u32 tokenValue{0};
     u32 tokenId{0};
     u32 keySize{0};
+    u64 segVa{0};
 };
 
 } // namespace Hccl
