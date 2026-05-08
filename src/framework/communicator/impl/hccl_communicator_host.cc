@@ -8156,6 +8156,7 @@ namespace hccl
 
         topoDescs[static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L0)].rankSize = userRankSize_;
         topoDescs[static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L1)].rankSize = 0;
+        topoDescs[static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L2)].rankSize = 0;
         return HCCL_SUCCESS;
     }
 
@@ -8758,9 +8759,9 @@ namespace hccl
         if (deviceType_ == DevType::DEV_TYPE_910_93) {
             netLayer_[0] = static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L0);
             netLayer_[1] = static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L1);
-            *netLayerNum = COMM_LAYER_NUM_MAX;
+            *netLayerNum = 2;
         } else if (deviceType_ == DevType::DEV_TYPE_910B || deviceType_ == DevType::DEV_TYPE_310P3) {
-            netLayer_[0] =static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L0);
+            netLayer_[0] = static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L0);
             *netLayerNum = 1;
         }
         *netLayers = netLayer_;
@@ -8770,7 +8771,8 @@ namespace hccl
     HcclResult HcclCommunicator::CommGetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum)
     {
         if ((netLayer == static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L0)) ||
-            (netLayer == static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L1))) {
+            (netLayer == static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L1)) ||
+            (netLayer == static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L2))) {
                 *rankNum = userRankSize_;
             }
         return HCCL_SUCCESS;

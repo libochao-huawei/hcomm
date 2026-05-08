@@ -1826,20 +1826,21 @@ u32 CommunicatorImpl::GetCcuMc2ServerNum()
     return ccuMc2ServerNum;
 }
 
-/* topoDescs 当前只支持l0和l1 */
 HcclResult CommunicatorImpl::GetTopoDesc(HcclTopoDescs *topoDescs, uint32_t topoSize) const
 {
     if (topoSize < static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_MAX)) {
         HCCL_ERROR("topoDescs size is not enough, please check topoSize[%u]", topoSize);
         return HCCL_E_PARA;
     }
- 
+
     topoDescs[static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L0)].algSets = HCCL_ALG_MESH;
     topoDescs[static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L1)].algSets = 0;
-   
+    topoDescs[static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L2)].algSets = 0;
+
     topoDescs[static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L0)].rankSize = rankSize;
     topoDescs[static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L1)].rankSize = 0;
- 
+    topoDescs[static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L2)].rankSize = 0;
+
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -3561,7 +3562,7 @@ HcclResult CommunicatorImpl::GetTopoInstsByLayer(uint32_t netLayer, uint32_t **t
     try {
         CHK_PTR_NULL(rankGraph);
         auto currNetType = rankGraph->GetNetType(netLayer);
-        if (currNetType != NetType::TOPO_FILE_DESC) {
+        if (currNetType != NetType::TOPO_FILE_DESC && currNetType != NetType::OCS_MESH) {
             HCCL_ERROR(
                     "[CommunicatorImpl::GetTopoInstsByLayer] Only support TOPO_FILE_DESC netType ,current netType is [%d]",
                     currNetType);
@@ -3592,7 +3593,7 @@ HcclResult CommunicatorImpl::GetTopoType(uint32_t netLayer, uint32_t topoInstId,
     try {
         CHK_PTR_NULL(rankGraph);
         auto currNetType = rankGraph->GetNetType(netLayer);
-        if (currNetType != NetType::TOPO_FILE_DESC) {
+        if (currNetType != NetType::TOPO_FILE_DESC && currNetType != NetType::OCS_MESH) {
             HCCL_ERROR(
                 "[CommunicatorImpl::GetTopoInstsByLayer] Only support TOPO_FILE_DESC netType, current netType is [%d]",
                 currNetType);
@@ -3633,7 +3634,7 @@ HcclResult CommunicatorImpl::GetRanksByTopoInst(uint32_t netLayer, uint32_t topo
     try {
         CHK_PTR_NULL(rankGraph);
         auto currNetType = rankGraph->GetNetType(netLayer);
-        if (currNetType != NetType::TOPO_FILE_DESC) {
+        if (currNetType != NetType::TOPO_FILE_DESC && currNetType != NetType::OCS_MESH) {
             HCCL_ERROR(
                     "[CommunicatorImpl::GetTopoInstsByLayer] Only support TOPO_FILE_DESC netType, current netType is [%d]",
                     currNetType);
