@@ -116,11 +116,11 @@ public:
     //参数加载类 相关接口
     CcuResult LoadArg(CcuVariableHandle varHandle, uint32_t argId);
     CcuResult LoadVar(uint64_t addr, CcuVariableHandle varHandle, uint32_t num);
-
+    CcuResult StoreVar(uint64_t addr, CcuVariableHandle varHandle, uint32_t num);
 
     //Event信号同步类 相关接口
-    CcuResult RecordEvent(CcuEventHandle eventHandle);
-    CcuResult WaitEvent(CcuEventHandle eventHandle);
+    CcuResult EventRecord(CcuEventHandle eventHandle);
+    CcuResult EventWait(CcuEventHandle eventHandle);
     CcuResult SetEventMask(CcuEventHandle eventHandle, uint32_t mask);
     CcuResult NotifyRecord(const ChannelHandle channel, uint32_t remoteNotifyIdx,  uint32_t mask);
     CcuResult NotifyWait(const ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask);
@@ -251,7 +251,7 @@ private:
     CcuResult GetRemoteAddrByHandle(CcuRemoteAddrHandle handle, CcuRep::RemoteAddr **remoteAddr);
     std::unordered_map<CcuRemoteAddrHandle, CcuRep::RemoteAddr> ccuRemoteAddrMap_{};
 
-    uint32_t loadArgUsedMask_{0}; // 记录已经加载的参数
+    std::unordered_set<uint32_t> loadArgUsedSet_{};
 
 protected:
     // 子类实现
