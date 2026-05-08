@@ -1183,7 +1183,7 @@ std::tuple<std::string, std::string, std::string, std::string> TaskExceptionHand
         auto addrPair = GetAddrPairByChannelId(channelId, taskInfo);
         localIp = addrPair.first.Describe();
         remoteIp = addrPair.second.Describe();
-        remoteId = std::to_string(GetAddrPairByChannelId(channelId, taskInfo));
+        remoteId = remoteIp;
     }
     return std::make_tuple(localServerId, localIp, remoteIp, remoteId);
 }
