@@ -338,11 +338,16 @@ string TaskExceptionHandler::GetGroupRankInfo(const TaskInfo& taskInfo)
 void TaskExceptionHandler::ProcessException(rtExceptionInfo_t* exceptionInfo, const TaskInfo& taskInfo)
 {
     HCCL_RUN_INFO("[TaskExceptionHandler][%s]begin to execute hccl task exception callback function.", __func__);
+    bool isExistAicpuError = false;
     if (exceptionInfo == nullptr) {
         HCCL_ERROR("[TaskExceptionHandler][ProcessException] exceptionInfo is nullptr.");
         return;
     }
-    PrintAicpuErrorMessage(exceptionInfo);
+    PrintAicpuErrorMessage(exceptionInfo, isExistAicpuError);
+    if (isExistAicpuError) {
+        // 如果已经有AICPU上报的task exception, 则host侧无需再次重复上报
+        return;
+    }
     HCCL_ERROR("[TaskExceptionHandler][%s]Task from HCCL run failed.", __func__);
     if (taskInfo.taskParam_.taskType == TaskParamType::TASK_NOTIFY_WAIT) {
         PrintTaskContextInfo(exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid);
@@ -744,7 +749,7 @@ void GetTaskParam(TaskParam &taskParam, const ErrorMessageReport &errorMessage) 
     }
 }
 
-void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo)
+void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo, bool &isExistAicpuError)
 {
     ErrorMessageReport errorMessage;
     unique_lock<std::mutex> lock(Hccl::g_commHadCallbackArrayMutexV2);
@@ -760,6 +765,7 @@ void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionIn
         // 找到对应的通信域，并调用回调函数从HDC通道获取AICPU异常信息
         errorMessage = (Hccl::g_communicatorCallbackMapV2[exceptionInfo->deviceid])[exceptionInfo->streamid]();
         if (strlen(errorMessage.tag) > 0) {
+            isExistAicpuError = true;
             std::string groupRankContent;
             u32 streamId = static_cast<u32>(errorMessage.streamId);
             TaskParam taskParam{};
