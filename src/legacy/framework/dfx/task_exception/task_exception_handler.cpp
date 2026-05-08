@@ -547,7 +547,11 @@ void TaskExceptionHandler::ProcessCcuException(const rtExceptionInfo_t* exceptio
     for (uint32_t i = 0; i < ccuExDetailInfo.ccuMissionNum; ++i) { // ccuExDetailInfo.ccuMissionNum为1
         const auto& missionInfo = ccuExDetailInfo.missionInfo[i]; // 异常mission
         uint16_t status = static_cast<uint16_t>(missionInfo.status) << BYTE | missionInfo.subStatus;
-        auto [localServerId, localIp, remoteIp, remoteId] = GetCcuErrorIpInfo(deviceId, status, taskInfo);
+        std::tuple<std::string, std::string, std::string, std::string> ipInfo = GetCcuErrorIpInfo(deviceId, status, taskInfo);
+        std::string localServerId = std::get<0>(ipInfo);
+        std::string localIp = std::get<1>(ipInfo);
+        std::string remoteIp = std::get<2>(ipInfo);
+        std::string remoteId = std::get<3>(ipInfo);
         RPT_INPUT_ERR(true, "EI0018", std::vector<std::string>({"localServerId", "localDeviceId", "localDeviceIp",
             "remoteServerId", "remoteDeviceId", "remoteDeviceIp"}),
             std::vector<std::string>({localServerId, std::to_string(deviceId), localIp, "", remoteId, remoteIp}));
