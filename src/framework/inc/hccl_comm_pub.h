@@ -428,8 +428,6 @@ public:
     HcclResult ResetExchangeInfo();
     const std::vector<u8>& GetExchangeInfoBuf() const;
     uint32_t GetExchangeInfoLen() const;
-    bool IsNewRemoteRank(uint32_t remoteRank) const;
-    void MarkRemoteRankChecked(uint32_t remoteRank);
 protected:
     /* * 禁止用户对API类的实体做拷贝构造或拷贝赋值的操作，内部有指针成员变量 */
     hcclComm(const hcclComm &) = delete;
@@ -482,8 +480,6 @@ private:
     std::vector<u8> exchangeInfoBuf_;                                         // 本端待交换信息缓冲区
     uint32_t exchangeInfoLen_ = 0;                                            // 本端待交换数据长度
     std::unordered_map<uint32_t, ExchangeInfoEntry> remoteExchangeInfoMap_;   // 对端交换信息<remoteRank, data>
-    std::set<uint32_t> checkedRemoteRanks_;
-};
 }  // namespace hccl
 
 using HcclCommPtr = std::shared_ptr<hccl::hcclComm>;
