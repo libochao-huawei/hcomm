@@ -773,9 +773,7 @@ HcclResult MyRank::BatchExchangeAndCheckConsistency(
     if (hcclComm->GetExchangeInfoLen() > 0){
         // ====== 第二阶段：Hcomm信息校验通过后，交换HCCL算子信息 ======
         CHK_RET(ExchangeUserInfo(sockets, remoteRanks, roles, uniqueCount, hcclComm));
-
         HCCL_INFO("[BatchExchangeAndCheckConsistency] all[%u] new ranks check passed.", uniqueCount);
-
         for (u32 i = 0; i < uniqueCount; i++) {
             hcclComm->MarkRemoteRankChecked(remoteRanks[i]);
         }
@@ -1000,7 +998,7 @@ HcclResult MyRank::ExchangeAndCheckBaseFrame(
             return checkRet;
         }
     }
-
+    HCCL_INFO("[ExchangeAndCheckBaseFrame] hcomm ranks check passed.");
     return HCCL_SUCCESS;
 }
 
