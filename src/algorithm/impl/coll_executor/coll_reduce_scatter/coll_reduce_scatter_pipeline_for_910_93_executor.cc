@@ -40,7 +40,8 @@ u64 CollReduceScatterPipelineFor91093Executor::CalcLoopMaxCount(const u32 unitSi
     const u64 maxSizePerLoop = maxSizePerLoopUnaligned / HCCL_MIN_SLICE_ALIGN * HCCL_MIN_SLICE_ALIGN;
     const u64 maxCountPerLoop = maxSizePerLoop / unitSize;
     HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][CalcLoopMaxCount] "
-        "maxCountPerLoop[%llu], maxSizePerLoop[%llu]", maxCountPerLoop, maxSizePerLoop);
+        "inCCLbufferSize[%llu], userRankSize[%u], maxCountPerLoop[%llu], maxSizePerLoop[%llu]",
+        inCCLbufferSize_, topoAttr_.userRankSize, maxCountPerLoop, maxSizePerLoop);
     return maxCountPerLoop;
 }
 

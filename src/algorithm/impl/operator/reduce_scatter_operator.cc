@@ -462,6 +462,8 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
     if (deviceNumPerAggregation_ != 0) {
         maxPipelineBlockSize = commInputSize / deviceNumPerAggregation_ / HCCL_DEVICE_NUM_TWO /
             HCCL_MIN_SLICE_ALIGN * HCCL_MIN_SLICE_ALIGN;
+        HCCL_DEBUG("[SelectAlgfor91093] commInputSize[%llu], deviceNumPerAggregation[%u]",
+            commInputSize, deviceNumPerAggregation_);
     }
     u64 maxStablePipelineBlockSize = std::min(maxPipelineBlockSize, dataSize / HCCL_DEVICE_NUM_TWO);
     bool dmaReduceLimit = (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) && isPowOfTwo &&
