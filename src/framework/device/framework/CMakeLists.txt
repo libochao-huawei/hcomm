@@ -19,6 +19,8 @@ set(src_list
     aicpu_cache_manager.cc
 )
 
-target_sources(ccl_kernel PRIVATE
-    ${src_list}
-)
+if(TARGET ccl_kernel)
+    target_sources(ccl_kernel PRIVATE
+        ${src_list}
+    )
+endif()

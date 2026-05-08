@@ -185,10 +185,7 @@ endif()
 add_subdirectory(base)
 add_subdirectory(impl)
 
-
-
-# ccl_kernel include directories
-if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
+if(TARGET ccl_kernel)
     target_include_directories(ccl_kernel PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/base/inc
         ${CMAKE_CURRENT_SOURCE_DIR}/pub_inc

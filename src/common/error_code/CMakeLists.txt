@@ -11,6 +11,8 @@ set(alg_src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/error_code.cc
 )
 
-target_sources(hcomm PRIVATE
-    ${alg_src_list}
-)
+if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${alg_src_list}
+    )
+endif()

@@ -14,8 +14,7 @@ add_subdirectory(stream)
 add_subdirectory(launch_device)
 add_subdirectory(error_code)
 
-# ccl_kernel include directories
-if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
+if(TARGET ccl_kernel)
     target_include_directories(ccl_kernel PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/debug/
         ${CMAKE_CURRENT_SOURCE_DIR}/launch_device
