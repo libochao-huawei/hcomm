@@ -594,8 +594,7 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
 {
     CHK_PTR_NULL(channelDescs);
     CHK_PTR_NULL(channelHandles);
-    CHK_PRT_RET(channelNum == 0,
-        HCCL_ERROR("[%s] invalid param: channelNum is zero", __func__), HCCL_E_PARA);
+    CHK_PRT_RET(channelNum == 0, HCCL_ERROR("[%s] invalid param: channelNum is zero", __func__), HCCL_E_PARA);
 
     HCCL_INFO("[CreateChannels][Enter] engine[%d] commTag[%s] channelNum[%u] rankId[%u]",
         engine, commTag.c_str(), channelNum, rankId_);
@@ -646,8 +645,7 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
         return HCCL_SUCCESS;
     }
 
-    if (engine == COMM_ENGINE_CPU || engine == COMM_ENGINE_CCU
-        || engine == COMM_ENGINE_AIV) {
+    if (engine == COMM_ENGINE_CPU || engine == COMM_ENGINE_CCU || engine == COMM_ENGINE_AIV) {
         // TODO: Host侧 Channel 赋值到 channelHandles
         CHK_SAFETY_FUNC_RET(memcpy_s(channelHandles,
             channelNum * sizeof(ChannelHandle),
