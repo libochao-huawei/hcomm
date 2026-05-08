@@ -21,6 +21,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/pkg_inc/hcomm/ccu
 
     # src/pub_inc 目录下头文件
+    ${HCCL_CODE_ROOT}/src/common/
     ${HCCL_CODE_ROOT}/src/pub_inc
     ${HCCL_CODE_ROOT}/src/pub_inc/inner
     ${HCCL_CODE_ROOT}/src/pub_inc/aicpu
@@ -73,6 +74,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/group
     ${HCCL_CODE_ROOT}/src/framework/nslbdp/
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/api_c_adpt
+    ${HCCL_CODE_ROOT}/src/framework/next/common
 
     # src/platform 目录下头文件
     ${HCCL_CODE_ROOT}/src/platform/
@@ -184,6 +186,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/service/collective/primitive
     ${HCCL_CODE_ROOT}/src/legacy/framework/
     ${HCCL_CODE_ROOT}/src/legacy/framework/resource_manager/socket/
+    ${HCCL_CODE_ROOT}/src/legacy/framework/resource_manager/connection/
     ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/
     ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/aicpu/
     ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/aicpu/daemon
@@ -243,6 +246,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/test/ut/depends/include/acl/
     ${HCCL_CODE_ROOT}/test/ut/depends/include/ascendc/highlevel_api/
     ${HCCL_CODE_ROOT}/test/ut/depends/include/hcomm-legacy/
+    ${HCCL_CODE_ROOT}/test/ut/depends/include/urma/
 
     ${CANN_3RD_LIB_PATH}/json/include/
     ${CANN_3RD_LIB_PATH}/gtest/include/
@@ -263,6 +267,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/next/common/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/reged_mems/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/server_socket/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/sockets/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/host/

@@ -45,27 +45,7 @@ HcclResult AivUbMemChannel::Init()
 
 ChannelStatus AivUbMemChannel::GetStatus()
 {
-    Hccl::TransportStatus transportStatus = transport_->GetStatus();
-    ChannelStatus out = ChannelStatus::INIT;
-    switch (transportStatus) {
-        case Hccl::TransportStatus::INIT:
-            out = ChannelStatus::INIT;
-            break;
-        case Hccl::TransportStatus::SOCKET_OK:
-            out = ChannelStatus::SOCKET_OK;
-            break;
-        case Hccl::TransportStatus::SOCKET_TIMEOUT:
-            out = ChannelStatus::SOCKET_TIMEOUT;
-            break;
-        case Hccl::TransportStatus::READY:
-            out = ChannelStatus::READY;
-            break;
-        default:
-            HCCL_ERROR("[AivUbMemChannel][%s] Invalid TransportStatus[%d]", __func__, transportStatus);
-            out = ChannelStatus::INVALID;
-            break;
-    }
-    return out;
+    return Channel::TransportStatusToChannelStatus(transport_->GetStatus());
 }
 
 HcclResult AivUbMemChannel::GetNotifyNum(uint32_t *notifyNum) const
@@ -101,4 +81,40 @@ HcclResult AivUbMemChannel::Resume()
     return HCCL_SUCCESS;
 }
 
+
+HcclResult AivUbMemChannel::NotifyRecord(const uint32_t remoteNotifyIdx)
+{
+    HCCL_INFO("[AivUbMemChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult AivUbMemChannel::NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout)
+{
+    HCCL_INFO("[AivUbMemChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult AivUbMemChannel::WriteWithNotify(void *dst, const void *src, const uint64_t len, uint32_t remoteNotifyIdx)
+{
+    HCCL_INFO("[AivUbMemChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult AivUbMemChannel::Write(void *dst, const void *src, uint64_t len)
+{
+    HCCL_INFO("[AivUbMemChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult AivUbMemChannel::Read(void *dst, const void *src, uint64_t len)
+{
+    HCCL_INFO("[AivUbMemChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult AivUbMemChannel::ChannelFence()
+{
+    HCCL_INFO("[AivUbMemChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
 }

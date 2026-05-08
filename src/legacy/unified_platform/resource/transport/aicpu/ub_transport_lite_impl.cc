@@ -386,6 +386,7 @@ void UbTransportLiteImpl::Wait(u32 index, const StreamLite &stream)
 
 void UbTransportLiteImpl::WaitWithTimeout(u32 index, const StreamLite &stream, u32 timeout)
 {
+    auto taskId   = stream.GetRtsq()->GetTaskId();
     auto notifyId = locNotifyVec[index]->GetId();
     stream.GetRtsq()->NotifyWait(notifyId, timeout);
 
@@ -393,7 +394,6 @@ void UbTransportLiteImpl::WaitWithTimeout(u32 index, const StreamLite &stream, u
         return;
     }
 
-    auto taskId   = stream.GetRtsq()->GetTaskId();
     TaskParam taskParam{};
     taskParam.taskType                 = TaskParamType::TASK_NOTIFY_WAIT;
     taskParam.beginTime                = ProfGetCurCpuTimestamp();
@@ -469,6 +469,7 @@ void UbTransportLiteImpl::Read(const RmaBufferLite &loc, const Buffer &rmt, cons
 {
     SqeConfigLite cfg;
     SetFenceConfig(cfg);
+    auto taskId = stream.GetRtsq()->GetTaskId();
 
     // 当前使用1个connection,下标为0
     auto locRmaBufSlicelite = GetRmaBufSlicelite(loc);
@@ -476,7 +477,6 @@ void UbTransportLiteImpl::Read(const RmaBufferLite &loc, const Buffer &rmt, cons
     connVec[0]->Read(locRmaBufSlicelite, rmtRmaBufSlicelite, cfg, stream, connOut);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
-    auto taskId = stream.GetRtsq()->GetTaskId();
     ProfilingProcess(reinterpret_cast<void *>(locRmaBufSlicelite.GetAddr()),
                      reinterpret_cast<void *>(rmtRmaBufSlicelite.GetAddr()),
                      locRmaBufSlicelite.GetSize(), stream, DmaOp::HCCL_DMA_READ, taskId);
@@ -486,6 +486,7 @@ void UbTransportLiteImpl::Write(const RmaBufferLite &loc, const Buffer &rmt, con
 {
     SqeConfigLite cfg;
     SetFenceConfig(cfg);
+    auto taskId = stream.GetRtsq()->GetTaskId();
 
     // 当前使用1个connection，下标为0
     auto locRmaBufSlicelite = GetRmaBufSlicelite(loc);
@@ -493,7 +494,6 @@ void UbTransportLiteImpl::Write(const RmaBufferLite &loc, const Buffer &rmt, con
     connVec[0]->Write(locRmaBufSlicelite, rmtRmaBufSlicelite, cfg, stream, connOut);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
-    auto taskId = stream.GetRtsq()->GetTaskId();
     ProfilingProcess(reinterpret_cast<void *>(locRmaBufSlicelite.GetAddr()),
                      reinterpret_cast<void *>(rmtRmaBufSlicelite.GetAddr()),
                      locRmaBufSlicelite.GetSize(), stream, DmaOp::HCCL_DMA_WRITE, taskId);
@@ -504,6 +504,7 @@ void UbTransportLiteImpl::ReadReduce(const RmaBufferLite &loc, const Buffer &rmt
 {
     SqeConfigLite cfg;
     SetFenceConfig(cfg);
+    auto taskId = stream.GetRtsq()->GetTaskId();
 
     // 当前使用1个connection，下标为0
     auto locRmaBufSlicelite = GetRmaBufSlicelite(loc);
@@ -511,7 +512,6 @@ void UbTransportLiteImpl::ReadReduce(const RmaBufferLite &loc, const Buffer &rmt
     connVec[0]->ReadReduce(reduceIn, locRmaBufSlicelite, rmtRmaBufSlicelite, stream, cfg, connOut);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
-    auto taskId = stream.GetRtsq()->GetTaskId();
     ReduceProfilingProcess(reinterpret_cast<void *>(locRmaBufSlicelite.GetAddr()),
                             reinterpret_cast<void *>(rmtRmaBufSlicelite.GetAddr()),
                             locRmaBufSlicelite.GetSize(), reduceIn, stream, taskId);
@@ -522,6 +522,7 @@ void UbTransportLiteImpl::WriteReduce(const RmaBufferLite &loc, const Buffer &rm
 {
     SqeConfigLite cfg;
     SetFenceConfig(cfg);
+    auto taskId = stream.GetRtsq()->GetTaskId();
 
     // 当前使用1个connection，下标为0
     auto locRmaBufSlicelite = GetRmaBufSlicelite(loc);
@@ -530,7 +531,6 @@ void UbTransportLiteImpl::WriteReduce(const RmaBufferLite &loc, const Buffer &rm
                             rmtRmaBufSlicelite, cfg, connOut);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
-    auto taskId = stream.GetRtsq()->GetTaskId();
     ReduceProfilingProcess(reinterpret_cast<void *>(locRmaBufSlicelite.GetAddr()),
                             reinterpret_cast<void *>(rmtRmaBufSlicelite.GetAddr()),
                             locRmaBufSlicelite.GetSize(), reduceIn, stream, taskId);
@@ -544,6 +544,7 @@ void UbTransportLiteImpl::BatchTransfer(const std::vector<RmaBufferLite> &loc, c
     }
     SqeConfigLite cfg;
     SetFenceConfig(cfg);
+    auto taskId = stream.GetRtsq()->GetTaskId();
 
     u32 insNum = loc.size();
     for (u32 i = 0; i < insNum; i++) {
@@ -571,7 +572,6 @@ void UbTransportLiteImpl::BatchTransfer(const std::vector<RmaBufferLite> &loc, c
     }
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
-    auto taskId = stream.GetRtsq()->GetTaskId();
     u64 totalSize = 0;
     for (u32 i = 0; i < insNum; i++) {
         totalSize += GetRmaBufSlicelite(loc[i]).GetSize();
@@ -597,6 +597,7 @@ void UbTransportLiteImpl::WriteWithNotify(const RmaBufferLite &loc, const Buffer
     SqeConfigLite cfg;
     SetFenceConfig(cfg);
     u64           notifyData = 1; // 普通notify，固定1
+    auto taskId = stream.GetRtsq()->GetTaskId();
 
     // 当前使用1个connection，下标为0
     auto locRmaBufSlicelite = GetRmaBufSlicelite(loc);
@@ -610,7 +611,6 @@ void UbTransportLiteImpl::WriteWithNotify(const RmaBufferLite &loc, const Buffer
         return;
     }
 
-    auto taskId = stream.GetRtsq()->GetTaskId();
     TaskParam taskParam{};
     taskParam.taskType              = TaskParamType::TASK_WRITE_WITH_NOTIFY;
     taskParam.beginTime             = ProfGetCurCpuTimestamp();
@@ -638,6 +638,7 @@ void UbTransportLiteImpl::WriteReduceWithNotify(const RmaBufferLite &loc, const 
     SqeConfigLite cfg;
     SetFenceConfig(cfg);
     u64           notifyData = 1;                               // 普通notify，固定1
+    auto taskId = stream.GetRtsq()->GetTaskId();
 
     // 当前使用1个connection，下标为0
     auto locRmaBufSlicelite = GetRmaBufSlicelite(loc);
@@ -653,7 +654,6 @@ void UbTransportLiteImpl::WriteReduceWithNotify(const RmaBufferLite &loc, const 
         return;
     }
 
-    auto taskId = stream.GetRtsq()->GetTaskId();
     TaskParam taskParam{};
     taskParam.taskType                 = TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY;
     taskParam.beginTime                = ProfGetCurCpuTimestamp();
