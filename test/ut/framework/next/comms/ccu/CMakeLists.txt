@@ -17,6 +17,7 @@ set(src_to_test_list
     mocks/ccu_device_mock_utils.cc
     mocks/ccu_drv_handle_mock.cc
     mocks/ccu_dev_mgr_mock.cc
+    ut_CcuConn_test.cc
 )
 
 add_executable(hccl_utest_comms_ccu_features ${src_to_test_list})

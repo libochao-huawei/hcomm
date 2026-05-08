@@ -139,8 +139,14 @@ HcclResult SocketMgr::GetSocket(const Hccl::SocketConfig &socketConfig, Hccl::So
     // 1. 先查找
     auto it = socketMap_.find(socketConfig);
     if (it != socketMap_.end()) {
-        socket = it->second.get();
-        return HCCL_SUCCESS;
+        if (socketConfig.hostNic2DeviceNicMode_) {
+            socket = it->second.get();
+            socket->Destroy();
+            socketMap_.erase(it);
+        } else {
+            socket = it->second.get();
+            return HCCL_SUCCESS;
+        }
     }
 
     // 2. 不存在则创建

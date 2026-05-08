@@ -41,8 +41,10 @@ constexpr u32 MAX_CQ_DEPTH = 65535;
 constexpr u32 MAX_INLINE_DATA = 64;
 constexpr u32 RA_TLV_REQUEST_UNAVAIL = 128308;
 constexpr u32 ROCE_ENOMEM_RET = 328100;
+constexpr u32 GET_TP_ATTR_OPCODE = 106;
 constexpr u32 GET_TLS_ENABLE_OPCODE = 95;
 constexpr u32 GET_TLS_ENABLE_VERSION = 1;
+constexpr u32 GET_TP_ATTR_VERSION = 2;
 
 const std::unordered_map<HrtNetworkMode, NetworkMode, EnumClassHash> HRT_NETWORK_MODE_MAP
     = {{HrtNetworkMode::PEER, NetworkMode::NETWORK_PEER_ONLINE}, {HrtNetworkMode::HDC, NetworkMode::NETWORK_OFFLINE}};
@@ -611,7 +613,7 @@ SocketHandle HrtRaSocketInit(HrtNetworkMode  netMode, RaInterface &in)
     rdevInfo.family   = in.address.GetFamily();
     rdevInfo.localIp = IpAddressToHccpIpAddr(in.address);
 
-    HCCL_INFO("[HrtRaSocketInit] Input params: mode=%u, ip=%u, device id=%u, family=%u", 
+    HCCL_INFO("[HrtRaSocketInit] Input params: mode=%u, ip=%u, device id=%u, family=%u",
         mode, rdevInfo.localIp.addr.s_addr, rdevInfo.phyId, rdevInfo.family);
 
     SocketHandle socketHandle = nullptr;
@@ -1223,7 +1225,7 @@ HrtRaUbLocalMemRegOutParam HrtRaUbLocalMemReg(RdmaHandle handle, const HrtRaUbLo
     out.handle      = reinterpret_cast<LocMemHandle>(lmemHandle);
     out.targetSegVa = info.out.ub.targetSegHandle;
     info.in.ub.tokenValue = 0;
-    HCCL_INFO("[HrtRaUbLocalMemReg]UB mem reg info: in.addr[%llx], in.size[%llu], out.targetSegVa[%llx]",
+    HCCL_INFO("[HrtRaUbLocalMemReg]UB mem reg info: in.addr[%llx], in.size[%llu], out.targetSegVa[%llu]",
               in.addr, in.size, out.targetSegVa);
     return out;
 }
@@ -1290,7 +1292,7 @@ const std::map<HrtUbJfcMode, JfcMode> HRT_UB_JFC_MODE_MAP = {{HrtUbJfcMode::NORM
 constexpr u32 CQ_DEPTH     = 1024 * 1024 / 64;
 constexpr u32 CCU_CQ_DEPTH = 64;
 
-JfcHandle HrtRaUbCreateJfc(RdmaHandle handle, HrtUbJfcMode mode)
+JfcHandle HrtRaUbCreateJfc(RdmaHandle handle, CqCreateInfo& cqInfo, HrtUbJfcMode mode)
 {
     CHECK_NULLPTR(handle, "[HrtRaUbCreateJfc] handle is nullptr!");
     HCCL_INFO("[HrtRaUbCreateJfc] Input params: handle=%p, mode=%d", handle, mode);
@@ -1315,6 +1317,9 @@ JfcHandle HrtRaUbCreateJfc(RdmaHandle handle, HrtUbJfcMode mode)
         MACRO_THROW(NetworkApiException, msg);
     }
 
+    cqInfo.va = info.out.va;
+    HCCL_INFO("HrtRaUbCreateJfc va[%llu] mode[%u] jfcHandle[%p]",
+        cqInfo.va, info.in.ub.mode, jfcHandle);
     return reinterpret_cast<JfcHandle>(jfcHandle);
 }
 
@@ -1461,8 +1466,7 @@ HrtRaUbJettyCreatedOutParam HrtRaUbCreateJetty(RdmaHandle handle, const HrtRaUbC
     }
     out.keySize = info.key.size;
     attr.ub.tokenValue = 0;
-    HCCL_INFO("Create jetty success, output params: out.id[%u], out.dbVa[%llx]", out.id, out.dbVa);
-
+    HCCL_INFO("Create jetty success, handle[%llu] jettyVa[%llu]", out.handle, out.jettyVa);
     return out;
 }
 
@@ -1523,6 +1527,8 @@ static HrtRaUbJettyImportedOutParam ImportJetty(RdmaHandle handle, u8 *key, u32 
     out.handle        = reinterpret_cast<TargetJettyHandle>(remQpHandle);
     out.targetJettyVa = info.out.ub.tjettyHandle;
     out.tpn           = info.out.ub.tpn;
+
+    HCCL_INFO("ImportJetty handle[%llu] targetJettyVa[%llu] tpn[%u]", out.handle, out.targetJettyVa, out.tpn);
     info.in.ub.tokenValue = 0;
     return out;
 }
@@ -1536,6 +1542,9 @@ static struct JettyImportExpCfg GetTpImportCfg(const JettyImportCfg &jettyImport
     cfg.tag = jettyImportCfg.localTag;
     cfg.txPsn = jettyImportCfg.localPsn;
     cfg.rxPsn = jettyImportCfg.remotePsn;
+
+    HCCL_INFO("GetTpImportCfg tpHandle[%llu] peerTpHandle[%llu] tag[%llu] txPsn[%llu] rxPsn[%llu]",
+        cfg.tpHandle, cfg.peerTpHandle, cfg.tag, cfg.txPsn, cfg.rxPsn);
 
     return cfg;
 }
@@ -1556,7 +1565,7 @@ HrtRaUbJettyImportedOutParam RaUbTpImportJetty(RdmaHandle handle, u8 *key, u32 k
 {
     CHECK_NULLPTR(handle, "[RaUbTpImportJetty] handle is nullptr!");
     CHECK_NULLPTR(key, "[RaUbTpImportJetty] key is nullptr!");
-    HCCL_INFO("[RaUbTpImportJetty] Input params: handle=%p, key=%d, keyLen=%u", handle, *key, keyLen);
+    HCCL_INFO("[RaUbTpImportJetty] Input params: handle=%p", handle);
     struct JettyImportExpCfg cfg = GetTpImportCfg(jettyImportCfg);
     const auto mode = JettyImportMode::JETTY_IMPORT_MODE_EXP;
     return ImportJetty(handle, key, keyLen, tokenValue, cfg, mode, jettyImportCfg.protocol);
@@ -2152,6 +2161,38 @@ RequestHandle RaUbGetTpInfoAsync(const RdmaHandle rdmaHandle, const RaUbGetTpInf
     return reinterpret_cast<RequestHandle>(raReqHandle);
 }
 
+void RaUbGetTpInfo(const RdmaHandle rdmaHandle, const RaUbGetTpInfoParam &param,
+    vector<char_t> &out, uint32_t &num)
+{
+    CHECK_NULLPTR(rdmaHandle, "[RaUbGetTpInfo] rdmaHandle is nullptr!");
+    HCCL_INFO("[RaUbGetTpInfo] Input params: rdmaHandle=%p, num=%u", rdmaHandle, num);
+    const auto &locAddr    = param.locAddr;
+    const auto &rmtAddr    = param.rmtAddr;
+    const auto &tpProtocol = param.tpProtocol;
+
+    struct GetTpCfg cfg{};
+    cfg.flag.bs.rtp = tpProtocol == TpProtocol::TP ? 1 : 0;
+    cfg.flag.bs.ctp = tpProtocol == TpProtocol::CTP ? 1 : 0;
+    cfg.transMode = TransportModeT::CONN_RM; // 当前只使用RM Jetty
+    cfg.localEid = IpAddressToHccpEid(locAddr);
+    HCCL_INFO("RaUbGetTpInfo cfg.localEid=%s", HccpEidDesc(cfg.localEid).c_str());
+    cfg.peerEid = IpAddressToHccpEid(rmtAddr);
+    HCCL_INFO("RaUbGetTpInfo cfg.peerEid=%s", HccpEidDesc(cfg.peerEid).c_str());
+
+    out.resize(sizeof(HccpTpInfo));
+    struct HccpTpInfo *info = reinterpret_cast<struct HccpTpInfo *>(out.data());
+
+    num = TP_HANDLE_REQUEST_NUM; // 指定需要从管控面申请tp handle的数量, hccp 会返回实际个数
+    s32 ret = RaCtxGetTpInfoList(rdmaHandle, &cfg, info, &num);
+    if (ret != 0) {
+        MACRO_THROW(NetworkApiException, StringFormat("[%s] failed, call interface error[%d], "
+            "rdmaHandle[%p], locAddr[%s], rmtAddr[%s].", __func__, ret, rdmaHandle,
+            locAddr.Describe().c_str(), rmtAddr.Describe().c_str()));
+    }
+
+    HCCL_INFO("[%s] ok, get handle[%llu].", __func__);
+}
+
 static RequestHandle ImportJettyAsync(RdmaHandle rdmaHandle, const HrtRaUbJettyImportedInParam &in,
     vector<char_t> &out, void *&remQpHandle, const JettyImportExpCfg &cfg, JettyImportMode mode,
     TpProtocol protocol = TpProtocol::INVALID)
@@ -2253,7 +2294,6 @@ void HrtRaWaitEventHandle(int event_handle, std::vector<SocketEventInfo> &event_
 void HrtRaGetSecRandom(u32 *value, u32 &devPhyId)
 {
     CHECK_NULLPTR(value, "[HrtRaGetSecRandom] value is nullptr!");
-    HCCL_INFO("[HrtRaGetSecRandom] Input params: value=%u, devPhyId=%u", *value, devPhyId);
     struct RaInfo raInfo;
     raInfo.mode = HrtNetworkMode::HDC;
     raInfo.phyId = devPhyId;
@@ -2262,6 +2302,7 @@ void HrtRaGetSecRandom(u32 *value, u32 &devPhyId)
     if (ret != 0) {
         MACRO_THROW(NetworkApiException, StringFormat("[%s] failed, call interface error[%d]. params: value=%u, devPhyId=%u", __func__, ret, *value, devPhyId));
     }
+    HCCL_INFO("[HrtRaGetSecRandom] Input params: value=%u, devPhyId=%u", *value, devPhyId);
 }
 HcclResult HrtRaCreateQpWithCq(RdmaHandle rdmaHandle, s32 sqEvent, s32 rqEvent,
     void *sendChannel, void *recvChannel, QpInfo &info, bool isHdcMode)
@@ -2658,11 +2699,17 @@ HcclResult HrtRaSetTpAttrAsync(RdmaHandle handle, uint64_t tpHandle, uint32_t at
     return HCCL_SUCCESS;
 }
 
-HcclResult HrtRaGetTpAttrAsync(RdmaHandle handle, uint64_t tpHandle, uint32_t& attrBitmap, TpAttr& attr, RequestHandle& reqHandle)
+HcclResult HrtRaGetTpAttrAsync(u32 phyId, RdmaHandle handle, uint64_t tpHandle, uint32_t& attrBitmap, TpAttr& attr, RequestHandle& reqHandle)
 {
     HCCL_INFO("[HrtRaGetTpAttrAsync] begain, reqHandle[%llu]", reqHandle);
+    u32 tpAttrVersion = 0;
+    s32 ret = RaGetInterfaceVersion(phyId, GET_TP_ATTR_OPCODE, &tpAttrVersion);
+    if (ret != 0 || tpAttrVersion < GET_TP_ATTR_VERSION) {
+        HCCL_ERROR("this package does not support RaGetTpAttrAsync for device, please change new package, ret=%d, tpAttrVersion=%u.", ret, tpAttrVersion);
+        return HCCL_E_NOT_SUPPORT;
+    }
     void *raReqHandle = nullptr;
-    s32 ret = RaGetTpAttrAsync(handle, tpHandle, &attrBitmap, &attr, &raReqHandle);
+    ret = RaGetTpAttrAsync(handle, tpHandle, &attrBitmap, &attr, &raReqHandle);
     if (ret != 0) {
         string msg = StringFormat("call RaGetTpAttrAsync failed, error code =%d.", ret);
         THROW<NetworkApiException>(msg);
