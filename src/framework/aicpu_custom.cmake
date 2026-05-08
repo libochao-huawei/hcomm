@@ -19,7 +19,7 @@ target_clone(
 )
 
 # 链接库
-target_link_libraries(${ARG_NEW} PRIVATE
+target_link_libraries(aicpu_custom PRIVATE
     -Wl,--no-as-needed
     ascend_hal
     c_sec

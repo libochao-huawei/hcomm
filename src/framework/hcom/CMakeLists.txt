@@ -17,6 +17,9 @@ if(TARGET hcomm)
         ${CMAKE_CURRENT_SOURCE_DIR}/hcom.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/hcom_host_profiling.cc
     )
+    target_include_directories(hcomm PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
 endif()
 
 add_subdirectory(gradient_segment)

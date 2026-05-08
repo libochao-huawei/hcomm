@@ -15,7 +15,11 @@ set(TARGET_LINUX_DISTRIBUTOR_ID euleros)
 set(TARGET_LINUX_DISTRIBUTOR_RELEASE 2.8)
 
 if(NOT TOOLCHAIN_DIR)
-    message(FATAL_ERROR "TOOLCHAIN_DIR is not set")
+    if(DEFINED ENV{TOOLCHAIN_DIR})
+        set(TOOLCHAIN_DIR "$ENV{TOOLCHAIN_DIR}")
+    else()
+        message(FATAL_ERROR "TOOLCHAIN_DIR is not set")
+    endif()
 endif()
 
 set(CPU_TYPE aarch64)

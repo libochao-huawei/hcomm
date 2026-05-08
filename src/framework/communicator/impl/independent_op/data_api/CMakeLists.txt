@@ -17,6 +17,9 @@ if(TARGET hcomm)
         hccl_api_data_cpu.cc
         sync_data_cpu.cc
     )
+    target_include_directories(hcomm PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
 endif()
 
 if(TARGET ccl_kernel)

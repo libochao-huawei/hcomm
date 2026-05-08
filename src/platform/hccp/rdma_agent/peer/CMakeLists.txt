@@ -58,7 +58,7 @@ endif()
 target_link_directories(ra_peer PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/lib64
 )
-if (DEVICE_MODE)
+if(${PRODUCT_SIDE} STREQUAL "device")
     target_link_directories(ra_peer PRIVATE
         ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
     )
