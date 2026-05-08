@@ -255,10 +255,10 @@ HcclResult SendTaskExceptionByMBox(CommunicatorImplLite *aicpuComm, const rtLogi
     CHK_RET(SendTaskExceptionByMBox(localDeviceId, notifyId, 0, aicpuComm->GetUserStreamId(), exceptionInfo));
 
     if (exceptionInfo->errorType != 1) {
-        std::string remoteRankId = std::to_string(aicpuComm->GetRank());
+        std::string remoteRankId = std::to_string(aicpuComm->GetMyRank());
         std::string groupRankContent = "group:[" + aicpuComm->GetId() + "], rankSize[" +
             std::to_string(aicpuComm->GetRankSize()) + "], rankId[" + std::to_string(aicpuComm->GetMyRank()) + "]";
-        ReportSdmaError(localDeviceId, notifyId, tsId, userStreamId, exceptionInfo->errorCode,
+        ReportSdmaError(localDeviceId, notifyId, 0, aicpuComm->GetUserStreamId(), exceptionInfo->errorCode,
             remoteRankId, groupRankContent);
     }
     return HCCL_SUCCESS;
