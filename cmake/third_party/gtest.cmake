@@ -19,7 +19,7 @@ unset(GMOCK_STATIC_LIBRARY CACHE)
 unset(GMOCK_MAIN_STATIC_LIBRARY CACHE)
 
 set(GTEST_FILE "googletest-1.14.0.tar.gz")
-set(GTEST_URL "https://gitcode.com/cann-src-third-party/googletest/releases/download/v1.14.0/${GTEST_FILE}")
+set(GTEST_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/googletest/googletest-1.14.0.tar.gz")
 set(GTEST_PKG_PATH ${CANN_3RD_LIB_PATH}/${GTEST_FILE})
 set(GTEST_INSTALL_PATH ${CANN_3RD_LIB_PATH}/gtest)
 
