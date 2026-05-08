@@ -42,7 +42,7 @@ static std::map<ReduceOp, u32> g_ubmaDataOpMap = {{ReduceOp::SUM, 0xA}, {ReduceO
 void UbConnLite::FillCommSqe(UdmaSqeCommon *sqe, const RmtRmaBufSliceLite &rmt, const SqeConfigLite &cfg, u32 opCode,
                              u32 cqeEnable)
 {
-    FUNCTION_TRACE_AICPU;
+    FUNCTION_TRACE;
     u32 cqeEn = cfg.cqeEn ? cqeEnable : 0; // BatchTransfer输入cfg.cqeEn=false时，不使能cqe
     sqe->cqe       = cqeEn;
     sqe->owner     = (pi == (sqDepth_ - 1)) ? 1 : 0;
@@ -77,7 +77,7 @@ void UbConnLite::FillCommSqe(UdmaSqeCommon *sqe, const RmtRmaBufSliceLite &rmt, 
 
 void UbConnLite::FillCommSqeReduceInfo(UdmaSqeCommon &sqeComm, ReduceOp reduceOp, DataType dataType, u32 udfType) const
 {
-    FUNCTION_TRACE_AICPU;
+    FUNCTION_TRACE;
     HCCL_INFO("[UbConnLite::%s] start", __func__);
 
     sqeComm.inlinedata.udfData.udfType    = udfType; // 0代表inline reduce
@@ -192,7 +192,7 @@ void UbConnLite::ProcessSlicesWithNotify(
 void UbConnLite::FillOneSqeWrite(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, const SqeConfigLite &cfg,
                                  UdmaSqeWrite *sqe, UdmaSqOpcode opCode, u32 cqeEnable)
 {
-    FUNCTION_TRACE_AICPU;
+    FUNCTION_TRACE;
     HCCL_INFO("[UbConnLite::%s] start, loc size[%llu]", __func__, loc.GetSize());
 
     sqe->comm.inlineEn = 0;
@@ -207,7 +207,7 @@ void UbConnLite::FillOneSqeWrite(const RmaBufSliceLite &loc, const RmtRmaBufSlic
 
 void UbConnLite::ProcessOneWqe(UdmaSqeWrite *sqe, UdmaSqOpcode opCode, const StreamLite &stream)
 {
-    FUNCTION_TRACE_AICPU;
+    FUNCTION_TRACE;
     HCCL_INFO("[UbConnLite::%s] start, opCode[%s]", __func__, opCode.Describe().c_str());
 
     // sqOffset是用于计算Ubjetty中下wqe位置的偏移，小于sqDepth
@@ -235,7 +235,7 @@ void UbConnLite::ProcessOneWqeWithNotify(const RmaBufSliceLite &loc, const RmtRm
                                          const RmtRmaBufSliceLite &notify, u64 notifyData, u32 opCode,
                                          const StreamLite &stream)
 {
-    FUNCTION_TRACE_AICPU;
+    FUNCTION_TRACE;
     HCCL_INFO("[UbConnLite::%s] start, locSize[%u], opCode[%u]", __func__, loc.GetSize(), opCode);
 
     // sqOffset是用于计算Ubjetty中下wqe位置的偏移，小于sqDepth
@@ -273,7 +273,7 @@ void UbConnLite::ProcessOneWqeWithNotify(const RmaBufSliceLite &loc, const RmtRm
 
 void UbConnLite::MemorySetAndCopy(u8 *va, u32 sqeSize, void *sqe)
 {
-    FUNCTION_TRACE_AICPU;
+    FUNCTION_TRACE;
     auto ret = memset_s(va, sqeSize, 0, sqeSize);
     if (UNLIKELY(ret != 0)) {
         THROW<InternalException>(StringFormat("[UbConnLite::%s] memset fail, ret = %d", __func__, ret));
@@ -358,7 +358,7 @@ void UbConnLite::InlineWrite(const u8 *data, u16 size, const RmtRmaBufSliceLite 
 
 void UbConnLite::FillNotifySqe(struct UdmaSqeNotify *sqe, const RmtRmaBufSliceLite &notify, u64 notifyData) const
 {
-    FUNCTION_TRACE_AICPU;
+    FUNCTION_TRACE;
     sqe->notifyTokenId    = notify.GetTokenId();
     sqe->notifyTokenValue = notify.GetTokenValue();
     sqe->notifyAddrLow    = notify.GetAddr() & ADDR_BIT_LOW;
@@ -372,7 +372,7 @@ void UbConnLite::FillNotifySqe(struct UdmaSqeNotify *sqe, const RmtRmaBufSliceLi
 
 void UbConnLite::FillLocalSgeSqe(UdmaNormalSge *sqe, const RmaBufSliceLite &loc) const
 {
-    FUNCTION_TRACE_AICPU;
+    FUNCTION_TRACE;
     sqe->length       = loc.GetSize();
     sqe->tokenId      = loc.GetTokenId();
     sqe->dataAddrLow  = loc.GetAddr() & ADDR_BIT_LOW;
@@ -453,7 +453,7 @@ void UbConnLite::WriteReduceWithNotify(DataType dataType, ReduceOp reduceOp, con
 
 void UbConnLite::CustomizeSqeByOneSidedComm(UdmaSqeCommon *sqe, bool isLostWqe) const
 {
-    FUNCTION_TRACE_AICPU;
+    FUNCTION_TRACE;
     /* 表示SQE是否需要上报CQE:为1表示此SQE需要上报CQE，为0表示不需要 */
     sqe->cqe = isLostWqe;
 
@@ -483,7 +483,7 @@ void UbConnLite::CustomizeSqeByOneSidedComm(UdmaSqeCommon *sqe, bool isLostWqe) 
 void UbConnLite::FillBatchOneWqe(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, const SqeConfigLite &cfg,
                                  bool isLostWqe, u32 opCode, const StreamLite &stream)
 {
-    FUNCTION_TRACE_AICPU;
+    FUNCTION_TRACE;
     HCCL_INFO("UbConnLite FillBatchOneWqe start, loc[%s], rmt[%s]", loc.Describe().c_str(), rmt.Describe().c_str());
 
     u32 sqOffset = pi % sqDepth_;
@@ -519,7 +519,7 @@ void UbConnLite::FillBatchOneWqe(const RmaBufSliceLite &loc, const RmtRmaBufSlic
 void UbConnLite::BatchProcessOneSlice(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt,
                                       const SqeConfigLite &cfg, bool isLastSlice, u32 opCode, const StreamLite &stream)
 {
-    FUNCTION_TRACE_AICPU;
+    FUNCTION_TRACE;
     u64 dataSize = loc.GetSize();
     // 按照UDMA能力切分数据
     bool isLastWqe;
@@ -559,7 +559,7 @@ void UbConnLite::BatchProcessOneSlice(const RmaBufSliceLite &loc, const RmtRmaBu
 void UbConnLite::BatchCommDataProcess(const vector<RmaBufSliceLite> &loc, const vector<RmtRmaBufSliceLite> &rmt,
                                       const SqeConfigLite &cfg, u32 opCode, const StreamLite &stream)
 {
-    FUNCTION_TRACE_AICPU;
+    FUNCTION_TRACE;
     u64 siliceSize = loc.size();
     // 按照UDMA能力切分数据, 组装wqe
     for (u64 i = 0; i < siliceSize; i++) {
@@ -572,7 +572,7 @@ void UbConnLite::BatchCommDataProcess(const vector<RmaBufSliceLite> &loc, const 
 void UbConnLite::BatchOneSidedRead(const vector<RmaBufSliceLite> &loc, const vector<RmtRmaBufSliceLite> &rmt,
                                    const SqeConfigLite &cfg, const StreamLite &stream, ConnLiteOperationOut &out)
 {
-    FUNCTION_TRACE_AICPU;
+    FUNCTION_TRACE;
     // 按照UDMA能力切分数据, 组装wqe
     BatchCommDataProcess(loc, rmt, cfg, UdmaSqOpcode::UDMA_OPC_READ, stream);
 
@@ -584,7 +584,7 @@ void UbConnLite::BatchOneSidedRead(const vector<RmaBufSliceLite> &loc, const vec
 void UbConnLite::BatchOneSidedWrite(const vector<RmaBufSliceLite> &loc, const vector<RmtRmaBufSliceLite> &rmt,
                                     const SqeConfigLite &cfg, const StreamLite &stream, ConnLiteOperationOut &out)
 {
-    FUNCTION_TRACE_AICPU;
+    FUNCTION_TRACE;
     // 按照UDMA能力切分数据, 组装wqe
     BatchCommDataProcess(loc, rmt, cfg, UdmaSqOpcode::UDMA_OPC_WRITE, stream);
 
