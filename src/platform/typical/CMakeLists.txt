@@ -17,6 +17,8 @@ set(src_list
     rdma_resource_manager.cc
 )
 
-target_sources(hccl_plf PRIVATE
-    ${src_list}
-)
+if(TARGET hccl_plf)
+    target_sources(hccl_plf PRIVATE
+        ${src_list}
+    )
+endif()

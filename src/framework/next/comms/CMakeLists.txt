@@ -15,25 +15,21 @@ add_subdirectory(endpoint_pairs)
 add_subdirectory(comm_engine_res)
 add_subdirectory(api_c_adpt)
 
-target_include_directories(hcomm PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/common
-    ${CMAKE_CURRENT_SOURCE_DIR}/api_c_adpt
-    ${CMAKE_CURRENT_SOURCE_DIR}/endpoint_pairs
-    # ${CMAKE_CURRENT_SOURCE_DIR}/endpoint_pairs/channels
-    # ${CMAKE_CURRENT_SOURCE_DIR}/endpoint_pairs/channels/slaves
-    ${CMAKE_CURRENT_SOURCE_DIR}/endpoints
-    ${CMAKE_CURRENT_SOURCE_DIR}/endpoints/reged_mems
-    ${CMAKE_CURRENT_SOURCE_DIR}/comm_engine_res
-    #${CMAKE_CURRENT_SOURCE_DIR}/comm_engine_res/engine_ctxs
-    #${CMAKE_CURRENT_SOURCE_DIR}/comm_engine_res/notifys
-    #${CMAKE_CURRENT_SOURCE_DIR}/comm_engine_res/threads
-    ${CMAKE_CURRENT_SOURCE_DIR}/endpoints/net_dev
-)
-
 set(src_list
     hcomm_res_mgr.cc
 )
 
-target_sources(hcomm PRIVATE
-    ${src_list}
-)
+if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${src_list}
+    )
+    target_include_directories(hcomm PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/common
+        ${CMAKE_CURRENT_SOURCE_DIR}/api_c_adpt
+        ${CMAKE_CURRENT_SOURCE_DIR}/comm_engine_res
+        ${CMAKE_CURRENT_SOURCE_DIR}/endpoint_pairs
+        ${CMAKE_CURRENT_SOURCE_DIR}/endpoints
+        ${CMAKE_CURRENT_SOURCE_DIR}/endpoints/reged_mems
+        ${CMAKE_CURRENT_SOURCE_DIR}/endpoints/net_dev
+    )
+endif()
