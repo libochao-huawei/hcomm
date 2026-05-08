@@ -9,7 +9,6 @@ HCCL LLT（Low Level Test）是 HCCL 的测试框架，旨在系统化验证 HCC
 ```text
 test/
 ├── legacy                                          # 历史版本兼容测试框架
-│   ├── algorithm                                   # 算法测试用例
 │   ├── common                                      # 公共处理
 │   ├── depends                                     # 测试依赖其他组件头文件
 │   ├── st                                          # ST 集成测试用例
