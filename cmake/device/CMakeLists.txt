@@ -36,7 +36,7 @@ add_subdirectory(${HCOMM_DIR}/src)
 pack_targets_and_files(
     OUTPUT_TARGET "pack_cann_hcomm_compat"
     OUTPUT "cann-hcomm-compat.tar.gz"
-    TARGETS rs ra_adp tls_adp ascend_kms net_co hccp_service.bin
+    TARGETS rs_device ra_adp tls_adp ascend_kms net_co hccp_service.bin
     MANIFEST "hccp_compat_bin_hash.cfg"
 )
 sign_file(
