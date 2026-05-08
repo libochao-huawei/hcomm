@@ -10,8 +10,10 @@
 add_subdirectory(ccu_channel)
 add_subdirectory(ccu_pfe)
 
-target_sources(hccl_v2 PRIVATE
-    ccu_component.cpp
-    ccu_res_allocator.cpp
-    ccu_eid_info.cpp
-)
+if(TARGET hccl_v2)
+    target_sources(hccl_v2 PRIVATE
+        ccu_component.cpp
+        ccu_res_allocator.cpp
+        ccu_eid_info.cpp
+    )
+endif()

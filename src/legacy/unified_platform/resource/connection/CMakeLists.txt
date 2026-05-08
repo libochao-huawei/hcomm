@@ -7,13 +7,15 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-target_sources(hccl_v2 PRIVATE
-        rma_connection.cc
-        p2p_connection.cc
-        dev_rdma_connection.cc
-        dev_ub_connection.cc
-        host_ub_connection.cc
-)
+if(TARGET hccl_v2)
+    target_sources(hccl_v2 PRIVATE
+            rma_connection.cc
+            p2p_connection.cc
+            dev_rdma_connection.cc
+            dev_ub_connection.cc
+            host_ub_connection.cc
+    )
+endif()
 
 add_subdirectory(ub_ci_updater)
 add_subdirectory(aicpu)

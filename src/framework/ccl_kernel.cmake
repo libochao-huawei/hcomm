@@ -44,13 +44,11 @@ target_include_directories(ccl_kernel PRIVATE
     ${HCOMM_DIR}/src/pub_inc
     ${HCOMM_DIR}/src/pub_inc/aicpu
     ${HCOMM_DIR}/include
-    ${HCOMM_DIR}/include/hccl
-    ${HCOMM_DIR}/inc/hccl/hccl
     ${HCOMM_DIR}/pkg_inc/
     ${HCOMM_DIR}/pkg_inc/hccl/
     ${HCOMM_DIR}/externel_depends/tsch/
+    ${HCOMM_DIR}/src/algorithm/pub_inc
 
-    ${hccl_include_list}
     ${LEGACY_INCLUDE_LIST}
     ${RDMA_CORE_INCLUDE_DIR}
     ${THIRD_PARTY_NLOHMANN_PATH}
@@ -99,16 +97,6 @@ if(BUILD_OPEN_PROJECT)
         -lrt
         -ldl
         -lpthread
-    )
-
-    add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
-        COMMAND ${HI_PYTHON} ${HCOMM_DIR}/cmake/scripts/parser_ini.py ${HCOMM_DIR}/src/framework/device/framework/aicpu_custom.ini ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    )
-    add_custom_target(aicpu_custom_json DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json)
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
-        DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel ${INSTALL_OPTIONAL}
-        COMPONENT hcomm
     )
 else()
     target_include_directories(ccl_kernel PRIVATE
@@ -162,13 +150,17 @@ else()
     )
 endif()
 
-set(CCL_KERNEL_TAR_DIR ${HCOMM_DIR}/build_device/ccl_kernel_tar_pkg/aicpu_kernels_device)
+# 将 ccl_kernel.ini 转换为 json 格式
 add_custom_command(
-    TARGET ccl_kernel
-    POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${CCL_KERNEL_TAR_DIR}
-    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ccl_kernel> ${CCL_KERNEL_TAR_DIR}
-    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ccl_kernel_plf> ${CCL_KERNEL_TAR_DIR}
-    COMMAND chmod 750 ${CCL_KERNEL_TAR_DIR}/lib*
-    COMMENT "Copying libccl_kernel_plf.so libccl_kernel.so to ${CCL_KERNEL_TAR_DIR}"
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
+    COMMAND ${HI_PYTHON} ${HCOMM_DIR}/cmake/scripts/parser_ini.py
+                         ${CMAKE_CURRENT_SOURCE_DIR}/device/framework/ccl_kernel.ini
+                         ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMENT "Generating ccl_kernel.json"
+ 	VERBATIM
+)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
+    DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/config ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
 )
