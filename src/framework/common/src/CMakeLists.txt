@@ -20,6 +20,12 @@ if(TARGET hcomm)
         ${CMAKE_CURRENT_SOURCE_DIR}/launch_aicpu.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/hccl_mem_alloc.cc
     )
+    target_include_directories(hcomm PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/host
+        ${CMAKE_CURRENT_SOURCE_DIR}/h2d_dto
+        ${CMAKE_CURRENT_SOURCE_DIR}/mgr
+    )
 endif()
 
 if(TARGET ccl_kernel)

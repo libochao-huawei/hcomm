@@ -77,14 +77,14 @@ function(generate_stub STUB)
     endif()
 endfunction(generate_stub)
 
-if (NOT DEVICE_MODE)
-set(HOST_STUBS
-    c_sec
-    unified_dlog
-    mmpa
-    ascendcl
-    tsdclient
-)
+if(${PRODUCT_SIDE} STREQUAL "host")
+    set(HOST_STUBS
+        c_sec
+        unified_dlog
+        mmpa
+        ascendcl
+        tsdclient
+    )
 endif()
 
 if (BUILD_AARCH)
