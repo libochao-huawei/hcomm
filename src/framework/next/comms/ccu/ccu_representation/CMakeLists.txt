@@ -1,9 +1,11 @@
 file(GLOB_RECURSE CCU_REP_SOURCES "*.cc")
 
-target_sources(hcomm
-    PRIVATE
-    ${CCU_REP_SOURCES}
-)
+if(TARGET hcomm)
+    target_sources(hcomm
+        PRIVATE
+        ${CCU_REP_SOURCES}
+    )
+endif()
 
 target_include_directories(hcomm PRIVATE 
     ${CMAKE_CURRENT_SOURCE_DIR}

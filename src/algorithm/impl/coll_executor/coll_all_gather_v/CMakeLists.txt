@@ -19,16 +19,21 @@ set(src_list
   ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_gather_v_mesh_graph_pipeline_executor.cc
 )
 
-target_sources(hccl_alg PRIVATE
-  ${src_list}
-)
+if(TARGET hccl_alg)
+    target_sources(hccl_alg PRIVATE
+      ${src_list}
+    )
+endif()
 
-if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
+if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_gather_v_executor.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_gather_v_ring_for_910_93_executor.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/coll_aligned_all_gather_v_double_ring_for_910_93_executor.cc
     )
+endif()
+
+if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
     target_include_directories(ccl_kernel PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
     )

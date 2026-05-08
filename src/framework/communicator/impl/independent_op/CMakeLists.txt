@@ -19,14 +19,19 @@ set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/hccl_independent_op_engine.cc
 )
  
-target_sources(hcomm PRIVATE
-    ${src_list}
-)
+if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${src_list}
+    )
+endif()
 
-if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
+if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/hccl_independent_rank_graph.cc
     )
+endif()
+
+if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
     target_include_directories(ccl_kernel PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
     )

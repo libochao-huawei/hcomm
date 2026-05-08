@@ -13,16 +13,21 @@ set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_reduce_for_310p_doubling_direct_executor.cc
 )
 
-target_sources(hccl_alg PRIVATE
-    ${src_list}
-)
+if(TARGET hccl_alg)
+    target_sources(hccl_alg PRIVATE
+        ${src_list}
+    )
+endif()
 
-if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
+if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_reduce_for_310p_ring_executor.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_reduce_for_310p_doubling_executor.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_reduce_for_310p_doubling_direct_executor.cc
     )
+endif()
+
+if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
     target_include_directories(ccl_kernel PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
     )

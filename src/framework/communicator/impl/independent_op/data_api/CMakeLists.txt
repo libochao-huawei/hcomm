@@ -11,13 +11,15 @@ set(common_src_list
     launch_context.cc
 )
 
-target_sources(hcomm PRIVATE
-    ${common_src_list}
-    hccl_api_data_cpu.cc
-    sync_data_cpu.cc
-)
+if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${common_src_list}
+        hccl_api_data_cpu.cc
+        sync_data_cpu.cc
+    )
+endif()
 
-if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
+if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         ${common_src_list}
         hccl_api_data_aicpu_ts.cc

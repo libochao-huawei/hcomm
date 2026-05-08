@@ -25,11 +25,13 @@ set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_to_all_symmetric_memory_executor.cc
 )
 
-target_sources(hccl_alg PRIVATE
-    ${src_list}
-)
+if(TARGET hccl_alg)
+    target_sources(hccl_alg PRIVATE
+        ${src_list}
+    )
+endif()
 
-if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
+if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_to_all_executor.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_to_all_executor_aicpu.cc
@@ -41,6 +43,9 @@ if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
         ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_to_all_v_continuous_pipeline_executor.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_to_all_v_staged_executor.cc
     )
+endif()
+
+if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
     target_include_directories(ccl_kernel PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
     )

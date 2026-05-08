@@ -11,14 +11,19 @@ set(src_list_pub
     ${CMAKE_CURRENT_SOURCE_DIR}/send_receive.cc
 )
 
-target_sources(hccl_alg PRIVATE
-    ${src_list_pub}
-)
+if(TARGET hccl_alg)
+    target_sources(hccl_alg PRIVATE
+        ${src_list_pub}
+    )
+endif()
 
-if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
+if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/send_receive.cc
     )
+endif()
+
+if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
     target_include_directories(ccl_kernel PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
     )

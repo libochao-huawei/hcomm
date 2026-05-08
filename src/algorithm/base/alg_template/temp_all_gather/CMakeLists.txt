@@ -33,11 +33,13 @@ set(src_list_pub
     ${CMAKE_CURRENT_SOURCE_DIR}/all_gather_v_graph_pipeline.cc
 )
 
-target_sources(hccl_alg PRIVATE
-    ${src_list_pub}
-)
+if(TARGET hccl_alg)
+    target_sources(hccl_alg PRIVATE
+        ${src_list_pub}
+    )
+endif()
 
-if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
+if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/aligned_all_gather_double_ring.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/all_gather_ring_concurrent_direct.cc
@@ -59,6 +61,9 @@ if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
         ${CMAKE_CURRENT_SOURCE_DIR}/all_gather_hccs_sio.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/all_gather_graph_pipeline.cc
     )
+endif()
+
+if(NOT BUILD_OPEN_PROJECT OR DEVICE_MODE)
     target_include_directories(ccl_kernel PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
     )
