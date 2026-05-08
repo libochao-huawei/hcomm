@@ -13,6 +13,8 @@
 #include <cstdint>
 #include "unified_platform/ccu/ccu_device/ccu_component/ccu_component.h"
 
+#define private public
+
 using namespace hcomm;
 
 class CcuCompPubTest : public testing::Test {
