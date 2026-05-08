@@ -57,10 +57,12 @@ extern CcuResult CcuAddressAddAssignVar(CcuAddressHandle addr, CcuVariableHandle
 //参数加载类 相关接口
 extern CcuResult CcuLoadArg(CcuVariableHandle varHandle, uint32_t argId);
 extern CcuResult CcuLoadVar(uint64_t addr, CcuVariableHandle varHandle, uint32_t num);
+extern CcuResult CcuStoreVar(uint64_t addr, CcuVariableHandle varHandle, uint32_t num);
+
 
 //Event信号同步类 相关接口
-extern CcuResult CcuRecordEvent(CcuEventHandle eventHandle);
-extern CcuResult CcuWaitEvent(CcuEventHandle eventHandle);
+extern CcuResult CcuEventRecord(CcuEventHandle eventHandle);
+extern CcuResult CcuEventWait(CcuEventHandle eventHandle);
 extern CcuResult CcuSetMask(CcuEventHandle eventHandle, uint32_t mask);
 extern CcuResult CcuNotifyRecord(ChannelHandle channel, uint32_t remoteNotifyIdx, uint32_t mask);
 extern CcuResult CcuNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask);

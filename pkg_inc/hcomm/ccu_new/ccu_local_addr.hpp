@@ -27,7 +27,10 @@ public:
         this->addr.handle = other.addr.handle;
         this->token.handle = other.token.handle;
     }
-
+    void operator=(const LocalAddr& other) {
+        this->addr = other.addr;     
+        this->token = other.token;   
+    }
     void operator=(LocalAddr&& other) {
         this->handle = other.handle;
         this->addr.handle = other.addr.handle;
