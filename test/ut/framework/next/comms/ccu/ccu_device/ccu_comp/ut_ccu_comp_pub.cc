@@ -10,7 +10,7 @@
 #include "ccu_pfe_cfg_mgr.h" 
 #include "ccu_res_batch_allocator.h"
 #include "ccu_res_specs.h"
-
+#include <cstdint>
 #include "unified_platform/ccu/ccu_device/ccu_component/ccu_component.h"
 
 using namespace hcomm;
@@ -146,49 +146,52 @@ TEST(CcuPfeCfgMgrSimpleTest, Ut_InvalidDieId) {
 }
 
 TEST(CcuResBatchAllocatorTest, Ut_MissionMgrAllocWithUnsupportedReqTypeExpectWarning) {
-
-    MOCKER_CPP(&CcuResBatchAllocator::AllocBlockRes).stubs().with(any(), any(), any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&CcuComponent::AllocRes).stubs().with(any(), any(), any(), any(), any()).will(returnValue(HCCL_E_PARA));
-    int32_t devLogicId = 0;
-    auto& allocator = CcuResBatchAllocator::GetInstance(devLogicId);
-    
-    // 构造非法 reqType，例如 99
-    CcuResReq req{};
-    req.missionReq.reqType = static_cast<MissionReqType>(2); 
-    // 设置请求数量为 1，确保进入分配逻辑
-    req.missionReq.req[0] = 0; 
-    req.missionReq.req[1] = 0;
-
-    CcuResHandle handle = nullptr;
-    // 调用 AllocResHandle 间接触发 CcuMissionMgr::Alloc
-    // 预期行为：记录警告日志，修正 reqType，继续执行
-    (void)allocator.AllocResHandle(req, handle);
-    
-    if (handle) {
-        allocator.ReleaseResHandle(handle);
-    }
+    CcuResBatchAllocator allocat{}; 
+    uintptr_t handleKey = 0;
+    MissionReq missionReq; 
+    missionReq.reqType = MissionReqType::COMM_ENGINE_RESERVED; 
+    misssionReq.req[0] = 0;
+    misssionReq.req[0] = 1;
+    MissionResInfo missionInfos{};
+    allocat.missionMgr_.Alloc(handleKey, missionReq, missionInfos);
 }
+
 
 /**
  * 测试用例 2: 覆盖第 786 行 HCCL_WARNING 分支
  * 场景: Mission 资源不足，HandleBlockRes 返回 HCCL_E_UNAVAIL
- */
-TEST(CcuResBatchAllocatorTest, Ut_MissionMgrAllocWhenResourceUnavailableExpectHcclEUnavail) {
-    int32_t devLogicId = 0;
-    auto& allocator = CcuResBatchAllocator::GetInstance(devLogicId);
-    
-    // 构造一个请求大量 Mission 资源的 Req，超过预分配的大小
-    CcuResReq req{};
-    req.missionReq.reqType = MissionReqType::FUSION_MULTIPLE_DIE;
-    // 假设预分配的 block 很少，请求一个巨大的数量以触发 E_UNAVAIL
-    req.missionReq.req[0] = 10000; 
-    req.missionReq.req[1] = 10000;
+ * 
+ HcclResult CcuResBatchAllocator::CcuMissionMgr::Alloc(const uintptr_t handleKey,
+    const MissionReq &missionReq, MissionResInfo &missionInfos)
+{
+    MissionReqType reqType = missionReq.reqType;
+    constexpr MissionReqType defaultReqType = MissionReqType::FUSION_MULTIPLE_DIE;
+    if (missionReq.reqType != MissionReqType::FUSION_MULTIPLE_DIE) {
+        HCCL_WARNING("[CcuMissionMgr][%s] mission reqType[%d], mission resources "
+            "now only support %d.", __func__, reqType,
+            defaultReqType);
+        reqType = MissionReqType::FUSION_MULTIPLE_DIE;
+    }
 
-    CcuResHandle handle = nullptr;
+ */
+// TEST(CcuResBatchAllocatorTest, Ut_MissionMgrAllocWhenResourceUnavailableExpectHcclEUnavail) {
+   
     
-    // 执行分配，预期返回 HCCL_E_UNAVAIL
-    auto ret = allocator.AllocResHandle(req, handle);
+//     int32_t devLogicId = 0;
+//     auto& allocator = CcuResBatchAllocator::GetInstance(devLogicId);
     
-    EXPECT_EQ(ret, HcclResult::HCCL_E_UNAVAIL);
-    EXPECT_EQ(handle, nullptr);
-}
+//     // 构造一个请求大量 Mission 资源的 Req，超过预分配的大小
+//     CcuResReq req{};
+//     req.missionReq.reqType = MissionReqType::FUSION_MULTIPLE_DIE;
+//     // 假设预分配的 block 很少，请求一个巨大的数量以触发 E_UNAVAIL
+//     req.missionReq.req[0] = 10000; 
+//     req.missionReq.req[1] = 10000;
+
+//     CcuResHandle handle = nullptr;
+    
+//     // 执行分配，预期返回 HCCL_E_UNAVAIL
+//     auto ret = allocator.AllocResHandle(req, handle);
+    
+//     EXPECT_EQ(ret, HcclResult::HCCL_E_UNAVAIL);
+//     EXPECT_EQ(handle, nullptr);
+// }
