@@ -6737,7 +6737,9 @@ namespace hccl
                         HCCL_ERROR("[%s] algOperator is nullptr", __func__), HCCL_E_INTERNAL);
             AlgResourceRequest resRequest;
             CHK_RET(algOperator->CalcResRequest(algName, opParam, resRequest));
-            CHK_RET(AllocAlgResource(newTag, commType, opParam, resRequest, resMap_[newTag], isNeedHostSlaveStream));
+            AlgResourceResponse algResResponse;
+            CHK_RET(AllocAlgResource(newTag, commType, opParam, resRequest, algResResponse, isNeedHostSlaveStream));
+            resMap_[newTag] = algResResponse;
             CHK_RET(RegisterToHeartBeat());
         }
 

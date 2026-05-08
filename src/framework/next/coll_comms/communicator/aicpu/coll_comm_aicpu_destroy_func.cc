@@ -45,7 +45,7 @@ HcclResult CollCommAicpuDestroyFunc::Process()
         CollCommAicpu *aicpuComm = commInfo.second->GetCollCommAicpu();
         CHK_PTR_NULL(aicpuComm);
 
-        if (aicpuComm->GetCommmStatus() != HcclCommStatus::HCCL_COMM_STATUS_READY) {
+        if (aicpuComm->GetCommmStatus() == HcclCommStatus::HCCL_COMM_STATUS_INVALID) {
             continue;
         }
 
@@ -61,11 +61,9 @@ HcclResult CollCommAicpuDestroyFunc::Process()
     }
     rwlock.readUnlock();
 
-    rwlock.writeLock();
     for (std::string& groupName : destroyComm) {
-        CHK_RET(AicpuIndopProcess::AicpuDestroyCommbyGroup(groupName));
+        (void)(AicpuIndopProcess::AicpuDestroyCommbyGroup(groupName));
     }
-    rwlock.writeUnlock();
     return HCCL_SUCCESS;
 }
 }  // namespace hccl
