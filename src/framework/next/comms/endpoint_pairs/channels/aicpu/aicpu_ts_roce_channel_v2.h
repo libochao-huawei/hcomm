@@ -70,6 +70,13 @@ public:
     HcclResult Clean() override;
     HcclResult Resume() override;
 
+    HcclResult NotifyRecord(const uint32_t remoteNotifyIdx) override { return HCCL_SUCCESS; }
+    HcclResult NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout) override { return HCCL_SUCCESS; }
+    HcclResult WriteWithNotify(void *dst, const void *src, const uint64_t len, uint32_t remoteNotifyIdx) override { return HCCL_SUCCESS; }
+    HcclResult Write(void *dst, const void *src, uint64_t len) override { return HCCL_SUCCESS; }
+    HcclResult Read(void *dst, const void *src, uint64_t len) override { return HCCL_SUCCESS; }
+    HcclResult ChannelFence() override { return HCCL_SUCCESS; }
+
 private:
     HcclResult ParseInputParam();
     HcclResult BuildConnection();
