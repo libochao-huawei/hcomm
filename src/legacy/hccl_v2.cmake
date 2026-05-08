@@ -104,9 +104,3 @@ install(TARGETS hccl_v2
     LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
     COMPONENT hcomm
 )
-
-add_subdirectory(common)
-add_subdirectory(framework)
-add_subdirectory(service)
-add_subdirectory(unified_platform)
-add_subdirectory(interface)

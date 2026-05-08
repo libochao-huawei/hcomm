@@ -24,7 +24,9 @@ if(TARGET hcomm)
         ${src_list}
     )
     target_include_directories(hcomm PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/common
+        ${CMAKE_CURRENT_SOURCE_DIR}/common/device
         ${CMAKE_CURRENT_SOURCE_DIR}/api_c_adpt
         ${CMAKE_CURRENT_SOURCE_DIR}/endpoint_pairs
         # ${CMAKE_CURRENT_SOURCE_DIR}/endpoint_pairs/channels
@@ -35,5 +37,6 @@ if(TARGET hcomm)
         #${CMAKE_CURRENT_SOURCE_DIR}/comm_engine_res/engine_ctxs
         #${CMAKE_CURRENT_SOURCE_DIR}/comm_engine_res/notifys
         #${CMAKE_CURRENT_SOURCE_DIR}/comm_engine_res/threads
+        ${CMAKE_CURRENT_SOURCE_DIR}/ccu/pub_inc
     )
 endif()

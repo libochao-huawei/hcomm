@@ -18,6 +18,7 @@ if(TARGET hcomm)
         ${src_list}
     )
     target_include_directories(hcomm PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
         ${HCOMM_DIR}/src/framework/next/comms/endpoint_pairs/channels
     )
 endif()
