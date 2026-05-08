@@ -36,7 +36,7 @@ protected:
     }
 };
 
-TEST_F(AivUbMemTransportTest, Ut_GetStatus_When_SOCKET_OK_Expect_Success)
+TEST_F(AivUbMemTransportTest, St_GetStatus_When_SOCKET_OK_Expect_Success)
 {
     Hccl::Socket *fakeSocket = reinterpret_cast<Hccl::Socket *>(0x1);
     HcommChannelDesc desc{};
