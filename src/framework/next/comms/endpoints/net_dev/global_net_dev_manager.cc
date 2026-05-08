@@ -45,12 +45,20 @@ GlobalNetDevMgr::~GlobalNetDevMgr()
     HCCL_INFO("[GlobalNetDevMgr][%s] end.", __func__);
 }
 
-GlobalNetDevMgr& GlobalNetDevMgr::GetInstance(u32 devicePhyId)
+GlobalNetDevMgr& GlobalNetDevMgr::GetInstance()
 {
-    u32 deviceLogicId = 0;
-    HcclResult hcclRet = hrtGetDeviceIndexByPhyId(devicePhyId, deviceLogicId);
+    s32 deviceLogicId;
+    u32 devicePhyId;
+    HcclResult hcclRet = hrtGetDeviceRefresh(&deviceLogicId);
     if (hcclRet != HCCL_SUCCESS) {
         HCCL_RUN_WARNING("GlobalNetDevMgr::GetInstance hrtGetDeviceRefresh failed, ret[%d], "
+            "return reserve instance", hcclRet);
+        return netDevMgrInstance[MAX_MODULE_DEVICE_NUM];
+    }
+
+    hcclRet = hrtGetDevicePhyIdByIndex(static_cast<u32>(deviceLogicId), devicePhyId);
+    if (hcclRet != HCCL_SUCCESS) {
+        HCCL_RUN_WARNING("GlobalNetDevMgr::GetInstance hrtGetDevicePhyIdByIndex failed, ret[%d], "
             "return reserve instance", hcclRet);
         return netDevMgrInstance[MAX_MODULE_DEVICE_NUM];
     }
@@ -68,18 +76,18 @@ GlobalNetDevMgr& GlobalNetDevMgr::GetInstance(u32 devicePhyId)
         }
     }
 
-    HCCL_INFO("GlobalNetDevMgr::GetInstance deviceLogicId[%u].", deviceLogicId);
+    HCCL_DEBUG("GlobalNetDevMgr::GetInstance deviceLogicId[%d], devicePhyId[%u] done.", deviceLogicId, devicePhyId);
     return netDevMgrInstance[deviceLogicId];
 }
 
 HcclResult GlobalNetDevMgr::Init(u32 devicePhyId, u32 deviceLogicId)
 {
+    // init after get the lock
+    std::unique_lock<std::mutex> lock(netDevCtxMtx_);
     if (netDevMgrInstance[deviceLogicId].isInited_) {
         return HCCL_SUCCESS;
     }
 
-    // init after get the lock
-    std::unique_lock<std::mutex> lock(netDevCtxMtx_);
     if (!isDlRaInited_) {
         CHK_RET(hccl::DlRaFunction::GetInstance().DlRaFunctionInit());
         CHK_RET(hccl::DlHalFunction::GetInstance().DlHalFunctionInit());
@@ -110,7 +118,9 @@ void GlobalNetDevMgr::UnInit()
             devicePhyId_, deviceLogicId_);
         return;
     }
+
     (void)HcclNetDeInit(NICDeployment::NIC_DEPLOYMENT_DEVICE, devicePhyId_, static_cast<u32>(deviceLogicId_));
+    netDevCtx_ = nullptr;
     isInited_ = false;
     HCCL_INFO("[GlobalNetDevMgr][UnInit]UnInit success. devicePhyId[%u], deviceLogicId[%d]",
         devicePhyId_, deviceLogicId_);
@@ -161,12 +171,6 @@ HcclResult GlobalNetDevMgr::RefNetDevCtx(NicType nicType, const HcclIpAddress &i
     HcclNetDevCtx &netDevCtx)
 {
     HCCL_INFO("[GlobalNetDevMgr][RefNetDevCtx] nicType[%d], ip[%s]", nicType, ipAddr.GetReadableAddress());
-
-    if (devicePhyId_ == INVALID_UINT || deviceLogicId_ == INVALID_INT) {
-        CHK_RET(hrtGetDevice(&deviceLogicId_));
-        CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(deviceLogicId_), devicePhyId_));
-    }
-
     std::lock_guard<std::mutex> lock(netDevCtxMtx_);
 
     // 进程粒度open dev，如果已open，直接复用
@@ -177,6 +181,7 @@ HcclResult GlobalNetDevMgr::RefNetDevCtx(NicType nicType, const HcclIpAddress &i
  
         auto &netDevCtxRef = netDevCtxRefMap_[portInfo];
         netDevCtxRef.Ref();
+        netDevCtx_ = netDevCtx;
 
         HCCL_INFO(
             "[GlobalNetDevMgr][RefNetDevCtx] nicType[%d] ip[%s] has been Ref.",
@@ -195,6 +200,7 @@ HcclResult GlobalNetDevMgr::RefNetDevCtx(NicType nicType, const HcclIpAddress &i
     netDevCtxRefMap_.insert(std::make_pair(portInfo, ref));
 
     netDevCtx = tempNetDevCtx;
+    netDevCtx_ = netDevCtx;
     HCCL_INFO(
         "[GlobalNetDevMgr][RefNetDevCtx] nicType[%d] ip[%s] has been Init.", nicType, ipAddr.GetReadableAddress());
     return HCCL_SUCCESS;
@@ -204,12 +210,8 @@ HcclResult GlobalNetDevMgr::UnRefNetDevCtx(NicType nicType, const HcclIpAddress 
 {
     HCCL_INFO("[GlobalNetDevMgr][UnRefNetDevCtx] nicType[%d], ip[%s]", nicType, ipAddr.GetReadableAddress());
 
-    if (devicePhyId_ == INVALID_UINT || deviceLogicId_ == INVALID_INT) {
-        CHK_RET(hrtGetDevice(&deviceLogicId_));
-        CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(deviceLogicId_), devicePhyId_));
-    }
-
     std::lock_guard<std::mutex> lock(netDevCtxMtx_);
+ 
     HcclNetDevCtx netDevCtx;
     PortInfo portInfo(ipAddr, port);
     if (netDevCtxMap_.find(portInfo) != netDevCtxMap_.end()) {
@@ -231,16 +233,17 @@ HcclResult GlobalNetDevMgr::UnRefNetDevCtx(NicType nicType, const HcclIpAddress 
                 nicType, ipAddr.GetReadableAddress());
         }
     }
+
     if (netDevCtxMap_.empty()) {
         UnInit();
     }
     return HCCL_SUCCESS;
 }
 
-HcclResult GlobalNetDevMgr::ServerInit(const HcclNetDevCtx netDevCtx, u32 port)
+HcclResult GlobalNetDevMgr::ServerInit(u32 port)
 {
     HcclIpAddress localIp{0};
-    CHK_RET(HcclNetDevGetLocalIp(netDevCtx, localIp));
+    CHK_RET(HcclNetDevGetLocalIp(netDevCtx_, localIp));
     HCCL_INFO("[GlobalNetDevMgr][ServerInit]ip[%s] port[%u]", localIp.GetReadableAddress(), port);
     PortInfo portInfo(localIp, port);
 
@@ -255,7 +258,7 @@ HcclResult GlobalNetDevMgr::ServerInit(const HcclNetDevCtx netDevCtx, u32 port)
 
     std::shared_ptr<HcclSocket> tempSocket;
     EXECEPTION_CATCH((tempSocket = std::make_shared<HcclSocket>(
-        netDevCtx, port)), return HCCL_E_PTR);
+        netDevCtx_, port)), return HCCL_E_PTR);
     CHK_RET(tempSocket->Init());
     CHK_RET(tempSocket->Listen());
     serverSocketMap_.insert(std::make_pair(portInfo, tempSocket));
@@ -267,10 +270,10 @@ HcclResult GlobalNetDevMgr::ServerInit(const HcclNetDevCtx netDevCtx, u32 port)
     return HCCL_SUCCESS;
 }
 
-HcclResult GlobalNetDevMgr::ServerDeInit(const HcclNetDevCtx netDevCtx, u32 port)
+HcclResult GlobalNetDevMgr::ServerDeInit(u32 port)
 {
     HcclIpAddress localIp{0};
-    CHK_RET(HcclNetDevGetLocalIp(netDevCtx, localIp));
+    CHK_RET(HcclNetDevGetLocalIp(netDevCtx_, localIp));
     CHK_RET(ServerDeInit(localIp, port));
 
     return HCCL_SUCCESS;
@@ -376,13 +379,13 @@ void GlobalNetDevMgr::MakeSocketTag(hccl::HcclIpAddress tagServerIp, uint32_t ta
         std::string(":") + tagClientIp.GetReadableIP() + std::string(":") + std::to_string(id);
 }
 
-HcclResult GlobalNetDevMgr::ConnectToServer(const HcclNetDevCtx netDevCtx, uint32_t localPort,
+HcclResult GlobalNetDevMgr::ConnectToServer(uint32_t localPort,
     hccl::HcclIpAddress remoteIp, uint32_t remotePort, std::string &socketTag,
     std::shared_ptr<hccl::HcclSocket> &socket)
 {
     HCCL_INFO("[GlobalNetDevMgr]ConnectToServer start");
 
-    auto *netDevCtxPtr = static_cast<hccl::NetDevContext *>(netDevCtx);
+    auto *netDevCtxPtr = static_cast<hccl::NetDevContext *>(netDevCtx_);
     hccl::HcclIpAddress localIpAddr = netDevCtxPtr->GetLocalIp();
 
     HCCL_INFO("[GlobalNetDevMgr]ConnectToServer localIp[%s] localPort[%u] remoteIp[%s] remotePort[%u] socketTag[%s]",
@@ -390,7 +393,7 @@ HcclResult GlobalNetDevMgr::ConnectToServer(const HcclNetDevCtx netDevCtx, uint3
 
     HCCL_INFO("[GlobalNetDevMgr][client] ConnectToServer connect to server");
     std::shared_ptr<hccl::HcclSocket> socketTemp = nullptr;
-    EXECEPTION_CATCH(socketTemp = std::make_shared<hccl::HcclSocket>(socketTag, netDevCtx, remoteIp, remotePort,
+    EXECEPTION_CATCH(socketTemp = std::make_shared<hccl::HcclSocket>(socketTag, netDevCtx_, remoteIp, remotePort,
                         hccl::HcclSocketRole::SOCKET_ROLE_CLIENT),
         return HCCL_E_PTR);
     CHK_SMART_PTR_NULL(socketTemp);
@@ -409,12 +412,12 @@ HcclResult GlobalNetDevMgr::ConnectToServer(const HcclNetDevCtx netDevCtx, uint3
     return HCCL_SUCCESS;
 }
 
-HcclResult GlobalNetDevMgr::AcceptClient(const HcclNetDevCtx netDevCtx, uint32_t localPort,
+HcclResult GlobalNetDevMgr::AcceptClient(uint32_t localPort,
     hccl::HcclIpAddress remoteIp, std::string &socketTag, std::shared_ptr<hccl::HcclSocket> &socket)
 {
     HCCL_INFO("[GlobalNetDevMgr]AcceptClient start");
 
-    auto *netDevCtxPtr = static_cast<hccl::NetDevContext *>(netDevCtx);
+    auto *netDevCtxPtr = static_cast<hccl::NetDevContext *>(netDevCtx_);
     hccl::HcclIpAddress localIpAddr = netDevCtxPtr->GetLocalIp();
 
     HCCL_INFO("[GlobalNetDevMgr]AcceptClient localIp[%s] localPort[%u] remoteIp[%s] socketTag[%s]",

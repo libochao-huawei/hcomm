@@ -24,7 +24,6 @@
 
 namespace hcomm {
 std::unordered_map<ChannelHandle, ChannelHandle> channelD2HHandleMap_;
-std::atomic<u64> Channel::allId_(0);
 
 HcclResult Channel::CreateChannel(
     EndpointHandle endpointHandle, CommEngine engine, 
