@@ -864,9 +864,8 @@ HcclResult HostCpuRoceChannel::WriteWithNotify(
     return HCCL_SUCCESS;
 }
 
-void HostCpuRoceChannel::BuildRdmaWr(const char *caller, ibv_wr_opcode opcode, void *localAddr,
-                                      const void *remoteAddr, uint64_t len, size_t localIdx, size_t rmtIdx,
-                                      struct ibv_send_wr &wr, struct ibv_sge &sg) const
+void HostCpuRoceChannel::BuildRdmaWr(const char *caller, ibv_wr_opcode opcode, void *localAddr, const void *remoteAddr, uint64_t len,
+                     size_t localIdx, size_t rmtIdx, struct ibv_send_wr &wr, struct ibv_sge &sg) const
 {
     wr.sg_list             = &sg;
     wr.sg_list->addr       = reinterpret_cast<uint64_t>(localAddr);
