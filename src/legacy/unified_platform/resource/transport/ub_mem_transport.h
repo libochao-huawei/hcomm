@@ -30,6 +30,7 @@ public:
         std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &tagVec);
 
     std::string Describe() const override;
+    HcclResult Describe(std::string &dfxMsg);
 
     TransportStatus GetStatus() override;
 
