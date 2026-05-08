@@ -255,6 +255,7 @@ private:
     std::mutex ProcessLock_;
     ErrorCqeInfo CqeErrInfo_;
 
+    u32 testCounter_ = 0; // CMTEST 用来测试建链完成后是否能正确发送心跳帧
 };
 } // namespace hcomm
 #endif // CLUSTER_MONITOR_H
