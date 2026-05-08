@@ -1045,7 +1045,7 @@ private:
     DeviceMem tilingDataMemDevice_;
     // 单机场景下多卡间能互相访问的共享buffer，除了自己rank是申请的，其余均是Ipc打开的
     DeviceMem zeroCopyLocalBuffer_;
-    void *zeroCopyIpcPtrs_[MAX_MODULE_DEVICE_NUM] {};
+    void *zeroCopyIpcPtrs_[AICPU_ZERO_COPY_MAX_DEVICE_NUM_A3] {};
     std::atomic<HcclCommState> state_{HcclCommState::IDLE};
     std::unordered_map<std::string, std::string> newTagToTagMap_;
     // ClearResMap 强清块依据: zerocopy hex prefix tag + cnt 副本 _CaptureN tag,
