@@ -13,7 +13,7 @@ include_guard(GLOBAL)
 
 set(ABSEIL_NAME "abseil-cpp")
 set(ABSEIL_FILE "abseil-cpp-20250127.0.tar.gz")
-set(ABSEIL_URL "https://gitcode.com/cann-src-third-party/abseil-cpp/releases/download/20250127.0/${ABSEIL_FILE}")
+set(ABSEIL_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/abseil-cpp/abseil-cpp-20250127.0.tar.gz")
 set(ABSEIL_PKG_PATH ${CANN_3RD_LIB_PATH}/${ABSEIL_FILE})
 
 if(EXISTS ${ABSEIL_PKG_PATH})
