@@ -262,7 +262,11 @@ void TaskExceptionHost::GetAicpuCqeErrNetInstanceByRankId(hccl::CollComm* collCo
     hcclCommunicator->GetRankGraphV2(*rankGraph);
     Hccl::RankGraph *rankGraphv2 = static_cast<Hccl::RankGraph *>(*rankGraph);
     const Hccl::NetInstance *netInstance = rankGraphv2->GetNetInstanceByRankId(0, rankid);
-   // CHK_PTR_NULL(netInstance);
+    if (netInstance == nullptr) {
+        HCCL_ERROR("[GetAicpuCqeErrNetInstanceByRankId]netInstance is nullptr, rankId[%u]", rankid);
+        netInstanceId = "";
+        return;
+    }
     std::string netInsId = netInstance->GetNetInstId();
     netInstanceId = netInsId;
     return;

@@ -959,32 +959,49 @@ HcclResult CcuTaskException::GetCcuErrorMsg(int32_t deviceId, uint16_t missionSt
 }
 
 
-u32 CcuTaskException::GetCcuCqeErrRemoteLocalIdByRankId(hccl::CollComm* collComm, uint32_t rankid)
+void CcuTaskException::GetCcuCqeErrRemoteLocalIdByRankId(hccl::CollComm* collComm, uint32_t rankid, u32 &RemoteLocalId)
 {
-    CHK_PTR_NULL(collComm);
+    if (collComm == nullptr) {
+        HCCL_ERROR("[GetCcuCqeErrRemoteLocalIdByRankId] collComm is nullptr");
+        return;
+    }
     auto commV2 = collComm->GetCommunicatorV2();
-    CHK_PTR_NULL(commV2);
+    if (commV2 == nullptr) {
+        HCCL_ERROR("[GetCcuCqeErrRemoteLocalIdByRankId] commV2 is nullptr");
+        return;
+    }
     Hccl::HcclCommunicator *hcclCommunicator = static_cast<Hccl::HcclCommunicator *>(commV2);
     void **rankGraph = nullptr;
     hcclCommunicator->GetRankGraphV2(*rankGraph);
     Hccl::RankGraph *rankGraphv2 = static_cast<Hccl::RankGraph *>(*rankGraph);
     u32 LocalId = rankGraphv2->GetLocalId(rankid);
-    return LocalId;
+    RemoteLocalId = LocalId;
+    return;
 }
 
-std::string CcuTaskException::GetCcuCqeErrNetInstanceByRankId(hccl::CollComm* collComm, uint32_t rankid)
+void CcuTaskException::GetCcuCqeErrNetInstanceByRankId(hccl::CollComm* collComm, uint32_t rankid, std::string &netInstanceId)
 {
-    //CHK_PTR_NULL(collComm);
+    if (collComm == nullptr) {
+        HCCL_ERROR("[GetCcuCqeErrNetInstanceByRankId] collComm is nullptr");
+        return;
+    }
     auto commV2 = collComm->GetCommunicatorV2();
-    //CHK_PTR_NULL(commV2);
+    if (commV2 == nullptr) {
+        HCCL_ERROR("[GetCcuCqeErrNetInstanceByRankId] commV2 is nullptr");
+        return;
+    }
     Hccl::HcclCommunicator *hcclCommunicator = static_cast<Hccl::HcclCommunicator *>(commV2);
     void **rankGraph = nullptr;
     hcclCommunicator->GetRankGraphV2(*rankGraph);
     Hccl::RankGraph *rankGraphv2 = static_cast<Hccl::RankGraph *>(*rankGraph);
     const Hccl::NetInstance *netInstance = rankGraphv2->GetNetInstanceByRankId(0, rankid);
-   // CHK_PTR_NULL(netInstance);
-    std::string netInstanceId = netInstance->GetNetInstId();
-    return netInstanceId;
+    if (netInstance == nullptr) {
+        HCCL_ERROR("[GetCcuCqeErrNetInstanceByRankId] netInstance is nullptr for rankid[%u]", rankid);
+        return;
+    }
+    std::string netInsId = netInstance->GetNetInstId();
+    netInstanceId = netInsId;
+    return;
 }
 
 void CcuTaskException::GetCcuCqeErrorInfo(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 locDeviceId, uint8_t missionStatus)
@@ -992,8 +1009,10 @@ void CcuTaskException::GetCcuCqeErrorInfo(const CcuErrorInfo &ccuErrorInfo, cons
     auto pair = GetAddrPairByChannelId(ccuErrorInfo.msg.waitSignal.channelId[0], taskInfo, locDeviceId);
     RankId remoteRankId = GetRankIdByChannelId(ccuErrorInfo.msg.waitSignal.channelId[0], taskInfo, locDeviceId);
     hccl::CollComm *collComm = static_cast<hccl::CollComm*>(taskInfo.dfxOpInfo_->comm_);
-    u32 RemoteLocalId = GetCcuCqeErrRemoteLocalIdByRankId(collComm, remoteRankId);
-    std::string netInstanceId = GetCcuCqeErrNetInstanceByRankId(collComm, remoteRankId);
+    u32 RemoteLocalId = INVALID_VALUE_RANKID;
+    GetCcuCqeErrRemoteLocalIdByRankId(collComm, remoteRankId, RemoteLocalId);
+    std::string netInstanceId = "";
+    GetCcuCqeErrNetInstanceByRankId(collComm, remoteRankId, netInstanceId);
     std::string srcEid = pair.first.Describe();
     std::string dstEid = pair.second.Describe();
     ClusterMoniterGetCcuCqeErrInfo(RemoteLocalId, locDeviceId, missionStatus, srcEid, dstEid, netInstanceId);
