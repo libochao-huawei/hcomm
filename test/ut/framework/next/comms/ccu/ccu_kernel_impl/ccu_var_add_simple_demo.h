@@ -70,9 +70,11 @@ CcuResult CcuAllocDemoKernel(CcuKernelArg arg)
     ccu::Alloc(&varA);
     ccu::Alloc(&varB);
     ccu::Alloc(&result);
+    varA  = 1024;
+    varB = 2048;
+    result=varA + varB;
     ccu::LoadArg(varA,0);
     ccu::LoadArg(varB,1);
-    result=varA + varB;
 
     ccu::Variable varC;
     ccu::CreateByChannel(args->channelHandle, 0, &varC);
