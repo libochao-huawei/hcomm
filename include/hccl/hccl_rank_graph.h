@@ -376,6 +376,36 @@ extern HcclResult HcclRankGraphGetEndpointDesc(HcclComm comm, uint32_t layer, ui
  * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern HcclResult HcclRankGraphGetEndpointInfo(HcclComm comm, uint32_t rankId, const EndpointDesc *endpointDesc, EndpointAttr endpointAttr, uint32_t infoLen, void *info);
+
+/** 通信层级最大数量 */
+#define RANK_DESC_MAX_NET_LAYER 8
+
+/**
+ * @brief Rank描述信息结构体
+ * @note 包含本rank的物理位置、电互联组、OCS并行平面等拓扑属性
+ */
+typedef struct {
+    uint32_t localId;          ///< 本卡物理端口ID (devPhyId)
+    char superPodId[128];      ///< 超节点标识（字符串）
+    uint32_t serverIdx;        ///< Server在集群中的自然顺序索引
+    uint32_t elecGroupId;      ///< 电互联组ID (elecGroup)，自协商路径暂为0
+    uint32_t ocsPlaneId;       ///< 当前rank在OCS并行通信平面中的ID
+    uint32_t ocsPlaneNum;      ///< OCS并行通信平面总数
+    uint32_t netLayerNum;      ///< 通信层级数量
+    uint32_t netLayers[RANK_DESC_MAX_NET_LAYER];  ///< 通信层级列表（netLayer值）
+} RankDesc;
+
+/**
+ * @brief 获取通信域内本rank的拓扑描述信息
+ * @param[in] comm 通信域句柄
+ * @param[out] descList RankDesc描述信息（本rank单条）
+ * @param[out] descNum 描述信息数量（当前固定为1）
+ * @return HcclResult 执行结果状态码
+ * @warning 1、返回的descList内存由库内管理，调用者严禁释放
+ *          2、应及时复制返回的数据，同一通信域重复调用可能使前次结果失效
+ */
+extern HcclResult HcclGetRankDescList(HcclComm comm, RankDesc **descList, uint32_t *descNum);
+
 #ifdef __cplusplus
 }
 #endif  // __cplusplus
