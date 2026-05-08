@@ -100,7 +100,8 @@ std::string NewRankInfo::Describe() const
 NewRankInfo::NewRankInfo(BinaryStream &binStream)
 {
     binStream >> rankId >> localId >> replacedLocalId >> deviceId >> devicePort;
-    HCCL_DEBUG("[NewRankInfo] localId[%d]", localId);
+    binStream >> serverIdx;
+    HCCL_DEBUG("[NewRankInfo] localId[%d] serverIdx[%u]", localId, serverIdx);
     size_t rankLevelNum;
     binStream >> rankLevelNum;
     for (u32 i = 0; i < rankLevelNum; i++) {
@@ -123,8 +124,9 @@ void NewRankInfo::GetBinStream(bool isContainLoaId, BinaryStream &binStream) con
     } else {
         binStream << rankId << INVALID_RANKID << INVALID_RANKID<< deviceId << devicePort;
     }
+    binStream << serverIdx;
     binStream << rankLevelInfos.size();
-    HCCL_INFO("[NewRankInfo] rankLevelInfos size[%u], rankId[%d]", rankLevelInfos.size(), rankId);
+    HCCL_INFO("[NewRankInfo] rankLevelInfos size[%u], rankId[%d], serverIdx[%u]", rankLevelInfos.size(), rankId, serverIdx);
     for (auto &it : rankLevelInfos) {
         it.GetBinStream(binStream);
     }
