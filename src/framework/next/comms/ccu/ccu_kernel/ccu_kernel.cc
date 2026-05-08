@@ -158,13 +158,19 @@ HcclResult CcuKernel::SelectDie()
 CcuResult CcuKernel::GeneTaskParams(const uint64_t *taskArgs, uint32_t argsNum,
     std::vector<CcuTaskParam> &taskParams)
 {
-    const uint32_t expectedMask = (argsNum >= 32) ? 0xFFFFFFFFu : ((argsNum == 0) ? 0u : ((1u << argsNum) - 1));
-    if (loadArgUsedMask_ != expectedMask) { 
+    if (loadArgUsedSet_.size() != argsNum) {
         HCCL_ERROR("[CcuKernel][%s] failed, args number does not match the Load instruction, "
-            "argsNum = %d, loadArgInstr= %u", __func__, argsNum, loadArgIndex_);
+            "argsNum = %u, loaded = %zu", __func__, argsNum, loadArgUsedSet_.size());
         return CcuResult::CCU_E_INTERNAL;
     }
-
+    // 进一步保证集合内容是 [0, argsNum) 的全集（拒绝 5 个但有 argId=100 这种）
+    for (uint32_t i = 0; i < argsNum; ++i) {
+        if (loadArgUsedSet_.count(i) == 0) {
+            HCCL_ERROR("[CcuKernel][%s] failed, argId %u not loaded (argsNum=%u)",
+                __func__, i, argsNum);
+            return CcuResult::CCU_E_INTERNAL;
+        }
+    }
     if (argsNum != 0) {
         CCU_CHK_PTR_NULL(taskArgs);
     }
@@ -448,7 +454,7 @@ CcuResult CcuKernel::VariableAddVarToVar(CcuVariableHandle varHandle, CcuVariabl
 
 
 /*========== Event信号同步类 相关接口 ==========*/
-CcuResult CcuKernel::RecordEvent(CcuEventHandle eventHandle)
+CcuResult CcuKernel::EventRecord(CcuEventHandle eventHandle)
 {
     CcuRep::CompletedEvent *event{nullptr};
     CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
@@ -457,7 +463,7 @@ CcuResult CcuKernel::RecordEvent(CcuEventHandle eventHandle)
     return CcuResult::CCU_SUCCESS;
 }
 
-CcuResult CcuKernel::WaitEvent(CcuEventHandle eventHandle)
+CcuResult CcuKernel::EventWait(CcuEventHandle eventHandle)
 {
     CcuRep::CompletedEvent *event{nullptr};
     CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
@@ -502,19 +508,17 @@ CcuResult CcuKernel::WriteVariableWithNotify(const ChannelHandle channel, CcuVar
 //加载类 相关接口
 CcuResult  CcuKernel::LoadArg(CcuVariableHandle varHandle, uint32_t argId)
 {
-    if (argId >= CCU_SQE_ARGS_LEN) {
-        HCCL_ERROR("[CcuKernel][LoadArg] argId %u out of range [0, %u)",
-            argId, CCU_SQE_ARGS_LEN);
+    auto [it, inserted] = loadArgUsedSet_.insert(argId);
+    if (!inserted) {
+        HCCL_ERROR("[CcuKernel][LoadArg] argId %u already loaded", argId);
         return HCCL_TO_CCU_RET(HCCL_E_PARA);
     }
-    const uint32_t bit = (1u << argId);
 
 
     CcuRep::Variable *var{nullptr};
     CCU_CHK_RET(GetVariableByHandle(varHandle,&var));
-    auto loadArgRep = std::make_shared<CcuRep::CcuRepLoadArg>(*var, loadArgIndex_ % CCU_SQE_ARGS_LEN);
+    auto loadArgRep = std::make_shared<CcuRep::CcuRepLoadArg>(*var, argId % CCU_SQE_ARGS_LEN);
     Append(loadArgRep);
-    loadArgUsedMask_ |= bit;
     return CcuResult::CCU_SUCCESS;
 }
 
@@ -536,6 +540,24 @@ CcuResult CcuKernel::LoadVar(uint64_t addr, CcuVariableHandle varHandle, uint32_
     }
 
     Append(std::make_shared<CcuRep::CcuRepLoad>(addr, *var, num));
+    return CcuResult::CCU_SUCCESS;
+}
+CcuResult CcuKernel::StoreVar(uint64_t addr, CcuVariableHandle varHandle, uint32_t num)
+{
+    CcuRep::Variable *var{nullptr};
+    CCU_CHK_RET(GetVariableByHandle(varHandle, &var));
+    if (num > 1) {
+        for (uint32_t i = 1; i < num; i++) {
+            CcuRep::Variable *nextVar{nullptr};
+            CCU_CHK_RET(GetVariableByHandle(varHandle + i, &nextVar));
+            if (nextVar->Id() != var->Id() + i) {
+                HCCL_ERROR("[CcuKernel][StoreVariable] variables not continuous at index %u, "
+                           "expected Id %u but got %u", i, var->Id() + i, nextVar->Id());
+                return HCCL_TO_CCU_RET(HCCL_E_PARA);
+            }
+        }
+    }
+    Append(std::make_shared<CcuRep::CcuRepStore>(*var, addr, num));
     return CcuResult::CCU_SUCCESS;
 }
 //本地数据拷贝 相关实现
