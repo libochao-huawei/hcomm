@@ -16,16 +16,11 @@ HcclResult hcclComm::AddExchangeInfo(void* data, uint32_t length)
     CHK_PTR_NULL(data);
 
     std::lock_guard<std::mutex> lock(exchangeInfoMutex_);
-    CHK_PRT_RET(exchangeInfoReady_, 
-        HCCL_ERROR("[AddExchangeInfo] exchangeInfo already exists, consume it first via HcclChannelAcquire."), 
-        HCCL_E_PARA);
-
     exchangeInfoBuf_.resize(length);
     s32 sRet = memcpy_s(exchangeInfoBuf_.data(), length, data, length);
     CHK_PRT_RET(sRet != EOK, 
         HCCL_ERROR("[AddExchangeInfo] memcpy_s failed, ret[%d]", sRet), HCCL_E_MEMORY);
     exchangeInfoLen_ = length;
-    exchangeInfoReady_ = true;
     HCCL_INFO("[AddExchangeInfo] success, length[%u].", length);
     return HCCL_SUCCESS;
 }
@@ -66,16 +61,10 @@ HcclResult hcclComm::StoreRemoteExchangeInfo(uint32_t remoteRank, const std::vec
 HcclResult hcclComm::ResetExchangeInfo()
 {
     std::lock_guard<std::mutex> lock(exchangeInfoMutex_);
-    exchangeInfoReady_ = false;
     exchangeInfoBuf_.clear();
     exchangeInfoLen_ = 0;
     HCCL_INFO("[ResetExchangeInfo] exchange info state cleared.");
     return HCCL_SUCCESS;
-}
-
-bool hcclComm::IsExchangeInfoReady() const
-{
-    return exchangeInfoReady_;
 }
 
 const std::vector<u8>& hcclComm::GetExchangeInfoBuf() const
