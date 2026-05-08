@@ -138,19 +138,22 @@ endif()
 add_dependencies(rs crypto_static)
 
 # 创建 rs 动态链接库，device 侧使用，同时打包到 cann-hcomm-compat.tar.gz
-# 注意：rs_custom_interface 与 rs 完全一致，区别是编译时使能 CUSTOM_INTERFACE 宏定义
+# 注意：rs_device 与 rs 完全一致，区别是编译时使能 CUSTOM_INTERFACE 宏定义
 if("${PRODUCT_SIDE}" STREQUAL "device")
-    add_library(rs_custom_interface SHARED)
+    add_library(rs_device SHARED)
     # 克隆 rs 的属性
-    target_clone(rs rs_custom_interface)
+    target_clone(
+        ORIGIN rs
+        NEW rs_device
+    )
     # 宏定义
-    target_compile_definitions(rs_custom_interface PRIVATE
+    target_compile_definitions(rs_device PRIVATE
         CUSTOM_INTERFACE
     )
     # 设置依赖
-    add_dependencies(rs_custom_interface crypto_static)
-    # 设置 rs_custom_interface 输出文件名
-    set_target_properties(rs_custom_interface
+    add_dependencies(rs_device crypto_static)
+    # 设置 rs_device 输出文件名
+    set_target_properties(rs_device
         PROPERTIES
         OUTPUT_NAME rs
     )
