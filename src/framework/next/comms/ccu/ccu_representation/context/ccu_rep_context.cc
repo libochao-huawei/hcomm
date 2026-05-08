@@ -148,8 +148,10 @@ void CcuRepContext::AddSqeProfiling()
     ccuProfilingInfoCache.type      = (uint8_t)CcuProfilinType::CCU_TASK_PROFILING;
     ccuProfilingInfoCache.name      = "CCU_KERNEL";
     ccuProfilingInfoCache.dieId     = GetDieId();
-    HCCL_DEBUG("[%s]type[%d], name[%s], dieId[%u]", __func__, ccuProfilingInfoCache.type,
-        ccuProfilingInfoCache.name.c_str(), ccuProfilingInfoCache.dieId);
+    ccuProfilingInfoCache.missionId = GetMissionId();
+    ccuProfilingInfoCache.sqeNum    = sqeNum;
+    HCCL_DEBUG("[%s]type[%d], name[%s], dieId[%u], sqeNum[%u]", __func__, ccuProfilingInfoCache.type,
+        ccuProfilingInfoCache.name.c_str(), ccuProfilingInfoCache.dieId, ccuProfilingInfoCache.sqeNum);
     profilingInfo.push_back(ccuProfilingInfoCache);
 }
     
@@ -159,6 +161,9 @@ int32_t CcuRepContext::AddProfiling(const std::string &name, uint32_t mask)
     ccuProfilingInfoCache.name  = name;
     ccuProfilingInfoCache.ckeId = INVALID_CKE_ID;
     ccuProfilingInfoCache.mask  = mask;
+    ccuProfilingInfoCache.dieId = GetDieId();
+    ccuProfilingInfoCache.missionId = GetMissionId();
+    ccuProfilingInfoCache.sqeNum    = sqeNum;
     CHK_SAFETY_FUNC_RET(memset_s(ccuProfilingInfoCache.channelId, sizeof(ccuProfilingInfoCache.channelId), INVALID_VALUE_CHANNELID,
         sizeof(ccuProfilingInfoCache.channelId)));
 
@@ -177,6 +182,9 @@ int32_t CcuRepContext::AddProfiling(const ChannelHandle channel, const std::stri
     ccuProfilingInfoCache.name     = name;
     CHK_RET(channelImpl->GetLocCkeByIndex(signalIndex, ccuProfilingInfoCache.ckeId));
     ccuProfilingInfoCache.mask     = mask;
+    ccuProfilingInfoCache.dieId    = GetDieId();
+    ccuProfilingInfoCache.missionId = GetMissionId();
+    ccuProfilingInfoCache.sqeNum    = sqeNum;
     CHK_SAFETY_FUNC_RET(memset_s(ccuProfilingInfoCache.channelId, sizeof(ccuProfilingInfoCache.channelId),
                             INVALID_VALUE_CHANNELID, sizeof(ccuProfilingInfoCache.channelId)));
     ccuProfilingInfoCache.channelId[0] = channelImpl->GetChannelId();
@@ -197,7 +205,9 @@ int32_t CcuRepContext::AddProfiling(const ChannelHandle *channels, uint32_t chan
     ccuProfilingInfoCache.reduceOpType   = 0xFF; // 0xFF 无效值
     ccuProfilingInfoCache.inputDataType  = 0xFF; // 0xFF 无效值
     ccuProfilingInfoCache.outputDataType = 0xFF; // 0xFF 无效值
+    ccuProfilingInfoCache.dieId          = GetDieId();
     ccuProfilingInfoCache.missionId      = GetMissionId();
+    ccuProfilingInfoCache.sqeNum         = sqeNum;
 
     CHK_SAFETY_FUNC_RET(memset_s(ccuProfilingInfoCache.channelId, sizeof(ccuProfilingInfoCache.channelId),
                                 INVALID_VALUE_CHANNELID, sizeof(ccuProfilingInfoCache.channelId)));
@@ -233,7 +243,9 @@ int32_t CcuRepContext::AddProfiling(const ChannelHandle *channels, uint32_t chan
     ccuProfilingInfoCache.reduceOpType   = opType;
     ccuProfilingInfoCache.inputDataType  = dataType;
     ccuProfilingInfoCache.outputDataType = outputDataType;
+    ccuProfilingInfoCache.dieId          = GetDieId();
     ccuProfilingInfoCache.missionId      = GetMissionId();
+    ccuProfilingInfoCache.sqeNum         = sqeNum;
     
     CHK_SAFETY_FUNC_RET(memset_s(ccuProfilingInfoCache.channelId, sizeof(ccuProfilingInfoCache.channelId),
                                     INVALID_VALUE_CHANNELID, sizeof(ccuProfilingInfoCache.channelId)));
