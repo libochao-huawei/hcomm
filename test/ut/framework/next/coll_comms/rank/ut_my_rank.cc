@@ -631,7 +631,7 @@ TEST_F(MyRankTest, Ut_WaitAllAsyncComplete_When_AllOk_Expect_Success)
 
 TEST_F(MyRankTest, Ut_BatchExchange_When_NewRankConsistent_Expect_Success)
 {
-    std::shared_ptr<hccl::hcclComm> hcclComm;
+    hcclComm comm;
 
     // mock Socket异步接口：GetAsyncStatus返回OK
     MOCKER_CPP(&Hccl::Socket::GetAsyncStatus)
@@ -665,6 +665,6 @@ TEST_F(MyRankTest, Ut_BatchExchange_When_NewRankConsistent_Expect_Success)
     hcommDescVec.push_back(hcommDesc);
 
     HcclResult ret = myRank.BatchExchangeAndCheckConsistency(
-        channelDescs, hcommDescVec, 1, "test_tag", hcclComm.get());
+        channelDescs, hcommDescVec, 1, "test_tag", &comm);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
