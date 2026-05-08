@@ -557,6 +557,7 @@ void ClusterMonitor::MonitorThread()
     uint32_t count = 0;
     while (clusterMonitorThreadFlag_) {
         CreateHBLinksAsync(); // 内部起线程对所有的socket进行异步建链
+        HCCL_INFO("CMTEST [%s] deviceLogicId_ = %d testCounter_ = %d, MonitorThread Runing.", __func__, deviceLogicId_, testCounter_);
         threadLock_.lock();
         count++;
         if (count >= hccl::HEARTBEAT_COUNT) {
@@ -583,13 +584,12 @@ void ClusterMonitor::MonitorThread()
         threadLock_.unlock();
 
         std::this_thread::sleep_for(std::chrono::milliseconds(hccl::BROADCAST_INTERVAL));
-        testCounter_++;
-        HCCL_INFO("CMTEST [%s] deviceLogicId_ = %d testCounter_ = %d, MonitorThread Runing.", __func__, deviceLogicId_, testCounter_);
+        // testCounter_++;
 
-        if (deviceLogicId_ == 0 && testCounter_ >= 100) { // 心跳线程运行一段时间后自动退出，方便测试建链和心跳的功能，实际使用时可以去掉这个条件让心跳线程一直运行
-            HCCL_INFO("CMTEST [%s] deviceLogicId_ = %d, MonitorThread exit.", __func__, deviceLogicId_);
-            clusterMonitorThreadFlag_ = false;
-        }
+        // if (deviceLogicId_ == 0 && testCounter_ >= 100) { // 心跳线程运行一段时间后自动退出，方便测试建链和心跳的功能，实际使用时可以去掉这个条件让心跳线程一直运行
+        //     HCCL_INFO("CMTEST [%s] deviceLogicId_ = %d, MonitorThread exit.", __func__, deviceLogicId_);
+        //     clusterMonitorThreadFlag_ = false;
+        // }
     }
 
     linkThreadRunning_ = false;
