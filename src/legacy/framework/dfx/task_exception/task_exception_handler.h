@@ -77,7 +77,7 @@ private:
     static void PrintOpDataErrorMessage(u32 deviceId, ErrorMessageReport &errorMessage, string &stageErrInfo);
     static std::pair<IpAddress, IpAddress> GetAddrPairByChannelId(uint16_t channelId, const TaskInfo& taskInfo);
     static std::string GetCcuLenErrorMsg(const uint64_t len);
-    std::tuple<std::string, std::stding, std::string, std::string> TaskExceptionHandler::GetCcuErrorIpInfo(
+    std::tuple<std::string, std::string, std::string, std::string> TaskExceptionHandler::GetCcuErrorIpInfo(
         uint32_t deviceId, uint16_t status, const TaskInfo& taskInfo);
 
 private:

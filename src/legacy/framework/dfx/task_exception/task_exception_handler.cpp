@@ -547,7 +547,7 @@ void TaskExceptionHandler::ProcessCcuException(const rtExceptionInfo_t* exceptio
     for (uint32_t i = 0; i < ccuExDetailInfo.ccuMissionNum; ++i) { // ccuExDetailInfo.ccuMissionNum为1
         const auto& missionInfo = ccuExDetailInfo.missionInfo[i]; // 异常mission
         uint16_t status = static_cast<uint16_t>(missionInfo.status) << BYTE | missionInfo.subStatus;
-        auto [localServerId, localIp, remoteIp, remoteId] = GetCcuErrorIpInfo(deviceId, status, taskInfo)
+        auto [localServerId, localIp, remoteIp, remoteId] = GetCcuErrorIpInfo(deviceId, status, taskInfo);
         RPT_INPUT_ERR(true, "EI0018", std::vector<std::string>({"localServerId", "localDeviceId", "localDeviceIp",
             "remoteServerId", "remoteDeviceId", "remoteDeviceIp"}),
             std::vector<std::string>({localServerId, std::to_string(deviceId), localIp, "", remoteId, remoteIp}));
@@ -1164,7 +1164,7 @@ std::pair<IpAddress, IpAddress> TaskExceptionHandler::GetAddrPairByChannelId(uin
         dieId, channelId);
 }
 
-std::tuple<std::string, std::stding, std::string, std::string> TaskExceptionHandler::GetCcuErrorIpInfo(
+std::tuple<std::string, std::string, std::string, std::string> TaskExceptionHandler::GetCcuErrorIpInfo(
     uint32_t deviceId, uint16_t status, const TaskInfo& taskInfo)
 {
     std::string localServerId = "";
@@ -1177,7 +1177,7 @@ std::tuple<std::string, std::stding, std::string, std::string> TaskExceptionHand
         localServerId = serverIdBuf;
     }
 
-    auto ccuDetailInfo = taskInfo.taskParam_ccuDetailInfo;
+    auto ccuDetailInfo = taskInfo.taskParam_.ccuDetailInfo;
     if (ccuDetailInfo != nullptr && !ccuDetailInfo->empty() && ccuDetailInfo->at(0).channelId[0] != INVALID_VALUE_CHANNELID) {
         uint16_t channelId = ccuDetailInfo->at(0).channelId[0];
         auto addrPair = GetAddrPairByChannelId(channelId, taskInfo);
