@@ -459,11 +459,11 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
     u64 smallCountMultiServerThreshold = (hccsPortNum_ == HCCS_PORT_NUM_910_93_7) ? HCCL_SMALL_COUNT_1_MB : HCCL_SMALL_COUNT_2_MB;
     CHK_RET(cclBufferManager_.GetInCCLbuffer(commInputPtr, commInputSize));
     u64 maxPipelineBlockSize = 0;
-    if (deviceNumPerAggregation_ != 0) {
-        maxPipelineBlockSize = commInputSize / deviceNumPerAggregation_ / HCCL_DEVICE_NUM_TWO /
+    if (userRankSize_ != 0) {
+        maxPipelineBlockSize = commInputSize / userRankSize_ / HCCL_DEVICE_NUM_TWO /
             HCCL_MIN_SLICE_ALIGN * HCCL_MIN_SLICE_ALIGN;
-        HCCL_DEBUG("[SelectAlgfor91093] commInputSize[%llu], deviceNumPerAggregation[%u]",
-            commInputSize, deviceNumPerAggregation_);
+        HCCL_DEBUG("[SelectAlgfor91093] commInputSize[%llu], userRankSize[%u]",
+            commInputSize, userRankSize_);
     }
     u64 maxStablePipelineBlockSize = std::min(maxPipelineBlockSize, dataSize / HCCL_DEVICE_NUM_TWO);
     bool dmaReduceLimit = (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) && isPowOfTwo &&
