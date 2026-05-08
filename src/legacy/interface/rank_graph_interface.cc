@@ -453,4 +453,24 @@ namespace Hccl {
         return HCCL_SUCCESS;
     }
 
+    u32 IRankGraph::GetOcsPlaneId() const
+    {
+        if (rankGraphPtr_ == nullptr) {
+            HCCL_ERROR("[IRankGraph::GetOcsPlaneId] rankGraphPtr_ is null");
+            return 0;
+        }
+        const RankGraph *rankGraph = static_cast<const RankGraph *>(rankGraphPtr_);
+        return rankGraph->GetOcsPlaneId(rankGraph->GetMyRank());
+    }
+
+    u32 IRankGraph::GetOcsPlaneNum() const
+    {
+        if (rankGraphPtr_ == nullptr) {
+            HCCL_ERROR("[IRankGraph::GetOcsPlaneNum] rankGraphPtr_ is null");
+            return 0;
+        }
+        const RankGraph *rankGraph = static_cast<const RankGraph *>(rankGraphPtr_);
+        return rankGraph->GetOcsPlaneNum(rankGraph->GetMyRank());
+    }
+
 } // namespace Hccl

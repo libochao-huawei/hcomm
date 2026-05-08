@@ -40,6 +40,9 @@ namespace Hccl {
  	    HcclResult GetEndpointDesc(uint32_t netLayer, uint32_t topoInstId, uint32_t *descNum, EndpointDesc *endpointDesc);
  	    HcclResult GetEndpointInfo(uint32_t rankId, const EndpointDesc *endPointDesc, EndpointAttr endpointAttr, uint32_t infoLen, void *info);
 
+        u32 GetOcsPlaneId() const;
+        u32 GetOcsPlaneNum() const;
+
     private:
         void *rankGraphPtr_;
         std::vector<uint32_t> instSizeVec_;
