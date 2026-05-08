@@ -250,8 +250,6 @@ std::string TaskExceptionHost::GetAicpuCqeErrNetInstanceByRankId(hccl::CollComm*
 
 void TaskExceptionHost::GetAicpuCqeErrInfo(rtExceptionInfo_t* exceptionInfo, const Hccl::ErrorMessageReport &errorMessage, const Hccl::TaskInfo& taskInfo)
 {
-    
-    
     hccl::CollComm *collComm = static_cast<hccl::CollComm*>(taskInfo.dfxOpInfo_->comm_);
     u32 RemoteLocalId = GetAicpuCqeErrRemoteLocalIdByRankId(collComm, errorMessage.remoteUserRank);
     std::string netInstanceId = GetAicpuCqeErrNetInstanceByRankId(collComm, errorMessage.remoteUserRank);
@@ -575,7 +573,7 @@ void TaskExceptionHost::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo)
             }
 
             ReportErrorMsg(exceptionTaskInfo, groupRankContent, errorMessage, exceptionInfo);
-            
+
             if(errorMessage.taskType == Hccl::TaskParamType::TASK_UB && errorMessage.ubCqeStatus != 0) {
                 GetAicpuCqeErrInfo(exceptionInfo, errorMessage, exceptionTaskInfo);
             }
