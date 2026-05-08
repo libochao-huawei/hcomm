@@ -25,4 +25,7 @@ if(TARGET ccl_kernel)
         hccl_api_data_aicpu_ts.cc
         sync_data_aicpu_ts.cc
     )
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
 endif()

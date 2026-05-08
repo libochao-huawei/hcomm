@@ -87,3 +87,18 @@ install(TARGETS ccl_dpu
     LIBRARY DESTINATION ${INSTALL_DPU_KERNEL_JSON_DIR} ${INSTALL_OPTIONAL}
     COMPONENT hcomm
 )
+
+# 将 ccl_dpu.ini 转换为 json 格式
+add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/libccl_dpu.json
+    COMMAND ${HI_PYTHON} ${HCOMM_DIR}/cmake/scripts/parser_ini.py
+                         ${CMAKE_CURRENT_SOURCE_DIR}/framework/communicator/hostdpu/ccl_dpu.ini
+                         ${CMAKE_CURRENT_BINARY_DIR}/libccl_dpu.json
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMENT "Generating libccl_dpu.json"
+ 	VERBATIM
+)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libccl_dpu.json
+    DESTINATION ${INSTALL_DPU_KERNEL_JSON_DIR} ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
+)
