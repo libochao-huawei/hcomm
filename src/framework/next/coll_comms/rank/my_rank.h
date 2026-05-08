@@ -29,6 +29,8 @@
 
 
 namespace hccl {
+class hcclComm;
+class Socket;
 
 /**
  * @note 职责：管理当前通信域下本Rank的信息和通信资源
@@ -51,7 +53,7 @@ public:
     }
 
     HcclResult CreateChannels(CommEngine engine, const std::string &commTag, 
-        const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle *channels);
+        const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle *channels, hcclComm *hcclComm = nullptr);
     
     HcclResult ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, uint64_t *size);
     HcclResult ChannelGetRemoteMem(ChannelHandle channel, CommMem **remoteMem, char ***memTag, uint32_t *memNum);
@@ -78,6 +80,28 @@ private:
     HcclResult TryInitCcuInstance();
     HcclResult ConfigSqDepthByExpansionMode(CommEngine engine, HcommChannelDesc& hcommDesc);
     HcclResult DestroyNewChannels(CommEngine engine, const HcclChannelDesc* channelDescs);
+
+    HcclResult BatchExchangeAndCheckConsistency(
+        const HcclChannelDesc* channelDescs,
+        const std::vector<HcommChannelDesc> &hcommDescs,
+        uint32_t channelNum,
+        const std::string &commTag,
+        hcclComm *hcclComm);
+    HcclResult ExchangeUserInfo(
+        const std::vector<Hccl::Socket*> &sockets,
+        const std::vector<u32> &remoteRanks,
+        const std::vector<HcommSocketRole> &roles,
+        u32 uniqueCount,
+        hcclComm *hcclComm);
+    HcclResult BatchExchangeFixedData(
+        const std::vector<Hccl::Socket*> &sockets,
+        const std::vector<u32> &remoteRanks,
+        const std::vector<HcommSocketRole> &roles,
+        u32 uniqueCount,
+        const u8 *sendData, u32 sendLen,
+        u8 *recvData, u32 recvLen);
+    HcclResult WaitAllAsyncComplete(const std::vector<Hccl::Socket*> &sockets,
+        const std::vector<u32> &remoteRanks);
 
     aclrtBinHandle binHandle_{nullptr};
     uint32_t rankId_{};

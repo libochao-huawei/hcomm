@@ -777,9 +777,10 @@ std::vector<std::string> SplitDfsConfig(const std::string &str, char delimiter)
 
 DfsConfig CastDfsConfig(const std::string &dfsConfigEnv)
 {
-    constexpr std::size_t                              DFS_CONFIG_ITEM_NUM = 1;
-    const std::array<std::string, DFS_CONFIG_ITEM_NUM> taskExceptionName   = {"task_exception"};
+    constexpr std::size_t                              DFS_CONFIG_ITEM_NUM = 2;
+    const std::array<std::string, DFS_CONFIG_ITEM_NUM> dfsConfigName = {"task_exception", "inconsistent_check"};
     bool                                               taskExceptionEnable = true;
+    int32_t                                            rankConsistentState = 0;
     std::string                                        dfsConfigEnvCopy    = dfsConfigEnv;
     dfsConfigEnvCopy.erase(std::remove(dfsConfigEnvCopy.begin(), dfsConfigEnvCopy.end(), ' '), dfsConfigEnvCopy.end());
     auto items = SplitDfsConfig(dfsConfigEnvCopy, ',');
@@ -787,11 +788,11 @@ DfsConfig CastDfsConfig(const std::string &dfsConfigEnv)
         auto                  itemPair  = SplitDfsConfig(item, ':');
         constexpr std::size_t ITEM_SIZE = 2;
         if (itemPair.size() != ITEM_SIZE
-            || std::find(taskExceptionName.begin(), taskExceptionName.end(), itemPair[0]) == taskExceptionName.end()) {
+            || std::find(dfsConfigName.begin(), dfsConfigName.end(), itemPair[0]) == dfsConfigName.end()) {
             THROW<InvalidParamsException>(
                 StringFormat("env[HCCL_DFS_CONFIG] value[%s] is invalid,  please check, example [task_exception:on]", dfsConfigEnv.c_str()));
         }
-        if (itemPair[0] == taskExceptionName[0]) {
+        if (itemPair[0] == dfsConfigName[0]) {
             auto taskException = itemPair[1];
             if (taskException == "off") {
                 taskExceptionEnable = false;
@@ -802,9 +803,22 @@ DfsConfig CastDfsConfig(const std::string &dfsConfigEnv)
                 THROW<InvalidParamsException>(StringFormat(
                     "env[HCCL_DFS_CONFIG] please set task_exception to 'on' or 'off'.", taskException.c_str()));
             }
+        }else if (itemPair[0] == dfsConfigName[1]) {
+            auto rankConsistent = itemPair[1];
+            if (rankConsistent == "off") {
+                rankConsistentState = -1;
+            }else if (rankConsistent == "first")
+            {
+                rankConsistentState = 0;   
+            }else if (rankConsistent == "on")
+            {
+                rankConsistentState = 1;  
+            }else {
+                HCCL_ERROR("inconsistent_check value is illegal");
+            }
         }
     }
-    DfsConfig config{taskExceptionEnable};
+    DfsConfig config{taskExceptionEnable, rankConsistentState};
     HCCL_RUN_INFO("[Parse] HCCL_DFS_CONFIG task_exception set by environment to [%d]", config.taskExceptionEnable);
     return config;
 }
