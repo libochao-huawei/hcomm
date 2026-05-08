@@ -1169,7 +1169,7 @@ std::pair<IpAddress, IpAddress> TaskExceptionHandler::GetAddrPairByChannelId(uin
         dieId, channelId);
 }
 
-static std::tuple<std::string, std::string, std::string, std::string> TaskExceptionHandler::GetCcuErrorIpInfo(
+std::tuple<std::string, std::string, std::string, std::string> TaskExceptionHandler::GetCcuErrorIpInfo(
     uint32_t deviceId, uint16_t status, const TaskInfo& taskInfo)
 {
     std::string localServerId = "";
