@@ -41,6 +41,7 @@
 #include "../nslbdp/hccl_nslbdp.h"
 #include "dispatcher_ctx.h"
 #include "launch_device.h"
+
 using namespace std;
 
 constexpr u32 MODULE_NUM_FOUR = 4;
@@ -61,6 +62,7 @@ namespace hccl
     constexpr u32 AICPU_RETRY_LINKROCE_BACKUP = 1;
     constexpr u32 SINGLE_PROCESS_MIN_PORT = 1024;
     constexpr u32 SINGLE_PROCESS_MAX_PORT = 65535;
+
     enum TransferMemInfoIdx
     {
         TRANSFER_MEM_INFO_KEY_IDX = 0,
@@ -616,7 +618,7 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    bool HcclCommunicator::IsEnableRoce()
+bool HcclCommunicator::IsEnableRoce()
     {
         return attrCollector_.IsEnableRoce();
     }
@@ -854,7 +856,8 @@ namespace hccl
                                                   std::shared_ptr<HDCommunicate> &statusD2H)
     {
         HCCL_INFO("[HcclCommunicator][%s]start to destroy the aicpu comm, group[%s].", __func__, identifier_.c_str());
-        if (deviceType_ != DevType::DEV_TYPE_910_93 && !(deviceType_ == DevType::DEV_TYPE_910B && GetAicpuUnfoldFlag()))
+        if (deviceType_ != DevType::DEV_TYPE_910_93 &&
+            !(deviceType_ == DevType::DEV_TYPE_910B && GetAicpuUnfoldFlag()) && !myRankConnectMode_)
         {
             HCCL_INFO("[HcclCommunicator][%s]Device type[%d] no needs to destroy the aicpu comm.", __func__,
                       deviceType_);

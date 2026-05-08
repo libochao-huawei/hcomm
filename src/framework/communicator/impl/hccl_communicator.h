@@ -13,6 +13,7 @@
 
 #include <atomic>
 #include <memory>
+#include <vector>
 #include <hccl/hccl_types.h>
 #include "acl/acl_rt.h"
 #include "hccl_communicator_attrs.h"
@@ -57,6 +58,9 @@
 #include "new/hccl_dispatcher_ctx.h"
 #include "rank_graph.h"
 #include "symmetric_memory/symmetric_memory.h"
+#include "my_rank.h"
+#include "hccl_dpu_manager.h"
+#include "../../../legacy/unified_platform/resource/buffer/dev_buffer.h"
 
 // aclgraph 销毁路径 host 端 payload 复用 buffer 用到，完整定义见 src/pub_inc/aicpu_operator_pub.h
 struct HcclKfcClearOpResTilingData;
@@ -145,6 +149,13 @@ public:
     u32 GetModuleNum();
 
     u32 GetRealUserRank();
+
+    HcclResult InitMyRank();
+    HcclResult CreateMyRank(HcclCommParams &params, const RankTable_t &rankTable, HcclTopoAttr &topoAttr);
+    HcclResult InitMyRankConnectMode(HcclCommParams &params, const RankTable_t &rankTable);
+    uint32_t GetConnectMode();
+    void *GetMyRank();
+    HcclResult GetDevMemWorkSpace(const std::string &memTag, uint64_t *size, void **addr, bool *newCreated);
 
     HcclResult GetCommParams(HcclCommParams &params); // 逆向解析获取HcclCommParams参数
 
@@ -454,6 +465,7 @@ public:
     HcclResult GetLocalCCLBuf(void **addr, uint64_t *size);
     HcclResult GetRemoteCCLBuf(uint32_t remoteRank, void **addr, uint64_t *size);
     HcclResult GetKFCWorkSpace(void **addr, uint64_t *size);
+
     HcclResult CommGetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum);
     HcclResult CommGetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum);
     HcclResult CommGetInstTopoTypeByNetLayer(uint32_t netLayer, u32 *topoType);
@@ -462,6 +474,12 @@ public:
     HcclResult GetInstTopoTypeByNetLayer(uint32_t netLayer, CommTopo *topoType);
     HcclResult GetInstRanksByNetLayer(uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum);
     HcclResult GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize);
+
+    HcclResult GetTopoInstsByLayer(uint32_t netLayer, uint32_t **topoInsts, uint32_t *topoInstNum);
+    HcclResult GetTopoType(uint32_t netLayer, uint32_t topoInstId, CommTopo *topoType);
+    HcclResult GetRanksByTopoInst(uint32_t netLayer, uint32_t topoInstId, uint32_t **ranks, uint32_t *rankNum);
+    HcclResult GetEndpointNum(uint32_t netLayer, uint32_t topoInstId, uint32_t *num);
+    HcclResult GetEndpointDesc(uint32_t netLayer, uint32_t topoInstId, uint32_t *descNum, EndpointDesc *endpointDesc);
 
     HcclResult GetRankGraph(GraphType type, void **graph, uint32_t *len);
 
@@ -523,9 +541,18 @@ private:
     HcclResult InitPreResource(const RankTable_t &rankTable);
     HcclResult InitTcpMode(const RankTable_t &rankTable) const;
     HcclResult InitRaResource();
+    HcclResult InitRaNetResource();
+    HcclResult InitRaNic();
+    HcclResult InitDevicePrimaryNic(bool isMC2ReInit, bool isOneSidedTaskAndBackupInitA3);
+    HcclResult InitDeviceBackupNic(u32 backupDevPhyId, u32 backupDevLogicId,
+        std::vector<HcclIpAddress> &localIpList, bool isOneSidedTaskAndBackupInitA3);
+    HcclResult InitNicDeviceDeploy(bool isMC2ReInit, u32 backupDevPhyId, u32 backupDevLogicId,
+        std::vector<HcclIpAddress> &localIpList, bool isOneSidedTaskAndBackupInitA3);
+    HcclResult InitNicHostDeploy();
     bool IsNeedNicInit();
     HcclResult InitNic(bool isMC2ReInit = false);
     HcclResult DeinitNic();
+    HcclResult DeinitNicHostDeploy();
     HcclResult AddOpInfoToHeartBeat(const OpInfoDesc &opInfo, const std::string &tag);
     void DeleteOpInfoToHeartBeat();
     HcclResult RegisterToHeartBeat();
@@ -1123,7 +1150,10 @@ private:
     uint32_t netLayer_[COMM_LAYER_NUM_MAX]{};
 #ifndef CCL_KERNEL_AICPU
     RankGraphV1 rankGraph_;
+    std::unique_ptr<DpuManager> dpuManager_;
+    std::unique_ptr<MyRank> myRank_{nullptr};
 #endif
+    uint32_t myRankConnectMode_{0};
 
     // for group
     bool isGroupMode_ {false};

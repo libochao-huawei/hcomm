@@ -21,6 +21,9 @@
 #include "externalinput.h"
 #include "../host/transport_ibverbs.h"
 
+// 混合模式（RoCE Cross-Mode）公共类型定义
+#include "../../../../framework/next/comms/endpoint_pairs/channels/host/exchange_data_format.h"
+
 using namespace std;
 constexpr u32 RDMA_QP_EXPECT_STATUS_PAUSE = 5;
 constexpr u32 RDMA_QP_EXPECT_STATUS_CONNECTED = 1;
@@ -295,7 +298,9 @@ HcclResult TransportIbverbs::FillExchangeDataTotalSize()
             exchangeDataTotalSize_ += qpsPerConnection_ * sizeof(MemMsg);  // 多QP下新增协商内容
         }
     }
-    exchangeDataTotalSize_ += machinePara_.exchangeInfo.size();
+    if (!isHybridMode_) {
+        exchangeDataTotalSize_ += machinePara_.exchangeInfo.size();
+    }
 
     // 4.新增notify资源统计
     // 单qp notify资源大小：1*notifyNum， 多qp notify资源大小：qpNum*notifyNum
@@ -363,7 +368,9 @@ HcclResult TransportIbverbs::ConstructExchangeForSend()
                 exchangeDataPtr, exchangeDataBlankSize));
         }
     }
-    CHK_RET(ConstructExchangeDataForSend(exchangeDataPtr, exchangeDataBlankSize));
+    if (!isHybridMode_) {
+        CHK_RET(ConstructExchangeDataForSend(exchangeDataPtr, exchangeDataBlankSize));
+    }
     if (machinePara_.userMemEnable && UseMultiQp()) {
         for (u32 i = 0; i < qpsPerConnection_; i++) {
             std::shared_ptr<LocalIpcNotify> oneNotify;
@@ -468,7 +475,9 @@ HcclResult TransportIbverbs::ParseReceivedExchangeData()
         CHK_RET(GetRemoteAddr(MemType::DATA_ACK_NOTIFY_MEM, exchangeDataPtr, exchangeDataBlankSize));
     }
 
-    CHK_RET(ParseExchangeData(exchangeDataPtr, exchangeDataBlankSize));
+    if (!isHybridMode_) {
+        CHK_RET(ParseExchangeData(exchangeDataPtr, exchangeDataBlankSize));
+    }
 
     if (machinePara_.userMemEnable && UseMultiQp()) {
         for (u32 i = 0; i < qpsPerConnection_; i++) {
@@ -753,6 +762,8 @@ HcclResult TransportIbverbs::InitQpConnect()
 {
     /* 创建QP操作句柄 */
     qpsPerConnection_ = GetQpsPerConnection();
+
+    CHK_RET(ExchangeCapabilityHybrid());
 
     CHK_RET(CreateQp());
 
@@ -1808,7 +1819,7 @@ HcclResult TransportIbverbs::CreateNotifyBuffer(std::shared_ptr<LocalIpcNotify> 
     /* 获取notify寄存器虚拟基地址、大小, 物理地址回传值为空 */
     struct MrInfoT mrInfo = {nullptr};
     if (machinePara_.isAicpuModeEn || (machinePara_.nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE &&
-        machinePara_.deviceType != localDeviceType)) {
+        machinePara_.deviceType != localDeviceType) || isHybridMode_) {
         CHK_RET(HrtRaGetNotifyMrInfo(machinePara_.localDeviceId, nicRdmaHandle_, &mrInfo));
         notifyBaseVa = reinterpret_cast<u64>(mrInfo.addr);
         notifyTotalSize = mrInfo.size;
@@ -2715,4 +2726,64 @@ HcclResult TransportIbverbs::GetTransportId(u32 &id)
     id = cqeErrQpn_;
     return HCCL_SUCCESS;
 }
+
+HcclResult TransportIbverbs::ExchangeCapabilityHybrid()
+{
+    HCCL_INFO("[Hybrid][TransportIbverbs] Starting capability exchange");
+
+    // 1. 构造本地能力信息（使用公共头文件中的默认值）
+    using namespace hcomm;
+    RoCECapability localCap;
+    localCap.InitDefaults();
+    localCap.nicDeploy = NICDeployment::NIC_DEPLOYMENT_DEVICE;
+    localCap.commStack = CommStackType::COMM_STACK_TRANSPORT_IBVERBS;
+
+    // 2. 发送本地能力（合并为单次发送：totalLength已包含结构体大小）
+    CHK_RET(defaultSocket_->Send(&localCap, sizeof(localCap)));
+    HCCL_INFO("[Hybrid][TransportIbverbs] Sent capability, version=%u", localCap.version);
+
+    // 3. 接收对端能力（单次接收）
+    RoCECapability recvCap;
+    CHK_RET(defaultSocket_->Recv(&recvCap, sizeof(recvCap)));
+
+    // 4. 先检查魔数，如果不对可能是旧版本，需要回退
+    if (!RoCECapability::CheckMagic(reinterpret_cast<uint8_t*>(&recvCap), sizeof(recvCap))) {
+        HCCL_WARNING("[Hybrid][TransportIbverbs] Magic mismatch, peer may be old version. "
+                     "Falling back to native mode.");
+        // 回退到原生模式
+        isHybridMode_ = false;
+        return HCCL_SUCCESS;
+    }
+
+    // 5. 魔数正确，解析对端能力
+    RoCECapability remoteCap;
+    if (!remoteCap.Deserialize(reinterpret_cast<uint8_t*>(&recvCap), sizeof(recvCap))) {
+        HCCL_ERROR("[Hybrid][TransportIbverbs] Failed to deserialize capability");
+        return HCCL_E_PARA;
+    }
+
+    // 6. 校验字段有效性
+    if (!remoteCap.Validate()) {
+        HCCL_ERROR("[Hybrid][TransportIbverbs] Capability validation failed");
+        return HCCL_E_INTERNAL;
+    }
+
+    // 7. 版本兼容性处理（高版本兼容低版本）
+    if (remoteCap.version > ROCE_CAPABILITY_VERSION) {
+        // 对端版本更高，使用本地版本的功能集（最小公分母）
+        HCCL_INFO("[Hybrid][TransportIbverbs] Remote version %u > local %u, using local version features",
+            remoteCap.version, ROCE_CAPABILITY_VERSION);
+    } else if (remoteCap.version < ROCE_CAPABILITY_VERSION) {
+        // 对端版本更低，使用对端版本的功能集（向下兼容）
+        HCCL_INFO("[Hybrid][TransportIbverbs] Remote version %u < local %u, using remote version features",
+            remoteCap.version, ROCE_CAPABILITY_VERSION);
+    }
+
+    isHybridMode_ = (remoteCap.commStack == CommStackType::COMM_STACK_HOST_CPU_ROCE) ? true : false;
+    HCCL_INFO("[Hybrid][TransportIbverbs]Exchange mode success, Remote is %s", isHybridMode_ ? "HostCpuRoceChannel" :
+        "TransportIbverbs");
+
+    return HCCL_SUCCESS;
+}
+
 }  // namespace hccl
