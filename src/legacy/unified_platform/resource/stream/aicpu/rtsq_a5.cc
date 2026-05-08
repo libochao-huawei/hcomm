@@ -21,6 +21,7 @@
 #include "communicator_impl_lite_manager.h"
 #ifdef CCL_KERNEL_AICPU
 #include "hccl_api_data_aicpu_ts.h"
+#include "timer.h"
 #endif
 
 namespace Hccl {
@@ -139,7 +140,7 @@ void RtsqA5::CopyLocBufToSq()
 // 向芯片RTSQ VA中写入 SQE，并触发芯片执行
 void RtsqA5::LaunchTask()
 {
-    FUNCTION_TRACE;
+    FUNCTION_TRACE_AICPU;
     HCCL_INFO("RtsqA5::%s: START, pendingSqeCnt[%u]", __func__, pendingSqeCnt);
 
     if (pendingSqeCnt == 0) { // 没有SQE ，直接返回
@@ -170,7 +171,7 @@ u8 *RtsqA5::GetCurrSqeBuffer()
 
 void RtsqA5::RefreshInfo()
 {
-    FUNCTION_TRACE;
+    FUNCTION_TRACE_AICPU;
     if (UNLIKELY(SetTaskIdBySqeId() != HCCL_SUCCESS)) {
         taskId_++;
     }

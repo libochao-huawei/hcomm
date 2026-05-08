@@ -13,6 +13,7 @@
 #include "ub_jetty_lite.h"
 #include "sqe_v82.h"
 #include "log.h"
+#include "timer.h"
 
 namespace Hccl {
 
@@ -29,7 +30,7 @@ inline void SetSqeHeaderTaskFields(void* sqe, u32 taskId)
 
 inline void BuildA5SqeNotifyWait(u32 streamId, u32 taskId, u32 notifyId, uint8_t * const sqeIn)
 {
-    FUNCTION_TRACE;
+    FUNCTION_TRACE_AICPU;
     (void) streamId;
     Rt91095StarsNotifySqe *sqe = (Rt91095StarsNotifySqe *)sqeIn;
     SetSqeHeaderTaskFields(sqe, taskId);
@@ -47,7 +48,7 @@ inline void BuildA5SqeNotifyWait(u32 streamId, u32 taskId, u32 notifyId, uint8_t
 
 inline void BuildA5SqeNotifyWait(u32 streamId, u32 taskId, u32 notifyId, u32 timeout, uint8_t * const sqeIn)
 {
-    FUNCTION_TRACE;
+    FUNCTION_TRACE_AICPU;
     (void) streamId;
     Rt91095StarsNotifySqe *sqe = (Rt91095StarsNotifySqe *)sqeIn;
     SetSqeHeaderTaskFields(sqe, taskId);
@@ -65,7 +66,7 @@ inline void BuildA5SqeNotifyWait(u32 streamId, u32 taskId, u32 notifyId, u32 tim
 
 inline void BuildA5SqeNotifyRecord(u32 streamId, u32 taskId, u32 notifyId, uint8_t * const sqeIn)
 {
-    FUNCTION_TRACE;
+    FUNCTION_TRACE_AICPU;
     (void) streamId;
     Rt91095StarsNotifySqe *sqe = (Rt91095StarsNotifySqe *)sqeIn;
     SetSqeHeaderTaskFields(sqe, taskId);
@@ -80,7 +81,7 @@ inline void BuildA5SqeNotifyRecord(u32 streamId, u32 taskId, u32 notifyId, uint8
 
 inline void BuildA5SqeCnt1toNNotifyRecord(u32 streamId, u32 taskId, u32 notifyId, u32 cntValue, uint8_t * const sqeIn)
 {
-    FUNCTION_TRACE;
+    FUNCTION_TRACE_AICPU;
     (void) streamId;
     Rt91095StarsNotifySqe *sqe = (Rt91095StarsNotifySqe *)sqeIn;
     SetSqeHeaderTaskFields(sqe, taskId);
@@ -99,7 +100,7 @@ inline void BuildA5SqeCnt1toNNotifyRecord(u32 streamId, u32 taskId, u32 notifyId
 
 inline void BuildA5SqeCnt1toNNotifyWait(u32 streamId, u32 taskId, u32 notifyId, u32 cntValue, uint8_t * const sqeIn)
 {
-    FUNCTION_TRACE;
+    FUNCTION_TRACE_AICPU;
     (void) streamId;
     Rt91095StarsNotifySqe *sqe = (Rt91095StarsNotifySqe *)sqeIn;
     SetSqeHeaderTaskFields(sqe, taskId);
@@ -118,7 +119,7 @@ inline void BuildA5SqeCnt1toNNotifyWait(u32 streamId, u32 taskId, u32 notifyId, 
 
 inline void BuildA5SqeCntNto1NotifyRecord(u32 streamId, u32 taskId, u32 notifyId, u32 cntValue, uint8_t * const sqeIn)
 {
-    FUNCTION_TRACE;
+    FUNCTION_TRACE_AICPU;
     (void) streamId;
     Rt91095StarsNotifySqe *sqe = (Rt91095StarsNotifySqe *)sqeIn;
     SetSqeHeaderTaskFields(sqe, taskId);
@@ -137,7 +138,7 @@ inline void BuildA5SqeCntNto1NotifyRecord(u32 streamId, u32 taskId, u32 notifyId
 
 inline void BuildA5SqeCntNto1NotifyWait(u32 streamId, u32 taskId, u32 notifyId, u32 cntValue, uint8_t * const sqeIn)
 {
-    FUNCTION_TRACE;
+    FUNCTION_TRACE_AICPU;
     (void) streamId;
     Rt91095StarsNotifySqe *sqe = (Rt91095StarsNotifySqe *)sqeIn;
     SetSqeHeaderTaskFields(sqe, taskId);
@@ -157,7 +158,7 @@ inline void BuildA5SqeCntNto1NotifyWait(u32 streamId, u32 taskId, u32 notifyId, 
 inline void BuildA5SqeSdmaCopy(u32 streamId, u32 taskId, u64 dstAddr, u64 srcAddr, u32 size, u32 partId, u32 opcode,
                         uint8_t * const sqeIn)
 {
-    FUNCTION_TRACE;
+    FUNCTION_TRACE_AICPU;
     (void) streamId;
     Rt91095StarsMemcpySqe *sqe = (Rt91095StarsMemcpySqe *)sqeIn;
     SetSqeHeaderTaskFields(sqe, taskId);
@@ -182,7 +183,7 @@ inline void BuildA5SqeSdmaCopy(u32 streamId, u32 taskId, u64 dstAddr, u64 srcAdd
 
 inline void BuildA5SqeUbDbSend(u32 streamId, u32 taskId, const UbJettyLiteId &jettyLiteId, u16 piValue, uint8_t * const sqeIn)
 {
-    FUNCTION_TRACE;
+    FUNCTION_TRACE_AICPU;
     (void)streamId;
     Rt91095StarsUbdmaDBmodeSqe *sqe = (Rt91095StarsUbdmaDBmodeSqe *)sqeIn;
     SetSqeHeaderTaskFields(sqe, taskId);
@@ -200,7 +201,7 @@ inline void BuildA5SqeUbDbSend(u32 streamId, u32 taskId, const UbJettyLiteId &je
 
 inline void BuildA5SqeP2pWriteValue(u32 streamId, u32 taskId, u64 remoteAddr, u32 writeValue, uint8_t * const sqeIn)
 {
-    FUNCTION_TRACE;
+    FUNCTION_TRACE_AICPU;
     (void) streamId;
     Rt91095StarsWriteValueSqe *sqe  = (Rt91095StarsWriteValueSqe *)sqeIn;
     SetSqeHeaderTaskFields(sqe, taskId);

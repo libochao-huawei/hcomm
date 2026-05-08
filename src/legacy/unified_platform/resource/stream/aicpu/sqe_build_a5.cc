@@ -9,6 +9,7 @@
  */
 #include "sqe_build_a5.h"
 #include "communicator_impl_lite_manager.h"
+#include "timer.h"
 
 namespace Hccl {
 
@@ -81,7 +82,7 @@ void ConstructNop(Rt91095StarsCondOpNop_t &nop)
 
 void BuildA5SqeCCoreNotifyWait(u32 streamId, u32 taskId, u64 waitAddr, u64 actAddr, bool last, uint8_t * const sqeIn)
 {
-    FUNCTION_TRACE;
+    FUNCTION_TRACE_AICPU;
     Rt91095StarsCCoreSqeNotifyWait* sqe = (Rt91095StarsCCoreSqeNotifyWait *)sqeIn;
     sqe->header.type = static_cast<uint8_t>(Rt91095StarsSqeType::RT_91095_SQE_TYPE_COND);
     sqe->header.rtStreamId = static_cast<uint16_t>(taskId);
@@ -130,7 +131,7 @@ void BuildA5SqeCCoreNotifyWait(u32 streamId, u32 taskId, u64 waitAddr, u64 actAd
 
 void BuildA5SqeCCoreNotifyRecord(u32 streamId, u32 taskId, u64 writeAddr, u64 valueAddr, uint8_t * const sqeIn)
 {
-    FUNCTION_TRACE;
+    FUNCTION_TRACE_AICPU;
     Rt91095StarsCCoreSqeNotifyRecord* sqe = (Rt91095StarsCCoreSqeNotifyRecord *)sqeIn;
     sqe->header.type = static_cast<uint8_t>(Rt91095StarsSqeType::RT_91095_SQE_TYPE_COND);
     sqe->header.rtStreamId = static_cast<uint16_t>(taskId);
