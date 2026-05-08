@@ -14,6 +14,7 @@ add_subdirectory(mc2_handler)
 
 if(TARGET ccl_kernel)
     target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/inc
         ${CMAKE_CURRENT_SOURCE_DIR}/alg_aiv_template
     )
 endif()
