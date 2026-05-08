@@ -11,6 +11,7 @@
 #define HCCL_TASK_EXCEPTION_HANDLER_H
 
 #include <array>
+#include <tuple>
 #include "types.h"
 #include "hccl_types.h"
 #include "orion_adapter_rts.h"
@@ -76,6 +77,8 @@ private:
     static void PrintOpDataErrorMessage(u32 deviceId, ErrorMessageReport &errorMessage, string &stageErrInfo);
     static std::pair<IpAddress, IpAddress> GetAddrPairByChannelId(uint16_t channelId, const TaskInfo& taskInfo);
     static std::string GetCcuLenErrorMsg(const uint64_t len);
+    std::tuple<std::string, std::stding, std::string, std::string> TaskExceptionHandler::GetCcuErrorIpInfo(
+        uint32_t deviceId, uint16_t status, const TaskInfo& taskInfo);
 
 private:
     uint32_t devId_; // 当前设备id
