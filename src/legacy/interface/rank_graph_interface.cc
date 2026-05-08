@@ -81,7 +81,8 @@ namespace Hccl {
                 {NetType::MESH_1D, CommTopo::COMM_TOPO_1DMESH},
                 {NetType::A3_SERVER, CommTopo::COMM_TOPO_910_93},
                 {NetType::A2_AX_SERVER, CommTopo::COMM_TOPO_A2AXSERVER},
-                {NetType::TOPO_FILE_DESC, CommTopo::COMM_TOPO_CUSTOM}};
+                {NetType::TOPO_FILE_DESC, CommTopo::COMM_TOPO_CUSTOM},
+                {NetType::OCS_MESH, CommTopo::COMM_TOPO_OCS_MESH}};
 
         auto it = netTypeMap.find(type);
         if (it == netTypeMap.end()) {
@@ -368,7 +369,8 @@ namespace Hccl {
                 {Hccl::TopoType::CLOS, COMM_TOPO_CLOS},
                 {Hccl::TopoType::MESH_1D, COMM_TOPO_1DMESH},
                 {Hccl::TopoType::A3_SERVER, COMM_TOPO_910_93},
-                {Hccl::TopoType::A2_AX_SERVER, COMM_TOPO_A2AXSERVER}};
+                {Hccl::TopoType::A2_AX_SERVER, COMM_TOPO_A2AXSERVER},
+                {Hccl::TopoType::OCS_MESH, COMM_TOPO_OCS_MESH}};
         auto it = topoTypeMap.find(type);
         if (it != topoTypeMap.end()) {
             *topoType = it->second;

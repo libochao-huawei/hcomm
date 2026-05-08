@@ -3397,7 +3397,8 @@ HcclResult CommunicatorImpl::GetInstTopoTypeByNetLayer(uint32_t netLayer, uint32
         {NetType::MESH_1D, static_cast<uint32_t>(CommTopo::COMM_TOPO_1DMESH)},
         {NetType::A3_SERVER, static_cast<uint32_t>(CommTopo::COMM_TOPO_910_93)},
         {NetType::A2_AX_SERVER, static_cast<uint32_t>(CommTopo::COMM_TOPO_A2AXSERVER)},
-        {NetType::TOPO_FILE_DESC, static_cast<uint32_t>(CommTopo::COMM_TOPO_CUSTOM)}};
+        {NetType::TOPO_FILE_DESC, static_cast<uint32_t>(CommTopo::COMM_TOPO_CUSTOM)},
+        {NetType::OCS_MESH, static_cast<uint32_t>(CommTopo::COMM_TOPO_OCS_MESH)}};
 
     auto it = netTypeMap.find(type);
     if (it != netTypeMap.end()) {
