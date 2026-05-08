@@ -620,9 +620,6 @@ HcclAccelerator CastHcclAccelerator(const std::string &s)
         mode = HcclAccelerator::AICPU_TS;
     } else if (s == "AIV" || s == "AIV_ONLY") {
         mode = HcclAccelerator::AIV;
-    } else if (s == "HOST" || s == "HOST_TS") {
-        mode = HcclAccelerator::CCU_SCHED;
-        HCCL_WARNING("do not support %s, use default op expansion mode.", s.c_str());
     } else if (s == "CCU_MS") {
         mode = HcclAccelerator::CCU_MS;
     } else if (s == "CCU_SCHED") {
