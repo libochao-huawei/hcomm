@@ -206,4 +206,31 @@ string TaskInfo::GetConciseBaseInfo() const
     return taskConciseInfo.str();
 }
 
+string TaskInfo::GetIndopBaseInfo() const
+{
+    return Hccl::StringFormat("streamID(sqId):[%u], taskID(sqeId):[%u], taskType:[%s]",
+        this->streamId_, this->taskId_, this->taskParam_.taskType.Describe().c_str());
+}
+
+string TaskInfo::GetIndopDataInfo() const
+{
+    if (this->dfxOpInfo_ == nullptr) {
+        HCCL_ERROR("[TaskInfo][%s]TaskInfo dfxOpInfo is nullptr.", __func__);
+        return "";
+    }
+
+    const auto &opInfo = this->dfxOpInfo_;
+    return Hccl::StringFormat("opIndex[%u], algTag[%s], count[%llu], reduceType[%s], dataType[%s], "\
+        "input: ptr[0x%llx] size[%llu], output: ptr[0x%llx] size[%llu]",
+        opInfo->opIndex_,
+        opInfo->algTag_.c_str(),
+        opInfo->op_.dataCount,
+        opInfo->op_.reduceOp.Describe().c_str(),
+        opInfo->op_.dataType.Describe().c_str(),
+        opInfo->op_.inputMem == nullptr ? 0 : static_cast<u64>(opInfo->op_.inputMem->GetAddr()),
+        opInfo->op_.inputMem == nullptr ? 0 : opInfo->op_.inputMem->GetSize(),
+        opInfo->op_.outputMem == nullptr ? 0 : static_cast<u64>(opInfo->op_.outputMem->GetAddr()),
+        opInfo->op_.outputMem == nullptr ? 0 : opInfo->op_.outputMem->GetSize());
+}
+
 } // namespace Hccl

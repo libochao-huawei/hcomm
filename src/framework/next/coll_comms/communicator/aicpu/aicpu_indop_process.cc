@@ -18,7 +18,7 @@ using namespace hccl;
 namespace {
 struct CollCommAicpuInfo {
     ReadWriteLockBase commAicpuMgrMapMutex;  // 读写锁单例，维护全局的读写信息
-    std::unordered_map<std::string, std::shared_ptr<CollCommAicpuMgr>> commMgrMap;
+    std::unordered_map<std::string, std::unique_ptr<CollCommAicpuMgr>> commMgrMap;
 };
 CollCommAicpuInfo g_commAicpuInfo;
 
@@ -61,21 +61,15 @@ HcclResult AicpuIndopProcess::AcquireAicpuCommMgr(const std::string &group, Coll
     }
     
     // 未找到则创建新实例
-    std::shared_ptr<CollCommAicpuMgr> aicpuCommMgr;
-    try {
-        aicpuCommMgr = std::make_shared<CollCommAicpuMgr>();
-    } catch (std::exception& e) {
-        HCCL_ERROR("[%s]Failed, exception caught:%s", __func__, e.what());
-        rwlock.writeUnlock();
-        return HCCL_E_PTR;
-    }
+    std::unique_ptr<CollCommAicpuMgr> aicpuCommMgr;
+    EXECEPTION_CATCH(aicpuCommMgr = std::make_unique<CollCommAicpuMgr>(), return HCCL_E_PTR);
     // 创建aicpu通信域
     CHK_RET(aicpuCommMgr->AcquireCollCommAicpu());
 
     // 将新实例加入映射表
-    g_commAicpuInfo.commMgrMap[group] = aicpuCommMgr;
     *aicpuCommMgrPtr = aicpuCommMgr.get();
-    HCCL_INFO("[%s]Created new comm group [%s]", __func__, group.c_str());
+    g_commAicpuInfo.commMgrMap.insert({group, std::move(aicpuCommMgr)});
+    HCCL_RUN_INFO("[%s]Created new comm group [%s]", __func__, group.c_str());
     rwlock.writeUnlock();
     return HCCL_SUCCESS;
 }
@@ -240,20 +234,26 @@ HcclResult AicpuIndopProcess::AicpuGetCommAll(std::vector<std::pair<std::string,
 
 HcclResult AicpuIndopProcess::AicpuDestroyCommbyGroup(const std::string &group)
 {
+    ReadWriteLock rwlock(g_commAicpuInfo.commAicpuMgrMapMutex);
+    rwlock.writeLock();
     auto iter = g_commAicpuInfo.commMgrMap.find(group);
     if (iter == g_commAicpuInfo.commMgrMap.end()) {
         HCCL_ERROR("[AicpuIndopProcess][%s]group[%s] is not exist", __func__, group.c_str());
         return HCCL_E_PARA;
     }
 
-    if (iter->second->IsUsed() == true) {
-        HCCL_ERROR("[AicpuIndopProcess][%s]comm group [%s] has been used.", __func__, group.c_str());
-        return HCCL_E_INTERNAL;
-    }
     CollCommAicpu* aicpuComm = iter->second->GetCollCommAicpu();
     CHK_PTR_NULL(aicpuComm);
     aicpuComm->SetCommmStatus(HcclCommStatus::HCCL_COMM_STATUS_INVALID);
-    HCCL_INFO("[AicpuIndopProcess][%s]Destroy comm group [%s] success.", __func__, group.c_str());
+
+    if (iter->second->IsUsed() == true) {
+        HCCL_RUN_WARNING("[AicpuIndopProcess][%s]comm group [%s] has been used, skip erase", __func__, group.c_str());
+        return HCCL_SUCCESS;
+    }
+
+    g_commAicpuInfo.commMgrMap.erase(group);
+    HCCL_RUN_INFO("[AicpuIndopProcess][%s]Destroy comm group [%s] success.", __func__, group.c_str());
+    rwlock.writeUnlock();
     return HCCL_SUCCESS;
 }
 
