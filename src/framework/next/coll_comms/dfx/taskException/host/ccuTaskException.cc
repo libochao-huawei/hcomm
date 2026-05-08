@@ -1035,8 +1035,8 @@ void CcuTaskException::GetCcuCqeErrNetInstanceByRankId(hccl::CollComm* collComm,
 
 void CcuTaskException::GetCcuCqeErrorInfo(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 locDeviceId, uint8_t missionStatus)
 {
-    auto pair = GetAddrPairByChannelId(ccuErrorInfo.msg.waitSignal.channelId[0], taskInfo, locDeviceId);
-    RankId remoteRankId = GetRankIdByChannelId(ccuErrorInfo.msg.waitSignal.channelId[0], taskInfo, locDeviceId);
+    auto pair = GetAddrPairByChannelId(ccuErrorInfo.msg.waitSignal.channelId, taskInfo, locDeviceId);
+    RankId remoteRankId = GetRankIdByChannelId(ccuErrorInfo.msg.waitSignal.channelId, taskInfo, locDeviceId);
     HCCL_ERROR("[GetCcuCqeErrorInfo] start to get net instance id by rank id, remoteRankId[%u]", remoteRankId);
     hccl::CollComm *collComm = static_cast<hccl::CollComm*>(taskInfo.dfxOpInfo_->comm_);
     u32 RemoteLocalId = INVALID_VALUE_RANKID;
