@@ -9,7 +9,7 @@
 # -----------------------------------------------------------------------------------------------------------
 set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/hccl_communicator.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/hccl_communicator_attrs.cc 
+    ${CMAKE_CURRENT_SOURCE_DIR}/hccl_communicator_attrs.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/hccl_comm_exchange_info.cc
 )
 
