@@ -48,9 +48,6 @@ protected:
     virtual void SetUp()
     {
         hcclCommPtr = std::make_shared<hccl::hcclComm>();
-        checker_ = &RankConsistentcyChecker::GetInstance(0);
-        checker_->ClearCheckInfo();
-
         std::cout << "A Test SetUp" << std::endl;
     }
     virtual void TearDown()
@@ -61,7 +58,6 @@ protected:
     }
 
     std::shared_ptr<hccl::hcclComm> hcclCommPtr;
-    RankConsistentcyChecker* checker_;
 };
 
 TEST_F(ExchangeInfoTest, Ut_CApiAddExchangeInfo_When_ParamValid_Expect_Success)
@@ -107,12 +103,13 @@ TEST_F(ExchangeInfoTest, Ut_EndToEnd_When_AddStoreGet_Expect_Consistent)
 
     // 3. 清空本端交换信息状态（模拟HcclChannelAcquire建链后清空）
     ret = hcclCommPtr->ResetExchangeInfo();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
 
     // 4. 获取对端交换信息
     std::vector<u8> recvBuf(remoteData.size(), 0);
     uint32_t recvBufSize = recvBuf.size();
     ret = hcclCommPtr->GetExchangeInfo(1, recvBuf.data(), recvBufSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(recvBuf, remoteData);
+    EXPECT_EQ(recvBuf, remoteData);    
 }
 
