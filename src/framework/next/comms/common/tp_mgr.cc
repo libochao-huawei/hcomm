@@ -25,15 +25,8 @@
 namespace hcomm {
 
 namespace {
-
-// urma_api.h 公开 tp_attr_bitmap 仅 0–11（至 ttl）。若扩展位按 ttl 后「每个成员各占 1 位」递增（与 RS 一致）：
-// 12=ack_udp_srcport，13=data_udp_srcport，14=udp_srcport_range，15=spray_en，16=udp_global_en，17=reserve_0，18=slBitmap。
-// 若 Get 后 slBitmap 仍为 0，请以 RS/URMA 文档为准改本常量（例如合并位域为一扩展位时编号会前移）。
 constexpr uint32_t kTpAttrSlAvailableBit = 18U;
-static constexpr bool kSkipRaGetTpAttrStubSlAvailable = false;
-// hccp_tp.h：TpAttr.sl 对应 bitmap bit 10；经 RaCtxSetTpAttr → urma_set_tp_attr 写回当前 tpHandle（与 mappedJettyPriority 独立）
 static constexpr uint32_t kTpAttrBitmapSl = (1U << 10U);
-// urma_api：bit 8 = dscp；扩展位在 slBitmap(18) 之后递增至 dscpConfigMode（与 urma_tp_attr_value_t 成员顺序一致）
 static constexpr uint32_t kTpAttrBitmapDscp = (1U << 8U);
 static constexpr uint32_t kTpAttrDscpConfigModeBit = 19U;
 
@@ -463,15 +456,6 @@ HcclResult TpMgr::StartGetTpAttrForFirstTp(const GetTpInfoParam &param, RequestC
     reqCtx.tpAttrBitmap = (1U << kTpAttrSlAvailableBit) | kTpAttrBitmapSl;
     if (param.tpProtocol == TpProtocol::UBOE) {
         reqCtx.tpAttrBitmap |= kTpAttrBitmapDscp | (1U << kTpAttrDscpConfigModeBit);
-    }
-
-    if (kSkipRaGetTpAttrStubSlAvailable) {
-        // slBitmap 低 16bit：仅 bit1–3 置 1 → 0x000E，表示 SL 1/2/3 可用
-        reqCtx.tpAttr.slBitmap = 0x000EU;
-        reqCtx.tpAttr.dscpConfigMode = 1; // stub 下跳过 UBOE 业务面写 dscp
-        reqCtx.handle = 0;
-        reqCtx.phase = ReqPhase::WAIT_TP_ATTR;
-        return HcclResult::HCCL_SUCCESS;
     }
 
     const struct HccpTpInfo *list = reinterpret_cast<const struct HccpTpInfo *>(reqCtx.dataBuffer.data());
