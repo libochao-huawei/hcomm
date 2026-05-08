@@ -532,6 +532,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_reduce_scatter/coll_reduce_scatter_deter_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_reduce_scatter/coll_reduce_scatter_fast_double_ring_for_910_93_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_reduce_scatter/coll_aligned_reduce_scatter_double_ring_for_910_93_executor.cc
+        ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_reduce_scatter/coll_reduce_scatter_pipeline_for_910_93_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_reduce_scatter/coll_reduce_scatter_ring_for_910_93_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_reduce_scatter/coll_reduce_scatter_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_reduce_scatter/coll_reduce_scatter_mesh_dma_elimination.cc

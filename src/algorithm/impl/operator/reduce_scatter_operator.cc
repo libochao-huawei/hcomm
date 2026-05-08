@@ -458,6 +458,12 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
     u64 smallCountSingleServerThreshold = (hccsPortNum_ == HCCS_PORT_NUM_910_93_7) ? HCCL_SMALL_COUNT_512_KB : HCCL_SMALL_COUNT_1_MB;
     u64 smallCountMultiServerThreshold = (hccsPortNum_ == HCCS_PORT_NUM_910_93_7) ? HCCL_SMALL_COUNT_1_MB : HCCL_SMALL_COUNT_2_MB;
     CHK_RET(cclBufferManager_.GetInCCLbuffer(commInputPtr, commInputSize));
+    u64 maxPipelineBlockSize = 0;
+    if (deviceNumPerAggregation_ != 0) {
+        maxPipelineBlockSize = commInputSize / deviceNumPerAggregation_ / HCCL_DEVICE_NUM_TWO /
+            HCCL_MIN_SLICE_ALIGN * HCCL_MIN_SLICE_ALIGN;
+    }
+    u64 maxStablePipelineBlockSize = std::min(maxPipelineBlockSize, dataSize / HCCL_DEVICE_NUM_TWO);
     bool dmaReduceLimit = (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) && isPowOfTwo &&
         ((commInputSize * HCCL_DEVICE_NUM_TWO < param.DataDes.count * SIZE_TABLE[param.DataDes.dataType] * userRankSize_) ||
         retryEnable_);
@@ -513,6 +519,14 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
         } else {
             algName = "ReduceScatterRingZerocopyExchangeExecutor";      // 连续数据通信+数据交换（AHC不支持）
         }
+    } else if (isOpbase && superPodNum_ > 1 &&
+               !isAHCAlgo &&
+               !multiSuperPodDiffDeviceNumMode_ &&
+               isSupportInlineReduce &&
+               (topoType_ == TopoType::TOPO_TYPE_NP_SINGLE_RING ||
+                topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING) &&
+               maxStablePipelineBlockSize >= HCCL_SMALL_COUNT_1_MB) {
+        algName = "ReduceScatterPipelineFor91093Executor";
     } else {
         if (topoType_ == TopoType::TOPO_TYPE_NP_SINGLE_RING) {
             algName = "ReduceScatterRingFor91093Executor";
@@ -551,6 +565,13 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
         return HCCL_E_NOT_SUPPORT;
     }
     HCCL_INFO("[SelectAlgfor91093] ReduceScatter SelectAlgfor91093 is algName [%s]", algName.c_str());
+    
+    HCCL_INFO("[SelectAlgfor91093] isOpbase[%d] superPodNum_[%u] isAHCAlgo[%d] multiSuperPodDiffDeviceNumMode_[%d] "
+        "isSupportInlineReduce[%d] topoType_[%d] maxPipelineBlockSize[%llu] maxStablePipelineBlockSize[%llu] "
+        "dataSize[%llu]",
+        isOpbase, superPodNum_, isAHCAlgo, multiSuperPodDiffDeviceNumMode_,
+        isSupportInlineReduce, topoType_,
+        maxPipelineBlockSize, maxStablePipelineBlockSize, dataSize);
     return HCCL_SUCCESS;
 }
 
