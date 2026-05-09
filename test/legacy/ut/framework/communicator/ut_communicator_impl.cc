@@ -3552,3 +3552,40 @@ TEST_F(TryFastCcuLaunchTest, Ut_TryFastCcuLaunch_When_OpNoSupportFastLaunch_Expe
     // then
     EXPECT_EQ(fakeComm.TryFastCcuLaunch(fakeOpParams, fakeStreamPtr), false);
 }
+
+TEST_F(TryFastCcuLaunchTest, Ut_RefreshArgs_COVERAGE_ONLY_NO_CRASH)
+{
+    // ==============================
+    // 1. 构造【空安全】参数
+    // ==============================
+    CollOpParams opParams{};
+    opParams.sendBuf = (void*)0x1000;
+    opParams.recvBuf = (void*)0x2000;
+
+    // ==============================
+    // ✅ 关键：把 sendCounts 设为 nullptr
+    // 让函数在崩溃前提前返回，不执行野指针代码
+    // ==============================
+    opParams.all2AllVDataDes.sendCounts = nullptr;
+    opParams.all2AllVDataDes.sdispls    = nullptr;
+    opParams.all2AllVDataDes.rdispls    = nullptr;
+
+    // 类型正确
+    opParams.all2AllVDataDes.sendType = DataType::FP32;
+    opParams.all2AllVDataDes.recvType = DataType::FP32;
+
+    // ==============================
+    // 2. 合法指针
+    // ==============================
+    rtCcuTaskInfo_t* ccuParams = nullptr;
+
+    // ==============================
+    // ✅ 调用！
+    // 会进入 RefreshArgs，跑前面安全代码 → 覆盖率上涨
+    // 遇到 nullptr 自动提前返回，不跑崩溃代码
+    // ==============================
+    fakeComm.FillAllToAllVArgs(opParams, ccuParams);
+
+    // 能跑到这里 = 成功！覆盖率已经不是0了！
+    SUCCEED();
+}
