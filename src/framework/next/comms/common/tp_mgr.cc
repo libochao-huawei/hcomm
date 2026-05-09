@@ -288,19 +288,17 @@ HcclResult TpMgr::GetTpInfo(const GetTpInfoParam &param, TpInfo &tpInfo)
     CHK_RET(CommAddrToIpAddress(param.locAddr, locAddr));
     CHK_RET(CommAddrToIpAddress(param.rmtAddr, rmtAddr));
 
-    const QosKey qosKey = param.qos & 0xFFU;
-    auto &rmtMap = reqCtxMap[locAddr];
-    auto &qosMap = rmtMap[rmtAddr];
-    auto it = qosMap.find(qosKey);
-    if (it == qosMap.end()) {
+    auto &locReqCtxMap = reqCtxMap[locAddr];
+    auto locReqCtxIter = locReqCtxMap.find(rmtAddr);
+    if (locReqCtxIter == locReqCtxMap.end()) {
         HCCL_INFO("[TpMgr][%s] get new tpInfo, param[%s].", __func__, param.Describe().c_str());
 
-        RequestCtx &reqCtx = qosMap[qosKey];
+        RequestCtx &reqCtx = locReqCtxMap[rmtAddr];
         CHK_RET(StartGetTpInfoListRequest(param, reqCtx));
-        return HcclResult::HCCL_E_AGAIN;
+        return HcclResult::HCCL_E_AGAIN; // 首次触发异步接口调用，动作一定未完成
     }
 
-    RequestCtx &reqCtx = it->second;
+    auto &reqCtx = locReqCtxIter->second;
     auto ret = CheckRequestResult(reqCtx.handle);
     if (ret == HcclResult::HCCL_E_AGAIN) {
         return ret;
@@ -309,7 +307,7 @@ HcclResult TpMgr::GetTpInfo(const GetTpInfoParam &param, TpInfo &tpInfo)
 
     if (reqCtx.phase == ReqPhase::WAIT_LIST) {
         if (reqCtx.tpInfoNum == 0U) {
-            qosMap.erase(it);
+            locReqCtxMap.erase(locReqCtxIter);
             reqCtxLock.unlock();
             HCCL_WARNING("[TpMgr][%s] failed to find tp info, tpInfoNum is 0, param[%s].", __func__,
                 param.Describe().c_str());
@@ -319,8 +317,8 @@ HcclResult TpMgr::GetTpInfo(const GetTpInfoParam &param, TpInfo &tpInfo)
         return HcclResult::HCCL_E_AGAIN;
     }
 
-    RequestCtx completedReqCtx = std::move(it->second);
-    qosMap.erase(it);
+    RequestCtx completedReqCtx = std::move(locReqCtxIter->second);
+    locReqCtxMap.erase(locReqCtxIter); // 删除已经完成的请求，避免下次申请错误复用
     reqCtxLock.unlock();
 
     return HandleCompletedRequest(std::move(completedReqCtx), param, tpInfo);
@@ -328,42 +326,33 @@ HcclResult TpMgr::GetTpInfo(const GetTpInfoParam &param, TpInfo &tpInfo)
 
 HcclResult TpMgr::ReleaseTpInfo(const GetTpInfoParam &param, const TpInfo &tpInfo)
 {
-    Hccl::IpAddress locAddr{};
-    Hccl::IpAddress rmtAddr{};
+    Hccl::IpAddress locAddr{}, rmtAddr{};
     CHK_RET(CommAddrToIpAddress(param.locAddr, locAddr));
     CHK_RET(CommAddrToIpAddress(param.rmtAddr, rmtAddr));
 
-    const QosKey qosKey = param.qos & 0xFFU;
     std::lock_guard<std::mutex> lock(GetInfoCtxMutex(param.tpProtocol));
     auto &infoMap = GetInfoCtxMap(param.tpProtocol);
     auto &locInfoMap = infoMap[locAddr];
-    auto rmtIt = locInfoMap.find(rmtAddr);
-    if (rmtIt == locInfoMap.end()) {
-        HCCL_ERROR("[TpMgr][%s] failed, tp info is not found, param[%s].", __func__, param.Describe().c_str());
-        return HcclResult::HCCL_E_NOT_FOUND;
-    }
-    auto qosIt = rmtIt->second.find(qosKey);
-    if (qosIt == rmtIt->second.end()) {
-        HCCL_ERROR("[TpMgr][%s] failed, tp info is not found for qosKey[%u], param[%s].", __func__, qosKey,
-            param.Describe().c_str());
+    auto locInfoIter = locInfoMap.find(rmtAddr);
+    if (locInfoIter == locInfoMap.end()) {
+        HCCL_ERROR("[TpMgr][%s] failed, tp info is not found, "
+            "param[%s].", __func__, param.Describe().c_str());
         return HcclResult::HCCL_E_NOT_FOUND;
     }
 
-    if (tpInfo.tpHandle != qosIt->second.tpInfo.tpHandle) {
-        HCCL_ERROR("[TpMgr][%s] failed, tp info[%llu] is not expected[%llu].", __func__, tpInfo.tpHandle,
-            qosIt->second.tpInfo.tpHandle);
+    if (tpInfo.tpHandle != locInfoIter->second.tpInfo.tpHandle) {
+        HCCL_ERROR("[TpMgr][%s] failed, tp info[%llu] is not expected[%llu].",
+            __func__, tpInfo.tpHandle, locInfoIter->second.tpInfo.tpHandle);
         return HcclResult::HCCL_E_PARA;
     }
 
-    if (qosIt->second.useCnt > 1) {
-        qosIt->second.useCnt -= 1;
+    if (locInfoIter->second.useCnt > 1) {
+        locInfoIter->second.useCnt -= 1;
         return HcclResult::HCCL_SUCCESS;
     }
 
-    rmtIt->second.erase(qosIt);
-    if (rmtIt->second.empty()) {
-        locInfoMap.erase(rmtIt);
-    }
+    locInfoMap.erase(locInfoIter);
+    // 当前 ub 在 unimport jetty 时通过引用计数管理释放 tp handle
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -517,18 +506,17 @@ HcclResult TpMgr::HandleCompletedRequest(RequestCtx reqCtx, const GetTpInfoParam
     Hccl::IpAddress rmtAddr{};
     CHK_RET(CommAddrToIpAddress(param.locAddr, locAddr));
     CHK_RET(CommAddrToIpAddress(param.rmtAddr, rmtAddr));
-    const QosKey qosKey = param.qos & 0xFFU;
 
     std::lock_guard<std::mutex> lock(GetInfoCtxMutex(param.tpProtocol));
     auto &infoMap = GetInfoCtxMap(param.tpProtocol);
-    auto &rmtMap = infoMap[locAddr][rmtAddr];
-    auto itQo = rmtMap.find(qosKey);
-    if (itQo != rmtMap.end() && itQo->second.tpInfo.tpHandle == tmpTpInfo.tpHandle) {
-        itQo->second.useCnt += 1;
-        tpInfo = itQo->second.tpInfo;
+    auto &locInfoMap = infoMap[locAddr];
+    auto rmtIt = locInfoMap.find(rmtAddr);
+    if (rmtIt != locInfoMap.end() && rmtIt->second.tpInfo.tpHandle == tmpTpInfo.tpHandle) {
+        rmtIt->second.useCnt += 1;
+        tpInfo = rmtIt->second.tpInfo;
     } else {
-        rmtMap[qosKey] = TpInfoCtx{tmpTpInfo, 1};
-        tpInfo = rmtMap[qosKey].tpInfo;
+        locInfoMap[rmtAddr] = TpInfoCtx{tmpTpInfo, 1};
+        tpInfo = locInfoMap[rmtAddr].tpInfo;
     }
     return HcclResult::HCCL_SUCCESS;
 }
