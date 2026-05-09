@@ -197,6 +197,7 @@ void RankInfoDispather::ProcessSend()
     bool lastEpollWaitFlag = false;  // 最后一轮epoll_wait标识位
     auto timeout = std::chrono::seconds(EnvConfig::GetInstance().GetSocketConfig().GetLinkTimeOut());
     auto startTime = std::chrono::steady_clock::now();
+    HcclResult ret;
     while (sendDoneCount_ != rankNum_) {
         CHK_PRT_THROW(stop_, HCCL_ERROR("[RankInfoDispather::%s] process stop.", __func__), InvalidParamsException, "process stop.");
         
@@ -211,16 +212,16 @@ void RankInfoDispather::ProcessSend()
         // 等待epoll事件
         s32 epollTimeout = lastEpollWaitFlag ? LAST_EPOLL_TIMEOUT_MS : EPOLL_TIMEOUT_MS;
         u32 eventsNum{0};
-        HrtRaWaitEventHandle(epollFds_, eventInfos, epollTimeout, sendEvsCount, eventsNum);
+        ret = HrtRaWaitEventHandle(epollFds_, eventInfos, epollTimeout, sendEvsCount, eventsNum);
 
         // 最后一轮epoll_wait结束, 等待超时，epoll池内无事件
-        CHK_PRT_RET_NULL((eventsNum == 0 && sendDoneCount_ == rankNum_),
+        CHK_PRT_RET_NULL((eventsNum == 0 && ret == HCCL_SUCCESS && sendDoneCount_ == rankNum_),
             HCCL_WARNING("[RankInfoDispather::%s]hrtRaWaitEventHandle is timeout[%d] ms, eventsNum[%u], "
                          "sendDoneCount_[%d]", __func__, epollTimeout, eventsNum, sendDoneCount_.load()));
         
         // epoll wait事件失败
-        CHK_PRT_THROW(eventsNum <= 0, 
-                      HCCL_ERROR("[RankInfoDispather::%s] HrtRaWaitEventHandle failed, eventsNum[%u].", __func__, eventsNum),
+        CHK_PRT_THROW(eventsNum <= 0 && ret != HCCL_SUCCESS, 
+                      HCCL_ERROR("[RankInfoDispather::%s] HrtRaWaitEventHandle failed ret[%d], eventsNum[%u].", __func__, ret, eventsNum),
                       InvalidParamsException, "epoll_wait fail");
         for (u32 i = 0; i < eventsNum; ++i) {
             std::unique_lock<std::mutex> lck(taskQueueMutex_);
