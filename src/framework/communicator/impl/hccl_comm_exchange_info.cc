@@ -13,54 +13,38 @@
 namespace hccl {
 HcclResult hcclComm::AddExchangeInfo(void* data, uint32_t length)
 {
-    CHK_PTR_NULL(data);
-
-    std::lock_guard<std::mutex> lock(exchangeInfoMutex_);
     exchangeInfoBuf_.resize(length);
     s32 sRet = memcpy_s(exchangeInfoBuf_.data(), length, data, length);
     CHK_PRT_RET(sRet != EOK, 
         HCCL_ERROR("[AddExchangeInfo] memcpy_s failed, ret[%d]", sRet), HCCL_E_MEMORY);
-    exchangeInfoLen_ = length;
     HCCL_INFO("[AddExchangeInfo] success, length[%u].", length);
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::GetExchangeInfo(uint32_t remoteRank, void* data, uint32_t &length)
+HcclResult hcclComm::GetExchangeInfo(uint32_t remoteRank, void** data, uint32_t* length)
 {
-    CHK_PTR_NULL(data);
-
-    std::lock_guard<std::mutex> lock(exchangeInfoMutex_);
     auto iter = remoteExchangeInfoMap_.find(remoteRank);
     if (iter == remoteExchangeInfoMap_.end()) {
-        length = 0;
+        *length = 0;
         return HCCL_SUCCESS;
     }
-    length = iter->second.length;
-    
-    s32 sRet = memcpy_s(data, iter->second.length, iter->second.data.data(), iter->second.length);
-    CHK_PRT_RET(sRet != EOK, 
-        HCCL_ERROR("[GetExchangeInfo] memcpy_s failed, ret[%d]", sRet), HCCL_E_MEMORY);
-
+    *data = iter->second.data();
+    *length = static_cast<uint32_t>(iter->second.size());
     // 读后清除
     remoteExchangeInfoMap_.erase(iter);
-    HCCL_INFO("[GetExchangeInfo] success, remoteRank[%u], length[%u].", remoteRank, length);
+    HCCL_INFO("[GetExchangeInfo] success, remoteRank[%u], length[%u].", remoteRank, *length);
     return HCCL_SUCCESS;
 }
 
 HcclResult hcclComm::StoreRemoteExchangeInfo(uint32_t remoteRank, const std::vector<u8>& data)
 {
-    std::lock_guard<std::mutex> lock(exchangeInfoMutex_);
-    ExchangeInfoEntry infoEntry;
-    infoEntry.data = data;
-    infoEntry.length = static_cast<uint32_t>(data.size());
-    remoteExchangeInfoMap_[remoteRank] = std::move(infoEntry);
+    remoteExchangeInfoMap_[remoteRank] = std::move(data);
     HCCL_INFO("[StoreRemoteExchangeInfo] success, remoteRank[%u], length[%u].", remoteRank, infoEntry.length);
     return HCCL_SUCCESS;
 }
 
 HcclResult hcclComm::ResetExchangeInfo()
 {
-    std::lock_guard<std::mutex> lock(exchangeInfoMutex_);
     exchangeInfoBuf_.clear();
     exchangeInfoLen_ = 0;
     HCCL_INFO("[ResetExchangeInfo] exchange info state cleared.");
@@ -74,7 +58,7 @@ const std::vector<u8>& hcclComm::GetExchangeInfoBuf() const
 
 uint32_t hcclComm::GetExchangeInfoLen() const
 {
-    return exchangeInfoLen_;
+    return exchangeInfoBuf_.size();
 }
 
 }
