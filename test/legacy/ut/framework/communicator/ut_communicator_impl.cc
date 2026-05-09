@@ -3552,3 +3552,26 @@ TEST_F(TryFastCcuLaunchTest, Ut_TryFastCcuLaunch_When_OpNoSupportFastLaunch_Expe
     // then
     EXPECT_EQ(fakeComm.TryFastCcuLaunch(fakeOpParams, fakeStreamPtr), false);
 }
+
+TEST_F(TryFastCcuLaunchTest, Ut_TryFastCcuLaunch_AllToAllV_InstTypeCheck_ReturnTrue)
+{
+    // 1. 设置为 ALLTOALLV
+    fakeOpParams.opType = OpType::ALLTOALLV;
+
+    // 2. 构造正确的 KEY（和函数逻辑完全一致）
+    fakeComm.ccuParamsMappingKey = {
+        static_cast<u32>(fakeOpParams.reduceOp),
+        static_cast<u32>(fakeOpParams.all2AllVDataDes.sendType),
+        0
+    };
+
+    // 3. 保存正确的 INST TYPE（必须是这个）
+    fakeComm.saveCCUParams({}, {}, 0, CcuInstType::CCU_ALLTOALLV_MESH_1D_DIRECT, true);
+
+    // 4. 不执行底层硬件，只校验返回值
+    // 这里不会跑 ExecuteFastCcuLaunch → 绝对不崩溃
+    bool ret = fakeComm.TryFastCcuLaunch(fakeOpParams, fakeStreamPtr);
+
+    // 5. 验证条件成立
+    ASSERT_TRUE(ret);
+}
