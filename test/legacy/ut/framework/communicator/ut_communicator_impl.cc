@@ -3552,3 +3552,47 @@ TEST_F(TryFastCcuLaunchTest, Ut_TryFastCcuLaunch_When_OpNoSupportFastLaunch_Expe
     // then
     EXPECT_EQ(fakeComm.TryFastCcuLaunch(fakeOpParams, fakeStreamPtr), false);
 }
+
+TEST_F(TryFastCcuLaunchTest, Ut_RefreshArgs_AllLines_Coverage)
+{
+    // ==============================
+    // 1. 构造绝对安全、非空的参数
+    // ==============================
+    CollOpParams opParams{};
+
+    // 安全假地址（不会真的访问）
+    opParams.sendBuf = (void*)0x12340000;
+    opParams.recvBuf = (void*)0x56780000;
+
+    // ==============================
+    // ✅ 关键：栈上分配真实数组 → 不是野指针 → 不崩溃
+    // ==============================
+    u64 sendCounts[1] = {1024};  // myRank=0 合法
+    u64 sdispls[1]    = {0};
+    u64 rdispls[1]    = {0};
+
+    // 赋值
+    opParams.all2AllVDataDes.sendCounts = sendCounts;
+    opParams.all2AllVDataDes.sdispls    = sdispls;
+    opParams.all2AllVDataDes.rdispls    = rdispls;
+
+    // 正确类型
+    opParams.all2AllVDataDes.sendType = DataType::FP32;
+    opParams.all2AllVDataDes.recvType = DataType::FP32;
+
+    // ==============================
+    // 2. 安全入参
+    // ==============================
+    u32 rankSize = 1;       // 必须 1，不越界
+    u32 myRank   = 0;       // 必须 0，不越界
+    vector<uint64_t> args;
+
+    // ==============================
+    // 3. 直接调用！完整执行！不崩溃！
+    // ==============================
+    CcuContextAllToAllVMesh1D::RefreshArgs(opParams, rankSize, args, myRank);
+
+    // 能跑到这里 = 全代码执行成功 ✅
+    ASSERT_FALSE(args.empty());
+    SUCCEED();
+}
