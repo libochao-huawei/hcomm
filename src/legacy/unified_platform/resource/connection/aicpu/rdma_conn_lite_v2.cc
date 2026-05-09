@@ -1,17 +1,17 @@
 /**
- * Copyright (c) 2026 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
-#include "dev_rdma_conn_lite.h"
+#include "rdma_conn_lite_v2.h"
 
 namespace Hccl {
-void DevRdmaConnLite::ParseSqContext(std::vector<char>& data)
+void RdmaConnLiteV2::ParseSqContext(std::vector<char>& data)
 {
     BinaryStream binaryStream(data);
     binaryStream >> sqContext.qpn;
@@ -25,7 +25,7 @@ void DevRdmaConnLite::ParseSqContext(std::vector<char>& data)
     binaryStream >> sqContext.dbMode;
 }
 
-void DevRdmaConnLite::ParseCqContext(std::vector<char>& data)
+void RdmaConnLiteV2::ParseCqContext(std::vector<char>& data)
 {
     BinaryStream binaryStream(data);
     binaryStream >> cqContext.cqn;
@@ -38,7 +38,7 @@ void DevRdmaConnLite::ParseCqContext(std::vector<char>& data)
     binaryStream >> cqContext.dbMode;
 }
 
-DevRdmaConnLite::DevRdmaConnLite(std::vector<char>& uniqueId)
+RdmaConnLiteV2::RdmaConnLiteV2(std::vector<char>& uniqueId) : RmaConnLite()
 {
     BinaryStream binaryStream(uniqueId);
     binaryStream >> dmaMode_;
@@ -50,14 +50,18 @@ DevRdmaConnLite::DevRdmaConnLite(std::vector<char>& uniqueId)
     std::vector<char> cqUniqueId;
     binaryStream >> cqUniqueId;
     ParseCqContext(cqUniqueId);
+
+    qpVa_ = sqContext.sqVa;
+    sqVa_ = sqContext.sqVa;
+    sqDepth_ = sqContext.depth;
 }
 
-DevRdmaConnLite::~DevRdmaConnLite() {}
+RdmaConnLiteV2::~RdmaConnLiteV2() {}
 
-std::string DevRdmaConnLite::Describe()
+std::string RdmaConnLiteV2::Describe()
 {
     return StringFormat(
-        "DevRdmaConnLite[QPN=%u, SQ_VA=0x%llx, WQE_SIZE=%u, SQ_DEPTH=%u, SQ_HEAD_ADDR=0x%llx, SQ_TAIL_ADDR=0x%llx, "
+        "RdmaConnLiteV2[QPN=%u, SQ_VA=0x%llx, WQE_SIZE=%u, SQ_DEPTH=%u, SQ_HEAD_ADDR=0x%llx, SQ_TAIL_ADDR=0x%llx, "
         "SL=%u, SQ_DB_VA=0x%llx, SQ_DB_MODE=%d, CQN=%u, CQ_VA=0x%llx, CQE_SIZE=%u, CQ_DEPTH=%u, "
         "CQ_HEAD_ADDR=0x%llx, CQ_TAIL_ADDR=0x%llx, CQ_DB_VA=0x%llx, CQ_DB_MODE=%d]",
         sqContext.qpn, sqContext.sqVa, sqContext.wqeSize, sqContext.depth, sqContext.headAddr, sqContext.tailAddr,
