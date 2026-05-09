@@ -45,7 +45,7 @@ extern "C" {
 void RegisterGetAicpuTaskExceptionCallBackV2(s32 streamId, u32 deviceLogicId, Hccl::GetAicpuTaskExceptionCallBack p1)
 {
     lock_guard<mutex> lock(Hccl::g_communicatorCallbackMapMutexV2);
-    Hccl::g_communicatorCallbackMapV2[deviceLogicId].emplace(streamId, p1);
+    Hccl::g_communicatorCallbackMapV2[deviceLogicId][streamId] = p1;
     return;
 }
 #ifdef __cplusplus
