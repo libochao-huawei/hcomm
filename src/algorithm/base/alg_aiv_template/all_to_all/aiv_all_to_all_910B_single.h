@@ -85,6 +85,12 @@ __aicore__ inline void sk_all_to_all_910B_single(SUPERKERNEL_ARGS_DEF)
         op.Process<uint16_t>(input, output, op.tag_, remoteSendOffset, localRecvOffset, remoteSendCount);
     #elif defined HCCL_DTYPE_UINT32
         op.Process<uint32_t>(input, output, op.tag_, remoteSendOffset, localRecvOffset, remoteSendCount);
+    #elif defined HCCL_DTYPE_INT64
+        op.Process<int64_t>(input, output, op.tag_, remoteSendOffset, localRecvOffset, remoteSendCount);
+    #elif defined HCCL_DTYPE_UINT64
+        op.Process<uint64_t>(input, output, op.tag_, remoteSendOffset, localRecvOffset, remoteSendCount);
+    #elif defined HCCL_DTYPE_FP64
+        op.Process<double>(input, output, op.tag_, remoteSendOffset, localRecvOffset, remoteSendCount);
     #else
     #endif
 }
