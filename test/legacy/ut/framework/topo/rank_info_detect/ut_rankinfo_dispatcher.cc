@@ -267,7 +267,7 @@ TEST_F(RankInfoDispatherTest, Ut_ProcessSend_When_EventsNum_Error_Expect_Return_
     MOCKER(HrtRaWaitEventHandle)
         .stubs()
         .with(any(), any(), any(), any(), outBound(eventsNum))
-        .will(returnValue(HCCL_SUCCESS));
+        .will(returnValue(HCCL_E_NETWORK));
 
     // then
     IpAddress remoteIp;
