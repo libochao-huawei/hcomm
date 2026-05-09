@@ -131,13 +131,18 @@ HcclResult LaunchContext::SetLaunchMode(const char* launchTag, HcommLaunchMode m
 #endif
             return HCCL_SUCCESS;
         case HCOMM_LAUNCH_MODE_EAGER:
+#ifndef CCL_KERNEL_AICPU
             CHK_RET(HandleEagerMode());
             // 缺省 tag 模式下清理缓存
-            return HandleClear();
+            CHK_RET(HandleClear());
+#endif
+            return HCCL_SUCCESS;
         case HCOMM_LAUNCH_MODE_RESERVED:
+#ifndef CCL_KERNEL_AICPU
             if (!defaultTag) {
                 return HandleClear();
             }
+#endif
             return HCCL_SUCCESS;
         default:
             return HCCL_SUCCESS;
