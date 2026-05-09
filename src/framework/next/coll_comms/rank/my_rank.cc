@@ -258,6 +258,7 @@ HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint3
     // rankPairMgr_初始化
     EXECEPTION_CATCH(rankPairMgr_ = std::make_unique<RankPairMgr>(), return HCCL_E_PTR);
 
+    DlProfFunction::GetInstance().DlProfFunctionInit();
     // EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
