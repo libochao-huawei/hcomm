@@ -4016,7 +4016,8 @@ std::string HcclCommAicpu::GetTaskExceptionOpInfo(u32 idx, SqeRingBuffer *sqeCon
 {
     const AicpuOpInfo *opInfo = aicpuShareData_.GetAicpuOpInfo(sqeContextBuffer->rtsDfxInfo[idx].opRingBufferIdx);
     CHK_PRT_RET(opInfo == nullptr, HCCL_ERROR("%s fail, opInfo is nullptr", __func__), "unKnown");
-
+    auto opVInfo = opInfo->vInfo;
+    std::string opVInfoStr = GetTaskExceptionOpVInfo(opVInfo);
     std::stringstream ss;
     ss << "tag:" << opInfo->tagBuff << ", ";
     ss << "group:" << identifier_ << ", ";
@@ -4024,11 +4025,40 @@ std::string HcclCommAicpu::GetTaskExceptionOpInfo(u32 idx, SqeRingBuffer *sqeCon
     ss << "opLaunchIdx:" << opInfo->opIndex << ", ";
     ss << "opExecIdx:" << opInfo->opExecIndex << ", ";
     ss << "count:" << opInfo->count << ", ";
+    ss << "opvInfo:{" << opVInfoStr << "}, ";
     ss << "dataType:" << static_cast<u16>(opInfo->dataType) << ", ";
     ss << "opType:" << static_cast<u16>(opInfo->opType) << ", ";
     ss << "rootId:" << opInfo->rootId << ", ";
     ss << "dstAddr:0x" << std::hex << opInfo->dstAddr << ", ";
     ss << "srcAddr:0x" << std::hex << opInfo->srcAddr << ".";
+    return ss.str();
+}
+
+void HcclCommAicpu::AppendOpVInfoToStr(const std::string& name, const std::vector<u64>& vec, std::stringstream& ss)
+{
+    if (vec.empty()) {
+        return;
+    }
+    ss << name << "[";
+    for (size_t i = 0; i < vec.size(); ++i) {
+        ss << vec[i];
+        if (i + 1 < vec.size()) {
+            ss << ",";
+        }
+    }
+    ss << "] ";
+}
+
+std::string HcclCommAicpu::GetTaskExceptionOpVInfo(const OpVInfo& vInfo)
+{
+    std::stringstream ss;
+    AppendOpVInfoToStr("counts", vInfo.counts, ss);
+    AppendOpVInfoToStr("displs", vInfo.displs, ss);
+    AppendOpVInfoToStr("sendCounts", vInfo.sendCounts, ss);
+    AppendOpVInfoToStr("recvCounts", vInfo.recvCounts, ss);
+    AppendOpVInfoToStr("sdispls", vInfo.sdispls, ss);
+    AppendOpVInfoToStr("rdispls", vInfo.rdispls, ss);
+    AppendOpVInfoToStr("sendCountMatrix", vInfo.countMatrix, ss);
     return ss.str();
 }
 
@@ -4065,11 +4095,33 @@ const AicpuOpInfo* HcclCommAicpu::GetOpInfoFromSqIdx(u32 sqIdx, SqeRingBuffer *s
 void HcclCommAicpu::PrintOpDataInfo(u32 sqIdx, SqeRingBuffer *sqeContextBuffer, bool isMonitor)
 {
     std::string opInfo = GetTaskExceptionOpInfo(sqIdx, sqeContextBuffer);
-    if (isMonitor) {
-        HCCL_RUN_INFO("[StreamTaskMonitor]opData information is %s", opInfo.c_str());
-    } else {
-        HCCL_ERROR("[TaskException]opData information is %s", opInfo.c_str());
+    auto lines = SplitLogString(opInfo, LOG_TMPBUF_SIZE);
+    for (const auto& line : lines) {
+        if (isMonitor) {
+            HCCL_RUN_INFO("[StreamTaskMonitor]opData information is %s", line.c_str());
+        } else {
+            HCCL_ERROR("[TaskException]opData information is %s", line.c_str());
+        }
     }
+}
+
+// 日志行过长时，防截断打印
+std::vector<std::string> HcclCommAicpu::SplitLogString(const std::string& str, size_t maxLen)
+{
+    std::vector<std::string> strVec;
+    size_t start = 0;
+    while (start < str.size()) {
+        size_t end = std::min(start + maxLen, str.size());
+        if (end < str.size()) {
+            size_t splitPos = str.rfind(',', end);
+            if (splitPos != std::string::npos && splitPos > start) {
+                end = splitPos + 1;
+            }
+        }
+        strVec.push_back(str.substr(start, end - start));
+        start = end;
+    }
+    return strVec;
 }
 
 // 打印task序列行

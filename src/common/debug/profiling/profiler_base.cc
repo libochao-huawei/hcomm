@@ -157,6 +157,17 @@ HcclResult ProfilerBase::AddOpData(const std::string &tag, u64 count, const void
     }
     return HCCL_SUCCESS;
 }
+
+HcclResult ProfilerBase::AddOpVData(const std::string& tag, OpVDataInfo& vData)
+{
+    s32 deviceLogicId = -1;
+    HcclResult ret = hrtGetDevice(&deviceLogicId);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("rts get device error"), ret);
+    std::unique_lock<std::mutex> lock(streamMutex_[deviceLogicId]);
+    auto& opData = tagOpDataMap_[deviceLogicId][tag];
+    opData.vInfo = vData;
+    return HCCL_SUCCESS;
+}
  
 HcclResult ProfilerBase::DelOpData(const std::string &tag)
 {

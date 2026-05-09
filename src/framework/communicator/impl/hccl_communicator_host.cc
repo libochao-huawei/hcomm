@@ -6224,6 +6224,7 @@ namespace hccl
     {
         u64 count = 0;
         HcclDataType dataType = HcclDataType::HCCL_DATA_TYPE_RESERVED;
+        OpVDataInfo vData;
         switch (param.opType) {
         case HcclCMDType::HCCL_CMD_SEND:
         case HcclCMDType::HCCL_CMD_RECEIVE:
@@ -6234,12 +6235,45 @@ namespace hccl
             HCCL_PROFILER_ADD_GROUPRANK_SENDRECV(identifier_, userRankSize_, userRank_, param.dstRank);
             break;
         case HcclCMDType::HCCL_CMD_ALLTOALL:
-        case HcclCMDType::HCCL_CMD_ALLTOALLV:
-        case HcclCMDType::HCCL_CMD_ALLTOALLVC:
             CHK_RET(AddGroupTagInfo(param.tag, isAiv));
             count = param.All2AllDataDes.sendCount;
             dataType = param.All2AllDataDes.sendType;
             break;
+        case HcclCMDType::HCCL_CMD_ALLTOALLV:
+        {
+            CHK_RET(AddGroupTagInfo(param.tag, isAiv));
+            dataType = param.All2AllDataDes.sendType;
+            const u64* sendCounts = static_cast<const u64*>(param.All2AllDataDes.sendCounts);
+            const u64* recvCounts = static_cast<const u64*>(param.All2AllDataDes.recvCounts);
+            const u64* sdispls = static_cast<const u64*>(param.All2AllDataDes.sdispls);
+            const u64* rdispls = static_cast<const u64*>(param.All2AllDataDes.rdispls);
+            vData.sendCounts.assign(sendCounts, sendCounts + userRankSize_);
+            vData.recvCounts.assign(recvCounts, recvCounts + userRankSize_);
+            vData.sdispls.assign(sdispls, sdispls + userRankSize_);
+            vData.rdispls.assign(rdispls, rdispls + userRankSize_);
+            break;
+        }
+        case HcclCMDType::HCCL_CMD_ALLTOALLVC:
+        {
+            CHK_RET(AddGroupTagInfo(param.tag, isAiv));
+            dataType = param.All2AllDataDes.sendType;
+            const u64* matrix = static_cast<const u64*>(param.All2AllDataDes.sendCountMatrix);
+            vData.countMatrix.assign(matrix, matrix + userRankSize_ * userRankSize_);
+            break;
+        }
+
+        case HcclCMDType::HCCL_CMD_ALLGATHER_V:
+        case HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V:
+        {
+            CHK_RET(AddGroupTagInfo(param.tag, isAiv));
+            count = param.GetDataCount(userRank_);
+            dataType = param.GetDataType();
+            const u64* counts = static_cast<const u64*>(param.VDataDes.counts);
+            const u64* displs = static_cast<const u64*>(param.VDataDes.displs);
+            vData.counts.assign(counts, counts + userRankSize_);
+            vData.displs.assign(displs, displs + userRankSize_);
+            break;
+        }
         default:
             CHK_RET(AddGroupTagInfo(param.tag, isAiv));
             count = param.GetDataCount(userRank_);
@@ -6262,6 +6296,7 @@ namespace hccl
         // task exception使用: 算子计数，算子入参信息(src/dst/datatype/reducetype)
         HCCL_PROFILER_ADD_OPDATA_OP(param.tag, count, param.inputPtr, param.outputPtr, dataType, param.root, identifier_,
                                     param.reduceType);
+        CHK_RET(ProfilerBase::AddOpVData(param.tag, vData));
         // 记录主流相关信息, 给profiling和task exception使用
         HCCL_PROFILER_ADD_STREAM_BY_STREAMID(param.stream.id(), param.tag, 0, algType);
         if (((GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) &&

@@ -314,6 +314,8 @@ private:
     HcclResult PrintTaskExceptionAllStreams();
     bool IsRepeatedOpTaskException(u32 idx, SqeRingBuffer *sqeContextBuffer); // 避免同一个算子重复打印taskException
     std::string GetTaskExceptionOpInfo(u32 idx, SqeRingBuffer *sqeContextBuffer); // 打印算子参数信息
+    std::string GetTaskExceptionOpVInfo(const OpVInfo& vInfo); // 获取V算子参数信息
+    void AppendOpVInfoToStr(const std::string& name, const std::vector<u64>& vec, std::stringstream& ss); 
     void PrintTaskExceptionTaskQue(u32 sqIdx, SqeRingBuffer *sqeContextBuffer, bool isMonitor = false); // 打印当前位置的前序task
     std::string GetTaskBriefsInfo(u32 idx, SqeRingBuffer *sqeContextBuffer); // 打印task简写
     void PrintAicpuCommExecStatus();
@@ -430,7 +432,7 @@ private:
     
     // 打印算子数据信息
     void PrintOpDataInfo(u32 sqIdx, SqeRingBuffer *sqeContextBuffer, bool isMonitor);
-    
+    std::vector<std::string> SplitLogString(const std::string& str, size_t maxLen); // 日志打印防截断
     // 打印task序列行
     void PrintTaskLine(bool isMonitor, u32 lineNum, u32 totalPrinted, const std::string& taskLine) const;
     

@@ -670,6 +670,26 @@ void TaskExceptionHandler::TimeStruct2Str(struct timeval &tv, std::string &opDat
 
     return;
 }
+
+// 日志行过长时，防截断打印
+static std::vector<std::string> SplitLogString(const std::string& str, size_t maxLen)
+{
+    std::vector<std::string> strVec;
+    size_t start = 0;
+    while (start < str.size()) {
+        size_t end = std::min(start + maxLen, str.size());
+        if (end < str.size()) {
+            size_t splitPos = str.rfind(',', end);
+            if (splitPos != std::string::npos && splitPos > start) {
+                end = splitPos + 1;
+            }
+        }
+        strVec.push_back(str.substr(start, end - start));
+        start = end;
+    }
+    return strVec;
+}
+
 void TaskExceptionHandler::PrintOpDataInfo(OpDataInfo &opDataInfo, bool isFftsPlus, std::string &stageErrInfo)
 {
     stringstream opDataStr;
@@ -692,6 +712,8 @@ void TaskExceptionHandler::PrintOpDataInfo(OpDataInfo &opDataInfo, bool isFftsPl
     opDataContent += std::to_string(opDataInfo.index);
     opDataContent += "], count[";
     opDataContent += std::to_string(opDataInfo.count);
+    opDataContent += "], vDataInfo[";
+    opDataContent += GetOpVDataInfo(opDataInfo.vInfo);
     opDataContent += "], ";
     opDataContent += opStr;
     opDataContent += opDataStr.str();
@@ -699,8 +721,40 @@ void TaskExceptionHandler::PrintOpDataInfo(OpDataInfo &opDataInfo, bool isFftsPl
     opDataContent += GetDataTypeEnumStr(opDataInfo.dataType);
     opDataContent += "].";
 
-    PrintOpDataErrorLog(stageErrInfo, opDataContent);
+    auto lines = SplitLogString(opDataContent, LOG_TMPBUF_SIZE);
+    for (const auto& line : lines) {
+        PrintOpDataErrorLog(stageErrInfo, line);
+    }
     return;
+}
+
+static void AppendVectorToStr(const std::string& name, const std::vector<u64>& vec, std::string& outStr)
+{
+    if (vec.empty()) {
+        return;
+    }
+    if (!outStr.empty()) {
+        outStr += ", ";
+    }
+    outStr += name + "[";
+    for (size_t i = 0; i < vec.size(); ++i) {
+        outStr += std::to_string(vec[i]);
+        if (i + 1 < vec.size()) outStr += ",";
+    }
+    outStr += "]";
+}
+
+std::string TaskExceptionHandler::GetOpVDataInfo(const OpVDataInfo& vInfo)
+{
+    std::string opVInfoStr;
+    AppendVectorToStr("counts", vInfo.counts, opVInfoStr);
+    AppendVectorToStr("displs", vInfo.displs, opVInfoStr);
+    AppendVectorToStr("sendCounts", vInfo.sendCounts, opVInfoStr);
+    AppendVectorToStr("recvCounts", vInfo.recvCounts, opVInfoStr);
+    AppendVectorToStr("sdispls", vInfo.sdispls, opVInfoStr);
+    AppendVectorToStr("rdispls", vInfo.rdispls, opVInfoStr);
+    AppendVectorToStr("sendCountMatrix", vInfo.countMatrix, opVInfoStr);
+    return opVInfoStr;
 }
 
 bool TaskExceptionHandler::DealExceptionOpData(rtExceptionInfo *exceptionInfo, std::string &tag, bool isFftsPlus,

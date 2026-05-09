@@ -588,6 +588,21 @@ struct HierarchicalAlgInfo {
 
 constexpr u32 HCCL_TAG_SIZE = 256;
 constexpr u32 OPINFO_RING_BUFFER_MAX = 2048;
+
+// ====== V型算子扩展信息 ======    
+struct OpVInfo {
+    // allgatherV && reducescatterV
+    std::vector<u64> counts;
+    std::vector<u64> displs;
+    // alltoallV
+    std::vector<u64> sendCounts;
+    std::vector<u64> recvCounts;
+    std::vector<u64> sdispls;
+    std::vector<u64> rdispls;
+    // flatten matrix for ALLTOALLVC
+    std::vector<u64> countMatrix;
+};
+
 struct AicpuOpInfo {
     char  tagBuff[HCCL_TAG_SIZE] {0}; //记录tag信息
     uint32_t opIndex = 0;                // 记录算子下发index
@@ -600,6 +615,7 @@ struct AicpuOpInfo {
     uint32_t reduceType = 255; // 255 为 HcclReduceOp::HCCL_REDUCE_RESERVED
     uint32_t opExecIndex = 0;                // 记录算子执行index
     bool isCustom = false;
+    OpVInfo vInfo;  
 };
 
 struct TaskExceptionParam {

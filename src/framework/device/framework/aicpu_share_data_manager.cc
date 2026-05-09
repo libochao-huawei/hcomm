@@ -48,14 +48,31 @@ HcclResult AicpuShareDataManager::RecordOpInfo(const std::string &newTag, OpPara
     } else if (opParam.opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV) {
         aicpuOpInfo[opRingBufferIdx].count = SYS_MAX_COUNT;
         aicpuOpInfo[opRingBufferIdx].dataType = HCCL_DATA_TYPE_RESERVED;
-    } else if (opParam.opType == HcclCMDType::HCCL_CMD_ALLTOALLV || opParam.opType == HcclCMDType::HCCL_CMD_ALLTOALLVC ||
-               opParam.opType == HcclCMDType::HCCL_CMD_ALLTOALL) {
+    } else if (opParam.opType == HcclCMDType::HCCL_CMD_ALLTOALLV) {
+        aicpuOpInfo[opRingBufferIdx].dataType = opParam.All2AllDataDes.sendType;
+        const u64* sendCounts = static_cast<const u64*>(opParam.All2AllDataDes.sendCounts);
+        const u64* recvCounts = static_cast<const u64*>(opParam.All2AllDataDes.recvCounts);
+        const u64* sdispls = static_cast<const u64*>(opParam.All2AllDataDes.sdispls);
+        const u64* rdispls = static_cast<const u64*>(opParam.All2AllDataDes.rdispls);
+        aicpuOpInfo[opRingBufferIdx].vInfo.sendCounts.assign(sendCounts, sendCounts + opParam.rankSize);
+        aicpuOpInfo[opRingBufferIdx].vInfo.recvCounts.assign(recvCounts, recvCounts + opParam.rankSize);
+        aicpuOpInfo[opRingBufferIdx].vInfo.sdispls.assign(sdispls, sdispls + opParam.rankSize);
+        aicpuOpInfo[opRingBufferIdx].vInfo.rdispls.assign(rdispls, rdispls + opParam.rankSize);
+    } else if (opParam.opType == HcclCMDType::HCCL_CMD_ALLTOALLVC) {
+        aicpuOpInfo[opRingBufferIdx].dataType = opParam.All2AllDataDes.sendType;
+        const u64* matrix = static_cast<const u64*>(opParam.All2AllDataDes.sendCountMatrix);
+        aicpuOpInfo[opRingBufferIdx].vInfo.countMatrix.assign(matrix, matrix + opParam.rankSize * opParam.rankSize);
+    } else if (opParam.opType == HcclCMDType::HCCL_CMD_ALLTOALL) {
         aicpuOpInfo[opRingBufferIdx].count = opParam.All2AllDataDes.sendCount;
         aicpuOpInfo[opRingBufferIdx].dataType = opParam.All2AllDataDes.sendType;
     } else if (opParam.opType == HcclCMDType::HCCL_CMD_ALLGATHER_V ||
         opParam.opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V) {
         aicpuOpInfo[opRingBufferIdx].count = static_cast<u64 *>(opParam.VDataDes.counts)[userRank];
         aicpuOpInfo[opRingBufferIdx].dataType = opParam.VDataDes.dataType;
+        const u64* counts = static_cast<const u64*>(opParam.VDataDes.counts);
+        const u64* displs = static_cast<const u64*>(opParam.VDataDes.displs);
+        aicpuOpInfo[opRingBufferIdx].vInfo.counts.assign(counts, counts + opParam.rankSize);
+        aicpuOpInfo[opRingBufferIdx].vInfo.displs.assign(displs, displs + opParam.rankSize);        
     } else {
         aicpuOpInfo[opRingBufferIdx].count = opParam.DataDes.count;
         aicpuOpInfo[opRingBufferIdx].dataType = opParam.DataDes.dataType;

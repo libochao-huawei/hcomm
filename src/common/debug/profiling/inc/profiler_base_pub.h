@@ -55,6 +55,20 @@ struct GroupRankInfo {
     u32 remoteRankId{INVALID_VALUE_RANKSIZE};
 };
 
+// ====== V型算子扩展信息 ======    
+struct OpVDataInfo {
+    // allgatherV && reducescatterV
+    std::vector<u64> counts;
+    std::vector<u64> displs;
+    // alltoallV
+    std::vector<u64> sendCounts;
+    std::vector<u64> recvCounts;
+    std::vector<u64> sdispls;
+    std::vector<u64> rdispls;
+    // flatten matrix for ALLTOALLVC
+    std::vector<u64> countMatrix;
+};
+
 struct OpDataInfo {
     u64 count{0};
     const void *src{nullptr};
@@ -65,6 +79,7 @@ struct OpDataInfo {
     HcclDataType dataType{HcclDataType::HCCL_DATA_TYPE_RESERVED};
     HcclReduceOp reduceType{HcclReduceOp::HCCL_REDUCE_RESERVED};
     struct timeval tv{0};
+    OpVDataInfo vInfo;
 };
 
 struct StreamRecordInfo {
@@ -104,6 +119,7 @@ public:
     static HcclResult DelTag(const std::string &tag);
     static HcclResult AddOpData(const std::string &tag, u64 count, const void *src, const void *dst,
         HcclDataType dataType, u32 rootId, const std::string &group, HcclReduceOp reduceType = HCCL_REDUCE_RESERVED);
+    static HcclResult AddOpVData(const std::string& tag, OpVDataInfo& vData);
     static HcclResult DelOpData(const std::string &tag);
     static HcclResult AddGroupRankInfo(const std::string &group, u32 rankSize, u32 rankId, bool isSendRecv = false,
         u32 remoteRankId = INVALID_VALUE_RANKSIZE);

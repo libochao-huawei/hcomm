@@ -176,6 +176,7 @@ private:
     static void ParseTaskSyncFlag(s32 *flagMem, u32 flagMemSize, u32 rankSize, u32 rank, u32 index);
     static std::string SerializeSyncFlag(s32 *buf, u32 num, u32 interval);
     static void PrintOpDataInfo(OpDataInfo &opDataInfo, bool isFftsPlus, std::string &stageErrInfo);
+    static std::string GetOpVDataInfo(const OpVDataInfo& vInfo);
     static void TimeStruct2Str(struct timeval &tv, std::string &opDataContent);
     static bool DealExceptionOp(rtExceptionInfo *exceptionInfo);
     static bool DealExceptionTask(rtExceptionInfo *exceptionInfo);
