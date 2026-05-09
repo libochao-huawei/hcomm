@@ -52,7 +52,7 @@ void AicpuExecutorTracer::StopLaunchCommandHandle(AicpuComContext *const ctx)
                     (void)AicpuHdcUtils::SetOpExecStatus(
                         ctx->kfcStatusTransferD2H, KfcStatus::kStoplaunch, KfcError::kNone, 0);
                     AicpuUpdatComContextMumber(offsetof(AicpuComContext, endStopLaunch), true);
-                    HCCL_DEBUG("[NsRecovery][backGround]send in mc2 environment");
+                    HCCL_INFO("[NsRecovery][backGround]send in mc2 environment");
                 }
             }
         }
@@ -74,7 +74,7 @@ void AicpuExecutorTracer::KfcCommandHandle(AicpuComContext *const ctx)
         if (iter == commandHandles.cend()) {
             return;
         }
-        HCCL_DEBUG("Start to run command %ld", cmd);
+        HCCL_INFO("Start to run command %ld", cmd);
         iter->second(ctx);
     }
 }
@@ -220,7 +220,8 @@ void KfcCommandHandles::StopFunc(AicpuComContext *const ctx)
 
 void KfcCommandHandles::ClearCq(AicpuComContext *const ctx)
 {
-    for (u32 i = 0; i < ctx->rankNum; i++) {
+    const u32 streamNum = ctx->multiServerFlag ? 1U : ctx->rankNum;
+    for (u32 i = 0; i < streamNum; i++) {
         const HcclComStreamInfo &streamInfo = ctx->streamInfo[i];
         HCCL_INFO("ClearFunc, sqid:%d", streamInfo.sqId);
         if (ConfigSqStatusByType(ctx->devId, streamInfo.sqId, DRV_SQCQ_PROP_SQ_DISABLE_TO_ENABLE, 1) != HCCL_SUCCESS) {
@@ -239,7 +240,6 @@ void KfcCommandHandles::ClearCq(AicpuComContext *const ctx)
 void KfcCommandHandles::ClearFunc(AicpuComContext *const ctx)
 {
     if (ctx->isStopLaunch) {
-        AicpuUpdatComContextMumber(offsetof(AicpuComContext, isStopLaunch), false);
         // 等待drv任务停止
         if (DeviceQuery(ctx->devId, ts::APP_ABORT_TERMINATE_FINISH, 0U) != HCCL_SUCCESS) {
             (void)AicpuHdcUtils::SetOpExecStatus(ctx->kfcStatusTransferD2H, KfcStatus::kError, KfcError::kExec, 0);
@@ -262,7 +262,8 @@ void KfcCommandHandles::ClearFunc(AicpuComContext *const ctx)
             return;
         }
         SqeContext *sqeContext = GetSqeContext();
-        for (u32 i = 0; i < ctx->rankNum; i++) {
+        const u32 streamNum = ctx->multiServerFlag ? 1U : ctx->rankNum;
+        for (u32 i = 0; i < streamNum; i++) {
             auto &buff = sqeContext->buffPtr[i];
             if ((QuerySqStatusByType(ctx->devId, ctx->streamInfo[i].sqId, DRV_SQCQ_PROP_SQ_TAIL, buff.sqTail) !=
                     HCCL_SUCCESS) ||
@@ -274,15 +275,22 @@ void KfcCommandHandles::ClearFunc(AicpuComContext *const ctx)
             HCCL_INFO("hccl aicpu reset stream buffer, sqid:%d head:%u tail:%u.", ctx->streamInfo[i].sqId, buff.sqHead,
                       buff.sqTail);
         }
-        (void)AicpuHdcUtils::SetOpExecStatus(ctx->kfcStatusTransferD2H, KfcStatus::kClear, KfcError::kNone, 0);
-    } else {
-        (void)AicpuHdcUtils::SetOpExecStatus(ctx->kfcStatusTransferD2H, KfcStatus::kEnd, KfcError::kNone, 0);
     }
+    (void)memset_s(reinterpret_cast<void *>(ctx->ibversData[ctx->rankId].localInputMem.addr),
+        ctx->ibversData[ctx->rankId].localInputMem.size, 0, ctx->ibversData[ctx->rankId].localInputMem.size);
+    (void)memset_s(reinterpret_cast<void *>(ctx->ibversData[ctx->rankId].localOutputMem.addr),
+        ctx->ibversData[ctx->rankId].localOutputMem.size, 0, ctx->ibversData[ctx->rankId].localOutputMem.size);
     // 清理共享内存
     (void)memset_s(reinterpret_cast<void *>(ctx->workSpaceAddr), sizeof(HcclMsgArea), 0, sizeof(HcclMsgArea));
 
     AicpuUpdatComContextMumber(offsetof(AicpuComContext, isOpLaunch), false);
     AicpuUpdatComContextMumber(offsetof(AicpuComContext, endStopLaunch), false);
+    if (ctx->isStopLaunch) {
+        AicpuUpdatComContextMumber(offsetof(AicpuComContext, isStopLaunch), false);
+        (void)AicpuHdcUtils::SetOpExecStatus(ctx->kfcStatusTransferD2H, KfcStatus::kClear, KfcError::kNone, 0);
+    } else {
+        (void)AicpuHdcUtils::SetOpExecStatus(ctx->kfcStatusTransferD2H, KfcStatus::kEnd, KfcError::kNone, 0);
+    }
     HCCL_INFO("ClearFunc Finish");
 }
 }  // namespace dfx_tracer
