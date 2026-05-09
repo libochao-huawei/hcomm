@@ -99,11 +99,10 @@ struct ClusterMonitorFrame {
     ClusterUIDType dst{}; // 心跳建链的远端
     ClusterUIDType crimer{}; // 异常的节点
     ClusterUIDType informer{}; // 把异常传输给自己的节点
-    // ErrorCqeInfo   cqeInfo; // error cqe节点出现错误时，信息广播到其他节点
     ClusterMonitorStatus status = ClusterMonitorStatus::CLUSTER_MONITOR_OK;
     HcclUs TOARelative{}; // time of arrival (Relative)
     HcclSystemTime TOASystem{}; // time of arrival (System)
-    char reserved[256] = {0}; // 预留字段，存储其他信息
+    char reserved[256] = {0}; // 预留256个字段，后续扩展可存储其他信息
     ClusterMonitorFrame() {}
     ClusterMonitorFrame(ClusterUIDType &crimer, ClusterUIDType &informer, ClusterMonitorStatus status, HcclUs TOARelativeIn,
         HcclSystemTime TOASystemIn)
@@ -209,10 +208,10 @@ private:
         MONITOR_LINK_COMPLETED,
     };
 
-    uint32_t        localId_;
-    std::string     netInstId_;
-    s32             deviceLogicId_{0};
+    uint32_t        myRankLocalId_;
+    std::string     myRankNetInstId_;
     ClusterUIDType  myRankUID_;
+    s32             deviceLogicId_{0};
 
     bool clusterMonitorThreadFlag_ = false;
     std::unique_ptr<std::thread> clusterMonitorThread_;

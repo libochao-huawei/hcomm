@@ -37,8 +37,7 @@ std::string ClusterMonitor::GetUID(const ClusterUIDType &uid) const
     return uid.id;
 }
 
-HcclResult ClusterMonitor::GetRemEndpointDescs(HcclComm comm,
-    std::map<uint32_t, std::vector<UIDContext>> &uidCtxs,
+HcclResult ClusterMonitor::GetRemEndpointDescs(HcclComm comm, std::map<uint32_t, std::vector<UIDContext>> &uidCtxs,
     std::vector<uint32_t> &netLayersVector)
 {
     HCCL_INFO("CMTEST [%s] GetRemEndpointDescs begin.", __func__);
@@ -58,8 +57,8 @@ HcclResult ClusterMonitor::GetRemEndpointDescs(HcclComm comm,
     uint32_t netLayerNum = 0;
     CHK_RET(HcclRankGraphGetLayers(comm, &netLayers, &netLayerNum));
     if (netLayerNum == 0) {
-        HCCL_ERROR("[%s] no netLayer in RankGraph", __func__);
-        return HCCL_E_NOT_SUPPORT;
+        HCCL_WARNING("[%s] no netLayer in RankGraph", __func__);
+        return HCCL_SUCCESS;
     }
     netLayersVector.assign(netLayers, netLayers + netLayerNum);
     std::sort(netLayersVector.begin(), netLayersVector.end());
@@ -78,15 +77,17 @@ HcclResult ClusterMonitor::GetRemEndpointDescs(HcclComm comm,
             }
             rankIdsSet.insert(rankId);
             auto *netInstance = rankGraph->GetNetInstanceByRankId(0, rankId); // 查询对应rankId在netLayer=0的netInsId
-            CHK_PTR_NULL(netInstance); // 有可能netInstance为空
+            if (netInstance == nullptr) {
+                continue; // 如果没有查询到netInstance，不报错，不把该rank加入needConnectRank，直接跳过该rank
+            }
             auto netInstanceId = netInstance->GetNetInstId();
             auto localId = rankGraph->GetLocalId(rankId); // 根据rank查localId
             ClusterUIDCxt uidcxt(netInstanceId, localId);
             ClusterUIDType uid = FormatUID(uidcxt);
             if (myRankId == rankId) {
                 myRankUID_ = uid;
-                localId_ = localId;
-                netInstId_ = netInstanceId;
+                myRankLocalId_ = localId;
+                myRankNetInstId_ = netInstanceId;
             }
             uid2FrameStatusMap_.insert(uid, FrameStatus());
             commIdMap_[collComm->GetCommId()].insert(std::make_pair(uid, false)); //初始状态均为未连接，包含自己
@@ -147,9 +148,9 @@ HcclResult ClusterMonitor::InsertClusterMonitorCxt(HcclComm comm, UIDContext rem
     CommLink *links = nullptr;
     uint32_t linkNum = 0;
     CHK_RET(HcclRankGraphGetLinks(comm, netLayer, myRankId, remoteRank, &links, &linkNum));
-    if (linkNum == 0) { // TODO:如果没有查询到任何链接，是否需要报错？
-        HCCL_ERROR("[%s]no links betwen myRank[%u] to remoteRankId[%u]", __func__, myRankId, remoteRank);
-        return HCCL_E_PARA;
+    if (linkNum == 0) { // 如果没有查询到任何链接，不报错，不把该link加入needConnectRank，直接返回成功
+        HCCL_INFO("[%s] no link between myRank[%u] and remoteRank[%u]", __func__, myRankId, remoteRank);
+        return HCCL_SUCCESS;
     }
     // 查询该socket链接的server端监听的端口（监听方的选择策略需要跟SocketConfig中保持一致）
     Hccl::IpAddress localIpAddr{};
@@ -178,7 +179,7 @@ HcclResult ClusterMonitor::InsertClusterMonitorCxt(HcclComm comm, UIDContext rem
     socketDesc.remoteEndpoint = links[0].dstEndpointDesc;
     ClusterMonitorSocketCtx ctx(socketDesc, newConn);
     needConnectRank.insert(std::make_pair(remoteUID, ctx));
-    HCCL_INFO("CMTEST [%s] InsertClusterMonitorCxt for remoteUID[%s], role[%s], localEndpoint[commAddr:0x%llx], "
+    HCCL_DEBUG("[%s] InsertClusterMonitorCxt for remoteUID[%s], role[%s], localEndpoint[commAddr:0x%llx], "
         "remoteEndpoint[commAddr:0x%llx], tag[%s], listenPort [%u], newConn[%d]", __func__, GetUID(remoteUID).c_str(),
         (socketDesc.role == HcommSocketRole::HCOMM_SOCKET_ROLE_SERVER) ? "SERVER" : "CLIENT",
         hcomm::logger::CommAddrLogger::ToString(socketDesc.localEndpoint.commAddr).c_str(),
@@ -220,7 +221,7 @@ HcclResult ClusterMonitor::GetConnectRank(HcclComm comm,
     std::map<ClusterUIDType, ClusterMonitorSocketCtx> &needConnectRank,
     std::map<uint32_t, std::vector<UIDContext>> uidCtxs, std::vector<uint32_t> &netLayersVector)
 {
-    if (netLayersVector.empty()) {
+    if (netLayersVector.empty() || uidCtxs.empty()) {
         HCCL_INFO("CMTEST [%s] netLayersVector is empty, no netLayer in RankGraph", __func__);
         return HCCL_SUCCESS;
     }
@@ -228,7 +229,7 @@ HcclResult ClusterMonitor::GetConnectRank(HcclComm comm,
     std::vector<UIDContext> layer0CommLinks; // 需要存入UIDContext，待后续查出对应的port/remoteUID
     // 先处理netLayer=0，按照netLayer=0全局唯一的localId升序排列，在level0不需要考虑host网卡的场景，host网卡只会在level1及以上的层级
     std::sort(uidCtxs[0].begin(), uidCtxs[0].end(), [&](const UIDContext& a, const UIDContext& b) {
-        return a.localId < b.localId; // map在最开始加入的时候就按照localId
+        return a.localId < b.localId;
     });
     for (auto it = uidCtxs[0].begin(); it != uidCtxs[0].end(); ++it) {
         layer0CommLinks.push_back(*it); // netLayer为0
@@ -237,9 +238,12 @@ HcclResult ClusterMonitor::GetConnectRank(HcclComm comm,
 
     // 从layer=1开始，将commLinks存入vector中，找到所有与当前localId相同的节点
     std::vector<UIDContext> highLayerCommLinks;
-    for (uint32_t netLayer = 1; netLayer < netLayersVector.size(); netLayer++) {
+    for (uint32_t netLayer : netLayersVector) {
+        if (netLayer == 0) {
+            continue; // netLayer=0的节点已经处理过了
+        }
         for (auto it = uidCtxs[netLayersVector[netLayer]].begin(); it != uidCtxs[netLayersVector[netLayer]].end(); ++it) {
-            if (it->localId == this->localId_) {
+            if (it->localId == this->myRankLocalId_) {
                 // 在跨server、跨pod、跨超节点的场景，统一拿到local，打平处理为同一个平面，类似layer=0的情况
                 // 由于A5上的devPhyId在64卡的场景下8个[0,7]，所以使用localId
                 highLayerCommLinks.push_back(*it);
@@ -564,7 +568,9 @@ void ClusterMonitor::MonitorThread()
             for (auto iter = uid2SocketRefMap_.begin(); iter != uid2SocketRefMap_.end(); iter++) {
                 ClusterUIDType rem = iter->first;
                 uid2SocketRefMap_[rem].lostNum++;
-                SendFrame(rem, myRankUID_, myRankUID_, ClusterMonitorStatus::CLUSTER_MONITOR_OK); // 先发送心跳帧，触发对端回复，才能准确地判断链路状态
+                // 先发送心跳帧，触发对端回复，才能准确地判断链路状态
+                ret = SendFrame(rem, myRankUID_, myRankUID_, ClusterMonitorStatus::CLUSTER_MONITOR_OK);
+                ret == HCCL_E_INTERNAL ? errorSocket_.push_back(rem) : void(0);
             }
             DelErrorSocket(); // 处理socket错误的句柄
         }
@@ -821,7 +827,7 @@ void ClusterMonitor::GetCqeErrInfoFromTaskException(u32 RemoteLocalId, uint16_t 
 
     s32 stringRet = snprintf_s(errorLinkLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE- 1U,
         "localInfo{local instanceId[%s],LocalId[%d],localEid[%s]},remotrInfo{remote instanceId[%s],remoteLocalId[%d],remoteEid[%s]}",
-        netInstId_.c_str(),localId_,  CqeErrInfo_.CqeLocalEid.c_str(), CqeErrInfo_.CqeRemoteInsId.c_str(), CqeErrInfo_.CqeRemoteLocalId,
+        myRankNetInstId_.c_str(),myRankLocalId_,  CqeErrInfo_.CqeLocalEid.c_str(), CqeErrInfo_.CqeRemoteInsId.c_str(), CqeErrInfo_.CqeRemoteLocalId,
         CqeErrInfo_.CqeRemoteEid.c_str());
     CHK_PRT_CONT( stringRet < 0, HCCL_ERROR("[ClusterMonitor][GetCqeErrInfoFromTaskException]snprintf error when log cqe error info") );  
     
