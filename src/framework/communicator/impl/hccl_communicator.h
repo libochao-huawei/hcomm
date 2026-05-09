@@ -58,7 +58,6 @@
 #include "new/hccl_dispatcher_ctx.h"
 #include "rank_graph.h"
 #include "symmetric_memory/symmetric_memory.h"
-#include "my_rank.h"
 #include "hccl_dpu_manager.h"
 #include "../../../legacy/unified_platform/resource/buffer/dev_buffer.h"
 
@@ -1133,7 +1132,6 @@ private:
 #ifndef CCL_KERNEL_AICPU
     RankGraphV1 rankGraph_;
     std::unique_ptr<DpuManager> dpuManager_;
-    std::unique_ptr<MyRank> myRank_{nullptr};
 #endif
     uint32_t myRankConnectMode_{0}; // 0: normal mode 1: host nic对接device nic异构模式
 
