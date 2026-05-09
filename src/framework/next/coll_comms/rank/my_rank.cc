@@ -19,6 +19,7 @@
 #include "channel_process.h"
 #include "ccu_primitives.h"
 #include "ccu_log.h"
+#include "dlprof_function.h"
 
 using namespace hcomm;
 
