@@ -30,6 +30,8 @@
 
 #include "ccu_common.h"
 
+#include "hcomm_adapter_rts.h"
+
 CcuResult HcommCcuInsCreate(const void *resDesc, uint32_t descNum, CcuInsHandle *insHandle)
 {
     CCU_CHK_PTR_NULL(resDesc);
@@ -210,4 +212,41 @@ CcuResult HcommCcuKernelLaunch(ThreadHandle threadHandle,
     HCCL_INFO("[%s] success, take time [%lld]us.",
         __func__, DURATION_US(TIME_NOW() - startus));
     return CcuResult::CCU_SUCCESS;
+}
+
+constexpr uint64_t SetBits(uint16_t end)
+{
+    return ((uint64_t(1) << (end + 1)) - uint64_t(1));
+}
+
+inline uint64_t CcuCombineTokenInfo(uint64_t tokenId, uint64_t tokenValue, uint64_t tokenValid)
+{
+    constexpr uint16_t tokenValidBitNum   = 1;
+    constexpr uint16_t tokenValidShiftBit = 52;
+    constexpr uint16_t tokenIdBitNum      = 20;
+    constexpr uint16_t tokenIdShiftBit    = 32;
+    constexpr uint16_t tokenValueBitNum   = 32;
+    constexpr uint16_t tokenValueShiftBit = 0;
+    return ((tokenValid & SetBits(tokenValidBitNum)) << tokenValidShiftBit)
+           | ((tokenId & SetBits(tokenIdBitNum)) << tokenIdShiftBit)
+           | ((tokenValue & SetBits(tokenValueBitNum)) << tokenValueShiftBit);
+}
+
+HcommResult HcommCcuGetMemToken(uint64_t srcVa, uint64_t size, uint64_t *tokenInfo)
+{
+    CHK_PTR_NULL(tokenInfo);
+
+    if (srcVa == 0 || size == 0) {
+        HCCL_ERROR("[%s] failed, srcVa[%llx] size[%llu] should not be 0.",
+            __func__, srcVa, size);
+        return HcclResult::HCCL_E_PARA;
+    }
+    // 注意token信息属于安全信息，均不允许打印
+    hcomm::rtMemUbTokenInfo info{};
+    info.va = srcVa;
+    info.size = size;
+    CHK_RET(hcomm::RtsUbDevQueryInfo(QUERY_PROCESS_TOKEN, info));
+    *tokenInfo = CcuCombineTokenInfo(info.tokenId, info.tokenValue, 1);
+
+    return HcclResult::HCCL_SUCCESS;
 }
