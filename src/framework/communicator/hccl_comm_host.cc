@@ -282,6 +282,12 @@ namespace hccl
         return communicator_->GetEndpointDesc(netLayer, topoInstId, descNum, endpointDesc);
     }
 
+    HcclResult hcclComm::GetEndpointInfo(uint32_t rankId, const EndpointDesc *endPointDesc, EndpointAttr endpointAttr,
+                                         uint32_t infoLen, void *info)
+    {
+        return communicator_->GetEndpointInfo(rankId, endPointDesc, endpointAttr, infoLen, info);
+    }
+
     HcclResult hcclComm::GetRankGraph(GraphType type, void **graph, uint32_t *len)
     {
         return communicator_->GetRankGraph(type, graph, len);

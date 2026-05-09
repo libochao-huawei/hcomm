@@ -32,7 +32,7 @@
     #include "coll_comm.h"
 #endif
 
-namespace hccl {
+nahespace hccl {
 /* * 默认的rank_table, ranklist为空数组;  后续HCCL可以用于判断是否走新分支 */
 extern RankTable_t g_hcclDefaultRankTable;
 
@@ -412,6 +412,8 @@ public:
     HcclResult GetRanksByTopoInst(uint32_t netLayer, uint32_t topoInstId, uint32_t **ranks, uint32_t *rankNum);
     HcclResult GetEndpointNum(uint32_t netLayer, uint32_t topoInstId, uint32_t *num);
     HcclResult GetEndpointDesc(uint32_t netLayer, uint32_t topoInstId, uint32_t *descNum, EndpointDesc *endpointDesc);
+    HcclResult GetEndpointInfo(uint32_t rankId, const EndpointDesc *endPointDesc, EndpointAttr endpointAttr,
+                               uint32_t infoLen, void *info);
     HcclResult GetHeterogMode(HcclHeterogMode *mode);
     // for group
     HcclResult SetGroupMode(bool isGroup);

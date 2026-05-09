@@ -471,6 +471,8 @@ public:
     HcclResult GetRanksByTopoInst(uint32_t netLayer, uint32_t topoInstId, uint32_t **ranks, uint32_t *rankNum);
     HcclResult GetEndpointNum(uint32_t netLayer, uint32_t topoInstId, uint32_t *num);
     HcclResult GetEndpointDesc(uint32_t netLayer, uint32_t topoInstId, uint32_t *descNum, EndpointDesc *endpointDesc);
+    HcclResult GetEndpointInfo(uint32_t rankId, const EndpointDesc *endPointDesc, EndpointAttr endpointAttr,
+                               uint32_t infoLen, void *info);
 
     HcclResult GetRankGraph(GraphType type, void **graph, uint32_t *len);
     void* GetRankGraphV1();  // 获取V1 RankGraph指针，用于CollComm初始化

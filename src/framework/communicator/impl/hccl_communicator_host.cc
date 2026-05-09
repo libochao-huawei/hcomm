@@ -8998,6 +8998,12 @@ namespace hccl
         return rankGraph_.GetEndpointDesc(netLayer, topoInstId, descNum, endpointDesc);
     }
 
+    HcclResult HcclCommunicator::GetEndpointInfo(uint32_t rankId, const EndpointDesc *endPointDesc, EndpointAttr endpointAttr,
+                                 uint32_t infoLen, void *info)
+    {
+        return rankGraph_.GetEndpointInfo(rankId, endPointDesc, endpointAttr, infoLen, info);
+    }
+
     HcclResult HcclCommunicator::GetRankGraph(GraphType type, void **graph, uint32_t *len)
     {
         return rankGraph_.GetRankGraphInfo(type, graph, len);
