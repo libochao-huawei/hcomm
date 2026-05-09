@@ -3552,3 +3552,34 @@ TEST_F(TryFastCcuLaunchTest, Ut_TryFastCcuLaunch_When_OpNoSupportFastLaunch_Expe
     // then
     EXPECT_EQ(fakeComm.TryFastCcuLaunch(fakeOpParams, fakeStreamPtr), false);
 }
+
+TEST_F(TryFastCcuLaunchTest, Ut_TryFastCcuLaunch_AllToAllV_Mesh1D_RealCall_RefreshArgs)
+{
+    // 配置 ALLTOALLV
+    fakeOpParams.opType = OpType::ALLTOALLV;
+
+    // 构造合法的 AllToAllV 数据（必须填，否则会挂）
+    std::vector<u64> sendCounts = {10, 10, 10};
+    std::vector<u64> sdispls    = {0, 10, 20};
+    std::vector<u64> rdispls    = {0, 10, 20};
+    
+    fakeOpParams.all2AllVDataDes.sendCounts = sendCounts.data();
+    fakeOpParams.all2AllVDataDes.sdispls    = sdispls.data();
+    fakeOpParams.all2AllVDataDes.rdispls    = rdispls.data();
+    fakeOpParams.all2AllVDataDes.sendType   = DataType::FP32;
+    fakeOpParams.all2AllVDataDes.recvType   = DataType::FP32;
+
+    // 保存正确的 INST TYPE，确保会调用 RefreshArgs
+    fakeComm.saveCCUParams({}, {}, 0, CcuInstType::CCU_ALLTOALLV_MESH_1D_DIRECT, true);
+
+    // 执行！会真实跑进：
+    // TryFastCcuLaunch
+    //   -> ExecuteFastCcuLaunch
+    //     -> FillAllToAllVArgs
+    //       -> CcuContextAllToAllVMesh1D::RefreshArgs()
+    bool ret = fakeComm.TryFastCcuLaunch(fakeOpParams, fakeStreamPtr);
+
+    // 期望成功
+    EXPECT_TRUE(ret);
+}
+
