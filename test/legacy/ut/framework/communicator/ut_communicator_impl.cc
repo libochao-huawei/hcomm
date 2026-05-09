@@ -3552,3 +3552,11 @@ TEST_F(TryFastCcuLaunchTest, Ut_TryFastCcuLaunch_When_OpNoSupportFastLaunch_Expe
     // then
     EXPECT_EQ(fakeComm.TryFastCcuLaunch(fakeOpParams, fakeStreamPtr), false);
 }
+
+TEST_F(TryFastCcuLaunchTest, Ut_TryFastCcuLaunch_When_Alltoall_Expect_ReturnFalse)
+{
+    // when
+    fakeOpParams.opType = OpType::ALLTOALLV;
+    // then
+    EXPECT_EQ(fakeComm.TryFastCcuLaunch(fakeOpParams, fakeStreamPtr), false);
+}
