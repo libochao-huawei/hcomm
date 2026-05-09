@@ -39,14 +39,15 @@ AicpuGetErrStatusVecCallBack g_AicpuGetErrStatusVecCallBack = nullptr;
 void RegisterGetAicpuCqeErrInfoCallBackHcomm(GetAicpuCqeErrInfoCallBackHcomm p1)
 {
     g_getAicpuCqeErrInfoCallBack = p1;
-    //HCCL_INFO("RegisterGetAicpuCqeErrInfoCallBackHcomm success, callback[%p]", callback);
     return;
 }
 
-void TaskExceptionHost::ClusterMoniterGetAicpuCqeErrInfo(u32 RemoteLocalId, u32 LocDeviceId, uint16_t status, string LocalEid, string RemoteEid, string RemoteInsId)
+void TaskExceptionHost::ClusterMoniterGetAicpuCqeErrInfo(u32 remoteLocalId, u32 locDeviceId, uint16_t status, string localEid, string remoteEid, string remoteInsId)
 {
     if (g_getAicpuCqeErrInfoCallBack != nullptr) {
-        g_getAicpuCqeErrInfoCallBack(RemoteLocalId, LocDeviceId, status, LocalEid, RemoteEid, RemoteInsId);
+        g_getAicpuCqeErrInfoCallBack(remoteLocalId, locDeviceId, status, localEid, remoteEid, remoteInsId);
+    } else {
+        HCCL_RUN_WARNING("[ClusterMoniterGetAicpuCqeErrInfo]g_getAicpuCqeErrInfoCallBack is nullptr.");
     }
     return;
 }
@@ -62,7 +63,7 @@ std::vector<std::string> AicpuGetErrStatusVec(s32 deviceLogicID)
     if (g_AicpuGetErrStatusVecCallBack != nullptr) {
         return g_AicpuGetErrStatusVecCallBack(deviceLogicID);
     } else {
-        HCCL_RUN_WARNING("[GetErrStatusVec]g_AicpuGetErrStatusVecCallBack is nullptr.");
+        HCCL_RUN_WARNING("[AicpuGetErrStatusVec]g_AicpuGetErrStatusVecCallBack is nullptr.");
     }
     return std::vector<std::string>();
 }
@@ -221,30 +222,30 @@ std::string TaskExceptionHost::GetGroupRankInfo(const Hccl::TaskInfo& taskInfo)
         communicator->GetCommId().c_str(), communicator->GetRankSize(), communicator->GetMyRankId());
 }
 
-void TaskExceptionHost::GetAicpuCqeErrRemoteLocalIdByRankId(hccl::CollComm* collComm, uint32_t rankid, u32 &RemoteLocalId)
+void TaskExceptionHost::GetAicpuCqeErrRemoteLocalIdByRankId(hccl::CollComm* collComm, uint32_t rankid, u32 &remoteLocalId)
 {
     if (collComm == nullptr || rankid == INVALID_VALUE_RANKID) {
         HCCL_ERROR("[GetAicpuCqeErrRemoteLocalIdByRankId]collComm is nullptr or rankId is invalid, rankId[%u]", rankid);
-        RemoteLocalId = INVALID_VALUE_RANKID;
+        remoteLocalId = INVALID_VALUE_RANKID;
         return;
     }
 
     Hccl::HcclCommunicator * commV2 = static_cast<Hccl::HcclCommunicator *>(collComm->GetCommunicatorV2());
     if (commV2 == nullptr) {
         HCCL_ERROR("[GetAicpuCqeErrRemoteLocalIdByRankId]commV2 is nullptr, rankId[%u]", rankid);
-        RemoteLocalId = INVALID_VALUE_RANKID;
+        remoteLocalId = INVALID_VALUE_RANKID;
         return;
     }
     void *rankGraph = nullptr;
     HcclResult ret =commV2->GetRankGraphV2(rankGraph);
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[GetAicpuCqeErrRemoteLocalIdByRankId]GetRankGraphV2 failed, rankId[%u], ret[%d]", rankid, ret);
-        RemoteLocalId = INVALID_VALUE_RANKID;
+        remoteLocalId = INVALID_VALUE_RANKID;
         return;
     }
     Hccl::RankGraph *rankGraphv2 = static_cast<Hccl::RankGraph *>(rankGraph);
     u32 LocalId = rankGraphv2->GetLocalId(rankid);
-    RemoteLocalId = LocalId;
+    remoteLocalId = LocalId;
     return;
 }
 
@@ -284,11 +285,11 @@ void TaskExceptionHost::GetAicpuCqeErrNetInstanceByRankId(hccl::CollComm* collCo
 void TaskExceptionHost::GetAicpuCqeErrInfo(rtExceptionInfo_t* exceptionInfo, const Hccl::ErrorMessageReport &errorMessage, const Hccl::TaskInfo& taskInfo)
 {
     hccl::CollComm *collComm = static_cast<hccl::CollComm*>(taskInfo.dfxOpInfo_->comm_);
-    u32 RemoteLocalId = INVALID_VALUE_RANKID;
-    GetAicpuCqeErrRemoteLocalIdByRankId(collComm, errorMessage.remoteUserRank, RemoteLocalId);
+    u32 remoteLocalId = INVALID_VALUE_RANKID;
+    GetAicpuCqeErrRemoteLocalIdByRankId(collComm, errorMessage.remoteUserRank, remoteLocalId);
     std::string netInstanceId = "";
     GetAicpuCqeErrNetInstanceByRankId(collComm, errorMessage.remoteUserRank, netInstanceId);
-    ClusterMoniterGetAicpuCqeErrInfo(RemoteLocalId, exceptionInfo->deviceid, errorMessage.ubCqeStatus, errorMessage.locEid.Describe(), errorMessage.rmtEid.Describe(), netInstanceId); // 上报AICPU CQE错误信息到集群监控
+    ClusterMoniterGetAicpuCqeErrInfo(remoteLocalId, exceptionInfo->deviceid, errorMessage.ubCqeStatus, errorMessage.locEid.Describe(), errorMessage.rmtEid.Describe(), netInstanceId); // 上报AICPU CQE错误信息到集群监控
     return;
 }
 

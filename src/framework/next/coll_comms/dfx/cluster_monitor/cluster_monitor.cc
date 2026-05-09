@@ -795,19 +795,19 @@ void ClusterMonitor::ProcessExceptionEvent()
 }
 
 
-void GetCqeErrInfoFromTaskException(unsigned int RemoteLocalIdId, unsigned int LocDeviceId, unsigned short int status, std::string LocalEid, std::string RemoteEid, std::string RemoteInsId)
+void GetCqeErrInfoFromTaskException(unsigned int remoteLocalIdId, unsigned int locDeviceId, unsigned short int status, std::string localEid, std::string remoteEid, std::string remoteInsId)
 {
-    return hccl::CollCommMgr::GetInstance()->GetClusterMonitor(LocDeviceId).GetCqeErrInfoFromTaskException(RemoteLocalIdId, status, LocalEid, RemoteEid, RemoteInsId);
+    return hccl::CollCommMgr::GetInstance()->GetClusterMonitor(locDeviceId).GetCqeErrInfoFromTaskException(remoteLocalIdId, status, localEid, remoteEid, remoteInsId);
 }
 
-void ClusterMonitor::GetCqeErrInfoFromTaskException(u32 RemoteLocalId, uint16_t status, std::string LocalEid, std::string RemoteEid, std::string RemoteInsId)
+void ClusterMonitor::GetCqeErrInfoFromTaskException(u32 remoteLocalId, uint16_t status, std::string localEid, std::string remoteEid, std::string remoteInsId)
 {
-    CqeErrInfo_.CqeRemoteLocalId = RemoteLocalId;
-    CqeErrInfo_.Cqestatus = status;
-    CqeErrInfo_.CqeLocalEid = LocalEid;
-    CqeErrInfo_.CqeRemoteEid = RemoteEid;
-    CqeErrInfo_.CqeRemoteInsId = RemoteInsId;
-    ClusterUIDCxt remoteUIDcxt(RemoteInsId, RemoteLocalId);
+    CqeErrInfo_.cqeRemoteLocalId = remoteLocalId;
+    CqeErrInfo_.cqeStatus = status;
+    CqeErrInfo_.cqeLocalEid = localEid;
+    CqeErrInfo_.cqeRemoteEid = remoteEid;
+    CqeErrInfo_.cqeRemoteInsId = remoteInsId;
+    ClusterUIDCxt remoteUIDcxt(remoteInsId, remoteLocalId);
     ClusterUIDType localUID = myRankUID_;
     ClusterUIDType remoteUID = FormatUID(remoteUIDcxt);
     SetStatus(localUID, remoteUID, ClusterMonitorStatus::CLUSTER_MONITOR_CQE_ERR, true);
@@ -822,16 +822,16 @@ void ClusterMonitor::GetCqeErrInfoFromTaskException(u32 RemoteLocalId, uint16_t 
     char errorLinkLogBuffer[LOG_TMPBUF_SIZE];
 
     s32 stringRet = snprintf_s(errorLinkLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE- 1U,
-        "localInfo{local instanceId[%s],LocalId[%d],localEid[%s]},remotrInfo{remote instanceId[%s],remoteLocalId[%d],remoteEid[%s]}",
-        myRankNetInstId_.c_str(),myRankLocalId_,  CqeErrInfo_.CqeLocalEid.c_str(), CqeErrInfo_.CqeRemoteInsId.c_str(), CqeErrInfo_.CqeRemoteLocalId,
-        CqeErrInfo_.CqeRemoteEid.c_str());
+        "localInfo{local instanceId[%s], LocalId[%d], localEid[%s]}, remoteInfo{remote instanceId[%s], remoteLocalId[%d], remoteEid[%s]}",
+        myRankNetInstId_.c_str(), myRankLocalId_,  CqeErrInfo_.cqeLocalEid.c_str(), CqeErrInfo_.cqeRemoteInsId.c_str(), CqeErrInfo_.cqeRemoteLocalId,
+        CqeErrInfo_.cqeRemoteEid.c_str());
     CHK_PRT_CONT( stringRet < 0, HCCL_ERROR("[ClusterMonitor][GetCqeErrInfoFromTaskException]snprintf error when log cqe error info") );  
     
     if (now == nullptr) {
-        HCCL_ERROR("[%s][%s][%s]localtime fail, cqe error status[%u], %s", LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_CQE_ERROR.c_str(), CqeErrInfo_.Cqestatus, errorLinkLogBuffer);
+        HCCL_ERROR("[%s][%s][%s]localtime fail, cqe error status[%u], %s", LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_CQE_ERROR.c_str(), CqeErrInfo_.cqeStatus, errorLinkLogBuffer);
     } else {
         HCCL_ERROR("[%s][%s][%s]cqe error status[%u], time:[%04u-%02d-%02d %02d:%0d:%02d.%06u], %s", LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_CQE_ERROR.c_str(), 
-        CqeErrInfo_.Cqestatus, now->tm_year + 1900, now->tm_mon + 1, now->tm_mday, now->tm_hour,
+        CqeErrInfo_.cqeStatus, now->tm_year + 1900, now->tm_mon + 1, now->tm_mday, now->tm_hour,
         now->tm_min, now->tm_sec, microseconds, errorLinkLogBuffer);
     }   
     return;
