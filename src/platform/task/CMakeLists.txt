@@ -23,6 +23,9 @@ if(TARGET hccl_plf)
         dispatcher_graph.cc
         ${src_list}
     )
+    target_include_directories(hccl_plf PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
 endif()
 
 if(TARGET hccd)
