@@ -15,6 +15,7 @@
 #include "dlhal_function_v2.h"
 #include "task_param.h"
 #include "kernel_param_lite.h"
+#include "adapter_error_manager_pub.h"
 
 #include "task_struct_v2.h"
 #include "task_scheduler_error.h"
@@ -158,6 +159,32 @@ uint16_t SwitchUBCqeErrCodeToTsErrCode(u32 cqeErrCode){
     }
 }
 
+static std::string GetSdmaErrorDesc(u32 errorCode)
+{
+    switch (errorCode) {
+        case RT_SDMA_DATAERR:
+            return "read HBM return ERROR";
+        case RT_SDMA_COMPERR:
+            return "write copy timeout or address decode ERROR";
+        case RT_SDMA_COMPDATAERR:
+            return "read copy timeout or read HBM return ERROR";
+        default:
+            return "unknown SDMA ERROR";
+    }
+}
+
+static void ReportSdmaError(u32 localDeviceId, u32 notifyId, u32 tsId, s32 userStreamId, u32 errorCode,
+    const std::string &remoteRankId, const std::string &groupRankContent)
+{
+    std::string baseInfo = "localDeviceId=" + std::to_string(localDeviceId);
+    std::string taskInfo = "notifyId= " + std::to_string(notifyId) + ", tsId=" + std::to_string(tsId) +
+        ", streamId=" + std::to_string(userStreamId) + ", error_code=" + std::to_string(errorCode) +
+        ", description=" + GetSdmaErrorDesc(errorCode);
+    RPT_INPUT_ERR(true, "EI0012", std::vector<std::string>({"remote_rankid", "base_information",
+        "task_information", "group_rank_content"}),
+        std::vector<std::string>({remoteRankId, baseInfo, taskInfo, groupRankContent}));
+}
+
 HcclResult SendTaskExceptionByMBox(const u32 localDeviceId, const u32 notifyId, const u32 tsId,
     const s32 userStreamId, const rtLogicCqReport_t* exceptionInfo)
 {
@@ -226,6 +253,14 @@ HcclResult SendTaskExceptionByMBox(CommunicatorImplLite *aicpuComm, const rtLogi
         devPhyId, localDeviceId);
     
     CHK_RET(SendTaskExceptionByMBox(localDeviceId, notifyId, 0, aicpuComm->GetUserStreamId(), exceptionInfo));
+
+    if (exceptionInfo->errorType != 1) {
+        std::string remoteRankId = std::to_string(aicpuComm->GetMyRank());
+        std::string groupRankContent = "group:[" + aicpuComm->GetId() + "], rankSize[" +
+            std::to_string(aicpuComm->GetRankSize()) + "], rankId[" + std::to_string(aicpuComm->GetMyRank()) + "]";
+        ReportSdmaError(localDeviceId, notifyId, 0, aicpuComm->GetUserStreamId(), exceptionInfo->errorCode,
+            remoteRankId, groupRankContent);
+    }
     return HCCL_SUCCESS;
 }
 
