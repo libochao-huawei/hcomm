@@ -63,6 +63,7 @@
 #include "adapter_error_manager_pub.h"
 #include "ccu_context_all_to_all_v_mesh1d.h"
 #include "topo_addr_info.h"
+#include "aicpu/launch_device.h"
 
 namespace Hccl {
 constexpr u64 HCCL_CCL_COMM_FIXED_CALC_BUFFER_SIZE = (1 * 1024 * 1024); // 指定bufferSize的单位为MB
@@ -657,7 +658,7 @@ HcclResult CommunicatorImpl::OffloadResourcePre(std::string &opTag, const CollOp
 }
 
 HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, void *stream)
-{
+{FUNCTION_TRACE;
     try {
         isLoadOp = true;
         CHK_RET(CheckCommStatus());

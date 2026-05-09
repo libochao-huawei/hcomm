@@ -10,6 +10,9 @@
 #include "coll_comm_aicpu_destroy_func.h"
 #include "aicpu_indop_process.h"
 #include "read_write_lock.h"
+#ifdef CCL_KERNEL_AICPU
+#include "timer.h"
+#endif
 
 namespace hccl {
 CollCommAicpuDestroyFunc &CollCommAicpuDestroyFunc::GetInstance()
@@ -56,6 +59,11 @@ HcclResult CollCommAicpuDestroyFunc::Process()
         }
         destroyComm.push_back(aicpuComm->GetIdentifier());
         CHK_RET(aicpuComm->BackGroundSetStatus(Hccl::KfcStatus::DESTROY_AICPU_COMM_DONE));
+
+        #ifdef CCL_KERNEL_AICPU
+            HcclTimerDumperAICPU::GetInstance().DumpTimerLogs();
+        #endif
+
         HCCL_RUN_INFO("[%s]group[%s] Recv DESTROY_AICPU_COMM cmd and set DESTROY_AICPU_COMM_DONE",
             __func__, aicpuComm->GetIdentifier().c_str());
     }

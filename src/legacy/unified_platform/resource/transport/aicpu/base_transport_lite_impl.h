@@ -165,7 +165,7 @@ public:
     HcclResult SetAddTaskInfoCallback(std::function<HcclResult(u32, u32, const TaskParam&, u64)> callback)
     {
         CHK_PTR_NULL(callback);
-        newCallback_ = callback;
+        newCallback_ = nullptr;
         return HCCL_SUCCESS;
     }
 protected:

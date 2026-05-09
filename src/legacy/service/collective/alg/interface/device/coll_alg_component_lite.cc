@@ -16,6 +16,11 @@
 #include "execute_selector.h"
 #include "coll_alg_component_lite.h"
 
+#ifdef CCL_KERNEL_AICPU
+#include "timer.h"
+#define FUNCTION_TRACE FUNCTION_TRACE_AICPU
+#endif
+
 namespace Hccl {
 
 void CollAlgComponentLite::EnableDetour(bool enableDetour)
@@ -98,7 +103,7 @@ HcclResult CollAlgComponentLite::Orchestrate(const CollAlgOperator &op, const st
 
 HcclResult CollAlgComponentLite::Orchestrate(const CollAlgOperator &op, const std::string &algName,
                                              const AlgTopoInfo &algTopoInfo, InsQuePtr queue)
-{
+{FUNCTION_TRACE;
     HCCL_DEBUG("[CollAlgComponentLite] Orchestrate Mode: Instruction.");
     bool isAlltoAll = (op.opType == OpType::ALLTOALL) || (op.opType == OpType::ALLTOALLV) || (op.opType == OpType::ALLTOALLVC);
     if ((rankSize_ == 1) && (!isAlltoAll)) {

@@ -228,7 +228,10 @@ HcclResult AicpuTsThread::LocalNotifyRecord(uint32_t notifyId) const
 
     CHK_RET(pImpl_->NotifyRecordLoc(notifyId));
 
-    CHK_RET(ReportAicpuNotifyRecordTask(notifyId, beginTime, taskId, streamLite->GetSqId()));
+    (void)beginTime;
+    (void)taskId;
+    (void)streamLite;
+    // CHK_RET(ReportAicpuNotifyRecordTask(notifyId, beginTime, taskId, streamLite->GetSqId()));
     return HCCL_SUCCESS;
 }
 
@@ -248,7 +251,10 @@ HcclResult AicpuTsThread::LocalNotifyWait(uint32_t notifyId, uint32_t timeout) c
 
     CHK_RET(pImpl_->NotifyWait(notifyId, timeout));
 
-    CHK_RET(ReportAicpuNotifyWaitTask(notifyId, beginTime, taskId, streamLite->GetSqId()));
+    (void)beginTime;
+    (void)taskId;
+    (void)streamLite;
+    // CHK_RET(ReportAicpuNotifyWaitTask(notifyId, beginTime, taskId, streamLite->GetSqId()));
     
     return HCCL_SUCCESS;
 }
@@ -275,7 +281,13 @@ HcclResult AicpuTsThread::LocalProcess(
         u32 taskId = rtsq->GetTaskId();
 
         CHK_RET(op(dstAddr + doneSize, srcAddr + doneSize, realSize));
-        CHK_RET(reportOp(dstByte + doneSize, srcByte + doneSize, realSize, beginTime, taskId, streamLite->GetSqId()));
+        (void)reportOp;
+        (void)dstByte;
+        (void)srcByte;
+        (void)beginTime;
+        (void)taskId;
+        (void)streamLite;
+        // CHK_RET(reportOp(dstByte + doneSize, srcByte + doneSize, realSize, beginTime, taskId, streamLite->GetSqId()));
 
         doneSize += realSize;
         remainSize -= realSize;
@@ -291,7 +303,13 @@ HcclResult AicpuTsThread::LocalCopy(void *dst, const void *src, uint64_t size) c
             return pImpl_->SdmaCopy(dst, src, size);
         },
         [this](void *dst, const void *src, uint64_t size, uint64_t beginTime, uint32_t taskId, uint32_t sqId) {
-            return ReportAicpuLocalCopyTask(dst, src, size, beginTime, taskId, sqId);
+            (void)dst;
+            (void)src;
+            (void)size;
+            (void)beginTime;
+            (void)taskId;
+            (void)sqId;
+            return HCCL_SUCCESS; // ReportAicpuLocalCopyTask(dst, src, size, beginTime, taskId, sqId);
         });
 }
 
@@ -306,7 +324,15 @@ HcclResult AicpuTsThread::LocalReduce(
             return pImpl_->SdmaReduce(d, s, size, dataTypeRaw, reduceOpRaw);
         },
         [this, &dataType, &reduceOp](void *dst, const void *src, uint64_t size, uint64_t beginTime, uint32_t taskId,uint32_t sqId) {
-            return ReportAicpuLocalReduceTask(dst, src, size, dataType, reduceOp, beginTime, taskId, sqId);
+            (void)dst;
+            (void)src;
+            (void)size;
+            (void)dataType;
+            (void)reduceOp;
+            (void)beginTime;
+            (void)taskId;
+            (void)sqId;
+            return HCCL_SUCCESS; // ReportAicpuLocalReduceTask(dst, src, size, dataType, reduceOp, beginTime, taskId, sqId);
         });
 }
 

@@ -23,6 +23,7 @@ target_sources(hccl_v2 PRIVATE
     hccl_mc2_ex.cc
     aicpu_utils.cc
     launch_device.cc
+    timer.cc
 )
 
 if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
@@ -38,5 +39,6 @@ target_sources(ccl_kernel PRIVATE
     aicpu_mc2_handler.cc
     hccl_mc2_ex.cc
     aicpu_utils.cc
+    timer.cc
 )
 endif()

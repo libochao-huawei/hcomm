@@ -20,6 +20,10 @@
 #include "dlprof_function.h"
 #include "profiling_command_handle_lite.h"
 #endif
+#ifdef CCL_KERNEL_AICPU
+#include "timer.h"
+#define FUNCTION_TRACE FUNCTION_TRACE_AICPU
+#endif
 namespace Hccl {
 
 constexpr int KERNEL_SUCCESS_CODE = 0;
@@ -80,7 +84,7 @@ int CommunicatorImplLite::UpdateComm(HcclKernelParamLite *kernelParam)
 }
 
 std::shared_ptr<InsQueue> CommunicatorImplLite::GetInsQueue(HcclKernelParamLite *kernelParam)
-{
+{FUNCTION_TRACE;;
     if (kernelParam->oneSidedComm) {
         HCCL_INFO("CommunicatorImplLite::GetInsQueue oneSidedComm begin");
         CreateOneSidedComponentLite();
@@ -112,7 +116,7 @@ void CommunicatorImplLite::CreateCollAlgComponentLite()
 }
 
 void CommunicatorImplLite::UnfoldOp(HcclKernelParamLite *kernelParam)
-{
+{FUNCTION_TRACE;
     opIndex_ = kernelParam->comm.opIndex_;
     uint64_t beginTime = ProfGetCurCpuTimestamp();
     profilingReporterLite->UpdateProfStat();
@@ -258,7 +262,7 @@ bool CommunicatorImplLite::CheckNeedUpdateRes(HcclKernelParamLite *kernelParam)
 }
 
 void CommunicatorImplLite::UpdateRes(HcclKernelParamLite *kernelParam)
-{
+{FUNCTION_TRACE;
     if (CheckNeedUpdateRes(kernelParam)) {   
         HCCL_INFO("[UpdateRes] start, opMode[%s]", kernelParam->op.algOperator.opMode.Describe().c_str());
         RestoreOpRes(kernelParam->opTag, kernelParam->tagKey, kernelParam->binaryResAddr, kernelParam->binaryResSize);
