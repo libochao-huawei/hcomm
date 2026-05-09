@@ -32,6 +32,7 @@ if(TARGET ccl_kernel)
         ${CMAKE_CURRENT_SOURCE_DIR}/topo_matcher.cc
     )
     target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/inc
         ${CMAKE_CURRENT_SOURCE_DIR}/legacy
         ${CMAKE_CURRENT_SOURCE_DIR}/legacy/operator

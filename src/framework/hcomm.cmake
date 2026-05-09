@@ -39,12 +39,6 @@ target_link_options(hcomm PRIVATE
 )
 
 target_include_directories(hcomm PRIVATE
-    ${LEGACY_INCLUDE_LIST}
-
-    # framework 头文件
-    ${CMAKE_CURRENT_SOURCE_DIR}/inc
-    ${CMAKE_CURRENT_SOURCE_DIR}
-
     ${HCOMM_DIR}/include
     ${HCOMM_DIR}/include/hccl
     ${HCOMM_DIR}/pkg_inc
@@ -53,9 +47,24 @@ target_include_directories(hcomm PRIVATE
     ${HCOMM_DIR}/src/pub_inc
     ${HCOMM_DIR}/src/pub_inc/inner
     ${HCOMM_DIR}/src/pub_inc/new
+
+    # src/framework 头文件
+    ${HCOMM_DIR}/src/framework
+    ${HCOMM_DIR}/src/framework/inc
+
+    # src/common 头文件
     ${HCOMM_DIR}/src/common/debug/profiling/inc
     ${HCOMM_DIR}/src/common/debug/profiling/inc/host
     ${HCOMM_DIR}/src/common/debug/config
+
+    # src/algorithm 头文件
+    ${HCOMM_DIR}/src/algorithm/pub_inc
+    ${HCOMM_DIR}/src/algorithm/base/inc
+    ${HCOMM_DIR}/src/algorithm/base/alg_template
+    ${HCOMM_DIR}/src/algorithm/base/communicator
+
+    # src/legacy 头文件
+    ${LEGACY_INCLUDE_LIST}
 )
 
 if(BUILD_OPEN_PROJECT)
