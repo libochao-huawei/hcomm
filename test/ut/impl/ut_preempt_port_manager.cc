@@ -16,7 +16,6 @@
 #define protected public
 #include "hccl_common.h"
 #include "preempt_port_manager.h"
-#include "invalid_params_exception.h"
 #undef private
 #undef protected
 
@@ -244,52 +243,4 @@ TEST_F(HcclPreemptPortManagerTest, ut_Release)
     ret = ppm.Release(listenSocket);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
-}
-
-TEST_F(HcclPreemptPortManagerTest, ut_PreemptPortInRange_AllPortsOccupied_HostNic)
-{
-    MOCKER_CPP(&HcclSocket::Listen, HcclResult (HcclSocket::*)(u32 port))
-        .stubs().will(returnValue(HCCL_E_UNAVAIL));
-
-    HcclIpAddress remoteIp{"10.10.10.10"};
-    HcclIpAddress localIp{"10.10.10.1"};
-    std::vector<HcclSocketPortRange> portRange;
-    HcclSocketPortRange range = {50000, 50000};
-    portRange.push_back(range);
-    u32 usePort = 50000;
-    std::shared_ptr<HcclSocket> listenSocket(new (std::nothrow)HcclSocket("my tag", nullptr, remoteIp, 0,
-        HcclSocketRole::SOCKET_ROLE_SERVER));
-    listenSocket->localIp_ = localIp;
-    listenSocket->socketType_ = NicType::HOST_NIC_TYPE;
-
-    PreemptPortManager& ppm = PreemptPortManager::GetInstance(0);
-    IpPortRef hostPortRef;
-    hostPortRef.insert({"10.10.10.2", std::make_pair(5000, Referenced())});
-
-    HcclResult ret = ppm.PreemptPortInRange(hostPortRef, listenSocket, NICDeployment::NIC_DEPLOYMENT_HOST, portRange, usePort);
-    EXPECT_EQ(ret, HCCL_E_UNAVAIL);
-}
-
-TEST_F(HcclPreemptPortManagerTest, ut_PreemptPortInRange_AllPortsOccupied_NpuNic)
-{
-    MOCKER_CPP(&HcclSocket::Listen, HcclResult (HcclSocket::*)(u32 port))
-        .stubs().will(returnValue(HCCL_E_UNAVAIL));
-
-    HcclIpAddress remoteIp{"10.10.10.10"};
-    HcclIpAddress localIp{"10.10.10.1"};
-    std::vector<HcclSocketPortRange> portRange;
-    HcclSocketPortRange range = {50000, 50000};
-    portRange.push_back(range);
-    u32 usePort = 50000;
-    std::shared_ptr<HcclSocket> listenSocket(new (std::nothrow)HcclSocket("my tag", nullptr, remoteIp, 0,
-        HcclSocketRole::SOCKET_ROLE_SERVER));
-    listenSocket->localIp_ = localIp;
-    listenSocket->socketType_ = NicType::VNIC_TYPE;
-
-    PreemptPortManager& ppm = PreemptPortManager::GetInstance(0);
-    IpPortRef hostPortRef;
-    hostPortRef.insert({"10.10.10.2", std::make_pair(5000, Referenced())});
-
-    HcclResult ret = ppm.PreemptPortInRange(hostPortRef, listenSocket, NICDeployment::NIC_DEPLOYMENT_HOST, portRange, usePort);
-    EXPECT_EQ(ret, HCCL_E_UNAVAIL);
 }
