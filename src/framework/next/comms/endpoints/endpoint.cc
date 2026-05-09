@@ -7,15 +7,15 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- #include "endpoint_mgr.h"
- #include "endpoint.h"
- #include "aicpu_ts_roce_endpoint.h"
- #include "cpu_roce_endpoint.h"
- #include "urma_endpoint.h"
- #include "ub_mem_endpoint.h"
- #include "uboe_endpoint.h"
+#include "endpoint_mgr.h"
+#include "endpoint.h"
+#include "aicpu_ts_roce_endpoint.h"
+#include "cpu_roce_endpoint.h"
+#include "urma_endpoint.h"
+#include "ub_mem_endpoint.h"
+#include "uboe_endpoint.h"
 
- namespace hcomm{
+namespace hcomm {
 static bool IsProtocolSupported(CommProtocol protocol)
 {
     switch (protocol) {
@@ -43,7 +43,7 @@ HcclResult Endpoint::CreateEndpoint(const EndpointDesc &endpointDesc, std::uniqu
         return HCCL_E_PARA;
     }
 
-    if (!IsProtocolSupported(endpointDesc.protocol)){
+    if (!IsProtocolSupported(endpointDesc.protocol)) {
         HCCL_ERROR("[%s]endpointDesc.protocol [%d] is not supported.", __func__, endpointDesc.protocol);
     }
 
@@ -63,11 +63,11 @@ HcclResult Endpoint::CreateEndpoint(const EndpointDesc &endpointDesc, std::uniqu
         EXECEPTION_CATCH(endpointPtr = std::make_unique<AicpuTsRoceEndpoint>(endpointDesc), return HCCL_E_PTR);
     } else {
         endpointPtr = nullptr;
-        HCCL_ERROR("[%s] failed, endpointDesc.protocol [%d] and endpointDesc.loc.locType [%d] do not match.", 
-            __func__, endpointDesc.protocol, endpointDesc.loc.locType);
+        HCCL_ERROR("[%s] failed, endpointDesc.protocol [%d] and endpointDesc.loc.locType [%d] do not match.", __func__,
+            endpointDesc.protocol, endpointDesc.loc.locType);
         return HCCL_E_PARA;
     }
     return HCCL_SUCCESS;
 }
 
-}
+} // namespace hcomm
