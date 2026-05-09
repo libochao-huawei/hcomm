@@ -116,6 +116,7 @@ public:
     //参数加载类 相关接口
     CcuResult LoadArg(CcuVariableHandle varHandle, uint32_t argId);
     CcuResult LoadVar(uint64_t addr, CcuVariableHandle varHandle, uint32_t num);
+    CcuResult CcuLoadVarFromVarAddr(CcuVariableHandle addrHandle, CcuVariableHandle varHandle, uint32_t num);
     CcuResult StoreVar(uint64_t addr, CcuVariableHandle varHandle, uint32_t num);
 
     //Event信号同步类 相关接口
