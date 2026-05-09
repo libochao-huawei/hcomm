@@ -1,0 +1,51 @@
+# HcclRankGraphGetEndpointInfo
+
+## 产品支持情况
+
+- Ascend 950PR/Ascend 950DT：支持
+- Atlas A3 训练系列产品/Atlas A3 推理系列产品：不支持
+- Atlas A2 训练系列产品/Atlas A2 推理系列产品：不支持
+
+## 功能说明
+
+获取指定通信设备的拓扑属性信息。
+
+## 函数原型
+
+```c
+HcclResult HcclRankGraphGetEndpointInfo(HcclComm comm, uint32_t rankId, const EndpointDesc *endpointDesc, EndpointAttr endpointAttr, uint32_t infoLen, void *info)
+```
+
+## 参数说明
+
+| 参数名 | 输入/输出 | 描述 |
+| --- | --- | --- |
+| comm | 输入 | 通信域。<br>HcclComm类型的定义如下：<br>typedef void *HcclComm; |
+| rankId | 输入 | 需要查询的端点的所属的rank ID。 |
+| endpointDesc | 输入 | EndPoint描述符，为通过[HcclRankGraphGetEndpointDesc](HcclRankGraphGetEndpointDesc.md)接口获取到的“endPointDesc”。 |
+| endpointAttr | 输入 | 需要查询的EndPoint属性类型。<br>EndpointAttr类型的定义请参见[EndpointAttr](../../datatype_definition/EndpointAttr.md)。 |
+| infoLen | 输入 | 提供的info缓冲区大小（字节）。 |
+| info | 输出 | 存储属性信息的输出缓冲区指针。 |
+
+## 返回值
+
+[HcclResult](../../../comm_mgr_c/data_type_definition/HcclResult.md)：接口成功返回HCCL_SUCCESS，其他失败。
+
+## 约束说明
+
+无
+
+## 调用示例
+
+```c
+HcclComm comm;
+uint32_t netLayer = 0;
+uint32_t topoInstId = 0;
+uint32_t num = 0;
+HcclRankGraphGetEndpointNum(comm, netLayer, topoInstId, &num);
+uint32_t descNum = num;
+HcclRankGraphGetEndpointDesc(comm, netLayer, topoInstId, &descNum, endPointDesc);
+EndpointAttrBwCoeff bwCoeff{};
+uint32_t size = sizeof(EndpointAttrBwCoeff); //必须等于目标类型大小
+HcclRankGraphGetEndpointInfo(comm, rankId, endpointDesc, ENDPOINT_ATTR_BW_COEFF, size, &bwCoeff);
+```

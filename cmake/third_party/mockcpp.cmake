@@ -15,7 +15,7 @@ unset(MOCKCPP_INCLUDE CACHE)
 unset(MOCKCPP_STATIC_LIBRARY CACHE)
 
 set(MOCKCPP_FILE "mockcpp-2.7.tar.gz")
-set(MOCKCPP_URL "https://gitcode.com/cann-src-third-party/mockcpp/releases/download/v2.7-h4/${MOCKCPP_FILE}")
+set(MOCKCPP_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/mockcpp/mockcpp-2.7.tar.gz")
 set(MOCKCPP_PKG_PATH ${CANN_3RD_LIB_PATH}/${MOCKCPP_FILE})
 set(MOCKCPP_INSTALL_PATH ${CANN_3RD_LIB_PATH}/mockcpp)
 

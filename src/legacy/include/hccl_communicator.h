@@ -135,6 +135,7 @@ public:
     u32 GetDeviceLogicId() const;
     u32 GetRankInParentComm();
     HcclResult Mc2AiCpuStreamAllocAndGetV2(rtStream_t *aiCpuStream);
+    HcclResult GetStreamId(u32 &streamId);
  
 private:
     CommParams                        commParams;

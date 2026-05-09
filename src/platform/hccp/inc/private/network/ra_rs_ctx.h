@@ -140,7 +140,7 @@ struct CtxQpAttr {
             uint32_t tokenValue; /**< refer to urma_token_t; jfr_cfg->token_value */
             uint64_t tokenIdAddr; /**< NULL means unspecified */
             uint8_t priority; /**< the priority of JFS. services with low delay need set high priority. Range:[0-0xf] */
-            uint8_t rnrRetry; /**< the RNR retry count when receive RNR reponse; Range:[0-7] */
+            uint8_t rnrRetry; /**< the RNR retry count when receive RNR response; Range:[0-7] */
             uint8_t errTimeout; /**< the timeout to report error. Range: [0-31] */
             union {
                 struct {
