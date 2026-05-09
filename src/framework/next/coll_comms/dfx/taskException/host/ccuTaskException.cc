@@ -961,54 +961,50 @@ HcclResult CcuTaskException::GetCcuErrorMsg(int32_t deviceId, uint16_t missionSt
 
 void CcuTaskException::GetCcuCqeErrRemoteLocalIdByRankId(hccl::CollComm* collComm, uint32_t rankid, u32 &RemoteLocalId)
 {
-    HCCL_ERROR("[GetCcuCqeErrRemoteLocalIdByRankId] start to get remote local id by rank id, rankId[%u]", rankid);
     if (collComm == nullptr) {
         HCCL_ERROR("[GetCcuCqeErrRemoteLocalIdByRankId] collComm is nullptr");
         return;
     }
-    SaluSleep(10000); 
+
+    if (rankid == INVALID_VALUE_RANKID) {
+        HCCL_ERROR("[GetCcuCqeErrRemoteLocalIdByRankId] RemoteLocalId is already set, rankId[%u]", rankid);
+        return;
+    }
+
     Hccl::HcclCommunicator* commV2 = static_cast<Hccl::HcclCommunicator *>(collComm->GetCommunicatorV2());
     if (commV2 == nullptr) {
         HCCL_ERROR("[GetCcuCqeErrRemoteLocalIdByRankId] commV2 is nullptr");
         return;
     }
-    HCCL_ERROR("[GetCcuCqeErrRemoteLocalIdByRankId->commV2] start to get remote local id by rank id, rankId[%u]", rankid);
-    SaluSleep(10000); 
     void *rankGraph = nullptr;
     HcclResult ret = commV2->GetRankGraphV2(rankGraph);
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[GetCcuCqeErrRemoteLocalIdByRankId]GetRankGraphV2 failed, rankId[%u], ret[%d]", rankid, ret);
         return;
     }
-    SaluSleep(10000); 
     if (rankGraph == nullptr) {
         HCCL_ERROR("[GetCcuCqeErrRemoteLocalIdByRankId] rankGraph is nullptr for rankid[%u]", rankid);
         return;
     }
-    SaluSleep(10000); 
-    HCCL_ERROR("[GetCcuCqeErrRemoteLocalIdByRankId->rankGraph] start to get remote local id by rank id, rankId[%u]", rankid);
-    SaluSleep(10000); 
+ 
     Hccl::RankGraph *rankGraphv2 = static_cast<Hccl::RankGraph *>(rankGraph);
     if (rankGraphv2 == nullptr) {
         HCCL_ERROR("[GetCcuCqeErrRemoteLocalIdByRankId] rankGraphv2 is nullptr for rankid[%u]", rankid);
         return;
     }
-    SaluSleep(10000); 
-    HCCL_ERROR("[GetCcuCqeErrRemoteLocalIdByRankId->rankGraphv2] start to get remote local id by rank id, rankId[%u]", rankid);
-    SaluSleep(10000); 
     u32 LocalId = rankGraphv2->GetLocalId(rankid);
-    SaluSleep(10000); 
-    HCCL_ERROR("[GetCcuCqeErrRemoteLocalIdByRankId->LocalId] start to get remote local id by rank id, LocalId[%u]", LocalId);
     RemoteLocalId = LocalId;
     return;
 }
 
 void CcuTaskException::GetCcuCqeErrNetInstanceByRankId(hccl::CollComm* collComm, uint32_t rankid, std::string &netInstanceId)
 {
-    HCCL_ERROR("[GetCcuCqeErrNetInstanceByRankId] start to get net instance id by rank id, rankId[%u]", rankid);
-    SaluSleep(10000); 
     if (collComm == nullptr) {
         HCCL_ERROR("[GetCcuCqeErrNetInstanceByRankId] collComm is nullptr");
+        return;
+    }
+    if (rankid == INVALID_VALUE_RANKID) {
+        HCCL_ERROR("[GetCcuCqeErrNetInstanceByRankId] RemoteLocalId is already set, rankId[%u]", rankid);
         return;
     }
     Hccl::HcclCommunicator* commV2 = static_cast<Hccl::HcclCommunicator *>(collComm->GetCommunicatorV2());
@@ -1037,7 +1033,6 @@ void CcuTaskException::GetCcuCqeErrorInfo(const CcuErrorInfo &ccuErrorInfo, cons
 {
     auto pair = GetAddrPairByChannelId(ccuErrorInfo.msg.waitSignal.channelId[0], taskInfo, locDeviceId);
     RankId remoteRankId = GetRankIdByChannelId(ccuErrorInfo.msg.waitSignal.channelId[0], taskInfo, locDeviceId);
-    HCCL_ERROR("[GetCcuCqeErrorInfo] start to get net instance id by rank id, remoteRankId[%u]", remoteRankId);
     hccl::CollComm *collComm = static_cast<hccl::CollComm*>(taskInfo.dfxOpInfo_->comm_);
     u32 RemoteLocalId = INVALID_VALUE_RANKID;
     GetCcuCqeErrRemoteLocalIdByRankId(collComm, remoteRankId, RemoteLocalId);
@@ -1072,13 +1067,10 @@ void CcuTaskException::PrintCcuErrorInfo(uint32_t deviceId, uint16_t status, con
         if (isGetCqeErrInfo) {
             isGetCqeErrInfo = false; // 只获取一次CQE错误信息，避免重复获取
             for (const auto& errorInfo : errorInfos) {
-                HCCL_ERROR("[GetCcuCqeErrorInfo] errorInfo.repType[%d]", errorInfo.repType);
                 if (errorInfo.repType == CcuRep::CcuRepType::READ || errorInfo.repType == CcuRep::CcuRepType::WRITE || errorInfo.repType == CcuRep::CcuRepType::BUF_READ || errorInfo.repType == CcuRep::CcuRepType::BUF_WRITE) {
                     GetCcuCqeErrorInfo(errorInfo, taskInfo, deviceId, missionStatus);//添加注释errorInfos[0]对应missionStatus异常
                 }
-                //break;
-            }
-            
+            }        
         }
     }
 }
