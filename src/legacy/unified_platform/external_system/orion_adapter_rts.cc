@@ -41,6 +41,7 @@ const std::unordered_map<std::string, DevType> SOC_VER_CONVERT{{"Ascend310P1", D
                                                                {"Ascend910B2", DevType::DEV_TYPE_910A2},
                                                                {"Ascend910B3", DevType::DEV_TYPE_910A2},
                                                                {"Ascend910B4", DevType::DEV_TYPE_910A2},
+                                                               {"Ascend910B4-1", DevType::DEV_TYPE_910A2},
                                                                {"Ascend910_939", DevType::DEV_TYPE_910A3},
                                                                {"Ascend910_938", DevType::DEV_TYPE_910A3},
                                                                {"Ascend910_937", DevType::DEV_TYPE_910A3},
@@ -417,7 +418,7 @@ void *HrtMalloc(u64 size, aclrtMemType_t memType)
                 ret, size, memType, devPtr);
     if (ret == ACL_ERROR_RT_MEMORY_ALLOCATION) {
         RPT_INPUT_ERR(true, "EI0007", std::vector<std::string>({"resource_type", "resource_info"}),
-                            std::vector<std::string>({"DeviceMemory", std::string("size:") + std::to_string(size)}));
+                            std::vector<std::string>({"DeviceMemory", std::string("size:") + std::to_string(size) + " Byte"}));
         string msg = StringFormat("[Malloc][Mem]errNo[0x%016llx] aclrtMallocWithCfg failed, "
                    "Reason: out of memory, return[%d], para: devPtrAddr[%p], size[%llu]",
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, devPtr, size);
@@ -425,7 +426,7 @@ void *HrtMalloc(u64 size, aclrtMemType_t memType)
     }
     if (ret != ACL_SUCCESS) {
         RPT_INPUT_ERR(true, "EI0007", std::vector<std::string>({"resource_type", "resource_info"}),
-                            std::vector<std::string>({"DeviceMemory", std::string("size:") + std::to_string(size)}));
+                            std::vector<std::string>({"DeviceMemory", std::string("size:") + std::to_string(size)+ " Byte"}));
         string msg = StringFormat("[Malloc][Mem]errNo[0x%016llx] aclrtMallocWithCfg failed, "
                    "return[%d], para: devPtrAddr[%p], size[%llu]",
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, devPtr, size);
@@ -632,7 +633,7 @@ void *HrtMallocHost(u64 size)
                 ret, hostPtr, size);
     if (ret != ACL_SUCCESS) {
         RPT_INPUT_ERR(true, "EI0007", std::vector<std::string>({"resource_type", "resource_info"}),
-                            std::vector<std::string>({"HostMemory", std::string("size:") + std::to_string(size)}));
+                            std::vector<std::string>({"HostMemory", std::string("size:") + std::to_string(size)+ " Byte"}));
         string msg = StringFormat("[Malloc][Host]errNo[0x%016llx] rt malloc host fail. return[%d], "
                                 "para: size[%llu].",
                                 HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, size);

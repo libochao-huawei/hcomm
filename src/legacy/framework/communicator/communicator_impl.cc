@@ -3247,6 +3247,7 @@ HcclResult CommunicatorImpl::LaunchDpuKernel(aclrtFuncHandle &funcHandle)
     HCCL_INFO("[CommunicatorImpl::%s] DpuKernelLaunchParam{commId:%s; memorySize:%u; shareHBM:%p; hostMem:%p}",
               __func__, hostArgsTemp.commId.c_str(), hostArgsTemp.memorySize, hostArgsTemp.shareHBM,
               hostArgsTemp.hostMem);
+    CHK_RET(SaveDpuStreamId());
     size_t               argsSize = sizeof(hostArgsTemp);
     aclrtPlaceHolderInfo placeHolderArrays;
     size_t               placeHolderNum = 0;
@@ -3818,9 +3819,6 @@ HcclResult CommunicatorImpl::GetTilingAccelerator(void *mc2Tiling, AcceleratorSt
         case HcclAccelerator::DEFAULT:
             acceleratorState = AcceleratorState::CCU_SCHED; // 默认按照CCU_SCHED
             break;
-        case HcclAccelerator::CCU_MS:
-            acceleratorState = AcceleratorState::CCU_MS;
-            break;
         case HcclAccelerator::CCU_SCHED:
             acceleratorState = AcceleratorState::CCU_SCHED;
             break;
@@ -3969,6 +3967,13 @@ HcclResult CommunicatorImpl::Mc2AiCpuStreamAllocAndGetV2(rtStream_t *aiCpuStream
     Stream *stream = aicpuStreamManager->GetFreeStream();
     *aiCpuStream = stream->GetPtr();
     HCCL_RUN_INFO("[CommunicatorImpl::Mc2AiCpuStreamAllocAndGetV2] success, stream %s", stream->Describe().c_str());
+    return HCCL_SUCCESS;
+}
+
+HcclResult CommunicatorImpl::SaveDpuStreamId()
+{
+    dpuStreamId = HrtGetStreamId(dpuStream);
+    HCCL_INFO("[CommunicatorImpl::SaveDpuStreamId] dpuStreamId_[%u]", dpuStreamId);
     return HCCL_SUCCESS;
 }
 

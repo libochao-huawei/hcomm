@@ -41,7 +41,10 @@ static const struct FunLevelKType kernel_name##_kernel_type_section __attribute_
     func(uint32_t); \
     func(int8_t); \
     func(uint8_t); \
-    func(bfloat16_t)
+    func(bfloat16_t); \
+    func(int64_t); \
+    func(uint64_t); \
+    func(double)
     
 constexpr uint32_t MAX_RANK_SIZE = 16; // server内最大卡数
 constexpr uint32_t MAX_RANK_SIZE_A3 = 768; // 超节点内最大卡数

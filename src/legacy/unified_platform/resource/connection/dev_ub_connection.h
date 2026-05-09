@@ -19,6 +19,7 @@
 #include "stream.h"
 #include "task.h"
 #include "mc2_type.h"
+#include "hcomm/hcomm_res_entity_defs.h"
 
 namespace Hccl {
 
@@ -40,6 +41,9 @@ public:
     void SetCqInfo(HcclAiRMACQ &cq);
  	 
  	void SetWqInfo(HcclAiRMAWQ &wq);
+    
+    void SetCqContextInfo(CqContext &cq);
+    void SetSqContextInfo(SqContext &sq);
 
     unique_ptr<BaseTask> PrepareRead(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
                                      const SqeConfig &config) override;
@@ -73,6 +77,7 @@ public:
     ~DevUbConnection() override;
 
     string Describe() const override;
+    HcclResult Describe(std::string &dfxMsg) override;
 
     HrtUbJfcMode GetUbJfcMode() const;
     JettyHandle& GetJettyHandle();

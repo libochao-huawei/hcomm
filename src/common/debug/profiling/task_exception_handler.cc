@@ -41,7 +41,7 @@ void RegisterGetErrStatusVecCallBack(GetErrStatusVecCallBack p1)
 void RegisterGetAicpuTaskExceptionCallBack(s32 streamId, u32 deviceLogicId, GetAicpuTaskExceptionCallBack p1)
 {
     lock_guard<mutex> lock(g_communicatorCallbackMapMutex);
-    g_communicatorCallbackMap[deviceLogicId].emplace(streamId, p1);
+    g_communicatorCallbackMap[deviceLogicId][streamId] = p1;
     return;
 }
 #ifdef __cplusplus

@@ -50,6 +50,7 @@
 #include "acl/acl_rt.h"
 #include "adapter_tdt.h"
 #include "acl/acl_rt.h"
+#include "urma_api.h"
 
 /*----------------------------------------------*
  * 外部变量说明                                 *
@@ -1177,6 +1178,19 @@ s32 sal_create_name_map(const char* name, rt_name_map_stub_t** name_map)
 aclError aclrtMallocForTaskScheduler(void **devPtr, size_t size, aclrtMemMallocPolicy policy, aclrtMallocConfig *cfg)
 {
     return aclrtMallocWithCfg(devPtr, size, policy, cfg);
+}
+
+aclError aclrtMalloc(void **devPtr, size_t size, aclrtMemMallocPolicy policy)
+{
+    if (devPtr == nullptr) {
+        return ACL_ERROR_RT_PARAM_INVALID;
+    }
+    if (policy > ACL_MEM_ACCESS_USER_SPACE_READONLY) {
+        return ACL_ERROR_RT_PARAM_INVALID;
+    }
+
+    *devPtr = malloc(size);
+    return (*devPtr == nullptr) ? ACL_ERROR_RT_MEMORY_ALLOCATION : ACL_ERROR_NONE;
 }
 
 aclError aclrtMallocWithCfg(void **devPtr, size_t size, aclrtMemMallocPolicy policy, aclrtMallocConfig *cfg)
@@ -4695,6 +4709,17 @@ int stub_ibv_exp_post_send(struct ibv_qp *qp, struct ibv_send_wr *wr, struct ibv
     return -12;
 }
 
+urma_status_t stub_urma_post_jetty_send_wr(urma_jetty_t *jetty, urma_jfs_wr_t *wr, urma_jfs_wr_t **bad_wr)
+{
+    return URMA_SUCCESS;
+}
+
+int stub_urma_poll_jfc(urma_jfc_t *jfc, int cr_cnt, urma_cr_t *cr)
+{
+    cr->status = URMA_CR_SUCCESS;
+    return 1;
+}
+
 namespace hccl
 {
 std::map<std::string, void*> dlRaFuntionPtrMap = {
@@ -4864,6 +4889,11 @@ std::map<std::string, void*> dlrdmaFuntionPtrMap = {
     {"ibv_exp_post_send", (void*)&stub_ibv_exp_post_send}
 };
 
+std::map<std::string, void*> dlurmaFuntionPtrMap = {
+    {"urma_post_jetty_send_wr", (void*)&stub_urma_post_jetty_send_wr},
+    {"urma_poll_jfc", (void*)&stub_urma_poll_jfc}
+};
+
 static int dlRaHandle;
 static int dlTdtHandle;
 static int dlHalHandle;
@@ -4875,6 +4905,7 @@ static int dlUtraceHandle;
 static int dlHnsRdmav17Handle;
 static int dlHnsRdmav25Handle;
 static int dlHrn0Rdmav17Handle;
+static int dlUrmaHandle;
 void* __HcclDlopenSub(const char *libName, int mode)
 {
     HCCL_INFO("run dlopen(const char*[%s], int[%d])", libName, mode);
@@ -4901,6 +4932,8 @@ void* __HcclDlopenSub(const char *libName, int mode)
         return &dlHnsRdmav25Handle;
     } else if (LibName == "libhrn0-rdmav17.so") {
         return &dlHrn0Rdmav17Handle;
+    } else if (LibName == "liburma.so.0") {
+        return &dlUrmaHandle;
     }
 
     return nullptr;
@@ -4950,6 +4983,8 @@ void* __HcclDlsymSub(void* handle, const char* funcName)
         return dlrdmaFuntionPtrMap[tempName];
     } else if(handle == &dlHrn0Rdmav17Handle) {
         return dlrdmaFuntionPtrMap[tempName];
+    } else if (handle == &dlUrmaHandle) {
+        return dlurmaFuntionPtrMap[tempName];
     }
     return nullptr;
 }
@@ -4958,6 +4993,9 @@ strong_alias(__HcclDlcloseSub, HcclDlclose);
 strong_alias(__HcclDlsymSub, HcclDlsym);
 strong_alias(__hrtOpenNetServiceSub, hrtOpenNetService);
 strong_alias(__hrtCloseNetServiceSub, hrtCloseNetService);
+strong_alias(__HcclDlopenSub, HcclNextDlopen);
+strong_alias(__HcclDlcloseSub, HcclNextDlclose);
+strong_alias(__HcclDlsymSub, HcclNextDlsym);
 }
 
 HcclResult __hrtGetDeviceTypeStub(DevType &devType)
