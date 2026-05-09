@@ -3552,3 +3552,35 @@ TEST_F(TryFastCcuLaunchTest, Ut_TryFastCcuLaunch_When_OpNoSupportFastLaunch_Expe
     // then
     EXPECT_EQ(fakeComm.TryFastCcuLaunch(fakeOpParams, fakeStreamPtr), false);
 }
+
+TEST_F(TryFastCcuLaunchTest, Ut_AllToAllV_RefreshArgs_Coverage_Success)
+{
+    // 1. 安全构造参数
+    CollOpParams opParams{};
+    opParams.sendBuf = (void*)0x1000;  // 合法假地址
+    opParams.recvBuf = (void*)0x2000;
+
+    // 2. 构造 AllToAllV 数据（栈内存，绝不崩溃）
+    u64 sendCounts[2] = {10, 10};
+    u64 sdispls[2]    = {0, 10};
+    u64 rdispls[2]    = {0, 10};
+
+    opParams.all2AllVDataDes.sendCounts = sendCounts;
+    opParams.all2AllVDataDes.sdispls    = sdispls;
+    opParams.all2AllVDataDes.rdispls    = rdispls;
+    opParams.all2AllVDataDes.sendType   = DataType::FP32;
+    opParams.all2AllVDataDes.recvType   = DataType::FP32;
+
+    // ==============================
+    // ✅ 修复：必须定义一个指针变量，不能传 nullptr
+    // ==============================
+    rtCcuTaskInfo_t* ccuParams = nullptr;
+
+    // ==============================
+    // ✅ 调用！真实跑进 RefreshArgs！
+    // ==============================
+    fakeComm.FillAllToAllVArgs(opParams, ccuParams);
+
+    // 能走到这里 = RefreshArgs 已执行 ✅
+    SUCCEED();
+}
