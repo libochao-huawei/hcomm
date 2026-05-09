@@ -95,6 +95,9 @@ inline CcuResult LoadArg(Variable v, uint32_t argId) {
 inline CcuResult LoadVar(uint64_t addr, Variable* v, uint32_t num) {
     return CcuLoadVar(addr, v[0].handle, num);
 }
+inline CcuResult LoadVar(Variable addrVar, Variable* v, uint32_t num) {
+    return CcuLoadVarFromVarAddr(addrVar.handle, v[0].handle, num);
+}
 inline CcuResult StoreVar(uint64_t addr, Variable* v, uint32_t num) {
     return CcuStoreVar(addr, v[0].handle, num);
 }
