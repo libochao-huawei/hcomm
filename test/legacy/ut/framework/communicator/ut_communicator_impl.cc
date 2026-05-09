@@ -3552,3 +3552,25 @@ TEST_F(TryFastCcuLaunchTest, Ut_TryFastCcuLaunch_When_OpNoSupportFastLaunch_Expe
     // then
     EXPECT_EQ(fakeComm.TryFastCcuLaunch(fakeOpParams, fakeStreamPtr), false);
 }
+
+TEST_F(TryFastCcuLaunchTest, Ut_AllToAllV_RefreshArgs_Coverage)
+{
+    CollOpParams opParams{};
+    opParams.sendBuf = (void*)0x1000;
+    opParams.recvBuf = (void*)0x2000;
+
+    u64 sendCounts[2] = {10, 10};
+    u64 sdispls[2]    = {0, 10};
+    u64 rdispls[2]    = {0, 10};
+
+    opParams.all2AllVDataDes.sendCounts = sendCounts;
+    opParams.all2AllVDataDes.sdispls    = sdispls;
+    opParams.all2AllVDataDes.rdispls    = rdispls;
+    
+    opParams.all2AllVDataDes.sendType   = DataType::FP32;
+    opParams.all2AllVDataDes.recvType   = DataType::FP32;
+
+    fakeComm.FillAllToAllVArgs(opParams, nullptr);
+
+    SUCCEED();
+}
