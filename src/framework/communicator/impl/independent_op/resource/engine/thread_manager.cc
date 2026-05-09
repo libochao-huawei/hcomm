@@ -23,6 +23,8 @@ ThreadMgr::ThreadMgr(uint32_t threadNum, uint32_t notifyNumPerThread, std::strin
 
 uint64_t ThreadMgr::GetMaxNotifyTotal()
 {
+FUNCTION_TRACE;
+
     // 如果没设定最大值，设置一下
     uint64_t maxNotifyTotal = 0;
     if (threadNum_ == HCCL_COMM_THREADNUM_CONFIG_NOT_SET &&
@@ -339,7 +341,8 @@ HcclResult ThreadMgr::HcclThreadAcquire(CommEngine engine, uint32_t threadNum,
 }
 
 HcclResult ThreadMgr::HcclGetNotifyNumInThread(ThreadHandle thread, uint32_t *notifyNum)
-{
+{FUNCTION_TRACE;
+
     CHK_PTR_NULL(notifyNum);
     Thread* hcclThread = reinterpret_cast<Thread*>(thread);
     CHK_PTR_NULL(hcclThread);
@@ -351,7 +354,8 @@ HcclResult ThreadMgr::HcclGetNotifyNumInThread(ThreadHandle thread, uint32_t *no
 
 HcclResult ThreadMgr::HcclThreadAcquireWithStream(CommEngine engine,
     rtStream_t stream, uint32_t notifyNum, ThreadHandle *thread)
-{
+{FUNCTION_TRACE;
+
     CHK_PTR_NULL(thread);
 
     if (mainThread_.find(stream) != mainThread_.end()) {
@@ -382,7 +386,8 @@ HcclResult ThreadMgr::HcclThreadAcquireWithStream(CommEngine engine,
 }
 
 HcclResult ThreadMgr::ThreadExportToCommEngineCpu(uint32_t threadNum, const ThreadHandle *threads, ThreadHandle *exportedThreads)
-{
+{FUNCTION_TRACE;
+
     std::lock_guard<std::mutex> lock(threadMapMutex_);
     for (u32 i = 0; i < threadNum; i++) {
         if (threadHandleOthersToCpu_.find(threads[i]) == threadHandleOthersToCpu_.end()) {
@@ -395,7 +400,8 @@ HcclResult ThreadMgr::ThreadExportToCommEngineCpu(uint32_t threadNum, const Thre
 }
 
 HcclResult ThreadMgr::GetExportedThread(const ThreadHandle threadHandle, CommEngine commEngine, Thread *&exportedThread, std::shared_ptr<Thread> &threadOut)
-{
+{FUNCTION_TRACE;
+
     Thread *threadPtr = reinterpret_cast<Thread *>(threadHandle);
     for (auto &thread : threads_) {
         if (thread.get() == threadPtr) {
@@ -418,7 +424,8 @@ HcclResult ThreadMgr::GetExportedThread(const ThreadHandle threadHandle, CommEng
 }
 
 HcclResult ThreadMgr::ThreadExportToCommEngineAicpu(uint32_t threadNum, const ThreadHandle *threads, CommEngine dstCommEngine, ThreadHandle *exportedThreads)
-{
+{FUNCTION_TRACE;
+
     std::vector<std::shared_ptr<Thread>> hostThreads;
     std::vector<u32> index;
     Thread *exportedThread;
@@ -458,7 +465,8 @@ HcclResult ThreadMgr::ThreadExportToCommEngineAicpu(uint32_t threadNum, const Th
 }
 
 HcclResult ThreadMgr::HcclThreadExportToCommEngine(uint32_t threadNum, const ThreadHandle *threads, CommEngine dstCommEngine, ThreadHandle *exportedThreads)
-{
+{FUNCTION_TRACE;
+
     switch (dstCommEngine) {
     case COMM_ENGINE_CPU_TS:
     case COMM_ENGINE_CPU:

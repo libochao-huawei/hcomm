@@ -10,7 +10,10 @@
 #include "hcclCommProfilingLite.h"
 #include "profiling_reporter_lite.h"
 #include "mirror_task_manager_lite.h"
-
+#ifdef CCL_KERNEL_AICPU
+#include "timer.h"
+#define FUNCTION_TRACE FUNCTION_TRACE_AICPU
+#endif
 namespace hccl {
 // 构造函数
 HcclCommProfilingLite::HcclCommProfilingLite(Hccl::DevId deviceId, Hccl::MirrorTaskManagerLite* mirrorTaskManagerLite) {
@@ -21,6 +24,7 @@ HcclCommProfilingLite::HcclCommProfilingLite(Hccl::DevId deviceId, Hccl::MirrorT
 
 // HcclCommProfilingLite任务上报
 void HcclCommProfilingLite::ReportAllTasks() {
+    FUNCTION_TRACE;
     if (profilingReporterLite_) {
         profilingReporterLite_->ReportAllTasks();
     }
@@ -28,6 +32,7 @@ void HcclCommProfilingLite::ReportAllTasks() {
 
 // HcclCommProfilingLite::UpdateProfStat实现
 void HcclCommProfilingLite::UpdateProfStat() {
+    FUNCTION_TRACE;
     if (profilingReporterLite_) {
         profilingReporterLite_->UpdateProfStat();
     }
