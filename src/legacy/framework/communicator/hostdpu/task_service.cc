@@ -58,6 +58,12 @@ HcclResult TaskService::TaskUnRegister(std::string taskType)
     return HCCL_SUCCESS;
 }
 
+HcclResult TaskService::TaskProfRegister(ProfCallbackTemplate profCallback)
+{
+    profCallback_ = profCallback;
+    return HCCL_SUCCESS;
+}
+
 HcclResult TaskService::WriteFlag(uint8_t *flagPtr, uint8_t newFlag) const
 {
     aclError ret = aclrtMemcpy(flagPtr, sizeof(newFlag), &newFlag, sizeof(newFlag), aclrtMemcpyKind::ACL_MEMCPY_HOST_TO_DEVICE);
@@ -115,6 +121,7 @@ HcclResult TaskService::ReadTaskType(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t 
 
 HcclResult TaskService::ExecuteTask(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t *srcPtr, std::string taskTypeStr)
 {
+    uint64_t beginTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
     auto itFunc = callbacks_.find(taskTypeStr);
     if (itFunc == callbacks_.end()) {
         HCCL_ERROR("[TaskService::TaskRun] Callback of taskType[%s] Not Found", taskTypeStr.c_str());
@@ -148,6 +155,14 @@ HcclResult TaskService::ExecuteTask(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t *
     }
     if (itFunc->second(reinterpret_cast<uint64_t>(hostMem_), dataLen) != 0) {
         return HCCL_E_INTERNAL;
+    }
+    if (profCallback_ != nullptr) {
+        TaskParam taskParam{};
+        taskParam.beginTime = beginTime;
+        taskParam.taskType = Hccl::TaskParamType::TASK_DPU_KERNEL;
+        taskParam.endTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
+        taskParam.isMaster = true;
+        profCallback_(taskParam, INVALID_U64);
     }
     return HCCL_SUCCESS;
 }
