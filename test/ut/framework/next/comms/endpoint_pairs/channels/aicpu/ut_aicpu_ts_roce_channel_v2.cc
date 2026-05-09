@@ -15,7 +15,7 @@
 #include <iostream>
 #include <cstring>
 #include "aicpu_ts_roce_channel_v2.h"
-#include "next/comms/endpoint_pairs/channels/aicpu/dev_rdma_connection.h"
+#include "next/comms/endpoint_pairs/channels/aicpu/dev_rdma_connection_v2.h"
 #include "socket.h"
 #include "orion_adapter_hccp.h"
 #include "hccp.h"
@@ -119,8 +119,8 @@ TEST_F(AicpuTsRoceChannelV2Test, Ut_When_Normal_Init_Expect_HCCL_SUCCESS)
     DevType devType = DevType::DEV_TYPE_950;
     MOCKER(hrtGetDeviceType).stubs().with(outBound(devType)).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&Hccl::Socket::GetStatus).stubs().will(returnValue((Hccl::SocketStatus)Hccl::SocketStatus::OK));
-    MOCKER_CPP(&DevRdmaConnection::CreateQp).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&DevRdmaConnection::ModifyQp).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&DevRdmaConnectionV2::CreateQp).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&DevRdmaConnectionV2::ModifyQp).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&AicpuTsRoceChannelV2::NotifyVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&AicpuTsRoceChannelV2::ConnVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&AicpuTsRoceChannelV2::BufferVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
@@ -374,8 +374,8 @@ TEST_F(AicpuTsRoceChannelV2Test, Ut_When_ModifyQp_Expect_Success)
     channelDesc.memHandleNum = 1;
     auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
     channel->Init();
-    MOCKER_CPP(&DevRdmaConnection::ParseRmtExchangeDto).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&DevRdmaConnection::ModifyQp).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&DevRdmaConnectionV2::ParseRmtExchangeDto).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&DevRdmaConnectionV2::ModifyQp).stubs().will(returnValue(HCCL_SUCCESS));
     HcclResult ret = channel->ModifyQp();
     EXPECT_EQ(ret, HCCL_SUCCESS);
     std::cout << "End Ut_When_ModifyQp_Expect_Success" << std::endl;

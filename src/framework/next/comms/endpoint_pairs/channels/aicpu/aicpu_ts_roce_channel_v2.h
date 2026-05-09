@@ -22,7 +22,7 @@
 #include "../../../../../../legacy/unified_platform/resource/socket/socket.h"
 #include "../../../../../../legacy/unified_platform/resource/buffer/local_rdma_rma_buffer.h"
 #include "remote_rma_buffer.h"
-#include "./dev_rdma_connection.h"
+#include "./dev_rdma_connection_v2.h"
 #include "rdma_local_notify.h"
 #include "dev_buffer.h"
 
@@ -133,7 +133,7 @@ private:
     Hccl::Socket*                                           socket_{nullptr};
     RdmaHandle                                              rdmaHandle_{nullptr};
 
-    std::vector<std::unique_ptr<DevRdmaConnection>>         connections_{};
+    std::vector<std::unique_ptr<DevRdmaConnectionV2>>         connections_{};
     std::vector<Hccl::LocalRdmaRmaBuffer *>                 localRmaBuffers_{};
     std::vector<std::unique_ptr<Hccl::RdmaLocalNotify>>     localNotifies_{};
     std::shared_ptr<Hccl::DevBuffer>                        notifyValueMem_{nullptr};
