@@ -12,7 +12,7 @@
 #include "gtest/gtest.h"
 #include <mockcpp/mokc.h>
 #include <mockcpp/mockcpp.hpp>
-#include "next/comms/endpoint_pairs/channels/aicpu/dev_rdma_connection.h"
+#include "next/comms/endpoint_pairs/channels/aicpu/dev_rdma_connection_v2.h"
 #include "socket.h"
 #include "orion_adapter_hccp.h"
 #include "hccp.h"
@@ -21,21 +21,21 @@
 
 using namespace hcomm;
 
-class DevRdmaConnectionTest : public testing::Test {
+class DevRdmaConnectionV2Test : public testing::Test {
 protected:
     static void SetUpTestCase()
     {
-        std::cout << "DevRdmaConnectionTest tests set up." << std::endl;
+        std::cout << "DevRdmaConnectionV2Test tests set up." << std::endl;
     }
 
     static void TearDownTestCase()
     {
-        std::cout << "DevRdmaConnectionTest tests tear down." << std::endl;
+        std::cout << "DevRdmaConnectionV2Test tests tear down." << std::endl;
     }
 
     virtual void SetUp()
     {
-        std::cout << "A Test case in DevRdmaConnectionTest SetUP" << std::endl;
+        std::cout << "A Test case in DevRdmaConnectionV2Test SetUP" << std::endl;
         
         Hccl::IpAddress localIp("1.0.0.0");
         Hccl::IpAddress remoteIp("2.0.0.0");
@@ -55,28 +55,28 @@ protected:
     {
         GlobalMockObject::verify();
         delete fakeSocket;
-        std::cout << "A Test case in DevRdmaConnectionTest TearDown" << std::endl;
+        std::cout << "A Test case in DevRdmaConnectionV2Test TearDown" << std::endl;
     }
     
     Hccl::Socket* fakeSocket;
 };
 
-TEST_F(DevRdmaConnectionTest, Ut_When_Normal_Call_Expect_Status_Consistent)
+TEST_F(DevRdmaConnectionV2Test, Ut_When_Normal_Call_Expect_Status_Consistent)
 {
     std::cout << "Start Ut_When_Normal_Call_Expect_Status_Consistent" << std::endl;
     
     RdmaHandle rdmaHandle = (void *)0x1000000;
-    DevRdmaConnection connection(fakeSocket, rdmaHandle);
+    DevRdmaConnectionV2 connection(fakeSocket, rdmaHandle);
     
-    EXPECT_EQ(connection.rdmaConnStatus_, DevRdmaConnection::RdmaConnStatus::CLOSED);
+    EXPECT_EQ(connection.rdmaConnStatus_, DevRdmaConnectionV2::RdmaConnStatus::CLOSED);
     
     HcclResult ret = connection.Init();
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(connection.rdmaConnStatus_, DevRdmaConnection::RdmaConnStatus::INIT);
+    EXPECT_EQ(connection.rdmaConnStatus_, DevRdmaConnectionV2::RdmaConnStatus::INIT);
     
     ret = connection.CreateQp();
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(connection.rdmaConnStatus_, DevRdmaConnection::RdmaConnStatus::QP_CREATED);
+    EXPECT_EQ(connection.rdmaConnStatus_, DevRdmaConnectionV2::RdmaConnStatus::QP_CREATED);
     
     std::unique_ptr<Hccl::Serializable> locDto;
     ret = connection.GetExchangeDto(locDto);
@@ -88,31 +88,31 @@ TEST_F(DevRdmaConnectionTest, Ut_When_Normal_Call_Expect_Status_Consistent)
     
     ret = connection.ModifyQp();
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(connection.rdmaConnStatus_, DevRdmaConnection::RdmaConnStatus::QP_MODIFIED);
+    EXPECT_EQ(connection.rdmaConnStatus_, DevRdmaConnectionV2::RdmaConnStatus::QP_MODIFIED);
     
     std::cout << "End Ut_When_Normal_Call_Expect_Status_Consistent" << std::endl;
 }
 
-TEST_F(DevRdmaConnectionTest, Ut_When_QpAttrDto_IsValid_Expect_Correct)
+TEST_F(DevRdmaConnectionV2Test, Ut_When_QpAttrDto_IsValid_Expect_Correct)
 {
     std::cout << "Start Ut_When_QpAttrDto_IsValid_Expect_Correct" << std::endl;
     
-    DevRdmaConnection::QpAttrDto validDto;
+    DevRdmaConnectionV2::QpAttrDto validDto;
     validDto.qpn = 123;
     validDto.psn = 456;
     EXPECT_TRUE(validDto.IsValid());
     
-    DevRdmaConnection::QpAttrDto invalidDto1;
+    DevRdmaConnectionV2::QpAttrDto invalidDto1;
     invalidDto1.qpn = UINT32_MAX;
     invalidDto1.psn = 456;
     EXPECT_FALSE(invalidDto1.IsValid());
     
-    DevRdmaConnection::QpAttrDto invalidDto2;
+    DevRdmaConnectionV2::QpAttrDto invalidDto2;
     invalidDto2.qpn = 123;
     invalidDto2.psn = UINT32_MAX;
     EXPECT_FALSE(invalidDto2.IsValid());
     
-    DevRdmaConnection::QpAttrDto invalidDto3;
+    DevRdmaConnectionV2::QpAttrDto invalidDto3;
     invalidDto3.qpn = UINT32_MAX;
     invalidDto3.psn = UINT32_MAX;
     EXPECT_FALSE(invalidDto3.IsValid());
@@ -120,12 +120,12 @@ TEST_F(DevRdmaConnectionTest, Ut_When_QpAttrDto_IsValid_Expect_Correct)
     std::cout << "End Ut_When_QpAttrDto_IsValid_Expect_Correct" << std::endl;
 }
 
-TEST_F(DevRdmaConnectionTest, Ut_When_Describe_Expect_NotEmpty)
+TEST_F(DevRdmaConnectionV2Test, Ut_When_Describe_Expect_NotEmpty)
 {
     std::cout << "Start Ut_When_Describe_Expect_NotEmpty" << std::endl;
     
     RdmaHandle rdmaHandle = (void *)0x1000000;
-    DevRdmaConnection connection(fakeSocket, rdmaHandle);
+    DevRdmaConnectionV2 connection(fakeSocket, rdmaHandle);
     
     HcclResult ret = connection.Init();
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -136,12 +136,12 @@ TEST_F(DevRdmaConnectionTest, Ut_When_Describe_Expect_NotEmpty)
     std::cout << "End Ut_When_Describe_Expect_NotEmpty" << std::endl;
 }
 
-TEST_F(DevRdmaConnectionTest, Ut_When_BuildSqContext_Expect_Success)
+TEST_F(DevRdmaConnectionV2Test, Ut_When_BuildSqContext_Expect_Success)
 {
     std::cout << "Start Ut_When_BuildSqContext_Expect_Success" << std::endl;
     
     RdmaHandle rdmaHandle = (void *)0x1000000;
-    DevRdmaConnection connection(fakeSocket, rdmaHandle);
+    DevRdmaConnectionV2 connection(fakeSocket, rdmaHandle);
     
     HcclResult ret = connection.Init();
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -163,12 +163,12 @@ TEST_F(DevRdmaConnectionTest, Ut_When_BuildSqContext_Expect_Success)
     std::cout << "End Ut_When_BuildSqContext_Expect_Success" << std::endl;
 }
 
-TEST_F(DevRdmaConnectionTest, Ut_When_BuildCqContext_Expect_Success)
+TEST_F(DevRdmaConnectionV2Test, Ut_When_BuildCqContext_Expect_Success)
 {
     std::cout << "Start Ut_When_BuildCqContext_Expect_Success" << std::endl;
     
     RdmaHandle rdmaHandle = (void *)0x1000000;
-    DevRdmaConnection connection(fakeSocket, rdmaHandle);
+    DevRdmaConnectionV2 connection(fakeSocket, rdmaHandle);
     
     HcclResult ret = connection.Init();
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -190,12 +190,12 @@ TEST_F(DevRdmaConnectionTest, Ut_When_BuildCqContext_Expect_Success)
     std::cout << "End Ut_When_BuildCqContext_Expect_Success" << std::endl;
 }
 
-TEST_F(DevRdmaConnectionTest, Ut_When_GetUniqueId_Expect_NotEmpty)
+TEST_F(DevRdmaConnectionV2Test, Ut_When_GetUniqueId_Expect_NotEmpty)
 {
     std::cout << "Start Ut_When_GetUniqueId_Expect_NotEmpty" << std::endl;
     
     RdmaHandle rdmaHandle = (void *)0x1000000;
-    DevRdmaConnection connection(fakeSocket, rdmaHandle);
+    DevRdmaConnectionV2 connection(fakeSocket, rdmaHandle);
     
     HcclResult ret = connection.Init();
     EXPECT_EQ(ret, HCCL_SUCCESS);

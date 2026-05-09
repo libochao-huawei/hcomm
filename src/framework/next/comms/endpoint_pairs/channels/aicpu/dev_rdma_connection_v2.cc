@@ -1,13 +1,13 @@
 /**
- * Copyright (c) 2026 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
-#include "./dev_rdma_connection.h"
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+#include "./dev_rdma_connection_v2.h"
 #include "log.h"
 #include "orion_adapter_rts.h"
 #include "hccp.h"
@@ -19,13 +19,13 @@ constexpr uint32_t SL_TEMP = 4;
 constexpr uint32_t RETRY_CNT_TEMP = 7;
 constexpr uint32_t RETRY_TIME_TEMP = 20;
 
-DevRdmaConnection::DevRdmaConnection(Hccl::Socket *socket, RdmaHandle rdmaHandle):
+DevRdmaConnectionV2::DevRdmaConnectionV2(Hccl::Socket *socket, RdmaHandle rdmaHandle):
     socket_(socket), rdmaHandle_(rdmaHandle) {}
 
-HcclResult DevRdmaConnection::Init()
+HcclResult DevRdmaConnectionV2::Init()
 {
     if (rdmaConnStatus_ != RdmaConnStatus::CLOSED) {
-        HCCL_INFO("[DevRdmaConnection][%s] status[%s] is not need init.",
+        HCCL_INFO("[DevRdmaConnectionV2][%s] status[%s] is not need init.",
             __func__, rdmaConnStatus_.Describe().c_str());
         return HCCL_SUCCESS;
     }
@@ -38,7 +38,7 @@ HcclResult DevRdmaConnection::Init()
     return HCCL_SUCCESS;
 }
 
-DevRdmaConnection::~DevRdmaConnection()
+DevRdmaConnectionV2::~DevRdmaConnectionV2()
 {
     if (rdmaConnStatus_ == RdmaConnStatus::CLOSED || rdmaConnStatus_ == RdmaConnStatus::INIT) {
         return;
@@ -49,9 +49,9 @@ DevRdmaConnection::~DevRdmaConnection()
     }
 }
 
-std::string DevRdmaConnection::Describe() const
+std::string DevRdmaConnectionV2::Describe() const
 {
-    return Hccl::StringFormat("DevRdmaConnection[status=%s]", rdmaConnStatus_.Describe().c_str());
+    return Hccl::StringFormat("DevRdmaConnectionV2[status=%s]", rdmaConnStatus_.Describe().c_str());
 }
 
 static void *NdaAlloc(size_t size) {
@@ -97,7 +97,7 @@ static int NdaMemcpy(void *dst, size_t dstSize, void *src, size_t srcSize, uint3
     return 0;
 }
 
-void DevRdmaConnection::GetNdaOps() {
+void DevRdmaConnectionV2::GetNdaOps() {
     ndaOps_ = {
         .alloc = NdaAlloc,
         .free = NdaFree,
@@ -106,10 +106,10 @@ void DevRdmaConnection::GetNdaOps() {
     };
 }
 
-HcclResult DevRdmaConnection::GetDirectFlag() {
+HcclResult DevRdmaConnectionV2::GetDirectFlag() {
     s32 ret = RaNdaGetDirectFlag(rdmaHandle_, &directFlag_);
     if (ret != 0) {
-        HCCL_ERROR("[DevRdmaConnection][GetDirectFlag]errNo[0x%016llx] get directFlag fail. "
+        HCCL_ERROR("[DevRdmaConnectionV2][GetDirectFlag]errNo[0x%016llx] get directFlag fail. "
             "return[%d], params: rdmaHandle[%p], directFlag[%d]",
             HCCL_ERROR_CODE(HCCL_E_INTERNAL), ret, rdmaHandle_, directFlag_);
         return HCCL_E_INTERNAL;
@@ -117,7 +117,7 @@ HcclResult DevRdmaConnection::GetDirectFlag() {
     return HCCL_SUCCESS;
 }
 
-void DevRdmaConnection::GetDmaMode() {
+void DevRdmaConnectionV2::GetDmaMode() {
     switch (directFlag_) {
         case DIRECT_FLAG_PCIE: {
             dmaMode_ = QBUF_DMA_MODE_DEFAULT;
@@ -134,10 +134,10 @@ void DevRdmaConnection::GetDmaMode() {
     }
 }
 
-HcclResult DevRdmaConnection::CreateQp()
+HcclResult DevRdmaConnectionV2::CreateQp()
 {
     if (socket_->GetStatus() != Hccl::SocketStatus::OK) {
-        HCCL_WARNING("[DevRdmaConnection::CreateQp] socket status is not ok, please");
+        HCCL_WARNING("[DevRdmaConnectionV2::CreateQp] socket status is not ok, please");
         return HCCL_E_AGAIN;
     }
 
@@ -145,7 +145,6 @@ HcclResult DevRdmaConnection::CreateQp()
 
     CHK_RET(Hccl::HrtRaNdaQpCreate(rdmaHandle_, &ndaOps_, dmaMode_, &ndaCqInfo_, &ndaQpInfo_, &qpHandle_));
 
-    // 云脉驱动没有提供软件写 PI/CI 的地址空间，需要手动创建
     if (dmaMode_ == QBUF_DMA_MODE_DEFAULT) {
         SqPiMem_ = hccl::DeviceMem::alloc(sizeof(void*));
         SqCiMem_ = hccl::DeviceMem::alloc(sizeof(void*));
@@ -160,7 +159,7 @@ HcclResult DevRdmaConnection::CreateQp()
     return HCCL_SUCCESS;
 }
 
-HcclResult DevRdmaConnection::DestroyQp()
+HcclResult DevRdmaConnectionV2::DestroyQp()
 {
     if (rdmaConnStatus_ == RdmaConnStatus::CLOSED || rdmaConnStatus_ == RdmaConnStatus::INIT) {
         return HCCL_SUCCESS;
@@ -185,10 +184,10 @@ HcclResult DevRdmaConnection::DestroyQp()
     return HCCL_SUCCESS;
 }
 
-HcclResult DevRdmaConnection::GetExchangeDto(std::unique_ptr<Hccl::Serializable> &locQpAttrserial)
+HcclResult DevRdmaConnectionV2::GetExchangeDto(std::unique_ptr<Hccl::Serializable> &locQpAttrserial)
 {
     if (rdmaConnStatus_ != RdmaConnStatus::QP_CREATED && rdmaConnStatus_ != RdmaConnStatus::QP_MODIFIED) {
-        HCCL_ERROR("[DevRdmaConnection][%s] status[%s] is not expected.",
+        HCCL_ERROR("[DevRdmaConnectionV2][%s] status[%s] is not expected.",
             __func__, rdmaConnStatus_.Describe().c_str());
         return HCCL_E_AGAIN;
     }
@@ -196,7 +195,7 @@ HcclResult DevRdmaConnection::GetExchangeDto(std::unique_ptr<Hccl::Serializable>
     struct QpAttr localQpAttr;
     s32 ret = RaGetQpAttr(qpHandle_, &localQpAttr);
     if (ret != 0) {
-        HCCL_ERROR("[DevRdmaConnection::%s]RaGetQpAttr failed, ret[%d]", __func__, ret);
+        HCCL_ERROR("[DevRdmaConnectionV2::%s]RaGetQpAttr failed, ret[%d]", __func__, ret);
         return HCCL_E_ROCE_CONNECT;
     }
     std::unique_ptr<ExchangeRdmaConnDto> dto= nullptr;
@@ -209,10 +208,10 @@ HcclResult DevRdmaConnection::GetExchangeDto(std::unique_ptr<Hccl::Serializable>
     return HCCL_SUCCESS;
 }
 
-HcclResult DevRdmaConnection::ParseRmtExchangeDto(const Hccl::Serializable &rmtQpAttrSerial)
+HcclResult DevRdmaConnectionV2::ParseRmtExchangeDto(const Hccl::Serializable &rmtQpAttrSerial)
 {
     auto dto = dynamic_cast<const ExchangeRdmaConnDto &>(rmtQpAttrSerial);
-    HCCL_INFO("[DevRdmaConnection][%s] remoteConnDto[%s]", __func__, dto.Describe().c_str());
+    HCCL_INFO("[DevRdmaConnectionV2][%s] remoteConnDto[%s]", __func__, dto.Describe().c_str());
     rmtQpAttr_.psn = dto.psn_;
     rmtQpAttr_.qpn = dto.qpn_;
     rmtQpAttr_.gid_idx = dto.gid_idx_;
@@ -220,28 +219,28 @@ HcclResult DevRdmaConnection::ParseRmtExchangeDto(const Hccl::Serializable &rmtQ
     return HCCL_SUCCESS;
 }
 
-HcclResult DevRdmaConnection::ModifyQp()
+HcclResult DevRdmaConnectionV2::ModifyQp()
 {
     if (rdmaConnStatus_ == RdmaConnStatus::QP_MODIFIED) {
-        HCCL_WARNING("[DevRdmaConnection][%s] modify qp already, status[%s].",
+        HCCL_WARNING("[DevRdmaConnectionV2][%s] modify qp already, status[%s].",
                      __func__, rdmaConnStatus_.Describe().c_str());
         return HCCL_SUCCESS;
     } 
     if (rdmaConnStatus_ != RdmaConnStatus::QP_CREATED) {
-        HCCL_ERROR("[DevRdmaConnection][%s] status[%s] is not expected.", __func__,
+        HCCL_ERROR("[DevRdmaConnectionV2][%s] status[%s] is not expected.", __func__,
             rdmaConnStatus_.Describe().c_str());
         return HCCL_E_AGAIN;
     }
 
     if (!rmtQpAttr_.IsValid()) {
-        HCCL_ERROR("[DevRdmaConnection][%s] romate Qp Attr is empty, exchange qp attr first", __func__);
+        HCCL_ERROR("[DevRdmaConnectionV2][%s] romate Qp Attr is empty, exchange qp attr first", __func__);
         return HCCL_E_INTERNAL;
     }
 
     struct QpAttr localQpAttr;
     s32 ret = RaGetQpAttr(qpHandle_, &localQpAttr);
     if (ret != 0) {
-        HCCL_ERROR("[DevRdmaConnection::%s]RaGetQpAttr failed, ret[%d]", __func__, ret);
+        HCCL_ERROR("[DevRdmaConnectionV2::%s]RaGetQpAttr failed, ret[%d]", __func__, ret);
         return HCCL_E_ROCE_CONNECT;
     }
 
@@ -272,7 +271,7 @@ HcclResult DevRdmaConnection::ModifyQp()
     return HCCL_SUCCESS;
 }
 
-HcclResult DevRdmaConnection::BuildSqContext(SqContext* context)
+HcclResult DevRdmaConnectionV2::BuildSqContext(SqContext* context)
 {
     if (context == nullptr) {
         HCCL_ERROR("[BuildSqContext] Invalid null pointer for context.");
@@ -282,7 +281,7 @@ HcclResult DevRdmaConnection::BuildSqContext(SqContext* context)
     struct QpAttr localQpAttr;
     s32 ret = RaGetQpAttr(qpHandle_, &localQpAttr);
     if (ret != 0) {
-        HCCL_ERROR("[DevRdmaConnection::%s]RaGetQpAttr failed, ret[%d]", __func__, ret);
+        HCCL_ERROR("[DevRdmaConnectionV2::%s]RaGetQpAttr failed, ret[%d]", __func__, ret);
         return HCCL_E_ROCE_CONNECT;
     }
 
@@ -300,10 +299,10 @@ HcclResult DevRdmaConnection::BuildSqContext(SqContext* context)
     }
     context->contextInfo.rdmaSqContext.dbVa = reinterpret_cast<uint64_t >(ndaQpInfo_.sqInfo.dbHwVa.iovBase);
     context->contextInfo.rdmaSqContext.sl = qpInfo_.serviceLevel == 0 ? SL_TEMP : qpInfo_.serviceLevel;
-    context->contextInfo.rdmaSqContext.dbMode = 0; // 0-hw 1-sw
+    context->contextInfo.rdmaSqContext.dbMode = 0;
 
     HCCL_INFO(
-        "[DevRdmaConnection][%s] type=%u, QPN=%u, SQ_VA=0x%llx, WQE_SIZE=%u, "
+        "[DevRdmaConnectionV2][%s] type=%u, QPN=%u, SQ_VA=0x%llx, WQE_SIZE=%u, "
         "SQ_DEPTH=%u, SQ_HEAD_ADDR=0x%llx, SQ_TAIL_ADDR=0x%llx, "
         "SL=%u, SQ_DB_VA=0x%llx, SQ_DB_MODE=%d", __func__, context->type,
         context->contextInfo.rdmaSqContext.qpn, context->contextInfo.rdmaSqContext.sqVa, context->contextInfo.rdmaSqContext.wqeSize,
@@ -314,7 +313,7 @@ HcclResult DevRdmaConnection::BuildSqContext(SqContext* context)
     return HCCL_SUCCESS;
 }
 
-HcclResult DevRdmaConnection::BuildCqContext(CqContext* context)
+HcclResult DevRdmaConnectionV2::BuildCqContext(CqContext* context)
 {
     if (context == nullptr) {
         HCCL_ERROR("[GetCqContext] Invalid null pointer for context.");
@@ -334,10 +333,10 @@ HcclResult DevRdmaConnection::BuildCqContext(CqContext* context)
         context->contextInfo.rdmaCqContext.tailAddr = reinterpret_cast<uint64_t >(ndaCqInfo_.cqInfo.dbrCiVa.iovBase);
     }
     context->contextInfo.rdmaCqContext.dbVa = reinterpret_cast<uint64_t >(ndaCqInfo_.cqInfo.dbHwVa.iovBase);
-    context->contextInfo.rdmaCqContext.dbMode = 0; // 0-hw 1-sw
+    context->contextInfo.rdmaCqContext.dbMode = 0;
 
     HCCL_INFO(
-        "[DevRdmaConnection][%s] type=%u, CQN=%u, CQ_VA=0x%llx, CQE_SIZE=%u, CQ_DEPTH=%u, "
+        "[DevRdmaConnectionV2][%s] type=%u, CQN=%u, CQ_VA=0x%llx, CQE_SIZE=%u, CQ_DEPTH=%u, "
         "CQ_HEAD_ADDR=0x%llx, CQ_TAIL_ADDR=0x%llx, CQ_DB_VA=0x%llx, CQ_DB_MODE=%d]",
         __func__, context->type,
         context->contextInfo.rdmaCqContext.cqn, context->contextInfo.rdmaCqContext.cqVa, context->contextInfo.rdmaCqContext.cqeSize,
@@ -348,51 +347,51 @@ HcclResult DevRdmaConnection::BuildCqContext(CqContext* context)
     return HCCL_SUCCESS;
 }
 
-std::vector<char> DevRdmaConnection::GetSqUniqueId() const
+std::vector<char> DevRdmaConnectionV2::GetSqUniqueId() const
 {
     HCCL_DEBUG("start packing sq uniqueId");
     struct QpAttr localQpAttr;
     s32 ret = RaGetQpAttr(qpHandle_, &localQpAttr);
     if (ret != 0) {
-        HCCL_ERROR("[DevRdmaConnection::%s]RaGetQpAttr failed, ret[%d]", __func__, ret);
+        HCCL_ERROR("[DevRdmaConnectionV2::%s]RaGetQpAttr failed, ret[%d]", __func__, ret);
         return {};
     }
 
     Hccl::BinaryStream binaryStream;
-    binaryStream << localQpAttr.qpn; // qpn
-    binaryStream << ndaQpInfo_.sqInfo.qBuf.base; // sqVa
-    binaryStream << ndaQpInfo_.sqInfo.qBuf.entrySize; // wqeSize
-    binaryStream << ndaQpInfo_.sqInfo.qBuf.entryCnt; // depth
-    binaryStream << reinterpret_cast<uint64_t >(ndaQpInfo_.sqInfo.dbrPiVa.iovBase); // headAddr
-    binaryStream << reinterpret_cast<uint64_t >(ndaQpInfo_.sqInfo.dbrCiVa.iovBase); // tailAddr
-    binaryStream << reinterpret_cast<uint64_t >(ndaQpInfo_.sqInfo.dbHwVa.iovBase); // dbVa
-    binaryStream << (qpInfo_.serviceLevel == 0 ? SL_TEMP : qpInfo_.serviceLevel); // sl
-    binaryStream << 0; // 0-hw 1-sw
+    binaryStream << localQpAttr.qpn;
+    binaryStream << ndaQpInfo_.sqInfo.qBuf.base;
+    binaryStream << ndaQpInfo_.sqInfo.qBuf.entrySize;
+    binaryStream << ndaQpInfo_.sqInfo.qBuf.entryCnt;
+    binaryStream << reinterpret_cast<uint64_t >(ndaQpInfo_.sqInfo.dbrPiVa.iovBase);
+    binaryStream << reinterpret_cast<uint64_t >(ndaQpInfo_.sqInfo.dbrCiVa.iovBase);
+    binaryStream << reinterpret_cast<uint64_t >(ndaQpInfo_.sqInfo.dbHwVa.iovBase);
+    binaryStream << (qpInfo_.serviceLevel == 0 ? SL_TEMP : qpInfo_.serviceLevel);
+    binaryStream << 0;
 
     std::vector<char> result;
     binaryStream.Dump(result);
     return result;
 }
 
-std::vector<char> DevRdmaConnection::GetCqUniqueId() const
+std::vector<char> DevRdmaConnectionV2::GetCqUniqueId() const
 {
     HCCL_DEBUG("start packing cq uniqueId");
     Hccl::BinaryStream binaryStream;
-    binaryStream << 0; // cqn
-    binaryStream << ndaCqInfo_.cqInfo.qBuf.base; // cqVa
-    binaryStream << ndaCqInfo_.cqInfo.qBuf.entrySize; // cqeSize
-    binaryStream << ndaCqInfo_.cqInfo.qBuf.entryCnt; // cqDepth
-    binaryStream << reinterpret_cast<uint64_t >(ndaCqInfo_.cqInfo.dbrPiVa.iovBase); // headAddr
-    binaryStream << reinterpret_cast<uint64_t >(ndaCqInfo_.cqInfo.dbrCiVa.iovBase); // tailAddr
-    binaryStream << reinterpret_cast<uint64_t >(ndaCqInfo_.cqInfo.dbHwVa.iovBase); // dbVa
-    binaryStream << 0; // 0-hw 1-sw
+    binaryStream << 0;
+    binaryStream << ndaCqInfo_.cqInfo.qBuf.base;
+    binaryStream << ndaCqInfo_.cqInfo.qBuf.entrySize;
+    binaryStream << ndaCqInfo_.cqInfo.qBuf.entryCnt;
+    binaryStream << reinterpret_cast<uint64_t >(ndaCqInfo_.cqInfo.dbrPiVa.iovBase);
+    binaryStream << reinterpret_cast<uint64_t >(ndaCqInfo_.cqInfo.dbrCiVa.iovBase);
+    binaryStream << reinterpret_cast<uint64_t >(ndaCqInfo_.cqInfo.dbHwVa.iovBase);
+    binaryStream << 0;
 
     std::vector<char> result;
     binaryStream.Dump(result);
     return result;
 }
 
-std::vector<char> DevRdmaConnection::GetUniqueId() const
+std::vector<char> DevRdmaConnectionV2::GetUniqueId() const
 {
     HCCL_DEBUG("start packing conn uniqueId");
     Hccl::BinaryStream binaryStream;
