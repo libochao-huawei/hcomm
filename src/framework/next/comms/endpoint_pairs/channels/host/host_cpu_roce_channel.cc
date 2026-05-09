@@ -791,8 +791,7 @@ HcclResult HostCpuRoceChannel::NotifyWait(const uint32_t localNotifyIdx, const u
 
         if (actualNum > 0 && wc.imm_data == dpuNotifyId) {
             if (wc.status != IBV_WC_SUCCESS) {
-                HCCL_ERROR("[HostCpuRoceChannel][%s] ibv_poll_cq return wc.status[%d].",
-                    __func__, wc.status);
+                HCCL_ERROR("[HostCpuRoceChannel][%s] ibv_poll_cq return wc.status[%d].", __func__, wc.status);
                 return ReportWcStatusError(wc.status);
             }
             HCCL_INFO("[HostCpuRoceChannel::NotifyWait] poll cq success");
