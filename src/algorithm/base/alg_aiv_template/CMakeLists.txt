@@ -15,3 +15,9 @@ add_subdirectory(broadcast)
 add_subdirectory(reduce_scatter)
 add_subdirectory(reduce_scatter_v)
 add_subdirectory(aiv_sync)
+
+if(TARGET ccl_kernel)
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/inc
+    )
+endif()
