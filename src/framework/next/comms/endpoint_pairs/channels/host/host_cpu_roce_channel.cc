@@ -173,7 +173,7 @@ HcclResult HostCpuRoceChannel::BuildSocket()
 
 HcclResult HostCpuRoceChannel::BuildConnection()
 {
-    int lbMax = 1;
+    int lbMax;
     uint32_t ret = RaGetLbMax(rdmaHandle_, &lbMax);
     CHK_PRT_RET(ret != 0,
         HCCL_ERROR("[HostCpuRoceChannel::BuildConnection][GetLbMax]errNo[0x%016llx] RaGetLbMax fail. "
@@ -200,7 +200,9 @@ HcclResult HostCpuRoceChannel::BuildConnection()
         CHK_PTR_NULL(conn);
         CHK_RET(conn->Init());
         Hccl::QpInfo& qpInfo = conn->GetQpInfo();
-        qpInfo.lbValue = i % lbMax;
+        if (lbMax > 0) {
+            qpInfo.lbValue = i % lbMax;
+        }
         qpInfo.qpThreshold = channelDesc_.roceAttr.qpThreshold;
         qpInfo.serviceLevel = channelDesc_.roceAttr.sl;
         qpInfo.trafficClass = channelDesc_.roceAttr.tc;
@@ -985,19 +987,17 @@ HcclResult HostCpuRoceChannel::WriteWithNotify(
     // 尾块: RDMA_WRITE_WITH_IMM，携带 notify
     void *tailDst = static_cast<char *>(dst) + offset;
     const void *tailSrc = static_cast<const char *>(src) + offset;
-    uint64_t tailLen = len - offset;
-
+    uint64_t lastLen = len - offset;
     printf("[ywj]%s:%u", __FUNCTION__, __LINE__);
     // 构造 WR
     std::vector<Hccl::QpInfo> qpInfo = GetQpInfos();
     uint32_t useQpNum = 0;
-    uint32_t wrLen = len / qpInfo.size();
-    uint32_t wrLenTail = len - (qpInfo.size() - 1) * wrLen;
+    uint32_t wrLen = lastLen / qpInfo.size();
+    uint32_t wrLenTail = lastLen - (qpInfo.size() - 1) * wrLen;
     if (wrLen < qpInfo[0].qpThreshold) {
-        uint32_t minSize = len / qpInfo[0].qpThreshold;     // 保证每个qp分担的数据量满足最小阈值
-        useQpNum = minSize;
-        wrLen = tailLen / useQpNum;
-        wrLenTail = tailLen - (useQpNum - 1) * wrLen;
+        useQpNum = (lastLen - 1) / qpInfo[0].qpThreshold + 1;     // 保证每个qp分担的数据量满足最小阈值
+        wrLen = lastLen / useQpNum;
+        wrLenTail = lastLen - (useQpNum - 1) * wrLen;
     }
 
     // 构造 WR
