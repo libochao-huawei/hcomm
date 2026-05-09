@@ -4,11 +4,11 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#ifndef DEV_RDMA_CONNECTION_H
-#define DEV_RDMA_CONNECTION_H
+#ifndef DEV_RDMA_CONNECTION_V2_H
+#define DEV_RDMA_CONNECTION_V2_H
 
 #include "hccp_common.h"
 #include "enum_factory.h"
@@ -23,7 +23,7 @@
 #include "hccp_nda.h"
 
 namespace hcomm {
-class DevRdmaConnection {
+class DevRdmaConnectionV2 {
 public:
     struct QpAttrDto {
         uint32_t qpn{UINT32_MAX};
@@ -45,13 +45,13 @@ public:
         uint32_t sl{0};
     };
     MAKE_ENUM(RdmaConnStatus, CLOSED, INIT, QP_CREATED, QP_MODIFIED, SOCKET_TIMEOUT)
-    DevRdmaConnection(Hccl::Socket *socket, RdmaHandle rdmaHandle);
-    ~DevRdmaConnection();
+    DevRdmaConnectionV2(Hccl::Socket *socket, RdmaHandle rdmaHandle);
+    ~DevRdmaConnectionV2();
 
     HcclResult Init();
     HcclResult CreateQp();
     HcclResult GetExchangeDto(std::unique_ptr<Hccl::Serializable> &serial);
-    HcclResult ParseRmtExchangeDto(const Hccl::Serializable &rmtDto); // 解析收到的远端序列化数据
+    HcclResult ParseRmtExchangeDto(const Hccl::Serializable &rmtDto);
     HcclResult ModifyQp();
 
     std::string Describe() const ;
@@ -97,4 +97,4 @@ private:
 
 } // namespace hcomm
 
-#endif // DEV_RDMA_CONNECTION_H
+#endif // DEV_RDMA_CONNECTION_V2_H

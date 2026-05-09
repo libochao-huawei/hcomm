@@ -13,10 +13,7 @@
 #include <vector>
 #include <memory>
 #include "dev_aicpu_ts_channel.h"
-#include "rma_buffer_lite.h"
-#include "rmt_rma_buffer_lite.h"
-#include "dev_rdma_conn_lite.h"
-#include "notify_lite.h"
+#include "roce_transport_lite_impl.h"
 
 namespace Hccl {
 
@@ -36,30 +33,7 @@ public:
     std::string Describe() const;
 
 private:
-    HcclResult Init(std::vector<char> &uniqueId);
-
-    u32 notifyNum_{0};
-    u32 bufferNum_{0};
-    u32 connNum_{0};
-
-    std::vector<std::unique_ptr<NotifyLite>> localNotifies_{};
-    std::vector<RmtRmaBufferLite> remoteNotifies_{};
-    std::vector<RmaBufferLite> locBufferVec_{};
-    std::vector<RmtRmaBufferLite> rmtBufferVec_{};
-    std::vector<std::vector<char>> connUniqueIdVec_{};
-    std::vector<std::unique_ptr<DevRdmaConnLite>> connVec_{};
-    std::unique_ptr<RmaBufferLite> notifyValueBuffer_{};
-
-    RmaBufSliceLite GetRmaBufSlicelite(const RmaBufferLite &lite) const;
-    RmtRmaBufSliceLite GetRmtRmaBufSliceLite(const RmtRmaBufferLite &lite) const;
-    RmtRmaBufSliceLite GetRmtNotifySliceLite(u32 index) const;
-
-    void ParseLocNotifyVec(std::vector<char> &data);
-    void ParseRmtNotifyVec(std::vector<char> &data);
-    void ParseNotifyValueBuffer(std::vector<char> &data);
-    void ParseLocBufferVec(std::vector<char> &data);
-    void ParseRmtBufferVec(std::vector<char> &data);
-    void ParseConnVec(std::vector<char> &data);
+    std::unique_ptr<RoceTransportLiteImpl> transport_{};
 };
 
 } // namespace Hccl
