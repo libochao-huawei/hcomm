@@ -130,8 +130,8 @@ inline void ConfigCcuResReqCcuMs(CcuResReq &resReq, uint8_t dieId)
     resReq.blockMsReq[dieId] = 64 * 8 * 2;
     resReq.ckeReq[dieId] = 32;
     resReq.blockCkeReq[dieId] = 8 * 8 * 2;
-    resReq.continuousXnReq[dieId] = 0;
-    resReq.xnReq[dieId] = 400;
+    resReq.continuousXnReq[dieId] = 400;
+    resReq.xnReq[dieId] = 0;
     resReq.gsaReq[dieId] = 400;
     resReq.missionReq.reqType = MissionReqType::FUSION_MULTIPLE_DIE;
     resReq.missionReq.req[dieId] = 2;
@@ -145,8 +145,8 @@ inline void ConfigCcuResReqCcuSched(CcuResReq &resReq, uint8_t dieId)
     resReq.blockMsReq[dieId] = 128;
     resReq.ckeReq[dieId] = 32;
     resReq.blockCkeReq[dieId] = 16;
-    resReq.continuousXnReq[dieId] = 0;
-    resReq.xnReq[dieId] = 400;
+    resReq.continuousXnReq[dieId] = 400;
+    resReq.xnReq[dieId] = 0;
     resReq.gsaReq[dieId] = 400;
     resReq.missionReq.reqType = MissionReqType::FUSION_MULTIPLE_DIE;
     resReq.missionReq.req[dieId] = 2;

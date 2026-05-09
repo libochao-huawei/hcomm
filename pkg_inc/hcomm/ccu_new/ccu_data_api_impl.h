@@ -57,6 +57,7 @@ extern CcuResult CcuAddressAddAssignVar(CcuAddressHandle addr, CcuVariableHandle
 //参数加载类 相关接口
 extern CcuResult CcuLoadArg(CcuVariableHandle varHandle, uint32_t argId);
 extern CcuResult CcuLoadVar(uint64_t addr, CcuVariableHandle varHandle, uint32_t num);
+extern CcuResult CcuLoadVarFromVarAddr(CcuVariableHandle addrHandle, CcuVariableHandle varHandle, uint32_t num);
 extern CcuResult CcuStoreVar(uint64_t addr, CcuVariableHandle varHandle, uint32_t num);
 
 

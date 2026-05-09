@@ -306,7 +306,7 @@ CcuResult CcuKernel::GetVariableByHandle(CcuVariableHandle varHandle, CcuRep::Va
 //Alloc 相关接口
 CcuResult CcuKernel::VariableAlloc(CcuVariableHandle *varHandle)
 {
-    const auto &var = CreateResAssist(res_.variable);
+    const auto &var = CreateResAssist(res_.continuousVariable);
     CcuVariableHandle handle = ccuVarMap_.size();
     ccuVarMap_.emplace(handle, var);
 
@@ -533,6 +533,26 @@ CcuResult CcuKernel::LoadVar(uint64_t addr, CcuVariableHandle varHandle, uint32_
     }
 
     Append(std::make_shared<CcuRep::CcuRepLoad>(addr, *var, num));
+    return CcuResult::CCU_SUCCESS;
+}
+CcuResult CcuKernel::CcuLoadVarFromVarAddr(CcuVariableHandle addrHandle, CcuVariableHandle varHandle, uint32_t num)
+{
+    CcuRep::Variable *addrVar{nullptr};
+    CCU_CHK_RET(GetVariableByHandle(addrHandle, &addrVar));
+    CcuRep::Variable *var{nullptr};
+    CCU_CHK_RET(GetVariableByHandle(varHandle, &var));
+    if (num > 1) {
+        for (uint32_t i = 1; i < num; i++) {
+            CcuRep::Variable *nextVar{nullptr};
+            CCU_CHK_RET(GetVariableByHandle(varHandle + i, &nextVar));
+            if (nextVar->Id() != var->Id() + i) {
+                HCCL_ERROR("[CcuKernel][LoadVar] dst variables not continuous at index %u, "
+                           "expected Id %u but got %u", i, var->Id() + i, nextVar->Id());
+                return HCCL_TO_CCU_RET(HCCL_E_PARA);
+            }
+        }
+    }
+    Append(std::make_shared<CcuRep::CcuRepLoadVar>(*addrVar, *var, num));
     return CcuResult::CCU_SUCCESS;
 }
 CcuResult CcuKernel::StoreVar(uint64_t addr, CcuVariableHandle varHandle, uint32_t num)
