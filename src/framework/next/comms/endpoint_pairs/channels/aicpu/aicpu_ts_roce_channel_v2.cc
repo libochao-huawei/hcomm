@@ -24,6 +24,7 @@
 namespace hcomm {
 
 constexpr uint16_t DEFAULT_LISTENING_PORT = 60001;
+constexpr u32 CHANNEL_ENTITY_TYPE_RDMA = 0;
 
 AicpuTsRoceChannelV2::AicpuTsRoceChannelV2(EndpointHandle endpointHandle, HcommChannelDesc channelDesc, CommEngine engine)
     : endpointHandle_(endpointHandle), channelDesc_(channelDesc), engine_(engine)
@@ -511,7 +512,7 @@ HcclResult AicpuTsRoceChannelV2::BuildAndGetRmtBufInfo(ProtectionInfo** protecti
     for (uint32_t i = 0; i < bufferNum_; i++) {
         auto& rmtRmaBuffer = rmtRmaBuffers_[i];
         ProtectionInfo protectionInfo;
-        protectionInfo.type = 0; // 0-RDMA 1-URMA
+        protectionInfo.type = CHANNEL_ENTITY_TYPE_RDMA;
         protectionInfo.addr = static_cast<uint64_t>(rmtRmaBuffer->GetAddr());
         protectionInfo.length = rmtRmaBuffer->GetSize();
         protectionInfo.memInfo.rdmaMemInfo.rkey = rmtRmaBuffer->GetRkey();
@@ -544,7 +545,7 @@ HcclResult AicpuTsRoceChannelV2::BuildAndGetLocBufInfo(ProtectionInfo** protecti
     for (uint32_t i = 0; i < bufferNum_; i++) {
         auto& locRmaBuffer = localRmaBuffers_[i];
         ProtectionInfo protectionInfo;
-        protectionInfo.type = 0; // 0-RDMA 1-URMA
+        protectionInfo.type = CHANNEL_ENTITY_TYPE_RDMA;
         protectionInfo.addr = static_cast<uint64_t>(locRmaBuffer->GetAddr());
         protectionInfo.length = locRmaBuffer->GetSize();
         protectionInfo.memInfo.rdmaMemInfo.lkey = locRmaBuffer->GetLkey();
