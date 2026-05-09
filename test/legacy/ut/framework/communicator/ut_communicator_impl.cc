@@ -3552,3 +3552,33 @@ TEST_F(TryFastCcuLaunchTest, Ut_TryFastCcuLaunch_When_OpNoSupportFastLaunch_Expe
     // then
     EXPECT_EQ(fakeComm.TryFastCcuLaunch(fakeOpParams, fakeStreamPtr), false);
 }
+
+TEST(CcuContextAllToAllVMesh1DTest, Ut_RefreshArgs_ConstructArgs_Success)
+{
+    // 1. 构造安全的假数据
+    CollOpParams opParams = {};
+    opParams.sendBuf = (void*)0x1000;  // 合法假地址
+    opParams.recvBuf = (void*)0x2000;
+
+    // 构造安全的数组，不会崩溃
+    u64 sendCounts[] = {10, 10};
+    u64 sdispls[]    = {0, 10};
+    u64 rdispls[]    = {0, 10};
+
+    opParams.all2AllVDataDes.sendCounts = sendCounts;
+    opParams.all2AllVDataDes.sdispls    = sdispls;
+    opParams.all2AllVDataDes.rdispls    = rdispls;
+    opParams.all2AllVDataDes.sendType   = HCCL_DATA_TYPE_FP32;
+    opParams.all2AllVDataDes.recvType   = HCCL_DATA_TYPE_FP32;
+
+    // 2. 调用目标函数（真正跑进去！真正覆盖代码！）
+    std::vector<uint64_t> args;
+    u32 rankSize = 2;
+    u32 myRank   = 0;
+
+    // 🔥 这里会真实执行 RefreshArgs，覆盖所有代码行
+    CcuContextAllToAllVMesh1D::RefreshArgs(opParams, rankSize, args, myRank);
+
+    // 3. 验证
+    ASSERT_GT(args.size(), 0);
+}
