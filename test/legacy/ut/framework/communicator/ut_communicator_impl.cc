@@ -3552,3 +3552,40 @@ TEST_F(TryFastCcuLaunchTest, Ut_TryFastCcuLaunch_When_OpNoSupportFastLaunch_Expe
     // then
     EXPECT_EQ(fakeComm.TryFastCcuLaunch(fakeOpParams, fakeStreamPtr), false);
 }
+
+TEST_F(TryFastCcuLaunchTest, Ut_CcuContextAllToAllVMesh1D_RefreshArgs_ValidInput_Success)
+{
+    // ==============================
+    // 1. 构造入参（完全合法，不依赖Comm）
+    // ==============================
+    CollOpParams opParams{};
+    opParams.opType = OpType::ALLTOALLV;
+    opParams.sendBuf = reinterpret_cast<void*>(0x10002000);
+    opParams.recvBuf = reinterpret_cast<void*>(0x10003000);
+
+    // 构造 AllToAllV 数据
+    std::vector<u64> sendCounts = {10, 20, 30};
+    std::vector<u64> sdispls    = {0, 10, 30};
+    std::vector<u64> rdispls    = {0, 20, 40};
+
+    opParams.all2AllVDataDes.sendCounts = sendCounts.data();
+    opParams.all2AllVDataDes.sdispls    = sdispls.data();
+    opParams.all2AllVDataDes.rdispls    = rdispls.data();
+    opParams.all2AllVDataDes.sendType   = DataType::FP32;
+    opParams.all2AllVDataDes.recvType   = DataType::FP32;
+
+    u32 rankSize = 3;
+    u32 myRank   = 1;
+
+    // ==============================
+    // 2. 直接调用你要测的函数（不依赖任何CCU/硬件/流）
+    // ==============================
+    std::vector<uint64_t> args;
+    CcuContextAllToAllVMesh1D::RefreshArgs(opParams, rankSize, args, myRank);
+
+    // ==============================
+    // 3. 验证（能跑到这里就代表成功）
+    // ==============================
+    ASSERT_FALSE(args.empty());
+    SUCCEED();
+}
