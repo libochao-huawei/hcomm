@@ -278,9 +278,7 @@ HcclResult TpMgr::GetTpInfo(const GetTpInfoParam &param, TpInfo &tpInfo)
 {
     const auto &tpProtocol = param.tpProtocol;
     CHK_RET(CheckTpProtocol(tpProtocol));
-    if (FindAndGetTpInfo(param, tpInfo) == HcclResult::HCCL_SUCCESS) {
-        return HcclResult::HCCL_SUCCESS;
-    }
+    // 不在入口处命中 infoMap：每次均异步 RaGetTpInfoList / RaGetTpAttr；完成后写入 infoMap 供 ReleaseTpInfo 计数。
 
     std::unique_lock<std::mutex> reqCtxLock(GetReqCtxMutex(tpProtocol));
 
@@ -366,30 +364,6 @@ HcclResult TpMgr::ReleaseTpInfo(const GetTpInfoParam &param, const TpInfo &tpInf
     if (rmtIt->second.empty()) {
         locInfoMap.erase(rmtIt);
     }
-    return HcclResult::HCCL_SUCCESS;
-}
-
-HcclResult TpMgr::FindAndGetTpInfo(const GetTpInfoParam &param, TpInfo &tpInfo)
-{
-    Hccl::IpAddress locAddr{};
-    Hccl::IpAddress rmtAddr{};
-    CHK_RET(CommAddrToIpAddress(param.locAddr, locAddr));
-    CHK_RET(CommAddrToIpAddress(param.rmtAddr, rmtAddr));
-
-    const QosKey qosKey = param.qos & 0xFFU;
-    std::lock_guard<std::mutex> lock(GetInfoCtxMutex(param.tpProtocol));
-    auto &infoMap = GetInfoCtxMap(param.tpProtocol);
-    auto &locInfoMap = infoMap[locAddr];
-    auto rmtIt = locInfoMap.find(rmtAddr);
-    if (rmtIt == locInfoMap.end()) {
-        return HcclResult::HCCL_E_NOT_FOUND;
-    }
-    auto qosIt = rmtIt->second.find(qosKey);
-    if (qosIt == rmtIt->second.end()) {
-        return HcclResult::HCCL_E_NOT_FOUND;
-    }
-    qosIt->second.useCnt += 1;
-    tpInfo = qosIt->second.tpInfo;
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -548,9 +522,14 @@ HcclResult TpMgr::HandleCompletedRequest(RequestCtx reqCtx, const GetTpInfoParam
     std::lock_guard<std::mutex> lock(GetInfoCtxMutex(param.tpProtocol));
     auto &infoMap = GetInfoCtxMap(param.tpProtocol);
     auto &rmtMap = infoMap[locAddr][rmtAddr];
-    rmtMap[qosKey] = {std::move(tmpTpInfo), 1};
-
-    tpInfo = rmtMap[qosKey].tpInfo;
+    auto itQo = rmtMap.find(qosKey);
+    if (itQo != rmtMap.end() && itQo->second.tpInfo.tpHandle == tmpTpInfo.tpHandle) {
+        itQo->second.useCnt += 1;
+        tpInfo = itQo->second.tpInfo;
+    } else {
+        rmtMap[qosKey] = TpInfoCtx{tmpTpInfo, 1};
+        tpInfo = rmtMap[qosKey].tpInfo;
+    }
     return HcclResult::HCCL_SUCCESS;
 }
 

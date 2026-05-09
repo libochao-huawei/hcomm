@@ -98,7 +98,7 @@ private:
     };
 
     using QosKey = uint32_t;
-    /// 本/对端地址键（与 GetTpCfg 中 EID 同源）+ qos：同一 EID 对、同协议、同 qos 的多个通信域复用同一 TpInfo；不同 EID 对互不共享。
+    /// 本/对端地址键（与 GetTpCfg 中 EID 同源）+ qos：异步完成后登记 TpInfo，供 ReleaseTpInfo 维护 useCnt；GetTpInfo 入口不再命中复用。
     using InfoCtxMap = std::unordered_map<Hccl::IpAddress,
         std::unordered_map<Hccl::IpAddress, std::unordered_map<QosKey, TpInfoCtx>>>;
     using ReqCtxMap = std::unordered_map<Hccl::IpAddress,
@@ -110,7 +110,6 @@ private:
     TpMgr(const TpMgr &that) = delete;
     TpMgr &operator=(const TpMgr &that) = delete;
 
-    HcclResult FindAndGetTpInfo(const GetTpInfoParam &param, TpInfo &tpInfo);
     HcclResult StartGetTpInfoListRequest(const GetTpInfoParam &param, RequestCtx &reqCtx) const;
     HcclResult StartGetTpAttrForFirstTp(const GetTpInfoParam &param, RequestCtx &reqCtx) const;
     HcclResult HandleCompletedRequest(RequestCtx reqCtx, const GetTpInfoParam &param, TpInfo &tpInfo);
