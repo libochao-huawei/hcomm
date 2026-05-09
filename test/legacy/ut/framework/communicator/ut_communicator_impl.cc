@@ -3552,3 +3552,50 @@ TEST_F(TryFastCcuLaunchTest, Ut_TryFastCcuLaunch_When_OpNoSupportFastLaunch_Expe
     // then
     EXPECT_EQ(fakeComm.TryFastCcuLaunch(fakeOpParams, fakeStreamPtr), false);
 }
+
+TEST_F(TryFastCcuLaunchTest, Ut_TryFastCcuLaunch_AllToAllV_Enter_RefreshArgs_Success)
+{
+    // 1. 配置 ALLTOALLV
+    fakeOpParams.opType = OpType::ALLTOALLV;
+    fakeOpParams.reduceOp = ReduceOp::SUM;
+    fakeOpParams.all2AllVDataDes.sendType = DataType::FP32;
+
+    // 2. 构造合法 AllToAllV 数据
+    vector<u64> sendCounts = {10, 10, 10};
+    vector<u64> sdispls    = {0, 10, 20};
+    vector<u64> rdispls    = {0, 10, 20};
+
+    fakeOpParams.all2AllVDataDes.sendCounts = sendCounts.data();
+    fakeOpParams.all2AllVDataDes.sdispls    = sdispls.data();
+    fakeOpParams.all2AllVDataDes.rdispls    = rdispls.data();
+    fakeOpParams.all2AllVDataDes.recvType   = DataType::FP32;
+
+    // 3. 构造 KEY
+    fakeComm.ccuParamsMappingKey = {
+        static_cast<u32>(fakeOpParams.reduceOp),
+        static_cast<u32>(fakeOpParams.all2AllVDataDes.sendType),
+        0
+    };
+
+    // 4. 保存正确 INST TYPE（必须是这个才会进 RefreshArgs）
+    fakeComm.saveCCUParams({}, {}, 0, CcuInstType::CCU_ALLTOALLV_MESH_1D_DIRECT, true);
+
+    // ==============================
+    // 🔥 只 Mock 崩溃的底层函数，不影响 RefreshArgs
+    // ==============================
+    MOCKER_CPP(&CommunicatorImpl::SuperFastLoad).stubs().with(any()).will(ignoreReturnValue());
+    MOCKER_CPP(&HrtReduceAsync).stubs().with(any()).will(ignoreReturnValue());
+
+    // ==============================
+    // 放开 ExecuteFastCcuLaunch，让它真实执行！
+    // ==============================
+    UNMOCK(&CommunicatorImpl::ExecuteFastCcuLaunch);
+
+    // ==============================
+    // 执行！会 100% 跑进 RefreshArgs！
+    // ==============================
+    bool ret = fakeComm.TryFastCcuLaunch(fakeOpParams, fakeStreamPtr);
+
+    // 验证
+    EXPECT_TRUE(ret);
+}
