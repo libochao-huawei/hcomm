@@ -59,13 +59,13 @@ public:
     ~CachedCCUParams();
 
 private:
-    inline void *aligned_malloc(size_t align, size_t size) const
+    inline HcclResult aligned_malloc(void*& ptr, size_t align, size_t size) const
     {
-        void *p = nullptr;
-        if (posix_memalign(&p, align, size) != 0) {
-            throw std::bad_alloc();
+        if (posix_memalign(&ptr, align, size) != 0) {
+            HCCL_ERROR("Memory allocation failed, size=%zu", size);
+            return HCCL_E_MEMORY;
         }
-        return p;
+        return HCCL_SUCCESS;
     }
 
     inline void aligned_free(void *ptr) const
@@ -92,7 +92,12 @@ private:
         if (!is_power_of_2(alignment)) {
             return nullptr;
         };
-        return aligned_malloc(alignment, round_up_to(size, alignment));
+        void* ptr = nullptr;
+        HcclResult res = aligned_malloc(ptr, alignment, round_up_to(size, alignment));
+        if (res != HCCL_SUCCESS) {
+            return nullptr;
+        }
+        return ptr;
     }
 
     rtCcuTaskInfo_t *alloc_and_memcpy_aligned(const std::vector<std::vector<rtCcuTaskInfo_t>> &vecs,

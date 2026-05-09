@@ -71,6 +71,10 @@ CachedCCUParams::CachedCCUParams(std::vector<std::vector<Hccl::CcuTaskParam>> &&
     constexpr std::size_t alignment = alignof(std::max_align_t);
     ccuParams =
         alloc_and_memcpy_aligned(std::forward<std::vector<std::vector<rtCcuTaskInfo_t>>>(ccuTaskInstruction), alignment);
+    if (ccuParams == nullptr) {
+        HCCL_ERROR("[CachedCCUParams] failed to allocate ccuParams");
+        return;
+    }
     taskParams.reserve(ccuInstruction.size());
     for (std::size_t i = 0; i < ccuInstruction.size(); i++) {
         TaskParam taskParam = {};
@@ -112,7 +116,8 @@ rtCcuTaskInfo_t *CachedCCUParams::alloc_and_memcpy_aligned(const std::vector<std
                                                         std::size_t alignment)
 {
     if (alignment < alignof(CcuTaskParam)) {
-        THROW<InternalException>(StringFormat("[CachedCCUParams] alignment must be larger than type alignment."));
+        HCCL_ERROR("[CachedCCUParams] alignment must be larger than type alignment.");
+        return nullptr;
     }
     count.resize(vecs.size());
     std::size_t countIndex = 0;
@@ -122,13 +127,15 @@ rtCcuTaskInfo_t *CachedCCUParams::alloc_and_memcpy_aligned(const std::vector<std
         HCCL_INFO("CachedCCUParams: vec.size[%llu]", static_cast<std::uint64_t>(vec.size()));
     }
     if (totalCounts == 0) {
-        THROW<InternalException>(StringFormat("[CachedCCUParams] total count is zero."));
+        HCCL_ERROR("[CachedCCUParams] total count is zero.");
+        return nullptr;
     }
     HCCL_INFO("CachedCCUParams: totalCounts[%llu]", static_cast<std::uint64_t>(totalCounts));
     std::size_t bytes = totalCounts * sizeof(rtCcuTaskInfo_t);
     void *raw = alloc_aligned_raw(alignment, bytes);
     if (!raw) {
-        THROW<InternalException>(StringFormat("[CachedCCUParams] failed to allocate memory, size %zu.", bytes));
+        HCCL_ERROR("[CachedCCUParams] failed to allocate memory, size %zu.", bytes);
+        return nullptr;
     }
     rtCcuTaskInfo_t *dst = static_cast<rtCcuTaskInfo_t *>(raw);
     rtCcuTaskInfo_t *cur = dst;
@@ -136,7 +143,8 @@ rtCcuTaskInfo_t *CachedCCUParams::alloc_and_memcpy_aligned(const std::vector<std
         auto ret = memcpy_s(cur, count[0] * sizeof(rtCcuTaskInfo_t), vecs[0].data(), count[0] * sizeof(rtCcuTaskInfo_t));
         if (ret != EOK) {
             aligned_free(dst);
-            THROW<InternalException>(StringFormat("[CachedCCUParams] failed to memcpy, ret %d.", ret));
+            HCCL_ERROR("[CachedCCUParams] failed to memcpy, ret %d.", ret);
+            return nullptr;
         }
         cur += count[0];
     }
@@ -147,7 +155,8 @@ rtCcuTaskInfo_t *CachedCCUParams::alloc_and_memcpy_aligned(const std::vector<std
             auto ret = memcpy_s(cur, vec.size() * sizeof(rtCcuTaskInfo_t), vec.data(), vec.size() * sizeof(rtCcuTaskInfo_t));
             if (ret != EOK) {
                 aligned_free(dst);
-                THROW<InternalException>(StringFormat("[CachedCCUParams] failed to memcpy, ret %d.", ret));
+                HCCL_ERROR("[CachedCCUParams] failed to memcpy, ret %d.", ret);
+                return nullptr;
             }
             count[countIndex++] = vec.size();
             cur += vec.size();
