@@ -3552,3 +3552,45 @@ TEST_F(TryFastCcuLaunchTest, Ut_TryFastCcuLaunch_When_OpNoSupportFastLaunch_Expe
     // then
     EXPECT_EQ(fakeComm.TryFastCcuLaunch(fakeOpParams, fakeStreamPtr), false);
 }
+
+TEST_F(TryFastCcuLaunchTest, Ut_TryFastCcuLaunch_AllToAllV_Mesh1D_Direct_Call_RefreshArgs)
+{
+    // 1. 配置 ALLTOALLV
+    fakeOpParams.opType = OpType::ALLTOALLV;
+    fakeOpParams.reduceOp = ReduceOp::SUM;
+    fakeOpParams.all2AllVDataDes.sendType = DataType::FP32;
+
+    // 2. 构造合法的 AllToAllV 数据描述
+    vector<u64> sendCounts = {10, 10, 10};
+    vector<u64> sdispls    = {0, 10, 20};
+    vector<u64> rdispls    = {0, 10, 20};
+
+    fakeOpParams.all2AllVDataDes.sendCounts = sendCounts.data();
+    fakeOpParams.all2AllVDataDes.sdispls    = sdispls.data();
+    fakeOpParams.all2AllVDataDes.rdispls    = rdispls.data();
+    fakeOpParams.all2AllVDataDes.recvType   = DataType::FP32;
+
+    // 3. 构造正确的 KEY（必须和函数里的逻辑一致）
+    fakeComm.ccuParamsMappingKey = {
+        static_cast<u32>(fakeOpParams.reduceOp),
+        static_cast<u32>(fakeOpParams.all2AllVDataDes.sendType),
+        0
+    };
+
+    // 4. 保存正确 INST TYPE
+    fakeComm.saveCCUParams({}, {}, 0, CcuInstType::CCU_ALLTOALLV_MESH_1D_DIRECT, true);
+
+    // 5. 拿到缓存的参数
+    auto& mapping = fakeComm.colCcuParamMapping[OpType::ALLTOALLV];
+    auto& params  = mapping.find(fakeComm.ccuParamsMappingKey)->second;
+
+    // ==============================
+    // 🔥 这里直接调用 FillAllToAllVArgs
+    // 只会进 RefreshArgs，不跑硬件，不崩溃！
+    // ==============================
+    fakeComm.FillAllToAllVArgs(fakeOpParams, params.ccuParams);
+
+    // 能跑到这里，说明 RefreshArgs 已成功执行！
+    SUCCEED();
+}
+
