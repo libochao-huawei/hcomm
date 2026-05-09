@@ -220,14 +220,14 @@ enum class HcclRtMemcpyKind {
     HCCL_RT_MEMCPY_KIND_RESERVED,
 };
 DevId     HrtGetDevicePhyIdByIndex(s32 deviceLogicId);
-DevType HrtGetDeviceType();
+HcclResult HrtGetDeviceType(DevType& type);
 s32     HrtDeviceGetBareTgid();
 void    HrtGetSocVer(std::string &socName);
 s32     HrtGetDevice();
 // 非主线程使用rts添加task情况下，需要先使用该函数通知RTS，将线程和 device logic id绑定
 void                  HrtSetDevice(s32 deviceLogicId);
 void                  HrtResetDevice(s32 deviceLogicId);
-u32                   HrtGetDeviceCount();
+HcclResult            HrtGetDeviceCount(u32& count);
 HcclResult HrtGetDeviceInfo(uint32_t deviceLogicId, int32_t moduleType, aclrtDevAttr infoType, int64_t &val);
 HcclResult HrtGetMainboardId(uint32_t deviceLogicId, HcclMainboardId &hcclMainboardId);
 aclrtStream HrtStreamCreateWithFlags(uint32_t priority, uint32_t flag);

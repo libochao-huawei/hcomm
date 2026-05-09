@@ -38,8 +38,9 @@ UniversalConcurrentMap<u32, volatile u32> RankInfoDetect::g_detectServerStatus_;
 RankInfoDetect::RankInfoDetect()
 {
     devLogicId_ = HrtGetDevice();
-    s32 deviceNum = HrtGetDeviceCount();
-    CHK_PRT_THROW(devLogicId_ >= deviceNum,
+    u32 deviceNum = 0;
+    HcclResult ret = HrtGetDeviceCount(deviceNum);
+    CHK_PRT_THROW(ret != HCCL_SUCCESS || devLogicId_ >= static_cast<s32>(deviceNum),
         HCCL_ERROR("[RankInfoDetect::%s] deviceLogicId[%d] is invalid, deviceNum[%d].", __func__, devLogicId_, deviceNum),
         InternalException, "get hostIp fail");
     devPhyId_ = HrtGetDevicePhyIdByIndex(devLogicId_);

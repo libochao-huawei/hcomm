@@ -48,30 +48,41 @@ const std::unordered_map<std::string, DevType> SOC_VER_CONVERT{{"Ascend310P1", D
                                                                {"nosoc", DevType::DEV_TYPE_NOSOC}};
 
 // 添加编译宏，防止返回82类型芯片造成已有UT失效
-DevType HrtGetDeviceType()
+HcclResult HrtGetDeviceType(DevType& type)
 {
     std::string targetChipVerStr;
-    HrtGetSocVer(targetChipVerStr);
+    try {
+        HrtGetSocVer(targetChipVerStr);
+    } catch (const RuntimeApiException& e) {
+        HCCL_ERROR("[Get][DeviceType]HrtGetSocVer failed.");
+        return HcclResult::HCCL_E_RUNTIME;
+    }
 
     HCCL_INFO("[HrtGetDeviceType]targetChipVerStr = %s.", targetChipVerStr.c_str());
     if (targetChipVerStr.find("Ascend950") != std::string::npos) {
         HCCL_INFO("[HrtGetDeviceType]DeviceType = DevType::DEV_TYPE_950.");
-        return DevType::DEV_TYPE_950;
+        type = DevType::DEV_TYPE_950;
+        return HCCL_SUCCESS;
     }
 
     auto iter = SOC_VER_CONVERT.find(targetChipVerStr);
     if (iter == SOC_VER_CONVERT.end()) {
-        string msg = StringFormat("[Get][DeviceType]errNo[0x%016llx] rtGetSocVersion get "
+        HCCL_ERROR("[Get][DeviceType]errNo[0x%016llx] rtGetSocVersion get "
                    "illegal chipver, chip_ver[%s].",
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), targetChipVerStr.c_str());
-        MACRO_THROW(RuntimeApiException, msg);
+        return HcclResult::HCCL_E_RUNTIME;
     }
-    return iter->second;
+    type = iter->second;
+    return HCCL_SUCCESS;
 }
 
 DevId HrtGetDevicePhyIdByIndex(s32 deviceLogicId)
 {
-    DevType deviceType = HrtGetDeviceType();
+    DevType deviceType = DevType::DEV_TYPE_910A;
+    HcclResult ret = HrtGetDeviceType(deviceType);
+    if (ret != HCCL_SUCCESS) {
+        return 0;
+    }
     if (deviceType == DevType::DEV_TYPE_NOSOC) {
         return 0;
     }
@@ -152,18 +163,17 @@ void HrtResetDevice(s32 deviceLogicId)
     }
 }
 
-u32 HrtGetDeviceCount()
+HcclResult HrtGetDeviceCount(u32& count)
 {
-    u32       count = 0;
-    aclError ret   = aclrtGetDeviceCount(&count);
+    aclError ret = aclrtGetDeviceCount(&count);
     HCCL_INFO("Call rtGetDeviceCount, return value[%d], para: count[%u].", ret, count);
     if (ret != ACL_SUCCESS) {
-        string msg = StringFormat("[Get][DeviceCount]errNo[0x%016llx] rtGet device count fail. "
+        HCCL_ERROR("[Get][DeviceCount]errNo[0x%016llx] rtGet device count fail. "
                    "return[%d], para:count[%u].",
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, count);
-        MACRO_THROW(RuntimeApiException, msg);
+        return HcclResult::HCCL_E_RUNTIME;
     }
-    return count;
+    return HCCL_SUCCESS;
 }
 
 constexpr char RTS_SO_NAME[] = "libruntime.so";

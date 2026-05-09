@@ -2786,7 +2786,11 @@ HcclResult HcclSnapshotGetBufSize(uint32_t step, uint32_t *size)
 {
     // 校验DevType
     HCCL_INFO("[%s] start", __func__);
-    Hccl::DevType devType = HrtGetDeviceType();
+    Hccl::DevType devType = Hccl::DevType::DEV_TYPE_910A;
+    HcclResult ret = HrtGetDeviceType(devType);
+    if (ret != HCCL_SUCCESS) {
+        return ret;
+    }
     if (devType != DevType::DEV_TYPE_950) {
         HCCL_INFO("[%s] Get buffer size not support in this device type[%d]", __func__, devType);
         return HCCL_E_NOT_SUPPORT;

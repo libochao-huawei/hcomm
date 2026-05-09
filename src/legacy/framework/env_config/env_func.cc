@@ -340,8 +340,10 @@ std::vector<HcclAlgoType> CastAlgoTypeVec(const std::string &s)
         algoTypeVec[level] = algo;
     }
 
-    DevType devType = HrtGetDeviceType(); // 910A3场景只支持level0为ring算法
-    if (devType == DevType::DEV_TYPE_910A3 && algoTypeVec[HCCL_ALGO_LEVEL_0] != HcclAlgoType::HCCL_ALGO_TYPE_RING) {
+    DevType devType = DevType::DEV_TYPE_910A;
+    HcclResult ret = HrtGetDeviceType(devType);
+    if (ret == HCCL_SUCCESS && devType == DevType::DEV_TYPE_910A3 &&
+        algoTypeVec[HCCL_ALGO_LEVEL_0] != HcclAlgoType::HCCL_ALGO_TYPE_RING) {
         algoTypeVec[HCCL_ALGO_LEVEL_0] = HcclAlgoType::HCCL_ALGO_TYPE_RING;
     }
 
@@ -814,8 +816,10 @@ DfsConfig CastDfsConfig(const std::string &dfsConfigEnv)
 /*----------------------------- validate functions -------------------------*/
 void CheckExecTimeOut(const u32 &timeOut)
 {
-    DevType devType = HrtGetDeviceType();
-    if (devType == DevType::DEV_TYPE_910A2 || devType == DevType::DEV_TYPE_910A3 || devType == DevType::DEV_TYPE_950) {
+    DevType devType = DevType::DEV_TYPE_910A;
+    HcclResult ret = HrtGetDeviceType(devType);
+    if (ret == HCCL_SUCCESS && (devType == DevType::DEV_TYPE_910A2 || devType == DevType::DEV_TYPE_910A3 ||
+        devType == DevType::DEV_TYPE_950)) {
         // 910A2和910A3算子超时时间范围0s-2147483647s,其中0代表永不超时
         CheckRange<u32>(timeOut, 0, HCCL_EXEC_TIME_OUT_S_910A3);
     } else {
@@ -843,8 +847,10 @@ void SetRealPath(string &filePath)
 
 void ProcExecTimeOut(u32 &timeOut)
 {
-    DevType devType = HrtGetDeviceType();
-    if (devType == DevType::DEV_TYPE_910A2 || devType == DevType::DEV_TYPE_910A3 || devType == DevType::DEV_TYPE_950) {
+    DevType devType = DevType::DEV_TYPE_910A;
+    HcclResult ret = HrtGetDeviceType(devType);
+    if (ret == HCCL_SUCCESS && (devType == DevType::DEV_TYPE_910A2 || devType == DevType::DEV_TYPE_910A3 ||
+        devType == DevType::DEV_TYPE_950)) {
         return;
     }
     // 910A芯片限制超时时长为68的倍数
