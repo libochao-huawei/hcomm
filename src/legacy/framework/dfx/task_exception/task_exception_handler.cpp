@@ -1188,7 +1188,7 @@ std::tuple<std::string, std::string, std::string, std::string> TaskExceptionHand
         auto addrPair = GetAddrPairByChannelId(channelId, taskInfo);
         localIp = addrPair.first.Describe();
         remoteIp = addrPair.second.Describe();
-        remoteId = remoteIp;
+        remoteId = std::to_string(taskInfo.remoteRank_);
     }
     return std::make_tuple(localServerId, localIp, remoteIp, remoteId);
 }
