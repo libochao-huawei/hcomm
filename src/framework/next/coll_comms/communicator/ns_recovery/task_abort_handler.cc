@@ -96,7 +96,7 @@ int32_t ProcessTaskAbortHandleCallback(int32_t deviceLogicId, aclrtDeviceTaskAbo
     }
     HcclUs endut = std::chrono::steady_clock::now();
     auto execTime = std::chrono::duration_cast<std::chrono::microseconds>(endut - startut).count();
-    HCCL_INFO("[NsRecovery][Callback] ProcessTaskAbortHandleCallback success, take time:[%lld]us", execTime);
+    HCCL_RUN_INFO("[NsRecovery][Callback] ProcessTaskAbortHandleCallback success, take time:[%lld]us", execTime);
     return static_cast<int>(TaskAbortResult::TASK_ABORT_SUCCESS);
 }
 
