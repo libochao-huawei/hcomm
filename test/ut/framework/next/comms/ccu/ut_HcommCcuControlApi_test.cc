@@ -206,7 +206,7 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRegister_When_AllFine_Expect_Ret
 
     // kernel下发
     // 需要与样例需要的load args对应
-    std::vector<uint64_t> taskArgs{};
+    std::vector<uint64_t> taskArgs{1,2};
     void *fakeTaskArgs = static_cast<void *>(taskArgs.data());
     uint32_t fakeArgSize = taskArgs.size();
     EXPECT_EQ(HcommCcuKernelLaunch(fakeThreadHandle, kernelHandle,
