@@ -13,6 +13,7 @@
 #include "hccp.h"
 
 namespace hcomm {
+constexpr u32 CHANNEL_ENTITY_TYPE_RDMA = 0;
 constexpr uint32_t TC_TEMP = 132;
 constexpr uint32_t SL_TEMP = 4;
 constexpr uint32_t RETRY_CNT_TEMP = 7;
@@ -285,7 +286,7 @@ HcclResult DevRdmaConnection::BuildSqContext(SqContext* context)
         return HCCL_E_ROCE_CONNECT;
     }
 
-    context->type = 1; // 0-jfs 1-rdma
+    context->type = CHANNEL_ENTITY_TYPE_RDMA;
     context->contextInfo.rdmaSqContext.qpn = localQpAttr.qpn;
     context->contextInfo.rdmaSqContext.sqVa = ndaQpInfo_.sqInfo.qBuf.base;
     context->contextInfo.rdmaSqContext.wqeSize = ndaQpInfo_.sqInfo.qBuf.entrySize;
@@ -320,7 +321,7 @@ HcclResult DevRdmaConnection::BuildCqContext(CqContext* context)
         return HCCL_E_PTR;
     }
 
-    context->type = 1; // 0-jfs 1-rdma
+    context->type = CHANNEL_ENTITY_TYPE_RDMA;
     context->contextInfo.rdmaCqContext.cqn = 0;
     context->contextInfo.rdmaCqContext.cqVa = ndaCqInfo_.cqInfo.qBuf.base;
     context->contextInfo.rdmaCqContext.cqeSize = ndaCqInfo_.cqInfo.qBuf.entrySize;
