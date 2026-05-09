@@ -570,23 +570,8 @@ HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
     }
     std::vector<hcomm::CcuProfilingInfo> allCcuProfilingInfo;
     CHK_RET(kernel->GetCcuProfilingInfo(*ccuTaskArgs, allCcuProfilingInfo));
-    Hccl::TaskParam taskParam = {
-        .taskType  = Hccl::TaskParamType::TASK_CCU,
-        .beginTime = 0,
-        .endTime   = 0,
-        .isMaster = false,
-        .taskPara  = {
-            .Ccu = {
-                .dieId         = 0,
-                .missionId     = 0,
-                .execMissionId = 0,
-                .instrId       = 0,
-                .costumArgs    = {},
-                .executeId     = 0
-            }
-        },
-        .ccuDetailInfo  = nullptr
-    };
+    Hccl::TaskParam taskParam = {};
+    taskParam.taskType = Hccl::TaskParamType::TASK_CCU;
     CHK_RET(LaunchCcuTasks(ccuParams, streamPtr, taskParam));
     CHK_RET(HcclReportCcuProfilingInfo(threadHandle, kernelHandle, allCcuProfilingInfo.data(), allCcuProfilingInfo.size(),
                                         comm, taskParam, rtsThread->GetMaster()));
