@@ -97,12 +97,12 @@ private:
         uint32_t tpAttrBitmap{0};
     };
 
-    using QosKey = uint32_t;
-    /// 本/对端地址键（与 GetTpCfg 中 EID 同源）+ qos：异步完成后登记 TpInfo，供 ReleaseTpInfo 维护 useCnt；GetTpInfo 入口不再命中复用。
+    /// 仅 loc+rmt：异步完成后登记 TpInfo + useCnt，供 ReleaseTpInfo；与 ReqCtxMap 键维度一致。
     using InfoCtxMap = std::unordered_map<Hccl::IpAddress,
-        std::unordered_map<Hccl::IpAddress, std::unordered_map<QosKey, TpInfoCtx>>>;
+        std::unordered_map<Hccl::IpAddress, TpInfoCtx>>;
+    /// 仅 loc+rmt：合并进行中的 list/attr 异步。
     using ReqCtxMap = std::unordered_map<Hccl::IpAddress,
-        std::unordered_map<Hccl::IpAddress, std::unordered_map<QosKey, RequestCtx>>>;
+        std::unordered_map<Hccl::IpAddress, RequestCtx>>;
 
 private:
     TpMgr() = default;
