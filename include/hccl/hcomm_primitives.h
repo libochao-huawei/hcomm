@@ -1,0 +1,6 @@
+#ifndef HCCL_HCOMM_PRIMITIVES_FORWARD_H
+#define HCCL_HCOMM_PRIMITIVES_FORWARD_H
+
+#include "../hcomm_primitives.h"
+
+#endif // HCCL_HCOMM_PRIMITIVES_FORWARD_H
