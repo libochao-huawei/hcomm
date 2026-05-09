@@ -45,10 +45,10 @@ public:
         );
         if (!result.second) {
             result.first->second.ref++;
-            // 翻转
+            // 翻转检测
             if (result.first->second.ref == 0) {
                 HCCL_ERROR("Error: ref = 0, ref++ flipped");
-                throw std::logic_error("ref++ = 0, ref++ flipped");
+                return std::make_pair(result.first, false);
             }
             else if(result.first->second.ref > 1) {
                 HCCL_RUN_INFO("Memory is already registered, just increase the reference count, "
@@ -126,25 +126,28 @@ public:
         return std::make_pair(false, BufferType{});
     }
 
-    // 1.删除成功：输入key是表中某一最相近key的全集。 计数-1且之后为0。  返回true
-    // 2.删除引用数-1但未删除：输入key是表中某一最相近key的全集。 计数-1且之后大于0。 返回false
-    // 3.删除失败：输入key是表中某一个最相近key的交集、子集、超集、空集。——抛出NOT_FOUND异常
-    bool Del(const KeyType& key)
+    // 1.删除成功：输入key是表中某一最相近key的全集。 计数-1且之后为0。  deleted=true
+    // 2.删除引用数-1但未删除：输入key是表中某一最相近key的全集。 计数-1且之后大于0。 deleted=false
+    // 3.删除失败：输入key是表中某一个最相近key的交集、子集、超集、空集。返回HCCL_E_NOT_FOUND
+    HcclResult Del(const KeyType& key, bool& deleted)
     {
         auto it = intervalTree_.find(key);
         if (it == intervalTree_.end()) {
             HCCL_ERROR("Error: Buffer key not found.");
-            throw std::out_of_range("Del NOT_FOUND");
+            deleted = false;
+            return HCCL_E_NOT_FOUND;
         }
 
         if (--(it->second.ref) == 0) {
             intervalTree_.erase(it);
-            return true;
+            deleted = true;
+            return HCCL_SUCCESS;
         }
         // 引用计数大于0，不删除
         HCCL_RUN_INFO("Memory reference count is larger than 0, (used by other RemoteRank), do not deregister memory."
              "current memory reference count[%llu], %s.", it->second.ref, key.ToString().c_str());
-        return false; 
+        deleted = false;
+        return HCCL_SUCCESS;
     }
 
     ConstIterator End()

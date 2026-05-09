@@ -103,12 +103,13 @@ HcclResult CommMemMgr::CommUnregMem(const std::string& memTag, const void* memHa
         [&](const Handle &h) {
             if (!h || h.get() != memHandle) return false;
             const auto key = MakeKey(h->addr, static_cast<size_t>(h->size));
-            try {
-                if (reg.table.Del(key)) {
-                    ++erasedCount;            // 该 key 的引用归零并从表中移除
-                }
-            } catch (const std::out_of_range &) {
+            bool deleted = false;
+            HcclResult delRet = reg.table.Del(key, deleted);
+            if (delRet != HCCL_SUCCESS) {
                 HCCL_ERROR("[CommUnregMem] tag[%s] key not found on Del (maybe already removed)", itTag->first.c_str());
+            }
+            if (deleted) {
+                ++erasedCount;            // 该 key 的引用归零并从表中移除
             }
 
             ++unboundCount;                   // 从绑定列表移除，无论 Del 是否真正擦除

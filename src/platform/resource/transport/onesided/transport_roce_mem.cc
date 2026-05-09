@@ -139,20 +139,21 @@ HcclResult TransportRoceMem::DisableMemAccess(const RmaMemDesc &remoteMemDesc)
 
     BufferKey<uintptr_t, u64> tempKey(
         reinterpret_cast<uintptr_t>(tempRemoteBuffer.GetAddr()), tempRemoteBuffer.GetSize());
-    try {
-        if (remoteRdmaRmaBufferMgr_.Del(tempKey)) {
-            // 删除成功：输入key是表中某一最相近key的全集，计数-1后为0，返回true
-            HCCL_INFO("[TransportRoceMem][DisableMemAccess]Memory reference count is 0, disable memory access.");
-        } else {
-            // 删除失败：输入key是表中某一最相近key的全集，计数不为0（存在其他remoteRank使用），返回false
-            HCCL_INFO("[TransportRoceMem][DisableMemAccess]Memory reference count is larger than 0"\
-                "(used by other RemoteRank), do not disable memory.");
-        }
-        return HCCL_SUCCESS;
-    } catch (std::out_of_range& e) {
-        HCCL_ERROR("[TransportRoceMem][DisableMemAccess] catch RmaBufferMgr Del exception: %s", e.what());
-        return HCCL_E_NOT_FOUND;
+    bool deleted = false;
+    HcclResult delRet = remoteRdmaRmaBufferMgr_.Del(tempKey, deleted);
+    if (delRet != HCCL_SUCCESS) {
+        HCCL_ERROR("[TransportRoceMem][DisableMemAccess]Del memory failed. ret[%d]", delRet);
+        return delRet;
     }
+    if (deleted) {
+        // 删除成功：输入key是表中某一最相近key的全集，计数-1后为0
+        HCCL_INFO("[TransportRoceMem][DisableMemAccess]Memory reference count is 0, disable memory access.");
+    } else {
+        // 删除引用数-1但未删除：输入key是表中某一最相近key的全集，计数不为0（存在其他remoteRank使用）
+        HCCL_INFO("[TransportRoceMem][DisableMemAccess]Memory reference count is larger than 0"\
+            "(used by other RemoteRank), do not disable memory.");
+    }
+    return HCCL_SUCCESS;
 }
 
 HcclResult TransportRoceMem::FillRmaBufferSlice(const HcclBuf &localMem, const HcclBuf &remoteMem,

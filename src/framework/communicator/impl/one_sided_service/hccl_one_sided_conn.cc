@@ -269,22 +269,23 @@ void HcclOneSidedConn::DisableMemAccess(const HcclMemDesc &remoteMemDesc)
     BufferKey<uintptr_t, u64> tempKey(
         reinterpret_cast<uintptr_t>(it->second.addr), it->second.len);
     HcclBuf &buf = it->second;
-    try {
-        if (remoteRmaBufferMgr_.Del(tempKey)) {
-            EXCEPTION_THROW_IF_COND_ERR(HcclMemClose(&buf) != HCCL_SUCCESS, "Close remote memory failed.");
-            HCCL_INFO("[HcclOneSidedConn][DisableMemAccess] before erase memDescMap_ size[%d]", memDescMap_.size());
-            memDescMap_.erase(remoteRmaMemDesc->memDesc);
-            HCCL_INFO("[HcclOneSidedConn][DisableMemAccess] after erase memDescMap_ size[%d]", memDescMap_.size());
-            // 删除成功：输入key是表中某一最相近key的全集，计数-1后为0，返回true
-            HCCL_INFO("[TransportIpcMem][DisableMemAccess]Memory reference count is 0, disable memory access.");
-        } else {
-            // 删除失败：输入key是表中某一最相近key的全集，计数不为0（存在其他remoteRank使用），返回false
-            HCCL_INFO("[TransportIpcMem][DisableMemAccess]Memory reference count is larger than 0"\
-                "(used by other RemoteRank), do not disable memory.");
-        }
-    } catch (std::out_of_range& e) {
-        HCCL_ERROR("[TransportIpcMem][DisableMemAccess] catch RmaBufferMgr Del exception: %s", e.what());
-        EXCEPTION_THROW_IF_COND_ERR(true, "[TransportIpcMem][DisableMemAccess] catch RmaBufferMgr Del exception");
+    bool deleted = false;
+    HcclResult delRet = remoteRmaBufferMgr_.Del(tempKey, deleted);
+    if (delRet != HCCL_SUCCESS) {
+        HCCL_ERROR("[HcclOneSidedConn][DisableMemAccess]Del memory failed. ret[%d]", delRet);
+        return;
+    }
+    if (deleted) {
+        EXCEPTION_THROW_IF_COND_ERR(HcclMemClose(&buf) != HCCL_SUCCESS, "Close remote memory failed.");
+        HCCL_INFO("[HcclOneSidedConn][DisableMemAccess] before erase memDescMap_ size[%d]", memDescMap_.size());
+        memDescMap_.erase(remoteRmaMemDesc->memDesc);
+        HCCL_INFO("[HcclOneSidedConn][DisableMemAccess] after erase memDescMap_ size[%d]", memDescMap_.size());
+        // 删除成功：输入key是表中某一最相近key的全集，计数-1后为0
+        HCCL_INFO("[TransportIpcMem][DisableMemAccess]Memory reference count is 0, disable memory access.");
+    } else {
+        // 删除引用数-1但未删除：输入key是表中某一最相近key的全集，计数不为0（存在其他remoteRank使用）
+        HCCL_INFO("[TransportIpcMem][DisableMemAccess]Memory reference count is larger than 0"\
+            "(used by other RemoteRank), do not disable memory.");
     }
     HCCL_INFO("[HcclOneSidedConn][DisableMemAccess] Disable memory access success.");
 }

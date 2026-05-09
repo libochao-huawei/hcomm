@@ -232,10 +232,15 @@ HcclResult HcclOneSidedConn::DisableMemAccess(const HcclMemDesc &remoteMemDesc)
     // 计数器删除HcclBuf
     HcclBuf                  *buf = it->second.get();
     BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(it->second->addr), it->second->len);
-    // 删除成功：输入key是表中某一最相近key的全集，计数-1后为0，返回true
-    // 删除失败：输入key是表中某一最相近key的全集，计数-1后不为0（说明存在其他remoteRank使用），返回false
-    auto resultPair = remoteHcclBufMgr_.Del(tempKey);
-    if (resultPair) {
+    // 删除成功：输入key是表中某一最相近key的全集，计数-1后为0，deleted=true
+    // 删除失败：输入key是表中某一最相近key的全集，计数-1后不为0（说明存在其他remoteRank使用），deleted=false
+    bool deleted = false;
+    HcclResult delRet = remoteHcclBufMgr_.Del(tempKey, deleted);
+    if (delRet != HCCL_SUCCESS) {
+        HCCL_ERROR("[HcclOneSidedConn][DisableMemAccess]Del memory failed. ret[%d]", delRet);
+        return delRet;
+    }
+    if (deleted) {
         HcclResult ret = HcclMemClose(buf);
         if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("[HcclOneSidedConn][DisableMemAccess]Close remote memory failed. ret[%d]", ret);
