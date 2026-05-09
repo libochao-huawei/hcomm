@@ -208,19 +208,23 @@ public:
     {
         return localSlices.size();
     }
-    const DataSlice &GetLocalSlice(u32 pos) const
+    HcclResult GetLocalSlice(u32 pos, const DataSlice*& slice) const
     {
         if (pos >= localSlices.size()) {
-            throw InvalidParamsException("pos is out of range of localSlices");
+            HCCL_ERROR("pos[%u] out of range[%zu]", pos, localSlices.size());
+            return HCCL_E_PARA;
         }
-        return localSlices[pos];
+        slice = &localSlices[pos];
+        return HCCL_SUCCESS;
     }
-    const DataSlice &GetRemoteSlice(u32 pos) const
+    HcclResult GetRemoteSlice(u32 pos, const DataSlice*& slice) const
     {
         if (pos >= remoteSlices.size()) {
-            throw InvalidParamsException("pos is out of range of remoteSlices");
+            HCCL_ERROR("pos[%u] out of range[%zu]", pos, remoteSlices.size());
+            return HCCL_E_PARA;
         }
-        return remoteSlices[pos];
+        slice = &remoteSlices[pos];
+        return HCCL_SUCCESS;
     }
 
 private:
@@ -264,19 +268,23 @@ public:
     {
         return localSlices.size();
     }
-    const DataSlice &GetLocalSlice(u32 pos) const
+    HcclResult GetLocalSlice(u32 pos, const DataSlice*& slice) const
     {
         if (pos >= localSlices.size()) {
-            throw InvalidParamsException("pos is out of range of localSlices");
+            HCCL_ERROR("pos[%u] out of range[%zu]", pos, localSlices.size());
+            return HCCL_E_PARA;
         }
-        return localSlices[pos];
+        slice = &localSlices[pos];
+        return HCCL_SUCCESS;
     }
-    const DataSlice &GetRemoteSlice(u32 pos) const
+    HcclResult GetRemoteSlice(u32 pos, const DataSlice*& slice) const
     {
         if (pos >= remoteSlices.size()) {
-            throw InvalidParamsException("pos is out of range of remoteSlices");
+            HCCL_ERROR("pos[%u] out of range[%zu]", pos, remoteSlices.size());
+            return HCCL_E_PARA;
         }
-        return remoteSlices[pos];
+        slice = &remoteSlices[pos];
+        return HCCL_SUCCESS;
     }
 
 private:
@@ -329,26 +337,32 @@ public:
     {
         return localSlices.size();
     }
-    const DataSlice &GetLocalSlice(u32 pos) const
+    HcclResult GetLocalSlice(u32 pos, const DataSlice*& slice) const
     {
         if (pos >= localSlices.size()) {
-            throw InvalidParamsException("pos is out of range of localSlices");
+            HCCL_ERROR("pos[%u] out of range[%zu]", pos, localSlices.size());
+            return HCCL_E_PARA;
         }
-        return localSlices[pos];
+        slice = &localSlices[pos];
+        return HCCL_SUCCESS;
     }
-    const DataSlice &GetRemoteSrcSlice(u32 pos) const
+    HcclResult GetRemoteSrcSlice(u32 pos, const DataSlice*& slice) const
     {
         if (pos >= remoteSrcSlices.size()) {
-            throw InvalidParamsException("pos is out of range of remoteSrcSlices");
+            HCCL_ERROR("pos[%u] out of range[%zu]", pos, remoteSrcSlices.size());
+            return HCCL_E_PARA;
         }
-        return remoteSrcSlices[pos];
+        slice = &remoteSrcSlices[pos];
+        return HCCL_SUCCESS;
     }
-    const DataSlice &GetRemoteDstSlice(u32 pos) const
+    HcclResult GetRemoteDstSlice(u32 pos, const DataSlice*& slice) const
     {
         if (pos >= remoteDstSlices.size()) {
-            throw InvalidParamsException("pos is out of range of remoteDstSlices");
+            HCCL_ERROR("pos[%u] out of range[%zu]", pos, remoteDstSlices.size());
+            return HCCL_E_PARA;
         }
-        return remoteDstSlices[pos];
+        slice = &remoteDstSlices[pos];
+        return HCCL_SUCCESS;
     }
 
 private:
@@ -404,26 +418,32 @@ public:
     {
         return remoteSlices.size();
     }
-    const DataSlice &GetRemoteSlice(u32 pos) const
+    HcclResult GetRemoteSlice(u32 pos, const DataSlice*& slice) const
     {
         if (pos >= remoteSlices.size()) {
-            throw InvalidParamsException("pos is out of range of remoteSlices");
+            HCCL_ERROR("pos[%u] out of range[%zu]", pos, remoteSlices.size());
+            return HCCL_E_PARA;
         }
-        return remoteSlices[pos];
+        slice = &remoteSlices[pos];
+        return HCCL_SUCCESS;
     }
-    const DataSlice &GetLocalSrcSlice(u32 pos) const
+    HcclResult GetLocalSrcSlice(u32 pos, const DataSlice*& slice) const
     {
         if (pos >= localSrcSlices.size()) {
-            throw InvalidParamsException("pos is out of range of localSrcSlices");
+            HCCL_ERROR("pos[%u] out of range[%zu]", pos, localSrcSlices.size());
+            return HCCL_E_PARA;
         }
-        return localSrcSlices[pos];
+        slice = &localSrcSlices[pos];
+        return HCCL_SUCCESS;
     }
-    const DataSlice &GetLocalDstSlice(u32 pos) const
+    HcclResult GetLocalDstSlice(u32 pos, const DataSlice*& slice) const
     {
         if (pos >= localDstSlices.size()) {
-            throw InvalidParamsException("pos is out of range of localDstSlices");
+            HCCL_ERROR("pos[%u] out of range[%zu]", pos, localDstSlices.size());
+            return HCCL_E_PARA;
         }
-        return localDstSlices[pos];
+        slice = &localDstSlices[pos];
+        return HCCL_SUCCESS;
     }
 
 private:
