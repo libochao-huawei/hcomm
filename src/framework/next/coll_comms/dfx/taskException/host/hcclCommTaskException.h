@@ -50,7 +50,7 @@ private:
     static HcclResult PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHandle);
     static void ClusterMoniterGetAicpuCqeErrInfo(u32 RemoteDeviceId, u32 LocDeviceId, uint16_t status, std::string LocalEid, std::string RemoteEid, std::string RemoteInsId);
     static void GetAicpuCqeErrInfo(rtExceptionInfo_t* exceptionInfo, const Hccl::ErrorMessageReport &errorMessage, const Hccl::TaskInfo& taskInfo);
-    static void GetAicpuCqeErrRemoteLocalIdByRankId(hccl::CollComm* collComm, uint32_t rankid, u32 &RemoteLocalId);
+    static void GetAicpuCqeErrRemoteLocalIdByRankId(hccl::CollComm* collComm, uint32_t rankid, u32 &remoteLocalId);
     static void GetAicpuCqeErrNetInstanceByRankId(hccl::CollComm* collComm, uint32_t rankid, std::string &netInstanceId);
 private:
     bool isRegistered_ {false};

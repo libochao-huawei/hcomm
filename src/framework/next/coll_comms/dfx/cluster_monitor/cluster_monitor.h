@@ -26,10 +26,6 @@
 
 
 namespace hcomm {
-
-constexpr u32 OPINFO_SEND_NUM_BY_TAG = 500;   // 一次心跳帧发送的算子信息个数
-constexpr u32 OPINFO_TAG_QUEUE_NUM = 10;   // 一次心跳帧发送的算子信息个数
-
 using ClusterUIDType = struct HcclClusterMonitorUID {
     char id[2048] = {0}; // netInstanceId + localId 最大不超过2048字节
     bool operator == (const HcclClusterMonitorUID &that) const
@@ -69,13 +65,13 @@ enum class ClusterMonitorStatus {
 };
 
 struct ErrorCqeInfo {
-    u32 CqeLocalId = 0;
-    u32 CqeRemoteLocalId = 0;
-    uint16_t Cqestatus = 0;
-    std::string CqeLocalEid;
-    std::string CqeRemoteEid;
-    std::string CqeRemoteInsId;
-    std::string CqeLocalInsId;
+    u32 cqeLocalId = 0;
+    u32 cqeRemoteLocalId = 0;
+    uint16_t cqeStatus = 0;
+    std::string cqeLocalEid;
+    std::string cqeRemoteEid;
+    std::string cqeRemoteInsId;
+    std::string cqeLocalInsId;
 };
 const std::map<ClusterMonitorStatus, std::string> CLUSTER_MONITOR_STATUS_STR_MAP{
     {ClusterMonitorStatus::CLUSTER_MONITOR_OK, "OK"},
@@ -180,7 +176,7 @@ public:
     HcclResult ParseFrame(ClusterMonitorFrame &cmFrame, ClusterUIDType &src);
     HcclResult DeInit();
     static ClusterMonitor& GetInstance(u32 deviceId);
-    void GetCqeErrInfoFromTaskException(u32 RemoteLocalId, uint16_t status, std::string LocalEid, std::string RemoteEid, std::string RemoteInsId);
+    void GetCqeErrInfoFromTaskException(u32 remoteLocalId, uint16_t status, std::string localEid, std::string remoteEid, std::string remoteInsId);
     std::vector<std::string> GetErrStatusVecFromCluserMonitor();
     std::vector<std::string> PrintEvents(std::map<ClusterMonitorStatus, std::queue<ClusterMonitorFrame>> &keyEvents);
     void MakeErrMsg(std::queue<ClusterMonitorFrame> &keyEvents, std::vector<std::string> &errStatusVec);
