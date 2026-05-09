@@ -8,7 +8,10 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "mirror_task_manager.h"
-
+#ifdef CCL_KERNEL_AICPU
+#include "timer.h"
+#define FUNCTION_TRACE FUNCTION_TRACE_AICPU
+#endif
 namespace Hccl {
 
 MirrorTaskManager::MirrorTaskManager(u32 devId, GlobalMirrorTasks *globalMirrorTasks, bool devUsed)
@@ -30,7 +33,7 @@ void MirrorTaskManager::RegFullyCallBack(std::function<void()> callBack)
 }
 
 QueueType MirrorTaskManager::GetQueueType() const
-{
+{FUNCTION_TRACE;
     if (currDfxOpInfo_ == nullptr) {
         THROW<InternalException>(
             StringFormat("MirrorTaskManager::GetQueueType currDfxOpInfo_ is nullptr!"));
@@ -44,7 +47,7 @@ QueueType MirrorTaskManager::GetQueueType() const
 }
 
 void MirrorTaskManager::AddTaskInfo(std::shared_ptr<TaskInfo> taskInfo)
-{
+{FUNCTION_TRACE;
     HCCL_INFO("[MirrorTaskManager][AddTaskInfo]AddTaskInfo begin");
     if (UNLIKELY(taskInfo == nullptr)) {
         THROW<InternalException>(
@@ -87,7 +90,7 @@ bool MirrorTaskManager::IsStaticGraphMode(const CollOperator &collOperator) cons
 }
 
 void MirrorTaskManager::SetCurrDfxOpInfo(std::shared_ptr<DfxOpInfo> dfxOpInfo)
-{
+{FUNCTION_TRACE;
     if (dfxOpInfo == nullptr) {
         HCCL_ERROR("[MirrorTaskManager][SetCurrDfxOpInfo]fail, dfxOpInfo is nullptr");
         return;

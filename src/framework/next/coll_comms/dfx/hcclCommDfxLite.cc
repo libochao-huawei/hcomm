@@ -10,6 +10,7 @@
 
 #include "hcclCommDfxLite.h"
 #include "hccl_common.h"
+#include "timer.h"
 
 namespace hccl {
 ReadWriteLockBase HcclCommDfxLite::baseLockLite_; // 基类锁成员
@@ -21,6 +22,7 @@ HcclCommDfxLite::HcclCommDfxLite() {
 
 // HcclCommDfxLite初始化流程 - 修改为返回HcclResult类型
 HcclResult HcclCommDfxLite::Init(u32 deviceId, const std::string& commTag) {
+    FUNCTION_TRACE_AICPU;
     HCCL_INFO("[HcclCommDfxLite][Init] Init begin deviceId[%u], commTag[%s]", deviceId, commTag.c_str());
     deviceId_ = deviceId;
     commTag_ = commTag;
@@ -40,7 +42,7 @@ HcclResult HcclCommDfxLite::Init(u32 deviceId, const std::string& commTag) {
 }
 
 HcclResult HcclCommDfxLite::AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle)
-{
+{FUNCTION_TRACE_AICPU;
     CHK_SMART_PTR_NULL(mirrorTaskManagerLite_);
     u32 remoteRankId = INVALID_UINT;
     if (handle != INVALID_U64) {
@@ -56,18 +58,21 @@ HcclResult HcclCommDfxLite::AddTaskInfoCallback(u32 streamId, u32 taskId, const 
 
 // HcclCommDfxLite接口实现 - 修改为返回HcclResult类型
 HcclResult HcclCommDfxLite::ReportAllTasks() {
+    FUNCTION_TRACE_AICPU;
     CHK_SMART_PTR_NULL(profilingImpl_);
     profilingImpl_->ReportAllTasks();
     return HCCL_SUCCESS;
 }
 
 HcclResult HcclCommDfxLite::UpdateProfStat() {
+    FUNCTION_TRACE_AICPU;
     CHK_SMART_PTR_NULL(profilingImpl_);
     profilingImpl_->UpdateProfStat();
     return HCCL_SUCCESS;
 }
 
 void HcclCommDfxLite::AddChannelRemoteRankId(const std::string& commTag, u64 handle, u32 remoteRankId) {
+    FUNCTION_TRACE_AICPU;
     rwLockLite_.writeLock();
     HCCL_INFO("[HcclCommDfxLite][AddChannelRemoteRankId] commTag:[%s], handle:[%lu], remoteRankId:[%u]",
         commTag.c_str(), handle, remoteRankId);
@@ -76,6 +81,7 @@ void HcclCommDfxLite::AddChannelRemoteRankId(const std::string& commTag, u64 han
 }
 // 在channelRemoteRankIdLite_表中对remoteRankId进行查找
 HcclResult HcclCommDfxLite::GetChannelRemoteRankId(const std::string& commTag, u64 handle, u32& remoteRankId) {
+    FUNCTION_TRACE_AICPU;
     rwLockLite_.readLock();
     if (channelRemoteRankIdLite_.find(commTag) == channelRemoteRankIdLite_.end()) {
         rwLockLite_.readUnlock();

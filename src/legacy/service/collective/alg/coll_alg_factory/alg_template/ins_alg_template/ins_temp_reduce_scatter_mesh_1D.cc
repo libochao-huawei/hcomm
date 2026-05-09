@@ -11,6 +11,10 @@
 #include "ins_temp_reduce_scatter_mesh_1D.h"
 #include "log.h"
 #include "alg_data_trans_wrapper.h"
+#ifdef CCL_KERNEL_AICPU
+#include "timer.h"
+#define FUNCTION_TRACE FUNCTION_TRACE_AICPU
+#endif
 
 namespace Hccl {
 InsTempReduceScatterMesh1D::InsTempReduceScatterMesh1D(const RankId virtualRank, const u32 tempRankSize,
@@ -69,7 +73,7 @@ u64 InsTempReduceScatterMesh1D::CalcScratchMultiple(const BufferType &inBuffType
 
 HcclResult InsTempReduceScatterMesh1D::GenExtIns(const TempFuncs &tempFuncs, const TemplateDataParams &tempAlgParams,
     const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues)
-{
+{FUNCTION_TRACE;
     opMode_ = tempFuncs.opMode;
     enableCounterNotify_ = tempFuncs.enableCounterNotify;
     queNum_ = tempInsQues.size();

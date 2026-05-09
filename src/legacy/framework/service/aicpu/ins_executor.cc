@@ -14,6 +14,10 @@
 #include "hccl_sqe_v82.h"
 #include "sal.h"
 #include "communicator_impl_lite_manager.h"
+#ifdef CCL_KERNEL_AICPU
+#include "timer.h"
+#define FUNCTION_TRACE FUNCTION_TRACE_AICPU
+#endif
 
 namespace Hccl {
 
@@ -21,7 +25,8 @@ constexpr u64 FOUR_BYTES = 4;
 constexpr u32 LAUNCH_PRINT_INTERVAL    = 20;
 
 void InsExecutor::Execute(const InsQueue &insQueue)
-{
+{FUNCTION_TRACE;
+
     StreamLiteMgr *streamLiteMgr    = resMgrFetcher_->GetStreamLiteMgr();
     int            slaveStreamIndex = 0;
     for (auto slaveIter = insQueue.IterSlaves(); slaveIter.HasNext(); ++slaveIter) {
@@ -32,7 +37,8 @@ void InsExecutor::Execute(const InsQueue &insQueue)
 }
 
 void InsExecutor::AddOpCounter(const StreamLite &stream, bool isHead) const
-{
+{FUNCTION_TRACE;
+
     CHECK_NULLPTR(resMgrFetcher_, "[InsExecutor::AddOpCounter] resMgrFetcher_ is nullptr!");
     u64 counterSrcAddr = resMgrFetcher_->GetCounterAddr();
     if (counterSrcAddr == 0) {
@@ -60,7 +66,8 @@ void InsExecutor::AddOpCounter(const StreamLite &stream, bool isHead) const
 }
 
 void InsExecutor::ExecuteV82(const InsQueue &insQueue, bool isMc2)
-{
+{FUNCTION_TRACE;
+
     // InsQueue 非空已经在外部进行了校验
     if (resMgrFetcher_ == nullptr) {
         THROW<NullPtrException>(StringFormat("InsExecutor::%s resMgrFetcher is null, isMc2 %d.", __func__, isMc2));
@@ -116,7 +123,8 @@ void InsExecutor::ExecuteV82(const InsQueue &insQueue, bool isMc2)
 }
 
 void InsExecutor::ReportMainStreamTask(const StreamLite &stream, MainStreamTaskType type) const
-{
+{FUNCTION_TRACE;
+
     FlagTaskInfo flagTaskInfo;
     flagTaskInfo.streamId = stream.GetId();
     flagTaskInfo.taskId   = stream.GetRtsq()->GetTaskId();
@@ -126,7 +134,8 @@ void InsExecutor::ReportMainStreamTask(const StreamLite &stream, MainStreamTaskT
 }
 
 void InsExecutor::ExecuteAllQueues950(const InsQueue &insQueue, StreamLiteMgr *streamLiteMgr)
-{
+{FUNCTION_TRACE;
+
     HCCL_INFO("InsExecutor::%s start", __func__);
     list<InsQueue::Iterator> slaveQueueIters;
     std::set<u32> slaveStreamIndexSet;
@@ -180,7 +189,8 @@ void InsExecutor::ExecuteAllQueues950(const InsQueue &insQueue, StreamLiteMgr *s
 
 void InsExecutor::ExecuteSlaveQueue950(list<InsQueue::Iterator> &slaveQueueIters, StreamLiteMgr *streamLiteMgr, 
                                             bool &isLaunchTask, std::set<u32> &slaveStreamIndexSet)
-{
+{FUNCTION_TRACE;
+
     auto slaveStreamIndexIter = slaveStreamIndexSet.begin();
     isLaunchTask = false;
     for (auto slaveQueueIter = slaveQueueIters.begin(); slaveQueueIter != slaveQueueIters.end();) {
@@ -228,7 +238,8 @@ void InsExecutor::ExecuteSlaveQueue950(list<InsQueue::Iterator> &slaveQueueIters
 
 void InsExecutor::ExecuteMasterQueue950(InsQueue::Iterator &masterQueueIter, StreamLite *masterStream, 
                                             bool &isMasterInsIterEnd, bool &isLaunchTask)
-{
+{FUNCTION_TRACE;
+
     // 判断rtsq队列中的空间是否充足
     bool isRtsqQueueSpaceSufficient = masterStream->GetRtsq()->IsRtsqQueueSpaceSufficient();
     // 判断当前主流是否有Int64类型reduce算子，是否需要等其他流任务下发完成
@@ -250,7 +261,8 @@ void InsExecutor::ExecuteMasterQueue950(InsQueue::Iterator &masterQueueIter, Str
 }
 
 void InsExecutor::CheckPreStreamSync(StreamLiteMgr *streamLiteMgr, u32 slaveQueuesSize)
-{
+{FUNCTION_TRACE;
+
     if (!isPreStreamSyncExist_) {
         return;
     }
@@ -287,7 +299,8 @@ void InsExecutor::CheckPreStreamSync(StreamLiteMgr *streamLiteMgr, u32 slaveQueu
 }
 
 void InsExecutor::ExecuteSingleQue(const InsQueue &insQueue, const StreamLite *streamLite, const bool isMaster)
-{
+{FUNCTION_TRACE;
+
     sqeMgr->Begin(streamLite->GetSqId());
     if (isMaster) {
         HcclNotifyWaitSqe waitSqe;
