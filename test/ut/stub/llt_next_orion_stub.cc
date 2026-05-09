@@ -191,8 +191,6 @@ void Socket::ConnectAsync()
     return;
 }
 
-void Socket::Destroy() {}
-
 bool Socket::ISend(void *data, u64 size, u64& compSize) const
 {
     compSize = size;

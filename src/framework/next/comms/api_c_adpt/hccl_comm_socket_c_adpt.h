@@ -31,7 +31,8 @@ typedef struct {
     EndpointDesc remoteEndpoint;   // 远端网络设备端侧描述
     char tag[HCCL_SOCKET_TAG_LEN]; // 用户自定义标签,must end with '\0'
     HcommSocketRole role;          // socket角色：服务端或客户端
-    uint16_t listenPort;           //< 本地监听端口，仅server端有效
+    uint16_t listenPort;           // 本地监听端口，仅server端有效
+    char reserved[256];            // 预留字段
 } SocketDesc;                      // SocketDesc
 
 typedef void *SocketHandler;

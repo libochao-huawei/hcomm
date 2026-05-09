@@ -307,14 +307,10 @@ HcclResult ClusterMonitor::CreateTransportHandle(ClusterMonitorSocketCtx &info)
     HCCL_INFO("[CreateTransportHandle] CMTEST start!!!!!!!!");
     info.PrintSocketDesc("CreateTransportHandle");
     if (info.socketHandler == nullptr) {
-        HcclResult ret = SocketCreate(&info.socketDesc, &info.socketHandler);
-        if (ret != HCCL_SUCCESS) {
-            HCCL_WARNING("[CreateTransportHandle] SocketCreate failed, ret[%d]", ret);
-            return HCCL_E_NETWORK;
-        }
-    } else {
-        HCCL_WARNING("[CreateTransportHandle] socketHandler has been created, skip.");
+        return SocketCreate(&info.socketDesc, &info.socketHandler);
     }
+
+    HCCL_WARNING("[CreateTransportHandle] socketHandler has been created, skip.");
     return HCCL_SUCCESS;
 }
 
@@ -335,13 +331,13 @@ void ClusterMonitor::CreateLinkWithRemotePonit(
         return;
     }
 
-    auto CREATE_LINK_TIMEOUT = std::chrono::seconds(Hccl::EnvConfig::GetInstance().GetSocketConfig().GetLinkTimeOut());
+    auto createLinkTimeout = std::chrono::seconds(Hccl::EnvConfig::GetInstance().GetSocketConfig().GetLinkTimeOut());
     auto startTime = std::chrono::steady_clock::now();
     while (linkRunningStatus_.load()) {
-        if ((std::chrono::steady_clock::now() - startTime) >= CREATE_LINK_TIMEOUT) {
+        if ((std::chrono::steady_clock::now() - startTime) >= createLinkTimeout) {
             HCCL_RUN_WARNING("establish rank[%s] to rank[%s] connection failed. Reason: link timeout,"
                             "timeout[%llds], the HCCL_CONNECT_TIMEOUT may be insufficient. commId[%s].",
-                GetUID(myRankUID_).c_str(), GetUID(rem).c_str(), CREATE_LINK_TIMEOUT, commId.c_str());
+                GetUID(myRankUID_).c_str(), GetUID(rem).c_str(), createLinkTimeout.count(), commId.c_str());
             break;
         }
 
@@ -421,7 +417,7 @@ HcclResult ClusterMonitor::SendFrame(
                 (reinterpret_cast<uint64_t *>(&compSize)));
             if (ret != HCCL_SUCCESS) {
                 HCCL_WARNING("[CreateTransportHandle] SocketSendNb failed, ret[%d]", ret);
-                return HCCL_E_INTERNAL;
+                return ret;
             }
             if (uid2SocketRefMap_[dst].restSize == compSize) {
                 uid2SocketRefMap_[dst].sendBuffer.pop();
@@ -441,7 +437,7 @@ HcclResult ClusterMonitor::SendFrame(
             uid2SocketRefMap_[dst].socketHandler, &cmFrame, expectSize, (reinterpret_cast<uint64_t *>(&compSize)));
         if (ret != HCCL_SUCCESS) {
             HCCL_WARNING("[CreateTransportHandle] SocketSendNb failed, ret[%d]", ret);
-            return HCCL_E_INTERNAL;
+            return ret;
         }
         if (compSize == expectSize) {
             HCCL_DEBUG("[Heartbeat][SendFrame] Send Success, from [%s] to [%s] about [%s] by [%s] status[%d]",
@@ -478,7 +474,7 @@ HcclResult ClusterMonitor::RecvFrame(ClusterUIDType rem)
             }
         } else if (ret == HCCL_E_INTERNAL) {
             HCCL_WARNING("CMTEST SocketRecvNb recv rem[%s] fail", GetUID(rem).c_str());
-            return HCCL_E_INTERNAL;
+            return ret;
         } else {
             // 当没有数据可读时，SocketRecvNb会返回成功但compSize为0，此时退出循环，继续进行后续的心跳发送和异常处理等逻辑
             HCCL_INFO("CMTEST SocketRecvNb recv rem[%s] no data available", GetUID(rem).c_str());

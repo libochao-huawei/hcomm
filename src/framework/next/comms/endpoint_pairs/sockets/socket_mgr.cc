@@ -192,7 +192,7 @@ HcclResult SocketMgr::DeleteWhiteList(Hccl::Socket* socket)
 
 HcclResult SocketMgr::DestroySocket(Hccl::Socket* socket)
 {
-    if (socket == nullptr ) {
+    if (socket == nullptr) {
         HCCL_WARNING("[DestroySocket] socket is nullptr, nothing to destroy.");
         return HCCL_SUCCESS;
     }
