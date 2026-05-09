@@ -78,7 +78,7 @@ HcclResult HcclSocket::DeInit()
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclSocket::ListenHostNet(HcclResult &ret, std::string &errormessage, u32 port)
+HcclResult HcclSocket::ListenHostNet(HcclResult &ret, std::string &errormessage, u32 &port)
 {
     bool rdmaFlag = !GetExternalInputHcclIsTcpMode();
     u32 proto = 0;
@@ -89,11 +89,10 @@ HcclResult HcclSocket::ListenHostNet(HcclResult &ret, std::string &errormessage,
     } else {
         rdmaFlag = false;
     }
-    u32 listenPort = (port == 0) ? localPort_ : port;
     ret = NetworkManager::GetInstance(localDeviceLogicId_).StartHostNetAndListen(localIp_, hostSocketHandle,
-        listenPort, rdmaFlag);
+        port, rdmaFlag);
     errormessage = "The IP address " + std::string(localIp_.GetReadableIP()) + " and port " +
-        std::to_string(listenPort) + " have already been bound.";
+        std::to_string(port) + " have already been bound.";
     RPT_INPUT_ERR(ret == HCCL_E_UNAVAIL, "EI0019", std::vector<std::string>({"reason"}),
         std::vector<std::string>({errormessage}));
     return HCCL_SUCCESS;
@@ -125,7 +124,8 @@ HcclResult HcclSocket::Listen()
         RPT_INPUT_ERR(ret == HCCL_E_UNAVAIL, "EI0020", std::vector<std::string>({"reason"}),
             std::vector<std::string>({errormessage}));
     } else {
-        CHK_RET(ListenHostNet(ret, errormessage));
+        u32 port = 0;
+        CHK_RET(ListenHostNet(ret, errormessage, port));
     }
     std::stringstream tmpMsgstream;
     tmpMsgstream << ((socketType_ == NicType::HOST_NIC_TYPE) ? ("[" + LOG_KEYWORDS_INIT_CHANNEL + "]") :
