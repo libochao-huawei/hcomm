@@ -3552,3 +3552,30 @@ TEST_F(TryFastCcuLaunchTest, Ut_TryFastCcuLaunch_When_OpNoSupportFastLaunch_Expe
     // then
     EXPECT_EQ(fakeComm.TryFastCcuLaunch(fakeOpParams, fakeStreamPtr), false);
 }
+
+TEST_F(TryFastCcuLaunchTest, Ut_TryFastCcuLaunch_AllToAllV_Mesh1D_Direct_RealCall_RefreshArgs)
+{
+    fakeOpParams.opType = OpType::ALLTOALLV;
+
+    fakeOpParams.reduceOp = ReduceOp::SUM;             // key 一部分
+    fakeOpParams.all2AllVDataDes.sendType = DataType::FP32;  // key 一部分
+
+    std::vector<u64> sendCounts = {10, 10, 10};
+    std::vector<u64> sdispls    = {0, 10, 20};
+    std::vector<u64> rdispls    = {0, 10, 20};
+    fakeOpParams.all2AllVDataDes.sendCounts = sendCounts.data();
+    fakeOpParams.all2AllVDataDes.sdispls    = sdispls.data();
+    fakeOpParams.all2AllVDataDes.rdispls    = rdispls.data();
+    fakeOpParams.all2AllVDataDes.recvType   = DataType::FP32;
+
+    fakeComm.ccuParamsMappingKey = {
+        static_cast<uint32_t>(fakeOpParams.reduceOp),
+        static_cast<uint32_t>(fakeOpParams.all2AllVDataDes.sendType),
+        0  // ALLTOALLV key 第三个字段固定是 0
+    };
+
+    fakeComm.saveCCUParams({}, {}, 0, CcuInstType::CCU_ALLTOALLV_MESH_1D_DIRECT, true);
+    bool ret = fakeComm.TryFastCcuLaunch(fakeOpParams, fakeStreamPtr);
+    EXPECT_TRUE(ret);
+}
+
