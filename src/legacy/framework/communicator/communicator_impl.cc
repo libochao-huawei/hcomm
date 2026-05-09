@@ -378,7 +378,7 @@ void CommunicatorImpl::RefreshSubmittedOpcnt()
         collOpIndex++;
         submittedOpCnt = collOpIndex;
     }
-    HCCL_INFO("[%s] end, opType[%s], submittedOpCnt[%u], sendRecvIndex[%u], collOpIndex[%u]", __func__,
+    HCCL_INFO("[%s] end, opType[%s], submittedOpCnt[%u], sendRecvIndex[%u], collOpIndex[%u].", __func__,
               currentCollOperator->opType.Describe().c_str(), submittedOpCnt, sendRecvIndex, collOpIndex);
 }
 
@@ -404,7 +404,7 @@ void CommunicatorImpl::SingleRankProc(const CollOpParams &opParams, void *stream
         len = DataTypeSizeGet(opParams.dataType) * opParams.count;
     }
 
-    HCCL_INFO("[CommunicatorImpl][%s] sendBuf[%p], recvBuf[%p], len[%llu]", __func__, opParams.sendBuf, opParams.recvBuf, len);
+    HCCL_INFO("[CommunicatorImpl][%s] sendBuf[%p], recvBuf[%p], len[%llu].", __func__, opParams.sendBuf, opParams.recvBuf, len);
     if (len > 0) {
         HrtMemAsyncCopy(opParams.recvBuf, len, opParams.sendBuf, len, ACL_MEMCPY_DEVICE_TO_DEVICE, stream);
     }
@@ -472,14 +472,14 @@ static void FastCcuLaunchSaveDfxTaskInfo(const CommunicatorImpl &comm, const Tas
     shared_ptr<TaskInfo> taskInfo = std::make_shared<TaskInfo>(streamId, taskId, remoteRankId, taskParam,
         comm.GetMirrorTaskManager().GetCurrDfxOpInfo(), isMaster);
  
-    HCCL_INFO("Begin to AddTaskInfo: streamId[%lu], taskId[%lu], remoteRankId[%u].", streamId, taskId, remoteRankId);
+    HCCL_INFO("Begin to AddTaskInfo: streamId[%lu], taskId[%lu], remoteRankId[%u].", streamId, taskId, remoteRankId.);
     comm.GetMirrorTaskManager().AddTaskInfo(taskInfo);
 }
 
 void CommunicatorImpl::FillAllToAllVArgs(const CollOpParams &opParams, rtCcuTaskInfo_t *&ccuParams) const
 {
     std::vector<uint64_t> args;
-    CcuContextAllToAllVMesh1D::RefreshArgs(opParams, rankSize, args);
+    CcuContextAllToAllVMesh1D::RefreshArgs(opParams, rankSize, args, myRank);
     rtCcuTaskInfo_t *currCcuParam = ccuParams;
     for (u32 i = 0; i < args.size(); i++) {
         // skip token info
