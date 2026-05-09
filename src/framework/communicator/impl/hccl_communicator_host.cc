@@ -4854,7 +4854,8 @@ namespace hccl
         }
         InsertNewTagToTagMap(newTag, opParam.tag);
         bool aicpuUnfoldModeFor910B =
-            deviceType_ == DevType::DEV_TYPE_910B && opParam.aicpuUnfoldMode && algName == "RunAlltoAllVStaged";
+            deviceType_ == DevType::DEV_TYPE_910B && opParam.aicpuUnfoldMode &&
+            (algName == "RunAlltoAllVStaged" || algName == "RunAlltoAllVFullMesh");
         bool needRecreateAlltoallComm = false;
         if (resMap_.find(newTag) == resMap_.end()) {
             AlgResourceRequest resRequest;
