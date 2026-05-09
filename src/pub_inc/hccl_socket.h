@@ -109,7 +109,7 @@ private:
     HcclResult GetNicSocketHandle();
     HcclResult GetNicSocketHandle(std::map<HcclIpAddress, IpSocket> &socketMap,
         const HcclIpAddress &ip, SocketHandle &nicSocketHandle);
-    HcclResult ListenHostNet(HcclResult &ret, std::string &errormessage, u32 port = 0);
+    HcclResult ListenHostNet(HcclResult &ret, std::string &errormessage, u32 &port);
 
     std::string tag_;
     HcclNetDevCtx netDevCtx_;
