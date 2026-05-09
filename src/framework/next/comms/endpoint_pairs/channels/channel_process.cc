@@ -108,6 +108,7 @@ HcclResult ChannelProcess::CreateChannelsLoop(EndpointHandle endpointHandle, Com
 
 HcclResult ChannelProcess::ChannelUpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum, ChannelHandle channelHandle)
 {
+    EXCEPTION_HANDLE_BEGIN
     int32_t deviceId = 0;
     CHK_RET(hrtGetDevice(&deviceId));
 
@@ -132,6 +133,7 @@ HcclResult ChannelProcess::ChannelUpdateMemInfo(HcommMemHandle *memHandles, uint
         return HcclResult::HCCL_E_INTERNAL;
     }
     CHK_RET(itC->second->UpdateMemInfo(memHandles, memHandleNum));
+    EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
 
@@ -535,7 +537,8 @@ HcclResult ChannelProcess::LaunchChannelKernel(ChannelHandle *channelHandles,
     CHK_PRT_RET(listNum == 0U, HCCL_ERROR("[%s] listNum is 0", __func__), HCCL_E_PARA);
     auto *ch = reinterpret_cast<Channel *>(hostChannelHandles[0]);
     CHK_PTR_NULL(ch);
-    if (ch->GetChannelKind() == HcommChannelKind::AICPU_TS_URMA) {
+    if (ch->GetChannelKind() == HcommChannelKind::AICPU_TS_URMA
+        || ch->GetChannelKind() == HcommChannelKind::AICPU_TS_UBOE) {
         return ChannelKernelLaunchForBase(channelHandles, hostChannelHandles, hcommDesc, listNum, binHandle);
     }
     return LaunchCommonChannelKernel(channelHandles, hostChannelHandles, listNum, ch->GetChannelKind(), binHandle);

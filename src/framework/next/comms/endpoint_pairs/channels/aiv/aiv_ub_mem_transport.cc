@@ -81,44 +81,68 @@ HcclResult AivUbMemTransport::IsSocketReady(bool &isReady)
     return HCCL_SUCCESS;
 }
 
+void AivUbMemTransport::CheckStatusFuncResult(std::string funcName, HcclResult ret)
+{
+    if (UNLIKELY(ret != HCCL_SUCCESS)) {
+        HCCL_ERROR("[%s] fail ret[%d], aivUbStatus_[%d], baseStatus_[%d]",
+            funcName.c_str(), ret, aivUbStatus_, baseStatus_);
+        baseStatus_ = Hccl::TransportStatus::INVALID;
+    }
+}
+
 Hccl::TransportStatus AivUbMemTransport::GetStatus()
 {
-    if (baseStatus_ == Hccl::TransportStatus::READY) {
+    if (baseStatus_ == Hccl::TransportStatus::READY || baseStatus_ == Hccl::TransportStatus::INVALID) {
         return baseStatus_;
     } else if (baseStatus_ == Hccl::TransportStatus::INIT) {
         aivUbStatus_ = AivUbMemTransportStatus::INIT;
     }
 
     bool isReady = false;
-    IsSocketReady(isReady);
+    if (UNLIKELY(IsSocketReady(isReady) != HCCL_SUCCESS)) {
+        HCCL_ERROR("[%s] IsSocketReady fail, aivUbStatus_[%d], baseStatus_[%d]", __func__, aivUbStatus_, baseStatus_);
+        baseStatus_ = Hccl::TransportStatus::INVALID;
+        return baseStatus_;
+    }
     if (!isReady) {
         return baseStatus_;
     }
-    HCCL_INFO("%s aivUbStatus_[%d], baseStatus_[%d] start, aivUbStatus_::SOCKET_OK[%d]", 
+    return UpdateStatus();
+}
+
+Hccl::TransportStatus AivUbMemTransport::UpdateStatus()
+{
+    HCCL_INFO("%s aivUbStatus_[%d], baseStatus_[%d] start, aivUbStatus_::SOCKET_OK[%d]",
         __func__, aivUbStatus_, baseStatus_, AivUbMemTransportStatus::SOCKET_OK);
+    HcclResult ret;
     switch (aivUbStatus_) {
         case AivUbMemTransportStatus::INIT:
             aivUbStatus_ = AivUbMemTransportStatus::SOCKET_OK;
             baseStatus_ = Hccl::TransportStatus::SOCKET_OK;
             break;
         case AivUbMemTransportStatus::SOCKET_OK:
-            SendDataSize();
+            ret = SendDataSize();
+            CheckStatusFuncResult("SendDataSize", ret);
             aivUbStatus_ = AivUbMemTransportStatus::SEND_DATA_SIZE;
             break;
         case AivUbMemTransportStatus::SEND_DATA_SIZE:
-            RecvDataSize();
+            ret = RecvDataSize();
+            CheckStatusFuncResult("RecvDataSize", ret);
             aivUbStatus_ = AivUbMemTransportStatus::RECV_DATA_SIZE;
             break;
         case AivUbMemTransportStatus::RECV_DATA_SIZE:
-            SendMemInfo();
+            ret = SendMemInfo();
+            CheckStatusFuncResult("SendMemInfo", ret);
             aivUbStatus_ = AivUbMemTransportStatus::SEND_MEM_INFO;
             break;
         case AivUbMemTransportStatus::SEND_MEM_INFO:
-            RecvMemInfo();
+            ret = RecvMemInfo();
+            CheckStatusFuncResult("RecvMemInfo", ret);
             aivUbStatus_ = AivUbMemTransportStatus::RECV_MEM_INFO;
             break;
         case AivUbMemTransportStatus::RECV_MEM_INFO:
-            RecvDataProcess();
+            ret = RecvDataProcess();
+            CheckStatusFuncResult("RecvDataProcess", ret);
             aivUbStatus_ = AivUbMemTransportStatus::RECV_MEM_FIN;
             break;
         case AivUbMemTransportStatus::RECV_MEM_FIN:
@@ -381,7 +405,9 @@ HcclResult AivUbMemTransport::UpdateMemInfo(HcommMemHandle *memHandles, uint32_t
     CHK_RET(RecvMemInfo());
     CHK_RET(CheckSocketStatus());
     Hccl::BinaryStream recvStream(recvData_);
+    EXCEPTION_HANDLE_BEGIN
     RmtBufferUnpackProc(recvStream);
+    EXCEPTION_HANDLE_END
     localRmaBufferVec_.insert(localRmaBufferVec_.end(), locMemTemp_.begin(), locMemTemp_.end());
     localUserMemTag_.insert(localUserMemTag_.end(), locTagTemp_.begin(), locTagTemp_.end());
     // 流程中已有新增内存数量判断，故执行到此位置一定存在新增内存，需要将标识置位false，使得再次调用GetUserRemoteMem时重新构造缓存

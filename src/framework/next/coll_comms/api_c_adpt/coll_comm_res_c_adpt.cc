@@ -255,8 +255,8 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
  
         const uint32_t opExpansionMode = myRank->GetOpExpansionMode();
         if (!CheckCommEngine(engine, opExpansionMode)) {
-            HCCL_ERROR("[%s] failed, coll comm[%p] is not enable ccu feature[%d], "
-                "but commEngine is [%d].", __func__, hcclComm, opExpansionMode, engine);
+            HCCL_ERROR("[%s] failed, coll comm[%p] opExpansionMode[%d] is not supported by CCU engine[%d].", 
+                __func__, hcclComm, opExpansionMode, engine);
             return HcclResult::HCCL_E_PARA;
         }
         
@@ -270,9 +270,15 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
             HCCL_INFO("[HcclChannelAcquire] ReportChannelAicpuKernel success");
         }
     } else {
-        auto& channelMgr = hcclComm->GetIndependentOp().GetChannelManager();
-        ret = channelMgr.ChannelCommCreate(hcclComm->GetIdentifier(), engine,
-            channelDescFinals.data(), channelNum, channels);
+        hccl::MyRank *myRank = (hccl::MyRank *)hcclComm->GetMyRank();
+        if (hcclComm->GetConnectMode() && engine == COMM_ENGINE_CPU && myRank != nullptr) {
+            const std::string &commTag = hcclComm->GetIdentifier();
+            ret = myRank->CreateChannels(engine, commTag, channelDescFinals.data(), channelNum, channels);
+        } else {
+            auto& channelMgr = hcclComm->GetIndependentOp().GetChannelManager();
+            ret = channelMgr.ChannelCommCreate(hcclComm->GetIdentifier(), engine,
+                channelDescFinals.data(), channelNum, channels);
+        }
     }
  
     if (ret != HCCL_SUCCESS) {
