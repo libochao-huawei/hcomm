@@ -46,7 +46,6 @@ HcclResult hcclComm::StoreRemoteExchangeInfo(uint32_t remoteRank, const std::vec
 HcclResult hcclComm::ResetExchangeInfo()
 {
     exchangeInfoBuf_.clear();
-    exchangeInfoLen_ = 0;
     HCCL_INFO("[ResetExchangeInfo] exchange info state cleared.");
     return HCCL_SUCCESS;
 }
