@@ -94,9 +94,9 @@ HcclResult AicpuTsRoceChannelV2::BuildSocket()
 
 HcclResult AicpuTsRoceChannelV2::BuildConnection()
 {
-    std::unique_ptr<DevRdmaConnection> conn;
+    std::unique_ptr<DevRdmaConnectionV2> conn;
     EXECEPTION_CATCH(
-        conn = std::make_unique<DevRdmaConnection>(socket_, rdmaHandle_),
+        conn = std::make_unique<DevRdmaConnectionV2>(socket_, rdmaHandle_),
         return HCCL_E_INTERNAL);
     CHK_PTR_NULL(conn);
     CHK_RET(conn->Init());
