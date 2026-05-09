@@ -192,7 +192,7 @@ uint32_t AicpuTsThread::GetNotifyNum() const
 LocalNotify *AicpuTsThread::GetNotify(uint32_t index) const
 {
     if (UNLIKELY(index >= notifyNum_)) {
-        HCCL_ERROR("[AicpuTsThread][GetNotify] notifyNum[%u], index[%u] out of range[0, %u]", notifyNum_, index,
+        HCCL_ERROR("[AicpuTsThread][GetNotify] notifyNum[%u], index[%u] out of range[0, %u)", notifyNum_, index,
             notifyNum_ - 1);
         return nullptr;
     }
