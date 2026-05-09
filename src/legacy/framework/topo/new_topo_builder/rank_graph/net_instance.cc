@@ -94,14 +94,15 @@ void NetInstance::AddPeer(const shared_ptr<Peer> &peer)
 {
     if (netLayer == 0 && localIdsMap.find(peer->GetLocalId()) != localIdsMap.end()) {
         THROW<InvalidParamsException>(StringFormat("[NetInstance][%s] when netLayer is 0, local id[%u] is repeat. "
-            "rank id [%d]", __func__, peer->GetLocalId(), peer->GetRankId()));
+            "rank id [%d], netInstId[%s]", __func__, peer->GetLocalId(), peer->GetRankId(), netInstId.c_str()));
     }
     localIdsMap.insert({peer->GetLocalId(), peer->GetRankId()});
 
     peers[peer->GetRankId()] = peer;
     vGraph.AddNode(peer->GetNodeId(), peer);
 
-    HCCL_DEBUG("[NetInstance::AddPeer] add %s to %s", peer->Describe().c_str(), this->Describe().c_str());
+    HCCL_DEBUG("[NetInstance::AddPeer] add %s to %s, netInstId[%s]", peer->Describe().c_str(),
+               this->Describe().c_str(), netInstId.c_str());
 }
 
 void NetInstance::AddFabric(const shared_ptr<NetInstance::Fabric> &fabric)
@@ -243,9 +244,8 @@ vector<NetInstance::Path> InnerNetInstance::GetPaths(const RankId srcRankId, con
         path.links = {*edge};
         path.direction = edge->GetLinkDirection();
         paths.emplace_back(path);
-        HCCL_DEBUG("[InnerNetInstance::GetPaths] netLayer[%u], srcRankId[%d], dstRankId[%d], from src[%s] "
-                   "to dst[%s] get path.", netLayer, srcRankId, dstRankId, peers.at(srcRankId)->Describe().c_str(),
-                   peers.at(dstRankId)->Describe().c_str());
+        HCCL_DEBUG("[InnerNetInstance::GetPaths] netLayer[%u], from src[%s] to dst[%s] get path.",
+                   netLayer, peers.at(srcRankId)->Describe().c_str(), peers.at(dstRankId)->Describe().c_str());
         HCCL_DEBUG("[InnerNetInstance::GetPaths] netLayer[%u], srcRankId[%d], dstRankId[%d], path[%s]", netLayer,
                    srcRankId, dstRankId, path.links[0].Describe().c_str());
     });
@@ -327,9 +327,8 @@ vector<NetInstance::Path> ClosNetInstance::GetPaths(const RankId srcRankId, cons
             NetInstance::Path path;
             path.links = {srcToFabricLink, fabricToDstLink};
             paths.emplace_back(path);
-            HCCL_DEBUG("[ClosNetInstance::GetPaths] netLayer[%u], srcRankId[%d], dstRankId[%d], "
-                       "from src[%s] to dst[%s] get path via fabric[%s].", netLayer, srcRankId, dstRankId,
-                       peers.at(srcRankId)->Describe().c_str(), peers.at(dstRankId)->Describe().c_str(),
+            HCCL_DEBUG("[ClosNetInstance::GetPaths] netLayer[%u], from src[%s] to dst[%s] get path via fabric[%s].",
+                       netLayer, peers.at(srcRankId)->Describe().c_str(), peers.at(dstRankId)->Describe().c_str(),
                        fabric->Describe().c_str());
         } else {
             HCCL_DEBUG("[NetInstance::GetPaths] from src[%s] to dst[%s] link by fabric[%s] not found.",
