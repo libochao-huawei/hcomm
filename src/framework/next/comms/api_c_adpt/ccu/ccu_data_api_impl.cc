@@ -217,6 +217,14 @@ CcuResult CcuLoadVar(uint64_t addr, CcuVariableHandle varHandle, uint32_t num)
     CCU_CHK_RET(kernel->LoadVar(addr, varHandle, num));
     return CcuResult::CCU_SUCCESS;
 }
+CcuResult CcuLoadVarFromVarAddr(CcuVariableHandle addrHandle, CcuVariableHandle varHandle, uint32_t num)
+{
+const uint32_t devLogicId = HcclGetThreadDeviceId();
+auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
+CCU_CHK_PTR_NULL(kernel);
+CCU_CHK_RET(kernel->CcuLoadVarFromVarAddr(addrHandle, varHandle, num));
+return CcuResult::CCU_SUCCESS;
+}
 CcuResult CcuStoreVar(uint64_t addr, CcuVariableHandle varHandle, uint32_t num)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
