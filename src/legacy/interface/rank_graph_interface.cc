@@ -150,11 +150,10 @@ namespace Hccl {
         u32 size = 0;
         instSizeVec_.clear();
         auto ret = rankGraph->GetNetInstanceList(netLayer, instSizeVec_, size);
-        if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[IRankGraph::GetInstSizeListByNetLayer] Failed to get instSzie[%u] at netLayer[%u]",
-                       listSize, netLayer);
-            return ret;
-        }
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+                    HCCL_ERROR("[IRankGraph::GetInstSizeListByNetLayer] Failed to get instSizeList at netLayer[%u], "
+                               "myRank[%u], ret[%d]", netLayer, rankId, ret),
+                    ret);
         *instSizeList = instSizeVec_.data();
         *listSize = size;
         return HCCL_SUCCESS;
@@ -260,6 +259,10 @@ namespace Hccl {
                 net2peer = &link;
             }
         }
+        CHK_PRT_RET(peer2net == nullptr || net2peer == nullptr,
+                    HCCL_ERROR("[IRankGraph::%s] invalid Clos path, peer2net[%p], net2peer[%p], linkNum[%zu]",
+                               __func__, peer2net, net2peer, path.links.size()),
+                    HCCL_E_PARA);
         auto srcInterface = peer2net->GetSourceIface();
         auto dstInterface = net2peer->GetTargetIface();
         CHK_PTR_NULL(srcInterface);
@@ -304,10 +307,10 @@ namespace Hccl {
         RankGraph* rankGraph = static_cast<RankGraph*>(rankGraphPtr_);
         u32 rankId = rankGraph->GetMyRank();
         std::set<u32> levels = rankGraph->GetLevels(rankId);
-        if (levels.find(netLayer) == levels.end()) {
-            HCCL_ERROR("[IRankGraph::GetLinks] netLayer[%u] is invalid", netLayer);
-            return HCCL_E_PARA;
-        }
+        CHK_PRT_RET(levels.find(netLayer) == levels.end(),
+                    HCCL_ERROR("[IRankGraph::GetLinks] netLayer[%u] is invalid, srcRank[%u], dstRank[%u], "
+                               "myRank[%u]", netLayer, srcRank, dstRank, rankId),
+                    HCCL_E_PARA);
         std::vector<NetInstance::Path> paths = rankGraph->GetPaths(netLayer, srcRank, dstRank);
         linkListVec_.clear();
         // 遍历每条path
@@ -324,17 +327,17 @@ namespace Hccl {
             if (!isClos) {
                 // Peer2Peer网络：直接处理每条link
                 HcclResult ret = InsertInnerLink(path, linkListVec_);
-                if (ret != HCCL_SUCCESS) {
-                    HCCL_ERROR("[IRankGraph::%s] InsertInnerLink FAILED for Peer2Peer.", __func__);
-                    return ret;
-                }
+                CHK_PRT_RET(ret != HCCL_SUCCESS,
+                            HCCL_ERROR("[IRankGraph::%s] InsertInnerLink failed for Peer2Peer, linkNum[%zu], ret[%d]",
+                                       __func__, path.links.size(), ret),
+                            ret);
             } else {
                 // Clos网络：找到peer2net和net2peer，组合成一条链路
                 HcclResult ret = InsertClosLinks(path, linkListVec_);
-                if (ret != HCCL_SUCCESS) {
-                    HCCL_ERROR("[IRankGraph::%s] InsertClosLinks FAILED for Clos.", __func__);
-                    return ret;
-                }
+                CHK_PRT_RET(ret != HCCL_SUCCESS,
+                            HCCL_ERROR("[IRankGraph::%s] InsertClosLinks failed for Clos, linkNum[%zu], ret[%d]",
+                                       __func__, path.links.size(), ret),
+                            ret);
             }
         }
         *linkList = linkListVec_.data();
@@ -386,7 +389,10 @@ namespace Hccl {
             *topoType = it->second;
             return HCCL_SUCCESS;
         }
-        return HCCL_E_PARA;
+        CHK_PRT_RET(true,
+                    HCCL_ERROR("[IRankGraph::GetTopoType] topoType[%s] is not supported, netLayer[%u], "
+                               "topoInstId[%u], myRank[%u]", type.Describe().c_str(), netLayer, topoInstId, rankId),
+                    HCCL_E_PARA);
     }
 
     HcclResult IRankGraph::GetRanksByTopoInst(const uint32_t netLayer, const uint32_t topoInstId, uint32_t** ranks,
@@ -422,11 +428,10 @@ namespace Hccl {
             return HCCL_E_PARA;
         }
         auto ret = rankGraph->GetEndpointNum(netLayer, topoInstId, num);
-        if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[IRankGraph::GetEndpointNum] Faild to get endpoint num at netLayer [%u] with topoInstId",
-                       netLayer, topoInstId);
-            return ret;
-        }
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+                    HCCL_ERROR("[IRankGraph::GetEndpointNum] Failed to get endpoint num at netLayer[%u], "
+                               "topoInstId[%u], myRank[%u], ret[%d]", netLayer, topoInstId, rankId, ret),
+                    ret);
         return HCCL_SUCCESS;
     }
 
@@ -442,11 +447,11 @@ namespace Hccl {
             return HCCL_E_PARA;
         }
         auto ret = rankGraph->GetEndpointDesc(netLayer, topoInstId, descNum, endpointDesc);
-        if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[IRankGraph::GetEndpointDesc] Failed to get endpoint desc at netLayer [%u] with descNum [%u]",
-                       netLayer, descNum);
-            return ret;
-        }
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+                    HCCL_ERROR("[IRankGraph::GetEndpointDesc] Failed to get endpoint desc at netLayer[%u], "
+                               "topoInstId[%u], myRank[%u], descNum[%u], ret[%d]", netLayer, topoInstId, rankId,
+                               *descNum, ret),
+                    ret);
         return HCCL_SUCCESS;
     }
 
@@ -456,10 +461,13 @@ namespace Hccl {
         CHK_PTR_NULL(rankGraphPtr_);
         RankGraph *rankGraph = static_cast<RankGraph *>(rankGraphPtr_);
         HcclResult ret = rankGraph->GetEndpointInfo(rankId, endPointDesc, endpointAttr, infoLen, info);
-        if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[IRankGraph::GetEndpointInfo] Faild to get endpoint info with rank [%u]", rankId);
-            return ret;
-        }
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+                    HCCL_ERROR("[IRankGraph::GetEndpointInfo] Failed to get endpoint info, rankId[%u], "
+                               "endpointAttr[%d], protocol[%d], commAddrType[%d], ret[%d]", rankId,
+                               static_cast<s32>(endpointAttr),
+                               endPointDesc == nullptr ? -1 : static_cast<s32>(endPointDesc->protocol),
+                               endPointDesc == nullptr ? -1 : static_cast<s32>(endPointDesc->commAddr.type), ret),
+                    ret);
         return HCCL_SUCCESS;
     }
 

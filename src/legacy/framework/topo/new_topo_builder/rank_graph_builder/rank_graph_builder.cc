@@ -445,9 +445,11 @@ void RankGraphBuilder::BuildPeer2PeerLinks()
                     phyLink->GetTargetIFace(), dstPeer->GetPortAddrMapLayer0(), phyLink->GetTopoType(), phyLink->GetTopoInstId());
                 if (sourceIfaces.empty() || targetIfaces.empty()) {
                     // 没有可用的接口。
-                    HCCL_WARNING("[RankGraphBuilder][BuildFromPhytopo] srcRankId[%d] dstRankId[%d] edge not .",
-                        srcRankId,
-                        dstRankId);
+                    HCCL_WARNING("[RankGraphBuilder][BuildPeer2PeerLinks] no available interface, srcRankId[%d], "
+                        "dstRankId[%d], srcLocalId[%u], dstLocalId[%u], topoInstId[%u], topoType[%s], "
+                        "sourceIfaceNum[%zu], targetIfaceNum[%zu]", srcRankId, dstRankId, srcLocalId, dstLocalId,
+                        phyLink->GetTopoInstId(), phyLink->GetTopoType().Describe().c_str(), sourceIfaces.size(),
+                        targetIfaces.size());
                     continue;
                 }
                 srcPeer->AddConnInterfaces(0, sourceIfaces);
