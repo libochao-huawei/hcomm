@@ -77,7 +77,7 @@ std::unique_ptr<Channel> uniqueChannelPtr;
             return HCCL_E_NOT_FOUND;
     }
     CHK_PTR_NULL(uniqueChannelPtr);
-    CHK_RET(uniqueChannelPtr->Init());
+    CHK_RET_UNAVAIL(uniqueChannelPtr->Init());
     channelPtr = std::move(uniqueChannelPtr);
     return HCCL_SUCCESS;
 }
@@ -95,7 +95,7 @@ ChannelStatus Channel::TransportStatusToChannelStatus(Hccl::TransportStatus ts)
             return ChannelStatus::READY;
         default:
             HCCL_ERROR("[Channel][%s] Invalid TransportStatus[%d]", __func__, ts);
-            return ChannelStatus::INVALID;
+            return ChannelStatus::FAILED;
     }
 }
 

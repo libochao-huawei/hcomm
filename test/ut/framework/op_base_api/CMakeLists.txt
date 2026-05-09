@@ -20,6 +20,7 @@ set(src_to_test_list
     ut_HcclRecv_API_test.cc
     ut_HcclSend_API_test.cc
     ut_HcclAlltoAllV_API_test.cc
+    ut_HcclAlltoAllVC_API_test.cc
     ut_HcclReduce_API_test.cc
     ut_HcclAllGather_API_test.cc
     ut_HcclBarrier_API_test.cc
