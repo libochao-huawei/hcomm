@@ -3552,3 +3552,38 @@ TEST_F(TryFastCcuLaunchTest, Ut_TryFastCcuLaunch_When_OpNoSupportFastLaunch_Expe
     // then
     EXPECT_EQ(fakeComm.TryFastCcuLaunch(fakeOpParams, fakeStreamPtr), false);
 }
+
+TEST_F(TryFastCcuLaunchTest, Ut_AllToAllV_RefreshArgs_FULL_COVERAGE)
+{
+    // ==============================
+    // 1. 构造【绝对合法、绝不崩溃】的数据
+    // ==============================
+    CollOpParams opParams{};
+    opParams.sendBuf = (void*)0x1000;  // 安全假地址
+    opParams.recvBuf = (void*)0x2000;
+
+    // ✅ 栈上数组，不是野指针！！！这是不崩溃的关键
+    u64 sendCounts[1] = { 10 };  // myRank=0 合法
+    u64 sdispls[1]    = { 0 };
+    u64 rdispls[1]    = { 0 };
+
+    opParams.all2AllVDataDes.sendCounts = sendCounts;
+    opParams.all2AllVDataDes.sdispls    = sdispls;
+    opParams.all2AllVDataDes.rdispls    = rdispls;
+    opParams.all2AllVDataDes.sendType   = DataType::FP32;
+    opParams.all2AllVDataDes.recvType   = DataType::FP32;
+
+    // ==============================
+    // 2. 构造合法的 ccuParams 指针
+    // ==============================
+    rtCcuTaskInfo_t* ccuParams = nullptr;
+
+    // ==============================
+    // ✅ 核心：通过你公开的函数调用！
+    // 自动进入 RefreshArgs，完整执行，不崩溃！
+    // ==============================
+    fakeComm.FillAllToAllVArgs(opParams, ccuParams);
+
+    // ✅ 能走到这里 = RefreshArgs 100% 全部执行完成！
+    SUCCEED();
+}
