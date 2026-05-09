@@ -100,12 +100,6 @@ void RankInfoDetectService::GetConnections()
             if (isFirstAcceptTimeOut) {
                 continue;
             }
-            RPT_INPUT_ERR(true, "EI0015", std::vector<std::string>({"error_reason"}),
-                std::vector<std::string>({StringFormat("Receiving message from the root node timed out. "
-                    "Timeout was set to %lld seconds. expected %u nodes, received %u nodes. "
-                    "Check whether worker nodes are reachable and report errors.",
-                    static_cast<long long>(timeout.count()),
-                    expectedSocketNum + previousRankNum, previousRankNum)}));
             HCCL_ERROR("[RankInfoDetectService::%s] rank info detect server get socket timeout[%lld s]", __func__, timeout);
             DisplayConnectingStatus(previousRankNum, expectedSocketNum);
             isFirstAcceptTimeOut = true;
