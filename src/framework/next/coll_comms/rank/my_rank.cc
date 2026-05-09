@@ -490,6 +490,13 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
             reuseIdx++;
         }
 
+        uint32_t devLogicId{0};
+        uint32_t devPhyId{0};
+        devLogicId = static_cast<uint32_t>(HcclGetThreadDeviceId());
+        CHK_RET(hrtGetDevicePhyIdByIndex(devLogicId, devPhyId));
+        // 检查返回值吗??
+        ClusterMonitor::GerInstance(devLogicId).RegisterCtxHandleToClusterMonitor(devPhyId, epHandle);
+
         HCCL_INFO("[%s][%u/%u] channel created successfully, remoteRank[%u], channelHandle[%p]",
             __func__, i + 1, channelNum, remoteRank, channelHandles[i]);
     }
