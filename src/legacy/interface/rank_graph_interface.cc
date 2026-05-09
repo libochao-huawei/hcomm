@@ -307,10 +307,10 @@ namespace Hccl {
         RankGraph* rankGraph = static_cast<RankGraph*>(rankGraphPtr_);
         u32 rankId = rankGraph->GetMyRank();
         std::set<u32> levels = rankGraph->GetLevels(rankId);
-        CHK_PRT_RET(levels.find(netLayer) == levels.end(),
-                    HCCL_ERROR("[IRankGraph::GetLinks] netLayer[%u] is invalid, srcRank[%u], dstRank[%u], "
-                               "myRank[%u]", netLayer, srcRank, dstRank, rankId),
-                    HCCL_E_PARA);
+        if (levels.find(netLayer) == levels.end()) {
+            HCCL_ERROR("[IRankGraph::GetLinks] netLayer[%u] is invalid", netLayer);
+            return HCCL_E_PARA;
+        }
         std::vector<NetInstance::Path> paths = rankGraph->GetPaths(netLayer, srcRank, dstRank);
         linkListVec_.clear();
         // 遍历每条path

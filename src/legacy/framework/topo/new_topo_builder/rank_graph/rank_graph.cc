@@ -454,51 +454,49 @@ HcclResult RankGraph::GetEndpointInfo(uint32_t rankId,
     auto key = std::make_pair(endpointDesc->commAddr, endpointDesc->protocol);
     const auto& endpointToIfaceMap = peer->GetEndpointToIfaceMap();
     auto it = endpointToIfaceMap.find(key);
-    CHK_PRT_RET(it == endpointToIfaceMap.end(),
-                HCCL_ERROR("[GetEndpointInfo] No matching interface found, rankId[%u], endpointAttr[%d], "
-                           "protocol[%d], commAddrType[%d]", rankId, static_cast<s32>(endpointAttr),
-                            endpointDesc->protocol, endpointDesc->commAddr.type),
-                HCCL_E_NOT_FOUND);
+    if (it == endpointToIfaceMap.end()) {
+        HCCL_ERROR("[GetEndpointInfo] No matching interface found");
+        return HCCL_E_NOT_FOUND;
+    }
     const auto& iface = it->second;
     // 填充信息
     switch (endpointAttr) {
         case ENDPOINT_ATTR_BW_COEFF: {
-            CHK_PRT_RET(infoLen != sizeof(EndpointAttrBwCoeff),
-                        HCCL_ERROR("[GetEndpointInfo] Size mismatch: expected %zu, actual %u, rankId[%u], "
-                                   "endpointAttr[%d]", sizeof(EndpointAttrBwCoeff), infoLen, rankId,
-                                   static_cast<s32>(endpointAttr)),
-                        HCCL_E_PARA);
+            if (infoLen != sizeof(EndpointAttrBwCoeff)) {
+                HCCL_ERROR("[GetEndpointInfo] Size mismatch: expected %zu, actual %u",
+                             sizeof(EndpointAttrBwCoeff), infoLen);
+                return HCCL_E_PARA;
+            }
             *(static_cast<EndpointAttrBwCoeff*>(info)) = iface->GetPorts().size();
             break;
         }
         case ENDPOINT_ATTR_DIE_ID: {
-            CHK_PRT_RET(infoLen != sizeof(EndpointAttrDieId),
-                        HCCL_ERROR("[GetEndpointInfo] Size mismatch: expected %zu, actual %u, rankId[%u], "
-                                   "endpointAttr[%d]", sizeof(EndpointAttrDieId), infoLen, rankId,
-                                   static_cast<s32>(endpointAttr)),
-                        HCCL_E_PARA);
+            if (infoLen != sizeof(EndpointAttrDieId)) {
+                HCCL_ERROR("[GetEndpointInfo] Size mismatch: expected %zu, actual %u",
+                             sizeof(EndpointAttrDieId), infoLen);
+                return HCCL_E_PARA;
+            }
             *(static_cast<EndpointAttrDieId*>(info)) = iface->GetLocalDieId();
             HCCL_INFO("GetEndpointInfo rankId[%u] iface[%s]", rankId, iface->Describe().c_str());
             break;
         }
         case ENDPOINT_ATTR_LOCATION: {
-            CHK_PRT_RET(infoLen != sizeof(EndpointAttrLocation),
-                        HCCL_ERROR("[GetEndpointInfo] Size mismatch: expected %zu, actual %u, rankId[%u], "
-                                   "endpointAttr[%d]", sizeof(EndpointAttrLocation), infoLen, rankId,
-                                   static_cast<s32>(endpointAttr)),
-                        HCCL_E_PARA);
+            if (infoLen != sizeof(EndpointAttrLocation)) {
+                HCCL_ERROR("[GetEndpointInfo] Size mismatch: expected %zu, actual %u",
+                             sizeof(EndpointAttrLocation), infoLen);
+                return HCCL_E_PARA;
+            }
             *(static_cast<EndpointAttrLocation*>(info)) = iface->GetPos();
             break;
         }
         default: {
-            CHK_PRT_RET(true,
-                        HCCL_ERROR("[GetEndpointInfo] Invalid endpointAttr[%d], rankId[%u]",
-                                   static_cast<s32>(endpointAttr), rankId),
-                        HCCL_E_PARA);
+            HCCL_ERROR("[GetEndpointInfo] Invalid endpointAttr [%d]", endpointAttr);
+            return HCCL_E_PARA;
         }
     }
     return HCCL_SUCCESS;
 }
+
 
 bool RankGraph::IsSymmetric(const u32 netLayer) const
 {
