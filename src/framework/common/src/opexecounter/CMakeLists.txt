@@ -23,4 +23,7 @@ if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         ${src_list}
     )
+    target_include_directories(ccl_kernel BEFORE PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/../config
+    )
 endif()

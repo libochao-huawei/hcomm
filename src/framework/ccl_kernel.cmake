@@ -44,12 +44,41 @@ target_include_directories(ccl_kernel PRIVATE
     ${HCOMM_DIR}/src/pub_inc
     ${HCOMM_DIR}/src/pub_inc/aicpu
     ${HCOMM_DIR}/include
-    ${HCOMM_DIR}/pkg_inc/
-    ${HCOMM_DIR}/pkg_inc/hccl/
-    ${HCOMM_DIR}/externel_depends/tsch/
+    ${HCOMM_DIR}/pkg_inc
+    ${HCOMM_DIR}/pkg_inc/hccl
+    ${HCOMM_DIR}/externel_depends/tsch
+
+    # src/legacy 头文件，优先于 src/framework 头文件eneous
+    ${HCOMM_DIR}/src/legacy/unified_platform/resource/socket
+    ${HCOMM_DIR}/src/legacy/framework/env_config
+
+    # src/platform 头文件
+    ${HCOMM_DIR}/src/platform/inc
+    ${HCOMM_DIR}/src/platform/inc/adapter
+    ${HCOMM_DIR}/src/platform/common
+    ${HCOMM_DIR}/src/platform/common/buffer_manager
+    ${HCOMM_DIR}/src/platform/common/unique
+    ${HCOMM_DIR}/src/platform/common/unfold_cache
+    ${HCOMM_DIR}/src/platform/resource/transport
+    ${HCOMM_DIR}/src/platform/resource/transport/heterog
+    ${HCOMM_DIR}/src/platform/resource/notify
+    ${HCOMM_DIR}/src/platform/resource/dispatcher_ctx
+    ${HCOMM_DIR}/src/platform/resource/socket
+    ${HCOMM_DIR}/src/platform/task
+    ${HCOMM_DIR}/src/platform/hccp/inc
+    ${HCOMM_DIR}/src/platform/hccp/inc/network
+
+    # src/algorithm 头文件
     ${HCOMM_DIR}/src/algorithm/pub_inc
 
+    # src/framework 头文件
+    ${HCOMM_DIR}/src/framework
+    ${HCOMM_DIR}/src/framework/inc
+
+    # src/legacy 头文件
     ${LEGACY_INCLUDE_LIST}
+
+    # 三方件头文件
     ${RDMA_CORE_INCLUDE_DIR}
     ${THIRD_PARTY_NLOHMANN_PATH}
 )
