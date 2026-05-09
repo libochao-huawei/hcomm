@@ -3552,3 +3552,27 @@ TEST_F(TryFastCcuLaunchTest, Ut_TryFastCcuLaunch_When_OpNoSupportFastLaunch_Expe
     // then
     EXPECT_EQ(fakeComm.TryFastCcuLaunch(fakeOpParams, fakeStreamPtr), false);
 }
+
+TEST_F(TryFastCcuLaunchTest, Ut_TryFastCcuLaunch_AllToAllV_InstType_MESH_1D_DIRECT_ReturnTrue)
+{
+    // 配置 ALLTOALLV
+    fakeOpParams.opType = OpType::ALLTOALLV;
+
+    // 构造 key（和源码完全一致）
+    fakeComm.ccuParamsMappingKey = {
+        static_cast<std::uint32_t>(fakeOpParams.reduceOp),
+        static_cast<std::uint32_t>(fakeOpParams.all2AllVDataDes.sendType),
+        0
+    };
+
+    // 保存正确的 INST TYPE，触发 RefreshArgs 分支
+    fakeComm.saveCCUParams({}, {}, 0, CcuInstType::CCU_ALLTOALLV_MESH_1D_DIRECT, true);
+
+    // 因为你的 SetUp 已经 MOCK 了 ExecuteFastCcuLaunch
+    // 所以不会执行到底层硬件 → 不崩溃
+    // 但代码逻辑会走到 FillAllToAllVArgs → RefreshArgs
+    bool ret = fakeComm.TryFastCcuLaunch(fakeOpParams, fakeStreamPtr);
+
+    // 验证返回 true
+    EXPECT_TRUE(ret);
+}
