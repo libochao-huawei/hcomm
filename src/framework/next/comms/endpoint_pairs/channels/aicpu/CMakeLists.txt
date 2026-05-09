@@ -15,7 +15,7 @@ set(src_list
     aicpu_ts_roce_channel.cc
     aicpu_ts_hccs_channel.cc
     aicpu_ts_roce_channel_v2.cc
-    dev_rdma_connection.cc
+    dev_rdma_connection_v2.cc
 )
 
 target_sources(hcomm PRIVATE

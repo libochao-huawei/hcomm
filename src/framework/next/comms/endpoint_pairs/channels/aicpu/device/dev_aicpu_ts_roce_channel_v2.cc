@@ -17,238 +17,19 @@
 
 DevAicpuTsRoceChannelV2::DevAicpuTsRoceChannelV2(std::vector<char> &uniqueId)
 {
-    (void)Init(uniqueId);
+    transport_ = std::make_unique<RoceTransportLiteImpl>(uniqueId);
 }
 
 DevAicpuTsRoceChannelV2::~DevAicpuTsRoceChannelV2()
 {
 }
 
-HcclResult DevAicpuTsRoceChannelV2::Init(std::vector<char> &uniqueId)
-{
-    BinaryStream binaryStream(uniqueId);
-    u32 type;
-    binaryStream >> type;
-    binaryStream >> notifyNum_;
-    binaryStream >> bufferNum_;
-    binaryStream >> connNum_;
- 
-    std::vector<char> locNotifyUniqueIds;
-    binaryStream >> locNotifyUniqueIds;
-    ParseLocNotifyVec(locNotifyUniqueIds);
-
-    std::vector<char> rmtNotifyUniqueIds;
-    binaryStream >> rmtNotifyUniqueIds;
-    ParseRmtNotifyVec(rmtNotifyUniqueIds);
-
-    std::vector<char> notifyValueBufferUniqueIds;
-    binaryStream >> notifyValueBufferUniqueIds;
-    ParseNotifyValueBuffer(notifyValueBufferUniqueIds);
- 
-    std::vector<char> locBufferUniqueIds;
-    binaryStream >> locBufferUniqueIds;
-    ParseLocBufferVec(locBufferUniqueIds);
- 
-    std::vector<char> rmtBufferUniqueIds;
-    binaryStream >> rmtBufferUniqueIds;
-    ParseRmtBufferVec(rmtBufferUniqueIds);
-
-    std::vector<char> connUniqueIds;
-    binaryStream >> connUniqueIds;
-    ParseConnVec(connUniqueIds);
-
-    return HCCL_SUCCESS;
-}
-
-void DevAicpuTsRoceChannelV2::ParseLocNotifyVec(std::vector<char> &data)
-{
-    if (notifyNum_ == 0) {
-        HCCL_WARNING("[DevAicpuTsRoceChannelV2::%s] notifyNum is 0", __func__);
-        return;
-    }
-
-    u32 notifySizePerDto = data.size() / notifyNum_;
-
-    for (u32 idx = 0; idx < notifyNum_; idx++) {
-        auto              start = data.begin() + idx * notifySizePerDto;
-        auto              end   = start + notifySizePerDto;
-        std::vector<char> dto(start, end);
-        localNotifies_.push_back(std::make_unique<NotifyLite>(dto));
-        HCCL_INFO("locNotify idx=%u, %s", idx, localNotifies_.back()->Describe().c_str());
-    }
-}
-
-void DevAicpuTsRoceChannelV2::ParseRmtNotifyVec(std::vector<char> &data)
-{
-    if (notifyNum_ == 0) {
-        HCCL_WARNING("[DevAicpuTsRoceChannelV2::%s] notifyNum is 0", __func__);
-        return;
-    }
-
-    u32 rmtBufferSizePerDto = data.size() / notifyNum_;
-    HCCL_INFO("[DevAicpuTsRoceChannelV2::%s] Parse remote notify num=%u, sizePerDto=%u",
-        __func__, notifyNum_, rmtBufferSizePerDto);
-
-    BinaryStream binaryStream(data);
-    remoteNotifies_.clear();
-    u64 addr;
-    u64 size;
-    u32 rkey;
-    for (u32 idx = 0; idx < notifyNum_; idx++) {
-        binaryStream >> addr;
-        binaryStream >> size;
-        binaryStream >> rkey;
-        RmtRmaBufferLite rdmaBufLite(addr, size, rkey);
-        HCCL_INFO("idx=%u, %s", idx, rdmaBufLite.Describe().c_str());
-        remoteNotifies_.emplace_back(rdmaBufLite);
-    }
-}
-
-void DevAicpuTsRoceChannelV2::ParseNotifyValueBuffer(std::vector<char> &data)
-{
-    HCCL_INFO("[DevAicpuTsRoceChannelV2::%s] Parse notify value buffer",  __func__);
-
-    BinaryStream binaryStream(data);
-    u64 addr;
-    u64 size;
-    u32 lkey;
-    binaryStream >> addr;
-    binaryStream >> size;
-    binaryStream >> lkey;
-    notifyValueBuffer_ = std::make_unique<RmaBufferLite>(addr, size, lkey);
-}
-
-void DevAicpuTsRoceChannelV2::ParseLocBufferVec(std::vector<char> &data)
-{
-    if (bufferNum_ == 0) {
-        HCCL_WARNING("[DevAicpuTsRoceChannelV2::%s] bufferNum is 0", __func__);
-        return;
-    }
-
-    u32 locBufferSizePerDto = data.size() / bufferNum_;
-    HCCL_INFO("[DevAicpuTsRoceChannelV2::%s] Parse local buffer num=%u, sizePerDto=%u",
-        __func__, bufferNum_, locBufferSizePerDto);
-
-    BinaryStream binaryStream(data);
-    locBufferVec_.clear();
-    u64 addr;
-    u64 size;
-    u32 lkey;
-    for (u32 idx = 0; idx < bufferNum_; idx++) {
-        binaryStream >> addr;
-        binaryStream >> size;
-        binaryStream >> lkey;
-        RmaBufferLite rdmaBufLite(addr, size, lkey);
-        HCCL_INFO("idx=%u, %s", idx, rdmaBufLite.Describe().c_str());
-        locBufferVec_.emplace_back(rdmaBufLite);
-    }
-}
-
-void DevAicpuTsRoceChannelV2::ParseRmtBufferVec(std::vector<char> &data)
-{
-    if (bufferNum_ == 0) {
-        HCCL_WARNING("[DevAicpuTsRoceChannelV2::%s] bufferNum is 0", __func__);
-        return;
-    }
-
-    u32 rmtBufferSizePerDto = data.size() / bufferNum_;
-    HCCL_INFO("[DevAicpuTsRoceChannelV2::%s] Parse remote buffer num=%u, sizePerDto=%u",
-        __func__, bufferNum_, rmtBufferSizePerDto);
-
-    BinaryStream binaryStream(data);
-    rmtBufferVec_.clear();
-    u64 addr;
-    u64 size;
-    u32 rkey;
-    for (u32 idx = 0; idx < bufferNum_; idx++) {
-        binaryStream >> addr;
-        binaryStream >> size;
-        binaryStream >> rkey;
-        RmtRmaBufferLite rdmaBufLite(addr, size, rkey);
-        HCCL_INFO("idx=%u, %s", idx, rdmaBufLite.Describe().c_str());
-        rmtBufferVec_.emplace_back(rdmaBufLite);
-    }
-}
-
-void DevAicpuTsRoceChannelV2::ParseConnVec(std::vector<char> &data)
-{
-    if (connNum_ == 0) {
-        HCCL_WARNING("[DevAicpuTsRoceChannelV2::%s] connNum is 0", __func__);
-        return;
-    }
-
-    u32 connSizePerDto = data.size() / connNum_;
-    HCCL_INFO("[DevAicpuTsRoceChannelV2::%s] Parse conn num=%u, sizePerDto=%u",
-        __func__, connNum_, connSizePerDto);
-    for (u32 idx = 0; idx < connNum_; idx++) {
-        auto              start = data.begin() + idx * connSizePerDto;
-        auto              end   = start + connSizePerDto;
-        std::vector<char> connUniqueId(start, end);
-        connUniqueIdVec_.emplace_back(connUniqueId);
-        std::unique_ptr<DevRdmaConnLite> connLite;
-        connLite = std::make_unique<DevRdmaConnLite>(connUniqueId);
-        HCCL_INFO("[DevAicpuTsRoceChannelV2::%s] idx=%u, %s", __func__, idx, connLite->Describe().c_str());
-        connVec_.emplace_back(std::move(connLite));
-    }
-}
-
-RmaBufSliceLite DevAicpuTsRoceChannelV2::GetRmaBufSlicelite(const RmaBufferLite &lite) const
-{
-    return RmaBufSliceLite(lite.GetAddr(), lite.GetSize(), lite.GetLkey(), 0);
-}
-
-RmtRmaBufSliceLite DevAicpuTsRoceChannelV2::GetRmtRmaBufSliceLite(const RmtRmaBufferLite &lite) const
-{
-    return RmtRmaBufSliceLite(lite.GetAddr(), lite.GetSize(), lite.GetRkey(), 0, 0);
-}
-
-RmtRmaBufSliceLite DevAicpuTsRoceChannelV2::GetRmtNotifySliceLite(u32 index) const
-{
-    auto &lite = remoteNotifies_[index];
-    return RmtRmaBufSliceLite(lite.GetAddr(), lite.GetSize(), lite.GetRkey(), 0, 0);
-}
-
 std::string DevAicpuTsRoceChannelV2::Describe() const
 {
-    std::string desc = "DevAicpuTsRoceChannelV2[";
-
-    u32 idx = 0;
-    desc += "localNotifies=[";
-    for (auto &it : localNotifies_) {
-        desc += StringFormat("idx=%u, %u;", idx, it->Describe().c_str());
-        idx++;
+    if (transport_ != nullptr) {
+        return transport_->Describe();
     }
-
-    idx = 0;
-    desc += "], remoteNotifies=[";
-    for (auto &it : remoteNotifies_) {
-        desc += StringFormat("idx=%u, %u;", idx, it.Describe().c_str());
-        idx++;
-    }
-
-    idx = 0;
-    desc += "], locBufferVec=[";
-    for (auto &it : locBufferVec_) {
-        desc += StringFormat("idx=%u, %s;", idx, it.Describe().c_str());
-        idx++;
-    }
-
-    idx = 0;
-    desc += "], rmtBufferVec=[";
-    for (auto &it : rmtBufferVec_) {
-        desc += StringFormat("idx=%u, %s;", idx, it.Describe().c_str());
-        idx++;
-    }
-
-    idx = 0;
-    desc += "], connVec=[";
-    for (auto &it : connVec_) {
-        desc += StringFormat("idx=%u, %s;", idx, it->Describe().c_str());
-        idx++;
-    }
-
-    desc += "]]";
-    return desc;
+    return "DevAicpuTsRoceChannelV2[transport=nullptr]";
 }
 
 HcclResult DevAicpuTsRoceChannelV2::Create(const void *blob, u64 blobBytes,
@@ -270,11 +51,11 @@ HcclResult DevAicpuTsRoceChannelV2::Create(const void *blob, u64 blobBytes,
         return HCCL_E_PARA;
     }
 
-    auto devChannel = std::make_unique<DevAicpuTsRoceChannelV2>();
-    CHK_PTR_NULL(devChannel);
-    CHK_RET(devChannel->Init(dataVec[resType].data));
+    transport_ = std::make_unique<RoceTransportLiteImpl>();
+    CHK_PTR_NULL(transport_);
+    transport_->Init(dataVec[resType].data);
 
-    outHandle = reinterpret_cast<ChannelHandle>(devChannel.release());
+    outHandle = reinterpret_cast<ChannelHandle>(transport_.get());
 
     HCCL_INFO("[DevAicpuTsRoceChannelV2][Create] success blobBytes[%llu] handle[0x%llx]",
         static_cast<unsigned long long>(blobBytes),
@@ -284,8 +65,12 @@ HcclResult DevAicpuTsRoceChannelV2::Create(const void *blob, u64 blobBytes,
 
 bool DevAicpuTsRoceChannelV2::Destroy(ChannelHandle handle)
 {
-    auto *devChannel = reinterpret_cast<DevAicpuTsRoceChannelV2 *>(handle);
-    delete devChannel;
+    if (transport_ != nullptr && reinterpret_cast<ChannelHandle>(transport_.get()) == handle) {
+        transport_.reset();
+    } else {
+        auto *transport = reinterpret_cast<RoceTransportLiteImpl *>(handle);
+        delete transport;
+    }
     HCCL_DEBUG("[DevAicpuTsRoceChannelV2][Destroy] destroyed handle[0x%llx]", handle);
     return true;
 }
