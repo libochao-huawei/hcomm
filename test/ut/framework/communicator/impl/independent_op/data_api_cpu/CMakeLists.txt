@@ -16,6 +16,7 @@ set(src_to_test_list
     ut_cpu_HcommReadNbiOnThread.cc
     ut_cpu_HcommFenceOnThread.cc
     ut_cpu_HcommChannelFenceOnThread.cc
+    ut_cpu_HcommDpuChannelRegisterDfx.cc
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/data_api/hccl_api_data_cpu.cc
 )
 
