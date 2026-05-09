@@ -136,7 +136,7 @@ HcclResult ChannelProcess::ChannelUpdateMemInfo(HcommMemHandle *memHandles, uint
         }
         channel = itC->second.get();
     }
-    // 不在锁内执行，避免单进程多线程场景卡死
+    // UpdateMemInfo需要rank间交互，若在锁内执行会导致其他rank被锁拦住
     CHK_RET(channel->UpdateMemInfo(memHandles, memHandleNum));
     EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
