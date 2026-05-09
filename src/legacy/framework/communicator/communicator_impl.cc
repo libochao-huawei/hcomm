@@ -3818,9 +3818,6 @@ HcclResult CommunicatorImpl::GetTilingAccelerator(void *mc2Tiling, AcceleratorSt
         case HcclAccelerator::DEFAULT:
             acceleratorState = AcceleratorState::CCU_SCHED; // 默认按照CCU_SCHED
             break;
-        case HcclAccelerator::CCU_MS:
-            acceleratorState = AcceleratorState::CCU_MS;
-            break;
         case HcclAccelerator::CCU_SCHED:
             acceleratorState = AcceleratorState::CCU_SCHED;
             break;
