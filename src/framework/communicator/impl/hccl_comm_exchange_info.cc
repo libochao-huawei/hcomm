@@ -39,7 +39,7 @@ HcclResult hcclComm::GetExchangeInfo(uint32_t remoteRank, void** data, uint32_t*
 HcclResult hcclComm::StoreRemoteExchangeInfo(uint32_t remoteRank, const std::vector<u8>& data)
 {
     remoteExchangeInfoMap_[remoteRank] = std::move(data);
-    HCCL_INFO("[StoreRemoteExchangeInfo] success, remoteRank[%u], length[%u].", remoteRank, infoEntry.length);
+    HCCL_INFO("[StoreRemoteExchangeInfo] success, remoteRank[%u], length[%u].", remoteRank, data.size());
     return HCCL_SUCCESS;
 }
 
