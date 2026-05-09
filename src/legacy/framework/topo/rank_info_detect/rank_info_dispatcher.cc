@@ -23,6 +23,7 @@
 #include "env_config.h"
 #include "hccp_common.h"
 #include "network_api_exception.h"
+#include "adapter_error_manager_pub.h"
 
 namespace Hccl {
 
@@ -205,8 +206,15 @@ void RankInfoDispather::ProcessSend()
         }
 
         //循环超时
-        CHK_PRT_THROW(((std::chrono::steady_clock::now() - startTime) >= timeout), 
-                        HCCL_ERROR("[RankInfoDispather::%s] epoll_wait timeout.", __func__), TimeoutException, "epoll_wait timeout");
+        if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
+            HCCL_ERROR("[RankInfoDispather::%s] epoll_wait timeout, timeout[%lld s].", __func__,
+                static_cast<long long>(timeout.count()));
+            RPT_INPUT_ERR(true, "EI0015", std::vector<std::string>({"error_reason"}),
+                std::vector<std::string>({StringFormat("Receiving message from the root node timed out "
+                    "Timeout was set to %lld seconds. Expected to send to %u nodes, completed %u nodes.",
+                    static_cast<long long>(timeout.count()), rankNum_, sendDoneCount_.load())}));
+            THROW<TimeoutException>("epoll_wait timeout");
+        }
         
         // 等待epoll事件
         s32 epollTimeout = lastEpollWaitFlag ? LAST_EPOLL_TIMEOUT_MS : EPOLL_TIMEOUT_MS;
