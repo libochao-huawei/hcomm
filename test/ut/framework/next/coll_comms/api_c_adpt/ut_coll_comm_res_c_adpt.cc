@@ -90,6 +90,7 @@ TEST_F(HcclChannelDescTest, Ut_ProcessRoceChannelDesc_When_IsCommunicatorV2_Is_T
     std::vector<ChannelHandle> channels(1);
     GetChannelDesc(channelDesc);
     MOCKER(&MyRank::CreateChannels).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(HcommDpuChannelRegisterDfx).stubs().will(returnValue(0));
     ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_CPU, channelDesc.data(), 1, channels.data());
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }

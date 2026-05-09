@@ -616,11 +616,16 @@ int32_t HcommBatchModeEnd(const char *batchTag)
 
 int32_t HcommThreadRegisterDfx(ThreadHandle thread, std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback)
 {
-    HCCL_INFO("[HcommThreadRegisterDfx] Init begin");
     Thread *threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
     CHK_RET(threadPtr->SetAddTaskInfoCallback(callback));
-    HCCL_INFO("[HcommThreadRegisterDfx] Init success");
+    return HCCL_SUCCESS;
+}
+
+int32_t HcommDpuChannelRegisterDfx(ChannelHandle channel, std::function<HcclResult(const Hccl::TaskParam&, u64)> callback) {
+    auto *const hostCpuRoceChannelPtr = reinterpret_cast<hcomm::HostCpuRoceChannel *>(channel);
+    CHK_PTR_NULL(hostCpuRoceChannelPtr);
+    CHK_RET(hostCpuRoceChannelPtr->SetDfxCallback(callback));
     return HCCL_SUCCESS;
 }
 
@@ -785,7 +790,6 @@ HcclResult HcclProfilingReportOp(HcclComm comm, uint64_t beginTime)
     HCCL_INFO("[%s] Report All Tasks Info, comm[%p], hcclCommDfx[%p] GetMirrorTaskManager[%p].",
         __func__, comm, hcclCommDfx, hcclCommDfx->GetMirrorTaskManager());
     //单算子模式暂时默认true
-    CHK_RET(hcclCommDfx->ReportAllTasks(true));
     CHK_RET(hcclCommDfx->ReportOp(beginTime, true, true));
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
@@ -818,6 +822,8 @@ HcclResult HcclReportAicpuKernel(HcclComm comm, uint64_t beginTime, char* kernel
     uint32_t taskId = INVALID_UINT;
     uint32_t streamId = INVALID_UINT;
     CHK_RET(hrtGetTaskIdAndStreamID(taskId, streamId));
+    HCCL_INFO("[%s] taskId[%u], streamId[%u].", __func__, taskId, streamId);
+    hcclCommDfx->SetAicpuTaskIdAndStreamId(taskId, streamId);
     CHK_RET(hcclCommDfx->AddTaskInfoCallback(streamId, taskId, taskParam, INVALID_U64));
     HCCL_INFO("[HcclReportAicpuKernel] HcclReportAicpuKernel sucess");
     return HCCL_SUCCESS;

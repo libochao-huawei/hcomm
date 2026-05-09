@@ -649,23 +649,8 @@ static void FastLoadSaveParams(const CcuInstruction &ccuInstruction, Communicato
 void SubmitCcuInsGroupTasks(const CcuInstruction &ccuInstruction, CommunicatorImpl &comm, const OpTaskConfig &taskConfig, 
                             const Stream &stream, std::vector<std::vector<CcuTaskParam>> &ccuParams)
 {
-    TaskParam taskParam = {
-        .taskType  = TaskParamType::TASK_CCU,
-        .beginTime = 0,
-        .endTime   = 0,
-        .isMaster = false,
-        .taskPara  = {
-            .Ccu = {
-                .dieId         = 0,
-                .missionId     = 0,
-                .execMissionId = 0,
-                .instrId       = 0,
-                .costumArgs    = {0},
-                .executeId     = 0
-            }
-        },
-        .ccuDetailInfo  = nullptr
-    };
+    TaskParam taskParam = {};
+    taskParam.taskType = TaskParamType::TASK_CCU;
     std::vector<std::vector<CcuProfilingInfo>> ccuProfilingInfo;
     GetCcuProfilingInfo(ccuInstruction, ccuParams, ccuProfilingInfo);
     
@@ -732,23 +717,8 @@ static void SubmitCcuTasks(const CcuInstruction &ccuInstruction, CommunicatorImp
         return;
     }
 
-    TaskParam taskParam = {
-        .taskType  = TaskParamType::TASK_CCU,
-        .beginTime = 0,
-        .endTime   = 0,
-        .isMaster = false,
-        .taskPara  = {
-            .Ccu = {
-                .dieId         = 0,
-                .missionId     = 0,
-                .execMissionId = 0,
-                .instrId       = 0,
-                .costumArgs    = {0},
-                .executeId     = 0
-            }
-        },
-        .ccuDetailInfo  = nullptr
-    };
+    TaskParam taskParam = {};
+    taskParam.taskType = TaskParamType::TASK_CCU;
     std::vector<std::vector<CcuProfilingInfo>> ccuProfilingInfo;
     GetCcuProfilingInfo(ccuInstruction, ccuParams, ccuProfilingInfo);
     
@@ -781,6 +751,8 @@ static void ReportAivTaskInfo(const CommunicatorImpl &comm, AivOpArgs &aivOpArgs
         .taskType  = TaskParamType::TASK_AIV,
         .beginTime = aivOpArgs.beginTime,
         .endTime   = DlProfFunction::GetInstance().dlMsprofSysCycleTime(),
+        .aicpuTaskId = 0,
+        .npuDevId = 0,
         .isMaster = isMaster,
         .taskPara  = {
             .Aiv = {
