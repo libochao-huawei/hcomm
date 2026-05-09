@@ -102,11 +102,11 @@ extern HcclResult HcclCommAddExchangeInfo(HcclComm comm, void* data, uint32_t le
  * @param[in] comm 通信域句柄
  * @param[in] remoteRank 对端rank ID
  * @param[out] data 接收数据的缓冲区
- * @param[in,out] length 缓冲区长度
+ * @param[out] length 缓冲区长度
  * @return HcclResult 执行结果状态码
  * @note 读取后自动清空该remoteRank的交换信息，不可重复读取，在HcclChannelAcquire成功返回后调用
  */
-extern HcclResult HcclCommGetExchangeInfo(HcclComm comm, uint32_t remoteRank, void* data, uint32_t &length);
+extern HcclResult HcclCommGetExchangeInfo(HcclComm comm, uint32_t remoteRank, void** data, uint32_t* length);
 
 /**
  * @brief 重置交换信息
