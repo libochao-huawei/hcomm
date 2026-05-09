@@ -76,7 +76,8 @@ TEST_F(ExchangeInfoTest, Ut_CApiGetExchangeInfo_When_ParamValid_Expect_Success)
     HcclComm comm = static_cast<HcclComm>(hcclCommPtr.get());
     std::vector<u8> recvBuf(remoteData.size(), 0);
     uint32_t recvBufSize = recvBuf.size();
-    HcclResult ret = HcclCommGetExchangeInfo(comm, 0, recvBuf.data(), recvBufSize);
+    void *outData = recvBuf.data();
+    HcclResult ret = HcclCommGetExchangeInfo(comm, 0, &outData, &recvBufSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(recvBuf, remoteData);
 }
@@ -108,7 +109,8 @@ TEST_F(ExchangeInfoTest, Ut_EndToEnd_When_AddStoreGet_Expect_Consistent)
     // 4. 获取对端交换信息
     std::vector<u8> recvBuf(remoteData.size(), 0);
     uint32_t recvBufSize = recvBuf.size();
-    ret = hcclCommPtr->GetExchangeInfo(1, recvBuf.data(), recvBufSize);
+    void *outData = recvBuf.data();
+    ret = hcclCommPtr->GetExchangeInfo(1, &outData, &recvBufSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(recvBuf, remoteData);    
 }
