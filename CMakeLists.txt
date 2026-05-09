@@ -279,14 +279,6 @@ elseif(BUILD_OPEN_PROJECT)
         DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hccl/ ${INSTALL_OPTIONAL}
         COMPONENT hcomm
     )
-    set(HCCL_PKG_CCU_HEAD
-        pkg_inc/hcomm/ccu/ccu_assist_pub.h
-    )
-    install(FILES
-        ${HCCL_PKG_CCU_HEAD}
-        DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hcomm/ccu/ ${INSTALL_OPTIONAL}
-        COMPONENT hcomm
-    )
     set(HCCL_PKG_CCU_NEW_HEAD
         pkg_inc/hcomm/ccu_new/ccu_address.hpp
         pkg_inc/hcomm/ccu_new/ccu_api.hpp
