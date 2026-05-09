@@ -161,6 +161,7 @@ set(CCL_KERNEL_PLF_INCLUDE_LIST
     ${HCOMM_DIR}/src/platform/common/unfold_cache
     ${HCOMM_DIR}/src/platform/hccp
     ${HCOMM_DIR}/src/platform/hccp/inc
+    ${HCOMM_DIR}/src/platform/hccp/inc/network
     ${HCOMM_DIR}/src/platform/resource/dispatcher_ctx
     ${HCOMM_DIR}/src/platform/resource/transport
     ${HCOMM_DIR}/src/platform/resource/transport/device
