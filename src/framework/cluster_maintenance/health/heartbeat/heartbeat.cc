@@ -22,19 +22,6 @@
 #include "rt_external.h"
 
 namespace hccl {
-constexpr u32 HEARTBEAT_INTERVAL = 1000;                                 // 心跳帧发送周期为1000 ms
-constexpr u32 HEARTBEAT_COUNT = HEARTBEAT_INTERVAL / BROADCAST_INTERVAL; // 心跳帧发送间隔数
-constexpr u32 BASE_NUMBER = 2;
-constexpr u32 RETRY_CQE_ARRAY_SIZE = 128; // 重执行时获取的CQE数组的最大数量，最大128
-constexpr u32 JITTER_TIME = 300; // 关键事件允许的误差事件范围±300s。误差来源：EVENT和NOTIFY差异、传播耗时、计时误差
-constexpr u32 EVENT_MAX_CNT = 5000;          // 防止内存泄漏，同时不能太短，防止正常事件被冲掉
-constexpr u32 THROUND_MILS = 1000;           // 1000ms
-constexpr u32 OPINFO_QUEUE_MAX_SIZE = 131072; // 算子下发校验队列最大算子个数，防止内存占用
-constexpr u32 MAX_SENDBUFF_SIZE = 3072;      // SendBuff[dst] 最大数量
-constexpr u32 SR_TAG_MAP_MAX_NUM = 65536;
-constexpr u32 HBFRAME_SEND_LOOP_MAX_NUM = 120;
-constexpr s32 HCCL_STUCK_DETECT_TIME_MIN = 60; // 卡住检测最短时间
-constexpr s32 HCCL_STUCK_DETECT_TIME_BASE = 3; // 卡住检测时间为execTime/3
 Heartbeat &Heartbeat::GetInstance(s32 deviceLogicID)
 {
     static Heartbeat hb[MAX_MODULE_DEVICE_NUM];
@@ -95,9 +82,52 @@ HcclResult Heartbeat::InitNic(const NicType nicType, const s32 devicePhyId, cons
     return HCCL_SUCCESS;
 }
 
+HcclResult Heartbeat::InitDeviceNic(const RankInfo &locRank, bool isNeedNic, u32 port)
+{
+    if (isNeedNic && locRank.nicIp.size() != 0) {
+        nicIp_ = locRank.nicIp[0];
+        u32 nicPort = (port == HCCL_INVALID_PORT) ? locRank.deviceNicPort : port;
+        if (locRank.nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE && !nicIp_.IsInvalid() &&
+            netDevCtxMap_.find(nicIp_) == netDevCtxMap_.end()) {
+            CHK_RET(InitNic(NicType::DEVICE_NIC_TYPE, devicePhyId_, deviceLogicId_, nicIp_, nicPort));
+        }
+    }
+
+    if (isNeedNic && locRank.backupNicIp.size() != 0 && IsEnableBackupLink()) {
+        backupNicIp_ = locRank.backupNicIp[0];
+        u32 backupPort = HCCL_INVALID_PORT; // 不初始化备用网卡上的Socket
+        if (locRank.nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE &&
+            netDevCtxMap_.find(backupNicIp_) == netDevCtxMap_.end()) {
+            CHK_RET(InitNic(NicType::DEVICE_NIC_TYPE, deviceBackUpPhyId_, deviceBackupLogicId_, backupNicIp_,
+                backupPort, true));
+        }
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult Heartbeat::InitHostNic(const RankInfo &locRank, bool isNeedNic, u32 port)
+{
+    if (!isNeedNic || locRank.nicDeploy != NICDeployment::NIC_DEPLOYMENT_HOST) {
+        return HCCL_SUCCESS;
+    }
+
+    if (!locRank.nicIp[0].IsInvalid()) {
+        u32 nicPort = (port == HCCL_INVALID_PORT) ? locRank.deviceNicPort : port;
+        nicIp_ = locRank.nicIp[0];
+        if (netDevCtxMap_.find(nicIp_) == netDevCtxMap_.end()) {
+            CHK_RET(InitNic(NicType::HOST_NIC_TYPE, devicePhyId_, deviceLogicId_, nicIp_, nicPort));
+        }
+    } else {
+        if (netDevCtxMap_.find(locRank.hostIp) == netDevCtxMap_.end()) {
+            u32 hostPort = GetHostPort(devicePhyId_);
+            CHK_RET(InitNic(NicType::HOST_NIC_TYPE, devicePhyId_, deviceLogicId_, locRank.hostIp, hostPort));
+        }
+    }
+    return HCCL_SUCCESS;
+}
+
 HcclResult Heartbeat::Init(const RankInfo &locRank, const bool useSuperPodMode, const bool isNeedNic, const u32 port,
     const std::string &group)
-
 {
     HCCL_INFO("[%s] heartbeat Init begin.", __func__);
     devicePhyId_ = locRank.devicePhyId;
@@ -115,28 +145,8 @@ HcclResult Heartbeat::Init(const RankInfo &locRank, const bool useSuperPodMode, 
         }
     }
     std::unique_lock<std::mutex> mapLock(ctxMapMutex_);
-    if (isNeedNic && locRank.nicIp.size() != 0) {
-        nicIp_ = locRank.nicIp[0];
-        u32 nicPort = (port == HCCL_INVALID_PORT) ? locRank.deviceNicPort : port;
-        if (locRank.nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE && !nicIp_.IsInvalid() &&
-            netDevCtxMap_.find(nicIp_) == netDevCtxMap_.end()) {
-            CHK_RET(InitNic(NicType::DEVICE_NIC_TYPE, devicePhyId_, deviceLogicId_, nicIp_, nicPort));
-        }
-    }
-    if (isNeedNic && locRank.backupNicIp.size() != 0 && IsEnableBackupLink()) {
-        backupNicIp_ = locRank.backupNicIp[0];
-        u32 backupPort = HCCL_INVALID_PORT; // 不初始化备用网卡上的Socket
-        if (locRank.nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE &&
-            netDevCtxMap_.find(backupNicIp_) == netDevCtxMap_.end()) {
-            CHK_RET(InitNic(NicType::DEVICE_NIC_TYPE, deviceBackUpPhyId_, deviceBackupLogicId_, backupNicIp_,
-                backupPort, true));
-        }
-    }
-    if (isNeedNic && locRank.nicDeploy == NICDeployment::NIC_DEPLOYMENT_HOST &&
-        netDevCtxMap_.find(locRank.hostIp) == netDevCtxMap_.end()) {
-        u32 hostPort = GetHostPort(devicePhyId_);
-        CHK_RET(InitNic(NicType::HOST_NIC_TYPE, devicePhyId_, deviceLogicId_, locRank.hostIp, hostPort));
-    }
+    CHK_RET(InitDeviceNic(locRank, isNeedNic, port));
+    CHK_RET(InitHostNic(locRank, isNeedNic, port));
     mapLock.unlock();
     uid_ = GetUId(locRank);
     nicDeploy_ = locRank.nicDeploy;
@@ -274,10 +284,20 @@ HcclResult Heartbeat::RegisterRanks(DevType devType, const RankInfo &locRank, st
         }
     }
 
-    if (isNeedNic && locRank.nicDeploy == NICDeployment::NIC_DEPLOYMENT_HOST &&
-        netDevCtxMap_.find(locRank.hostIp) == netDevCtxMap_.end()) {
-        u32 hostPort = GetHostPort(devicePhyId_);
-        CHK_RET(InitNic(NicType::HOST_NIC_TYPE, devicePhyId_, deviceLogicId_, locRank.hostIp, hostPort));
+    u32 tcpPort = 0;
+    if (isNeedNic && locRank.nicDeploy == NICDeployment::NIC_DEPLOYMENT_HOST) {
+        if (!locRank.nicIp[0].IsInvalid()) {
+            nicIp_ = locRank.nicIp[0];
+            tcpPort = (port == HCCL_INVALID_PORT) ? locRank.deviceNicPort : port;
+            if (netDevCtxMap_.find(nicIp_) == netDevCtxMap_.end()) {
+                CHK_RET(InitNic(NicType::HOST_NIC_TYPE, devicePhyId_, deviceLogicId_, nicIp_, tcpPort));
+            }
+        } else {
+            if (netDevCtxMap_.find(locRank.hostIp) == netDevCtxMap_.end()) {
+                tcpPort = GetHostPort(devicePhyId_);
+                CHK_RET(InitNic(NicType::HOST_NIC_TYPE, devicePhyId_, deviceLogicId_, locRank.hostIp, tcpPort));
+            }
+        }
     }
     mapLock.unlock();
 

@@ -58,6 +58,7 @@
 #include "v80_rank_table.h"
 #include "externalinput_pub.h"
 #include "op_base.h"
+#include "hccl_group.h"
 #include "param_check_pub.h"
 #include "comm_config_pub.h"
 #include "kernel_tiling/kernel_tiling.h"

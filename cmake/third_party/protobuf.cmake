@@ -18,7 +18,7 @@ unset(PROTOBUF_PROTOC_EXECUTABLE CACHE)
 
 set(PROTOBUF_NAME "protobuf")
 set(PROTOBUF_FILE "protobuf-25.1.tar.gz")
-set(PROTOBUF_URL "https://gitcode.com/cann-src-third-party/protobuf/releases/download/v25.1/${PROTOBUF_FILE}")
+set(PROTOBUF_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/protobuf/protobuf-25.1.tar.gz")
 set(PROTOBUF_PKG_PATH ${CANN_3RD_LIB_PATH}/${PROTOBUF_FILE})
 set(PROTOBUF_INSTALL_PATH ${CANN_3RD_LIB_PATH}/protobuf)
 

@@ -30,6 +30,7 @@ public:
         std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &tagVec);
 
     std::string Describe() const override;
+    HcclResult Describe(std::string &dfxMsg);
 
     TransportStatus GetStatus() override;
 
@@ -77,6 +78,9 @@ public:
     HcclResult GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum);
     HcclResult CheckSocketStatus();
     HcclResult UpdateMemInfo(std::vector<LocalRmaBuffer *> &bufferVecTemp);
+
+    // hostUb使用
+    HcclResult GetRemoteSeg(const void* addr, u64 len, u64 *seg);
 
     HcclResult Init();
     HcclResult DeInit() const;
