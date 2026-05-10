@@ -632,6 +632,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_HostCpuRoceChannel_Pack_And_Unpack_Expect
     MOCKER_CPP(&HostCpuRoceChannel::ExchangeCapability).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ExchangeData).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::IbvPostRecv).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(RaDestroyCompChannel).stubs().with(any(), any()).will(returnValue(0));
     // construct
     void *memHandle = static_cast<void *>(localRdmaRmaBuffer.get());
     channelDesc.memHandles = &memHandle;
