@@ -768,14 +768,13 @@ HcclResult HostCpuRoceChannel::NotifyRecord(const uint32_t remoteNotifyIdx)
     struct ibv_sge sgList {};
     notifyRecordWr.sg_list      = &sgList;
     Hccl::TaskParam taskParam{};
+    printf("[ywj]%s:%u", __FUNCTION__, __LINE__);
     if (isHybridMode_) {
         BuildNotifyWrHybird(remoteNotifyIdx, notifyRecordWr);
     } else {
         CHK_RET(PrepareNotifyWrResource(MEM_BLOCK_SIZE, remoteNotifyIdx, notifyRecordWr, taskParam));
     }
 
-    printf("[ywj]%s:%u", __FUNCTION__, __LINE__);
-    CHK_RET(PrepareNotifyWrResource(MEM_BLOCK_SIZE, remoteNotifyIdx, notifyRecordWr));
     printf("[ywj]%s:%u", __FUNCTION__, __LINE__);
     std::vector<Hccl::QpInfo> qpInfo = GetQpInfos();
     CHK_PRT_RET(qpInfo.empty(), HCCL_ERROR("[HostCpuRoceChannel::%s] qpInfos is Empty", __func__), HCCL_E_ROCE_CONNECT);
