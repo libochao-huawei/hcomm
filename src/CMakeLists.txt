@@ -25,7 +25,7 @@ target_include_directories(hccl_headers INTERFACE
 
 # 获取 src/legacy 所有子目录，用于设置头文件搜索路径
 set(LEGACY_INCLUDE_LIST)
-FILE(GLOB_RECURSE LEGACY_DIRS LIST_DIRECTORIES TRUE ${HCOMM_DIR}/src/legacy/*)
+FILE(GLOB_RECURSE LEGACY_DIRS LIST_DIRECTORIES TRUE ${HCOMM_DIR}/src/legacy)
 foreach(dir ${LEGACY_DIRS})
     if((IS_DIRECTORY ${dir}) AND (${dir} MATCHES "src/legacy") AND (NOT ${dir} MATCHES "src/legacy/mdpi"))
         list(APPEND LEGACY_INCLUDE_LIST ${dir}) 

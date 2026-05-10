@@ -168,7 +168,7 @@ function build_st() {
 function mk_dir() {
   local create_dir="$1"  # the target to make
   mkdir -pv "${create_dir}"
-  echo "created ${create_dir}"
+  log "Info: Created ${create_dir}"
 }
 
 function build_ut() {
@@ -242,7 +242,10 @@ function make_ut_gov() {
 }
 
 function build_hcomm() {
+    # 设置 hcc 编译器工具链
     export TOOLCHAIN_DIR="${ASCEND_CANN_PACKAGE_PATH}/toolkit/toolchain/hcc"
+
+    # 创建构建目录
     mk_dir "${BUILD_DIR}"
     cd "${BUILD_DIR}"
 
