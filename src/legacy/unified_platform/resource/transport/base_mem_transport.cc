@@ -44,7 +44,8 @@ void BaseMemTransport::SetBaseStatusReady()
 bool BaseMemTransport::IsSocketReady()
 {
     if (socket == nullptr) {
-        MACRO_THROW(InternalException, StringFormat("%s socket is nullptr, please check", GetLinkDescInfo().c_str()));
+        HCCL_ERROR("%s socket is nullptr, please check", GetLinkDescInfo().c_str());
+        return false;
     }
 
     SocketStatus socketStatus = isHost_ ? socket->GetStatus() : socket->GetAsyncStatus();
@@ -113,8 +114,9 @@ void BaseMemTransport::HandshakeMsgUnpack(BinaryStream &binaryStream)
     binaryStream >> rmtHandshakeMsg;
 
     if (attr.handshakeMsg.size() != rmtHandshakeMsg.size()) {
-        MACRO_THROW(InvalidParamsException, StringFormat("handshakeMsg size=%u is not equal to rmt=%u",
-                                                         attr.handshakeMsg.size(), rmtHandshakeMsg.size()));
+        HCCL_ERROR("handshakeMsg size=%u is not equal to rmt=%u",
+                    attr.handshakeMsg.size(), rmtHandshakeMsg.size());
+        return;
     }
 
     //单边通信情况下，handshakeMsg的size为0
@@ -144,7 +146,8 @@ void BaseMemTransport::CheckLocNotify(CommonLocRes &res)
     for (auto &it : res.notifyVec) {
         if (it == nullptr) {
             string msg = StringFormat("%s notify is nullptr", GetLinkDescInfo().c_str());
-            MACRO_THROW(InvalidParamsException, msg);
+            HCCL_ERROR("%s", msg.c_str());
+            return;
         }
         HCCL_INFO("locNotify=%s", it->Describe().c_str());
     }
@@ -173,7 +176,8 @@ void BaseMemTransport::CheckLocConn(CommonLocRes &res)
     for (auto &it : res.connVec) {
         if (it == nullptr) {
             string msg = StringFormat("%s conn is nullptr", GetLinkDescInfo().c_str());
-            MACRO_THROW(InvalidParamsException, msg);
+            HCCL_ERROR("%s", msg.c_str());
+            return;
         }
         HCCL_INFO("conn=%s", it->Describe().c_str());
     }

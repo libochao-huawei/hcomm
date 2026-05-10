@@ -127,70 +127,73 @@ public:
 
     virtual std::vector<char> GetUniqueId()
     {
-        MACRO_THROW(NotSupportException, StringFormat("not supported."));
+        HCCL_ERROR("GetUniqueId not supported");
+        return {};
     }
 
     virtual RemoteRmaBuffer *GetRmtRmaBuffer(u32 index)
     {
         if (index >= rmtRmaBufferVec.size()) {
-            MACRO_THROW(InvalidParamsException,
-                        StringFormat("Get remote rmaBuffer fail, index[%u] is not in range.", index));
+            HCCL_ERROR("Get remote rmaBuffer fail, index[%u] is not in range.", index);
+            return nullptr;
         }
         return rmtRmaBufferVec[index];
     }
 
     virtual void SetConnVec(std::vector<RmaConnection *> &connVec)
     {
-        MACRO_THROW(NotSupportException, StringFormat("not supported."));
+        HCCL_ERROR("SetConnVec not supported");
     }
 
     virtual vector<char> &GetRmtCntNotifyDesc()
     {
-        MACRO_THROW(NotSupportException, StringFormat("not supported."));
+        static vector<char> emptyVec;
+        HCCL_ERROR("GetRmtCntNotifyDesc not supported");
+        return emptyVec;
     }
 
     virtual void Post(u32 index, const Stream &stream)
     {
-        MACRO_THROW(NotSupportException, StringFormat("not supported."));
+        HCCL_ERROR("Post not supported");
     }
 
     virtual void Wait(u32 index, const Stream &stream, u32 timeout)
     {
-        MACRO_THROW(NotSupportException, StringFormat("not supported."));
+        HCCL_ERROR("Wait not supported");
     }
 
     virtual void Read(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice, const Stream &stream)
     {
-        MACRO_THROW(NotSupportException, StringFormat("not supported."));
+        HCCL_ERROR("Read not supported");
     }
 
     virtual void ReadReduce(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice, const ReduceIn &reduceIn,
                             const Stream &stream)
     {
-        MACRO_THROW(NotSupportException, StringFormat("not supported."));
+        HCCL_ERROR("ReadReduce not supported");
     }
 
     virtual void Write(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice, const Stream &stream)
     {
-        MACRO_THROW(NotSupportException, StringFormat("not supported."));
+        HCCL_ERROR("Write not supported");
     }
 
     virtual void WriteReduce(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice,
                              const ReduceIn &reduceIn, const Stream &stream)
     {
-        MACRO_THROW(NotSupportException, StringFormat("not supported."));
+        HCCL_ERROR("WriteReduce not supported");
     }
 
     virtual void WriteWithNotify(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice,
                                  const WithNotifyIn &withNotify, const Stream &stream)
     {
-        MACRO_THROW(NotSupportException, StringFormat("not supported."));
+        HCCL_ERROR("WriteWithNotify not supported");
     }
 
     virtual void WriteReduceWithNotify(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice,
                                        const ReduceIn &reduceIn, const WithNotifyIn &withNotify, const Stream &stream)
     {
-        MACRO_THROW(NotSupportException, StringFormat("not supported."));
+        HCCL_ERROR("WriteReduceWithNotify not supported");
     }
 
     virtual vector<char> &GetLocalHandshakeMsg() // 返回本端握手消息
