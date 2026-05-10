@@ -61,8 +61,16 @@ target_include_directories(ccl_dpu PRIVATE
     ${HCOMM_DIR}/src/include/
     ${HCOMM_DIR}/src/include/hccl
     ${HCOMM_DIR}/src/pkg_inc
+
     ${CMAKE_CURRENT_SOURCE_DIR}/common
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/types
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/utils
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/exception
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/error_manager
     ${CMAKE_CURRENT_SOURCE_DIR}/base/inc
+    ${CMAKE_CURRENT_SOURCE_DIR}/unified_platform/pub_inc
+    ${CMAKE_CURRENT_SOURCE_DIR}/unified_platform/external_system
+    ${CMAKE_CURRENT_SOURCE_DIR}/framework/dfx
 )
 
 if(BUILD_OPEN_PROJECT)
