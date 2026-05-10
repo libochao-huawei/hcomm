@@ -135,6 +135,9 @@ HcclResult SaveThreads(const vector<shared_ptr<Thread>> &newThreads) {
     CHK_RET(hrtGetDevice(&deviceId));
 
     lock_guard<mutex> lock(g_ThreadMapMtx);
+    HCCL_INFO("YYYYYY hcomm resource [SaveThreads] enter file[%s], deviceId[%d], newThreadsSize[%zu], "
+        "gThreadMapSize[%zu], gThreadD2HMapSize[%zu].", __FILE__, deviceId, newThreads.size(),
+        g_ThreadMap.size(), g_ThreadD2HMap.size());
     for (const auto &threadPtr : newThreads) {
         ThreadHandle handle = reinterpret_cast<ThreadHandle>(threadPtr.get());
 
@@ -150,7 +153,13 @@ HcclResult SaveThreads(const vector<shared_ptr<Thread>> &newThreads) {
 
         g_ThreadMap.emplace(handle, threadPtr);
         g_ThreadD2HMap.emplace(key, handle);
+        HCCL_INFO("YYYYYY hcomm resource [SaveThreads] saved deviceId[%d], handle[0x%llx], "
+            "threadPtr[%p], gThreadMapSize[%zu], gThreadD2HMapSize[%zu].", deviceId, handle,
+            threadPtr.get(), g_ThreadMap.size(), g_ThreadD2HMap.size());
     }
+    HCCL_INFO("YYYYYY hcomm resource [SaveThreads] exit file[%s], deviceId[%d], newThreadsSize[%zu], "
+        "gThreadMapSize[%zu], gThreadD2HMapSize[%zu].", __FILE__, deviceId, newThreads.size(),
+        g_ThreadMap.size(), g_ThreadD2HMap.size());
     return HCCL_SUCCESS;
 }
 
@@ -193,14 +202,23 @@ HcclResult FillThreadD2HMap(ThreadHandle *deviceThreadHandles,
     CHK_RET(hrtGetDevice(&deviceId));
 
     lock_guard<mutex> lock(g_ThreadMapMtx);
+    HCCL_INFO("YYYYYY hcomm resource [FillThreadD2HMap] enter file[%s], deviceId[%d], listNum[%u], "
+        "deviceThreadHandles[%p], hostThreadHandles[%p], gThreadMapSize[%zu], gThreadD2HMapSize[%zu].",
+        __FILE__, deviceId, listNum, deviceThreadHandles, hostThreadHandles, g_ThreadMap.size(),
+        g_ThreadD2HMap.size());
     for (uint32_t idx = 0; idx < listNum; idx++) {
         auto deviceThreadHandle = deviceThreadHandles[idx];
         auto hostThreadHandle = hostThreadHandles[idx];
-        HCCL_INFO("%s deviceId[%d], deviceThreadHandle[0x%llx], hostThreadHandle[0x%llx]",
-            __func__, deviceId, deviceThreadHandle, hostThreadHandle);
         DeviceThreadKey key{deviceId, deviceThreadHandle};
         g_ThreadD2HMap.emplace(key, hostThreadHandle);
+        HCCL_INFO("YYYYYY hcomm resource [FillThreadD2HMap] mapped idx[%u], deviceId[%d], "
+            "deviceThreadHandle[0x%llx], hostThreadHandle[0x%llx], gThreadMapSize[%zu], "
+            "gThreadD2HMapSize[%zu].", idx, deviceId, deviceThreadHandle, hostThreadHandle,
+            g_ThreadMap.size(), g_ThreadD2HMap.size());
     }
+    HCCL_INFO("YYYYYY hcomm resource [FillThreadD2HMap] exit file[%s], deviceId[%d], listNum[%u], "
+        "gThreadMapSize[%zu], gThreadD2HMapSize[%zu].", __FILE__, deviceId, listNum, g_ThreadMap.size(),
+        g_ThreadD2HMap.size());
 
     return HCCL_SUCCESS;
 }
@@ -247,6 +265,10 @@ static HcclResult FreeThreadHandlesLocked(const ThreadHandle *threads, uint32_t 
     CHK_RET(hrtGetDevice(&deviceId));
 
     lock_guard<mutex> lock(g_ThreadMapMtx);
+    HCCL_INFO("YYYYYY hcomm resource [FreeThreadHandlesLocked] enter file[%s], deviceId[%d], "
+        "threadNum[%u], threads[%p], gThreadMapSize[%zu], gThreadD2HMapSize[%zu], deviceHandlesSize[%zu].",
+        __FILE__, deviceId, threadNum, threads, g_ThreadMap.size(), g_ThreadD2HMap.size(),
+        deviceHandles.size());
     for (uint32_t i = 0; i < threadNum; ++i) {
         const ThreadHandle inHandle = threads[i];
 
@@ -269,8 +291,10 @@ static HcclResult FreeThreadHandlesLocked(const ThreadHandle *threads, uint32_t 
             deviceHandles.push_back(inHandle); 
         }
 
-        HCCL_INFO("[%s] erase thread: deviceId[%d], inHandle[0x%llx], mappedHandle[0x%llx], ptr[%p]",
-            __func__, deviceId, inHandle, mappedHandle, itC->second.get());
+        HCCL_INFO("YYYYYY hcomm resource [FreeThreadHandlesLocked] erase begin idx[%u], deviceId[%d], "
+            "inHandle[0x%llx], mappedHandle[0x%llx], ptr[%p], gThreadMapSize[%zu], "
+            "gThreadD2HMapSize[%zu], deviceHandlesSize[%zu].", i, deviceId, inHandle, mappedHandle,
+            itC->second.get(), g_ThreadMap.size(), g_ThreadD2HMap.size(), deviceHandles.size());
         g_ThreadMap.erase(itC);
 
         for (auto it = g_ThreadD2HMap.begin(); it != g_ThreadD2HMap.end();) {
@@ -280,7 +304,14 @@ static HcclResult FreeThreadHandlesLocked(const ThreadHandle *threads, uint32_t 
                 ++it;
             }
         }
+        HCCL_INFO("YYYYYY hcomm resource [FreeThreadHandlesLocked] erase end idx[%u], deviceId[%d], "
+            "inHandle[0x%llx], mappedHandle[0x%llx], gThreadMapSize[%zu], gThreadD2HMapSize[%zu], "
+            "deviceHandlesSize[%zu].", i, deviceId, inHandle, mappedHandle, g_ThreadMap.size(),
+            g_ThreadD2HMap.size(), deviceHandles.size());
     }
+    HCCL_INFO("YYYYYY hcomm resource [FreeThreadHandlesLocked] exit file[%s], deviceId[%d], "
+        "threadNum[%u], gThreadMapSize[%zu], gThreadD2HMapSize[%zu], deviceHandlesSize[%zu].",
+        __FILE__, deviceId, threadNum, g_ThreadMap.size(), g_ThreadD2HMap.size(), deviceHandles.size());
     return HCCL_SUCCESS;
 }
 
@@ -292,17 +323,27 @@ HcclResult FreeThreads(const ThreadHandle *threads, uint32_t threadNum, aclrtBin
             __func__, threadNum, HCOMM_THREADNUM_MAX_NUM);
         return HCCL_E_PARA;
     }
-    HCCL_INFO("[%s] begin to free %u threads", __func__, threadNum);
+    HCCL_INFO("YYYYYY hcomm resource [FreeThreads] enter file[%s], threadNum[%u], threads[%p], "
+        "firstThread[0x%llx], binHandle[%p].", __FILE__, threadNum, threads,
+        ((threads != nullptr && threadNum > 0) ? threads[0] : 0ULL), binHandle);
 
     vector<ThreadHandle> deviceHandles; // 存放device侧的handle
 
-    CHK_RET(FreeThreadHandlesLocked(threads, threadNum, deviceHandles));
+    HcclResult ret = FreeThreadHandlesLocked(threads, threadNum, deviceHandles);
+    HCCL_INFO("YYYYYY hcomm resource [FreeThreads] FreeThreadHandlesLocked ret[%u], threadNum[%u], "
+        "deviceHandlesSize[%zu].", static_cast<u32>(ret), threadNum, deviceHandles.size());
+    CHK_RET(ret);
 
     // 如果有需要销毁的deviceThread，调用销毁kernel
     if (!deviceHandles.empty()) {
-        CHK_RET(AicpuLaunchMgr::ThreadKernelLaunchDestroy(deviceHandles.data(), deviceHandles.size(), binHandle));
+        ret = AicpuLaunchMgr::ThreadKernelLaunchDestroy(deviceHandles.data(), deviceHandles.size(), binHandle);
+        HCCL_INFO("YYYYYY hcomm resource [FreeThreads] ThreadKernelLaunchDestroy ret[%u], "
+            "deviceHandlesSize[%zu], firstDeviceHandle[0x%llx].", static_cast<u32>(ret), deviceHandles.size(),
+            deviceHandles.empty() ? 0ULL : deviceHandles[0]);
+        CHK_RET(ret);
     }
-    HCCL_INFO("[%s] %u threads freed successfully.", __func__, threadNum);
+    HCCL_INFO("YYYYYY hcomm resource [FreeThreads] exit file[%s], threadNum[%u], "
+        "deviceHandlesSize[%zu], ret[%u].", __FILE__, threadNum, deviceHandles.size(), static_cast<u32>(HCCL_SUCCESS));
     return HCCL_SUCCESS;
 }
 #endif

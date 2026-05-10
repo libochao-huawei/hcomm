@@ -191,6 +191,8 @@ extern "C" {
 #endif
 HcclResult HcclAllocComResourceByTiling(HcclComm comm, void* stream, void* Mc2Tiling, void** commContext)
 {
+    HCCL_INFO("YYYYYY hcomm resource [HcclAllocComResourceByTiling] enter file[%s], comm[%p], "
+        "stream[%p], mc2Tiling[%p], commContext[%p].", __FILE__, comm, stream, Mc2Tiling, commContext);
     // 校验
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(stream);
@@ -204,6 +206,8 @@ HcclResult HcclAllocComResourceByTiling(HcclComm comm, void* stream, void* Mc2Ti
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
     HCCL_INFO("[%s]version ptr[%p] val[%u] devType[%u]", __func__, pVersion, *pVersion, devType);
+    HCCL_INFO("YYYYYY hcomm resource [HcclAllocComResourceByTiling] tiling info file[%s], version[%u], "
+        "devType[%u].", __FILE__, *pVersion, static_cast<u32>(devType));
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
@@ -220,12 +224,19 @@ HcclResult HcclAllocComResourceByTiling(HcclComm comm, void* stream, void* Mc2Ti
         HCCL_RUN_WARNING("MC2 using share CCLbuffer[%s], potential conflict with coll communicator", cclBufferName.c_str());
     }
     if (*pVersion < MC2_TILING_VERSION || devType != DevType::DEV_TYPE_910_93) {
+        HCCL_INFO("YYYYYY hcomm resource [HcclAllocComResourceByTiling] fallback HcclCreateComResourceByComm, "
+            "commIdentifier[%s], version[%u], devType[%u].", commIdentifier.c_str(), *pVersion,
+            static_cast<u32>(devType));
         return HcclCreateComResourceByComm(comm, streamMode, true, commContext, true, Mc2Tiling);
     }
 
     // 根据streamMode创建aicpuStream
     rtStream_t aicpuStream{};
-    CHK_RET(hcclComm->Mc2AiCpuStreamAllocAndGet(streamMode, aicpuStream));
+    HcclResult ret = hcclComm->Mc2AiCpuStreamAllocAndGet(streamMode, aicpuStream);
+    HCCL_INFO("YYYYYY hcomm resource [HcclAllocComResourceByTiling] Mc2AiCpuStreamAllocAndGet ret[%u], "
+        "commIdentifier[%s], streamMode[%llu], aicpuStream[%p].", static_cast<u32>(ret),
+        commIdentifier.c_str(), static_cast<unsigned long long>(streamMode), aicpuStream);
+    CHK_RET(ret);
 
     char stackLogBuffer[LOG_TMPBUF_SIZE];
 
@@ -243,7 +254,11 @@ HcclResult HcclAllocComResourceByTiling(HcclComm comm, void* stream, void* Mc2Ti
         CHK_RET(hcclComm->SaveTraceInfo(logInfo));
     }
 
-    CHK_RET(HcclMc2ComResourceByTiling(comm, Mc2Tiling, aicpuStream));
+    ret = HcclMc2ComResourceByTiling(comm, Mc2Tiling, aicpuStream);
+    HCCL_INFO("YYYYYY hcomm resource [HcclAllocComResourceByTiling] HcclMc2ComResourceByTiling ret[%u], "
+        "commIdentifier[%s], mc2Tiling[%p], aicpuStream[%p].", static_cast<u32>(ret),
+        commIdentifier.c_str(), Mc2Tiling, aicpuStream);
+    CHK_RET(ret);
 
     // 获取 commContext
     hcclComm->GetCommResource(*commContext);
@@ -261,6 +276,8 @@ HcclResult HcclAllocComResourceByTiling(HcclComm comm, void* stream, void* Mc2Ti
         CHK_RET(hcclComm->SaveTraceInfo(endInfo));
     }
 
+    HCCL_INFO("YYYYYY hcomm resource [HcclAllocComResourceByTiling] exit file[%s], commIdentifier[%s], "
+        "commContext[%p], ctx[%p].", __FILE__, commIdentifier.c_str(), commContext, *commContext);
     return HCCL_SUCCESS;
 }
 

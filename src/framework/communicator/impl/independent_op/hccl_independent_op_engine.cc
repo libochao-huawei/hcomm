@@ -147,6 +147,9 @@ HcclResult HcclThreadAcquireWithStream(HcclComm comm, CommEngine engine,
     std::string commId = hcclComm->GetIdentifier();
     HCCL_RUN_INFO("Entry-%s:comm[%s] engine[%u] notifyNum[%u] stream[%p]",
         __func__, commId.c_str(), engine, notifyNum, stream);
+    HCCL_INFO("YYYYYY hcomm resource [HcclThreadAcquireWithStream] enter file[%s], comm[%p], "
+        "commId[%s], isV2[%d], engine[%u], stream[%p], notifyNum[%u], threadPtr[%p].",
+        __FILE__, comm, commId.c_str(), hcclComm->IsCommunicatorV2(), engine, stream, notifyNum, thread);
     HcclResult ret = HCCL_SUCCESS;
     if (hcclComm->IsCommunicatorV2()) {
         hccl::CollComm* collComm = hcclComm->GetCollComm();
@@ -154,6 +157,10 @@ HcclResult HcclThreadAcquireWithStream(HcclComm comm, CommEngine engine,
         CommEngineResMgr* engineResMgr = collComm->GetCommEngineResMgr();
         CHK_PTR_NULL(engineResMgr);
         ret = engineResMgr->HcclThreadAcquireWithStream(engine, stream, notifyNum, thread);
+        HCCL_INFO("YYYYYY hcomm resource [HcclThreadAcquireWithStream] acquire ret[%u], "
+            "commId[%s], collComm[%p], engineResMgr[%p], thread[0x%llx].",
+            static_cast<u32>(ret), commId.c_str(), collComm, engineResMgr,
+            ((ret == HCCL_SUCCESS && thread != nullptr) ? *thread : 0ULL));
         auto hcclCommDfxCallback = collComm->GetDfxCallback();
         int hret = HcommThreadRegisterDfx(*thread, hcclCommDfxCallback);
         if (hret != 0) {
@@ -180,6 +187,10 @@ HcclResult HcclThreadAcquireWithStream(HcclComm comm, CommEngine engine,
     else {
         auto& engineResMgr = hcclComm->GetIndependentOp().GetCommEngineResMgr();
         ret = engineResMgr.HcclThreadAcquireWithStream(engine, stream, notifyNum, thread);
+        HCCL_INFO("YYYYYY hcomm resource [HcclThreadAcquireWithStream] acquire ret[%u], "
+            "commId[%s], independent engineResMgr[%p], thread[0x%llx].",
+            static_cast<u32>(ret), commId.c_str(), &engineResMgr,
+            ((ret == HCCL_SUCCESS && thread != nullptr) ? *thread : 0ULL));
     }
 
     if (ret != HCCL_SUCCESS) {
@@ -189,6 +200,10 @@ HcclResult HcclThreadAcquireWithStream(HcclComm comm, CommEngine engine,
 
     HCCL_INFO("[HcclThreadAcquireWithStream] Allocated thread for engine[%d], stream[%p], notifyNum[%u]",
               engine, stream, notifyNum);
+    HCCL_INFO("YYYYYY hcomm resource [HcclThreadAcquireWithStream] exit file[%s], commId[%s], "
+        "engine[%u], stream[%p], notifyNum[%u], thread[0x%llx], ret[%u].",
+        __FILE__, commId.c_str(), engine, stream, notifyNum, (thread == nullptr ? 0ULL : *thread),
+        static_cast<u32>(ret));
     return HCCL_SUCCESS;
 }
 
@@ -294,6 +309,10 @@ HcclResult HcclThreadExportToCommEngine(HcclComm comm, uint32_t threadNum, const
     std::string commId = hcclComm->GetIdentifier();
     HCCL_INFO("Entry-[%s]:comm[%s], threadNum[%u], commEngine[%d], threadsPtr[%p], exportedThreadsPtr[%p]", 
              __func__, commId.c_str(), threadNum, dstCommEngine, threads, exportedThreads);
+    HCCL_INFO("YYYYYY hcomm resource [HcclThreadExportToCommEngine] enter file[%s], comm[%p], "
+        "commId[%s], isV2[%d], threadNum[%u], dstCommEngine[%d], threadsPtr[%p], firstThread[0x%llx], "
+        "exportedThreadsPtr[%p].", __FILE__, comm, commId.c_str(), hcclComm->IsCommunicatorV2(), threadNum,
+        dstCommEngine, threads, ((threadNum == 0 || threads == nullptr) ? 0ULL : threads[0]), exportedThreads);
     HcclResult ret;
     if (hcclComm->IsCommunicatorV2()) {
         hccl::CollComm* collComm = hcclComm->GetCollComm();
@@ -301,14 +320,27 @@ HcclResult HcclThreadExportToCommEngine(HcclComm comm, uint32_t threadNum, const
         CommEngineResMgr* engineResMgr = collComm->GetCommEngineResMgr();
         CHK_PTR_NULL(engineResMgr);
         ret = engineResMgr->HcclThreadExportToCommEngine(threadNum, threads, dstCommEngine, exportedThreads);
+        HCCL_INFO("YYYYYY hcomm resource [HcclThreadExportToCommEngine] export ret[%u], "
+            "commId[%s], collComm[%p], engineResMgr[%p], firstExported[0x%llx].",
+            static_cast<u32>(ret), commId.c_str(), collComm, engineResMgr,
+            ((ret == HCCL_SUCCESS && threadNum > 0 && exportedThreads != nullptr) ? exportedThreads[0] : 0ULL));
     } else {
         auto &engineResMgr = hcclComm->GetIndependentOp().GetCommEngineResMgr();
         ret = engineResMgr.HcclThreadExportToCommEngine(threadNum, threads, dstCommEngine, exportedThreads);
+        HCCL_INFO("YYYYYY hcomm resource [HcclThreadExportToCommEngine] export ret[%u], "
+            "commId[%s], independent engineResMgr[%p], firstExported[0x%llx].",
+            static_cast<u32>(ret), commId.c_str(), &engineResMgr,
+            ((ret == HCCL_SUCCESS && threadNum > 0 && exportedThreads != nullptr) ? exportedThreads[0] : 0ULL));
     }
 
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] Thread export failed. Export threadNum[%u], commEngine[%d], threadsPtr[%p], exportedThreadsPtr[%p]",
          __func__, threadNum, dstCommEngine, threads, exportedThreads), ret);
     HCCL_INFO("[%s]:comm[%s] export success. ", __func__, commId.c_str());
+    HCCL_INFO("YYYYYY hcomm resource [HcclThreadExportToCommEngine] exit file[%s], commId[%s], "
+        "threadNum[%u], dstCommEngine[%d], firstThread[0x%llx], firstExported[0x%llx], ret[%u].",
+        __FILE__, commId.c_str(), threadNum, dstCommEngine,
+        ((threadNum == 0 || threads == nullptr) ? 0ULL : threads[0]),
+        ((threadNum == 0 || exportedThreads == nullptr) ? 0ULL : exportedThreads[0]), static_cast<u32>(ret));
     return HCCL_SUCCESS;
 }
 #ifdef __cplusplus
