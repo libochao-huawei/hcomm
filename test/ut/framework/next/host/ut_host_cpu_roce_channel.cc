@@ -632,6 +632,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_HostCpuRoceChannel_Pack_And_Unpack_Expect
     MOCKER_CPP(&HostCpuRoceChannel::ExchangeCapability).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ExchangeData).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::IbvPostRecv).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(RaDestroyCompChannel).stubs().with(any(), any()).will(returnValue(0));
     // construct
     void *memHandle = static_cast<void *>(localRdmaRmaBuffer.get());
     channelDesc.memHandles = &memHandle;
@@ -655,8 +656,8 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_HostCpuRoceChannel_Pack_And_Unpack_Expect
     EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::DATA_EXCHANGE);
     EXPECT_EQ(status, ChannelStatus::SOCKET_OK);
     status = impl_->GetStatus();
-    EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::QP_MODIFIED);
-    EXPECT_EQ(status, ChannelStatus::SOCKET_OK);
+    EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::CONN_OK);
+    EXPECT_EQ(status, ChannelStatus::READY);
     struct QpAttr localQpAttr;
     localQpAttr.qpn = 0;
     localQpAttr.udpSport = 1;
