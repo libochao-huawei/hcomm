@@ -8,10 +8,12 @@
 #include <string>
 #include "mockcpp/mockcpp.hpp"
 #include "cluster_monitor.h"
+#include "host/host_cpu_roce_channel.h"
 
 #define private public
 
 using namespace hccl;
+using namespace hcomm;
 
 class HcclChannelDescTest : public BaseInit {
 public:
