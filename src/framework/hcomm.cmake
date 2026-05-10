@@ -51,17 +51,42 @@ target_include_directories(hcomm PRIVATE
     # src/framework 头文件
     ${HCOMM_DIR}/src/framework
     ${HCOMM_DIR}/src/framework/inc
+    ${HCOMM_DIR}/src/framework/common/src
+    ${HCOMM_DIR}/src/framework/common/src/config
+    ${HCOMM_DIR}/src/framework/common/src/mgr
+    ${HCOMM_DIR}/src/framework/communicator/impl
+    ${HCOMM_DIR}/src/framework/communicator/impl/resource_manager
 
     # src/common 头文件
     ${HCOMM_DIR}/src/common/debug/profiling/inc
     ${HCOMM_DIR}/src/common/debug/profiling/inc/host
     ${HCOMM_DIR}/src/common/debug/config
+    ${HCOMM_DIR}/src/common/stream
+    ${HCOMM_DIR}/src/common/launch_device
 
     # src/algorithm 头文件
     ${HCOMM_DIR}/src/algorithm/pub_inc
     ${HCOMM_DIR}/src/algorithm/base/inc
     ${HCOMM_DIR}/src/algorithm/base/alg_template
     ${HCOMM_DIR}/src/algorithm/base/communicator
+    ${HCOMM_DIR}/src/algorithm/base/communicator/legacy
+    ${HCOMM_DIR}/src/algorithm/impl
+    ${HCOMM_DIR}/src/algorithm/impl/resource_manager
+    ${HCOMM_DIR}/src/algorithm/impl/task
+    ${HCOMM_DIR}/src/algorithm/impl/legacy
+    ${HCOMM_DIR}/src/algorithm/impl/coll_executor
+
+    # src/platform 头文件
+    ${HCOMM_DIR}/src/platform/inc
+    ${HCOMM_DIR}/src/platform/inc/adapter
+    ${HCOMM_DIR}/src/platform/common
+    ${HCOMM_DIR}/src/platform/resource/transport
+    ${HCOMM_DIR}/src/platform/resource/transport/heterog
+    ${HCOMM_DIR}/src/platform/resource/notify
+    ${HCOMM_DIR}/src/platform/resource/dispatcher_ctx
+    ${HCOMM_DIR}/src/platform/resource/socket
+    ${HCOMM_DIR}/src/platform/hccp/inc
+    ${HCOMM_DIR}/src/platform/hccp/inc/network
 
     # src/legacy 头文件
     ${LEGACY_INCLUDE_LIST}

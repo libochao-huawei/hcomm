@@ -48,7 +48,7 @@ target_include_directories(ccl_kernel PRIVATE
     ${HCOMM_DIR}/pkg_inc/hccl
     ${HCOMM_DIR}/externel_depends/tsch
 
-    # src/legacy 头文件，优先于 src/framework 头文件eneous
+    # src/legacy 头文件，优先于 src/framework
     ${HCOMM_DIR}/src/legacy/unified_platform/resource/socket
     ${HCOMM_DIR}/src/legacy/framework/env_config
 
