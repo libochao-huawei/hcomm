@@ -24,8 +24,8 @@ public:
     RmaConnStatus GetStatus() override;
     QpHandle      GetHandle();
 
-    unique_ptr<BaseTask> PrepareWrite(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
-                                      const SqeConfig &config) override;
+    HcclResult PrepareWrite(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
+                                      const SqeConfig &config, unique_ptr<BaseTask> &task) override;
 
     ~DevRdmaConnection() override;
 

@@ -15,9 +15,18 @@
 
 namespace Hccl {
 
-RtsCntNotify::RtsCntNotify() : deviceId(HrtGetDevice()), devPhyId(HrtGetDevicePhyIdByIndex(HrtGetDevice())),
-                                handle(HrtCntNotifyCreate(deviceId)), id(HrtGetCntNotifyId(handle))
+RtsCntNotify::RtsCntNotify() : deviceId(-1), devPhyId(0), handle(nullptr), id(0)
 {
+    s32 localDeviceId = static_cast<s32>(deviceId);
+    HcclResult res = HrtGetDevice(localDeviceId);
+    if (res != HCCL_SUCCESS) {
+        HCCL_ERROR("[RtsCntNotify] HrtGetDevice failed, res[%d].", res);
+        return;
+    }
+    devPhyId = HrtGetDevicePhyIdByIndex(localDeviceId);
+    handle = HrtCntNotifyCreate(localDeviceId);
+    id = HrtGetCntNotifyId(handle);
+
     HrtDevResInfo devResInfo;
     devResInfo.dieId    = 0;
     devResInfo.procType = HrtDevResProcType::PROCESS_HCCP;

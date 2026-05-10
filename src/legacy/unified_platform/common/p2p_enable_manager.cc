@@ -23,7 +23,12 @@ P2PEnableManager &P2PEnableManager::GetInstance()
 
 HcclResult P2PEnableManager::EnableP2P(std::vector<uint32_t> remoteDevices)
 {
-    auto localDeviceLogicID = HrtGetDevice();
+    s32 localDeviceLogicID;
+    HcclResult res = HrtGetDevice(localDeviceLogicID);
+    if (res != HCCL_SUCCESS) {
+        HCCL_ERROR("[P2PEnableManager::EnableP2P] HrtGetDevice failed, res[%d].", res);
+        return res;
+    }
 
     for (auto remoteDevicePhysicID : remoteDevices) {
         CHK_RET(EnableP2P(localDeviceLogicID, remoteDevicePhysicID));
@@ -53,7 +58,12 @@ HcclResult P2PEnableManager::EnableP2P(uint32_t localDeviceLogicID, uint32_t rem
 
 HcclResult P2PEnableManager::WaitP2PEnabled(std::vector<uint32_t> remoteDevices)
 {
-    auto localDeviceLogicID = HrtGetDevice();
+    s32 localDeviceLogicID;
+    HcclResult res = HrtGetDevice(localDeviceLogicID);
+    if (res != HCCL_SUCCESS) {
+        HCCL_ERROR("[P2PEnableManager::WaitP2PEnabled] HrtGetDevice failed, res[%d].", res);
+        return res;
+    }
 
     for (auto &remoteDevicePhysicID : remoteDevices) {
         CHK_RET(WaitP2PEnabled(localDeviceLogicID, remoteDevicePhysicID));
@@ -119,7 +129,12 @@ HcclResult P2PEnableManager::WaitP2PConnected(int32_t localDeviceLogicID, uint32
 HcclResult P2PEnableManager::DisableP2P(std::vector<uint32_t> remoteDevices)
 {
     try {
-        auto localDeviceLogicID = HrtGetDevice();
+        s32 localDeviceLogicID;
+        HcclResult res = HrtGetDevice(localDeviceLogicID);
+        if (res != HCCL_SUCCESS) {
+            HCCL_ERROR("[P2PEnableManager::DisableP2P] HrtGetDevice failed, res[%d].", res);
+            return res;
+        }
 
         for (auto &remoteDevicePhysicID : remoteDevices) {
             CHK_RET(DisableP2P(localDeviceLogicID, remoteDevicePhysicID));

@@ -126,7 +126,8 @@ BaseMemTransport *MemTransportManager::CreateOpbasedMemTransport(const LinkData 
     SocketConfig socketConfig(linkData.GetRemoteRankId(), linkData, comm->GetEstablishLinkSocketTag());
     auto         socket = comm->GetSocketManager().GetConnectedSocket(socketConfig);
     if (socket == nullptr) {
-        throw std::runtime_error("CreateMemTransport GetConnectedSocket failed, socket is nullptr");
+        HCCL_ERROR("CreateMemTransport GetConnectedSocket failed, socket is nullptr");
+        return nullptr;
     }
     if (linkData.GetType() == PortDeploymentType::P2P) {
         opTagOpbasedMap[linkData] = make_unique<P2PTransport>(locRes, attr, linkData, *socket);
@@ -136,10 +137,12 @@ BaseMemTransport *MemTransportManager::CreateOpbasedMemTransport(const LinkData 
             linkProtocol == LinkProtocol::UBOE) {
             CreateOpbasedUbMemTransport(locRes, attr, linkData, *socket);
         } else {
-            THROW<NullPtrException>(StringFormat("linkData=%s is error", linkData.Describe().c_str()));
+            HCCL_ERROR("linkData=%s is error", linkData.Describe().c_str());
+            return nullptr;
         }
     } else {
-        THROW<NullPtrException>(StringFormat("linkData=%s is error", linkData.Describe().c_str()));
+        HCCL_ERROR("linkData=%s is error", linkData.Describe().c_str());
+        return nullptr;
     }
 
     opTagOpbasedMap[linkData]->Establish();
@@ -182,7 +185,8 @@ BaseMemTransport *MemTransportManager::CreateOffloadMemTransport(const std::stri
     SocketConfig socketConfig(linkData.GetRemoteRankId(), linkData, comm->GetEstablishLinkSocketTag());
     auto         socket = comm->GetSocketManager().GetConnectedSocket(socketConfig);
     if (socket == nullptr) {
-        throw std::runtime_error("CreateMemTransport GetConnectedSocket failed, socket is nullptr");
+        HCCL_ERROR("CreateMemTransport GetConnectedSocket failed, socket is nullptr");
+        return nullptr;
     }
 
     if (linkData.GetType() == PortDeploymentType::P2P) {
@@ -193,10 +197,12 @@ BaseMemTransport *MemTransportManager::CreateOffloadMemTransport(const std::stri
             linkProtocol == LinkProtocol::UBOE) {
             CreateOffloadUbMemTransport(opTag, locRes, attr, linkData, *socket);
         } else {
-            THROW<NullPtrException>(StringFormat("linkData=%s is error", linkData.Describe().c_str()));
+            HCCL_ERROR("linkData=%s is error", linkData.Describe().c_str());
+            return nullptr;
         }
     } else {
-        THROW<NullPtrException>(StringFormat("linkData=%s is error", linkData.Describe().c_str()));
+        HCCL_ERROR("linkData=%s is error", linkData.Describe().c_str());
+        return nullptr;
     }
 
     opTagOffloadMap[opTag][linkData]->Establish();
@@ -251,10 +257,10 @@ bool MemTransportManager::IsAllOpbasedTransportReady()
         auto status = opTagOpbasedMap[linkIt->first]->GetStatus();
         if (status != TransportStatus::READY) { // 任意一个没有ready，结果为 false
             if (status == TransportStatus::SOCKET_TIMEOUT) {
-                MACRO_THROW(TimeoutException,
-                            StringFormat("[MemTransportManager][%s] %s socket timeout, commId[%s], please check",
-                                         __func__, opTagOpbasedMap[linkIt->first]->GetLinkDescInfo().c_str(),
-                                         comm->GetId().c_str()));
+                HCCL_ERROR("[MemTransportManager][%s] %s socket timeout, commId[%s], please check",
+                           __func__, opTagOpbasedMap[linkIt->first]->GetLinkDescInfo().c_str(),
+                           comm->GetId().c_str());
+                return false;
             }
             result = false;
             ++linkIt;
@@ -291,10 +297,10 @@ bool MemTransportManager::IsAllOffloadTransportReady(const std::string &opTag)
         auto status = opTagOffloadMap[opTag][linkIt->first]->GetStatus();
         if (status != TransportStatus::READY) { // 任意一个没有ready，结果为 false
             if (status == TransportStatus::SOCKET_TIMEOUT) {
-                MACRO_THROW(TimeoutException,
-                            StringFormat("[MemTransportManager][%s] %s socket timeout, commId[%s], please check",
-                                         __func__, opTagOffloadMap[opTag][linkIt->first]->GetLinkDescInfo().c_str(),
-                                         comm->GetId().c_str()));
+                HCCL_ERROR("[MemTransportManager][%s] %s socket timeout, commId[%s], please check",
+                           __func__, opTagOffloadMap[opTag][linkIt->first]->GetLinkDescInfo().c_str(),
+                           comm->GetId().c_str());
+                return false;
             }
             result = false;
             ++linkIt;
@@ -315,9 +321,9 @@ bool MemTransportManager::IsAllTransportReady()
             auto status = it.second->GetStatus();
             if (status != TransportStatus::READY) { // 任意一个没有ready，结果为 false
                 if (status == TransportStatus::SOCKET_TIMEOUT) {
-                    MACRO_THROW(TimeoutException,
-                                StringFormat("[MemTransportManager][%s] %s socket timeout, commId[%s], please check",
-                                             __func__, it.second->GetLinkDescInfo().c_str(), comm->GetId().c_str()));
+                    HCCL_ERROR("[MemTransportManager][%s] %s socket timeout, commId[%s], please check",
+                               __func__, it.second->GetLinkDescInfo().c_str(), comm->GetId().c_str());
+                    return false;
                 }
                 result = false;
             }
@@ -327,9 +333,9 @@ bool MemTransportManager::IsAllTransportReady()
         auto status = it.second->GetStatus();
         if (status != TransportStatus::READY) { // 任意一个没有ready，结果为 false
             if (status == TransportStatus::SOCKET_TIMEOUT) {
-                MACRO_THROW(TimeoutException,
-                            StringFormat("[MemTransportManager][%s] %s socket timeout, commId[%s], please check",
-                                         __func__, it.second->GetLinkDescInfo().c_str(), comm->GetId().c_str()));
+                HCCL_ERROR("[MemTransportManager][%s] %s socket timeout, commId[%s], please check",
+                           __func__, it.second->GetLinkDescInfo().c_str(), comm->GetId().c_str());
+                return false;
             }
             result = false;
         }
@@ -338,9 +344,9 @@ bool MemTransportManager::IsAllTransportReady()
         auto status = it.second->GetStatus();
         if (status != TransportStatus::READY) { // 任意一个没有ready，结果为 false
             if (status == TransportStatus::SOCKET_TIMEOUT) {
-                MACRO_THROW(TimeoutException,
-                            StringFormat("[MemTransportManager][%s] %s socket timeout, commId[%s], please check",
-                                        __func__, it.second->GetLinkDescInfo().c_str(), comm->GetId().c_str()));
+                HCCL_ERROR("[MemTransportManager][%s] %s socket timeout, commId[%s], please check",
+                           __func__, it.second->GetLinkDescInfo().c_str(), comm->GetId().c_str());
+                return false;
             }
             result = false;
         }
@@ -633,7 +639,8 @@ BaseMemTransport *MemTransportManager::RecoverOpbasedMemTransport(const LinkData
     SocketConfig socketConfig(linkData.GetRemoteRankId(), linkData, comm->GetEstablishLinkSocketTag());
     auto         socket = comm->GetSocketManager().GetConnectedSocket(socketConfig);
     if (socket == nullptr) {
-        throw std::runtime_error("CreateMemTransport GetConnectedSocket failed, socket is nullptr");
+        HCCL_ERROR("CreateMemTransport GetConnectedSocket failed, socket is nullptr");
+        return nullptr;
     }
     if (linkData.GetType() == PortDeploymentType::P2P) {
         opTagOpbasedMap[linkData] = make_unique<P2PTransport>(locRes, attr, linkData, *socket);
@@ -642,10 +649,12 @@ BaseMemTransport *MemTransportManager::RecoverOpbasedMemTransport(const LinkData
         if (linkProtocol == LinkProtocol::UB_CTP || linkProtocol == LinkProtocol::UB_TP) {
             CreateOpbasedUbMemTransport(locRes, attr, linkData, *socket);
         } else {
-            THROW<NullPtrException>(StringFormat("linkData=%s is error", linkData.Describe().c_str()));
+            HCCL_ERROR("linkData=%s is error", linkData.Describe().c_str());
+            return nullptr;
         }
     } else {
-        THROW<NullPtrException>(StringFormat("linkData=%s is error", linkData.Describe().c_str()));
+        HCCL_ERROR("linkData=%s is error", linkData.Describe().c_str());
+        return nullptr;
     }
 
     opTagOpbasedMap[linkData]->Establish();
@@ -702,7 +711,8 @@ BaseMemTransport *MemTransportManager::RecoverOffloadMemTransport(const std::str
     SocketConfig socketConfig(linkData.GetRemoteRankId(), linkData, comm->GetEstablishLinkSocketTag());
     auto         socket = comm->GetSocketManager().GetConnectedSocket(socketConfig);
     if (socket == nullptr) {
-        throw std::runtime_error("CreateMemTransport GetConnectedSocket failed, socket is nullptr");
+        HCCL_ERROR("CreateMemTransport GetConnectedSocket failed, socket is nullptr");
+        return nullptr;
     }
     if (linkData.GetType() == PortDeploymentType::P2P) {
         opTagOffloadMap[opTag][linkData] = make_unique<P2PTransport>(locRes, attr, linkData, *socket);
@@ -711,10 +721,12 @@ BaseMemTransport *MemTransportManager::RecoverOffloadMemTransport(const std::str
         if (linkProtocol == LinkProtocol::UB_CTP || linkProtocol == LinkProtocol::UB_TP) {
             CreateOffloadUbMemTransport(opTag, locRes, attr, linkData, *socket);
         } else {
-            THROW<NullPtrException>(StringFormat("linkData=%s is error", linkData.Describe().c_str()));
+            HCCL_ERROR("linkData=%s is error", linkData.Describe().c_str());
+            return nullptr;
         }
     } else {
-        THROW<NullPtrException>(StringFormat("linkData=%s is error", linkData.Describe().c_str()));
+        HCCL_ERROR("linkData=%s is error", linkData.Describe().c_str());
+        return nullptr;
     }
 
     opTagOffloadMap[opTag][linkData]->Establish();
@@ -772,10 +784,10 @@ bool MemTransportManager::IsAllOpbasedTransportRecoveredReady()
         auto status = opTagOpbasedMap[linkIt->first]->GetStatus();
         if (status != TransportStatus::READY) {
             if (status == TransportStatus::SOCKET_TIMEOUT) {
-                MACRO_THROW(TimeoutException,
-                            StringFormat("[MemTransportManager][%s] %s socket timeout, commId[%s], please check",
-                                         __func__, opTagOpbasedMap[linkIt->first]->GetLinkDescInfo().c_str(),
-                                         comm->GetId().c_str()));
+                HCCL_ERROR("[MemTransportManager][%s] %s socket timeout, commId[%s], please check",
+                           __func__, opTagOpbasedMap[linkIt->first]->GetLinkDescInfo().c_str(),
+                           comm->GetId().c_str());
+                return false;
             }
             // 只要任意transport一个没有ready，整体建链结果为 false
             isAllTransportRecoveredReady = false;
@@ -799,10 +811,10 @@ bool MemTransportManager::IsAllOffloadTransportRecoveredReady(const std::string 
         auto status = opTagOffloadMap[opTag][linkIt->first]->GetStatus();
         if (status != TransportStatus::READY) {
             if (status == TransportStatus::SOCKET_TIMEOUT) {
-                MACRO_THROW(TimeoutException,
-                            StringFormat("[MemTransportManager][%s] %s socket timeout, commId[%s], please check",
-                                         __func__, opTagOffloadMap[opTag][linkIt->first]->GetLinkDescInfo().c_str(),
-                                         comm->GetId().c_str()));
+                HCCL_ERROR("[MemTransportManager][%s] %s socket timeout, commId[%s], please check",
+                           __func__, opTagOffloadMap[opTag][linkIt->first]->GetLinkDescInfo().c_str(),
+                           comm->GetId().c_str());
+                return false;
             }
             // 只要任意transport一个没有ready，整体建链结果为 false
             isAllTransportRecoveredReady = false;
@@ -894,7 +906,8 @@ BaseMemTransport *MemTransportManager::CreateOneSidedTransport(const LinkData &l
     SocketConfig socketConfig(linkData.GetRemoteRankId(), linkData, comm->GetEstablishLinkSocketTag());
     auto         socket = comm->GetSocketManager().GetConnectedSocket(socketConfig);
     if (socket == nullptr) {
-        throw std::runtime_error("CreateMemTransport GetConnectedSocket failed, socket is nullptr");
+        HCCL_ERROR("CreateMemTransport GetConnectedSocket failed, socket is nullptr");
+        return nullptr;
     }
     if (linkData.GetType() == PortDeploymentType::P2P) {
         oneSidedMap[linkData] = make_unique<P2PTransport>(locRes, attr, linkData, *socket);
@@ -904,10 +917,12 @@ BaseMemTransport *MemTransportManager::CreateOneSidedTransport(const LinkData &l
             CreateOneSidedUbMemTransport(locRes, attr, linkData, *socket);
             HCCL_INFO("CreateOneSidedUbMemTransport end");
         } else {
-            THROW<NullPtrException>(StringFormat("linkData=%s is error", linkData.Describe().c_str()));
+            HCCL_ERROR("linkData=%s is error", linkData.Describe().c_str());
+            return nullptr;
         }
     } else {
-        THROW<NullPtrException>(StringFormat("linkData=%s is error", linkData.Describe().c_str()));
+        HCCL_ERROR("linkData=%s is error", linkData.Describe().c_str());
+        return nullptr;
     }
 
     HCCL_INFO("CreateOneSidedTransport Establish");
@@ -972,7 +987,8 @@ BaseMemTransport *MemTransportManager::CreateUrmaDirectTransport(const LinkData 
     SocketConfig socketConfig(linkData.GetRemoteRankId(), linkData, comm->GetEstablishLinkSocketTag());
     auto         socket = comm->GetSocketManager().GetConnectedSocket(socketConfig);
     if (socket == nullptr) {
-        throw std::runtime_error("CreateMemTransport GetConnectedSocket failed, socket is nullptr");
+        HCCL_ERROR("CreateMemTransport GetConnectedSocket failed, socket is nullptr");
+        return nullptr;
     }
 
     CreateUrmaDirectTransport(locRes, attr, linkData, *socket);

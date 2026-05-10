@@ -264,7 +264,8 @@ RmtRmaBufSliceLite UbTransportLiteImpl::GetRmtRmaBufSliceLite(const Buffer &rmtB
             return RmtRmaBufSliceLite(rmtBuf.GetAddr(), rmtBuf.GetSize(), 0, it.tokenId, it.tokenValue);
         }
     }
-    MACRO_THROW(InternalException, StringFormat("%s is not in current transport", rmtBuf.Describe().c_str()));
+    HCCL_ERROR("%s is not in current transport", rmtBuf.Describe().c_str());
+    return RmtRmaBufSliceLite(0, 0, 0, 0, 0);
 }
 
 RmtRmaBufSliceLite UbTransportLiteImpl::GetRmtRmaBufSliceLite(const RmaBufferLite &lite) const

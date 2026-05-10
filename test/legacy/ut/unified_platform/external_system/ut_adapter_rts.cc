@@ -173,7 +173,8 @@ TEST_F(AdapterRtsTest, HrtSetDevice_return_nok)
     MOCKER(aclrtSetDevice).stubs().will(returnValue(1));
 
     // then
-    EXPECT_THROW(HrtSetDevice(123), RuntimeApiException);
+    HcclResult result = HrtSetDevice(123);
+    EXPECT_NE(HCCL_SUCCESS, result);
 }
 
 TEST_F(AdapterRtsTest, HrtResetDevice_return_nok)
@@ -182,7 +183,8 @@ TEST_F(AdapterRtsTest, HrtResetDevice_return_nok)
     MOCKER(aclrtResetDevice).stubs().with(any()).will(returnValue(1));
 
     // then
-    EXPECT_THROW(HrtResetDevice(1), RuntimeApiException);
+    HcclResult result = HrtResetDevice(1);
+    EXPECT_NE(HCCL_SUCCESS, result);
 }
 
 TEST_F(AdapterRtsTest, HrtGetDeviceCount_return_ok)
@@ -325,7 +327,8 @@ TEST_F(AdapterRtsTest, HrtStreamDestroy_return_nok)
     MOCKER(aclrtDestroyStreamForce).stubs().will(returnValue(1));
 
     // then
-    EXPECT_THROW(HrtStreamDestroy(ptr), RuntimeApiException);
+    HcclResult result = HrtStreamDestroy(ptr);
+    EXPECT_NE(HCCL_SUCCESS, result);
 }
 
 TEST_F(AdapterRtsTest, HcclStreamSynchronize_return_nok)
@@ -335,14 +338,16 @@ TEST_F(AdapterRtsTest, HcclStreamSynchronize_return_nok)
     MOCKER(aclrtSynchronizeStreamWithTimeout).stubs().will(returnValue(1));
 
     // then
-    EXPECT_THROW(HcclStreamSynchronize(ptr), RuntimeApiException);
+    HcclResult result = HcclStreamSynchronize(ptr);
+    EXPECT_NE(HCCL_SUCCESS, result);
 }
 
 TEST_F(AdapterRtsTest, HcclStreamSynchronize_streamPtrIsNull_return_nok)
 {
     // Given
     // then
-    EXPECT_THROW(HcclStreamSynchronize(nullptr), RuntimeApiException);
+    HcclResult result = HcclStreamSynchronize(nullptr);
+    EXPECT_NE(HCCL_SUCCESS, result);
 }
 
 TEST_F(AdapterRtsTest, HrtMalloc_return_ok)
@@ -354,8 +359,10 @@ TEST_F(AdapterRtsTest, HrtMalloc_return_ok)
     // when
     u64         size    = 100;
     aclrtMemType_t memType = 2;
-    void       *devPtr  = HrtMalloc(size, memType);
+    void *devPtr = nullptr;
+    HcclResult ret = HrtMalloc(devPtr, size, memType);
     // then
+    EXPECT_EQ(HCCL_SUCCESS, ret);
     EXPECT_EQ(fakeDevPtr, devPtr);
 }
 
@@ -364,9 +371,11 @@ TEST_F(AdapterRtsTest, HrtMalloc_return_nok)
     // Given
     MOCKER(aclrtMallocWithCfg).stubs().will(returnValue(1));
     u64         size    = 100;
-	aclrtMemType_t memType = 2;
+    aclrtMemType_t memType = 2;
     // then
-    EXPECT_THROW(HrtMalloc(size, memType), RuntimeApiException);
+    void *devPtr = nullptr;
+    HcclResult ret = HrtMalloc(devPtr, size, memType);
+    EXPECT_NE(HCCL_SUCCESS, ret);
 }
 
 TEST_F(AdapterRtsTest, HrtFree_return_nok)
@@ -374,7 +383,8 @@ TEST_F(AdapterRtsTest, HrtFree_return_nok)
     // Given
     MOCKER(aclrtFree).stubs().will(returnValue(1));
     // then
-    EXPECT_THROW(HrtFree(nullptr), RuntimeApiException);
+    HcclResult ret = HrtFree(nullptr);
+    EXPECT_NE(HCCL_SUCCESS, ret);
 }
 
 TEST_F(AdapterRtsTest, HrtMemcpy_d2d_return_nok)
@@ -383,8 +393,9 @@ TEST_F(AdapterRtsTest, HrtMemcpy_d2d_return_nok)
     MOCKER(aclmdlRICaptureThreadExchangeMode).stubs().will(returnValue(0));
     MOCKER(aclrtMemcpy).stubs().will(returnValue(1));
     // then
-    EXPECT_THROW(HrtMemcpy(nullptr, 64, nullptr, 64, Hccl::rtMemcpyKind_t::RT_MEMCPY_DEVICE_TO_DEVICE),
-                 RuntimeApiException);
+    void *dst = nullptr;
+    HcclResult ret = HrtMemcpy(dst, 64, nullptr, 64, Hccl::rtMemcpyKind_t::RT_MEMCPY_DEVICE_TO_DEVICE);
+    EXPECT_NE(HCCL_SUCCESS, ret);
 }
 
 TEST_F(AdapterRtsTest, HrtMemcpy_h2h_return_nok)
@@ -393,8 +404,9 @@ TEST_F(AdapterRtsTest, HrtMemcpy_h2h_return_nok)
     MOCKER(aclmdlRICaptureThreadExchangeMode).stubs().will(returnValue(0));
     MOCKER(aclrtMemcpy).stubs().will(returnValue(1));
     // then
-    EXPECT_THROW(HrtMemcpy(nullptr, 64, nullptr, 64, Hccl::rtMemcpyKind_t::RT_MEMCPY_HOST_TO_HOST),
-                 RuntimeApiException);
+    void *dst = nullptr;
+    HcclResult ret = HrtMemcpy(dst, 64, nullptr, 64, Hccl::rtMemcpyKind_t::RT_MEMCPY_HOST_TO_HOST);
+    EXPECT_NE(HCCL_SUCCESS, ret);
 }
 
 TEST_F(AdapterRtsTest, HrtMemcpy_reserved_return_nok)
@@ -403,8 +415,9 @@ TEST_F(AdapterRtsTest, HrtMemcpy_reserved_return_nok)
     MOCKER(aclmdlRICaptureThreadExchangeMode).stubs().will(returnValue(0));
     MOCKER(aclrtMemcpy).stubs().will(returnValue(1));
     // then
-    EXPECT_THROW(HrtMemcpy(nullptr, 64, nullptr, 64, Hccl::rtMemcpyKind_t::RT_MEMCPY_RESERVED),
-                 RuntimeApiException);
+    void *dst = nullptr;
+    HcclResult ret = HrtMemcpy(dst, 64, nullptr, 64, Hccl::rtMemcpyKind_t::RT_MEMCPY_RESERVED);
+    EXPECT_NE(HCCL_SUCCESS, ret);
 }
 
 TEST_F(AdapterRtsTest, HrtIpcSetMemoryName_return_nok)
@@ -507,9 +520,11 @@ TEST_F(AdapterRtsTest, HrtNotifyCreate_return_ok)
         .will(returnValue(RT_ERROR_NONE));
 
     // when
-    RtNotify_t rtNotify = HrtNotifyCreate(100);
+    RtNotify_t rtNotify = nullptr;
+    HcclResult result = HrtNotifyCreate(100, rtNotify);
 
     // then
+    EXPECT_EQ(HCCL_SUCCESS, result);
     EXPECT_EQ(fakeRtsNotify, rtNotify);
 }
 
@@ -519,7 +534,9 @@ TEST_F(AdapterRtsTest, HrtNotifyCreate_return_nok)
     MOCKER(aclrtCreateNotify).stubs().will(returnValue(1));
 
     // then
-    EXPECT_THROW(HrtNotifyCreate(100), RuntimeApiException);
+    RtNotify_t rtNotify = nullptr;
+    HcclResult result = HrtNotifyCreate(100, rtNotify);
+    EXPECT_NE(HCCL_SUCCESS, result);
 }
 
 TEST_F(AdapterRtsTest, HrtNotifyDestroy_return_nok)
@@ -715,7 +732,8 @@ TEST_F(AdapterRtsTest, HrtNotifyRecord_return_nok)
     MOCKER(aclrtRecordNotify).stubs().will(returnValue(1));
 
     // then
-    EXPECT_THROW(HrtNotifyRecord(nullptr, nullptr), RuntimeApiException);
+    HcclResult result = HrtNotifyRecord(nullptr, nullptr);
+    EXPECT_NE(HCCL_SUCCESS, result);
 }
 
 TEST_F(AdapterRtsTest, HrtMemAsyncCopy_return_nok)

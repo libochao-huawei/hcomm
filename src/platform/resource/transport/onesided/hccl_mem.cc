@@ -51,8 +51,8 @@ static HcclResult HcclMemRegIpc(NetDevContext *netDevCtx, const HcclMem *mem, Hc
     if (resultPair.second) {
         HcclResult ret = localBuffer->Init();
         if (ret != HCCL_SUCCESS) {
-            // 此分支中一定删除成功
-            localRmaBufferMgr->Del(tempKey);
+            bool deleted = false;
+            (void)localRmaBufferMgr->Del(tempKey, deleted);
             HCCL_ERROR("[HcclMemRegRoce]localbuffer init failed %d.", ret);
             return ret;
         }
@@ -74,12 +74,16 @@ static HcclResult HcclMemDeregIpc(NetDevContext *netDevCtx, const HcclBuf *buf)
     }
 
     BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(buf->addr), buf->len);
-    if (localRmaBufferMgr->Del(tempKey)) {
-        // 删除成功：输入key是表中某一最相近key的全集，计数-1后为0，返回true
+    bool deleted = false;
+    HcclResult delRet = localRmaBufferMgr->Del(tempKey, deleted);
+    if (delRet != HCCL_SUCCESS) {
+        HCCL_ERROR("[HcclMemDeregIpc]Del failed.");
+        return delRet;
+    }
+    if (deleted) {
         HCCL_INFO("[HcclMemDeregIpc]Memory reference count is 0, deregister memory.");
         return HCCL_SUCCESS;
     } else {
-        // 删除失败：输入key是表中某一最相近key的全集，计数不为0（存在其他remoteRank使用），返回false
         HCCL_INFO("[HcclMemDeregIpc]Memory reference count is larger than 0 "
             "(used by other RemoteRank), do not deregister memory.");
         return HCCL_E_AGAIN;
@@ -118,8 +122,8 @@ static HcclResult HcclMemRegRoce(NetDevContext *netDevCtx, const HcclMem *mem, H
     if (resultPair.second) {
         HcclResult ret = localBuffer->Init();
         if (ret != HCCL_SUCCESS) {
-            // 此分支中一定删除成功
-            localRmaBufferMgr->Del(tempKey);
+            bool deleted = false;
+            (void)localRmaBufferMgr->Del(tempKey, deleted);
             HCCL_ERROR("[HcclMemRegRoce]localbuffer init failed %d.", ret);
             return ret;
         }
@@ -141,12 +145,16 @@ static HcclResult HcclMemDeregRoce(NetDevContext *netDevCtx, const HcclBuf *buf)
     }
 
     BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(buf->addr), buf->len);
-    if (localRmaBufferMgr->Del(tempKey)) {
-        // 删除成功：输入key是表中某一最相近key的全集，计数-1后为0，返回true
+    bool deleted = false;
+    HcclResult delRet = localRmaBufferMgr->Del(tempKey, deleted);
+    if (delRet != HCCL_SUCCESS) {
+        HCCL_ERROR("[HcclMemDeregRoce]Del failed.");
+        return delRet;
+    }
+    if (deleted) {
         HCCL_INFO("[HcclMemDeregRoce]Memory reference count is 0, deregister memory.");
         return HCCL_SUCCESS;
     } else {
-        // 删除失败：输入key是表中某一最相近key的全集，计数不为0（存在其他remoteRank使用），返回false
         HCCL_INFO("[HcclMemDeregRoce]Memory reference count is larger than 0 "
             "(used by other RemoteRank), do not deregister memory.");
         return HCCL_E_AGAIN;

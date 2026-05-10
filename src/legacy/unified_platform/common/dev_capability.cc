@@ -74,7 +74,7 @@ void DevCapability::Init(DevType givenDevType)
     } else if (devType == DevType::DEV_TYPE_950) {
         LoadV82Cap();
     } else {
-        throw NotSupportException(StringFormat("we don't support %s now.", devType.Describe().c_str()));
+        HCCL_ERROR("we don't support %s now.", devType.Describe().c_str());
     }
 }
 

@@ -32,7 +32,11 @@ void Socket::Listen()
 {
     HCCL_INFO("[Socket::%s] listen start, listenPort[%u]", __func__, listenPort);
     RaSocketListenParam param(socketHandle, listenPort);
-    HrtRaSocketListenOneStart(param);
+    HcclResult ret = HrtRaSocketListenOneStart(param);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("HrtRaSocketListenOneStart failed, ret=%d", ret);
+        return;
+    }
     isListening = true;
     socketStatus = SocketStatus::LISTENING;
 }
@@ -62,7 +66,11 @@ void Socket::Connect()
     }
 
     RaSocketConnectParam param(socketHandle, remoteIp, listenPort, tag);
-    HrtRaSocketConnectOne(param);
+    HcclResult ret = HrtRaSocketConnectOne(param);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("HrtRaSocketConnectOne failed, ret=%d", ret);
+        return;
+    }
     HCCL_INFO("conn.tag %s", tag.c_str());
 
     socketStatus = SocketStatus::CONNECTING;
@@ -85,12 +93,12 @@ SocketStatus Socket::GetStatus()
 
     RaSocketGetParam param(socketHandle, remoteIp, tag, fdHandle);
     RaSocketFdHandleParam result(nullptr, 0);
-    TRY_CATCH_PROCESS_THROW(
-        NetworkApiException,
-        result = HrtRaBlockGetOneSocket(static_cast<u32>(role), param),
-        "Socket::GetStatus failed",
-        PrintErrorSocketInfo()
-    );
+    HcclResult ret = HrtRaBlockGetOneSocket(static_cast<u32>(role), param, result);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("HrtRaBlockGetOneSocket failed, ret=%d", ret);
+        PrintErrorSocketInfo();
+        return SocketStatus::INIT;
+    }
 
     fdHandle = result.fdHandle;
 
@@ -112,13 +120,21 @@ SocketStatus Socket::GetStatus()
 
 bool Socket::Send(const void *sendBuf, u32 size) const
 {
-    HrtRaSocketBlockSend(fdHandle, sendBuf, size);
+    HcclResult ret = HrtRaSocketBlockSend(fdHandle, sendBuf, size);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("HrtRaSocketBlockSend failed, ret=%d", ret);
+        return false;
+    }
     return true;
 }
 
 bool Socket::Recv(void *recvBuf, u32 size) const
 {
-    HrtRaSocketBlockRecv(fdHandle, recvBuf, size);
+    HcclResult ret = HrtRaSocketBlockRecv(fdHandle, recvBuf, size);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("HrtRaSocketBlockRecv failed, ret=%d", ret);
+        return false;
+    }
     return true;
 }
 
@@ -138,7 +154,10 @@ void Socket::Close()
 {
     if (isConnected) {
         RaSocketCloseParam param(socketHandle, fdHandle);
-        HrtRaSocketCloseOne(param);
+        HcclResult ret = HrtRaSocketCloseOne(param);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("HrtRaSocketCloseOne failed, ret=%d", ret);
+        }
         isConnected = false;
     }
 }
@@ -147,7 +166,10 @@ void Socket::StopListen()
 {
     if (isListening) {
         RaSocketListenParam param(socketHandle, listenPort);
-        HrtRaSocketListenOneStop(param);
+        HcclResult ret = HrtRaSocketListenOneStop(param);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("HrtRaSocketListenOneStop failed, ret=%d", ret);
+        }
         isListening = false;
     }
 }

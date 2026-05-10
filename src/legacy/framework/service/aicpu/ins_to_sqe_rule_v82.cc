@@ -121,7 +121,8 @@ void Interpret(const InsLocalPostTo &ins, const StreamLite &stream, ResMgrFetche
     } else {
         std::string msg
             = StringFormat("only support NORMAL or COUNTER notifyType, %s", ins.GetNotifyType().Describe().c_str());
-        MACRO_THROW(NotSupportException, msg);
+        HCCL_ERROR("%s", msg.c_str());
+        return;
     }
 
     TaskParam taskParam{};
@@ -150,7 +151,8 @@ void Interpret(const InsLocalWaitFrom &ins, const StreamLite &stream, ResMgrFetc
     } else {
         std::string msg
             = StringFormat("only support NORMAL or COUNTER notifyType, %s", ins.GetNotifyType().Describe().c_str());
-        MACRO_THROW(NotSupportException, msg);
+        HCCL_ERROR("%s", msg.c_str());
+        return;
     }
 
     TaskParam taskParam {};

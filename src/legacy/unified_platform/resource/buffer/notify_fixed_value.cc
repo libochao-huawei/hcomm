@@ -20,11 +20,27 @@ namespace Hccl {
 constexpr u32 V82_NOTIFY_SIZE = 8;
 NotifyFixedValue::NotifyFixedValue() : size(DevCapability::GetInstance().GetNotifySize())
 {
-    size = HrtGetDeviceType() == DevType::DEV_TYPE_950 ? V82_NOTIFY_SIZE : DevCapability::GetInstance().GetNotifySize();
+    DevType deviceType;
+    HcclResult result = HrtGetDeviceType(deviceType);
+    if (result == HCCL_SUCCESS && deviceType == DevType::DEV_TYPE_950) {
+        size = V82_NOTIFY_SIZE;
+    } else {
+        size = DevCapability::GetInstance().GetNotifySize();
+    }
     u64   notifyValueSize = LARGE_PAGE_MEMORY_MIN_SIZE; // 避免申请小页内存。最小2*1024*1024
-    void *ptr             = HrtMalloc(notifyValueSize, static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH));
+    void *ptr             = nullptr;
+    HcclResult ret = HrtMalloc(ptr, notifyValueSize, static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH));
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[NotifyFixedValue] HrtMalloc failed, notifyValueSize[%llu]", notifyValueSize);
+        THROW<InternalException>("HrtMalloc failed");
+    }
     u32   notifyValue     = 1; // notify值写1表示record
-    HrtMemcpy(ptr, notifyValueSize, &notifyValue, size, RT_MEMCPY_HOST_TO_DEVICE);
+    ret = HrtMemcpy(ptr, notifyValueSize, &notifyValue, size, RT_MEMCPY_HOST_TO_DEVICE);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[NotifyFixedValue] HrtMemcpy failed");
+        HrtFree(ptr);
+        THROW<InternalException>("HrtMemcpy failed");
+    }
     addr = reinterpret_cast<uintptr_t>(ptr);
 }
 
@@ -64,7 +80,8 @@ LocMemHandle NotifyFixedValue::GetMemHandle(RdmaHandle rdmaHandle)
 {
     if (memHandles.find(rdmaHandle) == memHandles.end()) {
         std::string msg = "memHandle not found for input rdmaHandle";
-        MACRO_THROW(ResourcesNotExistException, msg);
+        HCCL_ERROR("%s", msg.c_str());
+        return 0;
     }
     return memHandles[rdmaHandle];
 }

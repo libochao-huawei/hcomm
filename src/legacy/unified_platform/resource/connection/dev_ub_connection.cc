@@ -35,7 +35,11 @@ DevUbConnection::DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &l
       rmtEid(rmtAddr.GetReverseEid()), locEid(locAddr.GetReverseEid())
 {
     HCCL_INFO("[DevUbConnection::DevUbConnection] rmtEid=%s", rmtEid.Describe().c_str());
-    devLogicId = HrtGetDevice();
+    HcclResult res = HrtGetDevice(devLogicId);
+    if (res != HCCL_SUCCESS) {
+        HCCL_ERROR("[DevUbConnection] HrtGetDevice failed, res[%d].", res);
+        return;
+    }
 
     auto dieIdAndFuncId = RdmaHandleManager::GetInstance().GetDieAndFuncId(rdmaHandle); // 获取dieId和FuncId
     dieId               = dieIdAndFuncId.first;
@@ -85,7 +89,7 @@ DevUbUboeConnection::DevUbUboeConnection(const RdmaHandle rdmaHandle, const IpAd
     tpProtocol = TpProtocol::UBOE;
 }
 
-std::vector<char> DevUbConnection::GetUniqueId() const
+HcclResult DevUbConnection::GetUniqueId(std::vector<char> &exchangeId) const
 {
     BinaryStream binaryStream;
     binaryStream << dieId;
@@ -105,12 +109,11 @@ std::vector<char> DevUbConnection::GetUniqueId() const
     binaryStream << rmtEid.raw;
     binaryStream << locEid.raw;
 
-    std::vector<char> result;
-    binaryStream.Dump(result);
+    binaryStream.Dump(exchangeId);
     HCCL_INFO("DevUbConnection::GetUniqueId:%s", Describe().c_str());
     HCCL_INFO("type=%s, jfcPollMode=%u, dwqeCacheLocked=%d, sqCiAddr=0x%llx", rmaConnType.Describe().c_str(),
                jfcPollMode, dwqeCacheLocked, sqCiAddr);
-    return result;
+    return HCCL_SUCCESS;
 }
 
 void DevUbConnection::SetCqInfo(HcclAiRMACQ &cq)
@@ -194,12 +197,12 @@ RmaConnStatus DevUbConnection::GetStatus()
     return status;
 }
 
-std::unique_ptr<Serializable> DevUbConnection::GetExchangeDto()
+HcclResult DevUbConnection::GetExchangeDto(unique_ptr<Serializable> &exchangeDto)
 {
     if (status != RmaConnStatus::READY && status != RmaConnStatus::EXCHANGEABLE) {
         HCCL_ERROR("[DevUbConnection][%s] status[%s] is not expected.", __func__,
             status.Describe().c_str());
-        ThrowAbnormalStatus(std::string(__func__));
+        return HCCL_E_IN_STATUS;
     }
 
     if (tpProtocol != TpProtocol::INVALID) {
@@ -212,10 +215,11 @@ std::unique_ptr<Serializable> DevUbConnection::GetExchangeDto()
     std::unique_ptr<ExchangeUbConnDto> dto
         = make_unique<ExchangeUbConnDto>(tokenValue, keySize, jettyImportCfg.localTpHandle, jettyImportCfg.localPsn);
     (void)memcpy_s(dto->qpKey, HRT_UB_QP_KEY_MAX_LEN, localQpKey, HRT_UB_QP_KEY_MAX_LEN);
-    return std::unique_ptr<Serializable>(dto.release());
+    exchangeDto.reset(dto.release());
+    return HCCL_SUCCESS;
 }
 
-void DevUbConnection::ParseRmtExchangeDto(const Serializable &rmtDto)
+HcclResult DevUbConnection::ParseRmtExchangeDto(const Serializable &rmtDto)
 {
     auto dto = dynamic_cast<const ExchangeUbConnDto &>(rmtDto);
     HCCL_INFO("[DevUbConnection][%s] remoteConnDto[%s]", __func__, dto.Describe().c_str());
@@ -228,35 +232,37 @@ void DevUbConnection::ParseRmtExchangeDto(const Serializable &rmtDto)
         HCCL_INFO("[DevUbConnection][%s] tpEnable, remoteTpHandle[0x%llx], remotePsn[%u].", __func__,
                    jettyImportCfg.remoteTpHandle, jettyImportCfg.remotePsn);
     }
+    return HCCL_SUCCESS;
 }
 
-void DevUbConnection::ImportRmtDto()
+HcclResult DevUbConnection::ImportRmtDto()
 {
     if (ubConnStatus == UbConnStatus::READY) {
         HCCL_WARNING("[DevUbConnection][%s] import jetty already, %s.",
                      __func__, Describe().c_str());
-        return;
+        return HCCL_SUCCESS;
     }
 
     if (ubConnStatus != UbConnStatus::JETTY_CREATED) {
         HCCL_ERROR("[DevUbConnection][%s] failed, ubConnStatus[%s] is not expected.",
             __func__, ubConnStatus.Describe().c_str());
-        ThrowAbnormalStatus(std::string(__func__));
+        return HCCL_E_IN_STATUS;
     }
 
     // 设置tp attr(sip dip等)
     if ((tpProtocol == TpProtocol::UBOE) && SetTpAttrAsync() != HCCL_SUCCESS) {
         HCCL_ERROR("[DevUbConnection::%s] SetTpAttrAsync failed, %s", __func__, Describe().c_str());
-        ThrowAbnormalStatus(std::string(__func__));
+        return HCCL_E_INTERNAL;
     }
     // 获取tp attr(smac dmac等)
     if ((tpProtocol == TpProtocol::UBOE) && GetTpAttrAsync() != HCCL_SUCCESS) {
         HCCL_ERROR("[DevUbConnection::%s] GetTpAttrAsync failed, %s", __func__, Describe().c_str());
-        ThrowAbnormalStatus(std::string(__func__));
+        return HCCL_E_INTERNAL;
     }
 
     ImportJetty();
     ubConnStatus = UbConnStatus::JETTY_IMPORTING;
+    return HCCL_SUCCESS;
 }
 
 void DevUbConnection::ThrowAbnormalStatus(std::string funcName)
@@ -417,22 +423,21 @@ DevUbConnection::~DevUbConnection()
     DECTOR_TRY_CATCH("DevUbConnection", ReleaseResource());
 }
 
-// Suspend接口当前已不使用，由框架调用触发析构流程
-bool DevUbConnection::Suspend()
+HcclResult DevUbConnection::Suspend()
 {
     HCCL_WARNING("[DevUbConnection][%s] should not be called.", __func__);
     if (status == RmaConnStatus::SUSPENDED) {
         HCCL_INFO("[DevUbConnection][%s] RmaConnStatus is SUSPENDED, status[%s].", __func__, status.Describe().c_str());
-        return true;
+        return HCCL_SUCCESS;
     }
 
     if (status != RmaConnStatus::READY) {
-        ThrowAbnormalStatus(std::string(__func__));
+        return HCCL_E_IN_STATUS;
     }
 
     ReleaseResource();
     status = RmaConnStatus::SUSPENDED;
-    return true;
+    return HCCL_SUCCESS;
 }
 
 static void PrepareUbSendWrReqParamForWriteOrRead(HrtRaUbSendWrReqParam &sendWrReq, const HrtUbSendWrOpCode sendWrOpCode,
@@ -590,13 +595,14 @@ void DevUbConnection::ProcessSlicesWithNotify(
               locBufSize, sliceNum, sliceSize, lastSliceSize);
 }
 
-unique_ptr<BaseTask> DevUbConnection::PrepareRead(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
-                                                  const SqeConfig &config)
+HcclResult DevUbConnection::PrepareRead(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
+                                                  const SqeConfig &config, unique_ptr<BaseTask> &task)
 {
     VerifySizeIsEqual(remoteMemBuf, localMemBuf, "DevUbConnection::PrepareRead");
 
     if (localMemBuf.size == 0) {
-        return nullptr;
+        task = nullptr;
+        return HCCL_SUCCESS;
     }
 
     HrtRaUbSendWrRespParam sendWrResp{};
@@ -608,17 +614,20 @@ unique_ptr<BaseTask> DevUbConnection::PrepareRead(const MemoryBuffer &remoteMemB
         sendWrResp = HrtRaUbPostSend(jettyHandle, sendWrReq);
     });
 
-    return ConstructTaskUbSend(sendWrResp, config);
+    task = ConstructTaskUbSend(sendWrResp, config);
+    return HCCL_SUCCESS;
 }
 
-unique_ptr<BaseTask> DevUbConnection::PrepareReadReduce(const MemoryBuffer &remoteMemBuf,
+HcclResult DevUbConnection::PrepareReadReduce(const MemoryBuffer &remoteMemBuf,
                                                         const MemoryBuffer &localMemBuf, DataType dataType,
-                                                        ReduceOp reduceOp, const SqeConfig &config)
+                                                        ReduceOp reduceOp, const SqeConfig &config,
+                                                        unique_ptr<BaseTask> &task)
 {
     VerifySizeIsEqual(remoteMemBuf, localMemBuf, "DevUbConnection::PrepareReadReduce");
 
     if (localMemBuf.size == 0) {
-        return nullptr;
+        task = nullptr;
+        return HCCL_SUCCESS;
     }
 
     HrtRaUbSendWrRespParam sendWrResp{};
@@ -634,16 +643,18 @@ unique_ptr<BaseTask> DevUbConnection::PrepareReadReduce(const MemoryBuffer &remo
         },
         dataType);
 
-    return ConstructTaskUbSend(sendWrResp, config);
+    task = ConstructTaskUbSend(sendWrResp, config);
+    return HCCL_SUCCESS;
 }
 
-unique_ptr<BaseTask> DevUbConnection::PrepareWrite(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
-                                                   const SqeConfig &config)
+HcclResult DevUbConnection::PrepareWrite(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
+                                                   const SqeConfig &config, unique_ptr<BaseTask> &task)
 {
     VerifySizeIsEqual(remoteMemBuf, localMemBuf, "DevUbConnection::PrepareWrite");
 
     if (localMemBuf.size == 0) {
-        return nullptr;
+        task = nullptr;
+        return HCCL_SUCCESS;
     }
 
     HrtRaUbSendWrRespParam sendWrResp{};
@@ -654,17 +665,20 @@ unique_ptr<BaseTask> DevUbConnection::PrepareWrite(const MemoryBuffer &remoteMem
         sendWrResp = HrtRaUbPostSend(jettyHandle, sendWrReq);
     });
 
-    return ConstructTaskUbSend(sendWrResp, config);
+    task = ConstructTaskUbSend(sendWrResp, config);
+    return HCCL_SUCCESS;
 }
 
-unique_ptr<BaseTask> DevUbConnection::PrepareWriteReduce(const MemoryBuffer &remoteMemBuf,
-                                                         const MemoryBuffer &localMemBuf, DataType dataType,
-                                                         ReduceOp reduceOp, const SqeConfig &config)
+HcclResult DevUbConnection::PrepareWriteReduce(const MemoryBuffer &remoteMemBuf,
+                                                          const MemoryBuffer &localMemBuf, DataType dataType,
+                                                          ReduceOp reduceOp, const SqeConfig &config,
+                                                          unique_ptr<BaseTask> &task)
 {
     VerifySizeIsEqual(remoteMemBuf, localMemBuf, "DevUbConnection::PrepareWriteReduce");
 
     if (localMemBuf.size == 0) {
-        return nullptr;
+        task = nullptr;
+        return HCCL_SUCCESS;
     }
 
     HrtRaUbSendWrRespParam sendWrResp{};
@@ -679,11 +693,12 @@ unique_ptr<BaseTask> DevUbConnection::PrepareWriteReduce(const MemoryBuffer &rem
         },
         dataType);
 
-    return ConstructTaskUbSend(sendWrResp, config);
+    task = ConstructTaskUbSend(sendWrResp, config);
+    return HCCL_SUCCESS;
 }
 
-unique_ptr<BaseTask> DevUbConnection::PrepareInlineWrite(const MemoryBuffer &remoteMemBuf, u64 data,
-                                                         const SqeConfig &config)
+HcclResult DevUbConnection::PrepareInlineWrite(const MemoryBuffer &remoteMemBuf, u64 data,
+                                                         const SqeConfig &config, unique_ptr<BaseTask> &task)
 {
     HrtRaUbSendWrReqParam sendWrReq = {};
     sendWrReq.opcode                = HrtUbSendWrOpCode::WRITE;
@@ -713,7 +728,8 @@ unique_ptr<BaseTask> DevUbConnection::PrepareInlineWrite(const MemoryBuffer &rem
         sendWrReq.size, static_cast<u32>(*sendWrReq.inlineData));
     auto res = HrtRaUbPostSend(jettyHandle, sendWrReq);
 
-    return ConstructTaskUbSend(res, config);
+    task = ConstructTaskUbSend(res, config);
+    return HCCL_SUCCESS;
 }
 
 inline HrtRaUbSendWrReqParam ConstructUbSendWrReqParamForWriteWithNotify(const MemoryBuffer &remoteMemBuf,
@@ -734,15 +750,17 @@ inline HrtRaUbSendWrReqParam ConstructUbSendWrReqParamForWriteWithNotify(const M
     return sendWrReq;
 }
 
-unique_ptr<BaseTask> DevUbConnection::PrepareWriteWithNotify(const MemoryBuffer &remoteMemBuf,
+HcclResult DevUbConnection::PrepareWriteWithNotify(const MemoryBuffer &remoteMemBuf,
                                                              const MemoryBuffer &localMemBuf, u64 data,
                                                              const MemoryBuffer &remoteNotifyMemBuf,
-                                                             const SqeConfig    &config)
+                                                             const SqeConfig    &config,
+                                                             unique_ptr<BaseTask> &task)
 {
     VerifySizeIsEqual(remoteMemBuf, localMemBuf, "DevUbConnection::PrepareWriteWithNotify");
 
     if (localMemBuf.size == 0) {
-        return nullptr;
+        task = nullptr;
+        return HCCL_SUCCESS;
     }
 
     HrtRaUbSendWrRespParam sendWrResp{};
@@ -763,19 +781,22 @@ unique_ptr<BaseTask> DevUbConnection::PrepareWriteWithNotify(const MemoryBuffer 
             sendWrResp = HrtRaUbPostSend(jettyHandle, sendWrReq);
         });
 
-    return ConstructTaskUbSend(sendWrResp, config);
+    task = ConstructTaskUbSend(sendWrResp, config);
+    return HCCL_SUCCESS;
 }
 
-unique_ptr<BaseTask> DevUbConnection::PrepareWriteReduceWithNotify(const MemoryBuffer &remoteMemBuf,
-                                                                   const MemoryBuffer &localMemBuf, DataType dataType,
-                                                                   ReduceOp reduceOp, u64 data,
-                                                                   const MemoryBuffer &remoteNotifyMemBuf,
-                                                                   const SqeConfig    &config)
+HcclResult DevUbConnection::PrepareWriteReduceWithNotify(const MemoryBuffer &remoteMemBuf,
+                                                                    const MemoryBuffer &localMemBuf, DataType dataType,
+                                                                    ReduceOp reduceOp, u64 data,
+                                                                    const MemoryBuffer &remoteNotifyMemBuf,
+                                                                    const SqeConfig    &config,
+                                                                    unique_ptr<BaseTask> &task)
 {
     VerifySizeIsEqual(remoteMemBuf, localMemBuf, "DevUbConnection::PrepareWriteReduceWithNotify");
 
     if (localMemBuf.size == 0) {
-        return nullptr;
+        task = nullptr;
+        return HCCL_SUCCESS;
     }
 
     HrtRaUbSendWrRespParam sendWrResp{};
@@ -798,7 +819,8 @@ unique_ptr<BaseTask> DevUbConnection::PrepareWriteReduceWithNotify(const MemoryB
         },
         dataType);
 
-    return ConstructTaskUbSend(sendWrResp, config);
+    task = ConstructTaskUbSend(sendWrResp, config);
+    return HCCL_SUCCESS;
 }
 
 string DevUbConnection::Describe() const

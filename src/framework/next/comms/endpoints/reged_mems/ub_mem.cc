@@ -83,10 +83,14 @@ HcclResult UbMemRegedMemMgr::UnregisterMemory(void* memHandle)
 
     // 从LocalIpcRmaBuffer计数器删除HcclBuf
     hccl::BufferKey<uintptr_t, u64> tempKey(bufferInfo.first, bufferInfo.second);
-    bool isDeleted = false;
-    EXECEPTION_CATCH(isDeleted = localIpcRmaBufferMgr_->Del(tempKey), return HCCL_E_NOT_FOUND);
+    bool deleted = false;
+    HcclResult delRet = localIpcRmaBufferMgr_->Del(tempKey, deleted);
+    if (delRet != HCCL_SUCCESS) {
+        HCCL_ERROR("[%s] Del failed.", __func__);
+        return HCCL_E_NOT_FOUND;
+    }
     // 计数器大于1时，仅减少引用计数
-    if (!isDeleted) {
+    if (!deleted) {
         HCCL_INFO("[%s] Memory reference count is larger than 0, just decrease the reference count.", __func__);
         return HCCL_SUCCESS;
     }

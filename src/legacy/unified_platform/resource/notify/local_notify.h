@@ -44,7 +44,8 @@ public:
 
     virtual std::unique_ptr<Serializable> GetExchangeDto()
     {
-        MACRO_THROW(NotSupportException, StringFormat("not support."));
+        HCCL_ERROR("GetExchangeDto not supported in base class");
+        return nullptr;
     }
 
     RtsNotify* GetNotify() const

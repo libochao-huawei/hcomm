@@ -96,10 +96,14 @@ HcclResult UbRegedMemMgr::UnregisterMemory(void* memHandle)
 
     // 从LocalRamBuffer计数器删除
     hccl::BufferKey<uintptr_t, u64> tempKey(bufferInfo.first, bufferInfo.second);
-    bool resultPair = false;
-    EXECEPTION_CATCH(resultPair = this->localUbRmaBufferMgr_->Del(tempKey), return HCCL_E_NOT_FOUND);
+    bool deleted = false;
+    HcclResult delRet = this->localUbRmaBufferMgr_->Del(tempKey, deleted);
+    if (delRet != HCCL_SUCCESS) {
+        HCCL_ERROR("[UbRegedMemMgr][UnregisterMemory] Del failed.");
+        return HCCL_E_NOT_FOUND;
+    }
     // 计数器大于1时，返回false，说明框架层有其它设备在使用这段内存，返回HCCL_E_AGAIN
-    if (!resultPair) {
+    if (!deleted) {
         HCCL_INFO("[UbRegedMemMgr][[UnregisterMemory] Memory reference count is larger than 0"
                   "(used by other RemoteRank), do not deregister memory.");
         return HCCL_SUCCESS;
@@ -242,10 +246,14 @@ HcclResult UbRegedMemMgr::MemoryUnimport(const void *memDesc, uint32_t descLen)
     HCCL_INFO("[MemoryUnimport][Ub] MemoryUnimport");
     hccl::BufferKey<uintptr_t, u64> tempKey(static_cast<uintptr_t>(dto.addr), dto.size);
 
-    bool resultPair = false;
-    EXECEPTION_CATCH(resultPair = remoteUbRmaBufferMgrs_[endpointDesc]->Del(tempKey), return HCCL_E_NOT_FOUND);
+    bool deleted = false;
+    HcclResult delRet = remoteUbRmaBufferMgrs_[endpointDesc]->Del(tempKey, deleted);
+    if (delRet != HCCL_SUCCESS) {
+        HCCL_ERROR("[UrmaRegedMemMgr][MemoryUnimport] Del failed.");
+        return HCCL_E_NOT_FOUND;
+    }
     // 计数器大于1时，返回false，说明框架层有其它设备在使用这段内存，返回HCCL_E_AGAIN
-    if (!resultPair) {
+    if (!deleted) {
         HCCL_INFO("[UrmaRegedMemMgr][[MemoryUnimport] Memory reference count is larger than 0"
                     "(used by other RemoteRank).");
         return HCCL_E_AGAIN;

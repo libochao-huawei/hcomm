@@ -24,10 +24,16 @@ namespace Hccl {
 class CcuCommunicator {
 public:
     explicit CcuCommunicator(CommunicatorImpl *comm)
-        : comm(comm), devLogicId(HrtGetDevice()), ccuResPackMgr(), ccuJettyMgr(devLogicId),
-          ccuTransportMgr(*comm, devLogicId), ccuTransportGroupMgr(*comm),
-          registeredCcuCtxMgr(devLogicId)
+        : comm(comm), devLogicId(-1), ccuResPackMgr(), ccuJettyMgr(-1),
+          ccuTransportMgr(*comm, -1), ccuTransportGroupMgr(*comm),
+          registeredCcuCtxMgr(-1)
     {
+        HcclResult res = HrtGetDevice(devLogicId);
+        if (res != HCCL_SUCCESS) {
+            HCCL_ERROR("[CcuCommunicator] HrtGetDevice failed, res[%d].", res);
+            return;
+        }
+        HCCL_INFO("[CcuCommunicator] HrtGetDevice success, devLogicId[%d].", devLogicId);
     }
 
     CcuResPackMgr        *GetCcuResPackMgr();

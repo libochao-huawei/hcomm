@@ -57,9 +57,10 @@ public:
         return rmaConnType;
     }
 
-    virtual std::vector<char> GetUniqueId() const
+    virtual HcclResult GetUniqueId(std::vector<char> &exchangeId) const
     {
-        MACRO_THROW(NotSupportException, StringFormat("not supported."));
+        HCCL_ERROR("[RmaConnection::%s] not support.", __func__);
+        return HCCL_E_NOT_SUPPORT;
     }
 
     virtual void Connect() = 0;
@@ -74,54 +75,61 @@ public:
 
     virtual RemoteRmaBuffer *GetRemoteRmaBuffer(const BufferType &bufType);
 
-    virtual unique_ptr<BaseTask> PrepareRead(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
-                                             const SqeConfig &config);
+    virtual HcclResult PrepareRead(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
+                                             const SqeConfig &config, unique_ptr<BaseTask> &task);
 
-    virtual unique_ptr<BaseTask> PrepareReadReduce(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
-                                                   DataType datatype, ReduceOp reduceOp, const SqeConfig &config);
+    virtual HcclResult PrepareReadReduce(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
+                                                   DataType datatype, ReduceOp reduceOp, const SqeConfig &config,
+                                                   unique_ptr<BaseTask> &task);
 
-    virtual unique_ptr<BaseTask> PrepareWrite(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
-                                              const SqeConfig &config);
+    virtual HcclResult PrepareWrite(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
+                                              const SqeConfig &config, unique_ptr<BaseTask> &task);
 
-    virtual unique_ptr<BaseTask> PrepareWriteReduce(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
-                                                    DataType datatype, ReduceOp reduceOp, const SqeConfig &config);
+    virtual HcclResult PrepareWriteReduce(const MemoryBuffer &remoteMemBuf,
+                                                    const MemoryBuffer &localMemBuf, DataType datatype,
+                                                    ReduceOp reduceOp, const SqeConfig &config,
+                                                    unique_ptr<BaseTask> &task);
 
-    virtual unique_ptr<BaseTask> PrepareInlineWrite(const MemoryBuffer &remoteMemBuf, u64 data,
-                                                    const SqeConfig &config);
+    virtual HcclResult PrepareInlineWrite(const MemoryBuffer &remoteMemBuf, u64 data,
+                                                    const SqeConfig &config, unique_ptr<BaseTask> &task);
 
-    virtual unique_ptr<BaseTask> PrepareWriteWithNotify(const MemoryBuffer &remoteMemBuf,
+    virtual HcclResult PrepareWriteWithNotify(const MemoryBuffer &remoteMemBuf,
                                                         const MemoryBuffer &localMemBuf, u64 data,
                                                         const MemoryBuffer &remoteNotifyMemBuf,
-                                                        const SqeConfig    &config);
+                                                        const SqeConfig    &config, unique_ptr<BaseTask> &task);
 
-    virtual unique_ptr<BaseTask> PrepareWriteReduceWithNotify(const MemoryBuffer &remoteMemBuf,
+    virtual HcclResult PrepareWriteReduceWithNotify(const MemoryBuffer &remoteMemBuf,
                                                               const MemoryBuffer &localMemBuf, DataType datatype,
                                                               ReduceOp reduceOp, u64 data,
                                                               const MemoryBuffer &remoteNotifyMemBuf,
-                                                              const SqeConfig    &config);
+                                                              const SqeConfig    &config, unique_ptr<BaseTask> &task);
 
     virtual void AddNop(const Stream &stream)
     {
     }
 
-    virtual bool Suspend()
+    virtual HcclResult Suspend()
     {
-        MACRO_THROW(NotSupportException, StringFormat("Resume is not supported."));
+        HCCL_ERROR("[RmaConnection::%s] not support.", __func__);
+        return HCCL_E_NOT_SUPPORT;
     }
 
-    virtual unique_ptr<Serializable> GetExchangeDto() // 序列化本地数据
+    virtual HcclResult GetExchangeDto(unique_ptr<Serializable> &exchangeDto) // 序列化本地数据
     {
-        MACRO_THROW(NotSupportException, StringFormat("not support."));
+        HCCL_ERROR("[RmaConnection::%s] not support.", __func__);
+        return HCCL_E_NOT_SUPPORT;
     }
 
-    virtual void ParseRmtExchangeDto(const Serializable &rmtDto) // 解析收到得远端序列化数据
+    virtual HcclResult ParseRmtExchangeDto(const Serializable &rmtDto) // 解析收到得远端序列化数据
     {
-        MACRO_THROW(NotSupportException, StringFormat("not support."));
+        HCCL_ERROR("[RmaConnection::%s] not support.", __func__);
+        return HCCL_E_NOT_SUPPORT;
     }
 
-    virtual void ImportRmtDto() // 导入远端的数据
+    virtual HcclResult ImportRmtDto() // 导入远端的数据
     {
-        MACRO_THROW(NotSupportException, StringFormat("not support."));
+        HCCL_ERROR("[RmaConnection::%s] not support.", __func__);
+        return HCCL_E_NOT_SUPPORT;
     }
 
     virtual HcclResult Describe(std::string &dfxMsg)

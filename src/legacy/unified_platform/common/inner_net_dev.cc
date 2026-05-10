@@ -30,7 +30,12 @@ InnerNetDev::InnerNetDev(const NetDevInfo &info)
 
     try {
         if (localProto_ == LinkProtoType::RDMA) {
-            rdmaHandle_       = HrtRaRdmaInit(netMode_, intf);
+            HcclResult ret = HrtRaRdmaInit(netMode_, intf, rdmaHandle_);
+            if (ret != HCCL_SUCCESS) {
+                HCCL_ERROR("HrtRaRdmaInit failed, ret=%d", ret);
+                isValid_ = false;
+                return;
+            }
             auto dieAndFuncId = HraGetDieAndFuncId(rdmaHandle_);
             dieId_            = dieAndFuncId.first;
             funcId_           = dieAndFuncId.second;
@@ -79,7 +84,10 @@ InnerNetDev::~InnerNetDev()
             RaUbFreeTokenIdHandle(rdmaHandle_, tokenId_);
         }
         if (rdmaHandle_ != nullptr) {
-            HrtRaRdmaDeInit(rdmaHandle_, netMode_);
+            HcclResult ret = HrtRaRdmaDeInit(rdmaHandle_, netMode_);
+            if (ret != HCCL_SUCCESS) {
+                HCCL_ERROR("HrtRaRdmaDeInit failed, ret=%d", ret);
+            }
         }
     } else if (localProto_ == LinkProtoType::UB) {
         if (tokenInfoManager_ != nullptr) {

@@ -108,7 +108,8 @@ DevBuffer *CollServiceAiCpuImpl::OpBasedCollProcess(CollOperator &op, const std:
 
     auto                  buffer = PackOpData(op.opTag, req);
     shared_ptr<DevBuffer> devMem = make_shared<DevBuffer>(buffer.size()); // 申请device内存
-    HrtMemcpy(reinterpret_cast<void *>(devMem->GetAddr()), devMem->GetSize(), buffer.data(), buffer.size(),
+    void* devMemPtr = reinterpret_cast<void *>(devMem->GetAddr());
+    HrtMemcpy(devMemPtr, devMem->GetSize(), buffer.data(), buffer.size(),
               RT_MEMCPY_HOST_TO_DEVICE); // H2D拷贝，将资源拷贝到device内存
 
     collOpLoadedMap[curTagKey] = devMem;
@@ -216,8 +217,10 @@ HcclResult CollServiceAiCpuImpl::AicpuMc2CommResourcePrepare(const CollOperator 
     comm->GetStreamManager().ResetSlaveIndex(0);
 
     shared_ptr<DevBuffer> newDevMem = make_shared<DevBuffer>(sizeof(HcclKernelParamLite));
-    HrtMemcpy(reinterpret_cast<void *>(newDevMem->GetAddr()), sizeof(HcclKernelParamLite), 
-            reinterpret_cast<void *>(&param.kernel), sizeof(HcclKernelParamLite),
+    void* newDevMemPtr = reinterpret_cast<void *>(newDevMem->GetAddr());
+    void* paramPtr = reinterpret_cast<void *>(&param.kernel);
+    HrtMemcpy(newDevMemPtr, sizeof(HcclKernelParamLite),
+            paramPtr, sizeof(HcclKernelParamLite),
             RT_MEMCPY_HOST_TO_DEVICE);
     aicpuMc2CommResourceMap_.insert(make_pair(opAlgTag, newDevMem));
     *addr = reinterpret_cast<void *>(newDevMem->GetAddr());
@@ -390,8 +393,10 @@ void CollServiceAiCpuImpl::AicpuKernelLaunch(HcclKernelLaunchParam &param, Strea
 	attr.value.timeout = static_cast<u16>((timeoutCheck == 0) ? timeoutCheck : (timeoutCheck + 30)); // aicpu kernal超时时间: X+30s
 	cfg.numAttrs = 1;
 	cfg.attrs = &attr;
-    HrtMemcpy(reinterpret_cast<void *>(kernelParamBuf_.get()->GetAddr()), sizeof(HcclKernelParamLite), 
-        reinterpret_cast<void *>(&param), sizeof(HcclKernelParamLite), RT_MEMCPY_HOST_TO_HOST);
+    void* paramBufPtr = reinterpret_cast<void *>(kernelParamBuf_.get()->GetAddr());
+    void* paramPtr = reinterpret_cast<void *>(&param);
+    HrtMemcpy(paramBufPtr, sizeof(HcclKernelParamLite),
+        paramPtr, sizeof(HcclKernelParamLite), RT_MEMCPY_HOST_TO_HOST);
     
     HCCL_INFO("[CollServiceAiCpuImpl][%s] args timeout[%u]s", __func__, attr.value.timeout);
 
@@ -742,7 +747,8 @@ void CollServiceAiCpuImpl::Resume()
     
     shared_ptr<DevBuffer> devMem = make_shared<DevBuffer>(buffer.size()); // 申请device内存
     HCCL_INFO("[NsRecovery][Resume] devMem->GetAddr(): 0x%llx, devMem->GetSize(): %llu", devMem->GetAddr(), devMem->GetSize());
-    HrtMemcpy(reinterpret_cast<void *>(devMem->GetAddr()), devMem->GetSize(), buffer.data(), buffer.size(),
+    void* devMemPtr = reinterpret_cast<void *>(devMem->GetAddr());
+    HrtMemcpy(devMemPtr, devMem->GetSize(), buffer.data(), buffer.size(),
               RT_MEMCPY_HOST_TO_DEVICE); // H2D拷贝，将资源拷贝到device内存
 
     // 组新增的kernelLaunch命令、将打包数据下发到AICPU侧
@@ -752,7 +758,10 @@ void CollServiceAiCpuImpl::Resume()
     } else if (op->opMode == OpMode::OFFLOAD) {
         comm->GetAicpuStreamManager().AllocFreeStream();
         AicpuUpdateCommLaunch(*comm->GetAicpuStreamManager().GetFreeStream(), devMem.get());
-        HcclStreamSynchronize(comm->GetAicpuStreamManager().GetFreeStream()->GetPtr());
+        HcclResult ret = HcclStreamSynchronize(comm->GetAicpuStreamManager().GetFreeStream()->GetPtr());
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[NsRecovery][CollServiceAiCpuImpl] HcclStreamSynchronize failed, ret[%d].", ret);
+        }
         HCCL_INFO("[NsRecovery][CollServiceAiCpuImpl] HcclUpdateCommKernelEntrance Stream Synchronize finished.");
     } else {
         THROW<InternalException>(StringFormat("[NsRecovery][Resume] opMode=%s failed", op->opMode.Describe().c_str()));

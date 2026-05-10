@@ -158,11 +158,8 @@ u8 HcclSdmaSqe::ConvertToMemcpyDataType(u8 copyDataType) const
             break;
         }
         default: {
-            // Should not run here.
-            // Only for code style, 0x80 is reserved value of STRAS opcode.
-            MACRO_THROW(NotSupportException,
-                        StringFormat("DataType=%u do not support.", static_cast<u32>(copyDataType)));
-            break;
+            HCCL_ERROR("%s", StringFormat("DataType=%u do not support.", static_cast<u32>(copyDataType)).c_str());
+            return HCCL_E_NOT_SUPPORT;
         }
     }
     return opcode;
@@ -189,8 +186,8 @@ u8 HcclSdmaSqe::ConvertToMemcpyOpType(u32 copyKind) const
             break;
         }
         default: {
-            MACRO_THROW(NotSupportException, StringFormat("Type out of range: copyKind=%u", copyKind));
-            break;
+            HCCL_ERROR("%s", StringFormat("Type out of range: copyKind=%u", copyKind).c_str());
+            return HCCL_E_NOT_SUPPORT;
         }
     }
     return opcode;

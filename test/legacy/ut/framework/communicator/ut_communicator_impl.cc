@@ -258,7 +258,7 @@ void CommImplSendStub1()
 
 void MockCommunicatorImpl()
 {
-    MOCKER(HrtSetDevice).stubs().with(any()).will(ignoreReturnValue());
+    MOCKER(HrtSetDevice).stubs().with(any()).will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
     MOCKER(HrtOpenTsdProcess).stubs().with(any(), any()).will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER(HrtRaTlvInit).stubs().with(any()).will(returnValue(HcclResult::HCCL_SUCCESS));
@@ -559,7 +559,7 @@ TEST_F(CommunicatorImplTest, initvittualtopo_check_fail)
 
 TEST_F(CommunicatorImplTest, should_return_success_when_normal_calling_new_init_with_two_parameters_new)
 {
-    MOCKER(HrtSetDevice).stubs().with(any()).will(ignoreReturnValue());
+    MOCKER(HrtSetDevice).stubs().with(any()).will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_950)));
     MOCKER(HrtOpenTsdProcess).stubs().with(any(), any()).will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER(HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue(static_cast<DevId>(1)));
@@ -618,7 +618,7 @@ TEST_F(CommunicatorImplTest, should_return_success_when_normal_calling_new_init_
 
 TEST_F(CommunicatorImplTest, init_with_two_parameters)
 {
-    MOCKER(HrtSetDevice).stubs().with(any()).will(ignoreReturnValue());
+    MOCKER(HrtSetDevice).stubs().with(any()).will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_950)));
     MOCKER(HrtOpenTsdProcess).stubs().with(any(), any()).will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER(HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue(static_cast<DevId>(1)));
@@ -1008,7 +1008,7 @@ TEST_F(CommunicatorImplTest, LoadOpbasedCollOp_rankSize_1_test)
 TEST_F(CommunicatorImplTest, RecoverComm_NormalCase)
 {
     // 打桩所有初始化函数，使其返回成功
-    MOCKER(HrtSetDevice).stubs().with(any()).will(ignoreReturnValue());
+    MOCKER(HrtSetDevice).stubs().with(any()).will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
     MOCKER(HrtOpenTsdProcess).stubs().with(any(), any()).will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER(HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue(static_cast<DevId>(1)));
@@ -1101,7 +1101,7 @@ TEST_F(CommunicatorImplTest, RecoverSubComm_InitFlagTrue)
 TEST_F(CommunicatorImplTest, RecoverComm_SubCommNormalCase)
 {
     // 打桩所有初始化函数，使其返回成功
-    MOCKER(HrtSetDevice).stubs().with(any()).will(ignoreReturnValue());
+    MOCKER(HrtSetDevice).stubs().with(any()).will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
     MOCKER(HrtOpenTsdProcess).stubs().with(any(), any()).will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER(HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue(static_cast<DevId>(1)));

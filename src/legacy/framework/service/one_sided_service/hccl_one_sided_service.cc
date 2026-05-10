@@ -259,11 +259,13 @@ HcclResult HcclOneSidedService::BatchPutGetDevBufs(const HcclOneSideOpDesc *desc
     devBatchPutGetLocalBufs  = make_shared<DevBuffer>(sizeof(HcclAicpuLocBufLite) * descNum);
     devBatchPutGetRemoteBufs = make_shared<DevBuffer>(sizeof(HcclAicpuLocBufLite) * descNum);
 
-    HrtMemcpy(reinterpret_cast<void *>(devBatchPutGetLocalBufs->GetAddr()), devBatchPutGetLocalBufs->GetSize(),
+    void* localBufPtr = reinterpret_cast<void *>(devBatchPutGetLocalBufs->GetAddr());
+    void* remoteBufPtr = reinterpret_cast<void *>(devBatchPutGetRemoteBufs->GetAddr());
+    HrtMemcpy(localBufPtr, devBatchPutGetLocalBufs->GetSize(),
               static_cast<void *>(hostBatchPutGetLocalBufferSliceBufs.data()), sizeof(HcclAicpuLocBufLite) * descNum,
               RT_MEMCPY_HOST_TO_DEVICE);
 
-    HrtMemcpy(reinterpret_cast<void *>(devBatchPutGetRemoteBufs->GetAddr()), devBatchPutGetRemoteBufs->GetSize(),
+    HrtMemcpy(remoteBufPtr, devBatchPutGetRemoteBufs->GetSize(),
               static_cast<void *>(hostBatchPutGetRemoteBufferSliceBufs.data()), sizeof(HcclAicpuLocBufLite) * descNum,
               RT_MEMCPY_HOST_TO_DEVICE);
 
@@ -430,7 +432,8 @@ DevBuffer *HcclOneSidedService::PackResToKernelLanuch(CollAlgOpReq &opReq)
     shared_ptr<DevBuffer> devMem = make_shared<DevBuffer>(buffer.size()); // 申请device内存
 
     HCCL_INFO("[HcclOneSidedService][PackResToKernelLanuch], HrtMemSyncCopy start");
-    HrtMemcpy(reinterpret_cast<void *>(devMem->GetAddr()), devMem->GetSize(), buffer.data(), buffer.size(),
+    void* devMemPtr = reinterpret_cast<void *>(devMem->GetAddr());
+    HrtMemcpy(devMemPtr, devMem->GetSize(), buffer.data(), buffer.size(),
               RT_MEMCPY_HOST_TO_DEVICE); // H2D拷贝，将资源拷贝到device内存
     HCCL_INFO("HcclOneSidedService::BatchGet PackOpData: PackedData %s",
               Bytes2hex(buffer.data(), buffer.size()).c_str());
@@ -470,7 +473,7 @@ HcclResult HcclOneSidedService::BatchOpKernelLaunch(OpType opType, RankId remote
     auto it = oneSidedConns_.find(remoteRankId);
     if (it == oneSidedConns_.end()) {
         HCCL_ERROR("[HcclMemCommunication][BatchGet] Can't find oneSidedConn by remoteRank %u", remoteRankId);
-        throw out_of_range("Can't find oneSidedConn by remoteRank.");
+        return HCCL_E_NOT_FOUND;
     }
     HCCL_INFO("[HcclOneSidedService][BatchOpKernelLaunch] BatchPutGetDevBufs start");
     CHK_RET(BatchPutGetDevBufs(desc, descNum, it->second));
@@ -496,7 +499,7 @@ HcclResult HcclOneSidedService::BatchPut(RankId remoteRankId, const HcclOneSideO
     auto it = oneSidedConns_.find(remoteRankId);
     if (it == oneSidedConns_.end()) {
         HCCL_ERROR("[HcclMemCommunication][BatchPut] Can't find oneSidedConn by remoteRank %u", remoteRankId);
-        throw out_of_range("Can't find oneSidedConn by remoteRank.");
+        return HCCL_E_NOT_FOUND;
     }
 
     HCCL_INFO("[HcclOneSidedService][BatchPut] BatchOpKernelLaunch start");
@@ -512,7 +515,7 @@ HcclResult HcclOneSidedService::BatchGet(RankId remoteRankId, const HcclOneSideO
     auto it = oneSidedConns_.find(remoteRankId);
     if (it == oneSidedConns_.end()) {
         HCCL_ERROR("[HcclMemCommunication][BatchGet] Can't find oneSidedConn by remoteRank %u", remoteRankId);
-        throw out_of_range("Can't find oneSidedConn by remoteRank.");
+        return HCCL_E_NOT_FOUND;
     }
 
     HCCL_INFO("[HcclOneSidedService][BatchGet] BatchOpKernelLaunch start");

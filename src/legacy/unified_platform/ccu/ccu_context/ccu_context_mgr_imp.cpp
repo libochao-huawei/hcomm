@@ -669,8 +669,14 @@ void CtxMgrImp::LoadInstruction(CcuRep::CcuInstrInfo &instrInfo, uint32_t dieId)
         }
         HCCL_INFO("[CtxMgrImp]LoadInstruction: deviceLogicId[%d], instrNum[%u]", deviceLogicId_, instrNum);
         // rt接口申请device内存
-        instructionLoadDevMem_ = HrtMalloc(instrNum * sizeof(CcuInstr),
-										   static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH));
+        void* instrPtr = nullptr;
+        HcclResult ret = HrtMalloc(instrPtr, instrNum * sizeof(CcuInstr),
+                                   static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH));
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("HrtMalloc failed for instructionLoadDevMem_");
+            THROW<CcuApiException>("HrtMalloc failed for instructionLoadDevMem_");
+        }
+        instructionLoadDevMem_ = instrPtr;
     }
 
     // rt接口memcpySync

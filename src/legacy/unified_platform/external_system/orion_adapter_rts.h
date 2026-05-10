@@ -223,25 +223,25 @@ DevId     HrtGetDevicePhyIdByIndex(s32 deviceLogicId);
 HcclResult HrtGetDeviceType(DevType& type);
 s32     HrtDeviceGetBareTgid();
 void    HrtGetSocVer(std::string &socName);
-s32     HrtGetDevice();
+HcclResult HrtGetDevice(s32& deviceId);
 // 非主线程使用rts添加task情况下，需要先使用该函数通知RTS，将线程和 device logic id绑定
-void                  HrtSetDevice(s32 deviceLogicId);
-void                  HrtResetDevice(s32 deviceLogicId);
+HcclResult            HrtSetDevice(s32 deviceLogicId);
+HcclResult            HrtResetDevice(s32 deviceLogicId);
 HcclResult            HrtGetDeviceCount(u32& count);
 HcclResult HrtGetDeviceInfo(uint32_t deviceLogicId, int32_t moduleType, aclrtDevAttr infoType, int64_t &val);
 HcclResult HrtGetMainboardId(uint32_t deviceLogicId, HcclMainboardId &hcclMainboardId);
-aclrtStream HrtStreamCreateWithFlags(uint32_t priority, uint32_t flag);
-void       HrtStreamDestroy(aclrtStream ptr);
+HcclResult HrtStreamCreateWithFlags(uint32_t priority, uint32_t flag, aclrtStream& stream);
+HcclResult HrtStreamDestroy(aclrtStream ptr);
 void       HrtStreamSetMode(HcclRtStream streamPtr, const uint64_t stmMode);
 u64        HrtStreamGetMode(HcclRtStream const ptr);
-void       HcclStreamSynchronize(HcclRtStream ptr);
+HcclResult HcclStreamSynchronize(HcclRtStream ptr);
 s32        HrtGetStreamId(aclrtStream ptr);
 void       HrtStreamActive(aclrtStream activeStream, aclrtStream stream);
 
-void                 *HrtMalloc(u64 size, aclrtMemType_t memType);
-void                  HrtFree(void *devPtr);
-void                  HrtMemcpy(void *dst, uint64_t destMax, const void *src, uint64_t count, rtMemcpyKind_t kind);
-void                  HrtMemset(void *dst, uint64_t destMax, uint64_t count);
+HcclResult            HrtMalloc(void*& ptr, u64 size, aclrtMemType_t memType);
+HcclResult            HrtFree(void *devPtr);
+HcclResult            HrtMemcpy(void*& dst, uint64_t destMax, const void *src, uint64_t count, rtMemcpyKind_t kind);
+HcclResult            HrtMemset(void*& ptr, u64 count, s32 value);
 void                  HrtIpcSetMemoryName(void *ptr, char_t *name, u64 ptrMaxLen, u32 nameMaxLen);
 void                  HrtIpcDestroyMemoryName(const char_t *name);
 void                 *HrtIpcOpenMemory(const char_t *name);
@@ -256,7 +256,7 @@ void *HrtMallocHost(u64 size);
 void  HrtFreeHost(void *hostPtr);
 
 // rts notify manager api
-aclrtNotify HrtNotifyCreate(s32 deviceLogicId);
+HcclResult HrtNotifyCreate(s32 deviceLogicId, aclrtNotify& handle);
 aclrtNotify HrtNotifyCreateWithFlag(u32 devId, u32 flag);
 void       HrtNotifyDestroy(RtNotify_t ptr);
 void       HrtIpcSetNotifyName(RtNotify_t ptr, char_t *name, uint32_t len);
@@ -270,7 +270,7 @@ u32       HrtNotifyGetOffset(RtNotify_t ptr);
 
 // rts notify task api
 void HrtNotifyWaitWithTimeOut(RtNotify_t notifyPtr, aclrtStream streamPtr, uint32_t timeOut);
-void HrtNotifyRecord(RtNotify_t notifyPtr, aclrtStream streamPtr);
+HcclResult HrtNotifyRecord(RtNotify_t notifyPtr, aclrtStream streamPtr);
 
 // rts memcpy task api
 void HrtMemAsyncCopy(void *dst, uint64_t destMax, const void *src, uint64_t count, aclrtMemcpyKind kind,

@@ -131,7 +131,8 @@ inline WithNotifyIn GetFinWithNotify(const INS_TYPE &ins, BaseMemTransport &tran
                                               ins.GetBitValue());
     } else {
         string msg = StringFormat("only support NORMAL or COUNTER notifyType, ins=%s", ins.Describe().c_str());
-        MACRO_THROW(NotSupportException, msg);
+        HCCL_ERROR("%s", msg.c_str());
+        return WithNotifyIn(TransportNotifyType::NORMAL, 0);
     }
 }
 
@@ -355,7 +356,8 @@ void Interpret(const InsLocalPostTo &insLocalPostTo, CommunicatorImpl &comm, con
     } else {
         string msg = StringFormat("only support NORMAL or COUNTER notifyType, %s",
                                   insLocalPostTo.GetNotifyType().Describe().c_str());
-        MACRO_THROW(NotSupportException, msg);
+        HCCL_ERROR("%s", msg.c_str());
+        return;
     }
  
     taskParam.taskType = TaskParamType::TASK_NOTIFY_RECORD;
@@ -391,7 +393,8 @@ void Interpret(const InsLocalWaitFrom &insLocalWaitFrom, CommunicatorImpl &comm,
     } else {
         string msg = StringFormat("only support NORMAL or COUNTER notifyType, %s",
                                   insLocalWaitFrom.GetNotifyType().Describe().c_str());
-        MACRO_THROW(NotSupportException, msg);
+        HCCL_ERROR("%s", msg.c_str());
+        return;
     }
 
     taskParam.taskType = TaskParamType::TASK_NOTIFY_WAIT;
@@ -609,7 +612,13 @@ static void ReportCcuProfilingInfo(uint64_t execId, std::vector<CcuProfilingInfo
 static void GetCcuProfilingInfo(const CcuInstruction &ccuInstruction, const vector<vector<CcuTaskParam>> &ccuParams,
                                 std::vector<std::vector<CcuProfilingInfo>> &ccuProfilingInfo)
 {
-    HcclResult res = CcuCtxMgr::GetProfilingInfo(HrtGetDevice(), *(ccuInstruction.GetTaskArg()), ccuInstruction.GetExecId(), ccuProfilingInfo);
+    s32 deviceId;
+    HcclResult res = HrtGetDevice(deviceId);
+    if (res != HCCL_SUCCESS) {
+        string msg = StringFormat("GetCcuProfilingInfo HrtGetDevice failed, res[%d]", res);
+        THROW<NotSupportException>(msg);
+    }
+    res = CcuCtxMgr::GetProfilingInfo(deviceId, *(ccuInstruction.GetTaskArg()), ccuInstruction.GetExecId(), ccuProfilingInfo);
     if (res != HcclResult::HCCL_SUCCESS) {
         string msg = StringFormat("Get ccu profiling info failed, res[%d]", res);
         THROW<NotSupportException>(msg);

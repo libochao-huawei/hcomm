@@ -122,9 +122,10 @@
 
 namespace Hccl {
 
-void *HrtMalloc(u64 size, aclrtMemType_t memType)
+HcclResult HrtMalloc(void*& ptr, u64 size, aclrtMemType_t memType)
 {
-    return (void *)0x12345678;
+    ptr = (void *)0x12345678;
+    return HCCL_SUCCESS;
 }
 
 RdmaHandleManager::RdmaHandleManager()
@@ -2304,10 +2305,11 @@ s32 HrtGetStreamId(aclrtStream ptr)
     return 0;
 }
 
-aclrtStream HrtStreamCreateWithFlags(uint32_t priority, uint32_t flag)
+HcclResult HrtStreamCreateWithFlags(uint32_t priority, uint32_t flag, aclrtStream& stream)
 {
-    static aclrtStream stream;
-    return stream;
+    static aclrtStream tmpStream;
+    stream = tmpStream;
+    return HCCL_SUCCESS;
 }
 
 void HrtStreamSetMode(HcclRtStream streamPtr, const uint64_t stmMode)
@@ -2335,9 +2337,9 @@ void HrtSetIpcNotifyPid(aclrtNotify notify, int32_t pid)
     return;
 }
 
-void HrtStreamDestroy(aclrtStream ptr)
+HcclResult HrtStreamDestroy(aclrtStream ptr)
 {
-    return;
+    return HCCL_SUCCESS;
 }
 
 void HrtIpcSetNotifyName(RtNotify_t ptr, char_t *name, uint32_t len)
@@ -2351,10 +2353,11 @@ aclrtNotify HrtNotifyCreateWithFlag(u32 devId, u32 flag)
     return notify;
 }
 
-aclrtNotify HrtNotifyCreate(s32 deviceLogicId)
+HcclResult HrtNotifyCreate(s32 deviceLogicId, aclrtNotify& handle)
 {
     static aclrtNotify notify;
-    return notify;
+    handle = notify;
+    return HCCL_SUCCESS;
 }
 
 u64 HrtNotifyGetAddr(RtNotify_t notifyHandle)
@@ -2372,9 +2375,9 @@ u32 HrtStreamGetSqId(const aclrtStream ptr)
     return 0;
 }
 
-void HrtNotifyRecord(RtNotify_t notifyPtr, aclrtStream streamPtr)
+HcclResult HrtNotifyRecord(RtNotify_t notifyPtr, aclrtStream streamPtr)
 {
-    return;
+    return HCCL_SUCCESS;
 }
 
 void HrtNotifyWaitWithTimeOut(RtNotify_t notifyPtr, aclrtStream streamPtr, uint32_t timeOut)

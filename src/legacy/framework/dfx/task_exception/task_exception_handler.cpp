@@ -111,8 +111,10 @@ static std::pair<u32, u32> GetOpCounter(const TaskInfo& taskInfo)
         u64 size = 4;
         void *headAddr = reinterpret_cast<void *>(taskInfo.dfxOpInfo_->headOpCounterAddr_);
         void *tailAddr = reinterpret_cast<void *>(taskInfo.dfxOpInfo_->tailOpCounterAddr_);
-        HrtMemcpy(&floatCounter.first, size, headAddr, size, RT_MEMCPY_DEVICE_TO_HOST);
-        HrtMemcpy(&floatCounter.second, size, tailAddr, size, RT_MEMCPY_DEVICE_TO_HOST);
+        void* firstPtr = &floatCounter.first;
+        void* secondPtr = &floatCounter.second;
+        HrtMemcpy(firstPtr, size, headAddr, size, RT_MEMCPY_DEVICE_TO_HOST);
+        HrtMemcpy(secondPtr, size, tailAddr, size, RT_MEMCPY_DEVICE_TO_HOST);
     }
 
     std::pair<u32, u32> counter;

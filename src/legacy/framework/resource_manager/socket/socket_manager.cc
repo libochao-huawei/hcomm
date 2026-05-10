@@ -149,7 +149,8 @@ void SocketManager::ServerInit(PortData &localPort)
         HCCL_RUN_INFO("[SocketManager::%s] Local %s listen the port %u success", __func__, localPort.Describe().c_str(), serverListenPort);
     } else {
         string msg = StringFormat("[SocketManager::%s] Local %s listen the port %u failed, maybe other process be listen it", __func__, localPort.Describe().c_str(), serverListenPort);
-        MACRO_THROW(InvalidParamsException, msg);
+        HCCL_ERROR("%s", msg.c_str());
+        return;
     }
     serverSocketMap[localPort] = std::move(serverSocket);
 }
@@ -166,7 +167,12 @@ void SocketManager::ServerInitAll(NewRankInfo &rankInfo)
     PhyTopoBuilder::GetInstance().Build(topoPath);
 
     std::lock_guard<std::mutex> lock(socketLock);
-    auto devLogicId = HrtGetDevice();
+    s32 devLogicId;
+    HcclResult res = HrtGetDevice(devLogicId);
+    if (res != HCCL_SUCCESS) {
+        HCCL_ERROR("[SocketManager] HrtGetDevice failed, res[%d].", res);
+        return;
+    }
     auto &serverSocketMap = SocketManager::GetServerSocketMap();
     u32 rankId = rankInfo.rankId;
     u32 localId = rankInfo.localId;

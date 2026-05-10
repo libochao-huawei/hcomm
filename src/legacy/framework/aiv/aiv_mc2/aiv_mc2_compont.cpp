@@ -86,7 +86,9 @@ void AivMc2Compont::GenerateCommContext(void **commContext)
     }
     auto paramSize      = sizeof(HcclCombinOpParam);
     combinOpParamBuffer = std::make_shared<DevBuffer>(paramSize);
-    HrtMemcpy(reinterpret_cast<void *>(combinOpParamBuffer->GetAddr()), paramSize, static_cast<void *>(&combinOpParam),
+    void* combinOpParamBufPtr = reinterpret_cast<void *>(combinOpParamBuffer->GetAddr());
+    void* combinOpParamPtr = static_cast<void *>(&combinOpParam);
+    HrtMemcpy(combinOpParamBufPtr, paramSize, combinOpParamPtr,
         paramSize, RT_MEMCPY_HOST_TO_DEVICE);
     *commContext = reinterpret_cast<void *>(combinOpParamBuffer->GetAddr());
 }

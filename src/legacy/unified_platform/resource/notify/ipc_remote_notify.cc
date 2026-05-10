@@ -48,7 +48,10 @@ IpcRemoteNotify::IpcRemoteNotify(const Serializable &rmtDto) : BaseRemoteNotify(
 
 void IpcRemoteNotify::Post(const Stream &stream) const
 {
-    HrtNotifyRecord(handle, stream.GetPtr());
+    HcclResult res = HrtNotifyRecord(handle, stream.GetPtr());
+    if (res != HCCL_SUCCESS) {
+        HCCL_ERROR("[IpcRemoteNotify::Post] HrtNotifyRecord failed, res[%d].", res);
+    }
 }
 
 string IpcRemoteNotify::Describe() const

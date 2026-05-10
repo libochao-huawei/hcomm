@@ -14,14 +14,24 @@
 #include "binary_stream.h"
 namespace Hccl {
 
-RtsNotify::RtsNotify(bool devUsed) : devPhyId(HrtGetDevicePhyIdByIndex(HrtGetDevice())), devUsed(devUsed)
+RtsNotify::RtsNotify(bool devUsed) : devPhyId(0), devUsed(devUsed)
 {
-    s32 deviceID = HrtGetDevice();
+    s32 deviceID;
+    HcclResult res = HrtGetDevice(deviceID);
+    if (res != HCCL_SUCCESS) {
+        HCCL_ERROR("[RtsNotify] HrtGetDevice failed, res[%d].", res);
+        return;
+    }
+    devPhyId = HrtGetDevicePhyIdByIndex(deviceID);
 
     if (devUsed) {
         handle = HrtNotifyCreateWithFlag(deviceID, ACL_NOTIFY_DEVICE_USE_ONLY);
     } else {
-        handle = HrtNotifyCreate(deviceID);
+        res = HrtNotifyCreate(deviceID, handle);
+        if (res != HCCL_SUCCESS) {
+            HCCL_ERROR("[RtsNotify] HrtNotifyCreate failed, res[%d].", res);
+            return;
+        }
     }
 
     id = HrtGetNotifyID(handle);
@@ -93,7 +103,10 @@ void RtsNotify::Wait(const Stream &stream, u32 timeout) const
 
 void RtsNotify::Post(const Stream &stream) const
 {
-    HrtNotifyRecord(handle, stream.GetPtr());
+    HcclResult res = HrtNotifyRecord(handle, stream.GetPtr());
+    if (res != HCCL_SUCCESS) {
+        HCCL_ERROR("[RtsNotify::Post] HrtNotifyRecord failed, res[%d].", res);
+    }
 }
 
 string RtsNotify::Describe() const

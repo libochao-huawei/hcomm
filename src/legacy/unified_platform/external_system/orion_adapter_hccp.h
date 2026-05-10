@@ -75,8 +75,8 @@ struct HRaInitConfig {
     uint32_t       hdcType{DEFAULT_HDC_TYPE};
 };
 
-void HrtRaInit(HRaInitConfig &cfg);
-void HrtRaDeInit(HRaInitConfig &cfg);
+HcclResult HrtRaInit(HRaInitConfig &cfg);
+HcclResult HrtRaDeInit(HRaInitConfig &cfg);
 
 struct HRaTlvInitConfig  {
     HrtNetworkMode mode;
@@ -103,8 +103,8 @@ struct RaInterface {
     IpAddress address;
 };
 
-SocketHandle HrtRaSocketInit(HrtNetworkMode netMode, RaInterface &in);
-void         HrtRaSocketDeInit(SocketHandle socketHandle);
+HcclResult HrtRaSocketInit(HrtNetworkMode netMode, RaInterface &in, SocketHandle &socketHandle);
+HcclResult HrtRaSocketDeInit(SocketHandle socketHandle);
 
 struct RaSocketListenParam {
     SocketHandle socketHandle; /**< socket handle */
@@ -193,8 +193,8 @@ using CqInfo = struct CqInfoDef {
         rqEvent(rqEvent), srqContext(srqContext), sendChannel(sendChannel), recvChannel(recvChannel) {}
 };
 
-void HrtRaSocketListenOneStart(RaSocketListenParam &in);
-void HrtRaSocketListenOneStop(RaSocketListenParam &in);
+HcclResult HrtRaSocketListenOneStart(RaSocketListenParam &in);
+HcclResult HrtRaSocketListenOneStop(RaSocketListenParam &in);
 bool HrtRaSocketTryListenOneStart(RaSocketListenParam &in);
 
 void HrtRaSocketSetWhiteListStatus(u32 enable);
@@ -229,8 +229,8 @@ struct RaSocketCloseParam {
     }
 };
 
-void HrtRaSocketConnectOne(RaSocketConnectParam &in);
-void HrtRaSocketCloseOne(RaSocketCloseParam &in);
+HcclResult HrtRaSocketConnectOne(RaSocketConnectParam &in);
+HcclResult HrtRaSocketCloseOne(RaSocketCloseParam &in);
 
 struct RaSocketGetParam {
     SocketHandle socketHandle; /**< socket handle */
@@ -250,11 +250,11 @@ struct RaSocketFdHandleParam {
     {
     }
 };
-RaSocketFdHandleParam HrtRaBlockGetOneSocket(u32 role, RaSocketGetParam &param);
+HcclResult HrtRaBlockGetOneSocket(u32 role, RaSocketGetParam &param, RaSocketFdHandleParam &socketResult);
 
-void HrtRaSocketBlockSend(const FdHandle fdHandle, const void *data, u32 sendSize);
+HcclResult HrtRaSocketBlockSend(const FdHandle fdHandle, const void *data, u32 sendSize);
 bool HrtRaSocketNonBlockSend(const FdHandle fdHandle, void *data, u64 size, u64 *sentSize);
-void HrtRaSocketBlockRecv(const FdHandle fdHandle, void *data, u32 size);
+HcclResult HrtRaSocketBlockRecv(const FdHandle fdHandle, void *data, u32 size);
 
 vector<std::pair<std::string, IpAddress>> HrtGetHostIf(u32 devPhyId);
 vector<IpAddress>                         HrtGetDeviceIp(u32 devicePhyId, NetworkMode netWorkMode = NetworkMode::NETWORK_OFFLINE);
@@ -262,8 +262,8 @@ vector<IpAddress>                         HrtGetDeviceIp(u32 devicePhyId, Networ
 constexpr u32 RDMA_MEM_KEY_MAX_LEN  = 64; // 最大的memKey长度
 constexpr u32 RDMA_MEM_KEY_LEN_ROCE = 4;  // 暂定ROCE k的ey长度为4， 未来从HCCP新接口获取key真实长度
 
-RdmaHandle HrtRaRdmaInit(HrtNetworkMode netMode, RaInterface &in);
-void       HrtRaRdmaDeInit(RdmaHandle rdmaHandle, HrtNetworkMode netMode);
+HcclResult HrtRaRdmaInit(HrtNetworkMode netMode, RaInterface &in, RdmaHandle &rdmaHandle);
+HcclResult HrtRaRdmaDeInit(RdmaHandle rdmaHandle, HrtNetworkMode netMode);
 
 void HrtRaGetNotifyBaseAddr(RdmaHandle rdmaHandle, u64 *va, u64 *size);
 
@@ -273,9 +273,9 @@ constexpr s32 OPBASE_QP_MODE      = 2; // 单算子模式的QP(80)
 constexpr s32 OFFLINE_QP_MODE_EXT = 3; // 下沉模式(81)QP
 constexpr s32 OPBASE_QP_MODE_EXT  = 4; // 单算子模式(81)的QP
 
-QpHandle HrtRaQpCreate(RdmaHandle rdmaHandle, int flag, int qpMode);
+HcclResult HrtRaQpCreate(RdmaHandle rdmaHandle, int flag, int qpMode, QpHandle &connHandle);
 
-void HrtRaQpDestroy(QpHandle qpHandle);
+HcclResult HrtRaQpDestroy(QpHandle qpHandle);
 void HrtRaQpConnectAsync(QpHandle qpHandle, FdHandle fdHandle);
 int  HrtGetRaQpStatus(QpHandle qpHandle);
 

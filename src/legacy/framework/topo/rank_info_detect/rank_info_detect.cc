@@ -37,7 +37,11 @@ UniversalConcurrentMap<u32, volatile u32> RankInfoDetect::g_detectServerStatus_;
 
 RankInfoDetect::RankInfoDetect()
 {
-    devLogicId_ = HrtGetDevice();
+    HcclResult res = HrtGetDevice(devLogicId_);
+    if (res != HCCL_SUCCESS) {
+        HCCL_ERROR("[RankInfoDetect] HrtGetDevice failed, res[%d].", res);
+        return;
+    }
     u32 deviceNum = 0;
     HcclResult ret = HrtGetDeviceCount(deviceNum);
     CHK_PRT_THROW(ret != HCCL_SUCCESS || devLogicId_ >= static_cast<s32>(deviceNum),
@@ -193,7 +197,13 @@ void RankInfoDetect::SetupRankInfoDetectService(shared_ptr<Socket> serverSocket,
     g_detectServerStatus_.EmplaceAndUpdate(
         hostPort, [](volatile u32 &status) { status = RANKINFO_DETECT_SERVER_STATUS_RUNING; });
 
-    HrtSetDevice(devLogicId);
+    HcclResult ret = HrtSetDevice(devLogicId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[RankInfoDetect::%s] HrtSetDevice failed, ret[%d].", __func__, ret);
+        g_detectServerStatus_.EmplaceAndUpdate(hostPort,
+            [](volatile u32 &status) { status = RANKINFO_DETECT_SERVER_STATUS_ERROR; });
+        return;
+    }
     std::shared_ptr<RankInfoDetectService> rankInfoDetectService = make_shared<RankInfoDetectService>(devPhyId, serverSocket, identifier, wlistInfo);
 
     bool hasException = false;
@@ -201,9 +211,10 @@ void RankInfoDetect::SetupRankInfoDetectService(shared_ptr<Socket> serverSocket,
 
     // 若有异常则设置error状态退出
     if(hasException == true) {
-        g_detectServerStatus_.EmplaceAndUpdate(hostPort, 
+        g_detectServerStatus_.EmplaceAndUpdate(hostPort,
             [](volatile u32 &status) { status = RANKINFO_DETECT_SERVER_STATUS_ERROR; });
         HCCL_ERROR("[RankInfoDetect::%s] end, status error.", __func__);
+        (void)HrtResetDevice(devLogicId);
         return;
     }
 
@@ -216,16 +227,20 @@ void RankInfoDetect::SetupRankInfoDetectService(shared_ptr<Socket> serverSocket,
     // 确保root info流程先销毁server socket 再返回
     // 可能失败，需要将错误状态带出
     EXECEPTION_CATCH(serverSocket->Destroy(), hasException = true);
-    HrtResetDevice(devLogicId);
+    ret = HrtResetDevice(devLogicId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[RankInfoDetect::%s] HrtResetDevice failed, ret[%d].", __func__, ret);
+        hasException = true;
+    }
 
     // 若有异常则设置error状态退出
     if(hasException == true) {
-        g_detectServerStatus_.EmplaceAndUpdate(hostPort, 
+        g_detectServerStatus_.EmplaceAndUpdate(hostPort,
             [](volatile u32 &status) { status = RANKINFO_DETECT_SERVER_STATUS_ERROR; });
         HCCL_ERROR("[RankInfoDetect::%s] Destroy end, status error.", __func__);
         return;
     }
-    
+
     HCCL_INFO("[RankInfoDetect::%s] end.", __func__);
 }
 

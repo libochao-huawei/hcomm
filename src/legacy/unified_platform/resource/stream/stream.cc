@@ -21,36 +21,27 @@ Stream::Stream(aclrtStream ptr, bool isMaster) : ptr(ptr), selfOwned(false), isM
 
 Stream::Stream(bool deviceUsed, bool isMaster) : selfOwned(true), devUsed(deviceUsed), isMaster_(isMaster)
 {
-    try {
+    DECTOR_TRY_CATCH("Stream", {
         if (deviceUsed) {
-            ptr  = HrtStreamCreateWithFlags(HCCL_STREAM_PRIORITY_HIGH, ACL_STREAM_DEVICE_USE_ONLY);
+            (void)HrtStreamCreateWithFlags(HCCL_STREAM_PRIORITY_HIGH, ACL_STREAM_DEVICE_USE_ONLY, ptr);
             sqId = HrtStreamGetSqId(ptr);
             cqId = HrtStreamGetCqId(ptr);
         } else {
-            ptr = HrtStreamCreateWithFlags(HCCL_STREAM_PRIORITY_HIGH, ACL_STREAM_FAST_LAUNCH | ACL_STREAM_FAST_SYNC);
+            (void)HrtStreamCreateWithFlags(HCCL_STREAM_PRIORITY_HIGH, ACL_STREAM_FAST_LAUNCH | ACL_STREAM_FAST_SYNC, ptr);
             HrtStreamSetMode(ptr, STREAM_MODE_STOP_ON_FAILURE);
         }
         id = static_cast<u32>(HrtGetStreamId(ptr));
         InitDevPhyId();
-    } catch (RuntimeApiException &e) {
-        HCCL_ERROR("HrtGetStreamId failed: %s", e.what());
-        HrtStreamDestroy(ptr);
-        throw;
-    }
+    });
 }
 
 Stream::~Stream()
 {
-    try {
-        if (selfOwned) {
-            HrtStreamDestroy(ptr);
+    if (selfOwned) {
+        HcclResult ret = HrtStreamDestroy(ptr);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[Stream::~Stream] HrtStreamDestroy failed, ret[%d], ptr[%p].", ret, ptr);
         }
-    } catch (HcclException &e) {
-        HCCL_ERROR("%s", e.what());
-    } catch (std::exception &e) {
-        HCCL_ERROR("%s", e.what());
-    } catch (...) {
-        HCCL_ERROR("Unknow Error occurs when destruct stream %d", id);
     }
 }
 
@@ -111,7 +102,13 @@ std::string Stream::Describe() const
 
 void Stream::InitDevPhyId()
 {
-    devPhyId = HrtGetDevicePhyIdByIndex(HrtGetDevice());
+    s32 deviceId;
+    HcclResult res = HrtGetDevice(deviceId);
+    if (res != HCCL_SUCCESS) {
+        HCCL_ERROR("[Stream::InitDevPhyId] HrtGetDevice failed, res[%d].", res);
+        return;
+    }
+    devPhyId = HrtGetDevicePhyIdByIndex(deviceId);
 }
 
 } // namespace Hccl

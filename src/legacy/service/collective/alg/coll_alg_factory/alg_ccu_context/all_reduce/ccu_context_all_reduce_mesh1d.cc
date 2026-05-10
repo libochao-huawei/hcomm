@@ -47,7 +47,12 @@ CcuContextAllReduceMesh1D::CcuContextAllReduceMesh1D(const CcuCtxArg            
         outputDataType_.Describe().c_str(), reduceOp_.Describe().c_str());
 
     // 判断device类型
-    int32_t devLogicId = HrtGetDevice();
+    int32_t devLogicId;
+    HcclResult res = HrtGetDevice(devLogicId);
+    if (res != HCCL_SUCCESS) {
+        HCCL_ERROR("[CcuContextAllReduceMesh1D] HrtGetDevice failed, res[%d].", res);
+        return;
+    }
     if (CcuDeviceManager::GetCcuVersion(devLogicId, ccuVersion_) != HcclResult::HCCL_SUCCESS) {
         THROW<CcuApiException>("Cannot get ccu version: %s", __func__);
     }

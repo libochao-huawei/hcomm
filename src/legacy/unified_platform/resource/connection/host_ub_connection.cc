@@ -67,7 +67,7 @@ HostUbCtpConnection::HostUbCtpConnection(const RdmaHandle rdmaHandle, const IpAd
     tpProtocol = TpProtocol::CTP;
 }
 
-std::vector<char> HostUbConnection::GetUniqueId() const
+HcclResult HostUbConnection::GetUniqueId(std::vector<char> &exchangeId) const
 {
     BinaryStream binaryStream;
     binaryStream << dieId;
@@ -77,7 +77,6 @@ std::vector<char> HostUbConnection::GetUniqueId() const
     bool dwqeCacheLocked = false; // 待修改，该jetty是否支持dwqeCachedLocked，默认不支持
     u32  jfcPollMode     = 0;     // 待修改，0代表STARS POLL，1代表software Poll
     u64  sqCiAddr = 0; // 待修改，软件poll CQ情况下，需要AICPU从该地址中读取CI,依赖UB驱动支持
-    std::vector<char> result;
     binaryStream << jfcPollMode;
     binaryStream << dwqeCacheLocked;
     binaryStream << dbAddr;
@@ -88,11 +87,11 @@ std::vector<char> HostUbConnection::GetUniqueId() const
     binaryStream << rmtEid.raw;
     binaryStream << locEid.raw;
 
-    binaryStream.Dump(result);
+    binaryStream.Dump(exchangeId);
     HCCL_INFO("HostUbConnection::GetUniqueId:%s", Describe().c_str());
     HCCL_INFO("type=%s, jfcPollMode=%u, dwqeCacheLocked=%d, sqCiAddr=0x%llx", rmaConnType.Describe().c_str(),
             jfcPollMode, dwqeCacheLocked, sqCiAddr);
-    return result;
+    return HCCL_SUCCESS;
 }
 
 void HostUbConnection::SetCqInfo(HcclAiRMACQ &cq)
@@ -172,12 +171,12 @@ RmaConnStatus HostUbConnection::GetStatus()
     return status;
 }
 
-std::unique_ptr<Serializable> HostUbConnection::GetExchangeDto()
+HcclResult HostUbConnection::GetExchangeDto(unique_ptr<Serializable> &exchangeDto)
 {
     if (status != RmaConnStatus::READY && status != RmaConnStatus::EXCHANGEABLE) {
         HCCL_ERROR("[HostUbConnection][%s] status[%s] is not expected.", __func__,
             status.Describe().c_str());
-        ThrowAbnormalStatus(std::string(__func__));
+        return HCCL_E_IN_STATUS;
     }
 
     if (tpProtocol != TpProtocol::INVALID) {
@@ -192,12 +191,13 @@ std::unique_ptr<Serializable> HostUbConnection::GetExchangeDto()
     errno_t ret = memcpy_s(dto->qpKey, HRT_UB_QP_KEY_MAX_LEN, repJetty_.key, HRT_UB_QP_KEY_MAX_LEN);
     if (ret != EOK) {
         HCCL_ERROR("[HostUbConnection][%s] memcpy_s failed, ret=%d", __func__, ret);
-        ThrowAbnormalStatus(std::string(__func__));
+        return HCCL_E_INTERNAL;
     }
-    return std::unique_ptr<Serializable>(dto.release());
+    exchangeDto.reset(dto.release());
+    return HCCL_SUCCESS;
 }
 
-void HostUbConnection::ParseRmtExchangeDto(const Serializable &rmtDto)
+HcclResult HostUbConnection::ParseRmtExchangeDto(const Serializable &rmtDto)
 {
     auto dto = dynamic_cast<const ExchangeUbConnDto &>(rmtDto);
     HCCL_INFO("[HostUbConnection][%s] remoteConnDto[%s]", __func__, dto.Describe().c_str());
@@ -205,7 +205,7 @@ void HostUbConnection::ParseRmtExchangeDto(const Serializable &rmtDto)
     errno_t ret = memcpy_s(remoteQpKey, HRT_UB_QP_KEY_MAX_LEN, dto.qpKey, HRT_UB_QP_KEY_MAX_LEN);
     if (ret != EOK) {
         HCCL_ERROR("[HostUbConnection][%s] memcpy_s failed, ret=%d", __func__, ret);
-        ThrowAbnormalStatus(std::string(__func__));
+        return HCCL_E_INTERNAL;
     }
 
     if (tpProtocol != TpProtocol::INVALID) {
@@ -214,24 +214,26 @@ void HostUbConnection::ParseRmtExchangeDto(const Serializable &rmtDto)
         HCCL_INFO("[HostUbConnection][%s] tpEnable, remoteTpHandle[0x%llx], remotePsn[%u].", __func__,
                 jettyImportCfg.remoteTpHandle, jettyImportCfg.remotePsn);
     }
+    return HCCL_SUCCESS;
 }
 
-void HostUbConnection::ImportRmtDto()
+HcclResult HostUbConnection::ImportRmtDto()
 {
     if (ubConnStatus == UbConnStatus::READY) {
         HCCL_WARNING("[HostUbConnection][%s] import jetty already, %s.",
                     __func__, Describe().c_str());
-        return;
+        return HCCL_SUCCESS;
     }
 
     if (ubConnStatus != UbConnStatus::JETTY_CREATED) {
         HCCL_ERROR("[HostUbConnection][%s] failed, ubConnStatus[%s] is not expected.",
             __func__, ubConnStatus.Describe().c_str());
-        ThrowAbnormalStatus(std::string(__func__));
+        return HCCL_E_IN_STATUS;
     }
 
     ImportJetty();
     ubConnStatus = UbConnStatus::JETTY_IMPORTING;
+    return HCCL_SUCCESS;
 }
 
 void HostUbConnection::ThrowAbnormalStatus(std::string funcName)
@@ -300,7 +302,12 @@ bool HostUbConnection::GetTpInfo()
         ThrowAbnormalStatus(std::string(__func__));
     }
 
-    int32_t devLogicId = HrtGetDevice();
+    int32_t devLogicId;
+    HcclResult res = HrtGetDevice(devLogicId);
+    if (res != HCCL_SUCCESS) {
+        HCCL_ERROR("[HostUbConnection] HrtGetDevice failed, res[%d].", res);
+        return false;
+    }
     TpManager::GetInstance(devLogicId).SetIsHost();
     auto ret = TpManager::GetInstance(devLogicId).GetTpInfo(
         {locAddr, rmtAddr, tpProtocol}, tpInfo);
@@ -352,7 +359,12 @@ void HostUbConnection::SetImportInfo()
 
 void HostUbConnection::ReleaseTp()
 {
-    int32_t devLogicId = HrtGetDevice();
+    int32_t devLogicId;
+    HcclResult res = HrtGetDevice(devLogicId);
+    if (res != HCCL_SUCCESS) {
+        HCCL_ERROR("[HostUbConnection] HrtGetDevice failed, res[%d].", res);
+        return;
+    }
     if (tpInfo.tpHandle != 0) {
         (void)TpManager::GetInstance(devLogicId)
             .ReleaseTpInfo({locAddr, rmtAddr, tpProtocol}, tpInfo);
@@ -380,11 +392,10 @@ HostUbConnection::~HostUbConnection()
     DECTOR_TRY_CATCH("HostUbConnection", ReleaseResource());
 }
 
-// Suspend接口当前已不使用，由框架调用触发析构流程
-bool HostUbConnection::Suspend()
+HcclResult HostUbConnection::Suspend()
 {
     HCCL_WARNING("[HostUbConnection][%s] should not be called.", __func__);
-    return true;
+    return HCCL_E_NOT_SUPPORT;
 }
 
 std::unique_ptr<BaseTask> HostUbConnection::ConstructTaskUbSend(const HrtRaUbSendWrRespParam &sendWrResp,
@@ -400,41 +411,48 @@ void HostUbConnection::ProcessSlices(const MemoryBuffer &loc, const MemoryBuffer
 {
 }
 
-unique_ptr<BaseTask> HostUbConnection::PrepareRead(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
-                                                const SqeConfig &config)
+HcclResult HostUbConnection::PrepareRead(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
+                                                const SqeConfig &config, unique_ptr<BaseTask> &task)
 {
     HCCL_INFO("[HostUbConnection::%s] not supported yet.", __func__);
-    return nullptr;
+    task = nullptr;
+    return HCCL_E_NOT_SUPPORT;
 }
 
-unique_ptr<BaseTask> HostUbConnection::PrepareReadReduce(const MemoryBuffer &remoteMemBuf,
+HcclResult HostUbConnection::PrepareReadReduce(const MemoryBuffer &remoteMemBuf,
                                                         const MemoryBuffer &localMemBuf, DataType dataType,
-                                                        ReduceOp reduceOp, const SqeConfig &config)
+                                                        ReduceOp reduceOp, const SqeConfig &config,
+                                                        unique_ptr<BaseTask> &task)
 {
     HCCL_INFO("[HostUbConnection::%s] not supported yet.", __func__);
-    return nullptr;
+    task = nullptr;
+    return HCCL_E_NOT_SUPPORT;
 }
 
-unique_ptr<BaseTask> HostUbConnection::PrepareWrite(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
-                                                const SqeConfig &config)
+HcclResult HostUbConnection::PrepareWrite(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
+                                                const SqeConfig &config, unique_ptr<BaseTask> &task)
 {
     HCCL_INFO("[HostUbConnection::%s] not supported yet.", __func__);
-    return nullptr;
+    task = nullptr;
+    return HCCL_E_NOT_SUPPORT;
 }
 
-unique_ptr<BaseTask> HostUbConnection::PrepareWriteReduce(const MemoryBuffer &remoteMemBuf,
+HcclResult HostUbConnection::PrepareWriteReduce(const MemoryBuffer &remoteMemBuf,
                                                         const MemoryBuffer &localMemBuf, DataType dataType,
-                                                        ReduceOp reduceOp, const SqeConfig &config)
+                                                        ReduceOp reduceOp, const SqeConfig &config,
+                                                        unique_ptr<BaseTask> &task)
 {
     HCCL_INFO("[HostUbConnection::%s] not supported yet.", __func__);
-    return nullptr;
+    task = nullptr;
+    return HCCL_E_NOT_SUPPORT;
 }
 
-unique_ptr<BaseTask> HostUbConnection::PrepareInlineWrite(const MemoryBuffer &remoteMemBuf, u64 data,
-                                                        const SqeConfig &config)
+HcclResult HostUbConnection::PrepareInlineWrite(const MemoryBuffer &remoteMemBuf, u64 data,
+                                                        const SqeConfig &config, unique_ptr<BaseTask> &task)
 {
     HCCL_INFO("[HostUbConnection::%s] not supported yet.", __func__);
-    return nullptr;
+    task = nullptr;
+    return HCCL_E_NOT_SUPPORT;
 }
 
 string HostUbConnection::Describe() const

@@ -77,7 +77,12 @@ HcclResult HDCommunicate::VerifyDeviceMemoryRegisterSupport()
     size_t outputLen = 0;
     struct supportFeaturePara input = { 0 };
     struct supportFeaturePara output = { 0 };
-    s32 deviceId = HrtGetDevice();
+    s32 deviceId;
+    HcclResult res = HrtGetDevice(deviceId);
+    if (res != HCCL_SUCCESS) {
+        HCCL_ERROR("[HDCommunicate] HrtGetDevice failed, res[%d].", res);
+        return res;
+    }
     input.support_feature = CTRL_SUPPORT_PCIE_BAR_MEM_MASK;
     input.devid = static_cast<unsigned int>(deviceId);
     halMemCtl(CTRL_TYPE_SUPPORT_FEATURE, &input, sizeof(struct supportFeaturePara), &output, &outputLen);
@@ -266,7 +271,8 @@ HcclResult HDCommunicate::AllocShm()
     // 共享内存size需要按照4K(4*1024=4096)对齐
     size_t size = (buffLen + HCCL_HDC_CONTROL_WORDS * sizeof(u32) + HCCL_SHM_ALIGN - 1) / HCCL_SHM_ALIGN * HCCL_SHM_ALIGN;
     devMem = std::make_unique<DevBuffer>(size);
-    HrtMemset(reinterpret_cast<void *>(devMem->GetAddr()), devMem->GetSize(), devMem->GetSize());
+    void* tmpPtr = reinterpret_cast<void *>(devMem->GetAddr());
+    HrtMemset(tmpPtr, devMem->GetSize(), 0);
 
     if (supportDevMemReg) {
         void *hostAddr = nullptr;
@@ -293,7 +299,8 @@ HcclResult HDCommunicate::AllocReadCache()
         readCacheAddr = reinterpret_cast<void *>(hostCache->GetAddr());
     } else {
         devCache = std::make_unique<DevBuffer>(devMem->GetSize());
-        HrtMemset(reinterpret_cast<void *>(devCache->GetAddr()), devCache->GetSize(), devCache->GetSize());
+        void* tmpPtr = reinterpret_cast<void *>(devCache->GetAddr());
+        HrtMemset(tmpPtr, devCache->GetSize(), 0);
         readCacheAddr = reinterpret_cast<void *>(devCache->GetAddr());
     }
     return HCCL_SUCCESS;

@@ -55,7 +55,12 @@ RdmaHandle RdmaHandleManager::Create(u32 devPhyId, const PortData &localPort)
         netMode = HrtNetworkMode::PEER;
     }
 
-    RdmaHandle rdmaHandle = HrtRaRdmaInit(netMode, intf);
+    RdmaHandle rdmaHandle = nullptr;
+    HcclResult ret = HrtRaRdmaInit(netMode, intf, rdmaHandle);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("HrtRaRdmaInit failed, ret=%d", ret);
+        return nullptr;
+    }
     rdmaHandleMap[devPhyId][localPort.GetProto()][localPort.GetAddr()] = rdmaHandle;
     netWorkModeMap[rdmaHandle] = netMode;
     return rdmaHandle;
@@ -68,14 +73,19 @@ RdmaHandle RdmaHandleManager::Create(u32 devPhyId, const LinkProtoType &localPro
     intf.address = localIp;
     intf.phyId   = devPhyId;
 
-    HCCL_INFO("RdmaHandleManager::Create, devPhyId[%u], LinkProtoType[%s], localIp[%s]", 
+    HCCL_INFO("RdmaHandleManager::Create, devPhyId[%u], LinkProtoType[%s], localIp[%s]",
         devPhyId, localProtocolType.Describe().c_str(), localIp.GetIpStr().c_str());
 
     HrtNetworkMode netMode = HrtNetworkMode::HDC;
     if (type == PortDeploymentType::HOST_NET) {
         netMode = HrtNetworkMode::PEER;
     }
-    RdmaHandle rdmaHandle = HrtRaRdmaInit(netMode, intf);
+    RdmaHandle rdmaHandle = nullptr;
+    HcclResult ret = HrtRaRdmaInit(netMode, intf, rdmaHandle);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("HrtRaRdmaInit failed, ret=%d", ret);
+        return nullptr;
+    }
     rdmaHandleMap[devPhyId][localProtocolType][localIp] = rdmaHandle;
     netWorkModeMap[rdmaHandle] = netMode;
     tokenInfoMap[rdmaHandle] = std::make_unique<TokenInfoManager>(devPhyId, rdmaHandle);
@@ -279,7 +289,10 @@ void RdmaHandleManager::DestroyAll()
         for (u32 j = 0; j < rdmaHandleMap[i].size(); ++j) {
             for (auto &handleIter : rdmaHandleMap[i][j]) {
                 if (j == RDMA_HANDLE_INDEX && handleIter.second != nullptr) {
-                    DECTOR_TRY_CATCH("rdma handle deinit", HrtRaRdmaDeInit(handleIter.second, netWorkModeMap[handleIter.second]));
+                    HcclResult ret = HrtRaRdmaDeInit(handleIter.second, netWorkModeMap[handleIter.second]);
+                    if (ret != HCCL_SUCCESS) {
+                        HCCL_ERROR("HrtRaRdmaDeInit failed, ret=%d", ret);
+                    }
                 }
                 if (j == UB_HANDLE_INDEX && handleIter.second != nullptr) {
                     if (tokenInfoMap[handleIter.second] != nullptr) {
@@ -335,7 +348,12 @@ void RdmaHandleManager::UboeIpv4ToEid(const IpAddress& ipV4Address, IpAddress& e
         return;
     }
 
-    s32 deviceLogicId = HrtGetDevice();
+    s32 deviceLogicId;
+    HcclResult res = HrtGetDevice(deviceLogicId);
+    if (res != HCCL_SUCCESS) {
+        HCCL_ERROR("[RdmaHandleManager] HrtGetDevice failed, res[%d].", res);
+        return;
+    }
     HRaInfo                      info(HrtNetworkMode::HDC, HrtGetDevicePhyIdByIndex(deviceLogicId));
     vector<HrtDevEidInfo> eidInfoList =  HrtRaGetDevEidInfoList(info);
     if (eidInfoList.empty()) {

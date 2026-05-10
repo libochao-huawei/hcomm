@@ -199,7 +199,10 @@ TEST_F(HcomutCommManagerTest, ut_hcomv2_backlog_group)
     s32 rankSize = 1;
     s32 rank = atoi(identify);
     u32 devLogicId = 0;
-    HrtSetDevice(devLogicId);
+    HcclResult ret = HrtSetDevice(devLogicId);
+    if (ret != HCCL_SUCCESS) {
+        return ret;
+    }
 
     nlohmann::json rank_table = rank_table_950_1server_8rank;
     char file_name_t[] = "./st_hcom_test_rank_table_1server_8rank_950.json";

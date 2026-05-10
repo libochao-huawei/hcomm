@@ -187,7 +187,12 @@ static void SubmitUbTask(unique_ptr<BaseTask> task, const Stream &stream)
 void UbMemTransport::SubmitNotify(const MemoryBuffer &rmtNotify, u64 data, const Stream &stream)
 {
     SqeConfig config;
-    SubmitUbTask(commonLocRes.connVec[0]->PrepareInlineWrite(rmtNotify, data, config), stream);
+    std::unique_ptr<BaseTask> task;
+    HcclResult ret = commonLocRes.connVec[0]->PrepareInlineWrite(rmtNotify, data, config, task);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("PrepareInlineWrite failed");
+    }
+    SubmitUbTask(std::move(task), stream);
 }
 
 void UbMemTransport::Post(u32 index, const Stream &stream)
@@ -227,8 +232,12 @@ void UbMemTransport::Read(const RmaBufferSlice &locSlice, const RmtRmaBufferSlic
 
     SqeConfig config;
     config.wqeMode = WqeMode::DWQE;
-    SubmitUbTask(commonLocRes.connVec[0]->PrepareRead(GetRmtMemBuffer(rmtSlice), GetLocMemBuffer(locSlice), config),
-                 stream);
+    std::unique_ptr<BaseTask> task;
+    HcclResult ret = commonLocRes.connVec[0]->PrepareRead(GetRmtMemBuffer(rmtSlice), GetLocMemBuffer(locSlice), config, task);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("PrepareRead failed");
+    }
+    SubmitUbTask(std::move(task), stream);
 
     taskParam.taskType = TaskParamType::TASK_RDMA;
     taskParam.endTime = DlProfFunc::GetInstance().dlMsprofSysCycleTime();
@@ -249,9 +258,13 @@ void UbMemTransport::ReadReduce(const RmaBufferSlice &locSlice, const RmtRmaBuff
 
     SqeConfig config;
     config.wqeMode = WqeMode::DWQE;
-    SubmitUbTask(commonLocRes.connVec[0]->PrepareReadReduce(GetRmtMemBuffer(rmtSlice), GetLocMemBuffer(locSlice),
-                                                            reduceIn.dataType, reduceIn.reduceOp, config),
-                 stream);
+    std::unique_ptr<BaseTask> task;
+    HcclResult ret = commonLocRes.connVec[0]->PrepareReadReduce(GetRmtMemBuffer(rmtSlice), GetLocMemBuffer(locSlice),
+        reduceIn.dataType, reduceIn.reduceOp, config, task);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("PrepareReadReduce failed");
+    }
+    SubmitUbTask(std::move(task), stream);
 
     taskParam.taskType = TaskParamType::TASK_UB_REDUCE_INLINE;
     taskParam.endTime = DlProfFunc::GetInstance().dlMsprofSysCycleTime();
@@ -272,8 +285,12 @@ void UbMemTransport::Write(const RmaBufferSlice &locSlice, const RmtRmaBufferSli
 
     SqeConfig config;
     config.wqeMode = WqeMode::DWQE;
-    SubmitUbTask(commonLocRes.connVec[0]->PrepareWrite(GetRmtMemBuffer(rmtSlice), GetLocMemBuffer(locSlice), config),
-                 stream);
+    std::unique_ptr<BaseTask> task;
+    HcclResult ret = commonLocRes.connVec[0]->PrepareWrite(GetRmtMemBuffer(rmtSlice), GetLocMemBuffer(locSlice), config, task);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("PrepareWrite failed");
+    }
+    SubmitUbTask(std::move(task), stream);
     taskParam.taskType = TaskParamType::TASK_RDMA;
     taskParam.endTime = DlProfFunc::GetInstance().dlMsprofSysCycleTime();
     taskParam.taskPara.DMA.src = reinterpret_cast<const void*>(locSlice.addr);
@@ -294,9 +311,13 @@ void UbMemTransport::WriteReduce(const RmaBufferSlice &locSlice, const RmtRmaBuf
 
     SqeConfig config;
     config.wqeMode = WqeMode::DWQE;
-    SubmitUbTask(commonLocRes.connVec[0]->PrepareWriteReduce(GetRmtMemBuffer(rmtSlice), GetLocMemBuffer(locSlice),
-                                                             reduceIn.dataType, reduceIn.reduceOp, config),
-                 stream);
+    std::unique_ptr<BaseTask> task;
+    HcclResult ret = commonLocRes.connVec[0]->PrepareWriteReduce(GetRmtMemBuffer(rmtSlice), GetLocMemBuffer(locSlice),
+        reduceIn.dataType, reduceIn.reduceOp, config, task);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("PrepareWriteReduce failed");
+    }
+    SubmitUbTask(std::move(task), stream);
 
     taskParam.taskType = TaskParamType::TASK_UB_REDUCE_INLINE;
     taskParam.endTime = DlProfFunc::GetInstance().dlMsprofSysCycleTime();
@@ -381,7 +402,12 @@ void UbMemTransport::SubmitWriteWithNotify(const MemoryBuffer &rmt, const Memory
 
     SqeConfig config;
     config.wqeMode = WqeMode::DWQE;
-    SubmitUbTask(commonLocRes.connVec[0]->PrepareWriteWithNotify(rmt, loc, data, rmtNotify, config), stream);
+    std::unique_ptr<BaseTask> task;
+    HcclResult ret = commonLocRes.connVec[0]->PrepareWriteWithNotify(rmt, loc, data, rmtNotify, config, task);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("PrepareWriteWithNotify failed");
+    }
+    SubmitUbTask(std::move(task), stream);
 
     taskParam.taskType = TaskParamType::TASK_WRITE_WITH_NOTIFY;
     taskParam.endTime = DlProfFunc::GetInstance().dlMsprofSysCycleTime();
@@ -404,9 +430,13 @@ void UbMemTransport::SubmitWriteReduceWithNotify(const MemoryBuffer &rmt, const 
 
     SqeConfig config;
     config.wqeMode = WqeMode::DWQE;
-    SubmitUbTask(commonLocRes.connVec[0]->PrepareWriteReduceWithNotify(rmt, loc, reduceIn.dataType, reduceIn.reduceOp,
-                                                                       data, rmtNotify, config),
-                 stream);
+    std::unique_ptr<BaseTask> task;
+    HcclResult ret = commonLocRes.connVec[0]->PrepareWriteReduceWithNotify(rmt, loc, reduceIn.dataType, reduceIn.reduceOp,
+        data, rmtNotify, config, task);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("PrepareWriteReduceWithNotify failed");
+    }
+    SubmitUbTask(std::move(task), stream);
 
     taskParam.taskType = TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY;
     taskParam.endTime = DlProfFunc::GetInstance().dlMsprofSysCycleTime();
@@ -653,8 +683,8 @@ void UbMemTransport::CntNotifyDescUnpack(BinaryStream &binaryStream)
     u32 descSize;
     binaryStream >> descSize;
     if (descSize != cntNotifyDescSize) {
-        MACRO_THROW(InvalidParamsException,
-                    StringFormat("CntNotifyDescUnpack size=%u is not equal to rmtNum=%u", descSize, cntNotifyDescSize));
+        HCCL_ERROR("CntNotifyDescUnpack size=%u is not equal to rmtNum=%u", descSize, cntNotifyDescSize);
+        return;
     }
     rmtCntNotifyDesc.clear();
     u32 pos = 0;
@@ -672,9 +702,9 @@ void UbMemTransport::RmtBufferVecUnpackProc(u32 locNum, BinaryStream &binaryStre
     u32 rmtNum;
     binaryStream >> rmtNum;
     if (UNLIKELY(type == UbRmtBufType::BUFFER && rmtNum > MAX_BUFFER_NUM)) {
-        MACRO_THROW(InvalidParamsException,
-            StringFormat("[UbMemTransport][RmtBufferVecUnpackProc] rmtNum[%u] exceeds limit[%u]",
-            rmtNum, MAX_BUFFER_NUM));
+        HCCL_ERROR("[UbMemTransport][RmtBufferVecUnpackProc] rmtNum[%u] exceeds limit[%u]",
+            rmtNum, MAX_BUFFER_NUM);
+        return;
     }
 
     // 允许本端和远端交换内存数量不一致
@@ -723,8 +753,8 @@ bool UbMemTransport::ConnVecUnpackProc(BinaryStream &binaryStream)
     binaryStream >> rmtConnNum;
     HCCL_INFO("start unpack conn %s connNum=%u, rmtConnNum=%u", GetLinkDescInfo().c_str(), connNum, rmtConnNum);
     if (connNum != rmtConnNum) {
-        MACRO_THROW(InvalidParamsException,
-                    StringFormat("connNum=%u is not equal to rmtConnNum=%u", connNum, rmtConnNum));
+        HCCL_ERROR("connNum=%u is not equal to rmtConnNum=%u", connNum, rmtConnNum);
+        return HCCL_E_PARA;
     }
 
     bool result = false; // 不需要发送 finish
@@ -779,7 +809,8 @@ void UbMemTransport::RecvFinish()
 std::vector<char> UbMemTransport::GetUniqueId()
 {
     if (baseStatus != TransportStatus::READY) {
-        MACRO_THROW(InternalException, StringFormat("transport status is not ready, please check"));
+        HCCL_ERROR("transport status is not ready, please check");
+        return std::vector<char>();
     }
     u32          type = static_cast<u32>(transportType);
     BinaryStream binaryStream;
@@ -809,8 +840,9 @@ std::vector<char> UbMemTransport::GetUniqueId()
 std::vector<char> UbMemTransport::GetUniqueIdV2()
 {
     if (baseStatus != TransportStatus::READY) {
-        MACRO_THROW(InternalException, StringFormat("transport status[%d] is not ready[%d], please check.",
-            baseStatus, TransportStatus::READY));
+        HCCL_ERROR("transport status[%d] is not ready[%d], please check.",
+            baseStatus, TransportStatus::READY);
+        return std::vector<char>();
     }
     u32          type = static_cast<u32>(transportType);
     BinaryStream binaryStream;
@@ -846,8 +878,9 @@ std::vector<char> UbMemTransport::GetUniqueIdV2()
 std::vector<char> UbMemTransport::PackConnData()
 {
     if (baseStatus != TransportStatus::READY) {
-        MACRO_THROW(InternalException, StringFormat("transport status[%d] is not ready[%d], please check.",
-            baseStatus, TransportStatus::READY));
+        HCCL_ERROR("transport status[%d] is not ready[%d], please check.",
+            baseStatus, TransportStatus::READY);
+        return std::vector<char>();
     }
     u32          type = static_cast<u32>(transportType);
     BinaryStream binaryStream;
@@ -929,7 +962,12 @@ std::vector<char> UbMemTransport::GetConnUniqueIds()
     std::vector<char> result(0);
     for (auto &it : commonLocRes.connVec) {
         HCCL_INFO("[UbMemTransport::%s] conn[%s]", __func__, it->Describe().c_str());
-        auto uniqueId = it->GetUniqueId();
+        std::vector<char> uniqueId;
+        HcclResult ret = it->GetUniqueId(uniqueId);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("GetUniqueId failed");
+            return result;
+        }
         result.insert(result.end(), uniqueId.begin(), uniqueId.end());
     }
     return result;

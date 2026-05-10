@@ -42,10 +42,10 @@ SocketHandle HostSocketHandleManager::Create(DevId devicePhyId, const IpAddress 
     }
 
     // 校验devicePhyId
-    CHK_PRT_THROW((devicePhyId > hostSocketHandleMap.size() - 1), 
+    CHK_PRT_THROW((devicePhyId > hostSocketHandleMap.size() - 1),
         HCCL_ERROR("[HostSocketHandleManager::%s] devicePhyId[%u] error", __func__, devicePhyId),
         InvalidParamsException, "devicePhyId error");
-    
+
     // 若socketHandle已存在，引用计数+1
     auto &handles = hostSocketHandleMap[devicePhyId];
     auto ip    = hostIp.GetIpStr();
@@ -61,11 +61,16 @@ SocketHandle HostSocketHandleManager::Create(DevId devicePhyId, const IpAddress 
     intf.phyId   = devicePhyId;
     intf.address = hostIp;
 
-    SocketHandle socketHandle = HrtRaSocketInit(HrtNetworkMode::PEER, intf);
+    SocketHandle socketHandle = nullptr;
+    HcclResult ret = HrtRaSocketInit(HrtNetworkMode::PEER, intf, socketHandle);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("HrtRaSocketInit failed, ret=%d", ret);
+        return nullptr;
+    }
     handles[ip] = std::make_pair(socketHandle, Referenced());
     handles[ip].second.Ref();
 
-    HCCL_INFO("[HostSocketHandleManager::%s] devicePhyId[%u] hostIp[%s] create end.", 
+    HCCL_INFO("[HostSocketHandleManager::%s] devicePhyId[%u] hostIp[%s] create end.",
         __func__, devicePhyId, hostIp.GetIpStr().c_str());
     return socketHandle;
 }
@@ -104,7 +109,10 @@ void HostSocketHandleManager::DestroyAll()
             u32 count = innerMap.second.second.Count();
             CHK_PRT_CONT(count != 0, HCCL_WARNING("[HostSocketHandleManager::%s] release is not as expected, "
                          "devicePhyId[%u] hostIp[%s] ref[%u]", __func__, i, innerMap.first.c_str(), count));
-            DECTOR_TRY_CATCH("HrtRaSocketDeInit Exception", HrtRaSocketDeInit(innerMap.second.first));
+            HcclResult ret = HrtRaSocketDeInit(innerMap.second.first);
+            if (ret != HCCL_SUCCESS) {
+                HCCL_ERROR("HrtRaSocketDeInit failed, ret=%d", ret);
+            }
         }
         hostSocketHandleMap[i].clear();
     }
@@ -120,13 +128,13 @@ void HostSocketHandleManager::Destroy(DevId devicePhyId, const IpAddress &hostIp
     }
 
     // 校验devicePhyId
-    CHK_PRT_THROW((devicePhyId > hostSocketHandleMap.size() - 1), 
+    CHK_PRT_THROW((devicePhyId > hostSocketHandleMap.size() - 1),
         HCCL_ERROR("[HostSocketHandleManager::%s] devicePhyId[%u] invalid", __func__, devicePhyId),
         InvalidParamsException, "devicePhyId invalid");
-    
+
     // 校验hostIp
-    CHK_PRT_THROW(hostSocketHandleMap[devicePhyId].count(hostIp.GetIpStr()) == 0, 
-        HCCL_ERROR("[HostSocketHandleManager::%s] devicePhyId[%u] hostIp[%s] dose not exist", 
+    CHK_PRT_THROW(hostSocketHandleMap[devicePhyId].count(hostIp.GetIpStr()) == 0,
+        HCCL_ERROR("[HostSocketHandleManager::%s] devicePhyId[%u] hostIp[%s] dose not exist",
         __func__, devicePhyId, hostIp.GetIpStr().c_str()), InvalidParamsException, "hostIp not exist");
 
     // 引用计数-1
@@ -135,14 +143,17 @@ void HostSocketHandleManager::Destroy(DevId devicePhyId, const IpAddress &hostIp
 
     // 打印
     u32 count = socketHandleRef.second.Count();
-    HCCL_INFO("[HostSocketHandleManager::%s] devicePhyId[%u] hostIp[%s] release one, ref[%u].", 
+    HCCL_INFO("[HostSocketHandleManager::%s] devicePhyId[%u] hostIp[%s] release one, ref[%u].",
         __func__, devicePhyId, hostIp.GetIpStr().c_str(), count);
 
     // 若引用计数为0则deinit
     if (count == 0) {
-        HrtRaSocketDeInit(socketHandleRef.first);
+        HcclResult ret = HrtRaSocketDeInit(socketHandleRef.first);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("HrtRaSocketDeInit failed, ret=%d", ret);
+        }
         hostSocketHandleMap[devicePhyId].erase(hostIp.GetIpStr());
-        HCCL_INFO("[HostSocketHandleManager::%s] devicePhyId[%u] hostIp[%s] deinit success.", 
+        HCCL_INFO("[HostSocketHandleManager::%s] devicePhyId[%u] hostIp[%s] deinit success.",
             __func__, devicePhyId, hostIp.GetIpStr().c_str());
     }
 }

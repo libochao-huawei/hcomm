@@ -435,7 +435,12 @@ void CollServiceDeviceMode::Resume()
     ccuTransportMgr->Confirm();
     HCCL_INFO("[CollServiceDeviceMode][%s] resource confirm end.", __func__);
 
-    int32_t devLogicId = HrtGetDevice();
+    int32_t devLogicId;
+    HcclResult res = HrtGetDevice(devLogicId);
+    if (res != HCCL_SUCCESS) {
+        HCCL_ERROR("[CollServiceDeviceMode][%s] HrtGetDevice failed, res[%d].", __func__, res);
+        return;
+    }
     for (uint8_t dieId = 0; dieId < MAX_CCU_IODIE_NUM; ++dieId) {
         CHK_RET_THROW(InternalException,
             StringFormat("[CollServiceDeviceMode][%s]Error occurs when call CcuCleanDieCkes, "
@@ -602,7 +607,11 @@ HcclResult CollServiceDeviceMode::GetAlgExecParam(bool clearEnable, u32 numBlock
 
     void *sendAlgParamMemPtr = nullptr;
     // alloc device 地址
-    sendAlgParamMemPtr = HrtMalloc(sizeof(AivSuperKernelArgs), static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH));
+    HcclResult ret = HrtMalloc(sendAlgParamMemPtr, sizeof(AivSuperKernelArgs), static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH));
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("HrtMalloc failed for sendAlgParamMemPtr");
+        return HCCL_E_MEMORY;
+    }
     CHK_PTR_NULL(sendAlgParamMemPtr);
     HCCL_INFO("SPK sendalgparam %p.", sendAlgParamMemPtr);
 

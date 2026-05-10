@@ -77,7 +77,9 @@ void Mc2Compont::AllocCommResource(void *mc2Tiling, void **commContext)
     if(combinOpParamBuffer == nullptr) {
         combinOpParamBuffer = std::make_shared<DevBuffer>(paramSize);
     }
-    HrtMemcpy(reinterpret_cast<void *>(combinOpParamBuffer->GetAddr()), paramSize, static_cast<void *>(&combinOpParam),
+    void* combinOpParamBufPtr = reinterpret_cast<void *>(combinOpParamBuffer->GetAddr());
+    void* combinOpParamPtr = static_cast<void *>(&combinOpParam);
+    HrtMemcpy(combinOpParamBufPtr, paramSize, combinOpParamPtr,
               paramSize, RT_MEMCPY_HOST_TO_DEVICE);
     *commContext = reinterpret_cast<void *>(combinOpParamBuffer->GetAddr());
     // 生成ccuServer指令，将注册得到的execId保存在curExecId，GetCcuTaskInfo时通过curExecId获取TaskParam

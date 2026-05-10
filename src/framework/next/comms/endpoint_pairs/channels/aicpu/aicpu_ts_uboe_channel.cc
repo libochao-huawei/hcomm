@@ -367,7 +367,12 @@ void AicpuTsUboeChannel::ConnVecPack(Hccl::BinaryStream &binaryStream)
     HCCL_INFO("[AicpuTsUboeChannel::%s] pack conn size[%d]", __func__, commonRes_.connVec.size());
     for (auto &it : commonRes_.connVec) {
         binaryStream << pos;
-        std::unique_ptr<Hccl::Serializable> dto = it->GetExchangeDto();
+        std::unique_ptr<Hccl::Serializable> dto;
+        HcclResult ret = it->GetExchangeDto(dto);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[AicpuTsUboeChannel::%s] GetExchangeDto failed.", __func__);
+            return;
+        }
         dto->Serialize(binaryStream);
         HCCL_INFO("[AicpuTsUboeChannel::%s] pack connection pos=%u, dto %s", 
             __func__, pos, dto->Describe().c_str());
@@ -691,7 +696,12 @@ std::vector<char> AicpuTsUboeChannel::GetConnUniqueIds()
     std::vector<char> result(0);
     for (auto &it : commonRes_.connVec) {
         HCCL_INFO("[AicpuTsUboeChannel::%s] conn[%s]", __func__, it->Describe().c_str());
-        auto uniqueId = it->GetUniqueId();
+        std::vector<char> uniqueId;
+        HcclResult ret = it->GetUniqueId(uniqueId);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[AicpuTsUboeChannel::%s] GetUniqueId failed.", __func__);
+            return {};
+        }
         result.insert(result.end(), uniqueId.begin(), uniqueId.end());
     }
     return result;

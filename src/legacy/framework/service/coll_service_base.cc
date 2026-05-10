@@ -314,8 +314,10 @@ std::pair<u32, u32> CollServiceBase::GetOpCount()
     }
     void *headAddr = reinterpret_cast<void *>(counterBuf->GetAddr() + size);
     void *tailAddr = reinterpret_cast<void *>(counterBuf->GetAddr() + size * 2);
-    HrtMemcpy(&floatCounter.first, size, headAddr, size, RT_MEMCPY_DEVICE_TO_HOST);
-    HrtMemcpy(&floatCounter.second, size, tailAddr, size, RT_MEMCPY_DEVICE_TO_HOST);
+    void* firstPtr = &floatCounter.first;
+    void* secondPtr = &floatCounter.second;
+    HrtMemcpy(firstPtr, size, headAddr, size, RT_MEMCPY_DEVICE_TO_HOST);
+    HrtMemcpy(secondPtr, size, tailAddr, size, RT_MEMCPY_DEVICE_TO_HOST);
 
     std::pair<u32, u32> counter;
     counter.first = static_cast<u32>(floatCounter.first);

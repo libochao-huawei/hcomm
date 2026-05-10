@@ -54,52 +54,61 @@ RemoteRmaBuffer *RmaConnection::GetRemoteRmaBuffer(const BufferType &bufType)
     }
 }
 
-unique_ptr<BaseTask> RmaConnection::PrepareRead(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
-                                                const SqeConfig &config)
+HcclResult RmaConnection::PrepareRead(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
+                                                const SqeConfig &config, unique_ptr<BaseTask> &task)
 {
-    MACRO_THROW(NotSupportException, StringFormat("RmaConnection not support this function."));
+    HCCL_ERROR("[RmaConnection::%s] not support.", __func__);
+    return HCCL_E_NOT_SUPPORT;
 }
 
-unique_ptr<BaseTask> RmaConnection::PrepareReadReduce(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
-                                                      DataType datatype, ReduceOp reduceOp, const SqeConfig &config)
+HcclResult RmaConnection::PrepareReadReduce(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
+                                                      DataType datatype, ReduceOp reduceOp, const SqeConfig &config,
+                                                      unique_ptr<BaseTask> &task)
 {
-    MACRO_THROW(NotSupportException, StringFormat("RmaConnection not support this function."));
+    HCCL_ERROR("[RmaConnection::%s] not support.", __func__);
+    return HCCL_E_NOT_SUPPORT;
 }
 
-unique_ptr<BaseTask> RmaConnection::PrepareWrite(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
-                                                 const SqeConfig &config)
+HcclResult RmaConnection::PrepareWrite(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
+                                                 const SqeConfig &config, unique_ptr<BaseTask> &task)
 {
-    MACRO_THROW(NotSupportException, StringFormat("RmaConnection not support this function."));
+    HCCL_ERROR("[RmaConnection::%s] not support.", __func__);
+    return HCCL_E_NOT_SUPPORT;
 }
 
-unique_ptr<BaseTask> RmaConnection::PrepareWriteReduce(const MemoryBuffer &remoteMemBuf,
+HcclResult RmaConnection::PrepareWriteReduce(const MemoryBuffer &remoteMemBuf,
                                                        const MemoryBuffer &localMemBuf, DataType datatype,
-                                                       ReduceOp reduceOp, const SqeConfig &config)
+                                                       ReduceOp reduceOp, const SqeConfig &config,
+                                                       unique_ptr<BaseTask> &task)
 {
-    MACRO_THROW(NotSupportException, StringFormat("RmaConnection not support this function."));
+    HCCL_ERROR("[RmaConnection::%s] not support.", __func__);
+    return HCCL_E_NOT_SUPPORT;
 }
 
-unique_ptr<BaseTask> RmaConnection::PrepareInlineWrite(const MemoryBuffer &remoteMemBuf, u64 data,
-                                                       const SqeConfig &config)
+HcclResult RmaConnection::PrepareInlineWrite(const MemoryBuffer &remoteMemBuf, u64 data,
+                                                       const SqeConfig &config, unique_ptr<BaseTask> &task)
 {
-    MACRO_THROW(NotSupportException, StringFormat("RmaConnection not support this function."));
+    HCCL_ERROR("[RmaConnection::%s] not support.", __func__);
+    return HCCL_E_NOT_SUPPORT;
 }
 
-unique_ptr<BaseTask> RmaConnection::PrepareWriteWithNotify(const MemoryBuffer &remoteMemBuf,
+HcclResult RmaConnection::PrepareWriteWithNotify(const MemoryBuffer &remoteMemBuf,
                                                            const MemoryBuffer &localMemBuf, u64 data,
                                                            const MemoryBuffer &remoteNotifyMemBuf,
-                                                           const SqeConfig    &config)
+                                                           const SqeConfig    &config, unique_ptr<BaseTask> &task)
 {
-    MACRO_THROW(NotSupportException, StringFormat("RmaConnection not support this function."));
+    HCCL_ERROR("[RmaConnection::%s] not support.", __func__);
+    return HCCL_E_NOT_SUPPORT;
 }
 
-unique_ptr<BaseTask> RmaConnection::PrepareWriteReduceWithNotify(const MemoryBuffer &remoteMemBuf,
-                                                                 const MemoryBuffer &localMemBuf, DataType datatype,
-                                                                 ReduceOp reduceOp, u64 data,
-                                                                 const MemoryBuffer &remoteNotifyMemBuf,
-                                                                 const SqeConfig    &config)
+HcclResult RmaConnection::PrepareWriteReduceWithNotify(const MemoryBuffer &remoteMemBuf,
+                                                                  const MemoryBuffer &localMemBuf, DataType datatype,
+                                                                  ReduceOp reduceOp, u64 data,
+                                                                  const MemoryBuffer &remoteNotifyMemBuf,
+                                                                  const SqeConfig    &config, unique_ptr<BaseTask> &task)
 {
-    MACRO_THROW(NotSupportException, StringFormat("RmaConnection not support this function."));
+    HCCL_ERROR("[RmaConnection::%s] not support.", __func__);
+    return HCCL_E_NOT_SUPPORT;
 }
 
 } // namespace Hccl

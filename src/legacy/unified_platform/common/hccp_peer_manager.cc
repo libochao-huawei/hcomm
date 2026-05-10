@@ -34,7 +34,11 @@ void HccpPeerManager::Init(s32 deviceLogicId)
     HRaInitConfig cfg;
     cfg.phyId = HrtGetDevicePhyIdByIndex(deviceLogicId);
     cfg.mode  = HrtNetworkMode::PEER;
-    HrtRaInit(cfg);
+    HcclResult ret = HrtRaInit(cfg);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("HrtRaInit failed, ret=%d", ret);
+        return;
+    }
 
     instances_[deviceLogicId].Ref();
     HCCL_INFO("[HccpPeerManager::%s] deviceLogicId[%d] ra init success.", __func__, deviceLogicId);
@@ -65,7 +69,10 @@ void HccpPeerManager::DeInit(s32 deviceLogicId)
         HRaInitConfig cfg;
         cfg.phyId = HrtGetDevicePhyIdByIndex(deviceLogicId);
         cfg.mode  = HrtNetworkMode::PEER;
-        HrtRaDeInit(cfg);
+        HcclResult ret = HrtRaDeInit(cfg);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("HrtRaDeInit failed, ret=%d", ret);
+        }
         instances_.erase(deviceLogicId);
         HCCL_INFO("[HccpPeerManager::%s] devLogicId [%d] ra deinit success.", __func__, deviceLogicId);
     }
@@ -83,7 +90,10 @@ void HccpPeerManager::DeInitAll()
         HRaInitConfig cfg;
         cfg.phyId = HrtGetDevicePhyIdByIndex(instance.first);
         cfg.mode  = HrtNetworkMode::PEER;
-        HrtRaDeInit(cfg);
+        HcclResult ret = HrtRaDeInit(cfg);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("HrtRaDeInit failed, ret=%d", ret);
+        }
         HCCL_INFO("[HccpPeerManager::%s] devLogicId [%d] ra deinit success.", __func__, instance.first);
     }
 

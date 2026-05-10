@@ -36,7 +36,13 @@ HcclResult CcuTransportGroup::CheckTransportCntCke()
 {
     HcclResult allocResHandleReturnValue = HcclResult::HCCL_SUCCESS;
 
-    TRY_CATCH_RETURN(allocResHandleReturnValue = CcuDeviceManager::AllocCke(HrtGetDevice(), 
+    s32 deviceId;
+    HcclResult res = HrtGetDevice(deviceId);
+    if (res != HCCL_SUCCESS) {
+        HCCL_ERROR("[CcuTransportGroup::CheckTransportCntCke] HrtGetDevice failed, res[%d].", res);
+        return res;
+    }
+    TRY_CATCH_RETURN(allocResHandleReturnValue = CcuDeviceManager::AllocCke(deviceId,
                     cntCkesGroupDieId, cntCkeNumTransportGroupUse, ckeInfoTransportGroupUse));
 
     if (allocResHandleReturnValue != HCCL_SUCCESS) {
@@ -94,7 +100,13 @@ CcuTransportGroup::~CcuTransportGroup()
     }
 
     // 调用ReleaseResHandle接口，用来释放cntResHandleTransportGroupUse
-    auto ret = CcuDeviceManager::ReleaseCke(HrtGetDevice(), cntCkesGroupDieId, ckeInfoTransportGroupUse);
+    s32 deviceId;
+    HcclResult res = HrtGetDevice(deviceId);
+    if (res != HCCL_SUCCESS) {
+        HCCL_ERROR("[CcuTransportGroup::~CcuTransportGroup] HrtGetDevice failed, res[%d].", res);
+        return;
+    }
+    auto ret = CcuDeviceManager::ReleaseCke(deviceId, cntCkesGroupDieId, ckeInfoTransportGroupUse);
     if (ret != HcclResult::HCCL_SUCCESS) {
         HCCL_ERROR("[CcuTransportGroup::%s] Release ckesRes failed, ret[%d], ckeInfo size is [%u]", __func__, ret, ckeInfoTransportGroupUse.size());
         for (auto& ckeInfo : ckeInfoTransportGroupUse) {

@@ -473,7 +473,12 @@ void RankInfoDetectClient::TearDown()
     HostSocketHandleManager::GetInstance().Destroy(devPhyId_, clientSocket_->GetLocalIp());
 
     // deinit ra
-    s32 deviceLogicId = HrtGetDevice();
+    s32 deviceLogicId;
+    HcclResult res = HrtGetDevice(deviceLogicId);
+    if (res != HCCL_SUCCESS) {
+        HCCL_ERROR("[RankInfoDetectClient] HrtGetDevice failed, res[%d].", res);
+        return;
+    }
     HccpPeerManager::GetInstance().DeInit(deviceLogicId);
 
     HCCL_INFO("[RankInfoDetectClient::%s] end.", __func__);

@@ -318,7 +318,8 @@ void RmaConnManager::BatchCreate(vector<LinkData> &links)
 bool RmaConnManager::IsSocketReady(Socket *socket, const LinkData &linkData)
 {
     if (socket == nullptr) {
-        MACRO_THROW(InternalException, StringFormat("%s socket is nullptr, please check", linkData.Describe().c_str()));
+        HCCL_ERROR("%s socket is nullptr, please check", linkData.Describe().c_str());
+        return false;
     }
 
     SocketStatus socketStatus = socket->GetAsyncStatus();
@@ -380,10 +381,10 @@ void RmaConnManager::WaitUboeSocketReady(Socket *socket, const LinkData &linkDat
             break;
         }
         if (status == UboeStatus::SOCKET_TIMEOUT) {
-            MACRO_THROW(TimeoutException,
-                        StringFormat("[RmaConnManager][%s] %s socket timeout, commId[%s], please check",
-                                        __func__, linkData.Describe().c_str(),
-                                        comm->GetId().c_str()));
+            HCCL_ERROR("[RmaConnManager][%s] %s socket timeout, commId[%s], please check",
+                        __func__, linkData.Describe().c_str(),
+                        comm->GetId().c_str());
+            return;
         }
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
             string timeoutMsg = StringFormat("WaitUboeSocketReady timeout, commId[%s].", comm->GetId().c_str());

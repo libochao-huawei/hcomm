@@ -99,33 +99,49 @@ void P2PTransport::Post(u32 index, const Stream &stream)
 void P2PTransport::Read(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice, const Stream &stream)
 {
     SqeConfig config;
-    SubmitP2PTask(commonLocRes.connVec[0]->PrepareRead(GetRmtMemBuffer(rmtSlice), GetLocMemBuffer(locSlice), config),
-                  stream);
+    std::unique_ptr<BaseTask> task;
+    HcclResult ret = commonLocRes.connVec[0]->PrepareRead(GetRmtMemBuffer(rmtSlice), GetLocMemBuffer(locSlice), config, task);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("PrepareRead failed");
+    }
+    SubmitP2PTask(std::move(task), stream);
 }
 
 void P2PTransport::ReadReduce(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice,
                               const ReduceIn &reduceIn, const Stream &stream)
 {
     SqeConfig config;
-    SubmitP2PTask(commonLocRes.connVec[0]->PrepareReadReduce(GetRmtMemBuffer(rmtSlice), GetLocMemBuffer(locSlice),
-                                                             reduceIn.dataType, reduceIn.reduceOp, config),
-                  stream);
+    std::unique_ptr<BaseTask> task;
+    HcclResult ret = commonLocRes.connVec[0]->PrepareReadReduce(GetRmtMemBuffer(rmtSlice), GetLocMemBuffer(locSlice),
+        reduceIn.dataType, reduceIn.reduceOp, config, task);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("PrepareReadReduce failed");
+    }
+    SubmitP2PTask(std::move(task), stream);
 }
 
 void P2PTransport::Write(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice, const Stream &stream)
 {
     SqeConfig config;
-    SubmitP2PTask(commonLocRes.connVec[0]->PrepareWrite(GetRmtMemBuffer(rmtSlice), GetLocMemBuffer(locSlice), config),
-                  stream);
+    std::unique_ptr<BaseTask> task;
+    HcclResult ret = commonLocRes.connVec[0]->PrepareWrite(GetRmtMemBuffer(rmtSlice), GetLocMemBuffer(locSlice), config, task);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("PrepareWrite failed");
+    }
+    SubmitP2PTask(std::move(task), stream);
 }
 
 void P2PTransport::WriteReduce(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice,
                                const ReduceIn &reduceIn, const Stream &stream)
 {
     SqeConfig config;
-    SubmitP2PTask(commonLocRes.connVec[0]->PrepareWriteReduce(GetRmtMemBuffer(rmtSlice), GetLocMemBuffer(locSlice),
-                                                              reduceIn.dataType, reduceIn.reduceOp, config),
-                  stream);
+    std::unique_ptr<BaseTask> task;
+    HcclResult ret = commonLocRes.connVec[0]->PrepareWriteReduce(GetRmtMemBuffer(rmtSlice), GetLocMemBuffer(locSlice),
+        reduceIn.dataType, reduceIn.reduceOp, config, task);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("PrepareWriteReduce failed");
+    }
+    SubmitP2PTask(std::move(task), stream);
 }
 
 TransportStatus P2PTransport::GetStatus()
@@ -272,8 +288,8 @@ void P2PTransport::RmtNotifyVecUnpackProc(BinaryStream &binaryStream)
     binaryStream >> rmtNotifyNum;
     HCCL_INFO("unpack notify %s locNum=%u, rmtNum=%u", GetLinkDescInfo().c_str(), notifyNum, rmtNotifyNum);
     if (rmtNotifyNum != notifyNum) {
-        MACRO_THROW(InvalidParamsException,
-                    StringFormat("notifyNum=%u is not equal to rmtNotifyNum=%u", notifyNum, rmtNotifyNum));
+        HCCL_ERROR("notifyNum=%u is not equal to rmtNotifyNum=%u", notifyNum, rmtNotifyNum);
+        return;
     }
 
     rmtNotifyVec.clear(); // 清空remote资源
@@ -314,8 +330,8 @@ void P2PTransport::RmtBufferVecUnpackProc(BinaryStream &binaryStream)
     binaryStream >> rmtBufferNum;
     HCCL_INFO("unpack buffer %s locNum=%u rmtNum=%u", GetLinkDescInfo().c_str(), bufferNum, rmtBufferNum);
     if (rmtBufferNum != bufferNum) {
-        MACRO_THROW(InvalidParamsException,
-                    StringFormat("bufferNum=%u is not equal to rmtBufferNum=%u", bufferNum, rmtBufferNum));
+        HCCL_ERROR("bufferNum=%u is not equal to rmtBufferNum=%u", bufferNum, rmtBufferNum);
+        return;
     }
 
     rmtBufferVec.clear();
@@ -342,7 +358,8 @@ void P2PTransport::RmtBufferVecUnpackProc(BinaryStream &binaryStream)
 std::vector<char> P2PTransport::GetUniqueId()
 {
     if (baseStatus != TransportStatus::READY) {
-        MACRO_THROW(InternalException, StringFormat("transport status is not ready, please check"));
+        HCCL_ERROR("transport status is not ready, please check");
+        return std::vector<char>();
     }
     u32          type = static_cast<u32>(transportType);
     BinaryStream binaryStream;
@@ -368,7 +385,8 @@ std::vector<char> P2PTransport::GetUniqueId()
 std::vector<char> P2PTransport::GetUniqueIdV2()
 {
     if (baseStatus != TransportStatus::READY) {
-        MACRO_THROW(InternalException, StringFormat("transport status is not ready, please check"));
+        HCCL_ERROR("transport status is not ready, please check");
+        return std::vector<char>();
     }
     u32          type = static_cast<u32>(transportType);
     BinaryStream binaryStream;

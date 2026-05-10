@@ -59,8 +59,8 @@ std::string UrmaDirectTransport::Describe() const
 HcclAiRMAWQ UrmaDirectTransport::GetAiRMAWQ()
 {
     if (baseStatus != TransportStatus::READY) {
-        MACRO_THROW(InternalException, StringFormat(
-            "[UrmaDirectTransport::%s]transport status is not ready, please check, __func__"));
+        HCCL_ERROR("[UrmaDirectTransport::%s]transport status is not ready, please check, __func__");
+        return HcclAiRMAWQ{0};
     }
 
     HcclAiRMAWQ wq = {0};
@@ -99,8 +99,8 @@ HcclAiRMAWQ UrmaDirectTransport::GetAiRMAWQ()
 HcclAiRMACQ UrmaDirectTransport::GetAiRMACQ()
 {
     if (baseStatus != TransportStatus::READY) {
-        MACRO_THROW(InternalException, StringFormat(
-            "[UrmaDirectTransport::%s]transport status is not ready, please check, __func__"));
+        HCCL_ERROR("[UrmaDirectTransport::%s]transport status is not ready, please check, __func__");
+        return HcclAiRMACQ{0};
     }
     size_t connNum = commonLocRes.connVec.size();
     if (connNum != CONN_NUM) {
@@ -191,8 +191,8 @@ bool UrmaDirectTransport::ConnVecUnpackProc(BinaryStream &binaryStream)
     binaryStream >> rmtConnNum;
     HCCL_INFO("start unpack conn %s connNum=%u, rmtConnNum=%u", GetLinkDescInfo().c_str(), connNum, rmtConnNum);
     if (connNum != rmtConnNum) {
-        MACRO_THROW(InvalidParamsException,
-                    StringFormat("connNum=%u is not equal to rmtConnNum=%u", connNum, rmtConnNum));
+        HCCL_ERROR("connNum=%u is not equal to rmtConnNum=%u", connNum, rmtConnNum);
+        return HCCL_E_PARA;
     }
 
     bool result = false; // 不需要发送 finish
@@ -220,8 +220,8 @@ void UrmaDirectTransport::RmtBufferVecUnpackProc(u32 locNum, BinaryStream &binar
 
     HCCL_INFO("unpack BUFFER %s, locNum=%u, rmtNum=%u", GetLinkDescInfo().c_str(), locNum, rmtNum);
     if (rmtNum != locNum) {
-        MACRO_THROW(InvalidParamsException,
-                    StringFormat("BUFFER, locNum=%u is not equal to rmtNum=%u", locNum, rmtNum));
+        HCCL_ERROR("BUFFER, locNum=%u is not equal to rmtNum=%u", locNum, rmtNum);
+        return;
     }
 
     for (u32 i = 0; i < rmtNum; i++) {

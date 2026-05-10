@@ -64,7 +64,8 @@ inline void CheckLinkIsValid(const LinkData &link, const string &desc)
         }
     }
     string msg = StringFormat("type=%s is not support in %s", link.Describe().c_str(), desc.c_str());
-    throw NotSupportException(msg);
+    HCCL_ERROR("%s", msg.c_str());
+    return;
 }
 
 inline bool IsSupportInlineReduce(const DataType &datatype, const ReduceOp &reduceOp, const LinkData &link)
@@ -212,7 +213,9 @@ inline vector<unique_ptr<Instruction>> PrimSendInWriteMode(const PrimSend &send,
     }
     // not support, throw exception
     string msg = StringFormat("link=%s does not support PrimSendInWriteMode", send.GetLink().Describe().c_str());
-    MACRO_THROW(NotSupportException, msg);
+    HCCL_ERROR("%s", msg.c_str());
+    err = HCCL_E_NOT_SUPPORT;
+    return {};
 }
 
 inline vector<unique_ptr<Instruction>> PrimRecvInReadMode(const PrimRecv &recv, HcclResult &err)
@@ -363,7 +366,9 @@ inline vector<unique_ptr<Instruction>> PrimSendReduceInWriteModeWithInlineReduce
 
     string msg = StringFormat("link=%s does not support PrimSendReduceInWriteModeWithInlineReduce",
                               sendReduce.GetLink().Describe().c_str());
-    MACRO_THROW(NotSupportException, msg);
+    HCCL_ERROR("%s", msg.c_str());
+    err = HCCL_E_NOT_SUPPORT;
+    return {};
 }
 
 inline vector<unique_ptr<Instruction>> PrimSendReduceInReadModeWithoutInlineReduce(const PrimSendReduce &sendReduce, HcclResult &err)

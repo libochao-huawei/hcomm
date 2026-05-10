@@ -138,7 +138,8 @@ HcclResult AicpuTsRoceRegedMemMgr::RegisterMemory(HcommMem mem, const char *memT
     if (resultPair.second) {
         ret = localBuffer->Init();
         if (ret != HCCL_SUCCESS) {
-            (void)localRdmaRmaBufferMgr_->Del(tempKey);
+            bool deleted = false;
+            (void)localRdmaRmaBufferMgr_->Del(tempKey, deleted);
             HCCL_ERROR("[AicpuTsRoceRegedMemMgr][RegisterMemory] Init failed, ret[%d]", ret);
             return ret;
         }
@@ -169,9 +170,13 @@ HcclResult AicpuTsRoceRegedMemMgr::UnregisterMemory(void *memHandle)
     auto *buffer = static_cast<hccl::LocalRdmaRmaBuffer *>(memHandle);
     hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(buffer->GetAddr()), buffer->GetSize());
 
-    bool delOk = false;
-    EXECEPTION_CATCH(delOk = localRdmaRmaBufferMgr_->Del(tempKey), return HCCL_E_NOT_FOUND);
-    if (!delOk) {
+    bool deleted = false;
+    HcclResult delRet = localRdmaRmaBufferMgr_->Del(tempKey, deleted);
+    if (delRet != HCCL_SUCCESS) {
+        HCCL_ERROR("[AicpuTsRoceRegedMemMgr][UnregisterMemory] Del failed.");
+        return HCCL_E_NOT_FOUND;
+    }
+    if (!deleted) {
         HCCL_INFO("[AicpuTsRoceRegedMemMgr][UnregisterMemory] ref count > 0");
     }
 
@@ -295,9 +300,13 @@ HcclResult AicpuTsRoceRegedMemMgr::MemoryUnimport(const void *memDesc, uint32_t 
     CHK_RET(probe->Deserialize(rdmaBlob));
 
     hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(probe->GetAddr()), probe->GetSize());
-    bool delOk = false;
-    EXECEPTION_CATCH(delOk = mgrIt->second->Del(tempKey), return HCCL_E_NOT_FOUND);
-    if (!delOk) {
+    bool deleted = false;
+    HcclResult delRet = mgrIt->second->Del(tempKey, deleted);
+    if (delRet != HCCL_SUCCESS) {
+        HCCL_ERROR("[AicpuTsRoceRegedMemMgr][MemoryUnimport] Del failed.");
+        return HCCL_E_NOT_FOUND;
+    }
+    if (!deleted) {
         HCCL_INFO("[AicpuTsRoceRegedMemMgr][MemoryUnimport] ref count > 0");
         return HCCL_E_AGAIN;
     }

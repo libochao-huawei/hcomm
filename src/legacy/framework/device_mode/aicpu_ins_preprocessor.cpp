@@ -275,7 +275,8 @@ void AicpuInsPreprocessor::PackResAndCopyToDev(const std::string &algName, const
     std::string           opTag  = comm->GetCurrentCollOperator()->opTag;
     auto                  buffer = PackOpData(opTag, algName, resReq);
     shared_ptr<DevBuffer> devMem = make_shared<DevBuffer>(buffer.size()); // 申请device内存
-    HrtMemcpy(reinterpret_cast<void *>(devMem->GetAddr()), devMem->GetSize(), buffer.data(), buffer.size(),
+    void* devMemPtr = reinterpret_cast<void *>(devMem->GetAddr());
+    HrtMemcpy(devMemPtr, devMem->GetSize(), buffer.data(), buffer.size(),
               RT_MEMCPY_HOST_TO_DEVICE); // H2D拷贝，将资源拷贝到device内存
     HCCL_INFO("[AicpuInsPreprocessor::%s] PackedData %s", __func__, Bytes2hex(buffer.data(), buffer.size()).c_str());
 
@@ -313,16 +314,20 @@ void AicpuInsPreprocessor::AllocAlltoallVOpMem()
         isCountMemInited = true;
     }
 
-    HrtMemcpy(reinterpret_cast<void *>(sendCountsMem[resIndex].get()->GetAddr()),
+    void* sendCountsPtr = reinterpret_cast<void *>(sendCountsMem[resIndex].get()->GetAddr());
+    void* recvCountsPtr = reinterpret_cast<void *>(recvCountsMem[resIndex].get()->GetAddr());
+    void* sdisplsPtr = reinterpret_cast<void *>(sdisplsMem[resIndex].get()->GetAddr());
+    void* rdisplsPtr = reinterpret_cast<void *>(rdisplsMem[resIndex].get()->GetAddr());
+    HrtMemcpy(sendCountsPtr,
               sendCountsMem[resIndex].get()->GetSize(), op->all2AllVDataDes.sendCounts, size,
               RT_MEMCPY_HOST_TO_DEVICE); // H2D拷贝，将资源拷贝到SEND内存
-    HrtMemcpy(reinterpret_cast<void *>(recvCountsMem[resIndex].get()->GetAddr()),
+    HrtMemcpy(recvCountsPtr,
               recvCountsMem[resIndex].get()->GetSize(), op->all2AllVDataDes.recvCounts, size,
               RT_MEMCPY_HOST_TO_DEVICE); // H2D拷贝，将资源拷贝到RECV内存
-    HrtMemcpy(reinterpret_cast<void *>(sdisplsMem[resIndex].get()->GetAddr()), sdisplsMem[resIndex].get()->GetSize(),
+    HrtMemcpy(sdisplsPtr, sdisplsMem[resIndex].get()->GetSize(),
               op->all2AllVDataDes.sdispls, size,
               RT_MEMCPY_HOST_TO_DEVICE); // H2D拷贝，将资源拷贝到SDISPLS内存
-    HrtMemcpy(reinterpret_cast<void *>(rdisplsMem[resIndex].get()->GetAddr()), rdisplsMem[resIndex].get()->GetSize(),
+    HrtMemcpy(rdisplsPtr, rdisplsMem[resIndex].get()->GetSize(),
               op->all2AllVDataDes.rdispls, size,
               RT_MEMCPY_HOST_TO_DEVICE); // H2D拷贝，将资源拷贝到RDISPLS内存
 

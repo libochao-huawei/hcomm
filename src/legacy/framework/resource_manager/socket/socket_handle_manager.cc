@@ -57,10 +57,18 @@ SocketHandle SocketHandleManager::Create(DevId devicePhyId, const PortData &loca
         != hccpSocketHandleMap[devicePhyId][static_cast<u32>(localPort.GetProto())].end()) {
         return hccpSocketHandleMap[devicePhyId][static_cast<u32>(localPort.GetProto())][localPort.GetAddr()];
     }
-    SocketHandle socketHandle = HrtRaSocketInit(HrtNetworkMode::HDC, intf);
+    SocketHandle socketHandle = nullptr;
+    HcclResult ret = HrtRaSocketInit(HrtNetworkMode::HDC, intf, socketHandle);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("HrtRaSocketInit failed, ret=%d", ret);
+        return nullptr;
+    }
 
     if ((u32)localPort.GetProto() > LINK_PROTO_TYPE_NUM - 1) {
-        HrtRaSocketDeInit(socketHandle);
+        HcclResult deinitRet = HrtRaSocketDeInit(socketHandle);
+        if (deinitRet != HCCL_SUCCESS) {
+            HCCL_ERROR("HrtRaSocketDeInit failed, ret=%d", deinitRet);
+        }
         HCCL_ERROR("Invalid LinkProtoType.");
         return nullptr;
     }
@@ -89,7 +97,10 @@ void SocketHandleManager::DestroyAll()
         for (u32 j = 0; j < hccpSocketHandleMap[i].size(); ++j) {
             for (auto &iterHandle : hccpSocketHandleMap[i][j]) {
                 if (iterHandle.second != nullptr) {
-                    DECTOR_TRY_CATCH("RaSocketDeinit", HrtRaSocketDeInit(iterHandle.second));
+                    HcclResult ret = HrtRaSocketDeInit(iterHandle.second);
+                    if (ret != HCCL_SUCCESS) {
+                        HCCL_ERROR("HrtRaSocketDeInit failed, ret=%d", ret);
+                    }
                     iterHandle.second = nullptr;
                 }
             }

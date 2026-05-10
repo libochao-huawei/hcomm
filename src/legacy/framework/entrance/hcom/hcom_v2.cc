@@ -527,7 +527,12 @@ HcclResult HcomAlltoAllVCV2(const void *sendBuf, const void *sendCountMatrix, Hc
 
     std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
     s32 streamId = HrtGetStreamId(stream);
-    s32 deviceLogicId = HrtGetDevice();
+    s32 deviceLogicId;
+    HcclResult res = HrtGetDevice(deviceLogicId);
+    if (res != HCCL_SUCCESS) {
+        HCCL_ERROR("[HcomAlltoAllVC] HrtGetDevice failed, res[%d].", res);
+        return res;
+    }
     u64 sendCountMatrixHash;
     HcomGetHashFromSendCountMatrixV2(sendCountMatrixHash, sendCountMatrix, rankSize, tag);
     /* 接口交互信息日志 */

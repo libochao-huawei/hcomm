@@ -74,7 +74,8 @@ LocalRmaBuffer *LocalRmaBufManager::Reg(const string &opTag, BufferType bufferTy
         }
         // 待修改: 仅支持 P2P 和 RDMA
         string msg = StringFormat("PortData=%s is error", portData.Describe().c_str());
-        MACRO_THROW(InternalException, msg);
+        HCCL_ERROR("%s", msg.c_str());
+        return nullptr;
     }
 }
 

@@ -28,32 +28,34 @@ public:
                     const OpMode opMode, const HrtUbJfcMode jfcMode = HrtUbJfcMode::NORMAL);
     void          Connect() override;
     RmaConnStatus GetStatus() override;
-    bool          Suspend() override;
+    HcclResult   Suspend() override;
 
-    std::unique_ptr<Serializable> GetExchangeDto() override;
-    void                          ParseRmtExchangeDto(const Serializable &rmtDto) override;
-    void                          ImportRmtDto() override;
+    HcclResult   GetExchangeDto(unique_ptr<Serializable> &exchangeDto) override;
+    HcclResult   ParseRmtExchangeDto(const Serializable &rmtDto) override;
+    HcclResult   ImportRmtDto() override;
 
-    std::vector<char> GetUniqueId() const override;
+    HcclResult   GetUniqueId(std::vector<char> &exchangeId) const override;
 
     void SetCqInfo(HcclAiRMACQ &cq);
 
     void SetWqInfo(HcclAiRMAWQ &wq);
 
-    unique_ptr<BaseTask> PrepareRead(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
-                                    const SqeConfig &config) override;
+    HcclResult PrepareRead(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
+                                    const SqeConfig &config, unique_ptr<BaseTask> &task) override;
 
-    unique_ptr<BaseTask> PrepareReadReduce(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
-                                        DataType dataType, ReduceOp reduceOp, const SqeConfig &config) override;
+    HcclResult PrepareReadReduce(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
+                                        DataType dataType, ReduceOp reduceOp, const SqeConfig &config,
+                                        unique_ptr<BaseTask> &task) override;
 
-    unique_ptr<BaseTask> PrepareWrite(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
-                                    const SqeConfig &config) override;
+    HcclResult PrepareWrite(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
+                                    const SqeConfig &config, unique_ptr<BaseTask> &task) override;
 
-    unique_ptr<BaseTask> PrepareWriteReduce(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
-                                            DataType dataType, ReduceOp reduceOp, const SqeConfig &config) override;
+    HcclResult PrepareWriteReduce(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
+                                            DataType dataType, ReduceOp reduceOp, const SqeConfig &config,
+                                            unique_ptr<BaseTask> &task) override;
 
-    unique_ptr<BaseTask> PrepareInlineWrite(const MemoryBuffer &remoteMemBuf, u64 data,
-                                            const SqeConfig &config) override;
+    HcclResult PrepareInlineWrite(const MemoryBuffer &remoteMemBuf, u64 data,
+                                            const SqeConfig &config, unique_ptr<BaseTask> &task) override;
 
     class UbCiUpdater;
 

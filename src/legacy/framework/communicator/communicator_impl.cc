@@ -136,7 +136,11 @@ HcclResult CommunicatorImpl::Init(const CommParams &commParams, const std::strin
 
 void CommunicatorImpl::InitCommResource(const CommParams &commParams)
 {
-    HrtSetDevice(devLogicId);
+    HcclResult ret = HrtSetDevice(devLogicId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[CommunicatorImpl::InitCommResource] HrtSetDevice failed, ret[%d].", ret);
+        return;
+    }
     if (IsNeedDpu()) {
         InitHccpPeer();
     }
@@ -234,10 +238,10 @@ HcclResult CommunicatorImpl::Init(const CommParams &commParams, std::unique_ptr<
     if (!initFlag) {
         initFlag = true;
         try {
-            HrtSetDevice(inputDevLogicId);
+            CHK_RET(HrtSetDevice(inputDevLogicId));
             InitCommonData(commParams);
             InitRankGraph(inputRankGraph);
-            HrtSetDevice(devLogicId);
+            CHK_RET(HrtSetDevice(devLogicId));
             if (IsNeedDpu()) {
                 InitHccpPeer();
             }
@@ -286,8 +290,8 @@ HcclResult CommunicatorImpl::Init(const CommParams &commParams, std::unique_ptr<
 {
     if (!initFlag) {
         initFlag = true;
+        CHK_RET(HrtSetDevice(inputDevLogicId));
         TRY_CATCH_RETURN(
-            HrtSetDevice(inputDevLogicId);
             InitCommonData(commParams, subConfig);
             InitHccpHdc();
             InitCcuSuperFastLoad();
@@ -1216,8 +1220,13 @@ void CommunicatorImpl::InitCommonData(const CommParams &commParams)
     rankInParentComm       = commParams.rankInParentComm;
     devType                = commParams.devType;
     isWorldGroup           = commParams.isWorldGroup;
-    devLogicId             = HrtGetDevice();
-    devPhyId               = HrtGetDevicePhyIdByIndex(devLogicId);
+    s32 localDevLogicId = static_cast<s32>(devLogicId);
+    HcclResult res = HrtGetDevice(localDevLogicId);
+    if (res != HCCL_SUCCESS) {
+        HCCL_ERROR("[CommunicatorImpl] HrtGetDevice failed, res[%d].", res);
+        return;
+    }
+    devPhyId               = HrtGetDevicePhyIdByIndex(localDevLogicId);
 }
 
 void CommunicatorImpl::CheckRankGraph() const
@@ -1290,7 +1299,12 @@ void CommunicatorImpl::CheckRankGraphAddrs() const
 
 u32 GetLocalDieId(PortData&& port, LinkProtocol linkProtocol)
 {
-    auto     devLogicId = HrtGetDevice();
+    s32 devLogicId;
+    HcclResult res = HrtGetDevice(devLogicId);
+    if (res != HCCL_SUCCESS) {
+        HCCL_ERROR("[GetLocalDieId] HrtGetDevice failed, res[%d].", res);
+        return UINT_MAX;
+    }
     uint32_t devPhyId   = HrtGetDevicePhyIdByIndex(devLogicId);
  
     auto &rdmaHandleMgr = RdmaHandleManager::GetInstance();
@@ -1324,21 +1338,28 @@ std::string CommunicatorImpl::GetTopoFilePath()
         TRY_CATCH_THROW(InvalidParamsException, msgRankTopoFile, topoFilePath = GetJsonProperty(parseJson, "topo_file_path"););
     } else {
         const size_t bufSize = 1024;
-        auto devLogicId  = HrtGetDevice();
+        s32 devLogicId;
+        HcclResult res = HrtGetDevice(devLogicId);
+        if (res != HCCL_SUCCESS) {
+            HCCL_ERROR("[%s] HrtGetDevice failed, res[%d].", __func__, res);
+            return "";
+        }
         auto devPhyId = HrtGetDevicePhyIdByIndex(devLogicId);
         std::vector<char> buffer(bufSize, '\0');
         int result = TopoAddrInfoGetTopoFilePath(devPhyId, buffer.data(), buffer.size());
-        CHK_PRT_THROW(result != 0,
-                  HCCL_ERROR("[%s] Get topo file path failed.", __func__),
-                  InvalidParamsException, "Get topo file path failed.");
+        if (result != 0) {
+            HCCL_ERROR("[%s] Get topo file path failed.", __func__);
+            return "";
+        }
         topoFilePath = std::string(buffer.data());
     }
 
     // check topo_file_path
     char resolvedPath[PATH_MAX] = {0};
-    CHK_PRT_THROW(realpath(topoFilePath.c_str(), resolvedPath) == nullptr,
-            HCCL_ERROR("[%s] topo_file_path[%s] is not a valid real path", __func__, topoFilePath.c_str()),
-            InvalidParamsException, "topo_file_path error");
+    if (realpath(topoFilePath.c_str(), resolvedPath) == nullptr) {
+        HCCL_ERROR("[%s] topo_file_path[%s] is not a valid real path", __func__, topoFilePath.c_str());
+        return "";
+    }
     return topoFilePath;
 }
 
@@ -1389,7 +1410,8 @@ void CommunicatorImpl::InitDataBufferManager()
 
     if (rankSize > 1) {
         aivOffloadTagBuffer = std::move(DevBuffer::CreateHugePageBuf(HCCL_AIV_OFFLOAD_TAG_BUFFER_SIZE));
-        HrtMemset(reinterpret_cast<void*>(aivOffloadTagBuffer->GetAddr()), aivOffloadTagBuffer->GetSize(), aivOffloadTagBuffer->GetSize());
+        void* offloadTagPtr = reinterpret_cast<void*>(aivOffloadTagBuffer->GetAddr());
+        HrtMemset(offloadTagPtr, aivOffloadTagBuffer->GetSize(), 0);
         cclBuffer = std::move(DevBuffer::CreateHugePageBuf(scratchBufSize));
         HCCL_RUN_INFO(
             "[CommunicatorImpl][InitDataBufferManager] cclBuffer create, commId[%s], addr[%llu], size[%llu]M",
@@ -1398,7 +1420,8 @@ void CommunicatorImpl::InitDataBufferManager()
         u64 aivTagBufSize = HCCL_CCL_AIV_TAG_BUFFER_SIZE * HCCL_CCL_COMM_FIXED_CALC_BUFFER_SIZE;
         HCCL_INFO("[CommunicatorImpl][InitDataBufferManager] aivTagBufSize[%llu]M", aivTagBufSize / HCCL_CCL_COMM_FIXED_CALC_BUFFER_SIZE);
         aivTagBuffer = std::move(DevBuffer::CreateHugePageBuf(aivTagBufSize));
-        HrtMemset(reinterpret_cast<void*>(aivTagBuffer->GetAddr()), aivTagBuffer->GetSize(), aivTagBuffer->GetSize());
+        void* tagPtr = reinterpret_cast<void*>(aivTagBuffer->GetAddr());
+        HrtMemset(tagPtr, aivTagBuffer->GetSize(), 0);
         CreateCommCclBuf();
     }
     dataBufferManager = std::make_unique<DataBufManager>();
@@ -1744,7 +1767,8 @@ CollServiceBase *CommunicatorImpl::GetCcuCollService() const
     }
     else {
         std::string msg{"[CommunicatorImpl] Communicator uninitialized, this should not be arrived"};
-        MACRO_THROW(NullPtrException, msg);
+        HCCL_ERROR("%s", msg.c_str());
+        return nullptr;
     }
 }
 
@@ -2177,7 +2201,7 @@ HcclResult CommunicatorImpl::RecoverComm(SnapShotComm &snapShotComm, u32 stepPar
             }
             RecoverOpMode(snapShotComm.opMode);
             InitCommonData(snapShotComm.commParams, snapShotComm.config);
-            HrtSetDevice(devLogicId);
+            CHK_RET(HrtSetDevice(devLogicId));
             InitHccpHdc(); // 选择ccu加速模式依赖hdc通道打开ccu驱动
             RecoverExeCfgData(snapShotComm.opExecuteConfig, snapShotComm.commExecuteConfig, snapShotComm.isLoadOp); // 算子粒度 和 通信域粒度都恢复
             RecoverRankGraphData(snapShotComm, changeInfo);
@@ -2241,7 +2265,7 @@ HcclResult CommunicatorImpl::RecoverComm(const SnapShotSubComm &snapShotSubComm,
             }
             RecoverOpMode(snapShotSubComm.opMode);
             InitCommonDataNotInitDevType(snapShotSubComm.commParams, snapShotSubComm.config);
-            HrtSetDevice(devLogicId);
+            CHK_RET(HrtSetDevice(devLogicId));
             InitHccpHdc(); // 选择ccu加速模式依赖hdc通道打开ccu驱动
             RecoverExeCfgData(snapShotSubComm.opExecuteConfig, snapShotSubComm.commExecuteConfig, snapShotSubComm.isLoadOp); // 算子粒度 和 通信域粒度都恢复
             InitRankGraph(inputRankGraph);
@@ -2732,7 +2756,7 @@ void CommunicatorImpl::CollAlgComponentInit()
                            .Build();
     if (collAlgComponent == nullptr) {
         HCCL_ERROR("collAlgComponent is a null pointer!");
-        throw NullPtrException("collAlgComponent is a null pointer!");
+        return;
     }
     HCCL_INFO("[CommunicatorImpl][%s] finished initializing collAlgComponent.", __func__);
 }
@@ -3113,9 +3137,12 @@ HcclResult CommunicatorImpl::CreateBarrierMemory(void *&sendBuf, void *&recvBuf,
             return HCCL_E_MEMORY;
         }
         // H2D拷贝
-        HrtMemcpy(reinterpret_cast<void *>(barrierInMemory->GetAddr()), barrierInMemory->GetSize(), reinterpret_cast<void *>(barrierHostMem->GetAddr()),
+        void* barrierInPtr = reinterpret_cast<void *>(barrierInMemory->GetAddr());
+        void* barrierOutPtr = reinterpret_cast<void *>(barrierOutMemory->GetAddr());
+        void* barrierHostPtr = reinterpret_cast<void *>(barrierHostMem->GetAddr());
+        HrtMemcpy(barrierInPtr, barrierInMemory->GetSize(), barrierHostPtr,
             barrierHostMem->GetSize(), RT_MEMCPY_HOST_TO_DEVICE);
-        HrtMemcpy(reinterpret_cast<void *>(barrierOutMemory->GetAddr()), barrierOutMemory->GetSize(), reinterpret_cast<void *>(barrierHostMem->GetAddr()),
+        HrtMemcpy(barrierOutPtr, barrierOutMemory->GetSize(), barrierHostPtr,
             barrierHostMem->GetSize(), RT_MEMCPY_HOST_TO_DEVICE);
         isFirstBarrier = false;
     }

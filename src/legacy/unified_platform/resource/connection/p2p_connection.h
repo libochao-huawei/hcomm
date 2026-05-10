@@ -29,17 +29,19 @@ public:
     RmaConnStatus GetStatus() override;
     string        Describe() const override;
 
-    unique_ptr<BaseTask> PrepareRead(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
-                                     const SqeConfig &config) override;
+    HcclResult PrepareRead(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
+                                     const SqeConfig &config, unique_ptr<BaseTask> &task) override;
 
-    unique_ptr<BaseTask> PrepareReadReduce(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
-                                           DataType datatype, ReduceOp reduceOp, const SqeConfig &config) override;
+    HcclResult PrepareReadReduce(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
+                                           DataType datatype, ReduceOp reduceOp, const SqeConfig &config,
+                                           unique_ptr<BaseTask> &task) override;
 
-    unique_ptr<BaseTask> PrepareWrite(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
-                                      const SqeConfig &config) override;
+    HcclResult PrepareWrite(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
+                                      const SqeConfig &config, unique_ptr<BaseTask> &task) override;
 
-    unique_ptr<BaseTask> PrepareWriteReduce(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
-                                            DataType datatype, ReduceOp reduceOp, const SqeConfig &config) override;
+    HcclResult PrepareWriteReduce(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
+                                            DataType datatype, ReduceOp reduceOp, const SqeConfig &config,
+                                            unique_ptr<BaseTask> &task) override;
 
 private:
     void EnableP2p() const;

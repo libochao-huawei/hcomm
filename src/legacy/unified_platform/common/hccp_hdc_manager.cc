@@ -34,7 +34,11 @@ void HccpHdcManager::Init(u32 deviceLogicId)
     HRaInitConfig cfg;
     cfg.phyId = HrtGetDevicePhyIdByIndex(deviceLogicId);
     cfg.mode  = HrtNetworkMode::HDC;
-    HrtRaInit(cfg);
+    HcclResult ret = HrtRaInit(cfg);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("HrtRaInit failed, ret=%d", ret);
+        return;
+    }
 
     instances.insert(deviceLogicId);
 }
@@ -48,8 +52,14 @@ void HccpHdcManager::DestroyAll()
         HRaInitConfig cfg;
         cfg.phyId = HrtGetDevicePhyIdByIndex(deviceLogicId);
         cfg.mode  = HrtNetworkMode::HDC;
-        DECTOR_TRY_CATCH("HccpHdcManager", HrtRaDeInit(cfg));
-        DECTOR_TRY_CATCH("HccpHdcManager", HrtResetDevice(deviceLogicId));
+        HcclResult ret = HrtRaDeInit(cfg);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("HrtRaDeInit failed, ret=%d", ret);
+        }
+        HcclResult resetRet = HrtResetDevice(deviceLogicId);
+        if (resetRet != HCCL_SUCCESS) {
+            HCCL_ERROR("[HccpHdcManager::DestroyAll] HrtResetDevice failed, ret[%d].", resetRet);
+        }
     }
     instances.clear();
 }

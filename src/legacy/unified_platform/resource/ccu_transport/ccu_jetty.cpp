@@ -28,7 +28,11 @@ HcclResult CcuCreateJetty(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo
 CcuJetty::CcuJetty(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo)
     : ipAddr_(ipAddr), jettyInfo_(jettyInfo)
 {
-    devLogicId_ = HrtGetDevice();
+    HcclResult res = HrtGetDevice(devLogicId_);
+    if (res != HCCL_SUCCESS) {
+        HCCL_ERROR("[CcuJetty] HrtGetDevice failed, res[%d].", res);
+        return;
+    }
     Hccl::CqCreateInfo cqInfo{0};
     uint32_t devPhyId = HrtGetDevicePhyIdByIndex(devLogicId_);
     auto &rdmaHandleMgr = RdmaHandleManager::GetInstance();

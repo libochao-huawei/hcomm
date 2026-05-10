@@ -81,7 +81,11 @@ void BaseMemTransport::ConnVecPack(BinaryStream &binaryStream)
     u32 pos = 0;
     for (auto &it : commonLocRes.connVec) {
         binaryStream << pos;
-        std::unique_ptr<Serializable> dto = it->GetExchangeDto();
+        std::unique_ptr<Serializable> dto;
+        HcclResult ret = it->GetExchangeDto(dto);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("failed to get exchange dto for conn");
+        }
         dto->Serialize(binaryStream);
         HCCL_INFO("pack connection pos=%u, dto %s", pos, dto->Describe().c_str());
         pos++;

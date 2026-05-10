@@ -63,8 +63,7 @@ void UbLocalNotify::Wait(const Stream &stream, u32 timeout) const
 
 void UbLocalNotify::Post(const Stream &stream) const
 {
-    std::string msg = "UbLocalNotify does not support submitting record task";
-    MACRO_THROW(NotSupportException, msg);
+    HCCL_ERROR("UbLocalNotify does not support submitting record task");
 }
 
 std::unique_ptr<Serializable> UbLocalNotify::GetExchangeDto()

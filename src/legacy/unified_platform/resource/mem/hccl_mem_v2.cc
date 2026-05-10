@@ -67,20 +67,18 @@ HcclResult HcclMemDeregV2(const HcclBuf *buf)
     // 从LocalRamBuffer计数器删除HcclBuf
     LocalUbRmaBufferMgr      *localRmaBufferMgr = LocalUbRmaBufferManager::GetInstance();
     BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(buf->addr), buf->len);
-    try {
-        auto resultPair = localRmaBufferMgr->Del(tempKey);
-        // 计数器大于1时，返回false，说明框架层有其它设备在使用这段内存，返回HCCL_E_AGAIN
-        if (!resultPair) {
-            HCCL_INFO("[HcclOneSidedService][DeregMem]Memory reference count is larger than 0"
-                      "(used by other RemoteRank), do not deregister memory.");
-            return HCCL_E_AGAIN;
-        }
-        return HCCL_SUCCESS;
-    } catch (const std::out_of_range &e) {
-        // 若计数器内未找到buf，返回HCCL_E_NOT_FOUND
-        HCCL_ERROR("[%s] %s", __func__, e.what());
-        return HCCL_E_NOT_FOUND;
+    bool deleted = false;
+    HcclResult delRet = localRmaBufferMgr->Del(tempKey, deleted);
+    if (delRet != HCCL_SUCCESS) {
+        HCCL_ERROR("[%s] Del failed.", __func__);
+        return delRet;
     }
+    if (!deleted) {
+        HCCL_INFO("[HcclOneSidedService][DeregMem]Memory reference count is larger than 0"
+                  "(used by other RemoteRank), do not deregister memory.");
+        return HCCL_E_AGAIN;
+    }
+    return HCCL_SUCCESS;
 }
 
 HcclResult HcclMemExportV2(HcclBuf *buf, char **outDesc, uint64_t *outDescLen)

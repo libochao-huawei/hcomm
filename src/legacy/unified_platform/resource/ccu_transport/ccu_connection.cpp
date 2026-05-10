@@ -44,7 +44,11 @@ CcuCtpConnection::CcuCtpConnection(const IpAddress &locAddr, const IpAddress &rm
 HcclResult CcuConnection::Init()
 {
     TRY_CATCH_RETURN(
-        devLogicId = HrtGetDevice();
+        HcclResult res = HrtGetDevice(devLogicId);
+        if (res != HCCL_SUCCESS) {
+            HCCL_ERROR("[CcuConnection::Init] HrtGetDevice failed, res[%d].", res);
+            return res;
+        }
         uint32_t devPhyId = HrtGetDevicePhyIdByIndex(devLogicId);
 
         auto &rdmaHandleMgr = RdmaHandleManager::GetInstance();

@@ -121,8 +121,9 @@ void* HrtRaTlvInit(HRaTlvInitConfig  &cfg)
 
     ret = RaTlvInit(&init_info, &buffer_size, &tlv_handle);
     if (ret != 0 || tlv_handle == nullptr) {
-        MACRO_THROW(NetworkApiException, StringFormat("[Init][RaTlv]errNo[0x%016llx] ra tlv init fail. params: mode=%u, device id=%u, version=%d, tlv_handle=%p, return: ret[%d]",
-            HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), cfg.mode, init_info.phyId, init_info.version, tlv_handle, ret));
+        HCCL_ERROR("[Init][RaTlv]errNo[0x%016llx] ra tlv init fail. params: mode=%u, device id=%u, version=%d, tlv_handle=%p, return: ret[%d]",
+            HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), cfg.mode, init_info.phyId, init_info.version, tlv_handle, ret);
+        return nullptr;
     }
 
     HCCL_INFO("tlv init success, device id[%u]", init_info.phyId);
@@ -148,8 +149,9 @@ HcclResult HrtRaTlvRequest(void* tlv_handle, u32 tlv_module_type, u32 tlv_ccu_ms
             HCCL_WARNING("[HrtRaTlvRequest]ra tlv request UNAVAIL. return: ret[%d]", ret);
             return HCCL_E_UNAVAIL;
         }
-        MACRO_THROW(NetworkApiException, StringFormat("[Request][RaTlv]errNo[0x%016llx] ra tlv request fail. params: tlv_handle=%p, tlv_module_type=%u, tlv_ccu_msg_type=%u, return: ret=%d",
-            HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), tlv_handle, tlv_module_type, tlv_ccu_msg_type, ret));
+        HCCL_ERROR("[Request][RaTlv]errNo[0x%016llx] ra tlv request fail. params: tlv_handle=%p, tlv_module_type=%u, tlv_ccu_msg_type=%u, return: ret=%d",
+            HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), tlv_handle, tlv_module_type, tlv_ccu_msg_type, ret);
+        return HCCL_E_NETWORK;
     }
 
     HCCL_INFO("tlv request success, tlv module type[%u], message type[%u]", tlv_module_type, tlv_ccu_msg_type);
@@ -164,12 +166,12 @@ void HrtRaTlvDeInit(void* tlv_handle)
 
     ret = RaTlvDeinit(tlv_handle);
     if (ret != 0) {
-        MACRO_THROW(NetworkApiException, StringFormat("[DeInit][RaTlv]errNo[0x%016llx] ra tlv deinit fail. params: tlv_handle=%p, return: ret=%d",
-            HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), tlv_handle, ret));
+        HCCL_ERROR("[DeInit][RaTlv]errNo[0x%016llx] ra tlv deinit fail. params: tlv_handle=%p, return: ret=%d",
+            HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), tlv_handle, ret);
     }
 }
 
-void HrtRaInit(HRaInitConfig &cfg)
+HcclResult HrtRaInit(HRaInitConfig &cfg)
 {
     HCCL_INFO("[Init][Ra] Input params: phyId=[%u], mode=[%u]",
         cfg.phyId, cfg.mode);
@@ -191,20 +193,23 @@ void HrtRaInit(HRaInitConfig &cfg)
         } else if (ret == SOCK_EAGAIN) {
             bool bTimeout = ((std::chrono::steady_clock::now() - startTime) >= timeout);
             if (bTimeout) {
-                MACRO_THROW(NetworkApiException, StringFormat("[Init][Ra]errNo[0x%016llx], ra init timeout[%lld], phy_id=%u, nic_position=%u, ret=%d",
-                    HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), timeout, config.phyId, config.nicPosition, ret));
+                HCCL_ERROR("[Init][Ra]errNo[0x%016llx], ra init timeout[%lld], phy_id=%u, nic_position=%u, ret=%d",
+                    HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), timeout, config.phyId, config.nicPosition, ret);
+                return HCCL_E_NETWORK;
             }
             SaluSleep(ONE_MILLISECOND_OF_USLEEP);
         } else {
             // 非ra限速场景错误，不轮询。直接退出
-            MACRO_THROW(NetworkApiException, StringFormat("[Init][Ra]errNo[0x%016llx] ra init fail, phy_id=%u, nic_position=%u, ret=%d",
-                HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), config.phyId, config.nicPosition, ret));
+            HCCL_ERROR("[Init][Ra]errNo[0x%016llx] ra init fail, phy_id=%u, nic_position=%u, ret=%d",
+                HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), config.phyId, config.nicPosition, ret);
+            return HCCL_E_NETWORK;
         }
     }
     HCCL_INFO("init ra success,return: ret[%d]", ret);
+    return HCCL_SUCCESS;
 }
 
-void HrtRaDeInit(HRaInitConfig &cfg)
+HcclResult HrtRaDeInit(HRaInitConfig &cfg)
 {
     HCCL_INFO("[DeInit][Ra] Input params: phyId=[%u], mode=[%u]",
         cfg.phyId, cfg.mode);
@@ -224,19 +229,22 @@ void HrtRaDeInit(HRaInitConfig &cfg)
         } else if (ret == SOCK_EAGAIN) {
             bool bTimeout = ((std::chrono::steady_clock::now() - startTime) >= timeout);
             if (bTimeout) {
-                MACRO_THROW(NetworkApiException, StringFormat("[DeInit][Ra]errNo[0x%016llx] ra deinit timeout[%lld], phy_id=%u, nic_position=%u, ret=%d",
-                    HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), timeout, config.phyId, config.nicPosition, ret));
+                HCCL_ERROR("[DeInit][Ra]errNo[0x%016llx] ra deinit timeout[%lld], phy_id=%u, nic_position=%u, ret=%d",
+                    HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), timeout, config.phyId, config.nicPosition, ret);
+                return HCCL_E_NETWORK;
             }
             SaluSleep(ONE_MILLISECOND_OF_USLEEP);
         } else {
             // 非ra限速场景错误，不轮询。直接退出
-            MACRO_THROW(NetworkApiException, StringFormat("[DeInit][Ra]errNo[0x%016llx] ra deinit fail, phy_id=%u, nic_position=%u, ret=%d",
-                HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), config.phyId, config.nicPosition, ret));
+            HCCL_ERROR("[DeInit][Ra]errNo[0x%016llx] ra deinit fail, phy_id=%u, nic_position=%u, ret=%d",
+                HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), config.phyId, config.nicPosition, ret);
+            return HCCL_E_NETWORK;
         }
     }
+    return HCCL_SUCCESS;
 }
 
-static void SocketBatchConnect(SocketConnectInfoT conn[], u32 num)
+static HcclResult SocketBatchConnect(SocketConnectInfoT conn[], u32 num)
 {
     CHECK_NULLPTR(conn, "[SocketBatchConnect] conn is nullptr!");
     HCCL_INFO("[BatchConnect][RaSocket] Input params: num=%u", num);
@@ -251,20 +259,23 @@ static void SocketBatchConnect(SocketConnectInfoT conn[], u32 num)
         } else if (ret == SOCK_EAGAIN) {
             bool bTimeout = ((std::chrono::steady_clock::now() - startTime) >= timeout);
             if (bTimeout) {
-                MACRO_THROW(NetworkApiException, StringFormat("[BatchConnect][RaSocket]errNo[0x%016llx] ra socket batch connect, timeout[%lld]. return[%d], params: num[%u]", 
-                    HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), timeout, ret, num));
+                HCCL_ERROR("[BatchConnect][RaSocket]errNo[0x%016llx] ra socket batch connect, timeout[%lld]. return[%d], params: num[%u]",
+                    HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), timeout, ret, num);
+                return HCCL_E_TCP_CONNECT;
             }
             SaluSleep(ONE_MILLISECOND_OF_USLEEP);
         } else {
-            MACRO_THROW(NetworkApiException, StringFormat("[BatchConnect][RaSocket]errNo[0x%016llx] ra socket batch connect fail, return[%d], params: num[%u]", 
-                HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), ret, num));
+            HCCL_ERROR("[BatchConnect][RaSocket]errNo[0x%016llx] ra socket batch connect fail, return[%d], params: num[%u]",
+                HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), ret, num);
+            return HCCL_E_TCP_CONNECT;
         }
     }
+    return HCCL_SUCCESS;
 }
 
-void HrtRaSocketConnectOne(RaSocketConnectParam &in)
+HcclResult HrtRaSocketConnectOne(RaSocketConnectParam &in)
 {
-    HCCL_INFO("[ConnectOne][RaSocket] Input params: socketHandle=%p, remoteIp=%s, port=%u, tag=%s", 
+    HCCL_INFO("[ConnectOne][RaSocket] Input params: socketHandle=%p, remoteIp=%s, port=%u, tag=%s",
         in.socketHandle, in.remoteIp.Describe().c_str(), in.port, in.tag.c_str());
 
     struct SocketConnectInfoT connInfo {};
@@ -274,16 +285,16 @@ void HrtRaSocketConnectOne(RaSocketConnectParam &in)
 
     int sret = strcpy_s(connInfo.tag, sizeof(connInfo.tag), in.tag.c_str());
     if (sret != 0) {
-        string msg
-            = StringFormat("[HrtRaSocketConnectOne] copy tag[%s] to hccp tag failed, in.tag size[%d], connInfo.tag size[%d], ret[%d]", in.tag.c_str(), sizeof(in.tag.c_str()), sizeof(connInfo.tag), sret);
-        MACRO_THROW(NetworkApiException, msg);
+        HCCL_ERROR("[HrtRaSocketConnectOne] copy tag[%s] to hccp tag failed, in.tag size[%d], connInfo.tag size[%d], ret[%d]",
+            in.tag.c_str(), sizeof(in.tag.c_str()), sizeof(connInfo.tag), sret);
+        return HCCL_E_TCP_CONNECT;
     }
 
     HCCL_INFO("Socket Connect tag=[%s], remoteIp[%s]", connInfo.tag, in.remoteIp.Describe().c_str());
-    SocketBatchConnect(&connInfo, 1);
+    return SocketBatchConnect(&connInfo, 1);
 }
 
-static void HRaSocketBatchClose(struct SocketCloseInfoT conn[], u32 num)
+static HcclResult HRaSocketBatchClose(struct SocketCloseInfoT conn[], u32 num)
 {
     CHECK_NULLPTR(conn, "[HRaSocketBatchClose] conn is nullptr!");
     HCCL_INFO("[BatchClose][RaSocket] Input params: num=%u", num);
@@ -299,29 +310,32 @@ static void HRaSocketBatchClose(struct SocketCloseInfoT conn[], u32 num)
         } else if (ret == SOCK_EAGAIN) {
             bool bTimeout = ((std::chrono::steady_clock::now() - startTime) >= timeout);
             if (bTimeout) {
-                MACRO_THROW(NetworkApiException, StringFormat("[BatchClose][RaSocket]errNo[0x%016llx]  ra socket batch close, timeout[%d], return[%d], params: num[%u]", 
-                    HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), timeout, ret, num));
+                HCCL_ERROR("[BatchClose][RaSocket]errNo[0x%016llx]  ra socket batch close, timeout[%d], return[%d], params: num[%u]",
+                    HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), timeout, ret, num);
+                return HCCL_E_TCP_CONNECT;
             }
             SaluSleep(ONE_MILLISECOND_OF_USLEEP);
         } else {
             // 非ra限速场景错误，不轮询，直接退出
-            MACRO_THROW(NetworkApiException, StringFormat("[BatchClose][RaSocket]errNo[0x%016llx] ra socket batch close fail, return[%d], params: num[%u]", 
-                    HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), ret, num));
+            HCCL_ERROR("[BatchClose][RaSocket]errNo[0x%016llx] ra socket batch close fail, return[%d], params: num[%u]",
+                    HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), ret, num);
+            return HCCL_E_TCP_CONNECT;
         }
     }
+    return HCCL_SUCCESS;
 }
 
-void HrtRaSocketCloseOne(RaSocketCloseParam &in)
+HcclResult HrtRaSocketCloseOne(RaSocketCloseParam &in)
 {
     HCCL_INFO("[CloseOne][RaSocket] Input params: socketHandle=%p, fdHandle=%p", in.socketHandle, in.fdHandle);
     struct SocketCloseInfoT closeInfo = {0};
     closeInfo.fdHandle     = in.fdHandle;
     closeInfo.socketHandle = in.socketHandle;
 
-    HRaSocketBatchClose(&closeInfo, 1);
+    return HRaSocketBatchClose(&closeInfo, 1);
 }
 
-static void HRaSocketListenStart(struct SocketListenInfoT conn[], u32 num)
+static HcclResult HRaSocketListenStart(struct SocketListenInfoT conn[], u32 num)
 {
     CHECK_NULLPTR(conn, "[HRaSocketListenStart] conn is nullptr!");
     HCCL_INFO("[ListenStart][RaSocket] Input params: num=%u", num);
@@ -337,16 +351,19 @@ static void HRaSocketListenStart(struct SocketListenInfoT conn[], u32 num)
         } else if (ret == SOCK_EAGAIN) {
             bool bTimeout = ((std::chrono::steady_clock::now() - startTime) >= timeout);
             if (bTimeout) {
-                MACRO_THROW(NetworkApiException, StringFormat("[ListenStart][RaSocket]errNo[0x%016llx] ra socket listen start, timeout[%d], return[%d], params: num[%u]", 
-                    HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), EnvLinkTimeoutGet(), ret, num));
+                HCCL_ERROR("[ListenStart][RaSocket]errNo[0x%016llx] ra socket listen start, timeout[%d], return[%d], params: num[%u]",
+                    HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), EnvLinkTimeoutGet(), ret, num);
+                return HCCL_E_TCP_CONNECT;
             }
             SaluSleep(ONE_MILLISECOND_OF_USLEEP);
         } else {
             // 非ra限速场景错误，不轮询，直接退出
-            MACRO_THROW(NetworkApiException, StringFormat("[ListenStart][RaSocket]errNo[0x%016llx] ra socket listen start fail, return[%d], params: num[%u]", 
-                    HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), EnvLinkTimeoutGet(), ret, num));
+            HCCL_ERROR("[ListenStart][RaSocket]errNo[0x%016llx] ra socket listen start fail, return[%d], params: num[%u]",
+                    HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), EnvLinkTimeoutGet(), ret, num);
+            return HCCL_E_TCP_CONNECT;
         }
     }
+    return HCCL_SUCCESS;
 }
 
 static bool RaSocketTryListenStart(struct SocketListenInfoT conn[], u32 num)
@@ -364,16 +381,18 @@ static bool RaSocketTryListenStart(struct SocketListenInfoT conn[], u32 num)
                     " another port or check the port status", __func__, (num > 0 ? conn[0].port : HCCL_INVALID_PORT));
         return false;
     } else if (ret == SOCK_EADDRNOTAVAIL){
-        MACRO_THROW(NetworkApiException, StringFormat("[%s] Socket listen start fail: " 
-            "IP address is not available, please check the IP address configuration, return[%d]", __func__, ret));
+        HCCL_ERROR("[%s] Socket listen start fail: "
+            "IP address is not available, please check the IP address configuration, return[%d]", __func__, ret);
+        return false;
     } else {
         // 非ra限速场景错误，不轮询，直接退出
-        MACRO_THROW(NetworkApiException, StringFormat("[TryListenStart][RaSocket]errNo[0x%016llx] ra socket listen start fail, return[%d], params: num[%u]", 
-            HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), ret, num));
+        HCCL_ERROR("[TryListenStart][RaSocket]errNo[0x%016llx] ra socket listen start fail, return[%d], params: num[%u]",
+            HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), ret, num);
+        return false;
     }
 }
 
-static void HRaSocketListenStop(struct SocketListenInfoT conn[], u32 num)
+static HcclResult HRaSocketListenStop(struct SocketListenInfoT conn[], u32 num)
 {
     CHECK_NULLPTR(conn, "[HRaSocketListenStop] conn is nullptr!");
     HCCL_INFO("[ListenStop][RaSocket] Input params: num=%u", num);
@@ -388,25 +407,37 @@ static void HRaSocketListenStop(struct SocketListenInfoT conn[], u32 num)
         } else if (ret == SOCK_EAGAIN) {
             bool bTimeout = ((std::chrono::steady_clock::now() - startTime) >= timeout);
             if (bTimeout) {
-                MACRO_THROW(NetworkApiException, StringFormat("[ListenStop][RaSocket]errNo[0x%016llx]  ra socket listen stop fail, timeout[%d], return[%d], params: num[%u]", 
-                    HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), timeout, ret, num));
+                HCCL_ERROR("[ListenStop][RaSocket]errNo[0x%016llx]  ra socket listen stop fail, timeout[%d], return[%d], params: num[%u]",
+                    HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), timeout, ret, num);
+                return HCCL_E_TCP_CONNECT;
             }
             SaluSleep(ONE_MILLISECOND_OF_USLEEP);
         } else {
             // 非ra限速场景错误，不轮询，直接退出
-            MACRO_THROW(NetworkApiException, StringFormat("[ListenStop][RaSocket]errNo[0x%016llx] ra socket listen stop fail, return[%d], params: num[%u]", 
-                    HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), ret, num));
+            HCCL_ERROR("[ListenStop][RaSocket]errNo[0x%016llx] ra socket listen stop fail, return[%d], params: num[%u]",
+                    HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), timeout, ret, num);
+            return HCCL_E_TCP_CONNECT;
         }
     }
+    return HCCL_SUCCESS;
 }
 
-void HrtRaSocketListenOneStart(RaSocketListenParam &in)
+HcclResult HrtRaSocketListenOneStop(RaSocketListenParam &in)
+{
+    HCCL_INFO("[ListenOneStop][RaSocket] Input params: socketHandle: %p, port: %u",in.socketHandle, in.port);
+    struct SocketListenInfoT listenInfo {};
+    listenInfo.socketHandle = in.socketHandle;
+    listenInfo.port = in.port;
+    return HRaSocketListenStop(&listenInfo, 1);
+}
+
+HcclResult HrtRaSocketListenOneStart(RaSocketListenParam &in)
 {
     HCCL_INFO("[ListenStart][RaSocket] Input params: socketHandle: %p, port: %u", in.socketHandle, in.port);
     struct SocketListenInfoT listenInfo {};
     listenInfo.socketHandle = in.socketHandle;
     listenInfo.port = in.port;
-    HRaSocketListenStart(&listenInfo, 1);
+    return HRaSocketListenStart(&listenInfo, 1);
 }
 
 bool HrtRaSocketTryListenOneStart(RaSocketListenParam &in)
@@ -422,16 +453,7 @@ bool HrtRaSocketTryListenOneStart(RaSocketListenParam &in)
     return ret;
 }
 
-void HrtRaSocketListenOneStop(RaSocketListenParam &in)
-{
-    HCCL_INFO("[ListenOneStop][RaSocket] Input params: socketHandle: %p, port: %u",in.socketHandle, in.port);
-    struct SocketListenInfoT listenInfo {};
-    listenInfo.socketHandle = in.socketHandle;
-    listenInfo.port = in.port;
-    HRaSocketListenStop(&listenInfo, 1);
-}
-
-void RaBlockGetSockets(u32 role, SocketInfoT conn[], u32 num) // 修改为内部函数，不对外
+HcclResult RaBlockGetSockets(u32 role, SocketInfoT conn[], u32 num) // 修改为内部函数，不对外
 {
     CHECK_NULLPTR(conn, "[RaBlockGetSockets] conn is nullptr!");
     HCCL_INFO("[GetSockets][RaBlock] Input params: role=%u, num=%u", role, num);
@@ -441,32 +463,36 @@ void RaBlockGetSockets(u32 role, SocketInfoT conn[], u32 num) // 修改为内部
     auto timeout       = std::chrono::seconds(EnvLinkTimeoutGet());
     while (true) {
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
-            MACRO_THROW(NetworkApiException, StringFormat("[HrtRaBlockGetSockets] get rasocket timeout role[%u], num[%u], gotSocketsCnt[%u], timeout[%lld]s",
-                role, num, gotSocketsCnt, timeout));
+            HCCL_ERROR("[HrtRaBlockGetSockets] get rasocket timeout role[%u], num[%u], gotSocketsCnt[%u], timeout[%lld]s",
+                role, num, gotSocketsCnt, timeout);
+            return HCCL_E_NETWORK;
         }
         u32 connectedNum = 0;
         sockRet          = RaGetSockets(role, conn, num, &connectedNum);
         if ((connectedNum == 0 && sockRet == 0) || (sockRet == SOCK_EAGAIN)) {
             SaluSleep(ONE_MILLISECOND_OF_USLEEP);
         } else if (sockRet != 0) {
-            MACRO_THROW(NetworkApiException, StringFormat("[Get][RaSocket]get rasocket error. role[%u], num[%u], sockRet[%d], connectednum[%u]", role, num, sockRet, connectedNum));
+            HCCL_ERROR("[Get][RaSocket]get rasocket error. role[%u], num[%u], sockRet[%d], connectednum[%u]", role, num, sockRet, connectedNum);
+            return HCCL_E_NETWORK;
         } else {
             gotSocketsCnt += connectedNum;
             if (gotSocketsCnt == num) {
                 HCCL_INFO("block get sockets success, socket num[%u]", gotSocketsCnt);
                 break;
             } else if (gotSocketsCnt > num) {
-                MACRO_THROW(NetworkApiException, StringFormat("[Get][RaSocket]total Sockets[%u], more than needed num[%u]!", gotSocketsCnt, num));
+                HCCL_ERROR("[Get][RaSocket]total Sockets[%u], more than needed num[%u]!", gotSocketsCnt, num);
+                return HCCL_E_NETWORK;
             } else {
                 SaluSleep(ONE_MILLISECOND_OF_USLEEP);
             }
         }
     }
+    return HCCL_SUCCESS;
 }
 
-RaSocketFdHandleParam HrtRaBlockGetOneSocket(u32 role, RaSocketGetParam &param)
+HcclResult HrtRaBlockGetOneSocket(u32 role, RaSocketGetParam &param, RaSocketFdHandleParam &socketResult)
 {
-    HCCL_INFO("[GetOneSocket][RaSocket] Input params: role=%u,socketHandle=%p, fdHandle=%p, remoteIp=%s", 
+    HCCL_INFO("[GetOneSocket][RaSocket] Input params: role=%u,socketHandle=%p, fdHandle=%p, remoteIp=%s",
         role, param.socketHandle, param.fdHandle, param.remoteIp.Describe().c_str());
     struct SocketInfoT socketInfo {};
 
@@ -477,17 +503,22 @@ RaSocketFdHandleParam HrtRaBlockGetOneSocket(u32 role, RaSocketGetParam &param)
 
     int sret = strcpy_s(socketInfo.tag, sizeof(socketInfo.tag), param.tag.c_str());
     if (sret != 0) {
-        MACRO_THROW(NetworkApiException, StringFormat("[HrtRaBlockGetOneSocket] copy tag[%s] to hccp failed, ret=%d, role=%u,socketHandle=%p, fdHandle=%p, remoteIp=%s, socketInfo.tag size=%d, param.tag size=%d",
-            param.tag.c_str(), sret, role, param.socketHandle, param.fdHandle, param.remoteIp.Describe().c_str(), sizeof(socketInfo.tag), sizeof(param.tag.c_str())));
+        HCCL_ERROR("[HrtRaBlockGetOneSocket] copy tag[%s] to hccp failed, ret=%d, role=%u,socketHandle=%p, fdHandle=%p, remoteIp=%s, socketInfo.tag size=%d, param.tag size=%d",
+            param.tag.c_str(), sret, role, param.socketHandle, param.fdHandle, param.remoteIp.Describe().c_str(), sizeof(socketInfo.tag), sizeof(param.tag.c_str()));
+        return HCCL_E_TCP_CONNECT;
     }
-    
-    HCCL_INFO("Socket Get tag=[%s], remoteIp[%s], ret[%d]", socketInfo.tag, param.remoteIp.Describe().c_str(), sret);
-    RaBlockGetSockets(role, &socketInfo, 1);
 
-    return RaSocketFdHandleParam(socketInfo.fdHandle, socketInfo.status);
+    HCCL_INFO("Socket Get tag=[%s], remoteIp[%s], ret[%d]", socketInfo.tag, param.remoteIp.Describe().c_str(), sret);
+    HcclResult ret = RaBlockGetSockets(role, &socketInfo, 1);
+    if (ret != HCCL_SUCCESS) {
+        return ret;
+    }
+
+    socketResult = RaSocketFdHandleParam(socketInfo.fdHandle, socketInfo.status);
+    return HCCL_SUCCESS;
 }
 
-void HrtRaSocketBlockSend(const FdHandle fdHandle, const void *data, u32 sendSize)
+HcclResult HrtRaSocketBlockSend(const FdHandle fdHandle, const void *data, u32 sendSize)
 {
     CHECK_NULLPTR(fdHandle, "[HrtRaSocketBlockSend] fdHandle is nullptr!");
     CHECK_NULLPTR(data, "[HrtRaSocketBlockSend] data is nullptr!");
@@ -512,25 +543,29 @@ void HrtRaSocketBlockSend(const FdHandle fdHandle, const void *data, u32 sendSiz
             }
 
             if (totalSentSize > sendSize) {
-                MACRO_THROW(NetworkApiException, StringFormat("[Send][RaSocket]errNo[0x%016llx] ra socket send failed, fdHandle=%p, data=%p, size=%u, retSize=%u", 
-                    HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), fdHandle, data, sendSize, sentSize));
+                HCCL_ERROR("[Send][RaSocket]errNo[0x%016llx] ra socket send failed, fdHandle=%p, data=%p, size=%u, retSize=%u",
+                    HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), fdHandle, data, sendSize, sentSize);
+                return HCCL_E_NETWORK;
             }
             SaluSleep(ONE_HUNDRED_MICROSECOND_OF_USLEEP);
         } else if (ret == SOCK_EAGAIN) {
             /* ra速率限制 retry */
             SaluSleep(ONE_MILLISECOND_OF_USLEEP);
         } else {
-            MACRO_THROW(NetworkApiException, StringFormat("[Send][RaSocket]errNo[0x%016llx] ra socket send failed, fdHandle=%p, data=%p, size=%u, retSize=%u, ret=%d", 
-                HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), fdHandle, data, sendSize, sentSize, ret));
+            HCCL_ERROR("[Send][RaSocket]errNo[0x%016llx] ra socket send failed, fdHandle=%p, data=%p, size=%u, retSize=%u, ret=%d",
+                HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), fdHandle, data, sendSize, sentSize, ret);
+            return HCCL_E_NETWORK;
         }
         /* 获取当前时间，如果耗时超过timeout，则返回错误 */
         const auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - start);
         if (elapsed > timeout) {
-            MACRO_THROW(NetworkApiException, StringFormat("[Send][RaSocket]errNo[0x%016llx] Wait timeout for sockets send, fdHandle[%p], data[%p], size[%u], retsize[%u], ret[%d]",
-                       HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), fdHandle, data, sendSize, sentSize, ret));
+            HCCL_ERROR("[Send][RaSocket]errNo[0x%016llx] Wait timeout for sockets send, fdHandle[%p], data[%p], size[%u], retsize[%u], ret[%d]",
+                       HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), fdHandle, data, sendSize, sentSize, ret);
+            return HCCL_E_NETWORK;
         }
     }
     HCCL_INFO("ra socket send finished,ret[%d]", ret);
+    return HCCL_SUCCESS;
 }
 
 bool HrtRaSocketNonBlockSend(const FdHandle fdHandle, void *data, u64 size, u64 *sentSize)
@@ -541,8 +576,9 @@ bool HrtRaSocketNonBlockSend(const FdHandle fdHandle, void *data, u64 size, u64 
     HCCL_INFO("[HrtRaSocketNonBlockSend] Input params: fdHandle=%p,data=%p, size=%llu, sentSize=%llu", 
         fdHandle, data, size, *sentSize);
     if (size > SOCKET_SEND_MAX_SIZE) {
-        MACRO_THROW(NetworkApiException, StringFormat("[hrtRaSocketNonBlockSend]errNo[0x%016llx] ra socket send size is too large, "
-            "data[%p], size[%llu], fdHandle[%p], send size[%llu]", HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), data, size, fdHandle, *sentSize));
+        HCCL_ERROR("[hrtRaSocketNonBlockSend]errNo[0x%016llx] ra socket send size is too large, "
+            "data[%p], size[%llu], fdHandle[%p], send size[%llu]", HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), data, size, fdHandle, *sentSize);
+        return false;
     }   
     
     s32 ret = RaSocketSend(fdHandle, data, size, sentSize);
@@ -556,7 +592,7 @@ bool HrtRaSocketNonBlockSend(const FdHandle fdHandle, void *data, u64 size, u64 
     }
 }
 
-void HrtRaSocketBlockRecv(const FdHandle fdHandle, void *data, u32 size)
+HcclResult HrtRaSocketBlockRecv(const FdHandle fdHandle, void *data, u32 size)
 {
     auto                       startTime = std::chrono::steady_clock::now();
     unsigned long long         recvSize  = 0;
@@ -569,43 +605,44 @@ void HrtRaSocketBlockRecv(const FdHandle fdHandle, void *data, u32 size)
     HCCL_INFO("before ra socket recv, para: fdHandle[%p], data[%p], size[%u]", fdHandle, data, size);
     while (true) {
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
-            std::string errMsg = StringFormat(
-                "[Recv][RaSocket]errNo[0x%016llx] Wait timeout for sockets recv, data[%p], "
+            HCCL_ERROR("[Recv][RaSocket]errNo[0x%016llx] Wait timeout for sockets recv, data[%p], "
                 "size[%u], recvSize[%u], fdHandle[%p], ret[%d]",
-                HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), data, size, recvSize, fdHandle, rtRet
-            );
-            HCCL_ERROR("%s", errMsg.c_str());
+                HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), data, size, recvSize, fdHandle, rtRet);
             HCCL_ERROR("Please check the following reasons:");
             HCCL_ERROR("1. check the firewall configuration or try to disable the firewall.");
             HCCL_ERROR("2. check error log on the other process or thread.");
-            MACRO_THROW(NetworkApiException, errMsg);
+            return HCCL_E_TCP_TRANSFER;
         }
         rtRet = RaSocketRecv(fdHandle, reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(data) + getedLen),
                                size - getedLen, &recvSize);
         if ((rtRet == 0) && (recvSize > 0)) { // 接收完成，也有可能要多次接收
             getedLen += recvSize;
             if (getedLen > size) {
-                MACRO_THROW(NetworkApiException, StringFormat("[Recv][RaSocket]errNo[0x%016llx] socket receive call RaSocketRecv failed,"
+                HCCL_ERROR("[Recv][RaSocket]errNo[0x%016llx] socket receive call RaSocketRecv failed,"
                            "rtSize[%u], bigger size[%zu], fdHandle[%p], data[%p], retSize[%u], ret[%d]",
-                           HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_TRANSFER), getedLen, size, fdHandle, data, recvSize, rtRet));
+                           HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_TRANSFER), getedLen, size, fdHandle, data, recvSize, rtRet);
+                return HCCL_E_TCP_TRANSFER;
             }
             if (getedLen == size) {
                 break;
             }
         } else if ((rtRet == 0) && (recvSize == 0)) {
-            MACRO_THROW(NetworkApiException, StringFormat("[Recv][RaSocket]recv fail, fdHandle=%p, data=%p, bufLen=%u, recLen=%lld, ret=%d", fdHandle, data, size, recvSize, rtRet));
+            HCCL_ERROR("[Recv][RaSocket]recv fail, fdHandle=%p, data=%p, bufLen=%u, recLen=%lld, ret=%d", fdHandle, data, size, recvSize, rtRet);
+            return HCCL_E_TCP_TRANSFER;
         } else if (rtRet == SOCK_ESOCKCLOSED || rtRet == SOCK_CLOSE) { // 连接关闭，出错
-            MACRO_THROW(NetworkApiException, StringFormat("[Recv][RaSocket]errNo[0x%016llx] recv fail, call RaSocketRecv failed, sock_esockclosed, fdhandle=%p, data=%p, bufLen=%u, recLen=%lld, ret=%d",
-                HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_TRANSFER), fdHandle, data, size, recvSize, rtRet));
+            HCCL_ERROR("[Recv][RaSocket]errNo[0x%016llx] recv fail, call RaSocketRecv failed, sock_esockclosed, fdhandle=%p, data=%p, bufLen=%u, recLen=%lld, ret=%d",
+                HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_TRANSFER), fdHandle, data, size, recvSize, rtRet);
+            return HCCL_E_TCP_TRANSFER;
         } else if (rtRet != 0) {
             SaluSleep(ONE_MILLISECOND_OF_USLEEP); // 尚未接收到数据,延时1ms
             continue;
         }
     }
     HCCL_INFO("ra socket receive finished. ret[%d]", rtRet);
+    return HCCL_SUCCESS;
 }
 
-SocketHandle HrtRaSocketInit(HrtNetworkMode  netMode, RaInterface &in)
+HcclResult HrtRaSocketInit(HrtNetworkMode  netMode, RaInterface &in, SocketHandle &socketHandle)
 {
     int mode = HRT_NETWORK_MODE_MAP.at(netMode);
     struct rdev rdevInfo {};
@@ -616,27 +653,30 @@ SocketHandle HrtRaSocketInit(HrtNetworkMode  netMode, RaInterface &in)
     HCCL_INFO("[HrtRaSocketInit] Input params: mode=%u, ip=%u, device id=%u, family=%u",
         mode, rdevInfo.localIp.addr.s_addr, rdevInfo.phyId, rdevInfo.family);
 
-    SocketHandle socketHandle = nullptr;
+    socketHandle = nullptr;
     s32          ret          = RaSocketInit(mode, rdevInfo, &socketHandle);
     if (ret != 0 || (socketHandle == nullptr)) {
-        MACRO_THROW(NetworkApiException, StringFormat("[Init][RaSock]errNo[0x%016llx] ra socket init fail, call RaSocketInit failed, params: mode=%u, ip=%u, device id=%u, family=%u. return: ret=%d",
-            HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), mode, rdevInfo.localIp.addr.s_addr, rdevInfo.phyId, rdevInfo.family, ret));
+        HCCL_ERROR("[Init][RaSock]errNo[0x%016llx] ra socket init fail, call RaSocketInit failed, params: mode=%u, ip=%u, device id=%u, family=%u. return: ret=%d",
+            HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), mode, rdevInfo.localIp.addr.s_addr, rdevInfo.phyId, rdevInfo.family, ret);
+        return HCCL_E_NETWORK;
     }
 
     HCCL_INFO("socket init success, ip[%u], device id[%u], ret[%d]", rdevInfo.localIp.addr.s_addr, rdevInfo.phyId, ret);
-    return socketHandle;
+    return HCCL_SUCCESS;
 }
 
-void HrtRaSocketDeInit(SocketHandle socketHandle)
+HcclResult HrtRaSocketDeInit(SocketHandle socketHandle)
 {
     CHECK_NULLPTR(socketHandle, "[HrtRaSocketDeInit] socketHandle is nullptr!");
     HCCL_INFO("[HrtRaSocketDeInit] Input params: socketHandle=%p", socketHandle);
 
     s32 ret = RaSocketDeinit(socketHandle);
     if (ret != 0) {
-        MACRO_THROW(NetworkApiException, StringFormat("[DeInit][RaSocket]errNo[0x%016llx] rt socket deinit fail. call RaSocketDeinit failed, params: socketHandle[%p], return: ret[%d]",
-            HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), socketHandle, ret));
+        HCCL_ERROR("[DeInit][RaSocket]errNo[0x%016llx] rt socket deinit fail. call RaSocketDeinit failed, params: socketHandle[%p], return: ret[%d]",
+            HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), socketHandle, ret);
+        return HCCL_E_NETWORK;
     }
+    return HCCL_SUCCESS;
 }
 
 void HrtRaSocketSetWhiteListStatus(u32 enable)
@@ -644,8 +684,8 @@ void HrtRaSocketSetWhiteListStatus(u32 enable)
     HCCL_INFO("[HrtRaSocketSetWhiteListStatus] Input params: enable=%u", enable);
     s32 ret = RaSocketSetWhiteListStatus(enable);
     if (ret != 0) {
-        MACRO_THROW(NetworkApiException, StringFormat("[Set][WhiteListStatus]errNo[0x%016llx] ra socekt set white list fail, call RaSocketSetWhiteListStatus failed, params: enable[%u], return: ret[%d]",
-            HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), enable, ret));
+        HCCL_ERROR("[Set][WhiteListStatus]errNo[0x%016llx] ra socekt set white list fail, call RaSocketSetWhiteListStatus failed, params: enable[%u], return: ret[%d]",
+            HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), enable, ret);
     }
 
     HCCL_INFO("set host socket whitelist status[%u] success.", enable);
@@ -656,8 +696,9 @@ u32 HrtRaSocketGetWhiteListStatus()
     u32 enable;
     s32 ret = RaSocketGetWhiteListStatus(&enable);
     if (ret != 0) {
-        MACRO_THROW(NetworkApiException, StringFormat("[Get][WhiteListStatus]errNo[0x%016llx] ra socekt get whilte list fail, call RaSocketGetWhiteListStatus failed, return: ret[%d]",
-            HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), ret));
+        HCCL_ERROR("[Get][WhiteListStatus]errNo[0x%016llx] ra socekt get whilte list fail, call RaSocketGetWhiteListStatus failed, return: ret[%d]",
+            HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), ret);
+        return 0;
     }
    
     HCCL_INFO("get host socket whitelist status[%u] success.", enable);
@@ -682,8 +723,9 @@ void HrtRaSocketWhiteListAdd(SocketHandle socketHandle, vector<RaSocketWhitelist
 
             int sret = strcpy_s(wlistInfo.tag, sizeof(wlistInfo.tag), wlists[idx].tag.c_str());
             if (sret != EOK) {
-                MACRO_THROW(InternalException, StringFormat("[Add][RaSocketWhiteList]errNo[0x%016llx]errName[HCCL_E_MEMORY] memory copy failed. params: socketHandle[%p], return: ret[%d], wlistInfo.tag size=%d,  wlists[%d].tag size=%d",
-                    HCOM_ERROR_CODE(HcclResult::HCCL_E_MEMORY), socketHandle, sret, sizeof(wlistInfo.tag), idx, sizeof(wlists[idx].tag.c_str())));
+                HCCL_ERROR("[Add][RaSocketWhiteList]errNo[0x%016llx]errName[HCCL_E_MEMORY] memory copy failed. params: socketHandle[%p], return: ret[%d], wlistInfo.tag size=%d,  wlists[%d].tag size=%d",
+                    HCOM_ERROR_CODE(HcclResult::HCCL_E_MEMORY), socketHandle, sret, sizeof(wlistInfo.tag), idx, sizeof(wlists[idx].tag.c_str()));
+                return;
             }
             HCCL_INFO("add whitelistInfo tag=[%s], remoteIp[%s]",
                     wlistInfo.tag, wlists[idx].remoteIp.Describe().c_str());
@@ -692,8 +734,9 @@ void HrtRaSocketWhiteListAdd(SocketHandle socketHandle, vector<RaSocketWhitelist
 
         s32 ret = RaSocketWhiteListAdd(socketHandle, wlistInfoVec.data(), wlistInfoVec.size());
         if (ret != 0) {
-            MACRO_THROW(NetworkApiException, StringFormat("[Add][RaSocketWhiteList]errNo[0x%016llx]errName[HCCL_E_TCP_CONNECT] ra white list add fail, call RaSocketWhiteListAdd failed, socketHandle[%p], num=%llu, return[%d].",
-                HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), socketHandle, wlistInfoVec.size() + startIdx, ret));
+            HCCL_ERROR("[Add][RaSocketWhiteList]errNo[0x%016llx]errName[HCCL_E_TCP_CONNECT] ra white list add fail, call RaSocketWhiteListAdd failed, socketHandle[%p], num=%llu, return[%d].",
+                HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), socketHandle, wlistInfoVec.size() + startIdx, ret);
+            return;
         }
         HCCL_INFO("add white list: num[%llu], remain [%llu].", addListNum, (wlistNum - addListNum));
 
@@ -722,17 +765,18 @@ void HrtRaSocketWhiteListDel(SocketHandle socketHandle, vector<RaSocketWhitelist
 
             int sret = strcpy_s(wlistInfo.tag, sizeof(wlistInfo.tag), wlists[idx].tag.c_str());
             if (sret != EOK) {
-                auto msg = StringFormat("[Del][RaSocketWhiteList]errNo[0x%016llx] memory copy failed. ret[%d], wlistInfo.tag size[%d], wlists[%d].tag size[%d]",
-                                        HCOM_ERROR_CODE(HcclResult::HCCL_E_MEMORY), sret, sizeof(wlistInfo.tag), idx, sizeof(wlists[idx].tag.c_str()));
-                MACRO_THROW(InternalException, msg);
+                HCCL_ERROR("[Del][RaSocketWhiteList]errNo[0x%016llx] memory copy failed. ret[%d], wlistInfo.tag size[%d], wlists[%d].tag size[%d]",
+                    HCOM_ERROR_CODE(HcclResult::HCCL_E_MEMORY), sret, sizeof(wlistInfo.tag), idx, sizeof(wlists[idx].tag.c_str()));
+                return;
             }
             wlistInfoVec.push_back(wlistInfo);
         }
 
         s32 ret = RaSocketWhiteListDel(socketHandle, wlistInfoVec.data(), wlistInfoVec.size());
         if (ret != 0) {
-            MACRO_THROW(NetworkApiException, StringFormat("[Del][RaSocketWhiteList]errNo[0x%016llx] ra white list del fail, call RaSocketWhiteListDel failed, num=%llu, return[%d].",
-                HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), wlists.size(), ret));
+            HCCL_ERROR("[Del][RaSocketWhiteList]errNo[0x%016llx] ra white list del fail, call RaSocketWhiteListDel failed, num=%llu, return[%d].",
+                HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), wlists.size(), ret);
+            return;
         }
         HCCL_INFO("del white list: num[%llu], remain [%llu].", delListNum, (wlistNum - delListNum));
 
@@ -786,8 +830,9 @@ static u32 HrtGetIfNum(struct RaGetIfattr &config)
     u32 num = 0;
     s32 ret = RaGetIfnum(&config, &num);
     if (ret != 0) {
-        MACRO_THROW(NetworkApiException, StringFormat("[Get][IfNum]errNo[0x%016llx] ra get if num fail. call RaGetIfnum failed, Input params: phyId=%u, nicPosistion=%u, return: ret[%d], num[%u]",
-            HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), config.phyId, config.nicPosition, ret, num));
+        HCCL_ERROR("[Get][IfNum]errNo[0x%016llx] ra get if num fail. call RaGetIfnum failed, Input params: phyId=%u, nicPosistion=%u, return: ret[%d], num[%u]",
+            HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), config.phyId, config.nicPosition, ret, num);
+        return 0;
     }
     return num;
 }
@@ -799,8 +844,8 @@ static void HrtGetIfAddress(struct RaGetIfattr &config, InterfaceInfo ifaddrInfo
 
     s32 ret = RaGetIfaddrs(&config, ifaddrInfos, &num);
     if (ret != 0) {
-        MACRO_THROW(NetworkApiException, StringFormat("[Get][IfAddress]errNo[0x%016llx] ra get if address fail. call RaGetIfaddrs failed, Input params: phyId=%u, nicPosistion=%u, return: ret[%d], num[%u]",
-            HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), config.phyId, config.nicPosition, ret, num));
+        HCCL_ERROR("[Get][IfAddress]errNo[0x%016llx] ra get if address fail. call RaGetIfaddrs failed, Input params: phyId=%u, nicPosistion=%u, return: ret[%d], num[%u]",
+            HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), config.phyId, config.nicPosition, ret, num);
     }
 }
 
@@ -869,9 +914,9 @@ vector<IpAddress> HrtGetDeviceIp(u32 devicePhyId, NetworkMode netWorkMode)
     return ipAddr;
 }
 
-RdmaHandle HrtRaRdmaInit(HrtNetworkMode netMode, RaInterface &in)
+HcclResult HrtRaRdmaInit(HrtNetworkMode netMode, RaInterface &in, RdmaHandle &rdmaHandle)
 {
-    RdmaHandle rdmaHandle = nullptr;
+    rdmaHandle = nullptr;
     int        mode       = HRT_NETWORK_MODE_MAP.at(netMode);
     unsigned int notifyType = netMode == HrtNetworkMode::PEER ? NO_USE : NOTIFY;
     HCCL_INFO("[HrtRaRdmaInit] Input params: mode=%d, phyId=%u", mode, in.phyId);
@@ -886,22 +931,25 @@ RdmaHandle HrtRaRdmaInit(HrtNetworkMode netMode, RaInterface &in)
         vector<string>({std::to_string(rdevInfo.phyId), "The network port is down"})
     );
     if (ret != 0 || (rdmaHandle == nullptr)) {
-        MACRO_THROW(NetworkApiException, StringFormat("[Init][RaRdma]errNo[0x%016llx] rdma init fail. call RaRdevInit failed, Input params: phyId=%u, mode=%u, return: ret[%d]",
-            HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), in.phyId, mode, ret));
+        HCCL_ERROR("[Init][RaRdma]errNo[0x%016llx] rdma init fail. call RaRdevInit failed, Input params: phyId=%u, mode=%u, return: ret=%d]",
+            HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), in.phyId, mode, ret);
+        return HCCL_E_NETWORK;
     }
-    return rdmaHandle;
+    return HCCL_SUCCESS;
 }
 
-void HrtRaRdmaDeInit(RdmaHandle rdmaHandle, HrtNetworkMode netMode)
+HcclResult HrtRaRdmaDeInit(RdmaHandle rdmaHandle, HrtNetworkMode netMode)
 {
     CHECK_NULLPTR(rdmaHandle, "[HrtRaRdmaDeInit] rdmaHandle is nullptr!");
     HCCL_INFO("[HrtRaRdmaDeInit] Input params: rdmaHandle=%p, netMode=%d", rdmaHandle, netMode);
     unsigned int notifyType = netMode == HrtNetworkMode::PEER ? NO_USE : NOTIFY;
     s32 ret = RaRdevDeinit(rdmaHandle, notifyType);
     if (ret != 0) {
-        MACRO_THROW(NetworkApiException, StringFormat("[DeInit][RaRdma]errNo[0x%016llx] rt rdev deinit fail. call RaRdevDeinit failed, rdmaHandle=%p, return[%d].",
-            HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), rdmaHandle, ret));
+        HCCL_ERROR("[DeInit][RaRdma]errNo[0x%016llx] rt rdev deinit fail. call RaRdevDeinit failed, rdmaHandle=%p, return[%d].",
+            HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), rdmaHandle, ret);
+        return HCCL_E_NETWORK;
     }
+    return HCCL_SUCCESS;
 }
 
 void HrtRaGetNotifyBaseAddr(RdmaHandle rdmaHandle, u64 *va, u64 *size)
@@ -930,30 +978,32 @@ void HrtRaGetNotifyBaseAddr(RdmaHandle rdmaHandle, u64 *va, u64 *size)
             }
             SaluSleep(ONE_MILLISECOND_OF_USLEEP);
         } else {
-            MACRO_THROW(NetworkApiException, StringFormat("[Get][RaNotifyBaseAddr]errNo[0x%016llx] ra get notify base addr fail, call RaGetNotifyBaseAddr failed,"
-                "return[%d], params: va[0x%llx], size[%llu], rdmaHandle=%p",
-            HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), ret, notifyVa, notifySize, rdmaHandle));
+            HCCL_ERROR("[Get][RaNotifyBaseAddr]errNo[0x%016llx] ra get notify base addr fail, call RaGetNotifyBaseAddr failed,"
+                "return[%d], params: va[0x%llx], size[%llx], rdmaHandle=%p",
+                HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), ret, notifyVa, notifySize, rdmaHandle);
+            return;
         }
     }
 }
 
-QpHandle HrtRaQpCreate(RdmaHandle rdmaHandle, int flag, int qpMode)
+HcclResult HrtRaQpCreate(RdmaHandle rdmaHandle, int flag, int qpMode, QpHandle &connHandle)
 {
     CHECK_NULLPTR(rdmaHandle, "[HrtRaQpCreate] rdmaHandle is nullptr!");
     HCCL_INFO("[HrtRaQpCreate] Input params: rdmaHandle=%p, flag=%d, qpMode=%d", rdmaHandle, flag, qpMode);
-    QpHandle connHandle = nullptr;
+    connHandle = nullptr;
 
     s32 ret = RaQpCreate(rdmaHandle, flag, qpMode, &connHandle);
     if (ret != 0 || connHandle == nullptr) {
-        RPT_INPUT_ERR(ret == ROCE_ENOMEM_RET, "EI0011", std::vector<std::string>({"memory_size"}), // A3是当ROCE_ENOMEM_RET才上报EI0011
+        RPT_INPUT_ERR(ret == ROCE_ENOMEM_RET, "EI0011", std::vector<std::string>({"memory_size"}),
                             std::vector<std::string>({"size: [0.25MB, 3MB], Affected by QP depth configuration"}));
-        MACRO_THROW(NetworkApiException, StringFormat("[Create][RaQp]errNo[0x%016llx] ra qp create fail. call RaGetNotifyBaseAddr, params: rdmaHandle[%p], flag[%d], qpMode[%d], connHandle[%p]. return: ret[%d]",
-            HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), rdmaHandle, flag, qpMode, connHandle, ret));
+        HCCL_ERROR("[Create][RaQp]errNo[0x%016llx] ra qp create fail. call RaGetNotifyBaseAddr, params: rdmaHandle[%p], flag[%d], qpMode[%d], connHandle[%p]. return: ret[%d]",
+            HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), rdmaHandle, flag, qpMode, connHandle, ret);
+        return HCCL_E_NETWORK;
     }
-    return connHandle;
+    return HCCL_SUCCESS;
 }
 
-void HrtRaQpDestroy(QpHandle qpHandle)
+HcclResult HrtRaQpDestroy(QpHandle qpHandle)
 {
     CHECK_NULLPTR(qpHandle, "[HrtRaQpDestroy] qpHandle is nullptr!");
     HCCL_INFO("[HrtRaQpDestroy] Input params: qpHandle=%p", qpHandle);
@@ -966,16 +1016,19 @@ void HrtRaQpDestroy(QpHandle qpHandle)
         } else if (ret == SOCK_EAGAIN) {
             bool bTimeout = ((std::chrono::steady_clock::now() - startTime) >= timeout);
             if (bTimeout != 0) {
-                MACRO_THROW(NetworkApiException, StringFormat("[Destroy][RaQp]errNo[0x%016llx] ra qp destroy timeout[%d]. "
+                HCCL_ERROR("[Destroy][RaQp]errNo[0x%016llx] ra qp destroy timeout[%d]. "
                             "qpHandle[%p], return[%d].",
-                            HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), timeout, qpHandle, ret));
+                            HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), timeout, qpHandle, ret);
+                return HCCL_E_NETWORK;
             }
             SaluSleep(ONE_MILLISECOND_OF_USLEEP);
         } else {
-            MACRO_THROW(NetworkApiException, StringFormat("[Destroy][RaQp]errNo[0x%016llx] ra qp destroy fail. call RaQpDestroy failed, qpHandle[%p], return[%d].",
-                HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), qpHandle, ret));
+            HCCL_ERROR("[Destroy][RaQp]errNo[0x%016llx] ra qp destroy fail. call RaQpDestroy failed, qpHandle[%p], return[%d].",
+                HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), qpHandle, ret);
+            return HCCL_E_NETWORK;
         }
     }
+    return HCCL_SUCCESS;
 }
 
 void HrtRaQpConnectAsync(QpHandle qpHandle, FdHandle fdHandle)
@@ -999,8 +1052,9 @@ void HrtRaQpConnectAsync(QpHandle qpHandle, FdHandle fdHandle)
             }
             SaluSleep(ONE_MILLISECOND_OF_USLEEP);
         } else {
-            MACRO_THROW(NetworkApiException, StringFormat("[ConnectAsync][RaQp]errNo[0x%016llx] ra qp connect async fail. call RaQpConnectAsync failed, qpHandle=%p, fdHandle=%p, return[%d]",
-                HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), qpHandle, fdHandle, ret));
+            HCCL_ERROR("[ConnectAsync][RaQp]errNo[0x%016llx] ra qp connect async fail. call RaQpConnectAsync failed, qpHandle=%p, fdHandle=%p, return[%d]",
+                HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), qpHandle, fdHandle, ret);
+            return;
         }
     }
 }
@@ -1012,8 +1066,9 @@ int HrtGetRaQpStatus(QpHandle qpHandle)
     int status = 0;
     s32 ret    = RaGetQpStatus(qpHandle, &status);
     if (ret != 0) {
-        MACRO_THROW(NetworkApiException, StringFormat("[GetStatus][RaQp]errNo[0x%016llx] ra qp get status failed. call ra_get_status failed, qpHandle[%p], return[%d]",
-            HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), qpHandle, ret));
+        HCCL_ERROR("[GetStatus][RaQp]errNo[0x%016llx] ra qp get status failed. call ra_get_status failed, qpHandle[%p], return[%d]",
+            HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), qpHandle, ret);
+        return -1;
     }
     return status;
 }
@@ -1029,8 +1084,8 @@ void HrtRaMrReg(QpHandle qpHandle, RaMrInfo &info)
     HCCL_INFO("ra mr reg: qpHandle[%p], addr[%p], size[%llu], access[%d]", qpHandle, mrInfo.addr, mrInfo.size, mrInfo.access);
     s32 ret = RaMrReg(qpHandle, &mrInfo);
     if (ret != 0) {
-        MACRO_THROW(NetworkApiException, StringFormat("[Reg][RaMr]errNo[0x%016llx] ra mr reg fail. call RaMrReg failed, return[%d], params: qpHandle[%p], addr[%p], size[%llu], access[%d]",
-            HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), ret, qpHandle, mrInfo.addr, mrInfo.size, mrInfo.access));
+        HCCL_ERROR("[Reg][RaMr]errNo[0x%016llx] ra mr reg fail. call RaMrReg failed, return[%d], params: qpHandle[%p], addr[%p], size[%llu], access[%d]",
+            HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), ret, qpHandle, mrInfo.addr, mrInfo.size, mrInfo.access);
     } 
 }
 
@@ -1045,9 +1100,8 @@ void HrtRaMrDereg(QpHandle qpHandle, RaMrInfo &info)
     HCCL_INFO("ra mr dereg: qpHandle[%p], addr[%p], size[%llu], access[%d]", qpHandle, mrInfo.addr, mrInfo.size, mrInfo.access);
     s32 ret = RaMrDereg(qpHandle, &mrInfo);
     if (ret != 0) {
-        string msg = StringFormat("call RaMrDereg failed, qpHandle=%p, addr=%p, size=%llu, access=%d", qpHandle,
-                                  mrInfo.addr, mrInfo.size, mrInfo.access);
-        MACRO_THROW(NetworkApiException, msg);
+        HCCL_ERROR("call RaMrDereg failed, qpHandle=%p, addr=%p, size=%llu, access=%d", qpHandle,
+            mrInfo.addr, mrInfo.size, mrInfo.access);
     }
 }
 
@@ -1072,9 +1126,8 @@ static void HrtRaSendWr(QpHandle qpHandle, struct SendWr *wr, struct SendWrRsp *
                 SaluSleep(ONE_MILLISECOND_OF_USLEEP);
             }
         } else {
-            string msg
-                = StringFormat("call RaSendWr failed, qpHandle=%p, send_wrAddr=%p opRspAddr=%p", qpHandle, wr, opRsp);
-            MACRO_THROW(NetworkApiException, msg);
+            HCCL_ERROR("call RaSendWr failed, qpHandle=%p, send_wrAddr=%p opRspAddr=%p", qpHandle, wr, opRsp);
+            return;
         }
     }
 }
@@ -1122,16 +1175,17 @@ RdmaHandle HrtRaUbCtxInit(const HrtRaUbCtxInitParam &in)
     HCCL_INFO("[HrtRaUbCtxInit] use eid[%s]", in.addr.Describe().c_str());
     s32 sRet = memcpy_s(ctxInfo.ub.eid.raw, sizeof(ctxInfo.ub.eid.raw), in.addr.GetEid().raw, sizeof(in.addr.GetEid().raw));
     if (sRet != EOK) {
-        MACRO_THROW(InternalException, StringFormat("[HrtRaUbCtxInit]memcpy_s failed. sRet[%d]", sRet));
+        HCCL_ERROR("[HrtRaUbCtxInit]memcpy_s failed. sRet[%d]", sRet);
+        return nullptr;
     }
 
     RdmaHandle handle;
     s32        ret = RaCtxInit(&initCfg, &ctxInfo, &handle);
     if (ret != 0) {
-        string msg = StringFormat(
+        HCCL_ERROR(
             "[Init][RaUbCtx]errNo[0x%016llx] ub ctx init fail, mode[%d], phyId[%u], addr[%s], ret[%d]",
             HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), in.mode, in.phyId, in.addr.GetIpStr().c_str(), ret);
-        MACRO_THROW(NetworkApiException, msg);
+        return nullptr;
     }
     return handle;
 }
@@ -1142,9 +1196,8 @@ void HrtRaUbCtxDestroy(RdmaHandle handle)
     HCCL_INFO("[HrtRaUbCtxDestroy] rdmaHandle[%llu].", handle);
     s32 ret = RaCtxDeinit(handle);
     if (ret != 0) {
-        string msg = StringFormat("[DeInit][RaRdma]errNo[0x%016llx] rt ctx deinit fail. handle[%p], return[%d].",
-                                  HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), handle, ret);
-        MACRO_THROW(NetworkApiException, msg);
+        HCCL_ERROR("[DeInit][RaRdma]errNo[0x%016llx] rt ctx deinit fail. handle[%p], return[%d].",
+            HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), handle, ret);
     }
 }
 
@@ -1156,8 +1209,8 @@ std::pair<TokenIdHandle, uint32_t> RaUbAllocTokenIdHandle(RdmaHandle handle)
     void *tokenIdHandle = nullptr;
     s32 ret = RaCtxTokenIdAlloc(handle, &out, &tokenIdHandle);
     if (ret != 0) {
-        string msg = StringFormat("%s failed, set=%d, rdmaHandle=%p", __func__, ret, handle);
-        MACRO_THROW(NetworkApiException, msg);
+        HCCL_ERROR("%s failed, set=%d, rdmaHandle=%p", __func__, ret, handle);
+        return {reinterpret_cast<TokenIdHandle>(nullptr), 0U};
     }
     HCCL_INFO("[RaUbAllocTokenIdHandle] tokenIdHandle[%p], rdmaHandle[%p]", tokenIdHandle, handle);
     return {reinterpret_cast<TokenIdHandle>(tokenIdHandle), out.tokenId >> URMA_TOKEN_ID_RIGHT_SHIFT};
@@ -1169,9 +1222,8 @@ void RaUbFreeTokenIdHandle(RdmaHandle handle, TokenIdHandle tokenIdHandle)
     HCCL_INFO("[RaUbFreeTokenIdHandle] rdmaHandle[%p], tokenIdHandle[0x%llx].", handle, tokenIdHandle);
     s32 ret = RaCtxTokenIdFree(handle, reinterpret_cast<void *>(tokenIdHandle));
     if (ret != 0) {
-        string msg = StringFormat("%s failed, set=%d, rdmaHandle=%p, tokenIdHandle=0x%llx.",
-                                 __func__, ret, handle, tokenIdHandle);
-        MACRO_THROW(NetworkApiException, msg);
+        HCCL_ERROR("%s failed, set=%d, rdmaHandle=%p, tokenIdHandle=0x%llx.",
+            __func__, ret, handle, tokenIdHandle);
     }
 }
 
@@ -1210,14 +1262,15 @@ HrtRaUbLocalMemRegOutParam HrtRaUbLocalMemReg(RdmaHandle handle, const HrtRaUbLo
     void *lmemHandle = nullptr;
     s32   ret        = RaCtxLmemRegister(handle, &info, &lmemHandle);
     if (ret != 0) {
-        string msg = StringFormat("localMemReg failed, addr=0x%llx, size=0x%llx", in.addr, in.size);
-        MACRO_THROW(NetworkApiException, msg);
+        HCCL_ERROR("localMemReg failed, addr=0x%llx, size=0x%llx", in.addr, in.size);
+        return HrtRaUbLocalMemRegOutParam{};
     }
 
     HrtRaUbLocalMemRegOutParam out;
     s32 sRet = memcpy_s(out.key, sizeof(out.key), info.out.key.value, info.out.key.size);
     if (sRet != EOK) {
-        MACRO_THROW(InternalException, StringFormat("[HrtRaUbLocalMemReg]memcpy_s failed. sRet[%d]", sRet));
+        HCCL_ERROR("[HrtRaUbLocalMemReg]memcpy_s failed. sRet[%d]", sRet);
+        return HrtRaUbLocalMemRegOutParam{};
     }
 
     HCCL_INFO("[HrtRaUbLocalMemReg]UbLocalMemReg key.size=%u", info.out.key.size);
@@ -1236,8 +1289,7 @@ void HrtRaUbLocalMemUnreg(RdmaHandle rdmaHandle, LocMemHandle lmemHandle)
     HCCL_INFO("[HrtRaUbLocalMemUnreg] Input params: rdmaHandle=%p, lmemHandle=0x%llx", rdmaHandle, lmemHandle);
     s32 ret = RaCtxLmemUnregister(rdmaHandle, reinterpret_cast<void *>(lmemHandle));
     if (ret != 0) {
-        string msg = StringFormat("localMemUnreg failed, rdmaHandle=%p, lmemHandle=0x%llx", rdmaHandle, lmemHandle);
-        MACRO_THROW(NetworkApiException, msg);
+        HCCL_ERROR("localMemUnreg failed, rdmaHandle=%p, lmemHandle=0x%llx", rdmaHandle, lmemHandle);
     }
 }
 
@@ -1249,7 +1301,8 @@ HrtRaUbRemMemImportedOutParam HrtRaUbRemoteMemImport(RdmaHandle handle, u8 *key,
     struct MrImportInfoT info {};
     int res = memcpy_s(info.in.key.value, sizeof(info.in.key.value), key, keyLen);
     if (res != 0) {
-        MACRO_THROW(InternalException, StringFormat("[%s] memcpy_s failed, ret = %d, params: handle=%p, key=%d, keyLen=%u", __func__, res, handle, *key, keyLen));
+        HCCL_ERROR("[%s] memcpy_s failed, ret = %d, params: handle=%p, key=%d, keyLen=%u", __func__, res, handle, *key, keyLen);
+        return HrtRaUbRemMemImportedOutParam{};
     }
     info.in.key.size = keyLen;
 
@@ -1262,8 +1315,8 @@ HrtRaUbRemMemImportedOutParam HrtRaUbRemoteMemImport(RdmaHandle handle, u8 *key,
     void *rmemHandle = nullptr;
     s32   ret        = RaCtxRmemImport(handle, &info, &rmemHandle);
     if (ret != 0) {
-        string msg = StringFormat("ubRemoteMemImport failed!");
-        MACRO_THROW(NetworkApiException, msg);
+        HCCL_ERROR("ubRemoteMemImport failed!");
+        return HrtRaUbRemMemImportedOutParam{};
     }
 
     HrtRaUbRemMemImportedOutParam out;
@@ -1278,9 +1331,7 @@ void HrtRaUbRemoteMemUnimport(RdmaHandle rdmaHandle, RemMemHandle rmemHandle)
     HCCL_INFO("[HrtRaUbRemoteMemUnimport] Input params: rdmaHandle=%p, rmemHandle=0x%llx", rdmaHandle, rmemHandle);
     s32 ret = RaCtxRmemUnimport(rdmaHandle, reinterpret_cast<void *>(rmemHandle));
     if (ret != 0) {
-        string msg
-            = StringFormat("ubRemoteMemUnimport failed, rdmaHandle=%p, rmemHandle=0x%llx", rdmaHandle, rmemHandle);
-        MACRO_THROW(NetworkApiException, msg);
+        HCCL_ERROR("ubRemoteMemUnimport failed, rdmaHandle=%p, rmemHandle=0x%llx", rdmaHandle, rmemHandle);
     }
 }
 
@@ -1313,8 +1364,8 @@ JfcHandle HrtRaUbCreateJfc(RdmaHandle handle, CqCreateInfo& cqInfo, HrtUbJfcMode
 
     s32 ret = RaCtxCqCreate(handle, &info, &jfcHandle);
     if (ret != 0) {
-        string msg = StringFormat("ubCreateCq failed, rdmaHandle=%p,", handle);
-        MACRO_THROW(NetworkApiException, msg);
+        HCCL_ERROR("ubCreateCq failed, rdmaHandle=%p,", handle);
+        return 0;
     }
 
     cqInfo.va = info.out.va;
@@ -1329,8 +1380,7 @@ void HrtRaUbDestroyJfc(RdmaHandle handle, JfcHandle jfcHandle)
     HCCL_INFO("[HrtRaUbDestroyJfc] Input params: handle=%p, jfcHandle=0x%llx", handle, jfcHandle);
     s32 ret = RaCtxCqDestroy(handle, reinterpret_cast<void *>(jfcHandle));
     if (ret != 0) {
-        string msg = StringFormat("ubCqDestroy failed, rdmaHandle=%p, jfcHandle=0x%llx", handle, jfcHandle);
-        MACRO_THROW(NetworkApiException, msg);
+        HCCL_ERROR("ubCqDestroy failed, rdmaHandle=%p, jfcHandle=0x%llx", handle, jfcHandle);
     }
 }
 
@@ -1447,8 +1497,8 @@ HrtRaUbJettyCreatedOutParam HrtRaUbCreateJetty(RdmaHandle handle, const HrtRaUbC
     void *qpHandle = nullptr;
     s32   ret      = RaCtxQpCreate(handle, &attr, &info, &qpHandle);
     if (ret != 0) {
-        string msg = StringFormat("ubCreateJetty failed, rdmaHandle=%p,", handle);
-        MACRO_THROW(NetworkApiException, msg);
+        HCCL_ERROR("ubCreateJetty failed, rdmaHandle=%p,", handle);
+        return HrtRaUbJettyCreatedOutParam{};
     }
 
     HrtRaUbJettyCreatedOutParam out;
@@ -1462,7 +1512,8 @@ HrtRaUbJettyCreatedOutParam HrtRaUbCreateJetty(RdmaHandle handle, const HrtRaUbC
 
     s32 sRet = memcpy_s(out.key, sizeof(out.key), info.key.value, info.key.size);
     if (sRet != EOK) {
-        MACRO_THROW(InternalException, StringFormat("HrtRaUbCreateJetty memcpy_s failed. sRet[%d], params: handle=%p", sRet, handle));
+        HCCL_ERROR("HrtRaUbCreateJetty memcpy_s failed. sRet[%d], params: handle=%p", sRet, handle);
+        return HrtRaUbJettyCreatedOutParam{};
     }
     out.keySize = info.key.size;
     attr.ub.tokenValue = 0;
@@ -1475,8 +1526,7 @@ void HrtRaUbDestroyJetty(JettyHandle jettyHandle)
     HCCL_INFO("[HrtRaUbDestroyJetty] Input params: jettyHandle=0x%llx", jettyHandle);
     s32 ret = RaCtxQpDestroy(reinterpret_cast<void *>(jettyHandle));
     if (ret != 0) {
-        string msg = StringFormat("ubDestroyJetty failed, jettyHandle=0x%llx", jettyHandle);
-        MACRO_THROW(NetworkApiException, msg);
+        HCCL_ERROR("ubDestroyJetty failed, jettyHandle=0x%llx", jettyHandle);
     }
 }
 
@@ -1487,15 +1537,17 @@ static HrtRaUbJettyImportedOutParam ImportJetty(RdmaHandle handle, u8 *key, u32 
     CHECK_NULLPTR(key, "[ImportJetty] key is nullptr!");
     HCCL_INFO("[ImportJetty] Input params: handle=%p, key=%d, keyLen=%u, mode=%d", handle, *key, keyLen, mode);
     if (mode == JettyImportMode::JETTY_IMPORT_MODE_NORMAL) {
-        MACRO_THROW(NotSupportException, StringFormat("[%s] currently not support JETTY_IMPORT_MODE_NORMAL.",
-            __func__));
+        HCCL_ERROR("[%s] currently not support JETTY_IMPORT_MODE_NORMAL.",
+            __func__);
+        return HrtRaUbJettyImportedOutParam{};
     }
 
     struct QpImportInfoT info {};
 
     int res = memcpy_s(info.in.key.value, sizeof(info.in.key.value), key, keyLen);
     if (res != 0) {
-        MACRO_THROW(InternalException, StringFormat("[%s] memcpy_s failed, ret = %d", __func__, res));
+        HCCL_ERROR("[%s] memcpy_s failed, ret = %d", __func__, res);
+        return HrtRaUbJettyImportedOutParam{};
     }
     info.in.key.size = keyLen;
 
@@ -1510,8 +1562,9 @@ static HrtRaUbJettyImportedOutParam ImportJetty(RdmaHandle handle, u8 *key, u32 
     info.in.ub.expImportCfg = cfg;
 
     if (protocol != TpProtocol::TP && protocol != TpProtocol::CTP && protocol != TpProtocol::UBOE) {
-        MACRO_THROW(NetworkApiException, StringFormat("[%s] failed, tp protocol[%s] is not expected.",
-            __func__, protocol.Describe().c_str()));
+        HCCL_ERROR("[%s] failed, tp protocol[%s] is not expected.",
+            __func__, protocol.Describe().c_str());
+        return HrtRaUbJettyImportedOutParam{};
     }
     // tpType: 0->RTP, 1->CTP
     info.in.ub.tpType = protocol == TpProtocol::TP ? 0 : 1;
@@ -1519,8 +1572,8 @@ static HrtRaUbJettyImportedOutParam ImportJetty(RdmaHandle handle, u8 *key, u32 
     void *remQpHandle = nullptr;
     s32   ret         = RaCtxQpImport(handle, &info, &remQpHandle);
     if (ret != 0) {
-        string msg = StringFormat("UbImportJetty failed, rdmaHandle=%p,", handle);
-        MACRO_THROW(NetworkApiException, msg);
+        HCCL_ERROR("UbImportJetty failed, rdmaHandle=%p,", handle);
+        return HrtRaUbJettyImportedOutParam{};
     }
 
     HrtRaUbJettyImportedOutParam out;
@@ -1577,9 +1630,7 @@ void HrtRaUbUnimportJetty(RdmaHandle handle, TargetJettyHandle targetJettyHandle
     HCCL_INFO("[HrtRaUbUnimportJetty] Input params: handle=%p, targetJettyHandle=0x%llx", handle, targetJettyHandle);
     s32 ret = RaCtxQpUnimport(reinterpret_cast<void *>(handle), reinterpret_cast<void *>(targetJettyHandle));
     if (ret != 0) {
-        string msg
-            = StringFormat("ubCqDestroy failed, rdmaHandle=%p, targetJettyHandle=0x%llx", handle, targetJettyHandle);
-        MACRO_THROW(NetworkApiException, msg);
+        HCCL_ERROR("ubCqDestroy failed, rdmaHandle=%p, targetJettyHandle=0x%llx", handle, targetJettyHandle);
     }
 }
 
@@ -1588,9 +1639,8 @@ void HrtRaUbJettyBind(JettyHandle jettyHandle, TargetJettyHandle targetJettyHand
     HCCL_INFO("[HrtRaUbJettyBind] Input params: jettyHandle=0x%llx, targetJettyHandle=0x%llx", jettyHandle, targetJettyHandle);
     s32 ret = RaCtxQpBind(reinterpret_cast<void *>(jettyHandle), reinterpret_cast<void *>(targetJettyHandle));
     if (ret != 0) {
-        string msg = StringFormat("ubJettyBind failed, jettyHandle=0x%llx, targetJettyHandle=0x%llx", jettyHandle,
-                                  targetJettyHandle);
-        MACRO_THROW(NetworkApiException, msg);
+        HCCL_ERROR("ubJettyBind failed, jettyHandle=0x%llx, targetJettyHandle=0x%llx", jettyHandle,
+            targetJettyHandle);
     }
 }
 
@@ -1599,8 +1649,7 @@ void HrtRaUbJettyUnbind(JettyHandle jettyHandle)
     HCCL_INFO("[HrtRaUbJettyUnbind] Input params: jettyHandle=0x%llx", jettyHandle);
     s32 ret = RaCtxQpUnbind(reinterpret_cast<void *>(jettyHandle));
     if (ret != 0) {
-        string msg = StringFormat("ubJettyUnbind failed, jettyHandle=0x%llx", jettyHandle);
-        MACRO_THROW(NetworkApiException, msg);
+        HCCL_ERROR("ubJettyUnbind failed, jettyHandle=0x%llx", jettyHandle);
     }
 }
 
@@ -1677,8 +1726,8 @@ HrtRaUbSendWrRespParam HrtRaUbPostSend(JettyHandle jettyHandle, HrtRaUbSendWrReq
     u32 compNum = 0;
     s32 ret     = RaBatchSendWr(reinterpret_cast<void *>(jettyHandle), &sendWr, &sendWrResp, 1, &compNum);
     if (ret != 0) {
-        string msg = StringFormat("UbJettySendWr failed, jettyHandle=0x%llx,", jettyHandle);
-        MACRO_THROW(NetworkApiException, msg);
+        HCCL_ERROR("UbJettySendWr failed, jettyHandle=0x%llx,", jettyHandle);
+        return HrtRaUbSendWrRespParam{};
     }
     HrtRaUbSendWrRespParam out;
     out.dieId    = sendWrResp.doorbellInfo.dieId;
@@ -1688,8 +1737,8 @@ HrtRaUbSendWrRespParam HrtRaUbPostSend(JettyHandle jettyHandle, HrtRaUbSendWrReq
     out.dwqeSize = sendWrResp.doorbellInfo.dwqeSize;
     ret          = memcpy_s(out.dwqe, sizeof(out.dwqe), sendWrResp.doorbellInfo.dwqe, out.dwqeSize);
     if (ret != 0) {
-        string msg = StringFormat("HrtRaUbPostSend copy dwqe failed, ret=%d", ret);
-        MACRO_THROW(InternalException, msg);
+        HCCL_ERROR("HrtRaUbPostSend copy dwqe failed, ret=%d", ret);
+        return HrtRaUbSendWrRespParam{};
     }
 
     return out;
@@ -1702,7 +1751,8 @@ std::pair<uint32_t, uint32_t> HraGetDieAndFuncId(RdmaHandle handle)
     struct DevBaseAttr out {};
     auto                   ret = RaGetDevBaseAttr(handle, &out);
     if (ret != 0) {
-        MACRO_THROW(NetworkApiException, StringFormat("[%s] call ra_get_dev_base_attr failed, error code =%d.",  __func__, ret));
+        HCCL_ERROR("[%s] call ra_get_dev_base_attr failed, error code =%d.",  __func__, ret);
+        return {0, 0};
     }
     return std::make_pair(out.ub.dieId, out.ub.funcId);
 }
@@ -1742,7 +1792,7 @@ void HrtRaCustomChannel(const HRaInfo &raInfo, void *customIn, void *customOut)
 
     int ret = RaCustomChannel(info, in, out);
     if (ret != 0) {
-        MACRO_THROW(NetworkApiException, StringFormat("call ra_custom_channel failed, error code =%d.", ret));
+        HCCL_ERROR("call ra_custom_channel failed, error code =%d.", ret);
     }
 }
 
@@ -1760,8 +1810,7 @@ void HrtRaUbPostNops(JettyHandle jettyHandle, JettyHandle remoteJettyHandle, con
     u32          compNum                = 0;
     s32 ret = RaBatchSendWr(reinterpret_cast<void *>(jettyHandle), sendWrList, sendWrRespList, numNop, &compNum);
     if (ret != 0) {
-        string msg = StringFormat("UbJettySendWr failed, jettyHandle=0x%llx,", jettyHandle);
-        MACRO_THROW(NetworkApiException, msg);
+        HCCL_ERROR("UbJettySendWr failed, jettyHandle=0x%llx,", jettyHandle);
     }
 }
 
@@ -1770,8 +1819,7 @@ void RaUbUpdateCi(JettyHandle jettyHandle, u32 ci)
     HCCL_INFO("RaUbUpdateCi: jettyHandle=0x%llx, ci=%u", jettyHandle, ci);
     s32 ret = RaCtxUpdateCi(reinterpret_cast<void *>(jettyHandle), ci);
     if (ret != 0) {
-        string msg = StringFormat("UbUpdateCi failed, ret=%d, jettyHandle=0x%llx, ci=%u", ret, jettyHandle, ci);
-        MACRO_THROW(NetworkApiException, msg);
+        HCCL_ERROR("UbUpdateCi failed, ret=%d, jettyHandle=0x%llx, ci=%u", ret, jettyHandle, ci);
     }
 }
 
@@ -1788,7 +1836,8 @@ inline IpAddress HccpEidToIpAddress(union HccpEid& hccpEid)
     HCCL_INFO("[HccpEidToIpAddress] %s", HccpEidDesc(hccpEid).c_str());
     s32 sRet = memcpy_s(eid.raw, sizeof(eid.raw), hccpEid.raw, sizeof(hccpEid.raw));
     if (sRet != EOK) {
-        MACRO_THROW(InternalException, StringFormat("[HccpEidToIpAddress]memcpy_s failed. sRet[%d]", sRet));
+        HCCL_ERROR("[HccpEidToIpAddress]memcpy_s failed. sRet[%d]", sRet);
+        return IpAddress();
     }
     return IpAddress(eid);
 }
@@ -1805,15 +1854,15 @@ std::vector<HrtDevEidInfo> HrtRaGetDevEidInfoList(const HRaInfo &raInfo)
     HCCL_INFO("[HrtRaGetDevEidInfoList] Input params: mode=%d, phyId=%u", info.mode, info.phyId);
     s32 ret = RaGetDevEidInfoNum(info, &num);
     if (ret != 0) {
-        string msg = StringFormat("call RaGetDevEidInfoNum failed, error code =%d.", ret);
-        MACRO_THROW(NetworkApiException, msg);
+        HCCL_ERROR("call RaGetDevEidInfoNum failed, error code =%d.", ret);
+        return std::vector<HrtDevEidInfo>{};
     }
 
     struct HccpDevEidInfo infoList[num] = {};
     ret = RaGetDevEidInfoList(info, infoList, &num);
     if (ret != 0) {
-        string msg = StringFormat("call RaGetDevEidInfoList failed, error code =%d.", ret);
-        MACRO_THROW(NetworkApiException, msg);
+        HCCL_ERROR("call RaGetDevEidInfoList failed, error code =%d.", ret);
+        return std::vector<HrtDevEidInfo>{};
     }
 
     hrtDevEidInfo.resize(num);
@@ -1854,8 +1903,9 @@ ReqHandleResult HrtRaGetAsyncReqResult(RequestHandle &reqHandle)
 
     // 返回码非0代表调用查询接口失败，当前仅入参错误时触发
     if (ret != 0) {
-        MACRO_THROW(NetworkApiException, StringFormat("[%s] failed, call interface error[%d], "
-            "reqhandle[%llu].", __func__, ret, reqHandle));
+        HCCL_ERROR("[%s] failed, call interface error[%d], "
+            "reqhandle[%llu].", __func__, ret, reqHandle);
+        return ReqHandleResult::INVALID_PARA;
     }
 
     RequestHandle tmpReqHandle = reqHandle;
@@ -1867,8 +1917,9 @@ ReqHandleResult HrtRaGetAsyncReqResult(RequestHandle &reqHandle)
     }
 
     if (reqResult != 0) {
-        MACRO_THROW(NetworkApiException, StringFormat("[%s] failed, the asynchronous request "
-            "error[%d], reqhandle[%llu].", __func__, reqResult, tmpReqHandle));
+        HCCL_ERROR("[%s] failed, the asynchronous request "
+            "error[%d], reqhandle[%llu].", __func__, reqResult, tmpReqHandle);
+        return ReqHandleResult::INVALID_PARA;
     }
 
     return ReqHandleResult::COMPLETED;
@@ -1884,18 +1935,20 @@ RequestHandle RaSocketConnectOneAsync(RaSocketConnectParam &in)
 
     int sret = strcpy_s(connInfo.tag, sizeof(connInfo.tag), in.tag.c_str());
     if (sret != 0) {
-        MACRO_THROW(NetworkApiException, StringFormat(
+        HCCL_ERROR(
             "[%s] copy tag[%s] to hccp tag failed, ret=%d, connInfo.tag size=%d, in.tag size=%d",
-            __func__, in.tag.c_str(), sret, sizeof(connInfo.tag), sizeof(in.tag.c_str())));
+            __func__, in.tag.c_str(), sret, sizeof(connInfo.tag), sizeof(in.tag.c_str()));
+        return 0;
     }
 
     HCCL_INFO("Socket Connect tag=[%s], remoteIp[%s]", connInfo.tag, in.remoteIp.Describe().c_str());
     void *raReqHandle = nullptr;
     int ret = RaSocketBatchConnectAsync(&connInfo, SOCKET_NUM_ONE, &raReqHandle);
     if (ret != 0) {
-        MACRO_THROW(NetworkApiException, StringFormat(
+        HCCL_ERROR(
             "[BatchConnect][RaSocket]errNo[0x%016llx] ra socket batch connect fail. return[%d]",
-            HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), ret));
+            HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), ret);
+        return 0;
     }
 
     return reinterpret_cast<RequestHandle>(raReqHandle);
@@ -1911,9 +1964,10 @@ RequestHandle RaSocketCloseOneAsync(RaSocketCloseParam &in)
     void *raReqHandle = nullptr;
     int ret = RaSocketBatchCloseAsync(&closeInfo, SOCKET_NUM_ONE, &raReqHandle);
     if (ret != 0) {
-        MACRO_THROW(NetworkApiException, StringFormat(
+        HCCL_ERROR(
             "[BatchClose][RaSocket]errNo[0x%016llx] ra socket batch close fail. return[%d]",
-            HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), ret));
+            HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), ret);
+        return 0;
     }
 
     return reinterpret_cast<RequestHandle>(raReqHandle);
@@ -1929,9 +1983,10 @@ RequestHandle RaSocketListenOneStartAsync(RaSocketListenParam &in)
     void *raReqHandle = nullptr;
     int ret = RaSocketListenStartAsync(&listenInfo, SOCKET_NUM_ONE, &raReqHandle);
     if (ret != 0) {
-        MACRO_THROW(NetworkApiException, StringFormat(
+        HCCL_ERROR(
             "errNo[0x%016llx] ra socket listen start fail. return[%d]",
-            HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), ret));
+            HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), ret);
+        return 0;
     }
 
     return reinterpret_cast<RequestHandle>(raReqHandle);
@@ -1947,9 +2002,10 @@ RequestHandle RaSocketListenOneStopAsync(RaSocketListenParam &in)
     void *raReqHandle = nullptr;
     int ret = RaSocketListenStopAsync(&listenInfo, SOCKET_NUM_ONE, &raReqHandle);
     if (ret != 0) {
-        MACRO_THROW(NetworkApiException, StringFormat(
+        HCCL_ERROR(
             "[ListenStop][RaSocket]errNo[0x%016llx] ra socket listen stop fail. return[%d]",
-            HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), ret));
+            HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), ret);
+        return 0;
     }
 
     return reinterpret_cast<RequestHandle>(raReqHandle);
@@ -1966,8 +2022,9 @@ RaSocketFdHandleParam RaGetOneSocket(u32 role, RaSocketGetParam &param)
 
     int sret = strcpy_s(socketInfo.tag, sizeof(socketInfo.tag), param.tag.c_str());
     if (sret != 0) {
-        MACRO_THROW(NetworkApiException, StringFormat("[%s] failed, copy tag[%s] to hccp failed, ret=%d, socketInfo.tag size=%d, param.tag size=%d",
-            __func__, param.tag.c_str(), sret, sizeof(socketInfo.tag), sizeof(param.tag.c_str())));
+        HCCL_ERROR("[%s] failed, copy tag[%s] to hccp failed, ret=%d, socketInfo.tag size=%d, param.tag size=%d",
+            __func__, param.tag.c_str(), sret, sizeof(socketInfo.tag), sizeof(param.tag.c_str()));
+        return RaSocketFdHandleParam(nullptr, SOCKET_NOT_CONNECTED);
     }
     
     u32 connectedNum = 0;
@@ -1979,14 +2036,16 @@ RaSocketFdHandleParam RaGetOneSocket(u32 role, RaSocketGetParam &param)
     }
 
     if (sockRet != 0) {
-        MACRO_THROW(NetworkApiException, StringFormat("[%s] failed, call interface error[%d], "
-            "role[%u], num[%u], connectednum[%u]", __func__, sockRet, role, SOCKET_NUM_ONE, connectedNum));
+        HCCL_ERROR("[%s] failed, call interface error[%d], "
+            "role[%u], num[%u], connectednum[%u]", __func__, sockRet, role, SOCKET_NUM_ONE, connectedNum);
+        return RaSocketFdHandleParam(nullptr, SOCKET_NOT_CONNECTED);
     }
 
     if (connectedNum > SOCKET_NUM_ONE) {
-        MACRO_THROW(NetworkApiException, StringFormat("[%s] failed, connetedNum[%u] is more "
+        HCCL_ERROR("[%s] failed, connetedNum[%u] is more "
             "than expected[%u], role[%u], num[%u], connectednum[%u]", __func__, connectedNum,
-            SOCKET_NUM_ONE, sockRet, role, SOCKET_NUM_ONE, connectedNum));
+            SOCKET_NUM_ONE, sockRet, role, SOCKET_NUM_ONE, connectedNum);
+        return RaSocketFdHandleParam(nullptr, SOCKET_NOT_CONNECTED);
     }
 
     return RaSocketFdHandleParam(socketInfo.fdHandle, socketInfo.status);
@@ -2001,9 +2060,10 @@ RequestHandle HrtRaSocketSendAsync(const FdHandle fdHandle, const void *data, u3
     void *raReqHandle = nullptr;
     s32 ret = RaSocketSendAsync(fdHandle, data, size, &sentSize, &raReqHandle);
     if (ret != 0 || !raReqHandle) {
-        MACRO_THROW(NetworkApiException, StringFormat("[%s] failed, call interface error[%d] "
+        HCCL_ERROR("[%s] failed, call interface error[%d] "
             "raReqHandle[%p], fdHandle[%p], data[%p], size[%u], sentSize[%u].",
-            __func__, ret, raReqHandle, fdHandle, data, size, sentSize));
+            __func__, ret, raReqHandle, fdHandle, data, size, sentSize);
+        return 0;
     }
 
     return reinterpret_cast<RequestHandle>(raReqHandle);
@@ -2017,10 +2077,11 @@ RequestHandle HrtRaSocketRecvAsync(const FdHandle fdHandle, void *data, u32 size
     HCCL_INFO("[HrtRaSocketRecvAsync] Input params: fdHandle=%p, data=%p, size=%u, recvSize=%llu", fdHandle, data, size, recvSize);
     void *raReqHandle = nullptr;
     s32 ret = RaSocketRecvAsync(fdHandle, data, size, &recvSize, &raReqHandle);
-        if (ret != 0 || !raReqHandle) {
-        MACRO_THROW(NetworkApiException, StringFormat("[%s] failed, call interface error[%d], "
+    if (ret != 0 || !raReqHandle) {
+        HCCL_ERROR("[%s] failed, call interface error[%d], "
             "raReqHandle[%p], fdHandle[%p], data[%p], size[%u], recvSize[%u].",
-            __func__, ret, raReqHandle, fdHandle, data, size, recvSize));
+            __func__, ret, raReqHandle, fdHandle, data, size, recvSize);
+        return 0;
     }
 
     return reinterpret_cast<RequestHandle>(raReqHandle);
@@ -2054,9 +2115,10 @@ RequestHandle RaUbLocalMemRegAsync(RdmaHandle handle, const HrtRaUbLocMemRegPara
     void *raReqHandle = nullptr;
     s32 ret = RaCtxLmemRegisterAsync(handle, info, &lmemHandle, &raReqHandle);
     if (ret != 0 || !raReqHandle) {
-        MACRO_THROW(NetworkApiException, StringFormat("[%s] failed, call interface "
+        HCCL_ERROR("[%s] failed, call interface "
             "error[%d], raReqHandle[%p], addr=0x%llx, size=0x%llx",
-            __func__, ret, raReqHandle, in.addr, in.size));
+            __func__, ret, raReqHandle, in.addr, in.size);
+        return 0;
     }
     info->in.ub.tokenValue = 0;
     HCCL_INFO("[%s] ok, get handle[%llu].", __func__, reinterpret_cast<RequestHandle>(raReqHandle));
@@ -2071,9 +2133,10 @@ RequestHandle RaUbLocalMemUnregAsync(RdmaHandle rdmaHandle, LocMemHandle lmemHan
     s32 ret = RaCtxLmemUnregisterAsync(rdmaHandle,
         reinterpret_cast<void *>(lmemHandle), &raReqHandle);
     if (ret != 0 || !raReqHandle) {
-        MACRO_THROW(NetworkApiException, StringFormat("[%s] failed, call interface error[%d] "
+        HCCL_ERROR("[%s] failed, call interface error[%d] "
             "raReqResult[%p], rdmaHandle=%p, lmemHandle=0x%llx.", __func__, ret, raReqHandle,
-            rdmaHandle, lmemHandle));
+            rdmaHandle, lmemHandle);
+        return 0;
     }
 
     HCCL_INFO("[%s] ok, get handle[%llu]", __func__, reinterpret_cast<RequestHandle>(raReqHandle));
@@ -2090,8 +2153,9 @@ RequestHandle RaUbCreateJettyAsync(const RdmaHandle handle, const HrtRaUbCreateJ
     s32 ret = RaCtxQpCreateAsync(handle, &attr, reinterpret_cast<QpCreateInfo *>(out.data()),
         &jettyHandle, &raReqHandle);
     if (ret != 0 || !raReqHandle) {
-        MACRO_THROW(NetworkApiException, StringFormat("[%s] failed, call interface error[%d], raReqHandle[%p], "
-            "rdmaHanlde[%p].", __func__, ret, raReqHandle, handle));
+        HCCL_ERROR("[%s] failed, call interface error[%d], raReqHandle[%p], "
+            "rdmaHanlde[%p].", __func__, ret, raReqHandle, handle);
+        return 0;
     }
     attr.ub.tokenValue = 0;
     HCCL_INFO("[%s] ok, get handle[%llu].", __func__, reinterpret_cast<RequestHandle>(raReqHandle));
@@ -2105,8 +2169,9 @@ RequestHandle RaUbDestroyJettyAsync(void *jettyHandle)
     void *raReqHandle = nullptr;
     s32 ret = RaCtxQpDestroyAsync(jettyHandle, &raReqHandle);
     if (ret != 0) {
-        MACRO_THROW(NetworkApiException, StringFormat("[%s] failed, call interface error[%d] raReqHandle[%p], "
-            "jettyHandle[%p].", __func__, ret, raReqHandle, jettyHandle));
+        HCCL_ERROR("[%s] failed, call interface error[%d] raReqHandle[%p], "
+            "jettyHandle[%p].", __func__, ret, raReqHandle, jettyHandle);
+        return 0;
     }
 
     HCCL_INFO("[%s] ok, get handle[%llu].", __func__, reinterpret_cast<RequestHandle>(raReqHandle));
@@ -2119,8 +2184,9 @@ inline HccpEid IpAddressToHccpEid(const IpAddress &ipAddr)
     HCCL_INFO("EID ipAddr[%s]", ipAddr.Describe().c_str());
     s32 sRet = memcpy_s(eid.raw, sizeof(eid.raw), ipAddr.GetEid().raw, sizeof(ipAddr.GetEid().raw));
     if (sRet != EOK) {
-        MACRO_THROW(InternalException, StringFormat("[IpAddressToHccpEid]memcpy_s failed. sRet[%d], dest[%p], destSize[%zu], src[%p], srcSize[%zu]",
-            sRet, eid.raw, sizeof(eid.raw), ipAddr.GetEid().raw, sizeof(ipAddr.GetEid().raw)));
+        HCCL_ERROR("[IpAddressToHccpEid]memcpy_s failed. sRet[%d], dest[%p], destSize[%zu], src[%p], srcSize[%zu]",
+            sRet, eid.raw, sizeof(eid.raw), ipAddr.GetEid().raw, sizeof(ipAddr.GetEid().raw));
+        return HccpEid{};
     }
     HCCL_INFO("[IpAddressToHccpEid] %s", HccpEidDesc(eid).c_str());
     return eid;
@@ -2152,9 +2218,10 @@ RequestHandle RaUbGetTpInfoAsync(const RdmaHandle rdmaHandle, const RaUbGetTpInf
     num = TP_HANDLE_REQUEST_NUM; // 指定需要从管控面申请tp handle的数量, hccp 会返回实际个数
     s32 ret = RaGetTpInfoListAsync(rdmaHandle, &cfg, info, &num, &raReqHandle);
     if (ret != 0 || !raReqHandle) {
-        MACRO_THROW(NetworkApiException, StringFormat("[%s] failed, call interface error[%d] raReqHandle[%p], "
+        HCCL_ERROR("[%s] failed, call interface error[%d] raReqHandle[%p], "
             "rdmaHandle[%p], locAddr[%s], rmtAddr[%s].", __func__, ret, raReqHandle, rdmaHandle,
-            locAddr.Describe().c_str(), rmtAddr.Describe().c_str()));
+            locAddr.Describe().c_str(), rmtAddr.Describe().c_str());
+        return 0;
     }
 
     HCCL_INFO("[%s] ok, get handle[%llu].", __func__, reinterpret_cast<RequestHandle>(raReqHandle));
@@ -2185,9 +2252,9 @@ void RaUbGetTpInfo(const RdmaHandle rdmaHandle, const RaUbGetTpInfoParam &param,
     num = TP_HANDLE_REQUEST_NUM; // 指定需要从管控面申请tp handle的数量, hccp 会返回实际个数
     s32 ret = RaCtxGetTpInfoList(rdmaHandle, &cfg, info, &num);
     if (ret != 0) {
-        MACRO_THROW(NetworkApiException, StringFormat("[%s] failed, call interface error[%d], "
+        HCCL_ERROR("[%s] failed, call interface error[%d], "
             "rdmaHandle[%p], locAddr[%s], rmtAddr[%s].", __func__, ret, rdmaHandle,
-            locAddr.Describe().c_str(), rmtAddr.Describe().c_str()));
+            locAddr.Describe().c_str(), rmtAddr.Describe().c_str());
     }
 
     HCCL_INFO("[%s] ok, get handle[%llu].", __func__);
@@ -2200,8 +2267,9 @@ static RequestHandle ImportJettyAsync(RdmaHandle rdmaHandle, const HrtRaUbJettyI
     CHECK_NULLPTR(rdmaHandle, "[ImportJettyAsync] rdmaHandle is nullptr!");
     HCCL_INFO("[ImportJettyAsync] Input params: rdmaHandle=%p, remQpHandle=%p", rdmaHandle, remQpHandle);
     if (mode == JettyImportMode::JETTY_IMPORT_MODE_NORMAL) {
-        MACRO_THROW(NotSupportException, StringFormat("[%s] currently not support JETTY_IMPORT_MODE_NORMAL.",
-            __func__));
+        HCCL_ERROR("[%s] currently not support JETTY_IMPORT_MODE_NORMAL.",
+            __func__);
+        return 0;
     }
 
     out.resize(sizeof(QpImportInfoT));
@@ -2209,7 +2277,8 @@ static RequestHandle ImportJettyAsync(RdmaHandle rdmaHandle, const HrtRaUbJettyI
 
     s32 ret = memcpy_s(info->in.key.value, sizeof(info->in.key.value), in.key, in.keyLen);
     if (ret != 0) {
-        MACRO_THROW(InternalException, StringFormat("[%s] memcpy_s failed, ret=%d.", __func__, ret));
+        HCCL_ERROR("[%s] memcpy_s failed, ret=%d.", __func__, ret);
+        return 0;
     }
 
     info->in.key.size = in.keyLen;
@@ -2224,8 +2293,9 @@ static RequestHandle ImportJettyAsync(RdmaHandle rdmaHandle, const HrtRaUbJettyI
     info->in.ub.expImportCfg = cfg;
 
     if (protocol != TpProtocol::TP && protocol != TpProtocol::CTP && protocol != TpProtocol::UBOE) {
-        MACRO_THROW(NetworkApiException, StringFormat("[%s] failed, tp protocol[%s] is not expected, %s.",
-        __func__, protocol.Describe().c_str()));
+        HCCL_ERROR("[%s] failed, tp protocol[%s] is not expected, %s.",
+        __func__, protocol.Describe().c_str());
+        return 0;
     }
     // tpType: 0->RTP, 1->CTP
     info->in.ub.tpType = protocol == TpProtocol::TP ? 0 : 1;
@@ -2233,8 +2303,9 @@ static RequestHandle ImportJettyAsync(RdmaHandle rdmaHandle, const HrtRaUbJettyI
     void *raReqHandle = nullptr;
     ret = RaCtxQpImportAsync(rdmaHandle, info, &remQpHandle, &raReqHandle);
     if (ret != 0 || !raReqHandle) {
-        MACRO_THROW(NetworkApiException, StringFormat("[%s] failed, call interface error[%d] raReqHandle[%p], "
-            "rdmaHandle[%p].", __func__, ret, raReqHandle, rdmaHandle));
+        HCCL_ERROR("[%s] failed, call interface error[%d] raReqHandle[%p], "
+            "rdmaHandle[%p].", __func__, ret, raReqHandle, rdmaHandle);
+        return 0;
     }
     info->in.ub.tokenValue = 0;
     HCCL_INFO("[%s] ok, get handle[%llu]", __func__, reinterpret_cast<RequestHandle>(raReqHandle));
@@ -2269,8 +2340,9 @@ RequestHandle RaUbUnimportJettyAsync(void *targetJettyHandle)
     void *raReqHandle = nullptr;
     s32 ret = RaCtxQpUnimportAsync(targetJettyHandle, &raReqHandle);
     if (ret != 0 || !raReqHandle) {
-        MACRO_THROW(NetworkApiException, StringFormat("[%s] failed, call interface error[%d] raReqHandle[%p], "
-            "targetJettyHandle[%p].", __func__, ret, raReqHandle, targetJettyHandle));
+        HCCL_ERROR("[%s] failed, call interface error[%d] raReqHandle[%p], "
+            "targetJettyHandle[%p].", __func__, ret, raReqHandle, targetJettyHandle);
+        return 0;
     }
 
     HCCL_INFO("[%s] ok, get handle[%llu].", __func__, reinterpret_cast<RequestHandle>(raReqHandle));
@@ -2284,7 +2356,7 @@ void HrtRaWaitEventHandle(int event_handle, std::vector<SocketEventInfo> &event_
     std::vector<struct SocketEventInfoT> raEventInfos(maxevents);
     s32 ret = RaWaitEventHandle(event_handle, raEventInfos.data(), timeout, maxevents, &events_num);
     if (ret != 0) {
-        MACRO_THROW(NetworkApiException, StringFormat("[%s] failed, call interface error[%d].", __func__, ret));
+        HCCL_ERROR("[%s] failed, call interface error[%d].", __func__, ret);
     }
     for (u32 i = 0; i < events_num; i++) {
         event_infos[i].fdHandle = raEventInfos[i].fdHandle;
@@ -2300,7 +2372,7 @@ void HrtRaGetSecRandom(u32 *value, u32 &devPhyId)
 
     s32 ret = RaGetSecRandom(&raInfo, value);
     if (ret != 0) {
-        MACRO_THROW(NetworkApiException, StringFormat("[%s] failed, call interface error[%d]. params: value=%u, devPhyId=%u", __func__, ret, *value, devPhyId));
+        HCCL_ERROR("[%s] failed, call interface error[%d]. params: value=%u, devPhyId=%u", __func__, ret, *value, devPhyId);
     }
     HCCL_INFO("[HrtRaGetSecRandom] Input params: value=%u, devPhyId=%u", *value, devPhyId);
 }
@@ -2330,7 +2402,7 @@ HcclResult HrtRaCreateQpWithCq(RdmaHandle rdmaHandle, s32 sqEvent, s32 rqEvent,
     info.sendChannel = sChannel;
 
     if (isHdcMode) {
-        TRY_CATCH_RETURN(info.qpHandle = HrtRaQpCreate(rdmaHandle, info.flag, info.qpMode));
+        TRY_CATCH_RETURN(HrtRaQpCreate(rdmaHandle, info.flag, info.qpMode, info.qpHandle));
     } else {
         CHK_RET(HrtRaNormalQpCreate(rdmaHandle, info));
     }

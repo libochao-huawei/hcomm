@@ -59,45 +59,55 @@ void P2PConnection::EnableP2p() const
     // SDMA P2pEnable
 }
 
-unique_ptr<BaseTask> P2PConnection::PrepareRead(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
-                                                const SqeConfig &config)
+HcclResult P2PConnection::PrepareRead(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
+                                                const SqeConfig &config, unique_ptr<BaseTask> &task)
 {
     VerifySizeIsEqual(remoteMemBuf, localMemBuf, "P2PConnection PrepareRead");
     if (localMemBuf.size == 0) {
-        return nullptr;
+        task = nullptr;
+        return HCCL_E_PARA;
     }
-    return make_unique<TaskP2pMemcpy>(localMemBuf.addr, remoteMemBuf.addr, localMemBuf.size, MemcpyKind::D2D);
+    task = make_unique<TaskP2pMemcpy>(localMemBuf.addr, remoteMemBuf.addr, localMemBuf.size, MemcpyKind::D2D);
+    return HCCL_SUCCESS;
 }
 
-unique_ptr<BaseTask> P2PConnection::PrepareReadReduce(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
-                                                      DataType datatype, ReduceOp reduceOp, const SqeConfig &config)
+HcclResult P2PConnection::PrepareReadReduce(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
+                                                      DataType datatype, ReduceOp reduceOp, const SqeConfig &config,
+                                                      unique_ptr<BaseTask> &task)
 {
     VerifySizeIsEqual(remoteMemBuf, localMemBuf, "P2PConnection PrepareReadReduce");
     if (localMemBuf.size == 0) {
-        return nullptr;
+        task = nullptr;
+        return HCCL_E_PARA;
     }
-    return make_unique<TaskSdmaReduce>(localMemBuf.addr, remoteMemBuf.addr, localMemBuf.size, datatype, reduceOp);
+    task = make_unique<TaskSdmaReduce>(localMemBuf.addr, remoteMemBuf.addr, localMemBuf.size, datatype, reduceOp);
+    return HCCL_SUCCESS;
 }
 
-unique_ptr<BaseTask> P2PConnection::PrepareWrite(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
-                                                 const SqeConfig &config)
+HcclResult P2PConnection::PrepareWrite(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
+                                                 const SqeConfig &config, unique_ptr<BaseTask> &task)
 {
     VerifySizeIsEqual(remoteMemBuf, localMemBuf, "P2PConnection PrepareWrite");
     if (localMemBuf.size == 0) {
-        return nullptr;
+        task = nullptr;
+        return HCCL_E_PARA;
     }
-    return make_unique<TaskP2pMemcpy>(remoteMemBuf.addr, localMemBuf.addr, localMemBuf.size, MemcpyKind::D2D);
+    task = make_unique<TaskP2pMemcpy>(remoteMemBuf.addr, localMemBuf.addr, localMemBuf.size, MemcpyKind::D2D);
+    return HCCL_SUCCESS;
 }
 
-unique_ptr<BaseTask> P2PConnection::PrepareWriteReduce(const MemoryBuffer &remoteMemBuf,
+HcclResult P2PConnection::PrepareWriteReduce(const MemoryBuffer &remoteMemBuf,
                                                        const MemoryBuffer &localMemBuf, DataType datatype,
-                                                       ReduceOp reduceOp, const SqeConfig &config)
+                                                       ReduceOp reduceOp, const SqeConfig &config,
+                                                       unique_ptr<BaseTask> &task)
 {
     VerifySizeIsEqual(remoteMemBuf, localMemBuf, "P2PConnection PrepareWriteReduce");
     if (localMemBuf.size == 0) {
-        return nullptr;
+        task = nullptr;
+        return HCCL_E_PARA;
     }
-    return make_unique<TaskSdmaReduce>(remoteMemBuf.addr, localMemBuf.addr, localMemBuf.size, datatype, reduceOp);
+    task = make_unique<TaskSdmaReduce>(remoteMemBuf.addr, localMemBuf.addr, localMemBuf.size, datatype, reduceOp);
+    return HCCL_SUCCESS;
 }
 
 string P2PConnection::Describe() const

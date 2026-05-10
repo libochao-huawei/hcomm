@@ -22,7 +22,12 @@ DevRdmaConnection::DevRdmaConnection(Socket *socket, RdmaHandle rdmaHandle, OpMo
     : RmaConnection(socket, RmaConnType::RDMA)
 {
     int     qpMode  = 0;
-    DevType devType = HrtGetDeviceType();
+    DevType devType;
+    HcclResult ret = HrtGetDeviceType(devType);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("HrtGetDeviceType failed");
+        return;
+    }
     if (devType == DevType::DEV_TYPE_910A2 || devType == DevType::DEV_TYPE_910A3) {
         qpMode = (opMode == OpMode::OPBASE) ? OPBASE_QP_MODE_EXT : OFFLINE_QP_MODE_EXT;
     } else if (devType == DevType::DEV_TYPE_910A) {
@@ -31,9 +36,13 @@ DevRdmaConnection::DevRdmaConnection(Socket *socket, RdmaHandle rdmaHandle, OpMo
         HCCL_ERROR("Cannot support this device type!"
                    "errNo[0x%016llx], device type[%s]",
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_NOT_SUPPORT), DevTypeToString(devType).c_str());
-        throw NotSupportException(DevTypeToString(devType));
+        return;
     }
-    qpHandle = HrtRaQpCreate(rdmaHandle, QP_FLAG_RC, qpMode);
+    ret = HrtRaQpCreate(rdmaHandle, QP_FLAG_RC, qpMode, qpHandle);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("HrtRaQpCreate failed, ret=%d", ret);
+        return;
+    }
 }
 
 void DevRdmaConnection::Connect()
@@ -74,22 +83,27 @@ QpHandle DevRdmaConnection::GetHandle()
 
 DevRdmaConnection::~DevRdmaConnection()
 {
-    HrtRaQpDestroy(qpHandle);
+    HcclResult ret = HrtRaQpDestroy(qpHandle);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("HrtRaQpDestroy failed, ret=%d", ret);
+    }
 }
 
-unique_ptr<BaseTask> DevRdmaConnection::PrepareWrite(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
-                                                     const SqeConfig &config)
+HcclResult DevRdmaConnection::PrepareWrite(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
+                                                     const SqeConfig &config, unique_ptr<BaseTask> &task)
 {
     VerifySizeIsEqual(remoteMemBuf, localMemBuf, "DevRdmaConnection::PrepareWrite");
 
     if (localMemBuf.size == 0) {
-        return nullptr;
+        task = nullptr;
+        return HCCL_E_PARA;
     }
     // RDMA_WRITE: op = 0
     HRaSendWr wr(localMemBuf.addr, localMemBuf.size, remoteMemBuf.addr, 0, RA_SEND_SIGNALED);
     RaSendWrResp resp = HrtRaSendOneWr(qpHandle, wr);
 
-    return make_unique<TaskRdmaSend>(resp.dbIndex, static_cast<u64>(resp.dbInfo));
+    task = make_unique<TaskRdmaSend>(resp.dbIndex, static_cast<u64>(resp.dbInfo));
+    return HCCL_SUCCESS;
 }
 
 string DevRdmaConnection::Describe() const

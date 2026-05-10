@@ -84,20 +84,20 @@ u32 HrtGetDevicePhyIdByIndex(s32 deviceLogicId)
     return deviceLogicId;
 }
 
-void *HrtMalloc(u64 size, aclrtMemType_t memType)
+HcclResult HrtMalloc(void*& ptr, u64 size, aclrtMemType_t memType)
 {
-    void     *devPtr = (void*)0x01;
-    return devPtr;
+    ptr = (void*)0x01;
+    return HCCL_SUCCESS;
 }
 
-void HrtFree(void *devPtr)
+HcclResult HrtFree(void *devPtr)
 {
-    return;
+    return HCCL_SUCCESS;
 }
 
-void HrtMemcpy(void *dst, uint64_t destMax, const void *src, uint64_t count, rtMemcpyKind_t kind)
+HcclResult HrtMemcpy(void*& dst, uint64_t destMax, const void *src, uint64_t count, rtMemcpyKind_t kind)
 {
-    ;
+    return HCCL_SUCCESS;
 }
 
 s32 HrtGetDevice()
