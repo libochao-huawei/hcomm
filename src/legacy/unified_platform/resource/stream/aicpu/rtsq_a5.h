@@ -20,49 +20,50 @@ public:
 
     void Reset() override;
 
-    void LaunchTask() override;
+    HcclResult LaunchTask() override;
 
-    void NotifyWait(u32 notifyId) override;
+    HcclResult NotifyWait(u32 notifyId) override;
 
-    void NotifyWait(u32 notifyId, u32 timeout);
+    HcclResult NotifyWait(u32 notifyId, u32 timeout);
 
-    void NotifyRecordLoc(u32 notifyId) override;
+    HcclResult NotifyRecordLoc(u32 notifyId) override;
 
-    void Cnt1toNNotifyWait(u32 notifyId, u32 value) override;
+    HcclResult Cnt1toNNotifyWait(u32 notifyId, u32 value) override;
 
-    void Cnt1toNNotifyRecord(u32 notifyId, u32 value) override;
+    HcclResult Cnt1toNNotifyRecord(u32 notifyId, u32 value) override;
 
-    void CntNto1NotifyWait(u32 notifyId, u32 value) override;
+    HcclResult CntNto1NotifyWait(u32 notifyId, u32 value) override;
 
-    void CntNto1NotifyRecord(u32 notifyId, u32 value) override;
+    HcclResult CntNto1NotifyRecord(u32 notifyId, u32 value) override;
 
-    void SdmaCopy(u64 srcAddr, u64 dstAddr, u32 size, u32 partId) override;
+    HcclResult SdmaCopy(u64 srcAddr, u64 dstAddr, u32 size, u32 partId) override;
 
-    void SdmaReduce(u64 srcAddr, u64 dstAddr, u32 size, u32 partId, const ReduceIn &reduceIn) override;
+    HcclResult SdmaReduce(u64 srcAddr, u64 dstAddr, u32 size, u32 partId, const ReduceIn &reduceIn) override;
 
-    void P2PWriteValue(u64 remoteAddr, u32 writeValue) override;
+    HcclResult P2PWriteValue(u64 remoteAddr, u32 writeValue) override;
 
-    void UbDbSend(const UbJettyLiteId &jettyLiteId, u16 piValue) override;
+    HcclResult UbDbSend(const UbJettyLiteId &jettyLiteId, u16 piValue) override;
 
-    void UbDirectSend(const UbJettyLiteId &jettyLiteId, u32 dwqeSize, const u8 *wqe) override
+    HcclResult UbDirectSend(const UbJettyLiteId &jettyLiteId, u32 dwqeSize, const u8 *wqe) override
     {
-        // 构造UBDMA的command，这个里面，SQE可能占用 128Byte 或者 192Byte
         (void)jettyLiteId;
         (void)dwqeSize;
         (void)wqe;
+        return HCCL_SUCCESS;
     }
 
-    void UbWriteValue(u64 dbAddr, u32 piValue) override
+    HcclResult UbWriteValue(u64 dbAddr, u32 piValue) override
     {
         (void)dbAddr;
         (void)piValue;
+        return HCCL_SUCCESS;
     }
 
     bool IsRtsqQueueSpaceSufficient() override;
 
-    void CCoreNotifyWait(u64 waitAddr, u64 curTurnCntAddr, bool last) override;
+    HcclResult CCoreNotifyWait(u64 waitAddr, u64 curTurnCntAddr, bool last) override;
 
-    void CCoreNotifyRecord(u64 recordAddr, u64 curTurnCntAddr) override;
+    HcclResult CCoreNotifyRecord(u64 recordAddr, u64 curTurnCntAddr) override;
 
     HcclResult SetPreStreamSyncReady() override;
 

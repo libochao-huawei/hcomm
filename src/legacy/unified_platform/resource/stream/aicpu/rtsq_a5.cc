@@ -137,13 +137,13 @@ void RtsqA5::CopyLocBufToSq()
 }
 
 // 向芯片RTSQ VA中写入 SQE，并触发芯片执行
-void RtsqA5::LaunchTask()
+HcclResult RtsqA5::LaunchTask()
 {
     HCCL_INFO("RtsqA5::%s: START, pendingSqeCnt[%u]", __func__, pendingSqeCnt);
 
     if (pendingSqeCnt == 0) { // 没有SQE ，直接返回
         HCCL_INFO("RtsqA5::%s: pendingSqeCnt is %u, return", __func__, pendingSqeCnt);
-        return;
+        return HCCL_SUCCESS;
     }
     // 确保 rtsq 有足够空间放pending SQE
     MakeSureAvailableSpace();
@@ -160,6 +160,7 @@ void RtsqA5::LaunchTask()
     pendingSqeCnt = 0;
     (void)memset_s(locBuf, rtsqSqeSize * perLaunchSqeCnt, 0, rtsqSqeSize * perLaunchSqeCnt); // locBuffer清零
     HCCL_INFO("RtsqA5::%s: END, pendingSqeCnt[%u], sqHead_[%u] sqTail_[%u]", __func__, pendingSqeCnt, sqHead_, sqTail_);
+    return HCCL_SUCCESS;
 }
 
 u8 *RtsqA5::GetCurrSqeBuffer()
@@ -189,54 +190,61 @@ void RtsqA5::RefreshInfo()
     LaunchTask();
 }
 
-void RtsqA5::NotifyWait(u32 notifyId)
+HcclResult RtsqA5::NotifyWait(u32 notifyId)
 {
     NotifyWait(notifyId, GetKernelExecTimeoutFromEnvConfig());
+    return HCCL_SUCCESS;
 }
 
-void RtsqA5::NotifyWait(u32 notifyId, u32 timeout)
+HcclResult RtsqA5::NotifyWait(u32 notifyId, u32 timeout)
 {
     BuildA5SqeNotifyWait(streamId_, taskId_, notifyId, timeout, GetCurrSqeBuffer());
     HCCL_INFO("RtsqA5::NotifyWait: streamId %u, taskId %u, notifyId %u, timeout %u", streamId_, taskId_, notifyId, timeout);
     RefreshInfo();
+    return HCCL_SUCCESS;
 }
 
-void RtsqA5::NotifyRecordLoc(u32 notifyId)
+HcclResult RtsqA5::NotifyRecordLoc(u32 notifyId)
 {
     BuildA5SqeNotifyRecord(streamId_, taskId_, notifyId, GetCurrSqeBuffer());
     HCCL_INFO("RtsqA5::NotifyRecordLoc: streamId %u, taskId %u, notifyId %u", streamId_, taskId_, notifyId);
     RefreshInfo();
+    return HCCL_SUCCESS;
 }
 
-void RtsqA5::Cnt1toNNotifyWait(u32 notifyId, u32 value)
+HcclResult RtsqA5::Cnt1toNNotifyWait(u32 notifyId, u32 value)
 {
     BuildA5SqeCnt1toNNotifyWait(streamId_, taskId_, notifyId, value, GetCurrSqeBuffer());
     HCCL_INFO("RtsqA5::Cnt1toNNotifyWait: streamId %u, taskId %u, notifyId %u", streamId_, taskId_, notifyId);
     RefreshInfo();
+    return HCCL_SUCCESS;
 }
 
-void RtsqA5::Cnt1toNNotifyRecord(u32 notifyId, u32 value)
+HcclResult RtsqA5::Cnt1toNNotifyRecord(u32 notifyId, u32 value)
 {
     BuildA5SqeCnt1toNNotifyRecord(streamId_, taskId_, notifyId, value, GetCurrSqeBuffer());
     HCCL_INFO("RtsqA5::Cnt1toNNotifyWait: streamId %u, taskId %u, notifyId %u", streamId_, taskId_, notifyId);
     RefreshInfo();
+    return HCCL_SUCCESS;
 }
 
-void RtsqA5::CntNto1NotifyWait(u32 notifyId, u32 value)
+HcclResult RtsqA5::CntNto1NotifyWait(u32 notifyId, u32 value)
 {
     BuildA5SqeCntNto1NotifyWait(streamId_, taskId_, notifyId, value, GetCurrSqeBuffer());
     HCCL_INFO("RtsqA5::CntNto1NotifyWait: streamId %u, taskId %u, notifyId %u", streamId_, taskId_, notifyId);
     RefreshInfo();
+    return HCCL_SUCCESS;
 }
 
-void RtsqA5::CntNto1NotifyRecord(u32 notifyId, u32 value)
+HcclResult RtsqA5::CntNto1NotifyRecord(u32 notifyId, u32 value)
 {
     BuildA5SqeCntNto1NotifyRecord(streamId_, taskId_, notifyId, value, GetCurrSqeBuffer());
     HCCL_INFO("RtsqA5::CntNto1NotifyRecord: streamId %u, taskId %u, notifyId %u", streamId_, taskId_, notifyId);
     RefreshInfo();
+    return HCCL_SUCCESS;
 }
 
-void RtsqA5::SdmaCopy(u64 srcAddr, u64 dstAddr, u32 size, u32 partId)
+HcclResult RtsqA5::SdmaCopy(u64 srcAddr, u64 dstAddr, u32 size, u32 partId)
 {
     // 不带reduce的拷贝，opcode填0
     (void)partId;
@@ -244,6 +252,7 @@ void RtsqA5::SdmaCopy(u64 srcAddr, u64 dstAddr, u32 size, u32 partId)
     HCCL_INFO("RtsqA5::SdmaCopy: streamId %u, taskId %u, srcAddr 0x%llx, dstAddr 0x%llx, size %u", streamId_, taskId_,
         srcAddr, dstAddr, size);
     RefreshInfo();
+    return HCCL_SUCCESS;
 }
 
 const std::unordered_map<ReduceOp, RtStarsMemcpyAsyncOperationKind, EnumClassHash> ReduceOpToStarsOpKindMap
@@ -260,14 +269,15 @@ const std::unordered_map<DataType, RtStarsMemcpyAsyncDataType, EnumClassHash> Da
        {DataType::FP32, RtStarsMemcpyAsyncDataType::RT_STARS_MEMCPY_ASYNC_DATA_TYPE_FP32},
        {DataType::BFP16, RtStarsMemcpyAsyncDataType::RT_STARS_MEMCPY_ASYNC_DATA_TYPE_BFP16}};
 
-void RtsqA5::SdmaReduce(u64 srcAddr, u64 dstAddr, u32 size, u32 partId, const ReduceIn &reduceIn)
+HcclResult RtsqA5::SdmaReduce(u64 srcAddr, u64 dstAddr, u32 size, u32 partId, const ReduceIn &reduceIn)
 {
     (void)partId;
     if (UNLIKELY(ReduceOpToStarsOpKindMap.find(reduceIn.reduceOp) == ReduceOpToStarsOpKindMap.end()
         || DataTypeToStarsDataTypeMap.find(reduceIn.dataType) == DataTypeToStarsDataTypeMap.end())) {
-        THROW<InternalException>(StringFormat("Sdma does not support reduceOp %s dataType %s",
-                                              reduceIn.reduceOp.Describe().c_str(),
-                                              reduceIn.dataType.Describe().c_str()));
+        HCCL_ERROR("Sdma does not support reduceOp %s dataType %s",
+            reduceIn.reduceOp.Describe().c_str(),
+            reduceIn.dataType.Describe().c_str());
+        return HCCL_E_NOT_SUPPORT;
     }
 
     u8 op   = static_cast<u8>(ReduceOpToStarsOpKindMap.at(reduceIn.reduceOp));
@@ -277,6 +287,7 @@ void RtsqA5::SdmaReduce(u64 srcAddr, u64 dstAddr, u32 size, u32 partId, const Re
     HCCL_INFO("RtsqA5::SdmaReduce: streamId %u, taskId %u, srcAddr 0x%llx, dstAddr 0x%llx, size %u", streamId_, taskId_,
         srcAddr, dstAddr, size);
     RefreshInfo();
+    return HCCL_SUCCESS;
 }
 
 bool RtsqA5::IsRtsqQueueSpaceSufficient()
@@ -311,35 +322,39 @@ bool RtsqA5::GetPreStreamSyncStatus()
     return isPreStreamSync;
 }
 
-void RtsqA5::UbDbSend(const UbJettyLiteId &jettyLiteId, u16 piValue)
+HcclResult RtsqA5::UbDbSend(const UbJettyLiteId &jettyLiteId, u16 piValue)
 {
     // piValue需要使用u16数据类型，保证自然增长，用于判断是否翻转
     BuildA5SqeUbDbSend(streamId_, taskId_, jettyLiteId, piValue, GetCurrSqeBuffer());
     HCCL_INFO("[RtsqA5][UbDbSend] piValue(UbPi):%u, SqTail(Rtsq Pi):%u", piValue, sqTail_);
     RefreshInfo();
+    return HCCL_SUCCESS;
 }
 
-void RtsqA5::CCoreNotifyWait(u64 waitAddr, u64 curTurnCntAddr, bool last)
+HcclResult RtsqA5::CCoreNotifyWait(u64 waitAddr, u64 curTurnCntAddr, bool last)
 {
     BuildA5SqeCCoreNotifyWait(streamId_, taskId_, waitAddr, curTurnCntAddr, last, GetCurrSqeBuffer());
     HCCL_INFO("RtsqA5::CCoreNotifyWait: streamId %u, taskId %u, waitAddr %llu, curTurnCntAddr %llu, last %d", streamId_,
               taskId_, waitAddr, curTurnCntAddr, last);
     RefreshInfo();
+    return HCCL_SUCCESS;
 }
 
-void RtsqA5::CCoreNotifyRecord(u64 recordAddr, u64 curTurnCntAddr)
+HcclResult RtsqA5::CCoreNotifyRecord(u64 recordAddr, u64 curTurnCntAddr)
 {
     BuildA5SqeCCoreNotifyRecord(streamId_, taskId_, recordAddr, curTurnCntAddr, GetCurrSqeBuffer());
     HCCL_INFO("RtsqA5::CCoreNotifyRecord: streamId %u, taskId %u, recordAddr %llu, curTurnCntAddr %llu", streamId_, taskId_,
               recordAddr, curTurnCntAddr);
     RefreshInfo();
+    return HCCL_SUCCESS;
 }
 
-void RtsqA5::P2PWriteValue(u64 remoteAddr, u32 writeValue)
+HcclResult RtsqA5::P2PWriteValue(u64 remoteAddr, u32 writeValue)
 {
     BuildA5SqeP2pWriteValue(streamId_, taskId_, remoteAddr, writeValue, GetCurrSqeBuffer());
     HCCL_INFO("RtsqA5::P2PWriteValue: streamId %u, taskId %u, remoteAddr %llu, writeValue %llu",
         streamId_, taskId_, remoteAddr, writeValue);
     RefreshInfo();
+    return HCCL_SUCCESS;
 }
 }

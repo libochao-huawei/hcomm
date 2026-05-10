@@ -18,7 +18,6 @@
 #include "reduce_op.h"
 #include "data_type.h"
 #include "reduce_in.h"
-#include "not_support_exception.h"
 #include "ub_jetty_lite.h"
 
 #include "ascend_hal.h"
@@ -60,126 +59,143 @@ public:
         checkOpExecStatusCallback_ = callback;
     }
 
-    virtual void LaunchTask()
+    virtual HcclResult LaunchTask()
     {
-        MACRO_THROW(NotSupportException, StringFormat("not supported."));
+        HCCL_ERROR("LaunchTask not supported");
+        return HCCL_E_NOT_SUPPORT;
     }
 
-    virtual void NotifyWait(u32 notifyId)
+    virtual HcclResult NotifyWait(u32 notifyId)
     {
         (void)notifyId;
-        MACRO_THROW(NotSupportException, StringFormat("not supported."));
+        HCCL_ERROR("NotifyWait not supported");
+        return HCCL_E_NOT_SUPPORT;
     }
 
-    virtual void NotifyWait(u32 notifyId, u32 timeout)
+    virtual HcclResult NotifyWait(u32 notifyId, u32 timeout)
     {
         (void)notifyId;
         (void)timeout;
-        MACRO_THROW(NotSupportException, StringFormat("not supported."));
+        HCCL_ERROR("NotifyWait not supported");
+        return HCCL_E_NOT_SUPPORT;
     }
 
-    virtual void Cnt1toNNotifyWait(u32 notifyId, u32 value)
+    virtual HcclResult Cnt1toNNotifyWait(u32 notifyId, u32 value)
     {
         (void)notifyId;
         (void)value;
-        MACRO_THROW(NotSupportException, StringFormat("not supported."));
+        HCCL_ERROR("Cnt1toNNotifyWait not supported");
+        return HCCL_E_NOT_SUPPORT;
     }
 
-    virtual void Cnt1toNNotifyRecord(u32 notifyId, u32 value)
+    virtual HcclResult Cnt1toNNotifyRecord(u32 notifyId, u32 value)
     {
         (void)notifyId;
         (void)value;
-        MACRO_THROW(NotSupportException, StringFormat("not supported."));
+        HCCL_ERROR("Cnt1toNNotifyRecord not supported");
+        return HCCL_E_NOT_SUPPORT;
     }
 
-    virtual void CntNto1NotifyWait(u32 notifyId, u32 value)
+    virtual HcclResult CntNto1NotifyWait(u32 notifyId, u32 value)
     {
         (void)notifyId;
         (void)value;
-        MACRO_THROW(NotSupportException, StringFormat("not supported."));
+        HCCL_ERROR("CntNto1NotifyWait not supported");
+        return HCCL_E_NOT_SUPPORT;
     }
 
-    virtual void CntNto1NotifyRecord(u32 notifyId, u32 value)
+    virtual HcclResult CntNto1NotifyRecord(u32 notifyId, u32 value)
     {
         (void)notifyId;
         (void)value;
-        MACRO_THROW(NotSupportException, StringFormat("not supported."));
+        HCCL_ERROR("CntNto1NotifyRecord not supported");
+        return HCCL_E_NOT_SUPPORT;
     }
 
-    virtual void NotifyRecordLoc(u32 notifyId)
+    virtual HcclResult NotifyRecordLoc(u32 notifyId)
     {
         (void)notifyId;
-        MACRO_THROW(NotSupportException, StringFormat("not supported."));
+        HCCL_ERROR("NotifyRecordLoc not supported");
+        return HCCL_E_NOT_SUPPORT;
     }
 
-    virtual void NotifyRecordRmt(u32 rmtDevPhyId, u32 notifyId) // 仅 P2P 使用
+    virtual HcclResult NotifyRecordRmt(u32 rmtDevPhyId, u32 notifyId)
     {
         (void)rmtDevPhyId;
         (void)notifyId;
-        MACRO_THROW(NotSupportException, StringFormat("not supported."));
+        HCCL_ERROR("NotifyRecordRmt not supported");
+        return HCCL_E_NOT_SUPPORT;
     }
 
-    virtual void SdmaCopy(u64 srcAddr, u64 dstAddr, u32 size, u32 partId)
+    virtual HcclResult SdmaCopy(u64 srcAddr, u64 dstAddr, u32 size, u32 partId)
     {
         (void)srcAddr;
         (void)dstAddr;
         (void)size;
         (void)partId;
-        MACRO_THROW(NotSupportException, StringFormat("not supported."));
+        HCCL_ERROR("SdmaCopy not supported");
+        return HCCL_E_NOT_SUPPORT;
     }
 
-    virtual void SdmaReduce(u64 srcAddr, u64 dstAddr, u32 size, u32 partId, const ReduceIn &reduceIn)
+    virtual HcclResult SdmaReduce(u64 srcAddr, u64 dstAddr, u32 size, u32 partId, const ReduceIn &reduceIn)
     {
         (void)srcAddr;
         (void)dstAddr;
         (void)size;
         (void)partId;
         (void)reduceIn;
-        MACRO_THROW(NotSupportException, StringFormat("not supported."));
+        HCCL_ERROR("SdmaReduce not supported");
+        return HCCL_E_NOT_SUPPORT;
     }
 
-    virtual void P2PWriteValue(u64 remoteAddr, u32 writeValue)
+    virtual HcclResult P2PWriteValue(u64 remoteAddr, u32 writeValue)
     {
         (void)remoteAddr;
         (void)writeValue;
-        MACRO_THROW(NotSupportException, StringFormat("not supported."));
+        HCCL_ERROR("P2PWriteValue not supported");
+        return HCCL_E_NOT_SUPPORT;
     }
 
-    virtual void UbDbSend(const UbJettyLiteId &jettyLiteId, u16 piValue)
+    virtual HcclResult UbDbSend(const UbJettyLiteId &jettyLiteId, u16 piValue)
     {
         (void)jettyLiteId;
         (void)piValue;
-        MACRO_THROW(NotSupportException, StringFormat("not supported."));
+        HCCL_ERROR("UbDbSend not supported");
+        return HCCL_E_NOT_SUPPORT;
     }
 
-    virtual void UbDirectSend(const UbJettyLiteId &jettyLiteId, u32 dwqeSize, const u8 *wqe)
+    virtual HcclResult UbDirectSend(const UbJettyLiteId &jettyLiteId, u32 dwqeSize, const u8 *wqe)
     {
         (void)jettyLiteId;
         (void)dwqeSize;
         (void)wqe;
-        MACRO_THROW(NotSupportException, StringFormat("not supported."));
+        HCCL_ERROR("UbDirectSend not supported");
+        return HCCL_E_NOT_SUPPORT;
     }
 
-    virtual void UbWriteValue(u64 dbAddr, u32 piValue)
+    virtual HcclResult UbWriteValue(u64 dbAddr, u32 piValue)
     {
         (void)dbAddr;
         (void)piValue;
-        MACRO_THROW(NotSupportException, StringFormat("not supported."));
+        HCCL_ERROR("UbWriteValue not supported");
+        return HCCL_E_NOT_SUPPORT;
     }
 
-    virtual void CCoreNotifyWait(u64 waitAddr, u64 curTurnCntAddr, bool last)
+    virtual HcclResult CCoreNotifyWait(u64 waitAddr, u64 curTurnCntAddr, bool last)
     {
         (void)waitAddr;
         (void)curTurnCntAddr;
         (void)last;
-        MACRO_THROW(NotSupportException, StringFormat("not supported."));
+        HCCL_ERROR("CCoreNotifyWait not supported");
+        return HCCL_E_NOT_SUPPORT;
     }
 
-    virtual void CCoreNotifyRecord(u64 recordAddr, u64 curTurnCntAddr)
+    virtual HcclResult CCoreNotifyRecord(u64 recordAddr, u64 curTurnCntAddr)
     {
         (void)recordAddr;
         (void)curTurnCntAddr;
-        MACRO_THROW(NotSupportException, StringFormat("not supported."));
+        HCCL_ERROR("CCoreNotifyRecord not supported");
+        return HCCL_E_NOT_SUPPORT;
     }
 
     u32 QuerySqHead();
@@ -192,14 +208,14 @@ public:
 
     virtual HcclResult SetPreStreamSyncReady()
     {
-        MACRO_THROW(NotSupportException, StringFormat("not supported."));
-        return HCCL_SUCCESS;
+        HCCL_ERROR("SetPreStreamSyncReady not supported");
+        return HCCL_E_NOT_SUPPORT;
     }
 
     virtual HcclResult SetPreStreamSyncFin()
     {
-        MACRO_THROW(NotSupportException, StringFormat("not supported."));
-        return HCCL_SUCCESS;
+        HCCL_ERROR("SetPreStreamSyncFin not supported");
+        return HCCL_E_NOT_SUPPORT;
     }
 
     virtual bool GetPreStreamSyncStatus()
