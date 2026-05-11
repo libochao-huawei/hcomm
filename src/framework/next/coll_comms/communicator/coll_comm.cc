@@ -15,8 +15,6 @@
 #include "kfc.h"
 #include "dlhal_function.h"
 #include "hcclCommTaskException.h"
-#include "ccu_comp.h"
-#include "env_config/env_config.h"
 #include "hcom_common.h"
 
 constexpr uint32_t MULTIPLE = 4;               // 用于A5判断TC是否为4的倍数
@@ -88,15 +86,6 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
                 HCCL_ERROR_CODE(HCCL_E_PARA), qos),
             HCCL_E_PARA);
         CHK_RET(config_.SetConfigHcclQos(qos));
-    }
-
-    {
-        const u32 q = config_.GetConfigHcclQos();
-        const u32 loopQos = (q == HCCL_COMM_QOS_CONFIG_NOT_SET) ? static_cast<u32>(EnvConfig::UB_QOS_DEFAULT) : (q & 7U);
-        const s32 devLogicIdForLoop = HcclGetThreadDeviceId();
-        if (devLogicIdForLoop >= 0) {
-            hcomm::CcuComponent::GetInstance(devLogicIdForLoop).SetLoopGetTpInfoQos(loopQos);
-        }
     }
 
     EXECEPTION_CATCH(myRank_ = std::make_shared<MyRank>(binHandle, rankId_, config_, callbacks_, rankgraph_.get()), return HCCL_E_PTR);

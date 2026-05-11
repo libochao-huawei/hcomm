@@ -105,7 +105,6 @@ static bool ApplyUbcQosTpSlPolicy(const GetTpInfoParam &param, uint32_t nTp, uin
     return true;
 }
 
-/* 暂不向 TP 写回 SL / DSCP；恢复时与 HandleCompletedRequest 内对应块一并取消注释
 static HcclResult CommitMappedSlToTpAttr(const uint32_t devPhyId, const CommAddr &locCommAddr, uint64_t tpHandle,
     uint32_t mappedSl)
 {
@@ -186,7 +185,6 @@ static bool ParseDscpFromCfgByQos(const std::string &cfg, uint8_t qos, uint8_t &
         return false;
     }
 
-    // 形式1：仅数值列表（位置即 qos）
     if (nums.size() > static_cast<size_t>(qos)) {
         const uint32_t dscp = nums[qos];
         if (dscp <= 63U) {
@@ -195,7 +193,6 @@ static bool ParseDscpFromCfgByQos(const std::string &cfg, uint8_t qos, uint8_t &
         }
     }
 
-    // 形式2：成对配置（qos,dscp）
     for (size_t i = 0; i + 1 < nums.size(); i += 2) {
         if (nums[i] == qos && nums[i + 1] <= 63U) {
             dscpOut = static_cast<uint8_t>(nums[i + 1]);
@@ -226,7 +223,6 @@ static bool GetDscpByQosFromHccnCfg(const uint32_t devPhyId, uint8_t qos, uint8_
     std::string cfg(value.data(), valueLen);
     return ParseDscpFromCfgByQos(cfg, qos, dscpOut);
 }
-*/
 
 } // namespace
 
@@ -486,20 +482,21 @@ HcclResult TpMgr::HandleCompletedRequest(RequestCtx reqCtx, const GetTpInfoParam
     tmpTpInfo.mappedJettyPriority = mappedSl & 0xFU;
     tmpTpInfo.hasMappedJettyPriority = true;
 
+    // RTP / UBOE：将 ApplyUbcQosTpSlPolicy 得到的 mapped SL 写回 TP；CTP 不向 TP 写 SL（沿用既有约定）
     if (param.tpProtocol == TpProtocol::RTP || param.tpProtocol == TpProtocol::UBOE) {
         CHK_RET(CommitMappedSlToTpAttr(devPhyId_, param.locAddr, tmpTpInfo.tpHandle, mappedSl));
     }
     if (param.tpProtocol == TpProtocol::UBOE && reqCtx.tpAttr.dscpConfigMode == 0) {
         const uint8_t dscpBefore = static_cast<uint8_t>(reqCtx.tpAttr.dscp & 0x3FU);
         const uint8_t qos = static_cast<uint8_t>(param.qos & 0xFFU);
-        uint8_t dscp = 33U; // cfg 未命中时回退默认值
+        uint8_t dscp = 33U;
         (void)GetDscpByQosFromHccnCfg(devPhyId_, qos, dscp);
         CHK_RET(CommitUboeDscpToTpAttr(devPhyId_, param.locAddr, tmpTpInfo.tpHandle, dscp));
         HCCL_INFO("[TpMgr][%s] UBOE dscp updated: tpHandle[%llu] qos[%u] dscpBefore[%u] dscpAfter[%u].", __func__,
             tmpTpInfo.tpHandle, static_cast<unsigned>(qos), static_cast<unsigned>(dscpBefore),
             static_cast<unsigned>(dscp));
     }
-    
+
     HCCL_INFO("[TpMgr][%s] tp qos mapping ok: tpHandle[%llu] tpListIndex[%u] mappedSl[%u] jettyPriority[%u] qos[%u] param[%s].",
         __func__, tmpTpInfo.tpHandle, tpListIndex, static_cast<unsigned>(mappedSl & 0xFU), tmpTpInfo.mappedJettyPriority,
         param.qos & 0xFFU, param.Describe().c_str());

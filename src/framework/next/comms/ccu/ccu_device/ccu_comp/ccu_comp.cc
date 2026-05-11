@@ -31,15 +31,16 @@ namespace hcomm {
 
 constexpr TpProtocol LOOP_JETTY_PROTOCOL = TpProtocol::RTP; // 环回使用RTP避免被环境link down阻塞
 
-static GetTpInfoParam MakeLoopGetTpInfoParam(const CommAddr &commAddr, uint32_t qos)
+static GetTpInfoParam MakeLoopGetTpInfoParam(const CommAddr &commAddr)
 {
     GetTpInfoParam param;
     param.locAddr = commAddr;
     param.rmtAddr = commAddr;
     param.tpProtocol = LOOP_JETTY_PROTOCOL;
-    param.qos = qos & 7U;
+    param.qos = 0U; // CCU 环回与通信域 hcclQos 解耦；SL 仅由 RaGetTpAttr.slBitmap + loopFirstTpLowestSl 决定
     param.slLevelCount = 0;
     param.loopFirstTpLowestSl = true;
+    param.ccuLoopbackGetTpInfo = true;
     return param;
 }
 
@@ -71,11 +72,6 @@ CcuComponent &CcuComponent::GetInstance(const int32_t deviceLogicId)
 
     ccuComponent[devLogicId].devLogicId_ = devLogicId;
     return ccuComponent[devLogicId];
-}
-
-void CcuComponent::SetLoopGetTpInfoQos(uint32_t qos)
-{
-    loopGetTpInfoQos_ = qos & 7U;
 }
 
 HcclResult CcuComponent::Init()
@@ -455,6 +451,7 @@ HcclResult CcuComponent::CreateAndImportLoopJettys(const uint8_t dieId,
     const uint32_t loopJettyQos = loopTpInfo.hasMappedJettyPriority
         ? (loopTpInfo.mappedJettyPriority & 0xFU)
         : EnvConfig::UB_QOS_DEFAULT;
+    // 此QOS其实为第一个TP中第一个可用的SL
 
     for (const auto &jettyInfo : jettyInfos) {
         const auto jettyMode = HrtJettyMode::CCU_CCUM_CACHE; // 当前仅支持该模式
@@ -485,7 +482,7 @@ HcclResult CcuComponent::RequestNewLoopTpInfo(const CommAddr &commAddr, TpInfo &
     const auto startTime = std::chrono::steady_clock::now();
 
     auto &tpMgr = TpMgr::GetInstance(devPhyId_);
-    const GetTpInfoParam tpParam = MakeLoopGetTpInfoParam(commAddr, loopGetTpInfoQos_);
+    const GetTpInfoParam tpParam = MakeLoopGetTpInfoParam(commAddr);
     HcclResult ret = HcclResult::HCCL_SUCCESS;
     do {
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
@@ -901,7 +898,7 @@ HcclResult CcuComponent::ReleaseAllTpInfos()
             return HcclResult::HCCL_E_NOT_FOUND;
         }
         const auto &commAddr = dieIdIter->second.second;
-        const GetTpInfoParam tpParam = MakeLoopGetTpInfoParam(commAddr, loopGetTpInfoQos_);
+        const GetTpInfoParam tpParam = MakeLoopGetTpInfoParam(commAddr);
         (void)TpMgr::GetInstance(devPhyId_).ReleaseTpInfo(tpParam, tpInfo);
         item.second.tpHandle = 0; // 清理handle，避免重复释放
     }
