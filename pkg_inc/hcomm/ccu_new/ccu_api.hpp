@@ -11,6 +11,8 @@
 #ifndef CCU_API_HPP
 #define CCU_API_HPP
 
+#include <vector>
+
 #include "ccu_data_api_impl.h"
 #include "ccu_control_flow_macro.h"
 #include "hcom_common.h"

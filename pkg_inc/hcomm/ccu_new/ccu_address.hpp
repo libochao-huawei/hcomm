@@ -43,10 +43,8 @@ public:
     }
 
     void operator=(const Address& other) const {
-        auto ret = CcuAddressAssignAddr(this->handle, other.handle);
-        if (ret != CcuResult::CCU_SUCCESS) {
-            throw "todo: failed";
-        }
+        CCU_THROW_IF_FAILED(CcuAddressAssignAddr(this->handle, other.handle),
+            "Address::operator=(Address): CcuAddressAssignAddr failed");
     }
 
     void operator=(Address&& other) {
@@ -54,38 +52,31 @@ public:
     }
 
     void operator=(uint64_t immediate) const {
-        auto ret = CcuAddressAssignImm(this->handle, immediate);
-        if (ret != CcuResult::CCU_SUCCESS) {
-            throw "todo: failed";
-        }
+        CCU_THROW_IF_FAILED(CcuAddressAssignImm(this->handle, immediate),
+            "Address::operator=(uint64_t): CcuAddressAssignImm failed");
     }
 
     void operator=(const Variable &var) const {
-        auto ret = CcuAddressAssignVar(this->handle, var.handle);
-        if (ret != CcuResult::CCU_SUCCESS) {
-            throw "todo: failed";
-        }
+        CCU_THROW_IF_FAILED(CcuAddressAssignVar(this->handle, var.handle),
+            "Address::operator=(Variable): CcuAddressAssignVar failed");
     }
 
     void operator=(CcuArithmeticOperator<Address, Address> op) const {
-        auto ret = CcuAddressAddAddrToAddr(this->handle, op.lhs.handle, op.rhs.handle);
-        if (ret != CcuResult::CCU_SUCCESS) {
-            throw "todo: failed";
-        }
+        CCU_THROW_IF_FAILED(
+            CcuAddressAddAddrToAddr(this->handle, op.lhs.handle, op.rhs.handle),
+            "Address::operator=(Addr+Addr): CcuAddressAddAddrToAddr failed");
     }
 
     void operator=(CcuArithmeticOperator<Address, Variable> op) const {
-        auto ret = CcuAddressAddVarToAddr(this->handle, op.lhs.handle, op.rhs.handle);
-        if (ret != CcuResult::CCU_SUCCESS) {
-            throw "todo: failed";
-        }
+        CCU_THROW_IF_FAILED(
+            CcuAddressAddVarToAddr(this->handle, op.lhs.handle, op.rhs.handle),
+            "Address::operator=(Addr+Var): CcuAddressAddVarToAddr failed");
     }
 
     void operator=(CcuArithmeticOperator<Variable, Address> op) const {
-        auto ret = CcuAddressAddVarToAddr(this->handle, op.rhs.handle, op.lhs.handle);
-        if (ret != CcuResult::CCU_SUCCESS) {
-            throw "todo: failed";
-        }
+        CCU_THROW_IF_FAILED(
+            CcuAddressAddVarToAddr(this->handle, op.rhs.handle, op.lhs.handle),
+            "Address::operator=(Var+Addr): CcuAddressAddVarToAddr failed");
     }
 
     // addr + addr
@@ -99,18 +90,15 @@ public:
     }
 
     void operator+=(const Variable &var) const {
-        auto ret = CcuAddressAddAssignVar(this->handle, var.handle);
-        if (ret != CcuResult::CCU_SUCCESS) {
-            throw "todo: failed";
-        }
+        CCU_THROW_IF_FAILED(CcuAddressAddAssignVar(this->handle, var.handle),
+            "Address::operator+=(Variable): CcuAddressAddAssignVar failed");
     }
 
     // addr += addr
     void operator+=(const Address &other) const {
-        auto ret = CcuAddressAddAddrToAddr(this->handle, this->handle, other.handle);
-        if (ret != CcuResult::CCU_SUCCESS) {
-            throw "todo: failed";
-        }
+        CCU_THROW_IF_FAILED(
+            CcuAddressAddAddrToAddr(this->handle, this->handle, other.handle),
+            "Address::operator+=(Address): CcuAddressAddAddrToAddr failed");
     }
 
     CcuAddressHandle handle{0};
