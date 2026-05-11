@@ -69,7 +69,7 @@ HcclResult CcuWqeBBMgr::Alloc(const uint32_t sqSize, ResInfo &wqeBBInfo)
     uint32_t wqeBBReqSize = GetWqeBBReqSizeBySqSize(sqSize);
     std::vector<ResInfo> resInfo;
     // 成员变量认为调用时已初始化，wqebb资源要求连续
-    auto ret = idAllocator_->Alloc(wqeBBReqSize, true, resInfo);
+    auto ret = idAllocator_->Alloc(wqeBBReqSize, true, resInfo, "ResType::WqeBB"); // wqebb资源要求连续
     if (ret == HcclResult::HCCL_E_UNAVAIL) {
         HCCL_WARNING("[CcuWqeBBMgr][%s] failed, left resources are enough, "
             "sqSize[%u], wqeBBSize[%u]", __func__, sqSize, wqeBBReqSize);
