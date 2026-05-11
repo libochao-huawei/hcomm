@@ -348,12 +348,15 @@ namespace hccl
         CHK_RET(hrtGetDeviceType(devType_));
         commAicpuParam_.deviceType = static_cast<u32>(devType_);
         CHK_RET(InitBinHandle());
-        CHK_PTR_NULL(commV2);
 
         EXECEPTION_CATCH(collComm_ = std::make_unique<CollComm>(commV2, userRank, commName, callbacks),
             return HCCL_E_PTR);
 
         CHK_RET(collComm_->Init(rankGraph, binHandle_, cclBuffer, config));
+        if (commV2 == nullptr) { /* hccl::CommunicatorV1支持CollComm简易流程 */
+            return HCCL_SUCCESS;
+        }
+
         CHK_RET(collComm_->GetHDCommunicate(commAicpuParam_.kfcControlTransferH2DParams,
             commAicpuParam_.kfcStatusTransferD2HParams));
         commAicpuParam_.userRank = collComm_->GetMyRankId();
@@ -368,7 +371,7 @@ namespace hccl
             commAicpuParam_.envConfig.taskExceptionEnable);
 
         const char *opModeEnv = getenv("HCCL_CCU_CUSTOM_OP_MODE");
-        if (opModeEnv != nullptr && strcmp(opModeEnv, "1") == 0 && commV2 != nullptr) {
+        if (opModeEnv != nullptr && strcmp(opModeEnv, "1") == 0) {
             // 当前需要支持coll comm与legacy comm混跑，coll comm确定加速模式后，需要设置comm加速模式
             auto *commImplV2 = static_cast<Hccl::HcclCommunicator *>(commV2);
             constexpr bool isCcuMsAvailable = false; // 禁止legacy通信域使用ms模式，避免抢占过多coll comm ccu可用资源
@@ -380,6 +383,10 @@ namespace hccl
 
     HcclResult hcclComm::InitCollCommInner(uint32_t userRank)
     {
+        if (!GetConnectMode()) {
+            return HCCL_SUCCESS;
+        }
+
         HCCL_INFO("[InitCollCommInner] start, userRank[%u]", userRank);
         HcclCommunicator* hcclComm = GetHcclCommunicator();
         if (hcclComm == nullptr) {
@@ -395,6 +402,7 @@ namespace hccl
 
         void* cclBufferAddr = nullptr;
         std::size_t cclBufferSize = 0;
+        CHK_RET(CreateCommCCLbuffer());
         HcclResult ret = hcclComm->GetInCCLbuffer(cclBufferAddr, cclBufferSize);
         if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("[InitCollCommInner] GetInCCLbuffer failed, ret=%d", ret);
