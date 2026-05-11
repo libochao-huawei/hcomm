@@ -18,6 +18,7 @@ set(src_to_test_list
     mocks/ccu_drv_handle_mock.cc
     mocks/ccu_dev_mgr_mock.cc
     ut_CcuConn_test.cc
+    ut_ccu_microcode.cc
 )
 
 add_executable(hccl_utest_comms_ccu_features ${src_to_test_list})
@@ -62,3 +63,11 @@ add_dependencies(hccl_utest_comms_ccu_features hccl_llt)
 
 enable_testing()
 add_test(NAME hccl_utest_comms_ccu_features COMMAND hccl_utest_comms_ccu_features)
+
+add_subdirectory(ccu_representation/reps/sync)
+add_subdirectory(ccu_representation/reps/control)
+add_subdirectory(ccu_representation/reps/common)
+add_subdirectory(ccu_representation/reps/data)
+add_subdirectory(ccu_representation/reps/arithmetic)
+add_subdirectory(ccu_representation/reps/loop)
+add_subdirectory(ccu_representation/interface)
