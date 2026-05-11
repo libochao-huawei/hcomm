@@ -22,26 +22,9 @@ constexpr u32 MODULE_NUM_FOUR = 4;
 constexpr u32 HCCL_310P_DATA_SIZE_MID_COUNT = 320 * 1024;
 constexpr u32 HCCL_310P_DATA_SIZE_SMALL_COUNT = 1024;
 constexpr u32 HCCL_310P_SLIM_RING_MAX_SIZE = 8;
+constexpr u64 HCCL_PIPELINE_TOTAL_DATA_SIZE_THRESHOLD = 608 * 1024 * 1024;
 
 namespace hccl {
-
-static bool isPipelineBlockSlicingBetter(const u64 dataSize, const u64 commInputSize, const u32 userRankSize)
-{
-    constexpr u32 PIPELINE_BLOCK_NUM_FOUR = 4;
-    u64 maxPipelineBlockSize = 0;
-    u64 numBlockTotal = 0;
-    if (userRankSize != 0) {
-        maxPipelineBlockSize = commInputSize / userRankSize / HCCL_DEVICE_NUM_TWO /
-            HCCL_MIN_SLICE_ALIGN * HCCL_MIN_SLICE_ALIGN;
-    }
-    if (dataSize != 0 && maxPipelineBlockSize != 0) {
-        numBlockTotal = (dataSize - 1) / maxPipelineBlockSize + 1;
-    }
-    HCCL_INFO("[ReduceScatterOperator][isPipelineBlockSlicingBetter] dataSize[%llu] commInputSize[%llu] "
-        "userRankSize[%u] maxPipelineBlockSize[%llu] numBlockTotal[%llu]",
-        dataSize, commInputSize, userRankSize, maxPipelineBlockSize, numBlockTotal);
-    return numBlockTotal > PIPELINE_BLOCK_NUM_FOUR;
-}
 
 ReduceScatterOperator::ReduceScatterOperator(AlgConfigurator* algConfigurator, CCLBufferManager &cclBufferManager,
     HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher) :
@@ -477,8 +460,16 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
     u64 smallCountSingleServerThreshold = (hccsPortNum_ == HCCS_PORT_NUM_910_93_7) ? HCCL_SMALL_COUNT_512_KB : HCCL_SMALL_COUNT_1_MB;
     u64 smallCountMultiServerThreshold = (hccsPortNum_ == HCCS_PORT_NUM_910_93_7) ? HCCL_SMALL_COUNT_1_MB : HCCL_SMALL_COUNT_2_MB;
     CHK_RET(cclBufferManager_.GetInCCLbuffer(commInputPtr, commInputSize));
-    bool isBetterToUsePipelineBlockSlicing =
-        isPipelineBlockSlicingBetter(dataSize, commInputSize, userRankSize_);
+    u64 maxPipelineBlockSize = 0;
+    if (userRankSize_ != 0) {
+        maxPipelineBlockSize = commInputSize / userRankSize_ / HCCL_DEVICE_NUM_TWO /
+            HCCL_MIN_SLICE_ALIGN * HCCL_MIN_SLICE_ALIGN;
+    }
+    bool isSupportPipelineFor91093 = (maxPipelineBlockSize >= HCCL_SMALL_COUNT_2_MB) &&
+        (dataSize * userRankSize_ > HCCL_PIPELINE_TOTAL_DATA_SIZE_THRESHOLD);
+    HCCL_INFO("[ReduceScatterOperator][SelectAlgfor91093] dataSize[%llu] commInputSize[%llu] "
+        "userRankSize[%u] maxPipelineBlockSize[%llu] isSupportPipelineFor91093[%d]",
+        dataSize, commInputSize, userRankSize_, maxPipelineBlockSize, isSupportPipelineFor91093);
     bool dmaReduceLimit = (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) && isPowOfTwo &&
         ((commInputSize * HCCL_DEVICE_NUM_TWO < param.DataDes.count * SIZE_TABLE[param.DataDes.dataType] * userRankSize_) ||
         retryEnable_);
@@ -540,7 +531,7 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
                isSupportInlineReduce &&
                (topoType_ == TopoType::TOPO_TYPE_NP_SINGLE_RING ||
                 topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING) &&
-               isBetterToUsePipelineBlockSlicing) {
+               isSupportPipelineFor91093) {
         algName = "ReduceScatterPipelineFor91093Executor";
     } else {
         if (topoType_ == TopoType::TOPO_TYPE_NP_SINGLE_RING) {
