@@ -152,8 +152,7 @@ namespace Hccl {
         auto ret = rankGraph->GetNetInstanceList(netLayer, instSizeVec_, size);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
                     HCCL_ERROR("[IRankGraph::GetInstSizeListByNetLayer] Failed to get instSizeList at netLayer[%u], "
-                               "myRank[%u], ret[%d]", netLayer, rankId, ret),
-                    ret);
+                               "myRank[%u], ret[%d]", netLayer, rankId, ret), ret);
         *instSizeList = instSizeVec_.data();
         *listSize = size;
         return HCCL_SUCCESS;

@@ -205,8 +205,7 @@ vector<NetInstance::Path> RankGraph::GetPaths(u32 netLayer, RankId sRankId, Rank
 {
     // 若sRank和dRank均不在innerGroup里，则返回空
     if (innerRanks_.count(sRankId) == 0 && innerRanks_.count(dRankId) == 0) {
-        HCCL_WARNING("[RankGraph][GetPaths] netLayer[%u], sRankId[%d], dRankId[%d] are not in innerRanks", netLayer,
-                     sRankId, dRankId);
+        HCCL_WARNING("[RankGraph][GetPaths] sRankId[%d] and dRankId[%d] are not in innerRanks", sRankId, dRankId);
         return {};
     }
 
@@ -238,7 +237,7 @@ u32 RankGraph::GetLayerRanks(const u32 netLayer) const
 {
     u32 layerRankSize = 0;
     if(netInsts_.at(netLayer).size() == 0){
-        HCCL_WARNING("[RankGraph][GetLayerRanks] RankGraph has no netInstance on layer %u", netLayer);
+        HCCL_WARNING("[RankGraph][GetLayerRanks] RankGraph has no netInstance on netLayer %u", netLayer);
         return 0;
     }
     for (const auto& netInst : netInsts_.at(netLayer)) {
