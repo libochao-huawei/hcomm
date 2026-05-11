@@ -356,8 +356,15 @@ HcclResult CcuConnection::StartImportJettyRequest(uint32_t jettyIndex, RequestHa
     auto &importCtxInParam = importJettyCtxs_[jettyIndex].inParam;
     importCtxInParam.jettyImportCfg = jettyImportCfg_;
     importCtxInParam.jettyImportCfg.protocol = tpProtocol_;
-    CHK_RET(HccpUbTpImportJettyAsync(ctxHandle_, importCtxInParam, reqDataBuffers_[jettyIndex],
-        remoteJettyHandlePtrs_[jettyIndex], reqHandle));
+
+    /* 与 TpMgr 假 TP 配套：不调 RaCtxQpImportAsync，否则 RS 对非法 TP 异步失败（如 528101） */
+    reqDataBuffers_[jettyIndex].resize(sizeof(struct QpImportInfoT));
+    struct QpImportInfoT *info = reinterpret_cast<struct QpImportInfoT *>(reqDataBuffers_[jettyIndex].data());
+    (void)memset_s(info, sizeof(*info), 0, sizeof(*info));
+    info->out.ub.tpn = static_cast<uint32_t>(tpInfo_.tpHandle);
+    info->out.ub.tjettyHandle = 0ULL;
+    remoteJettyHandlePtrs_[jettyIndex] = nullptr;
+    reqHandle = 0;
 
     return HcclResult::HCCL_SUCCESS;
 }
@@ -372,6 +379,11 @@ HcclResult CcuConnection::CheckRequestResults()
     std::vector<size_t> completedReqs;
     const uint32_t reqSize = reqHandles_.size();
     for (size_t i = 0; i < reqSize; i++) {
+        if (reqHandles_[i] == 0) {
+            completedReqs.push_back(i);
+            continue;
+        }
+
         RequestResult result = HccpGetAsyncReqResult(reqHandles_[i]);
         if (result == RequestResult::NOT_COMPLETED) {
             continue;
