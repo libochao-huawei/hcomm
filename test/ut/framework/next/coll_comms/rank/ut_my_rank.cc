@@ -173,6 +173,9 @@ TEST_F(MyRankTest, Ut_When_BatchCreateChannels_Expect_SUCCESS)
     u32 RmtEp2reuseIdx0 = 0u;
 
     std::vector<HcommChannelDesc> hcommDesc(3);
+    for (u32 i = 0; i < 3; ++i) {
+        hcommDesc[i] = MyRankUtils::ChannelDescHccl2Hcomm(channelDesc[i]);
+    }
     EXPECT_EQ(myRank.BatchCreateSockets(channelDesc, 1, "test", hcommDesc), HCCL_SUCCESS);
     std::vector<ChannelHandle> hostChannelHandles(3);
     ChannelHandle *hostChannelHandleList = hostChannelHandles.data();
