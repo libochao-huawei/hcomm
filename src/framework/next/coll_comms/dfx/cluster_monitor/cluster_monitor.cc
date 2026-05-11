@@ -795,9 +795,9 @@ void ClusterMonitor::ProcessExceptionEvent()
 }
 
 
-void GetCqeErrInfoFromTaskException(unsigned int remoteLocalIdId, unsigned int locDeviceId, unsigned short int status, std::string localEid, std::string remoteEid, std::string remoteInsId)
+void GetCqeErrInfoFromTaskException(unsigned int remoteLocalId, unsigned int locDeviceId, unsigned short int status, std::string localEid, std::string remoteEid, std::string remoteInsId)
 {
-    return hccl::CollCommMgr::GetInstance()->GetClusterMonitor(locDeviceId).GetCqeErrInfoFromTaskException(remoteLocalIdId, status, localEid, remoteEid, remoteInsId);
+    return hccl::CollCommMgr::GetInstance()->GetClusterMonitor(locDeviceId).GetCqeErrInfoFromTaskException(remoteLocalId, status, localEid, remoteEid, remoteInsId);
 }
 
 void ClusterMonitor::GetCqeErrInfoFromTaskException(u32 remoteLocalId, uint16_t status, std::string localEid, std::string remoteEid, std::string remoteInsId)
