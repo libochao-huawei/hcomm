@@ -39,6 +39,22 @@ void HccpHdcManager::Init(u32 deviceLogicId)
     instances.insert(deviceLogicId);
 }
 
+void HccpHdcManager::DeInit(u32 deviceLogicId)
+{
+    std::unique_lock<std::mutex> lock(managerMutex);
+    // 校验是否存在
+    if (instances_.count(deviceLogicId) == 0) {
+        HCCL_WARNING("[HccpHdcManager::%s] deviceLogicId[%d] not ra init", __func__, deviceLogicId);
+        return;
+    }
+    HRaInitConfig cfg;
+    cfg.phyId = HrtGetDevicePhyIdByIndex(deviceLogicId);
+    cfg.mode = HrtNetworkMode::HDC;
+    DECTOR_TRY_CATCH("HccpHdcManager", HrtRaDeInit(cfg));
+    instances.erase(deviceLogicId);
+    HCCL_INFO("[HccpHdcManager::%s] devLogicId [%d] ra deinit success.", __func__, deviceLogicId);
+}
+
 void HccpHdcManager::DestroyAll()
 {
     std::unique_lock<std::mutex> lock(managerMutex);
