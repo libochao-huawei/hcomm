@@ -122,6 +122,7 @@ HcclResult ProcessHcclChannelDesc(const HcclChannelDesc &channelDesc, HcclChanne
      // 根据协议类型拷贝union中的相应成员
     switch (channelDesc.channelProtocol) {
         case COMM_PROTOCOL_HCCS:
+        case COMM_PROTOCOL_HCCS_ONLY:
         case COMM_PROTOCOL_PCIE:
         case COMM_PROTOCOL_SIO:
         case COMM_PROTOCOL_UBC_CTP:
@@ -140,6 +141,7 @@ HcclResult ProcessHcclChannelDesc(const HcclChannelDesc &channelDesc, HcclChanne
                     case COMM_PROTOCOL_UB_MEM:  return "COMM_PROTOCOL_UB_MEM";
                     case COMM_PROTOCOL_ROCE:    return "COMM_PROTOCOL_ROCE";
                     case COMM_PROTOCOL_UBC_TP:  return "COMM_PROTOCOL_UBC_TP";
+                    case COMM_PROTOCOL_HCCS_ONLY:   return "COMM_PROTOCOL_HCCS_ONLY";
                     default:                    return "UNKNOWN_PROTOCOL";
                 }
             };
