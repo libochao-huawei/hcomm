@@ -5381,8 +5381,9 @@ HcclResult HcclCommAicpu::InitP2pChannel(HcclIndOpChannelRemoteResV3 *commParam,
     CHK_PTR_NULL(commParam);
     CHK_PTR_NULL(commParam->channelList);
     HcclIndOpChannelRemoteResV2 &remoteResV2 = commParam->remoteResV2[channelIndex];
+    u32 linkType = static_cast<u32>(remoteResV2.channelP2p.transportAttr.linkType);
     std::string channelKey = std::string(commParam->channelTag) + ":" + std::to_string(commParam->engine) + ":" +
-        std::to_string(remoteResV2.remoteRank) + ":" + std::to_string(CommProtocol::COMM_PROTOCOL_HCCS);
+        std::to_string(remoteResV2.remoteRank) + ":" + std::to_string(linkType);
     HCCL_INFO("%s channelKey[%s]", __func__, channelKey.c_str());
     if (channelHandleMap_.find(channelKey) != channelHandleMap_.end()) {
         HCCL_ERROR("[%s]the channel has existed.", __func__);

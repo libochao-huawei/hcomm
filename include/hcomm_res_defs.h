@@ -73,6 +73,7 @@ typedef enum {
 typedef enum {
     COMM_PROTOCOL_RESERVED = -1,  ///< 保留协议类型
     COMM_PROTOCOL_HCCS = 0,       ///< HCCS协议
+    COMM_PROTOCOL_IPC_MEM = 0,    ///< 自适应选择HCCS、SIO
     COMM_PROTOCOL_ROCE = 1,       ///< RDMA over Converged Ethernet
     COMM_PROTOCOL_PCIE = 2,       ///< PCIE协议
     COMM_PROTOCOL_SIO = 3,        ///< SIO协议
@@ -80,6 +81,7 @@ typedef enum {
     COMM_PROTOCOL_UBC_TP = 5,     ///< 华为统一总线UBC_TP
     COMM_PROTOCOL_UB_MEM = 6,     ///< UB_MEM
     COMM_PROTOCOL_UBOE = 7,       ///< UBoE
+    COMM_PROTOCOL_HCCS_ONLY = 8,  ///< 一卡双DIE使用HCCS
 } CommProtocol;
 
 /**
