@@ -58,6 +58,7 @@ public:
     static HcclResult ChannelResume(const ChannelHandle *channelList, uint32_t channelNum);
     static HcclResult ChannelUpdateKernelLaunch(ChannelHandle* deviceChannelHandles, ChannelHandle* hostChannelHandles, 
         uint32_t listNum, const std::string &commTag, aclrtBinHandle binHandle);
+    static HcclResult ChannelDestroyByDeviceId(int32_t deviceId);    
     
 private:
     template <typename Func>

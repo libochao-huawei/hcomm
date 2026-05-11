@@ -616,3 +616,70 @@ HcommResult HcommDfxKernelLaunch(const std::string &commTag, aclrtBinHandle binH
 
     return HCCL_SUCCESS;
 }
+
+static void EndpointDeviceStateCallback(int32_t deviceId, aclrtDeviceState state, void *args)
+{
+    HCCL_INFO("[EndpointDeviceStateCallback] deviceId=%d, state=%d", deviceId, static_cast<int>(state));
+
+    // 仅处理设备重置前状态
+    if (state != ACL_RT_DEVICE_STATE_RESET_PRE) {
+        return;
+    }
+
+    // Step1: 释放内存 - 根据 deviceId 获取 endpoint 并注销所有注册的内存
+    Endpoint *endpoint = g_EndpointMap.GetEndpointByDeviceId(static_cast<uint32_t>(deviceId));
+    if (endpoint != nullptr) {
+        void *memHandles = nullptr;
+        uint32_t memHandleNum = 0;
+        HcclResult ret = endpoint->GetAllMemHandles(&memHandles, &memHandleNum);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_WARNING("[EndpointDeviceStateCallback] GetAllMemHandles failed, ret=%d", ret);
+        } else if (memHandles != nullptr && memHandleNum > 0) {
+            void **handles = static_cast<void **>(memHandles);
+            for (uint32_t i = 0; i < memHandleNum; ++i) {
+                ret = endpoint->UnregisterMemory(handles[i]);
+                if (ret != HCCL_SUCCESS) {
+                    HCCL_WARNING(
+                        "[EndpointDeviceStateCallback] UnregisterMemory failed for handle[%u], ret=%d", i, ret);
+                }
+            }
+        }
+    } else {
+        HCCL_WARNING("[EndpointDeviceStateCallback] endpoint not found for deviceId=%d", deviceId);
+    }
+
+    // Step2: 释放通道 - 销毁该设备上的所有通信通道
+    HcclResult ret = ChannelProcess::ChannelDestroyByDeviceId(deviceId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_WARNING(
+            "[EndpointDeviceStateCallback] ChannelDestroyByDeviceId failed for deviceId=%d, ret=%d", deviceId, ret);
+    }
+
+    // Step3: RDMA去初始化 - 释放 RDMA 相关资源
+    struct RaInitConfig config = {0};
+    config.phyId = static_cast<uint32_t>(deviceId);
+    config.nicPosition = static_cast<uint32_t>(NICDeployment::NIC_DEPLOYMENT_DEVICE);
+    config.hdcType = HDC_SERVICE_TYPE_RDMA_V2;
+    config.enableHdcAsync = false;
+
+    ret = HrtRaDeInit(&config);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_WARNING("[EndpointDeviceStateCallback] HrtRaDeInit failed for deviceId=%d, ret=%d", deviceId, ret);
+    }
+
+    // Step4: 释放Endpoint - 从全局映射表中移除 endpoint（endpoint变量需保持有效直到此处）
+    if (endpoint != nullptr) {
+        EndpointHandle handle = reinterpret_cast<EndpointHandle>(endpoint);
+        if (!g_EndpointMap.RemoveEndpoint(handle)) {
+            HCCL_WARNING("[EndpointDeviceStateCallback] RemoveEndpoint failed for deviceId=%d", deviceId);
+        }
+    }
+}
+
+__attribute__((constructor)) void EndpointCallBackInit()
+{
+ 	aclError ret = aclrtRegDeviceStateCallback("hcomm_endpoint", EndpointDeviceStateCallback, nullptr);
+ 	if (ret != ACL_SUCCESS) {
+ 	    HCCL_WARNING("[EndpointCallBackInit] aclrtRegDeviceStateCallback failed, ret=%d", ret);
+ 	}
+}

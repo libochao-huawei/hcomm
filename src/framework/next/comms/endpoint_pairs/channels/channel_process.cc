@@ -877,4 +877,34 @@ HcclResult ChannelProcess::ChannelUpdateKernelLaunch(ChannelHandle* deviceChanne
     return HCCL_SUCCESS;
 }
 
+HcclResult ChannelProcess::ChannelDestroyByDeviceId(int32_t deviceId)
+{
+    HCCL_INFO("[%s] START. deviceId[%d].", __func__, deviceId);
+
+    std::vector<ChannelHandle> deviceHandles;
+    std::vector<ChannelHandle> hostHandles;
+
+    {
+        std::lock_guard<std::mutex> lock(g_ChannelMapMtx);
+        for (auto it = g_ChannelD2HMap.begin(); it != g_ChannelD2HMap.end();) {
+            if (it->first.deviceId == deviceId) {
+                ChannelHandle mappedHandle = it->second;
+                auto itC = g_ChannelMap.find(mappedHandle);
+                if (itC != g_ChannelMap.end()) {
+                    HCCL_INFO("[Hcomm][%s] erase channel: deviceId[%d], inHandle[0x%llx], mappedHandle[0x%llx]",
+                        __func__, deviceId, it->first.handle, mappedHandle);
+                    deviceHandles.push_back(it->first.handle);
+                    hostHandles.push_back(mappedHandle);
+                    g_ChannelMap.erase(itC);
+                }
+                it = g_ChannelD2HMap.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+
+    HCCL_INFO("[%s] destroyed %u channels for deviceId[%d].", __func__, deviceHandles.size(), deviceId);
+    return HCCL_SUCCESS;
+}
 }
