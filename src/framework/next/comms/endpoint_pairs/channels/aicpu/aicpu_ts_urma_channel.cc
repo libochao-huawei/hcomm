@@ -15,12 +15,17 @@
 #include "exception_handler.h"
 #include "comm_mems.h"
 
+#include <chrono>
+
 // Orion
+#include "adapter_rts_common.h"
 #include "coll_alg_param.h"
 #include "topo_common_types.h"
 #include "virtual_topo.h"
 #include "aicpu_res_package_helper.h"
 #include "tp_manager.h"
+#include "tp_mgr.h"
+#include "env_config/env_config.h"
 
 namespace hcomm {
 
@@ -108,19 +113,51 @@ HcclResult AicpuTsUrmaChannel::BuildConnection()
     CHK_RET(hrtGetDevice(&deviceLogicId));
     Hccl::TpManager::GetInstance(deviceLogicId).Init();
 
+    uint32_t devPhyId = 0;
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(deviceLogicId), devPhyId));
+
+    GetTpInfoParam param{};
+    param.locAddr = localEp_.commAddr;
+    param.rmtAddr = remoteEp_.commAddr;
+    param.tpProtocol = (protocol == Hccl::LinkProtocol::UB_CTP) ? TpProtocol::CTP : TpProtocol::RTP;
+    param.qos = (channelDesc_.ubAttr.qos > 7U) ? EnvConfig::UB_QOS_DEFAULT : (channelDesc_.ubAttr.qos & 7U);
+    param.slLevelCount = 0;
+    param.loopFirstTpLowestSl = false;
+
+    TpInfo tpInfo{};
+    constexpr uint32_t kTpInfoWaitTimeoutMs = 10000;
+    const auto tpWaitStart = std::chrono::steady_clock::now();
+    HcclResult tpRet = HCCL_SUCCESS;
+    do {
+        if (std::chrono::steady_clock::now() - tpWaitStart >= std::chrono::milliseconds(kTpInfoWaitTimeoutMs)) {
+            HCCL_ERROR("[AicpuTsUrmaChannel][%s] TpMgr::GetTpInfo timeout[%u ms] devPhyId[%u].", __func__,
+                kTpInfoWaitTimeoutMs, devPhyId);
+            return HCCL_E_TIMEOUT;
+        }
+        tpRet = TpMgr::GetInstance(devPhyId).GetTpInfo(param, tpInfo);
+    } while (tpRet == HCCL_E_AGAIN);
+
+    CHK_PRT_RET(tpRet != HCCL_SUCCESS,
+        HCCL_ERROR("[AicpuTsUrmaChannel][%s] TpMgr::GetTpInfo failed, ret[%d].", __func__, tpRet), tpRet);
+    CHK_PRT_RET(!tpInfo.hasMappedJettyPriority,
+        HCCL_ERROR("[AicpuTsUrmaChannel][%s] TpMgr did not produce mappedJettyPriority.", __func__),
+        HCCL_E_INTERNAL);
+
+    const u8 qos = static_cast<u8>(tpInfo.mappedJettyPriority & 0xFU);
+
     std::unique_ptr<Hccl::DevUbConnection> ubConn = nullptr;
     switch (protocol) {
         case Hccl::LinkProtocol::UB_TP:
             EXECEPTION_CATCH(
                 ubConn = std::make_unique<Hccl::DevUbTpConnection>(rdmaHandle_, locAddr, rmtAddr, opMode, devUsed,
-                    Hccl::HrtUbJfcMode::STARS_POLL, Hccl::IpAddress(), Hccl::IpAddress()),
+                    Hccl::HrtUbJfcMode::STARS_POLL, Hccl::IpAddress(), Hccl::IpAddress(), qos),
                 return HCCL_E_PTR
             );
             break;
         case Hccl::LinkProtocol::UB_CTP:
             EXECEPTION_CATCH(
                 ubConn = std::make_unique<Hccl::DevUbCtpConnection>(rdmaHandle_, locAddr, rmtAddr, opMode, devUsed,
-                    Hccl::HrtUbJfcMode::STARS_POLL, Hccl::IpAddress(), Hccl::IpAddress()),
+                    Hccl::HrtUbJfcMode::STARS_POLL, Hccl::IpAddress(), Hccl::IpAddress(), qos),
                 return HCCL_E_PTR
             );
             break;

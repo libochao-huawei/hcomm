@@ -14,6 +14,7 @@
 #include "rma_connection.h"
 #include "op_mode.h"
 #include "orion_adapter_hccp.h"
+#include "../../../framework/env_config/env_config.h"
 #include "tp_manager.h"
 #include "local_ub_rma_buffer.h"
 #include "stream.h"
@@ -105,6 +106,7 @@ private:
     u32          tokenValue{GetUbToken()};
     Eid          rmtEid{};
     Eid          locEid{};
+    u8           qos_{static_cast<u8>(UB_QOS_DEFAULT)};
 
     int32_t   devLogicId{0};
     u32       dieId{0};
@@ -175,21 +177,24 @@ class DevUbTpConnection : public DevUbConnection {
 public:
     DevUbTpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
                       const OpMode opMode, const bool devUsed = false, const HrtUbJfcMode jfcMode = HrtUbJfcMode::STARS_POLL,
-                      const IpAddress &locIpv4Addr = IpAddress(), const IpAddress &rmtIpv4Addr = IpAddress());
+                      const IpAddress &locIpv4Addr = IpAddress(), const IpAddress &rmtIpv4Addr = IpAddress(),
+                      u8 qos = static_cast<u8>(UB_QOS_DEFAULT));
 };
 
 class DevUbCtpConnection : public DevUbConnection {
 public:
     DevUbCtpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
                        const OpMode opMode, const bool devUsed = false, const HrtUbJfcMode jfcMode = HrtUbJfcMode::STARS_POLL,
-                       const IpAddress &locIpv4Addr = IpAddress(), const IpAddress &rmtIpv4Addr = IpAddress());
+                       const IpAddress &locIpv4Addr = IpAddress(), const IpAddress &rmtIpv4Addr = IpAddress(),
+                       u8 qos = static_cast<u8>(UB_QOS_DEFAULT));
 };
 
 class DevUbUboeConnection : public DevUbConnection {
 public:
     DevUbUboeConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
                         const OpMode opMode, const bool devUsed = false, const HrtUbJfcMode jfcMode = HrtUbJfcMode::STARS_POLL,
-                        const IpAddress &locIpv4Addr = IpAddress(), const IpAddress &rmtIpv4Addr = IpAddress());
+                        const IpAddress &locIpv4Addr = IpAddress(), const IpAddress &rmtIpv4Addr = IpAddress(),
+                        u8 qos = static_cast<u8>(UB_QOS_DEFAULT));
 };
 
 std::vector<DevUbConnection *> GetStarsPollUbConns(const std::vector<RmaConnection *> &rmaConns);
