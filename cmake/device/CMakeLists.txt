@@ -100,5 +100,10 @@ install(FILES ${sign_aicpu_hcomm}
     COMPONENT hcomm
 )
 
-# 设置子工程打包
-set_cann_subprj_package()
+# 设置子工程打包 - 输出文件名为 device-hcomm.tar.gz，匹配 host 侧 makeself.cmake 中的 device-${CPACK_PACKAGE_NAME}.tar.gz
+get_cmake_property(CPACK_COMPONENTS_ALL COMPONENTS)
+list(REMOVE_ITEM CPACK_COMPONENTS_ALL "Unspecified")
+set(CPACK_GENERATOR TGZ)
+set(CPACK_ARCHIVE_COMPONENT_INSTALL ON)
+set(CPACK_ARCHIVE_FILE_NAME "device-hcomm")
+include(CPack)

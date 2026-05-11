@@ -132,10 +132,34 @@ elseif(BUILD_OPEN_PROJECT)
             BUILD_ALWAYS TRUE
         )
 
-        # 安装 device 侧编译产物
+        # 安装 device 侧编译产物 - 整体 tar.gz 包
+        # makeself.cmake 中会解压 device-${CPACK_PACKAGE_NAME}.tar.gz (= device-hcomm.tar.gz)
         install(FILES
             ${CMAKE_BINARY_DIR}/device_build/device-hcomm.tar.gz
             DESTINATION .
+            COMPONENT hcomm
+        )
+        # 安装 device 侧编译产物 - 各独立内核文件
+        # ccl_kernel 库及配置
+        install(FILES
+            ${CMAKE_BINARY_DIR}/device_build/src/framework/libccl_kernel.so
+            DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/devlib/device ${INSTALL_OPTIONAL}
+            COMPONENT hcomm
+        )
+        install(FILES
+            ${CMAKE_BINARY_DIR}/device_build/src/framework/ccl_kernel.json
+            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/config ${INSTALL_OPTIONAL}
+            COMPONENT hcomm
+        )
+        # aicpu_custom 库及配置
+        install(FILES
+            ${CMAKE_BINARY_DIR}/device_build/src/libaicpu_custom.so
+            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel ${INSTALL_OPTIONAL}
+            COMPONENT hcomm
+        )
+        install(FILES
+            ${CMAKE_BINARY_DIR}/device_build/src/libaicpu_custom.json
+            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel ${INSTALL_OPTIONAL}
             COMPONENT hcomm
         )
     endif()
