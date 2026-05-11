@@ -290,11 +290,11 @@ void InsAllReduceParallelExecutorV2<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplat
     params.buffInfo.inBuffType      = BufferType::OUTPUT;
     params.buffInfo.outBuffType     = BufferType::OUTPUT;
     params.buffInfo.scratBuffType   = BufferType::SCRATCH;
-    params.buffInfo.inBuffBaseOff   = dataOffset + myRank_ * sliceBytes;
+    params.buffInfo.inBuffBaseOff   = dataOffset + rankIdxLevel0_ * sliceBytes;
     params.buffInfo.outBuffBaseOff  = dataOffset + rankIdxLevel0_ * sliceBytes;
     params.buffInfo.scratchBuffBaseOff = scratchOff;
     params.sliceSize            = sliceBytes;
-    params.inputSliceStride     = 0;
+    params.inputSliceStride     = sliceBytes * rankSizeLevel0_;
     params.outputSliceStride    = sliceBytes * rankSizeLevel0_;
     params.repeatNum            = 1;
     params.inputRepeatStride    = 0;
