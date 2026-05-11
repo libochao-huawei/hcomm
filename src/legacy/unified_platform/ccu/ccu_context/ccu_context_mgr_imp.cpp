@@ -763,6 +763,8 @@ std::vector<std::vector<CcuProfilingInfo>> CtxMgrImp::GetProfilingInfo(CcuTaskAr
 
 CcuContext* CtxMgrImp::GetCtx(uint64_t executorId, uint32_t dieId, uint32_t missionId)
 {
+    std::unique_lock<std::mutex> lock(contextMapMutex_);
+
     if (ctxGroupMap_.find(executorId) == ctxGroupMap_.end()) {
         HCCL_ERROR("[CtxMgrImp][GetCtx] executorId [%llu] is not exist", executorId);
         return nullptr;
