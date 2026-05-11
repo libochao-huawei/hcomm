@@ -18,7 +18,6 @@
 extern "C" {
 #endif // __cplusplus
 
-typedef void* ChannelEntityHandle;
 typedef void* ChannelPtr;
 
 struct ProtectionInfo {
@@ -135,8 +134,6 @@ struct ChannelEntity {
     CqContext *CqContextAddr;
     uint8_t reserve[1024];
 };
-
-extern HcommResult HcommChannelGetPtrByHandle(const ChannelHandle *channelList, uint32_t listNum, ChannelPtr *channelPtr);
 
 #ifdef __cplusplus
 }
