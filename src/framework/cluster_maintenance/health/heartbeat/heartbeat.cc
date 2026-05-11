@@ -155,7 +155,7 @@ HcclResult Heartbeat::Init(const RankInfo &locRank, const bool useSuperPodMode, 
     startSendRecvTask_ = true;
     sendRecvThread_.reset(new (std::nothrow) std::thread(&Heartbeat::HeartbeatStatusMonitor, this));
     CHK_SMART_PTR_NULL(sendRecvThread_);
-    lostThreshold_ = 30; // 心跳丢失阈值为30s
+    lostThreshold_ = HCCL_LOST_THRESHOLD; // 心跳丢失阈值为30s
     initialized_ = true;
     isPaused_ = false;
     isDeInit_ = false;

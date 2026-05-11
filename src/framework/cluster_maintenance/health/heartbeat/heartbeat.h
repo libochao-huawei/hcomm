@@ -47,6 +47,7 @@ constexpr u32 SR_TAG_MAP_MAX_NUM = 65536;
 constexpr u32 HBFRAME_SEND_LOOP_MAX_NUM = 120;
 constexpr s32 HCCL_STUCK_DETECT_TIME_MIN = 60; // 卡住检测最短时间
 constexpr s32 HCCL_STUCK_DETECT_TIME_BASE = 3; // 卡住检测时间为execTime/3
+constexpr s32 HCCL_LOST_THRESHOLD = 30; // 心跳丢失阈值为30s
 
 using UIDType = struct HcclHeartBeatUid {
     char id[512] = {0}; // ip[IP_ADDRESS_BUFFER_LEN] + ifname[MAX_INTERFACE_NAME_LEN] + devid 最大不超过512字节
