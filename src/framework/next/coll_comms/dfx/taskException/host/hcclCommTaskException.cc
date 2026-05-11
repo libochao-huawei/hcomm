@@ -84,7 +84,7 @@ void TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(s32 streamI
 void TaskExceptionHostManager::UnregisterGetAicpuTaskExceptionCallBack(s32 streamId, u32 deviceLogicId)
 {
     lock_guard<mutex> lock(g_communicatorCallbackMapMutexV2);
-    if (deviceMapIter != MAX_MODULE_DEVICE_NUM_V2) {
+    if (g_communicatorCallbackMapV2[deviceLogicId],count(streamId) > 0) {
         g_communicatorCallbackMapV2[deviceLogicId].erase(streamId);
     }
     return;
