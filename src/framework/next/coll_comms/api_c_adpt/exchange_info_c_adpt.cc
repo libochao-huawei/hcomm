@@ -28,7 +28,7 @@ HcclResult HcclCommGetExchangeInfo(HcclComm comm, uint32_t remoteRank, uint32_t 
     CHK_PTR_NULL(data);
     CHK_PTR_NULL(actualLength);
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
-    return hcclComm->GetExchangeInfo(remoteRank, data, length, actualLength);
+    return hcclComm->GetExchangeInfo(remoteRank, length, data, actualLength);
 }
 
 HcclResult HcclCommResetExchangeInfo(HcclComm comm)
