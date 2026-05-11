@@ -21,7 +21,7 @@ HcclResult hcclComm::AddExchangeInfo(void* data, uint32_t length)
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::GetExchangeInfo(uint32_t remoteRank, void* data, uint32_t length, uint32_t* actualLength)
+HcclResult hcclComm::GetExchangeInfo(uint32_t remoteRank, uint32_t length, void* data, uint32_t* actualLength)
 {
     auto iter = remoteExchangeInfoMap_.find(remoteRank);
     if (iter == remoteExchangeInfoMap_.end()) {
@@ -40,7 +40,7 @@ HcclResult hcclComm::GetExchangeInfo(uint32_t remoteRank, void* data, uint32_t l
     
     // 读后清除
     remoteExchangeInfoMap_.erase(iter);
-    HCCL_INFO("[GetExchangeInfo] success, remoteRank[%u], length[%u].", remoteRank, *length);
+    HCCL_INFO("[GetExchangeInfo] success, remoteRank[%u], actualLength[%u].", remoteRank, *actualLength);
     return HCCL_SUCCESS;
 }
 
