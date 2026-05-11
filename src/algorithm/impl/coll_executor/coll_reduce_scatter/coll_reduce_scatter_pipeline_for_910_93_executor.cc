@@ -61,6 +61,7 @@ HcclResult CollReduceScatterPipelineFor91093Executor::RunLoop(OpParam &param, Al
     auto notifyL2toL0L1B = algResResp_->notifiesAux[baseStreamNum + 1];
     PipelineLoopContext ctx;
     CHK_RET(BuildPipelineLoopContext(param, algRes, unitSize, ctx));
+    CHK_RET(GetLevelCommInfo());
 
     auto getForwardNotify = [&](u64 blockIdx) -> std::shared_ptr<LocalNotify> {
         return (blockIdx % PIPELINE_NOTIFY_NUM == 0) ? notifyL0L1toL2A : notifyL0L1toL2B;
@@ -71,7 +72,6 @@ HcclResult CollReduceScatterPipelineFor91093Executor::RunLoop(OpParam &param, Al
 
     const u64 numLoopTotal = ctx.numBlockTotal + 1;
     for (u64 i = 0; i < numLoopTotal; ++i) {
-        CHK_RET(InitPipelineLoopTask(param, ctx, i, unitSize));
         if (i < ctx.numBlockTotal) {
             if (i >= 2) {
                 CHK_RET(LocalNotify::Wait(streamL0L1, dispatcher_, getBackwardNotify(i)));
@@ -85,37 +85,12 @@ HcclResult CollReduceScatterPipelineFor91093Executor::RunLoop(OpParam &param, Al
             CHK_RET(RunL2Phase(param, ctx, blockIdx, streamL2));
             CHK_RET(LocalNotify::Post(streamL2, dispatcher_, getBackwardNotify(blockIdx)));
         }
-        if (!is310P3Common_) {
-            CHK_RET(LaunchTaskExtend(dispatcher_, param.stream, algResResp_->slaveStreams));
-        }
+        CHK_RET(LaunchTaskExtend(dispatcher_, param.stream, algResResp_->slaveStreams));
     }
 
     CHK_RET(WaitForRemainingL2Signals(param, ctx.numBlockTotal, streamL0L1, notifyL2toL0L1A, notifyL2toL0L1B));
+    CHK_RET(LaunchTaskExtend(dispatcher_, param.stream, algResResp_->slaveStreams));
     HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][RunLoop] Pipeline run success");
-    return HCCL_SUCCESS;
-}
-
-// 由 RunLoop 调用
-HcclResult CollReduceScatterPipelineFor91093Executor::InitPipelineLoopTask(
-    OpParam &param, const PipelineLoopContext &ctx, u64 loopIdx, const u32 unitSize)
-{
-    if (is310P3Common_) {
-        return HCCL_SUCCESS;
-    }
-
-    const ReduceType reduceType = ((param.reduceType != HCCL_REDUCE_PROD) &&
-        (param.DataDes.dataType != HCCL_DATA_TYPE_INT64)) ? ReduceType::INLINE_REDUCE : ReduceType::TBE_REDUCE;
-    const u32 autoSelectedAlgTypeLevel1 = static_cast<u32>(algType_.algoLevel1);
-    const u8 deterministic = topoMatcher_->GetExternalInputHcclDeterministic();
-    const u64 metaBlockIdx = (loopIdx < ctx.numBlockTotal) ? loopIdx : (ctx.numBlockTotal - 1);
-    const bool metaLastBlock = (metaBlockIdx == ctx.numBlockTotal - 1);
-    const u64 metaCount = metaLastBlock ? ctx.countDataLastLoop : ctx.countDataPerLoop;
-    const u64 metaSize = metaCount * unitSize;
-    const bool hugeData = IsHugeData(metaSize, &param);
-    const bool smallData = IsSmallData(param.DataDes.count * unitSize, metaSize);
-    auto opMeta = HcclOpMetaInfo::GetOneForReduceScatter(autoSelectedAlgTypeLevel1, param.DataDes.dataType,
-        reduceType, hugeData, smallData, CopyPattern::BCOPY, false, deterministic, false);
-    CHK_RET(InitTask(dispatcher_, param.stream, opMeta.isEnableCache, opMeta.GetCacheKey()));
     return HCCL_SUCCESS;
 }
 
@@ -277,24 +252,9 @@ HcclResult CollReduceScatterPipelineFor91093Executor::RunLevel2(
     return HCCL_SUCCESS;
 }
 
-// 基类用 slaveStreams.size()+1 推断 ringNum，Pipeline 多 2 条资源流，需扣除后再 +1，即 size()-1。
-// 分支条件和索引逻辑与基类一致。
-HcclResult CollReduceScatterPipelineFor91093Executor::GetSubStreamInfoOnOneRing(const u32 ringIndex,
-    std::vector<Stream> &subStreamsInOneRing,
-    std::vector<std::shared_ptr<LocalNotify>> &mainSignalsInOneRing,
-    std::vector<std::shared_ptr<LocalNotify>> &subSignalsInOneRing)
+u32 CollReduceScatterPipelineFor91093Executor::GetLevel0RingNum() const
 {
-    u32 ringNum = algResResp_->slaveStreams.size() - 1;
-    if (ringNum == LEVEL0_PLANE_NUM_IN_NPRING_DOUBLE * STREAM_NUM_FOR_DMAREDUCE_ONE_RING) {
-        subStreamsInOneRing.push_back(algResResp_->slaveStreams[ringIndex + 1]);
-        mainSignalsInOneRing.push_back(algResResp_->notifiesMain[ringIndex + 1]);
-        subSignalsInOneRing.push_back(algResResp_->notifiesAux[ringIndex + 1]);
-    } else if (ringNum == LEVEL0_PLANE_NUM_IN_NPRING_SINGLE * STREAM_NUM_FOR_DMAREDUCE_ONE_RING) {
-        subStreamsInOneRing.push_back(algResResp_->slaveStreams[ringIndex]);
-        mainSignalsInOneRing.push_back(algResResp_->notifiesMain[ringIndex]);
-        subSignalsInOneRing.push_back(algResResp_->notifiesAux[ringIndex]);
-    }
-    return HCCL_SUCCESS;
+    return algResResp_->slaveStreams.size() - 1;
 }
 
 HcclResult CollReduceScatterPipelineFor91093Executor::RunIntraSeverReduceScatter(
@@ -407,19 +367,15 @@ HcclResult CollReduceScatterPipelineFor91093Executor::KernelRunLevel0To1(
     const OpParam &param, ExecMem &execMem, Stream &streamL0L1, const u64 baseOffset)
 {
     HCCL_CONFIG_INFO(HCCL_ALG, "[%s] executor starts", __func__);
-    CHK_RET(GetLevelCommInfo());
     u32 perDataSize = 0;
     const HcclDataType dataType = param.GetDataType();
     CHK_RET(SalGetDataTypeSize(dataType, perDataSize));
 
     u32 ringNum;
-    u32 level0RankSize = logicalLevel0CommInfo_.localRankSize;
-    bool ARSFlag = topoMatcher_->GetARSFlag();
-    bool ARSDoubleRing = (ARSFlag && (level0RankSize > FACTOR_TWO) && topoAttr_.isARSDoubleRing);
     u32 sliceNum = logicalLevel0CommInfo_.localRankSize;
     u32 commIndex = logicalLevel0CommInfo_.localRank;
 
-    if ((topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING && !IsUnifiedMarch(param) && !ARSFlag) || ARSDoubleRing) {
+    if (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING) {
         ringNum = LEVEL0_PLANE_NUM_IN_NPRING_DOUBLE;
     } else {
         ringNum = LEVEL0_PLANE_NUM_IN_NPRING_SINGLE;
@@ -454,7 +410,7 @@ HcclResult CollReduceScatterPipelineFor91093Executor::KernelRunLevel0To1(
         &opInfoByReduceScatterDMAreduce, multRingsUserMemSlice, disableDMAReduce));
 
     if (level1RankSize > 1) {
-        CHK_RET(SelectAndRunLevel1Template(param, execMem, streamL0L1, baseOffset,
+        CHK_RET(RunLevel1Template(param, execMem, streamL0L1, baseOffset,
             commIndex, sliceNum, level1RankSize, level2RankSize, perDataSize));
     }
 
@@ -462,7 +418,7 @@ HcclResult CollReduceScatterPipelineFor91093Executor::KernelRunLevel0To1(
 }
 
 // 由 KernelRunLevel0To1 调用
-HcclResult CollReduceScatterPipelineFor91093Executor::SelectAndRunLevel1Template(
+HcclResult CollReduceScatterPipelineFor91093Executor::RunLevel1Template(
     const OpParam &param, ExecMem &execMem, Stream &streamL0L1, u64 baseOffset,
     u32 commIndex, u32 sliceNum, u32 level1RankSize, u32 level2RankSize,
     u32 perDataSize)
@@ -509,7 +465,6 @@ HcclResult CollReduceScatterPipelineFor91093Executor::KernelRunLevel2(
     const OpParam &param, ExecMem &execMem, Stream &streamL2, const u64 baseOffset)
 {
     HCCL_CONFIG_INFO(HCCL_ALG, "[%s] executor starts", __func__);
-    CHK_RET(GetLevelCommInfo());
     u32 perDataSize = 0;
     const HcclDataType dataType = param.GetDataType();
     CHK_RET(SalGetDataTypeSize(dataType, perDataSize));
@@ -518,10 +473,8 @@ HcclResult CollReduceScatterPipelineFor91093Executor::KernelRunLevel2(
     CHK_RET(GetLevel2CommInfo(level2CommInfo));
     const u32 level2RankSize = level2CommInfo.localRankSize;
 
-    if (level2RankSize > 1) {
-        CHK_RET(SelectAndRunLevel2Template(param, execMem, streamL2, baseOffset,
-            level2CommInfo, level2RankSize, perDataSize));
-    }
+    CHK_RET(RunLevel2Template(param, execMem, streamL2, baseOffset,
+        level2CommInfo, level2RankSize, perDataSize));
 
     HcomCollOpInfo opInfo = GetHcomCollOpInfo(param, execMem);
     HcomCollOpInfo *opInfoPtr = &opInfo;
@@ -539,7 +492,7 @@ HcclResult CollReduceScatterPipelineFor91093Executor::KernelRunLevel2(
 }
 
 // 由 KernelRunLevel2 调用
-HcclResult CollReduceScatterPipelineFor91093Executor::SelectAndRunLevel2Template(
+HcclResult CollReduceScatterPipelineFor91093Executor::RunLevel2Template(
     const OpParam &param, ExecMem &execMem, Stream &streamL2, u64 baseOffset,
     const SubCommInfo &level2CommInfo, u32 level2RankSize, u32 perDataSize)
 {

@@ -40,8 +40,6 @@ private:
     u64 CalcLoopMaxCount(const u32 unitSize) override;
     HcclResult RunLoop(OpParam &param, AlgResourceResponse &algRes) override;
     // 由 RunLoop 调用
-    HcclResult InitPipelineLoopTask(OpParam &param, const PipelineLoopContext &ctx, u64 loopIdx, const u32 unitSize);
-    // 由 RunLoop 调用
     HcclResult BuildPipelineLoopContext(OpParam &param, AlgResourceResponse &algRes,
         const u32 unitSize, PipelineLoopContext &ctx);
     // 由 RunLoop 调用
@@ -80,12 +78,12 @@ private:
         std::vector<std::vector<u32>> &rankOrders);
 
     // 由 KernelRunLevel0To1 调用
-    HcclResult SelectAndRunLevel1Template(const OpParam &param, ExecMem &execMem,
+    HcclResult RunLevel1Template(const OpParam &param, ExecMem &execMem,
         Stream &streamL0L1, u64 baseOffset, u32 commIndex, u32 sliceNum,
         u32 level1RankSize, u32 level2RankSize, u32 perDataSize);
 
     // 由 KernelRunLevel2 调用
-    HcclResult SelectAndRunLevel2Template(const OpParam &param, ExecMem &execMem,
+    HcclResult RunLevel2Template(const OpParam &param, ExecMem &execMem,
         Stream &streamL2, u64 baseOffset, const SubCommInfo &level2CommInfo,
         u32 level2RankSize, u32 perDataSize);
 
@@ -95,10 +93,7 @@ private:
         const u64 baseOffset, const HcomCollOpInfo *opInfo,
         const std::vector<std::vector<Slice>> multRingsUserMemSlice, const bool disableDMAReduce);
 
-    HcclResult GetSubStreamInfoOnOneRing(const u32 ringIndex,
-        std::vector<Stream> &subStreamsInOneRing,
-        std::vector<std::shared_ptr<LocalNotify>> &mainSignalsInOneRing,
-        std::vector<std::shared_ptr<LocalNotify>> &subSignalsInOneRing) override;
+    u32 GetLevel0RingNum() const override;
 };
 
 }  // namespace hccl
