@@ -213,11 +213,11 @@ TEST_F(ClusterMonitorTest, Ut_GetCqeErrInfoFromTaskException_When_NormalInput_Ex
 
     g_monitor.GetCqeErrInfoFromTaskException(remoteLocalId, status, localEid, remoteEid, remoteInsId);
 
-    EXPECT_EQ(g_monitor.CqeErrInfo_.cqeRemoteLocalId, remoteLocalId);
-    EXPECT_EQ(g_monitor.CqeErrInfo_.cqeStatus, status);
-    EXPECT_EQ(g_monitor.CqeErrInfo_.cqeLocalEid, localEid);
-    EXPECT_EQ(g_monitor.CqeErrInfo_.cqeRemoteEid, remoteEid);
-    EXPECT_EQ(g_monitor.CqeErrInfo_.cqeRemoteInsId, remoteInsId);
+    EXPECT_EQ(g_monitor.cqeErrInfo_.cqeRemoteLocalId, remoteLocalId);
+    EXPECT_EQ(g_monitor.cqeErrInfo_.cqeStatus, status);
+    EXPECT_EQ(g_monitor.cqeErrInfo_.cqeLocalEid, localEid);
+    EXPECT_EQ(g_monitor.cqeErrInfo_.cqeRemoteEid, remoteEid);
+    EXPECT_EQ(g_monitor.cqeErrInfo_.cqeRemoteInsId, remoteInsId);
 }
 
 TEST_F(ClusterMonitorTest, Ut_ProcessExceptionEvent_When_NormalQueue_Expect_SendFrames)
@@ -432,7 +432,6 @@ TEST_F(ClusterMonitorTest, Ut_MonitorThread_When_Normal_Expect_ProcessEvents)
     }
 }
 
-
 TEST_F(ClusterMonitorTest, Ut_RegisterToClusterMonitor_When_Normal_Expect_Success)
 {
     Hccl::RankGraph stub(0);
@@ -480,4 +479,37 @@ TEST_F(ClusterMonitorTest, Ut_RegisterToClusterMonitor_When_Normal_Expect_Succes
     ret = g_monitor.RegisterToClusterMonitor(comm);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
+
+TEST_F(ClusterMonitorTest, Ut_UnRegisterToClusterMonitor_When_Normal_Expect_Success)
+{
+    MOCKER(SocketDestroy).stubs().will(returnValue(HCCL_SUCCESS));
+
+    g_monitor.initialized_ = true;  // 设置已初始化标志，允许调用UnRegisterToClusterMonitor
+    hccl::RankGraphStub rankGraphStub;
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
+    void* commV2 = (void*)0x2000;
+    uint32_t rank = 1;
+    HcclMem cclBuffer;
+    cclBuffer.size = 1;
+    cclBuffer.type = HcclMemType::HCCL_MEM_TYPE_HOST;
+    cclBuffer.addr = (void*)0x1000;
+    char commName[128] = {"comm1"};
+    std::shared_ptr<hccl::hcclComm> hcclCommPtr = std::make_shared<hccl::hcclComm>(1, 1, commName);
+    HcclCommConfig config;
+    config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
+    config.hcclRdmaTrafficClass = 0xFFFFFFFF; // 不配置RDMA Traffic Class
+    config.hcclRdmaServiceLevel = 0xFFFFFFFF; // 不配置RDMA Service Level 
+    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
+    hccl::CollComm* collComm = hcclCommPtr->GetCollComm();
+    HcclComm comm = static_cast<HcclComm>(hcclCommPtr.get());
+
+    std::string commKey(commName);
+    std::string netInstId("remoteInstance");
+    ClusterUIDCxt clusterUidCxt(netInstId, 1);
+    ClusterUIDType clusterUid = g_monitor.FormatUID(clusterUidCxt);
+    g_monitor.commIdMap_[commKey][clusterUid] = true;
+    ret = g_monitor.UnRegisterToClusterMonitor(collComm);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
 
