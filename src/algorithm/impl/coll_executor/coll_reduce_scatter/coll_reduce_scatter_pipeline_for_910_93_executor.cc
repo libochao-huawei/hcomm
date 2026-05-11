@@ -104,7 +104,10 @@ HcclResult CollReduceScatterPipelineFor91093Executor::BuildPipelineLoopContext(
     CHK_PTR_NULL(curInputPtr);
     CHK_PTR_NULL(curOutputPtr);
 
-    const u64 countDataPerLoop = CalcLoopMaxCount(unitSize);
+    const u64 maxCountDataPerLoop = CalcLoopMaxCount(unitSize);
+    const u64 targetCountDataPerLoop = HCCL_SMALL_COUNT_4_MB / unitSize;
+    const u64 countDataPerLoop =
+        maxCountDataPerLoop < targetCountDataPerLoop ? maxCountDataPerLoop : targetCountDataPerLoop;
     CHK_PRT_RET(countDataPerLoop == 0,
         HCCL_ERROR("[CollReduceScatterPipelineFor91093Executor][BuildPipelineLoopContext]"
             " countDataPerLoop is zero."),
@@ -127,8 +130,10 @@ HcclResult CollReduceScatterPipelineFor91093Executor::BuildPipelineLoopContext(
     ctx.curOutputPtr = curOutputPtr;
 
     HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][BuildPipelineLoopContext] "
-        "tag[%s] numBlockTotal[%llu] numLoopTotal[%llu] countDataPerLoop[%llu] countDataLastLoop[%llu]",
-        param.tag.c_str(), ctx.numBlockTotal, ctx.numBlockTotal + 1, ctx.countDataPerLoop, ctx.countDataLastLoop);
+        "tag[%s] numBlockTotal[%llu] numLoopTotal[%llu] maxCountDataPerLoop[%llu] "
+        "targetCountDataPerLoop[%llu] countDataPerLoop[%llu] countDataLastLoop[%llu]",
+        param.tag.c_str(), ctx.numBlockTotal, ctx.numBlockTotal + 1, maxCountDataPerLoop, targetCountDataPerLoop,
+        ctx.countDataPerLoop, ctx.countDataLastLoop);
     return HCCL_SUCCESS;
 }
 
