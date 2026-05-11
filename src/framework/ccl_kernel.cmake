@@ -204,12 +204,6 @@ else()
         -lpthread
         ofed_headers
     )
-
-    # 安装
-    install(TARGETS ccl_kernel
-        LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
-        COMPONENT hcomm
-    )
 endif()
 
 # 将 ccl_kernel.ini 转换为 json 格式
@@ -224,6 +218,12 @@ add_custom_command(
 )
 add_custom_target(ccl_kernel_json ALL
     DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
+)
+
+# 安装
+install(TARGETS ccl_kernel
+    LIBRARY DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
 )
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
     DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/config ${INSTALL_OPTIONAL}

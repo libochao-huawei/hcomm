@@ -46,11 +46,13 @@ add_custom_command(
 add_custom_target(aicpu_custom_json ALL
     DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
 )
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
-    DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel ${INSTALL_OPTIONAL}
+
+# 安装
+install(TARGETS aicpu_custom
+    LIBRARY DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel ${INSTALL_OPTIONAL}
     COMPONENT hcomm
 )
-install(TARGETS aicpu_custom LIBRARY
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
     DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel ${INSTALL_OPTIONAL}
     COMPONENT hcomm
 )
