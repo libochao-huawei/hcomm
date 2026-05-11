@@ -19,6 +19,7 @@
 #include "device/framework/aicpu_hccl_process.h"
 #include "coll_comm_aicpu_mgr.h"
 #include "aicpu_indop_process.h"
+#include "aicpu_indop_env.h"
 #include "hcclCommDfxLite.h"
 #include "hcclCommProfilingLite.h"
 #include "profiling_handler_lite.h"
@@ -65,9 +66,11 @@ HcclResult HcclDfxRegOpInfoByCommId(char* commId, void* hcclDfxOpInfo)
 
     bool l0State = Hccl::ProfilingHandlerLite::GetInstance().GetProfL0State();
     bool l1State = Hccl::ProfilingHandlerLite::GetInstance().GetProfL1State();
+    bool taskExceptionEnable = hcomm::GetTaskExceptionEnable();
 
-    if (!(l0State || l1State)) {
-        HCCL_INFO("[%s] l0State[%d], l1State[%d], skip DfxRegOpInfo", __func__, l0State, l1State);
+    if (!(l0State || l1State || taskExceptionEnable)) {
+        HCCL_INFO("[%s] l0State[%d], l1State[%d], taskExceptionEnable[%d], skip DfxRegOpInfo",
+            __func__, l0State, l1State, taskExceptionEnable);
         return HCCL_SUCCESS;
     }
 
