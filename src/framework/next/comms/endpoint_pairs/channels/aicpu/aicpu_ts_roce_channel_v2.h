@@ -61,8 +61,6 @@ public:
     }
 
     HcclResult BuildAndGetDevChannelEntity(void** devChannelEntityPtr);
-    void SetPtrArrayDevPtr(std::shared_ptr<hccl::DeviceMem> ptr) override;
-    std::shared_ptr<hccl::DeviceMem> GetPtrArrayDevPtr() const override { return ptrArrayDevPtr_; }
 
     HcclResult H2DResPack(std::vector<char>& buffer);
 
@@ -158,7 +156,6 @@ private:
     std::vector<ProtectionInfo>                             locBufProtecInfoList_{};
     std::vector<ProtectionInfo>                             rmtBufProtecInfoList_{};
     std::vector<hccl::DeviceMem>                            deviceMemories_;
-    std::shared_ptr<hccl::DeviceMem>                        ptrArrayDevPtr_{nullptr};
     void*                                                   devChannelEntityPtr_{nullptr};
 };
 

@@ -649,47 +649,22 @@ HcommResult HcommChannelGetPtrByHandle(const ChannelHandle *channelList, uint32_
     CHK_PRT_RET((listNum == 0), HCCL_ERROR("[%s]Invalid listNum, listNum[%u]",
         __func__, listNum), HCCL_E_PARA);
 
-    std::vector<Channel*> channels(listNum, nullptr);
     for (uint32_t i = 0; i < listNum; ++i) {
         void *channel;
         HcommResult hcommRet = HcommChannelGet(channelList[i], &channel);
         CHK_PRT_RET(hcommRet != HCOMM_SUCCESS,
             HCCL_ERROR("%s HcommChannelGet failed, ret[%d]", __func__, hcommRet),
             HCCL_E_NOT_FOUND);
-        channels[i] = static_cast<Channel*>(channel);
-        CHK_PRT_RET(channels[i]->GetPtrArrayDevPtr() != nullptr, 
-            HCCL_ERROR("%s Channel [%d] entity has already been built, please check.", __func__, i),
-            HCCL_E_INTERNAL);
-    }
-
-    std::vector<void*> devEntityPtrs(listNum, nullptr);
-    for (uint32_t i = 0; i < listNum; ++i) {
-        Channel *baseChannel = channels[i];
+        Channel *baseChannel = static_cast<Channel*>(channel);
         if (baseChannel->GetChannelKind() == HcommChannelKind::AICPU_TS_ROCE_V2) {
             auto *aicpuTsRoceChannelV2 = static_cast<AicpuTsRoceChannelV2*>(baseChannel);
-            CHK_RET(aicpuTsRoceChannelV2->BuildAndGetDevChannelEntity(&devEntityPtrs[i]));
+            CHK_RET(aicpuTsRoceChannelV2->BuildAndGetDevChannelEntity(&channelPtr[i]));
         } else {
             HCCL_ERROR("%s channel type not support, type[%d]", __func__, baseChannel->GetChannelKind());
             return HCCL_E_PARA;
         }
     }
 
-    u32 ptrArraySize = listNum * sizeof(void*);
-    hccl::DeviceMem ptrArrayMem = hccl::DeviceMem::alloc(ptrArraySize);
-    CHK_PRT_RET(!ptrArrayMem,
-        HCCL_ERROR("%s DeviceMem::alloc for entity pointer array failed, size=%u", __func__, ptrArraySize),
-        HCCL_E_MEMORY);
-
-    Hccl::HrtMemcpy(ptrArrayMem.ptr(), ptrArraySize, devEntityPtrs.data(), ptrArraySize,
-                     Hccl::tagRtMemcpyKind::RT_MEMCPY_HOST_TO_DEVICE);
-
-    auto ptrArrayShared = std::make_shared<hccl::DeviceMem>(std::move(ptrArrayMem));
-    for (uint32_t i = 0; i < listNum; ++i) {
-        // 按值传递 ptrArrayShared, 产生拷贝构造, 让每个 channel 持有一个引用计数。最后一个 channel 销毁后，ptrArrayShared 才释放。
-        channels[i]->SetPtrArrayDevPtr(ptrArrayShared);
-    }
-
-    *channelPtr = ptrArrayShared->ptr();
-    HCCL_INFO("%s Success, ptrArrayDevPtr=%p, listNum=%u", __func__, ptrArrayShared->ptr(), listNum);
+    HCCL_INFO("%s Success, listNum=%u", __func__, listNum);
     return HCOMM_SUCCESS;
 }
