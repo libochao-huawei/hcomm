@@ -56,7 +56,7 @@ private:
     HcclResult BuildUbMemTransport();
     HcclResult GetLocSeg(const void *addr, const size_t size, u64 *seg);
     HcclResult UrmaPostJettySendWr(urma_opcode_t opcode, void *dst, const void *src, uint64_t len);
-    HcclResult GetSplitNum(uint64_t len, uint32_t maxJettyWrDataLen, uint64_t &splitNum)
+    HcclResult GetSplitNum(uint64_t len, uint64_t maxJettyWrDataLen, uint64_t &splitNum);
     HcclResult GetLocalAndRemoteSeg(urma_opcode_t opcode, void *dst, const void *src, uint64_t len, u64 &localSeg, u64 &remoteSeg);
 
 private:

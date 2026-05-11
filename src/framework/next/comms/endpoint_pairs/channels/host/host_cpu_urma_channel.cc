@@ -257,7 +257,7 @@ HcclResult HostCpuUrmaChannel::GetLocSeg(const void *addr, const size_t size, u6
     return HCCL_SUCCESS;
 }
 
-HcclResult HostCpuUrmaChannel::GetSplitNum(uint64_t len, uint32_t maxJettyWrDataLen, uint64_t &splitNum)
+HcclResult HostCpuUrmaChannel::GetSplitNum(uint64_t len, uint64_t maxJettyWrDataLen, uint64_t &splitNum)
 {
     if (len == 0) {
         HCCL_ERROR("[HostCpuUrmaChannel::%s] invalid length 0.", __func__);
@@ -299,8 +299,8 @@ HcclResult HostCpuUrmaChannel::UrmaPostJettySendWr(urma_opcode_t opcode, void *d
 
     //  获取切片数量
     uint64_t splitNum = 0;
-    uint32_t maxJettyWrDataLen = (opcode == URMA_OPC_WRITE) ? devBaseAttr_.maxWriteSize : devBaseAttr_.maxReadSize;
-    CHK_RET(GetSplitNum(len, maxJettyWrDataLen,splitNum));
+    uint64_t maxJettyWrDataLen = (opcode == URMA_OPC_WRITE) ? devBaseAttr_.maxWriteSize : devBaseAttr_.maxReadSize;
+    CHK_RET(GetSplitNum(len, maxJettyWrDataLen, splitNum));
 
     u64 localSeg;
     u64 remoteSeg;
