@@ -463,10 +463,7 @@ namespace Hccl {
         HcclResult ret = rankGraph->GetEndpointInfo(rankId, endPointDesc, endpointAttr, infoLen, info);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
                     HCCL_ERROR("[IRankGraph::GetEndpointInfo] Failed to get endpoint info, rankId[%u], "
-                               "endpointAttr[%d], protocol[%d], commAddrType[%d], ret[%d]", rankId,
-                               static_cast<s32>(endpointAttr),
-                               endPointDesc == nullptr ? -1 : static_cast<s32>(endPointDesc->protocol),
-                               endPointDesc == nullptr ? -1 : static_cast<s32>(endPointDesc->commAddr.type), ret),
+                               "endpointAttr[%d], ret[%d]", rankId, static_cast<s32>(endpointAttr), ret),
                     ret);
         return HCCL_SUCCESS;
     }

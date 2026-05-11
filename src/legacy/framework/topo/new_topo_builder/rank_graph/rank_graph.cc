@@ -238,7 +238,7 @@ u32 RankGraph::GetLayerRanks(const u32 netLayer) const
 {
     u32 layerRankSize = 0;
     if(netInsts_.at(netLayer).size() == 0){
-        HCCL_WARNING("[RankGraph][GetLayerRanks] RankGraph has no net instance on layer %u", netLayer);
+        HCCL_WARNING("[RankGraph][GetLayerRanks] RankGraph has no netInstance on layer %u", netLayer);
         return 0;
     }
     for (const auto& netInst : netInsts_.at(netLayer)) {
@@ -320,8 +320,6 @@ HcclResult RankGraph::GetTopoType(const u32 netLayer, const u32 topoInstId, Topo
 HcclResult RankGraph::GetRanksByTopoInst(
     const u32 netLayer, const u32 topoInstId, std::vector<u32> &ranks, u32 &rankNum) const
 {
-    ranks.clear();
-    rankNum = 0;
     auto *netInstance = GetNetInstanceByRankId(netLayer, myRank_);
     CHK_PRT_RET(netInstance == nullptr,
                 HCCL_ERROR("[RankGraph::GetRanksByTopoInst] netInstance is nullptr, myRank[%d], netLayer[%u], "
