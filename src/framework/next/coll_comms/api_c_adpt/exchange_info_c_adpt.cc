@@ -22,13 +22,13 @@ HcclResult HcclCommAddExchangeInfo(HcclComm comm, void* data, uint32_t length)
     return hcclComm->AddExchangeInfo(data, length);
 }
 
-HcclResult HcclCommGetExchangeInfo(HcclComm comm, uint32_t remoteRank, void** data, uint32_t* length)
+HcclResult HcclCommGetExchangeInfo(HcclComm comm, uint32_t remoteRank, uint32_t length, void* data, uint32_t* actualLength)
 {
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(data);
     CHK_PTR_NULL(length);
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
-    return hcclComm->GetExchangeInfo(remoteRank, data, length);
+    return hcclComm->GetExchangeInfo(remoteRank, data, length, actualLength);
 }
 
 HcclResult HcclCommResetExchangeInfo(HcclComm comm)
