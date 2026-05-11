@@ -160,20 +160,6 @@ HcclResult MyRank::TryInitCcuInstance()
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult MyRank::GetDevicePortInternal(uint32_t rank, uint32_t *devPort)
-{
-    CHK_PTR_NULL(devPort);
-    CHK_PTR_NULL(rankGraph_);
-    return rankGraph_->GetDevicePort(rank, devPort);
-}
-
-HcclResult MyRank::GetDeviceIdInternal(uint32_t rankId, uint32_t *deviceId)
-{
-    CHK_PTR_NULL(deviceId);
-    CHK_PTR_NULL(rankGraph_);
-    return rankGraph_->GetDeviceId(rankId, deviceId);
-}
-
 HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint32_t rankNum)
 {
     // EXCEPTION_HANDLE_BEGIN
@@ -229,7 +215,7 @@ HcclResult MyRank::QueryListenPort(uint32_t localRank, uint32_t remoteRank, cons
 {
     // 查询rmtRankId对应的devPort
     uint32_t rmtPort = 0;
-    CHK_RET(GetDevicePortInternal(remoteRank, &rmtPort));
+    CHK_RET(rankGraph_->GetDevicePort(remoteRank, &rmtPort));
     if (rmtPort > Hccl::MAX_VALUE_DEVICEPORT) {
         HCCL_ERROR("[%s] Invalid port[%u] of Rank[%u]", __func__, rmtPort, remoteRank);
         return HCCL_E_PARA;
@@ -241,7 +227,7 @@ HcclResult MyRank::QueryListenPort(uint32_t localRank, uint32_t remoteRank, cons
     CHK_RET(CommAddrToIpAddress(remoteEndpointDesc.commAddr, remoteIpAddr));
     if (localIpAddr < remoteIpAddr) {
         // 查询localRankId对应的devPort
-        CHK_RET(GetDevicePortInternal(localRank, &listenPort));
+        CHK_RET(rankGraph_->GetDevicePort(localRank, &listenPort));
         hcommDesc.role = HcommSocketRole::HCOMM_SOCKET_ROLE_SERVER;
         if (listenPort > Hccl::MAX_VALUE_DEVICEPORT) {
             HCCL_ERROR("[%s] Invalid port[%u] of Rank[%u]", __func__, listenPort, localRank);
@@ -296,8 +282,8 @@ HcclResult MyRank::BatchCreateSockets(const HcclChannelDesc* channelDescs, uint3
 
         uint32_t devicePhyId;
         uint32_t remoteDevicePhyId;
-        GetDeviceIdInternal(rankId_, &devicePhyId);
-        GetDeviceIdInternal(remoteRank, &remoteDevicePhyId);
+        rankGraph_->GetDeviceId(rankId_, &devicePhyId);
+        rankGraph_->GetDeviceId(remoteRank, &remoteDevicePhyId);
         HCCL_INFO("[MyRank][BatchCreateSockets] rankId_[%u] devicePhyId[%u]", rankId_, devicePhyId);
         HCCL_INFO("[MyRank][BatchCreateSockets] rankId_[%u] devicePhyId[%u]", remoteRank, remoteDevicePhyId);
 
@@ -391,7 +377,7 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
 
         // 启动监听
         uint32_t listenPort = 0;
-        CHK_RET(GetDevicePortInternal(localRank, &listenPort));
+        CHK_RET(rankGraph_->GetDevicePort(localRank, &listenPort));
         CHK_RET(static_cast<HcclResult>(HcommEndpointStartListen(epHandle, listenPort, nullptr)));
 
         HCCL_INFO("[%s][%u/%u] remoteRank[%u] epHandle[%p] protocol[%d]",

@@ -749,11 +749,11 @@ HcclResult RankGraphV1::GetEndpointInfo(uint32_t rankId, const EndpointDesc *end
         if (endpoint.commAddr.type == endPointDesc->commAddr.type &&
             endpoint.protocol == endPointDesc->protocol) {
             if (endpoint.commAddr.type == COMM_ADDR_TYPE_IP_V4 &&
-                endpoint.commAddr.addr == endPointDesc->commAddr.addr) {
+                memcmp(&endpoint.commAddr.addr, &endPointDesc->commAddr.addr, sizeof(endpoint.commAddr.addr)) == 0) {
                 foundEndpoint = &endpoint;
                 break;
             } else if (endpoint.commAddr.type == COMM_ADDR_TYPE_IP_V6 &&
-                memcmp(endpoint.commAddr.addr6, endPointDesc->commAddr.addr6, sizeof(endpoint.commAddr.addr6)) == 0) {
+                memcmp(&endpoint.commAddr.addr6, &endPointDesc->commAddr.addr6, sizeof(endpoint.commAddr.addr6)) == 0) {
                 foundEndpoint = &endpoint;
                 break;
             } else if (endpoint.commAddr.type == COMM_ADDR_TYPE_ID) {

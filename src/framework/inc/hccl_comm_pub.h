@@ -32,7 +32,7 @@
     #include "coll_comm.h"
 #endif
 
-nahespace hccl {
+namespace hccl {
 /* * 默认的rank_table, ranklist为空数组;  后续HCCL可以用于判断是否走新分支 */
 extern RankTable_t g_hcclDefaultRankTable;
 
