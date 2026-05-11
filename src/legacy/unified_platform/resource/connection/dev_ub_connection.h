@@ -27,7 +27,8 @@ class DevUbConnection : public RmaConnection {
 public:
     DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
                     const OpMode opMode, const bool devUsed = false, const HrtUbJfcMode jfcMode = HrtUbJfcMode::STARS_POLL,
-                    const IpAddress &locIpv4Addr = IpAddress(), const IpAddress &rmtIpv4Addr = IpAddress());
+                    const IpAddress &locIpv4Addr = IpAddress(), const IpAddress &rmtIpv4Addr = IpAddress(),
+                    u8 qos = static_cast<u8>(UB_QOS_DEFAULT));
     void          Connect() override;
     RmaConnStatus GetStatus() override;
     bool          Suspend() override;
