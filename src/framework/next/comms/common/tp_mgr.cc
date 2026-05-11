@@ -25,12 +25,6 @@
 namespace hcomm {
 
 namespace {
-/* 编译期打桩：定义为 1 时跳过 RaGetTpAttrAsync，直接注入 slBitmap=0x000E（bit1..3，SL 1/2/3 可用），handle=0。
- * 例：-DTP_MGR_STUB_TP_ATTR=1 ；默认 0 关闭。 */
-#ifndef TP_MGR_STUB_TP_ATTR
-#define TP_MGR_STUB_TP_ATTR 0
-#endif
-
 constexpr uint32_t kTpAttrSlAvailableBit = 18U;
 static constexpr uint32_t kTpAttrBitmapSl = (1U << 10U);
 static constexpr uint32_t kTpAttrBitmapDscp = (1U << 8U);
@@ -431,18 +425,6 @@ HcclResult TpMgr::StartGetTpAttrForFirstTp(const GetTpInfoParam &param, RequestC
         reqCtx.tpAttrBitmap |= kTpAttrBitmapDscp | (1U << kTpAttrDscpConfigModeBit);
     }
 
-#if TP_MGR_STUB_TP_ATTR
-    // 固定 sl 可用掩码：0x000E = SL1 | SL2 | SL3（与真实 slBitmap 语义一致）
-    reqCtx.tpAttr.slBitmap = 0x000EU;
-    if (param.tpProtocol == TpProtocol::UBOE) {
-        reqCtx.tpAttr.dscpConfigMode = 1; // 避免 HandleCompletedRequest 再走 CommitUboeDscpToTpAttr
-    }
-    reqCtx.handle = 0;
-    reqCtx.phase = ReqPhase::WAIT_TP_ATTR;
-    HCCL_INFO("[TpMgr][%s] stub tp attr (no RaGetTpAttrAsync) slBitmap[0x000e].", __func__);
-    return HcclResult::HCCL_SUCCESS;
-#endif
-
     const struct HccpTpInfo *list = reinterpret_cast<const struct HccpTpInfo *>(reqCtx.dataBuffer.data());
     const uint64_t firstTpHandle = list[0].tpHandle;
 
@@ -504,8 +486,6 @@ HcclResult TpMgr::HandleCompletedRequest(RequestCtx reqCtx, const GetTpInfoParam
     tmpTpInfo.mappedJettyPriority = mappedSl & 0xFU;
     tmpTpInfo.hasMappedJettyPriority = true;
 
-    // CTP 不向 TP 写回 SL；仅 RTP / UBOE 通过 RaCtxSetTpAttr 提交 mapped SL（与上方静态辅助函数一并恢复）
-    /*
     if (param.tpProtocol == TpProtocol::RTP || param.tpProtocol == TpProtocol::UBOE) {
         CHK_RET(CommitMappedSlToTpAttr(devPhyId_, param.locAddr, tmpTpInfo.tpHandle, mappedSl));
     }
@@ -519,7 +499,7 @@ HcclResult TpMgr::HandleCompletedRequest(RequestCtx reqCtx, const GetTpInfoParam
             tmpTpInfo.tpHandle, static_cast<unsigned>(qos), static_cast<unsigned>(dscpBefore),
             static_cast<unsigned>(dscp));
     }
-    */
+    
     HCCL_INFO("[TpMgr][%s] tp qos mapping ok: tpHandle[%llu] tpListIndex[%u] mappedSl[%u] jettyPriority[%u] qos[%u] param[%s].",
         __func__, tmpTpInfo.tpHandle, tpListIndex, static_cast<unsigned>(mappedSl & 0xFU), tmpTpInfo.mappedJettyPriority,
         param.qos & 0xFFU, param.Describe().c_str());
