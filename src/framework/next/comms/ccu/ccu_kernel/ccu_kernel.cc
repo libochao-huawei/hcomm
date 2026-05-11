@@ -2145,14 +2145,12 @@ static uint16_t ParseRepeatNumFromParallelParam(uint64_t parallelParam)
 HcclResult CcuKernel::GetCcuProfilingInfo(const uint64_t *taskArgs, uint32_t argSize,
     std::vector<CcuProfilingInfo> &allCcuProfilingInfo)
 {
- 	HCCL_INFO("[GetCcuProfilingInfo] Enter.");
+    HCCL_INFO("[GetCcuProfilingInfo] Enter.");
     allCcuProfilingInfos_.clear();
- 	auto &ccuProfilingCache = GetProfilingInfo();
- 	 
- 	// auto taskArgs = GeneArgs(arg);
-    std::vector<uint64_t> taskArgs{}; // todo: 
- 	uint32_t count {0};
- 	HCCL_INFO("[GetCcuProfilingInfo] Process sqe&waitcke profiling info start.");
+    auto &ccuProfilingCache = GetProfilingInfo();
+
+    uint32_t count {0};
+    HCCL_INFO("[GetCcuProfilingInfo] Process sqe&waitcke profiling info start.");
     for (auto &profInfo : ccuProfilingCache) {
         profInfo.missionId = GetMissionId();
         if (profInfo.type == static_cast<uint8_t>(hcomm::CcuProfilinType::CCU_TASK_PROFILING)) {
