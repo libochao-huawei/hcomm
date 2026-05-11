@@ -21,15 +21,25 @@ HcclResult hcclComm::AddExchangeInfo(void* data, uint32_t length)
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::GetExchangeInfo(uint32_t remoteRank, void** data, uint32_t* length)
+HcclResult hcclComm::GetExchangeInfo(uint32_t remoteRank, void* data, uint32_t length, uint32_t* actualLength)
 {
     auto iter = remoteExchangeInfoMap_.find(remoteRank);
     if (iter == remoteExchangeInfoMap_.end()) {
-        *length = 0;
+        *actualLength = 0;
         return HCCL_SUCCESS;
     }
-    *data = iter->second.data();
-    *length = static_cast<uint32_t>(iter->second.size());
+    *actualLength = static_cast<uint32_t>(iter->second.size());
+    
+    if (length == *actualLength || *actualLength == 0) {
+        s32 sRet = memcpy_s(data, length, iter->second.data(), iter->second.size());
+        CHK_PRT_RET(sRet != EOK, 
+            HCCL_ERROR("[GetExchangeInfo] memcpy_s failed, ret[%d]", sRet), HCCL_E_MEMORY);
+    } else {
+        HCCL_ERROR("[GetExchangeInfo] failed, length[%u] actualLength[%u].", length, *actualLength);
+    }
+    
+    // 读后清除
+    remoteExchangeInfoMap_.erase(iter);
     HCCL_INFO("[GetExchangeInfo] success, remoteRank[%u], length[%u].", remoteRank, *length);
     return HCCL_SUCCESS;
 }
