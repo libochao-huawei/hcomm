@@ -58,9 +58,9 @@ target_link_libraries(ccl_dpu
 
 # 头文件搜索路径
 target_include_directories(ccl_dpu PRIVATE
-    ${HCOMM_DIR}/src/include/
-    ${HCOMM_DIR}/src/include/hccl
-    ${HCOMM_DIR}/src/pkg_inc
+    ${HCOMM_DIR}/include
+    ${HCOMM_DIR}/include/hccl
+    ${HCOMM_DIR}/pkg_inc
 
     ${CMAKE_CURRENT_SOURCE_DIR}/common
     ${CMAKE_CURRENT_SOURCE_DIR}/common/types
@@ -100,11 +100,14 @@ install(TARGETS ccl_dpu
 add_custom_command(
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/libccl_dpu.json
     COMMAND ${HI_PYTHON} ${HCOMM_DIR}/cmake/scripts/parser_ini.py
-                         ${CMAKE_CURRENT_SOURCE_DIR}/framework/communicator/hostdpu/ccl_dpu.ini
+                         ${CMAKE_CURRENT_LIST_DIR}/framework/communicator/hostdpu/ccl_dpu.ini
                          ${CMAKE_CURRENT_BINARY_DIR}/libccl_dpu.json
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
     COMMENT "Generating libccl_dpu.json"
- 	VERBATIM
+    VERBATIM
+)
+add_custom_target(ccl_dpu_json ALL
+    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/libccl_dpu.json
 )
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libccl_dpu.json
     DESTINATION ${INSTALL_DPU_KERNEL_JSON_DIR} ${INSTALL_OPTIONAL}

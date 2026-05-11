@@ -16,12 +16,13 @@ init_cann_project()
 
 option(BUILD_OPEN_PROJECT "Build open hcomm project." ON)
 message(STATUS "BUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}")
+message(STATUS "ASCEND_CANN_PACKAGE_PATH=${ASCEND_CANN_PACKAGE_PATH}")
 message(STATUS "CANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH}")
 message(STATUS "ENABLE_BUILD_DEVICE=${ENABLE_BUILD_DEVICE}")
 message(STATUS "AARCH_MODE=${AARCH_MODE}")
 
 set(HCOMM_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
-set(HCC_TOOLCHAIN_DIR "${CUSTOM_ASCEND_CANN_PACKAGE_PATH}/toolkit/toolchain/hcc/")
+set(HCC_TOOLCHAIN_DIR "${ASCEND_CANN_PACKAGE_PATH}/toolkit/toolchain/hcc")
 set(HCC_CXX_COMPILER  "${HCC_TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-g++")
 set(HCC_C_COMPILER    "${HCC_TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-gcc")
 set(HCC_C_AR          "${HCC_TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-ar")
@@ -99,8 +100,14 @@ elseif(BUILD_OPEN_PROJECT)
     add_subdirectory(src)
     add_subdirectory(python)
 
+    if(DEFINED ENV{TOOLCHAIN_DIR} AND ENABLE_BUILD_DEVICE)
+        set(ENABLE_DEVICE ON)
+    else()
+        set(ENABLE_DEVICE OFF)
+    endif()
+
     # Device 侧编译构建
-    if(ENABLE_BUILD_DEVICE)
+    if(ENABLE_DEVICE)
         include(ExternalProject)
         ExternalProject_Add(hcomm_device
             SOURCE_DIR ${HCOMM_DIR}/cmake/device
@@ -123,6 +130,13 @@ elseif(BUILD_OPEN_PROJECT)
                 -DVERSION_INFO=${VERSION_INFO}
             INSTALL_COMMAND ${CMAKE_CPACK_COMMAND}
             BUILD_ALWAYS TRUE
+        )
+
+        # 安装 device 侧编译产物
+        install(FILES
+            ${CMAKE_BINARY_DIR}/device_build/device-hcomm.tar.gz
+            DESTINATION .
+            COMPONENT hcomm
         )
     endif()
 
