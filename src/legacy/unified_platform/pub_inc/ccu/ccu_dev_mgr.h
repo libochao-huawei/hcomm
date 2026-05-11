@@ -22,13 +22,11 @@ struct CcuChannelPara {
     uint32_t channelNum{0};
     uint32_t jettyNum{0};
     uint32_t sqSize{0};
-    uint8_t qos{2};
 
     CcuChannelPara() = default;
     CcuChannelPara(const IpAddress &ip, const uint32_t channelNum,
-        const uint32_t jettyNum, const uint32_t sqSize, uint8_t qos = 4)
-        : ipAddr(ip), channelNum(channelNum), jettyNum(jettyNum), sqSize(sqSize),
-          qos(qos) {
+        const uint32_t jettyNum, const uint32_t sqSize)
+        : ipAddr(ip), channelNum(channelNum), jettyNum(jettyNum), sqSize(sqSize) {
     }
 };
 

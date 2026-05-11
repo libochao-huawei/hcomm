@@ -348,7 +348,7 @@ HcclResult CcuComponent::CreateLoopChannel(const uint8_t dieId, uint32_t &channe
     }
 
     std::vector<ChannelInfo> channelInfos; // 按jetty组分配
-    const ChannelPara channelPara{feId, LOOP_CHANNEL_USE_JETTY, LOOP_CHANNEL_USE_SQSIZE, loopChannelUbQos_};
+    const ChannelPara channelPara{feId, LOOP_CHANNEL_USE_JETTY, LOOP_CHANNEL_USE_SQSIZE};
     auto ret = channelMgrs[dieId]->Alloc(channelPara, channelInfos);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_WARNING("[CcuComponent][%s] failed to alloc channel, "
@@ -412,7 +412,7 @@ HcclResult CcuComponent::CreateAndImportLoopJettys(const uint8_t dieId, const Ip
         HrtRaUbCreateJettyParam req{jfcHandle, jfcHandle, ccuBufTokenValue,
             tokenIdHandle, jettyMode, jettyInfo.taJettyId, jettyInfo.sqBufVa,
             jettyInfo.sqBufSize, jettyInfo.wqeBBStartId, jettyInfo.sqDepth};
-        req.qos = jettyInfo.qos;
+        req.qos = loopChannelUbQos_;
         auto createdOutParam = HrtRaUbCreateJetty(rdmaHandle, req);
         createdVec.emplace_back(createdOutParam);
 

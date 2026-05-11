@@ -13,6 +13,7 @@
 #include <unordered_set>
 
 #include "ccu_dev_mgr_pub.h"
+#include "hccl_types.h"
 #include "orion_adpt_utils.h"
 
 namespace hcomm {
@@ -49,8 +50,10 @@ HcclResult CcuChannelCtxPool::ResourceBatch::Init(const std::vector<CcuChannelIn
                 continue;
             }
 
+            CcuJettyInfo ji = jettyInfo;
+            ji.qos = static_cast<uint8_t>(HCCL_COMM_QOS_CONFIG_DEFAULT_UB);
             std::unique_ptr<CcuJetty> ccuJetty;
-            CHK_RET(CcuCreateJetty(key, jettyInfo, ccuJetty));
+            CHK_RET(CcuCreateJetty(key, ji, ccuJetty));
 
             jettys[jettyIdKey] = std::move(ccuJetty);
         }

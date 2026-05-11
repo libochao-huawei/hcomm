@@ -31,7 +31,7 @@ public:
     CcuComponent &operator=(const CcuComponent &that) = delete;
 
     static CcuComponent &GetInstance(const int32_t deviceLogicId);
-    /** 与 TryInitCcuFeature 中 GetCommQos 对齐；环回 ChannelPara::qos 用此值。未调用时默认 2（单测直接 Init 兼容） */
+    /** 与 TryInitCcuFeature 中 GetCommQos 对齐；环回创建 UB jetty 时用此 qos。未调用 SetLoopChannelUbQos 时为 HCCL_COMM_QOS_CONFIG_DEFAULT_UB */
     void SetLoopChannelUbQos(u8 qos);
     void Init();
     void Deinit();
@@ -72,7 +72,7 @@ public:
 private:
     static constexpr uint32_t INVALID_DEV_ID = 0xFFFFFFFF;
     bool ifInit{false};
-    u8 loopChannelUbQos_{4};
+    u8 loopChannelUbQos_{static_cast<u8>(HCCL_COMM_QOS_CONFIG_DEFAULT_UB)};
     int32_t devLogicId{static_cast<int32_t>(INVALID_DEV_ID)};
     uint32_t devPhyId{INVALID_DEV_ID};
     CcuVersion ccuVersion{CcuVersion::CCU_INVALID};
