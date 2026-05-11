@@ -57,11 +57,6 @@ CcuComponent &CcuComponent::GetInstance(const int32_t deviceLogicId)
     return ccuComponent[deviceLogicId];
 }
 
-void CcuComponent::SetLoopChannelUbQos(u8 qos)
-{
-    loopChannelUbQos_ = qos;
-}
-
 void CcuComponent::Init()
 {
     std::lock_guard<std::mutex> _lock(innerMutex);
@@ -108,7 +103,6 @@ void CcuComponent::Deinit()
     ccuRmaBufferMap.clear();
     localCcuRmaBufferMap.clear();
     additionalCcuRmaBufferMap.clear();
-    loopChannelUbQos_ = 2;
     for (uint8_t dieId = 0; dieId < MAX_CCU_IODIE_NUM; dieId++) {
         channelMgrs[dieId] = nullptr;
         resAllocators[dieId] = nullptr;
@@ -348,7 +342,7 @@ HcclResult CcuComponent::CreateLoopChannel(const uint8_t dieId, uint32_t &channe
     }
 
     std::vector<ChannelInfo> channelInfos; // 按jetty组分配
-    const ChannelPara channelPara{feId, LOOP_CHANNEL_USE_JETTY, LOOP_CHANNEL_USE_SQSIZE, loopChannelUbQos_};
+    const ChannelPara channelPara{feId, LOOP_CHANNEL_USE_JETTY, LOOP_CHANNEL_USE_SQSIZE};
     auto ret = channelMgrs[dieId]->Alloc(channelPara, channelInfos);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_WARNING("[CcuComponent][%s] failed to alloc channel, "
@@ -409,10 +403,9 @@ HcclResult CcuComponent::CreateAndImportLoopJettys(const uint8_t dieId, const Ip
     auto &importedVec = importedOutParamMap[dieId];
     for (const auto &jettyInfo : jettyInfos) {
         const auto jettyMode = HrtJettyMode::CCU_CCUM_CACHE; // 当前仅支持该模式
-        HrtRaUbCreateJettyParam req{jfcHandle, jfcHandle, ccuBufTokenValue,
+        const HrtRaUbCreateJettyParam req{jfcHandle, jfcHandle, ccuBufTokenValue,
             tokenIdHandle, jettyMode, jettyInfo.taJettyId, jettyInfo.sqBufVa,
             jettyInfo.sqBufSize, jettyInfo.wqeBBStartId, jettyInfo.sqDepth};
-        req.qos = jettyInfo.qos;
         auto createdOutParam = HrtRaUbCreateJetty(rdmaHandle, req);
         createdVec.emplace_back(createdOutParam);
 
