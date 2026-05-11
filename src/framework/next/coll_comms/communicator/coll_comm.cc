@@ -36,7 +36,7 @@ CollComm::~CollComm()
     if (hcclCommDfx_ != nullptr) {  // 添加检查
         hcclCommDfx_->ReportAllTasks(true);
     }
-    for (auto StreamId : aicpuStreamIds_) {
+    for (auto streamId : aicpuStreamIds_) {
         hcomm::TaskExceptionHostManager::UnregisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId_);
     }
     aicpuStreamIds_.clear();

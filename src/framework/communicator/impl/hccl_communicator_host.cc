@@ -268,7 +268,7 @@ namespace hccl
         }
 
         (void)UnRegistTaskExceptionHandler();
-        for (auto StreamId : aicpuStreamIds_) {
+        for (auto streamId : aicpuStreamIds_) {
             UnregisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId_);
         }
         aicpuStreamIds_.clear();
