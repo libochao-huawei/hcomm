@@ -152,8 +152,11 @@ HcclResult CollReduceScatterPipelineFor91093Executor::BuildPipelineLoopContext(
     ctx.curOutputPtr = curOutputPtr;
 
     HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][BuildPipelineLoopContext] "
-        "tag[%s] numBlockTotal[%llu] numLoopTotal[%llu] countDataPerLoop[%llu] countDataLastLoop[%llu]",
-        param.tag.c_str(), ctx.numBlockTotal, ctx.numBlockTotal + 1, ctx.countDataPerLoop, ctx.countDataLastLoop);
+        "tag[%s] numBlockTotal[%llu] numLoopTotal[%llu] countDataPerLoop[%llu] countDataLastLoop[%llu] "
+        "cclInputSizeHalved[%llu] cclInputBMem[%llu] cclOutputSizeHalved[%llu] cclOutputBMem[%llu]",
+        param.tag.c_str(), ctx.numBlockTotal, ctx.numBlockTotal + 1, ctx.countDataPerLoop, ctx.countDataLastLoop,
+        cclInputSizeHalved, ctx.cclInputBMem.ptr(), cclOutputSizeHalved, ctx.cclOutputBMem.ptr()
+    );
     return HCCL_SUCCESS;
 }
 
