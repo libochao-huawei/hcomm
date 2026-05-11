@@ -701,41 +701,11 @@ HcclResult InitCommClusterInfo(std::string &rankTableM, const uint32_t rank, con
         hcclNslbDp::GetInstance().SendGlobalRankTable(rank);
     }
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    do {
-        hccl::HcclCommunicator* hcclComm = opBaseHcom.pComm->GetHcclCommunicator();
-        if (hcclComm == nullptr) {
-            HCCL_WARNING("[Init][CommClusterInfo] HcclCommunicator NULL, skip CollComm init");
-            break;
-        }
-
-        void* rankGraphV1 = nullptr;
-        rankGraphV1 = hcclComm->GetRankGraphV1();
-        if (rankGraphV1 == nullptr) {
-            HCCL_WARNING("[Init][CommClusterInfo] rankGraphV1 is nullptr, skip CollComm init");
-            break;
-        }
-
-        void* cclBufferAddr = nullptr;
-        std::size_t cclBufferSize = 0;
-        ret = hcclComm->GetInCCLbuffer(cclBufferAddr, cclBufferSize);
-        if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[Init][CommClusterInfo] GetInCCLbuffer failed, ret=%d", ret);
-            break;
-        }
-
-        HcclMem cclBuffer{};
-        cclBuffer.size = static_cast<uint64_t>(cclBufferSize);
-        cclBuffer.addr = cclBufferAddr;
-        cclBuffer.type = HcclMemType::HCCL_MEM_TYPE_DEVICE;
-        std::string commName = opBaseHcom.pComm->GetIdentifier();
-        constexpr HcclCommConfig* config = nullptr;
-        ret = opBaseHcom.pComm->InitCollComm(nullptr, rankGraphV1, rank, cclBuffer, commName, const_cast<HcclCommConfig*>(config));
-        if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[Init][CommClusterInfo] InitCollComm failed, ret=%d", ret);
-            break;
-        }
-        HCCL_INFO("[Init][CommClusterInfo] CollComm init success for V1");
-    } while (0);
+    ret = opBaseHcom.pComm->InitCollCommInner(rank);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[Init][CommClusterInfo] InitCollCommInner failed, ret=%d", ret);
+        return ret;
+    }
 #endif
     /* 关键状态记录 */
     HCCL_INFO("%s success, rankNum[%u], rank[%u], server[%s], device[%d].",
@@ -3502,14 +3472,10 @@ HcclResult HcclConfigGetInfo(HcclComm comm, HcclConfigType cfgType,
         return HcclResult::HCCL_E_PARA;
     }
 
-    MyRank *myRank;
     auto *hcclComm = static_cast<hccl::hcclComm *>(comm);
     auto *collComm = hcclComm->GetCollComm();
-    if (collComm == nullptr) {
-        myRank = (MyRank *)hcclComm->GetMyRank();
-    } else {
-        myRank = collComm->GetMyRank();
-    }
+    CHK_PTR_NULL(collComm);
+    auto *myRank = collComm->GetMyRank();
     CHK_PTR_NULL(myRank);
     const uint32_t opExpansionModeValue = myRank->GetOpExpansionMode();
     const auto opExpansionMode = OpExpansionModeValueToModeEnum(opExpansionModeValue);

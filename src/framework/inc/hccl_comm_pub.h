@@ -374,6 +374,7 @@ public:
 #ifndef HCCD
     HcclResult InitCollComm(void* commV2, void* rankGraph, uint32_t userRank,
         HcclMem cclBuffer,const std::string &commName, HcclCommConfig *config);
+    HcclResult InitCollCommInner(uint32_t userRank);
 #endif
     void* GetCommunicatorV2();
     HcclCommunicator* GetHcclCommunicator();

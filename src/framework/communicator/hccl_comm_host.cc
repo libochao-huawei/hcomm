@@ -378,6 +378,46 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    HcclResult hcclComm::InitCollCommInner(uint32_t userRank)
+    {
+        HCCL_INFO("[InitCollCommInner] start, userRank[%u]", userRank);
+        HcclCommunicator* hcclComm = GetHcclCommunicator();
+        if (hcclComm == nullptr) {
+            HCCL_WARNING("[InitCollCommInner] HcclCommunicator NULL, skip CollComm init");
+            return HCCL_SUCCESS;
+        }
+
+        void* rankGraphV1 = hcclComm->GetRankGraphV1();
+        if (rankGraphV1 == nullptr) {
+            HCCL_WARNING("[InitCollCommInner] rankGraphV1 is nullptr, skip CollComm init");
+            return HCCL_SUCCESS;
+        }
+
+        void* cclBufferAddr = nullptr;
+        std::size_t cclBufferSize = 0;
+        HcclResult ret = hcclComm->GetInCCLbuffer(cclBufferAddr, cclBufferSize);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[InitCollCommInner] GetInCCLbuffer failed, ret=%d", ret);
+            return ret;
+        }
+
+        HcclMem cclBuffer{};
+        cclBuffer.size = static_cast<uint64_t>(cclBufferSize);
+        cclBuffer.addr = cclBufferAddr;
+        cclBuffer.type = HcclMemType::HCCL_MEM_TYPE_DEVICE;
+        std::string commName = GetIdentifier();
+        constexpr HcclCommConfig* config = nullptr;
+
+        ret = InitCollComm(nullptr, rankGraphV1, userRank, cclBuffer, commName, const_cast<HcclCommConfig*>(config));
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[InitCollCommInner] InitCollComm failed, ret=%d", ret);
+            return ret;
+        }
+
+        HCCL_INFO("[InitCollCommInner] CollComm init success for V1");
+        return HCCL_SUCCESS;
+    }
+
     HcclResult hcclComm::InitBinHandle()
     {
         std::string jsonPath;
