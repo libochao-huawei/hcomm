@@ -68,10 +68,10 @@ struct ErrorCqeInfo {
     u32 cqeLocalId = 0;
     u32 cqeRemoteLocalId = 0;
     uint16_t cqeStatus = 0;
-    std::string cqeLocalEid;
-    std::string cqeRemoteEid;
-    std::string cqeRemoteInsId;
-    std::string cqeLocalInsId;
+    std::string cqeLocalEid = "";
+    std::string cqeRemoteEid = "";
+    std::string cqeRemoteInsId = "";
+    std::string cqeLocalInsId = "";
 };
 const std::map<ClusterMonitorStatus, std::string> CLUSTER_MONITOR_STATUS_STR_MAP{
     {ClusterMonitorStatus::CLUSTER_MONITOR_OK, "OK"},

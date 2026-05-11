@@ -125,7 +125,7 @@ struct ccumDfxInfo {
 
 std::mutex g_channelMapMutex;
 std::unordered_map<uint16_t, uint64_t> g_channelIdToHandle;
-bool isGetCqeErrInfo = false; // 是否已获取过CQE错误信息，获取过后再次获取的概率较小，且获取过程可能较慢，因此设置标志位避免重复获取
+std::atomic<bool> isGetCqeErrInfo(false); // 是否已获取过CQE错误信息，获取过后再次获取的概率较小，且获取过程可能较慢，因此设置标志位避免重复获取
 CcuGetErrStatusVecCallBack g_CcuGetErrStatusVecCallBack = nullptr;
 GetCcuCqeErrInfoCallBackHcomm g_getCqeErrInfoCallBack = nullptr;
 
