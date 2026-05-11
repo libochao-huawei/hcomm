@@ -40,7 +40,6 @@ std::string ClusterMonitor::GetUID(const ClusterUIDType &uid) const
 HcclResult ClusterMonitor::GetRemEndpointDescs(HcclComm comm, std::map<uint32_t, std::vector<UIDContext>> &uidCtxs,
     std::vector<uint32_t> &netLayersVector)
 {
-    HCCL_INFO("CMTEST [%s] GetRemEndpointDescs begin.", __func__);
     // 将所有远端的rank都加入到状态维护map中
     auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
     CHK_PTR_NULL(hcclComm);
@@ -200,16 +199,16 @@ HcclResult ClusterMonitor::GetSamePlaneRank(HcclComm comm, std::vector<UIDContex
 
     uint32_t singlePlaneSize = singlePlaneCtx.size(); // 包含myRank自己，一个平面所有的节点
     if (singlePlaneSize <= 1) { // 待连接的节点个数为0或1，无需连接
-        HCCL_INFO("CMTEST [%s] no need to connect", __func__);
+        HCCL_INFO("[%s] no need to connect", __func__);
         return HCCL_SUCCESS;
     } else if (singlePlaneSize == 2) { // 待连接的节点个数为2，不需要双ring环，一条边就够了
         uint32_t nextIndex = (index + 1) % singlePlaneSize; // 算出与本Rank相连，对端的节点
-        HCCL_INFO("CMTEST [%s] singlePlaneSize is 2, only connect nextIndex[%u]", __func__, nextIndex);
+        HCCL_INFO("[%s] singlePlaneSize is 2, only connect nextIndex[%u]", __func__, nextIndex);
         CHK_RET(InsertClusterMonitorCxt(comm, singlePlaneCtx[nextIndex], needConnectRank));
     } else {
         uint32_t nextIndex = (index + 1) % singlePlaneSize; // 算出与本Rank相连，右手的节点
         uint32_t preIndex = (index + singlePlaneSize - 1) % singlePlaneSize; // 算出与本Rank相连，左手或回绕环的节点
-        HCCL_INFO("CMTEST [%s] singlePlaneSize is %u, connect nextIndex[%u], preIndex[%u]", __func__, singlePlaneSize, nextIndex, preIndex);
+        HCCL_INFO("[%s] singlePlaneSize is %u, connect nextIndex[%u], preIndex[%u]", __func__, singlePlaneSize, nextIndex, preIndex);
         CHK_RET(InsertClusterMonitorCxt(comm, singlePlaneCtx[nextIndex], needConnectRank)); //以本rank为起点，环的右手
         CHK_RET(InsertClusterMonitorCxt(comm, singlePlaneCtx[preIndex], needConnectRank)); // 以本rank为起点，环的左手
     }
@@ -222,7 +221,7 @@ HcclResult ClusterMonitor::GetConnectRank(HcclComm comm,
     std::map<uint32_t, std::vector<UIDContext>> uidCtxs, std::vector<uint32_t> &netLayersVector)
 {
     if (netLayersVector.empty() || uidCtxs.empty()) {
-        HCCL_INFO("CMTEST [%s] netLayersVector is empty, no netLayer in RankGraph", __func__);
+        HCCL_INFO("[%s] netLayersVector is empty, no netLayer in RankGraph", __func__);
         return HCCL_SUCCESS;
     }
 
@@ -233,7 +232,6 @@ HcclResult ClusterMonitor::GetConnectRank(HcclComm comm,
     });
     for (auto it = uidCtxs[0].begin(); it != uidCtxs[0].end(); ++it) {
         layer0CommLinks.push_back(*it); // netLayer为0
-        HCCL_INFO("CMTEST [%s] layer0CommLinks: localId[%u], remoteId[%u], netLayer[%u], UID[%s]", __func__, it->localId, it->rankId, it->netLayer, GetUID(it->uid).c_str());
     }
 
     // 从layer=1开始，将commLinks存入vector中，找到所有与当前localId相同的节点
@@ -247,7 +245,6 @@ HcclResult ClusterMonitor::GetConnectRank(HcclComm comm,
                 // 在跨server、跨pod、跨超节点的场景，统一拿到local，打平处理为同一个平面，类似layer=0的情况
                 // 由于A5上的devPhyId在64卡的场景下8个[0,7]，所以使用localId
                 highLayerCommLinks.push_back(*it);
-                HCCL_INFO("CMTEST [%s] highLayerCommLinks: localId[%u], remoteId[%u], netLayer[%u], UID[%s]", __func__, it->localId, it->rankId, it->netLayer, GetUID(it->uid).c_str());
             }
         }
     }
@@ -272,7 +269,6 @@ void ClusterMonitor::CreateHBLinksAsync()
         while (!commIdConnInfoQueue.empty()) {
             connInfoQueue.push(
                 std::make_tuple(commId, commIdConnInfoQueue.front().first, commIdConnInfoQueue.front().second));
-            HCCL_INFO("[CreateHBLinksAsync] CMTEST commIdConnInfoQueue commId = %s, ClusterUIDType = %d", commId.c_str(), commIdConnInfoQueue.front().first);
             commIdConnInfoQueue.pop();
         }
     }
@@ -282,7 +278,6 @@ void ClusterMonitor::CreateHBLinksAsync()
         const std::string commId = std::get<0>(connInfoQueue.front());
         const ClusterUIDType &remUID = std::get<1>(connInfoQueue.front());
         ClusterMonitorSocketCtx &connInfo = std::get<2>(connInfoQueue.front());
-        HCCL_INFO("[CreateHBLinksAsync] CMTEST commId = %s, ClusterUIDType = %d", commId.c_str(), remUID);
         connInfo.PrintSocketDesc("CreateHBLinksAsync");
         auto it = linkThreadMap_.find(remUID);
         if (it != linkThreadMap_.end() && it->second->joinable()) {
@@ -304,7 +299,6 @@ void ClusterMonitor::CreateHBLinksAsync()
 
 HcclResult ClusterMonitor::CreateTransportHandle(ClusterMonitorSocketCtx &info)
 {
-    HCCL_INFO("[CreateTransportHandle] CMTEST start!!!!!!!!");
     info.PrintSocketDesc("CreateTransportHandle");
     if (info.socketHandler == nullptr) {
         return SocketCreate(&info.socketDesc, &info.socketHandler);
@@ -320,7 +314,6 @@ void ClusterMonitor::CreateLinkWithRemotePonit(
     // 给当前线程添加名字
     const std::string threadName = "hb" + GetUID(rem);
     SetThreadName(threadName);
-    HCCL_INFO("[Heartbeat][CreateLinkWithRemote] CMTEST commId[%s], thread[%s] start...", commId.c_str(), threadName.c_str());
     hrtSetDevice(deviceLogicId_);
 
     HcclResult ret = CreateTransportHandle(needConnectRank);
@@ -387,7 +380,7 @@ void ClusterMonitor::CreateLinkWithRemotePonit(
         monitorLinkStatusMap_[rem] = MonitorLinkStatus::MONITOR_LINK_COMPLETED;
         commIdMap_[commId][rem] = true; // 更新状态为已连接
         lock.unlock();
-        HCCL_RUN_INFO("CMTEST commId:[%s], establish rank[%s] to rank[%s] heartbeat connection success.", commId.c_str(),
+        HCCL_RUN_INFO("commId:[%s], establish rank[%s] to rank[%s] heartbeat connection success.", commId.c_str(),
             GetUID(myRankUID_).c_str(), GetUID(rem).c_str());
         break;
     }
@@ -400,8 +393,6 @@ void ClusterMonitor::CreateLinkWithRemotePonit(
 HcclResult ClusterMonitor::SendFrame(
     ClusterUIDType &dst, ClusterUIDType &crimer, ClusterUIDType &informer, ClusterMonitorStatus status)
 {
-    HCCL_INFO("CMTEST [%s] start dst[%s] crimer[%s] informer[%s] status[%d] ",
-        __func__, GetUID(dst).c_str(), GetUID(crimer).c_str(), GetUID(informer).c_str(), status);
     ClusterMonitorFrame cmFrame(myRankUID_, dst, crimer, informer, status);
     if (uid2SocketRefMap_[dst].sendBuffer.size() > 0) {
         if (status != ClusterMonitorStatus::CLUSTER_MONITOR_OK
@@ -473,11 +464,10 @@ HcclResult ClusterMonitor::RecvFrame(ClusterUIDType rem)
                 CHK_RET(ParseFrame(cmFrame, rem));
             }
         } else if (ret == HCCL_E_INTERNAL) {
-            HCCL_WARNING("CMTEST SocketRecvNb recv rem[%s] fail", GetUID(rem).c_str());
+            HCCL_WARNING("SocketRecvNb recv rem[%s] fail", GetUID(rem).c_str());
             return ret;
         } else {
             // 当没有数据可读时，SocketRecvNb会返回成功但compSize为0，此时退出循环，继续进行后续的心跳发送和异常处理等逻辑
-            HCCL_INFO("CMTEST SocketRecvNb recv rem[%s] no data available", GetUID(rem).c_str());
             break;
         }
     }
@@ -486,8 +476,6 @@ HcclResult ClusterMonitor::RecvFrame(ClusterUIDType rem)
 
 HcclResult ClusterMonitor::ParseFrame(ClusterMonitorFrame &cmFrame, ClusterUIDType &src)
 {
-    HCCL_INFO("CMTEST [%s] start rem[%s]", __func__, GetUID(src).c_str());
-
     if (cmFrame.src != src || cmFrame.dst != myRankUID_) {
         HCCL_WARNING("rank[%s] recv wrong frame", GetUID(myRankUID_).c_str());
         return HCCL_E_INTERNAL;
@@ -601,7 +589,7 @@ void ClusterMonitor::MonitorThread()
 
 HcclResult ClusterMonitor::RunMonitorThread()
 {
-    HCCL_INFO("CMTEST [%s] Start ClusterMonitorThread.", __func__);
+    HCCL_INFO("[%s] Start ClusterMonitorThread.", __func__);
     clusterMonitorThreadFlag_ = true;
     clusterMonitorThread_.reset(new (std::nothrow) std::thread(&ClusterMonitor::MonitorThread, this));
     CHK_SMART_PTR_NULL(clusterMonitorThread_);
@@ -613,7 +601,7 @@ HcclResult ClusterMonitor::RunMonitorThread()
 
 HcclResult ClusterMonitor::RegisterToClusterMonitor(HcclComm comm)
 {
-    HCCL_INFO("CMTEST [%s] RegisterToClusterMonitor begin.", __func__);
+    HCCL_INFO("[%s] RegisterToClusterMonitor begin.", __func__);
     CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
     auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
     CHK_PTR_NULL(hcclComm);
@@ -795,9 +783,16 @@ void ClusterMonitor::ProcessExceptionEvent()
 }
 
 
-void GetCqeErrInfoFromTaskException(unsigned int remoteLocalId, unsigned int locDeviceId, unsigned short int status, std::string localEid, std::string remoteEid, std::string remoteInsId)
+void GetCqeErrInfoFromTaskException(unsigned int remoteLocalId, unsigned int locDeviceId, unsigned short int status,
+    std::string localEid, std::string remoteEid, std::string remoteInsId)
 {
-    return hccl::CollCommMgr::GetInstance()->GetClusterMonitor(locDeviceId).GetCqeErrInfoFromTaskException(remoteLocalId, status, localEid, remoteEid, remoteInsId);
+    if (!Hccl::EnvConfig::GetInstance().GetLogConfig().GetDfsConfig().clusterHeartBeatEnable) {
+        HCCL_RUN_INFO("[%s] HCCL_DFS_CONFIG cluster_heartbeat is off. It's unnecessary to "
+            "get cqe error info.", __func__);
+        return;
+    }
+    return hccl::CollCommMgr::GetInstance()->GetClusterMonitor(locDeviceId).GetCqeErrInfoFromTaskException(remoteLocalId,
+        status, localEid, remoteEid, remoteInsId);
 }
 
 void ClusterMonitor::GetCqeErrInfoFromTaskException(u32 remoteLocalId, uint16_t status, std::string localEid, std::string remoteEid, std::string remoteInsId)

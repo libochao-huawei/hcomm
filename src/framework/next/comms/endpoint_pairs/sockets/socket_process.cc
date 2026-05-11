@@ -93,7 +93,6 @@ HcclResult SocketProcess::DestroySocketHandle(SocketHandle socketHandle)
 
 HcclResult SocketProcess::GetSocket(SocketDesc *socketDesc, SocketHandle &socketHandle)
 {
-    HCCL_INFO("[GetSocket] CMTEST start!!!!!!!!!");
     CHK_PTR_NULL(socketDesc);
     CHK_RET(Init());
 
@@ -203,7 +202,6 @@ HcclResult SocketProcess::Init()
     s32 devLogicId;
     CHK_RET(hrtGetDevice(&devLogicId));
     CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_));
-    HCCL_INFO("[SocketProcess] CMTEST Init devicePhyId_ = %d", devicePhyId_);
 
     return HCCL_SUCCESS;
 }
@@ -228,8 +226,6 @@ HcclResult SocketProcess::BuildSocket(SocketDesc *socketDesc, const std::string 
         return HCCL_SUCCESS;
     }
 
-    HCCL_INFO("[BuildSocket] CMTEST start!!!!!!!!!");
-    // 存疑CommProtocol还没有tcp的protocol，这里是别的协议吗？
     Hccl::LinkData linkData = BuildDefaultLinkData();
     CHK_RET(EndpointDescPairToLinkData(socketDesc->localEndpoint, socketDesc->remoteEndpoint, linkData));
     HCCL_INFO("[SocketProcess][%s] built linkData: %s", __func__, linkData.Describe().c_str());
