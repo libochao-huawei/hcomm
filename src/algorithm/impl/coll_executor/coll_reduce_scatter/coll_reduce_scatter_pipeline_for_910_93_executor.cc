@@ -202,10 +202,29 @@ void CollReduceScatterPipelineFor91093Executor::SliceExecMemIfNeeded(
     if (CCLMemSlice_) {
         u32 unitSize = SIZE_TABLE[param.DataDes.dataType];
         u64 curSize = execMem.count * unitSize;
+        u64 cclSliceSize = CalcAlignedCclSliceSize(execMem, unitSize);
         u32 sliceNum = topoAttr_.userRankSize;
-        execMem.inputMem = execMem.inputMem.range(0, curSize * sliceNum);
+        execMem.inputMem = execMem.inputMem.range(0, cclSliceSize * sliceNum);
         execMem.outputMem = execMem.outputMem.range(0, curSize);
     }
+}
+
+u64 CollReduceScatterPipelineFor91093Executor::CalcAlignedCclSliceSize(
+    const ExecMem &execMem, u32 unitSize) const
+{
+    if (isReduceScatterV_) {
+        return execMem.outputMem.size();
+    }
+    return AlgTemplateBase::RoundUpWithDivisor(execMem.count * unitSize, HCCL_MIN_SLICE_ALIGN);
+}
+
+u64 CollReduceScatterPipelineFor91093Executor::CalcPipelineSrcMemOffset(
+    const ExecMem &execMem, const OpParam &param, u32 perDataSize) const
+{
+    if (isReduceScatterV_) {
+        return CalcSrcMemOffset(execMem, param, perDataSize);
+    }
+    return topoAttr_.userRank * CalcAlignedCclSliceSize(execMem, perDataSize);
 }
 
 // 由 KernelRunLevel0To1、KernelRunLevel2 调用
@@ -215,6 +234,204 @@ HcclResult CollReduceScatterPipelineFor91093Executor::GetLevel2CommInfo(
 {
     CHK_RET(CheckCommSize(COMM_LEVEL2, COMM_INDEX_0 + 1));
     level2CommInfo = GetSubCommInfo(COMM_LEVEL2, COMM_INDEX_0);
+    return HCCL_SUCCESS;
+}
+
+HcclResult CollReduceScatterPipelineFor91093Executor::CalLevel0DataSegsSlice(
+    const ExecMem &execMem, std::vector<std::vector<Slice>> &multiStreamSlice,
+    const OpParam &param, u32 ringNum, u32 sliceNum, u32 level1RankSize, u32 level2RankSize,
+    HcclDataType dataType, std::vector<std::vector<Slice>> &level0DataSegsSlice)
+{
+    if (isReduceScatterV_) {
+        return CollReduceScatterRingFor91093Executor::CalLevel0DataSegsSlice(execMem, multiStreamSlice, param,
+            ringNum, sliceNum, level1RankSize, level2RankSize, dataType, level0DataSegsSlice);
+    }
+
+    bool isInlineReduce = IsSupportSDMAReduce(execMem.inputMem.ptr(), execMem.scratchMem.ptr(), dataType,
+        param.reduceType);
+    bool useInlineReduce = isInlineReduce && algoAttr_.inlineReduceSwitchOn;
+    const u64 cclSliceSize = CalcAlignedCclSliceSize(execMem, SIZE_TABLE[dataType]);
+    std::vector<Slice> dataSegsSlice;
+    dataSegsSlice.reserve(sliceNum);
+    for (u32 level0Idx = 0; level0Idx < sliceNum; ++level0Idx) {
+        Slice sliceTemp;
+        sliceTemp.size = execMem.outputMem.size();
+        sliceTemp.offset = cclSliceSize * level0Idx;
+        dataSegsSlice.push_back(sliceTemp);
+    }
+
+    bool ARSFlag = topoMatcher_->GetARSFlag();
+    auto nicList = topoAttr_.nicList;
+    if (ARSFlag) {
+        std::vector<u32> mockNicList;
+        for (u32 level0Idx = 0; level0Idx < sliceNum; ++level0Idx) {
+            mockNicList.push_back(level0Idx);
+        }
+        nicList = mockNicList;
+    }
+
+    if (ringNum == LEVEL0_PLANE_NUM_IN_8PRING) {
+        if (useInlineReduce || execMem.outputMem.size() % CCE_REDUCE_ALIGN_SIZE == 0) {
+            multiStreamSlice = PrepareMultiRingSlice(dataSegsSlice, param.tag);
+        } else {
+            multiStreamSlice = PrepareMultiRingSlice(dataSegsSlice, param.tag, true);
+        }
+    } else if (ringNum == LEVEL0_PLANE_NUM_IN_NPRING_DOUBLE) {
+        if (useInlineReduce || execMem.outputMem.size() % CCE_REDUCE_ALIGN_SIZE == 0) {
+            multiStreamSlice = PrepareMultiRingSlice(dataSegsSlice, param.tag, false, nicList);
+        } else {
+            multiStreamSlice = PrepareMultiRingSlice(dataSegsSlice, param.tag, true, nicList);
+        }
+    } else {
+        multiStreamSlice.push_back(dataSegsSlice);
+    }
+
+    for (u32 ringIndex = 0; ringIndex < multiStreamSlice.size(); ++ringIndex) {
+        std::vector<Slice> dataSlice;
+        for (u32 level0Idx = 0; level0Idx < sliceNum; ++level0Idx) {
+            const Slice &level0Slice = multiStreamSlice[ringIndex][level0Idx];
+            for (u32 level2Idx = 0; level2Idx < level2RankSize; ++level2Idx) {
+                for (u32 level1Idx = 0; level1Idx < level1RankSize; ++level1Idx) {
+                    Slice sliceTemp;
+                    sliceTemp.size = level0Slice.size;
+                    sliceTemp.offset = level0Slice.offset +
+                        level1Idx * sliceNum * cclSliceSize +
+                        level2Idx * sliceNum * level1RankSize * cclSliceSize;
+                    dataSlice.push_back(sliceTemp);
+                    HCCL_DEBUG("[CollReduceScatterPipelineFor91093Executor][CalLevel0DataSegsSlice] "
+                        "rank[%u], ringIndex[%u], offset[%llu], size[%llu], cclSliceSize[%llu]",
+                        topoAttr_.userRank, ringIndex, sliceTemp.offset, sliceTemp.size, cclSliceSize);
+                }
+            }
+        }
+        level0DataSegsSlice.push_back(dataSlice);
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult CollReduceScatterPipelineFor91093Executor::CalUserMemDataSegsSlice(
+    const ExecMem &execMem, const std::vector<std::vector<Slice>> &level0DataSegsSlice,
+    const std::vector<std::vector<Slice>> &multiStreamSlice, const OpParam &param, u32 ringNum, u32 sliceNum,
+    u32 level1RankSize, u32 level2RankSize, HcclDataType dataType, u32 perDataSize, HcomCollOpInfo *opInfoPtr,
+    bool disableDMAReduce, std::vector<std::vector<Slice>> &multRingsUserMemSlice)
+{
+    (void)ringNum;
+    (void)dataType;
+    if (isReduceScatterV_) {
+        return CollReduceScatterRingFor91093Executor::CalUserMemDataSegsSlice(execMem, level0DataSegsSlice,
+            multiStreamSlice, param, ringNum, sliceNum, level1RankSize, level2RankSize, dataType, perDataSize,
+            opInfoPtr, disableDMAReduce, multRingsUserMemSlice);
+    }
+
+    CHK_PRT_RET(0 < param.DataDes.strideCount && param.DataDes.strideCount < param.DataDes.count,
+        HCCL_ERROR("[CollReduceScatterPipelineFor91093Executor][CalUserMemDataSegsSlice]"
+            "strideCount[%llu] is smaller than opCount[%llu]",
+            param.DataDes.strideCount, param.DataDes.count),
+        HCCL_E_PARA);
+
+    u32 level0RankSize = logicalLevel0CommInfo_.localRankSize;
+    bool ARSFlag = topoMatcher_->GetARSFlag();
+    bool ARSDoubleRing = (ARSFlag && (level0RankSize > FACTOR_TWO) && topoAttr_.isARSDoubleRing);
+    if (opInfoPtr == nullptr &&
+        (!((topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING || ARSDoubleRing) &&
+        (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB || disableDMAReduce)))) {
+        multRingsUserMemSlice = level0DataSegsSlice;
+        if (param.DataDes.strideCount != 0) {
+            CHK_RET(UpdateOffsetBasedOnStrideCount(param, multRingsUserMemSlice));
+        }
+        return HCCL_SUCCESS;
+    }
+
+    const u64 cclSliceSize = CalcAlignedCclSliceSize(execMem, perDataSize);
+    const u64 userRankSize = (param.DataDes.strideCount == 0) ? param.DataDes.count : param.DataDes.strideCount;
+    for (u32 ringIndex = 0; ringIndex < level0DataSegsSlice.size(); ++ringIndex) {
+        std::vector<Slice> userMemSlice;
+        u32 sliceIndex = 0;
+        for (u32 level0Idx = 0; level0Idx < sliceNum; ++level0Idx) {
+            CHK_PRT_RET(ringIndex >= multiStreamSlice.size() || level0Idx >= multiStreamSlice[ringIndex].size(),
+                HCCL_ERROR("[CollReduceScatterPipelineFor91093Executor][CalUserMemDataSegsSlice]"
+                    "invalid multiStreamSlice, ringIndex[%u], level0Idx[%u]",
+                    ringIndex, level0Idx),
+                HCCL_E_INTERNAL);
+            const u64 level0RankIndex = multiStreamSlice[ringIndex][level0Idx].offset / cclSliceSize;
+            const u64 ringInnerOffset = multiStreamSlice[ringIndex][level0Idx].offset % cclSliceSize;
+            for (u32 level2Idx = 0; level2Idx < level2RankSize; ++level2Idx) {
+                for (u32 level1Idx = 0; level1Idx < level1RankSize; ++level1Idx) {
+                    CHK_PRT_RET(sliceIndex >= level0DataSegsSlice[ringIndex].size(),
+                        HCCL_ERROR("[CollReduceScatterPipelineFor91093Executor][CalUserMemDataSegsSlice]"
+                            "invalid level0DataSegsSlice, ringIndex[%u], sliceIndex[%u]",
+                            ringIndex, sliceIndex),
+                        HCCL_E_INTERNAL);
+                    const Slice &cclSlice = level0DataSegsSlice[ringIndex][sliceIndex++];
+                    const u64 userRankIndex =
+                        level2Idx * level1RankSize * sliceNum + level1Idx * sliceNum + level0RankIndex;
+                    Slice tmpSlice;
+                    tmpSlice.size = cclSlice.size;
+                    tmpSlice.offset = userRankIndex * userRankSize * perDataSize + ringInnerOffset;
+                    userMemSlice.push_back(tmpSlice);
+                    HCCL_DEBUG("[CollReduceScatterPipelineFor91093Executor][CalUserMemDataSegsSlice] "
+                        "rank[%u], ringIndex[%u], userOffset[%llu], size[%llu]",
+                        topoAttr_.userRank, ringIndex, tmpSlice.offset, tmpSlice.size);
+                }
+            }
+        }
+        multRingsUserMemSlice.push_back(userMemSlice);
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult CollReduceScatterPipelineFor91093Executor::CalLevel1DataSegsSlice(
+    const ExecMem &execMem, const OpParam &param, CommPlane commPlaneLevel, const u32 &commIndex,
+    u32 sliceNum, u32 level1RankSize, u32 level2RankSize, u32 perDataSize,
+    std::vector<Slice> &level1DataSegsSlice)
+{
+    if (isReduceScatterV_) {
+        return CollReduceScatterRingFor91093Executor::CalLevel1DataSegsSlice(execMem, param, commPlaneLevel,
+            commIndex, sliceNum, level1RankSize, level2RankSize, perDataSize, level1DataSegsSlice);
+    }
+
+    const u64 cclSliceSize = CalcAlignedCclSliceSize(execMem, perDataSize);
+    for (u32 i = 0; i < level1RankSize; ++i) {
+        Slice sliceTemp;
+        u32 level1UserRank;
+        CHK_RET(GetUserRankByRank(commPlaneLevel, commIndex, i, level1UserRank));
+        if (level2RankSize <= 1) {
+            sliceTemp.size = execMem.outputMem.size();
+            sliceTemp.offset = level1UserRank * cclSliceSize;
+            level1DataSegsSlice.push_back(sliceTemp);
+        } else {
+            for (u32 level2Idx = 0; level2Idx < level2RankSize; ++level2Idx) {
+                sliceTemp.size = execMem.outputMem.size();
+                sliceTemp.offset = (level1UserRank % (level1RankSize * sliceNum)) * cclSliceSize +
+                    level2Idx * sliceNum * level1RankSize * cclSliceSize;
+                level1DataSegsSlice.push_back(sliceTemp);
+            }
+        }
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult CollReduceScatterPipelineFor91093Executor::CalLevel2DataSegsSlice(
+    const ExecMem &execMem, const OpParam &param, u32 level2RankSize, u32 perDataSize,
+    std::vector<Slice> &level2DataSegsSlice)
+{
+    if (isReduceScatterV_) {
+        return CollReduceScatterRingFor91093Executor::CalLevel2DataSegsSlice(execMem, param, level2RankSize,
+            perDataSize, level2DataSegsSlice);
+    }
+
+    const u64 cclSliceSize = CalcAlignedCclSliceSize(execMem, perDataSize);
+    for (u32 i = 0; i < level2RankSize; ++i) {
+        Slice sliceTemp;
+        u32 level2UserRank;
+        CHK_RET(GetUserRankByRank(COMM_LEVEL2, COMM_INDEX_0, i, level2UserRank));
+        sliceTemp.size = execMem.outputMem.size();
+        sliceTemp.offset = level2UserRank * cclSliceSize;
+        level2DataSegsSlice.push_back(sliceTemp);
+        HCCL_DEBUG("[CollReduceScatterPipelineFor91093Executor][CalLevel2DataSegsSlice] "
+            "rank[%u], level2UserRank[%u], offset[%llu], size[%llu], cclSliceSize[%llu]",
+            topoAttr_.userRank, level2UserRank, sliceTemp.offset, sliceTemp.size, cclSliceSize);
+    }
     return HCCL_SUCCESS;
 }
 
@@ -479,7 +696,7 @@ HcclResult CollReduceScatterPipelineFor91093Executor::KernelRunLevel2(
     HcomCollOpInfo opInfo = GetHcomCollOpInfo(param, execMem);
     HcomCollOpInfo *opInfoPtr = &opInfo;
 
-    const u64 offset = CalcSrcMemOffset(execMem, param, perDataSize);
+    const u64 offset = CalcPipelineSrcMemOffset(execMem, param, perDataSize);
     DeviceMem srcMem = execMem.inputMem.range(offset, execMem.outputMem.size());
     if (opInfoPtr != nullptr) {
         DeviceMem dstMem = DeviceMem::create(static_cast<u8 *>(opInfoPtr->outputAddr), execMem.outputMem.size());

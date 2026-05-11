@@ -56,6 +56,9 @@ private:
     // 由 RunLevel0To1、RunLevel2 调用
     void SliceExecMemIfNeeded(const OpParam &param, ExecMem &execMem);
 
+    u64 CalcAlignedCclSliceSize(const ExecMem &execMem, u32 unitSize) const;
+    u64 CalcPipelineSrcMemOffset(const ExecMem &execMem, const OpParam &param, u32 perDataSize) const;
+
     // 由 KernelRunLevel0To1、KernelRunLevel2 调用
     HcclResult GetLevel2CommInfo(SubCommInfo &level2CommInfo);
 
@@ -68,6 +71,19 @@ private:
     HcclResult RunLevel2(OpParam &param, ExecMem &execMem, Stream &streamL2, const u64 baseOffset);
     HcclResult KernelRunLevel0To1(const OpParam &param, ExecMem &execMem, Stream &streamL0L1, const u64 baseOffset);
     HcclResult KernelRunLevel2(const OpParam &param, ExecMem &execMem, Stream &streamL2, const u64 baseOffset);
+    HcclResult CalLevel0DataSegsSlice(const ExecMem &execMem, std::vector<std::vector<Slice>> &multiStreamSlice,
+        const OpParam &param, u32 ringNum, u32 sliceNum, u32 level1RankSize, u32 level2RankSize,
+        HcclDataType dataType, std::vector<std::vector<Slice>> &level0DataSegsSlice) override;
+    HcclResult CalUserMemDataSegsSlice(const ExecMem &execMem,
+        const std::vector<std::vector<Slice>> &level0DataSegsSlice,
+        const std::vector<std::vector<Slice>> &multiStreamSlice, const OpParam &param, u32 ringNum, u32 sliceNum,
+        u32 level1RankSize, u32 level2RankSize, HcclDataType dataType, u32 perDataSize, HcomCollOpInfo *opInfoPtr,
+        bool disableDMAReduce, std::vector<std::vector<Slice>> &multRingsUserMemSlice) override;
+    HcclResult CalLevel1DataSegsSlice(const ExecMem &execMem, const OpParam &param, CommPlane commPlaneLevel,
+        const u32 &commIndex, u32 sliceNum, u32 level1RankSize, u32 level2RankSize, u32 perDataSize,
+        std::vector<Slice> &level1DataSegsSlice) override;
+    HcclResult CalLevel2DataSegsSlice(const ExecMem &execMem, const OpParam &param, u32 level2RankSize,
+        u32 perDataSize, std::vector<Slice> &level2DataSegsSlice) override;
 
     // 由 DoubleRingReduceScatter 调用
     HcclResult PrepareDoubleRingSlices(u32 ringNum, const HcclDataType dataType,
