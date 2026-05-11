@@ -50,10 +50,8 @@ public:
     }
 
     void operator=(const Variable& other) const {
-        auto ret = CcuVariableAssignVar(this->handle, other.handle);
-        if (ret != CcuResult::CCU_SUCCESS) {
-            throw "todo: failed";
-        }
+        CCU_THROW_IF_FAILED(CcuVariableAssignVar(this->handle, other.handle),
+            "Variable::operator=(Variable): CcuVariableAssignVar failed");
     }
 
     void operator=(Variable&& other) {
@@ -61,24 +59,20 @@ public:
     }
 
     void operator=(uint64_t immediate) const {
-        auto ret = CcuVariableAssignImm(this->handle, immediate);
-        if (ret != CcuResult::CCU_SUCCESS) {
-            throw "todo: failed";
-        }
+        CCU_THROW_IF_FAILED(CcuVariableAssignImm(this->handle, immediate),
+            "Variable::operator=(uint64_t): CcuVariableAssignImm failed");
     }
 
     void operator=(CcuArithmeticOperator<Variable, Variable> op) const {
-        auto ret = CcuVariableAddVarToVar(this->handle, op.lhs.handle, op.rhs.handle);
-        if (ret != CcuResult::CCU_SUCCESS) {
-            throw "todo: failed";
-        }
+        CCU_THROW_IF_FAILED(
+            CcuVariableAddVarToVar(this->handle, op.lhs.handle, op.rhs.handle),
+            "Variable::operator=(Var+Var): CcuVariableAddVarToVar failed");
     }
 
     void operator+=(const Variable &other) const {
-        auto ret = CcuVariableAddVarToVar(this->handle, this->handle, other.handle);
-        if (ret != CcuResult::CCU_SUCCESS) {
-            throw "todo: failed";
-        }
+        CCU_THROW_IF_FAILED(
+            CcuVariableAddVarToVar(this->handle, this->handle, other.handle),
+            "Variable::operator+=(Variable): CcuVariableAddVarToVar failed");
     }
 
     CcuArithmeticOperator<Variable, Variable> operator+(const Variable &that) const {
