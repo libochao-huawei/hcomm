@@ -40,6 +40,7 @@ ENABLE_ST="off"
 ST_TASKS=()
 ENABLE_GCOV="off"
 ENABLE_NO_EXEC="off"
+ENABLE_TRACY="OFF"
 CMAKE_BUILD_TYPE="Debug"
 
 if [ "${USER_ID}" != "0" ]; then
@@ -308,6 +309,8 @@ function usage() {
   echo "    -u, --ut       Run all unit tests (UT)"
   echo "    -s, --st       Run all system tests (ST)"
   echo "    --noexec       Run build and skip executing tests"
+    echo "    --tracy        Enable Tracy client source integration"
+    echo "    --no-tracy     Disable Tracy client source integration"
   echo ""
 }
 
@@ -349,6 +352,14 @@ while [[ $# -gt 0 ]]; do
         ;;
     --noexec)
         ENABLE_NO_EXEC="on"
+        shift
+        ;;
+    --tracy|--enable-tracy)
+        ENABLE_TRACY="ON"
+        shift
+        ;;
+    --no-tracy)
+        ENABLE_TRACY="OFF"
         shift
         ;;
     -u|--ut)
@@ -524,6 +535,7 @@ if [ "${COV}" == "true" ];then
 fi
 
 CUSTOM_OPTION="${CUSTOM_OPTION} -DASCENDC_DUMP=0" # AIV算子调测阶段可配置为1以打开AscendC打印功能
+CUSTOM_OPTION="${CUSTOM_OPTION} -DENABLE_TRACY=${ENABLE_TRACY}"
 
 if [ -n "${ascend_package_path}" ];then
     ASCEND_CANN_PACKAGE_PATH=${ascend_package_path}

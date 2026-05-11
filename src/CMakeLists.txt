@@ -548,6 +548,10 @@ target_compile_definitions(ccl_kernel_plf_a PRIVATE
     USE_AICORE_GATHERV2
     USE_AICORE_GATHERV2_INFER
 )
+
+# Tracy: definitions, includes, and warning relaxation are carried by the
+# tracy_client STATIC library's PUBLIC properties — no per-target duplication.
+# ccl_kernel_plf and ccl_kernel_plf_a inherit everything via link below.
 # 向ccl_kernel_plf添加链接器选项
 target_link_options(ccl_kernel_plf PRIVATE
     -Wl,-z,relro,-z,now,-z,noexecstack
@@ -625,6 +629,12 @@ else()
         -lpthread
         ofed_headers
     )
+endif()
+
+if(TARGET tracy_client)
+    # Keep Tracy symbols resolved in FULL_MODE where ccl_kernel uses shared ccl_kernel_plf.
+    target_link_libraries(ccl_kernel_plf tracy_client)
+    target_link_libraries(ccl_kernel_plf_a tracy_client)
 endif()
 
 # 将子目录添加到构建过程

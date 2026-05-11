@@ -45,6 +45,9 @@ find_package_handle_standard_args(hcomm_utils
 message(STATUS "[ThirdParty] Found hcomm_utils: ${hcomm_utils_FOUND}")
 
 if(hcomm_utils_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
+    if(NOT TARGET hcomm_utils)
+        add_custom_target(hcomm_utils)
+    endif()
     message(STATUS "[ThirdParty] hcomm_utils found in ${HCOMM_UTILS_INSTALL_PATH}, and not force rebuild cann third_party")
 else()
     file(GLOB HCOMM_UTILS_PKG
@@ -104,7 +107,7 @@ set_target_properties(ascend_kms PROPERTIES
     IMPORTED_LOCATION "${HCOMM_UTILS_INSTALL_PATH}/${PRODUCT_SIDE}/lib/libascend_kms.so"
 )
 
-if(${PRODUCT_SIDE} STREQUAL "device")
+if("${PRODUCT_SIDE}" STREQUAL "device")
     install(FILES  ${HCOMM_UTILS_INSTALL_PATH}/${PRODUCT_SIDE}/lib/libascend_kms.so
         DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
         COMPONENT hcomm

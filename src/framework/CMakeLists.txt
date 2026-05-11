@@ -1014,6 +1014,16 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
             -lpthread
         )
 
+        add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
+            COMMAND ${HI_PYTHON} ${HCCL_BASE_DIR}/../cmake/scripts/parser_ini.py ${HCCL_BASE_DIR}/../src/framework/device/framework/ccl_kernel.ini ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        )
+        add_custom_target(ccl_kernel_json DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json)
+        add_dependencies(ccl_kernel ccl_kernel_json)
+        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
+            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
+        )
+
         add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
             COMMAND ${HI_PYTHON} ${HCCL_BASE_DIR}/../cmake/scripts/parser_ini.py ${HCCL_BASE_DIR}/../src/framework/device/framework/aicpu_custom.ini ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -1026,6 +1036,10 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
 
         target_link_directories(ccl_kernel PRIVATE
             ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
+        )
+
+        install(TARGETS ccl_kernel
+            LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL
         )
     endif()
 endif()
@@ -1061,7 +1075,6 @@ if(DEVICE_MODE AND KERNEL_MODE)
         -ldl
         -lpthread
     )
-
     add_library(aicpu_custom SHARED)
     get_target_property(CCL_KERNEL_ALL_SOURCES ccl_kernel SOURCES)
     if(CCL_KERNEL_ALL_SOURCES)

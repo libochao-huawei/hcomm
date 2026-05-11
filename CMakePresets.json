@@ -13,7 +13,10 @@
         "CANN_UTILS_LIB_PATH": "${sourceDir}/utils",
         "ASCENDC_DUMP": "0",
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-        "BUILD_OPEN_PROJECT": "ON"
+        "BUILD_OPEN_PROJECT": "ON",
+        "ENABLE_TRACY": "ON",
+        "TRACY_SAVE_NO_SEND": "ON",
+        "TRACYLITE_PERFETTO": "ON"
       }
     },
     {
@@ -71,7 +74,8 @@
         "USE_ALOG": "0",
         "CUSTOM_SIGN_SCRIPT": "${sourceDir}/scripts/sign/community_sign_build.py",
         "ENABLE_SIGN": "false",
-        "VERSION_INFO": "8.5.0"
+        "VERSION_INFO": "8.5.0",
+        "ENABLE_TRACY": "OFF"
       },
       "environment": {
         "BASH_ENV": "/usr/local/Ascend/ascend-toolkit/latest/bin/setenv.bash"
@@ -87,7 +91,8 @@
         "PRODUCT": "ascend",
         "PRODUCT_SIDE": "host",
         "USE_ALOG": "1",
-        "BUILD_DEVICE_DIR": "${sourceParentDir}/hcomm-build/build_pkg_device"
+        "BUILD_DEVICE_DIR": "${sourceParentDir}/hcomm-build/build_pkg_device",
+        "ENABLE_TRACY": "ON"
       },
       "environment": {
         "BASH_ENV": "/usr/local/Ascend/ascend-toolkit/latest/bin/setenv.bash"
@@ -107,7 +112,8 @@
         "USE_ALOG": "0",
         "CUSTOM_SIGN_SCRIPT": "${sourceDir}/scripts/sign/community_sign_build.py",
         "ENABLE_SIGN": "false",
-        "VERSION_INFO": "8.5.0"
+        "VERSION_INFO": "8.5.0",
+        "ENABLE_TRACY": "OFF"
       },
       "environment": {
         "BASH_ENV": "/usr/local/Ascend/ascend-toolkit/latest/bin/setenv.bash"
@@ -126,7 +132,8 @@
         "USE_ALOG": "1",
         "CUSTOM_SIGN_SCRIPT": "${sourceDir}/scripts/sign/community_sign_build.py",
         "ENABLE_SIGN": "false",
-        "VERSION_INFO": "8.5.0"
+        "VERSION_INFO": "8.5.0",
+        "ENABLE_TRACY": "OFF"
       },
       "environment": {
         "BASH_ENV": "/usr/local/Ascend/ascend-toolkit/latest/bin/setenv.bash"
@@ -144,7 +151,8 @@
         "PRODUCT_SIDE": "host",
         "USE_ALOG": "1",
         "BUILD_DEVICE_DIR": "${sourceParentDir}/hcomm-build/build_full_device",
-        "BUILD_HCCD_DIR": "${sourceParentDir}/hcomm-build/build_full_hccd"
+        "BUILD_HCCD_DIR": "${sourceParentDir}/hcomm-build/build_full_hccd",
+        "ENABLE_TRACY": "ON"
       },
       "environment": {
         "BASH_ENV": "/usr/local/Ascend/ascend-toolkit/latest/bin/setenv.bash"
