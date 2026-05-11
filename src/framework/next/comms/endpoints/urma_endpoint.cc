@@ -23,6 +23,18 @@ UrmaEndpoint::UrmaEndpoint(const EndpointDesc &endpointDesc)
 {
 }
 
+UrmaEndpoint::~UrmaEndpoint()
+{
+    s32 deviceLogicId;
+    HCCL_INFO("[UrmaEndpoint][%s] START", __func__);
+    HcclResult ret = hrtGetDevice(&deviceLogicId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("call hrtGetDevice failed, deviceLogicId[%d]", deviceLogicId);
+        return;
+    }
+    Hccl::HccpHdcManager::GetInstance().DeInit(deviceLogicId);
+}
+
 HcclResult UrmaEndpoint::Init()
 {
     HCCL_INFO("[%s] localEndpoint protocol[%d]", __func__, endpointDesc_.protocol);

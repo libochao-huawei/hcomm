@@ -24,7 +24,7 @@ namespace hcomm {
 class UrmaEndpoint : public Endpoint {
 public:
     explicit UrmaEndpoint(const EndpointDesc &endpointDesc);
-    ~UrmaEndpoint() = default;
+    ~UrmaEndpoint();
 
     HcclResult Init() override;
 
