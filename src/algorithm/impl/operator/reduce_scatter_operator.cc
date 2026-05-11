@@ -38,8 +38,8 @@ static bool isPipelineBlockSlicingBetter(const u64 dataSize, const u64 commInput
     if (dataSize != 0 && maxPipelineBlockSize != 0) {
         numBlockTotal = (dataSize - 1) / maxPipelineBlockSize + 1;
     }
-    HCCL_INFO("[isPipelineBlockSlicingBetter] dataSize[%llu] commInputSize[%llu] userRankSize[%u] "
-        "maxPipelineBlockSize[%llu] numBlockTotal[%llu]",
+    HCCL_INFO("[ReduceScatterOperator][isPipelineBlockSlicingBetter] dataSize[%llu] commInputSize[%llu] "
+        "userRankSize[%u] maxPipelineBlockSize[%llu] numBlockTotal[%llu]",
         dataSize, commInputSize, userRankSize, maxPipelineBlockSize, numBlockTotal);
     // Pipeline blocks | Non-pipeline blocks | Better
     // 1,2             | 1                   | non-pipeline
