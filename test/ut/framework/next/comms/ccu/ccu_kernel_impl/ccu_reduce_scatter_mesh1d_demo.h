@@ -70,7 +70,7 @@
 
 // struct LoopGroupResource {
 //     ccu::Event  completedEvent[RS_CCU_MS_DEFAULT_LOOP_COUNT];
-//     ccu::Buffer ccuBuf[RS_CCU_MS_DEFAULT_LOOP_COUNT * RS_CCU_MS_INTERLEAVE];
+//     ccu::CcuBuffer ccuBuf[RS_CCU_MS_DEFAULT_LOOP_COUNT * RS_CCU_MS_INTERLEAVE];
 //     uint32_t  eventCount;
 //     uint32_t  bufCount;
 // };
