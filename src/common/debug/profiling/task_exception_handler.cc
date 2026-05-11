@@ -48,8 +48,10 @@ void RegisterGetAicpuTaskExceptionCallBack(s32 streamId, u32 deviceLogicId, GetA
 void UnregisterGetAicpuTaskExceptionCallBack(s32 streamId, u32 deviceLogicId)
 {
     lock_guard<mutex> lock(g_communicatorCallbackMapMutex);
-    if (g_communicatorCallbackMap[deviceLogicId],count(streamId) > 0) {
-        g_communicatorCallbackMap[deviceLogicId].erase(streamId);
+    auto& deviceMap = g_communicatorCallbackMap[deviceLogicId];
+    auto it = deviceMap.find(streamId);
+    if (it != deviceMap.end()) {
+        deviceMap.erase(it);
     }
     return;
 }
