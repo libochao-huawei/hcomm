@@ -95,6 +95,8 @@ extern HcommResult HcommChannelGetNotifyNum(ChannelHandle channelHandle, uint32_
 
 extern HcommResult HcommChannelGetRemoteMems(ChannelHandle channel, uint32_t *memNum, CommMem **remoteMems, char ***memTags);
 
+extern HcommResult HcommMemGrant(EndpointHandle endpointHandle, const HcommMemGrantInfo *remoteGrantInfo);
+
 HcommResult HcommChannelGet(ChannelHandle channelHandle, void **channel);
 
 HcommResult HcommChannelGetRemoteMem(ChannelHandle channelHandle, CommMem **remoteMem, uint32_t *memNum,
@@ -119,10 +121,7 @@ HcommResult HcommCollectiveChannelCreate(EndpointHandle endpointHandle, CommEngi
     HcommChannelDesc *channelDescs, uint32_t channelNum, ChannelHandle *channels);
 HcommResult HcommChannelUpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum, ChannelHandle channelHandle);
 
-// todo: 不合理
-// HcclResult HcclReportCcuProfilingInfo(const ThreadHandle threadHandle, uint64_t execId,
-//     void *streamProfilingInfos, size_t infoNum,
-//     const HcclComm comm, Hccl::TaskParam &taskParam, bool isMaster);
+HcommResult CheckUbAttr(HcommChannelDesc &channelDesc);
 
 #ifdef __cplusplus
 }
