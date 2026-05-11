@@ -293,6 +293,9 @@ HcclResult TpMgr::GetTpInfo(const GetTpInfoParam &param, TpInfo &tpInfo)
 
         RequestCtx &reqCtx = locReqCtxMap[rmtAddr];
         CHK_RET(StartGetTpInfoListRequest(param, reqCtx));
+        HCCL_INFO("[TpMgr][GetTpInfo] RaGetTpInfoListAsync submitted, devPhyId[%u] reqHandle[%llu] phase[WAIT_LIST] "
+                  "param[%s].",
+            devPhyId_, static_cast<unsigned long long>(reqCtx.handle), param.Describe().c_str());
         return HcclResult::HCCL_E_AGAIN; // 首次触发异步接口调用，动作一定未完成
     }
 
@@ -301,7 +304,19 @@ HcclResult TpMgr::GetTpInfo(const GetTpInfoParam &param, TpInfo &tpInfo)
     if (ret == HcclResult::HCCL_E_AGAIN) {
         return ret;
     }
-    CHK_RET(ret);
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        const char *phaseStr = (reqCtx.phase == ReqPhase::WAIT_LIST)
+            ? "WAIT_LIST(RaGetTpInfoListAsync)"
+            : "WAIT_TP_ATTR(RaGetTpAttrAsync)";
+        HCCL_ERROR(
+            "[TpMgr][GetTpInfo] async completed with failure, phase[%s] devPhyId[%u] tpProtocol[%s] qos[%u] "
+            "reqHandle[%llu] tpInfoNum[%u] param[%s] hcclRet[%d]; see prior [HccpGetAsyncReqResult] line for "
+            "async reqResult code.",
+            phaseStr, devPhyId_, tpProtocol.Describe().c_str(), param.qos & 0xFFU,
+            static_cast<unsigned long long>(reqCtx.handle), reqCtx.tpInfoNum, param.Describe().c_str(),
+            static_cast<int>(ret));
+        return ret;
+    }
 
     if (reqCtx.phase == ReqPhase::WAIT_LIST) {
         if (reqCtx.tpInfoNum == 0U) {
@@ -311,7 +326,15 @@ HcclResult TpMgr::GetTpInfo(const GetTpInfoParam &param, TpInfo &tpInfo)
                 param.Describe().c_str());
             return HcclResult::HCCL_E_NOT_FOUND;
         }
+        const struct HccpTpInfo *list = reinterpret_cast<const struct HccpTpInfo *>(reqCtx.dataBuffer.data());
+        HCCL_INFO("[TpMgr][GetTpInfo] list stage ok, devPhyId[%u] tpInfoNum[%u] firstTpHandle[%llu] param[%s].",
+            devPhyId_, reqCtx.tpInfoNum, static_cast<unsigned long long>(list[0].tpHandle),
+            param.Describe().c_str());
         CHK_RET(StartGetTpAttrForFirstTp(param, reqCtx));
+        HCCL_INFO("[TpMgr][GetTpInfo] RaGetTpAttrAsync submitted, devPhyId[%u] reqHandle[%llu] phase[WAIT_TP_ATTR] "
+                  "tpAttrBitmap[0x%x] param[%s].",
+            devPhyId_, static_cast<unsigned long long>(reqCtx.handle), reqCtx.tpAttrBitmap,
+            param.Describe().c_str());
         return HcclResult::HCCL_E_AGAIN;
     }
 
