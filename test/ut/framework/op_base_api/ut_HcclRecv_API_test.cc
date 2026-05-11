@@ -145,3 +145,22 @@ TEST_F(HcclRecvTest, Ut_HcclRecv_When_2Server4Rank_Expect_ReturnIsHCCL_SUCCESS)
 
     UT_UNSET_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
 }
+
+TEST_F(HcclRecvTest, Ut_HcclRecv_When_GroupModeSuccess_Expect_ReturnIsHCCL_SUCCESS)
+{
+    MOCKER(taskAppend)
+        .stubs()
+        .with(any(), any())
+        .will(returnValue(HCCL_SUCCESS));
+    UT_SET_RECVBUF_COUNT(HCCL_COM_DATA_SIZE, HCCL_COM_DATA_SIZE);
+    int destRank = 1;
+    UT_COMM_CREATE_DEFAULT(comm);
+    UT_STREAM_CREATE_DEFAULT(stream);
+    hcclGroupDepth = 1;
+
+    HcclResult ret = HcclRecvInner(recvBuf, count, HCCL_DATA_TYPE_INT8, destRank, comm, stream);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    hcclGroupDepth = 0;
+    UT_UNSET_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
+}

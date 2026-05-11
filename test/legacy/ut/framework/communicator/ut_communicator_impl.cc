@@ -3552,3 +3552,66 @@ TEST_F(TryFastCcuLaunchTest, Ut_TryFastCcuLaunch_When_OpNoSupportFastLaunch_Expe
     // then
     EXPECT_EQ(fakeComm.TryFastCcuLaunch(fakeOpParams, fakeStreamPtr), false);
 }
+
+// 测试 SaveDpuStreamId - 正常情况
+TEST_F(CommunicatorImplTest, Ut_SaveDpuStreamId_When_Normal_Expect_ReturnSuccess)
+{
+    CommunicatorImpl comm;
+    // 构造一个假的 aclrtStream
+    aclrtStream fakeStream = (aclrtStream)0x12345678;
+    comm.dpuStream = fakeStream;
+    // mock HrtGetStreamId 返回固定值
+    s32 fakeStreamId = 0;
+    MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
+
+    HcclResult ret = comm.SaveDpuStreamId();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(comm.GetDpuStreamId(), static_cast<u32>(fakeStreamId));
+}
+
+TEST_F(TryFastCcuLaunchTest, GetJsonPorperty_When_MissingProperty_Expect_Throw)
+{
+    nlohmann::json obj = nlohmann::json::object();
+    EXPECT_THROW(GetJsonProperty(obj, "missing", true), InvalidParamsException);
+}
+
+TEST_F(TryFastCcuLaunchTest, GetJsonPorpertyUInt_When_MissingProperty_Expect_Throw)
+{
+    nlohmann::json obj = nlohmann::json::object();
+    EXPECT_THROW(GetJsonPropertyUInt(obj, "missing", true, 0), InvalidParamsException);
+}
+
+TEST_F(TryFastCcuLaunchTest, GetJsonPorpertyUInt_When_ValueExceedsUint32Max_Expect_Throw)
+{
+    nlohmann::json obj;
+    obj["test"] = INT64_MAX;
+    EXPECT_THROW(GetJsonPropertyUInt(obj, "test", true, 0), InvalidParamsException);
+}
+
+TEST_F(TryFastCcuLaunchTest, GetJsonPorpertySInt_When_MissingProperty_Expect_Throw)
+{
+    nlohmann::json obj = nlohmann::json::object();
+    EXPECT_THROW(GetJsonPropertySInt(obj, "missing", true, 0), InvalidParamsException);
+}
+
+TEST_F(TryFastCcuLaunchTest, GetJsonPorpertySInt_When_ValueExceedsSint32Max_Expect_Throw)
+{
+    nlohmann::json obj;
+    obj["test"] = INT64_MAX;
+    EXPECT_THROW(GetJsonPropertySInt(obj, "test", true, 0), InvalidParamsException);
+}
+
+TEST_F(TryFastCcuLaunchTest, GetJsonPorpertyList_When_MissingProperty_Expect_Throw)
+{
+    nlohmann::json obj = nlohmann::json::object();
+    nlohmann::json listObj;
+    EXPECT_THROW(GetJsonPropertyList(obj, "missing", listObj), InvalidParamsException);
+}
+
+TEST_F(TryFastCcuLaunchTest, GetJsonPorpertyList_When_NotArray_Expect_Throw)
+{
+    nlohmann::json obj;
+    obj["test"] = "not_array";
+    nlohmann::json listObj;
+    EXPECT_THROW(GetJsonPropertyList(obj, "test", listObj), InvalidParamsException);
+}

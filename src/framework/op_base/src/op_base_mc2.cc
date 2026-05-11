@@ -342,7 +342,11 @@ HcclResult HcclDevMemAcquire(HcclComm comm, const char *memTag, uint64_t *size, 
     CHK_PTR_NULL(size);
     CHK_PTR_NULL(addr);
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-    HCCLV2_FUNC_RUN(HcclDevMemAcquireV2(hcclComm->GetCommunicatorV2(), memTag, size, addr, newCreated));
+    if (hcclComm->GetCommunicatorV2() != nullptr) {
+        HCCLV2_FUNC_RUN(HcclDevMemAcquireV2(hcclComm->GetCommunicatorV2(), memTag, size, addr, newCreated));
+    } else {
+        CHK_RET(hcclComm->GetDevMemWorkSpace(memTag, size, addr, newCreated));
+    }
     return HCCL_SUCCESS;
 }
 

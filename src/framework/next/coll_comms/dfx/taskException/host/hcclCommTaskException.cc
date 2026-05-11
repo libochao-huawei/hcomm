@@ -77,7 +77,7 @@ void TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(s32 streamI
     GetAicpuTaskExceptionCallBackHcomm p1)
 {
    lock_guard<mutex> lock(g_communicatorCallbackMapMutexV2);
-   g_communicatorCallbackMapV2[deviceLogicId].emplace(streamId, p1);
+   g_communicatorCallbackMapV2[deviceLogicId][streamId] = p1;
    return ;
 }
 
@@ -188,11 +188,11 @@ void TaskExceptionHost::ProcessException(rtExceptionInfo_t* exceptionInfo, const
         PrintTaskContextInfo(exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid);
     }
     HCCL_ERROR("[TaskExceptionHost]Task run failed, base information is deviceID:[%u], %s.",
-        exceptionInfo->deviceid, taskInfo.GetBaseInfo().c_str());
+        exceptionInfo->deviceid, taskInfo.GetIndopBaseInfo().c_str());
     HCCL_ERROR("[TaskExceptionHost]Task run failed, para information is %s.", taskInfo.GetParaInfo().c_str());
     HCCL_ERROR("[TaskExceptionHost]Task run failed, groupRank information is %s.",
         GetGroupRankInfo(taskInfo).c_str());
-    HCCL_ERROR("[TaskExceptionHost]Task run failed, opData information is %s.", taskInfo.GetOpInfo().c_str());
+    HCCL_ERROR("[TaskExceptionHost]Task run failed, opData information is %s.", taskInfo.GetIndopDataInfo().c_str());
 }
 
 void TaskExceptionHost::PrintTaskContextInfo(uint32_t deviceId, uint32_t streamId, uint32_t taskId)
@@ -390,7 +390,7 @@ void ReportErrorMsg(const Hccl::TaskInfo &exceptionTaskInfo, const std::string &
             std::vector<std::string>({"remote_rankid", "base_information", "task_information", "group_rank_content"}),
             std::vector<std::string>({
                 std::to_string(exceptionTaskInfo.remoteRank_),
-                exceptionTaskInfo.GetBaseInfo().c_str(), (exceptionTaskInfo.GetParaInfo()).c_str(),
+                exceptionTaskInfo.GetIndopBaseInfo().c_str(), (exceptionTaskInfo.GetParaInfo()).c_str(),
                 ""})
         );
     } else if (exceptionTaskInfo.taskParam_.taskType == Hccl::TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY 
@@ -464,7 +464,7 @@ void TaskExceptionHost::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo)
             auto stageErrInfo = "[" + Hccl::LOG_KEYWORDS_TASK_EXEC + "][" + logKeywordL2 + "][" + Hccl::LOG_KEYWORDS_AICPU + "]";
             HCCL_ERROR("%sTask from HCCL run failed.", stageErrInfo.c_str());
             // 防止tag字符串过长， 信息分开打印
-            PrintBaseErrorLog(stageErrInfo, exceptionTaskInfo.GetBaseInfo());
+            PrintBaseErrorLog(stageErrInfo, exceptionTaskInfo.GetIndopBaseInfo());
             PrintParaErrorLog(stageErrInfo, exceptionTaskInfo.GetParaInfo());
             PrintGroupErrorMessage(errorMessage, exceptionTaskInfo, groupRankContent, stageErrInfo);
             PrintOpDataErrorMessage(exceptionInfo->deviceid, errorMessage, stageErrInfo);

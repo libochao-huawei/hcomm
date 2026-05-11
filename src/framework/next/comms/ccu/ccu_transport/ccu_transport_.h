@@ -107,6 +107,7 @@ public:
     HcclResult  GetCkeNum(uint32_t &ckeNum) const;
 
     std::string Describe() const;
+    HcclResult Describe(std::string &dfxMsg);
 
 public:
     struct Attribution {
