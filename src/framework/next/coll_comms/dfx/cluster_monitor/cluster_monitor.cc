@@ -802,11 +802,11 @@ void GetCqeErrInfoFromTaskException(unsigned int remoteLocalId, unsigned int loc
 
 void ClusterMonitor::GetCqeErrInfoFromTaskException(u32 remoteLocalId, uint16_t status, std::string localEid, std::string remoteEid, std::string remoteInsId)
 {
-    CqeErrInfo_.cqeRemoteLocalId = remoteLocalId;
-    CqeErrInfo_.cqeStatus = status;
-    CqeErrInfo_.cqeLocalEid = localEid;
-    CqeErrInfo_.cqeRemoteEid = remoteEid;
-    CqeErrInfo_.cqeRemoteInsId = remoteInsId;
+    cqeErrInfo_.cqeRemoteLocalId = remoteLocalId;
+    cqeErrInfo_.cqeStatus = status;
+    cqeErrInfo_.cqeLocalEid = localEid;
+    cqeErrInfo_.cqeRemoteEid = remoteEid;
+    cqeErrInfo_.cqeRemoteInsId = remoteInsId;
     ClusterUIDCxt remoteUIDcxt(remoteInsId, remoteLocalId);
     ClusterUIDType localUID = myRankUID_;
     ClusterUIDType remoteUID = FormatUID(remoteUIDcxt);
@@ -823,15 +823,15 @@ void ClusterMonitor::GetCqeErrInfoFromTaskException(u32 remoteLocalId, uint16_t 
 
     s32 stringRet = snprintf_s(errorLinkLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE- 1U,
         "localInfo{local instanceId[%s], LocalId[%d], localEid[%s]}, remoteInfo{remote instanceId[%s], remoteLocalId[%d], remoteEid[%s]}",
-        myRankNetInstId_.c_str(), myRankLocalId_,  CqeErrInfo_.cqeLocalEid.c_str(), CqeErrInfo_.cqeRemoteInsId.c_str(), CqeErrInfo_.cqeRemoteLocalId,
-        CqeErrInfo_.cqeRemoteEid.c_str());
+        myRankNetInstId_.c_str(), myRankLocalId_,  cqeErrInfo_.cqeLocalEid.c_str(), cqeErrInfo_.cqeRemoteInsId.c_str(), cqeErrInfo_.cqeRemoteLocalId,
+        cqeErrInfo_.cqeRemoteEid.c_str());
     CHK_PRT_CONT( stringRet < 0, HCCL_ERROR("[ClusterMonitor][GetCqeErrInfoFromTaskException]snprintf error when log cqe error info") );  
     
     if (now == nullptr) {
-        HCCL_ERROR("[%s][%s][%s]localtime fail, cqe error status[%u], %s", LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_CQE_ERROR.c_str(), CqeErrInfo_.cqeStatus, errorLinkLogBuffer);
+        HCCL_ERROR("[%s][%s][%s]localtime fail, cqe error status[%u], %s", LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_CQE_ERROR.c_str(), cqeErrInfo_.cqeStatus, errorLinkLogBuffer);
     } else {
         HCCL_ERROR("[%s][%s][%s]cqe error status[%u], time:[%04u-%02d-%02d %02d:%0d:%02d.%06u], %s", LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_CQE_ERROR.c_str(), 
-        CqeErrInfo_.cqeStatus, now->tm_year + 1900, now->tm_mon + 1, now->tm_mday, now->tm_hour,
+        cqeErrInfo_.cqeStatus, now->tm_year + 1900, now->tm_mon + 1, now->tm_mday, now->tm_hour,
         now->tm_min, now->tm_sec, microseconds, errorLinkLogBuffer);
     }   
     return;

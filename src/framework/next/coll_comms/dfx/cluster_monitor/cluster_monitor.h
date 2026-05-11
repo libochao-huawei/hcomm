@@ -246,7 +246,7 @@ private:
 
     std::atomic<bool> linkRunningStatus_{false};
 
-    ErrorCqeInfo CqeErrInfo_;
+    ErrorCqeInfo cqeErrInfo_;
 };
 } // namespace hcomm
 #endif // CLUSTER_MONITOR_H
