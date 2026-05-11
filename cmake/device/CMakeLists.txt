@@ -18,6 +18,10 @@ project(hcomm_device)
 # 初始化 CANN 项目配置
 init_cann_project()
 
+message(STATUS "BUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}")
+message(STATUS "ASCEND_INSTALL_PATH=${ASCEND_INSTALL_PATH}")
+message(STATUS "CANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH}")
+
 # cmake 配置
 include(${HCOMM_DIR}/cmake/config.cmake)
 include(${HCOMM_DIR}/cmake/func.cmake)
