@@ -1763,7 +1763,7 @@ void CcuKernel::SetCcuInstrInfo(const CcuRep::CcuInstrInfo &instrInfo)
 
 CcuRep::Variable CcuKernel::CreateVariable()
 {
-    return CreateResAssist(res_.variable);
+    return CreateResAssist(res_.continuousVariable);
 }
 
 CcuRep::Address CcuKernel::CreateAddress()
