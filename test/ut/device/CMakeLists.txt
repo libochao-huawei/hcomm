@@ -17,6 +17,7 @@ set(hccl_utest_device_src_list
     ut_engine_aicpu_interface.cc
     ut_aicpu_one_side_service.cc
     ut_hccl_aicpu_utils.cc
+    ut_ranktable_concise_device.cc
 
     ${HCCL_CODE_ROOT}/src/common/stream/stream_utils_aicpu.cc
     ${HCCL_CODE_ROOT}/src/common/debug/profiling/plugin_runner_device.cc
@@ -28,6 +29,7 @@ set(hccl_utest_device_src_list
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl/zero_copy/zero_copy_address_mgr_device.cc
     ${HCCL_CODE_ROOT}/src/algorithm/impl/hccl_aiv_device.cc
     ${HCCL_CODE_ROOT}/src/algorithm/impl/hccl_alg_device.cc
+    ${HCCL_CODE_ROOT}/src/framework/common/src/topo/topo_device/topoinfo_ranktableConcise_device.cc
     ${HCCL_CODE_ROOT}/src/algorithm/impl/coll_executor/coll_all_to_all/coll_all_to_all_executor_aicpu.cc
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/resource/device/engine_aicpu_interface.cc
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads/slaves/aicpu_thread_process.cc

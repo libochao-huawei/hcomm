@@ -7,27 +7,42 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- #include "endpoint_mgr.h"
- #include "endpoint.h"
- #include "cpu_roce_endpoint.h"
- #include "urma_endpoint.h"
- #include "ub_mem_endpoint.h"
- #include "uboe_endpoint.h"
+#include "endpoint_mgr.h"
+#include "endpoint.h"
+#include "aicpu_ts_roce_endpoint.h"
+#include "cpu_roce_endpoint.h"
+#include "urma_endpoint.h"
+#include "ub_mem_endpoint.h"
+#include "uboe_endpoint.h"
+#include "cpu_urma_endpoint.h"
 
- namespace hcomm{
-static bool IsProtocolSupported(CommProtocol protocol)
+namespace hcomm{
+static bool IsSupported(const EndpointDesc &endpointDesc)
 {
-    switch (protocol) {
+    bool protocolSupported = false;
+    bool locTypeSupported = false;
+    switch (endpointDesc.protocol) {
         case COMM_PROTOCOL_ROCE:
         case COMM_PROTOCOL_UBC_TP:
         case COMM_PROTOCOL_UBC_CTP:
         case COMM_PROTOCOL_UB_MEM:
         case COMM_PROTOCOL_PCIE:
         case COMM_PROTOCOL_UBOE:
-            return true;
+            protocolSupported = true;
+            break;
         default:
             return false;
     }
+    switch (endpointDesc.loc.locType) {
+        case ENDPOINT_LOC_TYPE_DEVICE:
+        case ENDPOINT_LOC_TYPE_HOST:
+            locTypeSupported = true;
+            break;
+        default:
+            return false;
+    }
+
+    return protocolSupported && locTypeSupported;
 }
 
 Endpoint::Endpoint(const EndpointDesc &endpointDesc)
@@ -37,20 +52,20 @@ Endpoint::Endpoint(const EndpointDesc &endpointDesc)
 
 HcclResult Endpoint::CreateEndpoint(const EndpointDesc &endpointDesc, std::unique_ptr<Endpoint> &endpointPtr)
 {
-    if (endpointDesc.loc.locType != ENDPOINT_LOC_TYPE_DEVICE && endpointDesc.loc.locType != ENDPOINT_LOC_TYPE_HOST) {
-        HCCL_ERROR("[%s] endpointDesc.loc.locType [%d] is not supported.", __func__, endpointDesc.loc.locType);
+    if (!IsSupported(endpointDesc)) {
+        HCCL_ERROR("[%s]endpointDesc is not supported. endpointDesc.protocol [%d] endpointDesc.loc.locType [%d].", __func__, endpointDesc.protocol, endpointDesc.loc.locType);
         return HCCL_E_PARA;
     }
 
-    if (!IsProtocolSupported(endpointDesc.protocol)){
-        HCCL_ERROR("[%s]endpointDesc.protocol [%d] is not supported.", __func__, endpointDesc.protocol);
-    }
+    HCCL_INFO("[%s]endpointDesc.protocol [%d] endpointDesc.loc.locType [%d].", __func__, endpointDesc.protocol, endpointDesc.loc.locType);
 
     if (endpointDesc.protocol == COMM_PROTOCOL_ROCE && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_HOST) {
         EXECEPTION_CATCH(endpointPtr = std::make_unique<CpuRoceEndpoint>(endpointDesc), return HCCL_E_PTR);
-    } else if (endpointDesc.protocol == COMM_PROTOCOL_UBC_TP && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
-        EXECEPTION_CATCH(endpointPtr = std::make_unique<UrmaEndpoint>(endpointDesc), return HCCL_E_PTR);
-    } else if (endpointDesc.protocol == COMM_PROTOCOL_UBC_CTP && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
+    } else if ((endpointDesc.protocol == COMM_PROTOCOL_UBC_TP || endpointDesc.protocol == COMM_PROTOCOL_UBC_CTP) 	 
+                && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_HOST) { 
+        EXECEPTION_CATCH(endpointPtr = std::make_unique<CpuUrmaEndpoint>(endpointDesc), return HCCL_E_PTR);	 
+    } else if ((endpointDesc.protocol == COMM_PROTOCOL_UBC_TP || endpointDesc.protocol == COMM_PROTOCOL_UBC_CTP)	 
+                 && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
         EXECEPTION_CATCH(endpointPtr = std::make_unique<UrmaEndpoint>(endpointDesc), return HCCL_E_PTR);
     } else if (endpointDesc.protocol == COMM_PROTOCOL_UB_MEM && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
         EXECEPTION_CATCH(endpointPtr = std::make_unique<UbMemEndpoint>(endpointDesc), return HCCL_E_PTR);
@@ -58,6 +73,8 @@ HcclResult Endpoint::CreateEndpoint(const EndpointDesc &endpointDesc, std::uniqu
         EXECEPTION_CATCH(endpointPtr = std::make_unique<UbMemEndpoint>(endpointDesc), return HCCL_E_PTR);
     } else if (endpointDesc.protocol == COMM_PROTOCOL_UBOE && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
         EXECEPTION_CATCH(endpointPtr = std::make_unique<UboeEndpoint>(endpointDesc), return HCCL_E_PTR);
+    } else if (endpointDesc.protocol == COMM_PROTOCOL_ROCE && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
+        EXECEPTION_CATCH(endpointPtr = std::make_unique<AicpuTsRoceEndpoint>(endpointDesc), return HCCL_E_PTR);
     } else {
         endpointPtr = nullptr;
         HCCL_ERROR("[%s] failed, endpointDesc.protocol [%d] and endpointDesc.loc.locType [%d] do not match.", 

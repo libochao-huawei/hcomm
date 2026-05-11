@@ -252,25 +252,21 @@ HcclResult AicpuTsUrmaChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNu
 
 ChannelStatus AicpuTsUrmaChannel::GetStatus()
 {
-    Hccl::TransportStatus transportStatus = memTransport_->GetStatus();
-    ChannelStatus out = ChannelStatus::INIT;
-    switch (transportStatus) {
-        case Hccl::TransportStatus::INIT:
-            out = ChannelStatus::INIT;
-            break;
-        case Hccl::TransportStatus::SOCKET_OK:
-            out = ChannelStatus::SOCKET_OK;
-            break;
-        case Hccl::TransportStatus::SOCKET_TIMEOUT:
-            out = ChannelStatus::SOCKET_TIMEOUT;
-            break;
-        case Hccl::TransportStatus::READY:
-            out = ChannelStatus::READY;
-            break;
-        default:
-            HCCL_ERROR("[AicpuTsUrmaChannel][%s] Invalid TransportStatus[%d]", __func__, transportStatus);
-            out = ChannelStatus::INVALID;
-            break;
+    ChannelStatus out = Channel::TransportStatusToChannelStatus(memTransport_->GetStatus());
+
+    if (isFirstPrintChannelInfo_ && out == ChannelStatus::READY) {
+        std::string channelInfo = "create channel info:channel handle[";
+        channelInfo.append(std::to_string(reinterpret_cast<uint64_t>(this)));
+        channelInfo.append("] ");
+        HcclResult ret = memTransport_->Describe(channelInfo);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[AicpuTsUrmaChannel][%s] Describe channel info failed, ret=%d", __func__, ret);
+            out = ChannelStatus::FAILED;
+        } else {
+            channelInfo.append(" TA[RM]"); // 目前TA只支持RM
+            HCCL_RUN_INFO("%s", channelInfo.c_str());
+        }
+        isFirstPrintChannelInfo_ = false;
     }
     return out;
 }
@@ -341,4 +337,47 @@ HcclResult AicpuTsUrmaChannel::UpdateMemInfo(HcommMemHandle *memHandles, uint32_
     bufs_.insert(bufs_.end(), bufsTemp.begin(), bufsTemp.end());
     return memTransport_->UpdateMemInfo(bufferVecTemp_);
 }
+
+// 返回当前 channel 类型，供上层区分不同 channel 的能力和行为
+HcommChannelKind AicpuTsUrmaChannel::GetChannelKind() const
+{
+    return HcommChannelKind::AICPU_TS_URMA;
+}
+
+HcclResult AicpuTsUrmaChannel::NotifyRecord(const uint32_t remoteNotifyIdx)
+{
+    HCCL_INFO("[AicpuTsUrmaChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult AicpuTsUrmaChannel::NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout)
+{
+    HCCL_INFO("[AicpuTsUrmaChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult AicpuTsUrmaChannel::WriteWithNotify(void *dst, const void *src, const uint64_t len, uint32_t remoteNotifyIdx)
+{
+    HCCL_INFO("[AicpuTsUrmaChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult AicpuTsUrmaChannel::Write(void *dst, const void *src, uint64_t len)
+{
+    HCCL_INFO("[AicpuTsUrmaChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult AicpuTsUrmaChannel::Read(void *dst, const void *src, uint64_t len)
+{
+    HCCL_INFO("[AicpuTsUrmaChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult AicpuTsUrmaChannel::ChannelFence()
+{
+    HCCL_INFO("[AicpuTsUrmaChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
 } // namespace hcomm

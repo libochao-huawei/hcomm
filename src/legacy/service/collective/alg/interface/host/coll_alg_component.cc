@@ -17,7 +17,6 @@
 #include "coll_alg_component.h"
 #include "data_type.h"
 #include "acl/acl_rt.h"
-#include "invalid_params_exception.h"
 
 namespace Hccl {
 CollAlgComponent::CollAlgComponent(RankGraph *rankGraph, DevType devType, u32 myRank, u32 rankSize)
@@ -127,6 +126,7 @@ HcclResult CollAlgComponent::CalcResOffload(const OpType &opType, const u64 &dat
     CollAlgOperator op;
     op.opType    = opType;
     op.dataType = HcclDataTypeToDataType(dataType);
+    op.dataCount = dataSize / DataTypeSizeGet(op.dataType);
     CollAlgParams params;
     params.opExecuteConfig = opExecuteConfig;
     params.opMode = OpMode::OFFLOAD;

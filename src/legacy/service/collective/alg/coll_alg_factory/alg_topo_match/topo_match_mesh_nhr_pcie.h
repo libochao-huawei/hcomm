@@ -36,8 +36,8 @@ public:
         std::vector<std::vector<RankId>> &virtRanks, std::vector<std::map<RankId, u32>> &virtRankMap) override;
 
 private:
-    HcclResult LoadTopoInstRanks(u32 topoInstId, std::vector<RankId> &ranksOfSameLinkType);
-    HcclResult DeduplicateLevelRanks(std::vector<RankId> &level0Ranks, std::vector<RankId> &level1Ranks);
+    HcclResult LoadTopoInstRanks(u32 topoInstId, std::vector<RankId> &ranksOfSameLinkType) const;
+    HcclResult DeduplicateLevelRanks(std::vector<RankId> &level0Ranks, std::vector<RankId> &level1Ranks) const;
 };
 }  // namespace Hccl
 

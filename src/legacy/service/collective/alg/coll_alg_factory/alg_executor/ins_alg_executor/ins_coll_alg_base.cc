@@ -219,7 +219,7 @@ HcclResult InsCollAlgBase::CalNumBlocks(u32 &numBlocks, u64 dataSize, u32 numBlo
     numBlocks = 0;
     (void)dataSize;
     (void)numBlocksLimit;
-    HCCL_INFO("[InsCollAlgFactory] current excutor doesn't support controlling num of aiv cores.");
+    HCCL_INFO("[InsCollAlgFactory] current executor doesn't support controlling num of aiv cores.");
     return HcclResult::HCCL_SUCCESS;
 }
 } // namespace Hccl

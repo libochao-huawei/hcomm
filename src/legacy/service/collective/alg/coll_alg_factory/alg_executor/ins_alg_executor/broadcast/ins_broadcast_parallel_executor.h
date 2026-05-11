@@ -71,7 +71,6 @@ private:
     std::vector<std::map<RankId, u32>> virtRankMap_; // map<virtRank, virtRankOrder>
     std::vector<std::vector<RankId>> virtRanks_;
 
-
     const RankGraph *rankGraphPtr_ = nullptr;
 };
 

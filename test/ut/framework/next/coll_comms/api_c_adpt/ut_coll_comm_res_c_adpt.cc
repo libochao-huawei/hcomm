@@ -58,7 +58,8 @@ protected:
         HcclCommConfig config;
         config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
         config.hcclRdmaTrafficClass = 0xFFFFFFFF; // 不配置RDMA Traffic Class
-        config.hcclRdmaServiceLevel = 0xFFFFFFFF; // 不配置RDMA Service Level       
+        config.hcclRdmaServiceLevel = 0xFFFFFFFF; // 不配置RDMA Service Level 
+        unsetenv("HCCL_DFS_CONFIG");      
         ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
         CollComm* collComm = hcclCommPtr->GetCollComm();
         comm = static_cast<HcclComm>(hcclCommPtr.get());
@@ -89,6 +90,7 @@ TEST_F(HcclChannelDescTest, Ut_ProcessRoceChannelDesc_When_IsCommunicatorV2_Is_T
     std::vector<ChannelHandle> channels(1);
     GetChannelDesc(channelDesc);
     MOCKER(&MyRank::CreateChannels).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(HcommDpuChannelRegisterDfx).stubs().will(returnValue(0));
     ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_CPU, channelDesc.data(), 1, channels.data());
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }

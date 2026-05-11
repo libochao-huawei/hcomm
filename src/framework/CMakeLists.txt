@@ -36,6 +36,7 @@ set(hccl_include_list
     ${HCCL_BASE_DIR}/algorithm/base/inc
     ${HCCL_BASE_DIR}/algorithm/pub_inc
     ${HCCL_BASE_DIR}/pub_inc
+    ${HCCL_BASE_DIR}/pub_inc/inner
     ${HCCL_BASE_DIR}/pub_inc/new
     ${HCCL_BASE_DIR}/algorithm/base/alg_aiv_template
     ${HCCL_BASE_DIR}/algorithm/base/alg_template
@@ -84,6 +85,7 @@ set(hccl_include_list
     ${HCCL_BASE_DIR}/framework/op_base/src
     ${HCCL_BASE_DIR}/framework/group
 
+    ${HCCL_BASE_DIR}/common/
     ${HCCL_BASE_DIR}/common/health/
     ${HCCL_BASE_DIR}/common/stream/
     ${HCCL_BASE_DIR}/common/launch_device/
@@ -114,6 +116,7 @@ set(hccl_include_list
 
     # ccu 头文件
     ${HCCL_BASE_DIR}/framework/next/comms/adpt
+    ${HCCL_BASE_DIR}/framework/next/comms/api_c_adpt
 
     ${HCCL_BASE_DIR}/framework/next/comms/ccu/pub_inc/
     ${HCCL_BASE_DIR}/framework/next/comms/ccu/ccu_device/
@@ -124,6 +127,7 @@ set(hccl_include_list
 
     ${HCCL_BASE_DIR}/framework/next/comms/ccu/ccu_transport/
     ${HCCL_BASE_DIR}/framework/next/comms/ccu/ccu_kernel
+    ${HCCL_BASE_DIR}/framework/next/comms/common/device/
 )
 
 target_include_directories(hcomm PRIVATE
@@ -151,6 +155,7 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/platform/hccp/inc/
         ${HCCL_BASE_DIR}/platform/resource/dispatcher_ctx
         ${HCCL_BASE_DIR}/platform/hccp/inc/network
+        ${URMA_INCLUDE_DIR}
 
         ${HCCL_BASE_DIR}/platform/inc/adapter
         
@@ -218,6 +223,8 @@ else()
         ${HCCL_BASE_DIR}/pkg_inc
 
         ${TOP_DIR}/hcomm-legacy/src/platform/legacy/inc
+
+        ${HCCL_BASE_DIR}/../pkg_inc/hcomm/ccu
     )
 endif()
 
@@ -767,6 +774,8 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/framework/device/common
         ${HCCL_BASE_DIR}/framework/device/inc
         ${HCCL_BASE_DIR}/framework/device/framework
+
+        ${HCCL_BASE_DIR}/../pkg_inc/hcomm/ccu
 
         # runtime头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/

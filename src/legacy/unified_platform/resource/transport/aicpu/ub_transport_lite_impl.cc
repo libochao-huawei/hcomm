@@ -16,6 +16,7 @@
 #include "internal_exception.h"
 #include "sal.h"
 #include "communicator_impl_lite_manager.h"
+#include "profiling_handler_lite.h"
 
 namespace Hccl {
 constexpr u32 UB_WQE_BB_SIZE       = 64;  // 一个WQE BB是64Byte
@@ -225,6 +226,7 @@ void UbTransportLiteImpl::ParseConnVec(std::vector<char> &data)
         connVec.push_back(lite);
         HCCL_INFO("[%s]idx=%u, %s", __func__, idx, lite->Describe().c_str());
     }
+    CheckConnVec("after ParseConnVec");
 }
 
 void UbTransportLiteImpl::BuildUbDbSendTask(const StreamLite &stream, const UbJettyLiteId &jettyLiteId, u32 pi)
@@ -331,7 +333,6 @@ RmaBufSliceLite UbTransportLiteImpl::GetRmaBufSlicelite(const RmaBufferLite &lit
 
 void UbTransportLiteImpl::Post(u32 index, const StreamLite &stream)
 {
-    ClearConnOut();
     SqeConfigLite cfg;
     if (index == 1) { // PostFin场景
         cfg.cqeEn     = true;
@@ -339,7 +340,7 @@ void UbTransportLiteImpl::Post(u32 index, const StreamLite &stream)
         cfg.compOrder = UB_COMPLETION;
     }
     u32           inlineData = 1;
-    CheckConnVec("UbTransportLiteImpl::Post"); // 待修改优化, 检查connection
+
     auto taskId = stream.GetRtsq()->GetTaskId();
     // 当前使用1个connection，下标为0 构建sqe
     auto rmtBuffSliceLite = GetRmtNotifySliceLite(index);
@@ -349,10 +350,8 @@ void UbTransportLiteImpl::Post(u32 index, const StreamLite &stream)
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
     HCCL_INFO("UbTransportLiteImpl::Post notifyId[0x%llx], pi=%u", rmtBuffSliceLite.GetAddr(), connOut.pi);
- 
-    if (callback_ == nullptr && newCallback_ == nullptr)
-    {
-        HCCL_WARNING("[UbTransportLiteImpl] callback_ is nullptr.");
+
+    if (!IsReportTask()) {
         return;
     }
 
@@ -391,9 +390,7 @@ void UbTransportLiteImpl::WaitWithTimeout(u32 index, const StreamLite &stream, u
     auto notifyId = locNotifyVec[index]->GetId();
     stream.GetRtsq()->NotifyWait(notifyId, timeout);
 
-    if (callback_ == nullptr && newCallback_ == nullptr)
-    {
-        HCCL_WARNING("[UbTransportLiteImpl] callback_ is nullptr.");
+    if (!IsReportTask()) {
         return;
     }
 
@@ -414,9 +411,7 @@ void UbTransportLiteImpl::WaitWithTimeout(u32 index, const StreamLite &stream, u
 void UbTransportLiteImpl::ProfilingProcess(void *src, void *dst, u64 size, const StreamLite &stream,
                                            DmaOp dmaOp, u32 taskId)
 {
-    if (callback_ == nullptr && newCallback_ == nullptr)
-    {
-        HCCL_WARNING("[UbTransportLiteImpl] callback_ is nullptr.");
+    if (!IsReportTask()) {
         return;
     }
 
@@ -444,9 +439,7 @@ void UbTransportLiteImpl::ProfilingProcess(void *src, void *dst, u64 size, const
 void UbTransportLiteImpl::ReduceProfilingProcess(void *src, void *dst, u64 size,
                                                  const ReduceIn &reduceIn, const StreamLite &stream, u32 taskId)
 {
-    if (callback_ == nullptr && newCallback_ == nullptr)
-    {
-        HCCL_WARNING("[UbTransportLiteImpl] callback_ is nullptr.");
+    if (!IsReportTask()) {
         return;
     }
 
@@ -474,11 +467,10 @@ void UbTransportLiteImpl::ReduceProfilingProcess(void *src, void *dst, u64 size,
 
 void UbTransportLiteImpl::Read(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream)
 {
-    ClearConnOut();
     SqeConfigLite cfg;
     SetFenceConfig(cfg);
     auto taskId = stream.GetRtsq()->GetTaskId();
-    CheckConnVec("UbTransportLiteImpl::Read"); // 待修改优化, 检查connection
+
     // 当前使用1个connection,下标为0
     auto locRmaBufSlicelite = GetRmaBufSlicelite(loc);
     auto rmtRmaBufSlicelite = GetRmtRmaBufSliceLite(rmt);
@@ -492,11 +484,10 @@ void UbTransportLiteImpl::Read(const RmaBufferLite &loc, const Buffer &rmt, cons
 
 void UbTransportLiteImpl::Write(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream)
 {
-    ClearConnOut();
     SqeConfigLite cfg;
     SetFenceConfig(cfg);
     auto taskId = stream.GetRtsq()->GetTaskId();
-    CheckConnVec("UbTransportLiteImpl::Write"); // 待修改优化, 检查connection
+
     // 当前使用1个connection，下标为0
     auto locRmaBufSlicelite = GetRmaBufSlicelite(loc);
     auto rmtRmaBufSlicelite = GetRmtRmaBufSliceLite(rmt);
@@ -511,11 +502,10 @@ void UbTransportLiteImpl::Write(const RmaBufferLite &loc, const Buffer &rmt, con
 void UbTransportLiteImpl::ReadReduce(const RmaBufferLite &loc, const Buffer &rmt, const ReduceIn &reduceIn,
                                      const StreamLite &stream)
 {
-    ClearConnOut();
     SqeConfigLite cfg;
     SetFenceConfig(cfg);
     auto taskId = stream.GetRtsq()->GetTaskId();
-    CheckConnVec("UbTransportLiteImpl::ReadReduce"); // 待修改优化, 检查connection
+
     // 当前使用1个connection，下标为0
     auto locRmaBufSlicelite = GetRmaBufSlicelite(loc);
     auto rmtRmaBufSlicelite = GetRmtRmaBufSliceLite(rmt);
@@ -530,11 +520,10 @@ void UbTransportLiteImpl::ReadReduce(const RmaBufferLite &loc, const Buffer &rmt
 void UbTransportLiteImpl::WriteReduce(const RmaBufferLite &loc, const Buffer &rmt, const ReduceIn &reduceIn,
                                       const StreamLite &stream)
 {
-    ClearConnOut();
     SqeConfigLite cfg;
     SetFenceConfig(cfg);
     auto taskId = stream.GetRtsq()->GetTaskId();
-    CheckConnVec("UbTransportLiteImpl::WriteReduce"); // 待修改优化, 检查connection
+
     // 当前使用1个connection，下标为0
     auto locRmaBufSlicelite = GetRmaBufSlicelite(loc);
     auto rmtRmaBufSlicelite = GetRmtRmaBufSliceLite(rmt);
@@ -553,11 +542,10 @@ void UbTransportLiteImpl::BatchTransfer(const std::vector<RmaBufferLite> &loc, c
     if (UNLIKELY(loc.empty())) {
         return;
     }
-    ClearConnOut();
     SqeConfigLite cfg;
     SetFenceConfig(cfg);
     auto taskId = stream.GetRtsq()->GetTaskId();
-    CheckConnVec("UbTransportLiteImpl::BatchTransfer"); // 待修改优化, 检查connection
+
     u32 insNum = loc.size();
     for (u32 i = 0; i < insNum; i++) {
         cfg.cqeEn     = (i == insNum - 1) ? true : false; // 返回最后一个sqe的cqe
@@ -606,12 +594,11 @@ void UbTransportLiteImpl::BatchTransfer(const std::vector<RmaBufferLite> &loc, c
 void UbTransportLiteImpl::WriteWithNotify(const RmaBufferLite &loc, const Buffer &rmt, const WithNotifyIn &withNotify,
                                           const StreamLite &stream)
 {
-    ClearConnOut();
     SqeConfigLite cfg;
     SetFenceConfig(cfg);
     u64           notifyData = 1; // 普通notify，固定1
     auto taskId = stream.GetRtsq()->GetTaskId();
-    CheckConnVec("UbTransportLiteImpl::WriteWithNotify"); // 待修改优化, 检查connection
+
     // 当前使用1个connection，下标为0
     auto locRmaBufSlicelite = GetRmaBufSlicelite(loc);
     auto rmtRmaBufSlicelite = GetRmtRmaBufSliceLite(rmt);
@@ -620,9 +607,7 @@ void UbTransportLiteImpl::WriteWithNotify(const RmaBufferLite &loc, const Buffer
                                 rmtNotifySliceLite, stream, notifyData);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
-    if (callback_ == nullptr && newCallback_ == nullptr)
-    {
-        HCCL_WARNING("[UbTransportLiteImpl] callback_ is nullptr.");
+    if (!IsReportTask()) {
         return;
     }
 
@@ -650,12 +635,11 @@ void UbTransportLiteImpl::WriteWithNotify(const RmaBufferLite &loc, const Buffer
 void UbTransportLiteImpl::WriteReduceWithNotify(const RmaBufferLite &loc, const Buffer &rmt, const ReduceIn &reduceIn,
                                                 const WithNotifyIn &withNotify, const StreamLite &stream)
 {
-    ClearConnOut();
     SqeConfigLite cfg;
     SetFenceConfig(cfg);
     u64           notifyData = 1;                               // 普通notify，固定1
-    CheckConnVec("UbTransportLiteImpl::WriteReduceWithNotify"); // 待修改优化, 检查connection
     auto taskId = stream.GetRtsq()->GetTaskId();
+
     // 当前使用1个connection，下标为0
     auto locRmaBufSlicelite = GetRmaBufSlicelite(loc);
     auto rmtRmaBufSlicelite = GetRmtRmaBufSliceLite(rmt);
@@ -665,9 +649,8 @@ void UbTransportLiteImpl::WriteReduceWithNotify(const RmaBufferLite &loc, const 
                                       notifyData);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
-    if (callback_ == nullptr && newCallback_ == nullptr)
-    {
-        HCCL_WARNING("[UbTransportLiteImpl] callback_ is nullptr.");
+
+    if (!IsReportTask()) {
         return;
     }
 
@@ -696,10 +679,9 @@ void UbTransportLiteImpl::WriteReduceWithNotify(const RmaBufferLite &loc, const 
 void UbTransportLiteImpl::BatchOneSidedRead(const vector<RmaBufSliceLite> &loc, const vector<RmtRmaBufSliceLite> &rmt,
         const StreamLite &stream)
 {
-    ClearConnOut();
     SqeConfigLite cfg;
     SetFenceConfig(cfg);
-    CheckConnVec("UbTransportLiteImpl::BatchOneSidedRead");
+
     // 当前使用1个connection，下标为0
     connVec[0]->BatchOneSidedRead(loc, rmt, cfg, stream, connOut);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
@@ -708,10 +690,9 @@ void UbTransportLiteImpl::BatchOneSidedRead(const vector<RmaBufSliceLite> &loc, 
 void UbTransportLiteImpl::BatchOneSidedWrite(const vector<RmaBufSliceLite> &loc, const vector<RmtRmaBufSliceLite> &rmt,
         const StreamLite &stream)
 {
-    ClearConnOut();
     SqeConfigLite cfg;
     SetFenceConfig(cfg);
-    CheckConnVec("UbTransportLiteImpl::BatchOneSidedRead");
+
     // 当前使用1个connection，下标为0
     connVec[0]->BatchOneSidedWrite(loc, rmt, cfg, stream, connOut);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
@@ -720,22 +701,12 @@ void UbTransportLiteImpl::BatchOneSidedWrite(const vector<RmaBufSliceLite> &loc,
  
 Eid UbTransportLiteImpl::GetLocEid() const
 {
-    Eid eid{};
-    if (!connVec.empty()) {
-        HCCL_INFO("[UbTransportLiteImpl::%s] locEid[%s]", __func__, connVec[0]->GetLocEid().Describe().c_str());
-        return connVec[0]->GetLocEid();
-    }
-    return eid;
+    return connVec[0]->GetLocEid();
 }
 
 Eid UbTransportLiteImpl::GetRmtEid() const
 {
-    Eid eid{};
-    if (!connVec.empty()) {
-        HCCL_INFO("[UbTransportLiteImpl::%s] rmtEid[%s]", __func__, connVec[0]->GetRmtEid().Describe().c_str());
-        return connVec[0]->GetRmtEid();
-    }
-    return eid;
+    return connVec[0]->GetRmtEid();
 }
 
 HcclResult UbTransportLiteImpl::Clean()
@@ -751,9 +722,6 @@ HcclResult UbTransportLiteImpl::Clean()
     }
     connUniqueIdVec.clear();
     connVec.clear();
-
-    // 清理wqe
-    ClearConnOut();
 
     return HCCL_SUCCESS;
 }
@@ -779,5 +747,11 @@ void UbTransportLiteImpl::SetFenceConfig(SqeConfigLite &cfg)
         cfg.compOrder = UB_COMPLETION;
     }
     fence_ = false;
+}
+
+bool UbTransportLiteImpl::IsReportTask()
+{
+    return (taskExceptionEnable_ || ProfilingHandlerLite::GetInstance().GetProfL1State()) &&
+           (callback_ != nullptr || newCallback_ != nullptr);
 }
 } // namespace Hccl

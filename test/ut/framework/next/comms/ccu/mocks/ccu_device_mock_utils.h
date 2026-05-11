@@ -94,6 +94,9 @@ void MockCcuNetworkDeviceDefault(int32_t devPhyId)
     eidInfo.commAddr.addr.s_addr = 469762271;
     fakeEidInfos.push_back(eidInfo);
 
+    MOCKER(hcomm::HccpGetUboeFlagEnable).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+    MOCKER(hcomm::HccpCheckUboeSupported).stubs().will(returnValue(false));
+
     MOCKER(hcomm::RaGetDevEidInfos)
         .stubs()
         .with(any(), outBound(fakeEidInfos))

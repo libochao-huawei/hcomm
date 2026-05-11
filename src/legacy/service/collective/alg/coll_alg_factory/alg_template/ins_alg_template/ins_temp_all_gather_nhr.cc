@@ -34,7 +34,7 @@ HcclResult InsTempAllGatherNHR::CalcRes(AlgTempResReq &tempResReq)
     for (auto resReqIter = linkReq.begin(); resReqIter != linkReq.end(); resReqIter++) {
         auto remoteRank = resReqIter->first;
         if (rank2PathNumMap_.find(remoteRank) == rank2PathNumMap_.end() || rank2PathNumMap_[remoteRank] == 0) {
-            HCCL_ERROR("[InsTempAllGatherNHR] No path to remoteRank[%u]", remoteRank);
+            HCCL_ERROR("[InsTempAllGatherNHR] No path to remoteRank[%d]", remoteRank);
             return HcclResult::HCCL_E_INTERNAL;
         }
         if (pathNum == 0) {
@@ -42,7 +42,7 @@ HcclResult InsTempAllGatherNHR::CalcRes(AlgTempResReq &tempResReq)
         } else if (rank2PathNumMap_[remoteRank] != pathNum) {
             HCCL_ERROR("[InsTempAllGatherNHR] Inconsistency pathNum to remoteRanks, Previous consistent pathNum=[%u], "
                        "mismatched "
-                       "remoteRank=[%u], pathNum=[%u]",
+                       "remoteRank=[%d], pathNum=[%u]",
                 pathNum, remoteRank, rank2PathNumMap_[remoteRank]);
             return HcclResult::HCCL_E_INTERNAL;
         }
@@ -204,7 +204,7 @@ HcclResult InsTempAllGatherNHR::RunNHR(std::vector<InsQuePtr> &tempInsQues)
             HCCL_ERROR("linkRecv.size()!=linkSend.size()");
             return HcclResult::HCCL_E_INTERNAL;
         }
-        HCCL_INFO("GetRankFromMap(stepInfo.fromRank)=%u", GetRankFromMap(stepInfo.fromRank));
+        HCCL_INFO("GetRankFromMap(stepInfo.fromRank)=%d", GetRankFromMap(stepInfo.fromRank));
         u32 linkNum = rank2PathNumMap_.at(GetRankFromMap(stepInfo.fromRank));
         if (linkNum != linkRecv.size()) {
             HCCL_ERROR("InsTempAllGatherMesh1D::RunMesh linkNum != linkRecv.size()");

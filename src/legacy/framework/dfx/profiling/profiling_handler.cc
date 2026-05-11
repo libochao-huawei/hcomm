@@ -170,27 +170,37 @@ void ProfilingHandler::ReportHcclTaskDetails(const TaskInfo &taskInfo, bool cach
     GetHCCLReportData(taskInfo, hcclReportData);
 
     // 调用additionInfo接口上报数据
-    CallAddtionInfo(hcclReportData);
+   
+    // 上报DPU track信息
+    if (taskInfo.taskParam_.taskType == TaskParamType::TASK_DPU_INLINE_WRITE
+        || taskInfo.taskParam_.taskType == TaskParamType::TASK_DPU_NOTIFY_WAIT
+        || taskInfo.taskParam_.taskType == TaskParamType::TASK_DPU_WRITE_WITH_NOTIFY
+        || taskInfo.taskParam_.taskType == TaskParamType::TASK_DPU_CHANNEL_FENCE) {
+        HCCL_INFO("[ProfilingHandler]ReportHcclTaskDetails Report DPU info taskId[%llu].", hcclReportData.dpuProfInfo.taskId);
+        CallAddtionInfo(hcclReportData, &hcclReportData.dpuProfInfo, sizeof(hcclReportData.dpuProfInfo), ProfTaskType::TASK_DPU_HCCL_INFO);
+    } else {
+        HCCL_INFO("[ProfilingHandler]ReportHcclTaskDetails Report HCCL info .");
+        CallAddtionInfo(hcclReportData, &hcclReportData.profInfo, sizeof(hcclReportData.profInfo), ProfTaskType::TASK_HCCL_INFO);
+    }
     HCCL_INFO("[ProfilingHandler]ReportHcclTaskDetails end.");
 }
 
-void ProfilingHandler::CallAddtionInfo(HCCLReportData &hcclReportData) const
+void ProfilingHandler::CallAddtionInfo(HCCLReportData &hcclReportData, void *data, u32 len, ProfTaskType type) const
 {
     HCCL_INFO("[ProfilingHandler]ReportHcclTaskDetails start.");
     MsprofAdditionalInfo reporterData{};
     reporterData.level     = MSPROF_REPORT_HCCL_NODE_LEVEL;
-    reporterData.type      = static_cast<uint32_t>(ProfTaskType::TASK_HCCL_INFO);
+    reporterData.type      = static_cast<uint32_t>(type);
     reporterData.threadId  = SalGetTid();
-    reporterData.dataLen   = sizeof(hcclReportData.profInfo);
+    reporterData.dataLen   = len;
     reporterData.timeStamp = hcclReportData.ts;
-    s32 sret               = memcpy_s(reporterData.data, sizeof(reporterData.data), &hcclReportData.profInfo,
-                                      sizeof(hcclReportData.profInfo));
+    s32 sret               = memcpy_s(reporterData.data, sizeof(reporterData.data), data, len);
     if (sret != EOK) {
         THROW<InternalException>("Call memcpy_s failed, errorno[%d]", sret);
     }
     s32 ret = DlProfFunction::GetInstance().dlMsprofReportAdditionalInfo(
         1, &reporterData, sizeof(MsprofAdditionalInfo)); // aingFlag 根据静态图模式下保存
-    HCCL_INFO("Call MsprofReportAdditionalInfo, return value[%d]", ret);
+    HCCL_INFO("Call MsprofReportAdditionalInfo, return value[%d], taskType[%d]", ret, static_cast<int>(type));
     if (ret != 0) {
         THROW<InternalException>("Call MsprofReportAdditionalInfo failed, return[%d]", ret);
     }
@@ -257,10 +267,52 @@ void ProfilingHandler::GetHCCLReportData(const TaskInfo &taskInfo, HCCLReportDat
     } else if (taskInfo.taskParam_.taskType == TaskParamType::TASK_CCU) {
         HCCL_INFO("current taskType is TASK_CCU");
         ReportCcuInfo(taskInfo);
+    } else if (taskInfo.taskParam_.taskType == TaskParamType::TASK_DPU_INLINE_WRITE
+               || taskInfo.taskParam_.taskType == TaskParamType::TASK_DPU_WRITE_WITH_NOTIFY
+               || taskInfo.taskParam_.taskType == TaskParamType::TASK_DPU_NOTIFY_WAIT
+               || taskInfo.taskParam_.taskType == TaskParamType::TASK_DPU_CHANNEL_FENCE) {
+        // 公共字段赋值
+        hcclReportData.dpuProfInfo.itemId     = hcclReportData.profInfo.itemId;
+        hcclReportData.dpuProfInfo.cclTag     = hcclReportData.profInfo.cclTag;
+        hcclReportData.dpuProfInfo.groupName  = hcclReportData.profInfo.groupName;
+        hcclReportData.dpuProfInfo.localRank   = hcclReportData.profInfo.localRank;
+        hcclReportData.dpuProfInfo.remoteRank  = hcclReportData.profInfo.remoteRank;
+        hcclReportData.dpuProfInfo.rankSize    = hcclReportData.profInfo.rankSize;
+        hcclReportData.dpuProfInfo.workFlowMode = hcclReportData.profInfo.workFlowMode;
+        hcclReportData.dpuProfInfo.planeID     = hcclReportData.profInfo.planeID;
+        hcclReportData.dpuProfInfo.stage       = hcclReportData.profInfo.stage;
+        hcclReportData.dpuProfInfo.role        = hcclReportData.profInfo.role;
+        hcclReportData.dpuProfInfo.durationEstimated = hcclReportData.profInfo.durationEstimated;
+        hcclReportData.dpuProfInfo.aicpu_task_id = taskInfo.taskParam_.aicpuTaskId;
+        hcclReportData.dpuProfInfo.npuDevId = taskInfo.taskParam_.npuDevId;
+        hcclReportData.dpuProfInfo.dpuDevId = (1U << 12); // 高4位=1，低12位=0
+        hcclReportData.dpuProfInfo.linkType = static_cast<uint16_t>(taskInfo.taskParam_.taskPara.DMA.linkType);
+        hcclReportData.dpuProfInfo.taskId = taskInfo.taskId_;
+        hcclReportData.dpuProfInfo.streamId = taskInfo.streamId_;
+        hcclReportData.dpuProfInfo.timeStamp = taskInfo.taskParam_.beginTime;
+        HCCL_INFO("[GetHCCLReportData]taskId[%llu], streamId[%lu], npuDevId[%lu], dpuDevId[%lu], starttime[%llu], endtime[%llu], aicputaskId[%llu].", 
+            hcclReportData.dpuProfInfo.taskId, hcclReportData.dpuProfInfo.streamId, 
+            hcclReportData.dpuProfInfo.npuDevId, hcclReportData.dpuProfInfo.dpuDevId, 
+            hcclReportData.dpuProfInfo.timeStamp, hcclReportData.ts, hcclReportData.dpuProfInfo.aicpu_task_id);
+        // 按task类型填充特定字段
+        if (taskInfo.taskParam_.taskType == TaskParamType::TASK_DPU_INLINE_WRITE
+            || taskInfo.taskParam_.taskType == TaskParamType::TASK_DPU_WRITE_WITH_NOTIFY) {
+            hcclReportData.dpuProfInfo.srcAddr
+                = static_cast<u64>(reinterpret_cast<uintptr_t>(taskInfo.taskParam_.taskPara.DMA.src));
+            hcclReportData.dpuProfInfo.dstAddr
+                = static_cast<u64>(reinterpret_cast<uintptr_t>(taskInfo.taskParam_.taskPara.DMA.dst));
+            hcclReportData.dpuProfInfo.dataSize = static_cast<u32>(taskInfo.taskParam_.taskPara.DMA.size);
+            hcclReportData.dpuProfInfo.notifyID = taskInfo.taskParam_.taskPara.DMA.notifyID;
+        } else if (taskInfo.taskParam_.taskType == TaskParamType::TASK_DPU_NOTIFY_WAIT || taskInfo.taskParam_.taskType == TaskParamType::TASK_DPU_CHANNEL_FENCE) {
+            hcclReportData.dpuProfInfo.notifyID = taskInfo.taskParam_.taskPara.Notify.notifyID;
+        }
     }
     hcclReportData.profInfo.dataType = taskInfo.dfxOpInfo_->op_.dataType;
     hcclReportData.profInfo.opType        = taskInfo.dfxOpInfo_->op_.opType;
     hcclReportData.profInfo.transportType = static_cast<int32_t>(SimpleTaskType::UB);
+    hcclReportData.dpuProfInfo.dataType = static_cast<uint32_t>(taskInfo.dfxOpInfo_->op_.dataType);
+    hcclReportData.dpuProfInfo.opType        = static_cast<uint32_t>(taskInfo.dfxOpInfo_->op_.opType);
+    hcclReportData.dpuProfInfo.transportType = static_cast<uint32_t>(SimpleTaskType::ROCE);
     DumpHCCLReportData(taskInfo, hcclReportData);
     HCCL_INFO("[ProfilingHandler]GetHCCLReportData end.");
 }
@@ -286,6 +338,26 @@ void ProfilingHandler::DumpHCCLReportData(const TaskInfo &taskInfo, const HCCLRe
         hcclReportData.profInfo.srcAddr, hcclReportData.profInfo.dstAddr, hcclReportData.profInfo.dataSize, hcclReportData.profInfo.notifyID, 
         hcclReportData.profInfo.linkType, OpTypeToSerialString(hcclReportData.profInfo.opType).c_str(), hcclReportData.profInfo.transportType, 
         DataTypeToSerialString(hcclReportData.profInfo.dataType).c_str(), hcclReportData.profInfo.localRank, hcclReportData.profInfo.remoteRank);
+
+    HCCL_INFO(
+        "HCCLReportData is: hcclReportData.ts[%llu], hcclReportData.dpuProfInfo.itemId[%llu], "
+        "hcclReportData.dpuProfInfo.cclTag[%llu], hcclReportData.dpuProfInfo.groupName[%llu],  "
+        "hcclReportData.dpuProfInfo.rankSize[%u], hcclReportData.dpuProfInfo.workFlowMode [%u], "
+        "hcclReportData.dpuProfInfo.stage[%u], hcclReportData.dpuProfInfo.role[%u], "
+        "hcclReportData.dpuProfInfo.durationEstimated[%f], taskInfo.taskParam_.taskType[%d]",
+        hcclReportData.ts, hcclReportData.dpuProfInfo.itemId, hcclReportData.dpuProfInfo.cclTag,
+        hcclReportData.dpuProfInfo.groupName, hcclReportData.dpuProfInfo.rankSize, hcclReportData.dpuProfInfo.workFlowMode,
+        hcclReportData.dpuProfInfo.stage, hcclReportData.dpuProfInfo.role, hcclReportData.dpuProfInfo.durationEstimated,
+        taskInfo.taskParam_.taskType);
+    HCCL_INFO(
+        "HCCLReportData other data is: hcclReportData.dpuProfInfo.srcAddr[%llu], hcclReportData.dpuProfInfo.dstAddr[%llu], "
+        "hcclReportData.dpuProfInfo.dataSize[%u], hcclReportData.dpuProfInfo.notifyID[%llu], "
+        "hcclReportData.dpuProfInfo.linkType[%u], "
+        "hcclReportData.dpuProfInfo.opType[%s], hcclReportData.dpuProfInfo.transportType[%u], "
+        "hcclReportData.dpuProfInfo.dataType[%s], hcclReportData.dpuProfInfo.localRank[%u], hcclReportData.dpuProfInfo.remoteRank[%u]",
+        hcclReportData.dpuProfInfo.srcAddr, hcclReportData.dpuProfInfo.dstAddr, hcclReportData.dpuProfInfo.dataSize, hcclReportData.dpuProfInfo.notifyID, 
+        hcclReportData.dpuProfInfo.linkType, OpTypeToSerialString(hcclReportData.dpuProfInfo.opType).c_str(), hcclReportData.dpuProfInfo.transportType, 
+        DataTypeToSerialString(hcclReportData.dpuProfInfo.dataType).c_str(), hcclReportData.dpuProfInfo.localRank, hcclReportData.dpuProfInfo.remoteRank);
 }
 
 void ProfilingHandler::ReportCcuInfo(const TaskInfo &taskInfo) const
@@ -659,7 +731,7 @@ int32_t ProfilingHandler::CommandHandle(uint32_t rtType, void *data, uint32_t le
             instance_.StopSubscribe(); 
             break;
         default:
-            HCCL_RUN_INFO("[Profiling][CommandHandle] Unexcepeted behaviour.");
+            HCCL_RUN_INFO("[Profiling][CommandHandle] Unexpected behaviour.");
     }
     return HCCL_SUCCESS;
 }
@@ -779,6 +851,13 @@ void ProfilingHandler::CallProfRegTaskTypeApi() const
     if (sret != 0) {
         THROW<InternalException>("Call MsprofRegTypeInfo fail, return[%d]", sret);
     }
+
+    const std::string dpuhcclType("dpu_hccl_info");
+    sret = DlProfFunction::GetInstance().dlMsprofRegTypeInfo(
+        MSPROF_REPORT_HCCL_NODE_LEVEL, static_cast<uint32_t>(ProfTaskType::TASK_DPU_HCCL_INFO), dpuhcclType.c_str());
+    if (sret != 0) {
+        THROW<InternalException>("Call MsprofRegTypeInfo fail, return[%d]", sret);
+    }
     const std::vector<std::pair<uint32_t, std::string>> taskTypes
         = {{MSPROF_REPORT_NODE_CONTEXT_ID_INFO_TYPE, "context_id_info"}};
     const std::vector<std::pair<uint32_t, std::string>> taskOtherTypes
@@ -862,7 +941,7 @@ void ProfilingHandler::ReportStoragedAdditionInfo()
         HCCLReportData hcclReportData{};
         GetHCCLReportData(taskInfo, hcclReportData);
         // 调用additionInfo接口上报数据
-        CallAddtionInfo(hcclReportData);
+        CallAddtionInfo(hcclReportData, &hcclReportData.profInfo, sizeof(hcclReportData.profInfo), ProfTaskType::TASK_HCCL_INFO);
     }
 }
 

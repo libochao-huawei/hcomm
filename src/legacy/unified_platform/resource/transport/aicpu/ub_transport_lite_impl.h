@@ -75,12 +75,14 @@ public:
 
     HcclResult Clean();
     HcclResult Resume(std::vector<char> &uniqueId);
+    void SetTaskExceptionEnable(bool flag) { taskExceptionEnable_ = flag; }
 
 private:
     u32 notifyNum{0};
     u32 bufferNum{0};
     u32 connNum{0};
     bool fence_{false};
+    bool taskExceptionEnable_{true};
 
     struct RmtUbBufLite {
         u64         addr;
@@ -129,8 +131,6 @@ private:
     std::vector<RmaConnLite *> connVec;
 
     std::function<void(u32 streamId, u32 taskId, const TaskParam &taskParam)> callback_{nullptr};
-    
-    std::function<HcclResult(u32, u32, const TaskParam&, u64)> newCallback_{nullptr};
 
     void ProfilingProcess(void *src, void *dst, u64 size, const StreamLite &stream, DmaOp dmaOp,
                             u32 taskId);
@@ -153,6 +153,8 @@ private:
     void CheckConnVec(const std::string &desc);
 
     void SetFenceConfig(SqeConfigLite &cfg);
+
+    bool IsReportTask();
 };
 
 } // namespace Hccl

@@ -387,6 +387,10 @@ public:
     aclrtFuncHandle GetAicpuKernelFuncHandle(const char *kernelName) const;
     bool IsCommWithPCIEProtocol();   // 判断通信域内是否有rank之间存在PCIE链路
     HcclResult Mc2AiCpuStreamAllocAndGetV2(rtStream_t *aiCpuStream);
+    HcclResult SaveDpuStreamId();
+    uint32_t GetDpuStreamId() {
+        return dpuStreamId;
+    }
 
 private:
     std::string                                id;
@@ -401,7 +405,7 @@ private:
     DevId                                      devLogicId;
     HcclCommConfig                             config;
     std::shared_ptr<RankGraph>                 rankGraph;
-
+    uint32_t                                   dpuStreamId{0};
     unique_ptr<DataBufManager>                 dataBufferManager;
     unique_ptr<LocalRmaBufManager>             localRmaBufManager;
     unique_ptr<RemoteRmaBufManager>            remoteRmaBufManager;
@@ -537,7 +541,7 @@ private:
     void LaunchConvertCollOperatorA2A(const CollOpParams &opParams, bool isHcomSelectAlg = false);
     void ConvertCollOperatorMem(const CollOpParams &opParams, u64 size);
     void CalcA2ASendRecvMem(const CollOpParams &opParams, u64 &sendSize, u64 &recvSize, bool isHcomSelectAlg = false) const;
-    void ConvertCollOperatorMemV(const CollOpParams &opParams);
+    void ConvertCollOperatorMemV(const CollOpParams &opParams, bool isHcomSelectAlg = false);
     void RegisterAicpuKernel();
 
     // dpu相关
