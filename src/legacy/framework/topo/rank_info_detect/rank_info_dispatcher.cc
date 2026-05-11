@@ -221,7 +221,7 @@ void RankInfoDispather::ProcessSend()
         
         // epoll wait事件失败
         // 可能出现ret==HCCL_SUCCESS但eventsNum==0的情况，属于正常情况，不报错退出，需要继续循环
-        CHK_PRT_THROW(eventsNum <= 0 && ret != HCCL_SUCCESS, 
+        CHK_PRT_THROW(ret != HCCL_SUCCESS, 
                       HCCL_ERROR("[RankInfoDispather::%s] HrtRaWaitEventHandle failed ret[%d], eventsNum[%u].", __func__, ret, eventsNum),
                       InvalidParamsException, "epoll_wait fail");
         for (u32 i = 0; i < eventsNum; ++i) {
