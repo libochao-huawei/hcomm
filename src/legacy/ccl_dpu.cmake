@@ -58,9 +58,9 @@ target_link_libraries(ccl_dpu
 
 # 头文件搜索路径
 target_include_directories(ccl_dpu PRIVATE
-    ${HCOMM_DIR}/src/include/
-    ${HCOMM_DIR}/src/include/hccl
-    ${HCOMM_DIR}/src/pkg_inc
+    ${HCOMM_DIR}/include
+    ${HCOMM_DIR}/include/hccl
+    ${HCOMM_DIR}/pkg_inc
 
     ${CMAKE_CURRENT_SOURCE_DIR}/common
     ${CMAKE_CURRENT_SOURCE_DIR}/common/types
