@@ -99,8 +99,14 @@ elseif(BUILD_OPEN_PROJECT)
     add_subdirectory(src)
     add_subdirectory(python)
 
+    if(DEFINED ENV{TOOLCHAIN_DIR} AND ENABLE_BUILD_DEVICE)
+        set(ENABLE_DEVICE ON)
+    else()
+        set(ENABLE_DEVICE OFF)
+    endif()
+
     # Device 侧编译构建
-    if(ENABLE_BUILD_DEVICE)
+    if(ENABLE_DEVICE)
         include(ExternalProject)
         ExternalProject_Add(hcomm_device
             SOURCE_DIR ${HCOMM_DIR}/cmake/device

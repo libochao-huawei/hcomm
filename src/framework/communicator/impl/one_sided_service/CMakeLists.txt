@@ -31,4 +31,3 @@ if(TARGET ccl_kernel)
         ${CMAKE_CURRENT_SOURCE_DIR}
     )
 endif()
-
