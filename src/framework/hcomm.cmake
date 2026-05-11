@@ -54,8 +54,21 @@ target_include_directories(hcomm PRIVATE
     ${HCOMM_DIR}/src/framework/common/src
     ${HCOMM_DIR}/src/framework/common/src/config
     ${HCOMM_DIR}/src/framework/common/src/mgr
+    ${HCOMM_DIR}/src/framework/common/src/hashtable
     ${HCOMM_DIR}/src/framework/communicator/impl
     ${HCOMM_DIR}/src/framework/communicator/impl/resource_manager
+    ${HCOMM_DIR}/src/framework/communicator/impl/one_sided_service
+    ${HCOMM_DIR}/src/framework/op_base/src
+
+    # src/framework/next 头文件
+    ${HCOMM_DIR}/src/framework/next/common
+    ${HCOMM_DIR}/src/framework/next/comms/ccu/pub_inc
+    ${HCOMM_DIR}/src/framework/next/comms/ccu/ccu_device
+    ${HCOMM_DIR}/src/framework/next/comms/ccu/ccu_device/ccu_comp
+    ${HCOMM_DIR}/src/framework/next/comms/ccu/ccu_device/ccu_comp/ccu_channel
+    ${HCOMM_DIR}/src/framework/next/comms/ccu/ccu_device/ccu_comp/ccu_channel/ccu_pfe
+    ${HCOMM_DIR}/src/framework/next/comms/ccu/ccu_device/ccu_comp/ccu_channel/ccu_channel_ctx_v1
+    ${HCOMM_DIR}/src/framework/next/comms/endpoint_pairs/channels/host
 
     # src/common 头文件
     ${HCOMM_DIR}/src/common/debug/profiling/inc
@@ -87,6 +100,7 @@ target_include_directories(hcomm PRIVATE
     ${HCOMM_DIR}/src/platform/resource/socket
     ${HCOMM_DIR}/src/platform/hccp/inc
     ${HCOMM_DIR}/src/platform/hccp/inc/network
+    ${HCOMM_DIR}/src/platform/hccp/external_depends/ubengine
 
     # src/legacy 头文件
     ${LEGACY_INCLUDE_LIST}
