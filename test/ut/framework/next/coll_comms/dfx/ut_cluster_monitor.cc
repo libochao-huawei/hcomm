@@ -201,8 +201,8 @@ TEST_F(ClusterMonitorTest, Ut_GetCqeErrInfoFromTaskException_When_NormalInput_Ex
     ClusterUIDCxt localUidCxt(netInstId, localId);
     ClusterUIDType localUid = g_monitor.FormatUID(localUidCxt);
     g_monitor.myRankUID_ = localUid;
-    g_monitor.netInstId_ = netInstId;
-    g_monitor.localId_ = localId;
+    g_monitor.myRankNetInstId_ = netInstId;
+    g_monitor.myRankLocalId_ = localId;
 
     u32 remoteLocalId = 1;
     uint16_t status = 1;
@@ -212,11 +212,11 @@ TEST_F(ClusterMonitorTest, Ut_GetCqeErrInfoFromTaskException_When_NormalInput_Ex
 
     g_monitor.GetCqeErrInfoFromTaskException(remoteLocalId, status, localEid, remoteEid, remoteInsId);
 
-    EXPECT_EQ(g_monitor.CqeErrInfo_.CqeRemoteLocalId, remoteLocalId);
-    EXPECT_EQ(g_monitor.CqeErrInfo_.Cqestatus, status);
-    EXPECT_EQ(g_monitor.CqeErrInfo_.CqeLocalEid, localEid);
-    EXPECT_EQ(g_monitor.CqeErrInfo_.CqeRemoteEid, remoteEid);
-    EXPECT_EQ(g_monitor.CqeErrInfo_.CqeRemoteInsId, remoteInsId);
+    EXPECT_EQ(g_monitor.CqeErrInfo_.cqeRemoteLocalId, remoteLocalId);
+    EXPECT_EQ(g_monitor.CqeErrInfo_.cqeStatus, status);
+    EXPECT_EQ(g_monitor.CqeErrInfo_.cqeLocalEid, localEid);
+    EXPECT_EQ(g_monitor.CqeErrInfo_.cqeRemoteEid, remoteEid);
+    EXPECT_EQ(g_monitor.CqeErrInfo_.cqeRemoteInsId, remoteInsId);
 }
 
 TEST_F(ClusterMonitorTest, Ut_ProcessExceptionEvent_When_NormalQueue_Expect_SendFrames)
