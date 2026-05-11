@@ -142,17 +142,18 @@ LoopGroupProfilingInfo &CcuRepContext::GetLGProfilingInfo()
     return lgProfilingInfo;
 }
 
-void CcuRepContext::AddSqeProfiling()
+void CcuRepContext::AddSqeProfiling(const std::string &kernelName)
 {
+    constexpr uint32_t defaultDieId = 0; // 首次填写profiling时dieId未确定
     // 生成SQE粒度profiling信息
     ccuProfilingInfoCache.type      = (uint8_t)CcuProfilinType::CCU_TASK_PROFILING;
-    ccuProfilingInfoCache.name      = "CCU_KERNEL";
-    ccuProfilingInfoCache.dieId     = GetDieId();
-    HCCL_DEBUG("[%s]type[%d], name[%s], dieId[%u]", __func__, ccuProfilingInfoCache.type,
+    ccuProfilingInfoCache.name      = kernelName.c_str();
+    ccuProfilingInfoCache.dieId     = defaultDieId;
+    HCCL_DEBUG("[%s]type[%d], name[%s], deafultDieId[0]", __func__, ccuProfilingInfoCache.type,
         ccuProfilingInfoCache.name.c_str(), ccuProfilingInfoCache.dieId);
     profilingInfo.push_back(ccuProfilingInfoCache);
 }
-    
+
 int32_t CcuRepContext::AddProfiling(const std::string &name, uint32_t mask)
 {
     ccuProfilingInfoCache.type  = (uint8_t)CcuProfilinType::CCU_WAITCKE_PROFILING;
@@ -166,7 +167,7 @@ int32_t CcuRepContext::AddProfiling(const std::string &name, uint32_t mask)
     profilingInfo.push_back(ccuProfilingInfoCache);
     return HCCL_SUCCESS;
 }
-    
+
 int32_t CcuRepContext::AddProfiling(const ChannelHandle channel, const std::string &name, uint32_t signalIndex, uint32_t mask)
 {
     void *channelPtr{nullptr};
@@ -188,7 +189,7 @@ int32_t CcuRepContext::AddProfiling(const ChannelHandle channel, const std::stri
     profilingInfo.push_back(ccuProfilingInfoCache);
     return HCCL_SUCCESS;
 }
-    
+
 int32_t CcuRepContext::AddProfiling(const ChannelHandle *channels, uint32_t channelNum)
 {
     CHK_PTR_NULL(channels);
@@ -219,7 +220,7 @@ int32_t CcuRepContext::AddProfiling(const ChannelHandle *channels, uint32_t chan
     }
     return HCCL_SUCCESS;
 }
-    
+
 int32_t CcuRepContext::AddProfiling(const ChannelHandle *channels, uint32_t channelNum, HcommDataType hcommDataType,
     HcommDataType hcommOutputDataType, HcommReduceOp hcommOpType)
 {
