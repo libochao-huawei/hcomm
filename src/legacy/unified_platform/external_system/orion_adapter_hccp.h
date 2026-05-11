@@ -430,7 +430,6 @@ using HrtRaUbCreateJettyParam = struct HrtRaUbJettyCreateParamDef {
     // HOST_OFFLOAD / HOST_OPBASE / CACHE_LOCK_DWQE 类型的Jetty ，需要指定WQEBB的数目
     // STADARD 类型Jetty，该参数代表SQ深度
     u32              sqDepth{0};
-    u8               qos{4};
     u32              rqDepth{64};
     HrtTransportMode transMode{HrtTransportMode::RM}; // 仅能使用RM模式的Jetty
 
