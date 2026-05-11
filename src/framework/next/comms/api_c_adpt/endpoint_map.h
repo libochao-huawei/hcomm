@@ -29,6 +29,8 @@ public:
     bool UpdateEndpoint(EndpointHandle handle, std::unique_ptr<Endpoint> newEndpoint);
 
     Endpoint* GetEndpoint(EndpointHandle handle);
+
+    Endpoint *GetEndpointByDeviceId(uint32_t deviceId);
 };
 }
 
