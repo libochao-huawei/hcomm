@@ -640,6 +640,7 @@ private:
     u32 deviceBackUpPhyId_;
     s32 deviceLogicId_;
     u32 deviceBackUpLogicId_;
+    std::vector<s32> aicpuStreamIds_;
     std::vector<HcclIpAddress> devIpAddr_;
     std::vector<HcclIpAddress> devBackupIpAddr_;
     u32 devBackupPort_{HCCL_INVALID_PORT};
