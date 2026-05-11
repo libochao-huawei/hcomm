@@ -30,8 +30,6 @@ HcclResult hcclComm::GetExchangeInfo(uint32_t remoteRank, void** data, uint32_t*
     }
     *data = iter->second.data();
     *length = static_cast<uint32_t>(iter->second.size());
-    // 读后清除
-    remoteExchangeInfoMap_.erase(iter);
     HCCL_INFO("[GetExchangeInfo] success, remoteRank[%u], length[%u].", remoteRank, *length);
     return HCCL_SUCCESS;
 }
