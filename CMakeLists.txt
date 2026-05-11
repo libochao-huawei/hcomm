@@ -131,6 +131,13 @@ elseif(BUILD_OPEN_PROJECT)
             INSTALL_COMMAND ${CMAKE_CPACK_COMMAND}
             BUILD_ALWAYS TRUE
         )
+
+        # 安装 device 侧编译产物
+        install(FILES
+            ${CMAKE_BINARY_DIR}/device_build/device-hcomm.tar.gz
+            DESTINATION .
+            COMPONENT hcomm
+        )
     endif()
 
     set(HCCL_HEAD
