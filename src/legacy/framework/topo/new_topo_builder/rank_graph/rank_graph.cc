@@ -495,7 +495,6 @@ HcclResult RankGraph::GetEndpointInfo(uint32_t rankId,
     return HCCL_SUCCESS;
 }
 
-
 bool RankGraph::IsSymmetric(const u32 netLayer) const
 {
     if(netInsts_.at(netLayer).size() == 0){
