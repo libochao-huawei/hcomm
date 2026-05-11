@@ -127,7 +127,7 @@ struct ClusterMonitorSocketCtx { // 原ConnInfo
     {
         std::string localAddr = hcomm::logger::CommAddrLogger::ToString(socketDesc.localEndpoint.commAddr);
         std::string remoteAddr = hcomm::logger::CommAddrLogger::ToString(socketDesc.remoteEndpoint.commAddr);
-        HCCL_INFO("[%s] CMTEST socketDesc: localEndpoint: {commAddr: %s, EndpointLocType: %d}, "
+        HCCL_DEBUG("[%s] socketDesc: localEndpoint: {commAddr: %s, EndpointLocType: %d}, "
             "remoteEndpoint: {commAddr: %s, EndpointLocType: %d}, tag: %s, role: %d, listenPort: %u",
             tag.c_str(), localAddr.c_str(), socketDesc.localEndpoint.loc.locType, remoteAddr.c_str(),
             socketDesc.remoteEndpoint.loc.locType, socketDesc.tag, socketDesc.role, socketDesc.listenPort);

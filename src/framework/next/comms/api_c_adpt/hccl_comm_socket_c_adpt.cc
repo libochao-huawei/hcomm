@@ -19,7 +19,6 @@ HcclResult SocketCreate(SocketDesc *socketDesc, SocketHandler *socketHandle)
 
     s32 devLogicId;
     CHK_RET(hrtGetDevice(&devLogicId));
-    HCCL_INFO("[SocketCreate] CMTEST start devLogicId = %d", devLogicId);
     return hcomm::SocketProcess::GetInstance(devLogicId).GetSocket(socketDesc, *socketHandle);
 }
 

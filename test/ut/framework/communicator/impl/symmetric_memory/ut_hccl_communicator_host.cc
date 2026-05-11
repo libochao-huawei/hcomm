@@ -105,9 +105,9 @@ TEST_F(HcclCommunicatorHostTest, Ut_IsSupportSymmetricMemory_When_Normal_Expect_
     opParam.outputSymWindow = reinterpret_cast<void *>(0x2000);
     opParam.aicpuUnfoldMode = true;
 
-//     bool retBool = hcclCommunicator->IsSupportSymmetricMemory(HcclCMDType::HCCL_CMD_ALLGATHER, opParam);
-//     EXPECT_EQ(retBool, true);
-//     GlobalMockObject::verify();
+    bool retBool = hcclCommunicator->IsSupportSymmetricMemory(HcclCMDType::HCCL_CMD_ALLGATHER, opParam);
+    EXPECT_EQ(retBool, true);
+    GlobalMockObject::verify();
 }
 
 TEST_F(HcclCommunicatorHostTest, Ut_IsSupportSymmetricMemory_When_AicpuUnfoldIsFalse_Expect_ReturnIsFalse)
