@@ -888,7 +888,7 @@ std::vector<std::string> ClusterMonitor::PrintEvents(std::map<ClusterMonitorStat
 
 std::vector<std::string> ClusterMonitor::GetErrStatusVecFromCluserMonitor()
 {
-    std::unique_lock<std::mutex> lock(ProcessLock_);
+    std::unique_lock<std::mutex> lock(threadLock_);
     std::map<ClusterMonitorStatus, std::queue<ClusterMonitorFrame>> keyEvents;
     while (errStatusQueue_.size() > 0) {
         auto &tmp = errStatusQueue_.front();

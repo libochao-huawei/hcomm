@@ -246,8 +246,6 @@ private:
 
     std::atomic<bool> linkRunningStatus_{false};
 
-       
-    std::mutex ProcessLock_;
     ErrorCqeInfo CqeErrInfo_;
 };
 } // namespace hcomm
