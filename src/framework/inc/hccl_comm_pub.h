@@ -423,7 +423,7 @@ public:
 
     // 交换信息管理接口
     HcclResult AddExchangeInfo(void *data, uint32_t length);
-    HcclResult GetExchangeInfo(uint32_t remoteRank, void** data, uint32_t* length);
+    HcclResult GetExchangeInfo(uint32_t remoteRank, void* data, uint32_t length, uint32_t* actualLength);
     HcclResult StoreRemoteExchangeInfo(uint32_t remoteRank, const std::vector<u8>& data);
     HcclResult ResetExchangeInfo();
     const std::vector<u8>& GetExchangeInfoBuf() const;
