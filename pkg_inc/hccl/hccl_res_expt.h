@@ -101,7 +101,7 @@ extern HcclResult HcclCommAddExchangeInfo(HcclComm comm, void* data, uint32_t le
  * @brief 算子包获取通信域建链时从对端rank交换到的一致性校验信息
  * @param[in] comm 通信域句柄
  * @param[in] remoteRank 对端rank ID
- * @param[in] length 希望获取的数据长度长度
+ * @param[in] length 提供的缓冲区长度
  * @param[out] data 接收数据的缓冲区
  * @param[out] actualLength 实际缓冲区长度
  * @return HcclResult 执行结果状态码
