@@ -63,6 +63,14 @@ HcclResult HcclDfxRegOpInfoByCommId(char* commId, void* hcclDfxOpInfo)
     CHK_PTR_NULL(commId);
     CHK_PTR_NULL(hcclDfxOpInfo);
 
+    bool l0State = Hccl::ProfilingHandlerLite::GetInstance().GetProfL0State();
+    bool l1State = Hccl::ProfilingHandlerLite::GetInstance().GetProfL1State();
+
+    if (!(l0State || l1State)) {
+        HCCL_INFO("[%s] l0State[%d], l1State[%d], skip DfxRegOpInfo", __func__, l0State, l1State);
+        return HCCL_SUCCESS;
+    }
+
     DevType deviceType;
     CHK_RET(hrtGetDeviceType(deviceType));
     if (deviceType == DevType::DEV_TYPE_910B) {
