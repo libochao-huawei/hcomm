@@ -69,4 +69,20 @@ Endpoint* HcommEndpointMap::GetEndpoint(EndpointHandle handle)
     return nullptr;
 }
 
+Endpoint *HcommEndpointMap::GetEndpointByDeviceId(uint32_t deviceId)
+{
+    std::lock_guard<std::mutex> lock(g_EndpointMapMutex);
+
+    for (auto &pair : g_EndpointMap) {
+        Endpoint *endpoint = pair.second.get();
+        if (endpoint != nullptr) {
+            EndpointDesc desc = endpoint->GetEndpointDesc();
+            if (desc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE && desc.loc.device.devPhyId == deviceId) {
+                return endpoint;
+            }
+        }
+    }
+    return nullptr;
+}
+
 } // namespace hcomm
