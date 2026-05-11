@@ -21,6 +21,7 @@
 #undef private
 #include "hccl_comm_socket_c_adpt.h"
 #include "base_config.h"
+#include "llt_hccl_stub_rank_graph.h"
 
 using namespace hcomm;
 
@@ -401,3 +402,82 @@ TEST_F(ClusterMonitorTest, Ut_GetErrStatusVecFromCluserMonitor_When_EmptyQueue_E
 
     EXPECT_EQ(result.size(), 0);
 }
+
+
+TEST_F(ClusterMonitorTest, Ut_MonitorThread_When_Normal_Expect_ProcessEvents)
+{
+    MOCKER_CPP(&ClusterMonitor::SendFrame)
+    .stubs()
+    .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER_CPP(&ClusterMonitor::RecvFrame)
+    .stubs()
+    .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER_CPP(&ClusterMonitor::PrintEvents)
+        .stubs()
+        .will(returnValue(std::vector<std::string>{"Error Message"}));
+
+    HCCL_ERROR("g_monitor.uid2SocketRefMap_.Size = %d", g_monitor.uid2SocketRefMap_.Size());
+    g_monitor.clusterMonitorThreadFlag_  = true;
+    g_monitor.RunMonitorThread();
+    EXPECT_TRUE(g_monitor.clusterMonitorThread_ != nullptr);
+    SalSleep(1);  // 等待线程处理完队列中的事件
+    g_monitor.clusterMonitorThreadFlag_  = false;
+
+    if (g_monitor.clusterMonitorThread_) {
+        if (g_monitor.clusterMonitorThread_->joinable()) {
+            g_monitor.clusterMonitorThread_->join();
+        }
+    }
+}
+
+
+TEST_F(ClusterMonitorTest, Ut_RegisterToClusterMonitor_When_Normal_Expect_Success)
+{
+    Hccl::RankGraph stub(0);
+    void *stubPtr = &stub;
+    MOCKER_CPP(&Hccl::HcclCommunicator::GetRankGraphV2)
+    .stubs()
+    .with(outBound(stubPtr))
+    .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER_CPP(&ClusterMonitor::GetRemEndpointDescs)
+    .stubs()
+    .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(hrtGetDeviceType).stubs().with(outBound(DevType::DEV_TYPE_950)).will(returnValue(HCCL_SUCCESS));
+
+    bool isDeviceSide {
+        false
+    };
+    MOCKER(GetRunSideIsDevice).stubs().with(outBound(isDeviceSide)).will(returnValue(HCCL_SUCCESS));
+    setenv("HCCL_INDEPENDENT_OP", "1", 1);
+    setenv("HCCL_RDMA_RETRY_CNT", "7", 1);
+    setenv("HCCL_RDMA_TIMEOUT", "20", 1);
+    setenv("HCCL_RDMA_TC", "120", 1);
+    setenv("HCCL_RDMA_SL", "2", 1);
+    setenv("HCCL_DFS_CONFIG", "clusterHeartBeatEnable:on", 1);
+    hccl::RankGraphStub rankGraphStub;
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
+    void* commV2 = (void*)0x2000;
+    uint32_t rank = 1;
+    HcclMem cclBuffer;
+    cclBuffer.size = 1;
+    cclBuffer.type = HcclMemType::HCCL_MEM_TYPE_HOST;
+    cclBuffer.addr = (void*)0x1000;
+    char commName[128] = {};
+    std::shared_ptr<hccl::hcclComm> hcclCommPtr = std::make_shared<hccl::hcclComm>(1, 1, commName);
+    HcclCommConfig config;
+    config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
+    config.hcclRdmaTrafficClass = 0xFFFFFFFF; // 不配置RDMA Traffic Class
+    config.hcclRdmaServiceLevel = 0xFFFFFFFF; // 不配置RDMA Service Level 
+    unsetenv("HCCL_DFS_CONFIG");    
+    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
+    hccl::CollComm* collComm = hcclCommPtr->GetCollComm();
+    HcclComm comm = static_cast<HcclComm>(hcclCommPtr.get());
+
+    ret = g_monitor.RegisterToClusterMonitor(comm);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
