@@ -149,9 +149,9 @@ int RaCtxGetTpInfoList(void *ctxHandle, struct GetTpCfg *cfg, struct HccpTpInfo 
     return 0;
 }
 
-int RaGetDevBaseAttr(void *ctx_handle, struct DevBaseAttr *attr)
+} // namespace Hccl
+
+int RaGetDevBaseAttr(void *ctxHandle, struct DevBaseAttr *attr)
 {
     return 0;
 }
-
-} // namespace Hccl
