@@ -27,7 +27,6 @@ namespace hccl {
 
 static bool isPipelineBlockSlicingBetter(const u64 dataSize, const u64 commInputSize, const u32 userRankSize)
 {
-    constexpr u32 PIPELINE_BLOCK_NUM_THREE = 3;
     constexpr u32 PIPELINE_BLOCK_NUM_FOUR = 4;
     u64 maxPipelineBlockSize = 0;
     u64 numBlockTotal = 0;
@@ -41,12 +40,7 @@ static bool isPipelineBlockSlicingBetter(const u64 dataSize, const u64 commInput
     HCCL_INFO("[ReduceScatterOperator][isPipelineBlockSlicingBetter] dataSize[%llu] commInputSize[%llu] "
         "userRankSize[%u] maxPipelineBlockSize[%llu] numBlockTotal[%llu]",
         dataSize, commInputSize, userRankSize, maxPipelineBlockSize, numBlockTotal);
-    // Pipeline blocks | Non-pipeline blocks | Better
-    // 1,2             | 1                   | non-pipeline
-    // 3               | 2                   | pipeline
-    // 4               | 2                   | non-pipeline
-    // 5+              | 3+                  | pipeline
-    return numBlockTotal > PIPELINE_BLOCK_NUM_FOUR || numBlockTotal == PIPELINE_BLOCK_NUM_THREE;
+    return numBlockTotal > PIPELINE_BLOCK_NUM_FOUR;
 }
 
 ReduceScatterOperator::ReduceScatterOperator(AlgConfigurator* algConfigurator, CCLBufferManager &cclBufferManager,
