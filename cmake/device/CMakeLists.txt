@@ -95,3 +95,6 @@ install(FILES ${sign_aicpu_hcomm}
     DESTINATION ${INSTALL_DEVICE_TAR_DIR} ${INSTALL_OPTIONAL}
     COMPONENT hcomm
 )
+
+# 设置子工程打包
+set_cann_subprj_package()
