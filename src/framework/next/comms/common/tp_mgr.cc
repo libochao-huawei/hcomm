@@ -111,6 +111,7 @@ static bool ApplyUbcQosTpSlPolicy(const GetTpInfoParam &param, uint32_t nTp, uin
     return true;
 }
 
+/* 暂不向 TP 写回 SL / DSCP；恢复时与 HandleCompletedRequest 内对应块一并取消注释
 static HcclResult CommitMappedSlToTpAttr(const uint32_t devPhyId, const CommAddr &locCommAddr, uint64_t tpHandle,
     uint32_t mappedSl)
 {
@@ -231,6 +232,7 @@ static bool GetDscpByQosFromHccnCfg(const uint32_t devPhyId, uint8_t qos, uint8_
     std::string cfg(value.data(), valueLen);
     return ParseDscpFromCfgByQos(cfg, qos, dscpOut);
 }
+*/
 
 } // namespace
 
@@ -502,7 +504,7 @@ HcclResult TpMgr::HandleCompletedRequest(RequestCtx reqCtx, const GetTpInfoParam
     tmpTpInfo.mappedJettyPriority = mappedSl & 0xFU;
     tmpTpInfo.hasMappedJettyPriority = true;
 
-    // CTP 不向 TP 写回 SL；仅 RTP / UBOE 通过 RaCtxSetTpAttr 提交 mapped SL
+    // CTP 不向 TP 写回 SL；仅 RTP / UBOE 通过 RaCtxSetTpAttr 提交 mapped SL（与上方静态辅助函数一并恢复）
     /*
     if (param.tpProtocol == TpProtocol::RTP || param.tpProtocol == TpProtocol::UBOE) {
         CHK_RET(CommitMappedSlToTpAttr(devPhyId_, param.locAddr, tmpTpInfo.tpHandle, mappedSl));
