@@ -22,12 +22,8 @@
 #include "virtual_topo.h"
 #include "aicpu_res_package_helper.h"
 #include "tp_manager.h"
-#include "tp_mgr.h"
 #include "exchange_ub_buffer_dto.h"
 #include "exchange_ub_conn_dto.h"
-#include "env_config.h"
-
-#include <chrono>
 
 namespace hcomm {
 
@@ -115,39 +111,8 @@ HcclResult AicpuTsUboeChannel::BuildConnection()
     CHK_RET(hrtGetDevice(&deviceLogicId));
     Hccl::TpManager::GetInstance(deviceLogicId).Init();
 
-    uint32_t devPhyId = 0;
-    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(deviceLogicId), devPhyId));
-
-    GetTpInfoParam param{};
-    param.locAddr = localEp_.commAddr;
-    param.rmtAddr = remoteEp_.commAddr;
-    param.tpProtocol = TpProtocol::UBOE;
-    param.qos = (channelDesc_.ubAttr.qos > 7U) ? EnvConfig::UB_QOS_DEFAULT : (channelDesc_.ubAttr.qos & 7U);
-    param.slLevelCount = 0;
-    param.loopFirstTpLowestSl = false;
-
-    TpInfo tpInfo{};
-    constexpr uint32_t kTpInfoWaitTimeoutMs = 10000;
-    const auto tpWaitStart = std::chrono::steady_clock::now();
-    HcclResult tpRet = HCCL_SUCCESS;
-    do {
-        if (std::chrono::steady_clock::now() - tpWaitStart >= std::chrono::milliseconds(kTpInfoWaitTimeoutMs)) {
-            HCCL_ERROR("[AicpuTsUboeChannel][%s] TpMgr::GetTpInfo timeout[%u ms] devPhyId[%u].", __func__,
-                kTpInfoWaitTimeoutMs, devPhyId);
-            return HCCL_E_TIMEOUT;
-        }
-        tpRet = TpMgr::GetInstance(devPhyId).GetTpInfo(param, tpInfo);
-    } while (tpRet == HCCL_E_AGAIN);
-
-    CHK_PRT_RET(tpRet != HCCL_SUCCESS,
-        HCCL_ERROR("[AicpuTsUboeChannel][%s] TpMgr::GetTpInfo failed, ret[%d].", __func__, tpRet), tpRet);
-    CHK_PRT_RET(!tpInfo.hasMappedJettyPriority,
-        HCCL_ERROR("[AicpuTsUboeChannel][%s] TpMgr did not produce mappedJettyPriority.", __func__),
-        HCCL_E_INTERNAL);
-    const u8 qos = static_cast<u8>(tpInfo.mappedJettyPriority & 0xFU);
-
-    std::unique_ptr<Hccl::DevUbConnection> ubConn = std::make_unique<Hccl::DevUbUboeConnection>(rdmaHandle_, 
-        locAddr_, rmtAddr_, opMode, devUsed, Hccl::HrtUbJfcMode::STARS_POLL, locIpv4Addr, rmtIpv4Addr, qos);
+    std::unique_ptr<Hccl::DevUbConnection> ubConn = std::make_unique<Hccl::DevUbUboeConnection>(rdmaHandle_,
+        locAddr_, rmtAddr_, opMode, devUsed, Hccl::HrtUbJfcMode::STARS_POLL, locIpv4Addr, rmtIpv4Addr);
     CHK_SMART_PTR_NULL(ubConn);
 
     commonRes_.connVec.clear();

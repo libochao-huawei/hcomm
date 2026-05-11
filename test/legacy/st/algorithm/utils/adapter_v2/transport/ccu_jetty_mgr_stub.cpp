@@ -9,6 +9,7 @@
 #include <unordered_set>
 
 #include "ccu_dev_mgr.h"
+#include "hccl_types.h"
 #include "internal_exception.h"
 #include "invalid_params_exception.h"
 
@@ -80,7 +81,8 @@ HcclResult CcuJettyMgr::GetAvailableBatch(const BatchKey &batchKey, ResourceBatc
         ret);
     CHK_RET(ret);
     // 如果新增资源保存失败，手动释放避免泄露
-    ret = CreateAndSaveNewBatch(batchKey, channelInfos, batchPtr);
+    ret = CreateAndSaveNewBatch(batchKey, channelInfos, batchPtr,
+        static_cast<uint8_t>(HCCL_COMM_QOS_CONFIG_DEFAULT_UB));
     if (ret != HcclResult::HCCL_SUCCESS) {
         HCCL_ERROR("[CcuJettyMgr][%s] failed, release temp ccu resources, locAddr[%s], "
             "devLogicId[%d], .", __func__, batchKey.Describe().c_str(), devLogicId_);
@@ -95,12 +97,12 @@ HcclResult CcuJettyMgr::GetAvailableBatch(const BatchKey &batchKey, ResourceBatc
 }
 
 HcclResult CcuJettyMgr::CreateAndSaveNewBatch(const BatchKey &batchKey,
-    const std::vector<CcuChannelInfo> channelInfos, ResourceBatch *&batchPtr)
+    const std::vector<CcuChannelInfo> channelInfos, ResourceBatch *&batchPtr, uint8_t jettyQos)
 {
     // 该流程如果抛异常，可能资源还未记录，析构无法释放导致资源泄露，故捕获异常处理
     TRY_CATCH_RETURN(
         auto &batches = batchMap_[batchKey];
-        auto newBatch = std::make_unique<ResourceBatch>(batchKey, channelInfos);
+        auto newBatch = std::make_unique<ResourceBatch>(batchKey, channelInfos, jettyQos);
         for (const auto &channelInfo : channelInfos) {
             const auto dieId = channelInfo.dieId;
             const auto channelIdKey = std::make_pair(dieId, channelInfo.channelId);

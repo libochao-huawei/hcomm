@@ -24,9 +24,9 @@ HcclResult CcuAllocChannels(const int32_t deviceLogicId, const CcuChannelPara &c
     std::vector<CcuChannelInfo> &ccuChannelInfos)
 {
     HCCL_INFO("[%s] new allocation request: deviceLogicId[%d], ipAddr[%s], "
-        "channelnum[%u], jettyNum[%u], sqSize[%u], qos[%u].", __func__, deviceLogicId,
+        "channelnum[%u], jettyNum[%u], sqSize[%u].", __func__, deviceLogicId,
         ccuChannelPara.ipAddr.Describe().c_str(), ccuChannelPara.channelNum,
-        ccuChannelPara.jettyNum, ccuChannelPara.sqSize, ccuChannelPara.qos);
+        ccuChannelPara.jettyNum, ccuChannelPara.sqSize);
     // 入参校验拦截
     CHK_PRT_RET((deviceLogicId < 0 || static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM),
         HCCL_ERROR("[CcuAllocChannels]deviceLogicId[%d] error, MAX_MODULE_DEVICE_NUM[%u]", deviceLogicId, MAX_MODULE_DEVICE_NUM),
@@ -41,8 +41,6 @@ HcclResult CcuAllocChannels(const int32_t deviceLogicId, const CcuChannelPara &c
         para.feId = dieIdAndFuncId.second;
         para.jettyNum = ccuChannelPara.jettyNum;
         para.sqSize = ccuChannelPara.sqSize;
-        HCCL_INFO("CcuAllocChannels qos = %u", para.qos);
-        para.qos = ccuChannelPara.qos;
         return CcuComponent::GetInstance(deviceLogicId).AllocChannels(dieId, para, ccuChannelInfos);
     );
 }
