@@ -715,13 +715,7 @@ HcclResult AicpuTsRoceChannelV2::CopyArrayToDevice(const T* hostArray, uint32_t 
 void AicpuTsRoceChannelV2::FreeDeviceMemories()
 {
     deviceMemories_.clear();
-    ptrArrayDevPtr_.reset();
     devChannelEntityPtr_ = nullptr;
-}
-
-void AicpuTsRoceChannelV2::SetPtrArrayDevPtr(std::shared_ptr<hccl::DeviceMem> ptr)
-{
-    ptrArrayDevPtr_ = std::move(ptr);
 }
 
 std::string AicpuTsRoceChannelV2::Describe() const
