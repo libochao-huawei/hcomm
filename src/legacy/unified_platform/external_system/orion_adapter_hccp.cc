@@ -2277,18 +2277,17 @@ RequestHandle RaUbUnimportJettyAsync(void *targetJettyHandle)
     return reinterpret_cast<RequestHandle>(raReqHandle);
 }
 
-void HrtRaWaitEventHandle(int event_handle, std::vector<SocketEventInfo> &event_infos, int timeout,
+HcclResult HrtRaWaitEventHandle(int event_handle, std::vector<SocketEventInfo> &event_infos, int timeout,
     unsigned int maxevents, u32 &events_num)
 {
     HCCL_INFO("[HrtRaWaitEventHandle] Input params: event_handle=%d, timeout=%d, maxevents=%u, events_num=%u", event_handle, timeout, maxevents, events_num);
     std::vector<struct SocketEventInfoT> raEventInfos(maxevents);
     s32 ret = RaWaitEventHandle(event_handle, raEventInfos.data(), timeout, maxevents, &events_num);
-    if (ret != 0) {
-        MACRO_THROW(NetworkApiException, StringFormat("[%s] failed, call interface error[%d].", __func__, ret));
-    }
+    CHK_PRT_RET(ret != 0, HCCL_ERROR("[%s] failed, call RaWaitEventHandle error ret[%d].", __func__, ret), HCCL_E_NETWORK);
     for (u32 i = 0; i < events_num; i++) {
         event_infos[i].fdHandle = raEventInfos[i].fdHandle;
     }
+    return HCCL_SUCCESS;
 }
 
 void HrtRaGetSecRandom(u32 *value, u32 &devPhyId)
