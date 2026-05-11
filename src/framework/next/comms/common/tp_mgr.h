@@ -32,6 +32,8 @@ using GetTpInfoParam = struct GetTpInfoParamDef {
     uint32_t slLevelCount{0};
     /// 环回等场景：首 TPID + 掩码内最小 SL
     bool loopFirstTpLowestSl{false};
+    /// 仅 CCU 设备环回 GetTpInfo：与通信域 hcclQos 解耦，SL 来自 GetTpAttr.slBitmap；并允许 RaCtxSetTpAttr 写回 SL
+    bool ccuLoopbackGetTpInfo{false};
 
     explicit GetTpInfoParamDef() = default;
     GetTpInfoParamDef(const CommAddr &locAddr, const CommAddr &rmtAddr, TpProtocol tpProtocol)
@@ -42,9 +44,9 @@ using GetTpInfoParam = struct GetTpInfoParamDef {
         (void)CommAddrToIpAddress(locAddr, locIpAddr);
         (void)CommAddrToIpAddress(rmtAddr, rmtIpAddr);
         return Hccl::StringFormat(
-            "RaUbGetTpInfoParam[locAddr=%s, rmtAddr=%s, tpProtocol=%s, qos=%u, loopFirstTpLowestSl=%d]",
+            "RaUbGetTpInfoParam[locAddr=%s, rmtAddr=%s, tpProtocol=%s, qos=%u, loopFirstTpLowestSl=%d, ccuLoop=%d]",
             locIpAddr.Describe().c_str(), rmtIpAddr.Describe().c_str(), tpProtocol.Describe().c_str(), qos,
-            static_cast<int>(loopFirstTpLowestSl));
+            static_cast<int>(loopFirstTpLowestSl), static_cast<int>(ccuLoopbackGetTpInfo));
     }
 };
 

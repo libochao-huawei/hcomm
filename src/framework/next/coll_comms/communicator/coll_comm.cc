@@ -15,8 +15,6 @@
 #include "kfc.h"
 #include "dlhal_function.h"
 #include "hcclCommTaskException.h"
-#include "ccu_comp.h"
-#include "env_config/env_config.h"
 #include "hcom_common.h"
 
 constexpr uint32_t MULTIPLE = 4;               // 用于A5判断TC是否为4的倍数

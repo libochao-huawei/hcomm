@@ -65,9 +65,6 @@ public:
     HcclResult SetTaskKillDone();
     HcclResult SetTaskKill();
 
-    /** 环回 GetTpInfo / loop jetty 使用的 qos(0–7)，默认与 EnvConfig::UB_QOS_DEFAULT 一致；由通信域在 Init 时同步。 */
-    void SetLoopGetTpInfoQos(uint32_t qos);
-
 private:
     explicit CcuComponent() = default;
     ~CcuComponent();
@@ -125,7 +122,6 @@ private:
     using ImportOutParamPair = std::pair<CtxHandle, HrtRaUbJettyImportedOutParam>;
     std::unordered_map<uint8_t, std::vector<ImportOutParamPair>> importedOutParamMap_{};
     std::unordered_map<uint8_t, TpInfo> tpInfoMap_{};
-    uint32_t loopGetTpInfoQos_{4U};
     enum class CcuTaskKillStatus : uint8_t { INIT = 0, TASK_KILL = 1, KILL_DONE = 2, CLEAN_TIF = 3, INVALID = 4};
     CcuTaskKillStatus status{CcuTaskKillStatus::INVALID};
 };
