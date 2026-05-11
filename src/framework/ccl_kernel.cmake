@@ -40,17 +40,45 @@ target_link_options(ccl_kernel PRIVATE
 
 # 头文件搜索路径
 target_include_directories(ccl_kernel PRIVATE
-    ${HCOMM_DIR}/include/hccl
-    ${HCOMM_DIR}/src/pub_inc
-    ${HCOMM_DIR}/src/pub_inc/aicpu
     ${HCOMM_DIR}/include
+    ${HCOMM_DIR}/include/hccl
     ${HCOMM_DIR}/pkg_inc
     ${HCOMM_DIR}/pkg_inc/hccl
+    ${HCOMM_DIR}/pkg_inc/hcomm/ccu
+    ${HCOMM_DIR}/src/pub_inc
+    ${HCOMM_DIR}/src/pub_inc/aicpu
+    ${HCOMM_DIR}/src/pub_inc/new
     ${HCOMM_DIR}/externel_depends/tsch
+
+    # src/common 头文件
+    ${HCOMM_DIR}/src/common/stream
+    ${HCOMM_DIR}/src/common/debug/profiling/inc
 
     # src/legacy 头文件，优先于 src/framework
     ${HCOMM_DIR}/src/legacy/unified_platform/resource/socket
     ${HCOMM_DIR}/src/legacy/framework/env_config
+
+    # src/framework 头文件
+    ${HCOMM_DIR}/src/framework
+    ${HCOMM_DIR}/src/framework/inc
+    ${HCOMM_DIR}/src/framework/op_base/src
+    ${HCOMM_DIR}/src/framework/cluster_maintenance/health/heartbeat
+    ${HCOMM_DIR}/src/framework/cluster_maintenance/recovery/operator_retry
+    ${HCOMM_DIR}/src/framework/common/src/exception
+    ${HCOMM_DIR}/src/framework/communicator/impl
+    ${HCOMM_DIR}/src/framework/communicator/impl/resource_manager
+    ${HCOMM_DIR}/src/framework/next/comms/api_c_adpt
+    ${HCOMM_DIR}/src/framework/next/comms/endpoints
+    ${HCOMM_DIR}/src/framework/next/comms/endpoint_pairs
+    ${HCOMM_DIR}/src/framework/next/comms/endpoint_pairs/sockets
+    ${HCOMM_DIR}/src/framework/next/comms/endpoint_pairs/channels
+    ${HCOMM_DIR}/src/framework/next/comms/common/device
+    ${HCOMM_DIR}/src/framework/next/comms/ccu/ccu_device
+    ${HCOMM_DIR}/src/framework/next/coll_comms
+    ${HCOMM_DIR}/src/framework/next/coll_comms/communicator
+    ${HCOMM_DIR}/src/framework/next/coll_comms/rank
+    ${HCOMM_DIR}/src/framework/next/coll_comms/rank_pairs
+    ${HCOMM_DIR}/src/framework/next/coll_comms/dfx/profiling/aicpu
 
     # src/platform 头文件
     ${HCOMM_DIR}/src/platform/inc
@@ -70,10 +98,15 @@ target_include_directories(ccl_kernel PRIVATE
 
     # src/algorithm 头文件
     ${HCOMM_DIR}/src/algorithm/pub_inc
-
-    # src/framework 头文件
-    ${HCOMM_DIR}/src/framework
-    ${HCOMM_DIR}/src/framework/inc
+    ${HCOMM_DIR}/src/algorithm/base/inc
+    ${HCOMM_DIR}/src/algorithm/base/alg_template
+    ${HCOMM_DIR}/src/algorithm/base/communicator
+    ${HCOMM_DIR}/src/algorithm/base/communicator/legacy
+    ${HCOMM_DIR}/src/algorithm/impl
+    ${HCOMM_DIR}/src/algorithm/impl/resource_manager
+    ${HCOMM_DIR}/src/algorithm/impl/task
+    ${HCOMM_DIR}/src/algorithm/impl/legacy
+    ${HCOMM_DIR}/src/algorithm/impl/coll_executor
 
     # src/legacy 头文件
     ${LEGACY_INCLUDE_LIST}
@@ -171,23 +204,26 @@ else()
         -lpthread
         ofed_headers
     )
-
-    # 安装
-    install(TARGETS ccl_kernel
-        LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
-        COMPONENT hcomm
-    )
 endif()
 
 # 将 ccl_kernel.ini 转换为 json 格式
 add_custom_command(
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
     COMMAND ${HI_PYTHON} ${HCOMM_DIR}/cmake/scripts/parser_ini.py
-                         ${CMAKE_CURRENT_SOURCE_DIR}/device/framework/ccl_kernel.ini
+                         ${CMAKE_CURRENT_LIST_DIR}/device/framework/ccl_kernel.ini
                          ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
     COMMENT "Generating ccl_kernel.json"
  	VERBATIM
+)
+add_custom_target(ccl_kernel_json ALL
+    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
+)
+
+# 安装
+install(TARGETS ccl_kernel
+    LIBRARY DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
 )
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
     DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/config ${INSTALL_OPTIONAL}

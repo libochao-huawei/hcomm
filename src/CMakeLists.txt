@@ -41,7 +41,7 @@ add_subdirectory(algorithm)
 add_subdirectory(common)
 
 # 定义 aicpu_hcomm 库，在 device 侧使用
-# 注意：aicpu_hcomm 依赖 ccl_kernel 的源文件u列表，因此需要在其后定义
+# 注意：aicpu_hcomm 依赖 ccl_kernel 的源文件列表，因此需要在其后定义
 if(${PRODUCT_SIDE} STREQUAL "device")
     include(framework/aicpu_custom.cmake)
 endif()

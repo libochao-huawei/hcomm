@@ -37,17 +37,22 @@ target_link_libraries(aicpu_custom PRIVATE
 add_custom_command(
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
     COMMAND ${HI_PYTHON} ${HCOMM_DIR}/cmake/scripts/parser_ini.py
-                         ${CMAKE_CURRENT_SOURCE_DIR}/device/framework/aicpu_custom.ini
+                         ${CMAKE_CURRENT_LIST_DIR}/device/framework/aicpu_custom.ini
                          ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
     COMMENT "Generating libaicpu_custom.json"
  	VERBATIM
 )
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
-    DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel ${INSTALL_OPTIONAL}
+add_custom_target(aicpu_custom_json ALL
+    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
+)
+
+# 安装
+install(TARGETS aicpu_custom
+    LIBRARY DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel ${INSTALL_OPTIONAL}
     COMPONENT hcomm
 )
-install(TARGETS aicpu_custom LIBRARY
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
     DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel ${INSTALL_OPTIONAL}
     COMPONENT hcomm
 )
