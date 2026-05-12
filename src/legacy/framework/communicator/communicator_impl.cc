@@ -1794,14 +1794,6 @@ bool CommunicatorImpl::GetCommCcuFeatureFlag() const
     return IsCommUsingCcuMs() || IsCommUsingCcuSched(); // 通信域粒度
 }
 
-u8 CommunicatorImpl::GetCommQos() const
-{
-    if (config.hcclQos == HCCL_COMM_QOS_CONFIG_NOT_SET) {
-        return static_cast<u8>(HCCL_COMM_QOS_CONFIG_DEFAULT_UB);
-    }
-    return static_cast<u8>(config.hcclQos);
-}
-
 HcclResult CommunicatorImpl::AllocCommResource(void *mc2Tiling, void **commContext)
 {
     bool isAiv = (GetCommExecuteConfig().accState == AcceleratorState::AIV || GetCommExecuteConfig().accState == AcceleratorState::AIV_ONLY);

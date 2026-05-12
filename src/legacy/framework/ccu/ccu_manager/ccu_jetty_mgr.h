@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #ifndef HCCL_CCU_JETTY_MGR_H
 #define HCCL_CCU_JETTY_MGR_H
@@ -21,11 +21,9 @@
 
 namespace Hccl {
 
-class CommunicatorImpl;
-
 class CcuJettyMgr final {
 public:
-    explicit CcuJettyMgr(int32_t devLogicId, CommunicatorImpl *comm = nullptr);
+    explicit CcuJettyMgr(int32_t devLogicId);
     ~CcuJettyMgr();
 
     HcclResult PrepareCreate(const std::vector<LinkData> &links);
@@ -42,7 +40,6 @@ public:
 
 private:
     int32_t devLogicId_{0};
-    CommunicatorImpl *comm_{nullptr};
     bool    isReleased{true};
 
     struct ResIdHash {
@@ -62,14 +59,12 @@ private:
     // 故以srcIp为粒度，多次调用接口，每次接口结果定义为一个批次资源
     struct ResourceBatch { // 记录该批次申请到的所有channel资源信息
         BatchKey key;
-        uint8_t jettyQos_{};
         std::vector<ChannelIdKey> channelIdKeys;
         std::vector<ChannelIdKey> availableChannelIdKeys;
         std::unordered_map<JettyIdKey, std::unique_ptr<CcuJetty>, ResIdHash> jettys;
-    
-        ResourceBatch(const BatchKey &batchKey, const std::vector<CcuChannelInfo> &channelInfos,
-            uint8_t jettyQos)
-            : key(batchKey), jettyQos_(jettyQos)
+
+        ResourceBatch(const BatchKey &batchKey, const std::vector<CcuChannelInfo> &channelInfos)
+            : key(batchKey)
         {
             const uint32_t channelNum = channelInfos.size();
             channelIdKeys.reserve(channelNum);
@@ -87,14 +82,12 @@ private:
                         continue;
                     }
 
-                    CcuJettyInfo ji = jettyInfo;
-                    ji.qos = jettyQos_;
                     std::unique_ptr<CcuJetty> ccuJetty;
                     CHK_RET_THROW(InternalException,
                         StringFormat("[CcuJettyMgr][%s] failed to create ccu jetty, locAddr[%s] "
                             "dieId[%u] taJettyId[%u].", __func__, key.Describe().c_str(),
                             dieId, taJettyId),
-                        CcuCreateJetty(key, ji, ccuJetty));
+                        CcuCreateJetty(key, jettyInfo, ccuJetty));
 
                     jettys[jettyIdKey] = std::move(ccuJetty);
                 }
@@ -136,7 +129,7 @@ private:
     HcclResult GetAvailableBatch(const BatchKey &batchKey, ResourceBatch *&batchPtr, uint32_t sqSize);
     bool FindAvailableBatch(const BatchKey &batchKey, ResourceBatch *&batchPtr) const;
     HcclResult CreateAndSaveNewBatch(const BatchKey &batchKey,
-        const std::vector<CcuChannelInfo> channelInfos, ResourceBatch *&batchPtr, uint8_t jettyQos);
+        const std::vector<CcuChannelInfo> channelInfos, ResourceBatch *&batchPtr);
     void FallbackAndRemoveBatches();
     void FallbackAllocatedChannelJettyInfo();
     void ReleaseConfirmedChannelRes();

@@ -27,7 +27,6 @@ HcclCommunicator::HcclCommunicator(const CommParams &commParams) : commParams(st
     pimpl                    = std::make_unique<CommunicatorImpl>();
     config.hcclBufferSize    = 0;
     config.hcclDeterministic = 0;
-    config.hcclQos           = HCCL_COMM_QOS_CONFIG_NOT_SET;
     RegistTaskAbortHandler();
 }
 
