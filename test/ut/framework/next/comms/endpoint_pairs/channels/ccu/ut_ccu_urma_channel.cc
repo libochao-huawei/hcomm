@@ -87,7 +87,7 @@ TEST_F(CcuUrmaChannelTest, Ut_GetStatus_DfxInfo_TEST) {
     CcuChannelInfo channelInfo{};
     std::vector<CcuJetty*> jettys{};
 
-    auto conn = std::make_unique<CcuConnection>(locAddr, rmtAddr, channelInfo, jettys);
+    auto conn = std::make_unique<CcuConnection>(locAddr, rmtAddr, channelInfo, jettys, EnvConfig::UB_QOS_DEFAULT);
     auto fakeSocket = reinterpret_cast<Hccl::Socket*>(1);
     CcuTransport::CclBufferInfo bufInfo(0x1000, 0x100, 1, 1);
 
