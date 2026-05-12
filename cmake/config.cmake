@@ -77,7 +77,7 @@ function(generate_stub STUB)
     endif()
 endfunction(generate_stub)
 
-if(${PRODUCT_SIDE} STREQUAL "host")
+if(PRODUCT_SIDE STREQUAL "host")
     set(HOST_STUBS
         c_sec
         unified_dlog
