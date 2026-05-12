@@ -41,6 +41,7 @@ HcclResult SocketMgr::AddWhiteList(const Hccl::SocketConfig &socketConfig, const
     wlistInfo.connLimit = 1;
     wlistInfo.remoteIp = socketConfig.link.GetRemoteAddr();
     wlistInfo.tag = socketConfig.GetHccpTag();
+    handle2WhiteListMap_[socketHandle].push_back(wlistInfo);
 
     std::vector<Hccl::RaSocketWhitelist> wlistInfoVec;
     wlistInfoVec.clear();
@@ -164,6 +165,48 @@ HcclResult SocketMgr::GetSocket(const Hccl::SocketConfig &socketConfig, Hccl::So
     }
  
     socket = it->second.get();
+    return HCCL_SUCCESS;
+}
+
+HcclResult SocketMgr::DeleteWhiteList(Hccl::Socket* socket)
+{
+    CHK_PTR_NULL(socket);
+    auto iter = handle2WhiteListMap_.find(socket->GetFdHandle());
+    if (iter == handle2WhiteListMap_.end()) {
+        HCCL_WARNING("[DeleteWhiteList] socketHandle[%p] not found in handle2WhiteListMap_, nothing to delete.",
+            socket->GetFdHandle());
+        return HCCL_SUCCESS;
+    }
+
+    std::vector<Hccl::RaSocketWhitelist> &wlistInfoVec = iter->second;
+    if (wlistInfoVec.empty()) {
+        HCCL_WARNING("[DeleteWhiteList] socketHandle[%p] has empty white list, nothing to delete.", socket->GetFdHandle());
+        return HCCL_SUCCESS;
+    }
+
+    EXECEPTION_CATCH(Hccl::HrtRaSocketWhiteListDel(socket->GetFdHandle(), wlistInfoVec), return HCCL_E_INTERNAL);
+    handle2WhiteListMap_.erase(iter);
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult SocketMgr::DestroySocket(Hccl::Socket* socket)
+{
+    if (socket == nullptr) {
+        HCCL_WARNING("[DestroySocket] socket is nullptr, nothing to destroy.");
+        return HCCL_SUCCESS;
+    }
+
+    for (auto it = socketMap_.begin(); it != socketMap_.end(); ++it) {
+        if (it->second.get() == socket) {
+            HCCL_INFO("[DestroySocket] Erasing socket with tag[%s] from socketMap.", it->first.GetHccpTag().c_str());
+            socketMap_.erase(it);
+            break;
+        }
+    }
+
+    EXECEPTION_CATCH(socket->Destroy(),
+        HCCL_ERROR("[DestroySocket] Destroy failed for socket with tag[%s].", socket->Describe().c_str()));
     return HCCL_SUCCESS;
 }
 
