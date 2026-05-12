@@ -15,8 +15,31 @@
 #include "hcomm_res_defs.h"
 #include "channel_process.h"
 #include "endpoint_map.h"
+#include "next/comms/endpoint_pairs/channels/aiv/aiv_urma_channel.h"
+#include "next/comms/endpoint_pairs/channels/aicpu/aicpu_ts_urma_channel.h"
+#include "next/comms/endpoint_pairs/channels/aicpu/aicpu_ts_roce_channel_v2.h"
 
 using namespace hcomm;
+
+HcclResult StubBuildChannelEntityToDevice(hcomm::AivUrmaChannel *channel, void **devPtr)
+{
+    (void)channel;
+    if (devPtr == nullptr) {
+        return HCCL_E_PTR;
+    }
+    *devPtr = reinterpret_cast<void *>(0x5678);
+    return HCCL_SUCCESS;
+}
+
+HcclResult StubBuildAndGetDevChannelEntity(hcomm::AicpuTsRoceChannelV2 *channel, uint64_t *devPtr)
+{
+    (void)channel;
+    if (devPtr == nullptr) {
+        return HCCL_E_PTR;
+    }
+    *devPtr = static_cast<uint64_t>(0x6789);
+    return HCCL_SUCCESS;
+}
 
 class HcommCAdptTest : public testing::Test {
 protected:
@@ -143,6 +166,87 @@ TEST_F(HcommCAdptTest, ut_HcommChannelGetRemoteMems_When_Normal_Expect_Success)
         .will(returnValue(HCCL_SUCCESS));
     HcommResult ret = HcommChannelGetRemoteMems(channelHandle, &memNum, &remoteMems, &memTags);
     EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(HcommCAdptTest, ut_HcommChannelGetPtrByHandle_When_ParamsInvalid_Expect_Error)
+{
+    ChannelHandle channelList[1] = {0x12345};
+    ChannelPtr channelPtr[1] = {0};
+
+    EXPECT_EQ(HcommChannelGetPtrByHandle(nullptr, 1, channelPtr), HCCL_E_PTR);
+    EXPECT_EQ(HcommChannelGetPtrByHandle(channelList, 1, nullptr), HCCL_E_PTR);
+    EXPECT_EQ(HcommChannelGetPtrByHandle(channelList, 0, channelPtr), HCCL_E_PARA);
+    EXPECT_EQ(HcommChannelGetPtrByHandle(channelList, 1024 * 1024 + 1, channelPtr), HCCL_E_PARA);
+}
+
+TEST_F(HcommCAdptTest, ut_HcommChannelGetPtrByHandle_When_AivUrma_Expect_FillArray)
+{
+    EndpointHandle endpointHandle = reinterpret_cast<EndpointHandle>(0x12345);
+    HcommChannelDesc channelDesc{};
+    (void)HcommChannelDescInit(&channelDesc, 1);
+    hcomm::AivUrmaChannel aivUrmaChannel(endpointHandle, channelDesc);
+    void *channel = &aivUrmaChannel;
+    ChannelHandle channelList[1] = {0x12345};
+    ChannelPtr channelPtr[1] = {0};
+
+    MOCKER(ChannelProcess::ChannelGet)
+        .stubs()
+        .with(any(), outBoundP(&channel, sizeof(channel)))
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hcomm::AivUrmaChannel::BuildChannelEntityToDevice, HcclResult(hcomm::AivUrmaChannel::*)(void **))
+        .stubs()
+        .will(invoke(StubBuildChannelEntityToDevice));
+
+    HcommResult ret = HcommChannelGetPtrByHandle(channelList, 1, channelPtr);
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(channelPtr[0], static_cast<ChannelPtr>(0x5678));
+}
+
+TEST_F(HcommCAdptTest, ut_HcommChannelGetPtrByHandle_When_AicpuTsRoceV2_Expect_FillArray)
+{
+    EndpointHandle endpointHandle = reinterpret_cast<EndpointHandle>(0x12345);
+    HcommChannelDesc channelDesc{};
+    (void)HcommChannelDescInit(&channelDesc, 1);
+    hcomm::AicpuTsRoceChannelV2 aicpuTsRoceChannelV2(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    void *channel = &aicpuTsRoceChannelV2;
+    ChannelHandle channelList[1] = {0x12345};
+    ChannelPtr channelPtr[1] = {0};
+
+    MOCKER(ChannelProcess::ChannelGet)
+        .stubs()
+        .with(any(), outBoundP(&channel, sizeof(channel)))
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hcomm::AicpuTsRoceChannelV2::BuildAndGetDevChannelEntity,
+        HcclResult(hcomm::AicpuTsRoceChannelV2::*)(uint64_t *))
+        .stubs()
+        .will(invoke(StubBuildAndGetDevChannelEntity));
+
+    HcommResult ret = HcommChannelGetPtrByHandle(channelList, 1, channelPtr);
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(channelPtr[0], static_cast<ChannelPtr>(0x6789));
+}
+
+TEST_F(HcommCAdptTest, ut_HcommChannelGetPtrByHandle_When_ChannelKindUnsupported_Expect_E_PARA)
+{
+    EndpointHandle endpointHandle = reinterpret_cast<EndpointHandle>(0x12345);
+    HcommChannelDesc channelDesc{};
+    (void)HcommChannelDescInit(&channelDesc, 1);
+    hcomm::AicpuTsUrmaChannel aicpuTsUrmaChannel(endpointHandle, channelDesc);
+    void *channel = &aicpuTsUrmaChannel;
+    ChannelHandle channelList[1] = {0x12345};
+    ChannelPtr channelPtr[1] = {0};
+
+    MOCKER(ChannelProcess::ChannelGet)
+        .stubs()
+        .with(any(), outBoundP(&channel, sizeof(channel)))
+        .will(returnValue(HCCL_SUCCESS));
+
+    HcommResult ret = HcommChannelGetPtrByHandle(channelList, 1, channelPtr);
+
+    EXPECT_EQ(ret, HCCL_E_PARA);
+    EXPECT_EQ(channelPtr[0], static_cast<ChannelPtr>(0));
 }
 
 TEST_F(HcommCAdptTest, ut_HcommCollectiveChannelCreate_When_Normal_Expect_Success)
