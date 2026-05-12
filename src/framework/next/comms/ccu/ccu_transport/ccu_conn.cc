@@ -22,6 +22,7 @@
 #include "buffer.h"
 #include "local_ub_rma_buffer.h"
 #include "rdma_handle_manager.h"
+#include "env_config.h"
 
 namespace hcomm {
 
@@ -120,32 +121,181 @@ HcclResult CcuConnection::StatusMachine()
     return HcclResult::HCCL_SUCCESS;
 }
 
+// ==================== TA 档位映射表 ====================
+// TA 芯片挡位 = hw_value / 8
+// 挡位 0 (0-7):   512ms
+// 挡位 1 (8-15):  1000ms (1s)
+// 挡位 2 (16-23): 8000ms (8s)
+// 挡位 3 (24-31): 32000ms (32s)
+// 各挡位对应的最小硬件配置值
+constexpr uint8_t TA_HW_GEAR0_BASE = 0;
+constexpr uint8_t TA_HW_GEAR1_BASE = 8;
+constexpr uint8_t TA_HW_GEAR2_BASE = 16;
+constexpr uint8_t TA_HW_GEAR3_BASE = 24;
+static constexpr uint32_t TA_TIMEOUT_MS_GEAR0 = 512;
+static constexpr uint32_t TA_TIMEOUT_MS_GEAR1 = 1000;
+static constexpr uint32_t TA_TIMEOUT_MS_GEAR2 = 8000;
+static constexpr uint32_t TA_TIMEOUT_MS_GEAR3 = 32000;
+ 
+// AT 档位 -> 单轮超时时间(ms) 的映射表
+// at=0 -> 16ms
+// at=1 -> 128ms
+// at=2 -> 1000ms (1s)
+// at=3 -> 4000ms (4s)
+static constexpr uint32_t AT_TIMEOUT_MAP[4] = {16, 128, 1000, 4000};
+ 
+// 合法的 AT 档位范围
+static constexpr uint8_t AT_GEAR_MIN = 0;
+static constexpr uint8_t AT_GEAR_MAX = 3;
+ 
+// 默认 AT 档位（异常降级用）
+static constexpr uint8_t AT_GEAR_DEFAULT = 2; // 默认 1s
+ 
+HcclResult CcuConnection::CalcTotalTimeout(uint32_t &outTotalTimeoutMs)
+{
+    TpHandle tpHandle = tpInfo_.tpHandle;
+    uint32_t attrBitmap = 0;
+    struct TpAttr tpAttr = {0};
+    RequestHandle reqHandle{0};
+    CHK_RET(HrtRaGetTpAttrAsync(ctxHandle_, tpHandle, attrBitmap, tpAttr, reqHandle));
+
+    // 1. 读取结构体中的原始值
+    uint8_t rawAtGear = tpAttr.at;
+    uint8_t rawRetryTimes = tpAttr.retryTimesInit;
+
+    // 2. 校验并确定最终使用的 AT 档位
+    uint8_t finalAtGear = rawAtGear;
+    if (rawAtGear < AT_GEAR_MIN || rawAtGear > AT_GEAR_MAX) {
+        finalAtGear = AT_GEAR_DEFAULT;
+        HCCL_WARNING("[TpTimeoutCalculator] Invalid at gear[%u], expect [%u, %u], use default gear[%u].", rawAtGear,
+            AT_GEAR_MIN, AT_GEAR_MAX, finalAtGear);
+    }
+
+    // 3. 查表获取单轮 AT 超时时间
+    uint32_t singleAtTimeoutMs = AT_TIMEOUT_MAP[finalAtGear];
+
+    // 4. 计算总超时时间：单轮时间 * 重传次数
+    uint32_t totalTimeoutMs = singleAtTimeoutMs * static_cast<uint32_t>(rawRetryTimes);
+
+    // 5. 赋值输出
+    outTotalTimeoutMs = totalTimeoutMs;
+
+    HCCL_INFO("[TpTimeoutCalculator] TP timeout calc success: "
+              "raw_at_gear[%u], final_at_gear[%u], single_timeout[%ums], "
+              "retry_times_init[%u], total_timeout[%ums].",
+        rawAtGear, finalAtGear, singleAtTimeoutMs, rawRetryTimes, totalTimeoutMs);
+
+    return HCCL_SUCCESS;
+}
+ 
+uint32_t TaHwValueToMs(uint8_t hwValue)
+{
+    uint8_t gear = hwValue / 8; // 芯片挡位 = 配置值 / 8
+    switch (gear) {
+        case 0:
+            return TA_TIMEOUT_MS_GEAR0; // 512ms
+        case 1:
+            return TA_TIMEOUT_MS_GEAR1; // 1s
+        case 2:
+            return TA_TIMEOUT_MS_GEAR2; // 8s
+        case 3:
+            return TA_TIMEOUT_MS_GEAR3; // 32s
+        default:
+            return TA_TIMEOUT_MS_GEAR2; // 异常兜底 8s
+    }
+}
+ 
+uint8_t FindMinTaHwValueGreaterThan(uint32_t tpTotalTimeoutMs)
+{
+    uint8_t finalHwValue = 0;
+ 
+    // 按挡位从小到大依次判断，找到第一个大于目标时间的挡位
+    if (tpTotalTimeoutMs < TA_TIMEOUT_MS_GEAR0) {
+        finalHwValue = TA_HW_GEAR0_BASE;
+    } else if (tpTotalTimeoutMs < TA_TIMEOUT_MS_GEAR1) {
+        finalHwValue = TA_HW_GEAR1_BASE;
+    } else if (tpTotalTimeoutMs < TA_TIMEOUT_MS_GEAR2) {
+        finalHwValue = TA_HW_GEAR2_BASE;
+    } else {
+        // 超过8s或等于8s，直接使用最大挡位32s
+        finalHwValue = TA_HW_GEAR3_BASE;
+    }
+ 
+    // 打印调试日志，方便线上定位
+    HCCL_DEBUG("[FindMinTaHwValue] tp_total_timeout[%ums], selected_gear_hw_value[%u], corresponding_timeout[%ums]",
+        tpTotalTimeoutMs, finalHwValue,
+        (finalHwValue == TA_HW_GEAR0_BASE)   ? TA_TIMEOUT_MS_GEAR0
+        : (finalHwValue == TA_HW_GEAR1_BASE) ? TA_TIMEOUT_MS_GEAR1
+        : (finalHwValue == TA_HW_GEAR2_BASE) ? TA_TIMEOUT_MS_GEAR2
+                                             : TA_TIMEOUT_MS_GEAR3);
+ 
+    return finalHwValue;
+}
+ 
+HcclResult CcuConnection::GetTaTimeOut()
+{
+    TpHandle tpHandle = tpInfo_.tpHandle;
+    uint32_t attrBitmap = 0;
+    struct TpAttr tpAttr = {0};
+    RequestHandle reqHandle{0};
+    CHK_RET(HrtRaGetTpAttrAsync(ctxHandle_, tpHandle, attrBitmap, tpAttr, reqHandle));
+ 
+    u8 envValue = EnvConfig::GetExternalInputUBTimeOut();
+    
+    if (tpProtocol_ == TpProtocol::CTP) {
+        errTimeout_ = envValue;
+        return HCCL_SUCCESS;
+    }
+ 
+    uint32_t envTimeoutMs = TaHwValueToMs(envValue);
+    uint32_t tpTimeOutMs = 0;
+    CHK_RET(CalcTotalTimeout(tpTimeOutMs));
+
+    if (envTimeoutMs < tpTimeOutMs) {
+        errTimeout_ = FindMinTaHwValueGreaterThan(tpTimeOutMs);
+        HCCL_WARNING("[TaTimeoutFinalDecider] Env timeout [%ums] < TP timeout [%ums]. Auto upgrade TA to "
+                     "hw_val[%u] (%ums).",
+            envTimeoutMs, tpTimeOutMs, errTimeout_, TaHwValueToMs(errTimeout_));
+    } else {
+        // 规则: 否则，直接使用环境变量对应的挡位 (对齐到 0/8/16/24)
+        // 注意：这里我们取环境变量所在挡位的基准值 (例如 env=10 -> 取 8)
+        errTimeout_ = envValue;
+        HCCL_INFO("[TaTimeoutFinalDecider] Env timeout [%ums] >= TP timeout [%ums]. Use env gear base "
+                  "hw_val[%u] (%ums).",
+            envTimeoutMs, tpTimeOutMs, envValue, envTimeoutMs);
+    }
+    return HCCL_SUCCESS;
+}
+
 HcclResult CcuConnection::UpdateInitStatus()
 {
     switch (innerStatus_) {
         case InnerStatus::INIT:
-        case InnerStatus::JETTY_CREATING: {
-            auto ret = CreateJetty();
+        case InnerStatus::TP_INFO_GETTING: {
+            auto ret = GetTpInfo();
             if (ret == HcclResult::HCCL_E_AGAIN) {
-                innerStatus_ = InnerStatus::JETTY_CREATING;
+                innerStatus_ = InnerStatus::TP_INFO_GETTING;
                 break; // 状态不改变退出，下轮状态机进入继续执行
             }
             CHK_RET(ret);
 
-            ret = GetTpInfo(); // 不退出继续调用下个异步接口
+            GetTaTimeOut();
+            ret = CreateJetty(); // 不退出继续调用下个异步接口
             if (ret == HcclResult::HCCL_E_AGAIN) {
-                innerStatus_ = InnerStatus::TP_INFO_GETTING;
+                innerStatus_ = InnerStatus::JETTY_CREATING;
                 break;
             }
             CHK_RET(ret);
-            // 如果有缓存的tp信息，可以直接完成
+
             innerStatus_ = InnerStatus::EXCHANGEABLE;
-            status_      = CcuConnStatus::EXCHANGEABLE;
+            status_ = CcuConnStatus::EXCHANGEABLE;
             break;
         }
-        case InnerStatus::TP_INFO_GETTING: {
-            auto ret = GetTpInfo(); // 不退出继续调用下个异步接口
+        case InnerStatus::JETTY_CREATING: {
+            GetTaTimeOut();
+            auto ret = CreateJetty();
             if (ret == HcclResult::HCCL_E_AGAIN) {
+                innerStatus_ = InnerStatus::JETTY_CREATING;
                 break; // 状态不改变退出，下轮状态机进入继续执行
             }
             CHK_RET(ret);
@@ -169,7 +319,7 @@ HcclResult CcuConnection::CreateJetty()
 
     isJettyCreated_ = true;
     for (size_t i = 0; i < jettyNum_; i++) {
-        auto ret = ccuJettys_[i]->CreateJetty();
+        auto ret = ccuJettys_[i]->CreateJetty(errTimeout_);
         if (ret == HcclResult::HCCL_E_AGAIN) {
             // 不提供日志避免刷屏
             isJettyCreated_ = isJettyCreated_ && false;

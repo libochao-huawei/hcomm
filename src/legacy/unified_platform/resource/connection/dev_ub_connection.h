@@ -84,10 +84,12 @@ public:
 
 protected:
     TpProtocol     tpProtocol{TpProtocol::INVALID};
+    void           GetTimeOut();
+    u8             timeOut{8};
 
 private:
     MAKE_ENUM(UbConnStatus,
-        INIT, TP_INFO_GETTING, JETTY_CREATED,
+        INIT, TP_INFO_GETTING, JETTY_CREATING, JETTY_CREATED,
         JETTY_IMPORTING,
         READY,
         CONN_INVALID);
@@ -139,6 +141,8 @@ private:
 
     CqCreateInfo cqInfo_{0};
 
+    bool isdevUsed{false};
+
     bool CheckRequestResult();
     void ThrowAbnormalStatus(std::string funcName);
 
@@ -168,6 +172,7 @@ private:
     HcclResult                SetTpAttrAsync();
     HcclResult                GetTpAttrAsync();
     HcclResult                Ipv4ToIpArray(const char *ipv4Str, uint8_t ipArr[16U]);
+    HcclResult                CalcTotalTimeout(uint32_t &outTotalTimeoutMs);
 };
 
 class DevUbTpConnection : public DevUbConnection {

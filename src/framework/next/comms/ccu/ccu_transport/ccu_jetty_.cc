@@ -57,7 +57,8 @@ HcclResult CcuJetty::Init()
     const auto jettyMode = HrtJettyMode::CCU_CCUM_CACHE; // 当前仅支持该模式
     inParam_ = HrtRaUbCreateJettyParam{jfcHandle, jfcHandle, tokenValue,
         tokenIdHandle, jettyMode, jettyInfo_.taJettyId, jettyInfo_.sqBufVa,
-        jettyInfo_.sqBufSize, jettyInfo_.wqeBBStartId, jettyInfo_.sqDepth};
+        jettyInfo_.sqBufSize, jettyInfo_.wqeBBStartId, jettyInfo_.sqDepth, 8}; // CTP默认为8s
+    // TODO: 读取环境变量HCCL_UB_TIMEOUT，配置errTimeout档位
     EXCEPTION_HANDLE_END
 
     return HcclResult::HCCL_SUCCESS;

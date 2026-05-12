@@ -76,6 +76,8 @@ using HrtRaUbCreateJettyParam = struct HrtRaUbJettyCreateParamDef {
     JfcHandle sjfcHandle{nullptr};
     JfcHandle rjfcHandle{nullptr};
 
+    u8 errTimeout{8};
+
     // CCU的DB需要注册，填写tokenValue
     u32 tokenValue{0};
     TokenIdHandle tokenIdHandle{0};
@@ -103,10 +105,11 @@ using HrtRaUbCreateJettyParam = struct HrtRaUbJettyCreateParamDef {
 
     HrtRaUbJettyCreateParamDef(JfcHandle sjfcHandle, JfcHandle rjfcHandle,
         u32 tokenValue, TokenIdHandle tokenIdHandle, HrtJettyMode jettyMode,
-        u32 jettyId, u64 sqBufVa, u32 sqBufSize, u32 sqeBufIndex, u32 sqDepth)
+        u32 jettyId, u64 sqBufVa, u32 sqBufSize, u32 sqeBufIndex, u32 sqDepth, u8 errTimeout)
         : sjfcHandle(sjfcHandle), rjfcHandle(rjfcHandle), tokenValue(tokenValue),
           tokenIdHandle(tokenIdHandle), jettyMode(jettyMode), jettyId(jettyId),
-          sqBufVa(sqBufVa), sqBufSize(sqBufSize), sqeBufIndex(sqeBufIndex), sqDepth(sqDepth)
+          sqBufVa(sqBufVa), sqBufSize(sqBufSize), sqeBufIndex(sqeBufIndex),
+          sqDepth(sqDepth), errTimeout(errTimeout)
     {
     }
 };
