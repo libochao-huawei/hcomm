@@ -22,7 +22,6 @@
 #include "workspace_resource.h"
 #include "transport_heterog_def.h"
 #include "transport_heterog_pub.h"
-#include "tcp_send_thread_pool.h"
 #include "dlhal_function.h"
 #include "mr_manager.h"
 #include "spin_mutex.h"

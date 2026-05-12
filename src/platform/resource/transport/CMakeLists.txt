@@ -15,13 +15,9 @@ set(src_list
 
 target_sources(hccl_plf PRIVATE
     ${src_list}
-    tcp_send_thread_pool.cc
-    tcp_recv_task.cc
 )
 
 target_sources(hccd PRIVATE
-    tcp_recv_task.cc
-    tcp_send_thread_pool.cc
     transport_base.cc
     mem_name_repository.cc
 )
