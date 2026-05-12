@@ -485,11 +485,21 @@ TpInfo CcuComponent::RequestNewTpInfo(const IpAddress &srcIpAddr, const IpAddres
     TpInfo tpInfo{};
 
     auto &tpManager = TpManager::GetInstance(devLogicId);
+    // 与 Next `MakeLoopGetTpInfoParam` 对齐：环回与通信域 hcclQos 解耦；SL 由 GetTpAttr.slBitmap + loopFirstTpLowestSl 决定
+    RaUbGetTpInfoParam loopParam{};
+    loopParam.locAddr = srcIpAddr;
+    loopParam.rmtAddr = dstIpAddr;
+    loopParam.tpProtocol = LOOP_JETTY_PROTOCOL;
+    loopParam.qos = 0U;
+    loopParam.slLevelCount = 0U;
+    loopParam.loopFirstTpLowestSl = true;
+    loopParam.ccuLoopbackGetTpInfo = true;
+
     const auto timeout = std::chrono::milliseconds(LOOP_CHANNEL_WAIT_TIMEOUT_MS);
     const auto startTime = std::chrono::steady_clock::now();
-    auto ret = tpManager.GetTpInfo({srcIpAddr, dstIpAddr, LOOP_JETTY_PROTOCOL}, tpInfo);
+    auto ret = tpManager.GetTpInfo(loopParam, tpInfo);
     while (ret == HcclResult::HCCL_E_AGAIN) {
-        ret = tpManager.GetTpInfo({srcIpAddr, dstIpAddr, LOOP_JETTY_PROTOCOL}, tpInfo);
+        ret = tpManager.GetTpInfo(loopParam, tpInfo);
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
             THROW<InternalException>("[CcuComponent][%s] failed, get tp info "
                 "timeout[%d ms], devLogicId[%d].", __func__, timeout, devLogicId);
@@ -497,8 +507,8 @@ TpInfo CcuComponent::RequestNewTpInfo(const IpAddress &srcIpAddr, const IpAddres
     }
 
     if (ret != HcclResult::HCCL_SUCCESS) {
-        THROW<InternalException>("[CcuComponent][%s] failed, ret[%u], "
-            "devLogicId[%d].", __func__, devLogicId, ret);
+        THROW<InternalException>("[CcuComponent][%s] failed, ret[%d], "
+            "devLogicId[%d].", __func__, static_cast<int>(ret), devLogicId);
     }
 
     return tpInfo;

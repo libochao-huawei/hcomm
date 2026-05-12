@@ -600,6 +600,8 @@ using RaUbGetTpInfoParam = struct RaUbGetTpInfoParamDef {
     uint32_t qos{UB_QOS_DEFAULT};
     uint32_t slLevelCount{0U};
     bool loopFirstTpLowestSl{false};
+    /// 与 Next `GetTpInfoParam::ccuLoopbackGetTpInfo` 对齐：标识 CCU 设备环回 GetTpInfo（便于日志/后续分支）
+    bool ccuLoopbackGetTpInfo{false};
 
     explicit RaUbGetTpInfoParamDef() = default;
     RaUbGetTpInfoParamDef(const IpAddress &locAddr, const IpAddress &rmtAddr, TpProtocol tpProtocol)
@@ -607,9 +609,10 @@ using RaUbGetTpInfoParam = struct RaUbGetTpInfoParamDef {
 
     std::string Describe() const {
         return StringFormat(
-            "RaUbGetTpInfoParam[locAddr=%s, rmtAddr=%s, tpProtocol=%s, qos=%u, loopFirstTpLowestSl=%d]",
+            "RaUbGetTpInfoParam[locAddr=%s, rmtAddr=%s, tpProtocol=%s, qos=%u, loopFirstTpLowestSl=%d, ccuLoop=%d]",
             locAddr.Describe().c_str(), rmtAddr.Describe().c_str(), tpProtocol.Describe().c_str(),
-            static_cast<unsigned>(qos & 0xFFU), static_cast<int>(loopFirstTpLowestSl));
+            static_cast<unsigned>(qos & 0xFFU), static_cast<int>(loopFirstTpLowestSl),
+            static_cast<int>(ccuLoopbackGetTpInfo));
     }
 };
 
