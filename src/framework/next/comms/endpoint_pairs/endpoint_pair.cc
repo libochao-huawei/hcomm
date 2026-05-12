@@ -31,7 +31,6 @@ EndpointPair::~EndpointPair()
 
 HcclResult EndpointPair::Init()
 {
-    EXECEPTION_CATCH(socketMgr_ = std::make_unique<SocketMgr>(), return HCCL_E_PTR);
     channelHandles_.clear();
     return HCCL_SUCCESS;
 }
@@ -46,7 +45,7 @@ HcclResult EndpointPair::GetSocket(const std::string &socketTag, const uint32_t 
         linkTag += ("_" + linkData.GetReuseIdx());
     }
     Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, listenPort, linkTag);
-    CHK_RET(socketMgr_->GetSocket(socketConfig, socket));
+    CHK_RET(SocketMgr::GetInstance().GetSocket(socketConfig, socket));
     return HCCL_SUCCESS;
 }
 
@@ -69,7 +68,7 @@ HcclResult EndpointPair::GetSocketWithRank(const uint32_t myRank, const uint32_t
     /* A2: host nic(cpu roce channel) -- device nic(transport ibv)时，两边ip地址格式不一样，判断大小算法不匹配
      * 修改成按照rank id大小判断server和client */
     Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, listenPort, linkTag, connectMode, myRank, rmtRank);
-    CHK_RET(socketMgr_->GetSocket(socketConfig, socket));
+    CHK_RET(SocketMgr::GetInstance().GetSocket(socketConfig, socket));
     return HCCL_SUCCESS;
 }
 
