@@ -18,6 +18,8 @@
 #include "env_config/env_config.h"
 #include "channel_process.h"
 #include "dlprof_function.h"
+#include "hcom_common.h"
+#include "cluster_monitor.h"
 
 using namespace hcomm;
 
@@ -480,6 +482,15 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
             HCCL_ERROR("[%s] failed to create channel, channelIndex[%u], remoteRank[%u], engine[%d], reuseIndex[%u]",
                 __func__, i + 1, remoteRank, engine, reuseIdx),
             ret);
+        
+        // 向心跳模块注册EndpointHandle句柄
+        uint32_t devLogicId{0};
+        uint32_t devPhyId{0};
+        devLogicId = static_cast<uint32_t>(HcclGetThreadDeviceId());
+        CHK_RET(hrtGetDevicePhyIdByIndex(devLogicId, devPhyId));
+        // 检查返回值吗??
+        ClusterMonitor::GetInstance(devLogicId).RegisterEpHandleToClusterMonitor(devPhyId, epHandle);
+
         if (idx != UNREUSE_CHANNEL_IDX) {
             reuseIdx++;
         }
