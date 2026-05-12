@@ -22,7 +22,7 @@ namespace Hccl {
 constexpr u32 TEN_MILLISECOND_OF_USLEEP = 10000;
 
 LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle rdmaHandle)
-    : LocalRmaBuffer(buf, RmaType::UB), rdmaHandle(rdmaHandle)
+    : LocalUbRmaBufferBase(buf), rdmaHandle(rdmaHandle)
 {
      if (rdmaHandle == nullptr) {
         THROW<NullPtrException>("LocalUbRmaBuffer's rdmaHandle is NULL");
@@ -45,8 +45,7 @@ LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle rdmaH
                memHandle, keySize);
 }
 
-LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, void *netDevice, bool flag)
-    : LocalRmaBuffer(buf, RmaType::UB)
+LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, void *netDevice, bool flag) : LocalUbRmaBufferBase(buf)
 {
     (void)flag;
     if (netDevice == nullptr) {
@@ -71,7 +70,7 @@ LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, void *netDevice,
               memHandle, keySize);
 }
 
-LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf) : LocalRmaBuffer(buf, RmaType::UB), rdmaHandle(nullptr)
+LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf) : LocalUbRmaBufferBase(buf), rdmaHandle(nullptr)
 {
     rtMemUbTokenInfo info;
     info.va   = buf->GetAddr();
@@ -110,21 +109,6 @@ LocalUbRmaBuffer::~LocalUbRmaBuffer()
     }
 }
 
-u32 LocalUbRmaBuffer::GetTokenId() const
-{
-    return tokenId;
-}
-
-u32 LocalUbRmaBuffer::GetTokenValue() const
-{
-    return tokenValue;
-}
-
-TokenIdHandle LocalUbRmaBuffer::GetTokenIdHandle() const
-{
-    return tokenIdHandle;
-}
-
 static bool isInitialized = false;  // 标记是否已经初始化
 static u32 token = 0;  // 存储生成的随机数
 static std::mutex ubTokenMutex;
@@ -140,5 +124,102 @@ u32 GetUbToken()
     return token;
 }
 
+u32 GetUbTokenUnique()
+{
+    std::lock_guard<std::mutex> lock(ubTokenMutex);
+    s32 devLogicId = HrtGetDevice();
+    u32 devPhyId = HrtGetDevicePhyIdByIndex(devLogicId);
+    u32 uniqueToken = 0;
+    HrtRaGetSecRandom(&uniqueToken, devPhyId);
+    return uniqueToken;
+}
+
+LocalUbAggregatedRmaBuffer::LocalUbAggregatedRmaBuffer(std::shared_ptr<Buffer> buf, const std::vector<RdmaHandle> &handles)
+    : LocalUbRmaBufferBase(buf)
+{
+    if (handles.empty()) {
+        THROW<NullPtrException>("LocalUbAggregatedRmaBuffer's handles is empty");
+    }
+
+    std::pair<u64, u64> alignBuf = BufAlign(buf->GetAddr(), buf->GetSize());
+
+    for (const auto &handle : handles) {
+        if (handle == nullptr) {
+            THROW<NullPtrException>("LocalUbAggregatedRmaBuffer's rdmaHandle is NULL");
+        }
+
+        PortAggregationContext ctx;
+        ctx.rdmaHandle = handle;
+        ctx.tokenValue = GetUbTokenUnique();
+
+        const auto &tokenIdInfoPair = RdmaHandleManager::GetInstance().GetTokenIdInfo(
+            handle, BufferKey<uintptr_t, u64>{alignBuf.first, alignBuf.second});
+        ctx.tokenIdHandle = tokenIdInfoPair.first;
+        ctx.tokenId = tokenIdInfoPair.second;
+
+        HrtRaUbLocMemRegParam lmemReg{alignBuf.first, alignBuf.second, ctx.tokenValue, ctx.tokenIdHandle, 1};
+        ctx.param = HrtRaUbLocalMemReg(handle, lmemReg);
+        ctx.memHandle = ctx.param.handle;
+        ctx.segVa = ctx.param.targetSegVa;
+
+        portCtxs_.push_back(ctx);
+
+        HCCL_INFO("[LocalUbAggregatedRmaBuffer::%s] register handle[%p], lmemHandle[0x%llx], keySize[%u], tokenValue[%u]",
+                  __func__, handle, ctx.memHandle, ctx.param.keySize, ctx.tokenValue);
+    }
+
+    HCCL_INFO("[LocalUbAggregatedRmaBuffer::%s] end, handleCount[%zu]", __func__, handles.size());
+}
+
+LocalUbAggregatedRmaBuffer::~LocalUbAggregatedRmaBuffer()
+{
+    for (size_t i = 0; i < portCtxs_.size(); ++i) {
+        const auto &ctx = portCtxs_[i];
+        if (ctx.rdmaHandle != nullptr && ctx.memHandle != 0) {
+            HCCL_INFO("[LocalUbAggregatedRmaBuffer::%s] port[%zu] rdmaHandle[%p], lmemHandle[0x%llx]",
+                      __func__, i, ctx.rdmaHandle, ctx.memHandle);
+            DECTOR_TRY_CATCH("LocalUbAggregatedRmaBuffer", HrtRaUbLocalMemUnreg(ctx.rdmaHandle, ctx.memHandle));
+        }
+    }
+}
+
+string LocalUbAggregatedRmaBuffer::Describe() const
+{
+    return StringFormat("LocalUbAggregatedRmaBuffer[handleCount=%zu, buf=%s]",
+                        portCtxs_.size(), buf->Describe().c_str());
+}
+
+std::unique_ptr<Serializable> LocalUbAggregatedRmaBuffer::GetExchangeDto()
+{
+    auto dto = make_unique<ExchangeAggregatedUbBufferDto>(
+        buf->GetAddr(),
+        buf->GetSize(),
+        buf->GetMemType(),
+        buf->GetMemTag().c_str());
+
+    dto->portDtos.reserve(portCtxs_.size());
+
+    for (const auto &ctx : portCtxs_) {
+        ExchangeAggregatedUbBufferDto::PortDto portDto;
+        portDto.tokenValue = ctx.tokenValue;
+        portDto.tokenId = ctx.tokenId;
+        portDto.keySize = ctx.param.keySize;
+        portDto.segVa = ctx.segVa;
+        memcpy_s(portDto.key, HRT_UB_MEM_KEY_MAX_LEN, ctx.param.key, HRT_UB_MEM_KEY_MAX_LEN);
+        dto->portDtos.push_back(portDto);
+    }
+
+    return std::unique_ptr<Serializable>(dto.release());
+}
+
+void *LocalUbAggregatedRmaBuffer::GetMemHandleByPortIdx(uint8_t idx)
+{
+    if (idx >= portCtxs_.size()) {
+        HCCL_ERROR("[LocalUbAggregatedRmaBuffer::%s] invalid port idx[%u], total ports[%zu]",
+                   __func__, idx, portCtxs_.size());
+        return nullptr;
+    }
+    return portCtxs_[idx].memHandle;
+}
 
 } // namespace Hccl
