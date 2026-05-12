@@ -23,6 +23,11 @@
 
 using namespace Hccl;
 
+namespace Hccl {
+uint32_t TaHwValueToMs(uint8_t hwValue);
+uint8_t FindMinTaHwValueGreaterThan(uint32_t tpTotalTimeoutMs);
+}
+
 class DevUbConnectionTest : public testing::Test {
 protected:
     static void SetUpTestCase()
@@ -349,4 +354,76 @@ TEST(DevUbConnectionTest, ctp_import_test)
 
     EXPECT_EQ(devUbConnection.GetStatus(), RmaConnStatus::READY);
     EXPECT_EQ(DevUbConnection::UbConnStatus::READY, devUbConnection.ubConnStatus);
+}
+
+TEST(DevUbConnectionTest, Ut_TaHwValueToMs_When_InputGear0_Expect_Return512ms)
+{
+    uint32_t timeoutMs = TaHwValueToMs(0);
+    EXPECT_EQ(timeoutMs, 512u);
+    timeoutMs = TaHwValueToMs(7);
+    EXPECT_EQ(timeoutMs, 512u);
+}
+
+TEST(DevUbConnectionTest, Ut_TaHwValueToMs_When_InputGear1_Expect_Return1000ms)
+{
+    uint32_t timeoutMs = TaHwValueToMs(8);
+    EXPECT_EQ(timeoutMs, 1000u);
+    timeoutMs = TaHwValueToMs(15);
+    EXPECT_EQ(timeoutMs, 1000u);
+}
+
+TEST(DevUbConnectionTest, Ut_TaHwValueToMs_When_InputGear2_Expect_Return8000ms)
+{
+    uint32_t timeoutMs = TaHwValueToMs(16);
+    EXPECT_EQ(timeoutMs, 8000u);
+    timeoutMs = TaHwValueToMs(23);
+    EXPECT_EQ(timeoutMs, 8000u);
+}
+
+TEST(DevUbConnectionTest, Ut_TaHwValueToMs_When_InputGear3_Expect_Return32000ms)
+{
+    uint32_t timeoutMs = TaHwValueToMs(24);
+    EXPECT_EQ(timeoutMs, 32000u);
+    timeoutMs = TaHwValueToMs(31);
+    EXPECT_EQ(timeoutMs, 32000u);
+}
+
+TEST(DevUbConnectionTest, Ut_TaHwValueToMs_When_InputInvalid_Expect_ReturnDefault8000ms)
+{
+    uint32_t timeoutMs = TaHwValueToMs(32);
+    EXPECT_EQ(timeoutMs, 8000u);
+    timeoutMs = TaHwValueToMs(100);
+    EXPECT_EQ(timeoutMs, 8000u);
+}
+
+TEST(DevUbConnectionTest, Ut_FindMinTaHwValueGreaterThan_When_LessThan512ms_Expect_Return0)
+{
+    uint8_t hwValue = FindMinTaHwValueGreaterThan(100);
+    EXPECT_EQ(hwValue, 0u);
+    hwValue = FindMinTaHwValueGreaterThan(511);
+    EXPECT_EQ(hwValue, 0u);
+}
+
+TEST(DevUbConnectionTest, Ut_FindMinTaHwValueGreaterThan_When_LessThan1000ms_Expect_Return8)
+{
+    uint8_t hwValue = FindMinTaHwValueGreaterThan(512);
+    EXPECT_EQ(hwValue, 8u);
+    hwValue = FindMinTaHwValueGreaterThan(999);
+    EXPECT_EQ(hwValue, 8u);
+}
+
+TEST(DevUbConnectionTest, Ut_FindMinTaHwValueGreaterThan_When_LessThan8000ms_Expect_Return16)
+{
+    uint8_t hwValue = FindMinTaHwValueGreaterThan(1000);
+    EXPECT_EQ(hwValue, 16u);
+    hwValue = FindMinTaHwValueGreaterThan(7999);
+    EXPECT_EQ(hwValue, 16u);
+}
+
+TEST(DevUbConnectionTest, Ut_FindMinTaHwValueGreaterThan_When_GreaterOrEqual8000ms_Expect_Return24)
+{
+    uint8_t hwValue = FindMinTaHwValueGreaterThan(8000);
+    EXPECT_EQ(hwValue, 24u);
+    hwValue = FindMinTaHwValueGreaterThan(10000);
+    EXPECT_EQ(hwValue, 24u);
 }
