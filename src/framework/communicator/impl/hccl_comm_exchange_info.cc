@@ -13,6 +13,7 @@
 namespace hccl {
 HcclResult hcclComm::AddExchangeInfo(const void* data, uint32_t length)
 {
+    CHK_PTR_NULL(data);
     exchangeInfoBuf_.resize(length);
     s32 sRet = memcpy_s(exchangeInfoBuf_.data(), length, data, length);
     CHK_PRT_RET(sRet != EOK, 
@@ -23,6 +24,7 @@ HcclResult hcclComm::AddExchangeInfo(const void* data, uint32_t length)
 
 HcclResult hcclComm::GetExchangeInfo(uint32_t remoteRank, uint32_t length, void* data, uint32_t* actualLength)
 {
+    CHK_PTR_NULL(data);
     auto iter = remoteExchangeInfoMap_.find(remoteRank);
     if (iter == remoteExchangeInfoMap_.end()) {
         *actualLength = 0;
@@ -48,7 +50,7 @@ HcclResult hcclComm::GetExchangeInfo(uint32_t remoteRank, uint32_t length, void*
 HcclResult hcclComm::StoreRemoteExchangeInfo(uint32_t remoteRank, std::vector<u8>& data)
 {
     remoteExchangeInfoMap_[remoteRank] = std::move(data);
-    HCCL_INFO("[StoreRemoteExchangeInfo] success, remoteRank[%u], length[%zu].", remoteRank, data.size());
+    HCCL_INFO("[StoreRemoteExchangeInfo] success, remoteRank[%u], length[%zu].", remoteRank, remoteExchangeInfoMap_[remoteRank].size());
     return HCCL_SUCCESS;
 }
 
@@ -66,7 +68,7 @@ const std::vector<u8>& hcclComm::GetExchangeInfoBuf() const
 
 uint32_t hcclComm::GetExchangeInfoLen() const
 {
-    return exchangeInfoBuf_.size();
+    return static_cast<uint32_t>(exchangeInfoBuf_.size());
 }
 
 }
