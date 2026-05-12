@@ -412,7 +412,8 @@ HcclResult InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsA
     }
     InitFinalSliceDataParameters(slice, scratchMultiple, dataParameters);
     dataParameters.dataOffset[0] = (slice.loopTimes - 1) * slice.sliceCount * dataTypeSize_;
-    dataParameters.dataOffset[1] = dataParameters.dataOffset[0] + slice.finalSliceCountPart0 * dataTypeSize_;
+    dataParameters.dataOffset[1]
+        = dataParameters.dataOffset[0] + (slice.finalSliceCountPart0 + slice.finalTailCountPart0) * dataTypeSize_;
     CHK_RET(StageProcess(dataParameters, stageProcAlgParaVec));
     return HcclResult::HCCL_SUCCESS;
 }
