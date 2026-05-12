@@ -41,7 +41,7 @@ CcuJetty::CcuJetty(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo)
 
     inParam_ = HrtRaUbCreateJettyParam{jfcHandle, jfcHandle, tokenValue,
         tokenIdHandle, jettyMode, jettyInfo.taJettyId, jettyInfo.sqBufVa,
-        jettyInfo.sqBufSize, jettyInfo.wqeBBStartId, jettyInfo.sqDepth};
+        jettyInfo.sqBufSize, jettyInfo.wqeBBStartId, jettyInfo.sqDepth, 8};
 }
 
 CcuJetty::~CcuJetty()

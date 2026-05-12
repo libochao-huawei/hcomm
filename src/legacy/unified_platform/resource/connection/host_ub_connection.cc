@@ -276,7 +276,7 @@ void HostUbConnection::CreateJetty()
         HrtJettyMode::STANDARD, // peer模式只支持JETTY_MODE_URMA_NORMAL
         0, // HOST展开与AICPU展开传入jetty id为0，申请一个新的jetty
         0, // va由底层分配，此处填0即可。
-        size, 0, sqDepth}; // 非CCUv2不需要填写sqeBufIndex
+        size, 0, sqDepth, 8}; // 非CCUv2不需要填写sqeBufIndex
 
     repJetty_ = HrtRaUbCreateJetty(rdmaHandle, req);
 }

@@ -77,6 +77,7 @@ target_include_directories(hccl_v2 PRIVATE
     ${HCCL_BASE_DIR}/src/algorithm/base/alg_template
     ${HCCL_BASE_DIR}/src/algorithm/base/communicator
     ${HCCL_BASE_DIR}/src/platform/hccp/inc/network
+    ${HCCL_BASE_DIR}/src/framework/common/src/config
     ${RDMA_CORE_INCLUDE_DIR}
     ${HCCL_BASE_DIR}/src/platform/hccp/orion/hcomm_dev/inc/network
     ${HCCL_BASE_DIR}/externel_depends/tsch
