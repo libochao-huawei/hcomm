@@ -27,7 +27,6 @@ set(hccl_utest_misc_list
     ut_heartbeat.cc
     ut_transport_tcp.cc
     ut_transport_heterog_roce.cc
-    ut_transport_roce.cc
     ut_tcp_send_thread_pool.cc
     ut_mpi_recv_task.cc
     ut_p2p_mgmt.cc

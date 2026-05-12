@@ -17,7 +17,6 @@ set(src_list
 
 target_sources(hccl_plf PRIVATE
     ${src_list}
-    transport_roce.cc
 )
 
 target_sources(hccd PRIVATE
