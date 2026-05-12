@@ -142,9 +142,9 @@ add_dependencies(rs crypto_static)
 if(${PRODUCT_SIDE} STREQUAL "device")
     add_library(rs_device SHARED)
     # 克隆 rs 的属性
-    target_clone(
+    clone_cann_target(
         ORIGIN rs
-        NEW rs_device
+        OUTPUT rs_device
     )
     # 宏定义
     target_compile_definitions(rs_device PRIVATE
