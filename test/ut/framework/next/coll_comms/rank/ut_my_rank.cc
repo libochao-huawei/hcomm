@@ -632,6 +632,10 @@ TEST_F(MyRankTest, Ut_WaitAllAsyncComplete_When_AllOk_Expect_Success)
 TEST_F(MyRankTest, Ut_BatchExchange_When_NewRankConsistent_Expect_Success)
 {
     hcclComm comm;
+    
+    std::vector<u8> localData = {0xDE, 0xAD, 0xBE, 0xEF};
+    HcclResult ret = comm->AddExchangeInfo(localData.data(), localData.size());
+    EXPECT_EQ(ret, HCCL_SUCCESS);
 
     // mock Socket异步接口：GetAsyncStatus返回OK
     MOCKER_CPP(&Hccl::Socket::GetAsyncStatus)
