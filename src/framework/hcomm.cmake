@@ -104,6 +104,11 @@ target_include_directories(hcomm PRIVATE
 
     # src/legacy 头文件
     ${LEGACY_INCLUDE_LIST}
+
+    # 三方件头文件
+    ${THIRD_PARTY_NLOHMANN_PATH}
+    ${RDMA_CORE_INCLUDE_DIR}
+    ${URMA_INCLUDE_DIR}
 )
 
 if(BUILD_OPEN_PROJECT)
@@ -113,11 +118,6 @@ if(BUILD_OPEN_PROJECT)
     )
 
     target_include_directories(hcomm PRIVATE
-        # 三方件头文件
-        ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
-        ${RDMA_CORE_INCLUDE_DIR}
-        ${THIRD_PARTY_NLOHMANN_PATH}
-
         # runtime头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/
         # mmpa头文件
@@ -137,6 +137,8 @@ if(BUILD_OPEN_PROJECT)
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
+        # 三方件头文件
+        ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
     )
 
     target_link_directories(hcomm PRIVATE
