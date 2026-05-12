@@ -16,6 +16,7 @@
 #include "hccl_common.h"
 #include "exception_handler.h"
 #include "rdma_handle_manager.h"
+#include "orion_adapter_hccp.h"
 
 namespace hcomm {
 
@@ -136,6 +137,48 @@ HcclResult TpMgr::ReleaseTpInfo(const GetTpInfoParam &param, const TpInfo &tpInf
     locInfoMap.erase(locInfoIter);
     // 当前ub在unimport jetty时通过引用计数管理释放tp handle
     return HcclResult::HCCL_SUCCESS;
+}
+
+// AT 档位 -> 单轮超时时间(ms) 的映射表
+// at=0 -> 16ms
+// at=1 -> 128ms
+// at=2 -> 1000ms (1s)
+// at=3 -> 4000ms (4s)
+static constexpr uint32_t AT_TIMEOUT_MAP[4] = {16, 128, 1000, 4000};
+
+// 合法的 AT 档位范围
+static constexpr uint8_t AT_GEAR_MIN = 0;
+static constexpr uint8_t AT_GEAR_MAX = 3;
+
+// 默认 AT 档位（异常降级用）
+static constexpr uint8_t AT_GEAR_DEFAULT = 2; // 默认 1s
+
+HcclResult TpMgr::GetTpTotalTimeout(uint32_t devPhyId, CtxHandle ctxHandle, TpHandle tpHandle, uint32_t &outTotalTimeoutMs)
+{
+    uint32_t attrBitmap = 0;
+    struct TpAttr tpAttr = {0};
+    RequestHandle reqHandle{0};
+    CHK_RET(Hccl::HrtRaGetTpAttrAsync(devPhyId, ctxHandle, tpHandle, attrBitmap, tpAttr, reqHandle));
+    uint8_t rawAtGear = tpAttr.at;
+    uint8_t rawRetryTimes = tpAttr.retryTimesInit;
+
+    uint8_t finalAtGear = rawAtGear;
+    if (rawAtGear < AT_GEAR_MIN || rawAtGear > AT_GEAR_MAX) {
+        finalAtGear = AT_GEAR_DEFAULT;
+        HCCL_WARNING("%s Invalid at gear[%u], expect [%u, %u], use default gear[%u].", __func__, rawAtGear, AT_GEAR_MIN,
+            AT_GEAR_MAX, finalAtGear);
+    }
+
+    uint32_t singleAtTimeoutMs = AT_TIMEOUT_MAP[finalAtGear];
+    uint32_t totalTimeoutMs = singleAtTimeoutMs * static_cast<uint32_t>(rawRetryTimes + 1);
+    outTotalTimeoutMs = totalTimeoutMs;
+
+    HCCL_INFO("%s TP timeout calc success: "
+              "raw_at_gear[%u], final_at_gear[%u], single_timeout[%ums], "
+              "retry_times_init[%u], total_timeout[%ums].",
+        __func__, rawAtGear, finalAtGear, singleAtTimeoutMs, rawRetryTimes, totalTimeoutMs);
+
+    return HCCL_SUCCESS;
 }
 
 HcclResult TpMgr::FindAndGetTpInfo(const GetTpInfoParam &param, TpInfo &tpInfo)
