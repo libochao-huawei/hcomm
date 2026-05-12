@@ -14,7 +14,7 @@ add_library(aicpu_custom SHARED)
 # 克隆 ccl_kernel 属性
 target_clone(
     ORIGIN ccl_kernel
-    NEW aicpu_custom
+    OUTPUT aicpu_custom
     IGNORE_PROP LINK_LIBRARIES      # 忽略链接库属性
 )
 
