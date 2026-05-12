@@ -16,7 +16,7 @@ include(${HCOMM_DIR}/cmake/fetch_cann_cmake.cmake)
 project(hcomm_device)
 
 # 初始化 CANN 项目配置
-init_cann_project()
+init_cann_project(PREPEND_MODULE_PATH)
 
 message(STATUS "BUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}")
 message(STATUS "ASCEND_INSTALL_PATH=${ASCEND_INSTALL_PATH}")
@@ -25,6 +25,14 @@ message(STATUS "CANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH}")
 # cmake 配置
 include(${HCOMM_DIR}/cmake/config.cmake)
 include(${HCOMM_DIR}/cmake/func.cmake)
+
+# 查找依赖包
+find_cann_package(msprof MODULE REQUIRED)
+find_cann_package(securec MODULE REQUIRED)
+find_cann_package(unified_dlog MODULE REQUIRED)
+find_cann_package(mmpa MODULE REQUIRED)
+find_cann_package(runtime MODULE REQUIRED)
+find_cann_package(error_manager MODULE REQUIRED)
 
 # third_party
 include(${HCOMM_DIR}/cmake/hcomm_utils.cmake)
