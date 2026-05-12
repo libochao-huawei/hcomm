@@ -65,6 +65,11 @@ public:
         MACRO_THROW(NotSupportException, StringFormat("not supported."));
     }
 
+    virtual void TryLaunchTask();
+    {
+        MACRO_THROW(NotSupportException, StringFormat("not supported."));
+    }
+
     virtual void NotifyWait(u32 notifyId)
     {
         (void)notifyId;
