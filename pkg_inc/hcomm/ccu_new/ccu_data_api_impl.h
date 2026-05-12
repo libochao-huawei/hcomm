@@ -100,6 +100,14 @@ extern CcuResult CcuWhileEnd(const char *label);
 extern CcuResult CcuDoWhileBegin(const char *label);
 extern CcuResult CcuDoWhileEnd(CcuVariableHandle var, uint64_t immediate, CcuConditionType condType, const char *label);
 
+/*========== 函数调用操作 ==========*/
+extern CcuResult CcuFuncBlockLookup(const void *funcPtr, uint64_t *outHandle);
+extern CcuResult CcuFuncBlockBegin(const void *funcPtr, uint64_t *outHandle);
+extern CcuResult CcuFuncBlockEnd(uint64_t handle);
+extern CcuResult CcuFuncDefineInArg(uint64_t handle, CcuVariableHandle formal);
+extern CcuResult CcuFuncCall(uint64_t handle,
+    const CcuVariableHandle *inArgs, uint32_t numIn);
+
 /*
  * 控制流宏内部使用的标签栈接口（以 _ 前缀标识为内部 API，
  * 仅供 ccu_control_flow_macro.h 中的 CCU_IF / CCU_ELSE / CCU_DO / CCU_WHILE

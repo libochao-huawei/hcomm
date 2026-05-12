@@ -24,6 +24,7 @@
 #include "hcomm_c_adpt.h"
 
 #include "ccu_rep_context_v1.h"
+#include "ccu_rep_funccall_v1.h"
 #include "../../endpoint_pairs/channels/ccu/ccu_urma_channel.h"
 
 #include "ccu_log.h"
@@ -1546,6 +1547,131 @@ CcuResult CcuKernel::LoopSetParam(CcuLoop loop,
     desc.repLoopBlock->DefineArg(*formal);
     desc.paramBindings.push_back({*formal, *actual});
 
+    return CcuResult::CCU_SUCCESS;
+}
+
+CcuResult CcuKernel::FuncBlockLookup(const void *funcPtr, uint64_t *outHandle)
+{
+    if (funcPtr == nullptr || outHandle == nullptr) {
+        HCCL_ERROR("[CcuKernel::FuncBlockLookup] null pointer");
+        return CcuResult::CCU_E_PTR;
+    }
+    if (loopBodyDepth_ > 0 || inFuncBody_) {
+        if (inFuncBody_) {
+            funcBodyError_ = true;
+        }
+        HCCL_ERROR("[CcuKernel::FuncBlockLookup] ccu::CallFunc only allowed at top level");
+        return CcuResult::CCU_E_INTERNAL;
+    }
+
+    auto it = funcInstanceMap_.find(funcPtr);
+    *outHandle = (it == funcInstanceMap_.end()) ? 0 : it->second;
+    return CcuResult::CCU_SUCCESS;
+}
+
+CcuResult CcuKernel::FuncBlockBegin(const void *funcPtr, uint64_t *outHandle)
+{
+    if (funcPtr == nullptr || outHandle == nullptr) {
+        HCCL_ERROR("[CcuKernel::FuncBlockBegin] null pointer");
+        return CcuResult::CCU_E_PTR;
+    }
+    if (loopBodyDepth_ > 0 || inFuncBody_) {
+        if (inFuncBody_) {
+            funcBodyError_ = true;
+        }
+        HCCL_ERROR("[CcuKernel::FuncBlockBegin] ccu::CallFunc only allowed at top level");
+        return CcuResult::CCU_E_INTERNAL;
+    }
+
+    auto exist = funcInstanceMap_.find(funcPtr);
+    if (exist != funcInstanceMap_.end()) {
+        *outHandle = exist->second;
+        return CcuResult::CCU_SUCCESS;
+    }
+
+    const uint64_t handle = ++funcHandleCounter_;
+    std::string label = "func_" + std::to_string(handle);
+
+    FuncDescriptor desc;
+    desc.funcPtr = funcPtr;
+    desc.label = label;
+    desc.repFuncBlock = std::make_shared<CcuRep::CcuRepFuncBlock>(label);
+    desc.prevActiveBlock = CurrentBlock();
+
+    funcMap_[handle] = desc;
+    SetCurrentBlock(desc.repFuncBlock);
+    inFuncBody_ = true;
+    funcBodyError_ = false;
+    *outHandle = handle;
+    return CcuResult::CCU_SUCCESS;
+}
+
+CcuResult CcuKernel::FuncBlockEnd(uint64_t handle)
+{
+    auto it = funcMap_.find(handle);
+    if (it == funcMap_.end()) {
+        HCCL_ERROR("[CcuKernel::FuncBlockEnd] invalid func handle %lu", handle);
+        return CcuResult::CCU_E_PARA;
+    }
+    auto &desc = it->second;
+
+    SetCurrentBlock(desc.prevActiveBlock);
+    inFuncBody_ = false;
+
+    if (funcBodyError_) {
+        HCCL_ERROR("[CcuKernel::FuncBlockEnd] ccu::CallFunc only allowed at top level");
+        funcBodyError_ = false;
+        funcMap_.erase(it);
+        return CcuResult::CCU_E_INTERNAL;
+    }
+
+    Append(desc.repFuncBlock);
+    desc.bodyDefined = true;
+    funcInstanceMap_[desc.funcPtr] = handle;
+    return CcuResult::CCU_SUCCESS;
+}
+
+CcuResult CcuKernel::FuncDefineInArg(uint64_t handle, CcuVariableHandle formal)
+{
+    auto it = funcMap_.find(handle);
+    if (it == funcMap_.end()) {
+        HCCL_ERROR("[CcuKernel::FuncDefineInArg] invalid func handle %lu", handle);
+        return CcuResult::CCU_E_PARA;
+    }
+
+    CcuRep::Variable *formalVar = nullptr;
+    CCU_CHK_RET(GetVariableByHandle(formal, &formalVar));
+    it->second.repFuncBlock->DefineInArg(*formalVar);
+    return CcuResult::CCU_SUCCESS;
+}
+
+CcuResult CcuKernel::FuncCall(uint64_t handle, const CcuVariableHandle *inArgs, uint32_t numIn)
+{
+    if (loopBodyDepth_ > 0 || inFuncBody_) {
+        if (inFuncBody_) {
+            funcBodyError_ = true;
+        }
+        HCCL_ERROR("[CcuKernel::FuncCall] ccu::CallFunc only allowed at top level");
+        return CcuResult::CCU_E_INTERNAL;
+    }
+    if (numIn > 0 && inArgs == nullptr) {
+        HCCL_ERROR("[CcuKernel::FuncCall] null input args");
+        return CcuResult::CCU_E_PTR;
+    }
+
+    auto it = funcMap_.find(handle);
+    if (it == funcMap_.end() || !it->second.bodyDefined) {
+        HCCL_ERROR("[CcuKernel::FuncCall] invalid func handle %lu", handle);
+        return CcuResult::CCU_E_PARA;
+    }
+
+    auto repFuncCall = std::make_shared<CcuRep::CcuRepFuncCall>(it->second.label);
+    for (uint32_t i = 0; i < numIn; i++) {
+        CcuRep::Variable *actual = nullptr;
+        CCU_CHK_RET(GetVariableByHandle(inArgs[i], &actual));
+        repFuncCall->SetInArg(*actual);
+    }
+    Append(repFuncCall);
     return CcuResult::CCU_SUCCESS;
 }
 
