@@ -32,6 +32,7 @@ public:
         EXPECT_NE(nullptr, rtsqPtr);
 
         MOCKER_CPP_VIRTUAL(*rtsqPtr, &RtsqBase::LaunchTask).stubs().will(ignoreReturnValue());
+        MOCKER_CPP_VIRTUAL(*rtsqPtr, &RtsqBase::TryLaunchTask).stubs().will(ignoreReturnValue());
         MOCKER_CPP_VIRTUAL(*rtsqPtr, &RtsqBase::NotifyWait, void (RtsqBase::*)(uint32_t, uint32_t)).stubs().will(ignoreReturnValue());
         MOCKER_CPP_VIRTUAL(*rtsqPtr, &RtsqBase::NotifyRecordLoc).stubs().will(ignoreReturnValue());
         MOCKER_CPP_VIRTUAL(*rtsqPtr, &RtsqBase::SdmaCopy).stubs().will(ignoreReturnValue());
@@ -55,6 +56,16 @@ TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_LaunchTask_When_Inited_Expect_Succe
 {
     // 不应该崩溃
     EXPECT_NO_THROW(aicpuThread.LaunchTask());
+}
+
+/**
+ * 测试 IAicpuTsThread TryLaunchTask 正常执行
+ * 验证：初始化后调用 TryLaunchTask 不崩溃
+ */
+TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_TryLaunchTask_When_Inited_Expect_Success)
+{
+    // 不应该崩溃
+    EXPECT_NO_THROW(aicpuThread.TryLaunchTask());
 }
 
 /**
