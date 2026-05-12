@@ -176,12 +176,13 @@ TEST_F(CcuTransportTest, Ut_GetStatus_When_InterfaceOk_Expect_Return_Ok)
         EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::INIT);
     }
 
-    EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::SEND_ALL_INFO);
+    EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::SEND_SIZE);
+    EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::RECV_SIZE);
+    EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::SEND_DATA);
 
     transport->recvData = transport->sendData; // 模拟资源信息交换成功
 
-    EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::RECV_ALL_INFO);
-
+    EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::RECV_DATA);
     EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::SEND_FIN);
 
     EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::RECVING_FIN);
@@ -312,11 +313,13 @@ TEST_F(CcuTransportTest, Ut_GetStatusError_When_HandshakeMsgInvalid_Expect_Retur
         EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::INIT);
         EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::INIT);
 
-        EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::SEND_ALL_INFO);
+        EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::SEND_SIZE);
+        EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::RECV_SIZE);
+        EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::SEND_DATA);
 
         transport->recvData = transport->sendData;
 
-        EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::RECV_ALL_INFO);
+        EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::RECV_DATA);
 
         transport->attr.handshakeMsg.push_back('a');
         status = transport->GetStatus();
