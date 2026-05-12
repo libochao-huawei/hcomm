@@ -168,6 +168,8 @@ TEST_F(EnvConfigTest, parse_env_config_should_success)
         EXPECT_EQ(envCfg.GetRdmaConfig().GetRdmaServerLevel(), 3);
         EXPECT_EQ(envCfg.GetRdmaConfig().GetRdmaTimeOut(), 6);
         EXPECT_EQ(envCfg.GetRdmaConfig().GetRdmaRetryCnt(), 5);
+        EXPECT_EQ(envCfg.GetRdmaConfig().GetUboeTimeOut(), 16);
+        EXPECT_EQ(envCfg.GetRdmaConfig().GetUbTimeOut(), 8);
         EXPECT_EQ(envCfg.GetAlgoConfig().GetPrimQueueGenName(), "AllReduceRing");
         std::map<OpType, std::vector<HcclAlgoType>> algoMap = {
             {OpType::ALLREDUCE, {

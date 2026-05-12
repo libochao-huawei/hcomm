@@ -72,6 +72,8 @@ struct EnvConfig {
     u32 rdmaServerLevel;
     u32 rdmaTimeOut;        // RDMA超时时间，配置范围5-24，默认值为20
     u32 rdmaRetryCnt;       // RDMA重传次数，配置范围1-7，默认值为7
+    u32 uboeTimeOut;        // UBOE超时时间，配置范围0-31，默认值为16
+    u32 ubTimeOut;          // UB超时时间，配置范围0-31，默认值为8
     bool enableClusterHeartBeat;
     bool opCounterEnable;
     bool inconsistentCheckSwitch;
@@ -135,6 +137,14 @@ struct EnvConfig {
     static const u32 HCCL_RDMA_RETRY_CNT_MIN = 1;  // Retry Cnt最小值为1
     static const u32 HCCL_RDMA_RETRY_CNT_MAX = 7;  // Retry Cnt最大值为7
 
+    static const u32 HCCL_UBOE_TIMEOUT_DEFAULT = 16; // 默认的TIMEOUT配置为8s
+    static const u32 HCCL_UBOE_TIMEOUT_MIN = 0;      // TIMEOUT最小值为0
+    static const u32 HCCL_UBOE_TIMEOUT_MAX = 31;     // TIMEOUT最大值为31
+ 
+    static const u32 HCCL_UB_TIMEOUT_DEFAULT = 8; // 默认的TIMEOUT配置为1s
+    static const u32 HCCL_UB_TIMEOUT_MIN = 0;     // TIMEOUT最小值为0
+    static const u32 HCCL_UB_TIMEOUT_MAX = 31;    // TIMEOUT最大值为31
+
     static const u32 HCCL_QOS_MIN = 0;
  	static const u32 HCCL_QOS_MAX = 7;
  	static const u32 HCCL_QOS_DEFAULT = 6;
@@ -144,6 +154,9 @@ struct EnvConfig {
     HcclResult ParseRDMAServerLevel();
 
     HcclResult ParseRDMATimeOut(std::pair<u32, u32> &rdmaTimeOutRange);
+    HcclResult ParseUBOETimeOut(std::pair<u32, u32> &uboeTimeOutRange);
+    HcclResult ParseUBTimeOut(std::pair<u32, u32> &ubTimeOutRange);
+
 
     HcclResult ParseRDMARetryCnt();
 
@@ -151,6 +164,9 @@ struct EnvConfig {
     static const u32& GetExternalInputRdmaServerLevel();
     static const u32& GetExternalInputRdmaTimeOut();
     static const u32& GetExternalInputRdmaRetryCnt();
+
+    static const u32& GetExternalInputUboeTimeOut();
+    static const u32& GetExternalInputUBTimeOut();
 
     bool CheckEnvLen(const char *envStr, u32 envMaxLen);
 };
