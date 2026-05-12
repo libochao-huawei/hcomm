@@ -107,6 +107,7 @@ private:
 extern "C" {
 #endif // __cplusplus
 extern void RegisterGetAicpuTaskExceptionCallBackV2(s32 streamId, u32 deviceLogicId, Hccl::GetAicpuTaskExceptionCallBack p1);
+extern void UnregisterGetAicpuTaskExceptionCallBackV2(s32 streamId, u32 deviceLogicId);
 #ifdef __cplusplus
 }
 #endif // __cplusplus
