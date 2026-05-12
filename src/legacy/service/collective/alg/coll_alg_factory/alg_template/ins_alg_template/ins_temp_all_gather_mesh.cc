@@ -125,7 +125,6 @@ HcclResult InsTempAllGatherMesh1D::LocalCopyToUsrOut(InsQuePtr tempInsQue)
     CHK_RET(GetAlgRank(myRank_, tempVTopo_[0], myAlgRank));
     // 做个保护，tailSize填写为0就认为尾块是正常块
     u64 tailSize = (tempAlgParams_.tailSize == 0) ? tempAlgParams_.sliceSize : tempAlgParams_.tailSize;
-    u64 sliceSize = (myAlgRank == tempRankSize_ - 1) ? tailSize : tempAlgParams_.sliceSize;
     for (u32 rpt = 0; rpt < tempAlgParams_.repeatNum; ++rpt) {
         const u64 inBaseOff = tempAlgParams_.buffInfo.inBuffBaseOff + rpt * tempAlgParams_.inputRepeatStride;
         const u64 outBaseOff = tempAlgParams_.buffInfo.outBuffBaseOff + rpt * tempAlgParams_.outputRepeatStride;
@@ -135,8 +134,35 @@ HcclResult InsTempAllGatherMesh1D::LocalCopyToUsrOut(InsQuePtr tempInsQue)
         if (tempAlgParams_.buffInfo.inBuffType == tempAlgParams_.buffInfo.outBuffType && inOff == outOff) {
             continue;
         }
-        DataSlice src(tempAlgParams_.buffInfo.inBuffType, inOff, sliceSize);
-        DataSlice dst(tempAlgParams_.buffInfo.outBuffType, outOff, sliceSize);
+        // 如果是最后一张卡，而且带有尾块且inBuffType和outBuffType相同可能要分多次搬移，否则可能出现内存重叠
+        if (myAlgRank == tempRankSize_ - 1 && tailSize > tempAlgParams_.sliceSize) {
+            if (tempAlgParams_.sliceSize < tailSize - tempAlgParams_.sliceSize) {
+                DataSlice src(tempAlgParams_.buffInfo.inBuffType, inOff + 2 * tempAlgParams_.sliceSize,
+                    tailSize - 2 * tempAlgParams_.sliceSize);
+                DataSlice dst(tempAlgParams_.buffInfo.outBuffType, outOff + 2 * tempAlgParams_.sliceSize,
+                    tailSize - 2 * tempAlgParams_.sliceSize);
+                HCCL_INFO("[InsTempAllGatherMesh1D] in:%s -> out:%s", src.Describe().c_str(), dst.Describe().c_str());
+                auto ins = std::make_unique<InsLocalCopy>(src, dst);
+                tempInsQue->Append(std::move(ins));
+                DataSlice src1(tempAlgParams_.buffInfo.inBuffType, inOff + tempAlgParams_.sliceSize,
+                    tempAlgParams_.sliceSize);
+                DataSlice dst1(tempAlgParams_.buffInfo.outBuffType, outOff + tempAlgParams_.sliceSize,
+                    tempAlgParams_.sliceSize);
+                HCCL_INFO("[InsTempAllGatherMesh1D] in:%s -> out:%s", src1.Describe().c_str(), dst1.Describe().c_str());
+                auto ins1 = std::make_unique<InsLocalCopy>(src1, dst1);
+                tempInsQue->Append(std::move(ins1));
+            }else{
+                DataSlice src(tempAlgParams_.buffInfo.inBuffType, inOff + tempAlgParams_.sliceSize,
+                    tailSize - tempAlgParams_.sliceSize);
+                DataSlice dst(tempAlgParams_.buffInfo.outBuffType, outOff + tempAlgParams_.sliceSize,
+                    tailSize - tempAlgParams_.sliceSize);
+                HCCL_INFO("[InsTempAllGatherMesh1D] in:%s -> out:%s", src.Describe().c_str(), dst.Describe().c_str());
+                auto ins = std::make_unique<InsLocalCopy>(src, dst);
+                tempInsQue->Append(std::move(ins));
+            }
+        }
+        DataSlice src(tempAlgParams_.buffInfo.inBuffType, inOff, tempAlgParams_.sliceSize);
+        DataSlice dst(tempAlgParams_.buffInfo.outBuffType, outOff, tempAlgParams_.sliceSize);
         HCCL_INFO("[InsTempAllGatherMesh1D] in:%s -> out:%s", src.Describe().c_str(), dst.Describe().c_str());
 
         auto ins = std::make_unique<InsLocalCopy>(src, dst);

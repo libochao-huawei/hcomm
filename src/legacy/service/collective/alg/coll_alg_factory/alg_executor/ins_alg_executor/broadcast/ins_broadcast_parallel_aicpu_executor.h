@@ -121,7 +121,7 @@ private:
             intraLocalRankSize_, interLocalRankSize_);
         return HcclResult::HCCL_SUCCESS;
     };
-    void GetParallelDataSplit(std::vector<float>& splitDataSize) const
+    void GetParallelDataSplit(std::vector<double>& splitDataSize) const
     {
         // to do 先做等分，后续根据性能做调整
         double splitData = 0.5;
@@ -212,7 +212,7 @@ private:
     }
 
     void CalcScratchMultiple(
-        std::vector<float>& splitDataSize, ScratchMultiple& scratchMultiple, InsAlgTemplate0& intraScatterTempAlg,
+        std::vector<double>& splitDataSize, ScratchMultiple& scratchMultiple, InsAlgTemplate0& intraScatterTempAlg,
         InsAlgTemplate1& interScatterTempAlg, InsAlgTemplate2& intraAllGatherTempAlg,
         InsAlgTemplate3& interAllGatherTempAlg) const
     {
@@ -230,7 +230,7 @@ private:
         scratchMultiple.maxMultiple = std::max(multiple0, multiple1);
         return;
     }
-    void CalcSlice(std::vector<float>& splitDataSize, float scratchMaxMultiple, SliceConfig& slice);
+    void CalcSlice(std::vector<double>& splitDataSize, float scratchMaxMultiple, SliceConfig& slice);
     void LogAlgInfo(
         InsAlgTemplate0& intraScatterTempAlg, InsAlgTemplate1& interScatterTempAlg,
         InsAlgTemplate2& intraAllGatherTempAlg, InsAlgTemplate3& interAllGatherTempAlg) const
