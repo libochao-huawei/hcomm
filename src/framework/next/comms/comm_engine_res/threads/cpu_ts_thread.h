@@ -34,6 +34,7 @@ public:
     Stream *GetStream() const override;
     void *GetStreamLitePtr() const override;
     void LaunchTask() const override;
+    void TryLaunchTask() const override;
 
     // Local Data Plane Functions
     HcclResult LocalNotifyRecord(uint32_t notifyId) const override;
