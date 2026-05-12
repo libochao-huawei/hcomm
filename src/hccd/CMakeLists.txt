@@ -238,6 +238,3 @@ endif()
 
 # 设置依赖关系
 add_dependencies(hccd json)
-if(BUILD_OPEN_PROJECT)
-    add_dependencies(hccd hccl_legacy)
-endif()
