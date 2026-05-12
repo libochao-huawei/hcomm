@@ -59,6 +59,7 @@ public:
     HcclResult GetTpInfo(const GetTpInfoParam &param, TpInfo &tpInfo);
     // unimport jetty 会 URMA 销毁 tp 资源，hccl 配套删除记录
     HcclResult ReleaseTpInfo(const GetTpInfoParam &param, const TpInfo &tpInfo);
+    HcclResult GetTpTotalTimeout(uint32_t devPhyId, CtxHandle ctxHandle, TpHandle tpHandle, uint32_t &outTotalTimeoutMs);
 
 private:
      struct TpInfoCtx {
