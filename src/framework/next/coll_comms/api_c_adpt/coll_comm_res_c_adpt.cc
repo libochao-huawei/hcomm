@@ -20,12 +20,8 @@
 #include "../comms/ccu/ccu_kernel/ccu_kernel_mgr.h"
 #include "rt_external.h"
 #include "hccl_ccu_res.h"
-<<<<<<< HEAD
 #include "coll_comm_mgr.h"
 #include "hcclCommOp.h"
-=======
-
->>>>>>> 6875f656 (rank间一致性校验向算子包提供交换信息能力)
 using namespace hccl;
 /**
  * @note 职责：集合通信的通信域资源管理的C接口的C到C++适配
