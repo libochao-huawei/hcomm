@@ -159,6 +159,8 @@ HcclResult EndpointDescPairToLinkData(const EndpointDesc &locEp, const EndpointD
     uint32_t locDevPhyId = locEp.loc.device.devPhyId;
     uint32_t rmtDevPhyId = rmtEp.loc.device.devPhyId;
 
+    HCCL_INFO("[%s] rmtDevPhyId is %u", __func__, rmtDevPhyId);
+
     // 开源开放架构下comms层级不感知通信域层级的rank信息
     // 当前复用orion数据结构故使用devId替换
     linkData = Hccl::LinkData(
