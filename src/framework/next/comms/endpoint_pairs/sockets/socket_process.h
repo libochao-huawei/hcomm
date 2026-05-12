@@ -27,6 +27,8 @@ public:
 
     HcclResult GetSocket(SocketDesc *socketDesc, SocketHandle &socketHandle);
 
+    void PutSocket(SocketHandle &socketHandle);
+
     // 异步推动建链
     HcclResult GetStatus(SocketHandle socketHandle, SocketStates &socketStatus);
 
@@ -48,7 +50,6 @@ private:
     std::map<std::pair<Hccl::PortData, u32>, std::unique_ptr<Hccl::Socket>> serverSocketMap_{};
     std::unordered_map<std::string, std::pair<Hccl::Socket *, u32>> tag2socketMap_{};
     std::unordered_map<Hccl::Socket *, std::string> socket2TagMap_{};
-    std::unique_ptr<SocketMgr> socketMgr_{};
     std::mutex mutex_;
     u32 devicePhyId_{0};
 };
