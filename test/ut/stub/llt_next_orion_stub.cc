@@ -119,12 +119,34 @@
 #include "ipc_local_notify.h"
 #include "host_ub_connection.h"
 #include "urma_api.h"
+#include "coll_operator.h"
+#include "coll_operator_check.h"
 
 namespace Hccl {
+
+constexpr u32 LLT_UB_WQE_NUM_PER_SQE = 4;
 
 void *HrtMalloc(u64 size, aclrtMemType_t memType)
 {
     return (void *)0x12345678;
+}
+
+void HrtMemcpy(void *dst, uint64_t destMax, const void *src, uint64_t count, rtMemcpyKind_t kind)
+{
+    (void)kind;
+    if (dst == nullptr || src == nullptr || count > destMax) {
+        return;
+    }
+    (void)memcpy_s(dst, destMax, src, count);
+}
+
+void HrtMemcpy(void *dst, uint64_t destMax, const void *src, uint64_t count, rtMemcpyKind_t kind)
+{
+    (void)kind;
+    if (dst == nullptr || src == nullptr || count > destMax) {
+        return;
+    }
+    (void)memcpy_s(dst, destMax, src, count);
 }
 
 RdmaHandleManager::RdmaHandleManager()
@@ -539,6 +561,26 @@ std::vector<char> DevUbConnection::GetUniqueId() const
 
 void DevUbConnection::Connect()
 {
+}
+
+void DevUbConnection::SetSqContextInfo(SqContext &sq)
+{
+    sq.contextInfo.jfsContext.jfsID = jettyId;
+    sq.contextInfo.jfsContext.dbVa = dbAddr;
+    sq.contextInfo.jfsContext.sqVa = sqBuffVa;
+    sq.contextInfo.jfsContext.sqDepth = sqDepth * LLT_UB_WQE_NUM_PER_SQE;
+    sq.contextInfo.jfsContext.tpID = tpn;
+    (void)memcpy_s(sq.contextInfo.jfsContext.remoteEID, sizeof(sq.contextInfo.jfsContext.remoteEID),
+        rmtEid.raw, sizeof(sq.contextInfo.jfsContext.remoteEID));
+}
+
+void DevUbConnection::SetCqContextInfo(CqContext &cq)
+{
+    cq.contextInfo.jfcContext.jfcID = cqInfo_.id;
+    cq.contextInfo.jfcContext.scqVa = cqInfo_.va;
+    cq.contextInfo.jfcContext.cqeSize = cqInfo_.cqeSize;
+    cq.contextInfo.jfcContext.cqDepth = cqInfo_.cqDepth;
+    cq.contextInfo.jfcContext.dbVa = cqInfo_.swdbAddr;
 }
 
 inline uint32_t GetRandomNum()
@@ -2234,6 +2276,16 @@ HcclResult HcclCommunicator::SetAccelerator(int32_t accelerator, bool isCcuMsAva
     return HCCL_SUCCESS;
 }
 
+CollOperatorDef CollOperatorDef::GetPackedData(std::vector<char> &byteVector)
+{
+    (void)byteVector;
+    return {};
+}
+
+void CheckCollOperator(const CollOperator &localOpData, const CollOperator &remoteOpData)
+{
+    (void)localOpData;
+    (void)remoteOpData;
 HcclResult HcclCommunicator::GetRankGraphV2(void *&rankGraph)
 {
     return HCCL_SUCCESS;
