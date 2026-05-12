@@ -29,6 +29,14 @@ constexpr uint16_t DEFAULT_LISTENING_PORT = 60001;
 HostCpuUrmaChannel::HostCpuUrmaChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc):
     endpointHandle_(endpointHandle), channelDesc_(channelDesc) {}
 
+HostCpuUrmaChannel::~HostCpuUrmaChannel()
+{
+    if (socket_ != nullptr) {
+        SocketMgr::GetInstance().PutSocket(socketConfig_, socket_);
+        socket_ = nullptr;
+    }
+}
+
 HcclResult HostCpuUrmaChannel::ParseInputParam()
 {
     // 1. 从 endpointHandle_，获得 localEp_ 和 rdmaHandle_
@@ -64,8 +72,6 @@ HcclResult HostCpuUrmaChannel::ParseInputParam()
         HCCL_WARNING("[HostCpuUrmaChannel][%s] exchangeAllMems is false.", __func__);
     }
 
-    EXECEPTION_CATCH(socketMgr_ = std::make_unique<SocketMgr>(), return HCCL_E_PTR);
-
     return HCCL_SUCCESS;
 }
 
@@ -85,6 +91,7 @@ HcclResult HostCpuUrmaChannel::StartListen()
 HcclResult HostCpuUrmaChannel::BuildSocket()
 {
     if (socket_ != nullptr) {
+        HCCL_INFO("[HostCpuUrmaChannel::%s] socket ptr is not NULL, return success", __func__);
         return HCCL_SUCCESS;
     }
     HCCL_INFO("[HostCpuUrmaChannel::%s] socket ptr is NULL, rebuild Socket", __func__);
@@ -100,7 +107,7 @@ HcclResult HostCpuUrmaChannel::BuildSocket()
     std::string socketTag = "AUTOMATIC_SOCKET_TAG";
     bool noRankId = true;
     Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, socketTag, noRankId);
-    CHK_RET(socketMgr_->GetSocket(socketConfig, socket_));
+    CHK_RET(SocketMgr::GetInstance().GetSocket(socketConfig, socket_));
     HCCL_INFO("[HostCpuUrmaChannel::%s] SUCCESS. port[%u].", __func__, port);
     return HCCL_SUCCESS;
 }
@@ -212,7 +219,11 @@ HcclResult HostCpuUrmaChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNu
 ChannelStatus HostCpuUrmaChannel::GetStatus()
 {
     memTransport_->SetIsHost();
-    return Channel::TransportStatusToChannelStatus(memTransport_->GetStatus());
+    ChannelStatus out = Channel::TransportStatusToChannelStatus(memTransport_->GetStatus());
+    if (out == ChannelStatus::READY && socket_ != nullptr) {
+        SocketMgr::GetInstance().PutSocket(socketConfig_, socket_);
+    }
+    return out;
 }
 
 HcclResult hcomm::HostCpuUrmaChannel::NotifyRecord(const uint32_t remoteNotifyIdx)
