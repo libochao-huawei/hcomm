@@ -57,10 +57,9 @@ public:
         role(link.GetLocalAddr() < link.GetRemoteAddr() ? SocketRole::SERVER : SocketRole::CLIENT),
         hccpTag(role == SocketRole::SERVER
                     ? tag + "_" + link.GetLocalAddr().GetIpStr() + "_" + link.GetRemoteAddr().GetIpStr()
-                    : tag + "_" + link.GetRemoteAddr().GetIpStr() + "_" + link.GetLocalAddr().GetIpStr())
-    {
-        (void)noRankId;
-    }
+                    : tag + "_" + link.GetRemoteAddr().GetIpStr() + "_" + link.GetLocalAddr().GetIpStr()),
+        noRankId(noRankId)
+    {}
 
     SocketConfig(const LinkData &link, const uint32_t listenPort, const std::string &tag,
         uint32_t hostNic2DeviceNicMode, const uint32_t myRank, const uint32_t rmtRank):
@@ -124,6 +123,9 @@ public:
 private:
     SocketRole role{};
     string     hccpTag;
+
+public:
+    bool       noRankId;
 };
 } // namespace Hccl
 
@@ -147,6 +149,12 @@ template <> class equal_to<Hccl::SocketConfig> {
 public:
     bool operator()(const Hccl::SocketConfig &config, const Hccl::SocketConfig &otherConfig) const
     {
+        if (config.noRankId && otherConfig.noRankId) {
+            return config.link.GetLocalPort().GetAddr() == otherConfig.link.GetLocalPort().GetAddr()
+                && config.link.GetRemotePort().GetAddr() == otherConfig.link.GetRemotePort().GetAddr()
+                && config.tag == otherConfig.tag && config.listeningPort == otherConfig.listeningPort;
+        }
+
         return config.remoteRank == otherConfig.remoteRank
                && config.link.GetLocalPort().GetAddr() == otherConfig.link.GetLocalPort().GetAddr()
                && config.link.GetRemotePort().GetAddr() == otherConfig.link.GetRemotePort().GetAddr()
