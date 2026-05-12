@@ -11,7 +11,7 @@ cmake_minimum_required(VERSION 3.16.0)
 project(hccl_alg)
 
 # 定义 hccl_alg 链接库，在 host 侧使用
-if(${PRODUCT_SIDE} STREQUAL "host")
+if(PRODUCT_SIDE STREQUAL "host")
     include(hccl_alg.cmake)
 endif()
 

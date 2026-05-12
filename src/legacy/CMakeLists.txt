@@ -8,7 +8,7 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 
-if(${PRODUCT_SIDE} STREQUAL "host")
+if(PRODUCT_SIDE STREQUAL "host")
     # 添加 hccl_v2 链接库，host 侧使用
     include(hccl_v2.cmake)
     # 添加 ccl_dpu 链接库，host 侧使用
