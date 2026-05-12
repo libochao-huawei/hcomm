@@ -46,9 +46,10 @@ pack_targets_and_files(
     MANIFEST "hccp_compat_bin_hash.cfg"
 )
 sign_file(
+    OUTPUT_TARGET sign_cann_hcomm_compat
     INPUT "cann-hcomm-compat.tar.gz"
     CONFIG "${HCOMM_DIR}/scripts/sign/hcomm_check_cfg.xml"
-    RESULT_VAR "sign_cann_hcomm_compat"
+    RESULT_VAR "cann_hcomm_compat_signed_file"
     DEPENDS pack_cann_hcomm_compat
 )
 
@@ -61,9 +62,10 @@ pack_targets_and_files(
     TAR_ROOT_DIR "lib64"
 )
 sign_file(
+    OUTPUT_TARGET sign_cann_hccd_compat
     INPUT "cann-hccd-compat.tar.gz"
     CONFIG "${HCOMM_DIR}/scripts/sign/hcomm_check_cfg.xml"
-    RESULT_VAR "sign_cann_hccd_compat"
+    RESULT_VAR "cann_hccd_compat_signed_file"
     DEPENDS pack_cann_hccd_compat
 )
 
@@ -76,26 +78,27 @@ pack_targets_and_files(
     TAR_ROOT_DIR "aicpu_kernels_device"
 )
 sign_file(
+    OUTPUT_TARGET sign_aicpu_hcomm
     INPUT "aicpu_hcomm.tar.gz"
     CONFIG "${HCOMM_DIR}/scripts/sign/hcomm_check_cfg.xml"
-    RESULT_VAR "sign_aicpu_hcomm"
+    RESULT_VAR "aicpu_hcomm_signed_file"
     DEPENDS pack_aicpu_hcomm
 )
 
 # 安装 cann-hcomm-compat.tar.gz
-install(FILES ${sign_cann_hcomm_compat}
+install(FILES ${cann_hcomm_compat_sign_file}
     DESTINATION ${INSTALL_DEVICE_TAR_DIR} ${INSTALL_OPTIONAL}
     COMPONENT hcomm
     PERMISSIONS OWNER_READ GROUP_READ
 )
 # 安装 cann-hccd-compat.tar.gz
-install(FILES ${sign_cann_hccd_compat}
+install(FILES ${cann_hccd_compat_signed_file}
     DESTINATION ${INSTALL_DEVICE_TAR_DIR} ${INSTALL_OPTIONAL}
     COMPONENT hcomm
     PERMISSIONS OWNER_READ GROUP_READ
 )
 # 安装 aicpu_hcomm.tar.gz
-install(FILES ${sign_aicpu_hcomm}
+install(FILES ${aicpu_hcomm_signed_file}
     DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel ${INSTALL_OPTIONAL}
     COMPONENT hcomm
 )
