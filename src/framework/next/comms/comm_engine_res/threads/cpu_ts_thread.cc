@@ -197,6 +197,11 @@ void CpuTsThread::LaunchTask() const
     return;
 }
 
+void CpuTsThread::TryLaunchTask() const
+{
+    return;
+}
+
 // Local Data Plane Functions
 HcclResult CpuTsThread::LocalNotifyRecord(uint32_t notifyId) const
 {
