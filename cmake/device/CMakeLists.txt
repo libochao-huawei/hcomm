@@ -96,7 +96,7 @@ install(FILES ${sign_cann_hccd_compat}
 )
 # 安装 aicpu_hcomm.tar.gz
 install(FILES ${sign_aicpu_hcomm}
-    DESTINATION ${INSTALL_DEVICE_TAR_DIR} ${INSTALL_OPTIONAL}
+    DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel ${INSTALL_OPTIONAL}
     COMPONENT hcomm
 )
 

@@ -144,7 +144,7 @@ if(${PRODUCT_SIDE} STREQUAL "device")
     # 克隆 rs 的属性
     target_clone(
         ORIGIN rs
-        NEW rs_device
+        OUTPUT rs_device
     )
     # 宏定义
     target_compile_definitions(rs_device PRIVATE
