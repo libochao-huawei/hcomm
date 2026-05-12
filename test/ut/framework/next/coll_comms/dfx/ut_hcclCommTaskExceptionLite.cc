@@ -165,7 +165,7 @@ TEST_F(hcclCommTaskExceptionLiteTest, Ut_UnregisterGetAicpuTaskExceptionCallBack
     EXPECT_TRUE(true);
 }
 
-TEST_F(hcclCommTaskExceptionLiteTest, Ut_RegisterMultipleCallBacks_SameDevice_DifferentStream_Expect_AllStrored)
+TEST_F(hcclCommTaskExceptionLiteTest, Ut_RegisterMultipleCallBacks_SameDevice_DifferentStream_Expect_AllStored)
 {
     u32 deviceLogicId = 2;
     s32 streamId1 = 10;
