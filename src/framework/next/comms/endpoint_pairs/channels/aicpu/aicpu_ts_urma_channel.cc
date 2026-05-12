@@ -201,6 +201,7 @@ HcclResult AicpuTsUrmaChannel::BuildUbMemTransport()
 HcclResult AicpuTsUrmaChannel::BuildSocket()
 {
     if (socket_ != nullptr) {
+        HCCL_INFO("[AicpuTsUrmaChannel::%s] socket ptr is not NULL, return success", __func__);
         return HCCL_SUCCESS;
     }
     HCCL_INFO("[AicpuTsUrmaChannel][%s] socket ptr is NULL, rebuildSocket", __func__);
@@ -222,6 +223,7 @@ HcclResult AicpuTsUrmaChannel::BuildSocket()
     bool noRankId = true;
     Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, socketTag, noRankId);
     CHK_RET(SocketMgr::GetInstance(devicePhyId_).GetSocket(socketConfig, socket_));
+    HCCL_INFO("[AicpuTsUrmaChannel][%s] socket_ is %p", __func__, static_cast<const void *>(socket_));
 
     return HCCL_SUCCESS;
 }

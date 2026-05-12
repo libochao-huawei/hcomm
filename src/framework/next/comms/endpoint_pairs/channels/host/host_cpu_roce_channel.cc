@@ -154,6 +154,7 @@ HcclResult HostCpuRoceChannel::StartListen()
 HcclResult HostCpuRoceChannel::BuildSocket()
 {
     if (socket_ != nullptr) {
+        HCCL_INFO("[HostCpuRoceChannel::%s] socket ptr is not NULL, return success", __func__);
         return HCCL_SUCCESS;
     }
     HCCL_INFO("[HostCpuRoceChannel::%s] socket ptr is NULL, rebuild Socket", __func__);
