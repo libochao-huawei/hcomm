@@ -25,6 +25,7 @@
 #include "rdma_handle_manager.h"
 #include "orion_adapter_rts.h"
 #include "orion_adapter_hccp.h"
+#include "env_config/env_config.h"
 
 namespace hcomm {
 
@@ -124,33 +125,106 @@ HcclResult CcuConnection::StatusMachine()
     return HcclResult::HCCL_SUCCESS;
 }
 
+static uint32_t TaHwValueToMs(uint8_t hwValue)
+{
+    uint8_t gear = hwValue / 8; // 芯片挡位 = 配置值 / 8
+    switch (gear) {
+        case 0: return TA_TIMEOUT_MS_GEAR0; // 512ms
+        case 1: return TA_TIMEOUT_MS_GEAR1; // 1s
+        case 2: return TA_TIMEOUT_MS_GEAR2; // 8s
+        case 3: return TA_TIMEOUT_MS_GEAR3; // 32s
+        default: return TA_TIMEOUT_MS_GEAR2; // 异常兜底 8s
+    }
+}
+
+static uint8_t FindMinTaHwValue(uint32_t tpTotalTimeoutMs)
+{
+    uint8_t finalHwValue = 0;
+
+    // 按挡位从小到大依次判断，找到第一个大于目标时间的挡位
+    if (tpTotalTimeoutMs < TA_TIMEOUT_MS_GEAR0) {
+        finalHwValue = TA_HW_GEAR0_BASE;
+    } else if (tpTotalTimeoutMs < TA_TIMEOUT_MS_GEAR1) {
+        finalHwValue = TA_HW_GEAR1_BASE;
+    } else if (tpTotalTimeoutMs < TA_TIMEOUT_MS_GEAR2) {
+        finalHwValue = TA_HW_GEAR2_BASE;
+    } else {
+        // 超过8s或等于8s，直接使用最大挡位32s
+        finalHwValue = TA_HW_GEAR3_BASE;
+    }
+
+    // 打印调试日志，方便线上定位
+    HCCL_DEBUG("%s tp_total_timeout[%ums], selected_gear_hw_value[%u]", __func__, tpTotalTimeoutMs, finalHwValue);
+    return finalHwValue;
+}
+
+HcclResult CcuConnection::GetTaTimeOut()
+{
+    u8 envValue = static_cast<uint8_t>(Hccl::EnvConfig::GetInstance().GetRdmaConfig().GetUbTimeOut());
+
+    if (tpProtocol_ == TpProtocol::CTP) {
+        errTimeout_ = envValue;
+        return HCCL_SUCCESS;
+    }
+
+    u32 tpTimeOutMs = 0;
+    CHK_RET(TpMgr::GetTPTotalTimeout(tpAttrInfo_, tpTimeOutMs));
+    
+    if (envTimeoutMs < tpTimeOutMs) {
+        errTimeout_ = FindMinTaHwValue(tpTimeOutMs);
+        HCCL_WARNING("%s Env timeout [%ums] < TP timeout [%ums]. Auto upgrade TA to "
+                     "hw_val[%u] (%ums).",
+            __func__, envTimeoutMs, tpTimeOutMs, errTimeout_, TaHwValueToMs(errTimeout_));
+    } else {
+        errTimeout_ = envValue;
+        HCCL_INFO("%s Env timeout [%ums] >= TP timeout [%ums]. Use env gear base "
+                  "hw_val[%u] (%ums).",
+            __func__, envTimeoutMs, tpTimeOutMs, envValue, envTimeoutMs);
+    }
+    return HCCL_SUCCESS;
+}
+
 HcclResult CcuConnection::UpdateInitStatus()
 {
     switch (innerStatus_) {
         case InnerStatus::INIT:
-        case InnerStatus::JETTY_CREATING: {
-            auto ret = CreateJetty();
-            if (ret == HcclResult::HCCL_E_AGAIN) {
-                innerStatus_ = InnerStatus::JETTY_CREATING;
-                break; // 状态不改变退出，下轮状态机进入继续执行
-            }
-            CHK_RET(ret);
-
-            ret = GetTpInfo(); // 不退出继续调用下个异步接口
+        case InnerStatus::TP_INFO_GETTING: {
+            auto ret = GetTpInfo();
             if (ret == HcclResult::HCCL_E_AGAIN) {
                 innerStatus_ = InnerStatus::TP_INFO_GETTING;
                 break;
             }
             CHK_RET(ret);
-            // 如果有缓存的tp信息，可以直接完成
-            innerStatus_ = InnerStatus::EXCHANGEABLE;
-            status_      = CcuConnStatus::EXCHANGEABLE;
+
+            innerStatus_ = InnerStatus::TP_ATTR_GETTING;
             break;
         }
-        case InnerStatus::TP_INFO_GETTING: {
-            auto ret = GetTpInfo(); // 不退出继续调用下个异步接口
+        case InnerStatus::TP_ATTR_GETTING: {
+            auto ret = GetTpAttr();
             if (ret == HcclResult::HCCL_E_AGAIN) {
-                break; // 状态不改变退出，下轮状态机进入继续执行
+                innerStatus_ = InnerStatus::TP_ATTR_GETTING;
+                break;
+            }
+            CHK_RET(ret);
+
+            GetTaTimeOut();
+            ret = CreateJetty();
+            if (ret == HcclResult::HCCL_E_AGAIN) {
+                innerStatus_ = InnerStatus::JETTY_CREATING;
+                break;
+            }
+            CHK_RET(ret);
+
+            innerStatus_ = InnerStatus::EXCHANGEABLE;
+            status_ = CcuConnStatus::EXCHANGEABLE;
+            break;
+        }
+        case InnerStatus::JETTY_CREATING: {
+            GetTaTimeOut();
+            auto ret = CreateJetty();
+            if (ret == HcclResult::HCCL_E_AGAIN) {
+                innerStatus_ = InnerStatus::JETTY_CREATING;
+                break;
             }
             CHK_RET(ret);
 
@@ -173,7 +247,7 @@ HcclResult CcuConnection::CreateJetty()
 
     isJettyCreated_ = true;
     for (size_t i = 0; i < jettyNum_; i++) {
-        auto ret = ccuJettys_[i]->CreateJetty();
+        auto ret = ccuJettys_[i]->CreateJetty(errTimeout_);
         if (ret == HcclResult::HCCL_E_AGAIN) {
             // 不提供日志避免刷屏
             isJettyCreated_ = isJettyCreated_ && false;
@@ -204,7 +278,7 @@ void CcuConnection::GenerateLocalPsn()
 
 HcclResult CcuConnection::GetTpInfo()
 {
-    if (tpProtocol_ == TpProtocol::INVALID) { // 不感知tp建链，当前默认不支持
+    if (tpProtocol_ == TpProtocol::INVALID) {
         HCCL_ERROR("[CcuConnection][%s] failed, tpProtocol[%s] is not expected.",
             __func__, tpProtocol_.Describe().c_str());
         return HcclResult::HCCL_E_PARA;
@@ -213,7 +287,6 @@ HcclResult CcuConnection::GetTpInfo()
     HcclResult ret = TpMgr::GetInstance(devPhyId_)
         .GetTpInfo({locAddr_, rmtAddr_, tpProtocol_}, tpInfo_);
     if (ret == HcclResult::HCCL_E_AGAIN) {
-        // 此处可能刷屏，非必要勿加日志
         return ret;
     }
 
@@ -223,6 +296,27 @@ HcclResult CcuConnection::GetTpInfo()
     }
 
     jettyImportCfg_.localTpHandle = tpInfo_.tpHandle;
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuConnection::GetTpAttr()
+{
+    if (tpProtocol_ == TpProtocol::CTP) {
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    constexpr uint32_t TP_ATTR_BITMAP = 0;
+    HcclResult ret = TpMgr::GetInstance(devPhyId_)
+        .GetTpAttr({tpInfo_.tpHandle, TP_ATTR_BITMAP}, tpAttrInfo_, ctxHandle_);
+    if (ret == HcclResult::HCCL_E_AGAIN) {
+        return ret;
+    }
+
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        HCCL_ERROR("[CcuConnection][%s] failed, hccl result[%d]", __func__, ret);
+        return HcclResult::HCCL_E_NETWORK;
+    }
+
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -476,14 +570,17 @@ HcclResult CcuConnection::ReleaseConnRes()
     }
     importJettyCtxs_.clear();
 
+    if (tpProtocol_ == TpProtocol::RTP && tpInfo_.tpHandle != 0) {
+        (void)TpMgr::GetInstance(devPhyId_)
+            .ReleaseTpAttr(tpInfo_.tpHandle, tpAttrInfo_);
+    }
+
     if (tpInfo_.tpHandle != 0) { // tp handle 复用，只释放一次
         (void)TpMgr::GetInstance(devPhyId_)
             .ReleaseTpInfo({locAddr_, rmtAddr_, tpProtocol_}, tpInfo_);
         tpInfo_.tpHandle = 0;
     }
 
-    // CcuJetty 生命周期跟随通信域CcuJettyMgr
-    // 不需要connection主动销毁
     return HcclResult::HCCL_SUCCESS;
 }
 
