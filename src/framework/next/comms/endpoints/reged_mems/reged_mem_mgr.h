@@ -41,13 +41,13 @@ public:
     virtual HcclResult MemoryUnimport(const void *memDesc, uint32_t descLen) = 0;
 
     virtual HcclResult GetAllMemHandles(void **memHandles, uint32_t *memHandleNum) = 0;
- 
-    // 授权
-    virtual HcclResult MemoryGrant(const HcommMemGrantInfo *remoteGrantInfo)
-    {
-        return HCCL_SUCCESS;
-    }
 
+    // 授权 
+    virtual HcclResult MemoryGrant(const HcommMemGrantInfo *remoteGrantInfo) 
+    { 
+        return HCCL_SUCCESS; 
+    }
+  
     RdmaHandle rdmaHandle_{nullptr};
 };
 }
