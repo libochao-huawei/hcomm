@@ -16,10 +16,12 @@
 
 #include "ccu_types.h"
 #include "ccu_data_api_impl.h"
+#include "ccu_data_utils.hpp"
 
 namespace ccu {
 
 class Event;
+template <typename U> class Array;
 
 class EventMask {
 public:
@@ -36,9 +38,16 @@ private:
 
 class Event final {
 public:
-    explicit Event() : mask(&handle) {}
+    Event() : mask(&handle) {
+        auto ret = CcuEventAlloc(&this->handle);
+        if (ret != CcuResult::CCU_SUCCESS) {
+            throw "CcuEventAlloc: failed";
+        }
+    }
 
     Event(const Event& other) : handle(other.handle), mask(&handle) {}
+
+    Event(Event&& other) noexcept : handle(other.handle), mask(&handle) {}
 
     void operator=(Event&& other) {
         this->handle = other.handle;
@@ -53,6 +62,10 @@ public:
 
     CcuEventHandle handle{0};
     EventMask mask;
+
+private:
+    explicit Event(NoAllocTag) : mask(&handle) {}
+    template <typename U> friend class Array;
 };
 
 } // namespace ccu

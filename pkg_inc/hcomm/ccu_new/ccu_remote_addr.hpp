@@ -18,18 +18,30 @@
 
 namespace ccu {
 
+template <typename U> class Array;
+
 class RemoteAddr final {
 public:
-    explicit RemoteAddr() {}
+    RemoteAddr() : addr(NoAllocTag{}), token(NoAllocTag{}) {
+        auto ret = CcuRemoteAddrAlloc(&this->handle, &this->addr.handle, &this->token.handle);
+        if (ret != CcuResult::CCU_SUCCESS) {
+            throw "CcuRemoteAddrAlloc: failed";
+        }
+    }
 
-    RemoteAddr(const RemoteAddr& other) {
+    RemoteAddr(const RemoteAddr& other) : addr(NoAllocTag{}), token(NoAllocTag{}) {
+        this->handle = other.handle;
+        this->addr.handle = other.addr.handle;
+        this->token.handle = other.token.handle;
+    }
+    RemoteAddr(RemoteAddr&& other) noexcept : addr(NoAllocTag{}), token(NoAllocTag{}) {
         this->handle = other.handle;
         this->addr.handle = other.addr.handle;
         this->token.handle = other.token.handle;
     }
     void operator=(const RemoteAddr& other) {
-        this->addr = other.addr;     
-        this->token = other.token;   
+        this->addr = other.addr;
+        this->token = other.token;
     }
     void operator=(RemoteAddr&& other) {
         this->handle = other.handle;
@@ -40,6 +52,10 @@ public:
     Address addr;
     Variable token;
     CcuRemoteAddrHandle handle{0};
+
+private:
+    explicit RemoteAddr(NoAllocTag) : addr(NoAllocTag{}), token(NoAllocTag{}) {}
+    template <typename U> friend class Array;
 };
 
 } // namespace ccu
