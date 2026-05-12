@@ -52,14 +52,12 @@ private:
 
     struct ResourceBatch { // 记录该批次申请到的所有channel资源信息
         BatchKey key;
-        uint8_t jettyQos_{};
         std::vector<ChannelIdKey> channelIdKeys;
         std::vector<ChannelIdKey> availableChannelIdKeys;
         std::unordered_map<JettyIdKey, std::unique_ptr<CcuJetty>, ResIdHash> jettys;
     
-        ResourceBatch(const BatchKey &batchKey, const std::vector<CcuChannelInfo> &channelInfos,
-            uint8_t jettyQos)
-            : key(batchKey), jettyQos_(jettyQos)
+        ResourceBatch(const BatchKey &batchKey, const std::vector<CcuChannelInfo> &channelInfos)
+            : key(batchKey)
         {
             const uint32_t channelNum = channelInfos.size();
             channelIdKeys.reserve(channelNum);
@@ -77,14 +75,12 @@ private:
                         continue;
                     }
 
-                    CcuJettyInfo ji = jettyInfo;
-                    ji.qos = jettyQos_;
                     std::unique_ptr<CcuJetty> ccuJetty;
                     CHK_RET_THROW(InternalException,
                         StringFormat("[CcuJettyMgr][%s] failed to create ccu jetty, locAddr[%s] "
                             "dieId[%u] taJettyId[%u].", __func__, key.Describe().c_str(),
                             dieId, taJettyId),
-                        CcuCreateJetty(key, ji, ccuJetty));
+                        CcuCreateJetty(key, jettyInfo, ccuJetty));
 
                     jettys[jettyIdKey] = std::move(ccuJetty);
                 }
@@ -125,7 +121,7 @@ private:
     HcclResult GetAvailableBatch(const BatchKey &batchKey, ResourceBatch *&batchPtr);
     bool FindAvailableBatch(const BatchKey &batchKey, ResourceBatch *&batchPtr) const;
     HcclResult CreateAndSaveNewBatch(const BatchKey &batchKey,
-        const std::vector<CcuChannelInfo> channelInfos, ResourceBatch *&batchPtr, uint8_t jettyQos);
+        const std::vector<CcuChannelInfo> channelInfos, ResourceBatch *&batchPtr);
     void FallbackAndRemoveBatches();
     void FallbackAllocatedChannelJettyInfo();
     void ReleaseConfirmedChannelRes();

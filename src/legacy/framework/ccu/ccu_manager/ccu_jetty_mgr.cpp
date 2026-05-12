@@ -13,8 +13,6 @@
 #include <unordered_set>
 
 #include "ccu_dev_mgr.h"
-#include "communicator_impl.h"
-#include "hccl_types.h"
 #include "internal_exception.h"
 #include "invalid_params_exception.h"
 
@@ -25,8 +23,7 @@ constexpr uint32_t CCU_CLOS_REQUEST_SQ_SIZE = 16;  // CLOS场景的默认SQ大�
 constexpr uint32_t CCU_DEFAULT_REQUEST_CHANNEL_NUM = 1;
 constexpr uint32_t CCU_DEFAULT_REQUEST_JETTY_NUM = 0; // 申请数量为0时，由平台层决定提供数量
 
-CcuJettyMgr::CcuJettyMgr(int32_t devLogicId, CommunicatorImpl *comm)
-    : devLogicId_(devLogicId), comm_(comm)
+CcuJettyMgr::CcuJettyMgr(int32_t devLogicId) : devLogicId_(devLogicId)
 {
 }
 
@@ -88,14 +85,11 @@ HcclResult CcuJettyMgr::GetAvailableBatch(const BatchKey &batchKey, ResourceBatc
         return HcclResult::HCCL_SUCCESS;
     }
     // 已有的资源不足，需要新增资源，获取的channel数量可能超过申请数量
-    const u8 qos = comm_ != nullptr ? comm_->GetCommQos()
-                                    : static_cast<u8>(HCCL_COMM_QOS_CONFIG_DEFAULT_UB);
-    HCCL_INFO("CcuJettyMgr::GetAvailableBatch qos = %u", qos);
     const CcuChannelPara channelPara{batchKey, CCU_DEFAULT_REQUEST_CHANNEL_NUM,
         CCU_DEFAULT_REQUEST_JETTY_NUM, sqSize};
     HCCL_INFO("[CcuJettyMgr][%s] try to alloc ccu channels with channelPara[channelNum=%u, jettyNum=%u, sqSize=%u], "
-        "jettyQos[%u], locAddr[%s], devLogicId[%d].", __func__, channelPara.channelNum, channelPara.jettyNum,
-        channelPara.sqSize, static_cast<unsigned>(qos), batchKey.Describe().c_str(), devLogicId_);
+        "locAddr[%s], devLogicId[%d].", __func__, channelPara.channelNum, channelPara.jettyNum,
+        channelPara.sqSize, batchKey.Describe().c_str(), devLogicId_);
     std::vector<CcuChannelInfo> channelInfos;
     auto ret = CcuAllocChannels(devLogicId_, channelPara, channelInfos);
     // 如果资源不足，平台层返回不可用错误，需要上层感知不可用进行降级处理
@@ -109,7 +103,7 @@ HcclResult CcuJettyMgr::GetAvailableBatch(const BatchKey &batchKey, ResourceBatc
             "are unavaialble, locAddr[%s], sqSize[%u], devLogicId[%d].", __func__,
             batchKey.Describe().c_str(), sqSize, devLogicId_), ret);
     // 如果新增资源保存失败，手动释放避免泄露
-    ret = CreateAndSaveNewBatch(batchKey, channelInfos, batchPtr, qos);
+    ret = CreateAndSaveNewBatch(batchKey, channelInfos, batchPtr);
     if (ret != HcclResult::HCCL_SUCCESS) {
         HCCL_ERROR("[CcuJettyMgr][%s] failed, try to release temp ccu resources, locAddr[%s], "
             "devLogicId[%d], .", __func__, batchKey.Describe().c_str(), devLogicId_);
@@ -124,12 +118,12 @@ HcclResult CcuJettyMgr::GetAvailableBatch(const BatchKey &batchKey, ResourceBatc
 }
 
 HcclResult CcuJettyMgr::CreateAndSaveNewBatch(const BatchKey &batchKey,
-    const std::vector<CcuChannelInfo> channelInfos, ResourceBatch *&batchPtr, uint8_t jettyQos)
+    const std::vector<CcuChannelInfo> channelInfos, ResourceBatch *&batchPtr)
 {
     // 该流程如果抛异常，可能资源还未记录，析构无法释放导致资源泄露，故捕获异常处理
     TRY_CATCH_RETURN(
         auto &batches = batchMap_[batchKey];
-        auto newBatch = std::make_unique<ResourceBatch>(batchKey, channelInfos, jettyQos);
+        auto newBatch = std::make_unique<ResourceBatch>(batchKey, channelInfos);
         for (const auto &channelInfo : channelInfos) {
             const auto dieId = channelInfo.dieId;
             const auto channelIdKey = std::make_pair(dieId, channelInfo.channelId);
