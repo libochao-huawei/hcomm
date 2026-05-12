@@ -2616,10 +2616,6 @@ HrtRaUbJettyImportedOutParam RaUbTpImportJetty(RdmaHandle handle, u8 *key, u32 k
     return HrtRaUbJettyImportedOutParam{};
 }
 
-void TpManager::SetIsHost()
-{
-}
-
 ReqHandleResult HrtRaGetAsyncReqResult(RequestHandle &reqHandle)
 {
     return ReqHandleResult::COMPLETED;
