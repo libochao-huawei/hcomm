@@ -120,8 +120,13 @@ protected:
         endpointDesc2.loc.locType = ENDPOINT_LOC_TYPE_HOST;
         channelDesc.remoteEndpoint = endpointDesc2;
         channelDesc.notifyNum = 2;
-        fakeSocket = new Hccl::Socket(
-            nullptr, localIp, 60001, remoteIp, "_0_1_", Hccl::SocketRole::SERVER, Hccl::NicType::HOST_NIC_TYPE);
+        Hccl::LinkData linkData = BuildDefaultLinkData();
+        uint16_t port = channelDesc.port;
+        std::string socketTag = "AUTOMATIC_SOCKET_TAG";
+        Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, port, socketTag);
+        SocketMgr::GetInstance().socketMap_[socketConfig] = std::make_unique<Hccl::Socket>(nullptr, localIp, 60001, remoteIp, "_0_1_", Hccl::SocketRole::SERVER, Hccl::NicType::HOST_NIC_TYPE);
+        SocketMgr::GetInstance().socketInUseMap_[SocketMgr::GetInstance().socketMap_[socketConfig].get()] = true;
+        fakeSocket = SocketMgr::GetInstance().socketMap_[socketConfig].get();
         void *fsocket = static_cast<void *>(fakeSocket);
         channelDesc.socket = fsocket;
         localBufferPtr = std::make_shared<Hccl::Buffer>(666);
@@ -154,6 +159,8 @@ protected:
         MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
         MOCKER_CPP(&HostCpuRoceChannel::ExchangeCapability).stubs().will(returnValue(HCCL_SUCCESS));
         MOCKER_CPP(&HostCpuRoceChannel::ExchangeData).stubs().will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&SocketMgr::GetSocket).stubs().will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&SocketMgr::PutSocket).stubs().will(returnValue(HCCL_SUCCESS));
     }
 
     std::unique_ptr<hcomm::HostCpuRoceChannel> CreateInitAndConnect(uint32_t notifyNum = 4)
