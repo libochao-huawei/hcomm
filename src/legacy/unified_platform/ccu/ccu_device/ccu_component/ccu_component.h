@@ -21,8 +21,17 @@
 #include "ccu_res_allocator.h"
 #include "ccu_device_manager.h"
 #include "tp_manager.h"
+#include "hccp_tp.h"
 
 namespace Hccl {
+
+struct TpAttrInfo {
+    struct TpAttr tpAttr{0};
+
+    TpAttrInfo() = default;
+    TpAttrInfo(const struct TpAttr &attr)
+        : tpAttr(attr) {}
+};
 
 class CcuComponent {
 public:
@@ -90,6 +99,7 @@ private:
     using ImportOutParamPair = std::pair<RdmaHandle, HrtRaUbJettyImportedOutParam>;
     std::unordered_map<uint8_t, std::vector<ImportOutParamPair>> importedOutParamMap{};
     std::unordered_map<IpAddress, TpInfo> tpInfoMap{};
+    std::unordered_map<IpAddress, TpAttrInfo> tpAttrInfoMap{};
     std::unordered_map<IpAddress, uint32_t> psnMap{};
 
     // CCU Task Kill相关状态
@@ -111,6 +121,8 @@ private:
         const vector<JettyInfo> &jettyInfos);
     TpInfo RequestNewTpInfo(const IpAddress &srcIpAddr, const IpAddress &dstIpAddr) const;
     TpInfo GetTpInfo(const IpAddress &ipAddr);
+    TpAttrInfo GetLoopTpAttr(const IpAddress &ipAddr, const TpHandle tpHandle);
+    static uint8_t CalcTaTimeout(const TpAttrInfo &tpAttrInfo);
     uint32_t GetPsn(const IpAddress &ipAddr);
     HcclResult ConfigLoopChannel(const uint8_t dieId, const IpAddress &ipAddr,
         const ChannelInfo &channelInfo);
