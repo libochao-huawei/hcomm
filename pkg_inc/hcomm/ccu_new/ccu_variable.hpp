@@ -21,6 +21,10 @@
 namespace ccu {
 
 class Variable;
+class LocalAddr;
+class RemoteAddr;
+template <typename U> class Array;
+Variable CreateByChannel(ChannelHandle channel, uint32_t varIndex);
 
 struct CondExpr {
     Variable *var;
@@ -30,9 +34,18 @@ struct CondExpr {
 
 class Variable final {
 public:
-    explicit Variable() {}
+    Variable() {
+        auto ret = CcuVariableAlloc(&this->handle);
+        if (ret != CcuResult::CCU_SUCCESS) {
+            throw "CcuVariableAlloc: failed";
+        }
+    }
 
     Variable(const Variable& other) {
+        this->handle = other.handle;
+    }
+
+    Variable(Variable&& other) noexcept {
         this->handle = other.handle;
     }
 
@@ -81,6 +94,13 @@ public:
     }
 
     CcuVariableHandle handle{0};
+
+private:
+    explicit Variable(NoAllocTag) {}
+    template <typename U> friend class Array;
+    friend class LocalAddr;
+    friend class RemoteAddr;
+    friend Variable CreateByChannel(ChannelHandle channel, uint32_t varIndex);
 };
 
 } // namespace ccu
