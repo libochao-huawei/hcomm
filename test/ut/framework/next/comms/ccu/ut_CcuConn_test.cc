@@ -122,3 +122,108 @@ TEST_F(CcuConnTest, Ut_GetStatus_When_CreateAndImportJettySuccess_Expect_Return_
     ret = connection->Describe(testDfxMsg);
     EXPECT_NE(ret, HcclResult::HCCL_SUCCESS);
 }
+
+TEST_F(CcuConnTest, Ut_GetTpAttr_CTP_ReturnsSuccess)
+{
+    auto resPair = MockMakeCcuConnection(hcomm::TpProtocol::CTP);
+    auto connection = resPair.first.get();
+    connection->tpProtocol_ = hcomm::TpProtocol::CTP;
+
+    HcclResult ret = connection->GetTpAttr();
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(CcuConnTest, Ut_GetTpAttr_RTP_TpMgrReturnsAgain_ReturnsAgain)
+{
+    auto resPair = MockMakeCcuConnection(hcomm::TpProtocol::RTP);
+    auto connection = resPair.first.get();
+    connection->tpProtocol_ = hcomm::TpProtocol::RTP;
+    connection->tpInfo_.tpHandle = 0x1234;
+    connection->ctxHandle_ = (CtxHandle)0x5678;
+    connection->devPhyId_ = 0;
+
+    MOCKER_CPP(&hcomm::TpMgr::GetInstance).stubs().will(returnValue((hcomm::TpMgr*)0x12345));
+    MOCKER_CPP(&hcomm::TpMgr::GetTpAttr).stubs().will(returnValue(HcclResult::HCCL_E_AGAIN));
+
+    HcclResult ret = connection->GetTpAttr();
+    EXPECT_EQ(ret, HcclResult::HCCL_E_AGAIN);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(CcuConnTest, Ut_GetTpAttr_RTP_TpMgrReturnsSuccess_ReturnsSuccess)
+{
+    auto resPair = MockMakeCcuConnection(hcomm::TpProtocol::RTP);
+    auto connection = resPair.first.get();
+    connection->tpProtocol_ = hcomm::TpProtocol::RTP;
+    connection->tpInfo_.tpHandle = 0x1234;
+    connection->ctxHandle_ = (CtxHandle)0x5678;
+    connection->devPhyId_ = 0;
+
+    MOCKER_CPP(&hcomm::TpMgr::GetInstance).stubs().will(returnValue((hcomm::TpMgr*)0x12345));
+    MOCKER_CPP(&hcomm::TpMgr::GetTpAttr).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+
+    HcclResult ret = connection->GetTpAttr();
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(CcuConnTest, Ut_GetTaTimeOut_CTP_UsesEnvValue)
+{
+    auto resPair = MockMakeCcuConnection(hcomm::TpProtocol::CTP);
+    auto connection = resPair.first.get();
+    connection->tpProtocol_ = hcomm::TpProtocol::CTP;
+
+    MOCKER_CPP(&Hccl::EnvConfig::GetInstance).stubs().will(returnValue((Hccl::EnvConfig*)0x12345));
+    MOCKER_CPP(&Hccl::EnvConfig::GetRdmaConfig).stubs().will(returnValue((Hccl::RdmaConfig*)0x12345));
+    MOCKER_CPP(&Hccl::RdmaConfig::GetUbTimeOut).stubs().will(returnValue(16));
+
+    HcclResult ret = connection->GetTaTimeOut();
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+    EXPECT_EQ(connection->errTimeout_, 16);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(CcuConnTest, Ut_GetTaTimeOut_RTP_UsesCalcTaTimeout)
+{
+    auto resPair = MockMakeCcuConnection(hcomm::TpProtocol::RTP);
+    auto connection = resPair.first.get();
+    connection->tpProtocol_ = hcomm::TpProtocol::RTP;
+    connection->tpAttrInfo_.tpAttr.at = 2;
+    connection->tpAttrInfo_.tpAttr.retryTimesInit = 1;
+
+    MOCKER_CPP(&hcomm::TpMgr::CalcTaTimeout).stubs().will(returnValue(24));
+
+    HcclResult ret = connection->GetTaTimeOut();
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+    EXPECT_EQ(connection->errTimeout_, 24);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(CcuConnTest, Ut_UpdateInitStatus_TP_ATTR_GETTING_State_Transitions)
+{
+    auto resPair = MockMakeCcuConnection(hcomm::TpProtocol::RTP);
+    auto connection = resPair.first.get();
+    connection->tpProtocol_ = hcomm::TpProtocol::RTP;
+    connection->innerStatus_ = hcomm::CcuConnection::InnerStatus::TP_ATTR_GETTING;
+    connection->tpInfo_.tpHandle = 0x1234;
+    connection->ctxHandle_ = (CtxHandle)0x5678;
+    connection->devPhyId_ = 0;
+    connection->tpAttrInfo_.tpAttr.at = 2;
+
+    MOCKER_CPP(&hcomm::TpMgr::GetInstance).stubs().will(returnValue((hcomm::TpMgr*)0x12345));
+    MOCKER_CPP(&hcomm::TpMgr::GetTpAttr).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+    MOCKER_CPP(&hcomm::TpMgr::CalcTaTimeout).stubs().will(returnValue(16));
+    MOCKER_CPP(&hcomm::CcuJetty::CreateJetty).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+
+    HcclResult ret = connection->UpdateInitStatus();
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+    EXPECT_EQ(connection->innerStatus_, hcomm::CcuConnection::InnerStatus::EXCHANGEABLE);
+
+    GlobalMockObject::verify();
+}
