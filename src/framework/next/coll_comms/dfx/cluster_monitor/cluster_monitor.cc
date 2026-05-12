@@ -906,5 +906,97 @@ __attribute__((constructor)) void ClusterMonitorCallBackInit()
     hcomm::RegisterCcuGetErrStatusVecCallBack(GetErrStatusVecFromCluserMonitor);
 }
 
+// HcommGetAsyncEvents接口放在那个.cc里面
+HcclResult HcommGetAsyncEvents(u32 devPhyId, EndpointHandle epHandle, struct AsyncEvent events[], int &num)
+{
+    // 对接口进行参数devPhyId,num检查????
+    Endpoint *localEpPtr = reinterpret_cast<Endpoint *>(epHandle);
+    CHK_PTR_NULL(localEpPtr);
+    CHK_PTR_NULL(events);
+
+    return localEpPtr->GetAsyncEventsContext(devPhyId, events, num);
+}
+
+HcclResult ClusterMonitor::RegisterEpHandleToClusterMonitor(u32 devPhyId, EndpointHandle epHandle)
+{
+    CHK_PTR_NULL(epHandle);
+
+    std::unique_lock<std::mutex> tableLock(epHandleTableMtx_);
+    epHandleTable_[devPhyId].emplace(reinterpret_cast<u64>(epHandle));
+    tableLock.unlock();
+    return HCCL_SUCCESS;
+}
+
+void ClusterMonitor::PrintUbAsyncEventsContext(u32 devPhyId, const struct AsyncEvent &event)
+{
+    unsigned int contextLen = 0;
+    unsigned int contextIndex = 0;
+    unsigned int bytesPreLine = 4;
+
+    contextLen = event.len;
+    if (contextLen > CONTEXT_MAX_LEN) {
+        HCCL_ERROR("[ClusterMonitor][%s] print devPhyId[%u] failed for context len[%u] exceed max len[%u]", __func__,
+            devPhyId, contextLen, CONTEXT_MAX_LEN);
+        return;
+    }
+    
+    HCCL_ERROR("************* devPhyId[%u] ub async event info, resId[%u], eventType[%u], contextLen[%u]*************",
+        devPhyId, event.resId, event.eventType, event.len);
+    for (unsigned int i = 0; i < contextLen; i = contextIndex) {
+        contextIndex += bytesPreLine;
+        HCCL_ERROR("event context[byte  %-u]: %02x%02x%02x%02x", contextIndex, event.context[i + 3],
+            event.context[i + 2], contextIndex, event.context[i + 1], contextIndex, event.context[i]);
+    }
+    HCCL_ERROR(
+        "********************************************************************************************************");
+}
+
+void ClusterMonitor::ProcessUbAsyncEvents()
+{
+    if (!isProcessUbAsyncEvents_) {
+        return;
+    }
+
+    uint32_t devLogicId{0};
+    uint32_t devPhyId{0};
+    devLogicId = static_cast<uint32_t>(HcclGetThreadDeviceId());
+    CHK_RET_NULL(hrtGetDevicePhyIdByIndex(devLogicId, devPhyId));
+
+    std::vector<EndpointHandle> handles;
+    {
+        std::unique_lock<std::mutex> tableLock(epHandleTableMtx_);
+        auto iter = epHandleTable_.find(devPhyId);
+        if (iter != epHandleTable_.end()) {
+            for (const auto &value : iter->second) {
+                handles.push_back(reinterpret_cast<EndpointHandle>(value));
+            }
+        }
+        tableLock.unlock();
+    }
+
+    HCCL_DEBUG("[ClusterMonitor][%s] devPhyId[%u] handles[%zu]", __func__, devPhyId, handles.size());
+
+    for (const auto &epHandle : handles) {
+        unsigned int num = ASYNC_EVENT_MAX_NUM;
+        auto events = std::unique_ptr<struct AsyncEvent[]>(new (std::nothrow) struct AsyncEvent[ASYNC_EVENT_MAX_NUM]);
+        CHK_SMART_PTR_RET_NULL(events);
+
+        HcclResult ret = HcommGetAsyncEvents(devPhyId, epHandle, events.get(), num);
+
+        if (ret == HCCL_E_NOT_SUPPORT) {
+            isProcessUbAsyncEvents_ = false;
+            HCCL_ERROR("[ClusterMonitor][%s] devPhyId[%u] version not support", __func__, devPhyId);
+            return;
+        } else if (ret == HCCL_SUCCESS) {
+            HCCL_DEBUG("[ClusterMonitor][%s] devPhyId[%u] fetched %u events", __func__, devPhyId, num);
+            for (unsigned int i = 0; i < num; ++i) {
+                PrintUbAsyncEventsContext(event[i]);
+            }
+        } else {
+            HCCL_ERROR("[ClusterMonitor][%s] devPhyId[%u] HcommGetAsyncEvents failed, ret[%d]", __func__, devPhyId, ret);
+            // 出错了，继续获取下一个EndpointHandle
+        }
+    }
+}
 
 } // namespace hcomm
