@@ -71,10 +71,11 @@ TEST_F(ExchangeInfoTest, Ut_CApiAddExchangeInfo_When_ParamValid_Expect_Success)
 TEST_F(ExchangeInfoTest, Ut_CApiGetExchangeInfo_When_ParamValid_Expect_Success)
 {
     std::vector<u8> remoteData = {0xAA, 0xBB};
+    size_t size = remoteData.size();
     hcclCommPtr->StoreRemoteExchangeInfo(0, remoteData);
 
     HcclComm comm = static_cast<HcclComm>(hcclCommPtr.get());
-    std::vector<u8> recvBuf(remoteData.size(), 0);
+    std::vector<u8> recvBuf(size, 0);
     uint32_t recvBufSize = recvBuf.size();
     uint32_t actualLen = 0;
     HcclResult ret = HcclCommGetExchangeInfo(comm, 0, recvBufSize, recvBuf.data(), &actualLen);
@@ -98,6 +99,7 @@ TEST_F(ExchangeInfoTest, Ut_EndToEnd_When_AddStoreGet_Expect_Consistent)
 
     // 2. 模拟建链后存储对端信息
     std::vector<u8> remoteData = {0xCA, 0xFE, 0xBA, 0xBE};
+    size_t size = remoteData.size();
     ret = hcclCommPtr->StoreRemoteExchangeInfo(1, remoteData);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
@@ -106,7 +108,7 @@ TEST_F(ExchangeInfoTest, Ut_EndToEnd_When_AddStoreGet_Expect_Consistent)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     // 4. 获取对端交换信息
-    std::vector<u8> recvBuf(remoteData.size(), 0);
+    std::vector<u8> recvBuf(size, 0);
     uint32_t recvBufSize = recvBuf.size();
     uint32_t actualLen = 0;
     ret = hcclCommPtr->GetExchangeInfo(1, recvBufSize, recvBuf.data(), &actualLen);
