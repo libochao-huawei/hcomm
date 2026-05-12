@@ -72,6 +72,11 @@ HostCpuRoceChannel::~HostCpuRoceChannel() {
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[HostCpuRoceChannel::~HostCpuRoceChannel] exception occurred, HcclResult=[%d]", ret);
     }
+
+    if (socket_ != nullptr) {
+        SocketMgr::GetInstance().PutSocket(socket_);
+        socket_ = nullptr;
+    }
 }
 
 HcclResult HostCpuRoceChannel::ParseInputParam()
@@ -114,8 +119,6 @@ HcclResult HostCpuRoceChannel::ParseInputParam()
             localRmaBuffers_.emplace_back(localRdmaBuffer);
         }
     }
-
-    EXECEPTION_CATCH(socketMgr_ = std::make_unique<SocketMgr>(), return HCCL_E_PTR);
 
     auto* localCpuRoceEpPtr = dynamic_cast<CpuRoceEndpoint *>(localEpPtr);
     if (localCpuRoceEpPtr == nullptr) {
@@ -165,7 +168,7 @@ HcclResult HostCpuRoceChannel::BuildSocket()
     }
     std::string socketTag = "AUTOMATIC_SOCKET_TAG";
     Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, port, socketTag);
-    CHK_RET(socketMgr_->GetSocket(socketConfig, socket_));
+    CHK_RET(SocketMgr::GetInstance().GetSocket(socketConfig, socket_));
     HCCL_INFO("[HostCpuRoceChannel::%s] SUCCESS. port[%u].", __func__, port);
     return HCCL_SUCCESS;
 }
@@ -227,6 +230,22 @@ ChannelStatus HostCpuRoceChannel::GetStatus()
     return status;
 }
 
+HcclResult HostCpuRoceChannel::ProcessStatus()
+{
+    switch (channelStatus_) {
+        case ChannelStatus::READY:
+            if (socket_ != nullptr) {
+                SocketMgr::GetInstance().PutSocket(socket_);
+                socket_ = nullptr;
+            }
+            return HCCL_SUCCESS;
+        case ChannelStatus::SOCKET_TIMEOUT:
+            return HCCL_E_ROCE_CONNECT;
+        default:
+            return HCCL_E_AGAIN;
+    }
+}
+
 HcclResult HostCpuRoceChannel::GetStatus(ChannelStatus &status) {
     switch (rdmaStatus_) {
         case RdmaStatus::INIT:
@@ -272,14 +291,7 @@ HcclResult HostCpuRoceChannel::GetStatus(ChannelStatus &status) {
     }
 
     status = channelStatus_;
-    switch (channelStatus_) {
-        case ChannelStatus::READY:
-            return HCCL_SUCCESS;
-        case ChannelStatus::SOCKET_TIMEOUT:
-            return HCCL_E_ROCE_CONNECT;
-        default:
-            return HCCL_E_AGAIN;
-    }
+    return ProcessStatus();
 }
 
 HcclResult HostCpuRoceChannel::CheckSocketStatus() {
@@ -577,7 +589,9 @@ std::string HostCpuRoceChannel::Describe() const
         msg += ", ";
     }
     msg += Hccl::StringFormat("], rdmaHandle: %p, %s, ", rdmaHandle_, channelStatus_.Describe().c_str());
-    msg += socket_->Describe();
+    if (socket_ != nullptr) {
+        msg += socket_->Describe();
+    }
     msg += ", ";
     // msg += attr_.Describe();
     return msg;
