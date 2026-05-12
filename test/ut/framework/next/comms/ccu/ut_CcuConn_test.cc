@@ -105,6 +105,11 @@ pair<unique_ptr<hcomm::CcuConnection>, vector<unique_ptr<hcomm::CcuJetty>>> Mock
     return {std::move(connection), std::move(ccuJettys)};
 }
 
+namespace hcomm {
+uint32_t TaHwValueToMs(uint8_t hwValue);
+uint8_t FindMinTaHwValueGreaterThan(uint32_t tpTotalTimeoutMs);
+}
+
 TEST_F(CcuConnTest, Ut_GetStatus_When_CreateAndImportJettySuccess_Expect_Return_Connected)
 {
     auto resPair = MockMakeCcuConnection(hcomm::TpProtocol::RTP);
@@ -121,4 +126,76 @@ TEST_F(CcuConnTest, Ut_GetStatus_When_CreateAndImportJettySuccess_Expect_Return_
     EXPECT_NE(ret, HcclResult::HCCL_SUCCESS);
     ret = connection->Describe(testDfxMsg);
     EXPECT_NE(ret, HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(CcuConnTest, Ut_TaHwValueToMs_When_InputGear0_Expect_Return512ms)
+{
+    uint32_t timeoutMs = hcomm::TaHwValueToMs(0);
+    EXPECT_EQ(timeoutMs, 512u);
+    timeoutMs = hcomm::TaHwValueToMs(7);
+    EXPECT_EQ(timeoutMs, 512u);
+}
+
+TEST_F(CcuConnTest, Ut_TaHwValueToMs_When_InputGear1_Expect_Return1000ms)
+{
+    uint32_t timeoutMs = hcomm::TaHwValueToMs(8);
+    EXPECT_EQ(timeoutMs, 1000u);
+    timeoutMs = hcomm::TaHwValueToMs(15);
+    EXPECT_EQ(timeoutMs, 1000u);
+}
+
+TEST_F(CcuConnTest, Ut_TaHwValueToMs_When_InputGear2_Expect_Return8000ms)
+{
+    uint32_t timeoutMs = hcomm::TaHwValueToMs(16);
+    EXPECT_EQ(timeoutMs, 8000u);
+    timeoutMs = hcomm::TaHwValueToMs(23);
+    EXPECT_EQ(timeoutMs, 8000u);
+}
+
+TEST_F(CcuConnTest, Ut_TaHwValueToMs_When_InputGear3_Expect_Return32000ms)
+{
+    uint32_t timeoutMs = hcomm::TaHwValueToMs(24);
+    EXPECT_EQ(timeoutMs, 32000u);
+    timeoutMs = hcomm::TaHwValueToMs(31);
+    EXPECT_EQ(timeoutMs, 32000u);
+}
+
+TEST_F(CcuConnTest, Ut_TaHwValueToMs_When_InputInvalid_Expect_ReturnDefault8000ms)
+{
+    uint32_t timeoutMs = hcomm::TaHwValueToMs(32);
+    EXPECT_EQ(timeoutMs, 8000u);
+    timeoutMs = hcomm::TaHwValueToMs(100);
+    EXPECT_EQ(timeoutMs, 8000u);
+}
+
+TEST_F(CcuConnTest, Ut_FindMinTaHwValueGreaterThan_When_LessThan512ms_Expect_Return0)
+{
+    uint8_t hwValue = hcomm::FindMinTaHwValueGreaterThan(100);
+    EXPECT_EQ(hwValue, 0u);
+    hwValue = hcomm::FindMinTaHwValueGreaterThan(511);
+    EXPECT_EQ(hwValue, 0u);
+}
+
+TEST_F(CcuConnTest, Ut_FindMinTaHwValueGreaterThan_When_LessThan1000ms_Expect_Return8)
+{
+    uint8_t hwValue = hcomm::FindMinTaHwValueGreaterThan(512);
+    EXPECT_EQ(hwValue, 8u);
+    hwValue = hcomm::FindMinTaHwValueGreaterThan(999);
+    EXPECT_EQ(hwValue, 8u);
+}
+
+TEST_F(CcuConnTest, Ut_FindMinTaHwValueGreaterThan_When_LessThan8000ms_Expect_Return16)
+{
+    uint8_t hwValue = hcomm::FindMinTaHwValueGreaterThan(1000);
+    EXPECT_EQ(hwValue, 16u);
+    hwValue = hcomm::FindMinTaHwValueGreaterThan(7999);
+    EXPECT_EQ(hwValue, 16u);
+}
+
+TEST_F(CcuConnTest, Ut_FindMinTaHwValueGreaterThan_When_GreaterOrEqual8000ms_Expect_Return24)
+{
+    uint8_t hwValue = hcomm::FindMinTaHwValueGreaterThan(8000);
+    EXPECT_EQ(hwValue, 24u);
+    hwValue = hcomm::FindMinTaHwValueGreaterThan(10000);
+    EXPECT_EQ(hwValue, 24u);
 }

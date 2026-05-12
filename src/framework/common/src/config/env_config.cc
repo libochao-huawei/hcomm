@@ -35,6 +35,7 @@ const std::string INCONSISTENT_CHECK_CONFIG = "inconsistent_check:";
 const std::string CONNECTION_FAULT_DETECTION_TIME = "connection_fault_detection_time:";
 const std::string TASK_MONITOR_INTERVAL = "task_monitor_interval:";
 constexpr static const s32 HCCL_MAX_LINK_TIME_OUT_S  = (120 * 60); // HCCL 最大探测超时时间设置为120*60s
+
 HcclResult InitEnvConfig()
 {
     std::lock_guard<std::mutex> lock(g_envConfigMutex);
@@ -81,6 +82,15 @@ const u32& EnvConfig::GetExternalInputRdmaRetryCnt()
     return g_envConfig.rdmaRetryCnt;
 }
 
+const u32& EnvConfig::GetExternalInputUboeTimeOut()
+{
+    return g_envConfig.uboeTimeOut;
+}
+const u32& EnvConfig::GetExternalInputUBTimeOut()
+{
+    return g_envConfig.ubTimeOut;
+}
+
 const std::vector<HcclSocketPortRange> &GetExternalInputHostSocketPortRange()
 {
     std::lock_guard<std::mutex> lock(g_envConfigMutex);
@@ -107,6 +117,27 @@ HcclResult ResetEnvConfigInitState()
 {
     g_envConfig.SetDefaultParams();
     return HCCL_SUCCESS;
+}
+
+HcclResult ParseAndReportTimeOutEnv(
+    std::pair<u32, u32>& timeOutRange,
+    HcclResult (EnvConfig::*parseFunc)(std::pair<u32, u32>&),
+    const std::string& envName,
+    u32 mmEnvId,
+    HcclResult& ret)
+{
+    ret = (g_envConfig.*parseFunc)(timeOutRange);
+    char* mmSysGetEnvValue = nullptr;
+    MM_SYS_GET_ENV(mmEnvId, mmSysGetEnvValue);
+    std::string timeOutEnv = (mmSysGetEnvValue != nullptr) ? mmSysGetEnvValue : ENV_EMPTY_STRING;
+    std::string validRange = "range[" + std::to_string(timeOutRange.first) + " ," + std::to_string(timeOutRange.second) + "]";
+    RPT_ENV_ERR(ret != HCCL_SUCCESS, "EI0001", std::vector<std::string>({"value", "env", "expect"}),
+        std::vector<std::string>({timeOutEnv, envName, validRange}));
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse %s failed. errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_ENV_CONFIG.c_str(), HCCL_ERROR_CODE(ret), ret, envName.c_str()),
+        ret);
+    return ret;
 }
 
 HcclResult InitEnvParam()
@@ -270,6 +301,16 @@ HcclResult InitEnvParam()
             HCCL_ERROR_CODE(ret),
             ret),
         ret);
+    // 解析UBOETimeOut
+    std::pair<u32, u32> uboeTimeOutRange;
+    ParseAndReportTimeOutEnv(uboeTimeOutRange, &EnvConfig::ParseUBOETimeOut, "HCCL_UBOE_TIMEOUT", MM_ENV_HCCL_UBOE_TIMEOUT, ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("Parse Env UBoE TimeOut failed. errorno[%d]", ), ret);
+
+    // 解析UBTimeOut
+    std::pair<u32, u32> ubTimeOutRange;
+    ParseAndReportTimeOutEnv(ubTimeOutRange, &EnvConfig::ParseUBTimeOut, "HCCL_UB_TIMEOUT", MM_ENV_HCCL_UB_TIMEOUT, ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("Parse Env ub TimeOut failed. errorno[%d]", ), ret);
+
     return HCCL_SUCCESS;
 }
 
@@ -618,6 +659,87 @@ HcclResult EnvConfig::ParseRDMATimeOut(std::pair<u32, u32> &rdmaTimeOutRange)
 
     g_envConfig.rdmaTimeOut = rdmaTimeOut;
     HCCL_RUN_INFO("[HCCL_ENV] HCCL_RDMA_TIMEOUT set by environment to [%u]", rdmaTimeOut);
+    return HCCL_SUCCESS;
+}
+
+HcclResult EnvConfig::ParseUBOETimeOut(std::pair<u32, u32> &uboeTimeOutRange)
+{
+    u32 uboeTimeOutMax;
+    uboeTimeOutMax = HCCL_UBOE_TIMEOUT_MAX;
+    uboeTimeOutRange.first = HCCL_UBOE_TIMEOUT_MIN;
+    uboeTimeOutRange.second = uboeTimeOutMax;
+    char* mmSysGetEnvValue = nullptr;
+    MM_SYS_GET_ENV(MM_ENV_HCCL_UBOE_TIMEOUT, mmSysGetEnvValue);
+    std::string timeOutEnv = (mmSysGetEnvValue != nullptr) ? mmSysGetEnvValue : "EmptyString";
+    u32 uboeTimeOut = HCCL_UBOE_TIMEOUT_DEFAULT;
+    if (timeOutEnv == "EmptyString") {
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_UBOE_TIMEOUT set by default to [%u]", uboeTimeOut);
+        return HCCL_SUCCESS;
+    }
+ 
+    // 校验环境变量长度
+    bool isEnvLenValid = CheckEnvLen(timeOutEnv.c_str(), MAX_LEN_OF_DIGIT_ENV);
+ 
+    CHK_PRT_RET(!isEnvLenValid,
+        HCCL_ERROR("[Parse][UBOETimeOut]errNo[0x%016llx] Invalid HCCL_UBOE_TIMEOUT env len, len is bigger than "\
+            "[%u]. errorno[%d]", HCCL_ERROR_CODE(HCCL_E_PARA), MAX_LEN_OF_DIGIT_ENV, HCCL_E_PARA), HCCL_E_PARA);
+ 
+    g_envConfig.uboeTimeOut = HCCL_UBOE_TIMEOUT_DEFAULT;
+    CHK_RET(IsAllDigit(timeOutEnv.c_str()));
+ 
+    HcclResult ret = SalStrToULong(timeOutEnv.c_str(), HCCL_BASE_DECIMAL, uboeTimeOut);
+    // 若转换出错或者设置的UBOETimeOut不在有效范围内，报错
+    CHK_PRT_RET(
+        (ret != HCCL_SUCCESS || uboeTimeOut < HCCL_UBOE_TIMEOUT_MIN || uboeTimeOut > uboeTimeOutMax),
+        HCCL_ERROR("[Parse][UBOETimeOut]HCCL_UBOE_TIMEOUT[%s] is invalid. except: [%u, %u]",
+            timeOutEnv.c_str(),
+            HCCL_UBOE_TIMEOUT_MIN,
+            uboeTimeOutMax),
+        HCCL_E_PARA);
+ 
+    g_envConfig.uboeTimeOut = uboeTimeOut;
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_UBOE_TIMEOUT set by environment to [%u]", uboeTimeOut);
+    return HCCL_SUCCESS;
+}
+ 
+HcclResult EnvConfig::ParseUBTimeOut(std::pair<u32, u32> &ubTimeOutRange)
+{
+    u32 ubTimeOutMax;
+    ubTimeOutMax = HCCL_UB_TIMEOUT_MAX;
+ 
+    ubTimeOutRange.first = HCCL_UB_TIMEOUT_MIN;
+    ubTimeOutRange.second = ubTimeOutMax;
+    char* mmSysGetEnvValue = nullptr;
+    MM_SYS_GET_ENV(MM_ENV_HCCL_UB_TIMEOUT, mmSysGetEnvValue);
+    std::string timeOutEnv = (mmSysGetEnvValue != nullptr) ? mmSysGetEnvValue : "EmptyString";
+    u32 ubTimeOut = HCCL_UB_TIMEOUT_DEFAULT;
+    if (timeOutEnv == "EmptyString") {
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_UB_TIMEOUT set by default to [%u]", ubTimeOut);
+        return HCCL_SUCCESS;
+    }
+ 
+    // 校验环境变量长度
+    bool isEnvLenValid = CheckEnvLen(timeOutEnv.c_str(), MAX_LEN_OF_DIGIT_ENV);
+ 
+    CHK_PRT_RET(!isEnvLenValid,
+        HCCL_ERROR("[Parse][UBTimeOut]errNo[0x%016llx] Invalid HCCL_UB_TIMEOUT env len, len is bigger than "\
+            "[%u]. errorno[%d]", HCCL_ERROR_CODE(HCCL_E_PARA), MAX_LEN_OF_DIGIT_ENV, HCCL_E_PARA), HCCL_E_PARA);
+ 
+    g_envConfig.ubTimeOut = HCCL_UB_TIMEOUT_DEFAULT;
+    CHK_RET(IsAllDigit(timeOutEnv.c_str()));
+ 
+    HcclResult ret = SalStrToULong(timeOutEnv.c_str(), HCCL_BASE_DECIMAL, ubTimeOut);
+    // 若转换出错或者设置的UBTimeOut不在有效范围内，报错
+    CHK_PRT_RET(
+        (ret != HCCL_SUCCESS || ubTimeOut < HCCL_UB_TIMEOUT_MIN || ubTimeOut > ubTimeOutMax),
+        HCCL_ERROR("[Parse][UBTimeOut]HCCL_UB_TIMEOUT[%s] is invalid. except: [%u, %u]",
+            timeOutEnv.c_str(),
+            HCCL_UB_TIMEOUT_MIN,
+            ubTimeOutMax),
+        HCCL_E_PARA);
+ 
+    g_envConfig.ubTimeOut = ubTimeOut;
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_UB_TIMEOUT set by environment to [%u]", ubTimeOut);
     return HCCL_SUCCESS;
 }
 
