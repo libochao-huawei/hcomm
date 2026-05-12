@@ -11,7 +11,6 @@
 #include "transport.h"
 #include "transport_base.h"
 #include "transport_ibverbs.h"
-#include "transport_tcp.h"
 #include "transport_direct_npu.h"
 #ifdef CCL_KERNEL
 #include "transport_device_p2p.h"
@@ -44,8 +43,6 @@ Transport::Transport(TransportType type, TransportPara& para,
         }
     } else if (type == TransportType::TRANS_TYPE_P2P) {
         pimpl_ = new (std::nothrow) TransportP2p(dispatcher, notifyPool, machinePara, para.timeout);
-    } else if (type == TransportType::TRANS_TYPE_HOST_TCP) {
-        pimpl_ = new (std::nothrow) TransportTcp(dispatcher, notifyPool, machinePara, para.timeout, para.nicDeploy);
     } else if (type == TransportType::TRANS_TYPE_DEVICE_P2P) {
 #ifdef CCL_KERNEL
         pimpl_ =

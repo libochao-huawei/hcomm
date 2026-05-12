@@ -9,7 +9,6 @@
 # -----------------------------------------------------------------------------------------------------------
 set(src_list
     transport_ibverbs.cc
-    transport_tcp.cc
     transport_p2p.cc
     transport_net.cc
     transport_virtural.cc
@@ -23,7 +22,6 @@ target_sources(hccl_plf PRIVATE
 )
 
 target_sources(hccd PRIVATE
-    transport_tcp.cc
     transport_net.cc
 )
 

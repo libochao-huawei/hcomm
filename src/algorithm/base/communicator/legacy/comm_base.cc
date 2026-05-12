@@ -236,9 +236,7 @@ HcclResult CommBase::SetTransportType(const u32 dstRank)
             transportType_[dstRank] = TransportType::TRANS_TYPE_P2P;
         }
     } else { // server间
-        if (GetExternalInputHcclIsTcpMode()) {
-            transportType_[dstRank] = TransportType::TRANS_TYPE_HOST_TCP;
-        } else if (IsSupportInterHccs(dstRank)) {
+        if (IsSupportInterHccs(dstRank)) {
             // 超节点内节点间走HCCS通信
             transportType_[dstRank] = TransportType::TRANS_TYPE_P2P;
         } else {
@@ -676,9 +674,6 @@ HcclResult CommBase::TransportInit(const u32 dstRank, MachinePara &machinePara)
     if (type == TransportType::TRANS_TYPE_P2P) {
         transportInfo_[dstRank].reset(new (std::nothrow) Transport(type, para, dispatcher_, notifyPool_, machinePara));
     } else if (type == TransportType::TRANS_TYPE_IBV_EXP) {
-        transportInfo_[dstRank].reset(new (std::nothrow) Transport(type, para, dispatcher_, notifyPool_, machinePara));
-    } else if (type == TransportType::TRANS_TYPE_HOST_TCP) {
-        para.nicDeploy = nicDeployInner_;
         transportInfo_[dstRank].reset(new (std::nothrow) Transport(type, para, dispatcher_, notifyPool_, machinePara));
     } else {
         HCCL_ERROR("[Init][Transport]not supported transport type");
