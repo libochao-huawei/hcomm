@@ -310,7 +310,7 @@ HcclResult InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsA
 template <typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTemplate1, typename InsAlgTemplate2,
     typename InsAlgTemplate3>
 void InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1, InsAlgTemplate2,
-    InsAlgTemplate3>::CalcSlice(std::vector<float> &splitDataSize, float scratchMaxMultiple, SliceConfig &slice)
+    InsAlgTemplate3>::CalcSlice(std::vector<double> &splitDataSize, float scratchMaxMultiple, SliceConfig &slice)
 {
     // 数据切分
     u64 sliceCount = std::min(static_cast<u64>(UB_MAX_DATA_SIZE) / dataTypeSize_, dataCount_);
@@ -320,10 +320,10 @@ void InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemp
             = min(sliceCount, static_cast<u64>(float(scratchCount) / scratchMaxMultiple)); // 向下取整，防止Scratch溢出
     }
     /* 刷新slicecout0 和slicecout1确保是interLocalRankSize_ * intraLocalRankSize_整倍数 */
-    u64 sliceCountPart0 = static_cast<u64>(float(sliceCount) * splitDataSize.at(0));
+    u64 sliceCountPart0 = static_cast<u64>(sliceCount * splitDataSize.at(0));
     sliceCountPart0
         = (sliceCountPart0 / interLocalRankSize_ / intraLocalRankSize_) * interLocalRankSize_ * intraLocalRankSize_;
-    u64 sliceCountPart1 = static_cast<u64>(float(sliceCount) * splitDataSize.at(1));
+    u64 sliceCountPart1 = static_cast<u64>(sliceCount * splitDataSize.at(1));
     sliceCountPart1
         = (sliceCountPart1 / interLocalRankSize_ / intraLocalRankSize_) * interLocalRankSize_ * intraLocalRankSize_;
     sliceCount = sliceCountPart0 + sliceCountPart1;
@@ -331,14 +331,12 @@ void InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemp
     u32 loopTimes = sliceCount == 0 ? 1 : (dataCount_ + sliceCount - 1) / sliceCount;
     // 计算尾块
     u64 finalSliceCount = dataCount_ - (loopTimes - 1) * sliceCount;
-    u64 finalSliceCountPart0 = static_cast<u64>(float(finalSliceCount) * splitDataSize.at(0));
+    u64 finalTailCount = finalSliceCount % (interLocalRankSize_ * intraLocalRankSize_);
+    u64 finalSliceCountPart1 = static_cast<u64>((finalSliceCount - finalTailCount) * splitDataSize.at(1));
     //  刷新slicecout0 和slicecout1确保是interLocalRankSize_ * intraLocalRankSize_整倍数
-    finalSliceCountPart0 = (finalSliceCountPart0 / interLocalRankSize_ / intraLocalRankSize_) * interLocalRankSize_
-                           * intraLocalRankSize_;
-    u64 finalSliceCountPart1 = static_cast<u64>(float(finalSliceCount) * splitDataSize.at(1));
     finalSliceCountPart1 = (finalSliceCountPart1 / interLocalRankSize_ / intraLocalRankSize_) * interLocalRankSize_
                            * intraLocalRankSize_;
-    u64 finalTailCount = finalSliceCount - finalSliceCountPart0 - finalSliceCountPart1;
+    u64 finalSliceCountPart0 = finalSliceCount - finalSliceCountPart1 - finalTailCount;
     slice.loopTimes = loopTimes;
     slice.sliceCount = sliceCount;
     slice.sliceCountPart0 = sliceCountPart0;
@@ -347,7 +345,7 @@ void InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemp
     slice.finalSliceCountPart0 = finalSliceCountPart0;
     slice.finalSliceCountPart1 = finalSliceCountPart1;
     // 结构体定义中必须确保finalTailCountPart0和finalTailCountPart1初始化为0
-    (finalTailCount < finalSliceCountPart0 ? slice.finalTailCountPart0 : slice.finalTailCountPart1) = finalTailCount;
+    (finalSliceCountPart0 <= finalSliceCountPart1 ? slice.finalTailCountPart0 : slice.finalTailCountPart1) = finalTailCount;
     return;
 }
 
@@ -392,7 +390,7 @@ HcclResult InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsA
 {
     LogAlgInfo(intraScatterTempAlg, interScatterTempAlg, intraAllGatherTempAlg, interAllGatherTempAlg);
 
-    std::vector<float> dataSplitSize;
+    std::vector<double> dataSplitSize;
     GetParallelDataSplit(dataSplitSize);
     ScratchMultiple scratchMultiple;
     CalcScratchMultiple(dataSplitSize, scratchMultiple, intraScatterTempAlg, interScatterTempAlg, intraAllGatherTempAlg,
@@ -412,7 +410,8 @@ HcclResult InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsA
     }
     InitFinalSliceDataParameters(slice, scratchMultiple, dataParameters);
     dataParameters.dataOffset[0] = (slice.loopTimes - 1) * slice.sliceCount * dataTypeSize_;
-    dataParameters.dataOffset[1] = dataParameters.dataOffset[0] + slice.finalSliceCountPart0 * dataTypeSize_;
+    dataParameters.dataOffset[1]
+        = dataParameters.dataOffset[0] + (slice.finalSliceCountPart0 + slice.finalTailCountPart0) * dataTypeSize_;
     CHK_RET(StageProcess(dataParameters, stageProcAlgParaVec));
     return HcclResult::HCCL_SUCCESS;
 }

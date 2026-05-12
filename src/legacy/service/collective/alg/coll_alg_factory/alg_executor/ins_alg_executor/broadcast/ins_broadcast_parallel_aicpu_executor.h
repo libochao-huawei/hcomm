@@ -15,8 +15,7 @@
 
 namespace Hccl {
 
-template <
-    typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTemplate1, typename InsAlgTemplate2,
+template <typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTemplate1, typename InsAlgTemplate2,
     typename InsAlgTemplate3>
 class InsBroadcastParallelAiCpuExecutor : public InsCollAlgBase {
 public:
@@ -28,16 +27,15 @@ public:
         return "Instruction based BroadCast Parallel AICPU Executor.";
     }
 
-    HcclResult CalcRes(const RankGraph* rankGraph, CollAlgResReq& algResReq) override;
+    HcclResult CalcRes(const RankGraph *rankGraph, CollAlgResReq &algResReq) override;
 
-    HcclResult CalcResOffload(const RankGraph* rankGraph, const u64& dataSize, CollOffloadOpResReq& resReq) override;
+    HcclResult CalcResOffload(const RankGraph *rankGraph, const u64 &dataSize, CollOffloadOpResReq &resReq) override;
     // HOST 接口
     HcclResult Orchestrate(
-        const RankGraph* rankGraph, const CollAlgOperator& op, const CollAlgParams& params, InsQuePtr insQue) override;
+        const RankGraph *rankGraph, const CollAlgOperator &op, const CollAlgParams &params, InsQuePtr insQue) override;
     // AICPU 接口
-    HcclResult Orchestrate(
-        const AlgTopoInfo& topoInfo, const CollAlgOperator& op, const CollAlgParams& params, ConnectedLinkMgr* linkMgr,
-        InsQuePtr insQue) override;
+    HcclResult Orchestrate(const AlgTopoInfo &topoInfo, const CollAlgOperator &op, const CollAlgParams &params,
+        ConnectedLinkMgr *linkMgr, InsQuePtr insQue) override;
 
 private:
     struct ScratchMultiple {
@@ -77,51 +75,47 @@ private:
     };
 
     struct StageProcAlgPara {
-        std::function<HcclResult(TempFuncs&, TemplateDataParams&, ResLinks&, std::vector<InsQuePtr>&)> part0FuncPtr;
+        std::function<HcclResult(TempFuncs &, TemplateDataParams &, ResLinks &, std::vector<InsQuePtr> &)> part0FuncPtr;
         ResLinks part0links;
         std::vector<InsQuePtr> part0Que;
-        std::function<HcclResult(TempFuncs&, TemplateDataParams&, ResLinks&, std::vector<InsQuePtr>&)> part1FuncPtr;
+        std::function<HcclResult(TempFuncs &, TemplateDataParams &, ResLinks &, std::vector<InsQuePtr> &)> part1FuncPtr;
         ResLinks part1links;
         std::vector<InsQuePtr> part1Que;
     };
-    HcclResult WrapPrepResLinks(const RankGraph* type, const LinkReq& linkReq, ResLinks& resLinks)
+    HcclResult WrapPrepResLinks(const RankGraph *type, const LinkReq &linkReq, ResLinks &resLinks)
     {
         return PrepResLinks(myRank_, type, linkPriority_, linkReq, resLinks);
     }
-    HcclResult WrapPrepResLinks(ConnectedLinkMgr* type, const LinkReq& linkReq, ResLinks& resLinks) const
+    HcclResult WrapPrepResLinks(ConnectedLinkMgr *type, const LinkReq &linkReq, ResLinks &resLinks) const
     {
         return PrepResLinks(myRank_, linkReq, type, resLinks);
     }
-    HcclResult PreCalcRes(
-        const RankGraph* rankGraph, AlgTempResReq& resReqIntraScatter, AlgTempResReq& resReqInterScatter,
-        AlgTempResReq& resReqIntraAllGather, AlgTempResReq& resReqInterAllGather);
+    HcclResult PreCalcRes(const RankGraph *rankGraph, AlgTempResReq &resReqIntraScatter,
+        AlgTempResReq &resReqInterScatter, AlgTempResReq &resReqIntraAllGather, AlgTempResReq &resReqInterAllGather);
     template <typename T>
-    HcclResult CalcSingleAlgRes(
-        InsAlgTemplate0& intraScatter, InsAlgTemplate1& interScatter, InsAlgTemplate2& intraAllGather,
-        InsAlgTemplate3& interAllGather, T* type, AlgTempResReq& resReqIntraScatter, AlgTempResReq& resReqInterScatter,
-        AlgTempResReq& resReqIntraAllGather, AlgTempResReq& resReqInterAllGather) const;
+    HcclResult CalcSingleAlgRes(InsAlgTemplate0 &intraScatter, InsAlgTemplate1 &interScatter,
+        InsAlgTemplate2 &intraAllGather, InsAlgTemplate3 &interAllGather, T *type, AlgTempResReq &resReqIntraScatter,
+        AlgTempResReq &resReqInterScatter, AlgTempResReq &resReqIntraAllGather,
+        AlgTempResReq &resReqInterAllGather) const;
 
     template <typename T>
-    HcclResult PrepareRes(
-        T* type, AlgTempResReq& resReqIntraScatter, AlgTempResReq& resReqInterScatter,
-        AlgTempResReq& resReqIntraAllGather, AlgTempResReq& resReqInterAllGather);
+    HcclResult PrepareRes(T *type, AlgTempResReq &resReqIntraScatter, AlgTempResReq &resReqInterScatter,
+        AlgTempResReq &resReqIntraAllGather, AlgTempResReq &resReqInterAllGather);
 
     HcclResult CalcLocalRankSize()
     {
         uint64_t virtRanks_2 = 2;
-        CHK_PRT_RET(
-            virtRanks_.size() < virtRanks_2, HCCL_ERROR("[CalcLocalRankSize] virtRanks level num is smaller than 2."),
-            HcclResult::HCCL_E_INTERNAL);
+        CHK_PRT_RET(virtRanks_.size() < virtRanks_2,
+            HCCL_ERROR("[CalcLocalRankSize] virtRanks level num is smaller than 2."), HcclResult::HCCL_E_INTERNAL);
 
         intraLocalRankSize_ = virtRanks_.at(0).size();
         interLocalRankSize_ = virtRanks_.at(1).size();
 
-        HCCL_INFO(
-            "[CalcLocalRankSize] localRankSize: myRank[%d] intraLocalRankSize[%u] interLocalRankSize[%u]", myRank_,
-            intraLocalRankSize_, interLocalRankSize_);
+        HCCL_INFO("[CalcLocalRankSize] localRankSize: myRank[%d] intraLocalRankSize[%u] interLocalRankSize[%u]",
+            myRank_, intraLocalRankSize_, interLocalRankSize_);
         return HcclResult::HCCL_SUCCESS;
     };
-    void GetParallelDataSplit(std::vector<float>& splitDataSize) const
+    void GetParallelDataSplit(std::vector<double> &splitDataSize) const
     {
         // to do 先做等分，后续根据性能做调整
         double splitData = 0.5;
@@ -129,75 +123,65 @@ private:
         splitDataSize.push_back(splitData);
         return;
     }
-    void InitDataParameters(SliceConfig& slice, ScratchMultiple& scratchMultiple, DataParameters& dataParameters) const
+    void InitDataParameters(SliceConfig &slice, ScratchMultiple &scratchMultiple, DataParameters &dataParameters) const
     {
-        dataParameters.sliceSize.at(0) = {
-            slice.sliceCountPart0 * dataTypeSize_ / interLocalRankSize_,
+        dataParameters.sliceSize.at(0) = {slice.sliceCountPart0 * dataTypeSize_ / interLocalRankSize_,
             slice.sliceCountPart0 * dataTypeSize_ / interLocalRankSize_ / intraLocalRankSize_,
             slice.sliceCountPart0 * dataTypeSize_ / interLocalRankSize_ / intraLocalRankSize_,
             slice.sliceCountPart0 * dataTypeSize_ / interLocalRankSize_};
-        dataParameters.sliceSize.at(1) = {
-            slice.sliceCountPart1 * dataTypeSize_ / intraLocalRankSize_,
+        dataParameters.sliceSize.at(1) = {slice.sliceCountPart1 * dataTypeSize_ / intraLocalRankSize_,
             slice.sliceCountPart1 * dataTypeSize_ / intraLocalRankSize_ / interLocalRankSize_,
             slice.sliceCountPart1 * dataTypeSize_ / intraLocalRankSize_ / interLocalRankSize_,
             slice.sliceCountPart1 * dataTypeSize_ / intraLocalRankSize_};
-        dataParameters.inputStride.at(0) = {
-            slice.sliceCountPart0 * dataTypeSize_ / interLocalRankSize_,
+        dataParameters.inputStride.at(0) = {slice.sliceCountPart0 * dataTypeSize_ / interLocalRankSize_,
             slice.sliceCountPart0 * dataTypeSize_ / interLocalRankSize_ / intraLocalRankSize_, 0, 0};
-        dataParameters.inputStride.at(1) = {
-            slice.sliceCountPart1 * dataTypeSize_ / intraLocalRankSize_,
+        dataParameters.inputStride.at(1) = {slice.sliceCountPart1 * dataTypeSize_ / intraLocalRankSize_,
             slice.sliceCountPart1 * dataTypeSize_ / intraLocalRankSize_ / interLocalRankSize_, 0, 0};
         // 计算Scratch偏移，数据尾块必然小于常规块，不用额外计算尾块时的Scratch偏移
         dataParameters.scratchOffset.at(0) = {0, 0, 0, 0};
-        dataParameters.scratchOffset.at(1) = {
-            slice.sliceCountPart0 * scratchMultiple.interScatter * dataTypeSize_,
+        dataParameters.scratchOffset.at(1) = {slice.sliceCountPart0 * scratchMultiple.interScatter * dataTypeSize_,
             (slice.sliceCountPart0 / interLocalRankSize_) * scratchMultiple.intraScatter * dataTypeSize_,
-            (slice.sliceCountPart0 / interLocalRankSize_ / intraLocalRankSize_) * scratchMultiple.intraAllGather *
-                dataTypeSize_,
+            (slice.sliceCountPart0 / interLocalRankSize_ / intraLocalRankSize_) * scratchMultiple.intraAllGather
+                * dataTypeSize_,
             (slice.sliceCountPart0 / interLocalRankSize_) * scratchMultiple.interAllGather * dataTypeSize_};
         dataParameters.tailSize = dataParameters.sliceSize;
         return;
     }
     void InitFinalSliceDataParameters(
-        SliceConfig& slice, ScratchMultiple& scratchMultiple, DataParameters& dataParameters) const
+        SliceConfig &slice, ScratchMultiple &scratchMultiple, DataParameters &dataParameters) const
     {
-        dataParameters.sliceSize.at(0) = {
-            slice.finalSliceCountPart0 * dataTypeSize_ / interLocalRankSize_,
+        dataParameters.sliceSize.at(0) = {slice.finalSliceCountPart0 * dataTypeSize_ / interLocalRankSize_,
             slice.finalSliceCountPart0 * dataTypeSize_ / interLocalRankSize_ / intraLocalRankSize_,
             slice.finalSliceCountPart0 * dataTypeSize_ / interLocalRankSize_ / intraLocalRankSize_,
             slice.finalSliceCountPart0 * dataTypeSize_ / interLocalRankSize_};
-        dataParameters.sliceSize.at(1) = {
-            slice.finalSliceCountPart1 * dataTypeSize_ / intraLocalRankSize_,
+        dataParameters.sliceSize.at(1) = {slice.finalSliceCountPart1 * dataTypeSize_ / intraLocalRankSize_,
             slice.finalSliceCountPart1 * dataTypeSize_ / intraLocalRankSize_ / interLocalRankSize_,
             slice.finalSliceCountPart1 * dataTypeSize_ / intraLocalRankSize_ / interLocalRankSize_,
             slice.finalSliceCountPart1 * dataTypeSize_ / intraLocalRankSize_};
-        dataParameters.inputStride.at(0) = {
-            slice.finalSliceCountPart0 * dataTypeSize_ / interLocalRankSize_,
+        dataParameters.inputStride.at(0) = {slice.finalSliceCountPart0 * dataTypeSize_ / interLocalRankSize_,
             slice.finalSliceCountPart0 * dataTypeSize_ / interLocalRankSize_ / intraLocalRankSize_, 0, 0};
-        dataParameters.inputStride.at(1) = {
-            slice.finalSliceCountPart1 * dataTypeSize_ / intraLocalRankSize_,
+        dataParameters.inputStride.at(1) = {slice.finalSliceCountPart1 * dataTypeSize_ / intraLocalRankSize_,
             slice.finalSliceCountPart1 * dataTypeSize_ / intraLocalRankSize_ / interLocalRankSize_, 0, 0};
         dataParameters.scratchOffset.at(0) = {0, 0, 0, 0};
-        dataParameters.scratchOffset.at(1) = {
-            slice.finalSliceCountPart0 * scratchMultiple.interScatter,
-            slice.finalSliceCountPart0 / interLocalRankSize_ * scratchMultiple.intraScatter,
-            (slice.finalSliceCountPart0 / interLocalRankSize_ / intraLocalRankSize_) * scratchMultiple.intraAllGather,
-            (slice.finalSliceCountPart0 / interLocalRankSize_) * scratchMultiple.interAllGather};
+        dataParameters.scratchOffset.at(1) = {slice.finalSliceCountPart0 * scratchMultiple.interScatter * dataTypeSize_,
+            slice.finalSliceCountPart0 / interLocalRankSize_ * scratchMultiple.intraScatter * dataTypeSize_,
+            (slice.finalSliceCountPart0 / interLocalRankSize_ / intraLocalRankSize_) * scratchMultiple.intraAllGather
+                * dataTypeSize_,
+            (slice.finalSliceCountPart0 / interLocalRankSize_) * scratchMultiple.interAllGather * dataTypeSize_};
         // 只有最后一片数据的part1部分存在尾片数据，scatter算子和allgather算子都需要支持该数据收集
         for (size_t i = 0; i < dataParameters.sliceSize.at(0).size(); i++) {
-            dataParameters.tailSize.at(0).at(i) =
-                dataParameters.sliceSize.at(0).at(i) + slice.finalTailCountPart0 * dataTypeSize_;
+            dataParameters.tailSize.at(0).at(i)
+                = dataParameters.sliceSize.at(0).at(i) + slice.finalTailCountPart0 * dataTypeSize_;
         }
         for (size_t i = 0; i < dataParameters.sliceSize.at(1).size(); i++) {
-            dataParameters.tailSize.at(1).at(i) =
-                dataParameters.sliceSize.at(1).at(i) + slice.finalTailCountPart1 * dataTypeSize_;
+            dataParameters.tailSize.at(1).at(i)
+                = dataParameters.sliceSize.at(1).at(i) + slice.finalTailCountPart1 * dataTypeSize_;
         }
         return;
     }
     HcclResult CalcLocalRoot()
     {
-        CHK_PRT_RET(
-            root_ >= rankSize_, HCCL_ERROR("[CalcLocalRoot] root[%u] is out of rankSize[%u]", root_, rankSize_),
+        CHK_PRT_RET(root_ >= rankSize_, HCCL_ERROR("[CalcLocalRoot] root[%u] is out of rankSize[%u]", root_, rankSize_),
             HcclResult::HCCL_E_INTERNAL);
 
         u32 intraLocalRootIdx = root_ % intraLocalRankSize_;
@@ -205,35 +189,32 @@ private:
         u32 interLocalRootIdx = root_ / intraLocalRankSize_;
         interLocalRoot_ = static_cast<u32>(vTopo_.at(1).at(0).at(interLocalRootIdx));
 
-        HCCL_INFO(
-            "[CalcLocalRoot] localRoot: myRank[%d] intraLocalRoot[%u] interLocalRoot[%u]", myRank_, intraLocalRoot_,
-            interLocalRoot_);
+        HCCL_INFO("[CalcLocalRoot] localRoot: myRank[%d] intraLocalRoot[%u] interLocalRoot[%u]", myRank_,
+            intraLocalRoot_, interLocalRoot_);
         return HcclResult::HCCL_SUCCESS;
     }
 
-    void CalcScratchMultiple(
-        std::vector<float>& splitDataSize, ScratchMultiple& scratchMultiple, InsAlgTemplate0& intraScatterTempAlg,
-        InsAlgTemplate1& interScatterTempAlg, InsAlgTemplate2& intraAllGatherTempAlg,
-        InsAlgTemplate3& interAllGatherTempAlg) const
+    void CalcScratchMultiple(std::vector<double> &splitDataSize, ScratchMultiple &scratchMultiple,
+        InsAlgTemplate0 &intraScatterTempAlg, InsAlgTemplate1 &interScatterTempAlg,
+        InsAlgTemplate2 &intraAllGatherTempAlg, InsAlgTemplate3 &interAllGatherTempAlg) const
     {
         scratchMultiple.intraScatter = intraScatterTempAlg.CalcScratchMultiple(BufferType::INPUT, BufferType::INPUT);
         scratchMultiple.interScatter = interScatterTempAlg.CalcScratchMultiple(BufferType::INPUT, BufferType::INPUT);
-        scratchMultiple.intraAllGather =
-            intraAllGatherTempAlg.CalcScratchMultiple(BufferType::INPUT, BufferType::INPUT);
-        scratchMultiple.interAllGather =
-            interAllGatherTempAlg.CalcScratchMultiple(BufferType::INPUT, BufferType::INPUT);
+        scratchMultiple.intraAllGather
+            = intraAllGatherTempAlg.CalcScratchMultiple(BufferType::INPUT, BufferType::INPUT);
+        scratchMultiple.interAllGather
+            = interAllGatherTempAlg.CalcScratchMultiple(BufferType::INPUT, BufferType::INPUT);
         // 计算第一步需要的倍数和最后一步所需要的数据缓存倍数，取multiple最大需求
-        float multiple0 = splitDataSize.at(0) * float(scratchMultiple.interScatter) +
-                          splitDataSize.at(1) * float(scratchMultiple.intraScatter);
-        float multiple1 = splitDataSize.at(0) * float(scratchMultiple.interAllGather / interLocalRankSize_) +
-                          splitDataSize.at(1) * float(scratchMultiple.intraAllGather / intraLocalRankSize_);
+        float multiple0 = splitDataSize.at(0) * float(scratchMultiple.interScatter)
+                          + splitDataSize.at(1) * float(scratchMultiple.intraScatter);
+        float multiple1 = splitDataSize.at(0) * float(scratchMultiple.interAllGather / interLocalRankSize_)
+                          + splitDataSize.at(1) * float(scratchMultiple.intraAllGather / intraLocalRankSize_);
         scratchMultiple.maxMultiple = std::max(multiple0, multiple1);
         return;
     }
-    void CalcSlice(std::vector<float>& splitDataSize, float scratchMaxMultiple, SliceConfig& slice);
-    void LogAlgInfo(
-        InsAlgTemplate0& intraScatterTempAlg, InsAlgTemplate1& interScatterTempAlg,
-        InsAlgTemplate2& intraAllGatherTempAlg, InsAlgTemplate3& interAllGatherTempAlg) const
+    void CalcSlice(std::vector<double> &splitDataSize, float scratchMaxMultiple, SliceConfig &slice);
+    void LogAlgInfo(InsAlgTemplate0 &intraScatterTempAlg, InsAlgTemplate1 &interScatterTempAlg,
+        InsAlgTemplate2 &intraAllGatherTempAlg, InsAlgTemplate3 &interAllGatherTempAlg) const
     {
         HCCL_INFO("[InsBroadcastParallelAiCpuExecutor] Alg0 is [%s]", intraScatterTempAlg.Describe().c_str());
         HCCL_INFO("[InsBroadcastParallelAiCpuExecutor] Alg1 is [%s]", interScatterTempAlg.Describe().c_str());
@@ -241,10 +222,10 @@ private:
         HCCL_INFO("[InsBroadcastParallelAiCpuExecutor] Alg3 is [%s]", interAllGatherTempAlg.Describe().c_str());
         return;
     }
-    HcclResult StageProcess(DataParameters& dataParameters, std::vector<StageProcAlgPara>& algParaVec);
-    void AlgTemplateInitPara(
-        const CollAlgOperator& op, InsAlgTemplate0& intraScatterTempAlg, InsAlgTemplate1& interScatterTempAlg,
-        InsAlgTemplate2& intraAllGatherTempAlg, InsAlgTemplate3& interAllGatherTempAlg)
+    HcclResult StageProcess(DataParameters &dataParameters, std::vector<StageProcAlgPara> &algParaVec);
+    void AlgTemplateInitPara(const CollAlgOperator &op, InsAlgTemplate0 &intraScatterTempAlg,
+        InsAlgTemplate1 &interScatterTempAlg, InsAlgTemplate2 &intraAllGatherTempAlg,
+        InsAlgTemplate3 &interAllGatherTempAlg)
     {
         intraScatterTempAlg.SetDmaMode(dmaMode_);
         intraScatterTempAlg.SetCollOp(op);
@@ -268,16 +249,16 @@ private:
         return;
     }
     // Host
-    HcclResult PrepareResForTemplate(
-        const RankGraph* rankGraph, InsAlgTemplate0& intraScatterTempAlg, InsAlgTemplate1& interScatterTempAlg,
-        InsAlgTemplate2& intraAllGatherTempAlg, InsAlgTemplate3& interAllGatherTempAlg);
+    HcclResult PrepareResForTemplate(const RankGraph *rankGraph, InsAlgTemplate0 &intraScatterTempAlg,
+        InsAlgTemplate1 &interScatterTempAlg, InsAlgTemplate2 &intraAllGatherTempAlg,
+        InsAlgTemplate3 &interAllGatherTempAlg);
     // Aicpu
-    HcclResult PrepareResForTemplate(
-        ConnectedLinkMgr* linkMgr, InsAlgTemplate0& intraScatterTempAlg, InsAlgTemplate1& interScatterTempAlg,
-        InsAlgTemplate2& intraAllGatherTempAlg, InsAlgTemplate3& interAllGatherTempAlg);
+    HcclResult PrepareResForTemplate(ConnectedLinkMgr *linkMgr, InsAlgTemplate0 &intraScatterTempAlg,
+        InsAlgTemplate1 &interScatterTempAlg, InsAlgTemplate2 &intraAllGatherTempAlg,
+        InsAlgTemplate3 &interAllGatherTempAlg);
 
     void GenDataParamsStage(
-        const u32 part, const u32 stage, DataParameters& dataParameters, TemplateDataParams& dataParams) const
+        const u32 part, const u32 stage, DataParameters &dataParameters, TemplateDataParams &dataParams) const
     {
         dataParams.buffInfo.inBuffType = BufferType::INPUT;
         dataParams.buffInfo.outBuffType = BufferType::INPUT;
@@ -294,34 +275,52 @@ private:
         dataParams.tailSize = dataParameters.tailSize.at(part).at(stage);
         return;
     }
-    void InitStageProcAlgParaVec(
-        std::vector<StageProcAlgPara>& stageProcAlgParaVec, InsAlgTemplate0& intraScatterTempAlg,
-        InsAlgTemplate1& interScatterTempAlg, InsAlgTemplate2& intraAllGatherTempAlg,
-        InsAlgTemplate3& interAllGatherTempAlg)
+    void InitStageProcAlgParaVec(std::vector<StageProcAlgPara> &stageProcAlgParaVec,
+        InsAlgTemplate0 &intraScatterTempAlg, InsAlgTemplate1 &interScatterTempAlg,
+        InsAlgTemplate2 &intraAllGatherTempAlg, InsAlgTemplate3 &interAllGatherTempAlg)
     {
         // 以此输入第1个阶段的part0 GenExtIns, scratchOffset, links,que以及 part1部分对应信息
         stageProcAlgParaVec = {
-            {[&](auto&... args) { return interScatterTempAlg.GenExtIns(args...); }, scatterInterLinks_,
-             interQue_, // stage0 part0
-             [&](auto&... args) { return intraScatterTempAlg.GenExtIns(args...); }, scatterIntraLinks_,
-             intraQue_}, // stage0 part1
-            {[&](auto&... args) { return intraScatterTempAlg.GenExtIns(args...); }, scatterIntraLinks_,
-             intraQue_, // stage1 part0
-             [&](auto&... args) { return interScatterTempAlg.GenExtIns(args...); }, scatterInterLinks_,
-             interQue_}, // stage1 part1
-            {[&](auto&... args) { return intraAllGatherTempAlg.GenExtIns(args...); }, allGatherIntraLinks_,
-             intraQue_, // stage2 part0
-             [&](auto&... args) { return interAllGatherTempAlg.GenExtIns(args...); }, allGatherInterLinks_,
-             interQue_}, // stage2 part1
-            {[&](auto&... args) { return interAllGatherTempAlg.GenExtIns(args...); }, allGatherInterLinks_,
-             interQue_, // stage3 part0
-             [&](auto&... args) { return intraAllGatherTempAlg.GenExtIns(args...); }, allGatherIntraLinks_,
-             intraQue_}, // stage3 part1
+            {[&](auto &...args) {
+                 return interScatterTempAlg.GenExtIns(args...);
+             },
+                scatterInterLinks_,
+                interQue_, // stage0 part0
+                [&](auto &...args) {
+                    return intraScatterTempAlg.GenExtIns(args...);
+                },
+                scatterIntraLinks_, intraQue_}, // stage0 part1
+            {[&](auto &...args) {
+                 return intraScatterTempAlg.GenExtIns(args...);
+             },
+                scatterIntraLinks_,
+                intraQue_, // stage1 part0
+                [&](auto &...args) {
+                    return interScatterTempAlg.GenExtIns(args...);
+                },
+                scatterInterLinks_, interQue_}, // stage1 part1
+            {[&](auto &...args) {
+                 return intraAllGatherTempAlg.GenExtIns(args...);
+             },
+                allGatherIntraLinks_,
+                intraQue_, // stage2 part0
+                [&](auto &...args) {
+                    return interAllGatherTempAlg.GenExtIns(args...);
+                },
+                allGatherInterLinks_, interQue_}, // stage2 part1
+            {[&](auto &...args) {
+                 return interAllGatherTempAlg.GenExtIns(args...);
+             },
+                allGatherInterLinks_,
+                interQue_, // stage3 part0
+                [&](auto &...args) {
+                    return intraAllGatherTempAlg.GenExtIns(args...);
+                },
+                allGatherIntraLinks_, intraQue_}, // stage3 part1
         };
     }
-    HcclResult GenInsQues(
-        InsAlgTemplate0& intraScatterTempAlg, InsAlgTemplate1& interScatterTempAlg,
-        InsAlgTemplate2& intraAllGatherTempAlg, InsAlgTemplate3& interAllGatherTempAlg);
+    HcclResult GenInsQues(InsAlgTemplate0 &intraScatterTempAlg, InsAlgTemplate1 &interScatterTempAlg,
+        InsAlgTemplate2 &intraAllGatherTempAlg, InsAlgTemplate3 &interAllGatherTempAlg);
 
     u32 intraLocalRankSize_{0}; // server内算法rankSize
     u32 interLocalRankSize_{0}; // server间算法rankSize
@@ -332,7 +331,7 @@ private:
     u32 intraLocalRoot_{0}; // server内算法root
     u32 interLocalRoot_{0}; // server间算法root
 
-    const RankGraph* rankGraph_ = nullptr;
+    const RankGraph *rankGraph_ = nullptr;
 
     std::vector<std::vector<std::vector<RankId>>> vTopo_;
     std::vector<std::vector<RankId>> virtRanks_;
@@ -347,7 +346,7 @@ private:
     ResLinks allGatherIntraLinks_;
     ResLinks allGatherInterLinks_;
 
-    const RankGraph* rankGraphPtr_ = nullptr;
+    const RankGraph *rankGraphPtr_ = nullptr;
 };
 
 } // namespace Hccl

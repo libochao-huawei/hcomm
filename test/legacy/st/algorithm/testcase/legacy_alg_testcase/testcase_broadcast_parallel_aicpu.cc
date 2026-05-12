@@ -186,62 +186,62 @@ TEST_F(BroadcastParallelAiCpuTest, broadcast_aicpu_case_test_4x8_rank_ParallelMe
 TEST_F(BroadcastParallelAiCpuTest, broadcast_aicpu_case_test_4x8_rank_ParallelMesh1DNHR_bigdata_root_0)
 {
     RunBroadcastTest(
-        0, 1, 4, 8, CheckerOpMode::OPBASE, 1024 * 1024 * 1024 * 4 + 15, CheckerDataType::DATA_TYPE_INT64,
+        0, 1, 4, 8, CheckerOpMode::OPBASE, (u64)1024 * 1024 * 1024 * 4 + 15, CheckerDataType::DATA_TYPE_INT64,
         "AiCpuInsBroadcastParallelMesh1DNHR");
 }
 
 TEST_F(BroadcastParallelAiCpuTest, broadcast_aicpu_case_test_4x8_rank_ParallelMesh1DNHR_bigdata_root_7)
 {
     RunBroadcastTest(
-        7, 1, 4, 8, CheckerOpMode::OPBASE, 1024 * 1024 * 1024 * 4 + 15, CheckerDataType::DATA_TYPE_INT64,
+        7, 1, 4, 8, CheckerOpMode::OPBASE, (u64)1024 * 1024 * 1024 * 4 + 15, CheckerDataType::DATA_TYPE_INT64,
         "AiCpuInsBroadcastParallelMesh1DNHR");
 }
 
 TEST_F(BroadcastParallelAiCpuTest, broadcast_aicpu_case_test_4x8_rank_ParallelMesh1DNHR_bigdata_root_8)
 {
     RunBroadcastTest(
-        8, 1, 4, 8, CheckerOpMode::OPBASE, 1024 * 1024 * 1024 * 4 + 15, CheckerDataType::DATA_TYPE_INT64,
+        8, 1, 4, 8, CheckerOpMode::OPBASE, (u64)1024 * 1024 * 1024 * 4 + 15, CheckerDataType::DATA_TYPE_INT64,
         "AiCpuInsBroadcastParallelMesh1DNHR");
 }
 
 TEST_F(BroadcastParallelAiCpuTest, broadcast_aicpu_case_test_4x8_rank_ParallelMesh1DNHR_bigdata_root_24)
 {
     RunBroadcastTest(
-        24, 1, 4, 8, CheckerOpMode::OPBASE, 1024 * 1024 * 1024 * 4 + 15, CheckerDataType::DATA_TYPE_INT64,
+        24, 1, 4, 8, CheckerOpMode::OPBASE, (u64)1024 * 1024 * 1024 * 4 + 15, CheckerDataType::DATA_TYPE_INT64,
         "AiCpuInsBroadcastParallelMesh1DNHR");
 }
 
 TEST_F(BroadcastParallelAiCpuTest, broadcast_aicpu_case_test_4x8_rank_ParallelMesh1DNHR_bigdata_root_31)
 {
     RunBroadcastTest(
-        31, 1, 4, 8, CheckerOpMode::OPBASE, 1024 * 1024 * 1024 * 4 + 15, CheckerDataType::DATA_TYPE_INT64,
+        31, 1, 4, 8, CheckerOpMode::OPBASE, (u64)1024 * 1024 * 1024 * 4 + 15, CheckerDataType::DATA_TYPE_INT64,
         "AiCpuInsBroadcastParallelMesh1DNHR");
 }
 
 TEST_F(BroadcastParallelAiCpuTest, broadcast_aicpu_case_test_4x8_rank_ParallelMesh1DNHR_offload_root_0)
 {
     RunBroadcastTest(
-        0, 1, 4, 8, CheckerOpMode::OFFLOAD, 1024 * 1024 * 1024 * 4 + 15, CheckerDataType::DATA_TYPE_FP16,
+        0, 1, 4, 8, CheckerOpMode::OFFLOAD, (u64)1024 * 1024 * 1024 * 4 + 15, CheckerDataType::DATA_TYPE_FP16,
         "AiCpuInsBroadcastParallelMesh1DNHR");
 }
 
 TEST_F(BroadcastParallelAiCpuTest, broadcast_aicpu_case_test_4x8_rank_ParallelMesh1DNHR_offload_root_7)
 {
     RunBroadcastTest(
-        7, 1, 4, 8, CheckerOpMode::OFFLOAD, 1024 * 1024 * 1024 * 4 + 15, CheckerDataType::DATA_TYPE_FP16,
+        7, 1, 4, 8, CheckerOpMode::OFFLOAD, (u64)1024 * 1024 * 1024 * 4 + 15, CheckerDataType::DATA_TYPE_FP16,
         "AiCpuInsBroadcastParallelMesh1DNHR");
 }
 
 TEST_F(BroadcastParallelAiCpuTest, broadcast_aicpu_case_test_4x8_rank_ParallelMesh1DNHR_offload_root_8)
 {
     RunBroadcastTest(
-        8, 1, 4, 8, CheckerOpMode::OFFLOAD, 1024 * 1024 * 1024 * 4 + 15, CheckerDataType::DATA_TYPE_FP16,
+        8, 1, 4, 8, CheckerOpMode::OFFLOAD, (u64)1024 * 1024 * 1024 * 4 + 15, CheckerDataType::DATA_TYPE_FP16,
         "AiCpuInsBroadcastParallelMesh1DNHR");
 }
 
 TEST_F(BroadcastParallelAiCpuTest, broadcast_aicpu_case_test_4x8_rank_ParallelMesh1DNHR_offload_root_24)
 {
     RunBroadcastTest(
-        24, 1, 4, 8, CheckerOpMode::OFFLOAD, 1024 * 1024 * 1024 * 4 + 15, CheckerDataType::DATA_TYPE_FP16,
+        24, 1, 4, 8, CheckerOpMode::OFFLOAD, (u64)1024 * 1024 * 1024 * 4 + 15, CheckerDataType::DATA_TYPE_FP16,
         "AiCpuInsBroadcastParallelMesh1DNHR");
 }
