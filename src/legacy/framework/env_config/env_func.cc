@@ -777,9 +777,10 @@ std::vector<std::string> SplitDfsConfig(const std::string &str, char delimiter)
 
 DfsConfig CastDfsConfig(const std::string &dfsConfigEnv)
 {
-    constexpr std::size_t                              DFS_CONFIG_ITEM_NUM = 1;
-    const std::array<std::string, DFS_CONFIG_ITEM_NUM> taskExceptionName   = {"task_exception"};
+    constexpr std::size_t                              DFS_CONFIG_ITEM_NUM = 2;
+    const std::array<std::string, DFS_CONFIG_ITEM_NUM> dfsItemName   = {"task_exception", "cluster_heartbeat"};
     bool                                               taskExceptionEnable = true;
+    bool                                               clusterHeartBeatEnable = true;
     std::string                                        dfsConfigEnvCopy    = dfsConfigEnv;
     dfsConfigEnvCopy.erase(std::remove(dfsConfigEnvCopy.begin(), dfsConfigEnvCopy.end(), ' '), dfsConfigEnvCopy.end());
     auto items = SplitDfsConfig(dfsConfigEnvCopy, ',');
@@ -787,11 +788,11 @@ DfsConfig CastDfsConfig(const std::string &dfsConfigEnv)
         auto                  itemPair  = SplitDfsConfig(item, ':');
         constexpr std::size_t ITEM_SIZE = 2;
         if (itemPair.size() != ITEM_SIZE
-            || std::find(taskExceptionName.begin(), taskExceptionName.end(), itemPair[0]) == taskExceptionName.end()) {
+            || std::find(dfsItemName.begin(), dfsItemName.end(), itemPair[0]) == dfsItemName.end()) {
             THROW<InvalidParamsException>(
                 StringFormat("env[HCCL_DFS_CONFIG] value[%s] is invalid,  please check, example [task_exception:on]", dfsConfigEnv.c_str()));
         }
-        if (itemPair[0] == taskExceptionName[0]) {
+        if (itemPair[0] == dfsItemName[0]) {
             auto taskException = itemPair[1];
             if (taskException == "off") {
                 taskExceptionEnable = false;
@@ -802,10 +803,23 @@ DfsConfig CastDfsConfig(const std::string &dfsConfigEnv)
                 THROW<InvalidParamsException>(StringFormat(
                     "env[HCCL_DFS_CONFIG] please set task_exception to 'on' or 'off'.", taskException.c_str()));
             }
+        } else if (itemPair[0] == dfsItemName[1]) {
+            auto heartBeat = itemPair[1];
+            if (heartBeat == "off") {
+                clusterHeartBeatEnable = false;
+                HCCL_WARNING("env[HCCL_DFS_CONFIG] cluster_heartbeat was configed to [%s]", heartBeat.c_str());
+            } else if (heartBeat == "on") {
+                clusterHeartBeatEnable = true;
+            } else {
+                THROW<InvalidParamsException>(StringFormat(
+                    "env[HCCL_DFS_CONFIG] please set cluster_heartbeat to 'on' or 'off'.", heartBeat.c_str()));
+            }
         }
     }
-    DfsConfig config{taskExceptionEnable};
-    HCCL_RUN_INFO("[Parse] HCCL_DFS_CONFIG task_exception set by environment to [%d]", config.taskExceptionEnable);
+    DfsConfig config{taskExceptionEnable, clusterHeartBeatEnable};
+
+    HCCL_RUN_INFO("[Parse] HCCL_DFS_CONFIG task_exception set by environment to [%d], cluster_heartbeat [%d]",
+        config.taskExceptionEnable, config.clusterHeartBeatEnable);
     return config;
 }
 

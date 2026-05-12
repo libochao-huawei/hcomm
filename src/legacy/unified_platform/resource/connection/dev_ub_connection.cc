@@ -444,6 +444,7 @@ static void PrepareUbSendWrReqParamForWriteOrRead(HrtRaUbSendWrReqParam &sendWrR
     sendWrReq.size       = localMemBuf.size;
     sendWrReq.localAddr  = localMemBuf.addr;
     sendWrReq.remoteAddr = remoteMemBuf.addr;
+
     sendWrReq.lmemHandle = localMemBuf.memHandle;
     sendWrReq.rmemHandle = remoteMemBuf.memHandle;
     sendWrReq.handle     = remoteJettyHandle;

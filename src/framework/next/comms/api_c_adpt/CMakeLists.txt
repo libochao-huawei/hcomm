@@ -13,6 +13,7 @@ add_subdirectory(ccu)
 set(src_list
     hcomm_c_adpt.cc
     endpoint_map.cc
+    hccl_comm_socket_c_adpt.cc
 )
  
 target_sources(hcomm PRIVATE
