@@ -94,7 +94,7 @@ public:
 private:
     EndpointDesc localEndpointDesc_{};
     EndpointDesc remoteEndpointDesc_{};
-    std::unique_ptr<SocketMgr> socketMgr_;
+    SocketMgr* socketMgr_{nullptr};
     std::unique_ptr<Hccl::SocketManager> socketMgrCompat_;
     std::unordered_map<CommEngine, std::vector<ChannelHandle>> channelHandles_{};
 };
