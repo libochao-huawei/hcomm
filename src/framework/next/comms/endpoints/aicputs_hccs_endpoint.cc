@@ -114,15 +114,44 @@ HcclResult AicpuTsHccsEndpoint::MemoryUnimport(const void *memDesc, uint32_t des
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsHccsEndpoint::MemoryGrant(const HcommMemGrantInfo *remoteGrantInfo)
-{
-    CHK_RET(GetRegedMemMgr()->MemoryGrant(remoteGrantInfo));
-    return HCCL_SUCCESS;
-}
-
 HcclResult AicpuTsHccsEndpoint::GetAllMemHandles(void **memHandles, uint32_t *memHandleNum)
 {
     CHK_RET(GetRegedMemMgr()->GetAllMemHandles(memHandles, memHandleNum));
+    return HCCL_SUCCESS;
+}
+
+HcclResult AicpuTsHccsEndpoint::MemoryGrant(const HcommMemGrantInfo *remoteGrantInfo)
+{
+    HccsRegedMemMgr *hccsRegedMemMgr = dynamic_cast<HccsRegedMemMgr *>(GetRegedMemMgr().get());
+    CHK_RET(hccsRegedMemMgr->MemoryGrant(remoteGrantInfo));
+    return HCCL_SUCCESS;
+}
+
+HcclResult AicpuTsHccsEndpoint::MemoryEnableP2P(const EndpointDesc &remoteEndpointDesc)
+{
+    HccsRegedMemMgr *hccsRegedMemMgr = dynamic_cast<HccsRegedMemMgr *>(GetRegedMemMgr().get());
+    CHK_RET(hccsRegedMemMgr->MemoryEnableP2P(GetEndpointDesc(), remoteEndpointDesc));
+    return HCCL_SUCCESS;
+}
+
+HcclResult AicpuTsHccsEndpoint::MemoryDisableP2P(const EndpointDesc &remoteEndpointDesc)
+{
+    HccsRegedMemMgr *hccsRegedMemMgr = dynamic_cast<HccsRegedMemMgr *>(GetRegedMemMgr().get());
+    CHK_RET(hccsRegedMemMgr->MemoryDisableP2P(GetEndpointDesc(), remoteEndpointDesc));
+    return HCCL_SUCCESS;
+}
+
+HcclResult AicpuTsHccsEndpoint::MemoryOpenRemoteIpc()
+{
+    HccsRegedMemMgr *hccsRegedMemMgr = dynamic_cast<HccsRegedMemMgr *>(GetRegedMemMgr().get());
+    CHK_RET(hccsRegedMemMgr->MemoryOpenRemoteIpc());
+    return HCCL_SUCCESS;
+}
+
+HcclResult AicpuTsHccsEndpoint::MemoryCloseRemoteIpc()
+{
+    HccsRegedMemMgr *hccsRegedMemMgr = dynamic_cast<HccsRegedMemMgr *>(GetRegedMemMgr().get());
+    CHK_RET(hccsRegedMemMgr->MemoryCloseRemoteIpc());
     return HCCL_SUCCESS;
 }
 

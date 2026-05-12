@@ -42,7 +42,15 @@ AicpuTsHccsChannel::~AicpuTsHccsChannel()
     } catch (...) { }
 
     try {
+        DisableMemAccess();
+    } catch (...) { }
+
+    try {
         DestroyConnection();
+    } catch (...) { }
+
+    try {
+        DisableP2P();
     } catch (...) { }
 }
 
@@ -133,6 +141,7 @@ void AicpuTsHccsChannel::DestroyConnection()
         (void)hccl::GlobalNetDevMgr::GetInstance().ServerDeInit(serverPort_);
         serverInited_ = false;
     }
+    HCCL_INFO("[AicpuTsHccsChannel][%s] finish DestroyConnection", __func__);
 }
 
 HcclResult AicpuTsHccsChannel::SetMachinePara(hccl::MachinePara &machinePara)
@@ -199,6 +208,7 @@ HcclResult AicpuTsHccsChannel::TransportInit()
 
     CHK_RET(transport_->Init());
 
+    HCCL_INFO("[AicpuTsHccsChannel][%s] finish TransportInit", __func__);
     return HCCL_SUCCESS;
 }
 
@@ -218,22 +228,87 @@ void AicpuTsHccsChannel::TransportDeInit()
         (void)HcclDispatcherDestroy(dispatcher_);
         dispatcher_ = nullptr;
     }
+    HCCL_INFO("[AicpuTsHccsChannel][%s] finish TransportDeInit", __func__);
+}
+
+HcclResult AicpuTsHccsChannel::EnableP2P()
+{
+    CHK_RET(localEpPtr_->MemoryEnableP2P(remoteEp_));
+    HCCL_INFO("[AicpuTsHccsChannel][%s] finish EnableP2P", __func__);
+    return HCCL_SUCCESS;
+}
+
+void AicpuTsHccsChannel::DisableP2P()
+{
+    (void)localEpPtr_->MemoryDisableP2P(remoteEp_);
+    HCCL_INFO("[AicpuTsHccsChannel][%s] finish DisableP2P", __func__);
+}
+
+HcclResult AicpuTsHccsChannel::EnableMemAccess()
+{
+    // Should NOT using SalGetBareTgid
+    s32 pid = SalGetPid();
+    // switch first
+    HcommMemGrantInfo localGrantInfo = {localEp_.loc.device.superDevId, pid};
+    HcommMemGrantInfo remoteGrantInfo = {0};
+    if (isSocketServer_) {
+        CHK_RET(socket_->Recv(&remoteGrantInfo, sizeof(HcommMemGrantInfo)));
+        CHK_RET(socket_->Send(&localGrantInfo, sizeof(HcommMemGrantInfo)));
+    } else {
+        CHK_RET(socket_->Send(&localGrantInfo, sizeof(HcommMemGrantInfo)));
+        CHK_RET(socket_->Recv(&remoteGrantInfo, sizeof(HcommMemGrantInfo)));
+    }
+
+    CHK_RET(localEpPtr_->MemoryGrant(&remoteGrantInfo));
+    // need to wait peer grant for me end
+    u32 localGrant = 1;
+    u32 remoteGrant = 1;
+    if (isSocketServer_) {
+        CHK_RET(socket_->Recv(&remoteGrant, sizeof(u32)));
+        CHK_RET(socket_->Send(&localGrant, sizeof(u32)));
+    } else {
+        CHK_RET(socket_->Send(&localGrant, sizeof(u32)));
+        CHK_RET(socket_->Recv(&remoteGrant, sizeof(u32)));
+    }
+    CHK_RET(localEpPtr_->MemoryOpenRemoteIpc());
+    HCCL_INFO("[AicpuTsHccsChannel][%s] finish EnableMemAccess", __func__);
+    return HCCL_SUCCESS;
+}
+
+void AicpuTsHccsChannel::DisableMemAccess()
+{
+    (void)localEpPtr_->MemoryCloseRemoteIpc();
+    HCCL_INFO("[AicpuTsHccsChannel][%s] finish DisableMemAccess", __func__);
 }
 
 HcclResult AicpuTsHccsChannel::Init()
 {  
     CHK_RET(ParseInputParam());
+    CHK_RET(EnableP2P());
     HcclResult ret = BuildConnection();
     if (ret != HCCL_SUCCESS) {
         DestroyConnection();
+        DisableP2P();
         return ret;
     }
+
+    ret = EnableMemAccess();
+    if (ret != HCCL_SUCCESS) {
+        DisableMemAccess();
+        DestroyConnection();
+        DisableP2P();
+        return ret;
+    }
+
     ret = TransportInit();
     if (ret != HCCL_SUCCESS) {
         TransportDeInit();
+        DisableMemAccess();
         DestroyConnection();
+        DisableP2P();
         return ret;
     }
+    HCCL_INFO("[AicpuTsHccsChannel][%s] finish Init", __func__);
     return HCCL_SUCCESS;
 }
 
