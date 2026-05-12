@@ -8,14 +8,14 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 
-if(${PRODUCT_SIDE} STREQUAL "device")
+if(PRODUCT_SIDE STREQUAL "device")
     add_subdirectory(stub_tsd)
     add_subdirectory(netco)
 endif()
 add_subdirectory(rdma_agent)
 add_subdirectory(rdma_service)
 
-if(${PRODUCT_SIDE} STREQUAL "host")
+if(PRODUCT_SIDE STREQUAL "host")
     return()
 endif()
 

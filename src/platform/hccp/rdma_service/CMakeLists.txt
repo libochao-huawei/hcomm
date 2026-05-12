@@ -139,7 +139,7 @@ add_dependencies(rs crypto_static)
 
 # 创建 rs 动态链接库，device 侧使用，同时打包到 cann-hcomm-compat.tar.gz
 # 注意：rs_device 与 rs 完全一致，区别是编译时使能 CUSTOM_INTERFACE 宏定义
-if(${PRODUCT_SIDE} STREQUAL "device")
+if(PRODUCT_SIDE STREQUAL "device")
     add_library(rs_device SHARED)
     # 克隆 rs 的属性
     clone_cann_target(
@@ -160,7 +160,7 @@ if(${PRODUCT_SIDE} STREQUAL "device")
 endif()
 
 # 安装
-if(${PRODUCT_SIDE} STREQUAL "host")
+if(PRODUCT_SIDE STREQUAL "host")
     install(TARGETS rs
         LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
         COMPONENT hcomm

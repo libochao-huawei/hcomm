@@ -13,17 +13,17 @@ set(src_list
     zero_copy_memory_agent.cc
 )
 
+set(src_list_device
+    zero_copy_address_mgr_device.cc
+)
+
 if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         ${src_list_device}
     )
-endif()
-
-if(TARGET ccl_kernel)
-    set(src_list_device
-        zero_copy_address_mgr_device.cc
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
     )
-
 endif()
 
 if(TARGET hcomm)

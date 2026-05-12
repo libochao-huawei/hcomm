@@ -104,7 +104,7 @@ set_target_properties(ascend_kms PROPERTIES
     IMPORTED_LOCATION "${HCOMM_UTILS_INSTALL_PATH}/${PRODUCT_SIDE}/lib/libascend_kms.so"
 )
 
-if(${PRODUCT_SIDE} STREQUAL "device")
+if(PRODUCT_SIDE STREQUAL "device")
     install(FILES  ${HCOMM_UTILS_INSTALL_PATH}/${PRODUCT_SIDE}/lib/libascend_kms.so
         DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
         COMPONENT hcomm
