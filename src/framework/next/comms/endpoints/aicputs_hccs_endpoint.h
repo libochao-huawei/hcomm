@@ -37,9 +37,13 @@ public:
     HcclResult MemoryExport(void *memHandle, void **memDesc, uint32_t *memDescLen) override;
     HcclResult MemoryImport(const void *memDesc, uint32_t descLen, HcommMem *outMem) override;
     HcclResult MemoryUnimport(const void *memDesc, uint32_t descLen) override;
-    HcclResult MemoryGrant(const HcommMemGrantInfo *remoteGrantInfo) override;
-
     HcclResult GetAllMemHandles(void **memHandles, uint32_t *memHandleNum) override;
+
+    HcclResult MemoryGrant(const HcommMemGrantInfo *remoteGrantInfo);
+    HcclResult MemoryEnableP2P(const EndpointDesc &remoteEndpointDesc);
+    HcclResult MemoryDisableP2P(const EndpointDesc &remoteEndpointDesc);
+    HcclResult MemoryOpenRemoteIpc();
+    HcclResult MemoryCloseRemoteIpc();
     HcclResult GetRemoteIpcRmaBuffer(std::vector<HcclMem> &remoteIpcRmaBufferVec);
     HcclResult GetRemoteIpcRmaBufferEx(std::vector<HcclMemEx> &remoteIpcRmaBufferVecEx);
     HcclResult GetLocalIpcRmaBufferEx(std::vector<HcclMemEx> &localIpcRmaBufferVecEx);
