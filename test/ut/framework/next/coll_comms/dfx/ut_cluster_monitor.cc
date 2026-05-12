@@ -16,6 +16,9 @@
 #include <string>
 #include <cstring>
 #include "hccl_types.h"
+extern "C" {
+#include "hccp_ctx.h"
+}
 #define private public
 #include "dfx/cluster_monitor/cluster_monitor.h"
 #undef private
@@ -39,6 +42,60 @@ public:
 };
 
 ClusterMonitor ClusterMonitorTest::g_monitor;
+
+class UtStubEndpoint : public Endpoint {
+    HcclResult Init()
+    {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult ServerSocketListen(const uint32_t port)
+    {
+        return HCCL_SUCCESS;
+    }
+
+    // 注册内存
+    HcclResult RegisterMemory(HcommMem mem, const char *memTag, void **memHandle)
+    {
+        return HCCL_SUCCESS;
+    }
+
+    // 注销内存
+    HcclResult UnregisterMemory(void *memHandle)
+    {
+        return HCCL_SUCCESS;
+    }
+
+    // 导出指定内存描述，用于交换
+    HcclResult MemoryExport(void *memHandle, void **memDesc, uint32_t *memDescLen)
+    {
+        return HCCL_SUCCESS;
+    }
+
+    // 基于内存描述，导入获得内存
+    HcclResult MemoryImport(const void *memDesc, uint32_t descLen, HcommMem *outMem)
+    {
+        return HCCL_SUCCESS;
+    }
+
+    // 关闭内存
+    HcclResult MemoryUnimport(const void *memDesc, uint32_t descLen)
+    {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult GetAllMemHandles(void **memHandles, uint32_t *memHandleNum)
+    {
+        return HCCL_SUCCESS;
+    }
+}
+
+HcclResult UtStubGetAsyncEventsContext(uint32_t devPhyId, struct AsyncEvent events[],
+    uint32_t &num)
+{
+    num = 0;
+    return HCCL_SUCCESS;
+}
 
 TEST_F(ClusterMonitorTest, Ut_CreateMonitorLinksAsync_When_NormalInput_Expect_CreateLinks)
 {
@@ -512,4 +569,73 @@ TEST_F(ClusterMonitorTest, Ut_UnRegisterToClusterMonitor_When_Normal_Expect_Succ
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
+TEST_F(ClusterMonitorTest, Ut_PrintUbAsyncEventsContext_When_ContextLenExceedMax_Expect_Return)
+{
+    u32 devPhyId = 0;
+    struct AsyncEvent event;
+    event.resId = 1;
+    event.eventType = 2;
+    event.len = CONTEXT_MAX_LEN + 1;
+    memset(event.context, 0, CONTEXT_MAX_LEN);
+
+    g_monitor.PrintUbAsyncEventsContext(devPhyId, event);
+}
+
+TEST_F(ClusterMonitorTest, Ut_PrintUbAsyncEventsContext_When_NormalContext_Expect_PrintInfo)
+{
+    u32 devPhyId = 1;
+    struct AsyncEvent event;
+    event.resId = 100;
+    event.eventType = 200;
+    event.len = 8;
+    for (unsigned int i = 0; i < event.len; i++) {
+        event.context[i] = static_cast<uint8_t>(i);
+    }
+
+    g_monitor.PrintUbAsyncEventsContext(devPhyId, event);
+}
+
+TEST_F(ClusterMonitorTest, Ut_ProcessUbAsyncEvents_When_FlagFalse_Expect_Return)
+{
+    g_monitor.isProcessUbAsyncEvents_ = false;
+    g_monitor.ProcessUbAsyncEvents();
+    g_monitor.isProcessUbAsyncEvents_ = true;
+}
+
+TEST_F(ClusterMonitorTest, Ut_ProcessUbAsyncEvents_When_NoEndpointHandle_Expect_Return)
+{
+    MOCKER(HcclGetThreadDeviceId).stubs().will(returnValue(0));
+    MOCKER(hrtGetDevicePhyIdByIndex).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
+
+    g_monitor.epHandleTable_.clear();
+    g_monitor.ProcessUbAsyncEvents();
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(ClusterMonitorTest, Ut_ProcessUbAsyncEvents_CoverAllBranches)
+{
+    u32 devPhyId = 0;
+    UtStubEndpoint myUtEndpoint;
+    g_monitor.RegisterEpHandleToClusterMonitor(devPhyId, static_cast<EndpointHandle>(&myUtEndpoint));
+    g_monitor.isProcessUbAsyncEvents_ = true;
+
+    MOCKER(HcclGetThreadDeviceId).stubs().will(returnValue(0));
+    MOCKER(hrtGetDevicePhyIdByIndex).stubs().with(any(), outBound(devPhyId)).will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(&Endpoint::GetAsyncEventsContext).stubs().will(returnValue(HCCL_E_NOT_SUPPORT));
+    g_monitor.ProcessUbAsyncEvents();
+    g_monitor.isProcessUbAsyncEvents_ = true;
+
+    MOCKER(&Endpoint::GetAsyncEventsContext).stubs().will(returnValue(HCCL_E_INTERNAL));
+    g_monitor.ProcessUbAsyncEvents();
+
+    MOCKER(&Endpoint::GetAsyncEventsContext).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(&ClusterMonitor::PrintUbAsyncEventsContext).stubs();
+    g_monitor.ProcessUbAsyncEvents();
+
+    g_monitor.isProcessUbAsyncEvents_ = true;
+    g_monitor.epHandleTable_.clear();
+    GlobalMockObject::verify();
+}
 
