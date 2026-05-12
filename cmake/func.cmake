@@ -260,7 +260,7 @@ function(add_version_info_targets)
 endfunction()
 
 # 将 cc 源文件的相对路径，转换为绝对路径
-function(to_absolute_path origin_sources origin_source_dir output_sources)
+function(__cann_to_absolute_path origin_sources origin_source_dir output_sources)
     set(sources_list)
     foreach(source_file ${${origin_sources}})
         if(NOT IS_ABSOLUTE ${source_file} AND ${source_file} MATCHES "\\.(c|cc|cpp)$")
@@ -275,10 +275,10 @@ endfunction()
 # 克隆 target 的属性到新 target，IGNORE_PROP 为需要跳过的属性名列表
 #
 # Usage:
-#   target_clone(ORIGIN ccl_kernel OUTPUT aicpu_custom)
-#   target_clone(ORIGIN ccl_kernel OUTPUT aicpu_custom IGNORE_PROP LINK_LIBRARIES)
-#   target_clone(ORIGIN ccl_kernel OUTPUT aicpu_custom IGNORE_PROP SOURCES LINK_LIBRARIES)
-function(target_clone)
+#   clone_cann_target(ORIGIN ccl_kernel OUTPUT aicpu_custom)
+#   clone_cann_target(ORIGIN ccl_kernel OUTPUT aicpu_custom IGNORE_PROP LINK_LIBRARIES)
+#   clone_cann_target(ORIGIN ccl_kernel OUTPUT aicpu_custom IGNORE_PROP SOURCES LINK_LIBRARIES)
+function(clone_cann_target)
     cmake_parse_arguments(ARG
         ""
         "ORIGIN;OUTPUT"
@@ -287,14 +287,14 @@ function(target_clone)
     )
 
     if(NOT ARG_ORIGIN OR NOT ARG_OUTPUT)
-        message(FATAL_ERROR "target_clone: ORIGIN or OUTPUT is required")
+        message(FATAL_ERROR "clone_cann_target: ORIGIN or OUTPUT is required")
     endif()
 
     # 克隆源文件，同时将相对路径转换为绝对路径
     if(NOT "SOURCES" IN_LIST ARG_IGNORE_PROP)
         get_target_property(sourceFiles ${ARG_ORIGIN} SOURCES)
         get_target_property(sourceDir ${ARG_ORIGIN} SOURCE_DIR)
-        to_absolute_path(sourceFiles sourceDir absolute_sources_files)
+        __cann_to_absolute_path(sourceFiles sourceDir absolute_sources_files)
         target_sources(${ARG_OUTPUT} PRIVATE
             ${absolute_sources_files}
         )
