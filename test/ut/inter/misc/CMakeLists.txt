@@ -21,7 +21,6 @@ set(hccl_utest_inter_misc_list
     # ut_hccl_transport_ibv_exp.cc
     # ut_hccl_transport_heterog_p2p.cc
     # ut_hccl_transport_p2p.cc 
-    # ut_hccl_transport_tcp.cc
     # ut_hccl_inter_new.cc
     # ut_nonuniform_hierarchical_ring_v1_base.cc
     # ut_reducescatter_common.cc
