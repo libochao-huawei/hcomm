@@ -22,19 +22,6 @@
 #include "rt_external.h"
 
 namespace hccl {
-constexpr u32 HEARTBEAT_INTERVAL = 1000;                                 // 心跳帧发送周期为1000 ms
-constexpr u32 HEARTBEAT_COUNT = HEARTBEAT_INTERVAL / BROADCAST_INTERVAL; // 心跳帧发送间隔数
-constexpr u32 BASE_NUMBER = 2;
-constexpr u32 RETRY_CQE_ARRAY_SIZE = 128; // 重执行时获取的CQE数组的最大数量，最大128
-constexpr u32 JITTER_TIME = 300; // 关键事件允许的误差事件范围±300s。误差来源：EVENT和NOTIFY差异、传播耗时、计时误差
-constexpr u32 EVENT_MAX_CNT = 5000;          // 防止内存泄漏，同时不能太短，防止正常事件被冲掉
-constexpr u32 THROUND_MILS = 1000;           // 1000ms
-constexpr u32 OPINFO_QUEUE_MAX_SIZE = 131072; // 算子下发校验队列最大算子个数，防止内存占用
-constexpr u32 MAX_SENDBUFF_SIZE = 3072;      // SendBuff[dst] 最大数量
-constexpr u32 SR_TAG_MAP_MAX_NUM = 65536;
-constexpr u32 HBFRAME_SEND_LOOP_MAX_NUM = 120;
-constexpr s32 HCCL_STUCK_DETECT_TIME_MIN = 60; // 卡住检测最短时间
-constexpr s32 HCCL_STUCK_DETECT_TIME_BASE = 3; // 卡住检测时间为execTime/3
 Heartbeat &Heartbeat::GetInstance(s32 deviceLogicID)
 {
     static Heartbeat hb[MAX_MODULE_DEVICE_NUM];
@@ -168,7 +155,7 @@ HcclResult Heartbeat::Init(const RankInfo &locRank, const bool useSuperPodMode, 
     startSendRecvTask_ = true;
     sendRecvThread_.reset(new (std::nothrow) std::thread(&Heartbeat::HeartbeatStatusMonitor, this));
     CHK_SMART_PTR_NULL(sendRecvThread_);
-    lostThreshold_ = 30; // 心跳丢失阈值为30s
+    lostThreshold_ = HCCL_LOST_THRESHOLD; // 心跳丢失阈值为30s
     initialized_ = true;
     isPaused_ = false;
     isDeInit_ = false;
