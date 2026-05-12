@@ -18,6 +18,7 @@
 #include "orion_adapter_rts.h"
 #include "internal_exception.h"
 #include "rdma_handle_manager.h"
+#include "env_config/env_config.h"
 
 #include "ccu_eid_info.h"
 #include "ccu_res_specs.h"
@@ -43,6 +44,91 @@ constexpr u32 MAX_CKE_DATA_ARRAY_SIZE = 8;
 // 环境是A+X时，配置die0的MS交织粒度为1<<7 = 128
 constexpr uint32_t MSID_CONFIG_AX_MAINBOARD = 7;
 constexpr TpProtocol LOOP_JETTY_PROTOCOL = TpProtocol::TP; // 环回使用TP避免被环境link down阻塞
+
+// TA 档位映射表
+static constexpr uint8_t TA_HW_GEAR0_BASE = 0;
+static constexpr uint8_t TA_HW_GEAR1_BASE = 8;
+static constexpr uint8_t TA_HW_GEAR2_BASE = 16;
+static constexpr uint8_t TA_HW_GEAR3_BASE = 24;
+
+static constexpr uint8_t TA_GEAR_INDEX_0 = 0;
+static constexpr uint8_t TA_GEAR_INDEX_1 = 1;
+static constexpr uint8_t TA_GEAR_INDEX_2 = 2;
+static constexpr uint8_t TA_GEAR_INDEX_3 = 3;
+
+static constexpr uint32_t TA_TIMEOUT_MS_GEAR0 = 512;
+static constexpr uint32_t TA_TIMEOUT_MS_GEAR1 = 1000;
+static constexpr uint32_t TA_TIMEOUT_MS_GEAR2 = 8000;
+static constexpr uint32_t TA_TIMEOUT_MS_GEAR3 = 32000;
+
+static constexpr uint8_t AT_GEAR_MIN = 0;
+static constexpr uint8_t AT_GEAR_MAX = 3;
+static constexpr uint8_t AT_GEAR_DEFAULT = 2;
+static constexpr uint32_t AT_TIMEOUT_MAP[4] = {16, 128, 1000, 4000};
+
+static uint32_t TaHwValueToMs(uint8_t hwValue)
+{
+    uint8_t gear = hwValue / 8;
+    switch (gear) {
+        case TA_GEAR_INDEX_0: return TA_TIMEOUT_MS_GEAR0;
+        case TA_GEAR_INDEX_1: return TA_TIMEOUT_MS_GEAR1;
+        case TA_GEAR_INDEX_2: return TA_TIMEOUT_MS_GEAR2;
+        case TA_GEAR_INDEX_3: return TA_TIMEOUT_MS_GEAR3;
+        default: return TA_TIMEOUT_MS_GEAR2;
+    }
+}
+
+static uint8_t FindMinTaHwValue(uint32_t tpTotalTimeoutMs)
+{
+    if (tpTotalTimeoutMs < TA_TIMEOUT_MS_GEAR0) {
+        return TA_HW_GEAR0_BASE;
+    }
+    if (tpTotalTimeoutMs < TA_TIMEOUT_MS_GEAR1) {
+        return TA_HW_GEAR1_BASE;
+    }
+    if (tpTotalTimeoutMs < TA_TIMEOUT_MS_GEAR2) {
+        return TA_HW_GEAR2_BASE;
+    }
+    return TA_HW_GEAR3_BASE;
+}
+
+static uint32_t GetTpTotalTimeout(const TpAttrInfo &tpAttrInfo)
+{
+    uint8_t rawAtGear = tpAttrInfo.tpAttr.at;
+    uint8_t rawRetryTimes = tpAttrInfo.tpAttr.retryTimesInit;
+
+    uint8_t finalAtGear = rawAtGear;
+    if (rawAtGear < AT_GEAR_MIN || rawAtGear > AT_GEAR_MAX) {
+        finalAtGear = AT_GEAR_DEFAULT;
+        HCCL_WARNING("[CcuComponent][%s] Invalid at gear[%u], expect [%u, %u], use default gear[%u].",
+            __func__, rawAtGear, AT_GEAR_MIN, AT_GEAR_MAX, finalAtGear);
+    }
+
+    uint32_t singleAtTimeoutMs = AT_TIMEOUT_MAP[finalAtGear];
+    return singleAtTimeoutMs * static_cast<uint32_t>(rawRetryTimes + 1);
+}
+
+uint8_t CcuComponent::CalcTaTimeout(const TpAttrInfo &tpAttrInfo)
+{
+    constexpr uint8_t UB_TIMEOUT_DEFAULT = 8;
+    uint8_t envValue = static_cast<uint8_t>(EnvConfig::GetInstance().GetRdmaConfig().GetUbTimeOut());
+    uint32_t envTimeoutMs = TaHwValueToMs(envValue);
+
+    uint32_t tpTimeOutMs = GetTpTotalTimeout(tpAttrInfo);
+
+    uint8_t errTimeout = UB_TIMEOUT_DEFAULT;
+    if (envTimeoutMs < tpTimeOutMs) {
+        errTimeout = FindMinTaHwValue(tpTimeOutMs);
+        HCCL_WARNING("[CcuComponent][%s] Env timeout[%ums] < TP timeout[%ums]. Auto upgrade TA to hw_val[%u].",
+            __func__, envTimeoutMs, tpTimeOutMs, errTimeout);
+    } else {
+        errTimeout = envValue;
+        HCCL_INFO("[CcuComponent][%s] Env timeout[%ums] >= TP timeout[%ums]. Use env hw_val[%u].",
+            __func__, envTimeoutMs, tpTimeOutMs, envValue);
+    }
+
+    return errTimeout;
+}
 
 CcuComponent &CcuComponent::GetInstance(const int32_t deviceLogicId)
 {
@@ -97,6 +183,7 @@ void CcuComponent::Deinit()
     createdOutParamMap.clear();
     importedOutParamMap.clear();
     tpInfoMap.clear();
+    tpAttrInfoMap.clear();
     psnMap.clear();
 
     loopFeIpAddrMap.clear();
@@ -399,17 +486,20 @@ HcclResult CcuComponent::CreateAndImportLoopJettys(const uint8_t dieId, const Ip
     const auto ccuBufTokenValue = ccuRmaBuffer->GetTokenValue();
     const auto tokenIdHandle = ccuRmaBuffer->GetTokenIdHandle();
     
+    const auto &tpInfo = GetTpInfo(ipAddr);
+    const auto tpAttrInfo = GetLoopTpAttr(ipAddr, tpInfo.tpHandle);
+    const uint8_t errTimeout = CalcTaTimeout(tpAttrInfo);
+
     auto &createdVec = createdOutParamMap[dieId];
     auto &importedVec = importedOutParamMap[dieId];
     for (const auto &jettyInfo : jettyInfos) {
         const auto jettyMode = HrtJettyMode::CCU_CCUM_CACHE; // 当前仅支持该模式
         const HrtRaUbCreateJettyParam req{jfcHandle, jfcHandle, ccuBufTokenValue,
             tokenIdHandle, jettyMode, jettyInfo.taJettyId, jettyInfo.sqBufVa,
-            jettyInfo.sqBufSize, jettyInfo.wqeBBStartId, jettyInfo.sqDepth};
+            jettyInfo.sqBufSize, jettyInfo.wqeBBStartId, jettyInfo.sqDepth, errTimeout};
         auto createdOutParam = HrtRaUbCreateJetty(rdmaHandle, req);
         createdVec.emplace_back(createdOutParam);
 
-        const auto &tpInfo = GetTpInfo(ipAddr);
         const auto psn = GetPsn(ipAddr);
         const auto jettyImportCfg = GetJettyImportCfg(tpInfo, psn);
         const auto importedOutParam = RaUbTpImportJetty(rdmaHandle, createdOutParam.key,
@@ -455,6 +545,42 @@ TpInfo CcuComponent::GetTpInfo(const IpAddress &ipAddr)
     }
 
     return srcIter->second;
+}
+
+TpAttrInfo CcuComponent::GetLoopTpAttr(const IpAddress &ipAddr, const TpHandle tpHandle)
+{
+    const auto &srcIter = tpAttrInfoMap.find(ipAddr);
+    if (srcIter != tpAttrInfoMap.end()) {
+        return srcIter->second;
+    }
+
+    auto &rdmaHandleMgr = RdmaHandleManager::GetInstance();
+    const auto rdmaHandle = rdmaHandleMgr.GetByIp(devPhyId, ipAddr);
+
+    struct TpAttr tpAttr = {0};
+    uint32_t attrBitmap = 0;
+    RequestHandle reqHandle = 0;
+
+    const auto timeout = std::chrono::milliseconds(LOOP_CHANNEL_WAIT_TIMEOUT_MS);
+    const auto startTime = std::chrono::steady_clock::now();
+
+    auto ret = HrtRaGetTpAttrAsync(devPhyId, rdmaHandle, tpHandle, attrBitmap, tpAttr, reqHandle);
+    while (ret == HcclResult::HCCL_E_AGAIN) {
+        if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
+            THROW<InternalException>("[CcuComponent][%s] failed, get tp attr "
+                "timeout[%d ms], devLogicId[%d].", __func__, timeout, devLogicId);
+        }
+        ret = HrtRaGetTpAttrAsync(devPhyId, rdmaHandle, tpHandle, attrBitmap, tpAttr, reqHandle);
+    }
+
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        THROW<InternalException>("[CcuComponent][%s] failed, ret[%u], "
+            "devLogicId[%d].", __func__, ret, devLogicId);
+    }
+
+    TpAttrInfo tpAttrInfo(tpAttr);
+    tpAttrInfoMap[ipAddr] = tpAttrInfo;
+    return tpAttrInfo;
 }
 
 inline uint32_t GetRandomNum()
