@@ -1250,17 +1250,10 @@ void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo *exceptionInfo
         return;
     }
     lock.unlock();
-    auto callback = Hccl::GetAicpuTaskExceptionCallBack{} ;
-    {
-        lock_guard<mutex> cbLock(g_communicatorCallbackMapMutexV2);
-        auto& deviceMap = g_communicatorCallbackMapV2[exceptionInfo->deviceid];
-        auto it = deviceMap.find(exceptionInfo->streamid);
-        if (it != deviceMap.end()) {
-            callback = it->second;
-        }
-    }
-    if (callback) {
-        errorMessage = callback();
+    if (g_communicatorCallbackMap[exceptionInfo->deviceid].find(exceptionInfo->streamid) !=\
+        g_communicatorCallbackMap[exceptionInfo->deviceid].end()) {
+        // 找到对应的通信域，并调用回调函数从HDC通道获取AICPU异常信息
+        errorMessage = (g_communicatorCallbackMap[exceptionInfo->deviceid])[exceptionInfo->streamid]();
         if (strlen(errorMessage.tag) > 0) {
             isExistAicpuError = true;
             string groupRankContent;
