@@ -510,7 +510,8 @@ CcuResult  CcuKernel::LoadArg(CcuVariableHandle varHandle, uint32_t argId)
     loadArgUsedSet_.insert(argId);
     CcuRep::Variable *var{nullptr};
     CCU_CHK_RET(GetVariableByHandle(varHandle,&var));
-    auto loadArgRep = std::make_shared<CcuRep::CcuRepLoadArg>(*var, argId % CCU_SQE_ARGS_LEN);
+    auto loadArgRep = std::make_shared<CcuRep::CcuRepLoadArg>(
+        *var, argId % CCU_SQE_ARGS_LEN, static_cast<uint16_t>(argId));
     Append(loadArgRep);
     return CcuResult::CCU_SUCCESS;
 }
@@ -1145,7 +1146,8 @@ CcuResult CcuKernel::AddressAddAssignAddr(CcuAddressHandle addrHandle, CcuAddres
 
 void CcuKernel::Load(const CcuRep::Variable &var)
 {
-    auto loadArgRep = std::make_shared<CcuRep::CcuRepLoadArg>(var, loadArgIndex_ % CCU_SQE_ARGS_LEN);
+    auto loadArgRep = std::make_shared<CcuRep::CcuRepLoadArg>(
+        var, loadArgIndex_ % CCU_SQE_ARGS_LEN, static_cast<uint16_t>(loadArgIndex_));
     Append(loadArgRep);
     loadArgIndex_++;
 }
@@ -1763,7 +1765,7 @@ void CcuKernel::SetCcuInstrInfo(const CcuRep::CcuInstrInfo &instrInfo)
 
 CcuRep::Variable CcuKernel::CreateVariable()
 {
-    return CreateResAssist(res_.variable);
+    return CreateResAssist(res_.continuousVariable);
 }
 
 CcuRep::Address CcuKernel::CreateAddress()

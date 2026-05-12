@@ -11,6 +11,12 @@
 #ifndef CCU_DATA_UTILS_HPP
 #define CCU_DATA_UTILS_HPP
 
+namespace ccu {
+// 跨资源类共享的占位 tag：表示构造时不调用底层 Alloc。
+// 仅供工厂函数（如 ccu::CreateByChannel）以及 ccu::Array<T> 通过 friend 关系使用。
+struct NoAllocTag {};
+} // namespace ccu
+
 template <typename lhsT, typename rhsT> class CcuOperator {
 public:
     CcuOperator(lhsT lhs, rhsT rhs) : lhs(lhs), rhs(rhs)
