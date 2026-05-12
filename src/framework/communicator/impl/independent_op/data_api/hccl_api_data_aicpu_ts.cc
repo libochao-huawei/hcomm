@@ -73,7 +73,6 @@ HcclResult HcommThreadGetNotifyId(ThreadHandle thread, uint32_t notifyIdx, uint3
 HcclResult HcclDfxRegOpInfoByCommId(char* commId, void* hcclDfxOpInfo)
 {
     CHK_PTR_NULL(commId);
-    CHK_PTR_NULL(hcclDfxOpInfo);
 
     bool l0State = Hccl::ProfilingHandlerLite::GetInstance().GetProfL0State();
     bool l1State = Hccl::ProfilingHandlerLite::GetInstance().GetProfL1State();
@@ -84,6 +83,8 @@ HcclResult HcclDfxRegOpInfoByCommId(char* commId, void* hcclDfxOpInfo)
             __func__, l0State, l1State, taskExceptionEnable);
         return HCCL_SUCCESS;
     }
+
+    CHK_PTR_NULL(hcclDfxOpInfo);
 
     DevType deviceType;
     CHK_RET(hrtGetDeviceType(deviceType));
