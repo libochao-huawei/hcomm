@@ -740,6 +740,8 @@ int RaSetTpAttrAsync(void *ctxHandle, uint64_t tpHandle, uint32_t attrBitmap, st
 
 int RaGetTpAttrAsync(void *ctxHandle, uint64_t tpHandle, uint32_t *attrBitmap, struct TpAttr *attr, void **reqHandle)
 {
+    static int reqHandleValue = 12378;
+    *reqHandle = &reqHandleValue;
     return 0;
 }
 
