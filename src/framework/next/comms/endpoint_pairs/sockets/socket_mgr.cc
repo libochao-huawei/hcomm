@@ -181,6 +181,7 @@ HcclResult SocketMgr::MakeSocketInUse(Hccl::Socket*& socket)
 HcclResult SocketMgr::GetSocket(const Hccl::SocketConfig &socketConfig, Hccl::Socket*& socket)
 {
     std::unique_lock<std::mutex> lock(mutex_);
+    std::unique_lock<std::mutex> lock(mutex_);
     CHK_RET(Init());
     // 1. 先查找
     std::unordered_map<Hccl::SocketConfig,
@@ -189,11 +190,17 @@ HcclResult SocketMgr::GetSocket(const Hccl::SocketConfig &socketConfig, Hccl::So
 
     for (; it != socketMap_.end(); ++it) {
         if (std::equal_to<Hccl::SocketConfig>{}(socketConfig, it->first)) {
+            HCCL_INFO("[SocketMgr][%s] socketConfig tag is %s, map tag is %s", __func__, socketConfig.tag.c_str(), it->first.tag.c_str());
+            HCCL_INFO("[SocketMgr][%s] socketConfig remoteRank is %d, map remoteRank is %d", __func__, socketConfig.remoteRank, it->first.remoteRank);
+            HCCL_INFO("[SocketMgr][%s] socketConfig link.GetLocalPort().GetAddr() is %s, map link.GetLocalPort().GetAddr() is %s", __func__, socketConfig.link.GetLocalPort().GetAddr().Describe().c_str(), it->first.link.GetLocalPort().GetAddr().Describe().c_str());
+            HCCL_INFO("[SocketMgr][%s] socketConfig link.GetRemotePort().GetAddr() is %s, map link.GetRemotePort().GetAddr() is %s", __func__, socketConfig.link.GetRemotePort().GetAddr().Describe().c_str(), it->first.link.GetRemotePort().GetAddr().Describe().c_str());
+            HCCL_INFO("[SocketMgr][%s] socketConfig listeningPort is %u, map listeningPort is %u", __func__, socketConfig.listeningPort, it->first.listeningPort);
             break;
         }
     }
     if (it != socketMap_.end()) {
         if (socketConfig.hostNic2DeviceNicMode_) {
+            HCCL_INFO("[SocketMgr][%s] socketConfig hostNic2DeviceNicMode is true", __func__);
             socket = it->second.get();
             socket->Destroy();
             socketMap_.erase(it);
@@ -216,7 +223,9 @@ HcclResult SocketMgr::GetSocket(const Hccl::SocketConfig &socketConfig, Hccl::So
     }
 
     // 2. 不存在则创建
+    HCCL_INFO("[SocketMgr][%s] cannot find a correct socket in map, map_size = %d", __func__, socketMap_.size());
     CHK_RET(CreateSocketWithSocketHandle(socketConfig));
+    HCCL_INFO("[SocketMgr][%s] after createsocket, map_size = %d", __func__, socketMap_.size());
 
     // 3. 再次查找
     it = socketMap_.find(socketConfig);
@@ -226,6 +235,7 @@ HcclResult SocketMgr::GetSocket(const Hccl::SocketConfig &socketConfig, Hccl::So
         return HCCL_E_INTERNAL;
     }
     socket = it->second.get();
+    HCCL_INFO("[SocketMgr][%s] socket is %p", __func__, static_cast<const void *>(socket));
     CHK_RET(MakeSocketInUse(socket));
     return HCCL_SUCCESS;
 }
