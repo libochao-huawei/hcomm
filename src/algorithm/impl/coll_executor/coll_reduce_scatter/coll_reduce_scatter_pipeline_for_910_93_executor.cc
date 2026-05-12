@@ -174,7 +174,15 @@ HcclResult CollReduceScatterPipelineFor91093Executor::RunL0L1Phase(
     execMem.outputPtr = ctx.curOutputPtr + blockIdx * ctx.sizeDataPerLoop;
 
     const u64 bufferBaseOffset = useBufferA ? 0 : ctx.cclInputSizeHalved;
-    CHK_RET(RunLevel0To1(param, execMem, streamL0L1, bufferBaseOffset));
+    SliceExecMem(param, execMem);
+
+    HCCL_CONFIG_INFO(HCCL_ALG,
+        "[CollReduceScatterPipelineFor91093Executor][RunL0L1Phase] chunk starts");
+
+    HcclResult ret = KernelRunLevel0To1(param, execMem, streamL0L1, bufferBaseOffset);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[CollReduceScatterPipelineFor91093Executor][RunL0L1Phase] kernel run error, tag[%s]",
+            param.tag.c_str()), ret);
     return HCCL_SUCCESS;
 }
 
@@ -196,12 +204,20 @@ HcclResult CollReduceScatterPipelineFor91093Executor::RunL2Phase(
     execMem.outputPtr = ctx.curOutputPtr + blockIdx * ctx.sizeDataPerLoop;
 
     const u64 l2BaseOffset = useBufferA ? 0 : ctx.cclInputSizeHalved;
-    CHK_RET(RunLevel2(param, execMem, streamL2, l2BaseOffset));
+    SliceExecMem(param, execMem);
+
+    HCCL_CONFIG_INFO(HCCL_ALG,
+        "[CollReduceScatterPipelineFor91093Executor][RunL2Phase] chunk starts");
+
+    HcclResult ret = KernelRunLevel2(param, execMem, streamL2, l2BaseOffset);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[CollReduceScatterPipelineFor91093Executor][RunL2Phase] kernel run error, tag[%s]",
+            param.tag.c_str()), ret);
     return HCCL_SUCCESS;
 }
 
-// 由 RunLevel0To1、RunLevel2 调用
-void CollReduceScatterPipelineFor91093Executor::SliceExecMemIfNeeded(
+// 由 RunL0L1Phase、RunL2Phase 调用
+void CollReduceScatterPipelineFor91093Executor::SliceExecMem(
     const OpParam &param, ExecMem &execMem)
 {
     u32 unitSize = SIZE_TABLE[param.DataDes.dataType];
@@ -218,40 +234,6 @@ HcclResult CollReduceScatterPipelineFor91093Executor::GetLevel2CommInfo(
 {
     CHK_RET(CheckCommSize(COMM_LEVEL2, COMM_INDEX_0 + 1));
     level2CommInfo = GetSubCommInfo(COMM_LEVEL2, COMM_INDEX_0);
-    return HCCL_SUCCESS;
-}
-
-HcclResult CollReduceScatterPipelineFor91093Executor::RunLevel0To1(
-    OpParam &param, ExecMem &execMem, Stream &streamL0L1,
-    const u64 baseOffset)
-{
-    SliceExecMemIfNeeded(param, execMem);
-
-    HCCL_CONFIG_INFO(HCCL_ALG,
-        "[CollReduceScatterPipelineFor91093Executor][RunLevel0To1] chunk starts");
-
-    HcclResult ret = KernelRunLevel0To1(param, execMem, streamL0L1, baseOffset);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollReduceScatterPipelineFor91093Executor][RunLevel0To1] kernel run error, tag[%s]",
-            param.tag.c_str()), ret);
-
-    return HCCL_SUCCESS;
-}
-
-HcclResult CollReduceScatterPipelineFor91093Executor::RunLevel2(
-    OpParam &param, ExecMem &execMem, Stream &streamL2,
-    const u64 baseOffset)
-{
-    SliceExecMemIfNeeded(param, execMem);
-
-    HCCL_CONFIG_INFO(HCCL_ALG,
-        "[CollReduceScatterPipelineFor91093Executor][RunLevel2] chunk starts");
-
-    HcclResult ret = KernelRunLevel2(param, execMem, streamL2, baseOffset);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollReduceScatterPipelineFor91093Executor][RunLevel2] kernel run error, tag[%s]",
-            param.tag.c_str()), ret);
-
     return HCCL_SUCCESS;
 }
 

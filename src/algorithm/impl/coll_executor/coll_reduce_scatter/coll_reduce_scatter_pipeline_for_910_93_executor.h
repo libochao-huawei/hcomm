@@ -53,8 +53,8 @@ private:
         const std::vector<std::vector<Slice>> &multRingsUserMemSlice = std::vector<std::vector<Slice>>(0),
         const bool disableDMAReduce = false) override;
 
-    // 由 RunLevel0To1、RunLevel2 调用
-    void SliceExecMemIfNeeded(const OpParam &param, ExecMem &execMem);
+    // 由 RunL0L1Phase、RunL2Phase 调用
+    void SliceExecMem(const OpParam &param, ExecMem &execMem);
 
     // 由 KernelRunLevel0To1、KernelRunLevel2 调用
     HcclResult GetLevel2CommInfo(SubCommInfo &level2CommInfo);
@@ -64,8 +64,6 @@ private:
     // 由 RunLoop 循环体调用
     HcclResult RunL2Phase(OpParam &param, const PipelineLoopContext &ctx, u64 blockIdx, Stream &streamL2);
 
-    HcclResult RunLevel0To1(OpParam &param, ExecMem &execMem, Stream &streamL0L1, const u64 baseOffset);
-    HcclResult RunLevel2(OpParam &param, ExecMem &execMem, Stream &streamL2, const u64 baseOffset);
     HcclResult KernelRunLevel0To1(const OpParam &param, ExecMem &execMem, Stream &streamL0L1, const u64 baseOffset);
     HcclResult KernelRunLevel2(const OpParam &param, ExecMem &execMem, Stream &streamL2, const u64 baseOffset);
 
