@@ -12,7 +12,7 @@ if(NOT DEFINED HCOMM_DIR)
     set(HCOMM_DIR "${CMAKE_CURRENT_SOURCE_DIR}/..")
 endif()
 
-if(NOT COMMAND target_clone)
+if(NOT COMMAND clone_cann_target)
     include(${HCOMM_DIR}/cmake/func.cmake)
 endif()
 
