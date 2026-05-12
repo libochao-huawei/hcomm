@@ -12,7 +12,7 @@ include(cmake/fetch_cann_cmake.cmake)
 project(hcomm)
 
 # 初始化 CANN 项目配置
-init_cann_project()
+init_cann_project(PREPEND_MODULE_PATH)
 
 option(BUILD_OPEN_PROJECT "Build open hcomm project." ON)
 option(ENABLE_BUILD_DEVICE "Build hcomm device project." OFF)
@@ -103,6 +103,13 @@ elseif(BUILD_OPEN_PROJECT)
     include(cmake/third_party/ubengine.cmake)
     include(cmake/third_party/rdma-core.cmake)
     include(cmake/third_party/json.cmake)
+    # 查找依赖包
+    find_cann_package(msprof MODULE REQUIRED)
+    find_cann_package(securec MODULE REQUIRED)
+    find_cann_package(unified_dlog MODULE REQUIRED)
+    find_cann_package(mmpa MODULE REQUIRED)
+    find_cann_package(runtime MODULE REQUIRED)
+    find_cann_package(error_manager MODULE REQUIRED)
     # 检查构建依赖
     check_pkg_build_deps("hcomm")
     add_version_info_targets()

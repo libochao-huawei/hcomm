@@ -79,9 +79,6 @@ endfunction(generate_stub)
 
 if(PRODUCT_SIDE STREQUAL "host")
     set(HOST_STUBS
-        c_sec
-        unified_dlog
-        mmpa
         ascendcl
         tsdclient
     )
@@ -100,11 +97,9 @@ else()
         slog
         aicpu_sharder
         ${HOST_STUBS}
-        runtime
         acl_rt
         metadef
         opp_registry
-        error_manager
     )
 endif()
 

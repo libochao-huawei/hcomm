@@ -141,9 +141,6 @@ if(BUILD_OPEN_PROJECT)
         ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
     )
 
-    target_link_directories(hcomm PRIVATE
-        ${ASCEND_CANN_PACKAGE_PATH}/lib64
-    )
     target_link_libraries(hcomm
         -Wl,--no-as-needed
         c_sec
