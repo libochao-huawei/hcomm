@@ -275,19 +275,19 @@ endfunction()
 # 克隆 target 的属性到新 target，IGNORE_PROP 为需要跳过的属性名列表
 #
 # Usage:
-#   target_clone(ORIGIN ccl_kernel NEW aicpu_custom)
-#   target_clone(ORIGIN ccl_kernel NEW aicpu_custom IGNORE_PROP LINK_LIBRARIES)
-#   target_clone(ORIGIN ccl_kernel NEW aicpu_custom IGNORE_PROP SOURCES LINK_LIBRARIES)
+#   target_clone(ORIGIN ccl_kernel OUTPUT aicpu_custom)
+#   target_clone(ORIGIN ccl_kernel OUTPUT aicpu_custom IGNORE_PROP LINK_LIBRARIES)
+#   target_clone(ORIGIN ccl_kernel OUTPUT aicpu_custom IGNORE_PROP SOURCES LINK_LIBRARIES)
 function(target_clone)
     cmake_parse_arguments(ARG
         ""
-        "ORIGIN;NEW"
+        "ORIGIN;OUTPUT"
         "IGNORE_PROP"
         ${ARGN}
     )
 
-    if(NOT ARG_ORIGIN OR NOT ARG_NEW)
-        message(FATAL_ERROR "target_clone: ORIGIN or NEW is required")
+    if(NOT ARG_ORIGIN OR NOT ARG_OUTPUT)
+        message(FATAL_ERROR "target_clone: ORIGIN or OUTPUT is required")
     endif()
 
     # 克隆源文件，同时将相对路径转换为绝对路径
@@ -295,7 +295,7 @@ function(target_clone)
         get_target_property(sourceFiles ${ARG_ORIGIN} SOURCES)
         get_target_property(sourceDir ${ARG_ORIGIN} SOURCE_DIR)
         to_absolute_path(sourceFiles sourceDir absolute_sources_files)
-        target_sources(${ARG_NEW} PRIVATE
+        target_sources(${ARG_OUTPUT} PRIVATE
             ${absolute_sources_files}
         )
     endif()
@@ -303,7 +303,7 @@ function(target_clone)
     # 克隆头文件搜索路径
     if(NOT "INCLUDE_DIRECTORIES" IN_LIST ARG_IGNORE_PROP)
         get_target_property(includeDirs ${ARG_ORIGIN} INCLUDE_DIRECTORIES)
-        target_include_directories(${ARG_NEW} PRIVATE
+        target_include_directories(${ARG_OUTPUT} PRIVATE
             ${includeDirs}
         )
     endif()
@@ -311,7 +311,7 @@ function(target_clone)
     # 克隆链接库
     if(NOT "LINK_LIBRARIES" IN_LIST ARG_IGNORE_PROP)
         get_target_property(linkLibs ${ARG_ORIGIN} LINK_LIBRARIES)
-        target_link_libraries(${ARG_NEW} PRIVATE
+        target_link_libraries(${ARG_OUTPUT} PRIVATE
             ${linkLibs}
         )
     endif()
@@ -320,7 +320,7 @@ function(target_clone)
     if(NOT "LINK_DIRECTORIES" IN_LIST ARG_IGNORE_PROP)
         get_target_property(linkDirs ${ARG_ORIGIN} LINK_DIRECTORIES)
         if(linkDirs)
-            target_link_directories(${ARG_NEW} PRIVATE
+            target_link_directories(${ARG_OUTPUT} PRIVATE
                 ${linkDirs}
             )
         endif()
@@ -330,7 +330,7 @@ function(target_clone)
     if(NOT "COMPILE_DEFINITIONS" IN_LIST ARG_IGNORE_PROP)
         get_target_property(compileDefs ${ARG_ORIGIN} COMPILE_DEFINITIONS)
         if(compileDefs)
-            target_compile_definitions(${ARG_NEW} PRIVATE
+            target_compile_definitions(${ARG_OUTPUT} PRIVATE
                 ${compileDefs}
             )
         endif()
@@ -340,7 +340,7 @@ function(target_clone)
     if(NOT "COMPILE_OPTIONS" IN_LIST ARG_IGNORE_PROP)
         get_target_property(compileOptions ${ARG_ORIGIN} COMPILE_OPTIONS)
         if(compileOptions)
-            target_compile_options(${ARG_NEW} PRIVATE
+            target_compile_options(${ARG_OUTPUT} PRIVATE
                 ${compileOptions}
             )
         endif()
@@ -350,7 +350,7 @@ function(target_clone)
     if(NOT "LINK_OPTIONS" IN_LIST ARG_IGNORE_PROP)
         get_target_property(linkOpts ${ARG_ORIGIN} LINK_OPTIONS)
         if(linkOpts)
-            target_link_options(${ARG_NEW} PRIVATE
+            target_link_options(${ARG_OUTPUT} PRIVATE
                 ${linkOpts}
             )
         endif()
