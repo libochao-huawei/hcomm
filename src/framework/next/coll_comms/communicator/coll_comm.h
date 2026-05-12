@@ -51,7 +51,10 @@ public:
     
     // 获取Rank ID
     uint32_t GetMyRankId() const;
-    
+
+    // 获取devicelogicId
+    s32 GetDeviceLogicId() const { return deviceLogicId_; }
+
     // 获取Rank数量
     uint32_t GetRankSize() {
         if (rankgraph_ == nullptr) {
