@@ -9,9 +9,9 @@
 # -----------------------------------------------------------------------------------------------------------
 
 set(src_list
-comm_addr_logger.cc
-endpoint_logger.cc
-channel_logger.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/comm_addr_logger.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/endpoint_logger.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/channel_logger.cc
 )
 
 if(TARGET hcomm)
