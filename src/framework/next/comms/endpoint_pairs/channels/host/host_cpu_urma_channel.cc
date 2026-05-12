@@ -64,7 +64,7 @@ HcclResult HostCpuUrmaChannel::ParseInputParam()
         HCCL_WARNING("[HostCpuUrmaChannel][%s] exchangeAllMems is false.", __func__);
     }
 
-    EXECEPTION_CATCH(socketMgr_ = std::make_unique<SocketMgr>(), return HCCL_E_PTR);
+    EXECEPTION_CATCH(socketMgr_ = SocketMgr::GetInstance(), return HCCL_E_PTR);
 
     return HCCL_SUCCESS;
 }
@@ -210,7 +210,12 @@ HcclResult HostCpuUrmaChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNu
 ChannelStatus HostCpuUrmaChannel::GetStatus()
 {
     memTransport_->SetIsHost();
-    return Channel::TransportStatusToChannelStatus(memTransport_->GetStatus());
+    ChannelStatus out = Channel::TransportStatusToChannelStatus(memTransport_->GetStatus());
+    if (out == ChannelStatus::READY) {
+        socketMgr_->PutSocket(socket_);
+        socket_ = nullptr;
+    }
+    return out;
 }
 
 HcclResult hcomm::HostCpuUrmaChannel::NotifyRecord(const uint32_t remoteNotifyIdx)

@@ -82,7 +82,7 @@ private:
     std::vector<std::unique_ptr<Hccl::LocalIpcRmaBuffer>>       localRmaBuffers_{};
     std::vector<std::unique_ptr<Hccl::IpcLocalNotify>>          localNotifies_{};
     std::unique_ptr<Hccl::Socket>                               serverSocket_;
-    std::unique_ptr<SocketMgr>                                  socketMgr_{nullptr};
+    SocketMgr*                                                  socketMgr_{nullptr};
 };
 
 } // namespace hcomm

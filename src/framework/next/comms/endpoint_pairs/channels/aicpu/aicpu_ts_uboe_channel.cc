@@ -87,7 +87,7 @@ HcclResult AicpuTsUboeChannel::ParseInputParam()
         CHK_RET(Makebufs(channelDesc_.memHandles, channelDesc_.memHandleNum, bufs_));
     }
 
-    EXECEPTION_CATCH(socketMgr_ = std::make_unique<SocketMgr>(), return HCCL_E_PTR);
+    EXECEPTION_CATCH(socketMgr_ = SocketMgr::GetInstance(), return HCCL_E_PTR);
     return HCCL_SUCCESS;
 }
 
@@ -604,7 +604,11 @@ void AicpuTsUboeChannel::ProcessUboeState()
 
 ChannelStatus AicpuTsUboeChannel::GetStatus()
 {
-    if (channelStatus == ChannelStatus::READY) return channelStatus;
+    if (channelStatus == ChannelStatus::READY) {
+        socketMgr_->PutSocket(socket_);
+        socket_ = nullptr;
+        return channelStatus;
+    }
     if (channelStatus == ChannelStatus::INIT) uboeStatus = UboeStatus::INIT;
 
     if (!IsSocketReady()) return channelStatus;
