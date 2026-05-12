@@ -401,7 +401,7 @@ namespace hccl
         }
 
         void* cclBufferAddr = nullptr;
-        std::size_t cclBufferSize = 0;
+        u64 cclBufferSize = 0;
         CHK_RET(CreateCommCCLbuffer());
         HcclResult ret = hcclComm->GetInCCLbuffer(cclBufferAddr, cclBufferSize);
         if (ret != HCCL_SUCCESS) {
