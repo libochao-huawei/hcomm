@@ -12,6 +12,7 @@
 #define HCOMM_RES_H
  
 #include "hcomm_res_defs.h"
+#include "hcomm/hcomm_res_entity_defs.h"
  
 #ifdef __cplusplus
 extern "C" {
@@ -37,6 +38,9 @@ extern HcommResult HcommChannelCreate(EndpointHandle endpointHandle, CommEngine 
 extern HcommResult HcommChannelGetStatus(const ChannelHandle *channelList, uint32_t listNum, int32_t *statusList);
 
 extern HcommResult HcommChannelDestroy(const ChannelHandle *channels, uint32_t channelNum);
+
+extern HcommResult HcommChannelGetPtrByHandle(const ChannelHandle *channelList, uint32_t listNum,
+    ChannelPtr *channelPtr);
 
 extern HcommResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, const uint32_t *notifyNumPerThread, ThreadHandle *threads);
 
