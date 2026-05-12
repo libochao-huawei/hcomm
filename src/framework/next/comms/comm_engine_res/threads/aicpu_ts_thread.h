@@ -45,6 +45,7 @@ public:
     }
 
     void LaunchTask() const override;
+    void TryLaunchTask() const override;
 
     // Local Data Plane Functions
     HcclResult LocalNotifyWait(uint32_t notifyId) const override;
