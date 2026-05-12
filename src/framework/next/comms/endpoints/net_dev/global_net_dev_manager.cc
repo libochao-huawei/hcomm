@@ -45,38 +45,30 @@ GlobalNetDevMgr::~GlobalNetDevMgr()
     HCCL_INFO("[GlobalNetDevMgr][%s] end.", __func__);
 }
 
-GlobalNetDevMgr& GlobalNetDevMgr::GetInstance()
+GlobalNetDevMgr& GlobalNetDevMgr::GetInstance(u32 devicePhyId)
 {
-    s32 deviceLogicId;
-    u32 devicePhyId;
-    HcclResult hcclRet = hrtGetDeviceRefresh(&deviceLogicId);
+    u32 deviceLogicId;
+    HcclResult hcclRet = hrtGetDeviceIndexByPhyId(devicePhyId, deviceLogicId);
     if (hcclRet != HCCL_SUCCESS) {
-        HCCL_RUN_WARNING("GlobalNetDevMgr::GetInstance hrtGetDeviceRefresh failed, ret[%d], "
+        HCCL_RUN_WARNING("GlobalNetDevMgr::GetInstance hrtGetDeviceIndexByPhyId failed, ret[%d], "
             "return reserve instance", hcclRet);
         return netDevMgrInstance[MAX_MODULE_DEVICE_NUM];
     }
 
-    hcclRet = hrtGetDevicePhyIdByIndex(static_cast<u32>(deviceLogicId), devicePhyId);
-    if (hcclRet != HCCL_SUCCESS) {
-        HCCL_RUN_WARNING("GlobalNetDevMgr::GetInstance hrtGetDevicePhyIdByIndex failed, ret[%d], "
-            "return reserve instance", hcclRet);
-        return netDevMgrInstance[MAX_MODULE_DEVICE_NUM];
-    }
-
-    if (static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM) {
-        HCCL_RUN_WARNING("[Get][Instance]deviceLogicId[%d] is invalid, return reserve instance", deviceLogicId);
+    if (deviceLogicId >= MAX_MODULE_DEVICE_NUM) {
+        HCCL_RUN_WARNING("[Get][Instance]deviceLogicId[%u] is invalid, return reserve instance", deviceLogicId);
         return netDevMgrInstance[MAX_MODULE_DEVICE_NUM];
     }
 
     if (!netDevMgrInstance[deviceLogicId].isInited_) {
         hcclRet = Init(devicePhyId, deviceLogicId);
         if (hcclRet != HCCL_SUCCESS) {
-            HCCL_RUN_WARNING("[Get][Instance]Init deviceLogicId[%d]fail, return reserve instance", deviceLogicId);
+            HCCL_RUN_WARNING("[Get][Instance]Init deviceLogicId[%u]fail, return reserve instance", deviceLogicId);
             return netDevMgrInstance[MAX_MODULE_DEVICE_NUM];
         }
     }
 
-    HCCL_DEBUG("GlobalNetDevMgr::GetInstance deviceLogicId[%d], devicePhyId[%u] done.", deviceLogicId, devicePhyId);
+    HCCL_DEBUG("GlobalNetDevMgr::GetInstance deviceLogicId[%u], devicePhyId[%u] done.", deviceLogicId, devicePhyId);
     return netDevMgrInstance[deviceLogicId];
 }
 
