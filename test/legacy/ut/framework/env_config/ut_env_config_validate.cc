@@ -308,6 +308,112 @@ TEST_F(EnvConfigValidateTest, test_parse_HCCL_RDMA_RETRY_CNT_should_success)
     EXPECT_EQ(rdmaCfg.rdmaRetryCnt.Get(), 5);
 }
 
+TEST_F(EnvConfigValidateTest, test_parse_HCCL_UBOE_TIMEOUT_should_default)
+{
+    EnvRdmaConfig rdmaCfg{};
+    MOCKER(SalGetEnv).stubs().will(returnValue(string("")));
+    rdmaCfg.uboeTimeOut.Parse();
+    EXPECT_EQ(rdmaCfg.uboeTimeOut.Get(), 16);
+}
+
+TEST_F(EnvConfigValidateTest, test_parse_HCCL_UBOE_TIMEOUT_should_fail_when_value_too_long)
+{
+    EnvRdmaConfig rdmaCfg{};
+    MOCKER(SalGetEnv).stubs().will(returnValue(string("10000000000")));
+    EXPECT_THROW(rdmaCfg.uboeTimeOut.Parse(), InvalidParamsException);
+}
+
+TEST_F(EnvConfigValidateTest, test_parse_HCCL_UBOE_TIMEOUT_shoudl_fail_when_value_not_number)
+{
+    EnvRdmaConfig rdmaCfg{};
+    MOCKER(SalGetEnv).stubs().will(returnValue(string("123abc")));
+    EXPECT_THROW(rdmaCfg.uboeTimeOut.Parse(), InvalidParamsException);
+}
+
+TEST_F(EnvConfigValidateTest, test_parse_HCCL_UBOE_TIMEOUT_shoudl_fail_when_value_too_big)
+{
+    EnvRdmaConfig rdmaCfg{};
+    MOCKER(SalGetEnv).stubs().will(returnValue(string("32")));
+    EXPECT_THROW(rdmaCfg.uboeTimeOut.Parse(), InvalidParamsException);
+}
+
+TEST_F(EnvConfigValidateTest, test_parse_HCCL_UBOE_TIMEOUT_should_success_when_value_0)
+{
+    EnvRdmaConfig rdmaCfg{};
+    MOCKER(SalGetEnv).stubs().will(returnValue(string("0")));
+    rdmaCfg.uboeTimeOut.Parse();
+    EXPECT_EQ(rdmaCfg.uboeTimeOut.Get(), 0);
+}
+
+TEST_F(EnvConfigValidateTest, test_parse_HCCL_UBOE_TIMEOUT_should_success_when_value_31)
+{
+    EnvRdmaConfig rdmaCfg{};
+    MOCKER(SalGetEnv).stubs().will(returnValue(string("31")));
+    rdmaCfg.uboeTimeOut.Parse();
+    EXPECT_EQ(rdmaCfg.uboeTimeOut.Get(), 31);
+}
+
+TEST_F(EnvConfigValidateTest, test_parse_HCCL_UBOE_TIMEOUT_should_success)
+{
+    EnvRdmaConfig rdmaCfg{};
+    MOCKER(SalGetEnv).stubs().will(returnValue(string("20")));
+    rdmaCfg.uboeTimeOut.Parse();
+    EXPECT_EQ(rdmaCfg.uboeTimeOut.Get(), 20);
+}
+
+TEST_F(EnvConfigValidateTest, test_parse_HCCL_UB_TIMEOUT_should_default)
+{
+    EnvRdmaConfig rdmaCfg{};
+    MOCKER(SalGetEnv).stubs().will(returnValue(string("")));
+    rdmaCfg.ubTimeOut.Parse();
+    EXPECT_EQ(rdmaCfg.ubTimeOut.Get(), 8);
+}
+
+TEST_F(EnvConfigValidateTest, test_parse_HCCL_UB_TIMEOUT_should_fail_when_value_too_long)
+{
+    EnvRdmaConfig rdmaCfg{};
+    MOCKER(SalGetEnv).stubs().will(returnValue(string("10000000000")));
+    EXPECT_THROW(rdmaCfg.ubTimeOut.Parse(), InvalidParamsException);
+}
+
+TEST_F(EnvConfigValidateTest, test_parse_HCCL_UB_TIMEOUT_shoudl_fail_when_value_not_number)
+{
+    EnvRdmaConfig rdmaCfg{};
+    MOCKER(SalGetEnv).stubs().will(returnValue(string("123abc")));
+    EXPECT_THROW(rdmaCfg.ubTimeOut.Parse(), InvalidParamsException);
+}
+
+TEST_F(EnvConfigValidateTest, test_parse_HCCL_UB_TIMEOUT_shoudl_fail_when_value_too_big)
+{
+    EnvRdmaConfig rdmaCfg{};
+    MOCKER(SalGetEnv).stubs().will(returnValue(string("32")));
+    EXPECT_THROW(rdmaCfg.ubTimeOut.Parse(), InvalidParamsException);
+}
+
+TEST_F(EnvConfigValidateTest, test_parse_HCCL_UB_TIMEOUT_should_success_when_value_0)
+{
+    EnvRdmaConfig rdmaCfg{};
+    MOCKER(SalGetEnv).stubs().will(returnValue(string("0")));
+    rdmaCfg.ubTimeOut.Parse();
+    EXPECT_EQ(rdmaCfg.ubTimeOut.Get(), 0);
+}
+
+TEST_F(EnvConfigValidateTest, test_parse_HCCL_UB_TIMEOUT_should_success_when_value_31)
+{
+    EnvRdmaConfig rdmaCfg{};
+    MOCKER(SalGetEnv).stubs().will(returnValue(string("31")));
+    rdmaCfg.ubTimeOut.Parse();
+    EXPECT_EQ(rdmaCfg.ubTimeOut.Get(), 31);
+}
+
+TEST_F(EnvConfigValidateTest, test_parse_HCCL_UB_TIMEOUT_should_success)
+{
+    EnvRdmaConfig rdmaCfg{};
+    MOCKER(SalGetEnv).stubs().will(returnValue(string("15")));
+    rdmaCfg.ubTimeOut.Parse();
+    EXPECT_EQ(rdmaCfg.ubTimeOut.Get(), 15);
+}
+
 TEST_F(EnvConfigValidateTest, test_parse_HCCL_IF_IP_should_success_when_input_default)
 {
     EnvHostNicConfig nicCfg{};
