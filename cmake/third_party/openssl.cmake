@@ -125,7 +125,7 @@ else()
         --prefix=${OPENSSL_INSTALL_PATH}
     )
 
-    if(DEVICE_MODE)
+    if(${PRODUCT_SIDE} STREQUAL "device")
         set(OPENSSL_CONFIGURE_COMMAND
             unset CROSS_COMPILE &&
             ${OPENSSL_CONFIGURE_PUB_COMMAND}
