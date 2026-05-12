@@ -21,6 +21,7 @@
 #include "ccu_res_specs.h"
 #include "rdma_handle_manager.h"
 #include "ccu_api_exception.h"
+#include "env_config/env_config.h"
 
 #undef private
 #undef protected
@@ -587,4 +588,60 @@ TEST_F(CcuComponentTest, Ut_SetTaskKillAndSetTaskKillDone_When_CcuV1_Expect_Retu
 
     EXPECT_EQ(ccuComponent.SetTaskKillDone(), HcclResult::HCCL_SUCCESS);
     EXPECT_EQ(ccuComponent.status, CcuComponent::CcuTaskKillStatus::INIT);
+}
+
+TEST_F(CcuComponentTest, Ut_GetLoopTpAttr_Cached_ReturnsCachedValue)
+{
+    const int32_t devLogicId = MAX_MODULE_DEVICE_NUM - 1;
+    CcuComponent ccuComponent;
+    ccuComponent.devLogicId = devLogicId;
+
+    IpAddress ipAddr("10.0.0.1");
+    TpAttrInfo cachedTpAttrInfo{};
+    cachedTpAttrInfo.tpAttr.at = 2;
+    cachedTpAttrInfo.tpAttr.retryTimesInit = 1;
+    ccuComponent.tpAttrInfoMap[ipAddr] = cachedTpAttrInfo;
+
+    TpHandle tpHandle = 12345;
+    TpAttrInfo result = ccuComponent.GetLoopTpAttr(ipAddr, tpHandle);
+    EXPECT_EQ(result.tpAttr.at, 2);
+    EXPECT_EQ(result.tpAttr.retryTimesInit, 1);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(CcuComponentTest, Ut_GetLoopTpAttr_NotCached_CallsHrtRaGetTpAttrAsync)
+{
+    const int32_t devLogicId = MAX_MODULE_DEVICE_NUM - 1;
+    CcuComponent ccuComponent;
+    ccuComponent.devLogicId = devLogicId;
+    ccuComponent.devPhyId = 0;
+
+    IpAddress ipAddr("10.0.0.2");
+    TpHandle tpHandle = 12345;
+
+    MOCKER_CPP(&RdmaHandleManager::GetByIp).stubs().will(returnValue((void*)0x12345678));
+
+    TpAttrInfo result = ccuComponent.GetLoopTpAttr(ipAddr, tpHandle);
+    EXPECT_EQ(ccuComponent.tpAttrInfoMap.count(ipAddr), 1);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(CcuComponentTest, Ut_GetLoopTpAttr_RaGetTpAttrAsyncFails_ThrowsException)
+{
+    const int32_t devLogicId = MAX_MODULE_DEVICE_NUM - 1;
+    CcuComponent ccuComponent;
+    ccuComponent.devLogicId = devLogicId;
+    ccuComponent.devPhyId = 0;
+
+    IpAddress ipAddr("10.0.0.3");
+    TpHandle tpHandle = 12345;
+
+    MOCKER_CPP(&RdmaHandleManager::GetByIp).stubs().will(returnValue((void*)0x12345678));
+    MOCKER(RaGetTpAttrAsync).stubs().will(returnValue(-1));
+
+    EXPECT_THROW(ccuComponent.GetLoopTpAttr(ipAddr, tpHandle), InternalException);
+
+    GlobalMockObject::verify();
 }
