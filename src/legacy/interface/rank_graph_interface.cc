@@ -258,10 +258,9 @@ namespace Hccl {
                 net2peer = &link;
             }
         }
-        CHK_PRT_RET(peer2net == nullptr || net2peer == nullptr,
-                    HCCL_ERROR("[IRankGraph::%s] invalid Clos path, peer2net[%p], net2peer[%p], linkNum[%zu]",
-                               __func__, peer2net, net2peer, path.links.size()),
-                    HCCL_E_PARA);
+        CHK_PTR_NULL(peer2net);
+        CHK_PTR_NULL(net2peer);
+        
         auto srcInterface = peer2net->GetSourceIface();
         auto dstInterface = net2peer->GetTargetIface();
         CHK_PTR_NULL(srcInterface);
@@ -388,10 +387,9 @@ namespace Hccl {
             *topoType = it->second;
             return HCCL_SUCCESS;
         }
-        CHK_PRT_RET(true,
-                    HCCL_ERROR("[IRankGraph::GetTopoType] topoType[%s] is not supported, netLayer[%u], "
-                               "topoInstId[%u], myRank[%u]", type.Describe().c_str(), netLayer, topoInstId, rankId),
-                    HCCL_E_PARA);
+        HCCL_ERROR("[IRankGraph::GetTopoType] topoType[%s] is not supported, netLayer[%u], "
+                               "topoInstId[%u], myRank[%u]", type.Describe().c_str(), netLayer, topoInstId, rankId);
+        return HCCL_E_PARA;
     }
 
     HcclResult IRankGraph::GetRanksByTopoInst(const uint32_t netLayer, const uint32_t topoInstId, uint32_t** ranks,
