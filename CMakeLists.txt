@@ -111,7 +111,7 @@ elseif(BUILD_OPEN_PROJECT)
         include(ExternalProject)
         ExternalProject_Add(hcomm_device
             SOURCE_DIR ${HCOMM_DIR}/cmake/device
-            BINARY_DIR ${CMAKE_BINARY_DIR}/device_build
+            BINARY_DIR ${HCOMM_DEVICE_BUILD_PATH}
             CMAKE_ARGS
                 -DTOOLCHAIN_DIR=${HCC_TOOLCHAIN_DIR}
                 -DCMAKE_TOOLCHAIN_FILE=${HCOMM_DIR}/cmake/aarch64-hcc-toolchain.cmake
@@ -121,7 +121,7 @@ elseif(BUILD_OPEN_PROJECT)
                 -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
                 -DCMAKE_C_AR=${HCC_CXX_AR}
                 -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-                -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/device_install
+                -DCMAKE_INSTALL_PREFIX=${HCOMM_DEVICE_INSTALL_PATH}
                 -DASCEND_INSTALL_PATH=${ASCEND_INSTALL_PATH}
                 -DBUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}
                 -DCANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH}
@@ -134,8 +134,24 @@ elseif(BUILD_OPEN_PROJECT)
 
         # 安装 device 侧编译产物
         install(FILES
-            ${CMAKE_BINARY_DIR}/device_build/device-hcomm.tar.gz
+            ${HCOMM_DEVICE_BUILD_PATH}/device-hcomm.tar.gz
             DESTINATION .
+            COMPONENT hcomm
+        )
+        install(FILES
+            ${HCOMM_DEVICE_INSTALL_PATH}/${INSTALL_CCL_KERNEL_JSON_DIR}/kernel/libccl_kernel.so
+            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel
+            COMPONENT hcomm
+        )
+        install(FILES
+            ${HCOMM_DEVICE_INSTALL_PATH}/${INSTALL_CCL_KERNEL_JSON_DIR}/config/ccl_kernel.json
+            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/config
+            COMPONENT hcomm
+        )
+        install(FILES
+            ${HCOMM_DEVICE_INSTALL_PATH}/${INSTALL_CCL_KERNEL_JSON_DIR}/kernel/libaicpu_custom.so
+            ${HCOMM_DEVICE_INSTALL_PATH}/${INSTALL_CCL_KERNEL_JSON_DIR}/kernel/libaicpu_custom.json
+            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel
             COMPONENT hcomm
         )
     endif()
