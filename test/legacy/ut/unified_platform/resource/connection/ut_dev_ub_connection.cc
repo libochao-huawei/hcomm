@@ -22,6 +22,7 @@
 #include "rdma_handle_manager.h"
 #include "tp_manager.h"
 #include "hccp_async.h"
+#include "env_config/env_config.h"
 #undef protected
 #undef private
 #include "hccp_async_ctx.h"
@@ -962,4 +963,56 @@ TEST_F(DevUbConnectionTest, Ut_Describe_Tp_Mode)
     EXPECT_NE(ret, HcclResult::HCCL_SUCCESS);
     ret = devUbConnection.Describe(testDfx);
     EXPECT_NE(ret, HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(DevUbConnectionTest, CalcTotalTimeout_ValidAtGear_ReturnsCorrectTimeout)
+{
+    RdmaHandle rdmaHandle = (void *)0x1000000;
+    BasePortType portType(PortDeploymentType::DEV_NET, ConnectProtoType::UB);
+    LinkData linkData(portType, 10, 11, 10, 11);
+    linkData.linkProtocol_ = LinkProtocol::UB_TP;
+    
+    DevUbTpConnection devUbConnection(rdmaHandle, linkData.GetLocalAddr(), linkData.GetRemoteAddr(), OpMode::OPBASE);
+    devUbConnection.tpInfo.tpHandle = 0x1234;
+    devUbConnection.reqHandle = 0;
+
+    struct TpAttr tpAttr = {0};
+    tpAttr.at = 0;
+    tpAttr.retryTimesInit = 0;
+    
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(0)));
+    MOCKER(HrtRaGetTpAttrAsync).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+
+    uint32_t totalTimeoutMs = 0;
+    HcclResult ret = devUbConnection.CalcTotalTimeout(totalTimeoutMs);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(totalTimeoutMs, 16);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(DevUbConnectionTest, CalcTotalTimeout_WithRetryTimes_ReturnsCorrectTimeout)
+{
+    RdmaHandle rdmaHandle = (void *)0x1000000;
+    BasePortType portType(PortDeploymentType::DEV_NET, ConnectProtoType::UB);
+    LinkData linkData(portType, 10, 11, 10, 11);
+    linkData.linkProtocol_ = LinkProtocol::UB_TP;
+    
+    DevUbTpConnection devUbConnection(rdmaHandle, linkData.GetLocalAddr(), linkData.GetRemoteAddr(), OpMode::OPBASE);
+    devUbConnection.tpInfo.tpHandle = 0x1234;
+    devUbConnection.reqHandle = 0;
+
+    struct TpAttr tpAttr = {0};
+    tpAttr.at = 2;
+    tpAttr.retryTimesInit = 3;
+    
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(0)));
+    MOCKER(HrtRaGetTpAttrAsync).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+
+    uint32_t totalTimeoutMs = 0;
+    HcclResult ret = devUbConnection.CalcTotalTimeout(totalTimeoutMs);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(totalTimeoutMs, 4000);
+
+    GlobalMockObject::verify();
 }
