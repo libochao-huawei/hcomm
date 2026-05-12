@@ -22,6 +22,9 @@ constexpr u32 MODULE_NUM_FOUR = 4;
 constexpr u32 HCCL_310P_DATA_SIZE_MID_COUNT = 320 * 1024;
 constexpr u32 HCCL_310P_DATA_SIZE_SMALL_COUNT = 1024;
 constexpr u32 HCCL_310P_SLIM_RING_MAX_SIZE = 8;
+
+// Pipeline并行比串行更优的总数据量临界点（基于910_93 2 SuperPod, 1 Server, 12 Rank 性能基线测试，
+// 数据量低于此值时调度开销超过流水收益）
 constexpr u64 HCCL_PIPELINE_TOTAL_DATA_SIZE_THRESHOLD = 608 * 1024 * 1024;
 
 namespace hccl {

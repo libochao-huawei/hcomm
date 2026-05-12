@@ -13,8 +13,11 @@
 
 namespace hccl {
 namespace {
-constexpr u32 PIPELINE_NOTIFY_NUM = 2;
 constexpr u32 PIPELINE_BUFFER_NUM = 2;
+constexpr u32 PIPELINE_PINGPONG_NOTIFY_PAIRS = PIPELINE_BUFFER_NUM;
+// HCCL 按 stream:notify = 1:1 分配；pipeline 仅使用最后一条额外 stream 承载 L2，
+// 其余额外 stream 仅用于获取 ping-pong notify 对。
+constexpr u32 PIPELINE_EXTRA_STREAM_NUM = PIPELINE_PINGPONG_NOTIFY_PAIRS;
 }
 
 CollReduceScatterPipelineFor91093Executor::
@@ -28,7 +31,7 @@ CollReduceScatterPipelineFor91093Executor::
 HcclResult CollReduceScatterPipelineFor91093Executor::CalcStreamNum(u32 &streamNum)
 {
     CHK_RET(CollReduceScatterRingFor91093Executor::CalcStreamNum(streamNum));
-    streamNum += PIPELINE_NOTIFY_NUM;
+    streamNum += PIPELINE_EXTRA_STREAM_NUM;
     HCCL_INFO("[CollReduceScatterPipelineFor91093Executor][CalcStreamNum] tag[%s] streamNum[%u]",
         tag_.c_str(), streamNum);
     return HCCL_SUCCESS;
@@ -54,26 +57,26 @@ HcclResult CollReduceScatterPipelineFor91093Executor::RunLoop(OpParam &param, Al
 
     Stream streamL0L1 = param.stream;
     Stream streamL2 = algResResp_->slaveStreams.back();
-    const u32 baseStreamNum = algResResp_->slaveStreams.size() - PIPELINE_NOTIFY_NUM;
-    auto notifyL0L1toL2A = algResResp_->notifiesMain[baseStreamNum];
-    auto notifyL0L1toL2B = algResResp_->notifiesMain[baseStreamNum + 1];
-    auto notifyL2toL0L1A = algResResp_->notifiesAux[baseStreamNum];
-    auto notifyL2toL0L1B = algResResp_->notifiesAux[baseStreamNum + 1];
+    const u32 baseNotifyIndex = algResResp_->notifiesMain.size() - PIPELINE_PINGPONG_NOTIFY_PAIRS;
+    auto notifyL0L1toL2A = algResResp_->notifiesMain[baseNotifyIndex];
+    auto notifyL0L1toL2B = algResResp_->notifiesMain[baseNotifyIndex + 1];
+    auto notifyL2toL0L1A = algResResp_->notifiesAux[baseNotifyIndex];
+    auto notifyL2toL0L1B = algResResp_->notifiesAux[baseNotifyIndex + 1];
     PipelineLoopContext ctx;
     CHK_RET(BuildPipelineLoopContext(param, algRes, unitSize, ctx));
     CHK_RET(GetLevelCommInfo());
 
     auto getForwardNotify = [&](u64 blockIdx) -> std::shared_ptr<LocalNotify> {
-        return (blockIdx % PIPELINE_NOTIFY_NUM == 0) ? notifyL0L1toL2A : notifyL0L1toL2B;
+        return (blockIdx % PIPELINE_PINGPONG_NOTIFY_PAIRS == 0) ? notifyL0L1toL2A : notifyL0L1toL2B;
     };
     auto getBackwardNotify = [&](u64 blockIdx) -> std::shared_ptr<LocalNotify> {
-        return (blockIdx % PIPELINE_NOTIFY_NUM == 0) ? notifyL2toL0L1A : notifyL2toL0L1B;
+        return (blockIdx % PIPELINE_PINGPONG_NOTIFY_PAIRS == 0) ? notifyL2toL0L1A : notifyL2toL0L1B;
     };
 
     const u64 numLoopTotal = ctx.numBlockTotal + 1;
     for (u64 i = 0; i < numLoopTotal; ++i) {
         if (i < ctx.numBlockTotal) {
-            if (i >= 2) {
+            if (i >= PIPELINE_BUFFER_NUM) {
                 CHK_RET(LocalNotify::Wait(streamL0L1, dispatcher_, getBackwardNotify(i)));
             }
             CHK_RET(RunL0L1Phase(param, ctx, i, streamL0L1));
@@ -115,17 +118,17 @@ HcclResult CollReduceScatterPipelineFor91093Executor::BuildPipelineLoopContext(
 
     const u64 countDataLastLoopTemp = param.DataDes.count % countDataPerLoop;
     const u64 countDataLastLoop = countDataLastLoopTemp > 0 ? countDataLastLoopTemp : countDataPerLoop;
-    const u64 cclInputSizeHalved = algRes.cclInputMem.size() / 2;
-    const u64 cclOutputSizeHalved = algRes.cclOutputMem.size() / 2;
+    const u64 cclInputBufferSize = algRes.cclInputMem.size() / PIPELINE_BUFFER_NUM;
+    const u64 cclOutputBufferSize = algRes.cclOutputMem.size() / PIPELINE_BUFFER_NUM;
     ctx.countDataPerLoop = countDataPerLoop;
     ctx.countDataLastLoop = countDataLastLoop;
     ctx.sizeDataPerLoop = countDataPerLoop * unitSize;
     ctx.numBlockTotal = (param.DataDes.count - countDataLastLoop) / countDataPerLoop + 1;
-    ctx.cclInputSizeHalved = cclInputSizeHalved;
-    ctx.cclInputAMem = algRes.cclInputMem.range(0, cclInputSizeHalved);
-    ctx.cclInputBMem = algRes.cclInputMem.range(cclInputSizeHalved, cclInputSizeHalved);
-    ctx.cclOutputAMem = algRes.cclOutputMem.range(0, cclOutputSizeHalved);
-    ctx.cclOutputBMem = algRes.cclOutputMem.range(cclOutputSizeHalved, cclOutputSizeHalved);
+    ctx.cclInputBufferSize = cclInputBufferSize;
+    ctx.cclInputAMem = algRes.cclInputMem.range(0, cclInputBufferSize);
+    ctx.cclInputBMem = algRes.cclInputMem.range(cclInputBufferSize, cclInputBufferSize);
+    ctx.cclOutputAMem = algRes.cclOutputMem.range(0, cclOutputBufferSize);
+    ctx.cclOutputBMem = algRes.cclOutputMem.range(cclOutputBufferSize, cclOutputBufferSize);
     ctx.curInputPtr = curInputPtr;
     ctx.curOutputPtr = curOutputPtr;
 
@@ -143,10 +146,11 @@ HcclResult CollReduceScatterPipelineFor91093Executor::WaitForRemainingL2Signals(
     const std::shared_ptr<LocalNotify> &notifyL2toL0L1A,
     const std::shared_ptr<LocalNotify> &notifyL2toL0L1B)
 {
-    const u64 remainingSignals = (numBlockTotal >= 2) ? 2 : numBlockTotal;
+    const u64 remainingSignals = (numBlockTotal >= PIPELINE_PINGPONG_NOTIFY_PAIRS) ?
+        PIPELINE_PINGPONG_NOTIFY_PAIRS : numBlockTotal;
     const u64 firstBlockIdx = numBlockTotal - remainingSignals;
     for (u64 blockIdx = firstBlockIdx; blockIdx < numBlockTotal; ++blockIdx) {
-        auto notify = (blockIdx % PIPELINE_NOTIFY_NUM == 0) ? notifyL2toL0L1A : notifyL2toL0L1B;
+        auto notify = (blockIdx % PIPELINE_PINGPONG_NOTIFY_PAIRS == 0) ? notifyL2toL0L1A : notifyL2toL0L1B;
         HcclResult ret = LocalNotify::Wait(streamL0L1, dispatcher_, notify);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[CollReduceScatterPipelineFor91093Executor][WaitForRemainingL2Signals] "
@@ -161,9 +165,9 @@ HcclResult CollReduceScatterPipelineFor91093Executor::RunL0L1Phase(
 {
     HCCL_CONFIG_INFO(HCCL_ALG,
         "[CollReduceScatterPipelineFor91093Executor][RunL0L1Phase] blockIdx[%llu] useBufferA[%d]",
-        blockIdx, (blockIdx % 2 == 0));
+        blockIdx, (blockIdx % PIPELINE_BUFFER_NUM == 0));
 
-    const bool useBufferA = (blockIdx % 2 == 0);
+    const bool useBufferA = (blockIdx % PIPELINE_BUFFER_NUM == 0);
     const bool isLastBlock = (blockIdx == ctx.numBlockTotal - 1);
     ExecMem execMem;
     execMem.count = isLastBlock ? ctx.countDataLastLoop : ctx.countDataPerLoop;
@@ -173,7 +177,7 @@ HcclResult CollReduceScatterPipelineFor91093Executor::RunL0L1Phase(
     execMem.inputPtr = ctx.curInputPtr + blockIdx * ctx.sizeDataPerLoop;
     execMem.outputPtr = ctx.curOutputPtr + blockIdx * ctx.sizeDataPerLoop;
 
-    const u64 bufferBaseOffset = useBufferA ? 0 : ctx.cclInputSizeHalved;
+    const u64 bufferBaseOffset = useBufferA ? 0 : ctx.cclInputBufferSize;
     SliceExecMem(param, execMem);
 
     HCCL_CONFIG_INFO(HCCL_ALG,
@@ -193,7 +197,7 @@ HcclResult CollReduceScatterPipelineFor91093Executor::RunL2Phase(
     HCCL_CONFIG_INFO(HCCL_ALG,
         "[CollReduceScatterPipelineFor91093Executor][RunL2Phase] blockIdx[%llu] L2 phase", blockIdx);
 
-    const bool useBufferA = (blockIdx % 2 == 0);
+    const bool useBufferA = (blockIdx % PIPELINE_BUFFER_NUM == 0);
     const bool isLastBlock = (blockIdx == ctx.numBlockTotal - 1);
     ExecMem execMem;
     execMem.count = isLastBlock ? ctx.countDataLastLoop : ctx.countDataPerLoop;
@@ -203,7 +207,7 @@ HcclResult CollReduceScatterPipelineFor91093Executor::RunL2Phase(
     execMem.inputPtr = ctx.curInputPtr + blockIdx * ctx.sizeDataPerLoop;
     execMem.outputPtr = ctx.curOutputPtr + blockIdx * ctx.sizeDataPerLoop;
 
-    const u64 l2BaseOffset = useBufferA ? 0 : ctx.cclInputSizeHalved;
+    const u64 l2BaseOffset = useBufferA ? 0 : ctx.cclInputBufferSize;
     SliceExecMem(param, execMem);
 
     HCCL_CONFIG_INFO(HCCL_ALG,
@@ -239,7 +243,8 @@ HcclResult CollReduceScatterPipelineFor91093Executor::GetLevel2CommInfo(
 
 u32 CollReduceScatterPipelineFor91093Executor::GetLevel0RingNum() const
 {
-    return algResResp_->slaveStreams.size() - 1;
+    // 排除尾部 Pipeline 专用资源后，与基类 ring 数语义一致。
+    return algResResp_->slaveStreams.size() + 1 - PIPELINE_EXTRA_STREAM_NUM;
 }
 
 HcclResult CollReduceScatterPipelineFor91093Executor::RunIntraSeverReduceScatter(
@@ -295,11 +300,11 @@ HcclResult CollReduceScatterPipelineFor91093Executor::DoubleRingReduceScatter(
     CHK_SMART_PTR_NULL(tempAlg);
     // 排除尾部 Pipeline 专用资源流（NotifyReserve + StreamL2），使模板看到与基类一致的流数
     std::vector<Stream> baseSlaveStreams(algResResp_->slaveStreams.begin(),
-        algResResp_->slaveStreams.end() - PIPELINE_NOTIFY_NUM);
+        algResResp_->slaveStreams.end() - PIPELINE_EXTRA_STREAM_NUM);
     std::vector<std::shared_ptr<LocalNotify>> baseNotifiesMain(algResResp_->notifiesMain.begin(),
-        algResResp_->notifiesMain.end() - PIPELINE_NOTIFY_NUM);
+        algResResp_->notifiesMain.end() - PIPELINE_PINGPONG_NOTIFY_PAIRS);
     std::vector<std::shared_ptr<LocalNotify>> baseNotifiesAux(algResResp_->notifiesAux.begin(),
-        algResResp_->notifiesAux.end() - PIPELINE_NOTIFY_NUM);
+        algResResp_->notifiesAux.end() - PIPELINE_PINGPONG_NOTIFY_PAIRS);
     HcclResult ret = tempAlg->Prepare(inputMem, inputMem, outputMem, count, dataType, stream, multRingsSliceZero,
         reductionOp, LEVEL0_BRIDGE_RANK_ID, baseOffset, disableDMAReduce,
         reduceAttr, opInfo, topoAttr_.userRank, baseSlaveStreams,

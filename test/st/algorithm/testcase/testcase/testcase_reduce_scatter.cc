@@ -2433,10 +2433,13 @@ TEST_F(ReduceScatterTest, reduce_scatter_910_93_pipeline_SR_2pod_3server_1rank_i
 TEST_F(ReduceScatterTest, reduce_scatter_910_93_pipeline_DR_one_block_degenerate_fp16_sum)
 {
     constexpr u32 p = 2, s = 1, r = 8;
+    constexpr u32 buffSizeMB = 200;
 
     RankTable_For_LLT gen;
     TopoMeta topoMeta;
     gen.GenTopoMeta(topoMeta, p, s, r);
+
+    setenv("HCCL_BUFFSIZE", std::to_string(buffSizeMB).c_str(), 1);
 
     CheckerOpParam checkerOpParam;
     checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
@@ -2452,4 +2455,6 @@ TEST_F(ReduceScatterTest, reduce_scatter_910_93_pipeline_DR_one_block_degenerate
     HcclResult ret;
     ret = checker.Check(checkerOpParam, topoMeta);
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+
+    unsetenv("HCCL_BUFFSIZE");
 }
