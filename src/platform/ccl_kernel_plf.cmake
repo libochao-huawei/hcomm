@@ -331,9 +331,6 @@ endif()
 
 # 设置依赖
 add_dependencies(ccl_kernel_plf json)
-if(BUILD_OPEN_PROJECT)
-    add_dependencies(ccl_kernel_plf hccl_legacy)
-endif()
 
 # 设置 ccl_kernel_plf_a 输出文件名
 set_target_properties(ccl_kernel_plf_a
