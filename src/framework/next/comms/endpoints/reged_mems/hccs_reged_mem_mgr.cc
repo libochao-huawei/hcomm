@@ -19,6 +19,7 @@
 #include "inner/local_rdma_rma_buffer.h"
 #include "inner/remote_rdma_rma_buffer.h"
 #include "hccl_network.h"
+#include "adapter_rts.h"
 
 using namespace hccl;
 namespace hcomm {
@@ -214,6 +215,16 @@ HcclResult HccsRegedMemMgr::MemoryExport(
     return HCCL_SUCCESS;
 }
 
+HcclResult HccsRegedMemMgr::GetExistIpcRmaBuffer(const void *memDesc,
+    std::shared_ptr<hccl::RemoteIpcRmaBuffer> &remoteIpcRmaBuffer)
+{
+    HCCL_INFO("[HccsRegedMemMgr][%s] Begin", __FUNCTION__);
+    CHK_PTR_NULL(remoteIpcRmaBuffer);
+    CHK_PTR_NULL(memDesc);
+    remoteIpcRmaBuffer = remoteIpcRmaBufferDescMgrs_[reinterpret_cast<uintptr_t>(memDesc)];
+    return HCCL_SUCCESS;
+}
+
 HcclResult HccsRegedMemMgr::AddMemDesc(const void *memDesc, uint32_t descLen,
     std::shared_ptr<hccl::RemoteIpcRmaBuffer> &remoteIpcRmaBuffer)
 {
@@ -247,8 +258,7 @@ HcclResult HccsRegedMemMgr::AddMemDesc(const void *memDesc, uint32_t descLen,
     return HCCL_SUCCESS;
 }
 
-HcclResult HccsRegedMemMgr::DeleteMemDesc(const void *memDesc, uint32_t descLen,
-    std::shared_ptr<hccl::RemoteIpcRmaBuffer> &remoteIpcRmaBuffer)
+HcclResult HccsRegedMemMgr::DeleteMemDesc(const void *memDesc, uint32_t descLen)
 {
     HCCL_INFO("[HccsRegedMemMgr][%s] memDesc[%p] descLen[%u] start",
         __FUNCTION__, memDesc, descLen);
@@ -257,7 +267,8 @@ HcclResult HccsRegedMemMgr::DeleteMemDesc(const void *memDesc, uint32_t descLen,
         HCCL_ERROR("[HccsRegedMemMgr][DeleteMemDesc] Remote buffer manager Not Found.");
         return HCCL_E_NOT_FOUND;
     }
-    remoteIpcRmaBuffer = remoteIpcRmaBufferDescMgrs_[reinterpret_cast<uintptr_t>(memDesc)];
+    std::shared_ptr<hccl::RemoteIpcRmaBuffer> remoteIpcRmaBuffer = 
+        remoteIpcRmaBufferDescMgrs_[reinterpret_cast<uintptr_t>(memDesc)];
     HCCL_INFO("[HccsRegedMemMgr][%s] memDesc[%p] descLen[%u] find remoteIpcRmaBuffer[%p], addr[%p], size[%lu]",
         __FUNCTION__, memDesc, descLen, remoteIpcRmaBuffer, remoteIpcRmaBuffer->GetAddr(), remoteIpcRmaBuffer->GetSize());
 
@@ -295,23 +306,22 @@ HcclResult HccsRegedMemMgr::MemoryImport(const void *memDesc, uint32_t descLen, 
     CHK_RET(DeSerializeFromMemDesc(memDesc, descLen, endpointDesc, ipcRmaBufferDesc));
     HCCL_INFO("[%s] ipcRmaBufferDesc.len[%u]", __FUNCTION__, ipcRmaBufferDesc.length());
 
-    std::shared_ptr<hccl::RemoteIpcRmaBuffer> remoteIpcRmaBuffer;
-    EXECEPTION_CATCH(
-        remoteIpcRmaBuffer = std::make_shared<hccl::RemoteIpcRmaBuffer>(netDevCtx_),
-        return HCCL_E_PTR;
-    );
+    std::shared_ptr<hccl::RemoteIpcRmaBuffer> remoteIpcRmaBuffer = nullptr;
+    CHK_RET(GetExistIpcRmaBuffer(memDesc, remoteIpcRmaBuffer));
+    if (remoteIpcRmaBuffer == nullptr) {
+        EXECEPTION_CATCH(
+            remoteIpcRmaBuffer = std::make_shared<hccl::RemoteIpcRmaBuffer>(netDevCtx_),
+            return HCCL_E_PTR;
+        );
 
-    CHK_PTR_NULL(remoteIpcRmaBuffer);
-    HcclResult deRet = remoteIpcRmaBuffer->Deserialize(ipcRmaBufferDesc);
-    HcclResult openRet = remoteIpcRmaBuffer->Open();
-    if (deRet != HCCL_SUCCESS || openRet != HCCL_SUCCESS) {
-        CHK_PRT_RET(deRet != HCCL_SUCCESS,
-            HCCL_ERROR("[HccsRegedMemMgr][MemoryImport]RemoteIpcRmaBuffer Deserialize failed."), deRet);
-        CHK_PRT_RET(openRet != HCCL_SUCCESS,
-            HCCL_ERROR("[HccsRegedMemMgr][MemoryImport]RemoteIpcRmaBuffer Open failed."), openRet);
+        CHK_PTR_NULL(remoteIpcRmaBuffer);
+        HcclResult deRet = remoteIpcRmaBuffer->Deserialize(ipcRmaBufferDesc);
+        if (deRet != HCCL_SUCCESS) {
+            CHK_PRT_RET(deRet != HCCL_SUCCESS,
+                HCCL_ERROR("[HccsRegedMemMgr][MemoryImport]RemoteIpcRmaBuffer Deserialize failed."), deRet);
+        }
+        CHK_RET(AddMemDesc(memDesc, descLen, remoteIpcRmaBuffer));
     }
-
-    CHK_RET(AddMemDesc(memDesc, descLen, remoteIpcRmaBuffer));
 
     outMem->addr = reinterpret_cast<void *>(remoteIpcRmaBuffer->GetAddr());
     outMem->size = remoteIpcRmaBuffer->GetSize();
@@ -330,12 +340,19 @@ HcclResult HccsRegedMemMgr::MemoryUnimport(const void *memDesc, uint32_t descLen
 
     HCCL_INFO("[%s] memDesc[%p] descLen[%u] start", __FUNCTION__, memDesc, descLen);
 
-    std::shared_ptr<hccl::RemoteIpcRmaBuffer> remoteIpcRmaBuffer;
-    CHK_RET(DeleteMemDesc(memDesc, descLen, remoteIpcRmaBuffer));
-    CHK_PTR_NULL(remoteIpcRmaBuffer);
-    HcclResult ret = remoteIpcRmaBuffer->Close();
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[HccsRegedMemMgr][MemoryUnimport]RemoteIpcRmaBuffer Close failed"), ret);
+    std::shared_ptr<hccl::RemoteIpcRmaBuffer> remoteIpcRmaBuffer = nullptr;
+    CHK_RET(GetExistIpcRmaBuffer(memDesc, remoteIpcRmaBuffer));
+    if (remoteIpcRmaBuffer == nullptr) {
+        HCCL_ERROR("[HccsRegedMemMgr][DeleteMemDesc] Remote buffer manager Not Found.");
+        return HCCL_E_NOT_FOUND;
+    }
+
+    if (remoteIpcRmaBuffer->IsOpened()) {
+        HCCL_INFO("[HccsRegedMemMgr][DeleteMemDesc] memDesc[%p] descLen[%u] need close first", memDesc, descLen);
+        return HCCL_SUCCESS;
+    }
+
+    CHK_RET(DeleteMemDesc(memDesc, descLen));
 
     HCCL_INFO("[%s] memDesc[%p] descLen[%u] done", __FUNCTION__, memDesc, descLen);
 
@@ -363,6 +380,64 @@ HcclResult HccsRegedMemMgr::MemoryGrant(const HcommMemGrantInfo *remoteGrantInfo
 
     HCCL_INFO("[HccsRegedMemMgr][MemoryGrant]Grant remotePid:%d, remoteSdid:%u done",
         remoteGrantInfo->pid, remoteGrantInfo->sdid);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HccsRegedMemMgr::MemoryEnableP2P(const EndpointDesc &localEndpointDesc, const EndpointDesc &remoteEndpointDesc)
+{
+    HCCL_INFO("[%s] Begin", __FUNCTION__);
+    if (localEndpointDesc.loc.device.serverIdx == remoteEndpointDesc.loc.device.serverIdx) {
+        u32 deviceLogicId;
+        hrtGetDeviceIndexByPhyId(localEndpointDesc.loc.device.devPhyId, deviceLogicId);
+        HCCL_INFO("Need do hrtEnableP2P for device[%u] with deviceLogicId[%u]",
+            remoteEndpointDesc.loc.device.devPhyId, deviceLogicId);
+        CHK_RET(hrtEnableP2P(deviceLogicId, remoteEndpointDesc.loc.device.devPhyId));
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HccsRegedMemMgr::MemoryDisableP2P(const EndpointDesc &localEndpointDesc, const EndpointDesc &remoteEndpointDesc)
+{
+    HCCL_INFO("[%s] Begin", __FUNCTION__);
+    if (localEndpointDesc.loc.device.serverIdx == remoteEndpointDesc.loc.device.serverIdx) {
+        u32 deviceLogicId;
+        hrtGetDeviceIndexByPhyId(localEndpointDesc.loc.device.devPhyId, deviceLogicId);
+        HCCL_INFO("Need do hrtDisableP2P for device[%u] with deviceLogicId[%u]",
+            remoteEndpointDesc.loc.device.devPhyId, deviceLogicId);
+        CHK_RET(hrtDisableP2P(deviceLogicId, remoteEndpointDesc.loc.device.devPhyId));
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HccsRegedMemMgr::MemoryOpenRemoteIpc()
+{
+    HCCL_INFO("[%s] Begin", __FUNCTION__);
+    for (auto it = remoteIpcRmaBufferMgr_.Begin(); it != remoteIpcRmaBufferMgr_.End();) {
+        std::shared_ptr<hccl::RemoteIpcRmaBuffer> remoteIpcRmaBuffer = it->second.buffer;
+        HcclResult openRet = remoteIpcRmaBuffer->Open();
+        if (openRet != HCCL_SUCCESS) {
+            HCCL_ERROR("[HccsRegedMemMgr][MemoryOpenRemoteIpc]RemoteIpcRmaBuffer Open failed.");
+            for (auto it2 = remoteIpcRmaBufferMgr_.Begin(); it2 != it;) {
+                (void)remoteIpcRmaBuffer->Close();
+                it2 = remoteIpcRmaBufferMgr_.Next(it2);
+            }
+            return openRet;
+        }
+        it = remoteIpcRmaBufferMgr_.Next(it);
+    }
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult HccsRegedMemMgr::MemoryCloseRemoteIpc()
+{
+    HCCL_INFO("[%s] Begin", __FUNCTION__);
+    for (auto it = remoteIpcRmaBufferMgr_.Begin(); it != remoteIpcRmaBufferMgr_.End();) {
+        std::shared_ptr<hccl::RemoteIpcRmaBuffer> remoteIpcRmaBuffer = it->second.buffer;
+        (void)remoteIpcRmaBuffer->Close();
+        it = remoteIpcRmaBufferMgr_.Next(it);
+    }
+
     return HCCL_SUCCESS;
 }
 
