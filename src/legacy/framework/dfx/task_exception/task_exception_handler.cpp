@@ -49,6 +49,18 @@ void RegisterGetAicpuTaskExceptionCallBackV2(s32 streamId, u32 deviceLogicId, Hc
     Hccl::g_communicatorCallbackMapV2[deviceLogicId][streamId] = p1;
     return;
 }
+
+void UnregisterGetAicpuTaskExceptionCallBackV2(s32 streamId, u32 deviceLogicId)
+{
+    lock_guard<mutex> lock(Hccl::g_communicatorCallbackMapMutexV2);
+    auto& deviceMap = Hccl::g_communicatorCallbackMapV2[deviceLogicId];
+    auto it = deviceMap.find(streamId);
+    if (it != deviceMap.end()) {
+        deviceMap.erase(it);
+    }
+    return;
+}
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus
