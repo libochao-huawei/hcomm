@@ -23,6 +23,7 @@
 #include "ccu_local_addr.hpp"
 #include "ccu_remote_addr.hpp"
 #include "ccu_array.hpp"
+#include "ccu_func.hpp"
 
 namespace ccu {
 

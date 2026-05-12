@@ -505,6 +505,53 @@ CcuResult CcuDoWhileEnd(CcuVariableHandle var, uint64_t immediate,
 
     return CcuResult::CCU_SUCCESS;
 }
+
+/*========== 函数调用操作 ==========*/
+CcuResult CcuFuncBlockLookup(const void *funcPtr, uint64_t *outHandle)
+{
+    const uint32_t devLogicId = HcclGetThreadDeviceId();
+    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
+    CCU_CHK_PTR_NULL(kernel);
+    CCU_CHK_RET(kernel->FuncBlockLookup(funcPtr, outHandle));
+    return CcuResult::CCU_SUCCESS;
+}
+
+CcuResult CcuFuncBlockBegin(const void *funcPtr, uint64_t *outHandle)
+{
+    const uint32_t devLogicId = HcclGetThreadDeviceId();
+    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
+    CCU_CHK_PTR_NULL(kernel);
+    CCU_CHK_RET(kernel->FuncBlockBegin(funcPtr, outHandle));
+    return CcuResult::CCU_SUCCESS;
+}
+
+CcuResult CcuFuncBlockEnd(uint64_t handle)
+{
+    const uint32_t devLogicId = HcclGetThreadDeviceId();
+    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
+    CCU_CHK_PTR_NULL(kernel);
+    CCU_CHK_RET(kernel->FuncBlockEnd(handle));
+    return CcuResult::CCU_SUCCESS;
+}
+
+CcuResult CcuFuncDefineInArg(uint64_t handle, CcuVariableHandle formal)
+{
+    const uint32_t devLogicId = HcclGetThreadDeviceId();
+    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
+    CCU_CHK_PTR_NULL(kernel);
+    CCU_CHK_RET(kernel->FuncDefineInArg(handle, formal));
+    return CcuResult::CCU_SUCCESS;
+}
+
+CcuResult CcuFuncCall(uint64_t handle, const CcuVariableHandle *inArgs, uint32_t numIn)
+{
+    const uint32_t devLogicId = HcclGetThreadDeviceId();
+    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
+    CCU_CHK_PTR_NULL(kernel);
+    CCU_CHK_RET(kernel->FuncCall(handle, inArgs, numIn));
+    return CcuResult::CCU_SUCCESS;
+}
+
 /*========== 循环操作 ==========*/  
 CcuResult CcuLoopCreate(CcuLoop *loop)
 {
