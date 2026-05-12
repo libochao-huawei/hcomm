@@ -175,7 +175,7 @@ CcuResult CcuLocalCopyKernel(CcuKernelArg arg)
     dst.token = 0x40000000;
     ccu::Event evt;
     ccu::Alloc(&evt);
-    ccu::Buffer buf;
+    ccu::CcuBuffer buf;
     ccu::BlockAlloc(&buf, 1);
     ccu::Variable len;
     ccu::Alloc(&len);
@@ -205,7 +205,7 @@ CcuResult CcuLocalReduceKernel(CcuKernelArg arg)
     ccu::Alloc(&evt);
     ccu::LocalReduce(dst, src, len, HCCL_DATA_TYPE_FP16, HCCL_REDUCE_SUM, evt);
     ccu::EventWait(evt);
-    ccu::Buffer buf[2];
+    ccu::CcuBuffer buf[2];
     ccu::BlockAlloc(buf, 2);
     ccu::LocalReduce(buf, 2, HCCL_DATA_TYPE_FP16, HCCL_DATA_TYPE_FP16, HCCL_REDUCE_SUM, len, evt);
     ccu::EventWait(evt);
@@ -231,7 +231,7 @@ CcuResult CcuRemoteReadKernel(CcuKernelArg arg)
     ccu::Alloc(&evt);
     ccu::Read(args->channelHandle, src, dst, len, evt);
     ccu::EventWait(evt);
-    ccu::Buffer buf;
+    ccu::CcuBuffer buf;
     ccu::BlockAlloc(&buf, 1);
     ccu::Read(args->channelHandle, buf, dst, len, evt);
     ccu::EventWait(evt);
@@ -244,7 +244,7 @@ CcuResult CcuRemoteWriteKernel(CcuKernelArg arg)
     auto *args = static_cast<CcuVarAddKernelArg *>(arg);
     ccu::RemoteAddr dst;
     ccu::LocalAddr src;
-    ccu::Buffer buf;
+    ccu::CcuBuffer buf;
     ccu::Alloc(&src);
     ccu::Alloc(&dst);
     ccu::BlockAlloc(&buf, 1);
@@ -343,7 +343,7 @@ CcuResult CcuRemoteWriteKernel(CcuKernelArg arg)
 //     dst.token = 0x40000000;
 //     ccu::Copy(dst, src, len, evt);
 //     ccu::Wait(evt);
-//     ccu::Buffer buf;
+//     ccu::CcuBuffer buf;
 //     ccu::BlockCreate(&buf, 1);
 //     ccu::Copy(buf, src, len, evt);
 //     ccu::Wait(evt);
@@ -370,7 +370,7 @@ CcuResult CcuRemoteWriteKernel(CcuKernelArg arg)
 //     CcuLocalCopyHBMToHBM(dst, src, len, evt);           // LocalAddr → LocalAddr
 //     CcuWaitEvent(evt);
     
-//     ccu::Buffer buf;
+//     ccu::CcuBuffer buf;
 //     CcuBlockBufferCreate(&buf,1);
 //     CcuLocalCopyHBMToBuffer(buf, src, len, evt);   // LocalAddr → Buffer
 //     CcuWaitEvent(evt);
@@ -435,7 +435,7 @@ CcuResult CcuRemoteWriteKernel(CcuKernelArg arg)
 //     src0.token = 0x20000000;
 //     src1.addr = 0x30000000;
 //     src1.token = 0x40000000;
-//     ccu::Buffer bufs[2];
+//     ccu::CcuBuffer bufs[2];
 //     ccu::BlockCreate(bufs, 2);
 //     ccu::Copy(bufs[0], src0, len, evt);
 //     ccu::Wait(evt);
@@ -463,7 +463,7 @@ CcuResult CcuRemoteWriteKernel(CcuKernelArg arg)
 //     src1.addr = 0x30000000;
 //     src1.token = 0x40000000;
 //     constexpr uint32_t bufCount = 2;
-//     ccu::Buffer bufs[bufCount];
+//     ccu::CcuBuffer bufs[bufCount];
 //     CcuBlockBufferCreate(bufs, bufCount);
 //     CcuLocalCopyHBMToBuffer(bufs[0], src0, len, evt);
 //     CcuWaitEvent(evt);
@@ -493,7 +493,7 @@ CcuResult CcuRemoteWriteKernel(CcuKernelArg arg)
 //     dst.token = 0x40000000;
 //     ccu::Read(args->channelHandle, src, dst, len, evt);
 //     ccu::Wait(evt);
-//     ccu::Buffer buf[2];
+//     ccu::CcuBuffer buf[2];
 //     ccu::BlockCreate(buf, 2);
 //     ccu::Read(args->channelHandle, buf[1], dst, len, evt);
 //     ccu::Wait(evt);
@@ -519,7 +519,7 @@ CcuResult CcuRemoteWriteKernel(CcuKernelArg arg)
 //     dst.token = 0x40000000;
 //     CcuReadHBMToHBM(args->channelHandle, src, dst, len, evt);
 //     CcuWaitEvent(evt);
-//     ccu::Buffer buf;
+//     ccu::CcuBuffer buf;
 //     CcuBlockBufferCreate(&buf,1);
 //     CcuReadHBMToBuffer(args->channelHandle, buf, dst, len, evt);
 //     CcuWaitEvent(evt);
@@ -545,7 +545,7 @@ CcuResult CcuRemoteWriteKernel(CcuKernelArg arg)
 //     dst.token = 0x40000000;
 //     CcuWriteHBMToHBM(args->channelHandle, dst, src, len, evt);
 //     CcuWaitEvent(evt);
-//     ccu::Buffer buf;
+//     ccu::CcuBuffer buf;
 //     CcuBlockBufferCreate(&buf,1);
 //     CcuWriteBufferToHBM(args->channelHandle, dst, buf, len, evt);
 //     CcuWaitEvent(evt);
@@ -570,7 +570,7 @@ CcuResult CcuRemoteWriteKernel(CcuKernelArg arg)
 //     dst.token = 0x40000000;
 //     ccu::Write(args->channelHandle, dst, src, len, evt);
 //     ccu::Wait(evt);
-//     ccu::Buffer buf;
+//     ccu::CcuBuffer buf;
 //     ccu::BlockCreate(&buf, 1);
 //     ccu::Write(args->channelHandle, dst, buf, len, evt);
 //     ccu::Wait(evt);
