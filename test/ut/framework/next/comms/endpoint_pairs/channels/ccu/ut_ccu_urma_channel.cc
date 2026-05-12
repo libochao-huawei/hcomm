@@ -1,4 +1,6 @@
 #include "gtest/gtest.h"
+#include <mockcpp/mokc.h>
+#include <mockcpp/mockcpp.hpp>
 
 #define private public
 #include "next/comms/endpoint_pairs/channels/ccu/ccu_urma_channel.h"
@@ -69,4 +71,55 @@ TEST_F(CcuUrmaChannelTest, Ut_Resume_When_Called_Expect_HCCL_SUCCESS) {
 
     auto ret = ch.Resume();
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(CcuUrmaChannelTest, Ut_GetStatus_DfxInfo_TEST) {
+    HcommChannelDesc desc{};
+    EndpointHandle ep = reinterpret_cast<EndpointHandle>(1);
+    CcuUrmaChannel ch(ep, desc);
+
+    // 1. 构造依赖
+    CommAddr locAddr{}, rmtAddr{};
+    CcuChannelInfo channelInfo{};
+    std::vector<CcuJetty*> jettys{};
+
+    auto conn = std::make_unique<CcuConnection>(locAddr, rmtAddr, channelInfo, jettys);
+    auto fakeSocket = reinterpret_cast<Hccl::Socket*>(1);
+    CcuTransport::CclBufferInfo bufInfo(0x1000, 0x100, 1, 1);
+
+    // 2. 创建 transport
+    auto transport = std::make_unique<CcuTransport>(fakeSocket, std::move(conn), bufInfo);
+    ch.impl_ = std::move(transport);
+
+    // 3. 从 ch.impl_ 操作，不要再用旧的 transport 指针！
+    ch.impl_->transStatus_ = CcuTransport::TransStatus::SOCKET_TIMEOUT;
+    auto ret = ch.GetStatus();
+    EXPECT_NE(ret, ChannelStatus::INIT);
+
+    ch.impl_->transStatus_ = CcuTransport::TransStatus::CONNECT_FAILED;
+    ret = ch.GetStatus();
+    EXPECT_NE(ret, ChannelStatus::INIT);
+
+    // 4. Mock 1：成功
+    ch.impl_->transStatus_ = CcuTransport::TransStatus::READY;
+    MOCKER_CPP(&CcuConnection::Describe, HcclResult (CcuConnection::*)(std::string&))
+        .stubs()
+        .with(any())
+        .will(returnValue(HcclResult::HCCL_SUCCESS));
+    ret = ch.GetStatus();
+    EXPECT_EQ(ret, ChannelStatus::READY);
+    GlobalMockObject::verify();
+    GlobalMockObject::reset(); // <-- 必须重置 Mock！
+
+    // 5. Mock 2：失败
+    ch.impl_->transStatus_ = CcuTransport::TransStatus::READY;
+    ch.isFirstPrintChannelInfo_ = true; // 需要重置为true才能触发Describe的调用
+    MOCKER_CPP(&CcuConnection::Describe, HcclResult (CcuConnection::*)(std::string&))
+        .stubs()
+        .with(any())
+        .will(returnValue(HcclResult::HCCL_E_PARA));
+    ret = ch.GetStatus();
+    EXPECT_EQ(ret, ChannelStatus::FAILED);
+    GlobalMockObject::verify();
+    GlobalMockObject::reset();
 }

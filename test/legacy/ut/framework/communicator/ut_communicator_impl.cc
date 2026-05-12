@@ -157,7 +157,7 @@ protected:
         fakeComm.cclBuffer = DevBuffer::Create(0x100, 0x100);
         fakeComm.aivTagBuffer = DevBuffer::Create(0x100, 10);
         fakeComm.aivOffloadTagBuffer = DevBuffer::Create(0x100, 10);
-        fakeComm.status = CommStatus::COMM_READY;
+        fakeComm.SetCommStatus(CommStatus::COMM_READY);
         fakeComm.opExecuteConfig.accState = AcceleratorState::AICPU_TS;
         fakeComm.InitNotifyManager();
         fakeComm.InitSocketManager();
@@ -292,7 +292,7 @@ protected:
     void SetUp() override {
         CommunicatorImplTest::SetUp();
         // 初始化测试环境
-        fakeComm.status = CommStatus::COMM_READY;
+        fakeComm.SetCommStatus(CommStatus::COMM_READY);
         fakeComm.commExecuteConfig.accState = AcceleratorState::HOSTCPU_TS;
         fakeComm.opExecuteConfig.accState = AcceleratorState::HOSTCPU_TS;
     }
@@ -538,7 +538,7 @@ TEST_F(CommunicatorImplTest, Ut_NsRecovery_Resume_When_Not_Load_Op_Expect_Succes
     MockCommunicatorImpl();
     CommunicatorImpl comm;
     comm.devLogicId = 0;
-    comm.status = CommStatus::COMM_READY;
+    comm.SetCommStatus(CommStatus::COMM_READY);
     comm.isSuspended = true;
     comm.isCleaned = true;
     comm.commExecuteConfig.accState = AcceleratorState::CCU_MS;
@@ -915,7 +915,7 @@ TEST_F(CommunicatorImplTest, should_fail_when_LoadOpbasedCollOp_CollServiceDefau
     opParams.dataType = DataType::FP32;
     opParams.opType = OpType::ALLREDUCE;
 
-    comm.status = CommStatus::COMM_READY;
+    comm.SetCommStatus(CommStatus::COMM_READY);
     comm.devLogicId = 0;
     comm.InitMirrorTaskManager();
     comm.InitProfilingReporter();
@@ -938,7 +938,7 @@ TEST_F(CommunicatorImplTest, LoadOpbasedCollOp_rankSize_1_test)
     CollServiceAiCpuImpl collService{&comm};
     comm.collService = &collService;
     MOCKER_CPP(&CommunicatorImpl::ExecAlgSelect).stubs().will(ignoreReturnValue());
-    comm.status = CommStatus::COMM_READY;
+    comm.SetCommStatus(CommStatus::COMM_READY);
     MOCKER(HrtMemAsyncCopy).stubs();
 
     // allreduce sendBuf和recvBuf地址相同
@@ -1065,7 +1065,7 @@ TEST_F(CommunicatorImplTest, RecoverComm_NormalCase)
 
     // 检查结果
     EXPECT_EQ(result, HCCL_SUCCESS);
-    EXPECT_EQ(comm.status, CommStatus::COMM_RESUMING);
+    EXPECT_EQ(comm.GetCommStatus(), CommStatus::COMM_RESUMING);
     EXPECT_TRUE(comm.initFlag);
 }
 
@@ -1073,14 +1073,14 @@ TEST_F(CommunicatorImplTest, RecoverComm_NormalCase)
 TEST_F(CommunicatorImplTest, RecoverComm_StdException)
 {
     fakeComm.initFlag = false;
-    fakeComm.status = CommStatus::COMM_IDLE;
+    fakeComm.SetCommStatus(CommStatus::COMM_IDLE);
     SnapShotComm snapShotComm;
     u32 step = 0;
     const char *filePath = "test";
     MOCKER_CPP(&CommunicatorImpl::TryInitCcuFeature).stubs().with(any()).will(ignoreReturnValue());
     HcclResult result = fakeComm.RecoverComm(snapShotComm, step, filePath);
     EXPECT_EQ(result, HcclResult::HCCL_E_INTERNAL);
-    EXPECT_EQ(fakeComm.status, CommStatus::COMM_IDLE);
+    EXPECT_EQ(fakeComm.GetCommStatus(), CommStatus::COMM_IDLE);
 }
 
 // //OK
@@ -1145,7 +1145,7 @@ TEST_F(CommunicatorImplTest, RecoverComm_SubCommNormalCase)
 
     // 检查结果
     EXPECT_EQ(result, HCCL_SUCCESS);
-    EXPECT_EQ(comm.status, CommStatus::COMM_RESUMING);
+    EXPECT_EQ(comm.GetCommStatus(), CommStatus::COMM_RESUMING);
     EXPECT_TRUE(comm.initFlag);
 }
 
@@ -1158,13 +1158,13 @@ TEST_F(CommunicatorImplTest, RecoverComm_SubComStdException)
     u32 step = 1;
 
     fakeComm.initFlag = false;
-    fakeComm.status = CommStatus::COMM_IDLE;
+    fakeComm.SetCommStatus(CommStatus::COMM_IDLE);
     MOCKER_CPP(&CommunicatorImpl::TryInitCcuFeature).stubs().with(any()).will(ignoreReturnValue());
     HcclResult result = fakeComm.RecoverComm(snapShotComm, virtualTopo, step);
 
     // 检查结果
     EXPECT_EQ(result, HcclResult::HCCL_E_PARA);
-    EXPECT_EQ(fakeComm.status, CommStatus::COMM_IDLE);
+    EXPECT_EQ(fakeComm.GetCommStatus(), CommStatus::COMM_IDLE);
     EXPECT_TRUE(fakeComm.initFlag);
 }
 
@@ -1181,7 +1181,7 @@ TEST_F(CommunicatorImplTest, RecoverComm_SubComInitFlagTrue)
     MOCKER_CPP(&CommunicatorImpl::TryInitCcuFeature).stubs().with(any()).will(ignoreReturnValue());
     HcclResult result = comm.RecoverComm(snapShotComm, virtualTopo, step);
     EXPECT_EQ(result, HcclResult::HCCL_E_INTERNAL);
-    EXPECT_EQ(comm.status, CommStatus::COMM_IDLE);
+    EXPECT_EQ(comm.GetCommStatus(), CommStatus::COMM_IDLE);
 }
 
 // ok
@@ -1197,7 +1197,7 @@ TEST_F(CommunicatorImplTest, RecoverSubComm_InitFlagFalse)
     MOCKER_CPP(&CommunicatorImpl::TryInitCcuFeature).stubs().with(any()).will(ignoreReturnValue());
     HcclResult result = comm.RecoverSubComm(snapShotSubComm, subCommImpl.get(), step);
     EXPECT_EQ(result, HcclResult::HCCL_E_INTERNAL);
-    EXPECT_EQ(comm.status, CommStatus::COMM_IDLE);
+    EXPECT_EQ(comm.GetCommStatus(), CommStatus::COMM_IDLE);
 }
 
 TEST_F(CommunicatorImplTest, should_no_throw_exception_when_only_ccu_enabled)
@@ -1310,7 +1310,7 @@ TEST_F(CommunicatorImplTest, should_throw_exception_when_mirrorTaskManager_is_nu
 TEST_F(CommunicatorImplTest, should_fail_when_comm_status_error)
 {
     CommunicatorImpl comm;
-    comm.status = CommStatus::COMM_ERROR;
+    comm.SetCommStatus(CommStatus::COMM_ERROR);
     CollOpParams param = {};
     param.opType = OpType::ALLREDUCE;
     param.dataType = DataType::INT32;
@@ -1321,7 +1321,7 @@ TEST_F(CommunicatorImplTest, should_fail_when_comm_status_error)
 
 void CommConfigCondition(CommunicatorImpl &comm, CollOpParams &param)
 {
-    comm.status = CommStatus::COMM_READY;
+    comm.SetCommStatus(CommStatus::COMM_READY);
     param.opType = OpType::ALLREDUCE;
     param.dataType = DataType::UINT8;
     comm.opExecuteConfig.accState = AcceleratorState::AICPU_TS;  // aicpu 展开
@@ -1366,7 +1366,7 @@ TEST_F(CommunicatorImplTest, Ut_LoadOffloadCollOp_When_Datatype_Not_Support_Expe
 TEST_F(CommunicatorImplTest, should_fail_when_comm_status_error2)
 {
     MOCKER_CPP(&CommunicatorImpl::CovertToCurrentCollOperator).stubs().will(throws(InternalException("")));
-    fakeComm.status = CommStatus::COMM_ERROR;
+    fakeComm.SetCommStatus(CommStatus::COMM_ERROR);
     CollOpParams param = {};
     param.opType = OpType::ALLREDUCE;
     param.dataType = DataType::INT32;
@@ -1377,7 +1377,7 @@ TEST_F(CommunicatorImplTest, should_fail_when_comm_status_error2)
 TEST_F(CommunicatorImplTest, should_fail_when_comm_status_error3)
 {
     MOCKER_CPP(&CommunicatorImpl::CovertToCurrentCollOperator).stubs().will(throws(1));
-    fakeComm.status = CommStatus::COMM_ERROR;
+    fakeComm.SetCommStatus(CommStatus::COMM_ERROR);
     CollOpParams param = {};
     param.opType = OpType::ALLREDUCE;
     param.dataType = DataType::INT32;
@@ -1388,7 +1388,7 @@ TEST_F(CommunicatorImplTest, should_fail_when_comm_status_error3)
 TEST_F(CommunicatorImplTest, should_fail_when_comm_status_error4)
 {
     MOCKER_CPP(&CommunicatorImpl::CovertToCurrentCollOperator).stubs().will(throws(InternalException("")));
-    fakeComm.status = CommStatus::COMM_ERROR;
+    fakeComm.SetCommStatus(CommStatus::COMM_ERROR);
     CollOpParams param = {};
     std::string opTag = "";
     param.opType = OpType::ALLREDUCE;
@@ -1400,7 +1400,7 @@ TEST_F(CommunicatorImplTest, should_fail_when_comm_status_error4)
 TEST_F(CommunicatorImplTest, should_fail_when_comm_status_error5)
 {
     MOCKER_CPP(&CommunicatorImpl::CovertToCurrentCollOperator).stubs().will(throws(1));
-    fakeComm.status = CommStatus::COMM_ERROR;
+    fakeComm.SetCommStatus(CommStatus::COMM_ERROR);
     CollOpParams param = {};
     std::string opTag = "";
     param.opType = OpType::ALLREDUCE;
@@ -1411,7 +1411,7 @@ TEST_F(CommunicatorImplTest, should_fail_when_comm_status_error5)
 
 TEST_F(CommunicatorImplTest, should_fail_when_comm_status_error6)
 {
-    fakeComm.status = CommStatus::COMM_ERROR;
+    fakeComm.SetCommStatus(CommStatus::COMM_ERROR);
     CollOpParams param = {};
     std::string opTag = "";
     param.opType = OpType::ALLREDUCE;
@@ -1431,7 +1431,7 @@ TEST_F(CommunicatorImplTest, should_trace_success_when_comm_params_valid)
     CollServiceAiCpuImpl collService{&comm};
     comm.collService = &collService;
     MOCKER_CPP(&CommunicatorImpl::ExecAlgSelect).stubs().will(ignoreReturnValue());
-    comm.status = CommStatus::COMM_READY;
+    comm.SetCommStatus(CommStatus::COMM_READY);
     comm.trace = std::make_unique<Trace>();
     MOCKER(HrtMemAsyncCopy).stubs();
 
@@ -1818,7 +1818,7 @@ TEST_F(CommunicatorImplTest, ut_CalcTaskNum_When_Abnormal_Expect_Return_HCCL_E_I
     CommunicatorImpl comm;
     comm.CollAlgComponentInit();
     comm.cclBuffer = DevBuffer::Create(0x100, 0x100);
-    comm.status = CommStatus::COMM_READY;
+    comm.SetCommStatus(CommStatus::COMM_READY);
     comm.devLogicId = 0;
     comm.InitMirrorTaskManager();
     comm.InitProfilingReporter();
@@ -1849,7 +1849,7 @@ TEST_F(CommunicatorImplTest, ut_CreateCommCclBuf_When_Normal_Expect_Return_HCCL_
     CommunicatorImpl comm;
     comm.CollAlgComponentInit();
     comm.cclBuffer = DevBuffer::Create(0x100, 0x100);
-    comm.status = CommStatus::COMM_READY;
+    comm.SetCommStatus(CommStatus::COMM_READY);
     comm.devLogicId = 0;
     comm.config.hcclBufferSize = 0;
     comm.InitMirrorTaskManager();
@@ -2124,7 +2124,7 @@ TEST_F(CommunicatorImplTest, Ut_CommunicatorImpl_When_EnableSuperFastLoad_Expect
     comm.currentCollOperator->opType = OpType::ALLREDUCE;
     CollServiceAiCpuImpl collService{&comm};
     comm.collService = &collService;
-    comm.status = CommStatus::COMM_READY;
+    comm.SetCommStatus(CommStatus::COMM_READY);
     CollOpParams opParams{};
     u32 sendBuffer = 10;
     opParams.sendBuf = static_cast<void *>(&sendBuffer);
@@ -2444,7 +2444,7 @@ TEST_F(CommunicatorImplTest, Ut_LoadOffloadCollOp_When_dataTpye_fail_Expect_HCCL
     comm.collService = &collService;
     comm.opExecuteConfig.accState = AcceleratorState::AICPU_TS;
     MOCKER_CPP(&CommunicatorImpl::ExecAlgSelect).stubs().will(ignoreReturnValue());
-    comm.status = CommStatus::COMM_READY;
+    comm.SetCommStatus(CommStatus::COMM_READY);
     MOCKER(HrtMemAsyncCopy).stubs();
     CollOpParams opParams;
     u32 buffer = 10;
@@ -3195,7 +3195,7 @@ TEST_F(CommunicatorImplTest, ut_GetAlgExecParam_When_Normal_Expect_ReturnHCCL_SU
 TEST_F(CommunicatorImplTest, ut_Single_Rank_With_SendRecv_Expect_HCCL_SUCCESS)
 {
     CommunicatorImpl comm;
-    comm.status = CommStatus::COMM_READY;
+    comm.SetCommStatus(CommStatus::COMM_READY);
     comm.rankSize = 1;
 
     CollOpParams opParams;
@@ -3258,7 +3258,7 @@ TEST_F(CommunicatorImplTest, Ut_AllocCollOpResource_When_Not_AiCpu_Expect_Return
 
 TEST_F(CommunicatorImplTest, Ut_AllocCollOpResource_When_Status_Error_Expect_ReturnIsHCCL_E_INTERNAL)
 {
-    fakeComm.status = CommStatus::COMM_ERROR;
+    fakeComm.SetCommStatus(CommStatus::COMM_ERROR);
     CollOpParams param{};
     param.opType = OpType::ALLREDUCE;
     param.dataType = DataType::INT32;
@@ -3551,4 +3551,67 @@ TEST_F(TryFastCcuLaunchTest, Ut_TryFastCcuLaunch_When_OpNoSupportFastLaunch_Expe
     fakeOpParams.opType = OpType::ALLGATHERV;
     // then
     EXPECT_EQ(fakeComm.TryFastCcuLaunch(fakeOpParams, fakeStreamPtr), false);
+}
+
+// 测试 SaveDpuStreamId - 正常情况
+TEST_F(CommunicatorImplTest, Ut_SaveDpuStreamId_When_Normal_Expect_ReturnSuccess)
+{
+    CommunicatorImpl comm;
+    // 构造一个假的 aclrtStream
+    aclrtStream fakeStream = (aclrtStream)0x12345678;
+    comm.dpuStream = fakeStream;
+    // mock HrtGetStreamId 返回固定值
+    s32 fakeStreamId = 0;
+    MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
+
+    HcclResult ret = comm.SaveDpuStreamId();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(comm.GetDpuStreamId(), static_cast<u32>(fakeStreamId));
+}
+
+TEST_F(TryFastCcuLaunchTest, GetJsonPorperty_When_MissingProperty_Expect_Throw)
+{
+    nlohmann::json obj = nlohmann::json::object();
+    EXPECT_THROW(GetJsonProperty(obj, "missing", true), InvalidParamsException);
+}
+
+TEST_F(TryFastCcuLaunchTest, GetJsonPorpertyUInt_When_MissingProperty_Expect_Throw)
+{
+    nlohmann::json obj = nlohmann::json::object();
+    EXPECT_THROW(GetJsonPropertyUInt(obj, "missing", true, 0), InvalidParamsException);
+}
+
+TEST_F(TryFastCcuLaunchTest, GetJsonPorpertyUInt_When_ValueExceedsUint32Max_Expect_Throw)
+{
+    nlohmann::json obj;
+    obj["test"] = INT64_MAX;
+    EXPECT_THROW(GetJsonPropertyUInt(obj, "test", true, 0), InvalidParamsException);
+}
+
+TEST_F(TryFastCcuLaunchTest, GetJsonPorpertySInt_When_MissingProperty_Expect_Throw)
+{
+    nlohmann::json obj = nlohmann::json::object();
+    EXPECT_THROW(GetJsonPropertySInt(obj, "missing", true, 0), InvalidParamsException);
+}
+
+TEST_F(TryFastCcuLaunchTest, GetJsonPorpertySInt_When_ValueExceedsSint32Max_Expect_Throw)
+{
+    nlohmann::json obj;
+    obj["test"] = INT64_MAX;
+    EXPECT_THROW(GetJsonPropertySInt(obj, "test", true, 0), InvalidParamsException);
+}
+
+TEST_F(TryFastCcuLaunchTest, GetJsonPorpertyList_When_MissingProperty_Expect_Throw)
+{
+    nlohmann::json obj = nlohmann::json::object();
+    nlohmann::json listObj;
+    EXPECT_THROW(GetJsonPropertyList(obj, "missing", listObj), InvalidParamsException);
+}
+
+TEST_F(TryFastCcuLaunchTest, GetJsonPorpertyList_When_NotArray_Expect_Throw)
+{
+    nlohmann::json obj;
+    obj["test"] = "not_array";
+    nlohmann::json listObj;
+    EXPECT_THROW(GetJsonPropertyList(obj, "test", listObj), InvalidParamsException);
 }

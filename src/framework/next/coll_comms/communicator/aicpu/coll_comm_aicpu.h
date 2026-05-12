@@ -51,6 +51,7 @@ public:
     HcclResult SendErrorMessageReportToHost(Hccl::ErrorMessageReport& errMsgInfo);
     HcclResult RegisterProfCallBack();
     HcclCommDfxLite* GetHcclCommDfxLite() { return &dfx_; };
+    ReadWriteLockBase& GetThreadMutex() { return threadMutex_; }
 
     // h2d - d2h通道信息交互
     HcclResult BackGroundGetCmd(Hccl::KfcCommand &cmd);
@@ -86,6 +87,7 @@ private:
     std::string identifier_;
     HcclCommStatus commStatus_{HcclCommStatus::HCCL_COMM_STATUS_INVALID};
     HcclTopoInfo topoInfo_;
+    ReadWriteLockBase threadMutex_;
     std::vector<std::shared_ptr<Thread>> threads_;
     std::vector<std::unique_ptr<LocalNotify>> notifys_;
     // A5 独立算子

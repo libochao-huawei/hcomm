@@ -17,9 +17,8 @@ namespace Hccl {
 
 LocalIpcRmaBuffer::LocalIpcRmaBuffer(std::shared_ptr<Buffer> buf) : LocalRmaBuffer(buf, RmaType::IPC)
 {
-    HrtIpcSetMemoryName(reinterpret_cast<void *>(buf->GetAddr()), name, buf->GetSize(), RTS_IPC_MEM_NAME_LEN);
-
     HrtDevMemAlignWithPage(reinterpret_cast<void *>(buf->GetAddr()), buf->GetSize(), ipcPtr, ipcSize, ipcOffset);
+    HrtIpcSetMemoryName(ipcPtr, name, ipcSize, RTS_IPC_MEM_NAME_LEN);
 }
 
 LocalIpcRmaBuffer::~LocalIpcRmaBuffer()

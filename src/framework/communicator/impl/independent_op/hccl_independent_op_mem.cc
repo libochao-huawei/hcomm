@@ -119,7 +119,15 @@ HcclResult HcclGetHcclBuffer(HcclComm comm, void ** buffer, uint64_t *size)
         }());
 #endif
 
-    auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
+    auto *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    hccl::MyRank *myRank = static_cast<hccl::MyRank *>(hcclComm->GetMyRank());
+    if (hcclComm->GetConnectMode() && myRank != nullptr) {
+        CommMems *commMem = myRank->GetCommMems();
+        CHK_PTR_NULL(commMem);
+        CHK_RET(commMem->GetHcclBuffer(*buffer, *size));
+        return HCCL_SUCCESS;
+    }
+
     std::string commId = hcclComm->GetIdentifier();
     HCCL_RUN_INFO("Entry-%s:comm[%s]", __func__, commId.c_str());
     HcclResult ret = HCCL_SUCCESS;

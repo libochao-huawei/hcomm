@@ -387,6 +387,10 @@ public:
     aclrtFuncHandle GetAicpuKernelFuncHandle(const char *kernelName) const;
     bool IsCommWithPCIEProtocol();   // 判断通信域内是否有rank之间存在PCIE链路
     HcclResult Mc2AiCpuStreamAllocAndGetV2(rtStream_t *aiCpuStream);
+    HcclResult SaveDpuStreamId();
+    uint32_t GetDpuStreamId() {
+        return dpuStreamId;
+    }
 
 private:
     std::string                                id;
@@ -401,7 +405,7 @@ private:
     DevId                                      devLogicId;
     HcclCommConfig                             config;
     std::shared_ptr<RankGraph>                 rankGraph;
-
+    uint32_t                                   dpuStreamId{0};
     unique_ptr<DataBufManager>                 dataBufferManager;
     unique_ptr<LocalRmaBufManager>             localRmaBufManager;
     unique_ptr<RemoteRmaBufManager>            remoteRmaBufManager;
@@ -482,7 +486,7 @@ private:
     std::unordered_map<std::string, std::shared_ptr<Buffer>> offloadScrachBufferMap;
     BinaryStream                                             staticBinaryInfo; // 静态信息序列化流
 
-    CommStatus status{CommStatus::COMM_IDLE}; // 通信域状态
+    std::atomic<CommStatus> status_{CommStatus::COMM_IDLE}; // 通信域状态
     std::vector<u32>                           rankIdsVec; // 子通信域使用：序列化解析
     std::unique_ptr<RankTableInfo>             ranktableInfo;  // 主通信域使用：序列化解析
     std::shared_ptr<TopoInfo>                  topoInfo;  // 主通信域使用：序列化解析
