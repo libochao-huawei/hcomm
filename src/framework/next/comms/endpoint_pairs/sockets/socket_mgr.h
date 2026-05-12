@@ -27,6 +27,8 @@ public:
     ~SocketMgr() {};
 
     HcclResult GetSocket(const Hccl::SocketConfig &socketConfig, Hccl::Socket*& socket);
+    HcclResult DeleteWhiteList(Hccl::Socket* socket);
+    HcclResult DestroySocket(Hccl::Socket* socket);
 
 private:
     HcclResult Init();
@@ -39,6 +41,7 @@ private:
     uint32_t devicePhyId_{};
     uint32_t serverListenPort_{};
     std::unordered_map<Hccl::SocketConfig, std::unique_ptr<Hccl::Socket>> socketMap_{};
+    std::unordered_map<Hccl::SocketHandle, std::vector<Hccl::RaSocketWhitelist>> handle2WhiteListMap_{};
     std::mutex mutex_{};
 };
 
