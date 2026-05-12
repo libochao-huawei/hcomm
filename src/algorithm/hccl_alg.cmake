@@ -132,10 +132,6 @@ if(BUILD_OPEN_PROJECT)
         ${THIRD_PARTY_NLOHMANN_PATH}
     )
 
-    target_link_directories(hccl_alg PRIVATE
-        ${ASCEND_CANN_PACKAGE_PATH}/lib64
-    )
-
     target_link_libraries(hccl_alg PRIVATE
         -Wl,--no-as-needed
         c_sec
