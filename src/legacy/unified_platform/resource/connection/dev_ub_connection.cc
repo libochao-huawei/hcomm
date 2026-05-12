@@ -18,6 +18,9 @@
 #include "rma_conn_exception.h"
 #include "rdma_handle_manager.h"
 #include "exchange_ub_conn_dto.h"
+#include "../../../../framework/common/src/config/env_config.h"
+// #include "env_config.h"
+
 
 namespace Hccl {
 
@@ -47,6 +50,7 @@ DevUbConnection::DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &l
     else {
         jfcHandle = RdmaHandleManager::GetInstance().GetJfcHandle(rdmaHandle, cqInfo_, jfcMode);
     }
+    isdevUsed = devUsed;
 
     sqDepth = OPBASED_UB_SQ_DEPTH_MAX;
     if (opMode == OpMode::OFFLOAD && devUsed == false) {
@@ -58,7 +62,7 @@ DevUbConnection::DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &l
         THROW<InternalException>("integer overflow occurs");
     }
 
-    CreateJetty(devUsed);
+    // CreateJetty(devUsed);
 }
 
 DevUbTpConnection::DevUbTpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
@@ -83,6 +87,7 @@ DevUbUboeConnection::DevUbUboeConnection(const RdmaHandle rdmaHandle, const IpAd
     : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode, locIpv4Addr, rmtIpv4Addr)
 {
     tpProtocol = TpProtocol::UBOE;
+    timeOut = 16;
 }
 
 std::vector<char> DevUbConnection::GetUniqueId() const
@@ -143,6 +148,145 @@ inline uint32_t GetRandomNum()
     return randNum;
 }
 
+// ==================== TA 档位映射表 ====================
+// TA 芯片挡位 = hw_value / 8
+// 挡位 0 (0-7):   512ms
+// 挡位 1 (8-15):  1000ms (1s)
+// 挡位 2 (16-23): 8000ms (8s)
+// 挡位 3 (24-31): 32000ms (32s)
+// 各挡位对应的最小硬件配置值
+static constexpr uint8_t TA_HW_GEAR0_BASE = 0;
+static constexpr uint8_t TA_HW_GEAR1_BASE = 8;
+static constexpr uint8_t TA_HW_GEAR2_BASE = 16;
+static constexpr uint8_t TA_HW_GEAR3_BASE = 24;
+static constexpr uint32_t TA_TIMEOUT_MS_GEAR0 = 512;
+static constexpr uint32_t TA_TIMEOUT_MS_GEAR1 = 1000;
+static constexpr uint32_t TA_TIMEOUT_MS_GEAR2 = 8000;
+static constexpr uint32_t TA_TIMEOUT_MS_GEAR3 = 32000;
+ 
+// AT 档位 -> 单轮超时时间(ms) 的映射表
+// at=0 -> 16ms
+// at=1 -> 128ms
+// at=2 -> 1000ms (1s)
+// at=3 -> 4000ms (4s)
+static constexpr uint32_t AT_TIMEOUT_MAP[4] = {16, 128, 1000, 4000};
+ 
+// 默认 AT 档位（异常降级用）
+static constexpr uint8_t AT_GEAR_DEFAULT = 2; // 默认 1s
+ 
+HcclResult DevUbConnection::CalcTotalTimeout(uint32_t &outTotalTimeoutMs)
+{
+    TpHandle tpHandle = tpInfo.tpHandle;
+    uint32_t attrBitmap = 0;
+    struct TpAttr tpAttr = {0};
+    u32 devicePhyId = HrtGetDevicePhyIdByIndex(devLogicId);
+    CHK_RET(HrtRaGetTpAttrAsync(devicePhyId, rdmaHandle, tpHandle, attrBitmap, tpAttr, reqHandle));
+ 
+    // 1. 读取结构体中的原始值
+    uint8_t rawAtGear = tpAttr.at;
+    uint8_t rawRetryTimes = tpAttr.retryTimesInit;
+ 
+    // 3. 查表获取单轮 AT 超时时间
+    uint32_t singleAtTimeoutMs = AT_TIMEOUT_MAP[rawAtGear];
+ 
+    // 4. 计算总超时时间：单轮时间 * 重传次数
+    // 注意：retryTimesInit 是 3bit 位域，最大值为 7，无需担心溢出
+    uint32_t totalTimeoutMs = singleAtTimeoutMs * static_cast<uint32_t>(rawRetryTimes);
+ 
+    // 5. 赋值输出
+    outTotalTimeoutMs = totalTimeoutMs;
+ 
+    // 6. 打印关键日志（INFO级别，方便线上定位）
+    HCCL_INFO("[TpTimeoutCalculator] TP timeout calc success: "
+              "raw_at_gear[%u], single_timeout[%ums], "
+              "retry_times_init[%u], total_timeout[%ums].",
+        rawAtGear, singleAtTimeoutMs, rawRetryTimes, totalTimeoutMs);
+ 
+    return HCCL_SUCCESS;
+}
+ 
+uint32_t TaHwValueToMs(uint8_t hwValue)
+{
+    uint8_t gear = hwValue / 8; // 芯片挡位 = 配置值 / 8
+    switch (gear) {
+        case 0:
+            return TA_TIMEOUT_MS_GEAR0; // 512ms
+        case 1:
+            return TA_TIMEOUT_MS_GEAR1; // 1s
+        case 2:
+            return TA_TIMEOUT_MS_GEAR2; // 8s
+        case 3:
+            return TA_TIMEOUT_MS_GEAR3; // 32s
+        default:
+            return TA_TIMEOUT_MS_GEAR2; // 异常兜底 8s
+    }
+}
+ 
+uint8_t FindMinTaHwValueGreaterThan(uint32_t tpTotalTimeoutMs)
+{
+    uint8_t finalHwValue = 0;
+ 
+    // 按挡位从小到大依次判断，找到第一个大于目标时间的挡位
+    if (tpTotalTimeoutMs < TA_TIMEOUT_MS_GEAR0) {
+        finalHwValue = TA_HW_GEAR0_BASE;
+    } else if (tpTotalTimeoutMs < TA_TIMEOUT_MS_GEAR1) {
+        finalHwValue = TA_HW_GEAR1_BASE;
+    } else if (tpTotalTimeoutMs < TA_TIMEOUT_MS_GEAR2) {
+        finalHwValue = TA_HW_GEAR2_BASE;
+    } else {
+        // 超过8s或等于8s，直接使用最大挡位32s
+        finalHwValue = TA_HW_GEAR3_BASE;
+    }
+ 
+    // 打印调试日志，方便线上定位
+    HCCL_INFO("[FindMinTaHwValue] tp_total_timeout[%ums], selected_gear_hw_value[%u], corresponding_timeout[%ums]",
+        tpTotalTimeoutMs, finalHwValue, TaHwValueToMs(finalHwValue));
+ 
+    return finalHwValue;
+}
+ 
+void DevUbConnection::GetTimeOut() // 直接基于环境变量控制
+{
+    if (tpProtocol == TpProtocol::INVALID) { // 不感知tp建链，当前默认不支持
+        HCCL_ERROR(
+            "[DevUbConnection][%s] failed, tpProtocol[%s] is not expected.", __func__, tpProtocol.Describe().c_str());
+        ThrowAbnormalStatus(std::string(__func__));
+    }
+ 
+    uint8_t envValue = ::EnvConfig::GetExternalInputUBTimeOut();
+    uint32_t envTimeOut = TaHwValueToMs(envValue);
+ 
+    if (tpProtocol == TpProtocol::CTP) {
+        timeOut = envValue;
+        HCCL_INFO("[UbCtp] Env Value [%u] (%ums).", envValue, envTimeOut);
+        return;
+    }
+ 
+    if (tpProtocol == TpProtocol::UBOE) {
+        envValue = ::EnvConfig::GetExternalInputUboeTimeOut();
+        envTimeOut = TaHwValueToMs(envValue);
+    }
+ 
+    uint32_t tpTimeOut = 0;
+    CalcTotalTimeout(tpTimeOut);
+    if (envTimeOut < tpTimeOut) {
+        // 规则: 如果环境变量时间 < TP总超时，选择大于TP总超时的最小TA挡位
+        timeOut = FindMinTaHwValueGreaterThan(tpTimeOut);
+        HCCL_WARNING(
+            "[TaTimeoutFinalDecider] Env timeout [%ums] < TP timeout [%ums]. Auto upgrade TA to hw_val[%u] (%ums).",
+            envTimeOut, tpTimeOut, envValue, tpTimeOut);
+    } else {
+        // 规则: 否则，直接使用环境变量对应的挡位 (对齐到 0/8/16/24)
+        // 注意：这里我们取环境变量所在挡位的基准值 (例如 env=10 -> 取 8)
+        timeOut = envValue;
+        HCCL_INFO(
+            "[TaTimeoutFinalDecider] Env timeout [%ums] >= TP timeout [%ums]. Use env gear base hw_val[%u] (%ums).",
+            envTimeOut, tpTimeOut, envValue, envTimeOut);
+    }
+ 
+    HCCL_INFO("[UbCtp] Env Value [%ums]. Use env gear base hw_val[%u] (%ums).", timeOut, timeOut, envTimeOut);
+}
+
 RmaConnStatus DevUbConnection::GetStatus()
 {
     if (!CheckRequestResult()) {
@@ -154,19 +298,26 @@ RmaConnStatus DevUbConnection::GetStatus()
             HCCL_INFO("[DevUbConnection][%s] start, status[%s], ubConnStatus[%s].", __func__, status.Describe().c_str(),
                       ubConnStatus.Describe().c_str());
 
-            SetJettyInfo();
-
             if (!GetTpInfo()) {
-                ubConnStatus = UbConnStatus::TP_INFO_GETTING;
                 break;
             }
+            // TODO: 读取HCCL_UBOE_TIMEOUT/HCCL_UB_TIMEOUT环境变量，如果是TP类型，获取TP总超时时间，确定ta超时时间
+            GetTimeOut();
+            CreateJetty(isdevUsed);
+ 
+            if (!CheckRequestResult()) {
+                ubConnStatus = UbConnStatus::JETTY_CREATING;
+                break;
+            }
+            SetJettyInfo();
 
             status       = RmaConnStatus::EXCHANGEABLE;
             ubConnStatus = UbConnStatus::JETTY_CREATED;
             break;
         }
-        case UbConnStatus::TP_INFO_GETTING: {
-            if (GetTpInfo()) {
+        case UbConnStatus::JETTY_CREATING: {
+            if (CheckRequestResult()) {
+                SetJettyInfo();
                 status       = RmaConnStatus::EXCHANGEABLE;
                 ubConnStatus = UbConnStatus::JETTY_CREATED;
             }
@@ -301,7 +452,7 @@ void DevUbConnection::CreateJetty(const bool devUsed)
         HrtJettyMode::HOST_OPBASE, // 默认HOST单算子模式
         0, // HOST展开与AICPU展开传入jetty id为0，申请一个新的jetty
         0, // va由底层分配，此处填0即可。
-        size, 0, sqDepth}; // 非CCUv2不需要填写sqeBufIndex
+        size, 0, sqDepth, timeOut}; // 非CCUv2不需要填写sqeBufIndex
 
     if (opMode == OpMode::OFFLOAD) { // HOST展开图模式切换模式
         req.jettyMode = HrtJettyMode::HOST_OFFLOAD;
