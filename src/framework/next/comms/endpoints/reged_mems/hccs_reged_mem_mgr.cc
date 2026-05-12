@@ -303,12 +303,9 @@ HcclResult HccsRegedMemMgr::MemoryImport(const void *memDesc, uint32_t descLen, 
 
     CHK_PTR_NULL(remoteIpcRmaBuffer);
     HcclResult deRet = remoteIpcRmaBuffer->Deserialize(ipcRmaBufferDesc);
-    HcclResult openRet = remoteIpcRmaBuffer->Open();
-    if (deRet != HCCL_SUCCESS || openRet != HCCL_SUCCESS) {
+    if (deRet != HCCL_SUCCESS) {
         CHK_PRT_RET(deRet != HCCL_SUCCESS,
             HCCL_ERROR("[HccsRegedMemMgr][MemoryImport]RemoteIpcRmaBuffer Deserialize failed."), deRet);
-        CHK_PRT_RET(openRet != HCCL_SUCCESS,
-            HCCL_ERROR("[HccsRegedMemMgr][MemoryImport]RemoteIpcRmaBuffer Open failed."), openRet);
     }
 
     CHK_RET(AddMemDesc(memDesc, descLen, remoteIpcRmaBuffer));
@@ -363,6 +360,64 @@ HcclResult HccsRegedMemMgr::MemoryGrant(const HcommMemGrantInfo *remoteGrantInfo
 
     HCCL_INFO("[HccsRegedMemMgr][MemoryGrant]Grant remotePid:%d, remoteSdid:%u done",
         remoteGrantInfo->pid, remoteGrantInfo->sdid);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HccsRegedMemMgr::MemoryEnableP2P(const EndpointDesc &localEndpointDesc, const EndpointDesc &remoteEndpointDesc)
+{
+    HCCL_INFO("[%s] Begin", __FUNCTION__);
+    if (localEndpointDesc.loc.device.serverIdx == remoteEndpointDesc.loc.device.serverIdx) {
+        u32 deviceLogicId;
+        hrtGetDeviceIndexByPhyId(localEndpointDesc.loc.device.devPhyId, deviceLogicId);
+        HCCL_INFO("Need do hrtEnableP2P for device[%u] with deviceLogicId[%u]",
+            remoteEndpointDesc.loc.device.devPhyId, deviceLogicId);
+        CHK_RET(hrtEnableP2P(deviceLogicId, remoteEndpointDesc.loc.device.devPhyId));
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HccsRegedMemMgr::MemoryDisableP2P(const EndpointDesc &localEndpointDesc, const EndpointDesc &remoteEndpointDesc)
+{
+    HCCL_INFO("[%s] Begin", __FUNCTION__);
+    if (localEndpointDesc.loc.device.serverIdx == remoteEndpointDesc.loc.device.serverIdx) {
+        u32 deviceLogicId;
+        hrtGetDeviceIndexByPhyId(localEndpointDesc.loc.device.devPhyId, deviceLogicId);
+        HCCL_INFO("Need do hrtDisableP2P for device[%u] with deviceLogicId[%u]",
+            remoteEndpointDesc.loc.device.devPhyId, deviceLogicId);
+        CHK_RET(hrtDisableP2P(deviceLogicId, remoteEndpointDesc.loc.device.devPhyId));
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HccsRegedMemMgr::MemoryOpenRemoteIpc()
+{
+    HCCL_INFO("[%s] Begin", __FUNCTION__);
+    for (auto it = remoteIpcRmaBufferMgr_.Begin(); it != remoteIpcRmaBufferMgr_.End();) {
+        std::shared_ptr<hccl::RemoteIpcRmaBuffer> remoteIpcRmaBuffer = it->second.buffer;
+        HcclResult openRet = remoteIpcRmaBuffer->Open();
+        if (openRet != HCCL_SUCCESS) {
+            HCCL_ERROR("[HccsRegedMemMgr][MemoryOpenRemoteIpc]RemoteIpcRmaBuffer Open failed.");
+            for (auto it2 = remoteIpcRmaBufferMgr_.Begin(); it2 != it;) {
+                (void)remoteIpcRmaBuffer->Close();
+                it2 = remoteIpcRmaBufferMgr_.Next(it2);
+            }
+            return openRet;
+        }
+        it = remoteIpcRmaBufferMgr_.Next(it);
+    }
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult HccsRegedMemMgr::MemoryCloseRemoteIpc()
+{
+    HCCL_INFO("[%s] Begin", __FUNCTION__);
+    for (auto it = remoteIpcRmaBufferMgr_.Begin(); it != remoteIpcRmaBufferMgr_.End();) {
+        std::shared_ptr<hccl::RemoteIpcRmaBuffer> remoteIpcRmaBuffer = it->second.buffer;
+        (void)remoteIpcRmaBuffer->Close();
+        it = remoteIpcRmaBufferMgr_.Next(it);
+    }
+
     return HCCL_SUCCESS;
 }
 
