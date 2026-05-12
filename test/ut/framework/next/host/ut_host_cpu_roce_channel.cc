@@ -120,8 +120,8 @@ protected:
         endpointDesc2.loc.locType = ENDPOINT_LOC_TYPE_HOST;
         channelDesc.remoteEndpoint = endpointDesc2;
         channelDesc.notifyNum = 2;
-        fakeSocket = new Hccl::Socket(
-            nullptr, localIp, 60001, remoteIp, "_0_1_", Hccl::SocketRole::SERVER, Hccl::NicType::HOST_NIC_TYPE);
+        fakeSocket = new Hccl::Socket(	 
+             nullptr, localIp, 60001, remoteIp, "_0_1_", Hccl::SocketRole::SERVER, Hccl::NicType::HOST_NIC_TYPE);
         void *fsocket = static_cast<void *>(fakeSocket);
         channelDesc.socket = fsocket;
         localBufferPtr = std::make_shared<Hccl::Buffer>(666);
