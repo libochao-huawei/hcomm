@@ -47,11 +47,6 @@ void TpManager::Init()
     initFlag = true;
 }
 
-void TpManager::SetIsHost()
-{
-    isHost = true;
-}
-
 bool TpManager::CheckRequestResult(RequestHandle &reqHandle) const
 {
     if (reqHandle == 0) {
@@ -81,7 +76,8 @@ HcclResult CheckTpProtocol(const TpProtocol tpProtocol) {
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult TpManager::GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo)
+HcclResult TpManager::GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo,
+    bool isHost)
 {
     const auto &tpProtocol = param.tpProtocol;
     CHK_RET(CheckTpProtocol(tpProtocol));
@@ -101,11 +97,12 @@ HcclResult TpManager::GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo)
             param.Describe().c_str());
 
         RequestCtx &reqCtx = locReqCtxMap[rmtAddr];
-        StartGetTpInfoListRequest(param, reqCtx);
+        reqCtx.isHost = isHost;
+        StartGetTpInfoListRequest(param, reqCtx, isHost);
         return HcclResult::HCCL_E_AGAIN;
     }
 
-    if(!isHost) {
+    if(!locReqCtxIter->second.isHost) {
         auto &reqCtx = locReqCtxIter->second;
         if (!CheckRequestResult(reqCtx.handle)) {
             return HcclResult::HCCL_E_AGAIN;
@@ -163,7 +160,7 @@ bool TpManager::FindAndGetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo
 }
 
 void TpManager::StartGetTpInfoListRequest(const RaUbGetTpInfoParam &param,
-    TpManager::RequestCtx &reqCtx) const
+    TpManager::RequestCtx &reqCtx, bool isHost) const
 {
     Hccl::IpAddress localIp = param.locAddr;
     RdmaHandle rdmaHandle = isHost 
