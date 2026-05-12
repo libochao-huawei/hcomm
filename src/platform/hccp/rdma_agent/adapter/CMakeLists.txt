@@ -97,7 +97,10 @@ target_link_libraries(ra_adp PRIVATE
     -pthread
 )
 
-install(TARGETS  ra_adp
-    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
-    COMPONENT hcomm
-)
+# 安装
+if(PRODUCT_SIDE STREQUAL "host")
+    install(TARGETS ra_adp
+        LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
+        COMPONENT hcomm
+    )
+endif()

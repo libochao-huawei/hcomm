@@ -97,7 +97,10 @@ target_compile_definitions(ra PRIVATE
     LOG_CPP
 )
 
-install(TARGETS  ra
-    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
-    COMPONENT hcomm
-)
+# 安装
+if(PRODUCT_SIDE STREQUAL "host")
+    install(TARGETS ra
+        LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
+        COMPONENT hcomm
+    )
+endif()
