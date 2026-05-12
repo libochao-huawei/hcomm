@@ -95,7 +95,7 @@ extern int32_t HcclTaskUnRegister(HcclComm comm, const char *msgTag);
  * @return HcclResult 执行结果状态码
  * @note 每次建链前只能调用一次，交换信息在HcclChannelAcquire执行后被自动清空
  */
-extern HcclResult HcclCommAddExchangeInfo(HcclComm comm, void* data, uint32_t length);
+extern HcclResult HcclCommAddExchangeInfo(HcclComm comm, const void* data, uint32_t length);
 
 /**
  * @brief 算子包获取通信域建链时从对端rank交换到的一致性校验信息
