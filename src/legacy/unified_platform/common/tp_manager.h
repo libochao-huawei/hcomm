@@ -37,14 +37,12 @@ class TpManager {
 public:
     static TpManager &GetInstance(const int32_t deviceLogicId);
     void Init();
-    HcclResult GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo);
+    HcclResult GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo, bool isSync = false);
     // unimport jetty 会 URMA 销毁 tp 资源，hccl 配套删除记录
     HcclResult ReleaseTpInfo(const RaUbGetTpInfoParam &param, const TpInfo &tpInfo);
-    void SetIsHost();
 
 private:
     bool initFlag{false};
-    bool isHost{false};
     uint32_t devLogicId{0};
     uint32_t devPhyId{0};
 
@@ -66,6 +64,7 @@ private:
     struct RequestCtx {
         RequestHandle handle{0};
         uint32_t tpInfoNum{0};
+        bool isSync{false};
         std::vector<char_t> dataBuffer;
     };
 
@@ -96,7 +95,7 @@ private:
     TpManager &operator=(const TpManager &that) = delete;
 
     bool FindAndGetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo);
-    void StartGetTpInfoListRequest(const RaUbGetTpInfoParam &param, RequestCtx &reqCtx) const;
+    void StartGetTpInfoListRequest(const RaUbGetTpInfoParam &param, RequestCtx &reqCtx, bool isSync) const;
     HcclResult HandleCompletedRequest(const RequestCtx reqCtx, const RaUbGetTpInfoParam &param,
         TpInfo &tpInfo);
 

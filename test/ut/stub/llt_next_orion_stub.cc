@@ -2582,7 +2582,7 @@ std::pair<uint32_t, uint32_t> RdmaHandleManager::GetDieAndFuncId(RdmaHandle rdma
     return {0, 0};
 }
 
-HcclResult TpManager::GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo)
+HcclResult TpManager::GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo, bool isHost)
 {
     return HcclResult::HCCL_SUCCESS;
 }
@@ -2614,10 +2614,6 @@ HrtRaUbJettyImportedOutParam RaUbTpImportJetty(RdmaHandle handle, u8 *key, u32 k
     u32 tokenValue, const JettyImportCfg &jettyImportCfg)
 {
     return HrtRaUbJettyImportedOutParam{};
-}
-
-void TpManager::SetIsHost()
-{
 }
 
 ReqHandleResult HrtRaGetAsyncReqResult(RequestHandle &reqHandle)
