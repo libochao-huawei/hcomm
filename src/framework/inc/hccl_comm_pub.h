@@ -15,6 +15,7 @@
 #include <memory>
 #include <map>
 #include <mutex>
+#include <unordered_map>
 #include "hccl/base.h"
 #include "hccl_common.h"
 #include "common.h"
@@ -422,9 +423,9 @@ public:
     aclrtBinHandle GetBinHandle();
 
     // 交换信息管理接口
-    HcclResult AddExchangeInfo(void *data, uint32_t length);
+    HcclResult AddExchangeInfo(const void *data, uint32_t length);
     HcclResult GetExchangeInfo(uint32_t remoteRank, uint32_t length, void* data, uint32_t* actualLength);
-    HcclResult StoreRemoteExchangeInfo(uint32_t remoteRank, const std::vector<u8>& data);
+    HcclResult StoreRemoteExchangeInfo(uint32_t remoteRank, std::vector<u8>& data);
     HcclResult ResetExchangeInfo();
     const std::vector<u8>& GetExchangeInfoBuf() const;
     uint32_t GetExchangeInfoLen() const;
