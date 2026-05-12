@@ -218,6 +218,7 @@ extern "C" {
 #endif // __cplusplus
 extern void RegisterGetErrStatusVecCallBack(GetErrStatusVecCallBack);
 extern void RegisterGetAicpuTaskExceptionCallBack(s32 streamId, u32 deviceLogicId, GetAicpuTaskExceptionCallBack p1);
+extern void UnregisterGetAicpuTaskExceptionCallBack(s32 streamId, u32 deviceLogicId);
 #ifdef __cplusplus
 }
 #endif // __cplusplus
