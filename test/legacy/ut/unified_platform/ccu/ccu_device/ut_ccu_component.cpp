@@ -21,6 +21,7 @@
 #include "ccu_res_specs.h"
 #include "rdma_handle_manager.h"
 #include "ccu_api_exception.h"
+#include "env_config/env_config.h"
 
 #undef private
 #undef protected
@@ -587,4 +588,116 @@ TEST_F(CcuComponentTest, Ut_SetTaskKillAndSetTaskKillDone_When_CcuV1_Expect_Retu
 
     EXPECT_EQ(ccuComponent.SetTaskKillDone(), HcclResult::HCCL_SUCCESS);
     EXPECT_EQ(ccuComponent.status, CcuComponent::CcuTaskKillStatus::INIT);
+}
+
+TEST_F(CcuComponentTest, Ut_CalcTaTimeout_ValidTpAttr_ReturnsCorrectTimeout)
+{
+    TpAttrInfo tpAttrInfo{};
+    tpAttrInfo.tpAttr.at = 2;
+    tpAttrInfo.tpAttr.retryTimesInit = 0;
+
+    MOCKER_CPP(&EnvConfig::GetInstance).stubs().will(returnValue((EnvConfig*)0x12345));
+    MOCKER_CPP(&EnvConfig::GetRdmaConfig).stubs().will(returnValue((RdmaConfig*)0x12345));
+    MOCKER_CPP(&RdmaConfig::GetUbTimeOut).stubs().will(returnValue(16));
+
+    uint8_t timeout = CcuComponent::CalcTaTimeout(tpAttrInfo);
+    EXPECT_EQ(timeout, 16);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(CcuComponentTest, Ut_CalcTaTimeout_TpTimeoutGreaterThanEnv_AutoUpgrade)
+{
+    TpAttrInfo tpAttrInfo{};
+    tpAttrInfo.tpAttr.at = 3;
+    tpAttrInfo.tpAttr.retryTimesInit = 3;
+
+    MOCKER_CPP(&EnvConfig::GetInstance).stubs().will(returnValue((EnvConfig*)0x12345));
+    MOCKER_CPP(&EnvConfig::GetRdmaConfig).stubs().will(returnValue((RdmaConfig*)0x12345));
+    MOCKER_CPP(&RdmaConfig::GetUbTimeOut).stubs().will(returnValue(0));
+
+    uint8_t timeout = CcuComponent::CalcTaTimeout(tpAttrInfo);
+    EXPECT_EQ(timeout, 24);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(CcuComponentTest, Ut_CalcTaTimeout_InvalidAtGear_UsesDefault)
+{
+    TpAttrInfo tpAttrInfo{};
+    tpAttrInfo.tpAttr.at = 31;
+    tpAttrInfo.tpAttr.retryTimesInit = 0;
+
+    MOCKER_CPP(&EnvConfig::GetInstance).stubs().will(returnValue((EnvConfig*)0x12345));
+    MOCKER_CPP(&EnvConfig::GetRdmaConfig).stubs().will(returnValue((RdmaConfig*)0x12345));
+    MOCKER_CPP(&RdmaConfig::GetUbTimeOut).stubs().will(returnValue(8));
+
+    uint8_t timeout = CcuComponent::CalcTaTimeout(tpAttrInfo);
+    EXPECT_EQ(timeout, 8);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(CcuComponentTest, Ut_GetLoopTpAttr_Cached_ReturnsCachedValue)
+{
+    const int32_t devLogicId = MAX_MODULE_DEVICE_NUM - 1;
+    CcuComponent ccuComponent;
+    ccuComponent.devLogicId = devLogicId;
+
+    IpAddress ipAddr("10.0.0.1");
+    TpAttrInfo cachedTpAttrInfo{};
+    cachedTpAttrInfo.tpAttr.at = 2;
+    cachedTpAttrInfo.tpAttr.retryTimesInit = 1;
+    ccuComponent.tpAttrInfoMap[ipAddr] = cachedTpAttrInfo;
+
+    TpHandle tpHandle = 12345;
+    TpAttrInfo result = ccuComponent.GetLoopTpAttr(ipAddr, tpHandle);
+    EXPECT_EQ(result.tpAttr.at, 2);
+    EXPECT_EQ(result.tpAttr.retryTimesInit, 1);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(CcuComponentTest, Ut_GetLoopTpAttr_NotCached_CallsHrtRaGetTpAttrAsync)
+{
+    const int32_t devLogicId = MAX_MODULE_DEVICE_NUM - 1;
+    CcuComponent ccuComponent;
+    ccuComponent.devLogicId = devLogicId;
+    ccuComponent.devPhyId = 0;
+
+    IpAddress ipAddr("10.0.0.2");
+    TpHandle tpHandle = 12345;
+
+    MOCKER_CPP(&RdmaHandleManager::GetByIp).stubs().will(returnValue((void*)0x12345678));
+    MOCKER(HrtRaGetTpAttrAsync).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+
+    struct TpAttr tpAttr = {0};
+    tpAttr.at = 1;
+    tpAttr.retryTimesInit = 2;
+
+    TpAttrInfo result = ccuComponent.GetLoopTpAttr(ipAddr, tpHandle);
+    EXPECT_EQ(result.tpAttr.at, 0);
+    EXPECT_EQ(result.tpAttr.retryTimesInit, 0);
+
+    EXPECT_EQ(ccuComponent.tpAttrInfoMap.count(ipAddr), 1);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(CcuComponentTest, Ut_GetLoopTpAttr_HrtRaGetTpAttrAsyncFails_ThrowsException)
+{
+    const int32_t devLogicId = MAX_MODULE_DEVICE_NUM - 1;
+    CcuComponent ccuComponent;
+    ccuComponent.devLogicId = devLogicId;
+    ccuComponent.devPhyId = 0;
+
+    IpAddress ipAddr("10.0.0.3");
+    TpHandle tpHandle = 12345;
+
+    MOCKER_CPP(&RdmaHandleManager::GetByIp).stubs().will(returnValue((void*)0x12345678));
+    MOCKER(HrtRaGetTpAttrAsync).stubs().will(returnValue(HcclResult::HCCL_E_INTERNAL));
+
+    EXPECT_THROW(ccuComponent.GetLoopTpAttr(ipAddr, tpHandle), InternalException);
+
+    GlobalMockObject::verify();
 }
