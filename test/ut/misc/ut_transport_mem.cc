@@ -30,7 +30,6 @@
 #include "adapter_rts.h"
 #include "hccl_impl.h"
 #include "hccl_comm_pub.h"
-#include "tcp_recv_task.h"
 #include "hccl_communicator.h"
 #include "hccd_impl_pml.h"
 #include "transport_heterog.h"
@@ -41,7 +40,6 @@
 #include "transport_roce_mem.h"
 #include "transport_device_roce_mem.h"
 #include "transport_ipc_mem.h"
-#include "tcp_send_thread_pool.h"
 #undef private
 
 #include <hccl/hccl_comm.h>

@@ -25,10 +25,7 @@ set(hccl_utest_misc_list
     # ut_mpi_tcp_sendrecv.cc
     # ut_tbe_vector_reduce.cc
     ut_heartbeat.cc
-    ut_transport_tcp.cc
     ut_transport_heterog_roce.cc
-    ut_tcp_send_thread_pool.cc
-    ut_mpi_recv_task.cc
     ut_p2p_mgmt.cc
     ut_stream_active_manager.cc
     ut_socket_manager.cc

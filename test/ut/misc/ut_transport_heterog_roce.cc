@@ -30,12 +30,10 @@
 #define protected public
 #include "hccl_impl.h"
 #include "hccl_comm_pub.h"
-#include "tcp_recv_task.h"
 #include "hccl_communicator.h"
 #include "transport_heterog.h"
 #include "hccd_impl_pml.h"
 #include "transport_heterog_roce_pub.h"
-#include "tcp_send_thread_pool.h"
 #include "transport_heterog_event_roce_pub.h"
 #undef private
 
