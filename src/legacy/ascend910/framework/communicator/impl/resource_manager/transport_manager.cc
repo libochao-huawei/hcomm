@@ -31,8 +31,6 @@ TransportManager::TransportManager(CCLBufferManager &cclBufferManager,
                                    s32 deviceLogicId,
                                    NICDeployment nicDeployment,
                                    bool isHaveCpuRank,
-                                   const void *transportResourceInfoAddr,
-                                   size_t transportResourceInfoSize,
                                    bool isUseRankPort,
                                    bool isUsedRdmaLevel0,
                                    const std::vector<u32> &nicRanksPort,
@@ -45,7 +43,6 @@ TransportManager::TransportManager(CCLBufferManager &cclBufferManager,
     : cclBufferManager_(cclBufferManager), socketManager_(socketManager), dispatcher_(dispatcher),
     notifyPool_(notifyPool), rankInfoList_(rankInfoList), userRank_(userRank), identifier_(identifier), commName_(commName),
     deviceLogicId_(deviceLogicId), nicDeployment_(nicDeployment), isHaveCpuRank_(isHaveCpuRank),
-    transportResourceInfoAddr_(transportResourceInfoAddr), transportResourceInfoSize_(transportResourceInfoSize),
     isUseRankPort_(isUseRankPort), isUsedRdmaLevel0_(isUsedRdmaLevel0), nicRanksPort_(nicRanksPort),
     vnicRanksPort_(vnicRanksPort), useSuperPodMode_(useSuperPodMode), devIpAddr_(devIpAddr), hostIp_(hostIp),
     localVnicIp_(localVnicIp), netDevCtxMap_(netDevCtxMap), trafficClass_(HCCL_COMM_TRAFFIC_CLASS_CONFIG_NOT_SET),
@@ -1523,8 +1520,6 @@ HcclResult TransportManager::GetTransportType(const u32 dstRank, bool isUsedRdma
         if ((!isUsedRdma) && IsSupportInterHccs(dstRank)) {
             // 超节点内节点间走HCCS通信
             transportType = TransportType::TRANS_TYPE_P2P;
-        } else if (GetExternalInputHcclIsTcpMode()) {
-            transportType = TransportType::TRANS_TYPE_HOST_TCP;
         } else {
             transportType = TransportType::TRANS_TYPE_IBV_EXP;
         }
@@ -1540,8 +1535,6 @@ void TransportManager::SetTransportParam(TransportPara &para, MachinePara &machi
     std::chrono::milliseconds kdefaultTimeout = std::chrono::seconds(
         GetExternalInputHcclLinkTimeOut());
     para.timeout = kdefaultTimeout;
-    para.transportResourceInfoAddr = transportResourceInfoAddr_;
-    para.transportResourceInfoSize = transportResourceInfoSize_;
     para.virtualFlag = false;
 }
 
@@ -1561,9 +1554,6 @@ HcclResult TransportManager::TransportInit(const u32 dstRank, MachinePara &machi
             CHK_RET(mulQpinfo_->GetSpecialSourcePortsByIpPair(
                 machinePara.srcPorts, std::make_pair(machinePara.localIpAddr, machinePara.remoteIpAddr)));
         }
-        link.reset(new (std::nothrow) Transport(type, para, dispatcher_, notifyPool_, machinePara));
-    } else if (type == TransportType::TRANS_TYPE_HOST_TCP) {
-        para.nicDeploy = nicDeployment_;
         link.reset(new (std::nothrow) Transport(type, para, dispatcher_, notifyPool_, machinePara));
     } else if (type == TransportType::TRANS_TYPE_DEVICE_DIRECT) {
         bool isEnableMulQp = false;

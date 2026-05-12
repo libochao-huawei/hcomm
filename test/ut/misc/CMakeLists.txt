@@ -19,20 +19,13 @@ set(hccl_utest_misc_list
     ut_opretry_conn.cc
     # ut_op_base.cc
     # ut_op_base_multithread.cc
-    ut_heterog_send_recv.cc
     ut_rankconsistent.cc
     ut_task_exception.cc
     # ut_mpi_tcp_sendrecv.cc
     # ut_tbe_vector_reduce.cc
     ut_heartbeat.cc
-    ut_transport_tcp.cc
-    ut_transport_heterog_roce.cc
-    ut_transport_roce.cc
-    ut_tcp_send_thread_pool.cc
-    ut_mpi_recv_task.cc
     ut_p2p_mgmt.cc
     ut_stream_active_manager.cc
-    ut_transport_virtural.cc
     ut_socket_manager.cc
     ut_op_base_stream_manager.cc
     ut_offload_stream_manager.cc
@@ -46,7 +39,6 @@ set(hccl_utest_misc_list
     # ut_hccl_comm_aicpuunfold.cc
     # ut_hccl_transport_p2p.cc
     # ut_onesided_service.cc
-    ut_transport_mem.cc
     ut_transport_ibverbs.cc
     ut_load_backup_ip.cc
     # ut_backup_link.cc
