@@ -2303,11 +2303,6 @@ HcclResult HcclCommunicator::GetRankGraphV2(void *&rankGraph)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclCommunicator::GetRankGraphV2(void *&rankGraph)
-{
-    return HCCL_SUCCESS;
-}
-
 void HrtFree(void *devPtr)
 {
 }
