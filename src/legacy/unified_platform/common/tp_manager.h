@@ -37,14 +37,12 @@ class TpManager {
 public:
     static TpManager &GetInstance(const int32_t deviceLogicId);
     void Init();
-    HcclResult GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo);
+    HcclResult GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo, bool isSync = false);
     // unimport jetty 会 URMA 销毁 tp 资源，hccl 配套删除记录
     HcclResult ReleaseTpInfo(const RaUbGetTpInfoParam &param, const TpInfo &tpInfo);
-    void SetIsHost();
 
 private:
     bool initFlag{false};
-    bool isHost{false};
     uint32_t devLogicId{0};
     uint32_t devPhyId{0};
 
@@ -61,11 +59,14 @@ private:
     * Request上下文，保存查询TP信息相关调用异步接口出参
     * handle: 异步接口调用handle，用于查询处理结果
     * tpInfoNum: 查询到的TP信息个数，当前为复用TP，只会申请1个
+    * isSync: 同步/异步标记，true走同步路径直接调用RaUbGetTpInfo并等待返回，false走异步路径通过RaUbGetTpInfoAsync+轮询完成。
+    *          当前仅hostCpuUrma场景（HostUbConnection）使用同步模式。
     * dataBuffer: 查询到的TP信息数据，原始数据保留缓冲区
     */
     struct RequestCtx {
         RequestHandle handle{0};
         uint32_t tpInfoNum{0};
+        bool isSync{false};
         std::vector<char_t> dataBuffer;
     };
 
@@ -96,7 +97,7 @@ private:
     TpManager &operator=(const TpManager &that) = delete;
 
     bool FindAndGetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo);
-    void StartGetTpInfoListRequest(const RaUbGetTpInfoParam &param, RequestCtx &reqCtx) const;
+    void StartGetTpInfoListRequest(const RaUbGetTpInfoParam &param, RequestCtx &reqCtx, bool isSync) const;
     HcclResult HandleCompletedRequest(const RequestCtx reqCtx, const RaUbGetTpInfoParam &param,
         TpInfo &tpInfo);
 
