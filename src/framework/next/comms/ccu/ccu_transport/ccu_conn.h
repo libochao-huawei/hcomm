@@ -70,6 +70,7 @@ private:
     HcclResult    GetLocalCcuRmaBufferInfo();
     HcclResult    CreateJetty();
     HcclResult    GetTpInfo();
+    HcclResult    GetTaTimeOut();
     void          GenerateLocalPsn();
     void          ResetRequestCtxs();
     HcclResult    StartImportJettyRequest(uint32_t jettyIndex, RequestHandle &reqHandle);
@@ -117,6 +118,10 @@ private:
     std::vector<RequestHandle>  reqHandles_;
     std::vector<std::vector<char>> reqDataBuffers_;
     std::vector<void*>          remoteJettyHandlePtrs_;
+
+    u8 errTimeout_{8};
+
+    HcclResult CalcTotalTimeout(uint32_t &outTotalTimeoutMs);
 };
 
 class CcuRtpConnection : public CcuConnection {
