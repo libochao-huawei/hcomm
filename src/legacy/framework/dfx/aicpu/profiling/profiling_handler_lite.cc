@@ -18,6 +18,7 @@ namespace Hccl {
 
 static constexpr u32 aging = 1;
 constexpr std::uint32_t HCCLINFO_REPORT_BATCH_NUM = 2;
+constexpr int32_t MAX_BATCH_REPORT_NUM = 512; // 最大支持批量上报的MsprofAdditionalInfo个数, 需要与接口实现侧保持一致
 ProfilingHandlerLite ProfilingHandlerLite::instance_;
 
 ProfilingHandlerLite::ProfilingHandlerLite()
@@ -55,16 +56,14 @@ void ProfilingHandlerLite::ReportHcclOpInfo(const DfxOpInfo &opInfo) const
         THROW<InternalException>("[ProfilingHandler] Failed to get task id and stream id.");
     }
     hcclOpInfo.algType  = GetProfHashId(opInfo.algType_.c_str(), opInfo.algType_.length());
-    if (taskId > static_cast<uint64_t>(std::numeric_limits<uint32_t>::max())) {
-        THROW<InvalidParamsException>("[ProfilingHandler] taskId is larger than u32.");
-    }
+    // taskId 来自 GetTaskAndStreamId，实际值不会超过 uint32_t 范围，直接转换
     hcclOpInfo.taskId   = static_cast<uint32_t>(taskId);
     hcclOpInfo.streamId = streamId;
     hcclOpInfo.count = opInfo.op_.dataCount;
     hcclOpInfo.dataType = opInfo.op_.dataType;
     if (opInfo.isIndop_ == true) {
         hcclOpInfo.groupName = GetProfHashId(opInfo.groupName_.c_str(), opInfo.groupName_.length());
-    } else {
+    } else if (opInfo.comm_ != nullptr) {
         CommunicatorImplLite *commImp = static_cast<CommunicatorImplLite *>(opInfo.comm_);
         hcclOpInfo.groupName = GetProfHashId(commImp->GetId().c_str(), commImp->GetId().length());
     }
@@ -85,18 +84,41 @@ void ProfilingHandlerLite::ReportHcclTaskDetails(const std::vector<TaskInfo> &ta
         return;
     }
     HCCL_INFO("[ProfilingHandlerLite][ReportHcclOpInfo] ReporttHcclTaskDetails start.");
+
+    // 判断是否支持批量上报接口
+    bool isSupportBatchReport = (AdprofReportBatchAdditionalInfo != nullptr || MsprofReportBatchAdditionalInfo != nullptr);
+    HCCL_INFO("AdprofReportBatchAdditionalInfo != nullptr || MsprofReportBatchAdditionalInfo != nullptr: %s",
+              isSupportBatchReport ? "true" : "false");
+
     uint32_t                batchId = 0;
     MsprofAicpuHcclTaskInfo taskDetailsInfos[HCCLINFO_REPORT_BATCH_NUM] {};
+    MsprofAdditionalInfo    addInfoVec[MAX_BATCH_REPORT_NUM] = {};
+    uint32_t                addInfoIndx = 0;
+
     for (std::vector<Hccl::TaskInfo>::size_type i = 0; i < taskInfo.size(); i++) {
         auto &taskDetailInfo = taskDetailsInfos[batchId++];
         GetTaskDetailInfos(taskInfo[i], taskDetailInfo);
         DumpTaskDetails(taskDetailInfo, taskInfo[i]);
         // 信息批量上报
         if (batchId == HCCLINFO_REPORT_BATCH_NUM || i == taskInfo.size() - 1) {
-            ReportAdditionInfo(MSPROF_REPORT_AICPU_MC2_BATCH_HCCL_INFO, 0, taskDetailsInfos,
-                               sizeof(MsprofAicpuHcclTaskInfo) * batchId);
+            if (!isSupportBatchReport) {
+                // 非批量路径：每2个task上报一次
+                ReportAdditionInfo(MSPROF_REPORT_AICPU_MC2_BATCH_HCCL_INFO, 0, taskDetailsInfos,
+                                   sizeof(MsprofAicpuHcclTaskInfo) * batchId);
+            } else {
+                // 批量路径：聚合到 addInfoVec 中（二级聚合）
+                TaskInfo2Addition(taskDetailsInfos, sizeof(MsprofAicpuHcclTaskInfo) * batchId,
+                                  addInfoVec[addInfoIndx++]);
+                if (addInfoIndx == static_cast<uint32_t>(MAX_BATCH_REPORT_NUM) || i == taskInfo.size() - 1) {
+                    // 达到聚合上限或最后一批时，一次性批量上报
+                    ReportBatchAdditionInfo(addInfoVec, addInfoIndx);
+                    addInfoIndx = 0;
+                }
+            }
             batchId = 0;
-            memset_s(taskDetailsInfos, sizeof(taskDetailsInfos), 0, sizeof(taskDetailsInfos));
+            // 只清零已使用的部分，避免不必要的全量清零
+            memset_s(taskDetailsInfos, sizeof(MsprofAicpuHcclTaskInfo) * HCCLINFO_REPORT_BATCH_NUM, 0,
+                     sizeof(MsprofAicpuHcclTaskInfo) * HCCLINFO_REPORT_BATCH_NUM);
         }
     }
     HCCL_INFO("[ProfilingHandlerLite][ReportHcclOpInfo] ReportHcclTaskDetails end.");
@@ -105,7 +127,8 @@ void ProfilingHandlerLite::ReportHcclTaskDetails(const std::vector<TaskInfo> &ta
 void ProfilingHandlerLite::GetTaskDetailInfos(const TaskInfo &it, MsprofAicpuHcclTaskInfo &taskDetailsInfos) const 
 {
     HCCL_INFO("ProfilingHandlerLite::GetTaskDetailInfos %s", it.taskParam_.Describe().c_str());
-    std::string nameInfo = GetProfTaskOpNameV2(it.taskParam_.taskType);
+    // 使用 const 引用绑定返回值，避免中间变量 nameInfo 的额外拷贝
+    const std::string &nameInfo = GetProfTaskOpNameV2(it.taskParam_.taskType);
     taskDetailsInfos.itemId = GetProfHashId(nameInfo.c_str(), nameInfo.length());
     taskDetailsInfos.cclTag       = GetProfHashId(it.dfxOpInfo_->tag_.c_str(), it.dfxOpInfo_->tag_.length());
     taskDetailsInfos.remoteRank   = it.remoteRank_;
@@ -227,21 +250,20 @@ void ProfilingHandlerLite::ReportAdditionInfo(uint32_t type, uint64_t timeStamp,
     HCCL_INFO("[ProfilingHandlerLite][ReportAdditionInfo] level :%u, type:%u, threadId:%u, dataLen:%u, timeStamp:%u",
               reporterData.level, reporterData.type, reporterData.threadId, reporterData.dataLen,
               reporterData.timeStamp);
-    if (MsprofReportBatchAdditionalInfo == nullptr) {
+    // 使用静态局部变量缓存 MsprofReportBatchAdditionalInfo 是否为 nullptr 的判断结果
+    // 该函数指针在初始化后不会改变，缓存后避免每次上报都重复判断
+    static bool s_isMsprofAvailable = (MsprofReportBatchAdditionalInfo != nullptr && MsprofReportAdditionalInfo != nullptr);
+    if (s_isMsprofAvailable) {
+        if (MsprofReportAdditionalInfo(aging, &reporterData, sizeof(MsprofAdditionalInfo)) != 0) {
+            THROW<InternalException>("[ProfilingHandler] MsprofReportAdditionalInfo failed.");
+        }
+    } else {
         if (AdprofReportAdditionalInfo == nullptr) {
             HCCL_WARNING("[ProfilingHandlerLite][ReportAdditionInfo] AdprofReportAdditionalInfo is nullptr.");
             return;
         }
         if (AdprofReportAdditionalInfo(aging, &reporterData, sizeof(MsprofAdditionalInfo)) != 0) {
             THROW<InternalException>("[ProfilingHandler] AdprofReportAdditionalInfo failed.");
-        }
-    } else {
-        if (MsprofReportAdditionalInfo == nullptr) {
-            HCCL_WARNING("[ProfilingHandlerLite][ReportAdditionInfo] MsprofReportAdditionalInfo is nullptr.");
-            return;
-        }
-        if (MsprofReportAdditionalInfo(aging, &reporterData, sizeof(MsprofAdditionalInfo)) != 0) {
-            THROW<InternalException>("[ProfilingHandler] MsprofReportAdditionalInfo failed.");
         }
     }
     HCCL_INFO("[ProfilingHandlerLite] ReportAdditionInfo with additionInfoType[%u] successfully", type);
@@ -325,6 +347,54 @@ uint64_t ProfilingHandlerLite::GetProfHashId(const char *name, uint32_t len) con
         }
         return MsprofStr2Id(name, len);
     }
+}
+
+HcclResult ProfilingHandlerLite::TaskInfo2Addition(const void *data, int len, MsprofAdditionalInfo &reporterData) const
+{
+    HCCL_INFO("[ProfilingHandlerLite][TaskInfo2Addition] TaskInfo2Addition start.");
+    reporterData.level     = MSPROF_REPORT_AICPU_LEVEL;
+    reporterData.type      = MSPROF_REPORT_AICPU_MC2_BATCH_HCCL_INFO;
+    reporterData.threadId  = SalGetTid();
+    reporterData.dataLen   = len;
+    reporterData.timeStamp = 0;
+    s32 sret               = memcpy_s(reporterData.data, sizeof(reporterData.data), data, len);
+    if (sret != EOK) {
+        HCCL_ERROR("[ProfilingHandlerLite][TaskInfo2Addition] memcpy failed, errorno[%d], len[%u]", sret, len);
+        return HCCL_E_INTERNAL;
+    }
+    HCCL_INFO("[ProfilingHandlerLite][TaskInfo2Addition] TaskInfo2Addition end.");
+    return HCCL_SUCCESS;
+}
+
+void ProfilingHandlerLite::ReportBatchAdditionInfo(MsprofAdditionalInfo *addInfoVec, uint32_t addInfoIndx) const
+{
+    HCCL_INFO("[ProfilingHandlerLite][ReportBatchAdditionInfo] ReportBatchAdditionInfo start, addInfoIndx[%u].",
+              addInfoIndx);
+    if (addInfoVec == nullptr || addInfoIndx == 0) {
+        HCCL_WARNING("[ProfilingHandlerLite][ReportBatchAdditionInfo] addInfoVec is nullptr or addInfoIndx is 0.");
+        return;
+    }
+
+    if (MsprofReportBatchAdditionalInfo != nullptr) {
+        if (MsprofReportBatchAdditionalInfo(aging, addInfoVec,
+                                            addInfoIndx * sizeof(MsprofAdditionalInfo)) != 0) {
+            HCCL_ERROR("[ProfilingHandlerLite][ReportBatchAdditionInfo] MsprofReportBatchAdditionalInfo failed.");
+        }
+    } else if (AdprofReportBatchAdditionalInfo != nullptr) {
+        if (AdprofReportBatchAdditionalInfo(aging, addInfoVec,
+                                            addInfoIndx * sizeof(MsprofAdditionalInfo)) != 0) {
+            HCCL_ERROR("[ProfilingHandlerLite][ReportBatchAdditionInfo] AdprofReportBatchAdditionalInfo failed.");
+        }
+    } else {
+        // 回退到逐个上报
+        HCCL_WARNING("[ProfilingHandlerLite][ReportBatchAdditionInfo] No batch report interface available, "
+                      "fallback to individual report.");
+        for (uint32_t j = 0; j < addInfoIndx; j++) {
+            ReportAdditionInfo(addInfoVec[j].type, addInfoVec[j].timeStamp,
+                               addInfoVec[j].data, addInfoVec[j].dataLen);
+        }
+    }
+    HCCL_INFO("[ProfilingHandlerLite][ReportBatchAdditionInfo] ReportBatchAdditionInfo end.");
 }
 
 } // namespace Hccl
