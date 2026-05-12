@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2026 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #include <iostream>
 #include "hccl_api_base_test.h"
@@ -120,6 +120,31 @@ static void MockChannelDestory(const std::pair<EndpointHandle, ChannelHandle> &h
     EXPECT_EQ(hcommRet, static_cast<HcommResult>(HcclResult::HCCL_SUCCESS));
 }
 
+// 控制流（CCU_DO/CCU_WHILE/CCU_IF）的 kernel 在 IR 翻译期会调用
+// CcuKernel::CreateVariable() 占用 res_.variable / xnReq 资源，但 ConfigCcuResReqCcuMs
+// 默认只为 CCU_MS 实例分配 continuousXn=400、xn=0。这里直接给 resPack 的 xn 资源池
+// 注入若干虚拟条目，让 Register 阶段的 CheckResIfAvailable 不会因 xn 不足而失败；
+// 注入操作仅修改 host 侧统计，不会触发任何真实硬件资源申请。
+static void InjectXnIntoResPack(int32_t devLogicId, CcuInsHandle insHandle,
+    uint32_t xnPerDie = 64)
+{
+    auto *instance = hcomm::CcuInstanceMgr::GetInstance(devLogicId).Get(insHandle);
+    if (instance == nullptr) {
+        ADD_FAILURE() << "InjectXnIntoResPack: instance not found, insHandle=" << insHandle;
+        return;
+    }
+    auto *resPack = instance->GetResPack();
+    if (resPack == nullptr) {
+        ADD_FAILURE() << "InjectXnIntoResPack: resPack is null, insHandle=" << insHandle;
+        return;
+    }
+    for (uint32_t dieId = 0; dieId < hcomm::CCU_MAX_IODIE_NUM; ++dieId) {
+        for (uint32_t i = 0; i < xnPerDie; ++i) {
+            resPack->resRepo_.xn[dieId].push_back(hcomm::ResInfo(2000 + dieId * 1000 + i, 1));
+        }
+    }
+}
+
 static ThreadHandle MockThreadAllocWithStream(CommEngine commEngine)
 {
     // 选择调用Hcomm接口，而不是对具体的Thread实现打桩，减少内部依赖
@@ -221,290 +246,255 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRegister_When_AllFine_Expect_Ret
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 }
 
+TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelDoWhile_When_AllFine_Expect_ReturnCcuSUCCESS)
+{
+    HcommResult hcclRet = 0;
+    CcuResult ccuRet = CcuResult::CCU_E_RESERVED;
+    constexpr uint32_t fakeDevId = MAX_MODULE_DEVICE_NUM - 3;
+    MOCKER(HcclGetThreadDeviceId).stubs().will(returnValue(fakeDevId));
+    int32_t fakeDeviceLogicId = static_cast<int32_t>(fakeDevId);
+    MOCKER(hrtGetDevice).stubs()
+        .with(outBoundP(&fakeDeviceLogicId))
+        .will(returnValue(HcclResult::HCCL_SUCCESS));
+    MOCKER(hrtGetDevicePhyIdByIndex).stubs()
+        .with(any(), outBound(static_cast<uint32_t>(fakeDeviceLogicId)), any())
+        .will(returnValue(HcclResult::HCCL_SUCCESS));
+    constexpr hcomm::CcuVersion fakeCcuVersion = hcomm::CcuVersion::CCU_V1;
+    MockCcuNetworkDeviceDefault(fakeDeviceLogicId);
+    EXPECT_EQ(MockCcuResourcesDefault(fakeDeviceLogicId, fakeCcuVersion), HcclResult::HCCL_SUCCESS);
+    MockCcuChannelGetRes();
+    MOCKER(hrtMemcpy).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
 
+    constexpr auto MS_INS_TPYE = CcuInstanceType::CCU_MS;
+    CcuResDesc resDesc{};
+    resDesc.dieId = hcomm::CCU_MAX_IODIE_NUM;
+    resDesc.insType = MS_INS_TPYE;
+    constexpr uint32_t descNum = 1;
+    CcuInsHandle insHandle{0};
+    ccuRet = HcommCcuInsCreate(static_cast<void *>(&resDesc), descNum, &insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
-// TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelDoWhile_When_AllFine_Expect_ReturnCcuSUCCESS)
-// {
-//     HcclResult hcclRet = HcclResult::HCCL_E_RESERVED;
-//     CcuResult ccuRet = CcuResult::CCU_E_RESERVED;
-//     constexpr uint32_t fakeDevId = MAX_MODULE_DEVICE_NUM;
-//     MOCKER(HcclGetThreadDeviceId).stubs().will(returnValue(fakeDevId));
-//     int32_t fakeDeviceLogicId = static_cast<int32_t>(fakeDevId);
-//     MOCKER(hrtGetDevice).stubs().with(outBound(&fakeDeviceLogicId)).will(returnValue(HcclResult::HCCL_SUCCESS));
-//     EXPECT_EQ(MockCcuResourcesDefault(fakeDeviceLogicId, hcomm::CcuVersion::CCU_V1), HcclResult::HCCL_SUCCESS);
-//     MockCcuChannelGetRes();
-//     MOCKER(hrtMemcpy).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+    constexpr auto commEngine = CommEngine::COMM_ENGINE_CCU;
+    constexpr uint32_t srcDevPhyId = fakeDevId;
+    constexpr uint32_t dstDevPhyId = 1;
+    constexpr uint32_t srcIp = 167772383;
+    constexpr uint32_t dstIp = 0x87654321;
+    const auto &handlePair = MockCcuChannelConnect(srcDevPhyId, dstDevPhyId, srcIp, dstIp, commEngine);
 
-//     constexpr auto MS_INS_TPYE = CcuInstanceType::CCU_MS;
-//     auto insType = MS_INS_TPYE;
-//     void *ccuResDesc = static_cast<void *>(&insType);
-//     CcuInsHandle insHandle{0};
-//     ccuRet = HcommCcuInsCreate(ccuResDesc, &insHandle);
-//     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+    CcuKernelFunc demoFunc = CcuDoWhileWhileDemoKernel;
+    CcuDoWhileWhileDemoKernelArg demoArg{};
+    demoArg.loopCount = 5;
+    auto kernelFunc = reinterpret_cast<void *>(demoFunc);
+    auto kernelArg = static_cast<CcuKernelArg>(&demoArg);
 
-//     constexpr auto commEngine = CommEngine::COMM_ENGINE_CCU;
-//     constexpr uint32_t srcDevPhyId = fakeDevId;
-//     constexpr uint32_t dstDevPhyId = 1;
-//     constexpr uint32_t srcIp = 167772383;
-//     constexpr uint32_t dstIp = 0x87654321;
-//     const auto &handlePair = MockCcuChannelConnect(srcDevPhyId, dstDevPhyId, srcIp, dstIp, commEngine);
+    ccuRet = HcommCcuKernelRegisterStart(insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+    InjectXnIntoResPack(fakeDeviceLogicId, insHandle);
 
-//     CcuKernelFunc demoFunc = CcuDoWhileWhileDemoKernel;
-//     CcuDoWhileWhileDemoKernelArg demoArg{};
-//     demoArg.loopCount = 5;
-//     auto kernelFunc = reinterpret_cast<void *>(demoFunc);
-//     auto kernelArg = static_cast<CcuKernelArg>(&demoArg);
+    char *kernelFuncName = "ccu_do_while_while_demo";
+    CcuKernelHandle kernelHandle{0};
+    ccuRet = HcommCcuKernelRegister(insHandle, kernelFuncName,
+        kernelFunc, kernelArg, &kernelHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
-//     ccuRet = HcommCcuKernelRegisterStart(insHandle);
-//     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+    ccuRet = HcommCcuKernelRegisterEnd(insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
-//     char *kernelFuncName = "ccu_do_while_while_demo";
-//     CcuKernelHandle kernelHandle{0};
-//     ccuRet = HcommCcuKernelRegister(insHandle, kernelFuncName,
-//         kernelFunc, kernelArg, &kernelHandle);
-//     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+    MockChannelDestory(handlePair);
+    ccuRet = HcommCcuInsDestroy(insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+}
 
-//     ccuRet = HcommCcuKernelRegisterEnd(insHandle);
-//     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelNestedIfOuterElse_When_AllFine_Expect_ReturnCcuSUCCESS)
+{
+    HcommResult hcclRet = 0;
+    CcuResult ccuRet = CcuResult::CCU_E_RESERVED;
+    constexpr uint32_t fakeDevId = MAX_MODULE_DEVICE_NUM - 4;
+    MOCKER(HcclGetThreadDeviceId).stubs().will(returnValue(fakeDevId));
+    int32_t fakeDeviceLogicId = static_cast<int32_t>(fakeDevId);
+    MOCKER(hrtGetDevice).stubs()
+        .with(outBoundP(&fakeDeviceLogicId))
+        .will(returnValue(HcclResult::HCCL_SUCCESS));
+    MOCKER(hrtGetDevicePhyIdByIndex).stubs()
+        .with(any(), outBound(static_cast<uint32_t>(fakeDeviceLogicId)), any())
+        .will(returnValue(HcclResult::HCCL_SUCCESS));
+    constexpr hcomm::CcuVersion fakeCcuVersion = hcomm::CcuVersion::CCU_V1;
+    MockCcuNetworkDeviceDefault(fakeDeviceLogicId);
+    EXPECT_EQ(MockCcuResourcesDefault(fakeDeviceLogicId, fakeCcuVersion), HcclResult::HCCL_SUCCESS);
+    MockCcuChannelGetRes();
+    MOCKER(hrtMemcpy).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
 
-//     MockChannelDestory(handlePair);
-//     ccuRet = HcommCcuInsDestroy(insHandle);
-//     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
-// }
+    constexpr auto MS_INS_TPYE = CcuInstanceType::CCU_MS;
+    CcuResDesc resDesc{};
+    resDesc.dieId = hcomm::CCU_MAX_IODIE_NUM;
+    resDesc.insType = MS_INS_TPYE;
+    constexpr uint32_t descNum = 1;
+    CcuInsHandle insHandle{0};
+    ccuRet = HcommCcuInsCreate(static_cast<void *>(&resDesc), descNum, &insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
-// TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelNestedIfOuterElse_When_AllFine_Expect_ReturnCcuSUCCESS)
-// {
-//     HcclResult hcclRet = HcclResult::HCCL_E_RESERVED;
-//     CcuResult ccuRet = CcuResult::CCU_E_RESERVED;
-//     constexpr uint32_t fakeDevId = MAX_MODULE_DEVICE_NUM;
-//     MOCKER(HcclGetThreadDeviceId).stubs().will(returnValue(fakeDevId));
-//     int32_t fakeDeviceLogicId = static_cast<int32_t>(fakeDevId);
-//     MOCKER(hrtGetDevice).stubs().with(outBound(&fakeDeviceLogicId)).will(returnValue(HcclResult::HCCL_SUCCESS));
-//     EXPECT_EQ(MockCcuResourcesDefault(fakeDeviceLogicId, hcomm::CcuVersion::CCU_V1), HcclResult::HCCL_SUCCESS);
-//     MockCcuChannelGetRes();
-//     MOCKER(hrtMemcpy).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+    constexpr auto commEngine = CommEngine::COMM_ENGINE_CCU;
+    constexpr uint32_t srcDevPhyId = fakeDevId;
+    constexpr uint32_t dstDevPhyId = 1;
+    constexpr uint32_t srcIp = 167772383;
+    constexpr uint32_t dstIp = 0x87654321;
+    const auto &handlePair = MockCcuChannelConnect(srcDevPhyId, dstDevPhyId, srcIp, dstIp, commEngine);
 
-//     constexpr auto MS_INS_TPYE = CcuInstanceType::CCU_MS;
-//     auto insType = MS_INS_TPYE;
-//     void *ccuResDesc = static_cast<void *>(&insType);
-//     CcuInsHandle insHandle{0};
-//     ccuRet = HcommCcuInsCreate(ccuResDesc, &insHandle);
-//     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+    CcuKernelFunc demoFunc = CcuNestedIfOuterElseDemoKernel;
+    CcuNestedIfOuterElseDemoKernelArg demoArg{};
+    demoArg.outerVal = 1;
+    demoArg.outerExpected = 1;
+    demoArg.innerVal = 2;
+    demoArg.innerExpected = 2;
+    auto kernelFunc = reinterpret_cast<void *>(demoFunc);
+    auto kernelArg = static_cast<CcuKernelArg>(&demoArg);
 
-//     constexpr auto commEngine = CommEngine::COMM_ENGINE_CCU;
-//     constexpr uint32_t srcDevPhyId = fakeDevId;
-//     constexpr uint32_t dstDevPhyId = 1;
-//     constexpr uint32_t srcIp = 167772383;
-//     constexpr uint32_t dstIp = 0x87654321;
-//     const auto &handlePair = MockCcuChannelConnect(srcDevPhyId, dstDevPhyId, srcIp, dstIp, commEngine);
+    ccuRet = HcommCcuKernelRegisterStart(insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+    InjectXnIntoResPack(fakeDeviceLogicId, insHandle);
 
-//     CcuKernelFunc demoFunc = CcuNestedIfOuterElseDemoKernel;
-//     CcuNestedIfOuterElseDemoKernelArg demoArg{};
-//     demoArg.outerVal = 1;
-//     demoArg.outerExpected = 1;
-//     demoArg.innerVal = 2;
-//     demoArg.innerExpected = 2;
-//     auto kernelFunc = reinterpret_cast<void *>(demoFunc);
-//     auto kernelArg = static_cast<CcuKernelArg>(&demoArg);
+    char *kernelFuncName = "ccu_nested_if_outer_else_demo";
+    CcuKernelHandle kernelHandle{0};
+    ccuRet = HcommCcuKernelRegister(insHandle, kernelFuncName,
+        kernelFunc, kernelArg, &kernelHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
-//     ccuRet = HcommCcuKernelRegisterStart(insHandle);
-//     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+    ccuRet = HcommCcuKernelRegisterEnd(insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
-//     char *kernelFuncName = "ccu_nested_if_outer_else_demo";
-//     CcuKernelHandle kernelHandle{0};
-//     ccuRet = HcommCcuKernelRegister(insHandle, kernelFuncName,
-//         kernelFunc, kernelArg, &kernelHandle);
-//     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+    MockChannelDestory(handlePair);
+    ccuRet = HcommCcuInsDestroy(insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+}
 
-//     ccuRet = HcommCcuKernelRegisterEnd(insHandle);
-//     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelNestedIfInnerElse_When_AllFine_Expect_ReturnCcuSUCCESS)
+{
+    HcommResult hcclRet = 0;
+    CcuResult ccuRet = CcuResult::CCU_E_RESERVED;
+    constexpr uint32_t fakeDevId = MAX_MODULE_DEVICE_NUM - 5;
+    MOCKER(HcclGetThreadDeviceId).stubs().will(returnValue(fakeDevId));
+    int32_t fakeDeviceLogicId = static_cast<int32_t>(fakeDevId);
+    MOCKER(hrtGetDevice).stubs()
+        .with(outBoundP(&fakeDeviceLogicId))
+        .will(returnValue(HcclResult::HCCL_SUCCESS));
+    MOCKER(hrtGetDevicePhyIdByIndex).stubs()
+        .with(any(), outBound(static_cast<uint32_t>(fakeDeviceLogicId)), any())
+        .will(returnValue(HcclResult::HCCL_SUCCESS));
+    constexpr hcomm::CcuVersion fakeCcuVersion = hcomm::CcuVersion::CCU_V1;
+    MockCcuNetworkDeviceDefault(fakeDeviceLogicId);
+    EXPECT_EQ(MockCcuResourcesDefault(fakeDeviceLogicId, fakeCcuVersion), HcclResult::HCCL_SUCCESS);
+    MockCcuChannelGetRes();
+    MOCKER(hrtMemcpy).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
 
-//     MockChannelDestory(handlePair);
-//     ccuRet = HcommCcuInsDestroy(insHandle);
-//     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
-// }
+    constexpr auto MS_INS_TPYE = CcuInstanceType::CCU_MS;
+    CcuResDesc resDesc{};
+    resDesc.dieId = hcomm::CCU_MAX_IODIE_NUM;
+    resDesc.insType = MS_INS_TPYE;
+    constexpr uint32_t descNum = 1;
+    CcuInsHandle insHandle{0};
+    ccuRet = HcommCcuInsCreate(static_cast<void *>(&resDesc), descNum, &insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
-// TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelNestedIfInnerElse_When_AllFine_Expect_ReturnCcuSUCCESS)
-// {
-//     HcclResult hcclRet = HcclResult::HCCL_E_RESERVED;
-//     CcuResult ccuRet = CcuResult::CCU_E_RESERVED;
-//     constexpr uint32_t fakeDevId = MAX_MODULE_DEVICE_NUM;
-//     MOCKER(HcclGetThreadDeviceId).stubs().will(returnValue(fakeDevId));
-//     int32_t fakeDeviceLogicId = static_cast<int32_t>(fakeDevId);
-//     MOCKER(hrtGetDevice).stubs().with(outBound(&fakeDeviceLogicId)).will(returnValue(HcclResult::HCCL_SUCCESS));
-//     EXPECT_EQ(MockCcuResourcesDefault(fakeDeviceLogicId, hcomm::CcuVersion::CCU_V1), HcclResult::HCCL_SUCCESS);
-//     MockCcuChannelGetRes();
-//     MOCKER(hrtMemcpy).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+    constexpr auto commEngine = CommEngine::COMM_ENGINE_CCU;
+    constexpr uint32_t srcDevPhyId = fakeDevId;
+    constexpr uint32_t dstDevPhyId = 1;
+    constexpr uint32_t srcIp = 167772383;
+    constexpr uint32_t dstIp = 0x87654321;
+    const auto &handlePair = MockCcuChannelConnect(srcDevPhyId, dstDevPhyId, srcIp, dstIp, commEngine);
 
-//     constexpr auto MS_INS_TPYE = CcuInstanceType::CCU_MS;
-//     auto insType = MS_INS_TPYE;
-//     void *ccuResDesc = static_cast<void *>(&insType);
-//     CcuInsHandle insHandle{0};
-//     ccuRet = HcommCcuInsCreate(ccuResDesc, &insHandle);
-//     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
-//     constexpr auto MS_INS_TPYE = CcuInstanceType::CCU_MS;
-//     auto insType = MS_INS_TPYE;
-//     void *ccuResDesc = static_cast<void *>(&insType);
-//     CcuInsHandle insHandle{0};
-//     ccuRet = HcommCcuInsCreate(ccuResDesc, &insHandle);
-//     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+    CcuKernelFunc demoFunc = CcuNestedIfInnerElseDemoKernel;
+    CcuNestedIfInnerElseDemoKernelArg demoArg{};
+    demoArg.outerVal = 1;
+    demoArg.outerExpected = 1;
+    demoArg.innerVal = 2;
+    demoArg.innerExpected = 2;
+    auto kernelFunc = reinterpret_cast<void *>(demoFunc);
+    auto kernelArg = static_cast<CcuKernelArg>(&demoArg);
 
-//     constexpr auto commEngine = CommEngine::COMM_ENGINE_CCU;
-//     constexpr uint32_t srcDevPhyId = fakeDevId;
-//     constexpr uint32_t dstDevPhyId = 1;
-//     constexpr uint32_t srcIp = 167772383;
-//     constexpr uint32_t dstIp = 0x87654321;
-//     const auto &handlePair = MockCcuChannelConnect(srcDevPhyId, dstDevPhyId, srcIp, dstIp, commEngine);
+    ccuRet = HcommCcuKernelRegisterStart(insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+    InjectXnIntoResPack(fakeDeviceLogicId, insHandle);
 
-//     CcuKernelFunc demoFunc = CcuNestedIfInnerElseDemoKernel;
-//     CcuNestedIfInnerElseDemoKernelArg demoArg{};
-//     demoArg.outerVal = 1;
-//     demoArg.outerExpected = 1;
-//     demoArg.innerVal = 2;
-//     demoArg.innerExpected = 2;
-//     auto kernelFunc = reinterpret_cast<void *>(demoFunc);
-//     auto kernelArg = static_cast<CcuKernelArg>(&demoArg);
+    char *kernelFuncName = "ccu_nested_if_inner_else_demo";
+    CcuKernelHandle kernelHandle{0};
+    ccuRet = HcommCcuKernelRegister(insHandle, kernelFuncName,
+        kernelFunc, kernelArg, &kernelHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
-//     ccuRet = HcommCcuKernelRegisterStart(insHandle);
-//     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+    ccuRet = HcommCcuKernelRegisterEnd(insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
-//     char *kernelFuncName = "ccu_nested_if_inner_else_demo";
-//     CcuKernelHandle kernelHandle{0};
-//     ccuRet = HcommCcuKernelRegister(insHandle, kernelFuncName,
-//         kernelFunc, kernelArg, &kernelHandle);
-//     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+    MockChannelDestory(handlePair);
+    ccuRet = HcommCcuInsDestroy(insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+}
 
-//     ccuRet = HcommCcuKernelRegisterEnd(insHandle);
-//     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelDoWhileUnified_When_AllFine_Expect_ReturnCcuSUCCESS)
+{
+    HcommResult hcclRet = 0;
+    CcuResult ccuRet = CcuResult::CCU_E_RESERVED;
+    constexpr uint32_t fakeDevId = MAX_MODULE_DEVICE_NUM - 6;
+    MOCKER(HcclGetThreadDeviceId).stubs().will(returnValue(fakeDevId));
+    int32_t fakeDeviceLogicId = static_cast<int32_t>(fakeDevId);
+    MOCKER(hrtGetDevice).stubs()
+        .with(outBoundP(&fakeDeviceLogicId))
+        .will(returnValue(HcclResult::HCCL_SUCCESS));
+    MOCKER(hrtGetDevicePhyIdByIndex).stubs()
+        .with(any(), outBound(static_cast<uint32_t>(fakeDeviceLogicId)), any())
+        .will(returnValue(HcclResult::HCCL_SUCCESS));
+    constexpr hcomm::CcuVersion fakeCcuVersion = hcomm::CcuVersion::CCU_V1;
+    MockCcuNetworkDeviceDefault(fakeDeviceLogicId);
+    EXPECT_EQ(MockCcuResourcesDefault(fakeDeviceLogicId, fakeCcuVersion), HcclResult::HCCL_SUCCESS);
+    MockCcuChannelGetRes();
+    MOCKER(hrtMemcpy).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
 
-//     MockChannelDestory(handlePair);
-//     ccuRet = HcommCcuInsDestroy(insHandle);
-//     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
-// }
+    constexpr auto MS_INS_TPYE = CcuInstanceType::CCU_MS;
+    CcuResDesc resDesc{};
+    resDesc.dieId = hcomm::CCU_MAX_IODIE_NUM;
+    resDesc.insType = MS_INS_TPYE;
+    constexpr uint32_t descNum = 1;
+    CcuInsHandle insHandle{0};
+    ccuRet = HcommCcuInsCreate(static_cast<void *>(&resDesc), descNum, &insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
-// TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelDoWhileUnified_When_AllFine_Expect_ReturnCcuSUCCESS)
-// {
-//     HcclResult hcclRet = HcclResult::HCCL_E_RESERVED;
-//     CcuResult ccuRet = CcuResult::CCU_E_RESERVED;
-//     constexpr uint32_t fakeDevId = MAX_MODULE_DEVICE_NUM;
-//     MOCKER(HcclGetThreadDeviceId).stubs().will(returnValue(fakeDevId));
-//     int32_t fakeDeviceLogicId = static_cast<int32_t>(fakeDevId);
-//     MOCKER(hrtGetDevice).stubs().with(outBound(&fakeDeviceLogicId)).will(returnValue(HcclResult::HCCL_SUCCESS));
-//     EXPECT_EQ(MockCcuResourcesDefault(fakeDeviceLogicId, hcomm::CcuVersion::CCU_V1), HcclResult::HCCL_SUCCESS);
-//     MockCcuChannelGetRes();
-//     MOCKER(hrtMemcpy).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+    constexpr auto commEngine = CommEngine::COMM_ENGINE_CCU;
+    constexpr uint32_t srcDevPhyId = fakeDevId;
+    constexpr uint32_t dstDevPhyId = 1;
+    constexpr uint32_t srcIp = 167772383;
+    constexpr uint32_t dstIp = 0x87654321;
+    const auto &handlePair = MockCcuChannelConnect(srcDevPhyId, dstDevPhyId, srcIp, dstIp, commEngine);
 
-//     constexpr auto MS_INS_TPYE = CcuInstanceType::CCU_MS;
-//     auto insType = MS_INS_TPYE;
-//     void *ccuResDesc = static_cast<void *>(&insType);
-//     CcuInsHandle insHandle{0};
-//     ccuRet = HcommCcuInsCreate(ccuResDesc, &insHandle);
-//     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+    CcuKernelFunc demoFunc = CcuDoWhileUnifiedDemoKernel;
+    CcuDoWhileUnifiedDemoKernelArg demoArg{};
+    demoArg.loopCount = 5;
+    auto kernelFunc = reinterpret_cast<void *>(demoFunc);
+    auto kernelArg = static_cast<CcuKernelArg>(&demoArg);
 
-//     constexpr auto commEngine = CommEngine::COMM_ENGINE_CCU;
-//     constexpr uint32_t srcDevPhyId = fakeDevId;
-//     constexpr uint32_t dstDevPhyId = 1;
-//     constexpr uint32_t srcIp = 167772383;
-//     constexpr uint32_t dstIp = 0x87654321;
-//     const auto &handlePair = MockCcuChannelConnect(srcDevPhyId, dstDevPhyId, srcIp, dstIp, commEngine);
+    ccuRet = HcommCcuKernelRegisterStart(insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+    InjectXnIntoResPack(fakeDeviceLogicId, insHandle);
 
-//     CcuKernelFunc demoFunc = CcuDoWhileUnifiedDemoKernel;
-//     CcuDoWhileUnifiedDemoKernelArg demoArg{};
-//     demoArg.loopCount = 5;
-//     auto kernelFunc = reinterpret_cast<void *>(demoFunc);
-//     auto kernelArg = static_cast<CcuKernelArg>(&demoArg);
+    char *kernelFuncName = "ccu_do_while_unified_demo";
+    CcuKernelHandle kernelHandle{0};
+    ccuRet = HcommCcuKernelRegister(insHandle, kernelFuncName,
+        kernelFunc, kernelArg, &kernelHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
-//     ccuRet = HcommCcuKernelRegisterStart(insHandle);
-//     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+    ccuRet = HcommCcuKernelRegisterEnd(insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
-//     char *kernelFuncName = "ccu_do_while_unified_demo";
-//     CcuKernelHandle kernelHandle{0};
-//     ccuRet = HcommCcuKernelRegister(insHandle, kernelFuncName,
-//         kernelFunc, kernelArg, &kernelHandle);
-//     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+    MockChannelDestory(handlePair);
+    ccuRet = HcommCcuInsDestroy(insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+}
 
-//     ccuRet = HcommCcuKernelRegisterEnd(insHandle);
-//     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
-
-//     MockChannelDestory(handlePair);
-//     ccuRet = HcommCcuInsDestroy(insHandle);
-//     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
-// }
-
+// 暂未启用：CcuReduceScatterMesh1dKernel 的 kernel 实现在
+// ccu_kernel_impl/ccu_reduce_scatter_mesh1d_demo.h 中整文件被注释，等该 demo
+// 适配新 API 后再放开此 UT。
 // TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelReduceScatterMesh1d_When_AllFine_Expect_ReturnCcuSUCCESS)
 // {
 //     HcclResult hcclRet = HcclResult::HCCL_E_RESERVED;
 //     CcuResult ccuRet = CcuResult::CCU_E_RESERVED;
-//     constexpr uint32_t fakeDevId = MAX_MODULE_DEVICE_NUM;
-//     MOCKER(HcclGetThreadDeviceId).stubs().will(returnValue(fakeDevId));
-//     int32_t fakeDeviceLogicId = static_cast<int32_t>(fakeDevId);
-//     MOCKER(hrtGetDevice).stubs().with(outBound(&fakeDeviceLogicId)).will(returnValue(HcclResult::HCCL_SUCCESS));
-//     EXPECT_EQ(MockCcuResourcesDefault(fakeDeviceLogicId, hcomm::CcuVersion::CCU_V1), HcclResult::HCCL_SUCCESS);
-//     MockCcuChannelGetRes();
-//     MOCKER(hrtMemcpy).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
-
-//     constexpr auto MS_INS_TPYE = CcuInstanceType::CCU_MS;
-//     auto insType = MS_INS_TPYE;
-//     void *ccuResDesc = static_cast<void *>(&insType);
-//     CcuInsHandle insHandle{0};
-//     ccuRet = HcommCcuInsCreate(ccuResDesc, &insHandle);
-//     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
-
-//     // reduce-scatter 需要 rankSize-1 个对等通道，本用例采用最小 2-rank 配置，建单条通道
-//     constexpr auto commEngine = CommEngine::COMM_ENGINE_CCU;
-//     constexpr uint32_t srcDevPhyId = fakeDevId;
-//     constexpr uint32_t dstDevPhyId = 1;
-//     constexpr uint32_t srcIp = 167772383;
-//     constexpr uint32_t dstIp = 0x87654321;
-//     const auto &handlePair = MockCcuChannelConnect(srcDevPhyId, dstDevPhyId, srcIp, dstIp, commEngine);
-
-//     // 构造 reduce-scatter kernel 参数：2 个 rank，本 rank 为 0，1 条通道连接 peer rank 1
-//     CcuKernelFunc demoFunc = CcuReduceScatterMesh1dKernel;
-//     ReduceScatterKernelArg demoArg{};
-//     demoArg.rankSize       = 2;
-//     demoArg.rankId         = 0;
-//     demoArg.channelCount   = 1;
-//     demoArg.channels[0]    = handlePair.second;
-//     demoArg.dataType       = HCCL_DATA_TYPE_FP16;
-//     demoArg.outputDataType = HCCL_DATA_TYPE_FP16;
-//     demoArg.reduceOp       = HCCL_REDUCE_SUM;
-//     auto kernelFunc = reinterpret_cast<void *>(demoFunc);
-//     auto kernelArg = static_cast<CcuKernelArg>(&demoArg);
-//     // 构造 reduce-scatter kernel 参数：2 个 rank，本 rank 为 0，1 条通道连接 peer rank 1
-//     CcuKernelFunc demoFunc = CcuReduceScatterMesh1dKernel;
-//     ReduceScatterKernelArg demoArg{};
-//     demoArg.rankSize       = 2;
-//     demoArg.rankId         = 0;
-//     demoArg.channelCount   = 1;
-//     demoArg.channels[0]    = handlePair.second;
-//     demoArg.dataType       = HCCL_DATA_TYPE_FP16;
-//     demoArg.outputDataType = HCCL_DATA_TYPE_FP16;
-//     demoArg.reduceOp       = HCCL_REDUCE_SUM;
-//     auto kernelFunc = reinterpret_cast<void *>(demoFunc);
-//     auto kernelArg = static_cast<CcuKernelArg>(&demoArg);
-
-//     ccuRet = HcommCcuKernelRegisterStart(insHandle);
-//     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
-//     ccuRet = HcommCcuKernelRegisterStart(insHandle);
-//     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
-
-//     char *kernelFuncName = "ccu_reduce_scatter_mesh1d_demo";
-//     CcuKernelHandle kernelHandle{0};
-//     ccuRet = HcommCcuKernelRegister(insHandle, kernelFuncName,
-//         kernelFunc, kernelArg, &kernelHandle);
-//     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
-//     char *kernelFuncName = "ccu_reduce_scatter_mesh1d_demo";
-//     CcuKernelHandle kernelHandle{0};
-//     ccuRet = HcommCcuKernelRegister(insHandle, kernelFuncName,
-//         kernelFunc, kernelArg, &kernelHandle);
-//     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
-
-//     ccuRet = HcommCcuKernelRegisterEnd(insHandle);
-//     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
-//     ccuRet = HcommCcuKernelRegisterEnd(insHandle);
-//     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
-
-//     MockChannelDestory(handlePair);
-//     ccuRet = HcommCcuInsDestroy(insHandle);
-//     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+//     constexpr uint32_t fakeDevId = MAX_MODULE_DEVICE_NUM - 7;
+//     ...
 // }
