@@ -83,8 +83,3 @@ target_link_libraries(hccp_service.bin PRIVATE
     tsd_eventclient
     -ldl
 )
-
-install(TARGETS hccp_service.bin
-    DESTINATION ${INSTALL_RUNTIME_DIR} ${INSTALL_OPTIONAL}
-    COMPONENT hcomm
-)

@@ -90,7 +90,10 @@ target_compile_definitions(ra_peer PRIVATE
     LOG_CPP
 )
 
-install(TARGETS  ra_peer
-    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
-    COMPONENT hcomm
-)
+# 安装
+if(PRODUCT_SIDE STREQUAL "host")
+    install(TARGETS ra_peer
+        LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
+        COMPONENT hcomm
+    )
+endif()
