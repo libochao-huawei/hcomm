@@ -27,7 +27,7 @@ class CcuTransport {
 public:
     static constexpr uint32_t INIT_CKE_NUM = 16;
     static constexpr uint32_t INIT_XN_NUM  = 16;
-    MAKE_ENUM(TransStatus, INIT, SEND_ALL_INFO, RECV_ALL_INFO, SEND_TRANS_RES, RECV_TRANS_RES, SEND_FIN, RECV_FIN,
+    MAKE_ENUM(TransStatus, INIT, SEND_SIZE, RECV_SIZE, SEND_DATA, RECV_DATA, SEND_TRANS_RES, RECV_TRANS_RES, SEND_FIN, RECV_FIN,
               RECVING_FIN, RECVING_TRANS_RES, READY, CONNECT_FAILED, SOCKET_TIMEOUT)
 
     struct CclBufferInfo {
@@ -160,6 +160,10 @@ private:
     void                                     ReleaseTransRes();
     void                                     SendConnAndTransInfo();
     void                                     RecvConnAndTransInfo();
+    void                                     SendDataSize();
+    void                                     RecvDataSize();
+    void                                     SendExchangeData();
+    void                                     RecvExchangeData();
     void                                     SendTransInfo();
     void                                     RecvTransInfo();
     void                                     HandshakeMsgPack(BinaryStream &binaryStream);
