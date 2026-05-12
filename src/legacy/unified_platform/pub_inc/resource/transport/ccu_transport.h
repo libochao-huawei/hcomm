@@ -192,6 +192,8 @@ private:
     std::vector<char>                        sendTrans{};
     std::vector<char>                        recvFinishMsg{};
     std::vector<char>                        sendFinishMsg{};
+    uint32_t                                 sendStep_{0};    // 发送步骤：0=发送SIZE, 1=发送DATA
+    uint32_t                                 recvStep_{0};   // 接收步骤：0=接收SIZE, 1=接收DATA
 };
 
 HcclResult CcuCreateTransport(Socket *socket, const CcuTransport::CcuConnectionInfo &ccuConnectionInfo,
