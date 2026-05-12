@@ -59,6 +59,68 @@ public:
     u64 segVa{0};
 };
 
+class ExchangeAggregatedUbBufferDto : public Serializable {
+public:
+    struct PortDto {
+        u8  key[HRT_UB_MEM_KEY_MAX_LEN]{0};
+        u32 tokenValue{0};
+        u32 tokenId{0};
+        u32 keySize{0};
+        u64 segVa{0};
+
+        void Serialize(Hccl::BinaryStream &stream)
+        {
+            stream << tokenValue << tokenId << keySize << segVa;
+            stream.Write(key, HRT_UB_MEM_KEY_MAX_LEN);
+        }
+
+        void Deserialize(Hccl::BinaryStream &stream)
+        {
+            stream >> tokenValue >> tokenId >> keySize >> segVa;
+            stream.Read(key, HRT_UB_MEM_KEY_MAX_LEN);
+        }
+    };
+
+    ExchangeAggregatedUbBufferDto() = default;
+
+    ExchangeAggregatedUbBufferDto(u64 addr, u64 size, HcclMemType memType, const char *memTag)
+        : addr(addr), size(size), memType(memType), memTag(memTag)
+    {}
+
+    void Serialize(Hccl::BinaryStream &stream) override
+    {
+        stream << addr << size << memType << memTag;
+        u32 portCount = static_cast<u32>(portDtos.size());
+        stream << portCount;
+        for (const auto &portDto : portDtos) {
+            portDto.Serialize(stream);
+        }
+    }
+
+    void Deserialize(Hccl::BinaryStream &stream) override
+    {
+        stream >> addr >> size >> memType >> memTag;
+        u32 portCount = 0;
+        stream >> portCount;
+        portDtos.resize(portCount);
+        for (auto &portDto : portDtos) {
+            portDto.Deserialize(stream);
+        }
+    }
+
+    std::string Describe() const override
+    {
+        return StringFormat("ExchangeAggregatedUbBufferDto[addr=0x%llx, size=0x%llx, portCount=%zu]",
+                            addr, size, portDtos.size());
+    }
+
+    u64 addr{0};
+    u64 size{0};
+    HcclMemType memType{};
+    std::string memTag;
+    std::vector<PortDto> portDtos;
+};
+
 } // namespace Hccl
 
 #endif

@@ -14,6 +14,7 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include "hcomm_res_defs.h"
 #include "reged_mem_mgr.h"
 #include "rma_buffer_mgr.h"
 #include "buffer_key.h"
@@ -27,14 +28,16 @@ namespace hcomm {
  */
 class UbRegedMemMgr : public RegedMemMgr {
 public:
-    using LocalUbRmaBufferMgr = hccl::RmaBufferMgr<hccl::BufferKey<uintptr_t, u64>, std::shared_ptr<Hccl::LocalUbRmaBufferBase>>;
-    using RemoteUbRmaBufferMgr = hccl::RmaBufferMgr<hccl::BufferKey<uintptr_t, u64>, std::shared_ptr<Hccl::RemoteUbRmaBufferBase>>;
-    enum class UbProtoType {
-        UB,
-        UBOE,
+    enum class UbBufferMode {
+        NORMAL,            // 普通 -> LocalUbRmaBuffer
+        AGGREGATED,        // 聚合 -> LocalUbAggregatedRmaBuffer
     };
 
+    using LocalUbRmaBufferMgr = hccl::RmaBufferMgr<hccl::BufferKey<uintptr_t, u64>, std::shared_ptr<Hccl::LocalUbRmaBufferBase>>;
+    using RemoteUbRmaBufferMgr = hccl::RmaBufferMgr<hccl::BufferKey<uintptr_t, u64>, std::shared_ptr<Hccl::RemoteUbRmaBufferBase>>;
+
     UbRegedMemMgr();
+    UbRegedMemMgr(CommProtocol protocol);
     ~UbRegedMemMgr() = default;
  
     HcclResult RegisterMemory(HcommMem mem, const char *memTag, void **memHandle) override;
@@ -48,7 +51,7 @@ public:
                                         EndpointDesc &endpointDesc, Hccl::ExchangeUbBufferDto &dto);
  
 private:
-    UbProtoType protoType_{UbProtoType::UB};
+    UbBufferMode bufferMode_{UbBufferMode::NORMAL};
     std::unique_ptr<LocalUbRmaBufferMgr> localUbRmaBufferMgr_{};
     std::vector<std::shared_ptr<Hccl::LocalUbRmaBufferBase>> allRegisteredBuffers_;
     std::unordered_map<EndpointDesc, std::unique_ptr<RemoteUbRmaBufferMgr>> remoteUbRmaBufferMgrs_;

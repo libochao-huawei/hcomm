@@ -24,10 +24,10 @@ MAKE_ENUM(UbBufferStatus, INIT, READY, RELEASED);
 
 class LocalUbRmaBufferBase : public LocalRmaBuffer {
 public:
-    explicit LocalUbRmaBufferBase(std::shared_ptr<Buffer> buf) : LocalRmaBuffer(buf, RmaType::UB) 
+    explicit LocalUbRmaBufferBase(std::shared_ptr<Buffer> buf) : LocalRmaBuffer(buf, RmaType::UB)
     {}
 
-    virtual ~LocalUbRmaBufferBase() = default;
+    ~LocalUbRmaBufferBase() = default;
 
     u32 GetTokenId() const
     {
@@ -100,6 +100,8 @@ public:
 
     void *GetMemHandleByPortIdx(uint8_t idx);
 
+    u32 GetPortCount() const { return static_cast<u32>(portCtxs_.size()); }
+
 private:
     struct PortAggregationContext
     {
@@ -107,11 +109,15 @@ private:
         HrtRaUbLocalMemRegOutParam param{};
         void *memHandle{nullptr};
         u64 segVa{0};
+        u32 tokenValue{0};
+        u32 tokenId{0};
+        TokenIdHandle tokenIdHandle{0};
     };
 
     std::vector<PortAggregationContext> portCtxs_{};
 };
 
-u32 GetUbToken(); // 生成伪随机数
+u32 GetUbToken(); // 生成伪随机数（所有调用返回相同值）
+u32 GetUbTokenUnique(); // 每次调用生成独立的随机数
 } // namespace Hccl
 #endif // HCCLV2_LOCAL_UB_RMA_BUFFER_H

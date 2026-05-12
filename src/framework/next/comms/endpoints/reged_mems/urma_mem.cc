@@ -26,6 +26,16 @@ UbRegedMemMgr::UbRegedMemMgr()
     localUbRmaBufferMgr_ = std::make_unique<LocalUbRmaBufferMgr>();
 }
 
+UbRegedMemMgr::UbRegedMemMgr(CommProtocol protocol)
+{
+    localUbRmaBufferMgr_ = std::make_unique<LocalUbRmaBufferMgr>();
+    if (protocol == COMM_PROTOCOL_UBOE) {
+        bufferMode_ = UbBufferMode::NORMAL;
+    } else {
+        bufferMode_ = UbBufferMode::AGGREGATED;
+    }
+}
+
 HcclResult UbRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void **memHandle)
 {
     HCCL_INFO("[%s] Begin", __FUNCTION__);
@@ -50,11 +60,14 @@ HcclResult UbRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void 
             mem.size, static_cast<HcclMemType>(mem.type), memTag)),
             return HCCL_E_PTR);
 
-        if (memTag && (strcmp(memTag, "HcclBuffer") == 0)) {
+        if (bufferMode_ == UbBufferMode::AGGREGATED) {
+            EXECEPTION_CATCH((localUbRmaBuffer = std::make_shared<Hccl::LocalUbAggregatedRmaBuffer>(
+                localBufferPtr, this->rdmaHandleList_)),
+                return HCCL_E_PTR);
+        } else if (memTag && (strcmp(memTag, "HcclBuffer") == 0)) {
             EXECEPTION_CATCH((localUbRmaBuffer = std::make_shared<Hccl::LocalUbRmaBuffer>(localBufferPtr)),
                 return HCCL_E_PTR);
-        }
-        else {
+        } else {
             EXECEPTION_CATCH((localUbRmaBuffer = std::make_shared<Hccl::LocalUbRmaBuffer>(localBufferPtr, this->rdmaHandle_)),
                 return HCCL_E_PTR);
         }
@@ -120,7 +133,7 @@ HcclResult UbRegedMemMgr::UnregisterMemory(void* memHandle)
     return HCCL_SUCCESS;
 }
 
-HcclResult UbRegedMemMgr::GetMemDesc(const EndpointDesc endpointDesc, Hccl::LocalUbRmaBufferBase *localUbRmaBuffer) 
+HcclResult UbRegedMemMgr::GetMemDesc(const EndpointDesc endpointDesc, Hccl::LocalUbRmaBufferBase *localUbRmaBuffer)
 {
     auto                      dto = localUbRmaBuffer->GetExchangeDto();
     Hccl::BinaryStream        localUbRmaBufferStream;
