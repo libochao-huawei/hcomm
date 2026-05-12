@@ -643,6 +643,7 @@ HcommResult HcommDfxKernelLaunch(const std::string &commTag, aclrtBinHandle binH
 
 HcommResult HcommChannelGetPtrByHandle(const ChannelHandle *channelList, uint32_t listNum, ChannelPtr *channelPtr)
 {
+    HCCL_RUN_INFO("Entry-%s", __func__);
     CHK_PTR_NULL(channelList);
     CHK_PTR_NULL(channelPtr);
     CHK_PRT_RET((listNum == 0), HCCL_ERROR("[%s]Invalid listNum, listNum[%u]",
@@ -664,6 +665,6 @@ HcommResult HcommChannelGetPtrByHandle(const ChannelHandle *channelList, uint32_
         }
     }
 
-    HCCL_INFO("%s Success, listNum=%u", __func__, listNum);
+    HCCL_RUN_INFO("%s Success, listNum=%u", __func__, listNum);
     return HCOMM_SUCCESS;
 }
