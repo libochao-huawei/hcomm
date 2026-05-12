@@ -119,8 +119,12 @@
 #include "ipc_local_notify.h"
 #include "host_ub_connection.h"
 #include "urma_api.h"
+#include "coll_operator.h"
+#include "coll_operator_check.h"
 
 namespace Hccl {
+
+constexpr u32 LLT_UB_WQE_NUM_PER_SQE = 4;
 
 void *HrtMalloc(u64 size, aclrtMemType_t memType)
 {
@@ -131,6 +135,13 @@ void HrtMemset(void *dst, uint64_t destMax, uint64_t count)
 {
     memset(dst, 0, count);
     return;
+void HrtMemcpy(void *dst, uint64_t destMax, const void *src, uint64_t count, rtMemcpyKind_t kind)
+{
+    (void)kind;
+    if (dst == nullptr || src == nullptr || count > destMax) {
+        return;
+    }
+    (void)memcpy_s(dst, destMax, src, count);
 }
 
 RdmaHandleManager::RdmaHandleManager()
@@ -545,6 +556,26 @@ std::vector<char> DevUbConnection::GetUniqueId() const
 
 void DevUbConnection::Connect()
 {
+}
+
+void DevUbConnection::SetSqContextInfo(SqContext &sq)
+{
+    sq.contextInfo.ubJfs.jfsID = jettyId;
+    sq.contextInfo.ubJfs.dbVa = dbAddr;
+    sq.contextInfo.ubJfs.sqVa = sqBuffVa;
+    sq.contextInfo.ubJfs.sqDepth = sqDepth * LLT_UB_WQE_NUM_PER_SQE;
+    sq.contextInfo.ubJfs.tpID = tpn;
+    (void)memcpy_s(sq.contextInfo.ubJfs.remoteEID, sizeof(sq.contextInfo.ubJfs.remoteEID),
+        rmtEid.raw, sizeof(sq.contextInfo.ubJfs.remoteEID));
+}
+
+void DevUbConnection::SetCqContextInfo(CqContext &cq)
+{
+    cq.contextInfo.ubJfc.jfcID = cqInfo_.id;
+    cq.contextInfo.ubJfc.scqVa = cqInfo_.va;
+    cq.contextInfo.ubJfc.cqeSize = cqInfo_.cqeSize;
+    cq.contextInfo.ubJfc.cqDepth = cqInfo_.cqDepth;
+    cq.contextInfo.ubJfc.dbVa = cqInfo_.swdbAddr;
 }
 
 inline uint32_t GetRandomNum()
@@ -2243,6 +2274,18 @@ HcclResult HcclCommunicator::SetAccelerator(HcclAccelerator hcclAccelerator, boo
 HcclResult HcclCommunicator::SetAccelerator(int32_t accelerator, bool isCcuMsAvailable)
 {
     return HCCL_SUCCESS;
+}
+
+CollOperatorDef CollOperatorDef::GetPackedData(std::vector<char> &byteVector)
+{
+    (void)byteVector;
+    return {};
+}
+
+void CheckCollOperator(const CollOperator &localOpData, const CollOperator &remoteOpData)
+{
+    (void)localOpData;
+    (void)remoteOpData;
 }
 
 HcclResult HcclCommunicator::GetRankGraphV2(void *&rankGraph)
