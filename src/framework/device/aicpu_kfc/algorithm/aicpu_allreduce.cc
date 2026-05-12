@@ -26,6 +26,7 @@ HcclResult AicpuAllreduce::RunAlgorithm(HcclReduceOp opType, void *sendBuffer, v
     } else if (ctx_->commOpType == CC_EXE_ONE_SHOT_HD) {
         return RunAllReduceOneshotHD(opType, sendBuffer, recvBuffer, dataCount * ctx_->unitSize, dataType);
     } else if (ctx_->commOpType == CC_EXE_ONE_SHOT_SINGLE_RING) {
+        exit(10);
         return RunAllReduceRing(opType, sendBuffer, recvBuffer, dataCount, dataType);
     }
 
