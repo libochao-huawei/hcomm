@@ -72,7 +72,7 @@ private:
 
     // --------------------- 具体成员 ---------------------
     Hccl::Socket*                                               socket_{nullptr};
-    std::unique_ptr<SocketMgr>                                  socketMgr_{nullptr};
+    SocketMgr*                                                  socketMgr_{nullptr};
     RdmaHandle                                                  rdmaHandle_{nullptr};
     std::unique_ptr<Hccl::UbMemTransport>                       memTransport_{nullptr};
     Hccl::BaseMemTransport::Attribution                         attr_{};

@@ -76,7 +76,7 @@ HcclResult AicpuTsP2pChannel::ParseInputParam()
         CHK_RET(Makebufs(channelDesc_.memHandles, channelDesc_.memHandleNum, bufs_));
     }
 
-    EXECEPTION_CATCH(socketMgr_ = std::make_unique<SocketMgr>(), return HCCL_E_PTR);
+    EXECEPTION_CATCH(socketMgr_ = SocketMgr::GetInstance(), return HCCL_E_PTR);
 
     return HCCL_SUCCESS;
 }
@@ -214,7 +214,12 @@ HcclResult AicpuTsP2pChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum
 
 ChannelStatus AicpuTsP2pChannel::GetStatus()
 {
-    return Channel::TransportStatusToChannelStatus(memTransport_->GetStatus());
+    ChannelStatus out = Channel::TransportStatusToChannelStatus(memTransport_->GetStatus());
+    if (out == ChannelStatus::READY) {
+        socketMgr_->PutSocket(socket_);
+        socket_ = nullptr;
+    }
+    return out;
 }
 
 HcclResult AicpuTsP2pChannel::SetModuleDataName(Hccl::ModuleData &module, const std::string &name)

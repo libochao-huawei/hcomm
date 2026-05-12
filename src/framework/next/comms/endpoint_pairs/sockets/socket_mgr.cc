@@ -8,6 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <chrono>
+
 #include "socket_mgr.h"
 #include "../channels/channel.h"
 #include "orion_adpt_utils.h"
@@ -18,6 +20,15 @@
 namespace hcomm {
 
 constexpr uint32_t TempServerListenPort = 60001;    // 临时固定监听端口，用于功能验证
+constexpr u32 SOCKET_GET_TIMEOUT = 2000;
+
+SocketMgr* SocketMgr::instance_ = nullptr;
+
+SocketMgr& SocketMgr::GetInstance()
+{
+    static SocketMgr instance;  // C++11 保证线程安全
+    return instance;
+}
 
 HcclResult SocketMgr::Init()
 {
@@ -129,6 +140,7 @@ HcclResult SocketMgr::CreateSocket(const Hccl::SocketConfig &socketConfig, const
     }
 
     socketMap_[socketConfig] = std::move(tmpSocket);
+    socketInUseMap_[socketConfig] = false;
 
     EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
@@ -136,6 +148,7 @@ HcclResult SocketMgr::CreateSocket(const Hccl::SocketConfig &socketConfig, const
 
 HcclResult SocketMgr::GetSocket(const Hccl::SocketConfig &socketConfig, Hccl::Socket*& socket)
 {
+    std::unique_lock<std::mutex> lock(mutex_);
     CHK_RET(Init());
     // 1. 先查找
     auto it = socketMap_.find(socketConfig);
@@ -145,7 +158,23 @@ HcclResult SocketMgr::GetSocket(const Hccl::SocketConfig &socketConfig, Hccl::So
             socket->Destroy();
             socketMap_.erase(it);
         } else {
+            auto timeoutPoint = std::chrono::steady_clock::now() + 
+                           std::chrono::milliseconds(SOCKET_GET_TIMEOUT);
+            while(socketInUseMap_[socketConfig] == true) {
+                if (socketAvailableCv_.wait_until(lock, timeoutPoint) == std::cv_status::timeout) {
+                    HCCL_ERROR("[SocketMgr][%s] Get Socket Time Out",
+                        __func__);
+                    return HCCL_E_INTERNAL;
+            }
+            }
             socket = it->second.get();
+            if (socketInUseMap_.find(socketConfig) != socketInUseMap_.end()) {
+                socketInUseMap_[socketConfig] = true;
+            } else {
+                HCCL_ERROR("[SocketMgr][%s] CreateSocket succeeded but socket not found in socketInUseMap",
+                        __func__);
+                return HCCL_E_INTERNAL;
+            }
             return HCCL_SUCCESS;
         }
     }
@@ -159,13 +188,34 @@ HcclResult SocketMgr::GetSocket(const Hccl::SocketConfig &socketConfig, Hccl::So
     // 3. 再次查找
     it = socketMap_.find(socketConfig);
     if (it == socketMap_.end()) {
-        HCCL_ERROR("[SocketMgr][%s] CreateSocket succeeded but socket not found",
+        HCCL_ERROR("[SocketMgr][%s] CreateSocket succeeded but socket not found in socketMap",
                    __func__);
         return HCCL_E_INTERNAL;
     }
- 
     socket = it->second.get();
+    if (socketInUseMap_.find(socketConfig) != socketInUseMap_.end()) {
+        socketInUseMap_[socketConfig] = true;
+    } else {
+        HCCL_ERROR("[SocketMgr][%s] CreateSocket succeeded but socket not found in socketInUseMap",
+                   __func__);
+        return HCCL_E_INTERNAL;
+    }
+    
     return HCCL_SUCCESS;
+}
+
+void SocketMgr::PutSocket(Hccl::Socket*& socket)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (auto it = socketMap_.begin(); it != socketMap_.end(); ++it) {
+        if (it->second.get() == socket) {
+            socketInUseMap_[it->first] = false;
+            socketAvailableCv_.notify_all();
+            return;
+        }
+    }
+    HCCL_ERROR("[SocketMgr][%s] socket not found in socketInUseMap",
+                   __func__);
 }
 
 HcclResult SocketMgr::DeleteWhiteList(Hccl::Socket* socket)
@@ -196,9 +246,10 @@ HcclResult SocketMgr::DestroySocket(Hccl::Socket* socket)
         HCCL_WARNING("[DestroySocket] socket is nullptr, nothing to destroy.");
         return HCCL_SUCCESS;
     }
-
     for (auto it = socketMap_.begin(); it != socketMap_.end(); ++it) {
         if (it->second.get() == socket) {
+            HCCL_INFO("[DestroySocket] Erasing socket inuse info with tag[%s] from socketInUseMap.", it->first.GetHccpTag().c_str());
+            socketInUseMap_.erase(it->first);
             HCCL_INFO("[DestroySocket] Erasing socket with tag[%s] from socketMap.", it->first.GetHccpTag().c_str());
             socketMap_.erase(it);
             break;
