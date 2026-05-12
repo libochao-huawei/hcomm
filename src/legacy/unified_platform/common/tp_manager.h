@@ -103,6 +103,7 @@ private:
 
     bool FindAndGetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo);
     void StartGetTpInfoListRequest(const RaUbGetTpInfoParam &param, RequestCtx &reqCtx) const;
+    void StartGetTpAttrForFirstTpDevice(const RaUbGetTpInfoParam &param, RequestCtx &reqCtx);
     HcclResult HandleCompletedRequest(RequestCtx reqCtx, const RaUbGetTpInfoParam &param, TpInfo &tpInfo,
         bool withSlPolicy);
 

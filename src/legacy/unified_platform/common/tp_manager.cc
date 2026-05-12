@@ -27,14 +27,16 @@
 
 namespace Hccl {
 
-namespace {
-
-constexpr uint32_t kGetTpAttrOpcode = 106U;
-constexpr uint32_t kGetTpAttrVersion = 2U;
+// RaGetTpAttrAsync 属性位图常量；匿名命名空间内工具与 TpManager 成员函数共用
 constexpr uint32_t kTpAttrSlAvailableBit = 18U;
 constexpr uint32_t kTpAttrBitmapSl = (1U << 10U);
 constexpr uint32_t kTpAttrBitmapDscp = (1U << 8U);
 constexpr uint32_t kTpAttrDscpConfigModeBit = 19U;
+
+namespace {
+
+constexpr uint32_t kGetTpAttrOpcode = 106U;
+constexpr uint32_t kGetTpAttrVersion = 2U;
 
 static uint32_t CalSlAvailableCnt(uint32_t mask)
 {
@@ -213,33 +215,6 @@ static HcclResult CommitUboeDscpToTpAttr(const uint32_t devPhyId, const IpAddres
     return HcclResult::HCCL_SUCCESS;
 }
 
-static void StartGetTpAttrForFirstTpDevice(uint32_t devPhyId, const RaUbGetTpInfoParam &param,
-    TpManager::RequestCtx &reqCtx)
-{
-    (void)memset_s(&reqCtx.tpAttr, sizeof(reqCtx.tpAttr), 0, sizeof(reqCtx.tpAttr));
-    reqCtx.tpAttrBitmap = (1U << kTpAttrSlAvailableBit) | kTpAttrBitmapSl;
-    if (param.tpProtocol == TpProtocol::UBOE) {
-        reqCtx.tpAttrBitmap |= kTpAttrBitmapDscp | (1U << kTpAttrDscpConfigModeBit);
-    }
-    const struct HccpTpInfo *list = reinterpret_cast<const struct HccpTpInfo *>(reqCtx.dataBuffer.data());
-    const uint64_t firstTpHandle = list[0].tpHandle;
-    const RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().GetByIp(devPhyId, param.locAddr);
-    if (!rdmaHandle) {
-        THROW<InternalException>("[TpManager][%s] can not find rdmaHandle for RaGetTpAttrAsync, devPhyId[%u].",
-            __func__, devPhyId);
-    }
-    void *raReqHandle = nullptr;
-    const s32 ret =
-        RaGetTpAttrAsync(rdmaHandle, firstTpHandle, &reqCtx.tpAttrBitmap, &reqCtx.tpAttr, &raReqHandle);
-    if (ret != 0 || !raReqHandle) {
-        THROW<NetworkApiException>(StringFormat("[TpManager][StartGetTpAttrForFirstTpDevice] RaGetTpAttrAsync failed "
-                                                  "ret[%d] raReqHandle[%p] tpHandle[%llu].",
-            ret, raReqHandle, firstTpHandle));
-    }
-    reqCtx.handle = reinterpret_cast<RequestHandle>(raReqHandle);
-    reqCtx.phase = TpManager::RequestCtx::ReqPhase::WAIT_TP_ATTR;
-}
-
 } // namespace
 
 TpManager& TpManager::GetInstance(const int32_t deviceLogicId)
@@ -343,7 +318,7 @@ HcclResult TpManager::GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo)
             }
             if (DeviceSupportsRaGetTpAttrAsync(devPhyId)) {
                 try {
-                    StartGetTpAttrForFirstTpDevice(devPhyId, param, reqCtx);
+                    StartGetTpAttrForFirstTpDevice(param, reqCtx);
                 } catch (...) {
                     locReqCtxMap.erase(locReqCtxIter);
                     throw;
@@ -440,6 +415,32 @@ void TpManager::StartGetTpInfoListRequest(const RaUbGetTpInfoParam &param,
         return;
     }
     reqCtx.handle = RaUbGetTpInfoAsync(rdmaHandle, param, reqCtx.dataBuffer, reqCtx.tpInfoNum);
+}
+
+void TpManager::StartGetTpAttrForFirstTpDevice(const RaUbGetTpInfoParam &param, RequestCtx &reqCtx)
+{
+    (void)memset_s(&reqCtx.tpAttr, sizeof(reqCtx.tpAttr), 0, sizeof(reqCtx.tpAttr));
+    reqCtx.tpAttrBitmap = (1U << kTpAttrSlAvailableBit) | kTpAttrBitmapSl;
+    if (param.tpProtocol == TpProtocol::UBOE) {
+        reqCtx.tpAttrBitmap |= kTpAttrBitmapDscp | (1U << kTpAttrDscpConfigModeBit);
+    }
+    const struct HccpTpInfo *list = reinterpret_cast<const struct HccpTpInfo *>(reqCtx.dataBuffer.data());
+    const uint64_t firstTpHandle = list[0].tpHandle;
+    const RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().GetByIp(devPhyId, param.locAddr);
+    if (!rdmaHandle) {
+        THROW<InternalException>("[TpManager][%s] can not find rdmaHandle for RaGetTpAttrAsync, devPhyId[%u].",
+            __func__, devPhyId);
+    }
+    void *raReqHandle = nullptr;
+    const s32 ret =
+        RaGetTpAttrAsync(rdmaHandle, firstTpHandle, &reqCtx.tpAttrBitmap, &reqCtx.tpAttr, &raReqHandle);
+    if (ret != 0 || !raReqHandle) {
+        THROW<NetworkApiException>(StringFormat("[TpManager][StartGetTpAttrForFirstTpDevice] RaGetTpAttrAsync failed "
+                                                  "ret[%d] raReqHandle[%p] tpHandle[%llu].",
+            ret, raReqHandle, firstTpHandle));
+    }
+    reqCtx.handle = reinterpret_cast<RequestHandle>(raReqHandle);
+    reqCtx.phase = RequestCtx::ReqPhase::WAIT_TP_ATTR;
 }
 
 inline TpInfo ParseTpInfo(const struct HccpTpInfo *infoPtr)
