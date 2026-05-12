@@ -8,7 +8,7 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 
-if(${PRODUCT_SIDE} STREQUAL "host")
+if(PRODUCT_SIDE STREQUAL "host")
     # 定义 hcomm 库，在 host 侧使用
     include(hcomm.cmake)
 else()

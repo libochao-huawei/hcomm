@@ -11,7 +11,7 @@
 add_subdirectory(new_topo_builder)
 add_subdirectory(rank_info_detect)
 
-if(${PRODUCT_SIDE} STREQUAL "host")
+if(PRODUCT_SIDE STREQUAL "host")
     add_subdirectory(topo_addr_info)
 endif()
 

@@ -91,7 +91,7 @@ set(includes
 )
 
 target_include_directories(net_co PRIVATE ${includes})
-if(${PRODUCT_SIDE} STREQUAL "device")
+if(PRODUCT_SIDE STREQUAL "device")
     target_link_directories(net_co PRIVATE
         ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
     )
