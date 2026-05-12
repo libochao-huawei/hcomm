@@ -42,6 +42,7 @@ public:
     HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char** memTags) override;
     ChannelStatus GetStatus() override;
     HcclResult GetStatus(ChannelStatus &status);
+    HcclResult ProcessStatus();
 
     std::string Describe() const;
 
@@ -148,7 +149,6 @@ private:
     ExchangeRdmaConnDto rmtConnDto_;
     std::vector<std::unique_ptr<HcclMem>> remoteMems{};
     uint32_t wqeNum_{0};
-    std::unique_ptr<SocketMgr> socketMgr_{nullptr};
     bool fenceFlag_{false};
 
     uint64_t maxMsgSize_{0};
