@@ -7,15 +7,15 @@
 
 namespace ccu {
 
-class Buffer final {
+class CcuBuffer final {
 public:
-    explicit Buffer() {}
+    explicit CcuBuffer() {}
 
-    Buffer(const Buffer& other) {
+    CcuBuffer(const CcuBuffer& other) {
         this->handle = other.handle;
     }
 
-    void operator=(Buffer&& other) {
+    void operator=(CcuBuffer&& other) {
         this->handle = other.handle;
     }
 
