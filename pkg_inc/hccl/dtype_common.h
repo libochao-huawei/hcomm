@@ -29,8 +29,7 @@ enum class DevType {
     DEV_TYPE_910_93 = 4,
     DEV_TYPE_NOSOC = 5,
     DEV_TYPE_950 = 6,
-    DEV_TYPE_MC62 = 7,
-    DEV_TYPE_COUNT = 8
+    DEV_TYPE_COUNT = 7
 };
 
 #ifdef __cplusplus
