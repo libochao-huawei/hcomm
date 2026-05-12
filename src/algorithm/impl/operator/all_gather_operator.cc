@@ -266,7 +266,7 @@ bool AllGatherOperator::SmallCountOptimSinglePod(const OpParam& param)
         (deviceNumPerAggregation_ > HCCL_DEVICE_NUM_TWO) && (serverNum_ != 1) && (superPodNum_ == 1) &&
         (((deviceNumPerAggregation_ % HCCL_DEVICE_NUM_FOUR == 0) && (param.DataDes.count * unitSize * serverNum_ <= HCCL_SMALL_COUNT_1_MB)) ||
         ((deviceNumPerAggregation_ % HCCL_DEVICE_NUM_FOUR != 0) && (param.DataDes.count * unitSize * serverNum_ <= HCCL_SMALL_COUNT_512_KB))) &&
-        !dmaReduceLimit && !GetExternalInputInterHccsDisable();
+        !dmaReduceLimit && (!GetExternalInputInterHccsDisable() && useSuperPodMode_);
     return smallCountOptimSingleServer || smallCountOptimMultiServer;
 }
 
@@ -317,7 +317,7 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
 
     bool smallCountOptimSinglePod = SmallCountOptimSinglePod(param);
 
-    bool smallCountOptimMultiPod = (superPodNum_ > 1 || (GetExternalInputInterHccsDisable() && serverNum_ > 1)) &&
+    bool smallCountOptimMultiPod = (superPodNum_ > 1 || ((GetExternalInputInterHccsDisable() || !useSuperPodMode_) && serverNum_ > 1)) &&
         (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_16_KB) && !retryEnable_; // 涉及ROCE平面
     // 多超节点的中等数据量
     bool midCountOptimMultiPod = (superPodNum_ > 1) && isOpbase &&
