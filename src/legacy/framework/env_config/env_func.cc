@@ -620,14 +620,12 @@ HcclAccelerator CastHcclAccelerator(const std::string &s)
         mode = HcclAccelerator::AICPU_TS;
     } else if (s == "AIV" || s == "AIV_ONLY") {
         mode = HcclAccelerator::AIV;
-    } else if (s == "HOST" || s == "HOST_TS") {
-        mode = HcclAccelerator::CCU_SCHED;
-        HCCL_WARNING("do not support %s, use default op expansion mode.", s.c_str());
     } else if (s == "CCU_MS") {
         mode = HcclAccelerator::CCU_MS;
     } else if (s == "CCU_SCHED") {
         mode = HcclAccelerator::CCU_SCHED;
     } else {
+        HCCL_ERROR("Env HCCL_OP_EXPANSION_MODE config do not support %s, it should be one of [AI_CPU, AIV, AIV_ONLY, CCU_MS, CCU_SCHED].", s.c_str());
         THROW<InvalidParamsException>(
             StringFormat("Env HCCL_OP_EXPANSION_MODE config \"%s\" is invalid."
                 "it should be one of [AI_CPU, AIV, AIV_ONLY, CCU_MS, CCU_SCHED].", s.c_str()));

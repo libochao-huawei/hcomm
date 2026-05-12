@@ -32,7 +32,7 @@ HcclResult CcuJettyCtxMgrV1::Alloc(const uint32_t feId, const uint32_t jettyNum,
         HcclResult::HCCL_E_INTERNAL);
 
     std::vector<ResInfo> jettyResInfos; // jettys分配必须要求连续，故返回一个元素
-    ret = allocatorHandle->idAllocator->Alloc(jettyNum, true, jettyResInfos);
+    ret = allocatorHandle->idAllocator->Alloc(jettyNum, true, jettyResInfos, "ResType::Jetty");
     CHK_PRT_RET(ret != HcclResult::HCCL_SUCCESS,
         HCCL_WARNING("[CcuJettyCtxMgrV1][%s] failed, allocator failed to allocate, "
             "devLogicId[%d], dieId[%u], feId[%u].", __func__, devLogicId_, dieId_, feId),

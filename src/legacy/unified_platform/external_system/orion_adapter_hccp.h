@@ -620,7 +620,7 @@ struct SocketEventInfo {
     FdHandle fdHandle;
 };
 
-void HrtRaWaitEventHandle(int event_handle, std::vector<SocketEventInfo> &event_infos, int timeout,
+HcclResult HrtRaWaitEventHandle(int event_handle, std::vector<SocketEventInfo> &event_infos, int timeout,
                           unsigned int maxevents, u32 &events_num);
 void HrtRaGetSecRandom(u32 *value, u32 &devPhyId);
 
