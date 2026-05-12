@@ -31,6 +31,7 @@ constexpr uint64_t MAX_JETTY_WR_DATA_LEN = 256 * 1024 * 1024;  // 256MB
 class HostCpuUrmaChannel : public Channel {
 public:
     HostCpuUrmaChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc);
+    ~HostCpuUrmaChannel();
 
     HcclResult Init() override;
     HcclResult GetNotifyNum(uint32_t *notifyNum) const override;
@@ -72,7 +73,7 @@ private:
 
     // --------------------- 具体成员 ---------------------
     Hccl::Socket*                                               socket_{nullptr};
-    std::unique_ptr<SocketMgr>                                  socketMgr_{nullptr};
+    Hccl::SocketConfig*                                         socketConfig_{nullptr};
     RdmaHandle                                                  rdmaHandle_{nullptr};
     std::unique_ptr<Hccl::UbMemTransport>                       memTransport_{nullptr};
     Hccl::BaseMemTransport::Attribution                         attr_{};
