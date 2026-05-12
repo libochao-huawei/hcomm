@@ -145,10 +145,6 @@ if(BUILD_OPEN_PROJECT)
         -D_GLIBCXX_USE_CXX11_ABI=1
     )
 
-    target_link_directories(ccl_kernel PRIVATE
-        ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
-    )
-
     target_link_libraries(ccl_kernel PRIVATE
         -Wl,--no-as-needed
         ascend_hal

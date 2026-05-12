@@ -121,11 +121,6 @@ if(BUILD_OPEN_PROJECT)
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
     )
-
-    # c_sec、mmpa、unified_dlog动态库搜索路径
-    target_link_directories(rs PRIVATE
-        ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/
-    )
 else()
     target_include_directories(rs PRIVATE
         ${TOP_DIR}/drivers/network/tls_adp
