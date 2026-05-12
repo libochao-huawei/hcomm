@@ -158,6 +158,7 @@ class ClusterMonitor {
 public:
     HcclResult RegisterToClusterMonitor(HcclComm comm);
     HcclResult UnRegisterToClusterMonitor(hccl::CollComm* collComm);
+    HcclResult RegisterEpHandleToClusterMonitor(u32 devPhyId, EndpointHandle epHandle);
     ClusterUIDType FormatUID(ClusterUIDCxt ctxt);
     std::string GetUID(const ClusterUIDType &uid) const;
     std::string FormatConnTag(HcommSocketRole role, std::pair<ClusterUIDType, ClusterUIDType> uidPair);
@@ -190,7 +191,10 @@ private:
     HcclResult CreateTransportHandle(ClusterMonitorSocketCtx &info);
 
     void CreateLinkWithRemotePonit(std::string group, ClusterUIDType rem, ClusterMonitorSocketCtx needConnectRank);
-    
+
+    void PrintUbAsyncEventsContext(u32 devPhyId, const struct AsyncEvent &event);
+    void ProcessUbAsyncEvents();
+
     struct FrameStatus { // 专门用来给frame设置对应的状态
         ClusterMonitorStatus status = ClusterMonitorStatus::CLUSTER_MONITOR_OK;
         ClusterUIDType informer;
@@ -247,6 +251,10 @@ private:
     std::atomic<bool> linkRunningStatus_{false};
 
     ErrorCqeInfo cqeErrInfo_;
+
+    bool isProcessUbAsyncEvents_{true};
+    std::mutex epHandleTableMtx_;
+    std::unordered_map<u32, std::unordered_set<u64>> epHandleTable_;
 };
 } // namespace hcomm
 #endif // CLUSTER_MONITOR_H
