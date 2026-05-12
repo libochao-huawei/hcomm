@@ -125,9 +125,20 @@ HcclResult CcuConnection::StatusMachine()
     return HcclResult::HCCL_SUCCESS;
 }
 
+// 初始化子状态机（仅当 status_ == CcuConnStatus::INIT 时，由 StatusMachine -> 本函数驱动；GetStatus 可多次调用以轮询推进）。
+// 异步约定：某步返回 HCCL_E_AGAIN 表示未完成，保持/设置 innerStatus_ 后 return SUCCESS，外层下轮再进入。
+// 状态与转移：
+//   INIT --GetTpInfo=AGAIN--> TP_INFO_GETTING --下轮 GetTpInfo--> ...
+//   INIT/TP_INFO_GETTING --GetTpInfo 成功--> 写入 mappedJettyPriority 到各 jetty --> JETTY_CREATING
+//   （TP 成功后本函数内 [[fallthrough]]，同一轮继续执行 CreateJetty，等价于原先连续两段逻辑。）
+//   JETTY_CREATING --CreateJetty=AGAIN--> 保持 JETTY_CREATING，下轮只走建 jetty 分支（不再 GetTpInfo）。
+//   JETTY_CREATING --CreateJetty 成功--> EXCHANGEABLE，且 status_ -> EXCHANGEABLE，初始化阶段结束。
+// 其余 innerStatus_ 进入 default，视为非法，ReturnErrorStatus。
 HcclResult CcuConnection::UpdateInitStatus()
 {
-    if (innerStatus_ == InnerStatus::INIT || innerStatus_ == InnerStatus::TP_INFO_GETTING) {
+    switch (innerStatus_) {
+    case InnerStatus::INIT:
+    case InnerStatus::TP_INFO_GETTING: {
         auto ret = GetTpInfo();
         if (ret == HcclResult::HCCL_E_AGAIN) {
             innerStatus_ = InnerStatus::TP_INFO_GETTING;
@@ -141,9 +152,9 @@ HcclResult CcuConnection::UpdateInitStatus()
             jetty->SetMappedJettyPriority(tpInfo_.mappedJettyPriority);
         }
         innerStatus_ = InnerStatus::JETTY_CREATING;
+        [[fallthrough]];
     }
-
-    if (innerStatus_ == InnerStatus::JETTY_CREATING) {
+    case InnerStatus::JETTY_CREATING: {
         auto ret = CreateJetty();
         if (ret == HcclResult::HCCL_E_AGAIN) {
             return HcclResult::HCCL_SUCCESS;
@@ -153,8 +164,9 @@ HcclResult CcuConnection::UpdateInitStatus()
         status_      = CcuConnStatus::EXCHANGEABLE;
         return HcclResult::HCCL_SUCCESS;
     }
-
-    return ReturnErrorStatus(std::string(__func__));
+    default:
+        return ReturnErrorStatus(std::string(__func__));
+    }
 }
 
 HcclResult CcuConnection::CreateJetty()
