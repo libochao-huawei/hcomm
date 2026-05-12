@@ -132,6 +132,26 @@ void DevUbConnection::SetWqInfo(HcclAiRMAWQ &wq)
     memcpy_s(wq.rmtEid, sizeof(wq.rmtEid), rmtEid.raw, sizeof(wq.rmtEid));
 }
 
+void DevUbConnection::SetSqContextInfo(SqContext &sq)
+{
+    sq.contextInfo.ubJfs.jfsID = jettyId;
+    sq.contextInfo.ubJfs.dbVa = dbAddr;
+    sq.contextInfo.ubJfs.sqVa = sqBuffVa;
+    sq.contextInfo.ubJfs.sqDepth = sqDepth * WQE_NUM_PER_SQE;
+    sq.contextInfo.ubJfs.tpID = tpn;
+    memcpy_s(sq.contextInfo.ubJfs.remoteEID, sizeof(sq.contextInfo.ubJfs.remoteEID), rmtEid.raw,
+        sizeof(sq.contextInfo.ubJfs.remoteEID));
+}
+ 
+void DevUbConnection::SetCqContextInfo(CqContext &cq)
+{
+    cq.contextInfo.ubJfc.jfcID = cqInfo_.id;
+    cq.contextInfo.ubJfc.scqVa = cqInfo_.va;
+    cq.contextInfo.ubJfc.cqeSize = cqInfo_.cqeSize;
+    cq.contextInfo.ubJfc.cqDepth = cqInfo_.cqDepth;
+    cq.contextInfo.ubJfc.dbVa = cqInfo_.swdbAddr;
+}
+
 void DevUbConnection::Connect()
 {
     GetStatus();
