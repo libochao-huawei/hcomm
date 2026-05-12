@@ -1522,8 +1522,6 @@ HcclResult TransportManager::GetTransportType(const u32 dstRank, bool isUsedRdma
         if ((!isUsedRdma) && IsSupportInterHccs(dstRank)) {
             // 超节点内节点间走HCCS通信
             transportType = TransportType::TRANS_TYPE_P2P;
-        } else if (GetExternalInputHcclIsTcpMode()) {
-            transportType = TransportType::TRANS_TYPE_HOST_TCP;
         } else {
             transportType = TransportType::TRANS_TYPE_IBV_EXP;
         }
@@ -1560,9 +1558,6 @@ HcclResult TransportManager::TransportInit(const u32 dstRank, MachinePara &machi
             CHK_RET(mulQpinfo_->GetSpecialSourcePortsByIpPair(
                 machinePara.srcPorts, std::make_pair(machinePara.localIpAddr, machinePara.remoteIpAddr)));
         }
-        link.reset(new (std::nothrow) Transport(type, para, dispatcher_, notifyPool_, machinePara));
-    } else if (type == TransportType::TRANS_TYPE_HOST_TCP) {
-        para.nicDeploy = nicDeployment_;
         link.reset(new (std::nothrow) Transport(type, para, dispatcher_, notifyPool_, machinePara));
     } else if (type == TransportType::TRANS_TYPE_DEVICE_DIRECT) {
         bool isEnableMulQp = false;
