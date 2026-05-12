@@ -241,10 +241,10 @@ endfunction()
 # 添加生成version.info的目标
 # 目标名格式为：version_${包名}_info
 function(add_version_info_targets)
-    if(${PRODUCT_SIDE} STREQUAL "host")
-        set(HOST_ONLY "true")
-    else()
+    if(ENABLE_DEVICE)
         set(HOST_ONLY "false")
+    else()
+        set(HOST_ONLY "true")
     endif()
 
     foreach(pkg_name ${CANN_VERSION_PACKAGES})
