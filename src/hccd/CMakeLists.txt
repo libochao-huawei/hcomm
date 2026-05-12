@@ -8,12 +8,38 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 
-if(${PRODUCT_SIDE} STREQUAL "host")
+if(PRODUCT_SIDE STREQUAL "host")
     return()
 endif()
 
 # 定义 hccd 动态链接库，在 device 侧使用
 add_library(hccd SHARED)
+
+# 宏定义
+target_compile_definitions(hccd PRIVATE
+    HCCD
+)
+
+# 编译选项
+target_compile_options(hccd PRIVATE
+    -Werror
+    -Wall
+    -fno-common
+    -fstack-protector-strong
+    -fno-strict-aliasing
+    -pipe
+    -O3
+    -std=c++14
+    $<$<CONFIG:Debug>:-g>
+)
+
+# 链接选项
+target_link_options(hccd PRIVATE
+    -Wl,-z,relro
+    -Wl,-z,now
+    -Wl,-z,noexecstack
+    $<$<CONFIG:Release>:-s>
+)
 
 # 源文件列表
 target_sources(hccd PRIVATE
@@ -56,13 +82,13 @@ target_include_directories(hccd PRIVATE
     ${HCOMM_DIR}/src/pub_inc/inner
     ${HCOMM_DIR}/src/pub_inc/aicpu
 
-    ${HCOMM_DIR}/src/legacy/interface
-
+    # src/common 头文件
     ${HCOMM_DIR}/src/common/health
     ${HCOMM_DIR}/src/common/debug/profiling/inc
     ${HCOMM_DIR}/src/common/debug/profiling/inc/host
     ${HCOMM_DIR}/src/common/debug/config
 
+    # src/framework 头文件
     ${HCOMM_DIR}/src/framework
     ${HCOMM_DIR}/src/framework/inc
     ${HCOMM_DIR}/src/framework/common/src
@@ -86,6 +112,7 @@ target_include_directories(hccd PRIVATE
     ${HCOMM_DIR}/src/framework/next/comms/endpoint_pairs/sockets
     ${HCOMM_DIR}/src/framework/next/comms/comm_engine_res/threads
 
+    # src/platform 头文件
     ${HCOMM_DIR}/src/platform/inc
     ${HCOMM_DIR}/src/platform/inc/adapter
     ${HCOMM_DIR}/src/platform/common
@@ -104,6 +131,7 @@ target_include_directories(hccd PRIVATE
     ${HCOMM_DIR}/src/platform/resource/dispatcher_ctx
     ${HCOMM_DIR}/src/platform/resource/transport/heterog
 
+    # src/algorithm 头文件
     ${HCOMM_DIR}/src/algorithm/pub_inc
     ${HCOMM_DIR}/src/algorithm/impl
     ${HCOMM_DIR}/src/algorithm/impl/inc
@@ -128,39 +156,9 @@ target_include_directories(hccd PRIVATE
     ${HCOMM_DIR}/src/algorithm/base/alg_template
 
     ${HCOMM_DIR}/externel_depends/tsch/
-)
-# 添加 legacy 目录下的头文件搜索路径
-FILE(GLOB_RECURSE LEGACY_SOURCE_LIST LIST_DIRECTORIES TRUE ${HCOMM_DIR}/src/legacy/*)
-foreach(legacy_dir ${LEGACY_SOURCE_LIST})
-    if(IS_DIRECTORY ${legacy_dir})
-        target_include_directories(hccd PRIVATE ${legacy_dir})
-    endif()
-endforeach()
 
-# 定义预处理宏
-target_compile_definitions(hccd PRIVATE
-    HCCD
-)
-
-# 编译选项
-target_compile_options(hccd PRIVATE
-    -Werror
-    -Wall
-    -fno-common
-    -fstack-protector-strong
-    -fno-strict-aliasing
-    -pipe
-    -O3
-    -std=c++14
-    $<$<CONFIG:Debug>:-g>
-)
-
-# 链接选项
-target_link_options(hccd PRIVATE
-    -Wl,-z,relro
-    -Wl,-z,now
-    -Wl,-z,noexecstack
-    $<$<CONFIG:Release>:-s>
+    # src/legacy 头文件
+    ${LEGACY_INCLUDE_LIST}
 )
 
 if(BUILD_OPEN_PROJECT)
