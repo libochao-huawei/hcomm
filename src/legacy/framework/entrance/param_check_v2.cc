@@ -19,6 +19,7 @@
 #include "log.h"
 #include "exception_util.h"
 #include "data_type.h"
+#include "rank_consistentcy_checker.h"
 
 using namespace std;
 using namespace Hccl;
@@ -479,6 +480,9 @@ HcclResult HcomLoadRankTableFileV2(const char *clusterInfo, std::string &rankTab
         HCCL_ERROR("[RankTable]load ranktable failed, file is empty");
         return HCCL_E_PARA;
     }
+
+    CHK_RET(RankConsistentcyChecker::GetInstance().RecordA5RankTableCrc(ranktableM));
+
     return HCCL_SUCCESS;
 }
 

@@ -1288,6 +1288,15 @@ HcclResult HcclCreateSubCommConfig(HcclComm *comm, uint32_t rankNum, uint32_t *r
             CheckCcuMc2CompatMode();
             hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(*comm);
             CHK_PTR_NULL(hcclComm);
+
+            const std::string &parentIdentifier = hcclComm->GetIdentifier();
+            u32 parentCrc = 0;
+            HcclResult crcRet = RankConsistentcyChecker::GetInstance().CalcStringCrc(parentIdentifier.c_str(), parentCrc);
+            CHK_PRT_RET(crcRet != HCCL_SUCCESS,
+                HCCL_ERROR("[HcclCreateSubCommConfig] CalcStringCrc for parentIdentifier failed."), crcRet);
+            // 将子通信域4个参数的CRC记录到A5专用存储
+            CHK_RET(RankConsistentcyChecker::GetInstance().RecordSubCommParaV2(parentCrc, rankNum, rankIds, subCommId));
+
             void* commV2 = hcclComm->GetCommunicatorV2();
             CHK_PTR_NULL(commV2);
             void* subCommV2 = nullptr;
