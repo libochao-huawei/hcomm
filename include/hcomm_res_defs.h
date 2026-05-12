@@ -168,6 +168,11 @@ typedef struct {
     uint64_t size;    ///< 内存区域字节数
 } CommMem;
 
+typedef struct {
+    uint32_t sdid;
+    int32_t pid;
+} HcommMemGrantInfo;
+
 /**
  * @brief 兼容Abi字段结构体
  */

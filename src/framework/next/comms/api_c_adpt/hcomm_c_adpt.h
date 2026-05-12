@@ -42,11 +42,6 @@ typedef CommMem HcommMem;
 
 typedef HcommMemHandle MemHandle;
 
-typedef struct {
-    uint32_t sdid;
-    int32_t pid;
-} HcommMemGrantInfo;
-
 struct CommMemInfo {
     CommMem mem {};
     void* bufferHandle {nullptr};
@@ -92,8 +87,6 @@ extern HcommResult HcommEndpointStopListen(EndpointHandle endpointHandle, uint32
 extern HcommResult HcommChannelGetNotifyNum(ChannelHandle channelHandle, uint32_t *notifyNum);
 
 extern HcommResult HcommChannelGetRemoteMems(ChannelHandle channel, uint32_t *memNum, CommMem **remoteMems, char ***memTags);
-
-extern HcommResult HcommMemGrant(EndpointHandle endpointHandle, const HcommMemGrantInfo *remoteGrantInfo);
 
 HcommResult HcommChannelGet(ChannelHandle channelHandle, void **channel);
 

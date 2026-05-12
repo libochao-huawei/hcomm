@@ -25,6 +25,8 @@ extern HcommResult HcommMemReg(EndpointHandle endpointHandle, const char *memTag
 
 extern HcommResult HcommMemUnreg(EndpointHandle endpointHandle, HcommMemHandle memHandle);
 
+extern HcommResult HcommMemGrant(EndpointHandle endpointHandle, const HcommMemGrantInfo *remoteGrantInfo);
+
 extern HcommResult HcommMemExport(EndpointHandle endpointHandle, HcommMemHandle memHandle, void **memDesc, uint32_t *memDescLen);
 
 extern HcommResult HcommMemImport(EndpointHandle endpointHandle, const void *memDesc, uint32_t descLen, CommMem *outMem);
