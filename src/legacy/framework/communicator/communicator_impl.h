@@ -486,7 +486,7 @@ private:
     std::unordered_map<std::string, std::shared_ptr<Buffer>> offloadScrachBufferMap;
     BinaryStream                                             staticBinaryInfo; // 静态信息序列化流
 
-    CommStatus status{CommStatus::COMM_IDLE}; // 通信域状态
+    std::atomic<CommStatus> status_{CommStatus::COMM_IDLE}; // 通信域状态
     std::vector<u32>                           rankIdsVec; // 子通信域使用：序列化解析
     std::unique_ptr<RankTableInfo>             ranktableInfo;  // 主通信域使用：序列化解析
     std::shared_ptr<TopoInfo>                  topoInfo;  // 主通信域使用：序列化解析
