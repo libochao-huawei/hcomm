@@ -75,7 +75,7 @@ private:
 
 constexpr u32 MAX_MODULE_DEVICE_NUM_V2 = 65;
 extern std::mutex g_communicatorCallbackMapMutexV2;
-extern std::array<map<s32, GetAicpuTaskExceptionCallBackHcomm>, MAX_MODULE_DEVICE_NUM_V2> g_communicatorCallbackMapV2;
+extern std::array<std::map<s32, GetAicpuTaskExceptionCallBackHcomm>, MAX_MODULE_DEVICE_NUM_V2> g_communicatorCallbackMapV2;
 } // namespace hcomm
 
 #endif
