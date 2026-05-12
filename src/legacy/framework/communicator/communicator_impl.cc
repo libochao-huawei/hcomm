@@ -13,6 +13,7 @@
 #include <adapter_error_manager_pub.h>
 #include "orion_adapter_tsd.h"
 #include "orion_adapter_rts.h"
+#include "orion_adapter_hal.h"
 #include "hccl_exception.h"
 #include "null_ptr_exception.h"
 #include "runtime_api_exception.h"
@@ -2430,6 +2431,12 @@ CommunicatorImpl::~CommunicatorImpl()
 {
     HCCL_INFO("[~CommunicatorImpl] start CommunicatorImpl destroy, commId[%s]", id.c_str());
     (void)DestroyDpuKernelResource();
+    (void)DestroyKFCWorkSpaceVA();
+    // 释放
+    if (hostShareBuf != nullptr) {
+        free(hostShareBuf);
+        hostShareBuf = nullptr;
+    }
     g_taskServiceMap.erase(id);
     (void)NotifyAicpuDestroyComm();
     ccuDrvHandle = nullptr;
@@ -2440,12 +2447,6 @@ CommunicatorImpl::~CommunicatorImpl()
 
 HcclResult CommunicatorImpl::DestroyDpuKernelResource()
 {
-    // 释放
-    if (hostShareBuf != nullptr) {
-        free(hostShareBuf);
-        hostShareBuf = nullptr;
-    }
-
     // 终止Dpu Kernel的TaskRun
     if (!isDpuKernelLaunched) {
         return HCCL_SUCCESS;
@@ -2491,28 +2492,27 @@ HcclResult CommunicatorImpl::DestroyDpuKernelResource()
 
 HcclResult CommunicatorImpl::WaitDpuKernelThreadTerminate()
 {
-    if (!IsNeedDpu()) {
+    if (!isDpuKernelLaunched) {
         return HCCL_SUCCESS;
     }
-    auto shMem = GetKFCWorkSpace(DPUTAG);
-    if (shMem == nullptr) {
-        HCCL_ERROR("[CommunicatorImpl::%s] GetKFCWorkSpace failed, shMem is null", __func__);
+    if (accessVA_ == nullptr) {
+        HCCL_ERROR("[CommunicatorImpl::%s] accessVA_ is nullptr", __func__);
         return HCCL_E_MEMORY;
     }
-    uint8_t *dstPtr = reinterpret_cast<uint8_t *>(shMem->GetAddr());
     uint8_t  flag   = DEVICE_SIGNAL_SECOND;
-    auto     ret = aclrtMemcpy(dstPtr, sizeof(flag), &flag, sizeof(flag), aclrtMemcpyKind::ACL_MEMCPY_HOST_TO_DEVICE);
-    if (ret != ACL_SUCCESS) {
-        HCCL_ERROR("Terminate TaskRun Fail");
-        return HCCL_E_RUNTIME;
+    errno_t ret = memcpy_s(accessVA_, sizeof(flag), &flag, sizeof(flag));
+    if (ret != EOK) {
+        HCCL_ERROR("Terminate TaskRun Fail, return[%d]", ret);
+        return HCCL_E_INTERNAL;
     }
     do {
-        if (aclrtMemcpy(&flag, sizeof(flag), dstPtr, sizeof(flag), aclrtMemcpyKind::ACL_MEMCPY_DEVICE_TO_HOST)
-            != ACL_SUCCESS) {
-            HCCL_ERROR("Read Terminate TaskRun Signal Fail");
-            return HCCL_E_RUNTIME;
+        ret = memcpy_s(&flag, sizeof(flag), accessVA_, sizeof(flag));
+        if (ret != EOK) {
+            HCCL_ERROR("Read Terminate TaskRun Signal Fail, return[%d]", ret);
+            return HCCL_E_INTERNAL;
         }
     } while (flag != DEVICE_SIGNAL_THIRD);
+
     return HCCL_SUCCESS;
 }
 
@@ -3241,8 +3241,7 @@ HcclResult CommunicatorImpl::LaunchDpuKernel(aclrtFuncHandle &funcHandle)
     hostArgsTemp.commId     = id;
     hostArgsTemp.memorySize = SHARE_HBM_MEMORY_SIZE;
     hostArgsTemp.hostMem    = hostShareBuf;
-    auto shMem              = GetKFCWorkSpace(DPUTAG);
-    hostArgsTemp.shareHBM = reinterpret_cast<void *>(shMem->GetAddr());
+    hostArgsTemp.shareHBM = accessVA_;
     hostArgsTemp.deviceId = devLogicId;
     HCCL_INFO("[CommunicatorImpl::%s] DpuKernelLaunchParam{commId:%s; memorySize:%u; shareHBM:%p; hostMem:%p}",
               __func__, hostArgsTemp.commId.c_str(), hostArgsTemp.memorySize, hostArgsTemp.shareHBM,
@@ -3266,7 +3265,7 @@ HcclResult CommunicatorImpl::InitAndLaunchDpuKernel()
     // 申请共享内存(需要在npu ctx 下进行)
     bool       newCreate = false;
     uint64_t   memSize   = static_cast<uint64_t>(SHARE_HBM_MEMORY_SIZE);
-    HcclResult memRet    = CreateWorkspaceBuf(DPUTAG, &memSize, &newCreate);
+    HcclResult memRet    = GetKFCWorkSpaceVA(DPUTAG, &memSize, &accessVA_, &newCreate);
     if (memRet != HCCL_SUCCESS) {
         HCCL_ERROR("[CommunicatorImpl::InitCommResource] Alloc Share HBM Failed");
         return HCCL_E_RUNTIME;
@@ -3359,6 +3358,9 @@ HcclResult CommunicatorImpl::GetLocalCclBuffer(void **addr, uint64_t *size)
  
 HcclResult CommunicatorImpl::GetDevMemWorkSpace(const std::string &memTag, uint64_t *size, void **addr, bool *newCreated)
 {
+    if (memTag == DPUTAG) {
+        return GetKFCWorkSpaceVA(memTag, size, addr, newCreated);
+    }
     auto iter = tagWorkspaceMap_.find(memTag);
     if (iter != tagWorkspaceMap_.end()) {
         std::shared_ptr<DevBuffer> oldWorkspace = iter->second;
@@ -3381,6 +3383,94 @@ HcclResult CommunicatorImpl::GetDevMemWorkSpace(const std::string &memTag, uint6
     }
     *addr = reinterpret_cast<void *>(newWorkspace.get()->GetAddr());
     return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CommunicatorImpl::AllocAndRegKFCWorkSpace(uint64_t size)
+{
+    CHK_RET(HrtHalGetDeviceInfo(devLogicId, MODULE_TYPE_SYSTEM, INFO_TYPE_HD_CONNECT_TYPE, &connectType_));
+    accessVA_ = nullptr;
+    drvError_t ret = DRV_ERROR_NONE;
+    if (connectType_ == HOST_DEVICE_CONNECT_TYPE_PCIE) {
+        va_ = HrtMalloc(size, ACL_MEM_TYPE_HIGH_BAND_WIDTH);
+        ret = halHostRegister(va_, size, DEV_SVM_MAP_HOST, devLogicId, &accessVA_);
+    } else if (connectType_ == HOST_DEVICE_CONNECT_TYPE_UB) {
+        va_ = malloc(size);
+        CHK_PTR_NULL(va_);
+        ret = halHostRegister(va_, size, HOST_SVM_MAP_DEV, devLogicId, &accessVA_);
+    } else {
+        return HCCL_E_NOT_SUPPORT;
+    }
+    if (ret != DRV_ERROR_NONE) {
+        HCCL_ERROR("halHostRegister failed, ret: %d, connect type: %ld", ret, connectType_);
+        if (va_ != nullptr) {
+            if (connectType_ == HOST_DEVICE_CONNECT_TYPE_PCIE) {
+                HrtFree(va_);
+            } else if (connectType_ == HOST_DEVICE_CONNECT_TYPE_UB) {
+                free(va_);
+            }
+            va_ = nullptr;
+        }
+        return HCCL_E_DRV;
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult CommunicatorImpl::GetKFCWorkSpaceVA(const std::string &memTag, uint64_t *size, void **addr, bool *newCreated)
+{
+    if (memTag != DPUTAG) {
+        HCCL_ERROR("HcclCommunicator::GetKFCWorkSpaceVA, memTag is invalid, memTag: %s", memTag.c_str());
+        return HCCL_E_PARA;
+    }
+    auto iter = tagWorkspaceVAMap_.find(memTag);
+    if (iter != tagWorkspaceVAMap_.end()) {
+        std::shared_ptr<DevBuffer> oldWorkspace = iter->second;
+        if (*size != static_cast<uint64_t>(oldWorkspace.get()->GetSize())) {
+            HCCL_ERROR("HcclCommunicator::GetKFCWorkSpaceVA, The size of oldWorkspace %p is non-consistent, target size compare now size: %llu->%llu", *addr, *size, oldWorkspace.get()->GetSize());
+            return HCCL_E_PARA;
+        }
+        *addr = reinterpret_cast<void *>(oldWorkspace.get()->GetAddr());
+        if (newCreated != nullptr) {
+            *newCreated = false;
+        }
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    CHK_RET(AllocAndRegKFCWorkSpace(*size));
+    shared_ptr<DevBuffer> newWorkspace = DevBuffer::Create(reinterpret_cast<uintptr_t>(accessVA_), *size);
+    tagWorkspaceVAMap_.insert(make_pair(memTag, newWorkspace));
+    if (newCreated != nullptr) {
+        *newCreated = true;
+    }
+    *addr = reinterpret_cast<void *>(newWorkspace.get()->GetAddr());
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CommunicatorImpl::DestroyKFCWorkSpaceVA()
+{
+    if (accessVA_ == nullptr && va_ == nullptr) {
+        return HCCL_SUCCESS;
+    }
+
+    // 必须先halHostUnregister解除映射，再释放设备内存，否则HrtFree会因内存被pin住而异常
+    if (accessVA_ != nullptr) {
+        drvError_t drvRet = halHostUnregister(accessVA_, devLogicId);
+        if (drvRet != DRV_ERROR_NONE) {
+            HCCL_ERROR("halHostUnregister failed, drvRet[%d]", drvRet);
+        }
+    }
+
+    if (va_ != nullptr) {
+        if (connectType_ == HOST_DEVICE_CONNECT_TYPE_PCIE) {
+            DECTOR_TRY_CATCH("KFCWorkSpace", HrtFree(va_));
+        } else if (connectType_ == HOST_DEVICE_CONNECT_TYPE_UB) {
+            free(va_);
+        }
+    }
+
+    va_ = nullptr;
+    accessVA_ = nullptr;
+    tagWorkspaceVAMap_.erase(DPUTAG);
+    return HCCL_SUCCESS;
 }
  
 HcclResult CommunicatorImpl::GetAicpuOpStreamNotify(rtStream_t *opStream, u8 aicpuNotifyNum, void** aicpuNotify) const
