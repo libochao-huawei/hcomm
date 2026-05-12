@@ -99,16 +99,6 @@ IF (DEFINED ENV{HCCL_LOCAL_BUILD})
         ${TOP_DIR}/inc/external/
     )
 
-    target_link_directories(hccl_v2_stest PRIVATE
-        ${TOP_DIR}/llt/third_party/googletest/lib/4.9
-        ${TOP_DIR}/llt/third_party/mockcpp/4.9/lib
-        ${TOP_DIR}/ace/comop/inc/
-        ${TOP_DIR}/ace/comop/inc/hccl/
-        ${TOP_DIR}/ace/comop/inc/external/
-        ${TOP_DIR}/ace/comop/inc/external/hccl
-        ${TOP_DIR}/inc/external/
-    )
-
     target_link_libraries(hccl_v2_stest PRIVATE
             $<BUILD_INTERFACE:hccl_headers>
             hccl_st_fwk
