@@ -706,6 +706,150 @@ TEST_F(ExternalInputTest, ut_external_input_env_variables_RdmaRetryCnt)
     unsetenv("HCCL_RDMA_RETRY_CNT");
 }
 
+TEST_F(ExternalInputTest, ut_external_input_env_variables_UboeTimeOut)
+{
+    u32 uboeTimeOut;
+    HcclResult ret;
+    ret = InitEnvVarParam();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    uboeTimeOut = GetExternalInputUboeTimeOut();
+    HCCL_INFO("the uboeTimeOut is %d", uboeTimeOut);
+    uboeTimeOut == EnvConfig::HCCL_UBOE_TIMEOUT_DEFAULT ? ret = HCCL_SUCCESS : ret = HCCL_E_PARA;
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    setenv("HCCL_UBOE_TIMEOUT", "0xffffffff", 1);
+    ret = InitEnvVarParam();
+    EXPECT_EQ(ret, HCCL_E_PARA);
+
+    setenv("HCCL_UBOE_TIMEOUT", "0x5a5a", 1);
+    ret = InitEnvVarParam();
+    EXPECT_EQ(ret, HCCL_E_PARA);
+
+    setenv("HCCL_UBOE_TIMEOUT", "this is a test", 1);
+    ret = InitEnvVarParam();
+    EXPECT_EQ(ret, HCCL_E_PARA);
+
+    setenv("HCCL_UBOE_TIMEOUT", "32", 1);
+    ret = InitEnvVarParam();
+    EXPECT_EQ(ret, HCCL_E_PARA);
+
+    uboeTimeOut = GetExternalInputUboeTimeOut();
+    HCCL_INFO("the uboeTimeOut is %d", uboeTimeOut);
+    uboeTimeOut == EnvConfig::HCCL_UBOE_TIMEOUT_DEFAULT ? ret = HCCL_SUCCESS : ret = HCCL_E_PARA;
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    setenv("HCCL_UBOE_TIMEOUT", "0", 1);
+    ret = InitEnvVarParam();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    uboeTimeOut = GetExternalInputUboeTimeOut();
+    HCCL_INFO("the uboeTimeOut is %d", uboeTimeOut);
+    uboeTimeOut == 0 ? ret = HCCL_SUCCESS : ret = HCCL_E_PARA;
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    setenv("HCCL_UBOE_TIMEOUT", "31", 1);
+    ret = InitEnvVarParam();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    uboeTimeOut = GetExternalInputUboeTimeOut();
+    HCCL_INFO("the uboeTimeOut is %d", uboeTimeOut);
+    uboeTimeOut == 31 ? ret = HCCL_SUCCESS : ret = HCCL_E_PARA;
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    setenv("HCCL_UBOE_TIMEOUT", "20", 1);
+    ret = InitEnvVarParam();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    uboeTimeOut = GetExternalInputUboeTimeOut();
+    HCCL_INFO("the uboeTimeOut is %d", uboeTimeOut);
+    uboeTimeOut == 20 ? ret = HCCL_SUCCESS : ret = HCCL_E_PARA;
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    setenv("HCCL_UBOE_TIMEOUT", "16", 1);
+    ret = InitEnvVarParam();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    uboeTimeOut = GetExternalInputUboeTimeOut();
+    HCCL_INFO("the uboeTimeOut is %d", uboeTimeOut);
+    uboeTimeOut == EnvConfig::HCCL_UBOE_TIMEOUT_DEFAULT ? ret = HCCL_SUCCESS : ret = HCCL_E_PARA;
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    unsetenv("HCCL_UBOE_TIMEOUT");
+}
+
+TEST_F(ExternalInputTest, ut_external_input_env_variables_UbTimeOut)
+{
+    u32 ubTimeOut;
+    HcclResult ret;
+    ret = InitEnvVarParam();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    ubTimeOut = GetExternalInputUBTimeOut();
+    HCCL_INFO("the ubTimeOut is %d", ubTimeOut);
+    ubTimeOut == EnvConfig::HCCL_UB_TIMEOUT_DEFAULT ? ret = HCCL_SUCCESS : ret = HCCL_E_PARA;
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    setenv("HCCL_UB_TIMEOUT", "0xffffffff", 1);
+    ret = InitEnvVarParam();
+    EXPECT_EQ(ret, HCCL_E_PARA);
+
+    setenv("HCCL_UB_TIMEOUT", "0x5a5a", 1);
+    ret = InitEnvVarParam();
+    EXPECT_EQ(ret, HCCL_E_PARA);
+
+    setenv("HCCL_UB_TIMEOUT", "this is a test", 1);
+    ret = InitEnvVarParam();
+    EXPECT_EQ(ret, HCCL_E_PARA);
+
+    setenv("HCCL_UB_TIMEOUT", "32", 1);
+    ret = InitEnvVarParam();
+    EXPECT_EQ(ret, HCCL_E_PARA);
+
+    ubTimeOut = GetExternalInputUBTimeOut();
+    HCCL_INFO("the ubTimeOut is %d", ubTimeOut);
+    ubTimeOut == EnvConfig::HCCL_UB_TIMEOUT_DEFAULT ? ret = HCCL_SUCCESS : ret = HCCL_E_PARA;
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    setenv("HCCL_UB_TIMEOUT", "0", 1);
+    ret = InitEnvVarParam();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    ubTimeOut = GetExternalInputUBTimeOut();
+    HCCL_INFO("the ubTimeOut is %d", ubTimeOut);
+    ubTimeOut == 0 ? ret = HCCL_SUCCESS : ret = HCCL_E_PARA;
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    setenv("HCCL_UB_TIMEOUT", "31", 1);
+    ret = InitEnvVarParam();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    ubTimeOut = GetExternalInputUBTimeOut();
+    HCCL_INFO("the ubTimeOut is %d", ubTimeOut);
+    ubTimeOut == 31 ? ret = HCCL_SUCCESS : ret = HCCL_E_PARA;
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    setenv("HCCL_UB_TIMEOUT", "15", 1);
+    ret = InitEnvVarParam();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    ubTimeOut = GetExternalInputUBTimeOut();
+    HCCL_INFO("the ubTimeOut is %d", ubTimeOut);
+    ubTimeOut == 15 ? ret = HCCL_SUCCESS : ret = HCCL_E_PARA;
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    setenv("HCCL_UB_TIMEOUT", "8", 1);
+    ret = InitEnvVarParam();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    ubTimeOut = GetExternalInputUBTimeOut();
+    HCCL_INFO("the ubTimeOut is %d", ubTimeOut);
+    ubTimeOut == EnvConfig::HCCL_UB_TIMEOUT_DEFAULT ? ret = HCCL_SUCCESS : ret = HCCL_E_PARA;
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    unsetenv("HCCL_UB_TIMEOUT");
+}
+
 TEST_F(ExternalInputTest, ut_external_input_env_variables_masterinfo)
 {
     HcclResult ret;
