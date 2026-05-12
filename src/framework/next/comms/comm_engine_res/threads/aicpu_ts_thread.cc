@@ -211,6 +211,12 @@ void AicpuTsThread::LaunchTask() const
     return;
 }
 
+void AicpuTsThread::TryLaunchTask() const
+{
+    pImpl_->TryLaunchTask();
+    return;
+}
+
 // Local Data Plane Functions
 HcclResult AicpuTsThread::LocalNotifyWait(uint32_t notifyId) const
 {
