@@ -549,7 +549,7 @@ void UbTransportLiteImpl::BatchTransfer(const std::vector<RmaBufferLite> &loc, c
     u32 insNum = loc.size();
     for (u32 i = 0; i < insNum; i++) {
         cfg.cqeEn     = (i == insNum - 1) ? true : false; // 返回最后一个sqe的cqe
-        cfg.placeOdr  = UB_RELAX_ORDER;
+        cfg.placeOdr  = (i == insNum - 1) ? UB_STRONG_ORDER : UB_RELAX_ORDER; // 最后一个要求保序
         cfg.compOrder = UB_NO_COMPLETION;
 
         auto localBuffer  = GetRmaBufSlicelite(loc[i]);
@@ -557,15 +557,21 @@ void UbTransportLiteImpl::BatchTransfer(const std::vector<RmaBufferLite> &loc, c
 
         if (transferOp[i].transType == TransferType::WRITE) {
             if (transferOp[i].reduceIn.reduceOp == ReduceOp::INVALID) {
+                HCCL_INFO("BatchTransfer Write idx=%u, loc[%s], rmt[%s]", i, localBuffer.Describe().c_str(), remoteBuffer.Describe().c_str()); // 调测日志
                 connVec[0]->Write(localBuffer, remoteBuffer, cfg, stream, connOut); // 当前只有一个connection，对应一个jetty
             } else {
+                HCCL_INFO("BatchTransfer WriteReduce idx=%u, loc[%s], rmt[%s], dataType[%s], reduceOp[%s]", i, localBuffer.Describe().c_str(),
+ 	                           remoteBuffer.Describe().c_str(), transferOp[i].reduceIn.dataType.Describe().c_str(), transferOp[i].reduceIn.reduceOp.Describe().c_str()); //调测日志
                 connVec[0]->WriteReduce(transferOp[i].reduceIn.dataType, transferOp[i].reduceIn.reduceOp, localBuffer,
                     stream, remoteBuffer, cfg, connOut);
             }
         } else if (transferOp[i].transType == TransferType::READ) {
             if (transferOp[i].reduceIn.reduceOp == ReduceOp::INVALID) {
+                HCCL_INFO("BatchTransfer Read idx=%u, loc[%s], rmt[%s]", i, localBuffer.Describe().c_str(), remoteBuffer.Describe().c_str()); // 调测日志
                 connVec[0]->Read(localBuffer, remoteBuffer, cfg, stream, connOut); // 当前只有一个connection，对应一个jetty
             } else {
+                HCCL_INFO("BatchTransfer ReadReduce idx=%u, loc[%s], rmt[%s], dataType[%s], reduceOp[%s]", i, localBuffer.Describe().c_str(),
+ 	                           remoteBuffer.Describe().c_str(), transferOp[i].reduceIn.dataType.Describe().c_str(), transferOp[i].reduceIn.reduceOp.Describe().c_str()); // 调测日志
                 connVec[0]->ReadReduce(transferOp[i].reduceIn, localBuffer, remoteBuffer, stream, cfg, connOut);
             }
         }
