@@ -42,6 +42,10 @@ AicpuTsHccsChannel::~AicpuTsHccsChannel()
     } catch (...) { }
 
     try {
+        DisableMemAccess();
+    } catch (...) { }
+
+    try {
         DestroyConnection();
     } catch (...) { }
 }
@@ -220,6 +224,44 @@ void AicpuTsHccsChannel::TransportDeInit()
     }
 }
 
+HcclResult AicpuTsHccsChannel::EnableMemAccess()
+{
+    s32 pid;
+    CHK_RET(SalGetBareTgid(&pid));
+    // switch first
+    HcommMemGrantInfo localGrantInfo = {localEp_.loc.device.superDevId, pid};
+    HcommMemGrantInfo remoteGrantInfo = {0};
+    if (isSocketServer_) {
+        CHK_RET(socket_->Recv(&remoteGrantInfo, sizeof(HcommMemGrantInfo)));
+        CHK_RET(socket_->Send(&localGrantInfo, sizeof(HcommMemGrantInfo)));
+    } else {
+        CHK_RET(socket_->Send(&localGrantInfo, sizeof(HcommMemGrantInfo)));
+        CHK_RET(socket_->Recv(&remoteGrantInfo, sizeof(HcommMemGrantInfo)));
+    }
+
+    CHK_RET(localEpPtr_->MemoryEnableP2P(remoteEp_));
+    CHK_RET(localEpPtr_->MemoryGrant(&remoteGrantInfo));
+
+    // need to wait peer grant for me end
+    u32 localGrant = 1;
+    u32 remoteGrant = 1;
+    if (isSocketServer_) {
+        CHK_RET(socket_->Recv(&remoteGrant, sizeof(u32)));
+        CHK_RET(socket_->Send(&localGrant, sizeof(u32)));
+    } else {
+        CHK_RET(socket_->Send(&localGrant, sizeof(u32)));
+        CHK_RET(socket_->Recv(&remoteGrant, sizeof(u32)));
+    }
+    CHK_RET(localEpPtr_->MemoryOpenRemoteIpc());
+    return HCCL_SUCCESS;
+}
+
+void AicpuTsHccsChannel::DisableMemAccess()
+{
+    (void)localEpPtr_->MemoryCloseRemoteIpc();
+    (void)localEpPtr_->MemoryDisableP2P(remoteEp_);
+}
+
 HcclResult AicpuTsHccsChannel::Init()
 {  
     CHK_RET(ParseInputParam());
@@ -228,9 +270,18 @@ HcclResult AicpuTsHccsChannel::Init()
         DestroyConnection();
         return ret;
     }
+
+    ret = EnableMemAccess();
+    if (ret != HCCL_SUCCESS) {
+        DisableMemAccess();
+        DestroyConnection();
+        return ret;
+    }
+
     ret = TransportInit();
     if (ret != HCCL_SUCCESS) {
         TransportDeInit();
+        DisableMemAccess();
         DestroyConnection();
         return ret;
     }

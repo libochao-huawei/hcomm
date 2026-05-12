@@ -340,11 +340,6 @@ HcommResult HcommMemUnimport(EndpointHandle endpointHandle, const void *memDesc,
 HcommResult HcommMemGrant(EndpointHandle endpointHandle, const HcommMemGrantInfo *remoteGrantInfo)
 {
     CHK_PTR_NULL(remoteGrantInfo);
-    HCCL_INFO("[%s] START. endpointHandle[0x%llx].",__func__, endpointHandle);
-    auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
-    CHK_PRT_RET(endpoint == nullptr, HCCL_ERROR("[%s] endpoint not found, endpointHandle[0x%llx]",
-        __func__, endpointHandle), HCCL_E_NOT_FOUND);
-    CHK_RET(endpoint->MemoryGrant(remoteGrantInfo));
     return HCCL_SUCCESS;
 }
 
