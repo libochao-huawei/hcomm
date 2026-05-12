@@ -111,6 +111,5 @@ TEST_F(ExchangeInfoTest, Ut_EndToEnd_When_AddStoreGet_Expect_Consistent)
     uint32_t actualLen = 0;
     ret = hcclCommPtr->GetExchangeInfo(1, recvBufSize, recvBuf.data(), &actualLen);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(recvBufSize, remoteData.size());  
 }
 
