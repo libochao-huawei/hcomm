@@ -549,7 +549,7 @@ void UbTransportLiteImpl::BatchTransfer(const std::vector<RmaBufferLite> &loc, c
     u32 insNum = loc.size();
     for (u32 i = 0; i < insNum; i++) {
         cfg.cqeEn     = (i == insNum - 1) ? true : false; // 返回最后一个sqe的cqe
-        cfg.placeOdr  = UB_RELAX_ORDER;
+        cfg.placeOdr  = (i == insNum - 1) ? UB_STRONG_ORDER : UB_RELAX_ORDER; // 最后一个要求保序
         cfg.compOrder = UB_NO_COMPLETION;
 
         auto localBuffer  = GetRmaBufSlicelite(loc[i]);
