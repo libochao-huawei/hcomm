@@ -405,7 +405,7 @@ HcclResult CcuComponent::CreateAndImportLoopJettys(const uint8_t dieId, const Ip
         const auto jettyMode = HrtJettyMode::CCU_CCUM_CACHE; // 当前仅支持该模式
         const HrtRaUbCreateJettyParam req{jfcHandle, jfcHandle, ccuBufTokenValue,
             tokenIdHandle, jettyMode, jettyInfo.taJettyId, jettyInfo.sqBufVa,
-            jettyInfo.sqBufSize, jettyInfo.wqeBBStartId, jettyInfo.sqDepth};
+            jettyInfo.sqBufSize, jettyInfo.wqeBBStartId, jettyInfo.sqDepth, 8};
         auto createdOutParam = HrtRaUbCreateJetty(rdmaHandle, req);
         createdVec.emplace_back(createdOutParam);
 
