@@ -25,6 +25,7 @@
 #include "rdma_handle_manager.h"
 #include "orion_adapter_rts.h"
 #include "orion_adapter_hccp.h"
+#include "env_config.h"
 
 namespace hcomm {
 
@@ -124,32 +125,98 @@ HcclResult CcuConnection::StatusMachine()
     return HcclResult::HCCL_SUCCESS;
 }
 
+static uint32_t TaHwValueToMs(uint8_t hwValue)
+{
+    uint8_t gear = hwValue / 8; // 芯片挡位 = 配置值 / 8
+    switch (gear) {
+        case 0: return TA_TIMEOUT_MS_GEAR0; // 512ms
+        case 1: return TA_TIMEOUT_MS_GEAR1; // 1s
+        case 2: return TA_TIMEOUT_MS_GEAR2; // 8s
+        case 3: return TA_TIMEOUT_MS_GEAR3; // 32s
+        default: return TA_TIMEOUT_MS_GEAR2; // 异常兜底 8s
+    }
+}
+
+static uint8_t FindMinTaHwValue(uint32_t tpTotalTimeoutMs)
+{
+    uint8_t finalHwValue = 0;
+
+    // 按挡位从小到大依次判断，找到第一个大于目标时间的挡位
+    if (tpTotalTimeoutMs < TA_TIMEOUT_MS_GEAR0) {
+        finalHwValue = TA_HW_GEAR0_BASE;
+    } else if (tpTotalTimeoutMs < TA_TIMEOUT_MS_GEAR1) {
+        finalHwValue = TA_HW_GEAR1_BASE;
+    } else if (tpTotalTimeoutMs < TA_TIMEOUT_MS_GEAR2) {
+        finalHwValue = TA_HW_GEAR2_BASE;
+    } else {
+        // 超过8s或等于8s，直接使用最大挡位32s
+        finalHwValue = TA_HW_GEAR3_BASE;
+    }
+
+    // 打印调试日志，方便线上定位
+    HCCL_DEBUG("[FindMinTaHwValue] tp_total_timeout[%ums], selected_gear_hw_value[%u]", tpTotalTimeoutMs, finalHwValue);
+    return finalHwValue;
+}
+
+HcclResult CcuConnection::GetTaTimeOut()
+{
+    u8 envValue = EnvConfig::GetExternalInputUBTimeOut();
+    
+    if (tpProtocol_ == TpProtocol::CTP) {
+        errTimeout_ = envValue;
+        return HCCL_SUCCESS;
+    }
+
+    TpHandle tpHandle = tpInfo_.tpHandle;
+    uint32_t envTimeoutMs = TaHwValueToMs(envValue);
+    uint32_t tpTimeOutMs = 0;
+    CHK_RET(TpMgr::GetInstance(devPhyId_).GetTpTotalTimeout(ctxHandle_, tpHandle, tpTimeOutMs));
+
+    if (envTimeoutMs < tpTimeOutMs) {
+        errTimeout_ = FindMinTaHwValue(tpTimeOutMs);
+        HCCL_WARNING("[TaTimeoutFinalDecider] Env timeout [%ums] < TP timeout [%ums]. Auto upgrade TA to "
+                     "hw_val[%u] (%ums).",
+            envTimeoutMs, tpTimeOutMs, errTimeout_, TaHwValueToMs(errTimeout_));
+    } else {
+        // 规则: 否则，直接使用环境变量对应的挡位 (对齐到 0/8/16/24)
+        // 注意：这里我们取环境变量所在挡位的基准值 (例如 env=10 -> 取 8)
+        errTimeout_ = envValue;
+        HCCL_INFO("[TaTimeoutFinalDecider] Env timeout [%ums] >= TP timeout [%ums]. Use env gear base "
+                  "hw_val[%u] (%ums).",
+            envTimeoutMs, tpTimeOutMs, envValue, envTimeoutMs);
+    }
+    return HCCL_SUCCESS;
+}
+
 HcclResult CcuConnection::UpdateInitStatus()
 {
     switch (innerStatus_) {
         case InnerStatus::INIT:
-        case InnerStatus::JETTY_CREATING: {
-            auto ret = CreateJetty();
+        case InnerStatus::TP_INFO_GETTING: {
+            auto ret = GetTpInfo();
             if (ret == HcclResult::HCCL_E_AGAIN) {
-                innerStatus_ = InnerStatus::JETTY_CREATING;
+                innerStatus_ = InnerStatus::TP_INFO_GETTING;
                 break; // 状态不改变退出，下轮状态机进入继续执行
             }
             CHK_RET(ret);
 
-            ret = GetTpInfo(); // 不退出继续调用下个异步接口
+            GetTaTimeOut();
+            ret = CreateJetty(); // 不退出继续调用下个异步接口
             if (ret == HcclResult::HCCL_E_AGAIN) {
-                innerStatus_ = InnerStatus::TP_INFO_GETTING;
+                innerStatus_ = InnerStatus::JETTY_CREATING;
                 break;
             }
             CHK_RET(ret);
-            // 如果有缓存的tp信息，可以直接完成
+
             innerStatus_ = InnerStatus::EXCHANGEABLE;
-            status_      = CcuConnStatus::EXCHANGEABLE;
+            status_ = CcuConnStatus::EXCHANGEABLE;
             break;
         }
-        case InnerStatus::TP_INFO_GETTING: {
-            auto ret = GetTpInfo(); // 不退出继续调用下个异步接口
+        case InnerStatus::JETTY_CREATING: {
+            GetTaTimeOut();
+            auto ret = CreateJetty();
             if (ret == HcclResult::HCCL_E_AGAIN) {
+                innerStatus_ = InnerStatus::JETTY_CREATING;
                 break; // 状态不改变退出，下轮状态机进入继续执行
             }
             CHK_RET(ret);
@@ -173,7 +240,7 @@ HcclResult CcuConnection::CreateJetty()
 
     isJettyCreated_ = true;
     for (size_t i = 0; i < jettyNum_; i++) {
-        auto ret = ccuJettys_[i]->CreateJetty();
+        auto ret = ccuJettys_[i]->CreateJetty(errTimeout_);
         if (ret == HcclResult::HCCL_E_AGAIN) {
             // 不提供日志避免刷屏
             isJettyCreated_ = isJettyCreated_ && false;

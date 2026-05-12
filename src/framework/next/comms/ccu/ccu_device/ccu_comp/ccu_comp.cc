@@ -25,6 +25,9 @@
 #include "adapter_rts_common.h"
 #include "ccu_error_info_v1.h"
 #include "orion_adapter_hccp.h"
+#include "env_config.h"
+#include "exception_util.h"
+#include "hcomm_adapter_hccp.h"
 
 namespace hcomm {
 
@@ -407,6 +410,39 @@ JettyImportCfg GetJettyImportCfg(const TpInfo &tpInfo, const uint32_t &psn)
     return cfg;
 }
 
+static uint32_t TaHwValueToMs(uint8_t hwValue)
+{
+    uint8_t gear = hwValue / 8; // 芯片挡位 = 配置值 / 8
+    switch (gear) {
+        case 0: return TA_TIMEOUT_MS_GEAR0; // 512ms
+        case 1: return TA_TIMEOUT_MS_GEAR1; // 1s
+        case 2: return TA_TIMEOUT_MS_GEAR2; // 8s
+        case 3: return TA_TIMEOUT_MS_GEAR3; // 32s
+        default: return TA_TIMEOUT_MS_GEAR2; // 异常兜底 8s
+    }
+}
+
+static uint8_t FindMinTaHwValue(uint32_t tpTotalTimeoutMs)
+{
+    uint8_t finalHwValue = 0;
+
+    // 按挡位从小到大依次判断，找到第一个大于目标时间的挡位
+    if (tpTotalTimeoutMs < TA_TIMEOUT_MS_GEAR0) {
+        finalHwValue = TA_HW_GEAR0_BASE;
+    } else if (tpTotalTimeoutMs < TA_TIMEOUT_MS_GEAR1) {
+        finalHwValue = TA_HW_GEAR1_BASE;
+    } else if (tpTotalTimeoutMs < TA_TIMEOUT_MS_GEAR2) {
+        finalHwValue = TA_HW_GEAR2_BASE;
+    } else {
+        // 超过8s或等于8s，直接使用最大挡位32s
+        finalHwValue = TA_HW_GEAR3_BASE;
+    }
+
+    // 打印调试日志，方便线上定位
+    HCCL_DEBUG("[FindMinTaHwValue] tp_total_timeout[%ums], selected_gear_hw_value[%u]", tpTotalTimeoutMs, finalHwValue);
+    return finalHwValue;
+}
+
 HcclResult CcuComponent::CreateAndImportLoopJettys(const uint8_t dieId,
     const CommAddr &commAddr, const std::vector<JettyInfo> &jettyInfos)
 {
@@ -432,23 +468,46 @@ HcclResult CcuComponent::CreateAndImportLoopJettys(const uint8_t dieId,
     auto &createdVec = createdOutParamMap_[dieId];
     auto &importedVec = importedOutParamMap_[dieId];
     for (const auto &jettyInfo : jettyInfos) {
-        const auto jettyMode = HrtJettyMode::CCU_CCUM_CACHE; // 当前仅支持该模式
-        const HrtRaUbCreateJettyParam req{jfcHandle, jfcHandle, ccuBufTokenValue,
-            tokenIdHandle, jettyMode, jettyInfo.taJettyId, jettyInfo.sqBufVa,
-            jettyInfo.sqBufSize, jettyInfo.wqeBBStartId, jettyInfo.sqDepth};
-        
-        HrtRaUbJettyCreatedOutParam createdOutParam{};
-        CHK_RET(HccpUbCreateJetty(ctxHandle, req, createdOutParam));
-        createdVec.emplace_back(createdOutParam);
-
+        // 创建TpInfo
         TpInfo tpInfo{};
         CHK_RET(GetLoopTpInfo(dieId, commAddr, tpInfo));
         const auto psn = GetNewPsn();
         const auto jettyImportCfg = GetJettyImportCfg(tpInfo, psn);
+        TpHandle tpHandle = tpInfo.tpHandle;
+
+        u8 errTimeout = EnvConfig::HCCL_UB_TIMEOUT_DEFAULT;
+        u8 envValue = EnvConfig::GetExternalInputUBTimeOut();
+        uint32_t envTimeoutMs = TaHwValueToMs(envValue);
+        uint32_t tpTimeOutMs = 0;
+        CHK_RET(TpMgr::GetInstance(devPhyId_).GetTpTotalTimeout(ctxHandle, tpHandle, tpTimeOutMs));
+
+        if (envTimeoutMs < tpTimeOutMs) {
+            // 规则: 如果环境变量时间 < TP总超时，选择大于TP总超时的最小TA挡位
+            errTimeout = FindMinTaHwValue(tpTimeOutMs);
+            HCCL_WARNING(
+                "[TaTimeoutFinalDecider] Env timeout [%ums] < TP timeout [%ums]. Auto upgrade TA to hw_val[%u] (%ums).",
+                envTimeoutMs, tpTimeOutMs, errTimeout, TaHwValueToMs(errTimeout));
+        } else {
+            // 规则: 否则，直接使用环境变量对应的挡位 (对齐到 0/8/16/24)
+            // 注意：这里我们取环境变量所在挡位的基准值 (例如 env=10 -> 取 8)
+            errTimeout = envValue;
+            HCCL_INFO(
+                "[TaTimeoutFinalDecider] Env timeout [%ums] >= TP timeout [%ums]. Use env gear base hw_val[%u] (%ums).",
+                envTimeoutMs, tpTimeOutMs, envValue, envTimeoutMs);
+        }
+
+        const auto jettyMode = HrtJettyMode::CCU_CCUM_CACHE; // 当前仅支持该模式
+        const HrtRaUbCreateJettyParam req{jfcHandle, jfcHandle, ccuBufTokenValue, tokenIdHandle, jettyMode,
+            jettyInfo.taJettyId, jettyInfo.sqBufVa, jettyInfo.sqBufSize, jettyInfo.wqeBBStartId, jettyInfo.sqDepth,
+            errTimeout};
+
+        HrtRaUbJettyCreatedOutParam createdOutParam{};
+        CHK_RET(HccpUbCreateJetty(ctxHandle, req, createdOutParam));
+        createdVec.emplace_back(createdOutParam);
 
         HrtRaUbJettyImportedOutParam importedOutParam{};
-        CHK_RET(HccpUbTpImportJetty(ctxHandle, createdOutParam.key,
-            createdOutParam.keySize, ccuBufTokenValue, jettyImportCfg, importedOutParam));
+        CHK_RET(HccpUbTpImportJetty(ctxHandle, createdOutParam.key, createdOutParam.keySize, ccuBufTokenValue,
+            jettyImportCfg, importedOutParam));
         importedVec.emplace_back(std::make_pair(ctxHandle, importedOutParam));
     }
 
