@@ -213,6 +213,24 @@ void Socket::ConnectAsync()
     return;
 }
 
+bool Socket::ISend(void *data, u64 size, u64& compSize) const
+{
+    compSize = size;
+    return true;
+}
+
+HcclResult Socket::ISendWithHeart(void *data, u64 size, u64& compSize) const
+{ 
+    compSize = size;
+    return HCCL_SUCCESS;
+}
+
+HcclResult Socket::IRecvWithHeart(void *data, u64 size, u64& compSize) const
+{ 
+    compSize = size;
+    return HCCL_SUCCESS;
+}
+ 
 void Socket::SendAsync(const u8 *sendBuf, u32 size)
 {
     return;
@@ -2268,6 +2286,9 @@ void CheckCollOperator(const CollOperator &localOpData, const CollOperator &remo
 {
     (void)localOpData;
     (void)remoteOpData;
+HcclResult HcclCommunicator::GetRankGraphV2(void *&rankGraph)
+{
+    return HCCL_SUCCESS;
 }
 
 } // namespace Hccl
