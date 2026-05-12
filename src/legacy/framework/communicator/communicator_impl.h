@@ -232,6 +232,9 @@ public:
     HcclResult GetLocalCclBuffer(void **addr, uint64_t *size);
     HcclResult GetDevMemWorkSpace(const std::string &memTag, uint64_t *size, void **addr, bool *newCreated);
     HcclResult CreateWorkspaceBuf(const char *memTag, uint64_t *size, bool *newCreated);
+    HcclResult AllocAndRegKFCWorkSpace(uint64_t size);
+    HcclResult GetKFCWorkSpaceVA(const std::string &memTag, uint64_t *size, void **addr, bool *newCreated);
+    HcclResult DestroyKFCWorkSpaceVA();
 
     bool IsWorldGroup() const;
 
@@ -479,6 +482,10 @@ private:
     bool isFirstBarrier = true;
     // Dpu Kernel Launch 申请的共享内存
     void* hostShareBuf{nullptr};
+    void* va_{nullptr};
+    void* accessVA_{nullptr};
+    int64_t connectType_{0};
+    std::unordered_map<std::string, std::shared_ptr<DevBuffer>> tagWorkspaceVAMap_;
     aclrtStream dpuStream;
     aclrtContext dpuContext;
     aclrtContext npuContext;
@@ -486,7 +493,7 @@ private:
     std::unordered_map<std::string, std::shared_ptr<Buffer>> offloadScrachBufferMap;
     BinaryStream                                             staticBinaryInfo; // 静态信息序列化流
 
-    CommStatus status{CommStatus::COMM_IDLE}; // 通信域状态
+    std::atomic<CommStatus> status_{CommStatus::COMM_IDLE}; // 通信域状态
     std::vector<u32>                           rankIdsVec; // 子通信域使用：序列化解析
     std::unique_ptr<RankTableInfo>             ranktableInfo;  // 主通信域使用：序列化解析
     std::shared_ptr<TopoInfo>                  topoInfo;  // 主通信域使用：序列化解析

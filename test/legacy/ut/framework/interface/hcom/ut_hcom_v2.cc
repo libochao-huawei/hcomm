@@ -2095,7 +2095,7 @@ void ExecuteHcomSelectV2Success(AcceleratorState accelerator = AcceleratorState:
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm = commInfoV2.pComm;
     hcclComm->pimpl->myRank = 0;
     hcclComm->pimpl->rankSize = 2;
-    hcclComm->pimpl->status = CommStatus::COMM_READY;
+    hcclComm->pimpl->SetCommStatus(CommStatus::COMM_READY);
     hcclComm->pimpl->commExecuteConfig.accState = accelerator;
 
     s64 comm = reinterpret_cast<s64>(hcclComm.get());
@@ -2148,7 +2148,7 @@ TEST_F(HcomTest, ut_HcomGraphSelectAlgV2_When_UnNormal_Expect_ReturnError)
 
     auto& commInfoV2 = CommManager::GetInstance(0).GetCommInfoV2();
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm = commInfoV2.pComm;
-    hcclComm->pimpl->status = CommStatus::COMM_READY;
+    hcclComm->pimpl->SetCommStatus(CommStatus::COMM_READY);
 
     s64 comm = reinterpret_cast<s64>(hcclComm.get());
     char group[256] = "hccl_world_group";
@@ -2166,11 +2166,11 @@ TEST_F(HcomTest, ut_HcomGraphSelectAlgV2_When_UnNormal_Expect_ReturnError)
     EXPECT_EQ(HCCL_E_NOT_SUPPORT, ret);
 
     opType = HcclCMDType::HCCL_CMD_ALLREDUCE;
-    hcclComm->pimpl->status = CommStatus::COMM_ERROR;
+    hcclComm->pimpl->SetCommStatus(CommStatus::COMM_ERROR);
     ret = HcomGraphSelectAlgV2(comm, group, opType, count, dataType, op, aivCoreLimit, ifAiv, algName);
     EXPECT_EQ(HCCL_E_INTERNAL, ret);
 
-    hcclComm->pimpl->status = CommStatus::COMM_READY;
+    hcclComm->pimpl->SetCommStatus(CommStatus::COMM_READY);
     hcclComm->pimpl->isSuspended = true;
     ret = HcomGraphSelectAlgV2(comm, group, opType, count, dataType, op, aivCoreLimit, ifAiv, algName);
     EXPECT_EQ(HCCL_E_SUSPENDING, ret);
@@ -2191,7 +2191,7 @@ TEST_F(HcomTest, ut_HcomCalcNumBlocksV2_When_Normal_Expect_ReturnHCCL_SUCCESS)
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm = commInfoV2.pComm;
     hcclComm->pimpl->myRank = 0;
     hcclComm->pimpl->rankSize = 2;
-    hcclComm->pimpl->status = CommStatus::COMM_READY;
+    hcclComm->pimpl->SetCommStatus(CommStatus::COMM_READY);
 
     char group[256] = "hccl_world_group";
     HcclCMDType opType = HcclCMDType::HCCL_CMD_ALLREDUCE;
@@ -2219,7 +2219,7 @@ TEST_F(HcomTest, ut_HcclGetAlgExecParamV2_When_Normal_Expect_ReturnHCCL_SUCCESS)
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm = commInfoV2.pComm;
     hcclComm->pimpl->myRank = 0;
     hcclComm->pimpl->rankSize = 2;
-    hcclComm->pimpl->status = CommStatus::COMM_READY;
+    hcclComm->pimpl->SetCommStatus(CommStatus::COMM_READY);
 
     std::string tag = "aivTag";
     char group[256] = "hccl_world_group";
