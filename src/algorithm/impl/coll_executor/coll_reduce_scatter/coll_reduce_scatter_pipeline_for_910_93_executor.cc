@@ -204,13 +204,11 @@ HcclResult CollReduceScatterPipelineFor91093Executor::RunL2Phase(
 void CollReduceScatterPipelineFor91093Executor::SliceExecMemIfNeeded(
     const OpParam &param, ExecMem &execMem)
 {
-    if (CCLMemSlice_) {
-        u32 unitSize = SIZE_TABLE[param.DataDes.dataType];
-        u64 curSize = execMem.count * unitSize;
-        u32 sliceNum = topoAttr_.userRankSize;
-        execMem.inputMem = execMem.inputMem.range(0, curSize * sliceNum);
-        execMem.outputMem = execMem.outputMem.range(0, curSize);
-    }
+    u32 unitSize = SIZE_TABLE[param.DataDes.dataType];
+    u64 curSize = execMem.count * unitSize;
+    u32 sliceNum = topoAttr_.userRankSize;
+    execMem.inputMem = execMem.inputMem.range(0, curSize * sliceNum);
+    execMem.outputMem = execMem.outputMem.range(0, curSize);
 }
 
 // 由 KernelRunLevel0To1、KernelRunLevel2 调用
