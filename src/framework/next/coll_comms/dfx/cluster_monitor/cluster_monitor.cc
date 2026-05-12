@@ -384,6 +384,7 @@ void ClusterMonitor::CreateLinkWithRemotePonit(
             GetUID(myRankUID_).c_str(), GetUID(rem).c_str());
         break;
     }
+    SocketRelease(needConnectRank.socketHandler);
     hrtResetDevice(deviceLogicId_);
 
     HCCL_INFO("[%s] Thread [%s] end...", __func__, threadName.c_str());
