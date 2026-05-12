@@ -2565,6 +2565,9 @@ std::pair<uint32_t, uint32_t> RdmaHandleManager::GetDieAndFuncId(RdmaHandle rdma
 
 HcclResult TpManager::GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo)
 {
+    tpInfo.tpHandle = 1;
+    tpInfo.mappedJettyPriority = static_cast<uint32_t>(param.qos & 0xFU);
+    tpInfo.hasMappedJettyPriority = true;
     return HcclResult::HCCL_SUCCESS;
 }
 

@@ -19,6 +19,7 @@
 #include "hccp_tlv.h"
 #include <mutex>
 #include "hccp_async_ctx.h"
+#include "../../framework/env_config/env_config.h"
 
 namespace Hccl {
 using namespace std;
@@ -593,15 +594,20 @@ using RaUbGetTpInfoParam = struct RaUbGetTpInfoParamDef {
     IpAddress locAddr{};
     IpAddress rmtAddr{};
     TpProtocol tpProtocol{TpProtocol::CTP};
+    /// 与 Next TpMgr 一致：参与 SL→jetty priority 映射（0–7）；默认与 UB_QOS_DEFAULT 一致
+    uint32_t qos{UB_QOS_DEFAULT};
+    uint32_t slLevelCount{0U};
+    bool loopFirstTpLowestSl{false};
 
     explicit RaUbGetTpInfoParamDef() = default;
     RaUbGetTpInfoParamDef(const IpAddress &locAddr, const IpAddress &rmtAddr, TpProtocol tpProtocol)
-        : locAddr(locAddr), rmtAddr(rmtAddr), tpProtocol(tpProtocol){};
+        : locAddr(locAddr), rmtAddr(rmtAddr), tpProtocol(tpProtocol) {}
 
     std::string Describe() const {
-        return StringFormat("RaUbGetTpInfoParam[locAddr=%s, rmtAddr=%s, tpProtocol=%s]",
-            locAddr.Describe().c_str(), rmtAddr.Describe().c_str(),
-            tpProtocol.Describe().c_str());
+        return StringFormat(
+            "RaUbGetTpInfoParam[locAddr=%s, rmtAddr=%s, tpProtocol=%s, qos=%u, loopFirstTpLowestSl=%d]",
+            locAddr.Describe().c_str(), rmtAddr.Describe().c_str(), tpProtocol.Describe().c_str(),
+            static_cast<unsigned>(qos & 0xFFU), static_cast<int>(loopFirstTpLowestSl));
     }
 };
 

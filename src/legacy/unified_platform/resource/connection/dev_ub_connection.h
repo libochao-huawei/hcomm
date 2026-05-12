@@ -90,7 +90,7 @@ protected:
 
 private:
     MAKE_ENUM(UbConnStatus,
-        INIT, TP_INFO_GETTING, JETTY_CREATED,
+        INIT, TP_INFO_GETTING, JETTY_CREATING, JETTY_CREATED,
         JETTY_IMPORTING,
         READY,
         CONN_INVALID);
@@ -108,6 +108,8 @@ private:
     Eid          rmtEid{};
     Eid          locEid{};
     u8           qos_{static_cast<u8>(UB_QOS_DEFAULT)};
+
+    bool         devUsed_{false};
 
     int32_t   devLogicId{0};
     u32       dieId{0};

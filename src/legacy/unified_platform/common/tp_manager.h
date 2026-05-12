@@ -27,6 +27,8 @@ namespace Hccl {
 using TpHandle = uint64_t;
 struct TpInfo {
     TpHandle tpHandle{0};
+    uint32_t mappedJettyPriority{0};
+    bool hasMappedJettyPriority{false};
 
     TpInfo() = default;
     TpInfo(const TpHandle handle)
@@ -64,9 +66,13 @@ private:
     * dataBuffer: 查询到的TP信息数据，原始数据保留缓冲区
     */
     struct RequestCtx {
+        enum class ReqPhase : uint8_t { WAIT_LIST = 0, WAIT_TP_ATTR = 1 };
+        ReqPhase phase{ReqPhase::WAIT_LIST};
         RequestHandle handle{0};
         uint32_t tpInfoNum{0};
         std::vector<char_t> dataBuffer;
+        TpAttr tpAttr{};
+        uint32_t tpAttrBitmap{0};
     };
 
     using InfoCtxMap = std::unordered_map<IpAddress, std::unordered_map<IpAddress, TpInfoCtx>>;
@@ -97,8 +103,8 @@ private:
 
     bool FindAndGetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo);
     void StartGetTpInfoListRequest(const RaUbGetTpInfoParam &param, RequestCtx &reqCtx) const;
-    HcclResult HandleCompletedRequest(const RequestCtx reqCtx, const RaUbGetTpInfoParam &param,
-        TpInfo &tpInfo);
+    HcclResult HandleCompletedRequest(RequestCtx reqCtx, const RaUbGetTpInfoParam &param, TpInfo &tpInfo,
+        bool withSlPolicy);
 
     bool CheckRequestResult(RequestHandle &reqHandle) const;
     InfoCtxMap &GetInfoCtxMap(const TpProtocol tpProtocol);
