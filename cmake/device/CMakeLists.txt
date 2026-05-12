@@ -42,7 +42,7 @@ add_cann_subdirectories_relative(${HCOMM_DIR}
 pack_targets_and_files(
     OUTPUT_TARGET "pack_cann_hcomm_compat"
     OUTPUT "cann-hcomm-compat.tar.gz"
-    TARGETS rs_device ra_adp tls_adp ascend_kms net_co hccp_service.bin
+    TARGETS rs_device ra_adp net_co hccp_service.bin tls_adp ascend_kms
     MANIFEST "hccp_compat_bin_hash.cfg"
 )
 sign_file(
@@ -56,7 +56,7 @@ sign_file(
 pack_targets_and_files(
     OUTPUT_TARGET "pack_cann_hccd_compat"
     OUTPUT "cann-hccd-compat.tar.gz"
-    TARGETS rs ra ra_hdc ra_peer tls_adp ascend_kms hccd
+    TARGETS rs ra ra_hdc ra_peer hccd tls_adp ascend_kms
     MANIFEST "bin_hash.cfg"
     TAR_ROOT_DIR "lib64"
 )
