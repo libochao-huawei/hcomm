@@ -7,7 +7,6 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#include <set>
 #include "my_rank.h"
 #include "hcomm_c_adpt.h"
 #include "hcomm_res.h"
@@ -807,6 +806,11 @@ HcclResult MyRank::BatchExchangeAndCheckConsistency(
     std::vector<u32> remoteRanks;
     std::vector<HcommSocketRole> roles;
 
+    if (channelNum == 0) {
+        HCCL_INFO("[BatchExchangeAndCheckConsistency] channelNum is 0.");
+        return HCCL_SUCCESS;
+    }
+
     for (uint32_t i = 0; i < channelNum; i++) {
         u32 remoteRank = channelDescs[i].remoteRank;
         HcommSocket rawSocket = hcommDescs[i].socket;
@@ -818,11 +822,6 @@ HcclResult MyRank::BatchExchangeAndCheckConsistency(
         sockets.push_back(socket);
         remoteRanks.push_back(remoteRank);
         roles.push_back(hcommDescs[i].role);
-    }
-
-    if (channelNum == 0) {
-        HCCL_INFO("[BatchExchangeAndCheckConsistency] channelNum is 0.");
-        return HCCL_SUCCESS;
     }
 
     // 交换HCCL算子信息 ======

@@ -30,7 +30,6 @@
 
 namespace hccl {
 class hcclComm;
-class Socket;
 
 /**
  * @note 职责：管理当前通信域下本Rank的信息和通信资源
