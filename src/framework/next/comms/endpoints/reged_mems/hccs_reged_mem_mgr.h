@@ -13,6 +13,7 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <list>
 #include "reged_mem_mgr.h"
 #include "rma_buffer_mgr.h"
 #include "buffer_key.h"
@@ -56,12 +57,20 @@ private:
     HcclResult DeleteMemDesc(const void *memDesc, uint32_t descLen,
         std::shared_ptr<hccl::RemoteIpcRmaBuffer> &remoteIpcRmaBuffer);
 private:
+    struct VirtualRegEntry {
+        std::shared_ptr<hccl::LocalIpcRmaBuffer> parentBuffer;
+        uintptr_t childAddr;
+        uint64_t childSize;
+        std::vector<char> exportDesc;
+    };
+
     HcclNetDevCtx netDevCtx_{};
     std::vector<std::shared_ptr<hccl::LocalIpcRmaBuffer>> allRegisteredBuffers_;
     // for MemoryUnimport
     std::unordered_map<uintptr_t, std::shared_ptr<hccl::RemoteIpcRmaBuffer>> remoteIpcRmaBufferDescMgrs_;
     // for read/write with origin addr and len
     RemoteIpcRmaBufferMgr remoteIpcRmaBufferMgr_;
+    std::list<VirtualRegEntry> virtualRegs_;
 };
 }
 

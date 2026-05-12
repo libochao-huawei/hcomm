@@ -35,6 +35,13 @@ public:
     std::unique_ptr<Serializable> GetExchangeDto() override;
     std::pair<uintptr_t, u64> GetBufferInfo() {return std::make_pair(buf->GetAddr(), buf->GetSize());}
 
+    friend class hcomm::UbMemRegedMemMgr;
+
+protected:
+    // tag类型用于区分：不进行IPC注册的构造，用于虚拟子buffer
+    struct NoRegTag {};
+    LocalIpcRmaBuffer(std::shared_ptr<Buffer> buf, NoRegTag) : LocalRmaBuffer(buf, RmaType::IPC) {}
+
 protected:
     char  name[RTS_IPC_MEM_NAME_LEN];
     void *ipcPtr{nullptr};

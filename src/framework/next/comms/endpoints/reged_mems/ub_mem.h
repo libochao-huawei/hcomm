@@ -13,6 +13,7 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <list>
 #include "reged_mem_mgr.h"
 #include "rma_buffer_mgr.h"
 #include "buffer_key.h"
@@ -37,8 +38,15 @@ public:
     HcclResult GetAllMemHandles(void **memHandles, uint32_t *memHandleNum) override;
  
 private:
+    struct VirtualRegEntry {
+        std::shared_ptr<Hccl::LocalIpcRmaBuffer> parentBuffer;
+        uintptr_t childAddr;
+        uint64_t childSize;
+    };
+
     std::unique_ptr<LocalIpcRmaBufferMgr> localIpcRmaBufferMgr_{};
     std::vector<std::shared_ptr<Hccl::LocalIpcRmaBuffer>> allRegisteredBuffers_;
+    std::list<VirtualRegEntry> virtualRegs_;
 };
 }
  

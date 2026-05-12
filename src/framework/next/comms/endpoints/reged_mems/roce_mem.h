@@ -13,6 +13,7 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <list>
 #include "reged_mem_mgr.h"
 #include "rma_buffer_mgr.h"
 #include "buffer_key.h"
@@ -44,9 +45,17 @@ public:
                                         EndpointDesc &endpointDesc, Hccl::ExchangeRdmaBufferDto &dto);
  
 private:
+    struct VirtualRegEntry {
+        std::shared_ptr<Hccl::LocalRdmaRmaBuffer> parentBuffer;
+        uintptr_t childAddr;
+        uint64_t childSize;
+        std::vector<char> exportDesc;
+    };
+
     std::unique_ptr<LocalRdmaRmaBufferMgr> localRdmaRmaBufferMgr_{};
     std::vector<std::shared_ptr<Hccl::LocalRdmaRmaBuffer>> allRegisteredBuffers_;
     std::unordered_map<EndpointDesc, std::unique_ptr<RemoteRdmaRmaBufferMgr>> remoteRdmaRmaBufferMgrs_;
+    std::list<VirtualRegEntry> virtualRegs_;
 };
 }
  

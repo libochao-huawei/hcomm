@@ -301,9 +301,8 @@ bool HostUbConnection::GetTpInfo()
     }
 
     int32_t devLogicId = HrtGetDevice();
-    TpManager::GetInstance(devLogicId).SetIsHost();
     auto ret = TpManager::GetInstance(devLogicId).GetTpInfo(
-        {locAddr, rmtAddr, tpProtocol}, tpInfo);
+        {locAddr, rmtAddr, tpProtocol}, tpInfo, true);
 
     switch (ret) {
         case HcclResult::HCCL_E_AGAIN:

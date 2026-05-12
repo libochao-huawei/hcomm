@@ -48,7 +48,9 @@ public:
 
     std::vector<char> Desc;
 
-private:
+    friend class hcomm::UbRegedMemMgr;
+
+protected:
     RdmaHandle           rdmaHandle{nullptr};
     HcclNetDevice        *netDev{nullptr};
     u8                   key[HRT_UB_MEM_KEY_MAX_LEN]{0};

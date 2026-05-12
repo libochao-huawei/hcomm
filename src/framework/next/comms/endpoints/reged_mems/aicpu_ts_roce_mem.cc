@@ -120,10 +120,47 @@ HcclResult AicpuTsRoceRegedMemMgr::RegisterMemory(HcommMem mem, const char *memT
     std::lock_guard<std::mutex> phyLocalLock(*ctx->mu);
 
     std::shared_ptr<hccl::LocalRdmaRmaBuffer> localRdmaRmaBuffer;
-    HcclResult ret = GetOrCreateLocalRdmaRmaBuffer(netDevCtx, mem, tempKey, localRdmaRmaBuffer);
-    if (ret != HCCL_SUCCESS) {
-        return ret;
+
+    // 检查是否已注册（精确匹配或子集）
+    auto findPair = localRdmaRmaBufferMgr_->Find(tempKey);
+    if (findPair.first) {
+        localRdmaRmaBuffer = findPair.second;
+        CHK_SMART_PTR_NULL(localRdmaRmaBuffer);
+
+        auto parentAddr = reinterpret_cast<uintptr_t>(localRdmaRmaBuffer->GetAddr());
+        auto parentSize = localRdmaRmaBuffer->GetSize();
+        hccl::BufferKey<uintptr_t, u64> parentKey(parentAddr, parentSize);
+
+        if (tempKey == parentKey) {
+            // CASE 1: 精确匹配，增加引用计数
+            HCCL_INFO("[AicpuTsRoceRegedMemMgr][RegisterMemory]Memory {addr[%p], size[%llu]} already registered, "
+                "increase ref count.", mem.addr, mem.size);
+            localRdmaRmaBufferMgr_->Add(tempKey, localRdmaRmaBuffer);
+            TrackRegisteredBuffer(localRdmaRmaBuffer);
+            *memHandle = static_cast<void *>(localRdmaRmaBuffer.get());
+            return HCCL_SUCCESS;
+        }
+
+        // CASE 2: 传入内存被包含于更大的已注册区域，构造虚拟注册
+        HCCL_INFO("[AicpuTsRoceRegedMemMgr][RegisterMemory]Memory {addr[%p], size[%llu]} is within registered region "
+            "{addr[%p], size[%llu]}, create virtual entry.",
+            mem.addr, mem.size, reinterpret_cast<void *>(parentAddr), parentSize);
+
+        localRdmaRmaBufferMgr_->AddWithoutCheck(tempKey, localRdmaRmaBuffer);
+        localRdmaRmaBufferMgr_->AddWithoutCheck(parentKey, localRdmaRmaBuffer);
+
+        virtualRegs_.push_back(
+            {localRdmaRmaBuffer, reinterpret_cast<uintptr_t>(mem.addr), mem.size, {}});
+        *memHandle = static_cast<void *>(&virtualRegs_.back());
+        return HCCL_SUCCESS;
     }
+
+    // CASE 3: 未注册，构造LocalRdmaRmaBuffer
+    hccl::RmaMemType memType = static_cast<hccl::RmaMemType>(mem.type);
+    HCCL_INFO("[AicpuTsRoceRegedMemMgr][RegisterMemory] Find miss, construct LocalRdmaRmaBuffer key {%p, %llu} type[%u]",
+        mem.addr, mem.size, static_cast<unsigned int>(mem.type));
+    EXECEPTION_CATCH((localRdmaRmaBuffer = std::make_shared<hccl::LocalRdmaRmaBuffer>(netDevCtx, mem.addr,
+        static_cast<u64>(mem.size), memType)), return HCCL_E_PTR);
 
     auto resultPair = localRdmaRmaBufferMgr_->Add(tempKey, localRdmaRmaBuffer);
     if (resultPair.first == localRdmaRmaBufferMgr_->End()) {
@@ -136,7 +173,7 @@ HcclResult AicpuTsRoceRegedMemMgr::RegisterMemory(HcommMem mem, const char *memT
     *memHandle = static_cast<void *>(localBuffer.get());
 
     if (resultPair.second) {
-        ret = localBuffer->Init();
+        HcclResult ret = localBuffer->Init();
         if (ret != HCCL_SUCCESS) {
             (void)localRdmaRmaBufferMgr_->Del(tempKey);
             HCCL_ERROR("[AicpuTsRoceRegedMemMgr][RegisterMemory] Init failed, ret[%d]", ret);
@@ -165,6 +202,40 @@ HcclResult AicpuTsRoceRegedMemMgr::UnregisterMemory(void *memHandle)
     std::shared_ptr<LocalBufferMgrCtx> ctx = GetOrCreateLocalBufferMgr(netDevCtx->GetPhyId());
     CHK_PTR_NULL(ctx);
     std::lock_guard<std::mutex> phyLocalLock(*ctx->mu);
+
+    // 检查是否为虚拟注册句柄
+    for (auto it = virtualRegs_.begin(); it != virtualRegs_.end(); ++it) {
+        if (static_cast<void *>(&(*it)) == memHandle) {
+            HCCL_INFO("[AicpuTsRoceRegedMemMgr][UnregisterMemory] Unregister virtual memory {addr[%p], size[%llu]}.",
+                reinterpret_cast<void *>(it->childAddr), it->childSize);
+
+            hccl::BufferKey<uintptr_t, u64> childKey(it->childAddr, it->childSize);
+            bool childDeleted = false;
+            EXECEPTION_CATCH(childDeleted = localRdmaRmaBufferMgr_->Del(childKey), return HCCL_E_NOT_FOUND);
+
+            hccl::BufferKey<uintptr_t, u64> parentKey(
+                reinterpret_cast<uintptr_t>(it->parentBuffer->GetAddr()),
+                it->parentBuffer->GetSize());
+            bool parentDeleted = false;
+            EXECEPTION_CATCH(parentDeleted = localRdmaRmaBufferMgr_->Del(parentKey), return HCCL_E_NOT_FOUND);
+
+            if (parentDeleted) {
+                allRegisteredBuffers_.erase(std::remove_if(allRegisteredBuffers_.begin(), allRegisteredBuffers_.end(),
+                    [parent = it->parentBuffer.get()](const std::shared_ptr<hccl::LocalRdmaRmaBuffer> &p) {
+                        return p.get() == parent;
+                    }), allRegisteredBuffers_.end());
+
+                hcclBufRecords_.erase(std::remove_if(hcclBufRecords_.begin(), hcclBufRecords_.end(),
+                    [parent = it->parentBuffer.get()](const HcclBuf &b) {
+                        return b.handle == static_cast<void *>(parent);
+                    }), hcclBufRecords_.end());
+            }
+
+            virtualRegs_.erase(it);
+            HCCL_INFO("[AicpuTsRoceRegedMemMgr][UnregisterMemory] virtual unregister success");
+            return HCCL_SUCCESS;
+        }
+    }
 
     auto *buffer = static_cast<hccl::LocalRdmaRmaBuffer *>(memHandle);
     hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(buffer->GetAddr()), buffer->GetSize());
@@ -195,6 +266,38 @@ HcclResult AicpuTsRoceRegedMemMgr::MemoryExport(const EndpointDesc endpointDesc,
     CHK_PTR_NULL(memHandle);
     CHK_PTR_NULL(memDesc);
     CHK_PTR_NULL(memDescLen);
+
+    // 检查是否为虚拟注册句柄
+    for (auto &virt : virtualRegs_) {
+        if (static_cast<void *>(&virt) == memHandle) {
+            HCCL_INFO("[AicpuTsRoceRegedMemMgr][MemoryExport] Export virtual memory {addr[%p], size[%llu]}.",
+                reinterpret_cast<void *>(virt.childAddr), virt.childSize);
+
+            auto *parentBuf = virt.parentBuffer.get();
+            CHK_PTR_NULL(parentBuf);
+            std::string &ser = parentBuf->Serialize();
+            if (ser.empty()) {
+                HCCL_ERROR("[AicpuTsRoceRegedMemMgr][MemoryExport] parent Serialize empty");
+                return HCCL_E_INTERNAL;
+            }
+
+            virt.exportDesc.clear();
+            virt.exportDesc.reserve(ser.size() + sizeof(EndpointDesc));
+            virt.exportDesc.insert(virt.exportDesc.end(), ser.begin(), ser.end());
+
+            std::vector<char> ep(sizeof(EndpointDesc));
+            if (memcpy_s(ep.data(), sizeof(EndpointDesc), &endpointDesc, sizeof(EndpointDesc)) != EOK) {
+                HCCL_ERROR("[AicpuTsRoceRegedMemMgr][MemoryExport] endpointDesc memcpy_s failed");
+                return HCCL_E_INTERNAL;
+            }
+            virt.exportDesc.insert(virt.exportDesc.end(), ep.begin(), ep.end());
+
+            *memDesc = static_cast<void *>(virt.exportDesc.data());
+            *memDescLen = static_cast<uint32_t>(virt.exportDesc.size());
+            HCCL_INFO("[AicpuTsRoceRegedMemMgr][MemoryExport] virtual export success memHandle[%p]", memHandle);
+            return HCCL_SUCCESS;
+        }
+    }
 
     auto *buf = reinterpret_cast<hccl::LocalRdmaRmaBuffer *>(memHandle);
     std::string &ser = buf->Serialize();

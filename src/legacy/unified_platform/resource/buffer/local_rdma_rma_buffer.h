@@ -38,7 +38,13 @@ public:
     std::pair<uintptr_t, u64> GetBufferInfo() {return make_pair(buf->GetAddr(), buf->GetSize());}
 
     std::vector<char> Desc;
-    
+
+    friend class hcomm::RoceRegedMemMgr;
+
+protected:
+    // 用于创建虚拟子buffer（共享父buffer的注册信息，不重复注册）
+    LocalRdmaRmaBuffer(std::shared_ptr<Buffer> buf) : LocalRmaBuffer(buf, RmaType::RDMA), rdmaHandle(nullptr) {}
+
 private:
     RdmaHandle rdmaHandle;
     u8         key[RDMA_MEM_KEY_MAX_LEN]{0};

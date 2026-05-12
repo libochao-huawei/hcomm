@@ -11,6 +11,7 @@
 #define AICPU_TS_ROCE_MEM_H
 
 #include <cstring>
+#include <list>
 #include <map>
 #include <memory>
 #include <string>
@@ -58,12 +59,20 @@ private:
     HcclResult AppendLocalNotifyMemDetails(std::vector<RoceMemDetails> &localOut) const;
     void GatherRemoteMemDetails(std::vector<RoceMemDetails> &remoteOut) const;
 
+    struct VirtualRegEntry {
+        std::shared_ptr<hccl::LocalRdmaRmaBuffer> parentBuffer;
+        uintptr_t childAddr;
+        uint64_t childSize;
+        std::vector<char> exportDesc;
+    };
+
     HcclNetDev netDev_{nullptr};
     std::shared_ptr<hccl::NetDevContext::LocalRdmaRmaBufferMgr> localRdmaRmaBufferMgr_{nullptr};
     std::vector<std::shared_ptr<hccl::LocalRdmaRmaBuffer>> allRegisteredBuffers_;
     std::vector<HcclBuf> hcclBufRecords_;
     std::unordered_map<hccl::LocalRdmaRmaBuffer *, std::vector<char>> exportDescByBuffer_;
     std::map<EndpointDesc, std::unique_ptr<RemoteRdmaRmaBufferMgr>, EndpointDescLess> remoteRdmaRmaBufferMgrs_;
+    std::list<VirtualRegEntry> virtualRegs_;
 };
 
 }  // namespace hcomm

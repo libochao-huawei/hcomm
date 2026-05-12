@@ -33,31 +33,59 @@ HcclResult UbRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void 
     CHK_PTR_NULL(memHandle);
     CHK_PTR_NULL(mem.addr);
     CHK_PRT_RET(mem.size == 0, HCCL_ERROR("[%s] mem size is zero", __func__), HCCL_E_PARA);
-    CHK_PRT_RET(mem.type == COMM_MEM_TYPE_INVALID, 
+    CHK_PRT_RET(mem.type == COMM_MEM_TYPE_INVALID,
         HCCL_ERROR("[%s] invalid mem type [%d]", __func__, mem.type), HCCL_E_PARA);
 
     std::shared_ptr<Hccl::LocalUbRmaBuffer> localUbRmaBuffer = nullptr;
 
     // LocalUbRmaBuffer构造函数存在注册动作，在调用该构造函数前需检查是否注册过
     hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(mem.addr), mem.size);
-    auto findPair = localUbRmaBufferMgr_->DirectFind(tempKey);
-    if(findPair.first) {
+    auto findPair = localUbRmaBufferMgr_->Find(tempKey);
+    if (findPair.first) {
         localUbRmaBuffer = findPair.second;
-    } else {
-        // 构造LocalUbRmaBuffer
-        std::shared_ptr<Hccl::Buffer> localBufferPtr = nullptr;
-        EXECEPTION_CATCH((localBufferPtr = std::make_shared<Hccl::Buffer>(reinterpret_cast<uintptr_t>(mem.addr),
-            mem.size, static_cast<HcclMemType>(mem.type), memTag)),
-            return HCCL_E_PTR);
 
-        if (memTag && (strcmp(memTag, "HcclBuffer") == 0)) {
-            EXECEPTION_CATCH((localUbRmaBuffer = std::make_shared<Hccl::LocalUbRmaBuffer>(localBufferPtr)),
-                return HCCL_E_PTR);
+        auto parentAddr = localUbRmaBuffer->GetAddr();
+        auto parentSize = static_cast<uint64_t>(localUbRmaBuffer->GetSize());
+        hccl::BufferKey<uintptr_t, u64> parentKey(parentAddr, parentSize);
+
+        if (tempKey == parentKey) {
+            // CASE 1: 精确匹配，增加引用计数
+            HCCL_INFO("[UbRegedMemMgr][RegisterMemory]Memory {addr[%p], size[%llu]} already registered, increase ref count.",
+                mem.addr, mem.size);
+            auto resultPair = localUbRmaBufferMgr_->AddWithoutCheck(parentKey, localUbRmaBuffer);
+            std::shared_ptr<Hccl::LocalUbRmaBuffer> &localBuffer = resultPair.first->second.buffer;
+            CHK_SMART_PTR_NULL(localBuffer);
+            *memHandle = static_cast<void *>(localBuffer.get());
+            return HCCL_SUCCESS;
         }
-        else {
-            EXECEPTION_CATCH((localUbRmaBuffer = std::make_shared<Hccl::LocalUbRmaBuffer>(localBufferPtr, this->rdmaHandle_)),
-                return HCCL_E_PTR);
-        }
+
+        // CASE 2: 传入内存被包含于更大的已注册区域，构造虚拟注册
+        HCCL_INFO("[UbRegedMemMgr][RegisterMemory]Memory {addr[%p], size[%llu]} is within registered region "
+            "{addr[%p], size[%llu]}, create virtual entry.",
+            mem.addr, mem.size, reinterpret_cast<void *>(parentAddr), parentSize);
+
+        localUbRmaBufferMgr_->AddWithoutCheck(tempKey, localUbRmaBuffer);
+        localUbRmaBufferMgr_->AddWithoutCheck(parentKey, localUbRmaBuffer);
+
+        virtualRegs_.push_back(
+            {localUbRmaBuffer, reinterpret_cast<uintptr_t>(mem.addr), mem.size});
+        *memHandle = static_cast<void *>(&virtualRegs_.back());
+        return HCCL_SUCCESS;
+    }
+
+    // CASE 3: 未注册，构造LocalUbRmaBuffer
+    std::shared_ptr<Hccl::Buffer> localBufferPtr = nullptr;
+    EXECEPTION_CATCH((localBufferPtr = std::make_shared<Hccl::Buffer>(reinterpret_cast<uintptr_t>(mem.addr),
+        mem.size, static_cast<HcclMemType>(mem.type), memTag)),
+        return HCCL_E_PTR);
+
+    if (memTag && (strcmp(memTag, "HcclBuffer") == 0)) {
+        EXECEPTION_CATCH((localUbRmaBuffer = std::make_shared<Hccl::LocalUbRmaBuffer>(localBufferPtr)),
+            return HCCL_E_PTR);
+    }
+    else {
+        EXECEPTION_CATCH((localUbRmaBuffer = std::make_shared<Hccl::LocalUbRmaBuffer>(localBufferPtr, this->rdmaHandle_)),
+            return HCCL_E_PTR);
     }
 
     // 重新构造key确保注册到计数器的key和接口返回的memHandle对应
@@ -71,13 +99,11 @@ HcclResult UbRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void 
     CHK_SMART_PTR_NULL(localBuffer);
     *memHandle = static_cast<void *>(localBuffer.get());
 
-    // 已注册：输入key是表中某一最相近key的全集。 返回添加该key的迭代器，及false
-    // 未注册：输入key是表中某一最相近key的空集。 返回添加成功的迭代器，及true
     if (resultPair.second) {
         HCCL_INFO("[UbRegedMemMgr][RegisterMemory]Register memory success! Add key {%p, %llu}", mem.addr, mem.size);
-    } else {  
+    } else {
         HCCL_INFO("[UbRegedMemMgr][RegisterMemory]Memory is already registered, just increase the reference count. Add key "
-                "{%p, %llu}", mem.addr, mem.size);;
+                "{%p, %llu}", mem.addr, mem.size);
         return HCCL_SUCCESS;
     }
 
@@ -89,6 +115,38 @@ HcclResult UbRegedMemMgr::UnregisterMemory(void* memHandle)
 {
     HCCL_INFO("[%s] Begin", __FUNCTION__);
     CHK_PTR_NULL(this->localUbRmaBufferMgr_);
+
+    // 检查是否为虚拟注册句柄
+    for (auto it = virtualRegs_.begin(); it != virtualRegs_.end(); ++it) {
+        if (static_cast<void *>(&(*it)) == memHandle) {
+            HCCL_INFO("[UbRegedMemMgr][UnregisterMemory] Unregister virtual memory {addr[%p], size[%llu]}.",
+                reinterpret_cast<void *>(it->childAddr), it->childSize);
+
+            hccl::BufferKey<uintptr_t, u64> childKey(it->childAddr, it->childSize);
+            bool childDeleted = false;
+            EXECEPTION_CATCH(childDeleted = localUbRmaBufferMgr_->Del(childKey), return HCCL_E_NOT_FOUND);
+
+            hccl::BufferKey<uintptr_t, u64> parentKey(
+                reinterpret_cast<uintptr_t>(it->parentBuffer->GetAddr()),
+                static_cast<uint64_t>(it->parentBuffer->GetSize()));
+            bool parentDeleted = false;
+            EXECEPTION_CATCH(parentDeleted = localUbRmaBufferMgr_->Del(parentKey), return HCCL_E_NOT_FOUND);
+
+            // 若父buffer引用计数归零（无真实用户亦无其他虚拟子buffer），清理allRegisteredBuffers_
+            if (parentDeleted) {
+                auto vecIt = std::find_if(allRegisteredBuffers_.begin(), allRegisteredBuffers_.end(),
+                    [parent = it->parentBuffer.get()](const std::shared_ptr<Hccl::LocalUbRmaBuffer>& ptr) {
+                        return ptr.get() == parent;
+                    });
+                if (vecIt != allRegisteredBuffers_.end()) {
+                    allRegisteredBuffers_.erase(vecIt);
+                }
+            }
+
+            virtualRegs_.erase(it);
+            return HCCL_SUCCESS;
+        }
+    }
 
     Hccl::LocalUbRmaBuffer* buffer = static_cast<Hccl::LocalUbRmaBuffer*>(memHandle);
     CHK_PTR_NULL(buffer);
@@ -104,7 +162,7 @@ HcclResult UbRegedMemMgr::UnregisterMemory(void* memHandle)
                   "(used by other RemoteRank), do not deregister memory.");
         return HCCL_SUCCESS;
     }
-    
+
     // 删除vector中的LocalUbRmaBuffer
     auto it = std::find_if(allRegisteredBuffers_.begin(), allRegisteredBuffers_.end(),
             [buffer](const std::shared_ptr<Hccl::LocalUbRmaBuffer>& ptr) {
@@ -154,10 +212,42 @@ HcclResult UbRegedMemMgr::MemoryExport(const EndpointDesc endpointDesc, void *me
 {
     HCCL_INFO("[%s] Begin", __FUNCTION__);
 
-    // 获取序列化信息
+    // 检查是否为虚拟注册句柄
+    for (auto &virt : virtualRegs_) {
+        if (static_cast<void *>(&virt) == memHandle) {
+            HCCL_INFO("[UbRegedMemMgr][MemoryExport] Export virtual memory {addr[%p], size[%llu]}.",
+                reinterpret_cast<void *>(virt.childAddr), virt.childSize);
+
+            // 从父buffer获取DTO，修改addr/size为子区间值
+            auto dto = virt.parentBuffer->GetExchangeDto();
+            auto *ubDto = dynamic_cast<Hccl::ExchangeUbBufferDto *>(dto.get());
+            CHK_PTR_NULL(ubDto);
+            ubDto->addr = static_cast<u64>(virt.childAddr);
+            ubDto->size = static_cast<u64>(virt.childSize);
+
+            Hccl::BinaryStream stream;
+            dto->Serialize(stream);
+            virt.exportDesc.clear();
+            stream.Dump(virt.exportDesc);
+
+            std::vector<char> tempLocalEndpointDesc;
+            tempLocalEndpointDesc.resize(sizeof(EndpointDesc));
+            if (memcpy_s(tempLocalEndpointDesc.data(), sizeof(EndpointDesc), &endpointDesc, sizeof(EndpointDesc)) != EOK) {
+                HCCL_ERROR("[UbRegedMemMgr][MemoryExport] endpointDesc memcpy_s failed.");
+                return HCCL_E_INTERNAL;
+            }
+            virt.exportDesc.insert(virt.exportDesc.end(),
+                tempLocalEndpointDesc.begin(), tempLocalEndpointDesc.end());
+
+            *memDescLen = static_cast<uint32_t>(virt.exportDesc.size());
+            *memDesc = static_cast<void *>(virt.exportDesc.data());
+            return HCCL_SUCCESS;
+        }
+    }
+
+    // 非虚拟句柄，走原有逻辑
     Hccl::LocalUbRmaBuffer *localUbRmaBuffer = reinterpret_cast<Hccl::LocalUbRmaBuffer *>(memHandle);
-    
-    // 获取序列化信息
+
     CHK_RET(GetMemDesc(endpointDesc, localUbRmaBuffer));
 
     *memDescLen = static_cast<uint32_t>(localUbRmaBuffer->Desc.size());
