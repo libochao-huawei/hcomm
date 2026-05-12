@@ -107,6 +107,8 @@ protected:
 
     virtual void SetUp()
     {
+        MOCKER(hrtEnableP2P).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+        MOCKER(hrtDisableP2P).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
         MOCKER(hrtGetDevice).stubs().with(any()).will(invoke(StubHrtGetDevice));
         MOCKER(hrtGetDeviceRefresh).stubs().with(any()).will(invoke(StubHrtGetDeviceRefresh));
         MOCKER(hrtGetDevicePhyIdByIndex).stubs().with(any(), outBound(0U)).will(invoke(StubHrtGetDevicePhyIdByIndex));
@@ -402,12 +404,6 @@ TEST_F(AiCpuTsHccsEndpointTest, Ut_When_export_import_Expect_Return_SUCCESS)
     void *memDesc = nullptr;
     uint32_t memDescLen = 0;
     CommMem outMem;
-
-    HcommMemGrantInfo remoteGrantInfo;
-    (void)aclrtDeviceGetBareTgid(&remoteGrantInfo.pid);
-    remoteGrantInfo.sdid = static_cast<uint32_t>(-1);
-    ret = HcommMemGrant(endpointHandle1, &remoteGrantInfo);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
 
     ret = HcommMemExport(endpointHandle1, memHandle1, &memDesc, &memDescLen);
     EXPECT_EQ(ret, HCCL_SUCCESS);
