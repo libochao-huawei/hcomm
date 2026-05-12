@@ -111,7 +111,7 @@ string RemoteRdmaRmaBuffer::Describe() const
     return StringFormat("RemoteRdmaRmaBuffer[addr=0x%llx, size=0x%llx]", addr, size);
 }
 
-RemoteUbRmaBuffer::RemoteUbRmaBuffer(RdmaHandle rdmaHandle) : RemoteRmaBuffer(RmaType::UB), rdmaHandle(rdmaHandle)
+RemoteUbRmaBuffer::RemoteUbRmaBuffer(RdmaHandle rdmaHandle) : RemoteUbRmaBufferBase(RmaType::UB), rdmaHandle(rdmaHandle)
 {
     if (rdmaHandle == nullptr) {
         THROW<NullPtrException>("RemoteUbRmaBuffer's rdmaHandle is NULL");
@@ -126,7 +126,7 @@ RemoteUbRmaBuffer::~RemoteUbRmaBuffer()
 }
 
 RemoteUbRmaBuffer::RemoteUbRmaBuffer(RdmaHandle rdmaHandle1, const Serializable &rmtDto) :
-      RemoteRmaBuffer(RmaType::UB), rdmaHandle(rdmaHandle1)
+      RemoteUbRmaBufferBase(RmaType::UB), rdmaHandle(rdmaHandle1)
 { // 从 DTO 取得数据，然后生成 memHandle
     auto dto = dynamic_cast<const ExchangeUbBufferDto &>(rmtDto);
     memcpy_s(key, HRT_UB_MEM_KEY_MAX_LEN, dto.key, HRT_UB_MEM_KEY_MAX_LEN);

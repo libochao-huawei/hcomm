@@ -128,19 +128,12 @@ private:
     u32        rkey{0};
 };
 
-class RemoteUbRmaBuffer : public RemoteRmaBuffer {
+class RemoteUbRmaBufferBase : public RemoteRmaBuffer {
 public:
-    explicit RemoteUbRmaBuffer(RdmaHandle rdmaHandle);
+    RemoteUbRmaBufferBase() : RemoteRmaBuffer(RmaType::UB)
+    {}
 
-    RemoteUbRmaBuffer(RdmaHandle rdmaHandle1, const Serializable &rmtDto);
-
-    ~RemoteUbRmaBuffer() override;
-
-    RemoteUbRmaBuffer(const RemoteUbRmaBuffer &that) = delete;
-
-    RemoteUbRmaBuffer &operator=(const RemoteUbRmaBuffer &that) = delete;
-
-    std::string Describe() const final;
+    ~RemoteUbRmaBufferBase() = default;
 
     uint32_t GetTokenId() const
     {
@@ -157,13 +150,56 @@ public:
         return segVa;
     }
 
-private:
-    RdmaHandle rdmaHandle{nullptr};
+protected:
     u8         key[HRT_UB_MEM_KEY_MAX_LEN]{0};
     u32        tokenValue{0};
     u32        tokenId{0};
     u32        keySize{0};
     u64        segVa{0};
+};
+
+class RemoteUbRmaBuffer : public RemoteUbRmaBufferBase {
+public:
+    explicit RemoteUbRmaBuffer(RdmaHandle rdmaHandle);
+
+    RemoteUbRmaBuffer(RdmaHandle rdmaHandle1, const Serializable &rmtDto);
+
+    ~RemoteUbRmaBuffer() override;
+
+    RemoteUbRmaBuffer(const RemoteUbRmaBuffer &that) = delete;
+
+    RemoteUbRmaBuffer &operator=(const RemoteUbRmaBuffer &that) = delete;
+
+    std::string Describe() const final;
+
+private:
+    RdmaHandle rdmaHandle{nullptr};
+};
+
+class RemoteUbAggregatedRmaBuffer : public RemoteUbRmaBufferBase {
+public:
+    explicit RemoteUbAggregatedRmaBuffer(std::vector<RdmaHandle> handles);
+
+    RemoteUbAggregatedRmaBuffer(std::vector<RdmaHandle> handles, const Serializable &rmtDto);
+
+    ~RemoteUbAggregatedRmaBuffer() override;
+
+    RemoteUbAggregatedRmaBuffer(const RemoteUbAggregatedRmaBuffer &that) = delete;
+
+    RemoteUbAggregatedRmaBuffer &operator=(const RemoteUbAggregatedRmaBuffer &that) = delete;
+
+    std::string Describe() const final;
+
+    void *GetMemHandleByPortIdx(uint8_t idx);
+
+private:
+    struct PortAggregationContext
+    {
+        RdmaHandle rdmaHandle{nullptr};
+        void *memHandle{nullptr};
+    };
+
+    std::vector<PortAggregationContext> portCtxs_{};
 };
 
 } // namespace Hccl
