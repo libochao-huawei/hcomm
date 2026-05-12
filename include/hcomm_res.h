@@ -17,6 +17,8 @@
 extern "C" {
 #endif  // __cplusplus
 
+typedef void *ChannelPtr;
+
 extern HcommResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *endpointHandle);
 
 extern HcommResult HcommEndpointDestroy(EndpointHandle endpointHandle);
@@ -37,6 +39,9 @@ extern HcommResult HcommChannelCreate(EndpointHandle endpointHandle, CommEngine 
 extern HcommResult HcommChannelGetStatus(const ChannelHandle *channelList, uint32_t listNum, int32_t *statusList);
 
 extern HcommResult HcommChannelDestroy(const ChannelHandle *channels, uint32_t channelNum);
+
+extern HcommResult HcommChannelGetPtrByHandle(const ChannelHandle *channelList, uint32_t listNum,
+    ChannelPtr *channelPtr);
 
 extern HcommResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, const uint32_t *notifyNumPerThread, ThreadHandle *threads);
 
