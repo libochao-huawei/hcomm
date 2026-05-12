@@ -138,6 +138,65 @@ HcclResult TpMgr::ReleaseTpInfo(const GetTpInfoParam &param, const TpInfo &tpInf
     return HcclResult::HCCL_SUCCESS;
 }
 
+// AT 档位 -> 单轮超时时间(ms) 的映射表
+// at=0 -> 16ms
+// at=1 -> 128ms
+// at=2 -> 1000ms (1s)
+// at=3 -> 4000ms (4s)
+static constexpr uint32_t AT_TIMEOUT_MAP[4] = {16, 128, 1000, 4000};
+
+// 合法的 AT 档位范围
+static constexpr uint8_t AT_GEAR_MIN = 0;
+static constexpr uint8_t AT_GEAR_MAX = 3;
+
+// 默认 AT 档位（异常降级用）
+static constexpr uint8_t AT_GEAR_DEFAULT = 2; // 默认 1s
+
+static HcclResult TpMgrGetTpAttrAsync(
+    RdmaHandle handle, uint64_t tpHandle, uint32_t &attrBitmap, TpAttr &attr, RequestHandle &reqHandle)
+{
+    HCCL_INFO("[TpMgrGetTpAttrAsync] begain, reqHandle[%llu]", reqHandle);
+
+    void *raReqHandle = nullptr;
+    int ret = RaGetTpAttrAsync(handle, tpHandle, &attrBitmap, &attr, &raReqHandle);
+    if (ret != 0) {
+        return HCCL_E_NETWORK;
+    }
+
+    CHK_RET(Hccl::WaitRequestResult(raReqHandle, reqHandle));
+    HCCL_INFO("[TpMgrGetTpAttrAsync] success, reqHandle[%llu]", reqHandle);
+    return HCCL_SUCCESS;
+}
+
+HcclResult TpMgr:GetTpTotalTimeout(CtxHandle ctxHandle, TpHandle tpHandle, uint32_t &outTotalTimeoutMs)
+{
+    uint32_t attrBitmap = 0;
+    struct TpAttr tpAttr = {0};
+    RequestHandle reqHandle{0};
+    CHK_RET(TpMgrGetTpAttrAsync(ctxHandle, tpHandle, attrBitmap, tpAttr, reqHandle));
+
+    uint8_t rawAtGear = tpAttr.at;
+    uint8_t rawRetryTimes = tpAttr.retryTimesInit;
+
+    uint8_t finalAtGear = rawAtGear;
+    if (rawAtGear < AT_GEAR_MIN || rawAtGear > AT_GEAR_MAX) {
+        finalAtGear = AT_GEAR_DEFAULT;
+        HCCL_WARNING("[TpTimeoutCalculator] Invalid at gear[%u], expect [%u, %u], use default gear[%u].", rawAtGear,
+            AT_GEAR_MIN, AT_GEAR_MAX, finalAtGear);
+    }
+
+    uint32_t singleAtTimeoutMs = AT_TIMEOUT_MAP[finalAtGear];
+    uint32_t totalTimeoutMs = singleAtTimeoutMs * static_cast<uint32_t>(rawRetryTimes);
+    outTotalTimeoutMs = totalTimeoutMs;
+
+    HCCL_INFO("[TpTimeoutCalculator] TP timeout calc success: "
+              "raw_at_gear[%u], final_at_gear[%u], single_timeout[%ums], "
+              "retry_times_init[%u], total_timeout[%ums].",
+        rawAtGear, finalAtGear, singleAtTimeoutMs, rawRetryTimes, totalTimeoutMs);
+
+    return HCCL_SUCCESS;
+}
+
 HcclResult TpMgr::FindAndGetTpInfo(const GetTpInfoParam &param, TpInfo &tpInfo)
 {
     Hccl::IpAddress locAddr{}, rmtAddr{};
