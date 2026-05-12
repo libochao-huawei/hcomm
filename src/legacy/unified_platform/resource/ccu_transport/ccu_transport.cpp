@@ -209,20 +209,34 @@ CcuTransport::TransStatus CcuTransport::StateMachine()
  
             if (connStatus == CcuConnStatus::EXCHANGEABLE
                 || connStatus == CcuConnStatus::CONNECTED) {
-                transStatus = CcuTransport::TransStatus::SEND_ALL_INFO;
+                transStatus = CcuTransport::TransStatus::SEND_SIZE;
                 SendConnAndTransInfo();
             }
 
             break;
         }
-        case CcuTransport::TransStatus::SEND_ALL_INFO:
-            transStatus = CcuTransport::TransStatus::RECV_ALL_INFO;
-            RecvConnAndTransInfo();
+        case CcuTransport::TransStatus::SEND_SIZE:
+            socket->SendAsync(reinterpret_cast<u8 *>(sendData.data()), sendData.size());
+            transStatus = CcuTransport::TransStatus::RECV_SIZE;
             break;
-        case CcuTransport::TransStatus::RECV_ALL_INFO:
+        case CcuTransport::TransStatus::RECV_SIZE:
+            RecvConnAndTransInfo();
+            transStatus = CcuTransport::TransStatus::RECV_DATA;
+            break;
+        case CcuTransport::TransStatus::RECV_DATA:
+            recvData.resize(exchangeDataSize);
+            socket->RecvAsync(reinterpret_cast<u8 *>(recvData.data()), recvData.size());
+            transStatus = CcuTransport::TransStatus::PROCESS_DATA;
+            break;
+        case CcuTransport::TransStatus::PROCESS_DATA:
             RecvDataProcess();
             ccuConnection->ImportJetty();
             transStatus = CcuTransport::TransStatus::SEND_FIN;
+            break;
+        case CcuTransport::TransStatus::SEND_ALL_INFO:
+            transStatus = CcuTransport::TransStatus::RECV_ALL_INFO;
+            break;
+        case CcuTransport::TransStatus::RECV_ALL_INFO:
             break;
         case CcuTransport::TransStatus::SEND_FIN: {
             auto connStatus = ccuConnection->GetStatus();
@@ -289,14 +303,16 @@ void CcuTransport::SendConnAndTransInfo()
     TransResPack(binaryStream);
     CclBufferInfoPack(binaryStream);
     binaryStream.Dump(sendData);
-    socket->SendAsync(reinterpret_cast<u8 *>(sendData.data()), sendData.size());
+    
     exchangeDataSize = sendData.size();
+    socket->SendAsync(reinterpret_cast<u8 *>(&exchangeDataSize), sizeof(exchangeDataSize));
+    HCCL_INFO("[CcuTransport::SendConnAndTransInfo] Send size[%u]", exchangeDataSize);
 }
 
 void CcuTransport::RecvConnAndTransInfo()
 {
-    recvData.resize(exchangeDataSize);
-    socket->RecvAsync(reinterpret_cast<u8 *>(recvData.data()), recvData.size());
+    socket->RecvAsync(reinterpret_cast<u8 *>(&exchangeDataSize), sizeof(exchangeDataSize));
+    HCCL_INFO("[CcuTransport::RecvConnAndTransInfo] Recv size[%u]", exchangeDataSize);
 }
  
 void CcuTransport::RecvDataProcess()
