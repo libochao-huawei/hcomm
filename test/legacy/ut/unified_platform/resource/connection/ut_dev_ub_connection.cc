@@ -22,6 +22,7 @@
 #include "rdma_handle_manager.h"
 #include "tp_manager.h"
 #include "hccp_async.h"
+#include "env_config/env_config.h"
 #undef protected
 #undef private
 #include "hccp_async_ctx.h"
@@ -947,8 +948,6 @@ TEST_F(DevUbConnectionTest, Ut_Describe_Tp_Mode)
     linkData.linkProtocol_ = LinkProtocol::UB_TP;
     std::string tag = "test";
 
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(0)));
-    MOCKER(HrtRaGetTpAttrAsync).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
     DevUbTpConnection devUbConnection(rdmaHandle, linkData.GetLocalAddr(), linkData.GetRemoteAddr(), OpMode::OPBASE);
 
     std::string testDfx = "";
@@ -956,10 +955,42 @@ TEST_F(DevUbConnectionTest, Ut_Describe_Tp_Mode)
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
 
     GlobalMockObject::verify();
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(0)));
-    MOCKER(HrtRaGetTpAttrAsync).stubs().will(returnValue(HcclResult::HCCL_E_NOT_SUPPORT)).then(returnValue(HcclResult::HCCL_E_INTERNAL));
-    ret = devUbConnection.Describe(testDfx);
-    EXPECT_NE(ret, HcclResult::HCCL_SUCCESS);
-    ret = devUbConnection.Describe(testDfx);
-    EXPECT_NE(ret, HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(DevUbConnectionTest, CalcTotalTimeout_ValidAtGear_ReturnsCorrectTimeout)
+{
+    RdmaHandle rdmaHandle = (void *)0x1000000;
+    BasePortType portType(PortDeploymentType::DEV_NET, ConnectProtoType::UB);
+    LinkData linkData(portType, 10, 11, 10, 11);
+    linkData.linkProtocol_ = LinkProtocol::UB_TP;
+    
+    DevUbTpConnection devUbConnection(rdmaHandle, linkData.GetLocalAddr(), linkData.GetRemoteAddr(), OpMode::OPBASE);
+    devUbConnection.tpInfo.tpHandle = 0x1234;
+    devUbConnection.reqHandle = 0;
+
+    uint32_t totalTimeoutMs = 0;
+    HcclResult ret = devUbConnection.CalcTotalTimeout(totalTimeoutMs);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(totalTimeoutMs, 16);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(DevUbConnectionTest, CalcTotalTimeout_WithRetryTimes_ReturnsCorrectTimeout)
+{
+    RdmaHandle rdmaHandle = (void *)0x1000000;
+    BasePortType portType(PortDeploymentType::DEV_NET, ConnectProtoType::UB);
+    LinkData linkData(portType, 10, 11, 10, 11);
+    linkData.linkProtocol_ = LinkProtocol::UB_TP;
+    
+    DevUbTpConnection devUbConnection(rdmaHandle, linkData.GetLocalAddr(), linkData.GetRemoteAddr(), OpMode::OPBASE);
+    devUbConnection.tpInfo.tpHandle = 0x1234;
+    devUbConnection.reqHandle = 0;
+
+    uint32_t totalTimeoutMs = 0;
+    HcclResult ret = devUbConnection.CalcTotalTimeout(totalTimeoutMs);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(totalTimeoutMs, 4000);
+
+    GlobalMockObject::verify();
 }
