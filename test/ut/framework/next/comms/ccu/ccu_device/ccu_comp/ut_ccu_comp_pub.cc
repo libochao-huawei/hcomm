@@ -9,6 +9,11 @@
 
 using namespace hcomm;
 
+namespace hcomm {
+uint32_t CcuCompTaHwValueToMs(uint8_t hwValue);
+uint8_t CcuCompFindMinTaHwValueGreaterThan(uint32_t tpTotalTimeoutMs);
+}
+
 class CcuCompPubTest : public testing::Test {
 protected:
     static void SetUpTestCase() {
@@ -130,4 +135,76 @@ TEST_F(CcuCompPubTest, Ut_CcuCleanDieCkesWhenUnderlyingFailsExpectFailure) {
     StubCleanDieCkes(HcclResult::HCCL_E_INTERNAL);
     auto ret = CcuCleanDieCkes(0, 1);
     EXPECT_EQ(ret, HcclResult::HCCL_E_INTERNAL);
+}
+
+TEST_F(CcuCompPubTest, Ut_CcuCompTaHwValueToMs_When_InputGear0_Expect_Return512ms)
+{
+    uint32_t timeoutMs = CcuCompTaHwValueToMs(0);
+    EXPECT_EQ(timeoutMs, 512u);
+    timeoutMs = CcuCompTaHwValueToMs(7);
+    EXPECT_EQ(timeoutMs, 512u);
+}
+
+TEST_F(CcuCompPubTest, Ut_CcuCompTaHwValueToMs_When_InputGear1_Expect_Return1000ms)
+{
+    uint32_t timeoutMs = CcuCompTaHwValueToMs(8);
+    EXPECT_EQ(timeoutMs, 1000u);
+    timeoutMs = CcuCompTaHwValueToMs(15);
+    EXPECT_EQ(timeoutMs, 1000u);
+}
+
+TEST_F(CcuCompPubTest, Ut_CcuCompTaHwValueToMs_When_InputGear2_Expect_Return8000ms)
+{
+    uint32_t timeoutMs = CcuCompTaHwValueToMs(16);
+    EXPECT_EQ(timeoutMs, 8000u);
+    timeoutMs = CcuCompTaHwValueToMs(23);
+    EXPECT_EQ(timeoutMs, 8000u);
+}
+
+TEST_F(CcuCompPubTest, Ut_CcuCompTaHwValueToMs_When_InputGear3_Expect_Return32000ms)
+{
+    uint32_t timeoutMs = CcuCompTaHwValueToMs(24);
+    EXPECT_EQ(timeoutMs, 32000u);
+    timeoutMs = CcuCompTaHwValueToMs(31);
+    EXPECT_EQ(timeoutMs, 32000u);
+}
+
+TEST_F(CcuCompPubTest, Ut_CcuCompTaHwValueToMs_When_InputInvalid_Expect_ReturnDefault8000ms)
+{
+    uint32_t timeoutMs = CcuCompTaHwValueToMs(32);
+    EXPECT_EQ(timeoutMs, 8000u);
+    timeoutMs = CcuCompTaHwValueToMs(100);
+    EXPECT_EQ(timeoutMs, 8000u);
+}
+
+TEST_F(CcuCompPubTest, Ut_CcuCompFindMinTaHwValueGreaterThan_When_LessThan512ms_Expect_Return0)
+{
+    uint8_t hwValue = CcuCompFindMinTaHwValueGreaterThan(100);
+    EXPECT_EQ(hwValue, 0u);
+    hwValue = CcuCompFindMinTaHwValueGreaterThan(511);
+    EXPECT_EQ(hwValue, 0u);
+}
+
+TEST_F(CcuCompPubTest, Ut_CcuCompFindMinTaHwValueGreaterThan_When_LessThan1000ms_Expect_Return8)
+{
+    uint8_t hwValue = CcuCompFindMinTaHwValueGreaterThan(512);
+    EXPECT_EQ(hwValue, 8u);
+    hwValue = CcuCompFindMinTaHwValueGreaterThan(999);
+    EXPECT_EQ(hwValue, 8u);
+}
+
+TEST_F(CcuCompPubTest, Ut_CcuCompFindMinTaHwValueGreaterThan_When_LessThan8000ms_Expect_Return16)
+{
+    uint8_t hwValue = CcuCompFindMinTaHwValueGreaterThan(1000);
+    EXPECT_EQ(hwValue, 16u);
+    hwValue = CcuCompFindMinTaHwValueGreaterThan(7999);
+    EXPECT_EQ(hwValue, 16u);
+}
+
+TEST_F(CcuCompPubTest, Ut_CcuCompFindMinTaHwValueGreaterThan_When_GreaterOrEqual8000ms_Expect_Return24)
+{
+    uint8_t hwValue = CcuCompFindMinTaHwValueGreaterThan(8000);
+    EXPECT_EQ(hwValue, 24u);
+    hwValue = CcuCompFindMinTaHwValueGreaterThan(10000);
+    EXPECT_EQ(hwValue, 24u);
 }
