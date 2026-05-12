@@ -22,15 +22,6 @@ CcuResult CcuLoopAddDemoKernel(CcuKernelArg arg)
 
     ccu::Variable r1{}, r2{}, r3{}, r4{}, r5{}, r6{}, numA{}, numB{};
 
-    CCU_CHK_RET(Alloc(&r1));
-    CCU_CHK_RET(Alloc(&r2));
-    CCU_CHK_RET(Alloc(&r3));
-    CCU_CHK_RET(Alloc(&r4));
-    CCU_CHK_RET(Alloc(&r5));
-    CCU_CHK_RET(Alloc(&r6));
-    CCU_CHK_RET(Alloc(&numA));
-    CCU_CHK_RET(Alloc(&numB));
-
     numA = args->numA;
     numB = args->numB;
 
@@ -44,9 +35,6 @@ CcuResult CcuLoopAddDemoKernel(CcuKernelArg arg)
     CcuLoop loop1;
     CCU_LOOP(loop1) {
         ccu::Variable formalA{}, formalB{}, formalResult{};
-        CCU_CHK_RET(Alloc(&formalA));
-        CCU_CHK_RET(Alloc(&formalB));
-        CCU_CHK_RET(Alloc(&formalResult));
 
         CCU_CHK_RET(LoopSetParam(loop1, &formalA, &numA));
         CCU_CHK_RET(LoopSetParam(loop1, &formalB, &numB));
@@ -81,9 +69,6 @@ CcuResult CcuLoopAddDemoKernel(CcuKernelArg arg)
     CcuLoop loop3;
     CCU_LOOP(loop3) {
         ccu::Variable formalX{}, formalY{}, formalOut{};
-        CCU_CHK_RET(Alloc(&formalX));
-        CCU_CHK_RET(Alloc(&formalY));
-        CCU_CHK_RET(Alloc(&formalOut));
 
         CCU_CHK_RET(LoopSetParam(loop3, &formalX, &numA));
         CCU_CHK_RET(LoopSetParam(loop3, &formalY, &numB));
@@ -108,9 +93,6 @@ CcuResult CcuLoopAddDemoKernel(CcuKernelArg arg)
 
     // ========== LoopGroup 3 (var-based): ccu::Variable-based group & loop ==========
     ccu::Variable varLoopParam{}, varParallel{}, varOffset{};
-    CCU_CHK_RET(Alloc(&varLoopParam));
-    CCU_CHK_RET(Alloc(&varParallel));
-    CCU_CHK_RET(Alloc(&varOffset));
 
     varLoopParam = 0x0001000200030000ULL;
     varParallel  = 0x0002000100020000ULL;
