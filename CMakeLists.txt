@@ -15,11 +15,19 @@ project(hcomm)
 init_cann_project()
 
 option(BUILD_OPEN_PROJECT "Build open hcomm project." ON)
+option(ENABLE_BUILD_DEVICE "Build hcomm device project." OFF)
+
 message(STATUS "BUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}")
 message(STATUS "ASCEND_CANN_PACKAGE_PATH=${ASCEND_CANN_PACKAGE_PATH}")
 message(STATUS "CANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH}")
 message(STATUS "ENABLE_BUILD_DEVICE=${ENABLE_BUILD_DEVICE}")
 message(STATUS "AARCH_MODE=${AARCH_MODE}")
+
+if(DEFINED ENV{TOOLCHAIN_DIR} AND ENABLE_BUILD_DEVICE)
+    set(ENABLE_DEVICE ON)
+else()
+    set(ENABLE_DEVICE OFF)
+endif()
 
 set(HCOMM_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 set(HCC_TOOLCHAIN_DIR "${ASCEND_CANN_PACKAGE_PATH}/toolkit/toolchain/hcc")
@@ -100,18 +108,12 @@ elseif(BUILD_OPEN_PROJECT)
     add_subdirectory(src)
     add_subdirectory(python)
 
-    if(DEFINED ENV{TOOLCHAIN_DIR} AND ENABLE_BUILD_DEVICE)
-        set(ENABLE_DEVICE ON)
-    else()
-        set(ENABLE_DEVICE OFF)
-    endif()
-
     # Device 侧编译构建
     if(ENABLE_DEVICE)
         include(ExternalProject)
         ExternalProject_Add(hcomm_device
             SOURCE_DIR ${HCOMM_DIR}/cmake/device
-            BINARY_DIR ${CMAKE_BINARY_DIR}/device_build
+            BINARY_DIR ${HCOMM_DEVICE_BUILD_PATH}
             CMAKE_ARGS
                 -DTOOLCHAIN_DIR=${HCC_TOOLCHAIN_DIR}
                 -DCMAKE_TOOLCHAIN_FILE=${HCOMM_DIR}/cmake/aarch64-hcc-toolchain.cmake
@@ -121,7 +123,7 @@ elseif(BUILD_OPEN_PROJECT)
                 -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
                 -DCMAKE_C_AR=${HCC_CXX_AR}
                 -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-                -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/device_install
+                -DCMAKE_INSTALL_PREFIX=${HCOMM_DEVICE_INSTALL_PATH}
                 -DASCEND_INSTALL_PATH=${ASCEND_INSTALL_PATH}
                 -DBUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}
                 -DCANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH}
@@ -134,8 +136,24 @@ elseif(BUILD_OPEN_PROJECT)
 
         # 安装 device 侧编译产物
         install(FILES
-            ${CMAKE_BINARY_DIR}/device_build/device-hcomm.tar.gz
+            ${HCOMM_DEVICE_BUILD_PATH}/device-hcomm.tar.gz
             DESTINATION .
+            COMPONENT hcomm
+        )
+        install(FILES
+            ${HCOMM_DEVICE_INSTALL_PATH}/${INSTALL_CCL_KERNEL_JSON_DIR}/kernel/libccl_kernel.so
+            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel
+            COMPONENT hcomm
+        )
+        install(FILES
+            ${HCOMM_DEVICE_INSTALL_PATH}/${INSTALL_CCL_KERNEL_JSON_DIR}/config/ccl_kernel.json
+            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/config
+            COMPONENT hcomm
+        )
+        install(FILES
+            ${HCOMM_DEVICE_INSTALL_PATH}/${INSTALL_CCL_KERNEL_JSON_DIR}/kernel/libaicpu_custom.so
+            ${HCOMM_DEVICE_INSTALL_PATH}/${INSTALL_CCL_KERNEL_JSON_DIR}/kernel/libaicpu_custom.json
+            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel
             COMPONENT hcomm
         )
     endif()
