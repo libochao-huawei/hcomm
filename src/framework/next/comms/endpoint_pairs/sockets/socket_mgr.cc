@@ -19,6 +19,28 @@ namespace hcomm {
 
 constexpr uint32_t TempServerListenPort = 60001;    // 临时固定监听端口，用于功能验证
 
+static SocketMgr& SocketMgr::GetInstance()
+{
+    if (instance_ == nullptr) {
+        std::lock_guard<std::mutex> lock(instance_mutex_);
+        if (instance_ == nullptr) {
+            instance_ = new SocketMgr();
+        }
+    }
+    return *instance_;
+}
+
+static void SocketMgr::DestroyInstance()
+{
+    if (instance_ != nullptr) {
+        std::lock_guard<std::mutex> lock(instance_mutex_);
+        if (instance_ != nullptr) {
+            delete instance_;
+            instance_ = nullptr;
+        }
+    }
+}
+
 HcclResult SocketMgr::Init()
 {
     if (isLoaded_) {
@@ -129,6 +151,7 @@ HcclResult SocketMgr::CreateSocket(const Hccl::SocketConfig &socketConfig, const
     }
 
     socketMap_[socketConfig] = std::move(tmpSocket);
+    socketInUseMap_[socketConfig] = false;
 
     EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
@@ -136,6 +159,7 @@ HcclResult SocketMgr::CreateSocket(const Hccl::SocketConfig &socketConfig, const
 
 HcclResult SocketMgr::GetSocket(const Hccl::SocketConfig &socketConfig, Hccl::Socket*& socket)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     CHK_RET(Init());
     // 1. 先查找
     auto it = socketMap_.find(socketConfig);
@@ -145,8 +169,11 @@ HcclResult SocketMgr::GetSocket(const Hccl::SocketConfig &socketConfig, Hccl::So
             socket->Destroy();
             socketMap_.erase(it);
         } else {
-            socket = it->second.get();
-            return HCCL_SUCCESS;
+            while(socketInUseMap_[socketConfig] == false) {
+                socket = it->second.get();
+                socketInUseMap_[socketConfig] = true;
+                return HCCL_SUCCESS;
+            }
         }
     }
 
@@ -163,8 +190,8 @@ HcclResult SocketMgr::GetSocket(const Hccl::SocketConfig &socketConfig, Hccl::So
                    __func__);
         return HCCL_E_INTERNAL;
     }
- 
     socket = it->second.get();
+    socketInUseMap_[socketConfig] = true;
     return HCCL_SUCCESS;
 }
 
@@ -196,9 +223,10 @@ HcclResult SocketMgr::DestroySocket(Hccl::Socket* socket)
         HCCL_WARNING("[DestroySocket] socket is nullptr, nothing to destroy.");
         return HCCL_SUCCESS;
     }
-
     for (auto it = socketMap_.begin(); it != socketMap_.end(); ++it) {
         if (it->second.get() == socket) {
+            HCCL_INFO("[DestroySocket] Erasing socket inuse info with tag[%s] from socketInUseMap.", it->first.GetHccpTag().c_str());
+            socketInUseMap_.erase(it->first);
             HCCL_INFO("[DestroySocket] Erasing socket with tag[%s] from socketMap.", it->first.GetHccpTag().c_str());
             socketMap_.erase(it);
             break;

@@ -23,12 +23,11 @@ namespace hcomm {
 
 class SocketMgr {
 public:
-    SocketMgr() {};
-    ~SocketMgr() {};
-
     HcclResult GetSocket(const Hccl::SocketConfig &socketConfig, Hccl::Socket*& socket);
     HcclResult DeleteWhiteList(Hccl::Socket* socket);
     HcclResult DestroySocket(Hccl::Socket* socket);
+    static SocketMgr& GetInstance();
+    static void DestroyInstance();
 
 private:
     HcclResult Init();
@@ -37,11 +36,19 @@ private:
     HcclResult CreateSocket(const Hccl::SocketConfig &socketConfig, const Hccl::SocketHandle &socketHandle);
 
 private:
+    static SocketMgr* instance_;
+    static std::mutex instance_mutex_;
+    SocketMgr() {};
+    ~SocketMgr() {};
+    SocketMgr(const SocketMgr&) = delete;
+    SocketMgr& operator=(const SocketMgr&) = delete;
+
     bool isLoaded_{false};
     uint32_t devicePhyId_{};
     uint32_t serverListenPort_{};
     std::unordered_map<Hccl::SocketConfig, std::unique_ptr<Hccl::Socket>> socketMap_{};
     std::unordered_map<Hccl::SocketHandle, std::vector<Hccl::RaSocketWhitelist>> handle2WhiteListMap_{};
+    std::unordered_map<Hccl::SocketConfig, bool> socketInUseMap_{};
     std::mutex mutex_{};
 };
 
