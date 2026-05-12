@@ -9,6 +9,7 @@
 # -----------------------------------------------------------------------------------------------------------
 
 set(src_list
+    host_cpu_channel.cc
     host_cpu_roce_channel.cc
     host_rdma_connection.cc
     host_cpu_urma_channel.cc

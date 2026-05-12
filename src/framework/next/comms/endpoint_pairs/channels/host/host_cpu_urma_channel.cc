@@ -22,9 +22,7 @@
 #include "aicpu_res_package_helper.h"
 
 namespace hcomm {
-constexpr u32 FENCE_TIMEOUT_MS = 30 * 1000; // 定义最大等待30秒
 constexpr u32 MEMORY_BLOCK_SIZE = 128;
-constexpr uint16_t DEFAULT_LISTENING_PORT = 60001;
 
 HostCpuUrmaChannel::HostCpuUrmaChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc):
     endpointHandle_(endpointHandle), channelDesc_(channelDesc) {}
@@ -69,40 +67,10 @@ HcclResult HostCpuUrmaChannel::ParseInputParam()
     return HCCL_SUCCESS;
 }
 
-HcclResult HostCpuUrmaChannel::StartListen()
+Hccl::SocketConfig HostCpuUrmaChannel::MakeSocketConfig(Hccl::LinkData &linkData, uint16_t port)
 {
-    uint16_t port = channelDesc_.port;
-    HCCL_INFO("[HostCpuUrmaChannel::%s] Start. EndpointHandle[0x%llx], port[%u]", __func__, reinterpret_cast<uint64_t>(endpointHandle_), port);
-    if (port == 0) {
-        port = DEFAULT_LISTENING_PORT;
-        HCCL_INFO("[HostCpuUrmaChannel::%s] channelDesc port is 0, use default port [%u]", __func__, port);
-    }
-    CHK_RET(static_cast<HcclResult>(HcommEndpointStartListen(endpointHandle_, port, nullptr)));
-    HCCL_INFO("[HostCpuUrmaChannel::%s] SUCCESS. port[%u].", __func__, port);
-    return HCCL_SUCCESS;
-}
-
-HcclResult HostCpuUrmaChannel::BuildSocket()
-{
-    if (socket_ != nullptr) {
-        return HCCL_SUCCESS;
-    }
-    HCCL_INFO("[HostCpuUrmaChannel::%s] socket ptr is NULL, rebuild Socket", __func__);
-
-    Hccl::LinkData linkData = BuildDefaultLinkData();
-    CHK_RET(EndpointDescPairToLinkData(localEp_, remoteEp_, linkData));
-    HCCL_INFO("[HostCpuUrmaChannel::%s] built linkData: %s", __func__, linkData.Describe().c_str());
-    uint16_t port = channelDesc_.port;
-    if (port == 0) {
-        port = DEFAULT_LISTENING_PORT;
-        HCCL_INFO("[HostCpuUrmaChannel::%s] channelDesc port is 0, use default port [%u]", __func__, port);
-    }
     std::string socketTag = "AUTOMATIC_SOCKET_TAG";
-    bool noRankId = true;
-    Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, socketTag, noRankId);
-    CHK_RET(socketMgr_->GetSocket(socketConfig, socket_));
-    HCCL_INFO("[HostCpuUrmaChannel::%s] SUCCESS. port[%u].", __func__, port);
-    return HCCL_SUCCESS;
+    return Hccl::SocketConfig(linkData, socketTag, true);
 }
 
 HcclResult HostCpuUrmaChannel::BuildConnection()
@@ -193,12 +161,6 @@ HcclResult HostCpuUrmaChannel::Init()
     CHK_RET(BuildUbMemTransport());
     // urma函数初始化
     CHK_RET(DlUrmaFunction::GetInstance().DlUrmaFunctionInit());
-    return HCCL_SUCCESS;
-}
-
-HcclResult HostCpuUrmaChannel::GetNotifyNum(uint32_t *notifyNum) const
-{
-    HCCL_INFO("[HostCpuUrmaChannel::%s] not supported yet.", __func__);
     return HCCL_SUCCESS;
 }
 

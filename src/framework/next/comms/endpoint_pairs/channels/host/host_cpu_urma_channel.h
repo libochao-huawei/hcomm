@@ -10,14 +10,12 @@
 #ifndef HOST_CPU_URMA_CHANNEL_H
 #define HOST_CPU_URMA_CHANNEL_H
 
-#include "../channel.h"
+#include "host_cpu_channel.h"
 #include <mutex>
 #include "urma_types.h"
 
 // Orion
-#include "../../../../../../legacy/unified_platform/resource/socket/socket.h"
 #include "../../../../../../legacy/unified_platform/pub_inc/buffer_key.h"
-#include "../../sockets/socket_mgr.h"
 #include "rma_connection.h"
 #include "ub_mem_transport.h"
 #include "host_ub_connection.h"
@@ -28,12 +26,11 @@ namespace hcomm {
 
 constexpr uint64_t MAX_JETTY_WR_DATA_LEN = 256 * 1024 * 1024;  // 256MB
 
-class HostCpuUrmaChannel : public Channel {
+class HostCpuUrmaChannel : public HostCpuChannel {
 public:
     HostCpuUrmaChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc);
 
     HcclResult Init() override;
-    HcclResult GetNotifyNum(uint32_t *notifyNum) const override;
     HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags) override;
     ChannelStatus GetStatus() override;
 
@@ -50,8 +47,7 @@ public:
 
 private:
     HcclResult ParseInputParam();
-    HcclResult StartListen();
-    HcclResult BuildSocket();
+    Hccl::SocketConfig MakeSocketConfig(Hccl::LinkData &linkData, uint16_t port) override;
     HcclResult BuildConnection();
     HcclResult BuildBuffer();
     HcclResult BuildUbMemTransport();
@@ -61,19 +57,12 @@ private:
     HcclResult GetLocalAndRemoteSeg(urma_opcode_t opcode, void *dst, const void *src, uint64_t len, u64 &localSeg, u64 &remoteSeg);
 
 private:
-    // --------------------- 入参 ---------------------
-    EndpointHandle                                              endpointHandle_;
-    HcommChannelDesc                                            channelDesc_;
+    // --------------------- 入参 (endpointHandle_, channelDesc_ 继承自 HostCpuChannel) ---------------------
 
-    // --------------------- 转换参数 ---------------------
-    EndpointDesc                                                localEp_{};
-    EndpointDesc                                                remoteEp_{};
+    // --------------------- 转换参数 (localEp_, remoteEp_, socket_, rdmaHandle_ 继承自 HostCpuChannel) ---------------------
     std::vector<std::shared_ptr<Hccl::Buffer>>                  bufs_{};
 
     // --------------------- 具体成员 ---------------------
-    Hccl::Socket*                                               socket_{nullptr};
-    std::unique_ptr<SocketMgr>                                  socketMgr_{nullptr};
-    RdmaHandle                                                  rdmaHandle_{nullptr};
     std::unique_ptr<Hccl::UbMemTransport>                       memTransport_{nullptr};
     Hccl::BaseMemTransport::Attribution                         attr_{};
     Hccl::BaseMemTransport::CommonLocRes                        commonRes_{};
@@ -84,8 +73,6 @@ private:
     urma_jfc_t jfc_{};
     urma_jetty_t jetty_{};
     urma_target_jetty_t tjetty_{};
-    uint32_t wqeNum_{0};
-    bool fenceFlag_{false};
 
     std::mutex jfcMutex_;
     std::mutex fenceMutex_;

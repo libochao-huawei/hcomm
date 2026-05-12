@@ -12,14 +12,12 @@
 
 #include <mutex>
 
-#include "../channel.h"
+#include "host_cpu_channel.h"
 #include "enum_factory.h"
 #include "hccl_common.h"
-#include "../../sockets/socket_mgr.h"
 #include "infiniband/verbs.h"
 
 // Orion
-#include "../../../../../../legacy/unified_platform/resource/socket/socket.h"
 #include "../../../../../../legacy/unified_platform/resource/buffer/local_rdma_rma_buffer.h"
 #include "remote_rma_buffer.h"
 #include "host_rdma_connection.h"
@@ -30,7 +28,7 @@
 
 namespace hcomm {
 
-class HostCpuRoceChannel final : public Channel {
+class HostCpuRoceChannel final : public HostCpuChannel {
 public:
     MAKE_ENUM(RdmaStatus, INIT, SOCKET_OK, CAP_EXCHANGED, QP_CREATED, DATA_EXCHANGE, QP_MODIFIED, CONN_OK)
 
@@ -38,7 +36,6 @@ public:
     ~HostCpuRoceChannel();
 
     HcclResult Init() override;
-    HcclResult GetNotifyNum(uint32_t *notifyNum) const override;
     HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char** memTags) override;
     ChannelStatus GetStatus() override;
     HcclResult GetStatus(ChannelStatus &status);
@@ -81,8 +78,7 @@ private:
 
 private:
     HcclResult ParseInputParam();
-    HcclResult StartListen();
-    HcclResult BuildSocket();
+    Hccl::SocketConfig MakeSocketConfig(Hccl::LinkData &linkData, uint16_t port) override;
     HcclResult BuildConnection();
     HcclResult BuildNotify();
     HcclResult BuildBuffer();
@@ -124,16 +120,10 @@ private:
         return ibv_poll_cq(sendCq, numEntries, wc);
     }
 
-    // 入参
-    EndpointHandle endpointHandle_;
-    HcommChannelDesc channelDesc_;
+    // 入参 (endpointHandle_, channelDesc_ 继承自 HostCpuChannel)
 
-    // 转换参数
-    EndpointDesc localEp_;
-    EndpointDesc remoteEp_;
+    // 转换参数 (localEp_, remoteEp_, socket_, rdmaHandle_ 继承自 HostCpuChannel)
     uint32_t notifyNum_{0};
-    Hccl::Socket *socket_{nullptr};
-    RdmaHandle rdmaHandle_{nullptr};
 
     std::vector<std::unique_ptr<HostRdmaConnection>> connections_{};
     std::vector<Hccl::LocalRdmaRmaBuffer *> localRmaBuffers_{};
@@ -147,9 +137,6 @@ private:
     std::vector<std::unique_ptr<Hccl::RemoteRdmaRmaBuffer>> rmtRmaBuffers_{};
     ExchangeRdmaConnDto rmtConnDto_;
     std::vector<std::unique_ptr<HcclMem>> remoteMems{};
-    uint32_t wqeNum_{0};
-    std::unique_ptr<SocketMgr> socketMgr_{nullptr};
-    bool fenceFlag_{false};
 
     uint64_t maxMsgSize_{0};
 
