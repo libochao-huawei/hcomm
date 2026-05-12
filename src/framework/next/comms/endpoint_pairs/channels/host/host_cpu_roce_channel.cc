@@ -72,6 +72,11 @@ HostCpuRoceChannel::~HostCpuRoceChannel() {
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[HostCpuRoceChannel::~HostCpuRoceChannel] exception occurred, HcclResult=[%d]", ret);
     }
+
+    if (socket_ != nullptr && socketMgr_ != nullptr) {
+        socketMgr_->PutSocket(socket_);
+        socket_ = nullptr;
+    }
 }
 
 HcclResult HostCpuRoceChannel::ParseInputParam()
@@ -115,7 +120,7 @@ HcclResult HostCpuRoceChannel::ParseInputParam()
         }
     }
 
-    EXECEPTION_CATCH(socketMgr_ = std::make_unique<SocketMgr>(), return HCCL_E_PTR);
+    EXECEPTION_CATCH(socketMgr_ = &SocketMgr::GetInstance(), return HCCL_E_PTR);
 
     auto* localCpuRoceEpPtr = dynamic_cast<CpuRoceEndpoint *>(localEpPtr);
     if (localCpuRoceEpPtr == nullptr) {
@@ -274,6 +279,8 @@ HcclResult HostCpuRoceChannel::GetStatus(ChannelStatus &status) {
     status = channelStatus_;
     switch (channelStatus_) {
         case ChannelStatus::READY:
+            socketMgr_->PutSocket(socket_);
+            socket_ = nullptr;
             return HCCL_SUCCESS;
         case ChannelStatus::SOCKET_TIMEOUT:
             return HCCL_E_ROCE_CONNECT;
