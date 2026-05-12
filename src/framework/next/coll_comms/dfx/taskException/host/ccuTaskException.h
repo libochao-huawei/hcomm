@@ -19,9 +19,16 @@
 #include "ccu_rep_context_v1.h"
 #include "ccu_device_pub.h"
 #include "ccu_jetty_.h"
+#include "coll_comm.h"
 
 namespace hcomm {
 using RdmaHandle = void*;
+
+using GetCcuCqeErrInfoCallBackHcomm = void (*)(u32 RemoteLocalId, u32 locDeviceId, uint16_t status, std::string LocalEid, std::string RemoteEid, std::string RemoteInsId); // 获取远端rankId的回调函数类型
+void RegisterGetCcuCqeErrInfoCallBackHcomm(GetCcuCqeErrInfoCallBackHcomm); // 注册获取远端rankId的回调函数
+
+using CcuGetErrStatusVecCallBack = std::vector<std::string> (*)(s32 deviceLogicID);
+void RegisterCcuGetErrStatusVecCallBack(CcuGetErrStatusVecCallBack);
 
 class CcuTaskException {
 public:
@@ -37,6 +44,7 @@ private:
     static HcclResult PrintCcuUbRegisters(const std::vector<CcuErrorInfo>& errorInfos, s32 devLogicId,
         const Hccl::TaskInfo& taskInfo);
     static HcclResult GetCcuJettys(const CcuErrorInfo& errorInfo, std::pair<CcuChannelInfo, std::vector<CcuJetty *>> &ctx);
+    static uint16_t GetChannleIdByCcuErrorInfo(const CcuErrorInfo& errorInfo);
 
  	static void PrintCcuErrorInfo(uint32_t deviceId, uint16_t status, const Hccl::TaskInfo& taskInfo);
     static void PrintCcuErrorLog(const std::vector<CcuErrorInfo>& errorInfos, const Hccl::TaskInfo& taskInfo, u32 deviceId);
@@ -105,6 +113,10 @@ private:
     
     static uint64_t GetCcuGSAValue(int32_t deviceId, uint32_t dieId, uint32_t gsaId);
     static uint16_t GetMSIdPerDie(uint16_t msId) { return msId & 0x7fff; }
+    static void GetCcuCqeErrorInfo(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 locDeviceId, uint8_t missionStatus);
+    static void GetCcuCqeErrRemoteLocalIdByRankId(hccl::CollComm* collComm, uint32_t rankid, u32 &remoteLocalId);
+    static void GetCcuCqeErrNetInstanceByRankId(hccl::CollComm* collComm, uint32_t rankid, std::string &netInstanceId);
+    static void ClusterMoniterGetCcuCqeErrInfo(u32 RemoteDeviceId, u32 locDeviceId, uint16_t status, std::string LocalEid, std::string RemoteEid, std::string RemoteInsId);
 };
 } // namespace hcomm
 
