@@ -19,10 +19,14 @@
 #include "hccp_tlv.h"
 #include <mutex>
 #include "hccp_async_ctx.h"
-#include "../../framework/env_config/env_config.h"
 
 namespace Hccl {
 using namespace std;
+
+/// 与 `Hccl::UB_QOS_DEFAULT`（legacy/framework/env_config/env_config.h）及 Next `EnvConfig::UB_QOS_DEFAULT` 数值一致；
+/// 本头文件不 include env_config，避免经 base_config.h 拉入 dma_mode.h 导致 platform 等目标缺头编译失败。
+constexpr u32 kRaUbGetTpInfoParamDefaultQos = 4U;
+
 constexpr u32 DEFAULT_INIT_PHY_ID  = 0;
 constexpr u32 DEFAULT_INIT_NIC_POS = 0;
 constexpr u32 DEFAULT_HDC_TYPE     = 6;
@@ -594,8 +598,8 @@ using RaUbGetTpInfoParam = struct RaUbGetTpInfoParamDef {
     IpAddress locAddr{};
     IpAddress rmtAddr{};
     TpProtocol tpProtocol{TpProtocol::CTP};
-    /// 与 Next TpMgr 一致：参与 SL→jetty priority 映射（0–7）；默认与 UB_QOS_DEFAULT 一致
-    uint32_t qos{UB_QOS_DEFAULT};
+    /// 与 Next TpMgr 一致：参与 SL→jetty priority 映射（0–7）；默认见 kRaUbGetTpInfoParamDefaultQos
+    uint32_t qos{kRaUbGetTpInfoParamDefaultQos};
     uint32_t slLevelCount{0U};
     bool loopFirstTpLowestSl{false};
     /// 与 Next `GetTpInfoParam::ccuLoopbackGetTpInfo` 对齐：标识 CCU 设备环回 GetTpInfo（便于日志/后续分支）
