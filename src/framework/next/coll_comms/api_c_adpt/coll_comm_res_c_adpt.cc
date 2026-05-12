@@ -281,8 +281,8 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
         if (engine != CommEngine::COMM_ENGINE_CPU) { // host dpu场景暂不支持cluster monitor
             CHK_RET(RegisterToClusterMonitor(comm));
         }
-        CHK_RET_UNAVAIL(myRank->CreateChannels(engine, commTag, channelDescFinals.data(), channelNum, channels, hcclComm));
 
+        CHK_RET_UNAVAIL(myRank->CreateChannels(engine, commTag, channelDescFinals.data(), channelNum, channels, hcclComm));
         if (engine == COMM_ENGINE_CPU) {
             HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
             CHK_PTR_NULL(hcclCommDfx);
