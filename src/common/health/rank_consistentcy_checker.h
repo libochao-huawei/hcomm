@@ -27,6 +27,7 @@ namespace hccl {
 constexpr u32 DEFAULT_CRC = 0xFFFFFFFF;   // CRC默认值
 constexpr u32 MAX_CANN_VERSION_LEN = 50;  // CANN版本校验
 constexpr u32 MAX_CRC_LEN = 128;          // 最大CRC个数128（CRC最大直径长度：128*sizeof（u32））
+static constexpr u32 MAX_CRC_LEN_V2 = 16; // A5最大CRC个数
 
 using HcclCMDInfo = struct TagHcclCMDInfo {
     HcclCMDType cmdType{HcclCMDType::HCCL_CMD_INVALID};
@@ -63,6 +64,21 @@ enum class HcclCrcRecordType {
     HCCL_CRC_RECORD_RANKTABLE = 0,
     HCCL_CRC_RECORD_VARING_COUNTS = 1,
     HCCL_CRC_RECORD_VARING_DISPLACEMENTS = 2,
+};
+
+struct CrcEntryV2 {
+    std::string name;  // A5环境变量名（如"HCCL_BUFFSIZE"）或子通信域参数名（如"sub_comm_rankNum"）或ranktable名
+    u32 crc = 0;
+};
+
+struct CheckFrameV2 {
+    u32 crcNum = 0;                                   // 环境变量CRC个数
+    u32 crcArray[MAX_CRC_LEN_V2] = {0};               // 环境变量CRC数组
+    u32 subCommCrcNum = 0;                            // 子通信域参数CRC个数
+    u32 subCommCrcArray[MAX_CRC_LEN_V2] = {0};  // 子通信域参数CRC数组
+    u32 rankTableCrcNum = 0;                          // ranktable CRC个数
+    u32 rankTableCrcArray[MAX_CRC_LEN_V2] = {0}; // ranktable CRC数组
+    char version[MAX_CANN_VERSION_LEN + 1] = {0};
 };
 
 const std::map<HcclCrcRecordType, std::string> HCCL_CRC_RECORD_TYPE_STR_MAP{
@@ -126,6 +142,17 @@ public:
 
     void SetCheckCannVersionSwitch(const bool cannVerCheckSwitch);
 
+    // ====== A5专用校验接口 ======
+    HcclResult RecordEnvVarCrcV2();
+    HcclResult RecordRankTableCrcV2(const std::string &rankTableContent);
+    HcclResult RecordSubCommParaV2(u32 parentCommCrc, uint32_t rankNum,
+        const uint32_t *rankIds, uint64_t subCommId);
+    HcclResult GenerateCheckFrameV2(CheckFrameV2 &frame);
+    HcclResult CompareCheckFrameV2(const CheckFrameV2 &local, const CheckFrameV2 &remote);
+    u64 GetCheckFrameLengthV2();
+
+    void SetInconsistentCheckFirstDone(bool inconsistentCheckFirstDone)
+    bool GetInconsistentCheckFirstDone();
 private:
     explicit RankConsistentcyChecker();
     // all of that
@@ -154,6 +181,12 @@ private:
     HcclResult ClearCrcInfo(void);
     HcclResult GetCrc(u32 num, u32 *crcAddr);
     HcclResult CalcRawDataCrc(const void *ptr, u64 length, u32 &crc);
+    
+    // ====== A5专用校验接口 ======
+    bool CompareEnvV2(const CheckFrameV2 &local, const CheckFrameV2 &remote);
+    bool CompareRankTableV2(const CheckFrameV2 &local, const CheckFrameV2 &remote);
+    bool CompareSubCommV2(const CheckFrameV2 &local, const CheckFrameV2 &remote);
+    bool CompareVersionV2(const CheckFrameV2 &local, const CheckFrameV2 &remote);
 
     // 要校验的内容
     std::unordered_map<std::string, HcclCMDInfo> cmdInfoMap_;
@@ -171,6 +204,13 @@ private:
     ProtocolType protocolType_ = ProtocolType::RESERVED;
     std::vector<u32> crcTable_;
     std::mutex mutex_;
+
+    // ====== A5专用CRC======
+    std::vector<A5CrcEntry> envVarCrcsV2_;        // A5环境变量CRC（带名称，用于精确报错）
+    std::vector<A5CrcEntry> rankTableCrcsV2_;     // A5 ranktable CRC（带名称，用于精确报错）
+    std::vector<A5CrcEntry> subCommParaCrcsV2_;   // A5子通信域参数CRC（带名称，用于精确报错）
+
+    bool inconsistentCheckFirstDone_ = false; // 是否完成首次校验
 };
 }
 #endif  // RANK_CONSISTENTCY_CHECKER_H

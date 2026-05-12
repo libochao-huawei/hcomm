@@ -805,6 +805,9 @@ HcclResult MyRank::BatchExchangeAndCheckConsistency(
     const std::string &commTag,
     hcclComm *hcclComm)
 {
+    auto &checker = RankConsistentcyChecker::GetInstance();
+    u64 frameLenV2 = checker.GetA5CheckFrameLength();
+
     std::vector<Hccl::Socket*> sockets;
     std::vector<u32> remoteRanks;
     std::vector<HcommSocketRole> roles;
@@ -825,6 +828,31 @@ HcclResult MyRank::BatchExchangeAndCheckConsistency(
     if (channelNum == 0) {
         HCCL_INFO("[BatchExchangeAndCheckConsistency] channelNum is 0.");
         return HCCL_SUCCESS;
+    }
+
+    // 只有rankConsistentState是first或者on时才进行hcomm信息校验
+    if(Hccl::EnvConfig::GetInstance().GetLogConfig().GetDfsConfig().rankConsistentState == 1 ||
+        (Hccl::EnvConfig::GetInstance().GetLogConfig().GetDfsConfig().rankConsistentState == 0 && !checker.GetInconsistentCheckFirstDone())) {
+        // ====== 生成本端A5CheckFrame ======
+       CheckFrameV2 localFrame;
+       CHK_RET(checker.GenerateCheckFrameV2(localFrame));
+
+       // ====== 交换CheckFrameV2（定长，批量并发交换）======
+       std::vector<CheckFrameV2> remoteFrames(sockets.size());
+       CHK_RET(BatchExchangeFixedData(sockets, remoteRanks, roles,
+            reinterpret_cast<const u8*>(&localFrame), static_cast<u32>(frameLenV2),
+            reinterpret_cast<u8*>(remoteFrames.data()), static_cast<u32>(frameLenV2)));
+
+        // ====== 逐个比对CheckFrameV2（精确报错：环境变量名/子通信域参数名）======
+        for (u32 i = 0; i < sockets.size(); i++) {
+            HcclResult cmpRet = checker.CompareCheckFrameV2(localFrame, remoteFrames[i]);
+            if (cmpRet != HCCL_SUCCESS) {
+                HCCL_ERROR("[BatchExchangeAndCheckConsistency] CheckFrameV2 mismatch for remoteRank[%u].",
+                    remoteRanks[i]);
+                return cmpRet;
+            }
+        }
+        checker.SetInconsistentCheckFirstDone(true);
     }
 
     // 交换HCCL算子信息 ======
