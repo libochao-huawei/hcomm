@@ -99,15 +99,17 @@ using HrtRaUbCreateJettyParam = struct HrtRaUbJettyCreateParamDef {
     u32              sqDepth{0};
     u32              rqDepth{64};
     HrtTransportMode transMode{HrtTransportMode::RM}; // 仅能使用RM模式的Jetty
+    u8 errTimeout{8};
 
     HrtRaUbJettyCreateParamDef() {}
 
     HrtRaUbJettyCreateParamDef(JfcHandle sjfcHandle, JfcHandle rjfcHandle,
         u32 tokenValue, TokenIdHandle tokenIdHandle, HrtJettyMode jettyMode,
-        u32 jettyId, u64 sqBufVa, u32 sqBufSize, u32 sqeBufIndex, u32 sqDepth)
+        u32 jettyId, u64 sqBufVa, u32 sqBufSize, u32 sqeBufIndex, u32 sqDepth, u8 errTimeout = 16)
         : sjfcHandle(sjfcHandle), rjfcHandle(rjfcHandle), tokenValue(tokenValue),
           tokenIdHandle(tokenIdHandle), jettyMode(jettyMode), jettyId(jettyId),
-          sqBufVa(sqBufVa), sqBufSize(sqBufSize), sqeBufIndex(sqeBufIndex), sqDepth(sqDepth)
+          sqBufVa(sqBufVa), sqBufSize(sqBufSize), sqeBufIndex(sqeBufIndex),
+          sqDepth(sqDepth), errTimeout(errTimeout)
     {
     }
 };
@@ -180,5 +182,22 @@ inline bool HccpCheckUboeSupported(const u32 devFeature)
     // 设备特性位掩码, 右移取UBOE标志位, 值为1表示支持
     return (devFeature >> UBOE_DEV_FLAG_RIGHT_SHIFT) & 1;
 }
+
+// ==================== TA 档位映射表 ====================
+// TA 芯片挡位 = hw_value / 8
+// 挡位 0 (0-7):   512ms
+// 挡位 1 (8-15):  1000ms (1s)
+// 挡位 2 (16-23): 8000ms (8s)
+// 挡位 3 (24-31): 32000ms (32s)
+// 各挡位对应的最小硬件配置值
+constexpr uint8_t TA_HW_GEAR0_BASE = 0;
+constexpr uint8_t TA_HW_GEAR1_BASE = 8;
+constexpr uint8_t TA_HW_GEAR2_BASE = 16;
+constexpr uint8_t TA_HW_GEAR3_BASE = 24;
+static constexpr uint32_t TA_TIMEOUT_MS_GEAR0 = 512;
+static constexpr uint32_t TA_TIMEOUT_MS_GEAR1 = 1000;
+static constexpr uint32_t TA_TIMEOUT_MS_GEAR2 = 8000;
+static constexpr uint32_t TA_TIMEOUT_MS_GEAR3 = 32000;
+
 } // namespace hcomm
 #endif // HCOMM_ADAPTER_HCCP_H
