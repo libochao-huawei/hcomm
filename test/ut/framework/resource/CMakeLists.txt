@@ -46,10 +46,7 @@ target_compile_options(hccl_utest_framework_resource PRIVATE
     -O0 -g --coverage -fprofile-arcs -ftest-coverage -fno-access-control
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
 )
- 
-target_link_directories(hccl_utest_framework_resource PRIVATE
-    ${ASCEND_CANN_PACKAGE_PATH}/lib64
-)
+
 target_link_libraries(hccl_utest_framework_resource PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
@@ -95,10 +92,7 @@ target_compile_options(hccl_utest_framework_resource_a5 PRIVATE
     -O0 -g --coverage -fprofile-arcs -ftest-coverage -fno-access-control
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
 )
- 
-target_link_directories(hccl_utest_framework_resource_a5 PRIVATE
-    ${ASCEND_CANN_PACKAGE_PATH}/lib64
-)
+
 target_link_libraries(hccl_utest_framework_resource_a5 PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>

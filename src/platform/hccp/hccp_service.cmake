@@ -57,11 +57,6 @@ target_link_options(hccp_service.bin PRIVATE
     $<$<CONFIG:Release>:-s>
 )
 
-# c_sec、mmpa、unified_dlog动态库搜索路径
-target_link_directories(hccp_service.bin PRIVATE
-    ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/
-)
-
 target_link_libraries(hccp_service.bin PRIVATE
     c_sec
     unified_dlog
