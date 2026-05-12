@@ -25,7 +25,7 @@ public:
 
     HcclResult Init();
 
-    HcclResult CreateJetty();
+    HcclResult CreateJetty(u8 errTimeout);
 
     HrtRaUbCreateJettyParam GetCreateJettyParam() const;
     HrtRaUbJettyCreatedOutParam GetJettyedOutParam() const;
@@ -55,7 +55,7 @@ private:
     HrtRaUbCreateJettyParam inParam_{};
     HrtRaUbJettyCreatedOutParam outParam_{};
 
-    HcclResult HandleAsyncRequest();
+    HcclResult HandleAsyncRequest(u8 errTimeout);
     RdmaHandle rdmaHandle_{nullptr};
 };
 
