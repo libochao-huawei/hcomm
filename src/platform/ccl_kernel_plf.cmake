@@ -229,13 +229,6 @@ if(BUILD_OPEN_PROJECT)
         ${CCL_KERNEL_PLF_OPEN_INCLUDE_LIST}
     )
 
-    target_link_directories(ccl_kernel_plf PRIVATE
-        ${ASCEND_CANN_PACKAGE_PATH}/devlib/device
-    )
-    target_link_directories(ccl_kernel_plf_a PRIVATE
-        ${ASCEND_CANN_PACKAGE_PATH}/devlib/device
-    )
-
     # 链接库
     set(CCL_KERNEL_PLF_LINK_LIBS
         -Wl,--no-as-needed

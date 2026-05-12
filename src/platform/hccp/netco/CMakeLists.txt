@@ -90,12 +90,9 @@ set(includes
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
 )
 
-target_include_directories(net_co PRIVATE ${includes})
-if(PRODUCT_SIDE STREQUAL "device")
-    target_link_directories(net_co PRIVATE
-        ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
-    )
-endif()
+target_include_directories(net_co PRIVATE
+    ${includes}
+)
 
 target_compile_options(net_co PRIVATE
 	-Werror
