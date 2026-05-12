@@ -105,7 +105,7 @@ HcclResult CollReduceScatterPipelineFor91093Executor::BuildPipelineLoopContext(
     CHK_PTR_NULL(curOutputPtr);
 
     const u64 maxCountDataPerLoop = CalcLoopMaxCount(unitSize);
-    const u64 targetCountDataPerLoop = HCCL_SMALL_COUNT_4_MB / unitSize;
+    const u64 targetCountDataPerLoop = HCCL_SMALL_COUNT_2_MB / unitSize;
     const u64 countDataPerLoop =
         maxCountDataPerLoop < targetCountDataPerLoop ? maxCountDataPerLoop : targetCountDataPerLoop;
     CHK_PRT_RET(countDataPerLoop == 0,
