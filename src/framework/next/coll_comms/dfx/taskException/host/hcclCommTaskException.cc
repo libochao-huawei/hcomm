@@ -23,7 +23,6 @@ namespace hcomm {
 
 using namespace std;
 
-constexpr u32 MAX_MODULE_DEVICE_NUM_V2 = 65;
 constexpr uint32_t TASK_CONTEXT_SIZE = 50;
 constexpr uint32_t TASK_CONTEXT_INFO_SIZE = LOG_TMPBUF_SIZE - 50; // task 执行失败时打印前序task信息的长度限制
 
