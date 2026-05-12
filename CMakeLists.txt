@@ -140,22 +140,6 @@ elseif(BUILD_OPEN_PROJECT)
             DESTINATION .
             COMPONENT hcomm
         )
-        install(FILES
-            ${HCOMM_DEVICE_INSTALL_PATH}/${INSTALL_CCL_KERNEL_JSON_DIR}/kernel/libccl_kernel.so
-            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel
-            COMPONENT hcomm
-        )
-        install(FILES
-            ${HCOMM_DEVICE_INSTALL_PATH}/${INSTALL_CCL_KERNEL_JSON_DIR}/config/ccl_kernel.json
-            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/config
-            COMPONENT hcomm
-        )
-        install(FILES
-            ${HCOMM_DEVICE_INSTALL_PATH}/${INSTALL_CCL_KERNEL_JSON_DIR}/kernel/libaicpu_custom.so
-            ${HCOMM_DEVICE_INSTALL_PATH}/${INSTALL_CCL_KERNEL_JSON_DIR}/kernel/libaicpu_custom.json
-            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel
-            COMPONENT hcomm
-        )
     endif()
 
     set(HCCL_HEAD
