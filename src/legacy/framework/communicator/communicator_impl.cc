@@ -162,7 +162,7 @@ void CommunicatorImpl::InitCommResource(const CommParams &commParams)
     InitTaskExceptionHandler();
     InitHDCommunicate();
     notifyTimeoutCfg.Init();
-    status = CommStatus::COMM_READY;
+    SetCommStatus(CommStatus::COMM_READY);
     SnapShotParser::GetInstance().SerializeCommonInfo(commParams, config, std::move(ranktableInfo), topoInfo, staticBinaryInfo);
     InitOneSidedService();
     RegisterKernel();
@@ -263,7 +263,7 @@ HcclResult CommunicatorImpl::Init(const CommParams &commParams, std::unique_ptr<
             InitTaskExceptionHandler();
             RegisterKernel();
             InitDpuKernel();
-            status = CommStatus::COMM_READY;
+            SetCommStatus(CommStatus::COMM_READY);
         } catch (HcclException &e) {
             HCCL_ERROR(e.what());
             PrintBackTrace(e);
@@ -317,7 +317,7 @@ HcclResult CommunicatorImpl::Init(const CommParams &commParams, std::unique_ptr<
             InitTaskExceptionHandler();
             RegisterKernel();
             InitDpuKernel();
-            status = CommStatus::COMM_READY;
+            SetCommStatus(CommStatus::COMM_READY);
             SnapShotParser::GetInstance().SerializeSubCommInfo(commParams, subConfig, rankIdsVec, staticBinaryInfo);
         );
         return HcclResult::HCCL_SUCCESS;
@@ -610,7 +610,7 @@ void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtS
     submittedOpCnt = collOpIndex;
     opBaseOpIndex++;
     opIndex++;
-    status = CommStatus::COMM_READY;
+    SetCommStatus(CommStatus::COMM_READY);
 }
 
 HcclResult CommunicatorImpl::SetAivControledCoreNum(bool isAiv)
@@ -684,7 +684,7 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
             return HcclResult::HCCL_E_NOT_SUPPORT;
         }
         bool isAiv = (opExecuteConfig.accState == AcceleratorState::AIV || opExecuteConfig.accState == AcceleratorState::AIV_ONLY);
-        status = CommStatus::COMM_READY;
+        SetCommStatus(CommStatus::COMM_READY);
         CHK_RET(OpParamsChecker::CheckOpDataTypeOpbase(opParams, GetOpCcuFeatureFlag(), GetOpAiCpuTSFeatureFlag(), isAiv));
 
         // AICPU aclgraph场景传入的stream被capture且算子时支持零拷贝算法的,会切换到图模式
@@ -697,7 +697,7 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
         CHK_RET(SetAivControledCoreNum(isAiv));
 
         // 避免transport建链前，通讯域被摧毁
-        status = CommStatus::COMM_INUSE;
+        SetCommStatus(CommStatus::COMM_INUSE);
         if (opParams.sendBuf != nullptr) {
             PrintMemoryAttr(opParams.sendBuf);
         }
@@ -718,22 +718,22 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
         RefreshSubmittedOpcnt();
         opBaseOpIndex++;
         opIndex++;
-        status = CommStatus::COMM_READY;
+        SetCommStatus(CommStatus::COMM_READY);
     } catch (HcclException &e) {
-        status = CommStatus::COMM_READY;
+        SetCommStatus(CommStatus::COMM_READY);
         HCCL_ERROR(e.what());
         PrintBackTrace(e);
         u32 idxHcclException = GetSubmittedOpCnt();
         HCCL_ERROR("SubmittedOpCnt: %u, OperatorParams: %s", idxHcclException, opParams.Describe().c_str());
         return e.GetErrorCode();
     } catch (exception &e) {
-        status = CommStatus::COMM_READY;
+        SetCommStatus(CommStatus::COMM_READY);
         HCCL_ERROR(e.what());
         u32 idxException = GetSubmittedOpCnt();
         HCCL_ERROR("SubmittedOpCnt: %u, OperatorParams: %s", idxException, opParams.Describe().c_str());
         return HcclResult::HCCL_E_INTERNAL;
     } catch (...) {
-        status = CommStatus::COMM_READY;
+        SetCommStatus(CommStatus::COMM_READY);
         u32 idxOthers = GetSubmittedOpCnt();
         HCCL_ERROR("SubmittedOpCnt: %u, OperatorParams: %s", idxOthers, opParams.Describe().c_str());
         HCCL_ERROR("Unknown error occurs!");
@@ -744,7 +744,7 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
 
 HcclResult CommunicatorImpl::CheckCommStatus()
 {
-    if (status == CommStatus::COMM_ERROR) {
+    if (GetCommStatus() == CommStatus::COMM_ERROR) {
         HCCL_ERROR("Comm has been error, can not load opbased operator now!");
         return HcclResult::HCCL_E_INTERNAL;
     }
@@ -776,25 +776,25 @@ HcclResult CommunicatorImpl::AllocCollOpResource(const CollOpParams &opParams, v
             return HcclResult::HCCL_E_NOT_SUPPORT;
         }
  
-        status = CommStatus::COMM_READY;
+        SetCommStatus(CommStatus::COMM_READY);
         CHK_RET(OpParamsChecker::CheckOpDataTypeOpbase(opParams, GetOpCcuFeatureFlag(), GetOpAiCpuTSFeatureFlag(), false));
-        status = CommStatus::COMM_INUSE;
+        SetCommStatus(CommStatus::COMM_INUSE);
         std::string opAlgTag = opParams.opTag + "_" + curAlgName;
         CHK_RET(collService->AllocCollOpResource(*currentCollOperator, opAlgTag, addr));
-        status = CommStatus::COMM_READY;
+        SetCommStatus(CommStatus::COMM_READY);
     } catch (HcclException &e) {
-        status = CommStatus::COMM_READY;
+        SetCommStatus(CommStatus::COMM_READY);
         HCCL_ERROR(e.what());
         PrintBackTrace(e);
         HCCL_ERROR("AllocCollOpResource OperatorParams: %s", opParams.Describe().c_str());
         return e.GetErrorCode();
     } catch (exception &e) {
-        status = CommStatus::COMM_READY;
+        SetCommStatus(CommStatus::COMM_READY);
         HCCL_ERROR(e.what());
         HCCL_ERROR("AllocCollOpResource OperatorParams: %s", opParams.Describe().c_str());
         return HcclResult::HCCL_E_INTERNAL;
     } catch (...) {
-        status = CommStatus::COMM_READY;
+        SetCommStatus(CommStatus::COMM_READY);
         HCCL_ERROR("AllocCollOpResource OperatorParams: %s", opParams.Describe().c_str());
         HCCL_ERROR("Unkown error occurs!");
         return HcclResult::HCCL_E_INTERNAL;
@@ -900,7 +900,7 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
         HCCL_INFO("CommunicatorImpl::LoadOffloadCollOp dataType[%s]", opParams.dataType.Describe().c_str());
         isLoadOp = true;
         curOpParams = opParams;
-        if (status == CommStatus::COMM_ERROR) {
+        if (GetCommStatus() == CommStatus::COMM_ERROR) {
             HCCL_ERROR("Comm has been error, can not offload operator now!");
             return HcclResult::HCCL_E_INTERNAL;
         }
@@ -951,22 +951,22 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
         }    
         
         // 避免transport建链前，通讯域被摧毁
-        status = CommStatus::COMM_INUSE;
+        SetCommStatus(CommStatus::COMM_INUSE);
         collService->LoadWithOffloadMode(*currentCollOperator, std::make_unique<Stream>(stream));
-        status = CommStatus::COMM_READY;
+        SetCommStatus(CommStatus::COMM_READY);
         bool cachedReq = opParams.staticShape || isCapture;
         ReportProfInfo(beginTime, cachedReq, isCapture); // profiling对于aclgraph场景的处理与单算子一致
         opIndex++;
     } catch (HcclException &e) {
-        status = CommStatus::COMM_READY;
+        SetCommStatus(CommStatus::COMM_READY);
         HCCL_ERROR(e.what());
         return e.GetErrorCode();
     } catch (exception &e) {
-        status = CommStatus::COMM_READY;
+        SetCommStatus(CommStatus::COMM_READY);
         HCCL_ERROR(e.what());
         return HcclResult::HCCL_E_INTERNAL;
     } catch (...) {
-        status = CommStatus::COMM_READY;
+        SetCommStatus(CommStatus::COMM_READY);
         HCCL_ERROR("Unknown error occurs!");
         return HcclResult::HCCL_E_INTERNAL;
     }
@@ -2015,7 +2015,7 @@ HcclResult CommunicatorImpl::Clean()
 HcclResult CommunicatorImpl::Resume()
 {
     TRY_CATCH_RETURN(
-        if (status == CommStatus::COMM_ERROR) {
+        if (GetCommStatus() == CommStatus::COMM_ERROR) {
             HCCL_ERROR("[NsRecovery][Resume] Comm has been error, can not resume now!");
             return HcclResult::HCCL_E_INTERNAL;
         }
@@ -2115,7 +2115,7 @@ bool CommunicatorImpl::IsCommReady()
     CHECK_NULLPTR(collService, "[CommunicatorImpl::IsCommReady] collService is nullptr!");
     if (collService->IsAllTransportRecoveredReady(GetId())) {
         // 遗留问题：对Comm状态置为ready
-        status = CommStatus::COMM_READY;
+        SetCommStatus(CommStatus::COMM_READY);
         return true;
     } else {
         return false;
@@ -2169,8 +2169,8 @@ HcclResult CommunicatorImpl::RecoverComm(SnapShotComm &snapShotComm, u32 stepPar
         try {
             HCCL_INFO("[CommunicatorImpl][%s], rank[%d]", __func__, myRank);
             // 将状态设置为resuming
-            if (status == CommStatus::COMM_IDLE) {
-                status = CommStatus::COMM_RESUMING;
+            if (GetCommStatus() == CommStatus::COMM_IDLE) {
+                SetCommStatus(CommStatus::COMM_RESUMING);
             } else {
                 HCCL_ERROR("Communicator status is not idle, can not resume!");
                 return HcclResult::HCCL_E_INTERNAL;
@@ -2204,18 +2204,18 @@ HcclResult CommunicatorImpl::RecoverComm(SnapShotComm &snapShotComm, u32 stepPar
             RecoverTransportData(snapShotComm.submittedOpCnt, snapShotComm.levelRankPairs, stepParam, snapShotComm.linkGroupPair);
         } catch (HcclException &e) {
             // 异常时状态返回IDLE
-            status = CommStatus::COMM_IDLE;
+            SetCommStatus(CommStatus::COMM_IDLE);
             HCCL_ERROR(e.what());
             PrintBackTrace(e);
             return e.GetErrorCode();
         } catch (exception &e) {
             // 异常时状态返回IDLE
-            status = CommStatus::COMM_IDLE;
+            SetCommStatus(CommStatus::COMM_IDLE);
             HCCL_ERROR(e.what());
             return HcclResult::HCCL_E_INTERNAL;
         } catch (...) {
             // 异常时状态返回IDLE
-            status = CommStatus::COMM_IDLE;
+            SetCommStatus(CommStatus::COMM_IDLE);
             HCCL_ERROR("Unknown error occurs!");
             return HcclResult::HCCL_E_INTERNAL;
         }
@@ -2233,8 +2233,8 @@ HcclResult CommunicatorImpl::RecoverComm(const SnapShotSubComm &snapShotSubComm,
         try {
             HCCL_INFO("[CommunicatorImpl][%s], rank[%d]", __func__, myRank);
             // 将状态设置为resuming
-            if (status == CommStatus::COMM_IDLE) {
-                status = CommStatus::COMM_RESUMING;
+            if (GetCommStatus() == CommStatus::COMM_IDLE) {
+                SetCommStatus(CommStatus::COMM_RESUMING);
             } else {
                 HCCL_ERROR("Communicator status is not idle, can not resume!");
                 return HcclResult::HCCL_E_INTERNAL;
@@ -2267,18 +2267,18 @@ HcclResult CommunicatorImpl::RecoverComm(const SnapShotSubComm &snapShotSubComm,
             RecoverTransportData(snapShotSubComm.submittedOpCnt, snapShotSubComm.levelRankPairs, inputStep, snapShotSubComm.linkGroupPair);
         } catch (HcclException &e) {
             // 异常时状态返回IDLE
-            status = CommStatus::COMM_IDLE;
+            SetCommStatus(CommStatus::COMM_IDLE);
             HCCL_ERROR(e.what());
             PrintBackTrace(e);
             return e.GetErrorCode();
         } catch (exception &e) {
             // 异常时状态返回IDLE
-            status = CommStatus::COMM_IDLE;
+            SetCommStatus(CommStatus::COMM_IDLE);
             HCCL_ERROR(e.what());
             return HcclResult::HCCL_E_INTERNAL;
         } catch (...) {
             // 异常时状态返回IDLE
-            status = CommStatus::COMM_IDLE;
+            SetCommStatus(CommStatus::COMM_IDLE);
             HCCL_ERROR("Unknown error occurs!");
             return HcclResult::HCCL_E_INTERNAL;
         }
@@ -2311,24 +2311,24 @@ HcclResult CommunicatorImpl::RecoverSubComm(const SnapShotSubComm &snapShotSubCo
             return subCommImpl->RecoverComm(snapShotSubComm, subRankGraph, step);
         } else {
             // 异常时状态返回IDLE
-            status = CommStatus::COMM_IDLE;
+            SetCommStatus(CommStatus::COMM_IDLE);
             std::string msg = StringFormat("CreateSubComm fail, communicator has not been initialized, please check.");
             THROW<InternalException>(msg);
         }
     } catch (HcclException &e) {
         // 异常时状态返回IDLE
-        status = CommStatus::COMM_IDLE;
+        SetCommStatus(CommStatus::COMM_IDLE);
         HCCL_ERROR(e.what());
         PrintBackTrace(e);
         return e.GetErrorCode();
     } catch (exception &e) {
         // 异常时状态返回IDLE
-        status = CommStatus::COMM_IDLE;
+        SetCommStatus(CommStatus::COMM_IDLE);
         HCCL_ERROR(e.what());
         return HcclResult::HCCL_E_INTERNAL;
     } catch (...) {
         // 异常时状态返回IDLE
-        status = CommStatus::COMM_IDLE;
+        SetCommStatus(CommStatus::COMM_IDLE);
         HCCL_ERROR("Unknown error occurs!");
         return HcclResult::HCCL_E_INTERNAL;
     }
@@ -2389,7 +2389,7 @@ void CommunicatorImpl::WaitReady() const
     HCCL_INFO("[CommunicatorImpl][%s] start", __func__);
     HcclUs startTime = std::chrono::steady_clock::now();
     while (true) {
-        if (status == CommStatus::COMM_READY) {
+        if (GetCommStatus() == CommStatus::COMM_READY) {
             break;
         }
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
@@ -2633,12 +2633,12 @@ void CommunicatorImpl::PrintChannelInfoCallback() const
 
 void CommunicatorImpl::SetCommStatus(CommStatus commStatus)
 {
-    status = commStatus;
+    status_.store(commStatus);
 }
 
 CommStatus CommunicatorImpl::GetCommStatus() const
 {
-    return status;
+    return status_.load();
 }
 
 std::map<HcclAccelerator, AcceleratorState> accStateMap = {
@@ -2935,7 +2935,7 @@ HcclResult CommunicatorImpl::HcomSelectAlg(const CollOpParams& opParams, int32_t
     HCCL_INFO("CommunicatorImpl::HcomSelectAlg opType[%s], count[%llu], dataType[%s], HcclReduceOp[%s], aivCoreLimit[%d]",
         opParams.opType.Describe().c_str(), opParams.count, opParams.dataType.Describe().c_str(), opParams.reduceOp.Describe().c_str(), aivCoreLimit);
 
-    if (status == CommStatus::COMM_ERROR) {
+    if (GetCommStatus() == CommStatus::COMM_ERROR) {
         HCCL_ERROR("Comm has been error, can not select alg now!");
         return HcclResult::HCCL_E_INTERNAL;
     }
@@ -2957,7 +2957,7 @@ HcclResult CommunicatorImpl::HcomSelectAlg(const CollOpParams& opParams, int32_t
                                                                         GetOpAiCpuTSFeatureFlag(), ifAiv);
     if (dataTypeChkRes != HcclResult::HCCL_SUCCESS) {
         HCCL_ERROR("[CommunicatorImpl::HcomSelectAlg] DataType check fail.");
-        status = CommStatus::COMM_READY;
+        SetCommStatus(CommStatus::COMM_READY);
         return dataTypeChkRes;
     }
     algName = curAlgName;
@@ -3037,7 +3037,7 @@ HcclResult CommunicatorImpl::GetCacheMap(AivOpCacheArgs& opCacheParam , std::sha
 
 HcclResult CommunicatorImpl::ReLoadOpbasedOp()
 {
-    HCCL_DEBUG("[CommunicatorImpl][%s] status is [%s], isSuspended is [%d]", __func__, status.Describe().c_str(),
+    HCCL_DEBUG("[CommunicatorImpl][%s] status is [%s], isSuspended is [%d]", __func__, GetCommStatus().Describe().c_str(),
                isSuspended);
     ExecAlgSelect(curOpParams, OpMode::OPBASE); // 根据配置选择对应的collService
     if (dynamic_cast<CollServiceDefaultImpl *>(collService) != nullptr) {
@@ -3049,7 +3049,7 @@ HcclResult CommunicatorImpl::ReLoadOpbasedOp()
                                                                        GetOpAiCpuTSFeatureFlag(), isAiv); // 算子粒度
     if (dataTypeChkRes != HcclResult::HCCL_SUCCESS) {
         HCCL_ERROR("[CommunicatorImpl::ReLoadOpbasedOp] DataType check fail.");
-        status = CommStatus::COMM_READY;
+        SetCommStatus(CommStatus::COMM_READY);
         return dataTypeChkRes;
     }
 
@@ -3063,7 +3063,7 @@ HcclResult CommunicatorImpl::ReLoadOpbasedOp()
 
 HcclResult CommunicatorImpl::ReLoadOffloadOp()
 {
-    HCCL_DEBUG("[CommunicatorImpl][%s] status is [%s], isSuspended is [%d]", __func__, status.Describe().c_str(),
+    HCCL_DEBUG("[CommunicatorImpl][%s] status is [%s], isSuspended is [%d]", __func__, GetCommStatus().Describe().c_str(),
                isSuspended);
 
     ExecAlgSelect(curOpParams, OpMode::OFFLOAD); // 根据配置选择对应的collService
@@ -3077,7 +3077,7 @@ HcclResult CommunicatorImpl::ReLoadOffloadOp()
                                                                         GetOpAiCpuTSFeatureFlag(), isAiv); // 算子粒度
     if (dataTypeChkRes != HcclResult::HCCL_SUCCESS) {
         HCCL_ERROR("[CommunicatorImpl::ReLoadOffloadCollOp] DataType check fail.");
-        status = CommStatus::COMM_READY;
+        SetCommStatus(CommStatus::COMM_READY);
         return dataTypeChkRes;
     }
 
