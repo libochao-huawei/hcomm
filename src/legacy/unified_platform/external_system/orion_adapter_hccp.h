@@ -410,37 +410,32 @@ using HrtRaUbCreateJettyParam = struct HrtRaUbJettyCreateParamDef {
     JfcHandle sjfcHandle{0};
     JfcHandle rjfcHandle{0};
 
-    // CCU的DB需要注册，填写tokenValue
+    u8 errTimeout{8};
+
     u32 tokenValue{0};
     TokenIdHandle tokenIdHandle{0};
 
     HrtJettyMode jettyMode{HrtJettyMode::STANDARD};
 
-    // 如果jettyId为0，则代表UB自行申请jetty,如果jettyId不为0，则代表使用预留jetty id
-    // [1024, 1024 +127]为ccuJetty预留的id
-    // [1024 + 192, 1024 + 192 + 4K - 1]为starsJetty预留的id
     u32 jettyId{0};
 
-    // 指定内存，需要填写的参数，CCU类型需要填写,即HrtJettyMode::CCU_CCUM_CACHE
     u64 sqBufVa{0};
     u32 sqBufSize{0};
-    // 指定sqeBB资源起始id，当前预留
     u32 sqeBufIndex{0};
 
-    // HOST_OFFLOAD / HOST_OPBASE / CACHE_LOCK_DWQE 类型的Jetty ，需要指定WQEBB的数目
-    // STADARD 类型Jetty，该参数代表SQ深度
     u32              sqDepth{0};
     u32              rqDepth{64};
-    HrtTransportMode transMode{HrtTransportMode::RM}; // 仅能使用RM模式的Jetty
+    HrtTransportMode transMode{HrtTransportMode::RM};
 
     HrtRaUbJettyCreateParamDef() {}
 
     HrtRaUbJettyCreateParamDef(JfcHandle sjfcHandle, JfcHandle rjfcHandle,
         u32 tokenValue, TokenIdHandle tokenIdHandle, HrtJettyMode jettyMode,
-        u32 jettyId, u64 sqBufVa, u32 sqBufSize, u32 sqeBufIndex, u32 sqDepth)
+        u32 jettyId, u64 sqBufVa, u32 sqBufSize, u32 sqeBufIndex, u32 sqDepth, u8 errTimeout)
         : sjfcHandle(sjfcHandle), rjfcHandle(rjfcHandle), tokenValue(tokenValue),
           tokenIdHandle(tokenIdHandle), jettyMode(jettyMode), jettyId(jettyId),
-          sqBufVa(sqBufVa), sqBufSize(sqBufSize), sqeBufIndex(sqeBufIndex), sqDepth(sqDepth)
+          sqBufVa(sqBufVa), sqBufSize(sqBufSize), sqeBufIndex(sqeBufIndex),
+          sqDepth(sqDepth), errTimeout(errTimeout)
     {
     }
 };
