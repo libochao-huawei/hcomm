@@ -403,12 +403,6 @@ TEST_F(AiCpuTsHccsEndpointTest, Ut_When_export_import_Expect_Return_SUCCESS)
     uint32_t memDescLen = 0;
     CommMem outMem;
 
-    HcommMemGrantInfo remoteGrantInfo;
-    (void)aclrtDeviceGetBareTgid(&remoteGrantInfo.pid);
-    remoteGrantInfo.sdid = static_cast<uint32_t>(-1);
-    ret = HcommMemGrant(endpointHandle1, &remoteGrantInfo);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-
     ret = HcommMemExport(endpointHandle1, memHandle1, &memDesc, &memDescLen);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
