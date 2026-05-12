@@ -76,6 +76,7 @@ private:
     HcclResult GetLocalTlsStatus(Hccl::TlsStatus &tlsStatus) const;
 
     HcclResult TryInitCcuInstance();
+    HcclResult ConfigSqDepthByExpansionMode(CommEngine engine, HcommChannelDesc& hcommDesc);
     HcclResult DestroyNewChannels(CommEngine engine, const HcclChannelDesc* channelDescs);
 
     aclrtBinHandle binHandle_{nullptr};
@@ -103,8 +104,16 @@ private:
 
     // Ns recovery
     std::unique_ptr<NsRecoveryProcessor> nsRecoveryProcessor_{nullptr};
+    // 内部获取 port 的方法，根据 mode_ 区分 v1/v2
+    HcclResult GetDevicePortInternal(uint32_t rank, uint32_t *devPort);
 };
 
 } // namespace hccl
+
+namespace MyRankUtils {
+
+HcommChannelDesc ChannelDescHccl2Hcomm(const HcclChannelDesc &hcclDesc);
+
+} // namespace MyRankUtils  
 
 #endif // MY_RANK_H

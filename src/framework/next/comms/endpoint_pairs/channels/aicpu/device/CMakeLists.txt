@@ -9,7 +9,10 @@
 # -----------------------------------------------------------------------------------------------------------
 set(src_list
     aicpu_channel_process.cc
+    dev_aicpu_ts_channel_mgr.cc
+    dev_aicpu_ts_roce_channel.cc
     aicpu_ts_urma_channel_kernel.cc
+    dev_aicpu_ts_hccs_channel.cc
 )
 
 if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))

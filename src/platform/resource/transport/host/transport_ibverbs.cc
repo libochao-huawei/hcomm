@@ -21,6 +21,9 @@
 #include "externalinput.h"
 #include "../host/transport_ibverbs.h"
 
+// 混合模式（RoCE Cross-Mode）公共类型定义
+#include "../../../../framework/next/comms/endpoint_pairs/channels/host/exchange_data_format.h"
+
 using namespace std;
 constexpr u32 RDMA_QP_EXPECT_STATUS_PAUSE = 5;
 constexpr u32 RDMA_QP_EXPECT_STATUS_CONNECTED = 1;
@@ -194,10 +197,12 @@ HcclResult TransportIbverbs::Init()
         machinePara_.exchangeInfo.size());
     HcclUs startut = TIME_NOW();
 
-    CHK_SMART_PTR_NULL(machinePara_.inputMem);
-    CHK_SMART_PTR_NULL(machinePara_.outputMem);
+    if (machinePara_.userMemEnable) {
+        CHK_SMART_PTR_NULL(machinePara_.inputMem);
+        CHK_SMART_PTR_NULL(machinePara_.outputMem);
+        CHK_SMART_PTR_NULL(notifyPool_);
+    }
     CHK_PTR_NULL(dispatcher_);
-    CHK_SMART_PTR_NULL(notifyPool_);
     CHK_RET(CheckDeviceId());
     CHK_RET(CheckExchangeData());
 
@@ -286,11 +291,15 @@ HcclResult TransportIbverbs::FillExchangeDataTotalSize()
     if (UseMultiQp()) {
         exchangeDataTotalSize_ += sizeof(u32);  // 再放个MultiQpThreshold
     }
-    exchangeDataTotalSize_ += sizeof(MemMsg)*2; // 2: output and input mem
-    exchangeDataTotalSize_ += sizeof(MemMsg)*3; // 3: dataNotify_\ackNotify_\dataAckNotify_ or aicpu ones
-    exchangeDataTotalSize_ += machinePara_.exchangeInfo.size();
-    if (UseMultiQp()) {
-        exchangeDataTotalSize_ += qpsPerConnection_ * sizeof(MemMsg);  // 多QP下新增协商内容
+    if (machinePara_.userMemEnable) {
+        exchangeDataTotalSize_ += sizeof(MemMsg) * 2; // 2: output and input mem
+        exchangeDataTotalSize_ += sizeof(MemMsg) * 3; // 3: dataNotify_\ackNotify_\dataAckNotify_
+        if (UseMultiQp()) {
+            exchangeDataTotalSize_ += qpsPerConnection_ * sizeof(MemMsg);  // 多QP下新增协商内容
+        }
+    }
+    if (!isHybridMode_) {
+        exchangeDataTotalSize_ += machinePara_.exchangeInfo.size();
     }
 
     // 4.新增notify资源统计
@@ -342,23 +351,27 @@ HcclResult TransportIbverbs::ConstructExchangeForSend()
         exchangeDataBlankSize -= sizeof(u32);
     }
 
-    CHK_RET(RegUserMem(MemType::USER_OUTPUT_MEM, exchangeDataPtr, exchangeDataBlankSize));
-    CHK_RET(RegUserMem(MemType::USER_INPUT_MEM, exchangeDataPtr, exchangeDataBlankSize));
-    if (machinePara_.isAicpuModeEn) {
-        CHK_RET(CreateNotifyBuffer(dataNotify_, MemType::DATA_NOTIFY_MEM,
-            exchangeDataPtr, exchangeDataBlankSize, NotifyLoadType::DEVICE_NOTIFY));
-        CHK_RET(CreateNotifyBuffer(ackNotify_, MemType::ACK_NOTIFY_MEM,
-            exchangeDataPtr, exchangeDataBlankSize, NotifyLoadType::DEVICE_NOTIFY));
-        CHK_RET(CreateNotifyBuffer(dataAckNotify_, MemType::DATA_ACK_NOTIFY_MEM,
-            exchangeDataPtr, exchangeDataBlankSize, NotifyLoadType::DEVICE_NOTIFY));
-    } else {
-        CHK_RET(CreateNotifyBuffer(dataNotify_, MemType::DATA_NOTIFY_MEM, exchangeDataPtr, exchangeDataBlankSize));
-        CHK_RET(CreateNotifyBuffer(ackNotify_, MemType::ACK_NOTIFY_MEM, exchangeDataPtr, exchangeDataBlankSize));
-        CHK_RET(CreateNotifyBuffer(dataAckNotify_, MemType::DATA_ACK_NOTIFY_MEM,
-            exchangeDataPtr, exchangeDataBlankSize));
+    if (machinePara_.userMemEnable) {
+        CHK_RET(RegUserMem(MemType::USER_OUTPUT_MEM, exchangeDataPtr, exchangeDataBlankSize));
+        CHK_RET(RegUserMem(MemType::USER_INPUT_MEM, exchangeDataPtr, exchangeDataBlankSize));
+        if (machinePara_.isAicpuModeEn) {
+            CHK_RET(CreateNotifyBuffer(dataNotify_, MemType::DATA_NOTIFY_MEM,
+                exchangeDataPtr, exchangeDataBlankSize, NotifyLoadType::DEVICE_NOTIFY));
+            CHK_RET(CreateNotifyBuffer(ackNotify_, MemType::ACK_NOTIFY_MEM,
+                exchangeDataPtr, exchangeDataBlankSize, NotifyLoadType::DEVICE_NOTIFY));
+            CHK_RET(CreateNotifyBuffer(dataAckNotify_, MemType::DATA_ACK_NOTIFY_MEM,
+                exchangeDataPtr, exchangeDataBlankSize, NotifyLoadType::DEVICE_NOTIFY));
+        } else {
+            CHK_RET(CreateNotifyBuffer(dataNotify_, MemType::DATA_NOTIFY_MEM, exchangeDataPtr, exchangeDataBlankSize));
+            CHK_RET(CreateNotifyBuffer(ackNotify_, MemType::ACK_NOTIFY_MEM, exchangeDataPtr, exchangeDataBlankSize));
+            CHK_RET(CreateNotifyBuffer(dataAckNotify_, MemType::DATA_ACK_NOTIFY_MEM,
+                exchangeDataPtr, exchangeDataBlankSize));
+        }
     }
-    CHK_RET(ConstructExchangeDataForSend(exchangeDataPtr, exchangeDataBlankSize));
-    if (UseMultiQp()) {
+    if (!isHybridMode_) {
+        CHK_RET(ConstructExchangeDataForSend(exchangeDataPtr, exchangeDataBlankSize));
+    }
+    if (machinePara_.userMemEnable && UseMultiQp()) {
         for (u32 i = 0; i < qpsPerConnection_; i++) {
             std::shared_ptr<LocalIpcNotify> oneNotify;
             if (machinePara_.isAicpuModeEn) {
@@ -447,24 +460,26 @@ HcclResult TransportIbverbs::ParseReceivedExchangeData()
         exchangeDataBlankSize -= sizeof(u32);
     }
 
-    CHK_RET(GetRemoteAddr(MemType::USER_OUTPUT_MEM, exchangeDataPtr, exchangeDataBlankSize));
+    if (machinePara_.userMemEnable) {
+        CHK_RET(GetRemoteAddr(MemType::USER_OUTPUT_MEM, exchangeDataPtr, exchangeDataBlankSize));
+        CHK_RET(GetRemoteAddr(MemType::USER_INPUT_MEM, exchangeDataPtr, exchangeDataBlankSize));
+        CHK_RET(GetRemoteAddr(MemType::DATA_NOTIFY_MEM, exchangeDataPtr, exchangeDataBlankSize));
+        s32 sret = memcpy_s(&remoteDataNotifyMsg_, sizeof(MemMsg),
+            &remoteMemMsg_[static_cast<u32>(MemType::DATA_NOTIFY_MEM)], sizeof(MemMsg));
+        CHK_PRT_RET(sret != EOK,
+            HCCL_ERROR("[Get][RemoteMem]errNo[0x%016llx] In lbv exp init, memory copy failed. errorno[%d], "
+                    "params:destMaxSize[%zu],count[%zu]",
+            HCCL_ERROR_CODE(HCCL_E_MEMORY), sret, sizeof(MemMsg), sizeof(MemMsg)),
+            HCCL_E_MEMORY);
+        CHK_RET(GetRemoteAddr(MemType::ACK_NOTIFY_MEM, exchangeDataPtr, exchangeDataBlankSize));
+        CHK_RET(GetRemoteAddr(MemType::DATA_ACK_NOTIFY_MEM, exchangeDataPtr, exchangeDataBlankSize));
+    }
 
-    CHK_RET(GetRemoteAddr(MemType::USER_INPUT_MEM, exchangeDataPtr, exchangeDataBlankSize));
+    if (!isHybridMode_) {
+        CHK_RET(ParseExchangeData(exchangeDataPtr, exchangeDataBlankSize));
+    }
 
-    CHK_RET(GetRemoteAddr(MemType::DATA_NOTIFY_MEM, exchangeDataPtr, exchangeDataBlankSize));
-    s32 sret = memcpy_s(&remoteDataNotifyMsg_, sizeof(MemMsg),
-        &remoteMemMsg_[static_cast<u32>(MemType::DATA_NOTIFY_MEM)], sizeof(MemMsg));
-    CHK_PRT_RET(sret != EOK,
-        HCCL_ERROR("[Get][RemoteMem]errNo[0x%016llx] In lbv exp init, memory copy failed. errorno[%d], "
-                "params:destMaxSize[%zu],count[%zu]",
-        HCCL_ERROR_CODE(HCCL_E_MEMORY), sret, sizeof(MemMsg), sizeof(MemMsg)),
-        HCCL_E_MEMORY);
-    CHK_RET(GetRemoteAddr(MemType::ACK_NOTIFY_MEM, exchangeDataPtr, exchangeDataBlankSize));
-    CHK_RET(GetRemoteAddr(MemType::DATA_ACK_NOTIFY_MEM, exchangeDataPtr, exchangeDataBlankSize));
-
-    CHK_RET(ParseExchangeData(exchangeDataPtr, exchangeDataBlankSize));
-
-    if (UseMultiQp()) {
+    if (machinePara_.userMemEnable && UseMultiQp()) {
         for (u32 i = 0; i < qpsPerConnection_; i++) {
             CHK_RET(GetRemoteAddr(MemType::MULTI_QP_DATA_NOTIFY_MEM, exchangeDataPtr, exchangeDataBlankSize));
         }
@@ -747,6 +762,8 @@ HcclResult TransportIbverbs::InitQpConnect()
 {
     /* 创建QP操作句柄 */
     qpsPerConnection_ = GetQpsPerConnection();
+
+    CHK_RET(ExchangeCapabilityHybrid());
 
     CHK_RET(CreateQp());
 
@@ -1802,7 +1819,7 @@ HcclResult TransportIbverbs::CreateNotifyBuffer(std::shared_ptr<LocalIpcNotify> 
     /* 获取notify寄存器虚拟基地址、大小, 物理地址回传值为空 */
     struct MrInfoT mrInfo = {nullptr};
     if (machinePara_.isAicpuModeEn || (machinePara_.nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE &&
-        machinePara_.deviceType != localDeviceType)) {
+        machinePara_.deviceType != localDeviceType) || isHybridMode_) {
         CHK_RET(HrtRaGetNotifyMrInfo(machinePara_.localDeviceId, nicRdmaHandle_, &mrInfo));
         notifyBaseVa = reinterpret_cast<u64>(mrInfo.addr);
         notifyTotalSize = mrInfo.size;
@@ -2118,6 +2135,10 @@ HcclResult TransportIbverbs::GetRemoteNotifyAddr(u8*& exchangeDataPtr, u64& exch
 
 HcclResult TransportIbverbs::CreateNotifyValueBuffer()
 {
+    if (!machinePara_.userMemEnable) {
+        HCCL_INFO("userMemEnable is false, no need to create notify value buffer");
+        return HCCL_SUCCESS;
+    }
     std::unique_lock<std::mutex> lock(notifyValueMutex_[machinePara_.deviceLogicId]);
     if (notifyValueMem_[machinePara_.deviceLogicId].ptr() == nullptr) {
         u64 notifyVaule = 1; // notify值写1表示record
@@ -2705,4 +2726,64 @@ HcclResult TransportIbverbs::GetTransportId(u32 &id)
     id = cqeErrQpn_;
     return HCCL_SUCCESS;
 }
+
+HcclResult TransportIbverbs::ExchangeCapabilityHybrid()
+{
+    HCCL_INFO("[Hybrid][TransportIbverbs] Starting capability exchange");
+
+    // 1. 构造本地能力信息（使用公共头文件中的默认值）
+    using namespace hcomm;
+    RoCECapability localCap;
+    localCap.InitDefaults();
+    localCap.nicDeploy = NICDeployment::NIC_DEPLOYMENT_DEVICE;
+    localCap.commStack = CommStackType::COMM_STACK_TRANSPORT_IBVERBS;
+
+    // 2. 发送本地能力（合并为单次发送：totalLength已包含结构体大小）
+    CHK_RET(defaultSocket_->Send(&localCap, sizeof(localCap)));
+    HCCL_INFO("[Hybrid][TransportIbverbs] Sent capability, version=%u", localCap.version);
+
+    // 3. 接收对端能力（单次接收）
+    RoCECapability recvCap;
+    CHK_RET(defaultSocket_->Recv(&recvCap, sizeof(recvCap)));
+
+    // 4. 先检查魔数，如果不对可能是旧版本，需要回退
+    if (!RoCECapability::CheckMagic(reinterpret_cast<uint8_t*>(&recvCap), sizeof(recvCap))) {
+        HCCL_WARNING("[Hybrid][TransportIbverbs] Magic mismatch, peer may be old version. "
+                     "Falling back to native mode.");
+        // 回退到原生模式
+        isHybridMode_ = false;
+        return HCCL_SUCCESS;
+    }
+
+    // 5. 魔数正确，解析对端能力
+    RoCECapability remoteCap;
+    if (!remoteCap.Deserialize(reinterpret_cast<uint8_t*>(&recvCap), sizeof(recvCap))) {
+        HCCL_ERROR("[Hybrid][TransportIbverbs] Failed to deserialize capability");
+        return HCCL_E_PARA;
+    }
+
+    // 6. 校验字段有效性
+    if (!remoteCap.Validate()) {
+        HCCL_ERROR("[Hybrid][TransportIbverbs] Capability validation failed");
+        return HCCL_E_INTERNAL;
+    }
+
+    // 7. 版本兼容性处理（高版本兼容低版本）
+    if (remoteCap.version > ROCE_CAPABILITY_VERSION) {
+        // 对端版本更高，使用本地版本的功能集（最小公分母）
+        HCCL_INFO("[Hybrid][TransportIbverbs] Remote version %u > local %u, using local version features",
+            remoteCap.version, ROCE_CAPABILITY_VERSION);
+    } else if (remoteCap.version < ROCE_CAPABILITY_VERSION) {
+        // 对端版本更低，使用对端版本的功能集（向下兼容）
+        HCCL_INFO("[Hybrid][TransportIbverbs] Remote version %u < local %u, using remote version features",
+            remoteCap.version, ROCE_CAPABILITY_VERSION);
+    }
+
+    isHybridMode_ = (remoteCap.commStack == CommStackType::COMM_STACK_HOST_CPU_ROCE) ? true : false;
+    HCCL_INFO("[Hybrid][TransportIbverbs]Exchange mode success, Remote is %s", isHybridMode_ ? "HostCpuRoceChannel" :
+        "TransportIbverbs");
+
+    return HCCL_SUCCESS;
+}
+
 }  // namespace hccl

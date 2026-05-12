@@ -485,6 +485,19 @@ STATIC void RsNdaCqInitExPrepare(struct NdaCqInitAttr *attr, struct RsNdaCb *nda
     RsNdaInitExOps(ndaCb, attr->dmaMode, attr->ops, &cqInitAttrEx->ops);
 }
 
+STATIC void RsNdaFillQueueInfo(struct queue_info *extendInfo, struct queueInfo *info)
+{
+    info->qBuf.base = extendInfo->qbuf.base;
+    info->qBuf.entryCnt = extendInfo->qbuf.entry_cnt;
+    info->qBuf.entrySize = extendInfo->qbuf.entry_size;
+    info->dbrPiVa.iovBase = extendInfo->dbr_pi_va.iov_base;
+    info->dbrPiVa.iovLen = extendInfo->dbr_pi_va.iov_len;
+    info->dbrCiVa.iovBase = extendInfo->dbr_ci_va.iov_base;
+    info->dbrCiVa.iovLen = extendInfo->dbr_ci_va.iov_len;
+    info->dbHwVa.iovBase = extendInfo->db_hw_va.iov_base;
+    info->dbHwVa.iovLen = extendInfo->db_hw_va.iov_len;
+}
+
 STATIC int RsNdaCqCreateEx(struct RsRdevCb *rdevCb, struct ibv_cq_init_attr_extend *cqInitAttrEx,
     struct NdaCqInfo *info, void **ibvCqExt)
 {
@@ -493,10 +506,9 @@ STATIC int RsNdaCqCreateEx(struct RsRdevCb *rdevCb, struct ibv_cq_init_attr_exte
     cqExt = RsNdaIbvCreateCqExtend(rdevCb->ibCtxEx, cqInitAttrEx);
     CHK_PRT_RETURN(cqExt == NULL, hccp_err("RsNdaCreateCqExtend failed, errno:%d", errno), -ENOMEM);
 
+    RsNdaFillQueueInfo(&cqExt->cq_info, &info->cqInfo);
     info->cq = cqExt->cq;
-    (void)memcpy_s(&info->cqInfo, sizeof(struct queue_info), &cqExt->cq_info, sizeof(struct queue_info));
     *ibvCqExt = cqExt;
-
     return 0;
 }
 
@@ -618,8 +630,8 @@ STATIC int RsNdaQpCreateEx(struct RsQpCb *qpCb, struct ibv_qp_init_attr_extend *
     }
 
     info->qp = qpCb->ibQp;
-    (void)memcpy_s(&info->sqInfo, sizeof(struct queue_info), &qpCb->ibQpEx->sq_info, sizeof(struct queue_info));
-    (void)memcpy_s(&info->rqInfo, sizeof(struct queue_info), &qpCb->ibQpEx->rq_info, sizeof(struct queue_info));
+    RsNdaFillQueueInfo(&qpCb->ibQpEx->sq_info, &info->sqInfo);
+    RsNdaFillQueueInfo(&qpCb->ibQpEx->rq_info, &info->rqInfo);
     hccp_info("chip_id:%u, rdevIndex:%u, qp:%d create succ", rdevCb->rsCb->chipId, rdevCb->rdevIndex,
         qpCb->qpInfoLo.qpn);
     return ret;

@@ -10,6 +10,7 @@
 #ifndef AICPU_TS_URMA_CHANNEL_H
 #define AICPU_TS_URMA_CHANNEL_H
 
+#include <atomic>
 #include "../channel.h"
 #include "../../sockets/socket_mgr.h"
 
@@ -36,9 +37,18 @@ public:
     HcclResult UpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum) override;
 
     HcclResult H2DResPack(std::vector<char>& buffer);
+    HcommChannelKind GetChannelKind() const override;
 
     virtual HcclResult Clean() override;
     virtual HcclResult Resume() override;
+
+    // 数据面接口
+    HcclResult NotifyRecord(const uint32_t remoteNotifyIdx) override;
+    HcclResult NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout) override;
+    HcclResult WriteWithNotify(void *dst, const void *src, const uint64_t len, uint32_t remoteNotifyIdx) override;
+    HcclResult Write(void *dst, const void *src, uint64_t len) override;
+    HcclResult Read(void *dst, const void *src, uint64_t len) override;
+    HcclResult ChannelFence() override;
 
 private:
     HcclResult Makebufs(HcommMemHandle *memHandles, uint32_t memHandleNum, std::vector<std::shared_ptr<Hccl::Buffer>> &bufs);
@@ -53,6 +63,7 @@ private:
     HcclResult PackOpData(std::vector<char> &data);
 
 private:
+    std::atomic<bool> isFirstPrintChannelInfo_{true}; // 是否第一次打印通道建链信息，避免重复打印日志刷屏
     // --------------------- 入参 ---------------------
     EndpointHandle                                              endpointHandle_;
     HcommChannelDesc                                            channelDesc_;

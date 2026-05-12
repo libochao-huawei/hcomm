@@ -170,5 +170,6 @@ HcclResult MockSendStub(HcclSocket *obj, const void* data, u64 size);
 HcclResult MockRecvStub(HcclSocket *obj, void* data, u32 size);
 HcclResult MockCreateOneQp(TransportIbverbs *obj, s32 qpMode, u32 qpsPerConnection, QpHandle& qpHandle, bool useAicpu,
                            u32 udpSport);
+void ClearRdevNicInfo();
 #endif /* __LLT_HCCL_STUB_GDR_H__ */
 

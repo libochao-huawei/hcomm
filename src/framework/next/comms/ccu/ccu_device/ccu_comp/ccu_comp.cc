@@ -18,13 +18,16 @@
 #include "rdma_handle_manager.h"
 
 #include "eid_info_mgr.h"
-#include "ccu_res_specs.h"
+#include "../../../ccu_res_specs.h"
 #include "ccu_channel_ctx_mgr_v1.h"
 
 #include "exception_handler.h"
 #include "adapter_rts_common.h"
 #include "ccu_error_info_v1.h"
+
 #include "env_config.h"
+#include "orion_adapter_hccp.h"
+
 
 namespace hcomm {
 
@@ -145,6 +148,9 @@ HcclResult CcuComponent::CheckDiesEnable()
 static HcclResult FindOneUsableEid(const int32_t devLogicId, const uint32_t devPhyId,
     const uint8_t dieId, uint32_t &feId, CommAddr &commAddr)
 {
+    // 如果无法查询设备是否为uboe设备，报错退出
+    CHK_RET(HccpGetUboeFlagEnable(devPhyId));
+
     std::vector<DevEidInfo> eidInfos;
     auto ret = EidInfoMgr::GetInstance(devPhyId).GetEidInfos(eidInfos);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
@@ -160,7 +166,8 @@ static HcclResult FindOneUsableEid(const int32_t devLogicId, const uint32_t devP
     EXCEPTION_HANDLE_BEGIN
     auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
     for (auto &eidInfo : eidInfos) {
-        if (eidInfo.dieId != dieId) {
+        // 如果是UBOE设备，则跳过
+        if (HccpCheckUboeSupported(eidInfo.devFeature) || (eidInfo.dieId != dieId)) {
             continue;
         }
 
@@ -512,9 +519,10 @@ HcclResult CcuComponent::CreateAndImportLoopJettys(const uint8_t dieId,
     Hccl::IpAddress ipAddr{};
     CHK_RET(CommAddrToIpAddress(commAddr, ipAddr));
 
+    Hccl::CqCreateInfo cqInfo{0};
     auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
     const auto ctxHandle = static_cast<CtxHandle>(rdmaHandleMgr.GetByIp(devPhyId_, ipAddr));
-    const auto _jfcHandle = rdmaHandleMgr.GetJfcHandle(ctxHandle, Hccl::HrtUbJfcMode::CCU_POLL);
+    const auto _jfcHandle = rdmaHandleMgr.GetJfcHandle(ctxHandle, cqInfo, Hccl::HrtUbJfcMode::CCU_POLL);
     const JfcHandle jfcHandle = reinterpret_cast<JfcHandle>(_jfcHandle);
 
     const auto &rmaBufferIter = ccuRmaBufferMap_.find(dieId);

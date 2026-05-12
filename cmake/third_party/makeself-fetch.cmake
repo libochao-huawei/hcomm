@@ -10,7 +10,7 @@
 
 set(MAKESELF_NAME "makeself")
 set(MAKESELF_FILE "makeself-release-2.5.0-patch1.tar.gz")
-set(MAKESELF_URL "https://gitcode.com/cann-src-third-party/makeself/releases/download/release-2.5.0-patch1.0/${MAKESELF_FILE}")
+set(MAKESELF_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/makeself/makeself-release-2.5.0-patch1.tar.gz")
 set(MAKESELF_PKG_PATH ${CANN_3RD_LIB_PATH}/${MAKESELF_FILE})
 set(MAKESELF_SRC_PATH ${CANN_3RD_LIB_PATH}/makeself)
 

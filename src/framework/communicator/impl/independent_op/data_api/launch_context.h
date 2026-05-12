@@ -23,7 +23,10 @@ public:
 
     HcclResult SetLaunchMode(const char* launchTag, HcommLaunchMode mode);
     void AddThread(ThreadHandle thread);
-    bool IsBatchLaunchMode() const;
+    inline bool IsBatchLaunchMode() const
+    {
+        return mode_ == HCOMM_LAUNCH_MODE_BATCH;
+    }
 
 private:
     HcclResult HandleBatchMode();
@@ -32,7 +35,6 @@ private:
 
     std::string launchTag_; // 当前tag
     std::unordered_map<std::string, std::unordered_set<ThreadHandle>> launchModeMap_;
-    std::mutex mtx_;
     HcommLaunchMode mode_ = HCOMM_LAUNCH_MODE_EAGER;
 };
 

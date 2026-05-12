@@ -332,17 +332,17 @@ STATIC int RsTcpRecvTagInHandle(struct RsListenInfo *listenInfo, int connfd, str
 
     RsGetCurTime(&startTime);
     while (expSize > 0 && size != 0) {
-        connTmp->tagSyncTime++;
+        connTmp->tagSyncTimes++;
         size = recv(connfd, recvBuff, expSize, 0);
         if ((size < 0) && (errno == EINTR)) {
-            connTmp->tagEintrTime++;
+            connTmp->tagEintrTimes++;
             continue;
         }
         // peer socket session has been closed
         if (size == 0) {
-            hccp_run_info("session has been closed, server:{%s:%u} client:%s tagSyncTime:%u tagEintrTime:%u",
+            hccp_run_info("session has been closed, server:{%s:%u} client:%s tagSyncTimes:%u tagEintrTimes:%u",
                 listenInfo->serverIpAddr.readAddr, listenInfo->sockPort, remoteIp->readAddr,
-                connTmp->tagSyncTime, connTmp->tagEintrTime);
+                connTmp->tagSyncTimes, connTmp->tagEintrTimes);
             return -ESOCKCLOSED;
         }
 
@@ -352,9 +352,9 @@ STATIC int RsTcpRecvTagInHandle(struct RsListenInfo *listenInfo, int connfd, str
         HccpTimeInterval(&now, &startTime, &timeCost);
         // enlarge the timeout threshold to make sure the connection can be established successfully
         if (timeCost >= RS_RECV_TAG_MAX_TIME) {
-            hccp_run_info("recv tag time out, server:{%s:%u} client:%s tagSyncTime:%u tagEintrTime:%u",
+            hccp_run_info("recv tag time out, server:{%s:%u} client:%s tagSyncTimes:%u tagEintrTimes:%u",
                 listenInfo->serverIpAddr.readAddr, listenInfo->sockPort, remoteIp->readAddr,
-                connTmp->tagSyncTime, connTmp->tagEintrTime);
+                connTmp->tagSyncTimes, connTmp->tagEintrTimes);
             return -ETIME;
         }
 
@@ -369,15 +369,15 @@ STATIC int RsTcpRecvTagInHandle(struct RsListenInfo *listenInfo, int connfd, str
     connTmp->state = RS_CONN_STATE_TAG_SYNC;
     connTmp->port = listenInfo->sockPort;
     if (timeCost >= RS_RECV_MAX_TIME) {
-        hccp_run_info("recv tag success, server:{%s:%u} client:%s timeCost:%fms tagSyncTime:%u tagEintrTime:%u",
+        hccp_run_info("recv tag success, server:{%s:%u} client:%s timeCost:%fms tagSyncTimes:%u tagEintrTimes:%u",
             listenInfo->serverIpAddr.readAddr, listenInfo->sockPort, remoteIp->readAddr, timeCost,
-            connTmp->tagSyncTime, connTmp->tagEintrTime);
+            connTmp->tagSyncTimes, connTmp->tagEintrTimes);
         return 0;
     }
 
-    hccp_info("recv tag success, server:{%s:%u} client:%s timeCost:%fms tagSyncTime:%u tagEintrTime:%u",
+    hccp_info("recv tag success, server:{%s:%u} client:%s timeCost:%fms tagSyncTimes:%u tagEintrTimes:%u",
         listenInfo->serverIpAddr.readAddr, listenInfo->sockPort, remoteIp->readAddr, timeCost,
-        connTmp->tagSyncTime, connTmp->tagEintrTime);
+        connTmp->tagSyncTimes, connTmp->tagEintrTimes);
     return 0;
 }
 
@@ -491,7 +491,7 @@ int RsEpollEventListenInHandle(struct rs_cb *rsCb, int fd)
                 goto err_accept;
             }
 
-            hccp_info("[server]server_ip:%s server_port:%u accept ok @ listen_fd:%d, new fd:%d",
+            hccp_info("[server]server_ip:%s server_port:%u accept ok, listen_fd:%d, new fd:%d",
                 listenInfo->serverIpAddr.readAddr, listenInfo->sockPort, fd, connfd);
 
             remoteIp.family = (uint32_t)remoteSAddr.family;
@@ -987,7 +987,7 @@ out:
     RS_CLOSE_RETRY_FOR_EINTR(retClose, conn->connfd);
     conn->connfd = RS_FD_INVALID;
     conn->state = RS_CONN_STATE_RESET;
-    conn->tagSyncTime = 0;
+    conn->tagSyncTimes = 0;
     return;
 }
 
@@ -996,20 +996,20 @@ STATIC void RsSocketTagSync(struct RsConnInfo *conn)
     int ret;
 
     /* sync tag to server */
-    conn->tagSyncTime++;
+    conn->tagSyncTimes++;
     ret = RsDrvSocketSend(conn->connfd, conn->tag, SOCK_CONN_TAG_SIZE + SOCK_CONN_DEV_ID_SIZE, 0);
     if (ret == SOCK_CONN_TAG_SIZE + SOCK_CONN_DEV_ID_SIZE) {
         conn->state = RS_CONN_STATE_TAG_SYNC;
-        hccp_info("[client]send tag success! ret:%d, tagSyncTime:%u, clientIp:%s serverIp:%s serverPort:%u tag:%s",
-            ret, conn->tagSyncTime, conn->clientIp.readAddr, conn->serverIp.readAddr, conn->port, conn->tag);
+        hccp_info("[client]send tag success! ret:%d, tagSyncTimes:%u, clientIp:%s serverIp:%s serverPort:%u tag:%s",
+            ret, conn->tagSyncTimes, conn->clientIp.readAddr, conn->serverIp.readAddr, conn->port, conn->tag);
     } else if (ret == -EAGAIN) {
         conn->state = RS_CONN_STATE_TIMEOUT;
-        hccp_info("[client]send tag incomplete! ret:%d, tagSyncTime:%u, clientIp:%s serverIp:%s serverPort:%u "
-            "tag:%s", ret, conn->tagSyncTime, conn->clientIp.readAddr, conn->serverIp.readAddr, conn->port,
+        hccp_info("[client]send tag incomplete! ret:%d, tagSyncTimes:%u, clientIp:%s serverIp:%s serverPort:%u "
+            "tag:%s", ret, conn->tagSyncTimes, conn->clientIp.readAddr, conn->serverIp.readAddr, conn->port,
             conn->tag);
     } else {
-        hccp_run_info("[client]send tag unsuccessful, ret:%d, tagSyncTime:%u, retry connect, clientIp:%s "
-            "serverIp:%s serverPort:%u tag:%s", ret, conn->tagSyncTime, conn->clientIp.readAddr,
+        hccp_run_info("[client]send tag unsuccessful, ret:%d, tagSyncTimes:%u, retry connect, clientIp:%s "
+            "serverIp:%s serverPort:%u tag:%s", ret, conn->tagSyncTimes, conn->clientIp.readAddr,
             conn->serverIp.readAddr, conn->port, conn->tag);
 
         if (gRsCb->sslEnable == RS_SSL_ENABLE) {
@@ -1020,7 +1020,7 @@ STATIC void RsSocketTagSync(struct RsConnInfo *conn)
         RS_CLOSE_RETRY_FOR_EINTR(ret, conn->connfd);
         conn->connfd = RS_FD_INVALID;
         conn->state = RS_CONN_STATE_RESET;
-        conn->tagSyncTime = 0;
+        conn->tagSyncTimes = 0;
     }
 
     return;

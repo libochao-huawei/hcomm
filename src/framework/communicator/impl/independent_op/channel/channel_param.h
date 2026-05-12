@@ -81,4 +81,47 @@ struct HcclChannelUrmaRes {
     u32   deviceType{0};             // 基础通信使用
 };
 
+struct HcommRoceChannelRes {
+    void *localMem = nullptr;  // device 上 RoceMemDetails[localMemCount]
+    void *remoteMem = nullptr; // device 上 RoceMemDetails[remoteMemCount]
+    u32 localMemCount = 0;
+    u32 remoteMemCount = 0;
+    s64 chipId{LLONG_MAX};
+    HcclQpInfoV2 QpInfo[RDMA_QP_MAX_NUM];
+    u32 qpsPerConnection{1};
+};
+
+// for A2/A3 endpoint with tranport
+struct HcclChannelHccsRes {
+    char channelTag[TAG_MAX_LENGTH];    // channelTag 最大长度待修改
+    HcclChannelP2p channelP2p;  // P2p资源
+    u64 p2pNotifyNum{0};       // 用于linkp2p添加notify信息
+    u32 deviceType{0};          // 基础通信使用
+    u32 remoteRank{0};         // 远端rankId
+    u32 localRank{0};
+    u32 remoteDevicePhyId{0};      // 远端 PhyId
+    u32 localDevicePhyId{0};
+    s32 localDeviceLogicId{0};
+    hccl::MachineType machineType{hccl::MachineType::MACHINE_RESERVED_TYPE};  // client或者server
+    u32 localBufSize{0};
+    u32 remoteBufSize{0};
+    HcclMemEx *localBufMem{nullptr};
+    HcclMemEx *remoteBufMem{nullptr};
+};
+
+struct HcommDeviceInfo {
+    s32 deviceLogicId{0};
+    u32 devicePhyId{0};
+    u32 deviceType{0};
+};
+
+struct HcommChannelRes {
+    void* channelList;               // 反序列后返回给host侧的device侧handle地址
+    u32 listNum = 0;                 // 建链channel的总数量
+    void* channelDataListAddr;       // device 上 listNum 个指针，每项指向该 channel 的序列化 device 内存
+    void* channelDataSizeListAddr;   // device 上 listNum 个 u32，每项为对应 channel 序列化字节数
+    void* channelTypeListAddr;       // device 上 listNum 个 u32，每项为 hcomm::HcommChannelKind 数值（见 channel.h）
+    HcommDeviceInfo deviceInfo;
+};
+
 #endif

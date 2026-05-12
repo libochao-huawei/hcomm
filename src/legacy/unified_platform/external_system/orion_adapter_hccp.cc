@@ -41,8 +41,10 @@ constexpr u32 MAX_CQ_DEPTH = 65535;
 constexpr u32 MAX_INLINE_DATA = 64;
 constexpr u32 RA_TLV_REQUEST_UNAVAIL = 128308;
 constexpr u32 ROCE_ENOMEM_RET = 328100;
+constexpr u32 GET_TP_ATTR_OPCODE = 106;
 constexpr u32 GET_TLS_ENABLE_OPCODE = 95;
 constexpr u32 GET_TLS_ENABLE_VERSION = 1;
+constexpr u32 GET_TP_ATTR_VERSION = 2;
 
 const std::unordered_map<HrtNetworkMode, NetworkMode, EnumClassHash> HRT_NETWORK_MODE_MAP
     = {{HrtNetworkMode::PEER, NetworkMode::NETWORK_PEER_ONLINE}, {HrtNetworkMode::HDC, NetworkMode::NETWORK_OFFLINE}};
@@ -312,7 +314,7 @@ static void HRaSocketBatchClose(struct SocketCloseInfoT conn[], u32 num)
 void HrtRaSocketCloseOne(RaSocketCloseParam &in)
 {
     HCCL_INFO("[CloseOne][RaSocket] Input params: socketHandle=%p, fdHandle=%p", in.socketHandle, in.fdHandle);
-    struct SocketCloseInfoT closeInfo = {0};
+    struct SocketCloseInfoT closeInfo = {};
     closeInfo.fdHandle     = in.fdHandle;
     closeInfo.socketHandle = in.socketHandle;
 
@@ -531,7 +533,7 @@ void HrtRaSocketBlockSend(const FdHandle fdHandle, const void *data, u32 sendSiz
     HCCL_INFO("ra socket send finished,ret[%d]", ret);
 }
 
-bool HrtRaSocketNonBlockSend(const FdHandle fdHandle, void *data, u64 size, u64 *sentSize)
+s32 HrtRaSocketNonBlockSendNormal(const FdHandle fdHandle, void *data, u64 size, u64 *sentSize)
 {
     CHECK_NULLPTR(fdHandle, "[HrtRaSocketNonBlockSend] fdHandle is nullptr!");
     CHECK_NULLPTR(data, "[HrtRaSocketNonBlockSend] data is nullptr!");
@@ -543,7 +545,12 @@ bool HrtRaSocketNonBlockSend(const FdHandle fdHandle, void *data, u64 size, u64 
             "data[%p], size[%llu], fdHandle[%p], send size[%llu]", HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), data, size, fdHandle, *sentSize));
     }   
     
-    s32 ret = RaSocketSend(fdHandle, data, size, sentSize);
+    return RaSocketSend(fdHandle, data, size, sentSize);
+}
+
+bool HrtRaSocketNonBlockSend(const FdHandle fdHandle, void *data, u64 size, u64 *sentSize)
+{
+    s32 ret = HrtRaSocketNonBlockSendNormal(fdHandle, data, size, sentSize);
     if (ret == 0 || ret == SOCK_EAGAIN) {
         HCCL_INFO("[HrtRaSocketNonBlockSend] ra socket send, data[%p], size[%llu], send size[%llu], ret[%d]", data, size, *sentSize, ret);
         return true;
@@ -552,6 +559,45 @@ bool HrtRaSocketNonBlockSend(const FdHandle fdHandle, void *data, u64 size, u64 
             fdHandle, data, size, *sentSize, ret);
         return false;
     }
+}
+
+HcclResult HrtRaSocketNonBlockSendHeart(const FdHandle fdHandle, void *data, u64 size, u64 *sentSize)
+{
+    s32 ret = HrtRaSocketNonBlockSendNormal(fdHandle, data, size, sentSize);
+    if (ret == 0) {
+        return HCCL_SUCCESS;
+    } else if (ret == SOCK_EAGAIN) {
+        return HCCL_E_AGAIN;
+    } else if (ret == SOCK_CLOSE) {
+        return HCCL_E_INTERNAL; //暂时用这个错误码表示hccp进程异常退出
+    } else {
+        HCCL_WARNING("[HrtRaSocketNonBlockSend]ra socket send failed, data[%p], size[%llu], send size[%llu], ret[%d]",
+            data, size, *sentSize, ret);
+        return HCCL_E_NETWORK;
+    }
+}
+
+HcclResult HrtRaSocketNonBlockRecvHeart(const FdHandle fdHandle, void *data, u64 size, u64 *recvSize)
+{
+    CHECK_NULLPTR(fdHandle, "[HrtRaSocketNonBlockRecv] fdHandle is nullptr!");
+    CHECK_NULLPTR(data, "[HrtRaSocketNonBlockRecv] data is nullptr!");
+    CHECK_NULLPTR(recvSize, "[HrtRaSocketNonBlockRecv] recvSize is nullptr!");
+    HCCL_DEBUG("[HrtRaSocketNonBlockRecv] Input params: fdHandle=%p,data=%p, size=%llu, recvSize=%llu", 
+        fdHandle, data, size, *recvSize); 
+    
+    s32 ret = RaSocketRecv(fdHandle, data, size, recvSize);
+    if (ret == 0) {
+        return HCCL_SUCCESS;
+    } else if (ret == SOCK_EAGAIN) {
+        return HCCL_E_AGAIN;
+    } else if (ret == SOCK_CLOSE) {
+        return HCCL_E_INTERNAL; //暂时用这个错误码表示hccp进程异常退出
+    } else {
+        HCCL_WARNING("[HrtRaSocketNonBlockRecv]ra socket recv failed, data[%p], size[%llu], "\
+            "recv[%llu], ret[%d], errno[%d][%s]", data, size, recvSize, ret, errno, strerror(errno));
+        return HCCL_E_TCP_TRANSFER;
+    }
+    return HCCL_SUCCESS;
 }
 
 void HrtRaSocketBlockRecv(const FdHandle fdHandle, void *data, u32 size)
@@ -611,7 +657,7 @@ SocketHandle HrtRaSocketInit(HrtNetworkMode  netMode, RaInterface &in)
     rdevInfo.family   = in.address.GetFamily();
     rdevInfo.localIp = IpAddressToHccpIpAddr(in.address);
 
-    HCCL_INFO("[HrtRaSocketInit] Input params: mode=%u, ip=%u, device id=%u, family=%u", 
+    HCCL_INFO("[HrtRaSocketInit] Input params: mode=%u, ip=%u, device id=%u, family=%u",
         mode, rdevInfo.localIp.addr.s_addr, rdevInfo.phyId, rdevInfo.family);
 
     SocketHandle socketHandle = nullptr;
@@ -755,7 +801,7 @@ void HrtRaSocketGetVnicIpInfos(u32 phyId, DeviceIdType deviceIdType, u32 deviceI
             deviceId, vnicIP.Describe().c_str());
         return;
     }
-    struct IpInfo vnicIpInfo;
+    struct IpInfo vnicIpInfo = {};
     (void)memset_s(&vnicIpInfo, sizeof(IpInfo), 0, sizeof(IpInfo));
     IdType idType = static_cast<IdType>(deviceIdType);
     auto ret = RaSocketGetVnicIpInfos(phyId, idType, &deviceId, 1, &vnicIpInfo);
@@ -806,7 +852,7 @@ std::vector<std::pair<std::string, IpAddress>> HrtGetHostIf(u32 devPhyId)
 {
     HCCL_INFO("[HrtGetHostIf] Input params: devPhyId=%u", devPhyId);
     std::vector<std::pair<std::string, IpAddress>> hostIfs;
-    struct RaGetIfattr                           config = {0};
+    struct RaGetIfattr                           config = {};
     config.phyId                                         = devPhyId;
     config.nicPosition                                   = static_cast<u32>(NetworkMode::NETWORK_PEER_ONLINE);
 
@@ -838,7 +884,7 @@ vector<IpAddress> HrtGetDeviceIp(u32 devicePhyId, NetworkMode netWorkMode)
 {
     HCCL_INFO("[HrtGetDeviceIp] Input params: devicePhyId=%u", devicePhyId);
     vector<IpAddress>     ipAddr;
-    struct RaGetIfattr  config = {0};
+    struct RaGetIfattr  config = {};
     config.phyId                = devicePhyId;
     config.nicPosition          = static_cast<u32>(netWorkMode);
 
@@ -878,6 +924,11 @@ RdmaHandle HrtRaRdmaInit(HrtNetworkMode netMode, RaInterface &in)
     rdevInfo.family   = in.address.GetFamily();
     rdevInfo.localIp = IpAddressToHccpIpAddr(in.address);
     s32 ret           = RaRdevInit(mode, notifyType, rdevInfo, &rdmaHandle);
+    RPT_INPUT_ERR(ret == HCCP_ELINKDOWN,
+        "EI0009",
+        vector<string>({"device_id", "reason"}),
+        vector<string>({std::to_string(rdevInfo.phyId), "The network port is down"})
+    );
     if (ret != 0 || (rdmaHandle == nullptr)) {
         MACRO_THROW(NetworkApiException, StringFormat("[Init][RaRdma]errNo[0x%016llx] rdma init fail. call RaRdevInit failed, Input params: phyId=%u, mode=%u, return: ret[%d]",
             HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), in.phyId, mode, ret));
@@ -1014,7 +1065,7 @@ int HrtGetRaQpStatus(QpHandle qpHandle)
 void HrtRaMrReg(QpHandle qpHandle, RaMrInfo &info)
 {
     CHECK_NULLPTR(qpHandle, "[HrtRaMrReg] qpHandle is nullptr!");
-    struct MrInfoT mrInfo;
+    struct MrInfoT mrInfo = {};
     mrInfo.addr = info.addr;
     mrInfo.size = info.size;
     mrInfo.access = info.access;
@@ -1030,7 +1081,7 @@ void HrtRaMrReg(QpHandle qpHandle, RaMrInfo &info)
 void HrtRaMrDereg(QpHandle qpHandle, RaMrInfo &info)
 {
     CHECK_NULLPTR(qpHandle, "[HrtRaMrDereg] qpHandle is nullptr!");
-    struct MrInfoT mrInfo;
+    struct MrInfoT mrInfo = {};
     mrInfo.addr = info.addr;
     mrInfo.size = info.size;
     mrInfo.access = info.access;
@@ -1080,13 +1131,13 @@ RaSendWrResp HrtRaSendOneWr(QpHandle qpHandle, HRaSendWr &in)
     bufList.addr = in.locAddr;
     bufList.len  = in.len;
 
-    struct SendWr wr;
+    struct SendWr wr = {};
     wr.op        = in.op;
     wr.dstAddr   = in.rmtAddr;
     wr.sendFlag = in.sendFlag;
     wr.bufNum   = 1; // 此处list只有一个，设置为1
     wr.bufList  = &bufList;
-    struct SendWrRsp opRsp;
+    struct SendWrRsp opRsp = {};
     HrtRaSendWr(qpHandle, &wr, &opRsp);
 
     return RaSendWrResp(opRsp.wqeTmp.sqIndex, opRsp.wqeTmp.wqeIndex, opRsp.db.dbIndex, opRsp.db.dbInfo);
@@ -1218,7 +1269,7 @@ HrtRaUbLocalMemRegOutParam HrtRaUbLocalMemReg(RdmaHandle handle, const HrtRaUbLo
     out.handle      = reinterpret_cast<LocMemHandle>(lmemHandle);
     out.targetSegVa = info.out.ub.targetSegHandle;
     info.in.ub.tokenValue = 0;
-    HCCL_INFO("[HrtRaUbLocalMemReg]UB mem reg info: in.addr[%llx], in.size[%llu], out.targetSegVa[%llx]",
+    HCCL_INFO("[HrtRaUbLocalMemReg]UB mem reg info: in.addr[%llx], in.size[%llu], out.targetSegVa[%llu]",
               in.addr, in.size, out.targetSegVa);
     return out;
 }
@@ -1285,7 +1336,7 @@ const std::map<HrtUbJfcMode, JfcMode> HRT_UB_JFC_MODE_MAP = {{HrtUbJfcMode::NORM
 constexpr u32 CQ_DEPTH     = 1024 * 1024 / 64;
 constexpr u32 CCU_CQ_DEPTH = 64;
 
-JfcHandle HrtRaUbCreateJfc(RdmaHandle handle, HrtUbJfcMode mode)
+JfcHandle HrtRaUbCreateJfc(RdmaHandle handle, CqCreateInfo& cqInfo, HrtUbJfcMode mode)
 {
     CHECK_NULLPTR(handle, "[HrtRaUbCreateJfc] handle is nullptr!");
     HCCL_INFO("[HrtRaUbCreateJfc] Input params: handle=%p, mode=%d", handle, mode);
@@ -1310,6 +1361,9 @@ JfcHandle HrtRaUbCreateJfc(RdmaHandle handle, HrtUbJfcMode mode)
         MACRO_THROW(NetworkApiException, msg);
     }
 
+    cqInfo.va = info.out.va;
+    HCCL_INFO("HrtRaUbCreateJfc va[%llu] mode[%u] jfcHandle[%p]",
+        cqInfo.va, info.in.ub.mode, jfcHandle);
     return reinterpret_cast<JfcHandle>(jfcHandle);
 }
 
@@ -1456,8 +1510,7 @@ HrtRaUbJettyCreatedOutParam HrtRaUbCreateJetty(RdmaHandle handle, const HrtRaUbC
     }
     out.keySize = info.key.size;
     attr.ub.tokenValue = 0;
-    HCCL_INFO("Create jetty success, output params: out.id[%u], out.dbVa[%llx]", out.id, out.dbVa);
-
+    HCCL_INFO("Create jetty success, handle[%llu] jettyVa[%llu]", out.handle, out.jettyVa);
     return out;
 }
 
@@ -1518,6 +1571,8 @@ static HrtRaUbJettyImportedOutParam ImportJetty(RdmaHandle handle, u8 *key, u32 
     out.handle        = reinterpret_cast<TargetJettyHandle>(remQpHandle);
     out.targetJettyVa = info.out.ub.tjettyHandle;
     out.tpn           = info.out.ub.tpn;
+
+    HCCL_INFO("ImportJetty handle[%llu] targetJettyVa[%llu] tpn[%u]", out.handle, out.targetJettyVa, out.tpn);
     info.in.ub.tokenValue = 0;
     return out;
 }
@@ -1531,6 +1586,9 @@ static struct JettyImportExpCfg GetTpImportCfg(const JettyImportCfg &jettyImport
     cfg.tag = jettyImportCfg.localTag;
     cfg.txPsn = jettyImportCfg.localPsn;
     cfg.rxPsn = jettyImportCfg.remotePsn;
+
+    HCCL_INFO("GetTpImportCfg tpHandle[%llu] peerTpHandle[%llu] tag[%llu] txPsn[%llu] rxPsn[%llu]",
+        cfg.tpHandle, cfg.peerTpHandle, cfg.tag, cfg.txPsn, cfg.rxPsn);
 
     return cfg;
 }
@@ -1551,7 +1609,7 @@ HrtRaUbJettyImportedOutParam RaUbTpImportJetty(RdmaHandle handle, u8 *key, u32 k
 {
     CHECK_NULLPTR(handle, "[RaUbTpImportJetty] handle is nullptr!");
     CHECK_NULLPTR(key, "[RaUbTpImportJetty] key is nullptr!");
-    HCCL_INFO("[RaUbTpImportJetty] Input params: handle=%p, key=%d, keyLen=%u", handle, *key, keyLen);
+    HCCL_INFO("[RaUbTpImportJetty] Input params: handle=%p", handle);
     struct JettyImportExpCfg cfg = GetTpImportCfg(jettyImportCfg);
     const auto mode = JettyImportMode::JETTY_IMPORT_MODE_EXP;
     return ImportJetty(handle, key, keyLen, tokenValue, cfg, mode, jettyImportCfg.protocol);
@@ -1645,7 +1703,7 @@ static void ConstructSendWrReq(HrtRaUbSendWrReqParam &in, struct WrSgeList &sge,
 
 HrtRaUbSendWrRespParam HrtRaUbPostSend(JettyHandle jettyHandle, HrtRaUbSendWrReqParam &in)
 {
-    struct WrSgeList sge;
+    struct WrSgeList sge = {};
     struct SendWrData sendWr {};
 
     ConstructWrSge(in, sge);
@@ -1890,7 +1948,7 @@ RequestHandle RaSocketConnectOneAsync(RaSocketConnectParam &in)
 RequestHandle RaSocketCloseOneAsync(RaSocketCloseParam &in)
 {
     HCCL_INFO("[RaSocketCloseOneAsync] Input params: socketHandle=%p, fdHandle=%p", in.socketHandle, in.fdHandle);
-    struct SocketCloseInfoT closeInfo = {0};
+    struct SocketCloseInfoT closeInfo = {};
     closeInfo.fdHandle     = in.fdHandle;
     closeInfo.socketHandle = in.socketHandle;
 
@@ -2147,6 +2205,38 @@ RequestHandle RaUbGetTpInfoAsync(const RdmaHandle rdmaHandle, const RaUbGetTpInf
     return reinterpret_cast<RequestHandle>(raReqHandle);
 }
 
+void RaUbGetTpInfo(const RdmaHandle rdmaHandle, const RaUbGetTpInfoParam &param,
+    vector<char_t> &out, uint32_t &num)
+{
+    CHECK_NULLPTR(rdmaHandle, "[RaUbGetTpInfo] rdmaHandle is nullptr!");
+    HCCL_INFO("[RaUbGetTpInfo] Input params: rdmaHandle=%p, num=%u", rdmaHandle, num);
+    const auto &locAddr    = param.locAddr;
+    const auto &rmtAddr    = param.rmtAddr;
+    const auto &tpProtocol = param.tpProtocol;
+
+    struct GetTpCfg cfg{};
+    cfg.flag.bs.rtp = tpProtocol == TpProtocol::TP ? 1 : 0;
+    cfg.flag.bs.ctp = tpProtocol == TpProtocol::CTP ? 1 : 0;
+    cfg.transMode = TransportModeT::CONN_RM; // 当前只使用RM Jetty
+    cfg.localEid = IpAddressToHccpEid(locAddr);
+    HCCL_INFO("RaUbGetTpInfo cfg.localEid=%s", HccpEidDesc(cfg.localEid).c_str());
+    cfg.peerEid = IpAddressToHccpEid(rmtAddr);
+    HCCL_INFO("RaUbGetTpInfo cfg.peerEid=%s", HccpEidDesc(cfg.peerEid).c_str());
+
+    out.resize(sizeof(HccpTpInfo));
+    struct HccpTpInfo *info = reinterpret_cast<struct HccpTpInfo *>(out.data());
+
+    num = TP_HANDLE_REQUEST_NUM; // 指定需要从管控面申请tp handle的数量, hccp 会返回实际个数
+    s32 ret = RaCtxGetTpInfoList(rdmaHandle, &cfg, info, &num);
+    if (ret != 0) {
+        MACRO_THROW(NetworkApiException, StringFormat("[%s] failed, call interface error[%d], "
+            "rdmaHandle[%p], locAddr[%s], rmtAddr[%s].", __func__, ret, rdmaHandle,
+            locAddr.Describe().c_str(), rmtAddr.Describe().c_str()));
+    }
+
+    HCCL_INFO("[%s] ok, get handle[%llu].", __func__);
+}
+
 static RequestHandle ImportJettyAsync(RdmaHandle rdmaHandle, const HrtRaUbJettyImportedInParam &in,
     vector<char_t> &out, void *&remQpHandle, const JettyImportExpCfg &cfg, JettyImportMode mode,
     TpProtocol protocol = TpProtocol::INVALID)
@@ -2231,25 +2321,24 @@ RequestHandle RaUbUnimportJettyAsync(void *targetJettyHandle)
     return reinterpret_cast<RequestHandle>(raReqHandle);
 }
 
-void HrtRaWaitEventHandle(int event_handle, std::vector<SocketEventInfo> &event_infos, int timeout,
+HcclResult HrtRaWaitEventHandle(int event_handle, std::vector<SocketEventInfo> &event_infos, int timeout,
     unsigned int maxevents, u32 &events_num)
 {
     HCCL_INFO("[HrtRaWaitEventHandle] Input params: event_handle=%d, timeout=%d, maxevents=%u, events_num=%u", event_handle, timeout, maxevents, events_num);
     std::vector<struct SocketEventInfoT> raEventInfos(maxevents);
     s32 ret = RaWaitEventHandle(event_handle, raEventInfos.data(), timeout, maxevents, &events_num);
-    if (ret != 0) {
-        MACRO_THROW(NetworkApiException, StringFormat("[%s] failed, call interface error[%d].", __func__, ret));
-    }
+    CHK_PRT_RET(ret != 0, HCCL_ERROR("[%s] failed, call RaWaitEventHandle error ret[%d].", __func__, ret), HCCL_E_NETWORK);
     for (u32 i = 0; i < events_num; i++) {
         event_infos[i].fdHandle = raEventInfos[i].fdHandle;
     }
+    return HCCL_SUCCESS;
 }
 
 void HrtRaGetSecRandom(u32 *value, u32 &devPhyId)
 {
     CHECK_NULLPTR(value, "[HrtRaGetSecRandom] value is nullptr!");
     HCCL_INFO("[HrtRaGetSecRandom] Input params: value=%u, devPhyId=%u", *value, devPhyId);
-    struct RaInfo raInfo;
+    struct RaInfo raInfo = {};
     raInfo.mode = HrtNetworkMode::HDC;
     raInfo.phyId = devPhyId;
 
@@ -2257,6 +2346,7 @@ void HrtRaGetSecRandom(u32 *value, u32 &devPhyId)
     if (ret != 0) {
         MACRO_THROW(NetworkApiException, StringFormat("[%s] failed, call interface error[%d]. params: value=%u, devPhyId=%u", __func__, ret, *value, devPhyId));
     }
+    HCCL_INFO("[HrtRaGetSecRandom] Input params: value=%u, devPhyId=%u", *value, devPhyId);
 }
 HcclResult HrtRaCreateQpWithCq(RdmaHandle rdmaHandle, s32 sqEvent, s32 rqEvent,
     void *sendChannel, void *recvChannel, QpInfo &info, bool isHdcMode)
@@ -2349,7 +2439,7 @@ HcclResult HrtRaDestroyCq(RdmaHandle rdmaHandle, CqInfo& cq)
 {
     CHK_PTR_NULL(rdmaHandle);
     HCCL_INFO("[HrtRaDestroyCq] Input params: rdmaHandle=%p, sq=%p, rq=%p, context=%p", rdmaHandle, cq.sq, cq.rq, cq.context);
-    struct CqAttr attr;
+    struct CqAttr attr = {};
     attr.qpContext = &cq.context;
     attr.ibSendCq = &cq.sq;
     attr.ibRecvCq = &cq.rq;
@@ -2367,7 +2457,7 @@ HcclResult HrtRaNormalQpCreate(RdmaHandle rdmaHandle, QpInfo& qp)
 {
     CHK_PTR_NULL(rdmaHandle);
     HCCL_INFO("[HrtRaNormalQpCreate] Input params: rdmaHandle=%p, context=%p", rdmaHandle, qp.context);
-    struct ibv_qp_init_attr ibQpAttr;
+    struct ibv_qp_init_attr ibQpAttr = {};
     CHK_SAFETY_FUNC_RET(memset_s(&ibQpAttr, sizeof(ibv_qp_init_attr), 0, sizeof(ibv_qp_init_attr)));
     ibQpAttr.qp_context= qp.context;
     ibQpAttr.send_cq = qp.sendCq;
@@ -2653,11 +2743,17 @@ HcclResult HrtRaSetTpAttrAsync(RdmaHandle handle, uint64_t tpHandle, uint32_t at
     return HCCL_SUCCESS;
 }
 
-HcclResult HrtRaGetTpAttrAsync(RdmaHandle handle, uint64_t tpHandle, uint32_t& attrBitmap, TpAttr& attr, RequestHandle& reqHandle)
+HcclResult HrtRaGetTpAttrAsync(u32 phyId, RdmaHandle handle, uint64_t tpHandle, uint32_t& attrBitmap, TpAttr& attr, RequestHandle& reqHandle)
 {
     HCCL_INFO("[HrtRaGetTpAttrAsync] begain, reqHandle[%llu]", reqHandle);
+    u32 tpAttrVersion = 0;
+    s32 ret = RaGetInterfaceVersion(phyId, GET_TP_ATTR_OPCODE, &tpAttrVersion);
+    if (ret != 0 || tpAttrVersion < GET_TP_ATTR_VERSION) {
+        HCCL_ERROR("this package does not support RaGetTpAttrAsync for device, please change new package, ret=%d, tpAttrVersion=%u.", ret, tpAttrVersion);
+        return HCCL_E_NOT_SUPPORT;
+    }
     void *raReqHandle = nullptr;
-    s32 ret = RaGetTpAttrAsync(handle, tpHandle, &attrBitmap, &attr, &raReqHandle);
+    ret = RaGetTpAttrAsync(handle, tpHandle, &attrBitmap, &attr, &raReqHandle);
     if (ret != 0) {
         string msg = StringFormat("call RaGetTpAttrAsync failed, error code =%d.", ret);
         THROW<NetworkApiException>(msg);
@@ -2665,6 +2761,19 @@ HcclResult HrtRaGetTpAttrAsync(RdmaHandle handle, uint64_t tpHandle, uint32_t& a
 
     CHK_RET(WaitRequestResult(raReqHandle, reqHandle));
     HCCL_INFO("[HrtRaGetTpAttrAsync] success, reqHandle[%llu]", reqHandle);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtGetUboeFlagEnable(const u32 devPhyId)
+{
+    u32 uboeVersion = 0;
+    s32 versionRet = RaGetInterfaceVersion(devPhyId, GET_UBOE_FLAG_ENABLE_OPCODE, &uboeVersion);
+    CHK_PRT_RET(versionRet != 0,
+        HCCL_ERROR("[%s] RaGetInterfaceVersion failed, devPhyId=%u, versionRet=%d", __func__, devPhyId, versionRet),
+            HCCL_E_INTERNAL);
+    CHK_PRT_RET(uboeVersion < GET_UBOE_FLAG_ENABLE_VERSION,
+        HCCL_ERROR("[%s] this package does not support to get uboe flag, "
+            "please change new package. uboeVersion[%u].", __func__, uboeVersion), HCCL_E_NOT_SUPPORT);
     return HCCL_SUCCESS;
 }
 

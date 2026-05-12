@@ -88,7 +88,7 @@ private:
     {
         return PrepResLinks(myRank_, type, linkPriority_, linkReq, resLinks);
     }
-    HcclResult WrapPrepResLinks(ConnectedLinkMgr* type, const LinkReq& linkReq, ResLinks& resLinks)
+    HcclResult WrapPrepResLinks(ConnectedLinkMgr* type, const LinkReq& linkReq, ResLinks& resLinks) const
     {
         return PrepResLinks(myRank_, linkReq, type, resLinks);
     }
@@ -99,7 +99,7 @@ private:
     HcclResult CalcSingleAlgRes(
         InsAlgTemplate0& intraScatter, InsAlgTemplate1& interScatter, InsAlgTemplate2& intraAllGather,
         InsAlgTemplate3& interAllGather, T* type, AlgTempResReq& resReqIntraScatter, AlgTempResReq& resReqInterScatter,
-        AlgTempResReq& resReqIntraAllGather, AlgTempResReq& resReqInterAllGather);
+        AlgTempResReq& resReqIntraAllGather, AlgTempResReq& resReqInterAllGather) const;
 
     template <typename T>
     HcclResult PrepareRes(
@@ -121,7 +121,7 @@ private:
             intraLocalRankSize_, interLocalRankSize_);
         return HcclResult::HCCL_SUCCESS;
     };
-    void GetParallelDataSplit(std::vector<float>& splitDataSize)
+    void GetParallelDataSplit(std::vector<float>& splitDataSize) const
     {
         // to do 先做等分，后续根据性能做调整
         double splitData = 0.5;
@@ -129,7 +129,7 @@ private:
         splitDataSize.push_back(splitData);
         return;
     }
-    void InitDataParameters(SliceConfig& slice, ScratchMultiple& scratchMultiple, DataParameters& dataParameters)
+    void InitDataParameters(SliceConfig& slice, ScratchMultiple& scratchMultiple, DataParameters& dataParameters) const
     {
         dataParameters.sliceSize.at(0) = {
             slice.sliceCountPart0 * dataTypeSize_ / interLocalRankSize_,
@@ -159,7 +159,7 @@ private:
         return;
     }
     void InitFinalSliceDataParameters(
-        SliceConfig& slice, ScratchMultiple& scratchMultiple, DataParameters& dataParameters)
+        SliceConfig& slice, ScratchMultiple& scratchMultiple, DataParameters& dataParameters) const
     {
         dataParameters.sliceSize.at(0) = {
             slice.finalSliceCountPart0 * dataTypeSize_ / interLocalRankSize_,
@@ -214,7 +214,7 @@ private:
     void CalcScratchMultiple(
         std::vector<float>& splitDataSize, ScratchMultiple& scratchMultiple, InsAlgTemplate0& intraScatterTempAlg,
         InsAlgTemplate1& interScatterTempAlg, InsAlgTemplate2& intraAllGatherTempAlg,
-        InsAlgTemplate3& interAllGatherTempAlg)
+        InsAlgTemplate3& interAllGatherTempAlg) const
     {
         scratchMultiple.intraScatter = intraScatterTempAlg.CalcScratchMultiple(BufferType::INPUT, BufferType::INPUT);
         scratchMultiple.interScatter = interScatterTempAlg.CalcScratchMultiple(BufferType::INPUT, BufferType::INPUT);
@@ -233,7 +233,7 @@ private:
     void CalcSlice(std::vector<float>& splitDataSize, float scratchMaxMultiple, SliceConfig& slice);
     void LogAlgInfo(
         InsAlgTemplate0& intraScatterTempAlg, InsAlgTemplate1& interScatterTempAlg,
-        InsAlgTemplate2& intraAllGatherTempAlg, InsAlgTemplate3& interAllGatherTempAlg)
+        InsAlgTemplate2& intraAllGatherTempAlg, InsAlgTemplate3& interAllGatherTempAlg) const
     {
         HCCL_INFO("[InsBroadcastParallelAiCpuExecutor] Alg0 is [%s]", intraScatterTempAlg.Describe().c_str());
         HCCL_INFO("[InsBroadcastParallelAiCpuExecutor] Alg1 is [%s]", interScatterTempAlg.Describe().c_str());
@@ -241,7 +241,7 @@ private:
         HCCL_INFO("[InsBroadcastParallelAiCpuExecutor] Alg3 is [%s]", interAllGatherTempAlg.Describe().c_str());
         return;
     }
-    HcclResult StageProcess(DataParameters& dataParameters, std::vector<StageProcAlgPara>& stageProcAlgParaVec);
+    HcclResult StageProcess(DataParameters& dataParameters, std::vector<StageProcAlgPara>& algParaVec);
     void AlgTemplateInitPara(
         const CollAlgOperator& op, InsAlgTemplate0& intraScatterTempAlg, InsAlgTemplate1& interScatterTempAlg,
         InsAlgTemplate2& intraAllGatherTempAlg, InsAlgTemplate3& interAllGatherTempAlg)

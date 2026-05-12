@@ -46,7 +46,7 @@ DevUbConnection::DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &l
         jfcHandle = RdmaHandleManager::GetInstance().GetJfcHandleAndCqInfo(rdmaHandle, cqInfo_, jfcMode);
     }
     else {
-        jfcHandle = RdmaHandleManager::GetInstance().GetJfcHandle(rdmaHandle, jfcMode);
+        jfcHandle = RdmaHandleManager::GetInstance().GetJfcHandle(rdmaHandle, cqInfo_, jfcMode);
     }
     isdevUsed = devUsed;
 
@@ -593,6 +593,7 @@ static void PrepareUbSendWrReqParamForWriteOrRead(HrtRaUbSendWrReqParam &sendWrR
     sendWrReq.size       = localMemBuf.size;
     sendWrReq.localAddr  = localMemBuf.addr;
     sendWrReq.remoteAddr = remoteMemBuf.addr;
+
     sendWrReq.lmemHandle = localMemBuf.memHandle;
     sendWrReq.rmemHandle = remoteMemBuf.memHandle;
     sendWrReq.handle     = remoteJettyHandle;
@@ -958,6 +959,36 @@ string DevUbConnection::Describe() const
                         funcId, jettyId, sqBuffVa, sqDepth, tpn, dbAddr);
 }
 
+HcclResult DevUbConnection::Describe(std::string &dfxMsg)
+{
+    uint16_t udpSport = 0xFFFF; // 无法获取实际的udpSport，使用0xFFFF表示未知
+    if (tpProtocol == TpProtocol::TP) {
+        struct TpAttr tpAttr {0};
+        uint32_t attrBitmap = 1 << 13; // 13对应dataUdpSrcport
+        TRY_CATCH_PRINT_ERROR(
+            u32 devicePhyId = HrtGetDevicePhyIdByIndex(devLogicId);
+            HcclResult ret = HrtRaGetTpAttrAsync(devicePhyId, rdmaHandle, tpInfo.tpHandle, attrBitmap, tpAttr, reqHandle);
+            if (ret == HCCL_E_NOT_SUPPORT) {
+                HCCL_ERROR("[DevUbConnection::%s] this package does not support RaGetTpAttrAsync for device,"
+                    " please change new package, devPhyId[%u]", __func__, devicePhyId);
+                return ret;
+            } else if (ret != HCCL_SUCCESS) {
+                HCCL_ERROR("[DevUbConnection::%s] failed, hccl result[%d]", __func__, ret);
+                return ret;
+            }
+        );
+        udpSport = tpAttr.dataUdpSrcport;
+    }
+    udpSport = udpSport & 0xFF;
+
+    std::string dfxStr = StringFormat("chip id[%u] die id[%u] func id[%u] jetty id[%u] "
+        "local %s remote %s udp sport[%u]",
+        devLogicId, dieId, funcId, jettyId, locEid.Describe().c_str(), rmtEid.Describe().c_str(), udpSport);
+    dfxMsg += dfxStr;
+    HCCL_INFO("[DevUbConnection::%s] %s", __func__, dfxStr.c_str());
+    return HCCL_SUCCESS;
+}
+
 void DevUbConnection::AddNop(const Stream &stream)
 {
     if (opMode != OpMode::OFFLOAD) {
@@ -1119,7 +1150,8 @@ HcclResult DevUbConnection::GetTpAttrAsync()
     uint32_t attrBitmap = 0;
     struct TpAttr tpAttr = {0};
 
-    CHK_RET(HrtRaGetTpAttrAsync(rdmaHandle, tpHandle, attrBitmap, tpAttr, reqHandle));
+    u32 devicePhyId = HrtGetDevicePhyIdByIndex(devLogicId);
+    CHK_RET(HrtRaGetTpAttrAsync(devicePhyId, rdmaHandle, tpHandle, attrBitmap, tpAttr, reqHandle));
     HCCL_INFO("[DevUbConnection::%s] locIpv4Addr[%s], rmtIpv4Addr[%s], locAddr[%s], rmtAddr[%s]",
         __func__, locIpv4Addr.Describe().c_str(), rmtIpv4Addr.Describe().c_str(),
         locAddr.Describe().c_str(), rmtAddr.Describe().c_str());

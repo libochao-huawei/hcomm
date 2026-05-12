@@ -32,6 +32,10 @@ CollComm::~CollComm()
 {
     CollCommMgr::GetInstance()->UnRegisteCollComm(this); 
     HCCL_INFO("[CollComm][~CollComm] collComm deinit");
+    // dpu的兜底上报
+    if (hcclCommDfx_ != nullptr) {  // 添加检查
+        hcclCommDfx_->ReportAllTasks(true);
+    }
     (void)DestroyAicpuComm();
 }
 
@@ -86,7 +90,7 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
  	if (!hcclCommDfx_) {
         EXECEPTION_CATCH(hcclCommDfx_ = std::make_unique<HcclCommDfx>(), return HCCL_E_PTR);
  	}
- 	CHK_RET(hcclCommDfx_->Init(deviceLogicId_, commId_));
+ 	CHK_RET(hcclCommDfx_->Init(deviceLogicId_, commId_, rankId_));
     CHK_RET(InitTaskExceptionHandler());
 
     CHK_RET(InitKfcAndRegisterCollComm());
@@ -174,6 +178,7 @@ HcclCommStatus CollComm::GetCommStatus() const
 
 HcclResult CollComm::Suspend()
 {
+    HCCL_RUN_INFO("[CollComm][Suspend] commId[%s] start to suspend.", commId_.c_str());
     if (commStatus_ == HcclCommStatus::HCCL_COMM_STATUS_SUSPENDING) {
         HCCL_WARNING("[CollComm][Suspend] The current communication has been suspended, no need to suspend again.");
         return HcclResult::HCCL_SUCCESS;
@@ -185,6 +190,7 @@ HcclResult CollComm::Suspend()
 
 HcclResult CollComm::Clean()
 {
+    HCCL_RUN_INFO("[CollComm][Clean] commId[%s] start to clean.", commId_.c_str());
     if (commStatus_ != HcclCommStatus::HCCL_COMM_STATUS_SUSPENDING) {
         HCCL_ERROR("[CollComm][Clean] The current communication is not suspended, cannot clean, status is [%u]", 
             static_cast<uint32_t>(commStatus_));

@@ -967,9 +967,11 @@ HcclResult NetworkManager::StopRdmaHandle(const HcclIpAddress &ipAddr, HcclNetDe
     switch (netDevDeployment) {
         case HcclNetDevDeployment::HCCL_NETDEV_DEPLOYMENT_DEVICE:{
             auto it = raResourceInfo_.nicSocketMap.find(ipAddr);
-            CHK_PRT_RET(it == raResourceInfo_.nicSocketMap.end(),
-                HCCL_ERROR("[Stop][NicsSocket]ip[%s] is not found in nicSocketMap.", ipAddr.GetReadableAddress()),
-                HCCL_E_INTERNAL);
+            if (it == raResourceInfo_.nicSocketMap.end()) {
+                HCCL_WARNING("[Stop][NicsSocket]ip[%s] not found in nicSocketMap, may already cleaned.",
+                    ipAddr.GetReadableAddress());
+                return HCCL_SUCCESS;
+            }
             IpSocket &ipSock = it->second;
             if (ipSock.nicRdmaHandle != nullptr && HrtRaRdmaDeInit(ipSock.nicRdmaHandle, notifyType_)) {
             HCCL_ERROR("[Stop][rmda]NIC rdev deInit not successfully, notifyType_[%d]", notifyType_);
@@ -1007,7 +1009,7 @@ HcclResult NetworkManager::StopRdmaHandle(const HcclIpAddress &ipAddr, HcclNetDe
     }
 
     HCCL_INFO("[NetworkManager] [StopRdmaHandle] devicePhyId_[%u] StopRdmaHandle success ip [%s]", devicePhyId_, ipAddr.GetReadableAddress());
-    return HCCL_SUCCESS;
+    return HCCL_SUCCESS; // stop socket。port 数清零时自动关闭socket
 }
 
 HcclResult NetworkManager::StopNicSocketHandle(const HcclIpAddress &ipAddr)
@@ -1110,7 +1112,7 @@ HcclResult NetworkManager::StopAllDeviceNicSockets()
     }
 
     raResourceInfo_.nicSocketMap.clear();
-    return  HCCL_SUCCESS; // stop socket。port 数清零时自动关闭socket
+    return HCCL_SUCCESS;
 }
 
 HcclResult NetworkManager::StopAllDeviceVnicSockets()
@@ -1264,7 +1266,7 @@ HcclResult NetworkManager::StartHostNetAndListen(const HcclIpAddress &ipAddr, So
             ret);
     }
     if (sock.nicRdmaHandle == nullptr && rdmaFlag) {
-        notifyType_ = NOTIFY;
+        notifyType_ = EVENTID;
         ret = InitRDMA(devicePhyId_, ipAddr, NETWORK_PEER_ONLINE, notifyType_, sock.nicRdmaHandle);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[Start][Nic]errNo[0x%016llx] ra nic init rdma failed, devid[%u], return[%d]",

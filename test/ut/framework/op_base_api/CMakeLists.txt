@@ -20,12 +20,14 @@ set(src_to_test_list
     ut_HcclRecv_API_test.cc
     ut_HcclSend_API_test.cc
     ut_HcclAlltoAllV_API_test.cc
+    ut_HcclAlltoAllVC_API_test.cc
     ut_HcclReduce_API_test.cc
     ut_HcclAllGather_API_test.cc
     ut_HcclBarrier_API_test.cc
     ut_HcclReduceScatter_API_test.cc
     ut_HcomGetCommHandleByGroup_API_test.cc
     ut_op_base_misc_test.cc
+    # ut_op_base_v2_test.cc
 )
 
 add_executable(hccl_utest_framework_op_base_api ${src_to_test_list})

@@ -248,6 +248,36 @@ TEST_F(AdapterHccpTest, Ut_HrtRaSocketTryListenOneStart_When_InValid_IP_Expect_T
     EXPECT_THROW(HrtRaSocketTryListenOneStart(listenInfo), NetworkApiException);
 }
 
+TEST_F(AdapterHccpTest, Ut_HrtRaSocketNonBlockSendHeart_When_Input_normal_Expect_Return_Success)
+{
+    u64 sendBuffer = 0;
+    u64 sendSizeStub = 123;
+    u64 fd = 0;
+    SocketHandle socketHandle = &fd;
+    MOCKER(RaSocketSend).stubs().with(any(), any(), any(), outBoundP(&sendSizeStub, sizeof(sendSizeStub)))
+        .will(returnValue(0));
+
+    u64 sentSize = 0;
+    HcclResult ret = HrtRaSocketNonBlockSendHeart(socketHandle, &sendBuffer, sizeof(sendBuffer), &sentSize);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(sendSizeStub, sentSize);
+}
+
+TEST_F(AdapterHccpTest, Ut_HrtRaSocketNonBlockRecvHeart_When_Input_normal_Expect_Return_Success)
+{
+    u64 recvbuffer = 0;
+    u64 recvSizeStub = 123;
+    u64 fd = 0;
+    SocketHandle socketHandle = &fd;
+    MOCKER(RaSocketRecv).stubs().with(any(), any(), any(), outBoundP(&recvSizeStub, sizeof(recvSizeStub)))
+        .will(returnValue(0));
+
+    u64 recvedSize = 0;
+    HcclResult ret = HrtRaSocketNonBlockRecvHeart(socketHandle, &recvbuffer, sizeof(recvbuffer), &recvedSize);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(recvSizeStub, recvedSize);
+}
+
 TEST_F(AdapterHccpTest, HrtRaSocketInit_OK)
 {
     // Given
@@ -292,6 +322,23 @@ TEST_F(AdapterHccpTest, HrtHrtRaRdmaInit_NOK)
         .stubs()
         .with(any(), any(), any(), outBoundP(&rdmaHandle, sizeof(rdmaHandle)))
         .will(returnValue(1));
+
+    struct RaInterface rdevInfo;
+    // when
+
+    EXPECT_THROW(HrtRaRdmaInit(HrtNetworkMode::HDC, rdevInfo), NetworkApiException);
+    delete[] num;
+}
+
+TEST_F(AdapterHccpTest, HrtHrtRaRdmaInit_return_HCCP_ELINKDOWN_NOK)
+{
+    // Given
+    u32       *num        = new u32[1];
+    RdmaHandle rdmaHandle = static_cast<void *>(num);
+    MOCKER(RaRdevInit)
+        .stubs()
+        .with(any(), any(), any(), outBoundP(&rdmaHandle, sizeof(rdmaHandle)))
+        .will(returnValue(HCCP_ELINKDOWN));
 
     struct RaInterface rdevInfo;
     // when
@@ -429,7 +476,8 @@ TEST_F(AdapterHccpTest, HrtRaUbRemoteMemUnimport_ok)
 TEST_F(AdapterHccpTest, HrtRaUbCreateJfc_ok)
 {
     RdmaHandle handle = reinterpret_cast<RdmaHandle>(0x123);
-    u64 result = HrtRaUbCreateJfc(handle, HrtUbJfcMode::NORMAL);
+    struct Hccl::CqCreateInfo cqInfo;
+    u64 result = HrtRaUbCreateJfc(handle, cqInfo, HrtUbJfcMode::NORMAL);
     EXPECT_EQ(0, result);
 }
 
@@ -998,4 +1046,64 @@ TEST_F(AdapterHccpTest, HrtRaGetEidByIp_empty_input_ok)
 
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_TRUE(eidAddrList.empty());
+}
+
+TEST_F(AdapterHccpTest, ut_HrtGetUboeFlagEnable_VersionEnough_Expect_Success)
+{
+    u32 devPhyId = 1;
+    u32 mock_version = GET_UBOE_FLAG_ENABLE_VERSION;
+    MOCKER(RaGetInterfaceVersion)
+        .stubs()
+        .with(any(), any(), outBoundP(&mock_version, sizeof(s32)))
+        .will(returnValue(0));
+
+    HcclResult ret = HrtGetUboeFlagEnable(devPhyId);
+    
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(AdapterHccpTest, ut_HrtGetUboeFlagEnable_When_VersionNotEnough_Expect_NotSupport)
+{
+    u32 devPhyId = 1;
+    u32 mock_version = GET_UBOE_FLAG_ENABLE_VERSION - 1;
+    MOCKER(RaGetInterfaceVersion)
+        .stubs()
+        .with(any(), any(), outBoundP(&mock_version, sizeof(s32)))
+        .will(returnValue(0));
+    
+    HcclResult ret = HrtGetUboeFlagEnable(devPhyId);
+    
+    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
+}
+
+TEST_F(AdapterHccpTest, ut_HrtGetUboeFlagEnable_When_RaGetInterfaceFailed_Expect_E_INTERNAL)
+{
+    u32 devPhyId = 1;
+    MOCKER(RaGetInterfaceVersion).stubs().will(returnValue(-1));
+    HcclResult ret = HrtGetUboeFlagEnable(devPhyId);
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+}
+
+TEST_F(AdapterHccpTest, ut_HrtCheckUboeSupported_When_DevFeatureBitSet_Expect_True)
+{
+    u32 devFeature = 1 << UBOE_DEV_FLAG_RIGHT_SHIFT;
+    bool result = HrtCheckUboeSupported(devFeature);
+    EXPECT_TRUE(result);
+    
+    // 测试其他位也有值的情况
+    devFeature = (1 << UBOE_DEV_FLAG_RIGHT_SHIFT) | 0xFFFF;
+    result = HrtCheckUboeSupported(devFeature);
+    EXPECT_TRUE(result);
+}
+
+TEST_F(AdapterHccpTest, ut_HrtCheckUboeSupported_When_DevFeatureBitNotSet_Expect_False)
+{
+    u32 devFeature = 0;
+    bool result = HrtCheckUboeSupported(devFeature);
+    EXPECT_FALSE(result);
+    
+    // 测试只有其他位被设置，但UBOE位未设置
+    devFeature = 0xFFFFFFFF & ~(1 << UBOE_DEV_FLAG_RIGHT_SHIFT);
+    result = HrtCheckUboeSupported(devFeature);
+    EXPECT_FALSE(result);
 }

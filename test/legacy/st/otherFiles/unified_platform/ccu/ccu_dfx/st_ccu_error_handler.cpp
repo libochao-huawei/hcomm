@@ -141,6 +141,10 @@ TEST_F(CcuErrorHandlerTest, test_gen_status_info)
     CcuErrorHandler::GenStatusInfo(baseInfo, errorInfo);
 
     errorInfo.clear();
+    baseInfo.status = 0x0902;
+    CcuErrorHandler::GenStatusInfo(baseInfo, errorInfo);
+
+    errorInfo.clear();
     baseInfo.status = 0x0A07;
     CcuErrorHandler::GenStatusInfo(baseInfo, errorInfo);
 
