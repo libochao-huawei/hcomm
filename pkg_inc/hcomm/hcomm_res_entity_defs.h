@@ -1,4 +1,3 @@
-
 /**
  * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
@@ -66,7 +65,7 @@ typedef struct {
         } ub;
         uint8_t raws[24];
     } memInfo;
-} ProtectionInfo; // 32B
+} ProtectionInfo; // 28B
 
 typedef struct {
     RegedBufferType type;
