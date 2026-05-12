@@ -1863,6 +1863,8 @@ static bool NeedStopCounter()
 TEST_F(HostCpuRoceChannelTest, Ut_ConnectSingleQpHybrid_Success_Expect_HCCL_SUCCESS)
 {
     SetupSuccessfulConnectionMocks();
+    MOCKER(SocketMgr::GetSocket).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(SocketMgr::PutSocket).stubs().will(returnValue(HCCL_SUCCESS));
     auto impl_ = CreateInitAndConnect();
 
     impl_->isHybridMode_ = true;
