@@ -16,3 +16,7 @@ set(src_list
 target_sources(hcomm PRIVATE
     ${src_list}
 )
+
+target_include_directories(hcomm PRIVATE
+    ${CMAKE_SOURCE_DIR}/src/legacy/framework/env_config
+)
