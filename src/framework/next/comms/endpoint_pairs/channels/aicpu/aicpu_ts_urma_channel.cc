@@ -27,6 +27,14 @@ namespace hcomm {
 AicpuTsUrmaChannel::AicpuTsUrmaChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc):
     endpointHandle_(endpointHandle), channelDesc_(channelDesc) {}
 
+AicpuTsUrmaChannel::~AicpuTsUrmaChannel()
+{
+    if (socket_ != nullptr && socketMgr_ != nullptr) {
+        socketMgr_->PutSocket(socket_);
+        socket_ = nullptr;
+    }
+}
+
 HcclResult AicpuTsUrmaChannel::Makebufs(HcommMemHandle *memHandles, uint32_t memHandleNum,
     std::vector<std::shared_ptr<Hccl::Buffer>> &bufs)
 {
@@ -80,7 +88,7 @@ HcclResult AicpuTsUrmaChannel::ParseInputParam()
         CHK_RET(Makebufs(channelDesc_.memHandles, channelDesc_.memHandleNum, bufs_));
     }
 
-    EXECEPTION_CATCH(socketMgr_ = std::make_unique<SocketMgr>(), return HCCL_E_PTR);
+    EXECEPTION_CATCH(socketMgr_ = &SocketMgr::GetInstance(), return HCCL_E_PTR);
 
     return HCCL_SUCCESS;
 }
@@ -267,6 +275,11 @@ ChannelStatus AicpuTsUrmaChannel::GetStatus()
             HCCL_RUN_INFO("%s", channelInfo.c_str());
         }
         isFirstPrintChannelInfo_ = false;
+    }
+    
+    if (out == ChannelStatus::READY) {
+        socketMgr_->PutSocket(socket_);
+        socket_ = nullptr;
     }
     return out;
 }
