@@ -49,7 +49,6 @@ void RegisterGetAicpuTaskExceptionCallBackV2(s32 streamId, u32 deviceLogicId, Hc
     Hccl::g_communicatorCallbackMapV2[deviceLogicId][streamId] = p1;
     return;
 }
-
 #ifdef __cplusplus
 }
 #endif // __cplusplus
