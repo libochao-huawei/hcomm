@@ -18,8 +18,7 @@ set(src_list
 if(TARGET hccl_plf)
     target_sources(hccl_plf PRIVATE
         ${src_list}
-        transport_roce.cc
-        )
+            )
 endif()
 
 if(TARGET hccd)
