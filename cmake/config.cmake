@@ -86,9 +86,6 @@ set(HOST_STUBS
 =======
 if(PRODUCT_SIDE STREQUAL "host")
     set(HOST_STUBS
-        c_sec
-        unified_dlog
-        mmpa
         ascendcl
         tsdclient
     )
