@@ -465,7 +465,7 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
         maxPipelineBlockSize = commInputSize / userRankSize_ / HCCL_DEVICE_NUM_TWO /
             HCCL_MIN_SLICE_ALIGN * HCCL_MIN_SLICE_ALIGN;
     }
-    bool isSupportPipelineFor91093 = (maxPipelineBlockSize >= HCCL_SMALL_COUNT_2_MB) &&
+    bool isSupportPipelineFor91093 = (maxPipelineBlockSize >= HCCL_SMALL_COUNT_8_MB) &&
         (dataSize * userRankSize_ > HCCL_PIPELINE_TOTAL_DATA_SIZE_THRESHOLD);
     HCCL_INFO("[ReduceScatterOperator][SelectAlgfor91093] dataSize[%llu] commInputSize[%llu] "
         "userRankSize[%u] maxPipelineBlockSize[%llu] isSupportPipelineFor91093[%d]",
