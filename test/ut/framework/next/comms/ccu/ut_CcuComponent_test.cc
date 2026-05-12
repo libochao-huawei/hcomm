@@ -111,3 +111,65 @@ TEST_F(CcuComponentTest, Ut_CcuComponent_SetTaskKill_Transitions)
     // 调用 CleanTaskKillState（const 方法），仅验证返回值
     EXPECT_EQ(ccuComponent.CleanTaskKillState(), HcclResult::HCCL_SUCCESS);
 }
+
+TEST_F(CcuComponentTest, Ut_CcuComponent_GetLoopTpAttr_Cached_ReturnsCachedValue)
+{
+    const int32_t devLogicId = MAX_MODULE_DEVICE_NUM - 1;
+    hcomm::CcuComponent ccuComponent{};
+    ccuComponent.devLogicId_ = devLogicId;
+
+    hcomm::TpAttrInfo cachedTpAttrInfo{};
+    cachedTpAttrInfo.tpAttr.at = 2;
+    cachedTpAttrInfo.tpAttr.retryTimesInit = 1;
+    ccuComponent.tpAttrInfoMap_[0] = cachedTpAttrInfo;
+
+    CommAddr commAddr{};
+    hcomm::TpAttrInfo result{};
+    EXPECT_EQ(ccuComponent.GetLoopTpAttr(0, commAddr, result), HcclResult::HCCL_SUCCESS);
+    EXPECT_EQ(result.tpAttr.at, 2);
+    EXPECT_EQ(result.tpAttr.retryTimesInit, 1);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(CcuComponentTest, Ut_CcuComponent_GetLoopTpAttr_TpInfoNotFound_ReturnsError)
+{
+    const int32_t devLogicId = MAX_MODULE_DEVICE_NUM - 1;
+    hcomm::CcuComponent ccuComponent{};
+    ccuComponent.devLogicId_ = devLogicId;
+    ccuComponent.devPhyId_ = 0;
+
+    CommAddr commAddr{};
+    hcomm::TpAttrInfo result{};
+    EXPECT_EQ(ccuComponent.GetLoopTpAttr(0, commAddr, result), HcclResult::HCCL_E_NOT_FOUND);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(CcuComponentTest, Ut_CcuComponent_GetLoopTpAttr_TpInfoPresent_CallsTpMgrAndCaches)
+{
+    const int32_t devLogicId = MAX_MODULE_DEVICE_NUM - 1;
+    hcomm::CcuComponent ccuComponent{};
+    ccuComponent.devLogicId_ = devLogicId;
+    ccuComponent.devPhyId_ = 0;
+
+    hcomm::TpInfo tpInfo{};
+    tpInfo.tpHandle = 12345;
+    ccuComponent.tpInfoMap_[0] = tpInfo;
+
+    CommAddr commAddr{};
+    commAddr.type = CommAddrType::COMM_ADDR_TYPE_IP_V4;
+    commAddr.addr.s_addr = 167772382;
+
+    hcomm::TpAttrInfo expectedTpAttrInfo{};
+    expectedTpAttrInfo.tpAttr.at = 1;
+    expectedTpAttrInfo.tpAttr.retryTimesInit = 2;
+
+    MOCKER_CPP(&hcomm::TpMgr::GetInstance).stubs().will(returnValue((hcomm::TpMgr*)0x12345));
+    MOCKER_CPP(&hcomm::TpMgr::GetTpAttr).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+
+    hcomm::TpAttrInfo result{};
+    EXPECT_EQ(ccuComponent.GetLoopTpAttr(0, commAddr, result), HcclResult::HCCL_SUCCESS);
+
+    GlobalMockObject::verify();
+}
