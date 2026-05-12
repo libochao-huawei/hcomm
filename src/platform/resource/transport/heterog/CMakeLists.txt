@@ -8,13 +8,11 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 set(src_list
-    transport_heterog_p2p.cc
     transport_heterog_roce.cc
     transport_heterog_event_tcp.cc
     transport_heterog.cc
     transport_heterog_event_roce.cc
     transport_heterog_raw_roce.cc
-    socket.cc
 )
 
 if(TARGET hccl_plf)
