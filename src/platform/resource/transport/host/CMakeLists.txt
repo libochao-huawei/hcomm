@@ -19,8 +19,7 @@ if(TARGET hccl_plf)
     target_sources(hccl_plf PRIVATE
         ${src_list}
         transport_roce.cc
-        transport_shm_event.cc
-    )
+        )
 endif()
 
 if(TARGET hccd)
