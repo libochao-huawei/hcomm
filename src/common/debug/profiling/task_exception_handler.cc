@@ -1250,7 +1250,7 @@ void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo *exceptionInfo
         return;
     }
     lock.unlock();
-    GetAicpuTaskExceptionCallBackHcomm callback;
+    auto callback = Hccl::GetAicpuTaskExceptionCallBack{} ;
     {
         lock_guard<mutex> cbLock(g_communicatorCallbackMapMutexV2);
         auto& deviceMap = g_communicatorCallbackMapV2[exceptionInfo->deviceid];
