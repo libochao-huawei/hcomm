@@ -451,10 +451,17 @@ void TaskExceptionHost::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo)
         return;
     }
     lock.unlock();
-    if (g_communicatorCallbackMapV2[exceptionInfo->deviceid].find(exceptionInfo->streamid) !=\
-        g_communicatorCallbackMapV2[exceptionInfo->deviceid].end()) {
-        // 找到对应的通信域，并调用回调函数从HDC通道获取AICPU异常信息
-        errorMessage = (g_communicatorCallbackMapV2[exceptionInfo->deviceid])[exceptionInfo->streamid]();
+    GetAicpuTaskExceptionCallBackHcomm callback;
+    {
+        lock_guard<mutex> cbLock(g_communicatorCallbackMapMutexV2);
+        auto& deviceMap = g_communicatorCallbackMapV2[exceptionInfo->deviceid];
+        auto it = deviceMap.find(exceptionInfo->streamid);
+        if (it != deviceMap.end()) {
+            callback = it->second;
+        }
+    }
+    if (callback) {
+        errorMessage = callback();
         if (strlen(errorMessage.tag) > 0) {
             std::string groupRankContent;
             u32 streamId = static_cast<u32>(errorMessage.streamId);
