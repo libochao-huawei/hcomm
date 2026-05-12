@@ -59,7 +59,7 @@ HcclResult CcuJetty::Init()
     const auto jettyMode = HrtJettyMode::CCU_CCUM_CACHE; // 当前仅支持该模式
     inParam_ = HrtRaUbCreateJettyParam{jfcHandle, jfcHandle, tokenValue,
         tokenIdHandle, jettyMode, jettyInfo_.taJettyId, jettyInfo_.sqBufVa,
-        jettyInfo_.sqBufSize, jettyInfo_.wqeBBStartId, jettyInfo_.sqDepth};
+        jettyInfo_.sqBufSize, jettyInfo_.wqeBBStartId, jettyInfo_.sqDepth}; // CTP默认为8s
     EXCEPTION_HANDLE_END
 
     return HcclResult::HCCL_SUCCESS;
@@ -134,7 +134,7 @@ HcclResult CcuJetty::HandleAsyncRequest()
     return ParseCreateInfo(info, jettyHandle, outParam_);
 }
 
-HcclResult CcuJetty::CreateJetty()
+HcclResult CcuJetty::CreateJetty(u8 errTimeout)
 {
     if (isError_) {
         HCCL_ERROR("[CcuJetty][%s] failed, jetty[%u] is error, "
@@ -148,6 +148,7 @@ HcclResult CcuJetty::CreateJetty()
         return HcclResult::HCCL_SUCCESS;
     }
 
+    inParam_.errTimeout = errTimeout;
     auto ret = HandleAsyncRequest();
     if (ret == HcclResult::HCCL_SUCCESS) {
         isCreated_ = true;
