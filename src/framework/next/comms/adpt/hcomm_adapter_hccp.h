@@ -72,7 +72,7 @@ MAKE_ENUM(HrtTransportMode, RM, RC);
 // CACHE_LOCK_DWQE: 该模式下，      STARS仅能使用UB DirectWQE的task，不能使用UB DbSend task,，需要指定sqeBbNum
 // CCU_CCUM_CACHE: 不需要指定sqeBbNum
 MAKE_ENUM(HrtJettyMode, STANDARD, HOST_OFFLOAD, HOST_OPBASE, DEV_USED, CACHE_LOCK_DWQE, CCU_CCUM_CACHE);
-MAKE_ENUM(HrtUbJfcMode, NORMAL, STARS_POLL, CCU_POLL);
+MAKE_ENUM(HrtUbJfcMode, NORMAL, STARS_POLL, CCU_POLL, USER_CTL);
 using HrtRaUbCreateJettyParam = struct HrtRaUbJettyCreateParamDef {
     JfcHandle sjfcHandle{nullptr};
     JfcHandle rjfcHandle{nullptr};
