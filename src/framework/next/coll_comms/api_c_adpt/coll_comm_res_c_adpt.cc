@@ -19,7 +19,6 @@
 #include "ccu_kernel.h"
 #include "../comms/ccu/ccu_kernel/ccu_kernel_mgr.h"
 #include "rt_external.h"
-#include "hccl_ccu_res.h"
 #include "coll_comm_mgr.h"
 #include "hcclCommOp.h"
 
