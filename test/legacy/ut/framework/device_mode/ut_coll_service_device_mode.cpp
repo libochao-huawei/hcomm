@@ -103,7 +103,7 @@ protected:
         MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
 
         fakeComm.cclBuffer = DevBuffer::Create(0x100, 0x100);
-        fakeComm.status = CommStatus::COMM_READY;
+        fakeComm.SetCommStatus(CommStatus::COMM_READY);
         fakeComm.InitNotifyManager();
         fakeComm.InitSocketManager();
         fakeComm.InitRmaConnManager();
@@ -684,7 +684,7 @@ TEST_F(CollServiceDeviceModeTest, should_success_when_AllocCommResource_aiv)
         .will(returnValue(rmaBuf));
 
     CommunicatorImpl comm;
-    comm.status = CommStatus::COMM_READY;
+    comm.SetCommStatus(CommStatus::COMM_READY);
     comm.rankSize = 2;
     comm.myRank = 0;
     comm.opExecuteConfig.accState = AcceleratorState::CCU_MS;
@@ -774,7 +774,7 @@ TEST_F(CollServiceDeviceModeTest, Ut_AllocCommResource_When_versionIs0_Expect_TH
         .will(returnValue(rmaBuf));
 
     CommunicatorImpl comm;
-    comm.status = CommStatus::COMM_READY;
+    comm.SetCommStatus(CommStatus::COMM_READY);
     comm.rankSize = 2;
     comm.myRank = 0;
     comm.opExecuteConfig.accState = AcceleratorState::CCU_MS;
@@ -880,7 +880,7 @@ TEST_F(CollServiceDeviceModeTest, Ut_AllocCommResource_When_versionIs100_Expect_
         .will(returnValue(rmaBuf));
 
     CommunicatorImpl comm;
-    comm.status = CommStatus::COMM_READY;
+    comm.SetCommStatus(CommStatus::COMM_READY);
     comm.rankSize = 2;
     comm.myRank = 0;
     comm.opExecuteConfig.accState = AcceleratorState::CCU_MS;
