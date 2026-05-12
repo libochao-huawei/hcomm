@@ -533,7 +533,7 @@ void HrtRaSocketBlockSend(const FdHandle fdHandle, const void *data, u32 sendSiz
     HCCL_INFO("ra socket send finished,ret[%d]", ret);
 }
 
-bool HrtRaSocketNonBlockSend(const FdHandle fdHandle, void *data, u64 size, u64 *sentSize)
+s32 HrtRaSocketNonBlockSendNormal(const FdHandle fdHandle, void *data, u64 size, u64 *sentSize)
 {
     CHECK_NULLPTR(fdHandle, "[HrtRaSocketNonBlockSend] fdHandle is nullptr!");
     CHECK_NULLPTR(data, "[HrtRaSocketNonBlockSend] data is nullptr!");
@@ -545,7 +545,12 @@ bool HrtRaSocketNonBlockSend(const FdHandle fdHandle, void *data, u64 size, u64 
             "data[%p], size[%llu], fdHandle[%p], send size[%llu]", HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), data, size, fdHandle, *sentSize));
     }   
     
-    s32 ret = RaSocketSend(fdHandle, data, size, sentSize);
+    return RaSocketSend(fdHandle, data, size, sentSize);
+}
+
+bool HrtRaSocketNonBlockSend(const FdHandle fdHandle, void *data, u64 size, u64 *sentSize)
+{
+    s32 ret = HrtRaSocketNonBlockSendNormal(fdHandle, data, size, sentSize);
     if (ret == 0 || ret == SOCK_EAGAIN) {
         HCCL_INFO("[HrtRaSocketNonBlockSend] ra socket send, data[%p], size[%llu], send size[%llu], ret[%d]", data, size, *sentSize, ret);
         return true;
@@ -554,6 +559,45 @@ bool HrtRaSocketNonBlockSend(const FdHandle fdHandle, void *data, u64 size, u64 
             fdHandle, data, size, *sentSize, ret);
         return false;
     }
+}
+
+HcclResult HrtRaSocketNonBlockSendHeart(const FdHandle fdHandle, void *data, u64 size, u64 *sentSize)
+{
+    s32 ret = HrtRaSocketNonBlockSendNormal(fdHandle, data, size, sentSize);
+    if (ret == 0) {
+        return HCCL_SUCCESS;
+    } else if (ret == SOCK_EAGAIN) {
+        return HCCL_E_AGAIN;
+    } else if (ret == SOCK_CLOSE) {
+        return HCCL_E_INTERNAL; //暂时用这个错误码表示hccp进程异常退出
+    } else {
+        HCCL_WARNING("[HrtRaSocketNonBlockSend]ra socket send failed, data[%p], size[%llu], send size[%llu], ret[%d]",
+            data, size, *sentSize, ret);
+        return HCCL_E_NETWORK;
+    }
+}
+
+HcclResult HrtRaSocketNonBlockRecvHeart(const FdHandle fdHandle, void *data, u64 size, u64 *recvSize)
+{
+    CHECK_NULLPTR(fdHandle, "[HrtRaSocketNonBlockRecv] fdHandle is nullptr!");
+    CHECK_NULLPTR(data, "[HrtRaSocketNonBlockRecv] data is nullptr!");
+    CHECK_NULLPTR(recvSize, "[HrtRaSocketNonBlockRecv] recvSize is nullptr!");
+    HCCL_DEBUG("[HrtRaSocketNonBlockRecv] Input params: fdHandle=%p,data=%p, size=%llu, recvSize=%llu", 
+        fdHandle, data, size, *recvSize); 
+    
+    s32 ret = RaSocketRecv(fdHandle, data, size, recvSize);
+    if (ret == 0) {
+        return HCCL_SUCCESS;
+    } else if (ret == SOCK_EAGAIN) {
+        return HCCL_E_AGAIN;
+    } else if (ret == SOCK_CLOSE) {
+        return HCCL_E_INTERNAL; //暂时用这个错误码表示hccp进程异常退出
+    } else {
+        HCCL_WARNING("[HrtRaSocketNonBlockRecv]ra socket recv failed, data[%p], size[%llu], "\
+            "recv[%llu], ret[%d], errno[%d][%s]", data, size, recvSize, ret, errno, strerror(errno));
+        return HCCL_E_TCP_TRANSFER;
+    }
+    return HCCL_SUCCESS;
 }
 
 void HrtRaSocketBlockRecv(const FdHandle fdHandle, void *data, u32 size)
@@ -2277,18 +2321,17 @@ RequestHandle RaUbUnimportJettyAsync(void *targetJettyHandle)
     return reinterpret_cast<RequestHandle>(raReqHandle);
 }
 
-void HrtRaWaitEventHandle(int event_handle, std::vector<SocketEventInfo> &event_infos, int timeout,
+HcclResult HrtRaWaitEventHandle(int event_handle, std::vector<SocketEventInfo> &event_infos, int timeout,
     unsigned int maxevents, u32 &events_num)
 {
     HCCL_INFO("[HrtRaWaitEventHandle] Input params: event_handle=%d, timeout=%d, maxevents=%u, events_num=%u", event_handle, timeout, maxevents, events_num);
     std::vector<struct SocketEventInfoT> raEventInfos(maxevents);
     s32 ret = RaWaitEventHandle(event_handle, raEventInfos.data(), timeout, maxevents, &events_num);
-    if (ret != 0) {
-        MACRO_THROW(NetworkApiException, StringFormat("[%s] failed, call interface error[%d].", __func__, ret));
-    }
+    CHK_PRT_RET(ret != 0, HCCL_ERROR("[%s] failed, call RaWaitEventHandle error ret[%d].", __func__, ret), HCCL_E_NETWORK);
     for (u32 i = 0; i < events_num; i++) {
         event_infos[i].fdHandle = raEventInfos[i].fdHandle;
     }
+    return HCCL_SUCCESS;
 }
 
 void HrtRaGetSecRandom(u32 *value, u32 &devPhyId)
