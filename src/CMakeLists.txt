@@ -12,6 +12,10 @@ if(NOT DEFINED HCOMM_DIR)
     set(HCOMM_DIR "${CMAKE_CURRENT_SOURCE_DIR}/..")
 endif()
 
+if(NOT COMMAND clone_cann_target)
+    include(${HCOMM_DIR}/cmake/func.cmake)
+endif()
+
 # 组件间对外头文件目录
 add_library(hccl_headers INTERFACE)
 target_include_directories(hccl_headers INTERFACE
