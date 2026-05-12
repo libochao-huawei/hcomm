@@ -1391,6 +1391,7 @@ void CommunicatorImpl::InitDataBufferManager()
         aivOffloadTagBuffer = std::move(DevBuffer::CreateHugePageBuf(HCCL_AIV_OFFLOAD_TAG_BUFFER_SIZE));
         HrtMemset(reinterpret_cast<void*>(aivOffloadTagBuffer->GetAddr()), aivOffloadTagBuffer->GetSize(), aivOffloadTagBuffer->GetSize());
         cclBuffer = std::move(DevBuffer::CreateHugePageBuf(scratchBufSize));
+        HrtMemset(reinterpret_cast<void*>(cclBuffer->GetAddr()), cclBuffer->GetSize(), cclBuffer->GetSize());
         HCCL_RUN_INFO(
             "[CommunicatorImpl][InitDataBufferManager] cclBuffer create, commId[%s], addr[%llu], size[%llu]M",
             GetId().c_str(), cclBuffer->GetAddr(), cclBufferSize / HCCL_CCL_COMM_FIXED_CALC_BUFFER_SIZE);
