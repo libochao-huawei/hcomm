@@ -8,11 +8,10 @@
 - Ascend 950PR/Ascend 950DT：不支持
 - Atlas A3 训练系列产品/Atlas A3 推理系列产品：支持
 - Atlas A2 训练系列产品/Atlas A2 推理系列产品：不支持
-- Atlas 推理系列产品：不支持
-- Atlas 训练系列产品：不支持
-
-> [!NOTE]说明
-> 针对Atlas A2 训练系列产品/Atlas A2 推理系列产品，仅支持Atlas 800T A2 训练服务器、Atlas 900 A2 PoD 集群基础单元、Atlas 200T A2 Box16 异构子框。
+<cann-filter npu-type="310p">
+- Atlas 推理系列产品：不支持</cann-filter>
+<cann-filter npu-type="910">
+- Atlas 训练系列产品：不支持</cann-filter>
 
 ## 功能说明
 
@@ -26,7 +25,7 @@ HcclResult HcclCommDeactivateCommMemory(HcclComm comm, void *virPtr)
 
 ## 参数说明
 
-s| 参数名 | 输入/输出 | 描述 |
+| 参数名 | 输入/输出 | 描述 |
 | --- | --- | --- |
 | comm | 输入 | HCCL通信域，建议使用Server内最大的通信域，即覆盖最大卡数的通信域。 |
 | virPtr | 输入 | 需要反激活的虚拟地址的起始地址，即[HcclCommActivateCommMemory](HcclCommActivateCommMemory.md)接口“virPtr”参数指定的虚拟内存地址。<br>需要注意，指定的虚拟内存必须是已成功激活的内存，且仅支持整个地址块反激活。 |
