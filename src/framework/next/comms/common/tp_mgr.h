@@ -21,6 +21,33 @@
 
 namespace hcomm {
 
+// ==================== TA 档位映射表 ====================
+// TA 芯片挡位 = hw_value / 8
+// 挡位 0 (0-7):   512ms
+// 挡位 1 (8-15):  1000ms (1s)
+// 挡位 2 (16-23): 8000ms (8s)
+// 挡位 3 (24-31): 32000ms (32s)
+// 各挡位对应的最小硬件配置值
+constexpr uint8_t TA_HW_GEAR0_BASE = 0;
+constexpr uint8_t TA_HW_GEAR1_BASE = 8;
+constexpr uint8_t TA_HW_GEAR2_BASE = 16;
+constexpr uint8_t TA_HW_GEAR3_BASE = 24;
+
+constexpr uint8_t TA_GEAR_INDEX_0 = 0;
+constexpr uint8_t TA_GEAR_INDEX_1 = 1;
+constexpr uint8_t TA_GEAR_INDEX_2 = 2;
+constexpr uint8_t TA_GEAR_INDEX_3 = 3;
+
+static constexpr uint32_t TA_TIMEOUT_MS_GEAR0 = 512;
+static constexpr uint32_t TA_TIMEOUT_MS_GEAR1 = 1000;
+static constexpr uint32_t TA_TIMEOUT_MS_GEAR2 = 8000;
+static constexpr uint32_t TA_TIMEOUT_MS_GEAR3 = 32000;
+
+constexpr uint8_t AT_GEAR_MIN = 0;
+constexpr uint8_t AT_GEAR_MAX = 3;
+constexpr uint8_t AT_GEAR_DEFAULT = 2;
+constexpr uint32_t AT_TIMEOUT_MAP[4] = {16, 128, 1000, 4000};
+
 using GetTpInfoParam = struct GetTpInfoParamDef {
     CommAddr locAddr{};
     CommAddr rmtAddr{};
@@ -53,12 +80,39 @@ struct TpInfo {
         : tpHandle(handle) {}
 };
 
+struct TpAttrInfo {
+    struct TpAttr tpAttr{0};
+
+    TpAttrInfo() = default;
+    TpAttrInfo(const struct TpAttr &attr)
+        : tpAttr(attr) {}
+};
+
+using GetTpAttrParam = struct GetTpAttrParamDef {
+    TpHandle tpHandle{0};
+    uint32_t attrBitmap{0};
+
+    explicit GetTpAttrParamDef() = default;
+    GetTpAttrParamDef(const TpHandle tpHandle, const uint32_t attrBitmap)
+        : tpHandle(tpHandle), attrBitmap(attrBitmap){};
+
+    std::string Describe() const {
+        return Hccl::StringFormat("GetTpAttrParam[tpHandle=0x%llx, attrBitmap=0x%x]",
+            tpHandle, attrBitmap);
+    }
+};
+
+
 class TpMgr {
 public:
     static TpMgr &GetInstance(const uint32_t devicePhyId);
     HcclResult GetTpInfo(const GetTpInfoParam &param, TpInfo &tpInfo);
+    HcclResult GetTpAttr(const GetTpAttrParam &param, TpAttrInfo &tpAttrInfo, CtxHandle ctxHandle);
     // unimport jetty 会 URMA 销毁 tp 资源，hccl 配套删除记录
     HcclResult ReleaseTpInfo(const GetTpInfoParam &param, const TpInfo &tpInfo);
+    HcclResult ReleaseTpAttr(const TpHandle tpHandle, const TpAttrInfo &tpAttrInfo);
+    static HcclResult GetTpTotalTimeout(const TpAttrInfo &tpAttrInfo, uint32_t &tpTimeOutMs);
+    static uint8_t CalcTaTimeout(const TpAttrInfo &tpAttrInfo);
 
 private:
      struct TpInfoCtx {
@@ -68,6 +122,15 @@ private:
         TpInfoCtx() = default;
         TpInfoCtx(const TpInfo &info, const uint32_t cnt)
             : tpInfo(info), useCnt(cnt) {}
+    };
+
+    struct TpAttrCtx {
+        TpAttrInfo tpAttrInfo{};
+        uint32_t useCnt{0};
+        
+        TpAttrCtx() = default;
+        TpAttrCtx(const TpAttrInfo &info, const uint32_t cnt)
+            : tpAttrInfo(info), useCnt(cnt) {}
     };
 
     /*
@@ -82,6 +145,14 @@ private:
         std::vector<char> dataBuffer;
     };
 
+    struct TpAttrRequestCtx {
+        RequestHandle handle{0};
+        struct TpAttr tpAttr{0};
+    };
+
+    using TpAttrCtxMap = std::unordered_map<TpHandle, TpAttrCtx>;
+    using TpAttrReqCtxMap  = std::unordered_map<TpHandle, TpAttrRequestCtx>;
+
     using InfoCtxMap = std::unordered_map<Hccl::IpAddress,
         std::unordered_map<Hccl::IpAddress, TpInfoCtx>>;
     using ReqCtxMap  = std::unordered_map<Hccl::IpAddress,
@@ -94,9 +165,13 @@ private:
     TpMgr &operator=(const TpMgr &that) = delete;
 
     HcclResult FindAndGetTpInfo(const GetTpInfoParam &param, TpInfo &tpInfo);
+    HcclResult FindAndGetTpAttr(const TpHandle tpHandle, TpAttrInfo &tpAttrInfo);
     HcclResult StartGetTpInfoListRequest(const GetTpInfoParam &param, RequestCtx &reqCtx) const;
+    HcclResult StartGetTpAttrRequest(const GetTpAttrParam &param, TpAttrRequestCtx &reqCtx, CtxHandle ctxHandle) const;
     HcclResult HandleCompletedRequest(const RequestCtx reqCtx, const GetTpInfoParam &param,
         TpInfo &tpInfo);
+    HcclResult HandleCompletedTpAttrRequest(const TpAttrRequestCtx reqCtx, const TpHandle tpHandle,
+        TpAttrInfo &tpAttrInfo);
 
     InfoCtxMap &GetInfoCtxMap(const TpProtocol tpProtocol);
     ReqCtxMap  &GetReqCtxMap(const TpProtocol tpProtocol);
@@ -113,11 +188,17 @@ private:
     InfoCtxMap rtpInfoMap_;
     ReqCtxMap  rtpReqMap_;
 
+    TpAttrCtxMap tpAttrCtxMap_;
+    TpAttrReqCtxMap tpAttrReqCtxMap_;
+
     std::mutex ctpInfoMutex_;
     std::mutex ctpReqMutex_;
 
     std::mutex rtpInfoMutex_;
     std::mutex rtpReqMutex_;
+
+    std::mutex tpAttrCtxMutex_;
+    std::mutex tpAttrReqMutex_;
 };
 
 } // namespace hcomm
