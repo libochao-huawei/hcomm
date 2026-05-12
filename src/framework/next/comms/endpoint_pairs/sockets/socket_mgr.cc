@@ -19,6 +19,28 @@ namespace hcomm {
 
 constexpr uint32_t TempServerListenPort = 60001;    // 临时固定监听端口，用于功能验证
 
+static SocketMgr& SocketMgr::GetInstance()
+{
+    if (instance_ == nullptr) {
+        std::lock_guard<std::mutex> lock(instance_mutex_);
+        if (instance_ == nullptr) {
+            instance_ = new SocketMgr();
+        }
+    }
+    return *instance_;
+}
+
+static void SocketMgr::DestroyInstance()
+{
+    if (instance_ != nullptr) {
+        std::lock_guard<std::mutex> lock(instance_mutex_);
+        if (instance_ != nullptr) {
+            delete instance_;
+            instance_ = nullptr;
+        }
+    }
+}
+
 HcclResult SocketMgr::Init()
 {
     if (isLoaded_) {
