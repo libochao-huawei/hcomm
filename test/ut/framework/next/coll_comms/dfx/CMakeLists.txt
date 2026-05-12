@@ -13,6 +13,7 @@ set(src_to_test_list
     ut_HcommCcuProfiling_test.cc
     ut_HcommAivProfiling_test.cc
     ut_hcclCommTaskExceptionLite.cc
+    ut_ccuTaskexception_test.cc
     ut_hcclCommDfx.cc
 )
 

@@ -37,6 +37,7 @@ private:
     static HcclResult PrintCcuUbRegisters(const std::vector<CcuErrorInfo>& errorInfos, s32 devLogicId,
         const Hccl::TaskInfo& taskInfo);
     static HcclResult GetCcuJettys(const CcuErrorInfo& errorInfo, std::pair<CcuChannelInfo, std::vector<CcuJetty *>> &ctx);
+    static uint16_t GetChannleIdByCcuErrorInfo(const CcuErrorInfo& errorInfo);
 
  	static void PrintCcuErrorInfo(uint32_t deviceId, uint16_t status, const Hccl::TaskInfo& taskInfo);
     static void PrintCcuErrorLog(const std::vector<CcuErrorInfo>& errorInfos, const Hccl::TaskInfo& taskInfo, u32 deviceId);
