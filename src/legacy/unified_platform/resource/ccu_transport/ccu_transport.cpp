@@ -289,13 +289,22 @@ void CcuTransport::SendConnAndTransInfo()
     TransResPack(binaryStream);
     CclBufferInfoPack(binaryStream);
     binaryStream.Dump(sendData);
+    
+    u32 dataSize = sendData.size();
+    sendData.insert(sendData.begin(), reinterpret_cast<char *>(&dataSize), reinterpret_cast<char *>(&dataSize) + sizeof(dataSize));
+    
     socket->SendAsync(reinterpret_cast<u8 *>(sendData.data()), sendData.size());
     exchangeDataSize = sendData.size();
+    HCCL_INFO("[CcuTransport::SendConnAndTransInfo] Send total size[%u], data size[%u]", exchangeDataSize, dataSize);
 }
 
 void CcuTransport::RecvConnAndTransInfo()
 {
-    recvData.resize(exchangeDataSize);
+    u32 dataSize{0};
+    socket->RecvAsync(reinterpret_cast<u8 *>(&dataSize), sizeof(dataSize));
+    HCCL_INFO("[CcuTransport::RecvConnAndTransInfo] Recv size[%u]", dataSize);
+    
+    recvData.resize(dataSize);
     socket->RecvAsync(reinterpret_cast<u8 *>(recvData.data()), recvData.size());
 }
  
@@ -427,6 +436,7 @@ void CcuTransport::TransResUnpackProc(BinaryStream &binaryStream)
         binaryStream >> cntCke;
         rmtRes.cntCkes.push_back(cntCke);
     }
+    HCCL_INFO("Recv cntCkesSize[%u]", resSzie);
 
     binaryStream >> resSzie;
     rmtRes.xns.clear();
