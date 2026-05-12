@@ -9,6 +9,8 @@
  */
 
 #include <cstdlib>
+#include <cstring>
+
 #include "ccu_component.h"
 
 #include "sal.h"
@@ -23,8 +25,62 @@
 #include "ccu_res_specs.h"
 
 #include "ccu_channel_mgr_v1.h"
+#include "env_config.h"
+#include "hccp_tp.h"
 
 namespace Hccl {
+
+namespace {
+constexpr uint32_t kLoopTpAttrSlAvailableBit = 18U;
+constexpr uint32_t kLoopTpAttrBitmapSl = (1U << 10U);
+
+static uint32_t SlValueAtRankInMask16(uint32_t mask, uint32_t rank)
+{
+    uint32_t seen = 0;
+    for (uint32_t bit = 0; bit < 16U; ++bit) {
+        if ((mask & (1U << bit)) != 0U) {
+            if (seen == rank) {
+                return bit;
+            }
+            ++seen;
+        }
+    }
+    return 0;
+}
+
+// 与 Next 侧环回 MakeLoopGetTpInfoParam(loopFirstTpLowestSl=true) 一致：首 TP + slBitmap 中最低档 SL → jetty qos
+static uint8_t ResolveLoopJettyQosFromTpSl(RdmaHandle rdmaHandle, uint64_t tpHandle, uint32_t devPhyId)
+{
+    if (tpHandle == 0U) {
+        return static_cast<uint8_t>(UB_QOS_DEFAULT);
+    }
+
+    struct TpAttr tpAttr {};
+    (void)memset(&tpAttr, 0, sizeof(tpAttr));
+    uint32_t attrBitmap = (1U << kLoopTpAttrSlAvailableBit) | kLoopTpAttrBitmapSl;
+    RequestHandle reqHandle = nullptr;
+    const HcclResult startRet =
+        HrtRaGetTpAttrAsync(devPhyId, rdmaHandle, tpHandle, attrBitmap, tpAttr, reqHandle);
+    if (startRet == HcclResult::HCCL_E_NOT_SUPPORT) {
+        HCCL_WARNING("[CcuComponent][ResolveLoopJettyQosFromTpSl] HrtRaGetTpAttrAsync not supported, "
+            "use UB_QOS_DEFAULT.");
+        return static_cast<uint8_t>(UB_QOS_DEFAULT);
+    }
+    if (startRet != HcclResult::HCCL_SUCCESS) {
+        HCCL_WARNING("[CcuComponent][ResolveLoopJettyQosFromTpSl] HrtRaGetTpAttrAsync failed ret[%u], "
+            "use UB_QOS_DEFAULT.", static_cast<uint32_t>(startRet));
+        return static_cast<uint8_t>(UB_QOS_DEFAULT);
+    }
+
+    const uint16_t slMask = static_cast<uint16_t>(tpAttr.slBitmap);
+    if (slMask == 0U) {
+        HCCL_WARNING("[CcuComponent][ResolveLoopJettyQosFromTpSl] slBitmap empty, use UB_QOS_DEFAULT.");
+        return static_cast<uint8_t>(UB_QOS_DEFAULT);
+    }
+    const uint32_t mappedSl = SlValueAtRankInMask16(slMask, 0U);
+    return static_cast<uint8_t>(mappedSl & 0xFU);
+}
+} // namespace
 
 constexpr uint16_t INVAILD_LOOP_CHANNEL_ID = 0xFFFF;
 
@@ -401,17 +457,21 @@ HcclResult CcuComponent::CreateAndImportLoopJettys(const uint8_t dieId, const Ip
     
     auto &createdVec = createdOutParamMap[dieId];
     auto &importedVec = importedOutParamMap[dieId];
+
+    const TpInfo loopTpInfo = GetTpInfo(ipAddr);
+    const uint8_t loopJettyQos = ResolveLoopJettyQosFromTpSl(rdmaHandle, loopTpInfo.tpHandle, devPhyId);
+
     for (const auto &jettyInfo : jettyInfos) {
         const auto jettyMode = HrtJettyMode::CCU_CCUM_CACHE; // 当前仅支持该模式
-        const HrtRaUbCreateJettyParam req{jfcHandle, jfcHandle, ccuBufTokenValue,
+        HrtRaUbCreateJettyParam req{jfcHandle, jfcHandle, ccuBufTokenValue,
             tokenIdHandle, jettyMode, jettyInfo.taJettyId, jettyInfo.sqBufVa,
             jettyInfo.sqBufSize, jettyInfo.wqeBBStartId, jettyInfo.sqDepth};
+        req.qos = loopJettyQos;
         auto createdOutParam = HrtRaUbCreateJetty(rdmaHandle, req);
         createdVec.emplace_back(createdOutParam);
 
-        const auto &tpInfo = GetTpInfo(ipAddr);
         const auto psn = GetPsn(ipAddr);
-        const auto jettyImportCfg = GetJettyImportCfg(tpInfo, psn);
+        const auto jettyImportCfg = GetJettyImportCfg(loopTpInfo, psn);
         const auto importedOutParam = RaUbTpImportJetty(rdmaHandle, createdOutParam.key,
             createdOutParam.keySize, ccuBufTokenValue, jettyImportCfg);
         importedVec.emplace_back(ImportOutParamPair{rdmaHandle, importedOutParam});
