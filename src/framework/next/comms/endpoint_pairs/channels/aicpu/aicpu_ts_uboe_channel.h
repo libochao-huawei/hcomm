@@ -30,6 +30,7 @@ constexpr char_t FINISH_MSG[FINISH_MSG_SIZE] = "Uboe Comm Pipe ready!";
 class AicpuTsUboeChannel : public Channel {
 public:
     AicpuTsUboeChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc);
+    ~AicpuTsUboeChannel();
 
     HcclResult Init() override;
     HcclResult GetNotifyNum(uint32_t *notifyNum) const override;
@@ -122,6 +123,7 @@ private:
 
     // --------------------- 具体成员 ---------------------
     Hccl::Socket*                                               socket_{nullptr};
+    const Hccl::SocketConfig*                                   socketConfig_{nullptr};
     RdmaHandle                                                  rdmaHandle_{nullptr};
     std::unique_ptr<Hccl::UbMemTransport>                       memTransport_{nullptr};
     Hccl::BaseMemTransport::CommonLocRes                        commonRes_{};
@@ -130,7 +132,6 @@ private:
     std::vector<std::unique_ptr<Hccl::LocalUbRmaBuffer>>        localRmaBuffers_{};
     std::vector<std::unique_ptr<Hccl::UbLocalNotify>>           localNotifies_{};
     std::unique_ptr<Hccl::Socket>                               serverSocket_;
-    std::unique_ptr<SocketMgr>                                  socketMgr_{nullptr};
 
     ChannelStatus                                               channelStatus{ChannelStatus::INIT};
     MAKE_ENUM(UboeStatus, INIT, SEND_EID, RECV_EID, PROCESS_EID_DATA, BUILD_CONN, SEND_SIZE, RECV_SIZE, SEND_DATA, 
