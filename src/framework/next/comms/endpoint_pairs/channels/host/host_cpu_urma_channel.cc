@@ -64,7 +64,7 @@ HcclResult HostCpuUrmaChannel::ParseInputParam()
         HCCL_WARNING("[HostCpuUrmaChannel][%s] exchangeAllMems is false.", __func__);
     }
 
-    EXECEPTION_CATCH(socketMgr_ = std::make_unique<SocketMgr>(), return HCCL_E_PTR);
+    EXECEPTION_CATCH(socketMgr_ = SocketMgr::GetInstance(), return HCCL_E_PTR);
 
     return HCCL_SUCCESS;
 }
