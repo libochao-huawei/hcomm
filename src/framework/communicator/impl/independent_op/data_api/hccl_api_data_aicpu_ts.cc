@@ -38,6 +38,10 @@ void AddThread(ThreadHandle thread) {
     g_threadLaunchCtx.AddThread(thread);
 }
 
+HcclResult HandleDispatchAllStreams() {
+    return g_threadLaunchCtx.HandleDispatchAllStreams();
+}
+
 bool IsSupportReduce(HcommDataType dataType, HcommReduceOp op)
 {
     bool checkDataType =
@@ -275,6 +279,43 @@ HcclResult CommTaskLaunch(ThreadHandle *threads, uint32_t threadNum) // host fft
     }
 
     return HcclTaskLaunch(streams.data(), threadNum);
+}
+
+HcclResult DispatchAllStreams(ThreadHandle *threads, uint32_t threadNum)
+{
+    CHK_PTR_NULL(threads);
+    CHK_PRT_RET(threadNum < 1, HCCL_ERROR("[DispatchAllStreams]threadNum is less than 1"), HCCL_E_PARA);
+
+    Thread *threadPtr = reinterpret_cast<Thread *>(threads[0]);
+    CHK_PTR_NULL(threadPtr);
+
+    if (!threadPtr->IsDeviceA5()) {
+        HCCL_ERROR("[%s] DispatchAllStreams is only supported on A5 device.", __func__);
+        return HCCL_E_NOT_SUPPORT;
+    }
+
+    for (uint32_t i = 0; i < threadNum; i++) {
+        Thread *threadPtrLoop = reinterpret_cast<Thread *>(threads[i]);
+        CHK_PTR_NULL(threadPtrLoop);
+
+        HCCL_INFO("[%s] Dispatching streams in thread[0x%llx].", __func__, threads[i]);
+
+        void *streamLitePtr = threadPtrLoop->GetStreamLitePtr();
+        CHK_PTR_NULL(streamLitePtr);
+        Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(streamLitePtr);
+        Hccl::RtsqBase *rtsq = streamLite->GetRtsq();
+        CHK_PTR_NULL(rtsq);
+        HCCL_INFO("[%s] Get rtsq from thread[0x%llx], sqId[%u].", __func__, threads[i], streamLite->GetSqId());
+
+        Hccl::RtsqA5 *rtsqA5 = dynamic_cast<Hccl::RtsqA5 *>(rtsq);
+        if (rtsqA5 != nullptr) {
+            HCCL_INFO("[%s] Calling TryLaunchTask on thread[0x%llx].", __func__, threads[i]);
+            rtsqA5->TryLaunchTask();
+        } else {
+            HCCL_WARNING("[%s] rtsq is not RtsqA5 type, skip.", __func__);
+        }
+    }
+    return HCCL_SUCCESS;
 }
 
 namespace {
