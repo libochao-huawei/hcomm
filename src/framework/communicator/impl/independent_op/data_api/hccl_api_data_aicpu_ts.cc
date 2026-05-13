@@ -19,6 +19,7 @@
 #include "device/framework/aicpu_hccl_process.h"
 #include "coll_comm_aicpu_mgr.h"
 #include "aicpu_indop_process.h"
+#include "aicpu_indop_env.h"
 #include "hcclCommDfxLite.h"
 #include "hcclCommProfilingLite.h"
 #include "profiling_handler_lite.h"
@@ -32,6 +33,19 @@ thread_local LaunchContext g_threadLaunchCtx;
 
 bool IsBatchLaunchMode() {
     return g_threadLaunchCtx.IsBatchLaunchMode();
+}
+
+static bool ShouldSkipAicpuDfx()
+{
+    const bool l0State = Hccl::ProfilingHandlerLite::GetInstance().GetProfL0State();
+    const bool l1State = Hccl::ProfilingHandlerLite::GetInstance().GetProfL1State();
+    const bool taskExceptionEnable = hcomm::GetTaskExceptionEnable();
+    if (!(l0State || l1State || taskExceptionEnable)) {
+        HCCL_INFO("[%s] l0State[%d], l1State[%d], taskExceptionEnable[%d], skip aicpu dfx",
+            __func__, l0State, l1State, taskExceptionEnable);
+        return true;
+    }
+    return false;
 }
 
 void AddThread(ThreadHandle thread) {
@@ -60,6 +74,9 @@ HcclResult HcommThreadGetNotifyId(ThreadHandle thread, uint32_t notifyIdx, uint3
 
 HcclResult HcclDfxRegOpInfoByCommId(char* commId, void* hcclDfxOpInfo)
 {
+    if (ShouldSkipAicpuDfx()) {
+        return HCCL_SUCCESS;
+    }
     CHK_PTR_NULL(commId);
     CHK_PTR_NULL(hcclDfxOpInfo);
 
@@ -919,6 +936,9 @@ int32_t HcommThreadJoin(ThreadHandle thread, uint32_t timeout)
 #endif  // __cplusplus
 
 HcclResult HcommProfilingReportDeviceOp(const char* groupname) {
+    if (ShouldSkipAicpuDfx()) {
+        return HCCL_SUCCESS;
+    }
     HCCL_INFO("[%s] START.", __func__);
     CHK_PTR_NULL(groupname);
 
@@ -934,6 +954,10 @@ HcclResult HcommProfilingReportDeviceOp(const char* groupname) {
 
 HcclResult HcommProfilingReportKernelStartTask(uint64_t thread, const char* groupname)
 {
+    if (ShouldSkipAicpuDfx()) {
+        return HCCL_SUCCESS;
+    }
+
     DevType deviceType;
     CHK_RET(hrtGetDeviceType(deviceType));
     if (deviceType != DevType::DEV_TYPE_950) {
@@ -957,6 +981,9 @@ HcclResult HcommProfilingReportKernelStartTask(uint64_t thread, const char* grou
 
 HcclResult HcommProfilingReportKernelEndTask(uint64_t thread, const char* groupname)
 {
+    if (ShouldSkipAicpuDfx()) {
+        return HCCL_SUCCESS;
+    }
     CHK_PTR_NULL(groupname);
     HCCL_INFO("[%s] START. thread [%llu], groupname[%s].", __func__, thread, groupname);
 
