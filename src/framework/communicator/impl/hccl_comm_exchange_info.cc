@@ -14,11 +14,17 @@ namespace hccl {
 HcclResult hcclComm::AddExchangeInfo(const void* data, uint32_t length)
 {
     CHK_PTR_NULL(data);
-    exchangeInfoBuf_.resize(length);
-    s32 sRet = memcpy_s(exchangeInfoBuf_.data(), length, data, length);
-    CHK_PRT_RET(sRet != EOK, 
-        HCCL_ERROR("[AddExchangeInfo] memcpy_s failed, ret[%d]", sRet), HCCL_E_MEMORY);
-    HCCL_INFO("[AddExchangeInfo] success, length[%u].", length);
+    if (length > 0 && length <= HCCL_EXCHANGE_INFO_LEN) {
+        exchangeInfoBuf_.resize(length);
+        s32 sRet = memcpy_s(exchangeInfoBuf_.data(), length, data, length);
+        CHK_PRT_RET(sRet != EOK, 
+            HCCL_ERROR("[AddExchangeInfo] memcpy_s failed, ret[%d]", sRet), HCCL_E_MEMORY);
+        HCCL_INFO("[AddExchangeInfo] success, length[%u].", length);
+    }else {
+        HCCL_ERROR("[AddExchangeInfo] length[%u] is illegal", length);
+        return HCCL_E_PARA;
+    }
+    
     return HCCL_SUCCESS;
 }
 
