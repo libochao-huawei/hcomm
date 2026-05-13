@@ -22,6 +22,17 @@ CpuUrmaEndpoint::CpuUrmaEndpoint(const EndpointDesc &endpointDesc)
 {
 }
 
+CpuUrmaEndpoint::~CpuUrmaEndpoint()
+{
+    try {
+        auto ports = listenedPorts_;
+        for (auto port : ports) {
+            (void)ServerSocketStopListen(port);
+        }
+        listenedPorts_.clear();
+    } catch (...) { }
+}
+
 HcclResult CpuUrmaEndpoint::Init()
 {
     HCCL_INFO("[%s] localEndpoint protocol[%d]", __func__, endpointDesc_.protocol);
@@ -74,6 +85,7 @@ HcclResult CpuUrmaEndpoint::ServerSocketListen(const uint32_t port)
         __func__, devPhyId, ipAddr.Describe().c_str());
 
     CHK_RET(ServerSocketManager::GetInstance().ServerSocketStartListen(localPort, Hccl::NicType::HOST_NIC_TYPE, devPhyId, port));
+    listenedPorts_.insert(port);
 
     return HCCL_SUCCESS;
 }
@@ -90,6 +102,29 @@ HcclResult CpuUrmaEndpoint::ServerSocketStopListen(const uint32_t port)
     Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::UB);
     Hccl::PortData localPort = Hccl::PortData(devPhyId, type, 0, ipAddr);
     CHK_RET(ServerSocketManager::GetInstance().ServerSocketStopListen(localPort, Hccl::NicType::HOST_NIC_TYPE, port));
+    listenedPorts_.erase(port);
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult CpuUrmaEndpoint::ServerSocketGetListenPort(uint32_t *port)
+{
+    Hccl::IpAddress localIpAddr{};
+    CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, localIpAddr));
+
+    s32 deviceId = 0;
+    CHK_RET(hrtGetDevice(&deviceId));
+    u32 devicePhyId = 0;
+    CHK_RET(hrtGetDevicePhyIdByIndex(deviceId, devicePhyId));
+
+    Hccl::DevNetPortType portType = Hccl::DevNetPortType(Hccl::ConnectProtoType::UB);
+    Hccl::PortData portData = Hccl::PortData(devicePhyId, portType, 0, localIpAddr);
+
+    HCCL_INFO("[CpuUrmaEndpoint::%s] devicePhyId[%u] ipAddress[%s]",
+        __func__, devicePhyId, localIpAddr.Describe().c_str());
+
+    CHK_RET(ServerSocketManager::GetInstance().ServerSocketGetListenPort(portData, Hccl::NicType::HOST_NIC_TYPE, devicePhyId, port));
+    listenedPorts_.insert(*port);
 
     return HCCL_SUCCESS;
 }
