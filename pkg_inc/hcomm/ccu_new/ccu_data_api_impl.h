@@ -68,6 +68,10 @@ extern CcuResult CcuSetMask(CcuEventHandle eventHandle, uint32_t mask);
 extern CcuResult CcuNotifyRecord(ChannelHandle channel, uint32_t remoteNotifyIdx, uint32_t mask);
 extern CcuResult CcuNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask);
 extern CcuResult CcuWriteVariableWithNotify(ChannelHandle channel, CcuVariableHandle varHandle,uint32_t remoteVarIdx, uint32_t remoteNotifyIdx, uint32_t mask);
+// 本地（同 device 内跨 core）通知同步：与 CcuNotifyRecord/Wait 的区别在于
+// 通知对端用 coreId 标识（同卡内某个 core），而不是 ChannelHandle（跨 rank 通道）。
+extern CcuResult CcuLocalNotifyRecord(uint32_t coreId, uint32_t dstNotifyIdx, uint32_t mask);
+extern CcuResult CcuLocalNotifyWait(uint32_t coreId, uint32_t notifyIdx, uint32_t mask);
 
 //本地数据拷贝 相关接口
 extern CcuResult CcuLocalCopyMemToMem(CcuLocalAddrHandle dst, CcuLocalAddrHandle src, CcuVariableHandle len, CcuEventHandle event);
