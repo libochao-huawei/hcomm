@@ -488,6 +488,254 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelDoWhileUnified_When_AllFine_Expe
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 }
 
+// =================================================================================
+// 以下为针对 PR #2120 增量覆盖率（ccu_kernel.cc / ccu_data_api_impl.cc）补充的用例
+// 模板与上方 Ut_HcommCcuKernelDoWhile_* 完全一致：mock 资源 → 建实例 → 建链 →
+// RegisterStart → InjectXn → Register → RegisterEnd → 销毁。
+// 每条用例采用唯一的 fakeDevId（MAX_MODULE_DEVICE_NUM - N）以避免 CCU 资源串扰。
+// =================================================================================
+
+// ----- P0: CcuLoopAddDemoKernel：覆盖 ccu_kernel.cc 中 Loop / LoopGroup / Executor
+//        全部接口（L1456-L1736），单条用例预计可拉升整体覆盖率 ~15%
+TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelLoopAdd_When_AllFine_Expect_ReturnCcuSUCCESS)
+{
+    HcommResult hcclRet = 0;
+    CcuResult ccuRet = CcuResult::CCU_E_RESERVED;
+    constexpr uint32_t fakeDevId = MAX_MODULE_DEVICE_NUM - 7;
+    MOCKER(HcclGetThreadDeviceId).stubs().will(returnValue(fakeDevId));
+    int32_t fakeDeviceLogicId = static_cast<int32_t>(fakeDevId);
+    MOCKER(hrtGetDevice).stubs()
+        .with(outBoundP(&fakeDeviceLogicId))
+        .will(returnValue(HcclResult::HCCL_SUCCESS));
+    MOCKER(hrtGetDevicePhyIdByIndex).stubs()
+        .with(any(), outBound(static_cast<uint32_t>(fakeDeviceLogicId)), any())
+        .will(returnValue(HcclResult::HCCL_SUCCESS));
+    constexpr hcomm::CcuVersion fakeCcuVersion = hcomm::CcuVersion::CCU_V1;
+    MockCcuNetworkDeviceDefault(fakeDeviceLogicId);
+    EXPECT_EQ(MockCcuResourcesDefault(fakeDeviceLogicId, fakeCcuVersion), HcclResult::HCCL_SUCCESS);
+    MockCcuChannelGetRes();
+    MOCKER(hrtMemcpy).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+
+    constexpr auto MS_INS_TPYE = CcuInstanceType::CCU_MS;
+    CcuResDesc resDesc{};
+    resDesc.dieId = hcomm::CCU_MAX_IODIE_NUM;
+    resDesc.insType = MS_INS_TPYE;
+    constexpr uint32_t descNum = 1;
+    CcuInsHandle insHandle{0};
+    ccuRet = HcommCcuInsCreate(static_cast<void *>(&resDesc), descNum, &insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+
+    constexpr auto commEngine = CommEngine::COMM_ENGINE_CCU;
+    constexpr uint32_t srcDevPhyId = fakeDevId;
+    constexpr uint32_t dstDevPhyId = 1;
+    constexpr uint32_t srcIp = 167772383;
+    constexpr uint32_t dstIp = 0x87654321;
+    const auto &handlePair = MockCcuChannelConnect(srcDevPhyId, dstDevPhyId, srcIp, dstIp, commEngine);
+
+    CcuKernelFunc demoFunc = CcuLoopAddDemoKernel;
+    CcuLoopAddKernelArg demoArg{};
+    demoArg.numA = 7;
+    demoArg.numB = 11;
+    auto kernelFunc = reinterpret_cast<void *>(demoFunc);
+    auto kernelArg = static_cast<CcuKernelArg>(&demoArg);
+
+    ccuRet = HcommCcuKernelRegisterStart(insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+    // Loop 用例对 xn 资源消耗较大，多注入一些
+    InjectXnIntoResPack(fakeDeviceLogicId, insHandle, /*xnPerDie=*/256);
+
+    char *kernelFuncName = "ccu_loop_add_demo";
+    CcuKernelHandle kernelHandle{0};
+    ccuRet = HcommCcuKernelRegister(insHandle, kernelFuncName,
+        kernelFunc, kernelArg, &kernelHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+
+    ccuRet = HcommCcuKernelRegisterEnd(insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+
+    MockChannelDestory(handlePair);
+    ccuRet = HcommCcuInsDestroy(insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+}
+
+// ----- P0: CcuRemoteReadKernel：覆盖 ReadMemToMem / ReadMemToBuffer / ReadMemToMemReduce
+TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRemoteRead_When_AllFine_Expect_ReturnCcuSUCCESS)
+{
+    HcommResult hcclRet = 0;
+    CcuResult ccuRet = CcuResult::CCU_E_RESERVED;
+    constexpr uint32_t fakeDevId = MAX_MODULE_DEVICE_NUM - 8;
+    MOCKER(HcclGetThreadDeviceId).stubs().will(returnValue(fakeDevId));
+    int32_t fakeDeviceLogicId = static_cast<int32_t>(fakeDevId);
+    MOCKER(hrtGetDevice).stubs()
+        .with(outBoundP(&fakeDeviceLogicId))
+        .will(returnValue(HcclResult::HCCL_SUCCESS));
+    MOCKER(hrtGetDevicePhyIdByIndex).stubs()
+        .with(any(), outBound(static_cast<uint32_t>(fakeDeviceLogicId)), any())
+        .will(returnValue(HcclResult::HCCL_SUCCESS));
+    constexpr hcomm::CcuVersion fakeCcuVersion = hcomm::CcuVersion::CCU_V1;
+    MockCcuNetworkDeviceDefault(fakeDeviceLogicId);
+    EXPECT_EQ(MockCcuResourcesDefault(fakeDeviceLogicId, fakeCcuVersion), HcclResult::HCCL_SUCCESS);
+    MockCcuChannelGetRes();
+    MOCKER(hrtMemcpy).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+
+    constexpr auto MS_INS_TPYE = CcuInstanceType::CCU_MS;
+    CcuResDesc resDesc{};
+    resDesc.dieId = hcomm::CCU_MAX_IODIE_NUM;
+    resDesc.insType = MS_INS_TPYE;
+    constexpr uint32_t descNum = 1;
+    CcuInsHandle insHandle{0};
+    ccuRet = HcommCcuInsCreate(static_cast<void *>(&resDesc), descNum, &insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+
+    constexpr auto commEngine = CommEngine::COMM_ENGINE_CCU;
+    constexpr uint32_t srcDevPhyId = fakeDevId;
+    constexpr uint32_t dstDevPhyId = 1;
+    constexpr uint32_t srcIp = 167772383;
+    constexpr uint32_t dstIp = 0x87654321;
+    const auto &handlePair = MockCcuChannelConnect(srcDevPhyId, dstDevPhyId, srcIp, dstIp, commEngine);
+
+    CcuKernelFunc demoFunc = CcuRemoteReadKernel;
+    CcuVarAddKernelArg demoArg{};
+    demoArg.channelHandle = handlePair.second;
+    auto kernelFunc = reinterpret_cast<void *>(demoFunc);
+    auto kernelArg = static_cast<CcuKernelArg>(&demoArg);
+
+    ccuRet = HcommCcuKernelRegisterStart(insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+
+    char *kernelFuncName = "ccu_remote_read_demo";
+    CcuKernelHandle kernelHandle{0};
+    ccuRet = HcommCcuKernelRegister(insHandle, kernelFuncName,
+        kernelFunc, kernelArg, &kernelHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+
+    ccuRet = HcommCcuKernelRegisterEnd(insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+
+    MockChannelDestory(handlePair);
+    ccuRet = HcommCcuInsDestroy(insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+}
+
+// ----- P0: CcuRemoteWriteKernel：覆盖 WriteMemToMem / WriteBufferToMem / WriteMemToMemReduce
+TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRemoteWrite_When_AllFine_Expect_ReturnCcuSUCCESS)
+{
+    HcommResult hcclRet = 0;
+    CcuResult ccuRet = CcuResult::CCU_E_RESERVED;
+    constexpr uint32_t fakeDevId = MAX_MODULE_DEVICE_NUM - 9;
+    MOCKER(HcclGetThreadDeviceId).stubs().will(returnValue(fakeDevId));
+    int32_t fakeDeviceLogicId = static_cast<int32_t>(fakeDevId);
+    MOCKER(hrtGetDevice).stubs()
+        .with(outBoundP(&fakeDeviceLogicId))
+        .will(returnValue(HcclResult::HCCL_SUCCESS));
+    MOCKER(hrtGetDevicePhyIdByIndex).stubs()
+        .with(any(), outBound(static_cast<uint32_t>(fakeDeviceLogicId)), any())
+        .will(returnValue(HcclResult::HCCL_SUCCESS));
+    constexpr hcomm::CcuVersion fakeCcuVersion = hcomm::CcuVersion::CCU_V1;
+    MockCcuNetworkDeviceDefault(fakeDeviceLogicId);
+    EXPECT_EQ(MockCcuResourcesDefault(fakeDeviceLogicId, fakeCcuVersion), HcclResult::HCCL_SUCCESS);
+    MockCcuChannelGetRes();
+    MOCKER(hrtMemcpy).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+
+    constexpr auto MS_INS_TPYE = CcuInstanceType::CCU_MS;
+    CcuResDesc resDesc{};
+    resDesc.dieId = hcomm::CCU_MAX_IODIE_NUM;
+    resDesc.insType = MS_INS_TPYE;
+    constexpr uint32_t descNum = 1;
+    CcuInsHandle insHandle{0};
+    ccuRet = HcommCcuInsCreate(static_cast<void *>(&resDesc), descNum, &insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+
+    constexpr auto commEngine = CommEngine::COMM_ENGINE_CCU;
+    constexpr uint32_t srcDevPhyId = fakeDevId;
+    constexpr uint32_t dstDevPhyId = 1;
+    constexpr uint32_t srcIp = 167772383;
+    constexpr uint32_t dstIp = 0x87654321;
+    const auto &handlePair = MockCcuChannelConnect(srcDevPhyId, dstDevPhyId, srcIp, dstIp, commEngine);
+
+    CcuKernelFunc demoFunc = CcuRemoteWriteKernel;
+    CcuVarAddKernelArg demoArg{};
+    demoArg.channelHandle = handlePair.second;
+    auto kernelFunc = reinterpret_cast<void *>(demoFunc);
+    auto kernelArg = static_cast<CcuKernelArg>(&demoArg);
+
+    ccuRet = HcommCcuKernelRegisterStart(insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+
+    char *kernelFuncName = "ccu_remote_write_demo";
+    CcuKernelHandle kernelHandle{0};
+    ccuRet = HcommCcuKernelRegister(insHandle, kernelFuncName,
+        kernelFunc, kernelArg, &kernelHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+
+    ccuRet = HcommCcuKernelRegisterEnd(insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+
+    MockChannelDestory(handlePair);
+    ccuRet = HcommCcuInsDestroy(insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+}
+
+// ----- P0: CcuAllocDemoKernel：覆盖 VariableAlloc / AddressAlloc / EventAlloc /
+//        BlockEventAlloc / VariableCreateByChannel + 地址加法 + 事件 record/wait
+TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelAlloc_When_AllFine_Expect_ReturnCcuSUCCESS)
+{
+    HcommResult hcclRet = 0;
+    CcuResult ccuRet = CcuResult::CCU_E_RESERVED;
+    constexpr uint32_t fakeDevId = MAX_MODULE_DEVICE_NUM - 10;
+    MOCKER(HcclGetThreadDeviceId).stubs().will(returnValue(fakeDevId));
+    int32_t fakeDeviceLogicId = static_cast<int32_t>(fakeDevId);
+    MOCKER(hrtGetDevice).stubs()
+        .with(outBoundP(&fakeDeviceLogicId))
+        .will(returnValue(HcclResult::HCCL_SUCCESS));
+    MOCKER(hrtGetDevicePhyIdByIndex).stubs()
+        .with(any(), outBound(static_cast<uint32_t>(fakeDeviceLogicId)), any())
+        .will(returnValue(HcclResult::HCCL_SUCCESS));
+    constexpr hcomm::CcuVersion fakeCcuVersion = hcomm::CcuVersion::CCU_V1;
+    MockCcuNetworkDeviceDefault(fakeDeviceLogicId);
+    EXPECT_EQ(MockCcuResourcesDefault(fakeDeviceLogicId, fakeCcuVersion), HcclResult::HCCL_SUCCESS);
+    MockCcuChannelGetRes();
+    MOCKER(hrtMemcpy).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+
+    constexpr auto MS_INS_TPYE = CcuInstanceType::CCU_MS;
+    CcuResDesc resDesc{};
+    resDesc.dieId = hcomm::CCU_MAX_IODIE_NUM;
+    resDesc.insType = MS_INS_TPYE;
+    constexpr uint32_t descNum = 1;
+    CcuInsHandle insHandle{0};
+    ccuRet = HcommCcuInsCreate(static_cast<void *>(&resDesc), descNum, &insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+
+    constexpr auto commEngine = CommEngine::COMM_ENGINE_CCU;
+    constexpr uint32_t srcDevPhyId = fakeDevId;
+    constexpr uint32_t dstDevPhyId = 1;
+    constexpr uint32_t srcIp = 167772383;
+    constexpr uint32_t dstIp = 0x87654321;
+    const auto &handlePair = MockCcuChannelConnect(srcDevPhyId, dstDevPhyId, srcIp, dstIp, commEngine);
+
+    CcuKernelFunc demoFunc = CcuAllocDemoKernel;
+    CcuVarAddKernelArg demoArg{};
+    demoArg.channelHandle = handlePair.second;
+    auto kernelFunc = reinterpret_cast<void *>(demoFunc);
+    auto kernelArg = static_cast<CcuKernelArg>(&demoArg);
+
+    ccuRet = HcommCcuKernelRegisterStart(insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+
+    char *kernelFuncName = "ccu_alloc_demo";
+    CcuKernelHandle kernelHandle{0};
+    ccuRet = HcommCcuKernelRegister(insHandle, kernelFuncName,
+        kernelFunc, kernelArg, &kernelHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+
+    ccuRet = HcommCcuKernelRegisterEnd(insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+
+    MockChannelDestory(handlePair);
+    ccuRet = HcommCcuInsDestroy(insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+}
+
 // 暂未启用：CcuReduceScatterMesh1dKernel 的 kernel 实现在
 // ccu_kernel_impl/ccu_reduce_scatter_mesh1d_demo.h 中整文件被注释，等该 demo
 // 适配新 API 后再放开此 UT。
