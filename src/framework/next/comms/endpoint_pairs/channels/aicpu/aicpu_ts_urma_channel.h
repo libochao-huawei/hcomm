@@ -62,6 +62,7 @@ private:
     HcclResult BuildSocket();
 
     HcclResult PackOpData(std::vector<char> &data);
+    HcclResult StartListen();
 
 private:
     std::atomic<bool> isFirstPrintChannelInfo_{true}; // 是否第一次打印通道建链信息，避免重复打印日志刷屏
