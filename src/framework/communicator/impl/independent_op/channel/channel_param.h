@@ -81,15 +81,6 @@ struct HcclChannelUrmaRes {
     u32   deviceType{0};             // 基础通信使用
 };
 
-struct HcommRoceChannelRes {
-    void *localMem = nullptr;  // device 上 RoceMemDetails[localMemCount]
-    void *remoteMem = nullptr; // device 上 RoceMemDetails[remoteMemCount]
-    u32 localMemCount = 0;
-    u32 remoteMemCount = 0;
-    s64 chipId{LLONG_MAX};
-    HcclQpInfoV2 QpInfo[RDMA_QP_MAX_NUM];
-    u32 qpsPerConnection{1};
-};
 
 // for A2/A3 endpoint with tranport
 struct HcclChannelHccsRes {

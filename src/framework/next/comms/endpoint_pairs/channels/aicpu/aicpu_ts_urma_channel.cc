@@ -338,12 +338,6 @@ HcclResult AicpuTsUrmaChannel::UpdateMemInfo(HcommMemHandle *memHandles, uint32_
     return memTransport_->UpdateMemInfo(bufferVecTemp_);
 }
 
-// 返回当前 channel 类型，供上层区分不同 channel 的能力和行为
-HcommChannelKind AicpuTsUrmaChannel::GetChannelKind() const
-{
-    return HcommChannelKind::AICPU_TS_URMA;
-}
-
 HcclResult AicpuTsUrmaChannel::NotifyRecord(const uint32_t remoteNotifyIdx)
 {
     HCCL_INFO("[AicpuTsUrmaChannel::%s] not supported yet.", __func__);

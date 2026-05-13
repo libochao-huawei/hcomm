@@ -7,17 +7,20 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
+#ifndef AICPU_TS_ROCE_CHANNEL_H
+#define AICPU_TS_ROCE_CHANNEL_H
 
-#ifndef AICPU_TS_URMA_CAHNNEL_KERNEL_H
-#define AICPU_TS_URMA_CAHNNEL_KERNEL_H
+#include <memory>
+#include <vector>
 
-#include <cstdint>
-
-extern "C" {
-__attribute__((visibility("default"))) uint32_t RunAicpuIndOpChannelInitV2(void *args);
-__attribute__((visibility("default"))) uint32_t RunAicpuIndOpChannelUpdateV2(void *args);
-__attribute__((visibility("default"))) uint32_t RunAicpuChannelInitV2(void *args);
-__attribute__((visibility("default"))) uint32_t RunAicpuChannelDestroyV2(void *args);
+namespace hcomm {
+/**
+ * @note 职责：Channel的AicpuTs通信引擎、RoCE协议的类派生
+ */
+class AicpuTsRoceChannel : public Channel {
+public:
+    AicpuTsRoceChannel();
+    virtual ~AicpuTsRoceChannel() = default;
+};
 }
-
-#endif // AICPU_TS_URMA_CAHNNEL_KERNEL_H
+#endif // AICPU_TS_ROCE_CHANNEL_H
