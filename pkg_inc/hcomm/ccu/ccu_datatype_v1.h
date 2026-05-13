@@ -149,11 +149,12 @@ public:
     explicit LocalNotify(CcuRepContext *context = nullptr);
 };
 
+// CompletedEvent 退化为纯虚拟资源句柄持有者；
+// mask 由调用方（Rep / CcuKernel / C API / wrapper 各层）作为独立参数传入，
+// 不再绑定到 Event 上。
 class CompletedEvent : public CcuVirRes {
 public:
     explicit CompletedEvent(CcuRepContext *context = nullptr);
-    void SetMask(uint32_t compeletedMask);
-    uint32_t mask{1};
 };
 
 };     // namespace CcuRep
