@@ -13,7 +13,6 @@ set(src_list
     cpu_urma_endpoint.cc
     urma_endpoint.cc
     ub_mem_endpoint.cc
-    aicpu_ts_roce_endpoint.cc
     aicputs_hccs_endpoint.cc
     endpoint.cc
     uboe_endpoint.cc

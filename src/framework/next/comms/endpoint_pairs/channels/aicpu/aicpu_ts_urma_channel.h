@@ -37,7 +37,6 @@ public:
     HcclResult UpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum) override;
 
     HcclResult H2DResPack(std::vector<char>& buffer);
-    HcommChannelKind GetChannelKind() const override;
 
     virtual HcclResult Clean() override;
     virtual HcclResult Resume() override;

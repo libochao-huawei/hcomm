@@ -17,11 +17,8 @@
 #include "hccl/hccl_types.h"
 #include "hcomm_res_defs.h"
 #include "hccl_mem_defs.h"
-#include <cstdint>
-#include "mem_device_pub.h"
 #include <string>
 #include <unordered_map>
-#include <vector>
 #include "enum_factory.h"
 
 // Orion
@@ -33,19 +30,6 @@
 namespace hcomm {
 
 MAKE_ENUM(ChannelStatus, INIT, SOCKET_OK, SOCKET_TIMEOUT, READY, FAILED)
-
-/**
- * @brief 通道种类（与 HcommChannelRes.channelTypeList 中 u32 数值一致；由 CommEngine + CommProtocol 推导）。
- */
-enum class HcommChannelKind : uint32_t {
-    INVALID = 0U,
-    AICPU_TS_URMA = 1U,
-    AICPU_TS_ROCE = 2U,
-    AICPU_TS_HCCS = 3U,
-    CPU_ROCE = 4U,
-    AIV_UB_MEM = 5U,
-    AICPU_TS_UBOE = 6U,
-};
 
 /**
  * @note 职责：一个EndPointPair上的建立的通信通道的C++抽象接口类声明。
@@ -74,9 +58,6 @@ public:
 
     virtual HcclResult Clean()        = 0;
     virtual HcclResult Resume()       = 0;
-
-    virtual HcommChannelKind GetChannelKind() const;
-    virtual HcclResult Serialize(std::shared_ptr<hccl::DeviceMem> &out);
     // ------------------ 数据面接口 ------------------
     virtual HcclResult NotifyRecord(const uint32_t remoteNotifyIdx) = 0;
     virtual HcclResult NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout) = 0;

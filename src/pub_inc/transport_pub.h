@@ -12,7 +12,6 @@
 #define TRANSPORT_PUB_H
 
 #include <initializer_list>
-#include <vector>
 #include <hccl/hccl_types.h>
 #include "hccl_common.h"
 #include "sal_pub.h"
@@ -109,18 +108,6 @@ struct AddrKey {
     u64 addr = 0;
     u32 key = 0;
     u32 notifyId = INVALID_UINT;
-};
-
-/**
- * AICPU TS RoCE：下发 device 的 MR 元数据；亦为 TransportDeviceIbverbs 区间查表 value。
- * addr：同 RmaBuffer::GetAddr()（HOST 为主机 VA，DEVICE 为设备 VA）。
- * devAddr：MR 用设备 VA（GetDevAddr()）；HOST 映射后与 addr 不同，DEVICE 时与 addr 相同。
- */
-struct RoceMemDetails {
-    u64 addr = 0;
-    u64 devAddr = 0;
-    u64 size = 0;
-    u32 key = 0;
 };
 
 struct MemDetails {
@@ -255,14 +242,9 @@ public:
     LinkTypeInServer specifyLink{LinkTypeInServer::RESERVED_LINK_TYPE}; // 指定链路类型
     bool enableAtomicWrite{false}; // 使能atomicWrite
     QueueDepthAttr queueDepthAttr{}; // QP深度配置
-    bool userMemEnable{true};
-    // DispatcherCtxPtr；设备侧 TS Roce 等场景传入，WriteCommon 内写入线程局部 dispatcher
-    void *dctxPtr{nullptr};
     bool isNewOneSide{false};
     u32 localBufSize{0};
     u32 remoteBufSize{0};
-    HcclMemEx *localBufMem{nullptr};
-    HcclMemEx *remoteBufMem{nullptr};
     TagMachinePara() {}
 
     TagMachinePara(const struct TagMachinePara &that)
@@ -304,8 +286,6 @@ public:
         specifyLink = that.specifyLink;
         enableAtomicWrite = that.enableAtomicWrite;
         queueDepthAttr = that.queueDepthAttr;
-        userMemEnable = that.userMemEnable;
-        dctxPtr = that.dctxPtr;
         isNewOneSide = (that.isNewOneSide);
         localBufSize = (that.localBufSize);
         remoteBufSize = (that.remoteBufSize);
@@ -352,8 +332,6 @@ public:
             specifyLink = that.specifyLink;
             enableAtomicWrite = that.enableAtomicWrite;
             queueDepthAttr = that.queueDepthAttr;
-            userMemEnable = that.userMemEnable;
-            dctxPtr = that.dctxPtr;
             isNewOneSide = (that.isNewOneSide);
             localBufSize = (that.localBufSize);
             remoteBufSize = (that.remoteBufSize);
@@ -465,9 +443,6 @@ struct TransportDeviceIbverbsData {
     u32 multiQpThreshold;
     u32 qpsPerConnection;
     bool useAtomicWrite = false;
-    std::vector<RoceMemDetails> localRoceMemDetailsList;
-    std::vector<RoceMemDetails> remoteRoceMemDetailsList;
-    bool useMemDetailsMgr{false};
 
     TransportDeviceIbverbsData()
     {}
@@ -536,10 +511,7 @@ struct TransportDeviceIbverbsData {
           notifySize(that.notifySize),
           multiQpThreshold(that.multiQpThreshold),
           qpsPerConnection(that.qpsPerConnection),
-          useAtomicWrite(that.useAtomicWrite),
-          localRoceMemDetailsList(that.localRoceMemDetailsList),
-          remoteRoceMemDetailsList(that.remoteRoceMemDetailsList),
-          useMemDetailsMgr(that.useMemDetailsMgr)
+          useAtomicWrite(that.useAtomicWrite)
     {}
 };
 using CqeInfo =  struct tagCqeInfo {
