@@ -335,3 +335,38 @@ TEST_F(HcommCAdptTest, ut_HcommResMgrInit_MultiDevice_Expect_Success)
     EXPECT_EQ(ret1, HCCL_SUCCESS);
     EXPECT_EQ(ret2, HCCL_SUCCESS);
 }
+
+TEST_F(HcommCAdptTest, ut_HcommEndpointGetListenPort_When_PortNull_Expect_E_PTR)
+{
+    EndpointHandle endpointHandle = reinterpret_cast<EndpointHandle>(0x12345);
+    HcommResult ret = HcommEndpointGetListenPort(endpointHandle, nullptr);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(HcommCAdptTest, ut_HcommEndpointGetListenPort_When_HandleInvalid_Expect_E_NOT_FOUND)
+{
+    uint32_t port = 0;
+    HcommResult ret = HcommEndpointGetListenPort(nullptr, &port);
+    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
+}
+
+TEST_F(HcommCAdptTest, ut_HcommEndpointGetListenPort_When_Normal_Expect_Success)
+{
+    EndpointHandle endpointHandle = reinterpret_cast<EndpointHandle>(0x12345);
+    uint32_t port = 0;
+    uint32_t expectedPort = 12345;
+    
+    MOCKER_CPP(&HcommEndpointMap::GetEndpoint)
+        .stubs()
+        .will(returnValue(reinterpret_cast<Endpoint*>(endpointHandle)));
+    
+    MOCKER_CPP(&Endpoint::ServerSocketGetListenPort)
+        .stubs()
+        .with(eq(&port))
+        .will(setRef(port, expectedPort))
+        .then(returnValue(HCCL_SUCCESS));
+    
+    HcommResult ret = HcommEndpointGetListenPort(endpointHandle, &port);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(port, expectedPort);
+}
