@@ -2152,7 +2152,7 @@ void TaskExceptionHandler::Process(rtExceptionInfo_t *expectionInfo)
 {
 }
 
-void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo_t *expectionInfo)
+void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo_t *expectionInfo, bool &isExistAicpuError)
 {
 }
 
