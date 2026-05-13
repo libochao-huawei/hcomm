@@ -167,7 +167,9 @@ HcclResult HostCpuRoceChannel::BuildSocket()
         HCCL_INFO("[HostCpuRoceChannel::%s] channelDesc port is 0, use default port [%u]", __func__, port);
     }
     std::string socketTag = "AUTOMATIC_SOCKET_TAG";
-    Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, port, socketTag);
+    Hccl::SocketConfig socketConfig = (channelDesc_.role != HCOMM_SOCKET_ROLE_RESERVED)
+        ? Hccl::SocketConfig(linkData, port, socketTag, channelDesc_.role == HCOMM_SOCKET_ROLE_SERVER)
+        : Hccl::SocketConfig(linkData, port, socketTag);
     CHK_RET(SocketMgr::GetInstance(devicePhyId_).GetSocket(socketConfig, socket_));
     HCCL_INFO("[HostCpuRoceChannel::%s] SUCCESS. port[%u].", __func__, port);
     return HCCL_SUCCESS;
@@ -208,7 +210,8 @@ HcclResult HostCpuRoceChannel::BuildBuffer()
 HcclResult HostCpuRoceChannel::Init()
 {
     CHK_RET(ParseInputParam());
-    if (channelDesc_.exchangeAllMems) {  // true for HIXL, false for HCCL
+    // true for HIXL, false for HCCL
+    if (channelDesc_.exchangeAllMems && channelDesc_.role != HCOMM_SOCKET_ROLE_CLIENT) {
         CHK_RET(StartListen());
     }
     CHK_RET(BuildSocket());
