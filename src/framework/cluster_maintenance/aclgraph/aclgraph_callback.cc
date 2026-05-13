@@ -70,6 +70,7 @@ HcclResult AclgraphCallback::CleanCaptureRes(u64 modelId)
 
     bool isResourceReleaseFailed = false;
     for (auto &commIt : modelIt->second) {
+        // host 端逐 tag 清自己 resMap_（操作 host 进程内状态，无 launch 开销）
         for (auto &newTag : commIt.second) {
             ret = commIt.first->ClearOpResource(newTag);
             if (ret != HCCL_SUCCESS) {
@@ -77,14 +78,15 @@ HcclResult AclgraphCallback::CleanCaptureRes(u64 modelId)
                     __func__, modelId, newTag.c_str(), ret);
                 isResourceReleaseFailed = true;
             }
-            // host 端清完后同步通知 aicpu 端清自己持有的 resMap_/linkRes_，否则 driver signal/notify 表会累积
-            // 失败不阻断流程：aicpu 端清理失败时下一轮 destroy callback 仍可重试
-            HcclResult aicpuRet = commIt.first->AicpuKfcClearOpResLaunch(newTag);
-            if (aicpuRet != HCCL_SUCCESS) {
-                HCCL_RUN_WARNING("[%s] modelID[%llu] tag[%s] aicpu cleanup dispatch fail, ret[%d]",
-                    __func__, modelId, newTag.c_str(), aicpuRet);
-            }
-            HCCL_DEBUG("[%s] modelID[%llu] tag[%s] resource release finish", __func__, modelId, newTag.c_str());
+            HCCL_DEBUG("[%s] modelID[%llu] tag[%s] host resource release finish", __func__, modelId, newTag.c_str());
+        }
+        // aicpu 端整批一次 launch（同 communicator 内所有 tag 打包到一个 payload，由 host 侧分批限流），
+        // 避免逐 tag launch+sync 把 destroy 路径延迟放大 N 倍。
+        // 失败不阻断流程：aicpu 端清理失败时下一轮 destroy callback 仍可重试。
+        HcclResult aicpuRet = commIt.first->AicpuKfcClearOpResLaunch(commIt.second);
+        if (aicpuRet != HCCL_SUCCESS) {
+            HCCL_RUN_WARNING("[%s] modelID[%llu] aicpu batch cleanup dispatch fail, tagCount[%zu] ret[%d]",
+                __func__, modelId, commIt.second.size(), aicpuRet);
         }
     }
 

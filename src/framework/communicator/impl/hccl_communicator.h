@@ -58,6 +58,9 @@
 #include "rank_graph.h"
 #include "symmetric_memory/symmetric_memory.h"
 
+// aclgraph 销毁路径 host 端 payload 复用 buffer 用到，完整定义见 src/pub_inc/aicpu_operator_pub.h
+struct HcclKfcClearOpResTilingData;
+
 namespace hccl {
 using ServRankInfo_t = std::map<std::string, std::vector<RankInfo_t> >;
 
@@ -375,9 +378,10 @@ public:
         void* tilingDataPtr, u32 tilingDataSize, const std::string &kernelName, HcclWorkflowMode mode,
         const std::string &tag, bool isCustom);
     HcclResult InitAndCheckAicpuOrderNotify(u8 &orderLaunchMode);
-    // aclgraph销毁时同步清理aicpu端tag关联资源；走RunAicpuKfcClearOpRes kernel，
-    // payload走isInitTask=true模式，aicpu端按group定位HcclCommAicpu后调ClearOpResource(tag)
-    HcclResult AicpuKfcClearOpResLaunch(const std::string &tag);
+    // aclgraph销毁时批量清理aicpu端 tags 关联资源；走RunAicpuKfcClearOpRes kernel，
+    // 同一communicator下整批tag一次launch（超MAX_BATCH分批），payload走持久HBM buffer。
+    // aicpu端按group定位HcclCommAicpu后for循环ClearOpResource。
+    HcclResult AicpuKfcClearOpResLaunch(const std::unordered_set<std::string> &tags);
 
     virtual HcclResult Mc2AiCpuStreamAllocAndGet(u32 streamMode, rtStream_t &aiCpuStream);
     HcclResult Mc2AiCpuInitStreamAllocAndGet(u32 streamMode, rtStream_t &aiCpuStream);
@@ -937,6 +941,14 @@ private:
     DeviceMem workSpace_;
     DeviceMem mc2DeviceMem_;
     std::vector<DeviceMem> extraMem_;
+    // aclgraph 销毁时 host→aicpu 投递 HcclKfcClearOpResTilingData 的常驻 HBM buffer，
+    // lazy alloc 在 AicpuKfcClearOpResLaunch 首次调用；析构靠 DeviceMem RAII。
+    // 与 ExecOp 不共享 stream 资源，destroy callback 由 AclgraphCallback::resMutex_ 串行化访问。
+    DeviceMem aicpuCleanupBuf_;
+    // host 侧 payload 暂存 buffer：HcclKfcClearOpResTilingData 在 10k batch 时达 ~2.5MB，
+    // 若每次 launch 在栈上 value-init 整个结构体会有爆栈风险（ACL runtime callback
+    // worker thread 栈可能 <2MB，未在 ACL 文档钉死）。改为 heap 持久持有 + 复用。
+    std::unique_ptr<HcclKfcClearOpResTilingData> aicpuCleanupHostBuf_;
     std::vector<HcclRtEvent> aiCpuNoIpcEvnet_;
     bool isDiffDeviceModule_;
     bool isDiffDeviceType_;

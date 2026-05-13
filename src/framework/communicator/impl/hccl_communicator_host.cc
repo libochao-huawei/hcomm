@@ -7592,59 +7592,81 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::AicpuKfcClearOpResLaunch(const std::string &tag)
+    HcclResult HcclCommunicator::AicpuKfcClearOpResLaunch(const std::unordered_set<std::string> &tags)
     {
+        if (tags.empty()) {
+            return HCCL_SUCCESS;
+        }
         // 仅 aicpu unfold 模式有 aicpu 端 resMap_/linkRes_ 需要清理；host 模式下没有 binHandle_
         if (binHandle_ == nullptr) {
-            HCCL_DEBUG("[AicpuKfcClearOpResLaunch] binHandle_ null (host-mode communicator), skip; tag[%s]",
-                tag.c_str());
+            HCCL_DEBUG("[AicpuKfcClearOpResLaunch] binHandle_ null (host-mode communicator), skip; tagCount[%zu]",
+                tags.size());
             return HCCL_SUCCESS;
         }
         if (opStream_.ptr() == nullptr) {
-            HCCL_WARNING("[AicpuKfcClearOpResLaunch] opStream_ null, skip aicpu cleanup; tag[%s]", tag.c_str());
+            HCCL_WARNING("[AicpuKfcClearOpResLaunch] opStream_ null, skip aicpu cleanup; tagCount[%zu]", tags.size());
             return HCCL_SUCCESS;
         }
-
-        HcclKfcClearOpResTilingData payload{};
-        payload.magic = HCCL_KFC_CLEAR_OP_RES_MAGIC;
-        payload.reserved = 0;
-        // identifier_ / tag 含 null-terminator 长度 = length + 1，正常都 <= 256；超长按字段尺寸截断
-        const size_t groupCopyLen = std::min(identifier_.length() + 1, sizeof(payload.group));
-        const size_t tagCopyLen = std::min(tag.length() + 1, sizeof(payload.tag));
-        CHK_SAFETY_FUNC_RET(memcpy_s(payload.group, sizeof(payload.group), identifier_.c_str(), groupCopyLen));
-        CHK_SAFETY_FUNC_RET(memcpy_s(payload.tag, sizeof(payload.tag), tag.c_str(), tagCopyLen));
-        // 确保截断时仍以 '\0' 收尾
-        payload.group[sizeof(payload.group) - 1] = '\0';
-        payload.tag[sizeof(payload.tag) - 1] = '\0';
-
-        // host args buffer 通过 aclrtLaunchKernelWithHostArgs 传给 aicpu kernel 时有 size 上限,
-        // ~520B 的 HcclKfcClearOpResTilingData 直接走 args/tiling 通道都会被 runtime 拒绝
-        // (Aicpu kernel execute failed errorCode=0x2a)。改用与 RunAicpuKfcResInit 一致的模式：
-        // alloc HBM 持载 payload，args 只放 KFCResInitTask{context, isCustom} (16B) 包装，
-        // context 是 device buffer 地址，aicpu kernel 端从 context 反解 payload。
-        // Launch 后必须 sync 等 kernel 完成才能释放 deviceBuf (DeviceMem RAII 析构),
-        // 否则 buffer 提前归还 device runtime, aicpu kernel 解 context 时访问无效内存。
-        DeviceMem deviceBuf;
-        CHK_RET(DeviceMem::alloc(deviceBuf, sizeof(payload)));
-        CHK_RET(hrtMemSyncCopy(deviceBuf.ptr(), sizeof(payload), reinterpret_cast<void *>(&payload),
-            sizeof(payload), HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
+        // aclrtLaunchKernelWithHostArgs 的 host args 通道有 size 上限, 大 payload 直接走 args/tiling 通道会被
+        // runtime 拒绝(errorCode=0x2a)。沿用 RunAicpuKfcResInit 模式: HBM buffer 持载, args 只放
+        // KFCResInitTask{context, isCustom} (16B) 包装, context 是 device buffer 地址。
+        // aicpuCleanupBuf_ (device) + aicpuCleanupHostBuf_ (host heap) 都是 communicator 成员复用:
+        //   - device 端: 避免每次 destroy alloc/free HBM
+        //   - host 端: 避免在栈上 value-init ~2.5MB 结构体 (ACL callback worker thread 栈风险)
+        // 同一 communicator 的 cleanup launch 由 AclgraphCallback::resMutex_ 串行化, 不需要并发锁。
+        if (!aicpuCleanupBuf_) {
+            CHK_RET(DeviceMem::alloc(aicpuCleanupBuf_, sizeof(HcclKfcClearOpResTilingData)));
+        }
+        if (!aicpuCleanupHostBuf_) {
+            aicpuCleanupHostBuf_.reset(new (std::nothrow) HcclKfcClearOpResTilingData());
+            CHK_SMART_PTR_NULL(aicpuCleanupHostBuf_);
+        }
+        HcclKfcClearOpResTilingData &payload = *aicpuCleanupHostBuf_;
 
         struct KFCInitTask { u64 context; bool isCustom; };
-        KFCInitTask initTask = { reinterpret_cast<u64>(deviceBuf.ptr()), false };
-
+        KFCInitTask initTask = { reinterpret_cast<u64>(aicpuCleanupBuf_.ptr()), false };
         const u16 timeOut = MAX_VALUE_U16;
-        HcclResult ret = AicpuAclKernelLaunchV2(opStream_.ptr(), reinterpret_cast<void *>(&initTask),
-            sizeof(initTask), binHandle_, "RunAicpuKfcClearOpRes", true, timeOut, nullptr, 0);
-        if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[AicpuKfcClearOpResLaunch] launch fail, group[%s] tag[%s] ret[%d]",
-                identifier_.c_str(), tag.c_str(), ret);
-            return ret;
-        }
-        // 同步等 aicpu kernel 执行完毕, 再让 deviceBuf RAII 析构释放 HBM。
-        CHK_RET(hcclStreamSynchronize(opStream_.ptr(), commConfig_.GetConfigExecTimeOut()));
+        const size_t groupCopyLen = std::min(identifier_.length() + 1, sizeof(payload.group));
+        size_t totalBatches = 0;
 
-        HCCL_INFO("[AicpuKfcClearOpResLaunch] dispatched aicpu cleanup, group[%s] tag[%s]",
-            identifier_.c_str(), tag.c_str());
+        // 分批 launch: 同 buffer 复用, 每批最多 HCCL_KFC_CLEAR_OP_RES_MAX_BATCH 个 tag。
+        // launch 后 hcclStreamSynchronize 保证 aicpu kernel 完成才覆盖 buffer 下一批; 不 sync 则下一轮
+        // memcpy 会与 aicpu 端读冲突。一次 destroy callback 内 tags 通常 << MAX_BATCH, 多数情况只 1 批。
+        // payload 是 communicator 成员复用, 不每次 value-init 整个结构体; aicpu 端只读 tagCount 范围内的
+        // tags, payload.tags[tagCount..] 的脏数据不影响正确性。
+        auto it = tags.begin();
+        while (it != tags.end()) {
+            payload.magic = HCCL_KFC_CLEAR_OP_RES_MAGIC;
+            CHK_SAFETY_FUNC_RET(memcpy_s(payload.group, sizeof(payload.group), identifier_.c_str(), groupCopyLen));
+            payload.group[sizeof(payload.group) - 1] = '\0';
+
+            u32 idx = 0;
+            while (it != tags.end() && idx < HCCL_KFC_CLEAR_OP_RES_MAX_BATCH) {
+                const std::string &t = *it;
+                const size_t tagCopyLen = std::min(t.length() + 1, sizeof(payload.tags[idx]));
+                CHK_SAFETY_FUNC_RET(memcpy_s(payload.tags[idx], sizeof(payload.tags[idx]), t.c_str(), tagCopyLen));
+                payload.tags[idx][sizeof(payload.tags[idx]) - 1] = '\0';
+                ++idx;
+                ++it;
+            }
+            payload.tagCount = idx;
+
+            CHK_RET(hrtMemSyncCopy(aicpuCleanupBuf_.ptr(), sizeof(payload), reinterpret_cast<void *>(&payload),
+                sizeof(payload), HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
+
+            HcclResult ret = AicpuAclKernelLaunchV2(opStream_.ptr(), reinterpret_cast<void *>(&initTask),
+                sizeof(initTask), binHandle_, "RunAicpuKfcClearOpRes", true, timeOut, nullptr, 0);
+            if (ret != HCCL_SUCCESS) {
+                HCCL_ERROR("[AicpuKfcClearOpResLaunch] launch fail, group[%s] batch[%zu] tagCount[%u] ret[%d]",
+                    identifier_.c_str(), totalBatches, idx, ret);
+                return ret;
+            }
+            CHK_RET(hcclStreamSynchronize(opStream_.ptr(), commConfig_.GetConfigExecTimeOut()));
+            ++totalBatches;
+        }
+
+        HCCL_INFO("[AicpuKfcClearOpResLaunch] dispatched aicpu cleanup, group[%s] totalTags[%zu] batches[%zu]",
+            identifier_.c_str(), tags.size(), totalBatches);
         return HCCL_SUCCESS;
     }
 

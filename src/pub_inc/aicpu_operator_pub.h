@@ -240,13 +240,15 @@ constexpr u32 HCOMID_MAX_LENGTH = 256;
 
 // aclgraph销毁场景下，从host端投递到aicpu端的清理任务payload。
 // 与HcclKFCTilingData独立，避免污染现有通信任务结构体。
-// host端通过RunAicpuKfcClearOpRes作为kernel name投递，aicpu端按group定位HcclCommAicpu后清tag关联资源。
+// host端通过RunAicpuKfcClearOpRes作为kernel name投递，aicpu端按group定位HcclCommAicpu后批量清tags关联资源。
+// 单批最多HCCL_KFC_CLEAR_OP_RES_MAX_BATCH个tag，超出由host端分批launch（同一buffer复用）。
 constexpr u32 HCCL_KFC_CLEAR_OP_RES_MAGIC = 0x484B4346U; // 'HKCF'，aicpu端校验防误投
+constexpr u32 HCCL_KFC_CLEAR_OP_RES_MAX_BATCH = 10240U;  // 单次 launch 最多清的 tag 数；10240×256B ≈ 2.5MB
 struct HcclKfcClearOpResTilingData {
-    u32 magic;                          // 必须等于HCCL_KFC_CLEAR_OP_RES_MAGIC
-    u32 reserved;                       // 对齐预留
-    char group[HCOMID_MAX_LENGTH];      // communicator identifier
-    char tag[TAG_MAX_LENGTH];           // 待清理的op tag (含_Capture或_CaptureN后缀)
+    u32 magic;                                                                  // 必须等于HCCL_KFC_CLEAR_OP_RES_MAGIC
+    u32 tagCount;                                                               // 本批实际有效 tag 数 (1..MAX_BATCH)
+    char group[HCOMID_MAX_LENGTH];                                              // communicator identifier
+    char tags[HCCL_KFC_CLEAR_OP_RES_MAX_BATCH][TAG_MAX_LENGTH];                 // 待清理 op tag 列表，含_Capture后缀
 };
 
 struct HcclOpConfigV2 {

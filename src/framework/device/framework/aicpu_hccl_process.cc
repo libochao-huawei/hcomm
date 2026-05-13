@@ -353,34 +353,51 @@ u32 AicpuHcclProcess::AicpuRpcClearOpRes(const struct HcclKfcClearOpResTilingDat
             HCCL_KFC_CLEAR_OP_RES_MAGIC, tilingData->magic);
         return HCCL_E_PARA;
     }
+    if (tilingData->tagCount == 0 || tilingData->tagCount > HCCL_KFC_CLEAR_OP_RES_MAX_BATCH) {
+        HCCL_ERROR("[AicpuRpcClearOpRes] invalid tagCount[%u], must be in [1, %u]",
+            tilingData->tagCount, HCCL_KFC_CLEAR_OP_RES_MAX_BATCH);
+        return HCCL_E_PARA;
+    }
 
-    // payload 来自 host 端共享 HBM；按 C 字符串语义截断，确保不越界
+    // group 来自 host 端共享 HBM；按 C 字符串语义截断，确保不越界
     char group[HCOMID_MAX_LENGTH + 1] = {0};
-    char tag[TAG_MAX_LENGTH + 1] = {0};
-    if (memcpy_s(group, sizeof(group) - 1, tilingData->group, HCOMID_MAX_LENGTH) != EOK ||
-        memcpy_s(tag, sizeof(tag) - 1, tilingData->tag, TAG_MAX_LENGTH) != EOK) {
-        HCCL_ERROR("[AicpuRpcClearOpRes] memcpy_s failed");
+    if (memcpy_s(group, sizeof(group) - 1, tilingData->group, HCOMID_MAX_LENGTH) != EOK) {
+        HCCL_ERROR("[AicpuRpcClearOpRes] memcpy_s group failed");
         return HCCL_E_MEMORY;
     }
     const std::string groupStr(group);
-    const std::string tagStr(tag);
 
-    // GetCommbyGroup 独占占用槽位（与 ExecOp 互斥），保证清理不与正在跑的 op 竞争
-    // 超时 10ms 后返回 nullptr；超时不重试，留给下一轮 destroy callback 再清
+    // GetCommbyGroup 独占占用槽位（与 ExecOp 互斥），保证清理不与正在跑的 op 竞争。
+    // 一次 GetCommbyGroup 覆盖整批 tag, 避免在循环内反复抢占槽位; 整批结束后一次 Release。
+    // 超时 10ms 后返回 nullptr；超时不重试，留给下一轮 destroy callback 再清。
     hccl::HcclCommAicpu *commAicpu = AicpuHcclProcess::AicpuGetCommbyGroup(groupStr);
     if (commAicpu == nullptr) {
-        HCCL_WARNING("[AicpuRpcClearOpRes] group[%s] not found or busy, skip; tag[%s]",
-            groupStr.c_str(), tagStr.c_str());
+        HCCL_WARNING("[AicpuRpcClearOpRes] group[%s] not found or busy, skip batch; tagCount[%u]",
+            groupStr.c_str(), tilingData->tagCount);
         return HCCL_SUCCESS;
     }
 
-    HcclResult ret = commAicpu->ClearOpResource(tagStr);
-    AicpuHcclProcess::AicpuReleaseCommbyGroup(groupStr);
-    if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[AicpuRpcClearOpRes] ClearOpResource fail, group[%s] tag[%s] ret[%d]",
-            groupStr.c_str(), tagStr.c_str(), ret);
+    HcclResult lastErr = HCCL_SUCCESS;
+    for (u32 i = 0; i < tilingData->tagCount; ++i) {
+        char tag[TAG_MAX_LENGTH + 1] = {0};
+        if (memcpy_s(tag, sizeof(tag) - 1, tilingData->tags[i], TAG_MAX_LENGTH) != EOK) {
+            HCCL_ERROR("[AicpuRpcClearOpRes] memcpy_s tag failed, group[%s] idx[%u]", groupStr.c_str(), i);
+            lastErr = HCCL_E_MEMORY;
+            continue;
+        }
+        const std::string tagStr(tag);
+        HcclResult ret = commAicpu->ClearOpResource(tagStr);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[AicpuRpcClearOpRes] ClearOpResource fail, group[%s] tag[%s] ret[%d]",
+                groupStr.c_str(), tagStr.c_str(), ret);
+            lastErr = ret;
+            // 单 tag 失败不影响后续 tag, 尽量清干净
+        }
     }
-    return static_cast<u32>(ret);
+    AicpuHcclProcess::AicpuReleaseCommbyGroup(groupStr);
+    HCCL_INFO("[AicpuRpcClearOpRes] group[%s] processed batch tagCount[%u] lastErr[%d]",
+        groupStr.c_str(), tilingData->tagCount, lastErr);
+    return static_cast<u32>(lastErr);
 }
 
 HcclResult AicpuHcclProcess::AicpuGetCommAll(std::vector<std::pair<std::string, HcclCommAicpu *>> &aicpuCommInfo)
