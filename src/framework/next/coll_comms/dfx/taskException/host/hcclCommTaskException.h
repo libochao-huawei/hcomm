@@ -11,6 +11,7 @@
 #define HCCL_COMM_TASKEXCEPTION_H
 
 #include <array>
+#include <map>
 #include "types.h"
 #include "hccl_types.h"
 #include "orion_adapter_rts.h"
@@ -61,6 +62,7 @@ public:
     // 获取指定位置的异常处理器
     static TaskExceptionHost *GetHandler(size_t devId);
     static void RegisterGetAicpuTaskExceptionCallBack(s32 streamId, u32 deviceLogicId, GetAicpuTaskExceptionCallBackHcomm p1);
+    static void UnregisterGetAicpuTaskExceptionCallBack(s32 streamId, u32 deviceLogicId);
 
 private:
     TaskExceptionHostManager();
@@ -70,6 +72,10 @@ private:
     TaskExceptionHostManager(const TaskExceptionHostManager &)            = delete;
     TaskExceptionHostManager &operator=(const TaskExceptionHostManager &) = delete;
 };
-} // namespace hccl
+
+constexpr u32 MAX_MODULE_DEVICE_NUM_V2 = 65;
+extern std::mutex g_communicatorCallbackMapMutexV2;
+extern std::array<std::map<s32, GetAicpuTaskExceptionCallBackHcomm>, MAX_MODULE_DEVICE_NUM_V2> g_communicatorCallbackMapV2;
+} // namespace hcomm
 
 #endif

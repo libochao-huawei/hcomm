@@ -23,14 +23,13 @@ namespace hcomm {
 
 using namespace std;
 
-constexpr u32 MAX_MODULE_DEVICE_NUM_V2 = 65;
 constexpr uint32_t TASK_CONTEXT_SIZE = 50;
 constexpr uint32_t TASK_CONTEXT_INFO_SIZE = LOG_TMPBUF_SIZE - 50; // task 执行失败时打印前序task信息的长度限制
 
 std::mutex g_communicatorCallbackMapMutexV2;
-array<map<s32, GetAicpuTaskExceptionCallBackHcomm>, MAX_MODULE_DEVICE_NUM_V2> g_communicatorCallbackMapV2;
+std::array<map<s32, GetAicpuTaskExceptionCallBackHcomm>, MAX_MODULE_DEVICE_NUM_V2> g_communicatorCallbackMapV2;
 std::mutex g_commHadCallbackArrayMutexV2;
-array<bool, MAX_MODULE_DEVICE_NUM_V2> g_commHadCallbackArrayV2 = {false};
+std::array<bool, MAX_MODULE_DEVICE_NUM_V2> g_commHadCallbackArrayV2 = {false};
 
 
 GetAicpuCqeErrInfoCallBackHcomm g_getAicpuCqeErrInfoCallBack = nullptr;
@@ -141,6 +140,16 @@ void TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(s32 streamI
    return ;
 }
 
+void TaskExceptionHostManager::UnregisterGetAicpuTaskExceptionCallBack(s32 streamId, u32 deviceLogicId)
+{
+    lock_guard<mutex> lock(g_communicatorCallbackMapMutexV2);
+    auto& deviceMap = g_communicatorCallbackMapV2[deviceLogicId];
+    auto it = deviceMap.find(streamId);
+    if (it != deviceMap.end()) {
+        deviceMap.erase(it);
+    }
+    return;
+}
 
 HcclResult TaskExceptionHost::PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHandle)
 {
