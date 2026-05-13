@@ -161,8 +161,6 @@ struct TransportPara {
     HcclIpAddress* peerIp;
     u32 peerPort;
     u32 selfPort;
-    const void* transportResourceInfoAddr;
-    size_t transportResourceInfoSize;
     u32 index;
     dev_t shmDev;
     bool isRootRank;
