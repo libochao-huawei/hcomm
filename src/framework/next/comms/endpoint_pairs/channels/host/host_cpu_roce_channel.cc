@@ -205,7 +205,7 @@ HcclResult HostCpuRoceChannel::BuildBuffer()
 HcclResult HostCpuRoceChannel::Init()
 {
     CHK_RET(ParseInputParam());
-    if (channelDesc_.exchangeAllMems) {  // true for HIXL, false for HCCL
+    if (channelDesc_.exchangeAllMems && channelDesc_.role == HCOMM_SOCKET_ROLE_SERVER) {  // true for HIXL, false for HCCL
         CHK_RET(StartListen());
     }
     CHK_RET(BuildSocket());
