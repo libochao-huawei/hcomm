@@ -178,8 +178,6 @@ void AicpuTsHccsChannel::SetTransportParam(hccl::TransportPara &para)
 {
     std::chrono::milliseconds kdefaultTimeout = std::chrono::seconds(GetExternalInputHcclLinkTimeOut());
     para.timeout = kdefaultTimeout;
-    para.transportResourceInfoAddr = nullptr;
-    para.transportResourceInfoSize = 0;
     para.virtualFlag = false;
 }
 

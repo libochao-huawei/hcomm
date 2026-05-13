@@ -21,13 +21,12 @@ CommHalvingDoubling::CommHalvingDoubling(const std::string &collectiveId,
                                          const std::vector<RankInfo> paraVector,
                                          const DeviceMem& inputMem, const DeviceMem& outputMem,
                                          const bool isUsedRdmaLevel0,
-                                         const void* transportResourceInfoAddr, size_t transportResourceInfoSize,
                                          const std::string &tag, const NICDeployment nicDeployInner,
                                          const u32 subUserRankRoot, HalvingDoublingType halvingDoublingType,
                                          const bool isHaveCpuRank, const bool useSuperPodMode)
     : CommBase(collectiveId, userRank, userRankSize, rank, rankSize, paraVector, topoFlag,
                dispatcher, notifyPool, netDevCtxMap, exchanger, inputMem, outputMem, isUsedRdmaLevel0,
-               transportResourceInfoAddr, transportResourceInfoSize, tag, nicDeployInner, false, false, false,
+               tag, nicDeployInner, false, false, false,
                INVALID_UINT, isHaveCpuRank, useSuperPodMode),
       subUserRankRoot_(subUserRankRoot), halvingDoublingType_(halvingDoublingType)
 {
