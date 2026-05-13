@@ -39,6 +39,7 @@ public:
 
     HcclResult ServerSocketStartListen(const Hccl::PortData& localPort, const Hccl::NicType nicType, const uint32_t devPhyId, const uint32_t port);
     HcclResult ServerSocketStopListen(const Hccl::PortData& localPort, const Hccl::NicType nicType, const uint32_t port);
+    HcclResult ServerSocketGetListenPort(const Hccl::PortData& localPort, const Hccl::NicType nicType, const uint32_t devPhyId, uint32_t *port);
 
 private:
     ServerSocketManager()
@@ -51,6 +52,8 @@ private:
     HcclResult HostSocketListen(const Hccl::PortData& localPort, const uint32_t devPhyId, const uint32_t port);
     HcclResult DeviceSocketStopListen(const Hccl::PortData& localPort, const uint32_t port);
     HcclResult HostSocketStopListen(const Hccl::PortData& localPort, const uint32_t port);
+    HcclResult HostGetListenPort(const Hccl::PortData& localPort, const uint32_t devPhyId, uint32_t *port);
+    HcclResult DeviceGetListenPort(const Hccl::PortData& localPort, const uint32_t devPhyId, uint32_t *port);
 
     // PortData : {ListenPort : {Socket, Count}}
     std::unordered_map<Hccl::PortData, std::unordered_map<uint32_t, std::pair<std::unique_ptr<Hccl::Socket>, uint32_t>>> deviceServerSocketMap_{};
