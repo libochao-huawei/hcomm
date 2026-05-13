@@ -25,6 +25,7 @@ using namespace hccl;
 using namespace hcomm;
 
 constexpr u32 MAX_MODULE_DEVICE_NUM_V2 = 65;
+using GetAicpuTaskExceptionCallBackHcomm = std::function<Hccl::ErrorMessageReport()>;
 extern std::array<std::map<s32, GetAicpuTaskExceptionCallBackHcomm>, MAX_MODULE_DEVICE_NUM_V2> g_communicatorCallbackMapV2;
 
 constexpr u32 RT_UB_LOCAL_OPERATIOINERR = 0x2;
