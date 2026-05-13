@@ -28,8 +28,8 @@ constexpr uint8_t  TASK_TERMINATE          = 2;
 constexpr uint8_t  TASK_TERMINATE_RESPONSE = 3;
 constexpr uint8_t  MEMORY_DEVIDE           = 2;
 
-TaskService::TaskService(void *deviceMem, int32_t deviceMemSize, void *hostMem, int32_t hostMemSize)
-    : npu2dpuMem_(deviceMem), shmemSize_(deviceMemSize / MEMORY_DEVIDE), hostMem_(hostMem), hostMemSize_(hostMemSize)
+TaskService::TaskService(void *deviceMem, int32_t deviceMemSize, void *hostMem, int32_t hostMemSize, bool isHBM)
+    : npu2dpuMem_(deviceMem), shmemSize_(deviceMemSize / MEMORY_DEVIDE), hostMem_(hostMem), hostMemSize_(hostMemSize), isHBM_(isHBM)
 {
     int32_t controlSize = sizeof(uint8_t) + sizeof(char) * TASKTYPE_ADDR_LENGTH + sizeof(uint32_t) + CTRL_HDR_DATA_SIZE_LEN;
     if (shmemSize_ < controlSize) {
@@ -64,23 +64,35 @@ HcclResult TaskService::TaskProfRegister(ProfCallbackTemplate profCallback)
     return HCCL_SUCCESS;
 }
 
-HcclResult TaskService::WriteFlag(uint8_t *flagPtr, uint8_t newFlag) const
+HcclResult TaskService::MemcpyDevice(void *dst, size_t dstSize, const void *src, size_t srcSize,
+                                      aclrtMemcpyKind kind, const char *errorMsg) const
 {
-    errno_t ret = memcpy_s(flagPtr, sizeof(newFlag), &newFlag, sizeof(newFlag));
-    if (ret != EOK) {
-        HCCL_ERROR("[TaskService::TaskRun] set flag failed: %d", ret);
-        return HCCL_E_INTERNAL;
+    if (isHBM_) {
+        aclError ret = aclrtMemcpy(dst, dstSize, src, srcSize, kind);
+        if (ret != ACL_SUCCESS) {
+            HCCL_ERROR("[TaskService::%s] %s, return[%d].", __func__, errorMsg, ret);
+            return HCCL_E_INTERNAL;
+        }
+    } else {
+        errno_t ret = memcpy_s(dst, dstSize, src, srcSize);
+        if (ret != EOK) {
+            HCCL_ERROR("[TaskService::%s] %s, return[%d].", __func__, errorMsg, ret);
+            return HCCL_E_INTERNAL;
+        }
     }
     return HCCL_SUCCESS;
 }
 
+HcclResult TaskService::WriteFlag(uint8_t *flagPtr, uint8_t newFlag) const
+{
+    return MemcpyDevice(flagPtr, sizeof(newFlag), &newFlag, sizeof(newFlag),
+                        ACL_MEMCPY_HOST_TO_DEVICE, "set flag failed");
+}
+
 HcclResult TaskService::ReadFlag(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t &flag) const
 {
-    errno_t ret = memcpy_s(ctrlHdr, hdrLen, npu2dpuMem_, hdrLen);
-    if (ret != EOK) {
-        HCCL_ERROR("[TaskService::%s] memcpy_s failed on flag, return[%d].", __func__, ret);
-        return HCCL_E_INTERNAL;
-    }
+    CHK_RET(MemcpyDevice(ctrlHdr, hdrLen, npu2dpuMem_, hdrLen,
+                          ACL_MEMCPY_DEVICE_TO_HOST, "memcpy failed on flag"));
     flag = *ctrlHdr;
     return HCCL_SUCCESS;
 }
@@ -119,6 +131,25 @@ HcclResult TaskService::ReadTaskType(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t 
     return HCCL_SUCCESS;
 }
 
+HcclResult TaskService::CopyTaskDataToHost(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t *srcPtr, uint64_t dataLen)
+{
+    uint32_t ctrlHdrLen = CTRL_HDR_FLAG_LENGTH + TASKTYPE_ADDR_LENGTH + CTRL_HDR_MSG_ID_LEN + CTRL_HDR_DATA_SIZE_LEN;
+    /* ctrlHdr提前从deviceMem copy一定长度，如果长度够，直接从ctrlHdr copy，减少一次aclmemcpy耗时 */
+    if (hdrLen < ctrlHdrLen + dataLen) {
+        uint8_t *dataPtr = srcPtr + ctrlHdrLen;
+        CHK_RET(MemcpyDevice(hostMem_, leftSize_, dataPtr, dataLen,
+                              ACL_MEMCPY_DEVICE_TO_HOST, "control data memcpy failed"));
+    } else {
+        uint8_t *dataPtr = ctrlHdr + ctrlHdrLen;
+        int ret = memcpy_s(hostMem_, leftSize_, dataPtr, dataLen);
+        if (ret != EOK) {
+            HCCL_ERROR("control data memcpy failed: %d", ret);
+            return HCCL_E_INTERNAL;
+        }
+    }
+    return HCCL_SUCCESS;
+}
+
 HcclResult TaskService::ExecuteTask(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t *srcPtr, std::string taskTypeStr)
 {
     uint64_t beginTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
@@ -134,30 +165,14 @@ HcclResult TaskService::ExecuteTask(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t *
         return HCCL_E_NOT_FOUND;
     }
 
-    // copy data
     uint64_t dataLen = *(size_t *)(ctrlHdr + CTRL_HDR_FLAG_LENGTH + TASKTYPE_ADDR_LENGTH + CTRL_HDR_MSG_ID_LEN);
     if (dataLen > static_cast<uint64_t>(leftSize_) || dataLen > static_cast<uint64_t>(hostMemSize_)) {
         HCCL_ERROR("[TaskService::%s] dataLen[%llu] larger than leftSize[%d] or hostMemSize[%d]", __func__, dataLen,
             leftSize_, hostMemSize_);
         return HCCL_E_PARA;
     }
-    uint32_t ctrlHdrLen = CTRL_HDR_FLAG_LENGTH + TASKTYPE_ADDR_LENGTH + CTRL_HDR_MSG_ID_LEN + CTRL_HDR_DATA_SIZE_LEN;
-    /* ctrlHdr提前从deviceMem copy一定长度，如果长度够，直接从ctrlHdr copy，减少一次aclmemcpy耗时 */
-    if (hdrLen < ctrlHdrLen + dataLen) {
-        uint8_t *dataPtr = srcPtr + ctrlHdrLen;
-        errno_t ret     = memcpy_s(hostMem_, leftSize_, dataPtr, dataLen);
-        if (ret != EOK) {
-            HCCL_ERROR("control data memcpy failed: %d", ret);
-            return HCCL_E_INTERNAL;
-        }
-    } else {
-        uint8_t *dataPtr = ctrlHdr + ctrlHdrLen;
-        int ret = memcpy_s(hostMem_, leftSize_, dataPtr, dataLen);
-        if (ret != EOK) {
-            HCCL_ERROR("control data memcpy failed: %d", ret);
-            return HCCL_E_INTERNAL;
-        }
-    }
+
+    CHK_RET(CopyTaskDataToHost(ctrlHdr, hdrLen, srcPtr, dataLen));
     if (itFunc->second(reinterpret_cast<uint64_t>(hostMem_), dataLen) != 0) {
         return HCCL_E_INTERNAL;
     }
@@ -179,19 +194,12 @@ HcclResult TaskService::SynchronizeControlInfo(uint8_t *ctrlHdr, uint64_t hdrLen
     // npu2dpu -> dpu2npu
     int32_t controlDataSize = sizeof(uint8_t) + sizeof(char) * TASKTYPE_ADDR_LENGTH + sizeof(uint32_t);
     HCCL_INFO("[TaskService::TaskRun] Send response: npu2dpu -> dpu2npu memcpy");
-    errno_t ret = memcpy_s(dpu2npuMem_, controlDataSize, npu2dpuMem_, controlDataSize);
-    if (ret != EOK) {
-        HCCL_ERROR("[TaskService::TaskRun] npu2dpu -> dpu2npu memcpy failed: %d", ret);
-        return HCCL_E_INTERNAL;
-    }
-
-    uint8_t newFlag = 1;
+    CHK_RET(MemcpyDevice(dpu2npuMem_, controlDataSize, npu2dpuMem_, controlDataSize,
+                          ACL_MEMCPY_DEVICE_TO_DEVICE, "npu2dpu -> dpu2npu memcpy failed"));
     HCCL_INFO("[TaskService::TaskRun] Send response: Set dpu2npu flag -> 1");
-    ret = memcpy_s(dpu2npuMem_, sizeof(newFlag), &newFlag, sizeof(newFlag));
-    if (ret != EOK) {
-        HCCL_ERROR("[TaskService::TaskRun] set flag failed: %d", ret);
-        return HCCL_E_INTERNAL;
-    }
+    uint8_t newFlag = 1;
+    CHK_RET(MemcpyDevice(dpu2npuMem_, sizeof(newFlag), &newFlag, sizeof(newFlag),
+                          ACL_MEMCPY_HOST_TO_DEVICE, "set dpu2npu flag failed"));
     return HCCL_SUCCESS;
 }
 
@@ -216,11 +224,11 @@ HcclResult TaskService::TaskRun()
               dpu2npuMem_, hostMem_);
     if (leftSize_ <= 0) {
         HCCL_ERROR("[TaskService::%s] dataSize[%d] illegal", __func__, leftSize_);
-        return HCCL_E_INTERNAL;
+        return HCCL_E_PARA;
     }
     if (leftSize_ > hostMemSize_) {
         HCCL_ERROR("[TaskService::%s] hostMemSize[%d] less than dataSize[%d]", __func__, hostMemSize_, leftSize_);
-        return HCCL_E_INTERNAL;
+        return HCCL_E_PARA;
     }
     uint8_t flag{0};
     uint8_t *srcFlagPtr = static_cast<uint8_t *>(npu2dpuMem_);
