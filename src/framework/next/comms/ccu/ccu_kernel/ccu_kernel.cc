@@ -14,6 +14,7 @@
 #include "ccu_assist_v1.h"
 #include "ccu_microcode_v1.h"
 
+#include "ccu_types.h"
 #include "exception_util.h"
 #include "ccu_api_exception.h"
 #include "ccu_dev_mgr_imp.h"
@@ -468,6 +469,44 @@ CcuResult CcuKernel::EventWait(CcuEventHandle eventHandle)
     CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
     // 复用已有的 WaitEvent 实现（内部 Append CcuRepLocWaitEvent）
     CCU_CHK_RET(WaitEvent(*event));
+    return CcuResult::CCU_SUCCESS;
+}
+CcuResult CcuKernel::LocalNotifyRecord(const uint32_t coreId,
+    const uint32_t dstNotifyIdx, const uint32_t mask)
+{
+    if (CurrentBlock()->Type() == CcuRep::CcuRepType::LOOP_BLOCK) {
+        HCCL_ERROR("[CcuKernel][%s] is not supported in loop block, please check.", __func__);
+        return CcuResult::CCU_E_NOT_SUPPORT;
+    }
+
+    const std::string notifyTag = "Notify_" + std::to_string(coreId) + "_" +
+        std::to_string(dstNotifyIdx);
+
+    auto &sharedNotifies = importedRes_.sharedNotifies;
+    if (sharedNotifies.find(notifyTag) == sharedNotifies.end()) {
+        CcuRep::LocalNotify localNotify;
+        sharedNotifies.insert({notifyTag, localNotify});
+    }
+
+    Append(std::make_shared<CcuRep::CcuRepRecordSharedNotify>(sharedNotifies.at(notifyTag), mask));
+
+    return CcuResult::CCU_SUCCESS;
+}
+CcuResult CcuKernel::LocalNotifyWait(const uint32_t coreId,
+    const uint32_t notifyIdx, const uint32_t mask)
+{
+    const std::string notifyTag = "Notify_" + std::to_string(coreId) + "_"
+        + std::to_string(notifyIdx);
+
+    auto &sharedNotifies = exportedRes_.sharedNotifies;
+    if (sharedNotifies.find(notifyTag) == sharedNotifies.end()) {
+        CcuRep::LocalNotify notify = CreateLocalNotify();
+        exportedRes_.sharedNotifies.insert({notifyTag, notify});
+    }
+
+    bool isProfiling = CurrentBlock()->Type() != CcuRep::CcuRepType::LOOP_BLOCK;
+    Append(std::make_shared<CcuRep::CcuRepLocWaitNotify>(
+        exportedRes_.sharedNotifies.at(notifyTag), mask, isProfiling));
     return CcuResult::CCU_SUCCESS;
 }
 CcuResult CcuKernel::SetEventMask(CcuEventHandle eventHandle, uint32_t mask)
@@ -1162,46 +1201,6 @@ void CcuKernel::StoreVariable(const CcuRep::Variable &var, uint64_t addr)
 void CcuKernel::LoadVariable(const CcuRep::Variable &src, const CcuRep::Variable &var)
 {
     Append(std::make_shared<CcuRep::CcuRepLoadVar>(src, var));
-}
-
-HcclResult CcuKernel::LocalNotifyRecord(const uint32_t coreId,
-    const uint32_t dstNotifyIdx, const uint32_t mask)
-{
-    if (CurrentBlock()->Type() == CcuRep::CcuRepType::LOOP_BLOCK) {
-        HCCL_ERROR("[CcuKernel][%s] is not supported in loop block, please check.", __func__);
-        return HcclResult::HCCL_E_NOT_SUPPORT;
-    }
-
-    const std::string notifyTag = "Notify_" + std::to_string(coreId) + "_" +
-        std::to_string(dstNotifyIdx);
-
-    auto &sharedNotifies = importedRes_.sharedNotifies;
-    if (sharedNotifies.find(notifyTag) == sharedNotifies.end()) {
-        CcuRep::LocalNotify localNotify;
-        sharedNotifies.insert({notifyTag, localNotify});
-    }
-
-    Append(std::make_shared<CcuRep::CcuRepRecordSharedNotify>(sharedNotifies.at(notifyTag), mask));
-
-    return HcclResult::HCCL_SUCCESS;
-}
-
-HcclResult CcuKernel::LocalNotifyWait(const uint32_t coreId,
-    const uint32_t notifyIdx, const uint32_t mask)
-{
-    const std::string notifyTag = "Notify_" + std::to_string(coreId) + "_"
-        + std::to_string(notifyIdx);
-
-    auto &sharedNotifies = exportedRes_.sharedNotifies;
-    if (sharedNotifies.find(notifyTag) == sharedNotifies.end()) {
-        CcuRep::LocalNotify notify = CreateLocalNotify();
-        exportedRes_.sharedNotifies.insert({notifyTag, notify});
-    }
-
-    bool isProfiling = CurrentBlock()->Type() != CcuRep::CcuRepType::LOOP_BLOCK;
-    Append(std::make_shared<CcuRep::CcuRepLocWaitNotify>(
-        exportedRes_.sharedNotifies.at(notifyTag), mask, isProfiling));
-    return HcclResult::HCCL_SUCCESS;
 }
 
 HcclResult CcuKernel::RecordEvent(CcuRep::CompletedEvent event)
