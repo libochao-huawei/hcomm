@@ -552,4 +552,10 @@ HcclResult HcclCommunicator::GetStreamId(u32 &streamId)
     return HCCL_SUCCESS;
 }
 
+HcclResult HcclCommunicator::GetRankIpPortMap(RankIpPortMapPtr& rankIpPortMap)
+{
+    CHK_RET(pimpl->GetRankIpPortMap(rankIpPortMap));
+    return HCCL_SUCCESS;
+}
+
 } // namespace Hccl

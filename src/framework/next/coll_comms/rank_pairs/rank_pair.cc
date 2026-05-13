@@ -19,7 +19,7 @@ HcclResult RankPair::Init()
  
 HcclResult RankPair::GetEndpointPair(const EndpointDescPair &epDescPair, hcomm::EndpointPair*& out)
 {
-    return endpointPairMgr_->Get(epDescPair, out);
+    return endpointPairMgr_->Get(epDescPair, out, rankIpPortMap_);
 }
 
 hcomm::EpChannelMap RankPair::GetEpChannelMap()

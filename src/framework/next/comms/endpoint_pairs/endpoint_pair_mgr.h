@@ -26,7 +26,8 @@ public:
 
     ~EndpointPairMgr() = default;
 
-    HcclResult Get(const EndpointDescPair &endpointDescPair, EndpointPair*& out);
+    HcclResult Get(const EndpointDescPair &endpointDescPair, EndpointPair *&out,
+        const Hccl::RankIpPortMapPtr& rankIpPortMap);
     EpChannelMap GetEpChannelMap();
 
 private:
