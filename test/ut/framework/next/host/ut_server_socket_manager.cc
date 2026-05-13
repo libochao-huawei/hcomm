@@ -36,7 +36,8 @@ TEST_F(ServerSocketManagerTest, Ut_When_Device_Socket_Listen_Expect_SUCCESS)
     Hccl::IpAddress ipAddr("1.0.0.0");
     Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::UB);
     Hccl::PortData localPort = Hccl::PortData(0, type, 0, ipAddr);
-    HcclResult ret = ServerSocketManager::GetInstance().ServerSocketStartListen(localPort, Hccl::NicType::DEVICE_NIC_TYPE, 0, 60001);
+    uint32_t port = 60001;
+    HcclResult ret = ServerSocketManager::GetInstance().ServerSocketStartListen(localPort, Hccl::NicType::DEVICE_NIC_TYPE, 0, &port);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     ret = ServerSocketManager::GetInstance().ServerSocketStopListen(localPort, Hccl::NicType::DEVICE_NIC_TYPE, 60001);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -47,7 +48,8 @@ TEST_F(ServerSocketManagerTest, Ut_When_Host_Socket_Listen_Expect_SUCCESS)
     Hccl::IpAddress ipAddr("1.0.0.0");
     Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::RDMA);
     Hccl::PortData localPort = Hccl::PortData(0, type, 0, ipAddr);
-    HcclResult ret = ServerSocketManager::GetInstance().ServerSocketStartListen(localPort, Hccl::NicType::HOST_NIC_TYPE, 0, 60001);
+    uint32_t port = 60001;
+    HcclResult ret = ServerSocketManager::GetInstance().ServerSocketStartListen(localPort, Hccl::NicType::HOST_NIC_TYPE, 0, &port);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     ret = ServerSocketManager::GetInstance().ServerSocketStopListen(localPort, Hccl::NicType::HOST_NIC_TYPE, 60001);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -67,9 +69,45 @@ TEST_F(ServerSocketManagerTest, Ut_When_Stop_Listen_While_Listen_Count_Is_Zero_L
     Hccl::IpAddress ipAddr("1.0.0.0");
     Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::RDMA);
     Hccl::PortData localPort = Hccl::PortData(0, type, 0, ipAddr);
-    HcclResult ret = ServerSocketManager::GetInstance().ServerSocketStartListen(localPort, Hccl::NicType::HOST_NIC_TYPE, 0, 60001);
+    uint32_t port = 60001;
+    HcclResult ret = ServerSocketManager::GetInstance().ServerSocketStartListen(localPort, Hccl::NicType::HOST_NIC_TYPE, 0, &port);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     ServerSocketManager::GetInstance().hostServerSocketMap_.clear();
     ret = ServerSocketManager::GetInstance().ServerSocketStopListen(localPort, Hccl::NicType::HOST_NIC_TYPE, 60001);
     EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
+}
+TEST_F(ServerSocketManagerTest, Ut_When_ServerSocketStartListen_Device_Expect_SUCCESS)
+{
+    Hccl::IpAddress ipAddr("1.0.0.0");
+    Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::UB);
+    Hccl::PortData localPort = Hccl::PortData(0, type, 0, ipAddr);
+    uint32_t port = 0;
+    HcclResult ret = ServerSocketManager::GetInstance().ServerSocketStartListen(localPort, Hccl::NicType::DEVICE_NIC_TYPE, 0, &port);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_NE(port, 0);
+    ret = ServerSocketManager::GetInstance().ServerSocketStopListen(localPort, Hccl::NicType::DEVICE_NIC_TYPE, port);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(ServerSocketManagerTest, Ut_When_ServerSocketStartListen_Host_Expect_SUCCESS)
+{
+    Hccl::IpAddress ipAddr("1.0.0.0");
+    Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::RDMA);
+    Hccl::PortData localPort = Hccl::PortData(0, type, 0, ipAddr);
+    uint32_t port = 0;
+    HcclResult ret = ServerSocketManager::GetInstance().ServerSocketStartListen(localPort, Hccl::NicType::HOST_NIC_TYPE, 0, &port);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_NE(port, 0);
+    ret = ServerSocketManager::GetInstance().ServerSocketStopListen(localPort, Hccl::NicType::HOST_NIC_TYPE, port);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(ServerSocketManagerTest, Ut_When_ServerSocketStartListen_Illegal_NicType_Expect_Fail)
+{
+    Hccl::IpAddress ipAddr("1.0.0.0");
+    Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::RDMA);
+    Hccl::PortData localPort = Hccl::PortData(0, type, 0, ipAddr);
+    uint32_t port = 0;
+    HcclResult ret = ServerSocketManager::GetInstance().ServerSocketStartListen(localPort, Hccl::NicType::INVALID, 0, &port);
+    EXPECT_EQ(ret, HCCL_E_PARA);
 }
