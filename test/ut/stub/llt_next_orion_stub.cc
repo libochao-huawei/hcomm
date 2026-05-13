@@ -224,6 +224,12 @@ void Socket::Listen()
     std::cout << "Socket Server, listen." << std::endl;
 }
 
+bool Socket::Listen(u32 &port)
+{
+    std::cout << "Socket Server, listen on port" << port << std::endl;
+    return true;
+}
+
 void Socket::Connect()
 {
 }
