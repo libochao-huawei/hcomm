@@ -352,13 +352,13 @@ void TaskExceptionHandler::ProcessException(rtExceptionInfo_t* exceptionInfo, co
     HCCL_ERROR("[TaskExceptionHandler][%s]Task from HCCL run failed.", __func__);
     if (taskInfo.taskParam_.taskType == TaskParamType::TASK_NOTIFY_WAIT) {
         PrintTaskContextInfo(exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid);
-        HCCL_ERROR("[ReportErrorMsg] EI0002");
+        HCCL_ERROR("[TaskExceptionHandler][ProcessException] EI0002");
         RPT_INPUT_ERR(true,
             "EI0002",
             std::vector<std::string>({"remote_rankid", "base_information", "task_information", "group_rank_content"}),
             std::vector<std::string>({
                 std::to_string(taskInfo.remoteRank_),
-                taskInfo.GetBaseInfo().c_str(), (taskInfo.GetParaInfo()).c_str(),
+                taskInfo.GetBaseInfo(), taskInfo.GetParaInfo(),
                 ""})
         );
     }
