@@ -413,7 +413,6 @@ static HcclResult GetTpInfoListAsync(const CtxHandle ctxHandle, const GetTpInfoP
         cfg.peerEid.in6.subnetPrefix, cfg.peerEid.in6.interfaceId);
 
     // buffer 须至少容纳本次请求的个数，避免 RS 按 num 写多条 HccpTpInfo 时越界破坏堆
-    constexpr uint32_t TP_HANDLE_REQUEST_NUM = 8;
     out.resize(static_cast<size_t>(TP_HANDLE_REQUEST_NUM) * sizeof(struct HccpTpInfo));
     struct HccpTpInfo *info = reinterpret_cast<struct HccpTpInfo *>(out.data());
 
