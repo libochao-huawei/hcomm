@@ -23,6 +23,7 @@ namespace hcomm {
 
 using namespace std;
 
+constexpr u32 MAX_MODULE_DEVICE_NUM_V2 = 65;
 constexpr uint32_t TASK_CONTEXT_SIZE = 50;
 constexpr uint32_t TASK_CONTEXT_INFO_SIZE = LOG_TMPBUF_SIZE - 50; // task 执行失败时打印前序task信息的长度限制
 
@@ -135,13 +136,23 @@ TaskExceptionHostManager::~TaskExceptionHostManager() {}
 void TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(s32 streamId, u32 deviceLogicId,
     GetAicpuTaskExceptionCallBackHcomm p1)
 {
-   lock_guard<mutex> lock(g_communicatorCallbackMapMutexV2);
-   g_communicatorCallbackMapV2[deviceLogicId][streamId] = p1;
-   return ;
+    if (deviceLogicId >= MAX_MODULE_DEVICE_NUM_V2) {
+        HCCL_ERROR("[RegisterGetAicpuTaskExceptionCallBack] deviceLogicId[%u] out of range, max is %u",
+            deviceLogicId, MAX_MODULE_DEVICE_NUM_V2 - 1);
+        return;
+    }
+    lock_guard<mutex> lock(g_communicatorCallbackMapMutexV2);
+    g_communicatorCallbackMapV2[deviceLogicId][streamId] = p1;
+    return;
 }
 
 void TaskExceptionHostManager::UnregisterGetAicpuTaskExceptionCallBack(s32 streamId, u32 deviceLogicId)
 {
+    if (deviceLogicId >= MAX_MODULE_DEVICE_NUM_V2) {
+        HCCL_ERROR("[UnregisterGetAicpuTaskExceptionCallBack] deviceLogicId[%u] out of range, max is %u",
+            deviceLogicId, MAX_MODULE_DEVICE_NUM_V2 - 1);
+        return;
+    }
     lock_guard<mutex> lock(g_communicatorCallbackMapMutexV2);
     auto& deviceMap = g_communicatorCallbackMapV2[deviceLogicId];
     auto it = deviceMap.find(streamId);

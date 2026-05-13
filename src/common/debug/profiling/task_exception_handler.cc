@@ -40,6 +40,11 @@ void RegisterGetErrStatusVecCallBack(GetErrStatusVecCallBack p1)
 
 void RegisterGetAicpuTaskExceptionCallBack(s32 streamId, u32 deviceLogicId, GetAicpuTaskExceptionCallBack p1)
 {
+    if (deviceLogicId >= MAX_MODULE_DEVICE_NUM) {
+        HCCL_ERROR("[RegisterGetAicpuTaskExceptionCallBack] deviceLogicId[%u] out of range, max is %u",
+            deviceLogicId, MAX_MODULE_DEVICE_NUM - 1);
+        return;
+    }
     lock_guard<mutex> lock(g_communicatorCallbackMapMutex);
     g_communicatorCallbackMap[deviceLogicId][streamId] = p1;
     return;
