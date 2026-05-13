@@ -77,6 +77,13 @@ HcclResult AclgraphCallback::CleanCaptureRes(u64 modelId)
                     __func__, modelId, newTag.c_str(), ret);
                 isResourceReleaseFailed = true;
             }
+            // host 端清完后同步通知 aicpu 端清自己持有的 resMap_/linkRes_，否则 driver signal/notify 表会累积
+            // 失败不阻断流程：aicpu 端清理失败时下一轮 destroy callback 仍可重试
+            HcclResult aicpuRet = commIt.first->AicpuKfcClearOpResLaunch(newTag);
+            if (aicpuRet != HCCL_SUCCESS) {
+                HCCL_RUN_WARNING("[%s] modelID[%llu] tag[%s] aicpu cleanup dispatch fail, ret[%d]",
+                    __func__, modelId, newTag.c_str(), aicpuRet);
+            }
             HCCL_DEBUG("[%s] modelID[%llu] tag[%s] resource release finish", __func__, modelId, newTag.c_str());
         }
     }

@@ -4304,10 +4304,9 @@ namespace hccl
         if (opParam.isCapture) {
             // aclgraph使用新的Tag，避免影响其他操作
             newTag += "_Capture";
-            // aclgraph零拷贝场景下，每个算子都有单独的tag，需要记录，在graph销毁时清理相关资源
-            if (isInGraphCaptureZeroCopy) {
-                CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
-            }
+            // first entry 一并登记到 captureResMap_，graph 销毁时清理；
+            // 否则 SDMA 等非 zerocopy 场景下 first entry 永驻 resMap_，captureCnt_ 单调累加且 aicpu 侧资源累积
+            CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
         }
 
         if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && userRankSize_ > 1) {
@@ -4335,6 +4334,8 @@ namespace hccl
             CHK_RET(IncreAllocLink(newTag, opParam, resRequest, resMap_[newTag]));
             // 移除tag对应的指令信息
             CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
+            // recapture 生成的 cnt 副本需登记，graph 销毁时清理；first capture entry "xxx_Capture" 仍不登记，避免重复建链
+            CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
         }
         InsertNewTagToTagMap(newTag, opParam.tag);
         bool needIncreLink = false;
@@ -4643,10 +4644,9 @@ namespace hccl
         if (opParam.isCapture) {
             // aclgraph使用新的Tag，避免影响其他操作
             newTag += "_Capture";
-            // aclgraph零拷贝场景下，每个算子都有单独的tag，需要记录，在graph销毁时清理相关资源
-            if (isInGraphCaptureZeroCopy) {
-                CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
-            }
+            // first entry 一并登记到 captureResMap_，graph 销毁时清理；
+            // 否则 SDMA 等非 zerocopy 场景下 first entry 永驻 resMap_，captureCnt_ 单调累加且 aicpu 侧资源累积
+            CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
         }
 
         auto isSupportAlg = [](const std::string &algName, bool aicpuUnfoldMode) -> bool {
@@ -4676,6 +4676,8 @@ namespace hccl
             CHK_RET(IncreAllocLink(newTag, opParam, resRequest, resMap_[newTag]));
             // 移除tag对应的指令信息
             CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
+            // recapture 生成的 cnt 副本需登记，graph 销毁时清理；first capture entry "xxx_Capture" 仍不登记，避免重复建链
+            CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
         }
         InsertNewTagToTagMap(newTag, opParam.tag);
         bool aicpuUnfoldModeFor910B =
@@ -7587,6 +7589,45 @@ namespace hccl
             HCCL_ERROR("[HcclCommunicator][AicpuUnfoldKernelLaunchV2]isCustom[%d] binHandle[%p]",
                 isCustom, binHandle), ret);
         HCCL_INFO("[HcclCommunicator][AicpuUnfoldKernelLaunchV2] exec succ, isCustom[%d].", isCustom);
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::AicpuKfcClearOpResLaunch(const std::string &tag)
+    {
+        // 仅 aicpu unfold 模式有 aicpu 端 resMap_/linkRes_ 需要清理；host 模式下没有 binHandle_
+        if (binHandle_ == nullptr) {
+            HCCL_DEBUG("[AicpuKfcClearOpResLaunch] binHandle_ null (host-mode communicator), skip; tag[%s]",
+                tag.c_str());
+            return HCCL_SUCCESS;
+        }
+        if (opStream_.ptr() == nullptr) {
+            HCCL_WARNING("[AicpuKfcClearOpResLaunch] opStream_ null, skip aicpu cleanup; tag[%s]", tag.c_str());
+            return HCCL_SUCCESS;
+        }
+
+        HcclKfcClearOpResTilingData payload{};
+        payload.magic = HCCL_KFC_CLEAR_OP_RES_MAGIC;
+        payload.reserved = 0;
+        // identifier_ / tag 含 null-terminator 长度 = length + 1，正常都 <= 256；超长按字段尺寸截断
+        const size_t groupCopyLen = std::min(identifier_.length() + 1, sizeof(payload.group));
+        const size_t tagCopyLen = std::min(tag.length() + 1, sizeof(payload.tag));
+        CHK_SAFETY_FUNC_RET(memcpy_s(payload.group, sizeof(payload.group), identifier_.c_str(), groupCopyLen));
+        CHK_SAFETY_FUNC_RET(memcpy_s(payload.tag, sizeof(payload.tag), tag.c_str(), tagCopyLen));
+        // 确保截断时仍以 '\0' 收尾
+        payload.group[sizeof(payload.group) - 1] = '\0';
+        payload.tag[sizeof(payload.tag) - 1] = '\0';
+
+        // isInitTask=true：args 直接是 payload 本体，aicpu 端 RunAicpuKfcClearOpRes reinterpret_cast 即可
+        const u16 timeOut = MAX_VALUE_U16;
+        HcclResult ret = AicpuAclKernelLaunchV2(opStream_.ptr(), reinterpret_cast<void *>(&payload),
+            sizeof(payload), binHandle_, "RunAicpuKfcClearOpRes", true, timeOut, nullptr, 0);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[AicpuKfcClearOpResLaunch] launch fail, group[%s] tag[%s] ret[%d]",
+                identifier_.c_str(), tag.c_str(), ret);
+            return ret;
+        }
+        HCCL_INFO("[AicpuKfcClearOpResLaunch] dispatched aicpu cleanup, group[%s] tag[%s]",
+            identifier_.c_str(), tag.c_str());
         return HCCL_SUCCESS;
     }
 

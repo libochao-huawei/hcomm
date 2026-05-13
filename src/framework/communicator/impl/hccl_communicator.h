@@ -375,6 +375,9 @@ public:
         void* tilingDataPtr, u32 tilingDataSize, const std::string &kernelName, HcclWorkflowMode mode,
         const std::string &tag, bool isCustom);
     HcclResult InitAndCheckAicpuOrderNotify(u8 &orderLaunchMode);
+    // aclgraph销毁时同步清理aicpu端tag关联资源；走RunAicpuKfcClearOpRes kernel，
+    // payload走isInitTask=true模式，aicpu端按group定位HcclCommAicpu后调ClearOpResource(tag)
+    HcclResult AicpuKfcClearOpResLaunch(const std::string &tag);
 
     virtual HcclResult Mc2AiCpuStreamAllocAndGet(u32 streamMode, rtStream_t &aiCpuStream);
     HcclResult Mc2AiCpuInitStreamAllocAndGet(u32 streamMode, rtStream_t &aiCpuStream);
