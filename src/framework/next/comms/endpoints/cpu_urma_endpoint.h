@@ -27,6 +27,7 @@ public:
 
     HcclResult ServerSocketListen(const uint32_t port) override;
     HcclResult ServerSocketStopListen(const uint32_t port) override;
+    HcclResult ServerSocketGetListenPort(uint32_t *port) override;
 
     static std::unordered_map<Hccl::PortData, std::unique_ptr<Hccl::Socket>> &GetServerSocketMap();
 
