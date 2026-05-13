@@ -322,13 +322,13 @@ void TaskExceptionHost::ProcessException(rtExceptionInfo_t* exceptionInfo, const
     HCCL_ERROR("[TaskExceptionHost][%s]Task from HCCL run failed.", __func__);
     if (taskInfo.taskParam_.taskType == Hccl::TaskParamType::TASK_NOTIFY_WAIT) {
         PrintTaskContextInfo(exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid);
-        HCCL_ERROR("[ReportErrorMsg] EI0002");
+        HCCL_ERROR("[TaskExceptionHost][ProcessException] EI0002");
         RPT_INPUT_ERR(true,
             "EI0002",
             std::vector<std::string>({"remote_rankid", "base_information", "task_information", "group_rank_content"}),
             std::vector<std::string>({
                 std::to_string(taskInfo.remoteRank_),
-                taskInfo.GetBaseInfo().c_str(), (taskInfo.GetParaInfo()).c_str(),
+                taskInfo.GetBaseInfo(), (taskInfo.GetParaInfo()),
                 ""})
         );
     }
@@ -582,7 +582,8 @@ void GetTaskParam(Hccl::TaskParam &taskParam, const Hccl::ErrorMessageReport &er
 
 
 void TaskExceptionHost::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo,
-    const Hccl::TaskInfo& taskInfo, bool &isExistAicpuError) {
+    const Hccl::TaskInfo& taskInfo, bool &isExistAicpuError)
+{
     Hccl::ErrorMessageReport errorMessage;
     unique_lock<std::mutex> lock(g_commHadCallbackArrayMutexV2);
     if (g_commHadCallbackArrayV2[exceptionInfo->deviceid]) {
@@ -636,7 +637,8 @@ void TaskExceptionHost::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo,
     }
 }
 
-void TaskExceptionHost::PrintUbDfxInfo(rtExceptionInfo_t *exceptionInfo, const Hccl::ErrorMessageReport &errorMessage) {
+void TaskExceptionHost::PrintUbDfxInfo(rtExceptionInfo_t *exceptionInfo, const Hccl::ErrorMessageReport &errorMessage)
+{
     if (errorMessage.taskType == Hccl::TaskParamType::TASK_WRITE_WITH_NOTIFY ||
         errorMessage.taskType == Hccl::TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY ||
         errorMessage.taskType == Hccl::TaskParamType::TASK_UB_INLINE_WRITE ||
