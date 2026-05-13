@@ -64,7 +64,7 @@ target_include_directories(hccl_v2 PRIVATE
 
     ${HCCL_BASE_DIR}/include/hccl/
     ${HCCL_BASE_DIR}/pkg_inc
-    #${HCCL_BASE_DIR}/pkg_inc/hccl/
+    ${HCCL_BASE_DIR}/pkg_inc/hccl/
     ${HCCL_BASE_DIR}/src/algorithm/pub_inc
     ${HCCL_BASE_DIR}/src/legacy/common
     ${HCCL_BASE_DIR}/src/legacy/common/types
