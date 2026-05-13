@@ -31,12 +31,7 @@ HcommChannelDesc ChannelDescHccl2Hcomm(const HcclChannelDesc &hcclDesc)
     hcommDesc.notifyNum = hcclDesc.notifyNum;
     hcommDesc.memHandles = reinterpret_cast<HcommMemHandle *>(hcclDesc.memHandles);
     hcommDesc.memHandleNum = hcclDesc.memHandleNum;
-    (void)memcpy_s(hcommDesc.raws, sizeof(hcommDesc.raws), hcclDesc.raws, sizeof(hcommDesc.raws));
-
-    hcommDesc.roceAttr.retryCnt = hcclDesc.roceAttr.retryCnt;
-    hcommDesc.roceAttr.retryInterval = hcclDesc.roceAttr.retryInterval;
-    hcommDesc.roceAttr.sl = hcclDesc.roceAttr.sl;
-    hcommDesc.roceAttr.tc = hcclDesc.roceAttr.tc;
+    (void)memcpy_s(hcommDesc.raws, sizeof(hcommDesc.raws), hcclDesc.raws, sizeof(hcclDesc.raws));
     
     return hcommDesc;
 }
@@ -291,11 +286,8 @@ HcclResult MyRank::BatchCreateSockets(const HcclChannelDesc* channelDescs, uint3
         CHK_RET(rankPair->GetEndpointPair(endpointDescPair, endpointPair));
         CHK_PTR_NULL(endpointPair);
 
-        hcommDescs[i] = MyRankUtils::ChannelDescHccl2Hcomm(channelDescs[i]);
-
         uint32_t listenPort = 0;
         CHK_RET(QueryListenPort(rankId_, remoteRank, localEndpointDesc, remoteEndpointDesc, listenPort, hcommDescs[i]));
-
 
         if (reuseSocketIdxMap.find(rankPair) == reuseSocketIdxMap.end()) {
             std::unordered_map<hcomm::EndpointPair*, u32> endpointPair2Idx{};
@@ -588,24 +580,42 @@ HcclResult MyRank::BatchConnectChannels(const HcclChannelDesc* channelDescs, Cha
     return HCCL_SUCCESS;
 }
 
+HcclResult MyRank::ConfigSqDepthByExpansionMode(CommEngine engine, HcommChannelDesc& hcommDesc)
+{
+    if (engine == COMM_ENGINE_CCU) {
+        if (opExpansionMode_ == CCU_MS_MODE) {
+            hcommDesc.ubAttr.sqDepth = 128;
+        } else if (opExpansionMode_ == CCU_SCHED_MODE) {
+            hcommDesc.ubAttr.sqDepth = 16;
+        } else {
+            HCCL_ERROR("[%s] unexpected op expansion mode[%u] for ccu,", __func__, opExpansionMode_);
+            return HCCL_E_INTERNAL;
+        }
+    }
+    return HCCL_SUCCESS;
+}
+
 HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
         const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle *channelHandles)
 {
     CHK_PTR_NULL(channelDescs);
     CHK_PTR_NULL(channelHandles);
-    CHK_PRT_RET(channelNum == 0,
-        HCCL_ERROR("[%s] invalid param: channelNum is zero", __func__), HCCL_E_PARA);
+    CHK_PRT_RET(channelNum == 0, HCCL_ERROR("[%s] invalid param: channelNum is zero", __func__), HCCL_E_PARA);
 
-    HCCL_INFO("[CreateChannels][Enter] engine[%d] commTag[%s] channelNum[%u] rankId[%u]",
-        engine, commTag.c_str(), channelNum, rankId_);
+    HCCL_INFO("[CreateChannels][Enter] engine[%d] commTag[%s] channelNum[%u] rankId[%u]", engine, commTag.c_str(),
+        channelNum, rankId_);
 
     // 参数检查
     CHK_RET(CheckChannelParam(engine, channelDescs, channelNum));
 
     std::vector<ChannelHandle> hostChannelHandles(channelNum);
-    ChannelHandle* hostChannelHandleList = hostChannelHandles.data();
+    ChannelHandle *hostChannelHandleList = hostChannelHandles.data();
 
     std::vector<HcommChannelDesc> hcommDescs(channelNum);
+    for (u32 i = 0; i < channelNum; ++i) {
+        hcommDescs[i] = MyRankUtils::ChannelDescHccl2Hcomm(channelDescs[i]);
+        CHK_RET(ConfigSqDepthByExpansionMode(engine, hcommDescs[i]));
+    }
 
     CHK_RET(BatchCreateSockets(channelDescs, channelNum, commTag, hcommDescs));
     CHK_RET_UNAVAIL(BatchCreateChannels(engine, channelDescs, channelNum, hcommDescs, hostChannelHandleList));
@@ -616,10 +626,10 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
         HcclCommDfx::AddChannelRemoteRankId(commTag, hostChannelHandleList[i], remoteRank);
         // 打印UB通道建链信息
         HCCL_RUN_INFO("create channel info:channel handle[%s] comm tag[%s] protocol[%s]"
-            " local rank[%u] local dev phyid[%u] remote rank[%u] remote dev phyid[%u] engine[%s]",
+                      " local rank[%u] local dev phyid[%u] remote rank[%u] remote dev phyid[%u] engine[%s]",
             std::to_string(reinterpret_cast<uint64_t>(hostChannelHandleList[i])).c_str(), commTag.c_str(),
-            MyRankUtils::GetCommProtocolEnumStr(channelDescs[i].localEndpoint.protocol).c_str(),
-            rankId_, channelDescs[i].localEndpoint.loc.device.devPhyId, remoteRank,
+            MyRankUtils::GetCommProtocolEnumStr(channelDescs[i].localEndpoint.protocol).c_str(), rankId_,
+            channelDescs[i].localEndpoint.loc.device.devPhyId, remoteRank,
             channelDescs[i].remoteEndpoint.loc.device.devPhyId, MyRankUtils::GetCommEngineEnumStr(engine).c_str());
     }
 
@@ -632,9 +642,9 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
                 HCCL_ERROR("[%s] kernelLaunchAicpuCommInit failed, return [%d].", __func__, ret), ret);
             callbacks_.setAicpuCommState(true);
         }
-        HcommChannelDesc* hcommDesc = hcommDescs.data();
-        CHK_RET(ChannelProcess::ChannelKernelLaunchForComm(channelHandles, hostChannelHandleList, hcommDesc,
-            channelNum, commTag, binHandle_));
+        HcommChannelDesc *hcommDesc = hcommDescs.data();
+        CHK_RET(ChannelProcess::ChannelKernelLaunchForComm(
+            channelHandles, hostChannelHandleList, hcommDesc, channelNum, commTag, binHandle_));
 
         // ns recovery
         nsRecoveryProcessor_->AddNsRecoveryData(engine, channelHandles, hostChannelHandleList, channelNum, commTag);
@@ -642,12 +652,9 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
         return HCCL_SUCCESS;
     }
 
-    if (engine == COMM_ENGINE_CPU || engine == COMM_ENGINE_CCU
-        || engine == COMM_ENGINE_AIV) {
+    if (engine == COMM_ENGINE_CPU || engine == COMM_ENGINE_CCU || engine == COMM_ENGINE_AIV) {
         // TODO: Host侧 Channel 赋值到 channelHandles
-        CHK_SAFETY_FUNC_RET(memcpy_s(channelHandles,
-            channelNum * sizeof(ChannelHandle),
-            hostChannelHandleList,
+        CHK_SAFETY_FUNC_RET(memcpy_s(channelHandles, channelNum * sizeof(ChannelHandle), hostChannelHandleList,
             channelNum * sizeof(ChannelHandle)));
         return HCCL_SUCCESS;
     }
@@ -784,6 +791,5 @@ HcclResult MyRank::Resume()
     HCCL_INFO("[NsRecovery][Resume] MyRank::Resume success!");
     return HCCL_SUCCESS;
 }
-
 } // namespace hccl
 
