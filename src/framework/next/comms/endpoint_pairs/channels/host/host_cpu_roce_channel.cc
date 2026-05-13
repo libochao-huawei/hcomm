@@ -205,7 +205,7 @@ HcclResult HostCpuRoceChannel::BuildBuffer()
 HcclResult HostCpuRoceChannel::Init()
 {
     CHK_RET(ParseInputParam());
-    if (channelDesc_.exchangeAllMems) {  // true for HIXL, false for HCCL
+    if (channelDesc_.exchangeAllMems && channelDesc_.role == HCOMM_SOCKET_ROLE_SERVER) {  // true for HIXL, false for HCCL
         CHK_RET(StartListen());
     }
     CHK_RET(BuildSocket());
@@ -234,7 +234,7 @@ HcclResult HostCpuRoceChannel::GetStatus(ChannelStatus &status) {
             CHK_RET(CheckSocketStatus());
             break;
         case RdmaStatus::SOCKET_OK:
-            CHK_RET(ExchangeCapability());
+            //CHK_RET(ExchangeCapability());
             rdmaStatus_ = RdmaStatus::CAP_EXCHANGED;
             break;
         case RdmaStatus::CAP_EXCHANGED:
