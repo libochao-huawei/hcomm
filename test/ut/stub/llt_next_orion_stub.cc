@@ -1399,6 +1399,11 @@ bool SocketManager::ServerDeInit(PortData &portData) const
     return true;
 }
 
+void SocketManager::SetDeviceServerListenPortMap(const std::unordered_map<u32, std::unordered_map<IpAddress, u32>> &rankListenPortMap)
+{
+    return;
+}
+
 HccpTlvHdcManager &HccpTlvHdcManager::GetInstance()
 {
     static HccpTlvHdcManager HccpTlvHdcManager;
@@ -2239,6 +2244,12 @@ HcclResult HcclCommunicator::GetRankGraphV2(void *&rankGraph)
     return HCCL_SUCCESS;
 }
 
+HcclResult HcclCommunicator::GetRankIpPortMap(RankIpPortMapPtr& rankIpPortMap)
+{
+    static auto emptyMap = std::make_shared<std::unordered_map<u32, std::unordered_map<IpAddress, u32>>>();
+    rankIpPortMap = emptyMap;
+    return HCCL_SUCCESS;
+}
 } // namespace Hccl
 
 namespace Hccl {

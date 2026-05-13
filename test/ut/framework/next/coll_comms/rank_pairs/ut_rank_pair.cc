@@ -17,7 +17,7 @@ protected:
 
 TEST_F(RankPairTest, GetEpChannelMap_ReturnsEmptyWhenMgrEmpty) {
     RankIdPair ids = {1, 2};
-    RankPair rp(ids);
+    RankPair rp(ids, nullptr);
     EXPECT_EQ(rp.Init(), HCCL_SUCCESS);
 
     // Stub EndpointPairMgr::GetEpChannelMap to return empty map
@@ -32,7 +32,7 @@ TEST_F(RankPairTest, GetEpChannelMap_ReturnsEmptyWhenMgrEmpty) {
 
 TEST_F(RankPairTest, GetEpChannelMap_ReturnsProvidedMap) {
     RankIdPair ids = {10, 20};
-    RankPair rp(ids);
+    RankPair rp(ids, nullptr);
     EXPECT_EQ(rp.Init(), HCCL_SUCCESS);
 
     // Build a fake EpChannelMap with one EndpointDescPair -> (COMM_ENGINE_AICPU -> [0x1, 0x2])

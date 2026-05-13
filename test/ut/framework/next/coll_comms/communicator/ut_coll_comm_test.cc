@@ -56,7 +56,7 @@ TEST_F(TestCollComm, test_suspend_success_and_idempotent)
 
     // attach a MyRank instance (can be real or mocked; method is mocked above)
     aclrtBinHandle binHandle;
-    coll_->myRank_ = std::make_shared<MyRank>(binHandle, 0, coll_->GetCommConfig(), ManagerCallbacks(), nullptr);
+    coll_->myRank_ = std::make_shared<MyRank>(binHandle, 0, coll_->GetCommConfig(), ManagerCallbacks(), nullptr, nullptr);
 
     auto ret = coll_->Suspend();
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -97,7 +97,7 @@ TEST_F(TestCollComm, test_clean_success_and_idempotent)
 
     // attach a MyRank instance
     aclrtBinHandle binHandle;
-    coll_->myRank_ = std::make_shared<MyRank>(binHandle, 0, coll_->GetCommConfig(), ManagerCallbacks(), nullptr);
+    coll_->myRank_ = std::make_shared<MyRank>(binHandle, 0, coll_->GetCommConfig(), ManagerCallbacks(), nullptr, nullptr);
 
     auto ret = coll_->Clean();
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -131,7 +131,7 @@ TEST_F(TestCollComm, test_resume_fail_invalid_and_resume_success)
 
     // attach a MyRank instance
     aclrtBinHandle binHandle;
-    coll_->myRank_ = std::make_shared<MyRank>(binHandle, 0, coll_->GetCommConfig(), ManagerCallbacks(), nullptr);
+    coll_->myRank_ = std::make_shared<MyRank>(binHandle, 0, coll_->GetCommConfig(), ManagerCallbacks(), nullptr, nullptr);
 
     ret = coll_->Resume();
     EXPECT_EQ(ret, HCCL_SUCCESS);
