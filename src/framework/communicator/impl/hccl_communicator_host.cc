@@ -1435,10 +1435,12 @@ namespace hccl
         callbacks.getAicpuCommState = [this](){return 1;};
         callbacks.setAicpuCommState = [this](bool state){};
         callbacks.kernelLaunchAicpuCommInit = [this](){return HCCL_SUCCESS;};
-    
-        EXECEPTION_CATCH((myRank_ = std::make_unique<MyRank>(binHandle, rankId, commConfig, callbacks, &rankGraph_)),
+
+        // MyRank的rankIpPortMap为950使用，直接赋空
+        EXECEPTION_CATCH(
+            (myRank_ = std::make_unique<MyRank>(binHandle, rankId, commConfig, callbacks, &rankGraph_, nullptr)),
             return HCCL_E_PTR);
-    
+
         HCCL_INFO("[HcclCommunicator][CreateMyRank]Create myRank successfully for rank[%u]", rankId);
     
         return HCCL_SUCCESS;
@@ -4854,7 +4856,8 @@ namespace hccl
         }
         InsertNewTagToTagMap(newTag, opParam.tag);
         bool aicpuUnfoldModeFor910B =
-            deviceType_ == DevType::DEV_TYPE_910B && opParam.aicpuUnfoldMode && algName == "RunAlltoAllVStaged";
+            deviceType_ == DevType::DEV_TYPE_910B && opParam.aicpuUnfoldMode &&
+            (algName == "RunAlltoAllVStaged" || algName == "RunAlltoAllVFullMesh");
         bool needRecreateAlltoallComm = false;
         if (resMap_.find(newTag) == resMap_.end()) {
             AlgResourceRequest resRequest;
