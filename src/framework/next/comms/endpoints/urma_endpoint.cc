@@ -109,6 +109,29 @@ HcclResult UrmaEndpoint::ServerSocketStopListen(const uint32_t port)
     return HCCL_SUCCESS;
 }
 
+HcclResult UrmaEndpoint::ServerSocketGetListenPort(uint32_t *port)
+{
+    if (endpointDesc_.loc.locType != ENDPOINT_LOC_TYPE_DEVICE){
+        HCCL_INFO("[UrmaEndpoint][%s] endpointDesc.loc.locType[%d] skip create ServerSocket", __func__, endpointDesc_.loc.locType);
+        return HCCL_SUCCESS;
+    }
+
+    HCCL_INFO("endpointDesc_.loc.device.devPhyId %u",endpointDesc_.loc.device.devPhyId);
+    Hccl::IpAddress ipaddr{};
+    CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipaddr));
+
+    Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::UB);
+    Hccl::PortData localPort = Hccl::PortData(static_cast<Hccl::RankId>(endpointDesc_.loc.device.devPhyId), type, 0, ipaddr);
+
+    HCCL_INFO("[UrmaEndpoint][%s] devicePhyId[%u] localPort[%s]", 
+        __func__, 
+        endpointDesc_.loc.device.devPhyId, 
+        localPort.Describe().c_str()
+    );
+    CHK_RET(ServerSocketManager::GetInstance().ServerSocketGetListenPort(localPort, Hccl::NicType::DEVICE_NIC_TYPE, endpointDesc_.loc.device.devPhyId, port));
+    return HCCL_SUCCESS;
+}
+
 HcclResult UrmaEndpoint::RegisterMemory(HcommMem mem, const char *memTag, void **memHandle)
 {
     CHK_RET(this->regedMemMgr_->RegisterMemory(mem, memTag, memHandle));
