@@ -66,6 +66,8 @@ public:
     HcclResult Clean();
     HcclResult Resume();
 
+    HcclResult RecordEnvVarCrcV2()
+
 private:
     HcclResult BatchCreateSockets(const HcclChannelDesc* channelDescs, uint32_t channelNum,
         const std::string &commTag, std::vector<HcommChannelDesc> &hcommDescs);

@@ -143,7 +143,7 @@ public:
     void SetCheckCannVersionSwitch(const bool cannVerCheckSwitch);
 
     // ====== A5专用校验接口 ======
-    HcclResult RecordEnvVarCrcV2();
+    HcclResult RecordEnvVarCrcV2(u64 buffSize);
     HcclResult RecordRankTableCrcV2(const std::string &rankTableContent);
     HcclResult RecordSubCommParaV2(u32 parentCommCrc, uint32_t rankNum,
         const uint32_t *rankIds, uint64_t subCommId);

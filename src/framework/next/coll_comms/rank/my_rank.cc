@@ -798,6 +798,14 @@ HcclResult MyRank::Resume()
     return HCCL_SUCCESS;
 }
 
+HcclResult MyRank::RecordEnvVarCrcV2()
+{
+    auto &checker = RankConsistentcyChecker::GetInstance();
+    // 仅校验HCCL_BUFFSIZE，通过EnvConfig取已解析的配置值
+    u64 buffSize = Hccl::EnvConfig::GetInstance().GetAlgoConfig().GetBuffSize();
+    checker.RecordEnvVarCrcV2(buffSize);
+}
+
 HcclResult MyRank::BatchExchangeAndCheckConsistency(
     const HcclChannelDesc* channelDescs,
     const std::vector<HcommChannelDesc> &hcommDescs,
