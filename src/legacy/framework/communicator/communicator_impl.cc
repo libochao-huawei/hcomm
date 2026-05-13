@@ -3405,31 +3405,75 @@ HcclResult CommunicatorImpl::GetDevMemWorkSpace(const std::string &memTag, uint6
 
 HcclResult CommunicatorImpl::AllocAndRegKFCWorkSpace(uint64_t size)
 {
-    CHK_RET(HrtHalGetDeviceInfo(devLogicId, MODULE_TYPE_SYSTEM, INFO_TYPE_HD_CONNECT_TYPE, &connectType_));
+    // ACL_DEV_ATTR_H2D_CONNECT_TYPE 还没有
+    CHK_RET(HrtGetDeviceInfo(devLogicId, DEV_MODULE_TYPE::MODULE_TYPE_SYSTEM, INFO_TYPE_HD_CONNECT_TYPE, connectType_));
     accessVA_ = nullptr;
-    drvError_t ret = DRV_ERROR_NONE;
+    va_ = nullptr;
+
+    aclrtPhysicalMemProp prop = {};
+    prop.handleType = ACL_MEM_HANDLE_TYPE_NONE;
+    prop.allocationType = ACL_MEM_ALLOCATION_TYPE_PINNED;
+    prop.memAttr = ACL_HBM_MEM_NORMAL;
+    prop.location.id = devLogicId;
+
     if (connectType_ == HOST_DEVICE_CONNECT_TYPE_PCIE) {
-        va_ = HrtMalloc(size, ACL_MEM_TYPE_HIGH_BAND_WIDTH);
-        ret = halHostRegister(va_, size, DEV_SVM_MAP_HOST, devLogicId, &accessVA_);
+        prop.location.type = ACL_MEM_LOCATION_TYPE_DEVICE;
     } else if (connectType_ == HOST_DEVICE_CONNECT_TYPE_UB) {
-        va_ = malloc(size);
-        CHK_PTR_NULL(va_);
-        ret = halHostRegister(va_, size, HOST_SVM_MAP_DEV, devLogicId, &accessVA_);
+        prop.location.type = ACL_MEM_LOCATION_TYPE_HOST;
     } else {
         return HCCL_E_NOT_SUPPORT;
     }
-    if (ret != DRV_ERROR_NONE) {
-        HCCL_ERROR("halHostRegister failed, ret: %d, connect type: %ld", ret, connectType_);
-        if (va_ != nullptr) {
-            if (connectType_ == HOST_DEVICE_CONNECT_TYPE_PCIE) {
-                HrtFree(va_);
-            } else if (connectType_ == HOST_DEVICE_CONNECT_TYPE_UB) {
-                free(va_);
-            }
-            va_ = nullptr;
-        }
-        return HCCL_E_DRV;
+
+    // 获取内存分配粒度
+    size_t granularity = 0UL;
+    aclError ret = aclrtMemGetAllocationGranularity(&prop, ACL_RT_MEM_ALLOC_GRANULARITY_MINIMUM, &granularity);
+    CHK_PRT_RET(ret != ACL_SUCCESS,
+        HCCL_ERROR("[AllocAndRegKFCWorkSpace][GetAllocationGranularity]failed, ret[%d]", ret), HCCL_E_RUNTIME);
+
+    size_t alignedSize = ((size + granularity - 1U) / granularity) * granularity;
+
+    // 1. 申请物理内存
+    ret = aclrtMallocPhysical(&va_, alignedSize, &prop, 0);
+    CHK_PRT_RET(ret != ACL_SUCCESS,
+        HCCL_ERROR("[AllocAndRegKFCWorkSpace][MallocPhysical]failed, size[%llu], ret[%d]", alignedSize, ret),
+        HCCL_E_RUNTIME);
+
+    // 2. 申请虚拟地址
+    ret = aclrtReserveMemAddress(&accessVA_, granularity, 0, nullptr, 0);
+    if (ret != ACL_SUCCESS) {
+        HCCL_ERROR("[AllocAndRegKFCWorkSpace][ReserveMemAddress]failed, ret[%d]", ret);
+        (void)aclrtFreePhysical(va_);
+        va_ = nullptr;
+        return HCCL_E_RUNTIME;
     }
+
+    // 3. 建立物理内存和虚拟地址的映射关系
+    ret = aclrtMapMem(accessVA_, granularity, 0, va_, 0);
+    if (ret != ACL_SUCCESS) {
+        HCCL_ERROR("[AllocAndRegKFCWorkSpace][MapMem]failed, ret[%d]", ret);
+        (void)aclrtFreePhysical(va_);
+        va_ = nullptr;
+        (void)aclrtReleaseMemAddress(accessVA_);
+        accessVA_ = nullptr;
+        return HCCL_E_RUNTIME;
+    }
+
+    // 4. 设置内存访问权限
+    aclrtMemAccessDesc accessDesc = {};
+    accessDesc.flags = ACL_RT_MEM_ACCESS_FLAGS_READWRITE;
+    accessDesc.location.type = ACL_MEM_LOCATION_TYPE_DEVICE;
+    accessDesc.location.id = devLogicId;
+    ret = aclrtMemSetAccess(accessVA_, granularity, &accessDesc, 1);
+    if (ret != ACL_SUCCESS) {
+        HCCL_ERROR("[AllocAndRegKFCWorkSpace][MemSetAccess]failed, ret[%d]", ret);
+        (void)aclrtUnmapMem(accessVA_);
+        (void)aclrtFreePhysical(va_);
+        va_ = nullptr;
+        (void)aclrtReleaseMemAddress(accessVA_);
+        accessVA_ = nullptr;
+        return HCCL_E_RUNTIME;
+    }
+
     return HCCL_SUCCESS;
 }
 
@@ -3442,10 +3486,10 @@ HcclResult CommunicatorImpl::GetKFCWorkSpaceVA(const std::string &memTag, uint64
     auto iter = tagWorkspaceVAMap_.find(memTag);
     if (iter != tagWorkspaceVAMap_.end()) {
         std::shared_ptr<DevBuffer> oldWorkspace = iter->second;
-        if (*size != static_cast<uint64_t>(oldWorkspace.get()->GetSize())) {
-            HCCL_ERROR("HcclCommunicator::GetKFCWorkSpaceVA, The size of oldWorkspace %p is non-consistent, target size compare now size: %llu->%llu", *addr, *size, oldWorkspace.get()->GetSize());
-            return HCCL_E_PARA;
-        }
+        // if (*size != static_cast<uint64_t>(oldWorkspace.get()->GetSize())) {
+        //     HCCL_ERROR("HcclCommunicator::GetKFCWorkSpaceVA, The size of oldWorkspace %p is non-consistent, target size compare now size: %llu->%llu", *addr, *size, oldWorkspace.get()->GetSize());
+        //     return HCCL_E_PARA;
+        // }
         *addr = reinterpret_cast<void *>(oldWorkspace.get()->GetAddr());
         if (newCreated != nullptr) {
             *newCreated = false;
@@ -3469,19 +3513,22 @@ HcclResult CommunicatorImpl::DestroyKFCWorkSpaceVA()
         return HCCL_SUCCESS;
     }
 
-    // 必须先halHostUnregister解除映射，再释放设备内存，否则HrtFree会因内存被pin住而异常
+    aclError ret = ACL_SUCCESS;
     if (accessVA_ != nullptr) {
-        drvError_t drvRet = halHostUnregister(accessVA_, devLogicId);
-        if (drvRet != DRV_ERROR_NONE) {
-            HCCL_ERROR("halHostUnregister failed, drvRet[%d]", drvRet);
+        ret = aclrtUnmapMem(accessVA_);
+        if (ret != ACL_SUCCESS) {
+            HCCL_ERROR("aclrtUnmapMem failed, ret[%d]", ret);
+        }
+        ret = aclrtReleaseMemAddress(accessVA_);
+        if (ret != ACL_SUCCESS) {
+            HCCL_ERROR("aclrtReleaseMemAddress failed, ret[%d]", ret);
         }
     }
 
     if (va_ != nullptr) {
-        if (connectType_ == HOST_DEVICE_CONNECT_TYPE_PCIE) {
-            DECTOR_TRY_CATCH("KFCWorkSpace", HrtFree(va_));
-        } else if (connectType_ == HOST_DEVICE_CONNECT_TYPE_UB) {
-            free(va_);
+        ret = aclrtFreePhysical(va_);
+        if (ret != ACL_SUCCESS) {
+            HCCL_ERROR("aclrtFreePhysical failed, ret[%d]", ret);
         }
     }
 
