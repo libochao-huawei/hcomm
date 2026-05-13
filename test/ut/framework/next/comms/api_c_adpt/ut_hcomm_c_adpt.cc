@@ -18,6 +18,22 @@
 
 using namespace hcomm;
 
+HcclResult StubBuildChannelEntityToDevice(hcomm::AivUrmaChannel *channel, void **devPtr)
+{
+    (void)channel;
+    if (devPtr == nullptr) {
+        return HCCL_E_PTR;
+    }
+    *devPtr = reinterpret_cast<void *>(0x5678);
+    return HCCL_SUCCESS;
+}
+
+HcclResult StubServerSocketGetListenPort(Endpoint * /*endpoint*/, uint32_t *port)
+{
+    *port = 12345;
+    return HCCL_SUCCESS;
+}
+
 class HcommCAdptTest : public testing::Test {
 protected:
     static void SetUpTestCase()
@@ -45,20 +61,15 @@ protected:
 TEST_F(HcommCAdptTest, ut_HcommChannelGet_When_Normal_Expect_Success)
 {
     ChannelHandle channelHandle = 0x12345;
-    void* channel = nullptr;
-    MOCKER(ChannelProcess::ChannelGet)
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
+    void *channel = nullptr;
+    MOCKER(ChannelProcess::ChannelGet).stubs().will(returnValue(HCCL_SUCCESS));
     HcommResult ret = HcommChannelGet(channelHandle, &channel);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
 TEST_F(HcommCAdptTest, ut_HcommChannelGetStatus_When_Normal_Expect_Success)
 {
-    ChannelHandle channelList[2] = {
-        0x12345,
-        0x12346
-    };
+    ChannelHandle channelList[2] = {0x12345, 0x12346};
     int32_t statusList[2] = {0, 0};
     HcommResult ret = HcommChannelGetStatus(channelList, 2, statusList);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -75,20 +86,14 @@ TEST_F(HcommCAdptTest, ut_HcommChannelGetStatus_When_ChannelListNull_Expect_E_PT
 
 TEST_F(HcommCAdptTest, ut_HcommChannelGetStatus_When_StatusListNull_Expect_E_PTR)
 {
-    ChannelHandle channelList[2] = {
-        0x12345,
-        0x12346
-    };
+    ChannelHandle channelList[2] = {0x12345, 0x12346};
     HcommResult ret = HcommChannelGetStatus(channelList, 2, nullptr);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
 TEST_F(HcommCAdptTest, ut_HcommChannelGetStatus_When_ListNumZero_Expect_E_PARA)
 {
-    ChannelHandle channelList[2] = {
-        0x12345,
-        0x12346
-    };
+    ChannelHandle channelList[2] = {0x12345, 0x12346};
     int32_t statusList[2] = {0, 0};
     HcommResult ret = HcommChannelGetStatus(channelList, 0, statusList);
     EXPECT_EQ(ret, HCCL_E_PARA);
@@ -98,22 +103,15 @@ TEST_F(HcommCAdptTest, ut_HcommChannelGetNotifyNum_When_Normal_Expect_Success)
 {
     ChannelHandle channelHandle = 0x12345;
     uint32_t notifyNum = 0;
-    MOCKER(ChannelProcess::ChannelGetNotifyNum)
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
+    MOCKER(ChannelProcess::ChannelGetNotifyNum).stubs().will(returnValue(HCCL_SUCCESS));
     HcommResult ret = HcommChannelGetNotifyNum(channelHandle, &notifyNum);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
 TEST_F(HcommCAdptTest, ut_HcommChannelDestroy_When_Normal_Expect_Success)
 {
-    ChannelHandle channels[2] = {
-        0x12345,
-        0x12346
-    };
-    MOCKER(ChannelProcess::ChannelDestroy)
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
+    ChannelHandle channels[2] = {0x12345, 0x12346};
+    MOCKER(ChannelProcess::ChannelDestroy).stubs().will(returnValue(HCCL_SUCCESS));
     HcommResult ret = HcommChannelDestroy(channels, 2);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
@@ -121,13 +119,11 @@ TEST_F(HcommCAdptTest, ut_HcommChannelDestroy_When_Normal_Expect_Success)
 TEST_F(HcommCAdptTest, ut_HcommChannelGetRemoteMem_When_Normal_Expect_Success)
 {
     ChannelHandle channelHandle = 0x12345;
-    CommMem* remoteMem = nullptr;
+    CommMem *remoteMem = nullptr;
     uint32_t memNum = 0;
-    char* memTagsStorage[2] = {nullptr, nullptr};
-    char** memTags = memTagsStorage;
-    MOCKER(ChannelProcess::ChannelGetRemoteMem)
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
+    char *memTagsStorage[2] = {nullptr, nullptr};
+    char **memTags = memTagsStorage;
+    MOCKER(ChannelProcess::ChannelGetRemoteMem).stubs().will(returnValue(HCCL_SUCCESS));
     HcommResult ret = HcommChannelGetRemoteMem(channelHandle, &remoteMem, &memNum, memTags);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
@@ -135,12 +131,10 @@ TEST_F(HcommCAdptTest, ut_HcommChannelGetRemoteMem_When_Normal_Expect_Success)
 TEST_F(HcommCAdptTest, ut_HcommChannelGetRemoteMems_When_Normal_Expect_Success)
 {
     ChannelHandle channelHandle = 0x12345;
-    CommMem* remoteMems = nullptr;
-    char** memTags = nullptr;
+    CommMem *remoteMems = nullptr;
+    char **memTags = nullptr;
     uint32_t memNum = 0;
-    MOCKER(ChannelProcess::ChannelGetUserRemoteMem)
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
+    MOCKER(ChannelProcess::ChannelGetUserRemoteMem).stubs().will(returnValue(HCCL_SUCCESS));
     HcommResult ret = HcommChannelGetRemoteMems(channelHandle, &memNum, &remoteMems, &memTags);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
@@ -151,9 +145,7 @@ TEST_F(HcommCAdptTest, ut_HcommCollectiveChannelCreate_When_Normal_Expect_Succes
     HcommChannelDesc channelDesc{};
     (void)HcommChannelDescInit(&channelDesc, 1);
     ChannelHandle channels[1] = {0};
-    MOCKER(ChannelProcess::CreateChannelsLoop)
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
+    MOCKER(ChannelProcess::CreateChannelsLoop).stubs().will(returnValue(HCCL_SUCCESS));
     HcommResult ret = HcommCollectiveChannelCreate(endpointHandle, COMM_ENGINE_AICPU_TS, &channelDesc, 1, channels);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
@@ -197,7 +189,7 @@ TEST_F(HcommCAdptTest, ut_HcommChannelCreate_When_ChannelNumZero_Expect_E_PARA)
 TEST_F(HcommCAdptTest, ut_HcommEndpointGet_When_NotFound_Expect_E_NOT_FOUND)
 {
     EndpointHandle handle = reinterpret_cast<EndpointHandle>(0x12345678);
-    void* endpoint = nullptr;
+    void *endpoint = nullptr;
     HcommResult ret = HcommEndpointGet(handle, &endpoint);
     EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
 }
@@ -215,23 +207,17 @@ TEST_F(HcommCAdptTest, ut_HcommChannelCreate_When_NotAiCpu_Expect_Success)
     HcommChannelDesc channelDesc{};
     (void)HcommChannelDescInit(&channelDesc, 1);
     ChannelHandle channels[1] = {0};
-    MOCKER(ChannelProcess::CreateChannelsLoop)
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
-    MOCKER(ChannelProcess::ConnectChannels)
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
-    MOCKER(ChannelProcess::SaveChannels)
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
+    MOCKER(ChannelProcess::CreateChannelsLoop).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(ChannelProcess::ConnectChannels).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(ChannelProcess::SaveChannels).stubs().will(returnValue(HCCL_SUCCESS));
     HcommResult ret = HcommChannelCreate(endpointHandle, COMM_ENGINE_CPU, &channelDesc, 1, channels);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
 TEST_F(HcommCAdptTest, ut_HcommEngineCtxCopy_When_CPU_Expect_Success)
 {
-    void* dstCtx = malloc(1024);
-    void* srcCtx = malloc(1024);
+    void *dstCtx = malloc(1024);
+    void *srcCtx = malloc(1024);
     ASSERT_NE(dstCtx, nullptr);
     ASSERT_NE(srcCtx, nullptr);
     memset(dstCtx, 0, 1024);
@@ -244,8 +230,8 @@ TEST_F(HcommCAdptTest, ut_HcommEngineCtxCopy_When_CPU_Expect_Success)
 
 TEST_F(HcommCAdptTest, ut_HcommEngineCtxCopy_When_CPU_TS_Expect_Success)
 {
-    void* dstCtx = malloc(1024);
-    void* srcCtx = malloc(1024);
+    void *dstCtx = malloc(1024);
+    void *srcCtx = malloc(1024);
     ASSERT_NE(dstCtx, nullptr);
     ASSERT_NE(srcCtx, nullptr);
     memset(dstCtx, 0, 1024);
@@ -258,8 +244,8 @@ TEST_F(HcommCAdptTest, ut_HcommEngineCtxCopy_When_CPU_TS_Expect_Success)
 
 TEST_F(HcommCAdptTest, ut_HcommEngineCtxCopy_When_CCU_Expect_Success)
 {
-    void* dstCtx = malloc(1024);
-    void* srcCtx = malloc(1024);
+    void *dstCtx = malloc(1024);
+    void *srcCtx = malloc(1024);
     ASSERT_NE(dstCtx, nullptr);
     ASSERT_NE(srcCtx, nullptr);
     memset(dstCtx, 0, 1024);
@@ -283,15 +269,9 @@ TEST_F(HcommCAdptTest, ut_HcommChannelCreate_AICPU_Expect_LoadKernel)
     HcommChannelDesc channelDesc{};
     (void)HcommChannelDescInit(&channelDesc, 1);
     ChannelHandle channels[1] = {0};
-    MOCKER(ChannelProcess::CreateChannelsLoop)
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
-    MOCKER(ChannelProcess::ConnectChannels)
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
-    MOCKER(ChannelProcess::SaveChannels)
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
+    MOCKER(ChannelProcess::CreateChannelsLoop).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(ChannelProcess::ConnectChannels).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(ChannelProcess::SaveChannels).stubs().will(returnValue(HCCL_SUCCESS));
     HcommResult ret = HcommChannelCreate(endpointHandle, COMM_ENGINE_AICPU, &channelDesc, 1, channels);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
@@ -302,9 +282,7 @@ TEST_F(HcommCAdptTest, ut_HcommCollectiveChannelCreate_CPU_Expect_Success)
     HcommChannelDesc channelDesc{};
     (void)HcommChannelDescInit(&channelDesc, 1);
     ChannelHandle channels[1] = {0};
-    MOCKER(ChannelProcess::CreateChannelsLoop)
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
+    MOCKER(ChannelProcess::CreateChannelsLoop).stubs().will(returnValue(HCCL_SUCCESS));
     HcommResult ret = HcommCollectiveChannelCreate(endpointHandle, COMM_ENGINE_CPU, &channelDesc, 1, channels);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
@@ -315,9 +293,7 @@ TEST_F(HcommCAdptTest, ut_HcommCollectiveChannelCreate_CCU_Expect_Success)
     HcommChannelDesc channelDesc{};
     (void)HcommChannelDescInit(&channelDesc, 1);
     ChannelHandle channels[1] = {0};
-    MOCKER(ChannelProcess::CreateChannelsLoop)
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
+    MOCKER(ChannelProcess::CreateChannelsLoop).stubs().will(returnValue(HCCL_SUCCESS));
     HcommResult ret = HcommCollectiveChannelCreate(endpointHandle, COMM_ENGINE_CCU, &channelDesc, 1, channels);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
@@ -334,4 +310,18 @@ TEST_F(HcommCAdptTest, ut_HcommResMgrInit_MultiDevice_Expect_Success)
     HcommResult ret2 = HcommResMgrInit(1);
     EXPECT_EQ(ret1, HCCL_SUCCESS);
     EXPECT_EQ(ret2, HCCL_SUCCESS);
+}
+
+TEST_F(HcommCAdptTest, ut_HcommEndpointGetListenPort_When_PortNull_Expect_E_PTR)
+{
+    EndpointHandle endpointHandle = reinterpret_cast<EndpointHandle>(0x12345);
+    HcommResult ret = HcommEndpointGetListenPort(endpointHandle, nullptr);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(HcommCAdptTest, ut_HcommEndpointGetListenPort_When_HandleInvalid_Expect_E_NOT_FOUND)
+{
+    uint32_t port = 0;
+    HcommResult ret = HcommEndpointGetListenPort(nullptr, &port);
+    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
 }
