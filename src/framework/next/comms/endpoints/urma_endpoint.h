@@ -24,12 +24,13 @@ namespace hcomm {
 class UrmaEndpoint : public Endpoint {
 public:
     explicit UrmaEndpoint(const EndpointDesc &endpointDesc);
-    ~UrmaEndpoint() = default;
+    ~UrmaEndpoint();
 
     HcclResult Init() override;
 
     HcclResult ServerSocketListen(const uint32_t port) override;
     HcclResult ServerSocketStopListen(const uint32_t port) override;
+    HcclResult ServerSocketGetListenPort(uint32_t *port) override;
 
     std::shared_ptr<RegedMemMgr> GetRegedMemMgr() override {
         return regedMemMgr_;
@@ -45,6 +46,7 @@ public:
     HcclResult GetAllMemHandles(void **memHandles, uint32_t *memHandleNum) override;
 
 private:
+    u32 listenedPort_{HCCL_INVALID_PORT};
     std::unique_ptr<CcuChannelCtxPool> ccuChannelCtxPool_{nullptr};
 };
 }
