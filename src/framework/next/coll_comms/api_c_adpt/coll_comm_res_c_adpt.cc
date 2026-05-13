@@ -232,7 +232,6 @@ HcclResult RegisterToClusterMonitor(HcclComm comm)
 HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine, 
     const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle* channels)
 {
-    HCCL_RUN_INFO("Entry-%s channelNum[%u], engine[%d] group[%s]", __func__, channelNum, engine, hcclComm->GetIdentifier().c_str());
     HcclUs startut = TIME_NOW();
     u64 beginTime =  Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
     EXCEPTION_HANDLE_BEGIN
@@ -249,6 +248,7 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
  
     HcclResult ret = HCCL_SUCCESS;
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    HCCL_RUN_INFO("Entry-%s channelNum[%u], engine[%d] group[%s]", __func__, channelNum, engine, hcclComm->GetIdentifier().c_str());
     std::vector<HcclChannelDesc> channelDescFinals;
     for (uint32_t idx = 0; idx < channelNum; idx++) {
         HcclChannelDesc channelDescFinal;
