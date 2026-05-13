@@ -7617,15 +7617,32 @@ namespace hccl
         payload.group[sizeof(payload.group) - 1] = '\0';
         payload.tag[sizeof(payload.tag) - 1] = '\0';
 
-        // isInitTask=true：args 直接是 payload 本体，aicpu 端 RunAicpuKfcClearOpRes reinterpret_cast 即可
+        // host args buffer 通过 aclrtLaunchKernelWithHostArgs 传给 aicpu kernel 时有 size 上限,
+        // ~520B 的 HcclKfcClearOpResTilingData 直接走 args/tiling 通道都会被 runtime 拒绝
+        // (Aicpu kernel execute failed errorCode=0x2a)。改用与 RunAicpuKfcResInit 一致的模式：
+        // alloc HBM 持载 payload，args 只放 KFCResInitTask{context, isCustom} (16B) 包装，
+        // context 是 device buffer 地址，aicpu kernel 端从 context 反解 payload。
+        // Launch 后必须 sync 等 kernel 完成才能释放 deviceBuf (DeviceMem RAII 析构),
+        // 否则 buffer 提前归还 device runtime, aicpu kernel 解 context 时访问无效内存。
+        DeviceMem deviceBuf;
+        CHK_RET(DeviceMem::alloc(deviceBuf, sizeof(payload)));
+        CHK_RET(hrtMemSyncCopy(deviceBuf.ptr(), sizeof(payload), reinterpret_cast<void *>(&payload),
+            sizeof(payload), HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
+
+        struct KFCInitTask { u64 context; bool isCustom; };
+        KFCInitTask initTask = { reinterpret_cast<u64>(deviceBuf.ptr()), false };
+
         const u16 timeOut = MAX_VALUE_U16;
-        HcclResult ret = AicpuAclKernelLaunchV2(opStream_.ptr(), reinterpret_cast<void *>(&payload),
-            sizeof(payload), binHandle_, "RunAicpuKfcClearOpRes", true, timeOut, nullptr, 0);
+        HcclResult ret = AicpuAclKernelLaunchV2(opStream_.ptr(), reinterpret_cast<void *>(&initTask),
+            sizeof(initTask), binHandle_, "RunAicpuKfcClearOpRes", true, timeOut, nullptr, 0);
         if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("[AicpuKfcClearOpResLaunch] launch fail, group[%s] tag[%s] ret[%d]",
                 identifier_.c_str(), tag.c_str(), ret);
             return ret;
         }
+        // 同步等 aicpu kernel 执行完毕, 再让 deviceBuf RAII 析构释放 HBM。
+        CHK_RET(hcclStreamSynchronize(opStream_.ptr(), commConfig_.GetConfigExecTimeOut()));
+
         HCCL_INFO("[AicpuKfcClearOpResLaunch] dispatched aicpu cleanup, group[%s] tag[%s]",
             identifier_.c_str(), tag.c_str());
         return HCCL_SUCCESS;
