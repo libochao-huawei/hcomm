@@ -23,6 +23,28 @@ UrmaEndpoint::UrmaEndpoint(const EndpointDesc &endpointDesc)
 {
 }
 
+UrmaEndpoint::~UrmaEndpoint()
+{
+    try {
+        Hccl::IpAddress bindIp{};
+        (void)CommAddrToIpAddress(endpointDesc_.commAddr, bindIp);
+        Hccl::DevNetPortType connType = Hccl::DevNetPortType(Hccl::ConnectProtoType::UB);
+        Hccl::PortData bindPort(static_cast<Hccl::RankId>(endpointDesc_.loc.device.devPhyId), connType, 0, bindIp);
+
+        std::vector<uint32_t> activePorts;
+        {
+            std::lock_guard<std::mutex> lock(listenedPortsMutex_);
+            activePorts.assign(listenedPorts_.begin(), listenedPorts_.end());
+            listenedPorts_.clear();
+        }
+
+        for (auto activePort : activePorts) {
+            (void)ServerSocketManager::GetInstance().ServerSocketStopListen(
+                bindPort, Hccl::NicType::DEVICE_NIC_TYPE, activePort);
+        }
+    } catch (...) { }
+}
+
 HcclResult UrmaEndpoint::Init()
 {
     HCCL_INFO("[%s] localEndpoint protocol[%d]", __func__, endpointDesc_.protocol);
@@ -95,6 +117,8 @@ HcclResult UrmaEndpoint::ServerSocketListen(const uint32_t port)
         localPort.Describe().c_str()
     );
     CHK_RET(ServerSocketManager::GetInstance().ServerSocketStartListen(localPort, Hccl::NicType::DEVICE_NIC_TYPE, endpointDesc_.loc.device.devPhyId, port));
+    std::lock_guard<std::mutex> lock(listenedPortsMutex_);
+    listenedPorts_.insert(port);
     return HCCL_SUCCESS;
 }
 
@@ -106,6 +130,33 @@ HcclResult UrmaEndpoint::ServerSocketStopListen(const uint32_t port)
     Hccl::PortData localPort = Hccl::PortData(static_cast<Hccl::RankId>(endpointDesc_.loc.device.devPhyId), type, 0, ipAddr);
 
     CHK_RET(ServerSocketManager::GetInstance().ServerSocketStopListen(localPort, Hccl::NicType::DEVICE_NIC_TYPE, port));
+    std::lock_guard<std::mutex> lock(listenedPortsMutex_);
+    listenedPorts_.erase(port);
+    return HCCL_SUCCESS;
+}
+
+HcclResult UrmaEndpoint::ServerSocketGetListenPort(uint32_t *port)
+{
+    if (endpointDesc_.loc.locType != ENDPOINT_LOC_TYPE_DEVICE){
+        HCCL_INFO("[UrmaEndpoint][%s] endpointDesc.loc.locType[%d] skip create ServerSocket", __func__, endpointDesc_.loc.locType);
+        return HCCL_SUCCESS;
+    }
+
+    HCCL_INFO("endpointDesc_.loc.device.devPhyId %u",endpointDesc_.loc.device.devPhyId);
+    Hccl::IpAddress ipaddr{};
+    CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipaddr));
+
+    Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::UB);
+    Hccl::PortData localPort = Hccl::PortData(static_cast<Hccl::RankId>(endpointDesc_.loc.device.devPhyId), type, 0, ipaddr);
+
+    HCCL_INFO("[UrmaEndpoint][%s] devicePhyId[%u] localPort[%s]", 
+        __func__, 
+        endpointDesc_.loc.device.devPhyId, 
+        localPort.Describe().c_str()
+    );
+    CHK_RET(ServerSocketManager::GetInstance().ServerSocketGetListenPort(localPort, Hccl::NicType::DEVICE_NIC_TYPE, endpointDesc_.loc.device.devPhyId, port));
+    std::lock_guard<std::mutex> lock(listenedPortsMutex_);
+    listenedPorts_.insert(*port);
     return HCCL_SUCCESS;
 }
 
