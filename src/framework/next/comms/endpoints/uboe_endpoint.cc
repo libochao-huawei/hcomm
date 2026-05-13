@@ -64,6 +64,12 @@ HcclResult UboeEndpoint::ServerSocketStopListen(const uint32_t port)
     return HCCL_SUCCESS;
 }
 
+HcclResult UboeEndpoint::ServerSocketGetListenPort(uint32_t *port)
+{
+    HCCL_INFO("%s is not supported", __func__);
+    return HCCL_SUCCESS;
+}
+
 HcclResult UboeEndpoint::RegisterMemory(HcommMem mem, const char *memTag, void **memHandle)
 {
     CHK_RET(regedMemMgr_->RegisterMemory(mem, memTag, memHandle));
