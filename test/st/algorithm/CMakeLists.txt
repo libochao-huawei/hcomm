@@ -176,7 +176,7 @@ set(HCOMM_FRAMEWORK_INCLUDE_LIST
 
     # ccu 头文件
     ${HCOMM_CODE_FRAMEWORK}/../../pkg_inc/hcomm/ccu/
-    ${HCOMM_CODE_FRAMEWORK}/../../pkg_inc/hcomm/ccu/_new
+    ${HCOMM_CODE_FRAMEWORK}/../../pkg_inc/hcomm/ccu_new
     ${HCOMM_CODE_FRAMEWORK}/next/comms/adpt/
     ${HCOMM_CODE_FRAMEWORK}/next/comms/common/
  
