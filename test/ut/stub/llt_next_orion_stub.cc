@@ -247,6 +247,15 @@ void Socket::Listen()
     std::cout << "Socket Server, listen." << std::endl;
 }
 
+bool Socket::Listen(u32 &port)
+{
+    if (port == 0) {
+        port = 43210;
+    }
+    std::cout << "Socket Server, listen on port" << port << std::endl;
+    return true;
+}
+
 void Socket::Connect()
 {
 }
@@ -1415,6 +1424,8 @@ void LocalIpcRmaBuffer::Grant(u32 pid)
 {
 }
 
+
+SocketManager::SocketManager() {}
 SocketManager::SocketManager(u32 localRank, u32 devicePhyId, u32 deviceLogicId, const std::string &socketTag)
 {
 }

@@ -131,3 +131,16 @@ TEST_F(CpuUrmaEndpointTest, Ut_When_UnregisterMemory_Normal_Expect_HCCL_SUCCESS)
     void* memHandle = (void*)0x12345678;
     EXPECT_EQ(endpoint->UnregisterMemory(memHandle), HCCL_SUCCESS);
 }
+
+TEST_F(CpuUrmaEndpointTest, Ut_When_ServerSocketGetListenPort_Normal_Expect_HCCL_SUCCESS)
+{
+    auto endpoint = std::make_unique<CpuUrmaEndpoint>(endpointDesc);
+    EXPECT_EQ(endpoint->Init(), HCCL_SUCCESS);
+    uint32_t port = 0;
+    MOCKER_CPP(&hcomm::ServerSocketManager::ServerSocketStartListen).stubs()
+        .will(invoke([](const Hccl::PortData &, const Hccl::NicType &, uint32_t, uint32_t *p) {
+            *p = 60001;
+            return HCCL_SUCCESS;
+        }));
+    EXPECT_EQ(endpoint->ServerSocketGetListenPort(&port), HCCL_SUCCESS);
+}
