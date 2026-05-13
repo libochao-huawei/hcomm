@@ -121,7 +121,7 @@ protected:
         MOCKER(HrtNotifyCreateWithFlag).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
         MOCKER(HrtGetNotifyID).stubs().will(returnValue(fakeNotifyId));
         MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(fakeDevPhyId)));
-        MOCKER(HrtIpcSetNotifyName).stubs().with(any(), outBoundP(fakeName, sizeof(fakeName)), any());
+        MOCKER(HrtIpcSetNotifyName).stubs().with(any(), outBoundP(fakeName, sizeof(fakeName)), mockcpp::any());
         MOCKER(HrtNotifyGetOffset).stubs().will(returnValue(fakeOffset));
         MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_950)));
         MOCKER(HrtMemAsyncCopy).stubs();
@@ -3509,6 +3509,10 @@ namespace Hccl {
 HcclResult HrtHalGetDeviceInfo(uint32_t devId, int32_t moduleType, int32_t infoType, int64_t *value);
 }
 
+static void* g_stubVa = nullptr;
+static void* g_stubAccessVa = nullptr;
+static size_t g_stubGranularity = 4096;
+
 TEST_F(CommunicatorImplTest, Ut_GetKFCWorkSpaceVA_When_CacheHitSizeMatch_Expect_Success)
 {
     uint64_t size = 1024;
@@ -3559,6 +3563,42 @@ TEST_F(CommunicatorImplTest, Ut_GetKFCWorkSpaceVA_When_CacheHitNewCreatedNull_Ex
     EXPECT_EQ(addr, reinterpret_cast<void *>(0x1000));
 }
 
+static aclError MallocPhysicalStub(aclrtDrvMemHandle *handle, size_t size,
+    const aclrtPhysicalMemProp *prop, uint64_t flags)
+{
+    if (handle != nullptr) {
+        *handle = g_stubVa;
+    }
+    return ACL_SUCCESS;
+}
+
+static aclError ReserveMemAddressStub(void **virPtr, size_t size, size_t alignment,
+    void *expectPtr, uint64_t flags)
+{
+    if (virPtr != nullptr) {
+        *virPtr = g_stubAccessVa;
+    }
+    return ACL_SUCCESS;
+}
+
+static aclError GetAllocationGranularityStub(aclrtPhysicalMemProp *prop,
+    aclrtMemGranularityOptions option, size_t *granularity)
+{
+    if (granularity != nullptr) {
+        *granularity = g_stubGranularity;
+    }
+    return ACL_SUCCESS;
+}
+
+static HcclResult HrtGetDeviceInfoStub(uint32_t devId, int32_t moduleType,
+    int32_t infoType, int64_t *value)
+{
+    if (value != nullptr) {
+        *value = g_stubConnType;
+    }
+    return HCCL_SUCCESS;
+}
+
 TEST_F(CommunicatorImplTest, Ut_GetKFCWorkSpaceVA_When_PciePath_Expect_Success)
 {
     GlobalMockObject::verify();
@@ -3567,15 +3607,19 @@ TEST_F(CommunicatorImplTest, Ut_GetKFCWorkSpaceVA_When_PciePath_Expect_Success)
     bool newCreated = false;
     std::string tag = "DPUTAG";
 
-    int64_t connType = 0;// HOST_DEVICE_CONNECT_TYPE_PCIE
-    void* stubRegAddr = reinterpret_cast<void *>(0xBEEF0000);
-    MOCKER(HrtHalGetDeviceInfo).stubs().with(any(), any(), any(), outBoundP(&connType))
-        .will(returnValue(HCCL_SUCCESS));
-    MOCKER(HrtMalloc).stubs().with(any(), any())
-        .will(returnValue(reinterpret_cast<void *>(0x2000)));
-    MOCKER(halHostRegister).stubs().with(any(), any(), any(), any(), outBoundP(&stubRegAddr))
-        .will(returnValue(DRV_ERROR_NONE));
-    MOCKER(HrtFree).stubs();
+    void* expectVa = reinterpret_cast<void *>(0x2000);
+    void* expectAccessVa = reinterpret_cast<void *>(0xBEEF0000);
+    g_stubConnType = 0; // HOST_DEVICE_CONNECT_TYPE_PCIE
+    g_stubVa = expectVa;
+    g_stubAccessVa = expectAccessVa;
+    g_stubGranularity = 4096;
+
+    MOCKER(HrtGetDeviceInfo).stubs().will(invoke(HrtGetDeviceInfoStub));
+    MOCKER(aclrtMemGetAllocationGranularity).stubs().will(invoke(GetAllocationGranularityStub));
+    MOCKER(aclrtMallocPhysical).stubs().will(invoke(MallocPhysicalStub));
+    MOCKER(aclrtReserveMemAddress).stubs().will(invoke(ReserveMemAddressStub));
+    MOCKER(aclrtMapMem).stubs().will(returnValue(ACL_SUCCESS));
+    MOCKER(aclrtMemSetAccess).stubs().will(returnValue(ACL_SUCCESS));
 
     auto ret = fakeComm.GetKFCWorkSpaceVA(tag, &size, &addr, &newCreated);
 
@@ -3583,30 +3627,27 @@ TEST_F(CommunicatorImplTest, Ut_GetKFCWorkSpaceVA_When_PciePath_Expect_Success)
     EXPECT_NE(addr, nullptr);
     EXPECT_TRUE(newCreated);
     EXPECT_TRUE(fakeComm.tagWorkspaceVAMap_.find(tag) != fakeComm.tagWorkspaceVAMap_.end());
-    EXPECT_EQ(fakeComm.va_, reinterpret_cast<void *>(0x2000));
+    EXPECT_EQ(fakeComm.va_, expectVa);
+    EXPECT_EQ(fakeComm.accessVA_, expectAccessVa);
 }
 
-TEST_F(CommunicatorImplTest, Ut_GetKFCWorkSpaceVA_When_PcieHalHostRegisterFail_Expect_DrvError)
+TEST_F(CommunicatorImplTest, Ut_GetKFCWorkSpaceVA_When_PcieMallocPhysicalFail_Expect_RuntimeError)
 {
     GlobalMockObject::verify();
     uint64_t size = 1024;
     void *addr = nullptr;
     bool newCreated = true;
     std::string tag = "DPUTAG";
+    g_stubConnType = 0; // HOST_DEVICE_CONNECT_TYPE_PCIE
+    g_stubGranularity = 4096;
 
-    MOCKER(HrtMalloc).stubs().with(any(), any())
-        .will(returnValue(reinterpret_cast<void *>(0x2000)));
-    int64_t connType = 0;// HOST_DEVICE_CONNECT_TYPE_PCIE
-    void* stubRegAddr = reinterpret_cast<void *>(0xBEEF0000);
-    MOCKER(HrtHalGetDeviceInfo).stubs().with(any(), any(), any(), outBoundP(&connType))
-        .will(returnValue(HCCL_SUCCESS));
-    MOCKER(halHostRegister).stubs().with(any(), any(), any(), any(), any())
-        .will(returnValue(DRV_ERROR_INNER_ERR));
-    MOCKER(HrtFree).stubs();
+    MOCKER(HrtGetDeviceInfo).stubs().will(invoke(HrtGetDeviceInfoStub));
+    MOCKER(aclrtMemGetAllocationGranularity).stubs().will(invoke(GetAllocationGranularityStub));
+    MOCKER(aclrtMallocPhysical).stubs().will(returnValue(ACL_ERROR_BAD_ALLOC));
 
     auto ret = fakeComm.GetKFCWorkSpaceVA(tag, &size, &addr, &newCreated);
 
-    EXPECT_EQ(ret, HCCL_E_DRV);
+    EXPECT_EQ(ret, HCCL_E_RUNTIME);
     auto iter = fakeComm.tagWorkspaceVAMap_.find(tag);
     EXPECT_EQ(iter, fakeComm.tagWorkspaceVAMap_.end());
 }
@@ -3618,14 +3659,19 @@ TEST_F(CommunicatorImplTest, Ut_GetKFCWorkSpaceVA_When_UbPath_Expect_Success)
     void *addr = nullptr;
     bool newCreated = false;
     std::string tag = "DPUTAG";
-    int64_t connType = 2;// HOST_DEVICE_CONNECT_TYPE_UB
+    void* expectVa = reinterpret_cast<void *>(0x3000);
+    void* expectAccessVa = reinterpret_cast<void *>(0xBEEF0000);
+    g_stubConnType = 2; // HOST_DEVICE_CONNECT_TYPE_UB
+    g_stubVa = expectVa;
+    g_stubAccessVa = expectAccessVa;
+    g_stubGranularity = 4096;
 
-    void* stubRegAddr = reinterpret_cast<void *>(0xBEEF0000);
-
-    MOCKER(HrtHalGetDeviceInfo).stubs().with(any(), any(), any(), outBoundP(&connType))
-        .will(returnValue(HCCL_SUCCESS));
-    MOCKER(halHostRegister).stubs().with(any(), any(), any(), any(), outBoundP(&stubRegAddr))
-        .will(returnValue(DRV_ERROR_NONE));
+    MOCKER(HrtGetDeviceInfo).stubs().will(invoke(HrtGetDeviceInfoStub));
+    MOCKER(aclrtMemGetAllocationGranularity).stubs().will(invoke(GetAllocationGranularityStub));
+    MOCKER(aclrtMallocPhysical).stubs().will(invoke(MallocPhysicalStub));
+    MOCKER(aclrtReserveMemAddress).stubs().will(invoke(ReserveMemAddressStub));
+    MOCKER(aclrtMapMem).stubs().will(returnValue(ACL_SUCCESS));
+    MOCKER(aclrtMemSetAccess).stubs().will(returnValue(ACL_SUCCESS));
 
     auto ret = fakeComm.GetKFCWorkSpaceVA(tag, &size, &addr, &newCreated);
 
@@ -3633,10 +3679,8 @@ TEST_F(CommunicatorImplTest, Ut_GetKFCWorkSpaceVA_When_UbPath_Expect_Success)
     EXPECT_NE(addr, nullptr);
     EXPECT_TRUE(newCreated);
     EXPECT_TRUE(fakeComm.tagWorkspaceVAMap_.find(tag) != fakeComm.tagWorkspaceVAMap_.end());
-    EXPECT_NE(fakeComm.va_, nullptr);
-    // free the malloc'd memory allocated by GetKFCWorkSpaceVA in UB path
-    free(fakeComm.va_);
-    fakeComm.va_ = nullptr;
+    EXPECT_EQ(fakeComm.va_, expectVa);
+    EXPECT_EQ(fakeComm.accessVA_, expectAccessVa);
 }
 
 TEST_F(CommunicatorImplTest, Ut_GetKFCWorkSpaceVA_When_UnsupportedConnectType_Expect_NotSupport)
@@ -3646,10 +3690,9 @@ TEST_F(CommunicatorImplTest, Ut_GetKFCWorkSpaceVA_When_UnsupportedConnectType_Ex
     void *addr = nullptr;
     bool newCreated = true;
     std::string tag = "DPUTAG";
-    int64_t connType = 1;// HOST_DEVICE_CONNECT_TYPE_HCCS;// unsupported connect type
+    g_stubConnType = 1; // HOST_DEVICE_CONNECT_TYPE_HCCS, unsupported connect type
 
-    MOCKER(HrtHalGetDeviceInfo).stubs().with(any(), any(), any(), outBoundP(&connType))
-        .will(returnValue(HCCL_SUCCESS));
+    MOCKER(HrtGetDeviceInfo).stubs().will(invoke(HrtGetDeviceInfoStub));
 
     auto ret = fakeComm.GetKFCWorkSpaceVA(tag, &size, &addr, &newCreated);
 
