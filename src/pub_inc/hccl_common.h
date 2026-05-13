@@ -117,6 +117,7 @@ constexpr uint32_t HCCL_QOS_LEVEL_1_LIMIT = 2;
 constexpr uint32_t HCCL_QOS_LEVEL_2_LIMIT = 4;
 constexpr uint32_t HCCL_QOS_LEVEL_3_LIMIT = 7;
 
+constexpr uint32_t HCCL_EXCHANGE_INFO_LEN = 4096;  // HCCL一致性校验交换信息最大长度
 /* error message相关 */
     /* EI0004 */
     const std::string RANKTABLE_PARSE_ERROR_REASON =
