@@ -205,8 +205,6 @@ public:
         s32 deviceLogicId,
         NICDeployment nicDeployment,
         bool isHaveCpuRank,
-        const void *transportResourceInfoAddr,
-        size_t transportResourceInfoSize,
         bool isUseRankPort,
         bool isUsedRdmaLevel0,
         const std::vector<u32> &nicRanksPort,
@@ -322,8 +320,6 @@ private:
     s32 deviceLogicId_;
     NICDeployment nicDeployment_;
     bool isHaveCpuRank_{ false };
-    const void *transportResourceInfoAddr_;
-    size_t transportResourceInfoSize_;
     bool isUseRankPort_{ false };
     bool isUsedRdmaLevel0_{ false };
     const std::vector<u32> &nicRanksPort_;

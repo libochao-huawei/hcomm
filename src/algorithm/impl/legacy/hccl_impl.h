@@ -85,8 +85,6 @@ namespace hccl
                           const std::unique_ptr<QueueNotifyManager> &queueNotifyManager,
                           std::unique_ptr<WorkspaceResource> &workSpaceRes,
                           CCLBufferManager &cclBufferManager,
-                          const void *transportResourceInfoAddr,
-                          size_t transportResourceInfoSize,
                           HcclAlgoAttr &algoAttr,
                           HcclTopoAttr &topoAttr,
                           std::shared_ptr<AlgConfigurator> algConfigurator,
@@ -250,8 +248,6 @@ namespace hccl
         tagStreamInfo_t tagStreamInfo_;
         u32 meshAggregationRankSize_;
         std::string identifier_;
-        const void *transportResourceInfoAddr_;
-        size_t transportResourceInfoSize_;
         bool isDiffDeviceModule_;
         bool isStandardCard_;
         bool is310PDuoCard_;

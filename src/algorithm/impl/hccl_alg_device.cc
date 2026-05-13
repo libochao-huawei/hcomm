@@ -28,14 +28,11 @@ namespace hccl
     {
     }
 
-    HcclResult HcclAlg::Init(const void *transportResourceInfoAddr, size_t transportResourceInfoSize,
-                             std::unique_ptr<WorkspaceResource> &workSpaceRes,
+    HcclResult HcclAlg::Init(std::unique_ptr<WorkspaceResource> &workSpaceRes,
                              const std::unique_ptr<NotifyPool> &notifyPool, std::map<HcclIpAddress, HcclNetDevCtx> &netDevCtxMap,
                              const std::unique_ptr<QueueNotifyManager> &queueNotifyManager,
                              HcclAlgoAttr &algoAttr, HcclTopoAttr &topoAttr, bool isHeterogComm)
     {
-        (void) transportResourceInfoAddr;
-        (void) transportResourceInfoSize;
         (void) workSpaceRes;
         (void) notifyPool;
         (void) netDevCtxMap;

@@ -342,7 +342,6 @@ namespace hccl
             cclBufferManager_, socketManager_, dispatcher_, notifyPool_,
             rankInfoList_, userRank_, identifier_,
             deviceLogicId_, nicDeployment_, isHaveCpuRank_,
-            static_cast<const void *>(&transportResInfo_), sizeof(transportResInfo_),
             isUseRankPort_, isUsedRdmaLevel0_, nicRanksPorts, vnicRanksPorts, useSuperPodMode_,
             devIpAddr_, hostIp_, localVnicIp_, netDevCtxMap_)));
         CHK_SMART_PTR_NULL(transportManager_);
@@ -355,37 +354,11 @@ namespace hccl
             cclBufferManager_, socketManager_, ctx->GetDispatcher(), notifyPool_,
             rankInfoList_, userRank_, identifier_,
             deviceLogicId_, nicDeployment_, isHaveCpuRank_,
-            static_cast<const void *>(&transportResInfo_), sizeof(transportResInfo_),
             isUseRankPort_, isUsedRdmaLevel0_, nicRanksPorts, vnicRanksPorts, useSuperPodMode_,
             devIpAddr_, hostIp_, localVnicIp_, netDevCtxMap_)));
         CHK_SMART_PTR_NULL(indptOpTransportManager_);
         (void)indptOpTransportManager_->SetPortConfig(commPortConfig_.devPortSwitchOn);
         (void)indptOpTransportManager_->SetIsStandardCard(isStandardCard_);
-        return HCCL_SUCCESS;
-    }
-
-    HcclResult HcclCommunicator::InitMemoryManager()
-    {
-        if (IsOneSidedIdentifier(identifier_)) {
-            HCCL_INFO("[%s] comm[%s] is one sided comm, skip InitMemoryManager", __func__, identifier_.c_str());
-            return HCCL_SUCCESS;
-        }
-
-        CHK_RET(MrManagerInit());
-        // server数量不为1且非TCP模式时初始化RDMA资源
-        if (serverNum_ != SINGLE_SERVER_NUM && !GetExternalInputHcclIsTcpMode())
-        {
-            CHK_RET(InitRecvMsgAndRequestBuffer());
-            CHK_RET(InitMemBlocksAndRecvWrMem());
-        }
-        return HCCL_SUCCESS;
-    }
-
-    HcclResult HcclCommunicator::InitMemoryManagerSubGroup()
-    {
-        CHK_RET(MrManagerInit());
-        CHK_RET(InitRecvMsgAndRequestBuffer());
-        CHK_RET(InitMemBlocksAndRecvWrMem());
         return HCCL_SUCCESS;
     }
 
@@ -412,8 +385,7 @@ namespace hccl
 
         implAlg_.reset(new (std::nothrow) HcclAlg(cclBufferManager_, dispatcher_, vDispatcher_));
         CHK_SMART_PTR_NULL(implAlg_);
-        CHK_RET(implAlg_->Init(static_cast<const void *>(&transportResInfo_), sizeof(transportResInfo_),
-                               workSpaceRes_, notifyPool_, netDevCtxMap_, queueNotifyManager_,
+        CHK_RET(implAlg_->Init(workSpaceRes_, notifyPool_, netDevCtxMap_, queueNotifyManager_,
                                algoAttr, topoAttr, false));
         return HCCL_SUCCESS;
     }
