@@ -22,6 +22,18 @@ CpuUrmaEndpoint::CpuUrmaEndpoint(const EndpointDesc &endpointDesc)
 {
 }
 
+CpuUrmaEndpoint::~CpuUrmaEndpoint()
+{
+    try {
+        std::lock_guard<std::mutex> lock(portMutex_);
+        if (listenedPort_ != HCCL_INVALID_PORT) {
+            ServerSocketStopListen(listenedPort_);
+        }
+    } catch (...) {
+        HCCL_ERROR("[CpuUrmaEndpoint::~CpuUrmaEndpoint] Unknown exception");
+    }
+}
+
 HcclResult CpuUrmaEndpoint::Init()
 {
     HCCL_INFO("[%s] localEndpoint protocol[%d]", __func__, endpointDesc_.protocol);
@@ -90,6 +102,40 @@ HcclResult CpuUrmaEndpoint::ServerSocketStopListen(const uint32_t port)
     Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::UB);
     Hccl::PortData localPort = Hccl::PortData(devPhyId, type, 0, ipAddr);
     CHK_RET(ServerSocketManager::GetInstance().ServerSocketStopListen(localPort, Hccl::NicType::HOST_NIC_TYPE, port));
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult CpuUrmaEndpoint::ServerSocketGetListenPort(uint32_t *port)
+{
+    std::lock_guard<std::mutex> lock(portMutex_);
+    Hccl::IpAddress localIpAddr{};
+    CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, localIpAddr));
+
+    s32 deviceId = 0;
+    CHK_RET(hrtGetDevice(&deviceId));
+    u32 devicePhyId = 0;
+    CHK_RET(hrtGetDevicePhyIdByIndex(deviceId, devicePhyId));
+
+    Hccl::DevNetPortType portType = Hccl::DevNetPortType(Hccl::ConnectProtoType::UB);
+    Hccl::PortData portData = Hccl::PortData(devicePhyId, portType, 0, localIpAddr);
+
+    HCCL_INFO("[CpuUrmaEndpoint::%s] devicePhyId[%u] ipAddress[%s]",
+        __func__, devicePhyId, localIpAddr.Describe().c_str());
+
+    // 已有监听端口则直接返回
+    if (listenedPort_ != HCCL_INVALID_PORT) {
+        *port = listenedPort_;
+        HCCL_INFO("[CpuUrmaEndpoint::%s] already listening, return existing port[%u]", __func__, listenedPort_);
+        return HCCL_SUCCESS; 
+    }
+    
+    CHK_RET(ServerSocketManager::GetInstance().ServerSocketGetListenPort(portData, Hccl::NicType::HOST_NIC_TYPE, devicePhyId, port));
+    if (*port == 0 || *port == HCCL_INVALID_PORT) {
+        HCCL_ERROR("[CpuUrmaEndpoint::%s] get listen port failed, port is invalid.", __func__);
+        return HCCL_E_NETWORK;
+    }
+    listenedPort_ = *port;
 
     return HCCL_SUCCESS;
 }
