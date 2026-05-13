@@ -173,6 +173,10 @@ HcclResult AicpuTsRoceChannelV2::BuildBuffer()
 
 HcclResult AicpuTsRoceChannelV2::BuildNotifyValueBuffer()
 {
+    if (engine_ == COMM_ENGINE_AIV) {
+        return HCCL_SUCCESS;
+    }
+    
     u32 notifysize = Hccl::DevCapability::GetInstance().GetNotifySize();
     EXECEPTION_CATCH((notifyValueMem_ = std::make_shared<Hccl::DevBuffer>(notifysize)),
         return HCCL_E_PTR);
