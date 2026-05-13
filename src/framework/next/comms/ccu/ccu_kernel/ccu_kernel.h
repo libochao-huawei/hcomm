@@ -126,6 +126,8 @@ public:
     CcuResult NotifyRecord(const ChannelHandle channel, uint32_t remoteNotifyIdx,  uint32_t mask);
     CcuResult NotifyWait(const ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask);
     CcuResult WriteVariableWithNotify(const ChannelHandle channel, CcuVariableHandle varHandle,uint32_t remoteVarIdx, uint32_t remoteNotifyIdx, uint32_t mask);
+    CcuResult LocalNotifyRecord(const uint32_t coreId, const uint32_t dstNotifyIdx, const uint32_t mask);
+    CcuResult LocalNotifyWait(const uint32_t coreId, const uint32_t notifyIdx, const uint32_t mask);
 
     //本地数据拷贝 相关接口
     CcuResult LocalCopyMemToBuffer(CcuBufferHandle dstHandle, CcuLocalAddrHandle srcHandle,CcuVariableHandle lenHandle, CcuEventHandle eventHandle);
@@ -277,9 +279,6 @@ protected:
 
     HcclResult RecordEvent(CcuRep::CompletedEvent event);
     HcclResult WaitEvent(CcuRep::CompletedEvent event);
-
-    HcclResult LocalNotifyRecord(const uint32_t coreId, const uint32_t dstNotifyIdx, const uint32_t mask);
-    HcclResult LocalNotifyWait(const uint32_t coreId, const uint32_t notifyIdx, const uint32_t mask);
 
     // 数据操作
     HcclResult WriteNb(const ChannelHandle channel, const CcuRep::RemoteAddr &rem, const CcuRep::LocalAddr &loc,

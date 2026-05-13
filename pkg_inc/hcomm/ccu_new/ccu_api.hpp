@@ -50,6 +50,8 @@ inline Variable CreateByChannel(ChannelHandle channel, uint32_t varIndex) {
 // ==================== 事件 ====================
 inline CcuResult EventRecord(Event e)  { return CcuEventRecord(e.handle); }
 inline CcuResult EventWait(Event e)    { return CcuEventWait(e.handle); }
+inline CcuResult EventRecord(uint32_t coreId, uint32_t dstNotifyIdx, uint32_t mask = 1) { return CcuLocalNotifyRecord(coreId, dstNotifyIdx, mask); }
+inline CcuResult EventWait(uint32_t coreId, uint32_t notifyIdx, uint32_t mask = 1) { return CcuLocalNotifyWait(coreId, notifyIdx, mask); }
 inline CcuResult SetMask(Event e, uint32_t mask=1) { return CcuSetMask(e.handle, mask); }
 inline CcuResult NotifyRecord(ChannelHandle channel, uint32_t remoteNotifyIdx, uint32_t mask=1){ return CcuNotifyRecord(channel, remoteNotifyIdx, mask); }
 inline CcuResult NotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask=1){ return CcuNotifyWait(channel, localNotifyIdx, mask); }
