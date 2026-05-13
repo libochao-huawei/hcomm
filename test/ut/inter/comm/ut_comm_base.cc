@@ -373,13 +373,10 @@ TEST_F(CommInnerTest, ut_TransportInit)
     IntraExchanger exchanger{};
 
     TopoType topoFlag = TopoType::TOPO_TYPE_8P_RING;
-    std::unique_ptr<MrManager> mrManager = nullptr;
-    mrManager.reset(new (std::nothrow) MrManager());
-    TransportResourceInfo transportResourceInfo(mrManager, nullptr,  nullptr, nullptr, nullptr);
     std::map<HcclIpAddress, HcclNetDevCtx> netDevCtxMap;
     ConstructNetDevCtx(netDevCtxMap, NICDeployment::NIC_DEPLOYMENT_DEVICE, devicePhyId, devicePhyId, NicType::DEVICE_NIC_TYPE, tmp_para.nicIp[0]);
     CommBase* comm_inner = new CommBase(collective_id_tmp, userRank, user_rank_size, userRank, 1,  para_vector, topoFlag, dispatcher, nullptr,
-        netDevCtxMap, exchanger, DeviceMem::alloc(1024),DeviceMem::alloc(1024), true, static_cast<const void*>(&transportResourceInfo), sizeof(transportResourceInfo));
+        netDevCtxMap, exchanger, DeviceMem::alloc(1024),DeviceMem::alloc(1024), true);
 
     MachinePara machinePara;
     HcclIpAddress invalidIp;
@@ -400,7 +397,7 @@ TEST_F(CommInnerTest, ut_TransportInit)
     EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
 
     CommBase* comm_star = new CommStar(collective_id_tmp, userRank, user_rank_size, userRank, 1, topoFlag, dispatcher, nullptr, netDevCtxMap, exchanger,
-        para_vector, DeviceMem::alloc(1024),DeviceMem::alloc(1024), true, static_cast<const void*>(&transportResourceInfo), sizeof(transportResourceInfo));
+        para_vector, DeviceMem::alloc(1024),DeviceMem::alloc(1024), true);
     comm_star->transportType_[0] = TransportType::TRANS_TYPE_HETEROG_ROCE;
     comm_star->isHaveCpuRank_ = true;
     comm_star->interSocketManager_.reset(new (std::nothrow) HcclSocketManager(NICDeployment::NIC_DEPLOYMENT_DEVICE, 0, 0, 0));
@@ -561,13 +558,10 @@ TEST_F(CommInnerTest, ut_create_dest_link_memorry_error)
     IntraExchanger exchanger{};
 
     TopoType topoFlag = TopoType::TOPO_TYPE_8P_RING;
-    std::unique_ptr<MrManager> mrManager = nullptr;
-    mrManager.reset(new (std::nothrow) MrManager());
-    TransportResourceInfo transportResourceInfo(mrManager, nullptr,  nullptr, nullptr, nullptr);
     std::map<HcclIpAddress, HcclNetDevCtx> netDevCtxMap;
 
     CommBase* comm_inner = new CommBase(collective_id_tmp, userRank, user_rank_size, userRank, 1,  para_vector, topoFlag, dispatcher, nullptr,
-        netDevCtxMap, exchanger, DeviceMem::alloc(1024),DeviceMem::alloc(1024), true, static_cast<const void*>(&transportResourceInfo), sizeof(transportResourceInfo));
+        netDevCtxMap, exchanger, DeviceMem::alloc(1024),DeviceMem::alloc(1024), true);
     ErrContextPub error_context;
     error_context.work_stream_id = 1234567890;
     std::vector<std::shared_ptr<HcclSocket> > sockets;
