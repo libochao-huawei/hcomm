@@ -323,7 +323,7 @@ namespace hccl {
             opType == HcclCMDType::HCCL_CMD_ALLTOALL ||
             opType == HcclCMDType::HCCL_CMD_SCATTER ||
             opType == HcclCMDType::HCCL_CMD_ALLREDUCE) { // 非V类算子
-            if (algName == "RunAlltoAllVStaged") {
+            if (algName == "RunAlltoAllVStaged" || algName == "RunAlltoAllVFullMesh") {
                 HCCL_INFO("[AicpuCacheManager][%s] algName[%s] is not supported for unfolding cache", __func__, algName.c_str());
                 return HCCL_SUCCESS;
             }
