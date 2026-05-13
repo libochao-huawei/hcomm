@@ -32,7 +32,7 @@ using GetTpInfoParam = struct GetTpInfoParamDef {
     uint32_t slLevelCount{0};
     /// 环回等场景：首 TPID + 掩码内最小 SL
     bool loopFirstTpLowestSl{false};
-    /// 仅 CCU 设备环回 GetTpInfo：与通信域 hcclQos 解耦，SL 来自 GetTpAttr.slBitmap；并允许 RaCtxSetTpAttr 写回 SL
+    /// 仅 CCU 设备环回 GetTpInfo：与通信域 hcclQos 解耦，SL 来自 GetTpAttr.slBitmap；写回 SL 经 HrtRaSetTpAttrAsync（HDC）
     bool ccuLoopbackGetTpInfo{false};
 
     explicit GetTpInfoParamDef() = default;
