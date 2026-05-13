@@ -4,10 +4,6 @@
 #include "ccu_dev_mgr_pub.h"
 #include "ccu_comp.h"
 #include "hccl_common.h"
-<<<<<<< HEAD
-=======
-// #include "ccu_res_batch_allocator.h"
->>>>>>> 3b77a235 (修改)
 
 #include "unified_platform/ccu/ccu_device/ccu_component/ccu_component.h"
 
@@ -134,4 +130,10 @@ TEST_F(CcuCompPubTest, Ut_CcuCleanDieCkesWhenUnderlyingFailsExpectFailure) {
     StubCleanDieCkes(HcclResult::HCCL_E_INTERNAL);
     auto ret = CcuCleanDieCkes(0, 1);
     EXPECT_EQ(ret, HcclResult::HCCL_E_INTERNAL);
+}
+
+TEST_F(CcuPfeCfgMgrSimpleTest, Ut_InvalidDieId) {
+ 	auto& mgr = CcuPfeCfgMgr::GetInstance(0);
+ 	     // 传入无效 dieId，验证返回空向量以覆盖 warning 分支
+ 	EXPECT_TRUE(mgr.GetPfeJettyCtxCfg(CCU_MAX_IODIE_NUM).empty());
 }
