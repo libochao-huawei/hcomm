@@ -394,6 +394,9 @@ public:
     uint32_t GetDpuStreamId() {
         return dpuStreamId;
     }
+     
+    HcclResult GetRankIpPortMap(RankIpPortMapPtr& rankIpPortMap);
+    HcclResult SetRankIpPortMap(const RankIpPortMapPtr& rankIpPortMap);
 
 private:
     std::string                                id;
@@ -607,6 +610,8 @@ private:
 
     // AICPU场景aclgraph专用
     HcclResult OffloadResourcePre(std::string &opTag, const CollOpParams &opParams);
+    
+    RankIpPortMapPtr rankIpPortMap_;
 };
 } // namespace Hccl
 
