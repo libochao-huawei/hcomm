@@ -33,8 +33,7 @@ HcclAlg::~HcclAlg()
 #endif
 }
 
-HcclResult HcclAlg::Init(const void* transportResourceInfoAddr, size_t transportResourceInfoSize,
-    std::unique_ptr<WorkspaceResource> &workSpaceRes,
+HcclResult HcclAlg::Init(std::unique_ptr<WorkspaceResource> &workSpaceRes,
     const std::unique_ptr<NotifyPool> &notifyPool, std::map<HcclIpAddress, HcclNetDevCtx> &netDevCtxMap,
     const std::unique_ptr<QueueNotifyManager> &queueNotifyManager,
     HcclAlgoAttr &algoAttr, HcclTopoAttr &topoAttr, bool isHeterogComm)
@@ -44,7 +43,7 @@ HcclResult HcclAlg::Init(const void* transportResourceInfoAddr, size_t transport
 #ifndef OPEN_HCCL_TEST
     // 老流程使用，新流程的LLT不编译相关的代码
     pimpl_.reset((new (std::nothrow) hcclImpl(dispatcher_, notifyPool, netDevCtxMap, queueNotifyManager,
-        workSpaceRes, cclBufferManager_, transportResourceInfoAddr, transportResourceInfoSize, algoAttr_, topoAttr_,
+        workSpaceRes, cclBufferManager_, algoAttr_, topoAttr_,
         algConfigurator_, topoInfoEx_)));
     CHK_SMART_PTR_NULL(pimpl_);
     CHK_RET(pimpl_->Init(isHeterogComm));

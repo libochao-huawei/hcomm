@@ -516,8 +516,6 @@ private:
     HcclResult InitStreamManager();
     HcclResult InitSocketManager();
     HcclResult InitTransportManager();
-    HcclResult InitMemoryManager();
-    HcclResult InitMemoryManagerSubGroup();
     HcclResult InitHcclAlg();
     HcclResult InitProfiling();
     HcclResult DeinitProfiling();
@@ -552,11 +550,7 @@ private:
     HcclResult RegisterToHeartBeat(u32 peerRankId, std::string &tag);
     void UnRegisterToHeartBeat();
     void UnRegisterToCommConfiger();
-    HcclResult MrManagerInit();
-    HcclResult MrManagerDeInit();
     HcclResult DeInitTransportMem();
-    HcclResult InitRecvMsgAndRequestBuffer();
-    HcclResult InitMemBlocksAndRecvWrMem();
     HcclResult PrintOpbaseKeyTraceInfo(void);
     HcclResult InitPara();
     HcclResult GetComm(const std::string &tag, CommBase **comm);
@@ -699,7 +693,6 @@ private:
     std::vector<u32> groupNicRanksPort_;
     std::vector<u32> vnicRanksPort_;
     std::vector<u32> groupVnicRanksPort_;
-    std::unique_ptr<MrManager> mrManager_;
     std::unordered_map<std::string, std::map<u32, HcclIpAddress>> rankDevicePhyIdNicInfoMap_;
     std::unordered_map<u32, HcclRtContext> rtCtxMap_; // {devPhyId, rtCtx}
     WorkMode commWorkMode_;
@@ -712,11 +705,6 @@ private:
     std::string identifier_;
     u32 ranktableCrc_;
     s32 devicePid_;
-    std::unique_ptr<LocklessRingMemoryAllocate<HcclMessageInfo>> pMsgInfosMem_;
-    std::unique_ptr<LocklessRingMemoryAllocate<HcclRequestInfo>> pReqInfosMem_;
-    std::unique_ptr<HeterogMemBlocksManager> memBlocksManager_;
-    std::unique_ptr<LocklessRingMemoryAllocate<RecvWrInfo>> pRecvWrInfosMem_;
-    TransportResInfo transportResInfo_;
     bool multiModuleDiffDeviceNumMode_;
     bool multiSuperPodDiffServerNumMode_;
     bool multiSuperPodDiffDeviceNumMode_;
@@ -934,7 +922,6 @@ private:
     bool profilingInitiated_;
     u64 callbackThreadId_;
     u32 role_;
-    bool mrManagerInit_;
     std::map<u64, std::vector<rtStream_t>> callbackStreamMap_;
     bool isHostUseDevNic_;
     std::mutex socketListenMutex_;

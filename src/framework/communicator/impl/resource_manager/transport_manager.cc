@@ -30,8 +30,6 @@ TransportManager::TransportManager(CCLBufferManager &cclBufferManager,
                                    s32 deviceLogicId,
                                    NICDeployment nicDeployment,
                                    bool isHaveCpuRank,
-                                   const void *transportResourceInfoAddr,
-                                   size_t transportResourceInfoSize,
                                    bool isUseRankPort,
                                    bool isUsedRdmaLevel0,
                                    const std::vector<u32> &nicRanksPort,
@@ -44,7 +42,6 @@ TransportManager::TransportManager(CCLBufferManager &cclBufferManager,
     : cclBufferManager_(cclBufferManager), socketManager_(socketManager), dispatcher_(dispatcher),
     notifyPool_(notifyPool), rankInfoList_(rankInfoList), userRank_(userRank), identifier_(identifier),
     deviceLogicId_(deviceLogicId), nicDeployment_(nicDeployment), isHaveCpuRank_(isHaveCpuRank),
-    transportResourceInfoAddr_(transportResourceInfoAddr), transportResourceInfoSize_(transportResourceInfoSize),
     isUseRankPort_(isUseRankPort), isUsedRdmaLevel0_(isUsedRdmaLevel0), nicRanksPort_(nicRanksPort),
     vnicRanksPort_(vnicRanksPort), useSuperPodMode_(useSuperPodMode), devIpAddr_(devIpAddr), hostIp_(hostIp),
     localVnicIp_(localVnicIp), netDevCtxMap_(netDevCtxMap), trafficClass_(HCCL_COMM_TRAFFIC_CLASS_CONFIG_NOT_SET),
@@ -1537,8 +1534,6 @@ void TransportManager::SetTransportParam(TransportPara &para, MachinePara &machi
     std::chrono::milliseconds kdefaultTimeout = std::chrono::seconds(
         GetExternalInputHcclLinkTimeOut());
     para.timeout = kdefaultTimeout;
-    para.transportResourceInfoAddr = transportResourceInfoAddr_;
-    para.transportResourceInfoSize = transportResourceInfoSize_;
     para.virtualFlag = false;
 }
 

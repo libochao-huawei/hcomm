@@ -25,7 +25,6 @@ public:
                                  const IntraExchanger &exchanger,
                                  const std::vector<RankInfo> paraVector,
                                  const DeviceMem& inputMem, const DeviceMem& outputMem, const bool isUsedRdmaLevel0,
-                                 const void* transportResourceInfoAddr, size_t transportResourceInfoSize,
                                  const std::string &tag = "",
                                  const NICDeployment nicDeployInner = NICDeployment::NIC_DEPLOYMENT_DEVICE,
                                  const u32 subUserRankRoot = INVALID_VALUE_RANKID,

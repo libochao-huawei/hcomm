@@ -48,7 +48,6 @@ public:
                       std::map<HcclIpAddress, HcclNetDevCtx> &netDevCtxMap,
                       const IntraExchanger &exchanger,
                       const DeviceMem &inputMem, const DeviceMem &outputMem, const bool isUsedRdmaLevel0,
-                      const void* transportResourceInfoAddr = nullptr, size_t transportResourceInfoSize = 0,
                       const std::string &tag = "",
                       const NICDeployment nicDeployInner = NICDeployment::NIC_DEPLOYMENT_DEVICE,
                       bool isAlltoAllCommMesh = false, const bool useOneDoorbell = false,
@@ -199,9 +198,6 @@ protected:
     const DeviceMem inputMem_;
     const DeviceMem outputMem_;
     const bool isUsedRdmaLevel0_;
-
-    const void* transportResourceInfoAddr_;
-    size_t transportResourceInfoSize_;
 
     // 当前rank作为client端，需要连接的节点间server端的集合:键为rank 号，value为 HcclRankLinkInfo
     // 当前rank作为client端, 需要连接的节点间server端的集合

@@ -25,7 +25,6 @@ CommFactory::CommFactory(const std::string &identifier, const u32 userRank, cons
     std::shared_ptr<TopoInfoExtractor> topoInfoEx,
     const bool isUsedRdmaLevel0, const TopoType topoFlag, const DevType deviceType,
     const std::vector<RankInfo> rankVector, const NICDeployment nicDeploymentInner, bool isHeterogComm,
-    const void *transportResourceInfoAddr, size_t transportResourceInfoSize,
     u32 meshAggregationRankSize, bool isHaveCpuRank, bool isUsedInterHccsMode, bool useSuperPodMode)
     : identifier_(identifier),
       userRank_(userRank),
@@ -40,8 +39,6 @@ CommFactory::CommFactory(const std::string &identifier, const u32 userRank, cons
       rankVector_(rankVector),
       nicDeployInner_(nicDeploymentInner),
       isHeterogComm_(isHeterogComm),
-      transportResourceInfoAddr_(transportResourceInfoAddr),
-      transportResourceInfoSize_(transportResourceInfoSize),
       isHaveCpuRank_(isHaveCpuRank),
       reusedSocketManager_(),
       deviceLogicId_(0),
@@ -298,7 +295,7 @@ HcclResult CommFactory::CreateCommRing(const std::string &tag, const DeviceMem &
         commVec[ringIndex].reset(new (std::nothrow) CommRing(identifier_, userRank_, userRankSize_,
             rank, commPlaneVec[ringIndex].size(), topoFlag_, dispatcher_, notifyPool_, netDevCtxMap_, exchangerNetwork,
             commPlaneVec[ringIndex], inputMem, outputMem, isUsedRdma,
-            transportResourceInfoAddr_, transportResourceInfoSize_, tag, nicDeployInner_,
+            tag, nicDeployInner_,
             false, false, isHaveCpuRank_, useSuperPodMode_));
 
         CHK_PRT_RET(!commVec[ringIndex], HCCL_ERROR("[Create][CommRing]comm array[%u] reset failed",
@@ -353,7 +350,6 @@ HcclResult CommFactory::CreateCommHD(const std::string &tag, const DeviceMem &in
         commVec[ringIndex].reset(new (std::nothrow) CommHalvingDoubling(identifier_, userRank_, userRankSize_,
             rank, commPlaneVec[ringIndex].size(), topoFlag_, dispatcher_, notifyPool_, netDevCtxMap_, exchangerNetwork,
             commPlaneVec[ringIndex], inputMem, outputMem, isUsedRdma,
-            transportResourceInfoAddr_, transportResourceInfoSize_,
             tag, nicDeployInner_, subUserRankRoot, HalvingDoublingType::RECURSIVE_HALVING_DOUBLING,
             isHaveCpuRank_, useSuperPodMode_));
 
@@ -392,8 +388,7 @@ HcclResult CommFactory::CreateCommStar(const std::string &tag, const DeviceMem &
 
         commVec[ringIndex].reset(new (std::nothrow) CommStar(identifier_, userRank_, userRankSize_, userRank_,
             commPlaneVec[ringIndex].size(), topoFlag_, dispatcher_, notifyPool_, netDevCtxMap_, exchangerNetwork,
-            commPlaneVec[ringIndex], inputMem, outputMem, isUsedRdma, transportResourceInfoAddr_,
-            transportResourceInfoSize_, tag, nicDeployInner_, commParaInfo.root, isHaveCpuRank_));
+            commPlaneVec[ringIndex], inputMem, outputMem, isUsedRdma, tag, nicDeployInner_, commParaInfo.root, isHaveCpuRank_));
 
         CHK_PRT_RET(!commVec[ringIndex], HCCL_ERROR("[create][CommStar]comm array[%u] reset failed",
             ringIndex), HCCL_E_PARA);
@@ -441,8 +436,7 @@ HcclResult CommFactory::CreateCommMesh(const std::string &tag, const DeviceMem &
 
         commVec[ringIndex].reset(new (std::nothrow) CommMesh(identifier_, userRank_, userRankSize_,
             rank, commPlaneVec[ringIndex].size(), topoFlag_, dispatcher_, notifyPool_, netDevCtxMap_, exchangerNetwork,
-            commPlaneVec[ringIndex], inputMem, outputMem, intraIsUseRdma, transportResourceInfoAddr_,
-            transportResourceInfoSize_, tag, isAlltoAllCommMesh, nicDeployInner_, false, commParaInfo.isAicpuModeEn,
+            commPlaneVec[ringIndex], inputMem, outputMem, intraIsUseRdma, tag, isAlltoAllCommMesh, nicDeployInner_, false, commParaInfo.isAicpuModeEn,
             isHaveCpuRank_, useSuperPodMode_, expMem));
 
         CHK_PRT_RET(!commVec[ringIndex], HCCL_ERROR("[Create][CommMesh]comm array[%u] reset failed",
@@ -495,8 +489,7 @@ HcclResult CommFactory::CreateCommP2P(const std::string &tag, const DeviceMem &i
 
         commVec[ringIndex].reset(new (std::nothrow) CommP2P(identifier_, userRank_, userRankSize_,
             rank, commPlaneVec[ringIndex].size(), topoFlag_, dispatcher_, notifyPool_, netDevCtxMap_, exchangerNetwork,
-            commPlaneVec[ringIndex], inputMem, outputMem, isUsedRdma, transportResourceInfoAddr_,
-            transportResourceInfoSize_, tag, commParaInfo.peerUserRank, nicDeployInner_,
+            commPlaneVec[ringIndex], inputMem, outputMem, isUsedRdma, tag, commParaInfo.peerUserRank, nicDeployInner_,
             isHaveCpuRank_, useSuperPodMode_));
 
         CHK_PRT_RET(!commVec[ringIndex], HCCL_ERROR("[Create][CommP2P]comm array[%u] reset failed",
@@ -564,7 +557,7 @@ std::vector<std::unique_ptr<CommBase> > CommFactory::CreateCommP2PAsync(const st
         commP2PArray[ringIndex].reset(new (std::nothrow) CommP2P(identifier_, userRank_, userRankSize_,
             rank, CommPlaneVector_[COMM_COMBINE][ringIndex].size(), TopoType::TOPO_TYPE_COMMON, dispatcher_,
             notifyPool_, netDevCtxMap_, exchangerNetwork, CommPlaneVector_[COMM_COMBINE][ringIndex], inputMem,
-            outputMem, isUsedRdmaLevel0_, transportResourceInfoAddr_, transportResourceInfoSize_, tag, dstUserRank,
+            outputMem, isUsedRdmaLevel0_, tag, dstUserRank,
             nicDeployInner_));
 
         CHK_PRT_RET(!commP2PArray[ringIndex], HCCL_ERROR("[Create][CommP2P]comm p2p array[%u] reset failed.",

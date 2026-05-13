@@ -26,7 +26,7 @@ CommBase::CommBase(const std::string &collectiveId, const u32 userRank, const u3
     const HcclDispatcher dispatcher, const std::unique_ptr<NotifyPool> &notifyPool,
     std::map<HcclIpAddress, HcclNetDevCtx> &netDevCtxMap,
     const IntraExchanger &exchanger, const DeviceMem &inputMem, const DeviceMem &outputMem,
-    const bool isUsedRdmaLevel0, const void* transportResourceInfoAddr, size_t transportResourceInfoSize,
+    const bool isUsedRdmaLevel0,
     const std::string &tag, const NICDeployment nicDeployInner,
     bool isAlltoAllCommMesh, const bool useOneDoorbell, const bool isAicpuModeEn, const u32 rankRoot,
     const bool isHaveCpuRank, const bool useSuperPodMode, DeviceMem expMem)
@@ -38,7 +38,6 @@ CommBase::CommBase(const std::string &collectiveId, const u32 userRank, const u3
       userRankMap_(rankSize, INVALID_VALUE_RANKID), dispatcher_(dispatcher), notifyPool_(notifyPool),
       netDevCtxMap_(netDevCtxMap), exchanger_(exchanger), inputMem_(inputMem), outputMem_(outputMem),
       isUsedRdmaLevel0_(isUsedRdmaLevel0),
-      transportResourceInfoAddr_(transportResourceInfoAddr), transportResourceInfoSize_(transportResourceInfoSize),
       dstInterServerMap_(), dstInterClientMap_(), dstIntraServerVec_(), dstIntraClientVec_(),
       linkThreads_(), threadsRapplyNum_(0),
       shmDev_(0), isAlltoAllCommMesh_(isAlltoAllCommMesh),
@@ -656,8 +655,6 @@ void CommBase::SetTransportParam(TransportPara &para, MachinePara &machinePara)
         GetExternalInputHcclLinkTimeOut());
     para.isRootRank = subUserRankRoot_ == rank_ ? true : false;
     para.timeout = kdefaultTimeout;
-    para.transportResourceInfoAddr = transportResourceInfoAddr_;
-    para.transportResourceInfoSize = transportResourceInfoSize_;
     para.virtualFlag = false;
 }
 
