@@ -151,7 +151,7 @@ public:
     HcclResult CompareCheckFrameV2(const CheckFrameV2 &local, const CheckFrameV2 &remote);
     u64 GetCheckFrameLengthV2();
 
-    void SetInconsistentCheckFirstDone(bool inconsistentCheckFirstDone)
+    void SetInconsistentCheckFirstDone(bool inconsistentCheckFirstDone);
     bool GetInconsistentCheckFirstDone();
 private:
     explicit RankConsistentcyChecker();
