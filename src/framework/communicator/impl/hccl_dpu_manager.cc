@@ -23,6 +23,7 @@ constexpr uint8_t DEVICE_SIGNAL_THIRD = 3;
 constexpr uint32_t TEMP_DEV_TYPE_DPU = 0; // 临时适配，后续rts接口上库之后使用rts的定义
 struct DpuKernelLaunchParam {             // 需要和RunDpuRpcSrvLaunch入参定义保持一致
     u64 memorySize;
+    bool supportDirectMemcpy;
     void *deviceMem;
     void *hostMem;
     int32_t deviceId;
@@ -113,6 +114,7 @@ HcclResult DpuManager::LaunchDpuKernel(aclrtFuncHandle &funcHandle)
     g_hostArgsTemp.commId = commId_;
     g_hostArgsTemp.memorySize = SHARE_HBM_MEMORY_SIZE;
     g_hostArgsTemp.hostMem = hostShareBuf_;
+    g_hostArgsTemp.supportDirectMemcpy = true;
     auto shMem = GetKFCWorkSpace(DPUTAG);
     g_hostArgsTemp.deviceMem = reinterpret_cast<void *>(shMem->GetAddr());
     g_hostArgsTemp.deviceId = devLogicId_;

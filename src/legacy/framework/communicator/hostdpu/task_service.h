@@ -14,6 +14,7 @@
 #include <functional>
 #include <unordered_map>
 #include <string>
+#include "acl/acl_rt.h"
 #include "hccl_types.h"
 #include "task_param.h"
 #include "profiling/dlprof_function.h"
@@ -40,15 +41,18 @@ using ProfCallbackTemplate = std::function<HcclResult(const TaskParam&, uint64_t
 class TaskService {
 public:
     TaskService() = default;
-    TaskService(void* deviceMem, int32_t deviceMemSize, void* hostMem, int32_t hostMemSize);
+    TaskService(void* deviceMem, int32_t deviceMemSize, void* hostMem, int32_t hostMemSize, bool supportDirectMemcpy);
     HcclResult TaskRun();
     HcclResult TaskRegister(std::string taskType, CallbackTemplate callback);
     HcclResult TaskUnRegister(std::string taskType);
     HcclResult TaskProfRegister(ProfCallbackTemplate profCallback);
 private:
+    HcclResult MemcpyDevice(void *dst, size_t dstSize, const void *src, size_t srcSize,
+                             aclrtMemcpyKind kind, const char *errorMsg) const;
     HcclResult WriteFlag(uint8_t *flagPtr, uint8_t newFlag) const;
     HcclResult ReadFlag(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t &flag) const;
     HcclResult ReadTaskType(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t *srcTaskTypePtr, std::string &taskTypeStr) const;
+    HcclResult CopyTaskDataToHost(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t *srcPtr, uint64_t dataLen);
     HcclResult ExecuteTask(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t *srcPtr, std::string taskTypeStr);
     HcclResult SynchronizeControlInfo(uint8_t *ctrlHdr, uint64_t hdrLen);
     HcclResult ProcessTaskOk(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t *srcFlagPtr, uint8_t *srcTaskTypePtr);
@@ -61,6 +65,7 @@ private:
     int32_t leftSize_{0}; // npu2dpuMem_中除去控制信息后剩余的可用空间大小
     void       *hostMem_{nullptr};
     int32_t hostMemSize_{0};
+    bool supportDirectMemcpy_{false};
 };
 } // namespace Hccl
 
