@@ -20,51 +20,32 @@
 
 namespace ccu {
 
-class Event;
 template <typename U> class Array;
 
-class EventMask {
-public:
-    explicit EventMask(CcuEventHandle* owner) : ownerHandle_(owner) {}
-    void operator=(uint32_t newMask) const {
-        auto ret = CcuSetMask(*ownerHandle_, newMask);
-        if (ret != CcuResult::CCU_SUCCESS) {
-            throw "CcuSetMask: failed";
-        }
-    }
-private:
-    CcuEventHandle* ownerHandle_;
-};
-
+// Event 退化为纯 handle 持有者：mask 已与 Event 解耦，
+// 由调用方在每个 EventRecord/Wait/LocalCopy/Read/Write/... API 上独立传入。
+// 旧的 EventMask 代理类、Event::mask 字段、Event::setMask 接口已废弃删除。
 class Event final {
 public:
-    Event() : mask(&handle) {
+    Event() {
         auto ret = CcuEventAlloc(&this->handle);
         if (ret != CcuResult::CCU_SUCCESS) {
             throw "CcuEventAlloc: failed";
         }
     }
 
-    Event(const Event& other) : handle(other.handle), mask(&handle) {}
+    Event(const Event& other) : handle(other.handle) {}
 
-    Event(Event&& other) noexcept : handle(other.handle), mask(&handle) {}
+    Event(Event&& other) noexcept : handle(other.handle) {}
 
     void operator=(Event&& other) {
         this->handle = other.handle;
     }
 
-    void setMask(uint32_t mask) const {
-        auto ret = CcuSetMask(this->handle, mask);
-        if (ret != CcuResult::CCU_SUCCESS) {
-            throw "CcuSetMask: failed";
-        }
-    }
-
     CcuEventHandle handle{0};
-    EventMask mask;
 
 private:
-    explicit Event(NoAllocTag) : mask(&handle) {}
+    explicit Event(NoAllocTag) {}
     template <typename U> friend class Array;
 };
 

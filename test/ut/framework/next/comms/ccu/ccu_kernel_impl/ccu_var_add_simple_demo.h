@@ -124,16 +124,14 @@ CcuResult CcuLoadStoreDemoKernel(CcuKernelArg arg)
 CcuResult CcuNotifyDemoKernel(CcuKernelArg arg)
 {
     auto *args = static_cast<CcuVarAddKernelArg *>(arg);
+    // mask 已与 Event 解耦，统一作为 API 参数显式传入。
     ccu::Array<ccu::Event> evt(3);
-    ccu::SetMask(evt[0], 0x12);
-    ccu::EventRecord(evt[0]);
-    ccu::EventWait(evt[0]);
-    evt[1].setMask(0x13);
-    ccu::EventRecord(evt[1]);
-    ccu::EventWait(evt[1]);
-    evt[2].mask = 0x14;
-    ccu::EventRecord(evt[2]);
-    ccu::EventWait(evt[2]);
+    ccu::EventRecord(evt[0], 0x12);
+    ccu::EventWait(evt[0], 0x12);
+    ccu::EventRecord(evt[1], 0x13);
+    ccu::EventWait(evt[1], 0x13);
+    ccu::EventRecord(evt[2], 0x14);
+    ccu::EventWait(evt[2], 0x14);
 
     ccu::NotifyRecord(args->channelHandle, 0, 0x12);
     ccu::NotifyWait(args->channelHandle, 0, 0x12);
@@ -141,6 +139,25 @@ CcuResult CcuNotifyDemoKernel(CcuKernelArg arg)
     varA = 1024;
     ccu::WriteVariableWithNotify(args->channelHandle, varA, 0, 0, 0x12);
     ccu::NotifyWait(args->channelHandle, 0, 0x12);
+    return CcuResult::CCU_SUCCESS;
+}
+// 演示同 device 内跨 core 通知同步：用字符串 notifyTag 作为生产者/消费者的配对标识，
+// 同一 tag 必须先 Record 后 Wait；mask 与 tag 一同决定语义，默认 mask=1。
+// 与 NotifyRecord/Wait（用 ChannelHandle 标识跨 rank 通道）形成层次对偶。
+CcuResult CcuLocalNotifyDemoKernel(CcuKernelArg arg)
+{
+    (void)arg;
+    // 1) 默认 mask = 1：C++ wrapper EventRecord/EventWait(const char*) 重载
+    ccu::EventRecord("local_notify_tag_default");
+    ccu::EventWait("local_notify_tag_default");
+
+    // 2) 显式 mask：演示同一 tag 上多组掩码的同步配对
+    ccu::EventRecord("local_notify_tag_a", 0x12);
+    ccu::EventWait("local_notify_tag_a", 0x12);
+
+    // 3) 直接调用 C API CcuLocalNotifyRecord/Wait（C 风格调用点）
+    CcuLocalNotifyRecord("local_notify_tag_b", 0x34);
+    CcuLocalNotifyWait("local_notify_tag_b", 0x34);
     return CcuResult::CCU_SUCCESS;
 }
 CcuResult CcuLocalCopyKernel(CcuKernelArg arg)
