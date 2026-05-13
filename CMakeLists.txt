@@ -93,18 +93,22 @@ if(ENABLE_TEST)
     add_subdirectory(test)
 
 elseif(BUILD_OPEN_PROJECT)
-    include(cmake/third_party/openssl.cmake)
-    include(cmake/third_party/ubengine.cmake)
-    include(cmake/third_party/rdma-core.cmake)
-    include(cmake/third_party/json.cmake)
-    include(cmake/hcomm_utils.cmake)
     include(cmake/config.cmake)
     include(cmake/package.cmake)
     include(cmake/func.cmake)
     include(version.cmake)
+    # 三方件
+    include(cmake/hcomm_utils.cmake)
+    include(cmake/third_party/openssl.cmake)
+    include(cmake/third_party/ubengine.cmake)
+    include(cmake/third_party/rdma-core.cmake)
+    include(cmake/third_party/json.cmake)
+    # 检查构建依赖
     check_pkg_build_deps("hcomm")
     add_version_info_targets()
+    # 配置打包
     pack_built_in()
+    # 添加子目录
     add_subdirectory(src)
     add_subdirectory(python)
 

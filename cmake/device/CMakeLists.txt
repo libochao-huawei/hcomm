@@ -66,7 +66,7 @@ sign_file(
     INPUT "cann-hccd-compat.tar.gz"
     CONFIG "${HCOMM_DIR}/scripts/sign/hcomm_check_cfg.xml"
     RESULT_VAR "cann_hccd_compat_signed_file"
-    DEPENDS pack_cann_hccd_compat
+    DEPENDS pack_cann_hccd_compat sign_cann_hcomm_compat
 )
 
 # 打包并签名：aicpu_hcomm.tar.gz
@@ -82,11 +82,11 @@ sign_file(
     INPUT "aicpu_hcomm.tar.gz"
     CONFIG "${HCOMM_DIR}/scripts/sign/hcomm_check_cfg.xml"
     RESULT_VAR "aicpu_hcomm_signed_file"
-    DEPENDS pack_aicpu_hcomm
+    DEPENDS pack_aicpu_hcomm sign_cann_hccd_compat
 )
 
 # 安装 cann-hcomm-compat.tar.gz
-install(FILES ${cann_hcomm_compat_sign_file}
+install(FILES ${cann_hcomm_compat_signed_file}
     DESTINATION ${INSTALL_DEVICE_TAR_DIR} ${INSTALL_OPTIONAL}
     COMPONENT hcomm
     PERMISSIONS OWNER_READ GROUP_READ
