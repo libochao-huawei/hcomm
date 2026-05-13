@@ -2127,7 +2127,7 @@ HcclResult HcclCommAicpu::CalSendRecvInfoFor910B(const std::string &algName, con
     std::unique_ptr<CollExecutorBase> &executor)
 {
     // A2 AICPU才有机会走入RunAlltoAllVStaged
-    if (algName == "RunAlltoAllVStaged") {
+    if (algName == "RunAlltoAllVStaged" || algName == "RunAlltoAllVFullMesh") {
         CHK_PRT_RET(executor.get() == nullptr,
             HCCL_ERROR("[HcclCommAicpu][%s]Fail to find executor for algName[%s]", __func__, algName.c_str()),
             HCCL_E_PARA);
@@ -2171,7 +2171,7 @@ HcclResult HcclCommAicpu::GetAlgResponseRes(const std::string &newTag, const std
             CHK_RET(CalcResRequest(algName, opParam, executor, resRequest));
             CHK_RET(IncreAllocTransportResource(newTag, opParam, commParam, resRequest, resMap_[newTag]));
         }
-    } else if (algName == "RunAlltoAllVStaged") {
+    } else if (algName == "RunAlltoAllVStaged" || algName == "RunAlltoAllVFullMesh") {
         AlgResourceRequest resRequest;
         CHK_RET(CalcResRequest(algName, opParam, executor, resRequest));
         HCCL_INFO("[%s] check if need refresh resource for alg[%s], tag[%s], old[%lu], new[%lu]",
