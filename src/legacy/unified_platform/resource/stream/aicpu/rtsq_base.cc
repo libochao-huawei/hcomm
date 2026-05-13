@@ -15,8 +15,6 @@
 #include "internal_exception.h"
 #include <unordered_map>
 namespace Hccl {
-constexpr u32 PER_GET_SQE_ID_NUM = 1024;
-
 RtsqBase::RtsqBase(u32 devPhyId, u32 streamId, u32 sqId) : devPhyId_(devPhyId), streamId_(streamId), sqId_(sqId)
 {
     auto ret = drvGetLocalDevIDByHostDevID(devPhyId_, &localDevId_);
@@ -138,21 +136,4 @@ void RtsqBase::ConfigDisableToEnable(u32 value)
     HCCL_INFO("RtsqBase::%s, value=%u", __func__, value);
     ConfigSqStatusByType(drvSqCqPropType_t::DRV_SQCQ_PROP_SQ_DISABLE_TO_ENABLE, value);
 }
-
-void RtsqBase::SetTaskIdBySqeId()
-{
-    if (UNLIKELY(aicpu::GetSqeId == nullptr)) {
-        HCCL_WARNING("[RtsqBase][SetTaskIdBySqeId] aicpu::GetSqeId is nullptr.");
-        taskId_++;
-        return;
-    }
-
-    if (taskId_ < taskIdEnd_) {
-        taskId_++;
-    } else {
-        aicpu::GetSqeId(PER_GET_SQE_ID_NUM, taskId_, taskIdEnd_); // aicpu框架保证 taskId_ < taskIdEnd_
-    }
-    return;
-}
-
 } // namespace Hccl

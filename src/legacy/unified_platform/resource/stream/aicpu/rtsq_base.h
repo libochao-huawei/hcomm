@@ -230,7 +230,22 @@ protected:
     void ConfigSqTail(u32 value);
     void ConfigDisableToEnable(u32 value);
 
-    void SetTaskIdBySqeId();
+    inline void RtsqBase::SetTaskIdBySqeId()
+    {
+        if (UNLIKELY(aicpu::GetSqeId == nullptr)) {
+            HCCL_WARNING("[RtsqBase][SetTaskIdBySqeId] aicpu::GetSqeId is nullptr.");
+            taskId_++;
+            return;
+        }
+
+        if (taskId_ < taskIdEnd_) {
+            taskId_++;
+        } else {
+            constexpr u32 PER_GET_SQE_ID_NUM = 1024; // 一次性申请sqeId数量
+            aicpu::GetSqeId(PER_GET_SQE_ID_NUM, taskId_, taskIdEnd_); // aicpu框架保证 taskId_ < taskIdEnd_
+        }
+        return;
+    }
 
 private:
     u64 QuerySqBaseAddr();
