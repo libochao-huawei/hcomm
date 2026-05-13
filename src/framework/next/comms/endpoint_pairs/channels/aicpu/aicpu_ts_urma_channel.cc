@@ -23,6 +23,7 @@
 #include "tp_manager.h"
 
 namespace hcomm {
+constexpr uint16_t DEFAULT_LISTENING_PORT = 60001;
 
 AicpuTsUrmaChannel::AicpuTsUrmaChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc):
     endpointHandle_(endpointHandle), channelDesc_(channelDesc) {}
@@ -204,25 +205,39 @@ HcclResult AicpuTsUrmaChannel::BuildSocket()
         return HCCL_SUCCESS;
     }
     HCCL_INFO("[AicpuTsUrmaChannel][%s] socket ptr is NULL, rebuildSocket", __func__);
-
     Hccl::IpAddress ipaddr{};
     CHK_RET(CommAddrToIpAddress(localEp_.commAddr, ipaddr));
     Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::UB);
     Hccl::PortData localPort = Hccl::PortData(static_cast<Hccl::RankId>(localEp_.loc.device.devPhyId), type, 0, ipaddr);
-    Hccl::SocketHandle socketHandle = Hccl::SocketHandleManager::GetInstance().Create(localEp_.loc.device.devPhyId, localPort);
-    EXECEPTION_CATCH(serverSocket_ = std::make_unique<Hccl::Socket>(socketHandle, ipaddr, 60001, 
-        ipaddr, "server", Hccl::SocketRole::SERVER, Hccl::NicType::DEVICE_NIC_TYPE), return HCCL_E_PARA);
-    HCCL_INFO("[AicpuTsUrmaChannel][%s] listen_socket_info[%s]", __func__, serverSocket_->Describe().c_str());
-    EXECEPTION_CATCH(serverSocket_->Listen(), return HCCL_E_INTERNAL);
-
-    Hccl::LinkData linkData = BuildDefaultLinkData();
-    CHK_RET(EndpointDescPairToLinkData(localEp_, remoteEp_, linkData));
-    HCCL_INFO("[AicpuTsUrmaChannel][%s] built linkData: %s", __func__, linkData.Describe().c_str());
-    std::string socketTag = "AUTOMATIC_SOCKET_TAG";
-    bool noRankId = true;
-    Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, socketTag, noRankId);
-    CHK_RET(SocketMgr::GetInstance(devicePhyId_).GetSocket(socketConfig, socket_));
-
+    if (channelDesc_.role == HCOMM_SOCKET_ROLE_RESERVED) {
+        Hccl::SocketHandle socketHandle
+            = Hccl::SocketHandleManager::GetInstance().Create(localEp_.loc.device.devPhyId, localPort);
+        EXECEPTION_CATCH(serverSocket_ = std::make_unique<Hccl::Socket>(socketHandle, ipaddr, 60001, ipaddr, "server",
+                             Hccl::SocketRole::SERVER, Hccl::NicType::DEVICE_NIC_TYPE),
+            return HCCL_E_PARA);
+        HCCL_INFO("[AicpuTsUrmaChannel][%s] listen_socket_info[%s]", __func__, serverSocket_->Describe().c_str());
+        EXECEPTION_CATCH(serverSocket_->Listen(), return HCCL_E_INTERNAL);
+        Hccl::LinkData linkData = BuildDefaultLinkData();
+        CHK_RET(EndpointDescPairToLinkData(localEp_, remoteEp_, linkData));
+        HCCL_INFO("[AicpuTsUrmaChannel][%s] built linkData: %s", __func__, linkData.Describe().c_str());
+        std::string socketTag = "AUTOMATIC_SOCKET_TAG";
+        bool noRankId = true;
+        Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, socketTag, noRankId);
+        CHK_RET(SocketMgr::GetInstance(devicePhyId_).GetSocket(socketConfig, socket_));
+    } else {
+        uint16_t port = channelDesc_.port;
+        if (port == 0) {
+            port = DEFAULT_LISTENING_PORT;
+            HCCL_INFO("[AicpuTsUrmaChannel::%s] channelDesc port is 0, use default port [%u]", __func__, port);
+        }
+        Hccl::LinkData linkData = BuildDefaultLinkData();
+        CHK_RET(EndpointDescPairToLinkData(localEp_, remoteEp_, linkData));
+        HCCL_INFO("[AicpuTsUrmaChannel][%s] built linkData: %s", __func__, linkData.Describe().c_str());
+        std::string socketTag = "AUTOMATIC_SOCKET_TAG";
+        bool isServer = (channelDesc_.role == HCOMM_SOCKET_ROLE_SERVER);
+        Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, port, socketTag, isServer);
+        CHK_RET(SocketMgr::GetInstance(devicePhyId_).GetSocket(socketConfig, socket_));
+    }
     return HCCL_SUCCESS;
 }
 
@@ -237,6 +252,7 @@ HcclResult AicpuTsUrmaChannel::Init()
     CHK_RET(ParseInputParam());
     CHK_RET(hrtGetDevice(&devLogicId));
     CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_));
+    CHK_RET(StartListen());
     CHK_RET(BuildSocket());
     CHK_RET(BuildAttr());
     CHK_RET(BuildConnection());
@@ -392,6 +408,23 @@ HcclResult AicpuTsUrmaChannel::ChannelFence()
 {
     HCCL_INFO("[AicpuTsUrmaChannel::%s] not supported yet.", __func__);
     return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult AicpuTsUrmaChannel::StartListen()
+{
+    if (channelDesc_.role != HCOMM_SOCKET_ROLE_SERVER) {  // true for HIXL, false for HCCL
+        return HCCL_SUCCESS;
+    }
+
+    uint16_t port = channelDesc_.port;
+    HCCL_INFO("[AicpuTsUrmaChannel::%s] Start. EndpointHandle[0x%llx], port[%u]", __func__, reinterpret_cast<uint64_t>(endpointHandle_), port);
+    if (port == 0) {
+        port = DEFAULT_LISTENING_PORT;
+        HCCL_INFO("[AicpuTsUrmaChannel::%s] channelDesc port is 0, use default port [%u]", __func__, port);
+    }
+    CHK_RET(static_cast<HcclResult>(HcommEndpointStartListen(endpointHandle_, port, nullptr)));
+    HCCL_INFO("[AicpuTsUrmaChannel::%s] SUCCESS. port[%u].", __func__, port);
+    return HCCL_SUCCESS;
 }
 
 } // namespace hcomm
