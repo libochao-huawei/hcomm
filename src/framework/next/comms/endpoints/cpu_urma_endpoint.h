@@ -13,6 +13,8 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <unordered_set>
+#include <mutex>
 #include "endpoint.h"
 #include "ccu_channel_ctx_pool.h"
 #include "socket/socket.h"
@@ -21,12 +23,13 @@ namespace hcomm {
 class CpuUrmaEndpoint : public Endpoint {
 public:
     explicit CpuUrmaEndpoint(const EndpointDesc &endpointDesc);
-    ~CpuUrmaEndpoint() = default;
+    ~CpuUrmaEndpoint();
 
     HcclResult Init() override;
 
     HcclResult ServerSocketListen(const uint32_t port) override;
     HcclResult ServerSocketStopListen(const uint32_t port) override;
+    HcclResult ServerSocketGetListenPort(uint32_t *port) override;
 
     static std::unordered_map<Hccl::PortData, std::unique_ptr<Hccl::Socket>> &GetServerSocketMap();
 
@@ -40,6 +43,10 @@ public:
     HcclResult MemoryImport(const void *memDesc, uint32_t descLen, HcommMem *outMem) override;
     HcclResult MemoryUnimport(const void *memDesc, uint32_t descLen) override;
     HcclResult GetAllMemHandles(void **memHandles, uint32_t *memHandleNum) override;
+
+private:
+    std::mutex listenedPortsMutex_;
+    std::unordered_set<uint32_t> listenedPorts_;
 };
 }
 
