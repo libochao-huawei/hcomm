@@ -148,15 +148,33 @@ static HcclResult CommitMappedSlToTpAttr(const uint32_t devPhyId, const IpAddres
     }
     const RdmaHandle ctxHandle = RdmaHandleManager::GetInstance().GetByIp(devPhyId, locAddr);
     if (!ctxHandle) {
-        HCCL_ERROR("[TpManager][CommitMappedSlToTpAttr] ctxHandle null");
+        HCCL_ERROR("[TpManager][CommitMappedSlToTpAttr] ctxHandle null devPhyId[%u] loc[%s]", devPhyId,
+            locAddr.Describe().c_str());
         return HcclResult::HCCL_E_INTERNAL;
     }
     struct TpAttr tpSlAttr {};
     tpSlAttr.sl = static_cast<uint8_t>(mappedSl & 0xFU);
     const s32 ret = RaCtxSetTpAttr(ctxHandle, tpHandle, kTpAttrBitmapSl, &tpSlAttr);
-    if (ret != 0) {
-        HCCL_ERROR("[TpManager][CommitMappedSlToTpAttr] RaCtxSetTpAttr failed ret[%d] tpHandle[%llu] sl[%u].", ret,
-            tpHandle, static_cast<unsigned>(mappedSl & 0xFU));
+    if (ret == 0) {
+        return HcclResult::HCCL_SUCCESS;
+    }
+    HCCL_WARNING(
+        "[TpManager][CommitMappedSlToTpAttr] RaCtxSetTpAttr failed ret[%d] (e.g. Rs path phyId invalid on HDC); "
+        "retry HrtRaSetTpAttrAsync tpHandle[%llu] sl[%u] devPhyId[%u].",
+        ret, tpHandle, static_cast<unsigned>(mappedSl & 0xFU), devPhyId);
+    RequestHandle reqHandle = 0;
+    try {
+        const HcclResult hret = HrtRaSetTpAttrAsync(ctxHandle, tpHandle, kTpAttrBitmapSl, tpSlAttr, reqHandle);
+        if (hret != HcclResult::HCCL_SUCCESS) {
+            HCCL_ERROR("[TpManager][CommitMappedSlToTpAttr] HrtRaSetTpAttrAsync failed hcclRet[%d] tpHandle[%llu] "
+                       "sl[%u] devPhyId[%u].",
+                static_cast<int>(hret), tpHandle, static_cast<unsigned>(mappedSl & 0xFU), devPhyId);
+            return hret;
+        }
+    } catch (const NetworkApiException &ex) {
+        HCCL_ERROR("[TpManager][CommitMappedSlToTpAttr] HrtRaSetTpAttrAsync exception: %s tpHandle[%llu] sl[%u] "
+                   "devPhyId[%u].",
+            ex.what(), tpHandle, static_cast<unsigned>(mappedSl & 0xFU), devPhyId);
         return HcclResult::HCCL_E_NETWORK;
     }
     return HcclResult::HCCL_SUCCESS;
@@ -234,7 +252,20 @@ static HcclResult CommitUboeDscpToTpAttr(const uint32_t devPhyId, const IpAddres
     struct TpAttr tpDscpAttr {};
     tpDscpAttr.dscp = static_cast<uint8_t>(dscp & 0x3FU);
     const s32 ret = RaCtxSetTpAttr(ctxHandle, tpHandle, kTpAttrBitmapDscp, &tpDscpAttr);
-    if (ret != 0) {
+    if (ret == 0) {
+        return HcclResult::HCCL_SUCCESS;
+    }
+    HCCL_WARNING(
+        "[TpManager][CommitUboeDscpToTpAttr] RaCtxSetTpAttr failed ret[%d]; retry HrtRaSetTpAttrAsync tpHandle[%llu] "
+        "dscp[%u] devPhyId[%u].",
+        ret, tpHandle, static_cast<unsigned>(tpDscpAttr.dscp), devPhyId);
+    RequestHandle reqHandle = 0;
+    try {
+        const HcclResult hret = HrtRaSetTpAttrAsync(ctxHandle, tpHandle, kTpAttrBitmapDscp, tpDscpAttr, reqHandle);
+        if (hret != HcclResult::HCCL_SUCCESS) {
+            return hret;
+        }
+    } catch (const NetworkApiException &) {
         return HcclResult::HCCL_E_NETWORK;
     }
     return HcclResult::HCCL_SUCCESS;
