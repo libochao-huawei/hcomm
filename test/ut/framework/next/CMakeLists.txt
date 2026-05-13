@@ -69,6 +69,7 @@ set(src_to_test_list
     coll_comms/communicator/ns_recovery/ut_hccl_task_abort_handler.cc
     coll_comms/communicator/aicpu/ut_coll_comm_aicpu.cc
     coll_comms/communicator/ns_recovery/ut_ns_recovery.cc
+    coll_comms/dfx/ut_ccuTaskexception_test.cc
     comms/adpt/ut_hcomm_adapter_hccp_test.cc
 )
 
