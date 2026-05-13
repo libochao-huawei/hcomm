@@ -40,7 +40,7 @@ using ProfCallbackTemplate = std::function<HcclResult(const TaskParam&, uint64_t
 class TaskService {
 public:
     TaskService() = default;
-    TaskService(void* deviceMem, int32_t deviceMemSize, void* hostMem, int32_t hostMemSize);
+    TaskService(void* deviceMem, int32_t deviceMemSize, void* hostMem, int32_t hostMemSize, bool isHBM);
     HcclResult TaskRun();
     HcclResult TaskRegister(std::string taskType, CallbackTemplate callback);
     HcclResult TaskUnRegister(std::string taskType);
@@ -61,6 +61,7 @@ private:
     int32_t leftSize_{0}; // npu2dpuMem_中除去控制信息后剩余的可用空间大小
     void       *hostMem_{nullptr};
     int32_t hostMemSize_{0};
+    bool isHBM_{false};
 };
 } // namespace Hccl
 

@@ -83,6 +83,7 @@ static std::atomic<u32> g_commNum(0);     // 一个进程内创建的通信域�
 
 struct DpuKernelLaunchParam {
     u64         memorySize;
+    bool        isHBM;
     void       *shareHBM;
     void       *hostMem;
     int32_t     deviceId;
@@ -3243,6 +3244,7 @@ HcclResult CommunicatorImpl::LaunchDpuKernel(aclrtFuncHandle &funcHandle)
     hostArgsTemp.hostMem    = hostShareBuf;
     hostArgsTemp.shareHBM = accessVA_;
     hostArgsTemp.deviceId = devLogicId;
+    hostArgsTemp.isHBM = false;
     HCCL_INFO("[CommunicatorImpl::%s] DpuKernelLaunchParam{commId:%s; memorySize:%u; shareHBM:%p; hostMem:%p}",
               __func__, hostArgsTemp.commId.c_str(), hostArgsTemp.memorySize, hostArgsTemp.shareHBM,
               hostArgsTemp.hostMem);
