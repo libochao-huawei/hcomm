@@ -86,8 +86,15 @@ namespace hccl {
 
 constexpr uint32_t UNREUSE_CHANNEL_IDX = 0xFFFFFFFF;
 
-MyRank::MyRank(aclrtBinHandle binHandle, uint32_t rankId, const CommConfig& config, const ManagerCallbacks& callbacks, RankGraph* rankGraph)
-    : binHandle_(binHandle), rankId_(rankId), config_(config), callbacks_(callbacks), rankGraph_(rankGraph)
+MyRank::MyRank(aclrtBinHandle binHandle, uint32_t rankId, const CommConfig &config, const ManagerCallbacks &callbacks,
+    RankGraph *rankGraph,
+    const Hccl::RankIpPortMapPtr& rankIpPortMap)
+    : binHandle_(binHandle),
+      rankId_(rankId),
+      config_(config),
+      callbacks_(callbacks),
+      rankGraph_(rankGraph),
+      rankIpPortMap_(rankIpPortMap)
 {
 }
 
@@ -252,7 +259,7 @@ HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint3
     EXECEPTION_CATCH(endpointMgr_ = std::make_unique<hcomm::EndpointMgr>(), return HCCL_E_PTR);
 
     // rankPairMgr_初始化
-    EXECEPTION_CATCH(rankPairMgr_ = std::make_unique<RankPairMgr>(), return HCCL_E_PTR);
+    EXECEPTION_CATCH(rankPairMgr_ = std::make_unique<RankPairMgr>(rankIpPortMap_), return HCCL_E_PTR);
 
     DlProfFunction::GetInstance().DlProfFunctionInit();
     // EXCEPTION_HANDLE_END
@@ -573,6 +580,8 @@ HcclResult MyRank::BatchConnectChannels(const HcclChannelDesc* channelDescs, Cha
                 std::chrono::steady_clock::now() - startTime).count();
             HCCL_ERROR("[%s] channel connect timeout after %lld sec, channelNum[%u], elapsed[%lld]ms, retryCount[%u]",
                 __func__, timeout, channelNum, elapsed, retryCount);
+            RPT_INPUT_ERR(true, "EI0006", std::vector<std::string>({"reason"}), \
+                std::vector<std::string>({GET_SOCKET_TIMEOUT_REASON_CLOSE_DETECT}));
             Hccl::TlsStatus tlsStatus = Hccl::TlsStatus::UNKNOWN;
             CHK_PRT_CONT(GetLocalTlsStatus(tlsStatus),
                 HCCL_WARNING("[GetLocalTlsStatus] Can not get TlsStatus"));
