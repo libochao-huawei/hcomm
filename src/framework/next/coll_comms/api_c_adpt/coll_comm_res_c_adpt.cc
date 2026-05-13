@@ -253,6 +253,12 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
             HCCL_ERROR("[%s] failed, coll comm[%p] group[%s] opExpansionMode[%d] is not supported by CCU engine[%d].", __func__, hcclComm, hcclComm->GetIdentifier().c_str(), opExpansionMode, engine);
             return HcclResult::HCCL_E_PARA;
         }
+
+        if (engine != CommEngine::COMM_ENGINE_CPU) { // host dpu场景暂不支持cluster monitor
+            ret = RegisterToClusterMonitor(comm);
+            CHK_PRT_RET(ret != HCCL_SUCCESS,
+                HCCL_ERROR("RegisterToClusterMonitor failed. group[%s], engine[%d], ret[%d]", commTag.c_str(), engine, ret), ret);
+        }    
         
         ret = myRank->CreateChannels(engine, commTag, channelDescFinals.data(), channelNum, channels);
         CHK_PRT_RET((ret == HCCL_E_AGAIN || ret == HCCL_E_UNAVAIL),
