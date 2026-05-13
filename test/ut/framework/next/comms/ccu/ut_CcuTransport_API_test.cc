@@ -52,6 +52,27 @@ protected:
         return hcomm::CcuCreateTransport(fakeSocket_, connInfo, bufferInfos, ccuTransport);
     }
 
+    std::unique_ptr<hcomm::CcuTransport> CreateCcuTransportWithEmptyBuffer()
+    {
+        std::unique_ptr<hcomm::CcuConnection> ccuConnection{nullptr};
+        std::vector<hcomm::CcuTransport::CclBufferInfo> bufferInfos{hcomm::CcuTransport::CclBufferInfo{}};
+        return std::make_unique<hcomm::CcuTransport>(fakeSocket_, std::move(ccuConnection), bufferInfos);
+    }
+
+    void PrepareBinaryStreamWithBufferInfos(Hccl::BinaryStream &binaryStream, u32 bufferNum)
+    {
+        binaryStream << bufferNum;
+        for (u32 i = 0; i < bufferNum; ++i) {
+            hcomm::CcuTransport::CclBufferInfo bufferInfo;
+            bufferInfo.addr = 0x10000000 + i;
+            bufferInfo.size = 4096 + i;
+            bufferInfo.tokenId = i;
+            bufferInfo.tokenValue = i + 1;
+            bufferInfo.type = CommMemType::COMM_MEM_TYPE_DEVICE;
+            bufferInfo.Pack(binaryStream);
+        }
+    }
+
     CommMemInfo BuildMemInfo(u64 addr, u64 size, const std::string &tag = "",
         CommMemType type = CommMemType{})
     {
@@ -137,6 +158,7 @@ TEST_F(CcuTransportTest, ut_CcuTransport_UpdateMemInfo_When_Normal_Expect_Return
     ret = ccuTransport->BufferInfoPack(binaryStream, bufferVecTemp);
     binaryStream.Dump(ccuTransport->sendData_);
     ccuTransport->recvData_ = ccuTransport->sendData_;
+    ccuTransport->exchangeDataSize_ = ccuTransport->recvData_.size();
 
     ret = ccuTransport->UpdateMemInfo(bufferVecTemp);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -169,4 +191,39 @@ TEST_F(CcuTransportTest, ut_CcuTransport_UpdateMemInfo_When_bufferNumIs0_Expect_
     std::vector<hcomm::CcuTransport::CclBufferInfo> bufferVecTemp{};
     HcclResult ret = ccuTransport.UpdateMemInfo(bufferVecTemp);
     EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(CcuTransportTest, ut_CcuTransport_BufferInfoUnpack_When_rmtBufferNumIsZero_Expect_ReturnHCCL_E_PARA)
+{
+    auto ccuTransport = CreateCcuTransportWithEmptyBuffer();
+    Hccl::BinaryStream binaryStream;
+    u32 rmtBufferNumZero = 0;
+    binaryStream << rmtBufferNumZero;
+
+    HcclResult ret = ccuTransport->BufferInfoUnpack(binaryStream);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(CcuTransportTest, ut_CcuTransport_BufferInfoUnpack_When_rmtBufferNumExceedsLimit_Expect_ReturnHCCL_E_PARA)
+{
+    auto ccuTransport = CreateCcuTransportWithEmptyBuffer();
+    Hccl::BinaryStream binaryStream;
+    u32 rmtBufferNumExceeds = 30001;
+    binaryStream << rmtBufferNumExceeds;
+
+    HcclResult ret = ccuTransport->BufferInfoUnpack(binaryStream);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(CcuTransportTest, ut_CcuTransport_BufferInfoUnpack_When_Normal_Expect_ReturnHCCL_SUCCESS)
+{
+    auto ccuTransport = CreateCcuTransportWithEmptyBuffer();
+    Hccl::BinaryStream binaryStream;
+    u32 rmtBufferNum = 2;
+    PrepareBinaryStreamWithBufferInfos(binaryStream, rmtBufferNum);
+
+    HcclResult ret = ccuTransport->BufferInfoUnpack(binaryStream);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(ccuTransport->rmtBufferInfos_.size(), rmtBufferNum);
+    EXPECT_EQ(ccuTransport->remoteUserMemTag_.size(), rmtBufferNum);
 }
