@@ -71,8 +71,11 @@ static uint16_t ReadSlAvailableMask16(const struct TpAttr &attr)
 static bool ApplyUbcQosTpSlPolicy(const RaUbGetTpInfoParam &param, uint32_t nTp, uint16_t slMask,
     uint32_t &tpListIndexOut, uint32_t &mappedSlOut)
 {
-    uint32_t slAvailableCnt = CalSlAvailableCnt(slMask);
+    const uint32_t slRawCnt = CalSlAvailableCnt(slMask);
+    uint32_t slAvailableCnt = slRawCnt;
     if (slAvailableCnt == 0U) {
+        HCCL_WARNING("[TpManager][ApplyUbcQosTpSlPolicy] slMask empty: nTp[%u] slMask[0x%x] param[%s].", nTp,
+            static_cast<unsigned>(slMask), param.Describe().c_str());
         return false;
     }
     if (param.slLevelCount != 0U) {
@@ -81,9 +84,17 @@ static bool ApplyUbcQosTpSlPolicy(const RaUbGetTpInfoParam &param, uint32_t nTp,
     if (param.loopFirstTpLowestSl) {
         tpListIndexOut = 0;
         mappedSlOut = SlValueAtRankInMask16(slMask, 0);
+        HCCL_INFO(
+            "[TpManager][ApplyUbcQosTpSlPolicy] loopFirstTpLowestSl: nTp[%u] slRawCnt[%u] slAvailableCnt[%u(after cap)] "
+            "slMask[0x%x] tpListIdx[0] mappedSl[%u] param[%s].",
+            nTp, slRawCnt, slAvailableCnt, static_cast<unsigned>(slMask),
+            static_cast<unsigned>(mappedSlOut & 0xFU), param.Describe().c_str());
         return true;
     }
     if (nTp == 0U || slAvailableCnt == 0U) {
+        HCCL_WARNING("[TpManager][ApplyUbcQosTpSlPolicy] nTp or slAvailableCnt zero: nTp[%u] slAvailableCnt[%u] "
+                     "slMask[0x%x] param[%s].",
+            nTp, slAvailableCnt, static_cast<unsigned>(slMask), param.Describe().c_str());
         return false;
     }
     const uint32_t k = std::min(nTp, slAvailableCnt);
@@ -96,14 +107,28 @@ static bool ApplyUbcQosTpSlPolicy(const RaUbGetTpInfoParam &param, uint32_t nTp,
         (k == 3U) ? (qos < 3U ? 0U : (qos < 5U ? 1U : 2U)) : ((qos * numGroups) / 8U);
     const uint32_t slotIdx = (groupIdx * k) / numGroups;
     if (slotIdx >= k || slotIdx >= nTp) {
+        HCCL_WARNING(
+            "[TpManager][ApplyUbcQosTpSlPolicy] slotIdx out of range: nTp[%u] slRawCnt[%u] slAvailableCnt[%u] k[%u] "
+            "numGroups[%u] qos[%u] groupIdx[%u] slotIdx[%u] slMask[0x%x] param[%s].",
+            nTp, slRawCnt, slAvailableCnt, k, numGroups, qos, groupIdx, slotIdx, static_cast<unsigned>(slMask),
+            param.Describe().c_str());
         return false;
     }
     const uint32_t slRank = slotIdx;
     if (slRank >= slAvailableCnt) {
+        HCCL_WARNING(
+            "[TpManager][ApplyUbcQosTpSlPolicy] slRank out of range: nTp[%u] slAvailableCnt[%u] k[%u] slRank[%u] "
+            "slMask[0x%x] param[%s].",
+            nTp, slAvailableCnt, k, slRank, static_cast<unsigned>(slMask), param.Describe().c_str());
         return false;
     }
     tpListIndexOut = slotIdx;
     mappedSlOut = SlValueAtRankInMask16(slMask, slRank);
+    HCCL_INFO(
+        "[TpManager][ApplyUbcQosTpSlPolicy] nTp[%u] slRawCnt[%u] slAvailableCnt[%u] k[%u] numGroups[%u] qos[%u] "
+        "groupIdx[%u] slotIdx[%u] slMask[0x%x] tpListIdx[%u] mappedSl[%u] slLevelCount[%u] param[%s].",
+        nTp, slRawCnt, slAvailableCnt, k, numGroups, qos, groupIdx, slotIdx, static_cast<unsigned>(slMask),
+        tpListIndexOut, static_cast<unsigned>(mappedSlOut & 0xFU), param.slLevelCount, param.Describe().c_str());
     return true;
 }
 
@@ -459,6 +484,9 @@ HcclResult TpManager::HandleCompletedRequest(const TpManager::RequestCtx reqCtx,
             "param[%s].", __func__, param.Describe().c_str());
         return HcclResult::HCCL_E_NOT_FOUND;
     }
+
+    HCCL_INFO("[TpManager][%s] RaGetTpInfoList completed: tpInfoNum[%u] withSlPolicy[%d] devPhyId[%u] param[%s].",
+        __func__, tpInfoNum, static_cast<int>(withSlPolicy), devPhyId, param.Describe().c_str());
 
     const struct HccpTpInfo *baseInfoPtr =
         reinterpret_cast<const struct HccpTpInfo *>(reqCtx.dataBuffer.data());
