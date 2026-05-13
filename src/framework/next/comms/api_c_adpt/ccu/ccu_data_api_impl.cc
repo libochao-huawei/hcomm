@@ -283,6 +283,22 @@ CcuResult CcuWriteVariableWithNotify(ChannelHandle channel, CcuVariableHandle va
     CCU_CHK_RET(kernel->WriteVariableWithNotify(channel, varHandle, remoteVarIdx, remoteNotifyIdx, mask));
     return CcuResult::CCU_SUCCESS;
 }
+CcuResult CcuLocalNotifyRecord(uint32_t coreId, uint32_t dstNotifyIdx, uint32_t mask)
+{
+    const uint32_t devLogicId = HcclGetThreadDeviceId();
+    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
+    CCU_CHK_PTR_NULL(kernel);
+    CCU_CHK_RET(kernel->LocalNotifyRecord(coreId, dstNotifyIdx, mask));
+    return CcuResult::CCU_SUCCESS;
+}
+CcuResult CcuLocalNotifyWait(uint32_t coreId, uint32_t notifyIdx, uint32_t mask)
+{
+    const uint32_t devLogicId = HcclGetThreadDeviceId();
+    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
+    CCU_CHK_PTR_NULL(kernel);
+    CCU_CHK_RET(kernel->LocalNotifyWait(coreId, notifyIdx, mask));
+    return CcuResult::CCU_SUCCESS;
+}
 
 //本地数据拷贝 相关接口
 CcuResult CcuLocalCopyMemToMem(
