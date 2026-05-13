@@ -28,6 +28,17 @@ CpuRoceEndpoint::CpuRoceEndpoint(const EndpointDesc &endpointDesc)
 {
 }
 
+CpuRoceEndpoint::~CpuRoceEndpoint()
+{
+    try {
+        auto ports = listenedPorts_;
+        for (auto port : ports) {
+            (void)ServerSocketStopListen(port);
+        }
+        listenedPorts_.clear();
+    } catch (...) { }
+}
+
 HcclResult CpuRoceEndpoint::Init()
 {
     HCCL_INFO("[%s] localEndpoint protocol[%d]", __func__, endpointDesc_.protocol);
@@ -75,6 +86,7 @@ HcclResult CpuRoceEndpoint::ServerSocketListen(const uint32_t port)
         __func__, devPhyId, ipAddr.Describe().c_str());
 
     CHK_RET(ServerSocketManager::GetInstance().ServerSocketStartListen(localPort, Hccl::NicType::HOST_NIC_TYPE, devPhyId, port));
+    listenedPorts_.insert(port);
 
     return HCCL_SUCCESS;
 }
@@ -92,6 +104,29 @@ HcclResult CpuRoceEndpoint::ServerSocketStopListen(const uint32_t port)
     Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::RDMA);
     Hccl::PortData localPort = Hccl::PortData(devPhyId, type, 0, ipAddr);
     CHK_RET(ServerSocketManager::GetInstance().ServerSocketStopListen(localPort, Hccl::NicType::HOST_NIC_TYPE, port));
+    listenedPorts_.erase(port);
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult CpuRoceEndpoint::ServerSocketGetListenPort(uint32_t *port)
+{
+    s32 devId = 0;
+    CHK_RET(hrtGetDevice(&devId));
+    u32 devPhyId = 0;
+    CHK_RET(hrtGetDevicePhyIdByIndex(devId, devPhyId));
+
+    Hccl::IpAddress ipAddr{};
+    CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
+
+    Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::RDMA);
+    Hccl::PortData localPort = Hccl::PortData(devPhyId, type, 0, ipAddr);
+
+    HCCL_INFO("[CpuRoceEndpoint::%s] devicePhyId[%u] ipAddress[%s]",
+        __func__, devPhyId, ipAddr.Describe().c_str());
+
+    CHK_RET(ServerSocketManager::GetInstance().ServerSocketGetListenPort(localPort, Hccl::NicType::HOST_NIC_TYPE, devPhyId, port));
+    listenedPorts_.insert(*port);
 
     return HCCL_SUCCESS;
 }
