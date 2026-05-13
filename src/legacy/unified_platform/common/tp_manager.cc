@@ -28,10 +28,10 @@
 namespace Hccl {
 
 // RaGetTpAttrAsync 属性位图常量；匿名命名空间内工具与 TpManager 成员函数共用
-constexpr uint32_t kTpAttrSlAvailableBit = 18U;
+constexpr uint32_t kTpAttrSlAvailableBit = 17U;
 constexpr uint32_t kTpAttrBitmapSl = (1U << 10U);
 constexpr uint32_t kTpAttrBitmapDscp = (1U << 8U);
-constexpr uint32_t kTpAttrDscpConfigModeBit = 19U;
+constexpr uint32_t kTpAttrDscpConfigModeBit = 18U;
 
 namespace {
 

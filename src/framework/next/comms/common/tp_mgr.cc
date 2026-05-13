@@ -27,10 +27,10 @@
 namespace hcomm {
 
 namespace {
-constexpr uint32_t kTpAttrSlAvailableBit = 18U;
+constexpr uint32_t kTpAttrSlAvailableBit = 17U;
 static constexpr uint32_t kTpAttrBitmapSl = (1U << 10U);
 static constexpr uint32_t kTpAttrBitmapDscp = (1U << 8U);
-static constexpr uint32_t kTpAttrDscpConfigModeBit = 19U;
+static constexpr uint32_t kTpAttrDscpConfigModeBit = 18U;
 
 constexpr uint32_t TpCacheQosKey(uint32_t qos) noexcept
 {
