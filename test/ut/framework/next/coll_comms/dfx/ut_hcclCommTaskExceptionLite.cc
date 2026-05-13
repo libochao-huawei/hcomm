@@ -25,7 +25,6 @@ using namespace hccl;
 using namespace hcomm;
 
 constexpr u32 MAX_MODULE_DEVICE_NUM_V2 = 65;
-using GetAicpuTaskExceptionCallBackHcomm = std::function<Hccl::ErrorMessageReport()>;
 extern std::array<std::map<s32, GetAicpuTaskExceptionCallBackHcomm>, MAX_MODULE_DEVICE_NUM_V2> g_communicatorCallbackMapV2;
 
 constexpr u32 RT_UB_LOCAL_OPERATIOINERR = 0x2;
@@ -37,7 +36,7 @@ class hcclCommTaskExceptionLiteTest : public testing::Test
 protected:
     virtual void SetUp() override
     {
-        hcomm::g_communicatorCallbackMapV2.fill({});
+        g_communicatorCallbackMapV2.fill({});
         MOCKER(::getpid)
             .stubs()
             .will(returnValue(12345));
@@ -52,7 +51,7 @@ protected:
 
     virtual void TearDown() override
     {
-        hcomm::g_communicatorCallbackMapV2.fill({});
+        g_communicatorCallbackMapV2.fill({});
         GlobalMockObject::verify();
     }
 private:
@@ -138,9 +137,9 @@ TEST_F(hcclCommTaskExceptionLiteTest, Ut_RegisterGetAicpuTaskExceptionCallBack_W
         return report;
     };
 
-    hcomm::TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId, callback);
-    EXPECT_TRUE(hcomm::g_communicatorCallbackMapV2[deviceLogicId].find(streamId) !=
-                hcomm::g_communicatorCallbackMapV2[deviceLogicId].end());
+    TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId, callback);
+    EXPECT_TRUE(g_communicatorCallbackMapV2[deviceLogicId].find(streamId) !=
+                g_communicatorCallbackMapV2[deviceLogicId].end());
 }
 
 TEST_F(hcclCommTaskExceptionLiteTest, Ut_UnregisterGetAicpuTaskExceptionCallBack_When_Registered_Expect_Removed)
@@ -152,12 +151,12 @@ TEST_F(hcclCommTaskExceptionLiteTest, Ut_UnregisterGetAicpuTaskExceptionCallBack
         return report;
     };
 
-    hcomm::TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId, callback);
-    EXPECT_TRUE(hcomm::g_communicatorCallbackMapV2[deviceLogicId].find(streamId) !=
-                hcomm::g_communicatorCallbackMapV2[deviceLogicId].end());
-    hcomm::TaskExceptionHostManager::UnregisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId);
-    EXPECT_FALSE(hcomm::g_communicatorCallbackMapV2[deviceLogicId].find(streamId) !=
-                 hcomm::g_communicatorCallbackMapV2[deviceLogicId].end());
+    TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId, callback);
+    EXPECT_TRUE(g_communicatorCallbackMapV2[deviceLogicId].find(streamId) !=
+                g_communicatorCallbackMapV2[deviceLogicId].end());
+    TaskExceptionHostManager::UnregisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId);
+    EXPECT_FALSE(g_communicatorCallbackMapV2[deviceLogicId].find(streamId) !=
+                 g_communicatorCallbackMapV2[deviceLogicId].end());
 }
 
 TEST_F(hcclCommTaskExceptionLiteTest, Ut_UnregisterGetAicpuTaskExceptionCallBack_When_NoRegistered_Expect_NoCrash)
@@ -165,7 +164,7 @@ TEST_F(hcclCommTaskExceptionLiteTest, Ut_UnregisterGetAicpuTaskExceptionCallBack
     s32 streamId = 999;
     u32 deviceLogicId = 0;
 
-    hcomm::TaskExceptionHostManager::UnregisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId);
+    TaskExceptionHostManager::UnregisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId);
     EXPECT_TRUE(true);
 }
 
@@ -188,17 +187,17 @@ TEST_F(hcclCommTaskExceptionLiteTest, Ut_RegisterMultipleCallBacks_SameDevice_Di
         return report;
     };
 
-    hcomm::TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(streamId1, deviceLogicId, callback1);
-    hcomm::TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(streamId2, deviceLogicId, callback2);
-    hcomm::TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(streamId3, deviceLogicId, callback3);
+    TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(streamId1, deviceLogicId, callback1);
+    TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(streamId2, deviceLogicId, callback2);
+    TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(streamId3, deviceLogicId, callback3);
 
-    EXPECT_EQ(hcomm::g_communicatorCallbackMapV2[deviceLogicId].size(), 3u);
-    EXPECT_TRUE(hcomm::g_communicatorCallbackMapV2[deviceLogicId].find(streamId1) !=
-                hcomm::g_communicatorCallbackMapV2[deviceLogicId].end());
-    EXPECT_TRUE(hcomm::g_communicatorCallbackMapV2[deviceLogicId].find(streamId2) !=
-                hcomm::g_communicatorCallbackMapV2[deviceLogicId].end());
-    EXPECT_TRUE(hcomm::g_communicatorCallbackMapV2[deviceLogicId].find(streamId3) !=
-                hcomm::g_communicatorCallbackMapV2[deviceLogicId].end());
+    EXPECT_EQ(g_communicatorCallbackMapV2[deviceLogicId].size(), 3u);
+    EXPECT_TRUE(g_communicatorCallbackMapV2[deviceLogicId].find(streamId1) !=
+                g_communicatorCallbackMapV2[deviceLogicId].end());
+    EXPECT_TRUE(g_communicatorCallbackMapV2[deviceLogicId].find(streamId2) !=
+                g_communicatorCallbackMapV2[deviceLogicId].end());
+    EXPECT_TRUE(g_communicatorCallbackMapV2[deviceLogicId].find(streamId3) !=
+                g_communicatorCallbackMapV2[deviceLogicId].end());
 }
 
 TEST_F(hcclCommTaskExceptionLiteTest, Ut_UnregisterOneCallBack_OtherCallbacksPreserved_Expect_Correct)
@@ -215,15 +214,15 @@ TEST_F(hcclCommTaskExceptionLiteTest, Ut_UnregisterOneCallBack_OtherCallbacksPre
         return report;
     };
 
-    hcomm::TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(streamId1, deviceLogicId, callback1);
-    hcomm::TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(streamId2, deviceLogicId, callback2);
-    EXPECT_EQ(hcomm::g_communicatorCallbackMapV2[deviceLogicId].size(), 2u);
-    hcomm::TaskExceptionHostManager::UnregisterGetAicpuTaskExceptionCallBack(streamId1, deviceLogicId);
-    EXPECT_EQ(hcomm::g_communicatorCallbackMapV2[deviceLogicId].size(), 1u);
-    EXPECT_TRUE(hcomm::g_communicatorCallbackMapV2[deviceLogicId].find(streamId2) !=
-                hcomm::g_communicatorCallbackMapV2[deviceLogicId].end());
-    EXPECT_FALSE(hcomm::g_communicatorCallbackMapV2[deviceLogicId].find(streamId1) !=
-                 hcomm::g_communicatorCallbackMapV2[deviceLogicId].end());
+    TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(streamId1, deviceLogicId, callback1);
+    TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(streamId2, deviceLogicId, callback2);
+    EXPECT_EQ(g_communicatorCallbackMapV2[deviceLogicId].size(), 2u);
+    TaskExceptionHostManager::UnregisterGetAicpuTaskExceptionCallBack(streamId1, deviceLogicId);
+    EXPECT_EQ(g_communicatorCallbackMapV2[deviceLogicId].size(), 1u);
+    EXPECT_TRUE(g_communicatorCallbackMapV2[deviceLogicId].find(streamId2) !=
+                g_communicatorCallbackMapV2[deviceLogicId].end());
+    EXPECT_FALSE(g_communicatorCallbackMapV2[deviceLogicId].find(streamId1) !=
+                 g_communicatorCallbackMapV2[deviceLogicId].end());
 }
 
 TEST_F(hcclCommTaskExceptionLiteTest, Ut_CallbackOverwrite_SameStreamId_Expect_Updated)
@@ -244,11 +243,11 @@ TEST_F(hcclCommTaskExceptionLiteTest, Ut_CallbackOverwrite_SameStreamId_Expect_U
         return report;
     };
 
-    hcomm::TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId, callback1);
-    hcomm::TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId, callback2);
-    EXPECT_EQ(hcomm::g_communicatorCallbackMapV2[deviceLogicId].size(), 1u);
-    auto it = hcomm::g_communicatorCallbackMapV2[deviceLogicId].find(streamId);
-    ASSERT_TRUE(it != hcomm::g_communicatorCallbackMapV2[deviceLogicId].end());
+    TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId, callback1);
+    TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId, callback2);
+    EXPECT_EQ(g_communicatorCallbackMapV2[deviceLogicId].size(), 1u);
+    auto it = g_communicatorCallbackMapV2[deviceLogicId].find(streamId);
+    ASSERT_TRUE(it != g_communicatorCallbackMapV2[deviceLogicId].end());
     it->second();
     EXPECT_TRUE(callback2Called);
     EXPECT_FALSE(callback1Called);
