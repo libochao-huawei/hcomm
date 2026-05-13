@@ -267,10 +267,8 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
         hccl::MyRank* myRank = collComm->GetMyRank();
         CHK_PTR_NULL(myRank);
 
-        s32 deviceLogicId = 0;
-        (void)hrtGetDeviceRefresh(&deviceLogicId);
-        auto &checker = RankConsistentcyChecker::GetInstance(deviceLogicId);
-        checker.RecordEnvVarCrcV2();
+        myRank->RecordEnvVarCrcV2();
+        auto &checker = RankConsistentcyChecker::GetInstance();
         std::string curVersion = GetExternalInputCannVersion();
         checker.RecordVerInfo(curVersion);
  

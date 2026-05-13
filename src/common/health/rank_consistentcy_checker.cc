@@ -11,6 +11,7 @@
 #include "adapter_pub.h"
 #include "calc_crc.h"
 #include "rank_consistentcy_checker.h"
+#include "env_config.h"
 
 namespace hccl {
 
@@ -251,12 +252,10 @@ void RankConsistentcyChecker::SetCheckCannVersionSwitch(const bool cannVerCheckS
     return;
 }
 
-HcclResult RankConsistentcyChecker::RecordEnvVarCrcV2()
+HcclResult RankConsistentcyChecker::RecordEnvVarCrcV2(u64 buffSize)
 {
     std::lock_guard<std::mutex> lock(mutex_);
 
-    // 仅校验HCCL_BUFFSIZE，通过EnvConfig取已解析的配置值
-    u64 buffSize = Hccl::EnvConfig::GetInstance().GetAlgoConfig().GetBuffSize();
     std::string buffSizeStr = std::to_string(buffSize);
     u32 crc = 0;
     HcclResult ret = CalcStringCrc(buffSizeStr.c_str(), crc);
@@ -364,7 +363,7 @@ HcclResult RankConsistentcyChecker::GenerateCheckFrameV2(CheckFrameV2 &frame)
 }
 
 HcclResult RankConsistentcyChecker::CompareCheckFrameV2(
-    const A5CheckFrame &local, const A5CheckFrame &remote)
+    const CheckFrameV2 &local, const CheckFrameV2 &remote)
 {
     bool isDiff = false;
     isDiff = CompareEnvV2(local, remote);
