@@ -30,6 +30,7 @@ public:
 
     HcclResult ServerSocketListen(const uint32_t port) override;
     HcclResult ServerSocketStopListen(const uint32_t port) override;
+    HcclResult ServerSocketGetListenPort(uint32_t *port) override;
 
     HcclResult RegisterMemory(HcommMem mem, const char *memTag, void **memHandle) override;
     HcclResult UnregisterMemory(void* memHandle) override;
