@@ -1238,6 +1238,51 @@ TEST_F(CcuTaskExceptionTest, TaskExceptionHost_Process_ExceptionInfo_Nullptr)
     EXPECT_NO_THROW(hcomm::TaskExceptionHost::Process(exceptionInfo));
 }
 
+TEST_F(CcuTaskExceptionTest, TaskExceptionHost_PrintUbDfxInfo_ExceptionInfo_Nullptr)
+{
+    rtExceptionInfo_t* exceptionInfo = nullptr;
+    Hccl::ErrorMessageReport errorMessage = {};
+    memcpy(errorMessage.tag, "all_reduce_tag_001", strlen("all_reduce_tag_001"));
+    memcpy(errorMessage.group, "worker_group_0", strlen("worker_group_0"));
+    memcpy(errorMessage.algType, "Ring", strlen("Ring"));
+    errorMessage.taskType = Hccl::TaskParamType::TASK_WRITE_WITH_NOTIFY;
+    EXPECT_NO_THROW(hcomm::TaskExceptionHost::PrintUbDfxInfo(exceptionInfo, errorMessage));
+}
+
+TEST_F(CcuTaskExceptionTest, TaskExceptionHost_ProcessException_ExceptionInfo_false)
+{
+    rtExceptionInfo_t* exceptionInfo = nullptr;
+    Hccl::ParaCcu paraCcu = {};
+    Hccl::TaskParam taskParam = {
+        .taskType = Hccl::TaskParamType::TASK_NOTIFY_WAIT,
+        .beginTime = 0,
+        .endTime = 0,
+        .isMaster = false,
+        .taskPara = {.Ccu = paraCcu},
+        .ccuDetailInfo = nullptr
+    };
+    Hccl::TaskInfo taskInfo(1, 2, 3, taskParam, nullptr, true);
+    MOCKER(TaskExceptionHost::PrintAicpuErrorMessage).stubs().with(any(), any(), outBound(false));;
+    EXPECT_NO_THROW(hcomm::TaskExceptionHost::ProcessException(exceptionInfo, taskInfo));
+}
+
+TEST_F(CcuTaskExceptionTest, TaskExceptionHost_ProcessException_ExceptionInfo_true)
+{
+    rtExceptionInfo_t* exceptionInfo = nullptr;
+    Hccl::ParaCcu paraCcu = {};
+    Hccl::TaskParam taskParam = {
+        .taskType = Hccl::TaskParamType::TASK_CCU,
+        .beginTime = 0,
+        .endTime = 0,
+        .isMaster = false,
+        .taskPara = {.Ccu = paraCcu},
+        .ccuDetailInfo = nullptr
+    };
+    Hccl::TaskInfo taskInfo(1, 2, 3, taskParam, nullptr, true);
+    MOCKER(TaskExceptionHost::PrintAicpuErrorMessage).stubs().with(any(), any(), outBound(true));;
+    EXPECT_NO_THROW(hcomm::TaskExceptionHost::ProcessException(exceptionInfo, taskInfo));
+}
+
 TEST_F(CcuTaskExceptionTest, TaskExceptionHost_Process_FindTaskInfo_NotFound_DeviceId)
 {
     Hccl::GlobalMirrorTasks& globalMirrorTasks = Hccl::GlobalMirrorTasks::Instance();
