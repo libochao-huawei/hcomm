@@ -568,7 +568,10 @@ STATIC void RsUbCtxFreeJettyCb(struct RsCtxJettyCb *jettyCb)
     struct RsCtxJettyCb *tmpJettyCb = jettyCb;
 
 #ifdef CUSTOM_INTERFACE
-    (void)DlHalBuffFree((void *)(uintptr_t)jettyCb->qpShareInfoAddr);
+    if (jettyCb->qpShareInfoAddr != NULL) {
+        (void)DlHalBuffFree((void *)(uintptr_t)jettyCb->qpShareInfoAddr);
+        jettyCb->qpShareInfoAddr = NULL;
+    }
 #endif
 
     pthread_mutex_destroy(&tmpJettyCb->crErrInfo.mutex);
@@ -1531,14 +1534,6 @@ STATIC int RsUbCtxInitJettyCb(struct RsUbDevCb *devCb, struct CtxQpAttr *attr,
         goto jetty_cb_init_err;
     }
 
-#ifdef CUSTOM_INTERFACE
-    ret = RsUbJettyCbBuffAlloc(devCb, tmpJettyCb);
-    if (ret != 0) {
-        hccp_err("jetty_cb buff alloc failed ret:%d", ret);
-        goto jetty_cb_init_err;
-    }
-#endif
-
     *jettyCb = tmpJettyCb;
     return 0;
 
@@ -1754,6 +1749,18 @@ int RsUbCtxJettyCreate(struct RsUbDevCb *devCb, struct CtxQpAttr *attr, struct Q
         hccp_err("rs_ub_ctx_drv_jetty_create failed, ret:%d", ret);
         goto free_jetty_cb;
     }
+
+#ifdef CUSTOM_INTERFACE
+    if (sendJfcCb->jfcType == JFC_MODE_NORMAL) {
+        ret = RsUbJettyCbBuffAlloc(devCb, jettyCb);
+        if (ret != 0) {
+            hccp_err("jetty_cb buff alloc failed ret:%d", ret);
+            goto free_jetty_cb;
+        }
+    } else {
+        jettyCb->qpShareInfoAddr = NULL;
+    }
+#endif
 
     ret = RsUbFillJettyInfo(jettyCb, info);
     if (ret != 0) {
