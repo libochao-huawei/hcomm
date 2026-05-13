@@ -232,11 +232,10 @@ HcclResult RegisterToClusterMonitor(HcclComm comm)
 HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine, 
     const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle* channels)
 {
-    HCCL_RUN_INFO("Entry-%s", __func__);
+    HCCL_RUN_INFO("Entry-%s channelNum[%u], engine[%d] group[%s]", __func__, channelNum, engine, hcclComm->GetIdentifier().c_str());
     HcclUs startut = TIME_NOW();
     u64 beginTime =  Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
     EXCEPTION_HANDLE_BEGIN
-    HCCL_INFO("[%s] ChannelAcquire begin, channelNum[%u], engine[%d]", __func__, channelNum, engine);
 
     // 入参校验
     CHK_PTR_NULL(comm);
@@ -255,12 +254,8 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
         HcclChannelDesc channelDescFinal;
         HcclChannelDescInit(&channelDescFinal, 1);
         ret = ProcessHcclResPackReq(channelDescs[idx], channelDescFinal, hcclComm);
-        if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[%s] Failed check channelDesc, channelDesc idx[%u], group[%s], engine[%d], "
-                "channelNum[%llu], ret[%d]", __func__, idx, hcclComm->GetIdentifier().c_str(),
-                engine, channelNum, ret);
-            return ret;
-        }
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+            HCCL_ERROR("ProcessHcclResPackReq failed. channelDesc idx[%u], group[%s], engine[%d] channelNum[%llu], ret[%d]", idx, hcclComm->GetIdentifier().c_str(), engine, channelNum, ret), ret);
         channelDescFinals.push_back(channelDescFinal);
     }
  
@@ -282,7 +277,11 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
             CHK_RET(RegisterToClusterMonitor(comm));
         }
 
-        CHK_RET_UNAVAIL(myRank->CreateChannels(engine, commTag, channelDescFinals.data(), channelNum, channels));
+        ret = myRank->CreateChannels(engine, commTag, channelDescFinals.data(), channelNum, channels);
+        CHK_PRT_RET((ret == HCCL_E_AGAIN || ret == HCCL_E_UNAVAIL),
+            HCCL_WARNING("CreateChannels group[%s], engine[%d] ret[%d]", commTag.c_str(), engine, ret), ret);
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+            HCCL_ERROR("CreateChannels failed. group[%s], engine[%d] ret[%d]", commTag.c_str(), engine, ret), ret);
         if (engine == COMM_ENGINE_CPU) {
             HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
             CHK_PTR_NULL(hcclCommDfx);
