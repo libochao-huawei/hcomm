@@ -15,6 +15,7 @@
 #include <vector>
 #include <string>
 #include "endpoint.h"
+#include "externalinput_pub.h"
 
 namespace hcomm {
 /**
@@ -24,12 +25,13 @@ class CpuRoceEndpoint : public Endpoint {
 public:
     explicit CpuRoceEndpoint(const EndpointDesc &endpointDesc);
 
-    ~CpuRoceEndpoint() = default;
+    ~CpuRoceEndpoint();
 
     HcclResult Init() override;
 
     HcclResult ServerSocketListen(const uint32_t port) override;
     HcclResult ServerSocketStopListen(const uint32_t port) override;
+    HcclResult ServerSocketGetListenPort(uint32_t *port) override;
 
     HcclResult RegisterMemory(HcommMem mem, const char *memTag, void **memHandle) override;
     HcclResult UnregisterMemory(void* memHandle) override;
@@ -45,6 +47,7 @@ public:
     };
     HcclResult GetCapabilities(Capabilities &caps);
 private:
+    u32 listenedPort_{HCCL_INVALID_PORT};
     Capabilities capabilities_{};
     bool isCapabilitiesAvailable_{false};
 };
