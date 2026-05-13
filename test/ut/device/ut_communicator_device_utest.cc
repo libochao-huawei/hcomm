@@ -220,9 +220,6 @@ TEST_F(Communicator_Device_UT, CommunicatorTest) {
     HcclResult result = HCCL_SUCCESS;
     hcclCommunicator.GetCqeError(result);
 
-    hcclCommunicator.MrManagerInit();
-    hcclCommunicator.MrManagerDeInit();
-
     hcclCommunicator.SupportDeterministicOptim(findTag);
 
     hcclCommunicator.GetHccsLinkNum(buffer);
@@ -344,8 +341,6 @@ TEST_F(Communicator_Device_UT, CommunicatorTest) {
     hcclCommunicator.AllocAlgResource(tag, HcclCMDType::HCCL_CMD_ALL, opParam, resRequest, algResource);
     hcclCommunicator.IncreAllocLink(tag, opParam, resRequest, algResource);
 
-    hcclCommunicator.InitRecvMsgAndRequestBuffer();
-    hcclCommunicator.InitMemBlocksAndRecvWrMem();
     hcclCommunicator.SetDevicePid(0);
     hcclCommunicator.ReleaseWorkSpacebuffer();
 
