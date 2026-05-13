@@ -488,7 +488,7 @@ Hccl::TaskParam ConstructCcuTaskParam(const hcomm::CcuTaskParam &ccuParam, const
     HCCL_INFO("[%s]dieId[%u], missionId[%u], execMissionId[%u], instrId[%u], executeId[0x%llx], ccuKernelHandle[0x%llx]",
         __func__, taskParam.taskPara.Ccu.dieId, taskParam.taskPara.Ccu.missionId, taskParam.taskPara.Ccu.execMissionId,
         taskParam.taskPara.Ccu.instrId, taskParam.taskPara.Ccu.executeId, taskParam.taskPara.Ccu.ccuKernelHandle);
-    return std::move(taskParam);
+    return taskParam;
 }
 
 HcclResult ConstructProfilingInfo(const hcomm::CcuTaskArg &arg, hcomm::CcuKernel *kernel, const HcclComm comm,
@@ -521,17 +521,10 @@ HcclResult ConstructProfilingInfo(const hcomm::CcuTaskArg &arg, hcomm::CcuKernel
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclReportCcuProfilingInfo(hcomm::CcuProfilingInfo *profilingArray, size_t infoNum, const HcclComm comm, Hccl::TaskParam &taskParam)
-{
-    CHK_RET(SaveDfxTaskInfo(comm, taskParam));
-    return HCCL_SUCCESS;
-}
-
 HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
     const CcuKernelHandle kernelHandle, void *taskArgs)
 {
     // 性能关键路径，禁止打印算子粒度频次的日志
-    (void)comm;
     CHK_PTR_NULL(taskArgs);
     CHK_PRT_RET(threadHandle == 0, HCCL_ERROR("[%s] failed, thread handle is empty.", __func__), HCCL_E_PARA);
 
@@ -566,10 +559,9 @@ HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
         u64 endTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
         Hccl::TaskParam taskParam = ConstructCcuTaskParam(ccuParams[idx], kernelHandle, allCcuProfilingInfo,
             beginTime, endTime, rtsThread->GetMaster());
-        size_t infoNum = (idx + 1 == ccuParams.size()) ? allCcuProfilingInfo.size() : 1;
-        CHK_RET(HcclReportCcuProfilingInfo(allCcuProfilingInfo.data(), infoNum, comm, taskParam));
+        CHK_RET(SaveDfxTaskInfo(comm, taskParam));
     }
-    
+
     EXCEPTION_HANDLE_END
     return HcclResult::HCCL_SUCCESS;
 }
