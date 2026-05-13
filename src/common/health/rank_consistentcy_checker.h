@@ -206,9 +206,9 @@ private:
     std::mutex mutex_;
 
     // ====== A5专用CRC======
-    std::vector<A5CrcEntry> envVarCrcsV2_;        // A5环境变量CRC（带名称，用于精确报错）
-    std::vector<A5CrcEntry> rankTableCrcsV2_;     // A5 ranktable CRC（带名称，用于精确报错）
-    std::vector<A5CrcEntry> subCommParaCrcsV2_;   // A5子通信域参数CRC（带名称，用于精确报错）
+    std::vector<CrcEntryV2> envVarCrcsV2_;        // A5环境变量CRC（带名称，用于精确报错）
+    std::vector<CrcEntryV2> rankTableCrcsV2_;     // A5 ranktable CRC（带名称，用于精确报错）
+    std::vector<CrcEntryV2> subCommParaCrcsV2_;   // A5子通信域参数CRC（带名称，用于精确报错）
 
     bool inconsistentCheckFirstDone_ = false; // 是否完成首次校验
 };
