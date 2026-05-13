@@ -31,7 +31,6 @@ constexpr u32 ONE_HUNDRED_MICROSECOND_OF_USLEEP = 100;
 constexpr u32 ONE_MILLISECOND_OF_USLEEP         = 1000;
 constexpr unsigned int SOCKET_NUM_ONE           = 1;
 constexpr u32 MAX_NUM_OF_WHITE_LIST_NUM         = 16;
-constexpr uint32_t TP_HANDLE_REQUEST_NUM        = 8;
 constexpr u32      AUTO_LISTEN_PORT             = 0;
 constexpr u64 SOCKET_SEND_MAX_SIZE              = 0x7FFFFFFFFFFFFFFF;
 constexpr u32 MAX_WR_NUM = 1024;
