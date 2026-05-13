@@ -79,7 +79,7 @@ HcclResult CcuChannelCtxPool::PrepareCreate(const std::vector<Hccl::LinkData> &l
         auto ret = GetAvailableBatch(locAddr, batchPtr, sqSize);
         CHK_PRT_RET(ret == HcclResult::HCCL_E_UNAVAIL,
             HCCL_WARNING("[CcuChannelCtxPool][%s] failed to alloc ccu channels, ccu resources "
-                         "are unavaialble, locAddr[%s], devLogicId[%d], sqSize[%u].",
+                         "are unavailable, locAddr[%s], devLogicId[%d], sqSize[%u].",
                 __func__, locAddr.Describe().c_str(), devLogicId_, sqSize),
             ret);
         CHK_RET(ret);
