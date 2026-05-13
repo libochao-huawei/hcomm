@@ -529,6 +529,7 @@ HcclResult HostCpuRoceChannel::ConnVecUnpackProc(Hccl::BinaryStream &binaryStrea
         return HCCL_E_ROCE_CONNECT;
     }
     uint32_t qpNum = channelDesc_.roceAttr.queueNum;
+    rmtConnDtos_.resize(rmtConnNum);
     for (u32 i = 0; i < rmtConnNum; i++) {
         u32 pos;
         binaryStream >> pos;
@@ -537,7 +538,7 @@ HcclResult HostCpuRoceChannel::ConnVecUnpackProc(Hccl::BinaryStream &binaryStrea
         binaryStream >> channelDesc_.roceAttr.sl;
         binaryStream >> channelDesc_.roceAttr.tc;
         binaryStream >> channelDesc_.roceAttr.queueNum;
-        rmtConnDto_.Deserialize(binaryStream);
+        rmtConnDtos_[i].Deserialize(binaryStream);
     }
 
     if (qpNum != channelDesc_.roceAttr.queueNum) {
@@ -549,10 +550,11 @@ HcclResult HostCpuRoceChannel::ConnVecUnpackProc(Hccl::BinaryStream &binaryStrea
 }
 
 HcclResult HostCpuRoceChannel::ModifyQp() {
-    for (auto &conn : connections_) {
+    for (uint32_t i = 0; i < connections_.size(); i++) {
+        auto &conn = connections_[i];
         Hccl::CHECK_NULLPTR(conn,
             Hccl::StringFormat("[HostCpuRoceChannel::%s] failed, connection pointer is nullptr", __func__));
-        CHK_RET(conn->ParseRmtExchangeDto(rmtConnDto_));
+        CHK_RET(conn->ParseRmtExchangeDto(rmtConnDtos_[i]));
         Hccl::QpInfo& qpInfo = conn->GetQpInfo();
         qpInfo.serviceLevel = channelDesc_.roceAttr.sl;
         qpInfo.trafficClass = channelDesc_.roceAttr.tc;
@@ -1007,8 +1009,9 @@ HcclResult HostCpuRoceChannel::WriteWithNotify(
     // 构造 WR
     Hccl::TaskParam taskParam{};
     printf("[ywj]%s:%u", __FUNCTION__, __LINE__);
-    uint32_t i, qpLen;
-    for (i = 0; i < useQpNum; i++) {
+    uint32_t i = 0;
+    uint32_t qpLen;
+    for (i; i < useQpNum; i++) {
         qpLen = (i == useQpNum - 1) ? wrLenTail : wrLen;
         struct ibv_send_wr writeWithNotifyWr{};
         struct ibv_sge sgList{};
@@ -1017,6 +1020,7 @@ HcclResult HostCpuRoceChannel::WriteWithNotify(
         CHK_RET(PostAndCheckSend(qpInfo[i].qp, __func__, writeWithNotifyWr));
     }
     printf("[ywj]%s:%u", __FUNCTION__, __LINE__);
+    HCCL_INFO("[HostCpuRoceChannel::%s] %u of qp sent data, last %u of qp ")
     // 未使用的QP，发长度为0的数据
     while (i < qpInfo.size()) {
         struct ibv_send_wr writeWithNotifyWr{};

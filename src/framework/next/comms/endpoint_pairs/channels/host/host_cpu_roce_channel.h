@@ -145,7 +145,7 @@ private:
     RdmaStatus rdmaStatus_{RdmaStatus::INIT};
     std::vector<uint32_t> remoteDpuNotifyIds_;
     std::vector<std::unique_ptr<Hccl::RemoteRdmaRmaBuffer>> rmtRmaBuffers_{};
-    ExchangeRdmaConnDto rmtConnDto_;
+    std::vector<ExchangeRdmaConnDto> rmtConnDtos_;
     std::vector<std::unique_ptr<HcclMem>> remoteMems{};
     uint32_t wqeNum_{0};
     std::unique_ptr<SocketMgr> socketMgr_{nullptr};
