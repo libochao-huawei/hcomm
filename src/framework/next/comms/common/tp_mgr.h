@@ -11,6 +11,8 @@
 #ifndef TP_MGR_H
 #define TP_MGR_H
 
+#include <cstdint>
+#include <functional>
 #include <mutex>
 #include <vector>
 #include <unordered_map>
@@ -99,18 +101,25 @@ private:
         uint32_t tpAttrBitmap{0};
     };
 
-    /// 仅 loc+rmt：异步完成后登记 TpInfo + useCnt，供 ReleaseTpInfo；与 ReqCtxMap 键维度一致。
-    using InfoCtxMap = std::unordered_map<Hccl::IpAddress,
-        std::unordered_map<Hccl::IpAddress, TpInfoCtx>>;
-    /// 仅 loc+rmt：合并进行中的 list/attr 异步。
-    using ReqCtxMap = std::unordered_map<Hccl::IpAddress,
-        std::unordered_map<Hccl::IpAddress, RequestCtx>>;
+    /// 三级索引：先按本端 IP，再按对端 IP，最后按 QoS 档（0–7，与 GetTpInfo/TP-SL 策略里用的档位一致）。
+    /// 每一层的键要么是 Hccl::IpAddress，要么是 uint32_t，都可直接用作 unordered_map 的键。
+    using InfoQosMap = std::unordered_map<uint32_t, TpInfoCtx>;
+    using InfoRmtMap = std::unordered_map<Hccl::IpAddress, InfoQosMap>;
+    using InfoCtxMap = std::unordered_map<Hccl::IpAddress, InfoRmtMap>;
+    using ReqQosMap = std::unordered_map<uint32_t, RequestCtx>;
+    using ReqRmtMap = std::unordered_map<Hccl::IpAddress, ReqQosMap>;
+    using ReqCtxMap = std::unordered_map<Hccl::IpAddress, ReqRmtMap>;
 
 private:
     TpMgr() = default;
     ~TpMgr() = default;
     TpMgr(const TpMgr &that) = delete;
     TpMgr &operator=(const TpMgr &that) = delete;
+
+    bool FindAndGetTpInfo(const TpProtocol tpProtocol, const Hccl::IpAddress &locAddr, const Hccl::IpAddress &rmtAddr,
+        uint32_t qosKey, TpInfo &tpInfo);
+    static void EraseReqCtxAtQos(ReqCtxMap &reqCtxMap, const Hccl::IpAddress &loc, const Hccl::IpAddress &rmt,
+        uint32_t qosKey);
 
     HcclResult StartGetTpInfoListRequest(const GetTpInfoParam &param, RequestCtx &reqCtx) const;
     HcclResult StartGetTpAttrForFirstTp(const GetTpInfoParam &param, RequestCtx &reqCtx) const;

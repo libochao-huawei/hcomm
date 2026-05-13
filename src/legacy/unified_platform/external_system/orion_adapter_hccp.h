@@ -27,6 +27,9 @@ using namespace std;
 /// 本头文件不 include env_config，避免经 base_config.h 拉入 dma_mode.h 导致 platform 等目标缺头编译失败。
 constexpr u32 kRaUbGetTpInfoParamDefaultQos = 4U;
 
+/// 单次向管控面查询 TP 列表条数上限（异步接口传入/返回 num；与 buffer 中 HccpTpInfo 条数一致）。
+constexpr uint32_t TP_HANDLE_REQUEST_NUM = 8U;
+
 constexpr u32 DEFAULT_INIT_PHY_ID  = 0;
 constexpr u32 DEFAULT_INIT_NIC_POS = 0;
 constexpr u32 DEFAULT_HDC_TYPE     = 6;
