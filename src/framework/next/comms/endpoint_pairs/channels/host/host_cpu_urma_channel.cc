@@ -97,10 +97,13 @@ HcclResult HostCpuUrmaChannel::BuildSocket()
         port = DEFAULT_LISTENING_PORT;
         HCCL_INFO("[HostCpuUrmaChannel::%s] channelDesc port is 0, use default port [%u]", __func__, port);
     }
+    
     std::string socketTag = "AUTOMATIC_SOCKET_TAG";
-    bool noRankId = true;
-    Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, socketTag, noRankId);
+    Hccl::SocketConfig socketConfig = (channelDesc_.role != HCOMM_SOCKET_ROLE_RESERVED)
+        ? Hccl::SocketConfig(linkData, port, socketTag, channelDesc_.role == HCOMM_SOCKET_ROLE_SERVER)
+        : Hccl::SocketConfig(linkData, socketTag, true);
     CHK_RET(socketMgr_->GetSocket(socketConfig, socket_));
+
     HCCL_INFO("[HostCpuUrmaChannel::%s] SUCCESS. port[%u].", __func__, port);
     return HCCL_SUCCESS;
 }
@@ -186,7 +189,10 @@ HcclResult HostCpuUrmaChannel::BuildUbMemTransport()
 HcclResult HostCpuUrmaChannel::Init()
 {
     CHK_RET(ParseInputParam());
-    CHK_RET(StartListen());
+    // true for HIXL, false for HCCL
+    if (channelDesc_.exchangeAllMems && channelDesc_.role == HCOMM_SOCKET_ROLE_SERVER)
+        CHK_RET(StartListen());
+    }
     CHK_RET(BuildSocket());
     CHK_RET(BuildConnection());
     CHK_RET(BuildBuffer());
