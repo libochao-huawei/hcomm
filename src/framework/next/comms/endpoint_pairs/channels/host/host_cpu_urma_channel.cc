@@ -186,7 +186,9 @@ HcclResult HostCpuUrmaChannel::BuildUbMemTransport()
 HcclResult HostCpuUrmaChannel::Init()
 {
     CHK_RET(ParseInputParam());
-    CHK_RET(StartListen());
+    if (channelDesc_.role == HCOMM_SOCKET_ROLE_SERVER) {
+        CHK_RET(StartListen());
+    }
     CHK_RET(BuildSocket());
     CHK_RET(BuildConnection());
     CHK_RET(BuildBuffer());

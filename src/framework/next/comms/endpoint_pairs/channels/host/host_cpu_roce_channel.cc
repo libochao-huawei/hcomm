@@ -164,7 +164,8 @@ HcclResult HostCpuRoceChannel::BuildSocket()
         HCCL_INFO("[HostCpuRoceChannel::%s] channelDesc port is 0, use default port [%u]", __func__, port);
     }
     std::string socketTag = "AUTOMATIC_SOCKET_TAG";
-    Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, port, socketTag);
+    bool isServer = (channelDesc_.role == HCOMM_SOCKET_ROLE_SERVER);
+    Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, port, socketTag, isServer);
     CHK_RET(socketMgr_->GetSocket(socketConfig, socket_));
     HCCL_INFO("[HostCpuRoceChannel::%s] SUCCESS. port[%u].", __func__, port);
     return HCCL_SUCCESS;
@@ -205,7 +206,7 @@ HcclResult HostCpuRoceChannel::BuildBuffer()
 HcclResult HostCpuRoceChannel::Init()
 {
     CHK_RET(ParseInputParam());
-    if (channelDesc_.exchangeAllMems) {  // true for HIXL, false for HCCL
+    if (channelDesc_.exchangeAllMems && channelDesc_.role == HCOMM_SOCKET_ROLE_SERVER) {  // true for HIXL, false for HCCL
         CHK_RET(StartListen());
     }
     CHK_RET(BuildSocket());
@@ -234,7 +235,7 @@ HcclResult HostCpuRoceChannel::GetStatus(ChannelStatus &status) {
             CHK_RET(CheckSocketStatus());
             break;
         case RdmaStatus::SOCKET_OK:
-            CHK_RET(ExchangeCapability());
+            //CHK_RET(ExchangeCapability());
             rdmaStatus_ = RdmaStatus::CAP_EXCHANGED;
             break;
         case RdmaStatus::CAP_EXCHANGED:
