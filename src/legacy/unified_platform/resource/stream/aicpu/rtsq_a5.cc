@@ -29,16 +29,12 @@ constexpr u32 RTSQ_A5_PART_ID   = 0;
 constexpr u32 PRINT_INTERVAL  = 30;
 RtsqA5::RtsqA5(u32 devPhyId, u32 streamId, u32 sqId) : RtsqBase(devPhyId, streamId, sqId)
 {
-    if (UNLIKELY(SetTaskIdBySqeId() != HCCL_SUCCESS)) {
-        taskId_ = 0;
-    }
+    SetTaskIdBySqeId();
 }
 
 RtsqA5::RtsqA5(u32 devPhyId, u32 streamId, u32 sqId, bool launchFlag) : RtsqBase(devPhyId, streamId, sqId)
 {
-    if (UNLIKELY(SetTaskIdBySqeId() != HCCL_SUCCESS)) {
-        taskId_ = 0;
-    }
+    SetTaskIdBySqeId();
     launchFlag_ = launchFlag;
 }
 
@@ -169,9 +165,7 @@ u8 *RtsqA5::GetCurrSqeBuffer()
 
 void RtsqA5::RefreshInfo()
 {
-    if (UNLIKELY(SetTaskIdBySqeId() != HCCL_SUCCESS)) {
-        taskId_++;
-    }
+    SetTaskIdBySqeId();
     pendingSqeCnt++;
     HCCL_INFO("RtsqA5::%s: Updated: taskId_[%u], pendingSqeCnt[%u]", __func__, taskId_, pendingSqeCnt);
     

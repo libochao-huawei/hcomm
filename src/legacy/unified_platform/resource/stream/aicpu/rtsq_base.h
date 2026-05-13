@@ -219,6 +219,7 @@ protected:
     u64 sqBaseAddr_{0};
 
     u32 taskId_{0}; // 填写到SQE中的taskId，现改为由AICPU组件提供的sqeId维护
+    u32 taskIdEnd_{0}; // 当前流已经申请到的最大taskId
 
     std::function<void()> checkOpExecStatusCallback_{nullptr};
 
@@ -229,7 +230,7 @@ protected:
     void ConfigSqTail(u32 value);
     void ConfigDisableToEnable(u32 value);
 
-    HcclResult SetTaskIdBySqeId();
+    void SetTaskIdBySqeId();
 
 private:
     u64 QuerySqBaseAddr();
