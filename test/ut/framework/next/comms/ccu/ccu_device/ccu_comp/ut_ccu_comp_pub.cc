@@ -4,6 +4,10 @@
 #include "ccu_dev_mgr_pub.h"
 #include "ccu_comp.h"
 #include "hccl_common.h"
+<<<<<<< HEAD
+=======
+// #include "ccu_res_batch_allocator.h"
+>>>>>>> 3b77a235 (修改)
 
 #include "unified_platform/ccu/ccu_device/ccu_component/ccu_component.h"
 
