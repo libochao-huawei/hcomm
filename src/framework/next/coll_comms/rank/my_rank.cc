@@ -806,7 +806,7 @@ HcclResult MyRank::BatchExchangeAndCheckConsistency(
     hcclComm *hcclComm)
 {
     auto &checker = RankConsistentcyChecker::GetInstance();
-    u64 frameLenV2 = checker.GetA5CheckFrameLength();
+    u64 frameLenV2 = checker.GetCheckFrameLengthV2();
 
     std::vector<Hccl::Socket*> sockets;
     std::vector<u32> remoteRanks;
@@ -833,7 +833,7 @@ HcclResult MyRank::BatchExchangeAndCheckConsistency(
     // 只有rankConsistentState是first或者on时才进行hcomm信息校验
     if(Hccl::EnvConfig::GetInstance().GetLogConfig().GetDfsConfig().rankConsistentState == 1 ||
         (Hccl::EnvConfig::GetInstance().GetLogConfig().GetDfsConfig().rankConsistentState == 0 && !checker.GetInconsistentCheckFirstDone())) {
-        // ====== 生成本端A5CheckFrame ======
+        // ====== 生成本端CheckFrameV2 ======
        CheckFrameV2 localFrame;
        CHK_RET(checker.GenerateCheckFrameV2(localFrame));
 
