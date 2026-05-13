@@ -614,8 +614,7 @@ TEST_F(LinkIbvExpTest, ut_transport_ibv_multi_qp_configpath)
     s32 deviceLogicId;
     NICDeployment nicDeployment;
     bool isHaveCpuRank;
-    void *transportResourceInfoAddr;
-    size_t transportResourceInfoSize;
+
     bool isUseRankPort = false;
     bool isUsedRdmaOuter = true;
     std::vector<u32> ranksPort;
@@ -635,8 +634,6 @@ TEST_F(LinkIbvExpTest, ut_transport_ibv_multi_qp_configpath)
         deviceLogicId,
         nicDeployment,
         isHaveCpuRank,
-        transportResourceInfoAddr,
-        transportResourceInfoSize,
         isUseRankPort,
         isUsedRdmaOuter,
         ranksPort,
@@ -746,8 +743,7 @@ TEST_F(LinkIbvExpTest, ut_transport_ibv_multi_qp_configpath_patch1)
     s32 deviceLogicId;
     NICDeployment nicDeployment;
     bool isHaveCpuRank;
-    void *transportResourceInfoAddr;
-    size_t transportResourceInfoSize;
+
     bool isUseRankPort = false;
     bool isUsedRdmaOuter = true;
     std::vector<u32> ranksPort;
@@ -767,8 +763,6 @@ TEST_F(LinkIbvExpTest, ut_transport_ibv_multi_qp_configpath_patch1)
         deviceLogicId,
         nicDeployment,
         isHaveCpuRank,
-        transportResourceInfoAddr,
-        transportResourceInfoSize,
         isUseRankPort,
         isUsedRdmaOuter,
         ranksPort,
@@ -835,8 +829,7 @@ TEST_F(LinkIbvExpTest, ut_transport_ibv_multi_qp_configpath_patch2)
     s32 deviceLogicId;
     NICDeployment nicDeployment;
     bool isHaveCpuRank;
-    void *transportResourceInfoAddr;
-    size_t transportResourceInfoSize;
+
     bool isUseRankPort = false;
     bool isUsedRdmaOuter = true;
     std::vector<u32> ranksPort;
@@ -856,8 +849,6 @@ TEST_F(LinkIbvExpTest, ut_transport_ibv_multi_qp_configpath_patch2)
         deviceLogicId,
         nicDeployment,
         isHaveCpuRank,
-        transportResourceInfoAddr,
-        transportResourceInfoSize,
         isUseRankPort,
         isUsedRdmaOuter,
         ranksPort,
@@ -910,8 +901,7 @@ TEST_F(LinkIbvExpTest, ut_transport_ibv_multi_qp_configpath_patch3)
     s32 deviceLogicId;
     NICDeployment nicDeployment;
     bool isHaveCpuRank;
-    void *transportResourceInfoAddr;
-    size_t transportResourceInfoSize;
+
     bool isUseRankPort = false;
     bool isUsedRdmaOuter = true;
     std::vector<u32> ranksPort;
@@ -931,8 +921,6 @@ TEST_F(LinkIbvExpTest, ut_transport_ibv_multi_qp_configpath_patch3)
         deviceLogicId,
         nicDeployment,
         isHaveCpuRank,
-        transportResourceInfoAddr,
-        transportResourceInfoSize,
         isUseRankPort,
         isUsedRdmaOuter,
         ranksPort,
@@ -985,8 +973,7 @@ TEST_F(LinkIbvExpTest, ut_transport_ibv_multi_qp_configpath_patch4)
     s32 deviceLogicId;
     NICDeployment nicDeployment;
     bool isHaveCpuRank;
-    void *transportResourceInfoAddr;
-    size_t transportResourceInfoSize;
+
     bool isUseRankPort = false;
     bool isUsedRdmaOuter = true;
     std::vector<u32> ranksPort;
@@ -1006,8 +993,6 @@ TEST_F(LinkIbvExpTest, ut_transport_ibv_multi_qp_configpath_patch4)
         deviceLogicId,
         nicDeployment,
         isHaveCpuRank,
-        transportResourceInfoAddr,
-        transportResourceInfoSize,
         isUseRankPort,
         isUsedRdmaOuter,
         ranksPort,
@@ -1062,8 +1047,7 @@ TEST_F(LinkIbvExpTest, ut_transport_ibv_multi_qp_configpath_patch5)
     s32 deviceLogicId;
     NICDeployment nicDeployment;
     bool isHaveCpuRank;
-    void *transportResourceInfoAddr;
-    size_t transportResourceInfoSize;
+
     bool isUseRankPort = false;
     bool isUsedRdmaOuter = true;
     std::vector<u32> ranksPort;
@@ -1083,8 +1067,6 @@ TEST_F(LinkIbvExpTest, ut_transport_ibv_multi_qp_configpath_patch5)
         deviceLogicId,
         nicDeployment,
         isHaveCpuRank,
-        transportResourceInfoAddr,
-        transportResourceInfoSize,
         isUseRankPort,
         isUsedRdmaOuter,
         ranksPort,
@@ -1137,8 +1119,7 @@ TEST_F(LinkIbvExpTest, ut_transport_ibv_multi_qp_configpath_patch6)
     s32 deviceLogicId;
     NICDeployment nicDeployment;
     bool isHaveCpuRank;
-    void *transportResourceInfoAddr;
-    size_t transportResourceInfoSize;
+
     bool isUseRankPort = false;
     bool isUsedRdmaOuter = true;
     std::vector<u32> ranksPort;
@@ -1158,8 +1139,6 @@ TEST_F(LinkIbvExpTest, ut_transport_ibv_multi_qp_configpath_patch6)
         deviceLogicId,
         nicDeployment,
         isHaveCpuRank,
-        transportResourceInfoAddr,
-        transportResourceInfoSize,
         isUseRankPort,
         isUsedRdmaOuter,
         ranksPort,
@@ -1212,8 +1191,7 @@ TEST_F(LinkIbvExpTest, ut_transport_ibv_multi_qp_configpath_patch7)
     s32 deviceLogicId;
     NICDeployment nicDeployment;
     bool isHaveCpuRank;
-    void *transportResourceInfoAddr;
-    size_t transportResourceInfoSize;
+
     bool isUseRankPort = false;
     bool isUsedRdmaOuter = true;
     std::vector<u32> ranksPort;
@@ -1233,8 +1211,6 @@ TEST_F(LinkIbvExpTest, ut_transport_ibv_multi_qp_configpath_patch7)
         deviceLogicId,
         nicDeployment,
         isHaveCpuRank,
-        transportResourceInfoAddr,
-        transportResourceInfoSize,
         isUseRankPort,
         isUsedRdmaOuter,
         ranksPort,
@@ -1301,8 +1277,7 @@ TEST_F(LinkIbvExpTest, ut_transport_ipc_memory_error)
     s32 deviceLogicId;
     NICDeployment nicDeployment;
     bool isHaveCpuRank;
-    void *transportResourceInfoAddr;
-    size_t transportResourceInfoSize;
+
     bool isUseRankPort = false;
     bool isUsedRdmaOuter = true;
     std::vector<u32> ranksPort;
@@ -1322,8 +1297,6 @@ TEST_F(LinkIbvExpTest, ut_transport_ipc_memory_error)
         deviceLogicId,
         nicDeployment,
         isHaveCpuRank,
-        transportResourceInfoAddr,
-        transportResourceInfoSize,
         isUseRankPort,
         isUsedRdmaOuter,
         ranksPort,
@@ -1903,8 +1876,7 @@ TEST_F(LinkIbvExpTest, ut_BatchSendRecv_2rank_unflod)
     s32 deviceLogicId;
     NICDeployment nicDeployment;
     bool isHaveCpuRank;
-    void *transportResourceInfoAddr;
-    size_t transportResourceInfoSize;
+
     bool isUseRankPort = false;
     bool isUsedRdmaOuter = true;
     std::vector<u32> nicRanksPort;
@@ -1924,8 +1896,6 @@ TEST_F(LinkIbvExpTest, ut_BatchSendRecv_2rank_unflod)
         deviceLogicId,
         nicDeployment,
         isHaveCpuRank,
-        transportResourceInfoAddr,
-        transportResourceInfoSize,
         isUseRankPort,
         isUsedRdmaOuter,
         nicRanksPort,
