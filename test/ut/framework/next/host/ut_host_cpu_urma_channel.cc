@@ -91,6 +91,7 @@ TEST_F(HostCpuUrmaChannelTest, Ut_When_ParseInputParam_NullEndpoint_Expect_HCCL_
 
 TEST_F(HostCpuUrmaChannelTest, Ut_When_StartListen_Fail_Expect_Error)
 {
+    channelDesc.role = HCOMM_SOCKET_ROLE_SERVER;
     MOCKER(HcommEndpointStartListen).stubs().will(returnValue(static_cast<HcommResult>(HCCL_E_INTERNAL)));
     auto impl = std::make_unique<HostCpuUrmaChannel>(endpointHandle, channelDesc);
     EXPECT_NE(impl->Init(), HCCL_SUCCESS);
