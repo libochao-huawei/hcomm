@@ -230,7 +230,7 @@ protected:
     void ConfigSqTail(u32 value);
     void ConfigDisableToEnable(u32 value);
 
-    inline void RtsqBase::SetTaskIdBySqeId()
+    inline void SetTaskIdBySqeId()
     {
         if (UNLIKELY(aicpu::GetSqeId == nullptr)) {
             HCCL_WARNING("[RtsqBase][SetTaskIdBySqeId] aicpu::GetSqeId is nullptr.");
