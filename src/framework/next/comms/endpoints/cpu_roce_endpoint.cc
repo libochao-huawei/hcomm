@@ -29,6 +29,18 @@ CpuRoceEndpoint::CpuRoceEndpoint(const EndpointDesc &endpointDesc)
 {
 }
 
+CpuRoceEndpoint::~CpuRoceEndpoint()
+{
+    try {
+        std::lock_guard<std::mutex> lock(portMutex_);
+        if (listenedPort_ != HCCL_INVALID_PORT) {
+            ServerSocketStopListen(listenedPort_);
+        }
+    } catch (...) {
+        HCCL_ERROR("[CpuRoceEndpoint::~CpuRoceEndpoint] Unknown exception");
+    }
+}
+
 HcclResult CpuRoceEndpoint::Init()
 {
     HCCL_INFO("[%s] localEndpoint protocol[%d]", __func__, endpointDesc_.protocol);
@@ -76,7 +88,6 @@ HcclResult CpuRoceEndpoint::ServerSocketListen(const uint32_t port)
         __func__, devPhyId, ipAddr.Describe().c_str());
 
     CHK_RET(ServerSocketManager::GetInstance().ServerSocketStartListen(localPort, Hccl::NicType::HOST_NIC_TYPE, devPhyId, port));
-
     return HCCL_SUCCESS;
 }
 
@@ -94,6 +105,41 @@ HcclResult CpuRoceEndpoint::ServerSocketStopListen(const uint32_t port)
     Hccl::PortData localPort = Hccl::PortData(devPhyId, type, 0, ipAddr);
     CHK_RET(ServerSocketManager::GetInstance().ServerSocketStopListen(localPort, Hccl::NicType::HOST_NIC_TYPE, port));
 
+    return HCCL_SUCCESS;
+}
+
+HcclResult CpuRoceEndpoint::ServerSocketGetListenPort(uint32_t *port)
+{
+    std::lock_guard<std::mutex> lock(portMutex_);
+    CHK_PTR_NULL(port);
+    s32 devId = 0;
+    CHK_RET(hrtGetDevice(&devId));
+    u32 devPhyId = 0;
+    CHK_RET(hrtGetDevicePhyIdByIndex(devId, devPhyId));
+
+    Hccl::IpAddress ipAddr{};
+    CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
+
+    Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::RDMA);
+    Hccl::PortData localPort = Hccl::PortData(devPhyId, type, 0, ipAddr);
+
+    HCCL_INFO("[CpuRoceEndpoint::%s] devicePhyId[%u] ipAddress[%s]",
+        __func__, devPhyId, ipAddr.Describe().c_str());
+
+    // 已有监听端口则直接返回
+    if (listenedPort_ != HCCL_INVALID_PORT) {
+        *port = listenedPort_;
+        HCCL_INFO("[CpuRoceEndpoint::%s] already listening, return existing port[%u]", __func__, listenedPort_);
+        return HCCL_SUCCESS; 
+    }
+    int requestPort = 0;
+    CHK_RET(ServerSocketManager::GetInstance().ServerSocketStartListen(localPort, Hccl::NicType::HOST_NIC_TYPE, devPhyId, &requestPort));
+    if (*port == 0 || *port == HCCL_INVALID_PORT) {
+        HCCL_ERROR("[CpuRoceEndpoint::%s] get listen port failed, port is invalid", __func__);
+        return HCCL_E_NETWORK;
+    }
+    listenedPort_ = requestPort;
+    *port = listenedPort_
     return HCCL_SUCCESS;
 }
 

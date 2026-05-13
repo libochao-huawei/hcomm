@@ -23,6 +23,18 @@ UrmaEndpoint::UrmaEndpoint(const EndpointDesc &endpointDesc)
 {
 }
 
+UrmaEndpoint::~UrmaEndpoint()
+{
+    try {
+        std::lock_guard<std::mutex> lock(portMutex_);
+        if (listenedPort_ != HCCL_INVALID_PORT) {
+            ServerSocketStopListen(listenedPort_);
+        }
+    } catch (...) {
+        HCCL_ERROR("[UrmaEndpoint::~UrmaEndpoint] Unknown exception");
+    }
+}
+
 HcclResult UrmaEndpoint::Init()
 {
     HCCL_INFO("[%s] localEndpoint protocol[%d]", __func__, endpointDesc_.protocol);
@@ -84,7 +96,7 @@ HcclResult UrmaEndpoint::ServerSocketListen(const uint32_t port)
     Hccl::IpAddress ipaddr{};
     CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipaddr));
 
-    HCCL_INFO("endpointDesc_.loc.device.devPhyId %u",endpointDesc_.loc.device.devPhyId);
+    HCCL_INFO("[UrmaEndpoint][%s] endpointDesc_.loc.device.devPhyId %u", __func__, endpointDesc_.loc.device.devPhyId);
 
     Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::UB);
     Hccl::PortData localPort = Hccl::PortData(static_cast<Hccl::RankId>(endpointDesc_.loc.device.devPhyId), type, 0, ipaddr);
@@ -106,6 +118,44 @@ HcclResult UrmaEndpoint::ServerSocketStopListen(const uint32_t port)
     Hccl::PortData localPort = Hccl::PortData(static_cast<Hccl::RankId>(endpointDesc_.loc.device.devPhyId), type, 0, ipAddr);
 
     CHK_RET(ServerSocketManager::GetInstance().ServerSocketStopListen(localPort, Hccl::NicType::DEVICE_NIC_TYPE, port));
+    return HCCL_SUCCESS;
+}
+
+HcclResult UrmaEndpoint::ServerSocketGetListenPort(uint32_t *port)
+{
+    std::lock_guard<std::mutex> lock(portMutex_);
+    if (endpointDesc_.loc.locType != ENDPOINT_LOC_TYPE_DEVICE){
+        HCCL_INFO("[UrmaEndpoint][%s] endpointDesc.loc.locType[%d] skip create ServerSocket", __func__, endpointDesc_.loc.locType);
+        return HCCL_SUCCESS;
+    }
+
+    HCCL_INFO("[UrmaEndpoint][%s] endpointDesc_.loc.device.devPhyId %u", __func__, endpointDesc_.loc.device.devPhyId);
+    Hccl::IpAddress ipaddr{};
+    CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipaddr));
+
+    Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::UB);
+    Hccl::PortData localPort = Hccl::PortData(static_cast<Hccl::RankId>(endpointDesc_.loc.device.devPhyId), type, 0, ipaddr);
+
+    HCCL_INFO("[UrmaEndpoint][%s] devicePhyId[%u] localPort[%s]", 
+        __func__, 
+        endpointDesc_.loc.device.devPhyId, 
+        localPort.Describe().c_str()
+    );
+
+    // 已有监听端口则直接返回
+    if (listenedPort_ != HCCL_INVALID_PORT) {
+        *port = listenedPort_;
+        HCCL_INFO("[UrmaEndpoint::%s] already listening, return existing port[%u]", __func__, listenedPort_);
+        return HCCL_SUCCESS; 
+    }
+    int requestPort = 0;
+    CHK_RET(ServerSocketManager::GetInstance().ServerSocketStartListen(localPort, Hccl::NicType::DEVICE_NIC_TYPE, endpointDesc_.loc.device.devPhyId, requestPort));
+     if (requestPort == 0 || requestPort == HCCL_INVALID_PORT) {
+        HCCL_ERROR("[UrmaEndpoint::%s] get listen port failed, port is invalid.", __func__);
+        return HCCL_E_NETWORK;
+    }
+    listenedPort_ = requestPort;
+    *port = listenedPort_
     return HCCL_SUCCESS;
 }
 
