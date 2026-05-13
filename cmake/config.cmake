@@ -126,29 +126,6 @@ endif()
 
 set(ASCEND_MOCKCPP_PACKAGE_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 
-# if (NOT EXISTS "${ASCEND_CANN_PACKAGE_PATH}")
-#     message(FATAL_ERROR "${ASCEND_CANN_PACKAGE_PATH} does not exist, please install the cann package and set environment variables.")
-# endif()
-
-# if (NOT EXISTS "${THIRD_PARTY_NLOHMANN_PATH}")
-#     message(FATAL_ERROR "${THIRD_PARTY_NLOHMANN_PATH} does not exist, please check the setting of THIRD_PARTY_NLOHMANN_PATH.")
-# endif()
-
-#execute_process(COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/cmake/scripts/check_version_compatiable.sh
-#                             ${ASCEND_CANN_PACKAGE_PATH}
-#                             hccl
-#                             ${CMAKE_CURRENT_SOURCE_DIR}/version.info
-#    RESULT_VARIABLE result
-#    OUTPUT_STRIP_TRAILING_WHITESPACE
-#    OUTPUT_VARIABLE CANN_VERSION
-#    )
-
-#if (result)
-#    message(FATAL_ERROR "${CANN_VERSION}")
-#else()
-#     string(TOLOWER ${CANN_VERSION} CANN_VERSION)
-#endif()
-
 if (CMAKE_INSTALL_PREFIX STREQUAL /usr/local)
     set(CMAKE_INSTALL_PREFIX     "${CMAKE_CURRENT_SOURCE_DIR}/output"  CACHE STRING "path for install()" FORCE)
 endif ()

@@ -45,7 +45,7 @@ target_include_directories(hccl_v2 PRIVATE
     ${HCCL_BASE_DIR}/inc/adapter
     ${HCCL_BASE_DIR}/src/algorithm/impl/resource_manager
 
-    ${THIRD_PARTY_NLOHMANN_PATH}
+    ${JSON_INCLUDE_DIR}
     ${ASCEND_CANN_PACKAGE_PATH}/include/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/mmpa/
     ${ASCEND_CANN_PACKAGE_PATH}/include/acl/

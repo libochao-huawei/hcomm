@@ -161,7 +161,7 @@ if(BUILD_OPEN_PROJECT)
 
         ${HCCL_BASE_DIR}/platform/inc/adapter
         
-        ${THIRD_PARTY_NLOHMANN_PATH}
+        ${JSON_INCLUDE_DIR}
 
         ${HCCL_BASE_DIR}/common/debug/profiling/inc
         ${HCCL_BASE_DIR}/common/debug/profiling/inc/host
@@ -194,7 +194,7 @@ if(BUILD_OPEN_PROJECT)
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
 
-        ${THIRD_PARTY_NLOHMANN_PATH}
+        ${JSON_INCLUDE_DIR}
 
         ${HCCL_BASE_DIR}/framework/op_base/src
     )
@@ -806,7 +806,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
 
         ${HCCL_BASE_DIR}/../externel_depends/tsch/
         ${RDMA_CORE_INCLUDE_DIR}
-        ${THIRD_PARTY_NLOHMANN_PATH}
+        ${JSON_INCLUDE_DIR}
 
         
 
