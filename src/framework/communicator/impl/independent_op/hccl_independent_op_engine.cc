@@ -145,7 +145,7 @@ HcclResult HcclThreadAcquireWithStream(HcclComm comm, CommEngine engine,
 
     auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
     std::string commId = hcclComm->GetIdentifier();
-    HCCL_RUN_INFO("Entry-%s:comm[%s] engine[%u] notifyNum[%u] stream[%p]",
+    HCCL_INFO("Entry-%s:comm[%s] engine[%u] notifyNum[%u] stream[%p]",
         __func__, commId.c_str(), engine, notifyNum, stream);
     HcclResult ret = HCCL_SUCCESS;
     if (hcclComm->IsCommunicatorV2()) {
@@ -280,6 +280,7 @@ extern "C" {
 #endif
 HcclResult HcclThreadExportToCommEngine(HcclComm comm, uint32_t threadNum, const ThreadHandle *threads, CommEngine dstCommEngine, ThreadHandle *exportedThreads)
 {
+    u64 beginTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(threads);
     CHK_PTR_NULL(exportedThreads);
@@ -301,6 +302,13 @@ HcclResult HcclThreadExportToCommEngine(HcclComm comm, uint32_t threadNum, const
         CommEngineResMgr* engineResMgr = collComm->GetCommEngineResMgr();
         CHK_PTR_NULL(engineResMgr);
         ret = engineResMgr->HcclThreadExportToCommEngine(threadNum, threads, dstCommEngine, exportedThreads);
+        if (ret == HCCL_SUCCESS &&
+                (dstCommEngine == CommEngine::COMM_ENGINE_AICPU_TS || dstCommEngine == CommEngine::COMM_ENGINE_AICPU)) {
+            HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
+            CHK_PTR_NULL(hcclCommDfx);
+            const std::string KernelName = "RunAicpuIndOpThreadInit";
+            CHK_RET(hcclCommDfx->ReportKernel(beginTime, commId, KernelName, SalGetTid()));
+        }
     } else {
         auto &engineResMgr = hcclComm->GetIndependentOp().GetCommEngineResMgr();
         ret = engineResMgr.HcclThreadExportToCommEngine(threadNum, threads, dstCommEngine, exportedThreads);

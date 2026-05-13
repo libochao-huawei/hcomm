@@ -41,7 +41,13 @@ HcclResult ContextManager::CreateCommEngineCtx(const std::string &tag, CommEngin
         type = HCCL_MEM_TYPE_HOST;
         ctxData = malloc(size);
         CHK_PTR_NULL(ctxData);
-        CHK_SAFETY_FUNC_RET(memset_s(ctxData, size, 0, size));
+        s32 sRet = memset_s(ctxData, size, 0, size);
+        if (sRet != EOK) {
+            HCCL_ERROR("[%s] memset_s failed, ret[%d]", __func__, sRet);
+            free(ctxData);
+            ctxData = nullptr;
+            return HCCL_E_INTERNAL;
+        }
     } else if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS
         || engine == COMM_ENGINE_AIV) {
         type = HCCL_MEM_TYPE_DEVICE;
