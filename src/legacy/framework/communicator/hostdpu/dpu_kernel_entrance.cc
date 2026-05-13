@@ -20,6 +20,7 @@ __attribute__((visibility("default"))) uint32_t RunDpuRpcSrvLaunch(const uint64_
 {
     struct DpuKernelLaunchParam {
         u64      memorySize;
+        bool       supportDirectMemcpy;
         void*       deviceMem;
         void*       hostMem;
         int32_t    deviceId;
@@ -53,7 +54,7 @@ __attribute__((visibility("default"))) uint32_t RunDpuRpcSrvLaunch(const uint64_
 
     // 实例化TaskService
     std::unique_ptr<Hccl::TaskService> taskService = std::make_unique<Hccl::TaskService>(params->deviceMem, params->memorySize,
-                            params->hostMem, params->memorySize);
+                            params->hostMem, params->memorySize, params->supportDirectMemcpy);
 
     aclError ret = aclrtSetDevice(params->deviceId);
     if (ret != ACL_SUCCESS) {
