@@ -623,10 +623,19 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
         hcommDescs[i] = MyRankUtils::ChannelDescHccl2Hcomm(channelDescs[i]);
         CHK_RET(ConfigSqDepthByExpansionMode(engine, hcommDescs[i]));
     }
-
+    auto start = std::chrno::steady_clock::now();
     CHK_RET(BatchCreateSockets(channelDescs, channelNum, commTag, hcommDescs));
+    auto end = std::chrno::steady_clock::now();
+    auto batchCreateDuration = std::chrno::duration_cast<std::chrono::microseconds>(end - start).count();
+    start = std::chrno::steady_clock::now();
     CHK_RET_UNAVAIL(BatchCreateChannels(engine, channelDescs, channelNum, hcommDescs, hostChannelHandleList));
+    end = std::chrno::steady_clock::now();
+    createChannelDuration = std::chrno::duration_cast<std::chrono::microseconds>(end - start).count();
+    start = std::chrno::steady_clock::now();
     CHK_RET(BatchConnectChannels(channelDescs, hostChannelHandleList, channelNum));
+    end = std::chrno::steady_clock::now();
+    batchConnectDuration = std::chrno::duration_cast<std::chrono::microseconds>(end - start).count();
+    HCCL_RUN_INFO("BatchCreateSockets Time Elapsed [%llu], BatchCreateChannels Time Elapsed [%llu],BatchConnectChannels Time Elapsed [%llu]",batchCreateDuration, createChannelDuration, batchConnectDuration);
     // 添加初始化时进行填表
     for (u32 i = 0; i < channelNum; ++i) {
         u32 remoteRank = channelDescs[i].remoteRank;
