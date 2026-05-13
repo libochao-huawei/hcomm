@@ -238,6 +238,17 @@ constexpr u32 AICPU_MAX_RANK_NUM = 128 * 1024;
 constexpr u32 MAX_RANK_NUM_A3 = 768;
 constexpr u32 HCOMID_MAX_LENGTH = 256;
 
+// aclgraph销毁场景下，从host端投递到aicpu端的清理任务payload。
+// 与HcclKFCTilingData独立，避免污染现有通信任务结构体。
+// host端通过RunAicpuKfcClearOpRes作为kernel name投递，aicpu端按group定位HcclCommAicpu后清tag关联资源。
+constexpr u32 HCCL_KFC_CLEAR_OP_RES_MAGIC = 0x484B4346U; // 'HKCF'，aicpu端校验防误投
+struct HcclKfcClearOpResTilingData {
+    u32 magic;                          // 必须等于HCCL_KFC_CLEAR_OP_RES_MAGIC
+    u32 reserved;                       // 对齐预留
+    char group[HCOMID_MAX_LENGTH];      // communicator identifier
+    char tag[TAG_MAX_LENGTH];           // 待清理的op tag (含_Capture或_CaptureN后缀)
+};
+
 struct HcclOpConfigV2 {
     u8 deterministic;  // 确定性计算开关
 };
