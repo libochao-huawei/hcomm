@@ -14,6 +14,8 @@ set(src_to_test_list
     ut_CcuComponent_test.cc
     ut_CcuConn_test.cc
     ut_ccu_microcode.cc
+    ./ccu_representation/interface/ut_ccu_interface_assist.cc
+    ./ccu_device/ut_ccu_res_batch_allocator.cc
 )
 
 add_executable(hccl_utest_comms_ccu_features ${src_to_test_list})

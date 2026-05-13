@@ -29,3 +29,32 @@ protected:
     }
 
 };
+
+TEST_F(CcuMissionMgrTest, Alloc_WhenReqTypeNotDefault_ShouldForceSetToDefault)
+{   
+    hcomm::CcuResAllocator allocat{};
+    uintptr_t handleKey;
+    MissionReq missionReq;
+    missionReq.reqType = MissionReqType::COMM_ENGINE_RESERSED; 
+    missionReq.req[0] = 0;
+    missionReq.req[1] = 0;
+    MissionResInfo missionInfos;
+    
+    auto ret = allocat.missionMgr_.Alloc(handleKey, missionReq, missionInfos);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}
+
+
+TEST_F(CcuMissionMgrTest, Alloc_WhenReqNumIs0_ShouldReturnSuccessDirectly)
+{
+    hcomm::CcuResAllocator allocat{};
+    uintptr_t handleKey;
+    MissionReq missionReq;
+    missionReq.reqType = MissionReqType::FUSION_MULTIPLE_DIE; 
+    missionReq.req[0] = 0;
+    missionReq.req[1] = 0;
+    MissionResInfo missionInfos;
+    
+    auto ret = allocat.missionMgr_.Alloc(handleKey, missionReq, missionInfos);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}
