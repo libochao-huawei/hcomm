@@ -382,37 +382,35 @@
          uint32_t bufBase = index * ctx.moConfig.msInterleave;
  
          ccu::Event loopEvt = ctx.moRes.completedEvent[index];
- 
+
          CCU_LOOP(ctx.reduceLoops[index]) {
+             // mask 已与 Event 解耦：由各个数据 / 同步 API 末尾参数显式传入。
              for (uint32_t i = 0; i < size; i++) {
-                 loopEvt.setMask(1 << i);
+                 const uint32_t copyMask = 1 << i;
                  if (i == arg->rankId) {
                      ccu::LocalCopy(
                          ctx.moRes.ccuBuf[bufBase + i], ctx.loopSrc[index],
-                         ctx.loopLen[index], loopEvt);
+                         ctx.loopLen[index], loopEvt, copyMask);
                  } else {
                      ccu::LocalCopy(
                          ctx.moRes.ccuBuf[bufBase + i], ctx.loopScratch[index][i],
-                         ctx.loopLen[index], loopEvt);
+                         ctx.loopLen[index], loopEvt, copyMask);
                  }
              }
-             loopEvt.setMask((1 << size) - 1);
-             ccu::EventWait(loopEvt);
- 
+             ccu::EventWait(loopEvt, (1 << size) - 1);
+
              if (size > 1) {
-                 loopEvt.setMask(1);
                  ccu::LocalReduce(
                      &ctx.moRes.ccuBuf[bufBase], size,
                      arg->dataType, arg->outputDataType, arg->reduceOp,
-                     ctx.loopLen[index], loopEvt);
-                 ccu::EventWait(loopEvt);
+                     ctx.loopLen[index], loopEvt, 1);
+                 ccu::EventWait(loopEvt, 1);
              }
- 
-             loopEvt.setMask(1);
+
              ccu::LocalCopy(
                  ctx.loopDst[index], ctx.moRes.ccuBuf[bufBase],
-                 ctx.loopLenExp[index], loopEvt);
-             ccu::EventWait(loopEvt);
+                 ctx.loopLenExp[index], loopEvt, 1);
+             ccu::EventWait(loopEvt, 1);
          }
      }
  
@@ -578,22 +576,22 @@
      sliceSize = (arg->rankId == (arg->rankSize - 1)) ? ctx.lastSliceSize : ctx.normalSliceSize;
  
      CCU_IF(sliceSize != 0) {
+         // mask 已与 Event 解耦：record/read 用 (1 << rankIdx)，等待用全位 mask。
          for (uint32_t rankIdx = 0; rankIdx < arg->rankSize; rankIdx++) {
-             ctx.event.setMask(1 << rankIdx);
+             const uint32_t rankMask = 1 << rankIdx;
              if (rankIdx == arg->rankId) {
-                 ccu::EventRecord(ctx.event);
+                 ccu::EventRecord(ctx.event, rankMask);
              } else {
                  ccu::Read(
                      arg->channels[channelId],
                      ctx.scratchMem[rankIdx],
                      ctx.remoteInput[rankIdx],
-                     sliceSize, ctx.event);
+                     sliceSize, ctx.event, rankMask);
                  channelId++;
              }
          }
- 
-         ctx.event.setMask((1 << arg->rankSize) - 1);
-         ccu::EventWait(ctx.event);
+
+         ccu::EventWait(ctx.event, (1 << arg->rankSize) - 1);
  
          ReduceLoopGroup(ctx, myOutput, ctx.myInput,
              ctx.scratchMem, arg->rankSize, ctx.goSize);
