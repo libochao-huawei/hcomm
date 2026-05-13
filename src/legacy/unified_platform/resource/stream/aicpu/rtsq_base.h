@@ -232,12 +232,6 @@ protected:
 
     inline void SetTaskIdBySqeId()
     {
-        if (UNLIKELY(aicpu::GetSqeId == nullptr)) {
-            HCCL_WARNING("[RtsqBase][SetTaskIdBySqeId] aicpu::GetSqeId is nullptr.");
-            taskId_++;
-            return;
-        }
-
         if (taskId_ < taskIdEnd_) {
             taskId_++;
         } else {

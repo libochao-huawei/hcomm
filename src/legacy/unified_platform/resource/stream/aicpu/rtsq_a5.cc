@@ -167,7 +167,6 @@ void RtsqA5::RefreshInfo()
 {
     SetTaskIdBySqeId();
     pendingSqeCnt++;
-    HCCL_INFO("RtsqA5::%s: Updated: taskId_[%u], pendingSqeCnt[%u]", __func__, taskId_, pendingSqeCnt);
     
 #ifdef CCL_KERNEL_AICPU
     if (launchFlag_ && !IsBatchLaunchMode()) {
