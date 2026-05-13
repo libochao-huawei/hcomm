@@ -100,6 +100,20 @@ constexpr u32 MAX_CKE_DATA_ARRAY_SIZE = 8;
 constexpr uint32_t MSID_CONFIG_AX_MAINBOARD = 7;
 constexpr TpProtocol LOOP_JETTY_PROTOCOL = TpProtocol::TP; // 环回使用TP避免被环境link down阻塞
 
+// 与 TpManager 缓存键一致：须与 RequestNewTpInfo / Deinit::ReleaseTpInfo 使用同一套 qos 与环回标志
+static RaUbGetTpInfoParam MakeCcuLoopRaUbGetTpInfoParam(const IpAddress &locAddr, const IpAddress &rmtAddr)
+{
+    RaUbGetTpInfoParam p{};
+    p.locAddr = locAddr;
+    p.rmtAddr = rmtAddr;
+    p.tpProtocol = LOOP_JETTY_PROTOCOL;
+    p.qos = 0U;
+    p.slLevelCount = 0U;
+    p.loopFirstTpLowestSl = true;
+    p.ccuLoopbackGetTpInfo = true;
+    return p;
+}
+
 CcuComponent &CcuComponent::GetInstance(const int32_t deviceLogicId)
 {
     static CcuComponent ccuComponent[MAX_MODULE_DEVICE_NUM + 1];
@@ -146,8 +160,7 @@ void CcuComponent::Deinit()
     for (const auto &item : tpInfoMap) {
         const auto &ipAddr = item.first;
         const auto &tpInfo = item.second;
-        (void)TpManager::GetInstance(devLogicId)
-            .ReleaseTpInfo({ipAddr, ipAddr, LOOP_JETTY_PROTOCOL}, tpInfo);
+        (void)TpManager::GetInstance(devLogicId).ReleaseTpInfo(MakeCcuLoopRaUbGetTpInfoParam(ipAddr, ipAddr), tpInfo);
     }
 
     createdOutParamMap.clear();
@@ -486,14 +499,7 @@ TpInfo CcuComponent::RequestNewTpInfo(const IpAddress &srcIpAddr, const IpAddres
 
     auto &tpManager = TpManager::GetInstance(devLogicId);
     // 与 Next `MakeLoopGetTpInfoParam` 对齐：环回与通信域 hcclQos 解耦；SL 由 GetTpAttr.slBitmap + loopFirstTpLowestSl 决定
-    RaUbGetTpInfoParam loopParam{};
-    loopParam.locAddr = srcIpAddr;
-    loopParam.rmtAddr = dstIpAddr;
-    loopParam.tpProtocol = LOOP_JETTY_PROTOCOL;
-    loopParam.qos = 0U;
-    loopParam.slLevelCount = 0U;
-    loopParam.loopFirstTpLowestSl = true;
-    loopParam.ccuLoopbackGetTpInfo = true;
+    const RaUbGetTpInfoParam loopParam = MakeCcuLoopRaUbGetTpInfoParam(srcIpAddr, dstIpAddr);
 
     const auto timeout = std::chrono::milliseconds(LOOP_CHANNEL_WAIT_TIMEOUT_MS);
     const auto startTime = std::chrono::steady_clock::now();
