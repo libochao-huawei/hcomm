@@ -57,6 +57,9 @@ public:
         const std::vector<const RankInfo_t *> &topoInstRanks);
     HcclResult GetEndpointNum(uint32_t netLayer, uint32_t topoInstId, uint32_t *num);
     HcclResult GetEndpointDesc(uint32_t netLayer, uint32_t topoInstId, uint32_t *descNum, EndpointDesc *endpointDesc);
+    HcclResult GetEndpointInfo(uint32_t rankId, const EndpointDesc *endPointDesc, EndpointAttr endpointAttr,
+                                uint32_t infoLen, void *info);
+    HcclResult GetRankSize(uint32_t *rankSize) override;
     HcclResult GetDevicePort(const uint32_t rank, uint32_t *devPort) override;
 
 private:

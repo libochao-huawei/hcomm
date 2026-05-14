@@ -120,8 +120,12 @@ HcclResult HcclGetHcclBuffer(HcclComm comm, void ** buffer, uint64_t *size)
 #endif
 
     auto *hcclComm = static_cast<hccl::hcclComm *>(comm);
-    hccl::MyRank *myRank = static_cast<hccl::MyRank *>(hcclComm->GetMyRank());
-    if (hcclComm->GetConnectMode() && myRank != nullptr) {
+    CollComm* collComm = hcclComm->GetCollComm();
+    hccl::MyRank *myRank = nullptr;
+    if (collComm != nullptr) {
+        myRank = collComm->GetMyRank();
+    }
+    if (collComm != nullptr && hcclComm->GetConnectMode() && myRank != nullptr) {
         CommMems *commMem = myRank->GetCommMems();
         CHK_PTR_NULL(commMem);
         CHK_RET(commMem->GetHcclBuffer(*buffer, *size));

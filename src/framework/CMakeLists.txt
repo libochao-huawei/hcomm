@@ -225,8 +225,6 @@ else()
         ${HCCL_BASE_DIR}/pkg_inc
 
         ${TOP_DIR}/hcomm-legacy/src/platform/legacy/inc
-
-        ${HCCL_BASE_DIR}/../pkg_inc/hcomm/ccu
     )
 endif()
 
@@ -776,8 +774,6 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/framework/device/common
         ${HCCL_BASE_DIR}/framework/device/inc
         ${HCCL_BASE_DIR}/framework/device/framework
-
-        ${HCCL_BASE_DIR}/../pkg_inc/hcomm/ccu
 
         # runtime头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/

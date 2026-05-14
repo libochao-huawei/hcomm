@@ -700,6 +700,13 @@ HcclResult InitCommClusterInfo(std::string &rankTableM, const uint32_t rank, con
         hcclNslbDp::GetInstance().SetGlobalRank_RankTableExit(opBaseHcom.rankTable);
         hcclNslbDp::GetInstance().SendGlobalRankTable(rank);
     }
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    ret = opBaseHcom.pComm->InitCollCommInner(rank);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[Init][CommClusterInfo] InitCollCommInner failed, ret=%d", ret);
+        return ret;
+    }
+#endif
     /* 关键状态记录 */
     HCCL_INFO("%s success, rankNum[%u], rank[%u], server[%s], device[%d].",
         __func__, opBaseHcom.rankTable.rankNum, rank, opBaseHcom.params.serverId.c_str(),
@@ -3465,14 +3472,10 @@ HcclResult HcclConfigGetInfo(HcclComm comm, HcclConfigType cfgType,
         return HcclResult::HCCL_E_PARA;
     }
 
-    MyRank *myRank;
     auto *hcclComm = static_cast<hccl::hcclComm *>(comm);
     auto *collComm = hcclComm->GetCollComm();
-    if (collComm == nullptr) {
-        myRank = (MyRank *)hcclComm->GetMyRank();
-    } else {
-        myRank = collComm->GetMyRank();
-    }
+    CHK_PTR_NULL(collComm);
+    auto *myRank = collComm->GetMyRank();
     CHK_PTR_NULL(myRank);
     const uint32_t opExpansionModeValue = myRank->GetOpExpansionMode();
     const auto opExpansionMode = OpExpansionModeValueToModeEnum(opExpansionModeValue);

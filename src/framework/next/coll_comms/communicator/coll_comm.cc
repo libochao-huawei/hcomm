@@ -46,7 +46,11 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
     EXCEPTION_HANDLE_BEGIN
 
     CHK_RET(DlHalFunction::GetInstance().DlHalFunctionInit());
-    EXECEPTION_CATCH(rankgraph_ = std::make_unique<RankGraphV2>(rankGraph), return HCCL_E_PTR);
+    if (comm_ == nullptr) { /* A2/A3 hccl::Communicator对应版本 */
+        EXECEPTION_CATCH(rankgraph_ = std::unique_ptr<RankGraph>(static_cast<RankGraph*>(rankGraph)), return HCCL_E_PTR);
+    } else {  /* A5 Hccl::Communicator对应版本 */
+        EXECEPTION_CATCH(rankgraph_ = std::make_unique<RankGraphV2>(rankGraph), return HCCL_E_PTR);
+    }
     uint32_t rankNum = 0;
     CHK_PTR_NULL(rankgraph_);
     CHK_RET(rankgraph_->GetRankSize(&rankNum));
@@ -85,6 +89,11 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
         CHK_RET(config_.SetConfigServiceLevel(sl));
     }
     CHK_RET(myRank_->Init(cclBuffer, opExpansionMode, rankNum));
+
+    if (comm_ == NULL) {    /* hccl:Communicatior流程KFC在Communicator中初始化 */
+        return HCCL_SUCCESS;
+    }
+
     CHK_RET(hrtGetDevice(&deviceLogicId_));
 
     CHK_RET(InitHDCommunicate());
