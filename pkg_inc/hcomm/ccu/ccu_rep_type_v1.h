@@ -23,6 +23,7 @@ enum class CcuRepType {
     STORE,
     LOAD_ARG,
     LOAD_VAR,
+    STORE_VAR,
 
     ASSIGN,
     ADD,
