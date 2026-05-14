@@ -23,7 +23,7 @@ TpManager& TpManager::GetInstance(const int32_t deviceLogicId)
     return tpManager[deviceLogicId];
 }
 
-HcclResult TpManager::GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo)
+HcclResult TpManager::GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo, bool isSync)
 {
     TpInfo info;
     tpInfo = info;
