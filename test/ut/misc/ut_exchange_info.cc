@@ -19,7 +19,7 @@
 #define private public
 #define protected public
 #endif
-#include "hccl_comm_pub.h"
+#include "coll_comm_config_consistency.h"
 #include "rank_consistentcy_checker.h"
 #undef private
 #undef protected
@@ -31,9 +31,6 @@
 using namespace std;
 using namespace hccl;
 
-// ============================================================================
-// Test Fixture: hcclComm Exchange Info UT
-// ============================================================================
 class ExchangeInfoTest : public testing::Test
 {
 protected:
@@ -93,25 +90,26 @@ TEST_F(ExchangeInfoTest, Ut_CApiResetExchangeInfo_When_ParamValid_Expect_Success
 TEST_F(ExchangeInfoTest, Ut_EndToEnd_When_AddStoreGet_Expect_Consistent)
 {
     // 1. 本端添加交换信息
+    CollCommConfigConsistency consistency;
     std::vector<u8> localData = {0xDE, 0xAD, 0xBE, 0xEF};
-    HcclResult ret = hcclCommPtr->AddExchangeInfo(localData.data(), localData.size());
+    HcclResult ret = consistency.AddExchangeInfo(localData.data(), localData.size());
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     // 2. 模拟建链后存储对端信息
     std::vector<u8> remoteData = {0xCA, 0xFE, 0xBA, 0xBE};
     size_t size = remoteData.size();
-    ret = hcclCommPtr->StoreRemoteExchangeInfo(1, remoteData);
+    ret = consistency.StoreRemoteExchangeInfo(1, remoteData);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     // 3. 清空本端交换信息状态（模拟HcclChannelAcquire建链后清空）
-    ret = hcclCommPtr->ResetExchangeInfo();
+    ret = consistency.ResetExchangeInfo();
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     // 4. 获取对端交换信息
     std::vector<u8> recvBuf(size, 0);
     uint32_t recvBufSize = recvBuf.size();
     uint32_t actualLen = 0;
-    ret = hcclCommPtr->GetExchangeInfo(1, recvBufSize, recvBuf.data(), &actualLen);
+    ret = consistency.GetExchangeInfo(1, recvBufSize, recvBuf.data(), &actualLen);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 

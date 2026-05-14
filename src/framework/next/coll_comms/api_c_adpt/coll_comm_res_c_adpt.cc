@@ -279,7 +279,7 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
                 HCCL_ERROR("RegisterToClusterMonitor failed. group[%s], engine[%d], channelNum[%llu], ret[%d]", hcclComm->GetIdentifier().c_str(), engine, channelNum, ret), ret);
         }
 
-        ret = myRank->CreateChannels(engine, commTag, channelDescFinals.data(), channelNum, channels, hcclComm);
+        ret = myRank->CreateChannels(engine, commTag, channelDescFinals.data(), channelNum, channels);
         CHK_PRT_RET((ret == HCCL_E_AGAIN || ret == HCCL_E_UNAVAIL),
             HCCL_WARNING("CreateChannels group[%s], engine[%d] ret[%d]", commTag.c_str(), engine, ret), ret);
         CHK_PRT_RET(ret != HCCL_SUCCESS,

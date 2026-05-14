@@ -18,7 +18,6 @@
 #include "env_config/env_config.h"
 #include "channel_process.h"
 #include "dlprof_function.h"
-#include "hccl_comm_pub.h"
 
 using namespace hcomm;
 
@@ -606,8 +605,7 @@ HcclResult MyRank::ConfigSqDepthByExpansionMode(CommEngine engine, HcommChannelD
 }
 
 HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
-        const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle *channelHandles,
-        hcclComm *hcclComm)
+        const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle *channelHandles)
 {
     CHK_PTR_NULL(channelDescs);
     CHK_PTR_NULL(channelHandles);
@@ -630,9 +628,7 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
     CHK_RET(BatchCreateSockets(channelDescs, channelNum, commTag, hcommDescs));
     CHK_RET_UNAVAIL(BatchCreateChannels(engine, channelDescs, channelNum, hcommDescs, hostChannelHandleList));
     CHK_RET(BatchConnectChannels(channelDescs, hostChannelHandleList, channelNum));
-    if (hcclComm != nullptr) {
-        CHK_RET(BatchExchangeAndCheckConsistency(channelDescs, hcommDescs, channelNum, commTag, hcclComm));
-    }
+    CHK_RET(BatchExchangeAndCheckConsistency(channelDescs, hcommDescs, channelNum, commTag));
     // 添加初始化时进行填表
     for (u32 i = 0; i < channelNum; ++i) {
         u32 remoteRank = channelDescs[i].remoteRank;
@@ -808,8 +804,7 @@ HcclResult MyRank::BatchExchangeAndCheckConsistency(
     const HcclChannelDesc* channelDescs,
     const std::vector<HcommChannelDesc> &hcommDescs,
     uint32_t channelNum,
-    const std::string &commTag,
-    hcclComm *hcclComm)
+    const std::string &commTag)
 {
     std::vector<Hccl::Socket*> sockets;
     std::vector<u32> remoteRanks;
@@ -834,8 +829,9 @@ HcclResult MyRank::BatchExchangeAndCheckConsistency(
     }
 
     // 交换HCCL算子信息 ======
-    CHK_RET(ExchangeUserInfo(sockets, remoteRanks, roles, hcclComm));
-    CHK_RET(hcclComm->ResetExchangeInfo());
+    CollCommConfigConsistency collCommConfigConsistency;
+    CHK_RET(ExchangeUserInfo(sockets, remoteRanks, roles, collCommConfigConsistency));
+    CHK_RET(collCommConfigConsistency.ResetExchangeInfo());
 
     return HCCL_SUCCESS;
 }
@@ -844,9 +840,9 @@ HcclResult MyRank::ExchangeUserInfo(
     const std::vector<Hccl::Socket*> &sockets,
     const std::vector<u32> &remoteRanks,
     const std::vector<HcommSocketRole> &roles,
-    hcclComm *hcclComm)
+    CollCommConfigConsistency &collCommConfigConsistency)
 {
-    u32 localExchangeInfoLen = hcclComm->GetExchangeInfoLen();
+    u32 localExchangeInfoLen = exchangeInfo.GetExchangeInfoLen();
     if (localExchangeInfoLen == 0) {
         HCCL_INFO("[ExchangeUserInfo] localExchangeInfoLen is 0.");
         return HCCL_SUCCESS;
@@ -865,7 +861,8 @@ HcclResult MyRank::ExchangeUserInfo(
             remoteUserDatas[i].resize(remoteExchangeInfoLens[i], 0);
             sockets[i]->RecvAsync(remoteUserDatas[i].data(), remoteExchangeInfoLens[i]);
         } else {
-            const std::vector<u8> &exchangeBuf = hcclComm->GetExchangeInfoBuf();
+            const std::vector<u8> exchangeBuf;
+            collCommConfigConsistency.GetExchangeInfoBuf(exchangeBuf);
             sockets[i]->SendAsync(exchangeBuf.data(), localExchangeInfoLen);
         }
     }
@@ -875,7 +872,8 @@ HcclResult MyRank::ExchangeUserInfo(
     // SERVER再Send/CLIENT再Recv
     for (u32 i = 0; i < sockets.size(); i++) {
         if (roles[i] == HCOMM_SOCKET_ROLE_SERVER) {
-            const std::vector<u8> &exchangeBuf = hcclComm->GetExchangeInfoBuf();
+            const std::vector<u8> exchangeBuf;
+            collCommConfigConsistency.GetExchangeInfoBuf(exchangeBuf);
             sockets[i]->SendAsync(exchangeBuf.data(), localExchangeInfoLen);
         } else {
             remoteUserDatas[i].resize(remoteExchangeInfoLens[i], 0);
@@ -888,7 +886,7 @@ HcclResult MyRank::ExchangeUserInfo(
     // 存储对端交换信息
     for (u32 i = 0; i < sockets.size(); i++) {
         if (remoteExchangeInfoLens[i] > 0 && !remoteUserDatas[i].empty()) {
-            CHK_RET(hcclComm->StoreRemoteExchangeInfo(remoteRanks[i], remoteUserDatas[i]));
+            CHK_RET(collCommConfigConsistency.StoreRemoteExchangeInfo(remoteRanks[i], remoteUserDatas[i]));
         }
     }
 

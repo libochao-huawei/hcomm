@@ -24,12 +24,12 @@
 #include "hdc_pub.h"
 #include "rank_graph.h"
 #include "orion_adapter_hccp.h"
+#include "coll_comm_config_consistency.h"
 
 #include "../../comms/comm_engine_res/ccu/ccu_res_container.h"
 
 
 namespace hccl {
-class hcclComm;
 
 /**
  * @note 职责：管理当前通信域下本Rank的信息和通信资源
@@ -54,7 +54,7 @@ public:
     }
 
     HcclResult CreateChannels(CommEngine engine, const std::string &commTag, 
-        const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle *channels, hcclComm *hcclComm = nullptr);
+        const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle *channels);
     
     HcclResult ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, uint64_t *size);
     HcclResult ChannelGetRemoteMem(ChannelHandle channel, CommMem **remoteMem, char ***memTag, uint32_t *memNum);
@@ -86,13 +86,12 @@ private:
         const HcclChannelDesc* channelDescs,
         const std::vector<HcommChannelDesc> &hcommDescs,
         uint32_t channelNum,
-        const std::string &commTag,
-        hcclComm *hcclComm);
+        const std::string &commTag);
     HcclResult ExchangeUserInfo(
         const std::vector<Hccl::Socket*> &sockets,
         const std::vector<u32> &remoteRanks,
         const std::vector<HcommSocketRole> &roles,
-        hcclComm *hcclComm);
+        CollCommConfigConsistency &collCommConfigConsistency);
     HcclResult BatchExchangeFixedData(
         const std::vector<Hccl::Socket*> &sockets,
         const std::vector<u32> &remoteRanks,
