@@ -182,13 +182,6 @@ HcclResult RemoteUbRmaBuffer::BatchMemReg(RdmaHandle rdmaHandle, std::vector<Rem
     return HCCL_SUCCESS;
 }
 
-RemoteUbRmaBuffer::~RemoteUbRmaBuffer()
-{
-    if (memHandle != 0) {
-        DECTOR_TRY_CATCH("RemoteUbRmaBuffer", HrtRaUbRemoteMemUnimport(rdmaHandle, memHandle));
-    }
-}
-
 string RemoteUbRmaBuffer::Describe() const
 {
     return StringFormat("RemoteUbRmaBuffer[rdmaHandle=%p, addr=0x%llx, size=0x%llx, memHandle=%p segVa=%llu]",
