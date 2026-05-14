@@ -63,6 +63,7 @@ __aicore__ inline void AivReduceScatterVSmall910B::Process(GM_ADDR input, GM_ADD
 
     } else {
         CpGM2GM(outputGM, inputGM + extraArgs.sendDispls[rank_], extraArgs.sendCounts[rank_]);
+        PipeBarrier<PIPE_ALL>();
         // 卡内同步
         Record1vN(tag, CommPattern::intraRank, AivNotifyType::DataSignal, 0, ifPingpong);
     }

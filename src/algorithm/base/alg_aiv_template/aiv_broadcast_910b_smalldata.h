@@ -47,6 +47,7 @@ __aicore__ inline void AivBroadcastSmall910B::Process(GM_ADDR input, GM_ADDR out
         WaitNv1(tag, root, AivNotifyType::DataSignal);
         PipeBarrier<PIPE_ALL>();
         CpGM2GM(outputGM, cclGMRoot, len);  // 数据量小于190k时，ub一次搬运，直接从root卡的cclbuffer传数据到本卡的输出
+        PipeBarrier<PIPE_ALL>();
         // 置标志位，表示自己拿走了这个数据
         Record(tag, root, AivNotifyType::Done);
     }

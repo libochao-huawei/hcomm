@@ -85,6 +85,7 @@ __aicore__ inline void AivBroadcastBig910B::Process(
             inOutQue.EnQue(localIn);
             LocalTensor<T> localOut = inOutQue.DeQue<T>();
             DataCopyUB2GM(cclGT[0], localOut, curCount);
+            PipeBarrier<PIPE_ALL>();
             CountRecord(tag, curIndex, block_idx);
             PipeBarrier<PIPE_ALL>();
             DataCopyUB2GM(outputGT[0], localOut, curCount);
@@ -96,9 +97,11 @@ __aicore__ inline void AivBroadcastBig910B::Process(
             WaitSignalGEValue(ctrlFlagGM, localCheckGETensor, tag + curIndex);
             PipeBarrier<PIPE_ALL>();
             CpGM2GM(outputGM + dataOffset, cclGMOther + dataOffset, curCount);
+            PipeBarrier<PIPE_ALL>();
         } else {
             // 把root卡的数据搬到root的cclbuffer
             CpGM2GM(cclGMRoot + dataOffset, inputGM + dataOffset, curCount);
+            PipeBarrier<PIPE_ALL>();
             CountRecord(tag, curIndex, block_idx);
             PipeBarrier<PIPE_ALL>();
         }
@@ -128,6 +131,7 @@ __aicore__ inline void AivBroadcastBig910B::Process2Rank(
         if (rank_ == root) {
             // 把root数据拷贝到自己的cclbuffer
             CpGM2GM(cclGMRoot + dataOffset, inputGM + dataOffset, curCount);
+            PipeBarrier<PIPE_ALL>();
             // 告诉另一张卡可以读取数据了
             CountRecord(tag, curIndex, block_idx);
             PipeBarrier<PIPE_ALL>();
@@ -136,6 +140,7 @@ __aicore__ inline void AivBroadcastBig910B::Process2Rank(
             WaitSignalGEValue(ctrlFlagGM, localCheckGETensor, tag + curIndex);
             PipeBarrier<PIPE_ALL>();
             CpGM2GM(outputGM + dataOffset, cclGMRoot + dataOffset, curCount);
+            PipeBarrier<PIPE_ALL>();
         }
     }
     int32_t nowTag = tag >> TAG_MOVE_LEFT_BITS;

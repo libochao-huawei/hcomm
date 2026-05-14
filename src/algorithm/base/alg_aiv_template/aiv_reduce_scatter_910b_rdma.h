@@ -56,6 +56,7 @@ __aicore__ inline void AivReduceScatterRdma910B::Process(GM_ADDR input, GM_ADDR 
         pipe_barrier(PIPE_ALL);
         CpGM2GM(cclGMSelf + LengthPerPlane * rank_,
                 cclGMOther + LengthPerPlane * rank_, count * serverNum, true, reduceOp_);
+        PipeBarrier<PIPE_ALL>();
         Record(tag, block_idx, AivNotifyType::DataSignal);  // 本卡该片数据已可以被跨片读取
         Wait(tag, block_idx, AivNotifyType::DataSignal);
     }
