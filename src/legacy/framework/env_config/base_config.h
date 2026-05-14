@@ -120,9 +120,8 @@ public:
     u32  GetRdmaServerLevel() const;
     u32  GetRdmaTimeOut() const;
     u32  GetRdmaRetryCnt() const;
+    u32  GetRdmaQueueNum() const;
     u32  GetRdmaMultiQpThreshold() const;
-
-    u32  IsRdmaQpsNumConfigured() const;
 
 private:
     static constexpr u32 HCCL_RDMA_TC_DEFAULT        = 132; // 默认的traffic class为132(33*4)
