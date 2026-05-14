@@ -348,12 +348,25 @@ void UbTransportLiteImpl::Post(u32 index, const StreamLite &stream)
     u32           inlineData = 1;
 
     auto taskId = stream.GetRtsq()->GetTaskId();
+
     // 当前使用1个connection，下标为0 构建sqe
+    RmaConnLite* conn = connVec[0];
+
+    // 展开下发WQE前, 按需设置cache context
+    UbConnLite* ubConnLitePtr = nullptr;
+    bool needCacheTask = false;
+    CHK_RET(PreLaunchWqeForCache(ubConnLitePtr, needCacheTask, conn));
+
+    // 展开下发WQE
     auto rmtBuffSliceLite = GetRmtNotifySliceLite(index);
-    connVec[0]->InlineWrite(reinterpret_cast<u8 *>(&inlineData), UB_INLINE_WRITE_SIZE, rmtBuffSliceLite,
+    conn->InlineWrite(reinterpret_cast<u8 *>(&inlineData), UB_INLINE_WRITE_SIZE, rmtBuffSliceLite,
                             cfg, stream, connOut);
+
+    // 展开下发WQE后, 展开下发DbSqe前, 按需缓存wqe及DbSqeIdx
+    CHK_RET(PostLaunchWqeForCache(ubConnLitePtr, needCacheTask, stream));
+
     // 构建rts 的 sqe
-    BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
+    BuildUbDbSendTask(stream, conn->GetUbJettyLiteId(), connOut.pi);
 
     HCCL_INFO("UbTransportLiteImpl::Post notifyId[0x%llx], pi=%u", rmtBuffSliceLite.GetAddr(), connOut.pi);
 
@@ -478,10 +491,22 @@ void UbTransportLiteImpl::Read(const RmaBufferLite &loc, const Buffer &rmt, cons
     auto taskId = stream.GetRtsq()->GetTaskId();
 
     // 当前使用1个connection,下标为0
+    RmaConnLite* conn = connVec[0];
+
+    // 展开下发WQE前, 按需设置cache context
+    UbConnLite* ubConnLitePtr = nullptr;
+    bool needCacheTask = false;
+    CHK_RET(PreLaunchWqeForCache(ubConnLitePtr, needCacheTask, conn));
+
+    // 展开下发WQE
     auto locRmaBufSlicelite = GetRmaBufSlicelite(loc);
     auto rmtRmaBufSlicelite = GetRmtRmaBufSliceLite(rmt);
-    connVec[0]->Read(locRmaBufSlicelite, rmtRmaBufSlicelite, cfg, stream, connOut);
-    BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
+    conn->Read(locRmaBufSlicelite, rmtRmaBufSlicelite, cfg, stream, connOut);
+
+    // 展开下发WQE后, 展开下发DbSqe前, 按需缓存wqe及DbSqeIdx
+    CHK_RET(PostLaunchWqeForCache(ubConnLitePtr, needCacheTask, stream));
+
+    BuildUbDbSendTask(stream, conn->GetUbJettyLiteId(), connOut.pi);
 
     ProfilingProcess(reinterpret_cast<void *>(locRmaBufSlicelite.GetAddr()),
                      reinterpret_cast<void *>(rmtRmaBufSlicelite.GetAddr()),
@@ -495,10 +520,22 @@ void UbTransportLiteImpl::Write(const RmaBufferLite &loc, const Buffer &rmt, con
     auto taskId = stream.GetRtsq()->GetTaskId();
 
     // 当前使用1个connection，下标为0
+    RmaConnLite* conn = connVec[0];
+
+    // 展开下发WQE前, 按需设置cache context
+    UbConnLite* ubConnLitePtr = nullptr;
+    bool needCacheTask = false;
+    CHK_RET(PreLaunchWqeForCache(ubConnLitePtr, needCacheTask, conn));
+
+    // 展开下发WQE
     auto locRmaBufSlicelite = GetRmaBufSlicelite(loc);
     auto rmtRmaBufSlicelite = GetRmtRmaBufSliceLite(rmt);
-    connVec[0]->Write(locRmaBufSlicelite, rmtRmaBufSlicelite, cfg, stream, connOut);
-    BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
+    conn->Write(locRmaBufSlicelite, rmtRmaBufSlicelite, cfg, stream, connOut);
+
+    // 展开下发WQE后, 展开下发DbSqe前, 按需缓存wqe及DbSqeIdx
+    CHK_RET(PostLaunchWqeForCache(ubConnLitePtr, needCacheTask, stream));
+
+    BuildUbDbSendTask(stream, conn->GetUbJettyLiteId(), connOut.pi);
 
     ProfilingProcess(reinterpret_cast<void *>(locRmaBufSlicelite.GetAddr()),
                      reinterpret_cast<void *>(rmtRmaBufSlicelite.GetAddr()),
@@ -513,10 +550,22 @@ void UbTransportLiteImpl::ReadReduce(const RmaBufferLite &loc, const Buffer &rmt
     auto taskId = stream.GetRtsq()->GetTaskId();
 
     // 当前使用1个connection，下标为0
+    RmaConnLite* conn = connVec[0];
+
+    // 展开下发WQE前, 按需设置cache context
+    UbConnLite* ubConnLitePtr = nullptr;
+    bool needCacheTask = false;
+    CHK_RET(PreLaunchWqeForCache(ubConnLitePtr, needCacheTask, conn));
+
+    // 展开下发WQE
     auto locRmaBufSlicelite = GetRmaBufSlicelite(loc);
     auto rmtRmaBufSlicelite = GetRmtRmaBufSliceLite(rmt);
-    connVec[0]->ReadReduce(reduceIn, locRmaBufSlicelite, rmtRmaBufSlicelite, stream, cfg, connOut);
-    BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
+    conn->ReadReduce(reduceIn, locRmaBufSlicelite, rmtRmaBufSlicelite, stream, cfg, connOut);
+
+    // 展开下发WQE后, 展开下发DbSqe前, 按需缓存wqe及DbSqeIdx
+    CHK_RET(PostLaunchWqeForCache(ubConnLitePtr, needCacheTask, stream));
+
+    BuildUbDbSendTask(stream, conn->GetUbJettyLiteId(), connOut.pi);
 
     ReduceProfilingProcess(reinterpret_cast<void *>(locRmaBufSlicelite.GetAddr()),
                             reinterpret_cast<void *>(rmtRmaBufSlicelite.GetAddr()),
@@ -531,11 +580,23 @@ void UbTransportLiteImpl::WriteReduce(const RmaBufferLite &loc, const Buffer &rm
     auto taskId = stream.GetRtsq()->GetTaskId();
 
     // 当前使用1个connection，下标为0
+    RmaConnLite* conn = connVec[0];
+
+    // 展开下发WQE前, 按需设置cache context
+    UbConnLite* ubConnLitePtr = nullptr;
+    bool needCacheTask = false;
+    CHK_RET(PreLaunchWqeForCache(ubConnLitePtr, needCacheTask, conn));
+
+    // 展开下发WQE
     auto locRmaBufSlicelite = GetRmaBufSlicelite(loc);
     auto rmtRmaBufSlicelite = GetRmtRmaBufSliceLite(rmt);
-    connVec[0]->WriteReduce(reduceIn.dataType, reduceIn.reduceOp, locRmaBufSlicelite, stream,
+    conn->WriteReduce(reduceIn.dataType, reduceIn.reduceOp, locRmaBufSlicelite, stream,
                             rmtRmaBufSlicelite, cfg, connOut);
-    BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
+
+    // 展开下发WQE后, 展开下发DbSqe前, 按需缓存wqe及DbSqeIdx
+    CHK_RET(PostLaunchWqeForCache(ubConnLitePtr, needCacheTask, stream));
+
+    BuildUbDbSendTask(stream, conn->GetUbJettyLiteId(), connOut.pi);
 
     ReduceProfilingProcess(reinterpret_cast<void *>(locRmaBufSlicelite.GetAddr()),
                             reinterpret_cast<void *>(rmtRmaBufSlicelite.GetAddr()),
@@ -694,6 +755,16 @@ void UbTransportLiteImpl::BatchTransfer(const std::vector<RmaBufferLite> &loc, c
     SqeConfigLite cfg;
     SetFenceConfig(cfg);
     auto taskId = stream.GetRtsq()->GetTaskId();
+
+    // 当前使用1个connection，下标为0 (当前只有一个connection，对应一个jetty)
+    RmaConnLite* conn = connVec[0];
+
+    // 展开下发WQE前, 按需设置cache context
+    UbConnLite* ubConnLitePtr = nullptr;
+    bool needCacheTask = false;
+    CHK_RET(PreLaunchWqeForCache(ubConnLitePtr, needCacheTask, conn));
+
+    // 批量展开下发WQE
     u32 insNum = loc.size();
     for (u32 i = 0; i < insNum; i++) {
         cfg.cqeEn     = (i == insNum - 1) ? true : false;                         // 返回最后一个sqe的cqe
@@ -703,18 +774,26 @@ void UbTransportLiteImpl::BatchTransfer(const std::vector<RmaBufferLite> &loc, c
         auto localBuffer  = GetRmaBufSlicelite(loc[i]);
         auto remoteBuffer = GetRmtRmaBufSliceLite(rmt[i]);
         if (transferOp[i].transType == TransferType::WRITE) {
-            connVec[0]->Write(localBuffer, remoteBuffer, cfg, stream, connOut); // 当前只有一个connection，对应一个jetty 
+            conn->Write(localBuffer, remoteBuffer, cfg, stream, connOut); // 当前只有一个connection，对应一个jetty 
         } else if (transferOp[i].transType == TransferType::WRITE_REDUCE) { // write reduce
-            connVec[0]->WriteReduce(transferOp[i].reduceIn.dataType, transferOp[i].reduceIn.reduceOp, localBuffer,
+            conn->WriteReduce(transferOp[i].reduceIn.dataType, transferOp[i].reduceIn.reduceOp, localBuffer,
                         stream, remoteBuffer, cfg, connOut);
         } else if (transferOp[i].transType == TransferType::READ) {
-            connVec[0]->Read(localBuffer, remoteBuffer, cfg, stream, connOut); // 当前只有一个connection，对应一个jetty
+            conn->Read(localBuffer, remoteBuffer, cfg, stream, connOut); // 当前只有一个connection，对应一个jetty
         } else if (transferOp[i].transType == TransferType::READ_REDUCE) { // read reduce
-            connVec[0]->ReadReduce(transferOp[i].reduceIn, localBuffer, remoteBuffer, stream, cfg, connOut);
+            conn->ReadReduce(transferOp[i].reduceIn, localBuffer, remoteBuffer, stream, cfg, connOut);
         }
 
         if ( (i + 1) % wqeDepth == 0 || (i == insNum - 1)) { // 最后一个wqe或者达到队列深度，敲doorbell
-            BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
+            // 展开下发WQE后, 展开下发DbSqe前, 按需缓存wqe及DbSqeIdx
+            CHK_RET(PostLaunchWqeForCache(ubConnLitePtr, needCacheTask, stream));
+            
+            BuildUbDbSendTask(stream, conn->GetUbJettyLiteId(), connOut.pi);
+
+            // 如果还有WQE需要展开下发, 按需设置cache context
+            if (i < insNum - 1) {
+                CHK_RET(PreLaunchWqeForCache(ubConnLitePtr, needCacheTask, conn));
+            }
         }
     }
 
@@ -746,12 +825,24 @@ void UbTransportLiteImpl::WriteWithNotify(const RmaBufferLite &loc, const Buffer
     auto taskId = stream.GetRtsq()->GetTaskId();
 
     // 当前使用1个connection，下标为0
+    RmaConnLite* conn = connVec[0];
+
+    // 展开下发WQE前, 按需设置cache context
+    UbConnLite* ubConnLitePtr = nullptr;
+    bool needCacheTask = false;
+    CHK_RET(PreLaunchWqeForCache(ubConnLitePtr, needCacheTask, conn));
+
+    // 展开下发WQE
     auto locRmaBufSlicelite = GetRmaBufSlicelite(loc);
     auto rmtRmaBufSlicelite = GetRmtRmaBufSliceLite(rmt);
     auto rmtNotifySliceLite = GetRmtNotifySliceLite(withNotify.index_);
-    connVec[0]->WriteWithNotify(locRmaBufSlicelite, rmtRmaBufSlicelite, cfg, connOut,
+    conn->WriteWithNotify(locRmaBufSlicelite, rmtRmaBufSlicelite, cfg, connOut,
                                 rmtNotifySliceLite, stream, notifyData);
-    BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
+
+    // 展开下发WQE后, 展开下发DbSqe前, 按需缓存wqe及DbSqeIdx
+    CHK_RET(PostLaunchWqeForCache(ubConnLitePtr, needCacheTask, stream));
+
+    BuildUbDbSendTask(stream, conn->GetUbJettyLiteId(), connOut.pi);
 
     if (!IsReportTask()) {
         return;
@@ -787,14 +878,25 @@ void UbTransportLiteImpl::WriteReduceWithNotify(const RmaBufferLite &loc, const 
     auto taskId = stream.GetRtsq()->GetTaskId();
 
     // 当前使用1个connection，下标为0
+    RmaConnLite* conn = connVec[0];
+
+    // 展开下发WQE前, 按需设置cache context
+    UbConnLite* ubConnLitePtr = nullptr;
+    bool needCacheTask = false;
+    CHK_RET(PreLaunchWqeForCache(ubConnLitePtr, needCacheTask, conn));
+
+    // 展开下发WQE
     auto locRmaBufSlicelite = GetRmaBufSlicelite(loc);
     auto rmtRmaBufSlicelite = GetRmtRmaBufSliceLite(rmt);
     auto rmtNotifySliceLite = GetRmtNotifySliceLite(withNotify.index_);
-    connVec[0]->WriteReduceWithNotify(reduceIn.dataType, reduceIn.reduceOp, locRmaBufSlicelite,
+    conn->WriteReduceWithNotify(reduceIn.dataType, reduceIn.reduceOp, locRmaBufSlicelite,
                                       rmtRmaBufSlicelite, cfg, stream, connOut, rmtNotifySliceLite,
                                       notifyData);
-    BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
+    // 展开下发WQE后, 展开下发DbSqe前, 按需缓存wqe及DbSqeIdx
+    CHK_RET(PostLaunchWqeForCache(ubConnLitePtr, needCacheTask, stream));
+
+    BuildUbDbSendTask(stream, conn->GetUbJettyLiteId(), connOut.pi);
 
     if (!IsReportTask()) {
         return;
@@ -829,8 +931,20 @@ void UbTransportLiteImpl::BatchOneSidedRead(const vector<RmaBufSliceLite> &loc, 
     SetFenceConfig(cfg);
 
     // 当前使用1个connection，下标为0
-    connVec[0]->BatchOneSidedRead(loc, rmt, cfg, stream, connOut);
-    BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
+    RmaConnLite* conn = connVec[0];
+
+    // 展开下发WQE前, 按需设置cache context
+    UbConnLite* ubConnLitePtr = nullptr;
+    bool needCacheTask = false;
+    CHK_RET(PreLaunchWqeForCache(ubConnLitePtr, needCacheTask, conn));
+
+    // 展开下发WQE
+    conn->BatchOneSidedRead(loc, rmt, cfg, stream, connOut);
+
+    // 展开下发WQE后, 展开下发DbSqe前, 按需缓存wqe及DbSqeIdx
+    CHK_RET(PostLaunchWqeForCache(ubConnLitePtr, needCacheTask, stream));
+
+    BuildUbDbSendTask(stream, conn->GetUbJettyLiteId(), connOut.pi);
 }
 
 void UbTransportLiteImpl::BatchOneSidedWrite(const vector<RmaBufSliceLite> &loc, const vector<RmtRmaBufSliceLite> &rmt,
@@ -840,8 +954,20 @@ void UbTransportLiteImpl::BatchOneSidedWrite(const vector<RmaBufSliceLite> &loc,
     SetFenceConfig(cfg);
 
     // 当前使用1个connection，下标为0
-    connVec[0]->BatchOneSidedWrite(loc, rmt, cfg, stream, connOut);
-    BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
+    RmaConnLite* conn = connVec[0];
+
+    // 展开下发WQE前, 按需设置cache context
+    UbConnLite* ubConnLitePtr = nullptr;
+    bool needCacheTask = false;
+    CHK_RET(PreLaunchWqeForCache(ubConnLitePtr, needCacheTask, conn));
+
+    // 展开下发WQE
+    conn->BatchOneSidedWrite(loc, rmt, cfg, stream, connOut);
+
+    // 展开下发WQE后, 展开下发DbSqe前, 按需缓存wqe及DbSqeIdx
+    CHK_RET(PostLaunchWqeForCache(ubConnLitePtr, needCacheTask, stream));
+
+    BuildUbDbSendTask(stream, conn->GetUbJettyLiteId(), connOut.pi);
 }
 
  
