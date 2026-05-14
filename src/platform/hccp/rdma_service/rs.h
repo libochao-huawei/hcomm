@@ -267,6 +267,7 @@ enum ProductType {
     PRODUCT_TYPE_910_93,
     PRODUCT_TYPE_950,
     PRODUCT_TYPE_910_96,
+    PRODUCT_TYPE_350,
     PRODUCT_TYPE_OTHERS,
 };
 
@@ -334,7 +335,8 @@ static inline bool RsIsTlvSupported(void)
     enum ProductType productType;
     productType = RsGetProductType(0); // Ensure that RsGetProductType has been called at least once
     return (productType == PRODUCT_TYPE_910B || productType == PRODUCT_TYPE_910_93 ||
-        productType == PRODUCT_TYPE_950 || productType == PRODUCT_TYPE_910_96);
+        productType == PRODUCT_TYPE_950 || productType == PRODUCT_TYPE_910_96 ||
+        productType == PRODUCT_TYPE_350);
 }
 
 static inline bool RsIsRdmaSupported(void)
@@ -349,7 +351,8 @@ static inline bool RsIsUdmaSupported(void)
 {
     enum ProductType productType;
     productType = RsGetProductType(0);
-    return (productType == PRODUCT_TYPE_950 || productType == PRODUCT_TYPE_910_96);
+    return (productType == PRODUCT_TYPE_950 || productType == PRODUCT_TYPE_910_96 ||
+        productType == PRODUCT_TYPE_350);
 }
 
 static inline bool RsIsCustomInterfaceSupported(void)
