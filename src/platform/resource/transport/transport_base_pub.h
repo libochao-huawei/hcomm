@@ -204,6 +204,9 @@ public:
     virtual HcclResult ReadReduceSync(struct Transport::Buffer &localBuf, struct Transport::Buffer &remoteBuf,
         const HcclDataType datatype, HcclReduceOp redOp, Stream &stream);
 
+    virtual HcclResult BatchTransferAsync(
+        const HcommBatchTransferDesc *transferDescs, uint32_t descNum, Stream &stream);
+
     virtual HcclResult PostReady(Stream &stream);
     virtual HcclResult WaitReady(Stream &stream);
 
