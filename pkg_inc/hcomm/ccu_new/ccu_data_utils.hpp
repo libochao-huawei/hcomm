@@ -13,7 +13,7 @@
 
 namespace ccu {
 // 跨资源类共享的占位 tag：表示构造时不调用底层 Alloc。
-// 仅供工厂函数（如 ccu::CreateByChannel）以及 ccu::Array<T> 通过 friend 关系使用。
+// 仅供工厂函数（如 ccu::GetResByChannel）以及 ccu::Array<T> 通过 friend 关系使用。
 struct NoAllocTag {};
 } // namespace ccu
 

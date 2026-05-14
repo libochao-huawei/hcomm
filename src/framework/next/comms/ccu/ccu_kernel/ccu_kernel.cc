@@ -611,6 +611,26 @@ CcuResult CcuKernel::StoreVar(uint64_t addr, CcuVariableHandle varHandle, uint32
     Append(std::make_shared<CcuRep::CcuRepStore>(*var, addr, num));
     return CcuResult::CCU_SUCCESS;
 }
+CcuResult CcuKernel::CcuStoreVarToVarAddr(CcuVariableHandle addrHandle, CcuVariableHandle varHandle, uint32_t num)
+{
+    CcuRep::Variable *addrVar{nullptr};
+    CCU_CHK_RET(GetVariableByHandle(addrHandle, &addrVar));
+    CcuRep::Variable *var{nullptr};
+    CCU_CHK_RET(GetVariableByHandle(varHandle, &var));
+    if (num > 1) {
+        for (uint32_t i = 1; i < num; i++) {
+            CcuRep::Variable *nextVar{nullptr};
+            CCU_CHK_RET(GetVariableByHandle(varHandle + i, &nextVar));
+            if (nextVar->Id() != var->Id() + i) {
+                HCCL_ERROR("[CcuKernel][StoreVar] src variables not continuous at index %u, "
+                           "expected Id %u but got %u", i, var->Id() + i, nextVar->Id());
+                return HCCL_TO_CCU_RET(HCCL_E_PARA);
+            }
+        }
+    }
+    Append(std::make_shared<CcuRep::CcuRepStoreVar>(*var, *addrVar, num));
+    return CcuResult::CCU_SUCCESS;
+}
 //本地数据拷贝 相关实现
 CcuResult CcuKernel::LocalCopyMemToBuffer(CcuBufferHandle dstHandle, CcuLocalAddrHandle srcHandle,
     CcuVariableHandle lenHandle, CcuEventHandle eventHandle, uint32_t mask)
