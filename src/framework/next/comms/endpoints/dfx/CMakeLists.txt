@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------------------------------------
-# Copyright (c) 2025 Huawei Technologies Co., Ltd.
+# Copyright (c) 2026 Huawei Technologies Co., Ltd.
 # This program is free software, you can redistribute it and/or modify it under the terms and conditions of
 # CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -8,22 +8,11 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 set(src_list
-    endpoint_mgr.cc
-    cpu_roce_endpoint.cc
-    cpu_urma_endpoint.cc
-    urma_endpoint.cc
-    ub_mem_endpoint.cc
-    aicpu_ts_roce_endpoint.cc
-    aicputs_hccs_endpoint.cc
-    endpoint.cc
-    uboe_endpoint.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/endpoint_monitor.cc
 )
 
-target_sources(hcomm PRIVATE
-    ${src_list}
-)
-
-add_subdirectory(reged_mems)
-add_subdirectory(server_socket)
-add_subdirectory(net_dev)
-add_subdirectory(dfx)
+if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${src_list}
+    )
+endif()
