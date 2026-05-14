@@ -38,6 +38,8 @@
 #include "param_check_pub.h"
 #include "channel_process.h"
 #include "launch_device.h"
+#include "hcom_common.h"
+#include "../../endpoints/dfx/endpoint_monitor.h"
 
 
 namespace hcomm {
@@ -229,6 +231,11 @@ HcommResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *en
     CHK_PTR_NULL(handle);
     EXECEPTION_CATCH(g_EndpointMap.AddEndpoint(handle, std::move(endpointPtr)), return HCCL_E_INTERNAL);
     *endpointHandle = handle;
+
+    if ((endpoint->protocol == COMM_PROTOCOL_UBC_CTP) || (endpoint->protocol == COMM_PROTOCOL_UBC_TP)) {
+        uint32_t devLogicId = static_cast<uint32_t>(HcclGetThreadDeviceId());
+        EndpointMonitor::GetInstance(devLogicId).RegisterToEndpointMonitor(devLogicId, handle);
+    }
 
     HCCL_INFO("[%s] endpointDesc.protocol [%d] and endpointDesc.loc.locType [%d] create endpointHandle [%p] done.", 
             __func__, endpoint->protocol, endpoint->loc.locType, handle);
@@ -636,4 +643,14 @@ HcommResult HcommDfxKernelLaunch(const std::string &commTag, aclrtBinHandle binH
     HCCL_INFO("[%s] channel kernel launch success.", __func__);
 
     return HCCL_SUCCESS;
+}
+
+HcommResult HcommGetAsyncEvents(u32 devPhyId, EndpointHandle epHandle, struct AsyncEvent events[], u32 &num)
+{
+    // devPhyId参数怎么校验
+    Endpoint *localEpPtr = reinterpret_cast<Endpoint *>(epHandle);
+    CHK_PTR_NULL(localEpPtr);
+    CHK_PTR_NULL(events);
+
+    return localEpPtr->GetAsyncEventsContext(devPhyId, events, num);
 }
