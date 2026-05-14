@@ -74,7 +74,6 @@ private:
     TaskExceptionHostManager(const TaskExceptionHostManager &)            = delete;
     TaskExceptionHostManager &operator=(const TaskExceptionHostManager &) = delete;
 };
-
-} // namespace hcomm
+} // namespace hccl
 
 #endif
