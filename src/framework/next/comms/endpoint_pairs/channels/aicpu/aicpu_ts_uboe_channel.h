@@ -157,6 +157,14 @@ private:
     
     Hccl::IpAddress     locAddr_;
     Hccl::IpAddress     rmtAddr_;
+
+    std::mutex remoteMemsMutex_; // 远端内存列表互斥锁
+    std::unique_ptr<HcclMem[]> remoteMemsPtr_; // 远端内存缓存区
+    bool cacheValid_ = false; // GetUserRemoteMem 的缓存标识
+    std::vector<CommMem>         remoteUserMems_;     // 内存基本信息缓存
+    std::vector<std::string>     tagCopies_;          // 储存 Tag 字符串副本
+    std::vector<char*>           tagPointers_;        // Tag 缓存
+
 };
 
 } // namespace hcomm
