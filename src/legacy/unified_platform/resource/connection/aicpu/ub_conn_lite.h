@@ -100,11 +100,22 @@ public:
     void BatchOneSidedWrite(const vector<RmaBufSliceLite> &loc, const vector<RmtRmaBufSliceLite> &rmt,
                             const SqeConfigLite &cfg, const StreamLite &stream, ConnLiteOperationOut &out) override;
 
+    inline HcclResult SetAddWqeArrayCallback(
+        std::function<HcclResult(UbConnLite*, const std::vector<WqeTask>&, const uint32_t)> callback)
+    {
+        CHK_PTR_NULL(callback);
+        addWqeArrayCallback_ = callback;
+        return HCCL_SUCCESS;
+    }
+
 private:
     u16  pi{0};
     u16  ci{0}; 
     u32  piDetourCount{0};
     u32  ciDetourCount{0};
+    
+    std::function<HcclResult(UbConnLite*, const std::vector<WqeTask>&, const uint32_t)> addWqeArrayCallback_{nullptr};
+
     void ProcessSlices(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt,
                        std::function<void(const RmaBufSliceLite &, const RmtRmaBufSliceLite &, u32)> processOneSlice,
                        DataType dataType = DataType::INVALID) const;
