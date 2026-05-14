@@ -12,6 +12,7 @@
 #include "calc_crc.h"
 #include "rank_consistentcy_checker.h"
 #include "env_config.h"
+#include "rank_table_crc_bridge.h"
 
 namespace hccl {
 
@@ -834,5 +835,10 @@ HcclResult RankConsistentcyChecker::GetCrc(u32 num, u32 *crcAddr)
         crcAddr[i] = crcTable_[i];
     }
     return HCCL_SUCCESS;
+}
+
+HcclResult RecordRankTableCrcV2Bridge(const std::string &rankTableM)
+{
+    return RankConsistentcyChecker::GetInstance().RecordRankTableCrcV2(rankTableM);
 }
 }

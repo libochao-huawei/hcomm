@@ -19,7 +19,7 @@
 #include "log.h"
 #include "exception_util.h"
 #include "data_type.h"
-#include "rank_consistentcy_checker.h"
+#include "rank_table_crc_bridge.h"
 
 using namespace std;
 using namespace Hccl;
@@ -481,7 +481,7 @@ HcclResult HcomLoadRankTableFileV2(const char *clusterInfo, std::string &rankTab
         return HCCL_E_PARA;
     }
 
-    CHK_RET(RankConsistentcyChecker::GetInstance().RecordA5RankTableCrc(ranktableM));
+    CHK_RET(RecordRankTableCrcV2Bridge(ranktableM));
 
     return HCCL_SUCCESS;
 }

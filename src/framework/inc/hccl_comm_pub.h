@@ -426,7 +426,7 @@ public:
     HcclResult GetExchangeInfo(uint32_t remoteRank, uint32_t length, void* data, uint32_t* actualLength);
     HcclResult StoreRemoteExchangeInfo(uint32_t remoteRank, const std::vector<u8>& data);
     HcclResult ResetExchangeInfo();
-    const std::vector<u8>& GetExchangeInfoBuf() const;
+    HcclResult GetExchangeInfoBuf(std::vector<u8> &exchangeInfoBuf);
     uint32_t GetExchangeInfoLen() const;
 protected:
     /* * 禁止用户对API类的实体做拷贝构造或拷贝赋值的操作，内部有指针成员变量 */

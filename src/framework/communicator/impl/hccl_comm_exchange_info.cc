@@ -58,9 +58,10 @@ HcclResult hcclComm::ResetExchangeInfo()
     return HCCL_SUCCESS;
 }
 
-const std::vector<u8>& hcclComm::GetExchangeInfoBuf() const
+HcclResult hcclComm::GetExchangeInfoBuf(std::vector<u8> &exchangeInfoBuf)
 {
-    return exchangeInfoBuf_;
+    exchangeInfoBuf = exchangeInfoBuf_
+    return HCCL_SUCCESS;
 }
 
 uint32_t hcclComm::GetExchangeInfoLen() const
