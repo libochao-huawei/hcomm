@@ -549,8 +549,6 @@ HcclResult MyRank::BatchConnectChannels(const HcclChannelDesc* channelDescs, Cha
                 std::chrono::steady_clock::now() - startTime).count();
             HCCL_ERROR("[%s] channel connect timeout after %lld sec, channelNum[%u], elapsed[%lld]ms, retryCount[%u]",
                 __func__, timeout, channelNum, elapsed, retryCount);
-            RPT_INPUT_ERR(true, "EI0006", std::vector<std::string>({"reason"}), \
-                std::vector<std::string>({GET_SOCKET_TIMEOUT_REASON_CLOSE_DETECT}));
             Hccl::TlsStatus tlsStatus = Hccl::TlsStatus::UNKNOWN;
             CHK_PRT_CONT(GetLocalTlsStatus(tlsStatus),
                 HCCL_WARNING("[GetLocalTlsStatus] Can not get TlsStatus"));
@@ -625,10 +623,19 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
         hcommDescs[i] = MyRankUtils::ChannelDescHccl2Hcomm(channelDescs[i]);
         CHK_RET(ConfigSqDepthByExpansionMode(engine, hcommDescs[i]));
     }
-
+    auto start = std::chrono::steady_clock::now();
     CHK_RET(BatchCreateSockets(channelDescs, channelNum, commTag, hcommDescs));
+    auto end = std::chrono::steady_clock::now();
+    auto batchCreateDuration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    start = std::chrono::steady_clock::now();
     CHK_RET_UNAVAIL(BatchCreateChannels(engine, channelDescs, channelNum, hcommDescs, hostChannelHandleList));
+    end = std::chrono::steady_clock::now();
+    auto createChannelDuration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    start = std::chrono::steady_clock::now();
     CHK_RET(BatchConnectChannels(channelDescs, hostChannelHandleList, channelNum));
+    end = std::chrono::steady_clock::now();
+    auto batchConnectDuration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    HCCL_RUN_INFO("BatchCreateSockets Time Elapsed [%llu], BatchCreateChannels Time Elapsed [%llu],BatchConnectChannels Time Elapsed [%llu]",batchCreateDuration, createChannelDuration, batchConnectDuration);
     // 添加初始化时进行填表
     for (u32 i = 0; i < channelNum; ++i) {
         u32 remoteRank = channelDescs[i].remoteRank;

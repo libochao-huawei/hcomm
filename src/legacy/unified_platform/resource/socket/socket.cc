@@ -413,8 +413,10 @@ void Socket::GetOneSocket()
 
 void Socket::ListenAsync()
 {
-    RaSocketListenParam param(socketHandle, listenPort);
-    reqHandle = RaSocketListenOneStartAsync(param);
+    listenInfo_ = std::make_unique<SocketListenInfoT>();
+    listenInfo_->socketHandle = socketHandle;
+    listenInfo_->port = listenPort;
+    reqHandle = RaSocketListenOneStartAsync(listenInfo_.get());
     socketStatus = SocketStatus::LISTEN_STARTING;
 }
 

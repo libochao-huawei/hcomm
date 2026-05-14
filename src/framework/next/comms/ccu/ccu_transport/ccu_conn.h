@@ -15,6 +15,7 @@
 #include "ccu_jetty_.h"
 #include "ccu_dev_mgr_imp.h"
 #include "hcomm_adapter_hccp.h"
+#include <future>
 
 namespace hcomm {
 
@@ -63,6 +64,7 @@ private:
     };
 
 private:
+    HcclResult JettyCreating();
     HcclResult    StatusMachine();
     HcclResult    UpdateInitStatus();
     HcclResult    UpdateExchangeStatus();
