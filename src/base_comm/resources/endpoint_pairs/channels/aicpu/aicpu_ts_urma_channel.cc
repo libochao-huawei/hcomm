@@ -152,12 +152,13 @@ HcclResult AicpuTsUrmaChannel::BuildNotify()
     for (uint32_t i = 0; i < notifyNum_; ++i) {
         std::unique_ptr<Hccl::UbLocalNotify> notifyPtr = nullptr;
         EXCEPTION_CATCH(
-            notifyPtr = std::make_unique<Hccl::UbLocalNotify>(rdmaHandle_, devUsed),
+            notifyPtr = std::make_unique<Hccl::UbLocalNotify>(rdmaHandle_, devUsed, true),
             return HCCL_E_PTR
         );
         commonRes_.notifyVec.push_back(notifyPtr.get());
         localNotifies_.push_back(std::move(notifyPtr));
     }
+    CHK_RET(Hccl::UbLocalNotify::BatchMemReg(rdmaHandle_,localNotifies_));
     return HCCL_SUCCESS;
 }
 

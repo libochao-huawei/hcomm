@@ -695,3 +695,124 @@ int RaRsCtxGetUbContext(char *inBuf, char *outBuf, int *outLen, int *opResult, i
 
     return 0;
 }
+
+int RaRsLmemBatchReg(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
+{
+    union OpLmemBatchRegInfoData *opDataOut = (union OpLmemBatchRegInfoData *)(outBuf + sizeof(struct MsgHead));
+    union OpLmemBatchRegInfoData *opData = (union OpLmemBatchRegInfoData *)(inBuf + sizeof(struct MsgHead));
+    struct RaRsDevInfo devInfo = {0};
+    unsigned int i, num;
+    int ret = 0;
+
+    HCCP_CHECK_PARAM_LEN_RET_HOST(sizeof(union OpLmemBatchRegInfoData), sizeof(struct MsgHead), rcvBufLen, opResult);
+
+    RaRsSetDevInfo(&devInfo, opData->txData.phyId, opData->txData.devIndex);
+    num = opData->txData.num;
+    for (i = 0; i < num; i++) {
+        ret = gRaRsCtxOps.ctxLmemReg(&devInfo, &opData->txData.memAttrList[i], &opDataOut->rxData.memInfoList[i]);
+        if (ret != 0) {
+            hccp_err("[init][ra_rs_lmem]reg failed, ret[%d] phyId[%u] devIndex[0x%x]",
+                ret, devInfo.phyId, devInfo.devIndex);
+            break;
+        }
+    }
+    opDataOut->rxData.num = i;
+    *opResult = ret;
+
+    if (*opResult != 0) {
+        for (i = 0; i < opDataOut->rxData.num; i++) {
+            (void)gRaRsCtxOps.ctxLmemUnreg(&devInfo, opDataOut->rxData.memInfoList[i].ub.targetSegHandle);
+            opDataOut->rxData.memInfoList[i].ub.tokenId = 0;
+            opDataOut->rxData.memInfoList[i].ub.targetSegHandle = 0;
+        }
+    }
+    return 0;
+}
+
+int RaRsLmemBatchUnreg(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
+{
+    union OpLmemBatchUnregInfoData *opData = (union OpLmemBatchUnregInfoData *)(inBuf + sizeof(struct MsgHead));
+    struct RaRsDevInfo devInfo = {0};
+    unsigned int i, num;
+    int ret = 0;
+
+    HCCP_CHECK_PARAM_LEN_RET_HOST(sizeof(union OpLmemBatchUnregInfoData), sizeof(struct MsgHead), rcvBufLen,
+        opResult);
+
+    RaRsSetDevInfo(&devInfo, opData->txData.phyId, opData->txData.devIndex);
+    num = opData->txData.num;
+    opData->rxData.num = num;
+    *opResult = 0;
+    for (i = 0; i < num; i++) {
+        ret = gRaRsCtxOps.ctxLmemUnreg(&devInfo, opData->txData.addrList[i]);
+        if (ret != 0) {
+            hccp_err("[deinit][ra_rs_lmem]unreg failed, ret[%d] phyId[%u] devIndex[0x%x]",
+                ret, devInfo.phyId, devInfo.devIndex);
+            opData->rxData.num--;
+            *opResult = ret;
+        }
+    }
+
+    return 0;
+}
+
+int RaRsRmemBatchImport(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
+{
+    union OpRmemBatchImportInfoData *opDataOut = (union OpRmemBatchImportInfoData *)(outBuf + sizeof(struct MsgHead));
+    union OpRmemBatchImportInfoData *opData = (union OpRmemBatchImportInfoData *)(inBuf + sizeof(struct MsgHead));
+    struct RaRsDevInfo devInfo = {0};
+    unsigned int i, num;
+    int ret = 0;
+
+    HCCP_CHECK_PARAM_LEN_RET_HOST(sizeof(union OpRmemBatchImportInfoData), sizeof(struct MsgHead), rcvBufLen,
+        opResult);
+
+    RaRsSetDevInfo(&devInfo, opData->txData.phyId, opData->txData.devIndex);
+    num = opData->txData.num;
+
+    for (i = 0; i < num; i++) {
+        ret = gRaRsCtxOps.ctxRmemImport(&devInfo, &opData->txData.memAttrList[i], &opDataOut->rxData.memInfoList[i]);
+        if (ret != 0) {
+            hccp_err("[init][ra_rs_rmem]import failed, ret[%d] phyId[%u] devIndex[0x%x]",
+                ret, devInfo.phyId, devInfo.devIndex);
+            break;
+        }
+    }
+    opDataOut->rxData.num = i;
+    *opResult = ret;
+
+    if (*opResult != 0) {
+        for (i = 0; i < opDataOut->rxData.num; i++) {
+            (void)gRaRsCtxOps.ctxRmemUnimport(&devInfo, opDataOut->rxData.memInfoList[i].ub.targetSegHandle);
+            opDataOut->rxData.memInfoList[i].ub.targetSegHandle = 0;
+        }
+    }
+    return 0;
+}
+
+int RaRsRmemBatchUnimport(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
+{
+    union OpRmemBatchUnimportInfoData *opData = (union OpRmemBatchUnimportInfoData *)(inBuf + sizeof(struct MsgHead));
+    struct RaRsDevInfo devInfo = {0};
+    unsigned int num, i;
+    int ret = 0;
+
+    HCCP_CHECK_PARAM_LEN_RET_HOST(sizeof(union OpRmemBatchUnimportInfoData), sizeof(struct MsgHead), rcvBufLen,
+        opResult);
+
+    RaRsSetDevInfo(&devInfo, opData->txData.phyId, opData->txData.devIndex);
+    num = opData->txData.num;
+    opData->rxData.num = num;
+    *opResult = 0;
+    for (i = 0; i < num; i++) {
+        ret = gRaRsCtxOps.ctxRmemUnimport(&devInfo, opData->txData.addrList[i]);
+        if (ret != 0) {
+            hccp_err("[deinit][ra_rs_rmem]unimport failed, ret[%d] phyId[%u] devIndex[0x%x]",
+                ret, devInfo.phyId, devInfo.devIndex);
+            opData->rxData.num--;
+            *opResult = ret;
+        }
+    }
+
+    return 0;
+}

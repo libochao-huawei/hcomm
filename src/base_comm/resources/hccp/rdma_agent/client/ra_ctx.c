@@ -47,6 +47,10 @@ struct RaCtxOps gRaHdcCtxOps = {
     .raCtxQueryQpBatch = RaHdcCtxQpQueryBatch,
     .raCtxGetAuxInfo = RaHdcCtxGetAuxInfo,
     .raCtxGetJettyContext = RaHdcCtxGetJettyContext,
+    .raCtxLmemBatchRegister = RaHdcCtxLmemBatchRegister,
+    .raCtxLmemBatchUnregister = RaHdcCtxLmemBatchUnregister,
+    .raCtxRmemBatchImport = RaHdcCtxRmemBatchImport,
+    .raCtxRmemBatchUnimport = RaHdcCtxRmemBatchUnimport,
 };
 
 struct RaCtxOps gRaPeerCtxOps = {
@@ -75,6 +79,10 @@ struct RaCtxOps gRaPeerCtxOps = {
     .raCtxQueryQpBatch = NULL,
     .raCtxGetAuxInfo = NULL,
     .raCtxGetJettyContext = RaPeerCtxGetJettyContext,
+    .raCtxLmemBatchRegister = NULL,
+    .raCtxLmemBatchUnregister = NULL,
+    .raCtxRmemBatchImport = NULL,
+    .raCtxRmemBatchUnimport = NULL,
 };
 
 HCCP_ATTRI_VISI_DEF int RaGetDevEidInfoNum(struct RaInfo info, unsigned int *num)
@@ -370,6 +378,102 @@ err:
     return ConverReturnCode(RDMA_OP, ret);
 }
 
+STATIC int CheckCtxLmemBatchReg(void *ctxHandle, struct MrRegInfoT *lmemInfoList[],
+    void *lmemHandleList[], unsigned int num)
+{
+    struct RaCtxHandle *ctxHandleTmp = NULL;
+
+    CHK_PRT_RETURN(ctxHandle == NULL || lmemInfoList == NULL || lmemHandleList == NULL,
+        hccp_err("ctx_handle or lmem_info_list or lmem_handle_list is NULL"), -EINVAL);
+
+    CHK_PRT_RETURN(num == 0 || num > LMEM_BATCH_MAX,
+        hccp_err("num[%u] out of range(0, %d]", num, LMEM_BATCH_MAX), -EINVAL);
+
+    ctxHandleTmp = (struct RaCtxHandle *)ctxHandle;
+    CHK_PRT_RETURN(ctxHandleTmp->ctxOps == NULL || ctxHandleTmp->ctxOps->raCtxLmemBatchRegister == NULL,
+        hccp_err("ctx_ops or ra_ctx_lmem_batch_register is NULL"), -EINVAL);
+
+    return 0;
+}
+
+STATIC int PrepareCtxLmemBatchReg(struct RaLmemHandle *lmemHandleTmpList[], struct MrRegInfoT *lmemInfoList[],
+    unsigned int num)
+{
+    unsigned int i, j;
+    int ret = 0;
+
+    for (i = 0; i < num; i++) {
+        if (lmemInfoList[i] == NULL) {
+            ret = -EINVAL;
+            hccp_err("lmemInfoList[%u] is NULL", i);
+            goto err;
+        }
+        lmemHandleTmpList[i] = calloc(1, sizeof(struct RaLmemHandle));
+        if (lmemHandleTmpList[i] == NULL) {
+            ret = -ENOMEM;
+            hccp_err("calloc lmem_handle_tmp_list[%u] failed, errno(%d)", i, errno);
+            goto err;
+        }
+    }
+    return 0;
+
+err:
+    for (j = 0; j < i; j++) {
+        free(lmemHandleTmpList[j]);
+        lmemHandleTmpList[j] = NULL;
+    }
+    return ret;
+}
+
+HCCP_ATTRI_VISI_DEF int RaCtxLmemBatchRegister(void *ctxHandle, struct MrRegInfoT *lmemInfoList[],
+    void *lmemHandleList[], unsigned int num)
+{
+    struct RaLmemHandle **lmemHandleTmpList = NULL;
+    struct RaCtxHandle *ctxHandleTmp = NULL;
+    unsigned int i;
+    int ret;
+
+    ret = CheckCtxLmemBatchReg(ctxHandle, lmemInfoList, lmemHandleList, num);
+    if (ret != 0) {
+        return ConverReturnCode(RDMA_OP, ret);
+    }
+    ctxHandleTmp = (struct RaCtxHandle *)ctxHandle;
+
+    lmemHandleTmpList = calloc(num, sizeof(struct RaLmemHandle *));
+    CHK_PRT_RETURN(lmemHandleTmpList == NULL,
+        hccp_err("calloc lmem_handle_tmp_list failed, errno(%d) phyId(%u) devIndex(%u)",
+        errno, ctxHandleTmp->attr.phyId, ctxHandleTmp->devIndex), ConverReturnCode(RDMA_OP, -ENOMEM));
+
+    ret = PrepareCtxLmemBatchReg(lmemHandleTmpList, lmemInfoList, num);
+    if (ret != 0) {
+        hccp_err("PrepareCtxLmemBatchReg failed, phyId(%u) devIndex(%u)",
+            ctxHandleTmp->attr.phyId, ctxHandleTmp->devIndex);
+        goto free_list;
+    }
+
+    ret = ctxHandleTmp->ctxOps->raCtxLmemBatchRegister(ctxHandleTmp, lmemInfoList, lmemHandleTmpList, num);
+    if (ret != 0) {
+        hccp_err("[init][ra_lmem]batch register failed, ret(%d) phyId(%u) devIndex(%u)",
+            ret, ctxHandleTmp->attr.phyId, ctxHandleTmp->devIndex);
+        goto free_element;
+    }
+
+    for (i = 0; i < num; i++) {
+        lmemHandleList[i] = (void *)(lmemHandleTmpList[i]);
+    }
+    free(lmemHandleTmpList);
+    return 0;
+
+free_element:
+    for (i = 0; i < num; i++) {
+        free(lmemHandleTmpList[i]);
+        lmemHandleTmpList[i] = NULL;
+    }
+free_list:
+    free(lmemHandleTmpList);
+    return ConverReturnCode(RDMA_OP, ret);
+}
+
 HCCP_ATTRI_VISI_DEF int RaCtxLmemUnregister(void *ctxHandle, void *lmemHandle)
 {
     struct RaLmemHandle *lmemHandleTmp = NULL;
@@ -393,6 +497,47 @@ HCCP_ATTRI_VISI_DEF int RaCtxLmemUnregister(void *ctxHandle, void *lmemHandle)
 
     free(lmemHandleTmp);
     lmemHandleTmp = NULL;
+    return ConverReturnCode(RDMA_OP, ret);
+}
+
+HCCP_ATTRI_VISI_DEF int RaCtxLmemBatchUnregister(void *ctxHandle, void *lmemHandleList[], unsigned int num)
+{
+    struct RaLmemHandle **lmemHandleTmpList = NULL;
+    struct RaCtxHandle *ctxHandleTmp = NULL;
+    unsigned int i;
+    int ret = 0;
+
+    CHK_PRT_RETURN(ctxHandle == NULL || lmemHandleList == NULL,
+        hccp_err("ctx_handle or lmem_handle_list is NULL"), ConverReturnCode(RDMA_OP, -EINVAL));
+
+    CHK_PRT_RETURN(num == 0 || num > LMEM_BATCH_MAX,
+        hccp_err("num[%u] out of range(0, %d]", num, LMEM_BATCH_MAX), ConverReturnCode(RDMA_OP, -EINVAL));
+
+    ctxHandleTmp = (struct RaCtxHandle *)ctxHandle;
+    CHK_PRT_RETURN(ctxHandleTmp->ctxOps == NULL || ctxHandleTmp->ctxOps->raCtxLmemBatchUnregister == NULL,
+        hccp_err("ctx_ops or ra_ctx_lmem_batch_unregister is NULL"), ConverReturnCode(RDMA_OP, -EINVAL));
+
+    lmemHandleTmpList = (struct RaLmemHandle **)lmemHandleList;
+    for (i = 0; i < num; i++) {
+        CHK_PRT_RETURN(lmemHandleTmpList[i] == NULL, hccp_err("lmemHandleTmpList[%u] is NULL", i),
+            ConverReturnCode(RDMA_OP, -EINVAL));
+    }
+
+    ret = ctxHandleTmp->ctxOps->raCtxLmemBatchUnregister(ctxHandleTmp, lmemHandleTmpList, num);
+    if (ret != 0) {
+        hccp_err("[deinit][ra_lmem]unregister failed, ret(%d) phyId(%u) devIndex(%u)",
+            ret, ctxHandleTmp->attr.phyId, ctxHandleTmp->devIndex);
+    }
+
+    for (i = 0; i < num; i++) {
+        if (lmemHandleTmpList[i] != NULL) {
+            free(lmemHandleTmpList[i]);
+            lmemHandleTmpList[i] = NULL;
+        }
+    }
+
+    free(lmemHandleTmpList);
+    lmemHandleTmpList = NULL;
     return ConverReturnCode(RDMA_OP, ret);
 }
 
@@ -434,6 +579,104 @@ err:
     return ConverReturnCode(RDMA_OP, ret);
 }
 
+STATIC int CheckCtxRmemBatchImport(void *ctxHandle, struct MrImportInfoT *rmemInfoList[],
+    void *rmemHandleList[], unsigned int num)
+{
+    struct RaCtxHandle *ctxHandleTmp = NULL;
+
+    CHK_PRT_RETURN(ctxHandle == NULL || rmemInfoList == NULL || rmemHandleList == NULL,
+        hccp_err("ctx_handle or rmem_info_list or rmem_handle_list is NULL"), -EINVAL);
+
+    CHK_PRT_RETURN(num == 0 || num > RMEM_BATCH_MAX,
+        hccp_err("num[%u] out of range(0, %d]", num, RMEM_BATCH_MAX), -EINVAL);
+
+    ctxHandleTmp = (struct RaCtxHandle *)ctxHandle;
+    CHK_PRT_RETURN(ctxHandleTmp->ctxOps == NULL || ctxHandleTmp->ctxOps->raCtxRmemBatchImport == NULL,
+        hccp_err("ctx_ops or ra_ctx_rmem_batch_import is NULL"), -EINVAL);
+
+    return 0;
+}
+
+STATIC int PrepareCtxRmemBatchImport(struct RaRmemHandle *rmemHandleTmpList[], struct MrImportInfoT *rmemInfoList[],
+    unsigned int num)
+{
+    unsigned int i, j;
+    int ret = 0;
+
+    for (i = 0; i < num; i++) {
+        if (rmemInfoList[i] == NULL) {
+            ret = -EINVAL;
+            hccp_err("rmemInfoList[%u] is NULL", i);
+            goto err;
+        }
+        rmemHandleTmpList[i] = calloc(1, sizeof(struct RaRmemHandle));
+        if (rmemHandleTmpList[i] == NULL) {
+            ret = -ENOMEM;
+            hccp_err("calloc rmem_handle_tmp_list[%u] failed, errno(%d)", i, errno);
+            goto err;
+        }
+    }
+    return 0;
+
+err:
+    for (j = 0; j < i; j++) {
+        free(rmemHandleTmpList[j]);
+        rmemHandleTmpList[j] = NULL;
+    }
+    return ret;
+}
+
+HCCP_ATTRI_VISI_DEF int RaCtxRmemBatchImport(void *ctxHandle, struct MrImportInfoT *rmemInfoList[],
+    void *rmemHandleList[], unsigned int num)
+{
+    struct RaRmemHandle **rmemHandleTmpList = NULL;
+    struct RaCtxHandle *ctxHandleTmp = NULL;
+    unsigned int i;
+    int ret;
+
+    ret = CheckCtxRmemBatchImport(ctxHandle, rmemInfoList, rmemHandleList, num);
+    if (ret != 0) {
+        return ConverReturnCode(RDMA_OP, ret);
+    }
+    ctxHandleTmp = (struct RaCtxHandle *)ctxHandle;
+
+    rmemHandleTmpList = calloc(1, sizeof(struct RaRmemHandle *));
+    CHK_PRT_RETURN(rmemHandleTmpList == NULL,
+        hccp_err("calloc rmem_handle_tmp_list failed, errno(%d) phyId(%u) devIndex(%u)",
+        errno, ctxHandleTmp->attr.phyId, ctxHandleTmp->devIndex), ConverReturnCode(RDMA_OP, -ENOMEM));
+
+    ret = PrepareCtxRmemBatchImport(rmemHandleTmpList, rmemInfoList, num);
+    if (ret != 0) {
+        hccp_err("PrepareCtxRmemBatchImport failed, phyId(%u) devIndex(%u)",
+            ctxHandleTmp->attr.phyId, ctxHandleTmp->devIndex);
+        goto free_list;
+    }
+
+    ret = ctxHandleTmp->ctxOps->raCtxRmemBatchImport(ctxHandleTmp, rmemInfoList, num);
+    if (ret != 0) {
+        hccp_err("batch import failed, ret(%d) phyId(%u) devIndex(%u)",
+            ret, ctxHandleTmp->attr.phyId, ctxHandleTmp->devIndex);
+        goto free_element;
+    }
+
+    for (i = 0; i < num; i++) {
+        rmemHandleTmpList[i]->key = rmemInfoList[i]->in.key;
+        rmemHandleTmpList[i]->addr = rmemInfoList[i]->out.ub.targetSegHandle;
+        rmemHandleList[i] = (void *)(rmemHandleTmpList[i]);
+    }
+    free(rmemHandleTmpList);
+    return 0;
+
+free_element:
+    for (i = 0; i < num; i++) {
+        free(rmemHandleTmpList[i]);
+        rmemHandleTmpList[i] = NULL;
+    }
+free_list:
+    free(rmemHandleTmpList);
+    return ConverReturnCode(RDMA_OP, ret);
+}
+
 HCCP_ATTRI_VISI_DEF int RaCtxRmemUnimport(void *ctxHandle, void *rmemHandle)
 {
     struct RaRmemHandle *rmemHandleTmp = NULL;
@@ -456,6 +699,47 @@ HCCP_ATTRI_VISI_DEF int RaCtxRmemUnimport(void *ctxHandle, void *rmemHandle)
 
     free(rmemHandleTmp);
     rmemHandleTmp = NULL;
+    return ConverReturnCode(RDMA_OP, ret);
+}
+
+HCCP_ATTRI_VISI_DEF int RaCtxRmemBatchUnimport(void *ctxHandle, void *rmemHandleList[], unsigned int num)
+{
+    struct RaRmemHandle **rmemHandleTmpList = NULL;
+    struct RaCtxHandle *ctxHandleTmp = NULL;
+    unsigned int i;
+    int ret = 0;
+
+    CHK_PRT_RETURN(ctxHandle == NULL || rmemHandleList == NULL,
+        hccp_err("ctx_handle or rmem_handle_list is NULL"), ConverReturnCode(RDMA_OP, -EINVAL));
+
+    CHK_PRT_RETURN(num == 0 || num > RMEM_BATCH_MAX,
+        hccp_err("num[%u] out of range(0, %d]", num, RMEM_BATCH_MAX), ConverReturnCode(RDMA_OP, -EINVAL));
+
+    ctxHandleTmp = (struct RaCtxHandle *)ctxHandle;
+    CHK_PRT_RETURN(ctxHandleTmp->ctxOps == NULL || ctxHandleTmp->ctxOps->raCtxRmemBatchUnimport == NULL,
+        hccp_err("ctx_ops or ra_ctx_rmem_batch_unimport is NULL"), ConverReturnCode(RDMA_OP, -EINVAL));
+
+    rmemHandleTmpList = (struct RaRmemHandle **)rmemHandleList;
+    for (i = 0; i < num; i++) {
+        CHK_PRT_RETURN(rmemHandleTmpList[i] == NULL, hccp_err("rmemHandleTmpList[%u] is NULL", i),
+            ConverReturnCode(RDMA_OP, -EINVAL));
+    }
+
+    ret = ctxHandleTmp->ctxOps->raCtxRmemBatchUnimport(ctxHandleTmp, rmemHandleTmpList, num);
+    if (ret != 0) {
+        hccp_err("[deinit][ra_rmem]unimport failed, ret(%d) phyId(%u) devIndex(%u)",
+            ret, ctxHandleTmp->attr.phyId, ctxHandleTmp->devIndex);
+    }
+
+    for (i = 0; i < num; i++) {
+        if (rmemHandleTmpList[i] != NULL) {
+            free(rmemHandleTmpList[i]);
+            rmemHandleTmpList[i] = NULL;
+        }
+    }
+
+    free(rmemHandleTmpList);
+    rmemHandleTmpList = NULL;
     return ConverReturnCode(RDMA_OP, ret);
 }
 

@@ -896,12 +896,16 @@ RemoteUbRmaBuffer::RemoteUbRmaBuffer(RdmaHandle rdmaHandle) : RemoteRmaBuffer(Rm
 {
 }
 
-RemoteUbRmaBuffer::RemoteUbRmaBuffer(RdmaHandle rdmaHandle1, const Serializable &rmtDto)
+RemoteUbRmaBuffer::RemoteUbRmaBuffer(RdmaHandle rdmaHandle1, const Serializable &rmtDto, bool batchRegister)
     : RemoteRmaBuffer(RmaType::UB),
       rdmaHandle(rdmaHandle1)
 { // 从 DTO 取得数据，然后生成 memHandle
 }
 
+HcclResult RemoteUbRmaBuffer::BatchMemImport(RdmaHandle rdmaHandle, std::vector<RemoteRmaBuffer*> &rmtBufs)
+{
+    return HCCL_SUCCESS;
+}
 RemoteIpcRmaBuffer::RemoteIpcRmaBuffer() : RemoteRmaBuffer(RmaType::IPC), isOpened(true)
 {
 }
@@ -965,10 +969,14 @@ SocketHandle SocketHandleManager::Get(unsigned int, Hccl::PortData const &)
 {
     return (void *)0x12345678;
 }
-UbLocalNotify::UbLocalNotify(RdmaHandle rdmaHandle, bool devUsed)
+UbLocalNotify::UbLocalNotify(RdmaHandle rdmaHandle, bool devUsed, bool batchRegister)
     : BaseLocalNotify(RmaType::UB, devUsed),
       rdmaHandle(rdmaHandle)
 {
+}
+
+HcclResult UbLocalNotify::BatchMemReg(RdmaHandle rdmaHandle, std::vector<std::unique_ptr<Hccl::UbLocalNotify>> &notifies) {
+    return HCCL_SUCCESS;
 }
 
 string UbLocalNotify::Describe() const
@@ -2799,3 +2807,4 @@ int32_t HcommChannelRegisterDfx(ChannelHandle channel, std::function<HcclResult(
 {
     return 0;
 }
+
