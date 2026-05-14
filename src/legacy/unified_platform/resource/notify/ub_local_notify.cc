@@ -19,7 +19,8 @@
 
 namespace Hccl {
 
-UbLocalNotify::UbLocalNotify(RdmaHandle rdmaHandle, bool devUsed)
+static thread_local std::vector<HrtRaUbLocMemRegParam> notifyMems;
+UbLocalNotify::UbLocalNotify(RdmaHandle rdmaHandle, bool devUsed, bool batchRegister)
     : BaseLocalNotify(RmaType::UB, devUsed), rdmaHandle(rdmaHandle)
 {
     HrtDevResInfo devResInfo;
@@ -44,12 +45,37 @@ UbLocalNotify::UbLocalNotify(RdmaHandle rdmaHandle, bool devUsed)
     tokenValue = GetUbToken();
     std::pair<u64, u64> alignBuf = BufAlign(addr, size);
     HrtRaUbLocMemRegParam lmemReg{alignBuf.first, alignBuf.second, tokenValue, tokenIdHandle, 1};
-    reqReg = HrtRaUbLocalMemReg(rdmaHandle, lmemReg);
-    keySize         = reqReg.keySize;
-    memHandle       = reqReg.handle;
-    (void)memcpy_s(key, HRT_UB_MEM_KEY_MAX_LEN, reqReg.key, HRT_UB_MEM_KEY_MAX_LEN);
+    if (batchRegister) {
+        notifyMems.push_back(std::move(lmemReg));
+    } else {
+        reqReg = HrtRaUbLocalMemReg(rdmaHandle, lmemReg);
+        SetMemInfo(reqReg);
+    }
+    
 }
 
+HcclResult UbLocalNotify::SetMemInfo(const HrtRaUbLocalMemRegOutParam &reqReg)
+{
+    keySize         = reqReg.keySize;
+    memHandle       = reqReg.handle;
+    if (memcpy_s(key, HRT_UB_MEM_KEY_MAX_LEN, reqReg.key, HRT_UB_MEM_KEY_MAX_LEN) != 0) {
+        return HCCL_E_MEMORY;
+    }
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult UbLocalNotify::BatchMemReg(RdmaHandle rdmaHandle, std::vector<std::unique_ptr<Hccl::UbLocalNotify>> &notifies)
+{
+    CHK_PRT_RET(notifies.size() != notifyMems.size(), HCCL_ERROR("[BatchMemReg] notifyMemNum[%u] should match notifyNum[%u]", notifyMems.size(), notifies.size()), HCCL_E_INTERNAL);
+    std::vector<HrtRaUbLocalMemRegOutParam> reqRegs;
+    CHK_RET(HrtRaUbLocalMemBatchRegister(rdmaHandle, notifyMems, reqRegs));
+    for (u32 idx = 0; idx < notifies.size(); ++idx) {
+        notifies[idx]->SetMemInfo(reqRegs[idx]);
+    }
+    notifyMems.clear();
+    return HCCL_SUCCESS;
+}
 string UbLocalNotify::Describe() const
 {
     return StringFormat("UbLocalNotify:notify=%s, addr=0x%llx, keySize=%u, memHandle=0x%llx",

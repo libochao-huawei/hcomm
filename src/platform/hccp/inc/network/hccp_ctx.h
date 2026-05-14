@@ -22,6 +22,9 @@ extern "C" {
 #define GET_EID_BY_IP_MAX_NUM 32
 #define DEV_EID_INFO_MAX_NAME 64
 
+#define LMEM_BATCH_MAX 10
+#define RMEM_BATCH_MAX 10
+
 struct HccpDevEidInfo {
     char name[DEV_EID_INFO_MAX_NAME];
     uint32_t type;
@@ -736,6 +739,58 @@ HCCP_ATTRI_VISI_DEF int RaCtxRmemImport(void *ctxHandle, struct MrImportInfoT *r
  * @retval #non-zero Failure
 */
 HCCP_ATTRI_VISI_DEF int RaCtxRmemUnimport(void *ctxHandle, void *rmemHandle);
+
+/**
+ * @ingroup libudma
+ * @brief batch register local mem
+ * @param ctxHandle [IN] ctx handle
+ * @param lmemInfoList [IN/OUT] lmem reg info list
+ * @param lmemHandleList [OUT] lmem handle list
+ * @param num [IN] num of lmemInfoList and lmemHandleList array, max num is LMEM_BATCH_MAX
+ * @see RaCtxLmemRegister
+ * @retval #zero Success
+ * @retval #non-zero Failure
+*/
+HCCP_ATTRI_VISI_DEF int RaCtxLmemBatchRegister(void *ctxHandle, struct MrRegInfoT *lmemInfoList[],
+    void *lmemHandleList[], unsigned int num);
+
+/**
+ * @ingroup libudma
+ * @brief batch unregister local mem
+ * @param ctxHandle [IN] ctx handle
+ * @param lmemHandleList [IN] lmem handle list
+ * @param num [IN] num of lmemHandleList array, max num is LMEM_BATCH_MAX
+ * @see RaCtxLmemUnregister
+ * @retval #zero Success
+ * @retval #non-zero Failure
+*/
+HCCP_ATTRI_VISI_DEF int RaCtxLmemBatchUnregister(void *ctxHandle, void *lmemHandleList[], unsigned int num);
+
+/**
+ * @ingroup libudma
+ * @brief batch import remote mem
+ * @param ctxHandle [IN] ctx handle
+ * @param rmemInfoList [IN/OUT] rmem info list
+ * @param rmemHandleList [OUT] rmem handle list, key as rkey for send wr
+ * @param num [IN] num of rmemInfoList and rmemHandleList array, max num is RMEM_BATCH_MAX
+ * @see RaCtxRmemImport
+ * @retval #zero Success
+ * @retval #non-zero Failure
+*/
+HCCP_ATTRI_VISI_DEF int RaCtxRmemBatchImport(void *ctxHandle, struct MrImportInfoT *rmemInfoList[],
+    void *rmemHandleList[], unsigned int num);
+
+/**
+ * @ingroup libudma
+ * @brief unimport remote mem
+ * @param ctxHandle [IN] ctx handle
+ * @param rmemHandleList [IN] rmem handle list
+ * @param num [IN] num of rmemHandleList array, max num is RMEM_BATCH_MAX
+ * @see RaCtxRmemUnimport
+ * @retval #zero Success
+ * @retval #non-zero Failure
+*/
+HCCP_ATTRI_VISI_DEF int RaCtxRmemBatchUnimport(void *ctxHandle, void *rmemHandleList[], unsigned int num);
 
 /**
  * @ingroup libudma
