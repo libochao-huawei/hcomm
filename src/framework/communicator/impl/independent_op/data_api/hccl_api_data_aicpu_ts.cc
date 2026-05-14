@@ -418,43 +418,32 @@ const std::unordered_map<HcommDataType, uint32_t> HCOMM_DATA_TYPE_SIZE_MAP = {
     {HcommDataType::HCOMM_DATA_TYPE_FP8E8M0, 1}
 };
 
-// const std::unordered_map<HcommTransferType, Hccl::TransferType> TRANSFERTYPE_MAP = {
-//     {HCOMM_TRANSFER_TYPE_WRITE, Hccl::TransferType::WRITE},
-//     {HCOMM_TRANSFER_TYPE_WRITE_REDUCE, Hccl::TransferType::WRITE_REDUCE},
-//     {HCOMM_TRANSFER_TYPE_WRITE_WITH_NOTIFY, Hccl::TransferType::WRITE_WITH_NOTIFY},
-//     {HCOMM_TRANSFER_TYPE_WRITE_REDUCE_WITH_NOTIFY, Hccl::TransferType::WRITE_REDUCE_WITH_NOTIFY},
-//     {HCOMM_TRANSFER_TYPE_READ, Hccl::TransferType::READ},
-//     {HCOMM_TRANSFER_TYPE_READ_REDUCE, Hccl::TransferType::READ_REDUCE},
-//     {HCOMM_TRANSFER_TYPE_NOTIFY_RECORD, Hccl::TransferType::NOTIFY_RECORD},
-//     {HCOMM_TRANSFER_TYPE_NOTIFY_WAIT, Hccl::TransferType::NOTIFY_WAIT},
-// };
-
 static int32_t ParseData(HcommBatchTransferDesc &transferDesc, void* &rmt, void* &loc,
                         uint64_t &len, Hccl::TransferType &tfType, HcommDataType &dataType, HcommReduceOp &reduceOp)
 {
     if (transferDesc.transType == HCOMM_TRANSFER_TYPE_WRITE) {
-        rmt = transferDesc.write.dst; // write操作，dst是远端地址
-        loc = transferDesc.write.src; // src是本端地址
-        len = transferDesc.write.len;
+        rmt = transferDesc.transferInfo.write.dst; // write操作，dst是远端地址
+        loc = transferDesc.transferInfo.write.src; // src是本端地址
+        len = transferDesc.transferInfo.write.len;
         tfType = Hccl::TransferType::WRITE;
     } else if (transferDesc.transType == HCOMM_TRANSFER_TYPE_READ) {
-        rmt = transferDesc.read.src; // read操作，src是远端地址
-        loc = transferDesc.read.dst; // dst是本端地址
-        len = transferDesc.read.len;
+        rmt = transferDesc.transferInfo.read.src; // read操作，src是远端地址
+        loc = transferDesc.transferInfo.read.dst; // dst是本端地址
+        len = transferDesc.transferInfo.read.len;
         tfType = Hccl::TransferType::READ;
     } else if (transferDesc.transType == HCOMM_TRANSFER_TYPE_WRITE_REDUCE) {
-        rmt = transferDesc.reduce.dst;
-        loc = transferDesc.reduce.src;
-        len = transferDesc.reduce.count;
-        dataType = transferDesc.reduce.dataType;
-        reduceOp = transferDesc.reduce.reduceOp;
+        rmt = transferDesc.transferInfo.reduce.dst;
+        loc = transferDesc.transferInfo.reduce.src;
+        len = transferDesc.transferInfo.reduce.count;
+        dataType = transferDesc.transferInfo.reduce.dataType;
+        reduceOp = transferDesc.transferInfo.reduce.reduceOp;
         tfType = Hccl::TransferType::WRITE_REDUCE;
     } else if (transferDesc.transType == HCOMM_TRANSFER_TYPE_READ_REDUCE) {
-        rmt = transferDesc.reduce.src;
-        loc = transferDesc.reduce.dst;
-        len = transferDesc.reduce.count;
-        dataType = transferDesc.reduce.dataType;
-        reduceOp = transferDesc.reduce.reduceOp;
+        rmt = transferDesc.transferInfo.reduce.src;
+        loc = transferDesc.transferInfo.reduce.dst;
+        len = transferDesc.transferInfo.reduce.count;
+        dataType = transferDesc.transferInfo.reduce.dataType;
+        reduceOp = transferDesc.transferInfo.reduce.reduceOp;
         tfType = Hccl::TransferType::READ_REDUCE;
     } else {
         HCCL_ERROR("[%s] unsupported transType[%d]", __func__, transferDesc.transType);
@@ -467,24 +456,9 @@ static int32_t ParseData(HcommBatchTransferDesc &transferDesc, void* &rmt, void*
     return HCCL_SUCCESS;
 }
 
-int32_t HcommBatchTransferOnThread(ThreadHandle thread, ChannelHandle channel,
+static int32_t HcommBatchTransferOnThreadA5(Thread *threadPtr, ChannelHandle channel,
     HcommBatchTransferDesc *transferDescs, uint32_t transferDescNum)
 {
-    // BatchTransfer接口目前仅支持A5设备上的批量数据传输
-    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], transferDescNum[%u].",
-         __func__, thread, channel, transferDescNum);
-    CHK_PTR_NULL(transferDescs);
-
-    AddThread(thread);
-    Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
-    CHK_PTR_NULL(threadPtr);
-
-    if (!threadPtr->IsDeviceA5()) {
-        // 仅支持A5设备上的批量数据传输
-        HCCL_ERROR("[%s] Only support batch transfer on A5 device. thread[0x%llx].", __func__, thread);
-        return HCCL_E_NOT_SUPPORT;
-    }
-
     auto *const ubTransportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
     CHK_PTR_NULL(ubTransportLitePtr);
     auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
@@ -532,6 +506,27 @@ int32_t HcommBatchTransferOnThread(ThreadHandle thread, ChannelHandle channel,
     }
     EXECEPTION_CATCH(ubTransportLitePtr->BatchTransfer(locSlices, rmtSlices, transferOps, *streamLitePtr), return HCCL_E_INTERNAL);
     return HCCL_SUCCESS;
+}
+
+int32_t HcommBatchTransferOnThread(ThreadHandle thread, ChannelHandle channel,
+    HcommBatchTransferDesc *transferDescs, uint32_t transferDescNum)
+{
+    // BatchTransfer接口目前仅支持A5设备上的批量数据传输
+    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], transferDescNum[%u].",
+         __func__, thread, channel, transferDescNum);
+    CHK_PTR_NULL(transferDescs);
+
+    AddThread(thread);
+    Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
+    CHK_PTR_NULL(threadPtr);
+
+    if (!threadPtr->IsDeviceA5()) {
+        // 仅支持A5设备上的批量数据传输
+        HCCL_ERROR("[%s] Only support batch transfer on A5 device. thread[0x%llx].", __func__, thread);
+        return HCCL_E_NOT_SUPPORT;
+    }
+
+    return HcommBatchTransferOnThreadA5(threadPtr, channel, transferDescs, transferDescNum);
 }
 
 int32_t HcommWriteReduceOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
