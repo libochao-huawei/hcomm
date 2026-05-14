@@ -46,11 +46,9 @@ HcclResult LaunchContext::HandleEagerMode()
     }
 
     std::vector<ThreadHandle> threadVec(threadSet.begin(), threadSet.end());
-    if (UNLIKELY(HcclCheckLogLevel(DLOG_INFO))) {
-        for (size_t i = 0; i < threadVec.size(); i++) {
-            HCCL_INFO("[%s] HandleEagerMode begin, launchTag[%s], launchMode[%d], thread[%lu].",
-                __func__, launchTag_.c_str(), static_cast<int32_t>(mode_), threadVec[i]);
-        }
+    for (size_t i = 0; i < threadVec.size(); i++) {
+        HCCL_INFO("[%s] HandleEagerMode begin, launchTag[%s], launchMode[%d], thread[%lu].",
+            __func__, launchTag_.c_str(), static_cast<int32_t>(mode_), threadVec[i]);
     }
     return CommTaskLaunch(threadVec.data(), threadVec.size());
 }
