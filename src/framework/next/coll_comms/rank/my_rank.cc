@@ -862,7 +862,7 @@ HcclResult MyRank::ExchangeUserInfo(
             remoteUserDatas[i].resize(remoteExchangeInfoLens[i], 0);
             sockets[i]->RecvAsync(remoteUserDatas[i].data(), remoteExchangeInfoLens[i]);
         } else {
-            const std::vector<u8> exchangeBuf;
+            std::vector<u8> exchangeBuf;
             collCommConfigConsistency.GetExchangeInfoBuf(exchangeBuf);
             sockets[i]->SendAsync(exchangeBuf.data(), localExchangeInfoLen);
         }
@@ -873,7 +873,7 @@ HcclResult MyRank::ExchangeUserInfo(
     // SERVER再Send/CLIENT再Recv
     for (u32 i = 0; i < sockets.size(); i++) {
         if (roles[i] == HCOMM_SOCKET_ROLE_SERVER) {
-            const std::vector<u8> exchangeBuf;
+            std::vector<u8> exchangeBuf;
             collCommConfigConsistency.GetExchangeInfoBuf(exchangeBuf);
             sockets[i]->SendAsync(exchangeBuf.data(), localExchangeInfoLen);
         } else {
