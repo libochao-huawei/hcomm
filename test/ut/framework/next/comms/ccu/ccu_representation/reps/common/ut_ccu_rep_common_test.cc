@@ -53,6 +53,11 @@ protected:
     void SetUp() override {}
 };
 
+class CcuRepStoreVarTest : public ::testing::Test {
+protected:
+    void SetUp() override {}
+};
+
 TEST_F(CcuRepBlockTest, Constructor_DefaultLabel)
 {
     CcuRepBlock block;
@@ -362,6 +367,59 @@ TEST_F(CcuRepStoreTest, Translate)
     bool result = store.Translate(instrPtr, instrId, dep);
     EXPECT_TRUE(result);
     EXPECT_TRUE(store.Translated());
+    EXPECT_EQ(instrId, 7);
+}
+
+TEST_F(CcuRepStoreVarTest, Constructor)
+{
+    CcuRepContext context;
+    Variable var(&context);
+    var.Reset(1);
+    Variable dst(&context);
+    dst.Reset(2);
+    CcuRepStoreVar storeVar(var, dst);
+    EXPECT_EQ(storeVar.Type(), CcuRepType::STORE_VAR);
+    EXPECT_EQ(storeVar.InstrCount(), 7);
+}
+
+TEST_F(CcuRepStoreVarTest, Describe)
+{
+    CcuRepContext context;
+    Variable var(&context);
+    var.Reset(1);
+    Variable dst(&context);
+    dst.Reset(2);
+    CcuRepStoreVar storeVar(var, dst);
+    std::string desc = storeVar.Describe();
+    EXPECT_NE(desc.find("Store Var"), std::string::npos);
+}
+
+TEST_F(CcuRepStoreVarTest, Translate)
+{
+    CcuRepContext context;
+    Variable var(&context);
+    var.Reset(1);
+    Variable dst(&context);
+    dst.Reset(2);
+    CcuRepStoreVar storeVar(var, dst);
+    CcuInstr instr[10] = {};
+    CcuInstr *instrPtr = instr;
+    uint16_t instrId = 0;
+    TransDep dep = {};
+    dep.xnBaseAddr = 0x100000;
+    dep.commGsa[0] = 1;
+    dep.commGsa[1] = 2;
+    dep.commXn[0] = 3;
+    dep.commXn[1] = 4;
+    dep.commXn[2] = 5;
+    dep.reserveChannalId[0] = 6;
+    dep.commSignal = 7;
+    dep.reserveGsaId = 8;
+    dep.ccuResSpaceTokenInfo = 0x1000;
+    dep.memTokenInfo = 0x2000;
+    bool result = storeVar.Translate(instrPtr, instrId, dep);
+    EXPECT_TRUE(result);
+    EXPECT_TRUE(storeVar.Translated());
     EXPECT_EQ(instrId, 7);
 }
 

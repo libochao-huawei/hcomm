@@ -118,6 +118,7 @@ public:
     CcuResult LoadVar(uint64_t addr, CcuVariableHandle varHandle, uint32_t num);
     CcuResult CcuLoadVarFromVarAddr(CcuVariableHandle addrHandle, CcuVariableHandle varHandle, uint32_t num);
     CcuResult StoreVar(uint64_t addr, CcuVariableHandle varHandle, uint32_t num);
+    CcuResult CcuStoreVarToVarAddr(CcuVariableHandle addrHandle, CcuVariableHandle varHandle, uint32_t num);
 
     //Event信号同步类 相关接口
     // mask 由调用方独立传入（与 Event 句柄解耦），不再设独立的 SetEventMask 接口。
