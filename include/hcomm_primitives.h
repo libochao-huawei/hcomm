@@ -16,6 +16,7 @@
 #include <securec.h>
 #include <arpa/inet.h>
 #include "acl/acl_rt.h"
+#include "hcomm_res_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -65,6 +66,73 @@ typedef enum {
     HCOMM_DATA_TYPE_FP8E8M0 = 17,  /**< fp8e8m0 */
     HCOMM_DATA_TYPE_RESERVED = 255 /**< reserved */
 } HcommDataType;
+
+/**
+  * @brief 传输类型枚举
+  */
+typedef enum {
+    HCOMM_TRANSFER_TYPE_INVALID = -1, ///< 无效的传输类型
+    HCOMM_TRANSFER_TYPE_WRITE = 0,    ///< 写操作
+    HCOMM_TRANSFER_TYPE_WRITE_REDUCE = 1,
+    HCOMM_TRANSFER_TYPE_WRITE_WITH_NOTIFY = 2,
+    HCOMM_TRANSFER_TYPE_WRITE_REDUCE_WITH_NOTIFY = 3,
+    HCOMM_TRANSFER_TYPE_READ = 4,     ///< 读操作
+    HCOMM_TRANSFER_TYPE_READ_REDUCE = 5,
+    HCOMM_TRANSFER_TYPE_NOTIFY_RECORD = 6,
+    HCOMM_TRANSFER_TYPE_NOTIFY_WAIT = 7
+} HcommTransferType;
+
+/**
+ * @brief 批量传输描述符
+ * @note 结构体末尾扩展需要自增版本号，并补充兼容处理逻辑。
+ */
+typedef struct {
+    CommAbiHeader header;            ///< ABI头部，包含版本等信息
+    HcommTransferType transType;     ///< 传输类型
+    union {
+        uint8_t reserved[32];        ///< 保留字段
+    };
+    union {
+        uint8_t raws[32];            ///< 通用数据
+        struct {
+            uint64_t len;            ///< 数据长度（字节）
+            void *dst;               ///< 目标内存地址
+            void *src;               ///< 源内存地址
+        } write;
+        struct {
+            uint64_t len;            ///< 数据长度（字节）
+            void *dst;               ///< 目标内存地址
+            void *src;               ///< 源内存地址
+        } read;
+        struct {
+            uint64_t count;          ///< 个数
+            void *dst;               ///< 目标内存地址
+            void *src;               ///< 源内存地址
+            HcommReduceOp reduceOp;  ///< 归约操作
+            HcommDataType dataType;  ///< 数据类型
+        } reduce;
+        struct {
+            uint32_t notifyIdx;
+        } notifyRecord;
+        struct {
+            uint32_t notifyIdx;
+        } notifyWait;
+        struct {
+            uint64_t len;            ///< 数据长度（字节）
+            void *dst;               ///< 目标内存地址
+            void *src;               ///< 源内存地址
+            uint32_t notifyIdx;      ///< 远端通知索引
+        } writeWithNotify;
+        struct {
+            uint64_t count;          ///< 个数
+            void *dst;               ///< 目标内存地址
+            void *src;               ///< 源内存地址
+            HcommReduceOp reduceOp;  ///< 归约操作
+            HcommDataType dataType;  ///< 数据类型
+            uint32_t notifyIdx;      ///< 远端通知索引
+        } writeReduceWithNotify;
+    };
+} HcommBatchTransferDesc;
 
 /**
  * @defgroup 数据面编程接口
@@ -314,6 +382,17 @@ extern int32_t HcommReadNbiOnThread(ThreadHandle thread, ChannelHandle channel, 
  * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern int32_t HcommReadNbi(ChannelHandle channel, void *dst, const void *src, uint64_t len);
+
+ /**
+  * @brief 批量传输操作
+  * @param[in] thread 线程句柄
+  * @param[in] channel 通道句柄
+  * @param[in] transferDescs 批量传输描述符数组
+  * @param[in] transferDescNum 批量传输描述符数量
+  * @return int32_t 执行结果，0表示成功
+  */
+extern int32_t HcommBatchTransferOnThread(ThreadHandle thread, ChannelHandle channel,
+    HcommBatchTransferDesc *transferDescs, uint32_t transferDescNum);
 
 /** @} */  // 数据读写相关
 
