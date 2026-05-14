@@ -69,9 +69,7 @@ TEST_F(ExchangeInfoTest, Ut_CApiGetExchangeInfo_When_ParamValid_Expect_Success)
     std::vector<u8> remoteData = {0xAA, 0xBB};
     size_t size = remoteData.size();
     hccl::CollComm* collComm = hcclCommPtr->GetCollComm();
-    CHK_PTR_NULL(collComm);
     hccl::MyRank* myRank = collComm->GetMyRank();
-    CHK_PTR_NULL(myRank);
     CollCommConfigConsistency &collCommConfigConsistency = myRank->GetCollCommConfigConsistency();
     collCommConfigConsistency.StoreRemoteExchangeInfo(0, remoteData);
 
@@ -97,9 +95,7 @@ TEST_F(ExchangeInfoTest, Ut_EndToEnd_When_AddStoreGet_Expect_Consistent)
     CollCommConfigConsistency consistency;
     std::vector<u8> localData = {0xDE, 0xAD, 0xBE, 0xEF};
     hccl::CollComm* collComm = hcclCommPtr->GetCollComm();
-    CHK_PTR_NULL(collComm);
     hccl::MyRank* myRank = collComm->GetMyRank();
-    CHK_PTR_NULL(myRank);
     CollCommConfigConsistency &collCommConfigConsistency = myRank->GetCollCommConfigConsistency();
     HcclResult ret = collCommConfigConsistency.AddExchangeInfo(localData.data(), localData.size());
     EXPECT_EQ(ret, HCCL_SUCCESS);
