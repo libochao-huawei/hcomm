@@ -55,6 +55,8 @@ public:
 
     HcclResult GetHcclBuffer(void *&addr, uint64_t &len);
 
+    HcclResult HcclBufferMemset(void *&addr, uint64_t &len);
+
     HcclResult Init(HcclMem cclBuffer);
 
     HcclResult GetMemoryHandles(std::vector<HcclMem> &mem);
