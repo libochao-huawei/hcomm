@@ -77,16 +77,8 @@ CcuResult CcuBlockVariableAlloc(CcuVariableHandle *varHandles, uint32_t count)
     CCU_CHK_PTR_NULL(kernel);
     CCU_CHK_RET(kernel->BlockVariableAlloc(varHandles, count));
     return CcuResult::CCU_SUCCESS;
-}   
+}
 
-// CcuResult CcuBlockAddressAlloc(CcuAddressHandle *addrHandles, uint32_t count)
-// {
-//     const uint32_t devLogicId = HcclGetThreadDeviceId();
-//     auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
-//     CCU_CHK_PTR_NULL(kernel);
-//     CCU_CHK_RET(kernel->BlockAddressAlloc(addrHandles, count));
-//     return CcuResult::CCU_SUCCESS;
-// }
 CcuResult CcuBlockEventAlloc(CcuEventHandle *eventHandles, uint32_t count)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
