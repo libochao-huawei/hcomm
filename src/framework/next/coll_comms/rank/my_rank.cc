@@ -832,9 +832,8 @@ HcclResult MyRank::BatchExchangeAndCheckConsistency(
     }
 
     // 交换HCCL算子信息 ======
-    CollCommConfigConsistency collCommConfigConsistency;
-    CHK_RET(ExchangeUserInfo(sockets, remoteRanks, roles, collCommConfigConsistency));
-    CHK_RET(collCommConfigConsistency.ResetExchangeInfo());
+    CHK_RET(ExchangeUserInfo(sockets, remoteRanks, roles));
+    CHK_RET(collCommConfigConsistency_.ResetExchangeInfo());
 
     return HCCL_SUCCESS;
 }
@@ -842,10 +841,9 @@ HcclResult MyRank::BatchExchangeAndCheckConsistency(
 HcclResult MyRank::ExchangeUserInfo(
     const std::vector<Hccl::Socket*> &sockets,
     const std::vector<u32> &remoteRanks,
-    const std::vector<HcommSocketRole> &roles,
-    CollCommConfigConsistency &collCommConfigConsistency)
+    const std::vector<HcommSocketRole> &roles)
 {
-    u32 localExchangeInfoLen = collCommConfigConsistency.GetExchangeInfoLen();
+    u32 localExchangeInfoLen = collCommConfigConsistency_.GetExchangeInfoLen();
     if (localExchangeInfoLen == 0) {
         HCCL_INFO("[ExchangeUserInfo] localExchangeInfoLen is 0.");
         return HCCL_SUCCESS;
@@ -865,7 +863,7 @@ HcclResult MyRank::ExchangeUserInfo(
             sockets[i]->RecvAsync(remoteUserDatas[i].data(), remoteExchangeInfoLens[i]);
         } else {
             std::vector<u8> exchangeBuf;
-            collCommConfigConsistency.GetExchangeInfoBuf(exchangeBuf);
+            collCommConfigConsistency_.GetExchangeInfoBuf(exchangeBuf);
             sockets[i]->SendAsync(exchangeBuf.data(), localExchangeInfoLen);
         }
     }
@@ -876,7 +874,7 @@ HcclResult MyRank::ExchangeUserInfo(
     for (u32 i = 0; i < sockets.size(); i++) {
         if (roles[i] == HCOMM_SOCKET_ROLE_SERVER) {
             std::vector<u8> exchangeBuf;
-            collCommConfigConsistency.GetExchangeInfoBuf(exchangeBuf);
+            collCommConfigConsistency_.GetExchangeInfoBuf(exchangeBuf);
             sockets[i]->SendAsync(exchangeBuf.data(), localExchangeInfoLen);
         } else {
             remoteUserDatas[i].resize(remoteExchangeInfoLens[i], 0);
@@ -889,7 +887,7 @@ HcclResult MyRank::ExchangeUserInfo(
     // 存储对端交换信息
     for (u32 i = 0; i < sockets.size(); i++) {
         if (remoteExchangeInfoLens[i] > 0 && !remoteUserDatas[i].empty()) {
-            CHK_RET(collCommConfigConsistency.StoreRemoteExchangeInfo(remoteRanks[i], remoteUserDatas[i]));
+            CHK_RET(collCommConfigConsistency_.StoreRemoteExchangeInfo(remoteRanks[i], remoteUserDatas[i]));
         }
     }
 
