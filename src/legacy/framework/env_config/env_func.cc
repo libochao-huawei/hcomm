@@ -813,7 +813,7 @@ void CastDfsConfigParseRankConsistentState(int32_t &rankConsistentState, const s
         rankConsistentState = 1;  
     }else {
         THROW<InvalidParamsException>(StringFormat(
-            "env[HCCL_DFS_CONFIG] please set inconsistent_check to '-1' or '0' or '1'.", heartBeat.c_str()));
+            "env[HCCL_DFS_CONFIG] please set inconsistent_check to '-1' or '0' or '1'.", configValue.c_str()));
     }
 }
 
