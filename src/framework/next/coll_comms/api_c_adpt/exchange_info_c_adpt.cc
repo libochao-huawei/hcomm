@@ -9,7 +9,7 @@
  */
 
 #include "hccl/hccl_res_expt.h"
-#include "hccl_exchange_info.h"
+#include "coll_comm_config_consistency.h"
 
 using namespace hccl;
 
@@ -18,8 +18,8 @@ HcclResult HcclCommAddExchangeInfo(HcclComm comm, const void* data, uint32_t len
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(data);
     CHK_PRT_RET(length == 0, HCCL_ERROR("[HcclCommAddExchangeInfo] length is 0."), HCCL_E_PARA);
-    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
-    return hcclComm->AddExchangeInfo(data, length);
+    CollCommConfigConsistency collCommConfigConsistency;
+    return collCommConfigConsistency.AddExchangeInfo(data, length);
 }
 
 HcclResult HcclCommGetExchangeInfo(HcclComm comm, uint32_t remoteRank, uint32_t length, void* data, uint32_t* actualLength)
@@ -27,13 +27,13 @@ HcclResult HcclCommGetExchangeInfo(HcclComm comm, uint32_t remoteRank, uint32_t 
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(data);
     CHK_PTR_NULL(actualLength);
-    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
-    return hcclComm->GetExchangeInfo(remoteRank, length, data, actualLength);
+    CollCommConfigConsistency collCommConfigConsistency;
+    return collCommConfigConsistency.GetExchangeInfo(remoteRank, length, data, actualLength);
 }
 
 HcclResult HcclCommResetExchangeInfo(HcclComm comm)
 {
     CHK_PTR_NULL(comm);
-    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
-    return hcclComm->ResetExchangeInfo();
+    CollCommConfigConsistency collCommConfigConsistency;
+    return collCommConfigConsistency.ResetExchangeInfo();
 }
