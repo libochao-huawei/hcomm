@@ -380,9 +380,11 @@ HcclResult TpMgr::RunHandleCompletedGetTpEraseReq(ReqCtxMap &reqCtxMap, const Hc
     const Hccl::IpAddress &rmtAddr, const uint32_t qosKey, RequestCtx &&completedReqCtx,
     std::unique_lock<std::mutex> &reqCtxLock, const GetTpInfoParam &param, TpInfo &tpInfo)
 {
+    // `completedReqCtx` 常绑定在 map 槽位；须先移出再 Erase，避免先析构再 move（UB / tcache double free）
+    RequestCtx doneCtx(std::move(completedReqCtx));
     EraseReqCtxAtQos(reqCtxMap, locAddr, rmtAddr, qosKey);
     // 与 Legacy TpManager 一致：先写入 info 缓存再释放 req 互斥量，避免同 qosKey 上并发插入 in-flight 与本次提交竞态
-    const HcclResult ret = HandleCompletedRequest(std::move(completedReqCtx), param, tpInfo);
+    const HcclResult ret = HandleCompletedRequest(std::move(doneCtx), param, tpInfo);
     reqCtxLock.unlock();
     return ret;
 }
