@@ -568,7 +568,10 @@ STATIC void RsUbCtxFreeJettyCb(struct RsCtxJettyCb *jettyCb)
     struct RsCtxJettyCb *tmpJettyCb = jettyCb;
 
 #ifdef CUSTOM_INTERFACE
-    (void)DlHalBuffFree((void *)(uintptr_t)jettyCb->qpShareInfoAddr);
+    if (jettyCb->qpShareInfoAddr != NULL) {
+        (void)DlHalBuffFree((void *)(uintptr_t)jettyCb->qpShareInfoAddr);
+        jettyCb->qpShareInfoAddr = NULL;
+    }
 #endif
 
     pthread_mutex_destroy(&tmpJettyCb->crErrInfo.mutex);
@@ -1482,11 +1485,16 @@ STATIC int RsUbJettyCbInit(struct RsUbDevCb *devCb, struct CtxQpAttr *jettyAttr,
 }
 
 #ifdef CUSTOM_INTERFACE
-STATIC int RsUbJettyCbBuffAlloc(struct RsUbDevCb *devCb, struct RsCtxJettyCb *jettyCb)
+STATIC int RsUbJettyCbBuffAlloc(struct RsUbDevCb *devCb, struct RsCtxJettyCb *jettyCb, enum JfcMode jfcType)
 {
     unsigned int logicDevid = 0;
     unsigned long flag = 0;
     int ret = 0;
+
+    if (jfcType != JFC_MODE_NORMAL) {
+        jettyCb->qpShareInfoAddr = NULL;
+        return 0;
+    }
 
     ret = rsGetLocalDevIDByHostDevID(devCb->phyId, &logicDevid);
     CHK_PRT_RETURN(ret != 0, hccp_err("rsGetLocalDevIDByHostDevID failed, phyId(%u), ret(%d)",
@@ -1530,14 +1538,6 @@ STATIC int RsUbCtxInitJettyCb(struct RsUbDevCb *devCb, struct CtxQpAttr *attr,
         hccp_err("jetty_cb init failed ret:%d", ret);
         goto jetty_cb_init_err;
     }
-
-#ifdef CUSTOM_INTERFACE
-    ret = RsUbJettyCbBuffAlloc(devCb, tmpJettyCb);
-    if (ret != 0) {
-        hccp_err("jetty_cb buff alloc failed ret:%d", ret);
-        goto jetty_cb_init_err;
-    }
-#endif
 
     *jettyCb = tmpJettyCb;
     return 0;
@@ -1754,6 +1754,14 @@ int RsUbCtxJettyCreate(struct RsUbDevCb *devCb, struct CtxQpAttr *attr, struct Q
         hccp_err("rs_ub_ctx_drv_jetty_create failed, ret:%d", ret);
         goto free_jetty_cb;
     }
+
+#ifdef CUSTOM_INTERFACE
+    ret = RsUbJettyCbBuffAlloc(devCb, jettyCb, sendJfcCb->jfcType);
+    if (ret != 0) {
+        hccp_err("jetty_cb buff alloc failed ret:%d", ret);
+        goto free_jetty_cb;
+    }
+#endif
 
     ret = RsUbFillJettyInfo(jettyCb, info);
     if (ret != 0) {
