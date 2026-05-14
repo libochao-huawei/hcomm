@@ -26,6 +26,7 @@
 #include "llt_hccl_stub_sal_pub.h"
 #include "calc_crc.h"
 #include "hccl_res_expt.h"
+#include "llt_hccl_stub_rank_graph.h"
 
 using namespace std;
 using namespace hccl;
@@ -43,32 +44,54 @@ protected:
     }
     virtual void SetUp()
     {
-        hcclCommPtr = std::make_shared<hccl::hcclComm>();
+        setenv("HCCL_DFS_CONFIG", "task_exception:on", 1);
+        hcclCommPtr_ = std::make_shared<hccl::hcclComm>();
         std::cout << "A Test SetUp" << std::endl;
     }
     virtual void TearDown()
     {
-        hcclCommPtr.reset();
+        unsetenv("HCCL_DFS_CONFIG");
+        hcclCommPtr_.reset();
         GlobalMockObject::verify();
         std::cout << "A Test TearDown" << std::endl;
     }
 
-    std::shared_ptr<hccl::hcclComm> hcclCommPtr;
+    std::shared_ptr<hccl::hcclComm> hcclCommPtr_;
 };
+
+void InitCollComm(std::shared_ptr<hccl::hcclComm> hcclCommPtr)
+{
+    RankGraphStub rankGraphStub;
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
+    void* commV2 = (void*)0x2000;
+    uint32_t rank = 1;
+    HcclMem cclBuffer;
+    cclBuffer.size = 1;
+    cclBuffer.type = HcclMemType::HCCL_MEM_TYPE_HOST;
+    cclBuffer.addr = (void*)0x1000;
+    char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
+    HcclCommConfig config;
+    config.hcclOpExpansionMode = 1;
+    config.hcclRdmaTrafficClass = 0xFFFFFFFF;
+    config.hcclRdmaServiceLevel = 0xFFFFFFFF;
+    ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
+}
 
 TEST_F(ExchangeInfoTest, Ut_CApiAddExchangeInfo_When_ParamValid_Expect_Success)
 {
+    InitCollComm(hcclCommPtr_);
     std::vector<u8> data = {0x01, 0x02, 0x03};
-    HcclComm comm = static_cast<HcclComm>(hcclCommPtr.get());
+    HcclComm comm = static_cast<HcclComm>(hcclCommPtr_.get());
     HcclResult ret = HcclCommAddExchangeInfo(comm, data.data(), data.size());
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
 TEST_F(ExchangeInfoTest, Ut_CApiGetExchangeInfo_When_ParamValid_Expect_Success)
 {
+    InitCollComm(hcclCommPtr_);
     std::vector<u8> remoteData = {0xAA, 0xBB};
     size_t size = remoteData.size();
-    hccl::CollComm* collComm = hcclCommPtr->GetCollComm();
+    hccl::CollComm* collComm = hcclCommPtr_->GetCollComm();
     hccl::MyRank* myRank = collComm->GetMyRank();
     CollCommConfigConsistency &collCommConfigConsistency = myRank->GetCollCommConfigConsistency();
     collCommConfigConsistency.StoreRemoteExchangeInfo(0, remoteData);
@@ -83,6 +106,7 @@ TEST_F(ExchangeInfoTest, Ut_CApiGetExchangeInfo_When_ParamValid_Expect_Success)
 
 TEST_F(ExchangeInfoTest, Ut_CApiResetExchangeInfo_When_ParamValid_Expect_Success)
 {
+    InitCollComm(hcclCommPtr_);
     HcclComm comm = static_cast<HcclComm>(hcclCommPtr.get());
     HcclResult ret = HcclCommResetExchangeInfo(comm);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -91,10 +115,10 @@ TEST_F(ExchangeInfoTest, Ut_CApiResetExchangeInfo_When_ParamValid_Expect_Success
 // 端到端流程测试：AddExchangeInfo → StoreRemote → GetExchangeInfo
 TEST_F(ExchangeInfoTest, Ut_EndToEnd_When_AddStoreGet_Expect_Consistent)
 {
+    InitCollComm(hcclCommPtr_);
     // 1. 本端添加交换信息
-    CollCommConfigConsistency consistency;
     std::vector<u8> localData = {0xDE, 0xAD, 0xBE, 0xEF};
-    hccl::CollComm* collComm = hcclCommPtr->GetCollComm();
+    hccl::CollComm* collComm = hcclCommPtr_->GetCollComm();
     hccl::MyRank* myRank = collComm->GetMyRank();
     CollCommConfigConsistency &collCommConfigConsistency = myRank->GetCollCommConfigConsistency();
     HcclResult ret = collCommConfigConsistency.AddExchangeInfo(localData.data(), localData.size());
