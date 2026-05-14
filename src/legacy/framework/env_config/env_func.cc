@@ -779,12 +779,12 @@ void CastDfsConfigParseTaskExceptionEnable(bool &taskExceptionEnable, const std:
 {
     if (configValue == "off") {
         taskExceptionEnable = false;
-        HCCL_WARNING("env[HCCL_DFS_CONFIG] task_exception was configed to [%s]", taskException.c_str());
+        HCCL_WARNING("env[HCCL_DFS_CONFIG] task_exception was configed to [%s]", configValue.c_str());
     } else if (configValue == "on") {
         taskExceptionEnable = true;
     } else {
         THROW<InvalidParamsException>(StringFormat(
-            "env[HCCL_DFS_CONFIG] please set task_exception to 'on' or 'off'.", taskException.c_str()));
+            "env[HCCL_DFS_CONFIG] please set task_exception to 'on' or 'off'.", configValue.c_str()));
     }
 }
 
@@ -792,12 +792,12 @@ void CastDfsConfigParseClusterHeartBeatEnable(bool &clusterHeartBeatEnable, cons
 {
     if (configValue == "off") {
         clusterHeartBeatEnable = false;
-        HCCL_WARNING("env[HCCL_DFS_CONFIG] cluster_heartbeat was configed to [%s]", heartBeat.c_str());
+        HCCL_WARNING("env[HCCL_DFS_CONFIG] cluster_heartbeat was configed to [%s]", configValue.c_str());
     } else if (configValue == "on") {
         clusterHeartBeatEnable = true;
     } else {
         THROW<InvalidParamsException>(StringFormat(
-            "env[HCCL_DFS_CONFIG] please set cluster_heartbeat to 'on' or 'off'.", heartBeat.c_str()));
+            "env[HCCL_DFS_CONFIG] please set cluster_heartbeat to 'on' or 'off'.", configValue.c_str()));
     }
 }
 
