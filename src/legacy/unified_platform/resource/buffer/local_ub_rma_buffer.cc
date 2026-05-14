@@ -22,7 +22,7 @@ namespace Hccl {
 constexpr u32 TEN_MILLISECOND_OF_USLEEP = 10000;
 
 LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle rdmaHandle)
-    : LocalRmaBuffer(buf, RmaType::UB), rdmaHandle(rdmaHandle)
+    : LocalUbRmaBufferBase(buf), rdmaHandle(rdmaHandle)
 {
      if (rdmaHandle == nullptr) {
         THROW<NullPtrException>("LocalUbRmaBuffer's rdmaHandle is NULL");
@@ -45,8 +45,7 @@ LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle rdmaH
                memHandle, keySize);
 }
 
-LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, void *netDevice, bool flag)
-    : LocalRmaBuffer(buf, RmaType::UB)
+LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, void *netDevice, bool flag) : LocalUbRmaBufferBase(buf)
 {
     (void)flag;
     if (netDevice == nullptr) {
@@ -71,7 +70,7 @@ LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, void *netDevice,
               memHandle, keySize);
 }
 
-LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf) : LocalRmaBuffer(buf, RmaType::UB), rdmaHandle(nullptr)
+LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf) : LocalUbRmaBufferBase(buf), rdmaHandle(nullptr)
 {
     rtMemUbTokenInfo info;
     info.va   = buf->GetAddr();
@@ -108,21 +107,6 @@ LocalUbRmaBuffer::~LocalUbRmaBuffer()
         HCCL_INFO("[LocalUbRmaBuffer::%s] rdmaHandle[%p], lmemHandle[0x%llx]", __func__, rdmaHandle, memHandle);
         DECTOR_TRY_CATCH("LocalUbRmaBuffer", HrtRaUbLocalMemUnreg(rdmaHandle, memHandle));
     }
-}
-
-u32 LocalUbRmaBuffer::GetTokenId() const
-{
-    return tokenId;
-}
-
-u32 LocalUbRmaBuffer::GetTokenValue() const
-{
-    return tokenValue;
-}
-
-TokenIdHandle LocalUbRmaBuffer::GetTokenIdHandle() const
-{
-    return tokenIdHandle;
 }
 
 static bool isInitialized = false;  // 标记是否已经初始化
