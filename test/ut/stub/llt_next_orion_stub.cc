@@ -191,6 +191,24 @@ void Socket::ConnectAsync()
     return;
 }
 
+bool Socket::ISend(void *data, u64 size, u64& compSize) const
+{
+    compSize = size;
+    return true;
+}
+
+HcclResult Socket::ISendWithHeart(void *data, u64 size, u64& compSize) const
+{ 
+    compSize = size;
+    return HCCL_SUCCESS;
+}
+
+HcclResult Socket::IRecvWithHeart(void *data, u64 size, u64& compSize) const
+{ 
+    compSize = size;
+    return HCCL_SUCCESS;
+}
+ 
 void Socket::SendAsync(const u8 *sendBuf, u32 size)
 {
     return;
@@ -1381,6 +1399,11 @@ bool SocketManager::ServerDeInit(PortData &portData) const
     return true;
 }
 
+void SocketManager::SetDeviceServerListenPortMap(const std::unordered_map<u32, std::unordered_map<IpAddress, u32>> &rankListenPortMap)
+{
+    return;
+}
+
 HccpTlvHdcManager &HccpTlvHdcManager::GetInstance()
 {
     static HccpTlvHdcManager HccpTlvHdcManager;
@@ -2063,7 +2086,7 @@ void TaskExceptionHandler::Process(rtExceptionInfo_t *expectionInfo)
 {
 }
 
-void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo_t *expectionInfo)
+void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo_t *expectionInfo, bool &isExistAicpuError)
 {
 }
 
@@ -2145,6 +2168,17 @@ HcclResult HcclCommunicator::SetAccelerator(int32_t accelerator, bool isCcuMsAva
     return HCCL_SUCCESS;
 }
 
+HcclResult HcclCommunicator::GetRankGraphV2(void *&rankGraph)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommunicator::GetRankIpPortMap(RankIpPortMapPtr& rankIpPortMap)
+{
+    static auto emptyMap = std::make_shared<std::unordered_map<u32, std::unordered_map<IpAddress, u32>>>();
+    rankIpPortMap = emptyMap;
+    return HCCL_SUCCESS;
+}
 } // namespace Hccl
 
 namespace Hccl {
@@ -2488,7 +2522,7 @@ std::pair<uint32_t, uint32_t> RdmaHandleManager::GetDieAndFuncId(RdmaHandle rdma
     return {0, 0};
 }
 
-HcclResult TpManager::GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo)
+HcclResult TpManager::GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo, bool isSync)
 {
     return HcclResult::HCCL_SUCCESS;
 }
@@ -2520,10 +2554,6 @@ HrtRaUbJettyImportedOutParam RaUbTpImportJetty(RdmaHandle handle, u8 *key, u32 k
     u32 tokenValue, const JettyImportCfg &jettyImportCfg)
 {
     return HrtRaUbJettyImportedOutParam{};
-}
-
-void TpManager::SetIsHost()
-{
 }
 
 ReqHandleResult HrtRaGetAsyncReqResult(RequestHandle &reqHandle)

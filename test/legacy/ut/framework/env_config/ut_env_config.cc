@@ -478,8 +478,6 @@ TEST_F(EnvConfigTest, Ut_CastHcclAccelerator_When_ConfigVaild_ExpectSuccess)
 {
     EXPECT_EQ(CastHcclAccelerator("AI_CPU"), HcclAccelerator::AICPU_TS);
     EXPECT_EQ(CastHcclAccelerator("AIV"), HcclAccelerator::AIV);
-    EXPECT_EQ(CastHcclAccelerator("HOST"), HcclAccelerator::CCU_SCHED);
-    EXPECT_EQ(CastHcclAccelerator("HOST_TS"), HcclAccelerator::CCU_SCHED);
     EXPECT_EQ(CastHcclAccelerator("CCU_MS"), HcclAccelerator::CCU_MS);
     EXPECT_EQ(CastHcclAccelerator("CCU_SCHED"), HcclAccelerator::CCU_SCHED);
 }
@@ -487,4 +485,6 @@ TEST_F(EnvConfigTest, Ut_CastHcclAccelerator_When_ConfigVaild_ExpectSuccess)
 TEST_F(EnvConfigTest, Ut_CastHcclAccelerator_When_ConfigInvaild_ExpectThrow)
 {
     EXPECT_THROW(CastHcclAccelerator("Invalid"), InvalidParamsException);
+    EXPECT_THROW(CastHcclAccelerator("HOST"), InvalidParamsException);
+    EXPECT_THROW(CastHcclAccelerator("HOST_TS"), InvalidParamsException);
 }

@@ -47,11 +47,6 @@ void TpManager::Init()
     initFlag = true;
 }
 
-void TpManager::SetIsHost()
-{
-    isHost = true;
-}
-
 bool TpManager::CheckRequestResult(RequestHandle &reqHandle) const
 {
     if (reqHandle == 0) {
@@ -81,7 +76,8 @@ HcclResult CheckTpProtocol(const TpProtocol tpProtocol) {
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult TpManager::GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo)
+HcclResult TpManager::GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo,
+    bool isSync)
 {
     const auto &tpProtocol = param.tpProtocol;
     CHK_RET(CheckTpProtocol(tpProtocol));
@@ -101,11 +97,12 @@ HcclResult TpManager::GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo)
             param.Describe().c_str());
 
         RequestCtx &reqCtx = locReqCtxMap[rmtAddr];
-        StartGetTpInfoListRequest(param, reqCtx);
+        reqCtx.isSync = isSync;
+        StartGetTpInfoListRequest(param, reqCtx, isSync);
         return HcclResult::HCCL_E_AGAIN;
     }
 
-    if(!isHost) {
+    if (!locReqCtxIter->second.isSync) {
         auto &reqCtx = locReqCtxIter->second;
         if (!CheckRequestResult(reqCtx.handle)) {
             return HcclResult::HCCL_E_AGAIN;
@@ -163,10 +160,12 @@ bool TpManager::FindAndGetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo
 }
 
 void TpManager::StartGetTpInfoListRequest(const RaUbGetTpInfoParam &param,
-    TpManager::RequestCtx &reqCtx) const
+    TpManager::RequestCtx &reqCtx, bool isSync) const
 {
     Hccl::IpAddress localIp = param.locAddr;
-    RdmaHandle rdmaHandle = isHost 
+
+    // isSync为true走同步路径，false走异步路径。当前仅HostUbConnection使用同步模式。
+    RdmaHandle rdmaHandle = isSync 
         ? RdmaHandleManager::GetInstance().GetByAddr(devPhyId, LinkProtoType::UB, 
                                 localIp, Hccl::PortDeploymentType::HOST_NET)
         : RdmaHandleManager::GetInstance().GetByIp(devPhyId, param.locAddr);
@@ -175,7 +174,7 @@ void TpManager::StartGetTpInfoListRequest(const RaUbGetTpInfoParam &param,
             "devPhyId[%u] locAddr[%s].", __func__, devPhyId,
             param.locAddr.Describe().c_str());
     }
-    if (isHost) {
+    if (isSync) {
         RaUbGetTpInfo(rdmaHandle, param, reqCtx.dataBuffer, reqCtx.tpInfoNum);
         return;
     }
