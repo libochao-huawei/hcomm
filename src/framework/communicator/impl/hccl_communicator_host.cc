@@ -278,8 +278,6 @@ namespace hccl
             DeInitOneSidedServiceNetDevCtx();
         }
 
-        DeInitTransportMem();
-
         /* 网络资源销毁 */
         DestroyNetworkResources();
         notifyPool_ = nullptr;
@@ -9023,11 +9021,6 @@ namespace hccl
     HcclResult HcclCommunicator::GetHeterogMode(HcclHeterogMode *mode)
     {
         return rankGraph_.GetHeterogMode(mode);
-    }
-
-    HcclResult HcclCommunicator::DeInitTransportMem()
-    {
-        return HCCL_SUCCESS;
     }
 
     HcclResult HcclCommunicator::RegisterToSnapshot()

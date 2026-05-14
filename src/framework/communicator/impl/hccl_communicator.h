@@ -551,7 +551,6 @@ private:
     HcclResult RegisterToHeartBeat(u32 peerRankId, std::string &tag);
     void UnRegisterToHeartBeat();
     void UnRegisterToCommConfiger();
-    HcclResult DeInitTransportMem();
     HcclResult PrintOpbaseKeyTraceInfo(void);
     HcclResult InitPara();
     HcclResult GetComm(const std::string &tag, CommBase **comm);
