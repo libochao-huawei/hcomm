@@ -129,6 +129,12 @@ public:
                   loc.size(), rmt.size(), cfg.cqeEn, out.pi);
     }
 
+    virtual u32 GetCi() const 
+    {
+        HCCL_DEBUG("RmaConnLite GetCi start.");
+        return 0;
+    }
+
 protected:
     u32 qpVa_{0};
 
