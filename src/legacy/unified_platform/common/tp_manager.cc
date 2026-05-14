@@ -38,9 +38,9 @@ namespace {
 constexpr uint32_t kGetTpAttrOpcode = 106U;
 constexpr uint32_t kGetTpAttrVersion = 2U;
 
-constexpr uint32_t TpCacheQosKey(uint32_t qos) noexcept
+static constexpr QosKey QosMapKey(uint32_t qos) noexcept
 {
-    return qos & 7U;
+    return static_cast<QosKey>(qos & 0xFFU);
 }
 
 static uint32_t CalSlAvailableCnt(uint32_t mask)
@@ -330,56 +330,11 @@ HcclResult CheckTpProtocol(const TpProtocol tpProtocol) {
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult TpManager::RunHandleCompletedGetTpEraseReq(ReqCtxMap &reqCtxMap, const IpAddress &locAddr,
-    const IpAddress &rmtAddr, const uint32_t qosKey, RequestCtx &&completedReqCtx,
-    std::unique_lock<std::mutex> &reqCtxLock, const RaUbGetTpInfoParam &param, TpInfo &tpInfo, const bool withSlPolicy)
-{
-    // `completedReqCtx` 往往绑定在 reqCtxMap 的槽位上；必须先移出再 Erase，否则会先析构槽内对象再 move，属 UB（易 double free）
-    RequestCtx doneCtx(std::move(completedReqCtx));
-    EraseReqCtxAtQos(reqCtxMap, locAddr, rmtAddr, qosKey);
-    // 先完成缓存写入再释放 req 互斥量，避免其它线程在同一 qosKey 上再次插入 in-flight RequestCtx 与本次提交竞态
-    const HcclResult ret = HandleCompletedRequest(std::move(doneCtx), param, tpInfo, withSlPolicy);
-    reqCtxLock.unlock();
-    return ret;
-}
-
-HcclResult TpManager::GetTpInfoOnDeviceWaitListPhase(const RaUbGetTpInfoParam &param, ReqCtxMap &reqCtxMap,
-    const IpAddress &locAddr, const IpAddress &rmtAddr, const uint32_t qosKey, RequestCtx &reqCtx,
-    std::unique_lock<std::mutex> &reqCtxLock, TpInfo &tpInfo)
-{
-    if (reqCtx.tpInfoNum == 0U) {
-        EraseReqCtxAtQos(reqCtxMap, locAddr, rmtAddr, qosKey);
-        reqCtxLock.unlock();
-        HCCL_WARNING("[TpManager][%s] failed to find tp info, tpInfoNum is 0, param[%s].", __func__,
-            param.Describe().c_str());
-        return HcclResult::HCCL_E_NOT_FOUND;
-    }
-    if (DeviceSupportsRaGetTpAttrAsync(devPhyId)) {
-        try {
-            StartGetTpAttrForFirstTpDevice(param, reqCtx);
-        } catch (...) {
-            EraseReqCtxAtQos(reqCtxMap, locAddr, rmtAddr, qosKey);
-            throw;
-        }
-        return HcclResult::HCCL_E_AGAIN;
-    }
-    return RunHandleCompletedGetTpEraseReq(reqCtxMap, locAddr, rmtAddr, qosKey, std::move(reqCtx), reqCtxLock, param,
-        tpInfo, false);
-}
-
-HcclResult TpManager::GetTpInfoOnDeviceWaitTpAttrPhase(const RaUbGetTpInfoParam &param, ReqCtxMap &reqCtxMap,
-    const IpAddress &locAddr, const IpAddress &rmtAddr, const uint32_t qosKey, RequestCtx &reqCtx,
-    std::unique_lock<std::mutex> &reqCtxLock, TpInfo &tpInfo)
-{
-    return RunHandleCompletedGetTpEraseReq(reqCtxMap, locAddr, rmtAddr, qosKey, std::move(reqCtx), reqCtxLock, param,
-        tpInfo, true);
-}
-
 HcclResult TpManager::GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo, bool isSync)
 {
     const auto &tpProtocol = param.tpProtocol;
     CHK_RET(CheckTpProtocol(tpProtocol));
-    if (FindAndGetTpInfo(param, tpInfo)) {
+    if (FindAndGetTpInfo(param, tpInfo) == HcclResult::HCCL_SUCCESS) {
         return HcclResult::HCCL_SUCCESS;
     }
 
@@ -388,12 +343,12 @@ HcclResult TpManager::GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo,
     auto &reqCtxMap = GetReqCtxMap(tpProtocol);
     const auto &locAddr = param.locAddr;
     const auto &rmtAddr = param.rmtAddr;
-    const uint32_t qosKey = TpCacheQosKey(param.qos);
+    const QosKey qosKey = QosMapKey(param.qos);
 
     auto &rmtReqMap = reqCtxMap[locAddr];
     auto &qosReqMap = rmtReqMap[rmtAddr];
-    auto qosReqIter = qosReqMap.find(qosKey);
-    if (qosReqIter == qosReqMap.end()) {
+    auto it = qosReqMap.find(qosKey);
+    if (it == qosReqMap.end()) {
         HCCL_INFO("[TpManager][%s] get new tpInfo, param[%s].", __func__, param.Describe().c_str());
 
         RequestCtx &reqCtx = qosReqMap[qosKey];
@@ -402,7 +357,7 @@ HcclResult TpManager::GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo,
         return HcclResult::HCCL_E_AGAIN;
     }
 
-    RequestCtx &reqCtx = qosReqIter->second;
+    RequestCtx &reqCtx = it->second;
 
     if (!reqCtx.isSync && reqCtx.handle != 0U && !CheckRequestResult(reqCtx.handle)) {
         return HcclResult::HCCL_E_AGAIN;
@@ -410,39 +365,65 @@ HcclResult TpManager::GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo,
 
     if (!isHost) {
         if (reqCtx.phase == RequestCtx::ReqPhase::WAIT_LIST) {
-            return GetTpInfoOnDeviceWaitListPhase(param, reqCtxMap, locAddr, rmtAddr, qosKey, reqCtx, reqCtxLock, tpInfo);
+            if (reqCtx.tpInfoNum == 0U) {
+                qosReqMap.erase(it);
+                reqCtxLock.unlock();
+                HCCL_WARNING("[TpManager][%s] failed to find tp info, tpInfoNum is 0, param[%s].", __func__,
+                    param.Describe().c_str());
+                return HcclResult::HCCL_E_NOT_FOUND;
+            }
+            if (DeviceSupportsRaGetTpAttrAsync(devPhyId)) {
+                const struct HccpTpInfo *list =
+                    reinterpret_cast<const struct HccpTpInfo *>(reqCtx.dataBuffer.data());
+                HCCL_INFO("[TpManager][GetTpInfo] list stage ok, devPhyId[%u] tpInfoNum[%u] firstTpHandle[%llu] param[%s].",
+                    devPhyId, reqCtx.tpInfoNum, static_cast<unsigned long long>(list[0].tpHandle),
+                    param.Describe().c_str());
+                try {
+                    StartGetTpAttrForFirstTpDevice(param, reqCtx);
+                } catch (...) {
+                    qosReqMap.erase(it);
+                    throw;
+                }
+                return HcclResult::HCCL_E_AGAIN;
+            }
+            RequestCtx completedReqCtx = std::move(it->second);
+            qosReqMap.erase(it);
+            reqCtxLock.unlock();
+            return HandleCompletedRequest(std::move(completedReqCtx), param, tpInfo, false);
         }
         if (reqCtx.phase == RequestCtx::ReqPhase::WAIT_TP_ATTR) {
-            return GetTpInfoOnDeviceWaitTpAttrPhase(param, reqCtxMap, locAddr, rmtAddr, qosKey, reqCtx, reqCtxLock,
-                tpInfo);
+            RequestCtx completedReqCtx = std::move(it->second);
+            qosReqMap.erase(it);
+            reqCtxLock.unlock();
+            return HandleCompletedRequest(std::move(completedReqCtx), param, tpInfo, true);
         }
     }
 
-    return RunHandleCompletedGetTpEraseReq(reqCtxMap, locAddr, rmtAddr, qosKey, std::move(qosReqIter->second),
-        reqCtxLock, param, tpInfo, false);
+    RequestCtx completedReqCtx = std::move(it->second);
+    qosReqMap.erase(it);
+    reqCtxLock.unlock();
+    return HandleCompletedRequest(std::move(completedReqCtx), param, tpInfo, false);
 }
 
 HcclResult TpManager::ReleaseTpInfo(const RaUbGetTpInfoParam &param, const TpInfo &tpInfo)
 {
-    const uint32_t qosKey = TpCacheQosKey(param.qos);
+    const QosKey qosKey = QosMapKey(param.qos);
     std::lock_guard<std::mutex> lock(GetInfoCtxMutex(param.tpProtocol));
     auto &infoMap = GetInfoCtxMap(param.tpProtocol);
     auto lit = infoMap.find(param.locAddr);
     if (lit == infoMap.end()) {
-        HCCL_ERROR("[TpManager][%s] failed, tp info is not found, "
-            "param[%s].", __func__, param.Describe().c_str());
+        HCCL_ERROR("[TpManager][%s] failed, tp info is not found, param[%s].", __func__, param.Describe().c_str());
         return HcclResult::HCCL_E_NOT_FOUND;
     }
     auto rit = lit->second.find(param.rmtAddr);
     if (rit == lit->second.end()) {
-        HCCL_ERROR("[TpManager][%s] failed, tp info is not found, "
-            "param[%s].", __func__, param.Describe().c_str());
+        HCCL_ERROR("[TpManager][%s] failed, tp info is not found, param[%s].", __func__, param.Describe().c_str());
         return HcclResult::HCCL_E_NOT_FOUND;
     }
     auto qit = rit->second.find(qosKey);
     if (qit == rit->second.end()) {
-        HCCL_ERROR("[TpManager][%s] failed, tp info is not found, "
-            "param[%s].", __func__, param.Describe().c_str());
+        HCCL_ERROR("[TpManager][%s] failed, tp info is not found for qosKey[%u], param[%s].", __func__,
+            static_cast<unsigned>(qosKey), param.Describe().c_str());
         return HcclResult::HCCL_E_NOT_FOUND;
     }
 
@@ -468,49 +449,26 @@ HcclResult TpManager::ReleaseTpInfo(const RaUbGetTpInfoParam &param, const TpInf
     return HcclResult::HCCL_SUCCESS;
 }
 
-void TpManager::EraseReqCtxAtQos(ReqCtxMap &reqCtxMap, const IpAddress &loc, const IpAddress &rmt, uint32_t qosKey)
+HcclResult TpManager::FindAndGetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo)
 {
-    auto lit = reqCtxMap.find(loc);
-    if (lit == reqCtxMap.end()) {
-        return;
-    }
-    auto rit = lit->second.find(rmt);
-    if (rit == lit->second.end()) {
-        return;
-    }
-    auto qit = rit->second.find(qosKey);
-    if (qit == rit->second.end()) {
-        return;
-    }
-    rit->second.erase(qit);
-    if (rit->second.empty()) {
-        lit->second.erase(rit);
-    }
-    if (lit->second.empty()) {
-        reqCtxMap.erase(lit);
-    }
-}
-
-bool TpManager::FindAndGetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo)
-{
-    const uint32_t qosKey = TpCacheQosKey(param.qos);
+    const QosKey qosKey = QosMapKey(param.qos);
     std::lock_guard<std::mutex> lock(GetInfoCtxMutex(param.tpProtocol));
     auto &infoMap = GetInfoCtxMap(param.tpProtocol);
     auto lit = infoMap.find(param.locAddr);
     if (lit == infoMap.end()) {
-        return false;
+        return HcclResult::HCCL_E_NOT_FOUND;
     }
     auto rit = lit->second.find(param.rmtAddr);
     if (rit == lit->second.end()) {
-        return false;
+        return HcclResult::HCCL_E_NOT_FOUND;
     }
     auto qit = rit->second.find(qosKey);
     if (qit == rit->second.end()) {
-        return false;
+        return HcclResult::HCCL_E_NOT_FOUND;
     }
     qit->second.useCnt += 1;
     tpInfo = qit->second.tpInfo;
-    return true;
+    return HcclResult::HCCL_SUCCESS;
 }
 
 void TpManager::StartGetTpInfoListRequest(const RaUbGetTpInfoParam &param,
@@ -634,7 +592,7 @@ HcclResult TpManager::HandleCompletedRequest(const TpManager::RequestCtx reqCtx,
         tmpTpInfo.hasMappedJettyPriority = false;
     }
 
-    const uint32_t qosKey = TpCacheQosKey(param.qos);
+    const QosKey qosKey = QosMapKey(param.qos);
 
     std::lock_guard<std::mutex> lock(GetInfoCtxMutex(param.tpProtocol));
     auto &infoMap = GetInfoCtxMap(param.tpProtocol);
