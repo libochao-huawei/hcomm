@@ -127,6 +127,12 @@ void *HrtMalloc(u64 size, aclrtMemType_t memType)
     return (void *)0x12345678;
 }
 
+void HrtMemset(void *dst, uint64_t destMax, uint64_t count)
+{
+    memset(dst, 0, count);
+    return;
+}
+
 RdmaHandleManager::RdmaHandleManager()
 {
 }
