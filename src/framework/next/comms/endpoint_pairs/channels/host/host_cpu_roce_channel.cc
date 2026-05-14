@@ -979,7 +979,6 @@ HcclResult HostCpuRoceChannel::WriteWithNotify(
         return WriteWithNotifyHybrid(dst, src, len, remoteNotifyIdx);
     }
 
-    printf("[ywj]%s:%u", __FUNCTION__, __LINE__);
     // 前 N-1 块: 普通 RDMA_WRITE
     uint64_t offset = 0;
     while (len - offset > maxMsgSize_) {
@@ -989,13 +988,13 @@ HcclResult HostCpuRoceChannel::WriteWithNotify(
             maxMsgSize_));
         offset += maxMsgSize_;
     }
-    printf("[ywj]%s:%u", __FUNCTION__, __LINE__);
+
     // 尾块: RDMA_WRITE_WITH_IMM，携带 notify
     void *tailDst = static_cast<char *>(dst) + offset;
     const void *tailSrc = static_cast<const char *>(src) + offset;
     uint64_t lastLen = len - offset;
-    printf("[ywj]%s:%u", __FUNCTION__, __LINE__);
-    // 构造 WR
+
+    // 计算每个qp需要发送的数据量
     std::vector<Hccl::QpInfo> qpInfo = GetQpInfos();
     uint32_t useQpNum = 0;
     uint32_t wrLen = lastLen / qpInfo.size();
@@ -1008,35 +1007,28 @@ HcclResult HostCpuRoceChannel::WriteWithNotify(
 
     // 构造 WR
     Hccl::TaskParam taskParam{};
-    printf("[ywj]%s:%u", __FUNCTION__, __LINE__);
-    uint32_t i = 0;
     uint32_t qpLen;
-    for (i; i < useQpNum; i++) {
-        qpLen = (i == useQpNum - 1) ? wrLenTail : wrLen;
+    for (uint32_t i = 0; i < qpInfo.size(); i++) {
+        if (i < useQpNum - 1) {
+            qpLen = wrLen;
+        } else if (i == useQpNum - 1) {
+            qpLen = wrLenTail;
+        } else {
+            qpLen = 0;
+        }
         struct ibv_send_wr writeWithNotifyWr{};
         struct ibv_sge sgList{};
         writeWithNotifyWr.sg_list = &sgList;
         CHK_RET(PrepareWriteWrResource(static_cast<char *>(tailDst) + wrLen * i, static_cast<const char *>(tailSrc) + wrLen * i, qpLen, remoteNotifyIdx, writeWithNotifyWr, taskParam));
         CHK_RET(PostAndCheckSend(qpInfo[i].qp, __func__, writeWithNotifyWr));
     }
-    printf("[ywj]%s:%u", __FUNCTION__, __LINE__);
-    HCCL_INFO("[HostCpuRoceChannel::%s] %u of qp sent data, last %u of qp ")
-    // 未使用的QP，发长度为0的数据
-    while (i < qpInfo.size()) {
-        struct ibv_send_wr writeWithNotifyWr{};
-        struct ibv_sge sgList{};
-        writeWithNotifyWr.sg_list = &sgList;
-        qpLen = 0;
-        CHK_RET(PrepareWriteWrResource(static_cast<char *>(tailDst) + wrLen * i, static_cast<const char *>(tailSrc) + wrLen * i, qpLen, remoteNotifyIdx, writeWithNotifyWr, taskParam));
-        CHK_RET(PostAndCheckSend(qpInfo[i].qp, __func__, writeWithNotifyWr));
-        i++;
-    }
+    HCCL_INFO("[HostCpuRoceChannel::%s] %u of qp sent data, last %u of qp ", useQpNum, wrLen, wrLenTail);
 
     taskParam.endTime  = hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
     if (dfxCallback_ != nullptr) {
         return dfxCallback_(taskParam, reinterpret_cast<u64>(this));
     }
-    printf("[ywj]%s:%u", __FUNCTION__, __LINE__);
+
     HCCL_INFO("[HostCpuRoceChannel::%s] SUCCESS. len[0x%llx], newWqe[%u], wqeNum_[%u].",
         __func__, len, wqeNum_ - wqeNumBefore, wqeNum_);
     return HCCL_SUCCESS;
