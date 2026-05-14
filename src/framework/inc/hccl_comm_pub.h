@@ -15,7 +15,6 @@
 #include <memory>
 #include <map>
 #include <mutex>
-#include <unordered_map>
 #include "hccl/base.h"
 #include "hccl_common.h"
 #include "common.h"
