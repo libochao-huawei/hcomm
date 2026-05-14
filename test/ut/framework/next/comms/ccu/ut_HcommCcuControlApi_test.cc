@@ -202,7 +202,7 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRegister_When_AllFine_Expect_Ret
     const auto &handlePair = MockCcuChannelConnect(srcDevPhyId, dstDevPhyId, srcIp, dstIp, commEngine);
 
     // 构造CcuKernel实现
-    CcuKernelFunc demoFunc = CcuLocalCopyKernel;
+    CcuKernelFunc demoFunc = CcuLoadStoreDemoKernel;
     CcuVarAddKernelArg demoArg{};
     demoArg.numA = 1;
     demoArg.numB = 2;
@@ -739,10 +739,90 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelAlloc_When_AllFine_Expect_Return
 // 暂未启用：CcuReduceScatterMesh1dKernel 的 kernel 实现在
 // ccu_kernel_impl/ccu_reduce_scatter_mesh1d_demo.h 中整文件被注释，等该 demo
 // 适配新 API 后再放开此 UT。
-// TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelReduceScatterMesh1d_When_AllFine_Expect_ReturnCcuSUCCESS)
-// {
-//     HcclResult hcclRet = HcclResult::HCCL_E_RESERVED;
-//     CcuResult ccuRet = CcuResult::CCU_E_RESERVED;
-//     constexpr uint32_t fakeDevId = MAX_MODULE_DEVICE_NUM - 7;
-//     ...
-// }
+TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelReduceScatterMesh1d_When_AllFine_Expect_ReturnCcuSUCCESS)
+{
+    // 整体打桩，处理ccu资源
+    HcommResult hcclRet = 0;
+    CcuResult ccuRet = CcuResult::CCU_E_RESERVED;
+    constexpr uint32_t fakeDevId = MAX_MODULE_DEVICE_NUM - 2;
+    MOCKER(HcclGetThreadDeviceId).stubs().will(returnValue(fakeDevId));
+    int32_t fakeDeviceLogicId = static_cast<int32_t>(fakeDevId);
+    MOCKER(hrtGetDevice).stubs()
+        .with(outBoundP(&fakeDeviceLogicId))
+        .will(returnValue(HcclResult::HCCL_SUCCESS));
+    MOCKER(hrtGetDevicePhyIdByIndex).stubs()
+        .with(any(), outBound(static_cast<uint32_t>(fakeDeviceLogicId)), any())
+        .will(returnValue(HcclResult::HCCL_SUCCESS));
+    constexpr hcomm::CcuVersion fakeCcuVersion = hcomm::CcuVersion::CCU_V1;
+    MockCcuNetworkDeviceDefault(fakeDeviceLogicId); // 先处理网络设备，再初始化ccu
+    EXPECT_EQ(MockCcuResourcesDefault(fakeDeviceLogicId, fakeCcuVersion), HcclResult::HCCL_SUCCESS);
+    MockCcuChannelGetRes();
+    MOCKER(hrtMemcpy).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+
+    // ccuInstance构建（正常在通信域创建中，本用例仅测试hcomm接口）
+    constexpr auto MS_INS_TPYE = CcuInstanceType::CCU_MS;
+
+    CcuResDesc resDesc{};
+    resDesc.dieId = hcomm::CCU_MAX_IODIE_NUM;
+    resDesc.insType = MS_INS_TPYE;
+    constexpr uint32_t descNum = 1;
+    CcuInsHandle insHandle{0};
+    ccuRet = HcommCcuInsCreate(static_cast<void *>(&resDesc), descNum, &insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+
+    // 建链流程打桩
+    constexpr auto commEngine = CommEngine::COMM_ENGINE_CCU;
+    constexpr uint32_t srcDevPhyId = fakeDevId;
+    constexpr uint32_t dstDevPhyId = 1;
+    constexpr uint32_t srcIp = 167772383; // 需要与RaGetDevEidInfoList接口打桩一致
+    constexpr uint32_t dstIp = 0x87654321;
+    const auto &handlePair = MockCcuChannelConnect(srcDevPhyId, dstDevPhyId, srcIp, dstIp, commEngine);
+
+    // 构造CcuKernel实现
+    CcuKernelFunc demoFunc = CcuReduceScatterMesh1dKernel;
+    ReduceScatterKernelArg demoArg{};
+    demoArg.rankSize       = 2;
+    demoArg.rankId         = 0;
+    demoArg.channelCount   = 1;
+    demoArg.channels[0]    = handlePair.second;
+    demoArg.dataType       = HCCL_DATA_TYPE_FP16;
+    demoArg.outputDataType = HCCL_DATA_TYPE_FP16;
+    demoArg.reduceOp       = HCCL_REDUCE_SUM;
+
+    auto kernelFunc = reinterpret_cast<void *>(demoFunc);
+    auto kernelArg = static_cast<CcuKernelArg>(&demoArg);
+
+    // 重置CCU资源
+    ccuRet = HcommCcuKernelRegisterStart(insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+
+    // kernel注册
+    char *kernelFuncName = "ccu_reduce_scatter_mesh1d_demo";
+    CcuKernelHandle kernelHandle{0};
+    ccuRet = HcommCcuKernelRegister(insHandle, kernelFuncName,
+        kernelFunc, kernelArg, &kernelHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+
+    // kernel翻译
+    ccuRet = HcommCcuKernelRegisterEnd(insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+    
+    // 申请流，假定已经获取了threadHandle
+    auto fakeThreadHandle = MockThreadAllocWithStream(commEngine);
+
+    // kernel下发
+    // 需要与样例需要的load args对应（CcuReduceScatterMesh1dKernel::LoadArgs 共 15 个）
+    std::vector<uint64_t> taskArgs(15, 0);
+    void *fakeTaskArgs = static_cast<void *>(taskArgs.data());
+    uint32_t fakeArgSize = taskArgs.size();
+    EXPECT_EQ(HcommCcuKernelLaunch(fakeThreadHandle, kernelHandle,
+        fakeTaskArgs, fakeArgSize), CcuResult::CCU_SUCCESS);
+
+    // 清理各种资源，析构有时序要求
+    // 主线功能有bug，暂时不能主动释放stream
+    // constexpr uint32_t fakeThreadNum = 1;
+    // EXPECT_EQ(HcommThreadFree(&fakeThreadHandle, fakeThreadNum), HcclResult::HCCL_SUCCESS);
+    MockChannelDestory(handlePair);
+    ccuRet = HcommCcuInsDestroy(insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+}

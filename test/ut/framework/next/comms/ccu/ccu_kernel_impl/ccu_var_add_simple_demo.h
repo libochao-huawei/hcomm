@@ -71,7 +71,7 @@ CcuResult CcuAllocDemoKernel(CcuKernelArg arg)
     ccu::LoadArg(varA,0);
     ccu::LoadArg(varB,1);
 
-    ccu::Variable varC = ccu::CreateByChannel(args->channelHandle, 0);
+    ccu::Variable varC = ccu::GetResByChannel(args->channelHandle, 0);
     varA = varC;
 
     ccu::Address addrA, addrB, addrResult;
@@ -117,8 +117,19 @@ CcuResult CcuLoadStoreDemoKernel(CcuKernelArg arg)
 {
     auto *args = static_cast<CcuVarAddKernelArg *>(arg);
     ccu::Variable varA, varB, result;
-    ccu::LoadVar(0x10000000, &varA, 1);
-    ccu::StoreVar(0x20000000, &varB, 1);
+    ccu::Variable srcAddr, dstAddr;
+    srcAddr= 0x30000000;
+    dstAddr= 0x40000000;
+    ccu::LoadVar(0x10000000, varA);
+    ccu::StoreVar(0x20000000, varB);
+    ccu::LoadVar(srcAddr, varA);
+    ccu::StoreVar(dstAddr, varB);
+    ccu::Array<ccu::Variable> varArr(2);
+    ccu::Array<ccu::Variable> varArr2(2);
+    ccu::LoadVar(0x10000000, varArr,2);
+    ccu::StoreVar(0x20000000, varArr2,2);
+    ccu::LoadVar(srcAddr, varArr,2);
+    ccu::StoreVar(dstAddr, varArr2,2);
     return CcuResult::CCU_SUCCESS;
 }
 CcuResult CcuNotifyDemoKernel(CcuKernelArg arg)
