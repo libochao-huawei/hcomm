@@ -147,9 +147,10 @@ if(PRODUCT_SIDE STREQUAL "device")
     )
     # 设置依赖
     add_dependencies(rs_device crypto_static)
-    # 设置 rs_device 输出文件名
+    # 设置 rs_device 输出文件名，避免与 rs 输出目录冲突
     set_target_properties(rs_device
         PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/device"
         OUTPUT_NAME rs
     )
 endif()
