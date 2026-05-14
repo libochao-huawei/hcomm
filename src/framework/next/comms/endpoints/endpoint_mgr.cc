@@ -10,6 +10,7 @@
 #include "endpoint_mgr.h"
 #include <algorithm>
 #include "hcomm_c_adpt.h"
+#include "dfx/endpoint_monitor.h"
 
 namespace hcomm {
 
@@ -26,6 +27,9 @@ EndpointMgr::~EndpointMgr()
 
     for (const auto &kv : endpointMap_) {
         const EndpointHandle &endpointHandle = kv.second;
+        for (u32 id = 0; id < MAX_MODULE_DEVICE_NUM; ++id) {
+            EndpointMonitor::GetInstance(static_cast<s32>(id)).RemoveEpHandleFromEndpointMonitor(endpointHandle);
+        }
         (void)HcommEndpointDestroy(endpointHandle);
     }
 }
