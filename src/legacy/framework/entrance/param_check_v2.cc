@@ -481,7 +481,7 @@ HcclResult HcomLoadRankTableFileV2(const char *clusterInfo, std::string &rankTab
         return HCCL_E_PARA;
     }
 
-    CHK_RET(RecordRankTableCrcV2Bridge(ranktableM));
+    CHK_RET(RecordRankTableCrcV2Bridge(rankTableM));
 
     return HCCL_SUCCESS;
 }
