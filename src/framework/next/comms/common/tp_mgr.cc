@@ -397,6 +397,7 @@ HcclResult TpMgr::PollGetTpInfoReqCtx(std::unique_lock<std::mutex> &reqCtxLock, 
         return AdvanceGetTpInfoWaitList(param, reqCtx, qosMap, it, reqCtxLock);
     }
 
+    // 先 move 出槽位再 erase，避免 erase 析构槽内对象后再 move（UB / double free）
     RequestCtx completedReqCtx = std::move(it->second);
     qosMap.erase(it);
     const HcclResult ret = HandleCompletedRequest(std::move(completedReqCtx), param, tpInfo);
