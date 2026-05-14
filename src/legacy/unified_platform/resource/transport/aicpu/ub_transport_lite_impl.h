@@ -19,6 +19,7 @@
 #include "rmt_rma_buf_slice_lite.h"
 #include "rma_conn_lite.h"
 #include "kernel_param_lite.h"
+#include "ub_conn_lite.h"
 
 namespace Hccl {
 
@@ -76,6 +77,18 @@ public:
     HcclResult Clean();
     HcclResult Resume(std::vector<char> &uniqueId);
     void SetTaskExceptionEnable(bool flag) { taskExceptionEnable_ = flag; }
+
+    inline HcclResult SetAddWqeArrayCallback(
+        std::function<HcclResult(UbConnLite*, const std::vector<WqeTask>&, const uint32_t)> callback)
+    {
+        for (size_t i = 0; i < connVec.size(); ++i) {
+            HCCL_INFO("[UbConnLite][SetAddWqeArrayCallback] register addWqeArrayCallback for connVec[%u]", i);
+            UbConnLite* conn = dynamic_cast<UbConnLite*>(connVec[i]);
+            CHK_PTR_NULL(conn);
+            CHK_RET(conn->SetAddWqeArrayCallback(callback));
+        }
+        return HCCL_SUCCESS;
+    }
 
 private:
     u32 notifyNum{0};
