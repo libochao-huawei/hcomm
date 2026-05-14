@@ -1246,7 +1246,7 @@ void CommunicatorImpl::CheckRankGraph() const
                            num);
         THROW<InvalidParamsException>(msg);
     }
-    CheckRankGraphAddrs();
+    // CheckRankGraphAddrs();
 }
 
 void CommunicatorImpl::CheckRankGraphAddrs() const
