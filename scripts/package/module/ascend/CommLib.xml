@@ -58,7 +58,6 @@
         <file value="ccu_data_utils.hpp"/>
         <file value="ccu_event.hpp"/>
         <file value="ccu_local_addr.hpp"/>
-        <file value="ccu_loop_macro.h"/>
         <file value="ccu_remote_addr.hpp"/>
         <file value="ccu_types.h"/>
         <file value="ccu_variable.hpp"/>

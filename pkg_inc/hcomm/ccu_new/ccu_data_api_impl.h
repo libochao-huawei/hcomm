@@ -121,18 +121,15 @@ extern void _CcuDoWhileStackPush(const char *label);
 extern const char *_CcuDoWhileStackPopForWhile();
 
 /*========== 循环操作 ==========*/
-extern CcuResult CcuCreateBlockExecutor(CcuLoopExecutors *pool, uint32_t count);
+extern CcuResult CcuSetLoopNum(uint32_t count);
 
 extern CcuResult CcuLoopCreate(CcuLoop *loop);
 extern CcuResult _CcuLoopBodyEnter(CcuLoop loop);
 extern CcuResult _CcuLoopBodyExit(CcuLoop loop);
-extern CcuResult CcuLoopSetParam(CcuLoop loop,
-    CcuVariableHandle formalParam, CcuVariableHandle actualParam);
 extern CcuResult CcuLoopGroupCreate(CcuLoopGroup *group,
-    const CcuLoopGroupConfig *config, CcuLoopExecutors enginePool);
+    const CcuLoopGroupConfig *config);
 extern CcuResult CcuLoopGroupCreateFromVar(CcuLoopGroup *group,
-    CcuVariableHandle parallelVar, CcuVariableHandle offsetVar,
-    CcuLoopExecutors enginePool);
+    CcuVariableHandle parallelVar, CcuVariableHandle offsetVar);
 extern CcuResult CcuLoopGroupAddLoop(CcuLoopGroup group,
     CcuLoop loop, const CcuLoopConfig *config);
 extern CcuResult CcuLoopGroupAddLoopFromVar(CcuLoopGroup group,

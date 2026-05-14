@@ -30,18 +30,8 @@ void CcuRepLoopGroupBundle::AddLoop(const LoopEntry &entry)
     loops_.push_back(entry);
 }
 
-uint16_t CcuRepLoopGroupBundle::CalcParamBindingCount() const
-{
-    uint16_t count = 0;
-    for (const auto &loop : loops_) {
-        count += static_cast<uint16_t>(loop.paramBindings.size());
-    }
-    return count;
-}
-
 uint16_t CcuRepLoopGroupBundle::InstrCount()
 {
-    uint16_t paramBindingCount = CalcParamBindingCount();
     uint16_t loopCount = static_cast<uint16_t>(loops_.size());
 
     uint16_t varBasedLoopCount = 0;
@@ -51,8 +41,7 @@ uint16_t CcuRepLoopGroupBundle::InstrCount()
         }
     }
 
-    instrCount = paramBindingCount
-               + (loopCount - varBasedLoopCount)  // config-based: 1 LoadImd per loop
+    instrCount = (loopCount - varBasedLoopCount)  // config-based: 1 LoadImd per loop
                + (varBasedLoopCount * 2)           // var-based: LoadImd + LoadXX per loop
                + (isGroupVarBased_ ? 0 : 2)
                + 1                   // LoopGroupInstr
@@ -73,15 +62,7 @@ bool CcuRepLoopGroupBundle::Translate(CcuInstr *&instr, uint16_t &instrId, const
     this->instrId = instrId;
     translated = true;
 
-    // 1. LoopCall: param bindings (LoadXX)
-    for (const auto &loop : loops_) {
-        for (const auto &binding : loop.paramBindings) {
-            LoadXXInstr(instr++, binding.formal.Id(), binding.actual.Id(), dep.reserveXnId);
-            instrId++;
-        }
-    }
-
-    // 2. Assign loopParam for each loop
+    // 1. Assign loopParam for each loop
     for (const auto &loop : loops_) {
         if (!loop.isVarBased) {
             uint64_t lpImm = GetLoopParam(loop.executorId, loop.config.addrOffset, loop.config.loopIterNum);
@@ -96,7 +77,7 @@ bool CcuRepLoopGroupBundle::Translate(CcuInstr *&instr, uint16_t &instrId, const
         }
     }
 
-    // 3-4. Assign parallelParam & offsetParam (skip var-based group — registers already set)
+    // 2-3. Assign parallelParam & offsetParam (skip var-based group — registers already set)
     if (!isGroupVarBased_) {
         uint64_t parallelImm = GetParallelParam(config_.repeatNum, repeatLoopIdx_, totalLoopNum_);
         LoadImdToXnInstr(instr++, parallelVar_.Id(), parallelImm);
@@ -107,11 +88,11 @@ bool CcuRepLoopGroupBundle::Translate(CcuInstr *&instr, uint16_t &instrId, const
         instrId++;
     }
 
-    // 5. LoopGroupInstr — startLoopInstrId = instrId + 3
+    // 4. LoopGroupInstr — startLoopInstrId = instrId + 3
     LoopGroupInstr(instr++, instrId + 3, parallelVar_.Id(), offsetVar_.Id(), 0);
     instrId++;
 
-    // 6. Jump (skip over LoopInstr region)
+    // 5. Jump (skip over LoopInstr region)
     uint16_t loopCount = static_cast<uint16_t>(loops_.size());
     uint16_t jumpTargetInstrId = instrId + 2 + loopCount + 1;
     LoadImdToXnInstr(instr++, dep.reserveXnId, jumpTargetInstrId);
@@ -119,7 +100,7 @@ bool CcuRepLoopGroupBundle::Translate(CcuInstr *&instr, uint16_t &instrId, const
     JumpInstr(instr++, dep.reserveXnId, dep.reserveXnId, 1);
     instrId++;
 
-    // 7. LoopInstr for each loop
+    // 6. LoopInstr for each loop
     for (const auto &loop : loops_) {
         const auto &block = loop.repLoopBlock;
         LoopInstr(instr++, block->StartInstrId(),
@@ -128,7 +109,7 @@ bool CcuRepLoopGroupBundle::Translate(CcuInstr *&instr, uint16_t &instrId, const
         instrId++;
     }
 
-    // 8. NOP (JumpLabel target)
+    // 7. NOP (JumpLabel target)
     LoadImdToXnInstr(instr++, dep.reserveXnId, 0);
     instrId++;
 
