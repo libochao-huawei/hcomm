@@ -60,7 +60,7 @@ public:
         return channelDesc_.remoteEndpoint.protocol;
     }
 
-    HcclResult BuildAndGetDevChannelEntity(void** devChannelEntityPtr);
+    HcclResult BuildAndGetDevChannelEntity(uint64_t* devChannelEntityPtr);
 
     HcclResult H2DResPack(std::vector<char>& buffer);
 
@@ -156,7 +156,7 @@ private:
     std::vector<ProtectionInfo>                             locBufProtecInfoList_{};
     std::vector<ProtectionInfo>                             rmtBufProtecInfoList_{};
     std::vector<hccl::DeviceMem>                            deviceMemories_;
-    void*                                                   devChannelEntityPtr_{nullptr};
+    uint64_t                                              devChannelEntityPtr_{0};
 };
 
 } // namespace hcomm
