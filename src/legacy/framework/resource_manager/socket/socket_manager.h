@@ -49,6 +49,8 @@ public:
     u32 GetDeviceListenPort(const u32 &rankId, const IpAddress &ipAddress);
 
     void BatchCreateSockets(const vector<LinkData> &links);
+    void BatchServerListen(const vector<LinkData> &links);
+    void BatchConectSockets();
 
     void ServerInit(PortData &localPort);
 
@@ -80,6 +82,8 @@ private:
     void BatchServerInit(const vector<LinkData> &links);
     void BatchAddWhiteList(const vector<LinkData> &links);
     void BatchCreateConnectedSockets(const vector<LinkData> &links);
+    void BatchServerListenAsync(const vector<LinkData> &links)
+    void ServerListenAsync(PortData &localPort)
     const CommunicatorImpl *comm;
     static std::unordered_map<PortData, shared_ptr<Socket>>& GetServerSocketMap();
     u32               localRank;
@@ -105,6 +109,7 @@ private:
     std::set<LinkData>      availableLinks;
 
     std::string socketTag_{};
+    vector<LinkData> pendingLinks_;
 };
 
 } // namespace Hccl

@@ -20,6 +20,7 @@
 #include "socket_manager.h"
 #include "topo_addr_info.h"
 #include "adapter_error_manager_pub.h"
+#include "thread"
 
 namespace Hccl {
 
@@ -472,8 +473,11 @@ void RankInfoDetectClient::TearDown()
     // deinit handle
     HostSocketHandleManager::GetInstance().Destroy(devPhyId_, clientSocket_->GetLocalIp());
 
-    // deinit ra
+    // deinit ra in detach thread to avoid block main thread
     s32 deviceLogicId = HrtGetDevice();
+    std::thread{[deviceLogicId](){
+        HccpPeerManager::GetInstance().Deinit(deviceLogicId);
+    }}.detach();
     HccpPeerManager::GetInstance().DeInit(deviceLogicId);
 
     HCCL_INFO("[RankInfoDetectClient::%s] end.", __func__);
