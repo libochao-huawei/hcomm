@@ -418,43 +418,32 @@ const std::unordered_map<HcommDataType, uint32_t> HCOMM_DATA_TYPE_SIZE_MAP = {
     {HcommDataType::HCOMM_DATA_TYPE_FP8E8M0, 1}
 };
 
-// const std::unordered_map<HcommTransferType, Hccl::TransferType> TRANSFERTYPE_MAP = {
-//     {HCOMM_TRANSFER_TYPE_WRITE, Hccl::TransferType::WRITE},
-//     {HCOMM_TRANSFER_TYPE_WRITE_REDUCE, Hccl::TransferType::WRITE_REDUCE},
-//     {HCOMM_TRANSFER_TYPE_WRITE_WITH_NOTIFY, Hccl::TransferType::WRITE_WITH_NOTIFY},
-//     {HCOMM_TRANSFER_TYPE_WRITE_REDUCE_WITH_NOTIFY, Hccl::TransferType::WRITE_REDUCE_WITH_NOTIFY},
-//     {HCOMM_TRANSFER_TYPE_READ, Hccl::TransferType::READ},
-//     {HCOMM_TRANSFER_TYPE_READ_REDUCE, Hccl::TransferType::READ_REDUCE},
-//     {HCOMM_TRANSFER_TYPE_NOTIFY_RECORD, Hccl::TransferType::NOTIFY_RECORD},
-//     {HCOMM_TRANSFER_TYPE_NOTIFY_WAIT, Hccl::TransferType::NOTIFY_WAIT},
-// };
-
 static int32_t ParseData(HcommBatchTransferDesc &transferDesc, void* &rmt, void* &loc,
                         uint64_t &len, Hccl::TransferType &tfType, HcommDataType &dataType, HcommReduceOp &reduceOp)
 {
     if (transferDesc.transType == HCOMM_TRANSFER_TYPE_WRITE) {
-        rmt = transferDesc.write.dst; // write操作，dst是远端地址
-        loc = transferDesc.write.src; // src是本端地址
-        len = transferDesc.write.len;
+        rmt = transferDesc.transferInfo.write.dst; // write操作，dst是远端地址
+        loc = transferDesc.transferInfo.write.src; // src是本端地址
+        len = transferDesc.transferInfo.write.len;
         tfType = Hccl::TransferType::WRITE;
     } else if (transferDesc.transType == HCOMM_TRANSFER_TYPE_READ) {
-        rmt = transferDesc.read.src; // read操作，src是远端地址
-        loc = transferDesc.read.dst; // dst是本端地址
-        len = transferDesc.read.len;
+        rmt = transferDesc.transferInfo.read.src; // read操作，src是远端地址
+        loc = transferDesc.transferInfo.read.dst; // dst是本端地址
+        len = transferDesc.transferInfo.read.len;
         tfType = Hccl::TransferType::READ;
     } else if (transferDesc.transType == HCOMM_TRANSFER_TYPE_WRITE_REDUCE) {
-        rmt = transferDesc.reduce.dst;
-        loc = transferDesc.reduce.src;
-        len = transferDesc.reduce.count;
-        dataType = transferDesc.reduce.dataType;
-        reduceOp = transferDesc.reduce.reduceOp;
+        rmt = transferDesc.transferInfo.reduce.dst;
+        loc = transferDesc.transferInfo.reduce.src;
+        len = transferDesc.transferInfo.reduce.count;
+        dataType = transferDesc.transferInfo.reduce.dataType;
+        reduceOp = transferDesc.transferInfo.reduce.reduceOp;
         tfType = Hccl::TransferType::WRITE_REDUCE;
     } else if (transferDesc.transType == HCOMM_TRANSFER_TYPE_READ_REDUCE) {
-        rmt = transferDesc.reduce.src;
-        loc = transferDesc.reduce.dst;
-        len = transferDesc.reduce.count;
-        dataType = transferDesc.reduce.dataType;
-        reduceOp = transferDesc.reduce.reduceOp;
+        rmt = transferDesc.transferInfo.reduce.src;
+        loc = transferDesc.transferInfo.reduce.dst;
+        len = transferDesc.transferInfo.reduce.count;
+        dataType = transferDesc.transferInfo.reduce.dataType;
+        reduceOp = transferDesc.transferInfo.reduce.reduceOp;
         tfType = Hccl::TransferType::READ_REDUCE;
     } else {
         HCCL_ERROR("[%s] unsupported transType[%d]", __func__, transferDesc.transType);

@@ -79,7 +79,8 @@ typedef enum {
     HCOMM_TRANSFER_TYPE_READ = 4,     ///< 读操作
     HCOMM_TRANSFER_TYPE_READ_REDUCE = 5,
     HCOMM_TRANSFER_TYPE_NOTIFY_RECORD = 6,
-    HCOMM_TRANSFER_TYPE_NOTIFY_WAIT = 7
+    HCOMM_TRANSFER_TYPE_NOTIFY_WAIT = 7,
+    HCOMM_TRANSFER_TYPE_NOTIFY_WAIT_WITH_DEFAULT_TIMEOUT = 8
 } HcommTransferType;
 
 /**
@@ -87,13 +88,10 @@ typedef enum {
  * @note 结构体末尾扩展需要自增版本号，并补充兼容处理逻辑。
  */
 typedef struct {
-    CommAbiHeader header;            ///< ABI头部，包含版本等信息
     HcommTransferType transType;     ///< 传输类型
+    uint8_t reserved[4];
     union {
-        uint8_t reserved[32];        ///< 保留字段
-    };
-    union {
-        uint8_t raws[32];            ///< 通用数据
+        uint8_t raws[56];            ///< 通用数据
         struct {
             uint64_t len;            ///< 数据长度（字节）
             void *dst;               ///< 目标内存地址
@@ -116,7 +114,11 @@ typedef struct {
         } notifyRecord;
         struct {
             uint32_t notifyIdx;
+            uint32_t timeOut;
         } notifyWait;
+        struct {
+            uint32_t notifyIdx;
+        } notifyWaitWithDefaultTimeout;
         struct {
             uint64_t len;            ///< 数据长度（字节）
             void *dst;               ///< 目标内存地址
