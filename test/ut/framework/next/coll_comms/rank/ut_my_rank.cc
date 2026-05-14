@@ -9,8 +9,7 @@
 #include "base_config.h"
 #define private public
 #include "my_rank.h"
-#include "coll_comm_config_consistency.h"
-#include "rank_consistentcy_checker.h"
+#include "hccl_comm_pub.h"
 #undef private
 
 using namespace hccl;
@@ -637,9 +636,14 @@ TEST_F(MyRankTest, Ut_WaitAllAsyncComplete_When_AllOk_Expect_Success)
 TEST_F(MyRankTest, Ut_BatchExchange_When_NewRankConsistent_Expect_Success)
 {
     HcclResult ret = HCCL_SUCCESS;
-    CollCommConfigConsistency consistency;
+    std::shared_ptr<hccl::hcclComm> hcclCommPtr;
+    hccl::CollComm* collComm = hcclCommPtr->GetCollComm();
+    CHK_PTR_NULL(collComm);
+    hccl::MyRank* myRank = collComm->GetMyRank();
+    CHK_PTR_NULL(myRank);
+    CollCommConfigConsistency &collCommConfigConsistency = myRank->GetCollCommConfigConsistency();
     std::vector<u8> localData = {0xDE, 0xAD, 0xBE, 0xEF};
-    ret = consistency.AddExchangeInfo(localData.data(), localData.size());
+    ret = collCommConfigConsistency.AddExchangeInfo(localData.data(), localData.size());
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     // mock Socket异步接口：GetAsyncStatus返回OK

@@ -18,7 +18,12 @@ HcclResult HcclCommAddExchangeInfo(HcclComm comm, const void* data, uint32_t len
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(data);
     CHK_PRT_RET(length == 0, HCCL_ERROR("[HcclCommAddExchangeInfo] length is 0."), HCCL_E_PARA);
-    CollCommConfigConsistency collCommConfigConsistency;
+    hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+    hccl::CollComm* collComm = hcclComm->GetCollComm();
+    CHK_PTR_NULL(collComm);
+    hccl::MyRank* myRank = collComm->GetMyRank();
+    CHK_PTR_NULL(myRank);
+    CollCommConfigConsistency &collCommConfigConsistency = myRank->GetCollCommConfigConsistency();
     return collCommConfigConsistency.AddExchangeInfo(data, length);
 }
 
@@ -27,13 +32,23 @@ HcclResult HcclCommGetExchangeInfo(HcclComm comm, uint32_t remoteRank, uint32_t 
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(data);
     CHK_PTR_NULL(actualLength);
-    CollCommConfigConsistency collCommConfigConsistency;
-    return collCommConfigConsistency.GetExchangeInfo(remoteRank, length, data, actualLength);
+    hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+    hccl::CollComm* collComm = hcclComm->GetCollComm();
+    CHK_PTR_NULL(collComm);
+    hccl::MyRank* myRank = collComm->GetMyRank();
+    CHK_PTR_NULL(myRank);
+    CollCommConfigConsistency &collCommConfigConsistency = myRank->GetCollCommConfigConsistency();
+    return collCommConfigConsistency.collCommConfigConsistency(remoteRank, length, data, actualLength);
 }
 
 HcclResult HcclCommResetExchangeInfo(HcclComm comm)
 {
     CHK_PTR_NULL(comm);
-    CollCommConfigConsistency collCommConfigConsistency;
+    hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+    hccl::CollComm* collComm = hcclComm->GetCollComm();
+    CHK_PTR_NULL(collComm);
+    hccl::MyRank* myRank = collComm->GetMyRank();
+    CHK_PTR_NULL(myRank);
+    CollCommConfigConsistency &collCommConfigConsistency = myRank->GetCollCommConfigConsistency();
     return collCommConfigConsistency.ResetExchangeInfo();
 }
