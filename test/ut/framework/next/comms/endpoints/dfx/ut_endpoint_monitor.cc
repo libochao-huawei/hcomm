@@ -1,0 +1,154 @@
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FIT FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
+#include <gtest/gtest.h>
+#include "mockcpp/mokc.h"
+#include <mockcpp/mockcpp.hpp>
+
+#include <memory>
+#include <string>
+#include <cstring>
+#include "hccl_types.h"
+#define private public
+#include "dfx/cluster_monitor/cluster_monitor.h"
+#undef private
+
+using namespace hcomm;
+
+class EndpointMonitorTest : public ::testing::Test {
+public:
+    void SetUp() override {
+        testing::Test::SetUp();
+    }
+    void TearDown() override {
+        testing::Test::TearDown();
+        GlobalMockObject::verify();
+    }
+
+    ClusterMonitor &g_monitor = ClusterMonitor::GetInstance(0);
+};
+
+class UtStubEndpoint : public Endpoint {
+    HcclResult Init()
+    {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult ServerSocketListen(const uint32_t port)
+    {
+        return HCCL_SUCCESS;
+    }
+
+    // 注册内存
+    HcclResult RegisterMemory(HcommMem mem, const char *memTag, void **memHandle)
+    {
+        return HCCL_SUCCESS;
+    }
+
+    // 注销内存
+    HcclResult UnregisterMemory(void *memHandle)
+    {
+        return HCCL_SUCCESS;
+    }
+
+    // 导出指定内存描述，用于交换
+    HcclResult MemoryExport(void *memHandle, void **memDesc, uint32_t *memDescLen)
+    {
+        return HCCL_SUCCESS;
+    }
+
+    // 基于内存描述，导入获得内存
+    HcclResult MemoryImport(const void *memDesc, uint32_t descLen, HcommMem *outMem)
+    {
+        return HCCL_SUCCESS;
+    }
+
+    // 关闭内存
+    HcclResult MemoryUnimport(const void *memDesc, uint32_t descLen)
+    {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult GetAllMemHandles(void **memHandles, uint32_t *memHandleNum)
+    {
+        return HCCL_SUCCESS;
+    }
+}
+
+HcclResult UtStubGetAsyncEventsContext(uint32_t devPhyId, struct AsyncEvent events[],
+    uint32_t &num)
+{
+    num = 0;
+    return HCCL_SUCCESS;
+}
+
+TEST_F(EndpointMonitorTest, Ut_PrintUbAsyncEventsContext_When_ContextLenExceedMax_Expect_Return)
+{
+    u32 devPhyId = 0;
+    struct AsyncEvent event;
+    event.resId = 1;
+    event.eventType = 2;
+    event.len = CONTEXT_MAX_LEN + 1;
+    memset(event.context, 0, CONTEXT_MAX_LEN);
+
+    g_monitor.PrintUbAsyncEventsContext(devPhyId, event);
+}
+
+TEST_F(EndpointMonitorTest, Ut_PrintUbAsyncEventsContext_When_NormalContext_Expect_PrintInfo)
+{
+    u32 devPhyId = 1;
+    struct AsyncEvent event;
+    event.resId = 100;
+    event.eventType = 200;
+    event.len = 11;
+    for (unsigned int i = 0; i < event.len; i++) {
+        event.context[i] = static_cast<uint8_t>(i);
+    }
+
+    g_monitor.PrintUbAsyncEventsContext(devPhyId, event);
+}
+
+TEST_F(EndpointMonitorTest, Ut_ProcessUbAsyncEvents_When_NoEndpointHandle_Expect_Return)
+{
+    g_monitor.epHandleTable_.clear();
+    ProcessUbAsyncEvents();
+}
+
+TEST_F(EndpointMonitorTest, Ut_ProcessUbAsyncEvents_CoverAllBranches)
+{
+    u32 devPhyId = 0;
+    UtStubEndpoint myUtEndpoint;
+
+    EXPECT_EQ(g_monitor.RegisterToEndpointMonitor(-1, reinterpret_cast<EndpointHandle>(&myUtEndpoint)), HCCL_E_PARA);
+    EXPECT_EQ(
+        g_monitor.RegisterToEndpointMonitor(MAX_MODULE_DEVICE_NUM, reinterpret_cast<EndpointHandle>(&myUtEndpoint)),
+        HCCL_E_PARA);
+    EXPECT_EQ(g_monitor.RegisterToEndpointMonitor(0, nullptr), HCCL_E_PARA);
+
+    MOCKER(hrtGetDevicePhyIdByIndex).stubs().with(any(), outBound(devPhyId)).will(returnValue(HCCL_SUCCESS));
+    MOCKER(&Endpoint::GetAsyncEventsContext).stubs().will(returnValue(HCCL_E_NOT_SUPPORT));
+    EXPECT_EQ(g_monitor.RegisterToEndpointMonitor(0, reinterpret_cast<EndpointHandle>(&myUtEndpoint)), HCCL_SUCCESS);
+    EXPECT_EQ(g_monitor.UnRegisterToEndpointMonitor(), HCCL_SUCCESS);
+
+    g_monitor.epHandleSet_.emplace(reinterpret_cast<u64>(&myUtEndpoint));
+    MOCKER(&Endpoint::GetAsyncEventsContext).stubs().will(returnValue(HCCL_E_NOT_SUPPORT));
+    g_monitor.ProcessUbAsyncEvents();
+
+    MOCKER(&Endpoint::GetAsyncEventsContext).stubs().will(returnValue(HCCL_E_INTERNAL));
+    g_monitor.ProcessUbAsyncEvents();
+
+    MOCKER(&Endpoint::GetAsyncEventsContext).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(&ClusterMonitor::PrintUbAsyncEventsContext).stubs();
+    g_monitor.ProcessUbAsyncEvents();
+
+    g_monitor.epHandleSet_.clear();
+    GlobalMockObject::verify();
+}
+
