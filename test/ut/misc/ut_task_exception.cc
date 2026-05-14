@@ -930,6 +930,7 @@ TEST_F(TaskExceptionTest, Ut_UnregisterGetAicpuTaskExceptionCallBack_When_Invail
 
     UnregisterGetAicpuTaskExceptionCallBack(streamId, invalidDeviceLogicId);
     EXPECT_FALSE(true);
+    g_communicatorCallbackMap.fill({});
 }
 
 TEST_F(TaskExceptionTest, Ut_RegisterGetAicpuTaskExceptionCallBack_When_Normal_Expect_SUCCESS)
@@ -943,4 +944,5 @@ TEST_F(TaskExceptionTest, Ut_RegisterGetAicpuTaskExceptionCallBack_When_Normal_E
     RegisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId, callback);
     EXPECT_TRUE(g_communicatorCallbackMap[deviceLogicId].find(streamId) !=
                 g_communicatorCallbackMap[deviceLogicId].end());
+    g_communicatorCallbackMap.fill({});
 }
