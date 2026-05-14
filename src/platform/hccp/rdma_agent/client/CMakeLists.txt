@@ -89,7 +89,7 @@ target_compile_definitions(ra PRIVATE
 )
 
 # 安装
-if(PRODUCT_SIDE STREQUAL "host")
+if((NOT BUILD_OPEN_PROJECT) OR (PRODUCT_SIDE STREQUAL "host"))
     install(TARGETS ra
         LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
         COMPONENT hcomm
