@@ -255,6 +255,8 @@ RaSocketFdHandleParam HrtRaBlockGetOneSocket(u32 role, RaSocketGetParam &param);
 void HrtRaSocketBlockSend(const FdHandle fdHandle, const void *data, u32 sendSize);
 bool HrtRaSocketNonBlockSend(const FdHandle fdHandle, void *data, u64 size, u64 *sentSize);
 void HrtRaSocketBlockRecv(const FdHandle fdHandle, void *data, u32 size);
+HcclResult HrtRaSocketNonBlockSendHeart(const FdHandle fdHandle, void *data, u64 size, u64 *sentSize);
+HcclResult HrtRaSocketNonBlockRecvHeart(const FdHandle fdHandle, void *data, u64 size, u64 *recvSize);
 
 vector<std::pair<std::string, IpAddress>> HrtGetHostIf(u32 devPhyId);
 vector<IpAddress>                         HrtGetDeviceIp(u32 devicePhyId, NetworkMode netWorkMode = NetworkMode::NETWORK_OFFLINE);
@@ -618,7 +620,7 @@ struct SocketEventInfo {
     FdHandle fdHandle;
 };
 
-void HrtRaWaitEventHandle(int event_handle, std::vector<SocketEventInfo> &event_infos, int timeout,
+HcclResult HrtRaWaitEventHandle(int event_handle, std::vector<SocketEventInfo> &event_infos, int timeout,
                           unsigned int maxevents, u32 &events_num);
 void HrtRaGetSecRandom(u32 *value, u32 &devPhyId);
 

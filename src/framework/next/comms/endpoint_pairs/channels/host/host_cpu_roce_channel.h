@@ -116,6 +116,7 @@ private:
     HcclResult PostAndCheckSend(const char *caller, struct ibv_send_wr &wr);
     HcclResult FindLocalBuffer(const uint64_t addr, const uint64_t len, size_t &targetIdx) const;
     HcclResult FindRemoteBuffer(const uint64_t addr, const uint64_t len, size_t &targetIdx) const;
+    HcclResult ReportWcStatusError(enum ibv_wc_status status);
 
     // Wrapper for stub
     int IbvPollCq(ibv_cq *sendCq, uint32_t numEntries, ibv_wc *wc) const

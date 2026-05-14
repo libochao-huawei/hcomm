@@ -5,8 +5,10 @@
 - Ascend 950PR/Ascend 950DT：不支持
 - Atlas A3 训练系列产品/Atlas A3 推理系列产品：支持
 - Atlas A2 训练系列产品/Atlas A2 推理系列产品：不支持
-- Atlas 推理系列产品：不支持
-- Atlas 训练系列产品：不支持
+<cann-filter npu-type="310p">
+- Atlas 推理系列产品：不支持</cann-filter>
+<cann-filter npu-type="910">
+- Atlas 训练系列产品：不支持</cann-filter>
 
 ## 功能说明
 
@@ -16,7 +18,7 @@
 
 对称内存的基本实现模型如下图所示，每个rank通过提前预留相同大小、相同布局的虚拟地址来实现。
 
-![对称内存实现模型](figures/symmetric_memory.png)
+![对称内存实现模型](./figures/symmetric_memory.png)
 
 - 为每个rank申请虚拟内存，假设每个rank对应的虚拟内存大小为heap_size，通信域中的rank数量为rank_size，则通信域中总虚拟内存大小为heap_size\*rank_size。
 - 每个rank的虚拟地址布局都是相同的。
