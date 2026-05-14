@@ -107,6 +107,7 @@ private:
         const std::vector<u32> &remoteExchangeInfoLens,
         u32 localExchangeInfoLen,
         bool isFirstPass);
+    CollCommConfigConsistency &GetCollCommConfigConsistency();
 
     aclrtBinHandle binHandle_{nullptr};
     uint32_t rankId_{};
@@ -137,6 +138,8 @@ private:
     HcclResult GetDevicePortInternal(uint32_t rank, uint32_t *devPort);
 
     Hccl::RankIpPortMapPtr rankIpPortMap_;
+
+    CollCommConfigConsistency collCommConfigConsistency;
 };
 
 } // namespace hccl
