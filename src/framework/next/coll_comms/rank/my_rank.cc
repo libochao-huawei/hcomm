@@ -617,7 +617,8 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
         CHK_RET(ConfigSqDepthByExpansionMode(engine, hcommDescs[i]));
     }
 
-    CHK_RET(BatchCreateSockets(channelDescs, channelNum, commTag, hcommDescs));
+    std::string socketTag = commTag + "_engine" + std::to_string(engine);
+    CHK_RET(BatchCreateSockets(channelDescs, channelNum, socketTag, hcommDescs));
     CHK_RET_UNAVAIL(BatchCreateChannels(engine, channelDescs, channelNum, hcommDescs, hostChannelHandleList));
     CHK_RET(BatchConnectChannels(channelDescs, hostChannelHandleList, channelNum));
     // 添加初始化时进行填表
