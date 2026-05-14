@@ -39,7 +39,7 @@ HcclResult HcclCommGetExchangeInfo(HcclComm comm, uint32_t remoteRank, uint32_t 
     hccl::MyRank* myRank = collComm->GetMyRank();
     CHK_PTR_NULL(myRank);
     CollCommConfigConsistency &collCommConfigConsistency = myRank->GetCollCommConfigConsistency();
-    return collCommConfigConsistency.collCommConfigConsistency(remoteRank, length, data, actualLength);
+    return collCommConfigConsistency.GetExchangeInfo(remoteRank, length, data, actualLength);
 }
 
 HcclResult HcclCommResetExchangeInfo(HcclComm comm)
