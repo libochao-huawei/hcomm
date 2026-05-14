@@ -1895,4 +1895,36 @@ TEST_F(HostCpuRoceChannelTest, Ut_SetDfxCallback_When_Normal_Expect_SetSuccess)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
+TEST_F(HostCpuRoceChannelTest, Ut_ReportWcStatusError_When_Normal_Expect_HCCL_E_NETWORK)
+{
+    SetupSuccessfulConnectionMocks();
+    auto impl_ = CreateInitAndConnect();
+    impl_->localDpuNotifyIds_ = {0};
+    impl_->remoteDpuNotifyIds_ = {0};
 
+    HcclResult ret = impl_->ReportWcStatusError(IBV_WC_WR_FLUSH_ERR);
+    EXPECT_EQ(ret, HCCL_E_NETWORK);
+    GlobalMockObject::verify();
+}
+
+TEST_F(HostCpuRoceChannelTest, Ut_ReportWcStatusError_When_VariousStatuses_Expect_HCCL_E_NETWORK)
+{
+    SetupSuccessfulConnectionMocks();
+    auto impl_ = CreateInitAndConnect();
+    impl_->localDpuNotifyIds_ = {0};
+    impl_->remoteDpuNotifyIds_ = {0};
+
+    std::vector<enum ibv_wc_status> errorStatuses = {
+        IBV_WC_WR_FLUSH_ERR,
+        IBV_WC_BAD_RESP_ERR,
+        IBV_WC_LOC_ACCESS_ERR,
+        IBV_WC_REM_ACCESS_ERR,
+        IBV_WC_REM_OP_ERR
+    };
+
+    for (const auto& status : errorStatuses) {
+        HcclResult ret = impl_->ReportWcStatusError(status);
+        EXPECT_EQ(ret, HCCL_E_NETWORK);
+    }
+    GlobalMockObject::verify();
+}

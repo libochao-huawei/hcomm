@@ -60,9 +60,9 @@ HcclResult BuildBufferInfos(HcommMemHandle *memHandles, uint32_t memHandleNum,
 
 static HcclResult CreateCcuTransport(UrmaEndpoint *ccuEndpoint,
     const Hccl::LinkData &linkData, Hccl::Socket *socket, HcommMemHandle *memHandles,
-    uint32_t memHandleNum, std::unique_ptr<CcuTransport> &impl)
+    uint32_t memHandleNum, std::unique_ptr<CcuTransport> &impl, uint32_t sqSize)
 {
-    HCCL_INFO("[CcuUrmaChannel][%s] begin", __func__);
+    HCCL_INFO("[CcuUrmaChannel][%s] begin, sqSize[%u]", __func__, sqSize);
     // 当前ccu channel不支持按需申请cke
     CHK_PTR_NULL(ccuEndpoint);
     CHK_PTR_NULL(socket);
@@ -72,7 +72,7 @@ static HcclResult CreateCcuTransport(UrmaEndpoint *ccuEndpoint,
     auto *channelCtxPool = ccuEndpoint->GetCcuChannelCtxPool();
     CHK_PTR_NULL(channelCtxPool);
     // 申请ccu channel ctx， jetty ctx，wqebb，可能资源不足，需要回退
-    ret = channelCtxPool->PrepareCreate({linkData});
+    ret = channelCtxPool->PrepareCreate({linkData}, sqSize);
     if (ret == HCCL_E_UNAVAIL) {
         HCCL_WARNING("[CcuUrmaChannel][%s] prepare ccu channel ctx failed, "
             "ccu resources unavailable.", __func__);
@@ -166,7 +166,7 @@ HcclResult CcuUrmaChannel::Init()
     HCCL_WARNING("[CcuUrmaChannel][%s] now only support to exchange hccl buffer.",
         __func__);
     CHK_RET_UNAVAIL(CreateCcuTransport(ccuEndpoint, linkData, socket,
-        channelDesc_.memHandles, channelDesc_.memHandleNum, impl_));
+        channelDesc_.memHandles, channelDesc_.memHandleNum, impl_, channelDesc_.ubAttr.sqDepth));
 
     hcclBufferInfoPtr_.reset(new (std::nothrow) HcclMem());
     CHK_PTR_NULL(hcclBufferInfoPtr_);

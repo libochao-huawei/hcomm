@@ -25,6 +25,7 @@
 #include "root_handle_v2.h"
 #include "bootstrap_ip.h"
 #include "preempt_port_manager.h"
+#include "adapter_error_manager_pub.h"
 
 namespace Hccl {
 
@@ -313,6 +314,11 @@ void RankInfoDetect::WaitComplete(u32 listenPort, u32 listenStatus) const
         } else {
             const auto elapsed = chrono::duration_cast<chrono::seconds>(chrono::steady_clock::now() - start);
             if (elapsed > timeout) {
+                RPT_INPUT_ERR(true, "EI0015", std::vector<std::string>({"error_reason"}),
+                    std::vector<std::string>({StringFormat("Receiving message from the root node timed out "
+                        "after %lld seconds. Timeout was set to %lld seconds. Check whether node %s reports an error.",
+                        static_cast<long long>(elapsed.count()), static_cast<long long>(timeout.count()),
+                        identifier_.c_str())}));
                 THROW<TimeoutException>(StringFormat("[RankInfoDetect::%s] wait port[%u] complete timeout[%lld s]",
                     __func__, listenPort, elapsed));
             }

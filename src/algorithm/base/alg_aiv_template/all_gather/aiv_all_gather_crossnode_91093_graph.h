@@ -81,7 +81,13 @@ __aicore__ inline void sk_all_gather_crossnode(SUPERKERNEL_ARGS_DEF)
         op.Process<uint8_t>(op.flagAddrSelf_, op.commAddr_, input, output, op.tag_, op.len_);
     } else if (op.dataType_ == HCCL_DATA_TYPE_UINT16) {
         op.Process<uint16_t>(op.flagAddrSelf_, op.commAddr_, input, output, op.tag_, op.len_);
-    } else {
+    } else if (op.dataType_ == HCCL_DATA_TYPE_UINT32){
         op.Process<uint32_t>(op.flagAddrSelf_, op.commAddr_, input, output, op.tag_, op.len_);
+    } else if (op.dataType_ == HCCL_DATA_TYPE_INT64) {
+        op.Process<int64_t>(op.flagAddrSelf_, op.commAddr_, input, output, op.tag_, op.len_);
+    } else if (op.dataType_ == HCCL_DATA_TYPE_UINT64) {
+        op.Process<uint64_t>(op.flagAddrSelf_, op.commAddr_, input, output, op.tag_, op.len_);
+    } else if (op.dataType_ == HCCL_DATA_TYPE_FP64){
+        op.Process<double>(op.flagAddrSelf_, op.commAddr_, input, output, op.tag_, op.len_);
     }
 }   

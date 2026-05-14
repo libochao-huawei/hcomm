@@ -24,6 +24,8 @@ public:
 
     void LaunchTask() const;
 
+    void TryLaunchTask() const;
+
     HcclResult NotifyWait(uint32_t notifyId) const;
 
     HcclResult NotifyWait(uint32_t notifyId, uint32_t timeout) const;
