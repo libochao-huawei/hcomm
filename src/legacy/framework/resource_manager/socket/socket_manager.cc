@@ -94,7 +94,7 @@ void SocketManager::BatchCreateSockets(const vector<LinkData> &links)
 void SocketManager::BatchServerInit(const vector<LinkData> &links)
 {
     for (auto &link : links) {
-        ServerRole role = link.GetLocalRankId() < link.GetRemoteRankId() ? SocketRole::SERVER : SocketRole::CLIENT;
+        SocketRole role = link.GetLocalRankId() < link.GetRemoteRankId() ? SocketRole::SERVER : SocketRole::CLIENT;
         if (role == SocketRole::SERVER) {
             auto portData = link.GetLocalPort();
             ServerInit(portData);
@@ -108,7 +108,7 @@ void SocketManager::BatchAddWhiteList(const vector<LinkData> &links)
 
     for (const auto &link : links) {
         // 通过虚拟拓扑获取Peer可能为空，如果为空，需要抛异，NullPtrException
-        ServerRole role = link.GetLocalRankId() < link.GetRemoteRankId() ? SocketRole::SERVER : SocketRole::CLIENT;
+        SocketRole role = link.GetLocalRankId() < link.GetRemoteRankId() ? SocketRole::SERVER : SocketRole::CLIENT;
         if (role == SocketRole::SERVER) {
             if (comm) {
                 auto peer = comm->GetRankGraph()->GetPeer(link.GetRemoteRankId());

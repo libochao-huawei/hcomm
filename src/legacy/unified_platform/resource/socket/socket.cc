@@ -416,7 +416,7 @@ void Socket::ListenAsync()
     listenInfo_ = std::make_unique<SocketListenInfoT>();
     listenInfo_->socketHandle = socketHandle;
     listenInfo_->port = listenPort;
-    reqHandle = RaSocketListenOneStartAsync(listenInfo.get());
+    reqHandle = RaSocketListenOneStartAsync(listenInfo_.get());
     socketStatus = SocketStatus::LISTEN_STARTING;
 }
 
