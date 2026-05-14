@@ -182,6 +182,68 @@ union OpRmemUnimportInfoData {
     } rxData;
 };
 
+union OpLmemBatchRegInfoData {
+    struct {
+        unsigned int phyId;
+        unsigned int devIndex;
+        struct MemRegAttrT memAttrList[LMEM_BATCH_MAX];
+        unsigned int num;
+        unsigned int rsvd;
+    } txData;
+
+    struct {
+        struct MemRegInfoT memInfoList[LMEM_BATCH_MAX];
+        unsigned int num;
+        unsigned int rsvd;
+    } rxData;
+};
+
+union OpLmemBatchUnregInfoData {
+    struct {
+        unsigned int phyId;
+        unsigned int devIndex;
+        unsigned long long addrList[LMEM_BATCH_MAX];
+        unsigned int num;
+        unsigned int rsvd;
+    } txData;
+
+    struct {
+        unsigned int num;
+        unsigned int rsvd;
+    } rxData;
+};
+
+union OpRmemBatchImportInfoData {
+    struct {
+        unsigned int phyId;
+        unsigned int devIndex;
+        struct MemImportAttrT memAttrList[RMEM_BATCH_MAX];
+        unsigned int num;
+        unsigned int rsvd;
+    } txData;
+
+    struct {
+        struct MemImportInfoT memInfoList[RMEM_BATCH_MAX];
+        unsigned int num;
+        unsigned int rsvd;
+    } rxData;
+};
+
+union OpRmemBatchUnimportInfoData {
+    struct {
+        unsigned int phyId;
+        unsigned int devIndex;
+        unsigned long long addrList[RMEM_BATCH_MAX];
+        unsigned int num;
+        unsigned int rsvd;
+    } txData;
+
+    struct {
+        unsigned int num;
+        unsigned int rsvd;
+    } rxData;
+};
+
 union OpCtxChanCreateData {
     struct {
         unsigned int phyId;
@@ -465,4 +527,12 @@ int RaHdcCustomChannel(unsigned int phyId, struct CustomChanInfoIn *in, struct C
 int RaHdcCtxGetAuxInfo(struct RaCtxHandle *ctxHandle, struct HccpAuxInfoIn *in, struct HccpAuxInfoOut *out);
 int RaHdcCtxGetCrErrInfoList(struct RaCtxHandle *ctxHandle, struct CrErrInfo *infoList, unsigned int *num);
 int RaHdcCtxGetJettyContext(struct RaCtxQpHandle *qpHandle, uint8_t context[], unsigned int *len);
+int RaHdcCtxLmemBatchRegister(struct RaCtxHandle *ctxHandle, struct MrRegInfoT *lmemInfoList[],
+    struct RaLmemHandle *lmemHandleList[], unsigned int num);
+int RaHdcCtxLmemBatchUnregister(struct RaCtxHandle *ctxHandle, struct RaLmemHandle *lmemHandleList[],
+    unsigned int num);
+int RaHdcCtxRmemBatchImport(struct RaCtxHandle *ctxHandle, struct MrImportInfoT *rmemInfoList[],
+    unsigned int num);
+int RaHdcCtxRmemBatchUnimport(struct RaCtxHandle *ctxHandle, struct RaRmemHandle *rmemHandleList[],
+    unsigned int num);
 #endif // RA_HDC_CTX_H
