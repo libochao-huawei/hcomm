@@ -270,13 +270,13 @@
      }
  
      // ctx 默认构造时 Variable / LocalAddr / RemoteAddr / Event 成员已自动 alloc，
-     // 这里仅需把"远端 rank"对应的 Variable 通过 CreateByChannel 重绑定即可
-     // (右值赋值走 Variable 的 move-assign，直接覆盖 handle)。
-     for (uint64_t peerId = 0; peerId < arg->rankSize; peerId++) {
-         if (peerId != arg->rankId) {
-             ctx.input[peerId]   = ccu::CreateByChannel(arg->channels[channelIdx], RS_INPUT_XN_ID);
-             ctx.scratch[peerId] = ccu::CreateByChannel(arg->channels[channelIdx], RS_SCRATCH_XN_ID);
-             ctx.token[peerId]   = ccu::CreateByChannel(arg->channels[channelIdx], RS_TOKEN_XN_ID);
+    // 这里仅需把"远端 rank"对应的 Variable 通过 GetResByChannel 重绑定即可
+    // (右值赋值走 Variable 的 move-assign，直接覆盖 handle)。
+    for (uint64_t peerId = 0; peerId < arg->rankSize; peerId++) {
+        if (peerId != arg->rankId) {
+            ctx.input[peerId]   = ccu::GetResByChannel(arg->channels[channelIdx], RS_INPUT_XN_ID);
+            ctx.scratch[peerId] = ccu::GetResByChannel(arg->channels[channelIdx], RS_SCRATCH_XN_ID);
+            ctx.token[peerId]   = ccu::GetResByChannel(arg->channels[channelIdx], RS_TOKEN_XN_ID);
              channelIdx++;
          }
      }
