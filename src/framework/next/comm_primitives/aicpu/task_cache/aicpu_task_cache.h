@@ -1,0 +1,50 @@
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
+#ifndef HCCLV2_AICPU_TASK_CACHE_H
+#define HCCLV2_AICPU_TASK_CACHE_H
+
+#include <shared_mutex>
+#include <unordered_map>
+
+#include "aicpu_task_cache_entry.h"
+
+namespace Hccl {
+
+class AicpuTaskCache {
+public:
+    constexpr uint64_t AICPU_TASK_CACHE_CAPACITY = 10 * 1024 * 1024; // 10 MiB by default
+
+    explicit AicpuTaskCache(const uint64_t maxCacheBytes = AICPU_TASK_CACHE_CAPACITY);
+    ~AicpuTaskCache();
+
+    bool IsCacheFull() const;
+
+    HcclResult FindEntry(const std::string& cacheTag, AicpuTaskCacheEntry** entryPtrPtr) const;
+
+    // Cache miss
+    HcclResult AddEntry(const std::string& cacheTag, AicpuTaskCacheEntry** entryPtrPtr);
+    HcclResult IncCacheBytes(const uint64_t entryBytes);
+
+    HcclResult ClearEntry(const std::string& cacheTag);
+
+private:
+    using CacheHashMap = std::unordered_map<std::string, AicpuTaskCacheEntry*>;
+
+    mutable std::shared_time_mutex cacheMtx_; // 多个通信域共享的超时读写锁
+
+    CacheHashMap cacheHashMap_;
+    uint64_t cacheBytes_ = 0;
+    const uint64_t maxCacheBytes_;
+};
+
+} // namespace Hccl
+
+#endif // HCCLV2_AICPU_TASK_CACHE_H
