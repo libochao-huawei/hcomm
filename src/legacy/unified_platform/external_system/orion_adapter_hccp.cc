@@ -1274,6 +1274,102 @@ HrtRaUbLocalMemRegOutParam HrtRaUbLocalMemReg(RdmaHandle handle, const HrtRaUbLo
     return out;
 }
 
+HcclResult HrtRaUbLocalMemBatchReg(RdmaHandle handle, const std::vector<HrtRaUbLocMemRegParam> &regParams,
+    std::vector<HrtRaUbLocalMemRegOutParam> &outParams)
+{
+    u32 memNum = regParams.size();
+    std::vector<struct MrRegInfoT *> memInfos(memNum);
+    std::vector<struct MrRegInfoT> infos(memNum);
+    std::vector<void *> handles(memNum, reinterpret_cast<void *>(-1));
+    for (u32 idx = 0; idx < memNum; ++idx) {
+        CHECK_NULLPTR(handle, "[HrtRaUbLocalMemBatchReg] handle is nullptr!");
+        const auto &in = regParams[idx];
+        HCCL_INFO("[HrtRaUbLocalMemBatchReg] Input params: handle=%p, addr=0x%llx, size=0x%llx", handle, in.addr, in.size);
+        struct MrRegInfoT *info = &infos[idx];
+
+        info->in.mem.addr                   = in.addr;
+        info->in.mem.size                   = in.size;
+
+        info->in.ub.flags.value             = 0;
+        info->in.ub.flags.bs.tokenPolicy   = TOKEN_POLICY_PLAIN_TEXT;
+        info->in.ub.flags.bs.tokenIdValid = 1;
+        info->in.ub.flags.bs.access = MEM_SEG_ACCESS_READ
+            | MEM_SEG_ACCESS_WRITE | MEM_SEG_ACCESS_ATOMIC;
+        info->in.ub.flags.bs.nonPin = in.nonPin;
+        info->in.ub.tokenValue      = in.tokenValue;
+        info->in.ub.tokenIdHandle  = reinterpret_cast<void *>(in.tokenIdHandle);
+        memInfos[idx] = &infos[idx];
+    }
+    s32 ret = RaCtxLmemBatchRegister(handle, memInfos.data(), handles.data(), memNum);
+    if (ret != 0) {
+        HCCL_ERROR("[%s] failed, call interface error[%d]",
+            __func__, ret);
+            return HCCL_E_NETWORK;
+    }
+    for (u32 idx = 0; idx < memNum; ++idx) {
+        struct MrRegInfoT &info = infos[idx];
+        HrtRaUbLocalMemRegOutParam out;
+        errno_t sRet = memcpy_s(out.key, sizeof(out.key), info.out.key.value, info.out.key.size);
+        if (sRet != EOK) {
+            HCCL_ERROR("[%s] memcpy_s failed. sRet[%d]", __func__, sRet);
+        }
+        out.keySize     = info.out.key.size;
+        out.handle      = reinterpret_cast<LocMemHandle>(handles[idx]);
+        out.targetSegVa = info.out.ub.targetSegHandle;
+        info.in.ub.tokenValue = 0;
+        outParams.push_back(out);
+        HCCL_INFO("[HrtRaUbLocalMemBatchReg] ok, idx=%u, handle=%llu", idx, out.handle);
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtRaUbRemoteMemBatchImport(RdmaHandle handle, const std::vector<HrtRaUbRemMemImportParam> &importParams,
+    std::vector<HrtRaUbRemMemImportedOutParam> &outParams)
+{
+    u32 memNum = importParams.size();
+    if (memNum == 0) {
+        HCCL_WARNING("importParams size is 0");
+        return HCCL_SUCCESS;
+    }
+    std::vector<struct MrImportInfoT *> importInfos(memNum);
+    std::vector<struct MrImportInfoT> infos(memNum);
+    std::vector<void *> handles(memNum, reinterpret_cast<void *>(-1));
+    for (u32 idx = 0; idx < memNum; ++idx) {
+        CHECK_NULLPTR(handle, "[HrtRaUbRemoteMemBatchImport] handle is nullptr!");
+        const auto &in = importParams[idx];
+        CHECK_NULLPTR(in.key, "[HrtRaUbRemoteMemBatchImport] key is nullptr!");
+        HCCL_INFO("[HrtRaUbRemoteMemBatchImport] Input params: handle=%p, key=%d, keyLen=%u", handle, *(in.key), in.keyLen);
+
+        struct MrImportInfoT &info = infos[idx];
+        int res = memcpy_s(info.in.key.value, sizeof(info.in.key.value), in.key, in.keyLen);
+        if (res != EOK) {
+            HCCL_ERROR("[%s] memcpy_s failed. ret[%d], idx[%u]", __func__, res, idx);
+        }
+        info.in.key.size = in.keyLen;
+        info.in.ub.tokenValue  = in.tokenValue;
+        info.in.ub.mappingAddr = 0;
+        info.in.ub.flags.value    = 0;
+        info.in.ub.flags.bs.access = MEM_SEG_ACCESS_READ | MEM_SEG_ACCESS_WRITE
+                                     | MEM_SEG_ACCESS_ATOMIC;
+        importInfos[idx] = &infos[idx];
+    }
+    s32 ret = RaCtxRmemBatchImport(handle, importInfos.data(), handles.data(), memNum);
+    if (ret != 0) {
+        HCCL_ERROR("[%s] failed, call interface error[%d]", __func__, ret);
+        return HCCL_E_NETWORK;
+    }
+    for (u32 idx = 0; idx < memNum; ++idx) {
+        struct MrImportInfoT &info = infos[idx];
+        HrtRaUbRemMemImportedOutParam out;
+        out.handle      = reinterpret_cast<RemMemHandle>(handles[idx]);
+        out.targetSegVa = info.out.ub.targetSegHandle;
+        info.in.ub.tokenValue = 0;
+        outParams.push_back(out);
+        HCCL_INFO("[HrtRaUbRemoteMemBatchImport] ok, idx=%u, handle=%llu", idx, out.handle);
+    }
+    return HCCL_SUCCESS;
+}
+
 void HrtRaUbLocalMemUnreg(RdmaHandle rdmaHandle, LocMemHandle lmemHandle)
 {
     CHECK_NULLPTR(rdmaHandle, "[HrtRaUbLocalMemUnreg] rdmaHandle is nullptr!");
