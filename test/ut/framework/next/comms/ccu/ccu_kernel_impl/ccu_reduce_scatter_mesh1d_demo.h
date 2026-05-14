@@ -16,6 +16,7 @@
  
  #include <cstdint>
  #include <climits>
+ #include <memory>
  #include <vector>
  #include <string>
  #include <set>
@@ -248,17 +249,20 @@
      LoopGroupResource moRes;
      bool resourceAllocated;
  
-     CcuLoop          reduceLoops[2];
-     CcuLoopExecutors enginePool;
-     bool loopRegistered;
- 
-     // Loop body 中的外部 LocalAddr（每个 loop index 各两组）
-     ccu::LocalAddr loopDst[2];
-     ccu::LocalAddr loopSrc[2];
-     ccu::LocalAddr loopScratch[2][RS_MAX_RANK_SIZE];
-     ccu::Variable  loopLen[2];
-     ccu::Variable  loopLenExp[2];
- };
+    // 同一 ccu::Loop 跨 LoopGroup 复用：body 只翻译一次（在 ccu::Loop ctor 里），
+    // 每个 group 进入前通过 reduceLoopParam[i] 注入不同的 var-based 参数。
+    std::unique_ptr<ccu::Func> reduceBody[2];
+    std::unique_ptr<ccu::Loop> reduceLoops[2];
+    ccu::Variable              reduceLoopParam[2];
+    bool loopRegistered;
+
+    // Loop body 中的外部 LocalAddr（每个 loop index 各两组）
+    ccu::LocalAddr loopDst[2];
+    ccu::LocalAddr loopSrc[2];
+    ccu::LocalAddr loopScratch[2][RS_MAX_RANK_SIZE];
+    ccu::Variable  loopLen[2];
+    ccu::Variable  loopLenExp[2];
+};
  
  static CcuResult InitResource(ReduceScatterContext &ctx)
  {
@@ -281,15 +285,14 @@
          }
      }
 
-     ctx.selfBit = 1 << arg->rankId;
-     ctx.allBit  = ((1 << arg->rankSize) - 1) & (~(1 << arg->rankId));
+    ctx.selfBit = 1 << arg->rankId;
+    ctx.allBit  = ((1 << arg->rankSize) - 1) & (~(1 << arg->rankId));
  
-     // Engine pool for loop groups: up to RS_MAX_RANK_SIZE parallel copies
-     // inside each loop body, plus headroom for multi-loop groups.
-     CCU_CHK_RET(ccu::CreateLoopExecutor(&ctx.enginePool, RS_MAX_RANK_SIZE + 1));
- 
-     ctx.resourceAllocated = false;
-     ctx.loopRegistered    = false;
+    // LoopEngine 池由 main kernel 入口的 ccu::SetLoopNum(N) 统一申请，
+    // N = max(各 LoopGroup 的 loop 数)；这里两个 group 分别是 1 / 2，所以 N=2。
+
+    ctx.resourceAllocated = false;
+    ctx.loopRegistered    = false;
  
      return CCU_SUCCESS;
  }
@@ -374,49 +377,57 @@
          return CCU_SUCCESS;
      }
  
-     uint32_t expansionNum = GetReduceExpansionNum(arg->reduceOp, arg->dataType, arg->outputDataType);
-     uint32_t usedBufNum   = size > expansionNum ? size : expansionNum;
- 
-     for (int32_t index = 0; index < 2; index++) {
-         // ctx.loopDst / loopSrc / loopScratch / loopLen / loopLenExp 已在 ctx 默认构造时 alloc
-         uint32_t bufBase = index * ctx.moConfig.msInterleave;
- 
-         ccu::Event loopEvt = ctx.moRes.completedEvent[index];
+    uint32_t expansionNum = GetReduceExpansionNum(arg->reduceOp, arg->dataType, arg->outputDataType);
+    uint32_t usedBufNum   = size > expansionNum ? size : expansionNum;
+    (void)expansionNum;
+    (void)usedBufNum;
 
-         CCU_LOOP(ctx.reduceLoops[index]) {
-             // mask 已与 Event 解耦：由各个数据 / 同步 API 末尾参数显式传入。
-             for (uint32_t i = 0; i < size; i++) {
-                 const uint32_t copyMask = 1 << i;
-                 if (i == arg->rankId) {
-                     ccu::LocalCopy(
-                         ctx.moRes.ccuBuf[bufBase + i], ctx.loopSrc[index],
-                         ctx.loopLen[index], loopEvt, copyMask);
-                 } else {
-                     ccu::LocalCopy(
-                         ctx.moRes.ccuBuf[bufBase + i], ctx.loopScratch[index][i],
-                         ctx.loopLen[index], loopEvt, copyMask);
-                 }
-             }
-             ccu::EventWait(loopEvt, (1 << size) - 1);
+    for (int32_t index = 0; index < 2; index++) {
+        // ctx.loopDst / loopSrc / loopScratch / loopLen / loopLenExp 已在 ctx 默认构造时 alloc
+        uint32_t bufBase = static_cast<uint32_t>(index * ctx.moConfig.msInterleave);
 
-             if (size > 1) {
-                 ccu::LocalReduce(
-                     &ctx.moRes.ccuBuf[bufBase], size,
-                     arg->dataType, arg->outputDataType, arg->reduceOp,
-                     ctx.loopLen[index], loopEvt, 1);
-                 ccu::EventWait(loopEvt, 1);
-             }
+        ccu::Event loopEvt = ctx.moRes.completedEvent[index];
 
-             ccu::LocalCopy(
-                 ctx.loopDst[index], ctx.moRes.ccuBuf[bufBase],
-                 ctx.loopLenExp[index], loopEvt, 1);
-             ccu::EventWait(loopEvt, 1);
-         }
-     }
+        // 用对象式 API：Func 承载 body 闭包，Loop ctor 立即把 body 翻译为 LoopBlock；
+        // var-based 参数预留 ctx.reduceLoopParam[index]，由 ReduceLoopGroup 在加入
+        // 不同 LoopGroup 之前赋值。
+        ctx.reduceBody[index].reset(new ccu::Func(
+            [&ctx, index, bufBase, loopEvt, size, arg]() {
+                // mask 已与 Event 解耦：由各个数据 / 同步 API 末尾参数显式传入。
+                for (uint32_t i = 0; i < size; i++) {
+                    const uint32_t copyMask = 1 << i;
+                    if (i == arg->rankId) {
+                        ccu::LocalCopy(
+                            ctx.moRes.ccuBuf[bufBase + i], ctx.loopSrc[index],
+                            ctx.loopLen[index], loopEvt, copyMask);
+                    } else {
+                        ccu::LocalCopy(
+                            ctx.moRes.ccuBuf[bufBase + i], ctx.loopScratch[index][i],
+                            ctx.loopLen[index], loopEvt, copyMask);
+                    }
+                }
+                ccu::EventWait(loopEvt, (1 << size) - 1);
+
+                if (size > 1) {
+                    ccu::LocalReduce(
+                        &ctx.moRes.ccuBuf[bufBase], size,
+                        arg->dataType, arg->outputDataType, arg->reduceOp,
+                        ctx.loopLen[index], loopEvt, 1);
+                    ccu::EventWait(loopEvt, 1);
+                }
+
+                ccu::LocalCopy(
+                    ctx.loopDst[index], ctx.moRes.ccuBuf[bufBase],
+                    ctx.loopLenExp[index], loopEvt, 1);
+                ccu::EventWait(loopEvt, 1);
+            }));
+        ctx.reduceLoops[index].reset(
+            new ccu::Loop(ctx.reduceLoopParam[index], *ctx.reduceBody[index]));
+    }
  
-     ctx.loopRegistered = true;
-     return CCU_SUCCESS;
- }
+    ctx.loopRegistered = true;
+    return CCU_SUCCESS;
+}
  
  // ============================================================================
  // ReduceLoopGroup
@@ -477,16 +488,19 @@
          ctx.loopLen[0]    = sliceSize;
          ctx.loopLenExp[0] = sliceSizeExpansion;
 
-         ccu::Variable paraCfg;
-         paraCfg = GetParallelParam(ctx.moConfig.loopCount - 1, 0, 1);
+        ccu::Variable paraCfg;
+        paraCfg = GetParallelParam(ctx.moConfig.loopCount - 1, 0, 1);
 
-         ccu::Variable offsetCfg;
-         offsetCfg = GetOffsetParam(ctx.moConfig.memSlice, ctx.moConfig.msInterleave, 1);
+        ccu::Variable offsetCfg;
+        offsetCfg = GetOffsetParam(ctx.moConfig.memSlice, ctx.moConfig.msInterleave, 1);
 
-         CcuLoopGroup group;
-         CCU_CHK_RET(ccu::CreateLoopGroup(&group, &paraCfg, &offsetCfg, ctx.enginePool));
-         CCU_CHK_RET(ccu::AddLoop(group, ctx.reduceLoops[0], &loopParam));
-     }
+        // 把本组要用的 var-based loop 参数注入：reduceLoopParam[0] 已被 reduceLoops[0]
+        // 持引用，给它赋值即在当前位置 emit 一条 LoadImd/AddVar，并在 LoopGroup 翻译时
+        // 转化为对应 LoopInstr 的低位参数。
+        ctx.reduceLoopParam[0] = loopParam;
+        std::vector<ccu::Loop> grpLoops{ *ctx.reduceLoops[0] };
+        ccu::LoopGroup group(paraCfg, offsetCfg, grpLoops);
+    }
  
      // n+p 部分
      CCU_IF(goSize.parallelParam != 0) {
@@ -540,20 +554,20 @@
          ctx.loopLen[1]    = sliceSize;
          ctx.loopLenExp[1] = sliceSizeExpansion;
  
-         ccu::Variable loopCfg0;
-         loopCfg0 = GetLoopParam(0, 0, 1);
+        ccu::Variable loopCfg0;
+        loopCfg0 = GetLoopParam(0, 0, 1);
 
-         ccu::Variable loopCfg1;
-         loopCfg1 = GetLoopParam(0, 0, 1);
+        ccu::Variable loopCfg1;
+        loopCfg1 = GetLoopParam(0, 0, 1);
 
-         ccu::Variable offsetCfg;
-         offsetCfg = GetOffsetParam(ctx.moConfig.memSlice, ctx.moConfig.msInterleave, 1);
+        ccu::Variable offsetCfg;
+        offsetCfg = GetOffsetParam(ctx.moConfig.memSlice, ctx.moConfig.msInterleave, 1);
 
-         CcuLoopGroup group;
-         CCU_CHK_RET(ccu::CreateLoopGroup(&group, &goSize.parallelParam, &offsetCfg, ctx.enginePool));
-         CCU_CHK_RET(ccu::AddLoop(group, ctx.reduceLoops[0], &loopCfg0));
-         CCU_CHK_RET(ccu::AddLoop(group, ctx.reduceLoops[1], &loopCfg1));
-     }
+        ctx.reduceLoopParam[0] = loopCfg0;
+        ctx.reduceLoopParam[1] = loopCfg1;
+        std::vector<ccu::Loop> grpLoops{ *ctx.reduceLoops[0], *ctx.reduceLoops[1] };
+        ccu::LoopGroup group(goSize.parallelParam, offsetCfg, grpLoops);
+    }
  
      return CCU_SUCCESS;
  }
@@ -670,12 +684,14 @@
      ctx.moConfig.msInterleave = 0;
      ctx.moConfig.loopCount = 0;
      ctx.moConfig.memSlice = 0;
-     ctx.moRes.eventCount = 0;
-     ctx.moRes.bufCount = 0;
-     ctx.enginePool = 0;
- 
-     CCU_CHK_RET(InitResource(ctx));
-     CCU_CHK_RET(LoadArgs(ctx));
+    ctx.moRes.eventCount = 0;
+    ctx.moRes.bufCount = 0;
+
+    // 申请 LoopEngine 池：N = max(各 LoopGroup loop 数) = 2（loop0 自成一组 / loop0+loop1 一组）。
+    CCU_CHK_RET(ccu::SetLoopNum(2));
+
+    CCU_CHK_RET(InitResource(ctx));
+    CCU_CHK_RET(LoadArgs(ctx));
  
      PreSync(ctx);
  
