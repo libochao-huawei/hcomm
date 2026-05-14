@@ -399,8 +399,9 @@ HcclResult TpMgr::PollGetTpInfoReqCtx(std::unique_lock<std::mutex> &reqCtxLock, 
 
     RequestCtx completedReqCtx = std::move(it->second);
     qosMap.erase(it);
+    const HcclResult ret = HandleCompletedRequest(std::move(completedReqCtx), param, tpInfo);
     reqCtxLock.unlock();
-    return HandleCompletedRequest(std::move(completedReqCtx), param, tpInfo);
+    return ret;
 }
 
 HcclResult TpMgr::GetTpInfo(const GetTpInfoParam &param, TpInfo &tpInfo)
