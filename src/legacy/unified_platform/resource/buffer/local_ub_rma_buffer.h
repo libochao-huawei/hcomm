@@ -22,7 +22,41 @@ namespace Hccl {
 
 MAKE_ENUM(UbBufferStatus, INIT, READY, RELEASED);
 
-class LocalUbRmaBuffer : public LocalRmaBuffer {
+class LocalUbRmaBufferBase : public LocalRmaBuffer {
+public:
+    explicit LocalUbRmaBufferBase(std::shared_ptr<Buffer> buf) : LocalRmaBuffer(buf, RmaType::UB) 
+    {}
+
+    virtual ~LocalUbRmaBufferBase() = default;
+
+    u32 GetTokenId() const
+    {
+        return tokenId;
+    }
+    u32 GetTokenValue() const
+    {
+        return tokenValue;
+    }
+    TokenIdHandle GetTokenIdHandle() const
+    {
+        return tokenIdHandle;
+    }
+    std::pair<uintptr_t, u64> GetBufferInfo()
+    {
+        return make_pair(buf->GetAddr(), buf->GetSize());
+    }
+
+    std::vector<char> Desc;
+
+protected:
+    u8                   key[HRT_UB_MEM_KEY_MAX_LEN]{0};
+    u32                  tokenValue{0};
+    u32                  tokenId{0};
+    TokenIdHandle        tokenIdHandle{0};
+    u32                  keySize{0};
+};
+
+class LocalUbRmaBuffer : public LocalUbRmaBufferBase {
 public:
     LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle rdmaHandle);
 
@@ -39,28 +73,45 @@ public:
     string Describe() const override;
 
     std::unique_ptr<Serializable> GetExchangeDto() override;
-
-    u32 GetTokenId() const;
-    u32 GetTokenValue() const;
-    TokenIdHandle GetTokenIdHandle() const;
-    std::pair<uintptr_t, u64> GetBufferInfo() {return make_pair(buf->GetAddr(), buf->GetSize());}
+    
     u64 GetTargetSeg() const {return reqReg.targetSegVa;}
-
-    std::vector<char> Desc;
 
 private:
     RdmaHandle           rdmaHandle{nullptr};
     HcclNetDevice        *netDev{nullptr};
-    u8                   key[HRT_UB_MEM_KEY_MAX_LEN]{0};
-    u32                  tokenValue{0};
-    u32                  tokenId{0};
-    TokenIdHandle        tokenIdHandle{0};
-    u32                  keySize{0};
-
     HrtRaUbLocalMemRegOutParam    reqReg;
     void*                         lmemHandle{nullptr};
     u64                  segVa{0};
 };
+
+class LocalUbAggregatedRmaBuffer : public LocalUbRmaBufferBase {
+public:
+    LocalUbAggregatedRmaBuffer(std::shared_ptr<Buffer> buf, const std::vector<RdmaHandle> &handles);
+
+    ~LocalUbAggregatedRmaBuffer() override;
+
+    LocalUbAggregatedRmaBuffer(const LocalUbAggregatedRmaBuffer &that) = delete;
+
+    LocalUbAggregatedRmaBuffer &operator=(const LocalUbAggregatedRmaBuffer &that) = delete;
+
+    string Describe() const override;
+
+    std::unique_ptr<Serializable> GetExchangeDto() override;
+
+    void *GetMemHandleByPortIdx(uint8_t idx);
+
+private:
+    struct PortAggregationContext
+    {
+        RdmaHandle rdmaHandle{nullptr};
+        HrtRaUbLocalMemRegOutParam param{};
+        void *memHandle{nullptr};
+        u64 segVa{0};
+    };
+
+    std::vector<PortAggregationContext> portCtxs_{};
+};
+
 u32 GetUbToken(); // 生成伪随机数
 } // namespace Hccl
 #endif // HCCLV2_LOCAL_UB_RMA_BUFFER_H
