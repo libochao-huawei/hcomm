@@ -15,13 +15,11 @@
 
 ccu::Func CcuFuncCallBasicFunc([](ccu::Variable x) {
     ccu::Variable tmp{};
-    ccu::Alloc(&tmp);
     tmp = x + x;
 });
 
 ccu::Func CcuFuncCallNestedInnerFunc([](ccu::Variable x) {
     ccu::Variable tmp{};
-    ccu::Alloc(&tmp);
     tmp = x + x;
 });
 
@@ -33,7 +31,6 @@ inline CcuResult CcuFuncCallBasicDemoKernel(CcuKernelArg arg)
 {
     (void)arg;
     ccu::Variable x{};
-    CCU_CHK_RET(ccu::Alloc(&x));
     x = 1;
     return ccu::CallFunc<CcuFuncCallBasicFunc>(x);
 }
@@ -42,7 +39,6 @@ inline CcuResult CcuFuncCallReuseDemoKernel(CcuKernelArg arg)
 {
     (void)arg;
     ccu::Variable x{};
-    CCU_CHK_RET(ccu::Alloc(&x));
     x = 2;
     CCU_CHK_RET(ccu::CallFunc<CcuFuncCallBasicFunc>(x));
     return ccu::CallFunc<CcuFuncCallBasicFunc>(x);
@@ -52,21 +48,21 @@ inline CcuResult CcuFuncCallInLoopInvalidDemoKernel(CcuKernelArg arg)
 {
     (void)arg;
     ccu::Variable x{};
-    CCU_CHK_RET(ccu::Alloc(&x));
     x = 3;
 
-    CcuLoop loop;
-    CCU_LOOP(loop) {
-        CCU_CHK_RET(ccu::CallFunc<CcuFuncCallBasicFunc>(x));
-    }
-    return CcuResult::CCU_SUCCESS;
+    CcuResult bodyRet = CcuResult::CCU_SUCCESS;
+    ccu::Func body([&]() {
+        bodyRet = ccu::CallFunc<CcuFuncCallBasicFunc>(x);
+    });
+    CcuLoopConfig dummyCfg{};
+    ccu::Loop loop(dummyCfg, body);
+    return bodyRet;
 }
 
 inline CcuResult CcuFuncCallNestedInvalidDemoKernel(CcuKernelArg arg)
 {
     (void)arg;
     ccu::Variable x{};
-    CCU_CHK_RET(ccu::Alloc(&x));
     x = 4;
     return ccu::CallFunc<CcuFuncCallNestedOuterFunc>(x);
 }

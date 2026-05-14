@@ -1483,6 +1483,11 @@ CcuResult CcuKernel::LoopCreate(CcuLoop *loop)
         HCCL_ERROR("[CcuKernel::LoopCreate] cannot create loop inside a loop body");
         return CcuResult::CCU_E_INTERNAL;
     }
+    if (inFuncBody_) {
+        funcBodyError_ = true;
+        HCCL_ERROR("[CcuKernel::LoopCreate] cannot create loop inside a func body");
+        return CcuResult::CCU_E_INTERNAL;
+    }
 
     CcuLoop handle = ++loopHandleCounter_;
     std::string label = "loop_" + std::to_string(handle);
@@ -1504,6 +1509,10 @@ CcuResult CcuKernel::LoopBodyEnter(CcuLoop loop)
         return CcuResult::CCU_E_PARA;
     }
     auto &desc = it->second;
+    if (desc.bodyDefined) {
+        HCCL_ERROR("[CcuKernel::LoopBodyEnter] loop %lu body already defined", loop);
+        return CcuResult::CCU_E_INTERNAL;
+    }
 
     Append(desc.repLoopBlock);
     desc.prevActiveBlock = CurrentBlock();
@@ -1525,27 +1534,6 @@ CcuResult CcuKernel::LoopBodyExit(CcuLoop loop)
     SetCurrentBlock(desc.prevActiveBlock);
     desc.bodyDefined = true;
     --loopBodyDepth_;
-
-    return CcuResult::CCU_SUCCESS;
-}
-
-CcuResult CcuKernel::LoopSetParam(CcuLoop loop,
-    CcuVariableHandle formalHandle, CcuVariableHandle actualHandle)
-{
-    auto it = loopMap_.find(loop);
-    if (it == loopMap_.end()) {
-        HCCL_ERROR("[CcuKernel::LoopSetParam] invalid loop handle %lu", loop);
-        return CcuResult::CCU_E_PARA;
-    }
-    auto &desc = it->second;
-
-    CcuRep::Variable *formal{nullptr};
-    CcuRep::Variable *actual{nullptr};
-    CCU_CHK_RET(GetVariableByHandle(formalHandle, &formal));
-    CCU_CHK_RET(GetVariableByHandle(actualHandle, &actual));
-
-    desc.repLoopBlock->DefineArg(*formal);
-    desc.paramBindings.push_back({*formal, *actual});
 
     return CcuResult::CCU_SUCCESS;
 }
@@ -1675,26 +1663,27 @@ CcuResult CcuKernel::FuncCall(uint64_t handle, const CcuVariableHandle *inArgs, 
     return CcuResult::CCU_SUCCESS;
 }
 
-CcuResult CcuKernel::LoopEnginePoolCreate(CcuLoopExecutors *pool, uint32_t count)
+CcuResult CcuKernel::SetLoopNum(uint32_t count)
 {
-    if (pool == nullptr) {
-        HCCL_ERROR("[CcuKernel::LoopEnginePoolCreate] null pointer");
-        return CcuResult::CCU_E_PTR;
-    }
     if (count == 0) {
-        HCCL_ERROR("[CcuKernel::LoopEnginePoolCreate] count must be > 0");
+        HCCL_ERROR("[CcuKernel::SetLoopNum] count must be > 0");
         return CcuResult::CCU_E_PARA;
     }
-
-    *pool = ++loopEnginePoolCounter_;
-    auto &engines = loopEnginePools_[*pool];
-    engines.resize(count, CcuRep::Executor(this));
-    CreateBlockExecutor(count, engines.data());
+    // 与 CreateBlockResAssist 对齐：分配阶段所有资源都先落在 die0，
+    // 待 SelectDie 完成后再由 MoveResourcesToDie 迁移到目标 die。
+    constexpr uint32_t poolDieId = 0;
+    auto &loopEnginePool = res_.blockExecutor[poolDieId];
+    if (count <= loopEnginePool.size()) {
+        return CcuResult::CCU_SUCCESS;
+    }
+    const uint32_t deficit = count - static_cast<uint32_t>(loopEnginePool.size());
+    std::vector<CcuRep::Executor> tmp(deficit, CcuRep::Executor(this));
+    (void)CreateBlockExecutor(deficit, tmp.data());
     return CcuResult::CCU_SUCCESS;
 }
 
 CcuResult CcuKernel::LoopGroupCreate(CcuLoopGroup *group,
-    const CcuLoopGroupConfig *config, CcuLoopExecutors enginePool)
+    const CcuLoopGroupConfig *config)
 {
     if (group == nullptr || config == nullptr) {
         HCCL_ERROR("[CcuKernel::LoopGroupCreate] null pointer");
@@ -1704,9 +1693,10 @@ CcuResult CcuKernel::LoopGroupCreate(CcuLoopGroup *group,
         HCCL_ERROR("[CcuKernel::LoopGroupCreate] cannot create loop group inside a loop body");
         return CcuResult::CCU_E_INTERNAL;
     }
-    if (loopEnginePools_.find(enginePool) == loopEnginePools_.end()) {
-        HCCL_ERROR("[CcuKernel::LoopGroupCreate] invalid engine pool handle %lu", enginePool);
-        return CcuResult::CCU_E_PARA;
+    if (inFuncBody_) {
+        funcBodyError_ = true;
+        HCCL_ERROR("[CcuKernel::LoopGroupCreate] cannot create loop group inside a func body");
+        return CcuResult::CCU_E_INTERNAL;
     }
 
     CcuLoopGroup handle = ++loopGroupHandleCounter_;
@@ -1716,7 +1706,6 @@ CcuResult CcuKernel::LoopGroupCreate(CcuLoopGroup *group,
     desc.parallelVar = CreateVariable();
     desc.offsetVar = CreateVariable();
     desc.isVarBased = false;
-    desc.enginePoolHandle = enginePool;
 
     auto bundle = std::make_shared<CcuRep::CcuRepLoopGroupBundle>(
         *config, desc.parallelVar, desc.offsetVar);
@@ -1729,8 +1718,7 @@ CcuResult CcuKernel::LoopGroupCreate(CcuLoopGroup *group,
 }
 
 CcuResult CcuKernel::LoopGroupCreateFromVar(CcuLoopGroup *group,
-    CcuVariableHandle parallelVarHandle, CcuVariableHandle offsetVarHandle,
-    CcuLoopExecutors enginePool)
+    CcuVariableHandle parallelVarHandle, CcuVariableHandle offsetVarHandle)
 {
     if (group == nullptr) {
         HCCL_ERROR("[CcuKernel::LoopGroupCreateFromVar] null pointer for group");
@@ -1740,9 +1728,10 @@ CcuResult CcuKernel::LoopGroupCreateFromVar(CcuLoopGroup *group,
         HCCL_ERROR("[CcuKernel::LoopGroupCreateFromVar] cannot create loop group inside a loop body");
         return CcuResult::CCU_E_INTERNAL;
     }
-    if (loopEnginePools_.find(enginePool) == loopEnginePools_.end()) {
-        HCCL_ERROR("[CcuKernel::LoopGroupCreateFromVar] invalid engine pool handle %lu", enginePool);
-        return CcuResult::CCU_E_PARA;
+    if (inFuncBody_) {
+        funcBodyError_ = true;
+        HCCL_ERROR("[CcuKernel::LoopGroupCreateFromVar] cannot create loop group inside a func body");
+        return CcuResult::CCU_E_INTERNAL;
     }
 
     CcuRep::Variable *parallelVarPtr = nullptr;
@@ -1756,7 +1745,6 @@ CcuResult CcuKernel::LoopGroupCreateFromVar(CcuLoopGroup *group,
     desc.parallelVar = CcuRep::Variable(*parallelVarPtr);
     desc.offsetVar = CcuRep::Variable(*offsetVarPtr);
     desc.isVarBased = true;
-    desc.enginePoolHandle = enginePool;
 
     auto bundle = std::make_shared<CcuRep::CcuRepLoopGroupBundle>(
         desc.parallelVar, desc.offsetVar);
@@ -1795,11 +1783,15 @@ CcuResult CcuKernel::LoopGroupAddLoop(CcuLoopGroup group,
         return CcuResult::CCU_E_LOOP_BODY_UNDEFINED;
     }
 
-    auto &pool = loopEnginePools_[grpDesc.enginePoolHandle];
-    uint32_t loopIdx = grpDesc.loopCount;
-    if (loopIdx >= pool.size()) {
-        HCCL_ERROR("[CcuKernel::LoopGroupAddLoop] group %lu engine pool exhausted (pool size %lu, loopIdx %u)",
-                   group, pool.size(), loopIdx);
+    // 资源池统一在 die0 上申请，SelectDie 后由 MoveResourcesToDie 迁移
+    constexpr uint32_t poolDieId = 0;
+    auto &loopEnginePool = res_.blockExecutor[poolDieId];
+    const uint32_t loopIdx = grpDesc.loopCount;
+    if (loopIdx >= loopEnginePool.size()) {
+        HCCL_ERROR("[CcuKernel::LoopGroupAddLoop] loopEngine pool exhausted "
+                   "(pool size %zu, loopIdx %u). Call CcuSetLoopNum(N) first to allocate "
+                   "at least max(per-LoopGroup loop count) engines.",
+                   loopEnginePool.size(), loopIdx);
         return CcuResult::CCU_E_PARA;
     }
 
@@ -1808,14 +1800,10 @@ CcuResult CcuKernel::LoopGroupAddLoop(CcuLoopGroup group,
 
     CcuRep::CcuRepLoopGroupBundle::LoopEntry entry;
     entry.config = *config;
-    entry.executorId = static_cast<uint16_t>(pool[loopIdx].Id());
+    entry.executorId = static_cast<uint16_t>(loopEnginePool[loopIdx].Id());
     entry.repLoopBlock = loopDesc.repLoopBlock;
     entry.loopParamVar = CreateVariable();
     entry.isVarBased = false;
-    for (const auto &binding : loopDesc.paramBindings) {
-        entry.paramBindings.push_back({CcuRep::Variable(binding.formal),
-                                       CcuRep::Variable(binding.actual)});
-    }
 
     auto bundle = std::static_pointer_cast<CcuRep::CcuRepLoopGroupBundle>(grpDesc.bundleRep);
     bundle->AddLoop(entry);
@@ -1850,12 +1838,15 @@ CcuResult CcuKernel::LoopGroupAddLoopFromVar(CcuLoopGroup group,
         return CcuResult::CCU_E_LOOP_BODY_UNDEFINED;
     }
 
-
-    auto &pool = loopEnginePools_[grpDesc.enginePoolHandle];
-    uint32_t loopIdx = grpDesc.loopCount;
-    if (loopIdx >= pool.size()) {
-        HCCL_ERROR("[CcuKernel::LoopGroupAddLoopFromVar] group %lu engine pool exhausted (pool size %lu, loopIdx %u)",
-                   group, pool.size(), loopIdx);
+    // 资源池统一在 die0 上申请，SelectDie 后由 MoveResourcesToDie 迁移
+    constexpr uint32_t poolDieId = 0;
+    auto &loopEnginePool = res_.blockExecutor[poolDieId];
+    const uint32_t loopIdx = grpDesc.loopCount;
+    if (loopIdx >= loopEnginePool.size()) {
+        HCCL_ERROR("[CcuKernel::LoopGroupAddLoopFromVar] loopEngine pool exhausted "
+                   "(pool size %zu, loopIdx %u). Call CcuSetLoopNum(N) first to allocate "
+                   "at least max(per-LoopGroup loop count) engines.",
+                   loopEnginePool.size(), loopIdx);
         return CcuResult::CCU_E_PARA;
     }
 
@@ -1865,14 +1856,10 @@ CcuResult CcuKernel::LoopGroupAddLoopFromVar(CcuLoopGroup group,
     grpDesc.loopCount++;
 
     CcuRep::CcuRepLoopGroupBundle::LoopEntry entry;
-    entry.executorId = static_cast<uint16_t>(pool[loopIdx].Id());
+    entry.executorId = static_cast<uint16_t>(loopEnginePool[loopIdx].Id());
     entry.repLoopBlock = loopDesc.repLoopBlock;
     entry.loopParamVar = CcuRep::Variable(*loopParamVarPtr);
     entry.isVarBased = true;
-    for (const auto &binding : loopDesc.paramBindings) {
-        entry.paramBindings.push_back({CcuRep::Variable(binding.formal),
-                                       CcuRep::Variable(binding.actual)});
-    }
 
     auto bundle = std::static_pointer_cast<CcuRep::CcuRepLoopGroupBundle>(grpDesc.bundleRep);
     bundle->AddLoop(entry);
