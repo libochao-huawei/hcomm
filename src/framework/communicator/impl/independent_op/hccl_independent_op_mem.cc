@@ -111,8 +111,7 @@ HcclResult GetHcclBufferWithClearFlag(HcclComm comm, void **buffer, uint64_t *si
     if (clearFlag && *buffer != nullptr && *size > 0) {
         CHK_RET(commMem->HcclBufferMemset(*buffer, *size));
     }
-    HCCL_RUN_INFO("Entry-%s: success: comm[%s], buffer[%p] size[%llu]",
-        __func__, commId.c_str(), *buffer, *size);
+
     return HCCL_SUCCESS;
 }
 

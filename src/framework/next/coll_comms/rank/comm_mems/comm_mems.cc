@@ -59,7 +59,8 @@ HcclResult CommMems::GetHcclBuffer(void *&addr, uint64_t &len)
 HcclResult CommMems::HcclBufferMemset(void *&addr, uint64_t &len)
 {
     if (addr != nullptr && len > 0) {
-        return HrtMemset(addr, len, len);
+        EXECEPTION_CATCH(Hccl::HrtMemset(addr, len, len), return HCCL_E_INTERNAL);
+        return HCCL_SUCCESS;
     }
 
     HCCL_ERROR("[CommMems][HcclBufferMemset] buffer is null or size is 0, skip memset.");
