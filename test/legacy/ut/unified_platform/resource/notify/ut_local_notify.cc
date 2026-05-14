@@ -263,3 +263,17 @@ TEST_F(UbLocalNotifyTest, getExchangeDto_test)
     ubLocalNotify.GetExchangeDto();
 };
 
+TEST_F(UbLocalNotifyTest, batch_reg_ub_local_notify_expect_success)
+{
+    RdmaHandle rdmaHandle = (void*)0x100;
+    uint32_t notifyNum = 10;
+    UbLocalNotify ubLocalNotify(rdmaHandle);
+    std::vector<std::unique_ptr<Hccl::UbLocalNotify>>           localNotifies_{};
+    for (uint32_t i = 0; i < notifyNum; ++i) {
+        std::unique_ptr<Hccl::UbLocalNotify> notifyPtr = nullptr;
+        EXPECT_NO_THROW(notifyPtr = std::make_unique<Hccl::UbLocalNotify>(rdmaHandle, false, true));
+        localNotifies_.push_back(std::move(notifyPtr));
+    }
+    HcclResult ret = Hccl::UbLocalNotify::BatchMemReg(rdmaHandle,localNotifies_);
+    EXPECT_EQ(ret,HCCL_SUCCESS);
+};

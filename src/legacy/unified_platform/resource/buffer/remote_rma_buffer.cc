@@ -16,6 +16,8 @@
 #include "exchange_ipc_buffer_dto.h"
 #include "exchange_rdma_buffer_dto.h"
 namespace Hccl {
+
+static thread_local std::vector<HrtRaUbRemMemImportParam> remoteMemImports;
 RemoteIpcRmaBuffer::RemoteIpcRmaBuffer() : RemoteRmaBuffer(RmaType::IPC), isOpened(false)
 {
 }
@@ -121,11 +123,11 @@ RemoteUbRmaBuffer::RemoteUbRmaBuffer(RdmaHandle rdmaHandle) : RemoteRmaBuffer(Rm
 RemoteUbRmaBuffer::~RemoteUbRmaBuffer()
 {
     if (memHandle != 0) {
-        DECTOR_TRY_CATCH("RemoteUbRmaBuffer", HrtRaUbRemoteMemUnimport(rdmaHandle, memHandle));
+        DECTOR_TRY_CATCH("RemoteUbRmaBuffer", HrtRaUbRemoteMemUnimport(rdmaHandle, memHandle)); 
     }
 }
 
-RemoteUbRmaBuffer::RemoteUbRmaBuffer(RdmaHandle rdmaHandle1, const Serializable &rmtDto) :
+RemoteUbRmaBuffer::RemoteUbRmaBuffer(RdmaHandle rdmaHandle1, const Serializable &rmtDto, bool batchRegister) :
       RemoteRmaBuffer(RmaType::UB), rdmaHandle(rdmaHandle1)
 { // 从 DTO 取得数据，然后生成 memHandle
     auto dto = dynamic_cast<const ExchangeUbBufferDto &>(rmtDto);
@@ -139,14 +141,45 @@ RemoteUbRmaBuffer::RemoteUbRmaBuffer(RdmaHandle rdmaHandle1, const Serializable 
     keySize    = dto.keySize;
     
     if (keySize != 0) {
-        auto res        = HrtRaUbRemoteMemImport(rdmaHandle1, key, keySize, tokenValue);
-        memHandle       = res.handle;
-        segVa = res.targetSegVa;
+        if (batchRegister) {
+            HrtRaUbRemMemImportParam importParam{key, keySize, tokenValue};
+            remoteMemImports.push_back(std::move(importParam));
+        } else {
+            auto res = HrtRaUbRemoteMemImport(rdmaHandle, key, keySize, tokenValue);
+            SetMemInfo(res);
+        }
     } else {
         HCCL_INFO("[RemoteUbRmaBuffer] key is 0, do not need to import memory");
         memHandle = 0;
     }
     HCCL_INFO("Construct RemoteUbRmaBuffer:%s", Describe().c_str());
+}
+
+HcclResult RemoteUbRmaBuffer::SetMemInfo(const HrtRaUbRemMemImportedOutParam &res)
+{
+    memHandle       = res.handle;
+    segVa           = res.targetSegVa;
+    return HCCL_SUCCESS;
+}
+
+HcclResult RemoteUbRmaBuffer::BatchMemReg(RdmaHandle rdmaHandle, std::vector<RemoteRmaBuffer *> &rmtBufs)
+{
+    CHK_PRT_RET(rmtBufs.size() != remoteMemImports.size(),
+        HCCL_ERROR("[BatchMemReg] rmtBufs.size[%u] should match remoteMemImports.size[%u]",
+            rmtBufs.size(), remoteMemImports.size()),
+        HCCL_E_INTERNAL);
+    std::vector<HrtRaUbRemMemImportedOutParam> reqRegs;
+    CHK_RET(HrtRaUbRemoteMemBatchImport(rdmaHandle, remoteMemImports, reqRegs));
+    for (u32 idx = 0; idx < rmtBufs.size(); ++idx) {
+        auto res = dynamic_cast<RemoteUbRmaBuffer*>(rmtBufs[idx]);
+        if(res) {
+            CHK_RET(res->SetMemInfo(reqRegs[idx]));
+        } else {
+            return HCCL_E_PTR;
+        }
+    }
+    remoteMemImports.clear();
+    return HCCL_SUCCESS;
 }
 
 string RemoteUbRmaBuffer::Describe() const
