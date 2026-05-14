@@ -766,6 +766,12 @@ int RaNdaCqCreate(void *rdmaHandle, struct NdaCqInitAttr *attr, struct NdaCqInfo
     return 0;
 }
 
+int RaCtxLmemBatchRegister(void *ctxHandle, struct MrRegInfoT *lmemInfoList[],
+    void *lmemHandleList[], unsigned int num)
+{
+    return 0;
+}
+
 int RaNdaCqDestroy(void *rdmaHandle, void *cqHandle)
 {
     return 0;
@@ -783,5 +789,9 @@ int RaGetQpAttr(void *qpHandle, struct QpAttr *attr)
         attr->psn = 1;
         attr->gidIdx = 0;
     }
+    return 0;
+int RaCtxRmemBatchImport(void *ctxHandle, struct MrImportInfoT *rmemInfoList[],
+    void *rmemHandleList[], unsigned int num)
+{
     return 0;
 }
