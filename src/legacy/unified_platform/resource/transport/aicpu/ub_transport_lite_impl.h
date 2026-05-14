@@ -19,8 +19,14 @@
 #include "rmt_rma_buf_slice_lite.h"
 #include "rma_conn_lite.h"
 #include "kernel_param_lite.h"
+#include "hcomm_primitives.h"
 
 namespace Hccl {
+
+struct {
+    uint32_t index_{};
+    uint32_t timeout{1080};
+} NotifyWaitInfo;
 
 class UbTransportLiteImpl : public BaseTransportLiteImpl {
 public:
@@ -68,7 +74,11 @@ public:
         const StreamLite &stream) override;
     
     void BatchTransfer(const std::vector<RmaBufferLite> &loc, const std::vector<Buffer> &rmt,
-                        const std::vector<TransferOp> &transferOp, const StreamLite &stream) override;
+                        const std::vector<TransferOp> &transferOp,  const StreamLite &stream) override;
+
+    // 子类独有方法，支持所有操作类型，用于aicpu场景批量下发任务
+    void BatchTransferAll(const std::vector<RmaBufferLite> &loc, const std::vector<Buffer> &rmt,
+                        const std::vector<TransferOp> &transferOp, const std::vector<NotifyWaitInfo> &notifyWaitInfos, const StreamLite &stream);
 
     HcclResult BuildLocRmaBufferLite(const uintptr_t addr, const size_t size, RmaBufferLite &rmaBufferLite) override;
     HcclResult Fence();
@@ -77,6 +87,8 @@ public:
     HcclResult Resume(std::vector<char> &uniqueId);
     void SetTaskExceptionEnable(bool flag) { taskExceptionEnable_ = flag; }
 
+    HcclResult ExecuteBatchTransfer(StreamLite *streamLitePtr, const HcommBatchTransferDesc *transferDescs,
+                        uint32_t transferDescNum);
 private:
     u32 notifyNum{0};
     u32 bufferNum{0};
