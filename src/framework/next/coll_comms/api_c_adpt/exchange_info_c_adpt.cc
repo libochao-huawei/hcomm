@@ -9,6 +9,7 @@
  */
 
 #include "hccl/hccl_res_expt.h"
+#include "hccl_comm_pub.h"
 #include "coll_comm_config_consistency.h"
 
 using namespace hccl;
