@@ -19,8 +19,8 @@
 namespace hcomm {
 namespace CcuRep {
 
-CcuRepLocRecordEvent::CcuRepLocRecordEvent(const CompletedEvent &event)
-    : event_(event)
+CcuRepLocRecordEvent::CcuRepLocRecordEvent(const CompletedEvent &event, uint32_t mask)
+    : event_(event), mask_(mask)
 {
     type       = CcuRepType::LOC_RECORD_EVENT;
     instrCount = 1;
@@ -31,7 +31,7 @@ bool CcuRepLocRecordEvent::Translate(CcuInstr *&instr, uint16_t &instrId, const 
     this->instrId = instrId;
     translated    = true;
 
-    SetCKEInstr(instr++, event_.Id(), event_.mask, 0, 0, 1);
+    SetCKEInstr(instr++, event_.Id(), mask_, 0, 0, 1);
 
     CHK_PRT_THROW(instrId > USHRT_MAX - instrCount,
         HCCL_ERROR("[CcuRepLocRecordEvent][Translate] instrId[%u] + instrCount[%u] "
@@ -44,7 +44,7 @@ bool CcuRepLocRecordEvent::Translate(CcuInstr *&instr, uint16_t &instrId, const 
 
 std::string CcuRepLocRecordEvent::Describe()
 {
-    return Hccl::StringFormat("CcuRepLocRecordEvent=id[%u], mask[%04x]", event_.Id(), event_.mask);
+    return Hccl::StringFormat("CcuRepLocRecordEvent=id[%u], mask[%04x]", event_.Id(), mask_);
 }
 
 }; // namespace CcuRep

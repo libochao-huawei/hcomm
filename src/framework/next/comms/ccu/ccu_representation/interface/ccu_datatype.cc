@@ -173,10 +173,5 @@ CompletedEvent::CompletedEvent(CcuRepContext* context) : CcuVirRes(context)
 {
 }
 
-void CompletedEvent::SetMask(uint32_t completedMask)
-{
-    mask = completedMask;
-}
-
 }; // namespace CcuRep
 }; // namespace hcomm
