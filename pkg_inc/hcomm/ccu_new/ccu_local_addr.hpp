@@ -18,18 +18,30 @@
 
 namespace ccu {
 
+template <typename U> class Array;
+
 class LocalAddr final {
 public:
-    explicit LocalAddr() {}
+    LocalAddr() : addr(NoAllocTag{}), token(NoAllocTag{}) {
+        auto ret = CcuLocalAddrAlloc(&this->handle, &this->addr.handle, &this->token.handle);
+        if (ret != CcuResult::CCU_SUCCESS) {
+            throw "CcuLocalAddrAlloc: failed";
+        }
+    }
 
-    LocalAddr(const LocalAddr& other) {
+    LocalAddr(const LocalAddr& other) : addr(NoAllocTag{}), token(NoAllocTag{}) {
+        this->handle = other.handle;
+        this->addr.handle = other.addr.handle;
+        this->token.handle = other.token.handle;
+    }
+    LocalAddr(LocalAddr&& other) noexcept : addr(NoAllocTag{}), token(NoAllocTag{}) {
         this->handle = other.handle;
         this->addr.handle = other.addr.handle;
         this->token.handle = other.token.handle;
     }
     void operator=(const LocalAddr& other) {
-        this->addr = other.addr;     
-        this->token = other.token;   
+        this->addr = other.addr;
+        this->token = other.token;
     }
     void operator=(LocalAddr&& other) {
         this->handle = other.handle;
@@ -40,6 +52,10 @@ public:
     Address addr;
     Variable token;
     CcuLocalAddrHandle handle{0};
+
+private:
+    explicit LocalAddr(NoAllocTag) : addr(NoAllocTag{}), token(NoAllocTag{}) {}
+    template <typename U> friend class Array;
 };
 
 } // namespace ccu
