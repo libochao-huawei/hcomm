@@ -22,6 +22,9 @@
 
 namespace Hccl {
 
+/// 与 GetTpInfo / ReleaseTpInfo 中 info、req 两级 map 的 qos 键一致（param.qos 低 8 位）
+using QosKey = uint32_t;
+
 /*
  * TP信息，当前申请TpHandle，不感知具体TP信息，当前仅支持TP与CTP
  * tpHandle: 对应管控面的TPID与相关资源，URMA通过引用计数管理申请和销毁TP
@@ -80,7 +83,7 @@ private:
         uint32_t tpAttrBitmap{0};
     };
 
-    /// 三级索引：先按本端 IP，再按对端 IP，最后按 QoS 档（0–7，与 GetTpInfo/TP-SL 策略里用的档位一致）。
+    /// 三级索引：先按本端 IP，再按对端 IP，最后按 QoS 键（`QosKey`：`param.qos & 0xFF`，与 next `TpMgr` 一致）。
     /// 每一层的键要么是 IpAddress，要么是 uint32_t，都可直接放进 unordered_map，不必把 (本端,对端) 拼成 pair 再写自定义哈希。
     using InfoQosMap = std::unordered_map<uint32_t, TpInfoCtx>;
     using InfoRmtMap = std::unordered_map<IpAddress, InfoQosMap>;
@@ -112,23 +115,12 @@ private:
     TpManager(const TpManager &that) = delete;
     TpManager &operator=(const TpManager &that) = delete;
 
-    bool FindAndGetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo);
-    static void EraseReqCtxAtQos(ReqCtxMap &reqCtxMap, const IpAddress &loc, const IpAddress &rmt, uint32_t qosKey);
+    HcclResult FindAndGetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo);
     void StartGetTpInfoListRequest(const RaUbGetTpInfoParam &param, RequestCtx &reqCtx, bool isSync) const;
     void StartGetTpAttrForFirstTpDevice(const RaUbGetTpInfoParam &param, RequestCtx &reqCtx);
     HcclResult HandleCompletedRequest(RequestCtx reqCtx, const RaUbGetTpInfoParam &param, TpInfo &tpInfo,
         bool withSlPolicy);
     HcclResult MapTpInfoFromTpAttr(const RaUbGetTpInfoParam &param, const RequestCtx &reqCtx, TpInfo &outTpInfo);
-
-    HcclResult RunHandleCompletedGetTpEraseReq(ReqCtxMap &reqCtxMap, const IpAddress &locAddr,
-        const IpAddress &rmtAddr, uint32_t qosKey, RequestCtx &&completedReqCtx,
-        std::unique_lock<std::mutex> &reqCtxLock, const RaUbGetTpInfoParam &param, TpInfo &tpInfo, bool withSlPolicy);
-    HcclResult GetTpInfoOnDeviceWaitListPhase(const RaUbGetTpInfoParam &param, ReqCtxMap &reqCtxMap,
-        const IpAddress &locAddr, const IpAddress &rmtAddr, uint32_t qosKey, RequestCtx &reqCtx,
-        std::unique_lock<std::mutex> &reqCtxLock, TpInfo &tpInfo);
-    HcclResult GetTpInfoOnDeviceWaitTpAttrPhase(const RaUbGetTpInfoParam &param, ReqCtxMap &reqCtxMap,
-        const IpAddress &locAddr, const IpAddress &rmtAddr, uint32_t qosKey, RequestCtx &reqCtx,
-        std::unique_lock<std::mutex> &reqCtxLock, TpInfo &tpInfo);
 
     bool CheckRequestResult(RequestHandle &reqHandle) const;
     InfoCtxMap &GetInfoCtxMap(const TpProtocol tpProtocol);
