@@ -181,5 +181,14 @@ struct UdmaSqeRead {
     struct UdmaSqeCommon comm;
     union LocalValueU u;
 };
+
+// 定义WqeTask用于aicpu task cache
+// 注意: 不需要额外维护wqeType指定struct, 因为所有struct开头都是UdmaSqeCommon, 可以利用opCode判断wqe类型
+union __attribute__((packed)) WqeTask {
+    struct UdmaSqeRead wqeRead; // 64B (48 + 16); ub_conn_lite.cc中暂不使用UdmaSqeRead
+    struct UdmaSqeWrite wqeWrite; // 64B (48 + 16)
+    struct UdmaSqeWriteWithNotify wqeWriteWithNotify; // 96B (48 + 32 + 16)
+};
+
 }
 #endif // HCCL_AICPU_RESOURCE_AI_CPU_RESOUCES_H_

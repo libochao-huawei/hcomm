@@ -27,7 +27,7 @@ constexpr u32 SQE_INLINE_DATA_SIZE       = 16;
 constexpr u32 RAW_SIZE                   = 16;
 constexpr u32 RMT_EID_BYTE_SIZE          = 16;
 constexpr u32 PI_NUM_TWO                 = 2;
-constexpr u32 WRITE_WITH_NOTIFY_OPCODE   = 0x5;
+constexpr u32 WRITE_WITH_NOTIFY_OPCODE   = 0x5; // 注意: 与aicpu_task_cache_entry.cc保持一致
 constexpr u32 ADDR_BIT_LOW               = 0xffffffff;
 constexpr u32 UB_DMA_MAX_READ_WEITE_SIZE = 256 * 1024 * 1024; // Byte, UB协议一次传输的最大size
 
@@ -286,6 +286,9 @@ void UbConnLite::Read(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt,
         UdmaSqeWrite sqe{};
         FillOneSqeWrite(locSlice, rmtSlice, cfg, &sqe, UdmaSqOpcode::UDMA_OPC_READ, cqeEnable);
         ProcessOneWqe(&sqe, UdmaSqOpcode::UDMA_OPC_READ, stream);
+
+        // 按需更新cache context
+        UpdateCacheContext(sqe);
     });
 
     out.pi = pi;
@@ -304,6 +307,9 @@ void UbConnLite::ReadReduce(ReduceIn reduceIn, const RmaBufSliceLite &loc, const
             FillOneSqeWrite(locSlice, rmtSlice, cfg, &sqe, UdmaSqOpcode::UDMA_OPC_READ, cqeEnable);
             FillCommSqeReduceInfo(sqe.comm, reduceIn.reduceOp, reduceIn.dataType);
             ProcessOneWqe(&sqe, UdmaSqOpcode::UDMA_OPC_READ, stream);
+
+            // 按需更新cache context
+            UpdateCacheContext(sqe);
         },
         reduceIn.dataType);
 
@@ -320,6 +326,9 @@ void UbConnLite::Write(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt
         UdmaSqeWrite sqe{};
         FillOneSqeWrite(locSlice, rmtSlice, cfg, &sqe, UdmaSqOpcode::UDMA_OPC_WRITE, cqeEnable);
         ProcessOneWqe(&sqe, UdmaSqOpcode::UDMA_OPC_WRITE, stream);
+
+        // 按需更新cache context
+        UpdateCacheContext(sqe);
     });
 
     out.pi = pi;
@@ -343,6 +352,9 @@ void UbConnLite::InlineWrite(const u8 *data, u16 size, const RmtRmaBufSliceLite 
 
     // 写wqe到va
     ProcessOneWqe(&sqe, UdmaSqOpcode::UDMA_OPC_WRITE, stream);
+
+    // 按需更新cache context
+    UpdateCacheContext(sqe);
 
     out.pi = pi;
     HCCL_INFO("[UbConnLite::%s] end, ConnLiteOperationOut.pi = %u, ConnLiteOperationOut.datasize = %u, conn[%s]",
@@ -388,6 +400,9 @@ void UbConnLite::WriteReduce(DataType dataType, ReduceOp reduceOp, const RmaBufS
             FillCommSqeReduceInfo(sqe.comm, reduceOp, dataType);
             FillOneSqeWrite(locSlice, rmtSlice, cfg, &sqe, UdmaSqOpcode::UDMA_OPC_WRITE, cqeEnable);
             ProcessOneWqe(&sqe, UdmaSqOpcode::UDMA_OPC_WRITE, stream);
+
+            // 按需更新cache context
+            UpdateCacheContext(sqe);
         },
         dataType);
 
@@ -407,10 +422,16 @@ void UbConnLite::WriteWithNotify(const RmaBufSliceLite &loc, const RmtRmaBufSlic
             UdmaSqeWrite sqe{};
             FillOneSqeWrite(locSlice, rmtSlice, cfg, &sqe, UdmaSqOpcode::UDMA_OPC_WRITE, cqeEnable);
             ProcessOneWqe(&sqe, UdmaSqOpcode::UDMA_OPC_WRITE, stream);
+
+            // 按需更新cache context
+            UpdateCacheContext(sqe);
         },
         [&](const RmaBufSliceLite &locSlice, const RmtRmaBufSliceLite &rmtSlice) {
             UdmaSqeWriteWithNotify sqe{};
             ProcessOneWqeWithNotify(locSlice, rmtSlice, cfg, &sqe, notify, notifyData, WRITE_WITH_NOTIFY_OPCODE, stream);
+
+            // 按需更新cache context
+            UpdateCacheContext(sqe);
         });
 
     out.pi = pi;
@@ -430,11 +451,17 @@ void UbConnLite::WriteReduceWithNotify(DataType dataType, ReduceOp reduceOp, con
             FillCommSqeReduceInfo(sqe.comm, reduceOp, dataType);
             FillOneSqeWrite(locSlice, rmtSlice, cfg, &sqe, UdmaSqOpcode::UDMA_OPC_WRITE, cqeEnable);
             ProcessOneWqe(&sqe, UdmaSqOpcode::UDMA_OPC_WRITE, stream);
+
+            // 按需更新cache context
+            UpdateCacheContext(sqe);
         },
         [&](const RmaBufSliceLite &locSlice, const RmtRmaBufSliceLite &rmtSlice) {
             UdmaSqeWriteWithNotify sqe{};
             FillCommSqeReduceInfo(sqe.comm, reduceOp, dataType);
             ProcessOneWqeWithNotify(locSlice, rmtSlice, cfg, &sqe, notify, notifyData, WRITE_WITH_NOTIFY_OPCODE, stream);
+
+            // 按需更新cache context
+            UpdateCacheContext(sqe);
         },
         dataType);
 
@@ -503,6 +530,9 @@ void UbConnLite::FillBatchOneWqe(const RmaBufSliceLite &loc, const RmtRmaBufSlic
         }
     }
     HCCL_INFO("UbConnLite BatchWrite cp data to va end va(%p)", va);
+
+    // 按需更新cache context
+    UpdateCacheContext(sqe);
 }
 
 void UbConnLite::BatchProcessOneSlice(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt,
