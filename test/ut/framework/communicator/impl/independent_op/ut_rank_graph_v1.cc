@@ -119,3 +119,36 @@ TEST_F(RankGraphV1DirectTest, Ut_GetRanksInTopoInst_When_ValidParams_Expect_Succ
 
     EXPECT_EQ(ranks.size(), 2u);
 }
+
+TEST_F(RankGraphV1DirectTest, Ut_GetEndpointInfo_When_NormalParams_Expect_Success)
+{
+    RankGraphV1 rankGraph;
+
+    RankInfo_t rankInfo;
+    rankInfo.rankId = 0;
+    rankInfo.deviceInfo.devicePhyId = 0;
+
+    EndpointDesc endpoint;
+    endpoint.commAddr.type = COMM_ADDR_TYPE_IP_V4;
+    endpoint.protocol = CommProtocol::COMM_PROTOCOL_ROCE;
+    memset(&endpoint.commAddr.addr, 0, sizeof(endpoint.commAddr.addr));
+
+    RankGraphV1::RankGraphInfo graphInfo;
+    graphInfo.rankInfo = rankInfo;
+    graphInfo.endPoints.push_back(endpoint);
+
+    rankGraph.rankIndex_[0] = graphInfo;
+
+    uint32_t rankId = 0;
+    EndpointDesc queryEndpoint;
+    queryEndpoint.commAddr.type = COMM_ADDR_TYPE_IP_V4;
+    queryEndpoint.protocol = CommProtocol::COMM_PROTOCOL_ROCE;
+    memset(&queryEndpoint.commAddr.addr, 0, sizeof(queryEndpoint.commAddr.addr));
+
+    EndpointAttrBwCoeff bwCoeff = 0;
+    HcclResult ret = rankGraph.GetEndpointInfo(rankId, &queryEndpoint, ENDPOINT_ATTR_BW_COEFF,
+        sizeof(EndpointAttrBwCoeff), &bwCoeff);
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(bwCoeff, 1);
+}

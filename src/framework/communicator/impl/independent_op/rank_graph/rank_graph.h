@@ -63,6 +63,8 @@ public:
     HcclResult GetDevicePort(const uint32_t rank, uint32_t *devPort) override;
 
 private:
+    const EndpointDesc* MatchEndpointByAddr(const RankGraphInfo &rankGraphInfo, const EndpointDesc *endPointDesc) const;
+    HcclResult FillAttr(EndpointAttr endpointAttr, const EndpointDesc *foundEndpoint, uint32_t infoLen, void *info) const;
     HcclResult DevTypeToCommProtocol(DevType &type, CommProtocol &protocol) const;
     HcclResult BuildRankGraphInfo(const RankInfo_t &rankItem, const CommProtocol &protocol, RankGraphInfo &outInfo) const;
     CommProtocol GetCommProtocolFromRankInfo(const RankInfo_t &srcInfo, const RankInfo_t &dstInfo, uint32_t netLayer);
