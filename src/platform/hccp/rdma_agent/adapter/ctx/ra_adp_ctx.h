@@ -98,4 +98,8 @@ int RaRsCustomChannel(char *inBuf, char *outBuf, int *outLen, int *opResult, int
 int RaRsCtxGetAuxInfo(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
 int RaRsCtxGetCrErrInfoList(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
 int RaRsCtxGetUbContext(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+int RaRsLmemBatchReg(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+int RaRsLmemBatchUnreg(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+int RaRsRmemBatchImport(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+int RaRsRmemBatchUnimport(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
 #endif // RA_ADP_CTX_H
