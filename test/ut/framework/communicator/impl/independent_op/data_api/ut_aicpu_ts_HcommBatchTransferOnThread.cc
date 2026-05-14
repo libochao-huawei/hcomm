@@ -72,9 +72,9 @@ TEST_F(UtAicpuTsHcommBatchTransfer, Ut_HcommBatchTransfer_When_Write_Expect_Succ
     std::vector<HcommBatchTransferDesc> transferDescs;
     HcommBatchTransferDesc tmpTransferDesc;
     tmpTransferDesc.transType = HCOMM_TRANSFER_TYPE_WRITE;
-    tmpTransferDesc.write.dst = reinterpret_cast<void *>(0x1000);
-    tmpTransferDesc.write.src = reinterpret_cast<void *>(0x1000);
-    tmpTransferDesc.write.len = 64;
+    tmpTransferDesc.transferInfo.write.dst = reinterpret_cast<void *>(0x1000);
+    tmpTransferDesc.transferInfo.write.src = reinterpret_cast<void *>(0x1000);
+    tmpTransferDesc.transferInfo.write.len = 64;
     for (uint8_t i = 0; i < transferDescNum; ++i) {
         transferDescs.push_back(tmpTransferDesc);
     }
