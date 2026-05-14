@@ -9,7 +9,7 @@
 #include "base_config.h"
 #define private public
 #include "my_rank.h"
-#include "hccl_comm_pub.h"
+#include "coll_comm_config_consistency.h"
 #include "rank_consistentcy_checker.h"
 #undef private
 
@@ -637,9 +637,9 @@ TEST_F(MyRankTest, Ut_WaitAllAsyncComplete_When_AllOk_Expect_Success)
 TEST_F(MyRankTest, Ut_BatchExchange_When_NewRankConsistent_Expect_Success)
 {
     HcclResult ret = HCCL_SUCCESS;
-    hcclComm comm;
+    CollCommConfigConsistency consistency;
     std::vector<u8> localData = {0xDE, 0xAD, 0xBE, 0xEF};
-    ret = comm.AddExchangeInfo(localData.data(), localData.size());
+    ret = consistency.AddExchangeInfo(localData.data(), localData.size());
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     // mock Socket异步接口：GetAsyncStatus返回OK
@@ -673,7 +673,6 @@ TEST_F(MyRankTest, Ut_BatchExchange_When_NewRankConsistent_Expect_Success)
     std::vector<HcommChannelDesc> hcommDescVec;
     hcommDescVec.push_back(hcommDesc);
 
-    ret = myRank.BatchExchangeAndCheckConsistency(
-        channelDescs, hcommDescVec, 1, "test_tag", &comm);
+    ret = myRank.BatchExchangeAndCheckConsistency(channelDescs, hcommDescVec, 1, "test_tag");
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
