@@ -49,6 +49,15 @@ protected:
     ChannelHandle devHandle = reinterpret_cast<ChannelHandle>(&transportDev);
     int32_t res{HCCL_E_RESERVED};
     HcommBatchTransferDesc transferDescs[2];
+    uint32_t transferDescNum = 4;
+    std::vector<HcommBatchTransferDesc> transferDescVec;
+private:
+    void GenerateTransferDescs(HcommBatchTransferDesc tmpSingleDesc, uint32_t transferDescNum, std::vector<HcommBatchTransferDesc> &transferDescVec)
+    {
+        for (uint8_t i = 0; i < transferDescNum; ++i) {
+            transferDescVec.push_back(tmpSingleDesc);
+        }
+    }
 };
 
 TEST_F(UtAicpuTsHcommBatchTransferOnThread, Ut_HcommBatchTransferOnThread_When_ThreadIsNull_Expect_ReturnHCCL_E_PTR)
@@ -112,7 +121,7 @@ TEST_F(UtAicpuTsHcommBatchTransferOnThread, Ut_HcommBatchTransferOnThread_When_S
     EXPECT_EQ(res, HCCL_E_PTR);
 }
 
-TEST_F(UtAicpuTsHcommBatchTransferOnThread, Ut_HcommBatchTransferOnThread_When_MultipleDescs_Expect_ReturnHCCL_E_NOT_SUPPORT)
+TEST_F(UtAicpuTsHcommBatchTransferOnThread, Ut_HcommBatchTransferOnThread_When_MultipleDescs_Expect_ReturnHCCL_HCCL_SUCCESS)
 {
     transferDescs[0].transferInfo.write.len = len;
     transferDescs[0].transferInfo.write.dst = dst;
@@ -141,42 +150,32 @@ TEST_F(UtAicpuTsHcommBatchTransferOnThread, Ut_HcommBatchTransferOnThread_When_c
 
 TEST_F(UtAicpuTsHcommBatchTransferOnThread, Ut_HcommBatchTransferOnThread_When_Write_Expect_Success)
 {
-    uint32_t transferDescNum = 4;
-    std::vector<HcommBatchTransferDesc> transferDescs;
     HcommBatchTransferDesc tmpTransferDesc;
     tmpTransferDesc.transType = HCOMM_TRANSFER_TYPE_WRITE;
     tmpTransferDesc.transferInfo.write.dst = reinterpret_cast<void *>(0x1000);
     tmpTransferDesc.transferInfo.write.src = reinterpret_cast<void *>(0x1000);
     tmpTransferDesc.transferInfo.write.len = 64;
-    for (uint8_t i = 0; i < transferDescNum; ++i) {
-        transferDescs.push_back(tmpTransferDesc);
-    }
+    GenerateTransferDescs(tmpTransferDesc, transferDescNum, transferDescVec);
 
-    res = HcommBatchTransferOnThread(thread, devHandle, transferDescs.data(), transferDescNum);
+    res = HcommBatchTransferOnThread(thread, devHandle, transferDescVec.data(), transferDescNum);
     EXPECT_EQ(res, HCCL_SUCCESS);
 }
 
 TEST_F(UtAicpuTsHcommBatchTransferOnThread, Ut_HcommBatchTransferOnThread_When_Read_Expect_Success)
 {
-    uint32_t transferDescNum = 4;
-    std::vector<HcommBatchTransferDesc> transferDescs;
     HcommBatchTransferDesc tmpTransferDesc;
     tmpTransferDesc.transType = HCOMM_TRANSFER_TYPE_READ;
     tmpTransferDesc.transferInfo.write.dst = reinterpret_cast<void *>(0x1000);
     tmpTransferDesc.transferInfo.write.src = reinterpret_cast<void *>(0x1000);
     tmpTransferDesc.transferInfo.write.len = 64;
-    for (uint8_t i = 0; i < transferDescNum; ++i) {
-        transferDescs.push_back(tmpTransferDesc);
-    }
+    GenerateTransferDescs(tmpTransferDesc, transferDescNum, transferDescVec);
 
-    res = HcommBatchTransferOnThread(thread, devHandle, transferDescs.data(), transferDescNum);
+    res = HcommBatchTransferOnThread(thread, devHandle, transferDescVec.data(), transferDescNum);
     EXPECT_EQ(res, HCCL_SUCCESS);
 }
 
 TEST_F(UtAicpuTsHcommBatchTransferOnThread, Ut_HcommBatchTransferOnThread_When_WriteReduce_Expect_Success)
 {
-    uint32_t transferDescNum = 4;
-    std::vector<HcommBatchTransferDesc> transferDescs;
     HcommBatchTransferDesc tmpTransferDesc;
     tmpTransferDesc.transType = HCOMM_TRANSFER_TYPE_WRITE_REDUCE;
     tmpTransferDesc.transferInfo.reduce.dst = reinterpret_cast<void *>(0x1000);
@@ -184,18 +183,14 @@ TEST_F(UtAicpuTsHcommBatchTransferOnThread, Ut_HcommBatchTransferOnThread_When_W
     tmpTransferDesc.transferInfo.reduce.reduceOp = HCOMM_REDUCE_SUM;
     tmpTransferDesc.transferInfo.reduce.dataType = HCOMM_DATA_TYPE_INT64;
     tmpTransferDesc.transferInfo.reduce.count = 64;
-    for (uint8_t i = 0; i < transferDescNum; ++i) {
-        transferDescs.push_back(tmpTransferDesc);
-    }
+    GenerateTransferDescs(tmpTransferDesc, transferDescNum, transferDescVec);
 
-    res = HcommBatchTransferOnThread(thread, devHandle, transferDescs.data(), transferDescNum);
+    res = HcommBatchTransferOnThread(thread, devHandle, transferDescVec.data(), transferDescNum);
     EXPECT_EQ(res, HCCL_SUCCESS);
 }
 
 TEST_F(UtAicpuTsHcommBatchTransferOnThread, Ut_HcommBatchTransferOnThread_When_ReadReduce_Expect_Success)
 {
-    uint32_t transferDescNum = 4;
-    std::vector<HcommBatchTransferDesc> transferDescs;
     HcommBatchTransferDesc tmpTransferDesc;
     tmpTransferDesc.transType = HCOMM_TRANSFER_TYPE_READ_REDUCE;
     tmpTransferDesc.transferInfo.reduce.dst = reinterpret_cast<void *>(0x1000);
@@ -203,25 +198,48 @@ TEST_F(UtAicpuTsHcommBatchTransferOnThread, Ut_HcommBatchTransferOnThread_When_R
     tmpTransferDesc.transferInfo.reduce.reduceOp = HCOMM_REDUCE_SUM;
     tmpTransferDesc.transferInfo.reduce.dataType = HCOMM_DATA_TYPE_INT64;
     tmpTransferDesc.transferInfo.reduce.count = 64;
-    for (uint8_t i = 0; i < transferDescNum; ++i) {
-        transferDescs.push_back(tmpTransferDesc);
-    }
+    GenerateTransferDescs(tmpTransferDesc, transferDescNum, transferDescVec);
 
-    res = HcommBatchTransferOnThread(thread, devHandle, transferDescs.data(), transferDescNum);
+    res = HcommBatchTransferOnThread(thread, devHandle, transferDescVec.data(), transferDescNum);
     EXPECT_EQ(res, HCCL_SUCCESS);
 }
 
-TEST_F(UtAicpuTsHcommBatchTransferOnThread, Ut_HcommBatchTransferOnThread_When_NotifyRecord_Expect_NotSupport)
+TEST_F(UtAicpuTsHcommBatchTransferOnThread, Ut_HcommBatchTransferOnThread_When_NotifyRecord_Expect_Success)
 {
-    uint32_t transferDescNum = 4;
-    std::vector<HcommBatchTransferDesc> transferDescs;
     HcommBatchTransferDesc tmpTransferDesc;
     tmpTransferDesc.transType = HCOMM_TRANSFER_TYPE_NOTIFY_RECORD;
     tmpTransferDesc.transferInfo.notifyRecord.notifyIdx = 10;
-    for (uint8_t i = 0; i < transferDescNum; ++i) {
-        transferDescs.push_back(tmpTransferDesc);
-    }
+    GenerateTransferDescs(tmpTransferDesc, transferDescNum, transferDescVec);
 
-    res = HcommBatchTransferOnThread(thread, devHandle, transferDescs.data(), transferDescNum);
-    EXPECT_EQ(res, HCCL_E_NOT_SUPPORT);
+    res = HcommBatchTransferOnThread(thread, devHandle, transferDescVec.data(), transferDescNum);
+    EXPECT_EQ(res, HCCL_SUCCESS);
+}
+
+TEST_F(UtAicpuTsHcommBatchTransferOnThread, Ut_HcommBatchTransferOnThread_When_WriteWithNotify_Expect_Success)
+{
+    HcommBatchTransferDesc tmpTransferDesc;
+    tmpTransferDesc.transType = HCOMM_TRANSFER_TYPE_WRITE_WITH_NOTIFY;
+    tmpTransferDesc.transferInfo.writeWithNotify.notifyIdx = 10;
+    tmpTransferDesc.transferInfo.writeWithNotify.dst = reinterpret_cast<void *>(0x1000);
+    tmpTransferDesc.transferInfo.writeWithNotify.src = reinterpret_cast<void *>(0x1000);
+    GenerateTransferDescs(tmpTransferDesc, transferDescNum, transferDescVec);
+
+    res = HcommBatchTransferOnThread(thread, devHandle, transferDescVec.data(), transferDescNum);
+    EXPECT_EQ(res, HCCL_SUCCESS);
+}
+
+TEST_F(UtAicpuTsHcommBatchTransferOnThread, Ut_HcommBatchTransferOnThread_When_WriteReduceWithNotify_Expect_Success)
+{
+    HcommBatchTransferDesc tmpTransferDesc;
+    tmpTransferDesc.transType = HCOMM_TRANSFER_TYPE_WRITE_REDUCE_WITH_NOTIFY;
+    tmpTransferDesc.transferInfo.writeReduceWithNotify.notifyIdx = 10;
+    tmpTransferDesc.transferInfo.writeReduceWithNotify.dst = reinterpret_cast<void *>(0x1000);
+    tmpTransferDesc.transferInfo.writeReduceWithNotify.src = reinterpret_cast<void *>(0x1000);
+    tmpTransferDesc.transferInfo.writeReduceWithNotify.dataType = HCOMM_DATA_TYPE_INT64;
+    tmpTransferDesc.transferInfo.writeReduceWithNotify.reduceOp = HCOMM_REDUCE_SUM;
+    tmpTransferDesc.transferInfo.writeReduceWithNotify.count = 64;
+    GenerateTransferDescs(tmpTransferDesc, transferDescNum, transferDescVec);
+
+    res = HcommBatchTransferOnThread(thread, devHandle, transferDescVec.data(), transferDescNum);
+    EXPECT_EQ(res, HCCL_SUCCESS);
 }
