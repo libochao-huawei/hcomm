@@ -349,8 +349,9 @@ HcclResult TpManager::FinishGetTpInfoFromReq(ReqQosMap &qosReqMap, const ReqQosM
 {
     RequestCtx completedReqCtx = std::move(it->second);
     qosReqMap.erase(it);
+    const HcclResult ret = HandleCompletedRequest(std::move(completedReqCtx), param, tpInfo, withSlPolicy);
     reqCtxLock.unlock();
-    return HandleCompletedRequest(std::move(completedReqCtx), param, tpInfo, withSlPolicy);
+    return ret;
 }
 
 HcclResult TpManager::AdvanceDeviceWaitListPhase(const RaUbGetTpInfoParam &param, RequestCtx &reqCtx,
