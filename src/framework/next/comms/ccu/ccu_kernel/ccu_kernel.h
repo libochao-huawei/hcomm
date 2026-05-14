@@ -193,14 +193,11 @@ public:
     CcuResult LoopCreate(CcuLoop *loop);
     CcuResult LoopBodyEnter(CcuLoop loop);
     CcuResult LoopBodyExit(CcuLoop loop);
-    CcuResult LoopSetParam(CcuLoop loop,
-        CcuVariableHandle formalParam, CcuVariableHandle actualParam);
-    CcuResult LoopEnginePoolCreate(CcuLoopExecutors *pool, uint32_t count);
+    CcuResult SetLoopNum(uint32_t count);
     CcuResult LoopGroupCreate(CcuLoopGroup *group,
-        const CcuLoopGroupConfig *config, CcuLoopExecutors enginePool);
+        const CcuLoopGroupConfig *config);
     CcuResult LoopGroupCreateFromVar(CcuLoopGroup *group,
-        CcuVariableHandle parallelVar, CcuVariableHandle offsetVar,
-        CcuLoopExecutors enginePool);
+        CcuVariableHandle parallelVar, CcuVariableHandle offsetVar);
     CcuResult LoopGroupAddLoop(CcuLoopGroup group,
         CcuLoop loop, const CcuLoopConfig *config);
     CcuResult LoopGroupAddLoopFromVar(CcuLoopGroup group,
@@ -365,16 +362,10 @@ private:
     std::vector<GroupInfo> groupOpSizeInfo_;
     std::vector<CcuProfilingInfo> allCcuProfilingInfos_;
 
-    struct ParamBinding {
-        CcuRep::Variable formal;
-        CcuRep::Variable actual;
-    };
-
     struct LoopDescriptor {
         std::string label;
         std::shared_ptr<CcuRep::CcuRepLoopBlock> repLoopBlock;
         std::shared_ptr<CcuRep::CcuRepBlock> prevActiveBlock;
-        std::vector<ParamBinding> paramBindings;
         bool bodyDefined{false};
     };
 
@@ -386,7 +377,6 @@ private:
         CcuRep::Variable offsetVar;
         std::shared_ptr<CcuRep::CcuRepBase> bundleRep;
         bool isVarBased{false};
-        CcuLoopExecutors enginePoolHandle{0};
     };
 
     struct FuncDescriptor {
@@ -402,8 +392,6 @@ private:
     uint32_t loopHandleCounter_{0};
     uint32_t loopGroupHandleCounter_{0};
     uint32_t loopBodyDepth_{0};
-    std::unordered_map<CcuLoopExecutors, std::vector<CcuRep::Executor>> loopEnginePools_;
-    uint32_t loopEnginePoolCounter_{0};
 
     std::unordered_map<uint64_t, FuncDescriptor> funcMap_;
     std::unordered_map<const void *, uint64_t> funcInstanceMap_;
