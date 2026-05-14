@@ -121,6 +121,8 @@ HcommResult HcommChannelUpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHa
 
 HcommResult CheckUbAttr(HcommChannelDesc &channelDesc);
 
+HcommResult HcommGetAsyncEvents(u32 devPhyId, EndpointHandle epHandle, struct AsyncEvent events[], u32 &num);
+
 #ifdef __cplusplus
 }
 
