@@ -662,13 +662,6 @@ TEST_F(MyRankTest, Ut_BatchExchange_When_NewRankConsistent_Expect_Success)
         .stubs()
         .will(returnValue((s32)30));
 
-    aclrtBinHandle binHandle;
-    CommConfig config;
-    ManagerCallbacks callbacks;
-    void *rankGraphPtr = (void*)0x114514;
-    std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
-    MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get(), rankIpPortMap);
-
     HcclChannelDesc channelDescs[1];
     channelDescs[0].remoteRank = 1;
     HcommChannelDesc hcommDesc;
@@ -677,6 +670,6 @@ TEST_F(MyRankTest, Ut_BatchExchange_When_NewRankConsistent_Expect_Success)
     std::vector<HcommChannelDesc> hcommDescVec;
     hcommDescVec.push_back(hcommDesc);
 
-    ret = myRank.BatchExchangeAndCheckConsistency(channelDescs, hcommDescVec, 1, "test_tag");
+    ret = myRank->BatchExchangeAndCheckConsistency(channelDescs, hcommDescVec, 1, "test_tag");
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
