@@ -26,6 +26,40 @@ namespace Hccl {
 
 static std::mutex socketLock;
 
+void SocketManager::BatchServerListen(const vector<LinkData> &links)
+{
+    for (auto &link : links) {
+        if (Contain(availableLinks, link)) {
+            continue;
+        }
+        pendingLinks_.emplace_back(link);
+    }
+
+    if (pendingLinks_.empty()) {
+        return;
+    }
+
+    for (auto &link: pendingLinks_) {
+        if (link.GetLinkProtocol() == LinkProtocol::PCIE) {
+            std::vector<uint32_t> remoteDevices;
+            remoteDevices.push_back(link.GetRemoteDeviceId());
+            auto ret = P2PEnableManager::GetInstance().WaitP2PEnabled(remoteDevices);
+            if (ret != HCCL_SUCCESS) {
+                THROW<TimeoutException>(StringFormat("WaitP2PEnabled failed, devicePhyId=%d", link.GetRemoteDeviceId()));
+            }
+        }
+    }
+    BatchServerInit(pendingLinks_);
+    availableLinks.insert(pendingLinks_.begin(), pendingLinks_.end());
+}
+
+void SocketManager::BatchConectSockets()
+{
+    BatchAddWhiteList(pendingLinks_);
+    BatchCreateConnectedSockets(pendingLinks_);
+    pendingLinks_.clear();
+}
+
 void SocketManager::BatchCreateSockets(const vector<LinkData> &links)
 {
     vector<LinkData> pendingLinks;
