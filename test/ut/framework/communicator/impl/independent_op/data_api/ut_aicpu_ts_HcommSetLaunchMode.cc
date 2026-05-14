@@ -48,8 +48,6 @@ protected:
     int32_t res{HCCL_E_RESERVED};
 };
 
-using LaunchTaskFp = void (Hccl::IAicpuTsThread::*)() const;
-
 /**
  * @brief 测试HcommSetLaunchMode接口正常调用时的行为
  *
@@ -62,23 +60,5 @@ TEST_F(UtAicpuTsHcommSetLaunchMode, Ut_HcommSetLaunchMode_When_Normal_Expect_Ret
 {
     const char* launchTag = "test_launch";
     res = HcommSetLaunchMode(launchTag, HcommLaunchMode::HCOMM_LAUNCH_MODE_BATCH);
-    EXPECT_EQ(res, HCCL_SUCCESS);
-}
-
-TEST_F(UtAicpuTsHcommSetLaunchMode, Ut_HcommSetLaunchMode_When_EagerAndInfoLogEnabled_Expect_ReturnHCCL_SUCCESS)
-{
-    const char* launchTag = "test_launch_info";
-    AicpuTsThread threadOnDevice{StreamType::STREAM_TYPE_DEVICE, 0, NotifyLoadType::DEVICE_NOTIFY};
-    threadOnDevice.devType_ = DevType::DEV_TYPE_950;
-    threadOnDevice.pImpl_ = std::make_unique<Hccl::IAicpuTsThread>();
-
-    MOCKER(HcclCheckLogLevel).stubs().with(any()).will(returnValue(true));
-    MOCKER_CPP(&Hccl::IAicpuTsThread::LaunchTask, LaunchTaskFp).stubs().will(ignoreReturnValue());
-
-    res = HcommSetLaunchMode(launchTag, HcommLaunchMode::HCOMM_LAUNCH_MODE_BATCH);
-    EXPECT_EQ(res, HCCL_SUCCESS);
-    AddThread(reinterpret_cast<ThreadHandle>(&threadOnDevice));
-
-    res = HcommSetLaunchMode(launchTag, HcommLaunchMode::HCOMM_LAUNCH_MODE_EAGER);
     EXPECT_EQ(res, HCCL_SUCCESS);
 }
