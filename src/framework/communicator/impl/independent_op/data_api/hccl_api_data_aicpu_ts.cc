@@ -677,8 +677,63 @@ int32_t HcommBatchTransferOnThread(ThreadHandle thread, ChannelHandle channel,
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
     if (threadPtr->IsDeviceA5()) {
-        HCCL_WARNING("[%s] A5 path is not supported.", __func__);
-        return HCCL_E_NOT_SUPPORT;
+        HCCL_DEBUG("[%s] Running on A5.", __func__);
+        auto *const transportLitePtr = reinterpret_cast<Hccl::BaseTransportLiteImpl *>(channel);
+        CHK_PTR_NULL(transportLitePtr);
+        auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
+        CHK_PTR_NULL(streamLitePtr);
+
+        std::vector<Hccl::RmaBufferLite> locBufs;
+        std::vector<Hccl::Buffer> rmtBufs;
+        std::vector<Hccl::BaseTransportLiteImpl::TransferOp> transferOps;
+        locBufs.reserve(transferDescNum);
+        rmtBufs.reserve(transferDescNum);
+        transferOps.reserve(transferDescNum);
+
+        HcclResult ret = HCCL_SUCCESS;
+        for (uint32_t i = 0; i < transferDescNum; i++) {
+            Hccl::TransferType transType;
+            uintptr_t locAddr = 0;
+            uintptr_t rmtAddr = 0;
+            uint64_t len = 0;
+            if (transferDescs[i].transType == HCOMM_TRANSFER_TYPE_WRITE) {
+                transType = Hccl::TransferType::WRITE;
+                CHK_PTR_NULL(transferDescs[i].transferInfo.write.src);
+                locAddr = reinterpret_cast<uintptr_t>(transferDescs[i].transferInfo.write.src);
+                CHK_PTR_NULL(transferDescs[i].transferInfo.write.dst);
+                rmtAddr = reinterpret_cast<uintptr_t>(transferDescs[i].transferInfo.write.dst);
+                len = transferDescs[i].transferInfo.write.len;
+            } else if (transferDescs[i].transType == HCOMM_TRANSFER_TYPE_READ)  {
+                transType = Hccl::TransferType::READ;
+                CHK_PTR_NULL(transferDescs[i].transferInfo.read.dst);
+                locAddr = reinterpret_cast<uintptr_t>(transferDescs[i].transferInfo.read.dst);
+                CHK_PTR_NULL(transferDescs[i].transferInfo.read.src);
+                rmtAddr = reinterpret_cast<uintptr_t>(transferDescs[i].transferInfo.read.src);
+                len = transferDescs[i].transferInfo.read.len;
+            } else {
+                HCCL_ERROR("[ResolveTransferDesc] Unsupported transType[%d], transfer index=%u.",
+                    transferDescs[i].transType, i);
+                return HCCL_E_NOT_SUPPORT;
+            }
+
+            Hccl::RmaBufferLite locRmaBuf;
+            ret = transportLitePtr->BuildLocRmaBufferLite(locAddr, len, locRmaBuf);
+            CHK_PRT_RET(ret != HCCL_SUCCESS,
+                HCCL_ERROR("[%s] BuildLocRmaBufferLite failed for desc[%u].", __func__, i), ret);
+
+            locBufs.emplace_back(locRmaBuf);
+            rmtBufs.emplace_back(rmtAddr, len);
+            Hccl::ReduceIn reduceIn{Hccl::DataType::INVALID, Hccl::ReduceOp::INVALID};
+            transferOps.emplace_back(Hccl::BaseTransportLiteImpl::TransferOp{transType, reduceIn});
+        }
+
+        EXECEPTION_CATCH(transportLitePtr->BatchTransfer(locBufs, rmtBufs, transferOps, *streamLitePtr),
+            ret = HCCL_E_INTERNAL);
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[%s] BatchTransfer failed. transferDescNum[%u].", __func__, transferDescNum), ret);
+
+        HCCL_INFO("[%s] SUCCESS on A5. transferDescNum[%u].", __func__, transferDescNum);
+        return HCCL_SUCCESS;
     }
     AddThread(thread);
     Stream *stream = GetStream(thread);
