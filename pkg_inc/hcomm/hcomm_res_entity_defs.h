@@ -18,7 +18,7 @@
 extern "C" {
 #endif // __cplusplus
 
-typedef void* ChannelPtr;
+typedef uint64_t ChannelPtr;
 
 struct ProtectionInfo {
     uint32_t type; // 0 RDMA   1 URMA

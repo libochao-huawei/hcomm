@@ -621,13 +621,13 @@ HcclResult AicpuTsRoceChannelV2::BuildAndGetCqContext(CqContext** cqContextPtr)
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsRoceChannelV2::BuildAndGetDevChannelEntity(void** devChannelEntityPtr)
+HcclResult AicpuTsRoceChannelV2::BuildAndGetDevChannelEntity(uint64_t* devChannelEntityPtr)
 {
     CHK_PTR_NULL(devChannelEntityPtr);
 
-    if (devChannelEntityPtr_ != nullptr) {
+    if (devChannelEntityPtr_ != 0) {
         *devChannelEntityPtr = devChannelEntityPtr_;
-        HCCL_INFO("[AicpuTsRoceChannelV2::%s] already built, return cached devPtr=%p", __func__, devChannelEntityPtr_);
+        HCCL_INFO("[AicpuTsRoceChannelV2::%s] already built, return cached devPtr=0x%lx", __func__, devChannelEntityPtr_);
         return HCCL_SUCCESS;
     }
 
@@ -684,9 +684,9 @@ HcclResult AicpuTsRoceChannelV2::BuildAndGetDevChannelEntity(void** devChannelEn
     Hccl::HrtMemcpy(entityDevPtr, sizeof(ChannelEntity), &devEntity, sizeof(ChannelEntity),
                      Hccl::tagRtMemcpyKind::RT_MEMCPY_HOST_TO_DEVICE);
 
-    *devChannelEntityPtr = entityDevPtr;
-    devChannelEntityPtr_ = entityDevPtr;
-    HCCL_INFO("[AicpuTsRoceChannelV2::%s] Success, devPtr=%p", __func__, entityDevPtr);
+    *devChannelEntityPtr = reinterpret_cast<uint64_t>(entityDevPtr);
+    devChannelEntityPtr_ = reinterpret_cast<uint64_t>(entityDevPtr);
+    HCCL_INFO("[AicpuTsRoceChannelV2::%s] Success, devPtr=0x%lx", __func__, devChannelEntityPtr_);
     return HCCL_SUCCESS;
 }
 
