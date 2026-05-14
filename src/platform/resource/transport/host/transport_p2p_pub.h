@@ -14,8 +14,10 @@
 #include <sstream>
 
 #include "transport_base_pub.h"
+#include "rma_buffer_mgr.h"
 
 namespace hccl {
+using HcclMemExMgr = hccl::RmaBufferMgr<hccl::BufferKey<uintptr_t, u64>, std::shared_ptr<HcclMemEx>>;
 
 typedef enum {
     EX_IPCMEN_SIZE = 0,    /**< ipcMenSize */
@@ -82,11 +84,13 @@ public:
     HcclResult GetRemoteMemSize(UserMemType memType, u64 &size) override;
 
     HcclResult WriteAsync(struct Transport::Buffer &remoteBuf, struct Transport::Buffer &localBuf, Stream &stream);
+    HcclResult WriteAsyncEx(struct Transport::Buffer &remoteBuf, struct Transport::Buffer &localBuf, Stream &stream);
     HcclResult WriteSync(struct Transport::Buffer &remoteBuf, struct Transport::Buffer &localBuf, Stream &stream);
     HcclResult WriteReduceAsync(struct Transport::Buffer &remoteBuf,
         struct Transport::Buffer &localBuf, const HcclDataType datatype, HcclReduceOp redOp, Stream &stream) override;
 
     HcclResult ReadAsync(struct Transport::Buffer &localBuf, struct Transport::Buffer &remoteBuf, Stream &stream);
+    HcclResult ReadAsyncEx(struct Transport::Buffer &localBuf, struct Transport::Buffer &remoteBuf, Stream &stream);
     HcclResult ReadSync(struct Transport::Buffer &localBuf, struct Transport::Buffer &remoteBuf, Stream &stream);
     HcclResult ReadReduceSync(struct Transport::Buffer &localBuf, struct Transport::Buffer &remoteBuf,
         const HcclDataType datatype, HcclReduceOp redOp, Stream &stream);
@@ -117,6 +121,7 @@ protected:
         u64 &exchangeDataBlankSize);
     HcclResult ParseIntraProcMemInfo(u64* addr, u64* size, u8*& exchangeDataPtr, u64& exchangeDataBlankSize);
     HcclResult ParseNotifyInfo(u8*& exchangeDataPtr, u64& exchangeDataBlankSize);
+    HcclResult ParseNotifyInfoEx(u8*& exchangeDataPtr, u64& exchangeDataBlankSize);
     HcclResult ParseNotifyVectorInfo(u8*& exchangeDataPtr, u64& exchangeDataBlankSize);
     HcclResult ParseCheckDataLen(ExchangeInfoSize &remoteInfoSize, u8*& exchangeDataPtr, u64& exchangeDataBlankSize);
     HcclResult ParseMemNumInfo(u64 &memNum, u8 *&exchangeDataPtr, u64 &exchangeDataBlankSize);
@@ -157,6 +162,14 @@ protected:
     std::vector<u64> remoteIndOpDeviceMemOffsetValueVector_;
 
     bool useSdmaToSignalRecord_{false};
+
+    HcclResult ReplaceMemAddr(Transport::Buffer &localMem, Transport::Buffer &remoteMem,
+        Transport::Buffer &newLocalMem, Transport::Buffer &newRemoteMem, bool &isLocalHostAddr, bool &isRemoteHostAddr);
+    HcclResult InitHcclMemExMgrWithMem(HcclMemEx *bufMem, u32 bufSize, HcclMemExMgr &hcommMemExMgr);
+    HcclResult InitHcclMemExMgr(MachinePara &machinePara);
+    HcclMemExMgr localHcclMemExMgr_;
+    HcclMemExMgr remoteHcclMemExMgr_;
+
 private:
     HcclResult ParseSpecifyLink(LinkTypeInServer &linkType);
     void SetMemIncludeFlag();

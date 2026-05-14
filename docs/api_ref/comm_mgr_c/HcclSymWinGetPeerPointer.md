@@ -5,8 +5,10 @@
 - Ascend 950PR/Ascend 950DT：不支持
 - Atlas A3 训练系列产品/Atlas A3 推理系列产品：支持
 - Atlas A2 训练系列产品/Atlas A2 推理系列产品：不支持
-- Atlas 推理系列产品：不支持
-- Atlas 训练系列产品：不支持
+<cann-filter npu-type="310p">
+- Atlas 推理系列产品：不支持</cann-filter>
+<cann-filter npu-type="910">
+- Atlas 训练系列产品：不支持</cann-filter>
 
 ## 功能说明
 
@@ -19,7 +21,6 @@ HcclResult HcclSymWinGetPeerPointer(HcclCommSymWindow winHandle, size_t offset, 
 ```
 
 ## 参数说明
-
 
 | 参数名 | 输入/输出 | 说明 |
 | --- | --- | --- |

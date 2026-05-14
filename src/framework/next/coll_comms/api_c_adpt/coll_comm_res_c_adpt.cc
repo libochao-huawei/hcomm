@@ -19,6 +19,9 @@
 #include "ccu_kernel.h"
 #include "../comms/ccu/ccu_kernel/ccu_kernel_mgr.h"
 #include "rt_external.h"
+#include "coll_comm_mgr.h"
+#include "hcclCommOp.h"
+
 using namespace hccl;
 /**
  * @note 职责：集合通信的通信域资源管理的C接口的C到C++适配
@@ -209,14 +212,29 @@ bool CheckCommEngine(const CommEngine engine, const uint32_t opExpansionMode)
 
 constexpr uint32_t CHANNEL_NUM_MAX = 1024 * 1024;  // channel的默认限制最大为1024 * 1024
 
+HcclResult RegisterToClusterMonitor(HcclComm comm)
+{
+    HCCL_INFO("[%s] START, comm[%p].", __func__, comm);
+    CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
+    auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
+    CHK_PTR_NULL(hcclComm);
+    if (!hcclComm->IsCommunicatorV2()) {
+        HCCL_ERROR("comm is not support [%s]", __func__);
+        return HCCL_E_NOT_SUPPORT;
+    }
+    hccl::CollComm* collComm = hcclComm->GetCollComm();
+    CHK_PTR_NULL(collComm);
+    CHK_RET(CollCommMgr::GetInstance()->GetClusterMonitor(collComm->GetDeviceLogicId()).RegisterToClusterMonitor(comm));
+    HCCL_RUN_INFO("%s Success", __func__);
+    return HCCL_SUCCESS;
+}
+
 HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine, 
     const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle* channels)
 {
-    HCCL_RUN_INFO("Entry-%s", __func__);
     HcclUs startut = TIME_NOW();
     u64 beginTime =  Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
     EXCEPTION_HANDLE_BEGIN
-    HCCL_INFO("[%s] ChannelAcquire begin, channelNum[%u], engine[%d]", __func__, channelNum, engine);
 
     // 入参校验
     CHK_PTR_NULL(comm);
@@ -230,17 +248,14 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
  
     HcclResult ret = HCCL_SUCCESS;
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    HCCL_RUN_INFO("Entry-%s channelNum[%u], engine[%d] group[%s]", __func__, channelNum, engine, hcclComm->GetIdentifier().c_str());
     std::vector<HcclChannelDesc> channelDescFinals;
     for (uint32_t idx = 0; idx < channelNum; idx++) {
         HcclChannelDesc channelDescFinal;
         HcclChannelDescInit(&channelDescFinal, 1);
         ret = ProcessHcclResPackReq(channelDescs[idx], channelDescFinal, hcclComm);
-        if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[%s] Failed check channelDesc, channelDesc idx[%u], group[%s], engine[%d], "
-                "channelNum[%llu], ret[%d]", __func__, idx, hcclComm->GetIdentifier().c_str(),
-                engine, channelNum, ret);
-            return ret;
-        }
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+            HCCL_ERROR("ProcessHcclResPackReq failed. channelDesc idx[%u], group[%s], engine[%d] channelNum[%llu], ret[%d]", idx, hcclComm->GetIdentifier().c_str(), engine, channelNum, ret), ret);
         channelDescFinals.push_back(channelDescFinal);
     }
  
@@ -253,12 +268,22 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
  
         const uint32_t opExpansionMode = myRank->GetOpExpansionMode();
         if (!CheckCommEngine(engine, opExpansionMode)) {
-            HCCL_ERROR("[%s] failed, coll comm[%p] opExpansionMode[%d] is not supported by CCU engine[%d].", 
-                __func__, hcclComm, opExpansionMode, engine);
+            HCCL_ERROR("[%s] failed, coll comm[%p] group[%s] opExpansionMode[%d] is not supported by CCU engine[%d].", 
+                __func__, hcclComm, hcclComm->GetIdentifier().c_str(), opExpansionMode, engine);
             return HcclResult::HCCL_E_PARA;
         }
-        
-        CHK_RET_UNAVAIL(myRank->CreateChannels(engine, commTag, channelDescFinals.data(), channelNum, channels));
+
+        if (engine != CommEngine::COMM_ENGINE_CPU) { // host dpu场景暂不支持cluster monitor
+            ret = RegisterToClusterMonitor(comm);
+            CHK_PRT_RET(ret != HCCL_SUCCESS,
+                HCCL_ERROR("RegisterToClusterMonitor failed. group[%s], engine[%d], channelNum[%llu], ret[%d]", hcclComm->GetIdentifier().c_str(), engine, channelNum, ret), ret);
+        }
+
+        ret = myRank->CreateChannels(engine, commTag, channelDescFinals.data(), channelNum, channels);
+        CHK_PRT_RET((ret == HCCL_E_AGAIN || ret == HCCL_E_UNAVAIL),
+            HCCL_WARNING("CreateChannels group[%s], engine[%d] ret[%d]", commTag.c_str(), engine, ret), ret);
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+            HCCL_ERROR("CreateChannels failed. group[%s], engine[%d] ret[%d]", commTag.c_str(), engine, ret), ret);
         if (engine == COMM_ENGINE_CPU) {
             HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
             CHK_PTR_NULL(hcclCommDfx);
@@ -266,18 +291,19 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
             for (uint32_t idx = 0; idx < channelNum; idx++) {
                 int32_t ret = HcommDpuChannelRegisterDfx(channels[idx], callback);
                 CHK_PRT_RET(ret != HCCL_SUCCESS,
-                    HCCL_ERROR("[HcclChannelAcquire] Failed to register DFX callback for channel[%u], ret[%d]", idx, ret),
+                    HCCL_ERROR("[HcclChannelAcquire] group[%s] Failed to register DFX callback for channel[%u], ret[%d]", commTag.c_str(), idx, ret),
                     static_cast<HcclResult>(ret));
             }
-            HCCL_INFO("[HcclChannelAcquire] channelNum[%u] Register DFX callback for CPU channels success", channelNum);
+            HCCL_INFO("[HcclChannelAcquire] group[%s] channelNum[%u] Register DFX callback for CPU channels success", commTag.c_str(), channelNum);
         }
         if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
             HCCL_INFO("[HcclChannelAcquire] ReportChannelAicpuKernel start");
             HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
             CHK_PTR_NULL(hcclCommDfx);
             std::string kernelName = "RunAicpuIndOpChannelInitV2";
-            CHK_RET(hcclCommDfx->ReportKernel(beginTime, commTag, kernelName, SalGetTid()));
-            HCCL_INFO("[HcclChannelAcquire] ReportChannelAicpuKernel success");
+            ret = hcclCommDfx->ReportKernel(beginTime, commTag, kernelName, SalGetTid());
+            CHK_PRT_RET(ret != HCCL_SUCCESS,
+                HCCL_ERROR("[HcclChannelAcquire] group[%s] Failed to report kernel for kernelName[%s], tid[%d], ret[%d]", commTag.c_str(), kernelName.c_str(), SalGetTid(), ret), ret);
         }
     } else {
         hccl::MyRank *myRank = (hccl::MyRank *)hcclComm->GetMyRank();
@@ -291,16 +317,10 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
         }
     }
  
-    if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[%s] Failed to acquire channel, group[%s], engine[%d], channelNum[%llu], ret[%d]",
-           __func__, hcclComm->GetIdentifier().c_str(), engine, channelNum, ret);
-        return ret;
-    }
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[%s] Failed to acquire channel, group[%s], engine[%d], channelNum[%llu], ret[%d]", __func__, hcclComm->GetIdentifier().c_str(), engine, channelNum, ret), ret);
  
-    HCCL_RUN_INFO("[%s] acquire channel success, group[%s], engine[%d], channelNum[%llu], ret[%d]", 
-        __func__, hcclComm->GetIdentifier().c_str(), engine, channelNum, ret);
-    HCCL_INFO("[%s] success, take time [%lld]us.",
-        __func__, DURATION_US(TIME_NOW() - startut));
+    HCCL_RUN_INFO("[%s] acquire channel success, group[%s], engine[%d], channelNum[%llu], take time [%lld]us.", __func__, hcclComm->GetIdentifier().c_str(), engine, channelNum, DURATION_US(TIME_NOW() - startut));
     EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }

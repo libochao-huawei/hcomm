@@ -213,6 +213,9 @@ typedef struct {
         struct {
             uint32_t qos;            ///< HCCS QoS
         } hccsAttr;
+        struct {
+            uint32_t sqDepth;         ///< UB队列深度，0表示使用默认值
+        } ubAttr;
     };
 } HcommChannelDesc;
 
@@ -283,7 +286,7 @@ static inline HcommResult HcommChannelDescInit(HcommChannelDesc *channelDesc, ui
     return 0;
 }
 
-extern HcommResult HcommCcuGetMemToken(uint64_t srcVa, uint64_t size, uint64_t tokenInfo);
+extern HcommResult HcommCcuGetMemToken(uint64_t srcVa, uint64_t size, uint64_t *tokenInfo);
 
 #ifdef __cplusplus
 }

@@ -174,6 +174,12 @@ __aicore__ inline void sk_all_gather_91093_smalldata(SUPERKERNEL_ARGS_DEF)
         op.Process<uint16_t>(input, output, op.len_, op.tag_);
     #elif defined HCCL_DTYPE_UINT32
         op.Process<uint32_t>(input, output, op.len_, op.tag_);
+    #elif defined HCCL_DTYPE_INT64
+        op.Process<int64_t>(input, output, op.len_, op.tag_);
+    #elif defined HCCL_DTYPE_UINT64
+        op.Process<uint64_t>(input, output, op.len_, op.tag_);
+    #elif defined HCCL_DTYPE_FP64
+        op.Process<double>(input, output, op.len_, op.tag_);
     #else
     #endif
 }

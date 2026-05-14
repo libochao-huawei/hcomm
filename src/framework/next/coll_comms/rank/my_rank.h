@@ -34,7 +34,9 @@ namespace hccl {
  */
 class MyRank {
 public:
-    MyRank(aclrtBinHandle binHandle, uint32_t rankId, const CommConfig& config, const ManagerCallbacks& callbacks, RankGraph* rankGraph);
+    MyRank(aclrtBinHandle binHandle, uint32_t rankId, const CommConfig& config,
+        const ManagerCallbacks& callbacks, RankGraph* rankGraph,
+        const Hccl::RankIpPortMapPtr& rankIpPortMap);
     ~MyRank();
 
     HcclResult Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint32_t rankNum);
@@ -76,6 +78,7 @@ private:
     HcclResult GetLocalTlsStatus(Hccl::TlsStatus &tlsStatus) const;
 
     HcclResult TryInitCcuInstance();
+    HcclResult ConfigSqDepthByExpansionMode(CommEngine engine, HcommChannelDesc& hcommDesc);
     HcclResult DestroyNewChannels(CommEngine engine, const HcclChannelDesc* channelDescs);
 
     aclrtBinHandle binHandle_{nullptr};
@@ -104,8 +107,16 @@ private:
     std::unique_ptr<NsRecoveryProcessor> nsRecoveryProcessor_{nullptr};
     // 内部获取 port 的方法，根据 mode_ 区分 v1/v2
     HcclResult GetDevicePortInternal(uint32_t rank, uint32_t *devPort);
+
+    Hccl::RankIpPortMapPtr rankIpPortMap_;
 };
 
 } // namespace hccl
+
+namespace MyRankUtils {
+
+HcommChannelDesc ChannelDescHccl2Hcomm(const HcclChannelDesc &hcclDesc);
+
+} // namespace MyRankUtils  
 
 #endif // MY_RANK_H

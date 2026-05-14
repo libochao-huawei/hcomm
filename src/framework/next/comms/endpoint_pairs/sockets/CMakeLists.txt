@@ -10,6 +10,7 @@
 
 set(src_list
     socket_mgr.cc
+    socket_process.cc
 )
 
 target_sources(hcomm PRIVATE
