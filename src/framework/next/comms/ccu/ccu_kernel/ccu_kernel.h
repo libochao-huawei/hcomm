@@ -113,7 +113,6 @@ public:
     CcuResult LocalAddrAlloc(CcuLocalAddrHandle *localAddrHandle, CcuAddressHandle *addrHandle, CcuVariableHandle *tokenHandle);
     CcuResult RemoteAddrAlloc(CcuRemoteAddrHandle *remoteAddrHandle, CcuAddressHandle *addrHandle, CcuVariableHandle *tokenHandle);
     CcuResult BlockVariableAlloc(CcuVariableHandle *varHandles, uint32_t count);
-    // CcuResult BlockAddressAlloc(CcuAddressHandle *addrHandles, uint32_t count);
     CcuResult BlockEventAlloc(CcuEventHandle *eventHandles, uint32_t count);
     CcuResult BlockBufferAlloc(CcuBufferHandle *bufHandles, uint32_t count);
     CcuResult VariableCreateByChannel(ChannelHandle channel, uint32_t varIndex, CcuVariableHandle *varHandle);
@@ -223,6 +222,15 @@ private:
     // 由 LoopGroupCreate / LoopGroupCreateFromVar 在 LoopGroup 创建时调用。
     CcuResult EnsureLoopEnginePool(uint32_t maxLoopNum);
 
+    CcuResult ValidateTaskArgs(const uint64_t *taskArgs, uint32_t argsNum) const;
+    void FillTaskParam(CcuTaskParam &param, uint32_t index, uint32_t seqNum,
+        const uint64_t *taskArgs, uint32_t argsNum) const;
+
+    CcuResult ResolveBufRemoteLenEvent(CcuBufferHandle bufHandle, CcuRemoteAddrHandle remoteHandle,
+        CcuVariableHandle lenHandle, CcuEventHandle eventHandle,
+        CcuRep::CcuBuf **buf, CcuRep::RemoteAddr **remote,
+        CcuRep::Variable **len, CcuRep::CompletedEvent **event);
+
     struct IfLabelEntry {
         const char *label{nullptr};
         bool        bodyDone{false};
@@ -329,7 +337,6 @@ protected:
     // Variable src中存放内存地址，从地址中加载数据到Variable var中
     void LoadVariable(const CcuRep::Variable &src, const CcuRep::Variable &var);
 
-    // void LoadVariable(uint64_t addr, const CcuRep::Variable &var);
     void StoreVariable(const CcuRep::Variable &var, uint64_t addr);
     // 控制逻辑
     // 宏定义IF、WHILE
