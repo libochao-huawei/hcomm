@@ -92,8 +92,7 @@ private:
     HcclResult ExchangeUserInfo(
         const std::vector<Hccl::Socket*> &sockets,
         const std::vector<u32> &remoteRanks,
-        const std::vector<HcommSocketRole> &roles,
-        CollCommConfigConsistency &collCommConfigConsistency);
+        const std::vector<HcommSocketRole> &roles);
     HcclResult BatchExchangeFixedData(
         const std::vector<Hccl::Socket*> &sockets,
         const std::vector<u32> &remoteRanks,
