@@ -86,10 +86,10 @@ typedef enum {
  * @brief 批量传输描述符
  */
 typedef struct {
-    HcommTransferType transType;
+    HcommTransferType transType;     ///< 传输类型
     uint8_t reserved[4];
     union {
-        uint8_t raws[56];
+        uint8_t raws[56];            ///< 通用数据
         struct {
             uint64_t len;
             void *dst;
@@ -110,13 +110,6 @@ typedef struct {
         struct {
             uint32_t notifyIdx;
         } notifyRecord;
-        struct {
-            uint32_t notifyIdx;
-            uint32_t timeout;
-        } notifyWait;
-        struct {
-            uint32_t notifyIdx;
-        } notifyWaitWithDefaultTimeout;
         struct {
             uint64_t len;
             void *dst;
