@@ -99,6 +99,7 @@ public:
     HcclResult Resume();
 
 private:
+    HcclResult ValidateConfig(const HcclCommConfig *config);
     HcclResult DestroyAicpuComm();
     HcclResult InitHDCommunicate();   
     HcclResult InitTaskExceptionHandler();
