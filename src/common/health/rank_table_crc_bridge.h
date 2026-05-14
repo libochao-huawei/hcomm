@@ -18,3 +18,4 @@ namespace hccl {
 //桥接函数：记录A5 ranktable文件内容的CRC信息用于一致性校验
 HcclResult RecordRankTableCrcV2Bridge(const std::string &rankTableM);
 }
+#endif /* RANK_TABLE_CRC_BRIDGE_H */
