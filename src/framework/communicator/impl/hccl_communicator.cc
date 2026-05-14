@@ -377,6 +377,12 @@ namespace hccl
         workSpaceRes_.reset(new (std::nothrow) WorkspaceResource(devicePhyId_, deviceLogicId_));
         CHK_SMART_PTR_NULL(workSpaceRes_);
 
+        CHK_RET(InitAlgResource());
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::InitAlgResource()
+    {
         HcclTopoAttr topoAttr{};
         attrCollector_.GetTopoAttr(topoAttr);
 

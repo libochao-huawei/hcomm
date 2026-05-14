@@ -517,6 +517,7 @@ private:
     HcclResult InitSocketManager();
     HcclResult InitTransportManager();
     HcclResult InitHcclAlg();
+    HcclResult InitAlgResource();
     HcclResult InitProfiling();
     HcclResult DeinitProfiling();
     HcclResult InitProfiler();

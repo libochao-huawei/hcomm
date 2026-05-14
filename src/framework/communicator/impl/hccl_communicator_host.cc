@@ -1210,16 +1210,7 @@ namespace hccl
                                 WorkspaceResource(devicePhyId_, deviceLogicId_, &cclBufferManager_));
         CHK_SMART_PTR_NULL(workSpaceRes_);
 
-        HcclTopoAttr topoAttr{};
-        attrCollector_.GetTopoAttr(topoAttr);
-
-        HcclAlgoAttr algoAttr{};
-        attrCollector_.GetAlgoAttr(algoAttr);
-
-        implAlg_.reset(new (std::nothrow) HcclAlg(cclBufferManager_, dispatcher_, vDispatcher_));
-        CHK_SMART_PTR_NULL(implAlg_);
-        CHK_RET(implAlg_->Init(workSpaceRes_, notifyPool_, netDevCtxMap_, queueNotifyManager_,
-                               algoAttr, topoAttr, false));
+        CHK_RET(InitAlgResource());
         return HCCL_SUCCESS;
     }
 
