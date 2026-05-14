@@ -638,9 +638,7 @@ TEST_F(MyRankTest, Ut_BatchExchange_When_NewRankConsistent_Expect_Success)
     HcclResult ret = HCCL_SUCCESS;
     std::shared_ptr<hccl::hcclComm> hcclCommPtr;
     hccl::CollComm* collComm = hcclCommPtr->GetCollComm();
-    CHK_PTR_NULL(collComm);
     hccl::MyRank* myRank = collComm->GetMyRank();
-    CHK_PTR_NULL(myRank);
     CollCommConfigConsistency &collCommConfigConsistency = myRank->GetCollCommConfigConsistency();
     std::vector<u8> localData = {0xDE, 0xAD, 0xBE, 0xEF};
     ret = collCommConfigConsistency.AddExchangeInfo(localData.data(), localData.size());
