@@ -176,6 +176,7 @@ TEST_F(HcclChannelDescTest, Ut_HcclChannelAcquire_When_BuildConnection_Fails_Ret
     GetChannelDesc(channelDesc);
     channelDesc[0].roceAttr.queueNum = 1;
     MOCKER(&hcomm::ClusterMonitor::RegisterToClusterMonitor).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(&MyRank::CreateChannels).stubs().will(returnValue(HCCL_SUCCESS));
 
     // Mock BuildConnection 失败
     MOCKER(&HostCpuRoceChannel::BuildConnection).stubs().will(returnValue(HCCL_E_NETWORK));
@@ -191,6 +192,7 @@ TEST_F(HcclChannelDescTest, Ut_HcclChannelAcquire_When_IbvPostRecv_Fails_Return_
     GetChannelDesc(channelDesc);
     channelDesc[0].roceAttr.queueNum = 1;
     MOCKER(&hcomm::ClusterMonitor::RegisterToClusterMonitor).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(&MyRank::CreateChannels).stubs().will(returnValue(HCCL_SUCCESS));
     
     // Mock BuildConnection 成功
     MOCKER(&HostCpuRoceChannel::BuildConnection).stubs().will(returnValue(HCCL_SUCCESS));
