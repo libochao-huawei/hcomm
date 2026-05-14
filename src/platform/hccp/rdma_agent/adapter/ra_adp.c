@@ -1644,6 +1644,10 @@ struct RaOpHandle gRaOpHandle[] = {
     {RA_RS_CTX_GET_AUX_INFO, RaRsCtxGetAuxInfo, sizeof(union OpCtxGetAuxInfoData)},
     {RA_RS_CTX_GET_CR_ERR_INFO_LIST, RaRsCtxGetCrErrInfoList, sizeof(union OpCtxGetCrErrInfoListData)},
     {RA_RS_CTX_GET_UB_CONTEXT, RaRsCtxGetUbContext, sizeof(union OpCtxGetContextData)},
+    {RA_RS_LMEM_BATCH_REG, RaRsLmemBatchReg, sizeof(union OpLmemBatchRegInfoData)},
+    {RA_RS_LMEM_BATCH_UNREG, RaRsLmemBatchUnreg, sizeof(union OpLmemBatchUnregInfoData)},
+    {RA_RS_RMEM_BATCH_IMPORT, RaRsRmemBatchImport, sizeof(union OpRmemBatchImportInfoData)},
+    {RA_RS_RMEM_BATCH_UNIMPORT, RaRsRmemBatchUnimport, sizeof(union OpRmemBatchUnimportInfoData)},
 };
 
 STATIC int RaCheckParam(char *recvBuf, int rcvBufLen, char **sendBuf, int *sndBufLen, int *paramCheckResult)

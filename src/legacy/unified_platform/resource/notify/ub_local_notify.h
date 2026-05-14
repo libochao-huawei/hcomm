@@ -23,7 +23,7 @@ MAKE_ENUM(UbNotifyStatus, INIT, READY, RELEASED);
 
 class UbLocalNotify : public BaseLocalNotify {
 public:
-    explicit UbLocalNotify(RdmaHandle rdmaHandle, bool devUsed = false);
+    explicit UbLocalNotify(RdmaHandle rdmaHandle, bool devUsed = false, bool batchRegister = false);
 
     UbLocalNotify(const UbLocalNotify &that) = delete;
 
@@ -36,6 +36,7 @@ public:
     void Post(const Stream &stream) const override;
 
     std::unique_ptr<Serializable> GetExchangeDto() override; // 先实现UB Notify的exchange dto，IPC/RDMA待补充
+    static HcclResult BatchMemReg(RdmaHandle rdmaHandle, std::vector<std::unique_ptr<Hccl::UbLocalNotify>> &notifies);
 
     ~UbLocalNotify() override;
 
@@ -53,6 +54,7 @@ private:
     void*                         lmemHandle{nullptr};
 
     void ReleaseResource() const;
+    HcclResult SetMemInfo(const HrtRaUbLocalMemRegOutParam &reqReg);
 };
 
 } // namespace Hccl
