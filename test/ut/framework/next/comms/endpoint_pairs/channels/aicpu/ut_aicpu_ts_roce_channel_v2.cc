@@ -391,10 +391,10 @@ TEST_F(AicpuTsRoceChannelV2Test, Ut_When_BuildAndGetDevChannelEntity_Expect_Succ
     channel->Init();
     channel->channelStatus_ = ChannelStatus::READY;
     channel->rmtRmaBuffers_.push_back(std::make_unique<Hccl::RemoteRdmaRmaBuffer>((void *)0x1000000));
-    void* devChannelEntityPtr = nullptr;
+    uint64_t devChannelEntityPtr = 0;
     HcclResult ret = channel->BuildAndGetDevChannelEntity(&devChannelEntityPtr);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_NE(devChannelEntityPtr, nullptr);
+    EXPECT_NE(devChannelEntityPtr, 0);
     channel->FreeDeviceMemories();
     std::cout << "End Ut_When_BuildAndGetDevChannelEntity_Expect_Success" << std::endl;
 }
