@@ -843,7 +843,7 @@ HcclResult MyRank::ExchangeUserInfo(
     const std::vector<HcommSocketRole> &roles,
     CollCommConfigConsistency &collCommConfigConsistency)
 {
-    u32 localExchangeInfoLen = exchangeInfo.GetExchangeInfoLen();
+    u32 localExchangeInfoLen = collCommConfigConsistency.GetExchangeInfoLen();
     if (localExchangeInfoLen == 0) {
         HCCL_INFO("[ExchangeUserInfo] localExchangeInfoLen is 0.");
         return HCCL_SUCCESS;
