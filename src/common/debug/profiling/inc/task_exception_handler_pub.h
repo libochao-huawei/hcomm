@@ -216,7 +216,6 @@ using GetAicpuTaskExceptionCallBack = std::function<ErrorMessageReport()>;
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
-extern std::array<std::map<s32, GetAicpuTaskExceptionCallBack>, MAX_MODULE_DEVICE_NUM> g_communicatorCallbackMap;
 extern void RegisterGetErrStatusVecCallBack(GetErrStatusVecCallBack);
 extern void RegisterGetAicpuTaskExceptionCallBack(s32 streamId, u32 deviceLogicId, GetAicpuTaskExceptionCallBack p1);
 extern void UnregisterGetAicpuTaskExceptionCallBack(s32 streamId, u32 deviceLogicId);
