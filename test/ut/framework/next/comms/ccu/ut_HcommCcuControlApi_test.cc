@@ -216,6 +216,52 @@ CCU_FUNC_KERNEL_TEST(Ut_FuncCallReuse_Expect_Success, CcuFuncCallReuseDemoKernel
 CCU_FUNC_KERNEL_TEST(Ut_FuncCallInLoop_Expect_Fail, CcuFuncCallInLoopInvalidDemoKernel, false)
 CCU_FUNC_KERNEL_TEST(Ut_FuncCallNested_Expect_Fail, CcuFuncCallNestedInvalidDemoKernel, false)
 
+TEST_F(HcommCcuControlApiTest, Ut_LoopObjectApi_Expect_Success)
+{
+    CcuResult ccuRet = CcuResult::CCU_E_RESERVED;
+    constexpr uint32_t fakeDevId = MAX_MODULE_DEVICE_NUM - 2;
+    MOCKER(HcclGetThreadDeviceId).stubs().will(returnValue(fakeDevId));
+    int32_t fakeDeviceLogicId = static_cast<int32_t>(fakeDevId);
+    MOCKER(hrtGetDevice).stubs()
+        .with(outBoundP(&fakeDeviceLogicId))
+        .will(returnValue(HcclResult::HCCL_SUCCESS));
+    MOCKER(hrtGetDevicePhyIdByIndex).stubs()
+        .with(any(), outBound(static_cast<uint32_t>(fakeDeviceLogicId)), any())
+        .will(returnValue(HcclResult::HCCL_SUCCESS));
+    constexpr hcomm::CcuVersion fakeCcuVersion = hcomm::CcuVersion::CCU_V1;
+    MockCcuNetworkDeviceDefault(fakeDeviceLogicId);
+    EXPECT_EQ(MockCcuResourcesDefault(fakeDeviceLogicId, fakeCcuVersion), HcclResult::HCCL_SUCCESS);
+    MockCcuChannelGetRes();
+    MOCKER(hrtMemcpy).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+
+    CcuResDesc resDesc{};
+    resDesc.dieId = hcomm::CCU_MAX_IODIE_NUM;
+    resDesc.insType = CcuInstanceType::CCU_MS;
+    constexpr uint32_t descNum = 1;
+    CcuInsHandle insHandle{0};
+    ccuRet = HcommCcuInsCreate(static_cast<void *>(&resDesc), descNum, &insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+
+    ccuRet = HcommCcuKernelRegisterStart(insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+
+    CcuLoopAddKernelArg demoArg{};
+    demoArg.numA = 3;
+    demoArg.numB = 4;
+    CcuKernelArg kernelArg = static_cast<CcuKernelArg>(&demoArg);
+    CcuKernelHandle kernelHandle{0};
+    auto kernelFunc = reinterpret_cast<void *>(CcuLoopAddDemoKernel);
+    ccuRet = HcommCcuKernelRegister(insHandle, const_cast<char *>("CcuLoopAddDemoKernel"),
+        kernelFunc, kernelArg, &kernelHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+
+    ccuRet = HcommCcuKernelRegisterEnd(insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+
+    ccuRet = HcommCcuInsDestroy(insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+}
+
 TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRegister_When_AllFine_Expect_ReturnCcuSUCCESS)
 {
     // 整体打桩，处理ccu资源
@@ -790,9 +836,6 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelAlloc_When_AllFine_Expect_Return
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 }
 
-// 暂未启用：CcuReduceScatterMesh1dKernel 的 kernel 实现在
-// ccu_kernel_impl/ccu_reduce_scatter_mesh1d_demo.h 中整文件被注释，等该 demo
-// 适配新 API 后再放开此 UT。
 TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelReduceScatterMesh1d_When_AllFine_Expect_ReturnCcuSUCCESS)
 {
     // 整体打桩，处理ccu资源
