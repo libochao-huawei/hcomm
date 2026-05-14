@@ -18,7 +18,6 @@ set(src_list
     dlibv_function.cc
     dlra_function.cc
     dltdt_function.cc
-    mr_manager.cc
     peterson_lock.cc
     device_capacity.cc
     dlprof_func.cc
