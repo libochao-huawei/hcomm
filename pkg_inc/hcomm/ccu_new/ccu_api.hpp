@@ -33,10 +33,8 @@ namespace ccu {
 
 inline Variable GetResByChannel(ChannelHandle channel, uint32_t varIndex) {
     Variable v{NoAllocTag{}};
-    auto ret = CcuVariableCreateByChannel(channel, varIndex, &v.handle);
-    if (ret != CcuResult::CCU_SUCCESS) {
-        throw "CcuVariableCreateByChannel: failed";
-    }
+    CCU_THROW_IF_FAILED(CcuVariableCreateByChannel(channel, varIndex, &v.handle),
+        "CcuVariableCreateByChannel: failed");  
     return v;
 }
 
