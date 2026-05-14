@@ -97,6 +97,14 @@ struct RaCtxOps {
     int (*raCtxUpdateCi)(struct RaCtxQpHandle *qpHandle, uint16_t ci);
     int (*raCtxGetAuxInfo)(struct RaCtxHandle *ctxHandle, struct HccpAuxInfoIn *in, struct HccpAuxInfoOut *out);
     int (*raCtxGetJettyContext)(struct RaCtxQpHandle *qpHandle, uint8_t context[], unsigned int *len);
+    int (*raCtxLmemBatchRegister)(struct RaCtxHandle *ctxHandle, struct MrRegInfoT *lmemInfoList[],
+        struct RaLmemHandle *lmemHandleList[], unsigned int num);
+    int (*raCtxLmemBatchUnregister)(struct RaCtxHandle *ctxHandle, struct RaLmemHandle *lmemHandleList[],
+        unsigned int num);
+    int (*raCtxRmemBatchImport)(struct RaCtxHandle *ctxHandle, struct MrImportInfoT *rmemInfoList[],
+        unsigned int num);
+    int (*raRaHdcCtxRmemBatchUnimport)(struct RaCtxHandle *ctxHandle, struct RaRmemHandle *rmemHandleList[],
+        unsigned int num);
 };
 
 #endif // RA_CTX_H
