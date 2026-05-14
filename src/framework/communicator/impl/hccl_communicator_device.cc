@@ -1565,11 +1565,6 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::DeInitTransportMem()
-    {
-        return HCCL_SUCCESS;
-    }
-
     HcclResult HcclCommunicator::SnapshotCheckPreProcess()
     {
         return HCCL_SUCCESS;
