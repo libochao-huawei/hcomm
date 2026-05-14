@@ -17,6 +17,8 @@
 #include "serializable.h"
 #include <hcomm_res_defs.h>
 #include "hccl_mem_defs.h"
+#include <memory>
+#include <vector>
 namespace Hccl {
 
 class RemoteRmaBuffer {
@@ -132,7 +134,7 @@ class RemoteUbRmaBuffer : public RemoteRmaBuffer {
 public:
     explicit RemoteUbRmaBuffer(RdmaHandle rdmaHandle);
 
-    RemoteUbRmaBuffer(RdmaHandle rdmaHandle1, const Serializable &rmtDto);
+    RemoteUbRmaBuffer(RdmaHandle rdmaHandle1, const Serializable &rmtDto, bool batchRegister = false);
 
     ~RemoteUbRmaBuffer() override;
 
@@ -141,6 +143,8 @@ public:
     RemoteUbRmaBuffer &operator=(const RemoteUbRmaBuffer &that) = delete;
 
     std::string Describe() const final;
+
+    static HcclResult BatchImport(RdmaHandle rdmaHandle, std::vector<RemoteRmaBuffer*> &rmtBufs);
 
     uint32_t GetTokenId() const
     {
@@ -164,6 +168,9 @@ private:
     u32        tokenId{0};
     u32        keySize{0};
     u64        segVa{0};
+
+    HcclResult SetMemInfo(const HrtRaUbRemMemImportedOutParam &res);
+    HrtRaUbRemMemImportedOutParam reqReg;
 };
 
 } // namespace Hccl
