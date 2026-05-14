@@ -267,9 +267,10 @@ int32_t HcommWriteOnThread(ThreadHandle thread, ChannelHandle channel, void *dst
 }
 
 int32_t HcommBatchTransferOnThread(ThreadHandle thread, ChannelHandle channel,
-    HcommBatchTransferDesc *transferDescs, uint32_t transferDescNum)
+    const HcommBatchTransferDesc *transferDescs, uint32_t transferDescNum)
 {
-    return HCCL_SUCCESS;
+    HCCL_ERROR(" [HcommBatchTransferOnThread] not support in cpu");
+    return HCCL_E_NOT_SUPPORT;
 }
  	 
 
