@@ -348,10 +348,20 @@ void UbTransportLiteImpl::Post(u32 index, const StreamLite &stream)
     u32           inlineData = 1;
 
     auto taskId = stream.GetRtsq()->GetTaskId();
+
+    // 展开下发WQE前, 按需设置cache context
+    UbConnLite* ubConnLitePtr = nullptr;
+    bool needCacheTask = false;
+    CHK_RET(PreLaunchWqeForCache(ubConnLitePtr, needCacheTask, connVec[0]));
+
     // 当前使用1个connection，下标为0 构建sqe
     auto rmtBuffSliceLite = GetRmtNotifySliceLite(index);
     connVec[0]->InlineWrite(reinterpret_cast<u8 *>(&inlineData), UB_INLINE_WRITE_SIZE, rmtBuffSliceLite,
                             cfg, stream, connOut);
+
+    // 展开下发WQE后, 按需缓存wqe
+    CHK_RET(PostLaunchWqeForCache(ubConnLitePtr, needCacheTask, stream));
+
     // 构建rts 的 sqe
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 

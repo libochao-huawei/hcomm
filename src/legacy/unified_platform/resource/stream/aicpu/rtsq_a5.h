@@ -75,6 +75,9 @@ public:
 
     bool GetPreStreamSyncStatus() override;
 
+    // 用于aicpu task cache
+    uint32_t GetPendingSqeCnt() const { return pendingSqeCnt; }
+
 private:
     u32 pendingSqeCnt{0};
 

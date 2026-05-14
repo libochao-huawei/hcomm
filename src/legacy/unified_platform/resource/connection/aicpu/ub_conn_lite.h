@@ -100,6 +100,20 @@ public:
     void BatchOneSidedWrite(const vector<RmaBufSliceLite> &loc, const vector<RmtRmaBufSliceLite> &rmt,
                             const SqeConfigLite &cfg, const StreamLite &stream, ConnLiteOperationOut &out) override;
 
+    // 用于aicpu task cache
+    inline HcclResult EnableCacheContext() {
+        isCacheEnabled_ = true;
+        wqeTasks_.clear();
+        return HCCL_SUCCESS;
+    }
+    inline HcclResult DisableCacheContext() {
+        isCacheEnabled_ = false;
+        wqeTasks_.clear();
+        return HCCL_SUCCESS;
+    }
+    inline const std::vector<WqeTask>& GetWqeTasks() const {
+        return wqeTasks_;
+    }
 private:
     u16  pi{0};
     u16  ci{0}; 
@@ -121,6 +135,10 @@ private:
     void FillOneSqeWrite(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, const SqeConfigLite &cfg,
                          UdmaSqeWrite *sqe, UdmaSqOpcode opCode, u32 cqeEnable = 1);
     void MemorySetAndCopy(u8 *va, u32 sqeSize, void *sqe);
+
+    // 用于aicpu task cache
+    bool isCacheEnabled_{false};
+    std::vector<WqeTask> wqeTasks_;
 };
 } // namespace Hccl
 
