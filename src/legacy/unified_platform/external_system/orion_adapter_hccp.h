@@ -375,6 +375,21 @@ using HrtRaUbRemMemImportedOutParam = struct HrtRaUbRemMemHandleParamDef {
     u64          targetSegVa{0};
 };
 
+using HrtRaUbRemMemImportParam = struct HrtRaUbRemMemImportParamDef {
+    u8   *key{nullptr};
+    u32   keyLen{0};
+    u32   tokenValue{0};
+};
+
+using HrtRaUbRemMemImportOutParam = HrtRaUbRemMemImportedOutParam;
+
+HcclResult HrtRaUbLocalMemBatchRegister(RdmaHandle handle, const std::vector<HrtRaUbLocMemRegParam> &regParams,
+    std::vector<HrtRaUbLocalMemRegOutParam> &outParams);
+
+HcclResult HrtRaUbRemoteMemBatchImport(RdmaHandle handle, const std::vector<HrtRaUbRemMemImportParam> &importParams,
+    std::vector<HrtRaUbRemMemImportedOutParam> &outParams);
+    
+
 HrtRaUbRemMemImportedOutParam HrtRaUbRemoteMemImport(RdmaHandle handle, u8 *key, u32 keyLen, u32 tokenValue);
 
 void HrtRaUbRemoteMemUnimport(RdmaHandle rdmaHandle, RemMemHandle rmemHandle);
