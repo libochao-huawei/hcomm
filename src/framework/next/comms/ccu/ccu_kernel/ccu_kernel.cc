@@ -14,6 +14,7 @@
 #include "ccu_assist_v1.h"
 #include "ccu_microcode_v1.h"
 
+#include "ccu_types.h"
 #include "exception_util.h"
 #include "ccu_api_exception.h"
 #include "ccu_dev_mgr_imp.h"
@@ -453,28 +454,64 @@ CcuResult CcuKernel::VariableAddVarToVar(CcuVariableHandle varHandle, CcuVariabl
 
 
 /*========== Event信号同步类 相关接口 ==========*/
-CcuResult CcuKernel::EventRecord(CcuEventHandle eventHandle)
+CcuResult CcuKernel::EventRecord(CcuEventHandle eventHandle, uint32_t mask)
 {
     CcuRep::CompletedEvent *event{nullptr};
     CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
     // 复用已有的 RecordEvent 实现（内部 Append CcuRepLocRecordEvent）
-    CCU_CHK_RET(RecordEvent(*event));
+    CCU_CHK_RET(RecordEvent(*event, mask));
     return CcuResult::CCU_SUCCESS;
 }
 
-CcuResult CcuKernel::EventWait(CcuEventHandle eventHandle)
+CcuResult CcuKernel::EventWait(CcuEventHandle eventHandle, uint32_t mask)
 {
     CcuRep::CompletedEvent *event{nullptr};
     CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
     // 复用已有的 WaitEvent 实现（内部 Append CcuRepLocWaitEvent）
-    CCU_CHK_RET(WaitEvent(*event));
+    CCU_CHK_RET(WaitEvent(*event, mask));
     return CcuResult::CCU_SUCCESS;
 }
-CcuResult CcuKernel::SetEventMask(CcuEventHandle eventHandle, uint32_t mask)
+CcuResult CcuKernel::LocalNotifyRecord(const char *notifyTag, const uint32_t mask)
 {
-    CcuRep::CompletedEvent *event{nullptr};
-    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
-    event->SetMask(mask);
+    if (notifyTag == nullptr) {
+        HCCL_ERROR("[CcuKernel][%s] notifyTag is nullptr, please check.", __func__);
+        return CcuResult::CCU_E_PTR;
+    }
+    if (CurrentBlock()->Type() == CcuRep::CcuRepType::LOOP_BLOCK) {
+        HCCL_ERROR("[CcuKernel][%s] is not supported in loop block, please check.", __func__);
+        return CcuResult::CCU_E_NOT_SUPPORT;
+    }
+
+    const std::string tagKey(notifyTag);
+
+    auto &sharedNotifies = importedRes_.sharedNotifies;
+    if (sharedNotifies.find(tagKey) == sharedNotifies.end()) {
+        CcuRep::LocalNotify localNotify;
+        sharedNotifies.insert({tagKey, localNotify});
+    }
+
+    Append(std::make_shared<CcuRep::CcuRepRecordSharedNotify>(sharedNotifies.at(tagKey), mask));
+
+    return CcuResult::CCU_SUCCESS;
+}
+CcuResult CcuKernel::LocalNotifyWait(const char *notifyTag, const uint32_t mask)
+{
+    if (notifyTag == nullptr) {
+        HCCL_ERROR("[CcuKernel][%s] notifyTag is nullptr, please check.", __func__);
+        return CcuResult::CCU_E_PTR;
+    }
+
+    const std::string tagKey(notifyTag);
+
+    auto &sharedNotifies = exportedRes_.sharedNotifies;
+    if (sharedNotifies.find(tagKey) == sharedNotifies.end()) {
+        CcuRep::LocalNotify notify = CreateLocalNotify();
+        exportedRes_.sharedNotifies.insert({tagKey, notify});
+    }
+
+    bool isProfiling = CurrentBlock()->Type() != CcuRep::CcuRepType::LOOP_BLOCK;
+    Append(std::make_shared<CcuRep::CcuRepLocWaitNotify>(
+        exportedRes_.sharedNotifies.at(tagKey), mask, isProfiling));
     return CcuResult::CCU_SUCCESS;
 }
 CcuResult CcuKernel::NotifyRecord(const ChannelHandle channel,
@@ -510,7 +547,8 @@ CcuResult  CcuKernel::LoadArg(CcuVariableHandle varHandle, uint32_t argId)
     loadArgUsedSet_.insert(argId);
     CcuRep::Variable *var{nullptr};
     CCU_CHK_RET(GetVariableByHandle(varHandle,&var));
-    auto loadArgRep = std::make_shared<CcuRep::CcuRepLoadArg>(*var, argId % CCU_SQE_ARGS_LEN);
+    auto loadArgRep = std::make_shared<CcuRep::CcuRepLoadArg>(
+        *var, argId % CCU_SQE_ARGS_LEN, static_cast<uint16_t>(argId));
     Append(loadArgRep);
     return CcuResult::CCU_SUCCESS;
 }
@@ -575,7 +613,7 @@ CcuResult CcuKernel::StoreVar(uint64_t addr, CcuVariableHandle varHandle, uint32
 }
 //本地数据拷贝 相关实现
 CcuResult CcuKernel::LocalCopyMemToBuffer(CcuBufferHandle dstHandle, CcuLocalAddrHandle srcHandle,
-    CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
+    CcuVariableHandle lenHandle, CcuEventHandle eventHandle, uint32_t mask)
 {
     CcuRep::CcuBuf *dst{nullptr};
     CCU_CHK_RET(GetBufferByHandle(dstHandle, &dst));
@@ -585,12 +623,12 @@ CcuResult CcuKernel::LocalCopyMemToBuffer(CcuBufferHandle dstHandle, CcuLocalAdd
     CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
     CcuRep::CompletedEvent *event{nullptr};
     CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
-    auto ret = LocalCopyNb(*dst, *src, *len, *event);  // 复用 protected
+    auto ret = LocalCopyNb(*dst, *src, *len, *event, mask);  // 复用 protected
     return HCCL_TO_CCU_RET(ret);
 }
 
 CcuResult CcuKernel::LocalCopyBufferToMem(CcuLocalAddrHandle dstHandle, CcuBufferHandle srcHandle,
-    CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
+    CcuVariableHandle lenHandle, CcuEventHandle eventHandle, uint32_t mask)
 {
     CcuRep::LocalAddr *dst{nullptr};
     CCU_CHK_RET(GetLocalAddrByHandle(dstHandle, &dst));
@@ -600,12 +638,12 @@ CcuResult CcuKernel::LocalCopyBufferToMem(CcuLocalAddrHandle dstHandle, CcuBuffe
     CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
     CcuRep::CompletedEvent *event{nullptr};
     CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
-    auto ret = LocalCopyNb(*dst, *src, *len, *event);
+    auto ret = LocalCopyNb(*dst, *src, *len, *event, mask);
     return HCCL_TO_CCU_RET(ret);
 }
 
 CcuResult CcuKernel::LocalCopyMemToMem(CcuLocalAddrHandle dstHandle, CcuLocalAddrHandle srcHandle,
-    CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
+    CcuVariableHandle lenHandle, CcuEventHandle eventHandle, uint32_t mask)
 {
     CcuRep::LocalAddr *dst{nullptr};
     CCU_CHK_RET(GetLocalAddrByHandle(dstHandle, &dst));
@@ -615,13 +653,13 @@ CcuResult CcuKernel::LocalCopyMemToMem(CcuLocalAddrHandle dstHandle, CcuLocalAdd
     CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
     CcuRep::CompletedEvent *event{nullptr};
     CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
-    auto ret = LocalCopyNb(*dst, *src, *len, *event);
+    auto ret = LocalCopyNb(*dst, *src, *len, *event, mask);
     return HCCL_TO_CCU_RET(ret);
 }
 //本地reduce 相关实现
 CcuResult CcuKernel::LocalMemReduce(CcuLocalAddrHandle dstHandle, CcuLocalAddrHandle srcHandle,
     CcuVariableHandle lenHandle, HcclDataType dataType,
-    HcclReduceOp opType, CcuEventHandle eventHandle)
+    HcclReduceOp opType, CcuEventHandle eventHandle, uint32_t mask)
 {
     CcuRep::LocalAddr *dst{nullptr};
     CCU_CHK_RET(GetLocalAddrByHandle(dstHandle, &dst));
@@ -631,13 +669,13 @@ CcuResult CcuKernel::LocalMemReduce(CcuLocalAddrHandle dstHandle, CcuLocalAddrHa
     CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
     CcuRep::CompletedEvent *event{nullptr};
     CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
-    auto ret = LocalReduceNb(*dst, *src, *len, dataType, opType, *event);
+    auto ret = LocalReduceNb(*dst, *src, *len, dataType, opType, *event, mask);
     return HCCL_TO_CCU_RET(ret);
 }
 
 CcuResult CcuKernel::LocalBufferReduce(CcuBufferHandle* bufHandles, uint32_t count,
     HcclDataType dataType, HcclDataType outputDataType,
-    HcclReduceOp opType, CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
+    HcclReduceOp opType, CcuVariableHandle lenHandle, CcuEventHandle eventHandle, uint32_t mask)
 {
     CcuRep::Variable *len{nullptr};
     CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
@@ -649,14 +687,14 @@ CcuResult CcuKernel::LocalBufferReduce(CcuBufferHandle* bufHandles, uint32_t cou
         CCU_CHK_RET(GetBufferByHandle(bufHandles[i], &buf));
         bufs[i] = *buf;
     }
-    auto ret = LocalReduceNb(bufs.data(), count, dataType, outputDataType, opType, *len, *event);
+    auto ret = LocalReduceNb(bufs.data(), count, dataType, outputDataType, opType, *len, *event, mask);
     return HCCL_TO_CCU_RET(ret);
 }
 
 /*========== 远端数据传输操作 ==========*/
 
 CcuResult CcuKernel::ReadMemToMem(ChannelHandle channel, CcuLocalAddrHandle localHandle, CcuRemoteAddrHandle remoteHandle,
-    CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
+    CcuVariableHandle lenHandle, CcuEventHandle eventHandle, uint32_t mask)
 {
     CcuRep::LocalAddr *local{nullptr};
     CCU_CHK_RET(GetLocalAddrByHandle(localHandle, &local));
@@ -666,12 +704,12 @@ CcuResult CcuKernel::ReadMemToMem(ChannelHandle channel, CcuLocalAddrHandle loca
     CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
     CcuRep::CompletedEvent *event{nullptr};
     CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
-    auto ret = ReadNb(channel, *local, *remote, *len, *event);
+    auto ret = ReadNb(channel, *local, *remote, *len, *event, mask);
     return HCCL_TO_CCU_RET(ret);
-} 
+}
 
 CcuResult CcuKernel::ReadMemToBuffer(ChannelHandle channel, CcuBufferHandle localHandle, CcuRemoteAddrHandle remoteHandle,
-    CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
+    CcuVariableHandle lenHandle, CcuEventHandle eventHandle, uint32_t mask)
 {
     CcuRep::CcuBuf *local{nullptr};
     CCU_CHK_RET(GetBufferByHandle(localHandle, &local));
@@ -681,12 +719,12 @@ CcuResult CcuKernel::ReadMemToBuffer(ChannelHandle channel, CcuBufferHandle loca
     CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
     CcuRep::CompletedEvent *event{nullptr};
     CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
-    auto ret = ReadNb(channel, *local, *remote, *len, *event);
+    auto ret = ReadNb(channel, *local, *remote, *len, *event, mask);
     return HCCL_TO_CCU_RET(ret);
 }
 CcuResult CcuKernel::ReadMemToMemReduce(ChannelHandle channel, CcuLocalAddrHandle localHandle, CcuRemoteAddrHandle remoteHandle,
     CcuVariableHandle lenHandle, HcclDataType dataType,
-    HcclReduceOp opType, CcuEventHandle eventHandle)
+    HcclReduceOp opType, CcuEventHandle eventHandle, uint32_t mask)
 {
     CcuRep::LocalAddr *local{nullptr};
     CCU_CHK_RET(GetLocalAddrByHandle(localHandle, &local));
@@ -696,12 +734,12 @@ CcuResult CcuKernel::ReadMemToMemReduce(ChannelHandle channel, CcuLocalAddrHandl
     CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
     CcuRep::CompletedEvent *event{nullptr};
     CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
-    auto ret = ReadReduceNb(channel, *local, *remote, *len, dataType, opType, *event);
+    auto ret = ReadReduceNb(channel, *local, *remote, *len, dataType, opType, *event, mask);
     return HCCL_TO_CCU_RET(ret);
 }
 
 CcuResult CcuKernel::WriteMemToMem(ChannelHandle channel, CcuRemoteAddrHandle remoteHandle, CcuLocalAddrHandle localHandle,
-    CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
+    CcuVariableHandle lenHandle, CcuEventHandle eventHandle, uint32_t mask)
 {
     CcuRep::RemoteAddr *remote{nullptr};
     CCU_CHK_RET(GetRemoteAddrByHandle(remoteHandle, &remote));
@@ -711,12 +749,12 @@ CcuResult CcuKernel::WriteMemToMem(ChannelHandle channel, CcuRemoteAddrHandle re
     CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
     CcuRep::CompletedEvent *event{nullptr};
     CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
-    auto ret = WriteNb(channel, *remote, *local, *len, *event);
+    auto ret = WriteNb(channel, *remote, *local, *len, *event, mask);
     return HCCL_TO_CCU_RET(ret);
 }
 
 CcuResult CcuKernel::WriteBufferToMem(ChannelHandle channel, CcuRemoteAddrHandle remoteHandle, CcuBufferHandle localHandle,
-    CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
+    CcuVariableHandle lenHandle, CcuEventHandle eventHandle, uint32_t mask)
 {
     CcuRep::CcuBuf *local{nullptr};
     CCU_CHK_RET(GetBufferByHandle(localHandle, &local));
@@ -727,13 +765,13 @@ CcuResult CcuKernel::WriteBufferToMem(ChannelHandle channel, CcuRemoteAddrHandle
     CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
     CcuRep::CompletedEvent *event{nullptr};
     CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
-    auto ret = WriteNb(channel, *remote, *local, *len, *event);
+    auto ret = WriteNb(channel, *remote, *local, *len, *event, mask);
     return HCCL_TO_CCU_RET(ret);
 }
 
 CcuResult CcuKernel::WriteMemToMemReduce(ChannelHandle channel, CcuRemoteAddrHandle remoteHandle, CcuLocalAddrHandle localHandle,
     CcuVariableHandle lenHandle, HcclDataType dataType,
-    HcclReduceOp opType, CcuEventHandle eventHandle)
+    HcclReduceOp opType, CcuEventHandle eventHandle, uint32_t mask)
 {
     CcuRep::RemoteAddr *remote{nullptr};
     CCU_CHK_RET(GetRemoteAddrByHandle(remoteHandle, &remote));
@@ -743,7 +781,7 @@ CcuResult CcuKernel::WriteMemToMemReduce(ChannelHandle channel, CcuRemoteAddrHan
     CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
     CcuRep::CompletedEvent *event{nullptr};
     CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
-    auto ret = WriteReduceNb(channel, *remote, *local, *len, dataType, opType, *event);
+    auto ret = WriteReduceNb(channel, *remote, *local, *len, dataType, opType, *event, mask);
     return HCCL_TO_CCU_RET(ret);
 }
 
@@ -1145,7 +1183,8 @@ CcuResult CcuKernel::AddressAddAssignAddr(CcuAddressHandle addrHandle, CcuAddres
 
 void CcuKernel::Load(const CcuRep::Variable &var)
 {
-    auto loadArgRep = std::make_shared<CcuRep::CcuRepLoadArg>(var, loadArgIndex_ % CCU_SQE_ARGS_LEN);
+    auto loadArgRep = std::make_shared<CcuRep::CcuRepLoadArg>(
+        var, loadArgIndex_ % CCU_SQE_ARGS_LEN, static_cast<uint16_t>(loadArgIndex_));
     Append(loadArgRep);
     loadArgIndex_++;
 }
@@ -1162,61 +1201,21 @@ void CcuKernel::LoadVariable(const CcuRep::Variable &src, const CcuRep::Variable
     Append(std::make_shared<CcuRep::CcuRepLoadVar>(src, var));
 }
 
-HcclResult CcuKernel::LocalNotifyRecord(const uint32_t coreId,
-    const uint32_t dstNotifyIdx, const uint32_t mask)
+HcclResult CcuKernel::RecordEvent(CcuRep::CompletedEvent event, uint32_t mask)
 {
     if (CurrentBlock()->Type() == CcuRep::CcuRepType::LOOP_BLOCK) {
         HCCL_ERROR("[CcuKernel][%s] is not supported in loop block, please check.", __func__);
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
 
-    const std::string notifyTag = "Notify_" + std::to_string(coreId) + "_" +
-        std::to_string(dstNotifyIdx);
-
-    auto &sharedNotifies = importedRes_.sharedNotifies;
-    if (sharedNotifies.find(notifyTag) == sharedNotifies.end()) {
-        CcuRep::LocalNotify localNotify;
-        sharedNotifies.insert({notifyTag, localNotify});
-    }
-
-    Append(std::make_shared<CcuRep::CcuRepRecordSharedNotify>(sharedNotifies.at(notifyTag), mask));
-
-    return HcclResult::HCCL_SUCCESS;
-}
-
-HcclResult CcuKernel::LocalNotifyWait(const uint32_t coreId,
-    const uint32_t notifyIdx, const uint32_t mask)
-{
-    const std::string notifyTag = "Notify_" + std::to_string(coreId) + "_"
-        + std::to_string(notifyIdx);
-
-    auto &sharedNotifies = exportedRes_.sharedNotifies;
-    if (sharedNotifies.find(notifyTag) == sharedNotifies.end()) {
-        CcuRep::LocalNotify notify = CreateLocalNotify();
-        exportedRes_.sharedNotifies.insert({notifyTag, notify});
-    }
-
-    bool isProfiling = CurrentBlock()->Type() != CcuRep::CcuRepType::LOOP_BLOCK;
-    Append(std::make_shared<CcuRep::CcuRepLocWaitNotify>(
-        exportedRes_.sharedNotifies.at(notifyTag), mask, isProfiling));
-    return HcclResult::HCCL_SUCCESS;
-}
-
-HcclResult CcuKernel::RecordEvent(CcuRep::CompletedEvent event)
-{
-    if (CurrentBlock()->Type() == CcuRep::CcuRepType::LOOP_BLOCK) {
-        HCCL_ERROR("[CcuKernel][%s] is not supported in loop block, please check.", __func__);
-        return HcclResult::HCCL_E_NOT_SUPPORT;
-    }
-
-    Append(std::make_shared<CcuRep::CcuRepLocRecordEvent>(event));
+    Append(std::make_shared<CcuRep::CcuRepLocRecordEvent>(event, mask));
     return HCCL_SUCCESS;
 }
 
-HcclResult CcuKernel::WaitEvent(CcuRep::CompletedEvent event)
+HcclResult CcuKernel::WaitEvent(CcuRep::CompletedEvent event, uint32_t mask)
 {
     bool isProfiling = CurrentBlock()->Type() != CcuRep::CcuRepType::LOOP_BLOCK;
-    auto rep = std::make_shared<CcuRep::CcuRepLocWaitEvent>(event, isProfiling);
+    auto rep = std::make_shared<CcuRep::CcuRepLocWaitEvent>(event, mask, isProfiling);
     if (isProfiling) {
         CHK_RET(static_cast<HcclResult>(AddProfiling("WaitEvent", rep->GetMask())));
     }
@@ -1249,19 +1248,19 @@ CcuResult CcuKernel::GetRemoteAddrByHandle(CcuRemoteAddrHandle handle, CcuRep::R
 
 /*Read新接口*/
 HcclResult CcuKernel::ReadNb(const ChannelHandle channel, const CcuRep::CcuBuf &loc, const CcuRep::RemoteAddr &rem,
-                      const CcuRep::Variable &len, CcuRep::CompletedEvent event)
+                      const CcuRep::Variable &len, CcuRep::CompletedEvent event, uint32_t mask)
 {
     channels_.insert(channel);
-    Append(std::make_shared<CcuRep::CcuRepBufRead>(channel, rem, loc, len, event, event.mask));
+    Append(std::make_shared<CcuRep::CcuRepBufRead>(channel, rem, loc, len, event, mask));
     return HCCL_SUCCESS;
 }
 
 /*Write新接口*/
 HcclResult CcuKernel::WriteNb(const ChannelHandle channel, const CcuRep::RemoteAddr &rem, const CcuRep::CcuBuf &loc,
-                       const CcuRep::Variable &len, CcuRep::CompletedEvent event)
+                       const CcuRep::Variable &len, CcuRep::CompletedEvent event, uint32_t mask)
 {
     channels_.insert(channel);
-    Append(std::make_shared<CcuRep::CcuRepBufWrite>(channel, loc, rem, len, event, event.mask));
+    Append(std::make_shared<CcuRep::CcuRepBufWrite>(channel, loc, rem, len, event, mask));
     return HCCL_SUCCESS;
 }
 
@@ -1332,7 +1331,7 @@ static Hccl::ReduceOp HcommReduceOpToHcclReduceOp(const HcclReduceOp reduceOp)
 
 HcclResult CcuKernel::LocalReduceNb(const CcuRep::CcuBuf *bufs, uint32_t count, HcclDataType dataType,
                      HcclDataType outputDataType, HcclReduceOp opType,
-                     const CcuRep::Variable &len, CcuRep::CompletedEvent event)
+                     const CcuRep::Variable &len, CcuRep::CompletedEvent event, uint32_t mask)
 {
     auto opType_ = HcommReduceOpToHcclReduceOp(opType);
     auto dataType_ = HcommDataTypeToHcclDataType(dataType);
@@ -1351,53 +1350,53 @@ HcclResult CcuKernel::LocalReduceNb(const CcuRep::CcuBuf *bufs, uint32_t count, 
 
     Append(std::make_shared<CcuRep::CcuRepBufReduce>(ccuBufs, count, CcuRep::GetCcuDataType(dataType_, opType_),
                                                      CcuRep::GetCcuDataType(outputDataType_, opType_),
-                                                     CcuRep::GetCcuReduceType(opType_), event, len, event.mask));
+                                                     CcuRep::GetCcuReduceType(opType_), event, len, mask));
     return HCCL_SUCCESS;
 }
 
 
 /*Read新接口*/
 HcclResult CcuKernel::ReadNb(const ChannelHandle channel, const CcuRep::LocalAddr &loc, const CcuRep::RemoteAddr &rem,
-                      const CcuRep::Variable &len, CcuRep::CompletedEvent event)
+                      const CcuRep::Variable &len, CcuRep::CompletedEvent event, uint32_t mask)
 {
     channels_.insert(channel);
-    Append(std::make_shared<CcuRep::CcuRepRead>(channel, loc, rem, len, event, event.mask));
+    Append(std::make_shared<CcuRep::CcuRepRead>(channel, loc, rem, len, event, mask));
     return HCCL_SUCCESS;
 }
 
 /*ReadReduce新接口*/
 HcclResult CcuKernel::ReadReduceNb(const ChannelHandle channel, const CcuRep::LocalAddr &loc, const CcuRep::RemoteAddr &rem,
                             const CcuRep::Variable &len, HcclDataType dataType, HcclReduceOp opType,
-                            CcuRep::CompletedEvent event)
+                            CcuRep::CompletedEvent event, uint32_t mask)
 {
     channels_.insert(channel);
     auto opType_ = HcommReduceOpToHcclReduceOp(opType);
     auto dataType_ = HcommDataTypeToHcclDataType(dataType);
 
     Append(std::make_shared<CcuRep::CcuRepRead>(channel, loc, rem, len, CcuRep::GetUBDataType(dataType_),
-                                                CcuRep::GetUBReduceType(opType_), event, event.mask));
+                                                CcuRep::GetUBReduceType(opType_), event, mask));
     return HCCL_SUCCESS;
 }
 
 
 HcclResult CcuKernel::WriteNb(const ChannelHandle channel, const CcuRep::RemoteAddr &rem, const CcuRep::LocalAddr &loc,
-                       const CcuRep::Variable &len, CcuRep::CompletedEvent event)
+                       const CcuRep::Variable &len, CcuRep::CompletedEvent event, uint32_t mask)
 {
     channels_.insert(channel);
-    Append(std::make_shared<CcuRep::CcuRepWrite>(channel, rem, loc, len, event, event.mask));
+    Append(std::make_shared<CcuRep::CcuRepWrite>(channel, rem, loc, len, event, mask));
     return HCCL_SUCCESS;
 }
 
 HcclResult CcuKernel::WriteReduceNb(const ChannelHandle channel, const CcuRep::RemoteAddr &rem, const CcuRep::LocalAddr &loc,
                              const CcuRep::Variable &len, HcclDataType dataType, HcclReduceOp opType,
-                             CcuRep::CompletedEvent event)
+                             CcuRep::CompletedEvent event, uint32_t mask)
 {
     channels_.insert(channel);
     auto opType_ = HcommReduceOpToHcclReduceOp(opType);
     auto dataType_ = HcommDataTypeToHcclDataType(dataType);
 
     Append(std::make_shared<CcuRep::CcuRepWrite>(channel, rem, loc, len, CcuRep::GetUBDataType(dataType_),
-                                                 CcuRep::GetUBReduceType(opType_), event, event.mask));
+                                                 CcuRep::GetUBReduceType(opType_), event, mask));
     return HCCL_SUCCESS;
 }
 
@@ -1407,34 +1406,34 @@ CcuResult CcuKernel::GetBufferByHandle(CcuBufferHandle bufferHandle, CcuRep::Ccu
 }
 
 HcclResult CcuKernel::LocalCopyNb(const CcuRep::LocalAddr &dst, const CcuRep::LocalAddr &src, const CcuRep::Variable &len,
-                           CcuRep::CompletedEvent event)
+                           CcuRep::CompletedEvent event, uint32_t mask)
 {
-    Append(std::make_shared<CcuRep::CcuRepLocCpy>(dst, src, len, event, event.mask));
+    Append(std::make_shared<CcuRep::CcuRepLocCpy>(dst, src, len, event, mask));
     return HCCL_SUCCESS;
 }
 
 HcclResult CcuKernel::LocalCopyNb(const CcuRep::CcuBuf &dst, const CcuRep::LocalAddr &src, const CcuRep::Variable &len,
-                           CcuRep::CompletedEvent event)
+                           CcuRep::CompletedEvent event, uint32_t mask)
 {
-    Append(std::make_shared<CcuRep::CcuRepBufLocRead>(src, dst, len, event, event.mask));
+    Append(std::make_shared<CcuRep::CcuRepBufLocRead>(src, dst, len, event, mask));
     return HCCL_SUCCESS;
 }
 
 HcclResult CcuKernel::LocalCopyNb(const CcuRep::LocalAddr &dst, const CcuRep::CcuBuf &src, const CcuRep::Variable &len,
-                           CcuRep::CompletedEvent event)
+                           CcuRep::CompletedEvent event, uint32_t mask)
 {
-    Append(std::make_shared<CcuRep::CcuRepBufLocWrite>(src, dst, len, event, event.mask));
+    Append(std::make_shared<CcuRep::CcuRepBufLocWrite>(src, dst, len, event, mask));
     return HCCL_SUCCESS;
 }
 
 HcclResult CcuKernel::LocalReduceNb(const CcuRep::LocalAddr &dst, const CcuRep::LocalAddr &src, const CcuRep::Variable &len,
-                             HcclDataType dataType, HcclReduceOp opType, CcuRep::CompletedEvent event)
+                             HcclDataType dataType, HcclReduceOp opType, CcuRep::CompletedEvent event, uint32_t mask)
 {
     auto opType_ = HcommReduceOpToHcclReduceOp(opType);
     auto dataType_ = HcommDataTypeToHcclDataType(dataType);
 
     Append(std::make_shared<CcuRep::CcuRepLocCpy>(dst, src, len, CcuRep::GetUBDataType(dataType_), CcuRep::GetUBReduceType(opType_),
-                                                  event, event.mask));
+                                                  event, mask));
     return HCCL_SUCCESS;
 }
 

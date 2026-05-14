@@ -5,12 +5,16 @@
  */
 
 #include "ccu_rep_translator_v1.h"
+
+#include <algorithm>
+
 #include "exception_util.h"
 #include "ccu_api_exception.h"
 #include "ccu_rep_loopcall_v1.h"
 #include "ccu_rep_funccall_v1.h"
 #include "ccu_rep_type_v1.h"
 #include "ccu_rep_loop_v1.h"
+#include "ccu_rep_loadarg_v1.h"
 #include "ccu_assist_v1.h"
 
 #include "ccu_dev_mgr_imp.h"
@@ -195,10 +199,22 @@ CcuInstrInfo CcuRepTranslator::Translate(const std::vector<std::shared_ptr<CcuRe
 
     uint16_t missionStartInstrId = curInstrId;
 
-    // 翻译Load
-    Translate(repVec, instr, curInstrId, [](std::shared_ptr<CcuRepBase> rep) -> bool {
-        return rep->Type() == CcuRepType::LOAD_ARG;
-    });
+    // 翻译Load:按全局 argId 升序排序后再翻译,确保 LoadSqeArgs 指令在 mission 切分时
+    // 落入与其 slot id 匹配的 mission(避免用户乱序 LoadArg 导致取参错位)
+    std::vector<std::shared_ptr<CcuRepBase>> sortedLoadArgReps;
+    sortedLoadArgReps.reserve(repVec.size());
+    for (const auto &rep : repVec) {
+        if (rep->Type() == CcuRepType::LOAD_ARG) {
+            sortedLoadArgReps.push_back(rep);
+        }
+    }
+    std::stable_sort(sortedLoadArgReps.begin(), sortedLoadArgReps.end(),
+        [](const std::shared_ptr<CcuRepBase> &a, const std::shared_ptr<CcuRepBase> &b) {
+            return std::static_pointer_cast<CcuRepLoadArg>(a)->GetFullArgId()
+                 < std::static_pointer_cast<CcuRepLoadArg>(b)->GetFullArgId();
+        });
+    Translate(sortedLoadArgReps, instr, curInstrId,
+        [](std::shared_ptr<CcuRepBase> rep) -> bool { return rep->Type() == CcuRepType::LOAD_ARG; });
 
     // 插入通用操作
     CommonProcess(instr, curInstrId);
