@@ -805,8 +805,8 @@ TEST_F(TaskExceptionTest, Ut_RegisterGetAicpuTaskExceptionCallBack_When_InvaildD
     u32 invalidDeviceLogicId = MAX_MODULE_DEVICE_NUM - 1;
     s32 streamId = 1;
 
-    auto callback = []() -> GetAicpuTaskExceptionCallBack::element_type {
-        return nullptr;
+    auto callback = []() -> ErrorMessageReport {
+        return ErrorMessageReport();
     };
 
     RegisterGetAicpuTaskExceptionCallBack(streamId, invalidDeviceLogicId, callback);
@@ -819,8 +819,8 @@ TEST_F(TaskExceptionTest, Ut_UnregisterGetAicpuTaskExceptionCallBack_When_Regist
 {
     s32 streamId = 2;
     u32 deviceLogicId = 0;
-    auto callback = []() -> GetAicpuTaskExceptionCallBack::element_type {
-        return nullptr;
+    auto callback = []() -> ErrorMessageReport {
+        return ErrorMessageReport();
     };
 
     RegisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId, callback);
@@ -848,14 +848,14 @@ TEST_F(TaskExceptionTest, Ut_RegisterMultipleCallBacks_SameDevice_DifferentStrea
     s32 streamId1 = 10;
     s32 streamId2 = 20;
     s32 streamId3 = 30;
-    auto callback1 = []() -> GetAicpuTaskExceptionCallBack::element_type {
-        return nullptr;
+    auto callback1 = []() -> ErrorMessageReport {
+        return ErrorMessageReport();
     };
-    auto callback2 = []() -> GetAicpuTaskExceptionCallBack::element_type {
-        return nullptr;
+    auto callback2 = []() -> ErrorMessageReport {
+        return ErrorMessageReport();
     };
-    auto callback3 = []() -> GetAicpuTaskExceptionCallBack::element_type {
-        return nullptr;
+    auto callback3 = []() -> ErrorMessageReport {
+        return ErrorMessageReport();
     };
 
     RegisterGetAicpuTaskExceptionCallBack(streamId1, deviceLogicId, callback1);
@@ -877,11 +877,11 @@ TEST_F(TaskExceptionTest, Ut_UnregisterOneCallBack_OtherCallbacksPreserved_Expec
     u32 deviceLogicId = 2;
     s32 streamId1 = 100;
     s32 streamId2 = 200;
-    auto callback1 = []() -> GetAicpuTaskExceptionCallBack::element_type {
-        return nullptr;
+    auto callback1 = []() -> ErrorMessageReport {
+        return ErrorMessageReport();
     };
-    auto callback2 = []() -> GetAicpuTaskExceptionCallBack::element_type {
-        return nullptr;
+    auto callback2 = []() -> ErrorMessageReport {
+        return ErrorMessageReport();
     };
 
     RegisterGetAicpuTaskExceptionCallBack(streamId1, deviceLogicId, callback1);
@@ -903,13 +903,13 @@ TEST_F(TaskExceptionTest, Ut_CallbackOverwrite_SameStreamId_Expect_Updated)
     bool callback1Called = false;
     bool callback2Called = false;
 
-    auto callback1 = [&callback1Called]() -> GetAicpuTaskExceptionCallBack::element_type {
+    auto callback1 = [&callback1Called]() -> ErrorMessageReport {
         callback1Called = true;
-        return nullptr;
+        return ErrorMessageReport();
     };
-    auto callback2 = [&callback2Called]() -> GetAicpuTaskExceptionCallBack::element_type {
+    auto callback2 = [&callback2Called]() -> ErrorMessageReport {
         callback2Called = true;
-        return nullptr;
+        return ErrorMessageReport();
     };
 
     RegisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId, callback1);
@@ -936,8 +936,8 @@ TEST_F(TaskExceptionTest, Ut_RegisterGetAicpuTaskExceptionCallBack_When_Normal_E
 {
     s32 streamId = 1;
     u32 deviceLogicId = 0;
-    auto callback = []() -> GetAicpuTaskExceptionCallBack::element_type {
-        return nullptr;
+    auto callback = []() -> ErrorMessageReport {
+        return ErrorMessageReport();
     };
 
     RegisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId, callback);
