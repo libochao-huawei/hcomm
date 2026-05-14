@@ -799,3 +799,148 @@ TEST_F(TaskExceptionTest, St_DealExceptionTask_When_Comm_Has_Multi_Aiv_Expect_Pr
     GlobalMockObject::verify();
 }
 #endif
+
+TEST_F(TaskExceptionTest, Ut_RegisterGetAicpuTaskExceptionCallBack_When_InvaildDeviceId_Expect_NoRegister)
+{
+    u32 invalidDeviceLogicId = MAX_MODULE_DEVICE_NUM - 1;
+    s32 streamId = 1;
+
+    auto callback = []() -> GetAicpuTaskExceptionCallBack::element_type {
+        return nullptr;
+    };
+
+    RegisterGetAicpuTaskExceptionCallBack(streamId, invalidDeviceLogicId, callback);
+    EXPECT_TRUE(g_communicatorCallbackMap[invalidDeviceLogicId].find(streamId) !=
+                g_communicatorCallbackMap[invalidDeviceLogicId].end());
+    g_communicatorCallbackMap.fill({});
+}
+
+TEST_F(TaskExceptionTest, Ut_UnregisterGetAicpuTaskExceptionCallBack_When_Registered_Expect_Removed)
+{
+    s32 streamId = 2;
+    u32 deviceLogicId = 0;
+    auto callback = []() -> GetAicpuTaskExceptionCallBack::element_type {
+        return nullptr;
+    };
+
+    RegisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId, callback);
+    EXPECT_TRUE(g_communicatorCallbackMap[deviceLogicId].find(streamId) !=
+                g_communicatorCallbackMap[deviceLogicId].end());
+    UnregisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId);
+    EXPECT_FALSE(g_communicatorCallbackMap[deviceLogicId].find(streamId) !=
+                 g_communicatorCallbackMap[deviceLogicId].end());
+    g_communicatorCallbackMap.fill({});
+}
+
+TEST_F(TaskExceptionTest, Ut_UnregisterGetAicpuTaskExceptionCallBack_When_NoRegistered_Expect_NoCrash)
+{
+    s32 streamId = 999;
+    u32 deviceLogicId = 0;
+
+    UnregisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId);
+    EXPECT_TRUE(true);
+    g_communicatorCallbackMap.fill({});
+}
+
+TEST_F(TaskExceptionTest, Ut_RegisterMultipleCallBacks_SameDevice_DifferentStream_Expect_AllStored)
+{
+    u32 deviceLogicId = 1;
+    s32 streamId1 = 10;
+    s32 streamId2 = 20;
+    s32 streamId3 = 30;
+    auto callback1 = []() -> GetAicpuTaskExceptionCallBack::element_type {
+        return nullptr;
+    };
+    auto callback2 = []() -> GetAicpuTaskExceptionCallBack::element_type {
+        return nullptr;
+    };
+    auto callback3 = []() -> GetAicpuTaskExceptionCallBack::element_type {
+        return nullptr;
+    };
+
+    RegisterGetAicpuTaskExceptionCallBack(streamId1, deviceLogicId, callback1);
+    RegisterGetAicpuTaskExceptionCallBack(streamId2, deviceLogicId, callback2);
+    RegisterGetAicpuTaskExceptionCallBack(streamId3, deviceLogicId, callback3);
+
+    EXPECT_EQ(g_communicatorCallbackMap[deviceLogicId].size(), 3u);
+    EXPECT_TRUE(g_communicatorCallbackMap[deviceLogicId].find(streamId1) !=
+                g_communicatorCallbackMap[deviceLogicId].end());
+    EXPECT_TRUE(g_communicatorCallbackMap[deviceLogicId].find(streamId2) !=
+                g_communicatorCallbackMap[deviceLogicId].end());
+    EXPECT_TRUE(g_communicatorCallbackMap[deviceLogicId].find(streamId3) !=
+                g_communicatorCallbackMap[deviceLogicId].end());
+    g_communicatorCallbackMap.fill({});
+}
+
+TEST_F(TaskExceptionTest, Ut_UnregisterOneCallBack_OtherCallbacksPreserved_Expect_Correct)
+{
+    u32 deviceLogicId = 2;
+    s32 streamId1 = 100;
+    s32 streamId2 = 200;
+    auto callback1 = []() -> GetAicpuTaskExceptionCallBack::element_type {
+        return nullptr;
+    };
+    auto callback2 = []() -> GetAicpuTaskExceptionCallBack::element_type {
+        return nullptr;
+    };
+
+    RegisterGetAicpuTaskExceptionCallBack(streamId1, deviceLogicId, callback1);
+    RegisterGetAicpuTaskExceptionCallBack(streamId2, deviceLogicId, callback2);
+    EXPECT_EQ(g_communicatorCallbackMap[deviceLogicId].size(), 2u);
+    UnregisterGetAicpuTaskExceptionCallBack(streamId1, deviceLogicId);
+    EXPECT_EQ(g_communicatorCallbackMap[deviceLogicId].size(), 1u);
+    EXPECT_TRUE(g_communicatorCallbackMap[deviceLogicId].find(streamId2) !=
+                g_communicatorCallbackMap[deviceLogicId].end());
+    EXPECT_FALSE(g_communicatorCallbackMap[deviceLogicId].find(streamId1) !=
+                 g_communicatorCallbackMap[deviceLogicId].end());
+    g_communicatorCallbackMap.fill({});
+}
+
+TEST_F(TaskExceptionTest, Ut_CallbackOverwrite_SameStreamId_Expect_Updated)
+{
+    u32 deviceLogicId = 3;
+    s32 streamId = 500;
+    bool callback1Called = false;
+    bool callback2Called = false;
+
+    auto callback1 = [&callback1Called]() -> GetAicpuTaskExceptionCallBack::element_type {
+        callback1Called = true;
+        return nullptr;
+    };
+    auto callback2 = [&callback2Called]() -> GetAicpuTaskExceptionCallBack::element_type {
+        callback2Called = true;
+        return nullptr;
+    };
+
+    RegisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId, callback1);
+    RegisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId, callback2);
+    EXPECT_EQ(g_communicatorCallbackMap[deviceLogicId].size(), 1u);
+    auto it = g_communicatorCallbackMap[deviceLogicId].find(streamId);
+    ASSERT_TRUE(it != g_communicatorCallbackMap[deviceLogicId].end());
+    it->second();
+    EXPECT_TRUE(callback2Called);
+    EXPECT_FALSE(callback1Called);
+    g_communicatorCallbackMap.fill({});
+}
+
+TEST_F(TaskExceptionTest, Ut_UnregisterGetAicpuTaskExceptionCallBack_When_InvaildDeviceId_Expect_NoCrash)
+{
+    u32 invalidDeviceLogicId = MAX_MODULE_DEVICE_NUM - 1;
+    s32 streamId = 1;
+
+    UnregisterGetAicpuTaskExceptionCallBack(streamId, invalidDeviceLogicId);
+    EXPECT_FALSE(true);
+}
+
+TEST_F(TaskExceptionTest, Ut_RegisterGetAicpuTaskExceptionCallBack_When_Normal_Expect_SUCCESS)
+{
+    s32 streamId = 1;
+    u32 deviceLogicId = 0;
+    auto callback = []() -> GetAicpuTaskExceptionCallBack::element_type {
+        return nullptr;
+    };
+
+    RegisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId, callback);
+    EXPECT_TRUE(g_communicatorCallbackMap[deviceLogicId].find(streamId) !=
+                g_communicatorCallbackMap[deviceLogicId].end());
+}

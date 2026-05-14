@@ -250,3 +250,27 @@ TEST_F(hcclCommTaskExceptionLiteTest, Ut_CallbackOverwrite_SameStreamId_Expect_U
     EXPECT_FALSE(callback1Called);
 }
 
+TEST_F(hcclCommTaskExceptionLiteTest, Ut_RegisterGetAicpuTaskExceptionCallBack_When_InvaildDeviceId_Expect_NoRegister)
+{
+    u32 invalidDeviceLogicId = MAX_MODULE_DEVICE_NUM - 1;
+    s32 streamId = 1;
+
+    auto callback = []() -> Hccl::ErrorMessageReport {
+        Hccl::ErrorMessageReport report;
+        return report;
+    };
+
+    TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(streamId, invalidDeviceLogicId, callback);
+    EXPECT_FALSE(g_communicatorCallbackMapV2[invalidDeviceLogicId].find(streamId) !=
+                 g_communicatorCallbackMapV2[invalidDeviceLogicId].end());
+}
+
+TEST_F(hcclCommTaskExceptionLiteTest, Ut_UnregisterGetAicpuTaskExceptionCallBack_When_InvaildDeviceId_Expect_NoCrash)
+{
+    u32 invalidDeviceLogicId = MAX_MODULE_DEVICE_NUM - 1;
+    s32 streamId = 1;
+
+    TaskExceptionHostManager::UnregisterGetAicpuTaskExceptionCallBack(streamId, invalidDeviceLogicId);
+    EXPECT_FALSE(true);
+}
+
