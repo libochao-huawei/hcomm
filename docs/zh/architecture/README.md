@@ -16,6 +16,6 @@
 
 ## 相关链接
 
-- [贡献指南](../CONTRIBUTING.md)
+- [贡献指南](../../../CONTRIBUTING.md)
 - [RFC文档](../rfcs/)
-- [开发者指南](../dev_guide/)
+- [开发者指南](../comm_op_dev_guide/)

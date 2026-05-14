@@ -32,7 +32,7 @@ HcclResult HcclRankGraphGetTopoTypeByLayer(HcclComm comm, uint32_t netLayer, Com
 | --- | --- | --- |
 | comm | 输入 | 通信域。<br>HcclComm类型的定义如下：<br>typedef void *HcclComm; |
 | netLayer | 输入 | 拓扑层级编号。 |
-| topoType | 输出 | 拓扑类型，包括1DMesh、Clos、自定义等。<br>CommTopo类型的定义可参见[CommTopo](CommTopo.md)。 |
+| topoType | 输出 | 拓扑类型，包括1DMesh、Clos、自定义等。<br>CommTopo类型的定义可参见[CommTopo](../../datatype_definition/CommTopo.md)。 |
 
 ## 返回值
 
