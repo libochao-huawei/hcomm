@@ -23,6 +23,7 @@
 #include "hcclCommTaskExceptionLite.h"
 #include "coll_comm_aicpu_destroy_func.h"
 #include "aicpu_indop_env.h"
+#include "aicpu_task_cache_manager.h"
 
 constexpr u32 NOTIFY_SIZE_EIGHT = 8;
 
@@ -197,6 +198,7 @@ HcclResult CollCommAicpu::ProcessUrmaRes(HcclChannelUrmaRes *commParam, bool isI
             // 恢复出的channelHandle回填到commParam中
             channelList[index] = channelHandle;
             CHK_RET(RegisterChannelAddDfxTaskInfo(channelHandle));
+            CHK_RET(RegisterChannelCacheCallbacks(channelHandle)); // 注册回调函数用于aicpu task cache
             dfx_.AddChannelRemoteRankId(channelHandle, commParam->remoteRankList[index]);
         } else {
             channelHandle = channelList[index];
@@ -268,6 +270,20 @@ HcclResult CollCommAicpu::ParsePackData(std::vector<char> &data, ChannelHandle &
 HcclResult CollCommAicpu::RegisterChannelAddDfxTaskInfo(ChannelHandle channel) {
     int hert = HcommChannelRegisterDfx(channel, dfx_.GetCallback());
     return static_cast<HcclResult>(hert);
+}
+
+HcclResult CollCommAicpu::RegisterChannelCacheCallbacks(ChannelHandle channel) {
+    // 注意: 目前aicpu task cache只支持UB.URMA协议
+    std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::UbTransportLiteImpl>>::iterator iter =
+        ubTransportMap_.find(channel);
+    if (iter != ubTransportMap_.end()) {
+        // 注册回调函数用于判断是否需要cache task, 以及添加wqe数组到aicpu task cache
+        HCCL_INFO("[CollCommAicpu][RegisterChannelCacheCallbacks] register cache callbacks for channel[0x%016llx]", channel);
+        CHK_PRT_NULL(iter->second);
+        iter->second->SetNeedCacheTaskCallback(AicpuTaskCacheManager::NeedCacheTask);
+        iter->second->SetAddWqeArrayCallback(AicpuTaskCacheManager::AddWqeArray);
+    }
+    return HCCL_SUCCESS;
 }
 
 HcclResult CollCommAicpu::NotifyFree(NotifyMgrAicpuParam *param)
