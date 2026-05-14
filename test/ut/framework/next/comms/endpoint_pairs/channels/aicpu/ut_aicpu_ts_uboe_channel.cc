@@ -320,3 +320,210 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetChannelKind_Returns_AICPU_TS_UBOE) {
     AicpuTsUboeChannel ch(ep, desc);
     EXPECT_EQ(ch.GetChannelKind(), HcommChannelKind::AICPU_TS_UBOE);
 }
+
+// 辅助 FakeRemoteUbRmaBuffer，用于模拟远端内存区域
+class FakeRemoteUbRmaBuffer : public Hccl::RemoteUbRmaBuffer {
+public:
+    FakeRemoteUbRmaBuffer(void* rdmaHandle, uint64_t addr, size_t size, HcclMemType type, const std::string& tag)
+        : Hccl::RemoteUbRmaBuffer(rdmaHandle), addr_(addr), size_(size), type_(type), tag_(tag) {}
+    
+    uint64_t GetAddr() const override { return addr_; }
+    size_t GetSize() const override { return size_; }
+    HcclMemType GetMemType() const override { return type_; }
+    std::string GetMemTag() const override { return tag_; }
+
+private:
+    uint64_t addr_;
+    size_t size_;
+    HcclMemType type_;
+    std::string tag_;
+};
+
+TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMem_NullParams_ReturnsError) {
+    HcommChannelDesc desc{};
+    EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
+    AicpuTsUboeChannel ch(ep, desc);
+
+    HcclMem* remoteMem = nullptr;
+    uint32_t memNum = 0;
+    char** memTags = nullptr;
+
+    // remoteMem 为空指针
+    EXPECT_EQ(ch.GetRemoteMem(nullptr, &memNum, memTags), HCCL_E_PARA);
+    // memNum 为空指针
+    EXPECT_EQ(ch.GetRemoteMem(&remoteMem, nullptr, memTags), HCCL_E_PARA);
+}
+
+TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMem_NoBuffers_ReturnsSuccessWithZero) {
+    HcommChannelDesc desc{};
+    EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
+    AicpuTsUboeChannel ch(ep, desc);
+
+    // 确保 rmtBufferVec_ 为空
+    ch.rmtBufferVec_.clear();
+
+    HcclMem* remoteMem = nullptr;
+    uint32_t memNum = 0;
+    char* memTags[2] = {nullptr, nullptr}; // 任意长度，函数内不会使用
+
+    HcclResult ret = ch.GetRemoteMem(&remoteMem, &memNum, memTags);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(remoteMem, nullptr);
+    EXPECT_EQ(memNum, 0U);
+}
+
+TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMem_WithBuffers_ReturnsCorrectData) {
+    HcommChannelDesc desc{};
+    EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
+    AicpuTsUboeChannel ch(ep, desc);
+
+    // 构造两个远端内存区域
+    void* fakeRdma = reinterpret_cast<void*>(0x1234);
+    auto buf1 = std::make_unique<FakeRemoteUbRmaBuffer>(fakeRdma, 0x1000, 4096, HCCL_MEM_TYPE_DEVICE, "ccl_buffer");
+    auto buf2 = std::make_unique<FakeRemoteUbRmaBuffer>(fakeRdma, 0x2000, 8192, HCCL_MEM_TYPE_HOST, "user_buffer");
+    ch.rmtBufferVec_.push_back(std::move(buf1));
+    ch.rmtBufferVec_.push_back(std::move(buf2));
+
+    HcclMem* remoteMem = nullptr;
+    uint32_t memNum = 0;
+    // 分配内存标签数组，长度至少为2
+    char* memTags[2];
+    HcclResult ret = ch.GetRemoteMem(&remoteMem, &memNum, memTags);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(memNum, 2U);
+    ASSERT_NE(remoteMem, nullptr);
+
+    // 验证第一个内存区域
+    EXPECT_EQ(remoteMem[0].type, HCCL_MEM_TYPE_DEVICE);
+    EXPECT_EQ(remoteMem[0].addr, reinterpret_cast<void*>(0x1000));
+    EXPECT_EQ(remoteMem[0].size, 4096U);
+    EXPECT_STREQ(memTags[0], "ccl_buffer");
+
+    // 验证第二个内存区域
+    EXPECT_EQ(remoteMem[1].type, HCCL_MEM_TYPE_HOST);
+    EXPECT_EQ(remoteMem[1].addr, reinterpret_cast<void*>(0x2000));
+    EXPECT_EQ(remoteMem[1].size, 8192U);
+    EXPECT_STREQ(memTags[1], "user_buffer");
+}
+
+TEST_F(AicpuTsUboeChannelTest, Ut_GetUserRemoteMem_NullParams_ReturnsError) {
+    HcommChannelDesc desc{};
+    EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
+    AicpuTsUboeChannel ch(ep, desc);
+
+    // 至少构造一个 buffer，避免提前返回错误
+    void* fakeRdma = reinterpret_cast<void*>(0x1234);
+    auto cclBuf = std::make_unique<FakeRemoteUbRmaBuffer>(fakeRdma, 0x1000, 4096, HCCL_MEM_TYPE_DEVICE, "ccl_buffer");
+    ch.rmtBufferVec_.push_back(std::move(cclBuf));
+
+    CommMem* remoteMem = nullptr;
+    char** memTag = nullptr;
+    uint32_t memNum = 0;
+
+    // 传入无效参数，期望返回参数错误（具体错误码视实现而定，当前返回 HCCL_E_PARA）
+    EXPECT_EQ(ch.GetUserRemoteMem(nullptr, &memTag, &memNum), HCCL_E_PARA);
+    EXPECT_EQ(ch.GetUserRemoteMem(&remoteMem, nullptr, &memNum), HCCL_E_PARA);
+    EXPECT_EQ(ch.GetUserRemoteMem(&remoteMem, &memTag, nullptr), HCCL_E_PARA);
+}
+
+TEST_F(AicpuTsUboeChannelTest, Ut_GetUserRemoteMem_OnlyCclBuffer_ReturnsSuccessWithZero) {
+    HcommChannelDesc desc{};
+    EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
+    AicpuTsUboeChannel ch(ep, desc);
+
+    void* fakeRdma = reinterpret_cast<void*>(0x1234);
+    auto cclBuf = std::make_unique<FakeRemoteUbRmaBuffer>(fakeRdma, 0x1000, 4096, HCCL_MEM_TYPE_DEVICE, "ccl_buffer");
+    ch.rmtBufferVec_.push_back(std::move(cclBuf));
+
+    // 确保内部 cache 标志初始为 false，以便重新构建
+    ch.cacheValid_ = false;
+
+    CommMem* remoteMem = nullptr;
+    char** memTag = nullptr;
+    uint32_t memNum = 0;
+
+    HcclResult ret = ch.GetUserRemoteMem(&remoteMem, &memTag, &memNum);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(memNum, 0U);
+    EXPECT_EQ(remoteMem, nullptr);
+    // memTag 在数量为0时也可能为 nullptr，不强制检查
+}
+
+TEST_F(AicpuTsUboeChannelTest, Ut_GetUserRemoteMem_WithUserBuffers_ReturnsCorrectData) {
+    HcommChannelDesc desc{};
+    EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
+    AicpuTsUboeChannel ch(ep, desc);
+
+    void* fakeRdma = reinterpret_cast<void*>(0x1234);
+    // 第一个 buffer 视为 CCL buffer（会被跳过）
+    auto cclBuf = std::make_unique<FakeRemoteUbRmaBuffer>(fakeRdma, 0x1000, 4096, HCCL_MEM_TYPE_DEVICE, "ccl");
+    // 用户 buffer 1
+    auto userBuf1 = std::make_unique<FakeRemoteUbRmaBuffer>(fakeRdma, 0x2000, 8192, HCCL_MEM_TYPE_HOST, "user1");
+    // 用户 buffer 2
+    auto userBuf2 = std::make_unique<FakeRemoteUbRmaBuffer>(fakeRdma, 0x3000, 16384, HCCL_MEM_TYPE_DEVICE, "user2");
+    ch.rmtBufferVec_.push_back(std::move(cclBuf));
+    ch.rmtBufferVec_.push_back(std::move(userBuf1));
+    ch.rmtBufferVec_.push_back(std::move(userBuf2));
+
+    ch.cacheValid_ = false; // 强制重新构建缓存
+
+    CommMem* remoteMem = nullptr;
+    char** memTag = nullptr;
+    uint32_t memNum = 0;
+
+    HcclResult ret = ch.GetUserRemoteMem(&remoteMem, &memTag, &memNum);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(memNum, 2U);
+    ASSERT_NE(remoteMem, nullptr);
+    ASSERT_NE(memTag, nullptr);
+
+    // 验证第一个用户内存（索引1）
+    EXPECT_EQ(remoteMem[0].type, COMM_MEM_TYPE_HOST);
+    EXPECT_EQ(remoteMem[0].addr, reinterpret_cast<void*>(0x2000));
+    EXPECT_EQ(remoteMem[0].size, 8192U);
+    EXPECT_STREQ(memTag[0], "user1");
+
+    // 验证第二个用户内存（索引2）
+    EXPECT_EQ(remoteMem[1].type, COMM_MEM_TYPE_DEVICE);
+    EXPECT_EQ(remoteMem[1].addr, reinterpret_cast<void*>(0x3000));
+    EXPECT_EQ(remoteMem[1].size, 16384U);
+    EXPECT_STREQ(memTag[1], "user2");
+}
+
+TEST_F(AicpuTsUboeChannelTest, Ut_GetUserRemoteMem_WithCacheValid_SkipsRebuild) {
+    HcommChannelDesc desc{};
+    EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
+    AicpuTsUboeChannel ch(ep, desc);
+
+    void* fakeRdma = reinterpret_cast<void*>(0x1234);
+    auto cclBuf = std::make_unique<FakeRemoteUbRmaBuffer>(fakeRdma, 0x1000, 4096, HCCL_MEM_TYPE_DEVICE, "ccl");
+    auto userBuf = std::make_unique<FakeRemoteUbRmaBuffer>(fakeRdma, 0x2000, 8192, HCCL_MEM_TYPE_HOST, "user");
+    ch.rmtBufferVec_.push_back(std::move(cclBuf));
+    ch.rmtBufferVec_.push_back(std::move(userBuf));
+
+    // 手动设置缓存有效，并预先填充成员变量，模拟已有缓存
+    ch.cacheValid_ = true;
+    // 构造一些虚假的缓存内容，仅用于验证不会因缓存失效而崩溃
+    ch.remoteUserMem_.resize(1);
+    ch.remoteUserMem_[0].type = COMM_MEM_TYPE_HOST;
+    ch.remoteUserMem_[0].addr = reinterpret_cast<void*>(0x9999);
+    ch.remoteUserMem_[0].size = 1234;
+    ch.remoteUserMemTag_.push_back("cached_user");
+    ch.tagCopies_.clear();
+    ch.tagPointers_.clear();
+
+    CommMem* remoteMem = nullptr;
+    char** memTag = nullptr;
+    uint32_t memNum = 0;
+
+    HcclResult ret = ch.GetUserRemoteMem(&remoteMem, &memTag, &memNum);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    // 由于缓存有效，应直接返回之前缓存的内容
+    EXPECT_EQ(memNum, 1U);
+    ASSERT_NE(remoteMem, nullptr);
+    EXPECT_EQ(remoteMem[0].addr, reinterpret_cast<void*>(0x9999));
+    EXPECT_EQ(remoteMem[0].size, 1234U);
+    EXPECT_EQ(remoteMem[0].type, COMM_MEM_TYPE_HOST);
+    ASSERT_NE(memTag, nullptr);
+    EXPECT_STREQ(memTag[0], "cached_user");
+}
