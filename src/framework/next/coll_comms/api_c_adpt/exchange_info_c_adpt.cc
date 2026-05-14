@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "hccl_comm_pub.h"
 #include "hccl/hccl_res_expt.h"
+#include "hccl_exchange_info.h"
 
 using namespace hccl;
 

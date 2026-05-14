@@ -8,10 +8,20 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "hccl_comm_pub.h"
+#include "coll_comm_config_consistency.h"
 
 namespace hccl {
-HcclResult hcclComm::AddExchangeInfo(const void* data, uint32_t length)
+CollCommConfigConsistency::CollCommConfigConsistency()
+{
+}
+
+CollCommConfigConsistency::~CollCommConfigConsistency()
+{
+    remoteExchangeInfoMap_.clear();
+    ResetExchangeInfo();
+}
+
+HcclResult CollCommConfigConsistency::AddExchangeInfo(const void* data, uint32_t length)
 {
     CHK_PTR_NULL(data);
     if (length > 0 && length <= HCCL_EXCHANGE_INFO_LEN) {
@@ -28,7 +38,7 @@ HcclResult hcclComm::AddExchangeInfo(const void* data, uint32_t length)
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::GetExchangeInfo(uint32_t remoteRank, uint32_t length, void* data, uint32_t* actualLength)
+HcclResult CollCommConfigConsistency::GetExchangeInfo(uint32_t remoteRank, uint32_t length, void* data, uint32_t* actualLength)
 {
     CHK_PTR_NULL(data);
     auto iter = remoteExchangeInfoMap_.find(remoteRank);
@@ -53,26 +63,27 @@ HcclResult hcclComm::GetExchangeInfo(uint32_t remoteRank, uint32_t length, void*
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::StoreRemoteExchangeInfo(uint32_t remoteRank, std::vector<u8>& data)
+HcclResult CollCommConfigConsistency::StoreRemoteExchangeInfo(uint32_t remoteRank, std::vector<u8>& data)
 {
     remoteExchangeInfoMap_[remoteRank] = std::move(data);
     HCCL_INFO("[StoreRemoteExchangeInfo] success, remoteRank[%u], length[%zu].", remoteRank, remoteExchangeInfoMap_[remoteRank].size());
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::ResetExchangeInfo()
+HcclResult CollCommConfigConsistency::ResetExchangeInfo()
 {
     exchangeInfoBuf_.clear();
     HCCL_INFO("[ResetExchangeInfo] exchange info state cleared.");
     return HCCL_SUCCESS;
 }
 
-const std::vector<u8>& hcclComm::GetExchangeInfoBuf() const
+HcclResult CollCommConfigConsistency::GetExchangeInfoBuf(std::vector<u8> &exchangeInfoBuf)
 {
-    return exchangeInfoBuf_;
+    exchangeInfoBuf = exchangeInfoBuf_;
+    return HCCL_SUCCESS;
 }
 
-uint32_t hcclComm::GetExchangeInfoLen() const
+uint32_t CollCommConfigConsistency::GetExchangeInfoLen() const
 {
     return static_cast<uint32_t>(exchangeInfoBuf_.size());
 }
