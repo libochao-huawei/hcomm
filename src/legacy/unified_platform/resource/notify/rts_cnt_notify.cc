@@ -15,19 +15,33 @@
 
 namespace Hccl {
 
-RtsCntNotify::RtsCntNotify() : deviceId(HrtGetDevice()), devPhyId(HrtGetDevicePhyIdByIndex(HrtGetDevice())),
-                                handle(HrtCntNotifyCreate(deviceId)), id(HrtGetCntNotifyId(handle))
+HcclResult RtsCntNotify::Create(std::unique_ptr<RtsCntNotify>& notify)
 {
+    notify = std::make_unique<RtsCntNotify>();
+
+    s32 deviceId;
+    CHK_RET(HrtGetDevice(deviceId));
+    notify->deviceId = static_cast<u32>(deviceId);
+    CHK_RET(HrtGetDevicePhyIdByIndex(deviceId, notify->devPhyId));
+    CHK_RET(HrtCntNotifyCreate(deviceId, notify->handle));
+    CHK_RET(HrtGetCntNotifyId(notify->handle, notify->id));
+
     HrtDevResInfo devResInfo;
     devResInfo.dieId    = 0;
     devResInfo.procType = HrtDevResProcType::PROCESS_HCCP;
     devResInfo.resType  = HrtDevResType::RES_TYPE_STARS_CNT_NOTIFY_BIT_WR;
-    devResInfo.resId    = id;
+    devResInfo.resId    = notify->id;
     devResInfo.flag     = 0;
-    auto resAddrInfo    = HrtGetDevResAddress(devResInfo);
-    addr                = resAddrInfo.address;
-    size                = DevCapability::GetInstance().GetNotifySize();
+
+    HrtDevResAddrInfo addrInfo;
+    CHK_RET(HrtGetDevResAddress(devResInfo, addrInfo));
+    notify->addr = addrInfo.address;
+    notify->size = DevCapability::GetInstance().GetNotifySize();
+
+    return HCCL_SUCCESS;
 }
+
+RtsCntNotify::RtsCntNotify() : deviceId(0), devPhyId(0), handle(nullptr), id(0), addr(0), size(0) {}
 
 RtsCntNotify::~RtsCntNotify()
 {

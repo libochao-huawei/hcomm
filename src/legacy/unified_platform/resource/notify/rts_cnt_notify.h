@@ -24,6 +24,8 @@ namespace Hccl {
 class BaseTask;
 class RtsCntNotify {
 public:
+    static HcclResult Create(std::unique_ptr<RtsCntNotify>& notify);
+
     RtsCntNotify();
     ~RtsCntNotify();
     std::unique_ptr<BaseTask> PostBits(u32 bitValue);

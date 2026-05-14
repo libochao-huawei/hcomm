@@ -43,7 +43,11 @@ void TpManager::Init()
         return;
     }
 
-    devPhyId = HrtGetDevicePhyIdByIndex(devLogicId);
+    HcclResult ret = HrtGetDevicePhyIdByIndex(devLogicId, devPhyId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[TpManager::Init] HrtGetDevicePhyIdByIndex failed, ret=%d", ret);
+        return;
+    }
     initFlag = true;
 }
 

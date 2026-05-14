@@ -662,6 +662,7 @@ void CtxMgrImp::LoadInstruction(CcuRep::CcuInstrInfo &instrInfo, uint32_t dieId)
 {
     uint64_t instrInfoSize = instrInfo.instrVec.size() * sizeof(CcuInstr);
 
+    HcclResult ret = HCCL_SUCCESS;
     if (!instructionLoadDevMem_) {
         uint32_t instrNum = 0;
         if (CcuDeviceManager::GetInstructionNum(deviceLogicId_, 0, instrNum) != HcclResult::HCCL_SUCCESS) {
@@ -669,15 +670,27 @@ void CtxMgrImp::LoadInstruction(CcuRep::CcuInstrInfo &instrInfo, uint32_t dieId)
         }
         HCCL_INFO("[CtxMgrImp]LoadInstruction: deviceLogicId[%d], instrNum[%u]", deviceLogicId_, instrNum);
         // rt接口申请device内存
-        instructionLoadDevMem_ = HrtMalloc(instrNum * sizeof(CcuInstr),
-										   static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH));
+        void* devMemPtr = nullptr;
+        ret = HrtMalloc(instrNum * sizeof(CcuInstr),
+                                   static_cast<aclrtMemType_t>(ACL_MEM_TYPE_HIGH_BAND_WIDTH), devMemPtr);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[CtxMgrImp] HrtMalloc failed, ret=%d", ret);
+            return;
+        }
+        instructionLoadDevMem_ = devMemPtr;
     }
 
     // rt接口memcpySync
     HrtMemcpy(instructionLoadDevMem_, instrInfoSize, instrInfo.instrVec.data(), instrInfoSize,
               RT_MEMCPY_HOST_TO_DEVICE);
 
-    HRaInfo                      info(HrtNetworkMode::HDC, HrtGetDevicePhyIdByIndex(deviceLogicId_));
+    DevId phyDeviceId;
+    ret = HrtGetDevicePhyIdByIndex(deviceLogicId_, phyDeviceId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[CtxMgrImp] HrtGetDevicePhyIdByIndex failed, ret=%d", ret);
+        return;
+    }
+    HRaInfo                      info(HrtNetworkMode::HDC, phyDeviceId);
     struct CustomChannelInfoIn  inBuff;
     struct CustomChannelInfoOut outBuff;
 

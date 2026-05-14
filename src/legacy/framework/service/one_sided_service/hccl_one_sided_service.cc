@@ -500,7 +500,9 @@ HcclResult HcclOneSidedService::BatchPut(RankId remoteRankId, const HcclOneSideO
     }
 
     HCCL_INFO("[HcclOneSidedService][BatchPut] BatchOpKernelLaunch start");
-    CHK_RET(BatchOpKernelLaunch(OpType::BATCHPUT, remoteRankId, desc, descNum, std::make_shared<Stream>(stream)));
+    std::unique_ptr<Stream> streamPtr;
+    CHK_RET(Stream::CreateFromPtr(static_cast<aclrtStream>(stream), false, streamPtr));
+    CHK_RET(BatchOpKernelLaunch(OpType::BATCHPUT, remoteRankId, desc, descNum, std::shared_ptr<Stream>(streamPtr.release())));
 
     HCCL_INFO("[HcclOneSidedService][BatchPut] end");
     return HCCL_SUCCESS;
@@ -516,7 +518,9 @@ HcclResult HcclOneSidedService::BatchGet(RankId remoteRankId, const HcclOneSideO
     }
 
     HCCL_INFO("[HcclOneSidedService][BatchGet] BatchOpKernelLaunch start");
-    CHK_RET(BatchOpKernelLaunch(OpType::BATCHGET, remoteRankId, desc, descNum, std::make_shared<Stream>(stream)));
+    std::unique_ptr<Stream> streamPtr;
+    CHK_RET(Stream::CreateFromPtr(static_cast<aclrtStream>(stream), false, streamPtr));
+    CHK_RET(BatchOpKernelLaunch(OpType::BATCHGET, remoteRankId, desc, descNum, std::shared_ptr<Stream>(streamPtr.release())));
     HCCL_INFO("[HcclOneSidedService][BatchGet] end");
     return HCCL_SUCCESS;
 }

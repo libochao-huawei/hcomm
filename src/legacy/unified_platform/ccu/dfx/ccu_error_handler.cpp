@@ -679,7 +679,13 @@ void CcuErrorHandler::GenErrorInfoBufReduce(const ErrorInfoBase &baseInfo, share
 
 CcuMissionContext CcuErrorHandler::GetCcuMissionContext(int32_t deviceId, uint32_t dieId, uint32_t missionId)
 {
-    HRaInfo                      info(HrtNetworkMode::HDC, HrtGetDevicePhyIdByIndex(deviceId));
+    DevId devicePhyId;
+    HcclResult res = HrtGetDevicePhyIdByIndex(deviceId, devicePhyId);
+    if (res != HCCL_SUCCESS) {
+        HCCL_ERROR("[CcuErrorHandler] HrtGetDevicePhyIdByIndex failed, ret=%d", res);
+        return CcuMissionContext{};
+    }
+    HRaInfo                      info(HrtNetworkMode::HDC, devicePhyId);
     struct CustomChannelInfoIn  inBuff;
     struct CustomChannelInfoOut outBuff;
 
@@ -698,7 +704,13 @@ CcuMissionContext CcuErrorHandler::GetCcuMissionContext(int32_t deviceId, uint32
 
 CcuLoopContext CcuErrorHandler::GetCcuLoopContext(int32_t deviceId, uint32_t dieId, uint32_t loopCtxId)
 {
-    HRaInfo                      info(HrtNetworkMode::HDC, HrtGetDevicePhyIdByIndex(deviceId));
+    DevId devicePhyId;
+    HcclResult res = HrtGetDevicePhyIdByIndex(deviceId, devicePhyId);
+    if (res != HCCL_SUCCESS) {
+        HCCL_ERROR("[CcuErrorHandler] HrtGetDevicePhyIdByIndex failed, ret=%d", res);
+        return CcuLoopContext{};
+    }
+    HRaInfo                      info(HrtNetworkMode::HDC, devicePhyId);
     struct CustomChannelInfoIn  inBuff;
     struct CustomChannelInfoOut outBuff;
 
@@ -717,7 +729,13 @@ CcuLoopContext CcuErrorHandler::GetCcuLoopContext(int32_t deviceId, uint32_t die
 
 uint64_t CcuErrorHandler::GetCcuXnValue(int32_t deviceId, uint32_t dieId, uint32_t xnId)
 {
-    HRaInfo                      info(HrtNetworkMode::HDC, HrtGetDevicePhyIdByIndex(deviceId));
+    DevId devicePhyId;
+    HcclResult res = HrtGetDevicePhyIdByIndex(deviceId, devicePhyId);
+    if (res != HCCL_SUCCESS) {
+        HCCL_ERROR("[CcuErrorHandler] HrtGetDevicePhyIdByIndex failed, ret=%d", res);
+        return 0;
+    }
+    HRaInfo                      info(HrtNetworkMode::HDC, devicePhyId);
     struct CustomChannelInfoIn  inBuff;
     struct CustomChannelInfoOut outBuff;
 
@@ -736,7 +754,13 @@ uint64_t CcuErrorHandler::GetCcuXnValue(int32_t deviceId, uint32_t dieId, uint32
 
 uint64_t CcuErrorHandler::GetCcuGSAValue(int32_t deviceId, uint32_t dieId, uint32_t gsaId)
 {
-    HRaInfo                      info(HrtNetworkMode::HDC, HrtGetDevicePhyIdByIndex(deviceId));
+    DevId devicePhyId;
+    HcclResult res = HrtGetDevicePhyIdByIndex(deviceId, devicePhyId);
+    if (res != HCCL_SUCCESS) {
+        HCCL_ERROR("[CcuErrorHandler] HrtGetDevicePhyIdByIndex failed, ret=%d", res);
+        return 0;
+    }
+    HRaInfo                      info(HrtNetworkMode::HDC, devicePhyId);
     struct CustomChannelInfoIn  inBuff;
     struct CustomChannelInfoOut outBuff;
 
@@ -755,7 +779,13 @@ uint64_t CcuErrorHandler::GetCcuGSAValue(int32_t deviceId, uint32_t dieId, uint3
 
 uint16_t CcuErrorHandler::GetCcuCKEValue(int32_t deviceId, uint32_t dieId, uint32_t ckeId)
 {
-    HRaInfo                      info(HrtNetworkMode::HDC, HrtGetDevicePhyIdByIndex(deviceId));
+    DevId devicePhyId;
+    HcclResult res = HrtGetDevicePhyIdByIndex(deviceId, devicePhyId);
+    if (res != HCCL_SUCCESS) {
+        HCCL_ERROR("[CcuErrorHandler] HrtGetDevicePhyIdByIndex failed, ret=%d", res);
+        return 0;
+    }
+    HRaInfo                      info(HrtNetworkMode::HDC, devicePhyId);
     struct CustomChannelInfoIn  inBuff;
     struct CustomChannelInfoOut outBuff;
 

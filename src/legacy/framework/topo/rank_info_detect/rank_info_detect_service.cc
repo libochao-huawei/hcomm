@@ -415,7 +415,12 @@ void RankInfoDetectService::TearDown()
         HrtRaSocketWhiteListDel(hostSocketHandle, wlistInfo_);
     }
 
-    s32 deviceLogicId = HrtGetDevice();
+    s32 deviceLogicId;
+    HcclResult ret = HrtGetDevice(deviceLogicId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("HrtGetDevice failed, ret=%d", ret);
+        return;
+    }
     if (EnvConfig::GetInstance().GetHostNicConfig().GetHostSocketPortRange().size() > 0) {
         // 若开启抢占监听端口
         PreemptPortManager::GetInstance(deviceLogicId).Release(serverSocket_);

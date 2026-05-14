@@ -84,7 +84,10 @@ HcclResult CallSingletons()
 {
     s32 deviceLogicId = 0;
     try {
-        deviceLogicId = HrtGetDevice();
+        HcclResult ret = HrtGetDevice(deviceLogicId);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_WARNING("[CallSingletons] HrtGetDevice failed, ret=%d", ret);
+        }
         // 避免设备粒度单例访问错误设备
         if (deviceLogicId < 0 || static_cast<uint32_t>(deviceLogicId) >= ::MAX_MODULE_DEVICE_NUM) {
             HCCL_WARNING("[CallSingletons] deviceLogicId[%d] may not have device, passed.", deviceLogicId);
@@ -141,7 +144,12 @@ void CommManager::PrintChannelInfo()
 {
     std::lock_guard<std::mutex> lock(commInfoV2.groupParamsLock);
     u32 channelNum = 0;
-    s32 logicDevId = HrtGetDevice();
+    s32 logicDevId;
+    HcclResult ret = HrtGetDevice(logicDevId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[CommManager][PrintChannelInfo] HrtGetDevice failed, ret=%d", ret);
+        return;
+    }
     HCCL_INFO("[CommManager][PrintChannelInfo]devId[%d].", logicDevId);
     for (u32 dieId = 0; dieId < MAX_CCU_IODIE_NUM; dieId++) {
         auto ret = CcuGetChannelSpecNum(logicDevId, dieId, channelNum);
@@ -309,7 +317,12 @@ HcclResult HcomCreateGroupImplV2(const std::string &group, u32 rankNum, const st
 
     CHK_SMART_PTR_NULL(groupParamsV2Tem.pComm);
     groupParamsV2Tem.pComm->RegisterAcceStateCallBack(CommunicatorCallback());
-    s32 logicDevId = HrtGetDevice();
+    s32 logicDevId;
+    ret = HrtGetDevice(logicDevId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[HcomCreateGroupImplV2] HrtGetDevice failed, ret=%d", ret);
+        return ret;
+    }
     CHK_RET(CommManager::GetInstance(logicDevId).SetCommAcceleratorV2(groupParamsV2Tem.pComm.get(), 0)); // 子通信域创建，设置默认accelerator
 
     groupParaLock.lock();
@@ -584,7 +597,12 @@ HcclResult HcomInitByFileV2(const char *rankTablePath, const char *identify)
         HCCL_ERROR("[HcomInitByFile] Hccl::Communicator Init failed, res %d", res), HCCL_E_INTERNAL);
 
     hcomCommInfoV2.pComm->RegisterAcceStateCallBack(CommunicatorCallback());
-    s32 logicDevId = HrtGetDevice();
+    s32 logicDevId;
+    ret = HrtGetDevice(logicDevId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[HcomInitByFile] HrtGetDevice failed, ret=%d", ret);
+        return ret;
+    }
     CHK_RET(CommManager::GetInstance(logicDevId).SetCommAcceleratorV2(hcomCommInfoV2.pComm.get(), 0)); // 全局通信域创建，设置默认accelerator
 
     res = hcomCommInfoV2.pComm->GetRankSize(&commParams.rankSize);
@@ -642,7 +660,12 @@ HcclResult HcomInitByStringV2(const char *rankTableM, const char *identify)
         HCCL_ERROR("[HcomInitByString] Hccl::Communicator Init failed, res %d", res), HCCL_E_INTERNAL);
 
     hcomCommInfoV2.pComm->RegisterAcceStateCallBack(CommunicatorCallback());
-    s32 logicDevId = HrtGetDevice();
+    s32 logicDevId;
+    HcclResult ret = HrtGetDevice(logicDevId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[HcomInitByString] HrtGetDevice failed, ret=%d", ret);
+        return ret;
+    }
     CHK_RET(CommManager::GetInstance(logicDevId).SetCommAcceleratorV2(hcomCommInfoV2.pComm.get(), 0)); // 全局通信域创建，设置默认accelerator
 
     res = hcomCommInfoV2.pComm->GetRankSize(&commParams.rankSize);

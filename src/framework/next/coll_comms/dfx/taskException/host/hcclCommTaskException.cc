@@ -616,7 +616,12 @@ void TaskExceptionHost::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo,
                 errorMessage.locEid.Describe().c_str(), errorMessage.rmtEid.Describe().c_str());
                 auto reverseAddr = Hccl::IpAddress(errorMessage.locEid);
                 auto addr = Hccl::IpAddress(reverseAddr.GetReverseEid());
-                u32 devPhyId = Hccl::HrtGetDevicePhyIdByIndex(exceptionInfo->deviceid);
+                Hccl::DevId devPhyId;
+                HcclResult ret = Hccl::HrtGetDevicePhyIdByIndex(exceptionInfo->deviceid, devPhyId);
+                if (ret != HCCL_SUCCESS) {
+                    HCCL_ERROR("[HandleExceptionInfo] HrtGetDevicePhyIdByIndex failed, ret=%d", ret);
+                    return;
+                }
                 auto rdmaHandle = Hccl::RdmaHandleManager::GetInstance().GetByIp(devPhyId, addr);
                 PrintUbRegisters(static_cast<s32>(exceptionInfo->deviceid), rdmaHandle);
             }

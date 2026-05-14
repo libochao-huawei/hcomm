@@ -31,7 +31,11 @@ void AicpuStreamManager::AllocStreams(u32 num)
     }
     streams.resize(num);
     for (int i = size; i < static_cast<int>(num); i++) {
-        streams[i] = std::make_unique<Stream>(true, false);
+        HcclResult ret = Stream::Create(true, false, streams[i]);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("Stream::Create failed, ret=%d", ret);
+            return;
+        }
         stream_pointers.push_back(streams[i].get());
     }
 }
@@ -68,7 +72,11 @@ std::vector<char> AicpuStreamManager::GetPackedData()
 void AicpuStreamManager::AllocFreeStream()
 {
     if (freeStream  == nullptr) {
-        freeStream = std::make_unique<Stream>(false, false);
+        HcclResult ret = Stream::Create(false, false, freeStream);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("Stream::Create failed, ret=%d", ret);
+            return;
+        }
         HCCL_RUN_INFO("AicpuStreamManager %s allocted: %s", __func__, freeStream->Describe().c_str());
     }
 }

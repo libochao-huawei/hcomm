@@ -75,7 +75,12 @@ void ProfilingReporter::ReportAllTasks(bool cachedReq)
 {
     HCCL_INFO("[ProfilingReporter]ProfilingReporter ReportAllTasks start.");
     std::lock_guard<std::mutex> lock(mirrorTaskMgr_->GetTaskMutex());
-    s32 deviceLogicId = HrtGetDevice();
+    s32 deviceLogicId;
+    HcclResult ret = HrtGetDevice(deviceLogicId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[ProfilingReporter][ReportAllTasks] HrtGetDevice failed, ret=%d", ret);
+        return;
+    }
     if (deviceLogicId >= static_cast<s32>(MAX_MODULE_DEVICE_NUM) || deviceLogicId < 0) {
         HCCL_ERROR("[ProfilingReporter][ReportAllTasks] deviceLogicId[%d] out of range", deviceLogicId);
         return;
@@ -135,7 +140,12 @@ void ProfilingReporter::UpdateProfStat(void)
     }
     if (enableHcclL1_ != newEnableHcclL1) {
         enableHcclL1_ = newEnableHcclL1;
-        s32 deviceLogicId = HrtGetDevice();
+        s32 deviceLogicId;
+        HcclResult ret = HrtGetDevice(deviceLogicId);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[ProfilingReporter][UpdateProfStat] HrtGetDevice failed, ret=%d", ret);
+            return;
+        }
         if (deviceLogicId >= static_cast<s32>(MAX_MODULE_DEVICE_NUM) || deviceLogicId < 0) {
             HCCL_ERROR("[ProfilingReporter][ReportAllTasks] deviceLogicId[%d] out of range", deviceLogicId);
             return;

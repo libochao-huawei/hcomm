@@ -18,6 +18,7 @@
 #include "types.h"
 #include "aiv_ins.h"
 #include "stream_utils.h"
+#include "runtime_api_exception.h"
 #include "orion_adapter_rts.h"
 #include "rt_external_kernel.h"
 
@@ -435,7 +436,12 @@ void CollServiceDeviceMode::Resume()
     ccuTransportMgr->Confirm();
     HCCL_INFO("[CollServiceDeviceMode][%s] resource confirm end.", __func__);
 
-    int32_t devLogicId = HrtGetDevice();
+    int32_t devLogicId;
+    HcclResult ret = HrtGetDevice(devLogicId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[CollServiceDeviceMode] HrtGetDevice failed, ret=%d", ret);
+        throw RuntimeApiException(StringFormat("HrtGetDevice failed, ret=%d", ret));
+    }
     for (uint8_t dieId = 0; dieId < MAX_CCU_IODIE_NUM; ++dieId) {
         CHK_RET_THROW(InternalException,
             StringFormat("[CollServiceDeviceMode][%s]Error occurs when call CcuCleanDieCkes, "
@@ -602,7 +608,11 @@ HcclResult CollServiceDeviceMode::GetAlgExecParam(bool clearEnable, u32 numBlock
 
     void *sendAlgParamMemPtr = nullptr;
     // alloc device 地址
-    sendAlgParamMemPtr = HrtMalloc(sizeof(AivSuperKernelArgs), static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH));
+    HcclResult ret = HrtMalloc(sizeof(AivSuperKernelArgs), static_cast<aclrtMemType_t>(ACL_MEM_TYPE_HIGH_BAND_WIDTH), sendAlgParamMemPtr);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("HrtMalloc failed, ret=%d", ret);
+        return ret;
+    }
     CHK_PTR_NULL(sendAlgParamMemPtr);
     HCCL_INFO("SPK sendalgparam %p.", sendAlgParamMemPtr);
 

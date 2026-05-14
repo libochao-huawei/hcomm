@@ -32,7 +32,12 @@ HcclResult CcuAllocChannels(const int32_t deviceLogicId, const CcuChannelPara &c
         HCCL_ERROR("[CcuAllocChannels]deviceLogicId[%d] error, MAX_MODULE_DEVICE_NUM[%u]", deviceLogicId, MAX_MODULE_DEVICE_NUM),
             HcclResult::HCCL_E_PARA);  
     TRY_CATCH_RETURN(
-        const uint32_t devPhyId = HrtGetDevicePhyIdByIndex(deviceLogicId);
+        DevId devPhyId;
+        HcclResult ret = HrtGetDevicePhyIdByIndex(deviceLogicId, devPhyId);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[CcuAllocChannels] HrtGetDevicePhyIdByIndex failed, ret=%d", ret);
+            return ret;
+        }
         auto &rdmaHandleMgr = RdmaHandleManager::GetInstance();
         const RdmaHandle rdmaHandle = rdmaHandleMgr.GetByIp(devPhyId, ccuChannelPara.ipAddr);
         const auto &dieIdAndFuncId = rdmaHandleMgr.GetDieAndFuncId(rdmaHandle);

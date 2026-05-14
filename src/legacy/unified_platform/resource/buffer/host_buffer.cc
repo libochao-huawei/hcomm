@@ -27,7 +27,13 @@ HostBuffer::HostBuffer(std::size_t allocSize) : Buffer(allocSize), selfOwned(tru
         std::string msg = "allocaSize should not be 0!";
         THROW<InternalException>(msg);
     }
-    addr_ = reinterpret_cast<uintptr_t>(HrtMallocHost(allocSize));
+    void* hostPtr = nullptr;
+    HcclResult ret = HrtMallocHost(allocSize, hostPtr);
+    if (ret != HCCL_SUCCESS) {
+        std::string msg = "HrtMallocHost failed, ret=" + std::to_string(ret);
+        THROW<InternalException>(msg);
+    }
+    addr_ = reinterpret_cast<uintptr_t>(hostPtr);
 }
 
 HostBuffer::~HostBuffer()

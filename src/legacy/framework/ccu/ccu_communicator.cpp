@@ -10,8 +10,38 @@
 
 #include "ccu_communicator.h"
 #include "communicator_impl.h"
+#include "runtime_api_exception.h"
 
 namespace Hccl {
+
+static inline s32 GetDeviceIdHelper()
+{
+    s32 deviceId;
+    HcclResult ret = HrtGetDevice(deviceId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("GetDeviceIdHelper: HrtGetDevice failed, ret=%d", ret);
+        throw RuntimeApiException(StringFormat("GetDeviceIdHelper failed, ret=%d", ret));
+    }
+    return deviceId;
+}
+
+HcclResult CcuCommunicator::Create(CommunicatorImpl *comm, std::unique_ptr<CcuCommunicator>& ccuComm)
+{
+    try {
+        ccuComm = std::make_unique<CcuCommunicator>(comm);
+        return HCCL_SUCCESS;
+    } catch (const RuntimeApiException &e) {
+        HCCL_ERROR("CcuCommunicator::Create failed: %s", e.what());
+        return HCCL_E_RUNTIME;
+    }
+}
+
+CcuCommunicator::CcuCommunicator(CommunicatorImpl *comm)
+    : comm(comm), devLogicId(GetDeviceIdHelper()), ccuResPackMgr(), ccuJettyMgr(devLogicId),
+      ccuTransportMgr(*comm, devLogicId), ccuTransportGroupMgr(*comm),
+      registeredCcuCtxMgr(devLogicId)
+{
+}
 
 CcuResPackMgr *CcuCommunicator::GetCcuResPackMgr()
 {

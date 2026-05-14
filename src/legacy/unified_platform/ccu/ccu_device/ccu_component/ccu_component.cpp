@@ -65,7 +65,11 @@ void CcuComponent::Init()
         return;
     }
 
-    devPhyId = HrtGetDevicePhyIdByIndex(devLogicId);
+    HcclResult ret = HrtGetDevicePhyIdByIndex(devLogicId, devPhyId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[CcuComponent] HrtGetDevicePhyIdByIndex failed, ret=%d", ret);
+        return;
+    }
     CheckDiesEnable();
     for (uint8_t dieId = 0; dieId < MAX_CCU_IODIE_NUM; dieId++) {
         CleanDieCkes(dieId);
@@ -153,7 +157,13 @@ static HcclResult FindOneUsableEid(const uint32_t devLogicId, const uint8_t dieI
 
     std::string name;
     bool findFlag = false;
-    u32 devPhyId = HrtGetDevicePhyIdByIndex(devLogicId);
+    DevId devPhyId;
+    ret = HrtGetDevicePhyIdByIndex(devLogicId, devPhyId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_WARNING("[CcuComponent][%s] HrtGetDevicePhyIdByIndex failed, devLogicId[%u], dieId[%u], ret=%d",
+            __func__, devLogicId, dieId, ret);
+        return ret;
+    }
 
     // 如果无法查询设备是否为uboe设备，报错退出
     CHK_RET(HrtGetUboeFlagEnable(devPhyId));
@@ -522,7 +532,12 @@ HcclResult CcuComponent::ConfigLoopChannel(const uint8_t dieId, const IpAddress 
 void CcuComponent::ConfigMsIdToken()
 {
     bool isAX = CcuResSpecifications::GetInstance(devLogicId).GetAXFlag();
-    const uint32_t phyDeviceId = HrtGetDevicePhyIdByIndex(devLogicId);
+    DevId phyDeviceId;
+    HcclResult ret = HrtGetDevicePhyIdByIndex(devLogicId, phyDeviceId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[CcuComponent] HrtGetDevicePhyIdByIndex failed, ret=%d", ret);
+        return;
+    }
     const HRaInfo info(HrtNetworkMode::HDC, phyDeviceId);
     struct CustomChannelInfoIn  inBuff{};
     struct CustomChannelInfoOut outBuff{};

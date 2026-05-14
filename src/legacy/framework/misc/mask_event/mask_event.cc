@@ -13,9 +13,16 @@
 
 namespace Hccl {
 
-MaskEvent::MaskEvent() : eventPtr(HrtEventCreateWithFlag(ACL_EVENT_CAPTURE_STREAM_PROGRESS))
+MaskEvent::MaskEvent()
 {
-    // 待修改: flag暂时只用STREAM_MARK
+    aclrtEvent eventTmp;
+    HcclResult ret = HrtEventCreateWithFlag(ACL_EVENT_CAPTURE_STREAM_PROGRESS, eventTmp);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[MaskEvent] HrtEventCreateWithFlag failed, ret=%d", ret);
+        eventPtr = nullptr;
+        return;
+    }
+    eventPtr = eventTmp;
 }
 
 MaskEvent::~MaskEvent()
@@ -30,7 +37,13 @@ void MaskEvent::Record(const Stream &stream) const
 
 HrtEventStatus MaskEvent::QueryStatus() const
 {
-    return HrtEventQueryStatus(eventPtr);
+    HrtEventStatus status;
+    HcclResult ret = HrtEventQueryStatus(eventPtr, status);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[MaskEvent] HrtEventQueryStatus failed, ret=%d", ret);
+        return HrtEventStatus::EVENT_INIT;
+    }
+    return status;
 }
 
 } // namespace Hccl

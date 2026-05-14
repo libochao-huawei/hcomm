@@ -526,8 +526,18 @@ HcclResult HcomAlltoAllVCV2(const void *sendBuf, const void *sendCountMatrix, Hc
     CHK_RET(HcomCheckAlltoAllVCExternalMemV2(sendBuf, sendCountMatrix, recvBuf, rankSize, myRank));
 
     std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
-    s32 streamId = HrtGetStreamId(stream);
-    s32 deviceLogicId = HrtGetDevice();
+    s32 streamId;
+    HcclResult ret = HrtGetStreamId(stream, streamId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("HrtGetStreamId failed, ret=%d", ret);
+        return HCCL_E_INTERNAL;
+    }
+    s32 deviceLogicId;
+    ret = HrtGetDevice(deviceLogicId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("HrtGetDevice failed, ret=%d", ret);
+        return HCCL_E_INTERNAL;
+    }
     u64 sendCountMatrixHash;
     HcomGetHashFromSendCountMatrixV2(sendCountMatrixHash, sendCountMatrix, rankSize, tag);
     /* 接口交互信息日志 */
