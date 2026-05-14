@@ -75,6 +75,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/group
     ${HCCL_CODE_ROOT}/src/framework/nslbdp/
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/api_c_adpt
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/cluster_monitor
     ${HCCL_CODE_ROOT}/src/framework/next/common
 
     # src/platform 目录下头文件
@@ -180,6 +181,7 @@ set(UT_COMMON_INCLUDE_LIST
 
     # legacy include
     ${HCCL_CODE_ROOT}/src/legacy/
+    ${HCCL_CODE_ROOT}/src/legacy/include
     ${HCCL_CODE_ROOT}/src/legacy/common/
     ${HCCL_CODE_ROOT}/src/legacy/common/utils/
     ${HCCL_CODE_ROOT}/src/legacy/common/exception/
@@ -276,6 +278,10 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/ccu
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aicpu/
+
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/reged_mems
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/net_dev
+
     ${HCCL_CODE_ROOT}/src/framework/next/comms/api_c_adpt/
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/communicator/ns_recovery
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/communicator/ns_recovery/aicpu

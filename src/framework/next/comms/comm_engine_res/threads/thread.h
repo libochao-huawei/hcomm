@@ -81,6 +81,7 @@ public:
     virtual Stream *GetStream() const = 0;
     virtual void *GetStreamLitePtr() const = 0;
     virtual void LaunchTask() const = 0;
+    virtual void TryLaunchTask() const = 0;
 
     // Local Data Plane Functions
     virtual HcclResult LocalNotifyRecord(uint32_t notifyId) const = 0;

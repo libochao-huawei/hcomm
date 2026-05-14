@@ -26,6 +26,7 @@
 #include "ccu_ctx.h"
 #include "ccu_rep_translator.h"
 #include "ccu_ctx_mgr.h"
+#include "ccu_context_mgr_imp.h"
 #include "ins_exe_que.h"
 
 #include "orion_adapter_rts.h"
@@ -253,6 +254,22 @@ TEST_F(CcuContextManagerTest, AGTest)
 
     // 卸载指令
     EXPECT_EQ(InsExeQue::DeregisterExtendInstruction(deviceLogicId, entityId), HCCL_SUCCESS);
+}
+
+TEST_F(CcuContextManagerTest, GetCtx_ExecutorIdNotExist)
+{
+    CtxMgrImp& ctxMgr = CtxMgrImp::GetInstance(0);
+    CcuContext* result = ctxMgr.GetCtx(9999, 0, 0);
+    EXPECT_EQ(result, nullptr);
+}
+
+TEST_F(CcuContextManagerTest, GetCtx_ThreadSafety)
+{
+    CtxMgrImp& ctxMgr = CtxMgrImp::GetInstance(0);
+    ctxMgr.ctxGroupMap_[1] = CcuCtxGroup{};
+    CcuContext* result = ctxMgr.GetCtx(1, 0, 0);
+    EXPECT_EQ(result, nullptr);
+    ctxMgr.ctxGroupMap_.clear();
 }
 
 HcclResult CtxMgrGetResourceSharedResStub(

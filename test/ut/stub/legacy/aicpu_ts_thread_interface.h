@@ -61,6 +61,10 @@ public:
     {
     }
 
+    void TryLaunchTask() const
+    {
+    }
+
     inline uint32_t GetSqId() const
     {
         return 0;

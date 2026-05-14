@@ -233,7 +233,7 @@ TEST_F(RankInfoDispatherTest, St_ProcessSend_When_Send_Again_Expect_Return_TimeO
     MOCKER(HrtRaWaitEventHandle)
         .stubs()
         .with(any(), any(), any(), any(), outBound(eventsNum1))
-        .will(ignoreReturnValue());
+        .will(returnValue(HCCL_SUCCESS));
 
     EnvSocketConfig envConfig;
     EnvSocketConfig &fakeEnvConfig = envConfig;
@@ -266,7 +266,7 @@ TEST_F(RankInfoDispatherTest, St_ProcessSend_When_EventsNum_Error_Expect_Return_
     MOCKER(HrtRaWaitEventHandle)
         .stubs()
         .with(any(), any(), any(), any(), outBound(eventsNum))
-        .will(ignoreReturnValue());
+        .will(returnValue(HCCL_E_NETWORK));
 
     // then
     IpAddress remoteIp;

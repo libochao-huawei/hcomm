@@ -231,6 +231,15 @@ HcclResult CommTaskLaunch(ThreadHandle *threads, uint32_t threadNum) // host fft
     return HcclTaskLaunch(streams.data(), threadNum);
 }
 
+HcclResult DispatchAllStreams(ThreadHandle *threads, uint32_t threadNum)
+{
+    CHK_PTR_NULL(threads);
+    CHK_PRT_RET(threadNum < 1, HCCL_ERROR("[DispatchAllStreams]threadNum is less than 1"), HCCL_E_PARA);
+
+    HCCL_WARNING("[DispatchAllStreams] DispatchAllStreams is only supported on A5 device, skip");
+    return HCCL_E_NOT_SUPPORT;
+}
+
 int32_t HcommWriteOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len)
 {
     HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].",
@@ -790,6 +799,7 @@ HcclResult HcclProfilingReportOp(HcclComm comm, uint64_t beginTime)
     HCCL_INFO("[%s] Report All Tasks Info, comm[%p], hcclCommDfx[%p] GetMirrorTaskManager[%p].",
         __func__, comm, hcclCommDfx, hcclCommDfx->GetMirrorTaskManager());
     //单算子模式暂时默认true
+    CHK_RET(hcclCommDfx->ReportAllTasks(true));
     CHK_RET(hcclCommDfx->ReportOp(beginTime, true, true));
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
@@ -855,4 +865,4 @@ extern HcclResult HcclReportAivKernel(HcclComm comm, uint64_t beginTime)
     CHK_RET(hcclCommDfx->AddTaskInfoCallback(streamId, taskId, taskParam, INVALID_U64));
     HCCL_INFO("[HcclReportAivKernel] HcclReportAivKernel sucess");
     return HCCL_SUCCESS;
-} 
+}
