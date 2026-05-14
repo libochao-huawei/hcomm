@@ -76,6 +76,7 @@ private:
     HcclResult InitUrmaChannel(HcclChannelUrmaRes *commParam);
     HcclResult ParsePackData(std::vector<char> &data, ChannelHandle &handle);
     HcclResult RegisterChannelAddDfxTaskInfo(ChannelHandle channel);
+    HcclResult RegisterChannelCacheCallbacks(ChannelHandle channel);
     HcclResult RegisterThreadAddDfxTaskInfo(ThreadHandle thread);
     void InitBackGroundThread();
     HcclResult ResumePackData(std::vector<char> &data, ChannelHandle &handle);
