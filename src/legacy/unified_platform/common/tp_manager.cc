@@ -335,8 +335,10 @@ HcclResult TpManager::RunHandleCompletedGetTpEraseReq(ReqCtxMap &reqCtxMap, cons
     std::unique_lock<std::mutex> &reqCtxLock, const RaUbGetTpInfoParam &param, TpInfo &tpInfo, const bool withSlPolicy)
 {
     EraseReqCtxAtQos(reqCtxMap, locAddr, rmtAddr, qosKey);
+    // 先完成缓存写入再释放 req 互斥量，避免其它线程在同一 qosKey 上再次插入 in-flight RequestCtx 与本次提交竞态
+    const HcclResult ret = HandleCompletedRequest(std::move(completedReqCtx), param, tpInfo, withSlPolicy);
     reqCtxLock.unlock();
-    return HandleCompletedRequest(std::move(completedReqCtx), param, tpInfo, withSlPolicy);
+    return ret;
 }
 
 HcclResult TpManager::GetTpInfoOnDeviceWaitListPhase(const RaUbGetTpInfoParam &param, ReqCtxMap &reqCtxMap,
