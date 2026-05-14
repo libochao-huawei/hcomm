@@ -38,6 +38,7 @@
 #include "param_check_pub.h"
 #include "channel_process.h"
 #include "launch_device.h"
+#include "../../endpoints/dfx/endpoint_monitor.h"//cmakelist加include
 
 
 namespace hcomm {
@@ -229,6 +230,14 @@ HcommResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *en
     CHK_PTR_NULL(handle);
     EXECEPTION_CATCH(g_EndpointMap.AddEndpoint(handle, std::move(endpointPtr)), return HCCL_E_INTERNAL);
     *endpointHandle = handle;
+
+    if ((endpoint->protocol == COMM_PROTOCOL_UBC_CTP) || (endpoint->protocol == COMM_PROTOCOL_UBC_TP)) {
+        s32 devLogicIdSigned = HcclGetThreadDeviceId();
+        CHK_PRT_RET(devLogicIdSigned < 0,
+            HCCL_ERROR("[%s] HcclGetThreadDeviceId failed, ret[%d]", __func__, devLogicIdSigned), HCCL_E_INTERNAL);
+        uint32_t devLogicId = static_cast<uint32_t>(devLogicIdSigned);
+        EndpointMonitor::GetInstance(devLogicId).RegisterToEndpointMonitor(devLogicId, handle);
+    }
 
     HCCL_INFO("[%s] endpointDesc.protocol [%d] and endpointDesc.loc.locType [%d] create endpointHandle [%p] done.", 
             __func__, endpoint->protocol, endpoint->loc.locType, handle);
