@@ -40,7 +40,7 @@ HcclResult HcclCommSymWinRegister(HcclComm comm, void *addr, uint64_t size, Hccl
 | addr | 输入 | 预留的虚拟内存地址。<br>虚拟内存需要调用aclrtReserveMemAddress接口预留。 |
 | size | 输入 | 对称内存窗口的大小，0 < size <= HcclCommConfig.hcclSymWinMaxMemSizePerRank，并且size不能超过“与addr做映射的物理内存”大小（即调用aclrtMallocPhysical接口申请的Device物理内存）。<br>注：对称内存注册按物理内存的大小对齐，实际注册的对称内存窗口大小等于“与addr做映射的物理内存”的大小。 |
 | winHandle | 输出 | 存放“对称内存窗口资源句柄“的指针。<br>HcclCommSymWindow类型的定义请参见[HcclCommSymWindow](./data_type_definition/HcclCommSymWindow.md)。 |
-| flag | 输入 | 是否启用对称内存。 |
+| flag | 输入 | 是否启用对称内存，当前仅支持传入1。 |
 
 ## 返回值
 
@@ -50,7 +50,9 @@ HcclResult HcclCommSymWinRegister(HcclComm comm, void *addr, uint64_t size, Hccl
 
 - 仅支持Atlas A3 训练系列产品/Atlas A3 推理系列产品的超节点内通信。
 - 仅支持通信算子展开模式为AI CPU的场景。
-- 该接口仅支持集合通信算子AllGather、ReduceScatter、AllReduce。
+- 仅支持超节点内AI Server间使用HCCS链路进行SDMA通信的场景，不支持使用RoCE进行RDMA通信的场景（即不支持设置环境变量HCCL_INTER_HCCS_DISABLE为"TRUE"，单机场景该环境变量无效）。
+- 仅支持对称组网，即每个Server内卡数相同的场景。
+- 该接口仅支持集合通信算子AllGather、ReduceScatter、AllReduce、AllToAll。
 - 需确保通信域中的所有rank同时调用该注册接口。
 - 所有rank的输入地址映射的物理内存大小一致（对称内存注册按物理内存的大小对齐）。
 - 所有rank调用该接口时，输入的size参数需要保持一致。
@@ -65,15 +67,24 @@ HcclCommConfig config;
 HcclCommConfigInit(&config);
 // 按需修改通信域配置
 config.hcclSymWinMaxMemSizePerRank = 10; //单位GB, 默认值为16。设置对称堆预留的虚拟内存大小 = rankSize * config.hcclSymWinMaxMemSizePerRank;
+
+// 获取通信域参数
+uint32_t rankSize = 4;
+uint32_t rankId = 0;
+int32_t deviceId;
+ACLCHECK(aclrtGetDevice(&deviceId));
+HcclRootInfo rootInfo;
+HCCLCHECK(HcclGetRootInfo(&rootInfo));
+
 // 初始化集合通信域
 HcclComm hcclComm;
-HCCLCHECK(HcclCommInitRootInfoConfig(rankSize, &rootInfo, deviceId, &config, &hcclComm));
+HCCLCHECK(HcclCommInitRootInfoConfig(rankSize, &rootInfo, rankId, &config, &hcclComm));
+
 // 创建任务流
 aclrtStream stream;
-aclrtCreateStream(&stream);
+ACLCHECK(aclrtCreateStream(&stream));
+
 // 物理内存属性配置
-int32_t deviceId;
-aclrtGetDevice(&deviceId);
 aclrtPhysicalMemProp prop;
 prop.handleType = ACL_MEM_HANDLE_TYPE_NONE;
 prop.allocationType = ACL_MEM_ALLOCATION_TYPE_PINNED;
@@ -81,41 +92,53 @@ prop.memAttr = ACL_HBM_MEM_HUGE;
 prop.location.id = deviceId;
 prop.location.type = ACL_MEM_LOCATION_TYPE_DEVICE;
 prop.reserve = 0;
+
 // 获取对齐粒度，通常为2M
-size_t granularity = 0;
-aclrtMemGetAllocationGranularity(&prop, ACL_RT_MEM_ALLOC_GRANULARITY_RECOMMENDED, &granularity);
+size_t granularity;
+ACLCHECK(aclrtMemGetAllocationGranularity(&prop, ACL_RT_MEM_ALLOC_GRANULARITY_RECOMMENDED, &granularity));
+
 // size按粒度对齐
 size_t size = 2 * 1024 * 1024;
 size_t allocSize = (size + granularity - 1) / granularity * granularity;
-// 预留虚拟内存
-void *virPtr = nullptr;
-aclrtReserveMemAddress(&virPtr, allocSize, 0, nullptr, 1);
-// 申请物理内存
-aclrtDrvMemHandle handle;
-aclrtMallocPhysical(&handle, allocSize, &prop, 0);
-// 建立物理到虚拟的映射
-aclrtMapMem(virPtr, allocSize, 0, handle, 0);
 
-size_t send_bytes = 4*1024;
-size_t recv_bytes = 8*1024;
-HcclCommSymWindow sym_win;
+// 预留虚拟内存
+void *virPtr;
+ACLCHECK(aclrtReserveMemAddress(&virPtr, allocSize, 0, nullptr, 1));
+
+// 申请物理内存
+aclrtDrvMemHandle memHandle;
+ACLCHECK(aclrtMallocPhysical(&memHandle, allocSize, &prop, 0));
+
+// 建立物理到虚拟的映射
+ACLCHECK(aclrtMapMem(virPtr, allocSize, 0, memHandle, 0));
+
+size_t sendBytes = 1024;
+size_t recvBytes = rankSize * sendBytes;
+HcclCommSymWindow symWin;
 // 注册对称内存
-HcclCommSymWinRegister(hcclComm, virPtr, send_bytes + recv_bytes, &sym_win, HCCL_WIN_COLL_SYMMETRIC);
+HCCLCHECK(HcclCommSymWinRegister(hcclComm, virPtr, sendBytes + recvBytes, &symWin, 1));
+
 // 使用对称内存
-void *send_buff = virPtr;    
-void *recv_buff = static_cast&lt;char*>(send_buff) + send_bytes;
+void *sendBuff = virPtr;
+void *recvBuff = static_cast<char*>(sendBuff) + sendBytes;
+
 // 调用集合通信算子
-HCCLCHECK(HcclAllGather(send_buff, recv_buff, 1024, HCCL_DATA_TYPE_FP32, hcclComm, stream));
+HCCLCHECK(HcclAllGather(sendBuff, recvBuff, sendBytes, HCCL_DATA_TYPE_INT8, hcclComm, stream));
+
 // 阻塞等待任务流中的集合通信任务执行完成
 ACLCHECK(aclrtSynchronizeStream(stream));
+
 // 解注册对称内存
-HcclCommSymWinDeregister(sym_win);
+HCCLCHECK(HcclCommSymWinDeregister(symWin));
+
 // 释放内存
-aclrtUnmapMem(virPtr);
-aclrtFreePhysical(handle);
-aclrtReleaseMemAddress(virPtr);
+ACLCHECK(aclrtUnmapMem(virPtr));
+ACLCHECK(aclrtFreePhysical(memHandle));
+ACLCHECK(aclrtReleaseMemAddress(virPtr));
+
 // 销毁任务流
-aclrtDestroyStream(stream);
+ACLCHECK(aclrtDestroyStream(stream));
+
 // 销毁通信域
-HcclCommDestroy(hcclComm);
+HCCLCHECK(HcclCommDestroy(hcclComm));
 ```
