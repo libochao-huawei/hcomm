@@ -10,11 +10,16 @@
 #include "endpoint_mgr.h"
 #include <algorithm>
 #include "hcomm_c_adpt.h"
+#include "dfx/endpoint_monitor.h"
 
 namespace hcomm {
 
 EndpointMgr::~EndpointMgr()
 {
+    for (auto id : MAX_MODULE_DEVICE_NUM) {
+        EndpointMonitor::GetInstance(id).UnRegisterToEndpointMonitor();
+    }
+
     for (const auto &kv : endpointMemMap_) {
         const EndpointHandle &endpointHandle = kv.first;
         const std::vector<MemHandle> &memHandleVec = kv.second;
