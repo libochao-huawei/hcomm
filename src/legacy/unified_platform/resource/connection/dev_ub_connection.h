@@ -141,6 +141,9 @@ private:
     u32                 localTpnStart{0};
     u32                 localTpNum{0};
     TpInfo              tpInfo{};
+    /// 与 `TpManager` 缓存键一致：首次成功 `GetTpInfo` 时的 `p.qos`（须在改写 `qos_` 为 mapped priority 之前记录）
+    uint32_t            tpMgrReleaseQos_{0};
+    bool                tpMgrReleaseQosCaptured_{false};
 
     u32 piVal{0};
     u32 ciVal{0};
