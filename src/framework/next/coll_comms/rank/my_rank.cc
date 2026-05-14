@@ -269,7 +269,7 @@ HcclResult MyRank::QueryListenPort(uint32_t localRank, uint32_t remoteRank, cons
 }
 
 HcclResult MyRank::BatchCreateSockets(const HcclChannelDesc* channelDescs, uint32_t channelNum,
-        const std::string &commTag, std::vector<HcommChannelDesc> &hcommDescs)
+        const std::string &socketTag, std::vector<HcommChannelDesc> &hcommDescs)
 {
     CHK_PTR_NULL(channelDescs);
     CHK_PRT_RET(channelNum == 0,
@@ -314,10 +314,10 @@ HcclResult MyRank::BatchCreateSockets(const HcclChannelDesc* channelDescs, uint3
 
         Hccl::Socket* socket = nullptr;
         // 申请的socket在channel资源不足回退时不释放，回退后会复用
-        auto ret = endpointPair->GetSocket(rankId_, remoteRank, commTag, reuseIdx, listenPort, socket, devicePhyId, remoteDevicePhyId);
+        auto ret = endpointPair->GetSocket(rankId_, remoteRank, socketTag, reuseIdx, listenPort, socket, devicePhyId, remoteDevicePhyId);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[%s] failed to get socket, channelIndex[%u], remoteRank[%u], protocol[%d] reuseIdx[%u]",
-                __func__, i, remoteRank, localEndpointDesc.protocol, reuseIdx),
+            HCCL_ERROR("[%s] failed to get socket, channelIndex[%u], remoteRank[%u], protocol[%d], reuseIdx[%u], tag[%s]",
+                __func__, i, remoteRank, localEndpointDesc.protocol, reuseIdx, socketTag.c_str()),
             ret);
         CHK_PTR_NULL(socket);
 
@@ -626,7 +626,8 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
         CHK_RET(ConfigSqDepthByExpansionMode(engine, hcommDescs[i]));
     }
 
-    CHK_RET(BatchCreateSockets(channelDescs, channelNum, commTag, hcommDescs));
+    std::string socketTag = commTag + "_engine_" + std::to_string(engine);
+    CHK_RET(BatchCreateSockets(channelDescs, channelNum, socketTag, hcommDescs));
     CHK_RET_UNAVAIL(BatchCreateChannels(engine, channelDescs, channelNum, hcommDescs, hostChannelHandleList));
     CHK_RET(BatchConnectChannels(channelDescs, hostChannelHandleList, channelNum));
     // 添加初始化时进行填表
