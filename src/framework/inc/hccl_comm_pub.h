@@ -421,14 +421,6 @@ public:
     HcclResult DeregisterWindow(HcclCommSymWindow winHandle);
     HcclResult GetCommSymWin(void* ptr, size_t size, HcclCommSymWindow *winHandle, size_t *offset);
     aclrtBinHandle GetBinHandle();
-
-    // 交换信息管理接口
-    HcclResult AddExchangeInfo(const void *data, uint32_t length);
-    HcclResult GetExchangeInfo(uint32_t remoteRank, uint32_t length, void* data, uint32_t* actualLength);
-    HcclResult StoreRemoteExchangeInfo(uint32_t remoteRank, std::vector<u8>& data);
-    HcclResult ResetExchangeInfo();
-    const std::vector<u8>& GetExchangeInfoBuf() const;
-    uint32_t GetExchangeInfoLen() const;
 protected:
     /* * 禁止用户对API类的实体做拷贝构造或拷贝赋值的操作，内部有指针成员变量 */
     hcclComm(const hcclComm &) = delete;
@@ -471,9 +463,6 @@ private:
         std::unique_ptr<CollComm> collComm_{nullptr};
     #endif
 #endif
-
-    std::vector<u8> exchangeInfoBuf_;                                         // 本端待交换信息缓冲区
-    std::unordered_map<uint32_t, std::vector<u8>> remoteExchangeInfoMap_;    // 对端交换信息<remoteRank, data>
 };
 }  // namespace hccl
 

@@ -777,10 +777,11 @@ std::vector<std::string> SplitDfsConfig(const std::string &str, char delimiter)
 
 DfsConfig CastDfsConfig(const std::string &dfsConfigEnv)
 {
-    constexpr std::size_t                              DFS_CONFIG_ITEM_NUM = 2;
-    const std::array<std::string, DFS_CONFIG_ITEM_NUM> dfsItemName   = {"task_exception", "cluster_heartbeat"};
+    constexpr std::size_t                              DFS_CONFIG_ITEM_NUM = 3;
+    const std::array<std::string, DFS_CONFIG_ITEM_NUM> dfsItemName   = {"task_exception", "cluster_heartbeat, inconsistent_check"};
     bool                                               taskExceptionEnable = true;
     bool                                               clusterHeartBeatEnable = true;
+    int32_t                                            rankConsistentState = 0;
     std::string                                        dfsConfigEnvCopy    = dfsConfigEnv;
     dfsConfigEnvCopy.erase(std::remove(dfsConfigEnvCopy.begin(), dfsConfigEnvCopy.end(), ' '), dfsConfigEnvCopy.end());
     auto items = SplitDfsConfig(dfsConfigEnvCopy, ',');
@@ -814,11 +815,24 @@ DfsConfig CastDfsConfig(const std::string &dfsConfigEnv)
                 THROW<InvalidParamsException>(StringFormat(
                     "env[HCCL_DFS_CONFIG] please set cluster_heartbeat to 'on' or 'off'.", heartBeat.c_str()));
             }
+        } else if (itemPair[0] == dfsItemName[2]) {
+            auto rankConsistent = itemPair[1];
+            if (rankConsistent == "off") {
+                rankConsistentState = -1;
+            }else if (rankConsistent == "first")
+            {
+                rankConsistentState = 0;   
+            }else if (rankConsistent == "on")
+            {
+                rankConsistentState = 1;  
+            }else {
+                HCCL_ERROR("inconsistent_check value is illegal");
+            }
         }
     }
-    DfsConfig config{taskExceptionEnable, clusterHeartBeatEnable};
+    DfsConfig config{taskExceptionEnable, clusterHeartBeatEnable, rankConsistentState};
 
-    HCCL_RUN_INFO("[Parse] HCCL_DFS_CONFIG task_exception set by environment to [%d], cluster_heartbeat [%d]",
+    HCCL_RUN_INFO("[Parse] HCCL_DFS_CONFIG task_exception set by environment to [%d], cluster_heartbeat [%d] rankConsistentState[%d]",
         config.taskExceptionEnable, config.clusterHeartBeatEnable);
     return config;
 }
