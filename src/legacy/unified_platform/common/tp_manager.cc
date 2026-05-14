@@ -334,9 +334,11 @@ HcclResult TpManager::RunHandleCompletedGetTpEraseReq(ReqCtxMap &reqCtxMap, cons
     const IpAddress &rmtAddr, const uint32_t qosKey, RequestCtx &&completedReqCtx,
     std::unique_lock<std::mutex> &reqCtxLock, const RaUbGetTpInfoParam &param, TpInfo &tpInfo, const bool withSlPolicy)
 {
+    // `completedReqCtx` 往往绑定在 reqCtxMap 的槽位上；必须先移出再 Erase，否则会先析构槽内对象再 move，属 UB（易 double free）
+    RequestCtx doneCtx(std::move(completedReqCtx));
     EraseReqCtxAtQos(reqCtxMap, locAddr, rmtAddr, qosKey);
     // 先完成缓存写入再释放 req 互斥量，避免其它线程在同一 qosKey 上再次插入 in-flight RequestCtx 与本次提交竞态
-    const HcclResult ret = HandleCompletedRequest(std::move(completedReqCtx), param, tpInfo, withSlPolicy);
+    const HcclResult ret = HandleCompletedRequest(std::move(doneCtx), param, tpInfo, withSlPolicy);
     reqCtxLock.unlock();
     return ret;
 }
