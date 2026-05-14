@@ -536,7 +536,7 @@ void UbTransportLiteImpl::WriteReduce(const RmaBufferLite &loc, const Buffer &rm
                             locRmaBufSlicelite.GetSize(), reduceIn, stream, taskId);
 }
 
-constexpr int rtsqDepth = 128; // rtsq队列深度，当前支持一次下发128个任务
+constexpr int wqeDepth = 8192; // WQE队列深度
 void UbTransportLiteImpl::BatchTransfer(const std::vector<RmaBufferLite> &loc, const std::vector<Buffer> &rmt,
     const std::vector<BaseTransportLiteImpl::TransferOp> &transferOp, const StreamLite &stream)
 {
@@ -548,69 +548,24 @@ void UbTransportLiteImpl::BatchTransfer(const std::vector<RmaBufferLite> &loc, c
     auto taskId = stream.GetRtsq()->GetTaskId();
     u32 insNum = loc.size();
     for (u32 i = 0; i < insNum; i++) {
-        cfg.cqeEn     = (i == insNum - 1) || (i % rtsqDepth == 0) ? true : false; // 返回最后一个sqe的cqe
-        cfg.placeOdr  = (i == insNum - 1) ? UB_STRONG_ORDER : UB_RELAX_ORDER; // 最后一个要求保序
-        cfg.compOrder = (i == insNum - 1) ? UB_COMPLETION : UB_NO_COMPLETION;
+        cfg.cqeEn     = (i == insNum - 1) ? true : false;                         // 返回最后一个sqe的cqe
+        cfg.placeOdr  = (i == insNum - 1) ? UB_STRONG_ORDER : UB_RELAX_ORDER;     // 最后一个要求保序
+        cfg.compOrder = (i == insNum - 1) ? UB_COMPLETION : UB_NO_COMPLETION;     // 最后一个要求保序
 
         auto localBuffer  = GetRmaBufSlicelite(loc[i]);
         auto remoteBuffer = GetRmtRmaBufSliceLite(rmt[i]);
-
-        // if (transferOp[i].transType == TransferType::WRITE) {
-        //     if (notifyIdxs[i] != INVALID_VALUE_NOTIFYID) {
-        //         if (transferOp[i].reduceIn.reduceOp == ReduceOp::INVALID) { // write
-        //             HCCL_INFO("BatchTransfer Write idx=%u, loc[%s], rmt[%s]", i, localBuffer.Describe().c_str(), remoteBuffer.Describe().c_str()); // 调测日志
-        //             connVec[0]->Write(localBuffer, remoteBuffer, cfg, stream, connOut); // 当前只有一个connection，对应一个jetty 
-        //         } else { // write reduce
-        //             HCCL_INFO("BatchTransfer WriteReduce idx=%u, loc[%s], rmt[%s], dataType[%s], reduceOp[%s]", i, localBuffer.Describe().c_str(),
-        //                         remoteBuffer.Describe().c_str(), transferOp[i].reduceIn.dataType.Describe().c_str(), transferOp[i].reduceIn.reduceOp.Describe().c_str()); //调测日志
-        //             connVec[0]->WriteReduce(transferOp[i].reduceIn.dataType, transferOp[i].reduceIn.reduceOp, localBuffer,
-        //                 stream, remoteBuffer, cfg, connOut);
-        //         }
-        //     } else {
-        //         if (transferOp[i].reduceIn.reduceOp == ReduceOp::INVALID) {
-        //             if (len[i] == 0) { //record
-                        
-        //             } else {// write with notify
-                       
-        //             }
-        //         } else { // write reduce with notify
-                    
-        //         }
-        //     }
-        // } else if (transferOp[i].transType == TransferType::READ) {
-        //     if (notifyIdxs[i] != INVALID_VALUE_NOTIFYID) {
-        //         if (transferOp[i].reduceIn.reduceOp == ReduceOp::INVALID) { // read
-        //             HCCL_INFO("BatchTransfer Read idx=%u, loc[%s], rmt[%s]", i, localBuffer.Describe().c_str(), remoteBuffer.Describe().c_str()); // 调测日志
-        //             connVec[0]->Read(localBuffer, remoteBuffer, cfg, stream, connOut); // 当前只有一个connection，对应一个jetty
-        //         } else { // read reduce
-        //             HCCL_INFO("BatchTransfer ReadReduce idx=%u, loc[%s], rmt[%s], dataType[%s], reduceOp[%s]", i, localBuffer.Describe().c_str(),
-        //                         remoteBuffer.Describe().c_str(), transferOp[i].reduceIn.dataType.Describe().c_str(), transferOp[i].reduceIn.reduceOp.Describe().c_str()); // 调测日志
-        //             connVec[0]->ReadReduce(transferOp[i].reduceIn, localBuffer, remoteBuffer, stream, cfg, connOut);
-        //         }
-        //     } else { // wait
-
-        //     }
-        // }
         if (transferOp[i].transType == TransferType::WRITE) {
-            HCCL_INFO("BatchTransfer Write idx=%u, loc[%s], rmt[%s]", i, localBuffer.Describe().c_str(), remoteBuffer.Describe().c_str()); // 调测日志
             connVec[0]->Write(localBuffer, remoteBuffer, cfg, stream, connOut); // 当前只有一个connection，对应一个jetty 
         } else if (transferOp[i].transType == TransferType::WRITE_REDUCE) { // write reduce
-            HCCL_INFO("BatchTransfer WriteReduce idx=%u, loc[%s], rmt[%s], dataType[%s], reduceOp[%s]", i, localBuffer.Describe().c_str(),
-                                remoteBuffer.Describe().c_str(), transferOp[i].reduceIn.dataType.Describe().c_str(), transferOp[i].reduceIn.reduceOp.Describe().c_str()); //调测日志
             connVec[0]->WriteReduce(transferOp[i].reduceIn.dataType, transferOp[i].reduceIn.reduceOp, localBuffer,
                         stream, remoteBuffer, cfg, connOut);
         } else if (transferOp[i].transType == TransferType::READ) {
-            HCCL_INFO("BatchTransfer Read idx=%u, loc[%s], rmt[%s]", i, localBuffer.Describe().c_str(), remoteBuffer.Describe().c_str()); // 调测日志
             connVec[0]->Read(localBuffer, remoteBuffer, cfg, stream, connOut); // 当前只有一个connection，对应一个jetty
         } else if (transferOp[i].transType == TransferType::READ_REDUCE) { // read reduce
-            HCCL_INFO("BatchTransfer ReadReduce idx=%u, loc[%s], rmt[%s], dataType[%s], reduceOp[%s]", i, localBuffer.Describe().c_str(),
-                                remoteBuffer.Describe().c_str(), transferOp[i].reduceIn.dataType.Describe().c_str(), transferOp[i].reduceIn.reduceOp.Describe().c_str()); // 调测日志
             connVec[0]->ReadReduce(transferOp[i].reduceIn, localBuffer, remoteBuffer, stream, cfg, connOut);
-        } else { 
-
         }
 
-        if ( i % rtsqDepth == 0 || (i == insNum - 1)) { // 最后一个wqe或者达到队列深度，敲doorbell
+        if ( (i + 1) % wqeDepth == 0 || (i == insNum - 1)) { // 最后一个wqe或者达到队列深度，敲doorbell
             BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
         }
     }
