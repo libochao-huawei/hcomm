@@ -49,6 +49,7 @@ public:
     }
 
     RdmaHandle rdmaHandle_{nullptr};
+    std::vector<RdmaHandle> rdmaHandleList_{};
 };
 }
 
