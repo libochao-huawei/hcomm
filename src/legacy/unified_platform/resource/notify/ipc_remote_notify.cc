@@ -30,17 +30,34 @@ IpcRemoteNotify::IpcRemoteNotify(const Serializable &rmtDto) : BaseRemoteNotify(
     (void)memcpy_s(name, RTS_IPC_MEM_NAME_LEN, dto.name, RTS_IPC_MEM_NAME_LEN);
 
     // OpenIpc
-    u32 myPid = HrtDeviceGetBareTgid();
-    if (rmtPid == myPid) {
+    s32 myPid;
+    HcclResult ret = HrtDeviceGetBareTgid(myPid);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[IpcRemoteNotify] HrtDeviceGetBareTgid failed, ret=%d", ret);
+        return;
+    }
+    if (rmtPid == static_cast<u32>(myPid)) {
         handle = reinterpret_cast<void *>(handleAddr);
     } else {
+        RtNotify_t notifyHandle;
         if (devUsed) {
-            handle = HrtIpcOpenNotifyWithFlag(name, RT_NOTIFY_FLAG_DOWNLOAD_TO_DEV);
+            ret = HrtIpcOpenNotifyWithFlag(name, RT_NOTIFY_FLAG_DOWNLOAD_TO_DEV, notifyHandle);
         } else {
-            handle = HrtIpcOpenNotify(name);
+            ret = HrtIpcOpenNotify(name, notifyHandle);
         }
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[IpcRemoteNotify] HrtIpcOpenNotify failed, ret=%d", ret);
+            return;
+        }
+        handle = notifyHandle;
     }
-    addr = HrtNotifyGetAddr(handle);
+    u64 addrTmp;
+    ret = HrtNotifyGetAddr(handle, addrTmp);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[IpcRemoteNotify] HrtNotifyGetAddr failed, ret=%d", ret);
+        return;
+    }
+    addr = addrTmp;
     size = DevCapability::GetInstance().GetNotifySize();
     HCCL_INFO("IpcRemoteNotify[name=%s, handleAddr=0x%llx, id=%u, rmtPid=%u, rmtDevPhyId=%u, devUsed=%d, addr=%d, "
                         "handle=%p]", name, handleAddr, id, rmtPid, rmtDevPhyId, devUsed, addr, handle);

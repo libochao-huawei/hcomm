@@ -37,12 +37,25 @@ UniversalConcurrentMap<u32, volatile u32> RankInfoDetect::g_detectServerStatus_;
 
 RankInfoDetect::RankInfoDetect()
 {
-    devLogicId_ = HrtGetDevice();
-    s32 deviceNum = HrtGetDeviceCount();
-    CHK_PRT_THROW(devLogicId_ >= deviceNum,
+    HcclResult ret = HrtGetDevice(devLogicId_);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[RankInfoDetect::%s] HrtGetDevice failed, ret=%d", __func__, ret);
+        devLogicId_ = 0;
+    }
+    u32 deviceNum;
+    ret = HrtGetDeviceCount(deviceNum);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[RankInfoDetect::%s] HrtGetDeviceCount failed, ret=%d", __func__, ret);
+        return;
+    }
+    CHK_PRT_THROW(devLogicId_ >= static_cast<s32>(deviceNum),
         HCCL_ERROR("[RankInfoDetect::%s] deviceLogicId[%d] is invalid, deviceNum[%d].", __func__, devLogicId_, deviceNum),
         InternalException, "get hostIp fail");
-    devPhyId_ = HrtGetDevicePhyIdByIndex(devLogicId_);
+    ret = HrtGetDevicePhyIdByIndex(devLogicId_, devPhyId_);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[RankInfoDetect::SetupAgent] HrtGetDevicePhyIdByIndex failed, ret=%d", ret);
+        return;
+    }
 
     HCCL_INFO("[RankInfoDetect::%s] end, deviceNum[%d], devLogicId_[%d], devPhyId_[%u].",
         __func__, deviceNum, devLogicId_, devPhyId_);

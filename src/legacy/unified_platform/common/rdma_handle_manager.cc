@@ -302,7 +302,13 @@ void RdmaHandleManager::DestroyAll()
 HcclResult GetEidByAnyEidInfo(s32 deviceLogicId, const HrtDevEidInfo& eidInfo, const IpAddress& ipV4Address, IpAddress& eidAddress)
 {
     // 根据eidInfo初始化rdmaHandle
-    HrtRaUbCtxInitParam in(HrtNetworkMode::HDC, HrtGetDevicePhyIdByIndex(deviceLogicId), eidInfo.ipAddress);
+    DevId phyId;
+    HcclResult ret = HrtGetDevicePhyIdByIndex(deviceLogicId, phyId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[GetEidByAnyEidInfo] HrtGetDevicePhyIdByIndex failed, ret=%d", ret);
+        return ret;
+    }
+    HrtRaUbCtxInitParam in(HrtNetworkMode::HDC, phyId, eidInfo.ipAddress);
     RdmaHandle rdmaHandle = HrtRaUbCtxInit(in);
 
     // 调用ra_get_eid_by_ip转换ipAddress为eid
@@ -335,8 +341,19 @@ void RdmaHandleManager::UboeIpv4ToEid(const IpAddress& ipV4Address, IpAddress& e
         return;
     }
 
-    s32 deviceLogicId = HrtGetDevice();
-    HRaInfo                      info(HrtNetworkMode::HDC, HrtGetDevicePhyIdByIndex(deviceLogicId));
+    s32 deviceLogicId;
+    HcclResult ret = HrtGetDevice(deviceLogicId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[RdmaHandleManager::UboeIpv4ToEid] HrtGetDevice failed, ret=%d", ret);
+        return;
+    }
+    DevId phyId;
+    ret = HrtGetDevicePhyIdByIndex(deviceLogicId, phyId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[RdmaHandleManager::UboeIpv4ToEid] HrtGetDevicePhyIdByIndex failed, ret=%d", ret);
+        return;
+    }
+    HRaInfo                      info(HrtNetworkMode::HDC, phyId);
     vector<HrtDevEidInfo> eidInfoList =  HrtRaGetDevEidInfoList(info);
     if (eidInfoList.empty()) {
         HCCL_WARNING("[RdmaHandleManager::%s] Get EidInfoList empty, deviceLogicId=%d", __func__, deviceLogicId);

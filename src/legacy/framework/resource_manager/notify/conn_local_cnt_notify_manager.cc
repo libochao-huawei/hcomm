@@ -55,7 +55,11 @@ void ConnLocalCntNotifyManager::ApplyFor(u32 topicId, vector<LinkData> links)
     rtsNotifyPool[topicId].resize(count);
 
     for (u32 i = 0; i < count; ++i) {
-        rtsNotifyPool[topicId][i] = std::make_unique<RtsCntNotify>();
+        HcclResult ret = RtsCntNotify::Create(rtsNotifyPool[topicId][i]);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("RtsCntNotify::Create failed, ret=%d", ret);
+            return;
+        }
         for (auto &portLinkProtoPair : ports) {
             auto port = portLinkProtoPair.first;
             auto linkProtocol = portLinkProtoPair.second;

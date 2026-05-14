@@ -71,7 +71,13 @@ void OffloadStreamManager::RegisterSlaves(const std::string &opTag, const std::v
     int slaveNum = slaveStreams.size();
     slaves[opTag].resize(slaveNum);
     for (int i = 0; i < slaveNum; i++) {
-        slaves[opTag][i] = std::make_unique<Stream>(slaveStreams[i], false);
+        std::unique_ptr<Stream> slaveStream;
+        HcclResult ret = Stream::CreateFromPtr(static_cast<aclrtStream>(slaveStreams[i]), false, slaveStream);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("Stream::CreateFromPtr failed, ret=%d", ret);
+            return;
+        }
+        slaves[opTag][i] = std::move(slaveStream);
     }
 
     HCCL_INFO("[OffloadStreamManager::%s] end, slaveNum[%d].", __func__, slaveNum);

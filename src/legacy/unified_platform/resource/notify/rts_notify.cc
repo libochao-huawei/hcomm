@@ -12,19 +12,66 @@
 #include "dev_capability.h"
 #include "not_support_exception.h"
 #include "binary_stream.h"
+#include "exception_util.h"
+#include "runtime_api_exception.h"
 namespace Hccl {
 
-RtsNotify::RtsNotify(bool devUsed) : devPhyId(HrtGetDevicePhyIdByIndex(HrtGetDevice())), devUsed(devUsed)
+HcclResult RtsNotify::Create(bool devUsed, std::unique_ptr<RtsNotify>& notify)
 {
-    s32 deviceID = HrtGetDevice();
+    notify = std::make_unique<RtsNotify>();
+
+    s32 deviceId;
+    CHK_RET(HrtGetDevice(deviceId));
+
+    DevId phyId;
+    CHK_RET(HrtGetDevicePhyIdByIndex(deviceId, phyId));
+    notify->devPhyId = phyId;
 
     if (devUsed) {
-        handle = HrtNotifyCreateWithFlag(deviceID, ACL_NOTIFY_DEVICE_USE_ONLY);
+        CHK_RET(HrtNotifyCreateWithFlag(deviceId, ACL_NOTIFY_DEVICE_USE_ONLY, notify->handle));
     } else {
-        handle = HrtNotifyCreate(deviceID);
+        CHK_RET(HrtNotifyCreate(deviceId, notify->handle));
     }
 
-    id = HrtGetNotifyID(handle);
+    CHK_RET(HrtGetNotifyID(notify->handle, notify->id));
+    notify->devUsed = devUsed;
+    return HCCL_SUCCESS;
+}
+
+RtsNotify::RtsNotify() : devPhyId(0), devUsed(false), handle(nullptr), id(0) {}
+
+RtsNotify::RtsNotify(bool devUsed) : devPhyId(0), devUsed(devUsed), handle(nullptr), id(0)
+{
+    s32 deviceId;
+    HcclResult ret = HrtGetDevice(deviceId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("RtsNotify: HrtGetDevice failed, ret=%d", ret);
+        throw RuntimeApiException(StringFormat("RtsNotify: HrtGetDevice failed, ret=%d", ret));
+    }
+
+    DevId phyId;
+    ret = HrtGetDevicePhyIdByIndex(deviceId, phyId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("RtsNotify: HrtGetDevicePhyIdByIndex failed, ret=%d", ret);
+        throw RuntimeApiException(StringFormat("RtsNotify: HrtGetDevicePhyIdByIndex failed, ret=%d", ret));
+    }
+    devPhyId = phyId;
+
+    if (devUsed) {
+        ret = HrtNotifyCreateWithFlag(deviceId, ACL_NOTIFY_DEVICE_USE_ONLY, handle);
+    } else {
+        ret = HrtNotifyCreate(deviceId, handle);
+    }
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("RtsNotify: HrtNotifyCreate failed, ret=%d", ret);
+        throw RuntimeApiException(StringFormat("RtsNotify: HrtNotifyCreate failed, ret=%d", ret));
+    }
+
+    ret = HrtGetNotifyID(handle, id);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("RtsNotify: HrtGetNotifyID failed, ret=%d", ret);
+        throw RuntimeApiException(StringFormat("RtsNotify: HrtGetNotifyID failed, ret=%d", ret));
+    }
 }
 
 RtsNotify::~RtsNotify()
@@ -52,7 +99,13 @@ u32 RtsNotify::GetId() const
 
 u64 RtsNotify::GetOffset() const
 {
-    return HrtNotifyGetOffset(handle);
+    u32 offset;
+    HcclResult ret = HrtNotifyGetOffset(handle, offset);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[RtsNotify] HrtNotifyGetOffset failed, ret=%d", ret);
+        return 0;
+    }
+    return offset;
 }
 
 u64 RtsNotify::GetHandleAddr() const

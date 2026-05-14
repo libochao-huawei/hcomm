@@ -23,12 +23,9 @@ namespace Hccl {
 
 class CcuCommunicator {
 public:
-    explicit CcuCommunicator(CommunicatorImpl *comm)
-        : comm(comm), devLogicId(HrtGetDevice()), ccuResPackMgr(), ccuJettyMgr(devLogicId),
-          ccuTransportMgr(*comm, devLogicId), ccuTransportGroupMgr(*comm),
-          registeredCcuCtxMgr(devLogicId)
-    {
-    }
+    static HcclResult Create(CommunicatorImpl *comm, std::unique_ptr<CcuCommunicator>& ccuComm);
+
+    explicit CcuCommunicator(CommunicatorImpl *comm);
 
     CcuResPackMgr        *GetCcuResPackMgr();
     CcuJettyMgr          *GetCcuJettyMgr();

@@ -24,7 +24,13 @@ OpbaseStreamManager::~OpbaseStreamManager()
 void OpbaseStreamManager::ReplaceMaster(std::unique_ptr<Stream> stream)
 {
     master = std::move(stream);
-    master->SetStmMode(HrtStreamGetMode(master->GetPtr()));
+    uint64_t stmMode;
+    HcclResult ret = HrtStreamGetMode(master->GetPtr(), stmMode);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("HrtStreamGetMode failed, ret=%d", ret);
+    } else {
+        master->SetStmMode(stmMode);
+    }
 }
 
 void OpbaseStreamManager::RegisterMaster(std::unique_ptr<Stream> stream)
@@ -58,7 +64,13 @@ Stream *OpbaseStreamManager::GetOrCreateSlave()
     u32 slavesSize = slaves.size();
     HCCL_INFO("[OpbaseStreamManager::%s] slavesSize[%u] slaveIndex[%u]", __func__, slavesSize, slaveIndex);
     if (slaveIndex >= slavesSize) {
-        slaves.emplace_back(std::make_unique<Stream>(comm->GetOpAiCpuTSFeatureFlag(), false)); // 算子粒度
+        std::unique_ptr<Stream> newSlave;
+        HcclResult ret = Stream::Create(comm->GetOpAiCpuTSFeatureFlag(), false, newSlave);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("Stream::Create failed, ret=%d", ret);
+            return nullptr;
+        }
+        slaves.emplace_back(std::move(newSlave));
         if (master != nullptr && !comm->GetOpAiCpuTSFeatureFlag()) {  // 算子粒度
             slaves[slaveIndex]->SetStmMode(master->GetMode());
         }

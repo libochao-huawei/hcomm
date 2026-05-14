@@ -12,15 +12,18 @@
 
 #include "orion_adapter_rts.h"
 #include "stream_lite.h"
+#include <memory>
+
 namespace Hccl {
 
 class Stream {
 public:
-    explicit Stream(aclrtStream ptr, bool isMaster = true);
+    explicit Stream(void* ptr);
+    explicit Stream(bool devUsed);
+    static HcclResult Create(bool deviceUsed, bool isMaster, std::unique_ptr<Stream>& stream);
+    static HcclResult CreateFromPtr(aclrtStream ptr, bool isMaster, std::unique_ptr<Stream>& stream);
 
-    explicit Stream(bool deviceUsed = false, bool isMaster = true);
-
-    Stream(const Stream &stream, bool isMaster = true) = delete;
+    Stream(const Stream &stream) = delete;
 
     Stream &operator=(const Stream &stream) = delete;
 
@@ -57,7 +60,14 @@ public:
 private:
     static constexpr int32_t HCCL_STREAM_PRIORITY_LOW  = 5;
     static constexpr int32_t HCCL_STREAM_PRIORITY_HIGH = 5;
-    static constexpr int32_t STREAM_MODE_STOP_ON_FAILURE = 1; // 配置流失败模式为遇错即停
+    static constexpr int32_t STREAM_MODE_STOP_ON_FAILURE = 1;
+
+    Stream();
+
+    Stream(aclrtStream ptr, bool selfOwned, bool devUsed, bool isMaster, u32 id, u32 sqId, u32 cqId, u64 mode,
+           u32 devPhyId);
+
+    static HcclResult InitDevPhyId(u32& devPhyId);
 
     aclrtStream ptr;
     u32        id{0};
@@ -68,8 +78,6 @@ private:
     u32        cqId{0};
     u32        devPhyId{0};
     bool       isMaster_{true};
-
-    void InitDevPhyId();
 };
 
 } // namespace Hccl

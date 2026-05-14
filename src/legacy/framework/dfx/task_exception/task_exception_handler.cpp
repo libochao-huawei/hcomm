@@ -810,10 +810,15 @@ void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionIn
             if (errorMessage.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY || errorMessage.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY
  	            || errorMessage.taskType == TaskParamType::TASK_UB_INLINE_WRITE || errorMessage.taskType == TaskParamType::TASK_UB_REDUCE_INLINE
                 || errorMessage.taskType == TaskParamType::TASK_UB) {
- 	            HCCL_ERROR("errorMessage ubCqeStatus[%u], localEid[%s], remoteEid[%s]. ", static_cast<u32>(errorMessage.ubCqeStatus), errorMessage.locEid.Describe().c_str(), errorMessage.rmtEid.Describe().c_str());
+                HCCL_ERROR("errorMessage ubCqeStatus[%u], localEid[%s], remoteEid[%s]. ", static_cast<u32>(errorMessage.ubCqeStatus), errorMessage.locEid.Describe().c_str(), errorMessage.rmtEid.Describe().c_str());
                 auto reverseAddr = IpAddress(errorMessage.locEid);
                 auto addr = IpAddress(reverseAddr.GetReverseEid());
-                u32 devPhyId = HrtGetDevicePhyIdByIndex(exceptionInfo->deviceid);
+                DevId devPhyId;
+                HcclResult ret = HrtGetDevicePhyIdByIndex(exceptionInfo->deviceid, devPhyId);
+                if (ret != HCCL_SUCCESS) {
+                    HCCL_ERROR("HrtGetDevicePhyIdByIndex failed, ret=%d", ret);
+                    return;
+                }
                 auto rdmaHandle = RdmaHandleManager::GetInstance().GetByIp(devPhyId, addr);
                 PrintUbRegisters(static_cast<s32>(exceptionInfo->deviceid), rdmaHandle);
             }

@@ -132,8 +132,18 @@ u32 GetUbToken()
 {
     std::lock_guard<std::mutex> lock(ubTokenMutex);
     if (!isInitialized) {
-        s32 devLogicId = HrtGetDevice();
-        u32 devPhyId = HrtGetDevicePhyIdByIndex(devLogicId);
+        s32 devLogicId;
+        HcclResult ret = HrtGetDevice(devLogicId);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[GetUbToken] HrtGetDevice failed, ret=%d", ret);
+            return 0;
+        }
+        DevId devPhyId;
+        ret = HrtGetDevicePhyIdByIndex(devLogicId, devPhyId);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[GetUbToken] HrtGetDevicePhyIdByIndex failed, ret=%d", ret);
+            return 0;
+        }
         HrtRaGetSecRandom(&token, devPhyId);
         isInitialized = true;
     }

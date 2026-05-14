@@ -94,7 +94,12 @@ template <typename Func>
 HcclResult HcclCommOperationImplV2(HcclComm comm, const std::string func_name, Func operate)
 {
     s32 deviceLogicId = HcclGetThreadDeviceId();
-    s32 devPhyId = HrtGetDevicePhyIdByIndex(deviceLogicId);
+    DevId devPhyId;
+    HcclResult retDevice = HrtGetDevicePhyIdByIndex(deviceLogicId, devPhyId);
+    if (retDevice != HCCL_SUCCESS) {
+        HCCL_ERROR("[HcclCommOperationImplV2] HrtGetDevicePhyIdByIndex failed, ret=%d", retDevice);
+        return retDevice;
+    }
     HcclUs startut = TIME_NOW();
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     auto ret = operate(*communicator);
@@ -165,7 +170,13 @@ HcclResult CreateCommConfig(uint32_t rank, HcclCommConfig *config, HcclComm *com
             HCCL_ERROR("[CreateCommConfig]opbasedCommInfoV2.pComm->Init failed, errNo[0x%016llx]", HCCL_ERROR_CODE(ret)),
             errorFlag = true);
         opbasedCommInfoV2.pComm->RegisterAcceStateCallBack(CommunicatorCallback());
-        s32 logicDevId = HrtGetDevice();
+        s32 logicDevId;
+        ret = HrtGetDevice(logicDevId);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[CreateCommConfig] HrtGetDevice failed, ret=%d", ret);
+            errorFlag = true;
+            break;
+        }
         ret = CommManager::GetInstance(logicDevId).SetCommAcceleratorV2(opbasedCommInfoV2.pComm.get(), config->hcclOpExpansionMode); // 通信域创建，设置默认accelerator
         CHK_PRT_BREAK(ret != HcclResult::HCCL_SUCCESS,
             HCCL_ERROR("[CreateCommConfig]SetCommAcceleratorV2 failed, errNo[0x%016llx]", HCCL_ERROR_CODE(ret)),
@@ -235,7 +246,13 @@ HcclResult CreateCommConfigRootInfo(uint32_t rank, const HcclCommConfig *config,
             HCCL_ERROR("[%s]opbasedCommInfoV2.pComm->Init failed, errNo[0x%016llx]", __func__, HCCL_ERROR_CODE(ret)),
             errorFlag = true);
         opbasedCommInfoV2.pComm->RegisterAcceStateCallBack(CommunicatorCallback());
-        s32 logicDevId = HrtGetDevice();
+        s32 logicDevId;
+        ret = HrtGetDevice(logicDevId);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[%s] HrtGetDevice failed, ret=%d", __func__, ret);
+            errorFlag = true;
+            break;
+        }
         ret = CommManager::GetInstance(logicDevId).SetCommAcceleratorV2(opbasedCommInfoV2.pComm.get(), config->hcclOpExpansionMode); // 通信域创建，设置默认accelerator
         CHK_PRT_BREAK(ret != HcclResult::HCCL_SUCCESS,
             HCCL_ERROR("[%s]SetCommAcceleratorV2 failed, errNo[0x%016llx]", __func__, HCCL_ERROR_CODE(ret)),
@@ -286,7 +303,12 @@ HcclResult HcclCommInitClusterInfoV2(const char *clusterInfo, uint32_t rank, Hcc
 {
     HcclUs startut = TIME_NOW();
     s32 deviceLogicId = HcclGetThreadDeviceId();
-    s32 devPhyId = HrtGetDevicePhyIdByIndex(deviceLogicId);
+    DevId devPhyId;
+    HcclResult retDevice = HrtGetDevicePhyIdByIndex(deviceLogicId, devPhyId);
+    if (retDevice != HCCL_SUCCESS) {
+        HCCL_ERROR("[HcclCommInitClusterInfoV2] HrtGetDevicePhyIdByIndex failed, ret=%d", retDevice);
+        return retDevice;
+    }
     CHK_PTR_NULL(clusterInfo);
     CHK_PTR_NULL(comm);
 
@@ -331,13 +353,19 @@ HcclResult HcclCommInitClusterInfoV2(const char *clusterInfo, uint32_t rank, Hcc
             HCCL_ERROR("[%s]opbasedCommInfoV2.pComm->Init failed, errNo[0x%016llx]", __func__, HCCL_ERROR_CODE(ret)),
             errorFlag = true);
         opbasedCommInfoV2.pComm->RegisterAcceStateCallBack(CommunicatorCallback());
-        s32 logicDevId = HrtGetDevice();
+        s32 logicDevId;
+        ret = HrtGetDevice(logicDevId);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[%s] HrtGetDevice failed, ret=%d", __func__, ret);
+            errorFlag = true;
+            break;
+        }
         ret = CommManager::GetInstance(logicDevId).SetCommAcceleratorV2(opbasedCommInfoV2.pComm.get(), 0); // 通信域创建，设置默认accelerator
         CHK_PRT_BREAK(ret != HcclResult::HCCL_SUCCESS,
             HCCL_ERROR("[%s]SetCommAcceleratorV2 failed, errNo[0x%016llx]", __func__, HCCL_ERROR_CODE(ret)),
             errorFlag = true);
         *comm = static_cast<HcclComm>(opbasedCommInfoV2.pComm.get());
-    
+     
         HcclGetRankSizeV2(*comm, &commParams.rankSize);
         opbasedCommInfoV2.commParams = commParams;
  	 
@@ -397,7 +425,12 @@ HcclResult HcclCommInitClusterInfoConfigV2(
 {
     HcclUs startut = TIME_NOW();
     s32 deviceLogicId = HcclGetThreadDeviceId();
-    s32 devPhyId = HrtGetDevicePhyIdByIndex(deviceLogicId);
+    DevId devPhyId;
+    HcclResult retDevice = HrtGetDevicePhyIdByIndex(deviceLogicId, devPhyId);
+    if (retDevice != HCCL_SUCCESS) {
+        HCCL_ERROR("[HcclCommInitClusterInfoConfigV2] HrtGetDevicePhyIdByIndex failed, ret=%d", retDevice);
+        return retDevice;
+    }
     HCCL_RUN_INFO("Entry-HcclCommInitClusterInfoConfig V950, commEngine[%u]", config->hcclOpExpansionMode);
 
     CHK_RET(CallSingletons()); // 临时规避，在初始化通信域前声明单例保证时序
@@ -527,7 +560,12 @@ HcclResult HcclGetRootInfoV2(HcclRootInfo *rootInfo)
 
     /* 首节点诊断信息记录 */
     s32 deviceLogicId = HcclGetThreadDeviceId();
-    s32 devPhyId = HrtGetDevicePhyIdByIndex(deviceLogicId);
+    DevId devPhyId;
+    HcclResult ret = HrtGetDevicePhyIdByIndex(deviceLogicId, devPhyId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[HcclGetRootInfoV2] HrtGetDevicePhyIdByIndex failed, ret=%d", ret);
+        return ret;
+    }
     HCCL_RUN_INFO("HcclGetRootInfoV2 success, take time [%lld]us, rootinfo: host ip[%s] port[%u] netMode[%s] "
                   "identifier[%s], deviceLogicId[%d], devPhyId[%d]",
                   DURATION_US(TIME_NOW() - startut), rootHandle.ip, rootHandle.listenPort,
@@ -541,13 +579,17 @@ HcclResult GetDeviceCommV2(uint32_t ndev, const HcclRootInfo &rootHandle, const 
     //给当前线程添加名字
     SetThreadName("Hccl_GetDevComm");
 
-    TRY_CATCH_RETURN(HrtSetDevice(logicDeviceId));
+    HcclResult ret = HrtSetDevice(logicDeviceId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[GetDeviceComm] HrtSetDevice failed, ret=%d", ret);
+        return ret;
+    }
     std::string identifier;
-    HcclResult ret = HcclCommInitRootInfoV2(ndev, &rootHandle, rank, &comm, identifier);
+    ret = HcclCommInitRootInfoV2(ndev, &rootHandle, rank, &comm, identifier);
     if (ret != HCCL_SUCCESS || comm == nullptr) {
         comm = nullptr;
         HCCL_ERROR("[GetDeviceComm] rank[%d] Get device comm failed!", rank);
-        TRY_CATCH_RETURN(HrtSetDevice(logicDeviceId));
+        (void)HrtSetDevice(logicDeviceId);
         return ret;
     }
 
@@ -564,7 +606,11 @@ HcclResult HcclGetCommAllV2(uint32_t ndev, int32_t *devices, HcclComm *comms)
     //给当前线程添加名字
     SetThreadName("Hccl_GetCommAllV2");
 
-    TRY_CATCH_RETURN(HrtSetDevice(devices[0]));
+    HcclResult ret = HrtSetDevice(devices[0]);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[HcclGetCommAllV2] HrtSetDevice failed, ret=%d", ret);
+        return ret;
+    }
 
     // 获取通信域之前, 先把所有通信域设置为空
     for (uint32_t i = 0; i < ndev; i++) {
@@ -602,7 +648,11 @@ HcclResult HcclGetCommAllV2(uint32_t ndev, int32_t *devices, HcclComm *comms)
         return HCCL_E_INTERNAL;
     }
 
-    TRY_CATCH_RETURN(HrtSetDevice(devices[0]));
+    ret = HrtSetDevice(devices[0]);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[HcclGetCommAllV2] HrtSetDevice failed, ret=%d", ret);
+        return ret;
+    }
 
     return HCCL_SUCCESS;
 }
@@ -639,7 +689,12 @@ HcclResult HcclCommInitAllV2(uint32_t ndev, int32_t *devices, HcclComm *comms)
         return ret;
     }
     s32 deviceLogicId = HcclGetThreadDeviceId();
-    s32 devPhyId = HrtGetDevicePhyIdByIndex(deviceLogicId);
+    DevId devPhyId;
+    HcclResult retDevice = HrtGetDevicePhyIdByIndex(deviceLogicId, devPhyId);
+    if (retDevice != HCCL_SUCCESS) {
+        HCCL_ERROR("[HcclCommInitAllV2] HrtGetDevicePhyIdByIndex failed, ret=%d", retDevice);
+        return retDevice;
+    }
     HCCL_RUN_INFO("HcclCommInitAll success, take time [%lld]us, deviceLogicId[%d], devPhyId[%d].", DURATION_US(TIME_NOW() - startut),
                   deviceLogicId, devPhyId);
     return HCCL_SUCCESS;
@@ -685,7 +740,12 @@ HcclResult HcclCommDestroyV2(HcclComm comm)
     lock.unlock();
 
     s32 deviceLogicId = HcclGetThreadDeviceId();
-    s32 devPhyId = HrtGetDevicePhyIdByIndex(deviceLogicId);
+    DevId devPhyId;
+    HcclResult ret = HrtGetDevicePhyIdByIndex(deviceLogicId, devPhyId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[HcclCommDestroyV2] HrtGetDevicePhyIdByIndex failed, ret=%d", ret);
+        return ret;
+    }
     HCCL_RUN_INFO("HcclCommDestroy V950 comm[%s] success, take time [%lld]us, deviceLogicId[%d], devPhyId[%d].", commId.c_str(),
                   DURATION_US(TIME_NOW() - startut), deviceLogicId, devPhyId);
     return HCCL_SUCCESS;
@@ -709,8 +769,14 @@ HcclResult HcclAlltoAllV2(const void *sendBuf, uint64_t sendCount, HcclDataType 
     // 接口交互信息日志
     char stackLogBufferV2[LOG_TMPBUF_SIZE];
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
-        s32 streamId = HrtGetStreamId(stream);
-        s32 deviceLogicId = HrtGetDevice();
+        s32 streamId;
+        HcclResult hcret = HrtGetStreamId(stream, streamId);
+        s32 deviceLogicId;
+        hcret = HrtGetDevice(deviceLogicId);
+        if (hcret != HCCL_SUCCESS) {
+            HCCL_ERROR("[HcclAlltoAllV2] HrtGetDevice failed, ret=%d", hcret);
+            return hcret;
+        }
         u32 localRank = INVALID_VALUE_RANKID;
         CHK_RET_AND_PRINT_IDE(communicator->GetRankId(localRank), tag.c_str());
 
@@ -780,8 +846,14 @@ HcclResult HcclAlltoAllVV2(const void *sendBuf, const void *sendCounts, const vo
     // 接口交互信息日志
     char stackLogBufferV2[LOG_TMPBUF_SIZE];
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
-        s32 streamId = HrtGetStreamId(stream);
-        s32 deviceLogicId = HrtGetDevice();
+        s32 streamId;
+        HcclResult hcret = HrtGetStreamId(stream, streamId);
+        s32 deviceLogicId;
+        hcret = HrtGetDevice(deviceLogicId);
+        if (hcret != HCCL_SUCCESS) {
+            HCCL_ERROR("[HcclAlltoAllVV2] HrtGetDevice failed, ret=%d", hcret);
+            return hcret;
+        }
         u32 localRank = INVALID_VALUE_RANKID;
         CHK_RET_AND_PRINT_IDE(communicator->GetRankId(localRank), tag.c_str());
 
@@ -934,8 +1006,18 @@ HcclResult HcclCreateSubCommConfigV2(const HcclComm *comm, uint32_t rankNum, uin
        /* --------------初始化------------------------- */
     HcclResult ret = HCCL_SUCCESS;
     bool errorFlag = false;
-    s32 logicDevId = HrtGetDevice();
-    s32 devPhyId = HrtGetDevicePhyIdByIndex(logicDevId);
+    s32 logicDevId;
+    ret = HrtGetDevice(logicDevId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[%s] HrtGetDevice failed, ret=%d", __func__, ret);
+        return ret;
+    }
+    DevId devPhyId;
+    ret = HrtGetDevicePhyIdByIndex(logicDevId, devPhyId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[CreateSubCommV2] HrtGetDevicePhyIdByIndex failed, ret=%d", ret);
+        return ret;
+    }
     do {
         ret = communicator->CreateSubComm(commParams, rankIdsVec, subCommunicator, hcclConf);
         CHK_PRT_BREAK(ret != HcclResult::HCCL_SUCCESS,
@@ -1006,7 +1088,12 @@ HcclResult HcclGetRankSizeV2(HcclComm comm, uint32_t *rankSize)
     CHK_PTR_NULL(rankSize);
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     s32 deviceLogicId = HcclGetThreadDeviceId();
-    s32 devPhyId = HrtGetDevicePhyIdByIndex(deviceLogicId);
+    DevId devPhyId;
+    HcclResult retDevice = HrtGetDevicePhyIdByIndex(deviceLogicId, devPhyId);
+    if (retDevice != HCCL_SUCCESS) {
+        HCCL_ERROR("[HcclGetRankSizeV2] HrtGetDevicePhyIdByIndex failed, ret=%d", retDevice);
+        return retDevice;
+    }
     HCCL_RUN_INFO("Entry-HcclGetRankSize V950, commId[%s], deviceLogicId[%d], devPhyId[%d]", communicator->GetId().c_str(),
                   deviceLogicId, devPhyId);
     auto ret = communicator->GetRankSize(rankSize);
@@ -1041,7 +1128,7 @@ HcclResult HcclAlltoAllVCV2(const void *sendBuf, const void *sendCountMatrix, Hc
     bool isEmpty = false;
     CHK_RET(HcomCheckAlltoAllVCEmptyV2(sendBuf, sendCountMatrix, recvBuf, rankSize, isEmpty));
     if(isEmpty) {
-        HCCL_INFO("[HcclAlltoAllVCV2] sendCountMatrix is Empty");
+    HCCL_INFO("[HcclAlltoAllVCV2] sendCountMatrix is Empty");
         return HCCL_SUCCESS;
     }
     CHK_RET(HcomCheckAlltoAllVCExternalMemV2(sendBuf, sendCountMatrix, recvBuf, rankSize, myRank));
@@ -1051,13 +1138,19 @@ HcclResult HcclAlltoAllVCV2(const void *sendBuf, const void *sendCountMatrix, Hc
     /* 接口交互信息日志 */
     char stackLogBufferV2[LOG_TMPBUF_SIZE];
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
-        s32 streamId = HrtGetStreamId(stream);
-        s32 deviceLogicId = HrtGetDevice();
+        s32 streamId;
+        HcclResult hcret = HrtGetStreamId(stream, streamId);
+        s32 deviceLogicId;
+        hcret = HrtGetDevice(deviceLogicId);
+        if (hcret != HCCL_SUCCESS) {
+            HCCL_ERROR("[HcclAlltoAllVCV2] HrtGetDevice failed, ret=%d", hcret);
+            return hcret;
+        }
         u32 localRank = INVALID_VALUE_RANKID;
         CHK_RET_AND_PRINT_IDE(communicator->GetRankId(localRank), tag.c_str());
 
         s32 ret = snprintf_s(stackLogBufferV2, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-            "tag[%s], sendBuf[%p], sendCountMatrixHash[%llu], sendType[%s], recvBuf[%p],"
+            "tag[%s], sendCountMatrixHash[%llu], sendType[%s], recvBuf[%p],"
             "recvType[%s], localRank[%u], streamId[%d], deviceLogicId[%d]",
             tag.c_str(), sendBuf, sendCountMatrixHash, GetDataTypeEnumStrV2(sendType).c_str(), recvBuf,
             GetDataTypeEnumStrV2(recvType).c_str(), localRank, streamId, deviceLogicId);
@@ -1116,8 +1209,14 @@ HcclResult HcclReduceV2(void *sendBuf, void *recvBuf, uint64_t count, HcclDataTy
     /* 接口交互信息日志 */
     char stackLogBufferV2[LOG_TMPBUF_SIZE];
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
-        s32 streamId = HrtGetStreamId(stream);
-        s32 deviceLogicId = HrtGetDevice();
+        s32 streamId;
+        HcclResult hcret = HrtGetStreamId(stream, streamId);
+        s32 deviceLogicId;
+        hcret = HrtGetDevice(deviceLogicId);
+        if (hcret != HCCL_SUCCESS) {
+            HCCL_ERROR("[HcclReduceV2] HrtGetDevice failed, ret=%d", hcret);
+            return hcret;
+        }
         u32 localRank = INVALID_VALUE_RANKID;
         CHK_RET_AND_PRINT_IDE(communicator->GetRankId(localRank), tag.c_str());
 
@@ -1179,8 +1278,14 @@ HcclResult HcclAllReduceV2(void *sendBuf, void *recvBuf, uint64_t count, HcclDat
     /* 接口交互信息日志 */
     char stackLogBufferV2[LOG_TMPBUF_SIZE];
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
-        s32 streamId = HrtGetStreamId(stream);
-        s32 deviceLogicId = HrtGetDevice();
+        s32 streamId;
+        HcclResult hcret = HrtGetStreamId(stream, streamId);
+        s32 deviceLogicId;
+        hcret = HrtGetDevice(deviceLogicId);
+        if (hcret != HCCL_SUCCESS) {
+            HCCL_ERROR("[HcclAllReduceV2] HrtGetDevice failed, ret=%d", hcret);
+            return hcret;
+        }
         u32 localRank = INVALID_VALUE_RANKID;
         CHK_RET_AND_PRINT_IDE(communicator->GetRankId(localRank), tag.c_str());
 
@@ -1243,8 +1348,14 @@ HcclResult HcclBroadcastV2(void *buf, uint64_t count, HcclDataType dataType, uin
     /* 接口交互信息日志 */
     char stackLogBufferV2[LOG_TMPBUF_SIZE];
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
-        s32 streamId = HrtGetStreamId(stream);
-        s32 deviceLogicId = HrtGetDevice();
+        s32 streamId;
+        HcclResult hcret = HrtGetStreamId(stream, streamId);
+        s32 deviceLogicId;
+        hcret = HrtGetDevice(deviceLogicId);
+        if (hcret != HCCL_SUCCESS) {
+            HCCL_ERROR("[HcclBroadcastV2] HrtGetDevice failed, ret=%d", hcret);
+            return hcret;
+        }
         u32 localRank = INVALID_VALUE_RANKID;
         CHK_RET_AND_PRINT_IDE(communicator->GetRankId(localRank), tag.c_str());
 
@@ -1295,7 +1406,12 @@ HcclResult HcclBarrierV2(HcclComm comm, aclrtStream stream)
     void *recvBuf = nullptr;
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     s32 deviceLogicId = HcclGetThreadDeviceId();
-    s32 devPhyId = HrtGetDevicePhyIdByIndex(deviceLogicId);
+    DevId devPhyId;
+    HcclResult retDevice = HrtGetDevicePhyIdByIndex(deviceLogicId, devPhyId);
+    if (retDevice != HCCL_SUCCESS) {
+        HCCL_ERROR("[HcclBarrierV2] HrtGetDevicePhyIdByIndex failed, ret=%d", retDevice);
+        return retDevice;
+    }
     HCCL_RUN_INFO("Entry-HcclBarrier V950, commId[%s], deviceLogicId[%d], devPhyId[%d]", communicator->GetId().c_str(),
                   deviceLogicId, devPhyId);
     // 申请Device内存
@@ -1626,7 +1742,12 @@ HcclResult HcclCommResumeV2(HcclComm comm)
     HcclUs startut = TIME_NOW();
     HCCL_RUN_INFO("Entry-HcclCommResume V950");
     s32 deviceLogicId = HcclGetThreadDeviceId();
-    s32 devPhyId = HrtGetDevicePhyIdByIndex(deviceLogicId);
+    DevId devPhyId;
+    HcclResult ret = HrtGetDevicePhyIdByIndex(deviceLogicId, devPhyId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[HcclCommResumeV2] HrtGetDevicePhyIdByIndex failed, ret=%d", ret);
+        return ret;
+    }
     CHK_RET(static_cast<HcclResult>(Hccl::HcclCcuResumePfeTableProcess(deviceLogicId)));
     CHK_RET(HcclCommResumeImplV2(comm));
     HCCL_RUN_INFO("Entry-HcclCommResume V950 success, deviceLogicId[%d], devPhyId[%d], take time [%lld]us", 
@@ -1647,7 +1768,12 @@ HcclResult RootInfoDetect(std::shared_ptr<RankInfoDetect> rankInfoDetectAgent, c
     const HcclRootHandleV2 &rootHandle, RankTableInfo &rankTable)
 {
     s32 deviceLogicId = HcclGetThreadDeviceId();
-    s32 devPhyId = HrtGetDevicePhyIdByIndex(deviceLogicId);
+    DevId devPhyId;
+    HcclResult ret = HrtGetDevicePhyIdByIndex(deviceLogicId, devPhyId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[RootInfoDetect] HrtGetDevicePhyIdByIndex failed, ret=%d", ret);
+        return ret;
+    }
     HCCL_RUN_INFO("[%s] nRanks[%u], rank[%u] entry flat topo detect, rootinfo: host ip[%s] port[%u] netMode[%s] "
                   "identifier[%s], deviceLogicId[%d], devPhyId[%d]",
                   __func__, nRanks, rank, rootHandle.ip, rootHandle.listenPort,
@@ -1708,7 +1834,12 @@ HcclResult CommInitRootInfo(u32 nRanks, u32 rank, const HcclRootHandleV2 &rootHa
     CHK_PTR_NULL(opbasedCommInfoV2.pComm);
     /* --------------初始化------------------------- */
  	bool errorFlag = false;
- 	s32 logicDevId = HrtGetDevice();
+ 	s32 logicDevId;
+ 	ret = HrtGetDevice(logicDevId);
+ 	if (ret != HCCL_SUCCESS) {
+ 	    HCCL_ERROR("[%s] HrtGetDevice failed, ret=%d", __func__, ret);
+ 	    return ret;
+ 	}
  	do {
  	    ret = opbasedCommInfoV2.pComm->Init(rankTable);
  	    CHK_PRT_BREAK(ret != HcclResult::HCCL_SUCCESS,
@@ -1766,7 +1897,12 @@ HcclResult HcclCommInitRootInfoV2(
 
     /* 接口交互信息日志 */
     s32 deviceLogicId = HcclGetThreadDeviceId();
-    s32 devPhyId = HrtGetDevicePhyIdByIndex(deviceLogicId);
+    DevId devPhyId;
+    HcclResult retDevice = HrtGetDevicePhyIdByIndex(deviceLogicId, devPhyId);
+    if (retDevice != HCCL_SUCCESS) {
+        HCCL_ERROR("[HcclCommInitRootInfoV2] HrtGetDevicePhyIdByIndex failed, ret=%d", retDevice);
+        return retDevice;
+    }
     HCCL_RUN_INFO("Entry-HcclCommInitRootInfo V950, ranks[%u], rank[%u], rootinfo: host ip[%s] port[%u] "\
         "netMode[%s] identifier[%s], deviceLogicId[%d], devPhyId[%d]", nRanks, rank, rootHandle.ip, rootHandle.listenPort,
         rootHandle.netMode.Describe().c_str(), identifier.c_str(), deviceLogicId, devPhyId);
@@ -1862,8 +1998,14 @@ HcclResult HcclScatterV2(void *sendBuf, void *recvBuf, uint64_t recvCount, HcclD
     /* 接口交互信息日志 */
     char stackLogBufferV2[LOG_TMPBUF_SIZE];
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
-        s32 streamId = HrtGetStreamId(stream);
-        s32 deviceLogicId = HrtGetDevice();
+        s32 streamId;
+        HcclResult hcret = HrtGetStreamId(stream, streamId);
+        s32 deviceLogicId;
+        hcret = HrtGetDevice(deviceLogicId);
+        if (hcret != HCCL_SUCCESS) {
+            HCCL_ERROR("[HcclScatterV2] HrtGetDevice failed, ret=%d", hcret);
+            return hcret;
+        }
         u32 localRank = INVALID_VALUE_RANKID;
         CHK_RET_AND_PRINT_IDE(communicator->GetRankId(localRank), tag.c_str());
 
@@ -1920,8 +2062,14 @@ HcclResult HcclAllGatherV2(void *sendBuf, void *recvBuf, uint64_t sendCount, Hcc
     /* 接口交互信息日志 */
     char stackLogBufferV2[LOG_TMPBUF_SIZE];
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
-        s32 streamId = HrtGetStreamId(stream);
-        s32 deviceLogicId = HrtGetDevice();
+        s32 streamId;
+        HcclResult hcret = HrtGetStreamId(stream, streamId);
+        s32 deviceLogicId;
+        hcret = HrtGetDevice(deviceLogicId);
+        if (hcret != HCCL_SUCCESS) {
+            HCCL_ERROR("[HcclAllGatherV2] HrtGetDevice failed, ret=%d", hcret);
+            return hcret;
+        }
         u32 localRank = INVALID_VALUE_RANKID;
         CHK_RET_AND_PRINT_IDE(communicator->GetRankId(localRank), tag.c_str());
 
@@ -1999,8 +2147,14 @@ HcclResult HcclAllGatherVV2(void *sendBuf, uint64_t sendCount, void *recvBuf, vo
     /* 接口交互信息日志 */
     char stackLogBufferV2[LOG_TMPBUF_SIZE];
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
-        s32 streamId = HrtGetStreamId(stream);
-        s32 deviceLogicId = HrtGetDevice();
+        s32 streamId;
+        HcclResult hcret = HrtGetStreamId(stream, streamId);
+        s32 deviceLogicId;
+        hcret = HrtGetDevice(deviceLogicId);
+        if (hcret != HCCL_SUCCESS) {
+            HCCL_ERROR("[HcclAllGatherVV2] HrtGetDevice failed, ret=%d", hcret);
+            return hcret;
+        }
         u32 localRank = INVALID_VALUE_RANKID;
         CHK_RET_AND_PRINT_IDE(communicator->GetRankId(localRank), tag.c_str());
 
@@ -2088,8 +2242,14 @@ HcclResult HcclSendV2(
     /* 接口交互信息日志 */
     char hcclSendStackLogBufferV2[LOG_TMPBUF_SIZE];
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
-        s32 streamId = HrtGetStreamId(stream);
-        s32 deviceLogicId = HrtGetDevice();
+        s32 streamId;
+        HcclResult hcret = HrtGetStreamId(stream, streamId);
+        s32 deviceLogicId;
+        hcret = HrtGetDevice(deviceLogicId);
+        if (hcret != HCCL_SUCCESS) {
+            HCCL_ERROR("[HcclSendV2] HrtGetDevice failed, ret=%d", hcret);
+            return hcret;
+        }
         u32 localRank = INVALID_VALUE_RANKID;
         CHK_RET_AND_PRINT_IDE(communicator->GetRankId(localRank), tag.c_str());
 
@@ -2149,8 +2309,14 @@ HcclResult HcclRecvV2(
     /* 接口交互信息日志 */
     char hcclRecvStackLogBufferV2[LOG_TMPBUF_SIZE];
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
-        s32 streamId = HrtGetStreamId(stream);
-        s32 deviceLogicId = HrtGetDevice();
+        s32 streamId;
+        HcclResult hcret = HrtGetStreamId(stream, streamId);
+        s32 deviceLogicId;
+        hcret = HrtGetDevice(deviceLogicId);
+        if (hcret != HCCL_SUCCESS) {
+            HCCL_ERROR("[HcclRecvV2] HrtGetDevice failed, ret=%d", hcret);
+            return hcret;
+        }
         u32 localRank = INVALID_VALUE_RANKID;
         CHK_RET_AND_PRINT_IDE(communicator->GetRankId(localRank), tag.c_str());
 
@@ -2210,8 +2376,14 @@ HcclResult HcclReduceScatterV2(void *sendBuf, void *recvBuf, uint64_t recvCount,
     /* 接口交互信息日志 */
     char stackLogBufferV2[LOG_TMPBUF_SIZE];
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
-        s32 streamId = HrtGetStreamId(stream);
-        s32 deviceLogicId = HrtGetDevice();
+        s32 streamId;
+        HcclResult hcret = HrtGetStreamId(stream, streamId);
+        s32 deviceLogicId;
+        hcret = HrtGetDevice(deviceLogicId);
+        if (hcret != HCCL_SUCCESS) {
+            HCCL_ERROR("[HcclReduceScatterV2] HrtGetDevice failed, ret=%d", hcret);
+            return hcret;
+        }
         u32 localRank = INVALID_VALUE_RANKID;
         CHK_RET_AND_PRINT_IDE(communicator->GetRankId(localRank), tag.c_str());
 
@@ -2293,8 +2465,14 @@ HcclResult HcclReduceScatterVV2(void *sendBuf, void *sendCounts, void *sendDispl
     /* 接口交互信息日志 */
     char stackLogBufferV2[LOG_TMPBUF_SIZE];
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
-        s32 streamId = HrtGetStreamId(stream);
-        s32 deviceLogicId = HrtGetDevice();
+        s32 streamId;
+        HcclResult hcret = HrtGetStreamId(stream, streamId);
+        s32 deviceLogicId;
+        hcret = HrtGetDevice(deviceLogicId);
+        if (hcret != HCCL_SUCCESS) {
+            HCCL_ERROR("[HcclReduceScatterVV2] HrtGetDevice failed, ret=%d", hcret);
+            return hcret;
+        }
         u32 localRank = INVALID_VALUE_RANKID;
         CHK_RET_AND_PRINT_IDE(communicator->GetRankId(localRank), tag.c_str());
 
@@ -2384,8 +2562,14 @@ HcclResult HcclBatchSendRecvV2(HcclSendRecvItem *sendRecvInfo, uint32_t itemNum,
     /* 记录接口交互信息日志 */
     char stackLogBufferV2[LOG_TMPBUF_SIZE];
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
-        s32 streamId = HrtGetStreamId(stream);
-        s32 deviceLogicId = HrtGetDevice();
+        s32 streamId;
+        HcclResult hcret = HrtGetStreamId(stream, streamId);
+        s32 deviceLogicId;
+        hcret = HrtGetDevice(deviceLogicId);
+        if (hcret != HCCL_SUCCESS) {
+            HCCL_ERROR("[HcclBatchSendRecvV2] HrtGetDevice failed, ret=%d", hcret);
+            return hcret;
+        }
         u32 localRank = INVALID_VALUE_RANKID;
         CHK_RET_AND_PRINT_IDE(communicator->GetRankId(localRank), tag.c_str());
 
@@ -2422,7 +2606,7 @@ HcclResult HcclBatchSendRecvV2(HcclSendRecvItem *sendRecvInfo, uint32_t itemNum,
 HcclResult WaitAllCommReady(s32 deviceLogicId)
 {
     try {
-        HrtSetDevice(deviceLogicId);
+        CHK_RET(HrtSetDevice(deviceLogicId));
         HcclCommInfoV2 &opbasedCommInfoV2 = GetCommInfoV2();
         // 定义最大等待10秒
         constexpr u32 waitTransportReadyTimeoutMs = 10 * 1000; // 待解决
@@ -2786,7 +2970,12 @@ HcclResult HcclSnapshotGetBufSize(uint32_t step, uint32_t *size)
 {
     // 校验DevType
     HCCL_INFO("[%s] start", __func__);
-    Hccl::DevType devType = HrtGetDeviceType();
+    Hccl::DevType devType;
+    HcclResult ret = HrtGetDeviceType(devType);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[%s] HrtGetDeviceType failed, ret=%d", __func__, ret);
+        return HCCL_E_RUNTIME;
+    }
     if (devType != DevType::DEV_TYPE_950) {
         HCCL_INFO("[%s] Get buffer size not support in this device type[%d]", __func__, devType);
         return HCCL_E_NOT_SUPPORT;

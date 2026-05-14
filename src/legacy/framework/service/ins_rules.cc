@@ -609,7 +609,13 @@ static void ReportCcuProfilingInfo(uint64_t execId, std::vector<CcuProfilingInfo
 static void GetCcuProfilingInfo(const CcuInstruction &ccuInstruction, const vector<vector<CcuTaskParam>> &ccuParams,
                                 std::vector<std::vector<CcuProfilingInfo>> &ccuProfilingInfo)
 {
-    HcclResult res = CcuCtxMgr::GetProfilingInfo(HrtGetDevice(), *(ccuInstruction.GetTaskArg()), ccuInstruction.GetExecId(), ccuProfilingInfo);
+    s32 deviceLogicId;
+    HcclResult res = HrtGetDevice(deviceLogicId);
+    if (res != HcclResult::HCCL_SUCCESS) {
+        string msg = StringFormat("Get ccu profiling info failed, HrtGetDevice res[%d]", res);
+        THROW<NotSupportException>(msg);
+    }
+    res = CcuCtxMgr::GetProfilingInfo(deviceLogicId, *(ccuInstruction.GetTaskArg()), ccuInstruction.GetExecId(), ccuProfilingInfo);
     if (res != HcclResult::HCCL_SUCCESS) {
         string msg = StringFormat("Get ccu profiling info failed, res[%d]", res);
         THROW<NotSupportException>(msg);

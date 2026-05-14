@@ -4,53 +4,96 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FIT FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "stream.h"
-#include "runtime_api_exception.h"
 #include "log.h"
 #include "binary_stream.h"
+#include "exception_util.h"
+
 namespace Hccl {
 
-Stream::Stream(aclrtStream ptr, bool isMaster) : ptr(ptr), selfOwned(false), isMaster_(isMaster)
+Stream::Stream(void* ptr)
+    : ptr(static_cast<aclrtStream>(ptr)), id(0), selfOwned(false), mode(0), devUsed(false), sqId(0), cqId(0), devPhyId(0), isMaster_(true)
 {
-    id = static_cast<u32>(HrtGetStreamId(ptr));
-    InitDevPhyId();
 }
 
-Stream::Stream(bool deviceUsed, bool isMaster) : selfOwned(true), devUsed(deviceUsed), isMaster_(isMaster)
+Stream::Stream(bool devUsed)
+    : ptr(nullptr), id(0), selfOwned(false), mode(0), devUsed(devUsed), sqId(0), cqId(0), devPhyId(0), isMaster_(true)
 {
-    try {
-        if (deviceUsed) {
-            ptr  = HrtStreamCreateWithFlags(HCCL_STREAM_PRIORITY_HIGH, ACL_STREAM_DEVICE_USE_ONLY);
-            sqId = HrtStreamGetSqId(ptr);
-            cqId = HrtStreamGetCqId(ptr);
-        } else {
-            ptr = HrtStreamCreateWithFlags(HCCL_STREAM_PRIORITY_HIGH, ACL_STREAM_FAST_LAUNCH | ACL_STREAM_FAST_SYNC);
-            HrtStreamSetMode(ptr, STREAM_MODE_STOP_ON_FAILURE);
-        }
-        id = static_cast<u32>(HrtGetStreamId(ptr));
-        InitDevPhyId();
-    } catch (RuntimeApiException &e) {
-        HCCL_ERROR("HrtGetStreamId failed: %s", e.what());
-        HrtStreamDestroy(ptr);
-        throw;
+}
+
+HcclResult Stream::Create(bool deviceUsed, bool isMaster, std::unique_ptr<Stream>& stream)
+{
+    stream = std::unique_ptr<Stream>(new Stream());
+    stream->selfOwned = true;
+    stream->devUsed = deviceUsed;
+    stream->isMaster_ = isMaster;
+
+    if (deviceUsed) {
+        CHK_RET(HrtStreamCreateWithFlags(HCCL_STREAM_PRIORITY_HIGH, ACL_STREAM_DEVICE_USE_ONLY, stream->ptr));
+        CHK_RET(HrtStreamGetSqId(stream->ptr, stream->sqId));
+        CHK_RET(HrtStreamGetCqId(stream->ptr, stream->cqId));
+    } else {
+        CHK_RET(HrtStreamCreateWithFlags(HCCL_STREAM_PRIORITY_HIGH,
+            ACL_STREAM_FAST_LAUNCH | ACL_STREAM_FAST_SYNC, stream->ptr));
+        CHK_RET(HrtStreamSetMode(stream->ptr, STREAM_MODE_STOP_ON_FAILURE));
     }
+
+    s32 streamId;
+    CHK_RET(HrtGetStreamId(stream->ptr, streamId));
+    stream->id = static_cast<u32>(streamId);
+
+    CHK_RET(Stream::InitDevPhyId(stream->devPhyId));
+
+    stream->mode = 0;
+    return HCCL_SUCCESS;
+}
+
+HcclResult Stream::CreateFromPtr(aclrtStream ptr, bool isMaster, std::unique_ptr<Stream>& stream)
+{
+    stream = std::unique_ptr<Stream>(new Stream());
+    stream->ptr = ptr;
+    stream->selfOwned = false;
+    stream->isMaster_ = isMaster;
+
+    s32 streamId;
+    CHK_RET(HrtGetStreamId(ptr, streamId));
+    stream->id = static_cast<u32>(streamId);
+
+    CHK_RET(Stream::InitDevPhyId(stream->devPhyId));
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult Stream::InitDevPhyId(u32& devPhyId)
+{
+    s32 deviceId;
+    CHK_RET(HrtGetDevice(deviceId));
+    DevId phyId;
+    CHK_RET(HrtGetDevicePhyIdByIndex(deviceId, phyId));
+    devPhyId = phyId;
+    return HCCL_SUCCESS;
+}
+
+Stream::Stream() : ptr(nullptr), id(0), selfOwned(false), mode(0), devUsed(false), sqId(0), cqId(0), devPhyId(0),
+                    isMaster_(true) {}
+
+Stream::Stream(aclrtStream ptr, bool selfOwned, bool devUsed, bool isMaster, u32 id, u32 sqId, u32 cqId, u64 mode,
+               u32 devPhyId)
+    : ptr(ptr), id(id), selfOwned(selfOwned), mode(mode), devUsed(devUsed), sqId(sqId), cqId(cqId),
+      devPhyId(devPhyId), isMaster_(isMaster)
+{
 }
 
 Stream::~Stream()
 {
-    try {
-        if (selfOwned) {
-            HrtStreamDestroy(ptr);
+    if (selfOwned && ptr != nullptr) {
+        HcclResult ret = HrtStreamDestroy(ptr);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("HrtStreamDestroy failed in destructor, ret=%d", ret);
         }
-    } catch (HcclException &e) {
-        HCCL_ERROR("%s", e.what());
-    } catch (std::exception &e) {
-        HCCL_ERROR("%s", e.what());
-    } catch (...) {
-        HCCL_ERROR("Unknow Error occurs when destruct stream %d", id);
     }
 }
 
@@ -96,7 +139,7 @@ std::vector<char> Stream::GetUniqueId() const
     BinaryStream binaryStream;
     binaryStream << id;
     binaryStream << sqId;
-    binaryStream << devPhyId;    
+    binaryStream << devPhyId;
     binaryStream << cqId;
     binaryStream.Dump(result);
     HCCL_INFO("Stream::GetUniqueId:%s:data=%s", Describe().c_str(), Bytes2hex(result.data(), result.size()).c_str());
@@ -107,11 +150,6 @@ std::string Stream::Describe() const
 {
     return StringFormat("Stream[ptr=%p, id=%u, sqId=%u, selfOwned=%u, devUsed=%d, devPhyId=%u]", ptr, id, sqId,
                         selfOwned, devUsed, devPhyId);
-}
-
-void Stream::InitDevPhyId()
-{
-    devPhyId = HrtGetDevicePhyIdByIndex(HrtGetDevice());
 }
 
 } // namespace Hccl

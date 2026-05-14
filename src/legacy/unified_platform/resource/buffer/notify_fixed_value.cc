@@ -20,9 +20,20 @@ namespace Hccl {
 constexpr u32 V82_NOTIFY_SIZE = 8;
 NotifyFixedValue::NotifyFixedValue() : size(DevCapability::GetInstance().GetNotifySize())
 {
-    size = HrtGetDeviceType() == DevType::DEV_TYPE_950 ? V82_NOTIFY_SIZE : DevCapability::GetInstance().GetNotifySize();
+    DevType devType;
+    HcclResult ret = HrtGetDeviceType(devType);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[NotifyFixedValue] HrtGetDeviceType failed, ret=%d", ret);
+        return;
+    }
+    size = devType == DevType::DEV_TYPE_950 ? V82_NOTIFY_SIZE : DevCapability::GetInstance().GetNotifySize();
     u64   notifyValueSize = LARGE_PAGE_MEMORY_MIN_SIZE; // 避免申请小页内存。最小2*1024*1024
-    void *ptr             = HrtMalloc(notifyValueSize, static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH));
+    void* ptr = nullptr;
+    HcclResult mallocRet = HrtMalloc(notifyValueSize, static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH), ptr);
+    if (mallocRet != HCCL_SUCCESS) {
+        HCCL_ERROR("[NotifyFixedValue] HrtMalloc failed, ret=%d", mallocRet);
+        return;
+    }
     u32   notifyValue     = 1; // notify值写1表示record
     HrtMemcpy(ptr, notifyValueSize, &notifyValue, size, RT_MEMCPY_HOST_TO_DEVICE);
     addr = reinterpret_cast<uintptr_t>(ptr);

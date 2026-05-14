@@ -77,7 +77,12 @@ HcclResult HDCommunicate::VerifyDeviceMemoryRegisterSupport()
     size_t outputLen = 0;
     struct supportFeaturePara input = { 0 };
     struct supportFeaturePara output = { 0 };
-    s32 deviceId = HrtGetDevice();
+    s32 deviceId;
+    HcclResult ret = HrtGetDevice(deviceId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[HDCommunicate]VerifyDeviceMemoryRegisterSupport HrtGetDevice failed, ret=%d", ret);
+        return ret;
+    }
     input.support_feature = CTRL_SUPPORT_PCIE_BAR_MEM_MASK;
     input.devid = static_cast<unsigned int>(deviceId);
     halMemCtl(CTRL_TYPE_SUPPORT_FEATURE, &input, sizeof(struct supportFeaturePara), &output, &outputLen);

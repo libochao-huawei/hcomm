@@ -34,15 +34,27 @@ string LocalIpcRmaBuffer::Describe() const
 
 std::unique_ptr<Serializable> LocalIpcRmaBuffer::GetExchangeDto()
 {
+    s32 tgid = 0;
+    HcclResult res = HrtDeviceGetBareTgid(tgid);
+    if (res != HCCL_SUCCESS) {
+        HCCL_ERROR("[LocalIpcRmaBuffer] HrtDeviceGetBareTgid failed, ret=%d", res);
+        return nullptr;
+    }
     std::unique_ptr<ExchangeIpcBufferDto> dto
-        = make_unique<ExchangeIpcBufferDto>(buf->GetAddr(), buf->GetSize(), ipcOffset, HrtDeviceGetBareTgid(), buf->GetMemTag().c_str());
+        = make_unique<ExchangeIpcBufferDto>(buf->GetAddr(), buf->GetSize(), ipcOffset, static_cast<u32>(tgid), buf->GetMemTag().c_str());
     (void)memcpy_s(dto->name, RTS_IPC_MEM_NAME_LEN, name, RTS_IPC_MEM_NAME_LEN);
     return std::unique_ptr<Serializable>(dto.release());
 }
 
 void LocalIpcRmaBuffer::Grant(u32 pid)
 {
-    u32 myPid = HrtDeviceGetBareTgid();
+    s32 tgid = 0;
+    HcclResult res = HrtDeviceGetBareTgid(tgid);
+    if (res != HCCL_SUCCESS) {
+        HCCL_ERROR("[LocalIpcRmaBuffer] HrtDeviceGetBareTgid failed, ret=%d", res);
+        return;
+    }
+    u32 myPid = static_cast<u32>(tgid);
     if (pid == myPid) {
         HCCL_INFO("pid is equal to myPid, do need to use HrtIpcSetMemoryPid grant, pid==myPid=%u", pid);
         return;

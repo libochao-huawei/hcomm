@@ -166,7 +166,12 @@ void SocketManager::ServerInitAll(NewRankInfo &rankInfo)
     PhyTopoBuilder::GetInstance().Build(topoPath);
 
     std::lock_guard<std::mutex> lock(socketLock);
-    auto devLogicId = HrtGetDevice();
+    s32 devLogicId;
+    HcclResult ret = HrtGetDevice(devLogicId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[SocketManager::%s] HrtGetDevice failed, ret=%d", __func__, ret);
+        return;
+    }
     auto &serverSocketMap = SocketManager::GetServerSocketMap();
     u32 rankId = rankInfo.rankId;
     u32 localId = rankInfo.localId;

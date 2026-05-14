@@ -137,7 +137,11 @@ HcclResult CommunicatorImpl::Init(const CommParams &commParams, const std::strin
 
 void CommunicatorImpl::InitCommResource(const CommParams &commParams)
 {
-    HrtSetDevice(devLogicId);
+    HcclResult result = HrtSetDevice(devLogicId);
+    if (result != HCCL_SUCCESS) {
+        HCCL_ERROR("[CommunicatorImpl][InitCommResource] HrtSetDevice failed, devLogicId[%d]", devLogicId);
+        return;
+    }
     if (IsNeedDpu()) {
         InitHccpPeer();
     }
@@ -235,10 +239,10 @@ HcclResult CommunicatorImpl::Init(const CommParams &commParams, std::unique_ptr<
     if (!initFlag) {
         initFlag = true;
         try {
-            HrtSetDevice(inputDevLogicId);
+            CHK_RET(HrtSetDevice(inputDevLogicId));
             InitCommonData(commParams);
             InitRankGraph(inputRankGraph);
-            HrtSetDevice(devLogicId);
+            CHK_RET(HrtSetDevice(devLogicId));
             if (IsNeedDpu()) {
                 InitHccpPeer();
             }
@@ -288,7 +292,7 @@ HcclResult CommunicatorImpl::Init(const CommParams &commParams, std::unique_ptr<
     if (!initFlag) {
         initFlag = true;
         TRY_CATCH_RETURN(
-            HrtSetDevice(inputDevLogicId);
+            CHK_RET(HrtSetDevice(inputDevLogicId));
             InitCommonData(commParams, subConfig);
             InitHccpHdc();
             InitCcuSuperFastLoad();
@@ -535,7 +539,17 @@ void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtS
     
     if (streamNum > 1) {
         timeout = notifyTimeoutCfg.GetNotifyTimeout();
-        mStreamId = params.isSlave ? opbaseStream->GetSlave(slaveIndex++)->GetId() : HrtGetStreamId(mStream);
+        if (params.isSlave) {
+            mStreamId = opbaseStream->GetSlave(slaveIndex++)->GetId();
+        } else {
+            s32 streamId;
+            HcclResult ret = HrtGetStreamId(mStream, streamId);
+            if (ret != HCCL_SUCCESS) {
+                HCCL_ERROR("HrtGetStreamId failed, ret=%d", ret);
+            } else {
+                mStreamId = streamId;
+            }
+        }
         cntNotify1ToN = GetCcuStreamSyncNotifyManager().GetRts1ToNCntNotify(mStreamId);
         // launch LocalPostTo on stream
         value = 0;
@@ -557,7 +571,13 @@ void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtS
     
     if (streamNum > 1) {
         RtsCntNotify *cntNotifyNTo1 = GetCcuStreamSyncNotifyManager().GetRtsNTo1CntNotify(mStreamId);
-        opbaseStream->RegisterMaster(std::make_unique<Stream>(stream));
+        std::unique_ptr<Stream> masterStream;
+        HcclResult ret = Stream::CreateFromPtr(stream, true, masterStream);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("Stream::CreateFromPtr failed, ret=%d", ret);
+            return;
+        }
+        opbaseStream->RegisterMaster(std::move(masterStream));
         //  launch LocalWaitFrom on stream
         cntNotifyNTo1->WaitValue(value, timeout, mStream);
         for (std::size_t i = 0, len = streamNum - 1; i < len; ++i) {
@@ -655,7 +675,13 @@ HcclResult CommunicatorImpl::OffloadResourcePre(std::string &opTag, const CollOp
     std::vector<rtStream_t> slaveStreams;
     slaveStreams.resize(resReq.requiredSubQueNum);
     for (u64 i = 0; i < resReq.requiredSubQueNum; ++i) {
-        slaveStreams[i] = static_cast<rtStream_t>(std::make_unique<Stream>(true, false).get());
+        std::unique_ptr<Stream> slaveStream;
+        HcclResult ret = Stream::Create(true, false, slaveStream);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("Stream::Create failed, ret=%d", ret);
+            return ret;
+        }
+        slaveStreams[i] = static_cast<rtStream_t>(slaveStream->GetPtr());
     }
     CHK_RET(SetCollOffloadSlaveStreams(opTag, slaveStreams));
     CHK_RET(SetCollOffloadScratchBuf(opTag, reinterpret_cast<void *>(GetCclBuffer()->GetAddr()),
@@ -715,7 +741,13 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
 
         // 更新开关状态
         UpdateProfStat();
-        collService->LoadWithOpBasedMode(*currentCollOperator, std::make_unique<Stream>(stream));
+        std::unique_ptr<Stream> opBasedStream;
+        HcclResult ret = Stream::CreateFromPtr(static_cast<aclrtStream>(stream), false, opBasedStream);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("Stream::CreateFromPtr failed, ret=%d", ret);
+            return ret;
+        }
+        collService->LoadWithOpBasedMode(*currentCollOperator, std::move(opBasedStream));
         if (++aivTag > HCCL_CCL_AIV_CLEAR_STEP_MAX) {
             aivTag = 1;
         }
@@ -959,7 +991,13 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
         
         // 避免transport建链前，通讯域被摧毁
         SetCommStatus(CommStatus::COMM_INUSE);
-        collService->LoadWithOffloadMode(*currentCollOperator, std::make_unique<Stream>(stream));
+        std::unique_ptr<Stream> offloadStream;
+        HcclResult ret = Stream::CreateFromPtr(static_cast<aclrtStream>(stream), false, offloadStream);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("Stream::CreateFromPtr failed, ret=%d", ret);
+            return ret;
+        }
+        collService->LoadWithOffloadMode(*currentCollOperator, std::move(offloadStream));
         SetCommStatus(CommStatus::COMM_READY);
         bool cachedReq = opParams.staticShape || isCapture;
         ReportProfInfo(beginTime, cachedReq, isCapture); // profiling对于aclgraph场景的处理与单算子一致
@@ -1223,8 +1261,20 @@ void CommunicatorImpl::InitCommonData(const CommParams &commParams)
     rankInParentComm       = commParams.rankInParentComm;
     devType                = commParams.devType;
     isWorldGroup           = commParams.isWorldGroup;
-    devLogicId             = HrtGetDevice();
-    devPhyId               = HrtGetDevicePhyIdByIndex(devLogicId);
+    s32 devId;
+    HcclResult ret = HrtGetDevice(devId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[CommunicatorImpl::InitCommParams] HrtGetDevice failed, ret=%d", ret);
+        return;
+    }
+    devLogicId = devId;
+    DevId devPhyIdTmp;
+    ret = HrtGetDevicePhyIdByIndex(devLogicId, devPhyIdTmp);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[CommunicatorImpl::InitCommParams] HrtGetDevicePhyIdByIndex failed, ret=%d", ret);
+        return;
+    }
+    devPhyId = devPhyIdTmp;
 }
 
 void CommunicatorImpl::CheckRankGraph() const
@@ -1297,8 +1347,18 @@ void CommunicatorImpl::CheckRankGraphAddrs() const
 
 u32 GetLocalDieId(PortData&& port, LinkProtocol linkProtocol)
 {
-    auto     devLogicId = HrtGetDevice();
-    uint32_t devPhyId   = HrtGetDevicePhyIdByIndex(devLogicId);
+    s32 devLogicId;
+    HcclResult ret = HrtGetDevice(devLogicId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[GetLocalDieId] HrtGetDevice failed, ret=%d", ret);
+        return 0;
+    }
+    DevId devPhyId;
+    ret = HrtGetDevicePhyIdByIndex(devLogicId, devPhyId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[GetLocalDieId] HrtGetDevicePhyIdByIndex failed, ret=%d", ret);
+        return 0;
+    }
  
     auto &rdmaHandleMgr = RdmaHandleManager::GetInstance();
     auto  rdmaHandle    = rdmaHandleMgr.Get(devPhyId, port, linkProtocol);
@@ -1331,8 +1391,18 @@ std::string CommunicatorImpl::GetTopoFilePath()
         TRY_CATCH_THROW(InvalidParamsException, msgRankTopoFile, topoFilePath = GetJsonProperty(parseJson, "topo_file_path"););
     } else {
         const size_t bufSize = 1024;
-        auto devLogicId  = HrtGetDevice();
-        auto devPhyId = HrtGetDevicePhyIdByIndex(devLogicId);
+        s32 devLogicId;
+        HcclResult ret = HrtGetDevice(devLogicId);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[GetTopoFilePath] HrtGetDevice failed, ret=%d", ret);
+            return "";
+        }
+        DevId devPhyId;
+        ret = HrtGetDevicePhyIdByIndex(devLogicId, devPhyId);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[GetTopoFilePath] HrtGetDevicePhyIdByIndex failed, ret=%d", ret);
+            return "";
+        }
         std::vector<char> buffer(bufSize, '\0');
         int result = TopoAddrInfoGetTopoFilePath(devPhyId, buffer.data(), buffer.size());
         CHK_PRT_THROW(result != 0,
@@ -2186,7 +2256,7 @@ HcclResult CommunicatorImpl::RecoverComm(SnapShotComm &snapShotComm, u32 stepPar
             }
             RecoverOpMode(snapShotComm.opMode);
             InitCommonData(snapShotComm.commParams, snapShotComm.config);
-            HrtSetDevice(devLogicId);
+            CHK_RET(HrtSetDevice(devLogicId));
             InitHccpHdc(); // 选择ccu加速模式依赖hdc通道打开ccu驱动
             RecoverExeCfgData(snapShotComm.opExecuteConfig, snapShotComm.commExecuteConfig, snapShotComm.isLoadOp); // 算子粒度 和 通信域粒度都恢复
             RecoverRankGraphData(snapShotComm, changeInfo);
@@ -2250,7 +2320,7 @@ HcclResult CommunicatorImpl::RecoverComm(const SnapShotSubComm &snapShotSubComm,
             }
             RecoverOpMode(snapShotSubComm.opMode);
             InitCommonDataNotInitDevType(snapShotSubComm.commParams, snapShotSubComm.config);
-            HrtSetDevice(devLogicId);
+            CHK_RET(HrtSetDevice(devLogicId));
             InitHccpHdc(); // 选择ccu加速模式依赖hdc通道打开ccu驱动
             RecoverExeCfgData(snapShotSubComm.opExecuteConfig, snapShotSubComm.commExecuteConfig, snapShotSubComm.isLoadOp); // 算子粒度 和 通信域粒度都恢复
             InitRankGraph(inputRankGraph);
@@ -3409,7 +3479,11 @@ HcclResult CommunicatorImpl::AllocAndRegKFCWorkSpace(uint64_t size)
     accessVA_ = nullptr;
     drvError_t ret = DRV_ERROR_NONE;
     if (connectType_ == HOST_DEVICE_CONNECT_TYPE_PCIE) {
-        va_ = HrtMalloc(size, ACL_MEM_TYPE_HIGH_BAND_WIDTH);
+        HcclResult allocRet = HrtMalloc(size, ACL_MEM_TYPE_HIGH_BAND_WIDTH, va_);
+        if (allocRet != HCCL_SUCCESS) {
+            HCCL_ERROR("HrtMalloc failed, ret=%d", allocRet);
+            return allocRet;
+        }
         ret = halHostRegister(va_, size, DEV_SVM_MAP_HOST, devLogicId, &accessVA_);
     } else if (connectType_ == HOST_DEVICE_CONNECT_TYPE_UB) {
         va_ = malloc(size);
@@ -4080,7 +4154,13 @@ HcclResult CommunicatorImpl::Mc2AiCpuStreamAllocAndGetV2(rtStream_t *aiCpuStream
 
 HcclResult CommunicatorImpl::SaveDpuStreamId()
 {
-    dpuStreamId = HrtGetStreamId(dpuStream);
+    s32 streamId;
+    HcclResult ret = HrtGetStreamId(dpuStream, streamId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[CommunicatorImpl::SaveDpuStreamId] HrtGetStreamId failed, ret=%d", ret);
+        return ret;
+    }
+    dpuStreamId = streamId;
     HCCL_INFO("[CommunicatorImpl::SaveDpuStreamId] dpuStreamId_[%u]", dpuStreamId);
     return HCCL_SUCCESS;
 }

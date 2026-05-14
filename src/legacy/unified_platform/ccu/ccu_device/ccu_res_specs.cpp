@@ -139,7 +139,11 @@ static CcuResSpecInfo CheckResSpecifications(const uint32_t devPhyId, const uint
 HcclResult CcuResSpecifications::Init_()
 {
     TRY_CATCH_RETURN(
-        devPhyId = HrtGetDevicePhyIdByIndex(devLogicId);
+        HcclResult ret = HrtGetDevicePhyIdByIndex(devLogicId, devPhyId);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[CcuResSpecifications] HrtGetDevicePhyIdByIndex failed, ret=%d", ret);
+            return ret;
+        }
         ccuVersion = CheckCcuVersion();
         auto tlvHandle = HccpTlvHdcManager::GetInstance().GetTlvHandle(devLogicId);
         auto memTypeBitmap = GetCombinedMemTypeBitmap();

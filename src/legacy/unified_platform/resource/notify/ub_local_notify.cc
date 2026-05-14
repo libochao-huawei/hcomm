@@ -28,7 +28,12 @@ UbLocalNotify::UbLocalNotify(RdmaHandle rdmaHandle, bool devUsed)
     devResInfo.resType          = HrtDevResType::RES_TYPE_STARS_NOTIFY_RECORD;
     devResInfo.resId            = GetNotify()->GetId();
     devResInfo.flag             = 0;
-    auto resAddrInfo            = HrtGetDevResAddress(devResInfo);
+    HrtDevResAddrInfo resAddrInfo;
+    HcclResult ret = HrtGetDevResAddress(devResInfo, resAddrInfo);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[UbLocalNotify] HrtGetDevResAddress failed, ret=%d", ret);
+        return;
+    }
     addr                        = resAddrInfo.address;
     DevCapability::GetInstance().Init(DevType::DEV_TYPE_950); // 单例初始化
     size                        = DevCapability::GetInstance().GetNotifySize();

@@ -300,9 +300,14 @@ bool HostUbConnection::GetTpInfo()
         ThrowAbnormalStatus(std::string(__func__));
     }
 
-    int32_t devLogicId = HrtGetDevice();
-    auto ret = TpManager::GetInstance(devLogicId).GetTpInfo(
-        {locAddr, rmtAddr, tpProtocol}, tpInfo, true);
+    int32_t devLogicId;
+    HcclResult ret = HrtGetDevice(devLogicId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[HostUbConnection::GetTpInfo] HrtGetDevice failed, ret=%d", ret);
+        ThrowAbnormalStatus(std::string(__func__));
+    }
+    ret = TpManager::GetInstance(devLogicId).GetTpInfo(
+        {locAddr, rmtAddr, tpProtocol}, tpInfo);
 
     switch (ret) {
         case HcclResult::HCCL_E_AGAIN:
@@ -351,7 +356,12 @@ void HostUbConnection::SetImportInfo()
 
 void HostUbConnection::ReleaseTp()
 {
-    int32_t devLogicId = HrtGetDevice();
+    int32_t devLogicId;
+    HcclResult ret = HrtGetDevice(devLogicId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[HostUbConnection::ReleaseTp] HrtGetDevice failed, ret=%d", ret);
+        return;
+    }
     if (tpInfo.tpHandle != 0) {
         (void)TpManager::GetInstance(devLogicId)
             .ReleaseTpInfo({locAddr, rmtAddr, tpProtocol}, tpInfo);

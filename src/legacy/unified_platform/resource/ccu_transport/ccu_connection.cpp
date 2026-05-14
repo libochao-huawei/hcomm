@@ -44,11 +44,22 @@ CcuCtpConnection::CcuCtpConnection(const IpAddress &locAddr, const IpAddress &rm
 HcclResult CcuConnection::Init()
 {
     TRY_CATCH_RETURN(
-        devLogicId = HrtGetDevice();
-        uint32_t devPhyId = HrtGetDevicePhyIdByIndex(devLogicId);
+        s32 deviceId;
+        HcclResult ret = HrtGetDevice(deviceId);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[CcuConnection] HrtGetDevice failed, ret=%d", ret);
+            return ret;
+        }
+        devLogicId = deviceId;
+        DevId phyDeviceId;
+        ret = HrtGetDevicePhyIdByIndex(devLogicId, phyDeviceId);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[CcuConnection] HrtGetDevicePhyIdByIndex failed, ret=%d", ret);
+            return ret;
+        }
 
         auto &rdmaHandleMgr = RdmaHandleManager::GetInstance();
-        rdmaHandle = rdmaHandleMgr.GetByIp(devPhyId, locAddr_);
+        rdmaHandle = rdmaHandleMgr.GetByIp(phyDeviceId, locAddr_);
         dieId = rdmaHandleMgr.GetDieAndFuncId(rdmaHandle).first;
     );
 

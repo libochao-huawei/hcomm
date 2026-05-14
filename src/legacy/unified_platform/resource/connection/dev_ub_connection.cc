@@ -35,7 +35,11 @@ DevUbConnection::DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &l
       rmtEid(rmtAddr.GetReverseEid()), locEid(locAddr.GetReverseEid())
 {
     HCCL_INFO("[DevUbConnection::DevUbConnection] rmtEid=%s", rmtEid.Describe().c_str());
-    devLogicId = HrtGetDevice();
+    HcclResult ret = HrtGetDevice(devLogicId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[DevUbConnection] HrtGetDevice failed, ret=%d", ret);
+        THROW<InternalException>("HrtGetDevice failed");
+    }
 
     auto dieIdAndFuncId = RdmaHandleManager::GetInstance().GetDieAndFuncId(rdmaHandle); // 获取dieId和FuncId
     dieId               = dieIdAndFuncId.first;
@@ -817,8 +821,13 @@ HcclResult DevUbConnection::Describe(std::string &dfxMsg)
         struct TpAttr tpAttr {0};
         uint32_t attrBitmap = 1 << 13; // 13对应dataUdpSrcport
         TRY_CATCH_PRINT_ERROR(
-            u32 devicePhyId = HrtGetDevicePhyIdByIndex(devLogicId);
-            HcclResult ret = HrtRaGetTpAttrAsync(devicePhyId, rdmaHandle, tpInfo.tpHandle, attrBitmap, tpAttr, reqHandle);
+            DevId devicePhyId;
+            HcclResult ret = HrtGetDevicePhyIdByIndex(devLogicId, devicePhyId);
+            if (ret != HCCL_SUCCESS) {
+                HCCL_ERROR("[DevUbConnection::GetTpAttr] HrtGetDevicePhyIdByIndex failed, ret=%d", ret);
+                return ret;
+            }
+            ret = HrtRaGetTpAttrAsync(devicePhyId, rdmaHandle, tpInfo.tpHandle, attrBitmap, tpAttr, reqHandle);
             if (ret == HCCL_E_NOT_SUPPORT) {
                 HCCL_ERROR("[DevUbConnection::%s] this package does not support RaGetTpAttrAsync for device,"
                     " please change new package, devPhyId[%u]", __func__, devicePhyId);
@@ -1001,7 +1010,12 @@ HcclResult DevUbConnection::GetTpAttrAsync()
     uint32_t attrBitmap = 0;
     struct TpAttr tpAttr = {0};
 
-    u32 devicePhyId = HrtGetDevicePhyIdByIndex(devLogicId);
+    DevId devicePhyId;
+    HcclResult ret = HrtGetDevicePhyIdByIndex(devLogicId, devicePhyId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[DevUbConnection::GetTpAttrByIp] HrtGetDevicePhyIdByIndex failed, ret=%d", ret);
+        return ret;
+    }
     CHK_RET(HrtRaGetTpAttrAsync(devicePhyId, rdmaHandle, tpHandle, attrBitmap, tpAttr, reqHandle));
     HCCL_INFO("[DevUbConnection::%s] locIpv4Addr[%s], rmtIpv4Addr[%s], locAddr[%s], rmtAddr[%s]",
         __func__, locIpv4Addr.Describe().c_str(), rmtIpv4Addr.Describe().c_str(),

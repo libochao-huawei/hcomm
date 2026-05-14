@@ -28,9 +28,21 @@ HcclResult CcuCreateJetty(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo
 CcuJetty::CcuJetty(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo)
     : ipAddr_(ipAddr), jettyInfo_(jettyInfo)
 {
-    devLogicId_ = HrtGetDevice();
+    s32 deviceId;
+    HcclResult ret = HrtGetDevice(deviceId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[CcuJetty] HrtGetDevice failed, ret=%d", ret);
+        devLogicId_ = 0;
+        return;
+    }
+    devLogicId_ = deviceId;
+    DevId devPhyId;
+    ret = HrtGetDevicePhyIdByIndex(devLogicId_, devPhyId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[CcuJetty] HrtGetDevicePhyIdByIndex failed, ret=%d", ret);
+        return;
+    }
     Hccl::CqCreateInfo cqInfo{0};
-    uint32_t devPhyId = HrtGetDevicePhyIdByIndex(devLogicId_);
     auto &rdmaHandleMgr = RdmaHandleManager::GetInstance();
     rdmaHandle_ = rdmaHandleMgr.GetByIp(devPhyId, ipAddr);
     const auto jfcHandle = rdmaHandleMgr.GetJfcHandle(rdmaHandle_, cqInfo, HrtUbJfcMode::CCU_POLL);

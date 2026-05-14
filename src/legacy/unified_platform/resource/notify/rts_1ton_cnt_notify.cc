@@ -15,10 +15,21 @@
 
 namespace Hccl {
 
-Rts1ToNCntNotify::Rts1ToNCntNotify() : deviceId(HrtGetDevice()), devPhyId(HrtGetDevicePhyIdByIndex(HrtGetDevice())),
-                                        handle(HrtCntNotifyCreate(deviceId)), id(HrtGetCntNotifyId(handle))
+HcclResult Rts1ToNCntNotify::Create(std::unique_ptr<Rts1ToNCntNotify>& notify)
 {
+    notify = std::make_unique<Rts1ToNCntNotify>();
+
+    s32 deviceId;
+    CHK_RET(HrtGetDevice(deviceId));
+    notify->deviceId = static_cast<u32>(deviceId);
+    CHK_RET(HrtGetDevicePhyIdByIndex(deviceId, notify->devPhyId));
+    CHK_RET(HrtCntNotifyCreate(deviceId, notify->handle));
+    CHK_RET(HrtGetCntNotifyId(notify->handle, notify->id));
+
+    return HCCL_SUCCESS;
 }
+
+Rts1ToNCntNotify::Rts1ToNCntNotify() : deviceId(0), devPhyId(0), handle(nullptr), id(0) {}
 
 Rts1ToNCntNotify::~Rts1ToNCntNotify()
 {

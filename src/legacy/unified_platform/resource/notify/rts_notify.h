@@ -20,11 +20,15 @@ namespace Hccl {
 
 class RtsNotify {
 public:
+    static HcclResult Create(bool devUsed, std::unique_ptr<RtsNotify>& notify);
+
+    RtsNotify();
+
+    explicit RtsNotify(bool devUsed);
+
     RtsNotify(const RtsNotify &that) = delete;
 
     RtsNotify &operator=(const RtsNotify &that) = delete;
-
-    explicit RtsNotify(bool devUsed = false);
 
     ~RtsNotify();
 

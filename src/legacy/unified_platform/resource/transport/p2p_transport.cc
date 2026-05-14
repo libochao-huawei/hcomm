@@ -186,7 +186,14 @@ bool P2PTransport::IsRmtPidValid() const
 
 void P2PTransport::SendPid()
 {
-    myPid = HrtDeviceGetBareTgid();
+    s32 pid;
+    HcclResult ret = HrtDeviceGetBareTgid(pid);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[P2PTransport] HrtDeviceGetBareTgid failed, ret=%d", ret);
+        myPid = 0;
+        return;
+    }
+    myPid = static_cast<u32>(pid);
     HCCL_INFO("P2PTransport: send pid %u", myPid);
 
     BinaryStream binaryStream;

@@ -31,14 +31,26 @@ RemoteIpcRmaBuffer::RemoteIpcRmaBuffer(const Serializable &rmtDto) : RemoteRmaBu
     (void)memcpy_s(ipcName, RTS_IPC_MEM_NAME_LEN, dto.name, RTS_IPC_MEM_NAME_LEN);
     HCCL_INFO("[RemoteIpcRmaBuffer][RemoteIpcRmaBuffer]ipcAddr[%llu] ipcOffset[%llu] ipcName[%s] memTag[%s]",
               ipcAddr, ipcOffset, ipcName, memTag.c_str());
-    myPid = HrtDeviceGetBareTgid();
+    s32 tgid = 0;
+    HcclResult res = HrtDeviceGetBareTgid(tgid);
+    if (res != HCCL_SUCCESS) {
+        HCCL_ERROR("[RemoteIpcRmaBuffer] HrtDeviceGetBareTgid failed, ret=%d", res);
+        return;
+    }
+    myPid = static_cast<u32>(tgid);
     if (myPid == remotePid) {
         HCCL_INFO("RemoteIpcRmaBuffer: myPid is equal to remotePid, do not need to open memory");
         HrtMemPrefetchToDevice(reinterpret_cast<void*>(ipcAddr + ipcOffset) , size);
         addr = ipcAddr + ipcOffset;
     } else {
         HCCL_INFO("RemoteIpcRmaBuffer: open memory.");
-        ipcPtr   = HrtIpcOpenMemory(ipcName);
+        void* ipcPtrTmp = nullptr;
+        HcclResult res = HrtIpcOpenMemory(ipcName, ipcPtrTmp);
+        if (res != HCCL_SUCCESS) {
+            HCCL_ERROR("[RemoteIpcRmaBuffer] HrtIpcOpenMemory failed, ret=%d", res);
+            return;
+        }
+        ipcPtr   = ipcPtrTmp;
         addr     = reinterpret_cast<uintptr_t>(ipcPtr) + ipcOffset;
         isOpened = true;
     }
@@ -55,7 +67,13 @@ RemoteIpcRmaBuffer::RemoteIpcRmaBuffer(const Serializable &rmtDto, const string 
     (void)memcpy_s(ipcName, RTS_IPC_MEM_NAME_LEN, dto.name, RTS_IPC_MEM_NAME_LEN);
     HCCL_INFO("[RemoteIpcRmaBuffer][RemoteIpcRmaBuffer] tag[%s] ipcAddr[%llu] ipcOffset[%llu] ipcName[%s] memTag[%s]", tag.c_str(),
               ipcAddr, ipcOffset, ipcName, memTag.c_str());
-    ipcPtr   = HrtIpcOpenMemory(ipcName);
+    void* ipcPtrTmp = nullptr;
+    HcclResult res = HrtIpcOpenMemory(ipcName, ipcPtrTmp);
+    if (res != HCCL_SUCCESS) {
+        HCCL_ERROR("[RemoteIpcRmaBuffer] HrtIpcOpenMemory failed, ret=%d", res);
+        return;
+    }
+    ipcPtr   = ipcPtrTmp;
     addr     = reinterpret_cast<uintptr_t>(ipcPtr) + ipcOffset;
     isOpened = true;
 }
