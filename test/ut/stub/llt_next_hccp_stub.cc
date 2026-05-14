@@ -126,6 +126,11 @@ int RaNdaGetDirectFlag(void *rdmaHandle, int *directFlag)
     if (directFlag != nullptr) {
         *directFlag = 1;
     }
+}
+
+int RaCtxGetAsyncEvents(void *ctxHandle, struct AsyncEvent events[], unsigned int *num)
+{
+    *num = 0;
     return 0;
 }
 
