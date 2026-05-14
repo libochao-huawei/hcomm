@@ -99,7 +99,9 @@ public:
                            const SqeConfigLite &cfg, const StreamLite &stream, ConnLiteOperationOut &out) override;
     void BatchOneSidedWrite(const vector<RmaBufSliceLite> &loc, const vector<RmtRmaBufSliceLite> &rmt,
                             const SqeConfigLite &cfg, const StreamLite &stream, ConnLiteOperationOut &out) override;
-
+    inline u16 GetCi() const {
+        return ci; 
+    }
 private:
     u16  pi{0};
     u16  ci{0}; 
