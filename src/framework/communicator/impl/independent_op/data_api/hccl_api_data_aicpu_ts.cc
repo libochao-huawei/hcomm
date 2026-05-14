@@ -326,15 +326,17 @@ std::unordered_map<HcommDataType, Hccl::DataType> mapHcommDataTypeToA5 = {
     {HcommDataType::HCOMM_DATA_TYPE_HIF8,    Hccl::DataType::HIF8},
     {HcommDataType::HCOMM_DATA_TYPE_FP8E4M3, Hccl::DataType::FP8E4M3},
     {HcommDataType::HCOMM_DATA_TYPE_FP8E5M2, Hccl::DataType::FP8E5M2},
-    {HcommDataType::HCOMM_DATA_TYPE_FP8E8M0, Hccl::DataType::FP8E8M0}
+    {HcommDataType::HCOMM_DATA_TYPE_FP8E8M0, Hccl::DataType::FP8E8M0},
 #endif
+    {HcommDataType::HCOMM_DATA_TYPE_RESERVED, Hccl::DataType::INVALID}
 };
 
 std::unordered_map<HcommReduceOp, Hccl::ReduceOp> mapHcommReduceOpToA5 = {
     {HcommReduceOp::HCOMM_REDUCE_SUM,  Hccl::ReduceOp::SUM},
     {HcommReduceOp::HCOMM_REDUCE_PROD, Hccl::ReduceOp::PROD},
     {HcommReduceOp::HCOMM_REDUCE_MAX,  Hccl::ReduceOp::MAX},
-    {HcommReduceOp::HCOMM_REDUCE_MIN,  Hccl::ReduceOp::MIN}};
+    {HcommReduceOp::HCOMM_REDUCE_MIN,  Hccl::ReduceOp::MIN},
+    {HcommReduceOp::HCOMM_REDUCE_RESERVED, Hccl::ReduceOp::INVALID}};
 
 inline HcclResult CheckDataTypeAndReduceOp(HcommDataType dataType, HcommReduceOp reduceOp)
 {
@@ -676,22 +678,26 @@ int32_t HcommBatchTransferOnThread(ThreadHandle thread, ChannelHandle channel,
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
-    if (threadPtr->IsDeviceA5()) {
-        HCCL_WARNING("[%s] A5 path is not supported.", __func__);
-        return HCCL_E_NOT_SUPPORT;
-    }
     AddThread(thread);
-    Stream *stream = GetStream(thread);
-    CHK_PTR_NULL(stream);
-    hccl::Transport *transport = reinterpret_cast<hccl::Transport *>(channel);
-    CHK_PTR_NULL(transport);
-
-    HcclResult ret = transport->BatchTransferAsync(transferDescs, transferDescNum, *stream);
+    HcclResult ret = HCCL_SUCCESS;
+    if (threadPtr->IsDeviceA5()) {
+        auto *const ubTransportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
+        CHK_PTR_NULL(ubTransportLitePtr);
+        auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
+        CHK_PTR_NULL(streamLitePtr);
+        ret = ubTransportLitePtr->ExecuteBatchTransfer(streamLitePtr, transferDescs, transferDescNum);
+    } else {
+        Stream *stream = GetStream(thread);
+       CHK_PTR_NULL(stream);
+        hccl::Transport *transport = reinterpret_cast<hccl::Transport *>(channel);
+        CHK_PTR_NULL(transport);
+        ret = transport->BatchTransferAsync(transferDescs, transferDescNum, *stream);
+    }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s] BatchTransferAsync failed.", __func__), ret);
 
     HCCL_INFO("[%s] SUCCESS. transferDescNum[%u].", __func__, transferDescNum);
-    return HCCL_SUCCESS;
+    return ret;
 }
 
 int32_t HcommWriteNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len)
