@@ -87,7 +87,7 @@ void InitCollComm(std::shared_ptr<hccl::hcclComm> hcclCommPtr)
     config.hcclOpExpansionMode = 1;
     config.hcclRdmaTrafficClass = 0xFFFFFFFF;
     config.hcclRdmaServiceLevel = 0xFFFFFFFF;
-    ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
+    hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
 }
 
 TEST_F(MyRankTest, Ut_When_QueryListenPort_Listen_Port_Expect_SUCCESS)
