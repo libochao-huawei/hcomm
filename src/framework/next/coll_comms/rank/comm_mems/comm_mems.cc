@@ -63,7 +63,7 @@ HcclResult CommMems::HcclBufferMemset(void *&addr, uint64_t &len)
         return HCCL_SUCCESS;
     }
 
-    HCCL_ERROR("[CommMems][HcclBufferMemset] buffer is null or size is 0, skip memset.");
+    HCCL_ERROR("[CommMems][HcclBufferMemset] buffer[%p] is null or size[%llu] is 0, skip memset.", addr, len);
     return HCCL_E_PARA;
 }
 

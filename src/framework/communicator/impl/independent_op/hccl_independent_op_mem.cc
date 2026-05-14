@@ -156,6 +156,10 @@ HcclResult HcclGetHcclBuffer(HcclComm comm, void ** buffer, uint64_t *size)
 
 HcclResult HcclGetHcclBufferCleared(HcclComm comm, void **buffer, uint64_t *size)
 {
+    CHK_PRT_RET(buffer == nullptr, HCCL_ERROR("[%s] buffer is null", __func__), HCCL_E_PTR);
+    CHK_PRT_RET(comm == nullptr, HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
+    CHK_PRT_RET(size == nullptr, HCCL_ERROR("[%s] size is null", __func__), HCCL_E_PTR);
+
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
