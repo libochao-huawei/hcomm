@@ -60,7 +60,7 @@ HcclResult hcclComm::ResetExchangeInfo()
 
 HcclResult hcclComm::GetExchangeInfoBuf(std::vector<u8> &exchangeInfoBuf)
 {
-    exchangeInfoBuf = exchangeInfoBuf_
+    exchangeInfoBuf = exchangeInfoBuf_;
     return HCCL_SUCCESS;
 }
 
