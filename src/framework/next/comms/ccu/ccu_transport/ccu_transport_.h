@@ -114,27 +114,13 @@ public:
         Hccl::OpMode opMode{Hccl::OpMode::OPBASE};
         u32          devicePhyId{0};
         std::vector<char> handshakeMsg{};
+        Hccl::AcceleratorState opAcceState{Hccl::AcceleratorState::CCU_SCHED};  // 新增，默认值
         std::string Describe() const {
             return Hccl::StringFormat("CcuTransportAttribution[opMode=%s, devicePhyId=%u, handshakeMsg=%s]",
                                 opMode.Describe().c_str(), devicePhyId,
                                 Hccl::Bytes2hex(handshakeMsg.data(), handshakeMsg.size()).c_str());
         }
     };
-
-    std::vector<char> &GetRmtHandshakeMsg() // 返回握手消息
-    {
-        return rmtHandshakeMsg_;
-    }
-
-    std::vector<char> &GetLocalHandshakeMsg() // 返回握手消息
-    {
-        return attr_.handshakeMsg;
-    }
-
-    void SetHandshakeMsg(const std::vector<char> &handshakeMsg)
-    {
-        attr_.handshakeMsg = handshakeMsg;
-    }
 
 private:
     HcclResult StatusMachine();
@@ -174,6 +160,7 @@ private:
     int32_t                                  devLogicId_{0};
     Attribution                              attr_{};
     std::vector<char>                        rmtHandshakeMsg_{0}; // 远端握手消息
+    Hccl::AcceleratorState                   rmtOpAcceState{Hccl::AcceleratorState::CCU_SCHED};
     Hccl::Socket                             *socket_{nullptr};
     std::unique_ptr<CcuConnection>           ccuConnection_;
     TransRes                                 locRes_{};

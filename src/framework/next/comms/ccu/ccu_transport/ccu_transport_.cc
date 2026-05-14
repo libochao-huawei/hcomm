@@ -355,9 +355,10 @@ HcclResult CcuTransport::RecvTransInfoProcess()
 
 HcclResult CcuTransport::HandshakeMsgPack(Hccl::BinaryStream &binaryStream)
 {
+    binaryStream << static_cast<u32>(attr_.opAcceState);
     binaryStream << attr_.handshakeMsg;
-    HCCL_INFO("[CcuTransport][%s] start pack handshakeMsg, attr.handshakeMsg.size[%zu]",
-        __func__, attr_.handshakeMsg.size());
+    HCCL_INFO("[CcuTransport][%s] start pack handshakeMsg, attr.handshakeMsg.size[%zu], accelerator[%s]",
+        __func__, attr_.handshakeMsg.size(), attr_.opAcceState.Describe().c_str());
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -400,6 +401,17 @@ HcclResult CcuTransport::BufferInfoPack(Hccl::BinaryStream &binaryStream, std::v
 
 HcclResult CcuTransport::HandshakeMsgUnpack(Hccl::BinaryStream &binaryStream)
 {
+    u32 rmtAccelerator{0};
+    binaryStream >> rmtAccelerator;
+    HCCL_INFO("[CcuTransport::HandshakeMsgUnpack], rmtAccelerator[%u]", rmtAccelerator);
+    rmtOpAcceState = static_cast<Hccl::AcceleratorState::Value>(rmtAccelerator);
+    
+    if (rmtOpAcceState != attr_.opAcceState) {
+        HCCL_ERROR("[CcuTransport::HandshakeMsgUnpack] Accelerator information check fail. locOpAccelerator[%s], rmtOpAccelerator[%s]",
+            attr_.opAcceState.Describe().c_str(), rmtOpAcceState.Describe().c_str());
+        return HcclResult::HCCL_E_PARA;
+    }
+
     binaryStream >> rmtHandshakeMsg_;
 
     if (attr_.handshakeMsg.size() != rmtHandshakeMsg_.size()) {
