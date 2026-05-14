@@ -455,6 +455,10 @@ bool DevUbConnection::GetTpInfo()
 
     switch (ret) {
         case HcclResult::HCCL_SUCCESS:
+            if (!tpMgrReleaseQosCaptured_) {
+                tpMgrReleaseQos_ = p.qos;
+                tpMgrReleaseQosCaptured_ = true;
+            }
             if (tpInfo.hasMappedJettyPriority) {
                 qos_ = static_cast<u8>(tpInfo.mappedJettyPriority & 0xFU);
             }
@@ -504,9 +508,13 @@ void DevUbConnection::SetImportInfo()
 void DevUbConnection::ReleaseTp()
 {
     if (tpInfo.tpHandle != 0) {
-        (void)TpManager::GetInstance(devLogicId)
-            .ReleaseTpInfo({locAddr, rmtAddr, tpProtocol}, tpInfo);
+        RaUbGetTpInfoParam relParam(locAddr, rmtAddr, tpProtocol);
+        if (tpMgrReleaseQosCaptured_) {
+            relParam.qos = tpMgrReleaseQos_;
+        }
+        (void)TpManager::GetInstance(devLogicId).ReleaseTpInfo(relParam, tpInfo);
         tpInfo.tpHandle = 0;
+        tpMgrReleaseQosCaptured_ = false;
     }
 }
 
