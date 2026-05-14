@@ -50,6 +50,8 @@ public:
 
     void BatchCreateSockets(const vector<LinkData> &links);
 
+    void BatchCreateSockets(SocketConfig &socketConfig);
+
     void ServerInit(PortData &localPort);
 
     static void ServerInitAll(NewRankInfo &rankInfo);
@@ -57,8 +59,6 @@ public:
     bool ServerDeInit(PortData &localPort) const;
 
     Socket *CreateConnectedSocket(SocketConfig &socketConfig);
-
-    bool DestroyConnectedSocket(SocketConfig &socketConfig);
 
     Socket *GetConnectedSocket(SocketConfig &socketConfig) const;
 
