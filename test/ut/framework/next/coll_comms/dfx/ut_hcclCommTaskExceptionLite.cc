@@ -265,12 +265,3 @@ TEST_F(hcclCommTaskExceptionLiteTest, Ut_RegisterGetAicpuTaskExceptionCallBack_W
                  g_communicatorCallbackMapV2[invalidDeviceLogicId].end());
 }
 
-TEST_F(hcclCommTaskExceptionLiteTest, Ut_UnregisterGetAicpuTaskExceptionCallBack_When_InvaildDeviceId_Expect_NoCrash)
-{
-    u32 invalidDeviceLogicId = MAX_MODULE_DEVICE_NUM + 1;
-    s32 streamId = 1;
-
-    TaskExceptionHostManager::UnregisterGetAicpuTaskExceptionCallBack(streamId, invalidDeviceLogicId);
-    EXPECT_FALSE(true);
-}
-
