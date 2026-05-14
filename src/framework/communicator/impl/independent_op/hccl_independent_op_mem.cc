@@ -108,9 +108,7 @@ HcclResult GetHcclBufferWithClearFlag(HcclComm comm, void **buffer, uint64_t *si
     CommMems* commMem = myRank->GetCommMems();
     CHK_PTR_NULL(commMem);
     CHK_RET(commMem->GetHcclBuffer(*buffer, *size));
-    if (clearFlag && *buffer != nullptr && *size > 0) {
-        CHK_RET(commMem->HcclBufferMemset(*buffer, *size));
-    }
+    CHK_RET(commMem->HcclBufferMemset(*buffer, *size, clearFlag));
 
     return HCCL_SUCCESS;
 }

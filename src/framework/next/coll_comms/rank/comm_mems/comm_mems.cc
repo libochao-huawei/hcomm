@@ -56,15 +56,16 @@ HcclResult CommMems::GetHcclBuffer(void *&addr, uint64_t &len)
     return HCCL_SUCCESS;
 }
 
-HcclResult CommMems::HcclBufferMemset(void *&addr, uint64_t &len)
+HcclResult CommMems::HcclBufferMemset(void *&addr, uint64_t &len, bool clearFlag)
 {
-    if (addr != nullptr && len > 0) {
+    if (clearFlag && addr != nullptr && len > 0) {
         EXECEPTION_CATCH(Hccl::HrtMemset(addr, len, len), return HCCL_E_INTERNAL);
         return HCCL_SUCCESS;
     }
 
-    HCCL_ERROR("[CommMems][HcclBufferMemset] buffer[%p] is null or size[%llu] is 0, skip memset.", addr, len);
-    return HCCL_E_PARA;
+    HCCL_INFO("[CommMems][HcclBufferMemset] clearFlag[%d] is false or buffer[%p] is null or size[%llu] is 0, skip.",
+        clearFlag, addr, len);
+    return HCCL_SUCCESS;
 }
 
 HcclResult CommMems::Init(HcclMem cclBuffer)
