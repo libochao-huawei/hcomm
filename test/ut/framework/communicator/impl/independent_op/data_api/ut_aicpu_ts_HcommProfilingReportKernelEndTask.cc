@@ -24,7 +24,9 @@
 #define private public
 #include "aicpu_ts_thread.h"
 #include "aicpu_ts_thread_interface.h"
+#include "profiling_handler_lite.h"
 #undef private
+#include "aicpu_indop_env.h"
 
 using namespace hccl;
 
@@ -43,16 +45,25 @@ protected:
     {
         threadOnDevice.devType_ = DevType::DEV_TYPE_950;
         threadOnDevice.pImpl_ = std::make_unique<Hccl::IAicpuTsThread>();
+        profL0State_ = Hccl::ProfilingHandlerLite::GetInstance().enableHcclL0_;
+        profL1State_ = Hccl::ProfilingHandlerLite::GetInstance().enableHcclL1_;
+        taskExceptionEnable_ = hcomm::GetTaskExceptionEnable();
     }
 
     virtual void TearDown() override
     {
+        Hccl::ProfilingHandlerLite::GetInstance().enableHcclL0_ = profL0State_;
+        Hccl::ProfilingHandlerLite::GetInstance().enableHcclL1_ = profL1State_;
+        hcomm::SetTaskExceptionEnable(taskExceptionEnable_);
         GlobalMockObject::verify();
     }
 
     AicpuTsThread threadOnDevice{StreamType::STREAM_TYPE_DEVICE, 0, NotifyLoadType::DEVICE_NOTIFY};
     ThreadHandle thread = reinterpret_cast<ThreadHandle>(&threadOnDevice);
     HcclResult res{HCCL_E_RESERVED};
+    bool profL0State_{false};
+    bool profL1State_{false};
+    bool taskExceptionEnable_{true};
 };
 
 /**
@@ -81,4 +92,15 @@ TEST_F(UtAicpuTsHcommProfilingReportKernelEndTask, Ut_HcommProfilingReportKernel
     const char* groupName = "test_group";
     res = HcommProfilingReportKernelEndTask(0, groupName);
     EXPECT_EQ(res, HCCL_E_PTR);
+}
+
+TEST_F(UtAicpuTsHcommProfilingReportKernelEndTask,
+    Ut_HcommProfilingReportKernelEndTask_When_DfxAllDisabled_Expect_ReturnHCCL_SUCCESS)
+{
+    Hccl::ProfilingHandlerLite::GetInstance().enableHcclL0_ = false;
+    Hccl::ProfilingHandlerLite::GetInstance().enableHcclL1_ = false;
+    hcomm::SetTaskExceptionEnable(false);
+
+    res = HcommProfilingReportKernelEndTask(0, nullptr);
+    EXPECT_EQ(res, HCCL_SUCCESS);
 }

@@ -24,7 +24,9 @@
 #define private public
 #include "aicpu_ts_thread.h"
 #include "aicpu_ts_thread_interface.h"
+#include "profiling_handler_lite.h"
 #undef private
+#include "aicpu_indop_env.h"
 
 using namespace hccl;
 
@@ -39,12 +41,25 @@ using namespace hccl;
 class UtAicpuTsHcommProfilingReportDeviceOp : public testing::Test
 {
 protected:
+    virtual void SetUp() override
+    {
+        profL0State_ = Hccl::ProfilingHandlerLite::GetInstance().enableHcclL0_;
+        profL1State_ = Hccl::ProfilingHandlerLite::GetInstance().enableHcclL1_;
+        taskExceptionEnable_ = hcomm::GetTaskExceptionEnable();
+    }
+
     virtual void TearDown() override
     {
+        Hccl::ProfilingHandlerLite::GetInstance().enableHcclL0_ = profL0State_;
+        Hccl::ProfilingHandlerLite::GetInstance().enableHcclL1_ = profL1State_;
+        hcomm::SetTaskExceptionEnable(taskExceptionEnable_);
         GlobalMockObject::verify();
     }
 
     HcclResult res{HCCL_E_RESERVED};
+    bool profL0State_{false};
+    bool profL1State_{false};
+    bool taskExceptionEnable_{true};
 };
 
 /**
@@ -71,5 +86,15 @@ TEST_F(UtAicpuTsHcommProfilingReportDeviceOp, Ut_HcommProfilingReportDeviceOp_Wh
 {
     const char* groupName = "test_group";
     res = HcommProfilingReportDeviceOp(groupName);
+    EXPECT_EQ(res, HCCL_SUCCESS);
+}
+
+TEST_F(UtAicpuTsHcommProfilingReportDeviceOp, Ut_HcommProfilingReportDeviceOp_When_DfxAllDisabled_Expect_ReturnHCCL_SUCCESS)
+{
+    Hccl::ProfilingHandlerLite::GetInstance().enableHcclL0_ = false;
+    Hccl::ProfilingHandlerLite::GetInstance().enableHcclL1_ = false;
+    hcomm::SetTaskExceptionEnable(false);
+
+    res = HcommProfilingReportDeviceOp(nullptr);
     EXPECT_EQ(res, HCCL_SUCCESS);
 }
