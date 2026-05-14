@@ -16,6 +16,7 @@
 #include <securec.h>
 #include <arpa/inet.h>
 #include "acl/acl_rt.h"
+#include "hcomm_res_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -86,10 +87,10 @@ typedef enum {
  * @brief 批量传输描述符
  */
 typedef struct {
-    HcommTransferType transType;
+    HcommTransferType transType;     ///< 传输类型
     uint8_t reserved[4];
     union {
-        uint8_t raws[56];
+        uint8_t raws[56];            ///< 通用数据
         struct {
             uint64_t len;
             void *dst;
