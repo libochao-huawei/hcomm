@@ -26,6 +26,40 @@ namespace Hccl {
 
 static std::mutex socketLock;
 
+void SocketManager::BatchServerListen(const vector<LinkData> &links)
+{
+    for (auto &link : links) {
+        if (Contain(availableLinks, link)) {
+            continue;
+        }
+        pendingLinks_.emplace_back(link);
+    }
+
+    if (pendingLinks_.empty()) {
+        return;
+    }
+
+    for (auto &link: pendingLinks_) {
+        if (link.GetLinkProtocol() == LinkProtocol::PCIE) {
+            std::vector<uint32_t> remoteDevices;
+            remoteDevices.push_back(link.GetRemoteDeviceId());
+            auto ret = P2PEnableManager::GetInstance().WaitP2PEnabled(remoteDevices);
+            if (ret != HCCL_SUCCESS) {
+                THROW<TimeoutException>(StringFormat("WaitP2PEnabled failed, devicePhyId=%d", link.GetRemoteDeviceId()));
+            }
+        }
+    }
+    BatchServerListenAsync(pendingLinks_);
+    availableLinks.insert(pendingLinks_.begin(), pendingLinks_.end());
+}
+
+void SocketManager::BatchConectSockets()
+{
+    BatchAddWhiteList(pendingLinks_);
+    BatchCreateConnectedSockets(pendingLinks_);
+    pendingLinks_.clear();
+}
+
 void SocketManager::BatchCreateSockets(const vector<LinkData> &links)
 {
     vector<LinkData> pendingLinks;
@@ -64,6 +98,17 @@ void SocketManager::BatchServerInit(const vector<LinkData> &links)
         if (role == SocketRole::SERVER) {
             auto portData = link.GetLocalPort();
             ServerInit(portData);
+        }
+    }
+}
+
+void SocketManager::BatchServerListenAsync(const vector<LinkData> &links)
+{
+    for (auto &link : links) {
+        SocketRole role = link.GetLocalRankId() < link.GetRemoteRankId() ? SocketRole::SERVER : SocketRole::CLIENT;
+        if (role == SocketRole::SERVER) {
+            auto portData = link.GetLocalPort();
+            ServerListenAsync(portData);
         }
     }
 }
@@ -122,6 +167,45 @@ void SocketManager::BatchCreateConnectedSockets(const vector<LinkData> &links)
 }
 
 void SocketManager::ServerInit(PortData &localPort)
+{
+    std::lock_guard<std::mutex> lock(socketLock);
+    IpAddress ipAddress = localPort.GetAddr();
+    u32 serverListenPort = localPort.GetType() == PortDeploymentType::P2P
+            ? GetDeviceListenPort(localPort.GetRankId(), DEVICE_PORT_KEY_IPADDRESS)
+            : GetDeviceListenPort(localPort.GetRankId(), ipAddress);
+
+    auto &serverSocketMap = SocketManager::GetServerSocketMap();
+    auto serverSocketInMap = serverSocketMap.find(localPort);
+    if (serverSocketInMap != serverSocketMap.end()) {
+        auto oldServerSocket = serverSocketMap.at(localPort);
+        u32 oldServerListenPort = oldServerSocket->GetListenPort();
+        if (oldServerListenPort != serverListenPort) {
+            // 自定义算子的时候，会持有一个不关联通信域的SocketManager, 从而获取到的是默认端口，在单卡多进程的时候需要重新导向合适的端口。
+            // 通信域算子又可以切换回来。
+            bool success = oldServerSocket->Listen(serverListenPort);
+            HCCL_INFO("[SocketManager::%s] %s change listen port %u to %u, ret[%u]", __func__, 
+                localPort.Describe().c_str(), oldServerListenPort, serverListenPort, success);
+        }
+        HCCL_INFO("[%s] find localPort in serverSocketMap, localPort [%s]", __func__, localPort.Describe().c_str());
+        return;
+    }
+
+    SocketHandle hccpSocketHandle = SocketHandleManager::GetInstance().Create(devicePhyId, localPort);
+    NicType nicType = localPort.GetType() == PortDeploymentType::P2P
+            ? NicType::DEVICE_VNIC_TYPE
+            : NicType::DEVICE_NIC_TYPE;
+    auto serverSocket = socketProducer(ipAddress, ipAddress, serverListenPort, hccpSocketHandle, "server", SocketRole::SERVER, nicType);
+    bool success = serverSocket->Listen(serverListenPort);
+    if (success) {
+        HCCL_RUN_INFO("[SocketManager::%s] Local %s listen the port %u success", __func__, localPort.Describe().c_str(), serverListenPort);
+    } else {
+        string msg = StringFormat("[SocketManager::%s] Local %s listen the port %u failed, maybe other process be listen it", __func__, localPort.Describe().c_str(), serverListenPort);
+        MACRO_THROW(InvalidParamsException, msg);
+    }
+    serverSocketMap[localPort] = std::move(serverSocket);
+}
+
+void SocketManager::ServerListenAsync(PortData &localPort)
 {
     std::lock_guard<std::mutex> lock(socketLock);
     IpAddress ipAddress = localPort.GetAddr();
@@ -246,6 +330,10 @@ Socket *SocketManager::CreateConnectedSocket(SocketConfig &socketConfig)
     const PortData &remotePort = socketConfig.link.GetRemotePort();
 
     auto socketHandle = SocketHandleManager::GetInstance().Get(devicePhyId, localPort);
+    if (socketHandle == nullptr) {
+        socketHandle = SocketHandleManager::GetInstance().Create(devicePhyId, socketConfig.link.GetLocalPort());
+    }
+
     if (socketHandle == nullptr) {
         THROW<NullPtrException>(StringFormat("socketHandle of is nullptr, devicePhyId=%d, port=%s", devicePhyId,
                                              localPort.Describe().c_str()));
