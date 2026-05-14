@@ -138,3 +138,46 @@ TEST_F(UtAicpuTsHcommBatchTransferOnThread, Ut_HcommBatchTransferOnThread_When_M
     res = HcommBatchTransferOnThread(thread, devHandle, transferDescs, 2);
     EXPECT_EQ(res, HCCL_E_NOT_SUPPORT);
 }
+
+
+TEST_F(UtAicpuTsHcommBatchTransfer, Ut_HcommBatchTransfer_When_channel_IsNull_Expect_PtrError)
+{
+    ChannelHandle channel = 0;
+    HcommBatchTransferDesc * transferDescs = reinterpret_cast<HcommBatchTransferDesc *>(0x1000);
+    uint32_t transferDescNum = 1;
+
+    res = HcommBatchTransferOnThread(thread, channel, transferDescs, transferDescNum);
+    EXPECT_EQ(res, HCCL_E_PTR);
+}
+
+TEST_F(UtAicpuTsHcommBatchTransfer, Ut_HcommBatchTransfer_When_transferDescs_IsNull_Expect_PtrError)
+{
+    ChannelHandle channel = 0;
+    HcommBatchTransferDesc *transferDescs = nullptr;
+    uint32_t transferDescNum = 1;
+
+    res = HcommBatchTransferOnThread(thread, channel, transferDescs, transferDescNum);
+    EXPECT_EQ(res, HCCL_E_PTR);
+}
+
+TEST_F(UtAicpuTsHcommBatchTransfer, Ut_HcommBatchTransfer_When_Write_Expect_Success)
+{
+    ChannelHandle channel = 0;
+    std::unique_ptr<Hccl::UbTransportLiteImpl> ubTransportLiteImpl;
+    std::vector<char> transpUniqueId;
+    ubTransportLiteImpl = std::make_unique<Hccl::UbTransportLiteImpl>(transpUniqueId);
+    channel = reinterpret_cast<uint64_t>(ubTransportLiteImpl.get());
+    uint32_t transferDescNum = 4;
+    std::vector<HcommBatchTransferDesc> transferDescs;
+    HcommBatchTransferDesc tmpTransferDesc;
+    tmpTransferDesc.transType = HCOMM_TRANSFER_TYPE_WRITE;
+    tmpTransferDesc.write.dst = reinterpret_cast<void *>(0x1000);
+    tmpTransferDesc.write.src = reinterpret_cast<void *>(0x1000);
+    tmpTransferDesc.write.len = 64;
+    for (uint8_t i = 0; i < transferDescNum; ++i) {
+        transferDescs.push_back(tmpTransferDesc);
+    }
+
+    res = HcommBatchTransferOnThread(thread, channel, transferDescs.data(), transferDescNum);
+    EXPECT_EQ(res, HCCL_SUCCESS);
+}
