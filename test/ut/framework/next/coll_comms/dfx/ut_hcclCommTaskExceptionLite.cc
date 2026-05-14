@@ -252,7 +252,7 @@ TEST_F(hcclCommTaskExceptionLiteTest, Ut_CallbackOverwrite_SameStreamId_Expect_U
 
 TEST_F(hcclCommTaskExceptionLiteTest, Ut_RegisterGetAicpuTaskExceptionCallBack_When_InvaildDeviceId_Expect_NoRegister)
 {
-    u32 invalidDeviceLogicId = MAX_MODULE_DEVICE_NUM - 1;
+    u32 invalidDeviceLogicId = MAX_MODULE_DEVICE_NUM + 1;
     s32 streamId = 1;
 
     auto callback = []() -> Hccl::ErrorMessageReport {
@@ -267,7 +267,7 @@ TEST_F(hcclCommTaskExceptionLiteTest, Ut_RegisterGetAicpuTaskExceptionCallBack_W
 
 TEST_F(hcclCommTaskExceptionLiteTest, Ut_UnregisterGetAicpuTaskExceptionCallBack_When_InvaildDeviceId_Expect_NoCrash)
 {
-    u32 invalidDeviceLogicId = MAX_MODULE_DEVICE_NUM - 1;
+    u32 invalidDeviceLogicId = MAX_MODULE_DEVICE_NUM + 1;
     s32 streamId = 1;
 
     TaskExceptionHostManager::UnregisterGetAicpuTaskExceptionCallBack(streamId, invalidDeviceLogicId);

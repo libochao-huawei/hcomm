@@ -925,7 +925,7 @@ TEST_F(TaskExceptionTest, Ut_CallbackOverwrite_SameStreamId_Expect_Updated)
 
 TEST_F(TaskExceptionTest, Ut_UnregisterGetAicpuTaskExceptionCallBack_When_InvaildDeviceId_Expect_NoCrash)
 {
-    u32 invalidDeviceLogicId = MAX_MODULE_DEVICE_NUM - 1;
+    u32 invalidDeviceLogicId = MAX_MODULE_DEVICE_NUM + 1;
     s32 streamId = 1;
 
     UnregisterGetAicpuTaskExceptionCallBack(streamId, invalidDeviceLogicId);
