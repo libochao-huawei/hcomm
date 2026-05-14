@@ -122,6 +122,7 @@ public:
     u32  GetRdmaRetryCnt() const;
     u32  GetUboeTimeOut() const;
     u32  GetUbTimeOut() const;
+    u32  GetRdmaQueueNum() const;
     u32  GetRdmaMultiQpThreshold() const;
 
 private:
