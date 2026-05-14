@@ -69,7 +69,11 @@ public:
         const StreamLite &stream) override;
     
     void BatchTransfer(const std::vector<RmaBufferLite> &loc, const std::vector<Buffer> &rmt,
-                        const std::vector<TransferOp> &transferOp, const StreamLite &stream) override;
+                        const std::vector<TransferOp> &transferOp,  const StreamLite &stream) override;
+
+    // 子类独有方法，支持所有操作类型，用于aicpu场景批量下发任务
+    void BatchTransferAll(const std::vector<RmaBufferLite> &loc, const std::vector<Buffer> &rmt,
+                        const std::vector<TransferOp> &transferOp, const std::vector<uint32_t> &notifyIdxs, const StreamLite &stream);
 
     HcclResult BuildLocRmaBufferLite(const uintptr_t addr, const size_t size, RmaBufferLite &rmaBufferLite) override;
     HcclResult Fence();
@@ -158,6 +162,9 @@ private:
     void SetFenceConfig(SqeConfigLite &cfg);
 
     bool IsReportTask();
+
+    void ExecProfiling(const std::vector<RmaBufferLite> &loc, const std::vector<Buffer> &rmt, 
+                const std::vector<BaseTransportLiteImpl::TransferOp> &transferOp, const StreamLite &stream, u32 taskId);
 };
 
 } // namespace Hccl
