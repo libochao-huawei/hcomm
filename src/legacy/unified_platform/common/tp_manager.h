@@ -115,6 +115,17 @@ private:
     void StartGetTpAttrForFirstTpDevice(const RaUbGetTpInfoParam &param, RequestCtx &reqCtx);
     HcclResult HandleCompletedRequest(RequestCtx reqCtx, const RaUbGetTpInfoParam &param, TpInfo &tpInfo,
         bool withSlPolicy);
+    HcclResult MapTpInfoFromTpAttr(const RaUbGetTpInfoParam &param, const RequestCtx &reqCtx, TpInfo &outTpInfo);
+
+    HcclResult RunHandleCompletedGetTpEraseReq(ReqCtxMap &reqCtxMap, const IpAddress &locAddr,
+        const IpAddress &rmtAddr, uint32_t qosKey, RequestCtx &&completedReqCtx,
+        std::unique_lock<std::mutex> &reqCtxLock, const RaUbGetTpInfoParam &param, TpInfo &tpInfo, bool withSlPolicy);
+    HcclResult GetTpInfoOnDeviceWaitListPhase(const RaUbGetTpInfoParam &param, ReqCtxMap &reqCtxMap,
+        const IpAddress &locAddr, const IpAddress &rmtAddr, uint32_t qosKey, RequestCtx &reqCtx,
+        std::unique_lock<std::mutex> &reqCtxLock, TpInfo &tpInfo);
+    HcclResult GetTpInfoOnDeviceWaitTpAttrPhase(const RaUbGetTpInfoParam &param, ReqCtxMap &reqCtxMap,
+        const IpAddress &locAddr, const IpAddress &rmtAddr, uint32_t qosKey, RequestCtx &reqCtx,
+        std::unique_lock<std::mutex> &reqCtxLock, TpInfo &tpInfo);
 
     bool CheckRequestResult(RequestHandle &reqHandle) const;
     InfoCtxMap &GetInfoCtxMap(const TpProtocol tpProtocol);

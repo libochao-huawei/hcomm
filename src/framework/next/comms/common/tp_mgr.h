@@ -121,9 +121,22 @@ private:
     static void EraseReqCtxAtQos(ReqCtxMap &reqCtxMap, const Hccl::IpAddress &loc, const Hccl::IpAddress &rmt,
         uint32_t qosKey);
 
+    HcclResult WaitForInFlightGetTpReqResult(const GetTpInfoParam &param, const TpProtocol tpProtocol,
+        RequestCtx &reqCtx) const;
+    HcclResult OnGetTpInfoListAsyncDoneThenSubmitTpAttr(const GetTpInfoParam &param, ReqCtxMap &reqCtxMap,
+        const Hccl::IpAddress &locAddr, const Hccl::IpAddress &rmtAddr, uint32_t qosKey, RequestCtx &reqCtx,
+        std::unique_lock<std::mutex> &reqCtxLock) const;
+    HcclResult RunHandleCompletedGetTpEraseReq(ReqCtxMap &reqCtxMap, const Hccl::IpAddress &locAddr,
+        const Hccl::IpAddress &rmtAddr, uint32_t qosKey, RequestCtx &&completedReqCtx,
+        std::unique_lock<std::mutex> &reqCtxLock, const GetTpInfoParam &param, TpInfo &tpInfo);
+
     HcclResult StartGetTpInfoListRequest(const GetTpInfoParam &param, RequestCtx &reqCtx) const;
     HcclResult StartGetTpAttrForFirstTp(const GetTpInfoParam &param, RequestCtx &reqCtx) const;
     HcclResult HandleCompletedRequest(RequestCtx reqCtx, const GetTpInfoParam &param, TpInfo &tpInfo);
+    /// GetTpAttr 完成后：校验 sl_mask、按 QoS 选 TP/SL、写回设备属性并组装 `TpInfo`。
+    HcclResult MapTpInfoFromTpAttr(const GetTpInfoParam &param, const RequestCtx &reqCtx, TpInfo &outTpInfo);
+    HcclResult CommitTpAttrsAfterSlMapping(const GetTpInfoParam &param, const TpAttr &tpAttr, uint64_t tpHandle,
+        uint32_t mappedSl);
 
     InfoCtxMap &GetInfoCtxMap(const TpProtocol tpProtocol);
     ReqCtxMap  &GetReqCtxMap(const TpProtocol tpProtocol);
