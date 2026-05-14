@@ -41,11 +41,6 @@ public:
 
     virtual HcclResult Clean() override;
     virtual HcclResult Resume() override;
-    
-    HcommChannelKind GetChannelKind() const override
-    {
-        return HcommChannelKind::AICPU_TS_UBOE;
-    }
 
     // 数据面接口
     HcclResult WriteWithNotify(void *dst, const void *src, const uint64_t len, uint32_t remoteNotifyIdx) override;

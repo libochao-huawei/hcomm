@@ -82,24 +82,6 @@ struct HcclChannelUrmaRes {
 };
 
 
-// for A2/A3 endpoint with tranport
-struct HcclChannelHccsRes {
-    char channelTag[TAG_MAX_LENGTH];    // channelTag 最大长度待修改
-    HcclChannelP2p channelP2p;  // P2p资源
-    u64 p2pNotifyNum{0};       // 用于linkp2p添加notify信息
-    u32 deviceType{0};          // 基础通信使用
-    u32 remoteRank{0};         // 远端rankId
-    u32 localRank{0};
-    u32 remoteDevicePhyId{0};      // 远端 PhyId
-    u32 localDevicePhyId{0};
-    s32 localDeviceLogicId{0};
-    hccl::MachineType machineType{hccl::MachineType::MACHINE_RESERVED_TYPE};  // client或者server
-    u32 localBufSize{0};
-    u32 remoteBufSize{0};
-    HcclMemEx *localBufMem{nullptr};
-    HcclMemEx *remoteBufMem{nullptr};
-};
-
 struct HcommDeviceInfo {
     s32 deviceLogicId{0};
     u32 devicePhyId{0};

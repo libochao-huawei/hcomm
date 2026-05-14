@@ -31,10 +31,7 @@ TransportDeviceP2p::TransportDeviceP2p(DispatcherPub *dispatcher,
     this->remoteInputPtr_ = transDevP2pData.inputBufferPtr;
     this->remoteOutputPtr_ = transDevP2pData.outputBufferPtr;
     this->transportAttr_ = transDevP2pData.transportAttr;
-
-    if (!machinePara.isNewOneSide) {
-        this->SetNotifyPtr(transDevP2pData);
-    }
+    this->SetNotifyPtr(transDevP2pData);
 }
 
 TransportDeviceP2p::~TransportDeviceP2p()
@@ -59,13 +56,9 @@ HcclResult TransportDeviceP2p::Init()
     HcclUs startut = TIME_NOW();
 
     SetUseSdmaToSignalRecord();
-    if (!machinePara_.isNewOneSide) {
-        CHK_RET(ConfigUseSdmaCopyToSignalRecord());
-        CHK_RET(this->SetNotify());
-    } else {
-        // init localHcclMemExMgr_ and remoteHcclMemExMgr_ from machinePara_.localBufMem and machinePara_.remoteBufMem
-        CHK_RET(InitHcclMemExMgr(machinePara_));
-    }
+    CHK_RET(ConfigUseSdmaCopyToSignalRecord());
+
+    CHK_RET(this->SetNotify());
 
     HcclUs endut = TIME_NOW();
     HCCL_INFO("[TransportDeviceP2p][Init] take time:%lld us", DURATION_US(endut - startut));

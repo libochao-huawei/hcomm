@@ -13,17 +13,14 @@
 #include "log.h"
 #include "channel.h"
 #include "./aicpu/aicpu_ts_urma_channel.h"
-#include "./aicpu/aicpu_ts_p2p_channel.h"
 #include "./aicpu/aicpu_ts_uboe_channel.h"
 #include "./host/host_cpu_roce_channel.h"
 #include "./host/host_cpu_urma_channel.h"
 #include "./ccu/ccu_urma_channel.h"
 #include "./aiv/aiv_ub_mem_channel.h"
-#include "./aicpu/aicpu_ts_hccs_channel.h"
 
 namespace hcomm {
 std::unordered_map<ChannelHandle, ChannelHandle> channelD2HHandleMap_;
-
 HcclResult Channel::CreateChannel(
     EndpointHandle endpointHandle, CommEngine engine, 
     HcommChannelDesc channelDesc, std::unique_ptr<Channel>& channelPtr)
@@ -52,14 +49,9 @@ HcclResult Channel::CreateChannel(
         case COMM_ENGINE_AICPU_TS:
             if (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_UBOE) {
                 channelPtr.reset(new (std::nothrow) AicpuTsUboeChannel(endpointHandle, channelDesc));
-            } else if (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_PCIE) {
-                channelPtr.reset(new (std::nothrow) AicpuTsP2pChannel(endpointHandle, channelDesc));
             } else if (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_UBC_CTP ||
                        channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_UBC_TP) {
                 channelPtr.reset(new (std::nothrow) AicpuTsUrmaChannel(endpointHandle, channelDesc));
-            } else if (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_HCCS) {
-                channelPtr.reset(
-                    new (std::nothrow) AicpuTsHccsChannel(endpointHandle, channelDesc));
             } else {
                 HCCL_ERROR("[Channel][%s] invalid protocol for engine %d, protocol=%d",
                     __func__, engine, channelDesc.remoteEndpoint.protocol);

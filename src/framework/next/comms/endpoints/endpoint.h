@@ -71,13 +71,7 @@ public:
 
     virtual HcclResult GetAllMemHandles(void **memHandles, uint32_t *memHandleNum) = 0;
 
-    virtual HcclResult MemoryGrant(const HcommMemGrantInfo *remoteGrantInfo)
-    {
-        return HCCL_SUCCESS;
-    }
-
 protected:
-    static HcclResult CreateEndpointBase(const EndpointDesc &endpointDesc, std::unique_ptr<Endpoint> &endpointPtr);
     void* ctxHandle_{nullptr};
     std::shared_ptr<RegedMemMgr> regedMemMgr_{};
     EndpointDesc endpointDesc_;

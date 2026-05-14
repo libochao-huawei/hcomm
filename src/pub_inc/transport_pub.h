@@ -242,11 +242,9 @@ public:
     LinkTypeInServer specifyLink{LinkTypeInServer::RESERVED_LINK_TYPE}; // 指定链路类型
     bool enableAtomicWrite{false}; // 使能atomicWrite
     QueueDepthAttr queueDepthAttr{}; // QP深度配置
-    bool isNewOneSide{false};
-    u32 localBufSize{0};
-    u32 remoteBufSize{0};
-    HcclMemEx *localBufMem{nullptr}; 
-    HcclMemEx *remoteBufMem{nullptr};
+    bool userMemEnable{true};
+    // DispatcherCtxPtr；设备侧 TS Roce 等场景传入，WriteCommon 内写入线程局部 dispatcher
+    void *dctxPtr{nullptr};
     TagMachinePara() {}
 
     TagMachinePara(const struct TagMachinePara &that)
@@ -288,11 +286,8 @@ public:
         specifyLink = that.specifyLink;
         enableAtomicWrite = that.enableAtomicWrite;
         queueDepthAttr = that.queueDepthAttr;
-        isNewOneSide = (that.isNewOneSide);
-        localBufSize = (that.localBufSize);
-        remoteBufSize = (that.remoteBufSize);
-        localBufMem = (that.localBufMem);
-        remoteBufMem = (that.remoteBufMem);
+        userMemEnable = that.userMemEnable;
+        dctxPtr = that.dctxPtr;
     }
 
     struct TagMachinePara &operator=(struct TagMachinePara &that)
@@ -334,11 +329,8 @@ public:
             specifyLink = that.specifyLink;
             enableAtomicWrite = that.enableAtomicWrite;
             queueDepthAttr = that.queueDepthAttr;
-            isNewOneSide = (that.isNewOneSide);
-            localBufSize = (that.localBufSize);
-            remoteBufSize = (that.remoteBufSize);
-            localBufMem = (that.localBufMem);
-            remoteBufMem = (that.remoteBufMem);
+            userMemEnable = that.userMemEnable;
+            dctxPtr = that.dctxPtr;
         }
 
         return *this;

@@ -14,7 +14,6 @@
 #include "ub_mem_endpoint.h"
 #include "uboe_endpoint.h"
 #include "cpu_urma_endpoint.h"
-#include "aicputs_hccs_endpoint.h"
 
 namespace hcomm{
 static bool IsSupported(const EndpointDesc &endpointDesc)
@@ -28,7 +27,6 @@ static bool IsSupported(const EndpointDesc &endpointDesc)
         case COMM_PROTOCOL_UB_MEM:
         case COMM_PROTOCOL_PCIE:
         case COMM_PROTOCOL_UBOE:
-        case COMM_PROTOCOL_HCCS:
             protocolSupported = true;
             break;
         default:
@@ -60,12 +58,7 @@ HcclResult Endpoint::CreateEndpoint(const EndpointDesc &endpointDesc, std::uniqu
 
     HCCL_INFO("[%s]endpointDesc.protocol [%d] endpointDesc.loc.locType [%d].", __func__, endpointDesc.protocol, endpointDesc.loc.locType);
 
-    return CreateEndpointBase(endpointDesc, endpointPtr);
-}
-
-HcclResult Endpoint::CreateEndpointBase(const EndpointDesc &endpointDesc, std::unique_ptr<Endpoint> &endpointPtr)
-{
-if (endpointDesc.protocol == COMM_PROTOCOL_ROCE && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_HOST) {
+    if (endpointDesc.protocol == COMM_PROTOCOL_ROCE && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_HOST) {
         EXECEPTION_CATCH(endpointPtr = std::make_unique<CpuRoceEndpoint>(endpointDesc), return HCCL_E_PTR);
     } else if ((endpointDesc.protocol == COMM_PROTOCOL_UBC_TP || endpointDesc.protocol == COMM_PROTOCOL_UBC_CTP) 	 
                 && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_HOST) { 
@@ -79,8 +72,6 @@ if (endpointDesc.protocol == COMM_PROTOCOL_ROCE && endpointDesc.loc.locType == E
         EXECEPTION_CATCH(endpointPtr = std::make_unique<UbMemEndpoint>(endpointDesc), return HCCL_E_PTR);
     } else if (endpointDesc.protocol == COMM_PROTOCOL_UBOE && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
         EXECEPTION_CATCH(endpointPtr = std::make_unique<UboeEndpoint>(endpointDesc), return HCCL_E_PTR);
-    } else if (endpointDesc.protocol == COMM_PROTOCOL_HCCS && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
-        EXECEPTION_CATCH(endpointPtr = std::make_unique<AicpuTsHccsEndpoint>(endpointDesc), return HCCL_E_PTR);
     } else {
         endpointPtr = nullptr;
         HCCL_ERROR("[%s] failed, endpointDesc.protocol [%d] and endpointDesc.loc.locType [%d] do not match.", 
@@ -89,4 +80,5 @@ if (endpointDesc.protocol == COMM_PROTOCOL_ROCE && endpointDesc.loc.locType == E
     }
     return HCCL_SUCCESS;
 }
+
 }

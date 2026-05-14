@@ -58,13 +58,6 @@ typedef struct {
     uint64_t size;
 } HcclMem;
 
-typedef struct {
-    HcclMemType type;
-    void *addr;
-    uint64_t size;
-    void *devAddr;
-} HcclMemEx;
-
 #ifdef __cplusplus
 }
 #endif // __cplusplus

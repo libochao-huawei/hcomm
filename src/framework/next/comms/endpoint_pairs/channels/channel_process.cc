@@ -16,7 +16,6 @@
 #include "launch_aicpu.h"
 #include "hcclCommDfx.h"
 #include "env_config/env_config.h"
-#include "aicpu_ts_p2p_channel.h"
 
 namespace hcomm {
 
@@ -114,8 +113,8 @@ HcclResult ChannelProcess::ChannelUpdateMemInfo(HcommMemHandle *memHandles, uint
         return HcclResult::HCCL_E_INTERNAL;
     }
     // UpdateMemInfo需要rank间交互，若在锁内执行会导致单进程多线程场景其他rank被锁拦住
+    Channel *channel = itC->second.get();
     CHK_RET(channel->UpdateMemInfo(memHandles, memHandleNum));
-    EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
 
@@ -321,10 +320,7 @@ HcclResult ChannelProcess::LaunchChannelKernelCommon(ChannelHandle *channelHandl
     std::vector<u32> channelSizeVec{};
     uint32_t totalListNum = 0;
     for (uint32_t index = 0; index < listNum; index++) {
-        if (hcommDesc[index].remoteEndpoint.protocol == CommProtocol::COMM_PROTOCOL_PCIE) {
-            auto aicpuTsP2pChannel = reinterpret_cast<AicpuTsP2pChannel *>(hostChannelHandles[index]);
-            CHK_PRT(aicpuTsP2pChannel->H2DResPack(hostPackBuffers[index]));
-        } else if (hcommDesc[index].remoteEndpoint.protocol == CommProtocol::COMM_PROTOCOL_UBOE) {
+        if (hcommDesc[index].remoteEndpoint.protocol == CommProtocol::COMM_PROTOCOL_UBOE) {
             auto aicpuTsUboeChannel = reinterpret_cast<AicpuTsUboeChannel *>(hostChannelHandles[index]);
             CHK_PRT(aicpuTsUboeChannel->H2DResPack(hostPackBuffers[index]));
         } else {
