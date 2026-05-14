@@ -64,6 +64,44 @@ TEST_F(TestHcclGetHcclBuffer, Ut_HcclGetHcclBuffer_When_Normal_Return_HCCL_Succe
     EXPECT_EQ(size, 2);
 }
 
+TEST_F(TestHcclGetHcclBuffer, Ut_HcclGetHcclBufferCleared_When_Normal_Return_HCCL_Success)
+{
+    MOCKER(hrtGetDeviceType)
+        .stubs()
+        .with(outBound(DevType::DEV_TYPE_950))
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER(IsSupportHCCLV2)
+        .stubs()
+        .will(returnValue(true));
+    setenv("HCCL_INDEPENDENT_OP","1",1);
+
+    u64 bufferStub = 0;
+    void* commV2 = (void*)0x2000;
+    RankGraphStub rankGraphStub;
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
+    u32 rank = 1;
+    HcclMem cclBuffer;
+    cclBuffer.size = sizeof(bufferStub);
+    cclBuffer.type = HcclMemType::HCCL_MEM_TYPE_HOST;
+    cclBuffer.addr = &bufferStub;
+    char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
+    std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
+    HcclCommConfig config;
+    config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
+    config.hcclRdmaTrafficClass = 0xFFFFFFFF; // 不配置RDMA Traffic Class
+    config.hcclRdmaServiceLevel = 0xFFFFFFFF; // 不配置RDMA Service Level
+    unsetenv("HCCL_DFS_CONFIG");
+    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
+    EXPECT_EQ(ret, 0);
+    
+    void* comm = static_cast<HcclComm>(hcclCommPtr.get());
+    void* buffer;
+    uint64_t size;
+    ret =  HcclGetHcclBufferCleared(comm, &buffer, &size);
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(size, sizeof(bufferStub));
+}
+
 TEST_F(TestHcclGetHcclBuffer, Ut_HcclGetHcclBuffer_When_CommNullptr_Return_HCCL_E_PTR)
 {
     MOCKER(hrtGetDeviceType)
