@@ -987,7 +987,7 @@ HcclResult UbMemTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags
         return HCCL_E_PARA;
     }
     uint32_t userMemCount = rmtBufferVec.size() - 1; // 默认 cclBuffer 数量为1，后续出现1的含义也是 cclBufferNum
-    auto cacheBuilder = [](RemoteMemCtx<std::unique_ptr<RemoteUbRmaBuffer>> &remoteMemCtx, uint32_t index) {
+    auto cacheBuilder = [](Hccl::emoteMemCtx<std::unique_ptr<Hccl::RemoteUbRmaBuffer>> &remoteMemCtx, uint32_t index) {
         auto &rmtBuffer = remoteMemCtx.rmtBufferVec[index + 1];
         if (rmtBuffer == nullptr) {
             return;
@@ -1005,7 +1005,7 @@ HcclResult UbMemTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags
         remoteMemCtx.remoteUserMems[index].addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
         remoteMemCtx.remoteUserMems[index].size = rmtBuffer->GetSize();
     };
-    RemoteMemCtx<std::unique_ptr<RemoteUbRmaBuffer>> remoteMemCtx{
+    RemoteMemCtx<std::unique_ptr<Hccl::RemoteUbRmaBuffer>> remoteMemCtx{
         userMemCount, cacheValid_, rmtBufferVec, remoteUserMemTag_, remoteUserMems_, tagCopies_, tagPointers_,
         cacheBuilder, remoteMem, memTags, memNum};
     CHK_RET(GetRemoteUserMem(remoteMemCtx));
