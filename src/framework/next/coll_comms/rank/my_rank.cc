@@ -1004,7 +1004,7 @@ HcclResult MyRank::WaitActiveAsyncComplete(
 
 CollCommConfigConsistency &MyRank::GetCollCommConfigConsistency()
 {
-    return collCommConfigConsistency;
+    return collCommConfigConsistency_;
 }
 
 } // namespace hccl

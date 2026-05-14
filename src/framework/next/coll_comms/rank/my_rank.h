@@ -53,6 +53,8 @@ public:
         return opExpansionMode_;
     }
 
+    CollCommConfigConsistency &GetCollCommConfigConsistency();
+
     HcclResult CreateChannels(CommEngine engine, const std::string &commTag, 
         const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle *channels);
     
@@ -107,7 +109,6 @@ private:
         const std::vector<u32> &remoteExchangeInfoLens,
         u32 localExchangeInfoLen,
         bool isFirstPass);
-    CollCommConfigConsistency &GetCollCommConfigConsistency();
 
     aclrtBinHandle binHandle_{nullptr};
     uint32_t rankId_{};
@@ -139,7 +140,7 @@ private:
 
     Hccl::RankIpPortMapPtr rankIpPortMap_;
 
-    CollCommConfigConsistency collCommConfigConsistency;
+    CollCommConfigConsistency collCommConfigConsistency_;
 };
 
 } // namespace hccl
