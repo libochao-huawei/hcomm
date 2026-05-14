@@ -748,3 +748,15 @@ int RaCtxGetTpInfoList(void *ctxHandle, struct GetTpCfg *cfg, struct HccpTpInfo 
 {
     return 0;
 }
+
+int RaCtxLmemBatchRegister(void *ctxHandle, struct MrRegInfoT *lmemInfoList[],
+    void *lmemHandleList[], unsigned int num)
+{
+    return 0;
+}
+
+int RaCtxRmemBatchImport(void *ctxHandle, struct MrImportInfoT *rmemInfoList[],
+    void *rmemHandleList[], unsigned int num)
+{
+    return 0;
+}
