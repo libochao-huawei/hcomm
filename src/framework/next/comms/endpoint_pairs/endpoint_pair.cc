@@ -104,13 +104,13 @@ HcclResult EndpointPair::GetSocket(const uint32_t myRank, const uint32_t rmtRank
             return HCCL_E_PTR);
     }
 
-    socketMgrCompat_->BatchCreateSockets({linkData}); // 内部同时处理server端和connect端两类socket
-
     std::string linkTag = socketTag;
     if (linkData.GetReuseIdx() != "0") {
         linkTag += ("_" + linkData.GetReuseIdx());
     }
     Hccl::SocketConfig socketConfig(linkData.GetRemoteRankId(), linkData, linkTag);
+
+    socketMgrCompat_->BatchCreateSockets(socketConfig); // 内部同时处理server端和connect端两类socket
     socket = socketMgrCompat_->GetConnectedSocket(socketConfig);
     CHK_PTR_NULL(socket);
     EXCEPTION_HANDLE_END

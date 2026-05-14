@@ -57,6 +57,32 @@ void SocketManager::BatchCreateSockets(const vector<LinkData> &links)
     availableLinks.insert(pendingLinks.begin(), pendingLinks.end());
 }
 
+void SocketManager::BatchCreateSockets(SocketConfig &socketConfig)
+{
+    LinkData link = socketConfig.link;
+
+    // 使用link管理P2PEnable，但是不应该放置在这里
+    if (!Contain(availableLinks, link)) {
+        if (link.GetLinkProtocol() == LinkProtocol::PCIE) {
+            std::vector<uint32_t> remoteDevices;
+            remoteDevices.push_back(link.GetRemoteDeviceId());
+            auto ret = P2PEnableManager::GetInstance().WaitP2PEnabled(remoteDevices);
+            if (ret != HCCL_SUCCESS) {
+                THROW<TimeoutException>(
+                    StringFormat("WaitP2PEnabled failed, devicePhyId=%d", link.GetRemoteDeviceId()));
+            }
+        }
+        availableLinks.insert({link});
+    }
+
+    // 统一使用socketConfig管理socket复用
+    if (GetConnectedSocket(socketConfig) == nullptr) {
+        BatchServerInit({link});
+        BatchAddWhiteList({link});
+        BatchCreateConnectedSockets({link});
+    }
+}
+
 void SocketManager::BatchServerInit(const vector<LinkData> &links)
 {
     for (auto &link : links) {
@@ -265,22 +291,6 @@ Socket *SocketManager::CreateConnectedSocket(SocketConfig &socketConfig)
     tmpSocket->ConnectAsync();
     connectedSocketMap[socketConfig] = std::move(tmpSocket);
     return connectedSocketMap[socketConfig].get();
-}
-
-bool SocketManager::DestroyConnectedSocket(SocketConfig &socketConfig)
-{
-    auto socket = GetConnectedSocket(socketConfig);
-    if (socket) {
-        socket->Destroy();
-        int num = availableLinks.erase(socketConfig.link);
-        if (num <= 0) {
-            THROW<NullPtrException>(StringFormat("availableLinks has no socketConfig.link, link=%s",
-                socketConfig.link.Describe().c_str()));
-        }
-        return true;
-    }
-
-    return true;
 }
 
 Socket *SocketManager::GetConnectedSocket(SocketConfig &socketConfig) const

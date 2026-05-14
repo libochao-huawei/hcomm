@@ -51,14 +51,15 @@ static HcommEndpointMap g_EndpointMap;
 
 HcommResult CheckUbAttr(HcommChannelDesc &channelDesc)
 {
-    if (channelDesc.remoteEndpoint.protocol != COMM_PROTOCOL_UBC_CTP
-        && channelDesc.remoteEndpoint.protocol != COMM_PROTOCOL_UBC_TP
-        && channelDesc.remoteEndpoint.protocol != COMM_PROTOCOL_UBOE) {
+    if (channelDesc.remoteEndpoint.protocol != COMM_PROTOCOL_UBC_TP
+        && channelDesc.remoteEndpoint.protocol != COMM_PROTOCOL_UBOE
+        && channelDesc.remoteEndpoint.protocol != COMM_PROTOCOL_UBC_CTP) {
         return HCCL_SUCCESS;
     }
 
     // check sqDepth
     if (channelDesc.ubAttr.sqDepth == 0xFFFFFFFF) { // 0xFFFFFFFF表示使用默认值
+        HCCL_INFO("[%s] use default ubAttr.sqDepth.", __func__);
         return HCCL_SUCCESS;
     }
 
