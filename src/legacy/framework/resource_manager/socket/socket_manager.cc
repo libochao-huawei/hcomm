@@ -57,6 +57,58 @@ void SocketManager::BatchCreateSockets(const vector<LinkData> &links)
     availableLinks.insert(pendingLinks.begin(), pendingLinks.end());
 }
 
+void SocketManager::BatchCreateSockets(const SocketConfig &socketConfig)
+{
+    LinkData link = socketConfig.link;
+
+    // 使用link管理P2PEnable，但是不应该放置在这里
+    if (!Contain(availableLinks, link)) {
+        if (link.GetLinkProtocol() == LinkProtocol::PCIE) {
+            std::vector<uint32_t> remoteDevices;
+            remoteDevices.push_back(link.GetRemoteDeviceId());
+            auto ret = P2PEnableManager::GetInstance().WaitP2PEnabled(remoteDevices);
+            if (ret != HCCL_SUCCESS) {
+                THROW<TimeoutException>(
+                    StringFormat("WaitP2PEnabled failed, devicePhyId=%d", link.GetRemoteDeviceId()));
+            }
+        }
+        availableLinks.insert({link});
+    }
+
+    // 统一使用socketConfig管理socket复用
+    if (GetConnectedSocket(socketConfig) == nullptr) {
+        auto portData = link.GetLocalPort();
+        ServerInit(portData);
+        AddWhiteList(socketConfig);
+        CreateConnectedSocket(socketConfig);
+    }
+}
+
+void SocketManager::AddWhiteList(const SocketConfig &socketConfig)
+{
+    unordered_map<PortData, vector<RaSocketWhitelist>> wlistMap{};
+    LinkData link = socketConfig.link;
+   
+    // 通过虚拟拓扑获取Peer可能为空，如果为空，需要抛异，NullPtrException
+    if (comm) {
+        auto peer = comm->GetRankGraph()->GetPeer(link.GetRemoteRankId());
+        if (peer == nullptr) {
+            auto msg = StringFormat("Fail to get peer of rank %d!", link.GetRemoteRankId());
+            THROW<NullPtrException>(msg);
+        }
+    }
+
+    RaSocketWhitelist wlistInfo{};
+    wlistInfo.connLimit = 1;
+    wlistInfo.remoteIp = link.GetRemoteAddr();
+    wlistInfo.tag = socketConfig.GetHccpTag();
+
+    auto port = link.GetLocalPort();
+    vector<RaSocketWhitelist> wlistInfoVec{wlistInfo};
+    AddWhiteList(port, wlistInfoVec);
+    socketWlistMap[port] = wlistInfoVec;
+}
+
 void SocketManager::BatchServerInit(const vector<LinkData> &links)
 {
     for (auto &link : links) {
@@ -233,12 +285,16 @@ bool SocketManager::ServerDeInit(PortData &localPort) const
     return true;
 }
 
-Socket *SocketManager::CreateConnectedSocket(SocketConfig &socketConfig)
+Socket *SocketManager::CreateConnectedSocket(const SocketConfig &socketConfig)
 {
     auto res = GetConnectedSocket(socketConfig);
     if (res != nullptr) {
         return res;
     }
+
+    HCCL_INFO("[SocketManager::%s] Create connected socket for remote %s, localPort %s, remotePort %s, tag %s.", __func__,
+        socketConfig.link.GetRemotePort().Describe().c_str(), socketConfig.link.GetLocalPort().Describe().c_str(),
+        socketConfig.link.GetRemotePort().Describe().c_str(), socketConfig.tag.c_str());
 
     const PortData &localPort = socketConfig.link.GetLocalPort();
     const PortData &remotePort = socketConfig.link.GetRemotePort();
@@ -267,26 +323,12 @@ Socket *SocketManager::CreateConnectedSocket(SocketConfig &socketConfig)
     return connectedSocketMap[socketConfig].get();
 }
 
-bool SocketManager::DestroyConnectedSocket(SocketConfig &socketConfig)
+Socket *SocketManager::GetConnectedSocket(const SocketConfig &socketConfig) const
 {
-    auto socket = GetConnectedSocket(socketConfig);
-    if (socket) {
-        socket->Destroy();
-        int num = availableLinks.erase(socketConfig.link);
-        if (num <= 0) {
-            THROW<NullPtrException>(StringFormat("availableLinks has no socketConfig.link, link=%s",
-                socketConfig.link.Describe().c_str()));
-        }
-        return true;
-    }
-
-    return true;
-}
-
-Socket *SocketManager::GetConnectedSocket(SocketConfig &socketConfig) const
-{
+    HCCL_INFO("[SocketManager::%s] Get connected socket for tag %s.", __func__, socketConfig.tag.c_str());
     auto res = connectedSocketMap.find(socketConfig);
     if (res != connectedSocketMap.end()) {
+        HCCL_INFO("socket is existed");
         return res->second.get();
     }
 
