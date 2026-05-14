@@ -536,8 +536,13 @@ void UbTransportLiteImpl::WriteReduce(const RmaBufferLite &loc, const Buffer &rm
                             locRmaBufSlicelite.GetSize(), reduceIn, stream, taskId);
 }
 
+constexpr int rtsqDepth = 128; // rtsq队列深度，当前支持一次下发128个任务
+struct {
+    uint32_t index_{};
+    uint32_t timeout{1800};
+} NotifyWaitInfo;
 void UbTransportLiteImpl::BatchTransfer(const std::vector<RmaBufferLite> &loc, const std::vector<Buffer> &rmt,
-    const std::vector<BaseTransportLiteImpl::TransferOp> &transferOp, const StreamLite &stream)
+    const std::vector<BaseTransportLiteImpl::TransferOp> &transferOp, const std::vector<NotifyWaitInfo> notifyWaitInfos, const StreamLite &stream)
 {
     if (UNLIKELY(loc.empty())) {
         return;
@@ -545,32 +550,61 @@ void UbTransportLiteImpl::BatchTransfer(const std::vector<RmaBufferLite> &loc, c
     SqeConfigLite cfg;
     SetFenceConfig(cfg);
     auto taskId = stream.GetRtsq()->GetTaskId();
-
     u32 insNum = loc.size();
     for (u32 i = 0; i < insNum; i++) {
-        cfg.cqeEn     = (i == insNum - 1) ? true : false; // 返回最后一个sqe的cqe
-        cfg.placeOdr  = UB_RELAX_ORDER;
-        cfg.compOrder = UB_NO_COMPLETION;
+        cfg.cqeEn     = (i == insNum - 1) || (i % rtsqDepth == 0) ? true : false; // 返回最后一个sqe的cqe
+        cfg.placeOdr  = (i == insNum - 1) ? UB_STRONG_ORDER : UB_RELAX_ORDER; // 最后一个要求保序
+        cfg.compOrder = (i == insNum - 1) ? UB_COMPLETION : UB_NO_COMPLETION;
 
         auto localBuffer  = GetRmaBufSlicelite(loc[i]);
         auto remoteBuffer = GetRmtRmaBufSliceLite(rmt[i]);
+        auto rmtNotifySliceLite = GetRmtNotifySliceLite(notifyWaitInfos[i].index_);
+        auto rmtBuffSliceLite = GetRmtNotifySliceLite(notifyWaitInfos[i].index_);
 
         if (transferOp[i].transType == TransferType::WRITE) {
-            if (transferOp[i].reduceIn.reduceOp == ReduceOp::INVALID) {
-                connVec[0]->Write(localBuffer, remoteBuffer, cfg, stream, connOut); // 当前只有一个connection，对应一个jetty
-            } else {
-                connVec[0]->WriteReduce(transferOp[i].reduceIn.dataType, transferOp[i].reduceIn.reduceOp, localBuffer,
-                    stream, remoteBuffer, cfg, connOut);
-            }
+            HCCL_INFO("BatchTransfer Write idx=%u, loc[%s], rmt[%s]", i, localBuffer.Describe().c_str(), remoteBuffer.Describe().c_str()); // 调测日志 上库删除
+            connVec[0]->Write(localBuffer, remoteBuffer, cfg, stream, connOut); // 当前只有一个connection，对应一个jetty 
+        } else if (transferOp[i].transType == TransferType::WRITE_REDUCE) { // write reduce
+            HCCL_INFO("BatchTransfer WriteReduce idx=%u, loc[%s], rmt[%s], dataType[%s], reduceOp[%s]", i, localBuffer.Describe().c_str(), // 调测日志 上库删除
+                                remoteBuffer.Describe().c_str(), transferOp[i].reduceIn.dataType.Describe().c_str(), transferOp[i].reduceIn.reduceOp.Describe().c_str()); //调测日志
+            connVec[0]->WriteReduce(transferOp[i].reduceIn.dataType, transferOp[i].reduceIn.reduceOp, localBuffer,
+                        stream, remoteBuffer, cfg, connOut);
         } else if (transferOp[i].transType == TransferType::READ) {
-            if (transferOp[i].reduceIn.reduceOp == ReduceOp::INVALID) {
-                connVec[0]->Read(localBuffer, remoteBuffer, cfg, stream, connOut); // 当前只有一个connection，对应一个jetty
-            } else {
-                connVec[0]->ReadReduce(transferOp[i].reduceIn, localBuffer, remoteBuffer, stream, cfg, connOut);
+            HCCL_INFO("BatchTransfer Read idx=%u, loc[%s], rmt[%s]", i, localBuffer.Describe().c_str(), remoteBuffer.Describe().c_str()); // 调测日志 上库删除
+            connVec[0]->Read(localBuffer, remoteBuffer, cfg, stream, connOut); // 当前只有一个connection，对应一个jetty
+        } else if (transferOp[i].transType == TransferType::READ_REDUCE) { // read reduce
+            HCCL_INFO("BatchTransfer ReadReduce idx=%u, loc[%s], rmt[%s], dataType[%s], reduceOp[%s]", i, localBuffer.Describe().c_str(), // 调测日志 上库删除
+                                remoteBuffer.Describe().c_str(), transferOp[i].reduceIn.dataType.Describe().c_str(), transferOp[i].reduceIn.reduceOp.Describe().c_str()); // 调测日志
+            connVec[0]->ReadReduce(transferOp[i].reduceIn, localBuffer, remoteBuffer, stream, cfg, connOut);
+        } else if (transferOp[i].transType == TransferType::WRITE_WITH_NOTIFY) { 
+            u64           notifyData = 1; // 普通notify，固定1
+            connVec[0]->WriteWithNotify(localBuffer, remoteBuffer, cfg, connOut,
+                                        rmtNotifySliceLite, stream, notifyData); // 当前使用1个connection，下标为0
+        } else if (transferOp[i].transType == TransferType::WRITE_REDUCE_WITH_NOTIFY) {
+            u64           notifyData = 1;                               // 普通notify，固定1
+            connVec[0]->WriteReduceWithNotify(transferOp[i].reduceIn.dataType, transferOp[i].reduceIn.reduceOp, localBuffer,
+                                            remoteBuffer, cfg, stream, connOut, rmtNotifySliceLite,
+                                            notifyData); // 当前使用1个connection，下标为0
+        } else if (transferOp[i].transType == TransferType::NOTIFY_RECORD) {
+            if (notifyIdxs[i] == 1) { // PostFin场景
+                cfg.cqeEn     = true;
+                cfg.placeOdr  = UB_STRONG_ORDER;
+                cfg.compOrder = UB_COMPLETION;
             }
+            u32           inlineData = 1;
+            // 当前使用1个connection，下标为0 构建sqe
+            connVec[0]->InlineWrite(reinterpret_cast<u8 *>(&inlineData), UB_INLINE_WRITE_SIZE, rmtBuffSliceLite,
+                                    cfg, stream, connOut);
+        } else if (transferOp[i].transType == TransferType::NOTIFY_WAIT ||
+                    transferOp[i].transType == TransferType::NOTIFY_WAIT_WITH_DEFAULT_TIMEOUT) {
+            auto notifyId = locNotifyVec[notifyWaitInfos[i].index_]->GetId();
+            stream.GetRtsq()->NotifyWait(notifyId, notifyWaitInfos[i].timeout);
+        }
+        
+        if ( i % rtsqDepth == 0 || (i == insNum - 1)) { // 最后一个wqe或者达到队列深度，敲doorbell
+            BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
         }
     }
-    BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
     u64 totalSize = 0;
     for (u32 i = 0; i < insNum; i++) {
