@@ -296,6 +296,70 @@ int RaHdcCtxLmemUnregister(struct RaCtxHandle *ctxHandle, struct RaLmemHandle *l
     return 0;
 }
 
+STATIC int RaHdcCtxPrepareLmemBatchRegister(struct RaCtxHandle *ctxHandle, struct MrRegInfoT *lmemInfoList[],
+    unsigned int num, union OpLmemBatchRegInfoData *opData)
+{
+    struct MemRegAttrT *memAttr = NULL;
+    unsigned int i = 0;
+    int ret = 0;
+
+    opData->txData.phyId = ctxHandle->attr.phyId;
+    opData->txData.devIndex = ctxHandle->devIndex;
+    opData->txData.num = num;
+
+    for (i = 0; i < opData->txData.num; i++) {
+        memAttr = &(opData->txData.memAttrList[i]);
+        ret = RaCtxPrepareLmemRegister(lmemInfoList[i], memAttr);
+        CHK_PRT_RETURN(ret != 0, hccp_err("batch[%u] ra_ctx_prepare_lmem_register failed, ret[%d]", i, ret), ret);
+    }
+
+    return 0;
+}
+
+int RaHdcCtxLmemBatchRegister(struct RaCtxHandle *ctxHandle, struct MrRegInfoT *lmemInfoList[],
+    struct RaLmemHandle *lmemHandleList[], unsigned int num)
+{
+    unsigned int phyId = ctxHandle->attr.phyId;
+    union OpLmemBatchRegInfoData opData = {0};
+    unsigned int i = 0;
+    int ret;
+
+    ret = RaHdcCtxPrepareLmemBatchRegister(ctxHandle, lmemInfoList, num, &opData);
+    CHK_PRT_RETURN(ret != 0, hccp_err("[init][ra_hdc_lmem]prepare register failed ret[%d], phyId[%u] devIndex[%u]",
+        ret, phyId, ctxHandle->devIndex), ret);
+
+    ret = RaHdcProcessMsg(RA_RS_LMEM_BATCH_REG, phyId, (char *)&opData, sizeof(union OpLmemBatchRegInfoData));
+    CHK_PRT_RETURN(ret, hccp_err("[init][ra_hdc_lmem]hdc message process failed ret[%d], phyId[%u] devIndex[%u]",
+        ret, phyId, ctxHandle->devIndex), ret);
+
+    for (i = 0; i < num; i++) {
+        RaCtxGetLmemInfo(&(opData.rxData.memInfoList[i]), lmemInfoList[i], lmemHandleList[i]);
+    }
+
+    return 0;
+}
+
+int RaHdcCtxLmemBatchUnregister(struct RaCtxHandle *ctxHandle, struct RaLmemHandle *lmemHandleList[], unsigned int num)
+{
+    union OpLmemBatchUnregInfoData opData = {0};
+    unsigned int phyId = ctxHandle->attr.phyId;
+    unsigned int i = 0;
+    int ret;
+
+    opData.txData.phyId = phyId;
+    opData.txData.devIndex = ctxHandle->devIndex;
+    opData.txData.num = num;
+    for (i = 0; i < num; i++) {
+        opData.txData.addrList[i] = lmemHandleList[i]->addr;
+    }
+
+    ret = RaHdcProcessMsg(RA_RS_LMEM_BATCH_UNREG, phyId, (char *)&opData, sizeof(union OpLmemBatchUnregInfoData));
+    CHK_PRT_RETURN(ret, hccp_err("hdc message process failed ret[%d], phyId[%u] devIndex[%u]",
+        ret, phyId, ctxHandle->devIndex), ret);
+
+    return 0;
+}
+
 STATIC void RaHdcPrepareRmemImport(struct RaCtxHandle *ctxHandle, union OpRmemImportInfoData *opData,
     struct MrImportInfoT *rmemInfo)
 {
@@ -334,6 +398,65 @@ int RaHdcCtxRmemUnimport(struct RaCtxHandle *ctxHandle, struct RaRmemHandle *rme
     opData.txData.addr = rmemHandle->addr;
     ret = RaHdcProcessMsg(RA_RS_RMEM_UNIMPORT, phyId, (char *)&opData, sizeof(union OpRmemUnimportInfoData));
     CHK_PRT_RETURN(ret, hccp_err("[deinit][ra_hdc_rmem]hdc message process failed ret[%d], phyId[%u], devIndex[%u]",
+        ret, phyId, ctxHandle->devIndex), ret);
+
+    return 0;
+}
+
+STATIC void RaHdcPrepareRmemBatchImport(struct RaCtxHandle *ctxHandle, union OpRmemBatchImportInfoData *opData,
+    struct MrImportInfoT *rmemInfoList[], unsigned int num)
+{
+    struct MemImportAttrT *memAttr = NULL;
+    unsigned int i = 0;
+    int ret = 0;
+
+    opData->txData.phyId = ctxHandle->attr.phyId;
+    opData->txData.devIndex = ctxHandle->devIndex;
+    opData->txData.num = num;
+
+    for (i = 0; i < opData->txData.num; i++) {
+        memAttr = &(opData->txData.memAttrList[i]);
+        RaCtxPrepareRmemImport(rmemInfoList[i], memAttr);
+    }
+}
+
+int RaHdcCtxRmemBatchImport(struct RaCtxHandle *ctxHandle, struct MrImportInfoT *rmemInfoList[], unsigned int num)
+{
+    union OpRmemBatchImportInfoData opData = {0};
+    unsigned int phyId = ctxHandle->attr.phyId;
+    unsigned int i = 0;
+    int ret;
+
+    RaHdcPrepareRmemBatchImport(ctxHandle, &opData, rmemInfoList, num);
+
+    ret = RaHdcProcessMsg(RA_RS_RMEM_BATCH_IMPORT, phyId, (char *)&opData, sizeof(union OpRmemBatchImportInfoData));
+    CHK_PRT_RETURN(ret, hccp_err("hdc message process failed ret[%d], phyId[%u] devIndex[%u]",
+        ret, phyId, ctxHandle->devIndex), ret);
+
+    for (i = 0; i < num; i++) {
+        rmemInfoList[i]->out.ub.targetSegHandle = opData.rxData.memInfoList[i].ub.targetSegHandle;
+    }
+
+    return 0;
+}
+
+int RaHdcCtxRmemBatchUnimport(struct RaCtxHandle *ctxHandle, struct RaRmemHandle *rmemHandleList[], unsigned int num)
+{
+    union OpRmemBatchUnimportInfoData opData = {0};
+    unsigned int phyId = ctxHandle->attr.phyId;
+    unsigned int i = 0;
+    int ret;
+
+    opData.txData.phyId = phyId;
+    opData.txData.devIndex = ctxHandle->devIndex;
+    opData.txData.num = num;
+
+    for (i = 0; i < num; i++) {
+        opData.txData.addrList[i] = rmemHandleList[i]->addr;
+    }
+
+    ret = RaHdcProcessMsg(RA_RS_RMEM_BATCH_UNIMPORT, phyId, (char *)&opData, sizeof(union OpRmemBatchUnimportInfoData));
+    CHK_PRT_RETURN(ret, hccp_err("hdc message process failed ret[%d], phyId[%u], devIndex[%u]",
         ret, phyId, ctxHandle->devIndex), ret);
 
     return 0;
