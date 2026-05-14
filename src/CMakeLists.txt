@@ -12,6 +12,11 @@ if(NOT DEFINED HCOMM_DIR)
     set(HCOMM_DIR "${CMAKE_CURRENT_SOURCE_DIR}/..")
 endif()
 
+# AIV算子调测阶段可配置为1以打开AscendC打印功能
+if(NOT DEFINED ASCENDC_DUMP)
+    set(ASCENDC_DUMP "0")
+endif()
+
 # 组件间对外头文件目录
 add_library(hccl_headers INTERFACE)
 target_include_directories(hccl_headers INTERFACE
