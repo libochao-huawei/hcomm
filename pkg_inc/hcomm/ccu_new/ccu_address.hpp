@@ -21,11 +21,24 @@
 
 namespace ccu {
 
+class LocalAddr;
+class RemoteAddr;
+template <typename U> class Array;
+
 class Address final {
 public:
-    explicit Address() {}
+    Address() {
+        auto ret = CcuAddressAlloc(&this->handle);
+        if (ret != CcuResult::CCU_SUCCESS) {
+            throw "CcuAddressAlloc: failed";
+        }
+    }
 
     Address(const Address& other) {
+        this->handle = other.handle;
+    }
+
+    Address(Address&& other) noexcept {
         this->handle = other.handle;
     }
 
@@ -101,6 +114,12 @@ public:
     }
 
     CcuAddressHandle handle{0};
+
+private:
+    explicit Address(NoAllocTag) {}
+    template <typename U> friend class Array;
+    friend class LocalAddr;
+    friend class RemoteAddr;
 };
 
 // variable + addr（交换律）

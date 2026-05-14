@@ -202,7 +202,11 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRegister_When_AllFine_Expect_Ret
     const auto &handlePair = MockCcuChannelConnect(srcDevPhyId, dstDevPhyId, srcIp, dstIp, commEngine);
 
     // 构造CcuKernel实现
+<<<<<<< HEAD
     CcuKernelFunc demoFunc = CcuLocalCopyKernel;
+=======
+    CcuKernelFunc demoFunc = CcuLocalAddrDemoKernel;
+>>>>>>> xkp_ccu_c
     CcuVarAddKernelArg demoArg{};
     demoArg.numA = 1;
     demoArg.numB = 2;
@@ -516,6 +520,7 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelLoopAdd_When_AllFine_Expect_Retu
     MockCcuChannelGetRes();
     MOCKER(hrtMemcpy).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
 
+<<<<<<< HEAD
     constexpr auto MS_INS_TPYE = CcuInstanceType::CCU_MS;
     CcuResDesc resDesc{};
     resDesc.dieId = hcomm::CCU_MAX_IODIE_NUM;
@@ -564,6 +569,14 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRemoteRead_When_AllFine_Expect_R
     HcommResult hcclRet = 0;
     CcuResult ccuRet = CcuResult::CCU_E_RESERVED;
     constexpr uint32_t fakeDevId = MAX_MODULE_DEVICE_NUM - 8;
+=======
+TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelLocalNotify_When_AllFine_Expect_ReturnCcuSUCCESS)
+{
+    // 整体打桩，处理ccu资源
+    HcommResult hcclRet = 0;
+    CcuResult ccuRet = CcuResult::CCU_E_RESERVED;
+    constexpr uint32_t fakeDevId = MAX_MODULE_DEVICE_NUM - 2;
+>>>>>>> xkp_ccu_c
     MOCKER(HcclGetThreadDeviceId).stubs().will(returnValue(fakeDevId));
     int32_t fakeDeviceLogicId = static_cast<int32_t>(fakeDevId);
     MOCKER(hrtGetDevice).stubs()
@@ -578,6 +591,10 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRemoteRead_When_AllFine_Expect_R
     MockCcuChannelGetRes();
     MOCKER(hrtMemcpy).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
 
+<<<<<<< HEAD
+=======
+    // ccuInstance构建
+>>>>>>> xkp_ccu_c
     constexpr auto MS_INS_TPYE = CcuInstanceType::CCU_MS;
     CcuResDesc resDesc{};
     resDesc.dieId = hcomm::CCU_MAX_IODIE_NUM;
@@ -587,6 +604,7 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRemoteRead_When_AllFine_Expect_R
     ccuRet = HcommCcuInsCreate(static_cast<void *>(&resDesc), descNum, &insHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
+<<<<<<< HEAD
     constexpr auto commEngine = CommEngine::COMM_ENGINE_CCU;
     constexpr uint32_t srcDevPhyId = fakeDevId;
     constexpr uint32_t dstDevPhyId = 1;
@@ -597,13 +615,23 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRemoteRead_When_AllFine_Expect_R
     CcuKernelFunc demoFunc = CcuRemoteReadKernel;
     CcuVarAddKernelArg demoArg{};
     demoArg.channelHandle = handlePair.second;
+=======
+    // LocalNotify 演示 kernel 不依赖跨 rank channel（同 device 内跨 core 同步），
+    // 因此无需建链；KernelArg 也无 LoadArg（taskArgs 为空）。
+    CcuKernelFunc demoFunc = CcuLocalNotifyDemoKernel;
+    CcuVarAddKernelArg demoArg{};
+>>>>>>> xkp_ccu_c
     auto kernelFunc = reinterpret_cast<void *>(demoFunc);
     auto kernelArg = static_cast<CcuKernelArg>(&demoArg);
 
     ccuRet = HcommCcuKernelRegisterStart(insHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
+<<<<<<< HEAD
     char *kernelFuncName = "ccu_remote_read_demo";
+=======
+    char *kernelFuncName = "ccu_local_notify_demo";
+>>>>>>> xkp_ccu_c
     CcuKernelHandle kernelHandle{0};
     ccuRet = HcommCcuKernelRegister(insHandle, kernelFuncName,
         kernelFunc, kernelArg, &kernelHandle);
@@ -612,17 +640,46 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRemoteRead_When_AllFine_Expect_R
     ccuRet = HcommCcuKernelRegisterEnd(insHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
+<<<<<<< HEAD
     MockChannelDestory(handlePair);
+=======
+    constexpr auto commEngine = CommEngine::COMM_ENGINE_CCU;
+    auto fakeThreadHandle = MockThreadAllocWithStream(commEngine);
+
+    // demo 内无 LoadArg，taskArgs 为空
+    std::vector<uint64_t> taskArgs{};
+    void *fakeTaskArgs = static_cast<void *>(taskArgs.data());
+    uint32_t fakeArgSize = taskArgs.size();
+    EXPECT_EQ(HcommCcuKernelLaunch(fakeThreadHandle, kernelHandle,
+        fakeTaskArgs, fakeArgSize), CcuResult::CCU_SUCCESS);
+
+>>>>>>> xkp_ccu_c
     ccuRet = HcommCcuInsDestroy(insHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 }
 
+<<<<<<< HEAD
 // ----- P0: CcuRemoteWriteKernel：覆盖 WriteMemToMem / WriteBufferToMem / WriteMemToMemReduce
 TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRemoteWrite_When_AllFine_Expect_ReturnCcuSUCCESS)
 {
     HcommResult hcclRet = 0;
     CcuResult ccuRet = CcuResult::CCU_E_RESERVED;
     constexpr uint32_t fakeDevId = MAX_MODULE_DEVICE_NUM - 9;
+=======
+TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelLocalNotify_When_NullTag_Expect_ReturnCcuEPtr)
+{
+    // 直接验证 C API 的 nullptr 防御 —— CCU_CHK_PTR_NULL 在 ptr==nullptr 时返回 CCU_E_PTR
+    EXPECT_EQ(CcuLocalNotifyRecord(nullptr, 1), CcuResult::CCU_E_PTR);
+    EXPECT_EQ(CcuLocalNotifyWait(nullptr, 1), CcuResult::CCU_E_PTR);
+}
+
+TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelReduceScatterMesh1d_When_AllFine_Expect_ReturnCcuSUCCESS)
+{
+    // 整体打桩，处理ccu资源
+    HcommResult hcclRet = 0;
+    CcuResult ccuRet = CcuResult::CCU_E_RESERVED;
+    constexpr uint32_t fakeDevId = MAX_MODULE_DEVICE_NUM - 2;
+>>>>>>> xkp_ccu_c
     MOCKER(HcclGetThreadDeviceId).stubs().will(returnValue(fakeDevId));
     int32_t fakeDeviceLogicId = static_cast<int32_t>(fakeDevId);
     MOCKER(hrtGetDevice).stubs()
@@ -632,12 +689,22 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRemoteWrite_When_AllFine_Expect_
         .with(any(), outBound(static_cast<uint32_t>(fakeDeviceLogicId)), any())
         .will(returnValue(HcclResult::HCCL_SUCCESS));
     constexpr hcomm::CcuVersion fakeCcuVersion = hcomm::CcuVersion::CCU_V1;
+<<<<<<< HEAD
     MockCcuNetworkDeviceDefault(fakeDeviceLogicId);
+=======
+    MockCcuNetworkDeviceDefault(fakeDeviceLogicId); // 先处理网络设备，再初始化ccu
+>>>>>>> xkp_ccu_c
     EXPECT_EQ(MockCcuResourcesDefault(fakeDeviceLogicId, fakeCcuVersion), HcclResult::HCCL_SUCCESS);
     MockCcuChannelGetRes();
     MOCKER(hrtMemcpy).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
 
+<<<<<<< HEAD
     constexpr auto MS_INS_TPYE = CcuInstanceType::CCU_MS;
+=======
+    // ccuInstance构建（正常在通信域创建中，本用例仅测试hcomm接口）
+    constexpr auto MS_INS_TPYE = CcuInstanceType::CCU_MS;
+
+>>>>>>> xkp_ccu_c
     CcuResDesc resDesc{};
     resDesc.dieId = hcomm::CCU_MAX_IODIE_NUM;
     resDesc.insType = MS_INS_TPYE;
@@ -646,6 +713,7 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRemoteWrite_When_AllFine_Expect_
     ccuRet = HcommCcuInsCreate(static_cast<void *>(&resDesc), descNum, &insHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
+<<<<<<< HEAD
     constexpr auto commEngine = CommEngine::COMM_ENGINE_CCU;
     constexpr uint32_t srcDevPhyId = fakeDevId;
     constexpr uint32_t dstDevPhyId = 1;
@@ -663,11 +731,42 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRemoteWrite_When_AllFine_Expect_
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
     char *kernelFuncName = "ccu_remote_write_demo";
+=======
+    // 建链流程打桩
+    constexpr auto commEngine = CommEngine::COMM_ENGINE_CCU;
+    constexpr uint32_t srcDevPhyId = fakeDevId;
+    constexpr uint32_t dstDevPhyId = 1;
+    constexpr uint32_t srcIp = 167772383; // 需要与RaGetDevEidInfoList接口打桩一致
+    constexpr uint32_t dstIp = 0x87654321;
+    const auto &handlePair = MockCcuChannelConnect(srcDevPhyId, dstDevPhyId, srcIp, dstIp, commEngine);
+
+    // 构造CcuKernel实现
+    CcuKernelFunc demoFunc = CcuReduceScatterMesh1dKernel;
+    ReduceScatterKernelArg demoArg{};
+    demoArg.rankSize       = 2;
+    demoArg.rankId         = 0;
+    demoArg.channelCount   = 1;
+    demoArg.channels[0]    = handlePair.second;
+    demoArg.dataType       = HCCL_DATA_TYPE_FP16;
+    demoArg.outputDataType = HCCL_DATA_TYPE_FP16;
+    demoArg.reduceOp       = HCCL_REDUCE_SUM;
+
+    auto kernelFunc = reinterpret_cast<void *>(demoFunc);
+    auto kernelArg = static_cast<CcuKernelArg>(&demoArg);
+
+    // 重置CCU资源
+    ccuRet = HcommCcuKernelRegisterStart(insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+
+    // kernel注册
+    char *kernelFuncName = "ccu_reduce_scatter_mesh1d_demo";
+>>>>>>> xkp_ccu_c
     CcuKernelHandle kernelHandle{0};
     ccuRet = HcommCcuKernelRegister(insHandle, kernelFuncName,
         kernelFunc, kernelArg, &kernelHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
+<<<<<<< HEAD
     ccuRet = HcommCcuKernelRegisterEnd(insHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
@@ -746,3 +845,28 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelAlloc_When_AllFine_Expect_Return
 //     constexpr uint32_t fakeDevId = MAX_MODULE_DEVICE_NUM - 7;
 //     ...
 // }
+=======
+    // kernel翻译
+    ccuRet = HcommCcuKernelRegisterEnd(insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+    
+    // 申请流，假定已经获取了threadHandle
+    auto fakeThreadHandle = MockThreadAllocWithStream(commEngine);
+
+    // kernel下发
+    // 需要与样例需要的load args对应（CcuReduceScatterMesh1dKernel::LoadArgs 共 15 个）
+    std::vector<uint64_t> taskArgs(15, 0);
+    void *fakeTaskArgs = static_cast<void *>(taskArgs.data());
+    uint32_t fakeArgSize = taskArgs.size();
+    EXPECT_EQ(HcommCcuKernelLaunch(fakeThreadHandle, kernelHandle,
+        fakeTaskArgs, fakeArgSize), CcuResult::CCU_SUCCESS);
+
+    // 清理各种资源，析构有时序要求
+    // 主线功能有bug，暂时不能主动释放stream
+    // constexpr uint32_t fakeThreadNum = 1;
+    // EXPECT_EQ(HcommThreadFree(&fakeThreadHandle, fakeThreadNum), HcclResult::HCCL_SUCCESS);
+    MockChannelDestory(handlePair);
+    ccuRet = HcommCcuInsDestroy(insHandle);
+    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+}
+>>>>>>> xkp_ccu_c

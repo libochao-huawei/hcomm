@@ -19,8 +19,8 @@
 namespace hcomm {
 namespace CcuRep {
 
-CcuRepLocWaitEvent::CcuRepLocWaitEvent(const CompletedEvent &event, bool isProfiling)
-    : event_(event), isProfiling_(isProfiling)
+CcuRepLocWaitEvent::CcuRepLocWaitEvent(const CompletedEvent &event, uint32_t mask, bool isProfiling)
+    : event_(event), mask_(mask), isProfiling_(isProfiling)
 {
     type       = CcuRepType::LOC_WAIT_EVENT;
     instrCount = 1;
@@ -33,9 +33,9 @@ bool CcuRepLocWaitEvent::Translate(CcuInstr *&instr, uint16_t &instrId, const Tr
 
     // SetCKEInstr支持硬件profiling功能
     if (isProfiling_) {
-        SetCKEInstr(instr++, 0, 0, event_.Id(), event_.mask, 1);
+        SetCKEInstr(instr++, 0, 0, event_.Id(), mask_, 1);
     } else {
-        ClearCKEInstr(instr++, 0, 0, event_.Id(), event_.mask, 1);
+        ClearCKEInstr(instr++, 0, 0, event_.Id(), mask_, 1);
     }
 
     CHK_PRT_THROW((instrId > UINT16_MAX - instrCount),
@@ -49,7 +49,7 @@ bool CcuRepLocWaitEvent::Translate(CcuInstr *&instr, uint16_t &instrId, const Tr
 
 std::string CcuRepLocWaitEvent::Describe()
 {
-    return Hccl::StringFormat("CcuRepLocWaitEvent=id[%u], mask[%04x]", event_.Id(), event_.mask);
+    return Hccl::StringFormat("CcuRepLocWaitEvent=id[%u], mask[%04x]", event_.Id(), mask_);
 }
 
 }; // namespace CcuRep
