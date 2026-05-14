@@ -21,6 +21,7 @@
 #include "socket_handle_manager.h"
 #include "host_socket_handle_manager.h"
 #include "tp_manager.h"
+#include "dfx/endpoint_monitor.h"
 // orion ccu单例
 #include "ccu_component.h"
 #include "../../../legacy/unified_platform/ccu/ccu_device/ccu_res_batch_allocator.h"
@@ -54,6 +55,7 @@ HcommResMgr& HcommResMgr::GetInstance(const uint32_t devicePhyId)
     Hccl::SocketHandleManager::GetInstance();
     Hccl::HostSocketHandleManager::GetInstance();
     Hccl::TpManager::GetInstance(devicePhyId);
+    EndpointMonitor::GetInstance(devicePhyId); // 用logicId还是phyid
 
     Hccl::CcuComponent::GetInstance(devicePhyId);
     Hccl::CcuResBatchAllocator::GetInstance(devicePhyId);
