@@ -132,6 +132,10 @@ enum OpType {
     RA_RS_CTX_GET_ASYNC_EVENTS = 109,
     RA_RS_TLV_INIT = 110,
     RA_RS_CTX_GET_UB_CONTEXT = 111,
+    RA_RS_LMEM_BATCH_REG = 112,
+    RA_RS_LMEM_BATCH_UNREG = 113,
+    RA_RS_RMEM_BATCH_IMPORT = 114,
+    RA_RS_RMEM_BATCH_UNIMPORT = 115,
     RA_RS_EXTER_OP_MAX_NUM,
 
     // 上面opcode是对部opcode,下面是内部opcode
