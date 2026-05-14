@@ -99,10 +99,8 @@ HcclResult AicpuTsUrmaChannel::BuildConnection()
     Hccl::LinkProtocol  protocol;
     CHK_RET(CommProtocolToLinkProtocol(localEp_.protocol, protocol));
     
-    Hccl::IpAddress     locAddr;
-    Hccl::IpAddress     rmtAddr;
-    CHK_RET(CommAddrToIpAddress(localEp_.commAddr, locAddr));
-    CHK_RET(CommAddrToIpAddress(remoteEp_.commAddr, rmtAddr));
+    CHK_RET(CommAddrToIpAddress(localEp_.commAddr, locAddr_));
+    CHK_RET(CommAddrToIpAddress(remoteEp_.commAddr, rmtAddr_));
 
     s32 deviceLogicId;
     CHK_RET(hrtGetDevice(&deviceLogicId));
@@ -112,13 +110,13 @@ HcclResult AicpuTsUrmaChannel::BuildConnection()
     switch (protocol) {
         case Hccl::LinkProtocol::UB_TP:
             EXECEPTION_CATCH(
-                ubConn = std::make_unique<Hccl::DevUbTpConnection>(rdmaHandle_, locAddr, rmtAddr, opMode, devUsed),
+                ubConn = std::make_unique<Hccl::DevUbTpConnection>(rdmaHandle_, locAddr_, rmtAddr_, opMode, devUsed),
                 return HCCL_E_PTR
             );
             break;
         case Hccl::LinkProtocol::UB_CTP:
             EXECEPTION_CATCH(
-                ubConn = std::make_unique<Hccl::DevUbCtpConnection>(rdmaHandle_, locAddr, rmtAddr, opMode, devUsed),
+                ubConn = std::make_unique<Hccl::DevUbCtpConnection>(rdmaHandle_, locAddr_ , rmtAddr_, opMode, devUsed),
                 return HCCL_E_PTR
             );
             break;
@@ -199,8 +197,7 @@ HcclResult AicpuTsUrmaChannel::BuildSocket()
     }
     HCCL_INFO("[AicpuTsUrmaChannel][%s] socket ptr is NULL, rebuildSocket", __func__);
 
-    Hccl::IpAddress ipaddr{};
-    CHK_RET(CommAddrToIpAddress(localEp_.commAddr, ipaddr));
+    Hccl::IpAddress ipaddr = locAddr_;
     Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::UB);
     Hccl::PortData localPort = Hccl::PortData(static_cast<Hccl::RankId>(localEp_.loc.device.devPhyId), type, 0, ipaddr);
     Hccl::SocketHandle socketHandle = Hccl::SocketHandleManager::GetInstance().Create(localEp_.loc.device.devPhyId, localPort);

@@ -76,6 +76,7 @@ HcclResult CcuConnection::Init()
     GenerateLocalPsn();
     status_ = CcuConnStatus::INIT;
     innerStatus_ = InnerStatus::INIT;
+    CHK_RET(JettyCreating());
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -124,27 +125,32 @@ HcclResult CcuConnection::StatusMachine()
     return HcclResult::HCCL_SUCCESS;
 }
 
+HcclResult CcuConnection::JettyCreating() {
+    auto ret = CreateJetty();
+    if (ret == HcclResult::HCCL_E_AGAIN) {
+        innerStatus_ = InnerStatus::JETTY_CREATING;
+        return HCCL_SUCCESS;
+    }
+    CHK_RET(ret);
+
+    ret = GetTpInfo(); // 不退出继续调用下个异步接口
+    if (ret == HcclResult::HCCL_E_AGAIN) {
+        innerStatus_ = InnerStatus::TP_INFO_GETTING;
+        return HCCL_SUCCESS;
+    }
+    CHK_RET(ret);
+    // 如果有缓存的tp信息，可以直接完成
+    innerStatus_ = InnerStatus::EXCHANGEABLE;
+    status_      = CcuConnStatus::EXCHANGEABLE;
+    return HCCL_SUCCESS;
+}
+
 HcclResult CcuConnection::UpdateInitStatus()
 {
     switch (innerStatus_) {
         case InnerStatus::INIT:
         case InnerStatus::JETTY_CREATING: {
-            auto ret = CreateJetty();
-            if (ret == HcclResult::HCCL_E_AGAIN) {
-                innerStatus_ = InnerStatus::JETTY_CREATING;
-                break; // 状态不改变退出，下轮状态机进入继续执行
-            }
-            CHK_RET(ret);
-
-            ret = GetTpInfo(); // 不退出继续调用下个异步接口
-            if (ret == HcclResult::HCCL_E_AGAIN) {
-                innerStatus_ = InnerStatus::TP_INFO_GETTING;
-                break;
-            }
-            CHK_RET(ret);
-            // 如果有缓存的tp信息，可以直接完成
-            innerStatus_ = InnerStatus::EXCHANGEABLE;
-            status_      = CcuConnStatus::EXCHANGEABLE;
+            CHK_RET(JettyCreating());
             break;
         }
         case InnerStatus::TP_INFO_GETTING: {

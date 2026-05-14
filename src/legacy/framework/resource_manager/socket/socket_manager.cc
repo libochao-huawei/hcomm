@@ -60,8 +60,11 @@ void SocketManager::BatchCreateSockets(const vector<LinkData> &links)
 void SocketManager::BatchServerInit(const vector<LinkData> &links)
 {
     for (auto &link : links) {
-        auto portData = link.GetLocalPort();
-        ServerInit(portData);
+        ServerRole role = link.GetLocalRankId() < link.GetRemoteRankId() ? SocketRole::SERVER : SocketRole::CLIENT;
+        if (role == SocketRole::SERVER) {
+            auto portData = link.GetLocalPort();
+            ServerInit(portData);
+        }
     }
 }
 
@@ -71,28 +74,31 @@ void SocketManager::BatchAddWhiteList(const vector<LinkData> &links)
 
     for (const auto &link : links) {
         // 通过虚拟拓扑获取Peer可能为空，如果为空，需要抛异，NullPtrException
-        if (comm) {
-            auto peer = comm->GetRankGraph()->GetPeer(link.GetRemoteRankId());
-            if (peer == nullptr) {
-                auto msg = StringFormat("Fail to get peer of rank %d!", link.GetRemoteRankId());
-                THROW<NullPtrException>(msg);
+        ServerRole role = link.GetLocalRankId() < link.GetRemoteRankId() ? SocketRole::SERVER : SocketRole::CLIENT;
+        if (role == SocketRole::SERVER) {
+            if (comm) {
+                auto peer = comm->GetRankGraph()->GetPeer(link.GetRemoteRankId());
+                if (peer == nullptr) {
+                    auto msg = StringFormat("Fail to get peer of rank %d!", link.GetRemoteRankId());
+                    THROW<NullPtrException>(msg);
+                }
             }
+
+            RaSocketWhitelist wlistInfo{};;
+            wlistInfo.connLimit = 1;
+            wlistInfo.remoteIp = link.GetRemoteAddr();
+
+            std::string  linkTag  = socketTag_;
+            // 获取到reuseIdx不为0时，tag需要拼接_reuseIdx；为0时不拼接，不影响原socket公用
+            if (link.GetReuseIdx() != "0") {
+                linkTag += ("_" + link.GetReuseIdx());
+            }
+            SocketConfig socketConfig(link.GetRemoteRankId(), link, linkTag);
+            string       hccpSocketTag = socketConfig.GetHccpTag();
+
+            wlistInfo.tag = hccpSocketTag;
+            wlistMap[link.GetLocalPort()].push_back(wlistInfo);
         }
-
-        RaSocketWhitelist wlistInfo{};;
-        wlistInfo.connLimit = 1;
-        wlistInfo.remoteIp = link.GetRemoteAddr();
-
-        std::string  linkTag  = socketTag_;
-        // 获取到reuseIdx不为0时，tag需要拼接_reuseIdx；为0时不拼接，不影响原socket公用
-        if (link.GetReuseIdx() != "0") {
-            linkTag += ("_" + link.GetReuseIdx());
-        }
-        SocketConfig socketConfig(link.GetRemoteRankId(), link, linkTag);
-        string       hccpSocketTag = socketConfig.GetHccpTag();
-
-        wlistInfo.tag = hccpSocketTag;
-        wlistMap[link.GetLocalPort()].push_back(wlistInfo);
     }
 
     for (auto &i : wlistMap) {
@@ -131,9 +137,9 @@ void SocketManager::ServerInit(PortData &localPort)
         if (oldServerListenPort != serverListenPort) {
             // 自定义算子的时候，会持有一个不关联通信域的SocketManager, 从而获取到的是默认端口，在单卡多进程的时候需要重新导向合适的端口。
             // 通信域算子又可以切换回来。
-            bool success = oldServerSocket->Listen(serverListenPort);
-            HCCL_INFO("[SocketManager::%s] %s change listen port %u to %u, ret[%u]", __func__, 
-                localPort.Describe().c_str(), oldServerListenPort, serverListenPort, success);
+            oldServerSocket->ListenAsync();
+            HCCL_INFO("[SocketManager::%s] %s change listen port %u", __func__, 
+                localPort.Describe().c_str(), oldServerListenPort);
         }
         HCCL_INFO("[%s] find localPort in serverSocketMap, localPort [%s]", __func__, localPort.Describe().c_str());
         return;
@@ -144,13 +150,9 @@ void SocketManager::ServerInit(PortData &localPort)
             ? NicType::DEVICE_VNIC_TYPE
             : NicType::DEVICE_NIC_TYPE;
     auto serverSocket = socketProducer(ipAddress, ipAddress, serverListenPort, hccpSocketHandle, "server", SocketRole::SERVER, nicType);
-    bool success = serverSocket->Listen(serverListenPort);
-    if (success) {
-        HCCL_RUN_INFO("[SocketManager::%s] Local %s listen the port %u success", __func__, localPort.Describe().c_str(), serverListenPort);
-    } else {
-        string msg = StringFormat("[SocketManager::%s] Local %s listen the port %u failed, maybe other process be listen it", __func__, localPort.Describe().c_str(), serverListenPort);
-        MACRO_THROW(InvalidParamsException, msg);
-    }
+    serverSocket->ListenAsync();
+    HCCL_RUN_INFO("[SocketManager::%s] Local %s listen", __func__, localPort.Describe().c_str());
+   
     serverSocketMap[localPort] = std::move(serverSocket);
 }
 

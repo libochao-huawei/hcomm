@@ -88,6 +88,8 @@ private:
     std::vector<std::unique_ptr<Hccl::UbLocalNotify>>           localNotifies_{};
     std::unique_ptr<Hccl::Socket>                               serverSocket_;
     std::unique_ptr<SocketMgr>                                  socketMgr_{nullptr};
+    Hccl::IpAddress     locAddr_;
+    Hccl::IpAddress     rmtAddr_;
 };
 
 } // namespace hcomm

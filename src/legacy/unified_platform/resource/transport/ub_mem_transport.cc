@@ -462,9 +462,23 @@ TransportStatus UbMemTransport::GetStatus()
         ubStatus = UbStatus::INIT;
     }
 
-    if (!IsSocketReady()) {
+   std::future<bool> resResult;
+   if (!resReady_) {
+        resResult = std::async(std::launch::async, [this]() -> bool {
+            return IsResReady();
+        });
+   }
+
+   bool socketReady = IsSocketReady();
+   if (!resReady_) {
+        resReady_ = resResult.get();
+        if (!resReady_) {
+            return baseStatus;
+        }
+   }
+   if (!socketReady) {
         return baseStatus;
-    }
+   }
 
     switch (ubStatus) {
         case UbStatus::INIT:
@@ -472,10 +486,8 @@ TransportStatus UbMemTransport::GetStatus()
             baseStatus = TransportStatus::SOCKET_OK;
             break;
         case UbStatus::SEND_SIZE:
-            if (IsResReady()) {
                 SendDataSize();
                 ubStatus = UbStatus::RECV_SIZE;
-            }
             break;
         case UbStatus::RECV_SIZE:
             RecvDataSize();

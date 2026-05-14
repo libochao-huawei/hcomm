@@ -575,7 +575,7 @@ ReqHandleResult HrtRaGetAsyncReqResult(RequestHandle &reqHandle);
 
 RequestHandle RaSocketConnectOneAsync(RaSocketConnectParam &in);
 RequestHandle RaSocketCloseOneAsync(RaSocketCloseParam &in);
-RequestHandle RaSocketListenOneStartAsync(RaSocketListenParam &in);
+RequestHandle RaSocketListenOneStartAsync(SocketListenInfoT* listenInfo);
 RequestHandle RaSocketListenOneStopAsync(RaSocketListenParam &in);
 
 RequestHandle HrtRaSocketSendAsync(const FdHandle fdHandle, const void *data, u32 size, unsigned long long &sentSize);

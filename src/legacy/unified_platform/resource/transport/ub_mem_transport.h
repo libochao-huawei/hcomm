@@ -14,6 +14,7 @@
 #include "local_ub_rma_buffer.h"
 #include "task_param.h"
 #include "virtual_topo.h"
+#include <future>
 
 namespace Hccl {
 
@@ -171,6 +172,7 @@ private:
     vector<char> sendFinishMsg{};
 
     void SaveDfxTaskInfo(const TaskParam &taskParam);
+    bool resReady_{false};
 };
 } // namespace Hccl
 #endif
