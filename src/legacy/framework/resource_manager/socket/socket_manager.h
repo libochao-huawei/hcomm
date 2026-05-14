@@ -49,6 +49,8 @@ public:
     u32 GetDeviceListenPort(const u32 &rankId, const IpAddress &ipAddress);
 
     void BatchCreateSockets(const vector<LinkData> &links);
+    void BatchServerListen(const vector<LinkData> &links);
+    void BatchConectSockets();
 
     void ServerInit(PortData &localPort);
 
@@ -105,6 +107,7 @@ private:
     std::set<LinkData>      availableLinks;
 
     std::string socketTag_{};
+    vector<LinkData> pendingLinks_;
 };
 
 } // namespace Hccl
