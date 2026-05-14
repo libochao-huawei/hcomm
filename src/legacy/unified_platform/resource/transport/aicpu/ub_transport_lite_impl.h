@@ -68,7 +68,7 @@ public:
         const StreamLite &stream) override;
     
     void BatchTransfer(const std::vector<RmaBufferLite> &loc, const std::vector<Buffer> &rmt,
-                        const std::vector<TransferOp> &transferOp, const StreamLite &stream) override;
+                        const std::vector<TransferOp> &transferOp, const std::vector<NotifyWaitInfo> &notifyWaitInfos, const StreamLite &stream) override;
 
     HcclResult BuildLocRmaBufferLite(const uintptr_t addr, const size_t size, RmaBufferLite &rmaBufferLite) override;
     HcclResult Fence();
