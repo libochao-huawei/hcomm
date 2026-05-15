@@ -172,7 +172,7 @@ u32 EnvRdmaConfig::GetRdmaQueueNum() const
 
 u32 EnvRdmaConfig::GetRdmaMultiQpThreshold() const
 {
-    return multiQpThreshold.Get();
+    return multiQpThreshold.Get() * 1024;   // KB 转 B
 }
 
 // EnvAlgoConfig
