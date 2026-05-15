@@ -16,7 +16,7 @@
 #include <mutex>
 #include <vector>
 #include <hccl/hccl_types.h>
-#include "log.h"
+#include "hccl_common.h"
 
 namespace hccl {
 constexpr u32 MAX_CANN_VERSION_LEN = 50;  // CANN版本校验

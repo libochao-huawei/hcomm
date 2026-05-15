@@ -617,6 +617,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/common/debug/config/config_log.cc
         ${HCCL_BASE_DIR}/common/health/calc_crc.cc
         ${HCCL_BASE_DIR}/common/health/rank_consistentcy_checker.cc
+        ${HCCL_BASE_DIR}/common/health/rank_consistency_checker_v2.cc
         ${HCCL_BASE_DIR}/common/stream/stream_utils_aicpu.cc
 
         #framework
