@@ -24,7 +24,7 @@ class Variable;
 class LocalAddr;
 class RemoteAddr;
 template <typename U> class Array;
-Variable GetResByChannel(ChannelHandle channel, uint32_t varIndex);
+template <typename T> T GetResByChannel(ChannelHandle channel, uint32_t index);
 
 struct CondExpr {
     Variable *var;
@@ -100,7 +100,7 @@ private:
     template <typename U> friend class Array;
     friend class LocalAddr;
     friend class RemoteAddr;
-    friend Variable GetResByChannel(ChannelHandle channel, uint32_t varIndex);
+    template <typename T> friend T GetResByChannel(ChannelHandle channel, uint32_t index);
 };
 
 } // namespace ccu

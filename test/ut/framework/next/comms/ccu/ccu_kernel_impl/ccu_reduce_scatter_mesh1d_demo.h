@@ -274,9 +274,9 @@
     // (右值赋值走 Variable 的 move-assign，直接覆盖 handle)。
     for (uint64_t peerId = 0; peerId < arg->rankSize; peerId++) {
         if (peerId != arg->rankId) {
-            ctx.input[peerId]   = ccu::GetResByChannel(arg->channels[channelIdx], RS_INPUT_XN_ID);
-            ctx.scratch[peerId] = ccu::GetResByChannel(arg->channels[channelIdx], RS_SCRATCH_XN_ID);
-            ctx.token[peerId]   = ccu::GetResByChannel(arg->channels[channelIdx], RS_TOKEN_XN_ID);
+            ctx.input[peerId]   = ccu::GetResByChannel<ccu::Variable>(arg->channels[channelIdx], RS_INPUT_XN_ID);
+            ctx.scratch[peerId] = ccu::GetResByChannel<ccu::Variable>(arg->channels[channelIdx], RS_SCRATCH_XN_ID);
+            ctx.token[peerId]   = ccu::GetResByChannel<ccu::Variable>(arg->channels[channelIdx], RS_TOKEN_XN_ID);
              channelIdx++;
          }
      }

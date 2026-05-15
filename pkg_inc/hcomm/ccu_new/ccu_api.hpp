@@ -36,7 +36,14 @@ using LoopGroupConfig = ::CcuLoopGroupConfig;
 
 // ==================== channel资源获取 ====================
 
-inline Variable GetResByChannel(ChannelHandle channel, uint32_t varIndex) {
+template <typename T>
+inline T GetResByChannel(ChannelHandle /*channel*/, uint32_t /*index*/) {
+    static_assert(sizeof(T) == 0,
+        "ccu::GetResByChannel<T> is not specialized for this type T; "
+        "currently supported: Variable.");
+}
+template <>
+inline Variable GetResByChannel<Variable>(ChannelHandle channel, uint32_t varIndex) {
     Variable v{NoAllocTag{}};
     auto ret = CcuVariableCreateByChannel(channel, varIndex, &v.handle);
     if (ret != CcuResult::CCU_SUCCESS) {
@@ -44,7 +51,6 @@ inline Variable GetResByChannel(ChannelHandle channel, uint32_t varIndex) {
     }
     return v;
 }
-
 
 // ==================== 事件 ====================
 // mask 由调用方独立传入（与 Event 句柄解耦），ccu::SetMask 已废弃删除。
@@ -60,14 +66,14 @@ inline CcuResult WriteVariableWithNotify(ChannelHandle channel, Variable var,uin
 
 // ==================== 加载 ====================
 inline CcuResult LoadArg(Variable v, uint32_t argId) { return CcuLoadArg(v.handle, argId); }
-inline CcuResult LoadVar(uint64_t addr, Array<Variable>& vArr, uint32_t num) { return CcuLoadVar(addr, vArr[0].handle, num); }
-inline CcuResult LoadVar(uint64_t addr, Variable v) { return CcuLoadVar(addr, v.handle, 1); }
-inline CcuResult LoadVar(Variable addrVar, Array<Variable>& vArr, uint32_t num) { return CcuLoadVarFromVarAddr(addrVar.handle, vArr[0].handle, num); }
-inline CcuResult LoadVar(Variable addrVar, Variable v) { return CcuLoadVarFromVarAddr(addrVar.handle, v.handle, 1); }
-inline CcuResult StoreVar(uint64_t addr, Array<Variable>& vArr, uint32_t num) { return CcuStoreVar(addr, vArr[0].handle, num);}
-inline CcuResult StoreVar(uint64_t addr, Variable v) { return CcuStoreVar(addr, v.handle, 1); }
-inline CcuResult StoreVar(Variable addrVar, Array<Variable>& vArr, uint32_t num) { return CcuStoreVarToVarAddr(addrVar.handle, vArr[0].handle,num); }
-inline CcuResult StoreVar(Variable addrVar, Variable v) { return CcuStoreVarToVarAddr(addrVar.handle, v.handle, 1); }
+inline CcuResult Load(uint64_t addr, Array<Variable>& vArr, uint32_t num) { return CcuLoadVar(addr, vArr[0].handle, num); }
+inline CcuResult Load(uint64_t addr, Variable v) { return CcuLoadVar(addr, v.handle, 1); }
+inline CcuResult Load(Variable addrVar, Array<Variable>& vArr, uint32_t num) { return CcuLoadVarFromVarAddr(addrVar.handle, vArr[0].handle, num); }
+inline CcuResult Load(Variable addrVar, Variable v) { return CcuLoadVarFromVarAddr(addrVar.handle, v.handle, 1); }
+inline CcuResult Store(uint64_t addr, Array<Variable>& vArr, uint32_t num) { return CcuStoreVar(addr, vArr[0].handle, num);}
+inline CcuResult Store(uint64_t addr, Variable v) { return CcuStoreVar(addr, v.handle, 1); }
+inline CcuResult Store(Variable addrVar, Array<Variable>& vArr, uint32_t num) { return CcuStoreVarToVarAddr(addrVar.handle, vArr[0].handle,num); }
+inline CcuResult Store(Variable addrVar, Variable v) { return CcuStoreVarToVarAddr(addrVar.handle, v.handle, 1); }
 // ==================== 本地拷贝（3 种重载） ====================
 // 各数据 API 末尾统一新增 uint16_t mask = 1，与 Event 句柄解耦。
 
