@@ -64,7 +64,6 @@ private:
     };
 
 private:
-    HcclResult JettyCreating();
     HcclResult    StatusMachine();
     HcclResult    UpdateInitStatus();
     HcclResult    UpdateExchangeStatus();
