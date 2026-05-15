@@ -32,23 +32,17 @@ HcclResult LaunchContext::HandleEagerMode()
 
 HcclResult LaunchContext::HandleDispatchAllStreams()
 {
-    auto it = launchModeMap_.find(launchTag_);
-    if (it == launchModeMap_.end()) {
-        HCCL_DEBUG("[%s] launchTag[%s] not found.", __func__, launchTag_.c_str());
+    const auto &threadSetWithTag = launchModeMap_[launchTag_];
+    size_t totalSize = threadSetWithTag.size() + threadSet_.size();
+    if (totalSize == 0) {
+        HCCL_DEBUG("[%s]launchTag[%s] thread set is empty.", __func__, launchTag_.c_str());
         return HCCL_SUCCESS;
     }
 
-    const auto &threadSet = it->second;
-    if (threadSet.empty()) {
-        HCCL_DEBUG("[%s] launchTag[%s] has no threads.", __func__, launchTag_.c_str());
-        return HCCL_SUCCESS;
-    }
-
-    std::vector<ThreadHandle> threadVec(threadSet.begin(), threadSet.end());
-    for (size_t i = 0; i < threadVec.size(); i++) {
-        HCCL_DEBUG("[%s] HandleDispatchAllStreams begin, launchTag[%s], thread[%lu].",
-            __func__, launchTag_.c_str(), threadVec[i]);
-    }
+    std::vector<ThreadHandle> threadVec;
+    threadVec.reserve(totalSize);
+    threadVec.insert(threadVec.end(), threadSetWithTag.begin(), threadSetWithTag.end());
+    threadVec.insert(threadVec.end(), threadSet_.begin(), threadSet_.end());
     return DispatchAllStreams(threadVec.data(), threadVec.size());
 }
 
