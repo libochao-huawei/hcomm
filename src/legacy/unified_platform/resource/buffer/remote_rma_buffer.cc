@@ -121,10 +121,10 @@ RemoteUbRmaBuffer::RemoteUbRmaBuffer(RdmaHandle rdmaHandle) : RemoteRmaBuffer(Rm
 }
 
 RemoteUbRmaBuffer::~RemoteUbRmaBuffer()
-{ 
-    if (memHandle != 0) { 
+{
+    if (memHandle != 0) {
         DECTOR_TRY_CATCH("RemoteUbRmaBuffer", HrtRaUbRemoteMemUnimport(rdmaHandle, memHandle)); 
-    } 
+    }
 }
 
 RemoteUbRmaBuffer::RemoteUbRmaBuffer(RdmaHandle rdmaHandle1, const Serializable &rmtDto, bool batchRegister) :
