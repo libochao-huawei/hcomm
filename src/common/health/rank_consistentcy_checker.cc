@@ -11,6 +11,7 @@
 #include "adapter_pub.h"
 #include "calc_crc.h"
 #include "rank_consistentcy_checker.h"
+#include "env_config.h"
 
 namespace hccl {
 
@@ -168,6 +169,9 @@ HcclResult RankConsistentcyChecker::GetCheckFrame(u8 *destBuf, u64 maxDestBuf, c
 
 HcclResult RankConsistentcyChecker::CheckFrameRecv(const u8 *recvBuf, u32 recvBufLen, const std::string &tag)
 {
+    if (!GetExternalInconsistentCheckSwitch() || (GetExternalInconsistentCheckSwitch() && inconsistentCheckFirstDone_)) {
+        return HCCL_SUCCESS;
+    }
     CHK_PTR_NULL(recvBuf);
     CHK_PRT_RET(recvBufLen == 0 || recvBufLen > MAX_FRAME_LEN,
         HCCL_ERROR("[RankConsistentcyChecker][CheckFrameRecv] errNo[0x%016llx] recvBufLen is wrong.",
@@ -543,6 +547,7 @@ bool RankConsistentcyChecker::CompareFrame(HcclCheckInfo &checkInfo, HcclCheckIn
             bIsDiff = true;
         }
     }
+    inconsistentCheckFirstDone_ = true;
     return bIsDiff;
 }
 
