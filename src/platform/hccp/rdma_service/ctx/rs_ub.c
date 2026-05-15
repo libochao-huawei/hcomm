@@ -1759,7 +1759,7 @@ int RsUbCtxJettyCreate(struct RsUbDevCb *devCb, struct CtxQpAttr *attr, struct Q
     ret = RsUbJettyCbBuffAlloc(devCb, jettyCb, sendJfcCb->jfcType);
     if (ret != 0) {
         hccp_err("jetty_cb buff alloc failed ret:%d", ret);
-        goto free_jetty_cb;
+        goto fill_jetty_info_err;
     }
 #endif
 
