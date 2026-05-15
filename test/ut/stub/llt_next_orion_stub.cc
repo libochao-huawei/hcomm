@@ -2433,6 +2433,11 @@ HcclResult P2PTransport::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, cha
     return HCCL_SUCCESS;
 }
 
+HcclResult P2PTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum)
+{
+    return HCCL_SUCCESS;
+}
+
 std::vector<char> P2PTransport::GetUniqueIdV2()
 {
     return {};
