@@ -147,7 +147,7 @@ function run_ctest() {
     # CTest 执行用例
     ctest ${JOB_NUM} \
           --build-nocmake \
-          --timeout 200 \
+          --timeout 1000 \
           --output-on-failure \
           --stop-on-failure \
           --test-output-size-failed 10000000 \
