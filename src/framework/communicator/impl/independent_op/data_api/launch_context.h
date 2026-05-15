@@ -22,8 +22,23 @@ public:
     LaunchContext() = default;
 
     HcclResult SetLaunchMode(const char* launchTag, HcommLaunchMode mode);
-    void AddThread(ThreadHandle thread); // 储存当前线程使用的thread
-    void AddThreadWithTag(ThreadHandle thread); // ffts场景使用，支持储存存多个子图对应的thread信息
+    inline void AddThreadWithTag(ThreadHandle thread) // ffts场景使用，支持储存存多个子图对应的thread信息
+    {
+        if (mode_ != HCOMM_LAUNCH_MODE_BATCH) {
+            return;
+        }
+        auto& threadSet = launchModeMap_[launchTag_];
+        threadSet.insert(thread);
+    }
+
+    inline void AddThread(ThreadHandle thread) // 储存当前线程使用的thread
+    {
+        if (mode_ != HCOMM_LAUNCH_MODE_BATCH) {
+            return;
+        }
+        threadSet_.insert(thread);
+    }
+
     inline bool IsBatchLaunchMode() const
     {
         return mode_ == HCOMM_LAUNCH_MODE_BATCH;

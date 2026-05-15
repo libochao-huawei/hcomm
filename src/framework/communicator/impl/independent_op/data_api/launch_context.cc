@@ -13,48 +13,21 @@
 extern HcclResult CommTaskLaunch(ThreadHandle *threads, uint32_t threadNum); // host ffts+或aicpu stars使用"
 extern HcclResult CommTaskPrepare(char *key, uint32_t keyLen); // host ffts+使用
 
-void LaunchContext::AddThreadWithTag(ThreadHandle thread)
-{
-    if (mode_ != HCOMM_LAUNCH_MODE_BATCH) {
-        return;
-    }
-    auto& threadSet = launchModeMap_[launchTag_];
-    threadSet.insert(thread);
-    HCCL_INFO("[%s]success, launchTag[%s], launchMode[%d], thread[%lu].",
-        __func__, launchTag_.c_str(), static_cast<int32_t>(mode_), thread);
-}
-
-void LaunchContext::AddThread(ThreadHandle thread)
-{
-    if (mode_ != HCOMM_LAUNCH_MODE_BATCH) {
-        return;
-    }
-    threadSet_.insert(thread);
-    HCCL_INFO("[%s]success, launchMode[%d], thread[%lu].", __func__, static_cast<int32_t>(mode_), thread);
-}
-
 HcclResult LaunchContext::HandleEagerMode()
 {
-    auto it = launchModeMap_.find(launchTag_);
-    if (it == launchModeMap_.end()) {
-        HCCL_WARNING("[%s] launchTag[%s] not found.", __func__, launchTag_.c_str());
+    const auto &threadSetWithTag = launchModeMap_[launchTag_];
+    size_t totalSize = threadSetWithTag.size() + threadSet_.size();
+    if (totalSize == 0) {
+        HCCL_WARNING("[%s]launchTag[%s] thread set is empty.", __func__, launchTag_.c_str());
         return HCCL_SUCCESS;
     }
 
-    const auto &threadSet = it->second;
-    if (threadSet.empty()) {
-        HCCL_WARNING("[%s] launchTag[%s] has no threads.", __func__, launchTag_.c_str());
-        return HCCL_SUCCESS;
-    }
-
-    std::vector<ThreadHandle> threadVec(threadSet.begin(), threadSet.end());
-    for (size_t i = 0; i < threadVec.size(); i++) {
-        HCCL_INFO("[%s] HandleEagerMode begin, launchTag[%s], launchMode[%d], thread[%lu].",
-            __func__, launchTag_.c_str(), static_cast<int32_t>(mode_), threadVec[i]);
-    }
+    std::vector<ThreadHandle> threadVec;
+    threadVec.reserve(totalSize);
+    threadVec.insert(threadVec.end(), threadSetWithTag.begin(), threadSetWithTag.end());
+    threadVec.insert(threadVec.end(), threadSet_.begin(), threadSet_.end());
     return CommTaskLaunch(threadVec.data(), threadVec.size());
 }
-
 
 HcclResult LaunchContext::HandleClear()
 {
