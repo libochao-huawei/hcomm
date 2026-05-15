@@ -257,7 +257,7 @@ RmtRmaBufSliceLite UbTransportLiteImpl::GetRmtNotifySliceLite(u32 index)
 
 RmtRmaBufSliceLite UbTransportLiteImpl::GetRmtRmaBufSliceLite(const Buffer &rmtBuf)
 {
-    HCCL_INFO("TESTZJN --- UbTransportLiteImpl::GetRmtRmaBufSliceLite rmtBufferVec[%p]", reinterpret_cast<void*>(rmtBufferVec));
+    HCCL_INFO("TESTZJN --- UbTransportLiteImpl::GetRmtRmaBufSliceLite rmtBufferVec[%p]", &rmtBufferVec[0]);
     for (auto &it : rmtBufferVec) {
         Buffer buf(it.addr, it.size);
         HCCL_INFO("TESTZJN --- UbTransportLiteImpl::GetRmtRmaBufSliceLite %s", rmtBuf.Describe().c_str());
