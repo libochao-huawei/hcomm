@@ -80,11 +80,14 @@ target_include_directories(hccl_v2 PRIVATE
     ${RDMA_CORE_INCLUDE_DIR}
     ${HCCL_BASE_DIR}/src/platform/hccp/orion/hcomm_dev/inc/network
     ${HCCL_BASE_DIR}/externel_depends/tsch
+    ${HCCL_BASE_DIR}/src/common/health
 )
 
 # 每个文件夹单独组织要参与编译的文件
 target_sources(hccl_v2
-        PRIVATE
+    PRIVATE
+    ${HCCL_BASE_DIR}/src/common/health/rank_consistency_checker_v2.cc
+    ${HCCL_BASE_DIR}/src/common/health/calc_crc.cc
 )
 
 add_subdirectory(common)

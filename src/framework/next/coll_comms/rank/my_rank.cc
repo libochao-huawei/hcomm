@@ -18,6 +18,7 @@
 #include "env_config/env_config.h"
 #include "channel_process.h"
 #include "dlprof_function.h"
+#include "rank_consistency_checker_v2.h"
 
 using namespace hcomm;
 
@@ -801,12 +802,22 @@ HcclResult MyRank::Resume()
     return HCCL_SUCCESS;
 }
 
+HcclResult MyRank::RecordEnvVarCrcV2()
+{
+    // 仅校验HCCL_BUFFSIZE，通过EnvConfig取已解析的配置值
+    u64 buffSize = Hccl::EnvConfig::GetInstance().GetAlgoConfig().GetBuffSize();
+    CHK_RET(RankConsistencyCheckerV2::GetInstance().RecordEnvVarCrcV2(buffSize));
+    return HCCL_SUCCESS;
+}
+
 HcclResult MyRank::BatchExchangeAndCheckConsistency(
     const HcclChannelDesc* channelDescs,
     const std::vector<HcommChannelDesc> &hcommDescs,
     uint32_t channelNum,
     const std::string &commTag)
 {
+    auto &checker = RankConsistencyCheckerV2::GetInstance();
+    u64 frameLenV2 = checker.GetCheckFrameLengthV2();
     std::vector<Hccl::Socket*> sockets;
     std::vector<u32> remoteRanks;
     std::vector<HcommSocketRole> roles;
@@ -827,6 +838,31 @@ HcclResult MyRank::BatchExchangeAndCheckConsistency(
         sockets.push_back(socket);
         remoteRanks.push_back(remoteRank);
         roles.push_back(hcommDescs[i].role);
+    }
+
+    // 只有rankConsistentState是first或者on时才进行hcomm信息校验
+    if(Hccl::EnvConfig::GetInstance().GetLogConfig().GetDfsConfig().rankConsistentState == 1 ||
+        (Hccl::EnvConfig::GetInstance().GetLogConfig().GetDfsConfig().rankConsistentState == 0 && !checker.GetInconsistentCheckFirstDone())) {
+        // ====== 生成本端CheckFrameV2 ======
+       CheckFrameV2 localFrame;
+       CHK_RET(checker.GenerateCheckFrameV2(localFrame));
+
+       // ====== 交换CheckFrameV2（定长，批量并发交换）======
+       std::vector<CheckFrameV2> remoteFrames(sockets.size());
+       CHK_RET(BatchExchangeFixedData(sockets, remoteRanks, roles,
+            reinterpret_cast<const u8*>(&localFrame), static_cast<u32>(frameLenV2),
+            reinterpret_cast<u8*>(remoteFrames.data()), static_cast<u32>(frameLenV2)));
+
+        // ====== 逐个比对CheckFrameV2（精确报错：环境变量名/子通信域参数名）======
+        for (u32 i = 0; i < sockets.size(); i++) {
+            HcclResult cmpRet = checker.CompareCheckFrameV2(localFrame, remoteFrames[i]);
+            if (cmpRet != HCCL_SUCCESS) {
+                HCCL_ERROR("[BatchExchangeAndCheckConsistency] CheckFrameV2 mismatch for remoteRank[%u].",
+                    remoteRanks[i]);
+                return cmpRet;
+            }
+        }
+        checker.SetInconsistentCheckFirstDone(true);
     }
 
     // 交换HCCL算子信息 ======

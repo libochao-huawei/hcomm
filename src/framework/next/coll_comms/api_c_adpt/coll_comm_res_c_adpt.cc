@@ -265,6 +265,10 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
         const std::string &commTag = hcclComm->GetIdentifier();
         hccl::MyRank* myRank = collComm->GetMyRank();
         CHK_PTR_NULL(myRank);
+
+        myRank->RecordEnvVarCrcV2();
+        std::string curVersion = Hccl::EnvConfig::GetInstance().GetLogConfig().GetCannVersion();
+        RankConsistencyCheckerV2::GetInstance().RecordCannVersionV2(curVersion);
  
         const uint32_t opExpansionMode = myRank->GetOpExpansionMode();
         if (!CheckCommEngine(engine, opExpansionMode)) {
