@@ -10,7 +10,7 @@
 
 #include "rank_consistency_checker_v2.h"
 #include "calc_crc.h"
-#include "adapter_pub.h"
+#include "adapter_error_manager_pub.h"
 
 namespace hccl {
 
