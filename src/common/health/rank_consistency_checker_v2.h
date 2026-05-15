@@ -54,7 +54,6 @@ public:
     void SetInconsistentCheckFirstDone(bool inconsistentCheckFirstDone);
     bool GetInconsistentCheckFirstDone();
 private:
-    HcclResult CalcStringCrc(const char *str, u32 &crc);
     bool CompareEnvV2(const CheckFrameV2 &local, const CheckFrameV2 &remote);
     bool CompareRankTableV2(const CheckFrameV2 &local, const CheckFrameV2 &remote);
     bool CompareSubCommV2(const CheckFrameV2 &local, const CheckFrameV2 &remote);
