@@ -813,7 +813,8 @@ HcclResult MyRank::RecordEnvVarCrcV2()
     auto &checker = RankConsistentcyChecker::GetInstance();
     // 仅校验HCCL_BUFFSIZE，通过EnvConfig取已解析的配置值
     u64 buffSize = Hccl::EnvConfig::GetInstance().GetAlgoConfig().GetBuffSize();
-    checker.RecordEnvVarCrcV2(buffSize);
+    CHK_RET(RecordEnvVarCrcV2(buffSize));
+    return HCCL_SUCCESS;
 }
 
 HcclResult MyRank::BatchExchangeAndCheckConsistency(
@@ -905,7 +906,7 @@ HcclResult MyRank::ExchangeUserInfo(
             remoteUserDatas[i].resize(remoteExchangeInfoLens[i], 0);
             sockets[i]->RecvAsync(remoteUserDatas[i].data(), remoteExchangeInfoLens[i]);
         } else {
-            const std::vector<u8> exchangeBuf;
+            std::vector<u8> exchangeBuf;
             hcclComm->GetExchangeInfoBuf(exchangeBuf);
             sockets[i]->SendAsync(exchangeBuf.data(), localExchangeInfoLen);
         }
@@ -916,7 +917,7 @@ HcclResult MyRank::ExchangeUserInfo(
     // SERVER再Send/CLIENT再Recv
     for (u32 i = 0; i < sockets.size(); i++) {
         if (roles[i] == HCOMM_SOCKET_ROLE_SERVER) {
-            const std::vector<u8> exchangeBuf; 
+            std::vector<u8> exchangeBuf; 
             hcclComm->GetExchangeInfoBuf(exchangeBuf);
             sockets[i]->SendAsync(exchangeBuf.data(), localExchangeInfoLen);
         } else {

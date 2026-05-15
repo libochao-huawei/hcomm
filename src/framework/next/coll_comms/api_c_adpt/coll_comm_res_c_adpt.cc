@@ -268,7 +268,7 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
         CHK_PTR_NULL(myRank);
 
         myRank->RecordEnvVarCrcV2();
-        std::string curVersion = Hccl::EnvConfig::GetInstance().GetLogConfig().GetEnvLogConfig().GetCannVersion();
+        std::string curVersion = Hccl::EnvConfig::GetInstance().GetLogConfig().GetCannVersion();
         auto &checker = RankConsistentcyChecker::GetInstance();
         checker.RecordVerInfo(curVersion);
  
