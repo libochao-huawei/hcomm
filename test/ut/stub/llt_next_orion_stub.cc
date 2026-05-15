@@ -1380,6 +1380,15 @@ void SocketManager::BatchCreateSockets(const vector<LinkData> &links)
 {
 }
 
+void SocketManager::BatchServerListen(const vector<LinkData> &links)
+{
+}
+
+void SocketManager::BatchConectSockets()
+{
+}
+
+
 SocketManager::~SocketManager()
 {
 }
