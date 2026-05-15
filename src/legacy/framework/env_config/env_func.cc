@@ -820,7 +820,7 @@ void CastDfsConfigParseRankConsistentState(int32_t &rankConsistentState, const s
 DfsConfig CastDfsConfig(const std::string &dfsConfigEnv)
 {
     constexpr std::size_t                              DFS_CONFIG_ITEM_NUM = 3;
-    const std::array<std::string, DFS_CONFIG_ITEM_NUM> dfsItemName   = {"task_exception", "cluster_heartbeat, inconsistent_check"};
+    const std::array<std::string, DFS_CONFIG_ITEM_NUM> dfsItemName   = {"task_exception", "cluster_heartbeat", "inconsistent_check"};
     bool                                               taskExceptionEnable = true;
     bool                                               clusterHeartBeatEnable = true;
     int32_t                                            rankConsistentState = 0;
