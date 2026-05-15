@@ -104,7 +104,7 @@ ChannelStatus Channel::TransportStatusToChannelStatus(Hccl::TransportStatus ts)
     }
 }
 
-HcclResult Channel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum)
+HcclResult Channel::GetUserRemoteMem(CommMem **remoteMem, uint32_t *memNum)
 {
     return HCCL_SUCCESS;
 }

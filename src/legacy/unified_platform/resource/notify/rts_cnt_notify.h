@@ -13,7 +13,7 @@
 
 #include <memory>
 #include <string>
-#include "stream.h"
+#include "../stream/stream.h"
 #include "orion_adapter_rts.h"
 #include "orion_adapter_hccp.h"
 #include "cnt_nto1_notify_lite.h"

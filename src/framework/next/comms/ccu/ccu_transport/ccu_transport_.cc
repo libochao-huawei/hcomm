@@ -15,22 +15,21 @@
 #include "../../../../../legacy/unified_platform/resource/mem/user_remote_mem_getter.h"
 
 #include "env_config/env_config.h"
+#include "orion_adpt_utils.h"
 
 namespace hcomm {
 
 constexpr uint32_t FINISH_MSG_SIZE = 128;
 constexpr char FINISH_MSG[FINISH_MSG_SIZE] = "Transport exchange data ready!";
 
-HcclResult BuildCcuConnection(const CcuTransport::CcuConnectionInfo &ccuConnectionInfo, 
-    std::unique_ptr<CcuConnection> &ccuConnection)
+HcclResult BuildCcuConnection(
+    const CcuTransport::CcuConnectionInfo &ccuConnectionInfo, std::unique_ptr<CcuConnection> &ccuConnection)
 {
     if (ccuConnectionInfo.type == CcuTransport::CcuConnectionType::UBC_CTP) {
-        ccuConnection.reset(new (std::nothrow) CcuCtpConnection(
-            ccuConnectionInfo.locAddr, ccuConnectionInfo.rmtAddr,
+        ccuConnection.reset(new (std::nothrow) CcuCtpConnection(ccuConnectionInfo.locAddr, ccuConnectionInfo.rmtAddr,
             ccuConnectionInfo.channelInfo, ccuConnectionInfo.ccuJettys));
     } else {
-        ccuConnection.reset(new (std::nothrow) CcuRtpConnection(
-            ccuConnectionInfo.locAddr, ccuConnectionInfo.rmtAddr,
+        ccuConnection.reset(new (std::nothrow) CcuRtpConnection(ccuConnectionInfo.locAddr, ccuConnectionInfo.rmtAddr,
             ccuConnectionInfo.channelInfo, ccuConnectionInfo.ccuJettys));
     }
     CHK_PTR_NULL(ccuConnection);
@@ -45,8 +44,7 @@ HcclResult CcuCreateTransport(Hccl::Socket *socket, const CcuTransport::CcuConne
     std::unique_ptr<CcuConnection> ccuConnection{nullptr};
     CHK_RET(BuildCcuConnection(ccuConnectionInfo, ccuConnection));
 
-    ccuTransport.reset(new (std::nothrow)
-        CcuTransport(socket, std::move(ccuConnection), cclBufferInfo));
+    ccuTransport.reset(new (std::nothrow) CcuTransport(socket, std::move(ccuConnection), cclBufferInfo));
     CHK_PTR_NULL(ccuTransport);
     CHK_RET(ccuTransport->Init());
 
@@ -64,8 +62,7 @@ HcclResult CcuCreateTransport(Hccl::Socket *socket, const CcuTransport::CcuConne
         HCCL_ERROR("[CcuCreateTransport] bufferNum is 0.");
         return HCCL_E_PARA;
     }
-    ccuTransport.reset(new (std::nothrow)
-        CcuTransport(socket, std::move(ccuConnection), bufferInfos));
+    ccuTransport.reset(new (std::nothrow) CcuTransport(socket, std::move(ccuConnection), bufferInfos));
     CHK_PTR_NULL(ccuTransport);
     // 可能申请xn cke失败，需要回退
     auto ret = ccuTransport->Init();
@@ -78,22 +75,25 @@ HcclResult CcuCreateTransport(Hccl::Socket *socket, const CcuTransport::CcuConne
     return HcclResult::HCCL_SUCCESS;
 }
 
-CcuTransport::CcuTransport(Hccl::Socket *socket, std::unique_ptr<CcuConnection> &&connection,
-    const CclBufferInfo &locCclBufInfo)
-    : socket_(socket), ccuConnection_(std::move(connection))
+CcuTransport::CcuTransport(
+    Hccl::Socket *socket, std::unique_ptr<CcuConnection> &&connection, const CclBufferInfo &locCclBufInfo)
+    : socket_(socket),
+      ccuConnection_(std::move(connection))
 {
     locBufferInfos_.push_back(locCclBufInfo);
 }
 
-CcuTransport::CcuTransport(Hccl::Socket *socket, std::unique_ptr<CcuConnection> &&connection,
-    const std::vector<CclBufferInfo> &bufferInfos)
-    : socket_(socket), ccuConnection_(std::move(connection)), locBufferInfos_(bufferInfos)
+CcuTransport::CcuTransport(
+    Hccl::Socket *socket, std::unique_ptr<CcuConnection> &&connection, const std::vector<CclBufferInfo> &bufferInfos)
+    : socket_(socket),
+      ccuConnection_(std::move(connection)),
+      locBufferInfos_(bufferInfos)
 {
 }
 
 HcclResult CcuTransport::Init()
 {
-    dieId_      = ccuConnection_->GetDieId();
+    dieId_ = ccuConnection_->GetDieId();
     devLogicId_ = ccuConnection_->GetDevLogicId();
     auto ret = AppendCkes(INIT_CKE_NUM);
     if (ret == HcclResult::HCCL_E_UNAVAIL) {
@@ -113,15 +113,13 @@ HcclResult CcuTransport::Init()
 
 CcuTransport::TransStatus CcuTransport::GetStatus()
 {
-    if (transStatus_ == TransStatus::READY
-        || transStatus_ == TransStatus::CONNECT_FAILED
+    if (transStatus_ == TransStatus::READY || transStatus_ == TransStatus::CONNECT_FAILED
         || transStatus_ == TransStatus::SOCKET_TIMEOUT) {
         return transStatus_;
     }
 
     if (StatusMachine() != HcclResult::HCCL_SUCCESS) {
-        HCCL_ERROR("[CcuTransport][%s] failed, %s.",
-            __func__, transStatus_.Describe().c_str());
+        HCCL_ERROR("[CcuTransport][%s] failed, %s.", __func__, transStatus_.Describe().c_str());
         transStatus_ = TransStatus::CONNECT_FAILED;
     }
 
@@ -133,14 +131,12 @@ HcclResult CcuTransport::AppendCkes(uint32_t ckesNum)
     std::vector<ResInfo> resInfo;
     auto ret = CcuDevMgrImp::AllocCke(devLogicId_, dieId_, ckesNum, resInfo);
     CHK_PRT_RET(ret == HcclResult::HCCL_E_UNAVAIL,
-        HCCL_WARNING("[CcuTransport][%s] failed, the resource is not enough.",
-            __func__),
-        ret);
+        HCCL_WARNING("[CcuTransport][%s] failed, the resource is not enough.", __func__), ret);
     CHK_RET(ret);
 
     const uint32_t resSize = resInfo.size();
     for (uint32_t i = 0; i < resSize; i++) {
-        const uint32_t ckeNum     = resInfo[i].num;
+        const uint32_t ckeNum = resInfo[i].num;
         const uint32_t ckesSartId = resInfo[i].startId;
         for (uint32_t j = 0; j < ckeNum; j++) {
             locRes_.ckes.emplace_back(ckesSartId + j);
@@ -155,14 +151,12 @@ HcclResult CcuTransport::AppendXns(uint32_t xnsNum)
     std::vector<ResInfo> resInfo;
     auto ret = CcuDevMgrImp::AllocXn(devLogicId_, dieId_, xnsNum, resInfo);
     CHK_PRT_RET(ret == HcclResult::HCCL_E_UNAVAIL,
-        HCCL_WARNING("[CcuTransport][%s] failed, the resource is not enough.",
-            __func__),
-        ret);
+        HCCL_WARNING("[CcuTransport][%s] failed, the resource is not enough.", __func__), ret);
     CHK_RET(ret);
 
     const uint32_t resSize = resInfo.size();
     for (uint32_t i = 0; i < resSize; i++) {
-        uint32_t xnNum     = resInfo[i].num;
+        uint32_t xnNum = resInfo[i].num;
         uint32_t xnsSartId = resInfo[i].startId;
         for (uint32_t j = 0; j < xnNum; j++) {
             locRes_.xns.emplace_back(xnsSartId + j);
@@ -180,7 +174,7 @@ HcclResult CcuTransport::StatusMachine()
         HCCL_ERROR("[CcuTransport][GetStatus]socket timeout or no link, please check");
         return HcclResult::HCCL_E_INTERNAL;
     }
-    
+
     if (socketStatus != Hccl::SocketStatus::OK) {
         return HcclResult::HCCL_SUCCESS; // 操作成功，保持当前状态
     }
@@ -191,12 +185,12 @@ HcclResult CcuTransport::StatusMachine()
             auto connStatus = ccuConnection_->GetStatus();
             if (connStatus == CcuConnStatus::CONN_INVALID) {
                 HCCL_ERROR("[CcuTransport][GetStatus] connection status[%s] failed."
-                    " please check.", connStatus.Describe().c_str());
+                           " please check.",
+                    connStatus.Describe().c_str());
                 return HcclResult::HCCL_E_INTERNAL;
             }
 
-            if (connStatus == CcuConnStatus::EXCHANGEABLE
-                || connStatus == CcuConnStatus::CONNECTED) {
+            if (connStatus == CcuConnStatus::EXCHANGEABLE || connStatus == CcuConnStatus::CONNECTED) {
                 // connection完成本端资源创建或复用时，发送本端资源信息
                 CHK_RET(SendDataSize());
                 transStatus_ = TransStatus::SEND_DATA_SIZE;
@@ -226,7 +220,8 @@ HcclResult CcuTransport::StatusMachine()
             auto connStatus = ccuConnection_->GetStatus();
             if (connStatus == CcuConnStatus::CONN_INVALID) {
                 HCCL_ERROR("[CcuTransport][GetStatus] connection status[%s] failed."
-                    " please check", connStatus.Describe().c_str());
+                           " please check",
+                    connStatus.Describe().c_str());
                 return HcclResult::HCCL_E_INTERNAL;
             }
 
@@ -257,8 +252,7 @@ HcclResult CcuTransport::StatusMachine()
             transStatus_ = CcuTransport::TransStatus::SEND_FIN;
             break;
         default:
-            HCCL_ERROR("[CcuTransport][%s] failed, error status[%s].",
-                __func__, transStatus_.Describe().c_str());
+            HCCL_ERROR("[CcuTransport][%s] failed, error status[%s].", __func__, transStatus_.Describe().c_str());
             transStatus_ = CcuTransport::TransStatus::CONNECT_FAILED;
             break;
     }
@@ -279,8 +273,8 @@ HcclResult CcuTransport::SendDataSize()
     EXCEPTION_HANDLE_BEGIN
     socket_->SendAsync(reinterpret_cast<u8 *>(&sendSize), sizeof(sendSize));
     EXCEPTION_HANDLE_END
-    HCCL_INFO("[CcuTransport::%s] Send size[%u] of data success. [%zu] bytes sent.",
-        __func__, sendSize, sizeof(sendSize));
+    HCCL_INFO(
+        "[CcuTransport::%s] Send size[%u] of data success. [%zu] bytes sent.", __func__, sendSize, sizeof(sendSize));
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -290,8 +284,8 @@ HcclResult CcuTransport::RecvDataSize()
     EXCEPTION_HANDLE_BEGIN
     socket_->RecvAsync(reinterpret_cast<u8 *>(&exchangeDataSize_), sizeof(exchangeDataSize_));
     EXCEPTION_HANDLE_END
-    HCCL_INFO("[CcuTransport::%s] Receive size[%u] of data success. [%zu] bytes received.",
-        __func__, exchangeDataSize_, sizeof(exchangeDataSize_));
+    HCCL_INFO("[CcuTransport::%s] Receive size[%u] of data success. [%zu] bytes received.", __func__, exchangeDataSize_,
+        sizeof(exchangeDataSize_));
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -320,7 +314,6 @@ HcclResult CcuTransport::RecvDataProcess()
     CHK_RET(ConnInfoUnpackProc(binaryStream));
     CHK_RET(TransResUnpackProc(binaryStream));
     rmtBufferInfos_.clear();
-    remoteUserMemTag_.clear();
     CHK_RET(BufferInfoUnpack(binaryStream));
     return HcclResult::HCCL_SUCCESS;
 }
@@ -356,8 +349,8 @@ HcclResult CcuTransport::RecvTransInfoProcess()
 HcclResult CcuTransport::HandshakeMsgPack(Hccl::BinaryStream &binaryStream)
 {
     binaryStream << attr_.handshakeMsg;
-    HCCL_INFO("[CcuTransport][%s] start pack handshakeMsg, attr.handshakeMsg.size[%zu]",
-        __func__, attr_.handshakeMsg.size());
+    HCCL_INFO(
+        "[CcuTransport][%s] start pack handshakeMsg, attr.handshakeMsg.size[%zu]", __func__, attr_.handshakeMsg.size());
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -403,8 +396,7 @@ HcclResult CcuTransport::HandshakeMsgUnpack(Hccl::BinaryStream &binaryStream)
     binaryStream >> rmtHandshakeMsg_;
 
     if (attr_.handshakeMsg.size() != rmtHandshakeMsg_.size()) {
-        HCCL_ERROR("handshakeMsg size=%u is not equal to rmt=%u",
-            attr_.handshakeMsg.size(), rmtHandshakeMsg_.size());
+        HCCL_ERROR("handshakeMsg size=%u is not equal to rmt=%u", attr_.handshakeMsg.size(), rmtHandshakeMsg_.size());
         return HcclResult::HCCL_E_INTERNAL;
     }
     HCCL_INFO("[CcuTransport][%s] start unpack handshakeMsg", __func__);
@@ -456,7 +448,6 @@ HcclResult CcuTransport::BufferInfoUnpack(Hccl::BinaryStream &binaryStream)
         CclBufferInfo rmtBufferInfo{};
         rmtBufferInfo.Unpack(binaryStream);
         rmtBufferInfos_.push_back(rmtBufferInfo);
-        remoteUserMemTag_.push_back(rmtBufferInfo.memTag);
     }
     return HcclResult::HCCL_SUCCESS;
 }
@@ -484,8 +475,8 @@ HcclResult CcuTransport::CheckFinish()
     const std::string sendFinishMsgStr(sendFinishMsg_.begin(), sendFinishMsg_.end());
     const std::string recvFinishMsgStr(recvFinishMsg_.begin(), recvFinishMsg_.end());
     if (sendFinishMsgStr != recvFinishMsgStr) {
-        HCCL_ERROR("[CcuTransport][RecvFinish]msgRecv[%s] and msgSend[%s] are not equal",
-            recvFinishMsgStr.c_str(), sendFinishMsgStr.c_str());
+        HCCL_ERROR("[CcuTransport][RecvFinish]msgRecv[%s] and msgSend[%s] are not equal", recvFinishMsgStr.c_str(),
+            sendFinishMsgStr.c_str());
         return HcclResult::HCCL_E_INTERNAL;
     }
 
@@ -501,7 +492,8 @@ HcclResult CcuTransport::ReleaseTransRes()
         auto ret = CcuDevMgrImp::ReleaseCke(devLogicId_, dieId_, ckesRes_[i]);
         if (ret != HcclResult::HCCL_SUCCESS) {
             HCCL_ERROR("[CcuTransport][%s] release ckes failed but passed, "
-                "devLogicId[%d] dieId[%u].", __func__, devLogicId_, dieId_);
+                       "devLogicId[%d] dieId[%u].",
+                __func__, devLogicId_, dieId_);
         }
     }
     ckesRes_.clear();
@@ -513,7 +505,8 @@ HcclResult CcuTransport::ReleaseTransRes()
         auto ret = CcuDevMgrImp::ReleaseXn(devLogicId_, dieId_, xnsRes_[i]);
         if (ret != HcclResult::HCCL_SUCCESS) {
             HCCL_ERROR("[CcuTransport][%s] release xns failed but passed, "
-                "devLogicId[%d] dieId[%u].", __func__, devLogicId_, dieId_);
+                       "devLogicId[%d] dieId[%u].",
+                __func__, devLogicId_, dieId_);
         }
     }
     xnsRes_.clear();
@@ -533,14 +526,12 @@ uint32_t CcuTransport::GetChannelId() const
 
 HcclResult CcuTransport::GetLocCkeByIndex(const uint32_t index, uint32_t &locCkeId) const
 {
-    CHK_PRT_RET(locRes_.ckes.empty(),
-        HCCL_ERROR("[CcuTransport][%s] failed, local resources is empty.",
-            __func__),
+    CHK_PRT_RET(locRes_.ckes.empty(), HCCL_ERROR("[CcuTransport][%s] failed, local resources is empty.", __func__),
         HcclResult::HCCL_E_PARA);
 
     CHK_PRT_RET(index >= locRes_.ckes.size(),
-        HCCL_ERROR("[CcuTransport][%s] failed, index[%u] is larger than size[%u].",
-            __func__, index, locRes_.ckes.size()),
+        HCCL_ERROR(
+            "[CcuTransport][%s] failed, index[%u] is larger than size[%u].", __func__, index, locRes_.ckes.size()),
         HcclResult::HCCL_E_PARA);
 
     locCkeId = locRes_.ckes[index];
@@ -549,14 +540,12 @@ HcclResult CcuTransport::GetLocCkeByIndex(const uint32_t index, uint32_t &locCke
 
 HcclResult CcuTransport::GetLocXnByIndex(const uint32_t index, uint32_t &locXnId) const
 {
-    CHK_PRT_RET(locRes_.xns.empty(),
-        HCCL_ERROR("[CcuTransport][%s] failed, local resources is empty.",
-            __func__),
+    CHK_PRT_RET(locRes_.xns.empty(), HCCL_ERROR("[CcuTransport][%s] failed, local resources is empty.", __func__),
         HcclResult::HCCL_E_PARA);
 
     CHK_PRT_RET(index >= locRes_.xns.size(),
-        HCCL_ERROR("[CcuTransport][%s] failed, index[%u] is larger than size[%u].",
-            __func__, index, locRes_.xns.size()),
+        HCCL_ERROR(
+            "[CcuTransport][%s] failed, index[%u] is larger than size[%u].", __func__, index, locRes_.xns.size()),
         HcclResult::HCCL_E_PARA);
 
     locXnId = locRes_.xns[index];
@@ -565,14 +554,12 @@ HcclResult CcuTransport::GetLocXnByIndex(const uint32_t index, uint32_t &locXnId
 
 HcclResult CcuTransport::GetRmtCkeByIndex(const uint32_t index, uint32_t &rmtCkeId) const
 {
-    CHK_PRT_RET(rmtRes_.ckes.empty(),
-        HCCL_ERROR("[CcuTransport][%s] failed, local resources is empty.",
-            __func__),
+    CHK_PRT_RET(rmtRes_.ckes.empty(), HCCL_ERROR("[CcuTransport][%s] failed, local resources is empty.", __func__),
         HcclResult::HCCL_E_PARA);
 
     CHK_PRT_RET(index >= rmtRes_.ckes.size(),
-        HCCL_ERROR("[CcuTransport][%s] failed, index[%u] is larger than size[%u].",
-            __func__, index, rmtRes_.ckes.size()),
+        HCCL_ERROR(
+            "[CcuTransport][%s] failed, index[%u] is larger than size[%u].", __func__, index, rmtRes_.ckes.size()),
         HcclResult::HCCL_E_PARA);
 
     rmtCkeId = rmtRes_.ckes[index];
@@ -581,14 +568,12 @@ HcclResult CcuTransport::GetRmtCkeByIndex(const uint32_t index, uint32_t &rmtCke
 
 HcclResult CcuTransport::GetRmtXnByIndex(const uint32_t index, uint32_t &rmtXnId) const
 {
-    CHK_PRT_RET(rmtRes_.xns.empty(),
-        HCCL_ERROR("[CcuTransport][%s] failed, local resources is empty.",
-            __func__),
+    CHK_PRT_RET(rmtRes_.xns.empty(), HCCL_ERROR("[CcuTransport][%s] failed, local resources is empty.", __func__),
         HcclResult::HCCL_E_PARA);
-    
+
     CHK_PRT_RET(index >= rmtRes_.xns.size(),
-        HCCL_ERROR("[CcuTransport][%s] failed, index[%u] is larger than size[%u].",
-            __func__, index, rmtRes_.xns.size()),
+        HCCL_ERROR(
+            "[CcuTransport][%s] failed, index[%u] is larger than size[%u].", __func__, index, rmtRes_.xns.size()),
         HcclResult::HCCL_E_PARA);
 
     rmtXnId = rmtRes_.xns[index];
@@ -626,10 +611,8 @@ std::string CcuTransport::Describe() const
 
     description = Hccl::StringFormat("DieId: %u, ", dieId_);
     description += transStatus_.Describe();
-    description += Hccl::StringFormat(", LocRes: {%u Ckes, %u Xns}, ", locRes_.ckes.size(),
-                                locRes_.xns.size());
-    description += Hccl::StringFormat("RmtRes: {%u Ckes, %u Xns}, ", rmtRes_.ckes.size(),
-                                rmtRes_.xns.size());
+    description += Hccl::StringFormat(", LocRes: {%u Ckes, %u Xns}, ", locRes_.ckes.size(), locRes_.xns.size());
+    description += Hccl::StringFormat("RmtRes: {%u Ckes, %u Xns}, ", rmtRes_.ckes.size(), rmtRes_.xns.size());
     description += Hccl::StringFormat("CkesRes size: %u, ", ckesRes_.size());
     description += Hccl::StringFormat("XnsRes size: %u.", xnsRes_.size());
     return description;
@@ -648,7 +631,7 @@ void CcuTransport::Clean()
     ccuConnection_->Clean();
 }
 
-HcclResult CcuTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum)
+HcclResult CcuTransport::GetUserRemoteMem(CommMem **remoteMem, uint32_t *memNum)
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
     uint32_t userMemCount = rmtBufferInfos_.size() - 1; // 默认 cclBuffer 数量为1，后续出现1的含义也是 cclBufferNum
@@ -659,40 +642,9 @@ HcclResult CcuTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags, 
         remoteMemCtx.remoteUserMems[index].size = rmtBuffer.size;
     };
     Hccl::RemoteMemCtx<CclBufferInfo> remoteMemCtx{
-        userMemCount, cacheValid_, rmtBufferInfos_, remoteUserMemTag_, remoteUserMems_, tagCopies_, tagPointers_,
-        cacheBuilder, remoteMem, memTags, memNum};
+        userMemCount, cacheValid_, rmtBufferInfos_, remoteUserMems_, cacheBuilder, remoteMem, memNum};
     CHK_RET(Hccl::GetRemoteUserMem(remoteMemCtx));
     return HcclResult::HCCL_SUCCESS;
-}
-
-HcclResult CcuTransport::CheckSocketStatus()
-{
-    CHK_PTR_NULL(socket_);
-    auto timeout = std::chrono::seconds(Hccl::EnvConfig::GetInstance().GetSocketConfig().GetLinkTimeOut());
-    auto startTime = std::chrono::steady_clock::now();
-    uint32_t retryCount = 0;
-    while(true) {
-        EXCEPTION_HANDLE_BEGIN
-        Hccl::SocketStatus socketStatus = socket_->GetAsyncStatus();
-        if (socketStatus == Hccl::SocketStatus::OK) {
-            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-                std::chrono::steady_clock::now() - startTime).count();
-            HCCL_INFO("[CcuTransport][%s] success, elapsed[%lld]ms, retryCount[%u]",
-                __func__, elapsed, retryCount);
-            break;
-        }
-        if ((std::chrono::steady_clock::now() - startTime) >= timeout ||
-            socketStatus == Hccl::SocketStatus::TIMEOUT) {
-            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-                std::chrono::steady_clock::now() - startTime).count();
-            HCCL_ERROR("[CcuTransport][%s] channel connect timeout after %lld sec, elapsed[%lld]ms, retryCount[%u]",
-                __func__, timeout, elapsed, retryCount);
-            return HCCL_E_TIMEOUT;
-        }
-        EXCEPTION_HANDLE_END
-        retryCount++;
-    }
-    return HCCL_SUCCESS;
 }
 
 HcclResult CcuTransport::UpdateMemInfo(std::vector<CcuTransport::CclBufferInfo> &bufferVecTemp)
@@ -703,7 +655,8 @@ HcclResult CcuTransport::UpdateMemInfo(std::vector<CcuTransport::CclBufferInfo> 
     }
     uint32_t totalBufferNum = locBufferInfos_.size() + bufferVecTemp.size();
     if (UNLIKELY(totalBufferNum > MAX_BUFFER_NUM)) {
-        HCCL_ERROR("[CcuTransport][UpdateMemInfo] totalBufferNum[%u] exceeds limit[%u]", totalBufferNum, MAX_BUFFER_NUM);
+        HCCL_ERROR(
+            "[CcuTransport][UpdateMemInfo] totalBufferNum[%u] exceeds limit[%u]", totalBufferNum, MAX_BUFFER_NUM);
         return HCCL_E_PARA;
     }
     HCCL_INFO("[CcuTransport][UpdateMemInfo] bufferNum[%zu]", bufferVecTemp.size());
@@ -715,15 +668,15 @@ HcclResult CcuTransport::UpdateMemInfo(std::vector<CcuTransport::CclBufferInfo> 
     EXCEPTION_HANDLE_BEGIN
     socket_->SendAsync(reinterpret_cast<u8 *>(&sendSize), sizeof(sendSize));
     EXCEPTION_HANDLE_END
-    HCCL_INFO("[CcuTransport][UpdateMemInfo] Send size[%u] of data success. [%zu] bytes sent.",
-        sendSize, sizeof(sendSize));
-    CHK_RET(CheckSocketStatus());
+    HCCL_INFO(
+        "[CcuTransport][UpdateMemInfo] Send size[%u] of data success. [%zu] bytes sent.", sendSize, sizeof(sendSize));
+    CHK_RET(CheckSocketStatus(socket_));
     CHK_RET(RecvDataSize());
-    CHK_RET(CheckSocketStatus());
+    CHK_RET(CheckSocketStatus(socket_));
     CHK_RET(SendConnAndTransInfo());
-    CHK_RET(CheckSocketStatus());
+    CHK_RET(CheckSocketStatus(socket_));
     CHK_RET(RecvConnAndTransInfo());
-    CHK_RET(CheckSocketStatus());
+    CHK_RET(CheckSocketStatus(socket_));
     Hccl::BinaryStream recvStream(recvData_);
     CHK_RET(BufferInfoUnpack(recvStream));
     locBufferInfos_.insert(locBufferInfos_.end(), bufferVecTemp.begin(), bufferVecTemp.end());

@@ -270,6 +270,7 @@ HcommResult HcommEndpointStopListen(EndpointHandle endpointHandle, uint32_t port
 HcommResult HcommMemReg(EndpointHandle endpointHandle, const char *memTag, const CommMem *mem,
     HcommMemHandle *memHandle)
 {
+    (void)memTag;
     CHK_PTR_NULL(memHandle);
     EXCEPTION_HANDLE_BEGIN
     CHK_PTR_NULL(mem);
@@ -278,7 +279,7 @@ HcommResult HcommMemReg(EndpointHandle endpointHandle, const char *memTag, const
     auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
     CHK_PRT_RET(endpoint == nullptr, HCCL_ERROR("[%s] endpoint not found, endpointHandle[0x%llx]",
         __func__, endpointHandle), HCCL_E_NOT_FOUND);
-    CHK_RET(endpoint->RegisterMemory(*mem, memTag, reinterpret_cast<void **>(memHandle)));
+    CHK_RET(endpoint->RegisterMemory(*mem, reinterpret_cast<void **>(memHandle)));
     EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
