@@ -10,51 +10,46 @@
 #include "launch_context.h"
 #include "new/hccl_primitive_local.h"
 
-extern HcclResult CommTaskLaunch(ThreadHandle *threads, uint32_t threadNum); // host ffts+或aicpu stars使用"
+constexpr u32 THREAD_VECTOR_DEFAULT_SIZE = 128; // 设置vector初始长度，避免频繁扩容
+
+extern HcclResult CommTaskLaunch(ThreadHandle *threads, uint32_t threadNum); // host ffts+或aicpu stars使用
 extern HcclResult CommTaskPrepare(char *key, uint32_t keyLen); // host ffts+使用
 extern HcclResult DispatchAllStreams(ThreadHandle *threads, uint32_t threadNum);
+
+LaunchContext::LaunchContext()
+{
+    threadVec_.reserve(THREAD_VECTOR_DEFAULT_SIZE);
+}
 
 HcclResult LaunchContext::HandleEagerMode()
 {
     const auto &threadSetWithTag = launchModeMap_[launchTag_];
-    size_t totalSize = threadSetWithTag.size() + threadSet_.size();
-    if (totalSize == 0) {
+    threadVec_.insert(threadVec_.end(), threadSetWithTag.begin(), threadSetWithTag.end());
+    if (threadVec_.empty()) {
         HCCL_WARNING("[%s]launchTag[%s] thread set is empty.", __func__, launchTag_.c_str());
         return HCCL_SUCCESS;
     }
-
-    std::vector<ThreadHandle> threadVec;
-    threadVec.reserve(totalSize);
-    threadVec.insert(threadVec.end(), threadSetWithTag.begin(), threadSetWithTag.end());
-    threadVec.insert(threadVec.end(), threadSet_.begin(), threadSet_.end());
-    return CommTaskLaunch(threadVec.data(), threadVec.size());
+    CHK_RET(CommTaskLaunch(threadVec_.data(), threadVec_.size()));
+    HCCL_INFO("[%s]success, launchTag[%s], threadSetWithTag size[%u], totalThread size[%u]",
+        __func__, launchTag_.c_str(), threadSetWithTag.size(), threadVec_.size());
+    return HCCL_SUCCESS;
 }
 
 HcclResult LaunchContext::HandleDispatchAllStreams()
 {
-    auto it = launchModeMap_.find(launchTag_);
-    if (it == launchModeMap_.end()) {
-        HCCL_DEBUG("[%s] launchTag[%s] not found.", __func__, launchTag_.c_str());
+    const auto &threadSetWithTag = launchModeMap_[launchTag_];
+    threadVec_.insert(threadVec_.end(), threadSetWithTag.begin(), threadSetWithTag.end());
+    if (threadVec_.empty()) {
+        HCCL_DEBUG("[%s]launchTag[%s] thread set is empty.", __func__, launchTag_.c_str());
         return HCCL_SUCCESS;
     }
-
-    const auto &threadSet = it->second;
-    if (threadSet.empty()) {
-        HCCL_DEBUG("[%s] launchTag[%s] has no threads.", __func__, launchTag_.c_str());
-        return HCCL_SUCCESS;
-    }
-
-    std::vector<ThreadHandle> threadVec(threadSet.begin(), threadSet.end());
-    for (size_t i = 0; i < threadVec.size(); i++) {
-        HCCL_DEBUG("[%s] HandleDispatchAllStreams begin, launchTag[%s], thread[%lu].",
-            __func__, launchTag_.c_str(), threadVec[i]);
-    }
-    return DispatchAllStreams(threadVec.data(), threadVec.size());
+    CHK_RET(DispatchAllStreams(threadVec_.data(), threadVec_.size()));
+    return HCCL_SUCCESS;
 }
 
 HcclResult LaunchContext::HandleClear()
 {
-    threadSet_.clear();
+    threadVec_.clear();
     launchModeMap_.erase(launchTag_);
     HCCL_INFO("[%s] begin clear, launchTag[%s], launchMode[%d].",
         __func__, launchTag_.c_str(), static_cast<int32_t>(mode_));

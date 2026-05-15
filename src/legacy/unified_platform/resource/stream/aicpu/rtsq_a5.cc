@@ -75,8 +75,13 @@ void RtsqA5::MakeSureAvailableSpace()
     HCCL_INFO("RtsqA5::%s timeout: %u s, cur head: %u, tail: %u, sqId: %u", __func__, timeoutValue, sqHead_, sqTail_,
               sqId_);
 
-    HCCL_INFO("RtsqA5::%s start", __func__);
     while (availableSpace <= pendingSqeCnt) {
+        sqHead_        = QuerySqHead();
+        availableSpace = GetTailToHeadDist();
+        if (availableSpace > pendingSqeCnt) {
+            break; // 避免head没更新导致假反压
+        }
+
         if (UNLIKELY(std::chrono::steady_clock::now() - lastPrintTime >= printInterval)) {
             HCCL_INFO("RtsqA5::%s while loop availableSpace %u <= pendingSqeCnt %u", __func__, availableSpace,
                       pendingSqeCnt);
@@ -96,10 +101,6 @@ void RtsqA5::MakeSureAvailableSpace()
             THROW<InternalException>(msg);
         }
 #endif
-
-        sqHead_        = QuerySqHead();
-        availableSpace = GetTailToHeadDist();
-
         if (checkOpExecStatusCallback_ != nullptr) {
             checkOpExecStatusCallback_();
         }
@@ -108,7 +109,6 @@ void RtsqA5::MakeSureAvailableSpace()
 
 void RtsqA5::CopyLocBufToSq()
 {
-    sqHead_        = QuerySqHead();
     u8 *sqCurrAddr = reinterpret_cast<u8 *>(sqBaseAddr_) + sqTail_ * rtsqSqeSize;
     if (sqTail_ >= sqHead_) {
         u32 depthLeft = sqDepth_ - sqTail_;
