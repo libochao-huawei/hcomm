@@ -18,16 +18,10 @@ namespace CcuRep {
 
 class CcuRepLoopGroupBundle : public CcuRepBase {
 public:
-    struct ParamBindingEntry {
-        Variable formal;
-        Variable actual;
-    };
-
     struct LoopEntry {
         CcuLoopConfig config;
         uint16_t executorId{0};
         std::shared_ptr<CcuRepLoopBlock> repLoopBlock;
-        std::vector<ParamBindingEntry> paramBindings;
         Variable loopParamVar;
         bool isVarBased{false};
     };
@@ -45,8 +39,6 @@ public:
     std::string Describe() override;
 
 private:
-    uint16_t CalcParamBindingCount() const;
-
     CcuLoopGroupConfig config_;
     Variable parallelVar_;
     Variable offsetVar_;
