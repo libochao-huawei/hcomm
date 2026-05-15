@@ -193,6 +193,8 @@ HcclResult HostCpuUrmaChannel::Init()
     CHK_RET(BuildUbMemTransport());
     // urma函数初始化
     CHK_RET(DlUrmaFunction::GetInstance().DlUrmaFunctionInit());
+    // 获取urma read/write 单个wr的最大传输数据大小
+    CHK_RET(HccpRaGetDevBaseAttr(rdmaHandle_, &devBaseAttr_));
     return HCCL_SUCCESS;
 }
 
@@ -255,16 +257,16 @@ HcclResult HostCpuUrmaChannel::GetLocSeg(const void *addr, const size_t size, u6
     return HCCL_SUCCESS;
 }
 
-HcclResult HostCpuUrmaChannel::GetSplitNum(uint64_t len, uint64_t &splitNum)
+HcclResult HostCpuUrmaChannel::GetSplitNum(uint64_t len, uint64_t maxJettyWrDataLen, uint64_t &splitNum)
 {
-    if (len == 0) {
-        HCCL_ERROR("[HostCpuUrmaChannel::%s] invalid length 0.", __func__);
+    if (len == 0 || maxJettyWrDataLen == 0) {
+        HCCL_ERROR("[HostCpuUrmaChannel::%s] invalid len[%llu] or maxJettyWrDataLen[%llu].", __func__, len, maxJettyWrDataLen);
         return HCCL_E_PARA;
     }
-    if ((len % MAX_JETTY_WR_DATA_LEN) == 0) {
-        splitNum = len / MAX_JETTY_WR_DATA_LEN;
+    if ((len % maxJettyWrDataLen) == 0) {
+        splitNum = len / maxJettyWrDataLen;
     } else {
-        splitNum = (len / MAX_JETTY_WR_DATA_LEN) + 1;
+        splitNum = (len / maxJettyWrDataLen) + 1;
     }
     return HCCL_SUCCESS;
 }
@@ -297,7 +299,8 @@ HcclResult HostCpuUrmaChannel::UrmaPostJettySendWr(urma_opcode_t opcode, void *d
 
     //  获取切片数量
     uint64_t splitNum = 0;
-    CHK_RET(GetSplitNum(len, splitNum));
+    uint64_t maxJettyWrDataLen = (opcode == URMA_OPC_WRITE) ? devBaseAttr_.maxWriteSize : devBaseAttr_.maxReadSize;
+    CHK_RET(GetSplitNum(len, maxJettyWrDataLen, splitNum));
 
     u64 localSeg;
     u64 remoteSeg;
@@ -306,7 +309,7 @@ HcclResult HostCpuUrmaChannel::UrmaPostJettySendWr(urma_opcode_t opcode, void *d
     uint64_t offset = 0;
     for (uint64_t i = 0; i < splitNum; i++) {
         urma_jfs_wr_t *badWr = nullptr;
-        uint64_t chunkLen = std::min(len - offset, MAX_JETTY_WR_DATA_LEN);
+        uint64_t chunkLen = std::min(len - offset, maxJettyWrDataLen);
         // 源地址 数据长度 tseg
         urma_sge_t srclist = {0};
         urmaWriteWr.rw.src.sge = &srclist;
