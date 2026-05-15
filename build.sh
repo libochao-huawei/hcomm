@@ -430,6 +430,10 @@ while [[ $# -gt 0 ]]; do
         ST_TASKS+=("legacy_alg_testcase")
         shift
         ;;
+     --aicpu)
+        ENABLE_BUILD_DEVICE="ON"
+        shift
+        ;;
     --full)
         ENABLE_BUILD_DEVICE="ON"
         shift

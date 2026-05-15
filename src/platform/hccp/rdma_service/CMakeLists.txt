@@ -134,7 +134,7 @@ add_dependencies(rs crypto_static)
 
 # 创建 rs 动态链接库，device 侧使用，同时打包到 cann-hcomm-compat.tar.gz
 # 注意：rs_device 与 rs 完全一致，区别是编译时使能 CUSTOM_INTERFACE 宏定义
-if(PRODUCT_SIDE STREQUAL "device")
+if((NOT BUILD_OPEN_PROJECT) OR (PRODUCT_SIDE STREQUAL "device"))
     add_library(rs_device SHARED)
     # 克隆 rs 的属性
     clone_cann_target(
@@ -153,6 +153,13 @@ if(PRODUCT_SIDE STREQUAL "device")
         OUTPUT_NAME rs
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/device"
     )
+    # 安装
+    if(NOT BUILD_OPEN_PROJECT)
+        install(TARGETS rs_device
+            LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
+            COMPONENT hcomm
+        )
+    endif()
 endif()
 
 # 安装
