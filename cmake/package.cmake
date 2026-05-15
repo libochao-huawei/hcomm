@@ -66,7 +66,7 @@ function(pack_built_in)
       message(WARNING "Unknown architecture: ${CMAKE_SYSTEM_PROCESSOR}")
   endif ()
 
-  set(script_prefix ${CMAKE_SOURCE_DIR}/scripts/package/hcomm/scripts)
+  set(script_prefix ${CMAKE_CURRENT_SOURCE_DIR}/scripts/package/hcomm/scripts)
   install(DIRECTORY ${script_prefix}/
       DESTINATION share/info/hcomm/script
       FILE_PERMISSIONS
