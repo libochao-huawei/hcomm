@@ -12,6 +12,7 @@
 #include "calc_crc.h"
 #include "rank_consistentcy_checker.h"
 #include "rank_table_crc_bridge.h"
+#include "env_config.h"
 
 namespace hccl {
 
@@ -169,9 +170,9 @@ HcclResult RankConsistentcyChecker::GetCheckFrame(u8 *destBuf, u64 maxDestBuf, c
 
 HcclResult RankConsistentcyChecker::CheckFrameRecv(const u8 *recvBuf, u32 recvBufLen, const std::string &tag)
 {
-    if (!GetExternalInconsistentCheckSwitch() || (GetExternalInconsistentCheckSwitch() && inconsistentCheckFirstDone_)) {
-        return HCCL_SUCCESS;
-    }
+    // if (!GetExternalInconsistentCheckSwitch() || (GetExternalInconsistentCheckSwitch() && inconsistentCheckFirstDone_)) {
+    //     return HCCL_SUCCESS;
+    // }
     CHK_PTR_NULL(recvBuf);
     CHK_PRT_RET(recvBufLen == 0 || recvBufLen > MAX_FRAME_LEN,
         HCCL_ERROR("[RankConsistentcyChecker][CheckFrameRecv] errNo[0x%016llx] recvBufLen is wrong.",
