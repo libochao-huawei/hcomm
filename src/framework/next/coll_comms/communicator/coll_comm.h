@@ -114,7 +114,7 @@ private:
     ManagerCallbacks callbacks_; 
     s32 deviceLogicId_{0};
     uint32_t index_{0};
-    std::vector<s32> aicpuStreamIds_;
+    std::unordered_set<s32> aicpuStreamIds_;
 
     std::unique_ptr<RankGraph> rankgraph_{nullptr};
     std::unique_ptr<CommEngineResMgr> commEngineResMgr_{nullptr};
