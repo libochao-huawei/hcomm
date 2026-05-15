@@ -33,14 +33,19 @@ inline void ThrowIfLoopErr(::CcuResult ret, const char *what)
 
 class Loop {
 public:
-    Loop(Variable &loopCfg, Func &func)
+    // var-based：loopCfg 必须是 lvalue（持引用，加入 LoopGroup 时取地址）；
+    //            func 在 ctor 内即时翻译，之后不再访问，可接 rvalue (const &)。
+    Loop(Variable &loopCfg, const Func &func)
     {
         ComposeLoopBody(func);
         isVarBased_ = true;
         loopParamVar_ = &loopCfg;
     }
 
-    Loop(CcuLoopConfig &loopCfg, Func &func)
+    // config-based：loopCfg 拷贝进 config_，func 同上仅在 ctor 内使用，
+    //               两者均接 const &，支持完整 inline 写法
+    //               Loop({.addrOffset=..., .loopIterNum=...}, Func([&]{...})).
+    Loop(const CcuLoopConfig &loopCfg, const Func &func)
     {
         ComposeLoopBody(func);
         isVarBased_ = false;
@@ -68,7 +73,7 @@ public:
     }
 
 private:
-    void ComposeLoopBody(Func &func)
+    void ComposeLoopBody(const Func &func)
     {
         if (func.NumIn() != 0) {
             throw "ccu::Loop requires a no-argument ccu::Func";
@@ -100,10 +105,12 @@ public:
         AddLoops(loops);
     }
 
-    LoopGroup(CcuLoopGroupConfig &loopGroupCfg, const std::vector<Loop> &loops)
+    LoopGroup(const CcuLoopGroupConfig &loopGroupCfg, const std::vector<Loop> &loops)
     {
+        // 拷贝到 lvalue 以便取地址传给 C 接口；本身不修改原 cfg。
+        CcuLoopGroupConfig localCfg = loopGroupCfg;
         internal::ThrowIfLoopErr(
-            ::CcuLoopGroupCreate(&handle_, &loopGroupCfg),
+            ::CcuLoopGroupCreate(&handle_, &localCfg),
             "CcuLoopGroupCreate failed");
         AddLoops(loops);
     }
