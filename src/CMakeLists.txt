@@ -8,6 +8,15 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 
+if(NOT BUILD_OPEN_PROJECT)
+    set(INSTALL_CCL_KERNEL_JSON_DIR ${INSTALL_LIBRARY_DIR})
+    set(INSTALL_DPU_KERNEL_JSON_DIR ${INSTALL_LIBRARY_DIR})
+    message(STATUS "BUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}")
+    message(STATUS "TOP_DIR=${TOP_DIR}")
+    message(STATUS "CANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH}")
+    message(STATUS "INSTALL_LIBRARY_DIR=${INSTALL_LIBRARY_DIR}")
+endif()
+
 if(NOT DEFINED HCOMM_DIR)
     set(HCOMM_DIR "${CMAKE_CURRENT_SOURCE_DIR}/..")
 endif()
@@ -16,6 +25,10 @@ endif()
 if(NOT DEFINED ASCENDC_DUMP)
     set(ASCENDC_DUMP "0")
 endif()
+
+message(STATUS "HCOMM_DIR=${HCOMM_DIR}")
+message(STATUS "ASCENDC_DUMP=${ASCENDC_DUMP}")
+message(STATUS "PRODUCT_SIDE=${PRODUCT_SIDE}")
 
 # 组件间对外头文件目录
 add_library(hccl_headers INTERFACE)
