@@ -90,7 +90,7 @@ CcuResult CcuKernelMgr::Register(
     const CcuKernelFunc ccuKernelFunc, const CcuKernelArg kernelArg,
     CcuKernelHandle &kernelHandle)
 {
-    (void)kernelFuncName;
+    // 允许kernelFuncName未空，此时传递默认名称
     CCU_CHK_PTR_NULL(ccuKernelFunc);
     CCU_CHK_PTR_NULL(kernelArg);
 
@@ -98,6 +98,7 @@ CcuResult CcuKernelMgr::Register(
     
     currKernel_ = std::make_unique<CcuKernel>(); // 重置待注册kernel
 
+    CCU_CHK_RET(currKernel_->SetupProfilingInfo(kernelFuncName));
     CCU_CHK_RET(ccuKernelFunc(kernelArg)); // 执行算法流程，生成rep和计算资源占用
     currKernel_->FlushClosablePendingIfs(); // 处理未闭合的if
     CCU_CHK_RET(currKernel_->SelectDie()); // 先处理rep，后选择die
