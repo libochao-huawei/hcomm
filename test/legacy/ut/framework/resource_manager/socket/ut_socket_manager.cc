@@ -111,6 +111,33 @@ TEST_F(SocketManagerTest, batch_create_sockets_should_ok) {
     }
 }
 
+TEST_F(SocketManagerTest, batch_server_listen_async_should_ok) {
+    MOCKER_CPP(&SocketManager::BatchAddWhiteList).stubs();
+    SocketManager socketMgr(impl, localRank, devicePhyId, listenPort);
+    socketMgr.BatchServerListen(links);
+    auto &serverSocketMap = SocketManager::GetServerSocketMap();
+    for (const auto& sock: serverSocketMap) {
+        EXPECT_EQ(sock.second->socketStatus, SocketStatus::LISTENING);
+    }
+}
+
+TEST_F(SocketManagerTest, batch_server_listen_async_conect_sockets_should_ok) {
+    MOCKER_CPP(&SocketManager::BatchAddWhiteList).stubs();
+    SocketManager socketMgr(impl, localRank, devicePhyId, listenPort);
+    socketMgr.BatchServerListen(links);
+    auto &serverSocketMap = SocketManager::GetServerSocketMap();
+    for (const auto& sock: serverSocketMap) {
+        EXPECT_EQ(sock.second->socketStatus, SocketStatus::LISTENING);
+    }
+    socketMgr.BatchConectSockets();
+    for (const auto& sock: socketMgr.connectedSocketMap) {
+        if (sock.first.role == SocketRole::CLIENT) {
+            EXPECT_EQ(sock.second->socketStatus, SocketStatus::CONNECT_STARTING);
+        }
+        std::cout << sock.first.remoteRank << " " << sock.second->socketStatus << std::endl;
+    }
+}
+
 TEST_F(SocketManagerTest, test_ServerDeInit_and_GetServerListenSocket) {
     MOCKER_CPP(&SocketManager::BatchAddWhiteList).stubs();
     SocketManager socketMgr(impl, localRank, devicePhyId, listenPort);
