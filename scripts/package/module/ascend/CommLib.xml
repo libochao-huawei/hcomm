@@ -51,12 +51,15 @@
     <file_info value="include" copy_type="source" src_path="hcomm/pkg_inc/hcomm/ccu_new" dst_path="$(TARGET_ENV)/pkg_inc/hcomm/ccu_new" install_path="$(TARGET_ENV)/pkg_inc/hcomm/ccu_new" install_type="devel" install_mod="440">
         <file value="ccu_address.hpp"/>
         <file value="ccu_api.hpp"/>
+        <file value="ccu_array.hpp"/>
         <file value="ccu_buffer.hpp"/>
         <file value="ccu_control_api.h"/>
         <file value="ccu_control_flow_macro.h"/>
         <file value="ccu_data_api_impl.h"/>
         <file value="ccu_data_utils.hpp"/>
         <file value="ccu_event.hpp"/>
+        <file value="ccu_loop.hpp"/>
+        <file value="ccu_func.hpp"/>
         <file value="ccu_local_addr.hpp"/>
         <file value="ccu_remote_addr.hpp"/>
         <file value="ccu_types.h"/>
