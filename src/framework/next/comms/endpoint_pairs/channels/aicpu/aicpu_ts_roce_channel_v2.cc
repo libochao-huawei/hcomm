@@ -632,6 +632,7 @@ HcclResult AicpuTsRoceChannelV2::BuildAndGetDevChannelEntity(uint64_t* devChanne
     }
 
     ChannelEntity hostEntity{};
+    // TODO: 增加HcclChannelEntityInit函数设置abiHeader
     hostEntity.abiHeader.version   = HCCL_CHANNEL_VERSION;
     hostEntity.abiHeader.magicWord = HCCL_CHANNEL_MAGIC_WORD;
     hostEntity.abiHeader.size      = sizeof(ChannelEntity);

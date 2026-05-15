@@ -127,10 +127,11 @@ void DevRdmaConnectionV2::GetDmaMode() {
             break;
         }
         default: {
-            HCCL_WARNING("[GetDmaMode]Not support the directFlag [%d], use default.", directFlag_);
+            HCCL_ERROR("[GetDmaMode]Not support the directFlag [%d], use default.", directFlag_);
             dmaMode_ = QBUF_DMA_MODE_MAX;
         }
     }
+    HCCL_INFO("[GetDmaMode] directFlag[%d], dmaMode[%d]", directFlag_, dmaMode_);
 }
 
 HcclResult DevRdmaConnectionV2::CreateQp()
