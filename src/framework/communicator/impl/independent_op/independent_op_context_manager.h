@@ -32,7 +32,7 @@ struct HcclMemHash {
 
 struct CommEngineHash {
     size_t operator()(const CommEngine& engine) const noexcept {
-        return std::hash<int32_t>{}(static_cast<int>(engine));
+        return std::hash<int>{}(static_cast<int>(engine));
     }
 };
 

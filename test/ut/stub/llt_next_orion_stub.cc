@@ -127,6 +127,12 @@ void *HrtMalloc(u64 size, aclrtMemType_t memType)
     return (void *)0x12345678;
 }
 
+void HrtMemset(void *dst, uint64_t destMax, uint64_t count)
+{
+    memset(dst, 0, count);
+    return;
+}
+
 RdmaHandleManager::RdmaHandleManager()
 {
 }
@@ -2157,7 +2163,7 @@ void TaskExceptionHandler::Process(rtExceptionInfo_t *expectionInfo)
 {
 }
 
-void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo_t *expectionInfo)
+void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo_t *expectionInfo, bool &isExistAicpuError)
 {
 }
 
@@ -2593,7 +2599,7 @@ std::pair<uint32_t, uint32_t> RdmaHandleManager::GetDieAndFuncId(RdmaHandle rdma
     return {0, 0};
 }
 
-HcclResult TpManager::GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo)
+HcclResult TpManager::GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo, bool isSync)
 {
     return HcclResult::HCCL_SUCCESS;
 }
@@ -2625,10 +2631,6 @@ HrtRaUbJettyImportedOutParam RaUbTpImportJetty(RdmaHandle handle, u8 *key, u32 k
     u32 tokenValue, const JettyImportCfg &jettyImportCfg)
 {
     return HrtRaUbJettyImportedOutParam{};
-}
-
-void TpManager::SetIsHost()
-{
 }
 
 ReqHandleResult HrtRaGetAsyncReqResult(RequestHandle &reqHandle)

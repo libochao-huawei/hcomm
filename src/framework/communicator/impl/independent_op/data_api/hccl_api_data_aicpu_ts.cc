@@ -38,6 +38,11 @@ void AddThread(ThreadHandle thread) {
     g_threadLaunchCtx.AddThread(thread);
 }
 
+HcclResult HandleDispatchAllStreams() 
+{
+    return g_threadLaunchCtx.HandleDispatchAllStreams();
+}
+
 bool IsSupportReduce(HcommDataType dataType, HcommReduceOp op)
 {
     bool checkDataType =
@@ -275,6 +280,29 @@ HcclResult CommTaskLaunch(ThreadHandle *threads, uint32_t threadNum) // host fft
     }
 
     return HcclTaskLaunch(streams.data(), threadNum);
+}
+
+HcclResult DispatchAllStreams(ThreadHandle *threads, uint32_t threadNum)
+{
+    CHK_PTR_NULL(threads);
+    CHK_PRT_RET(threadNum < 1, HCCL_ERROR("[DispatchAllStreams]threadNum is less than 1"), HCCL_E_PARA);
+
+    Thread *threadPtr = reinterpret_cast<Thread *>(threads[0]);
+    CHK_PTR_NULL(threadPtr);
+
+    if (!threadPtr->IsDeviceA5()) {
+        HCCL_ERROR("[%s] DispatchAllStreams is only supported on A5 device.", __func__);
+        return HCCL_E_NOT_SUPPORT;
+    }
+
+    for (uint32_t i = 0; i < threadNum; i++) {
+        Thread *threadPtrLoop = reinterpret_cast<Thread *>(threads[i]);
+        CHK_PTR_NULL(threadPtrLoop);
+
+        HCCL_DEBUG("[%s] Dispatching streams in thread[0x%llx].", __func__, threads[i]);
+        threadPtrLoop->TryLaunchTask();
+    }
+    return HCCL_SUCCESS;
 }
 
 namespace {
@@ -633,6 +661,36 @@ int32_t HcommReadReduceOnThread(ThreadHandle thread, ChannelHandle channel, void
         HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d].",
         __func__, thread, channel, dst, src, count, dataType, reduceOp), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
+    return HCCL_SUCCESS;
+}
+
+int32_t HcommBatchTransferOnThread(ThreadHandle thread, ChannelHandle channel,
+    const HcommBatchTransferDesc *transferDescs, uint32_t transferDescNum)
+{
+    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], transferDescNum[%u].",
+        __func__, thread, channel, transferDescNum);
+
+    CHK_PTR_NULL(transferDescs);
+    CHK_PRT_RET(transferDescNum == 0,
+        HCCL_ERROR("[%s] transferDescNum is 0.", __func__), HCCL_E_PARA);
+
+    Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
+    CHK_PTR_NULL(threadPtr);
+    if (threadPtr->IsDeviceA5()) {
+        HCCL_WARNING("[%s] A5 path is not supported.", __func__);
+        return HCCL_E_NOT_SUPPORT;
+    }
+    AddThread(thread);
+    Stream *stream = GetStream(thread);
+    CHK_PTR_NULL(stream);
+    hccl::Transport *transport = reinterpret_cast<hccl::Transport *>(channel);
+    CHK_PTR_NULL(transport);
+
+    HcclResult ret = transport->BatchTransferAsync(transferDescs, transferDescNum, *stream);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[%s] BatchTransferAsync failed.", __func__), ret);
+
+    HCCL_INFO("[%s] SUCCESS. transferDescNum[%u].", __func__, transferDescNum);
     return HCCL_SUCCESS;
 }
 
