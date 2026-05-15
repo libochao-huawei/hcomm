@@ -19,6 +19,7 @@
 #include "inner/local_rdma_rma_buffer.h"
 #include "inner/remote_rdma_rma_buffer.h"
 #include "hccl_network.h"
+#include "hcomm_c_adpt.h"
 
 using namespace hccl;
 namespace hcomm {
@@ -71,7 +72,14 @@ HcclResult HccsRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, voi
         return HCCL_E_INTERNAL;
     }
 
-    *memHandle = static_cast<void *>(localIpcRmaBuffer.get());
+    auto *memInfo = new HcommMemInfo{};
+    memInfo->addr = mem.addr;
+    memInfo->size = mem.size;
+    if (memTag != nullptr) {
+        (void)strncpy(memInfo->memTag, memTag, HCOMM_RES_TAG_MAX_LEN - 1);
+    }
+    memInfo->localRmaBuffer = static_cast<Hccl::LocalRmaBuffer *>(localIpcRmaBuffer.get());
+    *memHandle = static_cast<void *>(memInfo);
 
     std::shared_ptr<hccl::LocalIpcRmaBuffer> &localBuffer = resultPair.first->second.buffer;
     CHK_SMART_PTR_NULL(localBuffer);
@@ -83,11 +91,12 @@ HcclResult HccsRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, voi
         if (ret != HCCL_SUCCESS) {
             // 此分支中一定删除成功
             localIpcRmaBufferMgr->Del(tempKey);
+            delete memInfo;
             HCCL_ERROR("[HccsRegedMemMgr][RegisterMemory]localbuffer init failed %d.", ret);
             return ret;
         }
         HCCL_INFO("[HccsRegedMemMgr][RegisterMemory]Register memory success! Add key {%p, %llu}", mem.addr, mem.size);
-    } else {  
+    } else {
         HCCL_INFO(
                 "[HccsRegedMemMgr][RegisterMemory]Memory is already registered, just increase the reference count. Add key "
                 "{%p, %llu}", mem.addr, mem.size);;
@@ -105,12 +114,13 @@ HcclResult HccsRegedMemMgr::UnregisterMemory(void* memHandle)
 {
     HCCL_INFO("[%s] Begin", __FUNCTION__);
     CHK_PTR_NULL(memHandle);
-   
+
     NetDevContext *netDevCtx = static_cast<NetDevContext *>(netDevCtx_);
     std::shared_ptr<LocalIpcRmaBufferMgr> localIpcRmaBufferMgr = netDevCtx->GetlocalIpcRmaBufferMgr();
     CHK_PTR_NULL(localIpcRmaBufferMgr);
 
-    hccl::LocalIpcRmaBuffer* localIpcRmaBuffer = static_cast<hccl::LocalIpcRmaBuffer*>(memHandle);
+    HcommMemInfo *memInfo = static_cast<HcommMemInfo *>(memHandle);
+    hccl::LocalIpcRmaBuffer* localIpcRmaBuffer = static_cast<hccl::LocalIpcRmaBuffer*>(memInfo->localRmaBuffer);
     void *addr = localIpcRmaBuffer->GetAddr();       ///< 内存地址
     uint64_t size = localIpcRmaBuffer->GetSize();    ///< 内存区域字节数
     HCCL_INFO("[%s] addr[%p] size[%u] memHandle[%p] start", __FUNCTION__, addr, size, memHandle);
@@ -130,12 +140,14 @@ HcclResult HccsRegedMemMgr::UnregisterMemory(void* memHandle)
         if ((*it).get() == localIpcRmaBuffer) {
             HCCL_INFO("[%s] addr[%p] size[%u] memHandle[%p] erase done", __FUNCTION__, addr, size, memHandle);
             it = allRegisteredBuffers_.erase(it);
+            delete memInfo;
             return HCCL_SUCCESS;
         }
     }
 
     HCCL_INFO("[%s] addr[%p] size[%u] memHandle[%p] allRegisteredBuffers_.size[%d] Not Found",
         __FUNCTION__, addr, size, memHandle, allRegisteredBuffers_.size());
+    delete memInfo;
     return HCCL_E_NOT_FOUND;
 }
 
@@ -205,7 +217,8 @@ HcclResult HccsRegedMemMgr::MemoryExport(
     CHK_PTR_NULL(memDesc);
     CHK_PTR_NULL(memDescLen);
 
-    hccl::LocalIpcRmaBuffer *localIpcRmaBuffer = reinterpret_cast<hccl::LocalIpcRmaBuffer *>(memHandle);
+    HcommMemInfo *memInfo = static_cast<HcommMemInfo *>(memHandle);
+    hccl::LocalIpcRmaBuffer *localIpcRmaBuffer = reinterpret_cast<hccl::LocalIpcRmaBuffer *>(memInfo->localRmaBuffer);
     std::string &ipcRmaBufferDesc = localIpcRmaBuffer->Serialize();
     HCCL_INFO("[%s] ipcRmaBufferDesc.len[%u]", __FUNCTION__, ipcRmaBufferDesc.length());
 

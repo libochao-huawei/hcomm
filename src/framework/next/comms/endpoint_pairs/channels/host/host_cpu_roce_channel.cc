@@ -101,7 +101,7 @@ HcclResult HostCpuRoceChannel::ParseInputParam()
         for (uint32_t i = 0; i < memHandleNum; ++i) {
             std::shared_ptr<Hccl::LocalRdmaRmaBuffer> &localRdmaBuffer = memHandles[i];
             HCCL_INFO("[HostCpuRoceChannel][%s] Got memHandle No.%u: addr[0x%llx], size[0x%llx], memTag[%s].",
-                __func__, i, localRdmaBuffer->GetAddr(), localRdmaBuffer->GetSize(), localRdmaBuffer->GetBuf()->GetMemTag());
+                __func__, i, localRdmaBuffer->GetAddr(), localRdmaBuffer->GetSize());
             localRmaBuffers_.emplace_back(localRdmaBuffer.get());
         }
     } else {
@@ -542,7 +542,7 @@ HcclResult HostCpuRoceChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNu
         hcclMem->type = rmtRmaBuffer->GetMemType();
         hcclMem->addr = reinterpret_cast<void *>(rmtRmaBuffer->GetAddr());
         hcclMem->size = rmtRmaBuffer->GetSize();
-        memTags[i] = const_cast<char*>(rmtRmaBuffer->GetMemTag().c_str());
+        memTags[i] = const_cast<char*>("");
         remoteMem[i] = hcclMem.get();
         HCCL_INFO("[HostCpuRoceChannel::%s] rmtBuf[addr[%p], size[%llu]]", 
             __func__, remoteMem[i]->addr, remoteMem[i]->size);

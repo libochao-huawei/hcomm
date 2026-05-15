@@ -61,14 +61,12 @@ HcclResult AicpuTsP2pChannel::ParseInputParam()
         HCCL_INFO("[AicpuTsP2pChannel][%s] Got memHandleNum[%u].", __func__, memHandleNum);
         for (uint32_t i = 0; i < memHandleNum; ++i) {
             std::shared_ptr<Hccl::LocalIpcRmaBuffer> &localIpcRmaBuffer = memHandles[i];
-            HCCL_INFO("[AicpuTsP2pChannel][%s] Got memHandle No.%u: addr[0x%llx], size[0x%llx], memTag[%s].",
+            HCCL_INFO("[AicpuTsP2pChannel][%s] Got memHandle No.%u: addr[0x%llx], size[0x%llx].",
                 __func__, i, localIpcRmaBuffer->GetBufferInfo().first,
-                localIpcRmaBuffer->GetBufferInfo().second,
-                localIpcRmaBuffer->GetBuf()->GetMemTag().c_str());
+                localIpcRmaBuffer->GetBufferInfo().second);
             bufs_.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
                 localIpcRmaBuffer->GetBufferInfo().first,
-                localIpcRmaBuffer->GetBufferInfo().second,
-                localIpcRmaBuffer->GetBuf()->GetMemTag().c_str())
+                localIpcRmaBuffer->GetBufferInfo().second)
             ));
         }
     } else {

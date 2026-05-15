@@ -73,12 +73,10 @@ HcclResult AicpuTsUboeChannel::ParseInputParam()
         HCCL_INFO("[AicpuTsUboeChannel][%s] Got memHandleNum[%u].", __func__, memHandleNum);
         for (uint32_t i = 0; i < memHandleNum; ++i) {
             std::shared_ptr<Hccl::LocalUbRmaBuffer> &localUbRmaBuffer = memHandles[i];
-            HCCL_INFO("[AicpuTsUboeChannel][%s] Got memHandle No.%u: addr[0x%llx], size[0x%llx], memTag[%s].",
-                __func__, i, localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize(),
-                localUbRmaBuffer->GetBuf()->GetMemTag().c_str());
+            HCCL_INFO("[AicpuTsUboeChannel][%s] Got memHandle No.%u: addr[0x%llx], size[0x%llx].",
+                __func__, i, localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize());
             bufs_.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
-                localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize(),
-                localUbRmaBuffer->GetBuf()->GetMemTag().c_str())
+                localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize())
             ));
         }
     } else {
@@ -168,7 +166,7 @@ HcclResult AicpuTsUboeChannel::FillTagVec(std::vector<Hccl::LocalRmaBuffer *> &b
             return HCCL_E_PARA;
         } else {
             CHK_PTR_NULL(localRmaBuffer->GetBuf());
-            std::string tag = localRmaBuffer->GetBuf()->GetMemTag();
+            std::string tag;
             if (tag.size() >= HCCL_RES_TAG_MAX_LEN) {
                 HCCL_ERROR("[AicpuTsUboeChannel][FillTagVec] tagSize exceeds limit[%u]", HCCL_RES_TAG_MAX_LEN);
                 return HCCL_E_PARA;
