@@ -1225,7 +1225,7 @@ HcclResult HostCpuRoceChannel::WaitForFenceCompletion()
             HCCL_INFO("[HostCpuRoceChannel::%s] SUCCESS. wqeNums_[%u].", __func__, wqeNums_[i]);
             return HCCL_SUCCESS;
         }
-        std::vector<struct ibv_wc> wc(wqeNums_);
+        std::vector<struct ibv_wc> wc(wqeNums_[i]);
         CHK_PRT_RET(qpInfo[i].sendCq == nullptr, HCCL_ERROR("[HostCpuRoceChannel::%s] sendCq is null", __func__), HCCL_E_INTERNAL);
         CHK_PRT_RET(qpInfo[i].qp == nullptr, HCCL_ERROR("[HostCpuRoceChannel::%s] qp is null", __func__), HCCL_E_INTERNAL);
         CHK_PRT_RET(qpInfo[i].sendCq->context == nullptr, HCCL_ERROR("[HostCpuRoceChannel::%s] sendCq->context is null", __func__), HCCL_E_INTERNAL);
