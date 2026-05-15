@@ -294,5 +294,4 @@ bool RankConsistencyCheckerV2::CompareVersionV2(const CheckFrameV2 &local, const
     }
     return isDiff;
 }
-
 }
