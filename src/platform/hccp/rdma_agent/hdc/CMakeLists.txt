@@ -78,10 +78,6 @@ target_compile_options(ra_hdc PRIVATE
     $<$<CONFIG:Debug>:-g>
 )
 
-target_compile_definitions(ra_hdc PRIVATE
-
-)
-
 target_link_options(ra_hdc PRIVATE
     -Wl,-z,now
     $<$<CONFIG:Release>:-s>
@@ -101,7 +97,7 @@ target_compile_definitions(ra_hdc PRIVATE
 )
 
 # 安装
-if(PRODUCT_SIDE STREQUAL "host")
+if((NOT BUILD_OPEN_PROJECT) OR (PRODUCT_SIDE STREQUAL "host"))
     install(TARGETS ra_hdc
         LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
         COMPONENT hcomm

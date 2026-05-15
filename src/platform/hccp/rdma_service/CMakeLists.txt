@@ -153,6 +153,13 @@ if(PRODUCT_SIDE STREQUAL "device")
         OUTPUT_NAME rs
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/device"
     )
+    # 安装
+    if(NOT BUILD_OPEN_PROJECT)
+        install(TARGETS rs_device
+            LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
+            COMPONENT hcomm
+        )
+    endif()
 endif()
 
 # 安装
