@@ -153,6 +153,7 @@ TEST_F(RankInfoDetectTest, Ut_SetupAgent_When_Input_Expect_NO_THROW)
     // when
     MOCKER_CPP(&RankInfoDetectClient::Setup).stubs().with(any()).will(ignoreReturnValue());
     MOCKER_CPP(&IpAddress::InitBinaryAddr).stubs().with(any()).will(ignoreReturnValue());
+    MOCKER_CPP(&RankInfoDetectClient::TearDown).stubs().with(any()).will(ignoreReturnValue());
     
     // check
     RankInfoDetect rankInfoDetect;

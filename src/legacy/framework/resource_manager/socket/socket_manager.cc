@@ -107,8 +107,38 @@ void SocketManager::BatchServerListenAsync(const vector<LinkData> &links)
     for (auto &link : links) {
         SocketRole role = link.GetLocalRankId() < link.GetRemoteRankId() ? SocketRole::SERVER : SocketRole::CLIENT;
         if (role == SocketRole::SERVER) {
-            auto portData = link.GetLocalPort();
-            ServerListenAsync(portData);
+            auto localPort = link.GetLocalPort();
+            std::lock_guard<std::mutex> lock(socketLock);
+            IpAddress ipAddress = localPort.GetAddr();
+            u32 serverListenPort = localPort.GetType() == PortDeploymentType::P2P
+                    ? GetDeviceListenPort(localPort.GetRankId(), DEVICE_PORT_KEY_IPADDRESS)
+                    : GetDeviceListenPort(localPort.GetRankId(), ipAddress);
+
+            auto &serverSocketMap = SocketManager::GetServerSocketMap();
+            auto serverSocketInMap = serverSocketMap.find(localPort);
+            if (serverSocketInMap != serverSocketMap.end()) {
+                auto oldServerSocket = serverSocketMap.at(localPort);
+                u32 oldServerListenPort = oldServerSocket->GetListenPort();
+                if (oldServerListenPort != serverListenPort) {
+                    // 都改为异步监听
+                    oldServerSocket->ListenAsync();
+                    HCCL_INFO("[SocketManager::%s] %s change listen port %u", __func__, 
+                        localPort.Describe().c_str(), oldServerListenPort);
+                }
+                HCCL_INFO("[%s] find localPort in serverSocketMap, localPort [%s]", __func__, localPort.Describe().c_str());
+                return;
+            }
+
+            SocketHandle hccpSocketHandle = SocketHandleManager::GetInstance().Create(devicePhyId, localPort);
+            NicType nicType = localPort.GetType() == PortDeploymentType::P2P
+                    ? NicType::DEVICE_VNIC_TYPE
+                    : NicType::DEVICE_NIC_TYPE;
+            auto serverSocket = socketProducer(ipAddress, ipAddress, serverListenPort, hccpSocketHandle, "server", SocketRole::SERVER, nicType);
+            // 异步监听接口
+            serverSocket->ListenAsync();
+            HCCL_RUN_INFO("[SocketManager::%s] Local %s listen", __func__, localPort.Describe().c_str());
+        
+            serverSocketMap[localPort] = std::move(serverSocket);
         }
     }
 }
@@ -202,41 +232,6 @@ void SocketManager::ServerInit(PortData &localPort)
         string msg = StringFormat("[SocketManager::%s] Local %s listen the port %u failed, maybe other process be listen it", __func__, localPort.Describe().c_str(), serverListenPort);
         MACRO_THROW(InvalidParamsException, msg);
     }
-    serverSocketMap[localPort] = std::move(serverSocket);
-}
-
-void SocketManager::ServerListenAsync(PortData &localPort)
-{
-    std::lock_guard<std::mutex> lock(socketLock);
-    IpAddress ipAddress = localPort.GetAddr();
-    u32 serverListenPort = localPort.GetType() == PortDeploymentType::P2P
-            ? GetDeviceListenPort(localPort.GetRankId(), DEVICE_PORT_KEY_IPADDRESS)
-            : GetDeviceListenPort(localPort.GetRankId(), ipAddress);
-
-    auto &serverSocketMap = SocketManager::GetServerSocketMap();
-    auto serverSocketInMap = serverSocketMap.find(localPort);
-    if (serverSocketInMap != serverSocketMap.end()) {
-        auto oldServerSocket = serverSocketMap.at(localPort);
-        u32 oldServerListenPort = oldServerSocket->GetListenPort();
-        if (oldServerListenPort != serverListenPort) {
-            // 自定义算子的时候，会持有一个不关联通信域的SocketManager, 从而获取到的是默认端口，在单卡多进程的时候需要重新导向合适的端口。
-            // 通信域算子又可以切换回来。
-            oldServerSocket->ListenAsync();
-            HCCL_INFO("[SocketManager::%s] %s change listen port %u", __func__, 
-                localPort.Describe().c_str(), oldServerListenPort);
-        }
-        HCCL_INFO("[%s] find localPort in serverSocketMap, localPort [%s]", __func__, localPort.Describe().c_str());
-        return;
-    }
-
-    SocketHandle hccpSocketHandle = SocketHandleManager::GetInstance().Create(devicePhyId, localPort);
-    NicType nicType = localPort.GetType() == PortDeploymentType::P2P
-            ? NicType::DEVICE_VNIC_TYPE
-            : NicType::DEVICE_NIC_TYPE;
-    auto serverSocket = socketProducer(ipAddress, ipAddress, serverListenPort, hccpSocketHandle, "server", SocketRole::SERVER, nicType);
-    serverSocket->ListenAsync();
-    HCCL_RUN_INFO("[SocketManager::%s] Local %s listen", __func__, localPort.Describe().c_str());
-   
     serverSocketMap[localPort] = std::move(serverSocket);
 }
 
