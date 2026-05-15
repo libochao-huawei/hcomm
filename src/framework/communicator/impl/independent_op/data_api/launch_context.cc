@@ -13,7 +13,7 @@
 extern HcclResult CommTaskLaunch(ThreadHandle *threads, uint32_t threadNum); // host ffts+或aicpu stars使用"
 extern HcclResult CommTaskPrepare(char *key, uint32_t keyLen); // host ffts+使用
 
-void LaunchContext::AddThread(ThreadHandle thread)
+void LaunchContext::AddThreadWithTag(ThreadHandle thread)
 {
     if (mode_ != HCOMM_LAUNCH_MODE_BATCH) {
         // 仅 BATCH 模式缓存线程
@@ -27,7 +27,24 @@ void LaunchContext::AddThread(ThreadHandle thread)
     }
 
     threadSet.insert(thread);
-    HCCL_INFO("[%s] AddThread end, launchTag[%s], launchMode[%d], thread[%lu].",
+    HCCL_INFO("[%s]success, launchTag[%s], launchMode[%d], thread[%lu].",
+        __func__, launchTag_.c_str(), static_cast<int32_t>(mode_), thread);
+}
+
+void LaunchContext::AddThread(ThreadHandle thread)
+{
+    if (mode_ != HCOMM_LAUNCH_MODE_BATCH) {
+        // 仅 BATCH 模式缓存线程
+        return;
+    }
+    // 检查线程是否已存在，避免重复添加
+    if (threadSet_.find(thread) != threadSet_.end()) {
+        HCCL_INFO("[%s] Thread already exists, launchTag[%s], thread[%lu].", __func__, launchTag_.c_str(), thread);
+        return;
+    }
+
+    threadSet_.insert(thread);
+    HCCL_INFO("[%s]success, launchTag[%s], launchMode[%d], thread[%lu].",
         __func__, launchTag_.c_str(), static_cast<int32_t>(mode_), thread);
 }
 

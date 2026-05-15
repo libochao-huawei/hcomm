@@ -22,7 +22,8 @@ public:
     LaunchContext() = default;
 
     HcclResult SetLaunchMode(const char* launchTag, HcommLaunchMode mode);
-    void AddThread(ThreadHandle thread);
+    void AddThread(ThreadHandle thread); // 储存当前线程使用的thread
+    void AddThreadWithTag(ThreadHandle thread); // ffts场景使用，支持储存存多个子图对应的thread信息
     inline bool IsBatchLaunchMode() const
     {
         return mode_ == HCOMM_LAUNCH_MODE_BATCH;
@@ -34,7 +35,8 @@ private:
     HcclResult HandleClear();
 
     std::string launchTag_; // 当前tag
-    std::unordered_map<std::string, std::unordered_set<ThreadHandle>> launchModeMap_;
+    std::unordered_map<std::string, std::unordered_set<ThreadHandle>> launchModeMap_; // 按tag粒度记录当前线程使用的thread
+    std::unordered_set<ThreadHandle> threadSet_; // 不区分tag，记录当前线程使用的thread
     HcommLaunchMode mode_ = HCOMM_LAUNCH_MODE_EAGER;
 };
 
