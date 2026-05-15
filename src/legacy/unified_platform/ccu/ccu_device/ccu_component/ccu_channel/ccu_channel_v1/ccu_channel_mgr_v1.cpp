@@ -13,6 +13,7 @@
 #include <vector>
 #include "ccu_res_specs.h"
 #include "orion_adapter_hccp.h"
+#include "hccp_tlv_hdc_manager.h"
 
 namespace Hccl {
 
@@ -143,7 +144,9 @@ static void DumpChannelDataV1(const struct ChannelDataV1 &data)
 static void ConfigChannelDataV1(const uint32_t devPhyId, const uint8_t dieId, const uint32_t channelId,
     const ChannelDataV1 &channelData)
 {
-    const HRaInfo                info(HrtNetworkMode::HDC, devPhyId);
+    auto tlvHandle = HccpTlvHdcManager::GetInstance().GetTlvHandle(devLogicId);
+    CHK_PTR_NULL(tlvHandle);
+    
     struct CustomChannelInfoIn  inBuff;
     struct CustomChannelInfoOut outBuff;
 
@@ -154,14 +157,17 @@ static void ConfigChannelDataV1(const uint32_t devPhyId, const uint8_t dieId, co
     inBuff.data.dataInfo.dataLen       = sizeof(struct ChannelDataV1) * dataArraySize;
     inBuff.offsetStartIdx              = channelId;
 
-    HCCL_INFO("[CcuChannelMgrV1][%s] set data to ccu driver, devPhyId[%u], "
-        "ioDie[%u], idx[%u], size[%u].", __func__, devPhyId, dieId, channelId,
+    HCCL_INFO("[CcuChannelMgrV1][%s] set data to ccu driver, devLogicId[%d] devPhyId[%u], "
+        "ioDie[%u], idx[%u], size[%u].", __func__, devLogicId, devPhyId, dieId, channelId,
         sizeof(struct ChannelDataV1));
     DumpChannelDataV1(channelData);
 
     (void)memcpy_s(inBuff.data.dataInfo.dataArray, sizeof(struct ChannelDataV1), &channelData,
                    sizeof(struct ChannelDataV1));
-    HrtRaCustomChannel(info, reinterpret_cast<void *>(&inBuff), reinterpret_cast<void *>(&outBuff));
+    auto ret = HrtRaTlvRequestForCustomChannel(tlvHandle, reinterpret_cast<void *>(&inBuff), reinterpret_cast<void *>(&outBuff));
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[%s] failed, devLogicId[%d] devPhyId[%u] dieId[%u] channelId[%u] ret[%d].", __func__, devLogicId, devPhyId, dieId, channelId, ret);
+    }
 }
 
 HcclResult CcuChannelMgrV1::Config(const ChannelCfg &channelCfg)

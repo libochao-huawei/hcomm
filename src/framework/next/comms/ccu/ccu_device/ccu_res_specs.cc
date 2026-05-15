@@ -13,6 +13,8 @@
 #include "hccp.h"
 #include "hccp_ctx.h"
 #include "hccl_common.h"
+#include "hcomm_adapter_hccp.h"
+#include "hccp_tlv_hdc_manager.h"
 
 #include "rt_external.h"
 #include "driver/ascend_hal.h"
@@ -38,22 +40,26 @@ static CcuVersion CheckCcuVersion()
     return CcuVersion::CCU_V1; // 当前仅有CCU V1
 }
 
-static bool CheckDieEnable(const uint32_t devPhyId, const uint8_t dieId)
+static bool CheckDieEnable(const int32_t devLogicId, const uint32_t devPhyId, const uint8_t dieId)
 {
-    const RaInfo info{NetworkMode::NETWORK_OFFLINE, devPhyId};
+    auto tlvHandle = Hccl::HccpTlvHdcManager::GetInstance().GetTlvHandle(devLogicId);
+    if (tlvHandle == nullptr) {
+        HCCL_WARNING("[%s] tlvHandle is null, devLogicId[%d].", __func__, devLogicId);
+        return false;
+    }
+    
     CustomChannelInfoIn  inBuff{};
     CustomChannelInfoOut outBuff{};
     inBuff.op                    = CcuOpcodeType::CCU_U_OP_GET_DIE_WORKING;
     inBuff.offsetStartIdx        = 0;
     inBuff.data.dataInfo.udieIdx = dieId;
 
-    auto ret = RaCustomChannel(info,
-        reinterpret_cast<CustomChanInfoIn *>(&inBuff),
-        reinterpret_cast<CustomChanInfoOut *>(&outBuff));
-    if (ret != 0) {
-        HCCL_WARNING("[CcuResSpecifications][%s] failed to call ccu driver, "
-            "devPhyId[%u] dieId[%d] op[%s].", __func__, devPhyId, dieId,
-            "GET_DIE_WORKING");
+    auto ret = HccpRaTlvRequestForCustomChannel(tlvHandle,
+        static_cast<void*>(&inBuff), static_cast<void*>(&outBuff));
+    if (ret != HCCL_SUCCESS) {
+        HCCL_WARNING("[CcuResSpecifications][%s] failed, "
+            "devLogicId[%d] devPhyId[%u] dieId[%d] op[%s] ret[%d].", 
+            __func__, devLogicId, devPhyId, dieId, "GET_DIE_WORKING", ret);
         return false;
     }
 
@@ -104,23 +110,24 @@ static CcuResSpecInfo ParseOutBuffToResSpecInfo(const CcuVersion ccuVersion, con
     return ccuResSpecInfo;
 }
 
-static HcclResult CheckResSpecifications(const uint32_t devPhyId, const uint8_t dieId,
-    const CcuVersion ccuVersion, CcuResSpecInfo &resSpecs)
+static HcclResult CheckResSpecifications(const int32_t devLogicId, const uint32_t devPhyId,
+    const uint8_t dieId, const CcuVersion ccuVersion, CcuResSpecInfo &resSpecs)
 {
-    const RaInfo info{NetworkMode::NETWORK_OFFLINE, devPhyId};
+    auto tlvHandle = Hccl::HccpTlvHdcManager::GetInstance().GetTlvHandle(devLogicId);
+    CHK_PTR_NULL(tlvHandle);
+    
     CustomChannelInfoIn  inBuff{};
     CustomChannelInfoOut outBuff{};
     inBuff.op                    = CcuOpcodeType::CCU_U_OP_GET_BASIC_INFO;
     inBuff.offsetStartIdx        = 0;
     inBuff.data.dataInfo.udieIdx = dieId;
 
-    auto ret = RaCustomChannel(info,
-        reinterpret_cast<CustomChanInfoIn *>(&inBuff),
-        reinterpret_cast<CustomChanInfoOut *>(&outBuff));
-    if (ret != 0) {
-        HCCL_ERROR("[CcuResSpecifications][%s] failed to call ccu driver, "
-            "devPhyId[%u] dieId[%d] op[%s].", __func__, devPhyId, dieId,
-            "GET_BASIC_INFO");
+    auto ret = HccpRaTlvRequestForCustomChannel(tlvHandle,
+        static_cast<void*>(&inBuff), static_cast<void*>(&outBuff));
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[CcuResSpecifications][%s] failed, "
+            "devLogicId[%d] devPhyId[%u] dieId[%d] op[%s] ret[%d].", 
+            __func__, devLogicId, devPhyId, dieId, "GET_BASIC_INFO", ret);
         return HcclResult::HCCL_E_NETWORK;
     }
 
@@ -221,13 +228,13 @@ HcclResult CcuResSpecifications::Init()
     CHK_RET(CheckArmX86Flag(devLogicId_, armX86Flag_));
     ccuVersion_ = CheckCcuVersion();
     for (uint8_t dieId = 0; dieId < CCU_MAX_IODIE_NUM; dieId++) {
-        dieEnableFlags_[dieId] = CheckDieEnable(devPhyId_, dieId);
+        dieEnableFlags_[dieId] = CheckDieEnable(devLogicId_, devPhyId_, dieId);
         if (!dieEnableFlags_[dieId]) {
             resSpecs_[dieId] = CcuResSpecInfo{};
             continue;
         }
 
-        CHK_RET(CheckResSpecifications(devPhyId_, dieId, ccuVersion_, resSpecs_[dieId]));
+        CHK_RET(CheckResSpecifications(devLogicId_, devPhyId_, dieId, ccuVersion_, resSpecs_[dieId]));
     }
 
     initFlag_ = true;

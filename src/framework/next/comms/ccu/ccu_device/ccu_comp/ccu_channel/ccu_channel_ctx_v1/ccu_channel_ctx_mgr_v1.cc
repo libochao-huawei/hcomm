@@ -15,6 +15,7 @@
 
 #include "../../../ccu_res_specs.h"
 #include "hcomm_adapter_hccp.h"
+#include "hccp_tlv_hdc_manager.h"
 
 namespace hcomm {
 
@@ -150,10 +151,11 @@ static void DumpChannelCtxDataV1(const struct ChannelCtxDataV1 &data)
         data.dstTokenValueValid);
 }
 
-static HcclResult ConfigChannelCtxDataV1(const uint32_t devPhyId, const uint8_t dieId,
+static HcclResult ConfigChannelCtxDataV1(const int32_t devLogicId, const uint32_t devPhyId, const uint8_t dieId,
     const uint32_t channelId, const ChannelCtxDataV1 &channelCtxData)
 {
-    const RaInfo info{NetworkMode::NETWORK_OFFLINE, devPhyId};
+    auto tlvHandle = Hccl::HccpTlvHdcManager::GetInstance().GetTlvHandle(devLogicId);
+    CHK_PTR_NULL(tlvHandle);
     CustomChannelInfoIn  inBuff{};
     CustomChannelInfoOut outBuff{};
 
@@ -172,12 +174,10 @@ static HcclResult ConfigChannelCtxDataV1(const uint32_t devPhyId, const uint8_t 
     (void)memcpy_s(inBuff.data.dataInfo.dataArray, sizeof(struct ChannelCtxDataV1), &channelCtxData,
                    sizeof(struct ChannelCtxDataV1));
     
-    auto ret = RaCustomChannel(info,
-        reinterpret_cast<CustomChanInfoIn *>(&inBuff),
-        reinterpret_cast<CustomChanInfoOut *>(&outBuff));
-    if (ret != 0) {
+    auto ret = HccpRaTlvRequestForCustomChannel(tlvHandle, static_cast<void*>(&inBuff), static_cast<void*>(&outBuff));
+    if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[CcuResSpecifications][%s] failed to call ccu driver, "
-            "devPhyId[%u] dieId[%d] op[%s].", __func__, devPhyId, dieId,
+            "devLogicId[%d] dieId[%d] op[%s].", __func__, devLogicId, dieId,
             "SET_CHANNEL");
         return HcclResult::HCCL_E_NETWORK;
     }
@@ -206,7 +206,7 @@ HcclResult CcuChannelCtxMgrV1::Config(const ChannelCfg &channelCfg)
     // 因jettyCtx连续，从起始jettyCtx配置
     const uint16_t startTaJettyId = jettyInfos[0].taJettyId;
     const ChannelCtxDataV1 &data = BuildChannelCtxDataV1(channelCfg, feId, dieId_, startTaJettyId);
-    CHK_RET(ConfigChannelCtxDataV1(devPhyId_, dieId_, channelId, data));
+    CHK_RET(ConfigChannelCtxDataV1(devLogicId_, devPhyId_, dieId_, channelId, data));
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -228,7 +228,7 @@ HcclResult CcuChannelCtxMgrV1::Release(const uint32_t channelId)
     // 重置并配置Channel表，避免错误复用
     channelResInfos_[channelId] = ChannelResInfo{};
     ChannelCtxDataV1 data = {};
-    CHK_RET(ConfigChannelCtxDataV1(devPhyId_, dieId_, channelId, data));
+    CHK_RET(ConfigChannelCtxDataV1(devLogicId_, devPhyId_, dieId_, channelId, data));
     return HcclResult::HCCL_SUCCESS;
 }
 
