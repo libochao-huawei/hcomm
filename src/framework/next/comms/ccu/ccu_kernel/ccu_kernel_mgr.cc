@@ -83,8 +83,9 @@ HcclResult CcuKernelMgr::Register(std::unique_ptr<CcuKernel> kernel,
     CcuResPack &resPack, CcuKernelHandle &kernelHandle)
 {
     std::unique_lock<std::mutex> lock(kernelMapMutex_);
-    
+    HCCL_INFO("check CcuKernelmgr Register start !");
     CHK_RET(AllocRes(kernel, resPack));
+    HCCL_INFO("check CcuKernelmgr Register end !");
 
     kernelId_++;
     kernelMap_[kernelId_] = std::move(kernel);
@@ -253,7 +254,9 @@ static HcclResult AllocInstrRes(std::unique_ptr<CcuKernel> &kernel, const int32_
 
 HcclResult CcuKernelMgr::AllocRes(std::unique_ptr<CcuKernel> &kernel, CcuResPack &resPack)
 {
+    HCCL_INFO("check CcuKernelmgr AllocRes start !");
     CHK_RET(kernel->Init());
+    HCCL_INFO("check CcuKernelmgr AllocRes end !");
 
     CcuResReq leftRes{};
     GetResNumFromResPack(resPack, leftRes);

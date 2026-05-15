@@ -517,9 +517,15 @@ void Mc2Compont::GenerateCcuServer(const std::unordered_set<uint64_t> &algoTempl
     // 实例化Mc2Context
     CcuCtxGroup ctxGroup;
     uint32_t    dieNum = algoTemplate.size();
+    int test_alogtemp = 0;
+    int test_item_second = 0;
     for (const auto &item : algoTemplate) {
         uint8_t dieId = item.first;
+        HCCL_INFO("Test algoTemplate runnum is = [%d]", test_alogtemp);
+        HCCL_INFO("Test dieId runnum is = [%u]", dieId);
         for (const auto &mission : item.second) {
+            HCCL_INFO("Test item.second is = [%d]", test_item_second);
+            HCCL_INFO("Test mission.first is = [%u]", mission.first);
             std::unique_ptr<Mc2ContextBase> mc2Context;
             if (mission.first == 0) {
                 mc2Context = std::make_unique<Mc2Context>();
@@ -535,7 +541,9 @@ void Mc2Compont::GenerateCcuServer(const std::unordered_set<uint64_t> &algoTempl
             mc2Context->SetMissionNumAndId(item.second.size(), mission.first);
             mc2Context->SetAlgoTemplateInfo(mission.second);
             ctxGroup.ctxs.push_back(std::move(mc2Context));
+            test_item_second++;
         }
+        test_alogtemp++;
     }
 
     // 申请资源
