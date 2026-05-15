@@ -15,6 +15,7 @@
 #include "ccu_jetty_.h"
 #include "ccu_dev_mgr_imp.h"
 #include "hcomm_adapter_hccp.h"
+
 namespace hcomm {
 
 MAKE_ENUM(CcuConnStatus,
