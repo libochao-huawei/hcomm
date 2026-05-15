@@ -86,6 +86,7 @@ struct HRaTlvInitConfig  {
 
 void* HrtRaTlvInit(HRaTlvInitConfig &cfg);
 HcclResult HrtRaTlvRequest(void* tlv_handle, u32 tlv_module_type, u32 tlv_ccu_msg_type);
+void HrtRaTlvRequestForCustomChannel(void* tlvHandle, void *customIn, void *customOut);
 void HrtRaTlvDeInit(void* tlv_handle);
 
 u32 HrtRaGetInterfaceVersion(u32 phyId, u32 interfaceOpcode);

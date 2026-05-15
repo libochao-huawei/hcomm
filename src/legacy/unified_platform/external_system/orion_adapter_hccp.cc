@@ -156,6 +156,41 @@ HcclResult HrtRaTlvRequest(void* tlv_handle, u32 tlv_module_type, u32 tlv_ccu_ms
     return HCCL_SUCCESS;
 }
 
+void HrtRaTlvRequestForCustomChannel(void* tlvHandle, void *customIn, void *customOut)
+{
+    HCCL_INFO("[%s] tlvHandle[%p], customIn[%p], customOut[%p]",
+        __func__, tlvHandle, customIn, customOut);
+    CHK_PTR_NULL(tlvHandle);
+    CHK_PTR_NULL(customIn);
+    CHK_PTR_NULL(customOut);
+    
+    constexpr s32 RA_TLV_REQUEST_UNAVAIL = 128308;
+    
+    struct TlvMsg sendMsg {};
+    sendMsg.type = MSG_TYPE_CCU_DISPATCH_CMD;
+    sendMsg.length = sizeof(CustomChanInfoIn);
+    sendMsg.data = static_cast<char*>(customIn);
+    
+    struct TlvMsg recvMsg {};
+    recvMsg.type = MSG_TYPE_CCU_DISPATCH_CMD;
+    recvMsg.length = sizeof(CustomChanInfoOut);
+    recvMsg.data = static_cast<char*>(customOut);
+    
+    s32 ret = RaTlvRequest(tlvHandle, TLV_MODULE_TYPE_CCU, &sendMsg, &recvMsg);
+    
+    if (ret == RA_TLV_REQUEST_UNAVAIL || ret == OTHERS_ENOTSUPP) {
+        MACRO_THROW(NetworkApiException, StringFormat("[%s] RaTlvRequest UNAVAIL, ret[%d]",
+            __func__, ret));
+    }
+    
+    if (ret != 0) {
+        MACRO_THROW(NetworkApiException, StringFormat("[%s] RaTlvRequest fail, ret[%d]",
+            __func__, ret));
+    }
+    
+    HCCL_INFO("[%s] success", __func__);
+}
+
 void HrtRaTlvDeInit(void* tlv_handle)
 {
     CHECK_NULLPTR(tlv_handle, "[HrtRaTlvDeInit] tlv_handle is nullptr!");

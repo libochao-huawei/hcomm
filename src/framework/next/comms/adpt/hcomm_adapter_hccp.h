@@ -170,6 +170,7 @@ HcclResult HccpUbTpImportJettyAsync(const CtxHandle ctxHandle,
 HcclResult HccpRaCustomChannel(HrtNetworkMode mode, uint32_t phyId, void *customIn, void *customOut);
 
 HcclResult HccpRaGetDevBaseAttr(void *ctxHandle, struct DevBaseAttr *attr);
+HcclResult HccpRaTlvRequestForCustomChannel(void *tlvHandle, void *customIn, void *customOut);
 
 constexpr u32 GET_UBOE_FLAG_ENABLE_OPCODE = 57;
 constexpr u32 GET_UBOE_FLAG_ENABLE_VERSION = 2;

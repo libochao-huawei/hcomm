@@ -16,6 +16,8 @@
 #include "hccl_common_v2.h"
 #include "ccu_api_exception.h"
 #include "orion_adapter_rts.h"
+#include "orion_adapter_hccp.h"
+#include "hccp_tlv_hdc_manager.h"
 #include "internal_exception.h"
 #include "rdma_handle_manager.h"
 
@@ -522,8 +524,11 @@ HcclResult CcuComponent::ConfigLoopChannel(const uint8_t dieId, const IpAddress 
 void CcuComponent::ConfigMsIdToken()
 {
     bool isAX = CcuResSpecifications::GetInstance(devLogicId).GetAXFlag();
-    const uint32_t phyDeviceId = HrtGetDevicePhyIdByIndex(devLogicId);
-    const HRaInfo info(HrtNetworkMode::HDC, phyDeviceId);
+    auto tlvHandle = HccpTlvHdcManager::GetInstance().GetTlvHandle(devLogicId);
+    if (tlvHandle == nullptr) {
+        HCCL_ERROR("[CcuComponent][ConfigMsIdToken] tlvHandle is nullptr, devLogicId[%d].", devLogicId);
+        return;
+    }
     struct CustomChannelInfoIn  inBuff{};
     struct CustomChannelInfoOut outBuff{};
 
@@ -554,7 +559,7 @@ void CcuComponent::ConfigMsIdToken()
         inBuff.data.dataInfo.dataArray[0].baseinfo.tokenId    = tokenId;
         inBuff.data.dataInfo.dataArray[0].baseinfo.tokenValue = tokenValue;
 
-        HrtRaCustomChannel(info, reinterpret_cast<void *>(&inBuff), reinterpret_cast<void *>(&outBuff));
+        HrtRaTlvRequestForCustomChannel(tlvHandle, reinterpret_cast<void *>(&inBuff), reinterpret_cast<void *>(&outBuff));
 
         HCCL_INFO("[CcuComponent][%s] config MS ID token success, dieId[%u], msid[%u]",
             __func__, dieId, msId);
@@ -813,8 +818,9 @@ HcclResult CcuComponent::CleanDieCkes(const uint8_t dieId) const
     if (!dieEnableFlags[dieId]) {
         return HcclResult::HCCL_SUCCESS;
     }
-    
-    HRaInfo               info(HrtNetworkMode::HDC, devPhyId);
+
+    auto tlvHandle = HccpTlvHdcManager::GetInstance().GetTlvHandle(devLogicId);
+    CHK_PTR_NULL(tlvHandle);
     CustomChannelInfoIn  inBuff{};
     CustomChannelInfoOut outBuff{};
 
@@ -831,7 +837,7 @@ HcclResult CcuComponent::CleanDieCkes(const uint8_t dieId) const
         inBuff.data.dataInfo.dataArraySize = std::min(ckeNum - startIdx, MAX_CKE_DATA_ARRAY_SIZE);
         inBuff.data.dataInfo.dataLen       = sizeof(CcuDataByte8) * inBuff.data.dataInfo.dataArraySize;
         inBuff.offsetStartIdx              = startIdx;
-        HrtRaCustomChannel(info, static_cast<void *>(&inBuff), static_cast<void *>(&outBuff));
+HrtRaTlvRequestForCustomChannel(tlvHandle, static_cast<void *>(&inBuff), static_cast<void *>(&outBuff));
     }
 
     return HcclResult::HCCL_SUCCESS;
@@ -839,7 +845,11 @@ HcclResult CcuComponent::CleanDieCkes(const uint8_t dieId) const
 
 void CcuComponent::SetProcess(CcuOpcodeType opCode) const
 {
-    const HRaInfo info(HrtNetworkMode::HDC, devPhyId);
+    auto tlvHandle = HccpTlvHdcManager::GetInstance().GetTlvHandle(devLogicId);
+    if (tlvHandle == nullptr) {
+        HCCL_ERROR("[CcuComponent][SetProcess] tlvHandle is nullptr, devLogicId[%d].", devLogicId);
+        return;
+    }
     struct CustomChannelInfoIn  inBuff;
     struct CustomChannelInfoOut outBuff;
 
@@ -852,7 +862,7 @@ void CcuComponent::SetProcess(CcuOpcodeType opCode) const
         }
         HCCL_INFO("[CcuComponent::SetProcess] devLogicId[%d], dieId[%u] start.", devLogicId, dieId);
         inBuff.data.dataInfo.udieIdx = dieId;
-        HrtRaCustomChannel(info, static_cast<void *>(&inBuff), static_cast<void *>(&outBuff));
+        HrtRaTlvRequestForCustomChannel(tlvHandle, static_cast<void *>(&inBuff), static_cast<void *>(&outBuff));
     }
 }
 
