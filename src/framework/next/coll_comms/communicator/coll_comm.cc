@@ -32,9 +32,15 @@ CollComm::~CollComm()
 {
     CollCommMgr::GetInstance()->UnRegisteCollComm(this); 
     HCCL_INFO("[CollComm][~CollComm] collComm deinit");
-    // dpu的兜底上报
-    if (hcclCommDfx_ != nullptr) {  // 添加检查
-        hcclCommDfx_->ReportAllTasks(true);
+    // dpu的兜底上报 - 异常退出时捕获异常避免二次崩溃
+    if (hcclCommDfx_ != nullptr) {
+        try {
+            hcclCommDfx_->ReportAllTasks(true);
+        } catch (const std::exception& e) {
+            HCCL_ERROR("[CollComm][~CollComm] ReportAllTasks exception: %s, skip to avoid crash", e.what());
+        } catch (...) {
+            HCCL_ERROR("[CollComm][~CollComm] ReportAllTasks unknown exception, skip to avoid crash");
+        }
     }
     (void)DestroyAicpuComm();
 }
