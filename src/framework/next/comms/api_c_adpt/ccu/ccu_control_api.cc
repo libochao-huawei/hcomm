@@ -32,6 +32,9 @@
 
 #include "hcomm_adapter_rts.h"
 
+#include "task_param.h"
+#include "hcclCommOp.h"
+
 CcuResult HcommCcuInsCreate(const void *resDesc, uint32_t descNum, CcuInsHandle *insHandle)
 {
     CCU_CHK_PTR_NULL(resDesc);
@@ -133,9 +136,82 @@ CcuResult HcommCcuKernelRegisterEnd(CcuInsHandle insHandle)
     return CcuResult::CCU_SUCCESS;
 }
 
-static HcclResult LaunchCcuTasks(const std::vector<hcomm::CcuTaskParam> &params,
-    const aclrtStream stream)
+/**
+ * @brief HcommCcuKernelLaunch 专用的 CCU 性能分析数据上报函数
+ * 通过线程 Handle 中注册的回调函数完成数据存储，替代原通信域存储方式。
+ * 对齐 HcclReportCcuProfilingInfo 的能力，数据格式和含义完全一致。
+ */
+static HcclResult HcommReportCcuProfilingInfo(const ThreadHandle threadHandle,
+    uint64_t execId, const std::vector<hcomm::CcuProfilingInfo> &allCcuProfilingInfo,
+    Hccl::TaskParam &taskParam)
 {
+    if (allCcuProfilingInfo.empty()) {
+        HCCL_INFO("There is no ccu profiling info.");
+        return HCCL_SUCCESS;
+    }
+
+    auto *rtsThread = reinterpret_cast<hccl::Thread *>(threadHandle);
+    CHK_PTR_NULL(rtsThread);
+
+    // 设置任务参数的基本信息
+    taskParam.taskPara.Ccu.dieId     = allCcuProfilingInfo[0].dieId;
+    taskParam.taskPara.Ccu.missionId = allCcuProfilingInfo[0].missionId;
+    taskParam.taskPara.Ccu.execMissionId = allCcuProfilingInfo[0].missionId;
+    taskParam.taskPara.Ccu.instrId   = allCcuProfilingInfo[0].instrId;
+    taskParam.taskPara.Ccu.executeId = execId; // TODO: 参数缺失，无法获取 - executeId（传入是kernelHandle，不建议赋值给executeId）
+    taskParam.taskPara.Ccu.ccuKernelHandle = execId;
+    taskParam.isMaster = rtsThread->GetMaster();
+    HCCL_INFO("[%s]dieId[%u], missionId[%u], execMissionId[%u], instrId[%u], executeId[%u], ccuKernelHandle[%u]",
+        __func__, taskParam.taskPara.Ccu.dieId, taskParam.taskPara.Ccu.missionId, taskParam.taskPara.Ccu.execMissionId,
+        taskParam.taskPara.Ccu.instrId, taskParam.taskPara.Ccu.executeId, taskParam.taskPara.Ccu.ccuKernelHandle);
+
+    // 转换函数：将 hcomm::CcuProfilingInfo 转换为 Hccl::CcuProfilingInfo
+    auto convertToHccl = [](const hcomm::CcuProfilingInfo& src) -> Hccl::CcuProfilingInfo {
+        Hccl::CcuProfilingInfo dst;
+        dst.name = src.name;
+        dst.type = src.type;
+        dst.dieId = src.dieId;
+        dst.missionId = src.missionId;
+        dst.instrId = src.instrId;
+        dst.reduceOpType = src.reduceOpType;
+        dst.inputDataType = src.inputDataType;
+        dst.outputDataType = src.outputDataType;
+        dst.dataSize = src.dataSize;
+        dst.ckeId = src.ckeId;
+        dst.mask = src.mask;
+        HCCL_INFO("src.name %s, dst.name %s", src.name.c_str(), dst.name.c_str());
+        (void)memcpy_s(dst.channelId, sizeof(dst.channelId), src.channelId, sizeof(src.channelId));
+        (void)memcpy_s(dst.remoteRankId, sizeof(dst.remoteRankId), src.remoteRankId, sizeof(src.remoteRankId));
+        (void)memcpy_s(dst.channelHandle, sizeof(dst.channelHandle), src.channelHandle, sizeof(src.channelHandle));
+        return dst;
+    };
+
+    // 转换所有性能信息
+    std::vector<Hccl::CcuProfilingInfo> converted;
+    converted.reserve(allCcuProfilingInfo.size());
+
+    for (size_t i = 0; i < allCcuProfilingInfo.size(); ++i) {
+        converted.push_back(convertToHccl(allCcuProfilingInfo[i]));
+    }
+
+    // 构建shared_ptr并保存到任务参数
+    taskParam.ccuDetailInfo = std::make_shared<std::vector<Hccl::CcuProfilingInfo>>(std::move(converted));
+    HCCL_DEBUG("[%s]dieId[%u]", __func__, taskParam.taskPara.Ccu.dieId);
+
+    // 通过线程Handle中注册的回调函数完成数据存储
+    auto callback = rtsThread->GetCallback();
+    CHK_PTR_NULL(callback);
+    u32 streamId = INVALID_UINT;
+    u32 taskId = INVALID_UINT;
+    CHK_RET(hrtGetTaskIdAndStreamID(taskId, streamId));
+    CHK_RET(callback(streamId, taskId, taskParam, INVALID_U64));
+    return HCCL_SUCCESS;
+}
+
+static HcclResult LaunchCcuTasks(const std::vector<hcomm::CcuTaskParam> &params,
+    const aclrtStream stream, Hccl::TaskParam &taskParam)
+{
+    taskParam.beginTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
     const uint32_t execTimeOutSec = Hccl::EnvConfig::GetInstance().GetRtsConfig().GetExecTimeOut();
     for (auto it = params.begin(); it != params.end(); ++it) {
         rtCcuTaskInfo_t taskInfo{};
@@ -156,6 +232,7 @@ static HcclResult LaunchCcuTasks(const std::vector<hcomm::CcuTaskParam> &params,
             constexpr std::size_t TOKEN_VALUE_INDEX = 2; // 与算法约束token index为 2
             if (i == TOKEN_VALUE_INDEX) { continue; }
             HCCL_INFO("[%s] arg[%lu] = %lu", __func__, i, taskInfo.args[i]);
+            taskParam.taskPara.Ccu.costumArgs[i] = taskInfo.args[i];
         }
 
         auto ret = rtCCULaunch(&taskInfo, stream);
@@ -164,6 +241,7 @@ static HcclResult LaunchCcuTasks(const std::vector<hcomm::CcuTaskParam> &params,
             return HcclResult::HCCL_E_RUNTIME;
         }
     }
+    taskParam.endTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
 
     return HcclResult::HCCL_SUCCESS;
 }
@@ -195,7 +273,6 @@ CcuResult HcommCcuKernelLaunch(ThreadHandle threadHandle,
 
     CCU_EXCEPTION_HANDLE_BEGIN
     std::vector<hcomm::CcuTaskParam> taskParams{};
-    // todo: 需要处理dfx功能
     auto ret = kernel->GeneTaskParams(static_cast<const uint64_t *>(taskArgs), argSize, taskParams);
     CHK_PRT_RET(ret != CcuResult::CCU_SUCCESS,
         HCCL_ERROR("[%s] failed, threadHandle[0x%llx] kernelHandle[0x%llx].",
@@ -207,7 +284,14 @@ CcuResult HcommCcuKernelLaunch(ThreadHandle threadHandle,
         return CcuResult::CCU_SUCCESS;
     }
 
-    CCU_CHK_RET(LaunchCcuTasks(taskParams, streamPtr));
+    Hccl::TaskParam taskParam = {};
+    taskParam.taskType = Hccl::TaskParamType::TASK_CCU;
+    CCU_CHK_RET(LaunchCcuTasks(taskParams, streamPtr, taskParam));
+
+    // CCU 性能分析数据上报
+    std::vector<hcomm::CcuProfilingInfo> allCcuProfilingInfo;
+    CCU_CHK_RET(kernel->GetCcuProfilingInfo(static_cast<const uint64_t *>(taskArgs), argSize, allCcuProfilingInfo));
+    CCU_CHK_RET(HcommReportCcuProfilingInfo(threadHandle, kernelHandle, allCcuProfilingInfo, taskParam));
     CCU_EXCEPTION_HANDLE_END
     HCCL_INFO("[%s] success, take time [%lld]us.",
         __func__, DURATION_US(TIME_NOW() - startus));
