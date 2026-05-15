@@ -1663,26 +1663,29 @@ CcuResult CcuKernel::FuncCall(uint64_t handle, const CcuVariableHandle *inArgs, 
     return CcuResult::CCU_SUCCESS;
 }
 
-CcuResult CcuKernel::SetLoopNum(uint32_t count)
+// 按 maxLoopNum 把 res_.blockExecutor[0] 扩容到至少 maxLoopNum 个 LoopEngine。
+// 与 CreateBlockResAssist 对齐：所有 LoopEngine 资源先落在 die0 池，待
+// SelectDie 完成后再由 MoveResourcesToDie 迁移到目标 die。
+// 不同 LoopGroup 通过 local loopIdx 复用同一池低位 executorId，所以这里只
+// "补足"而不是"累加"。
+CcuResult CcuKernel::EnsureLoopEnginePool(uint32_t maxLoopNum)
 {
-    if (count == 0) {
-        HCCL_ERROR("[CcuKernel::SetLoopNum] count must be > 0");
+    if (maxLoopNum == 0) {
+        HCCL_ERROR("[CcuKernel::EnsureLoopEnginePool] maxLoopNum must be > 0");
         return CcuResult::CCU_E_PARA;
     }
-    // 与 CreateBlockResAssist 对齐：分配阶段所有资源都先落在 die0，
-    // 待 SelectDie 完成后再由 MoveResourcesToDie 迁移到目标 die。
     constexpr uint32_t poolDieId = 0;
     auto &loopEnginePool = res_.blockExecutor[poolDieId];
-    if (count <= loopEnginePool.size()) {
+    if (maxLoopNum <= loopEnginePool.size()) {
         return CcuResult::CCU_SUCCESS;
     }
-    const uint32_t deficit = count - static_cast<uint32_t>(loopEnginePool.size());
+    const uint32_t deficit = maxLoopNum - static_cast<uint32_t>(loopEnginePool.size());
     std::vector<CcuRep::Executor> tmp(deficit, CcuRep::Executor(this));
     (void)CreateBlockExecutor(deficit, tmp.data());
     return CcuResult::CCU_SUCCESS;
 }
 
-CcuResult CcuKernel::LoopGroupCreate(CcuLoopGroup *group,
+CcuResult CcuKernel::LoopGroupCreate(CcuLoopGroup *group, uint32_t maxLoopNum,
     const CcuLoopGroupConfig *config)
 {
     if (group == nullptr || config == nullptr) {
@@ -1698,6 +1701,9 @@ CcuResult CcuKernel::LoopGroupCreate(CcuLoopGroup *group,
         HCCL_ERROR("[CcuKernel::LoopGroupCreate] cannot create loop group inside a func body");
         return CcuResult::CCU_E_INTERNAL;
     }
+
+    // 按需扩 LoopEngine 池；池足够则复用低位 executorId，跨组共享。
+    CCU_CHK_RET(EnsureLoopEnginePool(maxLoopNum));
 
     CcuLoopGroup handle = ++loopGroupHandleCounter_;
 
@@ -1717,7 +1723,7 @@ CcuResult CcuKernel::LoopGroupCreate(CcuLoopGroup *group,
     return CcuResult::CCU_SUCCESS;
 }
 
-CcuResult CcuKernel::LoopGroupCreateFromVar(CcuLoopGroup *group,
+CcuResult CcuKernel::LoopGroupCreateFromVar(CcuLoopGroup *group, uint32_t maxLoopNum,
     CcuVariableHandle parallelVarHandle, CcuVariableHandle offsetVarHandle)
 {
     if (group == nullptr) {
@@ -1733,6 +1739,8 @@ CcuResult CcuKernel::LoopGroupCreateFromVar(CcuLoopGroup *group,
         HCCL_ERROR("[CcuKernel::LoopGroupCreateFromVar] cannot create loop group inside a func body");
         return CcuResult::CCU_E_INTERNAL;
     }
+
+    CCU_CHK_RET(EnsureLoopEnginePool(maxLoopNum));
 
     CcuRep::Variable *parallelVarPtr = nullptr;
     CcuRep::Variable *offsetVarPtr = nullptr;
@@ -1789,8 +1797,8 @@ CcuResult CcuKernel::LoopGroupAddLoop(CcuLoopGroup group,
     const uint32_t loopIdx = grpDesc.loopCount;
     if (loopIdx >= loopEnginePool.size()) {
         HCCL_ERROR("[CcuKernel::LoopGroupAddLoop] loopEngine pool exhausted "
-                   "(pool size %zu, loopIdx %u). Call CcuSetLoopNum(N) first to allocate "
-                   "at least max(per-LoopGroup loop count) engines.",
+                   "(pool size %zu, loopIdx %u). Pass a larger maxLoopNum to "
+                   "CcuLoopGroupCreate so the pool can be extended at create time.",
                    loopEnginePool.size(), loopIdx);
         return CcuResult::CCU_E_PARA;
     }
@@ -1844,8 +1852,8 @@ CcuResult CcuKernel::LoopGroupAddLoopFromVar(CcuLoopGroup group,
     const uint32_t loopIdx = grpDesc.loopCount;
     if (loopIdx >= loopEnginePool.size()) {
         HCCL_ERROR("[CcuKernel::LoopGroupAddLoopFromVar] loopEngine pool exhausted "
-                   "(pool size %zu, loopIdx %u). Call CcuSetLoopNum(N) first to allocate "
-                   "at least max(per-LoopGroup loop count) engines.",
+                   "(pool size %zu, loopIdx %u). Pass a larger maxLoopNum to "
+                   "CcuLoopGroupCreateFromVar so the pool can be extended at create time.",
                    loopEnginePool.size(), loopIdx);
         return CcuResult::CCU_E_PARA;
     }
