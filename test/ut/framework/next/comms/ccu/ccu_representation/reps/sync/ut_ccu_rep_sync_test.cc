@@ -65,8 +65,7 @@ protected:
 TEST_F(CcuRepLocWaitEventTest, ConstructorInitializesCorrectly)
 {
     CompletedEvent event;
-    event.SetMask(0xF);
-    CcuRepLocWaitEvent rep(event, true);
+    CcuRepLocWaitEvent rep(event, 0xF, true);
 
     EXPECT_EQ(rep.Type(), CcuRepType::LOC_WAIT_EVENT);
     EXPECT_EQ(rep.InstrCount(), 1);
@@ -76,8 +75,7 @@ TEST_F(CcuRepLocWaitEventTest, ConstructorInitializesCorrectly)
 TEST_F(CcuRepLocWaitEventTest, ConstructorWithProfilingDisabled)
 {
     CompletedEvent event;
-    event.SetMask(0xA);
-    CcuRepLocWaitEvent rep(event, false);
+    CcuRepLocWaitEvent rep(event, 0xA, false);
 
     EXPECT_EQ(rep.Type(), CcuRepType::LOC_WAIT_EVENT);
     EXPECT_EQ(rep.InstrCount(), 1);
@@ -87,8 +85,7 @@ TEST_F(CcuRepLocWaitEventTest, ConstructorWithProfilingDisabled)
 TEST_F(CcuRepLocWaitEventTest, TranslateWithProfilingEnabled)
 {
     CompletedEvent event;
-    event.SetMask(0xF);
-    CcuRepLocWaitEvent rep(event, true);
+    CcuRepLocWaitEvent rep(event, 0xF, true);
 
     CcuInstr instr;
     CcuInstr* instrPtr = &instr;
@@ -108,8 +105,7 @@ TEST_F(CcuRepLocWaitEventTest, TranslateWithProfilingEnabled)
 TEST_F(CcuRepLocWaitEventTest, TranslateWithProfilingDisabled)
 {
     CompletedEvent event;
-    event.SetMask(0x5);
-    CcuRepLocWaitEvent rep(event, false);
+    CcuRepLocWaitEvent rep(event, 0x5, false);
 
     CcuInstr instr;
     CcuInstr* instrPtr = &instr;
@@ -128,8 +124,7 @@ TEST_F(CcuRepLocWaitEventTest, TranslateWithProfilingDisabled)
 TEST_F(CcuRepLocWaitEventTest, Describe)
 {
     CompletedEvent event;
-    event.SetMask(0xABCD);
-    CcuRepLocWaitEvent rep(event, true);
+    CcuRepLocWaitEvent rep(event, 0xABCD, true);
 
     std::string desc = rep.Describe();
 
@@ -212,8 +207,7 @@ TEST_F(CcuRepLocWaitNotifyTest, Describe)
 TEST_F(CcuRepLocRecordEventTest, ConstructorInitializesCorrectly)
 {
     CompletedEvent event;
-    event.SetMask(0xF);
-    CcuRepLocRecordEvent rep(event);
+    CcuRepLocRecordEvent rep(event, 0xF);
 
     EXPECT_EQ(rep.Type(), CcuRepType::LOC_RECORD_EVENT);
     EXPECT_EQ(rep.InstrCount(), 1);
@@ -223,8 +217,7 @@ TEST_F(CcuRepLocRecordEventTest, ConstructorInitializesCorrectly)
 TEST_F(CcuRepLocRecordEventTest, Translate)
 {
     CompletedEvent event;
-    event.SetMask(0xABCD);
-    CcuRepLocRecordEvent rep(event);
+    CcuRepLocRecordEvent rep(event, 0xABCD);
 
     CcuInstr instr;
     CcuInstr* instrPtr = &instr;
@@ -244,8 +237,7 @@ TEST_F(CcuRepLocRecordEventTest, Translate)
 TEST_F(CcuRepLocRecordEventTest, Describe)
 {
     CompletedEvent event;
-    event.SetMask(0xABCD);
-    CcuRepLocRecordEvent rep(event);
+    CcuRepLocRecordEvent rep(event, 0xABCD);
 
     std::string desc = rep.Describe();
 
