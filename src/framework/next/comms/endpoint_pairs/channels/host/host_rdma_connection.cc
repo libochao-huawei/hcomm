@@ -227,7 +227,7 @@ HcclResult HostRdmaConnection::ModifyQp()
     HCCL_DEBUG("[HostRdmaConnection::ModifyQp] HostRdmaConnection localQp: qpn[%u], psn[%u], gidIdx[3]",
                 localQpAttr.qpn, localQpAttr.psn, localQpAttr.gidIdx);
     HCCL_DEBUG("[HostRdmaConnection::ModifyQp] HostRdmaConnection remoteQp: qpn[%u], psn[%u], gidIdx[3]",
-                rmtQpAttr_.qpn, rmtQpAttr_.psn, rmtQpAttr_.gidIdx);
+                rmtQpAttr_.qpn, rmtQpAttr_.psn, rmtQpAttr_.gid_idx);
 
     struct TypicalQp localQp;
     struct TypicalQp rmtQp;
