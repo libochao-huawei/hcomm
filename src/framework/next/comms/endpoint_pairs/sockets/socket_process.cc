@@ -207,8 +207,8 @@ HcclResult SocketProcess::Init()
 
     s32 devLogicId;
     EXECEPTION_CATCH(socketMgr_ = std::make_unique<SocketMgr>(), return HCCL_E_PTR);
-    CHK_RET_UNLOCK(hrtGetDevice(&devLogicId), lock);
-    CHK_RET_UNLOCK(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_), lock);
+    CHK_RET(hrtGetDevice(&devLogicId));
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_));
 
     isInit_.store(true, std::memory_order_release);
     HCCL_RUN_INFO("[SocketProcess][%s] initialized successfully. deviceLogicId: %d, devicePhyId: %u, this: %p",
