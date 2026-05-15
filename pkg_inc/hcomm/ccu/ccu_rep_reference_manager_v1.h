@@ -22,8 +22,10 @@
 namespace hcomm {
 namespace CcuRep {
 
-// 支持自定义算子CCU开发资源管理优化，减少预留资源数量，避免xn耗尽
-constexpr uint16_t FUNC_ARG_MAX            = 1;
+// 支持自定义算子CCU开发资源管理优化，减少预留资源数量，避免xn耗尽。
+// FUNC_ARG_MAX：单个 ccu::Func 入参/出参上限。每提升 1，每个 die 在
+// CcuRepReferenceManager::GetResReq 中多预留 2 个 Xn（funcInVar + funcOutVar）。
+constexpr uint16_t FUNC_ARG_MAX            = 4;
 constexpr uint16_t FUNC_NEST_MAX           = 1;
 constexpr uint16_t FUNC_CALL_LAYER_INVALID = 0xFFFF;
 

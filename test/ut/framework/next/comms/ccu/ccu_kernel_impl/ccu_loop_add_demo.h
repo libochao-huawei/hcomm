@@ -24,7 +24,7 @@ CcuResult CcuLoopAddDemoKernel(CcuKernelArg arg)
     // 三个 LoopGroup 都从该池按 local loopIdx 取 executorId，跨组复用 0、1。
     CCU_CHK_RET(SetLoopNum(2));
 
-    Variable r1{}, r2{}, r3{}, r4{}, r5{}, r6{}, numA{}, numB{};
+    Variable r1{}, r2{}, r3{}, r4{}, r5{}, r6{}, r7{}, numA{}, numB{};
 
     numA = args->numA;
     numB = args->numB;
@@ -48,8 +48,7 @@ CcuResult CcuLoopAddDemoKernel(CcuKernelArg arg)
         .addrOffset = 0, .bufferOffset = 0, .eventOffset = 0,
         .repeatNum = 0, .repeatLoopIdx = 0
     };
-    std::vector<Loop> group1Loops{loop1, loop2};
-    LoopGroup group1(grpCfg1, group1Loops);
+    LoopGroup group1(grpCfg1, {loop1, loop2});
 
     r4 = numA + numB;
 
@@ -64,23 +63,26 @@ CcuResult CcuLoopAddDemoKernel(CcuKernelArg arg)
         .addrOffset = 4096, .bufferOffset = 1, .eventOffset = 1,
         .repeatNum = 3, .repeatLoopIdx = 1
     };
-    std::vector<Loop> group2Loops{loop2, loop3};
-    LoopGroup group2(grpCfg2, group2Loops);
+    LoopGroup group2(grpCfg2, {loop2, loop3});
 
-    // ========== LoopGroup 3 (var-based): variable group & repeated variable loop ==========
-    Variable varLoopParam{}, varParallel{}, varOffset{};
+    // ========== LoopGroup 3 (var-based): variable group with two distinct var-loops ==========
+    Variable varLoopParam4{}, varLoopParam5{}, varParallel{}, varOffset{};
 
-    varLoopParam = 0x0001000200030000ULL;
-    varParallel  = 0x0002000100020000ULL;
-    varOffset    = 0x1000000100010000ULL;
+    varLoopParam4 = 0x0001000200030000ULL;
+    varLoopParam5 = 0x0002000300040000ULL;
+    varParallel   = 0x0002000100020000ULL;
+    varOffset     = 0x1000000100010000ULL;
 
     Func body4([&]() {
         r6 = numA + numB;
     });
-    Loop loop4(varLoopParam, body4);
+    Func body5([&]() {
+        r7 = numA + numB;
+    });
+    Loop loop4(varLoopParam4, body4);
+    Loop loop5(varLoopParam5, body5);
 
-    std::vector<Loop> group3Loops{loop4, loop4};
-    LoopGroup group3(varParallel, varOffset, group3Loops);
+    LoopGroup group3(varParallel, varOffset, {loop4, loop5});
 
     return CcuResult::CCU_SUCCESS;
 }
