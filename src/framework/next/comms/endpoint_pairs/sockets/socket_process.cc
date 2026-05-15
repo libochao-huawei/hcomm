@@ -33,9 +33,8 @@ SocketProcess &SocketProcess::GetInstance(s32 deviceLogicId)
 
 SocketProcess::~SocketProcess()
 {
-    isInit_ = false;
-
     unique_lock<std::mutex> lock(mutex_);
+    isInit_ = false;
     for (auto &socketItem : serverSocketMap_) {
         if (socketItem.second != nullptr) {
             socketItem.second.get()->Destroy();
@@ -95,6 +94,8 @@ HcclResult SocketProcess::GetSocket(SocketDesc *socketDesc, SocketHandle &socket
 {
     CHK_PTR_NULL(socketDesc);
     CHK_RET(Init());
+    HCCL_RUN_INFO("[GetSocket][%s] initialized. devicePhyId: %u, this: %p",
+        __func__, devicePhyId_, static_cast<void *>(this));
 
     if (!isInit_) {
         HCCL_ERROR("[SocketProcess][%s] SocketProcess not initialized, device may be destroyed", __func__);
@@ -125,10 +126,12 @@ HcclResult SocketProcess::GetSocket(SocketDesc *socketDesc, SocketHandle &socket
 HcclResult SocketProcess::GetStatus(SocketHandle socketHandle, SocketStates &socketStatus)
 {
     Hccl::Socket *socket = static_cast<Hccl::Socket *>(socketHandle);
+    unique_lock<std::mutex> lock(mutex_);
     if (socket == nullptr || socket2TagMap_.find(socket) == socket2TagMap_.end()) {
         HCCL_ERROR("[SocketProcess][%s] socket is nullptr or not found, please check", __func__);
         return HCCL_E_PARA;
     }
+    lock.unlock();
 
     Hccl::SocketStatus status = socket->GetAsyncStatus();
     if (status == Hccl::SocketStatus::OK) {
@@ -145,10 +148,12 @@ HcclResult SocketProcess::GetStatus(SocketHandle socketHandle, SocketStates &soc
 HcclResult SocketProcess::SendNoBlock(SocketHandle socketHandle, void *sendbuffer, u64 sendSize, u64 *&sentSize)
 {
     Hccl::Socket *socket = static_cast<Hccl::Socket *>(socketHandle);
+    unique_lock<std::mutex> lock(mutex_);
     if (socket == nullptr || socket2TagMap_.find(socket) == socket2TagMap_.end()) {
         HCCL_ERROR("[SocketProcess][%s] socket is nullptr or not found, please check", __func__);
         return HCCL_E_PARA;
     }
+    lock.unlock();
     if (sentSize == nullptr || sendbuffer == nullptr) {
         HCCL_ERROR(
             "[SocketProcess][%s] sentSize is nullptr or sendbuffer is nullptr, please check",
@@ -170,10 +175,12 @@ HcclResult SocketProcess::RecvNoBlock(
     SocketHandle socketHandle, void *recvBuffer, u64 recvSize, u64 *&recvedSize)
 {
     Hccl::Socket *socket = static_cast<Hccl::Socket *>(socketHandle);
+    unique_lock<std::mutex> lock(mutex_);
     if (socket == nullptr || socket2TagMap_.find(socket) == socket2TagMap_.end()) {
         HCCL_ERROR("[SocketProcess][%s] socket is nullptr or not found, please check", __func__);
         return HCCL_E_PARA;
     }
+    lock.unlock();
     if (recvBuffer == nullptr || recvedSize == nullptr) {
         HCCL_ERROR(
             "[SocketProcess][%s] recvBuffer is nullptr or recvedSize is nullptr, please check",
@@ -193,15 +200,19 @@ HcclResult SocketProcess::RecvNoBlock(
 
 HcclResult SocketProcess::Init()
 {
-    if (isInit_) {
+    unique_lock<std::mutex> lock(mutex_);
+    if (isInit_.load(std::memory_order_acquire)) {
         return HCCL_SUCCESS;
     }
 
-    isInit_ = true;
-    EXECEPTION_CATCH(socketMgr_ = std::make_unique<SocketMgr>(), return HCCL_E_PTR);
     s32 devLogicId;
-    CHK_RET(hrtGetDevice(&devLogicId));
-    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_));
+    EXECEPTION_CATCH(socketMgr_ = std::make_unique<SocketMgr>(), return HCCL_E_PTR);
+    CHK_RET_UNLOCK(hrtGetDevice(&devLogicId), lock);
+    CHK_RET_UNLOCK(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_), lock);
+
+    isInit_.store(true, std::memory_order_release);
+    HCCL_RUN_INFO("[SocketProcess][%s] initialized successfully. deviceLogicId: %d, devicePhyId: %u, this: %p",
+        __func__, devLogicId, devicePhyId_, static_cast<void *>(this));
 
     return HCCL_SUCCESS;
 }
