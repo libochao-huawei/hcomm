@@ -98,7 +98,7 @@ HcclResult EndpointPair::BatchServerInit(const uint32_t myRank, const uint32_t r
     return HCCL_SUCCESS;
 }
 
-HcclResult EndpointPair::BatchGetSockets(const uint32_t myRank, const uint32_t rmtRank,
+HcclResult EndpointPair::GetConnectedSocket(const uint32_t myRank, const uint32_t rmtRank,
     const std::string &socketTag, u32 reuseIdx, const uint32_t listenPort, Hccl::Socket*& socket, uint32_t devicePhyId, uint32_t remoteDevicePhyId)
 {
     // 该接口内进行建链和获取socket
@@ -112,7 +112,7 @@ HcclResult EndpointPair::BatchGetSockets(const uint32_t myRank, const uint32_t r
         CHK_RET(this->GetSocketWithRank(myRank, rmtRank, socketTagPrefix, listenPort, reuseIdx, socket));
         return HCCL_SUCCESS;
     }
-    
+
     Hccl::LinkData linkData = BuildDefaultLinkData();
     CHK_RET(EndpointDescPairToLinkDataWithRankIds(myRank, rmtRank,
         localEndpointDesc_, remoteEndpointDesc_, linkData, devicePhyId, remoteDevicePhyId, reuseIdx));
