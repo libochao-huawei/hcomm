@@ -193,10 +193,13 @@ public:
     CcuResult LoopCreate(CcuLoop *loop);
     CcuResult LoopBodyEnter(CcuLoop loop);
     CcuResult LoopBodyExit(CcuLoop loop);
-    CcuResult SetLoopNum(uint32_t count);
-    CcuResult LoopGroupCreate(CcuLoopGroup *group,
+    // LoopGroup 创建时按需扩容 LoopEngine 资源池：
+    //   if (res_.blockExecutor[0].size() < maxLoopNum)
+    //       补足到 maxLoopNum；否则复用，不重复申请。
+    // maxLoopNum 应填本 LoopGroup 实际要 AddLoop 的次数（含展开复用）。
+    CcuResult LoopGroupCreate(CcuLoopGroup *group, uint32_t maxLoopNum,
         const CcuLoopGroupConfig *config);
-    CcuResult LoopGroupCreateFromVar(CcuLoopGroup *group,
+    CcuResult LoopGroupCreateFromVar(CcuLoopGroup *group, uint32_t maxLoopNum,
         CcuVariableHandle parallelVar, CcuVariableHandle offsetVar);
     CcuResult LoopGroupAddLoop(CcuLoopGroup group,
         CcuLoop loop, const CcuLoopConfig *config);
@@ -213,6 +216,9 @@ public:
 private:
     CcuResult GetVariableByHandle(CcuVariableHandle varHandle, CcuRep::Variable **variable);
     CcuResult GetEventByHandle(CcuEventHandle eventHandle, CcuRep::CompletedEvent **event);
+    // 按需扩容 res_.blockExecutor[0]：不足 maxLoopNum 时补足，足够则不动；
+    // 由 LoopGroupCreate / LoopGroupCreateFromVar 在 LoopGroup 创建时调用。
+    CcuResult EnsureLoopEnginePool(uint32_t maxLoopNum);
 
     struct IfLabelEntry {
         const char *label{nullptr};

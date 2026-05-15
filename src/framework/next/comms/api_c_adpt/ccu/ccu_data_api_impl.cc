@@ -553,15 +553,6 @@ CcuResult CcuFuncCall(uint64_t handle, const CcuVariableHandle *inArgs, uint32_t
 }
 
 /*========== 循环操作 ==========*/
-CcuResult CcuSetLoopNum(uint32_t count)
-{
-    const uint32_t devLogicId = HcclGetThreadDeviceId();
-    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
-    CCU_CHK_PTR_NULL(kernel);
-    CCU_CHK_RET(kernel->SetLoopNum(count));
-    return CcuResult::CCU_SUCCESS;
-}
-
 CcuResult CcuLoopCreate(CcuLoop *loop)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
@@ -589,23 +580,23 @@ CcuResult _CcuLoopBodyExit(CcuLoop loop)
     return CcuResult::CCU_SUCCESS;
 }
 
-CcuResult CcuLoopGroupCreate(CcuLoopGroup *group,
+CcuResult CcuLoopGroupCreate(CcuLoopGroup *group, uint32_t maxLoopNum,
     const CcuLoopGroupConfig *config)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
     auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
     CCU_CHK_PTR_NULL(kernel);
-    CCU_CHK_RET(kernel->LoopGroupCreate(group, config));
+    CCU_CHK_RET(kernel->LoopGroupCreate(group, maxLoopNum, config));
     return CcuResult::CCU_SUCCESS;
 }
 
-CcuResult CcuLoopGroupCreateFromVar(CcuLoopGroup *group,
+CcuResult CcuLoopGroupCreateFromVar(CcuLoopGroup *group, uint32_t maxLoopNum,
     CcuVariableHandle parallelVar, CcuVariableHandle offsetVar)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
     auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
     CCU_CHK_PTR_NULL(kernel);
-    CCU_CHK_RET(kernel->LoopGroupCreateFromVar(group, parallelVar, offsetVar));
+    CCU_CHK_RET(kernel->LoopGroupCreateFromVar(group, maxLoopNum, parallelVar, offsetVar));
     return CcuResult::CCU_SUCCESS;
 }
 

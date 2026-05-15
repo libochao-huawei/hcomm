@@ -102,10 +102,9 @@ inline CcuResult Write(ChannelHandle ch, RemoteAddr remote, CcuBuffer local, Var
 inline CcuResult WriteReduce(ChannelHandle ch, RemoteAddr remote, LocalAddr local, Variable len, HcclDataType dataType, HcclReduceOp opType, Event event, uint16_t mask = 1){ return CcuWriteMemToMemReduce(ch, remote.handle, local.handle, len.handle, dataType, opType, event.handle, mask);}
 
 // ==================== Loop ====================
-
-// 设置 LoopEngine 资源池大小（按 max(各 LoopGroup loop 数) 申请，不含展开数量）。
-// 不同 LoopGroup 通过 local loopIdx 复用同一组低位 executorId。
-inline CcuResult SetLoopNum(uint32_t count) { return CcuSetLoopNum(count); }
+//
+// LoopEngine 资源池由 ccu::LoopGroup 在创建时按 maxLoopNum 自动按需扩容，
+// 不再需要用户态显式调用 SetLoopNum / CcuSetLoopNum。
 
 } // namespace ccu
 
