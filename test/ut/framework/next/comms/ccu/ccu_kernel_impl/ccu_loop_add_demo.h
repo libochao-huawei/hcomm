@@ -20,92 +20,67 @@ CcuResult CcuLoopAddDemoKernel(CcuKernelArg arg)
     using namespace ccu;
     auto *args = static_cast<CcuLoopAddKernelArg *>(arg);
 
-    ccu::Variable r1{}, r2{}, r3{}, r4{}, r5{}, r6{}, numA{}, numB{};
+    // 申请 LoopEngine 池，大小 = max(各 LoopGroup loop 数) = 2；
+    // 三个 LoopGroup 都从该池按 local loopIdx 取 executorId，跨组复用 0、1。
+    CCU_CHK_RET(SetLoopNum(2));
+
+    Variable r1{}, r2{}, r3{}, r4{}, r5{}, r6{}, numA{}, numB{};
 
     numA = args->numA;
     numB = args->numB;
 
     r1 = numA + numB;
 
-    // group2 需要最多引擎: 1(非展开) + 1+3(展开3次) = 5
-    CcuLoopExecutors enginePool;
-    CCU_CHK_RET(CreateLoopExecutor(&enginePool, 5));
-
-    // ========== Loop 1: param bindings ==========
-    CcuLoop loop1;
-    CCU_LOOP(loop1) {
-        ccu::Variable formalA{}, formalB{}, formalResult{};
-
-        CCU_CHK_RET(LoopSetParam(loop1, &formalA, &numA));
-        CCU_CHK_RET(LoopSetParam(loop1, &formalB, &numB));
-        CCU_CHK_RET(LoopSetParam(loop1, &formalResult, &r2));
-
-        formalResult = formalA + formalB;
-    }
-
-    // ========== Loop 2: external variables directly ==========
-    CcuLoop loop2;
-    CCU_LOOP(loop2) {
+    // ========== LoopGroup 1 (config-based): two config loops, no unroll ==========
+    Func body1([&]() {
+        r2 = numA + numB;
+    });
+    Func body2([&]() {
         r3 = numA + numB;
-    }
+    });
 
-    // ========== LoopGroup 1 (config-based): two loops, no unroll ==========
-    CcuLoopGroup group1;
+    CcuLoopConfig cfg1 = {.addrOffset = 0, .loopIterNum = 2};
+    CcuLoopConfig cfg2 = {.addrOffset = 0, .loopIterNum = 2};
+    Loop loop1(cfg1, body1);
+    Loop loop2(cfg2, body2);
+
     CcuLoopGroupConfig grpCfg1 = {
         .addrOffset = 0, .bufferOffset = 0, .eventOffset = 0,
         .repeatNum = 0, .repeatLoopIdx = 0
     };
-    CCU_CHK_RET(CreateLoopGroup(&group1, &grpCfg1, enginePool));
-
-    CcuLoopConfig cfg1 = {.addrOffset = 0, .loopIterNum = 2};
-    CCU_CHK_RET(AddLoop(group1, loop1, &cfg1));
-
-    CcuLoopConfig cfg2 = {.addrOffset = 0, .loopIterNum = 2};
-    CCU_CHK_RET(AddLoop(group1, loop2, &cfg2));
+    std::vector<Loop> group1Loops{loop1, loop2};
+    LoopGroup group1(grpCfg1, group1Loops);
 
     r4 = numA + numB;
 
-    // ========== Loop 3: with offsets and param bindings ==========
-    CcuLoop loop3;
-    CCU_LOOP(loop3) {
-        ccu::Variable formalX{}, formalY{}, formalOut{};
+    // ========== LoopGroup 2: reuse loop2 + offset loop3 ==========
+    Func body3([&]() {
+        r5 = numA + numB;
+    });
+    CcuLoopConfig cfg3 = {.addrOffset = 4096, .loopIterNum = 4};
+    Loop loop3(cfg3, body3);
 
-        CCU_CHK_RET(LoopSetParam(loop3, &formalX, &numA));
-        CCU_CHK_RET(LoopSetParam(loop3, &formalY, &numB));
-        CCU_CHK_RET(LoopSetParam(loop3, &formalOut, &r5));
-
-        formalOut = formalX + formalY;
-    }
-
-    // ========== LoopGroup 2: loop2(no unroll) + loop3(unroll 3x) ==========
-    CcuLoopGroup group2;
     CcuLoopGroupConfig grpCfg2 = {
         .addrOffset = 4096, .bufferOffset = 1, .eventOffset = 1,
         .repeatNum = 3, .repeatLoopIdx = 1
     };
-    CCU_CHK_RET(CreateLoopGroup(&group2, &grpCfg2, enginePool));
+    std::vector<Loop> group2Loops{loop2, loop3};
+    LoopGroup group2(grpCfg2, group2Loops);
 
-    CcuLoopConfig cfg2_reuse = {.addrOffset = 0, .loopIterNum = 2};
-    CCU_CHK_RET(AddLoop(group2, loop2, &cfg2_reuse));
-
-    CcuLoopConfig cfg3 = {.addrOffset = 4096, .loopIterNum = 4};
-    CCU_CHK_RET(AddLoop(group2, loop3, &cfg3));
-
-    // ========== LoopGroup 3 (var-based): ccu::Variable-based group & loop ==========
-    ccu::Variable varLoopParam{}, varParallel{}, varOffset{};
+    // ========== LoopGroup 3 (var-based): variable group & repeated variable loop ==========
+    Variable varLoopParam{}, varParallel{}, varOffset{};
 
     varLoopParam = 0x0001000200030000ULL;
     varParallel  = 0x0002000100020000ULL;
     varOffset    = 0x1000000100010000ULL;
 
-    CcuLoop loop4;
-    CCU_LOOP(loop4) {
+    Func body4([&]() {
         r6 = numA + numB;
-    }
+    });
+    Loop loop4(varLoopParam, body4);
 
-    CcuLoopGroup group3;
-    CCU_CHK_RET(CreateLoopGroup(&group3, &varParallel, &varOffset, enginePool));
-    CCU_CHK_RET(AddLoop(group3, loop4, &varLoopParam));
+    std::vector<Loop> group3Loops{loop4, loop4};
+    LoopGroup group3(varParallel, varOffset, group3Loops);
 
     return CcuResult::CCU_SUCCESS;
 }
