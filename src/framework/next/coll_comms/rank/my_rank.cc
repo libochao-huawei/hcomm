@@ -284,7 +284,7 @@ HcclResult MyRank::BatchServerInitForChannels(const HcclChannelDesc* channelDesc
         const RankIdPair rankIdPair = std::make_pair(rankId_, remoteRank);
         const EndpointDescPair endpointDescPair = std::make_pair(localEndpointDesc, remoteEndpointDesc);
         RankPair* rankPair = nullptr;
-        
+
         CHK_RET(rankPairMgr_->Get(rankIdPair, rankPair));
         CHK_PTR_NULL(rankPair);
         CHK_RET(rankPair->GetEndpointPair(endpointDescPair, endpointPair));
@@ -347,7 +347,7 @@ HcclResult MyRank::BatchGetSocketsForChannels(const HcclChannelDesc* channelDesc
         HCCL_INFO("[MyRank][BatchCreateSockets] rankId_[%u] devicePhyId[%u]", rankId_, devicePhyId);
         HCCL_INFO("[MyRank][BatchCreateSockets] rankId_[%u] devicePhyId[%u]", remoteRank, remoteDevicePhyId);
         Hccl::Socket* socket = nullptr;
-        auto ret = endpointPair->BatchGetSockets(rankId_, remoteRank, commTag, reuseIdx, listenPort, socket, remoteRank, remoteDevicePhyId);
+        auto ret = endpointPair->GetConnectedSocket(rankId_, remoteRank, commTag, reuseIdx, listenPort, socket, remoteRank, remoteDevicePhyId);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[%s] failed to get socket, channelIndex[%u], remoteRank[%u], protocol[%d] reuseIdx[%u]",
                 __func__, i, remoteRank, localEndpointDesc.protocol, reuseIdx),
@@ -673,17 +673,11 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
     }
     auto start = std::chrono::steady_clock::now();
     CHK_RET(BatchCreateSockets(channelDescs, channelNum, commTag, hcommDescs));
-    auto end = std::chrono::steady_clock::now();
-    auto batchCreateDuration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-    start = std::chrono::steady_clock::now();
     CHK_RET_UNAVAIL(BatchCreateChannels(engine, channelDescs, channelNum, hcommDescs, hostChannelHandleList));
-    end = std::chrono::steady_clock::now();
-    auto createChannelDuration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-    start = std::chrono::steady_clock::now();
     CHK_RET(BatchConnectChannels(channelDescs, hostChannelHandleList, channelNum));
-    end = std::chrono::steady_clock::now();
-    auto batchConnectDuration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-    HCCL_RUN_INFO("BatchCreateSockets Time Elapsed [%llu], BatchCreateChannels Time Elapsed [%llu],BatchConnectChannels Time Elapsed [%llu]",batchCreateDuration, createChannelDuration, batchConnectDuration);
+    auto end = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    HCCL_RUN_INFO("CreateChannel Time Elapsed [%llu], channelNum [%u]", duration, channelNum);
     // 添加初始化时进行填表
     for (u32 i = 0; i < channelNum; ++i) {
         u32 remoteRank = channelDescs[i].remoteRank;
