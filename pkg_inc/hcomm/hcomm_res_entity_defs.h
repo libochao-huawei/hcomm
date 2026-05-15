@@ -13,130 +13,175 @@
 #define HCOMM_RES_ENTITY_DEFS_H
 
 #include <stdint.h>
+#include "hcomm_res_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif
 
 typedef uint64_t ChannelPtr;
 
-struct ProtectionInfo {
-    uint32_t type; // 0 RDMA   1 URMA
-    uint64_t addr;
-    uint64_t length;
-    union MemInfo {
-        struct RdmaMemProtectionInfo {
+typedef enum {
+    PROTECTION_TYPE_RDMA = 0,
+    PROTECTION_TYPE_URMA = 1,
+} ProtectionType;
+
+typedef enum {
+    SQ_CONTEXT_TYPE_JFS = 0,
+    SQ_CONTEXT_TYPE_RDMA = 1,
+} SqContextType;
+
+typedef enum {
+    CQ_CONTEXT_TYPE_JFC = 0,
+    CQ_CONTEXT_TYPE_RDMA = 1,
+} CqContextType;
+
+typedef enum {
+    REGED_NOTIFY_IPC_RT = 0,
+    REGED_NOTIFY_IPC_MEM = 1,
+    REGED_NOTIFY_RMA_RT = 2,
+    REGED_NOTIFY_RMA_MEM = 3,
+} RegedNotifyType;
+
+typedef enum {
+    REGED_BUFFER_IPC = 0,
+    REGED_BUFFER_RMA = 1,
+} RegedBufferType;
+
+typedef struct {
+    ProtectionType type;
+    union {
+        struct {
             uint32_t lkey;
             uint32_t rkey;
         } rdmaMemInfo;
-        struct UrmaMemProtectionInfo {
-            uint32_t tokenID;
+        struct {
+            uint32_t tokenId;
             uint32_t tokenValue;
         } urmaMemInfo;
-        int8_t reserve[32];
+        int8_t reserve[24];
     } memInfo;
-};
+} ProtectionInfo; // 32B
 
-struct SqContext {
-    uint32_t type;
-    union ContextInfo {
-        struct JfsContext {
-            uint32_t jfsID;
+typedef struct {
+    RegedBufferType type;
+    union {
+        struct {
+            uint64_t address;
+            uint32_t size;
+        } ipcBuffer;
+        struct {
+            uint64_t address;
+            uint32_t size;
+            ProtectionInfo protectionInfo;
+        } rmaBuffer;
+        int8_t reserve[56];
+    } bufferInfo;
+} RegedBufferEntity; // 64B
+
+typedef struct {
+    RegedNotifyType type;
+    union {
+        struct {
+            uint64_t address;
+            uint32_t size;
+            int32_t notifyId;
+        } ipcRtNotify;
+        struct {
+            uint64_t address;
+            uint32_t size;
+        } ipcMemNotify;
+        struct {
+            uint64_t address;
+            uint32_t size;
+            int32_t notifyId;
+            ProtectionInfo protectionInfo;
+        } rmaRtNotify;
+        struct {
+            uint64_t address;
+            uint32_t size;
+            ProtectionInfo protectionInfo;
+        } rmaMemNotify;
+        int8_t reserve[56];
+    } notifyInfo;
+} RegedNotifyEntity; // 64B
+
+typedef struct {
+    SqContextType type;
+    union {
+        struct {
             uint64_t sqVa;
+            uint64_t headAddr;
+            uint64_t tailAddr;
+            uint64_t dbVa;
+            uint32_t jfsID;
             uint32_t wqeSize;
             uint32_t sqDepth;
             uint32_t tpID;
+            uint8_t remoteEID[16];
+        } jfsContext;
+        struct {
+            uint64_t sqVa;
             uint64_t headAddr;
             uint64_t tailAddr;
-            uint8_t remoteEID[16];
             uint64_t dbVa;
-        } jfsContext; // 48+16= 64 Bytes
-        struct RdmaSqContext {
             uint32_t qpn;
-            uint64_t sqVa;
             uint32_t wqeSize;
             uint32_t depth;
-            uint64_t headAddr;
-            uint64_t tailAddr;
+            int8_t dbMode;
             uint8_t sl;
-            uint64_t dbVa;
-            int8_t dbMode; // 0-hw/1-sw
-        } rdmaSqContext;   // 46 Bytes
+        } rdmaSqContext;
         int8_t reserve[128];
     } contextInfo;
-};
+} SqContext;
 
 typedef struct {
-    uint32_t type;
-    union ContextInfo {
-        struct JfcContext {
-            uint32_t jfcID;
+    CqContextType type;
+    union {
+        struct {
             uint64_t scqVa;
-            uint32_t cqeSize;
-            uint32_t cqDepth;
             uint64_t headAddr;
             uint64_t tailAddr;
             uint64_t dbVa;
+            uint32_t jfcID;
+            uint32_t cqeSize;
+            uint32_t cqDepth;
         } jfcContext;
-        struct RdmaCqContext {
-            uint32_t cqn;
+        struct {
             uint64_t cqVa;
-            uint32_t cqeSize;
-            uint32_t cqDepth;
             uint64_t headAddr;
             uint64_t tailAddr;
             uint64_t dbVa;
-            int8_t dbMode; // 0-hw/1-sw
+            uint32_t cqn;
+            uint32_t cqeSize;
+            uint32_t cqDepth;
+            int8_t dbMode;
         } rdmaCqContext;
         int8_t reserve[128];
     } contextInfo;
 } CqContext;
 
-struct Notify {
-    uint32_t type;
-    union NotifyInfo {
-        struct HccsNotify {
-            uint64_t address;
-            int32_t notifyId;
-            uint32_t size; // 默认4Byte
-        } hccsNotify;
-        struct RmaNotify {
-            uint64_t address;
-            int32_t notifyId; // remote 时不用
-            uint32_t size;    // 默认4Byte
-            ProtectionInfo protectionInfo;
-        } rmaNotify;
-        int8_t reserve[64];
-    } notifyInfo;
-};
-
-struct ChannelEntity {
+typedef struct {
     CommAbiHeader abiHeader;
     CommEngine engine;
     CommProtocol protocol;
-    // local notify
     uint32_t localNotifyNum;
-    Notify *localNotifyAddr;
-    // remote notify
     uint32_t remoteNotifyNum;
-    Notify *remoteNotifyAddr;
-    // Local User Reg buffer
     uint32_t localBufferNum;
-    ProtectionInfo *localBufferAddr;
-    // Remote User Reg buffer
     uint32_t remoteBufferNum;
-    ProtectionInfo *remoteBufferAddr;
-    // SQ
     uint32_t sqNum;
-    SqContext *SqContextAddr;
-    // CQ
     uint32_t cqNum;
-    CqContext *CqContextAddr;
-    uint8_t reserve[1024];
-};
+    RegedNotifyEntity *localNotifyAddr;
+    RegedNotifyEntity *remoteNotifyAddr;
+    RegedBufferEntity *localBufferAddr;
+    RegedBufferEntity *remoteBufferAddr;
+    SqContext *sqContextAddr;
+    CqContext *cqContextAddr;
+    uint8_t reserve[160];
+} ChannelEntity; // 256B
 
 #ifdef __cplusplus
 }
-#endif // __cplusplus
-
 #endif
+
+#endif // HCOMM_RES_ENTITY_DEFS_H
