@@ -13,6 +13,7 @@
 #include <vector>
 #include "ccu_res_specs.h"
 #include "orion_adapter_hccp.h"
+#include "hccp_tlv_hdc_manager.h"
 
 namespace Hccl {
 
@@ -140,10 +141,15 @@ static void DumpChannelDataV1(const struct ChannelDataV1 &data)
         data.dstTokenValueValid);
 }
 
-static void ConfigChannelDataV1(const uint32_t devPhyId, const uint8_t dieId, const uint32_t channelId,
+static void ConfigChannelDataV1(const int32_t devLogicId, const uint32_t devPhyId, const uint8_t dieId, const uint32_t channelId,
     const ChannelDataV1 &channelData)
 {
-    const HRaInfo                info(HrtNetworkMode::HDC, devPhyId);
+    auto tlvHandle = HccpTlvHdcManager::GetInstance().GetTlvHandle(devLogicId);
+    if (tlvHandle == nullptr) {
+        HCCL_ERROR("[%s] tlvHandle is nullptr, devLogicId[%d].", __func__, devLogicId);
+        return;
+    }
+    
     struct CustomChannelInfoIn  inBuff;
     struct CustomChannelInfoOut outBuff;
 
@@ -154,14 +160,14 @@ static void ConfigChannelDataV1(const uint32_t devPhyId, const uint8_t dieId, co
     inBuff.data.dataInfo.dataLen       = sizeof(struct ChannelDataV1) * dataArraySize;
     inBuff.offsetStartIdx              = channelId;
 
-    HCCL_INFO("[CcuChannelMgrV1][%s] set data to ccu driver, devPhyId[%u], "
-        "ioDie[%u], idx[%u], size[%u].", __func__, devPhyId, dieId, channelId,
+    HCCL_INFO("[CcuChannelMgrV1][%s] set data to ccu driver, devLogicId[%d] devPhyId[%u], "
+        "ioDie[%u], idx[%u], size[%u].", __func__, devLogicId, devPhyId, dieId, channelId,
         sizeof(struct ChannelDataV1));
     DumpChannelDataV1(channelData);
 
     (void)memcpy_s(inBuff.data.dataInfo.dataArray, sizeof(struct ChannelDataV1), &channelData,
                    sizeof(struct ChannelDataV1));
-    HrtRaCustomChannel(info, reinterpret_cast<void *>(&inBuff), reinterpret_cast<void *>(&outBuff));
+    HrtRaTlvRequestForCustomChannel(tlvHandle, reinterpret_cast<void *>(&inBuff), reinterpret_cast<void *>(&outBuff));
 }
 
 HcclResult CcuChannelMgrV1::Config(const ChannelCfg &channelCfg)
@@ -185,7 +191,7 @@ HcclResult CcuChannelMgrV1::Config(const ChannelCfg &channelCfg)
     // 因jettyCtx连续，从起始jettyCtx配置
     const uint16_t startTaJettyId = jettyInfos[0].taJettyId;
     const ChannelDataV1 &data = BuildChannelDataV1(channelCfg, feId, dieId, startTaJettyId);
-    TRY_CATCH_RETURN(ConfigChannelDataV1(devPhyId, dieId, channelId, data));
+    TRY_CATCH_RETURN(ConfigChannelDataV1(devLogicId, devPhyId, dieId, channelId, data));
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -207,7 +213,7 @@ HcclResult CcuChannelMgrV1::Release(const uint32_t channelId)
     // 重置并配置Channel表，避免错误复用
     channelResInfos[channelId] = ChannelResInfo{};
     ChannelDataV1 data = {};
-    TRY_CATCH_RETURN(ConfigChannelDataV1(devPhyId, dieId, channelId, data));
+    TRY_CATCH_RETURN(ConfigChannelDataV1(devLogicId, devPhyId, dieId, channelId, data));
     return HcclResult::HCCL_SUCCESS;
 }
 

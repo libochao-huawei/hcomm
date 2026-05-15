@@ -13,6 +13,8 @@
 #include "../../ccu_res_specs.h"
 #include "hccp.h"
 #include "hccp_ctx.h"
+#include "hcomm_adapter_hccp.h"
+#include "hccp_tlv_hdc_manager.h"
 
 namespace hcomm {
 
@@ -95,11 +97,12 @@ void DumpJettyCtxData(const LocalJettyCtxData &tmp)
         tmp.startWqeBasicBlockIdxLow, tmp.startWqeBasicBlockIdxHigh, tmp.doorbellSendState);
 }
 
-HcclResult ConfigJettyCtxData(const uint8_t dieId, const uint32_t devPhyId,
+HcclResult ConfigJettyCtxData(const int32_t devLogicId, const uint8_t dieId, const uint32_t devPhyId,
     const uint16_t startJettyCtxId, std::vector<LocalJettyCtxData>& jettyCtxData)
 {
-    const uint32_t jettyNum = jettyCtxData.size(); // 分配与配置前校验已保证不为0
-    const RaInfo info{NetworkMode::NETWORK_OFFLINE, devPhyId};
+    const uint32_t jettyNum = jettyCtxData.size();
+    auto tlvHandle = Hccl::HccpTlvHdcManager::GetInstance().GetTlvHandle(devLogicId);
+    CHK_PTR_NULL(tlvHandle);
     CustomChannelInfoIn  inBuff{};
     CustomChannelInfoOut outBuff{};
 
@@ -123,12 +126,10 @@ HcclResult ConfigJettyCtxData(const uint8_t dieId, const uint32_t devPhyId,
             &jettyCtxData[i], sizeof(struct LocalJettyCtxData));
     }
 
-    auto ret = RaCustomChannel(info,
-        reinterpret_cast<CustomChanInfoIn *>(&inBuff),
-        reinterpret_cast<CustomChanInfoOut *>(&outBuff));
-    if (ret != 0) {
+    auto ret = HccpRaTlvRequestForCustomChannel(tlvHandle, static_cast<void*>(&inBuff), static_cast<void*>(&outBuff));
+    if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[CcuResSpecifications][%s] failed to call ccu driver, "
-            "devPhyId[%u] dieId[%d] op[%s].", __func__, devPhyId, dieId,
+            "devLogicId[%d] dieId[%d] op[%s].", __func__, devLogicId, dieId,
             "SET_JETTY_CTX");
         return HcclResult::HCCL_E_NETWORK;
     }

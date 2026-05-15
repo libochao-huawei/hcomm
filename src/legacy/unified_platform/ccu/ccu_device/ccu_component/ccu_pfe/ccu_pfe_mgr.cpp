@@ -12,6 +12,7 @@
 
 #include "ccu_res_specs.h"
 #include "orion_adapter_hccp.h"
+#include "hccp_tlv_hdc_manager.h"
 #include "ccu_pfe_cfg_generator.h"
 
 namespace Hccl {
@@ -40,18 +41,23 @@ inline PfeJettyStrategy BuildStrategy(const PfeJettyCtxCfg &cfg)
     return pfeJettyStrategy;
 }
 
-static void ConfigPfeTable(const uint32_t devPhyId, const uint8_t dieId, const uint32_t feId,
+static void ConfigPfeTable(const int32_t devLogicId, const uint32_t devPhyId, const uint8_t dieId, const uint32_t feId,
     const uint32_t pfeReservedNum, const PfeCtx &pfeCtx)
 {
-    const HRaInfo info(HrtNetworkMode::HDC, devPhyId);
+    auto tlvHandle = HccpTlvHdcManager::GetInstance().GetTlvHandle(devLogicId);
+    if (tlvHandle == nullptr) {
+        HCCL_ERROR("[ConfigPfeTable] tlvHandle is nullptr, devLogicId[%d].", devLogicId);
+        return;
+    }
+    
     struct CustomChannelInfoIn  inBuff;
     struct CustomChannelInfoOut outBuff;
     (void)memset_s(inBuff.data.raw, sizeof(inBuff.data.raw), 0, sizeof(inBuff.data.raw));
 
     if (UNLIKELY(feId > UINT32_MAX - static_cast<uint32_t>(dieId) * pfeReservedNum)) {
         THROW<InvalidParamsException>("[CcuPfeMgr][%s] failed, feId[%u] is greater than expected, "
-            "pfeReservedNum[%u], will exceeds the range of uint32_t, devPhyId[%u], "
-            "dieId[%u].", __func__, feId, pfeReservedNum, devPhyId, dieId);
+            "pfeReservedNum[%u], will exceeds the range of uint32_t, devLogicId[%d] devPhyId[%u], "
+            "dieId[%u].", __func__, feId, pfeReservedNum, devLogicId, devPhyId, dieId);
     }
 
     const uint32_t pfeTableOffset = static_cast<uint32_t>(dieId) * pfeReservedNum + feId;
@@ -65,7 +71,7 @@ static void ConfigPfeTable(const uint32_t devPhyId, const uint8_t dieId, const u
  
     (void)memcpy_s(inBuff.data.dataInfo.dataArray, inBuff.data.dataInfo.dataLen, &pfeCtx,
         inBuff.data.dataInfo.dataLen);
-    HrtRaCustomChannel(info, reinterpret_cast<void *>(&inBuff), reinterpret_cast<void *>(&outBuff));
+    HrtRaTlvRequestForCustomChannel(tlvHandle, reinterpret_cast<void *>(&inBuff), reinterpret_cast<void *>(&outBuff));
 }
 
 CcuPfeMgr::CcuPfeMgr(const int32_t devLogicId, const uint8_t dieId, const uint32_t devPhyId)
@@ -97,7 +103,7 @@ CcuPfeMgr::CcuPfeMgr(const int32_t devLogicId, const uint8_t dieId, const uint32
         pfeMap[feId] = BuildStrategy(cfg);
 
         const auto &pfeCtx = BuildPfeCtx(cfg);
-        ConfigPfeTable(devPhyId, dieId, feId, pfeReservedNum, pfeCtx);
+        ConfigPfeTable(devLogicId, devPhyId, dieId, feId, pfeReservedNum, pfeCtx);
         HCCL_INFO("[CcuPfeMgr] config pfe table end, devLogicId[%d] dieId[%u] feId[%u]",
                 devLogicId, dieId, feId);
     }
