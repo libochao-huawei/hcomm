@@ -15,11 +15,12 @@
 #include <cstdint>
 #include <mutex>
 #include <hccl/hccl_types.h>
-#include "hccl_common.h"
+#include "log.h"
 
 namespace hccl {
 constexpr u32 MAX_CANN_VERSION_LEN = 50;  // CANN版本校验
 static constexpr u32 MAX_CRC_LEN_V2 = 16; // A5最大CRC个数
+constexpr u32 MAX_MODULE_DEVICE_NUM = 65; // 单server双模组时支持最大的设备数量
 struct CrcEntryV2 {
     std::string name;  // A5环境变量名（如"HCCL_BUFFSIZE"）或子通信域参数名（如"sub_comm_rankNum"）或ranktable名
     u32 crc = 0;
