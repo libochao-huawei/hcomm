@@ -126,7 +126,9 @@ HcclResult CcuKernel::Init()
     profilingInfo.clear();
     // 生成SQE粒度profiling信息
     AddSqeProfiling();
+    HCCL_INFO("check CcuKernel loadpath start !");
     CHK_RET(Algorithm());
+    HCCL_INFO("check CcuKernel loadpath end !");
     return HcclResult::HCCL_SUCCESS;
 }
 
