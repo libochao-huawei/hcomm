@@ -88,7 +88,7 @@ struct LocalJettyCtxData {
 LocalJettyCtxData BuildJettyCtxData(const uint8_t dieId, const uint32_t pfeId,
     const JettyInfo& jettyInfo, const JettyCfg& jettyCfg);
 
-HcclResult ConfigJettyCtxData(const uint8_t dieId, const uint32_t devPhyId,
+HcclResult ConfigJettyCtxData(const int32_t devLogicId, const uint8_t dieId, const uint32_t devPhyId,
     const uint16_t startJettyCtxId, std::vector<LocalJettyCtxData>& jettyCtxData);
 
 void DumpJettyCtxData(const LocalJettyCtxData &tmp);

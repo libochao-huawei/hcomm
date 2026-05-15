@@ -12,10 +12,14 @@
 
 #include "log.h"
 #include "orion_adpt_utils.h"
+#include "hccp_tlv.h"
+#include "hccp_common.h"
 
 #include "hccp_async.h"
 #include "hccp_async_ctx.h"
 #include "enum_factory.h"
+
+constexpr u32 RA_TLV_REQUEST_UNAVAIL = 128308;
 
 namespace hcomm {
 
@@ -471,6 +475,49 @@ HcclResult HccpRaCustomChannel(HrtNetworkMode mode, uint32_t phyId, void *custom
     int ret = RaCustomChannel(info, in, out);
     CHK_PRT_RET(ret != 0, HCCL_ERROR("[%s]RaCustomChannel fail, mode[%s], phyId[%u], customIn[%p], customOut[%p]",
         __func__, mode.Describe().c_str(), phyId, customIn, customOut), HCCL_E_NETWORK);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HccpRaTlvRequestForCustomChannel(void *tlvHandle, void *customIn, void *customOut)
+{
+    HCCL_INFO("[%s] tlvHandle[%p], customIn[%p], customOut[%p]",
+        __func__, tlvHandle, customIn, customOut);
+    
+    CHK_PTR_NULL(tlvHandle);
+    CHK_PTR_NULL(customIn);
+    CHK_PTR_NULL(customOut);
+
+    static_assert(sizeof(CustomChanInfoIn) == sizeof(Hccl::CustomChannelInfoIn),
+        "CustomChanInfoIn and CustomChannelInfoIn must have the same size");
+    static_assert(sizeof(CustomChanInfoOut) == sizeof(Hccl::CustomChannelInfoOut),
+        "CustomChanInfoOut and CustomChannelInfoOut must have the same size");
+    
+    
+    struct TlvMsg sendMsg {};
+    sendMsg.type = MSG_TYPE_CCU_DISPATCH_CMD;
+    sendMsg.length = sizeof(CustomChanInfoIn);
+    sendMsg.data = static_cast<char*>(customIn);
+    
+    struct TlvMsg recvMsg {};
+    recvMsg.type = MSG_TYPE_CCU_DISPATCH_CMD;
+    recvMsg.length = sizeof(CustomChanInfoOut);
+    recvMsg.data = static_cast<char*>(customOut);
+    
+    int ret = RaTlvRequest(tlvHandle, TLV_MODULE_TYPE_CCU, &sendMsg, &recvMsg);
+    
+    if (ret == RA_TLV_REQUEST_UNAVAIL || ret == OTHERS_ENOTSUPP) {
+        HCCL_WARNING("[%s] RaTlvRequest UNAVAIL, tlvHandle[%p], ret[%d]",
+            __func__, tlvHandle, ret);
+        return HCCL_E_AGAIN;
+    }
+    
+    if (ret != 0) {
+        HCCL_ERROR("[%s] RaTlvRequest fail, tlvHandle[%p], ret[%d]",
+            __func__, tlvHandle, ret);
+        return HCCL_E_NETWORK;
+    }
+    
+    HCCL_INFO("[%s] success", __func__);
     return HCCL_SUCCESS;
 }
 
