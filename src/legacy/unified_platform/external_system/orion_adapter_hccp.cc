@@ -1965,12 +1965,12 @@ RequestHandle RaSocketCloseOneAsync(RaSocketCloseParam &in)
 
 RequestHandle RaSocketListenOneStartAsync(SocketListenInfoT* listenInfo)
 {
-    HCCL_INFO("[RaSocketListenOneStartAsync] Input params: socketHandle=%p, port=%u", listenInfo, listenInfo->port);
     if (listenInfo == nullptr) {
         MACRO_THROW(NetworkApiException, StringFormat(
         "errNo[0x%016llx] listenInfo is nullptr.",
         HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT)));
     }
+    HCCL_INFO("[RaSocketListenOneStartAsync] Input params: listenInfo=%p, port=%u", listenInfo, listenInfo->port);
 
     void *raReqHandle = nullptr;
     int ret = RaSocketListenStartAsync(listenInfo, SOCKET_NUM_ONE, &raReqHandle);
