@@ -21,8 +21,6 @@
 namespace hccl {
 constexpr u32 MAX_CANN_VERSION_LEN = 50;  // CANN版本校验
 static constexpr u32 MAX_CRC_LEN_V2 = 16; // A5最大CRC个数
-constexpr u32 MAX_MODULE_DEVICE_NUM = 65; // 单server双模组时支持最大的设备数量
-constexpr s32 HOST_DEVICE_ID = -1;
 struct CrcEntryV2 {
     std::string name;  // A5环境变量名（如"HCCL_BUFFSIZE"）或子通信域参数名（如"sub_comm_rankNum"）或ranktable名
     u32 crc = 0;
@@ -41,7 +39,7 @@ struct CheckFrameV2 {
 class RankConsistencyCheckerV2 {
 public:
     ~RankConsistencyCheckerV2();
-    static RankConsistencyCheckerV2& GetInstance(s32 deviceLogicId = 0xFF);
+    static RankConsistencyCheckerV2& GetInstance();
     
     HcclResult RecordEnvVarCrcV2(u64 buffSize);
     HcclResult RecordRankTableCrcV2(const std::string &rankTableContent);
