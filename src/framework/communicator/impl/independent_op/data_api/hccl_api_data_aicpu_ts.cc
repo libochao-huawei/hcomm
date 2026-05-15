@@ -664,6 +664,36 @@ int32_t HcommReadReduceOnThread(ThreadHandle thread, ChannelHandle channel, void
     return HCCL_SUCCESS;
 }
 
+int32_t HcommBatchTransferOnThread(ThreadHandle thread, ChannelHandle channel,
+    const HcommBatchTransferDesc *transferDescs, uint32_t transferDescNum)
+{
+    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], transferDescNum[%u].",
+        __func__, thread, channel, transferDescNum);
+
+    CHK_PTR_NULL(transferDescs);
+    CHK_PRT_RET(transferDescNum == 0,
+        HCCL_ERROR("[%s] transferDescNum is 0.", __func__), HCCL_E_PARA);
+
+    Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
+    CHK_PTR_NULL(threadPtr);
+    if (threadPtr->IsDeviceA5()) {
+        HCCL_WARNING("[%s] A5 path is not supported.", __func__);
+        return HCCL_E_NOT_SUPPORT;
+    }
+    AddThread(thread);
+    Stream *stream = GetStream(thread);
+    CHK_PTR_NULL(stream);
+    hccl::Transport *transport = reinterpret_cast<hccl::Transport *>(channel);
+    CHK_PTR_NULL(transport);
+
+    HcclResult ret = transport->BatchTransferAsync(transferDescs, transferDescNum, *stream);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[%s] BatchTransferAsync failed.", __func__), ret);
+
+    HCCL_INFO("[%s] SUCCESS. transferDescNum[%u].", __func__, transferDescNum);
+    return HCCL_SUCCESS;
+}
+
 int32_t HcommWriteNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len)
 {
     HCCL_DEBUG("[%s] thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].", __func__, thread, channel, dst, src, len);
