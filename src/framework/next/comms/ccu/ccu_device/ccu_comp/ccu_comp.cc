@@ -25,6 +25,8 @@
 #include "adapter_rts_common.h"
 #include "ccu_error_info_v1.h"
 #include "orion_adapter_hccp.h"
+#include "hcomm_adapter_hccp.h"
+#include "hccp_tlv_hdc_manager.h"
 
 namespace hcomm {
 
@@ -551,7 +553,8 @@ HcclResult CcuComponent::ConfigLoopChannel(const uint8_t dieId, const CommAddr &
 HcclResult CcuComponent::ConfigMsIdToken()
 {
     const bool armX86Flag = CcuResSpecifications::GetInstance(devLogicId_).GetArmX86Flag();
-    const RaInfo info{NetworkMode::NETWORK_OFFLINE, devPhyId_};
+    auto tlvHandle = Hccl::HccpTlvHdcManager::GetInstance().GetTlvHandle(devLogicId_);
+    CHK_PTR_NULL(tlvHandle);
     CustomChannelInfoIn  inBuff{};
     CustomChannelInfoOut outBuff{};
     for (uint8_t dieId = 0; dieId < CCU_MAX_IODIE_NUM; dieId++) {
@@ -576,12 +579,10 @@ HcclResult CcuComponent::ConfigMsIdToken()
         inBuff.data.dataInfo.dataArray[0].baseinfo.tokenId    = tokenId;
         inBuff.data.dataInfo.dataArray[0].baseinfo.tokenValue = tokenValue;
 
-        auto ret = RaCustomChannel(info,
-            reinterpret_cast<CustomChanInfoIn *>(&inBuff),
-            reinterpret_cast<CustomChanInfoOut *>(&outBuff));
-        if (ret != 0) {
+        auto ret = HccpRaTlvRequestForCustomChannel(tlvHandle, static_cast<void*>(&inBuff), static_cast<void*>(&outBuff));
+        if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("[CcuResSpecifications][%s] failed to call ccu driver, "
-                "devPhyId[%u] dieId[%d] op[%s].", __func__, devPhyId_, dieId,
+                "devLogicId[%d] dieId[%d] op[%s].", __func__, devLogicId_, dieId,
                 "SET_MSID_TOKEN");
             return HcclResult::HCCL_E_NETWORK;
         }
@@ -908,6 +909,8 @@ HcclResult CcuComponent::DestroyAllJettys()
 
 HcclResult CcuComponent::SetProcess(CcuOpcodeType opCode) const
 {
+    auto tlvHandle = Hccl::HccpTlvHdcManager::GetInstance().GetTlvHandle(devLogicId_);
+    CHK_PTR_NULL(tlvHandle);
     CustomChannelInfoIn  inBuff;
     CustomChannelInfoOut outBuff;
 
@@ -919,8 +922,11 @@ HcclResult CcuComponent::SetProcess(CcuOpcodeType opCode) const
         }
         HCCL_INFO("[%s]devLogicId[%d], dieId[%u] start.", __func__, devLogicId_, dieId);
         inBuff.data.dataInfo.udieIdx = dieId;
-        CHK_RET(HccpRaCustomChannel(HrtNetworkMode::HDC, devPhyId_, static_cast<void *>(&inBuff),
-            static_cast<void *>(&outBuff)));
+        auto ret = HccpRaTlvRequestForCustomChannel(tlvHandle, static_cast<void*>(&inBuff), static_cast<void*>(&outBuff));
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[%s] failed to call ccu driver, devLogicId[%d] dieId[%u] op[%s].",
+                __func__, devLogicId_, dieId, "SET_TASKKILL"),
+            ret);
     }
     return HcclResult::HCCL_SUCCESS;
 }
@@ -1014,6 +1020,8 @@ HcclResult CcuComponent::CleanDieCkes(const uint8_t dieId) const
         return HcclResult::HCCL_SUCCESS;
     }
 
+    auto tlvHandle = Hccl::HccpTlvHdcManager::GetInstance().GetTlvHandle(devLogicId_);
+    CHK_PTR_NULL(tlvHandle);
     CustomChannelInfoIn  inBuff{};
     CustomChannelInfoOut outBuff{};
 
@@ -1030,7 +1038,11 @@ HcclResult CcuComponent::CleanDieCkes(const uint8_t dieId) const
         inBuff.data.dataInfo.dataArraySize = std::min(ckeNum - startIdx, MAX_CKE_DATA_ARRAY_SIZE);
         inBuff.data.dataInfo.dataLen       = sizeof(CcuDataByte8) * inBuff.data.dataInfo.dataArraySize;
         inBuff.offsetStartIdx              = startIdx;
-        CHK_RET(HccpRaCustomChannel(HrtNetworkMode::HDC, devPhyId_, &inBuff, &outBuff));
+        auto ret = HccpRaTlvRequestForCustomChannel(tlvHandle, static_cast<void*>(&inBuff), static_cast<void*>(&outBuff));
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[%s] failed to call ccu driver, devLogicId[%d] dieId[%u] op[%s].",
+                __func__, devLogicId_, dieId, "SET_CKE"),
+            ret);
     }
 
     return HcclResult::HCCL_SUCCESS;
