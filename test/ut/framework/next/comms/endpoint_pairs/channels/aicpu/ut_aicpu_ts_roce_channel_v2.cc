@@ -246,7 +246,7 @@ TEST_F(AicpuTsRoceChannelV2Test, Ut_When_BuildAndGetLocNotifyInfo_Expect_Success
     channel->Init();
     channel->channelStatus_ = ChannelStatus::READY;
     
-    Notify* notify = nullptr;
+    RegedNotifyEntity* notify = nullptr;
     HcclResult ret = channel->BuildAndGetLocNotifyInfo(&notify);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     
@@ -263,7 +263,7 @@ TEST_F(AicpuTsRoceChannelV2Test, Ut_When_BuildAndGetRmtNotifyInfo_Expect_Success
     channel->Init();
     channel->channelStatus_ = ChannelStatus::READY;
     
-    Notify* notify = nullptr;
+    RegedNotifyEntity* notify = nullptr;
     HcclResult ret = channel->BuildAndGetRmtNotifyInfo(&notify);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     
@@ -280,8 +280,8 @@ TEST_F(AicpuTsRoceChannelV2Test, Ut_When_BuildAndGetLocBufInfo_Expect_Success)
     channel->Init();
     channel->channelStatus_ = ChannelStatus::READY;
     
-    ProtectionInfo* protectionInfo = nullptr;
-    HcclResult ret = channel->BuildAndGetLocBufInfo(&protectionInfo);
+    RegedBufferEntity* bufferEntity = nullptr;
+    HcclResult ret = channel->BuildAndGetLocBufInfo(&bufferEntity);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     
     std::cout << "End Ut_When_BuildAndGetLocBufInfo_Expect_Success" << std::endl;
@@ -298,8 +298,8 @@ TEST_F(AicpuTsRoceChannelV2Test, Ut_When_BuildAndGetRmtBufInfo_Expect_Success)
     channel->channelStatus_ = ChannelStatus::READY;
     channel->rmtRmaBuffers_.push_back(std::make_unique<Hccl::RemoteRdmaRmaBuffer>((void *)0x1000000));
     
-    ProtectionInfo* protectionInfo = nullptr;
-    HcclResult ret = channel->BuildAndGetRmtBufInfo(&protectionInfo);
+    RegedBufferEntity* bufferEntity = nullptr;
+    HcclResult ret = channel->BuildAndGetRmtBufInfo(&bufferEntity);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     
     std::cout << "End Ut_When_BuildAndGetRmtBufInfo_Expect_Success" << std::endl;
@@ -646,10 +646,10 @@ TEST_F(AicpuTsRoceChannelV2Test, Ut_When_CopyArrayToDevice_Expect_Success)
     channelDesc.memHandleNum = 1;
     auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
     channel->Init();
-    ProtectionInfo hostArray[2] = {};
-    hostArray[0].addr = 0x1000;
-    hostArray[1].addr = 0x2000;
-    ProtectionInfo* devPtr = nullptr;
+    RegedBufferEntity hostArray[2] = {};
+    hostArray[0].bufferInfo.rma.addr = 0x1000;
+    hostArray[1].bufferInfo.rma.addr = 0x2000;
+    RegedBufferEntity* devPtr = nullptr;
     HcclResult ret = channel->CopyArrayToDevice(hostArray, 2, &devPtr, "testArray");
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_NE(devPtr, nullptr);

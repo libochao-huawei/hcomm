@@ -24,7 +24,6 @@
 namespace hcomm {
 
 constexpr uint16_t DEFAULT_LISTENING_PORT = 60001;
-constexpr u32 CHANNEL_ENTITY_TYPE_RDMA = 0;
 
 AicpuTsRoceChannelV2::AicpuTsRoceChannelV2(EndpointHandle endpointHandle, HcommChannelDesc channelDesc, CommEngine engine)
     : endpointHandle_(endpointHandle), channelDesc_(channelDesc), engine_(engine)
@@ -483,19 +482,18 @@ HcclResult AicpuTsRoceChannelV2::ModifyQp() {
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsRoceChannelV2::BuildAndGetLocNotifyInfo(Notify** notify)
+HcclResult AicpuTsRoceChannelV2::BuildAndGetLocNotifyInfo(RegedNotifyEntity** notify)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult AicpuTsRoceChannelV2::BuildAndGetRmtNotifyInfo(RegedNotifyEntity** notify)
 {
     // 目前仅用于aiv模式，无notify
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsRoceChannelV2::BuildAndGetRmtNotifyInfo(Notify** notify)
-{
-    // 目前仅用于aiv模式，无notify
-    return HCCL_SUCCESS;
-}
-
-HcclResult AicpuTsRoceChannelV2::BuildAndGetRmtBufInfo(ProtectionInfo** protectionInfoPtr)
+HcclResult AicpuTsRoceChannelV2::BuildAndGetRmtBufInfo(RegedBufferEntity** bufferEntityPtr)
 {
     if (channelStatus_ != ChannelStatus::READY) {
         HCCL_ERROR("[AicpuTsRoceChannelV2::%s] channel status[%d] is not ready[%d], please check.",
@@ -508,27 +506,28 @@ HcclResult AicpuTsRoceChannelV2::BuildAndGetRmtBufInfo(ProtectionInfo** protecti
         return HCCL_SUCCESS;
     }
 
-    if (protectionInfoPtr == nullptr) {
+    if (bufferEntityPtr == nullptr) {
         HCCL_ERROR("[AicpuTsRoceChannelV2::%s] input param is null", __func__);
         return HCCL_E_PARA;
     }
 
     for (uint32_t i = 0; i < bufferNum_; i++) {
         auto& rmtRmaBuffer = rmtRmaBuffers_[i];
-        ProtectionInfo protectionInfo;
-        protectionInfo.type = CHANNEL_ENTITY_TYPE_RDMA;
-        protectionInfo.addr = static_cast<uint64_t>(rmtRmaBuffer->GetAddr());
-        protectionInfo.length = rmtRmaBuffer->GetSize();
-        protectionInfo.memInfo.rdmaMemInfo.rkey = rmtRmaBuffer->GetRkey();
-        rmtBufProtecInfoList_.emplace_back(protectionInfo);
+        RegedBufferEntity bufferEntity;
+        bufferEntity.type = REGED_BUFFER_RMA;
+        bufferEntity.bufferInfo.rma.addr = static_cast<uint64_t>(rmtRmaBuffer->GetAddr());
+        bufferEntity.bufferInfo.rma.size = rmtRmaBuffer->GetSize();
+        bufferEntity.bufferInfo.rma.protectionInfo.type = PROTECTION_TYPE_ROCE;
+        bufferEntity.bufferInfo.rma.protectionInfo.memInfo.roce.rkey = rmtRmaBuffer->GetRkey();
+        rmtBufEntityList_.emplace_back(bufferEntity);
         HCCL_INFO("[AicpuTsRoceChannelV2::%s] rmtBuf[addr[%p], size[%lu]]", 
-            __func__, protectionInfo.addr, protectionInfo.length);
+            __func__, bufferEntity.bufferInfo.rma.addr, bufferEntity.bufferInfo.rma.size);
     }
-    *protectionInfoPtr = rmtBufProtecInfoList_.data();
+    *bufferEntityPtr = rmtBufEntityList_.data();
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsRoceChannelV2::BuildAndGetLocBufInfo(ProtectionInfo** protectionInfoPtr)
+HcclResult AicpuTsRoceChannelV2::BuildAndGetLocBufInfo(RegedBufferEntity** bufferEntityPtr)
 {
     if (channelStatus_ != ChannelStatus::READY) {
         HCCL_ERROR("[AicpuTsRoceChannelV2::%s] channel status[%d] is not ready[%d], please check.",
@@ -541,23 +540,24 @@ HcclResult AicpuTsRoceChannelV2::BuildAndGetLocBufInfo(ProtectionInfo** protecti
         return HCCL_SUCCESS;
     }
 
-    if (protectionInfoPtr == nullptr) {
+    if (bufferEntityPtr == nullptr) {
         HCCL_ERROR("[AicpuTsRoceChannelV2::%s] input param is null", __func__);
         return HCCL_E_PARA;
     }
 
     for (uint32_t i = 0; i < bufferNum_; i++) {
         auto& locRmaBuffer = localRmaBuffers_[i];
-        ProtectionInfo protectionInfo;
-        protectionInfo.type = CHANNEL_ENTITY_TYPE_RDMA;
-        protectionInfo.addr = static_cast<uint64_t>(locRmaBuffer->GetAddr());
-        protectionInfo.length = locRmaBuffer->GetSize();
-        protectionInfo.memInfo.rdmaMemInfo.lkey = locRmaBuffer->GetLkey();
-        locBufProtecInfoList_.emplace_back(protectionInfo);
+        RegedBufferEntity bufferEntity;
+        bufferEntity.type = REGED_BUFFER_RMA;
+        bufferEntity.bufferInfo.rma.addr = static_cast<uint64_t>(locRmaBuffer->GetAddr());
+        bufferEntity.bufferInfo.rma.size = locRmaBuffer->GetSize();
+        bufferEntity.bufferInfo.rma.protectionInfo.type = PROTECTION_TYPE_ROCE;
+        bufferEntity.bufferInfo.rma.protectionInfo.memInfo.roce.lkey = locRmaBuffer->GetLkey();
+        locBufEntityList_.emplace_back(bufferEntity);
         HCCL_INFO("[AicpuTsRoceChannelV2::%s] locBuf[addr[%p], size[%lu]]", 
-            __func__, protectionInfo.addr, protectionInfo.length);
+            __func__, bufferEntity.bufferInfo.rma.addr, bufferEntity.bufferInfo.rma.size);
     }
-    *protectionInfoPtr = locBufProtecInfoList_.data();
+    *bufferEntityPtr = locBufEntityList_.data();
     return HCCL_SUCCESS;
 }
 
@@ -639,8 +639,8 @@ HcclResult AicpuTsRoceChannelV2::BuildAndGetDevChannelEntity(uint64_t* devChanne
     hostEntity.engine   = GetCommEngine();
     hostEntity.protocol = GetCommProtocol();
 
-    locBufProtecInfoList_.clear();
-    rmtBufProtecInfoList_.clear();
+    locBufEntityList_.clear();
+    rmtBufEntityList_.clear();
     sqContextList_.clear();
     cqContextList_.clear();
     deviceMemories_.clear();
@@ -656,9 +656,9 @@ HcclResult AicpuTsRoceChannelV2::BuildAndGetDevChannelEntity(uint64_t* devChanne
     CHK_RET(BuildAndGetRmtBufInfo(&hostEntity.remoteBufferAddr));
 
     CHK_RET(GetQpNum(&hostEntity.sqNum));
-    CHK_RET(BuildAndGetSqContext(&hostEntity.SqContextAddr));
+    CHK_RET(BuildAndGetSqContext(&hostEntity.sqContextAddr));
     hostEntity.cqNum = hostEntity.sqNum;
-    CHK_RET(BuildAndGetCqContext(&hostEntity.CqContextAddr));
+    CHK_RET(BuildAndGetCqContext(&hostEntity.cqContextAddr));
 
     hccl::DeviceMem entityDevMem = hccl::DeviceMem::alloc(sizeof(ChannelEntity));
     CHK_PRT_RET(!entityDevMem,
@@ -676,10 +676,10 @@ HcclResult AicpuTsRoceChannelV2::BuildAndGetDevChannelEntity(uint64_t* devChanne
                               &devEntity.localBufferAddr, "localBufferAddr"));
     CHK_RET(CopyArrayToDevice(hostEntity.remoteBufferAddr, hostEntity.remoteBufferNum,
                               &devEntity.remoteBufferAddr, "remoteBufferAddr"));
-    CHK_RET(CopyArrayToDevice(hostEntity.SqContextAddr, hostEntity.sqNum,
-                              &devEntity.SqContextAddr, "SqContextAddr"));
-    CHK_RET(CopyArrayToDevice(hostEntity.CqContextAddr, hostEntity.cqNum,
-                              &devEntity.CqContextAddr, "CqContextAddr"));
+    CHK_RET(CopyArrayToDevice(hostEntity.sqContextAddr, hostEntity.sqNum,
+                              &devEntity.sqContextAddr, "sqContextAddr"));
+    CHK_RET(CopyArrayToDevice(hostEntity.cqContextAddr, hostEntity.cqNum,
+                              &devEntity.cqContextAddr, "cqContextAddr"));
 
     Hccl::HrtMemcpy(entityDevPtr, sizeof(ChannelEntity), &devEntity, sizeof(ChannelEntity),
                      Hccl::tagRtMemcpyKind::RT_MEMCPY_HOST_TO_DEVICE);
