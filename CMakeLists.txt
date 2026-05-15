@@ -8,14 +8,13 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 cmake_minimum_required(VERSION 3.16.0)
-include(cmake/fetch_cann_cmake.cmake)
-project(hcomm)
-
-# 初始化 CANN 项目配置
-init_cann_project(PREPEND_MODULE_PATH)
-
 option(BUILD_OPEN_PROJECT "Build open hcomm project." ON)
 option(ENABLE_BUILD_DEVICE "Build hcomm device project." OFF)
+
+set(HCC_TOOLCHAIN_DIR "${ASCEND_CANN_PACKAGE_PATH}/toolkit/toolchain/hcc")
+set(HCC_CXX_COMPILER  "${HCC_TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-g++")
+set(HCC_C_COMPILER    "${HCC_TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-gcc")
+set(HCC_C_AR          "${HCC_TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-ar")
 
 message(STATUS "BUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}")
 message(STATUS "ASCEND_CANN_PACKAGE_PATH=${ASCEND_CANN_PACKAGE_PATH}")
@@ -23,19 +22,19 @@ message(STATUS "CANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH}")
 message(STATUS "ENABLE_BUILD_DEVICE=${ENABLE_BUILD_DEVICE}")
 message(STATUS "AARCH_MODE=${AARCH_MODE}")
 
+# 默认只编译 host 侧
+if(NOT DEFINED PRODUCT_SIDE)
+    set(PRODUCT_SIDE "host")
+endif()
+
 if(DEFINED ENV{TOOLCHAIN_DIR} AND ENABLE_BUILD_DEVICE)
     set(ENABLE_DEVICE ON)
 else()
     set(ENABLE_DEVICE OFF)
 endif()
 
-set(HCOMM_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
-set(HCC_TOOLCHAIN_DIR "${ASCEND_CANN_PACKAGE_PATH}/toolkit/toolchain/hcc")
-set(HCC_CXX_COMPILER  "${HCC_TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-g++")
-set(HCC_C_COMPILER    "${HCC_TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-gcc")
-set(HCC_C_AR          "${HCC_TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-ar")
-
-# 交叉编译场景（x86机器上编译arm包）
+# 交叉编译场景：必须在 project() 之前设置编译器，
+# 否则 CMake 会在 project() 之后检测到编译器变化，触发 cache 失效和重配，导致 -D 变量丢失
 if(AARCH_MODE)
     message(STATUS "TOOLCHAIN_DIR=${HCC_TOOLCHAIN_DIR}")
     set(CMAKE_SYSTEM_NAME Linux)
@@ -45,16 +44,18 @@ if(AARCH_MODE)
     set(CMAKE_C_COMPILER   ${HCC_C_COMPILER})
 endif()
 
+# 引入CANN/cmake库
+include(cmake/fetch_cann_cmake.cmake)
+project(hcomm)
+
+# 初始化 CANN 项目配置
+init_cann_project(PREPEND_MODULE_PATH)
+
 # 采用 C++14 标准
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_FLAGS_RELEASE "")
 set(CMAKE_CXX_FLAGS_RELEASE "")
-
-# 默认只编译 host 侧
-if(NOT DEFINED PRODUCT_SIDE)
-    set(PRODUCT_SIDE "host")
-endif()
 
 # 获取 CPU 核心数
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
