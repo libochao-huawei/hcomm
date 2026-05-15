@@ -204,8 +204,7 @@ HcclResult CcuKernel::SelectDie()
     return HcclResult::HCCL_SUCCESS;
 }
 
-CcuResult CcuKernel::GeneTaskParams(const uint64_t *taskArgs, uint32_t argsNum,
-    std::vector<CcuTaskParam> &taskParams)
+CcuResult CcuKernel::ValidateTaskArgs(const uint64_t *taskArgs, uint32_t argsNum) const
 {
     if (loadArgUsedSet_.size() != argsNum) {
         HCCL_ERROR("[CcuKernel][%s] failed, args number does not match the Load instruction, "
@@ -222,12 +221,47 @@ CcuResult CcuKernel::GeneTaskParams(const uint64_t *taskArgs, uint32_t argsNum,
     if (argsNum != 0) {
         CCU_CHK_PTR_NULL(taskArgs);
     }
-
     if (instrInfo_.missionInstrCount == 0 || instrInfo_.instrVec.empty()) {
         HCCL_ERROR("[CcuKernel][%s] failed, mission instructions are empty, "
             "the kernel is not been translated yet.", __func__);
         return CcuResult::CCU_E_INTERNAL;
     }
+    return CcuResult::CCU_SUCCESS;
+}
+
+void CcuKernel::FillTaskParam(CcuTaskParam &param, uint32_t index, uint32_t seqNum,
+    const uint64_t *taskArgs, uint32_t argsNum) const
+{
+    param.dieId       = GetDieId();
+    param.missionId   = GetMissionId();
+    param.instStartId = instrInfo_.missionStartInstrId + index * CCU_SQE_ARGS_LEN;
+    param.key         = GetMissionKey();
+    param.argSize     = CCU_SQE_ARGS_LEN;
+
+    const uint32_t preMissionInsCnt = index * CCU_SQE_ARGS_LEN;
+    const bool isLast = (index == seqNum - 1);
+    param.instCnt = isLast ? (instrInfo_.missionInstrCount - preMissionInsCnt) : CCU_SQE_ARGS_LEN;
+
+    if (argsNum > preMissionInsCnt) {
+        const uint32_t argsToCopy = isLast
+            ? std::min(argsNum - preMissionInsCnt, CCU_SQE_ARGS_LEN)
+            : CCU_SQE_ARGS_LEN;
+        std::copy(taskArgs + preMissionInsCnt, taskArgs + preMissionInsCnt + argsToCopy,
+                  std::begin(param.args));
+    }
+
+    HCCL_INFO("[GeneTaskParam]task Param, dieId[%u] missionId[%u] instStartId[%u] instCnt[%u], argSize[%u]",
+              param.dieId, param.missionId, param.instStartId, param.instCnt, param.argSize);
+    for (uint32_t i = 0; i < param.argSize; i++) {
+        if (i == TOKEN_VALUE_INDEX) { continue; }
+        HCCL_INFO("[GeneTaskParam]arg[%lu] = %lu", i, param.args[i]);
+    }
+}
+
+CcuResult CcuKernel::GeneTaskParams(const uint64_t *taskArgs, uint32_t argsNum,
+    std::vector<CcuTaskParam> &taskParams)
+{
+    CCU_CHK_RET(ValidateTaskArgs(taskArgs, argsNum));
 
     // 如果agrs数量超过sqe arg的最大数量，则返回多个TaskParam，前面几个只从sqe中加载args;
     // args数量大于等于0、小于等于最大值时，返回1个TaskParam
@@ -244,36 +278,7 @@ CcuResult CcuKernel::GeneTaskParams(const uint64_t *taskArgs, uint32_t argsNum,
 
     taskParams.resize(seqNum);
     for (uint32_t index = 0; index < seqNum; index++) {
-        taskParams[index].dieId       = GetDieId();
-        taskParams[index].missionId   = GetMissionId();
-        taskParams[index].instStartId = instrInfo_.missionStartInstrId + index * CCU_SQE_ARGS_LEN;
-        taskParams[index].key         = GetMissionKey();
-        taskParams[index].argSize     = CCU_SQE_ARGS_LEN;
-
-        const uint32_t preMissionInsCnt = index * CCU_SQE_ARGS_LEN;
-    
-        if (index == seqNum - 1) {
-            taskParams[index].instCnt = instrInfo_.missionInstrCount - preMissionInsCnt;
-        } else {
-            taskParams[index].instCnt = CCU_SQE_ARGS_LEN;
-        }
-        
-        // 统一处理参数拷贝
-        if (argsNum > preMissionInsCnt) {
-            const uint32_t argsToCopy = (index == seqNum - 1) 
-                ? std::min(argsNum - preMissionInsCnt, CCU_SQE_ARGS_LEN)
-                : CCU_SQE_ARGS_LEN;
-            std::copy(taskArgs + preMissionInsCnt, taskArgs + preMissionInsCnt + argsToCopy,
-                    std::begin(taskParams[index].args));
-        }
-
-        HCCL_INFO("[GeneTaskParam]task Param, dieId[%u] missionId[%u] instStartId[%u] instCnt[%u], argSize[%u]",
-                  taskParams[index].dieId, taskParams[index].missionId, taskParams[index].instStartId,
-                  taskParams[index].instCnt, taskParams[index].argSize);
-        for (uint32_t i = 0; i < taskParams[index].argSize; i++) {
-            if (i == TOKEN_VALUE_INDEX) { continue; }
-            HCCL_INFO("[GeneTaskParam]arg[%lu] = %lu", i, taskParams[index].args[i]);
-        }
+        FillTaskParam(taskParams[index], index, seqNum, taskArgs, argsNum);
     }
 
     return CcuResult::CCU_SUCCESS;
@@ -761,6 +766,18 @@ CcuResult CcuKernel::LocalBufferReduce(CcuBufferHandle* bufHandles, uint32_t cou
 
 /*========== 远端数据传输操作 ==========*/
 
+CcuResult CcuKernel::ResolveBufRemoteLenEvent(CcuBufferHandle bufHandle, CcuRemoteAddrHandle remoteHandle,
+    CcuVariableHandle lenHandle, CcuEventHandle eventHandle,
+    CcuRep::CcuBuf **buf, CcuRep::RemoteAddr **remote,
+    CcuRep::Variable **len, CcuRep::CompletedEvent **event)
+{
+    CCU_CHK_RET(GetBufferByHandle(bufHandle, buf));
+    CCU_CHK_RET(GetRemoteAddrByHandle(remoteHandle, remote));
+    CCU_CHK_RET(GetVariableByHandle(lenHandle, len));
+    CCU_CHK_RET(GetEventByHandle(eventHandle, event));
+    return CcuResult::CCU_SUCCESS;
+}
+
 CcuResult CcuKernel::ReadMemToMem(ChannelHandle channel, CcuLocalAddrHandle localHandle, CcuRemoteAddrHandle remoteHandle,
     CcuVariableHandle lenHandle, CcuEventHandle eventHandle, uint32_t mask)
 {
@@ -780,11 +797,8 @@ CcuResult CcuKernel::ReadMemToBuffer(ChannelHandle channel, CcuBufferHandle loca
     CcuVariableHandle lenHandle, CcuEventHandle eventHandle, uint32_t mask)
 {
     CcuRep::CcuBuf *local{nullptr};
-    CCU_CHK_RET(GetBufferByHandle(localHandle, &local));
     CcuRep::RemoteAddr *remote{nullptr};
-    CCU_CHK_RET(GetRemoteAddrByHandle(remoteHandle, &remote));
     CcuRep::Variable *len{nullptr};
-    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
     CcuRep::CompletedEvent *event{nullptr};
     CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
     auto ret = ReadNb(channel, *local, *remote, *len, *event, mask);
@@ -825,12 +839,8 @@ CcuResult CcuKernel::WriteBufferToMem(ChannelHandle channel, CcuRemoteAddrHandle
     CcuVariableHandle lenHandle, CcuEventHandle eventHandle, uint32_t mask)
 {
     CcuRep::CcuBuf *local{nullptr};
-    CCU_CHK_RET(GetBufferByHandle(localHandle, &local));
     CcuRep::RemoteAddr *remote{nullptr};
-    CCU_CHK_RET(GetRemoteAddrByHandle(remoteHandle, &remote));
-
     CcuRep::Variable *len{nullptr};
-    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
     CcuRep::CompletedEvent *event{nullptr};
     CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
     auto ret = WriteNb(channel, *remote, *local, *len, *event, mask);
