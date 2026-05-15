@@ -82,19 +82,19 @@ HcclResult RankConsistencyCheckerV2::RecordSubCommParaV2(u32 parentCommCrc, uint
 
     // 2. rankNum的CRC
     u32 rankNumCrc = 0;
-    CHK_RET(CalcCrc::HcclCalcCrc(static_cast<const char*>(&rankNum), sizeof(rankNum), rankNumCrc));
+    CHK_RET(CalcRawDataCrc(&rankNum, sizeof(rankNum), rankNumCrc));
     subCommParaCrcsV2_.push_back({"sub_comm_rankNum", rankNumCrc});
     HCCL_DEBUG("[RecordSubCommParaV2] rankNum[%u], crc[0x%08x] recorded.", rankNum, rankNumCrc);
 
     // 3. rankIds数组的CRC
     u32 rankIdsCrc = 0;
-    CHK_RET(CalcCrc::HcclCalcCrc(static_cast<const char*>(rankIds), rankNum * sizeof(uint32_t), rankIdsCrc));
+    CHK_RET(CalcRawDataCrc(rankIds, rankNum * sizeof(uint32_t), rankIdsCrc));
     subCommParaCrcsV2_.push_back({"sub_comm_rankIds", rankIdsCrc});
     HCCL_DEBUG("[RecordSubCommParaV2] rankIds crc[0x%08x] recorded.", rankIdsCrc);
 
     // 4. subCommId的CRC
     u32 subCommIdCrc = 0;
-    CHK_RET(CalcCrc::HcclCalcCrc(static_cast<const char*>(&subCommId), sizeof(subCommId), subCommIdCrc));
+    CHK_RET(CalcRawDataCrc(&subCommId, sizeof(subCommId), subCommIdCrc));
     subCommParaCrcsV2_.push_back({"sub_comm_subCommId", subCommIdCrc});
     HCCL_DEBUG("[RecordSubCommParaV2] subCommId[%llu], crc[0x%08x] recorded.", subCommId, subCommIdCrc);
 
@@ -186,6 +186,18 @@ bool RankConsistencyCheckerV2::GetInconsistentCheckFirstDone()
 }
 
 // private
+HcclResult RankConsistencyCheckerV2::CalcRawDataCrc(const void *ptr, u64 length, u32 &crc)
+{
+    // 计算内存数据块CRC
+    HcclResult ret = CalcCrc::HcclCalcCrc(static_cast<const char*>(ptr), length, crc);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[RankConsistencyCheckerV2][CalcRawDataCrc] errNo[0x%016llx] calc string crc error",
+        HCCL_ERROR_CODE(HCCL_E_INTERNAL)), HCCL_E_INTERNAL);
+
+    HCCL_DEBUG("[RankConsistencyCheckerV2][CalcRawDataCrc] result crc[%u].", crc);
+    return HCCL_SUCCESS;
+}
+
 bool RankConsistencyCheckerV2::CompareEnvV2(const CheckFrameV2 &local, const CheckFrameV2 &remote)
 {
      bool isDiff = false;
