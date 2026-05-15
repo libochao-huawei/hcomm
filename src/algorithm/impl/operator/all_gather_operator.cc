@@ -137,7 +137,8 @@ HcclResult AllGatherOperator::SelectAlgfor910B(const OpParam& param, std::string
                     && isSingleMeshAggregation_
                     && IsSupportAIVCopy(param.DataDes.dataType)
                     && (dataSize <= AIV_BIG_SIZE || isOnlyAiv);
-    if (isAivMode) {
+    bool isA2APreAG = (param.tag == HCCL_ALLTOALL_PARA_ALLGATHER);
+    if (isAivMode && !isA2APreAG) {
         if (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && dataSize <= AIV_ALL_GATHER_SMALL_SIZE) {
             algName = "AllGatherMeshAivSmallCountExecutor"; 
             HCCL_INFO("[SelectAlgfor910BAIV] AllGather SelectAlgfor910B is algName [%s]", algName.c_str());
@@ -197,7 +198,7 @@ HcclResult AllGatherOperator::SelectAlgfor910B(const OpParam& param, std::string
                         && isMeshTopo
                         && isCCLBufferGE16M
                         && isSupportAivRdmaCount;
-    if (isAivRdmaMode) {
+    if (isAivRdmaMode && !isA2APreAG) {
         algName = "AllGatherAivRdmaExecutor";
     } else if (isMeshTopo) {
         if (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
