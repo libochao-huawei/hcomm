@@ -30,12 +30,16 @@ CollComm::CollComm(void * comm, uint32_t rankId, const std::string &commName, co
 
 CollComm::~CollComm()
 {
-    CollCommMgr::GetInstance()->UnRegisteCollComm(this); 
+    CollCommMgr::GetInstance()->UnRegisteCollComm(this);
     HCCL_INFO("[CollComm][~CollComm] collComm deinit");
     // dpu的兜底上报
     if (hcclCommDfx_ != nullptr) {  // 添加检查
         hcclCommDfx_->ReportAllTasks(true);
     }
+    for (auto streamId : aicpuStreamIds_) {
+        hcomm::TaskExceptionHostManager::UnregisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId_);
+    }
+    aicpuStreamIds_.clear();
     (void)DestroyAicpuComm();
 }
 
@@ -246,6 +250,7 @@ void CollComm::RegisterAicpuTaskExceptionCallback(u32 streamId)
     auto getAicpuTaskExceptionCallBack = [this]() {return this->GetAicpuTaskException();};
     hcomm::TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId_,
         getAicpuTaskExceptionCallBack);
+    aicpuStreamIds_.push_back(static_cast<s32>(streamId));
     return ;
 }
 
