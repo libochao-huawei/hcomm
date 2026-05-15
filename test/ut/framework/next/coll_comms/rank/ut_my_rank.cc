@@ -9,8 +9,8 @@
 #include "base_config.h"
 #define private public
 #include "my_rank.h"
-#include "hccl_comm_pub.h"
 #undef private
+#include "hccl_comm_pub.h"
 #include "llt_hccl_stub_rank_graph.h"
 
 using namespace hccl;
