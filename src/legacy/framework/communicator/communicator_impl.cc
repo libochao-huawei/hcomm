@@ -1283,8 +1283,9 @@ void CommunicatorImpl::CheckRankGraphAddrs() const
     const std::shared_ptr<NetInstance::Peer> &peer = rankGraph->GetPeer(myRank);
     const std::vector<std::shared_ptr<NetInstance::ConnInterface>> &interfaces = peer->GetIfaces();
     for(auto &interface : interfaces) {
-        const std::set<LinkProtocol> &protocols = interface->GetLinkProtocols();  // PCIE没有EID
-        if (interface->GetPos() == AddrPosition::DEVICE && protocols.count(LinkProtocol::PCIE) == 0 && localEidSet.count(interface->GetAddr().GetEid()) == 0) {
+        const std::set<LinkProtocol> &protocols = interface->GetLinkProtocols();  // PCIE和UBOE没有EID
+        if (interface->GetPos() == AddrPosition::DEVICE && protocols.count(LinkProtocol::PCIE) == 0
+            && protocols.count(LinkProtocol::UBOE) == 0 && localEidSet.count(interface->GetAddr().GetEid()) == 0) {
             RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({"value", "variable", "expect"}),
                           std::vector<std::string>({interface->GetAddr().GetIpStr(), "addr", "A right ip address"}));
             THROW<InvalidParamsException>(StringFormat("[CommunicatorImpl][%s]"
