@@ -16,16 +16,9 @@ extern HcclResult CommTaskPrepare(char *key, uint32_t keyLen); // host ffts+使�
 void LaunchContext::AddThreadWithTag(ThreadHandle thread)
 {
     if (mode_ != HCOMM_LAUNCH_MODE_BATCH) {
-        // 仅 BATCH 模式缓存线程
         return;
     }
-    // 检查线程是否已存在，避免重复添加
     auto& threadSet = launchModeMap_[launchTag_];
-    if (threadSet.find(thread) != threadSet.end()) {
-        HCCL_INFO("[%s] Thread already exists, launchTag[%s], thread[%lu].", __func__, launchTag_.c_str(), thread);
-        return;
-    }
-
     threadSet.insert(thread);
     HCCL_INFO("[%s]success, launchTag[%s], launchMode[%d], thread[%lu].",
         __func__, launchTag_.c_str(), static_cast<int32_t>(mode_), thread);
@@ -34,18 +27,10 @@ void LaunchContext::AddThreadWithTag(ThreadHandle thread)
 void LaunchContext::AddThread(ThreadHandle thread)
 {
     if (mode_ != HCOMM_LAUNCH_MODE_BATCH) {
-        // 仅 BATCH 模式缓存线程
         return;
     }
-    // 检查线程是否已存在，避免重复添加
-    if (threadSet_.find(thread) != threadSet_.end()) {
-        HCCL_INFO("[%s] Thread already exists, launchTag[%s], thread[%lu].", __func__, launchTag_.c_str(), thread);
-        return;
-    }
-
     threadSet_.insert(thread);
-    HCCL_INFO("[%s]success, launchTag[%s], launchMode[%d], thread[%lu].",
-        __func__, launchTag_.c_str(), static_cast<int32_t>(mode_), thread);
+    HCCL_INFO("[%s]success, launchMode[%d], thread[%lu].", __func__, static_cast<int32_t>(mode_), thread);
 }
 
 HcclResult LaunchContext::HandleEagerMode()
@@ -73,14 +58,9 @@ HcclResult LaunchContext::HandleEagerMode()
 
 HcclResult LaunchContext::HandleClear()
 {
-    auto it = launchModeMap_.find(launchTag_);
-    if (it == launchModeMap_.end()) {
-        HCCL_WARNING("[%s] launchTag[%s] not found.", __func__, launchTag_.c_str());
-        return HCCL_SUCCESS;
-    }
-
-    launchModeMap_.erase(it);
-    HCCL_INFO("[%s] begin clear, launchTag[%s], launchMode[%d]",
+    threadSet_.clear();
+    launchModeMap_.erase(launchTag_);
+    HCCL_INFO("[%s] begin clear, launchTag[%s], launchMode[%d].",
         __func__, launchTag_.c_str(), static_cast<int32_t>(mode_));
 
     DevType devType = DevType::DEV_TYPE_COUNT;
