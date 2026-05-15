@@ -474,6 +474,44 @@ HcclResult HccpRaCustomChannel(HrtNetworkMode mode, uint32_t phyId, void *custom
     return HCCL_SUCCESS;
 }
 
+HcclResult HccpRaTlvRequestForCustomChannel(void *tlvHandle, void *customIn, void *customOut)
+{
+    HCCL_INFO("[%s] tlvHandle[%p], customIn[%p], customOut[%p]",
+        __func__, tlvHandle, customIn, customOut);
+    
+    CHK_PTR_NULL(tlvHandle);
+    CHK_PTR_NULL(customIn);
+    CHK_PTR_NULL(customOut);
+    
+    
+    struct TlvMsg sendMsg {};
+    sendMsg.type = MSG_TYPE_CCU_DISPATCH_CMD;
+    sendMsg.length = sizeof(CustomChanInfoIn);
+    sendMsg.data = static_cast<char*>(customIn);
+    
+    struct TlvMsg recvMsg {};
+    recvMsg.type = MSG_TYPE_CCU_DISPATCH_CMD;
+    recvMsg.length = sizeof(CustomChanInfoOut);
+    recvMsg.data = static_cast<char*>(customOut);
+    
+    int ret = RaTlvRequest(tlvHandle, TLV_MODULE_TYPE_CCU, &sendMsg, &recvMsg);
+    
+    if (ret == RA_TLV_REQUEST_UNAVAIL || ret == OTHERS_ENOTSUPP) {
+        HCCL_WARNING("[%s] RaTlvRequest UNAVAIL, tlvHandle[%p], ret[%d]",
+            __func__, tlvHandle, ret);
+        return HCCL_E_UNAVAIL;
+    }
+    
+    if (ret != 0) {
+        HCCL_ERROR("[%s] RaTlvRequest fail, tlvHandle[%p], ret[%d]",
+            __func__, tlvHandle, ret);
+        return HCCL_E_NETWORK;
+    }
+    
+    HCCL_INFO("[%s] success", __func__);
+    return HCCL_SUCCESS;
+}
+
 HcclResult RaBatchQueryJettyStatus(const std::vector<JettyHandle> &jettyHandles, std::vector<JettyStatus> &jettyAttrs, u32 &num)
 {
     if (jettyHandles.size() != num) {

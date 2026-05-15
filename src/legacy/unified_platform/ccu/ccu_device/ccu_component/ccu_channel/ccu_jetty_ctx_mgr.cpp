@@ -12,6 +12,7 @@
 
 #include "ccu_res_specs.h"
 #include "orion_adapter_hccp.h"
+#include "hccp_tlv_hdc_manager.h"
 #include "resources_not_exist_exception.h"
 
 namespace Hccl {
@@ -95,11 +96,13 @@ void DumpJettyCtxData(const LocalJettyCtxData &tmp)
         tmp.startWqeBasicBlockIdxLow, tmp.startWqeBasicBlockIdxHigh, tmp.doorbellSendState);
 }
 
-void ConfigJettyCtxData(const uint8_t dieId, const uint32_t devPhyId,
+void ConfigJettyCtxData(const int32_t devLogicId, const uint8_t dieId, const uint32_t devPhyId,
     const uint16_t startJettyCtxId, std::vector<LocalJettyCtxData>& jettyCtxData)
 {
     const uint32_t jettyNum = jettyCtxData.size(); // 分配与配置前校验已保证不为0
-    const HRaInfo info(HrtNetworkMode::HDC, devPhyId);
+    auto tlvHandle = HccpTlvHdcManager::GetInstance().GetTlvHandle(devLogicId);
+    CHK_PTR_NULL(tlvHandle);
+    
     struct CustomChannelInfoIn  inBuff;
     struct CustomChannelInfoOut outBuff;
 
@@ -124,7 +127,10 @@ void ConfigJettyCtxData(const uint8_t dieId, const uint32_t devPhyId,
             &jettyCtxData[i], sizeof(struct LocalJettyCtxData));
     }
 
-    HrtRaCustomChannel(info, reinterpret_cast<void *>(&inBuff), reinterpret_cast<void *>(&outBuff));
+    auto ret = HrtRaTlvRequestForCustomChannel(tlvHandle, reinterpret_cast<void *>(&inBuff), reinterpret_cast<void *>(&outBuff));
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[%s] failed, devLogicId[%d] devPhyId[%u] dieId[%u] ret[%d].", __func__, devLogicId, devPhyId, dieId, ret);
+    }
 }
 
 CcuJettyCtxMgr::CcuJettyCtxMgr(const int32_t devLogicId, const uint8_t dieId, const uint32_t devPhyId)

@@ -87,7 +87,7 @@ HcclResult CcuJettyCtxMgrV1::Config(const uint32_t feId,
     }
 
     const uint32_t startJettyCtxId = jettyInfos[0].jettyCtxId;
-    TRY_CATCH_RETURN(ConfigJettyCtxData(dieId, devPhyId, startJettyCtxId, jettyCtxData));
+    TRY_CATCH_RETURN(ConfigJettyCtxData(devLogicId, dieId, devPhyId, startJettyCtxId, jettyCtxData));
     return HcclResult::HCCL_SUCCESS;
 }
 
