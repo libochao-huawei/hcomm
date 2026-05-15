@@ -288,8 +288,8 @@
     ctx.selfBit = 1 << arg->rankId;
     ctx.allBit  = ((1 << arg->rankSize) - 1) & (~(1 << arg->rankId));
  
-    // LoopEngine 池由 main kernel 入口的 ccu::SetLoopNum(N) 统一申请，
-    // N = max(各 LoopGroup 的 loop 数)；这里两个 group 分别是 1 / 2，所以 N=2。
+    // LoopEngine 池由各 ccu::LoopGroup 在 ctor 第二个参数 maxLoopNum 处自报，
+    // kernel 按需扩容（取最大值，跨组复用）。下面两个 group 分别填 1 / 2。
 
     ctx.resourceAllocated = false;
     ctx.loopRegistered    = false;
@@ -499,7 +499,7 @@
         // 转化为对应 LoopInstr 的低位参数。
         ctx.reduceLoopParam[0] = loopParam;
         std::vector<ccu::Loop> grpLoops{ *ctx.reduceLoops[0] };
-        ccu::LoopGroup group(paraCfg, offsetCfg, grpLoops);
+        ccu::LoopGroup group(paraCfg, offsetCfg, /*maxLoopNum=*/1, grpLoops);
     }
  
      // n+p 部分
@@ -566,7 +566,7 @@
         ctx.reduceLoopParam[0] = loopCfg0;
         ctx.reduceLoopParam[1] = loopCfg1;
         std::vector<ccu::Loop> grpLoops{ *ctx.reduceLoops[0], *ctx.reduceLoops[1] };
-        ccu::LoopGroup group(goSize.parallelParam, offsetCfg, grpLoops);
+        ccu::LoopGroup group(goSize.parallelParam, offsetCfg, /*maxLoopNum=*/2, grpLoops);
     }
  
      return CCU_SUCCESS;
@@ -687,8 +687,7 @@
     ctx.moRes.eventCount = 0;
     ctx.moRes.bufCount = 0;
 
-    // 申请 LoopEngine 池：N = max(各 LoopGroup loop 数) = 2（loop0 自成一组 / loop0+loop1 一组）。
-    CCU_CHK_RET(ccu::SetLoopNum(2));
+    // LoopEngine 池由各 LoopGroup ctor 自动按 maxLoopNum 扩容，无需在此显式申请。
 
     CCU_CHK_RET(InitResource(ctx));
     CCU_CHK_RET(LoadArgs(ctx));
