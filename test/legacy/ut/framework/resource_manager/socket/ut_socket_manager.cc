@@ -154,3 +154,63 @@ TEST_F(SocketManagerTest, Ut_ServerInitAll_Skip_Init_When_Env_Config) {
     NewRankInfo rankInfo = rankGraphBuilder.GetRankTableInfo()->ranks[0];
     EXPECT_NO_THROW(SocketManager::ServerInitAll(rankInfo));
 }
+
+TEST_F(SocketManagerTest, test_BatchCreateSockets_with_SocketConfig) {
+    SocketManager socketMgr(localRank, devicePhyId, devicePhyId, "tmp");
+    auto link = links[0];
+    Hccl::SocketConfig socketConfig(link.GetRemoteRankId(), link, "test");
+    socketMgr.BatchCreateSockets(socketConfig);
+    socketMgr.GetConnectedSocket(socketConfig);
+}
+
+// TEST_F(SocketManagerTest, test_BatchCreateSockets_with_SocketConfig_and_GetConnectedSocket) {
+//     MOCKER_CPP(&SocketManager::BatchAddWhiteList).stubs();
+//
+//     SocketManager socketMgr(impl, localRank, devicePhyId, listenPort);
+//     LinkData link(PortDeploymentType::DEV_NET, LinkProtocol::UB_CTP, 0, 3,
+//         IpAddress("0.0.0.0"), IpAddress("3.0.0.0"));
+//     std::string tag = "test_socket_config";
+//     SocketConfig socketConfig(link, tag);
+//     socketMgr.BatchCreateSockets(socketConfig);
+//     Socket *socket = socketMgr.GetConnectedSocket(socketConfig);
+//     EXPECT_NE(nullptr, socket);
+// }
+
+// TEST_F(SocketManagerTest, test_BatchCreateSockets_with_SocketConfig_reuse_existing_socket) {
+//     MOCKER_CPP(&SocketManager::BatchAddWhiteList).stubs();
+//
+//     SocketManager socketMgr(impl, localRank, devicePhyId, listenPort);
+//     LinkData link(PortDeploymentType::DEV_NET, LinkProtocol::UB_CTP, 0, 3,
+//         IpAddress("0.0.0.0"), IpAddress("3.0.0.0"));
+//     std::string tag = "test_socket_config_reuse";
+//     SocketConfig socketConfig(link, tag);
+//     socketMgr.BatchCreateSockets(socketConfig);
+//     Socket *socketFirst = socketMgr.GetConnectedSocket(socketConfig);
+//     EXPECT_NE(nullptr, socketFirst);
+//     socketMgr.BatchCreateSockets(socketConfig);
+//     Socket *socketSecond = socketMgr.GetConnectedSocket(socketConfig);
+//     EXPECT_NE(nullptr, socketSecond);
+//     EXPECT_EQ(socketFirst, socketSecond);
+// }
+
+// TEST_F(SocketManagerTest, test_GetConnectedSocket_returns_null_for_nonexistent_config) {
+//     MOCKER_CPP(&SocketManager::BatchAddWhiteList).stubs();
+//     SocketManager socketMgr(impl, localRank, devicePhyId, listenPort);
+//     LinkData link(PortDeploymentType::DEV_NET, LinkProtocol::UB_CTP, 0, 5,
+//         IpAddress("0.0.0.0"), IpAddress("5.0.0.0"));
+//     std::string tag = "nonexistent_tag";
+//     SocketConfig socketConfig(link, tag);
+//     Socket *socket = socketMgr.GetConnectedSocket(socketConfig);
+//     EXPECT_EQ(nullptr, socket);
+// }
+
+// TEST_F(SocketManagerTest, test_CreateConnectedSocket_with_const_SocketConfig) {
+//     MOCKER_CPP(&SocketManager::BatchAddWhiteList).stubs();
+//     SocketManager socketMgr(impl, localRank, devicePhyId, listenPort);
+//     LinkData link(PortDeploymentType::DEV_NET, LinkProtocol::UB_CTP, 0, 2,
+//         IpAddress("0.0.0.0"), IpAddress("2.0.0.0"));
+//     std::string tag = "test_const_socket_config";
+//     const SocketConfig socketConfig(link, tag);
+//     Socket *socket = socketMgr.CreateConnectedSocket(socketConfig);
+//     EXPECT_NE(nullptr, socket);
+// }
