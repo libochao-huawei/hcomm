@@ -1550,7 +1550,8 @@ TEST_F(CommunicatorImplTest, should_success_when_AllocCommResource_ccu)
     std::vector<CcuTaskParam> vec;
     MOCKER_CPP(&Mc2Compont::GetCcuTaskInfo).stubs().with(any()).will(returnValue(vec));
 
-    MOCKER_CPP(&SocketManager::BatchCreateSockets).stubs();
+    MOCKER_CPP(&SocketManager::BatchCreateSockets, void(SocketManager::*)(const std::vector<LinkData>&))
+        .stubs();
 
     MOCKER_CPP(&ConnectionsBuilder::BatchBuild).stubs();
     std::vector<Hccl::LinkData> linkVec;
@@ -3180,7 +3181,8 @@ TEST_F(CommunicatorImplTest, ut_GetAlgExecParam_When_Normal_Expect_ReturnHCCL_SU
     void *addr = reinterpret_cast<void *>(0x12345678);
     MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue(addr));
     MOCKER(HrtFree).stubs();
-    MOCKER_CPP(&SocketManager::BatchCreateSockets).stubs().with(any()).will(ignoreReturnValue());
+    MOCKER_CPP(&SocketManager::BatchCreateSockets, void(SocketManager::*)(const std::vector<LinkData>&))
+        .stubs().will(ignoreReturnValue());
     MOCKER_CPP(&UbMemoryTransportMgr::BatchCreateTransport).stubs().with(any()).will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER_CPP(&UbMemoryTransportMgr::TransportsConnect).stubs().with(any()).will(ignoreReturnValue());
     EXPECT_EQ(fakeComm.SetCollOffloadScratchBuf("test", (void *)0x100, 0x100), HcclResult::HCCL_SUCCESS);
