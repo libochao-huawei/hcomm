@@ -11,7 +11,6 @@
 #include "adapter_pub.h"
 #include "calc_crc.h"
 #include "rank_consistentcy_checker.h"
-#include "env_config.h"
 #include "rank_table_crc_bridge.h"
 
 namespace hccl {
