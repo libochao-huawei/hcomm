@@ -16,6 +16,8 @@
 
 #include "env_config/env_config.h"
 
+#include "future"
+
 namespace hcomm {
 
 constexpr uint32_t FINISH_MSG_SIZE = 128;

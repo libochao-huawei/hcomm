@@ -14,7 +14,6 @@
 #include "local_ub_rma_buffer.h"
 #include "task_param.h"
 #include "virtual_topo.h"
-#include <future>
 
 namespace Hccl {
 
