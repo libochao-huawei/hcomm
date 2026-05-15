@@ -212,14 +212,14 @@ std::string RoceTransportLiteImpl::Describe() const
     u32 idx = 0;
     desc += "localNotifies=[";
     for (auto &it : localNotifies_) {
-        desc += StringFormat("idx=%u, %u;", idx, it->Describe().c_str());
+        desc += StringFormat("idx=%u, %s;", idx, it->Describe().c_str());
         idx++;
     }
 
     idx = 0;
     desc += "], remoteNotifies=[";
     for (auto &it : remoteNotifies_) {
-        desc += StringFormat("idx=%u, %u;", idx, it.Describe().c_str());
+        desc += StringFormat("idx=%u, %s;", idx, it.Describe().c_str());
         idx++;
     }
 
