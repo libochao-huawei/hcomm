@@ -98,10 +98,10 @@ private:
     HcclResult RmtBufferVecUnpackProc(Hccl::BinaryStream &binaryStream);
     HcclResult ConnVecUnpackProc(Hccl::BinaryStream &binaryStream);
 
-    HcclResult BuildAndGetLocNotifyInfo(Notify** notify);
-    HcclResult BuildAndGetRmtNotifyInfo(Notify** notify);
-    HcclResult BuildAndGetRmtBufInfo(ProtectionInfo** protectionInfoPtr);
-    HcclResult BuildAndGetLocBufInfo(ProtectionInfo** protectionInfoPtr);
+    HcclResult BuildAndGetLocNotifyInfo(RegedNotifyEntity** notify);
+    HcclResult BuildAndGetRmtNotifyInfo(RegedNotifyEntity** notify);
+    HcclResult BuildAndGetRmtBufInfo(RegedBufferEntity** bufferEntityPtr);
+    HcclResult BuildAndGetLocBufInfo(RegedBufferEntity** bufferEntityPtr);
     HcclResult BuildAndGetSqContext(SqContext** sqContextPtr);
     HcclResult BuildAndGetCqContext(CqContext** cqContextPtr);
 
@@ -153,8 +153,8 @@ private:
 
     std::vector<SqContext>                                  sqContextList_{};
     std::vector<CqContext>                                  cqContextList_{};
-    std::vector<ProtectionInfo>                             locBufProtecInfoList_{};
-    std::vector<ProtectionInfo>                             rmtBufProtecInfoList_{};
+    std::vector<RegedBufferEntity>                          locBufEntityList_{};
+    std::vector<RegedBufferEntity>                          rmtBufEntityList_{};
     std::vector<hccl::DeviceMem>                            deviceMemories_;
     uint64_t                                              devChannelEntityPtr_{0};
 };
