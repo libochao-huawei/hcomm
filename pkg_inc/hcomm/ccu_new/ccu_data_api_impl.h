@@ -121,14 +121,15 @@ extern void _CcuDoWhileStackPush(const char *label);
 extern const char *_CcuDoWhileStackPopForWhile();
 
 /*========== 循环操作 ==========*/
-extern CcuResult CcuSetLoopNum(uint32_t count);
-
 extern CcuResult CcuLoopCreate(CcuLoop *loop);
 extern CcuResult _CcuLoopBodyEnter(CcuLoop loop);
 extern CcuResult _CcuLoopBodyExit(CcuLoop loop);
-extern CcuResult CcuLoopGroupCreate(CcuLoopGroup *group,
+// LoopGroup 创建时按需扩容 LoopEngine 池：传入本 group 实际要 AddLoop 的次数
+// （含展开复用）。各 LoopGroup 之间通过 local loopIdx 复用低位 executorId，
+// 因此池子按"取最大值"被动扩容，不会按组累加。
+extern CcuResult CcuLoopGroupCreate(CcuLoopGroup *group, uint32_t maxLoopNum,
     const CcuLoopGroupConfig *config);
-extern CcuResult CcuLoopGroupCreateFromVar(CcuLoopGroup *group,
+extern CcuResult CcuLoopGroupCreateFromVar(CcuLoopGroup *group, uint32_t maxLoopNum,
     CcuVariableHandle parallelVar, CcuVariableHandle offsetVar);
 extern CcuResult CcuLoopGroupAddLoop(CcuLoopGroup group,
     CcuLoop loop, const CcuLoopConfig *config);

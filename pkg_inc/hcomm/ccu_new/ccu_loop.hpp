@@ -97,20 +97,28 @@ private:
 
 class LoopGroup {
 public:
-    LoopGroup(Variable &parallelCfg, Variable &offsetCfg, const std::vector<Loop> &loops)
+    // var-based。maxLoopNum：本 group 实际要 AddLoop 的次数（含展开复用），
+    // 用于驱动 kernel 在 CcuLoopGroupCreateFromVar 时按需扩容 LoopEngine 池。
+    // 形参顺序：parallelCfg、offsetCfg、maxLoopNum、loops——maxLoopNum 紧跟两个
+    // var 配置（第三位），与 config-based 重载里"cfg → maxLoopNum"的相对位置一致。
+    LoopGroup(Variable &parallelCfg, Variable &offsetCfg, uint32_t maxLoopNum,
+              const std::vector<Loop> &loops)
     {
         internal::ThrowIfLoopErr(
-            ::CcuLoopGroupCreateFromVar(&handle_, parallelCfg.handle, offsetCfg.handle),
+            ::CcuLoopGroupCreateFromVar(&handle_, maxLoopNum,
+                                        parallelCfg.handle, offsetCfg.handle),
             "CcuLoopGroupCreateFromVar failed");
         AddLoops(loops);
     }
 
-    LoopGroup(const CcuLoopGroupConfig &loopGroupCfg, const std::vector<Loop> &loops)
+    // config-based。maxLoopNum 同上语义；放在 cfg 之后作为 group 元参数。
+    LoopGroup(const CcuLoopGroupConfig &loopGroupCfg, uint32_t maxLoopNum,
+              const std::vector<Loop> &loops)
     {
         // 拷贝到 lvalue 以便取地址传给 C 接口；本身不修改原 cfg。
         CcuLoopGroupConfig localCfg = loopGroupCfg;
         internal::ThrowIfLoopErr(
-            ::CcuLoopGroupCreate(&handle_, &localCfg),
+            ::CcuLoopGroupCreate(&handle_, maxLoopNum, &localCfg),
             "CcuLoopGroupCreate failed");
         AddLoops(loops);
     }
