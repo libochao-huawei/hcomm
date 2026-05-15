@@ -11,14 +11,18 @@
 #ifndef CCU_DATA_API_IMPL_H
 #define CCU_DATA_API_IMPL_H
 
+#ifdef __cplusplus
+#include <cstdbool>
+#else
+#include <stdbool.h>
+#endif // __cplusplus
+
 #include "hccl_types.h"
 #include "ccu_types.h"
 #include "hcomm_primitives.h"
+
 #ifdef __cplusplus
-#include <cstdbool>
 extern "C" {
-#else
-#include <stdbool.h>
 #endif // __cplusplus
 
 //Alloc 相关接口
@@ -31,14 +35,12 @@ extern CcuResult CcuRemoteAddrAlloc(CcuRemoteAddrHandle *remoteAddrHandle, CcuAd
 
 //BlockAlloc 相关接口
 extern CcuResult CcuBlockVariableAlloc(CcuVariableHandle *varHandles, uint32_t count);
-// extern CcuResult CcuBlockAddressAlloc(CcuAddressHandle *addrHandles, uint32_t count);
 extern CcuResult CcuBlockEventAlloc(CcuEventHandle *eventHandles, uint32_t count);
 extern CcuResult CcuBlockBufferAlloc(CcuBufferHandle *bufHandles, uint32_t count);
 
 extern CcuResult CcuVariableCreateByChannel(ChannelHandle channel,
     uint32_t varIndex, CcuVariableHandle *varHandle);
 
-    
 //Variable操作类 相关接口
 extern CcuResult CcuVariableAssignImm(CcuVariableHandle resVar, uint64_t immediate);
 extern CcuResult CcuVariableAssignVar(CcuVariableHandle dstVarHandle, CcuVariableHandle srcVarHandle);
@@ -51,7 +53,6 @@ extern CcuResult CcuAddressAssignVar(CcuAddressHandle addr, CcuVariableHandle va
 extern CcuResult CcuAddressAddVarToAddr(CcuAddressHandle resAddr, CcuAddressHandle lhsAddr, CcuVariableHandle rhsVar);
 extern CcuResult CcuAddressAddAddrToAddr(CcuAddressHandle resAddr, CcuAddressHandle addrA, CcuAddressHandle addrB);
 extern CcuResult CcuAddressAddAssignVar(CcuAddressHandle addr, CcuVariableHandle var);
-// extern CcuResult CcuAddressAddAssignAddr(CcuAddressHandle addr, CcuAddressHandle otherAddr);
 
 
 //参数加载类 相关接口
