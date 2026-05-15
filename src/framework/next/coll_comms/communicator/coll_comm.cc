@@ -250,9 +250,7 @@ void CollComm::RegisterAicpuTaskExceptionCallback(u32 streamId)
     auto getAicpuTaskExceptionCallBack = [this]() {return this->GetAicpuTaskException();};
     hcomm::TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId_,
         getAicpuTaskExceptionCallBack);
-    if (std::find(aicpuStreamIds_.begin(), aicpuStreamIds_.end(), static_cast<s32>streamId) == aicpuStreamIds_.end()) {
-        aicpuStreamIds_.push_back(static_cast<s32>(streamId));
-    }
+    aicpuStreamIds_.insert(static_cast<s32>(streamId));
     return ;
 }
 
