@@ -20,6 +20,7 @@
 #include "channel_process.h"
 #include "dlprof_function.h"
 #include "hccl_comm_pub.h"
+#include "rank_consistentcy_checker.h"
 
 using namespace hcomm;
 
