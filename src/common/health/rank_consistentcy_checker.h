@@ -22,6 +22,7 @@
 #include "hccl_common.h"
 #include "common.h"
 #include "externalinput_pub.h"
+#include "env_config.h"
 
 namespace hccl {
 constexpr u32 DEFAULT_CRC = 0xFFFFFFFF;   // CRC默认值
