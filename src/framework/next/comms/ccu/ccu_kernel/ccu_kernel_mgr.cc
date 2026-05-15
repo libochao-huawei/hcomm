@@ -15,6 +15,8 @@
 #include "adapter_rts.h"
 #include "ccu_assist_v1.h"
 #include "dev_buffer.h"
+#include "hcomm_adapter_hccp.h"
+#include "hccp_tlv_hdc_manager.h"
 
 namespace hcomm {
 
@@ -636,7 +638,9 @@ HcclResult CcuKernelMgr::LoadInstruction(const CcuRep::CcuInstrInfo &instrInfo, 
     uint32_t devPhyId = 0;
     CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(devLogicId_), devPhyId));
 
-    const RaInfo info{NetworkMode::NETWORK_OFFLINE, devPhyId};
+    auto tlvHandle = Hccl::HccpTlvHdcManager::GetInstance().GetTlvHandle(devLogicId_);
+    CHK_PTR_NULL(tlvHandle);
+    
     CustomChannelInfoIn  inBuff{};
     CustomChannelInfoOut outBuff{};
 
@@ -651,13 +655,12 @@ HcclResult CcuKernelMgr::LoadInstruction(const CcuRep::CcuInstrInfo &instrInfo, 
     tmp.insinfo.resourceAddr = reinterpret_cast<uint64_t>(instructionLoadDevMem_);
     (void)memcpy_s(inBuff.data.dataInfo.dataArray, sizeof(CcuDataTypeUnion), &tmp, sizeof(CcuDataTypeUnion));
 
-    auto ret = RaCustomChannel(info,
-        reinterpret_cast<CustomChanInfoIn *>(&inBuff),
-        reinterpret_cast<CustomChanInfoOut *>(&outBuff));
-    if (ret != 0) {
-        HCCL_ERROR("[CcuResSpecifications][%s] failed to call ccu driver, "
-            "devPhyId[%u] dieId[%d] op[%s].", __func__, devPhyId, dieId,
-            "SET_INSTRUCTION");
+    auto ret = HccpRaTlvRequestForCustomChannel(tlvHandle,
+        static_cast<void*>(&inBuff), static_cast<void*>(&outBuff));
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[CcuResSpecifications][%s] failed, "
+            "devLogicId[%d] devPhyId[%u] dieId[%d] op[%s] ret[%d].", 
+            __func__, devLogicId_, devPhyId, dieId, "SET_INSTRUCTION", ret);
         return HcclResult::HCCL_E_NETWORK;
     }
 
