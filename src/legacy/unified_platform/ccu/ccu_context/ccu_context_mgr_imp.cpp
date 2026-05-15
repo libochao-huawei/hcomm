@@ -20,6 +20,7 @@
 #include "exception_util.h"
 #include "ccu_api_exception.h"
 #include "orion_adapter_hccp.h"
+#include "hccp_tlv_hdc_manager.h"
 #include "instruction.h"
 #include "ccu_assist.h"
 #include "dev_buffer.h"
@@ -677,7 +678,11 @@ void CtxMgrImp::LoadInstruction(CcuRep::CcuInstrInfo &instrInfo, uint32_t dieId)
     HrtMemcpy(instructionLoadDevMem_, instrInfoSize, instrInfo.instrVec.data(), instrInfoSize,
               RT_MEMCPY_HOST_TO_DEVICE);
 
-    HRaInfo                      info(HrtNetworkMode::HDC, HrtGetDevicePhyIdByIndex(deviceLogicId_));
+    auto tlvHandle = HccpTlvHdcManager::GetInstance().GetTlvHandle(deviceLogicId_);
+    if (tlvHandle == nullptr) {
+        HCCL_WARNING("[CtxMgrImp][LoadInstruction] tlvHandle is nullptr, deviceLogicId[%d].", deviceLogicId_);
+        return;
+    }
     struct CustomChannelInfoIn  inBuff;
     struct CustomChannelInfoOut outBuff;
 
@@ -694,7 +699,11 @@ void CtxMgrImp::LoadInstruction(CcuRep::CcuInstrInfo &instrInfo, uint32_t dieId)
     // 复制通道数据
     (void)memcpy_s(inBuff.data.dataInfo.dataArray, sizeof(CcuDataTypeUnion), &tmp, sizeof(CcuDataTypeUnion));
 
-    HrtRaCustomChannel(info, reinterpret_cast<void *>(&inBuff), reinterpret_cast<void *>(&outBuff));
+    auto ret = HrtRaTlvRequestForCustomChannel(tlvHandle, reinterpret_cast<void *>(&inBuff), reinterpret_cast<void *>(&outBuff));
+    if (ret != HCCL_SUCCESS) {
+        HCCL_WARNING("[CtxMgrImp][LoadInstruction] failed, ret[%d], deviceLogicId[%d], dieId[%u], startInstrId[%u].",
+            ret, deviceLogicId_, dieId, instrInfo.startInstrId);
+    }
 
     HCCL_RUN_INFO("Entry-LoadInstruction: load instruction success startInstrId[%u] instrCount[%u]",
                   instrInfo.startInstrId, instrInfo.instrCount);

@@ -64,16 +64,24 @@ static CcuVersion CheckCcuVersion()
     return CcuVersion::CCU_V1; // CCU驱动未更新前临时使用
 }
 
-static bool CheckDieEnable(const uint32_t devPhyId, const uint8_t dieId)
+static bool CheckDieEnable(const int32_t devLogicId, const uint8_t dieId)
 {
-    HRaInfo info(HrtNetworkMode::HDC, devPhyId);
+    auto tlvHandle = HccpTlvHdcManager::GetInstance().GetTlvHandle(devLogicId);
+    if (tlvHandle == nullptr) {
+        HCCL_WARNING("[CcuResSpecifications][CheckDieEnable] tlvHandle is nullptr, devLogicId[%d].", devLogicId);
+        return false;
+    }
     struct CustomChannelInfoIn  inBuff;
     struct CustomChannelInfoOut outBuff;
     inBuff.op                    = CcuOpcodeType::CCU_U_OP_GET_DIE_WORKING;
     inBuff.offsetStartIdx        = 0;
     inBuff.data.dataInfo.udieIdx = dieId;
 
-    HrtRaCustomChannel(info, reinterpret_cast<void *>(&inBuff), reinterpret_cast<void *>(&outBuff));
+    auto ret = HrtRaTlvRequestForCustomChannel(tlvHandle, reinterpret_cast<void *>(&inBuff), reinterpret_cast<void *>(&outBuff));
+    if (ret != HCCL_SUCCESS) {
+        HCCL_WARNING("[CcuResSpecifications][CheckDieEnable] failed, ret[%d], devLogicId[%d], dieId[%u].", ret, devLogicId, dieId);
+        return false;
+    }
 
     const uint32_t enableFlag = outBuff.data.dataInfo.dataArray[0].dieinfo.enableFlag;
     return enableFlag == CCU_ENABLE_FLAG;
@@ -122,17 +130,25 @@ static CcuResSpecInfo ParseOutBuffToResSpecInfo(const CcuVersion ccuVersion, con
     return ccuResSpecInfo;
 }
 
-static CcuResSpecInfo CheckResSpecifications(const uint32_t devPhyId, const uint8_t dieId,
+static CcuResSpecInfo CheckResSpecifications(const int32_t devLogicId, const uint8_t dieId,
     const CcuVersion ccuVersion)
 {
-    HRaInfo info(HrtNetworkMode::HDC, devPhyId);
+    auto tlvHandle = HccpTlvHdcManager::GetInstance().GetTlvHandle(devLogicId);
+    if (tlvHandle == nullptr) {
+        HCCL_WARNING("[CcuResSpecifications][CheckResSpecifications] tlvHandle is nullptr, devLogicId[%d].", devLogicId);
+        return {};
+    }
     struct CustomChannelInfoIn  inBuff;
     struct CustomChannelInfoOut outBuff;
     inBuff.op                    = CcuOpcodeType::CCU_U_OP_GET_BASIC_INFO;
     inBuff.offsetStartIdx        = 0;
     inBuff.data.dataInfo.udieIdx = dieId;
 
-    HrtRaCustomChannel(info, reinterpret_cast<void *>(&inBuff), reinterpret_cast<void *>(&outBuff));
+    auto ret = HrtRaTlvRequestForCustomChannel(tlvHandle, reinterpret_cast<void *>(&inBuff), reinterpret_cast<void *>(&outBuff));
+    if (ret != HCCL_SUCCESS) {
+        HCCL_WARNING("[CcuResSpecifications][CheckResSpecifications] failed, ret[%d], devLogicId[%d], dieId[%u].", ret, devLogicId, dieId);
+        return {};
+    }
     return ParseOutBuffToResSpecInfo(ccuVersion, outBuff);
 }
 
@@ -145,12 +161,12 @@ HcclResult CcuResSpecifications::Init_()
         auto memTypeBitmap = GetCombinedMemTypeBitmap();
         auto count = GetMemTypeVector().size();
         for (uint8_t dieId = 0; dieId < MAX_CCU_IODIE_NUM; dieId++) {
-            dieEnableFlags[dieId] = CheckDieEnable(devPhyId, dieId);
+            dieEnableFlags[dieId] = CheckDieEnable(devLogicId, dieId);
             if (!dieEnableFlags[dieId]) {
                 resSpecs[dieId] = CcuResSpecInfo{};
                 continue;
             }
-            resSpecs[dieId] = CheckResSpecifications(devPhyId, dieId, ccuVersion);
+            resSpecs[dieId] = CheckResSpecifications(devLogicId, dieId, ccuVersion);
             HrtGetCcuMemInfo(tlvHandle, dieId, memTypeBitmap, resSpecs[dieId].memInfoList.data(), count);
         }
         HcclMainboardId hcclMainboardId;

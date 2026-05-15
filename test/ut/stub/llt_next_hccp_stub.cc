@@ -79,6 +79,14 @@ int RaCustomChannel(struct RaInfo info, struct CustomChanInfoIn *in,
 {
     return 0;
 }
+
+int RaTlvRequest(void *tlvHandle, unsigned int moduleType, struct TlvMsg *sendMsg, struct TlvMsg *recvMsg)
+{
+    recvMsg->type = sendMsg->type;
+    recvMsg->length = sendMsg->length;
+    recvMsg->data = sendMsg->data;
+    return 0;
+}
  
 int RaGetDevEidInfoNum(struct RaInfo info, unsigned int *num)
 {

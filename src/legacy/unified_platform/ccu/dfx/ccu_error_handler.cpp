@@ -12,6 +12,7 @@
 #include "ccu_error_handler.h"
 #include "ccu_context_mgr_imp.h"
 #include "orion_adapter_hccp.h"
+#include "hccp_tlv_hdc_manager.h"
 #include "orion_adapter_rts.h"
 
 namespace Hccl {
@@ -679,7 +680,11 @@ void CcuErrorHandler::GenErrorInfoBufReduce(const ErrorInfoBase &baseInfo, share
 
 CcuMissionContext CcuErrorHandler::GetCcuMissionContext(int32_t deviceId, uint32_t dieId, uint32_t missionId)
 {
-    HRaInfo                      info(HrtNetworkMode::HDC, HrtGetDevicePhyIdByIndex(deviceId));
+    auto tlvHandle = HccpTlvHdcManager::GetInstance().GetTlvHandle(deviceId);
+    if (tlvHandle == nullptr) {
+        HCCL_WARNING("[CcuErrorHandler][GetCcuMissionContext] tlvHandle is nullptr, deviceId[%d].", deviceId);
+        return {};
+    }
     struct CustomChannelInfoIn  inBuff;
     struct CustomChannelInfoOut outBuff;
 
@@ -689,7 +694,12 @@ CcuMissionContext CcuErrorHandler::GetCcuMissionContext(int32_t deviceId, uint32
     inBuff.data.dataInfo.dataArraySize = 1; // 读1个MissionContext
     inBuff.data.dataInfo.dataLen       = sizeof(CcuMissionContext) * inBuff.data.dataInfo.dataArraySize;
 
-    HrtRaCustomChannel(info, &inBuff, &outBuff);
+    auto ret = HrtRaTlvRequestForCustomChannel(tlvHandle, &inBuff, &outBuff);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_WARNING("[CcuErrorHandler][GetCcuMissionContext] failed, ret[%d], deviceId[%d], dieId[%u], missionId[%u].",
+            ret, deviceId, dieId, missionId);
+        return {};
+    }
 
     CcuMissionContext missionCtx{};
     (void)memcpy_s(&missionCtx, sizeof(missionCtx), outBuff.data.dataInfo.dataArray, inBuff.data.dataInfo.dataLen);
@@ -698,7 +708,11 @@ CcuMissionContext CcuErrorHandler::GetCcuMissionContext(int32_t deviceId, uint32
 
 CcuLoopContext CcuErrorHandler::GetCcuLoopContext(int32_t deviceId, uint32_t dieId, uint32_t loopCtxId)
 {
-    HRaInfo                      info(HrtNetworkMode::HDC, HrtGetDevicePhyIdByIndex(deviceId));
+    auto tlvHandle = HccpTlvHdcManager::GetInstance().GetTlvHandle(deviceId);
+    if (tlvHandle == nullptr) {
+        HCCL_WARNING("[CcuErrorHandler][GetCcuLoopContext] tlvHandle is nullptr, deviceId[%d].", deviceId);
+        return {};
+    }
     struct CustomChannelInfoIn  inBuff;
     struct CustomChannelInfoOut outBuff;
 
@@ -708,7 +722,12 @@ CcuLoopContext CcuErrorHandler::GetCcuLoopContext(int32_t deviceId, uint32_t die
     inBuff.data.dataInfo.dataArraySize = 1; // 读1个LoopContext
     inBuff.data.dataInfo.dataLen       = sizeof(CcuLoopContext) * inBuff.data.dataInfo.dataArraySize;
 
-    HrtRaCustomChannel(info, &inBuff, &outBuff);
+    auto ret = HrtRaTlvRequestForCustomChannel(tlvHandle, &inBuff, &outBuff);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_WARNING("[CcuErrorHandler][GetCcuLoopContext] failed, ret[%d], deviceId[%d], dieId[%u], loopCtxId[%u].",
+            ret, deviceId, dieId, loopCtxId);
+        return {};
+    }
 
     CcuLoopContext loopCtx{};
     (void)memcpy_s(&loopCtx, sizeof(loopCtx), outBuff.data.dataInfo.dataArray, inBuff.data.dataInfo.dataLen);
@@ -717,7 +736,11 @@ CcuLoopContext CcuErrorHandler::GetCcuLoopContext(int32_t deviceId, uint32_t die
 
 uint64_t CcuErrorHandler::GetCcuXnValue(int32_t deviceId, uint32_t dieId, uint32_t xnId)
 {
-    HRaInfo                      info(HrtNetworkMode::HDC, HrtGetDevicePhyIdByIndex(deviceId));
+    auto tlvHandle = HccpTlvHdcManager::GetInstance().GetTlvHandle(deviceId);
+    if (tlvHandle == nullptr) {
+        HCCL_WARNING("[CcuErrorHandler][GetCcuXnValue] tlvHandle is nullptr, deviceId[%d].", deviceId);
+        return 0;
+    }
     struct CustomChannelInfoIn  inBuff;
     struct CustomChannelInfoOut outBuff;
 
@@ -727,7 +750,12 @@ uint64_t CcuErrorHandler::GetCcuXnValue(int32_t deviceId, uint32_t dieId, uint32
     inBuff.data.dataInfo.dataArraySize = 1; // 读1个Xn
     inBuff.data.dataInfo.dataLen       = sizeof(uint64_t) * inBuff.data.dataInfo.dataArraySize;
 
-    HrtRaCustomChannel(info, &inBuff, &outBuff);
+    auto ret = HrtRaTlvRequestForCustomChannel(tlvHandle, &inBuff, &outBuff);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_WARNING("[CcuErrorHandler][GetCcuXnValue] failed, ret[%d], deviceId[%d], dieId[%u], xnId[%u].",
+            ret, deviceId, dieId, xnId);
+        return 0;
+    }
 
     uint64_t xnVal{0};
     (void)memcpy_s(&xnVal, sizeof(xnVal), outBuff.data.dataInfo.dataArray, inBuff.data.dataInfo.dataLen);
@@ -736,7 +764,11 @@ uint64_t CcuErrorHandler::GetCcuXnValue(int32_t deviceId, uint32_t dieId, uint32
 
 uint64_t CcuErrorHandler::GetCcuGSAValue(int32_t deviceId, uint32_t dieId, uint32_t gsaId)
 {
-    HRaInfo                      info(HrtNetworkMode::HDC, HrtGetDevicePhyIdByIndex(deviceId));
+    auto tlvHandle = HccpTlvHdcManager::GetInstance().GetTlvHandle(deviceId);
+    if (tlvHandle == nullptr) {
+        HCCL_WARNING("[CcuErrorHandler][GetCcuGSAValue] tlvHandle is nullptr, deviceId[%d].", deviceId);
+        return 0;
+    }
     struct CustomChannelInfoIn  inBuff;
     struct CustomChannelInfoOut outBuff;
 
@@ -746,7 +778,12 @@ uint64_t CcuErrorHandler::GetCcuGSAValue(int32_t deviceId, uint32_t dieId, uint3
     inBuff.data.dataInfo.dataArraySize = 1; // 读1个GSA
     inBuff.data.dataInfo.dataLen       = sizeof(uint64_t) * inBuff.data.dataInfo.dataArraySize;
 
-    HrtRaCustomChannel(info, &inBuff, &outBuff);
+    auto ret = HrtRaTlvRequestForCustomChannel(tlvHandle, &inBuff, &outBuff);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_WARNING("[CcuErrorHandler][GetCcuGSAValue] failed, ret[%d], deviceId[%d], dieId[%u], gsaId[%u].",
+            ret, deviceId, dieId, gsaId);
+        return 0;
+    }
 
     uint64_t gsaVal{0};
     (void)memcpy_s(&gsaVal, sizeof(gsaVal), outBuff.data.dataInfo.dataArray, inBuff.data.dataInfo.dataLen);
@@ -755,7 +792,11 @@ uint64_t CcuErrorHandler::GetCcuGSAValue(int32_t deviceId, uint32_t dieId, uint3
 
 uint16_t CcuErrorHandler::GetCcuCKEValue(int32_t deviceId, uint32_t dieId, uint32_t ckeId)
 {
-    HRaInfo                      info(HrtNetworkMode::HDC, HrtGetDevicePhyIdByIndex(deviceId));
+    auto tlvHandle = HccpTlvHdcManager::GetInstance().GetTlvHandle(deviceId);
+    if (tlvHandle == nullptr) {
+        HCCL_WARNING("[CcuErrorHandler][GetCcuCKEValue] tlvHandle is nullptr, deviceId[%d].", deviceId);
+        return 0;
+    }
     struct CustomChannelInfoIn  inBuff;
     struct CustomChannelInfoOut outBuff;
 
@@ -765,7 +806,12 @@ uint16_t CcuErrorHandler::GetCcuCKEValue(int32_t deviceId, uint32_t dieId, uint3
     inBuff.data.dataInfo.dataArraySize = 1; // 读1个CKE
     inBuff.data.dataInfo.dataLen       = sizeof(uint64_t) * inBuff.data.dataInfo.dataArraySize;
 
-    HrtRaCustomChannel(info, &inBuff, &outBuff);
+    auto ret = HrtRaTlvRequestForCustomChannel(tlvHandle, &inBuff, &outBuff);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_WARNING("[CcuErrorHandler][GetCcuCKEValue] failed, ret[%d], deviceId[%d], dieId[%u], ckeId[%u].",
+            ret, deviceId, dieId, ckeId);
+        return 0;
+    }
 
     uint64_t ckeVal{0};
     (void)memcpy_s(&ckeVal, sizeof(ckeVal), outBuff.data.dataInfo.dataArray, inBuff.data.dataInfo.dataLen);

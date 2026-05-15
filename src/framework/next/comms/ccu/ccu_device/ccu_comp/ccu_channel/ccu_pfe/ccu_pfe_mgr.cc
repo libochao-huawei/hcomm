@@ -14,6 +14,8 @@
 
 #include "../../../ccu_res_specs.h"
 #include "ccu_pfe_cfg_mgr.h"
+#include "hcomm_adapter_hccp.h"
+#include "hccp_tlv_hdc_manager.h"
 
 namespace hcomm {
 
@@ -41,19 +43,20 @@ inline PfeJettyStrategy BuildStrategy(const PfeJettyCtxCfg &cfg)
     return pfeJettyStrategy;
 }
 
-static HcclResult ConfigPfeTable(const uint32_t devPhyId, const uint8_t dieId, const uint32_t feId,
-    const uint32_t pfeReservedNum, const PfeCtx &pfeCtx)
+static HcclResult ConfigPfeTable(const int32_t devLogicId, const uint32_t devPhyId, const uint8_t dieId,
+    const uint32_t feId, const uint32_t pfeReservedNum, const PfeCtx &pfeCtx)
 {
     if (UNLIKELY(feId > UINT32_MAX - static_cast<uint32_t>(dieId) * pfeReservedNum)) {
         HCCL_ERROR("[CcuPfeMgr][%s] failed, feId[%u] is greater than expected, "
-            "pfeReservedNum[%u], will exceeds the range of uint32_t, devPhyId[%u], "
-            "dieId[%u].", __func__, feId, pfeReservedNum, devPhyId, dieId);
+            "pfeReservedNum[%u], will exceeds the range of uint32_t, devLogicId[%d], "
+            "dieId[%u].", __func__, feId, pfeReservedNum, devLogicId, dieId);
         return HcclResult::HCCL_E_INTERNAL;
     }
     // die1 使用后半部分pfe表项，故根据pfe预留数量偏移
     const uint32_t pfeTableOffset = static_cast<uint32_t>(dieId) * pfeReservedNum + feId;
 
-    const RaInfo info{NetworkMode::NETWORK_OFFLINE, devPhyId};
+    auto tlvHandle = Hccl::HccpTlvHdcManager::GetInstance().GetTlvHandle(devLogicId);
+    CHK_PTR_NULL(tlvHandle);
     CustomChannelInfoIn  inBuff{};
     CustomChannelInfoOut outBuff{};
     inBuff.op                          = CcuOpcodeType::CCU_U_OP_SET_PFE;
@@ -65,12 +68,10 @@ static HcclResult ConfigPfeTable(const uint32_t devPhyId, const uint8_t dieId, c
     (void)memcpy_s(inBuff.data.dataInfo.dataArray, inBuff.data.dataInfo.dataLen, &pfeCtx,
         inBuff.data.dataInfo.dataLen);
 
-    auto ret = RaCustomChannel(info,
-        reinterpret_cast<CustomChanInfoIn *>(&inBuff),
-        reinterpret_cast<CustomChanInfoOut *>(&outBuff));
-    if (ret != 0) {
+    auto ret = HccpRaTlvRequestForCustomChannel(tlvHandle, static_cast<void*>(&inBuff), static_cast<void*>(&outBuff));
+    if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[CcuResSpecifications][%s] failed to call ccu driver, "
-            "devPhyId[%u] dieId[%d] op[%s].", __func__, devPhyId, dieId,
+            "devLogicId[%d] dieId[%d] op[%s].", __func__, devLogicId, dieId,
             "SET_PFE");
         return HcclResult::HCCL_E_NETWORK;
     }
@@ -106,7 +107,7 @@ HcclResult CcuPfeMgr::Init()
         pfeJettyMap_[feId] = BuildStrategy(cfg);
 
         const auto &pfeCtx = BuildPfeCtx(dieId_, cfg);
-        CHK_RET(ConfigPfeTable(devPhyId_, dieId_, feId, pfeReservedNum, pfeCtx));
+        CHK_RET(ConfigPfeTable(devLogicId_, devPhyId_, dieId_, feId, pfeReservedNum, pfeCtx));
     }
 
     return HcclResult::HCCL_SUCCESS;
