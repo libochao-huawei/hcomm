@@ -268,6 +268,10 @@ namespace hccl
         }
 
         (void)UnRegistTaskExceptionHandler();
+        for (auto streamId : aicpuStreamIds_) {
+            UnregisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId_);
+        }
+        aicpuStreamIds_.clear();
         kfcControlTransferH2D_ = nullptr;
         kfcStatusTransferD2H_ = nullptr;
         customControlTransferH2D_ = nullptr;
@@ -7527,8 +7531,10 @@ namespace hccl
             return this->GetAicpuTaskException();
         };
         RegisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId_, getAicpuTaskExceptionCallBack);
+        aicpuStreamIds_.push_back(streamId);
         if (streamId != opParam.stream.id()) {
             RegisterGetAicpuTaskExceptionCallBack(opParam.stream.id(), deviceLogicId_, getAicpuTaskExceptionCallBack);
+            aicpuStreamIds_.push_back(opParam.stream.id());
         }
 
         HCCL_INFO("%s profName[%s] tag[%s] kfcOpStreamId[%d] mainStreamId[%u] kfcStreamId[%d] isCapture[%d] mode[%d] ",
