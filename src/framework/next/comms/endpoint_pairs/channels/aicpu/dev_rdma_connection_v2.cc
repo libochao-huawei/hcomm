@@ -13,7 +13,6 @@
 #include "hccp.h"
 
 namespace hcomm {
-constexpr u32 CHANNEL_ENTITY_TYPE_RDMA = 0;
 constexpr uint32_t TC_TEMP = 132;
 constexpr uint32_t SL_TEMP = 4;
 constexpr uint32_t RETRY_CNT_TEMP = 7;
@@ -274,7 +273,7 @@ HcclResult DevRdmaConnectionV2::ModifyQp()
 HcclResult DevRdmaConnectionV2::BuildSqContext(SqContext* context)
 {
     if (context == nullptr) {
-        HCCL_ERROR("[BuildSqContext] Invalid null pointer for context.");
+        HCCL_ERROR("[GetSqContext] Invalid null pointer for context.");
         return HCCL_E_PTR;
     }
 
@@ -285,29 +284,29 @@ HcclResult DevRdmaConnectionV2::BuildSqContext(SqContext* context)
         return HCCL_E_ROCE_CONNECT;
     }
 
-    context->type = CHANNEL_ENTITY_TYPE_RDMA;
-    context->contextInfo.rdmaSqContext.qpn = localQpAttr.qpn;
-    context->contextInfo.rdmaSqContext.sqVa = ndaQpInfo_.sqInfo.qBuf.base;
-    context->contextInfo.rdmaSqContext.wqeSize = ndaQpInfo_.sqInfo.qBuf.entrySize;
-    context->contextInfo.rdmaSqContext.depth = ndaQpInfo_.sqInfo.qBuf.entryCnt;
+    context->type = SQ_CONTEXT_TYPE_ROCE;
+    context->contextInfo.roceSq.qpn = localQpAttr.qpn;
+    context->contextInfo.roceSq.sqVa = ndaQpInfo_.sqInfo.qBuf.base;
+    context->contextInfo.roceSq.wqeSize = ndaQpInfo_.sqInfo.qBuf.entrySize;
+    context->contextInfo.roceSq.depth = ndaQpInfo_.sqInfo.qBuf.entryCnt;
     if (dmaMode_ == QBUF_DMA_MODE_DEFAULT) {
-        context->contextInfo.rdmaSqContext.headAddr = reinterpret_cast<uint64_t >(SqPiMem_.ptr());
-        context->contextInfo.rdmaSqContext.tailAddr = reinterpret_cast<uint64_t >(SqCiMem_.ptr());
+        context->contextInfo.roceSq.headAddr = reinterpret_cast<uint64_t >(SqPiMem_.ptr());
+        context->contextInfo.roceSq.tailAddr = reinterpret_cast<uint64_t >(SqCiMem_.ptr());
     } else {
-        context->contextInfo.rdmaSqContext.headAddr = reinterpret_cast<uint64_t >(ndaQpInfo_.sqInfo.dbrPiVa.iovBase);
-        context->contextInfo.rdmaSqContext.tailAddr = reinterpret_cast<uint64_t >(ndaQpInfo_.sqInfo.dbrCiVa.iovBase);
+        context->contextInfo.roceSq.headAddr = reinterpret_cast<uint64_t >(ndaQpInfo_.sqInfo.dbrPiVa.iovBase);
+        context->contextInfo.roceSq.tailAddr = reinterpret_cast<uint64_t >(ndaQpInfo_.sqInfo.dbrCiVa.iovBase);
     }
-    context->contextInfo.rdmaSqContext.dbVa = reinterpret_cast<uint64_t >(ndaQpInfo_.sqInfo.dbHwVa.iovBase);
-    context->contextInfo.rdmaSqContext.sl = qpInfo_.serviceLevel == 0 ? SL_TEMP : qpInfo_.serviceLevel;
-    context->contextInfo.rdmaSqContext.dbMode = 0;
+    context->contextInfo.roceSq.dbVa = reinterpret_cast<uint64_t >(ndaQpInfo_.sqInfo.dbHwVa.iovBase);
+    context->contextInfo.roceSq.sl = qpInfo_.serviceLevel == 0 ? SL_TEMP : qpInfo_.serviceLevel;
+    context->contextInfo.roceSq.dbMode = 0;
 
     HCCL_INFO(
         "[DevRdmaConnectionV2][%s] type=%u, QPN=%u, SQ_VA=0x%llx, WQE_SIZE=%u, "
         "SQ_DEPTH=%u, SQ_HEAD_ADDR=0x%llx, SQ_TAIL_ADDR=0x%llx, "
         "SL=%u, SQ_DB_VA=0x%llx, SQ_DB_MODE=%d", __func__, context->type,
-        context->contextInfo.rdmaSqContext.qpn, context->contextInfo.rdmaSqContext.sqVa, context->contextInfo.rdmaSqContext.wqeSize,
-        context->contextInfo.rdmaSqContext.depth, context->contextInfo.rdmaSqContext.headAddr, context->contextInfo.rdmaSqContext.tailAddr,
-        context->contextInfo.rdmaSqContext.sl, context->contextInfo.rdmaSqContext.dbVa, context->contextInfo.rdmaSqContext.dbMode
+        context->contextInfo.roceSq.qpn, context->contextInfo.roceSq.sqVa, context->contextInfo.roceSq.wqeSize,
+        context->contextInfo.roceSq.depth, context->contextInfo.roceSq.headAddr, context->contextInfo.roceSq.tailAddr,
+        context->contextInfo.roceSq.sl, context->contextInfo.roceSq.dbVa, context->contextInfo.roceSq.dbMode
     );
 
     return HCCL_SUCCESS;
@@ -320,28 +319,28 @@ HcclResult DevRdmaConnectionV2::BuildCqContext(CqContext* context)
         return HCCL_E_PTR;
     }
 
-    context->type = CHANNEL_ENTITY_TYPE_RDMA;
-    context->contextInfo.rdmaCqContext.cqn = 0;
-    context->contextInfo.rdmaCqContext.cqVa = ndaCqInfo_.cqInfo.qBuf.base;
-    context->contextInfo.rdmaCqContext.cqeSize = ndaCqInfo_.cqInfo.qBuf.entrySize;
-    context->contextInfo.rdmaCqContext.cqDepth = ndaCqInfo_.cqInfo.qBuf.entryCnt;
+    context->type = CQ_CONTEXT_TYPE_ROCE;
+    context->contextInfo.roceCq.cqn = 0;
+    context->contextInfo.roceCq.cqVa = ndaCqInfo_.cqInfo.qBuf.base;
+    context->contextInfo.roceCq.cqeSize = ndaCqInfo_.cqInfo.qBuf.entrySize;
+    context->contextInfo.roceCq.cqDepth = ndaCqInfo_.cqInfo.qBuf.entryCnt;
     if (dmaMode_ == QBUF_DMA_MODE_DEFAULT) {
-        context->contextInfo.rdmaCqContext.headAddr = reinterpret_cast<uint64_t >(CqPiMem_.ptr());
-        context->contextInfo.rdmaCqContext.tailAddr = reinterpret_cast<uint64_t >(CqCiMem_.ptr());
+        context->contextInfo.roceCq.headAddr = reinterpret_cast<uint64_t >(CqPiMem_.ptr());
+        context->contextInfo.roceCq.tailAddr = reinterpret_cast<uint64_t >(CqCiMem_.ptr());
     } else {
-        context->contextInfo.rdmaCqContext.headAddr = reinterpret_cast<uint64_t >(ndaCqInfo_.cqInfo.dbrPiVa.iovBase);
-        context->contextInfo.rdmaCqContext.tailAddr = reinterpret_cast<uint64_t >(ndaCqInfo_.cqInfo.dbrCiVa.iovBase);
+        context->contextInfo.roceCq.headAddr = reinterpret_cast<uint64_t >(ndaCqInfo_.cqInfo.dbrPiVa.iovBase);
+        context->contextInfo.roceCq.tailAddr = reinterpret_cast<uint64_t >(ndaCqInfo_.cqInfo.dbrCiVa.iovBase);
     }
-    context->contextInfo.rdmaCqContext.dbVa = reinterpret_cast<uint64_t >(ndaCqInfo_.cqInfo.dbHwVa.iovBase);
-    context->contextInfo.rdmaCqContext.dbMode = 0;
+    context->contextInfo.roceCq.dbVa = reinterpret_cast<uint64_t >(ndaCqInfo_.cqInfo.dbHwVa.iovBase);
+    context->contextInfo.roceCq.dbMode = 0;
 
     HCCL_INFO(
         "[DevRdmaConnectionV2][%s] type=%u, CQN=%u, CQ_VA=0x%llx, CQE_SIZE=%u, CQ_DEPTH=%u, "
         "CQ_HEAD_ADDR=0x%llx, CQ_TAIL_ADDR=0x%llx, CQ_DB_VA=0x%llx, CQ_DB_MODE=%d]",
         __func__, context->type,
-        context->contextInfo.rdmaCqContext.cqn, context->contextInfo.rdmaCqContext.cqVa, context->contextInfo.rdmaCqContext.cqeSize,
-        context->contextInfo.rdmaCqContext.cqDepth, context->contextInfo.rdmaCqContext.headAddr, context->contextInfo.rdmaCqContext.tailAddr,
-        context->contextInfo.rdmaCqContext.dbVa, context->contextInfo.rdmaCqContext.dbMode
+        context->contextInfo.roceCq.cqn, context->contextInfo.roceCq.cqVa, context->contextInfo.roceCq.cqeSize,
+        context->contextInfo.roceCq.cqDepth, context->contextInfo.roceCq.headAddr, context->contextInfo.roceCq.tailAddr,
+        context->contextInfo.roceCq.dbVa, context->contextInfo.roceCq.dbMode
     );
 
     return HCCL_SUCCESS;
