@@ -27,17 +27,6 @@ typedef struct {
     uint32_t superPodId;
 } HcommDevId;
 
-/**
- * @struct HcommBuf
- * @brief 内存缓冲区描述结构体
- * @var addr   - 虚拟地址指针
- * @var len    - 内存长度（单位字节）
- */
-typedef struct {
-    void *addr;
-    uint64_t len;
-} HcommBuf;
-
 typedef CommMem HcommMem;
 
 typedef HcommMemHandle MemHandle;
