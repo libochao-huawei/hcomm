@@ -17,6 +17,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <unordered_map>
 #include <unordered_set>
 
 #include "ccu_task_arg_v1.h"
@@ -39,6 +40,7 @@
 // 暂时引用方便算法开发
 #include "ccu_repeat_v1.h"
 #include "ccu_condition_v1.h"
+#include "ccu_rep_funcblock_v1.h"
 #include "ccu_loopblock_v1.h"
 #include "ccu_loopcall_v1.h"
 #include "ccu_loopgroupcall_v1.h"
@@ -191,18 +193,21 @@ public:
     CcuResult LoopCreate(CcuLoop *loop);
     CcuResult LoopBodyEnter(CcuLoop loop);
     CcuResult LoopBodyExit(CcuLoop loop);
-    CcuResult LoopSetParam(CcuLoop loop,
-        CcuVariableHandle formalParam, CcuVariableHandle actualParam);
-    CcuResult LoopEnginePoolCreate(CcuLoopExecutors *pool, uint32_t count);
+    CcuResult SetLoopNum(uint32_t count);
     CcuResult LoopGroupCreate(CcuLoopGroup *group,
-        const CcuLoopGroupConfig *config, CcuLoopExecutors enginePool);
+        const CcuLoopGroupConfig *config);
     CcuResult LoopGroupCreateFromVar(CcuLoopGroup *group,
-        CcuVariableHandle parallelVar, CcuVariableHandle offsetVar,
-        CcuLoopExecutors enginePool);
+        CcuVariableHandle parallelVar, CcuVariableHandle offsetVar);
     CcuResult LoopGroupAddLoop(CcuLoopGroup group,
         CcuLoop loop, const CcuLoopConfig *config);
     CcuResult LoopGroupAddLoopFromVar(CcuLoopGroup group,
         CcuLoop loop, CcuVariableHandle loopParamVar);
+
+    CcuResult FuncBlockLookup(const void *funcPtr, uint64_t *outHandle);
+    CcuResult FuncBlockBegin(const void *funcPtr, uint64_t *outHandle);
+    CcuResult FuncBlockEnd(uint64_t handle);
+    CcuResult FuncDefineInArg(uint64_t handle, CcuVariableHandle formal);
+    CcuResult FuncCall(uint64_t handle, const CcuVariableHandle *inArgs, uint32_t numIn);
 
    
 private:
@@ -357,16 +362,10 @@ private:
     std::vector<GroupInfo> groupOpSizeInfo_;
     std::vector<CcuProfilingInfo> allCcuProfilingInfos_;
 
-    struct ParamBinding {
-        CcuRep::Variable formal;
-        CcuRep::Variable actual;
-    };
-
     struct LoopDescriptor {
         std::string label;
         std::shared_ptr<CcuRep::CcuRepLoopBlock> repLoopBlock;
         std::shared_ptr<CcuRep::CcuRepBlock> prevActiveBlock;
-        std::vector<ParamBinding> paramBindings;
         bool bodyDefined{false};
     };
 
@@ -378,7 +377,14 @@ private:
         CcuRep::Variable offsetVar;
         std::shared_ptr<CcuRep::CcuRepBase> bundleRep;
         bool isVarBased{false};
-        CcuLoopExecutors enginePoolHandle{0};
+    };
+
+    struct FuncDescriptor {
+        const void *funcPtr{nullptr};
+        std::string label;
+        std::shared_ptr<CcuRep::CcuRepFuncBlock> repFuncBlock;
+        std::shared_ptr<CcuRep::CcuRepBlock> prevActiveBlock;
+        bool bodyDefined{false};
     };
 
     std::unordered_map<CcuLoop, LoopDescriptor> loopMap_;
@@ -386,8 +392,12 @@ private:
     uint32_t loopHandleCounter_{0};
     uint32_t loopGroupHandleCounter_{0};
     uint32_t loopBodyDepth_{0};
-    std::unordered_map<CcuLoopExecutors, std::vector<CcuRep::Executor>> loopEnginePools_;
-    uint32_t loopEnginePoolCounter_{0};
+
+    std::unordered_map<uint64_t, FuncDescriptor> funcMap_;
+    std::unordered_map<const void *, uint64_t> funcInstanceMap_;
+    uint64_t funcHandleCounter_{0};
+    bool inFuncBody_{false};
+    bool funcBodyError_{false};
 };
 
 } // namespace hcomm

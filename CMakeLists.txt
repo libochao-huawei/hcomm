@@ -289,7 +289,6 @@ elseif(BUILD_OPEN_PROJECT)
         pkg_inc/hcomm/ccu_new/ccu_data_utils.hpp
         pkg_inc/hcomm/ccu_new/ccu_event.hpp
         pkg_inc/hcomm/ccu_new/ccu_local_addr.hpp
-        pkg_inc/hcomm/ccu_new/ccu_loop_macro.h
         pkg_inc/hcomm/ccu_new/ccu_remote_addr.hpp
         pkg_inc/hcomm/ccu_new/ccu_types.h
         pkg_inc/hcomm/ccu_new/ccu_variable.hpp
