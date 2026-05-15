@@ -224,10 +224,10 @@ HcclResult HostRdmaConnection::ModifyQp()
     HCCL_INFO("[HostRdmaConnection::ModifyQp] HostRdmaConnection qpInfo_: serviceLevel[%d], trafficClass[%d], retryCnt[%d], retryInterval[%d]. "
                "roceAttr_: sl[%d], tc[%d], retryCnt[%d], retryInterval[%d]", qpInfo_.serviceLevel, qpInfo_.trafficClass, qpInfo_.retryCnt, qpInfo_.retryInterval,
                roceAttr_.sl, roceAttr_.tc, roceAttr_.retryCnt, roceAttr_.retryInterval);
-    HCCL_DEBUG("[HostRdmaConnection::ModifyQp] HostRdmaConnection localQp: qpn[%u], psn[%u], gidIdx[3]",
+    HCCL_DEBUG("[HostRdmaConnection::ModifyQp] HostRdmaConnection localQp: qpn[%u], psn[%u], gidIdx[%u]",
                 localQpAttr.qpn, localQpAttr.psn, localQpAttr.gidIdx);
-    HCCL_DEBUG("[HostRdmaConnection::ModifyQp] HostRdmaConnection remoteQp: qpn[%u], psn[%u], gidIdx[3]",
-                rmtQpAttr_.qpn, rmtQpAttr_.psn, rmtQpAttr_.gidIdx);
+    HCCL_DEBUG("[HostRdmaConnection::ModifyQp] HostRdmaConnection remoteQp: qpn[%u], psn[%u], gidIdx[%u]",
+                rmtQpAttr_.qpn, rmtQpAttr_.psn, rmtQpAttr_.gid_idx);
 
     struct TypicalQp localQp;
     struct TypicalQp rmtQp;
