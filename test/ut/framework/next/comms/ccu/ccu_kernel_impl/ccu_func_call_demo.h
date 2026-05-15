@@ -67,4 +67,23 @@ inline CcuResult CcuFuncCallNestedInvalidDemoKernel(CcuKernelArg arg)
     return ccu::CallFunc<CcuFuncCallNestedOuterFunc>(x);
 }
 
+// 多入参 Func：lambda 形参个数由 ccu::Func 在编译期推导（FunctorTraits<Lambda>::Arity），
+// CallFunc 时若实参个数不匹配会返回 CCU_E_PARA。本 demo 演示 3 个 Variable 入参。
+ccu::Func CcuFuncCallMultiArgFunc([](ccu::Variable a, ccu::Variable b, ccu::Variable c) {
+    ccu::Variable tmp{};
+    tmp = a + b;
+    tmp = tmp + c;
+});
+
+inline CcuResult CcuFuncCallMultiArgDemoKernel(CcuKernelArg arg)
+{
+    (void)arg;
+    ccu::Variable a{}, b{}, c{};
+    a = 5;
+    b = 6;
+    c = 7;
+    CCU_CHK_RET(ccu::CallFunc<CcuFuncCallMultiArgFunc>(a, b, c));
+    return ccu::CallFunc<CcuFuncCallMultiArgFunc>(a, b, c);
+}
+
 #endif // CCU_FUNC_CALL_DEMO_H
