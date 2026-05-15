@@ -37,7 +37,8 @@ AicpuTsHccsEndpoint::~AicpuTsHccsEndpoint()
 
     try {
         if (netDevCtx_ != nullptr) {
-            (void)hccl::GlobalNetDevMgr::GetInstance().UnRefNetDevCtx(NicType::VNIC_TYPE, devIpAddr_, serverPort_);
+            (void)hccl::GlobalNetDevMgr::GetInstance(endpointDesc_.loc.device.devPhyId).UnRefNetDevCtx(
+                NicType::VNIC_TYPE, devIpAddr_, serverPort_);
             netDevCtx_ = nullptr;
         }
     }  catch (...) { }
@@ -62,14 +63,15 @@ HcclResult AicpuTsHccsEndpoint::Init()
     HCCL_INFO("[AicpuTsHccsEndpoint]devPhyId[%u] superDevId[%u] devIpAddr_[%s] ",
         devPhyId, superDevId, devIpAddr_.GetReadableAddress());
 
-    CHK_RET(hccl::GlobalNetDevMgr::GetInstance().RefNetDevCtx(NicType::VNIC_TYPE, devIpAddr_, serverPort_, netDevCtx_));
+    CHK_RET(hccl::GlobalNetDevMgr::GetInstance(endpointDesc_.loc.device.devPhyId).RefNetDevCtx(
+        NicType::VNIC_TYPE, devIpAddr_, serverPort_, netDevCtx_));
     EXECEPTION_CATCH(regedMemMgr_ = std::make_shared<HccsRegedMemMgr>(netDevCtx_), return HCCL_E_PARA);
     return HCCL_SUCCESS;
 }
 
 HcclResult AicpuTsHccsEndpoint::ServerSocketListen(const uint32_t port)
 {
-    CHK_RET(hccl::GlobalNetDevMgr::GetInstance().ServerInit(serverPort_));
+    CHK_RET(hccl::GlobalNetDevMgr::GetInstance(endpointDesc_.loc.device.devPhyId).ServerInit(serverPort_));
     serverListened_ = true;
     return HCCL_SUCCESS;
 }
@@ -77,7 +79,7 @@ HcclResult AicpuTsHccsEndpoint::ServerSocketListen(const uint32_t port)
 HcclResult AicpuTsHccsEndpoint::ServerSocketStopListen(const uint32_t port)
 {
     if (serverListened_) {
-        CHK_RET(hccl::GlobalNetDevMgr::GetInstance().ServerDeInit(port));
+        CHK_RET(hccl::GlobalNetDevMgr::GetInstance(endpointDesc_.loc.device.devPhyId).ServerDeInit(port));
         serverListened_ = false;
     }
 

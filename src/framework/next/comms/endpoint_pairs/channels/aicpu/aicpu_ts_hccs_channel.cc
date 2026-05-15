@@ -106,7 +106,7 @@ HcclResult AicpuTsHccsChannel::BuildConnection()
 {
     /* delay start server here, uplayer may not call ServerSocketListen of endpoint,
     and here can get the port from channel desc*/
-    CHK_RET(hccl::GlobalNetDevMgr::GetInstance().ServerInit(serverPort_));
+    CHK_RET(hccl::GlobalNetDevMgr::GetInstance(localEp_.loc.device.devPhyId).ServerInit(serverPort_));
     serverInited_ = true;
 
     std::string localReadableAddress = localIp_.GetReadableAddress();
@@ -118,11 +118,12 @@ HcclResult AicpuTsHccsChannel::BuildConnection()
 
     if (isSocketServer_) {
         GlobalNetDevMgr::MakeSocketTag(localIp_, serverPort_, remoteIp_, socketTag_, socketTagIdx_);
-        CHK_RET(GlobalNetDevMgr::GetInstance().AcceptClient(serverPort_, remoteIp_, socketTag_, socket_));
+        CHK_RET(GlobalNetDevMgr::GetInstance(localEp_.loc.device.devPhyId).AcceptClient(serverPort_,
+            remoteIp_, socketTag_, socket_));
     } else {
         GlobalNetDevMgr::MakeSocketTag(remoteIp_, serverPort_, localIp_, socketTag_, socketTagIdx_);
-        CHK_RET(GlobalNetDevMgr::GetInstance().ConnectToServer(serverPort_, remoteIp_, serverPort_,
-            socketTag_, socket_));
+        CHK_RET(GlobalNetDevMgr::GetInstance(localEp_.loc.device.devPhyId).ConnectToServer(serverPort_,
+            remoteIp_, serverPort_, socketTag_, socket_));
     }
     HCCL_INFO("[AicpuTsHccsChannel][BuildConnection] local devPhyId [%u] ip[%u] "
         "remote devPhyId[%u] ip[%s] socketTag_[%s]",
@@ -134,11 +135,11 @@ HcclResult AicpuTsHccsChannel::BuildConnection()
 void AicpuTsHccsChannel::DestroyConnection()
 {
     if (socket_ != nullptr) {
-        GlobalNetDevMgr::GetInstance().CloseSocket(socket_);
+        GlobalNetDevMgr::GetInstance(localEp_.loc.device.devPhyId).CloseSocket(socket_);
     }
     
     if (serverInited_) {
-        (void)hccl::GlobalNetDevMgr::GetInstance().ServerDeInit(serverPort_);
+        (void)hccl::GlobalNetDevMgr::GetInstance(localEp_.loc.device.devPhyId).ServerDeInit(serverPort_);
         serverInited_ = false;
     }
     HCCL_INFO("[AicpuTsHccsChannel][%s] finish DestroyConnection", __func__);
