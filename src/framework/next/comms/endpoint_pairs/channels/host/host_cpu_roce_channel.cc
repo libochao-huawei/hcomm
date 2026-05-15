@@ -526,27 +526,35 @@ HcclResult HostCpuRoceChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNu
 {
     CHK_PRT_RET(remoteMem == nullptr, HCCL_ERROR("[GetRemoteMem] remoteMem is nullptr"), HCCL_E_PTR);
     CHK_PRT_RET(memNum == nullptr, HCCL_ERROR("[GetRemoteMem] memNum is nullptr"), HCCL_E_PTR);
-    *memNum = 0;
+    CHK_PRT_RET(memTags == nullptr, HCCL_ERROR("[GetRemoteMem] memTags is nullptr"), HCCL_E_PTR);
 
     uint32_t totalCount = rmtRmaBuffers_.size();
     if (totalCount == 0) {
+        *memNum = 0;
         HCCL_INFO("[GetRemoteMem] No remote memory regions available");
         return HCCL_SUCCESS;
     }
 
+    // *memNum 作为入参传入数组容量（remoteMem 和 memTags 的数组大小），防止越界；返回时改写为实际数量
+    CHK_PRT_RET(totalCount > *memNum,
+        HCCL_ERROR("[GetRemoteMem] totalCount[%u] exceeds array capacity[%u]", totalCount, *memNum),
+        HCCL_E_PARA);
+
+    // 复用已有 remoteMems 条目：不足时增长，但绝不回收，保证已传出指针始终有效
+    while (remoteMems.size() < totalCount) {
+        EXECEPTION_CATCH(remoteMems.emplace_back(std::make_unique<HcclMem>()), return HCCL_E_PARA);
+    }
+
     for (uint32_t i = 0; i < totalCount; i++) {
         auto& rmtRmaBuffer = rmtRmaBuffers_[i];
-        std::unique_ptr<HcclMem> hcclMem{};
-        EXECEPTION_CATCH(hcclMem = std::make_unique<HcclMem>(), return HCCL_E_PARA);
-        
+        auto& hcclMem = remoteMems[i];
         hcclMem->type = rmtRmaBuffer->GetMemType();
         hcclMem->addr = reinterpret_cast<void *>(rmtRmaBuffer->GetAddr());
         hcclMem->size = rmtRmaBuffer->GetSize();
         memTags[i] = const_cast<char*>(rmtRmaBuffer->GetMemTag().c_str());
         remoteMem[i] = hcclMem.get();
-        HCCL_INFO("[HostCpuRoceChannel::%s] rmtBuf[addr[%p], size[%llu]]", 
+        HCCL_INFO("[HostCpuRoceChannel::%s] rmtBuf[addr[%p], size[%llu]]",
             __func__, remoteMem[i]->addr, remoteMem[i]->size);
-        remoteMems.emplace_back(std::move(hcclMem));
     }
 
     *memNum = totalCount;
