@@ -11,6 +11,8 @@
 #ifndef CCU_API_HPP
 #define CCU_API_HPP
 
+#include <vector>
+
 #include "ccu_data_api_impl.h"
 #include "ccu_control_flow_macro.h"
 #include "hcom_common.h"
@@ -31,10 +33,8 @@ namespace ccu {
 
 inline Variable GetResByChannel(ChannelHandle channel, uint32_t varIndex) {
     Variable v{NoAllocTag{}};
-    auto ret = CcuVariableCreateByChannel(channel, varIndex, &v.handle);
-    if (ret != CcuResult::CCU_SUCCESS) {
-        throw "CcuVariableCreateByChannel: failed";
-    }
+    CCU_THROW_IF_FAILED(CcuVariableCreateByChannel(channel, varIndex, &v.handle),
+        "CcuVariableCreateByChannel: failed");  
     return v;
 }
 

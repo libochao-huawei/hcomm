@@ -48,30 +48,52 @@ typedef enum {
     CCU_E_OOM = 24,                /**< out of memory */
     CCU_E_IN_STATUS = 1041,        /**< The error information is in the status. */
 
-    // todo: 需要评审 调整 赋值，预留扩展字段
-    CCU_E_DRV_INIT_FAILED,
-    CCU_E_DRV_BUSY,
+    /*
+     * 以下错误码采用显式分段赋值，避免隐式自增导致的 ABI 漂移：
+     *   - 1042..1099  driver / 其它通用错误，预留 ~58 个槽位
+     *   - 1100..1199  资源不可用专属网段，CCU_CHK_RES_UNAVAIL 依赖
+     *                 (ccuRet > CCU_E_RES_UNAVAIL_START && ccuRet < CCU_E_RES_UNAVAIL_END)
+     *                 该谓词；新资源类型必须在 1101..1198 内追加，
+     *                 严禁在该范围插入非"资源不可用"语义的错误码。
+     *   - 1200..      其它分类错误
+     * 任何新增错误码必须显式赋值，不得依赖隐式自增。
+     */
+    CCU_E_DRV_INIT_FAILED = 1042,
+    CCU_E_DRV_BUSY        = 1043,
 
-    // 各类资源不足
-    CCU_E_RES_UNAVAIL_START,
+    /* === 资源不足类错误（必须落在 (START, END) 区间内）=== */
+    CCU_E_RES_UNAVAIL_START = 1100,
 
-    CCU_E_CHANNEL_CTX_UNAVAIL,
-    CCU_E_JETTY_CTX_UNAVAIL,
-    CCU_E_WQEBB_UNAVAIL,
-    CCU_E_MS_UNAVAIL,
-    CCU_E_LOOP_UNAVAIL,
-    CCU_E_CKE_UNAVAIL,
-    CCU_E_XN_UNAVAIL,
-    CCU_E_GSA_UNAVAIL,
+    CCU_E_CHANNEL_CTX_UNAVAIL = 1101,
+    CCU_E_JETTY_CTX_UNAVAIL   = 1102,
+    CCU_E_WQEBB_UNAVAIL       = 1103,
+    CCU_E_MS_UNAVAIL          = 1104,
+    CCU_E_LOOP_UNAVAIL        = 1105,
+    CCU_E_CKE_UNAVAIL         = 1106,
+    CCU_E_XN_UNAVAIL          = 1107,
+    CCU_E_GSA_UNAVAIL         = 1108,
+    /* 新资源类型在此追加，下一可用值为 1109，严禁超过 1198 */
 
-    CCU_E_RES_UNAVAIL_END,
+    CCU_E_RES_UNAVAIL_END = 1199,
 
-    CCU_E_TRANSLATE_FAILED,
-    CCU_E_ALREADY_BOUND,
-    CCU_E_LOOP_BODY_UNDEFINED,
+    /* === 其它分类错误 === */
+    CCU_E_TRANSLATE_FAILED    = 1200,
+    CCU_E_ALREADY_BOUND       = 1201,
+    CCU_E_LOOP_BODY_UNDEFINED = 1202,
 
-    CCU_E_RESERVED                 /**< reserved */
+    CCU_E_RESERVED = 0x7FFFFFFF    /**< reserved，固定哨兵值 */
 } CcuResult;
+
+#ifdef __cplusplus
+/* 编译期围栏：保证资源不可用类错误码全部落在 (START, END) 区间内。
+ * 任何新增枚举忘记显式赋值、或越界放置，都会在此处直接编译失败。 */
+static_assert(CCU_E_CHANNEL_CTX_UNAVAIL > CCU_E_RES_UNAVAIL_START &&
+              CCU_E_GSA_UNAVAIL         < CCU_E_RES_UNAVAIL_END,
+              "CCU_E_*_UNAVAIL must lie strictly inside "
+              "(CCU_E_RES_UNAVAIL_START, CCU_E_RES_UNAVAIL_END)");
+static_assert(CCU_E_TRANSLATE_FAILED > CCU_E_RES_UNAVAIL_END,
+              "Non-resource errors must be placed after CCU_E_RES_UNAVAIL_END");
+#endif /* __cplusplus */
 
 
 /**

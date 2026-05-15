@@ -28,10 +28,8 @@ template <typename U> class Array;
 class Event final {
 public:
     Event() {
-        auto ret = CcuEventAlloc(&this->handle);
-        if (ret != CcuResult::CCU_SUCCESS) {
-            throw "CcuEventAlloc: failed";
-        }
+        CCU_THROW_IF_FAILED(CcuEventAlloc(&this->handle),
+        "CcuEventAlloc: failed");   
     }
 
     Event(const Event& other) : handle(other.handle) {}
