@@ -1749,12 +1749,6 @@ int RsUbCtxJettyCreate(struct RsUbDevCb *devCb, struct CtxQpAttr *attr, struct Q
         goto free_jetty_cb;
     }
 
-    ret = RsUbCtxDrvJettyCreate(jettyCb, sendJfcCb, recvJfcCb);
-    if (ret != 0) {
-        hccp_err("rs_ub_ctx_drv_jetty_create failed, ret:%d", ret);
-        goto free_jetty_cb;
-    }
-
 #ifdef CUSTOM_INTERFACE
     ret = RsUbJettyCbBuffAlloc(devCb, jettyCb, sendJfcCb->jfcType);
     if (ret != 0) {
@@ -1762,6 +1756,12 @@ int RsUbCtxJettyCreate(struct RsUbDevCb *devCb, struct CtxQpAttr *attr, struct Q
         goto free_jetty_cb;
     }
 #endif
+
+    ret = RsUbCtxDrvJettyCreate(jettyCb, sendJfcCb, recvJfcCb);
+    if (ret != 0) {
+        hccp_err("rs_ub_ctx_drv_jetty_create failed, ret:%d", ret);
+        goto free_jetty_cb;
+    }
 
     ret = RsUbFillJettyInfo(jettyCb, info);
     if (ret != 0) {
