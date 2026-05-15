@@ -20,10 +20,9 @@ CcuResult CcuLoopAddDemoKernel(CcuKernelArg arg)
     using namespace ccu;
     auto *args = static_cast<CcuLoopAddKernelArg *>(arg);
 
-    // 申请 LoopEngine 池，大小 = max(各 LoopGroup loop 数) = 2；
-    // 三个 LoopGroup 都从该池按 local loopIdx 取 executorId，跨组复用 0、1。
-    CCU_CHK_RET(SetLoopNum(2));
-
+    // 各 LoopGroup 通过 ctor 第二个参数 maxLoopNum 自报本组所需的 LoopEngine
+    // 数量；kernel 内按 max(各 LoopGroup maxLoopNum) 被动扩容池子，跨组复用低位
+    // executorId（0、1...）。本 demo 三个 LoopGroup 各填 2。
     Variable r1{}, r2{}, r3{}, r4{}, r5{}, r6{}, r7{}, numA{}, numB{};
 
     numA = args->numA;
@@ -48,7 +47,7 @@ CcuResult CcuLoopAddDemoKernel(CcuKernelArg arg)
         .addrOffset = 0, .bufferOffset = 0, .eventOffset = 0,
         .repeatNum = 0, .repeatLoopIdx = 0
     };
-    LoopGroup group1(grpCfg1, {loop1, loop2});
+    LoopGroup group1(grpCfg1, /*maxLoopNum=*/2, {loop1, loop2});
 
     r4 = numA + numB;
 
@@ -63,7 +62,7 @@ CcuResult CcuLoopAddDemoKernel(CcuKernelArg arg)
         .addrOffset = 4096, .bufferOffset = 1, .eventOffset = 1,
         .repeatNum = 3, .repeatLoopIdx = 1
     };
-    LoopGroup group2(grpCfg2, {loop2, loop3});
+    LoopGroup group2(grpCfg2, /*maxLoopNum=*/2, {loop2, loop3});
 
     // ========== LoopGroup 3 (var-based): variable group with two distinct var-loops ==========
     Variable varLoopParam4{}, varLoopParam5{}, varParallel{}, varOffset{};
@@ -82,7 +81,7 @@ CcuResult CcuLoopAddDemoKernel(CcuKernelArg arg)
     Loop loop4(varLoopParam4, body4);
     Loop loop5(varLoopParam5, body5);
 
-    LoopGroup group3(varParallel, varOffset, {loop4, loop5});
+    LoopGroup group3(varParallel, varOffset, /*maxLoopNum=*/2, {loop4, loop5});
 
     return CcuResult::CCU_SUCCESS;
 }
