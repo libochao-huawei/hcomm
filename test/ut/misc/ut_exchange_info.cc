@@ -133,6 +133,7 @@ TEST_F(ExchangeInfoTest, Ut_EndToEnd_When_AddStoreGet_Expect_Consistent)
     // 3. 清空本端交换信息状态（模拟HcclChannelAcquire建链后清空）
     ret = collCommConfigConsistency.ResetExchangeInfo();
     EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(0, collCommConfigConsistency.GetExchangeInfoLen());
 
     // 4. 获取对端交换信息
     std::vector<u8> recvBuf(size, 0);
