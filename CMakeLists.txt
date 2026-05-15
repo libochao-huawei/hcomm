@@ -282,12 +282,15 @@ elseif(BUILD_OPEN_PROJECT)
     set(HCCL_PKG_CCU_NEW_HEAD
         pkg_inc/hcomm/ccu_new/ccu_address.hpp
         pkg_inc/hcomm/ccu_new/ccu_api.hpp
+        pkg_inc/hcomm/ccu_new/ccu_array.hpp
         pkg_inc/hcomm/ccu_new/ccu_buffer.hpp
         pkg_inc/hcomm/ccu_new/ccu_control_api.h
         pkg_inc/hcomm/ccu_new/ccu_control_flow_macro.h
         pkg_inc/hcomm/ccu_new/ccu_data_api_impl.h
         pkg_inc/hcomm/ccu_new/ccu_data_utils.hpp
         pkg_inc/hcomm/ccu_new/ccu_event.hpp
+        pkg_inc/hcomm/ccu_new/ccu_loop.hpp
+        pkg_inc/hcomm/ccu_new/ccu_func.hpp
         pkg_inc/hcomm/ccu_new/ccu_local_addr.hpp
         pkg_inc/hcomm/ccu_new/ccu_remote_addr.hpp
         pkg_inc/hcomm/ccu_new/ccu_types.h
