@@ -616,7 +616,7 @@ std::map<OpType, std::vector<HcclAlgoType>> SetHcclAlgoConfig(const std::string 
 HcclAccelerator CastHcclAccelerator(const std::string &s)
 {
     HcclAccelerator mode;
-    if (s == "AI_CPU") {
+    if (s == "AI_CPU" || s == "AICPU_TS") {
         mode = HcclAccelerator::AICPU_TS;
     } else if (s == "AIV" || s == "AIV_ONLY") {
         mode = HcclAccelerator::AIV;
@@ -625,10 +625,10 @@ HcclAccelerator CastHcclAccelerator(const std::string &s)
     } else if (s == "CCU_SCHED") {
         mode = HcclAccelerator::CCU_SCHED;
     } else {
-        HCCL_ERROR("Env HCCL_OP_EXPANSION_MODE config do not support %s, it should be one of [AI_CPU, AIV, AIV_ONLY, CCU_MS, CCU_SCHED].", s.c_str());
+        HCCL_ERROR("Env HCCL_OP_EXPANSION_MODE config do not support %s, it should be one of [AI_CPU, AICPU_TS, AIV, AIV_ONLY, CCU_MS, CCU_SCHED].", s.c_str());
         THROW<InvalidParamsException>(
             StringFormat("Env HCCL_OP_EXPANSION_MODE config \"%s\" is invalid."
-                "it should be one of [AI_CPU, AIV, AIV_ONLY, CCU_MS, CCU_SCHED].", s.c_str()));
+                "it should be one of [AI_CPU, AICPU_TS, AIV, AIV_ONLY, CCU_MS, CCU_SCHED].", s.c_str()));
     }
     return mode;
 }
