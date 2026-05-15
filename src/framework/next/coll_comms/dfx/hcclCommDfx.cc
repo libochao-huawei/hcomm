@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "hcclCommDfx.h"
+#include "ccu_rep_context_v1.h"
 
 namespace hccl {
 
@@ -53,6 +54,27 @@ HcclResult HcclCommDfx::AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl
     u32 remoteRankId = INVALID_UINT;
     if (handle != INVALID_U64) {
         CHK_RET(GetChannelRemoteRankId(commTag_, handle, remoteRankId));
+    }
+    // TASK_CCU 类型：遍历 ccuDetailInfo 中的 channelHandle，通过 GetChannelRemoteRankId 获取 remoteRankId
+    if (taskParam.taskType == Hccl::TaskParamType::TASK_CCU && taskParam.ccuDetailInfo != nullptr) {
+        for (size_t i = 0; i < taskParam.ccuDetailInfo->size(); ++i) {
+            Hccl::CcuProfilingInfo &profInfo = (*taskParam.ccuDetailInfo)[i];
+            for (int idx = 0; idx < hcomm::CCU_MAX_CHANNEL_NUM; idx++) {
+                if (profInfo.channelId[idx] == hcomm::INVALID_VALUE_CHANNELID) {
+                    break;
+                }
+                u32 chRemoteRankId = hcomm::INVALID_RANKID;
+                HcclResult ret = GetChannelRemoteRankId(commTag_, profInfo.channelHandle[idx], chRemoteRankId);
+                if (ret != HCCL_SUCCESS) {
+                    HCCL_ERROR("[%s] Failed to get remote rank for channelHandle[0x%llx], using default 0",
+                        __func__, profInfo.channelHandle[idx]);
+                    return HCCL_E_PARA;
+                }
+                profInfo.remoteRankId[idx] = chRemoteRankId;
+                HCCL_INFO("[%s]idx[%u]: channelId[%u], remoteRankId[%u], channelHandle[0x%llx]",
+                    __func__, idx, profInfo.channelId[idx], profInfo.remoteRankId[idx], profInfo.channelHandle[idx]);
+            }
+        }
     }
     std::shared_ptr<Hccl::TaskInfo> taskInfo{nullptr};
     EXECEPTION_CATCH(taskInfo = std::make_shared<Hccl::TaskInfo>(streamId, taskId,

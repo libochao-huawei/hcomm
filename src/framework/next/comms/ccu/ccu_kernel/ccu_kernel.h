@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef HCOMM_CCU_KERNEL_NEW_H
-#define HCOMM_CCU_KERNEL_NEW_H
+#ifndef HCOMM_CCU_KERNEL_H
+#define HCOMM_CCU_KERNEL_H
 
 #include <cstdint>
 #include <functional>
@@ -69,6 +69,8 @@ class CcuKernel : public CcuRep::CcuRepContext {
 public:
     CcuKernel() = default;
     ~CcuKernel() override;
+
+    HcclResult SetupProfilingInfo(const char *kernelFuncName);
     HcclResult SelectDie();
 
     CcuResReq          GetResourceRequest();
@@ -96,7 +98,8 @@ public:
                                  HcclDataType outputDataType, HcclReduceOp opType, const std::string& opName);
     HcclResult AddCcuProfiling(const ChannelHandle *channels, uint32_t channelNum, HcclDataType dataType,
                                 HcclDataType outputDataType, HcclReduceOp opType, const std::string& opName);
-    HcclResult GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<CcuProfilingInfo> &allCcuProfilingInfo);
+    HcclResult GetCcuProfilingInfo(const uint64_t *taskArgs, uint32_t argSize,
+        std::vector<CcuProfilingInfo> &allCcuProfilingInfo);
 
     const std::vector<CcuProfilingInfo> &GetAllCcuProfilingInfo() { return allCcuProfilingInfos_; };
 
@@ -247,8 +250,6 @@ private:
     std::unordered_map<std::string, PendingWhileContext> pendingWhileCtx_{};
     std::unordered_map<std::string, PendingDoWhileContext> pendingDoWhileCtx_{};
 
-    
-
     std::unordered_map<CcuEventHandle, CcuRep::CompletedEvent> ccuEventMap_{};
 
     CcuResult GetBufferByHandle(CcuBufferHandle bufferHandle, CcuRep::CcuBuf **buffer);
@@ -266,10 +267,6 @@ private:
     std::unordered_set<uint32_t> loadArgUsedSet_{};
 
 protected:
-    // 子类实现
-    // virtual HcclResult Algorithm() = 0;
-    // virtual std::vector<uint64_t> GeneArgs(const CcuTaskArg &arg) = 0;
-
     // 使用channel中的Variable
     HcclResult CreateVariable(const ChannelHandle channel, uint32_t varIndex, CcuRep::Variable *var);
     CcuRep::Variable CreateVariable();
@@ -398,8 +395,13 @@ private:
     uint64_t funcHandleCounter_{0};
     bool inFuncBody_{false};
     bool funcBodyError_{false};
+
+    std::unordered_map<CcuLoopExecutors, std::vector<CcuRep::Executor>> loopEnginePools_;
+    uint32_t loopEnginePoolCounter_{0};
+
+    std::string name_{};
 };
 
 } // namespace hcomm
 
-#endif // HCOMM_CCU_KERNEL_NEW_H
+#endif // HCOMM_CCU_KERNEL_H
