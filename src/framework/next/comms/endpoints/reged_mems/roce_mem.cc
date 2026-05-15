@@ -19,6 +19,7 @@
 #include "local_rdma_rma_buffer_manager.h"
 #include "local_rdma_rma_buffer.h"
 #include "hccl_one_sided_data.h"
+#include "hcomm_c_adpt.h"
 
 namespace hcomm {
 
@@ -44,7 +45,7 @@ HcclResult RoceRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, voi
         // 构造LocalRdmaRmaBuffer
         std::shared_ptr<Hccl::Buffer> localBufferPtr = nullptr;
         EXECEPTION_CATCH((localBufferPtr = std::make_shared<Hccl::Buffer>(reinterpret_cast<uintptr_t>(mem.addr),
-            mem.size, static_cast<HcclMemType>(mem.type), memTag)),
+            mem.size, static_cast<HcclMemType>(mem.type))),
             return HCCL_E_PTR);
 
         EXECEPTION_CATCH((localRdmaRmaBuffer = std::make_shared<Hccl::LocalRdmaRmaBuffer>(localBufferPtr, this->rdmaHandle_)),
@@ -61,13 +62,21 @@ HcclResult RoceRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, voi
 
     std::shared_ptr<Hccl::LocalRdmaRmaBuffer> &localBuffer = resultPair.first->second.buffer;
     CHK_SMART_PTR_NULL(localBuffer);
-    *memHandle = static_cast<void *>(localBuffer.get());
+
+    auto *memInfo = new HcommMemInfo{};
+    memInfo->addr = mem.addr;
+    memInfo->size = mem.size;
+    if (memTag != nullptr) {
+        (void)strncpy(memInfo->memTag, memTag, HCOMM_RES_TAG_MAX_LEN - 1);
+    }
+    memInfo->localRmaBuffer = static_cast<Hccl::LocalRmaBuffer *>(localBuffer.get());
+    *memHandle = static_cast<void *>(memInfo);
 
     // 已注册：输入key是表中某一最相近key的全集。 返回添加该key的迭代器，及false
     // 未注册：输入key是表中某一最相近key的空集。 返回添加成功的迭代器，及true
     if (resultPair.second) {
         HCCL_INFO("[RoceRegedMemMgr][RegisterMemory]Register memory success! Add key {%p, %llu}", mem.addr, mem.size);
-    } else {  
+    } else {
         HCCL_INFO("[RoceRegedMemMgr][RegisterMemory]Memory is already registered, just increase the reference count. Add key "
                 "{%p, %llu}", mem.addr, mem.size);;
         return HCCL_SUCCESS;
@@ -82,7 +91,8 @@ HcclResult RoceRegedMemMgr::UnregisterMemory(void* memHandle)
     HCCL_INFO("[%s] Begin", __FUNCTION__);
     CHK_PTR_NULL(this->localRdmaRmaBufferMgr_);
     CHK_PTR_NULL(memHandle);
-    Hccl::LocalRdmaRmaBuffer* buffer = static_cast<Hccl::LocalRdmaRmaBuffer*>(memHandle);
+    HcommMemInfo *memInfo = static_cast<HcommMemInfo *>(memHandle);
+    Hccl::LocalRdmaRmaBuffer* buffer = static_cast<Hccl::LocalRdmaRmaBuffer*>(memInfo->localRmaBuffer);
     CHK_PTR_NULL(buffer);
     auto bufferInfo = buffer->GetBufferInfo();
 
@@ -105,10 +115,12 @@ HcclResult RoceRegedMemMgr::UnregisterMemory(void* memHandle)
 
     if (it == allRegisteredBuffers_.end()) {
         HCCL_ERROR("[RoceRegedMemMgr][UnregisterMemory] Memory not found in vector!");
+        delete memInfo;
         return HCCL_E_NOT_FOUND;
     }
 
     allRegisteredBuffers_.erase(it);
+    delete memInfo;
     return HCCL_SUCCESS;
 }
 
@@ -146,7 +158,8 @@ HcclResult RoceRegedMemMgr::MemoryExport(const EndpointDesc endpointDesc, void *
 {
     HCCL_INFO("[%s] Begin", __FUNCTION__);
     CHK_PTR_NULL(memHandle);
-    Hccl::LocalRdmaRmaBuffer *localRdmaRmaBuffer = reinterpret_cast<Hccl::LocalRdmaRmaBuffer *>(memHandle);
+    HcommMemInfo *memInfo = static_cast<HcommMemInfo *>(memHandle);
+    Hccl::LocalRdmaRmaBuffer *localRdmaRmaBuffer = reinterpret_cast<Hccl::LocalRdmaRmaBuffer *>(memInfo->localRmaBuffer);
 
     // 获取序列化信息
     CHK_RET(GetMemDesc(endpointDesc, localRdmaRmaBuffer));

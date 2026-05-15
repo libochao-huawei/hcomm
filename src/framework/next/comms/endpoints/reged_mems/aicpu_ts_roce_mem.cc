@@ -19,6 +19,7 @@
 #include "hccl_net_dev_defs.h"
 #include "log.h"
 #include "rma_buffer.h"
+#include "hcomm_c_adpt.h"
 
 namespace {
 using LocalRdmaRmaBufferMgr = hccl::NetDevContext::LocalRdmaRmaBufferMgr;
@@ -106,7 +107,6 @@ HcclResult AicpuTsRoceRegedMemMgr::GetOrCreateLocalRdmaRmaBuffer(hccl::NetDevCon
 
 HcclResult AicpuTsRoceRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void **memHandle)
 {
-    (void)memTag;
     HCCL_INFO("[%s] Begin", __FUNCTION__);
     CHK_PTR_NULL(netDev_);
     CHK_PTR_NULL(memHandle);
@@ -133,12 +133,21 @@ HcclResult AicpuTsRoceRegedMemMgr::RegisterMemory(HcommMem mem, const char *memT
 
     std::shared_ptr<hccl::LocalRdmaRmaBuffer> &localBuffer = resultPair.first->second.buffer;
     CHK_SMART_PTR_NULL(localBuffer);
-    *memHandle = static_cast<void *>(localBuffer.get());
+
+    auto *memInfo = new HcommMemInfo{};
+    memInfo->addr = mem.addr;
+    memInfo->size = mem.size;
+    if (memTag != nullptr) {
+        (void)strncpy(memInfo->memTag, memTag, HCOMM_RES_TAG_MAX_LEN - 1);
+    }
+    memInfo->localRmaBuffer = static_cast<Hccl::LocalRmaBuffer *>(localBuffer.get());
+    *memHandle = static_cast<void *>(memInfo);
 
     if (resultPair.second) {
         ret = localBuffer->Init();
         if (ret != HCCL_SUCCESS) {
             (void)localRdmaRmaBufferMgr_->Del(tempKey);
+            delete memInfo;
             HCCL_ERROR("[AicpuTsRoceRegedMemMgr][RegisterMemory] Init failed, ret[%d]", ret);
             return ret;
         }
@@ -166,7 +175,8 @@ HcclResult AicpuTsRoceRegedMemMgr::UnregisterMemory(void *memHandle)
     CHK_PTR_NULL(ctx);
     std::lock_guard<std::mutex> phyLocalLock(*ctx->mu);
 
-    auto *buffer = static_cast<hccl::LocalRdmaRmaBuffer *>(memHandle);
+    HcommMemInfo *memInfo = static_cast<HcommMemInfo *>(memHandle);
+    auto *buffer = static_cast<hccl::LocalRdmaRmaBuffer *>(memInfo->localRmaBuffer);
     hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(buffer->GetAddr()), buffer->GetSize());
 
     bool delOk = false;
@@ -177,14 +187,15 @@ HcclResult AicpuTsRoceRegedMemMgr::UnregisterMemory(void *memHandle)
 
     exportDescByBuffer_.erase(buffer);
     allRegisteredBuffers_.erase(std::remove_if(allRegisteredBuffers_.begin(), allRegisteredBuffers_.end(),
-        [memHandle](const std::shared_ptr<hccl::LocalRdmaRmaBuffer> &p) { return p.get() == memHandle; }),
+        [buffer](const std::shared_ptr<hccl::LocalRdmaRmaBuffer> &p) { return p.get() == buffer; }),
         allRegisteredBuffers_.end());
 
     hcclBufRecords_.erase(std::remove_if(hcclBufRecords_.begin(), hcclBufRecords_.end(),
-        [memHandle](const HcclBuf &b) { return b.handle == memHandle; }),
+        [buffer](const HcclBuf &b) { return b.handle == buffer; }),
         hcclBufRecords_.end());
     HCCL_INFO("[AicpuTsRoceRegedMemMgr][UnregisterMemory] success, memHandle[%p] key {%p, %llu}", memHandle,
         buffer->GetAddr(), static_cast<unsigned long long>(buffer->GetSize()));
+    delete memInfo;
     return HCCL_SUCCESS;
 }
 
@@ -196,7 +207,8 @@ HcclResult AicpuTsRoceRegedMemMgr::MemoryExport(const EndpointDesc endpointDesc,
     CHK_PTR_NULL(memDesc);
     CHK_PTR_NULL(memDescLen);
 
-    auto *buf = reinterpret_cast<hccl::LocalRdmaRmaBuffer *>(memHandle);
+    HcommMemInfo *memInfo = static_cast<HcommMemInfo *>(memHandle);
+    auto *buf = reinterpret_cast<hccl::LocalRdmaRmaBuffer *>(memInfo->localRmaBuffer);
     std::string &ser = buf->Serialize();
     if (ser.empty()) {
         HCCL_ERROR("[AicpuTsRoceRegedMemMgr][MemoryExport] Serialize empty");

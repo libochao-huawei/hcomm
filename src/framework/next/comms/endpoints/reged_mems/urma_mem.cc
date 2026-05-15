@@ -18,6 +18,7 @@
 #include "local_ub_rma_buffer_manager.h"
 #include "remote_rma_buffer.h"
 #include "local_ub_rma_buffer.h"
+#include "hcomm_c_adpt.h"
 
 namespace hcomm {
 
@@ -47,7 +48,7 @@ HcclResult UbRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void 
         // 构造LocalUbRmaBuffer
         std::shared_ptr<Hccl::Buffer> localBufferPtr = nullptr;
         EXECEPTION_CATCH((localBufferPtr = std::make_shared<Hccl::Buffer>(reinterpret_cast<uintptr_t>(mem.addr),
-            mem.size, static_cast<HcclMemType>(mem.type), memTag)),
+            mem.size, static_cast<HcclMemType>(mem.type))),
             return HCCL_E_PTR);
 
         if (memTag && (strcmp(memTag, "HcclBuffer") == 0)) {
@@ -69,13 +70,21 @@ HcclResult UbRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void 
 
     std::shared_ptr<Hccl::LocalUbRmaBuffer> &localBuffer = resultPair.first->second.buffer;
     CHK_SMART_PTR_NULL(localBuffer);
-    *memHandle = static_cast<void *>(localBuffer.get());
+
+    auto *memInfo = new HcommMemInfo{};
+    memInfo->addr = mem.addr;
+    memInfo->size = mem.size;
+    if (memTag != nullptr) {
+        (void)strncpy(memInfo->memTag, memTag, HCOMM_RES_TAG_MAX_LEN - 1);
+    }
+    memInfo->localRmaBuffer = static_cast<Hccl::LocalRmaBuffer *>(localBuffer.get());
+    *memHandle = static_cast<void *>(memInfo);
 
     // 已注册：输入key是表中某一最相近key的全集。 返回添加该key的迭代器，及false
     // 未注册：输入key是表中某一最相近key的空集。 返回添加成功的迭代器，及true
     if (resultPair.second) {
         HCCL_INFO("[UbRegedMemMgr][RegisterMemory]Register memory success! Add key {%p, %llu}", mem.addr, mem.size);
-    } else {  
+    } else {
         HCCL_INFO("[UbRegedMemMgr][RegisterMemory]Memory is already registered, just increase the reference count. Add key "
                 "{%p, %llu}", mem.addr, mem.size);;
         return HCCL_SUCCESS;
@@ -90,7 +99,8 @@ HcclResult UbRegedMemMgr::UnregisterMemory(void* memHandle)
     HCCL_INFO("[%s] Begin", __FUNCTION__);
     CHK_PTR_NULL(this->localUbRmaBufferMgr_);
 
-    Hccl::LocalUbRmaBuffer* buffer = static_cast<Hccl::LocalUbRmaBuffer*>(memHandle);
+    HcommMemInfo *memInfo = static_cast<HcommMemInfo *>(memHandle);
+    Hccl::LocalUbRmaBuffer* buffer = static_cast<Hccl::LocalUbRmaBuffer*>(memInfo->localRmaBuffer);
     CHK_PTR_NULL(buffer);
     auto bufferInfo = buffer->GetBufferInfo();
 
@@ -104,7 +114,7 @@ HcclResult UbRegedMemMgr::UnregisterMemory(void* memHandle)
                   "(used by other RemoteRank), do not deregister memory.");
         return HCCL_SUCCESS;
     }
-    
+
     // 删除vector中的LocalUbRmaBuffer
     auto it = std::find_if(allRegisteredBuffers_.begin(), allRegisteredBuffers_.end(),
             [buffer](const std::shared_ptr<Hccl::LocalUbRmaBuffer>& ptr) {
@@ -113,10 +123,12 @@ HcclResult UbRegedMemMgr::UnregisterMemory(void* memHandle)
 
     if (it == allRegisteredBuffers_.end()) {
         HCCL_ERROR("[UbRegedMemMgr][UnregisterMemory] Memory not found in vector!");
+        delete memInfo;
         return HCCL_E_NOT_FOUND;
     }
 
     allRegisteredBuffers_.erase(it);
+    delete memInfo;
     return HCCL_SUCCESS;
 }
 
@@ -155,7 +167,8 @@ HcclResult UbRegedMemMgr::MemoryExport(const EndpointDesc endpointDesc, void *me
     HCCL_INFO("[%s] Begin", __FUNCTION__);
 
     // 获取序列化信息
-    Hccl::LocalUbRmaBuffer *localUbRmaBuffer = reinterpret_cast<Hccl::LocalUbRmaBuffer *>(memHandle);
+    HcommMemInfo *memInfo = static_cast<HcommMemInfo *>(memHandle);
+    Hccl::LocalUbRmaBuffer *localUbRmaBuffer = reinterpret_cast<Hccl::LocalUbRmaBuffer *>(memInfo->localRmaBuffer);
     
     // 获取序列化信息
     CHK_RET(GetMemDesc(endpointDesc, localUbRmaBuffer));

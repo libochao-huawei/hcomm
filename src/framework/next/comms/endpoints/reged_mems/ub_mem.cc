@@ -15,6 +15,7 @@
 #include "hccl/hccl_res.h"
 #include "hccl_mem_v2.h"
 #include "local_ub_rma_buffer_manager.h"
+#include "hcomm_c_adpt.h"
 
 namespace hcomm {
 
@@ -42,8 +43,8 @@ HcclResult UbMemRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, vo
         localIpcRmaBuffer = findPair.second;
     } else {
         std::shared_ptr<Hccl::Buffer> localBufferPtr = nullptr;
-        EXECEPTION_CATCH((localBufferPtr = std::make_shared<Hccl::Buffer>(reinterpret_cast<uintptr_t>(mem.addr), mem.size, 
-            static_cast<HcclMemType>(mem.type), memTag)), return HCCL_E_PTR);
+        EXECEPTION_CATCH((localBufferPtr = std::make_shared<Hccl::Buffer>(reinterpret_cast<uintptr_t>(mem.addr), mem.size,
+            static_cast<HcclMemType>(mem.type))), return HCCL_E_PTR);
         EXECEPTION_CATCH((localIpcRmaBuffer = std::make_shared<Hccl::LocalIpcRmaBuffer>(localBufferPtr)), return HCCL_E_PTR);
     }
 
@@ -58,11 +59,19 @@ HcclResult UbMemRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, vo
 
     std::shared_ptr<Hccl::LocalIpcRmaBuffer> &localBuffer = resultPair.first->second.buffer;
     CHK_SMART_PTR_NULL(localBuffer);
-    *memHandle = static_cast<void *>(localBuffer.get());
+
+    auto *memInfo = new HcommMemInfo{};
+    memInfo->addr = mem.addr;
+    memInfo->size = mem.size;
+    if (memTag != nullptr) {
+        (void)strncpy(memInfo->memTag, memTag, HCOMM_RES_TAG_MAX_LEN - 1);
+    }
+    memInfo->localRmaBuffer = static_cast<Hccl::LocalRmaBuffer *>(localBuffer.get());
+    *memHandle = static_cast<void *>(memInfo);
 
     // 判断增加结果，重复添加仅增加引用计数
     if (!resultPair.second) {
-        HCCL_INFO("[%s] Memory {addr[%p], size[%llu]} is already registered, just increase the reference count.", 
+        HCCL_INFO("[%s] Memory {addr[%p], size[%llu]} is already registered, just increase the reference count.",
             __func__, mem.addr, mem.size);
         return HCCL_SUCCESS;
     }
@@ -77,7 +86,8 @@ HcclResult UbMemRegedMemMgr::UnregisterMemory(void* memHandle)
     HCCL_INFO("[%s] Begin", __func__);
     CHK_PTR_NULL(localIpcRmaBufferMgr_);
 
-    Hccl::LocalIpcRmaBuffer* buffer = static_cast<Hccl::LocalIpcRmaBuffer*>(memHandle);
+    HcommMemInfo *memInfo = static_cast<HcommMemInfo *>(memHandle);
+    Hccl::LocalIpcRmaBuffer* buffer = static_cast<Hccl::LocalIpcRmaBuffer*>(memInfo->localRmaBuffer);
     CHK_PTR_NULL(buffer);
     auto bufferInfo = buffer->GetBufferInfo();
 
@@ -98,10 +108,12 @@ HcclResult UbMemRegedMemMgr::UnregisterMemory(void* memHandle)
 
     if (it == allRegisteredBuffers_.end()) {
         HCCL_ERROR("[%s] Memory not found in vector!", __func__);
+        delete memInfo;
         return HCCL_E_NOT_FOUND;
     }
 
     allRegisteredBuffers_.erase(it);
+    delete memInfo;
     return HCCL_SUCCESS;
 }
 

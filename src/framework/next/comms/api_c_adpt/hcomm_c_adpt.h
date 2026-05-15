@@ -15,6 +15,7 @@
 #include "hccl/hccl_res.h"
 #include "mem_host_pub.h"
 #include "hccl_diag.h"
+#include "local_rma_buffer.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,17 +27,6 @@ typedef struct {
     int32_t devPhyId;
     uint32_t superPodId;
 } HcommDevId;
-
-/**
- * @struct HcommBuf
- * @brief 内存缓冲区描述结构体
- * @var addr   - 虚拟地址指针
- * @var len    - 内存长度（单位字节）
- */
-typedef struct {
-    void *addr;
-    uint64_t len;
-} HcommBuf;
 
 typedef CommMem HcommMem;
 
@@ -52,6 +42,13 @@ struct CommMemInfo {
     void* bufferHandle {nullptr};
     char memTag[HCOMM_RES_TAG_MAX_LEN] = {0};
 };
+
+typedef struct {
+    void *addr;
+    uint64_t size;
+    char memTag[HCOMM_RES_TAG_MAX_LEN];
+    Hccl::LocalRmaBuffer *localRmaBuffer;
+} HcommMemInfo;
 
 /**
  * @brief 通信设备Endpoint监听配置结构体
