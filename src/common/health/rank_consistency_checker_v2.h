@@ -14,6 +14,7 @@
 #include <string>
 #include <cstdint>
 #include <mutex>
+#include <vector>
 #include <hccl/hccl_types.h>
 #include "log.h"
 
