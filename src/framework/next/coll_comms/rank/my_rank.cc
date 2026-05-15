@@ -813,7 +813,7 @@ HcclResult MyRank::RecordEnvVarCrcV2()
     auto &checker = RankConsistentcyChecker::GetInstance();
     // 仅校验HCCL_BUFFSIZE，通过EnvConfig取已解析的配置值
     u64 buffSize = Hccl::EnvConfig::GetInstance().GetAlgoConfig().GetBuffSize();
-    CHK_RET(RecordEnvVarCrcV2(buffSize));
+    CHK_RET(RankConsistentcyChecker::GetInstance().RecordEnvVarCrcV2(buffSize));
     return HCCL_SUCCESS;
 }
 
