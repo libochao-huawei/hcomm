@@ -165,20 +165,6 @@ static HcclResult HcommReportCcuProfilingInfo(const ThreadHandle threadHandle,
         __func__, taskParam.taskPara.Ccu.dieId, taskParam.taskPara.Ccu.missionId, taskParam.taskPara.Ccu.execMissionId,
         taskParam.taskPara.Ccu.instrId, taskParam.taskPara.Ccu.executeId, taskParam.taskPara.Ccu.ccuKernelHandle);
 
-    // 处理每个性能信息条目
-    // remoteRankId 通过 ccuDetailInfo 传递到 HcclCommDfx::AddTaskInfoCallback 中，
-    // 在回调函数中根据 taskType == TASK_CCU 时遍历 channelHandle 获取 remoteRankId
-    for (size_t i = 0; i < allCcuProfilingInfo.size(); ++i) {
-        const hcomm::CcuProfilingInfo &profInfo = allCcuProfilingInfo[i];
-        for (int idx = 0; idx < hcomm::CCU_MAX_CHANNEL_NUM; idx++) {
-            if (profInfo.channelId[idx] == hcomm::INVALID_VALUE_CHANNELID) {
-                break;
-            }
-            HCCL_INFO("[%s]idx[%u]: channelId[%u], remoteRankId[%u], channelHandle[0x%llx]",
-                __func__, idx, profInfo.channelId[idx], profInfo.remoteRankId[idx], profInfo.channelHandle[idx]);
-        }
-    }
-
     // 转换函数：将 hcomm::CcuProfilingInfo 转换为 Hccl::CcuProfilingInfo
     auto convertToHccl = [](const hcomm::CcuProfilingInfo& src) -> Hccl::CcuProfilingInfo {
         Hccl::CcuProfilingInfo dst;
@@ -304,8 +290,8 @@ CcuResult HcommCcuKernelLaunch(ThreadHandle threadHandle,
 
     // CCU 性能分析数据上报
     std::vector<hcomm::CcuProfilingInfo> allCcuProfilingInfo;
-    CHK_RET(kernel->GetCcuProfilingInfo(static_cast<const uint64_t *>(taskArgs), argSize, allCcuProfilingInfo));
-    CHK_RET(HcommReportCcuProfilingInfo(threadHandle, kernelHandle, allCcuProfilingInfo, taskParam));
+    CCU_CHK_RET(kernel->GetCcuProfilingInfo(static_cast<const uint64_t *>(taskArgs), argSize, allCcuProfilingInfo));
+    CCU_CHK_RET(HcommReportCcuProfilingInfo(threadHandle, kernelHandle, allCcuProfilingInfo, taskParam));
     CCU_EXCEPTION_HANDLE_END
     HCCL_INFO("[%s] success, take time [%lld]us.",
         __func__, DURATION_US(TIME_NOW() - startus));
