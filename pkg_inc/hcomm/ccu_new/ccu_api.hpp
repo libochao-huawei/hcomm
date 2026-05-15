@@ -12,7 +12,6 @@
 #define CCU_API_HPP
 
 #include "ccu_data_api_impl.h"
-#include "ccu_loop_macro.h"
 #include "ccu_control_flow_macro.h"
 #include "hcom_common.h"
 
@@ -23,18 +22,12 @@
 #include "ccu_local_addr.hpp"
 #include "ccu_remote_addr.hpp"
 #include "ccu_array.hpp"
+#include "ccu_func.hpp"
+#include "ccu_loop.hpp"
 
 namespace ccu {
 
-// ==================== 类型别名 ====================
-
-using Loop           = ::CcuLoop;
-using LoopGroup      = ::CcuLoopGroup;
-using LoopExecutors  = ::CcuLoopExecutors;
-using LoopConfig     = ::CcuLoopConfig;
-using LoopGroupConfig = ::CcuLoopGroupConfig;
-
-// ==================== channel资源获取 ====================
+// ==================== 资源创建 ====================
 
 inline Variable GetResByChannel(ChannelHandle channel, uint32_t varIndex) {
     Variable v{NoAllocTag{}};
@@ -110,46 +103,9 @@ inline CcuResult WriteReduce(ChannelHandle ch, RemoteAddr remote, LocalAddr loca
 
 // ==================== Loop ====================
 
-inline CcuResult CreateLoopExecutor(LoopExecutors *pool, uint32_t count) {
-    return CcuCreateBlockExecutor(pool, count);
-}
-
-inline CcuResult LoopSetParam(Loop loop, Variable *formalParam, Variable *actualParam) {
-    if (formalParam == nullptr || actualParam == nullptr) {
-        return CcuResult::CCU_E_PTR;
-    }
-    return CcuLoopSetParam(loop, formalParam->handle, actualParam->handle);
-}
-
-inline CcuResult CreateLoopGroup(LoopGroup *group,
-    const LoopGroupConfig *config, LoopExecutors enginePool)
-{
-    return CcuLoopGroupCreate(group, config, enginePool);
-}
-
-inline CcuResult CreateLoopGroup(LoopGroup *group,
-    Variable *parallelVar, Variable *offsetVar, LoopExecutors enginePool)
-{
-    if (parallelVar == nullptr || offsetVar == nullptr) {
-        return CcuResult::CCU_E_PTR;
-    }
-    return CcuLoopGroupCreateFromVar(group, parallelVar->handle, offsetVar->handle, enginePool);
-}
-
-inline CcuResult AddLoop(LoopGroup group,
-    Loop loop, const LoopConfig *config)
-{
-    return CcuLoopGroupAddLoop(group, loop, config);
-}
-
-inline CcuResult AddLoop(LoopGroup group,
-    Loop loop, Variable *loopParamVar)
-{
-    if (loopParamVar == nullptr) {
-        return CcuResult::CCU_E_PTR;
-    }
-    return CcuLoopGroupAddLoopFromVar(group, loop, loopParamVar->handle);
-}
+// 设置 LoopEngine 资源池大小（按 max(各 LoopGroup loop 数) 申请，不含展开数量）。
+// 不同 LoopGroup 通过 local loopIdx 复用同一组低位 executorId。
+inline CcuResult SetLoopNum(uint32_t count) { return CcuSetLoopNum(count); }
 
 } // namespace ccu
 
