@@ -7528,10 +7528,14 @@ namespace hccl
             return this->GetAicpuTaskException();
         };
         RegisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId_, getAicpuTaskExceptionCallBack);
-        aicpuStreamIds_.push_back(streamId);
+        if (std::find(aicpuStreamIds_.begin(), aicpuStreamIds_.end(), streamId) == aicpuStreamIds_.end()) {
+            aicpuStreamIds_.push_back(streamId);
+        }
         if (streamId != opParam.stream.id()) {
             RegisterGetAicpuTaskExceptionCallBack(opParam.stream.id(), deviceLogicId_, getAicpuTaskExceptionCallBack);
-            aicpuStreamIds_.push_back(opParam.stream.id());
+            if (std::find(aicpuStreamIds_.begin(), aicpuStreamIds_.end(), opParam.stream.id()) == aicpuStreamIds_.end()) {
+                aicpuStreamIds_.push_back(opParam.stream.id());
+            }
         }
 
         HCCL_INFO("%s profName[%s] tag[%s] kfcOpStreamId[%d] mainStreamId[%u] kfcStreamId[%d] isCapture[%d] mode[%d] ",

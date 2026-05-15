@@ -52,6 +52,11 @@ void RegisterGetAicpuTaskExceptionCallBack(s32 streamId, u32 deviceLogicId, GetA
 
 void UnregisterGetAicpuTaskExceptionCallBack(s32 streamId, u32 deviceLogicId)
 {
+    if (deviceLogicId >= MAX_MODULE_DEVICE_NUM) {
+        HCCL_ERROR("[UnregisterGetAicpuTaskExceptionCallBack] deviceLogicId[%u] out of range, max is %u",
+            deviceLogicId, MAX_MODULE_DEVICE_NUM - 1);
+        return;
+    }
     lock_guard<mutex> lock(g_communicatorCallbackMapMutex);
     auto& deviceMap = g_communicatorCallbackMap[deviceLogicId];
     auto it = deviceMap.find(streamId);
