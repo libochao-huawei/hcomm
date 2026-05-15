@@ -81,8 +81,9 @@ HcclResult StubHcclSocketAcceptForEp(hccl::HcclSocket * /*self*/, const std::str
     return HCCL_SUCCESS;
 }
 
-HcclResult StubGetDeviceVnicIP(u32 devicePhyId, u32 superDeviceId, hccl::HcclIpAddress &vnicIP)
+HcclResult StubGetDeviceVnicIP(u32 localDevicePhyId, u32 devicePhyId, u32 superDeviceId, hccl::HcclIpAddress &vnicIP)
 {
+    (void)localDevicePhyId;
     std::string ip = "127.0.0." + std::to_string(devicePhyId + 1);
     (void)vnicIP.SetReadableAddress(ip);
     return HCCL_SUCCESS;
