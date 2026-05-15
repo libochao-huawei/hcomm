@@ -39,7 +39,7 @@ public:
     HcclResult Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cclBuffer, HcclCommConfig *config);
 
     inline CommConfig& GetCommConfig() { return config_;}
-    inline RankGraph* GetRankGraph() { return rankgraph_.get(); }
+    inline RankGraph* GetRankGraph() { return rankgraph_; }
     inline CommEngineResMgr* GetCommEngineResMgr() { return commEngineResMgr_.get(); }
     inline ContextManager* GetContextManager() { return contextMgr_.get(); }
     inline CommMemMgr* GetCommMemMgr() { return commMemMgr_.get(); }
@@ -116,7 +116,7 @@ private:
     s32 deviceLogicId_{0};
     uint32_t index_{0};
 
-    std::unique_ptr<RankGraph> rankgraph_{nullptr};
+    RankGraph *rankgraph_{nullptr};
     std::unique_ptr<CommEngineResMgr> commEngineResMgr_{nullptr};
     std::unique_ptr<ContextManager>  contextMgr_{nullptr};
     std::unique_ptr<CommMemMgr> commMemMgr_{nullptr};

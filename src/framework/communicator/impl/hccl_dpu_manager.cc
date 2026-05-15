@@ -40,7 +40,6 @@ DpuManager::DpuManager()
 
 DpuManager::~DpuManager()
 {
-    DeInitDpuKernel();
 }
 
 HcclResult DpuManager::CreateWorkspaceBuf(const char *memTag, uint64_t *size, bool *newCreated)

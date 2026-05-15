@@ -30,6 +30,13 @@ CollComm::CollComm(void * comm, uint32_t rankId, const std::string &commName, co
 
 CollComm::~CollComm()
 {
+    if (comm_ == nullptr) { /* A2/A3 CollComm是简化版本 */
+        return;
+    }
+    if (rankgraph_ != nullptr) {
+        delete rankgraph_;
+        rankgraph_ = nullptr;
+    }
     CollCommMgr::GetInstance()->UnRegisteCollComm(this); 
     HCCL_INFO("[CollComm][~CollComm] collComm deinit");
     // dpu的兜底上报
@@ -69,30 +76,32 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
 
     CHK_RET(DlHalFunction::GetInstance().DlHalFunctionInit());
     if (comm_ == nullptr) { /* A2/A3 hccl::Communicator对应版本 */
-        EXECEPTION_CATCH(rankgraph_ = std::unique_ptr<RankGraph>(static_cast<RankGraph*>(rankGraph)),
-            return HCCL_E_PTR);
+        EXECEPTION_CATCH(rankgraph_ = static_cast<RankGraph*>(rankGraph), return HCCL_E_PTR);
     } else {  /* A5 Hccl::Communicator对应版本 */
-        EXECEPTION_CATCH(rankgraph_ = std::make_unique<RankGraphV2>(rankGraph), return HCCL_E_PTR);
+        EXECEPTION_CATCH(rankgraph_ = new RankGraphV2(rankGraph), return HCCL_E_PTR);
     }
     uint32_t rankNum = 0;
     CHK_PTR_NULL(rankgraph_);
     CHK_RET(rankgraph_->GetRankSize(&rankNum));
-    CHK_RET(GetRankIpPortMap());
 
-    u32 threadNum = 0xffffffff;
-    u32 notifyNumPerThread = 0xffffffff;
-    if (!commEngineResMgr_) {
-        EXECEPTION_CATCH(commEngineResMgr_ = std::make_unique<CommEngineResMgr>(),
-            return HCCL_E_PTR);
-        CHK_PRT(commEngineResMgr_->Init(threadNum, notifyNumPerThread, commId_, binHandle, callbacks_));
-    }
+    if (comm_) {
+        CHK_RET(GetRankIpPortMap());
 
-    if (!contextMgr_) {
-        EXECEPTION_CATCH(contextMgr_ = std::make_unique<ContextManager>(), return HCCL_E_PTR);
+        u32 threadNum = 0xffffffff;
+        u32 notifyNumPerThread = 0xffffffff;
+        if (!commEngineResMgr_) {
+            EXECEPTION_CATCH(commEngineResMgr_ = std::make_unique<CommEngineResMgr>(),
+                return HCCL_E_PTR);
+            CHK_PRT(commEngineResMgr_->Init(threadNum, notifyNumPerThread, commId_, binHandle, callbacks_));
+        }
+
+        if (!contextMgr_) {
+            EXECEPTION_CATCH(contextMgr_ = std::make_unique<ContextManager>(), return HCCL_E_PTR);
+        }
     }
 
     EXECEPTION_CATCH(
-        myRank_ = std::make_shared<MyRank>(binHandle, rankId_, config_, callbacks_, rankgraph_.get(), rankIpPortMap_),
+        myRank_ = std::make_shared<MyRank>(binHandle, rankId_, config_, callbacks_, rankgraph_, rankIpPortMap_),
         return HCCL_E_PTR);
     uint32_t opExpansionMode = (config != nullptr) ? config->hcclOpExpansionMode : 0;
     CHK_RET(ValidateConfig(config));

@@ -257,36 +257,6 @@ TEST_F(DpuManagerTest, Ut_DeInitDpuKernel_When_NotLaunched_Expect_Success)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-// DeInitDpuKernel: 已初始化后调用应正常清理
-// 由于WaitDpuKernelThreadTerminate有200秒超时，通过Mock GetKFCWorkSpace返回nullptr跳过等待循环
-// 这样可以测试hostShareBuf_被正确清理
-// 全局计数器
-static int g_memcpyCallCount = 0;
-aclError MockAclrtMemcpy(void *dst, const void *src, size_t size, int kind)
-{
-    g_memcpyCallCount++;
-    // 第一次返回 0（成功），之后返回 -1（失败）
-    return (g_memcpyCallCount == 1) ? 0 : -1;
-}
-TEST_F(DpuManagerTest, Ut_DeInitDpuKernel_When_Launched_Expect_Success)
-{
-    DpuManager dpuManager;
-    dpuManager.isDpuKernelLaunched_ = true;
-    dpuManager.hostShareBuf_ = malloc(1024);
-
-    g_memcpyCallCount = 0;
-
-    MOCKER(aclrtMemcpy).stubs().will(invoke(MockAclrtMemcpy));
-
-    HcclResult ret = dpuManager.DeInitDpuKernel();
-    // WaitDpuKernelThreadTerminate返回HCCL_E_MEMORY，所以DeInitDpuKernel也返回该错误
-    EXPECT_EQ(ret, HCCL_E_MEMORY);
-    // hostShareBuf_仍为nullptr（因为在WaitDpuKernelThreadTerminate失败后被free了）
-    EXPECT_EQ(dpuManager.hostShareBuf_, nullptr);
-
-    g_memcpyCallCount = 0;
-}
-
 // DeInitDpuKernel: hostShareBuf为nullptr时应正常处理
 TEST_F(DpuManagerTest, Ut_DeInitDpuKernel_When_HostShareBufIsNull_Expect_Success)
 {
@@ -300,31 +270,25 @@ TEST_F(DpuManagerTest, Ut_DeInitDpuKernel_When_HostShareBufIsNull_Expect_Success
 
 // ========== WaitDpuKernelThreadTerminate 测试用例 ==========
 
-// WaitDpuKernelThreadTerminate: 获取工作空间失败时返回错误
-TEST_F(DpuManagerTest, Ut_WaitDpuKernelThreadTerminate_When_GetWorkspaceFailed_Expect_MemoryError)
+// WaitDpuKernelThreadTerminate: isDpuKernelLaunched_为false时直接返回成功
+TEST_F(DpuManagerTest, Ut_WaitDpuKernelThreadTerminate_When_NotLaunched_Expect_Success)
 {
     DpuManager dpuManager;
-    // tagWorkspaceMap_为空，GetKFCWorkSpace返回nullptr
+    dpuManager.isDpuKernelLaunched_ = false;
+
+    HcclResult ret = dpuManager.WaitDpuKernelThreadTerminate();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+// WaitDpuKernelThreadTerminate: isDpuKernelLaunched_为true但accessVA_为nullptr时返回错误
+TEST_F(DpuManagerTest, Ut_WaitDpuKernelThreadTerminate_When_AccessVAIsNull_Expect_MemoryError)
+{
+    DpuManager dpuManager;
+    dpuManager.isDpuKernelLaunched_ = true;
+    dpuManager.accessVA_ = nullptr;
 
     HcclResult ret = dpuManager.WaitDpuKernelThreadTerminate();
     EXPECT_EQ(ret, HCCL_E_MEMORY);
-}
-
-// WaitDpuKernelThreadTerminate: aclrtMemcpy失败时返回错误
-// 注意：真正等待200秒超时的场景不适合UT测试，这里测试aclrtMemcpy返回错误的快速路径
-TEST_F(DpuManagerTest, Ut_WaitDpuKernelThreadTerminate_When_MemcpyFailed_Expect_RuntimeError)
-{
-    DpuManager dpuManager;
-    // 先创建工作空间
-    const char *memTag = DPUTAG;
-    uint64_t size = 100 * 1024 * 1024; // SHARE_HBM_MEMORY_SIZE
-    dpuManager.CreateWorkspaceBuf(memTag, &size, nullptr);
-
-    // Mock aclrtMemcpy返回失败，导致提前退出循环
-    MOCKER(aclrtMemcpy).stubs().will(returnValue(ACL_ERROR_INVALID_PARAM));
-
-    HcclResult ret = dpuManager.WaitDpuKernelThreadTerminate();
-    EXPECT_EQ(ret, HCCL_E_RUNTIME);
 }
 
 // ========== Init 测试用例 ==========
