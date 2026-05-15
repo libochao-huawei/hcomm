@@ -76,26 +76,23 @@ HcclResult EndpointPair::GetSocketWithRank(const uint32_t myRank, const uint32_t
 HcclResult EndpointPair::BatchServerInit(const uint32_t myRank, const uint32_t rmtRank,
     const std::string &socketTag, u32 reuseIdx, uint32_t devicePhyId, uint32_t remoteDevicePhyId)
 {
+    // server异步监听
     Hccl::LinkData linkData = BuildDefaultLinkData();
-    CHK_RET(EndpointDescPairToLinkDataWithRankIds(myRank, rmtRank,
-        localEndpointDesc_, remoteEndpointDesc_, linkData, devicePhyId, remoteDevicePhyId, reuseIdx));
-
-    // 复用orion流程可能抛异常
+    CHK_RET(EndpointDescPairToLinkDataWithRankIds(myRank, rmtRank, localEndpointDesc_,
+        remoteEndpointDesc_, linkData, devicePhyId, remoteDevicePhyId, reuseIdx));
     EXCEPTION_HANDLE_BEGIN
     if (!socketMgrCompat_) {
         int32_t devLogicId = HcclGetThreadDeviceId();
         uint32_t devPhyId{0};
         CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(devLogicId), devPhyId));
-
         EXECEPTION_CATCH(socketMgrCompat_ =
             std::make_unique<Hccl::SocketManager>(myRank, devPhyId, devLogicId, socketTag),
             return HCCL_E_PTR);
         CHK_PTR_NULL(rankIpPortMap_);
-        // 单卡多进程场景下，用于保证端口不冲突
         socketMgrCompat_->SetDeviceServerListenPortMap(*rankIpPortMap_);
     }
-
-    socketMgrCompat_->BatchServerListen({linkData}); // 内部同时处理server端和connect端两类socket
+    // 调用sock的server异步监听接口
+    socketMgrCompat_->BatchServerListen({linkData}); 
     EXCEPTION_HANDLE_END
 
     return HCCL_SUCCESS;
@@ -104,7 +101,7 @@ HcclResult EndpointPair::BatchServerInit(const uint32_t myRank, const uint32_t r
 HcclResult EndpointPair::BatchGetSockets(const uint32_t myRank, const uint32_t rmtRank,
     const std::string &socketTag, u32 reuseIdx, const uint32_t listenPort, Hccl::Socket*& socket, uint32_t devicePhyId, uint32_t remoteDevicePhyId)
 {
-    // 临时方案：支持混跑新增，非Roce场景走orion socketMgr实现server socket复用
+    // 该接口内进行建链和获取socket
     if (localEndpointDesc_.loc.locType == EndpointLocType::ENDPOINT_LOC_TYPE_HOST) {
         std::string socketTagPrefix = socketTag;
         if (myRank <= rmtRank) {
@@ -115,13 +112,13 @@ HcclResult EndpointPair::BatchGetSockets(const uint32_t myRank, const uint32_t r
         CHK_RET(this->GetSocketWithRank(myRank, rmtRank, socketTagPrefix, listenPort, reuseIdx, socket));
         return HCCL_SUCCESS;
     }
+    
     Hccl::LinkData linkData = BuildDefaultLinkData();
     CHK_RET(EndpointDescPairToLinkDataWithRankIds(myRank, rmtRank,
         localEndpointDesc_, remoteEndpointDesc_, linkData, devicePhyId, remoteDevicePhyId, reuseIdx));
-
     EXCEPTION_HANDLE_BEGIN
+    // server监听已经获取了，所以不需要再次创建
     CHK_PTR_NULL(socketMgrCompat_);
-
     socketMgrCompat_->BatchConectSockets(); // 内部同时处理server端和connect端两类socket
 
     std::string linkTag = socketTag;
@@ -129,16 +126,17 @@ HcclResult EndpointPair::BatchGetSockets(const uint32_t myRank, const uint32_t r
         linkTag += ("_" + linkData.GetReuseIdx());
     }
     Hccl::SocketConfig socketConfig(linkData.GetRemoteRankId(), linkData, linkTag);
+    // socket 建链添加白名单和其他客户端连接部分
     socket = socketMgrCompat_->GetConnectedSocket(socketConfig);
     CHK_PTR_NULL(socket);
     EXCEPTION_HANDLE_END
-
     return HCCL_SUCCESS;
 }
 
 HcclResult EndpointPair::GetSocket(const uint32_t myRank, const uint32_t rmtRank,
     const std::string &socketTag, u32 reuseIdx, const uint32_t listenPort, Hccl::Socket*& socket, uint32_t devicePhyId, uint32_t remoteDevicePhyId)
 {
+    // 该接口是老接口调用同步监听
     // 临时方案：支持混跑新增，非Roce场景走orion socketMgr实现server socket复用
     if (localEndpointDesc_.loc.locType == EndpointLocType::ENDPOINT_LOC_TYPE_HOST) {
         std::string socketTagPrefix = socketTag;

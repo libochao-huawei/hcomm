@@ -17,6 +17,7 @@ public:
         UT_COMM_CREATE_DEFAULT(comm);
     }
     void TearDown() override {
+        Ut_Comm_Destroy(comm);
         BaseInit::TearDown();
         GlobalMockObject::verify();
     }

@@ -271,10 +271,12 @@ HcclResult MyRank::QueryListenPort(uint32_t localRank, uint32_t remoteRank, cons
 HcclResult MyRank::BatchServerInitForChannels(const HcclChannelDesc* channelDescs, uint32_t channelNum,
     const std::string &commTag, ReuseSocketIdxMap &reuseSocketIdxMap)
 {
+    // 批量获取socket，与server监听隔离开
     for (uint32_t i = 0; i < channelNum; ++i) {
         const EndpointDesc &localEndpointDesc = channelDescs[i].localEndpoint;
         const EndpointDesc &remoteEndpointDesc = channelDescs[i].remoteEndpoint;
         const uint32_t remoteRank = channelDescs[i].remoteRank;
+
         HCCL_INFO("[%s][%u/%u] remoteRank[%u] localProtocol[%d] remoteProtocol[%d]",
             __func__, i + 1, channelNum, remoteRank, localEndpointDesc.protocol, remoteEndpointDesc.protocol);
 
@@ -282,6 +284,7 @@ HcclResult MyRank::BatchServerInitForChannels(const HcclChannelDesc* channelDesc
         const RankIdPair rankIdPair = std::make_pair(rankId_, remoteRank);
         const EndpointDescPair endpointDescPair = std::make_pair(localEndpointDesc, remoteEndpointDesc);
         RankPair* rankPair = nullptr;
+        
         CHK_RET(rankPairMgr_->Get(rankIdPair, rankPair));
         CHK_PTR_NULL(rankPair);
         CHK_RET(rankPair->GetEndpointPair(endpointDescPair, endpointPair));

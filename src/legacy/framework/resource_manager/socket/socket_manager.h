@@ -83,7 +83,6 @@ private:
     void BatchAddWhiteList(const vector<LinkData> &links);
     void BatchCreateConnectedSockets(const vector<LinkData> &links);
     void BatchServerListenAsync(const vector<LinkData> &links);
-    void ServerListenAsync(PortData &localPort);
     const CommunicatorImpl *comm;
     static std::unordered_map<PortData, shared_ptr<Socket>>& GetServerSocketMap();
     u32               localRank;
