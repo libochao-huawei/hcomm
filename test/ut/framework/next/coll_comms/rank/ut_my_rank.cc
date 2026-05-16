@@ -9,6 +9,7 @@
 #include "my_rank.h"
 #include "channel_process.h"
 #include "base_config.h"
+#include "config/env_config.h"
 #define private public
 using namespace hccl;
 
@@ -179,7 +180,7 @@ TEST_F(MyRankTest, Ut_When_BatchCreateChannels_Expect_SUCCESS)
 
     std::vector<HcommChannelDesc> hcommDesc(3);
     for (u32 i = 0; i < 3; ++i) {
-        hcommDesc[i] = MyRankUtils::ChannelDescHccl2Hcomm(channelDesc[i]);
+        hcommDesc[i] = MyRankUtils::ChannelDescHccl2Hcomm(channelDesc[i], myRank.config_);
     }
     EXPECT_EQ(myRank.BatchCreateSockets(channelDesc, 1, "test", hcommDesc), HCCL_SUCCESS);
     std::vector<ChannelHandle> hostChannelHandles(3);
@@ -609,38 +610,53 @@ TEST_F(MyRankTest, ut_SetMemHandles_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
     EXPECT_EQ(memInfo1->bufferHandle, (void*)0x101);
 }
 
-TEST_F(MyRankTest, Ut_ChannelDescHccl2Hcomm_When_UbcCtp_Copies_UbAttrQos)
+TEST_F(MyRankTest, Ut_ChannelDescHccl2Hcomm_When_UbcCtp_Sets_CommDomainQos_FromCommConfig)
 {
+    CommConfig commConfig("ut");
+    ASSERT_EQ(commConfig.SetConfigHcclQos(5u), HCCL_SUCCESS);
     HcclChannelDesc in{};
     ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
     in.channelProtocol = COMM_PROTOCOL_UBC_CTP;
-    in.ubAttr.qos = 5u;
-    HcommChannelDesc out = MyRankUtils::ChannelDescHccl2Hcomm(in);
-    EXPECT_EQ(out.ubAttr.qos, 5u);
+    HcommChannelDesc out = MyRankUtils::ChannelDescHccl2Hcomm(in, commConfig);
+    EXPECT_EQ(out.qos, 5u);
 }
 
-TEST_F(MyRankTest, Ut_ChannelDescHccl2Hcomm_When_UbcTp_Copies_UbAttrQos)
+TEST_F(MyRankTest, Ut_ChannelDescHccl2Hcomm_When_UbcTp_Sets_CommDomainQos_FromCommConfig)
 {
+    CommConfig commConfig("ut");
+    ASSERT_EQ(commConfig.SetConfigHcclQos(2u), HCCL_SUCCESS);
     HcclChannelDesc in{};
     ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
     in.channelProtocol = COMM_PROTOCOL_UBC_TP;
-    in.ubAttr.qos = 2u;
-    HcommChannelDesc out = MyRankUtils::ChannelDescHccl2Hcomm(in);
-    EXPECT_EQ(out.ubAttr.qos, 2u);
+    HcommChannelDesc out = MyRankUtils::ChannelDescHccl2Hcomm(in, commConfig);
+    EXPECT_EQ(out.qos, 2u);
 }
 
-TEST_F(MyRankTest, Ut_ChannelDescHccl2Hcomm_When_Uboe_Copies_UbAttrQos)
+TEST_F(MyRankTest, Ut_ChannelDescHccl2Hcomm_When_Uboe_Sets_CommDomainQos_FromCommConfig)
 {
+    CommConfig commConfig("ut");
+    ASSERT_EQ(commConfig.SetConfigHcclQos(7u), HCCL_SUCCESS);
     HcclChannelDesc in{};
     ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
     in.channelProtocol = COMM_PROTOCOL_UBOE;
-    in.ubAttr.qos = 7u;
-    HcommChannelDesc out = MyRankUtils::ChannelDescHccl2Hcomm(in);
-    EXPECT_EQ(out.ubAttr.qos, 7u);
+    HcommChannelDesc out = MyRankUtils::ChannelDescHccl2Hcomm(in, commConfig);
+    EXPECT_EQ(out.qos, 7u);
+}
+
+TEST_F(MyRankTest, Ut_ChannelDescHccl2Hcomm_When_UbcTp_QosUnset_UsesUbQosDefault)
+{
+    CommConfig commConfig("ut");
+    ASSERT_EQ(commConfig.SetConfigHcclQos(HCCL_COMM_QOS_CONFIG_NOT_SET), HCCL_SUCCESS);
+    HcclChannelDesc in{};
+    ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
+    in.channelProtocol = COMM_PROTOCOL_UBC_TP;
+    HcommChannelDesc out = MyRankUtils::ChannelDescHccl2Hcomm(in, commConfig);
+    EXPECT_EQ(out.qos, EnvConfig::UB_QOS_DEFAULT);
 }
 
 TEST_F(MyRankTest, Ut_ChannelDescHccl2Hcomm_When_Roce_DoesNotUseUbAttrBranch)
 {
+    CommConfig commConfig("ut");
     HcclChannelDesc in{};
     ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
     in.channelProtocol = COMM_PROTOCOL_ROCE;
@@ -648,7 +664,7 @@ TEST_F(MyRankTest, Ut_ChannelDescHccl2Hcomm_When_Roce_DoesNotUseUbAttrBranch)
     in.roceAttr.retryInterval = 20u;
     in.roceAttr.tc = 8u;
     in.roceAttr.sl = 4u;
-    HcommChannelDesc out = MyRankUtils::ChannelDescHccl2Hcomm(in);
+    HcommChannelDesc out = MyRankUtils::ChannelDescHccl2Hcomm(in, commConfig);
     EXPECT_EQ(out.roceAttr.retryCnt, 3u);
     EXPECT_EQ(out.roceAttr.retryInterval, 20u);
     EXPECT_EQ(out.roceAttr.tc, 8u);
