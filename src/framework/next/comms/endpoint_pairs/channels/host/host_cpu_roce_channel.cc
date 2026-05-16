@@ -666,7 +666,6 @@ HcclResult HostCpuRoceChannel::IbvPostRecv() const {
                             __func__, ret, recvbadWr->wr_id, recvbadWr->sg_list->addr),
                     HCCL_E_NETWORK);
     }
-    
 
     return HCCL_SUCCESS;
 }
@@ -981,6 +980,9 @@ HcclResult HostCpuRoceChannel::WriteWithNotify(
         useQpNum = (lastLen - 1) / qpInfo[0].qpThreshold + 1;     // 自适应修改QP数，保证每个qp分担的数据量满足最小阈值
         wrLen = lastLen / useQpNum;
         wrLenTail = lastLen - (useQpNum - 1) * wrLen;
+        HCCL_INFO("[HostCpuRoceChannel::%s] The data allocated to each Qp (%u) is below the Qp Threshold (%u). "
+                  "the number of Qp for data sending is adaptively adjusted to %u.",
+                  wrLen, qpInfo[0].qpThreshold, useQpNum);
     }
 
     // 构造 WR
@@ -1228,8 +1230,8 @@ HcclResult HostCpuRoceChannel::WaitForFenceCompletion()
                 return HCCL_E_INTERNAL;
             } else if (actualNum32 > 0) {
                 for (uint32_t j = 0; j < actualNum32; j++) {
-                    if (wc[i].status != IBV_WC_SUCCESS) {
-                        HCCL_ERROR("[HostCpuRoceChannel::%s] ibv_poll_cq error. wc[%u] status: %d.", __func__, i, wc[i].status);
+                    if (wc[j].status != IBV_WC_SUCCESS) {
+                        HCCL_ERROR("[HostCpuRoceChannel::%s] ibv_poll_cq error. wc[%u] status: %d.", __func__, j, wc[j].status);
                         return HCCL_E_NETWORK;
                     }
                 }
