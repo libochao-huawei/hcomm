@@ -129,23 +129,25 @@ TEST_F(HostCpuUrmaChannelTest, Ut_When_GetSplitNum_ZeroLen_Expect_Error)
 {
     auto impl = std::make_unique<HostCpuUrmaChannel>(endpointHandle, channelDesc);
     uint64_t splitNum = 0;
-    EXPECT_EQ(impl->GetSplitNum(0, splitNum), HCCL_E_PARA);
+    uint64_t maxJettyWrDataLen = 256 * 1024 * 1024; // 256MB
+    EXPECT_EQ(impl->GetSplitNum(0, maxJettyWrDataLen, splitNum), HCCL_E_PARA);
 }
 
 TEST_F(HostCpuUrmaChannelTest, Ut_When_GetSplitNum_ValidLen_Expect_Success)
 {
     auto impl = std::make_unique<HostCpuUrmaChannel>(endpointHandle, channelDesc);
     uint64_t splitNum = 0;
+    uint64_t maxJettyWrDataLen = 256 * 1024 * 1024; // 256MB
     // Test with len = 256MB (should be 1 split)
-    EXPECT_EQ(impl->GetSplitNum(256 * 1024 * 1024, splitNum), HCCL_SUCCESS);
+    EXPECT_EQ(impl->GetSplitNum(256 * 1024 * 1024, maxJettyWrDataLen, splitNum), HCCL_SUCCESS);
     EXPECT_EQ(splitNum, 1);
 
     // Test with len = 512MB (should be 2 splits)
-    EXPECT_EQ(impl->GetSplitNum(512 * 1024 * 1024, splitNum), HCCL_SUCCESS);
+    EXPECT_EQ(impl->GetSplitNum(512 * 1024 * 1024, maxJettyWrDataLen, splitNum), HCCL_SUCCESS);
     EXPECT_EQ(splitNum, 2);
 
     // Test with len = 300MB (should be 2 splits)
-    EXPECT_EQ(impl->GetSplitNum(300 * 1024 * 1024, splitNum), HCCL_SUCCESS);
+    EXPECT_EQ(impl->GetSplitNum(300 * 1024 * 1024, maxJettyWrDataLen, splitNum), HCCL_SUCCESS);
     EXPECT_EQ(splitNum, 2);
 }
 
