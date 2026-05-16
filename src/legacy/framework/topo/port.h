@@ -64,7 +64,6 @@ inline LinkProtoType LinkProtocol2LinkProtoType(LinkProtocol linkProtocol)
         THROW<NotSupportException>(StringFormat("[LinkProtocol2LinkProtoType] linkProtocol[%s] don't support.",
             linkProtocol.Describe().c_str()));
     }
-    HCCL_INFO("[LinkProtocol2LinkProtoType] linkType is[%s]", linkType.Describe().c_str());
     return linkType;
 }
 

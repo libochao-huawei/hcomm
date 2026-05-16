@@ -45,7 +45,8 @@ const std::unordered_map<CommProtocol, std::string> HCOM_COMM_PROTOCOL_STR_MAP =
     {COMM_PROTOCOL_SIO, "SIO"},
     {COMM_PROTOCOL_UBC_CTP, "UBC_CTP"},
     {COMM_PROTOCOL_UBC_TP, "UBC_TP"},
-    {COMM_PROTOCOL_UB_MEM, "UB_MEM"}
+    {COMM_PROTOCOL_UB_MEM, "UB_MEM"},
+    {COMM_PROTOCOL_UBOE, "UBOE"}
 };
 
 inline std::string GetCommProtocolEnumStr(CommProtocol protocol)
@@ -269,7 +270,7 @@ HcclResult MyRank::QueryListenPort(uint32_t localRank, uint32_t remoteRank, cons
 }
 
 HcclResult MyRank::BatchServerInitForChannels(const HcclChannelDesc* channelDescs, uint32_t channelNum,
-    const std::string &commTag, ReuseSocketIdxMap &reuseSocketIdxMap)
+    const std::string &socketTag, ReuseSocketIdxMap &reuseSocketIdxMap)
 {
     // 批量获取socket，与server监听隔离开
     for (uint32_t i = 0; i < channelNum; ++i) {
@@ -304,7 +305,7 @@ HcclResult MyRank::BatchServerInitForChannels(const HcclChannelDesc* channelDesc
         rankGraph_->GetDeviceId(rankId_, &devicePhyId);
         rankGraph_->GetDeviceId(remoteRank, &remoteDevicePhyId);
 
-        auto ret = endpointPair->BatchServerInit(rankId_, remoteRank, commTag, reuseIdx, devicePhyId, remoteDevicePhyId);
+        auto ret = endpointPair->BatchServerInit(rankId_, remoteRank, socketTag, reuseIdx, devicePhyId, remoteDevicePhyId);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[%s] ServerInitFailed, channelIndex[%u], remoteRank[%u], protocol[%d] reuseIdx[%u]",
                 __func__, i, remoteRank, localEndpointDesc.protocol, reuseIdx),
@@ -317,7 +318,7 @@ HcclResult MyRank::BatchServerInitForChannels(const HcclChannelDesc* channelDesc
 }
 
 HcclResult MyRank::BatchGetSocketsForChannels(const HcclChannelDesc* channelDescs, uint32_t channelNum,
-    const std::string &commTag, std::vector<HcommChannelDesc> &hcommDescs,
+    const std::string &socketTag, std::vector<HcommChannelDesc> &hcommDescs,
     ReuseSocketIdxMap &reuseSocketIdxMap)
 {
     for (uint32_t i = 0; i < channelNum; ++i) {
@@ -347,10 +348,10 @@ HcclResult MyRank::BatchGetSocketsForChannels(const HcclChannelDesc* channelDesc
         HCCL_INFO("[MyRank][BatchCreateSockets] rankId_[%u] devicePhyId[%u]", rankId_, devicePhyId);
         HCCL_INFO("[MyRank][BatchCreateSockets] rankId_[%u] devicePhyId[%u]", remoteRank, remoteDevicePhyId);
         Hccl::Socket* socket = nullptr;
-        auto ret = endpointPair->GetConnectedSocket(rankId_, remoteRank, commTag, reuseIdx, listenPort, socket, remoteRank, remoteDevicePhyId);
+        auto ret = endpointPair->GetConnectedSocket(rankId_, remoteRank, socketTag, reuseIdx, listenPort, socket, remoteRank, remoteDevicePhyId);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[%s] failed to get socket, channelIndex[%u], remoteRank[%u], protocol[%d] reuseIdx[%u]",
-                __func__, i, remoteRank, localEndpointDesc.protocol, reuseIdx),
+            HCCL_ERROR("[%s] failed to get socket, channelIndex[%u], remoteRank[%u], protocol[%d], reuseIdx[%u], tag[%s]",
+                __func__, i, remoteRank, localEndpointDesc.protocol, reuseIdx, socketTag.c_str()),
             ret);
         CHK_PTR_NULL(socket);
 
@@ -364,7 +365,7 @@ HcclResult MyRank::BatchGetSocketsForChannels(const HcclChannelDesc* channelDesc
 }
 
 HcclResult MyRank::BatchCreateSockets(const HcclChannelDesc* channelDescs, uint32_t channelNum,
-        const std::string &commTag, std::vector<HcommChannelDesc> &hcommDescs)
+        const std::string &socketTag, std::vector<HcommChannelDesc> &hcommDescs)
 {
     CHK_PTR_NULL(channelDescs);
     CHK_PRT_RET(channelNum == 0,
@@ -372,9 +373,9 @@ HcclResult MyRank::BatchCreateSockets(const HcclChannelDesc* channelDescs, uint3
 
     ReuseSocketIdxMap reuseSocketIdxMap{};
     // socket服务器首先异步监听
-    CHK_RET(BatchServerInitForChannels(channelDescs, channelNum, commTag, reuseSocketIdxMap));
+    CHK_RET(BatchServerInitForChannels(channelDescs, channelNum, socketTag, reuseSocketIdxMap));
     // socket添加白名单以及进行连接，获取最后的socket
-    CHK_RET(BatchGetSocketsForChannels(channelDescs, channelNum, commTag, hcommDescs, reuseSocketIdxMap));
+    CHK_RET(BatchGetSocketsForChannels(channelDescs, channelNum, socketTag, hcommDescs, reuseSocketIdxMap));
     return HCCL_SUCCESS;
 }
 
@@ -671,8 +672,10 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
         hcommDescs[i] = MyRankUtils::ChannelDescHccl2Hcomm(channelDescs[i]);
         CHK_RET(ConfigSqDepthByExpansionMode(engine, hcommDescs[i]));
     }
+
     auto start = std::chrono::steady_clock::now();
-    CHK_RET(BatchCreateSockets(channelDescs, channelNum, commTag, hcommDescs));
+    std::string socketTag = commTag + "_engine_" + std::to_string(engine);
+    CHK_RET(BatchCreateSockets(channelDescs, channelNum, socketTag, hcommDescs));
     CHK_RET_UNAVAIL(BatchCreateChannels(engine, channelDescs, channelNum, hcommDescs, hostChannelHandleList));
     CHK_RET(BatchConnectChannels(channelDescs, hostChannelHandleList, channelNum));
     auto end = std::chrono::steady_clock::now();
