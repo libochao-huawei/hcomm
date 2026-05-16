@@ -15,9 +15,7 @@
 
 using namespace hccl;
 
-HcclResult ProcessUbcChannelDesc(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal,
-    hcclComm *hcclComm);
-HcclResult ProcessUboeChannelDesc(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal,
+HcclResult ProcessUbChannelDesc(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal,
     hcclComm *hcclComm);
 
 class HcclChannelDescTest : public BaseInit {
@@ -174,18 +172,29 @@ TEST_F(HcclChannelDescTest, Ut_HcclChannelAcquire_When_Notifynum_Exceeds_Return_
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
-TEST_F(HcclChannelDescTest, Ut_ProcessUbcChannelDesc_When_WrongProtocol_Expect_E_PARA)
+TEST_F(HcclChannelDescTest, Ut_ProcessUbChannelDesc_When_WrongProtocol_Expect_E_PARA)
 {
     HcclChannelDesc in{};
     HcclChannelDesc out{};
     ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
     ASSERT_EQ(HcclChannelDescInit(&out, 1), HCCL_SUCCESS);
     in.channelProtocol = COMM_PROTOCOL_ROCE;
-    ret = ProcessUbcChannelDesc(in, out, hcclCommPtr.get());
+    ret = ProcessUbChannelDesc(in, out, hcclCommPtr.get());
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
-TEST_F(HcclChannelDescTest, Ut_ProcessUbcChannelDesc_When_UbcCtp_QosUnset_UsesCommHcclQos)
+TEST_F(HcclChannelDescTest, Ut_ProcessUbChannelDesc_When_Hccs_Expect_E_PARA)
+{
+    HcclChannelDesc in{};
+    HcclChannelDesc out{};
+    ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
+    ASSERT_EQ(HcclChannelDescInit(&out, 1), HCCL_SUCCESS);
+    in.channelProtocol = COMM_PROTOCOL_HCCS;
+    ret = ProcessUbChannelDesc(in, out, hcclCommPtr.get());
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(HcclChannelDescTest, Ut_ProcessUbChannelDesc_When_UbcCtp_QosUnset_UsesCommHcclQos)
 {
     hcclCommPtr->GetCollComm()->GetCommConfig().SetConfigHcclQos(5u);
     comm = static_cast<HcclComm>(hcclCommPtr.get());
@@ -195,11 +204,11 @@ TEST_F(HcclChannelDescTest, Ut_ProcessUbcChannelDesc_When_UbcCtp_QosUnset_UsesCo
     ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
     ASSERT_EQ(HcclChannelDescInit(&out, 1), HCCL_SUCCESS);
     in.channelProtocol = COMM_PROTOCOL_UBC_CTP;
-    ret = ProcessUbcChannelDesc(in, out, hcclCommPtr.get());
+    ret = ProcessUbChannelDesc(in, out, hcclCommPtr.get());
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-TEST_F(HcclChannelDescTest, Ut_ProcessUbcChannelDesc_When_UbcTp_QosUnset_UsesUbQosDefault)
+TEST_F(HcclChannelDescTest, Ut_ProcessUbChannelDesc_When_UbcTp_QosUnset_UsesUbQosDefault)
 {
     hcclCommPtr->GetCollComm()->GetCommConfig().SetConfigHcclQos(HCCL_COMM_QOS_CONFIG_NOT_SET);
     comm = static_cast<HcclComm>(hcclCommPtr.get());
@@ -209,11 +218,11 @@ TEST_F(HcclChannelDescTest, Ut_ProcessUbcChannelDesc_When_UbcTp_QosUnset_UsesUbQ
     ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
     ASSERT_EQ(HcclChannelDescInit(&out, 1), HCCL_SUCCESS);
     in.channelProtocol = COMM_PROTOCOL_UBC_TP;
-    ret = ProcessUbcChannelDesc(in, out, hcclCommPtr.get());
+    ret = ProcessUbChannelDesc(in, out, hcclCommPtr.get());
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-TEST_F(HcclChannelDescTest, Ut_ProcessUbcChannelDesc_When_UbcCtp_Valid_Expect_Success)
+TEST_F(HcclChannelDescTest, Ut_ProcessUbChannelDesc_When_UbcCtp_Valid_Expect_Success)
 {
     hcclCommPtr->GetCollComm()->GetCommConfig().SetConfigHcclQos(1u);
     comm = static_cast<HcclComm>(hcclCommPtr.get());
@@ -223,22 +232,11 @@ TEST_F(HcclChannelDescTest, Ut_ProcessUbcChannelDesc_When_UbcCtp_Valid_Expect_Su
     ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
     ASSERT_EQ(HcclChannelDescInit(&out, 1), HCCL_SUCCESS);
     in.channelProtocol = COMM_PROTOCOL_UBC_CTP;
-    ret = ProcessUbcChannelDesc(in, out, hcclCommPtr.get());
+    ret = ProcessUbChannelDesc(in, out, hcclCommPtr.get());
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-TEST_F(HcclChannelDescTest, Ut_ProcessUboeChannelDesc_When_WrongProtocol_Expect_E_PARA)
-{
-    HcclChannelDesc in{};
-    HcclChannelDesc out{};
-    ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
-    ASSERT_EQ(HcclChannelDescInit(&out, 1), HCCL_SUCCESS);
-    in.channelProtocol = COMM_PROTOCOL_UBC_TP;
-    ret = ProcessUboeChannelDesc(in, out, hcclCommPtr.get());
-    EXPECT_EQ(ret, HCCL_E_PARA);
-}
-
-TEST_F(HcclChannelDescTest, Ut_ProcessUboeChannelDesc_When_Uboe_QosUnset_UsesCommHcclQos)
+TEST_F(HcclChannelDescTest, Ut_ProcessUbChannelDesc_When_Uboe_QosUnset_UsesCommHcclQos)
 {
     hcclCommPtr->GetCollComm()->GetCommConfig().SetConfigHcclQos(3u);
     comm = static_cast<HcclComm>(hcclCommPtr.get());
@@ -248,6 +246,6 @@ TEST_F(HcclChannelDescTest, Ut_ProcessUboeChannelDesc_When_Uboe_QosUnset_UsesCom
     ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
     ASSERT_EQ(HcclChannelDescInit(&out, 1), HCCL_SUCCESS);
     in.channelProtocol = COMM_PROTOCOL_UBOE;
-    ret = ProcessUboeChannelDesc(in, out, hcclCommPtr.get());
+    ret = ProcessUbChannelDesc(in, out, hcclCommPtr.get());
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
