@@ -14,6 +14,7 @@
 #include "hcom_host_profiling.h"
 #include "adapter_prof.h"
 #include "hccl/hccl_types.h"
+#include "profiler_base.h"
 
 using  namespace hccl;
 extern HcclResult HcommProfilingReportKernel(uint64_t beginTime, const char *profName)
@@ -30,7 +31,17 @@ extern HcclResult HcommProfilingReportOp(HcomProInfo profInfo)
     // 数据恢复
     HcclCMDType cmdTypeTemp = static_cast<HcclCMDType>(profInfo.cmdType);
     HcclDataType dataTypeTemp = static_cast<HcclDataType>(profInfo.dataType);
-    uint64_t groupName = hrtMsprofGetHashId(profInfo.commName, strlen(profInfo.commName));
+    std::string displayNameStr(profInfo.commName);
+    if (strlen(profInfo.udi) > 0 && strcmp(profInfo.udi, "Unspecified") != 0) {
+        displayNameStr = profInfo.udi;
+    } else {
+        std::string udiLookup;
+        HcclResult udiRet = ProfilerBase::GetUdiByGroup(profInfo.commName, udiLookup);
+        if (udiRet == HCCL_SUCCESS && !udiLookup.empty() && udiLookup != "Unspecified") {
+            displayNameStr = udiLookup;
+        }
+    }
+    uint64_t groupName = hrtMsprofGetHashId(displayNameStr.c_str(), displayNameStr.length());
     std::string algTypeStr(profInfo.algType);
 
     AlgType algType;
@@ -50,6 +61,9 @@ extern HcclResult HcommProfilingRegThread(HcomProInfo profInfo, ThreadHandle *th
     std::string identifier(profInfo.commName);
     std::string tag(profInfo.tag);
     HCCL_PROFILER_ADD_GROUPRANK(identifier, profInfo.rankSize, profInfo.userRank);
+    if (strlen(profInfo.udi) > 0 && strcmp(profInfo.udi, "Unspecified") != 0) {
+        HCCL_PROFILER_ADD_GROUP_UDI(identifier, profInfo.udi);
+    }
     if (profInfo.isAiv) {
         HCCL_PROFILER_ADD_TAG_AIV(tag, identifier, GetWorkflowMode());
     } else {
@@ -89,6 +103,7 @@ extern HcclResult HcommProfilingUnRegThread(HcomProInfo profInfo, ThreadHandle *
 
     HCCL_PROFILER_DEL_TAG(tag);
     HCCL_PROFILER_DEL_GROUPRANK(identifier);
+    HCCL_PROFILER_DEL_GROUP_UDI(identifier);
 
     uint32_t mainStreamId = reinterpret_cast<Thread*>(threads[0])->GetStream()->id();
     HCCL_PROFILER_DEL_STREAM_BY_STREAMID(mainStreamId);

@@ -121,6 +121,7 @@ HcclResult hcclComm::init(HcclCommParams &params, const CommConfig &commConfig, 
     }
     params.identifier = identifier_;
     params.cclBuffName = cclBuffName_;
+    udi_ = commConfig.GetConfigUdi();
 
     /* 设置commConfig单例 */
     HcclResult ret = CommConfiger::GetInstance().SetCommConfig(commConfig, identifier_);
@@ -176,6 +177,7 @@ HcclResult hcclComm::init(HcclCommParams &params, const CommConfig &commConfig, 
     }
 
     params.identifier = identifier_;
+    udi_ = commConfig.GetConfigUdi();
 
     /* 设置commConfig单例 */
     HcclResult ret = CommConfiger::GetInstance().SetCommConfig(commConfig, identifier_);
@@ -912,6 +914,11 @@ HcclResult hcclComm::GetIndirectOutCCLbuf(void* &ptr, u64 &size)
 std::string hcclComm::GetIdentifier()
 {
     return identifier_;
+}
+
+std::string hcclComm::GetUdi()
+{
+    return udi_;
 }
 
 std::string hcclComm::GetCCLbufferName()

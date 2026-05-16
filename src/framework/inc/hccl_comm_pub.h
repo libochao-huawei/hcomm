@@ -269,6 +269,7 @@ public:
         const HcomCollOpInfo &opInfo);
 
     std::string GetIdentifier();
+    std::string GetUdi();
     std::string GetCCLbufferName();
     HcclResult CreateBarrierMemory();
     HcclResult ReleaseSubComms() const;
@@ -442,6 +443,7 @@ private:
     bool isFirstBarrier_;
     const std::string identifier_;
     const std::string cclBuffName_;
+    std::string udi_;
     bool isHeterogComm_;
     bool isGroupMode_{false};
     bool isResetDevice_;

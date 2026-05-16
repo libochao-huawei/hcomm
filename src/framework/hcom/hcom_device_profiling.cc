@@ -15,6 +15,7 @@
 #include "hccl/hccl_types.h"
 #include "hcom_device_profiling.h"
 #include "stream_pub.h"
+#include "profiler_base.h"
 #ifdef CCL_KERNEL_AICPU
 #include "device/inc/profiling_manager_device.h"
 #endif
@@ -93,7 +94,17 @@ extern HcclResult HcommProfilingReportDeviceHcclOpInfo(HcomProInfo profInfo)
     hcclOpInfo.retry = 0; //目前全是false
     hcclOpInfo.dataType = static_cast<HcclDataType>(profInfo.dataType);
     hcclOpInfo.count = profInfo.dataCount;
-    uint64_t groupHashId = dfx::ProfilingManager::GetProfHashId(profInfo.commName, profInfo.commNameLen);
+    std::string displayNameStr(profInfo.commName);
+    if (strlen(profInfo.udi) > 0 && strcmp(profInfo.udi, "Unspecified") != 0) {
+        displayNameStr = profInfo.udi;
+    } else {
+        std::string udiLookup;
+        HcclResult udiRet = ProfilerBase::GetUdiByGroup(profInfo.commName, udiLookup);
+        if (udiRet == HCCL_SUCCESS && !udiLookup.empty() && udiLookup != "Unspecified") {
+            displayNameStr = udiLookup;
+        }
+    }
+    uint64_t groupHashId = dfx::ProfilingManager::GetProfHashId(displayNameStr.c_str(), displayNameStr.length());
     hcclOpInfo.groupName = groupHashId;
     hcclOpInfo.ranksize = profInfo.rankSize;
     std::string algTypeStr(profInfo.algType);

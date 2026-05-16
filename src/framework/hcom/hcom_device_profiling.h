@@ -36,6 +36,7 @@ typedef struct HcomProInfo {
     char tag[MAX_LENGTH];
     char commName[MAX_LENGTH];
     char algType[MAX_LENGTH];
+    char udi[MAX_LENGTH];
     bool isCapture = false;
     bool isAiv = false;
     uint8_t reserved[MAX_LENGTH];

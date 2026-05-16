@@ -1432,6 +1432,7 @@ bool HcclCommunicator::IsEnableRoce()
     HcclResult HcclCommunicator::AddGroupTagInfo(const std::string &tag, bool isAiv)
     {
         HCCL_PROFILER_ADD_GROUPRANK(identifier_, userRankSize_, userRank_);
+        HCCL_PROFILER_ADD_GROUP_UDI(identifier_, commConfig_.GetConfigUdi());
         if (isAiv)
         {
             HCCL_PROFILER_ADD_TAG_AIV(tag, identifier_, GetWorkflowMode());
@@ -1447,6 +1448,7 @@ bool HcclCommunicator::IsEnableRoce()
     {
         HCCL_PROFILER_DEL_TAG(param.tag);
         HCCL_PROFILER_DEL_GROUPRANK(identifier_);
+        HCCL_PROFILER_DEL_GROUP_UDI(identifier_);
         HCCL_PROFILER_DEL_STREAM_BY_STREAMID(param.stream.id());
         HCCL_PROFILER_DEL_OPDATA(param.tag);
         if (((GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) &&

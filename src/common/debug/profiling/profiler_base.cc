@@ -345,8 +345,27 @@ HcclResult ProfilerBase::AddGroupUdi(const std::string &group, const std::string
     HCCL_RUN_INFO("AddGroupUdi: group[%s] udi[%s] deviceLogicId[%d]", group.c_str(), udi.c_str(),
         deviceLogicId);
     std::lock_guard<std::mutex> lock(streamMutex_[deviceLogicId]);
-    groupUdiMap_[deviceLogicId].insert(
-        std::make_pair<const std::string &, const std::string &>(group, udi));
+    auto it = groupUdiMap_[deviceLogicId].find(group);
+    if (it != groupUdiMap_[deviceLogicId].end()) {
+        if (it->second != udi) {
+            HCCL_WARNING("AddGroupUdi: group[%s] udi changed from[%s] to[%s]",
+                group.c_str(), it->second.c_str(), udi.c_str());
+        }
+        it->second = udi;
+    } else {
+        if (udi != "Unspecified") {
+            for (const auto& pair : groupUdiMap_[deviceLogicId]) {
+                if (pair.second == udi) {
+                    HCCL_WARNING("AddGroupUdi: udi[%s] is already used by group[%s], "
+                        "this may cause confusion in profiling display",
+                        udi.c_str(), pair.first.c_str());
+                    break;
+                }
+            }
+        }
+        groupUdiMap_[deviceLogicId].insert(
+            std::make_pair<const std::string &, const std::string &>(group, udi));
+    }
     return HCCL_SUCCESS;
 }
 

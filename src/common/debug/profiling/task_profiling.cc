@@ -257,6 +257,13 @@ HcclResult TaskProfiling::Run(const TaskData &taskData, bool isCapture)
     GetTaskData(taskData.taskType, taskData, hcclReportData.profInfo);
 
     hcclReportData.profInfo.cclTag = hrtMsprofGetHashId(hcclReportData.tag.c_str(), hcclReportData.tag.length());
+    {
+        std::string udi;
+        HcclResult udiRet = ProfilerBase::GetUdiByGroup(hcclReportData.groupName, udi);
+        if (udiRet == HCCL_SUCCESS && !udi.empty() && udi != "Unspecified") {
+            hcclReportData.groupName = udi;
+        }
+    }
     hcclReportData.profInfo.groupName =
         hrtMsprofGetHashId(hcclReportData.groupName.c_str(), hcclReportData.groupName.length());
 
@@ -362,6 +369,13 @@ HcclResult TaskProfiling::Save(u32 captureStreamID, u32 streamID, u32 taskID, co
     hcclReportData.profInfo.dataSize = paraAiv.size;
 
     hcclReportData.profInfo.cclTag = hrtMsprofGetHashId(hcclReportData.tag.c_str(), hcclReportData.tag.length());
+    {
+        std::string udi;
+        HcclResult udiRet = ProfilerBase::GetUdiByGroup(hcclReportData.groupName, udi);
+        if (udiRet == HCCL_SUCCESS && !udi.empty() && udi != "Unspecified") {
+            hcclReportData.groupName = udi;
+        }
+    }
     hcclReportData.profInfo.groupName =
         hrtMsprofGetHashId(hcclReportData.groupName.c_str(), hcclReportData.groupName.length());
 
