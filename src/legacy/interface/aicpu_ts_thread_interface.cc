@@ -78,18 +78,6 @@ void IAicpuTsThread::LaunchTask() const
     return;
 }
 
-void IAicpuTsThread::TryLaunchTask() const
-{
-    HCCL_DEBUG("[IAicpuTsThread::%s] TryLaunch Task at Stream id [%u]", __func__,
-        static_cast<StreamLite *>(streamLiteVoidPtr_)->GetId());
-
-    RtsqBase *rtsqA5 = static_cast<StreamLite *>(streamLiteVoidPtr_)->GetRtsq();
-    if (rtsqA5 != nullptr) {
-        rtsqA5->TryLaunchTask();
-    }
-    return;
-}
-
 HcclResult IAicpuTsThread::NotifyWait(uint32_t notifyId) const
 {
     return NotifyWait(notifyId, GetKernelExecTimeoutFromEnvConfig());

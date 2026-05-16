@@ -27,7 +27,6 @@ public:
     {
         return mode_ == HCOMM_LAUNCH_MODE_BATCH;
     }
-    HcclResult HandleDispatchAllStreams();
 
 private:
     HcclResult HandleBatchMode();
