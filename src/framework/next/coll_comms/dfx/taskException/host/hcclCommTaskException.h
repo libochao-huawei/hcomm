@@ -11,6 +11,7 @@
 #define HCCL_COMM_TASKEXCEPTION_H
 
 #include <array>
+#include <map>
 #include "types.h"
 #include "hccl_types.h"
 #include "orion_adapter_rts.h"
@@ -30,6 +31,8 @@ void RegisterGetAicpuCqeErrInfoCallBackHcomm(GetAicpuCqeErrInfoCallBackHcomm); /
 using AicpuGetErrStatusVecCallBack = std::vector<std::string> (*)(s32 deviceLogicID);
 void RegisterAicpuGetErrStatusVecCallBack(AicpuGetErrStatusVecCallBack);
 
+extern std::array<std::map<s32, GetAicpuTaskExceptionCallBackHcomm>, MAX_MODULE_DEVICE_NUM> g_communicatorCallbackMapV2;
+
 class TaskExceptionHost {
 public:
     TaskExceptionHost() = default;
@@ -38,13 +41,13 @@ public:
     HcclResult        Register() ;                                // 向rts注册异常处理方法
     HcclResult        UnRegister() ;                              // 向rts注销异常处理方法
     static void Process(rtExceptionInfo_t *exceptionInfo); // 处理异常信息
-    static void PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo, const Hccl::TaskInfo& taskInfo);
+    static void PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo, const Hccl::TaskInfo& taskInfo, bool &isExistAicpuError);
 
 private:
     static std::string GetGroupRankInfo(const Hccl::TaskInfo& taskInfo);
     static void ProcessException(rtExceptionInfo_t* exceptionInfo, const Hccl::TaskInfo& taskInfo);
     static void PrintTaskContextInfo(uint32_t deviceId, uint32_t streamId, uint32_t taskId);
-
+    static void PrintUbDfxInfo(rtExceptionInfo_t *exceptionInfo, const Hccl::ErrorMessageReport &errorMessage);
     static void PrintGroupErrorMessage(Hccl::ErrorMessageReport &errorMessage, Hccl::TaskInfo &exceptionTaskInfo, std::string &groupRankContent, std::string &stageErrInfo);
     static void PrintOpDataErrorMessage(u32 deviceId, Hccl::ErrorMessageReport &errorMessage, std::string &stageErrInfo);
     static HcclResult PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHandle);
@@ -61,6 +64,7 @@ public:
     // 获取指定位置的异常处理器
     static TaskExceptionHost *GetHandler(size_t devId);
     static void RegisterGetAicpuTaskExceptionCallBack(s32 streamId, u32 deviceLogicId, GetAicpuTaskExceptionCallBackHcomm p1);
+    static void UnregisterGetAicpuTaskExceptionCallBack(s32 streamId, u32 deviceLogicId);
 
 private:
     TaskExceptionHostManager();

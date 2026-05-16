@@ -45,7 +45,8 @@ const std::unordered_map<CommProtocol, std::string> HCOM_COMM_PROTOCOL_STR_MAP =
     {COMM_PROTOCOL_SIO, "SIO"},
     {COMM_PROTOCOL_UBC_CTP, "UBC_CTP"},
     {COMM_PROTOCOL_UBC_TP, "UBC_TP"},
-    {COMM_PROTOCOL_UB_MEM, "UB_MEM"}
+    {COMM_PROTOCOL_UB_MEM, "UB_MEM"},
+    {COMM_PROTOCOL_UBOE, "UBOE"}
 };
 
 inline std::string GetCommProtocolEnumStr(CommProtocol protocol)
@@ -269,7 +270,7 @@ HcclResult MyRank::QueryListenPort(uint32_t localRank, uint32_t remoteRank, cons
 }
 
 HcclResult MyRank::BatchCreateSockets(const HcclChannelDesc* channelDescs, uint32_t channelNum,
-        const std::string &commTag, std::vector<HcommChannelDesc> &hcommDescs)
+        const std::string &socketTag, std::vector<HcommChannelDesc> &hcommDescs)
 {
     CHK_PTR_NULL(channelDescs);
     CHK_PRT_RET(channelNum == 0,
@@ -314,10 +315,10 @@ HcclResult MyRank::BatchCreateSockets(const HcclChannelDesc* channelDescs, uint3
 
         Hccl::Socket* socket = nullptr;
         // 申请的socket在channel资源不足回退时不释放，回退后会复用
-        auto ret = endpointPair->GetSocket(rankId_, remoteRank, commTag, reuseIdx, listenPort, socket, devicePhyId, remoteDevicePhyId);
+        auto ret = endpointPair->GetSocket(rankId_, remoteRank, socketTag, reuseIdx, listenPort, socket, devicePhyId, remoteDevicePhyId);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[%s] failed to get socket, channelIndex[%u], remoteRank[%u], protocol[%d] reuseIdx[%u]",
-                __func__, i, remoteRank, localEndpointDesc.protocol, reuseIdx),
+            HCCL_ERROR("[%s] failed to get socket, channelIndex[%u], remoteRank[%u], protocol[%d], reuseIdx[%u], tag[%s]",
+                __func__, i, remoteRank, localEndpointDesc.protocol, reuseIdx, socketTag.c_str()),
             ret);
         CHK_PTR_NULL(socket);
 
@@ -549,6 +550,8 @@ HcclResult MyRank::BatchConnectChannels(const HcclChannelDesc* channelDescs, Cha
                 std::chrono::steady_clock::now() - startTime).count();
             HCCL_ERROR("[%s] channel connect timeout after %lld sec, channelNum[%u], elapsed[%lld]ms, retryCount[%u]",
                 __func__, timeout, channelNum, elapsed, retryCount);
+            RPT_INPUT_ERR(true, "EI0006", std::vector<std::string>({"reason"}), \
+                std::vector<std::string>({GET_SOCKET_TIMEOUT_REASON_CLOSE_DETECT}));
             Hccl::TlsStatus tlsStatus = Hccl::TlsStatus::UNKNOWN;
             CHK_PRT_CONT(GetLocalTlsStatus(tlsStatus),
                 HCCL_WARNING("[GetLocalTlsStatus] Can not get TlsStatus"));
@@ -623,20 +626,13 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
         hcommDescs[i] = MyRankUtils::ChannelDescHccl2Hcomm(channelDescs[i]);
         CHK_RET(ConfigSqDepthByExpansionMode(engine, hcommDescs[i]));
     }
-    auto start = std::chrno::steady_clock::now();
+    auto start = std::chrono::steady_clock::now();
     CHK_RET(BatchCreateSockets(channelDescs, channelNum, commTag, hcommDescs));
-    auto end = std::chrno::steady_clock::now();
-    auto batchCreateDuration = std::chrno::duration_cast<std::chrono::microseconds>(end - start).count();
-    start = std::chrno::steady_clock::now();
     CHK_RET_UNAVAIL(BatchCreateChannels(engine, channelDescs, channelNum, hcommDescs, hostChannelHandleList));
-    end = std::chrno::steady_clock::now();
-    auto createChannelDuration = std::chrno::duration_cast<std::chrono::microseconds>(end - start).count();
-    start = std::chrno::steady_clock::now();
     CHK_RET(BatchConnectChannels(channelDescs, hostChannelHandleList, channelNum));
-    end = std::chrno::steady_clock::now();
-    auto batchConnectDuration = std::chrno::duration_cast<std::chrono::microseconds>(end - start).count();
-    HCCL_RUN_INFO("BatchCreateSockets Time Elapsed [%llu], BatchCreateChannels Time Elapsed [%llu],BatchConnectChannels Time Elapsed [%llu]",batchCreateDuration, createChannelDuration, batchConnectDuration);
-    // 添加初始化时进行填表
+    auto end = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    HCCL_RUN_INFO("[MyRank][CreateChannels] CreateChannels Time Elapsed [%llu], channelNum [%u]", duration, channelNum);// 添加初始化时进行填表
     for (u32 i = 0; i < channelNum; ++i) {
         u32 remoteRank = channelDescs[i].remoteRank;
         HcclCommDfx::AddChannelRemoteRankId(commTag, hostChannelHandleList[i], remoteRank);

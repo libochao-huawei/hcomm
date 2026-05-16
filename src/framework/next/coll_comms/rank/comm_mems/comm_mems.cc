@@ -10,6 +10,7 @@
 #include "comm_mems.h"
 #include <cstdlib>
 #include <algorithm>
+#include "orion_adapter_rts.h"
 
 namespace hccl {
 
@@ -53,6 +54,22 @@ HcclResult CommMems::GetHcclBuffer(void *&addr, uint64_t &len)
     addr = reinterpret_cast<void*>(cclMemInfo_.mem.addr);
     len = static_cast<uint64_t>(cclMemInfo_.mem.size);
     return HCCL_SUCCESS;
+}
+
+HcclResult CommMems::HcclBufferMemset(void *&addr, uint64_t &len, bool clearFlag)
+{
+    if (!clearFlag) {
+        HCCL_DEBUG("[CommMems][HcclBufferMemset] clearFlag[%d] is false, skip memset.", clearFlag);
+        return HCCL_SUCCESS;
+    }
+
+    if (addr != nullptr && len > 0) {
+        EXECEPTION_CATCH(Hccl::HrtMemset(addr, len, len), return HCCL_E_INTERNAL);
+        return HCCL_SUCCESS;
+    }
+
+    HCCL_ERROR("[CommMems][HcclBufferMemset] buffer[%p] is null or size[%llu] is 0, skip.", addr, len);
+    return HCCL_E_PARA;
 }
 
 HcclResult CommMems::Init(HcclMem cclBuffer)

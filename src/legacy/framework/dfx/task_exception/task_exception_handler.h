@@ -36,7 +36,7 @@ public:
     void        Register() const;                                // 向rts注册异常处理方法
     void        UnRegister() const;                              // 向rts注销异常处理方法
     static void Process(rtExceptionInfo_t *exceptionInfo); // 处理异常信息
-    static void PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo);
+    static void PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo, bool &isExistAicpuError);
 
 private:
     static std::string GetGroupRankInfo(const TaskInfo& taskInfo);
