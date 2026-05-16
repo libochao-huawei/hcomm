@@ -454,16 +454,14 @@ HcclResult CcuComponent::CreateAndImportLoopJettys(const uint8_t dieId,
     const uint32_t loopJettyQos = loopTpInfo.hasMappedJettyPriority
         ? (loopTpInfo.mappedJettyPriority & 0xFU)
         : EnvConfig::UB_QOS_DEFAULT;
-    // 此QOS其实为第一个TP中第一个可用的SL
+
+    TpAttrInfo tpAttrInfo{};
+    CHK_RET(GetLoopTpAttr(dieId, commAddr, tpAttrInfo));
+    const uint8_t errTimeout = TpMgr::CalcTaTimeout(tpAttrInfo);
 
     for (const auto &jettyInfo : jettyInfos) {
-        TpAttrInfo tpAttrInfo{};
-        CHK_RET(GetLoopTpAttr(dieId, commAddr, tpAttrInfo));
-
         const auto psn = GetNewPsn();
         const auto jettyImportCfg = GetJettyImportCfg(loopTpInfo, psn);
-
-        const uint8_t errTimeout = TpMgr::CalcTaTimeout(tpAttrInfo);
 
         const auto jettyMode = HrtJettyMode::CCU_CCUM_CACHE; // 当前仅支持该模式
         HrtRaUbCreateJettyParam req{jfcHandle, jfcHandle, ccuBufTokenValue, tokenIdHandle, jettyMode,
