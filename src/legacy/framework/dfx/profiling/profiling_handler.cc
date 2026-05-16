@@ -310,9 +310,15 @@ void ProfilingHandler::GetHCCLReportData(const TaskInfo &taskInfo, HCCLReportDat
     hcclReportData.profInfo.dataType = taskInfo.dfxOpInfo_->op_.dataType;
     hcclReportData.profInfo.opType        = taskInfo.dfxOpInfo_->op_.opType;
     hcclReportData.profInfo.transportType = static_cast<int32_t>(SimpleTaskType::UB);
+    if (hcclReportData.profInfo.remoteRank == static_cast<uint32_t>(-1)) {
+        hcclReportData.profInfo.transportType = static_cast<int32_t>(SimpleTaskType::LOCAL);
+    }
     hcclReportData.dpuProfInfo.dataType = static_cast<uint32_t>(taskInfo.dfxOpInfo_->op_.dataType);
     hcclReportData.dpuProfInfo.opType        = static_cast<uint32_t>(taskInfo.dfxOpInfo_->op_.opType);
     hcclReportData.dpuProfInfo.transportType = static_cast<uint32_t>(SimpleTaskType::ROCE);
+    if (hcclReportData.dpuProfInfo.remoteRank == static_cast<uint32_t>(-1)) {
+        hcclReportData.dpuProfInfo.transportType = static_cast<uint32_t>(SimpleTaskType::LOCAL);
+    }
     DumpHCCLReportData(taskInfo, hcclReportData);
     HCCL_INFO("[ProfilingHandler]GetHCCLReportData end.");
 }
