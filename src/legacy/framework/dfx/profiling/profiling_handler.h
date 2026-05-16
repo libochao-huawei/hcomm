@@ -186,6 +186,9 @@ private:
     void ReportStoragedAdditionInfo();
 
     void GetHCCLReportData(const TaskInfo &taskInfo, HCCLReportData &hcclReportData) const;
+    void SetProfCommonInfo(const TaskInfo &taskInfo, HCCLReportData &hcclReportData) const;
+    void SetProfTaskSpecificInfo(const TaskInfo &taskInfo, HCCLReportData &hcclReportData) const;
+    void SetDpuProfInfo(const TaskInfo &taskInfo, HCCLReportData &hcclReportData) const;
     void CallAddtionInfo(HCCLReportData &hcclReportData, void *data, u32 len, ProfTaskType taskType) const;
 
     void ReportCcuInfo(const TaskInfo &taskInfo) const;
