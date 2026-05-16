@@ -116,7 +116,7 @@ HcclResult AicpuTsUrmaChannel::BuildConnection()
     Hccl::TpManager::GetInstance(deviceLogicId).Init();
 
     const u8 qosPre = static_cast<u8>(
-        (channelDesc_.ubAttr.qos > 7U) ? Hccl::kRaUbGetTpInfoParamDefaultQos : (channelDesc_.ubAttr.qos & 7U));
+        (channelDesc_.qos > 7U) ? Hccl::kRaUbGetTpInfoParamDefaultQos : (channelDesc_.qos & 7U));
 
     std::unique_ptr<Hccl::DevUbConnection> ubConn = nullptr;
     switch (protocol) {
