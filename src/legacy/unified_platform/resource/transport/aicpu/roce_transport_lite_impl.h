@@ -53,6 +53,26 @@ private:
     void ParseLocBufferVec(std::vector<char> &data);
     void ParseRmtBufferVec(std::vector<char> &data);
     void ParseConnVec(std::vector<char> &data);
+
+    // ========== Buffer 构造接口 ==========
+    HcclResult BuildLocRmaBufferLite(const uintptr_t addr, const size_t size, RmaBufferLite &rmaBufferLite) const;
+
+    // ========== RMA 数据传输接口 ==========
+    void Write(const RmaBufferLite      &loc, 
+               const RmtRmaBufferLite   &rmt,
+               const StreamLite         &stream);
+
+    void WriteWithNotify(const RmaBufferLite    &loc, 
+                         const RmtRmaBufferLite &rmt, 
+                         const uint32_t         remoteNotifyIdx,
+                         const StreamLite       &stream);
+
+    // ========== 同步 / Notify 接口 ==========
+    void NotifyWait(const uint32_t index, const StreamLite &stream);
+
+    // ========== 底层 Task 构造接口(rtsq) ==========
+    void BuildRdmaDbSendTask(const StreamLite &stream, u64 remoteAddr, u64 dbValue);
+    void BuildNotifyWaitTask(const StreamLite &stream, u32 notifyId);
 };
 
 } // namespace Hccl
