@@ -91,8 +91,13 @@ HcclResult EndpointPair::BatchServerInit(const uint32_t myRank, const uint32_t r
         CHK_PTR_NULL(rankIpPortMap_);
         socketMgrCompat_->SetDeviceServerListenPortMap(*rankIpPortMap_);
     }
+    std::string linkTag = socketTag;
+    if (linkData.GetReuseIdx() != "0") {
+        linkTag += ("_" + linkData.GetReuseIdx());
+    }
+    Hccl::SocketConfig socketConfig(linkData.GetRemoteRankId(), linkData, linkTag);
     // 调用sock的server异步监听接口
-    socketMgrCompat_->BatchServerListen({linkData}); 
+    socketMgrCompat_->BatchServerListen(socketConfig); 
     EXCEPTION_HANDLE_END
 
     return HCCL_SUCCESS;
@@ -119,7 +124,6 @@ HcclResult EndpointPair::GetConnectedSocket(const uint32_t myRank, const uint32_
     EXCEPTION_HANDLE_BEGIN
     // server监听已经获取了，所以不需要再次创建
     CHK_PTR_NULL(socketMgrCompat_);
-    socketMgrCompat_->BatchConectSockets(); // 内部同时处理server端和connect端两类socket
 
     std::string linkTag = socketTag;
     if (linkData.GetReuseIdx() != "0") {
@@ -127,6 +131,7 @@ HcclResult EndpointPair::GetConnectedSocket(const uint32_t myRank, const uint32_
     }
     Hccl::SocketConfig socketConfig(linkData.GetRemoteRankId(), linkData, linkTag);
     // socket 建链添加白名单和其他客户端连接部分
+    socketMgrCompat_->BatchConectSockets(socketConfig); // 内部同时处理server端和connect端两类socket
     socket = socketMgrCompat_->GetConnectedSocket(socketConfig);
     CHK_PTR_NULL(socket);
     EXCEPTION_HANDLE_END
@@ -167,13 +172,13 @@ HcclResult EndpointPair::GetSocket(const uint32_t myRank, const uint32_t rmtRank
         socketMgrCompat_->SetDeviceServerListenPortMap(*rankIpPortMap_);
     }
 
-    socketMgrCompat_->BatchCreateSockets({linkData}); // 内部同时处理server端和connect端两类socket
-
     std::string linkTag = socketTag;
     if (linkData.GetReuseIdx() != "0") {
         linkTag += ("_" + linkData.GetReuseIdx());
     }
     Hccl::SocketConfig socketConfig(linkData.GetRemoteRankId(), linkData, linkTag);
+
+    socketMgrCompat_->BatchCreateSockets(socketConfig); // 内部同时处理server端和connect端两类socket
     socket = socketMgrCompat_->GetConnectedSocket(socketConfig);
     CHK_PTR_NULL(socket);
     EXCEPTION_HANDLE_END

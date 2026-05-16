@@ -46,14 +46,25 @@ HcclResult HcclCommSymWinGet(HcclComm comm, void *ptr, size_t size, HcclCommSymW
 HcclCommConfig config;
 HcclCommConfigInit(&config);
 // 按需修改通信域配置
-config.hcclSymWinMaxMemSizePerRank = 10; //单位GB, 默认值为16。设置对称堆预留的虚拟内存大小 = rankSize * config.hcclSymWinMaxMemSizePerRank;
+config.hcclSymWinMaxMemSizePerRank = 10; // 单位GB, 默认值为16
+
+// 获取通信域参数
+uint32_t rankSize = 4;
+uint32_t rankId = 0;
+int32_t deviceId;
+ACLCHECK(aclrtGetDevice(&deviceId));
+HcclRootInfo rootInfo;
+HCCLCHECK(HcclGetRootInfo(&rootInfo));
+
 // 初始化集合通信域
 HcclComm hcclComm;
-HCCLCHECK(HcclCommInitRootInfoConfig(rankSize, &rootInfo, deviceId, &config, &hcclComm));
+HCCLCHECK(HcclCommInitRootInfoConfig(rankSize, &rootInfo, rankId, &config, &hcclComm));
+
+// 创建任务流
+aclrtStream stream;
+ACLCHECK(aclrtCreateStream(&stream));
 
 // 物理内存属性配置
-int32_t deviceId;
-aclrtGetDevice(&deviceId);
 aclrtPhysicalMemProp prop;
 prop.handleType = ACL_MEM_HANDLE_TYPE_NONE;
 prop.allocationType = ACL_MEM_ALLOCATION_TYPE_PINNED;
@@ -61,34 +72,46 @@ prop.memAttr = ACL_HBM_MEM_HUGE;
 prop.location.id = deviceId;
 prop.location.type = ACL_MEM_LOCATION_TYPE_DEVICE;
 prop.reserve = 0;
+
 // 获取对齐粒度，通常为2M
-size_t granularity = 0;
-aclrtMemGetAllocationGranularity(&prop, ACL_RT_MEM_ALLOC_GRANULARITY_RECOMMENDED, &granularity);
+size_t granularity;
+ACLCHECK(aclrtMemGetAllocationGranularity(&prop, ACL_RT_MEM_ALLOC_GRANULARITY_RECOMMENDED, &granularity));
+
 // size按粒度对齐
 size_t size = 2 * 1024 * 1024;
 size_t allocSize = (size + granularity - 1) / granularity * granularity;
-// 预留虚拟内存
-void *virPtr = nullptr;
-aclrtReserveMemAddress(&virPtr, allocSize, 0, nullptr, 1);
-// 申请物理内存
-aclrtDrvMemHandle handle;
-aclrtMallocPhysical(&handle, allocSize, &prop, 0);
-// 建立物理到虚拟的映射
-aclrtMapMem(virPtr, allocSize, 0, handle, 0);
 
-HcclCommSymWindow sym_win;
+// 预留虚拟内存
+void *virPtr;
+ACLCHECK(aclrtReserveMemAddress(&virPtr, allocSize, 0, nullptr, 1));
+
+// 申请物理内存
+aclrtDrvMemHandle memHandle;
+ACLCHECK(aclrtMallocPhysical(&memHandle, allocSize, &prop, 0));
+
+// 建立物理到虚拟的映射
+ACLCHECK(aclrtMapMem(virPtr, allocSize, 0, memHandle, 0));
+
+HcclCommSymWindow symWin;
 // 注册对称内存
-HcclCommSymWinRegister(hcclComm, virPtr, allocSize, &sym_win, HCCL_WIN_COLL_SYMMETRIC);
+HCCLCHECK(HcclCommSymWinRegister(hcclComm, virPtr, allocSize, &symWin, 1));
+
 // 使用HcclCommSymWinGet获取对称内存资源
-HcclCommSymWindow temp_win;
+HcclCommSymWindow tempWin;
 size_t offset = 0;
-HcclCommSymWinGet(hcclComm, virPtr + 10, 1024, &temp_win, &offset);
+HCCLCHECK(HcclCommSymWinGet(hcclComm, virPtr, allocSize, &tempWin, &offset));
+
 // 解注册对称内存
-HcclCommSymWinDeregister(sym_win);
+HCCLCHECK(HcclCommSymWinDeregister(symWin));
+
 // 释放内存
-aclrtUnmapMem(virPtr);
-aclrtFreePhysical(handle);
-aclrtReleaseMemAddress(virPtr);
+ACLCHECK(aclrtUnmapMem(virPtr));
+ACLCHECK(aclrtFreePhysical(memHandle));
+ACLCHECK(aclrtReleaseMemAddress(virPtr));
+
+// 销毁任务流
+ACLCHECK(aclrtDestroyStream(stream));
+
 // 销毁通信域
-HcclCommDestroy(hcclComm);
+HCCLCHECK(HcclCommDestroy(hcclComm));
 ```
