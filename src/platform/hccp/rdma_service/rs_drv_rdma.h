@@ -64,6 +64,7 @@ int RsDrvQpInfoRelated(struct RsQpCb *qpCb, struct RsRdevCb *rdevCb,
                            struct ibv_port_attr *attr, struct ibv_qp_attr *qpAttr);
 int RsDrvQpCreate(struct RsQpCb *qpCb, struct RsQpNorm *qpNorm);
 int RsDrvQpCreateWithAttrs(struct RsQpCb *qpCb, struct RsQpNormWithAttrs *qpNorm);
+int RsDrvQpCreateWithCq(struct RsQpCb *qpCb, struct RsQpNormWithCq *qpNorm);
 void RsDrvQpDestroy(struct RsQpCb *qpCb);
 int RsDrvCreateCqEvent(struct RsCqContext *cqContext, struct CqAttr *attr);
 int RsDrvCreateCqWithChannel(struct RsCqContext *cqContext, struct CqAttr *attr);

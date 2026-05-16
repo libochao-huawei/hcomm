@@ -60,6 +60,10 @@ struct RaRdmaOps {
         struct AiQpInfo *info, void **qpHandle);
     int (*raTypicalQpCreate)(struct RaRdmaHandle *rdmaHandle, int flag, int qpMode, struct TypicalQp *qpInfo,
         void **qpHandle);
+    int (*raTypicalCqCreate)(struct RaRdmaHandle *rdmaHandle, unsigned int cqDepth, unsigned int *cqn);
+    int (*raTypicalQpCreateWithCq)(struct RaRdmaHandle *rdmaHandle, int flag, int qpMode,
+        unsigned int sendCqn, unsigned int recvCqn, struct ibv_qp_cap *cap, int qpType, int sqSigAll,
+        struct TypicalQp *qpInfo, void **qpHandle);
     int (*raLoopbackQpCreate)(struct RaRdmaHandle *rdevHandle, struct LoopbackQpPair *qpPair, void **qpHandle);
     int (*raQpDestroy)(struct RaQpHandle *handle);
     int (*raTypicalQpModify)(struct RaQpHandle *handle, struct TypicalQp *localQpInfo,
@@ -133,5 +137,9 @@ struct ErrcodeInfo {
     ((err_type) * 100000 + (HCCP_MODULE_ID) * 1000 + (module) * 100 + (module_errcode))  /* Combine a 6-digit ACL error code. */
 
 int RaRdevInitCheck(int mode, struct rdev rdevInfo, char localIp[], unsigned int num, void *rdmaHandle);
+int RaTypicalCqCreate(void *rdevHandle, unsigned int cqDepth, unsigned int *cqn);
+int RaTypicalQpCreateWithCQ(void *rdevHandle, int flag, int qpMode,
+    unsigned int sendCqn, unsigned int recvCqn, struct ibv_qp_cap *cap, int qpType, int sqSigAll,
+    struct TypicalQp *qpInfo, void **qpHandle);
 int RaInetPton(int family, union HccpIpAddr ip, char netAddr[], unsigned int len);
 #endif // RA_CLIENT_HOST_H

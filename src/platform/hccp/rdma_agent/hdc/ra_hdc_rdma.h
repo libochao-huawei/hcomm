@@ -184,6 +184,43 @@ union OpTypicalQpCreateData {
     } rxData;
 };
 
+union OpTypicalCqCreateData {
+    struct {
+        unsigned int phyId;
+        unsigned int rdevIndex;
+        unsigned int cqDepth;
+        unsigned int rsvd;
+    } txData;
+
+    struct {
+        unsigned int cqn;
+        unsigned int rsvd;
+    } rxData;
+};
+
+union OpTypicalQpCreateWithCqData {
+    struct {
+        unsigned int phyId;
+        unsigned int rdevIndex;
+        int qpMode;
+        int flag;
+        int memAlign;
+        unsigned int sendCqn;
+        unsigned int recvCqn;
+        struct ibv_qp_cap cap;
+        int qpType;
+        int sqSigAll;
+        unsigned int rsvd[4];
+    } txData;
+
+    struct {
+        unsigned int qpn;
+        unsigned int gidIdx;
+        unsigned int psn;
+        union ibv_gid gid;
+    } rxData;
+};
+
 union OpQpDestroyData {
     struct {
         unsigned int phyId;
@@ -508,6 +545,10 @@ int RaHdcAiQpCreateWithAttrs(struct RaRdmaHandle *rdmaHandle, struct QpExtAttrs 
     struct AiQpInfo *info, void **qpHandle);
 int RaHdcTypicalQpCreate(struct RaRdmaHandle *rdmaHandle, int flag, int qpMode, struct TypicalQp *qpInfo,
     void **qpHandle);
+int RaHdcTypicalCqCreate(struct RaRdmaHandle *rdmaHandle, unsigned int cqDepth, unsigned int *cqn);
+int RaHdcTypicalQpCreateWithCq(struct RaRdmaHandle *rdmaHandle, int flag, int qpMode,
+    unsigned int sendCqn, unsigned int recvCqn, struct ibv_qp_cap *cap, int qpType, int sqSigAll,
+    struct TypicalQp *qpInfo, void **qpHandle);
 int RaHdcPollCq(struct RaQpHandle *qpHdc, bool isSendCq, unsigned int numEntries, void *wc);
 int RaHdcQpDestroy(struct RaQpHandle *qpHdc);
 int RaHdcTypicalQpModify(struct RaQpHandle *qpHdc, struct TypicalQp *localQpInfo,

@@ -132,6 +132,8 @@ enum OpType {
     RA_RS_CTX_GET_ASYNC_EVENTS = 109,
     RA_RS_TLV_INIT = 110,
     RA_RS_CTX_GET_UB_CONTEXT = 111,
+    RA_RS_TYPICAL_CQ_CREATE = 112,
+    RA_RS_TYPICAL_QP_CREATE_WITH_CQ = 113,
     RA_RS_EXTER_OP_MAX_NUM,
 
     // 上面opcode是对部opcode,下面是内部opcode
@@ -262,6 +264,19 @@ struct RsQpNormWithAttrs {
     int isExt;
     struct QpExtAttrs extAttrs;
     unsigned int aiOpSupport;
+};
+
+struct RsQpNormWithCq {
+    int flag;
+    int qpMode;
+    int isExp;
+    int isExt;
+    int memAlign;
+    unsigned int sendCqn;
+    unsigned int recvCqn;
+    struct ibv_qp_cap cap;
+    int qpType;
+    int sqSigAll;
 };
 
 struct RsQpRespWithAttrs {
