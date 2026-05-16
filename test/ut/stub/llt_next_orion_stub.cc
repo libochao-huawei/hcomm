@@ -1386,11 +1386,15 @@ void SocketManager::BatchCreateSockets(const vector<LinkData> &links)
 {
 }
 
+void SocketManager::BatchCreateSockets(const SocketConfig &socketConfig)
+{
+}
+
 SocketManager::~SocketManager()
 {
 }
 
-Socket *SocketManager::GetConnectedSocket(SocketConfig &socketConfig) const
+Socket *SocketManager::GetConnectedSocket(const SocketConfig &socketConfig) const
 {
     return nullptr;
 }
