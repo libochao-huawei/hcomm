@@ -154,10 +154,10 @@ HcclResult RankConsistencyCheckerV2::CompareCheckFrameV2(
     const CheckFrameV2 &local, const CheckFrameV2 &remote)
 {
     bool isDiff = false;
-    isDiff = CompareEnvV2(local, remote);
-    isDiff = CompareRankTableV2(local, remote);
-    isDiff = CompareSubCommV2(local, remote);
-    isDiff = CompareVersionV2(local, remote);
+    CompareEnvV2(local, remote, isDiff);
+    CompareRankTableV2(local, remote, isDiff);
+    CompareSubCommV2(local, remote, isDiff);
+    CompareVersionV2(local, remote, isDiff);
     return isDiff ? HCCL_E_INTERNAL : HCCL_SUCCESS;
 }
 
@@ -189,10 +189,9 @@ HcclResult RankConsistencyCheckerV2::CalcRawDataCrc(const void *ptr, u64 length,
     return HCCL_SUCCESS;
 }
 
-bool RankConsistencyCheckerV2::CompareEnvV2(const CheckFrameV2 &local, const CheckFrameV2 &remote)
+HcclResult RankConsistencyCheckerV2::CompareEnvV2(const CheckFrameV2 &local, const CheckFrameV2 &remote, bool &isDiff)
 {
-     bool isDiff = false;
-     if (local.crcNum != remote.crcNum) {
+    if (local.crcNum != remote.crcNum) {
         HCCL_ERROR("[CompareEnvV2] env var crcNum mismatch: local[%u], remote[%u].",
             local.crcNum, remote.crcNum);
         RPT_INPUT_ERR(true, "EI0005",
@@ -215,12 +214,11 @@ bool RankConsistencyCheckerV2::CompareEnvV2(const CheckFrameV2 &local, const Che
             }
         }
     }
-    return isDiff;
+    return HCCL_SUCCESS;
 }
 
-bool RankConsistencyCheckerV2::CompareRankTableV2(const CheckFrameV2 &local, const CheckFrameV2 &remote)
+HcclResult RankConsistencyCheckerV2::CompareRankTableV2(const CheckFrameV2 &local, const CheckFrameV2 &remote, bool &isDiff)
 {
-    bool isDiff = false;
     if (local.rankTableCrcNum != remote.rankTableCrcNum) {
         HCCL_ERROR("[CompareRankTableV2] ranktable crcNum mismatch: local[%u], remote[%u].",
             local.rankTableCrcNum, remote.rankTableCrcNum);
@@ -244,12 +242,11 @@ bool RankConsistencyCheckerV2::CompareRankTableV2(const CheckFrameV2 &local, con
             }
         }
     }
-    return isDiff;
+    return HCCL_SUCCESS;
 }
 
-bool RankConsistencyCheckerV2::CompareSubCommV2(const CheckFrameV2 &local, const CheckFrameV2 &remote)
+HcclResult RankConsistencyCheckerV2::CompareSubCommV2(const CheckFrameV2 &local, const CheckFrameV2 &remote, bool &isDiff)
 {
-    bool isDiff = false;
     if (local.subCommCrcNum != remote.subCommCrcNum) {
         HCCL_ERROR("[CompareSubCommV2] sub comm crcNum mismatch: local[%u], remote[%u].",
             local.subCommCrcNum, remote.subCommCrcNum);
@@ -273,12 +270,11 @@ bool RankConsistencyCheckerV2::CompareSubCommV2(const CheckFrameV2 &local, const
             }
         }
     }
-    return isDiff;
+    return HCCL_SUCCESS;
 }
 
-bool RankConsistencyCheckerV2::CompareVersionV2(const CheckFrameV2 &local, const CheckFrameV2 &remote)
+HcclResult RankConsistencyCheckerV2::CompareVersionV2(const CheckFrameV2 &local, const CheckFrameV2 &remote, bool &isDiff)
 {
-    bool isDiff = false;
     std::string localVer(local.version);
     std::string remoteVer(remote.version);
     if (localVer.empty() || remoteVer.empty()) {
@@ -292,6 +288,7 @@ bool RankConsistencyCheckerV2::CompareVersionV2(const CheckFrameV2 &local, const
             localVer.c_str(), remoteVer.c_str());
         isDiff = true;
     }
-    return isDiff;
+    return HCCL_SUCCESS;
 }
 }
+
