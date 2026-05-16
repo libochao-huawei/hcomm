@@ -18,15 +18,8 @@ extern "C" {
 
 /**
  * 用于获取EID中的信息
- * EID是一个128bit的应用层地址
- * EID的格式说明:
- * |127:92|91:   78|77|76:74|73:      69|68:53|52   |51:32|31:0|
- * |无效  |超节点ID|  |无效 |UBEntity ID|无效 |固定1|无效 |CNA |
- * UBEntity ID 定义了本UBEntity的用途
- * CNA用于路由
- * CNA的格式定义如下
- * |31:   12|11   |10:            8|7      |6:   3|2:   0|
- * |固定前缀|固定0|subserverid(0-7)|iodie号|端口号|NPU ID|
+ * EID是一个128bit的应用层地址, EID的编址规则中包含了物理端口ID、iodie ID、UBEntity ID等信息
+ * 本文件中的相关函数为解析EID使用
  */
 
 /**
@@ -50,11 +43,13 @@ int UrmaEidGetPortIdForCard(dcmi_urma_eid_t *eid);
 int UrmaEidGetFeId(dcmi_urma_eid_t *eid);
 int UrmaEidGetPortId(dcmi_urma_eid_t *eid);
 int UrmaEidGetDieId(dcmi_urma_eid_t *eid);
-
 /**
- * 获取低6bit表示的逻辑端口号
+ * 判断是否为portgroup
+ * 判断依据:portID为0x3F时，为portgroup
+ * @param eid URMA eid结构体指针
+ * @return int 1为portgroup，0 不是portgroup
  */
-int UrmaEidGetLowBitPort(dcmi_urma_eid_t *eid);
+int UrmaEidIsPortGroup(dcmi_urma_eid_t *eid);
 
 /**
  * 获取FE ID, FE是UB中的功能实体, 在EID编址规则中，讲FE ID编在了EID中

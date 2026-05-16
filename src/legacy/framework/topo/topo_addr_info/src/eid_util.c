@@ -123,13 +123,6 @@ int GetMaxFeId(dcmi_urma_eid_info_t *eidList, size_t eidCnt)
     return maxFeId;
 }
 
-int UrmaEidGetLowBitPort(dcmi_urma_eid_t *eid)
-{
-    unsigned short lower = eid->raw[DCMI_URMA_EID_SIZE - 1];
-    int port = lower & 0x7F;
-    return port;
-}
-
 /**
  * @brief 判断是否为portgroup
  * 判断依据:portID为0x3F时，为portgroup
