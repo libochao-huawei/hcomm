@@ -321,7 +321,7 @@ void HrtRaSocketCloseOne(RaSocketCloseParam &in)
     HRaSocketBatchClose(&closeInfo, 1);
 }
 
-static void HRaSocketListenStart(struct SocketListenInfoT conn[], u32 num)
+static void HRaSocketListenStart(struct SocketListenInfoT conn[], u32 num, const IpAddress &localIp, HrtNetworkMode netMode)
 {
     CHECK_NULLPTR(conn, "[HRaSocketListenStart] conn is nullptr!");
     HCCL_INFO("[ListenStart][RaSocket] Input params: num=%u", num);
@@ -333,7 +333,7 @@ static void HRaSocketListenStart(struct SocketListenInfoT conn[], u32 num)
         ret = RaSocketListenStart(conn, num);
         if (ret == 0) {
             HCCL_INFO("socket listen start success, ret=%d", ret);
-            break; // 成功跳出
+            break;
         } else if (ret == SOCK_EAGAIN) {
             bool bTimeout = ((std::chrono::steady_clock::now() - startTime) >= timeout);
             if (bTimeout) {
@@ -341,6 +341,22 @@ static void HRaSocketListenStart(struct SocketListenInfoT conn[], u32 num)
                     HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), EnvLinkTimeoutGet(), ret, num));
             }
             SaluSleep(ONE_MILLISECOND_OF_USLEEP);
+        } else if (ret == SOCK_EADDRINUSE) {
+            u32 port = (num > 0) ? conn[0].port : HCCL_INVALID_PORT;
+            std::string errMsg = "The IP address " + std::string(localIp.GetReadableIP()) +
+                                 " and port " + std::to_string(port) + " have already been bound.";
+            if (netMode == HrtNetworkMode::PEER) {
+                RPT_INPUT_ERR(true, "EI0019", std::vector<std::string>({"reason"}),
+                    std::vector<std::string>({errMsg}));
+            } else {
+                RPT_INPUT_ERR(true, "EI0020", std::vector<std::string>({"reason"}),
+                    std::vector<std::string>({errMsg}));
+            }
+            MACRO_THROW(NetworkApiException, StringFormat("[%s]ra socket listen could not start, due to the port[%u] has already been bound. please try"
+                        " another port or check the port status", __func__, port));
+        } else if (ret == SOCK_EADDRNOTAVAIL){
+            MACRO_THROW(NetworkApiException, StringFormat("[%s] Socket listen start fail: "
+                "IP address is not available, please check the IP address configuration, return[%d]", __func__, ret));
         } else {
             // 非ra限速场景错误，不轮询，直接退出
             MACRO_THROW(NetworkApiException, StringFormat("[ListenStart][RaSocket]errNo[0x%016llx] ra socket listen start fail, return[%d], params: num[%u]", 
@@ -349,7 +365,7 @@ static void HRaSocketListenStart(struct SocketListenInfoT conn[], u32 num)
     }
 }
 
-static bool RaSocketTryListenStart(struct SocketListenInfoT conn[], u32 num)
+static bool RaSocketTryListenStart(struct SocketListenInfoT conn[], u32 num, const IpAddress &localIp, HrtNetworkMode netMode)
 {
     CHECK_NULLPTR(conn, "[RaSocketTryListenStart] conn is nullptr!");
     HCCL_INFO("[TryListenStart][RaSocket] Input params: num=%u", num);
@@ -359,9 +375,19 @@ static bool RaSocketTryListenStart(struct SocketListenInfoT conn[], u32 num)
     } else if (ret == SOCK_EAGAIN) {
         HCCL_INFO("[%s] listen eagain", __func__);
         return true;
-    } else if (ret == SOCK_EADDRINUSE){
+    } else if (ret == SOCK_EADDRINUSE) {
+        u32 port = (num > 0) ? conn[0].port : HCCL_INVALID_PORT;
+        std::string errMsg = "The IP address " + std::string(localIp.Describe().c_str()) +
+                             " and port " + std::to_string(port) + " have already been bound.";
+        if (netMode == HrtNetworkMode::PEER) {
+            RPT_INPUT_ERR(true, "EI0019", std::vector<std::string>({"reason"}),
+                std::vector<std::string>({errMsg}));
+        } else {
+            RPT_INPUT_ERR(true, "EI0020", std::vector<std::string>({"reason"}),
+                std::vector<std::string>({errMsg}));
+        }
         HCCL_INFO("[%s]ra socket listen could not start, due to the port[%u] has already been bound. please try"
-                    " another port or check the port status", __func__, (num > 0 ? conn[0].port : HCCL_INVALID_PORT));
+                    " another port or check the port status", __func__, port);
         return false;
     } else if (ret == SOCK_EADDRNOTAVAIL){
         MACRO_THROW(NetworkApiException, StringFormat("[%s] Socket listen start fail: " 
@@ -400,22 +426,22 @@ static void HRaSocketListenStop(struct SocketListenInfoT conn[], u32 num)
     }
 }
 
-void HrtRaSocketListenOneStart(RaSocketListenParam &in)
+void HrtRaSocketListenOneStart(RaSocketListenParam &in, HrtNetworkMode netMode)
 {
     HCCL_INFO("[ListenStart][RaSocket] Input params: socketHandle: %p, port: %u", in.socketHandle, in.port);
     struct SocketListenInfoT listenInfo {};
     listenInfo.socketHandle = in.socketHandle;
     listenInfo.port = in.port;
-    HRaSocketListenStart(&listenInfo, 1);
+    HRaSocketListenStart(&listenInfo, 1, netMode);
 }
 
-bool HrtRaSocketTryListenOneStart(RaSocketListenParam &in)
+bool HrtRaSocketTryListenOneStart(RaSocketListenParam &in, HrtNetworkMode netMode)
 {
     HCCL_INFO("[TryListenOneStart][RaSocket] Input params: socketHandle: %p, port: %u", in.socketHandle, in.port);
     struct SocketListenInfoT listenInfo {};
     listenInfo.socketHandle = in.socketHandle;
     listenInfo.port = in.port;
-    bool ret = RaSocketTryListenStart(&listenInfo, 1);
+    bool ret = RaSocketTryListenStart(&listenInfo, 1, in.localIp, netMode);
     if (ret && in.port == AUTO_LISTEN_PORT) {
         in.port = listenInfo.port;
     }
