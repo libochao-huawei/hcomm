@@ -54,10 +54,10 @@ public:
     bool GetInconsistentCheckFirstDone();
 private:
     HcclResult CalcRawDataCrc(const void *ptr, u64 length, u32 &crc);
-    bool CompareEnvV2(const CheckFrameV2 &local, const CheckFrameV2 &remote);
-    bool CompareRankTableV2(const CheckFrameV2 &local, const CheckFrameV2 &remote);
-    bool CompareSubCommV2(const CheckFrameV2 &local, const CheckFrameV2 &remote);
-    bool CompareVersionV2(const CheckFrameV2 &local, const CheckFrameV2 &remote);
+    HcclResult CompareEnvV2(const CheckFrameV2 &local, const CheckFrameV2 &remote, bool &isDiff);
+    HcclResult CompareRankTableV2(const CheckFrameV2 &local, const CheckFrameV2 &remote, bool &isDiff);
+    HcclResult CompareSubCommV2(const CheckFrameV2 &local, const CheckFrameV2 &remote, bool &isDiff);
+    HcclResult CompareVersionV2(const CheckFrameV2 &local, const CheckFrameV2 &remote, bool &isDiff);
     
     std::mutex mutex_;
     // cann 版本号

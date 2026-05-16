@@ -33,7 +33,6 @@ protected:
     }
     virtual void SetUp()
     {
-        checker_ = RankConsistencyCheckerV2::GetInstance();
         std::cout << "A Test SetUp" << std::endl;
     }
     virtual void TearDown()
@@ -42,39 +41,40 @@ protected:
     }
 
     // 构造最小RankTable_t用于RecordRankTableCrcV2
-    void FillMinRankTable(RankTable_t &rt) {
-        rt.deviceNum = 2;
-        rt.serverNum = 1;
-        rt.superPodNum = 1;
-        rt.nicDeploy = 0;
-        rt.rankNum = 2;
-        rt.version = "1.0";
-        RankInfo_t rank{};
-        rank.rankId = 0;
-        rank.localRank = 0;
-        rank.serverId = "s0";
-        rank.serverIdx = 0;
-        rank.superDeviceId = 0;
-        rank.superPodId = "p0";
-        rank.superPodIdx = 0;
-        rank.hostPort = 10000;
-        rank.nodeId = 0;
-        rank.itemId = 0;
-        rank.bindDeviceId = 0;
-        rt.rankList.push_back(rank);
-        rank.rankId = 1;
-        rank.localRank = 1;
-        rt.rankList.push_back(rank);
-    }
+    // void FillMinRankTable(RankTable_t &rt) {
+    //     rt.deviceNum = 2;
+    //     rt.serverNum = 1;
+    //     rt.superPodNum = 1;
+    //     rt.nicDeploy = 0;
+    //     rt.rankNum = 2;
+    //     rt.version = "1.0";
+    //     RankInfo_t rank{};
+    //     rank.rankId = 0;
+    //     rank.localRank = 0;
+    //     rank.serverId = "s0";
+    //     rank.serverIdx = 0;
+    //     rank.superDeviceId = 0;
+    //     rank.superPodId = "p0";
+    //     rank.superPodIdx = 0;
+    //     rank.hostPort = 10000;
+    //     rank.nodeId = 0;
+    //     rank.itemId = 0;
+    //     rank.bindDeviceId = 0;
+    //     rt.rankList.push_back(rank);
+    //     rank.rankId = 1;
+    //     rank.localRank = 1;
+    //     rt.rankList.push_back(rank);
+    // }
 
-    RankConsistencyCheckerV2 checker_;
+    RankConsistencyCheckerV2 &checker_ = RankConsistencyCheckerV2::GetInstance();
 };
 
 // 通用：Record*V2 → GenerateCheckFrameV2 → CompareCheckFrameV2全流程匹配
 TEST_F(RankConsistentV2Test, Ut_FullPipeline_AllMatch_Expect_Success)
 {
     // 1. RecordEnvVarCrcV2
-    HcclResult ret = checker_.RecordEnvVarCrcV2();
+    u64 buff_size = 8;
+    HcclResult ret = checker_.RecordEnvVarCrcV2(buff_size);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(checker_.envVarCrcsV2_.size(), 1u);
     EXPECT_EQ(checker_.envVarCrcsV2_[0].name, "HCCL_BUFFSIZE");
@@ -96,7 +96,6 @@ TEST_F(RankConsistentV2Test, Ut_FullPipeline_AllMatch_Expect_Success)
     ASSERT_EQ(checker_.subCommParaCrcsV2_.size(), 4u);
 
     // 4. GenerateCheckFrameV2
-    checker_->cannVerInfoRecordFlag_ = true;
     strncpy_s(checker_.cannVersion_, MAX_CANN_VERSION_LEN + 1, "8.0.RC1", strlen("8.0.RC1"));
     CheckFrameV2 localFrame;
     ret = checker_.GenerateCheckFrameV2(localFrame);
@@ -107,7 +106,7 @@ TEST_F(RankConsistentV2Test, Ut_FullPipeline_AllMatch_Expect_Success)
     EXPECT_EQ(std::string(localFrame.version), "8.0.RC1");
 
     // 5. GetCheckFrameV2Length
-    EXPECT_EQ(checker_.GetCheckFrameV2Length(), sizeof(CheckFrameV2));
+    EXPECT_EQ(checker_.GetCheckFrameLengthV2(), sizeof(CheckFrameV2));
 
     // 6. CompareCheckFrameV2匹配
     CheckFrameV2 remoteFrame = localFrame;
@@ -118,7 +117,8 @@ TEST_F(RankConsistentV2Test, Ut_FullPipeline_AllMatch_Expect_Success)
 // 异常：环境变量CRC不一致
 TEST_F(RankConsistentV2Test, Ut_CompareCheckFrameV2_EnvVarMismatch_Expect_INTERNAL)
 {
-    checker_.RecordEnvVarCrcV2();
+    u64 buff_size = 8;
+    checker_.RecordEnvVarCrcV2(buff_size);
     CheckFrameV2 localFrame;
     checker_.GenerateCheckFrameV2(localFrame);
     CheckFrameV2 remoteFrame = localFrame;
@@ -166,7 +166,6 @@ TEST_F(RankConsistentV2Test, Ut_CompareCheckFrameV2_SubCommMismatch_Expect_INTER
 // 异常：CANN版本不一致
 TEST_F(RankConsistentV2Test, Ut_CompareCheckFrameV2_VersionMismatch_Expect_INTERNAL)
 {
-    checker_.SetCheckCannVersionSwitch(true);
     strncpy_s(checker_.cannVersion_, MAX_CANN_VERSION_LEN + 1, "8.0.RC1", strlen("8.0.RC1"));
 
     CheckFrameV2 localFrame;
