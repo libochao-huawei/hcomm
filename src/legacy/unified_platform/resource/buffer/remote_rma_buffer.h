@@ -47,11 +47,6 @@ public:
         return memType;
     }
 
-    inline const std::string GetMemTag() const
-    {
-        return memTag;
-    }
-
     u64 GetMemHandle() const
     {
         return memHandle;
@@ -64,7 +59,6 @@ protected:
     u64         size{0};
     RmaType     rmaType;
     HcclMemType memType;
-    std::string memTag;
     u64         memHandle{0};
 };
 
@@ -73,8 +67,6 @@ public:
     RemoteIpcRmaBuffer();
 
     explicit RemoteIpcRmaBuffer(const Serializable &rmtDto);
-    
-    RemoteIpcRmaBuffer(const Serializable &rmtDto, const std::string tag);
 
     ~RemoteIpcRmaBuffer() override;
 

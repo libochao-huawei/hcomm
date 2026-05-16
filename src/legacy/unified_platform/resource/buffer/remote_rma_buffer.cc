@@ -27,10 +27,9 @@ RemoteIpcRmaBuffer::RemoteIpcRmaBuffer(const Serializable &rmtDto) : RemoteRmaBu
     ipcAddr         = dto.addr;
     ipcOffset       = dto.offset;
     size            = dto.size;
-    memTag          = dto.memTag;
     (void)memcpy_s(ipcName, RTS_IPC_MEM_NAME_LEN, dto.name, RTS_IPC_MEM_NAME_LEN);
-    HCCL_INFO("[RemoteIpcRmaBuffer][RemoteIpcRmaBuffer]ipcAddr[%llu] ipcOffset[%llu] ipcName[%s] memTag[%s]",
-              ipcAddr, ipcOffset, ipcName, memTag.c_str());
+    HCCL_INFO("[RemoteIpcRmaBuffer][RemoteIpcRmaBuffer]ipcAddr[%llu] ipcOffset[%llu] ipcName[%s]",
+              ipcAddr, ipcOffset, ipcName);
     myPid = HrtDeviceGetBareTgid();
     if (myPid == remotePid) {
         HCCL_INFO("RemoteIpcRmaBuffer: myPid is equal to remotePid, do not need to open memory");
@@ -51,10 +50,9 @@ RemoteIpcRmaBuffer::RemoteIpcRmaBuffer(const Serializable &rmtDto, const string 
     ipcAddr         = dto.addr;
     ipcOffset       = dto.offset;
     size            = dto.size;
-    memTag          = dto.memTag;
     (void)memcpy_s(ipcName, RTS_IPC_MEM_NAME_LEN, dto.name, RTS_IPC_MEM_NAME_LEN);
-    HCCL_INFO("[RemoteIpcRmaBuffer][RemoteIpcRmaBuffer] tag[%s] ipcAddr[%llu] ipcOffset[%llu] ipcName[%s] memTag[%s]", tag.c_str(),
-              ipcAddr, ipcOffset, ipcName, memTag.c_str());
+    HCCL_INFO("[RemoteIpcRmaBuffer][RemoteIpcRmaBuffer] tag[%s] ipcAddr[%llu] ipcOffset[%llu] ipcName[%s] ", tag.c_str(),
+              ipcAddr, ipcOffset, ipcName);
     ipcPtr   = HrtIpcOpenMemory(ipcName);
     addr     = reinterpret_cast<uintptr_t>(ipcPtr) + ipcOffset;
     isOpened = true;
@@ -97,8 +95,7 @@ RemoteRdmaRmaBuffer::RemoteRdmaRmaBuffer(RdmaHandle rdmaHandle, const Serializab
     addr = dto.addr;
     size = dto.size;
     rkey = dto.rkey;
-    memTag = dto.memTag;
-    HCCL_INFO("[RemoteRdmaRmaBuffer]addr = 0x%llx; size = 0x%llx; memTag = %s", addr, size, memTag.c_str());
+    HCCL_INFO("[RemoteRdmaRmaBuffer]addr = 0x%llx; size = 0x%llx; ", addr, size);
 }
 
 RemoteRdmaRmaBuffer::~RemoteRdmaRmaBuffer()
@@ -133,7 +130,6 @@ RemoteUbRmaBuffer::RemoteUbRmaBuffer(RdmaHandle rdmaHandle1, const Serializable 
     addr       = dto.addr;
     size       = dto.size;
     memType    = dto.memType;
-    memTag     = dto.memTag;
     tokenId    = dto.tokenId;
     tokenValue = dto.tokenValue;
     keySize    = dto.keySize;

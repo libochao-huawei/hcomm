@@ -29,6 +29,7 @@ RoceRegedMemMgr::RoceRegedMemMgr()
 
 HcclResult RoceRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void **memHandle)
 {
+    (void)memTag;
     HCCL_INFO("[%s] Begin", __FUNCTION__);
     CHK_PTR_NULL(this->localRdmaRmaBufferMgr_);
     CHK_PTR_NULL(memHandle);
@@ -44,7 +45,7 @@ HcclResult RoceRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, voi
         // 构造LocalRdmaRmaBuffer
         std::shared_ptr<Hccl::Buffer> localBufferPtr = nullptr;
         EXECEPTION_CATCH((localBufferPtr = std::make_shared<Hccl::Buffer>(reinterpret_cast<uintptr_t>(mem.addr),
-            mem.size, static_cast<HcclMemType>(mem.type), memTag)),
+            mem.size, static_cast<HcclMemType>(mem.type))),
             return HCCL_E_PTR);
 
         EXECEPTION_CATCH((localRdmaRmaBuffer = std::make_shared<Hccl::LocalRdmaRmaBuffer>(localBufferPtr, this->rdmaHandle_)),

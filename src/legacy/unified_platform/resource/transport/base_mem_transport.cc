@@ -14,18 +14,51 @@
 #include "coll_operator_check.h"
 
 namespace Hccl {
-BaseMemTransport::BaseMemTransport(CommonLocRes &commonLocRes, Attribution &attr, const LinkData &linkData,
-                                   const Socket &socket, TransportType type)
-    : commonLocRes(commonLocRes), attr(attr), linkData(linkData), socket(const_cast<Socket *>(&socket)),
+BaseMemTransport::BaseMemTransport(
+    CommonLocRes &commonLocRes, Attribution &attr, const LinkData &linkData, const Socket &socket, TransportType type)
+    : commonLocRes(commonLocRes),
+      attr(attr),
+      linkData(linkData),
+      socket(const_cast<Socket *>(&socket)),
+      transportType(type)
+{
+    CheckCommonLocRes(commonLocRes);
+}
+BaseMemTransport::BaseMemTransport(HcommChannelDesc channelDesc, CommonLocRes &commonLocRes, Attribution &attr,
+    const LinkData &linkData, const Socket &socket, TransportType type)
+    : channelDesc_(channelDesc),
+      commonLocRes(commonLocRes),
+      attr(attr),
+      linkData(linkData),
+      socket(const_cast<Socket *>(&socket)),
       transportType(type)
 {
     CheckCommonLocRes(commonLocRes);
 }
 
 BaseMemTransport::BaseMemTransport(CommonLocRes &commonLocRes, Attribution &attr, const LinkData &linkData,
-                                   const Socket &socket, TransportType type, std::function<void(u32 streamId, u32 taskId, TaskParam taskParam)> callback)
-    : commonLocRes(commonLocRes), attr(attr), linkData(linkData), socket(const_cast<Socket *>(&socket)),
-      transportType(type), callback(callback)
+    const Socket &socket, TransportType type,
+    std::function<void(u32 streamId, u32 taskId, TaskParam taskParam)> callback)
+    : commonLocRes(commonLocRes),
+      attr(attr),
+      linkData(linkData),
+      socket(const_cast<Socket *>(&socket)),
+      transportType(type),
+      callback(callback)
+{
+    CheckCommonLocRes(commonLocRes);
+}
+
+BaseMemTransport::BaseMemTransport(HcommChannelDesc channelDesc, CommonLocRes &commonLocRes, Attribution &attr,
+    const LinkData &linkData, const Socket &socket, TransportType type,
+    std::function<void(u32 streamId, u32 taskId, TaskParam taskParam)> callback)
+    : channelDesc_(channelDesc),
+      commonLocRes(commonLocRes),
+      attr(attr),
+      linkData(linkData),
+      socket(const_cast<Socket *>(&socket)),
+      transportType(type),
+      callback(callback)
 {
     CheckCommonLocRes(commonLocRes);
 }
@@ -89,8 +122,8 @@ void BaseMemTransport::ConnVecPack(BinaryStream &binaryStream)
 
 void BaseMemTransport::HandshakeMsgPack(BinaryStream &binaryStream)
 {
-    HCCL_INFO("[BaseMemTransport::%s] start pack %s handshakeMsg, size=%u, accelerator=%s", 
-        __func__, transportType.Describe().c_str(), attr.handshakeMsg.size(), attr.opAcceState.Describe().c_str());
+    HCCL_INFO("[BaseMemTransport::%s] start pack %s handshakeMsg, size=%u, accelerator=%s", __func__,
+        transportType.Describe().c_str(), attr.handshakeMsg.size(), attr.opAcceState.Describe().c_str());
     binaryStream << static_cast<u32>(attr.opAcceState);
     binaryStream << attr.handshakeMsg;
 }
@@ -100,13 +133,13 @@ void BaseMemTransport::HandshakeMsgUnpack(BinaryStream &binaryStream)
     u32 rmtAccelerator{0};
     binaryStream >> rmtAccelerator;
     rmtOpAcceState = static_cast<AcceleratorState::Value>(rmtAccelerator);
-    HCCL_INFO("[BaseMemTransport::%s] locOpAccelerator[%s], rmtOpAccelerator[%s]", 
-        __func__, attr.opAcceState.Describe().c_str(), rmtOpAcceState.Describe().c_str());
+    HCCL_INFO("[BaseMemTransport::%s] locOpAccelerator[%s], rmtOpAccelerator[%s]", __func__,
+        attr.opAcceState.Describe().c_str(), rmtOpAcceState.Describe().c_str());
     if (rmtOpAcceState != attr.opAcceState) {
         THROW<InvalidParamsException>(
             StringFormat("[BaseMemTransport::HandshakeMsgUnpack] Accelerator information check fail. "
                          "locOpAccelerator[%s], rmtOpAccelerator[%s]",
-                         attr.opAcceState.Describe().c_str(), rmtOpAcceState.Describe().c_str()));
+                attr.opAcceState.Describe().c_str(), rmtOpAcceState.Describe().c_str()));
     }
 
     rmtHandshakeMsg.clear();
@@ -114,10 +147,10 @@ void BaseMemTransport::HandshakeMsgUnpack(BinaryStream &binaryStream)
 
     if (attr.handshakeMsg.size() != rmtHandshakeMsg.size()) {
         MACRO_THROW(InvalidParamsException, StringFormat("handshakeMsg size=%u is not equal to rmt=%u",
-                                                         attr.handshakeMsg.size(), rmtHandshakeMsg.size()));
+                                                attr.handshakeMsg.size(), rmtHandshakeMsg.size()));
     }
 
-    //单边通信情况下，handshakeMsg的size为0
+    // 单边通信情况下，handshakeMsg的size为0
     if (attr.handshakeMsg.size() == 0) {
         return;
     }
@@ -129,7 +162,7 @@ void BaseMemTransport::HandshakeMsgUnpack(BinaryStream &binaryStream)
 string BaseMemTransport::GetLinkDescInfo()
 {
     return StringFormat("rank[%u], rmtRank[%u] linkData=%s, type=%s", linkData.GetLocalRankId(),
-                        linkData.GetRemoteRankId(), linkData.Describe().c_str(), transportType.Describe().c_str());
+        linkData.GetRemoteRankId(), linkData.Describe().c_str(), transportType.Describe().c_str());
 }
 
 string BaseMemTransport::DescribeSocket() const
@@ -185,6 +218,33 @@ void BaseMemTransport::CheckCommonLocRes(CommonLocRes &res)
     CheckLocNotify(res);
     CheckLocBuffer(res);
     CheckLocConn(res);
+}
+
+HcclResult BaseMemTransport::FillTagVec(HcommMemHandle *memHandles, uint32_t bufferNum,
+    LocalBufferVec &bufferVec, std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &tagVec)
+{
+    if (bufferNum > MAX_BUFFER_NUM) {
+        HCCL_ERROR("[BaseMemTransport][FillTagVec] bufferNum[%u] exceeds limit[%u]", bufferNum, MAX_BUFFER_NUM);
+        return HCCL_E_PARA;
+    }
+    tagVec.reserve(bufferNum);
+    for (uint32_t i = 0; i < bufferNum; ++i) {
+        auto locMemInfo = reinterpret_cast<CommMemInfo *>(memHandles[i]);
+        CHK_PTR_NULL(locMemInfo);
+        auto localIpcRmaBuffer = reinterpret_cast<Hccl::LocalIpcRmaBuffer *>(locMemInfo->bufferHandle);
+        CHK_PTR_NULL(localIpcRmaBuffer);
+        bufferVec.push_back(localIpcRmaBuffer);
+        std::array<char, HCCL_RES_TAG_MAX_LEN> memTag{};
+        std::string tag = locMemInfo->memTag;
+        if (UNLIKELY(tag.size() >= HCCL_RES_TAG_MAX_LEN)) {
+            HCCL_ERROR("[BaseMemTransport][FillTagVec] tagSize exceeds limit[%u]", HCCL_RES_TAG_MAX_LEN);
+            return HCCL_E_PARA;
+        }
+        CHK_SAFETY_FUNC_RET(memcpy_s(memTag.data(), memTag.size(), tag.c_str(), tag.size()));
+        HCCL_INFO("[BaseMemTransport][FillTagVec] memHandleNum[%u] memTag[%s]", i, memTag.data());
+        tagVec.push_back(memTag);
+    }
+    return HCCL_SUCCESS;
 }
 
 } // namespace Hccl

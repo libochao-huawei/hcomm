@@ -25,6 +25,7 @@ UbMemRegedMemMgr::UbMemRegedMemMgr()
     
 HcclResult UbMemRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void **memHandle)
 {
+    (void)memTag;
     HCCL_INFO("[%s] Begin", __func__);
     CHK_PTR_NULL(localIpcRmaBufferMgr_);
     CHK_PTR_NULL(memHandle);
@@ -43,7 +44,7 @@ HcclResult UbMemRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, vo
     } else {
         std::shared_ptr<Hccl::Buffer> localBufferPtr = nullptr;
         EXECEPTION_CATCH((localBufferPtr = std::make_shared<Hccl::Buffer>(reinterpret_cast<uintptr_t>(mem.addr), mem.size, 
-            static_cast<HcclMemType>(mem.type), memTag)), return HCCL_E_PTR);
+            static_cast<HcclMemType>(mem.type))), return HCCL_E_PTR);
         EXECEPTION_CATCH((localIpcRmaBuffer = std::make_shared<Hccl::LocalIpcRmaBuffer>(localBufferPtr)), return HCCL_E_PTR);
     }
 

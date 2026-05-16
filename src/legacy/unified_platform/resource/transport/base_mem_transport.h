@@ -30,31 +30,31 @@
 namespace Hccl {
 
 struct RmaBufferSlice {
-    u64             addr;
-    u64             size;
+    u64 addr;
+    u64 size;
     LocalRmaBuffer *buf;
-    std::string     Describe() const
+    std::string Describe() const
     {
         if (buf == nullptr) {
             return StringFormat("RmaBufferSlice[addr=0x%llx, size=0x%llx, buf is null]", addr, size);
         } else {
-            return StringFormat("RmaBufferSlice[addr=0x%llx, size=0x%llx, buf=%s]", addr, size,
-                                buf->Describe().c_str());
+            return StringFormat(
+                "RmaBufferSlice[addr=0x%llx, size=0x%llx, buf=%s]", addr, size, buf->Describe().c_str());
         }
     }
 };
 
 struct RmtRmaBufferSlice {
-    u64              addr;
-    u64              size;
+    u64 addr;
+    u64 size;
     RemoteRmaBuffer *buf;
-    std::string      Describe() const
+    std::string Describe() const
     {
         if (buf == nullptr) {
             return StringFormat("RmtRmaBufferSlice=[addr=0x%llx, size=0x%llx, buf is null]", addr, size);
         } else {
-            return StringFormat("RmtRmaBufferSlice=[addr=0x%llx, size=0x%llx, buf=%s]", addr, size,
-                                buf->Describe().c_str());
+            return StringFormat(
+                "RmtRmaBufferSlice=[addr=0x%llx, size=0x%llx, buf=%s]", addr, size, buf->Describe().c_str());
         }
     }
 };
@@ -63,46 +63,49 @@ class BaseMemTransport {
 public:
     struct CommonLocRes {
         std::vector<BaseLocalNotify *> notifyVec;
-        std::vector<LocalRmaBuffer *>  bufferVec;
-        std::vector<RmaConnection *>   connVec;
-        string                         Describe() const
+        std::vector<LocalRmaBuffer *> bufferVec;
+        std::vector<RmaConnection *> connVec;
+        string Describe() const
         {
             string msg = StringFormat("MemTransportCommonLocRes=[notifyNum=%zu, bufferNum=%zu, connNum=%zu]",
-                                      notifyVec.size(), bufferVec.size(), connVec.size());
+                notifyVec.size(), bufferVec.size(), connVec.size());
             return msg;
         }
     };
 
     struct LocCntNotifyRes {
         vector<LocalCntNotify *> vec{};
-        vector<char>             desc{}; // 将 topicId + index 映射到 index的关系交换对端
+        vector<char> desc{}; // 将 topicId + index 映射到 index的关系交换对端
 
         std::string Describe() const
         {
-            string msg = StringFormat("LocCntNotifyRes[cntNotifyNum=%zu], desc=%s", 
-                                      vec.size(), Bytes2hex(desc.data(), desc.size()).c_str());
+            string msg = StringFormat(
+                "LocCntNotifyRes[cntNotifyNum=%zu], desc=%s", vec.size(), Bytes2hex(desc.data(), desc.size()).c_str());
             return msg;
         }
     };
 
     struct Attribution {
-        OpMode       opMode;
-        u32          devicePhyId{0};
+        OpMode opMode;
+        u32 devicePhyId{0};
         vector<char> handshakeMsg{};
         AcceleratorState opAcceState{AcceleratorState::AICPU_TS};
-        string       Describe() const
+        string Describe() const
 
         {
             return StringFormat("MemTransportAttribution[opMode=%s, devicePhyId=%u, handleshakeMsg=%s]",
-                                opMode.Describe().c_str(), devicePhyId,
-                                Bytes2hex(handshakeMsg.data(), handshakeMsg.size()).c_str());
+                opMode.Describe().c_str(), devicePhyId, Bytes2hex(handshakeMsg.data(), handshakeMsg.size()).c_str());
         }
     };
     BaseMemTransport(CommonLocRes &commonLocRes, Attribution &attr, const LinkData &linkData, const Socket &socket,
-                     TransportType type);
-
+        TransportType type);
+    BaseMemTransport(HcommChannelDesc channelDesc_, CommonLocRes &commonLocRes, Attribution &attr,
+        const LinkData &linkData, const Socket &socket, TransportType type);
     BaseMemTransport(CommonLocRes &commonLocRes, Attribution &attr, const LinkData &linkData, const Socket &socket,
-                     TransportType type, std::function<void(u32 streamId, u32 taskId, TaskParam taskParam)> callback);
+        TransportType type, std::function<void(u32 streamId, u32 taskId, TaskParam taskParam)> callback);
+    BaseMemTransport(HcommChannelDesc channelDesc_, CommonLocRes &commonLocRes, Attribution &attr,
+        const LinkData &linkData, const Socket &socket, TransportType type,
+        std::function<void(u32 streamId, u32 taskId, TaskParam taskParam)> callback);
 
     virtual ~BaseMemTransport() = default;
 
@@ -133,8 +136,8 @@ public:
     virtual RemoteRmaBuffer *GetRmtRmaBuffer(u32 index)
     {
         if (index >= rmtRmaBufferVec.size()) {
-            MACRO_THROW(InvalidParamsException,
-                        StringFormat("Get remote rmaBuffer fail, index[%u] is not in range.", index));
+            MACRO_THROW(
+                InvalidParamsException, StringFormat("Get remote rmaBuffer fail, index[%u] is not in range.", index));
         }
         return rmtRmaBufferVec[index];
     }
@@ -165,7 +168,7 @@ public:
     }
 
     virtual void ReadReduce(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice, const ReduceIn &reduceIn,
-                            const Stream &stream)
+        const Stream &stream)
     {
         MACRO_THROW(NotSupportException, StringFormat("not supported."));
     }
@@ -176,19 +179,19 @@ public:
     }
 
     virtual void WriteReduce(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice,
-                             const ReduceIn &reduceIn, const Stream &stream)
+        const ReduceIn &reduceIn, const Stream &stream)
     {
         MACRO_THROW(NotSupportException, StringFormat("not supported."));
     }
 
     virtual void WriteWithNotify(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice,
-                                 const WithNotifyIn &withNotify, const Stream &stream)
+        const WithNotifyIn &withNotify, const Stream &stream)
     {
         MACRO_THROW(NotSupportException, StringFormat("not supported."));
     }
 
     virtual void WriteReduceWithNotify(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice,
-                                       const ReduceIn &reduceIn, const WithNotifyIn &withNotify, const Stream &stream)
+        const ReduceIn &reduceIn, const WithNotifyIn &withNotify, const Stream &stream)
     {
         MACRO_THROW(NotSupportException, StringFormat("not supported."));
     }
@@ -202,7 +205,7 @@ public:
     {
         return attr.opAcceState;
     }
- 
+
     void SetLocalOpAcceState(const AcceleratorState &opAcceState)
     {
         attr.opAcceState = opAcceState;
@@ -215,11 +218,15 @@ public:
 
     string GetLinkDescInfo();
     string DescribeSocket() const;
+    HcclResult FillTagVec(HcommMemHandle *memHandles, uint32_t bufferNum,
+        LocalBufferVec &bufferVec, std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &tagVec);
+
 protected:
-    CommonLocRes  commonLocRes{};
-    Attribution   attr;
-    LinkData      linkData;
-    Socket       *socket{};
+    CommonLocRes commonLocRes{};
+    HcommChannelDesc channelDesc_;
+    Attribution attr;
+    LinkData linkData;
+    Socket *socket{};
     TransportType transportType;
     std::function<void(u32 streamId, u32 taskId, const TaskParam &taskParam)> callback;
 

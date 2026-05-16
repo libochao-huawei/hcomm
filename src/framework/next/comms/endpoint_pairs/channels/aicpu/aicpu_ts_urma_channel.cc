@@ -335,7 +335,7 @@ HcclResult AicpuTsUrmaChannel::UpdateMemInfo(HcommMemHandle *memHandles, uint32_
     CHK_RET(Makebufs(memHandles, memHandleNum, bufsTemp));
     CHK_RET(BuildBuffer(bufsTemp));
     bufs_.insert(bufs_.end(), bufsTemp.begin(), bufsTemp.end());
-    return memTransport_->UpdateMemInfo(bufferVecTemp_);
+    return memTransport_->UpdateMemInfo(memHandles, memHandleNum);
 }
 
 // 返回当前 channel 类型，供上层区分不同 channel 的能力和行为

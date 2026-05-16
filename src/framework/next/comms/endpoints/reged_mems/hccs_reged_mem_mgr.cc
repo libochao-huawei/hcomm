@@ -36,6 +36,7 @@ HccsRegedMemMgr::~HccsRegedMemMgr()
 
 HcclResult HccsRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void **memHandle)
 {
+    (void)memTag;    
     HCCL_INFO("[%s] Begin", __FUNCTION__);
     CHK_PTR_NULL(memHandle);
     CHK_PTR_NULL(mem.addr);
