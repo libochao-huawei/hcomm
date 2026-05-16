@@ -211,18 +211,18 @@ void ProfilingHandler::CallAddtionInfo(HCCLReportData &hcclReportData, void *dat
     HCCL_INFO("[ProfilingHandler]ReportHcclTaskDetails end.");
 }
 
-void ProfilingHandler::GetHCCLReportData(const TaskInfo &taskInfo, HCCLReportData &hcclReportData) const
+void ProfilingHandler::GetProfCommonInfo(const TaskInfo &taskInfo, HCCLReportData &hcclReportData) const
 {
-    HCCL_INFO("[ProfilingHandler]GetHCCLReportData start.");
-    hcclReportData.ts = taskInfo.taskParam_.endTime;//该处时间需要保证在ReportHcclTaskApi内的begin和end时间之间。目前在end之外
-    const std::string profName(GetProfTaskOpNameV2(taskInfo.taskParam_.taskType));
+    hcclReportData.ts = taskInfo.taskParam_.endTime;
+    const auto &profName = GetProfTaskOpNameV2(taskInfo.taskParam_.taskType);
     hcclReportData.profInfo.itemId = GetProfHashId(profName.c_str(), profName.length());
-    std::string cclTag             = taskInfo.dfxOpInfo_->tag_;
+    const auto &cclTag = taskInfo.dfxOpInfo_->tag_;
     hcclReportData.profInfo.cclTag = GetProfHashId(cclTag.c_str(), cclTag.length());
-    uint64_t groupName = GetProfHashId(taskInfo.dfxOpInfo_->op_.opTag.c_str(), taskInfo.dfxOpInfo_->op_.opTag.length());
+    const auto &opTag = taskInfo.dfxOpInfo_->op_.opTag;
+    uint64_t groupName = GetProfHashId(opTag.c_str(), opTag.length());
     if (taskInfo.dfxOpInfo_->comm_ == nullptr) {
         HCCL_ERROR("[ProfilingHandler]taskInfo.dfxOpInfo_->comm_ is nullptr");
-        return ;
+        return;
     }
     if (taskInfo.dfxOpInfo_->isIndop_ == true) {
         hcclReportData.profInfo.groupName = groupName;
@@ -231,10 +231,10 @@ void ProfilingHandler::GetHCCLReportData(const TaskInfo &taskInfo, HCCLReportDat
         CommunicatorImpl *commImp = static_cast<CommunicatorImpl *>(taskInfo.dfxOpInfo_->comm_);
         if (commImp == nullptr) {
             HCCL_ERROR("[ProfilingHandler]commImp is  nullptr");
-            return ;
+            return;
         }
-        hcclReportData.profInfo.groupName         = groupName;
-        hcclReportData.profInfo.rankSize          = commImp->GetRankSize();
+        hcclReportData.profInfo.groupName = groupName;
+        hcclReportData.profInfo.rankSize  = commImp->GetRankSize();
     }
     hcclReportData.profInfo.workFlowMode      = static_cast<u32>(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
     hcclReportData.profInfo.planeID           = 0;
@@ -243,76 +243,101 @@ void ProfilingHandler::GetHCCLReportData(const TaskInfo &taskInfo, HCCLReportDat
     hcclReportData.profInfo.durationEstimated = 0;
     hcclReportData.profInfo.localRank         = taskInfo.dfxOpInfo_->op_.myRank;
     hcclReportData.profInfo.remoteRank        = taskInfo.remoteRank_;
-    if (taskInfo.taskParam_.taskType == TaskParamType::TASK_SDMA
-        || taskInfo.taskParam_.taskType == TaskParamType::TASK_RDMA) {
-        hcclReportData.profInfo.srcAddr
-            = static_cast<u64>(reinterpret_cast<uintptr_t>(taskInfo.taskParam_.taskPara.DMA.src));
-        hcclReportData.profInfo.dstAddr
-            = static_cast<u64>(reinterpret_cast<uintptr_t>(taskInfo.taskParam_.taskPara.DMA.dst));
-        hcclReportData.profInfo.dataSize = static_cast<u32>(taskInfo.taskParam_.taskPara.DMA.size);
-        hcclReportData.profInfo.notifyID = taskInfo.taskParam_.taskPara.DMA.notifyID;
-        hcclReportData.profInfo.linkType = static_cast<uint16_t>(taskInfo.taskParam_.taskPara.DMA.linkType);
-    } else if (taskInfo.taskParam_.taskType == TaskParamType::TASK_REDUCE_INLINE
-               || taskInfo.taskParam_.taskType == TaskParamType::TASK_REDUCE_TBE) {
-        hcclReportData.profInfo.srcAddr
-            = static_cast<u64>(reinterpret_cast<uintptr_t>(taskInfo.taskParam_.taskPara.Reduce.src));
-        hcclReportData.profInfo.dstAddr
-            = static_cast<u64>(reinterpret_cast<uintptr_t>(taskInfo.taskParam_.taskPara.Reduce.dst));
-        hcclReportData.profInfo.dataSize = static_cast<u32>(taskInfo.taskParam_.taskPara.Reduce.size);
-        hcclReportData.profInfo.notifyID = taskInfo.taskParam_.taskPara.Reduce.notifyID;
-        hcclReportData.profInfo.linkType = static_cast<uint16_t>(taskInfo.taskParam_.taskPara.Reduce.linkType);
-    } else if (taskInfo.taskParam_.taskType == TaskParamType::TASK_NOTIFY_RECORD
-               || taskInfo.taskParam_.taskType == TaskParamType::TASK_NOTIFY_WAIT) {
-        hcclReportData.profInfo.notifyID = taskInfo.taskParam_.taskPara.Notify.notifyID;
-    } else if (taskInfo.taskParam_.taskType == TaskParamType::TASK_CCU) {
+    hcclReportData.profInfo.dataType          = taskInfo.dfxOpInfo_->op_.dataType;
+    hcclReportData.profInfo.opType            = taskInfo.dfxOpInfo_->op_.opType;
+    hcclReportData.profInfo.transportType     = static_cast<int32_t>(SimpleTaskType::UB);
+    if (hcclReportData.profInfo.remoteRank == INVALID_VALUE_RANKID) {
+        hcclReportData.profInfo.transportType = static_cast<int32_t>(SimpleTaskType::LOCAL);
+        hcclReportData.profInfo.linkType = 0; // OnChip
+    }
+}
+
+void ProfilingHandler::GetProfTaskSpecificInfo(const TaskInfo &taskInfo, HCCLReportData &hcclReportData) const
+{
+    const auto &taskType = taskInfo.taskParam_.taskType;
+    const auto &taskPara = taskInfo.taskParam_.taskPara;
+    if (taskType == TaskParamType::TASK_SDMA || taskType == TaskParamType::TASK_RDMA) {
+        hcclReportData.profInfo.srcAddr = static_cast<u64>(reinterpret_cast<uintptr_t>(taskPara.DMA.src));
+        hcclReportData.profInfo.dstAddr = static_cast<u64>(reinterpret_cast<uintptr_t>(taskPara.DMA.dst));
+        hcclReportData.profInfo.dataSize = static_cast<u32>(taskPara.DMA.size);
+        hcclReportData.profInfo.notifyID = taskPara.DMA.notifyID;
+        hcclReportData.profInfo.linkType = static_cast<uint16_t>(taskPara.DMA.linkType);
+    } else if (taskType == TaskParamType::TASK_REDUCE_INLINE || taskType == TaskParamType::TASK_REDUCE_TBE) {
+        hcclReportData.profInfo.srcAddr = static_cast<u64>(reinterpret_cast<uintptr_t>(taskPara.Reduce.src));
+        hcclReportData.profInfo.dstAddr = static_cast<u64>(reinterpret_cast<uintptr_t>(taskPara.Reduce.dst));
+        hcclReportData.profInfo.dataSize = static_cast<u32>(taskPara.Reduce.size);
+        hcclReportData.profInfo.notifyID = taskPara.Reduce.notifyID;
+        hcclReportData.profInfo.linkType = static_cast<uint16_t>(taskPara.Reduce.linkType);
+    } else if (taskType == TaskParamType::TASK_NOTIFY_RECORD || taskType == TaskParamType::TASK_NOTIFY_WAIT) {
+        hcclReportData.profInfo.notifyID = taskPara.Notify.notifyID;
+    } else if (taskType == TaskParamType::TASK_CCU) {
         HCCL_INFO("current taskType is TASK_CCU");
         ReportCcuInfo(taskInfo);
-    } else if (taskInfo.taskParam_.taskType == TaskParamType::TASK_DPU_INLINE_WRITE
-               || taskInfo.taskParam_.taskType == TaskParamType::TASK_DPU_WRITE_WITH_NOTIFY
-               || taskInfo.taskParam_.taskType == TaskParamType::TASK_DPU_NOTIFY_WAIT
-               || taskInfo.taskParam_.taskType == TaskParamType::TASK_DPU_CHANNEL_FENCE) {
-        // 公共字段赋值
-        hcclReportData.dpuProfInfo.itemId     = hcclReportData.profInfo.itemId;
-        hcclReportData.dpuProfInfo.cclTag     = hcclReportData.profInfo.cclTag;
-        hcclReportData.dpuProfInfo.groupName  = hcclReportData.profInfo.groupName;
-        hcclReportData.dpuProfInfo.localRank   = hcclReportData.profInfo.localRank;
-        hcclReportData.dpuProfInfo.remoteRank  = hcclReportData.profInfo.remoteRank;
-        hcclReportData.dpuProfInfo.rankSize    = hcclReportData.profInfo.rankSize;
-        hcclReportData.dpuProfInfo.workFlowMode = hcclReportData.profInfo.workFlowMode;
-        hcclReportData.dpuProfInfo.planeID     = hcclReportData.profInfo.planeID;
-        hcclReportData.dpuProfInfo.stage       = hcclReportData.profInfo.stage;
-        hcclReportData.dpuProfInfo.role        = hcclReportData.profInfo.role;
-        hcclReportData.dpuProfInfo.durationEstimated = hcclReportData.profInfo.durationEstimated;
-        hcclReportData.dpuProfInfo.aicpu_task_id = taskInfo.taskParam_.aicpuTaskId;
-        hcclReportData.dpuProfInfo.npuDevId = taskInfo.taskParam_.npuDevId;
-        hcclReportData.dpuProfInfo.dpuDevId = (1U << 12); // 高4位=1，低12位=0
-        hcclReportData.dpuProfInfo.linkType = static_cast<uint16_t>(taskInfo.taskParam_.taskPara.DMA.linkType);
-        hcclReportData.dpuProfInfo.taskId = taskInfo.taskId_;
-        hcclReportData.dpuProfInfo.streamId = taskInfo.streamId_;
-        hcclReportData.dpuProfInfo.timeStamp = taskInfo.taskParam_.beginTime;
-        HCCL_INFO("[GetHCCLReportData]taskId[%llu], streamId[%lu], npuDevId[%lu], dpuDevId[%lu], starttime[%llu], endtime[%llu], aicputaskId[%llu].", 
-            hcclReportData.dpuProfInfo.taskId, hcclReportData.dpuProfInfo.streamId, 
-            hcclReportData.dpuProfInfo.npuDevId, hcclReportData.dpuProfInfo.dpuDevId, 
-            hcclReportData.dpuProfInfo.timeStamp, hcclReportData.ts, hcclReportData.dpuProfInfo.aicpu_task_id);
-        // 按task类型填充特定字段
-        if (taskInfo.taskParam_.taskType == TaskParamType::TASK_DPU_INLINE_WRITE
-            || taskInfo.taskParam_.taskType == TaskParamType::TASK_DPU_WRITE_WITH_NOTIFY) {
-            hcclReportData.dpuProfInfo.srcAddr
-                = static_cast<u64>(reinterpret_cast<uintptr_t>(taskInfo.taskParam_.taskPara.DMA.src));
-            hcclReportData.dpuProfInfo.dstAddr
-                = static_cast<u64>(reinterpret_cast<uintptr_t>(taskInfo.taskParam_.taskPara.DMA.dst));
-            hcclReportData.dpuProfInfo.dataSize = static_cast<u32>(taskInfo.taskParam_.taskPara.DMA.size);
-            hcclReportData.dpuProfInfo.notifyID = taskInfo.taskParam_.taskPara.DMA.notifyID;
-        } else if (taskInfo.taskParam_.taskType == TaskParamType::TASK_DPU_NOTIFY_WAIT || taskInfo.taskParam_.taskType == TaskParamType::TASK_DPU_CHANNEL_FENCE) {
-            hcclReportData.dpuProfInfo.notifyID = taskInfo.taskParam_.taskPara.Notify.notifyID;
-        }
     }
-    hcclReportData.profInfo.dataType = taskInfo.dfxOpInfo_->op_.dataType;
-    hcclReportData.profInfo.opType        = taskInfo.dfxOpInfo_->op_.opType;
-    hcclReportData.profInfo.transportType = static_cast<int32_t>(SimpleTaskType::UB);
-    hcclReportData.dpuProfInfo.dataType = static_cast<uint32_t>(taskInfo.dfxOpInfo_->op_.dataType);
-    hcclReportData.dpuProfInfo.opType        = static_cast<uint32_t>(taskInfo.dfxOpInfo_->op_.opType);
+}
+
+void ProfilingHandler::GetDpuProfInfo(const TaskInfo &taskInfo, HCCLReportData &hcclReportData) const
+{
+    const auto &taskType = taskInfo.taskParam_.taskType;
+    const auto &taskPara = taskInfo.taskParam_.taskPara;
+    hcclReportData.dpuProfInfo.itemId     = hcclReportData.profInfo.itemId;
+    hcclReportData.dpuProfInfo.cclTag     = hcclReportData.profInfo.cclTag;
+    hcclReportData.dpuProfInfo.groupName  = hcclReportData.profInfo.groupName;
+    hcclReportData.dpuProfInfo.localRank  = hcclReportData.profInfo.localRank;
+    hcclReportData.dpuProfInfo.remoteRank = hcclReportData.profInfo.remoteRank;
+    hcclReportData.dpuProfInfo.rankSize   = hcclReportData.profInfo.rankSize;
+    hcclReportData.dpuProfInfo.workFlowMode = hcclReportData.profInfo.workFlowMode;
+    hcclReportData.dpuProfInfo.planeID    = hcclReportData.profInfo.planeID;
+    hcclReportData.dpuProfInfo.stage      = hcclReportData.profInfo.stage;
+    hcclReportData.dpuProfInfo.role       = hcclReportData.profInfo.role;
+    hcclReportData.dpuProfInfo.durationEstimated = hcclReportData.profInfo.durationEstimated;
+    hcclReportData.dpuProfInfo.dataType   = static_cast<uint32_t>(taskInfo.dfxOpInfo_->op_.dataType);
+    hcclReportData.dpuProfInfo.opType     = static_cast<uint32_t>(taskInfo.dfxOpInfo_->op_.opType);
     hcclReportData.dpuProfInfo.transportType = static_cast<uint32_t>(SimpleTaskType::ROCE);
+    hcclReportData.dpuProfInfo.aicpu_task_id = taskInfo.taskParam_.aicpuTaskId;
+    hcclReportData.dpuProfInfo.npuDevId = taskInfo.taskParam_.npuDevId;
+    hcclReportData.dpuProfInfo.dpuDevId = (1U << 12);
+    hcclReportData.dpuProfInfo.linkType = static_cast<uint16_t>(taskPara.DMA.linkType);
+    if (hcclReportData.dpuProfInfo.remoteRank == INVALID_VALUE_RANKID) {
+        hcclReportData.dpuProfInfo.transportType = static_cast<uint32_t>(SimpleTaskType::LOCAL);
+        hcclReportData.dpuProfInfo.linkType = 0; // OnChip
+    }
+    hcclReportData.dpuProfInfo.taskId = taskInfo.taskId_;
+    hcclReportData.dpuProfInfo.streamId = taskInfo.streamId_;
+    hcclReportData.dpuProfInfo.timeStamp = taskInfo.taskParam_.beginTime;
+    HCCL_INFO("[GetHCCLReportData]taskId[%llu], streamId[%lu], npuDevId[%lu], dpuDevId[%lu], "
+              "starttime[%llu], endtime[%llu], aicputaskId[%llu].",
+        hcclReportData.dpuProfInfo.taskId, hcclReportData.dpuProfInfo.streamId,
+        hcclReportData.dpuProfInfo.npuDevId, hcclReportData.dpuProfInfo.dpuDevId,
+        hcclReportData.dpuProfInfo.timeStamp, hcclReportData.ts, hcclReportData.dpuProfInfo.aicpu_task_id);
+    if (taskType == TaskParamType::TASK_DPU_INLINE_WRITE
+        || taskType == TaskParamType::TASK_DPU_WRITE_WITH_NOTIFY) {
+        hcclReportData.dpuProfInfo.srcAddr = static_cast<u64>(reinterpret_cast<uintptr_t>(taskPara.DMA.src));
+        hcclReportData.dpuProfInfo.dstAddr = static_cast<u64>(reinterpret_cast<uintptr_t>(taskPara.DMA.dst));
+        hcclReportData.dpuProfInfo.dataSize = static_cast<u32>(taskPara.DMA.size);
+        hcclReportData.dpuProfInfo.notifyID = taskPara.DMA.notifyID;
+    } else if (taskType == TaskParamType::TASK_DPU_NOTIFY_WAIT
+               || taskType == TaskParamType::TASK_DPU_CHANNEL_FENCE) {
+        hcclReportData.dpuProfInfo.notifyID = taskPara.Notify.notifyID;
+    }
+}
+
+void ProfilingHandler::GetHCCLReportData(const TaskInfo &taskInfo, HCCLReportData &hcclReportData) const
+{
+    HCCL_INFO("[ProfilingHandler]GetHCCLReportData start.");
+    GetProfCommonInfo(taskInfo, hcclReportData);
+    GetProfTaskSpecificInfo(taskInfo, hcclReportData);
+    const auto &taskType = taskInfo.taskParam_.taskType;
+    if (taskType == TaskParamType::TASK_DPU_INLINE_WRITE
+        || taskType == TaskParamType::TASK_DPU_WRITE_WITH_NOTIFY
+        || taskType == TaskParamType::TASK_DPU_NOTIFY_WAIT
+        || taskType == TaskParamType::TASK_DPU_CHANNEL_FENCE) {
+        GetDpuProfInfo(taskInfo, hcclReportData);
+    } else {
+        hcclReportData.dpuProfInfo.dataType = static_cast<uint32_t>(taskInfo.dfxOpInfo_->op_.dataType);
+        hcclReportData.dpuProfInfo.opType = static_cast<uint32_t>(taskInfo.dfxOpInfo_->op_.opType);
+        hcclReportData.dpuProfInfo.transportType = static_cast<uint32_t>(SimpleTaskType::ROCE);
+    }
     DumpHCCLReportData(taskInfo, hcclReportData);
     HCCL_INFO("[ProfilingHandler]GetHCCLReportData end.");
 }
@@ -320,44 +345,41 @@ void ProfilingHandler::GetHCCLReportData(const TaskInfo &taskInfo, HCCLReportDat
 void ProfilingHandler::DumpHCCLReportData(const TaskInfo &taskInfo, const HCCLReportData &hcclReportData) const
 {
     HCCL_INFO(
-        "HCCLReportData is: hcclReportData.ts[%llu], hcclReportData.profInfo.itemId[%llu], "
-        "hcclReportData.profInfo.cclTag[%llu], hcclReportData.profInfo.groupName[%llu],  "
-        "hcclReportData.profInfo.rankSize[%u], hcclReportData.profInfo.workFlowMode [%u], "
-        "hcclReportData.profInfo.stage[%u], hcclReportData.profInfo.role[%u], "
-        "hcclReportData.profInfo.durationEstimated[%f], taskInfo.taskParam_.taskType[%d]",
+        "HCCLReportData profInfo: ts[%llu], itemId[%llu], cclTag[%llu], groupName[%llu], "
+        "localRank[%u], remoteRank[%u], rankSize[%u], workFlowMode[%u], planeID[%u], ctxId[%u], "
+        "stage[%u], role[%u], durationEstimated[%f], taskType[%d]",
         hcclReportData.ts, hcclReportData.profInfo.itemId, hcclReportData.profInfo.cclTag,
-        hcclReportData.profInfo.groupName, hcclReportData.profInfo.rankSize, hcclReportData.profInfo.workFlowMode,
-        hcclReportData.profInfo.stage, hcclReportData.profInfo.role, hcclReportData.profInfo.durationEstimated,
-        taskInfo.taskParam_.taskType);
+        hcclReportData.profInfo.groupName, hcclReportData.profInfo.localRank, hcclReportData.profInfo.remoteRank,
+        hcclReportData.profInfo.rankSize, hcclReportData.profInfo.workFlowMode, hcclReportData.profInfo.planeID,
+        hcclReportData.profInfo.ctxId, hcclReportData.profInfo.stage, hcclReportData.profInfo.role,
+        hcclReportData.profInfo.durationEstimated, taskInfo.taskParam_.taskType);
     HCCL_INFO(
-        "HCCLReportData other data is: hcclReportData.profInfo.srcAddr[%llu], hcclReportData.profInfo.dstAddr[%llu], "
-        "hcclReportData.profInfo.dataSize[%u], hcclReportData.profInfo.notifyID[%llu], "
-        "hcclReportData.profInfo.linkType[%u], "
-        "hcclReportData.profInfo.opType[%s], hcclReportData.profInfo.transportType[%u], "
-        "hcclReportData.profInfo.dataType[%s], hcclReportData.profInfo.localRank[%u], hcclReportData.profInfo.remoteRank[%u]",
-        hcclReportData.profInfo.srcAddr, hcclReportData.profInfo.dstAddr, hcclReportData.profInfo.dataSize, hcclReportData.profInfo.notifyID, 
-        hcclReportData.profInfo.linkType, OpTypeToSerialString(hcclReportData.profInfo.opType).c_str(), hcclReportData.profInfo.transportType, 
-        DataTypeToSerialString(hcclReportData.profInfo.dataType).c_str(), hcclReportData.profInfo.localRank, hcclReportData.profInfo.remoteRank);
+        "HCCLReportData profInfo detail: srcAddr[%llu], dstAddr[%llu], dataSize[%llu], notifyID[%llu], "
+        "linkType[%u], opType[%s], transportType[%u], dataType[%s], rdmaType[%u]",
+        hcclReportData.profInfo.srcAddr, hcclReportData.profInfo.dstAddr, hcclReportData.profInfo.dataSize,
+        hcclReportData.profInfo.notifyID, hcclReportData.profInfo.linkType,
+        OpTypeToSerialString(hcclReportData.profInfo.opType).c_str(), hcclReportData.profInfo.transportType,
+        DataTypeToSerialString(hcclReportData.profInfo.dataType).c_str(), hcclReportData.profInfo.rdmaType);
 
     HCCL_INFO(
-        "HCCLReportData is: hcclReportData.ts[%llu], hcclReportData.dpuProfInfo.itemId[%llu], "
-        "hcclReportData.dpuProfInfo.cclTag[%llu], hcclReportData.dpuProfInfo.groupName[%llu],  "
-        "hcclReportData.dpuProfInfo.rankSize[%u], hcclReportData.dpuProfInfo.workFlowMode [%u], "
-        "hcclReportData.dpuProfInfo.stage[%u], hcclReportData.dpuProfInfo.role[%u], "
-        "hcclReportData.dpuProfInfo.durationEstimated[%f], taskInfo.taskParam_.taskType[%d]",
+        "HCCLReportData dpuProfInfo: ts[%llu], itemId[%llu], cclTag[%llu], groupName[%llu], "
+        "localRank[%u], remoteRank[%u], rankSize[%u], workFlowMode[%u], planeID[%u], "
+        "stage[%u], role[%u], durationEstimated[%f], taskType[%d]",
         hcclReportData.ts, hcclReportData.dpuProfInfo.itemId, hcclReportData.dpuProfInfo.cclTag,
-        hcclReportData.dpuProfInfo.groupName, hcclReportData.dpuProfInfo.rankSize, hcclReportData.dpuProfInfo.workFlowMode,
+        hcclReportData.dpuProfInfo.groupName, hcclReportData.dpuProfInfo.localRank, hcclReportData.dpuProfInfo.remoteRank,
+        hcclReportData.dpuProfInfo.rankSize, hcclReportData.dpuProfInfo.workFlowMode, hcclReportData.dpuProfInfo.planeID,
         hcclReportData.dpuProfInfo.stage, hcclReportData.dpuProfInfo.role, hcclReportData.dpuProfInfo.durationEstimated,
         taskInfo.taskParam_.taskType);
     HCCL_INFO(
-        "HCCLReportData other data is: hcclReportData.dpuProfInfo.srcAddr[%llu], hcclReportData.dpuProfInfo.dstAddr[%llu], "
-        "hcclReportData.dpuProfInfo.dataSize[%u], hcclReportData.dpuProfInfo.notifyID[%llu], "
-        "hcclReportData.dpuProfInfo.linkType[%u], "
-        "hcclReportData.dpuProfInfo.opType[%s], hcclReportData.dpuProfInfo.transportType[%u], "
-        "hcclReportData.dpuProfInfo.dataType[%s], hcclReportData.dpuProfInfo.localRank[%u], hcclReportData.dpuProfInfo.remoteRank[%u]",
-        hcclReportData.dpuProfInfo.srcAddr, hcclReportData.dpuProfInfo.dstAddr, hcclReportData.dpuProfInfo.dataSize, hcclReportData.dpuProfInfo.notifyID, 
-        hcclReportData.dpuProfInfo.linkType, OpTypeToSerialString(hcclReportData.dpuProfInfo.opType).c_str(), hcclReportData.dpuProfInfo.transportType, 
-        DataTypeToSerialString(hcclReportData.dpuProfInfo.dataType).c_str(), hcclReportData.dpuProfInfo.localRank, hcclReportData.dpuProfInfo.remoteRank);
+        "HCCLReportData dpuProfInfo detail: srcAddr[%llu], dstAddr[%llu], dataSize[%llu], notifyID[%llu], "
+        "linkType[%u], opType[%s], transportType[%u], dataType[%s], rdmaType[%u], "
+        "taskId[%u], aicpu_task_id[%u], streamId[%u], npuDevId[%u], dpuDevId[%u], timeStamp[%llu]",
+        hcclReportData.dpuProfInfo.srcAddr, hcclReportData.dpuProfInfo.dstAddr, hcclReportData.dpuProfInfo.dataSize,
+        hcclReportData.dpuProfInfo.notifyID, hcclReportData.dpuProfInfo.linkType,
+        OpTypeToSerialString(hcclReportData.dpuProfInfo.opType).c_str(), hcclReportData.dpuProfInfo.transportType,
+        DataTypeToSerialString(hcclReportData.dpuProfInfo.dataType).c_str(), hcclReportData.dpuProfInfo.rdmaType,
+        hcclReportData.dpuProfInfo.taskId, hcclReportData.dpuProfInfo.aicpu_task_id, hcclReportData.dpuProfInfo.streamId,
+        hcclReportData.dpuProfInfo.npuDevId, hcclReportData.dpuProfInfo.dpuDevId, hcclReportData.dpuProfInfo.timeStamp);
 }
 
 void ProfilingHandler::ReportCcuInfo(const TaskInfo &taskInfo) const
