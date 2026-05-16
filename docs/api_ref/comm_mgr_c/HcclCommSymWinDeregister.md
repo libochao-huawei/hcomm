@@ -17,14 +17,14 @@
 ## 函数原型
 
 ```c
-HcclCommSymWinDeregister(HcclCommSymWindow winHandle)
+HcclResult HcclCommSymWinDeregister(HcclCommSymWindow winHandle)
 ```
 
 ## 参数说明
 
 | 参数名 | 输入/输出 | 说明 |
 | --- | --- | --- |
-| winHandle | 输入 | 注册过的对称窗口句柄。<br>HcclCommSymWindow类型的定义请参见[HcclCommSymWindow](./data_type_definition/HcclResult.md)。 |
+| winHandle | 输入 | 注册过的对称窗口句柄。<br>HcclCommSymWindow类型的定义请参见[HcclCommSymWindow](./data_type_definition/HcclCommSymWindow.md)。 |
 
 ## 返回值
 

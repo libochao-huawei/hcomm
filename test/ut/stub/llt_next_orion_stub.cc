@@ -127,6 +127,12 @@ void *HrtMalloc(u64 size, aclrtMemType_t memType)
     return (void *)0x12345678;
 }
 
+void HrtMemset(void *dst, uint64_t destMax, uint64_t count)
+{
+    memset(dst, 0, count);
+    return;
+}
+
 RdmaHandleManager::RdmaHandleManager()
 {
 }
@@ -1380,20 +1386,24 @@ void SocketManager::BatchCreateSockets(const vector<LinkData> &links)
 {
 }
 
-void SocketManager::BatchServerListen(const vector<LinkData> &links)
+void SocketManager::BatchServerListen(const SocketConfig &socketConfig)
 {
 }
 
-void SocketManager::BatchConectSockets()
+void SocketManager::BatchConectSockets(const SocketConfig &socketConfig)
 {
 }
 
+
+void SocketManager::BatchCreateSockets(const SocketConfig &socketConfig)
+{
+}
 
 SocketManager::~SocketManager()
 {
 }
 
-Socket *SocketManager::GetConnectedSocket(SocketConfig &socketConfig) const
+Socket *SocketManager::GetConnectedSocket(const SocketConfig &socketConfig) const
 {
     return nullptr;
 }
