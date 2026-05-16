@@ -1081,6 +1081,16 @@ HcclResult TransportBase::ReadReduceSync(struct Transport::Buffer &localBuf, str
     return HCCL_E_NOT_SUPPORT;
 }
 
+HcclResult TransportBase::BatchTransferAsync(
+    const HcommBatchTransferDesc *transferDescs, uint32_t descNum, Stream &stream)
+{
+    static_cast<void>(transferDescs);
+    static_cast<void>(descNum);
+    static_cast<void>(stream);
+    HCCL_ERROR("[TransportBase][BatchTransferAsync]Does not support this interface.");
+    return HCCL_E_NOT_SUPPORT;
+}
+
 HcclResult TransportBase::Fence()
 {
     return HCCL_E_NOT_SUPPORT;

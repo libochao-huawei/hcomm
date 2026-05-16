@@ -24,6 +24,7 @@
 #include "local_notify.h"
 #include "remote_notify.h"
 #include "hccl_mem_defs.h"
+#include "hcomm_primitives.h"
 
 enum class DBMode : s32 {
     INVALID_DB = -1,
@@ -675,6 +676,8 @@ public:
     HcclResult ReadSync(struct Buffer &localBuf, struct Buffer &remoteBuf, Stream &stream);
     HcclResult ReadReduceSync(struct Buffer &localBuf, struct Buffer &remoteBuf,
         const HcclDataType datatype, HcclReduceOp redOp, Stream &stream);
+
+    HcclResult BatchTransferAsync(const HcommBatchTransferDesc *transferDescs, uint32_t descNum, Stream &stream);
 
     HcclResult PostReady(Stream &stream);
     HcclResult WaitReady(Stream &stream);

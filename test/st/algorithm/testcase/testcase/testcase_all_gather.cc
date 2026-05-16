@@ -1227,10 +1227,197 @@ TEST_F(AllGatherTest, allgather_91093_AllGathermidcountExecutor)
     checkerOpParam.opType = CheckerOpType::ALLGATHER;
     checkerOpParam.tag = "AllGather";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.DataDes.count = 1024 * 1024;  // 64K 
+    checkerOpParam.DataDes.count = 1024 * 1024;  // 64K
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_93;
     checkerOpParam.algName = "AllGatherMidCountFor91093Executor";
+
+    Checker checker;
+    HcclResult ret;
+    ret = checker.Check(checkerOpParam, topoMeta);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}
+
+// ==================== Pipeline AllGather (A3, 910_93, CollAllGatherPipelineFor91093Executor) ====================
+
+TEST_F(AllGatherTest, ag_pipeline_DR_2pod_2server_int32_4blk_equal)
+{
+    // DoubleRing + L1/L2 默认 NHR；4 块等大（偶数），完整预热->稳态->排空
+    setenv("HCCL_BUFFSIZE", "1", 1);
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta;
+    gen.GenTopoMeta(topoMeta, 2, 2, 8);
+
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::ALLGATHER;
+    checkerOpParam.tag = "AllGather";
+    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_93;
+    checkerOpParam.DataDes.count = 16384;
+    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
+    checkerOpParam.algName = "AllGatherPipelineFor91093Executor";
+
+    Checker checker;
+    HcclResult ret;
+    ret = checker.Check(checkerOpParam, topoMeta);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(AllGatherTest, ag_pipeline_DR_3pod_1server_bfp16_3blk_smallA)
+{
+    // 3 SuperPod；3 块（奇数）尾块小落 BufferA（loopIdx=2, memIdx_==0）
+    setenv("HCCL_BUFFSIZE", "1", 1);
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta;
+    gen.GenTopoMeta(topoMeta, 3, 1, 8);
+
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::ALLGATHER;
+    checkerOpParam.tag = "AllGather";
+    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_93;
+    checkerOpParam.DataDes.count = 49104;
+    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_BFP16;
+    checkerOpParam.algName = "AllGatherPipelineFor91093Executor";
+
+    Checker checker;
+    HcclResult ret;
+    ret = checker.Check(checkerOpParam, topoMeta);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(AllGatherTest, ag_pipeline_DR_fp32_4blk_smallB)
+{
+    // FP32；4 块尾块小落 BufferB（loopIdx=3, memIdx_==1），互补用例 2
+    setenv("HCCL_BUFFSIZE", "1", 1);
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta;
+    gen.GenTopoMeta(topoMeta, 2, 1, 8);
+
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::ALLGATHER;
+    checkerOpParam.tag = "AllGather";
+    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_93;
+    checkerOpParam.DataDes.count = 26624;
+    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
+    checkerOpParam.algName = "AllGatherPipelineFor91093Executor";
+
+    Checker checker;
+    HcclResult ret;
+    ret = checker.Check(checkerOpParam, topoMeta);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(AllGatherTest, ag_pipeline_DR_force_ring_int8)
+{
+    // 强制 RING 模板；覆盖默认不覆盖的 Level1/Level2 RING 路径
+    setenv("HCCL_BUFFSIZE", "1", 1);
+    setenv("HCCL_ALGO", "level1:ring;level2:ring", 1);
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta;
+    gen.GenTopoMeta(topoMeta, 2, 2, 8);
+
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::ALLGATHER;
+    checkerOpParam.tag = "AllGather";
+    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_93;
+    checkerOpParam.DataDes.count = 49152;
+    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
+    checkerOpParam.algName = "AllGatherPipelineFor91093Executor";
+
+    Checker checker;
+    HcclResult ret;
+    ret = checker.Check(checkerOpParam, topoMeta);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(AllGatherTest, ag_pipeline_DR_force_nb_int16)
+{
+    // 强制 NB 模板路径覆盖
+    setenv("HCCL_BUFFSIZE", "1", 1);
+    setenv("HCCL_ALGO", "level1:NB;level2:NB", 1);
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta;
+    gen.GenTopoMeta(topoMeta, 2, 2, 8);
+
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::ALLGATHER;
+    checkerOpParam.tag = "AllGather";
+    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_93;
+    checkerOpParam.DataDes.count = 24576;
+    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT16;
+    checkerOpParam.algName = "AllGatherPipelineFor91093Executor";
+
+    Checker checker;
+    HcclResult ret;
+    ret = checker.Check(checkerOpParam, topoMeta);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(AllGatherTest, ag_pipeline_SR_3pod_7rank_bfp16)
+{
+    // SingleRing：奇数 rank(7) 触发 SINGLE_RING
+    setenv("HCCL_BUFFSIZE", "1", 1);
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta;
+    gen.GenTopoMeta(topoMeta, 3, 1, 7);
+
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::ALLGATHER;
+    checkerOpParam.tag = "AllGather";
+    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_93;
+    checkerOpParam.DataDes.count = 37440;
+    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_BFP16;
+    checkerOpParam.algName = "AllGatherPipelineFor91093Executor";
+
+    Checker checker;
+    HcclResult ret;
+    ret = checker.Check(checkerOpParam, topoMeta);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(AllGatherTest, ag_pipeline_SR_2pod_3server_1rank_int32)
+{
+    // rank/server=1 边界：L0 退化（机内仅 1 rank 无 gather），Pipeline 流水主要覆盖 L1/L2
+    setenv("HCCL_BUFFSIZE", "1", 1);
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta;
+    gen.GenTopoMeta(topoMeta, 2, 3, 1);
+
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::ALLGATHER;
+    checkerOpParam.tag = "AllGather";
+    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_93;
+    checkerOpParam.DataDes.count = 65520;
+    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
+    checkerOpParam.algName = "AllGatherPipelineFor91093Executor";
+
+    Checker checker;
+    HcclResult ret;
+    ret = checker.Check(checkerOpParam, topoMeta);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(AllGatherTest, ag_pipeline_DR_one_block_degenerate_fp16)
+{
+    // 小数据量单 block，Pipeline 退化为串行时序
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta;
+    gen.GenTopoMeta(topoMeta, 2, 1, 8);
+
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::ALLGATHER;
+    checkerOpParam.tag = "AllGather";
+    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_93;
+    checkerOpParam.DataDes.count = 8192;
+    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP16;
+    checkerOpParam.algName = "AllGatherPipelineFor91093Executor";
 
     Checker checker;
     HcclResult ret;
