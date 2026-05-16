@@ -113,9 +113,8 @@ HcclResult ProcessRoceChannelDesc(const HcclChannelDesc &channelDesc, HcclChanne
 HcclResult ProcessUbcChannelDesc(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal,
     hccl::hcclComm *hcclComm)
 {
-    hccl::CollComm *collComm = hcclComm->GetCollComm();
-    CHK_PTR_NULL(collComm);
-    hccl::CommConfig commConfig = collComm->GetCommConfig();
+    (void)channelDescFinal;
+    (void)hcclComm;
 
     if (channelDesc.channelProtocol != COMM_PROTOCOL_UBC_CTP &&
         channelDesc.channelProtocol != COMM_PROTOCOL_UBC_TP) {
@@ -123,33 +122,24 @@ HcclResult ProcessUbcChannelDesc(const HcclChannelDesc &channelDesc, HcclChannel
             static_cast<int>(channelDesc.channelProtocol));
         return HCCL_E_PARA;
     }
-    channelDescFinal.ubAttr.qos = (channelDesc.ubAttr.qos == INVALID_UINT)
-        ? ((commConfig.GetConfigHcclQos() == HCCL_COMM_QOS_CONFIG_NOT_SET) ? EnvConfig::UB_QOS_DEFAULT
-                                                                            : commConfig.GetConfigHcclQos())
-        : channelDesc.ubAttr.qos;
-    HCCL_INFO("[%s] channelProtocol[%d] qos[%u] (UBC)", __func__,
-        static_cast<int>(channelDescFinal.channelProtocol), channelDescFinal.ubAttr.qos);
+    HCCL_INFO("[%s] channelProtocol[%d] ub comm-domain qos applied in HcommChannelDesc::qos when converting (HcclChannelDesc has no qos field)",
+        __func__, static_cast<int>(channelDesc.channelProtocol));
     return HCCL_SUCCESS;
 }
 
 HcclResult ProcessUboeChannelDesc(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal,
     hccl::hcclComm *hcclComm)
 {
-    hccl::CollComm *collComm = hcclComm->GetCollComm();
-    CHK_PTR_NULL(collComm);
-    hccl::CommConfig commConfig = collComm->GetCommConfig();
+    (void)channelDescFinal;
+    (void)hcclComm;
 
     if (channelDesc.channelProtocol != COMM_PROTOCOL_UBOE) {
         HCCL_ERROR("[%s] unexpected channelProtocol[%d], expect UBOE", __func__,
             static_cast<int>(channelDesc.channelProtocol));
         return HCCL_E_PARA;
     }
-    channelDescFinal.ubAttr.qos = (channelDesc.ubAttr.qos == INVALID_UINT)
-        ? ((commConfig.GetConfigHcclQos() == HCCL_COMM_QOS_CONFIG_NOT_SET) ? EnvConfig::UB_QOS_DEFAULT
-                                                                            : commConfig.GetConfigHcclQos())
-        : channelDesc.ubAttr.qos;
-    HCCL_INFO("[%s] channelProtocol[%d] qos[%u] (UBOE)", __func__,
-        static_cast<int>(channelDescFinal.channelProtocol), channelDescFinal.ubAttr.qos);
+    HCCL_INFO("[%s] channelProtocol[%d] ub comm-domain qos applied in HcommChannelDesc::qos when converting (HcclChannelDesc has no qos field)",
+        __func__, static_cast<int>(channelDesc.channelProtocol));
     return HCCL_SUCCESS;
 }
 

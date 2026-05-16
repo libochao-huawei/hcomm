@@ -164,7 +164,7 @@ HcclResult CcuUrmaChannel::Init()
     HCCL_WARNING("[CcuUrmaChannel][%s] now only support to exchange hccl buffer.",
         __func__);
     CHK_RET_UNAVAIL(CreateCcuTransport(ccuEndpoint, linkData, socket,
-        channelDesc_.memHandles, channelDesc_.memHandleNum, channelDesc_.ubAttr.qos,
+        channelDesc_.memHandles, channelDesc_.memHandleNum, channelDesc_.qos,
         channelDesc_.ubAttr.sqDepth, impl_));
 
     hcclBufferInfoPtr_.reset(new (std::nothrow) HcclMem());
