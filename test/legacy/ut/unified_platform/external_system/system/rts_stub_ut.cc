@@ -10,7 +10,6 @@
 
 #include "rt_external.h"
 #include "acl/acl_rt.h"
-#include <mutex>
 
 aclError aclrtDeviceGetBareTgid(int32_t *pid)
 {
@@ -589,10 +588,3 @@ aclError aclrtMemP2PMap(void *devPtr, size_t size, int32_t dstDevId, uint64_t fl
 {
 	return ACL_SUCCESS;
 }
-
-namespace aicpu {
-void GetSqeId(const uint32_t num, uint32_t &start, uint32_t &end)
-{
-    return;
-}
-} // aicpu
