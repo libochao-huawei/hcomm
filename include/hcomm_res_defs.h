@@ -219,7 +219,7 @@ typedef struct {
             uint32_t qos;            ///< HCCS QoS
         } hccsAttr;
         struct {
-            uint32_t sqDepth;         ///< UB队列深度；0xFFFFFFFF 表示使用默认值（见 CheckUbAttr）
+            uint32_t sqDepth;         ///< UB队列深度，0表示使用默认值
         } ubAttr;
     };
     uint32_t qos;             ///< 通信域QoS 与协议解耦
