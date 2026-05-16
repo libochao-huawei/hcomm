@@ -22,8 +22,6 @@ public:
 
     void LaunchTask() override;
 
-    void TryLaunchTask() override;
-
     void NotifyWait(u32 notifyId) override;
 
     void NotifyWait(u32 notifyId, u32 timeout);

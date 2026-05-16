@@ -320,29 +320,3 @@ TEST_F(RtsqA5Test, Ut_CopyLocBufToSq_THROW)
     MOCKER(memcpy_s).stubs().with(any()).will(returnValue(1));
     EXPECT_THROW(rtsq.CopyLocBufToSq(), InternalException);
 }
-
-TEST_F(RtsqA5Test, Ut_TryLaunchTask_When_PendingSqeCnt_IsZero_Expect_NoAction)
-{
-    RtsqA5 rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
-    rtsq.pendingSqeCnt = 0;
-
-    rtsq.TryLaunchTask();
-
-    EXPECT_EQ(rtsq.pendingSqeCnt, 0);
-}
-
-TEST_F(RtsqA5Test, Ut_TryLaunchTask_When_HasEnoughSpace_Expect_LaunchTask)
-{
-    RtsqA5 rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
-
-    rtsq.sqTail_ = 0;
-    rtsq.sqHead_ = 0;
-    rtsq.sqDepth_ = AC_SQE_MAX_CNT;
-    rtsq.pendingSqeCnt = 5;
-
-    MOCKER_CPP(&RtsqA5::QuerySqHead).stubs().will(returnValue(10));
-
-    rtsq.TryLaunchTask();
-
-    EXPECT_EQ(rtsq.pendingSqeCnt, 0);
-}
