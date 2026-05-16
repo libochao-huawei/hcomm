@@ -9,6 +9,7 @@
  */
 #include <mutex>
 #include <cstring>
+#include <cstddef>
 
 #include "hccl/hccl_res.h"
 #include "hcomm_res.h"
@@ -123,6 +124,12 @@ HcommResult ProcessHcommChannelDescs(const HcommChannelDesc &channelDesc, HcommC
         HCCL_RUN_WARNING("The version of provided [%u] is lower than the current version[%u], "
             "configurations supported by later versions will be ignored.",
             channelDesc.header.version, HCOMM_CHANNEL_VERSION);
+    }
+
+    // v1：无 union 之后的通信域 qos；或 header.size 未覆盖当前结构体时，不解析传入的 qos 字节
+    if (channelDesc.header.version < HCOMM_CHANNEL_VERSION_TWO ||
+        channelDesc.header.size < sizeof(HcommChannelDesc)) {
+        channelDescFinal.qos = 0xFFFFFFFFU;
     }
 
     return HCOMM_SUCCESS;
