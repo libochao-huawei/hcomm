@@ -26,7 +26,7 @@ HcclResult CollCommExecutor::GetSubStreamInfoOnOneRing(const u32 ringIndex,
                                                        std::vector<std::shared_ptr<LocalNotify>> &mainSignalsInOneRing,
                                                        std::vector<std::shared_ptr<LocalNotify>> &subSignalsInOneRing)
 {
-    u32 ringNum = algResResp_->slaveStreams.size() + 1;
+    u32 ringNum = GetLevel0RingNum();
     if (ringNum == LEVEL0_PLANE_NUM_IN_NPRING_DOUBLE * STREAM_NUM_FOR_DMAREDUCE_ONE_RING) {
         // double ring
         subStreamsInOneRing.push_back(algResResp_->slaveStreams[ringIndex + 1]);
@@ -39,6 +39,11 @@ HcclResult CollCommExecutor::GetSubStreamInfoOnOneRing(const u32 ringIndex,
         subSignalsInOneRing.push_back(algResResp_->notifiesAux[ringIndex]);
     }
     return HCCL_SUCCESS;
+}
+
+u32 CollCommExecutor::GetLevel0RingNum() const
+{
+    return algResResp_->slaveStreams.size() + 1;
 }
 
 HcclResult CollCommExecutor::MultiRingAllReduce(const std::string &tag, DeviceMem &inputMem, DeviceMem &outputMem,

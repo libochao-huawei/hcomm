@@ -53,7 +53,7 @@ int srcRankId = 0;
 int destRankId = 1;
 // 使用win + offset + peerRank获取到peerRank对应的地址
 HcclSymWinGetPeerPointer(temp_win, 0, srcRankId, &src_ptr);
-HcclSymWinGetPeerPointer(temp_win, 0, rankId, &dest_ptr);
+HcclSymWinGetPeerPointer(temp_win, 0, destRankId, &dest_ptr);
 // 获取出来的地址可以使用数据面local copy直接读写，thread和size需调用者准备好
 HcommLocalCopyOnThread(thread, dest_ptr, src_ptr, size);
 ```
