@@ -109,9 +109,9 @@ void         HrtRaSocketDeInit(SocketHandle socketHandle);
 struct RaSocketListenParam {
     SocketHandle socketHandle; /**< socket handle */
     unsigned int port;         /**< Socket listening port number */
-    RaSocketListenParam(SocketHandle handle, u32 port) : socketHandle(handle), port(port)
-    {
-    }
+    IpAddress localIp;         /**< local IP address */
+    RaSocketListenParam(SocketHandle handle, u32 port, IpAddress ip)
+        : socketHandle(handle), port(port), localIp(ip) {}
 };
 
 using QpConfig = struct QpConfigDef {
@@ -195,7 +195,7 @@ using CqInfo = struct CqInfoDef {
 
 void HrtRaSocketListenOneStart(RaSocketListenParam &in);
 void HrtRaSocketListenOneStop(RaSocketListenParam &in);
-bool HrtRaSocketTryListenOneStart(RaSocketListenParam &in);
+bool HrtRaSocketTryListenOneStart(RaSocketListenParam &in, HrtNetworkMode netMode);
 
 void HrtRaSocketSetWhiteListStatus(u32 enable);
 u32  HrtRaSocketGetWhiteListStatus();

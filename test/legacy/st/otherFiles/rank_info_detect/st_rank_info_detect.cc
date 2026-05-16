@@ -71,7 +71,7 @@ protected:
         std::vector<std::pair<std::string, IpAddress>> hostIfInfos;
         hostIfInfos.push_back(std::make_pair("lo", IpAddress("127.0.0.1")));
         MOCKER(HrtGetHostIf).stubs().with(any()).will(returnValue(hostIfInfos));
-        MOCKER(HrtRaSocketTryListenOneStart).stubs().with(any()).will(returnValue(true));
+        MOCKER(HrtRaSocketTryListenOneStart).stubs().with(any(), any()).will(returnValue(true));
         MOCKER(HrtGetDeviceCount).stubs().with().will(returnValue(8));
         MOCKER(HrtSetDevice).stubs().with(any()).will(ignoreReturnValue());
         MOCKER(HrtResetDevice).stubs().with(any()).will(ignoreReturnValue());
