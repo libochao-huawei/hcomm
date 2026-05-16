@@ -214,10 +214,10 @@ typedef struct {
             uint32_t qos;            ///< HCCS QoS
         } hccsAttr;
         struct {
-            uint32_t qos;             ///< 通信域 QoS（UBC_CTP / UBC_TP / UBOE），与 HcclChannelDesc::ubAttr 首字段同序，便于与 HCCL union 字节拷贝对齐
             uint32_t sqDepth;         ///< UB队列深度；0xFFFFFFFF 表示使用默认值（见 CheckUbAttr）
         } ubAttr;
     };
+    uint32_t qos;             ///< 通信域QoS 与协议解耦
 } HcommChannelDesc;
 
 /**

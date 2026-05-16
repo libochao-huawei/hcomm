@@ -23,7 +23,17 @@ using namespace hcomm;
 
 namespace MyRankUtils {
 
-HcommChannelDesc ChannelDescHccl2Hcomm(const HcclChannelDesc &hcclDesc)
+namespace {
+uint32_t ResolveUbCommDomainQos(const hccl::CommConfig &commConfig)
+{
+    if (commConfig.GetConfigHcclQos() == HCCL_COMM_QOS_CONFIG_NOT_SET) {
+        return EnvConfig::UB_QOS_DEFAULT;
+    }
+    return commConfig.GetConfigHcclQos();
+}
+} // namespace
+
+HcommChannelDesc ChannelDescHccl2Hcomm(const HcclChannelDesc &hcclDesc, const hccl::CommConfig &commConfig)
 {
     HcommChannelDesc hcommDesc{};
     (void)HcommChannelDescInit(&hcommDesc, 1);
@@ -40,7 +50,7 @@ HcommChannelDesc ChannelDescHccl2Hcomm(const HcclChannelDesc &hcclDesc)
     } else if (hcclDesc.channelProtocol == COMM_PROTOCOL_UBC_CTP ||
                hcclDesc.channelProtocol == COMM_PROTOCOL_UBC_TP ||
                hcclDesc.channelProtocol == COMM_PROTOCOL_UBOE) {
-        hcommDesc.ubAttr.qos = hcclDesc.ubAttr.qos;
+        hcommDesc.qos = ResolveUbCommDomainQos(commConfig);
     }
     return hcommDesc;
 }
@@ -632,7 +642,7 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
 
     std::vector<HcommChannelDesc> hcommDescs(channelNum);
     for (u32 i = 0; i < channelNum; ++i) {
-        hcommDescs[i] = MyRankUtils::ChannelDescHccl2Hcomm(channelDescs[i]);
+        hcommDescs[i] = MyRankUtils::ChannelDescHccl2Hcomm(channelDescs[i], config_);
         CHK_RET(ConfigSqDepthByExpansionMode(engine, hcommDescs[i]));
     }
 
