@@ -248,4 +248,80 @@ std::string RoceTransportLiteImpl::Describe() const
     return desc;
 }
 
+HcclResult RoceTransportLiteImpl::BuildLocRmaBufferLite(const uintptr_t addr, const size_t size, RmaBufferLite &rmaBufferLite) const
+{
+    HCCL_INFO("[RoceTransportLiteImpl::%s] start to find addr[0x%llx], size[0x%llx] in locBufferVec, whose size is %zu. ",
+        __func__, addr, size, locBufferVec_.size());
+    
+    if (locBufferVec_.empty()) {
+        HCCL_ERROR("[RoceTransportLiteImpl::%s] locBufferVec is empty.", __func__);
+        return HCCL_E_INTERNAL;
+    }
+
+    bool isAddrInRange = false;
+    for (auto &it : locBufferVec_) {
+        Buffer iterBuf(it.GetAddr(), it.GetSize());
+        if (iterBuf.Contains(addr, size)) {
+            rmaBufferLite = RmaBufferLite(addr, size, it.GetLkey());
+            isAddrInRange = true;
+            break;
+        }
+    }
+
+    if (!isAddrInRange) {
+        HCCL_WARNING("[RoceTransportLiteImpl::%s] addr[0x%llx], size[0x%llx] not in any range of locBufferVec. The token of the first locBuffer is used.",
+            __func__, addr, size);
+        rmaBufferLite = RmaBufferLite(addr, size, locBufferVec_[0].GetLkey());
+        return HCCL_SUCCESS;
+    }
+
+    return HCCL_SUCCESS;
+}
+
+void RoceTransportLiteImpl::Write(const RmaBufferLite &loc, const RmtRmaBufferLite &rmt, const StreamLite &stream)
+{
+    u64 dbAddr = 0;
+    u64 dbValue = 0;
+
+    // Post Wqe && return dbValue
+    connVec_[0]->Write(
+        GetRmaBufSlicelite(loc), GetRmtRmaBufSliceLite(rmt), dbAddr, dbValue);
+
+    // Ring Doorbell
+    BuildRdmaDbSendTask(stream, dbAddr, dbValue);
+}
+
+void RoceTransportLiteImpl::WriteWithNotify(const RmaBufferLite &loc, const RmtRmaBufferLite &rmt, const uint32_t remoteNotifyIdx, const StreamLite &stream)
+{
+    u64 dbAddr = 0;
+    u64 dbValue = 0;
+
+    // Post Wqe && return dbValue
+    // TODO 此处localNotify获取接口未添加？
+    connVec_[0]->WriteWithNotify(
+        GetRmaBufSlicelite(loc), GetRmtRmaBufSliceLite(rmt),
+        GetLocNotifySliceLite(remoteNotifyIdx), GetRmtNotifySliceLite(remoteNotifyIdx), dbAddr, dbValue);
+
+    // Ring Doorbell
+    BuildRdmaDbSendTask(stream, dbAddr, dbValue);
+}
+
+void RoceTransportLiteImpl::NotifyWait(const uint32_t index, const StreamLite &stream)
+{
+    auto notifyId = localNotifies_[index]->GetId();
+    BuildNotifyWaitTask(stream, notifyId);
+}
+
+// 下发Rtsq sqe, 敲DB
+void AicpuTsRoceChannelLite::BuildRdmaDbSendTask(const StreamLite &stream, u64 remoteAddr, u64 dbValue)
+{
+    stream.GetRtsq()->RdmaDbSend(remoteAddr, dbValue);
+}
+
+// 下发Rtsq sqe, NotifyWait
+void AicpuTsRoceChannelLite::BuildNotifyWaitTask(const StreamLite &stream, u32 notifyId)
+{
+    stream.GetRtsq()->NotifyWait(notifyId);
+}
+
 } // namespace Hccl

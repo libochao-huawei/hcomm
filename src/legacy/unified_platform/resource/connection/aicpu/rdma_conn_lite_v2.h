@@ -40,6 +40,9 @@ struct RdmaCqContextLite {
     int8_t dbMode;
 };
 
+#include "rdma_vendor_1825_ops.h"
+#include "rdma_vendor_xscdv_ops.h"
+
 namespace Hccl {
 class RdmaConnLiteV2 : public RmaConnLite {
 public:
@@ -48,13 +51,33 @@ public:
 
     std::string Describe() override;
 
+    // ========== 厂商初始化接口 ==========
+    void GetVendorOps();
+
+    // ========== 数据面：RMA 数据传输 ==========
+    // TODO: 其他数据面接口
+    void Write(const RmaBufSliceLite    &loc,
+               const RmtRmaBufSliceLite &rmt,
+               uint64_t                 &dbAddr,
+               uint64_t                 &dbValue);
+
+    void WriteWithNotify(const RmaBufSliceLite    &loc,
+                         const RmtRmaBufSliceLite &rmt,
+                         const RmaBufSliceLite    &locNotify,
+                         const RmtRmaBufSliceLite &notify,
+                         uint64_t                 &dbAddr,
+                         uint64_t                 &dbValue);
+
 private:
     void ParseSqContext(std::vector<char>& data);
     void ParseCqContext(std::vector<char>& data);
 
     uint32_t            dmaMode_{0};
-    RdmaSqContextLite sqContext{};
-    RdmaCqContextLite cqContext{};
+    RdmaSqContextLite   sqContext_{};
+    RdmaCqContextLite   cqContext_{};
+
+    // ========== 厂商 Ops（工厂模式，负责具体厂商 ops 创建）==========
+    std::unique_ptr<RdmaBaseOps> vendorOps_ = nullptr;
 };
 
 } // namespace Hccl
