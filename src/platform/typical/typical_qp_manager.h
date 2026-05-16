@@ -22,6 +22,9 @@ public:
     static TypicalQpManager& GetInstance();
     HcclResult CreateQp(struct TypicalQp& qpInfo);
     HcclResult CreateQp(struct TypicalQp& qpInfo, const QpConfigInfo& qpConfig);
+    HcclResult CreateCq(unsigned int cqDepth, unsigned int &cqn);
+    HcclResult CreateQpWithCq(unsigned int sendCqn, unsigned int recvCqn,
+        struct ibv_qp_cap *cap, int qpType, int sqSigAll, struct TypicalQp& qpInfo);
     HcclResult ModifyQp(struct TypicalQp& localQpInfo, struct TypicalQp& remoteQpInfo);
     HcclResult DestroyQp(struct TypicalQp& qpInfo);
     HcclResult GetQpHandleByQpn(u32 qpn, QpHandle& qpHandle);
