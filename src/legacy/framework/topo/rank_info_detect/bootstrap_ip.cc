@@ -16,6 +16,7 @@
 #include "exception_util.h"
 #include "invalid_params_exception.h"
 #include "host_ip_not_found_exception.h"
+#include "adapter_error_manager_pub.h"
 
 namespace Hccl {
 
@@ -67,6 +68,10 @@ bool FindHostIpbyControlIfIp(const std::vector<std::pair<std::string, IpAddress>
         HCCL_INFO("[%s] find hostIp success, name[%s] ip[%s]", __func__, it->first.c_str(), ipAddress.GetIpStr().c_str());
         return true;
     }
+    RPT_INPUT_ERR(true, "EI0001",
+        std::vector<std::string>({"value", "env", "expect"}),
+        std::vector<std::string>({ipAddress.GetIpStr(), "HCCL_IF_IP",
+                                  "a valid IP from the available network interfaces"}));
     HCCL_ERROR("[%s] Env config \"HCCL_IF_IP\" is [%s] which is not found in the nic list.", __func__, ipAddress.GetIpStr().c_str());
     return false;
 }
@@ -190,6 +195,10 @@ bool FindLocalHostIp(const std::vector<std::pair<std::string, IpAddress>> &hostI
     if (!ifnames.configIfNames.empty()) {
         bool ret =  FindHostIpByIfName(hostIfInfos, ipAddress);
         if (!ret) {
+            RPT_INPUT_ERR(true, "EI0001",
+                std::vector<std::string>({"value", "env", "expect"}),
+                std::vector<std::string>({ifnames.configIfNameStr, "HCCL_SOCKET_IFNAME",
+                                          "a valid network interface name from the available interfaces"}));
             HCCL_ERROR("[Init][EnvVarParam][%s] Env config \"HCCL_SOCKET_IFNAME\" is [%s] which is not found in the nic list", 
                 __func__, ifnames.configIfNameStr.c_str());
             for (auto &ifInfo : hostIfInfos) {
