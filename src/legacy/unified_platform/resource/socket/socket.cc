@@ -31,8 +31,9 @@ Socket::~Socket()
 void Socket::Listen()
 {
     HCCL_INFO("[Socket::%s] listen start, listenPort[%u]", __func__, listenPort);
-    RaSocketListenParam param(socketHandle, listenPort);
-    HrtRaSocketListenOneStart(param);
+    HrtNetworkMode netMode = nicType == NicType::HOST_NIC_TYPE ? HrtNetworkMode::PEER : HrtNetworkMode::HDC;
+    RaSocketListenParam param(socketHandle, listenPort, localIp);
+    HrtRaSocketListenOneStart(param, netMode);
     isListening = true;
     socketStatus = SocketStatus::LISTENING;
 }
@@ -40,8 +41,9 @@ void Socket::Listen()
 bool Socket::Listen(u32 &port)
 {
     HCCL_INFO("[Socket::%s] trying to listen on port[%u]", __func__, port);
-    RaSocketListenParam param(socketHandle, port);
-    bool ret = HrtRaSocketTryListenOneStart(param);
+    HrtNetworkMode netMode = nicType == NicType::HOST_NIC_TYPE ? HrtNetworkMode::PEER : HrtNetworkMode::HDC;
+    RaSocketListenParam param(socketHandle, port, localIp);
+    bool ret = HrtRaSocketTryListenOneStart(param, netMode);
     CHK_PRT_RET(!ret, HCCL_INFO("[Socket::%s] socket[%s] listen failed, port[%u] is in use",
                                  __func__, Describe().c_str(), port), ret);
 
@@ -156,7 +158,7 @@ void Socket::Close()
 void Socket::StopListen()
 {
     if (isListening) {
-        RaSocketListenParam param(socketHandle, listenPort);
+        RaSocketListenParam param(socketHandle, listenPort, localIp);
         HrtRaSocketListenOneStop(param);
         isListening = false;
     }
@@ -413,7 +415,7 @@ void Socket::GetOneSocket()
 
 void Socket::ListenAsync()
 {
-    RaSocketListenParam param(socketHandle, listenPort);
+    RaSocketListenParam param(socketHandle, listenPort, localIp);
     reqHandle = RaSocketListenOneStartAsync(param);
     socketStatus = SocketStatus::LISTEN_STARTING;
 }
