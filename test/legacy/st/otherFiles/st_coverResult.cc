@@ -1468,7 +1468,7 @@ TEST(AdapterHccpTest, RaSocketListenOneStopAsync_return_ok)
 
     SocketHandle socketHandle = nullptr;
     unsigned int port = 100;
-    RaSocketListenParam param(socketHandle, port);
+    RaSocketListenParam param(socketHandle, port, IpAddress());
 
     RaSocketListenOneStopAsync(param);
 };
