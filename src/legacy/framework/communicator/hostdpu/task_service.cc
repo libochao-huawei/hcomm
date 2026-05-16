@@ -71,7 +71,7 @@ HcclResult TaskService::WriteFlag(uint8_t *flagPtr, uint8_t newFlag) const
         HCCL_ERROR("[TaskService::TaskRun] set flag failed: %d", ret);
         return HCCL_E_INTERNAL;
     }
-    return HCCL_SUCCESS;
+    return HCCL_SUCCESS; // test
 }
 
 HcclResult TaskService::ReadFlag(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t &flag) const
