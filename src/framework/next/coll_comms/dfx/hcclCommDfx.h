@@ -11,6 +11,7 @@
 #define HCCL_COMM_DFX_H
 
 #include <memory>
+#include <mutex>
 #include "mirror_task_manager.h"
 #include "hcclCommProfiling.h"
 #include "global_mirror_tasks.h"
@@ -76,6 +77,7 @@ private:
     static std::unordered_map<u32, u32> streamIdToTaskId_;
     static ReadWriteLockBase baseLock_; // 基类锁成员
     static ReadWriteLock rwLock_; // 读写锁
+    static std::mutex taskIdMutex_; // GetTaskId 专用互斥锁，避免与 channelRemoteRankId_ 共用读写锁
     std::string commTag_;
     u32 deviceId_{0};
     u32 myRankId_{0};

@@ -57,9 +57,10 @@ void MirrorTaskManager::AddTaskInfo(std::shared_ptr<TaskInfo> taskInfo)
             taskInfo->dfxOpInfo_ = currDfxOpInfo_;
         }
 
-        if (queueMap_.find(taskInfo->streamId_) == queueMap_.end()) {
-            QueueType queueType            = GetQueueType();
-            queueMap_[taskInfo->streamId_] = &(globalMirrorTasks_->CreateQueue(devId_, taskInfo->streamId_, queueType));
+        auto [it, inserted] = queueMap_.emplace(taskInfo->streamId_, nullptr);
+        if (inserted) {
+            QueueType queueType = GetQueueType();
+            it->second = &(globalMirrorTasks_->CreateQueue(devId_, taskInfo->streamId_, queueType));
             queueTaskNum[taskInfo->streamId_] = 0;
         }
 
@@ -107,10 +108,11 @@ std::shared_ptr<DfxOpInfo> MirrorTaskManager::GetCurrDfxOpInfo() const
 
 TaskInfoQueue *MirrorTaskManager::GetQueue(u32 streamId) const
 {
-    if (queueMap_.find(streamId) == queueMap_.end()) {
+    auto it = queueMap_.find(streamId);
+    if (it == queueMap_.end()) {
         THROW<InternalException>(StringFormat("MirrorTaskManager::GetQueue streamId(sqId)[%u] out of range", streamId));
     }
-    return queueMap_.find(streamId)->second;
+    return it->second;
 }
 
 std::unordered_map<u32, TaskInfoQueue *>::iterator MirrorTaskManager::Begin()

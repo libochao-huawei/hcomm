@@ -75,47 +75,58 @@ void ProfilingReporter::ReportAllTasks(bool cachedReq)
 {
     HCCL_INFO("[ProfilingReporter]ProfilingReporter ReportAllTasks start.");
     std::lock_guard<std::mutex> lock(mirrorTaskMgr_->GetTaskMutex());
+    if (mirrorTaskMgr_ == nullptr || profilingHandler_ == nullptr) {
+        HCCL_ERROR("[ProfilingReporter][ReportAllTasks] mirrorTaskMgr_[%p] or profilingHandler_[%p] is nullptr", mirrorTaskMgr_, profilingHandler_);
+        return;
+    }
     s32 deviceLogicId = HrtGetDevice();
     if (deviceLogicId >= static_cast<s32>(MAX_MODULE_DEVICE_NUM) || deviceLogicId < 0) {
         HCCL_ERROR("[ProfilingReporter][ReportAllTasks] deviceLogicId[%d] out of range", deviceLogicId);
         return;
     }
     auto& curLastPoses = allLastPoses_[deviceLogicId];
-    if (mirrorTaskMgr_ == nullptr || profilingHandler_ == nullptr) {
-        HCCL_ERROR("[ProfilingReporter][ReportAllTasks] mirrorTaskMgr_[%p] or profilingHandler_[%p] is nullptr", mirrorTaskMgr_, profilingHandler_);
-        return;
-    }
-    for (auto it = mirrorTaskMgr_->Begin(); it != mirrorTaskMgr_->End(); ++it) {
+    auto mirrorBegin = mirrorTaskMgr_->Begin();
+    auto mirrorEnd = mirrorTaskMgr_->End();
+    for (auto it = mirrorBegin; it != mirrorEnd; ++it) {
         u32  streamId     = it->first;
         Queue<std::shared_ptr<TaskInfo>> *currQueue = it->second;
-        if (currQueue == nullptr || currQueue->Begin() == nullptr || currQueue->Tail() == nullptr) {
+        if (currQueue == nullptr) {
             HCCL_WARNING("[ProfilingReporter][ReportAllTasks] currQueue is nullptr, continue to next task.");
             continue;
         }
-        if (*(*(currQueue->Begin())) == nullptr) {
-            HCCL_WARNING("[ProfilingReporter][ReportAllTasks] (*(*(currQueue->Begin())) is nullptr, continue to next task.");
+        auto queueBegin = currQueue->Begin();
+        auto queueTail = currQueue->Tail();
+        if (queueBegin == nullptr || queueTail == nullptr) {
+            HCCL_WARNING("[ProfilingReporter][ReportAllTasks] currQueue Begin or Tail is nullptr, continue to next task.");
             continue;
         }
-        if (curLastPoses.find(streamId) == curLastPoses.end() && currQueue->Begin() != nullptr) { // 是首个任务
-            TaskInfo task = (*(*(*currQueue->Begin())));
+        if (*(*queueBegin) == nullptr) {
+            HCCL_WARNING("[ProfilingReporter][ReportAllTasks] first task in queue is nullptr, continue to next task.");
+            continue;
+        }
+        // 查找当前 stream 的 lastPos，避免两次 map 查找
+        auto lastPosIt = curLastPoses.find(streamId);
+        if (lastPosIt == curLastPoses.end()) { // 是首个任务
+            const TaskInfo &task = *(*(*queueBegin));
             HCCL_INFO("[ProfilingReporter] ReportTask, streamId = %u, taskId = %u", task.streamId_, task.taskId_);
             profilingHandler_->ReportHcclTaskApi(task.taskParam_.taskType, task.taskParam_.beginTime,
                                                  task.taskParam_.endTime, task.isMaster_, cachedReq, true);
             profilingHandler_->ReportHcclTaskDetails(task, cachedReq);
-            curLastPoses[streamId] = currQueue->Begin();
+            curLastPoses[streamId] = queueBegin;
         }
         
-        auto endPos = currQueue->Tail();
-        auto iter = curLastPoses[streamId];
-        ++(*(iter));
-        for (; (*(iter)) != (*(currQueue->End())); ++(*(iter))) {
-            TaskInfo task = (*(*(*iter)));
-            HCCL_INFO("[ProfilingReporter] ReportTask, streamId = %u, taskId = %u", task.streamId_, task.taskId_);
+        auto endPos = queueTail;
+        auto &lastPos = curLastPoses[streamId];
+        auto iter = lastPos;
+        ++(*iter);
+        auto queueEnd = currQueue->End();
+        for (; (*(iter)) != (*queueEnd); ++(*(iter))) {
+            const TaskInfo &task = *(*(*iter));
             profilingHandler_->ReportHcclTaskApi(task.taskParam_.taskType, task.taskParam_.beginTime,
                                                  task.taskParam_.endTime, task.isMaster_, cachedReq, true);
             profilingHandler_->ReportHcclTaskDetails(task, cachedReq);
         }
-        curLastPoses[streamId] = endPos;
+        lastPos = endPos;
     }
 
     HCCL_INFO("[ProfilingReporter]ProfilingReporter ReportAllTasks end.");

@@ -115,6 +115,27 @@ void ProfilingHandler::ReportHcclOp(const DfxOpInfo &opInfo, bool cachedReq)
 
 void ProfilingHandler::ReportHcclTaskApi(TaskParamType taskType, uint64_t beginTime, uint64_t endTime, bool isMasterStream, bool cachedReq, bool ignoreLevel)
 {
+    // 开关判断，订阅开关未开启时，不上报数据
+    if (taskType == TaskParamType::TASK_AICPU_KERNEL) {
+        return;
+    }
+    if ((!enableHcclNode_) || (!ignoreLevel && !enableHcclL1_)) {
+        if (cachedReq) { // 开关未开判断是否为图模式进行缓存
+            HCCL_INFO("[ProfilingHandler] Cache ReportData");
+            MsprofApi reporterData{};
+            reporterData.level = MSPROF_REPORT_HCCL_NODE_LEVEL;
+            reporterData.type = isMasterStream ? MSPROF_REPORT_HCCL_MASTER_TYPE : MSPROF_REPORT_HCCL_SLAVE_TYPE;
+            reporterData.threadId = SalGetTid();
+            reporterData.beginTime = beginTime;
+            reporterData.endTime = endTime;
+            const std::string proName(GetProfTaskOpNameV2(taskType));
+            reporterData.itemId = GetProfHashId(proName.c_str(), proName.length());
+            std::lock_guard<std::mutex> lock(cachedTaskApiInfoMutex_);
+            cachedTaskApiInfo_.push(reporterData);
+            return;
+        }
+        return;
+    }
     // 获取数据
     MsprofApi reporterData{};
     reporterData.level = MSPROF_REPORT_HCCL_NODE_LEVEL;
@@ -128,19 +149,6 @@ void ProfilingHandler::ReportHcclTaskApi(TaskParamType taskType, uint64_t beginT
               "beginTime[%llu], endTime[%llu], itemId[%llu]",
               reporterData.level, reporterData.type, reporterData.threadId, reporterData.beginTime,
               reporterData.endTime, reporterData.itemId);
-    // 开关判断，订阅开关未开启时，不上报数据
-    if (taskType == TaskParamType::TASK_AICPU_KERNEL) {
-        return;
-    }
-    if ((!enableHcclNode_) || (!ignoreLevel && !enableHcclL1_)) {
-        if (cachedReq) { // 开关未开判断是否为图模式进行缓存
-            HCCL_INFO("[ProfilingHandler] Cache ReportData");
-            std::lock_guard<std::mutex> lock(cachedTaskApiInfoMutex_);
-            cachedTaskApiInfo_.push(reporterData);
-            return;
-        }
-        return;
-    }
     // 数据上报
     s32 ret = DlProfFunction::GetInstance().dlMsprofReportApi(1, &reporterData); 
     HCCL_INFO("Call MsprofReportApi, return value[%d]", ret);
@@ -333,11 +341,11 @@ void ProfilingHandler::DumpHCCLReportData(const TaskInfo &taskInfo, const HCCLRe
         "HCCLReportData other data is: hcclReportData.profInfo.srcAddr[%llu], hcclReportData.profInfo.dstAddr[%llu], "
         "hcclReportData.profInfo.dataSize[%u], hcclReportData.profInfo.notifyID[%llu], "
         "hcclReportData.profInfo.linkType[%u], "
-        "hcclReportData.profInfo.opType[%s], hcclReportData.profInfo.transportType[%u], "
-        "hcclReportData.profInfo.dataType[%s], hcclReportData.profInfo.localRank[%u], hcclReportData.profInfo.remoteRank[%u]",
+        "hcclReportData.profInfo.opType[%u], hcclReportData.profInfo.transportType[%u], "
+        "hcclReportData.profInfo.dataType[%u], hcclReportData.profInfo.localRank[%u], hcclReportData.profInfo.remoteRank[%u]",
         hcclReportData.profInfo.srcAddr, hcclReportData.profInfo.dstAddr, hcclReportData.profInfo.dataSize, hcclReportData.profInfo.notifyID, 
-        hcclReportData.profInfo.linkType, OpTypeToSerialString(hcclReportData.profInfo.opType).c_str(), hcclReportData.profInfo.transportType, 
-        DataTypeToSerialString(hcclReportData.profInfo.dataType).c_str(), hcclReportData.profInfo.localRank, hcclReportData.profInfo.remoteRank);
+        hcclReportData.profInfo.linkType, hcclReportData.profInfo.opType, hcclReportData.profInfo.transportType, 
+        hcclReportData.profInfo.dataType, hcclReportData.profInfo.localRank, hcclReportData.profInfo.remoteRank);
 
     HCCL_INFO(
         "HCCLReportData is: hcclReportData.ts[%llu], hcclReportData.dpuProfInfo.itemId[%llu], "
@@ -353,11 +361,11 @@ void ProfilingHandler::DumpHCCLReportData(const TaskInfo &taskInfo, const HCCLRe
         "HCCLReportData other data is: hcclReportData.dpuProfInfo.srcAddr[%llu], hcclReportData.dpuProfInfo.dstAddr[%llu], "
         "hcclReportData.dpuProfInfo.dataSize[%u], hcclReportData.dpuProfInfo.notifyID[%llu], "
         "hcclReportData.dpuProfInfo.linkType[%u], "
-        "hcclReportData.dpuProfInfo.opType[%s], hcclReportData.dpuProfInfo.transportType[%u], "
-        "hcclReportData.dpuProfInfo.dataType[%s], hcclReportData.dpuProfInfo.localRank[%u], hcclReportData.dpuProfInfo.remoteRank[%u]",
+        "hcclReportData.dpuProfInfo.opType[%u], hcclReportData.dpuProfInfo.transportType[%u], "
+        "hcclReportData.dpuProfInfo.dataType[%u], hcclReportData.dpuProfInfo.localRank[%u], hcclReportData.dpuProfInfo.remoteRank[%u]",
         hcclReportData.dpuProfInfo.srcAddr, hcclReportData.dpuProfInfo.dstAddr, hcclReportData.dpuProfInfo.dataSize, hcclReportData.dpuProfInfo.notifyID, 
-        hcclReportData.dpuProfInfo.linkType, OpTypeToSerialString(hcclReportData.dpuProfInfo.opType).c_str(), hcclReportData.dpuProfInfo.transportType, 
-        DataTypeToSerialString(hcclReportData.dpuProfInfo.dataType).c_str(), hcclReportData.dpuProfInfo.localRank, hcclReportData.dpuProfInfo.remoteRank);
+        hcclReportData.dpuProfInfo.linkType, hcclReportData.dpuProfInfo.opType, hcclReportData.dpuProfInfo.transportType, 
+        hcclReportData.dpuProfInfo.dataType, hcclReportData.dpuProfInfo.localRank, hcclReportData.dpuProfInfo.remoteRank);
 }
 
 void ProfilingHandler::ReportCcuInfo(const TaskInfo &taskInfo) const
@@ -675,10 +683,10 @@ void ProfilingHandler::ReportHcclOpInfo(uint64_t timeStamp, const DfxOpInfo &opI
     }
     // 数据上报
     HCCL_INFO("[ProfilingHandler][ReportHcclOpInfo], data is: level[%u], type[%u], threadId[%u], dataLen[%u], "
-              "timeStamp[%llu], relay [%u], retry[%u], dataType[%s], algType[%u], groupName[%llu], count[%llu]",
+              "timeStamp[%llu], relay [%u], retry[%u], dataType[%u], algType[%u], groupName[%llu], count[%llu]",
               reporterData.level, reporterData.type, reporterData.threadId, reporterData.dataLen,
               reporterData.timeStamp, reporterData.data.hcclopInfo.relay, reporterData.data.hcclopInfo.retry,
-              DataTypeToSerialString(reporterData.data.hcclopInfo.dataType).c_str(), reporterData.data.hcclopInfo.algType,
+              reporterData.data.hcclopInfo.dataType, reporterData.data.hcclopInfo.algType,
               reporterData.data.hcclopInfo.groupName, reporterData.data.hcclopInfo.count);
     s32 ret = DlProfFunction::GetInstance().dlMsprofReportCompactInfo(1, &reporterData, sizeof(MsprofCompactInfo));
     if (ret != 0) {

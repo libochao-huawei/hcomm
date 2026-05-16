@@ -46,11 +46,10 @@ HcclResult HcclCommDfxLite::AddTaskInfoCallback(u32 streamId, u32 taskId, const 
     if (handle != INVALID_U64) {
         CHK_RET(GetChannelRemoteRankId(commTag_, handle, remoteRankId));
     }
-    std::shared_ptr<Hccl::TaskInfo> taskInfo{nullptr};
-    EXECEPTION_CATCH(taskInfo = std::make_shared<Hccl::TaskInfo>(streamId, taskId,
-        remoteRankId, taskParam, mirrorTaskManagerLite_->GetCurrDfxOpInfo()), return HCCL_E_PTR);
-    EXECEPTION_CATCH(mirrorTaskManagerLite_->AddTaskInfo(taskInfo), return HCCL_E_PTR);
+    auto taskInfo = std::make_shared<Hccl::TaskInfo>(streamId, taskId,
+        remoteRankId, taskParam, mirrorTaskManagerLite_->GetCurrDfxOpInfo());
     HCCL_INFO("[%s]taskInfo: %s", __func__, taskInfo->Describe().c_str());
+    mirrorTaskManagerLite_->AddTaskInfo(std::move(taskInfo));
     return HCCL_SUCCESS;
 }
 
@@ -77,17 +76,19 @@ void HcclCommDfxLite::AddChannelRemoteRankId(const std::string& commTag, u64 han
 // 在channelRemoteRankIdLite_表中对remoteRankId进行查找
 HcclResult HcclCommDfxLite::GetChannelRemoteRankId(const std::string& commTag, u64 handle, u32& remoteRankId) {
     rwLockLite_.readLock();
-    if (channelRemoteRankIdLite_.find(commTag) == channelRemoteRankIdLite_.end()) {
+    auto commIt = channelRemoteRankIdLite_.find(commTag);
+    if (commIt == channelRemoteRankIdLite_.end()) {
         rwLockLite_.readUnlock();
         HCCL_ERROR("[HcclCommDfxLite]commTag:[%s] not found", commTag.c_str());
         return HCCL_E_PARA;
     }
-    if (channelRemoteRankIdLite_[commTag].find(handle) == channelRemoteRankIdLite_[commTag].end()) {
-        HCCL_ERROR("[HcclCommDfxLite]handle not found,commTag:[%s], handle:[%lu]", commTag.c_str(), handle);
+    auto handleIt = commIt->second.find(handle);
+    if (handleIt == commIt->second.end()) {
         rwLockLite_.readUnlock();
+        HCCL_ERROR("[HcclCommDfxLite]handle not found,commTag:[%s], handle:[%lu]", commTag.c_str(), handle);
         return HCCL_E_PARA;
     }
-    remoteRankId = channelRemoteRankIdLite_[commTag][handle];
+    remoteRankId = handleIt->second;
     rwLockLite_.readUnlock();
     return HCCL_SUCCESS;
 }

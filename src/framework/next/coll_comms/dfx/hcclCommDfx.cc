@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "hcclCommDfx.h"
+#include <mutex>
 
 namespace hccl {
 
@@ -15,6 +16,7 @@ ReadWriteLockBase HcclCommDfx::baseLock_;
 ReadWriteLock HcclCommDfx::rwLock_(HcclCommDfx::baseLock_);
 std::unordered_map<std::string,std::unordered_map<u64, u32> > HcclCommDfx::channelRemoteRankId_;
 std::unordered_map<u32, u32> HcclCommDfx::streamIdToTaskId_;
+std::mutex HcclCommDfx::taskIdMutex_;
 HcclCommDfx::HcclCommDfx() {
 }
 
@@ -54,11 +56,10 @@ HcclResult HcclCommDfx::AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl
     if (handle != INVALID_U64) {
         CHK_RET(GetChannelRemoteRankId(commTag_, handle, remoteRankId));
     }
-    std::shared_ptr<Hccl::TaskInfo> taskInfo{nullptr};
-    EXECEPTION_CATCH(taskInfo = std::make_shared<Hccl::TaskInfo>(streamId, taskId,
-        remoteRankId, taskParam, mirrorTaskManager_->GetCurrDfxOpInfo(), taskParam.isMaster), return HCCL_E_PTR);
-    EXECEPTION_CATCH(mirrorTaskManager_->AddTaskInfo(taskInfo), return HCCL_E_PTR);
+    auto taskInfo = std::make_shared<Hccl::TaskInfo>(streamId, taskId,
+        remoteRankId, taskParam, mirrorTaskManager_->GetCurrDfxOpInfo(), taskParam.isMaster);
     HCCL_INFO("[%s]taskInfo: %s", __func__, taskInfo->Describe().c_str());
+    mirrorTaskManager_->AddTaskInfo(std::move(taskInfo));
     return HCCL_SUCCESS;
 }
 
@@ -121,8 +122,8 @@ HcclResult HcclCommDfx::GetChannelRemoteRankId(const std::string& commTag, u64 h
     }
     auto handleIt = commIt->second.find(handle);
     if (handleIt == commIt->second.end()) {
-        HCCL_ERROR("[HcclCommDfx]handle not found,commTag:[%s],handle:[%lu]", commTag.c_str(), handle);
         rwLock_.readUnlock();
+        HCCL_ERROR("[HcclCommDfx]handle not found,commTag:[%s],handle:[%lu]", commTag.c_str(), handle);
         return HCCL_E_PARA;
     }
     remoteRankId = handleIt->second;
@@ -138,12 +139,10 @@ HcclResult HcclCommDfx::ReportKernel(uint64_t beginTime, const std::string& comm
 
 u32 HcclCommDfx::GetTaskId(u32 streamId)
 {
-    rwLock_.writeLock();
+    std::lock_guard<std::mutex> lock(taskIdMutex_);
     auto& taskIdRef = streamIdToTaskId_[streamId];
     taskIdRef = (taskIdRef + 1) % 65536;
-    u32 retTaskId = taskIdRef; 
-    rwLock_.writeUnlock();
-    return retTaskId; 
+    return taskIdRef; 
 }
 
 void HcclCommDfx::SetDpuStreamId(u32 dpuStreamId) {

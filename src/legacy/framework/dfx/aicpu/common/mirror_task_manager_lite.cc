@@ -40,8 +40,9 @@ void MirrorTaskManagerLite::AddTaskInfo(std::shared_ptr<TaskInfo> taskInfo)
         taskInfo->dfxOpInfo_ = currDfxOpInfo_;
     }
 
-    if (queueMap_.find(taskInfo->streamId_) == queueMap_.end()) {
-        queueMap_[taskInfo->streamId_] = std::make_unique<CircularQueue<std::shared_ptr<TaskInfo>>>(MAX_CIRCULAR_QUEUE_LENGTH);
+    auto [it, inserted] = queueMap_.emplace(taskInfo->streamId_, nullptr);
+    if (inserted) {
+        it->second = std::make_unique<CircularQueue<std::shared_ptr<TaskInfo>>>(MAX_CIRCULAR_QUEUE_LENGTH);
         queueTaskNum[taskInfo->streamId_] = 0;
     }
 
@@ -84,20 +85,18 @@ std::shared_ptr<DfxOpInfo> MirrorTaskManagerLite::GetCurrDfxOpInfo() const
 
 TaskInfoQueue *MirrorTaskManagerLite::GetQueue(u32 streamId) const
 {
-    if (queueMap_.find(streamId) == queueMap_.end()) {
+    auto it = queueMap_.find(streamId);
+    if (it == queueMap_.end()) {
         HCCL_ERROR("MirrorTaskManagerLite::GetQueue streamId(sqId)[%u] out of range", streamId);
         return nullptr;
     }
-    return queueMap_.find(streamId)->second.get();
+    return it->second.get();
 }
 
 std::shared_ptr<TaskInfo>  MirrorTaskManagerLite::GetTaskInfo(u32 streamId, u32 taskId) const
 {
-    TaskInfoQueue *queue = nullptr;
-    try {
-        queue = GetQueue(streamId);
-    } catch (HcclException &e) {
-        HCCL_ERROR("Hccl exception %s was caught.", e.what());
+    TaskInfoQueue *queue = GetQueue(streamId);
+    if (queue == nullptr) {
         return nullptr;
     }
 

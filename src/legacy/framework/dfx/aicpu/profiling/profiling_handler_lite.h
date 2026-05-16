@@ -19,6 +19,7 @@
 
 extern "C" {
 __attribute__((weak)) int32_t MsprofReportBatchAdditionalInfo(uint32_t nonPersistantFlag, const VOID_PTR data, uint32_t length);
+__attribute__((weak)) int32_t AdprofReportBatchAdditionalInfo(uint32_t nonPersistantFlag, const void *data, uint32_t length);
 __attribute__((weak)) int32_t AdprofReportAdditionalInfo(uint32_t agingFlag, const void *data, uint32_t length);
 __attribute__((weak)) int32_t MsprofReportAdditionalInfo(uint32_t nonPersistantFlag, const VOID_PTR data, uint32_t length);
 __attribute__((weak)) int32_t AdprofCheckFeatureIsOn(uint64_t feature);
@@ -62,6 +63,8 @@ public:
 private:
     explicit ProfilingHandlerLite();
     void ReportAdditionInfo(uint32_t type, uint64_t timeStamp, const void *data, int len) const;
+    HcclResult TaskInfo2Addition(const void *data, int len, MsprofAdditionalInfo& reporterData) const;
+    void ReportBatchAdditionInfo(MsprofAdditionalInfo *addInfoVec, uint32_t addInfoIndx) const;
 
     bool IsProfOn(uint64_t feature) const;
     bool IsProfSwitchOn(ProfilingLevel level);
