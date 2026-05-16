@@ -284,7 +284,8 @@ TEST_F(CollServiceDefaultImplTest, col_service_default_impl_load_with_op_based_m
     shared_ptr<InsQueue> insQueue = make_shared<InsQueue>();
     MOCKER_CPP(&PrimTranslator::Translate).stubs().will(returnValue(insQueue));
 
-    MOCKER_CPP(&SocketManager::BatchCreateSockets).stubs();
+    MOCKER_CPP(&SocketManager::BatchCreateSockets, void(SocketManager::*)(const std::vector<LinkData>&))
+        .stubs();
 
     MOCKER_CPP(&ConnectionsBuilder::BatchBuild).stubs();
 
@@ -357,7 +358,8 @@ TEST_F(CollServiceDefaultImplTest, coll_service_default_impl_orchestrate_with_in
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(devType));
     MOCKER_CPP(&CollServiceDefaultImpl::RegisterOpBufToBufMgr).stubs();
     MOCKER_CPP(&CollServiceDefaultImpl::RegisterOpbasedStream).stubs();
-    MOCKER_CPP(&SocketManager::BatchCreateSockets).stubs();
+    MOCKER_CPP(&SocketManager::BatchCreateSockets, void(SocketManager::*)(const std::vector<LinkData>&))
+        .stubs();
     MOCKER_CPP(&CollServiceBase::SaveMirrorDfxOpInfo).stubs();
 
     vector<LinkData> links;
