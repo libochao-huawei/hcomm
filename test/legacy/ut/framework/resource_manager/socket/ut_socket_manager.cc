@@ -111,25 +111,18 @@ TEST_F(SocketManagerTest, batch_create_sockets_should_ok) {
     }
 }
 
-TEST_F(SocketManagerTest, batch_server_listen_async_should_ok) {
-    MOCKER_CPP(&SocketManager::BatchAddWhiteList).stubs();
-    SocketManager socketMgr(impl, localRank, devicePhyId, listenPort);
-    socketMgr.BatchServerListen(links);
-    auto &serverSocketMap = SocketManager::GetServerSocketMap();
-    for (const auto& sock: serverSocketMap) {
-        EXPECT_EQ(sock.second->socketStatus, SocketStatus::LISTENING);
-    }
-}
 
 TEST_F(SocketManagerTest, batch_server_listen_async_conect_sockets_should_ok) {
     MOCKER_CPP(&SocketManager::BatchAddWhiteList).stubs();
-    SocketManager socketMgr(impl, localRank, devicePhyId, listenPort);
-    socketMgr.BatchServerListen(links);
+    SocketManager socketMgr(localRank, devicePhyId, devicePhyId, "tmp");
+ 	auto link = links[0];
+    Hccl::SocketConfig socketConfig(link.GetRemoteRankId(), link, "test");
+    socketMgr.BatchServerListen(socketConfig);
     auto &serverSocketMap = SocketManager::GetServerSocketMap();
     for (const auto& sock: serverSocketMap) {
         EXPECT_EQ(sock.second->socketStatus, SocketStatus::LISTENING);
     }
-    socketMgr.BatchConectSockets();
+    socketMgr.BatchConectSockets(socketConfig);
     for (const auto& sock: socketMgr.connectedSocketMap) {
         if (sock.first.role == SocketRole::CLIENT) {
             EXPECT_EQ(sock.second->socketStatus, SocketStatus::CONNECT_STARTING);
@@ -180,4 +173,12 @@ TEST_F(SocketManagerTest, Ut_ServerInitAll_Skip_Init_When_Env_Config) {
     EXPECT_NE(nullptr, graph);
     NewRankInfo rankInfo = rankGraphBuilder.GetRankTableInfo()->ranks[0];
     EXPECT_NO_THROW(SocketManager::ServerInitAll(rankInfo));
+}
+
+TEST_F(SocketManagerTest, test_BatchCreateSockets_with_SocketConfig) {
+    SocketManager socketMgr(localRank, devicePhyId, devicePhyId, "tmp");
+    auto link = links[0];
+    Hccl::SocketConfig socketConfig(link.GetRemoteRankId(), link, "test");
+    socketMgr.BatchCreateSockets(socketConfig);
+    socketMgr.GetConnectedSocket(socketConfig);
 }
