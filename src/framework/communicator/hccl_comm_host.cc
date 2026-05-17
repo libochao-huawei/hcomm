@@ -470,7 +470,8 @@ namespace hccl
         if (IsCommunicatorV2()) {
             status = collComm_->GetCommStatus();
         } else {
-            status = HcclCommStatus::HCCL_COMM_STATUS_READY;
+            HCCL_ERROR("[%s] deviceType is not support", __func__);
+            return HCCL_E_NOT_SUPPORT;
         }
         return HCCL_SUCCESS;
     }
