@@ -84,7 +84,7 @@ if(PRODUCT_SIDE STREQUAL "host")
     )
 endif()
 
-if (BUILD_AARCH)
+if(ENABLE_BUILD_AARCH)
     set(STUBS
         ascend_hal
         slog
@@ -164,7 +164,7 @@ set(INSTALL_CCL_KERNEL_JSON_DIR opp/built-in/op_impl/aicpu)
 set(INSTALL_DPU_KERNEL_JSON_DIR opp/built-in/op_impl/dpu)
 set(INSTALL_DEVICE_TAR_DIR compat)
 
-if(AARCH_MODE)
+if(ENABLE_BUILD_AARCH)
     set(INSTALL_DEVICE_LIBRARY_DIR ${CMAKE_SYSTEM_PROCESSOR}-linux/devlib/device)
 else()
     set(INSTALL_DEVICE_LIBRARY_DIR ${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/devlib/device)
