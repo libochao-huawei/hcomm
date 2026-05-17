@@ -38,10 +38,10 @@
 #include "param_check_pub.h"
 #include "channel_process.h"
 #include "launch_device.h"
-
+#include "base_comm_res_mgr.h"
+#include "sub_resource_mgrs.h"
 
 namespace hcomm {
-static std::unordered_map<ThreadHandle, std::shared_ptr<hccl::Thread>> g_ThreadMap;
 static aclrtBinHandle g_BinHandle;
 static std::mutex g_BinHandleMtx;
 }  // namespace hcomm
@@ -525,8 +525,13 @@ HcommResult HcommThreadAllocWithStream(CommEngine engine,
  
     // 返回第一个句柄
     *thread = reinterpret_cast<ThreadHandle>(handle.get());
-    hcomm::g_ThreadMap.emplace(*thread , handle);
- 
+    int32_t deviceId = 0;
+    CHK_RET(hrtGetDevice(&deviceId));
+    auto* threadsMgr = hcomm::BaseCommResMgr::Instance()
+                          .GetOrCreate(static_cast<uint32_t>(deviceId))
+                          ->GetThreadsMgr();
+    CHK_RET(threadsMgr->RegisterStreamThread(*thread, handle));
+
     HCCL_INFO("[ThreadMgr]  ThreadAcquireWithStream done: engine[%d] stream[%p],"
         "notifyNum[%u]",  engine, stream, notifyNum);
     return HCCL_SUCCESS;
