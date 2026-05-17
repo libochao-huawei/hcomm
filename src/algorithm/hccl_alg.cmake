@@ -107,32 +107,11 @@ if(BUILD_OPEN_PROJECT)
         LOG_CPP
     )
 
-    target_include_directories(hccl_alg PRIVATE
-        # runtime头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/base/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/dump/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/external/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/platform/
-        # mmpa头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/mmpa/
-        # acl头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/acl/
-        # driver头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
-        # 包间接口
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
-
-        ${THIRD_PARTY_NLOHMANN_PATH}
-    )
-
     target_link_libraries(hccl_alg PRIVATE
+        $<BUILD_INTERFACE:json>
+        $<BUILD_INTERFACE:acl_rt_headers>
+        $<BUILD_INTERFACE:runtime_headers>
+        $<BUILD_INTERFACE:mmpa_headers>
         -Wl,--no-as-needed
         c_sec
         unified_dlog

@@ -31,6 +31,7 @@ find_cann_package(msprof MODULE REQUIRED)
 find_cann_package(securec MODULE REQUIRED)
 find_cann_package(unified_dlog MODULE REQUIRED)
 find_cann_package(mmpa MODULE REQUIRED)
+find_cann_package(acl_rt MODULE REQUIRED)
 find_cann_package(runtime MODULE REQUIRED)
 find_cann_package(error_manager MODULE REQUIRED)
 

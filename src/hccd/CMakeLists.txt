@@ -188,6 +188,9 @@ if(BUILD_OPEN_PROJECT)
     )
 
     target_link_libraries(hccd
+        $<BUILD_INTERFACE:acl_rt_headers>
+        $<BUILD_INTERFACE:runtime_headers>
+        $<BUILD_INTERFACE:mmpa_headers>
         -Wl,--no-as-needed
         c_sec
         mmpa

@@ -45,6 +45,8 @@ target_link_options(ccl_dpu PRIVATE
 
 # 链接库
 target_link_libraries(ccl_dpu
+    $<BUILD_INTERFACE:acl_rt_headers>
+    $<BUILD_INTERFACE:runtime_headers>
     -Wl,--no-as-needed
     c_sec
     mmpa
@@ -78,7 +80,6 @@ if(BUILD_OPEN_PROJECT)
         ${ASCEND_CANN_PACKAGE_PATH}/include
         ${ASCEND_CANN_PACKAGE_PATH}/include/hccl
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/

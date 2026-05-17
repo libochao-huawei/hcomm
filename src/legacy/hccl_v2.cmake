@@ -41,6 +41,9 @@ target_link_options(hccl_v2 PRIVATE
 
 # 链接库
 target_link_libraries(hccl_v2 PRIVATE
+    $<BUILD_INTERFACE:acl_rt_headers>
+    $<BUILD_INTERFACE:runtime_headers>
+    $<BUILD_INTERFACE:mmpa_headers>
     -Wl,--no-as-needed
     c_sec
     unified_dlog
@@ -83,7 +86,6 @@ target_include_directories(hccl_v2 PRIVATE
 if(BUILD_OPEN_PROJECT)
     target_include_directories(hccl_v2 PRIVATE
         ${ASCEND_CANN_PACKAGE_PATH}/include/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/mmpa/
         ${ASCEND_CANN_PACKAGE_PATH}/include/acl/
         ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
         ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api/
@@ -91,7 +93,6 @@ if(BUILD_OPEN_PROJECT)
 
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
