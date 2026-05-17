@@ -733,6 +733,19 @@ int RaGetEidByIp(void *ctxHandle, struct IpInfo ip[], union HccpEid eid[], unsig
     return 0;
 }
 
+int RaGetHccnCfg(struct RaInfo *info, enum HccnCfgKey key, char *value, unsigned int *valueLen)
+{
+    (void)info;
+    (void)key;
+    if (value != nullptr && valueLen != nullptr && *valueLen > 0U) {
+        value[0] = '\0';
+    }
+    if (valueLen != nullptr) {
+        *valueLen = 0U;
+    }
+    return -1;
+}
+
 int RaSetTpAttrAsync(void *ctxHandle, uint64_t tpHandle, uint32_t attrBitmap, struct TpAttr *attr, void **reqHandle)
 {
     return 0;
