@@ -32,6 +32,9 @@ target_include_directories(hcomm PRIVATE
 
 set(src_list
     hcomm_res_mgr.cc
+    base_comm_res_mgr.cc
+    base_comm_res.cc
+    sub_resource_mgrs.cc
 )
 
 target_sources(hcomm PRIVATE
