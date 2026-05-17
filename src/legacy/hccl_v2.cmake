@@ -57,24 +57,25 @@ target_link_libraries(hccl_v2 PRIVATE
 )
 
 target_include_directories(hccl_v2 PRIVATE
+    # src/legacy 头文件
     ${LEGACY_INCLUDE_LIST}
-    ${CMAKE_CURRENT_SOURCE_DIR}/base/inc
-
-    ${HCOMM_DIR}/src/pub_inc
-    ${HCOMM_DIR}/src/pub_inc/hccl
+    # 内部头文件
     ${HCOMM_DIR}/include
-    ${HCOMM_DIR}/inc/adapter
-    ${HCOMM_DIR}/src/algorithm/impl/resource_manager
-
     ${HCOMM_DIR}/include/hccl/
     ${HCOMM_DIR}/pkg_inc
+    ${HCOMM_DIR}/src/pub_inc
+    # src/algorithm 头文件
     ${HCOMM_DIR}/src/algorithm/pub_inc
+    ${HCOMM_DIR}/src/algorithm/impl/resource_manager
     ${HCOMM_DIR}/src/algorithm/base/alg_template
     ${HCOMM_DIR}/src/algorithm/base/communicator
+    # src/platform 头文件
+    ${HCOMM_DIR}/src/platform/inc/adapter
     ${HCOMM_DIR}/src/platform/hccp/inc/network
     ${HCOMM_DIR}/src/platform/hccp/orion/hcomm_dev/inc/network
+    # 外部依赖
     ${HCOMM_DIR}/externel_depends/tsch
-
+    # 三方件头文件
     ${THIRD_PARTY_NLOHMANN_PATH}
     ${RDMA_CORE_INCLUDE_DIR}
 )
