@@ -1,72 +1,78 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #include "endpoint_map.h"
-#include <unordered_map>
-#include <memory>
-#include <mutex>
+
+#include "base_comm_res_mgr.h"
+#include "base_comm_res.h"
+#include "hcomm_dev_phy_id.h"
+#include "sub_resource_mgrs.h"
 
 namespace hcomm {
 
-static std::unordered_map<EndpointHandle, std::unique_ptr<Endpoint>> g_EndpointMap;
-static std::mutex g_EndpointMapMutex;
-
 void HcommEndpointMap::AddEndpoint(EndpointHandle handle, std::unique_ptr<Endpoint> endpoint)
 {
-    std::lock_guard<std::mutex> lock(g_EndpointMapMutex);
-
-    auto it = g_EndpointMap.find(handle);
-    if (it != g_EndpointMap.end()) {
-        it->second = std::move(endpoint);
+    if (endpoint == nullptr) {
         return;
     }
-
-    g_EndpointMap.emplace(handle, std::move(endpoint));
-    return;
+    const EndpointDesc desc = endpoint->GetEndpointDesc();
+    const uint32_t devPhyId = ResolveDevPhyIdFromEndpointDesc(desc);
+    BaseCommRes* res = BaseCommResMgr::Instance().GetOrCreate(devPhyId);
+    EndpointsMgr* mgr = res->GetEndpointsMgr();
+    mgr->InstallOwnedEndpoint(handle, std::move(endpoint));
 }
 
 bool HcommEndpointMap::RemoveEndpoint(EndpointHandle handle)
 {
-    std::lock_guard<std::mutex> lock(g_EndpointMapMutex);
-
-    auto it = g_EndpointMap.find(handle);
-    if (it != g_EndpointMap.end()) {
-        g_EndpointMap.erase(it);
-        return true;
-    }
-    return false;
+    bool removed = false;
+    BaseCommResMgr::Instance().VisitBaseCommRes([&](BaseCommRes* res) {
+        if (removed) {
+            return;
+        }
+        EndpointsMgr* mgr = res->TryGetEndpointsMgr();
+        if (mgr == nullptr) {
+            return;
+        }
+        if (mgr->RemoveOwnedEndpoint(handle) == HCCL_SUCCESS) {
+            removed = true;
+        }
+    });
+    return removed;
 }
 
-bool HcommEndpointMap::UpdateEndpoint(
-    EndpointHandle handle,
-    std::unique_ptr<Endpoint> newEndpoint)
+bool HcommEndpointMap::UpdateEndpoint(EndpointHandle handle, std::unique_ptr<Endpoint> newEndpoint)
 {
-    std::lock_guard<std::mutex> lock(g_EndpointMapMutex);
-
-    auto it = g_EndpointMap.find(handle);
-    if (it != g_EndpointMap.end()) {
-        it->second = std::move(newEndpoint);
-        return true;
+    if (newEndpoint == nullptr) {
+        return false;
     }
-    return false;
+    if (!RemoveEndpoint(handle)) {
+        return false;
+    }
+    AddEndpoint(handle, std::move(newEndpoint));
+    return true;
 }
 
 Endpoint* HcommEndpointMap::GetEndpoint(EndpointHandle handle)
 {
-    std::lock_guard<std::mutex> lock(g_EndpointMapMutex);
-
-    auto it = g_EndpointMap.find(handle);
-    if (it != g_EndpointMap.end()) {
-        return it->second.get(); // 返回裸指针，不转移所有权
-    }
-    return nullptr;
+    Endpoint* found = nullptr;
+    BaseCommResMgr::Instance().VisitBaseCommRes([&](BaseCommRes* res) {
+        if (found != nullptr) {
+            return;
+        }
+        EndpointsMgr* mgr = res->TryGetEndpointsMgr();
+        if (mgr == nullptr) {
+            return;
+        }
+        found = mgr->FindEndpointByHandle(handle);
+    });
+    return found;
 }
 
 } // namespace hcomm
