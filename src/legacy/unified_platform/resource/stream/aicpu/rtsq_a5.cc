@@ -66,12 +66,12 @@ u32 RtsqA5::GetTailToHeadDist() const
 void RtsqA5::MakeSureAvailableSpace()
 {
     u32  availableSpace = GetTailToHeadDist();
-    auto startTime      = std::chrono::steady_clock::now();
+    auto startTime = std::chrono::steady_clock::now();
     auto timeoutValue
         = CommunicatorImplLiteMgr::GetInstance().GetEnvConfig().hcclExecTimeout + 20; // rtsq full超时时间: X+20s
-    auto                       timeout = std::chrono::seconds(timeoutValue);
+    auto timeout = std::chrono::seconds(timeoutValue);
     const std::chrono::seconds printInterval(PRINT_INTERVAL); // 打印间隔30s
-    auto                       lastPrintTime = std::chrono::steady_clock::now() - printInterval;
+    auto lastPrintTime = startTime - printInterval;
     HCCL_INFO("RtsqA5::%s timeout: %u s, cur head: %u, tail: %u, sqId: %u", __func__, timeoutValue, sqHead_, sqTail_,
               sqId_);
 
@@ -82,12 +82,13 @@ void RtsqA5::MakeSureAvailableSpace()
             break; // 避免head没更新导致假反压
         }
 
-        if (UNLIKELY(std::chrono::steady_clock::now() - lastPrintTime >= printInterval)) {
+        auto curTime = std::chrono::steady_clock::now();
+        if (UNLIKELY(curTime - lastPrintTime >= printInterval)) {
             HCCL_INFO("RtsqA5::%s while loop availableSpace %u <= pendingSqeCnt %u", __func__, availableSpace,
                       pendingSqeCnt);
-            lastPrintTime = std::chrono::steady_clock::now();
+            lastPrintTime = curTime;
         }
-        if (UNLIKELY((std::chrono::steady_clock::now() - startTime) >= timeout)) { // timeout内还是不能向RTSQ中写入值，报错
+        if (UNLIKELY((curTime - startTime) >= timeout)) { // timeout内还是不能向RTSQ中写入值，报错
             auto msg = StringFormat("Rtsq full, timeout %u. cur head: %u, sqId: %u", timeoutValue, sqHead_, sqId_);
             HCCL_ERROR("%s", msg.c_str());
             THROW<InternalException>(msg);
@@ -170,9 +171,9 @@ void RtsqA5::LaunchTask()
     sqTail_ = newTail;
 
     // 清空本地的locBuffer和sqeCnt数目
+    HCCL_INFO("RtsqA5::%s: END, pendingSqeCnt[%u], sqHead_[%u] sqTail_[%u]", __func__, pendingSqeCnt, sqHead_, sqTail_);
     pendingSqeCnt = 0;
     (void)memset_s(locBuf, rtsqSqeSize * perLaunchSqeCnt, 0, rtsqSqeSize * perLaunchSqeCnt); // locBuffer清零
-    HCCL_INFO("RtsqA5::%s: END, pendingSqeCnt[%u], sqHead_[%u] sqTail_[%u]", __func__, pendingSqeCnt, sqHead_, sqTail_);
 }
 
 void RtsqA5::TryLaunchTask()
