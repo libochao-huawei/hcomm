@@ -15,11 +15,13 @@ if(TARGET ccl_kernel)
     )
     target_include_directories(ccl_kernel PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/inc
     )
-
-    add_subdirectory(aicpu_kfc)
-    add_subdirectory(common)
-    add_subdirectory(framework)
-    add_subdirectory(utils)
-    add_subdirectory(debug)
 endif()
+
+# 添加子目录
+add_subdirectory(aicpu_kfc)
+add_subdirectory(common)
+add_subdirectory(framework)
+add_subdirectory(utils)
+add_subdirectory(debug)
