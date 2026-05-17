@@ -2,7 +2,7 @@
 #include <mockcpp/mokc.h>
 #include <mockcpp/mockcpp.hpp>
 
-#include "env_config.h"
+#include "hccl/hccl_types.h"
 
 #define private public
 #include "next/comms/endpoint_pairs/channels/ccu/ccu_urma_channel.h"
@@ -32,7 +32,7 @@ class TestCcuConnection : public CcuConnection {
 public:
     TestCcuConnection(const CommAddr &locAddr, const CommAddr &rmtAddr,
         const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys,
-        uint32_t qos = EnvConfig::UB_QOS_DEFAULT)
+        uint32_t qos = HCCL_COMM_QOS_CONFIG_DEFAULT_UB)
         : CcuConnection(locAddr, rmtAddr, channelInfo, ccuJettys, qos) {}
     // Do not call Init(); use default base behavior for Clean()
 };
@@ -50,7 +50,7 @@ TEST_F(CcuUrmaChannelTest, Ut_Clean_When_ImplIsPresent_Expect_HCCL_SUCCESS) {
 
     // Create a test connection (does not call Init)
     std::unique_ptr<CcuConnection> conn(
-        new TestCcuConnection(locAddr, rmtAddr, channelInfo, jettys, EnvConfig::UB_QOS_DEFAULT));
+        new TestCcuConnection(locAddr, rmtAddr, channelInfo, jettys, HCCL_COMM_QOS_CONFIG_DEFAULT_UB));
 
     // Fake socket pointer (not dereferenced by Clean())
     Hccl::Socket *fakeSocket = reinterpret_cast<Hccl::Socket *>(0x1);
@@ -87,7 +87,7 @@ TEST_F(CcuUrmaChannelTest, Ut_GetStatus_DfxInfo_TEST) {
     CcuChannelInfo channelInfo{};
     std::vector<CcuJetty*> jettys{};
 
-    auto conn = std::make_unique<CcuConnection>(locAddr, rmtAddr, channelInfo, jettys, EnvConfig::UB_QOS_DEFAULT);
+    auto conn = std::make_unique<CcuConnection>(locAddr, rmtAddr, channelInfo, jettys, HCCL_COMM_QOS_CONFIG_DEFAULT_UB);
     auto fakeSocket = reinterpret_cast<Hccl::Socket*>(1);
     CcuTransport::CclBufferInfo bufInfo(0x1000, 0x100, 1, 1);
 

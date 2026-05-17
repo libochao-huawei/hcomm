@@ -8,6 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <cstring>
+
 #include "hccp.h"
 #include "hccp_async.h"
 #include "hccp_ctx.h"
@@ -734,6 +736,19 @@ int RaGetEidByIp(void *ctxHandle, struct IpInfo ip[], union HccpEid eid[], unsig
     return 0;
 }
 
+int RaGetHccnCfg(struct RaInfo *info, enum HccnCfgKey key, char *value, unsigned int *valueLen)
+{
+    (void)info;
+    (void)key;
+    if (value != nullptr && valueLen != nullptr && *valueLen > 0U) {
+        value[0] = '\0';
+    }
+    if (valueLen != nullptr) {
+        *valueLen = 0U;
+    }
+    return -1;
+}
+
 int RaSetTpAttrAsync(void *ctxHandle, uint64_t tpHandle, uint32_t attrBitmap, struct TpAttr *attr, void **reqHandle)
 {
     return 0;
@@ -741,8 +756,18 @@ int RaSetTpAttrAsync(void *ctxHandle, uint64_t tpHandle, uint32_t attrBitmap, st
 
 int RaGetTpAttrAsync(void *ctxHandle, uint64_t tpHandle, uint32_t *attrBitmap, struct TpAttr *attr, void **reqHandle)
 {
-    static int reqHandleValue = 12378;
-    *reqHandle = &reqHandleValue;
+    static char kStubRaTpAttrReq{};
+    (void)ctxHandle;
+    (void)tpHandle;
+    (void)attrBitmap;
+    if (attr != nullptr) {
+        (void)std::memset(attr, 0, sizeof(struct TpAttr));
+        attr->slBitmap = 0x7U;
+        attr->dscpConfigMode = 1U;
+    }
+    if (reqHandle != nullptr) {
+        *reqHandle = &kStubRaTpAttrReq;
+    }
     return 0;
 }
 
