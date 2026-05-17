@@ -23,6 +23,12 @@ HcclResult HcclCommGetStatus(const char * commId, HcclCommStatus *status)
 {
     CHK_PTR_NULL(commId);
     CHK_PTR_NULL(status);
+    DevType deviceType;
+    CHK_RET(hrtGetDeviceType(deviceType));
+    if (deviceType != DevType::DEV_TYPE_950) {
+        HCCL_ERROR("[%s] deviceType[%d] is not support", __func__, deviceType);
+        return HCCL_E_NOT_SUPPORT;
+    }
     HcclComm comm = nullptr;
     // 公共流程, 需要同时获取单算子和图模式的通信域
     CHK_RET(HcomGetCommHandleByGroup(commId, &comm));
