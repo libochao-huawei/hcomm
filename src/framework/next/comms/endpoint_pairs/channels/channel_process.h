@@ -12,27 +12,17 @@
 
 #include "hcomm_c_adpt.h"
 #include "channel.h"
+#include "channel_device_key.h"
 #include "mem_host_pub.h"
 #include <mutex>
 #include <string>
 
 namespace hcomm {
 
-struct DeviceChannelKey {
-    int32_t deviceId;
-    ChannelHandle handle;
+class ChannelsMgr;
 
-    bool operator==(const DeviceChannelKey& other) const {
-        return deviceId == other.deviceId && handle == other.handle;
-    }
-};
-
-struct DeviceChannelKeyHash {
-    std::size_t operator()(const DeviceChannelKey& key) const {
-        return std::hash<int32_t>()(key.deviceId) ^
-               (std::hash<ChannelHandle>()(key.handle) << 1);
-    }
-};
+using DeviceChannelKey = ChannelDeviceKey;
+using DeviceChannelKeyHash = ChannelDeviceKeyHash;
 
 class ChannelProcess {
 public:
@@ -78,12 +68,8 @@ private:
         ChannelHandle *hostChannelHandles, uint32_t listNum, HcommChannelKind channelKind, aclrtBinHandle binHandle);
 
     static HcclResult ChannelResumeConcurrency(const ChannelHandle *channelList, uint32_t channelNum);
-    static HcclResult RemoveSingleChannel(int32_t deviceId, ChannelHandle inHandle,
+    static HcclResult RemoveSingleChannel(ChannelsMgr* chMgr, int32_t deviceId, ChannelHandle inHandle,
         std::vector<ChannelHandle> &deviceHandles);
-
-    static std::unordered_map<ChannelHandle, std::unique_ptr<Channel>> g_ChannelMap;
-    static std::unordered_map<DeviceChannelKey, ChannelHandle, DeviceChannelKeyHash> g_ChannelD2HMap;
-    static std::mutex g_ChannelMapMtx;
 };
 }
 #endif // CHANNEL_PROCESS_H
