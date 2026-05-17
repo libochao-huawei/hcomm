@@ -72,8 +72,19 @@ int RaCtxQpImportAsync(void *ctx_handle, struct QpImportInfoT *info, void **rem_
 int RaGetTpInfoListAsync(void *ctx_handle, struct GetTpCfg *cfg, struct HccpTpInfo info_list[],
     unsigned int *num, void **req_handle)
 {
-    int a = 12378;
-    *req_handle = &a;
+    (void)ctx_handle;
+    (void)cfg;
+    if (info_list != nullptr) {
+        (void)std::memset(info_list, 0, sizeof(struct HccpTpInfo));
+        info_list[0].tpHandle = 1U;
+    }
+    if (num != nullptr) {
+        *num = 1U;
+    }
+    static int kStubRaTpInfoListReq = 12378;
+    if (req_handle != nullptr) {
+        *req_handle = &kStubRaTpInfoListReq;
+    }
     return 0;
 }
 
@@ -213,6 +224,15 @@ HcclResult HrtRaSetTpAttrAsync(RdmaHandle handle, uint64_t tpHandle, uint32_t at
 int RaCtxGetTpInfoList(void *ctxHandle, struct GetTpCfg *cfg, struct HccpTpInfo infoList[],
     unsigned int *num)
 {
+    (void)ctxHandle;
+    (void)cfg;
+    if (infoList != nullptr) {
+        (void)std::memset(infoList, 0, sizeof(struct HccpTpInfo));
+        infoList[0].tpHandle = 1U;
+    }
+    if (num != nullptr) {
+        *num = 1U;
+    }
     return 0;
 }
 
