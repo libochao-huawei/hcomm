@@ -710,7 +710,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_ChannelFence_When_WqeNumIsZero_Expect_HCCL_SUC
     EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::CONN_OK);
     EXPECT_EQ(status, ChannelStatus::READY);
     // ChannelFence
-    impl_->wqeNum_ = 0;
+    impl_->wqeNums_ = {0};
     HcclResult ret = impl_->ChannelFence();
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
