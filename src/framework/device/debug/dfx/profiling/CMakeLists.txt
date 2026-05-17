@@ -18,6 +18,6 @@ if(TARGET ccl_kernel)
         ${src_list}
     )
     target_include_directories(ccl_kernel PRIVATE
-        ${HCOMM_DIR}/src/framework/device/inc
+        ${CMAKE_CURRENT_SOURCE_DIR}
     )
 endif()

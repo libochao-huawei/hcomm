@@ -240,7 +240,7 @@ if(BUILD_OPEN_PROJECT)
         -ldl
         -lpthread
     )
-    target_link_libraries(ccl_kernel_plf PRIVATE
+    target_link_libraries(ccl_kernel_plf
         ${CCL_KERNEL_PLF_LINK_LIBS}
     )
     target_link_libraries(ccl_kernel_plf_a PRIVATE
@@ -304,10 +304,10 @@ else()
         -lpthread
         ofed_headers
     )
-    target_link_libraries(ccl_kernel_plf PRIVATE
+    target_link_libraries(ccl_kernel_plf
         ${CCL_KERNEL_PLF_LINK_LIBS}
     )
-    target_link_libraries(ccl_kernel_plf_a PRIVATE
+    target_link_libraries(ccl_kernel_plf_a
         ${CCL_KERNEL_PLF_LINK_LIBS}
     )
 
