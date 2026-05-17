@@ -119,7 +119,8 @@ static bool ApplyUbcQosTpSlPolicy(const RaUbGetTpInfoParam &param, uint32_t nTp,
             param.Describe().c_str());
         return false;
     }
-    const uint32_t slRank = slotIdx;
+    // hcclQos 越大优先级越高；UB SL 数值越小优先级越高，对档位取反
+    const uint32_t slRank = (slAvailableCnt - 1U) - slotIdx;
     if (slRank >= slAvailableCnt) {
         HCCL_WARNING(
             "[TpManager][ApplyUbcQosTpSlPolicy] slRank out of range: nTp[%u] slAvailableCnt[%u] k[%u] slRank[%u] "
@@ -127,7 +128,7 @@ static bool ApplyUbcQosTpSlPolicy(const RaUbGetTpInfoParam &param, uint32_t nTp,
             nTp, slAvailableCnt, k, slRank, static_cast<unsigned>(slMask), param.Describe().c_str());
         return false;
     }
-    tpListIndexOut = slotIdx;
+    tpListIndexOut = (k - 1U) - slotIdx;
     mappedSlOut = SlValueAtRankInMask16(slMask, slRank);
     return true;
 }
