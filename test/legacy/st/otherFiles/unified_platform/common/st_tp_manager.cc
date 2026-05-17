@@ -12,6 +12,7 @@
 #include <mockcpp/mokc.h>
 #include <mockcpp/mockcpp.hpp>
 #include "tp_manager.h"
+#include "hccp.h"
 #include "orion_adapter_rts.h"
 #include "env_config/env_config.h"
 
