@@ -8,8 +8,9 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 cmake_minimum_required(VERSION 3.16.0)
-option(BUILD_OPEN_PROJECT "Build open hcomm project." ON)
-option(ENABLE_BUILD_DEVICE "Build hcomm device project." OFF)
+option(BUILD_OPEN_PROJECT   "Build open hcomm project."     ON)
+option(ENABLE_BUILD_DEVICE  "Build hcomm device project."   OFF)
+option(ENABLE_BUILD_AARCH   "Build hcomm aarch project."    OFF)
 
 # 默认只编译 host 侧
 if(NOT DEFINED PRODUCT_SIDE)
@@ -28,7 +29,7 @@ message(STATUS "CANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH}")
 message(STATUS "PRODUCT_SIDE=${PRODUCT_SIDE}")
 message(STATUS "BUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}")
 message(STATUS "ENABLE_BUILD_DEVICE=${ENABLE_BUILD_DEVICE}")
-message(STATUS "AARCH_MODE=${AARCH_MODE}")
+message(STATUS "ENABLE_BUILD_AARCH=${ENABLE_BUILD_AARCH}")
 
 set(HCOMM_DIR         "${CMAKE_CURRENT_SOURCE_DIR}")
 set(HCC_TOOLCHAIN_DIR "${ASCEND_CANN_PACKAGE_PATH}/toolkit/toolchain/hcc")
@@ -37,7 +38,7 @@ set(HCC_C_COMPILER    "${HCC_TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-gcc")
 set(HCC_C_AR          "${HCC_TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-ar")
 
 # 交叉编译场景（x86机器上编译arm包）
-if(AARCH_MODE)
+if(ENABLE_BUILD_AARCH)
     message(STATUS "TOOLCHAIN_DIR=${HCC_TOOLCHAIN_DIR}")
     set(CMAKE_SYSTEM_NAME Linux)
     set(CMAKE_SYSTEM_PROCESSOR aarch64)
