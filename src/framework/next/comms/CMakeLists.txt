@@ -17,6 +17,9 @@ add_subdirectory(api_c_adpt)
 
 set(src_list
     hcomm_res_mgr.cc
+    base_comm_res_mgr.cc
+    base_comm_res.cc
+    sub_resource_mgrs.cc
 )
 
 if(TARGET hcomm)
