@@ -30,6 +30,10 @@ public:
     }
 };
 
+void MockHrtGetDeviceType(DevType deviceType) {
+    MOCKER(hrtGetDeviceType).stubs().with(outBound(deviceType)).will(returnValue(HCCL_SUCCESS));
+}
+
 TEST_F(HcclCommGetStatusTest, Ut_HcclCommGetStatus_When_StatusIsNull_Expect_ReturnIsHCCL_E_PTR) {
     UT_COMM_CREATE_DEFAULT(comm);
 
@@ -44,6 +48,8 @@ TEST_F(HcclCommGetStatusTest, Ut_HcclCommGetStatus_When_StatusIsNull_Expect_Retu
 TEST_F(HcclCommGetStatusTest, Ut_HcclCommGetStatus_When_CommIsOk_StatusOutIsReady_Expect_ReturnIsHCCL_SUCCESS) {
     UT_COMM_CREATE_DEFAULT(comm);
 
+    MockHrtGetDeviceType(DevType::DEV_TYPE_950);
+
     std::string commId = GetCommId(comm);
 
     HcclCommStatus status = HCCL_COMM_STATUS_INVALID;
@@ -51,6 +57,20 @@ TEST_F(HcclCommGetStatusTest, Ut_HcclCommGetStatus_When_CommIsOk_StatusOutIsRead
     EXPECT_EQ(ret, HCCL_SUCCESS);
     // After successful create, comm status should be READY
     EXPECT_EQ(status, HcclCommStatus::HCCL_COMM_STATUS_READY);
+
+    Ut_Comm_Destroy(comm);
+}
+
+TEST_F(HcclCommGetStatusTest, Ut_HcclCommGetStatus_When_DevTypeIsNot950_Expect_ReturnIsHCCL_E_NOT_SUPPORT) {
+    UT_COMM_CREATE_DEFAULT(comm);
+
+    MockHrtGetDeviceType(DevType::DEV_TYPE_910_93);
+
+    std::string commId = GetCommId(comm);
+
+    HcclCommStatus status = HCCL_COMM_STATUS_INVALID;
+    HcclResult ret = HcclCommGetStatus(commId.c_str(), &status);
+    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
 
     Ut_Comm_Destroy(comm);
 }
