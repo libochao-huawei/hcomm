@@ -202,20 +202,16 @@ if(BUILD_OPEN_PROJECT)
     )
 
     set(CCL_KERNEL_PLF_OPEN_INCLUDE_LIST
-        # runtime头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/
         # driver头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/driver
         # 包间接口
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/common/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/mmpa/
         # 临时依赖头文件，待删除
         ${HCOMM_DIR}/externel_depends/tsch/
         # 三方件头文件
@@ -231,6 +227,9 @@ if(BUILD_OPEN_PROJECT)
 
     # 链接库
     set(CCL_KERNEL_PLF_LINK_LIBS
+        $<BUILD_INTERFACE:acl_rt_headers>
+        $<BUILD_INTERFACE:runtime_headers>
+        $<BUILD_INTERFACE:mmpa_headers>
         -Wl,--no-as-needed
         c_sec
         aicpu_sharder

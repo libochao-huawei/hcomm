@@ -111,7 +111,6 @@ if(BUILD_OPEN_PROJECT)
 
     target_include_directories(hccl_plf PRIVATE
         # runtime头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/
         ${ASCEND_CANN_PACKAGE_PATH}/include/base/
         ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
         ${ASCEND_CANN_PACKAGE_PATH}/include/dump/
@@ -123,7 +122,6 @@ if(BUILD_OPEN_PROJECT)
 
         # 包间接口
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
@@ -138,6 +136,9 @@ if(BUILD_OPEN_PROJECT)
 
     target_link_libraries(hccl_plf
     PRIVATE
+        $<BUILD_INTERFACE:acl_rt_headers>
+        $<BUILD_INTERFACE:runtime_headers>
+        $<BUILD_INTERFACE:mmpa_headers>
         -Wl,--no-as-needed
         c_sec
         unified_dlog

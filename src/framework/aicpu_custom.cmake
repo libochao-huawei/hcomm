@@ -20,6 +20,11 @@ clone_cann_target(
 
 # 链接库
 target_link_libraries(aicpu_custom PRIVATE
+    $<BUILD_INTERFACE:json>
+    $<BUILD_INTERFACE:acl_rt_headers>
+    $<BUILD_INTERFACE:runtime_headers>
+    $<BUILD_INTERFACE:mmpa_headers>
+    $<BUILD_INTERFACE:slog_headers>
     -Wl,--no-as-needed
     ascend_hal
     c_sec

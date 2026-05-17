@@ -167,20 +167,16 @@ if(BUILD_OPEN_PROJECT)
     )
 
     target_include_directories(hccd PRIVATE
-        # runtime头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/
         # driver头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
         # 包间接口
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/common/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/mmpa/
         # 三方件头文件
         ${RDMA_CORE_INCLUDE_DIR}
         ${THIRD_PARTY_NLOHMANN_PATH}
@@ -188,6 +184,9 @@ if(BUILD_OPEN_PROJECT)
     )
 
     target_link_libraries(hccd
+        $<BUILD_INTERFACE:acl_rt_headers>
+        $<BUILD_INTERFACE:runtime_headers>
+        $<BUILD_INTERFACE:mmpa_headers>
         -Wl,--no-as-needed
         c_sec
         mmpa

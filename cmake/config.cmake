@@ -97,7 +97,6 @@ else()
         slog
         aicpu_sharder
         ${HOST_STUBS}
-        acl_rt
         metadef
         opp_registry
     )
