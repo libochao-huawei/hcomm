@@ -239,6 +239,7 @@ TEST_F(Ccukernel_ReportProfilingTest, Ut_HcclReportAivKernel_Normal)
     char commName[128] = {};
     std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
     HcclCommConfig config;
+    UtInitHcclCommConfig(config);
     config.hcclOpExpansionMode = 6; 
     config.hcclRdmaServiceLevel = 0; 
     config.hcclRdmaTrafficClass = 0;
@@ -278,6 +279,7 @@ TEST_F(Ccukernel_ReportProfilingTest, Ut_HcclReportAicpuKernel_Normal)
     char commName[128] = {};
     std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
     HcclCommConfig config;
+    UtInitHcclCommConfig(config);
     config.hcclOpExpansionMode = 6; 
     config.hcclRdmaServiceLevel = 0; 
     config.hcclRdmaTrafficClass = 0;
