@@ -9,7 +9,6 @@
  */
 
 #include <cstdlib>
-#include <cstring>
 
 #include "ccu_component.h"
 
@@ -56,7 +55,6 @@ static uint8_t ResolveLoopJettyQosFromTpSl(RdmaHandle rdmaHandle, uint64_t tpHan
     }
 
     struct TpAttr tpAttr {};
-    (void)memset(&tpAttr, 0, sizeof(tpAttr));
     uint32_t attrBitmap = (1U << kLoopTpAttrSlAvailableBit) | kLoopTpAttrBitmapSl;
     RequestHandle reqHandle = 0;
     const HcclResult startRet =
