@@ -191,6 +191,22 @@ void HrtRaSocketWhiteListDel(SocketHandle socketHandle, vector<RaSocketWhitelist
 
 HcclResult HrtRaGetTpAttrAsync(u32 phyId, RdmaHandle handle, uint64_t tpHandle, uint32_t& attrBitmap, TpAttr& attr, RequestHandle& reqHandle)
 {
+    (void)phyId;
+    (void)handle;
+    (void)tpHandle;
+    (void)attrBitmap;
+    (void)attr;
+    (void)reqHandle;
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtRaSetTpAttrAsync(RdmaHandle handle, uint64_t tpHandle, uint32_t attrBitmap, TpAttr& attr, RequestHandle& reqHandle)
+{
+    (void)handle;
+    (void)tpHandle;
+    (void)attrBitmap;
+    (void)attr;
+    reqHandle = 0;
     return HCCL_SUCCESS;
 }
 

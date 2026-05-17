@@ -22,6 +22,8 @@
 
 using namespace hccl;
 
+const u32 EnvConfig::UB_QOS_DEFAULT = 4;
+
 static std::mutex g_envConfigMutex;
 
 constexpr char ENV_EMPTY_STRING[] = "EmptyString";
