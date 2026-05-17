@@ -526,35 +526,30 @@ HcclResult HostCpuRoceChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNu
 {
     CHK_PRT_RET(remoteMem == nullptr, HCCL_ERROR("[GetRemoteMem] remoteMem is nullptr"), HCCL_E_PTR);
     CHK_PRT_RET(memNum == nullptr, HCCL_ERROR("[GetRemoteMem] memNum is nullptr"), HCCL_E_PTR);
-    CHK_PRT_RET(memTags == nullptr, HCCL_ERROR("[GetRemoteMem] memTags is nullptr"), HCCL_E_PTR);
- 
-    *remoteMem = nullptr;
     *memNum = 0;
- 
-    std::lock_guard<std::mutex> lock(remoteMemsMutex_);
- 
+
     uint32_t totalCount = rmtRmaBuffers_.size();
     if (totalCount == 0) {
         HCCL_INFO("[GetRemoteMem] No remote memory regions available");
         return HCCL_SUCCESS;
     }
-    // 释放之前的内存
-    remoteMemsPtr_.reset();  
-    remoteMemsPtr_ = std::make_unique<HcclMem[]>(totalCount);
-    CHK_PTR_NULL(remoteMemsPtr_);
 
     for (uint32_t i = 0; i < totalCount; i++) {
         auto& rmtRmaBuffer = rmtRmaBuffers_[i];
-        remoteMemsPtr_[i].type = rmtRmaBuffer->GetMemType();
-        remoteMemsPtr_[i].addr = reinterpret_cast<void *>(rmtRmaBuffer->GetAddr());
-        remoteMemsPtr_[i].size = rmtRmaBuffer->GetSize();
+        std::unique_ptr<HcclMem> hcclMem{};
+        EXECEPTION_CATCH(hcclMem = std::make_unique<HcclMem>(), return HCCL_E_PARA);
+        
+        hcclMem->type = rmtRmaBuffer->GetMemType();
+        hcclMem->addr = reinterpret_cast<void *>(rmtRmaBuffer->GetAddr());
+        hcclMem->size = rmtRmaBuffer->GetSize();
         memTags[i] = const_cast<char*>(rmtRmaBuffer->GetMemTag().c_str());
-        HCCL_INFO("[%s] addr[%p] size[%zu] rmtRmaBuffer[%p]", 
-            __func__, reinterpret_cast<void *>(rmtRmaBuffer->GetAddr()), rmtRmaBuffer->GetSize(), rmtRmaBuffer.get());
+        remoteMem[i] = hcclMem.get();
+        HCCL_INFO("[HostCpuRoceChannel::%s] rmtBuf[addr[%p], size[%llu]]", 
+            __func__, remoteMem[i]->addr, remoteMem[i]->size);
+        remoteMems.emplace_back(std::move(hcclMem));
     }
 
     *memNum = totalCount;
-    *remoteMem = remoteMemsPtr_.get();
     return HCCL_SUCCESS;
 }
 
