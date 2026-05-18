@@ -303,7 +303,7 @@ HcclResult RankGraph::GetTopoType(const u32 netLayer, const u32 topoInstId, Topo
 {
     auto *netInstance = GetNetInstanceByRankId(netLayer, myRank_);
     CHK_PRT_RET(netInstance == nullptr,
-                HCCL_ERROR("[RankGraph::GetTopoType] netInstance is nullptr, myRank[%d], netLayer[%u], "
+                HCCL_ERROR("[RankGraph::GetTopoType] netInstance is nullptr, myRank[%u], netLayer[%u], "
                            "topoInstId[%u]", myRank_, netLayer, topoInstId),
                 HCCL_E_PTR);
 
@@ -321,13 +321,13 @@ HcclResult RankGraph::GetRanksByTopoInst(
 {
     auto *netInstance = GetNetInstanceByRankId(netLayer, myRank_);
     CHK_PRT_RET(netInstance == nullptr,
-                HCCL_ERROR("[RankGraph::GetRanksByTopoInst] netInstance is nullptr, myRank[%d], netLayer[%u], "
+                HCCL_ERROR("[RankGraph::GetRanksByTopoInst] netInstance is nullptr, myRank[%u], netLayer[%u], "
                            "topoInstId[%u]", myRank_, netLayer, topoInstId),
                 HCCL_E_PTR);
 
     auto ret = netInstance->GetRanksByTopoInst(topoInstId, ranks, rankNum);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-                HCCL_ERROR("[%s] Failed to GetRanksByTopoInst, myRank[%d], netLayer[%u], netInstId[%s], "
+                HCCL_ERROR("[%s] Failed to GetRanksByTopoInst, myRank[%u], netLayer[%u], netInstId[%s], "
                            "topoInstId[%u], ret[%d]", __func__, myRank_, netLayer,
                            netInstance->GetNetInstId().c_str(), topoInstId, ret),
                 ret);

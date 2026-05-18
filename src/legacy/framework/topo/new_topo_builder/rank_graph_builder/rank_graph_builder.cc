@@ -446,7 +446,7 @@ void RankGraphBuilder::BuildPeer2PeerLinks()
                 if (sourceIfaces.empty() || targetIfaces.empty()) {
                     // 没有可用的接口。
                     HCCL_WARNING("[RankGraphBuilder][BuildPeer2PeerLinks] no available interface, "
-                        "srcRankId[%d] dstRankId[%d].", srcRankId, dstRankId);
+                        "srcRankId[%u] dstRankId[%u].", srcRankId, dstRankId);
                     continue;
                 }
                 srcPeer->AddConnInterfaces(0, sourceIfaces);

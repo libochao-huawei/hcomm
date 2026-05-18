@@ -94,7 +94,7 @@ void NetInstance::AddPeer(const shared_ptr<Peer> &peer)
 {
     if (netLayer == 0 && localIdsMap.find(peer->GetLocalId()) != localIdsMap.end()) {
         THROW<InvalidParamsException>(StringFormat("[NetInstance][%s] when netLayer is 0, local id[%u] is repeat. "
-            "rank id [%d], netInstId[%s]", __func__, peer->GetLocalId(), peer->GetRankId(), netInstId.c_str()));
+            "rank id [%u], netInstId[%s]", __func__, peer->GetLocalId(), peer->GetRankId(), netInstId.c_str()));
     }
     localIdsMap.insert({peer->GetLocalId(), peer->GetRankId()});
 
@@ -245,7 +245,7 @@ vector<NetInstance::Path> InnerNetInstance::GetPaths(const RankId srcRankId, con
         paths.emplace_back(path);
         HCCL_DEBUG("[InnerNetInstance::GetPaths] netLayer[%u], from src[%s] to dst[%s] get path.",
                    netLayer, peers.at(srcRankId)->Describe().c_str(), peers.at(dstRankId)->Describe().c_str());
-        HCCL_DEBUG("[InnerNetInstance::GetPaths] netLayer[%u], srcRankId[%d], dstRankId[%d], path[%s]", netLayer,
+        HCCL_DEBUG("[InnerNetInstance::GetPaths] netLayer[%u], srcRankId[%u], dstRankId[%u], path[%s]", netLayer,
                    srcRankId, dstRankId, path.links[0].Describe().c_str());
     });
 
@@ -277,7 +277,7 @@ vector<NetInstance::Path> InnerNetInstance::GetPaths(const RankId srcRankId, con
                 }
             }
         } else {
-            HCCL_WARNING("[NetInstance::GetPaths] netLayer[%u], srcRankId[%d], dstRankId[%d], netInstId[%s], "
+            HCCL_WARNING("[NetInstance::GetPaths] netLayer[%u], srcRankId[%u], dstRankId[%u], netInstId[%s], "
                          "from src[%s] to dst[%s] link via fabric[%s] not found.", netLayer, srcRankId, dstRankId,
                          netInstId.c_str(), peers.at(srcRankId)->Describe().c_str(),
                          peers.at(dstRankId)->Describe().c_str(), fabric->Describe().c_str());
@@ -296,7 +296,7 @@ vector<NetInstance::Path> ClosNetInstance::GetPaths(const RankId srcRankId, cons
 {
     vector<NetInstance::Path> paths;
     if (peers.count(srcRankId) == 0 || peers.count(dstRankId) == 0) {
-        HCCL_WARNING("[ClosNetInstance::GetPaths] srcRankId[%d] or dstRankId[%d] not exist in netInstance, "
+        HCCL_WARNING("[ClosNetInstance::GetPaths] srcRankId[%u] or dstRankId[%u] not exist in netInstance, "
                      "netLayer[%u], netInstId[%s].", srcRankId, dstRankId, netLayer, netInstId.c_str());
         return paths;
     }
