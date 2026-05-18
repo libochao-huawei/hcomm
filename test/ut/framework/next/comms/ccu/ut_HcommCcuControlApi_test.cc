@@ -121,31 +121,6 @@ static void MockChannelDestory(const std::pair<EndpointHandle, ChannelHandle> &h
     EXPECT_EQ(hcommRet, static_cast<HcommResult>(HcclResult::HCCL_SUCCESS));
 }
 
-// 控制流（CCU_DO/CCU_WHILE/CCU_IF）的 kernel 在 IR 翻译期会调用
-// CcuKernel::CreateVariable() 占用 res_.variable / xnReq 资源，但 ConfigCcuResReqCcuMs
-// 默认只为 CCU_MS 实例分配 continuousXn=400、xn=0。这里直接给 resPack 的 xn 资源池
-// 注入若干虚拟条目，让 Register 阶段的 CheckResIfAvailable 不会因 xn 不足而失败；
-// 注入操作仅修改 host 侧统计，不会触发任何真实硬件资源申请。
-static void InjectXnIntoResPack(int32_t devLogicId, CcuInsHandle insHandle,
-    uint32_t xnPerDie = 64)
-{
-    auto *instance = hcomm::CcuInstanceMgr::GetInstance(devLogicId).Get(insHandle);
-    if (instance == nullptr) {
-        ADD_FAILURE() << "InjectXnIntoResPack: instance not found, insHandle=" << insHandle;
-        return;
-    }
-    auto *resPack = instance->GetResPack();
-    if (resPack == nullptr) {
-        ADD_FAILURE() << "InjectXnIntoResPack: resPack is null, insHandle=" << insHandle;
-        return;
-    }
-    for (uint32_t dieId = 0; dieId < hcomm::CCU_MAX_IODIE_NUM; ++dieId) {
-        for (uint32_t i = 0; i < xnPerDie; ++i) {
-            resPack->resRepo_.xn[dieId].push_back(hcomm::ResInfo(2000 + dieId * 1000 + i, 1));
-        }
-    }
-}
-
 static ThreadHandle MockThreadAllocWithStream(CommEngine commEngine)
 {
     // 选择调用Hcomm接口，而不是对具体的Thread实现打桩，减少内部依赖
@@ -390,7 +365,6 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelDoWhile_When_AllFine_Expect_Retu
 
     ccuRet = HcommCcuKernelRegisterStart(insHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
-    InjectXnIntoResPack(fakeDeviceLogicId, insHandle);
 
     char *kernelFuncName = "ccu_do_while_while_demo";
     CcuKernelHandle kernelHandle{0};
@@ -452,7 +426,6 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelNestedIfOuterElse_When_AllFine_E
 
     ccuRet = HcommCcuKernelRegisterStart(insHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
-    InjectXnIntoResPack(fakeDeviceLogicId, insHandle);
 
     char *kernelFuncName = "ccu_nested_if_outer_else_demo";
     CcuKernelHandle kernelHandle{0};
@@ -514,7 +487,6 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelNestedIfInnerElse_When_AllFine_E
 
     ccuRet = HcommCcuKernelRegisterStart(insHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
-    InjectXnIntoResPack(fakeDeviceLogicId, insHandle);
 
     char *kernelFuncName = "ccu_nested_if_inner_else_demo";
     CcuKernelHandle kernelHandle{0};
@@ -573,7 +545,6 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelDoWhileUnified_When_AllFine_Expe
 
     ccuRet = HcommCcuKernelRegisterStart(insHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
-    InjectXnIntoResPack(fakeDeviceLogicId, insHandle);
 
     char *kernelFuncName = "ccu_do_while_unified_demo";
     CcuKernelHandle kernelHandle{0};
@@ -642,8 +613,6 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelLoopAdd_When_AllFine_Expect_Retu
 
     ccuRet = HcommCcuKernelRegisterStart(insHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
-    // Loop 用例对 xn 资源消耗较大，多注入一些
-    InjectXnIntoResPack(fakeDeviceLogicId, insHandle, /*xnPerDie=*/256);
 
     char *kernelFuncName = "ccu_loop_add_demo";
     CcuKernelHandle kernelHandle{0};
