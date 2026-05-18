@@ -91,11 +91,6 @@ set(includes
 )
 
 target_include_directories(net_co PRIVATE ${includes})
-if(DEVICE_MODE)
-    target_link_directories(net_co PRIVATE
-        ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
-    )
-endif()
 
 target_compile_options(net_co PRIVATE
 	-Werror
