@@ -239,7 +239,7 @@ git commit -m "feat(api): simplify HcclGetRankDescList to return full rankDescVe
 **Files:**
 - Modify: `src/legacy/framework/communicator/communicator_impl.cc:324-366`
 
-- [ ] **Step 1: 两个 CreateSubComm 重载中替换 Reparse 为 BuildRankDescVec**
+- [x] **Step 1: 两个 CreateSubComm 重载中替换 Reparse 为 BuildRankDescVec**
 
 **位置 1 (line 330-332)**：
 
@@ -262,7 +262,7 @@ git commit -m "feat(api): simplify HcclGetRankDescList to return full rankDescVe
               }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add src/legacy/framework/communicator/communicator_impl.cc
