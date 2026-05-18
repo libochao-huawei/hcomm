@@ -43,6 +43,17 @@ namespace Hccl {
         return HCCL_SUCCESS;
     }
 
+    HcclResult IRankGraph::GetHostPort(const uint32_t rank, uint32_t *hostPort)
+    {
+        CHK_PTR_NULL(hostPort);
+        CHK_PTR_NULL(rankGraphPtr_);
+        RankGraph *rankGraph = static_cast<RankGraph *>(rankGraphPtr_);
+        auto peer = rankGraph->GetPeer(rank);
+        CHK_PTR_NULL(peer);
+        *hostPort = peer->GetHostPort();
+        return HCCL_SUCCESS;
+    }
+
     HcclResult IRankGraph::GetRankGraphInfo(void **graph, uint32_t *len)
     {
         CHK_PTR_NULL(rankGraphPtr_);
