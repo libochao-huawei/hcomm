@@ -107,7 +107,7 @@ private:
     // Ns recovery
     std::unique_ptr<NsRecoveryProcessor> nsRecoveryProcessor_{nullptr};
     // 内部获取 port 的方法，根据 mode_ 区分 v1/v2
-    HcclResult GetDevicePortInternal(uint32_t rank, uint32_t *devPort);
+    HcclResult GetDevicePortInternal(uint32_t rank, uint32_t *devPort, EndpointLocType locType);
 
     Hccl::RankIpPortMapPtr rankIpPortMap_;
 };
