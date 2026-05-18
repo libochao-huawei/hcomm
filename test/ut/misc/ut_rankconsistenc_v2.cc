@@ -40,32 +40,6 @@ protected:
         std::cout << "A Test TearDown" << std::endl;
     }
 
-    // 构造最小RankTable_t用于RecordRankTableCrcV2
-    // void FillMinRankTable(RankTable_t &rt) {
-    //     rt.deviceNum = 2;
-    //     rt.serverNum = 1;
-    //     rt.superPodNum = 1;
-    //     rt.nicDeploy = 0;
-    //     rt.rankNum = 2;
-    //     rt.version = "1.0";
-    //     RankInfo_t rank{};
-    //     rank.rankId = 0;
-    //     rank.localRank = 0;
-    //     rank.serverId = "s0";
-    //     rank.serverIdx = 0;
-    //     rank.superDeviceId = 0;
-    //     rank.superPodId = "p0";
-    //     rank.superPodIdx = 0;
-    //     rank.hostPort = 10000;
-    //     rank.nodeId = 0;
-    //     rank.itemId = 0;
-    //     rank.bindDeviceId = 0;
-    //     rt.rankList.push_back(rank);
-    //     rank.rankId = 1;
-    //     rank.localRank = 1;
-    //     rt.rankList.push_back(rank);
-    // }
-
     RankConsistencyCheckerV2 &checker_ = RankConsistencyCheckerV2::GetInstance();
 };
 
