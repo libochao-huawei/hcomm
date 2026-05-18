@@ -700,6 +700,13 @@ HcclResult InitCommClusterInfo(std::string &rankTableM, const uint32_t rank, con
         hcclNslbDp::GetInstance().SetGlobalRank_RankTableExit(opBaseHcom.rankTable);
         hcclNslbDp::GetInstance().SendGlobalRankTable(rank);
     }
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    ret = opBaseHcom.pComm->InitCollCommInner(rank);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[Init][CommClusterInfo] InitCollCommInner failed, ret=%d", ret);
+        return ret;
+    }
+#endif
     /* 关键状态记录 */
     HCCL_INFO("%s success, rankNum[%u], rank[%u], server[%s], device[%d].",
         __func__, opBaseHcom.rankTable.rankNum, rank, opBaseHcom.params.serverId.c_str(),
@@ -3465,14 +3472,10 @@ HcclResult HcclConfigGetInfo(HcclComm comm, HcclConfigType cfgType,
         return HcclResult::HCCL_E_PARA;
     }
 
-    MyRank *myRank;
     auto *hcclComm = static_cast<hccl::hcclComm *>(comm);
     auto *collComm = hcclComm->GetCollComm();
-    if (collComm == nullptr) {
-        myRank = (MyRank *)hcclComm->GetMyRank();
-    } else {
-        myRank = collComm->GetMyRank();
-    }
+    CHK_PTR_NULL(collComm);
+    auto *myRank = collComm->GetMyRank();
     CHK_PTR_NULL(myRank);
     const uint32_t opExpansionModeValue = myRank->GetOpExpansionMode();
     const auto opExpansionMode = OpExpansionModeValueToModeEnum(opExpansionModeValue);
@@ -4866,26 +4869,31 @@ int32_t HcclTaskRegister(HcclComm comm, const char *msgTag, Callback cb)
     HcclResult ret;
     if (commV2 != nullptr) {
         ret =  HcclTaskRegisterV2(commV2, msgTag, cb);
-        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HcclTaskRegister] TaskRegisterV2 failed, ret[0x%016llx]", HCCL_ERROR_CODE(ret)), ret);
+        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HcclTaskRegister] TaskRegisterV2 failed, ret[0x%016llx]",
+            HCCL_ERROR_CODE(ret)), ret);
     } else {
         std::string commId = hcclComm->GetIdentifier();
         if (g_taskServiceMap.find(commId) == g_taskServiceMap.end()) {
             return HCCL_E_NOT_FOUND;
         }
         ret =  g_taskServiceMap[commId]->TaskRegister(msgTag, cb);
-        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HcclTaskRegister] TaskRegister failed, ret[0x%016llx]", HCCL_ERROR_CODE(ret)), ret);
+        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HcclTaskRegister] TaskRegister failed, ret[0x%016llx]",
+            HCCL_ERROR_CODE(ret)), ret);
+        return HCCL_SUCCESS;
     }
     uint32_t dpuStreamId;
     CHK_PTR_NULL(commV2);
     ret = HcclGetDpuSteamIdV2(commV2, dpuStreamId);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HcclTaskRegister] GetDpuSteamIdV2 failed, ret[0x%016llx]", HCCL_ERROR_CODE(ret)), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HcclTaskRegister] GetDpuSteamIdV2 failed, ret[0x%016llx]",
+        HCCL_ERROR_CODE(ret)), ret);
     hccl::CollComm *collComm = hcclComm->GetCollComm();
     CHK_PTR_NULL(collComm);
     collComm->GetHcclCommDfx()->SetDpuStreamId(dpuStreamId);
     auto profCallback = collComm->GetHcclCommDfx()->GetDpuCallback();
     CHK_PTR_NULL(profCallback);
     ret = HcclTaskRegisterProfV2(commV2, profCallback);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HcclTaskRegister] TaskProfRegister failed, ret[0x%016llx]", HCCL_ERROR_CODE(ret)), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HcclTaskRegister] TaskProfRegister failed, ret[0x%016llx]",
+        HCCL_ERROR_CODE(ret)), ret);
     return ret;
 
 #endif
