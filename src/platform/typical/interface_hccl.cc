@@ -25,6 +25,8 @@
 #include "typical_window_mem.h"
 #include "typical_qp_manager.h"
 #include "send_recv_executor.h"
+#include "adapter_hccp.h"
+#include "adapter_rts.h"
 
 using namespace hccl;
 constexpr u32 DEVISOR_VALUE_FOUR = 4;
@@ -209,6 +211,107 @@ HcclResult hcclModifyAscendQPEx(AscendQPInfo* localQPInfo, AscendQPInfo* remoteQ
     }
     remoteQp.psn = remoteQPInfo->psn;
     CHK_RET(TypicalQpManager::GetInstance().ModifyQp(localQp, remoteQp));
+    return HCCL_SUCCESS;
+}
+
+HcclResult hcclAscendPostSend(AscendVerbsQPInfo* qpInfo, struct AscendSendWr *sendWr, aclrtStream stream, struct AscendSendWr **badWr)
+{
+    s32 deviceLogicId = 0;
+    CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
+    CHK_PTR_NULL(qpInfo);
+    CHK_PTR_NULL(sendWr);
+    CHK_PTR_NULL(badWr);
+
+    QpHandle qpHandle;
+    CHK_RET(TypicalQpManager::GetInstance().GetQpHandleByQpn(qpInfo->qpn, qpHandle));
+
+    u32 maxSge = qpInfo->cap.maxSendSge;
+    struct AscendSendWr *curWr = sendWr;
+    while (curWr != nullptr) {
+        CHK_PRT_RET(curWr->numSge > static_cast<int>(maxSge),
+            HCCL_ERROR("[hcclAscendPostSend]numSge[%d] exceeds maxSendSge[%u]", curWr->numSge, maxSge),
+            HCCL_E_PARA);
+        struct VerbsSge verbsSgeList[maxSge];
+        struct VerbsSendWr verbsWr = {};
+
+        verbsWr.wrId = curWr->wrId;
+        verbsWr.numSge = curWr->numSge;
+        verbsWr.opcode = static_cast<enum RaWrOpcode>(curWr->opcode);
+        verbsWr.sendFlags = static_cast<int>(curWr->sendFlags);
+        verbsWr.immData = curWr->immData;
+        verbsWr.remoteAddr = curWr->wr.rdma.remoteAddr;
+        verbsWr.rkey = curWr->wr.rdma.rkey;
+
+        for (int i = 0; i < curWr->numSge && i < static_cast<int>(maxSge); i++) {
+            verbsSgeList[i].addr = curWr->sgList[i].addr;
+            verbsSgeList[i].length = curWr->sgList[i].len;
+            verbsSgeList[i].lkey = curWr->sgList[i].lkey;
+        }
+        verbsWr.sgList = verbsSgeList;
+
+        struct SendWrRsp opRsp = {};
+        HcclResult ret = HrtRaSendWrVerbs(qpHandle, &verbsWr, &opRsp);
+        if (ret != HCCL_SUCCESS) {
+            *badWr = curWr;
+            return ret;
+        }
+
+        if (curWr->next == nullptr) {
+            u32 dbIndex = static_cast<u32>(opRsp.db.dbIndex);
+            u64 dbInfo = static_cast<u64>(opRsp.db.dbInfo);
+            if (!((dbIndex == INVALID_UINT) && (dbInfo == INVALID_U64))) {
+                ret = hrtRDMADBSend(dbIndex, dbInfo, stream);
+                CHK_PRT_RET(ret != HCCL_SUCCESS,
+                    HCCL_ERROR("[hcclAscendPostSend]errNo[0x%016llx] rdma send failed. "
+                    "dbIndex[%u] dbInfo[%llu]", HCCL_ERROR_CODE(ret), dbIndex, dbInfo), ret);
+            }
+        }
+
+        curWr = curWr->next;
+    }
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult hcclAscendPostRecv(AscendVerbsQPInfo* qpInfo, struct AscendRecvWr *recvWr, aclrtStream stream, struct AscendRecvWr **badWr)
+{
+    s32 deviceLogicId = 0;
+    CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
+    CHK_PTR_NULL(qpInfo);
+    CHK_PTR_NULL(recvWr);
+    CHK_PTR_NULL(badWr);
+
+    QpHandle qpHandle;
+    CHK_RET(TypicalQpManager::GetInstance().GetQpHandleByQpn(qpInfo->qpn, qpHandle));
+
+    u32 maxSge = qpInfo->cap.maxRecvSge;
+    struct AscendRecvWr *curWr = recvWr;
+    while (curWr != nullptr) {
+        CHK_PRT_RET(curWr->numSge > static_cast<int>(maxSge),
+            HCCL_ERROR("[hcclAscendPostRecv]numSge[%d] exceeds maxRecvSge[%u]", curWr->numSge, maxSge),
+            HCCL_E_PARA);
+        struct VerbsSge verbsSgeList[maxSge];
+        struct VerbsRecvWr verbsWr = {};
+
+        verbsWr.wrId = curWr->wrId;
+        verbsWr.numSge = curWr->numSge;
+
+        for (int i = 0; i < curWr->numSge && i < static_cast<int>(maxSge); i++) {
+            verbsSgeList[i].addr = curWr->sgList[i].addr;
+            verbsSgeList[i].length = curWr->sgList[i].len;
+            verbsSgeList[i].lkey = curWr->sgList[i].lkey;
+        }
+        verbsWr.sgList = verbsSgeList;
+
+        HcclResult ret = HrtRaRecvWrVerbs(qpHandle, &verbsWr);
+        if (ret != HCCL_SUCCESS) {
+            *badWr = curWr;
+            return ret;
+        }
+
+        curWr = curWr->next;
+    }
+
     return HCCL_SUCCESS;
 }
 

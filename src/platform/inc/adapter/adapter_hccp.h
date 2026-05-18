@@ -198,6 +198,8 @@ HcclResult HrtRaMrDereg(QpHandle handle, struct MrInfoT *mrInfo);
 HcclResult HrtRaSendWr(QpHandle handle, struct SendWr *wr, struct SendWrRsp *opRsp);
 HcclResult HrtRaSendWrV2(QpHandle handle, struct SendWrV2 *wr, struct SendWrRsp *opRsp,
     HcclWorkflowMode workflowMode = HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
+HcclResult HrtRaSendWrVerbs(QpHandle handle, struct VerbsSendWr *wr, struct SendWrRsp *opRsp);
+HcclResult HrtRaRecvWrVerbs(QpHandle handle, struct VerbsRecvWr *wr);
 s32 hrtRaPollCq(QpHandle handle, bool is_send_cq, unsigned int num, void *wc);
 HcclResult HrtRaSendWrlist(QpHandle handle, struct SendWrlistData wr[], struct SendWrRsp opRsp[],
     unsigned int sendNum, unsigned int *completeNum);

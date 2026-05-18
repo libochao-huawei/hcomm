@@ -81,6 +81,7 @@ struct RaRdmaOps {
     int (*raDeregisterMr)(struct RaRdmaHandle *handle, void *mrHandle);
     int (*raSendWr)(struct RaQpHandle *handle, struct SendWr *wr, struct SendWrRsp *wrRsp);
     int (*raSendWrV2)(struct RaQpHandle *handle, struct SendWrV2 *wr, struct SendWrRsp *wrRsp);
+    int (*raSendWrVerbs)(struct RaQpHandle *handle, struct VerbsSendWr *wr, struct SendWrRsp *wrRsp);
     int (*raTypicalSendWr)(struct RaQpHandle *handle, struct SendWr *wr, struct SendWrRsp *wrRsp);
     int (*raSendWrlist)(struct RaQpHandle *handle, struct SendWrlistData wr[], struct SendWrRsp opRsp[],
         struct WrlistSendCompleteNum wrlistNum);
@@ -93,6 +94,7 @@ struct RaRdmaOps {
     int (*raGetNotifyMrInfo)(struct RaRdmaHandle *handle, struct MrInfoT *info);
     int (*raRecvWrlist)(struct RaQpHandle *handle, struct RecvWrlistData *wr, unsigned int recvNum,
         unsigned int *completeNum);
+    int (*raRecvWrVerbs)(struct RaQpHandle *handle, struct VerbsRecvWr *wr);
     int (*raPollCq)(struct RaQpHandle *handle, bool isSendCq, unsigned int numEntries, void *wc);
     int (*raGetQpContext)(struct RaQpHandle *handle, void** qp, void** sendCq, void** recvCq);
     int (*raNormalQpCreate)(struct RaRdmaHandle *rdmaHandle, struct ibv_qp_init_attr *qpInitAttr,

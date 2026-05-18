@@ -645,6 +645,36 @@ int RaHdcTypicalSendWr(struct RaQpHandle *qpHdc, struct SendWr *wr, struct SendW
     return -ENOTSUPP;
 }
 
+int RaHdcSendWrVerbs(struct RaQpHandle *qpHdc, struct VerbsSendWr *wr, struct SendWrRsp *opRsp)
+{
+    if (qpHdc->qpMode == RA_RS_OP_QP_MODE ||
+        qpHdc->qpMode == RA_RS_OP_QP_MODE_EXT) {
+        if (qpHdc->supportLite != LITE_NOT_SUPPORT) {
+            return RaHdcLiteTypicalSendWrVerbs(qpHdc, wr, opRsp);
+        }
+    }
+
+    hccp_warn("qpn:%u qp_mode:%d support_lite:%d not support to send_wr_verbs",
+        qpHdc->qpn, qpHdc->qpMode, qpHdc->supportLite);
+
+    return -ENOTSUPP;
+}
+
+int RaHdcRecvWrVerbs(struct RaQpHandle *qpHdc, struct VerbsRecvWr *wr)
+{
+    if (qpHdc->qpMode == RA_RS_OP_QP_MODE ||
+        qpHdc->qpMode == RA_RS_OP_QP_MODE_EXT) {
+        if (qpHdc->supportLite != LITE_NOT_SUPPORT) {
+            return RaHdcLiteTypicalRecvWrVerbs(qpHdc, wr);
+        }
+    }
+
+    hccp_warn("qpn:%u qp_mode:%d support_lite:%d not support to recv_wr_verbs",
+        qpHdc->qpn, qpHdc->qpMode, qpHdc->supportLite);
+
+    return -ENOTSUPP;
+}
+
 int RaHdcMrDereg(struct RaQpHandle *qpHdc, struct MrInfoT *info)
 {
     union OpMrDeregData mrDeregData = {0};
