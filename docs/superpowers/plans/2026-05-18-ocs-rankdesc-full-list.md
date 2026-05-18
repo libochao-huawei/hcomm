@@ -196,7 +196,7 @@ git commit -m "refactor(builder): switch from Reparse to BuildRankDescVec in Bui
 **Files:**
 - Modify: `src/framework/communicator/impl/independent_op/hccl_independent_rank_graph.cc:378-425`
 
-- [ ] **Step 1: 替换整个 HcclGetRankDescList 实现**
+- [x] **Step 1: 替换整个 HcclGetRankDescList 实现**
 
 ```cpp
 HcclResult HcclGetRankDescList(HcclComm comm, RankDesc **descList, uint32_t *descNum)
@@ -225,7 +225,7 @@ HcclResult HcclGetRankDescList(HcclComm comm, RankDesc **descList, uint32_t *des
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add src/framework/communicator/impl/independent_op/hccl_independent_rank_graph.cc
