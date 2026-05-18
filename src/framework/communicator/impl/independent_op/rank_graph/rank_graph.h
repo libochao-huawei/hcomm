@@ -31,7 +31,6 @@ enum class HcclNetLayerlevel {
     HCCL_NetLayer_L0 = 0,
     HCCL_NetLayer_L1,
     HCCL_NetLayer_L2,
-    HCCL_NetLayer_L3,
     HCCL_NetLayer_MAX,
 };
 
