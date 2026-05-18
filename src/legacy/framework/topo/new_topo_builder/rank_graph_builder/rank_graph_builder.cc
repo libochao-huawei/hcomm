@@ -625,52 +625,13 @@ void RankGraphBuilder::BuildRankGraph()
     // 添加绕路 绕路获取
     DetourService::GetInstance().InsertDetourLinks(rankGraph_.get(), rankTable_.get());
 
-    ReparseGroupedPlaneForOcsMesh();
+    rankGraph_->ReparseGroupedPlaneForOcsMesh(*rankTable_);
 
     // 设置endpoint
     SetEndpointDesc();
 
     // 构造完成
     rankGraph_->InitFinish();
-}
-
-void RankGraphBuilder::ReparseGroupedPlaneForOcsMesh()
-{
-    for (const auto &netInstMap : tempNetInsts_) {
-        for (const auto &pair : netInstMap) {
-            const auto &netInst = pair.second;
-            if (netInst->GetNetType() != NetType::OCS_MESH) {
-                continue;
-            }
-
-            const auto &rankIds = netInst->GetRankIds();
-            if (rankIds.empty()) {
-                continue;
-            }
-
-            std::map<u32, std::vector<RankId>> elecGroups;
-            for (RankId rankId : rankIds) {
-                const auto &rankInfo = rankTable_->ranks[rankId];
-                u32 elecGroupId = 0;
-                for (const auto &levelInfo : rankInfo.rankLevelInfos) {
-                    if (levelInfo.netType == NetType::OCS_MESH) {
-                        elecGroupId = levelInfo.elecGroupId;
-                        break;
-                    }
-                }
-                elecGroups[elecGroupId].push_back(rankId);
-            }
-
-            u32 totalGroups = static_cast<u32>(elecGroups.size());
-            u32 planeIdx = 0;
-            for (const auto &group : elecGroups) {
-                for (RankId rankId : group.second) {
-                    rankGraph_->SetOcsMeshAttr(rankId, planeIdx, totalGroups);
-                }
-                planeIdx++;
-            }
-        }
-    }
 }
 
 std::unique_ptr<RankTableInfo> RankGraphBuilder::GetRankTableInfo()

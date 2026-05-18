@@ -53,7 +53,6 @@ private:
                         const shared_ptr<NetInstance::Fabric> &fabNode, const vector<shared_ptr<PhyTopo::Link>> &links);
     void AddTopoDescFabricInfo();
     void UpdateTopoInstForMyRankOnly();
-    void ReparseGroupedPlaneForOcsMesh();
     // 新增创建NetInstance
     std::shared_ptr<NetInstance> GetNetInstance(const RankLevelInfo &levelInfo);
     std::shared_ptr<NetInstance> CreateNetInstance(const RankLevelInfo &levelInfo);

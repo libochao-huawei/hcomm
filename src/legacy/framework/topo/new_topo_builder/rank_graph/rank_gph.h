@@ -83,6 +83,10 @@ public:
     u32  GetOcsPlaneId(RankId rankId) const;
     u32  GetOcsPlaneNum(RankId rankId) const;
 
+    // 基于 RankTableInfo 重算 OCS 平面分组，globalRankIds 用于子通信域 rankId 映射（主通信域传 nullptr）
+    void ReparseGroupedPlaneForOcsMesh(const RankTableInfo &rankTable,
+                                       const std::vector<u32> *globalRankIds = nullptr);
+
     // 创建子虚拟拓扑
     std::unique_ptr<RankGraph> CreateSubRankGraph(const std::vector<u32> &rankIds) const; // 外部接口传入类型为u32
     // 打包接口

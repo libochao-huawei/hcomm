@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <map>
 #include <unordered_map>
 #include "virtual_topo.h"
 #include "string_util.h"
@@ -894,5 +895,63 @@ u32 RankGraph::GetOcsPlaneNum(RankId rankId) const
 {
     auto it = ocsMeshAttrMap_.find(rankId);
     return (it != ocsMeshAttrMap_.end()) ? it->second.ocsPlaneNum : 0;
+}
+
+void RankGraph::ReparseGroupedPlaneForOcsMesh(const RankTableInfo &rankTable,
+                                              const std::vector<u32> *globalRankIds)
+{
+    for (const auto &netInstMap : netInsts_) {
+        for (const auto &pair : netInstMap) {
+            const auto &netInst = pair.second;
+            if (netInst->GetNetType() != NetType::OCS_MESH) {
+                continue;
+            }
+
+            const auto &rankIds = netInst->GetRankIds();
+            if (rankIds.empty()) {
+                continue;
+            }
+
+            std::map<u32, std::vector<RankId>> elecGroups;
+            for (RankId rankId : rankIds) {
+                if (rankId < 0) {
+                    HCCL_WARNING("[RankGraph][ReparseGroupedPlaneForOcsMesh] invalid rankId[%d].", rankId);
+                    continue;
+                }
+
+                if (globalRankIds != nullptr && static_cast<size_t>(rankId) >= globalRankIds->size()) {
+                    HCCL_WARNING("[RankGraph][ReparseGroupedPlaneForOcsMesh] rankId[%d] exceeds globalRankIds size[%zu].",
+                                 rankId, globalRankIds->size());
+                    continue;
+                }
+
+                u32 globalRankId = (globalRankIds == nullptr) ? static_cast<u32>(rankId)
+                                                              : globalRankIds->at(rankId);
+                if (globalRankId >= rankTable.ranks.size()) {
+                    HCCL_WARNING("[RankGraph][ReparseGroupedPlaneForOcsMesh] globalRankId[%u] exceeds rankTable size[%zu].",
+                                 globalRankId, rankTable.ranks.size());
+                    continue;
+                }
+
+                u32 elecGroupId = 0;
+                for (const auto &levelInfo : rankTable.ranks[globalRankId].rankLevelInfos) {
+                    if (levelInfo.netType == NetType::OCS_MESH) {
+                        elecGroupId = levelInfo.elecGroupId;
+                        break;
+                    }
+                }
+                elecGroups[elecGroupId].push_back(rankId);
+            }
+
+            u32 totalGroups = static_cast<u32>(elecGroups.size());
+            u32 planeIdx = 0;
+            for (const auto &group : elecGroups) {
+                for (RankId rankId : group.second) {
+                    SetOcsMeshAttr(rankId, planeIdx, totalGroups);
+                }
+                planeIdx++;
+            }
+        }
+    }
 }
 } // namespace Hccl
