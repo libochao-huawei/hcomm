@@ -54,11 +54,12 @@ TEST_F(RankConsistentV2Test, Ut_FullPipeline_AllMatch_Expect_Success)
     EXPECT_EQ(checker_.envVarCrcsV2_[0].name, "HCCL_BUFFSIZE");
 
     // 2. RecordRankTableCrcV2
-    // RankTable_t rankTable;
-    // FillMinRankTable(rankTable);
-    // ret = checker_.RecordRankTableCrcV2(rankTable);
-    // EXPECT_EQ(ret, HCCL_SUCCESS);
-    // EXPECT_EQ(checker_->rankTableCrcsV2_[0].name, "ranktable_content");
+    RankTable_t rankTable;
+    FillMinRankTable(rankTable);
+    u32 rankTableCrc = 0x1234;
+    ret = checker_.RecordRankTableCrcV2(rankTableCrc);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(checker_->rankTableCrcsV2_[0].name, "ranktable_content");
 
     // 3. RecordSubCommParaV2
     u32 parentCrc = 0x12345678;
