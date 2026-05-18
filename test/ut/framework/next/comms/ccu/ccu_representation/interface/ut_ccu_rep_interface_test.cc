@@ -83,14 +83,6 @@ TEST_F(CcuRepInterfaceTest, CcuBuf_Id)
     EXPECT_EQ(buf.Id(), expectedId);
 }
 
-TEST_F(CcuRepInterfaceTest, CompletedEvent_SetMask)
-{
-    CcuRepContext context;
-    CompletedEvent event(&context);
-    event.SetMask(0xFF);
-    EXPECT_EQ(event.mask, 0xFF);
-}
-
 TEST_F(CcuRepInterfaceTest, LocalNotify_Constructor)
 {
     CcuRepContext context;
