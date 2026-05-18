@@ -9,7 +9,7 @@
  */
 
 #include <map>
-#include <cstring>
+#include <cstdint>
 #include <unordered_map>
 #include "virtual_topo.h"
 #include "string_util.h"
@@ -885,6 +885,11 @@ CommProtocol LinkProtocolToCommProtocol(const LinkProtocol &linkProtocol)
 void RankGraph::ReparseGroupedPlaneForOcsMesh(const RankTableInfo &rankTable,
                                               const std::vector<u32> *globalRankIds)
 {
+    size_t count = (globalRankIds == nullptr) ? rankTable.ranks.size() : globalRankIds->size();
+    if (rankDescVec_.empty()) {
+        rankDescVec_.assign(count, RankDesc{});
+    }
+
     for (const auto &netInstMap : netInsts_) {
         for (const auto &pair : netInstMap) {
             const auto &netInst = pair.second;
@@ -928,6 +933,11 @@ void RankGraph::ReparseGroupedPlaneForOcsMesh(const RankTableInfo &rankTable,
                 elecGroups[elecGroupId].push_back(rankId);
             }
 
+            if (elecGroups.size() > UINT32_MAX) {
+                THROW<InvalidParamsException>(StringFormat(
+                    "[RankGraph][ReparseGroupedPlaneForOcsMesh] elecGroups size[%zu] exceeds maximum u32[%u].",
+                    elecGroups.size(), UINT32_MAX));
+            }
             u32 totalGroups = static_cast<u32>(elecGroups.size());
             u32 planeIdx = 0;
             for (const auto &group : elecGroups) {
@@ -949,11 +959,14 @@ void RankGraph::ReparseGroupedPlaneForOcsMesh(const RankTableInfo &rankTable,
 void RankGraph::BuildRankDescVec(const RankTableInfo &rankTable,
                                  const std::vector<u32> *globalRankIds)
 {
-    u32 count = (globalRankIds == nullptr) ? static_cast<u32>(rankTable.ranks.size())
-                                           : static_cast<u32>(globalRankIds->size());
-    rankDescVec_.resize(count);
-    (void)memset_s(rankDescVec_.data(), count * sizeof(RankDesc),
-                   0, count * sizeof(RankDesc));
+    size_t rankCount = (globalRankIds == nullptr) ? rankTable.ranks.size() : globalRankIds->size();
+    if (rankCount > UINT32_MAX) {
+        THROW<InvalidParamsException>(StringFormat(
+            "[RankGraph][BuildRankDescVec] rank count[%zu] exceeds maximum u32[%u].",
+            rankCount, UINT32_MAX));
+    }
+    u32 count = static_cast<u32>(rankCount);
+    rankDescVec_.assign(count, RankDesc{});
 
     for (u32 i = 0; i < count; i++) {
         RankDesc &d = rankDescVec_[i];
@@ -979,8 +992,13 @@ void RankGraph::BuildRankDescVec(const RankTableInfo &rankTable,
                 d.elecGroupId = lv.elecGroupId;
             }
             if (lv.netType == NetType::CLOS) {
-                (void)strncpy(d.superPodId, lv.netInstId.c_str(),
-                              sizeof(d.superPodId) - 1);
+                errno_t sRet = strncpy_s(d.superPodId, sizeof(d.superPodId), lv.netInstId.c_str(),
+                                          sizeof(d.superPodId) - 1);
+                if (sRet != EOK) {
+                    THROW<InvalidParamsException>(StringFormat(
+                        "[RankGraph][BuildRankDescVec] copy superPodId failed, ret[%d].",
+                        sRet));
+                }
             }
         }
 
