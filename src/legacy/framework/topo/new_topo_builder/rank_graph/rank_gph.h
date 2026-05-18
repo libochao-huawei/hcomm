@@ -22,17 +22,13 @@
 #include "rank_table_info.h"
 #include "types.h"
 #include "hccl_res.h"
+#include "hccl_rank_graph.h"
 
 namespace Hccl {
 
 using Level2Id2NetInst       = std::vector<std::unordered_map<std::string, std::shared_ptr<NetInstance>>>;
 using RankId2PeerMap         = std::unordered_map<RankId, std::shared_ptr<NetInstance::Peer>>;
 constexpr u32 MAX_NET_LAYER = 8;
-
-struct OcsMeshAttr {
-    u32 ocsPlaneId{0};
-    u32 ocsPlaneNum{0};
-};
 
 class RankGraph {
 public:
@@ -78,14 +74,13 @@ public:
     HcclResult GetEndpointInfo(uint32_t rankId, const EndpointDesc* endPointDesc, EndpointAttr endpointAttr,
                                      uint32_t infoLen, void* info) const;
 
-    // OCS mesh 并行平面属性
-    void SetOcsMeshAttr(RankId rankId, u32 ocsPlaneId, u32 ocsPlaneNum);
-    u32  GetOcsPlaneId(RankId rankId) const;
-    u32  GetOcsPlaneNum(RankId rankId) const;
-
     // 基于 RankTableInfo 重算 OCS 平面分组，globalRankIds 用于子通信域 rankId 映射（主通信域传 nullptr）
     void ReparseGroupedPlaneForOcsMesh(const RankTableInfo &rankTable,
                                        const std::vector<u32> *globalRankIds = nullptr);
+    // RankDesc 全量数据一次性灌入，globalRankIds 为 nullptr 时使用主通信域 rankId 直接索引
+    void BuildRankDescVec(const RankTableInfo &rankTable,
+                          const std::vector<u32> *globalRankIds = nullptr);
+    const std::vector<RankDesc>& GetRankDescVec() const { return rankDescVec_; }
 
     // 创建子虚拟拓扑
     std::unique_ptr<RankGraph> CreateSubRankGraph(const std::vector<u32> &rankIds) const; // 外部接口传入类型为u32
@@ -99,7 +94,7 @@ private:
     std::set<RankId> innerRanks_; 
     RankId           myRank_;
     bool             initFlag_{false};
-    std::unordered_map<RankId, OcsMeshAttr> ocsMeshAttrMap_;
+    std::vector<RankDesc> rankDescVec_;
 
     void CreateSubNetInstances(const std::vector<RankId> rankIds, Level2Id2NetInst &subNetInsts, 
                              RankId2PeerMap &peers, RankGraph *subRankGraph) const;
