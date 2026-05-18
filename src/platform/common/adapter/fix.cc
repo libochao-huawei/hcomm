@@ -8,18 +8,16 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef HCCL_INC_ADAPTER_ERROR_MANAGER_H
-#define HCCL_INC_ADAPTER_ERROR_MANAGER_H
+// #include <adapter_error_manager.h>
+// #include "base/err_msg.h"
+// #include "base/err_mgr.h"
 
-#include <string>
-#include "log.h"
-#include "adapter_error_manager_pub.h"
-#include "base/err_msg.h"
-#include "base/err_mgr.h"
+// ErrContext hrtErrMGetErrorContext(void)
+// {
+//     return error_message::GetErrMgrContext();
+// }
 
-using ErrContext = error_message::ErrorManagerContext;
-
-ErrContext hrtErrMGetErrorContext(void);
-void hrtErrMSetErrorContext(ErrContext error_context);
-
-#endif  // HCCL_INC_ADAPTER_ERROR_MANAGER_H
+// void hrtErrMSetErrorContext(ErrContext error_context)
+// {
+//     error_message::SetErrMgrContext(error_context);
+// }
