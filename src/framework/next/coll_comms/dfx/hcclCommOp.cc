@@ -29,14 +29,14 @@ std::shared_ptr<Hccl::DfxOpInfo> ConvertToDfxOpInfo(const HcclDfxOpInfo& dfxOpIn
     collOp.inputMem = std::make_shared<Hccl::Buffer>(dfxOpInfo.inputMemAddr, dfxOpInfo.inputMemSize);
     collOp.outputMem = std::make_shared<Hccl::Buffer>(dfxOpInfo.outputMemAddr, dfxOpInfo.outputMemSize);
     collOp.scratchMem = std::make_shared<Hccl::Buffer>(0, 0);
-
+    HCCL_INFO("[%s]hccltest, collOp: %s", __func__, collOp->Describe().c_str());
     dfxOpInfoOnce->op_= std::move(collOp);
     dfxOpInfoOnce->algTag_ = dfxOpInfo.algTag;
     dfxOpInfoOnce->algType_ = Hccl::AlgType{Hccl::AlgType::MESH}.Describe();
     dfxOpInfoOnce->tag_ = Hccl::OpTypeToString(collOp.opType);
     dfxOpInfoOnce->beginTime_ = dfxOpInfo.beginTime;
     dfxOpInfoOnce->cpuWaitAicpuNotifyId_ = dfxOpInfo.cpuWaitAicpuNotifyId;
-
+    HCCL_INFO("[%s]hccltest, dfxOpInfoOnce: %s", __func__, dfxOpInfoOnce->Describe().c_str());
     return dfxOpInfoOnce;
 }
 

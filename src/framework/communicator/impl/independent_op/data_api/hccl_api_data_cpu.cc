@@ -753,7 +753,7 @@ HcclResult HcclDfxRegOpInfoByCommId(char* commId, void* hcclDfxOpInfo)
 
     dfxOpInfo->beginTime = hrtMsprofSysCycleTime();
     CHK_RET(RegAicpuTaskException(dfxOpInfo, collComm));
-
+    HCCL_INFO("[%s]hccltest, DfxOpInfo: %s", __func__, dfxOpInfo->Describe().c_str());
     //HcclDfxOpInfo转为DfxOpInfo
     auto dfxOpInfoOnce = ConvertToDfxOpInfo(*dfxOpInfo);
     CHK_SMART_PTR_NULL(dfxOpInfoOnce);
