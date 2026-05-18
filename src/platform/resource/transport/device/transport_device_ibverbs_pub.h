@@ -79,6 +79,9 @@ public:
     HcclResult ReadAsync(struct Transport::Buffer &localBuf, struct Transport::Buffer &remoteBuf,
         Stream &stream) override;
 
+    HcclResult BatchTransferAsync(const HcommBatchTransferDesc *transferDescs, uint32_t descNum,
+        Stream &stream) override;
+
     HcclResult PostReady(Stream &stream);
     HcclResult WaitReady(Stream &stream);
 
@@ -131,6 +134,12 @@ private:
     using DeviceMemDetailsRmaMgr = RmaBufferMgr<BufferKey<uintptr_t, u64>, std::shared_ptr<RoceMemDetails>>;
     HcclResult InitMemDetails();
     HcclResult BuildMemDetailsRmaMgrs();
+    HcclResult BatchTransferImpl(const HcommBatchTransferDesc *transferDescs, uint32_t descNum,
+        Stream &stream);
+    HcclResult ResolveTransferDesc(const HcommBatchTransferDesc &desc,
+        const void *&remoteAddr, const void *&localAddr, u64 &length, WqeType &wqeType,
+        struct WrAuxInfo &aux);
+    HcclResult SubmitWqeBatch(std::vector<WrInformation> &wrInfoVec, Stream &stream);
 
     struct RdmaAddrKeyResolveParam {
         const void *remoteAddr{nullptr};

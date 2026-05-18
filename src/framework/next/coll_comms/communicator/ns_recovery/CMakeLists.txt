@@ -13,12 +13,14 @@ set(src_list
     ns_recovery.cc
 )
 
-target_sources(hcomm PRIVATE
-    ${src_list}
-)
-
-target_include_directories(hcomm PRIVATE
-    ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/channels
-)
+if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${src_list}
+    )
+    target_include_directories(hcomm PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${HCOMM_DIR}/src/framework/next/comms/endpoint_pairs/channels
+    )
+endif()
 
 add_subdirectory(aicpu)

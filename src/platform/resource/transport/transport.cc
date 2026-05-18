@@ -547,6 +547,13 @@ HcclResult Transport::ReadReduceSync(struct Buffer &localBuf, struct Buffer &rem
     return pimpl_->ReadReduceSync(localBuf, remoteBuf, datatype, redOp, stream);
 }
 
+HcclResult Transport::BatchTransferAsync(const HcommBatchTransferDesc *transferDescs,
+    uint32_t descNum, Stream &stream)
+{
+    CHK_PTR_NULL(pimpl_);
+    return pimpl_->BatchTransferAsync(transferDescs, descNum, stream);
+}
+
 HcclResult Transport::PostReady(Stream &stream)
 {
     CHK_PTR_NULL(pimpl_);
