@@ -28,10 +28,8 @@ template <typename U> class Array;
 class Address final {
 public:
     Address() {
-        auto ret = CcuAddressAlloc(&this->handle);
-        if (ret != CcuResult::CCU_SUCCESS) {
-            throw "CcuAddressAlloc: failed";
-        }
+        CCU_THROW_IF_FAILED(CcuAddressAlloc(&this->handle),
+            "CcuAddressAlloc: failed");
     }
 
     Address(const Address& other) {
