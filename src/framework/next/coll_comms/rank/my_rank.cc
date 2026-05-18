@@ -31,6 +31,7 @@ HcommChannelDesc ChannelDescHccl2Hcomm(const HcclChannelDesc &hcclDesc)
     hcommDesc.notifyNum = hcclDesc.notifyNum;
     hcommDesc.memHandles = reinterpret_cast<HcommMemHandle *>(hcclDesc.memHandles);
     hcommDesc.memHandleNum = hcclDesc.memHandleNum;
+    hcommDesc.roceAttr.qpThreshold = rdmaConfig.GetRdmaMultiQpThreshold();
     (void)memcpy_s(hcommDesc.raws, sizeof(hcommDesc.raws), hcclDesc.raws, sizeof(hcclDesc.raws));
     
     return hcommDesc;
