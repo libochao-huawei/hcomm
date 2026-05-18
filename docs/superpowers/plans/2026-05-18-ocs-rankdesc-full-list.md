@@ -280,7 +280,7 @@ git commit -m "feat(subcomm): replace Reparse with BuildRankDescVec in CreateSub
 - Modify: `src/framework/communicator/impl/independent_op/rank_graph/rank_graph_v2.cc:106-114`
 - Modify: `src/framework/communicator/impl/independent_op/rank_graph/rank_graph_base.h:47-48`
 
-- [ ] **Step 1: 删除 IRankGraph 中 GetOcsPlaneId/Num 声明**
+- [x] **Step 1: 删除 IRankGraph 中 GetOcsPlaneId/Num 声明**
 
 `rank_graph_interface.h`:
 
@@ -289,7 +289,7 @@ git commit -m "feat(subcomm): replace Reparse with BuildRankDescVec in CreateSub
 -         u32 GetOcsPlaneNum() const;
 ```
 
-- [ ] **Step 2: 删除 IRankGraph 中 GetOcsPlaneId/Num 实现**
+- [x] **Step 2: 删除 IRankGraph 中 GetOcsPlaneId/Num 实现**
 
 `rank_graph_interface.cc`:
 
@@ -315,7 +315,7 @@ git commit -m "feat(subcomm): replace Reparse with BuildRankDescVec in CreateSub
 -     }
 ```
 
-- [ ] **Step 3: 删除 RankGraphV2 中 GetOcsPlaneId/Num 声明和实现**
+- [x] **Step 3: 删除 RankGraphV2 中 GetOcsPlaneId/Num 声明和实现**
 
 `rank_graph_v2.h`:
 
@@ -338,14 +338,14 @@ git commit -m "feat(subcomm): replace Reparse with BuildRankDescVec in CreateSub
 - }
 ```
 
-- [ ] **Step 4: 删除 rank_graph_base.h 中虚函数默认实现**
+- [x] **Step 4: 删除 rank_graph_base.h 中虚函数默认实现**
 
 ```diff
 -     virtual u32 GetOcsPlaneId() const { return 0; }
 -     virtual u32 GetOcsPlaneNum() const { return 0; }
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/legacy/interface/rank_graph_interface.h \
