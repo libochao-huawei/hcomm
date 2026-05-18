@@ -18,23 +18,34 @@ set(src_list_extend
     dispatcher_aicpu.cc
 )
 
-target_sources(hccl_plf PRIVATE
-    dispatcher_graph.cc
-    ${src_list}
-)
+if(TARGET hccl_plf)
+    target_sources(hccl_plf PRIVATE
+        dispatcher_graph.cc
+        ${src_list}
+    )
+    target_include_directories(hccl_plf PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()
 
-target_sources(hccd PRIVATE
-    dispatcher.cc
-)
+if(TARGET hccd)
+    target_sources(hccd PRIVATE
+        dispatcher.cc
+    )
+endif()
 
-target_sources(ccl_kernel_plf PRIVATE
-    ${src_list}
-    ${src_list_extend}
-)
+if(TARGET ccl_kernel_plf)
+    target_sources(ccl_kernel_plf PRIVATE
+        ${src_list}
+        ${src_list_extend}
+    )
+endif()
 
-target_sources(ccl_kernel_plf_a  PRIVATE
-    ${src_list}
-    ${src_list_extend}
-)
+if(TARGET ccl_kernel_plf_a)
+    target_sources(ccl_kernel_plf_a  PRIVATE
+        ${src_list}
+        ${src_list_extend}
+    )
+endif()
 
 add_subdirectory(rtsq_interact)

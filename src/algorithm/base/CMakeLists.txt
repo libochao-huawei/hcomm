@@ -9,5 +9,14 @@
 # -----------------------------------------------------------------------------------------------------------
 add_subdirectory(communicator)
 add_subdirectory(alg_template)
-add_subdirectory(alg_aiv_template)
 add_subdirectory(mc2_handler)
+
+if(PRODUCT_SIDE STREQUAL "host")
+    add_subdirectory(alg_aiv_template)
+endif()
+
+if(TARGET ccl_kernel)
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/inc
+    )
+endif()

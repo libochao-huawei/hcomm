@@ -13,23 +13,31 @@ set(src_list
     transport.cc
 )
 
-target_sources(hccl_plf PRIVATE
-    ${src_list}
-    tcp_send_thread_pool.cc
-    tcp_recv_task.cc
-)
+if(TARGET hccl_plf)
+    target_sources(hccl_plf PRIVATE
+        ${src_list}
+        tcp_send_thread_pool.cc
+        tcp_recv_task.cc
+    )
+endif()
 
-target_sources(hccd PRIVATE
-    tcp_recv_task.cc
-    tcp_send_thread_pool.cc
-    transport_base.cc
-    mem_name_repository.cc
-)
+if(TARGET hccd)
+    target_sources(hccd PRIVATE
+        tcp_recv_task.cc
+        tcp_send_thread_pool.cc
+        transport_base.cc
+        mem_name_repository.cc
+    )
+endif()
 
-target_sources(ccl_kernel_plf PRIVATE
-    ${src_list}
-)
+if(TARGET ccl_kernel_plf)
+    target_sources(ccl_kernel_plf PRIVATE
+        ${src_list}
+    )
+endif()
 
-target_sources(ccl_kernel_plf_a  PRIVATE
-    ${src_list}
-)
+if(TARGET ccl_kernel_plf_a)
+    target_sources(ccl_kernel_plf_a  PRIVATE
+        ${src_list}
+    )
+endif()
