@@ -60,6 +60,31 @@ protected:
         graph.AddNetInstance(netInst);
     }
 
+    void AddPathCapableOcsMeshNetInst(RankGraph &graph, u32 netLayer, const std::string &instId,
+                                      const std::vector<RankId> &rankIds)
+    {
+        auto netInst = std::make_shared<OcsMeshNetInstance>(netLayer, instId);
+        auto fabric = std::make_shared<NetInstance::Fabric>(0, "ocs_plane_0");
+        std::set<LinkProtocol> protocols = {LinkProtocol::UB_CTP};
+
+        netInst->AddNode(fabric);
+        for (RankId rankId : rankIds) {
+            auto peer = graph.GetPeer(rankId);
+            std::set<std::string> ports = {std::to_string(rankId)};
+            auto peerIface = std::make_shared<NetInstance::ConnInterface>(
+                IpAddress(rankId), ports, AddrPosition::HOST, LinkType::PEER2NET, protocols);
+
+            netInst->AddRankId(rankId);
+            netInst->AddNode(peer);
+            peer->AddNetInstance(netInst);
+            netInst->AddLink(std::make_shared<NetInstance::Link>(
+                peer, fabric, peerIface, nullptr, LinkType::PEER2NET, protocols));
+            netInst->AddLink(std::make_shared<NetInstance::Link>(
+                fabric, peer, nullptr, peerIface, LinkType::PEER2NET, protocols));
+        }
+        graph.AddNetInstance(netInst);
+    }
+
     void AddClosNetInst(RankGraph &graph, u32 netLayer, const std::string &instId,
                         const std::vector<RankId> &rankIds)
     {
@@ -166,4 +191,24 @@ TEST_F(OcsMeshPlaneTest, ReparseGroupedPlaneForOcsMesh_UsesGlobalRankIdsForSubCo
     EXPECT_EQ(graph.GetOcsPlaneNum(1), 2u);
     EXPECT_EQ(graph.GetOcsPlaneId(2), 1u);
     EXPECT_EQ(graph.GetOcsPlaneNum(2), 2u);
+}
+
+TEST_F(OcsMeshPlaneTest, ReparseGroupedPlaneForOcsMesh_SubRankGraphUsesRankIdMapping)
+{
+    RankGraph graph(5);
+    AddPeers(graph, 6);
+    AddPathCapableOcsMeshNetInst(graph, 0, "ocs_mesh_0", {0, 1, 2, 3, 4, 5});
+
+    RankTableInfo table = BuildRankTable({4, 0, 8, 3, 9, 3});
+    std::vector<u32> rankIds{5, 2, 3};
+    std::unique_ptr<RankGraph> subGraph = graph.CreateSubRankGraph(rankIds);
+
+    subGraph->ReparseGroupedPlaneForOcsMesh(table, &rankIds);
+
+    EXPECT_EQ(subGraph->GetOcsPlaneId(0), 0u);
+    EXPECT_EQ(subGraph->GetOcsPlaneNum(0), 2u);
+    EXPECT_EQ(subGraph->GetOcsPlaneId(1), 1u);
+    EXPECT_EQ(subGraph->GetOcsPlaneNum(1), 2u);
+    EXPECT_EQ(subGraph->GetOcsPlaneId(2), 0u);
+    EXPECT_EQ(subGraph->GetOcsPlaneNum(2), 2u);
 }

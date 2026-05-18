@@ -328,6 +328,9 @@ HcclResult CommunicatorImpl::CreateSubComm(const CommParams &subCommParams, cons
         if (initFlag) {
             // 创建子虚拟拓扑
             std::unique_ptr<RankGraph> subRankGraph = rankGraph->CreateSubRankGraph(rankIds);
+            if (ranktableInfo != nullptr) {
+                subRankGraph->ReparseGroupedPlaneForOcsMesh(*ranktableInfo, &rankIds);
+            }
             // 初始化子通信域
             CHK_RET(subCommImpl->Init(subCommParams, subRankGraph, devLogicId));
             return HcclResult::HCCL_SUCCESS;
@@ -348,6 +351,9 @@ HcclResult CommunicatorImpl::CreateSubComm(const CommParams &subCommParams, cons
             // 创建子虚拟拓扑
             std::unique_ptr<RankGraph> subRankGraph = rankGraph->CreateSubRankGraph(rankIds);
             subCommImpl->rankIdsVec = rankIds;
+            if (ranktableInfo != nullptr) {
+                subRankGraph->ReparseGroupedPlaneForOcsMesh(*ranktableInfo, &rankIds);
+            }
             HCCL_INFO("[%s]rankIds size[%u], rankIdsVec size[%u]", __func__, rankIds.size(), subCommImpl->rankIdsVec.size());
             // 初始化子通信域
             CHK_RET(subCommImpl->Init(subCommParams, subRankGraph, subConfig, devLogicId));
