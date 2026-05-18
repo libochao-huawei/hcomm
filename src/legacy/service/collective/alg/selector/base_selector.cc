@@ -380,6 +380,7 @@ void BaseSelector::CalcTopoShape(TopoInfo &topoInfo) const
     CHK_PRT_THROW(CalcLevel0TopoShape(topoInfo),
         HCCL_ERROR("[BaseSelector][CalcTopoShape] CalcLevel0TopoShape Failed"),
         InvalidParamsException, "CalcLevel0TopoShape Failed");
+    // TEST
     HCCL_INFO("[BaseSelector][CalcTopoShape] topoInfo.level0Shape is [%d], level0PcieMix is [%d], level0BigClosRange is [%d]", 
         topoInfo.level0Shape, topoInfo.level0PcieMix, topoInfo.level0BigClosRange);
 }
