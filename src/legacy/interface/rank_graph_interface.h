@@ -39,6 +39,7 @@ namespace Hccl {
         HcclResult GetEndpointNum(uint32_t netLayer, uint32_t topoInstId, uint32_t *num);
  	    HcclResult GetEndpointDesc(uint32_t netLayer, uint32_t topoInstId, uint32_t *descNum, EndpointDesc *endpointDesc);
  	    HcclResult GetEndpointInfo(uint32_t rankId, const EndpointDesc *endPointDesc, EndpointAttr endpointAttr, uint32_t infoLen, void *info);
+        HcclResult GetRankDescList(RankDesc **descList, uint32_t *descNum);
 
     private:
         void *rankGraphPtr_;

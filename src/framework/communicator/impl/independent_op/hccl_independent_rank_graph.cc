@@ -388,9 +388,7 @@ HcclResult HcclGetRankDescList(HcclComm comm, RankDesc **descList, uint32_t *des
         RankGraph* rankGraph = collComm->GetRankGraph();
         CHK_PTR_NULL(rankGraph);
 
-        const auto &vec = rankGraph->GetRankDescVec();
-        *descList = const_cast<RankDesc *>(vec.data());
-        *descNum  = static_cast<uint32_t>(vec.size());
+        CHK_RET(rankGraph->GetRankDescList(descList, descNum));
         HCCL_RUN_INFO("[%s] success, descNum[%u]", __func__, *descNum);
         return HCCL_SUCCESS;
     }());

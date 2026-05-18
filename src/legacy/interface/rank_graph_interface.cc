@@ -452,4 +452,16 @@ namespace Hccl {
         return HCCL_SUCCESS;
     }
 
+    HcclResult IRankGraph::GetRankDescList(RankDesc **descList, uint32_t *descNum)
+    {
+        CHK_PTR_NULL(descList);
+        CHK_PTR_NULL(descNum);
+        CHK_PTR_NULL(rankGraphPtr_);
+        RankGraph *rankGraph = static_cast<RankGraph *>(rankGraphPtr_);
+        const auto &vec = rankGraph->GetRankDescVec();
+        *descList = const_cast<RankDesc *>(vec.data());
+        *descNum = static_cast<uint32_t>(vec.size());
+        return HCCL_SUCCESS;
+    }
+
 } // namespace Hccl

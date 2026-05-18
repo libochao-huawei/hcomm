@@ -103,4 +103,9 @@ HcclResult RankGraphV2::GetEndpointInfo(uint32_t rankId, const EndpointDesc *end
  	return pImpl->GetEndpointInfo(rankId, endPointDesc, endpointAttr, infoLen, info);
 }
 
+HcclResult RankGraphV2::GetRankDescList(RankDesc **descList, uint32_t *descNum)
+{
+    return pImpl->GetRankDescList(descList, descNum);
+}
+
 };  // namespace hccl
