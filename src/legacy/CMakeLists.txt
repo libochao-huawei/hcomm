@@ -86,8 +86,6 @@ target_include_directories(hccl_v2 PRIVATE
 # 每个文件夹单独组织要参与编译的文件
 target_sources(hccl_v2
     PRIVATE
-    #${HCCL_BASE_DIR}/src/common/health/rank_consistency_checker_v2.cc
-    #${HCCL_BASE_DIR}/src/common/health/calc_crc.cc
 )
 
 add_subdirectory(common)
