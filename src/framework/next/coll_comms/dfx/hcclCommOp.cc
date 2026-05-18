@@ -36,7 +36,7 @@ HCCL_INFO("[%s]hccltest, collOp.opmode: %d", __func__, collOp.opMode);
     dfxOpInfoOnce->tag_ = Hccl::OpTypeToString(collOp.opType);
     dfxOpInfoOnce->beginTime_ = dfxOpInfo.beginTime;
     dfxOpInfoOnce->cpuWaitAicpuNotifyId_ = dfxOpInfo.cpuWaitAicpuNotifyId;
-HCCL_INFO("[%s]hccltest, dfxOpInfoOnce.op_: %d", __func__, dfxOpInfoOnce.op_);
+HCCL_INFO("[%s]hccltest, dfxOpInfoOnce.op_: %d", __func__, dfxOpInfoOnce->op_);
     return dfxOpInfoOnce;
 }
 
