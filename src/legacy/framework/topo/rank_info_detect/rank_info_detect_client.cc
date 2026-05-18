@@ -23,7 +23,7 @@
 
 namespace Hccl {
 
-void RankInfoDetectClient::Setup(RankTableInfo &rankTable)
+void RankInfoDetectClient::Setup(RankTableInfo &rankTable, u32 hostPort)
 {
     // 1. 构造localRankTable
     RankTableInfo localRankTable{};
@@ -31,6 +31,7 @@ void RankInfoDetectClient::Setup(RankTableInfo &rankTable)
 
     // 若启用单卡多进程抢占端口则执行
     SocketManager::ServerInitAll(localRankTable.ranks[0]);
+    localRankTable.ranks[0].hostPort = hostPort;
 
     // 2. 连接root节点
     Connect();
