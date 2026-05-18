@@ -195,7 +195,7 @@ HcclResult CollCommAicpu::ProcessUrmaRes(HcclChannelUrmaRes *commParam, bool isI
             // 恢复出的channelHandle回填到commParam中
             channelList[index] = channelHandle;
             CHK_RET(RegisterChannelAddDfxTaskInfo(channelHandle));
-            HcclCommDfxLite::AddChannelRemoteRankId(identifier_, channelHandle, commParam->remoteRankList[index]);
+            dfx_.AddChannelRemoteRankId(channelHandle, commParam->remoteRankList[index]);
         } else {
             channelHandle = channelList[index];
             if (!ubTransportMap_.count(channelHandle)) {
