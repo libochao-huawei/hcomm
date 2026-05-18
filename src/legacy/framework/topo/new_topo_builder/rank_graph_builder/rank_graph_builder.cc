@@ -330,24 +330,6 @@ void RankGraphBuilder::BuildFromRankTable()
         }
     }
 
-    // 补充计算 serverIdx：按 A3_SERVER 层 netInstId 首次出现顺序分配
-    {
-        std::unordered_map<std::string, u32> serverInstIdToIdx;
-        u32 nextServerIdx = 0;
-        for (auto &rankInfo : rankTable_->ranks) {
-            for (const auto &levelInfo : rankInfo.rankLevelInfos) {
-                if (levelInfo.netType == NetType::A3_SERVER) {
-                    auto it = serverInstIdToIdx.find(levelInfo.netInstId);
-                    if (it == serverInstIdToIdx.end()) {
-                        serverInstIdToIdx[levelInfo.netInstId] = nextServerIdx++;
-                    }
-                    rankInfo.serverIdx = serverInstIdToIdx[levelInfo.netInstId];
-                    break;
-                }
-            }
-        }
-    }
-
     // 初始化innerRanks
     rankGraph_->InitInnerRanks();
 
