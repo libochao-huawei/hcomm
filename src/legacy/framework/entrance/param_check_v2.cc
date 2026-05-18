@@ -486,10 +486,10 @@ HcclResult HcomLoadRankTableFileV2(const char *clusterInfo, std::string &rankTab
 
     aclError ret = 0;
     s32 deviceLogicId = 0;
-    ret = aclrtGetDevice(deviceLogicId);
+    ret = aclrtGetDevice(&deviceLogicId);
     CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[Get][DeviceRefresh]errNo[0x%016llx] rtGet device fail, "\
         "please make sure that device is set. return[%d], para:deviceLogicId[%d]",
-        HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, *deviceLogicId), HCCL_E_RUNTIME);
+        HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, deviceLogicId), HCCL_E_RUNTIME);
     HcomRecordRankTableJsonCrc(deviceLogicId, rankTableM);
     return HCCL_SUCCESS;
 }
