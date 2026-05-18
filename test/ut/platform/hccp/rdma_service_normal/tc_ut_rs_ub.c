@@ -97,6 +97,7 @@ extern void RsUbFreeJettyCbBatch(struct JettyDestroyBatchInfo *batchInfo,
 extern int RsUbCtxJfcCreateNormal(struct RsUbDevCb *devCb, urma_jfc_cfg_t *jfcCfg, urma_jfc_t **outJfc);
 extern int RsUbGetJfceCb(struct RsUbDevCb *devCb, unsigned long long addr, struct RsCtxJfceCb **jfceCb);
 extern int RsHandleEpollPollJfc(struct RsUbDevCb *devCb, urma_jfce_t *jfce);
+extern int RsUbJettyCbBuffAlloc(struct RsUbDevCb *devCb, struct RsCtxJettyCb *jettyCb, enum JfcMode jfcType);
 
 struct RsConnInfo gConn = {0};
 char gRevBuf[RS_BUF_SIZE] = {0};
@@ -1226,6 +1227,17 @@ void TcRsUbCtxInitJettyCb()
     mocker_clean();
 }
 
+static struct RsCtxJfcCb gSendJfcCb = {0};
+
+int RsUbQueryJfcCbStub(struct RsUbDevCb *devCb, unsigned long long scqIndex, unsigned long long rcqIndex,
+    struct RsCtxJfcCb **sendJfcCb, struct RsCtxJfcCb **recvJfcCb)
+{
+    gSendJfcCb.jfcType = JFC_MODE_NORMAL;
+    *sendJfcCb = &gSendJfcCb;
+    *recvJfcCb = &gSendJfcCb;
+    return 0;
+}
+
 void TcRsUbCtxJettyCreateFail()
 {
     struct RsUbDevCb devCb = {0};
@@ -1241,11 +1253,13 @@ void TcRsUbCtxJettyCreateFail()
     mocker_clean();
 
     mocker(RsUbCtxInitJettyCb, 1, 0);
-    mocker(RsUbQueryJfcCb, 1, 0);
+    mocker_invoke_p5("RsUbQueryJfcCb", "RsUbQueryJfcCbStub",
+        (stub_fn_t)RsUbQueryJfcCb, (stub_fn_t)RsUbQueryJfcCbStub, 10);
     mocker(RsUbCtxDrvJettyCreate, 1, 0);
     mocker(RsUbFillJettyInfo, 1, -1);
     mocker(RsUbCtxDrvJettyDelete, 1, -1);
     mocker(RsUbCtxFreeJettyCb, 1, -1);
+    mocker(RsUbJettyCbBuffAlloc, 10, 0);
     ret = RsUbCtxJettyCreate(&devCb, &attr, &info);
     EXPECT_INT_NE(0, ret);
     mocker_clean();

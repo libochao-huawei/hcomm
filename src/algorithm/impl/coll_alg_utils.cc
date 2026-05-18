@@ -376,7 +376,8 @@ bool ExecutorCanSupportDMAReduce(const std::string& algName)
         "AlignedAllReduceDoubleRingFor91093Executor",
         "ReduceScatterRingFor91093Executor",
         "ReduceScatterFastDoubleRingFor91093Executor",
-        "AlignedReduceScatterDoubleRingFor91093Executor"
+        "AlignedReduceScatterDoubleRingFor91093Executor",
+        "ReduceScatterPipelineFor91093Executor"
         };
     if (executorCanSupportDMAReduceSet.find(algName) != executorCanSupportDMAReduceSet.end()) {
         return true;

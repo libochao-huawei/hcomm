@@ -15,7 +15,6 @@
 #include "internal_exception.h"
 #include <unordered_map>
 namespace Hccl {
-
 RtsqBase::RtsqBase(u32 devPhyId, u32 streamId, u32 sqId) : devPhyId_(devPhyId), streamId_(streamId), sqId_(sqId)
 {
     auto ret = drvGetLocalDevIDByHostDevID(devPhyId_, &localDevId_);
@@ -42,9 +41,7 @@ void RtsqBase::Reset()
     sqTail_  = QuerySqTail();
     sqDepth_ = QuerySqDepth();
     sqBaseAddr_ = QuerySqBaseAddr();
-    if (SetTaskIdBySqeId() != HCCL_SUCCESS) {
-        taskId_ = 0;
-    }
+    SetTaskIdBySqeId();
 }
 
 std::string RtsqBase::GetHwSqDescribe()
@@ -139,16 +136,4 @@ void RtsqBase::ConfigDisableToEnable(u32 value)
     HCCL_INFO("RtsqBase::%s, value=%u", __func__, value);
     ConfigSqStatusByType(drvSqCqPropType_t::DRV_SQCQ_PROP_SQ_DISABLE_TO_ENABLE, value);
 }
-
-HcclResult RtsqBase::SetTaskIdBySqeId()
-{
-    if (UNLIKELY(aicpu::GetSqeId == nullptr)) {
-        HCCL_WARNING("[RtsqBase][SetTaskIdBySqeId] aicpu::GetSqeId is nullptr.");
-        return HCCL_E_INTERNAL;
-    }
-    u32 taskIdEnd;
-    aicpu::GetSqeId(1, taskId_, taskIdEnd);
-    return HCCL_SUCCESS;
-}
-
 } // namespace Hccl

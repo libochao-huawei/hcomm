@@ -36,9 +36,6 @@ target_compile_options(hccl_utest_framework_one_sided_service PRIVATE
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
 )
 
-target_link_directories(hccl_utest_framework_one_sided_service PRIVATE
-    ${ASCEND_CANN_PACKAGE_PATH}/lib64
-)
 target_link_libraries(hccl_utest_framework_one_sided_service PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>

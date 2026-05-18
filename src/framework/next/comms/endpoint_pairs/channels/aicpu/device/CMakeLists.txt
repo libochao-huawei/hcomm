@@ -15,8 +15,12 @@ set(src_list
     dev_aicpu_ts_hccs_channel.cc
 )
 
-if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
+if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         ${src_list}
+    )
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/..
     )
 endif()

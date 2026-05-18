@@ -16,6 +16,11 @@ set(src_list
     hccl_comm_socket_c_adpt.cc
 )
  
-target_sources(hcomm PRIVATE
-    ${src_list}
-)
+if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${src_list}
+    )
+    target_include_directories(hcomm PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()
