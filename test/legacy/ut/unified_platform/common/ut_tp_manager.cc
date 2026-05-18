@@ -13,10 +13,25 @@
 #include <mockcpp/mockcpp.hpp>
 #include "tp_manager.h"
 #include "hccp.h"
+#include "orion_adapter_hccp.h"
 #include "orion_adapter_rts.h"
 #include "internal_exception.h"
 
 using namespace Hccl;
+
+namespace {
+
+void MockDeviceTpAttrAsyncSupport()
+{
+    u32 tpAttrVersion = 2U;
+    MOCKER(RaGetInterfaceVersion)
+        .stubs()
+        .with(any(), any(), outBoundP(&tpAttrVersion, sizeof(tpAttrVersion)))
+        .will(returnValue(0));
+    MOCKER(HrtRaSetTpAttrAsync).stubs().will(returnValue(HCCL_SUCCESS));
+}
+
+} // namespace
 
 class TpManagerTest : public testing::Test {
 protected:
@@ -173,11 +188,7 @@ TEST_F(TpManagerTest, Ut_ReleaseTpInfo_When_InputValue_Expect_Return_HCCL_SUCCES
 
 TEST_F(TpManagerTest, tp_manager_device_qos_sl_mapping_success)
 {
-    u32 tpAttrVersion = 2U;
-    MOCKER(RaGetInterfaceVersion)
-        .stubs()
-        .with(any(), any(), outBoundP(&tpAttrVersion, sizeof(tpAttrVersion)))
-        .will(returnValue(0));
+    MockDeviceTpAttrAsyncSupport();
 
     HcclResult result;
     const int32_t devLogicId = 0;
@@ -201,11 +212,7 @@ TEST_F(TpManagerTest, tp_manager_device_qos_sl_mapping_success)
 
 TEST_F(TpManagerTest, tp_manager_loop_first_tp_lowest_sl_success)
 {
-    u32 tpAttrVersion = 2U;
-    MOCKER(RaGetInterfaceVersion)
-        .stubs()
-        .with(any(), any(), outBoundP(&tpAttrVersion, sizeof(tpAttrVersion)))
-        .will(returnValue(0));
+    MockDeviceTpAttrAsyncSupport();
 
     HcclResult result;
     const int32_t devLogicId = 0;
