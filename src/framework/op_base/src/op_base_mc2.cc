@@ -131,7 +131,7 @@ HcclResult HcclCreateOpResCtxInner(HcclComm comm, uint8_t opType, HcclDataType s
 
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if (devType != DevType::DEV_TYPE_910_93) {
+    if ((devType != DevType::DEV_TYPE_910_93) && (devType != DevType::DEV_TYPE_910B)) {
         HCCL_ERROR("[HcclCreateOpResCtxInner] devType[%d] is not supported", devType);
         return HCCL_E_NOT_SUPPORT;
     }
@@ -165,14 +165,30 @@ HcclResult HcclCreateOpResCtxInner(HcclComm comm, uint8_t opType, HcclDataType s
         CHK_RET(hcclComm->SaveTraceInfo(logInfo));
     }
 
-    CHK_RET(HcclMc2ComOpResCtx(comm, opType, srcDataType, dstDataType, reduceType, count, algConfig, commEngine, aicpuStream));
+    if (DevType::DEV_TYPE_910_93 == devType) {
+        CHK_RET(HcclMc2ComOpResCtx(comm, opType, srcDataType, dstDataType, reduceType, count, algConfig, commEngine, aicpuStream));
 
-    // 获取 commContext
-    hcclComm->GetCommResource(*opResCtx);
-    if (*opResCtx == nullptr) {
-        HCCL_ERROR("[%s] GetCommResource failed, opResCtx is nullptr, commIdentifier[%s]", __func__, commIdentifier.c_str());
-        return HCCL_E_INTERNAL;
+        // 获取 commContext
+        hcclComm->GetCommResource(*opResCtx);
+        if (*opResCtx == nullptr) {
+            HCCL_ERROR("[%s] GetCommResource failed, opResCtx is nullptr, commIdentifier[%s]", __func__, commIdentifier.c_str());
+            return HCCL_E_INTERNAL;
+        }
+    } else {
+        string tag = "CreatecomResource_" + commIdentifier;
+        u32 moduleNum = hcclComm->GetModuleNum();
+        if (moduleNum > HCCL_DEVICE_NUM_ONE) {
+            tag += HCCL_MC2_MULTISERVER_SUFFIX;
+        }
+        if (commEngine == COMM_ENGINE_AICPU) {
+            CHK_RET(hcclComm->SetAicpuCommEngine(true));
+        }
+        if (LIKELY(hcclComm->GetCommResource(tag, opResCtx))) {
+            return HCCL_SUCCESS;
+        }
+        CHK_RET(hcclComm->CreateCommResource(tag, aicpuStream, true, opResCtx, algConfig));
     }
+    
 
     if (GetExternalInputHcclEnableEntryLog()) {
         HcclUs endut = TIME_NOW();
