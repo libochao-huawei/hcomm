@@ -33,6 +33,10 @@ public:
 
     static HcclResult CreateEndpoint(const EndpointDesc &endpointDesc, std::unique_ptr<Endpoint> &endpointPtr);
 
+    uint8_t GetPortNum() const;
+
+    void *GetRdmaHandleByPortId(uint8_t portId);
+
     virtual HcclResult Init() = 0;
 
     virtual HcclResult ServerSocketListen(const uint32_t port) = 0;
@@ -40,12 +44,12 @@ public:
     virtual HcclResult ServerSocketStopListen(const uint32_t port) {return HCCL_E_NOT_SUPPORT;};
     virtual HcclResult ServerSocketGetListenPort(uint32_t *port) {return HCCL_E_NOT_SUPPORT;};
 
-    virtual std::shared_ptr<RegedMemMgr> GetRegedMemMgr() 
+    virtual std::shared_ptr<RegedMemMgr> GetRegedMemMgr()
     {
         return regedMemMgr_;
     }
 
-    void* GetRdmaHandle()
+    void *GetRdmaHandle()
     {
         return ctxHandle_;
     }
@@ -82,8 +86,10 @@ public:
 
 protected:
     static HcclResult CreateEndpointBase(const EndpointDesc &endpointDesc, std::unique_ptr<Endpoint> &endpointPtr);
-    void* ctxHandle_{nullptr};
+    void *ctxHandle_{nullptr};
     std::shared_ptr<RegedMemMgr> regedMemMgr_{};
+    uint8_t portNum_{1};
+    std::vector<void *> ctxHandleList_{};
     EndpointDesc endpointDesc_;
 };
 

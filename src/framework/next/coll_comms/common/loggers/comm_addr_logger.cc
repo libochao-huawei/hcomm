@@ -28,6 +28,8 @@ std::string CommAddrLogger::GetTypeString(CommAddrType type)
             return "ID";
         case COMM_ADDR_TYPE_EID:
             return "EID";
+        case COMM_ADDR_TYPE_MULTI_PORT:
+            return "MULTI_PORT";
         default:
             return "Unknown(" + std::to_string(type) + ")";
     }
@@ -108,6 +110,13 @@ std::string CommAddrLogger::ToString(const CommAddr& commAddr)
             break;
         case COMM_ADDR_TYPE_EID:
             desc += ConvertEID(commAddr.eid) + "]";
+            break;
+        case COMM_ADDR_TYPE_MULTI_PORT:
+            desc += "MultiPortAddr[portNum=" + std::to_string(commAddr.portsAddr.portNum);
+            for (uint8_t idx = 0; idx < commAddr.portsAddr.portNum && idx < HCOMM_NIC_PORT_MAX_NUM; ++idx) {
+                desc += ", port" + std::to_string(idx) + "=" + ConvertEID(commAddr.portsAddr.eidList[idx]);
+            }
+            desc += "]]";
             break;
         default:
             desc += "Unknown]";

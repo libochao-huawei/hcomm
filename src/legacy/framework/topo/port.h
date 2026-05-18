@@ -165,7 +165,8 @@ class DevNetPortType : public BasePortType {
 public:
     DevNetPortType(ConnectProtoType proto) : BasePortType(PortDeploymentType::DEV_NET)
     {
-        if (proto != ConnectProtoType::TCP && proto != ConnectProtoType::RDMA && proto != ConnectProtoType::UB) {
+        if (proto != ConnectProtoType::TCP && proto != ConnectProtoType::RDMA &&
+            proto != ConnectProtoType::UB && proto != ConnectProtoType::UBOE) {
             THROW<InvalidParamsException>(StringFormat("DevNetPortType::DevNetPortType proto invalid"));
         }
         proto_ = proto;
