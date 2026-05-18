@@ -32,6 +32,12 @@ HcclResult RankGraphV2::GetDevicePort(const uint32_t rank, uint32_t *devPort)
     return HCCL_SUCCESS;
 }
 
+HcclResult RankGraphV2::GetHostPort(const uint32_t rank, uint32_t *hostPort)
+{
+    CHK_RET(pImpl->GetHostPort(rank, hostPort));
+    return HCCL_SUCCESS;
+}
+
 HcclResult RankGraphV2::GetRankId(uint32_t *rank)
 {
     return pImpl->GetRankId(rank);
