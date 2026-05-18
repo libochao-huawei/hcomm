@@ -175,14 +175,14 @@ git commit -m "feat(rank_graph): add BuildRankDescVec, converge Reparse to rankD
 **Files:**
 - Modify: `src/legacy/framework/topo/new_topo_builder/rank_graph_builder/rank_graph_builder.cc:610-611`
 
-- [ ] **Step 1: 替换 ReparseGroupedPlaneForOcsMesh 调用为 BuildRankDescVec**
+- [x] **Step 1: 替换 ReparseGroupedPlaneForOcsMesh 调用为 BuildRankDescVec**
 
 ```diff
 -     rankGraph_->ReparseGroupedPlaneForOcsMesh(*rankTable_);
 +     rankGraph_->BuildRankDescVec(*rankTable_);
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add src/legacy/framework/topo/new_topo_builder/rank_graph_builder/rank_graph_builder.cc
