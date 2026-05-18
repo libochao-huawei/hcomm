@@ -31,8 +31,7 @@ public:
 
 private:
     uint8_t GetPortNumFromEndpointDesc() const;
-    HcclResult GetPortAddressByPortIdx(uint8_t idx, Hccl::IpAddress &ipAddr) const;
-    HcclResult GetLinkAddress(Hccl::IpAddress &ipAddr) const;
+    HcclResult GetIpAddressByPortId(uint8_t portId, Hccl::IpAddress &ipAddr) const;
 };
 
 } // namespace hcomm

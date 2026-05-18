@@ -61,10 +61,10 @@ uint8_t Endpoint::GetPortNum() const
     return portNum_;
 }
 
-void *Endpoint::GetRdmaHandleByPortIdx(uint8_t idx)
+void *Endpoint::GetRdmaHandleByPortId(uint8_t portId)
 {
-    if (idx >= portNum_) {
-        HCCL_ERROR("[%s] invalid port id[%u], portNum[%u].", __func__, idx, portNum_);
+    if (portId >= portNum_) {
+        HCCL_ERROR("[%s] invalid port id[%u], portNum[%u].", __func__, portId, portNum_);
         return nullptr;
     }
 
@@ -72,11 +72,12 @@ void *Endpoint::GetRdmaHandleByPortIdx(uint8_t idx)
         return ctxHandle_;
     }
 
-    if (idx >= ctxHandleList_.size()) {
-        HCCL_ERROR("[%s] invalid ctxHandleList size[%zu], port id[%u].", __func__, ctxHandleList_.size(), idx);
+    if (portId >= ctxHandleList_.size()) {
+        HCCL_ERROR("[%s] invalid ctxHandleList size[%zu], port id[%u].",
+            __func__, ctxHandleList_.size(), portId);
         return nullptr;
     }
-    return ctxHandleList_[idx];
+    return ctxHandleList_[portId];
 }
 
 HcclResult Endpoint::CreateEndpoint(const EndpointDesc &endpointDesc, std::unique_ptr<Endpoint> &endpointPtr)
