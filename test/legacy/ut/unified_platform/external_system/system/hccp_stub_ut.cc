@@ -750,6 +750,14 @@ int RaGetHccnCfg(struct RaInfo *info, enum HccnCfgKey key, char *value, unsigned
 
 int RaSetTpAttrAsync(void *ctxHandle, uint64_t tpHandle, uint32_t attrBitmap, struct TpAttr *attr, void **reqHandle)
 {
+    static char kStubRaSetTpAttrReq{};
+    (void)ctxHandle;
+    (void)tpHandle;
+    (void)attrBitmap;
+    (void)attr;
+    if (reqHandle != nullptr) {
+        *reqHandle = &kStubRaSetTpAttrReq;
+    }
     return 0;
 }
 
