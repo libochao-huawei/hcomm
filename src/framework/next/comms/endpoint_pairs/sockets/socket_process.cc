@@ -55,21 +55,21 @@ HcclResult SocketProcess::DestroySocketHandle(SocketHandle socketHandle)
 {
     Hccl::Socket *socket = static_cast<Hccl::Socket *>(socketHandle);
     if (socket == nullptr) {
-        HCCL_WARNING("[SocketProcess][%s] socket is nullptr, please check", __func__);
+        HCCL_WARNING("[SocketProcess][%s] socket[%p] is nullptr, please check", __func__, static_cast<void *>(socket));
         return HCCL_E_PARA;
     }
 
     unique_lock<std::mutex> lock(mutex_);
     auto socket2TagIter = socket2TagMap_.find(socket);
     if (socket2TagIter == socket2TagMap_.end()) {
-        HCCL_WARNING("[SocketProcess][%s] socket not found, please check", __func__);
+        HCCL_WARNING("[SocketProcess][%s] socket[%p] not found, please check", __func__, static_cast<void *>(socket));
         return HCCL_E_NOT_FOUND;
     }
 
     string socketTag = socket2TagIter->second;
     auto tag2socketIter = tag2socketMap_.find(socketTag);
     if (tag2socketIter == tag2socketMap_.end()) {
-        HCCL_WARNING("[SocketProcess][%s] socketTag not found, please check", __func__);
+        HCCL_WARNING("[SocketProcess][%s] socketTag[%s] not found, please check", __func__, socketTag.c_str());
         return HCCL_E_NOT_FOUND;
     }
 
