@@ -13,10 +13,6 @@
 #include "hccp.h"
 
 namespace hcomm {
-constexpr uint32_t TC_TEMP = 132;
-constexpr uint32_t SL_TEMP = 4;
-constexpr uint32_t RETRY_CNT_TEMP = 7;
-constexpr uint32_t RETRY_TIME_TEMP = 20;
 
 DevRdmaConnectionV2::DevRdmaConnectionV2(Hccl::Socket *socket, RdmaHandle rdmaHandle):
     socket_(socket), rdmaHandle_(rdmaHandle) {}
@@ -30,8 +26,8 @@ HcclResult DevRdmaConnectionV2::Init()
     }
 
     GetNdaOps();
-    GetDirectFlag();
-    GetDmaMode();
+    CHK_RET(GetDirectFlag());
+    CHK_RET(GetDmaMode());
 
     rdmaConnStatus_ = RdmaConnStatus::INIT;
     return HCCL_SUCCESS;
@@ -116,7 +112,7 @@ HcclResult DevRdmaConnectionV2::GetDirectFlag() {
     return HCCL_SUCCESS;
 }
 
-void DevRdmaConnectionV2::GetDmaMode() {
+HcclResult DevRdmaConnectionV2::GetDmaMode() {
     switch (directFlag_) {
         case DIRECT_FLAG_PCIE: {
             dmaMode_ = QBUF_DMA_MODE_DEFAULT;
@@ -127,11 +123,13 @@ void DevRdmaConnectionV2::GetDmaMode() {
             break;
         }
         default: {
-            HCCL_ERROR("[GetDmaMode]Not support the directFlag [%d], use default.", directFlag_);
+            HCCL_ERROR("[GetDmaMode]Not support the directFlag [%d].", directFlag_);
             dmaMode_ = QBUF_DMA_MODE_MAX;
+            return HCCL_E_INTERNAL;
         }
     }
     HCCL_INFO("[GetDmaMode] directFlag[%d], dmaMode[%d]", directFlag_, dmaMode_);
+    return HCCL_SUCCESS;
 }
 
 HcclResult DevRdmaConnectionV2::CreateQp()
@@ -165,14 +163,19 @@ HcclResult DevRdmaConnectionV2::DestroyQp()
         return HCCL_SUCCESS;
     }
 
-    if (cqHandle_ != nullptr) {
-        CHK_RET(Hccl::HrtRaNdaCqDestroy(rdmaHandle_, cqHandle_));
-        cqHandle_ = nullptr;
-    }
+    HcclResult ret = HCCL_SUCCESS;
 
     if (qpHandle_ != nullptr) {
         Hccl::HrtRaQpDestroy(qpHandle_);
         qpHandle_ = nullptr;
+    }
+
+    if (cqHandle_ != nullptr) {
+        ret = Hccl::HrtRaNdaCqDestroy(rdmaHandle_, cqHandle_);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[DevRdmaConnectionV2::%s] HrtRaNdaCqDestroy failed, ret[%d]", __func__, ret);
+        }
+        cqHandle_ = nullptr;
     }
 
     SqPiMem_ = hccl::DeviceMem();
@@ -181,7 +184,7 @@ HcclResult DevRdmaConnectionV2::DestroyQp()
     CqCiMem_ = hccl::DeviceMem();
 
     rdmaConnStatus_ = RdmaConnStatus::CLOSED;
-    return HCCL_SUCCESS;
+    return ret;
 }
 
 HcclResult DevRdmaConnectionV2::GetExchangeDto(std::unique_ptr<Hccl::Serializable> &locQpAttrserial)
@@ -246,18 +249,18 @@ HcclResult DevRdmaConnectionV2::ModifyQp()
 
     struct TypicalQp localQp;
     struct TypicalQp rmtQp;
-    localQp.sl = qpInfo_.serviceLevel == 0 ? SL_TEMP : qpInfo_.serviceLevel;
-    localQp.tc = qpInfo_.trafficClass == 0 ? TC_TEMP : qpInfo_.trafficClass;
-    localQp.retryCnt = qpInfo_.retryCnt == 0 ? RETRY_CNT_TEMP : qpInfo_.retryCnt;
-    localQp.retryTime = qpInfo_.retryInterval == 0? RETRY_TIME_TEMP : qpInfo_.retryInterval;
+    localQp.sl = qpInfo_.serviceLevel;
+    localQp.tc = qpInfo_.trafficClass;
+    localQp.retryCnt = qpInfo_.retryCnt;
+    localQp.retryTime = qpInfo_.retryInterval;
     localQp.qpn = localQpAttr.qpn;
     localQp.psn = localQpAttr.psn;
     localQp.gidIdx = localQpAttr.gidIdx;
     (void)memcpy_s(localQp.gid, HCCP_GID_RAW_LEN, localQpAttr.gid, HCCP_GID_RAW_LEN);
-    rmtQp.sl = qpInfo_.serviceLevel == 0 ? SL_TEMP : qpInfo_.serviceLevel;
-    rmtQp.tc = qpInfo_.trafficClass == 0 ? TC_TEMP : qpInfo_.trafficClass;
-    rmtQp.retryCnt = qpInfo_.retryCnt == 0 ? RETRY_CNT_TEMP : qpInfo_.retryCnt;
-    rmtQp.retryTime = qpInfo_.retryInterval == 0? RETRY_TIME_TEMP : qpInfo_.retryInterval;
+    rmtQp.sl = qpInfo_.serviceLevel;
+    rmtQp.tc = qpInfo_.trafficClass;
+    rmtQp.retryCnt = qpInfo_.retryCnt;
+    rmtQp.retryTime = qpInfo_.retryInterval;
     rmtQp.qpn = rmtQpAttr_.qpn;
     rmtQp.psn = rmtQpAttr_.psn;
     rmtQp.gidIdx = rmtQpAttr_.gid_idx;
@@ -298,7 +301,7 @@ HcclResult DevRdmaConnectionV2::BuildSqContext(SqContext* context)
         context->contextInfo.roceSq.tailAddr = reinterpret_cast<uint64_t >(ndaQpInfo_.sqInfo.dbrCiVa.iovBase);
     }
     context->contextInfo.roceSq.dbVa = reinterpret_cast<uint64_t >(ndaQpInfo_.sqInfo.dbHwVa.iovBase);
-    context->contextInfo.roceSq.sl = qpInfo_.serviceLevel == 0 ? SL_TEMP : qpInfo_.serviceLevel;
+    context->contextInfo.roceSq.sl = qpInfo_.serviceLevel;
     context->contextInfo.roceSq.dbMode = 0;
 
     HCCL_INFO(
@@ -365,7 +368,7 @@ std::vector<char> DevRdmaConnectionV2::GetSqUniqueId() const
     binaryStream << reinterpret_cast<uint64_t >(ndaQpInfo_.sqInfo.dbrPiVa.iovBase);
     binaryStream << reinterpret_cast<uint64_t >(ndaQpInfo_.sqInfo.dbrCiVa.iovBase);
     binaryStream << reinterpret_cast<uint64_t >(ndaQpInfo_.sqInfo.dbHwVa.iovBase);
-    binaryStream << (qpInfo_.serviceLevel == 0 ? SL_TEMP : qpInfo_.serviceLevel);
+    binaryStream << qpInfo_.serviceLevel;
     binaryStream << 0;
 
     std::vector<char> result;

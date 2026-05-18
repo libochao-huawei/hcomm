@@ -124,7 +124,7 @@ int RaCtxQpQueryBatch(void *qp_handle[], struct JettyAttr attr[], unsigned int *
 int RaNdaGetDirectFlag(void *rdmaHandle, int *directFlag)
 {
     if (directFlag != nullptr) {
-        *directFlag = 0;
+        *directFlag = 1;
     }
     return 0;
 }

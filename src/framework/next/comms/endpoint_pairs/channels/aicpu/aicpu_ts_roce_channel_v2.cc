@@ -24,6 +24,10 @@
 namespace hcomm {
 
 constexpr uint16_t DEFAULT_LISTENING_PORT = 60001;
+constexpr uint32_t TC_TEMP = 132;
+constexpr uint32_t SL_TEMP = 4;
+constexpr uint32_t RETRY_CNT_TEMP = 7;
+constexpr uint32_t RETRY_TIME_TEMP = 20;
 
 AicpuTsRoceChannelV2::AicpuTsRoceChannelV2(EndpointHandle endpointHandle, HcommChannelDesc channelDesc, CommEngine engine)
     : endpointHandle_(endpointHandle), channelDesc_(channelDesc), engine_(engine)
@@ -100,10 +104,10 @@ HcclResult AicpuTsRoceChannelV2::BuildConnection()
     CHK_PTR_NULL(conn);
     CHK_RET(conn->Init());
     Hccl::QpInfo& qpInfo = conn->GetQpInfo();
-    qpInfo.serviceLevel = channelDesc_.roceAttr.sl;
-    qpInfo.trafficClass = channelDesc_.roceAttr.tc;
-    qpInfo.retryCnt = channelDesc_.roceAttr.retryCnt;
-    qpInfo.retryInterval = channelDesc_.roceAttr.retryInterval;
+    qpInfo.serviceLevel = channelDesc_.roceAttr.sl == 0 ? SL_TEMP : channelDesc_.roceAttr.sl;
+    qpInfo.trafficClass = channelDesc_.roceAttr.tc == 0 ? TC_TEMP : channelDesc_.roceAttr.tc;
+    qpInfo.retryCnt = channelDesc_.roceAttr.retryCnt == 0 ? RETRY_CNT_TEMP : channelDesc_.roceAttr.retryCnt;
+    qpInfo.retryInterval = channelDesc_.roceAttr.retryInterval == 0 ? RETRY_TIME_TEMP : channelDesc_.roceAttr.retryInterval;
     HCCL_INFO("[AicpuTsRoceChannelV2::BuildConnection] QpInfo: serviceLevel[%u], trafficClass[%u], retryCnt[%u], retryInterval[%u].", 
         qpInfo.serviceLevel, qpInfo.trafficClass, qpInfo.retryCnt, qpInfo.retryInterval);
     connections_.emplace_back(std::move(conn));
