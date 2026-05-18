@@ -87,6 +87,7 @@ target_include_directories(hccd PRIVATE
     ${HCOMM_DIR}/src/common/debug/profiling/inc
     ${HCOMM_DIR}/src/common/debug/profiling/inc/host
     ${HCOMM_DIR}/src/common/debug/config
+    ${HCOMM_DIR}/src/common/error_manager
 
     # src/framework 头文件
     ${HCOMM_DIR}/src/framework
