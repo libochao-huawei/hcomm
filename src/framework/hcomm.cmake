@@ -47,6 +47,7 @@ target_include_directories(hcomm PRIVATE
     ${HCOMM_DIR}/src/pub_inc
     ${HCOMM_DIR}/src/pub_inc/inner
     ${HCOMM_DIR}/src/pub_inc/new
+    ${HCOMM_DIR}src/common/error_manager
 
     # src/framework 头文件
     ${HCOMM_DIR}/src/framework

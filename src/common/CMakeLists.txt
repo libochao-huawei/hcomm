@@ -29,3 +29,17 @@ if(TARGET ccl_kernel)
         ${CMAKE_CURRENT_SOURCE_DIR}/launch_device
     )
 endif()
+
+if(TARGET hccl_plf)
+    target_sources(hccl_plf PRIVATE
+        error_manager/adapter_error_manager.cc   # 相对于 CMakeLists.txt 的路径
+        error_manager/adapter_error_manager_pub.cc
+        error_manager/adapter_error_manager_pub_extend.cc
+    )
+endif()
+
+if(TARGET hccl_v2)
+    target_sources(hccl_v2 PRIVATE
+        error_manager/adapter_error_manager_pub_extend.cc
+    )
+endif()

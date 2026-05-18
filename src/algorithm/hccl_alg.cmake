@@ -89,8 +89,10 @@ target_include_directories(hccl_alg PRIVATE
     ${HCOMM_DIR}/include
     ${HCOMM_DIR}/include/hccl
     ${HCOMM_DIR}/pkg_inc
+    ${HCOMM_DIR}src/common/error_manager
     ${HCOMM_DIR}/pkg_inc/hccl
     ${HCOMM_DIR}/src/pub_inc
+    ${HCOMM_DIR}src/common/error_manager
     ${HCOMM_DIR}/src/framework/common/src/config
     ${HCOMM_DIR}/src/framework/inc/
     ${HCOMM_DIR}/src/framework/common/src/config
