@@ -57,7 +57,7 @@ struct CcuProfilingInfo {
     CcuProfilingInfo() : name(""), type(0), dieId(0), missionId(0), instrId(0), reduceOpType(0), inputDataType(0), outputDataType(0), dataSize(0), ckeId(0), mask(0) {
         (void)memset_s(channelId, sizeof(channelId), INVALID_VALUE_CHANNELID, sizeof(channelId));
         (void)memset_s(remoteRankId, sizeof(remoteRankId), INVALID_RANKID, sizeof(remoteRankId));
-        (void)memset_s(channelHandle, sizeof(channelHandle), INVALID_U64, sizeof(channelHandle));
+        (void)memset_s(channelHandle, sizeof(channelHandle), 0xFF, sizeof(channelHandle));
     }
 };
 constexpr u32  ADD_LEN = 128;
