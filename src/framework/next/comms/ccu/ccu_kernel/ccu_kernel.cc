@@ -301,7 +301,6 @@ HcclResult CcuKernel::CreateVariable(const ChannelHandle channel, uint32_t varIn
     return HcclResult::HCCL_SUCCESS;
 }
 
-
 CcuRepResource &CcuKernel::GetResource()
 {
     return res_;
@@ -439,6 +438,7 @@ CcuResult CcuKernel::BlockVariableAlloc(CcuVariableHandle *varHandles, uint32_t 
     }
     return CcuResult::CCU_SUCCESS;
 }
+
 CcuResult CcuKernel::BlockEventAlloc(CcuEventHandle *eventHandles, uint32_t count)
 {
     const auto& event = CreateBlockResAssist(count, res_.blockCompletedEvent);
@@ -449,6 +449,7 @@ CcuResult CcuKernel::BlockEventAlloc(CcuEventHandle *eventHandles, uint32_t coun
     }
     return CcuResult::CCU_SUCCESS;
 }
+
 CcuResult CcuKernel::BlockBufferAlloc(CcuBufferHandle *bufHandles, uint32_t count)
 {
     const auto& buffer = CreateBlockResAssist(count, res_.blockCcubufs);
@@ -459,6 +460,7 @@ CcuResult CcuKernel::BlockBufferAlloc(CcuBufferHandle *bufHandles, uint32_t coun
     }
     return CcuResult::CCU_SUCCESS;
 }
+
 CcuResult CcuKernel::VariableCreateByChannel(ChannelHandle channel, uint32_t varIndex, CcuVariableHandle *varHandle)
 {
     CcuRep::Variable var(this);
@@ -469,13 +471,12 @@ CcuResult CcuKernel::VariableCreateByChannel(ChannelHandle channel, uint32_t var
     return CcuResult::CCU_SUCCESS;
 }
 
-
 CcuResult CcuKernel::VariableAssignImm(CcuVariableHandle varHandle, uint64_t immediate)
 {
     CcuRep::Variable *variable{nullptr};
     CCU_CHK_RET(GetVariableByHandle(varHandle, &variable));
-    // todo: need try catch
-    // 通过符号重载实现，内部记录rep
+    // 通过符号重载实现，内部记录rep；异常由入口 HcommCcuKernelRegister 的
+    // CCU_EXCEPTION_HANDLE_BEGIN/END 统一接住，无需在此局部 try/catch。
     (*variable) = immediate;
     return CcuResult::CCU_SUCCESS;
 }
@@ -486,8 +487,7 @@ CcuResult CcuKernel::VariableAssignVar(CcuVariableHandle varHandle, CcuVariableH
     CCU_CHK_RET(GetVariableByHandle(varHandle, &variable));
     CcuRep::Variable *variableA{nullptr};
     CCU_CHK_RET(GetVariableByHandle(varA, &variableA));
-    // todo: need try catch
-    // 通过符号重载实现，内部记录rep
+    // 通过符号重载实现，内部记录rep；异常由入口统一 catch。
     (*variable) = (*variableA);
     return CcuResult::CCU_SUCCESS;
 }
@@ -499,12 +499,10 @@ CcuResult CcuKernel::VariableAddVarToVar(CcuVariableHandle varHandle, CcuVariabl
     CCU_CHK_RET(GetVariableByHandle(varA, &leftVar));
     CCU_CHK_RET(GetVariableByHandle(varB, &rightVar));
 
-    // todo: need try catch
-    // 通过符号重载实现，内部记录rep
+    // 通过符号重载实现，内部记录rep；异常由入口统一 catch。
     *resVar = *leftVar + *rightVar;
     return CcuResult::CCU_SUCCESS;
 }
-
 
 /*========== Event信号同步类 相关接口 ==========*/
 CcuResult CcuKernel::EventRecord(CcuEventHandle eventHandle, uint32_t mask)
@@ -524,6 +522,7 @@ CcuResult CcuKernel::EventWait(CcuEventHandle eventHandle, uint32_t mask)
     CCU_CHK_RET(WaitEvent(*event, mask));
     return CcuResult::CCU_SUCCESS;
 }
+
 CcuResult CcuKernel::LocalNotifyRecord(const char *notifyTag, const uint32_t mask)
 {
     if (notifyTag == nullptr) {
@@ -547,6 +546,7 @@ CcuResult CcuKernel::LocalNotifyRecord(const char *notifyTag, const uint32_t mas
 
     return CcuResult::CCU_SUCCESS;
 }
+
 CcuResult CcuKernel::LocalNotifyWait(const char *notifyTag, const uint32_t mask)
 {
     if (notifyTag == nullptr) {
@@ -567,6 +567,7 @@ CcuResult CcuKernel::LocalNotifyWait(const char *notifyTag, const uint32_t mask)
         exportedRes_.sharedNotifies.at(tagKey), mask, isProfiling));
     return CcuResult::CCU_SUCCESS;
 }
+
 CcuResult CcuKernel::NotifyRecord(const ChannelHandle channel,
     uint32_t remoteNotifyIdx, uint32_t mask)
 {
@@ -574,6 +575,7 @@ CcuResult CcuKernel::NotifyRecord(const ChannelHandle channel,
     Append(std::make_shared<CcuRep::CcuRepRemPostSem>(channel, remoteNotifyIdx, mask));
     return CCU_SUCCESS;
 }
+
 CcuResult CcuKernel::NotifyWait(const ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask)
 {
     bool isProfiling = CurrentBlock()->Type() != CcuRep::CcuRepType::LOOP_BLOCK;
@@ -583,6 +585,7 @@ CcuResult CcuKernel::NotifyWait(const ChannelHandle channel, uint32_t localNotif
     Append(std::make_shared<CcuRep::CcuRepRemWaitSem>(channel, localNotifyIdx, mask, isProfiling));
     return CcuResult::CCU_SUCCESS;
 }
+
 CcuResult CcuKernel::WriteVariableWithNotify(const ChannelHandle channel, CcuVariableHandle varHandle,
     uint32_t remoteVarIdx, uint32_t remoteNotifyIdx, uint32_t mask)
 {
@@ -626,6 +629,7 @@ CcuResult CcuKernel::LoadVar(uint64_t addr, CcuVariableHandle varHandle, uint32_
     Append(std::make_shared<CcuRep::CcuRepLoad>(addr, *var, num));
     return CcuResult::CCU_SUCCESS;
 }
+
 CcuResult CcuKernel::CcuLoadVarFromVarAddr(CcuVariableHandle addrHandle, CcuVariableHandle varHandle, uint32_t num)
 {
     CcuRep::Variable *addrVar{nullptr};
@@ -646,6 +650,7 @@ CcuResult CcuKernel::CcuLoadVarFromVarAddr(CcuVariableHandle addrHandle, CcuVari
     Append(std::make_shared<CcuRep::CcuRepLoadVar>(*addrVar, *var, num));
     return CcuResult::CCU_SUCCESS;
 }
+
 CcuResult CcuKernel::StoreVar(uint64_t addr, CcuVariableHandle varHandle, uint32_t num)
 {
     CcuRep::Variable *var{nullptr};
@@ -664,6 +669,7 @@ CcuResult CcuKernel::StoreVar(uint64_t addr, CcuVariableHandle varHandle, uint32
     Append(std::make_shared<CcuRep::CcuRepStore>(*var, addr, num));
     return CcuResult::CCU_SUCCESS;
 }
+
 CcuResult CcuKernel::CcuStoreVarToVarAddr(CcuVariableHandle addrHandle, CcuVariableHandle varHandle, uint32_t num)
 {
     CcuRep::Variable *addrVar{nullptr};
@@ -684,6 +690,7 @@ CcuResult CcuKernel::CcuStoreVarToVarAddr(CcuVariableHandle addrHandle, CcuVaria
     Append(std::make_shared<CcuRep::CcuRepStoreVar>(*var, *addrVar, num));
     return CcuResult::CCU_SUCCESS;
 }
+
 //本地数据拷贝 相关实现
 CcuResult CcuKernel::LocalCopyMemToBuffer(CcuBufferHandle dstHandle, CcuLocalAddrHandle srcHandle,
     CcuVariableHandle lenHandle, CcuEventHandle eventHandle, uint32_t mask)
@@ -729,6 +736,7 @@ CcuResult CcuKernel::LocalCopyMemToMem(CcuLocalAddrHandle dstHandle, CcuLocalAdd
     auto ret = LocalCopyNb(*dst, *src, *len, *event, mask);
     return HCCL_TO_CCU_RET(ret);
 }
+
 //本地reduce 相关实现
 CcuResult CcuKernel::LocalMemReduce(CcuLocalAddrHandle dstHandle, CcuLocalAddrHandle srcHandle,
     CcuVariableHandle lenHandle, HcclDataType dataType,
@@ -807,6 +815,7 @@ CcuResult CcuKernel::ReadMemToBuffer(ChannelHandle channel, CcuBufferHandle loca
     auto ret = ReadNb(channel, *local, *remote, *len, *event, mask);
     return HCCL_TO_CCU_RET(ret);
 }
+
 CcuResult CcuKernel::ReadMemToMemReduce(ChannelHandle channel, CcuLocalAddrHandle localHandle, CcuRemoteAddrHandle remoteHandle,
     CcuVariableHandle lenHandle, HcclDataType dataType,
     HcclReduceOp opType, CcuEventHandle eventHandle, uint32_t mask)
@@ -1111,6 +1120,7 @@ CcuResult CcuKernel::DoWhileEnd(CcuVariableHandle varHandle, uint64_t immediate,
 
     return CcuResult::CCU_SUCCESS;
 }
+
 // 控制流标签栈实体
 void CcuKernel::IfLabelStackPush(const char *label)
 {
@@ -1273,8 +1283,6 @@ void CcuKernel::Load(const CcuRep::Variable &var)
     loadArgIndex_++;
 }
 
-
-
 void CcuKernel::StoreVariable(const CcuRep::Variable &var, uint64_t addr)
 {
     Append(std::make_shared<CcuRep::CcuRepStore>(var, addr));
@@ -1312,9 +1320,6 @@ CcuResult CcuKernel::GetEventByHandle(CcuEventHandle eventHandle, CcuRep::Comple
     return GetResourceByHandle(ccuEventMap_, eventHandle, event, "completedEvent");
 }
 
-
-
-
 /*
 LocalAddr / RemoteAddr 相关接口
 */
@@ -1327,7 +1332,6 @@ CcuResult CcuKernel::GetRemoteAddrByHandle(CcuRemoteAddrHandle handle, CcuRep::R
 {
     return GetResourceByHandle(ccuRemoteAddrMap_, handle, remoteAddr, "remoteAddr");
 }
-
 
 
 /*Read新接口*/
@@ -1347,8 +1351,6 @@ HcclResult CcuKernel::WriteNb(const ChannelHandle channel, const CcuRep::RemoteA
     Append(std::make_shared<CcuRep::CcuRepBufWrite>(channel, loc, rem, len, event, mask));
     return HCCL_SUCCESS;
 }
-
-
 
 static bool isLowPrecisionIn(Hccl::DataType dataType)
 {
@@ -1437,7 +1439,6 @@ HcclResult CcuKernel::LocalReduceNb(const CcuRep::CcuBuf *bufs, uint32_t count, 
                                                      CcuRep::GetCcuReduceType(opType_), event, len, mask));
     return HCCL_SUCCESS;
 }
-
 
 /*Read新接口*/
 HcclResult CcuKernel::ReadNb(const ChannelHandle channel, const CcuRep::LocalAddr &loc, const CcuRep::RemoteAddr &rem,
