@@ -364,7 +364,7 @@ git commit -m "refactor: remove OcsPlaneId/Num accessor chain (superseded by ran
 - Modify: `src/framework/inc/hccl_comm_pub.h:409,458`
 - Modify: `src/legacy/framework/topo/new_topo_builder/rank_table_info/new_rank_info.h:39-40`
 
-- [ ] **Step 1: 删除 hcclComm::GetCachedRankDesc() 和 cachedRankDesc_**
+- [x] **Step 1: 删除 hcclComm::GetCachedRankDesc() 和 cachedRankDesc_**
 
 `hccl_comm_pub.h`:
 
@@ -378,7 +378,7 @@ git commit -m "refactor: remove OcsPlaneId/Num accessor chain (superseded by ran
 -     RankDesc cachedRankDesc_;
 ```
 
-- [ ] **Step 2: 删除 NewRankInfo 中 ocsPlaneId/ocsPlaneNum 死字段**
+- [x] **Step 2: 删除 NewRankInfo 中 ocsPlaneId/ocsPlaneNum 死字段**
 
 `new_rank_info.h`:
 
@@ -390,7 +390,7 @@ git commit -m "refactor: remove OcsPlaneId/Num accessor chain (superseded by ran
 
 确认 `.cc` 中 BinaryStream 序列化代码未引用这两个字段（已确认无引用，仅声明处删除即可）。
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/framework/inc/hccl_comm_pub.h \
