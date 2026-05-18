@@ -607,7 +607,7 @@ void RankGraphBuilder::BuildRankGraph()
     // 添加绕路 绕路获取
     DetourService::GetInstance().InsertDetourLinks(rankGraph_.get(), rankTable_.get());
 
-    rankGraph_->ReparseGroupedPlaneForOcsMesh(*rankTable_);
+    rankGraph_->BuildRankDescVec(*rankTable_);
 
     // 设置endpoint
     SetEndpointDesc();
