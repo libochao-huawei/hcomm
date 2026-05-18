@@ -388,34 +388,10 @@ HcclResult HcclGetRankDescList(HcclComm comm, RankDesc **descList, uint32_t *des
         RankGraph* rankGraph = collComm->GetRankGraph();
         CHK_PTR_NULL(rankGraph);
 
-        auto &desc = hcclCommObj->GetCachedRankDesc();
-
-        // 默认初始化
-        (void)memset_s(&desc, sizeof(desc), 0, sizeof(desc));
-
-        // netLayers
-        uint32_t *netLayers = nullptr;
-        uint32_t netLayerNum = 0;
-        HcclResult ret = rankGraph->GetNetLayers(&netLayers, &netLayerNum);
-        if (ret != HCCL_SUCCESS) {
-            return ret;
-        }
-        desc.netLayerNum = 0;
-        for (uint32_t i = 0; i < netLayerNum && i < RANK_DESC_MAX_NET_LAYER; i++) {
-            desc.netLayers[i] = netLayers[i];
-            desc.netLayerNum++;
-        }
-
-        // ocsPlaneId/ocsPlaneNum 通过 RankGraph 链路获取
-        // serverIdx/elecGroupId 后续提交补充
-        desc.serverIdx = 0;
-        desc.elecGroupId = 0;
-        desc.ocsPlaneId = rankGraph->GetOcsPlaneId();
-        desc.ocsPlaneNum = rankGraph->GetOcsPlaneNum();
-
-        *descList = &desc;
-        *descNum = 1;
-        HCCL_RUN_INFO("[%s] success, netLayerNum[%u]", __func__, desc.netLayerNum);
+        const auto &vec = rankGraph->GetRankDescVec();
+        *descList = const_cast<RankDesc *>(vec.data());
+        *descNum  = static_cast<uint32_t>(vec.size());
+        HCCL_RUN_INFO("[%s] success, descNum[%u]", __func__, *descNum);
         return HCCL_SUCCESS;
     }());
 
