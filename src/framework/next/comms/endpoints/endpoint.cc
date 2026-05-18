@@ -14,6 +14,7 @@
 #include "urma_endpoint.h"
 #include "ub_mem_endpoint.h"
 #include "uboe_endpoint.h"
+#include "cpu_uboe_endpoint.h"
 #include "cpu_urma_endpoint.h"
 #include "aicputs_hccs_endpoint.h"
 #include "../../../../platform/hccp/inc/private/network/ra_rs_comm.h"
@@ -55,6 +56,30 @@ Endpoint::Endpoint(const EndpointDesc &endpointDesc)
     endpointDesc_ = endpointDesc;
 }
 
+uint8_t Endpoint::GetPortNum() const
+{
+    return portNum_;
+}
+
+void *Endpoint::GetRdmaHandleByPortId(uint8_t portId)
+{
+    if (portId >= portNum_) {
+        HCCL_ERROR("[%s] invalid port id[%u], portNum[%u].", __func__, portId, portNum_);
+        return nullptr;
+    }
+
+    if (portNum_ == 1) {
+        return ctxHandle_;
+    }
+
+    if (portId >= ctxHandleList_.size()) {
+        HCCL_ERROR("[%s] invalid ctxHandleList size[%zu], port id[%u].",
+            __func__, ctxHandleList_.size(), portId);
+        return nullptr;
+    }
+    return ctxHandleList_[portId];
+}
+
 HcclResult Endpoint::CreateEndpoint(const EndpointDesc &endpointDesc, std::unique_ptr<Endpoint> &endpointPtr)
 {
     if (!IsSupported(endpointDesc)) {
@@ -72,6 +97,8 @@ HcclResult Endpoint::CreateEndpointBase(const EndpointDesc &endpointDesc, std::u
 if (endpointDesc.protocol == COMM_PROTOCOL_ROCE && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_HOST) {
         EXECEPTION_CATCH(endpointPtr = std::make_unique<CpuRoceEndpoint>(endpointDesc), return HCCL_E_PTR);
     } else if (endpointDesc.protocol == COMM_PROTOCOL_UBOE && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
+        EXECEPTION_CATCH(endpointPtr = std::make_unique<UboeEndpoint>(endpointDesc), return HCCL_E_PTR);
+    } else if (endpointDesc.protocol == COMM_PROTOCOL_UBOE && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_HOST) {
         EXECEPTION_CATCH(endpointPtr = std::make_unique<CpuUboeEndpoint>(endpointDesc), return HCCL_E_PTR);
     } else if ((endpointDesc.protocol == COMM_PROTOCOL_UBC_TP || endpointDesc.protocol == COMM_PROTOCOL_UBC_CTP) 	 
                 && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_HOST) { 
