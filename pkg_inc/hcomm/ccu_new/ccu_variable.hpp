@@ -35,10 +35,8 @@ struct CondExpr {
 class Variable final {
 public:
     Variable() {
-        auto ret = CcuVariableAlloc(&this->handle);
-        if (ret != CcuResult::CCU_SUCCESS) {
-            throw "CcuVariableAlloc: failed";
-        }
+        CCU_THROW_IF_FAILED(CcuVariableAlloc(&this->handle),
+            "CcuVariableAlloc: failed");
     }
 
     Variable(const Variable& other) {

@@ -715,7 +715,6 @@ CcuKernel *CcuKernelMgr::GetKernel(const CcuKernelHandle kernelHandle)
 }
 
 CcuKernel *CcuKernelMgr::GetCurrentKernel() {
-    // todo: 移动位置
     return currKernel_.get();
 }
 

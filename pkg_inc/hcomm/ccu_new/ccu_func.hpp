@@ -84,13 +84,6 @@ inline std::function<void(Variable*)> MakeBody(Lambda body)
     return MakeBodyImpl(body, std::make_index_sequence<N>{});
 }
 
-inline void ThrowIfErr(::CcuResult ret, const char* what)
-{
-    if (ret != ::CcuResult::CCU_SUCCESS) {
-        throw what;
-    }
-}
-
 } // namespace internal
 
 class Func {
