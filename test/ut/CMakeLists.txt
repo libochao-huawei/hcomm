@@ -256,8 +256,10 @@ set(UT_COMMON_INCLUDE_LIST
     ${CANN_3RD_LIB_PATH}/mockcpp/include/3rdparty/
     ${CANN_3RD_LIB_PATH}/boost/
 
-    ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal
+    # ascendc
+    ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/
+    ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api/
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
 
     # next
     ${HCCL_CODE_ROOT}/src/framework/next/
