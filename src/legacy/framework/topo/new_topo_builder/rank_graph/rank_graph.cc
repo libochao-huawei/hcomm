@@ -309,7 +309,7 @@ HcclResult RankGraph::GetTopoType(const u32 netLayer, const u32 topoInstId, Topo
 
     auto ret = netInstance->GetTopoType(topoInstId, topoType);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-                HCCL_ERROR("[%s] Failed to GetTopoType, myRank[%d], netLayer[%u], netInstId[%s], topoInstId[%u], "
+                HCCL_ERROR("[%s] Failed to GetTopoType, myRank[%u], netLayer[%u], netInstId[%s], topoInstId[%u], "
                            "ret[%d]", __func__, myRank_, netLayer, netInstance->GetNetInstId().c_str(), topoInstId,
                            ret),
                 ret);

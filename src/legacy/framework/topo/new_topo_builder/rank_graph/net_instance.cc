@@ -231,7 +231,7 @@ vector<NetInstance::Path> InnerNetInstance::GetPaths(const RankId srcRankId, con
 {
     vector<NetInstance::Path> paths;
     if (peers.count(srcRankId) == 0 || peers.count(dstRankId) == 0) {
-        HCCL_WARNING("[InnerNetInstance::GetPaths] srcRankId[%d] or dstRankId[%d] not exist in netInstance, "
+        HCCL_WARNING("[InnerNetInstance::GetPaths] srcRankId[%u] or dstRankId[%u] not exist in netInstance, "
                      "netLayer[%u], netInstId[%s]", srcRankId, dstRankId, netLayer, netInstId.c_str());
         return paths;
     }
