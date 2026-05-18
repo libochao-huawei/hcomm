@@ -74,7 +74,7 @@ git commit -m "refactor(rank_graph): replace OcsMeshAttr/map with rankDescVec_"
 **Files:**
 - Modify: `src/legacy/framework/topo/new_topo_builder/rank_graph/rank_graph.cc:883-956`
 
-- [ ] **Step 1: 删除 SetOcsMeshAttr/GetOcsPlaneId/GetOcsPlaneNum 实现 (lines 883-898)**
+- [x] **Step 1: 删除 SetOcsMeshAttr/GetOcsPlaneId/GetOcsPlaneNum 实现 (lines 883-898)**
 
 ```diff
 - void RankGraph::SetOcsMeshAttr(RankId rankId, u32 ocsPlaneId, u32 ocsPlaneNum)
@@ -95,7 +95,7 @@ git commit -m "refactor(rank_graph): replace OcsMeshAttr/map with rankDescVec_"
 - }
 ```
 
-- [ ] **Step 2: 修改 ReparseGroupedPlaneForOcsMesh — 写入目标从 ocsMeshAttrMap_ 改为 rankDescVec_**
+- [x] **Step 2: 修改 ReparseGroupedPlaneForOcsMesh — 写入目标从 ocsMeshAttrMap_ 改为 rankDescVec_**
 
 找到 line 950 的 `SetOcsMeshAttr(rankId, planeIdx, totalGroups);`，替换为：
 
@@ -105,7 +105,7 @@ git commit -m "refactor(rank_graph): replace OcsMeshAttr/map with rankDescVec_"
 +                     rankDescVec_[rankId].ocsPlaneNum = totalGroups;
 ```
 
-- [ ] **Step 3: 在 ReparseGroupedPlaneForOcsMesh 之后添加 BuildRankDescVec 实现**
+- [x] **Step 3: 在 ReparseGroupedPlaneForOcsMesh 之后添加 BuildRankDescVec 实现**
 
 ```cpp
 void RankGraph::BuildRankDescVec(const RankTableInfo &rankTable,
@@ -161,7 +161,7 @@ void RankGraph::BuildRankDescVec(const RankTableInfo &rankTable,
 }
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src/legacy/framework/topo/new_topo_builder/rank_graph/rank_graph.cc
