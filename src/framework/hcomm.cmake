@@ -44,6 +44,7 @@ target_include_directories(hcomm PRIVATE
     ${HCOMM_DIR}/pkg_inc
     ${HCOMM_DIR}/pkg_inc/hccl
     ${HCOMM_DIR}/pkg_inc/hcomm/ccu
+    ${HCOMM_DIR}/pkg_inc/hcomm/ccu_new
     ${HCOMM_DIR}/src/pub_inc
     ${HCOMM_DIR}/src/pub_inc/inner
     ${HCOMM_DIR}/src/pub_inc/new
