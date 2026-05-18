@@ -113,17 +113,17 @@ TEST_F(OcsMeshPlaneTest, ReparseGroupedPlaneForOcsMesh_MultiElecGroup_MainComm)
     RankTableInfo table = BuildRankTable({0, 0, 1, 1});
 
     // 主通信域：globalRankIds 为 nullptr
-    graph.ReparseGroupedPlaneForOcsMesh(table, nullptr);
+    graph.BuildRankDescVec(table, nullptr);
 
     // 验证分组结果
-    EXPECT_EQ(graph.GetOcsPlaneId(0), 0u);
-    EXPECT_EQ(graph.GetOcsPlaneNum(0), 2u);
-    EXPECT_EQ(graph.GetOcsPlaneId(1), 0u);
-    EXPECT_EQ(graph.GetOcsPlaneNum(1), 2u);
-    EXPECT_EQ(graph.GetOcsPlaneId(2), 1u);
-    EXPECT_EQ(graph.GetOcsPlaneNum(2), 2u);
-    EXPECT_EQ(graph.GetOcsPlaneId(3), 1u);
-    EXPECT_EQ(graph.GetOcsPlaneNum(3), 2u);
+    EXPECT_EQ(graph.GetRankDescVec()[0].ocsPlaneId, 0u);
+    EXPECT_EQ(graph.GetRankDescVec()[0].ocsPlaneNum, 2u);
+    EXPECT_EQ(graph.GetRankDescVec()[1].ocsPlaneId, 0u);
+    EXPECT_EQ(graph.GetRankDescVec()[1].ocsPlaneNum, 2u);
+    EXPECT_EQ(graph.GetRankDescVec()[2].ocsPlaneId, 1u);
+    EXPECT_EQ(graph.GetRankDescVec()[2].ocsPlaneNum, 2u);
+    EXPECT_EQ(graph.GetRankDescVec()[3].ocsPlaneId, 1u);
+    EXPECT_EQ(graph.GetRankDescVec()[3].ocsPlaneNum, 2u);
 }
 
 TEST_F(OcsMeshPlaneTest, ReparseGroupedPlaneForOcsMesh_SingleElecGroup_MainComm)
@@ -134,11 +134,11 @@ TEST_F(OcsMeshPlaneTest, ReparseGroupedPlaneForOcsMesh_SingleElecGroup_MainComm)
 
     RankTableInfo table = BuildRankTable({7, 7, 7, 7});
 
-    graph.ReparseGroupedPlaneForOcsMesh(table);
+    graph.BuildRankDescVec(table);
 
     for (RankId rankId = 0; rankId < 4; ++rankId) {
-        EXPECT_EQ(graph.GetOcsPlaneId(rankId), 0u);
-        EXPECT_EQ(graph.GetOcsPlaneNum(rankId), 1u);
+        EXPECT_EQ(graph.GetRankDescVec()[rankId].ocsPlaneId, 0u);
+        EXPECT_EQ(graph.GetRankDescVec()[rankId].ocsPlaneNum, 1u);
     }
 }
 
@@ -150,11 +150,11 @@ TEST_F(OcsMeshPlaneTest, ReparseGroupedPlaneForOcsMesh_NoOcsMeshNetInst_DoesNotS
 
     RankTableInfo table = BuildRankTable({0, 1, 2, 3});
 
-    graph.ReparseGroupedPlaneForOcsMesh(table);
+    graph.BuildRankDescVec(table);
 
     for (RankId rankId = 0; rankId < 4; ++rankId) {
-        EXPECT_EQ(graph.GetOcsPlaneId(rankId), 0u);
-        EXPECT_EQ(graph.GetOcsPlaneNum(rankId), 0u);
+        EXPECT_EQ(graph.GetRankDescVec()[rankId].ocsPlaneId, 0u);
+        EXPECT_EQ(graph.GetRankDescVec()[rankId].ocsPlaneNum, 0u);
     }
 }
 
@@ -166,11 +166,11 @@ TEST_F(OcsMeshPlaneTest, ReparseGroupedPlaneForOcsMesh_AllZeroElecGroup_MainComm
 
     RankTableInfo table = BuildRankTable({0, 0, 0, 0});
 
-    graph.ReparseGroupedPlaneForOcsMesh(table);
+    graph.BuildRankDescVec(table);
 
     for (RankId rankId = 0; rankId < 4; ++rankId) {
-        EXPECT_EQ(graph.GetOcsPlaneId(rankId), 0u);
-        EXPECT_EQ(graph.GetOcsPlaneNum(rankId), 1u);
+        EXPECT_EQ(graph.GetRankDescVec()[rankId].ocsPlaneId, 0u);
+        EXPECT_EQ(graph.GetRankDescVec()[rankId].ocsPlaneNum, 1u);
     }
 }
 
@@ -183,14 +183,14 @@ TEST_F(OcsMeshPlaneTest, ReparseGroupedPlaneForOcsMesh_UsesGlobalRankIdsForSubCo
     RankTableInfo table = BuildRankTable({7, 7, 0, 1, 7, 1});
     std::vector<u32> globalRankIds{5, 2, 3};
 
-    graph.ReparseGroupedPlaneForOcsMesh(table, &globalRankIds);
+    graph.BuildRankDescVec(table, &globalRankIds);
 
-    EXPECT_EQ(graph.GetOcsPlaneId(0), 1u);
-    EXPECT_EQ(graph.GetOcsPlaneNum(0), 2u);
-    EXPECT_EQ(graph.GetOcsPlaneId(1), 0u);
-    EXPECT_EQ(graph.GetOcsPlaneNum(1), 2u);
-    EXPECT_EQ(graph.GetOcsPlaneId(2), 1u);
-    EXPECT_EQ(graph.GetOcsPlaneNum(2), 2u);
+    EXPECT_EQ(graph.GetRankDescVec()[0].ocsPlaneId, 1u);
+    EXPECT_EQ(graph.GetRankDescVec()[0].ocsPlaneNum, 2u);
+    EXPECT_EQ(graph.GetRankDescVec()[1].ocsPlaneId, 0u);
+    EXPECT_EQ(graph.GetRankDescVec()[1].ocsPlaneNum, 2u);
+    EXPECT_EQ(graph.GetRankDescVec()[2].ocsPlaneId, 1u);
+    EXPECT_EQ(graph.GetRankDescVec()[2].ocsPlaneNum, 2u);
 }
 
 TEST_F(OcsMeshPlaneTest, ReparseGroupedPlaneForOcsMesh_SubRankGraphUsesRankIdMapping)
@@ -203,14 +203,14 @@ TEST_F(OcsMeshPlaneTest, ReparseGroupedPlaneForOcsMesh_SubRankGraphUsesRankIdMap
     std::vector<u32> rankIds{5, 2, 3};
     std::unique_ptr<RankGraph> subGraph = graph.CreateSubRankGraph(rankIds);
 
-    subGraph->ReparseGroupedPlaneForOcsMesh(table, &rankIds);
+    subGraph->BuildRankDescVec(table, &rankIds);
 
-    EXPECT_EQ(subGraph->GetOcsPlaneId(0), 0u);
-    EXPECT_EQ(subGraph->GetOcsPlaneNum(0), 2u);
-    EXPECT_EQ(subGraph->GetOcsPlaneId(1), 1u);
-    EXPECT_EQ(subGraph->GetOcsPlaneNum(1), 2u);
-    EXPECT_EQ(subGraph->GetOcsPlaneId(2), 0u);
-    EXPECT_EQ(subGraph->GetOcsPlaneNum(2), 2u);
+    EXPECT_EQ(subGraph->GetRankDescVec()[0].ocsPlaneId, 0u);
+    EXPECT_EQ(subGraph->GetRankDescVec()[0].ocsPlaneNum, 2u);
+    EXPECT_EQ(subGraph->GetRankDescVec()[1].ocsPlaneId, 1u);
+    EXPECT_EQ(subGraph->GetRankDescVec()[1].ocsPlaneNum, 2u);
+    EXPECT_EQ(subGraph->GetRankDescVec()[2].ocsPlaneId, 0u);
+    EXPECT_EQ(subGraph->GetRankDescVec()[2].ocsPlaneNum, 2u);
 }
 
 TEST_F(OcsMeshPlaneTest, ReparseGroupedPlaneForOcsMesh_InvalidGlobalRankIds_Throws)
