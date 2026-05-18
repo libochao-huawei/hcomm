@@ -54,6 +54,7 @@ HcommResMgr& HcommResMgr::GetInstance(const uint32_t devicePhyId)
     Hccl::SocketHandleManager::GetInstance();
     Hccl::HostSocketHandleManager::GetInstance();
     Hccl::TpManager::GetInstance(devicePhyId);
+    EndpointMonitor::GetInstance(devicePhyId); // 用logicId还是phyid
 
     Hccl::CcuComponent::GetInstance(devicePhyId);
     Hccl::CcuResBatchAllocator::GetInstance(devicePhyId);
