@@ -53,29 +53,6 @@ HcclResult CpuUboeEndpoint::GetPortAddressByPortIdx(uint8_t idx, Hccl::IpAddress
     s32 sret
         = memcpy_s(inputEid.raw, Hccl::URMA_EID_LEN, endpointDesc_.commAddr.portsAddr.eidList[idx], COMM_ADDR_EID_LEN);
     CHK_PRT_RET(sret != EOK, HCCL_ERROR("[CpuUboeEndpoint::%s] memcpy eid failed, errorno[%d].", __func__, sret),
-        HCCL_E_MEMORY);
-
-    ipAddr = Hccl::IpAddress(inputEid);
-    return HCCL_SUCCESS;
-}
-
-HcclResult CpuUboeEndpoint::GetLinkAddress(Hccl::IpAddress &ipAddr) const
-{
-    if (endpointDesc_.commAddr.type != COMM_ADDR_TYPE_MULTI_PORT) {
-        HCCL_ERROR("[CpuUboeEndpoint::%s] commAddr.type[%d] not support.", __func__, endpointDesc_.commAddr.type);
-        return HCCL_E_NOT_SUPPORT;
-    }
-
-    Hccl::BinaryAddr addr;
-    s32 sret = memcpy_s(
-        &addr, sizeof(Hccl::BinaryAddr), &endpointDesc_.commAddr.portsAddr.linkAddr, sizeof(Hccl::BinaryAddr));
-    CHK_PRT_RET(sret != EOK, HCCL_ERROR("[CpuUboeEndpoint::%s] memcpy linkAddr failed, errorno[%d].", __func__, sret),
-        HCCL_E_MEMORY);
-
-    ipAddr = Hccl::IpAddress(addr, endpointDesc_.commAddr.portsAddr.family);
-    return HCCL_SUCCESS;
-}
-
 HcclResult CpuUboeEndpoint::Init()
 {
     HCCL_INFO("[CpuUboeEndpoint::%s] localEndpoint protocol[%d].", __func__, endpointDesc_.protocol);
