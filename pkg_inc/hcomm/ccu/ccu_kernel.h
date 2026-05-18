@@ -65,6 +65,11 @@ struct GroupOpConfig {
     uint64_t memSlice;
 };
 
+struct CcuChannelMapInfo {
+    uint16_t channelId;
+    uint64_t channelHandle;
+};
+
 class CcuKernel : public CcuRep::CcuRepContext {
 public:
     explicit CcuKernel(const CcuKernelArg &arg);
@@ -97,6 +102,8 @@ public:
     HcclResult AddCcuProfiling(const ChannelHandle *channels, uint32_t channelNum, HcclDataType dataType,
                                 HcclDataType outputDataType, HcclReduceOp opType, const std::string& opName);
     HcclResult GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<CcuProfilingInfo> &allCcuProfilingInfo);
+    HcclResult GetCcuChannelMapInfo(std::vector<CcuChannelMapInfo> &channelMap);
+    HcclResult GetCcuTaskBaseInfo(uint8_t &dieId, uint8_t &missionId, uint16_t &instrId);
 
     const std::vector<CcuProfilingInfo> &GetAllCcuProfilingInfo() { return allCcuProfilingInfos_; };
 

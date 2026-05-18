@@ -53,6 +53,9 @@ public:
     static void AddChannelRemoteRankId(const std::string& commTag, u64 handle, u32 remoteRankId);
     // 在channelRemoteRankId_表中对remoteRankId进行查找
     static HcclResult GetChannelRemoteRankId(const std::string& commTag, u64 handle, u32& remoteRankId);
+    // 批量获取remoteRankId，一次锁获取查询多个handle，减少锁竞争
+    static HcclResult BatchGetChannelRemoteRankId(const std::string& commTag,
+        const u64* handles, u32* remoteRankIds, uint32_t count);
     // 根据streamId获取taskId，每次调用后taskId自增1，大于65535时回环到0
     static u32 GetTaskId(u32 streamId);
     std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> GetCallback() {

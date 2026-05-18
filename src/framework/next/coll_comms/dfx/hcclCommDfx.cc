@@ -130,6 +130,33 @@ HcclResult HcclCommDfx::GetChannelRemoteRankId(const std::string& commTag, u64 h
     return HCCL_SUCCESS; // 查找成功补充返回成功码
 }
 
+// 批量获取remoteRankId，一次锁获取查询多个handle，减少锁竞争
+HcclResult HcclCommDfx::BatchGetChannelRemoteRankId(const std::string& commTag,
+    const u64* handles, u32* remoteRankIds, uint32_t count)
+{
+    if (count == 0 || handles == nullptr || remoteRankIds == nullptr) {
+        return HCCL_SUCCESS;
+    }
+    rwLock_.readLock();
+    auto commIt = channelRemoteRankId_.find(commTag);
+    if (commIt == channelRemoteRankId_.end()) {
+        rwLock_.readUnlock();
+        HCCL_ERROR("[HcclCommDfx]commTag:[%s] not found", commTag.c_str());
+        return HCCL_E_PARA;
+    }
+    for (uint32_t i = 0; i < count; i++) {
+        auto handleIt = commIt->second.find(handles[i]);
+        if (handleIt == commIt->second.end()) {
+            HCCL_ERROR("[HcclCommDfx]handle not found,commTag:[%s],handle:[%lu]", commTag.c_str(), handles[i]);
+            rwLock_.readUnlock();
+            return HCCL_E_PARA;
+        }
+        remoteRankIds[i] = handleIt->second;
+    }
+    rwLock_.readUnlock();
+    return HCCL_SUCCESS;
+}
+
 HcclResult HcclCommDfx::ReportKernel(uint64_t beginTime, const std::string& commTag, const std::string& kernelName, uint32_t threadId) {
     CHK_PTR_NULL(profiling_);
     CHK_RET(profiling_->ReportKernel(beginTime, commTag, kernelName, threadId));
