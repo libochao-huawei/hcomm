@@ -42,42 +42,26 @@ HcommResult：接口成功返回0，其他失败。
 ## 调用示例
 
 ```c
-// 1. 调用 HcclRankGraphGetLinks 获取链路信息
-CommLink *linkList = nullptr;
-uint32_t listSize;
-CHK_RET(HcclRankGraphGetLinks(comm, netLayer, myRank, rank, &linkList, &listSize));
+EndpointHandle endpointHandle = nullptr;
+ // ... 创建端点的代码（省略）
 
-// 2. 遍历每个 CommLink，填充 HcommChannelDesc
-uint32_t channelNum = listSize;
-std::vector<HcommChannelDesc> hcommDescVec(channelNum);
-HcommChannelDescInit(hcommDescVec.data(), hcommDescVec.size());
-for (uint32_t idx = 0; idx < listSize; idx++) {
-  HcommChannelDesc channelDesc;
-  CommLink link = linkList[idx];
+ // 创建多个通道
+ const uint32_t CHANNEL_NUM = 4;
+ HcommChannelDesc channelDescs[CHANNEL_NUM] = {0};
+ ChannelHandle channels[CHANNEL_NUM] = {0};
 
-  //  核心映射：从 CommLink 提取 Endpoint 信息
-  channelDesc.localEndpoint.protocol = link.srcEndpointDesc.protocol;
-  channelDesc.localEndpoint.commAddr = link.srcEndpointDesc.commAddr;
-  channelDesc.localEndpoint.loc    = link.srcEndpointDesc.loc;
-  channelDesc.remoteEndpoint.protocol = link.dstEndpointDesc.protocol;
-  channelDesc.remoteEndpoint.commAddr = link.dstEndpointDesc.commAddr;
-  channelDesc.remoteEndpoint.loc   = link.dstEndpointDesc.loc;
-  channelDesc.channelProtocol     = link.linkAttr.linkProtocol;
-  channelDesc.notifyNum = NORMAL_NOTIFY_NUM;
+ // 准备通道描述符并创建通道
+ for (uint32_t i = 0; i < CHANNEL_NUM; i++) {
+     // ... 填充 channelDescs[i]
+ }
 
-  hcommDescVec[idx] = channelDesc;
+ HcommResult ret = HcommChannelCreate(endpointHandle, COMM_ENGINE_CPU,
+                                      channelDescs, CHANNEL_NUM, channels);
+ if (ret != 0) {
+     printf("Failed to create channels, ret = %d\n", ret);
+     HcommEndpointDestroy(endpointHandle);
+     return ret;
+ }
 
-  // socket配置为空
-  HcommSocket hcommSocket = nullptr;
-  hcommDescVec[idx].socket = hcommSocket;
-}
-
-// 参考 MyRank 下 BatchCreateChannels 获取 EndpointHandle
-EndpointHandle epHandle = nullptr;
-...
-
-// 3. 批量创建 Channel
-CommEngine engine = CommEngine::COMM_ENGINE_CPU_TS;
-std::vector<ChannelHandle> channels(channelNum);
-HcommChannelCreate(epHandle, engine, hcommDescVec.data(), channelNum, channels.data());
+ printf("%u channels created successfully\n", CHANNEL_NUM);
 ```
