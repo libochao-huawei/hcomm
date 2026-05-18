@@ -88,6 +88,14 @@ HcclResult DlRaFunction::DlRaFunctionRdmaInit()
     CHK_SMART_PTR_NULL(dlRaSendWr);
     dlRaSendWrV2 = (int(*)(QpHandle, struct SendWrV2*, struct SendWrRsp*))HcclDlsym(handle_, "RaSendWrV2");
     CHK_SMART_PTR_NULL(dlRaSendWrV2);
+    dlRaSendWrVerbs = (int(*)(QpHandle, struct VerbsSendWr*, struct SendWrRsp*))HcclDlsym(handle_, "RaSendWrVerbs");
+    if (dlRaSendWrVerbs == nullptr) {
+        HCCL_WARNING("dlRaSendWrVerbs is nullptr, can not use RaSendWrVerbs");
+    }
+    dlRaRecvWrVerbs = (int(*)(QpHandle, struct VerbsRecvWr*))HcclDlsym(handle_, "RaRecvWrVerbs");
+    if (dlRaRecvWrVerbs == nullptr) {
+        HCCL_WARNING("dlRaRecvWrVerbs is nullptr, can not use RaRecvWrVerbs");
+    }
     dlRaPollCq = (int(*)(QpHandle, bool, unsigned int, void *))HcclDlsym(handle_, "RaPollCq");
     CHK_SMART_PTR_NULL(dlRaPollCq);
     dlRaSendWrlist = (int(*)(QpHandle handle, struct SendWrlistData wr[], struct SendWrRsp op_rsp[],

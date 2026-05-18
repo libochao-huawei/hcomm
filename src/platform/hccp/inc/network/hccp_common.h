@@ -400,6 +400,31 @@ struct SendWrV2 {
     };
 };
 
+struct VerbsSge {
+    uint64_t addr;
+    uint32_t length;
+    uint32_t lkey;
+};
+
+struct VerbsSendWr {
+    uint64_t wrId;
+    struct VerbsSendWr *next;
+    struct VerbsSge *sgList;
+    int numSge;
+    enum RaWrOpcode opcode;
+    int sendFlags;
+    uint32_t immData;
+    uint64_t remoteAddr;
+    uint32_t rkey;
+};
+
+struct VerbsRecvWr {
+    uint64_t wrId;
+    struct VerbsRecvWr *next;
+    struct VerbsSge *sgList;
+    int numSge;
+};
+
 struct WrInfo {
     int sendFlags;                 /**< reference to ra_send_flags */
     uint32_t rkey;                  /**< remote address access key */

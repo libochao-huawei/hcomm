@@ -327,7 +327,6 @@ struct AscendSendWr {
             uint32_t remoteQkey; // remote QP key
         } ud;
     } wr;
-    uint32_t xrcRemoteSrqNum;
 };
 
 struct AscendRecvWr {

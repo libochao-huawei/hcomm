@@ -111,6 +111,8 @@ int RaHdcLiteSendWr(struct RaQpHandle *qpHdc, struct LiteSendWr *wr, struct Send
     unsigned long long wrId);
 int RaHdcLiteTypicalSendWr(struct RaQpHandle *qpHdc, struct LiteSendWr *wr, struct SendWrRsp *opRsp,
     unsigned long long wrId);
+int RaHdcLiteTypicalSendWrVerbs(struct RaQpHandle *qpHdc, struct VerbsSendWr *wr, struct SendWrRsp *opRsp);
+int RaHdcLiteTypicalRecvWrVerbs(struct RaQpHandle *qpHdc, struct VerbsRecvWr *wr);
 int RaHdcLiteGetConnectedInfo(struct RaQpHandle *qpHdc);
 int RaHdcLiteSendWrlist(struct RaQpHandle *qpHdc, struct SendWrlistData wr[], struct SendWrRsp opRsp[],
     struct WrlistSendCompleteNum wrlistNum);

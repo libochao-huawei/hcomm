@@ -561,8 +561,10 @@ int RaHdcTypicalMrReg(struct RaRdmaHandle *rdmaHandle, struct MrInfoT *info, voi
 int RaHdcRemapMr(struct RaRdmaHandle *rdmaHandle, struct MemRemapInfo info[], unsigned int num);
 int RaHdcTypicalMrDereg(struct RaRdmaHandle *rdmaHandle, void *mrHandle);
 int RaHdcSendWr(struct RaQpHandle *qpHdc, struct SendWr *wr, struct SendWrRsp *opRsp);
-int RaHdcTypicalSendWr(struct RaQpHandle *qpHdc, struct SendWr *wr, struct SendWrRsp *opRsp);
 int RaHdcSendWrV2(struct RaQpHandle *qpHdc, struct SendWrV2 *wr, struct SendWrRsp *opRsp);
+int RaHdcSendWrVerbs(struct RaQpHandle *qpHdc, struct VerbsSendWr *wr, struct SendWrRsp *opRsp);
+int RaHdcRecvWrVerbs(struct RaQpHandle *qpHdc, struct VerbsRecvWr *wr);
+int RaHdcTypicalSendWr(struct RaQpHandle *qpHdc, struct SendWr *wr, struct SendWrRsp *opRsp);
 int RaHdcSendWrlist(struct RaQpHandle *qpHdc, struct SendWrlistData wr[], struct SendWrRsp opRsp[],
     struct WrlistSendCompleteNum wrlistNum);
 int RaHdcSendWrlistExt(struct RaQpHandle *qpHdc, struct SendWrlistDataExt wr[], struct SendWrRsp opRsp[],

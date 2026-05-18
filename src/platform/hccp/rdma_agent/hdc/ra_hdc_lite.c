@@ -1092,6 +1092,125 @@ int RaHdcLiteSendWr(struct RaQpHandle *qpHdc, struct LiteSendWr *wr, struct Send
     return 0;
 }
 
+int RaHdcLiteTypicalSendWrVerbs(struct RaQpHandle *qpHdc, struct VerbsSendWr *wr, struct SendWrRsp *opRsp)
+{
+    struct rdma_lite_post_send_resp resp = { 0 };
+    struct rdma_lite_post_send_attr attr = { 0 };
+    struct rdma_lite_sge list[RA_SGLIST_MAX];
+    struct rdma_lite_send_wr liteWr = {
+        .sg_list    = list,
+        .num_sge    = wr->numSge,
+        .opcode     = (enum rdma_lite_wr_opcode)wr->opcode,
+        .send_flags = wr->sendFlags,
+        .wr_id      = wr->wrId,
+        .rkey       = wr->rkey,
+        .remote_addr = wr->remoteAddr,
+    };
+    struct rdma_lite_send_wr *badWr = NULL;
+    int ret;
+
+    CHK_PRT_RETURN(qpHdc->liteQpState == LITE_QP_STATE_ERR,
+        hccp_err("invalid liteQpState:%u qpn:%u phyId:%u", qpHdc->liteQpState, qpHdc->qpn, qpHdc->phyId),
+        -EINVAL);
+
+    ret = RaHdcLiteHandleBp(qpHdc);
+    if (ret != 0) {
+        return ret;
+    }
+
+    for (int i = 0; i < wr->numSge && i < RA_SGLIST_MAX; i++) {
+        list[i].addr = (uintptr_t)wr->sgList[i].addr;
+        list[i].length = wr->sgList[i].length;
+        list[i].lkey = wr->sgList[i].lkey;
+    }
+
+    if (liteWr.opcode == RDMA_LITE_WR_RDMA_WRITE_WITH_IMM ||
+        liteWr.opcode == RDMA_LITE_WR_SEND_WITH_IMM) {
+        liteWr.imm_data = htobe32(wr->immData);
+    }
+
+    ret = RaRdmaLitePostSend(qpHdc->liteQp, &liteWr, &badWr, &attr, &resp);
+    if (ret) {
+        if (ret == -ENOMEM) {
+            hccp_warn("[send][ra_hdc_wr_verbs]ra hdc post send unsuccessful, ret(%d) phyId(%u)", ret, qpHdc->phyId);
+        } else {
+            hccp_err("[send][ra_hdc_wr_verbs]ra hdc post send failed ret(%d) phyId(%u)", ret, qpHdc->phyId);
+        }
+        return ret;
+    }
+
+    opRsp->db.dbIndex = (unsigned int)qpHdc->dbIndex;
+    opRsp->db.dbInfo = resp.db.lite_db_info;
+
+    if ((((uint32_t)wr->sendFlags & RDMA_LITE_SEND_SIGNALED) != 0) || (qpHdc->sqSigAll != 0)) {
+        qpHdc->sendWrNum++;
+    }
+
+    return 0;
+}
+
+int RaHdcLiteTypicalRecvWrVerbs(struct RaQpHandle *qpHdc, struct VerbsRecvWr *wr)
+{
+    struct rdma_lite_recv_wr *liteWr = NULL;
+    struct rdma_lite_recv_wr *badWr = NULL;
+    struct rdma_lite_sge *list = NULL;
+    unsigned int recvNum = 0;
+    unsigned int i;
+    int ret;
+
+    CHK_PRT_RETURN(qpHdc->liteQpState == LITE_QP_STATE_ERR,
+        hccp_err("invalid liteQpState:%u qpn:%u phyId:%u", qpHdc->liteQpState, qpHdc->qpn, qpHdc->phyId),
+        -EINVAL);
+
+    struct VerbsRecvWr *cur = wr;
+    while (cur != NULL) {
+        recvNum++;
+        cur = cur->next;
+    }
+
+    CHK_PRT_RETURN(recvNum == 0, hccp_err("lite recv_num is 0!"), -EINVAL);
+
+    liteWr = (struct rdma_lite_recv_wr *)calloc(recvNum, sizeof(struct rdma_lite_recv_wr));
+    CHK_PRT_RETURN(liteWr == NULL, hccp_err("lite calloc lite_wr failed!"), -ENOSPC);
+
+    list = (struct rdma_lite_sge *)calloc(recvNum * RA_SGLIST_MAX, sizeof(struct rdma_lite_sge));
+    if (list == NULL) {
+        hccp_err("lite calloc list failed!");
+        free(liteWr);
+        return -ENOSPC;
+    }
+
+    cur = wr;
+    for (i = 0; i < recvNum; i++) {
+        int j;
+        for (j = 0; j < cur->numSge && j < RA_SGLIST_MAX; j++) {
+            list[i * RA_SGLIST_MAX + j].addr = (uintptr_t)cur->sgList[j].addr;
+            list[i * RA_SGLIST_MAX + j].length = cur->sgList[j].length;
+            list[i * RA_SGLIST_MAX + j].lkey = cur->sgList[j].lkey;
+        }
+        liteWr[i].sg_list = &list[i * RA_SGLIST_MAX];
+        liteWr[i].wr_id = cur->wrId;
+        liteWr[i].num_sge = j;
+        liteWr[i].next = (i < recvNum - 1) ? &liteWr[i + 1] : NULL;
+        cur = cur->next;
+    }
+
+    ret = RaRdmaLitePostRecv(qpHdc->liteQp, liteWr, &badWr);
+    if (ret == -ENOMEM) {
+        hccp_dbg("ra_rdma_lite_post_recv wqe overflow");
+    } else if (ret != 0) {
+        hccp_err("ra_rdma_lite_post_recv failed, ret[%d]", ret);
+    }
+
+    if (ret == 0) {
+        qpHdc->recvWrNum += recvNum;
+    }
+
+    free(list);
+    free(liteWr);
+    return (ret == -ENOMEM) ? 0 : ret;
+}
+
 int RaHdcLiteSendWrlist(struct RaQpHandle *qpHdc, struct SendWrlistData wr[], struct SendWrRsp opRsp[],
     struct WrlistSendCompleteNum wrlistNum)
 {

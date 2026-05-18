@@ -102,6 +102,7 @@ struct RaRdmaOps gRaHdcRdmaOps = {
     .raDeregisterMr = RaHdcTypicalMrDereg,
     .raSendWr = RaHdcSendWr,
     .raSendWrV2 = RaHdcSendWrV2,
+    .raSendWrVerbs = RaHdcSendWrVerbs,
     .raTypicalSendWr = RaHdcTypicalSendWr,
     .raSendWrlist = RaHdcSendWrlist,
     .raSendWrlistExt = RaHdcSendWrlistExt,
@@ -109,6 +110,7 @@ struct RaRdmaOps gRaHdcRdmaOps = {
     .raGetNotifyBaseAddr = RaHdcGetNotifyBaseAddr,
     .raGetNotifyMrInfo = RaHdcGetNotifyMrInfo,
     .raRecvWrlist = RaHdcRecvWrlist,
+    .raRecvWrVerbs = RaHdcRecvWrVerbs,
     .raPollCq = RaHdcPollCq,
     .raGetQpContext = NULL,
     .raNormalQpCreate = NULL,
@@ -154,6 +156,7 @@ struct RaRdmaOps gRaPeerRdmaOps = {
     .raDeregisterMr = RaPeerDeregisterMr,
     .raSendWr = RaPeerSendWr,
     .raSendWrV2 = NULL,
+    .raSendWrVerbs = NULL,
     .raTypicalSendWr = NULL,
     .raSendWrlist = RaPeerSendWrlist,
     .raSendWrlistExt = NULL,
@@ -161,6 +164,7 @@ struct RaRdmaOps gRaPeerRdmaOps = {
     .raGetNotifyBaseAddr = RaPeerGetNotifyBaseAddr,
     .raGetNotifyMrInfo = NULL,
     .raRecvWrlist = RaPeerRecvWrlist,
+    .raRecvWrVerbs = NULL,
     .raPollCq = NULL,
     .raGetQpContext = RaPeerGetQpContext,
     .raNormalQpCreate = RaPeerNormalQpCreate,
@@ -1506,6 +1510,41 @@ HCCP_ATTRI_VISI_DEF int RaSendWrV2(void *qpHandle, struct SendWrV2 *wr, struct S
 
     ret = raQpHandle->rdmaOps->raSendWrV2(raQpHandle, wr, opRsp);
     RaRdevIncSendWrNum();
+    return ConverReturnCode(RDMA_OP, ret);
+}
+
+HCCP_ATTRI_VISI_DEF int RaSendWrVerbs(void *qpHandle, struct VerbsSendWr *wr, struct SendWrRsp *opRsp)
+{
+    struct RaQpHandle *raQpHandle = (struct RaQpHandle *)qpHandle;
+    int ret;
+
+    CHK_PRT_RETURN(qpHandle == NULL || wr == NULL || opRsp == NULL,
+        hccp_err("[send][ra_wr_verbs]qp_handle or wr or op_rsp is NULL, para error!"),
+        ConverReturnCode(RDMA_OP, -EINVAL));
+
+    CHK_PRT_RETURN(raQpHandle->rdmaOps == NULL || raQpHandle->rdmaOps->raSendWrVerbs == NULL,
+        hccp_err("[send][ra_wr_verbs]rdma_ops is NULL or ra_qp_handle->rdma_ops->ra_send_wr_verbs is NULL, invalid"),
+        ConverReturnCode(RDMA_OP, -EINVAL));
+
+    ret = raQpHandle->rdmaOps->raSendWrVerbs(raQpHandle, wr, opRsp);
+    RaRdevIncSendWrNum();
+    return ConverReturnCode(RDMA_OP, ret);
+}
+
+HCCP_ATTRI_VISI_DEF int RaRecvWrVerbs(void *qpHandle, struct VerbsRecvWr *wr)
+{
+    struct RaQpHandle *raQpHandle = (struct RaQpHandle *)qpHandle;
+    int ret;
+
+    CHK_PRT_RETURN(qpHandle == NULL || wr == NULL,
+        hccp_err("[recv][ra_wr_verbs]qp_handle or wr is NULL, para error!"),
+        ConverReturnCode(RDMA_OP, -EINVAL));
+
+    CHK_PRT_RETURN(raQpHandle->rdmaOps == NULL || raQpHandle->rdmaOps->raRecvWrVerbs == NULL,
+        hccp_err("[recv][ra_wr_verbs]rdma_ops is NULL or ra_qp_handle->rdma_ops->ra_recv_wr_verbs is NULL, invalid"),
+        ConverReturnCode(RDMA_OP, -EINVAL));
+
+    ret = raQpHandle->rdmaOps->raRecvWrVerbs(raQpHandle, wr);
     return ConverReturnCode(RDMA_OP, ret);
 }
 

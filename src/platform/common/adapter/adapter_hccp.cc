@@ -509,6 +509,72 @@ HcclResult hrtRaQpBatchModify(RdmaHandle rdmaHandle, QpHandle qpHandle[], unsign
     return HCCL_SUCCESS;
 }
 
+HcclResult HrtRaSendWrVerbs(QpHandle handle, struct VerbsSendWr *wr, struct SendWrRsp *opRsp)
+{
+    if (DlRaFunction::GetInstance().dlRaSendWrVerbs == nullptr) {
+        HCCL_ERROR("[Send][RaWrVerbs]driver package does not support RaSendWrVerbs interface, "
+            "please change new one");
+        return HCCL_E_NOT_SUPPORT;
+    }
+
+    s32 ret = 0;
+    auto startTime = std::chrono::steady_clock::now();
+    auto timeout = std::chrono::seconds(GetExternalInputHcclLinkTimeOut());
+
+    while (true) {
+        ret = DlRaFunction::GetInstance().dlRaSendWrVerbs(handle, wr, opRsp);
+        if (!ret) {
+            break;
+        } else if ((ret == SOCK_ENOENT) || (ret == ROCE_EAGAIN) ||
+            (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && ret == ROCE_ENOMEM)) {
+            bool bTimeout = ((std::chrono::steady_clock::now() - startTime) >= timeout);
+            CHK_PRT_RET(bTimeout, HCCL_ERROR("[Send][RaWrVerbs]errNo[0x%016llx] ra get send async timeout[%d s]. "
+                "return[%d], params: send_wrAddr[%p], opRspAddr[%p]",
+                HCCL_ERROR_CODE(HCCL_E_ROCE_TRANSFER), timeout, ret, wr, opRsp), HCCL_E_ROCE_TRANSFER);
+            SaluSleep(ONE_MILLISECOND_OF_USLEEP);
+        } else {
+            HCCL_ERROR("[Send][RaWrVerbs]ra send async fail. return[%d], para: send_wrAddr[%p], "
+                "opRspAddr[%p].", ret, wr, opRsp);
+            return HCCL_E_ROCE_TRANSFER;
+        }
+    }
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtRaRecvWrVerbs(QpHandle handle, struct VerbsRecvWr *wr)
+{
+    if (DlRaFunction::GetInstance().dlRaRecvWrVerbs == nullptr) {
+        HCCL_ERROR("[Recv][RaWrVerbs]driver package does not support RaRecvWrVerbs interface, "
+            "please change new one");
+        return HCCL_E_NOT_SUPPORT;
+    }
+
+    s32 ret = 0;
+    auto startTime = std::chrono::steady_clock::now();
+    auto timeout = std::chrono::seconds(GetExternalInputHcclLinkTimeOut());
+
+    while (true) {
+        ret = DlRaFunction::GetInstance().dlRaRecvWrVerbs(handle, wr);
+        if (!ret) {
+            break;
+        } else if ((ret == SOCK_ENOENT) || (ret == ROCE_EAGAIN) ||
+            (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && ret == ROCE_ENOMEM)) {
+            bool bTimeout = ((std::chrono::steady_clock::now() - startTime) >= timeout);
+            CHK_PRT_RET(bTimeout, HCCL_ERROR("[Recv][RaWrVerbs]errNo[0x%016llx] ra get recv async timeout[%d s]. "
+                "return[%d], params: recv_wrAddr[%p]",
+                HCCL_ERROR_CODE(HCCL_E_ROCE_TRANSFER), timeout, ret, wr), HCCL_E_ROCE_TRANSFER);
+            SaluSleep(ONE_MILLISECOND_OF_USLEEP);
+        } else {
+            HCCL_ERROR("[Recv][RaWrVerbs]ra recv async fail. return[%d], para: recv_wrAddr[%p].",
+                ret, wr);
+            return HCCL_E_ROCE_TRANSFER;
+        }
+    }
+
+    return HCCL_SUCCESS;
+}
+
 HcclResult HrtRaSendWrlist(QpHandle handle, struct SendWrlistData wr[], struct SendWrRsp opRsp[],
                            unsigned int sendNum, unsigned int *completeNum)
 {
