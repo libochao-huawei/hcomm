@@ -99,3 +99,23 @@ TEST_F(HcommAdapterHccpTest, ut_HccpCheckUboeSupported_When_DevFeatureBitNotSet_
     EXPECT_FALSE(result);
 }
 
+TEST_F(HcommAdapterHccpTest, ut_HccpUbCreateJetty_UsesQosAsPriority)
+{
+    struct QpCreateAttr capturedAttr {};
+    MOCKER(RaCtxQpCreate)
+        .stubs()
+        .with(any(), outBoundP(&capturedAttr, sizeof(capturedAttr)), any(), any())
+        .will(returnValue(0));
+
+    const CtxHandle ctxHandle = reinterpret_cast<CtxHandle>(static_cast<uintptr_t>(0x1U));
+    HrtRaUbCreateJettyParam in {};
+    in.qos = 7U;
+    in.jettyMode = HrtJettyMode::STANDARD;
+    in.transMode = HrtTransportMode::RM;
+    in.sqDepth = 64U;
+    HrtRaUbJettyCreatedOutParam out {};
+
+    EXPECT_EQ(HccpUbCreateJetty(ctxHandle, in, out), HCCL_SUCCESS);
+    EXPECT_EQ(capturedAttr.ub.priority, 7U);
+}
+

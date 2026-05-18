@@ -98,7 +98,7 @@ int RaGetTpAttrAsync(void *ctxHandle, uint64_t tpHandle, uint32_t *attrBitmap, s
     (void)attrBitmap;
     if (attr != nullptr) {
         (void)std::memset(attr, 0, sizeof(struct TpAttr));
-        attr->slBitmap = 1U;
+        attr->slBitmap = 0x7U;
         attr->dscpConfigMode = 1U;
     }
     if (reqHandle != nullptr) {

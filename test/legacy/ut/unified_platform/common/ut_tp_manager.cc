@@ -170,3 +170,87 @@ TEST_F(TpManagerTest, Ut_ReleaseTpInfo_When_InputValue_Expect_Return_HCCL_SUCCES
     result = TpManager::GetInstance(devLogicId).ReleaseTpInfo({locAddr, rmtAddr, protocol}, tpInfo);
     EXPECT_EQ(result, HCCL_SUCCESS);
 }
+
+TEST_F(TpManagerTest, tp_manager_device_qos_sl_mapping_success)
+{
+    s32 tpAttrVersion = 2;
+    MOCKER(RaGetInterfaceVersion)
+        .stubs()
+        .with(any(), any(), outBoundP(&tpAttrVersion, sizeof(s32)))
+        .will(returnValue(0));
+
+    HcclResult result;
+    const int32_t devLogicId = 0;
+    IpAddress locAddr("8.0.0.1");
+    IpAddress rmtAddr("8.0.0.2");
+    const TpProtocol protocol = TpProtocol::TP;
+    RaUbGetTpInfoParam param{locAddr, rmtAddr, protocol};
+    param.qos = 5U;
+    TpInfo tpInfo{};
+
+    result = TpManager::GetInstance(devLogicId).GetTpInfo(param, tpInfo);
+    EXPECT_EQ(result, HCCL_E_AGAIN);
+
+    result = TpManager::GetInstance(devLogicId).GetTpInfo(param, tpInfo);
+    EXPECT_EQ(result, HCCL_E_AGAIN);
+
+    result = TpManager::GetInstance(devLogicId).GetTpInfo(param, tpInfo);
+    EXPECT_EQ(result, HCCL_SUCCESS);
+    EXPECT_TRUE(tpInfo.hasMappedJettyPriority);
+}
+
+TEST_F(TpManagerTest, tp_manager_loop_first_tp_lowest_sl_success)
+{
+    s32 tpAttrVersion = 2;
+    MOCKER(RaGetInterfaceVersion)
+        .stubs()
+        .with(any(), any(), outBoundP(&tpAttrVersion, sizeof(s32)))
+        .will(returnValue(0));
+
+    HcclResult result;
+    const int32_t devLogicId = 0;
+    IpAddress locAddr("8.0.0.3");
+    IpAddress rmtAddr("8.0.0.4");
+    const TpProtocol protocol = TpProtocol::TP;
+    RaUbGetTpInfoParam param{locAddr, rmtAddr, protocol};
+    param.loopFirstTpLowestSl = true;
+    param.qos = 2U;
+    TpInfo tpInfo{};
+
+    result = TpManager::GetInstance(devLogicId).GetTpInfo(param, tpInfo);
+    EXPECT_EQ(result, HCCL_E_AGAIN);
+
+    result = TpManager::GetInstance(devLogicId).GetTpInfo(param, tpInfo);
+    EXPECT_EQ(result, HCCL_E_AGAIN);
+
+    result = TpManager::GetInstance(devLogicId).GetTpInfo(param, tpInfo);
+    EXPECT_EQ(result, HCCL_SUCCESS);
+    EXPECT_TRUE(tpInfo.hasMappedJettyPriority);
+}
+
+TEST_F(TpManagerTest, tp_manager_qos_cache_by_key_success)
+{
+    HcclResult result;
+    const int32_t devLogicId = 0;
+    IpAddress locAddr("8.0.0.5");
+    IpAddress rmtAddr("8.0.0.6");
+    const TpProtocol protocol = TpProtocol::TP;
+
+    RaUbGetTpInfoParam paramQos0{locAddr, rmtAddr, protocol};
+    paramQos0.qos = 0U;
+    TpInfo tpInfo0{};
+
+    RaUbGetTpInfoParam paramQos7{locAddr, rmtAddr, protocol};
+    paramQos7.qos = 7U;
+    TpInfo tpInfo7{};
+
+    result = TpManager::GetInstance(devLogicId).GetTpInfo(paramQos0, tpInfo0);
+    EXPECT_EQ(result, HCCL_E_AGAIN);
+    result = TpManager::GetInstance(devLogicId).GetTpInfo(paramQos0, tpInfo0);
+    EXPECT_EQ(result, HCCL_SUCCESS);
+
+    result = TpManager::GetInstance(devLogicId).GetTpInfo(paramQos7, tpInfo7);
+    EXPECT_EQ(result, HCCL_E_AGAIN);
+    result = TpManager::GetInstance(devLogicId).GetTpInfo(paramQos7, tpInfo7);
+    EXPECT_EQ(result, HCCL_SUCCESS);
+}

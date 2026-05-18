@@ -8,6 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <cstring>
+
 #include "hccp.h"
 #include "hccp_async.h"
 #include "hccp_ctx.h"
@@ -753,6 +755,18 @@ int RaSetTpAttrAsync(void *ctxHandle, uint64_t tpHandle, uint32_t attrBitmap, st
 
 int RaGetTpAttrAsync(void *ctxHandle, uint64_t tpHandle, uint32_t *attrBitmap, struct TpAttr *attr, void **reqHandle)
 {
+    static char kStubRaTpAttrReq{};
+    (void)ctxHandle;
+    (void)tpHandle;
+    (void)attrBitmap;
+    if (attr != nullptr) {
+        (void)std::memset(attr, 0, sizeof(struct TpAttr));
+        attr->slBitmap = 0x7U;
+        attr->dscpConfigMode = 1U;
+    }
+    if (reqHandle != nullptr) {
+        *reqHandle = &kStubRaTpAttrReq;
+    }
     return 0;
 }
 
