@@ -766,13 +766,11 @@ void DumpCcuProfilingInfo(const std::vector<CcuProfilingInfo> &ccuProfilingInfo)
 */
 HcclResult CcuKernel::GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<CcuProfilingInfo> &allCcuProfilingInfo)
 {
- 	HCCL_INFO("[GetCcuProfilingInfo] Enter.");
     allCcuProfilingInfos_.clear();
  	auto &ccuProfilingCache = GetProfilingInfo();
  	 
  	auto taskArgs = GeneArgs(arg);
  	uint32_t count {0};
- 	HCCL_INFO("[GetCcuProfilingInfo] Process sqe&waitcke profiling info start.");
     for (auto &profInfo : ccuProfilingCache) {
         profInfo.missionId = GetMissionId();
         if (profInfo.type == static_cast<uint8_t>(hcomm::CcuProfilinType::CCU_TASK_PROFILING)) {
@@ -792,7 +790,6 @@ HcclResult CcuKernel::GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<Ccu
                 return HCCL_E_PTR;
             }
             profInfo.ckeId = waitCkeRep->GetId();
-            HCCL_INFO("[CcuKernel][GetCcuProfilingInfo] waitcke[%u]", profInfo.ckeId);
         }
         allCcuProfilingInfos_.push_back(profInfo);
         count++;
@@ -800,29 +797,27 @@ HcclResult CcuKernel::GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<Ccu
 
     // loopGroup
     auto &lgProfInfo = GetLGProfilingInfo();
-    HCCL_INFO("[GetCcuProfilingInfo] create varId2ArgIndexMap start. size=%lu", lgProfInfo.loadRep2ArgIdxMap.size());
+    // 构建varId2ArgIndexMap和varId2VarIdMap，用于loopGroup profiling
     std::unordered_map<uint16_t, uint32_t> varId2ArgIndexMap;
     for (auto &iter : lgProfInfo.loadRep2ArgIdxMap) {
         if (iter.first.get() == nullptr) {
             HCCL_ERROR("[GetCcuProfilingInfo] loadRep is nullptr.");
             return HCCL_E_PTR;
         }
-        auto loadRep = dynamic_cast<CcuRep::CcuRepLoadArg*>(iter.first.get());
+        auto loadRep = static_cast<CcuRep::CcuRepLoadArg*>(iter.first.get());
         varId2ArgIndexMap[loadRep->GetVarId()] = iter.second;
     }
 
-    HCCL_INFO("[GetCcuProfilingInfo] create varId2VarIdMap start. size=%lu", lgProfInfo.assignProfilingReps.size());
     std::unordered_map<uint16_t, uint16_t> varId2VarIdMap;
     for (auto &iter : lgProfInfo.assignProfilingReps) {
         if (iter.get() == nullptr) {
             HCCL_ERROR("[GetCcuProfilingInfo] assignRep is nullptr.");
             return HCCL_E_PTR;
         }
-        auto assignRep = dynamic_cast<CcuRep::CcuRepAssign*>(iter.get());
+        auto assignRep = static_cast<CcuRep::CcuRepAssign*>(iter.get());
         varId2VarIdMap[assignRep->varB.Id()] = assignRep->varA.Id();
     }
 
-    HCCL_INFO("[GetCcuProfilingInfo] process loop group profiling start: lgsize(%lu), goSize(%lu)", lgProfInfo.lgProfilingReps.size(), groupOpSizeInfo_.size());
     for (uint32_t i = 0; i < lgProfInfo.lgProfilingReps.size(); i += 2) { // 2: 一个goSize对应一个CcuProfilingInfo，对应1个loopGroup Rep
         if (taskArgs.empty() || varId2ArgIndexMap.empty()) {
             continue;
@@ -831,27 +826,25 @@ HcclResult CcuKernel::GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<Ccu
         CHK_RET(GetArgIndex(varId2VarIdMap, varId2ArgIndexMap, taskArgs, groupOpSizeInfo_[i].loopParamId, loopParam));
         uint64_t parallelParam {0};
         CHK_RET(GetArgIndex(varId2VarIdMap, varId2ArgIndexMap, taskArgs, groupOpSizeInfo_[i].parallelParamId, parallelParam));
-        HCCL_INFO("Collect loopgroup profiling info: repSize[%u], index[%u], loopParam[%llu], parallelParam[%llu].",
-                lgProfInfo.lgProfilingReps.size(), i, loopParam, parallelParam);
 
         if (loopParam != 0) {
             lgProfInfo.ccuProfilingInfos[i].dataSize = loopParam * moConfig_.loopCount * moConfig_.memSlice;
-            lgProfInfo.ccuProfilingInfos[i].instrId = dynamic_cast<CcuRep::CcuRepLoopGroup*>(lgProfInfo.lgProfilingReps[i].get())->StartInstrId();
+            lgProfInfo.ccuProfilingInfos[i].instrId = static_cast<CcuRep::CcuRepLoopGroup*>(lgProfInfo.lgProfilingReps[i].get())->StartInstrId();
             allCcuProfilingInfos_.push_back(lgProfInfo.ccuProfilingInfos[i]);
         }
 
         if (parallelParam != 0) {
-            HCCL_INFO("[GetCcuProfilingInfo] collect lg, residual start i=%lu", i);
             uint64_t residual {0};
             CHK_RET(GetArgIndex(varId2VarIdMap, varId2ArgIndexMap, taskArgs, groupOpSizeInfo_[i].residualId, residual));
             uint64_t repeatNum = Hccl::CcuRep::ParseRepeatNumFromParallelParam(parallelParam);
             lgProfInfo.ccuProfilingInfos[i].dataSize = repeatNum * moConfig_.memSlice + residual;
-            lgProfInfo.ccuProfilingInfos[i].instrId = dynamic_cast<CcuRep::CcuRepLoopGroup*>(lgProfInfo.lgProfilingReps[i + 1].get())->StartInstrId();
+            lgProfInfo.ccuProfilingInfos[i].instrId = static_cast<CcuRep::CcuRepLoopGroup*>(lgProfInfo.lgProfilingReps[i + 1].get())->StartInstrId();
             allCcuProfilingInfos_.push_back(lgProfInfo.ccuProfilingInfos[i]);
         }
     }
     DumpCcuProfilingInfo(allCcuProfilingInfos_);
-    allCcuProfilingInfo = allCcuProfilingInfos_;
+    // 使用swap避免vector拷贝，直接交换内部缓冲区
+    allCcuProfilingInfo.swap(allCcuProfilingInfos_);
     return HCCL_SUCCESS;
 }
 

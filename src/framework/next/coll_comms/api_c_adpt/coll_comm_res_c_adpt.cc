@@ -460,7 +460,7 @@ HcclResult HcclReportCcuProfilingInfo(const ThreadHandle threadHandle, uint64_t 
                                         const HcclComm comm, Hccl::TaskParam &taskParam, bool isMaster)
 {
     if (infoNum == 0) {
-        HCCL_INFO("There is no ccu profiling info.");
+        HCCL_DEBUG("There is no ccu profiling info.");
         return HCCL_SUCCESS;
     }
     CHK_PTR_NULL(streamProfilingInfos);
@@ -476,66 +476,65 @@ HcclResult HcclReportCcuProfilingInfo(const ThreadHandle threadHandle, uint64_t 
     taskParam.taskPara.Ccu.missionId = profilingArray[0].missionId;
     taskParam.taskPara.Ccu.execMissionId = profilingArray[0].missionId;
     taskParam.taskPara.Ccu.instrId   = profilingArray[0].instrId;
-    taskParam.taskPara.Ccu.executeId = execId; // TODO: 传入是kernelHandle，不建议赋值给executeId
+    taskParam.taskPara.Ccu.executeId = execId;
     taskParam.taskPara.Ccu.ccuKernelHandle = execId;
     taskParam.isMaster = isMaster;
-    HCCL_INFO("[%s]dieId[%u], missionId[%u], execMissionId[%u], instrId[%u], executeId[%u], ccuKernelHandle[%u]",
+    HCCL_DEBUG("[%s]dieId[%u], missionId[%u], execMissionId[%u], instrId[%u], executeId[%u], ccuKernelHandle[%u]",
         __func__, taskParam.taskPara.Ccu.dieId, taskParam.taskPara.Ccu.missionId, taskParam.taskPara.Ccu.execMissionId,
         taskParam.taskPara.Ccu.instrId, taskParam.taskPara.Ccu.executeId, taskParam.taskPara.Ccu.ccuKernelHandle);
 
-    // 处理每个性能信息条目
+    // 一次性完成：获取remoteRankId + 类型转换，合并为一次遍历
+    auto converted = std::make_shared<std::vector<Hccl::CcuProfilingInfo>>();
+    converted->reserve(infoNum);
+
     for (size_t i = 0; i < infoNum; ++i) {
         hcomm::CcuProfilingInfo& profInfo = profilingArray[i];
+        // 先统计有效channel数量，然后批量获取remoteRankId
+        u64 handles[hcomm::CCU_MAX_CHANNEL_NUM];
+        u32 remoteRankIds[hcomm::CCU_MAX_CHANNEL_NUM];
+        uint32_t validChannelCount = 0;
         for (int idx = 0; idx < hcomm::CCU_MAX_CHANNEL_NUM; idx++) {
             if (profInfo.channelId[idx] == hcomm::INVALID_VALUE_CHANNELID) {
                 break;
             }
-            // 获取 remoteRankId
-            u32 remoteRankId = hcomm::INVALID_RANKID;
-            HcclResult ret = hccl::HcclCommDfx::GetChannelRemoteRankId(
-                hcclComm->GetIdentifier(), profInfo.channelHandle[idx], remoteRankId);
+            handles[validChannelCount] = profInfo.channelHandle[idx];
+            validChannelCount++;
+        }
+        // 批量获取remoteRankId，一次锁获取查询多个handle
+        if (validChannelCount > 0) {
+            HcclResult ret = hccl::HcclCommDfx::BatchGetChannelRemoteRankId(
+                hcclComm->GetIdentifier(), handles, remoteRankIds, validChannelCount);
             if (ret != HCCL_SUCCESS) {
-                HCCL_ERROR("[%s] Failed to get remote rank for channelHandle[0x%llx], using default 0",
-                    __func__, profInfo.channelHandle[idx]);
+                HCCL_ERROR("[%s] Failed to batch get remote rank for %u channels",
+                    __func__, validChannelCount);
                 return HCCL_E_PARA;
             }
-            profInfo.remoteRankId[idx] = remoteRankId;
-            HCCL_INFO("[%s]idx[%u]: channelId[%u], remoteRankId[%u], channelHandle[0x%llx]",
-                __func__, idx, profInfo.channelId[idx], profInfo.remoteRankId[idx], profInfo.channelHandle[idx]);
+            for (uint32_t idx = 0; idx < validChannelCount; idx++) {
+                profInfo.remoteRankId[idx] = remoteRankIds[idx];
+            }
         }
-    }
-    
-    // 转换函数：将 hcomm::CcuProfilingInfo 转换为 Hccl::CcuProfilingInfo
-    auto convertToHccl = [](const hcomm::CcuProfilingInfo& src) -> Hccl::CcuProfilingInfo {
+        // 直接构造Hccl::CcuProfilingInfo并push_back，避免lambda函数调用开销
         Hccl::CcuProfilingInfo dst;
-        dst.name = src.name;
-        dst.type = src.type;
-        dst.dieId = src.dieId;
-        dst.missionId = src.missionId;
-        dst.instrId = src.instrId;
-        dst.reduceOpType = src.reduceOpType;
-        dst.inputDataType = src.inputDataType;
-        dst.outputDataType = src.outputDataType;
-        dst.dataSize = src.dataSize;
-        dst.ckeId = src.ckeId;
-        dst.mask = src.mask;
-        HCCL_INFO("src.name %s, dst.name %s", src.name.c_str(), dst.name.c_str());
-        (void)memcpy_s(dst.channelId, sizeof(dst.channelId), src.channelId, sizeof(src.channelId));
-        (void)memcpy_s(dst.remoteRankId, sizeof(dst.remoteRankId), src.remoteRankId, sizeof(src.remoteRankId));
-        return dst;
-    };
-
-    // 转换所有性能信息
-    std::vector<Hccl::CcuProfilingInfo> converted;
-    converted.reserve(infoNum);
-
-    for (size_t i = 0; i < infoNum; ++i) {
-        converted.push_back(convertToHccl(profilingArray[i]));
+        dst.name = profInfo.name;
+        dst.type = profInfo.type;
+        dst.dieId = profInfo.dieId;
+        dst.missionId = profInfo.missionId;
+        dst.instrId = profInfo.instrId;
+        dst.reduceOpType = profInfo.reduceOpType;
+        dst.inputDataType = profInfo.inputDataType;
+        dst.outputDataType = profInfo.outputDataType;
+        dst.dataSize = profInfo.dataSize;
+        dst.ckeId = profInfo.ckeId;
+        dst.mask = profInfo.mask;
+        for (int idx = 0; idx < hcomm::CCU_MAX_CHANNEL_NUM; idx++) {
+            dst.channelId[idx] = profInfo.channelId[idx];
+            dst.remoteRankId[idx] = profInfo.remoteRankId[idx];
+        }
+        converted->emplace_back(std::move(dst));
     }
     
-    // 构建shared_ptr并保存到任务参数
-    taskParam.ccuDetailInfo = std::make_shared<std::vector<Hccl::CcuProfilingInfo>>(std::move(converted));
-    HCCL_DEBUG("[%s]dieId[%u]", __func__, taskParam.taskPara.Ccu.dieId);
+    // 保存到任务参数
+    taskParam.ccuDetailInfo = std::move(converted);
     CHK_RET(SaveDfxTaskInfo(comm, taskParam));
     return HCCL_SUCCESS;
 }
