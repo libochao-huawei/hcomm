@@ -405,7 +405,7 @@ git commit -m "refactor: remove cachedRankDesc_ and NewRankInfo dead ocsPlane fi
 **Files:**
 - Modify: `test/legacy/ut/framework/topo/new_topo_builder/rank_graph/ut_ocs_mesh_plane.cc`
 
-- [ ] **Step 1: 将所有 `graph.GetOcsPlaneId(N)` 替换为 `graph.GetRankDescVec()[N].ocsPlaneId`**
+- [x] **Step 1: 将所有 `graph.GetOcsPlaneId(N)` 替换为 `graph.GetRankDescVec()[N].ocsPlaneId`**
 
 ```cpp
 // 改前
@@ -424,7 +424,7 @@ EXPECT_EQ(graph.GetRankDescVec()[0].ocsPlaneNum, 2u);
 - `ReparseGroupedPlaneForOcsMesh_AllZeroElecGroup_MainComm` (lines 172-173)
 - `ReparseGroupedPlaneForOcsMesh_UsesGlobalRankIdsForSubComm` (lines 188-193)
 
-- [ ] **Step 2: 测试用例需在 Reparse/BuildRankDescVec 调用后验证**
+- [x] **Step 2: 测试用例需在 Reparse/BuildRankDescVec 调用后验证**
 
 `ReparseGroupedPlaneForOcsMesh` 测试用例改为调用 `BuildRankDescVec`：
 
@@ -435,7 +435,7 @@ EXPECT_EQ(graph.GetRankDescVec()[0].ocsPlaneNum, 2u);
 
 或保留 Reparse 调用（Reparse 仍然存在，只是从 BuildRankDescVec 内部调用），但断言从 `GetRankDescVec()` 读取。对于只测 Reparse 分组逻辑的用例，需在 Reparse 前确保 `rankDescVec_` 已 resize（添加 `graph.BuildRankDescVec(table, nullptr)` 调用），因为 Reparse 现在写入 `rankDescVec_[rankId]`，依赖 vector 已有 size。
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add test/legacy/ut/framework/topo/new_topo_builder/rank_graph/ut_ocs_mesh_plane.cc
