@@ -29,7 +29,7 @@ public:
 
     void Algorithm() override;
     std::vector<uint64_t> GeneArgs(const CcuTaskArg &arg) override;
-    static void RefreshArgs(CollOpParams opParams, u32 rankSize, std::vector<uint64_t> &args);
+    static void RefreshArgs(CollOpParams opParams, u32 rankSize, std::vector<uint64_t> &args, const u32 myRank);
 
 protected:
     // a2a 对每个对端的发送接收信息
@@ -41,7 +41,7 @@ protected:
         GroupOpSize      tailGoSize;
     };
     void CreateVariables();
-    void LoadAll2allSendRecvInfo(A2AsingleSendRecvInfo &sendRecvInfo);
+    void LoadAll2allSendRecvInfo(std::vector<A2AsingleSendRecvInfo> &sendRecvInfo);
     void LoadArgs();
     void PreSync();
     void PostSync();
@@ -70,6 +70,7 @@ private:
     CcuRep::Variable completedRankCount_;
     CcuRep::Variable xnMaxTransportSize_;
     GroupOpSize xnMaxTransportGoSize_;
+    GroupOpSize localTailGoSize_;
     CcuRep::Variable xnConst1_;
 
     // 以下参数用于加载 MC2 参数

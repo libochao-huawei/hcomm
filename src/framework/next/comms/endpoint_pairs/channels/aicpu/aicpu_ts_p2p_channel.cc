@@ -207,9 +207,6 @@ HcclResult AicpuTsP2pChannel::GetNotifyNum(uint32_t *notifyNum) const
 HcclResult AicpuTsP2pChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags)
 {
     return memTransport_->GetRemoteMem(remoteMem, memNum, memTags);
-    // HCCL_WARNING("[AicpuTsP2pChannel][%s] P2PTransport does not support GetRemoteMem.", __func__);
-    // *memNum = 0;
-    // return HCCL_SUCCESS;
 }
 
 ChannelStatus AicpuTsP2pChannel::GetStatus()
@@ -273,9 +270,7 @@ HcclResult AicpuTsP2pChannel::Resume()
 
 HcclResult AicpuTsP2pChannel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum)
 {
-    HCCL_WARNING("[AicpuTsP2pChannel][%s] P2PTransport does not support GetUserRemoteMem.", __func__);
-    *memNum = 0;
-    return HCCL_SUCCESS;
+    return memTransport_->GetUserRemoteMem(remoteMem, memTag, memNum);
 }
 
 HcclResult AicpuTsP2pChannel::UpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum)

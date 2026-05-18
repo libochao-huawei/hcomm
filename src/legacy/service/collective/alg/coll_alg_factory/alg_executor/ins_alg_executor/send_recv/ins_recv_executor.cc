@@ -39,7 +39,10 @@ HcclResult InsRecvExecutor::Orchestrate(const RankGraph  *rankGraph,
     RankId remoteRank = op.sendRecvRemoteRank;
     u32 dataElemSize = DATA_TYPE_SIZE_MAP.at(op.dataType);
     u64 totalDataSize = static_cast<u64>(dataElemSize) * op.dataCount;
-
+    if (totalDataSize == 0) {
+        HCCL_WARNING("[InsCollAlgFactory][InsRecvExecutor][Orchestrate] totalDataSize is 0, do nothing.");
+        return HcclResult::HCCL_SUCCESS;
+    }
     // 判断是不是自发自收这种情况，若是，则什么都不做，直接返回
     if (myRank_ == remoteRank) {
         HCCL_WARNING("[InsCollAlgFactory][InsRecvExecutor][Orchestrate] Self send, Self recv, Do nothing");
@@ -148,7 +151,10 @@ HcclResult InsRecvExecutor::Orchestrate(const AlgTopoInfo     &topoInfo,
     RankId remoteRank = op.sendRecvRemoteRank;
     u32 dataElemSize = DATA_TYPE_SIZE_MAP.at(op.dataType);
     u64 totalDataSize = static_cast<u64>(dataElemSize) * op.dataCount;
-
+    if (totalDataSize == 0) {
+        HCCL_WARNING("[InsCollAlgFactory][InsRecvExecutor][Orchestrate] totalDataSize is 0, do nothing.");
+        return HcclResult::HCCL_SUCCESS;
+    }
     // 判断是不是自发自收这种情况，若是，则什么都不做，直接返回
     if (myRank_ == remoteRank) {
         HCCL_WARNING("[InsCollAlgFactory][InsRecvExecutor][Orchestrate] Self send, Self recv, Do nothing");
