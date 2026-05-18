@@ -38,7 +38,6 @@ public:
     };
     struct RoceAttr {
         uint32_t queueNum{0};
-        uint32_t qpThreshold{0};
         uint32_t retryCnt{0};
         uint32_t retryInterval{0};
         uint32_t tc{0};
