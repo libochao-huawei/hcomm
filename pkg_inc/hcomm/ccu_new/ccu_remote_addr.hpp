@@ -23,10 +23,9 @@ template <typename U> class Array;
 class RemoteAddr final {
 public:
     RemoteAddr() : addr(NoAllocTag{}), token(NoAllocTag{}) {
-        auto ret = CcuRemoteAddrAlloc(&this->handle, &this->addr.handle, &this->token.handle);
-        if (ret != CcuResult::CCU_SUCCESS) {
-            throw "CcuRemoteAddrAlloc: failed";
-        }
+        CCU_THROW_IF_FAILED(
+            CcuRemoteAddrAlloc(&this->handle, &this->addr.handle, &this->token.handle),
+            "CcuRemoteAddrAlloc: failed");
     }
 
     RemoteAddr(const RemoteAddr& other) : addr(NoAllocTag{}), token(NoAllocTag{}) {
