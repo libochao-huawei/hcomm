@@ -231,15 +231,6 @@ HcclResult CommTaskLaunch(ThreadHandle *threads, uint32_t threadNum) // host fft
     return HcclTaskLaunch(streams.data(), threadNum);
 }
 
-HcclResult DispatchAllStreams(ThreadHandle *threads, uint32_t threadNum)
-{
-    CHK_PTR_NULL(threads);
-    CHK_PRT_RET(threadNum < 1, HCCL_ERROR("[DispatchAllStreams]threadNum is less than 1"), HCCL_E_PARA);
-
-    HCCL_WARNING("[DispatchAllStreams] DispatchAllStreams is only supported on A5 device, skip");
-    return HCCL_E_NOT_SUPPORT;
-}
-
 int32_t HcommWriteOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len)
 {
     HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].",
@@ -625,16 +616,11 @@ int32_t HcommBatchModeEnd(const char *batchTag)
 
 int32_t HcommThreadRegisterDfx(ThreadHandle thread, std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback)
 {
+    HCCL_INFO("[HcommThreadRegisterDfx] Init begin");
     Thread *threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
     CHK_RET(threadPtr->SetAddTaskInfoCallback(callback));
-    return HCCL_SUCCESS;
-}
-
-int32_t HcommDpuChannelRegisterDfx(ChannelHandle channel, std::function<HcclResult(const Hccl::TaskParam&, u64)> callback) {
-    auto *const hostCpuRoceChannelPtr = reinterpret_cast<hcomm::HostCpuRoceChannel *>(channel);
-    CHK_PTR_NULL(hostCpuRoceChannelPtr);
-    CHK_RET(hostCpuRoceChannelPtr->SetDfxCallback(callback));
+    HCCL_INFO("[HcommThreadRegisterDfx] Init success");
     return HCCL_SUCCESS;
 }
 
@@ -753,7 +739,7 @@ HcclResult HcclDfxRegOpInfoByCommId(char* commId, void* hcclDfxOpInfo)
 
     dfxOpInfo->beginTime = hrtMsprofSysCycleTime();
     CHK_RET(RegAicpuTaskException(dfxOpInfo, collComm));
-    HCCL_INFO("[%s]hccltest, DfxOpInfo: %s", __func__, dfxOpInfo->Describe().c_str());
+    HCCL_INFO("[%s]hccltest, DfxOpInfo.opmode: %d", __func__, dfxOpInfoOnce->opMode);
     //HcclDfxOpInfo转为DfxOpInfo
     auto dfxOpInfoOnce = ConvertToDfxOpInfo(*dfxOpInfo);
     CHK_SMART_PTR_NULL(dfxOpInfoOnce);
@@ -832,8 +818,6 @@ HcclResult HcclReportAicpuKernel(HcclComm comm, uint64_t beginTime, char* kernel
     uint32_t taskId = INVALID_UINT;
     uint32_t streamId = INVALID_UINT;
     CHK_RET(hrtGetTaskIdAndStreamID(taskId, streamId));
-    HCCL_INFO("[%s] taskId[%u], streamId[%u].", __func__, taskId, streamId);
-    hcclCommDfx->SetAicpuTaskIdAndStreamId(taskId, streamId);
     CHK_RET(hcclCommDfx->AddTaskInfoCallback(streamId, taskId, taskParam, INVALID_U64));
     HCCL_INFO("[HcclReportAicpuKernel] HcclReportAicpuKernel sucess");
     return HCCL_SUCCESS;
@@ -865,4 +849,4 @@ extern HcclResult HcclReportAivKernel(HcclComm comm, uint64_t beginTime)
     CHK_RET(hcclCommDfx->AddTaskInfoCallback(streamId, taskId, taskParam, INVALID_U64));
     HCCL_INFO("[HcclReportAivKernel] HcclReportAivKernel sucess");
     return HCCL_SUCCESS;
-}
+} 
