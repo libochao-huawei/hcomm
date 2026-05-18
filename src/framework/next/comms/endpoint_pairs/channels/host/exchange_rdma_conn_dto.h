@@ -29,7 +29,7 @@ public:
 
     void Deserialize(Hccl::BinaryStream &stream) override
     {
-        stream >> qpn_ >> psn_ >> gid_idx_ >> gid_;
+        stream >> qpn_ >> psn_ >> gid_idx_ >> gid_; // test
     }
 
     std::string Describe() const override
