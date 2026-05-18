@@ -369,8 +369,7 @@ namespace Hccl {
                 {Hccl::TopoType::CLOS, COMM_TOPO_CLOS},
                 {Hccl::TopoType::MESH_1D, COMM_TOPO_1DMESH},
                 {Hccl::TopoType::A3_SERVER, COMM_TOPO_910_93},
-                {Hccl::TopoType::A2_AX_SERVER, COMM_TOPO_A2AXSERVER},
-                {Hccl::TopoType::OCS_MESH, COMM_TOPO_OCS_MESH}};
+                {Hccl::TopoType::A2_AX_SERVER, COMM_TOPO_A2AXSERVER}};
         auto it = topoTypeMap.find(type);
         if (it != topoTypeMap.end()) {
             *topoType = it->second;

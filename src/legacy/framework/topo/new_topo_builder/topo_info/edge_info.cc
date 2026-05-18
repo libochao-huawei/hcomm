@@ -31,8 +31,7 @@ const unordered_map<std::string, TopoType> EdgeInfo::strToTopoType =
         {"1DMESH", TopoType::MESH_1D},
         {"2DMESH", TopoType::MESH_2D},
         {"A3_SERVER", TopoType::A3_SERVER},
-        {"A2_AX_SERVER", TopoType::A2_AX_SERVER},
-        {"OCS_MESH", TopoType::OCS_MESH}});
+        {"A2_AX_SERVER", TopoType::A2_AX_SERVER}});
 
 const unordered_map<string, LinkType> EdgeInfo::strToLinkType =
     (unordered_map<string, LinkType>{{"PEER2PEER", LinkType::PEER2PEER}, {"PEER2NET", LinkType::PEER2NET}});
