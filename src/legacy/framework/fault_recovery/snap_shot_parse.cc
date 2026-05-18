@@ -285,7 +285,8 @@ HcclResult SnapShotParser::DeSnapShotDynamicBuf(BinaryStream &buf, SnapShotDynam
     return HcclResult::HCCL_SUCCESS;
 }
 /* 全局通信域静态信息序列化 */
-void SnapShotParser::SerializeCommonInfo(const CommParams &commParams, const HcclCommConfig &config, std::unique_ptr<RankTableInfo> ranktableInfo,
+void SnapShotParser::SerializeCommonInfo(const CommParams &commParams, const HcclCommConfig &config,
+                                         const RankTableInfo *ranktableInfo,
                                          std::shared_ptr<TopoInfo>& topoInfo, BinaryStream &binStream) const
 {
     HCCL_INFO("Snapshot saving: Start to serialize static info.");
@@ -294,7 +295,7 @@ void SnapShotParser::SerializeCommonInfo(const CommParams &commParams, const Hcc
     // 2. 参数信息序列化
     SerializeParamsInfo(commParams, binStream);
     // 3. rankTableInfo及crc信息序列化
-    SerializeRankTableInfo(std::move(ranktableInfo), binStream);
+    SerializeRankTableInfo(ranktableInfo, binStream);
     // 4. topoInfo及crc信息序列化
     SerializeTopoInfo(topoInfo, binStream);
 }
@@ -327,7 +328,7 @@ void SnapShotParser::SerializeParamsInfo(const CommParams &commParams, BinaryStr
               << static_cast<u32>(commParams.devType) << commParams.devUsed;
 }
 
-void SnapShotParser::SerializeRankTableInfo(std::unique_ptr<RankTableInfo> ranktableInfo, BinaryStream &binStream) const
+void SnapShotParser::SerializeRankTableInfo(const RankTableInfo *ranktableInfo, BinaryStream &binStream) const
 {
    HCCL_INFO("[%s]Snapshot saving: Start to serialize rankTableInfo.", __func__);
     if(ranktableInfo == nullptr) {

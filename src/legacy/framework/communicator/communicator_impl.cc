@@ -165,7 +165,7 @@ void CommunicatorImpl::InitCommResource(const CommParams &commParams)
     InitHDCommunicate();
     notifyTimeoutCfg.Init();
     status = CommStatus::COMM_READY;
-    SnapShotParser::GetInstance().SerializeCommonInfo(commParams, config, std::move(ranktableInfo), topoInfo, staticBinaryInfo);
+    SnapShotParser::GetInstance().SerializeCommonInfo(commParams, config, ranktableInfo.get(), topoInfo, staticBinaryInfo);
     InitOneSidedService();
     RegisterKernel();
     InitDpuKernel();

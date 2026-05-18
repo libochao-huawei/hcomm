@@ -156,10 +156,11 @@ TEST_F(SnapShotParserTest, SerializeCommonInfoTest) {
 	topoParser.ParseString(topoString, *topoInfo);
     // 创建二进制流
     BinaryStream binStream;
-    
+
     // 调用序列化函数
-    parser.SerializeCommonInfo(commParams, config, move(ranktableInfo), topoInfo, binStream);
-    
+    parser.SerializeCommonInfo(commParams, config, ranktableInfo.get(), topoInfo, binStream);
+    EXPECT_NE(ranktableInfo, nullptr);
+
     // 检查二进制流是否被正确写入（例如，检查大小是否增加）
     EXPECT_GT(binStream.GetSize(), 0);
     HcclResult ret = parser.DeserializeCommInfo(binStream, snapShot);
@@ -557,7 +558,5 @@ TEST_F(SnapShotParserTest, st_DeSnapShotDynamicBuf_with_all_elements_ReturnHCCL_
     vector<LinkInfo> linkInfos(1, LinkInfo{});
     
     SnapShotParser& parser = SnapShotParser::GetInstance();
-    EXPECT_EQ(HCCL_SUCCESS, parser.DeSnapShotDynamicBuf(buf, info));    
+    EXPECT_EQ(HCCL_SUCCESS, parser.DeSnapShotDynamicBuf(buf, info));
 }
-    
-    

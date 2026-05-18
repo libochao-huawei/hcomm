@@ -915,22 +915,22 @@ void RankGraph::ReparseGroupedPlaneForOcsMesh(const RankTableInfo &rankTable,
             std::map<u32, std::vector<RankId>> elecGroups;
             for (RankId rankId : rankIds) {
                 if (rankId < 0) {
-                    HCCL_WARNING("[RankGraph][ReparseGroupedPlaneForOcsMesh] invalid rankId[%d].", rankId);
-                    continue;
+                    THROW<InvalidParamsException>(StringFormat("[RankGraph][ReparseGroupedPlaneForOcsMesh] invalid rankId[%d].",
+                                                               rankId));
                 }
 
                 if (globalRankIds != nullptr && static_cast<size_t>(rankId) >= globalRankIds->size()) {
-                    HCCL_WARNING("[RankGraph][ReparseGroupedPlaneForOcsMesh] rankId[%d] exceeds globalRankIds size[%zu].",
-                                 rankId, globalRankIds->size());
-                    continue;
+                    THROW<InvalidParamsException>(StringFormat(
+                        "[RankGraph][ReparseGroupedPlaneForOcsMesh] rankId[%d] exceeds globalRankIds size[%zu].",
+                        rankId, globalRankIds->size()));
                 }
 
                 u32 globalRankId = (globalRankIds == nullptr) ? static_cast<u32>(rankId)
                                                               : globalRankIds->at(rankId);
                 if (globalRankId >= rankTable.ranks.size()) {
-                    HCCL_WARNING("[RankGraph][ReparseGroupedPlaneForOcsMesh] globalRankId[%u] exceeds rankTable size[%zu].",
-                                 globalRankId, rankTable.ranks.size());
-                    continue;
+                    THROW<InvalidParamsException>(StringFormat(
+                        "[RankGraph][ReparseGroupedPlaneForOcsMesh] globalRankId[%u] exceeds rankTable size[%zu].",
+                        globalRankId, rankTable.ranks.size()));
                 }
 
                 u32 elecGroupId = 0;

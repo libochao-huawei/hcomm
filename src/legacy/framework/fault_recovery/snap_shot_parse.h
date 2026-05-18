@@ -105,8 +105,9 @@ public:
     HcclResult ParseSnapshotToLocalBuff(void *snapshotBuf, uint32_t snapshotBufSize, SnapShotBuf &localBuff);
 
     // 生成 全局通信域 静态短流
-    void SerializeCommonInfo(const CommParams &commParams, const HcclCommConfig &config, std::unique_ptr<RankTableInfo> ranktableInfo, std::shared_ptr<TopoInfo>& topoInfo,
-                             BinaryStream &binStream) const;
+    void SerializeCommonInfo(const CommParams &commParams, const HcclCommConfig &config,
+                             const RankTableInfo *ranktableInfo,
+                             std::shared_ptr<TopoInfo>& topoInfo, BinaryStream &binStream) const;
 
     // 生成 子局通信域 静态短流
     void SerializeSubCommInfo(const CommParams &commParams, const HcclCommConfig &subConfig, const std::vector<u32> &rankId,
@@ -142,7 +143,7 @@ private:
      // 全局通信域静态信息的序列化
     void SerializeParamsInfo(const CommParams &commParams, BinaryStream &binStream) const;
     void SerializeCommConfigInfo(const HcclCommConfig &config, BinaryStream &binStream) const;
-    void SerializeRankTableInfo(std::unique_ptr<RankTableInfo> ranktableInfo, BinaryStream &binStream) const;
+    void SerializeRankTableInfo(const RankTableInfo *ranktableInfo, BinaryStream &binStream) const;
     void SerializeTopoInfo(const std::shared_ptr<TopoInfo>& topoInfo, BinaryStream &binStream) const;
 
     // 全局通信域静态信息的反序列化

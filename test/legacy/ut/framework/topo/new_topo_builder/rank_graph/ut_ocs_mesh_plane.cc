@@ -212,3 +212,27 @@ TEST_F(OcsMeshPlaneTest, ReparseGroupedPlaneForOcsMesh_SubRankGraphUsesRankIdMap
     EXPECT_EQ(subGraph->GetOcsPlaneId(2), 0u);
     EXPECT_EQ(subGraph->GetOcsPlaneNum(2), 2u);
 }
+
+TEST_F(OcsMeshPlaneTest, ReparseGroupedPlaneForOcsMesh_InvalidGlobalRankIds_Throws)
+{
+    RankGraph graph(0);
+    AddPeers(graph, 3);
+    AddOcsMeshNetInst(graph, 0, "ocs_mesh_0", {0, 1, 2});
+
+    RankTableInfo table = BuildRankTable({0, 1, 1});
+    std::vector<u32> globalRankIds{0, 1};
+
+    EXPECT_THROW(graph.ReparseGroupedPlaneForOcsMesh(table, &globalRankIds), InvalidParamsException);
+}
+
+TEST_F(OcsMeshPlaneTest, ReparseGroupedPlaneForOcsMesh_GlobalRankIdOutOfRankTable_Throws)
+{
+    RankGraph graph(0);
+    AddPeers(graph, 2);
+    AddOcsMeshNetInst(graph, 0, "ocs_mesh_0", {0, 1});
+
+    RankTableInfo table = BuildRankTable({0, 1});
+    std::vector<u32> globalRankIds{0, 5};
+
+    EXPECT_THROW(graph.ReparseGroupedPlaneForOcsMesh(table, &globalRankIds), InvalidParamsException);
+}
