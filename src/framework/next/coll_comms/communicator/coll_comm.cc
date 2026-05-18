@@ -30,6 +30,13 @@ CollComm::CollComm(void * comm, uint32_t rankId, const std::string &commName, co
 
 CollComm::~CollComm()
 {
+    if (comm_ == nullptr) { /* A2/A3 CollComm是简化版本 */
+        return;
+    }
+    if (rankgraph_ != nullptr) {
+        delete rankgraph_;
+        rankgraph_ = nullptr;
+    }
     CollCommMgr::GetInstance()->UnRegisteCollComm(this); 
     HCCL_INFO("[CollComm][~CollComm] collComm deinit");
     // dpu的兜底上报 - 异常退出时捕获异常避免二次崩溃
@@ -43,6 +50,28 @@ CollComm::~CollComm()
     (void)DestroyAicpuComm();
 }
 
+HcclResult CollComm::ValidateConfig(const HcclCommConfig *config)
+{
+    if (config == nullptr) {
+        return HCCL_SUCCESS;
+    }
+    u32 tc = config->hcclRdmaTrafficClass;
+    CHK_PRT_RET((tc != TC_DEFAULT) && (tc > TC_MAX || (tc % MULTIPLE != 0)),
+        HCCL_ERROR("[InitCollComm]errNo[0x%016llx] invalid hcclRdmaTrafficClass[%u], must be 0xFFFFFFFF or in [0,255] "
+            "and a multiple of 4",
+            HCCL_ERROR_CODE(HCCL_E_PARA), tc),
+        HCCL_E_PARA);
+    CHK_RET(config_.SetConfigTrafficClass(tc));
+
+    u32 sl = config->hcclRdmaServiceLevel;
+    CHK_PRT_RET((sl != SL_DEFAULT) && (sl > SL_MAX),
+        HCCL_ERROR("[InitCollComm]errNo[0x%016llx] invalid hcclRdmaServiceLevel[%u], must be 0xFFFFFFFF or in [0,7]",
+            HCCL_ERROR_CODE(HCCL_E_PARA), sl),
+        HCCL_E_PARA);
+    CHK_RET(config_.SetConfigServiceLevel(sl));
+    return HCCL_SUCCESS;
+}
+
 HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cclBuffer, HcclCommConfig *config)
 {
     CHK_PTR_NULL(rankGraph);
@@ -50,45 +79,42 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
     EXCEPTION_HANDLE_BEGIN
 
     CHK_RET(DlHalFunction::GetInstance().DlHalFunctionInit());
-    EXECEPTION_CATCH(rankgraph_ = std::make_unique<RankGraphV2>(rankGraph), return HCCL_E_PTR);
+    if (comm_ == nullptr) { /* A2/A3 hccl::Communicator对应版本 */
+        EXECEPTION_CATCH(rankgraph_ = static_cast<RankGraph*>(rankGraph), return HCCL_E_PTR);
+    } else {  /* A5 Hccl::Communicator对应版本 */
+        EXECEPTION_CATCH(rankgraph_ = new RankGraphV2(rankGraph), return HCCL_E_PTR);
+    }
     uint32_t rankNum = 0;
     CHK_PTR_NULL(rankgraph_);
     CHK_RET(rankgraph_->GetRankSize(&rankNum));
-    CHK_RET(GetRankIpPortMap());
 
-    u32 threadNum = 0xffffffff;
-    u32 notifyNumPerThread = 0xffffffff;
-    if (!commEngineResMgr_) {
-        EXECEPTION_CATCH(commEngineResMgr_ = std::make_unique<CommEngineResMgr>(),
-            return HCCL_E_PTR);
-        CHK_PRT(commEngineResMgr_->Init(threadNum, notifyNumPerThread, commId_, binHandle, callbacks_));
-    }
+    if (comm_) {
+        CHK_RET(GetRankIpPortMap());
 
-    if (!contextMgr_) {
-        EXECEPTION_CATCH(contextMgr_ = std::make_unique<ContextManager>(), return HCCL_E_PTR);
+        u32 threadNum = 0xffffffff;
+        u32 notifyNumPerThread = 0xffffffff;
+        if (!commEngineResMgr_) {
+            EXECEPTION_CATCH(commEngineResMgr_ = std::make_unique<CommEngineResMgr>(),
+                return HCCL_E_PTR);
+            CHK_PRT(commEngineResMgr_->Init(threadNum, notifyNumPerThread, commId_, binHandle, callbacks_));
+        }
+
+        if (!contextMgr_) {
+            EXECEPTION_CATCH(contextMgr_ = std::make_unique<ContextManager>(), return HCCL_E_PTR);
+        }
     }
 
     EXECEPTION_CATCH(
-        myRank_ = std::make_shared<MyRank>(binHandle, rankId_, config_, callbacks_, rankgraph_.get(), rankIpPortMap_),
+        myRank_ = std::make_shared<MyRank>(binHandle, rankId_, config_, callbacks_, rankgraph_, rankIpPortMap_),
         return HCCL_E_PTR);
-    uint32_t opExpansionMode = 0;
-    if (config) {
-        opExpansionMode = config->hcclOpExpansionMode;
-        u32 tc = config->hcclRdmaTrafficClass;
-        CHK_PRT_RET((tc != TC_DEFAULT) && (tc > TC_MAX || (tc % MULTIPLE != 0)),
-            HCCL_ERROR("[InitCollComm]errNo[0x%016llx] invalid hcclRdmaTrafficClass[%u], must be 0xFFFFFFFF or in [0,255] and a multiple of 4",
-                HCCL_ERROR_CODE(HCCL_E_PARA), tc),
-            HCCL_E_PARA);
-        CHK_RET(config_.SetConfigTrafficClass(tc));
-
-        u32 sl = config->hcclRdmaServiceLevel;
-        CHK_PRT_RET((sl != SL_DEFAULT) && (sl > SL_MAX),
-            HCCL_ERROR("[InitCollComm]errNo[0x%016llx] invalid hcclRdmaServiceLevel[%u], must be 0xFFFFFFFF or in [0,7]",
-                HCCL_ERROR_CODE(HCCL_E_PARA), sl),
-            HCCL_E_PARA);
-        CHK_RET(config_.SetConfigServiceLevel(sl));
-    }
+    uint32_t opExpansionMode = (config != nullptr) ? config->hcclOpExpansionMode : 0;
+    CHK_RET(ValidateConfig(config));
     CHK_RET(myRank_->Init(cclBuffer, opExpansionMode, rankNum));
+
+    if (comm_ == NULL) {    /* hccl:Communicatior流程KFC在Communicator中初始化 */
+        return HCCL_SUCCESS;
+    }
+
     CHK_RET(hrtGetDevice(&deviceLogicId_));
 
     CHK_RET(InitHDCommunicate());

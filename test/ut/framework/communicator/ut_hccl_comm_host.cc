@@ -158,3 +158,16 @@ TEST_F(HcclCommHostTest, Ut_GetCommStatusWhenIsCommunicatorV1ExpectReturnE_NOT_S
     HcclResult ret = hcclCommPtr->GetCommStatus(status);
     EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
 }
+
+TEST_F(HcclCommHostTest, Ut_InitCollCommInner_When_Success_Expect_Success)
+{
+    std::shared_ptr<hccl::hcclComm> hcclCommPtr = std::make_shared<hccl::hcclComm>(1, 1, "test_comm");
+
+    MOCKER_CPP(&hcclComm::GetConnectMode).stubs().will(returnValue(1));
+    MOCKER_CPP(&CollComm::Init).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CollComm::GetHDCommunicate).stubs().will(returnValue(HCCL_SUCCESS));
+
+    u32 userRank = 0;
+    HcclResult ret = hcclCommPtr->InitCollCommInner(userRank);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
