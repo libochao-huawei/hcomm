@@ -452,6 +452,20 @@ namespace Hccl {
         return HCCL_SUCCESS;
     }
 
+    static const char *EndpointAttrToString(EndpointAttr endpointAttr)
+    {
+        switch (endpointAttr) {
+            case ENDPOINT_ATTR_BW_COEFF:
+                return "ENDPOINT_ATTR_BW_COEFF";
+            case ENDPOINT_ATTR_DIE_ID:
+                return "ENDPOINT_ATTR_DIE_ID";
+            case ENDPOINT_ATTR_LOCATION:
+                return "ENDPOINT_ATTR_LOCATION";
+            default:
+                return "ENDPOINT_ATTR_INVALID";
+        }
+    }
+
     HcclResult IRankGraph::GetEndpointInfo(uint32_t rankId, const EndpointDesc *endPointDesc, EndpointAttr endpointAttr,
                                            uint32_t infoLen, void *info)
     {
@@ -460,7 +474,7 @@ namespace Hccl {
         HcclResult ret = rankGraph->GetEndpointInfo(rankId, endPointDesc, endpointAttr, infoLen, info);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
                     HCCL_ERROR("[IRankGraph::GetEndpointInfo] Failed to get endpoint info, rankId[%u], "
-                               "endpointAttr[%d], ret[%d]", rankId, static_cast<s32>(endpointAttr), ret),
+                               "endpointAttr[%s], ret[%d]", rankId, EndpointAttrToString(endpointAttr), ret),
                     ret);
         return HCCL_SUCCESS;
     }
