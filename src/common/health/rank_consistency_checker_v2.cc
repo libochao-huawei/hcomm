@@ -38,20 +38,9 @@ HcclResult RankConsistencyCheckerV2::RecordEnvVarCrcV2(u64 buffSize)
     return HCCL_SUCCESS;
 }
 
-HcclResult RankConsistencyCheckerV2::RecordRankTableCrcV2(const std::string &rankTableContent)
+HcclResult RankConsistencyCheckerV2::RecordRankTableCrcV2(u32 crc)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-
-    if (rankTableContent.empty()) {
-        HCCL_DEBUG("[RecordRankTableCrcV2] rankTableContent is empty, skip.");
-        return HCCL_SUCCESS;
-    }
-
-    // 对ranktable文件整体内容计算CRC
-    u32 crc = 0;
-    HcclResult ret = CalcCrc::HcclCalcCrc(rankTableContent.c_str(), strlen(rankTableContent.c_str()), crc);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[RecordRankTableCrcV2] CalcStringCrc failed for ranktable."), ret);
     rankTableCrcsV2_.push_back({"ranktable_content", crc});
     HCCL_DEBUG("[RecordA5RankTableCrc] ranktable crc[0x%08x] recorded, size[%zu].",
         crc, rankTableContent.size());
