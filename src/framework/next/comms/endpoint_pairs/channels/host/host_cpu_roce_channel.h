@@ -154,6 +154,7 @@ private:
     std::unique_ptr<HcclMem[]> remoteMemsPtr_;
 
     uint64_t maxMsgSize_{0};
+    uint32_t lbMax_{0};             // 多QP负载均衡
 
     std::function<HcclResult(const Hccl::TaskParam&, u64)> dfxCallback_;
 
