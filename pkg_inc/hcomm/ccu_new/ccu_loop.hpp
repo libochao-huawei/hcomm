@@ -17,19 +17,9 @@
 #include "ccu_variable.hpp"
 #include "ccu_func.hpp"
 #include "ccu_data_api_impl.h"
+#include "ccu_data_utils.hpp"
 
 namespace ccu {
-
-namespace internal {
-
-inline void ThrowIfLoopErr(::CcuResult ret, const char *what)
-{
-    if (ret != ::CcuResult::CCU_SUCCESS) {
-        throw what;
-    }
-}
-
-} // namespace internal
 
 class Loop {
 public:
@@ -76,17 +66,18 @@ private:
     void ComposeLoopBody(const Func &func)
     {
         if (func.NumIn() != 0) {
-            throw "ccu::Loop requires a no-argument ccu::Func";
+            throw ::ccu::CcuException(CcuResult::CCU_E_PARA,
+                "ccu::Loop requires a no-argument ccu::Func");
         }
-        internal::ThrowIfLoopErr(::CcuLoopCreate(&handle_), "CcuLoopCreate failed");
-        internal::ThrowIfLoopErr(::_CcuLoopBodyEnter(handle_), "_CcuLoopBodyEnter failed");
+        CCU_THROW_IF_FAILED(::CcuLoopCreate(&handle_), "CcuLoopCreate failed");
+        CCU_THROW_IF_FAILED(::_CcuLoopBodyEnter(handle_), "_CcuLoopBodyEnter failed");
         try {
             func.RunBody(nullptr);
         } catch (...) {
             (void)::_CcuLoopBodyExit(handle_);
             throw;
         }
-        internal::ThrowIfLoopErr(::_CcuLoopBodyExit(handle_), "_CcuLoopBodyExit failed");
+        CCU_THROW_IF_FAILED(::_CcuLoopBodyExit(handle_), "_CcuLoopBodyExit failed");
     }
 
     CcuLoop handle_{0};
@@ -104,7 +95,7 @@ public:
     LoopGroup(Variable &parallelCfg, Variable &offsetCfg, uint32_t maxLoopNum,
               const std::vector<Loop> &loops)
     {
-        internal::ThrowIfLoopErr(
+        CCU_THROW_IF_FAILED(
             ::CcuLoopGroupCreateFromVar(&handle_, maxLoopNum,
                                         parallelCfg.handle, offsetCfg.handle),
             "CcuLoopGroupCreateFromVar failed");
@@ -117,7 +108,7 @@ public:
     {
         // 拷贝到 lvalue 以便取地址传给 C 接口；本身不修改原 cfg。
         CcuLoopGroupConfig localCfg = loopGroupCfg;
-        internal::ThrowIfLoopErr(
+        CCU_THROW_IF_FAILED(
             ::CcuLoopGroupCreate(&handle_, maxLoopNum, &localCfg),
             "CcuLoopGroupCreate failed");
         AddLoops(loops);
@@ -135,13 +126,14 @@ private:
             if (loop.IsVarBased()) {
                 auto *loopParamVar = loop.LoopParamVar();
                 if (loopParamVar == nullptr) {
-                    throw "ccu::Loop var-based loop has null loop parameter";
+                    throw ::ccu::CcuException(CcuResult::CCU_E_PARA,
+                        "ccu::Loop var-based loop has null loop parameter");
                 }
-                internal::ThrowIfLoopErr(
+                CCU_THROW_IF_FAILED(
                     ::CcuLoopGroupAddLoopFromVar(handle_, loop.Handle(), loopParamVar->handle),
                     "CcuLoopGroupAddLoopFromVar failed");
             } else {
-                internal::ThrowIfLoopErr(
+                CCU_THROW_IF_FAILED(
                     ::CcuLoopGroupAddLoop(handle_, loop.Handle(), loop.Config()),
                     "CcuLoopGroupAddLoop failed");
             }

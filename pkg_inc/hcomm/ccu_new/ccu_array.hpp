@@ -68,7 +68,7 @@ public:
             ::operator delete(elems_);
             elems_ = nullptr;
             count_ = 0;
-            throw "Array BlockAlloc: failed";
+            throw ::ccu::CcuException(ret, "Array BlockAlloc: failed");
         }
         for (uint32_t i = 0; i < count; ++i) {
             CcuArrayTraits<T>::SetHandle(elems_[i], handles[i]);

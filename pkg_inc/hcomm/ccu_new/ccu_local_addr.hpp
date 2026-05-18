@@ -23,10 +23,9 @@ template <typename U> class Array;
 class LocalAddr final {
 public:
     LocalAddr() : addr(NoAllocTag{}), token(NoAllocTag{}) {
-        auto ret = CcuLocalAddrAlloc(&this->handle, &this->addr.handle, &this->token.handle);
-        if (ret != CcuResult::CCU_SUCCESS) {
-            throw "CcuLocalAddrAlloc: failed";
-        }
+        CCU_THROW_IF_FAILED(
+            CcuLocalAddrAlloc(&this->handle, &this->addr.handle, &this->token.handle),
+            "CcuLocalAddrAlloc: failed");
     }
 
     LocalAddr(const LocalAddr& other) : addr(NoAllocTag{}), token(NoAllocTag{}) {
