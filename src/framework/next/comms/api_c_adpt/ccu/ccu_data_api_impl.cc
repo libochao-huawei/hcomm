@@ -203,30 +203,49 @@ CcuResult CcuLoadArg(CcuVariableHandle varHandle, uint32_t argId)
 
 CcuResult CcuLoadVar(uint64_t addr, CcuVariableHandle varHandle, uint32_t num)
 {
+    if (num == 0) {
+        HCCL_ERROR("[CcuLoadVar] invalid args, num[%u]", num);
+        return CcuResult::CCU_E_PARA;
+    }
     const uint32_t devLogicId = HcclGetThreadDeviceId();
     auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
     CCU_CHK_PTR_NULL(kernel);
     CCU_CHK_RET(kernel->LoadVar(addr, varHandle, num));
     return CcuResult::CCU_SUCCESS;
 }
+
 CcuResult CcuLoadVarFromVarAddr(CcuVariableHandle addrHandle, CcuVariableHandle varHandle, uint32_t num)
 {
-const uint32_t devLogicId = HcclGetThreadDeviceId();
-auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
-CCU_CHK_PTR_NULL(kernel);
-CCU_CHK_RET(kernel->CcuLoadVarFromVarAddr(addrHandle, varHandle, num));
-return CcuResult::CCU_SUCCESS;
+    if (num == 0) {
+        HCCL_ERROR("[CcuLoadVarFromVarAddr] invalid args, num[%u]", num);
+        return CcuResult::CCU_E_PARA;
+    }
+    const uint32_t devLogicId = HcclGetThreadDeviceId();
+    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
+    CCU_CHK_PTR_NULL(kernel);
+    CCU_CHK_RET(kernel->CcuLoadVarFromVarAddr(addrHandle, varHandle, num));
+    return CcuResult::CCU_SUCCESS;
 }
+
 CcuResult CcuStoreVar(uint64_t addr, CcuVariableHandle varHandle, uint32_t num)
 {
+    if (num == 0) {
+        HCCL_ERROR("[CcuStoreVar] invalid args, num[%u]", num);
+        return CcuResult::CCU_E_PARA;
+    }
     const uint32_t devLogicId = HcclGetThreadDeviceId();
     auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
     CCU_CHK_PTR_NULL(kernel);
     CCU_CHK_RET(kernel->StoreVar(addr, varHandle, num));
     return CcuResult::CCU_SUCCESS;
 }
+
 CcuResult CcuStoreVarToVarAddr(CcuVariableHandle addrHandle, CcuVariableHandle varHandle, uint32_t num)
 {
+    if (num == 0) {
+        HCCL_ERROR("[CcuStoreVarToVarAddr] invalid args, num[%u]", num);
+        return CcuResult::CCU_E_PARA;
+    }
     const uint32_t devLogicId = HcclGetThreadDeviceId();
     auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
     CCU_CHK_PTR_NULL(kernel);
@@ -339,6 +358,10 @@ CcuResult CcuLocalMemReduce(CcuLocalAddrHandle dst, CcuLocalAddrHandle src, CcuV
 
 CcuResult CcuLocalBufferReduce(CcuBufferHandle* buffers, uint32_t count, HcclDataType dataType, HcclDataType outputDataType, HcclReduceOp opType, CcuVariableHandle len, CcuEventHandle event, uint16_t mask)
 {
+    if (buffers == nullptr || count == 0) {
+        HCCL_ERROR("[CcuLocalBufferReduce] invalid args, buffers[%p] count[%u]", buffers, count);
+        return CcuResult::CCU_E_PARA;
+    }
     const uint32_t devLogicId = HcclGetThreadDeviceId();
     auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
     CCU_CHK_PTR_NULL(kernel);
