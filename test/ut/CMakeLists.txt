@@ -86,7 +86,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/platform/ping_mesh/
     ${HCCL_CODE_ROOT}/src/platform/inc/
     ${HCCL_CODE_ROOT}/src/platform/inc/adapter
-    ${HCCL_CODE_ROOT}/src/platform/inc/adapter/host
+    ${HCCL_CODE_ROOT}/src/common/error_manager
     ${HCCL_CODE_ROOT}/src/platform/resource/
     ${HCCL_CODE_ROOT}/src/platform/resource/mem
     ${HCCL_CODE_ROOT}/src/platform/resource/notify/

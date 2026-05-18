@@ -202,7 +202,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/platform/common/buffer_manager
     ${HCCL_CODE_ROOT}/src/platform/inc
     ${HCCL_CODE_ROOT}/src/platform/inc/adapter
-    ${HCCL_CODE_ROOT}/src/platform/inc/adapter/host
+    ${HCCL_CODE_ROOT}/src/common/error_manager
     ${HCCL_CODE_ROOT}/src/platform/inc/common/
     ${HCCL_CODE_ROOT}/src/platform/resource/transport/
     ${HCCL_CODE_ROOT}/src/platform/resource/transport/host/
