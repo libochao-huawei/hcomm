@@ -11,7 +11,7 @@ set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/hcomm_diag_adapt_aicpu.cc
 )
 
-if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
+if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         ${src_list}
     )

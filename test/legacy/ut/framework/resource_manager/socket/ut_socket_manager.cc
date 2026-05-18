@@ -154,3 +154,11 @@ TEST_F(SocketManagerTest, Ut_ServerInitAll_Skip_Init_When_Env_Config) {
     NewRankInfo rankInfo = rankGraphBuilder.GetRankTableInfo()->ranks[0];
     EXPECT_NO_THROW(SocketManager::ServerInitAll(rankInfo));
 }
+
+TEST_F(SocketManagerTest, test_BatchCreateSockets_with_SocketConfig) {
+    SocketManager socketMgr(localRank, devicePhyId, devicePhyId, "tmp");
+    auto link = links[0];
+    Hccl::SocketConfig socketConfig(link.GetRemoteRankId(), link, "test");
+    socketMgr.BatchCreateSockets(socketConfig);
+    socketMgr.GetConnectedSocket(socketConfig);
+}
