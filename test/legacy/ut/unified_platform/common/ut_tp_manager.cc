@@ -173,10 +173,10 @@ TEST_F(TpManagerTest, Ut_ReleaseTpInfo_When_InputValue_Expect_Return_HCCL_SUCCES
 
 TEST_F(TpManagerTest, tp_manager_device_qos_sl_mapping_success)
 {
-    s32 tpAttrVersion = 2;
+    u32 tpAttrVersion = 2U;
     MOCKER(RaGetInterfaceVersion)
         .stubs()
-        .with(any(), any(), outBoundP(&tpAttrVersion, sizeof(s32)))
+        .with(any(), any(), outBoundP(&tpAttrVersion, sizeof(tpAttrVersion)))
         .will(returnValue(0));
 
     HcclResult result;
@@ -201,10 +201,10 @@ TEST_F(TpManagerTest, tp_manager_device_qos_sl_mapping_success)
 
 TEST_F(TpManagerTest, tp_manager_loop_first_tp_lowest_sl_success)
 {
-    s32 tpAttrVersion = 2;
+    u32 tpAttrVersion = 2U;
     MOCKER(RaGetInterfaceVersion)
         .stubs()
-        .with(any(), any(), outBoundP(&tpAttrVersion, sizeof(s32)))
+        .with(any(), any(), outBoundP(&tpAttrVersion, sizeof(tpAttrVersion)))
         .will(returnValue(0));
 
     HcclResult result;
