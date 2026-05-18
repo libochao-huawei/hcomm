@@ -9,6 +9,7 @@
  */
 
 #include <map>
+#include <cstring>
 #include <unordered_map>
 #include "virtual_topo.h"
 #include "string_util.h"
@@ -20,6 +21,7 @@
 #include "not_support_exception.h"
 #include "invalid_params_exception.h"
 #include "rank_gph.h"
+#include "securec.h"
 
 namespace Hccl {
 
@@ -880,23 +882,6 @@ CommProtocol LinkProtocolToCommProtocol(const LinkProtocol &linkProtocol)
     return COMM_PROTOCOL_RESERVED;
 }
 
-void RankGraph::SetOcsMeshAttr(RankId rankId, u32 ocsPlaneId, u32 ocsPlaneNum)
-{
-    ocsMeshAttrMap_[rankId] = {ocsPlaneId, ocsPlaneNum};
-}
-
-u32 RankGraph::GetOcsPlaneId(RankId rankId) const
-{
-    auto it = ocsMeshAttrMap_.find(rankId);
-    return (it != ocsMeshAttrMap_.end()) ? it->second.ocsPlaneId : 0;
-}
-
-u32 RankGraph::GetOcsPlaneNum(RankId rankId) const
-{
-    auto it = ocsMeshAttrMap_.find(rankId);
-    return (it != ocsMeshAttrMap_.end()) ? it->second.ocsPlaneNum : 0;
-}
-
 void RankGraph::ReparseGroupedPlaneForOcsMesh(const RankTableInfo &rankTable,
                                               const std::vector<u32> *globalRankIds)
 {
@@ -947,11 +932,69 @@ void RankGraph::ReparseGroupedPlaneForOcsMesh(const RankTableInfo &rankTable,
             u32 planeIdx = 0;
             for (const auto &group : elecGroups) {
                 for (RankId rankId : group.second) {
-                    SetOcsMeshAttr(rankId, planeIdx, totalGroups);
+                    if (static_cast<size_t>(rankId) >= rankDescVec_.size()) {
+                        THROW<InvalidParamsException>(StringFormat(
+                            "[RankGraph][ReparseGroupedPlaneForOcsMesh] rankId[%d] exceeds rankDescVec size[%zu].",
+                            rankId, rankDescVec_.size()));
+                    }
+                    rankDescVec_[rankId].ocsPlaneId = planeIdx;
+                    rankDescVec_[rankId].ocsPlaneNum = totalGroups;
                 }
                 planeIdx++;
             }
         }
     }
+}
+
+void RankGraph::BuildRankDescVec(const RankTableInfo &rankTable,
+                                 const std::vector<u32> *globalRankIds)
+{
+    u32 count = (globalRankIds == nullptr) ? static_cast<u32>(rankTable.ranks.size())
+                                           : static_cast<u32>(globalRankIds->size());
+    rankDescVec_.resize(count);
+    (void)memset_s(rankDescVec_.data(), count * sizeof(RankDesc),
+                   0, count * sizeof(RankDesc));
+
+    for (u32 i = 0; i < count; i++) {
+        RankDesc &d = rankDescVec_[i];
+        u32 globalIdx = (globalRankIds == nullptr) ? i : (*globalRankIds)[i];
+
+        if (globalIdx >= rankTable.ranks.size()) {
+            THROW<InvalidParamsException>(StringFormat(
+                "[RankGraph][BuildRankDescVec] globalIdx[%u] exceeds rankTable size[%zu].",
+                globalIdx, rankTable.ranks.size()));
+        }
+
+        const auto &rankInfo = rankTable.ranks[globalIdx];
+
+        // localId: peers_ 已有
+        d.localId = GetLocalId(i);
+
+        // serverIdx: Builder 已计算存入 NewRankInfo
+        d.serverIdx = rankInfo.serverIdx;
+
+        // elecGroupId & superPodId: 遍历层级信息
+        for (const auto &lv : rankInfo.rankLevelInfos) {
+            if (lv.netType == NetType::OCS_MESH) {
+                d.elecGroupId = lv.elecGroupId;
+            }
+            if (lv.netType == NetType::CLOS) {
+                (void)strncpy(d.superPodId, lv.netInstId.c_str(),
+                              sizeof(d.superPodId) - 1);
+            }
+        }
+
+        // netLayers: 从 GetLevels 填充
+        std::set<u32> levels = GetLevels(i);
+        d.netLayerNum = 0;
+        for (u32 lv : levels) {
+            if (d.netLayerNum < RANK_DESC_MAX_NET_LAYER) {
+                d.netLayers[d.netLayerNum++] = lv;
+            }
+        }
+    }
+
+    // ocsPlaneId/ocsPlaneNum: 复用分组逻辑
+    ReparseGroupedPlaneForOcsMesh(rankTable, globalRankIds);
 }
 } // namespace Hccl
