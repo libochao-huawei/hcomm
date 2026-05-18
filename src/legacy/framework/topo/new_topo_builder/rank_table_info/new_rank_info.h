@@ -36,8 +36,6 @@ public:
     u32                        replacedLocalId{0};
     u32                        devicePort{DEFAULT_VALUE_DEVICEPORT};
     u32                        serverIdx{0};
-    u32                        ocsPlaneId{0};
-    u32                        ocsPlaneNum{0};
     std::vector<RankLevelInfo> rankLevelInfos{};
     ControlPlane               controlPlane{};
     TlsStatus                  tlsStatus{TlsStatus::UNKNOWN};

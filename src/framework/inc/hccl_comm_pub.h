@@ -406,7 +406,6 @@ public:
     HcclResult GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank,
         CommLink **linkList, uint32_t *listSize);
     HcclResult GetHeterogMode(HcclHeterogMode *mode);
-    RankDesc& GetCachedRankDesc() { return cachedRankDesc_; }
     // for group
     HcclResult SetGroupMode(bool isGroup);
     bool GetGroupMode();
@@ -455,7 +454,6 @@ private:
         std::unique_ptr<CollComm> collComm_{nullptr};
     #endif
 #endif
-    RankDesc cachedRankDesc_;
 };
 }  // namespace hccl
 
