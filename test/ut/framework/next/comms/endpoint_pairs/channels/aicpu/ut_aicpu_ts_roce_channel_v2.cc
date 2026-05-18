@@ -66,7 +66,7 @@ protected:
         MOCKER(Hccl::HrtRaNdaCqCreate).stubs().with(any(), any(), any(), any(), any()).will(returnValue(HCCL_SUCCESS));
         MOCKER(Hccl::HrtRaNdaCqDestroy).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
         MOCKER(Hccl::HrtRaQpDestroy).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-        MOCKER(RaNdaGetDirectFlag).stubs().with(any(), any()).will(returnValue(0));
+        MOCKER(RaNdaGetDirectFlag).stubs().with(any(), outBoundP(1)).will(returnValue(0));
         MOCKER(RaGetQpAttr).stubs().with(any(), any()).will(returnValue(0));
         
         EndpointDesc endpointDesc{};

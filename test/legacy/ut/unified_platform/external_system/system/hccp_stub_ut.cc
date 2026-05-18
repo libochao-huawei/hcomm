@@ -754,7 +754,7 @@ int RaCtxGetTpInfoList(void *ctxHandle, struct GetTpCfg *cfg, struct HccpTpInfo 
 int RaNdaGetDirectFlag(void *rdmaHandle, int *directFlag)
 {
     if (directFlag != nullptr) {
-        *directFlag = 0;
+        *directFlag = 1;
     }
     return 0;
 }
