@@ -7,8 +7,10 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-target_sources(hccl_v2 PRIVATE
-        aicpu_ins_preprocessor.cpp
-        aicpu_kernel_launcher.cpp
-        coll_service_device_mode.cpp
-)
+if(TARGET hccl_v2)
+    target_sources(hccl_v2 PRIVATE
+            aicpu_ins_preprocessor.cpp
+            aicpu_kernel_launcher.cpp
+            coll_service_device_mode.cpp
+    )
+endif()

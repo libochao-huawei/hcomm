@@ -17,9 +17,29 @@ set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/hccl_aiv_host.cc
 )
 
-target_sources(hccl_alg PRIVATE
-    ${src_list}
-)
+if(TARGET hccl_alg)
+    target_sources(hccl_alg PRIVATE
+        ${src_list}
+    )
+endif()
+
+if(TARGET ccl_kernel)
+    target_sources(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/alg_env_config.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_alg_utils.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/hccl_alg_device.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/hccl_aiv_device.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/topo_matcher.cc
+    )
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/inc
+        ${CMAKE_CURRENT_SOURCE_DIR}/legacy
+        ${CMAKE_CURRENT_SOURCE_DIR}/legacy/operator
+        ${CMAKE_CURRENT_SOURCE_DIR}/operator
+        ${CMAKE_CURRENT_SOURCE_DIR}/operator/registry
+    )
+endif()
 
 add_subdirectory(resource_manager)
 add_subdirectory(task)

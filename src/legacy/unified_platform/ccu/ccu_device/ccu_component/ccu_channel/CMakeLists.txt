@@ -9,8 +9,10 @@
 # -----------------------------------------------------------------------------------------------------------
 add_subdirectory(ccu_channel_v1)
 
-target_sources(hccl_v2 PRIVATE
-    ccu_channel_mgr.cpp
-    ccu_jetty_ctx_mgr.cpp
-    ccu_wqebb_mgr.cpp
-)
+if(TARGET hccl_v2)
+    target_sources(hccl_v2 PRIVATE
+        ccu_channel_mgr.cpp
+        ccu_jetty_ctx_mgr.cpp
+        ccu_wqebb_mgr.cpp
+    )
+endif()
