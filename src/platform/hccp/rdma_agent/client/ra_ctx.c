@@ -597,7 +597,7 @@ STATIC int CheckCtxRmemBatchImport(void *ctxHandle, struct MrImportInfoT *rmemIn
     return 0;
 }
 
-STATIC int PrepareCtxRmemBatchImport(struct RaLmemHandle *rmemHandleTmpList[], struct MrImportInfoT *rmemInfoList[],
+STATIC int PrepareCtxRmemBatchImport(struct RaRmemHandle *rmemHandleTmpList[], struct MrImportInfoT *rmemInfoList[],
     void *rmemHandleList[], unsigned int num)
 {
     unsigned int i, j;

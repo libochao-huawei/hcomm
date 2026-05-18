@@ -416,7 +416,7 @@ STATIC void RaHdcPrepareRmemBatchImport(struct RaCtxHandle *ctxHandle, union OpR
 
     for (i = 0; i < opData->txData.num; i++) {
         memAttr = &(opData->txData.memAttrList[i]);
-        RaCtxPrepareRmemImport(rmemInfoList, memAttr);
+        RaCtxPrepareRmemImport(rmemInfoList[i], memAttr);
     }
 }
 
