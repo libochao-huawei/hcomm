@@ -15,7 +15,7 @@
 **Files:**
 - Modify: `src/legacy/framework/topo/new_topo_builder/rank_graph/rank_gph.h:32-35,81-88,102`
 
-- [ ] **Step 1: 删除 OcsMeshAttr 结构体 (line 32-35)**
+- [x] **Step 1: 删除 OcsMeshAttr 结构体 (line 32-35)**
 
 ```diff
 - struct OcsMeshAttr {
@@ -24,14 +24,14 @@
 - };
 ```
 
-- [ ] **Step 2: 替换 ocsMeshAttrMap_ 为 rankDescVec_ (line 102)**
+- [x] **Step 2: 替换 ocsMeshAttrMap_ 为 rankDescVec_ (line 102)**
 
 ```diff
 -     std::unordered_map<RankId, OcsMeshAttr> ocsMeshAttrMap_;
 +     std::vector<RankDesc> rankDescVec_;
 ```
 
-- [ ] **Step 3: 删除 SetOcsMeshAttr/GetOcsPlaneId/GetOcsPlaneNum 声明 (line 82-84)**
+- [x] **Step 3: 删除 SetOcsMeshAttr/GetOcsPlaneId/GetOcsPlaneNum 声明 (line 82-84)**
 
 ```diff
 -     // OCS mesh 并行平面属性
@@ -40,7 +40,7 @@
 -     u32  GetOcsPlaneNum(RankId rankId) const;
 ```
 
-- [ ] **Step 4: 添加 GetRankDescVec() 和 BuildRankDescVec() (在 ReparseGroupedPlaneForOcsMesh 声明之后)**
+- [x] **Step 4: 添加 GetRankDescVec() 和 BuildRankDescVec() (在 ReparseGroupedPlaneForOcsMesh 声明之后)**
 
 ```cpp
     // 基于 RankTableInfo 重算 OCS 平面分组，globalRankIds 用于子通信域 rankId 映射（主通信域传 nullptr）
@@ -53,14 +53,14 @@
     const std::vector<RankDesc>& GetRankDescVec() const { return rankDescVec_; }
 ```
 
-- [ ] **Step 5: 添加 #include "hccl_rank_graph.h" 到头文件顶部（RankDesc 定义所在）**
+- [x] **Step 5: 添加 #include "hccl_rank_graph.h" 到头文件顶部（RankDesc 定义所在）**
 
 ```diff
   #include "rank_table_info.h"
 + #include "hccl_rank_graph.h"
 ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/legacy/framework/topo/new_topo_builder/rank_graph/rank_gph.h
@@ -446,14 +446,14 @@ git commit -m "test: update ut_ocs_mesh_plane for rankDescVec_ access pattern"
 
 ### Task 9: 编译验证
 
-- [ ] **Step 1: 全量编译**
+- [ ] **Step 1: 增量编译**
 
 ```bash
 cd /data/ccl_workspace/toolsh_dir
-bash hcomm_build.sh --pkg --full
+bash hcomm_build.sh
 ```
 
-**预期**: 编译成功，退出码 0。
+**预期**: 增量编译成功，退出码 0。
 
 - [ ] **Step 2: 运行单元测试**
 
