@@ -88,16 +88,11 @@ target_link_options(ra_adp PRIVATE
 #链接动态库
 target_link_libraries(ra_adp PRIVATE
     -Wl,--no-as-needed
-    rs
+    rs_device
     c_sec
     unified_dlog
     -Wl,--as-needed
     -lrt
     -ldl
     -pthread
-)
-
-install(TARGETS  ra_adp
-    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
-    COMPONENT hcomm
 )

@@ -7,19 +7,19 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-if(NOT BUILD_OPEN_PROJECT)
+
+if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         hccl_aicpu_interface.cc
         hccl_aicpu_transport_interface.cc
+    )
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/inc
     )
 endif()
 
-if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
-    target_sources(ccl_kernel PRIVATE
-        hccl_aicpu_interface.cc
-        hccl_aicpu_transport_interface.cc
-    )
-endif()
+# 添加子目录
 add_subdirectory(aicpu_kfc)
 add_subdirectory(common)
 add_subdirectory(framework)

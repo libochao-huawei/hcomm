@@ -5,15 +5,17 @@ add_subdirectory(instruction)
 add_subdirectory(primitive)
 add_subdirectory(alg)
 
-target_sources(hccl_v2
-        PRIVATE
-        coll_operator.cc
-        coll_operator_check.cc
-)
+if(TARGET hccl_v2)
+    target_sources(hccl_v2
+            PRIVATE
+            coll_operator.cc
+            coll_operator_check.cc
+    )
+endif()
 
-if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
-target_sources(ccl_kernel PRIVATE
-        coll_operator.cc
-        coll_operator_check.cc
-)
+if(TARGET ccl_kernel)
+    target_sources(ccl_kernel PRIVATE
+            coll_operator.cc
+            coll_operator_check.cc
+    )
 endif()

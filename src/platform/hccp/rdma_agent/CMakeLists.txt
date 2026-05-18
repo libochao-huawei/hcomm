@@ -8,7 +8,7 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 
-if (DEVICE_MODE)
+if(PRODUCT_SIDE STREQUAL "device")
     add_subdirectory(adapter)
 endif()
 add_subdirectory(hdc)

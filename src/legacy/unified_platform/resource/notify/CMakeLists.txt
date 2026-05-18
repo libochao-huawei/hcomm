@@ -7,16 +7,18 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-target_sources(hccl_v2
-        PRIVATE
-        ipc_local_notify.cc
-        rdma_local_notify.cc
-        ub_local_notify.cc
-        ipc_remote_notify.cc
-        local_cnt_notify.cc
-        rts_notify.cc
-        rts_cnt_notify.cc
-        rts_1ton_cnt_notify.cc
-)
+if(TARGET hccl_v2)
+    target_sources(hccl_v2
+            PRIVATE
+            ipc_local_notify.cc
+            rdma_local_notify.cc
+            ub_local_notify.cc
+            ipc_remote_notify.cc
+            local_cnt_notify.cc
+            rts_notify.cc
+            rts_cnt_notify.cc
+            rts_1ton_cnt_notify.cc
+    )
+endif()
 
 add_subdirectory(aicpu)
