@@ -11,14 +11,20 @@ set(src_list
     dispatcher_ctx.cc
 )
 
-target_sources(hccl_plf PRIVATE
-    ${src_list}
-)
+if(TARGET hccl_plf)
+    target_sources(hccl_plf PRIVATE
+        ${src_list}
+    )
+endif()
 
-target_sources(ccl_kernel_plf PRIVATE
-    ${src_list}
-)
+if(TARGET ccl_kernel_plf)
+    target_sources(ccl_kernel_plf PRIVATE
+        ${src_list}
+    )
+endif()
 
-target_sources(ccl_kernel_plf_a  PRIVATE
-    ${src_list}
-)
+if(TARGET ccl_kernel_plf_a)
+    target_sources(ccl_kernel_plf_a  PRIVATE
+        ${src_list}
+    )
+endif()

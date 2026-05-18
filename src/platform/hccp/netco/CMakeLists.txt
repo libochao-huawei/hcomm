@@ -90,7 +90,9 @@ set(includes
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
 )
 
-target_include_directories(net_co PRIVATE ${includes})
+target_include_directories(net_co PRIVATE
+    ${includes}
+)
 
 target_compile_options(net_co PRIVATE
 	-Werror
