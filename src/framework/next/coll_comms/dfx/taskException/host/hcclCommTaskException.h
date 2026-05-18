@@ -12,8 +12,11 @@
 
 #include <array>
 #include <map>
+#include <vector>
+#include <mutex>
 #include "types.h"
 #include "hccl_types.h"
+#include "hccl_diag.h"
 #include "orion_adapter_rts.h"
 #include "global_mirror_tasks.h"
 #include "error_message_v2.h"
@@ -42,8 +45,10 @@ public:
     HcclResult        UnRegister() ;                              // 向rts注销异常处理方法
     static void Process(rtExceptionInfo_t *exceptionInfo); // 处理异常信息
     static void PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo, const Hccl::TaskInfo& taskInfo, bool &isExistAicpuError);
+    void SetTaskExceptionCallback(HcclTaskExceptionCallback callback);
 
 private:
+    void CallTaskExceptionCallbacks(rtExceptionInfo_t *exceptionInfo) const;
     static std::string GetGroupRankInfo(const Hccl::TaskInfo& taskInfo);
     static void ProcessException(rtExceptionInfo_t* exceptionInfo, const Hccl::TaskInfo& taskInfo);
     static void PrintTaskContextInfo(uint32_t deviceId, uint32_t streamId, uint32_t taskId);
@@ -57,6 +62,8 @@ private:
     static void GetAicpuCqeErrNetInstanceByRankId(hccl::CollComm* collComm, uint32_t rankid, std::string &netInstanceId);
 private:
     bool isRegistered_ {false};
+    mutable std::mutex callbackMutex_;
+    std::vector<HcclTaskExceptionCallback> callbacks_;
 };
 
 class TaskExceptionHostManager {
