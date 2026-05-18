@@ -15,7 +15,7 @@
 #include <unordered_map>
 
 #include "ccu_kernel.h"
-#include "ccu_res_pack.h"
+#include "../ccu_instance/ccu_res_pack.h"
 
 #include "ccu_dev_mgr_imp.h"
 #include "../ccu_representation/reps/translator/ccu_rep_translator_v1.h"
