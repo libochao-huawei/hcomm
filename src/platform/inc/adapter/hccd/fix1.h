@@ -8,16 +8,19 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include <adapter_error_manager.h>
-#include "base/err_msg.h"
-#include "base/err_mgr.h"
+// #ifndef HCCL_INC_ADAPTER_ERROR_MANAGER_H
+// #define HCCL_INC_ADAPTER_ERROR_MANAGER_H
 
-ErrContext hrtErrMGetErrorContext(void)
-{
-    return error_message::GetErrMgrContext();
-}
+// #include <string>
+// #include "log.h"
+// #include "adapter_error_manager_pub.h"
 
-void hrtErrMSetErrorContext(ErrContext error_context)
-{
-    error_message::SetErrMgrContext(error_context);
-}
+// using ErrContext =  struct Context {
+//         uint64_t work_stream_id;
+//         uint64_t reserved[7] = {0};
+//     };
+
+// ErrContext __attribute__((weak)) hrtErrMGetErrorContext(void);
+// void __attribute__((weak)) hrtErrMSetErrorContext(ErrContext error_context);
+
+// #endif  // HCCL_INC_ADAPTER_ERROR_MANAGER_H

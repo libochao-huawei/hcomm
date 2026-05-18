@@ -154,7 +154,7 @@ set(CCL_KERNEL_PLF_INCLUDE_LIST
     ${HCOMM_DIR}/src/platform/
     ${HCOMM_DIR}/src/platform/inc
     ${HCOMM_DIR}/src/platform/inc/adapter
-    ${HCOMM_DIR}/src/platform/inc/adapter/hccd
+    ${HCOMM_DIR}src/common/error_manager
     ${HCOMM_DIR}/src/platform/common/
     ${HCOMM_DIR}/src/platform/common/unique
     ${HCOMM_DIR}/src/platform/common/buffer_manager
