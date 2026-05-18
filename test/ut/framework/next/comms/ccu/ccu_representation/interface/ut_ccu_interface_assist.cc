@@ -11,7 +11,7 @@
 
 using namespace hcomm;
 
-class CcuResBatchAllocatorTest : public testing::Test {
+class AppendToContextTest : public testing::Test {
 protected:
     static void SetUpTestCase() {
         mockcpp::GlobalMockObject::verify();
@@ -32,7 +32,7 @@ protected:
 
 };
 
-TEST_F(CcuInterfaceAssistTest, Ut_AppendToContext_NullContext_ShouldThrowException)
+TEST_F(AppendToContextTest, Ut_AppendToContext_NullContext_ShouldThrowException)
 {
     std::shared_ptr<CcuRep::CcuRepBase> rep = std::make_shared<CcuRep::CcuRepBlock>("test_rep");
     

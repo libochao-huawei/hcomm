@@ -7,9 +7,12 @@
 #include "ccu_comp.h"
 #include "hccl_common.h"
 
+#define private public
+#define protected public
+
 using namespace hcomm;
 
-class AppendToContextTest : public testing::Test {
+class CcuResBatchAllocatorTest : public testing::Test {
 protected:
     static void SetUpTestCase() {
         mockcpp::GlobalMockObject::verify();
@@ -30,12 +33,12 @@ protected:
 
 };
 
-TEST_F(CcuMissionMgrTest, Alloc_WhenReqTypeNotDefault_ShouldForceSetToDefault)
+TEST_F(CcuResBatchAllocatorTest, Alloc_WhenReqTypeNotDefault_ShouldForceSetToDefault)
 {   
     hcomm::CcuResAllocator allocat{};
     uintptr_t handleKey;
     MissionReq missionReq;
-    missionReq.reqType = MissionReqType::COMM_ENGINE_RESERSED; 
+    missionReq.reqType = MissionReqType::COMM_ENGINE_RESERVED; 
     missionReq.req[0] = 0;
     missionReq.req[1] = 0;
     MissionResInfo missionInfos;
@@ -45,7 +48,7 @@ TEST_F(CcuMissionMgrTest, Alloc_WhenReqTypeNotDefault_ShouldForceSetToDefault)
 }
 
 
-TEST_F(CcuMissionMgrTest, Alloc_WhenReqNumIs0_ShouldReturnSuccessDirectly)
+TEST_F(CcuResBatchAllocatorTest, Alloc_WhenReqNumIs0_ShouldReturnSuccessDirectly)
 {
     hcomm::CcuResAllocator allocat{};
     uintptr_t handleKey;
