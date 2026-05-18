@@ -24,10 +24,8 @@ template <typename U> class Array;
 class CcuBuffer final {
 public:
     CcuBuffer() {
-        auto ret = CcuBufferAlloc(&this->handle);
-        if (ret != CcuResult::CCU_SUCCESS) {
-            throw "CcuBufferAlloc: failed";
-        }
+        CCU_THROW_IF_FAILED(CcuBufferAlloc(&this->handle),
+            "CcuBufferAlloc: failed");
     }
 
     CcuBuffer(const CcuBuffer& other) {
