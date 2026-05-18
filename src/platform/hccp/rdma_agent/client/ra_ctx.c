@@ -597,7 +597,7 @@ STATIC int CheckCtxRmemBatchImport(void *ctxHandle, struct MrImportInfoT *rmemIn
     return 0;
 }
 
-STATIC int PrepareCtxRmemBatchImport(struct RaLmemHandle *rmemHandleTmpList[], struct MrImportInfoT *rmemInfoList[],
+STATIC int PrepareCtxRmemBatchImport(struct RaRmemHandle *rmemHandleTmpList[], struct MrImportInfoT *rmemInfoList[],
     void *rmemHandleList[], unsigned int num)
 {
     unsigned int i, j;
@@ -626,7 +626,7 @@ err:
     return ret;
 }
 
-HCCP_ATTRI_VISI_DEF int RaCtxBatchRmemImport(void *ctxHandle, struct MrImportInfoT *rmemInfoList[],
+HCCP_ATTRI_VISI_DEF int RaCtxRmemBatchImport(void *ctxHandle, struct MrImportInfoT *rmemInfoList[],
     void *rmemHandleList[], unsigned int num)
 {
     struct RaRmemHandle **rmemHandleTmpList = NULL;
