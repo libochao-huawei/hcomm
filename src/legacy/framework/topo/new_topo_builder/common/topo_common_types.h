@@ -60,6 +60,18 @@ inline bool operator==(const CommAddr& lhs, const CommAddr& rhs) {
             // 假设 COMM_ADDR_EID_LEN 是一个常量，比如 16
             return memcmp(lhs.eid, rhs.eid, COMM_ADDR_EID_LEN) == 0;
 
+        case COMM_ADDR_TYPE_MULTI_PORT: {
+            if (lhs.portsAddr.portNum != rhs.portsAddr.portNum) {
+                return false;
+            }
+            if (lhs.portsAddr.portNum == 0 || lhs.portsAddr.portNum > HCOMM_NIC_PORT_MAX_NUM) {
+                return false;
+            }
+            return memcmp(lhs.portsAddr.eidList, rhs.portsAddr.eidList,
+                static_cast<size_t>(lhs.portsAddr.portNum) * COMM_ADDR_EID_LEN) == 0 &&
+                memcmp(&lhs.portsAddr.addr6, &rhs.portsAddr.addr6, sizeof(lhs.portsAddr.addr6)) == 0;
+        }
+
         case COMM_ADDR_TYPE_RESERVED:
         default:
             return true; 
@@ -124,6 +136,20 @@ struct hash<CommAddr> {
             case COMM_ADDR_TYPE_ID: {
                 // ID类型哈希
                 h = h ^ static_cast<size_t>(commAddr.id);
+                break;
+            }
+            case COMM_ADDR_TYPE_MULTI_PORT: {
+                h = h ^ static_cast<size_t>(commAddr.portsAddr.portNum);
+                for (uint8_t portId = 0; portId < commAddr.portsAddr.portNum && portId < HCOMM_NIC_PORT_MAX_NUM; ++portId) {
+                    for (u32 i = 0; i < COMM_ADDR_EID_LEN; ++i) {
+                        h = h ^ (static_cast<size_t>(commAddr.portsAddr.eidList[portId][i])
+                            << ((i % sizeof(size_t)) * 8));
+                    }
+                }
+                const auto *addrBytes = reinterpret_cast<const uint8_t *>(&commAddr.portsAddr.addr6);
+                for (u32 i = 0; i < sizeof(commAddr.portsAddr.addr6); ++i) {
+                    h = h ^ (static_cast<size_t>(addrBytes[i]) << ((i % sizeof(size_t)) * 8));
+                }
                 break;
             }
             default: {
