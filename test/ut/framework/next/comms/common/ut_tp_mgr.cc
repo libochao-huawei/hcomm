@@ -166,7 +166,7 @@ TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_UnsupportedProtocol_Expect_NotSupport)
 {
     TpMgr &mgr = TpMgr::GetInstance(0);
     GetTpInfoParam param = MakeParam("10.10.9.1", "10.10.9.2", TpProtocol::RTP, 0U);
-    param.tpProtocol = static_cast<TpProtocol>(99);
+    param.tpProtocol = TpProtocol::INVALID;
     TpInfo tpInfo{};
     EXPECT_EQ(mgr.GetTpInfo(param, tpInfo), HCCL_E_NOT_SUPPORT);
 }
