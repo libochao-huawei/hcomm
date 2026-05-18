@@ -33,8 +33,6 @@ HcclResult RankConsistencyCheckerV2::RecordEnvVarCrcV2(u64 buffSize)
         HCCL_ERROR("[RecordEnvVarCrcV2] CalcStringCrc failed for HCCL_BUFFSIZE."), ret);
     envVarCrcsV2_.push_back({"HCCL_BUFFSIZE", crc});
     HCCL_DEBUG("[RecordEnvVarCrcV2] HCCL_BUFFSIZE=[%s], crc[0x%08x] recorded.", buffSizeStr.c_str(), crc);
-
-    HCCL_INFO("[RecordEnvVarCrcV2] total a5 env var crc count[%zu].", envVarCrcsV2_.size());
     return HCCL_SUCCESS;
 }
 
@@ -42,10 +40,7 @@ HcclResult RankConsistencyCheckerV2::RecordRankTableCrcV2(u32 crc)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     rankTableCrcsV2_.push_back({"ranktable_content", crc});
-    HCCL_DEBUG("[RecordA5RankTableCrc] ranktable crc[0x%08x] recorded, size[%zu].",
-        crc, rankTableContent.size());
-
-    HCCL_INFO("[RecordRankTableCrcV2] total a5 ranktable crc count[%zu].", rankTableCrcsV2_.size());
+    HCCL_DEBUG("[RecordA5RankTableCrc] ranktable crc[0x%08x] recorded.",crc);
     return HCCL_SUCCESS;
 }
 
