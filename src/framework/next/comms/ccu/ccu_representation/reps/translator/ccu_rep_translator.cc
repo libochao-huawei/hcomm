@@ -89,18 +89,18 @@ uint32_t CcuRepTranslator::GetInstrNum()
 
 CcuResReq CcuRepTranslator::GetResReq(uint8_t dieId)
 {
-    // 需要申请若干xn、gsa、cke设置为固定值用于通用操作
+    // xn 资源统一从 continuousXn 池子申请，离散 xn 帐户已废弃
     CcuResReq resReq;
-    resReq.xnReq[dieId]  = XN_NUM; // 4个Xn资源
-    resReq.gsaReq[dieId] = GSA_NUM; // 3个GSA资源
-    resReq.ckeReq[dieId] = CKE_NUM; // 2个CKE资源
+    resReq.continuousXnReq[dieId] = XN_NUM; // 4个Xn资源
+    resReq.gsaReq[dieId]          = GSA_NUM; // 3个GSA资源
+    resReq.ckeReq[dieId]          = CKE_NUM; // 2个CKE资源
     return resReq;
 }
 
 void CcuRepTranslator::GetRes(CcuRepResource &res)
 {
     for (int i = 0; i < XN_NUM; i++) {
-        res.variable[transDep.dieId].push_back(var[i]);
+        res.continuousVariable[transDep.dieId].push_back(var[i]);
     }
     for (int i = 0; i < GSA_NUM; i++) {
         res.address[transDep.dieId].push_back(addr[i]);
