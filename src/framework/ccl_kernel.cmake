@@ -45,6 +45,7 @@ target_include_directories(ccl_kernel PRIVATE
     ${HCOMM_DIR}/pkg_inc
     ${HCOMM_DIR}/pkg_inc/hccl
     ${HCOMM_DIR}/pkg_inc/hcomm/ccu
+    ${HCOMM_DIR}/pkg_inc/hcomm/ccu_new
     ${HCOMM_DIR}/src/pub_inc
     ${HCOMM_DIR}/src/pub_inc/aicpu
     ${HCOMM_DIR}/src/pub_inc/new
