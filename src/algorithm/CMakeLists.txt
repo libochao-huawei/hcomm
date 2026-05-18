@@ -10,6 +10,7 @@
 cmake_minimum_required(VERSION 3.16.0)
 project(hccl_alg)
 
+<<<<<<< HEAD
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
 add_library(hccl_alg SHARED)
@@ -180,19 +181,13 @@ else()
         hccl_plf
         ofed_headers
     )
+=======
+# 定义 hccl_alg 链接库，在 host 侧使用
+if(PRODUCT_SIDE STREQUAL "host")
+    include(hccl_alg.cmake)
+>>>>>>> bab51b20 ([BC][Build] 重构 Device 工程)
 endif()
 
+# 添加子目录
 add_subdirectory(base)
 add_subdirectory(impl)
-
-install(TARGETS hccl_alg
-    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
-    COMPONENT hcomm
-)
-
-if(NOT BUILD_OPEN_PROJECT)
-    install_package(
-        PACKAGE hccl
-        TARGETS hccl_alg
-    )
-endif()
