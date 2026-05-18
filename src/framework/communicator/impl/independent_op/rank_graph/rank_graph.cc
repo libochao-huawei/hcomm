@@ -226,10 +226,6 @@ CommProtocol RankGraphV1::GetCommProtocolFromRankInfo(const RankInfo_t &srcInfo,
             return CommProtocol::COMM_PROTOCOL_RESERVED;
         }
     }
-    // L3 OCS_MESH 层使用 ROCE 协议（光互联跨电组通信）
-    if (netLayer == HCCL_NETLAYER_3) {
-        return CommProtocol::COMM_PROTOCOL_ROCE;
-    }
     if (srcInfo.serverIdx != dstInfo.serverIdx) {
         if (netLayer == HCCL_NETLAYER_0) {
             HCCL_INFO("[RankGraphV1][%s] ranks[%u,%u] not in same server", __func__, srcInfo.rankId, dstInfo.rankId);
@@ -309,7 +305,7 @@ HcclResult RankGraphV1::GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t d
         return HCCL_E_PARA;
     }
 
-    if (netLayer > HCCL_NETLAYER_3) {
+    if (netLayer > HCCL_NETLAYER_2) {
         HCCL_ERROR("[RankGraphV1][%s] srcRank[%u] and dstRank[%u] are do not have netLayer[%u]",
             __func__, srcRank, dstRank, netLayer);
         return HCCL_E_PARA;
@@ -446,11 +442,6 @@ HcclResult RankGraphV1::GetInstTopoTypeByNetLayer(uint32_t netLayer, CommTopo *t
         if (netLayer == static_cast<uint32_t>(HcclNetLayerlevel::HCCL_NetLayer_L0)) {
             *topoType = CommTopo::COMM_TOPO_310P;
         }
-    }
-
-    // L3 层统一映射为 OCS_MESH 拓扑类型
-    if (netLayer == static_cast<uint32_t>(HcclNetLayerlevel::HCCL_NetLayer_L3)) {
-        *topoType = CommTopo::COMM_TOPO_OCS_MESH;
     }
     return HCCL_SUCCESS;
 }
