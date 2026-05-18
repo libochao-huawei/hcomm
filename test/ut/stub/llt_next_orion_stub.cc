@@ -127,6 +127,12 @@ void *HrtMalloc(u64 size, aclrtMemType_t memType)
     return (void *)0x12345678;
 }
 
+void HrtMemset(void *dst, uint64_t destMax, uint64_t count)
+{
+    memset(dst, 0, count);
+    return;
+}
+
 RdmaHandleManager::RdmaHandleManager()
 {
 }
@@ -1380,11 +1386,15 @@ void SocketManager::BatchCreateSockets(const vector<LinkData> &links)
 {
 }
 
+void SocketManager::BatchCreateSockets(const SocketConfig &socketConfig)
+{
+}
+
 SocketManager::~SocketManager()
 {
 }
 
-Socket *SocketManager::GetConnectedSocket(SocketConfig &socketConfig) const
+Socket *SocketManager::GetConnectedSocket(const SocketConfig &socketConfig) const
 {
     return nullptr;
 }
@@ -2352,6 +2362,11 @@ P2PTransport::P2PTransport(
 }
 
 HcclResult P2PTransport::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult P2PTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum)
 {
     return HCCL_SUCCESS;
 }

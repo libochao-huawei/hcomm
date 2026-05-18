@@ -7,13 +7,13 @@
 
 ## 环境准备
 
-参照[源码构建](../../../../docs/build.md)中的环境准备，安装CANN Toolkit开发套件包，进行算法分析器编译前的准备工作。
+参照[源码构建](../../../../docs/zh/build/build.md)中的环境准备，安装CANN Toolkit开发套件包，进行算法分析器编译前的准备工作。
 
 ## 用例执行
 
 在hcomm源码仓根目录下，按如下命令，编译并执行算法分析器用例：
 
-```
+```bash
 # 编译所有测试套用例，并自动执行
 bash build.sh --legacy_all_testcase
 

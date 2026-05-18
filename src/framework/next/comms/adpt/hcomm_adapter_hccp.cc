@@ -515,4 +515,16 @@ HcclResult HccpGetUboeFlagEnable(const u32 devPhyId)
     return HCCL_SUCCESS;
 }
 
+HcclResult HccpRaGetDevBaseAttr(void *ctxHandle, struct DevBaseAttr *attr)
+{
+    int ret = RaGetDevBaseAttr(ctxHandle, attr);
+    if (ret != 0) {
+        HCCL_ERROR("[%s] RaGetDevBaseAttr failed, ctxHandle[%p], attr[%p], ret[%d]", __func__, ctxHandle, attr, ret);
+        return HCCL_E_NETWORK;
+    }
+    HCCL_INFO("HccpRaGetDevBaseAttr success, sqMaxDepth[%u], rqMaxDepth[%u], sqMaxSge[%u], rqMaxSge[%u], maxReadSize[%u], maxWriteSize[%u]",
+        attr->sqMaxDepth, attr->rqMaxDepth, attr->sqMaxSge, attr->rqMaxSge, attr->maxReadSize, attr->maxWriteSize); 
+    return HCCL_SUCCESS;
+}
+
 } // namespace hcomm

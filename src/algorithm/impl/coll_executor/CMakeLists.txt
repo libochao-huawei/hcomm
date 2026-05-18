@@ -14,9 +14,23 @@ set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/alg_profiling.cc
 )
 
-target_sources(hccl_alg PRIVATE
-    ${src_list}
-)
+if(TARGET hccl_alg)
+    target_sources(hccl_alg PRIVATE
+        ${src_list}
+    )
+endif()
+
+if(TARGET ccl_kernel)
+    target_sources(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_executor_base.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_native_executor_base.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_comm_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/alg_profiling.cc
+    )
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()
 
 add_subdirectory(coll_all_gather)
 add_subdirectory(coll_all_gather_v)

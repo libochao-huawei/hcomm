@@ -13,6 +13,19 @@ set(src_list
     task_loader.cc
 )
 
-target_sources(hccl_alg PRIVATE
-    ${src_list}
-)
+if(TARGET hccl_alg)
+    target_sources(hccl_alg PRIVATE
+        ${src_list}
+    )
+endif()
+
+if(TARGET ccl_kernel)
+    target_sources(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/threadManage.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/parallel_task_loader.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/task_loader.cc
+    )
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()
