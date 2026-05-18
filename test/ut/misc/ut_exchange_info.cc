@@ -14,15 +14,7 @@
 #include <vector>
 #include <cstdlib>
 #include <iostream>
-
-#ifndef private
-#define private public
-#define protected public
-#endif
 #include "hccl_comm_pub.h"
-#undef private
-#undef protected
-
 #include "llt_hccl_stub_sal_pub.h"
 #include "calc_crc.h"
 #include "hccl_res_expt.h"

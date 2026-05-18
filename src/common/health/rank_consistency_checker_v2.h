@@ -42,7 +42,7 @@ public:
     static RankConsistencyCheckerV2& GetInstance();
     
     HcclResult RecordEnvVarCrcV2(u64 buffSize);
-    HcclResult RecordRankTableCrcV2(const std::string &rankTableContent);
+    HcclResult RecordRankTableCrcV2(u32 crc);
     HcclResult RecordSubCommParaV2(u32 parentCommCrc, uint32_t rankNum,
         const uint32_t *rankIds, uint64_t subCommId);
     HcclResult RecordCannVersionV2(const std::string &version);
