@@ -11,16 +11,24 @@ set(common_src_list
     launch_context.cc
 )
 
-target_sources(hcomm PRIVATE
-    ${common_src_list}
-    hccl_api_data_cpu.cc
-    sync_data_cpu.cc
-)
+if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${common_src_list}
+        hccl_api_data_cpu.cc
+        sync_data_cpu.cc
+    )
+    target_include_directories(hcomm PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()
 
-if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
+if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         ${common_src_list}
         hccl_api_data_aicpu_ts.cc
         sync_data_aicpu_ts.cc
+    )
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
     )
 endif()

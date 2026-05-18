@@ -13,10 +13,14 @@ set(src_list
     aicpu_hccl_sqcqv2.cc
 )
 
-target_sources(ccl_kernel_plf PRIVATE
-    ${src_list}
-)
+if(TARGET ccl_kernel_plf)
+    target_sources(ccl_kernel_plf PRIVATE
+        ${src_list}
+    )
+endif()
 
-target_sources(ccl_kernel_plf_a  PRIVATE
-    ${src_list}
-)
+if(TARGET ccl_kernel_plf_a)
+    target_sources(ccl_kernel_plf_a  PRIVATE
+        ${src_list}
+    )
+endif()

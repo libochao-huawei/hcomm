@@ -16,21 +16,29 @@ set(src_list
     transport_direct_npu.cc
 )
 
-target_sources(hccl_plf PRIVATE
-    ${src_list}
-    transport_roce.cc
-    transport_shm_event.cc
-)
+if(TARGET hccl_plf)
+    target_sources(hccl_plf PRIVATE
+        ${src_list}
+        transport_roce.cc
+        transport_shm_event.cc
+    )
+endif()
 
-target_sources(hccd PRIVATE
-    transport_tcp.cc
-    transport_net.cc
-)
+if(TARGET hccd)
+    target_sources(hccd PRIVATE
+        transport_tcp.cc
+        transport_net.cc
+    )
+endif()
 
-target_sources(ccl_kernel_plf PRIVATE
-    ${src_list}
-)
+if(TARGET ccl_kernel_plf)
+    target_sources(ccl_kernel_plf PRIVATE
+        ${src_list}
+    )
+endif()
 
-target_sources(ccl_kernel_plf_a  PRIVATE
-    ${src_list}
-)
+if(TARGET ccl_kernel_plf_a)
+    target_sources(ccl_kernel_plf_a  PRIVATE
+        ${src_list}
+    )
+endif()

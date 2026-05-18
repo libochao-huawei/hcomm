@@ -9,9 +9,11 @@
 # -----------------------------------------------------------------------------------------------------------
 add_subdirectory(ccu_component)
 
-target_sources(hccl_v2 PRIVATE
-    ccu_res_specs.cpp
-    ccu_res_batch_allocator.cpp
-    ccu_device_manager.cpp
-    ccu_driver_handle.cc
-)
+if(TARGET hccl_v2)
+    target_sources(hccl_v2 PRIVATE
+        ccu_res_specs.cpp
+        ccu_res_batch_allocator.cpp
+        ccu_device_manager.cpp
+        ccu_driver_handle.cc
+    )
+endif()
