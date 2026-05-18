@@ -16,6 +16,7 @@
 - cmake >= 3.16.0
 - pkg-config >= 0.29.1（用于编译rdma-core）
 - ccache（可选，用于提高二次编译速度）
+- patch >= 2.7.0
 
 ### 安装CANN软件包
 
