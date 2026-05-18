@@ -140,7 +140,7 @@ HcclResult ClusterMonitor::InsertClusterMonitorCxt(HcclComm comm, UIDContext rem
     auto myRankId = collComm->GetMyRankId();
     CHK_PTR_NULL(rankGraph);
     CHK_RET(rankGraph->GetDevicePort(remoteRank, &rmtPort));
-    if (rmtPort > Hccl::MAX_VALUE_DEVICEPORT) {
+    if (rmtPort > Hccl::MAX_VALUE_TCPPORT) {
         HCCL_ERROR("[%s] Invalid port[%u] of Rank[%u]", __func__, rmtPort, remoteRank);
         return HCCL_E_PARA;
     }
@@ -160,7 +160,7 @@ HcclResult ClusterMonitor::InsertClusterMonitorCxt(HcclComm comm, UIDContext rem
         // 查询localRankId对应的devPort
         CHK_RET(rankGraph->GetDevicePort(myRankId, &listenPort));
         socketDesc.role = HcommSocketRole::HCOMM_SOCKET_ROLE_SERVER;
-        if (listenPort > Hccl::MAX_VALUE_DEVICEPORT) {
+        if (listenPort > Hccl::MAX_VALUE_TCPPORT) {
             HCCL_ERROR("[%s] Invalid port[%u] of Rank[%u]", __func__, listenPort, myRankId);
             return HCCL_E_PARA;
         }

@@ -168,6 +168,26 @@ HcclResult MyRank::TryInitCcuInstance()
     return HcclResult::HCCL_SUCCESS;
 }
 
+HcclResult MyRank::GetListenPortInternal(uint32_t rank, uint32_t *devPort, EndpointLocType locType)
+{
+    CHK_PTR_NULL(devPort);
+    CHK_PTR_NULL(rankGraph_);
+
+    DevType devType;
+    CHK_RET(hrtGetDeviceType(devType));
+    // A2 仍旧使用 DevicePort
+    if (devType == DevType::DEV_TYPE_910B || locType == EndpointLocType::ENDPOINT_LOC_TYPE_DEVICE) {
+        CHK_RET(rankGraph_->GetDevicePort(rank, devPort));
+    } else if (locType == EndpointLocType::ENDPOINT_LOC_TYPE_HOST) {
+        CHK_RET(rankGraph_->GetHostPort(rank, devPort));
+    } else {
+        HCCL_ERROR("[%s] Invalid locType[%d] for rank[%u]", __func__, locType, rank);
+        return HcclResult::HCCL_E_PARA;
+    }
+    HCCL_INFO("[%s] rank[%u] locType[%d] listenPort[%u]", __func__, rank, locType, *devPort);
+    return HCCL_SUCCESS;
+}
+
 HcclResult MyRank::GetDevicePortInternal(uint32_t rank, uint32_t *devPort)
 {
     CHK_PTR_NULL(devPort);
@@ -241,8 +261,8 @@ HcclResult MyRank::QueryListenPort(uint32_t localRank, uint32_t remoteRank, cons
 {
     // 查询rmtRankId对应的devPort
     uint32_t rmtPort = 0;
-    CHK_RET(GetDevicePortInternal(remoteRank, &rmtPort));
-    if (rmtPort > Hccl::MAX_VALUE_DEVICEPORT) {
+    CHK_RET(GetListenPortInternal(remoteRank, &rmtPort, remoteEndpointDesc.loc.locType));
+    if (rmtPort > Hccl::MAX_VALUE_TCPPORT) {
         HCCL_ERROR("[%s] Invalid port[%u] of Rank[%u]", __func__, rmtPort, remoteRank);
         return HCCL_E_PARA;
     }
@@ -253,9 +273,9 @@ HcclResult MyRank::QueryListenPort(uint32_t localRank, uint32_t remoteRank, cons
     CHK_RET(CommAddrToIpAddress(remoteEndpointDesc.commAddr, remoteIpAddr));
     if (localIpAddr < remoteIpAddr) {
         // 查询localRankId对应的devPort
-        CHK_RET(GetDevicePortInternal(localRank, &listenPort));
+        CHK_RET(GetListenPortInternal(localRank, &listenPort, localEndpointDesc.loc.locType));
         hcommDesc.role = HcommSocketRole::HCOMM_SOCKET_ROLE_SERVER;
-        if (listenPort > Hccl::MAX_VALUE_DEVICEPORT) {
+        if (listenPort > Hccl::MAX_VALUE_TCPPORT) {
             HCCL_ERROR("[%s] Invalid port[%u] of Rank[%u]", __func__, listenPort, localRank);
             return HCCL_E_PARA;
         }
@@ -403,7 +423,7 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
 
         // 启动监听
         uint32_t listenPort = 0;
-        CHK_RET(GetDevicePortInternal(localRank, &listenPort));
+        CHK_RET(GetListenPortInternal(localRank, &listenPort, localEndpointDesc.loc.locType));
         CHK_RET(static_cast<HcclResult>(HcommEndpointStartListen(epHandle, listenPort, nullptr)));
 
         HCCL_INFO("[%s][%u/%u] remoteRank[%u] epHandle[%p] protocol[%d]",
