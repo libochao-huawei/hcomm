@@ -205,7 +205,7 @@ typedef struct {
         uint8_t raws[128];           ///< 通用缓存
         struct {
             uint32_t queueNum;       ///< QP数量
-            uint32_t qpThreshold;
+            uint32_t qpThreshold;    ///< 多QP场景下，每个QP最小数据量(B)
             uint32_t retryCnt;       ///< 最大重传次数
             uint32_t retryInterval;  ///< 重传间隔（ms）
             uint8_t tc;              ///< 流量类别（QoS)
