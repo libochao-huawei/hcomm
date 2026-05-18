@@ -76,6 +76,8 @@ target_include_directories(hccl_plf PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/hccp/inc/
     ${CMAKE_CURRENT_SOURCE_DIR}/hccp/inc/network
 
+    
+    ${HCOMM_DIR}/include
     ${HCOMM_DIR}/include
     ${HCOMM_DIR}/include/hccl/
     ${HCOMM_DIR}/pkg_inc
@@ -85,6 +87,7 @@ target_include_directories(hccl_plf PRIVATE
     ${HCOMM_DIR}/src/pub_inc/aicpu/
     ${HCOMM_DIR}/src/pub_inc/inner
     ${HCOMM_DIR}/src/pub_inc/new
+    ${HCOMM_DIR}/src/common/error_manager
 
     # legacy
     ${HCOMM_DIR}/src/legacy/unified_platform
