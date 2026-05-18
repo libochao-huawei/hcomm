@@ -176,6 +176,8 @@ void RankInfoDetect::SetupAgent(u32 rankSize, u32 rankId, const HcclRootHandleV2
     // 2. 调用RankInfoDetectClient.Setup, 获取rankTable
     rankInfoDetectClient->Setup(rankTable_);
 
+    // TODO: 3. 获取host port，写入rankTable ?
+
     HCCL_INFO("[RankInfoDetect::%s] setup agent end.", __func__);
 }
 
