@@ -34,6 +34,10 @@ HcclResult hrtGetDeviceTypeStub91093(DevType &devType) {
     return HCCL_SUCCESS;
 }
 
+HcclResult hrtGetDeviceTypeStub910B(DevType &devType) {
+    devType = DevType::DEV_TYPE_910B;
+    return HCCL_SUCCESS;
+}
 HcclResult hrtGetDeviceTypeStub91095(DevType &devType) {
     devType = DevType::DEV_TYPE_950;
     return HCCL_SUCCESS;
@@ -105,6 +109,31 @@ TEST_F(HcclCreateOpResCtxTest, ut_HcclCreateOpResCtx_When_DevTypeIs91095_Expect_
 
     HcclResult result = HcclCreateOpResCtxInner(comm, opType, srcDataType, dstDataType, reduceType, count, algConfig, engine, &ctx);
     EXPECT_EQ(result, HCCL_E_NOT_SUPPORT);
+
+    Ut_Comm_Destroy(comm);
+    GlobalMockObject::verify();
+}
+
+TEST_F(HcclCreateOpResCtxTest, ut_HcclCreateOpResCtx_A2When_Normal_Expect_ReturnIsHCCL_SUCCESS)
+{
+    UT_COMM_CREATE_DEFAULT(comm);
+    uint8_t opType = 2;
+    HcclDataType srcDataType = HCCL_DATA_TYPE_FP16;
+    HcclDataType dstDataType = HCCL_DATA_TYPE_FP16;
+    HcclReduceOp reduceType = HCCL_REDUCE_SUM;
+    uint64_t count = 256;
+    char algConfig[128] = "AllReduce=level0:ring";
+    CommEngine engine = COMM_ENGINE_AIV;
+    void * ctx;
+
+    MOCKER(hrtGetDeviceType).stubs().will(invoke(hrtGetDeviceTypeStub910B));
+    MOCKER(hrtStreamSetMode).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HcclCommunicator::AllocComResourceByTiling).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HcclCommunicator::CreateCommResource).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HcclCommunicator::GetCommResource, bool (HcclCommunicator::*)(const std::string &tag, void **commContext)).stubs().will(returnValue(false));
+
+    HcclResult result = HcclCreateOpResCtxInner(comm, opType, srcDataType, dstDataType, reduceType, count, algConfig, engine, &ctx);
+    EXPECT_EQ(result, HCCL_SUCCESS);
 
     Ut_Comm_Destroy(comm);
     GlobalMockObject::verify();
