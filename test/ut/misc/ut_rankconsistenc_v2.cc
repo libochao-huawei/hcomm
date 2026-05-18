@@ -57,7 +57,7 @@ TEST_F(RankConsistentV2Test, Ut_FullPipeline_AllMatch_Expect_Success)
     u32 rankTableCrc = 0x1234;
     ret = checker_.RecordRankTableCrcV2(rankTableCrc);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(checker_->rankTableCrcsV2_[0].name, "ranktable_content");
+    EXPECT_EQ(checker_.rankTableCrcsV2_[0].name, "ranktable_content");
 
     // 3. RecordSubCommParaV2
     u32 parentCrc = 0x12345678;
