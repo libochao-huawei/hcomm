@@ -35,11 +35,16 @@ uint8_t CpuUboeEndpoint::GetPortNumFromEndpointDesc() const
     return portNum;
 }
 
-HcclResult CpuUboeEndpoint::GetPortAddressByPortIdx(uint8_t idx, Hccl::IpAddress &ipAddr) const
+HcclResult CpuUboeEndpoint::GetIpAddressByPortId(uint8_t portId, Hccl::IpAddress &ipAddr) const
 {
     if (endpointDesc_.commAddr.type != COMM_ADDR_TYPE_MULTI_PORT) {
-        HCCL_ERROR("[CpuUboeEndpoint::%s] commAddr.type[%d] not support.", __func__, endpointDesc_.commAddr.type);
-        return HCCL_E_NOT_SUPPORT;
+        CHK_PRT_RET(portId != 0,
+            HCCL_ERROR("[CpuUboeEndpoint::%s] single address only supports portId 0, portId[%u].",
+                __func__, portId),
+            HCCL_E_PARA);
+
+        CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
+        return HCCL_SUCCESS;
     }
 
     uint8_t portNum = endpointDesc_.commAddr.portsAddr.portNum;
@@ -59,29 +64,13 @@ HcclResult CpuUboeEndpoint::GetPortAddressByPortIdx(uint8_t idx, Hccl::IpAddress
     return HCCL_SUCCESS;
 }
 
-HcclResult CpuUboeEndpoint::GetLinkAddress(Hccl::IpAddress &ipAddr) const
-{
-    if (endpointDesc_.commAddr.type != COMM_ADDR_TYPE_MULTI_PORT) {
-        HCCL_ERROR("[CpuUboeEndpoint::%s] commAddr.type[%d] not support.", __func__, endpointDesc_.commAddr.type);
-        return HCCL_E_NOT_SUPPORT;
-    }
-
-    Hccl::BinaryAddr addr;
-    s32 sret = memcpy_s(
-        &addr, sizeof(Hccl::BinaryAddr), &endpointDesc_.commAddr.portsAddr.linkAddr, sizeof(Hccl::BinaryAddr));
-    CHK_PRT_RET(sret != EOK, HCCL_ERROR("[CpuUboeEndpoint::%s] memcpy linkAddr failed, errorno[%d].", __func__, sret),
-        HCCL_E_MEMORY);
-
-    ipAddr = Hccl::IpAddress(addr, endpointDesc_.commAddr.portsAddr.family);
-    return HCCL_SUCCESS;
-}
-
 HcclResult CpuUboeEndpoint::Init()
 {
     HCCL_INFO("[CpuUboeEndpoint::%s] localEndpoint protocol[%d].", __func__, endpointDesc_.protocol);
 
     if (endpointDesc_.loc.locType != ENDPOINT_LOC_TYPE_HOST) {
-        HCCL_ERROR("[CpuUboeEndpoint::%s] locType[%d] is not supported.", __func__, endpointDesc_.loc.locType);
+        HCCL_ERROR("[CpuUboeEndpoint::%s] locType[%d] is not supported.",
+            __func__, endpointDesc_.loc.locType);
         return HCCL_E_NOT_SUPPORT;
     }
 
@@ -96,7 +85,8 @@ HcclResult CpuUboeEndpoint::Init()
 
     portNum_ = GetPortNumFromEndpointDesc();
     CHK_PRT_RET(portNum_ == 0 || portNum_ > HCOMM_NIC_PORT_MAX_NUM,
-        HCCL_ERROR("[CpuUboeEndpoint::%s] invalid portNum[%u].", __func__, portNum_), HCCL_E_PARA);
+        HCCL_ERROR("[CpuUboeEndpoint::%s] invalid portNum[%u].", __func__, portNum_),
+        HCCL_E_PARA);
 
     ctxHandleList_.clear();
 

@@ -35,7 +35,7 @@ public:
 
     uint8_t GetPortNum() const;
 
-    void *GetRdmaHandleByPortIdx(uint8_t idx);
+    void *GetRdmaHandleByPortId(uint8_t portId);
 
     virtual HcclResult Init() = 0;
 
