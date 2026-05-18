@@ -23,7 +23,7 @@ extern "C" {
 
 static const uint32_t COMM_ADDR_EID_LEN = 16U;
 static const uint32_t HCOMM_CHANNEL_MAGIC_WORD = 0x0fcf0f0fU;
-static const uint32_t HCOMM_CHANNEL_VERSION_ONE = 1U;
+static const uint32_t HCOMM_CHANNEL_VERSION_ONE = 2U;
 static const uint32_t HCOMM_CHANNEL_VERSION = HCOMM_CHANNEL_VERSION_ONE;
 
 typedef int32_t HcommResult;
@@ -205,11 +205,11 @@ typedef struct {
         uint8_t raws[128];           ///< 通用缓存
         struct {
             uint32_t queueNum;       ///< QP数量
-            uint32_t qpThreshold;
             uint32_t retryCnt;       ///< 最大重传次数
             uint32_t retryInterval;  ///< 重传间隔（ms）
             uint8_t tc;              ///< 流量类别（QoS)
             uint8_t sl;              ///< 服务等级（QoS)
+            uint32_t qpThreshold;    ///< 多QP场景下，每个QP最小数据量(B)
         } roceAttr;
         struct {
             uint32_t qos;            ///< HCCS QoS
