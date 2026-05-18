@@ -8,12 +8,89 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 
+<<<<<<< HEAD
 if(PRODUCT_SIDE STREQUAL "host")
     # 添加 hccl_v2 链接库，host 侧使用
     include(hccl_v2.cmake)
     # 添加 ccl_dpu 链接库，host 侧使用
     include(ccl_dpu.cmake)
 endif()
+=======
+set(HCCL_V2_CODE_ROOT ${ORION_REAL_PATH})
+set(HCCL_BASE_DIR ${HCOMM_REAL_PATH})
+
+# 指定hccl编译为动态库
+add_library(hccl_v2 SHARED ""
+)
+
+# 自动找到项目内所有头文件
+FILE(GLOB_RECURSE sources_list LIST_DIRECTORIES TRUE ${HCCL_V2_CODE_ROOT}/*)
+
+foreach (dir ${sources_list})
+    IF ((IS_DIRECTORY ${dir} ) AND (${dir} MATCHES "src/legacy") AND (NOT ${dir} MATCHES "src/legacy/mdpi"))
+        target_include_directories(hccl_v2 PRIVATE ${dir})
+    endif ()
+endforeach ()
+
+# 添加项目外部头文件
+target_compile_definitions(hccl_v2 PRIVATE
+    $<$<STREQUAL:${PRODUCT_SIDE},host>:_GLIBCXX_USE_CXX11_ABI=0>
+
+)
+
+target_include_directories(hccl_v2 PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/base/inc
+    ${HCCL_BASE_DIR}/src/pub_inc
+    ${HCCL_BASE_DIR}/src/pub_inc/hccl
+    ${HCCL_BASE_DIR}/include
+    ${HCCL_BASE_DIR}/inc/adapter
+    ${HCCL_BASE_DIR}/src/algorithm/impl/resource_manager
+
+    ${THIRD_PARTY_NLOHMANN_PATH}
+    ${ASCEND_CANN_PACKAGE_PATH}/include/
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/mmpa/
+    ${ASCEND_CANN_PACKAGE_PATH}/include/acl/
+    ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
+    ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api/
+    ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/
+
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling/
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
+
+    ${HCCL_BASE_DIR}/include/hccl/
+    ${HCCL_BASE_DIR}/pkg_inc
+    ${HCCL_BASE_DIR}/pkg_inc/hccl/
+    ${HCCL_BASE_DIR}/src/algorithm/pub_inc
+    ${HCCL_BASE_DIR}/src/legacy/common
+    ${HCCL_BASE_DIR}/src/legacy/common/types
+    ${HCCL_BASE_DIR}/src/legacy/common/utils
+    ${HCCL_BASE_DIR}/src/legacy/common/exception
+    ${HCCL_BASE_DIR}/src/legacy/framework/dfx/profiling
+    ${HCCL_BASE_DIR}/src/legacy/framework/dfx/
+    ${HCCL_BASE_DIR}/src/legacy/unified_platform/external_system
+    ${HCCL_BASE_DIR}/src/legacy/unified_platform/pub_inc
+    ${HCCL_BASE_DIR}/src/algorithm/base/alg_template
+    ${HCCL_BASE_DIR}/src/algorithm/base/communicator
+    ${HCCL_BASE_DIR}/src/platform/hccp/inc/network
+    ${RDMA_CORE_INCLUDE_DIR}
+    ${HCCL_BASE_DIR}/src/platform/hccp/orion/hcomm_dev/inc/network
+    ${HCCL_BASE_DIR}/externel_depends/tsch
+    ${HCCL_BASE_DIR}/src/common/health
+)
+
+# 每个文件夹单独组织要参与编译的文件
+target_sources(hccl_v2
+    PRIVATE
+    ${HCCL_BASE_DIR}/src/common/health/rank_consistency_checker_v2.cc
+    ${HCCL_BASE_DIR}/src/common/health/calc_crc.cc
+)
+>>>>>>> 46414fc7 (hcomm参数一致性校验)
 
 # 添加子目录
 add_subdirectory(common)
