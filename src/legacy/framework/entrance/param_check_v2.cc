@@ -483,7 +483,8 @@ HcclResult HcomLoadRankTableFileV2(const char *clusterInfo, std::string &rankTab
         HCCL_ERROR("[RankTable]load ranktable failed, file is empty");
         return HCCL_E_PARA;
     }
-    HcomRecordRankTableJsonCrc(std::string(clusterInfo), rankTableM);
+    
+    HcomRecordRankTableJsonCrc(HcclGetThreadDeviceId(), rankTableM);
     return HCCL_SUCCESS;
 }
 
@@ -535,7 +536,7 @@ void HcomRecordRankTableJsonCrc(s32 deviceLogicId, const std::string &rankTableJ
 u32 HcomConsumeRankTableJsonCrc(s32 deviceLogicId)
 {
     std::lock_guard<std::mutex> lock(g_rankTableCrcMutex);
-    auto it = g_rankTableJsonCrcMap.find(commIdentifier);
+    auto it = g_rankTableJsonCrcMap.find(deviceLogicId);
     if (it == g_rankTableJsonCrcMap.end()) {
         return 0;
     }
