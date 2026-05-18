@@ -1027,10 +1027,6 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
             DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel ${INSTALL_OPTIONAL}
             COMPONENT hcomm
         )
-
-        target_link_directories(ccl_kernel PRIVATE
-            ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
-        )
     endif()
 endif()
 
@@ -1093,9 +1089,6 @@ if(DEVICE_MODE AND KERNEL_MODE)
     target_include_directories(aicpu_custom PRIVATE
         ${CCL_KERNEL_INCLUDE_LIST}
         ${ORION_HEAD_LIST}
-    )
-    target_link_directories(aicpu_custom PRIVATE
-        ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/
     )
     target_link_libraries(aicpu_custom PRIVATE ${AICPU_CUSTOM_LINK_LIBRARIES})
     add_dependencies(aicpu_custom ccl_kernel ccl_kernel_plf_a aicpu_custom_json)
