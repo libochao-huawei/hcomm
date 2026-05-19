@@ -72,6 +72,7 @@ HcclResult RemoteIpcRmaBuffer::Open()
 {
     CHK_SMART_PTR_NULL(pimpl_);
     CHK_RET(pimpl_->Open());
+    isOpened_ = true;
     this->devAddr = pimpl_->GetDevAddr();
     return HCCL_SUCCESS;
 }
@@ -79,6 +80,8 @@ HcclResult RemoteIpcRmaBuffer::Open()
 HcclResult RemoteIpcRmaBuffer::Close()
 {
     CHK_SMART_PTR_NULL(pimpl_);
-    return pimpl_->Close();
+    HcclResult ret = pimpl_->Close();
+    isOpened_ = false;
+    return ret;
 }
 }
