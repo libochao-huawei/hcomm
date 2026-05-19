@@ -609,23 +609,29 @@ CcuResult  CcuKernel::LoadArg(CcuVariableHandle varHandle, uint32_t argId)
     return CcuResult::CCU_SUCCESS;
 }
 
+CcuResult CcuKernel::CheckContinuousVariables(CcuVariableHandle varHandle, uint32_t num,
+    const CcuRep::Variable &baseVar, const char *tag)
+{
+    if (num <= 1) {
+        return CcuResult::CCU_SUCCESS;
+    }
+    for (uint32_t i = 1; i < num; i++) {
+        CcuRep::Variable *nextVar{nullptr};
+        CCU_CHK_RET(GetVariableByHandle(varHandle + i, &nextVar));
+        if (nextVar->Id() != baseVar.Id() + i) {
+            HCCL_ERROR("[CcuKernel][%s] variables not continuous at index %u, "
+                       "expected Id %u but got %u", tag, i, baseVar.Id() + i, nextVar->Id());
+            return HCCL_TO_CCU_RET(HCCL_E_PARA);
+        }
+    }
+    return CcuResult::CCU_SUCCESS;
+}
+
 CcuResult CcuKernel::LoadVar(uint64_t addr, CcuVariableHandle varHandle, uint32_t num)
 {
     CcuRep::Variable *var{nullptr};
     CCU_CHK_RET(GetVariableByHandle(varHandle, &var));
-
-    if (num > 1) {
-        for (uint32_t i = 1; i < num; i++) {
-            CcuRep::Variable *nextVar{nullptr};
-            CCU_CHK_RET(GetVariableByHandle(varHandle + i, &nextVar));
-            if (nextVar->Id() != var->Id() + i) {
-                HCCL_ERROR("[CcuKernel][LoadVariable] variables not continuous at index %u, "
-                           "expected Id %u but got %u", i, var->Id() + i, nextVar->Id());
-                return HCCL_TO_CCU_RET(HCCL_E_PARA);
-            }
-        }
-    }
-
+    CCU_CHK_RET(CheckContinuousVariables(varHandle, num, *var, "LoadVariable"));
     Append(std::make_shared<CcuRep::CcuRepLoad>(addr, *var, num));
     return CcuResult::CCU_SUCCESS;
 }
@@ -636,17 +642,7 @@ CcuResult CcuKernel::CcuLoadVarFromVarAddr(CcuVariableHandle addrHandle, CcuVari
     CCU_CHK_RET(GetVariableByHandle(addrHandle, &addrVar));
     CcuRep::Variable *var{nullptr};
     CCU_CHK_RET(GetVariableByHandle(varHandle, &var));
-    if (num > 1) {
-        for (uint32_t i = 1; i < num; i++) {
-            CcuRep::Variable *nextVar{nullptr};
-            CCU_CHK_RET(GetVariableByHandle(varHandle + i, &nextVar));
-            if (nextVar->Id() != var->Id() + i) {
-                HCCL_ERROR("[CcuKernel][LoadVar] dst variables not continuous at index %u, "
-                           "expected Id %u but got %u", i, var->Id() + i, nextVar->Id());
-                return HCCL_TO_CCU_RET(HCCL_E_PARA);
-            }
-        }
-    }
+    CCU_CHK_RET(CheckContinuousVariables(varHandle, num, *var, "LoadVar dst"));
     Append(std::make_shared<CcuRep::CcuRepLoadVar>(*addrVar, *var, num));
     return CcuResult::CCU_SUCCESS;
 }
@@ -655,17 +651,7 @@ CcuResult CcuKernel::StoreVar(uint64_t addr, CcuVariableHandle varHandle, uint32
 {
     CcuRep::Variable *var{nullptr};
     CCU_CHK_RET(GetVariableByHandle(varHandle, &var));
-    if (num > 1) {
-        for (uint32_t i = 1; i < num; i++) {
-            CcuRep::Variable *nextVar{nullptr};
-            CCU_CHK_RET(GetVariableByHandle(varHandle + i, &nextVar));
-            if (nextVar->Id() != var->Id() + i) {
-                HCCL_ERROR("[CcuKernel][StoreVariable] variables not continuous at index %u, "
-                           "expected Id %u but got %u", i, var->Id() + i, nextVar->Id());
-                return HCCL_TO_CCU_RET(HCCL_E_PARA);
-            }
-        }
-    }
+    CCU_CHK_RET(CheckContinuousVariables(varHandle, num, *var, "StoreVariable"));
     Append(std::make_shared<CcuRep::CcuRepStore>(*var, addr, num));
     return CcuResult::CCU_SUCCESS;
 }
@@ -676,17 +662,7 @@ CcuResult CcuKernel::CcuStoreVarToVarAddr(CcuVariableHandle addrHandle, CcuVaria
     CCU_CHK_RET(GetVariableByHandle(addrHandle, &addrVar));
     CcuRep::Variable *var{nullptr};
     CCU_CHK_RET(GetVariableByHandle(varHandle, &var));
-    if (num > 1) {
-        for (uint32_t i = 1; i < num; i++) {
-            CcuRep::Variable *nextVar{nullptr};
-            CCU_CHK_RET(GetVariableByHandle(varHandle + i, &nextVar));
-            if (nextVar->Id() != var->Id() + i) {
-                HCCL_ERROR("[CcuKernel][StoreVar] src variables not continuous at index %u, "
-                           "expected Id %u but got %u", i, var->Id() + i, nextVar->Id());
-                return HCCL_TO_CCU_RET(HCCL_E_PARA);
-            }
-        }
-    }
+    CCU_CHK_RET(CheckContinuousVariables(varHandle, num, *var, "StoreVar src"));
     Append(std::make_shared<CcuRep::CcuRepStoreVar>(*var, *addrVar, num));
     return CcuResult::CCU_SUCCESS;
 }
@@ -805,13 +781,11 @@ CcuResult CcuKernel::ReadMemToBuffer(ChannelHandle channel, CcuBufferHandle loca
     CcuVariableHandle lenHandle, CcuEventHandle eventHandle, uint32_t mask)
 {
     CcuRep::CcuBuf *local{nullptr};
-    CCU_CHK_RET(GetBufferByHandle(localHandle, &local));
     CcuRep::RemoteAddr *remote{nullptr};
-    CCU_CHK_RET(GetRemoteAddrByHandle(remoteHandle, &remote));
     CcuRep::Variable *len{nullptr};
-    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
     CcuRep::CompletedEvent *event{nullptr};
-    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
+    CCU_CHK_RET(ResolveBufRemoteLenEvent(localHandle, remoteHandle, lenHandle, eventHandle,
+        &local, &remote, &len, &event));
     auto ret = ReadNb(channel, *local, *remote, *len, *event, mask);
     return HCCL_TO_CCU_RET(ret);
 }
@@ -851,13 +825,11 @@ CcuResult CcuKernel::WriteBufferToMem(ChannelHandle channel, CcuRemoteAddrHandle
     CcuVariableHandle lenHandle, CcuEventHandle eventHandle, uint32_t mask)
 {
     CcuRep::CcuBuf *local{nullptr};
-    CCU_CHK_RET(GetBufferByHandle(localHandle, &local));
     CcuRep::RemoteAddr *remote{nullptr};
-    CCU_CHK_RET(GetRemoteAddrByHandle(remoteHandle, &remote));
     CcuRep::Variable *len{nullptr};
-    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
     CcuRep::CompletedEvent *event{nullptr};
-    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
+    CCU_CHK_RET(ResolveBufRemoteLenEvent(localHandle, remoteHandle, lenHandle, eventHandle,
+        &local, &remote, &len, &event));
     auto ret = WriteNb(channel, *remote, *local, *len, *event, mask);
     return HCCL_TO_CCU_RET(ret);
 }
