@@ -40,15 +40,25 @@ public:
 
     std::unique_ptr<Serializable> GetExchangeDto() override;
 
-    u32 GetTokenId() const;
-    u32 GetTokenValue() const;
-    TokenIdHandle GetTokenIdHandle() const;
-    std::pair<uintptr_t, u64> GetBufferInfo() {return make_pair(buf->GetAddr(), buf->GetSize());}
+    virtual u32 GetTokenId() const;
+    virtual u32 GetTokenValue() const;
+    virtual TokenIdHandle GetTokenIdHandle() const;
+    std::pair<uintptr_t, u64> GetBufferInfo() override {return make_pair(GetAddr(), GetSize());}
     u64 GetTargetSeg() const {return reqReg.targetSegVa;}
+    virtual u32 GetKeySize() const { return keySize; }
+    virtual const u8* GetKey() const { return key; }
+
+    // 硬件实际注册范围：4K 对齐后可能大于传入的 addr/size
+    uintptr_t GetAlignedAddr() const override { return alignedAddr_; }
+    u64 GetAlignedSize() const override { return alignedSize_; }
 
     std::vector<char> Desc;
 
-private:
+protected:
+    // Skip-registration constructor for virtual subclass — does not call HrtRaUbLocalMemReg
+    LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, u32 tokenValue, u32 tokenId,
+                     TokenIdHandle tokenIdHandle, u32 keySize, u64 segVa, const u8* keySrc);
+
     RdmaHandle           rdmaHandle{nullptr};
     HcclNetDevice        *netDev{nullptr};
     u8                   key[HRT_UB_MEM_KEY_MAX_LEN]{0};
@@ -60,6 +70,9 @@ private:
     HrtRaUbLocalMemRegOutParam    reqReg;
     void*                         lmemHandle{nullptr};
     u64                  segVa{0};
+
+    uintptr_t            alignedAddr_{0};
+    u64                  alignedSize_{0};
 };
 u32 GetUbToken(); // 生成伪随机数
 } // namespace Hccl
