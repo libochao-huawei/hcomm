@@ -398,7 +398,7 @@ TEST_F(CommInnerTest, ut_TransportInit)
 
     CommBase* comm_star = new CommStar(collective_id_tmp, userRank, user_rank_size, userRank, 1, topoFlag, dispatcher, nullptr, netDevCtxMap, exchanger,
         para_vector, DeviceMem::alloc(1024),DeviceMem::alloc(1024), true);
-    comm_star->transportType_[0] = TransportType::TRANS_TYPE_P2P;
+    comm_star->transportType_[0] = TransportType::TRANS_TYPE_RESERVED;
     comm_star->isHaveCpuRank_ = true;
     comm_star->interSocketManager_.reset(new (std::nothrow) HcclSocketManager(NICDeployment::NIC_DEPLOYMENT_DEVICE, 0, 0, 0));
     comm_star->interSocketManager_->ServerInit(netDevCtxMap[tmp_para.nicIp[0]], 16666);
