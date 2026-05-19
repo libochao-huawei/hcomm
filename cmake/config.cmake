@@ -86,18 +86,15 @@ endif()
 
 if(ENABLE_BUILD_AARCH)
     set(STUBS
-        ascend_hal
         slog
         aicpu_sharder
         ${HOST_STUBS}
     )
 else()
     set(STUBS
-        ascend_hal
         slog
         aicpu_sharder
         ${HOST_STUBS}
-        acl_rt
         metadef
         opp_registry
     )

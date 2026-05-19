@@ -14,6 +14,10 @@ set(stub_tsd_list
 # 创建共享库
 add_library(tsd_eventclient SHARED ${stub_tsd_list})
 
+# target_link_libraries(tsd_eventclient PRIVATE
+#     tsd_headers
+# )
+
 # 设置头文件搜索路径
 target_include_directories(tsd_eventclient PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/tsd
