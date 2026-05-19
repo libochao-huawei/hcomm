@@ -120,6 +120,12 @@ private:
     TpMgr &operator=(const TpMgr &that) = delete;
 
     HcclResult FindAndGetTpInfo(const GetTpInfoParam &param, TpInfo &tpInfo);
+    HcclResult LookupInfoCtxEntry(InfoCtxMap &infoMap, const Hccl::IpAddress &locAddr, const Hccl::IpAddress &rmtAddr,
+        QosKey qosKey, InfoCtxMap::iterator &lit, InfoRmtMap::iterator &rit, InfoQosMap::iterator &qosIt) const;
+    HcclResult PollGetTpInfoReqCtx(std::unique_lock<std::mutex> &reqCtxLock, const GetTpInfoParam &param, TpInfo &tpInfo);
+    HcclResult BeginGetTpInfoListRequest(const GetTpInfoParam &param, ReqQosMap &qosMap, QosKey qosKey);
+    HcclResult AdvanceGetTpInfoWaitList(const GetTpInfoParam &param, RequestCtx &reqCtx, ReqQosMap &qosMap,
+        ReqQosMap::iterator it, std::unique_lock<std::mutex> &reqCtxLock);
 
     HcclResult StartGetTpInfoListRequest(const GetTpInfoParam &param, RequestCtx &reqCtx) const;
     HcclResult StartGetTpAttrForFirstTp(const GetTpInfoParam &param, RequestCtx &reqCtx) const;
