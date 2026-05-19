@@ -48,12 +48,12 @@ public:
         return memHandle;
     }
 
-    size_t GetSize() const
+    virtual size_t GetSize() const
     {
         return buf->GetSize();
     }
- 
-    uintptr_t GetAddr() const
+
+    virtual uintptr_t GetAddr() const
     {
         return buf->GetAddr();
     }
@@ -62,6 +62,21 @@ public:
     {
         HCCL_ERROR("this is base class, not support.");
         return nullptr;
+    }
+
+    virtual bool IsVirtual() const
+    {
+        return false;
+    }
+
+    virtual LocalRmaBuffer* GetRealBuffer() const
+    {
+        return nullptr;
+    }
+
+    virtual std::pair<uintptr_t, u64> GetBufferInfo()
+    {
+        return {buf->GetAddr(), buf->GetSize()};
     }
 
 protected:
