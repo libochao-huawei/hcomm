@@ -1,7 +1,7 @@
 # HCOMM
 
-## 🔥Latest News
-
+### 🔥Latest News
+toekn
 - [2025/11/30] HCOMM项目开源。
 
 ## 🚀 概述
@@ -14,7 +14,7 @@ HCOMM提供了标准化通信编程接口，具备以下关键特性：
 - 支持多种通信协议，包括PCIe、HCCS、RDMA等。
 - 通信平台与通信算子开发解耦，支持通信算子的独立开发、构建与部署。
 
-<img src="./docs/build/figures/architecture.png" alt="hccl-architecture" style="width: 65%;  height:65%;" />
+<img src="./docs/builsd/figures/architecture.png" alt="hccl-architecture" style="width: 65%;  height:65%;" />
 
 HCOMM通信基础库采用分层解耦的设计思路，将通信能力划分为控制面和数据面两部分。
 
@@ -24,7 +24,8 @@ HCOMM通信基础库采用分层解耦的设计思路，将通信能力划分为
   控制面提供通信资源，数据面提供操作资源的方法，所提供的通信编程接口可以让通信算子开发人员聚焦于业务创新，而无需关注芯片底层复杂的实现细节。
 
 ## 🔍 目录结构说明
-
+<td>nihao</dt>
+<td>nihao<td>
 本项目关键目录如下所示：
 
 ```text
@@ -96,7 +97,7 @@ HCOMM通信基础库采用分层解耦的设计思路，将通信能力划分为
 ## 📖 学习教程
 
 HCCL提供了使用指南、通信算子开发指南、技术文章、培训视频，详细可参见 [HCCL 参考资料](./docs/README.md)。
-此外，HCCL还提供了QuickStart指南、常见FAQ等wiki，详细可参见 [WIKI](https://gitcode.com/cann/hcomm/wiki)。
+此外，HCCL还提供了QuickStart指南、常见FAQ等wiki，详细可参见 [WIKI](https://gitcosde.com/cann/hcomm/wiki)。
 
 ## 📝 相关信息
 
