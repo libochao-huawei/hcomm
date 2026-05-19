@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #ifndef LOCAL_IPC_RMA_BUFFER_H
 #define LOCAL_IPC_RMA_BUFFER_H
@@ -33,9 +33,14 @@ public:
     LocalIpcRmaBuffer &operator=(const LocalIpcRmaBuffer &that) = delete;
 
     // Init成功后调用Serialize和获取属性接口
-    std::string &Serialize();
+    virtual std::string &Serialize();
 
     HcclResult Grant(u32 remotePid, u32 remoteSdid);
+
+protected:
+    // Skip-registration constructor for virtual subclass — does not call Init/registration
+    LocalIpcRmaBuffer(const HcclNetDevCtx netDevCtx, void* addr, u64 size,
+        const RmaMemType memType, bool skipReg);
 
 private:
     std::unique_ptr<LocalIpcRmaBufferImpl> pimpl_;

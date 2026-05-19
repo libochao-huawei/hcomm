@@ -19,6 +19,8 @@
 #include "hccl_net_dev_defs.h"
 #include "log.h"
 #include "rma_buffer.h"
+#include "virtual_local_rma_buffer.h"
+#include "reged_mem_common.h"
 
 namespace {
 using LocalRdmaRmaBufferMgr = hccl::NetDevContext::LocalRdmaRmaBufferMgr;
@@ -58,7 +60,7 @@ AicpuTsRoceRegedMemMgr::AicpuTsRoceRegedMemMgr(HcclNetDev netDev, RdmaHandle rdm
             localRdmaRmaBufferMgr_ = ctx->mgr;
         }
         HCCL_INFO(
-            "[AicpuTsRoceRegedMemMgr] ctor netDev[%p] phyId[%d] process-local localRdmaRmaBufferMgr[%p] (not NetDev embed)",
+            "[AicpuTsRoceRegedMemMgr] ctor netDev[%p] phyId[%d] process-local localRdmaRmaBufferMgr[%p]",
             static_cast<void *>(netDev_), static_cast<int>(phyId), static_cast<void *>(localRdmaRmaBufferMgr_.get()));
     } else {
         HCCL_INFO("[AicpuTsRoceRegedMemMgr] ctor netDev is null, local mgr unset");
@@ -74,6 +76,9 @@ void AicpuTsRoceRegedMemMgr::TrackRegisteredBuffer(const std::shared_ptr<hccl::L
         return;
     }
     allRegisteredBuffers_.push_back(localBuffer);
+    if (localBuffer->IsVirtual()) {
+        return;
+    }
     HcclBuf rec{};
     rec.addr = localBuffer->GetAddr();
     rec.len = localBuffer->GetSize();
@@ -93,20 +98,59 @@ HcclResult AicpuTsRoceRegedMemMgr::GetOrCreateLocalRdmaRmaBuffer(hccl::NetDevCon
     auto findPair = localRdmaRmaBufferMgr_->Find(tempKey);
     if (findPair.first) {
         localRdmaRmaBuffer = findPair.second;
-        HCCL_INFO("[AicpuTsRoceRegedMemMgr][RegisterMemory] Find hit, reuse buffer mgr entry key {%p, %llu}",
-            mem.addr, mem.size);
+        HCCL_INFO("[AicpuTsRoceRegedMemMgr][GetOrCreate] Find hit, reuse key {%p, %llu}", mem.addr, mem.size);
         return HCCL_SUCCESS;
     }
-    HCCL_INFO("[AicpuTsRoceRegedMemMgr][RegisterMemory] Find miss, construct LocalRdmaRmaBuffer key {%p, %llu} type[%u]",
+    HCCL_INFO("[AicpuTsRoceRegedMemMgr][GetOrCreate] Find miss, construct key {%p, %llu} type[%u]",
         mem.addr, mem.size, static_cast<unsigned int>(mem.type));
     EXECEPTION_CATCH((localRdmaRmaBuffer = std::make_shared<hccl::LocalRdmaRmaBuffer>(netDevCtx, mem.addr,
         static_cast<u64>(mem.size), memType)), return HCCL_E_PTR);
     return HCCL_SUCCESS;
 }
 
+HcclResult AicpuTsRoceRegedMemMgr::RegNew(hccl::NetDevContext *netDevCtx, HcommMem mem,
+                                           hccl::BufferKey<uintptr_t, u64> &tempKey,
+                                           void **memHandle)
+{
+    std::shared_ptr<hccl::LocalRdmaRmaBuffer> localRdmaRmaBuffer;
+    HcclResult ret = GetOrCreateLocalRdmaRmaBuffer(netDevCtx, mem, tempKey, localRdmaRmaBuffer);
+    if (ret != HCCL_SUCCESS) {
+        return ret;
+    }
+
+    auto resultPair = localRdmaRmaBufferMgr_->Add(tempKey, localRdmaRmaBuffer);
+    if (resultPair.first == localRdmaRmaBufferMgr_->End()) {
+        HCCL_ERROR("[AicpuTsRoceRegedMemMgr][RegNew] memory overlaps with registered memory");
+        return HCCL_E_INTERNAL;
+    }
+
+    std::shared_ptr<hccl::LocalRdmaRmaBuffer> &localBuffer = resultPair.first->second.buffer;
+    CHK_SMART_PTR_NULL(localBuffer);
+    *memHandle = static_cast<void *>(localBuffer.get());
+
+    if (resultPair.second) {
+        ret = localBuffer->Init();
+        if (ret != HCCL_SUCCESS) {
+            (void)localRdmaRmaBufferMgr_->Del(tempKey);
+            HCCL_ERROR("[AicpuTsRoceRegedMemMgr][RegNew] Init failed, ret[%d]", ret);
+            return ret;
+        }
+        HCCL_INFO("[AicpuTsRoceRegedMemMgr][RegNew] success, key {%p, %llu}", mem.addr, mem.size);
+    }
+
+    TrackRegisteredBuffer(localBuffer);
+
+    if (resultPair.second) {
+        return HCCL_SUCCESS;
+    }
+    HCCL_INFO("[AicpuTsRoceRegedMemMgr][RegNew] already registered (unexpected), ref++");
+    return HCCL_SUCCESS;
+}
+
+// ==================== RegisterMemory 主入口 ====================
+
 HcclResult AicpuTsRoceRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void **memHandle)
 {
-    (void)memTag;
     HCCL_INFO("[%s] Begin", __FUNCTION__);
     CHK_PTR_NULL(netDev_);
     CHK_PTR_NULL(memHandle);
@@ -119,39 +163,24 @@ HcclResult AicpuTsRoceRegedMemMgr::RegisterMemory(HcommMem mem, const char *memT
     CHK_PTR_NULL(ctx);
     std::lock_guard<std::mutex> phyLocalLock(*ctx->mu);
 
-    std::shared_ptr<hccl::LocalRdmaRmaBuffer> localRdmaRmaBuffer;
-    HcclResult ret = GetOrCreateLocalRdmaRmaBuffer(netDevCtx, mem, tempKey, localRdmaRmaBuffer);
-    if (ret != HCCL_SUCCESS) {
-        return ret;
-    }
-
-    auto resultPair = localRdmaRmaBufferMgr_->Add(tempKey, localRdmaRmaBuffer);
-    if (resultPair.first == localRdmaRmaBufferMgr_->End()) {
-        HCCL_ERROR("[AicpuTsRoceRegedMemMgr][RegisterMemory] memory overlaps with registered memory");
-        return HCCL_E_INTERNAL;
-    }
-
-    std::shared_ptr<hccl::LocalRdmaRmaBuffer> &localBuffer = resultPair.first->second.buffer;
-    CHK_SMART_PTR_NULL(localBuffer);
-    *memHandle = static_cast<void *>(localBuffer.get());
-
-    if (resultPair.second) {
-        ret = localBuffer->Init();
-        if (ret != HCCL_SUCCESS) {
-            (void)localRdmaRmaBufferMgr_->Del(tempKey);
-            HCCL_ERROR("[AicpuTsRoceRegedMemMgr][RegisterMemory] Init failed, ret[%d]", ret);
-            return ret;
+    auto findPair = localRdmaRmaBufferMgr_->Find(tempKey);
+    if (findPair.first) {
+        auto existingBuffer = findPair.second;
+        uintptr_t existingAddr = reinterpret_cast<uintptr_t>(existingBuffer->GetAddr());
+        u64 existingSize = existingBuffer->GetSize();
+        hccl::BufferKey<uintptr_t, u64> existingHwKey(
+            reinterpret_cast<uintptr_t>(existingBuffer->GetAlignedAddr()),
+            existingBuffer->GetAlignedSize());
+        if (existingAddr != reinterpret_cast<uintptr_t>(mem.addr) || existingSize != static_cast<u64>(mem.size)) {
+            return RegSubsetTracked(*localRdmaRmaBufferMgr_, existingBuffer, allRegisteredBuffers_,
+                existingHwKey,
+                [this](const std::shared_ptr<hccl::LocalRdmaRmaBuffer> &b) { this->TrackRegisteredBuffer(b); },
+                memHandle, mem.addr, static_cast<u64>(mem.size), memTag);
         }
-        HCCL_INFO("[AicpuTsRoceRegedMemMgr][RegisterMemory] success, key {%p, %llu}", mem.addr, mem.size);
+        return RegExactDup(*localRdmaRmaBufferMgr_, existingHwKey, existingBuffer, memHandle);
     }
 
-    TrackRegisteredBuffer(localBuffer);
-
-    if (resultPair.second) {
-        return HCCL_SUCCESS;
-    }
-    HCCL_INFO("[AicpuTsRoceRegedMemMgr][RegisterMemory] already registered, ref++, key {%p, %llu}", mem.addr, mem.size);
-    return HCCL_SUCCESS;
+    return RegNew(netDevCtx, mem, tempKey, memHandle);
 }
 
 HcclResult AicpuTsRoceRegedMemMgr::UnregisterMemory(void *memHandle)
@@ -167,10 +196,29 @@ HcclResult AicpuTsRoceRegedMemMgr::UnregisterMemory(void *memHandle)
     std::lock_guard<std::mutex> phyLocalLock(*ctx->mu);
 
     auto *buffer = static_cast<hccl::LocalRdmaRmaBuffer *>(memHandle);
-    hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(buffer->GetAddr()), buffer->GetSize());
 
+    if (buffer->IsVirtual()) {
+        auto *realBuffer = static_cast<hccl::LocalRdmaRmaBuffer *>(buffer->GetRealBuffer());
+        CHK_PTR_NULL(realBuffer);
+        hccl::BufferKey<uintptr_t, u64> realHwKey(reinterpret_cast<uintptr_t>(realBuffer->GetAlignedAddr()),
+            realBuffer->GetAlignedSize());
+        bool delOk = false;
+        EXECEPTION_CATCH(delOk = localRdmaRmaBufferMgr_->Del(realHwKey), delOk = false);
+        if (!delOk) {
+            HCCL_INFO("[AicpuTsRoceRegedMemMgr][UnregisterMemory] Virtual: HW ref > 0 or already removed.");
+        }
+        exportDescByBuffer_.erase(buffer);
+        allRegisteredBuffers_.erase(std::remove_if(allRegisteredBuffers_.begin(), allRegisteredBuffers_.end(),
+            [memHandle](const std::shared_ptr<hccl::LocalRdmaRmaBuffer> &p) { return p.get() == memHandle; }),
+            allRegisteredBuffers_.end());
+        HCCL_INFO("[AicpuTsRoceRegedMemMgr][UnregisterMemory] Virtual buffer unregistered, memHandle[%p]", memHandle);
+        return HCCL_SUCCESS;
+    }
+
+    hccl::BufferKey<uintptr_t, u64> hwKey(reinterpret_cast<uintptr_t>(buffer->GetAlignedAddr()),
+        buffer->GetAlignedSize());
     bool delOk = false;
-    EXECEPTION_CATCH(delOk = localRdmaRmaBufferMgr_->Del(tempKey), return HCCL_E_NOT_FOUND);
+    EXECEPTION_CATCH(delOk = localRdmaRmaBufferMgr_->Del(hwKey), return HCCL_E_NOT_FOUND);
     if (!delOk) {
         HCCL_INFO("[AicpuTsRoceRegedMemMgr][UnregisterMemory] ref count > 0");
     }
@@ -217,8 +265,7 @@ HcclResult AicpuTsRoceRegedMemMgr::MemoryExport(const EndpointDesc endpointDesc,
 
     *memDesc = static_cast<void *>(blob.data());
     *memDescLen = static_cast<uint32_t>(blob.size());
-    HCCL_INFO("[AicpuTsRoceRegedMemMgr][MemoryExport] success memHandle[%p] memDescLen[%u] rdmaSerLen[%zu]", memHandle,
-        *memDescLen, ser.size());
+    HCCL_INFO("[AicpuTsRoceRegedMemMgr][MemoryExport] success memHandle[%p] memDescLen[%u]", memHandle, *memDescLen);
     return HCCL_SUCCESS;
 }
 
@@ -257,7 +304,7 @@ HcclResult AicpuTsRoceRegedMemMgr::MemoryImport(const void *memDesc, uint32_t de
         EXECEPTION_CATCH(mgr = std::make_unique<RemoteRdmaRmaBufferMgr>(), return HCCL_E_PTR);
         CHK_SMART_PTR_NULL(mgr);
         remoteRdmaRmaBufferMgrs_[endpointDesc] = std::move(mgr);
-        HCCL_INFO("[AicpuTsRoceRegedMemMgr][MemoryImport] created RemoteRdmaRmaBufferMgr for new endpoint, mgrCnt[%zu]",
+        HCCL_INFO("[AicpuTsRoceRegedMemMgr][MemoryImport] created remote mgr, mgrCnt[%zu]",
             remoteRdmaRmaBufferMgrs_.size());
     }
 
@@ -271,8 +318,8 @@ HcclResult AicpuTsRoceRegedMemMgr::MemoryImport(const void *memDesc, uint32_t de
     outMem->addr = remoteBuf->GetAddr();
     outMem->size = remoteBuf->GetSize();
     outMem->type = COMM_MEM_TYPE_DEVICE;
-    HCCL_INFO("[AicpuTsRoceRegedMemMgr][MemoryImport] success descLen[%u] outMem addr[%p] size[%llu], mgrCnt[%zu]",
-        descLen, outMem->addr, static_cast<unsigned long long>(outMem->size), remoteRdmaRmaBufferMgrs_.size());
+    HCCL_INFO("[AicpuTsRoceRegedMemMgr][MemoryImport] success descLen[%u] outMem addr[%p] size[%llu]",
+        descLen, outMem->addr, static_cast<unsigned long long>(outMem->size));
     return HCCL_SUCCESS;
 }
 
@@ -303,11 +350,8 @@ HcclResult AicpuTsRoceRegedMemMgr::MemoryUnimport(const void *memDesc, uint32_t 
     }
     if (mgrIt->second->size() == 0) {
         remoteRdmaRmaBufferMgrs_.erase(mgrIt);
-        HCCL_INFO("[AicpuTsRoceRegedMemMgr][MemoryUnimport] erased empty remote mgr, descLen[%u] remainingMgrCnt[%zu]",
-            descLen, remoteRdmaRmaBufferMgrs_.size());
     }
-    HCCL_INFO("[AicpuTsRoceRegedMemMgr][MemoryUnimport] success descLen[%u] key {%p, %llu}", descLen, probe->GetAddr(),
-        static_cast<unsigned long long>(probe->GetSize()));
+    HCCL_INFO("[AicpuTsRoceRegedMemMgr][MemoryUnimport] success descLen[%u]", descLen);
     return HCCL_SUCCESS;
 }
 
@@ -319,12 +363,9 @@ HcclResult AicpuTsRoceRegedMemMgr::GetAllMemHandles(void **memHandles, uint32_t 
     *memHandleNum = static_cast<uint32_t>(hcclBufRecords_.size());
     if (*memHandleNum == 0U) {
         *memHandles = nullptr;
-        HCCL_INFO("[AicpuTsRoceRegedMemMgr][GetAllMemHandles] no records, memHandleNum[0]");
         return HCCL_SUCCESS;
     }
     *memHandles = static_cast<void *>(hcclBufRecords_.data());
-    HCCL_INFO("[AicpuTsRoceRegedMemMgr][GetAllMemHandles] memHandleNum[%u] hcclBufRecords[%p]", *memHandleNum,
-        static_cast<void *>(hcclBufRecords_.data()));
     return HCCL_SUCCESS;
 }
 
@@ -335,6 +376,9 @@ HcclResult AicpuTsRoceRegedMemMgr::GatherLocalMemDetails(std::vector<RoceMemDeta
         if (buf == nullptr) {
             continue;
         }
+        if (buf->IsVirtual()) {
+            continue;
+        }
         auto *rma = static_cast<hccl::RmaBuffer *>(buf.get());
         CHK_PTR_NULL(rma->GetDevAddr());
         RoceMemDetails r{};
@@ -343,9 +387,6 @@ HcclResult AicpuTsRoceRegedMemMgr::GatherLocalMemDetails(std::vector<RoceMemDeta
         r.size = buf->GetSize();
         r.key = buf->GetKey();
         localOut.push_back(r);
-        HCCL_INFO("[AicpuTsRoceRegedMemMgr][GetAllMemDetails][local][%zu] addr[0x%llx] devAddr[0x%llx] size[%llu] key[%u]",
-            localOut.size() - 1U, static_cast<unsigned long long>(r.addr), static_cast<unsigned long long>(r.devAddr),
-            static_cast<unsigned long long>(r.size), r.key);
     }
     return HCCL_SUCCESS;
 }
@@ -364,9 +405,6 @@ HcclResult AicpuTsRoceRegedMemMgr::AppendLocalNotifyMemDetails(std::vector<RoceM
     notifyMd.size = static_cast<u64>(mrInfo.size);
     notifyMd.key = mrInfo.lkey;
     localOut.push_back(notifyMd);
-    HCCL_INFO("[AicpuTsRoceRegedMemMgr][GetAllMemDetails][local][notify] addr[0x%llx] devAddr[0x%llx] size[%llu] key[%u]",
-        static_cast<unsigned long long>(notifyMd.addr), static_cast<unsigned long long>(notifyMd.devAddr),
-        static_cast<unsigned long long>(notifyMd.size), notifyMd.key);
     return HCCL_SUCCESS;
 }
 
@@ -377,7 +415,8 @@ void AicpuTsRoceRegedMemMgr::GatherRemoteMemDetails(std::vector<RoceMemDetails> 
         if (mgr == nullptr) {
             continue;
         }
-        mgr->ForEach([&remoteOut](const hccl::BufferKey<uintptr_t, u64> &, const std::shared_ptr<hccl::RemoteRdmaRmaBuffer> &rb) {
+        mgr->ForEach([&remoteOut](const hccl::BufferKey<uintptr_t, u64> &,
+            const std::shared_ptr<hccl::RemoteRdmaRmaBuffer> &rb) {
             if (rb == nullptr) {
                 return;
             }
@@ -391,9 +430,6 @@ void AicpuTsRoceRegedMemMgr::GatherRemoteMemDetails(std::vector<RoceMemDetails> 
             r.size = rb->GetSize();
             r.key = rb->GetKey();
             remoteOut.push_back(r);
-            HCCL_INFO("[AicpuTsRoceRegedMemMgr][GetAllMemDetails][remote][%zu] addr[0x%llx] devAddr[0x%llx] size[%llu] key[%u]",
-                remoteOut.size() - 1U, static_cast<unsigned long long>(r.addr), static_cast<unsigned long long>(r.devAddr),
-                static_cast<unsigned long long>(r.size), r.key);
         });
     }
 }
@@ -406,8 +442,6 @@ HcclResult AicpuTsRoceRegedMemMgr::GetAllMemDetails(std::vector<RoceMemDetails> 
     CHK_RET(GatherLocalMemDetails(localOut));
     CHK_RET(AppendLocalNotifyMemDetails(localOut));
     GatherRemoteMemDetails(remoteOut);
-    HCCL_INFO("[AicpuTsRoceRegedMemMgr][GetAllMemDetails] summary localCnt[%zu] remoteCnt[%zu] remoteMgrCnt[%zu]",
-        localOut.size(), remoteOut.size(), remoteRdmaRmaBufferMgrs_.size());
     return HCCL_SUCCESS;
 }
 
