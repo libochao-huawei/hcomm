@@ -609,23 +609,29 @@ CcuResult  CcuKernel::LoadArg(CcuVariableHandle varHandle, uint32_t argId)
     return CcuResult::CCU_SUCCESS;
 }
 
+CcuResult CcuKernel::CheckContinuousVariables(CcuVariableHandle varHandle, uint32_t num,
+    const CcuRep::Variable &baseVar, const char *tag)
+{
+    if (num <= 1) {
+        return CcuResult::CCU_SUCCESS;
+    }
+    for (uint32_t i = 1; i < num; i++) {
+        CcuRep::Variable *nextVar{nullptr};
+        CCU_CHK_RET(GetVariableByHandle(varHandle + i, &nextVar));
+        if (nextVar->Id() != baseVar.Id() + i) {
+            HCCL_ERROR("[CcuKernel][%s] variables not continuous at index %u, "
+                       "expected Id %u but got %u", tag, i, baseVar.Id() + i, nextVar->Id());
+            return HCCL_TO_CCU_RET(HCCL_E_PARA);
+        }
+    }
+    return CcuResult::CCU_SUCCESS;
+}
+
 CcuResult CcuKernel::LoadVar(uint64_t addr, CcuVariableHandle varHandle, uint32_t num)
 {
     CcuRep::Variable *var{nullptr};
     CCU_CHK_RET(GetVariableByHandle(varHandle, &var));
-
-    if (num > 1) {
-        for (uint32_t i = 1; i < num; i++) {
-            CcuRep::Variable *nextVar{nullptr};
-            CCU_CHK_RET(GetVariableByHandle(varHandle + i, &nextVar));
-            if (nextVar->Id() != var->Id() + i) {
-                HCCL_ERROR("[CcuKernel][LoadVariable] variables not continuous at index %u, "
-                           "expected Id %u but got %u", i, var->Id() + i, nextVar->Id());
-                return HCCL_TO_CCU_RET(HCCL_E_PARA);
-            }
-        }
-    }
-
+    CCU_CHK_RET(CheckContinuousVariables(varHandle, num, *var, "LoadVariable"));
     Append(std::make_shared<CcuRep::CcuRepLoad>(addr, *var, num));
     return CcuResult::CCU_SUCCESS;
 }
@@ -636,17 +642,7 @@ CcuResult CcuKernel::CcuLoadVarFromVarAddr(CcuVariableHandle addrHandle, CcuVari
     CCU_CHK_RET(GetVariableByHandle(addrHandle, &addrVar));
     CcuRep::Variable *var{nullptr};
     CCU_CHK_RET(GetVariableByHandle(varHandle, &var));
-    if (num > 1) {
-        for (uint32_t i = 1; i < num; i++) {
-            CcuRep::Variable *nextVar{nullptr};
-            CCU_CHK_RET(GetVariableByHandle(varHandle + i, &nextVar));
-            if (nextVar->Id() != var->Id() + i) {
-                HCCL_ERROR("[CcuKernel][LoadVar] dst variables not continuous at index %u, "
-                           "expected Id %u but got %u", i, var->Id() + i, nextVar->Id());
-                return HCCL_TO_CCU_RET(HCCL_E_PARA);
-            }
-        }
-    }
+    CCU_CHK_RET(CheckContinuousVariables(varHandle, num, *var, "LoadVar dst"));
     Append(std::make_shared<CcuRep::CcuRepLoadVar>(*addrVar, *var, num));
     return CcuResult::CCU_SUCCESS;
 }
@@ -655,17 +651,7 @@ CcuResult CcuKernel::StoreVar(uint64_t addr, CcuVariableHandle varHandle, uint32
 {
     CcuRep::Variable *var{nullptr};
     CCU_CHK_RET(GetVariableByHandle(varHandle, &var));
-    if (num > 1) {
-        for (uint32_t i = 1; i < num; i++) {
-            CcuRep::Variable *nextVar{nullptr};
-            CCU_CHK_RET(GetVariableByHandle(varHandle + i, &nextVar));
-            if (nextVar->Id() != var->Id() + i) {
-                HCCL_ERROR("[CcuKernel][StoreVariable] variables not continuous at index %u, "
-                           "expected Id %u but got %u", i, var->Id() + i, nextVar->Id());
-                return HCCL_TO_CCU_RET(HCCL_E_PARA);
-            }
-        }
-    }
+    CCU_CHK_RET(CheckContinuousVariables(varHandle, num, *var, "StoreVariable"));
     Append(std::make_shared<CcuRep::CcuRepStore>(*var, addr, num));
     return CcuResult::CCU_SUCCESS;
 }
@@ -676,17 +662,7 @@ CcuResult CcuKernel::CcuStoreVarToVarAddr(CcuVariableHandle addrHandle, CcuVaria
     CCU_CHK_RET(GetVariableByHandle(addrHandle, &addrVar));
     CcuRep::Variable *var{nullptr};
     CCU_CHK_RET(GetVariableByHandle(varHandle, &var));
-    if (num > 1) {
-        for (uint32_t i = 1; i < num; i++) {
-            CcuRep::Variable *nextVar{nullptr};
-            CCU_CHK_RET(GetVariableByHandle(varHandle + i, &nextVar));
-            if (nextVar->Id() != var->Id() + i) {
-                HCCL_ERROR("[CcuKernel][StoreVar] src variables not continuous at index %u, "
-                           "expected Id %u but got %u", i, var->Id() + i, nextVar->Id());
-                return HCCL_TO_CCU_RET(HCCL_E_PARA);
-            }
-        }
-    }
+    CCU_CHK_RET(CheckContinuousVariables(varHandle, num, *var, "StoreVar src"));
     Append(std::make_shared<CcuRep::CcuRepStoreVar>(*var, *addrVar, num));
     return CcuResult::CCU_SUCCESS;
 }
@@ -805,13 +781,11 @@ CcuResult CcuKernel::ReadMemToBuffer(ChannelHandle channel, CcuBufferHandle loca
     CcuVariableHandle lenHandle, CcuEventHandle eventHandle, uint32_t mask)
 {
     CcuRep::CcuBuf *local{nullptr};
-    CCU_CHK_RET(GetBufferByHandle(localHandle, &local));
     CcuRep::RemoteAddr *remote{nullptr};
-    CCU_CHK_RET(GetRemoteAddrByHandle(remoteHandle, &remote));
     CcuRep::Variable *len{nullptr};
-    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
     CcuRep::CompletedEvent *event{nullptr};
-    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
+    CCU_CHK_RET(ResolveBufRemoteLenEvent(localHandle, remoteHandle, lenHandle, eventHandle,
+        &local, &remote, &len, &event));
     auto ret = ReadNb(channel, *local, *remote, *len, *event, mask);
     return HCCL_TO_CCU_RET(ret);
 }
@@ -851,13 +825,11 @@ CcuResult CcuKernel::WriteBufferToMem(ChannelHandle channel, CcuRemoteAddrHandle
     CcuVariableHandle lenHandle, CcuEventHandle eventHandle, uint32_t mask)
 {
     CcuRep::CcuBuf *local{nullptr};
-    CCU_CHK_RET(GetBufferByHandle(localHandle, &local));
     CcuRep::RemoteAddr *remote{nullptr};
-    CCU_CHK_RET(GetRemoteAddrByHandle(remoteHandle, &remote));
     CcuRep::Variable *len{nullptr};
-    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
     CcuRep::CompletedEvent *event{nullptr};
-    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
+    CCU_CHK_RET(ResolveBufRemoteLenEvent(localHandle, remoteHandle, lenHandle, eventHandle,
+        &local, &remote, &len, &event));
     auto ret = WriteNb(channel, *remote, *local, *len, *event, mask);
     return HCCL_TO_CCU_RET(ret);
 }
@@ -2163,17 +2135,9 @@ static uint16_t ParseRepeatNumFromParallelParam(uint64_t parallelParam)
     return ( parallelParam >> repeatNumShiftBit) & SetBits(repeatBitNum);
 }
 
-/*
- 	* variable/maskSignal等资源变量Id，一定要在获取ccu profiling时才获取；
- 	* 原因：在创建context Rep时，其资源Id属于虚拟资源；翻译时，才会绑定固定的物理资源。
-*/
-HcclResult CcuKernel::GetCcuProfilingInfo(const uint64_t *taskArgs, uint32_t argSize,
-    std::vector<CcuProfilingInfo> &allCcuProfilingInfo)
+HcclResult CcuKernel::CollectSqeAndWaitCkeProfilingInfo()
 {
-    HCCL_INFO("[GetCcuProfilingInfo] Enter.");
-    allCcuProfilingInfos_.clear();
     auto &ccuProfilingCache = GetProfilingInfo();
-
     uint32_t count {0};
     HCCL_INFO("[GetCcuProfilingInfo] Process sqe&waitcke profiling info start.");
     for (auto &profInfo : ccuProfilingCache) {
@@ -2201,12 +2165,15 @@ HcclResult CcuKernel::GetCcuProfilingInfo(const uint64_t *taskArgs, uint32_t arg
         allCcuProfilingInfos_.push_back(profInfo);
         count++;
     }
+    return HCCL_SUCCESS;
+}
 
-    // loopGroup
+HcclResult CcuKernel::BuildLoopGroupVarIdMaps(std::unordered_map<uint16_t, uint32_t> &varId2ArgIndexMap,
+    std::unordered_map<uint16_t, uint16_t> &varId2VarIdMap)
+{
     auto &lgProfInfo = GetLGProfilingInfo();
     HCCL_INFO("[GetCcuProfilingInfo] create varId2ArgIndexMap start. size=%lu",
         lgProfInfo.loadRep2ArgIdxMap.size());
-    std::unordered_map<uint16_t, uint32_t> varId2ArgIndexMap;
     for (auto &iter : lgProfInfo.loadRep2ArgIdxMap) {
         if (iter.first.get() == nullptr) {
             HCCL_ERROR("[GetCcuProfilingInfo] loadRep is nullptr.");
@@ -2218,7 +2185,6 @@ HcclResult CcuKernel::GetCcuProfilingInfo(const uint64_t *taskArgs, uint32_t arg
 
     HCCL_INFO("[GetCcuProfilingInfo] create varId2VarIdMap start. size=%lu",
         lgProfInfo.assignProfilingReps.size());
-    std::unordered_map<uint16_t, uint16_t> varId2VarIdMap;
     for (auto &iter : lgProfInfo.assignProfilingReps) {
         if (iter.get() == nullptr) {
             HCCL_ERROR("[GetCcuProfilingInfo] assignRep is nullptr.");
@@ -2227,7 +2193,14 @@ HcclResult CcuKernel::GetCcuProfilingInfo(const uint64_t *taskArgs, uint32_t arg
         auto assignRep = dynamic_cast<CcuRep::CcuRepAssign*>(iter.get());
         varId2VarIdMap[assignRep->varB.Id()] = assignRep->varA.Id();
     }
+    return HCCL_SUCCESS;
+}
 
+HcclResult CcuKernel::CollectLoopGroupProfilingInfo(const uint64_t *taskArgs, uint32_t argSize,
+    const std::unordered_map<uint16_t, uint32_t> &varId2ArgIndexMap,
+    const std::unordered_map<uint16_t, uint16_t> &varId2VarIdMap)
+{
+    auto &lgProfInfo = GetLGProfilingInfo();
     HCCL_INFO("[GetCcuProfilingInfo] process loop group profiling start: "
         "lgsize(%lu), goSize(%lu)", lgProfInfo.lgProfilingReps.size(), groupOpSizeInfo_.size());
     for (uint32_t i = 0; i < lgProfInfo.lgProfilingReps.size(); i += 2) { // 2: 一个goSize对应一个CcuProfilingInfo，对应1个loopGroup Rep
@@ -2261,6 +2234,27 @@ HcclResult CcuKernel::GetCcuProfilingInfo(const uint64_t *taskArgs, uint32_t arg
             allCcuProfilingInfos_.push_back(lgProfInfo.ccuProfilingInfos[i]);
         }
     }
+    return HCCL_SUCCESS;
+}
+
+/*
+ 	* variable/maskSignal等资源变量Id，一定要在获取ccu profiling时才获取；
+ 	* 原因：在创建context Rep时，其资源Id属于虚拟资源；翻译时，才会绑定固定的物理资源。
+*/
+HcclResult CcuKernel::GetCcuProfilingInfo(const uint64_t *taskArgs, uint32_t argSize,
+    std::vector<CcuProfilingInfo> &allCcuProfilingInfo)
+{
+    HCCL_INFO("[GetCcuProfilingInfo] Enter.");
+    allCcuProfilingInfos_.clear();
+
+    CHK_RET(CollectSqeAndWaitCkeProfilingInfo());
+
+    std::unordered_map<uint16_t, uint32_t> varId2ArgIndexMap;
+    std::unordered_map<uint16_t, uint16_t> varId2VarIdMap;
+    CHK_RET(BuildLoopGroupVarIdMaps(varId2ArgIndexMap, varId2VarIdMap));
+
+    CHK_RET(CollectLoopGroupProfilingInfo(taskArgs, argSize, varId2ArgIndexMap, varId2VarIdMap));
+
     DumpCcuProfilingInfo(allCcuProfilingInfos_);
     allCcuProfilingInfo = allCcuProfilingInfos_;
     return HCCL_SUCCESS;
