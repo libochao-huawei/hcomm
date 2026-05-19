@@ -35,6 +35,8 @@
 #include "task_param.h"
 #include "hcclCommOp.h"
 
+#include "ccu_assist_v1.h"
+
 CcuResult HcommCcuInsCreate(const void *resDesc, uint32_t descNum, CcuInsHandle *insHandle)
 {
     CCU_CHK_PTR_NULL(resDesc);
@@ -136,6 +138,50 @@ CcuResult HcommCcuKernelRegisterEnd(CcuInsHandle insHandle)
     return CcuResult::CCU_SUCCESS;
 }
 
+static Hccl::CcuProfilingInfo ConvertCcuProfilingInfo(const hcomm::CcuProfilingInfo &src)
+{
+    Hccl::CcuProfilingInfo dst;
+    dst.name = src.name;
+    dst.type = src.type;
+    dst.dieId = src.dieId;
+    dst.missionId = src.missionId;
+    dst.instrId = src.instrId;
+    dst.reduceOpType = src.reduceOpType;
+    dst.inputDataType = src.inputDataType;
+    dst.outputDataType = src.outputDataType;
+    dst.dataSize = src.dataSize;
+    dst.ckeId = src.ckeId;
+    dst.mask = src.mask;
+    HCCL_INFO("src.name %s, dst.name %s", src.name.c_str(), dst.name.c_str());
+    (void)memcpy_s(dst.channelId, sizeof(dst.channelId), src.channelId, sizeof(src.channelId));
+    (void)memcpy_s(dst.remoteRankId, sizeof(dst.remoteRankId), src.remoteRankId, sizeof(src.remoteRankId));
+    (void)memcpy_s(dst.channelHandle, sizeof(dst.channelHandle), src.channelHandle, sizeof(src.channelHandle));
+    return dst;
+}
+
+static void FillCcuTaskParam(const std::vector<hcomm::CcuProfilingInfo> &allCcuProfilingInfo,
+    uint64_t execId, bool isMaster, Hccl::TaskParam &taskParam)
+{
+    taskParam.taskPara.Ccu.dieId     = allCcuProfilingInfo[0].dieId;
+    taskParam.taskPara.Ccu.missionId = allCcuProfilingInfo[0].missionId;
+    taskParam.taskPara.Ccu.execMissionId = allCcuProfilingInfo[0].missionId;
+    taskParam.taskPara.Ccu.instrId   = allCcuProfilingInfo[0].instrId;
+    taskParam.taskPara.Ccu.executeId = execId; // TODO: 参数缺失，无法获取 - executeId（传入是kernelHandle，不建议赋值给executeId）
+    taskParam.taskPara.Ccu.ccuKernelHandle = execId;
+    taskParam.isMaster = isMaster;
+    HCCL_INFO("[%s]dieId[%u], missionId[%u], execMissionId[%u], instrId[%u], executeId[%u], ccuKernelHandle[%u]",
+        __func__, taskParam.taskPara.Ccu.dieId, taskParam.taskPara.Ccu.missionId, taskParam.taskPara.Ccu.execMissionId,
+        taskParam.taskPara.Ccu.instrId, taskParam.taskPara.Ccu.executeId, taskParam.taskPara.Ccu.ccuKernelHandle);
+
+    std::vector<Hccl::CcuProfilingInfo> converted;
+    converted.reserve(allCcuProfilingInfo.size());
+    for (size_t i = 0; i < allCcuProfilingInfo.size(); ++i) {
+        converted.push_back(ConvertCcuProfilingInfo(allCcuProfilingInfo[i]));
+    }
+    taskParam.ccuDetailInfo = std::make_shared<std::vector<Hccl::CcuProfilingInfo>>(std::move(converted));
+    HCCL_DEBUG("[%s]dieId[%u]", __func__, taskParam.taskPara.Ccu.dieId);
+}
+
 /**
  * @brief HcommCcuKernelLaunch 专用的 CCU 性能分析数据上报函数
  * 通过线程 Handle 中注册的回调函数完成数据存储，替代原通信域存储方式。
@@ -153,53 +199,8 @@ static HcclResult HcommReportCcuProfilingInfo(const ThreadHandle threadHandle,
     auto *rtsThread = reinterpret_cast<hccl::Thread *>(threadHandle);
     CHK_PTR_NULL(rtsThread);
 
-    // 设置任务参数的基本信息
-    taskParam.taskPara.Ccu.dieId     = allCcuProfilingInfo[0].dieId;
-    taskParam.taskPara.Ccu.missionId = allCcuProfilingInfo[0].missionId;
-    taskParam.taskPara.Ccu.execMissionId = allCcuProfilingInfo[0].missionId;
-    taskParam.taskPara.Ccu.instrId   = allCcuProfilingInfo[0].instrId;
-    taskParam.taskPara.Ccu.executeId = execId; // TODO: 参数缺失，无法获取 - executeId（传入是kernelHandle，不建议赋值给executeId）
-    taskParam.taskPara.Ccu.ccuKernelHandle = execId;
-    taskParam.isMaster = rtsThread->GetMaster();
-    HCCL_INFO("[%s]dieId[%u], missionId[%u], execMissionId[%u], instrId[%u], executeId[%u], ccuKernelHandle[%u]",
-        __func__, taskParam.taskPara.Ccu.dieId, taskParam.taskPara.Ccu.missionId, taskParam.taskPara.Ccu.execMissionId,
-        taskParam.taskPara.Ccu.instrId, taskParam.taskPara.Ccu.executeId, taskParam.taskPara.Ccu.ccuKernelHandle);
+    FillCcuTaskParam(allCcuProfilingInfo, execId, rtsThread->GetMaster(), taskParam);
 
-    // 转换函数：将 hcomm::CcuProfilingInfo 转换为 Hccl::CcuProfilingInfo
-    auto convertToHccl = [](const hcomm::CcuProfilingInfo& src) -> Hccl::CcuProfilingInfo {
-        Hccl::CcuProfilingInfo dst;
-        dst.name = src.name;
-        dst.type = src.type;
-        dst.dieId = src.dieId;
-        dst.missionId = src.missionId;
-        dst.instrId = src.instrId;
-        dst.reduceOpType = src.reduceOpType;
-        dst.inputDataType = src.inputDataType;
-        dst.outputDataType = src.outputDataType;
-        dst.dataSize = src.dataSize;
-        dst.ckeId = src.ckeId;
-        dst.mask = src.mask;
-        HCCL_INFO("src.name %s, dst.name %s", src.name.c_str(), dst.name.c_str());
-        (void)memcpy_s(dst.channelId, sizeof(dst.channelId), src.channelId, sizeof(src.channelId));
-        (void)memcpy_s(dst.remoteRankId, sizeof(dst.remoteRankId), src.remoteRankId, sizeof(src.remoteRankId));
-        (void)memcpy_s(dst.channelHandle, sizeof(dst.channelHandle), src.channelHandle, sizeof(src.channelHandle));
-        return dst;
-    };
-
-    // 转换所有性能信息
-    std::vector<Hccl::CcuProfilingInfo> converted;
-    converted.reserve(allCcuProfilingInfo.size());
-
-    for (size_t i = 0; i < allCcuProfilingInfo.size(); ++i) {
-        converted.push_back(convertToHccl(allCcuProfilingInfo[i]));
-    }
-
-    // 构建shared_ptr并保存到任务参数
-    taskParam.ccuDetailInfo = std::make_shared<std::vector<Hccl::CcuProfilingInfo>>(std::move(converted));
-    HCCL_DEBUG("[%s]dieId[%u]", __func__, taskParam.taskPara.Ccu.dieId);
-
-    // 通过线程Handle中注册的回调函数完成数据存储
-    // 注意：profiling 上报是可选能力，未注册 callback 时仅打 warning 跳过，不阻塞主功能路径
     auto callback = rtsThread->GetCallback();
     if (!callback) {
         HCCL_WARNING("[%s] task info callback is not registered on thread, skip ccu profiling report.", __func__);
@@ -302,24 +303,6 @@ CcuResult HcommCcuKernelLaunch(ThreadHandle threadHandle,
     return CcuResult::CCU_SUCCESS;
 }
 
-constexpr uint64_t SetBits(uint16_t end)
-{
-    return ((uint64_t(1) << (end + 1)) - uint64_t(1));
-}
-
-inline uint64_t CcuCombineTokenInfo(uint64_t tokenId, uint64_t tokenValue, uint64_t tokenValid)
-{
-    constexpr uint16_t tokenValidBitNum   = 1;
-    constexpr uint16_t tokenValidShiftBit = 52;
-    constexpr uint16_t tokenIdBitNum      = 20;
-    constexpr uint16_t tokenIdShiftBit    = 32;
-    constexpr uint16_t tokenValueBitNum   = 32;
-    constexpr uint16_t tokenValueShiftBit = 0;
-    return ((tokenValid & SetBits(tokenValidBitNum)) << tokenValidShiftBit)
-           | ((tokenId & SetBits(tokenIdBitNum)) << tokenIdShiftBit)
-           | ((tokenValue & SetBits(tokenValueBitNum)) << tokenValueShiftBit);
-}
-
 HcommResult HcommCcuGetMemToken(uint64_t srcVa, uint64_t size, uint64_t *tokenInfo)
 {
     CHK_PTR_NULL(tokenInfo);
@@ -334,7 +317,7 @@ HcommResult HcommCcuGetMemToken(uint64_t srcVa, uint64_t size, uint64_t *tokenIn
     info.va = srcVa;
     info.size = size;
     CHK_RET(hcomm::RtsUbDevQueryInfo(QUERY_PROCESS_TOKEN, info));
-    *tokenInfo = CcuCombineTokenInfo(info.tokenId, info.tokenValue, 1);
+    *tokenInfo = hcomm::CcuRep::CcuCombineTokenInfo(info.tokenId, info.tokenValue, 1);
 
     return HcclResult::HCCL_SUCCESS;
 }
