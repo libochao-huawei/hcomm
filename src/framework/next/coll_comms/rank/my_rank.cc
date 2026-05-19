@@ -305,7 +305,7 @@ HcclResult MyRank::BatchServerInitForChannels(const HcclChannelDesc* channelDesc
         rankGraph_->GetDeviceId(rankId_, &devicePhyId);
         rankGraph_->GetDeviceId(remoteRank, &remoteDevicePhyId);
 
-        auto ret = endpointPair->BatchServerInit(rankId_, remoteRank, socketTag, reuseIdx, devicePhyId, remoteDevicePhyId);
+        auto ret = endpointPair->ServerInit(rankId_, remoteRank, socketTag, reuseIdx, devicePhyId, remoteDevicePhyId);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[%s] ServerInitFailed, channelIndex[%u], remoteRank[%u], protocol[%d] reuseIdx[%u]",
                 __func__, i, remoteRank, localEndpointDesc.protocol, reuseIdx),
@@ -677,10 +677,13 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
     std::string socketTag = commTag + "_engine_" + std::to_string(engine);
     CHK_RET(BatchCreateSockets(channelDescs, channelNum, socketTag, hcommDescs));
     CHK_RET_UNAVAIL(BatchCreateChannels(engine, channelDescs, channelNum, hcommDescs, hostChannelHandleList));
-    CHK_RET(BatchConnectChannels(channelDescs, hostChannelHandleList, channelNum));
-    auto end = std::chrono::steady_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-    HCCL_RUN_INFO("[MyRank][CreateChannels] CreateChannels Time Elapsed [%llu], channelNum [%u]", duration, channelNum);
+    if (!newChannels_.empty()) {
+        CHK_RET(BatchConnectChannels(channelDescs, hostChannelHandleList, channelNum));
+        auto end = std::chrono::steady_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+        HCCL_RUN_INFO("[MyRank][CreateChannels] CreateChannels Time Elapsed [%llu], channelNum [%u]", duration, channelNum);
+    }
+
     // 添加初始化时进行填表
     for (u32 i = 0; i < channelNum; ++i) {
         u32 remoteRank = channelDescs[i].remoteRank;

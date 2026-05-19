@@ -16,8 +16,6 @@
 
 #include "env_config/env_config.h"
 
-#include "future"
-
 namespace hcomm {
 
 constexpr uint32_t FINISH_MSG_SIZE = 128;
@@ -177,30 +175,12 @@ HcclResult CcuTransport::AppendXns(uint32_t xnsNum)
 HcclResult CcuTransport::StatusMachine()
 {
     EXCEPTION_HANDLE_BEGIN
-    std::future<CcuConnStatus> connResult;
-    if (transStatus_ == TransStatus::INIT) {
-        connResult = std::async(std::launch::async, [this]() -> CcuConnStatus {
-            return ccuConnection_->GetStatus();
-        });
-    }
     Hccl::SocketStatus socketStatus = socket_->GetAsyncStatus();
-    if (transStatus_ ==  TransStatus::INIT) {
-        auto connStatus = connResult.get();
-        if (connStatus ==  CcuConnStatus::CONN_INVALID) {
-            HCCL_ERROR("[CcuTransport][GetStatus] connection status[%s]", connStatus.Describe().c_str());
-            return HcclResult::HCCL_E_INTERNAL;
-        }
-
-        if (connStatus != CcuConnStatus::EXCHANGEABLE && connStatus != CcuConnStatus::CONNECTED) {
-            // 连接状态非错误但未达到目标状态时，transport保持当前状态
-            return HcclResult::HCCL_SUCCESS;
-        }
-    }
     if (socketStatus == Hccl::SocketStatus::INIT || socketStatus == Hccl::SocketStatus::TIMEOUT) {
         HCCL_ERROR("[CcuTransport][GetStatus]socket timeout or no link, please check");
         return HcclResult::HCCL_E_INTERNAL;
     }
-
+    
     if (socketStatus != Hccl::SocketStatus::OK) {
         return HcclResult::HCCL_SUCCESS; // 操作成功，保持当前状态
     }
@@ -208,9 +188,21 @@ HcclResult CcuTransport::StatusMachine()
 
     switch (transStatus_) {
         case CcuTransport::TransStatus::INIT: {
-            // connection完成本端资源创建或者复用时，发送本端资源信息
-            CHK_RET(SendDataSize());
-            transStatus_ = TransStatus::SEND_DATA_SIZE;
+            auto connStatus = ccuConnection_->GetStatus();
+            if (connStatus == CcuConnStatus::CONN_INVALID) {
+                HCCL_ERROR("[CcuTransport][GetStatus] connection status[%s] failed."
+                    " please check.", connStatus.Describe().c_str());
+                return HcclResult::HCCL_E_INTERNAL;
+            }
+
+            if (connStatus == CcuConnStatus::EXCHANGEABLE
+                || connStatus == CcuConnStatus::CONNECTED) {
+                // connection完成本端资源创建或复用时，发送本端资源信息
+                CHK_RET(SendDataSize());
+                transStatus_ = TransStatus::SEND_DATA_SIZE;
+            }
+
+            // connection状态非错误但未达到目标状态时，transport保持当前状态
             break;
         }
         case CcuTransport::TransStatus::SEND_DATA_SIZE:

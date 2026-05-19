@@ -117,12 +117,12 @@ TEST_F(SocketManagerTest, batch_server_listen_async_conect_sockets_should_ok) {
     SocketManager socketMgr(localRank, devicePhyId, devicePhyId, "tmp");
  	auto link = links[0];
     Hccl::SocketConfig socketConfig(link.GetRemoteRankId(), link, "test");
-    socketMgr.BatchServerListen(socketConfig);
+    socketMgr.ServerListen(socketConfig);
     auto &serverSocketMap = SocketManager::GetServerSocketMap();
     for (const auto& sock: serverSocketMap) {
         EXPECT_EQ(sock.second->socketStatus, SocketStatus::LISTENING);
     }
-    socketMgr.BatchConectSockets(socketConfig);
+    socketMgr.ConnectSockets(socketConfig);
     for (const auto& sock: socketMgr.connectedSocketMap) {
         if (sock.first.role == SocketRole::CLIENT) {
             EXPECT_EQ(sock.second->socketStatus, SocketStatus::CONNECT_STARTING);

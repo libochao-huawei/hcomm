@@ -49,8 +49,8 @@ public:
     u32 GetDeviceListenPort(const u32 &rankId, const IpAddress &ipAddress);
 
     void BatchCreateSockets(const vector<LinkData> &links);
-    void BatchServerListen(const SocketConfig &socketConfig);
-    void BatchConectSockets(const SocketConfig &socketConfig);
+    void ServerListen(const SocketConfig &socketConfig);
+    void ConnectSockets(const SocketConfig &socketConfig);
 
     void BatchCreateSockets(const SocketConfig &socketConfig);
 
@@ -82,7 +82,6 @@ private:
     void BatchServerInit(const vector<LinkData> &links);
     void BatchAddWhiteList(const vector<LinkData> &links);
     void BatchCreateConnectedSockets(const vector<LinkData> &links);
-    void ServerListenAsync(PortData &localPort);
     void AddWhiteList(const SocketConfig &socketConfig);
     const CommunicatorImpl *comm;
     static std::unordered_map<PortData, shared_ptr<Socket>>& GetServerSocketMap();
