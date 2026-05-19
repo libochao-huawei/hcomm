@@ -13,11 +13,12 @@ set (include_list
     ${legacy_platform_include_list}
 
     ${HCOMM_ROOT_PATH}/src/pub_inc
-    
+
     ${HCOMM_PLATFORM_INCLUDE_LIST}
 
     ${ASCEND_CANN_INCLUDE_LIST}
-
+    
+    ${CMAKE_SOURCE_DIR}/test/legacy/depends/toolchain/
     // 第三方
     ${RDMA_CORE_INCLUDE_DIR}
     ${THIRD_PARTY_PATH}/json/include
