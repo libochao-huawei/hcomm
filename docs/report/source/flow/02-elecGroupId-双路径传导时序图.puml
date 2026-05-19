@@ -1,0 +1,105 @@
+@startuml elecGroupId-双路径传导-简化版
+' ============================================================
+' elecGroupId V2 双路径汇合传导 — 简化时序图
+' 目标：介绍双路径如何传导 elecGroupId 到 RankDesc
+'       以及子通信域如何继承、ocsPlaneId/Num 如何生成
+' ============================================================
+
+skinparam BoxPadding 10
+skinparam ParticipantPadding 40
+
+title elecGroupId 双路径传导 — 简化时序图
+
+actor "Client" as Client
+
+box "Path A - RootInfo 自协商" #E8F5E9
+    participant "ConstructRankTable\nrank_info_detect_client.cc" as PathA_Parse
+    participant "BinaryStream\n序列化" as PathA_Ser
+    participant "TCP Server\n合并 & 广播" as PathA_Server
+end box
+
+box "Path B - ClusterInfo RankTable" #E3F2FD
+    participant "HcclCommInitClusterInfoV2\nop_base_v2.cc" as PathB_Api
+    participant "InitRankGraph string\ncommunicator_impl.cc:1290" as PathB_Init
+end box
+
+box "汇合点" #FFF3E0
+    participant "InitRankGraph\nRankTableInfo&\ncommunicator_impl.cc:1329" as Merge
+end box
+
+box "RankGraph 构建 & 写入" #F3E5F5
+    participant "RankGraphBuilder\nBuildRankGraph" as Builder
+    participant "RankGraph\nBuildRankDescVec" as RankGraph
+    participant "ReparseGroupedPlane\nForOcsMesh" as Reparse
+    database "rankDescVec_\nvector<RankDesc>" as Vec
+end box
+
+box "子通信域" #FFEBEE
+    participant "CreateSubComm\ncommunicator_impl.cc:324" as SubComm
+end box
+
+== Path A - RootInfo Self-Negotiation ==
+
+Client -> PathA_Parse: Read /etc/hccl_rootinfo.json
+PathA_Parse -> PathA_Parse: RankLevelInfo::Deserialize\n  elecGroupId = json.value<u32>("elec_group_id", 0)
+note over PathA_Parse: elecGroupId: JSON → C++ u32
+
+PathA_Parse -> PathA_Ser: GetBinStream << elecGroupId
+PathA_Ser -> PathA_Server: TCP Send Client→Server
+
+PathA_Server -> PathA_Server: BinaryStream >> elecGroupId\nMerge all clients, no modify
+PathA_Server -> PathA_Ser: Broadcast BinaryStream << elecGroupId
+PathA_Ser -> PathA_Parse: BinaryStream >> elecGroupId\nrootInfoUpdate repeat serialize round
+
+PathA_Parse -> Merge: Init(RankTableInfo)\n  → InitRankGraph(RankTableInfo&)
+note over Merge: RankTableInfo.ranks[i]\n  .rankLevelInfos[j].elecGroupId
+
+== Path B - ClusterInfo RankTable File ==
+
+Client -> PathB_Api: HcclCommInitClusterInfoV2
+PathB_Api -> PathB_Api: HcomLoadRankTableFileV2\nread JSON file to std::string
+note over PathB_Api: ranktableM 含 "elec_group_id": N\n原始 JSON 文本, 未解析
+
+PathB_Api -> PathB_Init: Init(string ranktableM)
+
+PathB_Init -> PathB_Init: JsonParser::ParseString\n  → RankLevelInfo::Deserialize\n    elecGroupId = json.value<u32>("elec_group_id", 0)
+note over PathB_Init: 唯一一次 JSON → C++
+
+PathB_Init -> Merge: InitRankGraph(RankTableInfo&)
+
+== Convergence - BuildRankDescVec ==
+
+Merge -> Builder: RankGraphBuilder::Build ranktable, topoPath, myRank
+Builder -> Builder: BuildRankGraph phase 1-7\n  BuildFromRankTable, BuildPeer2PeerLinks...
+
+Builder -> RankGraph: BuildRankDescVec *rankTable_ phase 8
+
+group BuildRankDescVec detail
+    RankGraph -> Vec: assign count, RankDesc{}
+    loop i = 0 .. count-1
+        RankGraph -> RankGraph: globalIdx = globalRankIds ? rankIds[i] : i
+        RankGraph -> RankGraph: rankInfo = rankTable.ranks[globalIdx]
+        RankGraph -> RankGraph: for each rankLevelInfo:\n  if OCS_MESH: d.elecGroupId = lv.elecGroupId
+    end
+    RankGraph -> Reparse: ReparseGroupedPlaneForOcsMesh rankTable, globalRankIds
+end
+
+== ocsPlaneId ocsPlaneNum Generation ==
+
+Reparse -> Reparse: for each OCS_MESH netInst, group rankIds\n  by elecGroupId read from RankTableInfo
+Reparse -> Reparse: totalGroups = elecGroups size\nplaneIdx = 0,1,2...
+Reparse -> Vec: for each group, for each rankId:\n  rankDescVec_[rankId].ocsPlaneId = planeIdx\n  rankDescVec_[rankId].ocsPlaneNum = totalGroups
+
+Merge -> Merge: save ranktableInfo from builder for sub-comm use
+
+== Sub-communicator Inheritance ==
+
+Client -> SubComm: CreateSubComm rankIds
+SubComm -> RankGraph: CreateSubRankGraph rankIds
+SubComm -> RankGraph: BuildRankDescVec *ranktableInfo &rankIds
+note over RankGraph: d.elecGroupId = lv.elecGroupId 子域与父域同源
+
+SubComm -> SubComm: subCommImpl->Init subRankGraph
+note over SubComm: 子域 Init 不重建 RankGraph\nranktableInfo 保持 nullptr\nBuildRankDescVec 在 Init 之前已完成
+
+@enduml

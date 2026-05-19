@@ -1,0 +1,123 @@
+@startuml RankTableInfo-to-RankDesc-简化版
+' ============================================================
+' RankTableInfo → RankDesc 数据传导 — 简化时序图
+' 目标：展示 elecGroupId / ocsPlaneId / ocsPlaneNum
+'       如何从 RankTableInfo 传导到 rankDescVec_
+' ============================================================
+
+skinparam BoxPadding 10
+skinparam ParticipantPadding 40
+
+title RankTableInfo to RankDesc Dataflow
+
+actor "Caller" as Caller
+
+box "Entry" #FFF3E0
+    participant "InitRankGraph\nRankTableInfo&\ncommunicator_impl.cc:1329" as Merge
+end box
+
+box "Build Chain" #E3F2FD
+    participant "RankGraphBuilder\nBuildRankGraph" as Builder
+    participant "RankGraph\nBuildRankDescVec" as RankGraph
+    participant "ReparseGroupedPlane\nForOcsMesh" as Reparse
+end box
+
+box "Data Source" #E8F5E9
+    database "RankTableInfo\nranks[].rankLevelInfos[]" as Src
+end box
+
+box "Data Target" #F3E5F5
+    database "rankDescVec_\nvector<RankDesc>" as Vec
+end box
+
+box "Sub-communicator" #FFEBEE
+    participant "CreateSubComm\ncommunicator_impl.cc:324" as SubComm
+end box
+
+== Parent Domain - BuildRankDescVec ==
+
+Caller -> Merge: InitRankGraph RankTableInfo&
+Merge -> Builder: Build ranktable, topoPath, myRank
+Builder -> Builder: BuildRankGraph phases 1-7\nBuildFromRankTable, BuildPeer2PeerLinks...
+
+Builder -> RankGraph: BuildRankDescVec *rankTable_, nullptr\nphase 8
+activate RankGraph
+
+group Step 1 - Allocate
+    RankGraph -> Vec: assign count, RankDesc{}\nzero-init: elecGroupId=0, ocsPlaneId=0, ocsPlaneNum=0
+end
+
+group Step 2 - Fill 6 fields per rank (elecGroupId among them)
+    loop i = 0 .. count-1
+        RankGraph -> RankGraph: globalIdx = i (parent: nullptr)
+        RankGraph -> Src: rankInfo = rankTable.ranks[globalIdx]
+        RankGraph -> Src: for each rankLevelInfo:\n  if netType == OCS_MESH\n    d.elecGroupId = lv.elecGroupId
+        note over RankGraph: 1st read from RankTableInfo\ncopy to RankDesc.elecGroupId
+        RankGraph -> Src: d.serverIdx = rankInfo.serverIdx
+        RankGraph -> Src: if netType == CLOS\n  strncpy d.superPodId = netInstId
+    end
+end
+
+group Step 3 - ReparseGroupedPlaneForOcsMesh
+    RankGraph -> Reparse: ReparseGroupedPlaneForOcsMesh\n  rankTable, nullptr
+    activate Reparse
+
+    Reparse -> Reparse: for each OCS_MESH netInst in netInsts_
+    loop for each rankId in netInst
+        Reparse -> Reparse: globalRankId = rankId (parent: nullptr)
+        Reparse -> Src: read elecGroupId from\n  rankTable.ranks[globalRankId]\n  .rankLevelInfos[OCS_MESH]
+        note over Reparse: 2nd read from RankTableInfo\nas group key, not from rankDescVec_
+        Reparse -> Reparse: elecGroups[elecGroupId].push rankId
+    end
+
+    Reparse -> Reparse: totalGroups = elecGroups.size()\nplaneIdx = 0
+
+    loop for each group, for each rankId
+        Reparse -> Vec: rankDescVec_[rankId].ocsPlaneId = planeIdx\nrankDescVec_[rankId].ocsPlaneNum = totalGroups
+    end
+
+    deactivate Reparse
+end
+
+deactivate RankGraph
+
+== Sub Domain - BuildRankDescVec with rankIds ==
+
+Caller -> SubComm: CreateSubComm rankIds
+SubComm -> SubComm: CreateSubRankGraph rankIds\ncrop topology from parent
+SubComm -> RankGraph: BuildRankDescVec *ranktableInfo, &rankIds
+
+activate RankGraph
+
+group Step 1 - Allocate sub
+    RankGraph -> Vec: assign rankIds.size(), RankDesc{}
+end
+
+group Step 2 - Fill per rank with global mapping
+    loop i = 0 .. rankIds.size()-1
+        RankGraph -> RankGraph: globalIdx = rankIds[i]\nsub local i maps to parent global rankId
+        RankGraph -> Src: rankInfo = rankTable.ranks[globalIdx]
+        RankGraph -> Src: d.elecGroupId = lv.elecGroupId\nsame source as parent, identical value
+    end
+end
+
+group Step 3 - ReparseGroupedPlaneForOcsMesh sub
+    RankGraph -> Reparse: ReparseGroupedPlaneForOcsMesh\n  rankTable, &rankIds
+    activate Reparse
+
+    loop for each rankId in netInst
+        Reparse -> Reparse: globalRankId = globalRankIds->at rankId
+        Reparse -> Src: read elecGroupId as group key
+        Reparse -> Reparse: group by elecGroupId
+    end
+
+    Reparse -> Vec: ocsPlaneId = planeIdx\nocsPlaneNum = totalGroups
+    deactivate Reparse
+end
+
+deactivate RankGraph
+
+SubComm -> SubComm: subCommImpl->Init subRankGraph
+note over SubComm: rankDescVec_ ready before Init\nranktableInfo stays nullptr
+
+@enduml

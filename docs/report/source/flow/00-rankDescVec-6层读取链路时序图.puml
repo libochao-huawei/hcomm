@@ -1,0 +1,168 @@
+@startuml rankDescVec-读取路径-6层调用链路
+' ============================================================
+' rankDescVec_ 读取路径 — 6层调用链路时序图
+'
+' 覆盖:
+'   - V2 正常路径
+'   - V1 fallback
+'   - 初始化路径: CollComm 构造 + BuildRankDescVec 数据灌入
+'
+' 语法注意事项:
+'   - == 分隔线内不能用 ()
+'   - group/loop 块内不能放 note
+'   - 避免 Unicode 特殊符号
+' ============================================================
+
+skinparam BoxPadding 10
+skinparam ParticipantPadding 40
+skinparam SequenceBoxBorderColor #555555
+
+title rankDescVec_ 读取路径 — HcclGetRankDescList 6层调用链路
+
+actor "C 调用者\n应用层" as User
+
+box "C API 层" #E8F5E9
+    participant "HcclGetRankDescList\nhccl_independent_rank_graph.cc:378" as Api
+end box
+
+box "V2/V1 分发" #FFF3E0
+    participant "HCCLV2_FUNC_RUN\nparam_check_basic_v2.h:18" as Macro
+end box
+
+box "hccl 命名空间 / V2 框架层" #E3F2FD
+    participant "hccl::hcclComm\nhccl_comm_pub.h" as Comm
+    participant "hccl::CollComm\ncoll_comm.h:33" as CollComm
+    participant "hccl::RankGraph\n虚基类 / rank_graph_base.h:23" as Base
+    participant "hccl::RankGraphV2\nrank_graph_v2.h:16" as V2
+end box
+
+box "Hccl 命名空间 / Legacy 实现层" #F3E5F5
+    participant "Hccl::IRankGraph\nrank_graph_interface.h:20" as IFace
+    participant "Hccl::RankGraph\n数据源 / rank_gph.h:33" as DataSrc
+    database "rankDescVec_\nvector<RankDesc>" as Vec
+end box
+
+== V2 正常路径 : isSupportV2 == true ==
+
+User -> Api: HcclGetRankDescList\n  comm, &descList, &descNum
+
+group 参数校验
+    Api -> Api: CHK_PTR_NULL comm\nCHK_PTR_NULL descList\nCHK_PTR_NULL descNum
+end
+
+Api -> Macro: HCCLV2_FUNC_RUN lambda
+
+group 宏展开 : V2 运行时判断
+    Macro -> Macro: hrtGetHcclV2Support\n-> isSupportV2 == true
+end
+
+note over Api, Macro: isSupportV2 == true\n执行 lambda 并直接 return
+
+Api -> Comm: static_cast<hccl::hcclComm*>(comm)
+activate Comm
+
+Api -> Comm: GetCollComm()
+Comm --> Api: CollComm*
+deactivate Comm
+
+Api -> CollComm: GetRankGraph()
+activate CollComm
+CollComm -> CollComm: rankgraph_.get()
+note right of CollComm
+  rankgraph_ =
+  unique_ptr<hccl::RankGraph>
+  实际对象 = RankGraphV2
+end note
+CollComm --> Api: hccl::RankGraph*
+deactivate CollComm
+
+Api -> Base: rankGraph->GetRankDescList\n  descList, descNum
+note over Base: 虚函数调用
+
+group 虚函数派发
+    Base -[#0000FF]> V2: 虚表派发 -> RankGraphV2
+    activate V2
+
+    V2 -> IFace: pImpl->GetRankDescList\n  descList, descNum / 参数透传
+    activate IFace
+
+    group IRankGraph : void* 还原 + const_cast 桥接
+        IFace -> IFace: CHK_PTR_NULL descList\nCHK_PTR_NULL descNum\nCHK_PTR_NULL rankGraphPtr_
+
+        IFace -> IFace: static_cast<RankGraph*>\n  rankGraphPtr_\n  void* -> Hccl::RankGraph*
+
+        IFace -> DataSrc: GetRankDescVec()
+        activate DataSrc
+        DataSrc -> Vec: return rankDescVec_
+        DataSrc --> IFace: const vector<RankDesc>&
+        deactivate DataSrc
+
+        IFace -> Vec: vec.data()
+        Vec --> IFace: const RankDesc*
+
+        IFace -> IFace: *descList =\n  const_cast<RankDesc*>\n    vec.data()
+    end
+
+    note right of IFace
+      const_cast 去掉 const
+      暴露内部裸指针
+      零拷贝, 调用者禁止释放
+    end note
+
+    IFace -> Vec: vec.size()
+    Vec --> IFace: size_t
+    IFace -> IFace: *descNum =\n  static_cast<uint32_t>\n    vec.size()
+
+    IFace --> V2: HCCL_SUCCESS
+    deactivate IFace
+
+    V2 --> Base: HCCL_SUCCESS
+    deactivate V2
+end
+
+Base --> Api: HCCL_SUCCESS
+Api --> User: HCCL_SUCCESS\n*descList -> rankDescVec_.data()\n*descNum  = vec.size()
+
+== V1 fallback 路径 : isSupportV2 == false ==
+
+User -> Api: HcclGetRankDescList ...
+
+Api -> Macro: HCCLV2_FUNC_RUN lambda
+Macro -> Macro: hrtGetHcclV2Support\n-> isSupportV2 == false
+note over Macro: lambda 不执行\ndo-while 结束\n控制流继续到 V1 代码
+
+Api -> Api: HCCL_ERROR\n"V1 path not supported"
+Api --> User: HCCL_E_NOT_SUPPORT
+note over User, Api: V1 通信域不支持\nRankGraphV1 未重写\nGetRankDescList 虚函数
+
+== 初始化路径 : 通信域创建时 / 独立于查询 ==
+
+note over Comm, IFace: 此段与查询路径独立\n在通信域初始化时执行
+
+Comm -> CollComm: collComm_->Init\n  void* rankGraph,\n  binHandle, cclBuffer, config
+activate CollComm
+
+CollComm -> V2: rankgraph_ =\n  make_unique<RankGraphV2>\n    rankGraph
+activate V2
+
+V2 -> IFace: pImpl =\n  make_unique<IRankGraph>\n    rankGraphPtr
+activate IFace
+
+IFace -> IFace: rankGraphPtr_ = rankGraphPtr
+note right of IFace: void* 存储\n后续 static_cast 还原
+
+deactivate IFace
+deactivate V2
+deactivate CollComm
+
+== BuildRankDescVec Data Fill ==
+
+DataSrc -> DataSrc: BuildRankDescVec rankTable
+
+group BuildRankDescVec detail
+    DataSrc -> Vec: assign count RankDesc{}
+    DataSrc -> DataSrc: populate all 8 fields from rankTable + peers_
+    DataSrc -> DataSrc: ReparseGroupedPlaneForOcsMesh ocsPlaneId/Num
+end
+
+@enduml

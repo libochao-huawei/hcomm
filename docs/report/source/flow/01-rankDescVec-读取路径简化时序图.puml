@@ -1,0 +1,87 @@
+@startuml rankDescVec-读取路径-简化版
+' ============================================================
+' rankDescVec_ 读取路径简化时序图
+' 基于 00-rankDescVec-6层读取链路时序图.puml 精简
+' 目标：介绍大体流程，省略实现细节
+' ============================================================
+
+skinparam BoxPadding 10
+skinparam ParticipantPadding 40
+
+title rankDescVec_ 读写路径 — 简化时序图
+
+actor "调用者" as User
+
+box "C API 层" #E8F5E9
+    participant "HcclGetRankDescList" as Api
+end box
+
+box "V2/V1 分发" #FFF3E0
+    participant "HCCLV2_FUNC_RUN" as Macro
+end box
+
+box "V2 框架层 (hccl 命名空间)" #E3F2FD
+    participant "hcclComm\n+CollComm" as Framework
+    participant "hccl::RankGraph\nV2 包装" as V2
+end box
+
+box "Legacy 实现层 (Hccl 命名空间)" #F3E5F5
+    participant "IRankGraph\n接口适配" as IFace
+    participant "Hccl::RankGraph\n数据源" as DataSrc
+    database "rankDescVec_\nvector<RankDesc>" as Vec
+end box
+
+== Write Path - BuildRankDescVec ==
+
+Framework -> DataSrc: BuildRankGraph() 阶段 8\nBuildRankDescVec(rankTable, globalRankIds)
+activate DataSrc
+
+DataSrc -> Vec: assign(count, RankDesc{})
+DataSrc -> DataSrc: populate all 8 fields from rankTable and peers
+DataSrc -> DataSrc: ReparseGroupedPlaneForOcsMesh ocsPlaneId ocsPlaneNum
+DataSrc --> Framework: rankDescVec_ 就绪
+deactivate DataSrc
+
+== Read Path - V2 Query ==
+
+User -> Api: HcclGetRankDescList(comm, &descList, &descNum)
+
+Api -> Api: 参数校验 (CHK_PTR_NULL x3)
+
+Api -> Macro: HCCLV2_FUNC_RUN(lambda)
+Macro -> Macro: hrtGetHcclV2Support() == true
+note over Macro: 执行 lambda 并 return
+
+Api -> Framework: GetCollComm()->GetRankGraph()
+Framework --> Api: hccl::RankGraph* (= RankGraphV2)
+
+Api -> V2: GetRankDescList(descList, descNum)
+activate V2
+
+V2 -> IFace: pImpl->GetRankDescList(...)
+activate IFace
+
+IFace -> DataSrc: GetRankDescVec()
+activate DataSrc
+DataSrc --> IFace: const vector<RankDesc>&
+deactivate DataSrc
+
+IFace -> IFace: *descList = const_cast(vec.data())\n*descNum  = vec.size()
+
+IFace --> V2: HCCL_SUCCESS
+deactivate IFace
+
+V2 --> Api: HCCL_SUCCESS
+deactivate V2
+
+Api --> User: HCCL_SUCCESS\n  descList points to rankDescVec_ data\n  descNum = total rank count
+
+== V1 Fallback - device not support V2 ==
+
+User -> Api: HcclGetRankDescList(...)
+Api -> Macro: HCCLV2_FUNC_RUN(lambda)
+Macro -> Macro: hrtGetHcclV2Support() == false
+note over Macro: lambda 不执行，控制流继续到 V1 代码
+Api --> User: HCCL_E_NOT_SUPPORT
+
+@enduml
