@@ -29,7 +29,7 @@ target_compile_options(hccd PRIVATE
     -fno-strict-aliasing
     -pipe
     -O3
-    -std=c++14
+    -std=c++17
     $<$<CONFIG:Debug>:-g>
 )
 

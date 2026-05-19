@@ -27,7 +27,7 @@ target_compile_options(ccl_kernel PRIVATE
     -fno-strict-aliasing
     -pipe
     -O3
-    -std=c++14
+    -std=c++17
 )
 
 # 链接选项
