@@ -157,7 +157,8 @@ HcclResult MyRank::TryInitCcuInstance()
 
     // ccu驱动未启动时，不能查询die，当前传递默认dieId，触发可用die资源申请
     CcuResDesc resDesc{};
-    resDesc.dieId = CCU_MAX_IODIE_NUM;
+    constexpr uint8_t CCU_ALL_IODIE = 2;
+    resDesc.dieId = CCU_ALL_IODIE;
     resDesc.insType = ccuInsType;
     constexpr uint32_t descNum = 1;
     auto ccuInitRet = HcommCcuInsCreate(static_cast<void *>(&resDesc),
