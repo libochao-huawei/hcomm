@@ -76,6 +76,11 @@ uint64_t GetToken(uint64_t tokenId, uint64_t tokenValue, uint64_t tokenValid)
            | ((tokenValue & SetBits(tokenValueBitNum)) << tokenValueShiftBit);
 }
 
+uint64_t CcuCombineTokenInfo(uint64_t tokenId, uint64_t tokenValue, uint64_t tokenValid)
+{
+    return GetToken(tokenId, tokenValue, tokenValid);
+}
+
 uint16_t GetCcuReduceType(Hccl::ReduceOp reduceOp)
 {
     static std::map<Hccl::ReduceOp, uint16_t> ccuReduceTypeMap = {
