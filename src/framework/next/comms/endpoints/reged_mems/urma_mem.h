@@ -37,7 +37,7 @@ public:
     using RemoteUbRmaBufferMgr = hccl::RmaBufferMgr<hccl::BufferKey<uintptr_t, u64>, std::shared_ptr<Hccl::RemoteUbRmaBufferBase>>;
 
     UbRegedMemMgr();
-    UbRegedMemMgr(CommProtocol protocol);
+    UbRegedMemMgr(EndpointLocType locType, CommProtocol protocol);
     ~UbRegedMemMgr() = default;
  
     HcclResult RegisterMemory(HcommMem mem, const char *memTag, void **memHandle) override;
@@ -48,7 +48,7 @@ public:
     HcclResult GetAllMemHandles(void **memHandles, uint32_t *memHandleNum) override;
     HcclResult GetMemDesc(const EndpointDesc endpointDesc, Hccl::LocalUbRmaBufferBase *localUbRmaBuffer);
     HcclResult GetParamsFromMemDesc(const void *memDesc, uint32_t descLen, 
-                                        EndpointDesc &endpointDesc, Hccl::ExchangeUbBufferDto &dto);
+                                        EndpointDesc &endpointDesc, Hccl::Serializable &dto);
  
 private:
     UbBufferMode bufferMode_{UbBufferMode::NORMAL};

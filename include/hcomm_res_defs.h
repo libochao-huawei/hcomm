@@ -102,20 +102,12 @@ typedef enum {
  */
 typedef struct {
     uint8_t portNum;            ///< PORT数量，最大HCOMM_NIC_PORT_MAX_NUM，当前最多支持双PORT
-<<<<<<< HEAD
     int32_t family;             ///< 带外建链地址族
     union {
         struct in_addr addr;    ///< IPv4地址结构
         struct in6_addr addr6;  ///< IPv6地址结构
     } linkAddr;                 ///< 带外建链地址
     uint8_t eidList[HCOMM_NIC_PORT_MAX_NUM][COMM_ADDR_EID_LEN]; ///< 每个PORT对应的EID地址
-=======
-    uint8_t eidList[HCOMM_NIC_PORT_MAX_NUM][COMM_ADDR_EID_LEN]; ///< 每个PORT对应的EID
-    union {
-        struct in_addr addr;    ///< IPv4地址结构
-        struct in6_addr addr6;  ///< IPv6地址结构
-    };
->>>>>>> 4c169f3f... Uboe 控制面 Endpoint 适配
 } MultiPortAddr;
 
 /**
@@ -125,20 +117,12 @@ typedef struct {
 typedef struct {
     CommAddrType type;           ///< 通信地址类别
     union {
-<<<<<<< HEAD
         uint8_t raws[56]; ///< 通用数据
-=======
-        uint8_t raws[sizeof(MultiPortAddr)]; ///< 通用数据
->>>>>>> 4c169f3f... Uboe 控制面 Endpoint 适配
         struct in_addr addr;     ///< IPv4地址结构
         struct in6_addr addr6;   ///< IPv6地址结构
         uint32_t id;             ///< 标识
         uint8_t eid[COMM_ADDR_EID_LEN];  ///< EID地址类型
-<<<<<<< HEAD
         MultiPortAddr portsAddr; ///< 多PORT地址类型
-=======
-        MultiPortAddr portsAddr; ///< 多PORT EID地址类型
->>>>>>> 4c169f3f... Uboe 控制面 Endpoint 适配
     };
 } CommAddr;
 

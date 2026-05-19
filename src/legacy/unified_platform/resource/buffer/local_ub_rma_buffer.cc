@@ -212,14 +212,24 @@ std::unique_ptr<Serializable> LocalUbAggregatedRmaBuffer::GetExchangeDto()
     return std::unique_ptr<Serializable>(dto.release());
 }
 
-void *LocalUbAggregatedRmaBuffer::GetMemHandleByPortIdx(uint8_t idx)
+u64 LocalUbAggregatedRmaBuffer::GetMemHandleByPortIdx(uint8_t idx)
 {
     if (idx >= portCtxs_.size()) {
         HCCL_ERROR("[LocalUbAggregatedRmaBuffer::%s] invalid port idx[%u], total ports[%zu]",
                    __func__, idx, portCtxs_.size());
-        return nullptr;
+        return 0;
     }
     return portCtxs_[idx].memHandle;
+}
+
+std::vector<u64> LocalUbAggregatedRmaBuffer::GetAllTargetSeg() const
+{
+    std::vector<u64> allTargetSeg;
+    allTargetSeg.reserve(portCtxs_.size());
+    for (const auto &ctx : portCtxs_) {
+        allTargetSeg.push_back(ctx.param.targetSegVa);
+    }
+    return allTargetSeg;
 }
 
 } // namespace Hccl

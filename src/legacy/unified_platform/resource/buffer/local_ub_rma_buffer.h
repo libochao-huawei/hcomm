@@ -98,16 +98,17 @@ public:
 
     std::unique_ptr<Serializable> GetExchangeDto() override;
 
-    void *GetMemHandleByPortIdx(uint8_t idx);
+    u64 GetMemHandleByPortIdx(uint8_t idx);
 
     u32 GetPortCount() const { return static_cast<u32>(portCtxs_.size()); }
 
+    std::vector<u64> GetAllTargetSeg() const;
+
 private:
-    struct PortAggregationContext
-    {
+    struct PortAggregationContext {
         RdmaHandle rdmaHandle{nullptr};
         HrtRaUbLocalMemRegOutParam param{};
-        void *memHandle{nullptr};
+        LocMemHandle memHandle{0};
         u64 segVa{0};
         u32 tokenValue{0};
         u32 tokenId{0};

@@ -190,13 +190,16 @@ public:
 
     std::string Describe() const final;
 
-    void *GetMemHandleByPortIdx(uint8_t idx);
+    u64 GetMemHandleByPortIdx(uint8_t idx);
+
+    std::vector<u64> GetAllTargetSeg() const;
 
 private:
     struct PortAggregationContext
     {
         RdmaHandle rdmaHandle{nullptr};
-        void *memHandle{nullptr};
+        u64 memHandle{0};
+        u64 segVa{0};
     };
 
     std::vector<PortAggregationContext> portCtxs_{};

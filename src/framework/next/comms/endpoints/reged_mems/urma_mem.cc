@@ -26,13 +26,14 @@ UbRegedMemMgr::UbRegedMemMgr()
     localUbRmaBufferMgr_ = std::make_unique<LocalUbRmaBufferMgr>();
 }
 
-UbRegedMemMgr::UbRegedMemMgr(CommProtocol protocol)
+UbRegedMemMgr::UbRegedMemMgr(EndpointLocType locType, CommProtocol protocol)
 {
     localUbRmaBufferMgr_ = std::make_unique<LocalUbRmaBufferMgr>();
-    if (protocol == COMM_PROTOCOL_UBOE) {
-        bufferMode_ = UbBufferMode::NORMAL;
-    } else {
+    if (locType == EndpointLocType::ENDPOINT_LOC_TYPE_HOST &&
+        protocol == CommProtocol::COMM_PROTOCOL_UBOE) {
         bufferMode_ = UbBufferMode::AGGREGATED;
+    } else {
+        bufferMode_ = UbBufferMode::NORMAL;
     }
 }
 
@@ -180,7 +181,7 @@ HcclResult UbRegedMemMgr::MemoryExport(const EndpointDesc endpointDesc, void *me
 }
 
 HcclResult UbRegedMemMgr::GetParamsFromMemDesc(const void *memDesc, uint32_t descLen, 
-                                                EndpointDesc &endpointDesc, Hccl::ExchangeUbBufferDto &dto) 
+                                                EndpointDesc &endpointDesc, Hccl::Serializable &dto) 
 {
     const char *description = static_cast<const char *>(memDesc);
 
@@ -204,19 +205,35 @@ HcclResult UbRegedMemMgr::MemoryImport(const void *memDesc, uint32_t descLen, Hc
     HCCL_INFO("[%s] Begin", __FUNCTION__);
 
     EndpointDesc endpointDesc;
-    Hccl::ExchangeUbBufferDto dto;
-    CHK_RET(GetParamsFromMemDesc(memDesc, descLen, endpointDesc, dto));
+    bool isAggregated = (bufferMode_ == UbBufferMode::AGGREGATED);
 
-    // 构造RemoteUbRmaBuffer
-    std::shared_ptr<Hccl::RemoteUbRmaBuffer> remoteUbRmaBuffer;
-    EXECEPTION_CATCH(
-        remoteUbRmaBuffer = std::make_shared<Hccl::RemoteUbRmaBuffer>(this->rdmaHandle_, dto),
-        return HCCL_E_PTR;
-    );
+    std::unique_ptr<Hccl::Serializable> dtoPtr;
+    std::shared_ptr<Hccl::RemoteUbRmaBufferBase> remoteUbRmaBuffer;
+    u64 addr = 0;
+    u64 size = 0;
+
+    if (isAggregated) {
+        dtoPtr = std::make_unique<Hccl::ExchangeAggregatedUbBufferDto>();
+        CHK_RET(GetParamsFromMemDesc(memDesc, descLen, endpointDesc, *dtoPtr));
+
+        auto* aggregatedDto = dynamic_cast<Hccl::ExchangeAggregatedUbBufferDto*>(dtoPtr.get());
+        addr = aggregatedDto->addr;
+        size = aggregatedDto->size;
+        std::vector<Hccl::RdmaHandle> handles = {this->rdmaHandle_};
+        remoteUbRmaBuffer = std::make_shared<Hccl::RemoteUbAggregatedRmaBuffer>(handles, *dtoPtr);
+    } else {
+        dtoPtr = std::make_unique<Hccl::ExchangeUbBufferDto>();
+        CHK_RET(GetParamsFromMemDesc(memDesc, descLen, endpointDesc, *dtoPtr));
+
+        auto* normalDto = dynamic_cast<Hccl::ExchangeUbBufferDto*>(dtoPtr.get());
+        addr = normalDto->addr;
+        size = normalDto->size;
+        remoteUbRmaBuffer = std::make_shared<Hccl::RemoteUbRmaBuffer>(this->rdmaHandle_, *dtoPtr);
+    }
+
     CHK_SMART_PTR_NULL(remoteUbRmaBuffer);
 
-    // 放到RemoteUbRmaBufferMgr_
-    hccl::BufferKey<uintptr_t, u64> tempKey(static_cast<uintptr_t>(dto.addr), dto.size);
+    hccl::BufferKey<uintptr_t, u64> tempKey(static_cast<uintptr_t>(addr), size);
     if(remoteUbRmaBufferMgrs_.find(endpointDesc) == remoteUbRmaBufferMgrs_.end()) {
         std::unique_ptr<RemoteUbRmaBufferMgr> remoteUbRmaBufferMgr;
         EXECEPTION_CATCH((remoteUbRmaBufferMgr = std::make_unique<RemoteUbRmaBufferMgr>()),

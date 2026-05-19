@@ -70,14 +70,12 @@ public:
 
         void Serialize(Hccl::BinaryStream &stream)
         {
-            stream << tokenValue << tokenId << keySize << segVa;
-            stream.Write(key, HRT_UB_MEM_KEY_MAX_LEN);
+            stream << tokenValue << tokenId << keySize << key << segVa;
         }
 
         void Deserialize(Hccl::BinaryStream &stream)
         {
-            stream >> tokenValue >> tokenId >> keySize >> segVa;
-            stream.Read(key, HRT_UB_MEM_KEY_MAX_LEN);
+            stream >> tokenValue >> tokenId >> keySize >> key >> segVa;
         }
     };
 
@@ -92,7 +90,7 @@ public:
         stream << addr << size << memType << memTag;
         u32 portCount = static_cast<u32>(portDtos.size());
         stream << portCount;
-        for (const auto &portDto : portDtos) {
+        for (auto &portDto : portDtos) {
             portDto.Serialize(stream);
         }
     }
