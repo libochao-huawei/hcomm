@@ -21,6 +21,8 @@
 // 暂时引入orion
 #include "local_ub_rma_buffer.h"
 
+#include "comm_mems.h"
+
 namespace hcomm {
 
 CcuUrmaChannel::CcuUrmaChannel(const EndpointHandle locEndpointHandle,
@@ -50,7 +52,7 @@ HcclResult BuildBufferInfos(HcommMemHandle *memHandles, uint32_t memHandleNum,
             static_cast<uint32_t>(locMemInfo->mem.size),
             locRmaBuffer->GetTokenId(),
             locRmaBuffer->GetTokenValue(),
-            locMemInfo->mem.type,
+            hccl::ConvertCommToHcclMemType(locMemInfo->mem.type),
             memTag);
     }
     return HCCL_SUCCESS;
@@ -284,28 +286,9 @@ HcclResult CcuUrmaChannel::GetNotifyNum(uint32_t *notifyNum) const
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult CcuUrmaChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags)
+HcclResult CcuUrmaChannel::GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, char **memTags)
 {
-    CHK_PTR_NULL(remoteMem);
-    CHK_PTR_NULL(memNum);
-    CHK_PTR_NULL(memTags);
-
-    *remoteMem = nullptr;
-    *memNum = 0;
-
-    CHK_PTR_NULL(impl_);
-    CcuTransport::CclBufferInfo bufInfo{};
-    constexpr uint32_t bufNum = 0; // 当前不支持
-    CHK_RET(impl_->GetRmtBuffer(bufInfo, bufNum));
-
-    hcclBufferInfoPtr_->type = HCCL_MEM_TYPE_DEVICE;
-    hcclBufferInfoPtr_->addr = reinterpret_cast<void *>(bufInfo.addr);
-    hcclBufferInfoPtr_->size = static_cast<uint64_t>(bufInfo.size);
-
-    remoteMem[0] = hcclBufferInfoPtr_.get();
-    *memNum = 1;
-    memTags[0] = const_cast<char *>(memTag_.c_str());
-    return HcclResult::HCCL_SUCCESS;
+    return impl_->GetUserRemoteMems(remoteMem, memNum, memTags);
 }
 
 HcclResult CcuUrmaChannel::Clean()
@@ -318,11 +301,6 @@ HcclResult CcuUrmaChannel::Clean()
 HcclResult CcuUrmaChannel::Resume()
 {
     return HCCL_SUCCESS;
-}
-
-HcclResult CcuUrmaChannel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum)
-{
-    return impl_->GetUserRemoteMem(remoteMem, memTag, memNum);
 }
 
 HcclResult CcuUrmaChannel::UpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum)
