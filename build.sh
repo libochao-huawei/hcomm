@@ -21,7 +21,6 @@ COV="false"
 CUSTOM_OPTION="-DCMAKE_INSTALL_PREFIX=${BUILD_OUTPUT_DIR}"
 ENABLE_BUILD_DEVICE="OFF"
 ENABLE_BUILD_AARCH="OFF"
-DO_NOT_CLEAN="false" # 是否清理
 CANN_3RD_LIB_PATH="${CURRENT_DIR}/third_party"
 CANN_UTILS_LIB_PATH="${CURRENT_DIR}/utils"
 CUSTOM_SIGN_SCRIPT="${CURRENT_DIR}/scripts/sign/community_sign_build.py"
@@ -65,15 +64,6 @@ function clean()
 
     if [ -n "${BUILD_OUTPUT_DIR}" ];then
         rm -rf ${BUILD_OUTPUT_DIR}
-    fi
-
-    mkdir -p ${BUILD_DIR}
-}
-
-function rmdir()
-{
-    if [ "${DO_NOT_CLEAN}" = "false" ] && [ $# -gt 0 ]; then
-        rm -rf "$@"
     fi
 }
 
@@ -452,7 +442,7 @@ while [[ $# -gt 0 ]]; do
         shift
         ;;
     --noclean)
-        DO_NOT_CLEAN="true"
+        # 默认不清理构建目录
         shift
         ;;
     --cb_test_verify)
@@ -522,12 +512,7 @@ CUSTOM_OPTION="${CUSTOM_OPTION} -DPRODUCT=ascend"
 
 set_env
 
-if [ "${DO_NOT_CLEAN}" = "false" ]; then
-    clean
-else
-    mkdir -p "${BUILD_DIR}"
-fi
-
+mkdir -p "${BUILD_DIR}"
 cd ${BUILD_DIR}
 
 if [ "${ENABLE_UT}" == "on" ]; then
