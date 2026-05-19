@@ -1386,11 +1386,11 @@ void SocketManager::BatchCreateSockets(const vector<LinkData> &links)
 {
 }
 
-void SocketManager::BatchServerListen(const SocketConfig &socketConfig)
+void SocketManager::ServerListen(const SocketConfig &socketConfig)
 {
 }
 
-void SocketManager::BatchConectSockets(const SocketConfig &socketConfig)
+void SocketManager::ConnectSockets(const SocketConfig &socketConfig)
 {
 }
 

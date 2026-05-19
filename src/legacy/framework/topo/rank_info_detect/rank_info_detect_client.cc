@@ -476,7 +476,8 @@ void RankInfoDetectClient::TearDown()
     // deinit ra in detach thread to avoid block main thread
     s32 deviceLogicId = HrtGetDevice();
     std::thread{[deviceLogicId](){
-        HccpPeerManager::GetInstance().DeInit(deviceLogicId);
+        EXECEPTION_CATCH(HccpPeerManager::GetInstance().DeInit(deviceLogicId),
+            HCCL_ERROR("[RankInfoDetectClient::TearDown] DeInit exception"));
     }}.detach();
 
     HCCL_INFO("[RankInfoDetectClient::%s] end.", __func__);

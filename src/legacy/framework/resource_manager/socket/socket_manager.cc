@@ -26,7 +26,7 @@ namespace Hccl {
 
 static std::mutex socketLock;
 
-void SocketManager::BatchServerListen(const SocketConfig &socketConfig)
+void SocketManager::ServerListen(const SocketConfig &socketConfig)
 {
     LinkData link = socketConfig.link;
 
@@ -49,12 +49,12 @@ void SocketManager::BatchServerListen(const SocketConfig &socketConfig)
         auto portData = link.GetLocalPort();
         SocketRole role = link.GetLocalRankId() < link.GetRemoteRankId() ? SocketRole::SERVER : SocketRole::CLIENT;
         if (role == SocketRole::SERVER) {
-            ServerListenAsync(portData);
+            ServerListen(portData);
         }
     }
 }
 
-void SocketManager::BatchConectSockets(const SocketConfig &socketConfig)
+void SocketManager::ConnectSockets(const SocketConfig &socketConfig)
 {
     if (GetConnectedSocket(socketConfig) == nullptr) {
         AddWhiteList(socketConfig);
@@ -161,43 +161,6 @@ void SocketManager::BatchServerInit(const vector<LinkData> &links)
             ServerInit(portData);
         }
     }
-}
-
-void SocketManager::ServerListenAsync(PortData &localPort)
-{
-    std::lock_guard<std::mutex> lock(socketLock);
-    IpAddress ipAddress = localPort.GetAddr();
-    u32 serverListenPort = localPort.GetType() == PortDeploymentType::P2P
-            ? GetDeviceListenPort(localPort.GetRankId(), DEVICE_PORT_KEY_IPADDRESS)
-            : GetDeviceListenPort(localPort.GetRankId(), ipAddress);
-
-    auto &serverSocketMap = SocketManager::GetServerSocketMap();
-    auto serverSocketInMap = serverSocketMap.find(localPort);
-    if (serverSocketInMap != serverSocketMap.end()) {
-        auto oldServerSocket = serverSocketMap.at(localPort);
-        u32 oldServerListenPort = oldServerSocket->GetListenPort();
-        if (oldServerListenPort != serverListenPort) {
-            // 都改为异步监听
-            oldServerSocket->ListenAsync();
-            HCCL_INFO("[SocketManager::%s] %s change listen port %u", __func__, 
-                localPort.Describe().c_str(), oldServerListenPort);
-        }
-        HCCL_INFO("[%s] find localPort in serverSocketMap, localPort [%s]", __func__, localPort.Describe().c_str());
-        return;
-    }
-
-    SocketHandle hccpSocketHandle = SocketHandleManager::GetInstance().Create(devicePhyId, localPort);
-    NicType nicType = localPort.GetType() == PortDeploymentType::P2P
-            ? NicType::DEVICE_VNIC_TYPE
-            : NicType::DEVICE_NIC_TYPE;
-    auto serverSocket = socketProducer(ipAddress, ipAddress, serverListenPort, hccpSocketHandle, "server", SocketRole::SERVER, nicType);
-    // 异步监听接口
-    serverSocket->ListenAsync();
-    HCCL_RUN_INFO("[SocketManager::%s] Local %s listen", __func__, localPort.Describe().c_str());
-
-    serverSocketMap[localPort] = std::move(serverSocket);
-
-    
 }
 
 void SocketManager::BatchAddWhiteList(const vector<LinkData> &links)
