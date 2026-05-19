@@ -387,16 +387,16 @@ namespace hccl
             return HCCL_SUCCESS;
         }
 
-        HCCL_INFO("[InitCollCommInner] start, userRank[%u]", userRank);
+        HCCL_INFO("[%s] start, userRank[%u]", __func__, userRank);
         HcclCommunicator* hcclComm = GetHcclCommunicator();
         if (hcclComm == nullptr) {
-            HCCL_WARNING("[InitCollCommInner] HcclCommunicator NULL, skip CollComm init");
+            HCCL_WARNING("[%s] HcclCommunicator NULL, skip CollComm init", __func__);
             return HCCL_SUCCESS;
         }
 
         void* rankGraphV1 = hcclComm->GetRankGraphV1();
         if (rankGraphV1 == nullptr) {
-            HCCL_WARNING("[InitCollCommInner] rankGraphV1 is nullptr, skip CollComm init");
+            HCCL_WARNING("[%s] rankGraphV1 is nullptr, skip CollComm init", __func__);
             return HCCL_SUCCESS;
         }
 
@@ -405,7 +405,7 @@ namespace hccl
         CHK_RET(CreateCommCCLbuffer());
         HcclResult ret = hcclComm->GetInCCLbuffer(cclBufferAddr, cclBufferSize);
         if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[InitCollCommInner] GetInCCLbuffer failed, ret=%d", ret);
+            HCCL_ERROR("[%s] GetInCCLbuffer failed, ret=%d", __func__, ret);
             return ret;
         }
 
@@ -418,11 +418,11 @@ namespace hccl
 
         ret = InitCollComm(nullptr, rankGraphV1, userRank, cclBuffer, commName, const_cast<HcclCommConfig*>(config));
         if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[InitCollCommInner] InitCollComm failed, ret=%d", ret);
+            HCCL_ERROR("[%s] InitCollComm failed, ret=%d", __func__, ret);
             return ret;
         }
 
-        HCCL_INFO("[InitCollCommInner] CollComm init success for V1");
+        HCCL_INFO("[%s] CollComm init success for V1", __func__);
         return HCCL_SUCCESS;
     }
 

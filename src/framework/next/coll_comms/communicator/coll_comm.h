@@ -39,7 +39,7 @@ public:
     HcclResult Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cclBuffer, HcclCommConfig *config);
 
     inline CommConfig& GetCommConfig() { return config_;}
-    inline RankGraph* GetRankGraph() { return rankgraph_; }
+    inline RankGraph* GetRankGraph() { return rankgraph_.get(); }
     inline CommEngineResMgr* GetCommEngineResMgr() { return commEngineResMgr_.get(); }
     inline ContextManager* GetContextManager() { return contextMgr_.get(); }
     inline CommMemMgr* GetCommMemMgr() { return commMemMgr_.get(); }
@@ -117,7 +117,7 @@ private:
     uint32_t index_{0};
     std::unordered_set<s32> aicpuStreamIds_;
 
-    RankGraph *rankgraph_{nullptr};
+    std::shared_ptr<RankGraph> rankgraph_;
     std::unique_ptr<CommEngineResMgr> commEngineResMgr_{nullptr};
     std::unique_ptr<ContextManager>  contextMgr_{nullptr};
     std::unique_ptr<CommMemMgr> commMemMgr_{nullptr};

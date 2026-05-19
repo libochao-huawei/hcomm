@@ -414,7 +414,7 @@ namespace hccl
         CHK_RET(RegisterToSnapshot());
         CHK_RET(InitSymmetricMemory());
 
-        (void)InitMyRankConnectMode(params, rankTable);
+        CHK_RET(InitMyRankConnectMode(params, rankTable));
         if (dpuManager_ != nullptr && myRankConnectMode_) { /* 当前只有host nic--device nic使用 */
             CHK_RET(dpuManager_->Init(identifier_, deviceLogicId_));
         }
