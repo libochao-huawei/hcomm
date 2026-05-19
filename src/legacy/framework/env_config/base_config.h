@@ -136,6 +136,7 @@ private:
     static constexpr u32 HCCL_RDMA_TIMEOUT_MAX       = 24;  // rdma timeout最大值为24
     static constexpr u32 HCCL_RDMA_RETRY_CNT_MIN     = 1;   // rdma Retry Cnt最小值为1
     static constexpr u32 HCCL_RDMA_RETRY_CNT_MAX     = 7;   // rdma Retry Cnt最大值为7
+    static constexpr u32 HCCL_RDMA_KB_SIZE           = 1024;// 1 KB = 1024 B
 
     CfgField<u32> rdmaTrafficClass{"HCCL_RDMA_TC", u32(HCCL_RDMA_TC_DEFAULT), Str2T<u32>,
                                    CHK_RANGE_CLOSED<u32>(HCCL_RDMA_TC_MIN, HCCL_RDMA_TC_MAX), CheckRDMATrafficClass};
@@ -148,7 +149,7 @@ private:
     CfgField<u32> queueNum{"HCCL_RDMA_QPS_PER_CONNECTION", u32(1), Str2T<u32>,
                                CHK_RANGE_CLOSED<u32>(1, 32)};
     CfgField<u32> multiQpThreshold{"HCCL_MULTI_QP_THRESHOLD", u32(512), Str2T<u32>,
-                               CHK_RANGE_CLOSED<u32>(1, 8192)};
+                               CHK_RANGE_CLOSED<u32>(1, 8192), [](u64 &i) { i *= HCCL_RDMA_KB_SIZE; }}; // 从环境变量获取后，单位从KB转为B
 };
 
 // 算法配置
