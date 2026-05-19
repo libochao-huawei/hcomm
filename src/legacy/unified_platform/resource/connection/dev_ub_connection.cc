@@ -203,6 +203,83 @@ void DevUbConnection::GetTimeOut() // 直接基于环境变量控制
     HCCL_INFO("%s final TA Timeout [%u] (%ums).", __func__, jettyTimeOut);
 }
 
+void DevUbConnection::AdvanceUbConnFromInit()
+{
+    HCCL_INFO("[DevUbConnection][%s] start, status[%s], ubConnStatus[%s].", __func__, status.Describe().c_str(),
+              ubConnStatus.Describe().c_str());
+
+    if (devUsed_) {
+        if (!GetTpInfo()) {
+            ubConnStatus = UbConnStatus::TP_INFO_GETTING;
+            return;
+        }
+        GetTimeOut();
+        CreateJetty(devUsed_);
+        ubConnStatus = UbConnStatus::JETTY_CREATING;
+        return;
+    }
+
+    if (!GetTpInfo()) {
+        ubConnStatus = UbConnStatus::TP_INFO_GETTING;
+        return;
+    }
+    GetTimeOut();
+    CreateJetty(isdevUsed);
+    if (!CheckRequestResult()) {
+        ubConnStatus = UbConnStatus::JETTY_CREATING;
+        return;
+    }
+    SetJettyInfo();
+    status       = RmaConnStatus::EXCHANGEABLE;
+    ubConnStatus = UbConnStatus::JETTY_CREATED;
+}
+
+void DevUbConnection::AdvanceUbConnFromTpInfoGetting()
+{
+    if (!GetTpInfo()) {
+        return;
+    }
+    if (devUsed_) {
+        GetTimeOut();
+        CreateJetty(devUsed_);
+        ubConnStatus = UbConnStatus::JETTY_CREATING;
+        return;
+    }
+    GetTimeOut();
+    CreateJetty(isdevUsed);
+    if (!CheckRequestResult()) {
+        ubConnStatus = UbConnStatus::JETTY_CREATING;
+        return;
+    }
+    SetJettyInfo();
+    status       = RmaConnStatus::EXCHANGEABLE;
+    ubConnStatus = UbConnStatus::JETTY_CREATED;
+}
+
+void DevUbConnection::AdvanceUbConnFromJettyCreating()
+{
+    if (CheckRequestResult()) {
+        SetJettyInfo();
+        status       = RmaConnStatus::EXCHANGEABLE;
+        ubConnStatus = UbConnStatus::JETTY_CREATED;
+    }
+}
+
+void DevUbConnection::AdvanceUbConnFromJettyCreated()
+{
+    HCCL_INFO("[DevUbConnection][%s] status[%s] will not change, "
+              "should call ImportRmtDto to change status.",
+              __func__, status.Describe().c_str());
+}
+
+void DevUbConnection::AdvanceUbConnFromJettyImporting()
+{
+    SetImportInfo();
+
+    status       = RmaConnStatus::READY;
+    ubConnStatus = UbConnStatus::READY;
+}
+
 RmaConnStatus DevUbConnection::GetStatus()
 {
     if (!CheckRequestResult()) {
@@ -210,80 +287,21 @@ RmaConnStatus DevUbConnection::GetStatus()
     }
 
     switch (ubConnStatus) {
-        case UbConnStatus::INIT: {
-            HCCL_INFO("[DevUbConnection][%s] start, status[%s], ubConnStatus[%s].", __func__, status.Describe().c_str(),
-                      ubConnStatus.Describe().c_str());
-
-            if (devUsed_) {
-                if (!GetTpInfo()) {
-                    ubConnStatus = UbConnStatus::TP_INFO_GETTING;
-                    break;
-                }
-                GetTimeOut();
-                CreateJetty(devUsed_);
-                ubConnStatus = UbConnStatus::JETTY_CREATING;
-                break;
-            }
-
-            if (!GetTpInfo()) {
-                ubConnStatus = UbConnStatus::TP_INFO_GETTING;
-                break;
-            }
-            GetTimeOut();
-            CreateJetty(isdevUsed);
-
-            if (!CheckRequestResult()) {
-                ubConnStatus = UbConnStatus::JETTY_CREATING;
-                break;
-            }
-            SetJettyInfo();
-
-            status       = RmaConnStatus::EXCHANGEABLE;
-            ubConnStatus = UbConnStatus::JETTY_CREATED;
+        case UbConnStatus::INIT:
+            AdvanceUbConnFromInit();
             break;
-        }
-        case UbConnStatus::TP_INFO_GETTING: {
-            if (!GetTpInfo()) {
-                break;
-            }
-            if (devUsed_) {
-                GetTimeOut();
-                CreateJetty(devUsed_);
-                ubConnStatus = UbConnStatus::JETTY_CREATING;
-                break;
-            }
-            GetTimeOut();
-            CreateJetty(isdevUsed);
-            if (!CheckRequestResult()) {
-                ubConnStatus = UbConnStatus::JETTY_CREATING;
-                break;
-            }
-            SetJettyInfo();
-            status       = RmaConnStatus::EXCHANGEABLE;
-            ubConnStatus = UbConnStatus::JETTY_CREATED;
+        case UbConnStatus::TP_INFO_GETTING:
+            AdvanceUbConnFromTpInfoGetting();
             break;
-        }
-        case UbConnStatus::JETTY_CREATING: {
-            if (CheckRequestResult()) {
-                SetJettyInfo();
-                status       = RmaConnStatus::EXCHANGEABLE;
-                ubConnStatus = UbConnStatus::JETTY_CREATED;
-            }
+        case UbConnStatus::JETTY_CREATING:
+            AdvanceUbConnFromJettyCreating();
             break;
-        }
-        case UbConnStatus::JETTY_CREATED: {
-            HCCL_INFO("[DevUbConnection][%s] status[%s] will not change, "
-                      "should call ImportRmtDto to change status.",
-                      __func__, status.Describe().c_str());
+        case UbConnStatus::JETTY_CREATED:
+            AdvanceUbConnFromJettyCreated();
             break;
-        }
-        case UbConnStatus::JETTY_IMPORTING: {
-            SetImportInfo();
-
-            status       = RmaConnStatus::READY;
-            ubConnStatus = UbConnStatus::READY;
+        case UbConnStatus::JETTY_IMPORTING:
+            AdvanceUbConnFromJettyImporting();
             break;
-        }
         case UbConnStatus::READY:
             break;
         default:
