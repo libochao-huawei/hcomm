@@ -85,6 +85,7 @@ HcclResult DpuManager::AllocAndRegKFCWorkSpace(uint64_t size)
 HcclResult DpuManager::DestroyKFCWorkSpaceVA()
 {
     if (accessVA_ == nullptr && va_ == nullptr) {
+        HCCL_RUN_WARNING("[%s]accessVA_/va_ is nullptr", __func__);
         return HCCL_SUCCESS;
     }
 
