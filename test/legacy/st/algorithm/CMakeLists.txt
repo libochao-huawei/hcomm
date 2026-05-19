@@ -230,7 +230,6 @@ set(checker_include_list
 
 set(HCOMM_PLATFORM_INCLUDE_LIST
     ${HCOMM_CODE_PLATFORM}/hccp/inc/network
-    ${HCOMM_CODE_PLATFORM}/hccp/external_depends/inc/log
 )
 
 # 设置全局包含路径，让所有子目录继承
