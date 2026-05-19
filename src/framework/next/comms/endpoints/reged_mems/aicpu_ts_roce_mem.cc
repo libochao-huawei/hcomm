@@ -19,6 +19,7 @@
 #include "hccl_net_dev_defs.h"
 #include "log.h"
 #include "rma_buffer.h"
+#include "virtual_local_rma_buffer.h"
 
 namespace {
 using LocalRdmaRmaBufferMgr = hccl::NetDevContext::LocalRdmaRmaBufferMgr;
@@ -74,6 +75,10 @@ void AicpuTsRoceRegedMemMgr::TrackRegisteredBuffer(const std::shared_ptr<hccl::L
         return;
     }
     allRegisteredBuffers_.push_back(localBuffer);
+    // Skip hcclBufRecords_ for virtual buffers — they don't have their own RDMA handle
+    if (localBuffer->IsVirtual()) {
+        return;
+    }
     HcclBuf rec{};
     rec.addr = localBuffer->GetAddr();
     rec.len = localBuffer->GetSize();
@@ -118,6 +123,29 @@ HcclResult AicpuTsRoceRegedMemMgr::RegisterMemory(HcommMem mem, const char *memT
     std::shared_ptr<LocalBufferMgrCtx> ctx = GetOrCreateLocalBufferMgr(netDevCtx->GetPhyId());
     CHK_PTR_NULL(ctx);
     std::lock_guard<std::mutex> phyLocalLock(*ctx->mu);
+
+    // Check if the incoming memory is contained within a larger already-registered region
+    auto findPair = localRdmaRmaBufferMgr_->Find(tempKey);
+    if (findPair.first) {
+        auto existingBuffer = findPair.second;
+        uintptr_t existingAddr = reinterpret_cast<uintptr_t>(existingBuffer->GetAddr());
+        u64 existingSize = existingBuffer->GetSize();
+        if (existingAddr != reinterpret_cast<uintptr_t>(mem.addr) || existingSize != static_cast<u64>(mem.size)) {
+            // Subset case: create virtual buffer sharing the real buffer's RDMA registration.
+            hccl::BufferKey<uintptr_t, u64> realKey(existingAddr, existingSize);
+            localRdmaRmaBufferMgr_->AddToTree(realKey, existingBuffer);  // Increment ref count
+
+            auto virtBuffer = std::make_shared<hccl::VirtualLocalRdmaRmaBuffer>(
+                existingBuffer, mem.addr, static_cast<u64>(mem.size));
+            TrackRegisteredBuffer(virtBuffer);
+            *memHandle = static_cast<void *>(virtBuffer.get());
+            HCCL_INFO("[AicpuTsRoceRegedMemMgr][RegisterMemory] Created virtual buffer for subset {%p, %llu} within {%p, %llu}",
+                mem.addr, mem.size, reinterpret_cast<void *>(existingAddr),
+                static_cast<unsigned long long>(existingSize));
+            return HCCL_SUCCESS;
+        }
+        // Exact match: fall through to normal flow (reuse + ref increment)
+    }
 
     std::shared_ptr<hccl::LocalRdmaRmaBuffer> localRdmaRmaBuffer;
     HcclResult ret = GetOrCreateLocalRdmaRmaBuffer(netDevCtx, mem, tempKey, localRdmaRmaBuffer);
@@ -167,6 +195,25 @@ HcclResult AicpuTsRoceRegedMemMgr::UnregisterMemory(void *memHandle)
     std::lock_guard<std::mutex> phyLocalLock(*ctx->mu);
 
     auto *buffer = static_cast<hccl::LocalRdmaRmaBuffer *>(memHandle);
+
+    if (buffer->IsVirtual()) {
+        auto *realBuffer = static_cast<hccl::LocalRdmaRmaBuffer *>(buffer->GetRealBuffer());
+        CHK_PTR_NULL(realBuffer);
+        hccl::BufferKey<uintptr_t, u64> realKey(reinterpret_cast<uintptr_t>(realBuffer->GetAddr()),
+            realBuffer->GetSize());
+        bool delOk = false;
+        EXECEPTION_CATCH(delOk = localRdmaRmaBufferMgr_->Del(realKey), delOk = false);
+        if (!delOk) {
+            HCCL_INFO("[AicpuTsRoceRegedMemMgr][UnregisterMemory] Virtual: real buffer ref count > 0 or already removed.");
+        }
+        exportDescByBuffer_.erase(buffer);
+        allRegisteredBuffers_.erase(std::remove_if(allRegisteredBuffers_.begin(), allRegisteredBuffers_.end(),
+            [memHandle](const std::shared_ptr<hccl::LocalRdmaRmaBuffer> &p) { return p.get() == memHandle; }),
+            allRegisteredBuffers_.end());
+        HCCL_INFO("[AicpuTsRoceRegedMemMgr][UnregisterMemory] Virtual buffer unregistered, memHandle[%p]", memHandle);
+        return HCCL_SUCCESS;
+    }
+
     hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(buffer->GetAddr()), buffer->GetSize());
 
     bool delOk = false;
@@ -334,6 +381,9 @@ HcclResult AicpuTsRoceRegedMemMgr::GatherLocalMemDetails(std::vector<RoceMemDeta
     for (const auto &buf : allRegisteredBuffers_) {
         if (buf == nullptr) {
             continue;
+        }
+        if (buf->IsVirtual()) {
+            continue;  // Virtual buffers don't have their own RDMA registration
         }
         auto *rma = static_cast<hccl::RmaBuffer *>(buf.get());
         CHK_PTR_NULL(rma->GetDevAddr());

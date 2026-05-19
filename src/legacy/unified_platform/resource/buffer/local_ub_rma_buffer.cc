@@ -102,6 +102,19 @@ std::unique_ptr<Serializable> LocalUbRmaBuffer::GetExchangeDto()
     return std::unique_ptr<Serializable>(dto.release());
 }
 
+LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, u32 tokenValue, u32 tokenId,
+                                     TokenIdHandle tokenIdHandle, u32 keySize, u64 segVa, const u8* keySrc)
+    : LocalRmaBuffer(buf, RmaType::UB),
+      tokenValue(tokenValue), tokenId(tokenId), tokenIdHandle(tokenIdHandle),
+      keySize(keySize), segVa(segVa)
+{
+    // Protected constructor for virtual subclass — skips HrtRaUbLocalMemReg.
+    // rdmaHandle stays nullptr so the destructor does not deregister.
+    if (keySrc != nullptr) {
+        memcpy_s(key, HRT_UB_MEM_KEY_MAX_LEN, keySrc, HRT_UB_MEM_KEY_MAX_LEN);
+    }
+}
+
 LocalUbRmaBuffer::~LocalUbRmaBuffer()
 {
     if (rdmaHandle != nullptr && memHandle != 0) {
