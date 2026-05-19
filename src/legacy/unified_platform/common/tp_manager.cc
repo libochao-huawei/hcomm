@@ -74,29 +74,22 @@ static uint16_t ReadSlAvailableMask16(const struct TpAttr &attr)
     return static_cast<uint16_t>(attr.slBitmap);
 }
 
-static bool ApplyUbcQosTpSlPolicy(const RaUbGetTpInfoParam &param, uint32_t nTp, uint16_t slMask,
-    uint32_t &tpListIndexOut, uint32_t &mappedSlOut)
+static bool ApplyLoopFirstTpLowestSl(const RaUbGetTpInfoParam &param, const uint32_t nTp, const uint16_t slMask,
+    const uint32_t slRawCnt, const uint32_t slAvailableCnt, uint32_t &tpListIndexOut, uint32_t &mappedSlOut)
 {
-    const uint32_t slRawCnt = CalSlAvailableCnt(slMask);
-    uint32_t slAvailableCnt = slRawCnt;
-    if (slAvailableCnt == 0U) {
-        HCCL_WARNING("[TpManager][ApplyUbcQosTpSlPolicy] slMask empty: nTp[%u] slMask[0x%x] param[%s].", nTp,
-            static_cast<unsigned>(slMask), param.Describe().c_str());
-        return false;
-    }
-    if (param.slLevelCount != 0U) {
-        slAvailableCnt = std::min(param.slLevelCount, slAvailableCnt);
-    }
-    if (param.loopFirstTpLowestSl) {
-        tpListIndexOut = 0;
-        mappedSlOut = SlValueAtRankInMask16(slMask, 0);
-        HCCL_INFO(
-            "[TpManager][ApplyUbcQosTpSlPolicy] loopFirstTpLowestSl: nTp[%u] slRawCnt[%u] slAvailableCnt[%u(after cap)] "
-            "slMask[0x%x] tpListIdx[0] mappedSl[%u] param[%s].",
-            nTp, slRawCnt, slAvailableCnt, static_cast<unsigned>(slMask),
-            static_cast<unsigned>(mappedSlOut & 0xFU), param.Describe().c_str());
-        return true;
-    }
+    tpListIndexOut = 0;
+    mappedSlOut = SlValueAtRankInMask16(slMask, 0);
+    HCCL_INFO(
+        "[TpManager][ApplyUbcQosTpSlPolicy] loopFirstTpLowestSl: nTp[%u] slRawCnt[%u] slAvailableCnt[%u(after cap)] "
+        "slMask[0x%x] tpListIdx[0] mappedSl[%u] param[%s].",
+        nTp, slRawCnt, slAvailableCnt, static_cast<unsigned>(slMask), static_cast<unsigned>(mappedSlOut & 0xFU),
+        param.Describe().c_str());
+    return true;
+}
+
+static bool ApplyUbcQosTpSlPolicyGrouped(const RaUbGetTpInfoParam &param, const uint32_t nTp, const uint16_t slMask,
+    const uint32_t slRawCnt, const uint32_t slAvailableCnt, uint32_t &tpListIndexOut, uint32_t &mappedSlOut)
+{
     if (nTp == 0U || slAvailableCnt == 0U) {
         HCCL_WARNING("[TpManager][ApplyUbcQosTpSlPolicy] nTp or slAvailableCnt zero: nTp[%u] slAvailableCnt[%u] "
                      "slMask[0x%x] param[%s].",
@@ -132,6 +125,25 @@ static bool ApplyUbcQosTpSlPolicy(const RaUbGetTpInfoParam &param, uint32_t nTp,
     tpListIndexOut = (k - 1U) - slotIdx;
     mappedSlOut = SlValueAtRankInMask16(slMask, slRank);
     return true;
+}
+
+static bool ApplyUbcQosTpSlPolicy(const RaUbGetTpInfoParam &param, uint32_t nTp, uint16_t slMask,
+    uint32_t &tpListIndexOut, uint32_t &mappedSlOut)
+{
+    const uint32_t slRawCnt = CalSlAvailableCnt(slMask);
+    uint32_t slAvailableCnt = slRawCnt;
+    if (slAvailableCnt == 0U) {
+        HCCL_WARNING("[TpManager][ApplyUbcQosTpSlPolicy] slMask empty: nTp[%u] slMask[0x%x] param[%s].", nTp,
+            static_cast<unsigned>(slMask), param.Describe().c_str());
+        return false;
+    }
+    if (param.slLevelCount != 0U) {
+        slAvailableCnt = std::min(param.slLevelCount, slAvailableCnt);
+    }
+    if (param.loopFirstTpLowestSl) {
+        return ApplyLoopFirstTpLowestSl(param, nTp, slMask, slRawCnt, slAvailableCnt, tpListIndexOut, mappedSlOut);
+    }
+    return ApplyUbcQosTpSlPolicyGrouped(param, nTp, slMask, slRawCnt, slAvailableCnt, tpListIndexOut, mappedSlOut);
 }
 
 static bool DeviceSupportsRaGetTpAttrAsync(uint32_t phyId)
@@ -332,17 +344,44 @@ HcclResult CheckTpProtocol(const TpProtocol tpProtocol) {
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult TpManager::GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo, bool isSync)
+HcclResult TpManager::FinishGetTpInfoFromReq(ReqQosMap &qosReqMap, const ReqQosMap::iterator it,
+    std::unique_lock<std::mutex> &reqCtxLock, const RaUbGetTpInfoParam &param, TpInfo &tpInfo, const bool withSlPolicy)
 {
-    const auto &tpProtocol = param.tpProtocol;
-    CHK_RET(CheckTpProtocol(tpProtocol));
-    if (FindAndGetTpInfo(param, tpInfo) == HcclResult::HCCL_SUCCESS) {
-        return HcclResult::HCCL_SUCCESS;
+    RequestCtx completedReqCtx = std::move(it->second);
+    qosReqMap.erase(it);
+    reqCtxLock.unlock();
+    return HandleCompletedRequest(std::move(completedReqCtx), param, tpInfo, withSlPolicy);
+}
+
+HcclResult TpManager::AdvanceDeviceWaitListPhase(const RaUbGetTpInfoParam &param, RequestCtx &reqCtx,
+    ReqQosMap &qosReqMap, const ReqQosMap::iterator it, std::unique_lock<std::mutex> &reqCtxLock, TpInfo &tpInfo)
+{
+    if (reqCtx.tpInfoNum == 0U) {
+        qosReqMap.erase(it);
+        reqCtxLock.unlock();
+        HCCL_WARNING("[TpManager][%s] failed to find tp info, tpInfoNum is 0, param[%s].", __func__,
+            param.Describe().c_str());
+        return HcclResult::HCCL_E_NOT_FOUND;
     }
+    if (DeviceSupportsRaGetTpAttrAsync(devPhyId)) {
+        const struct HccpTpInfo *list = reinterpret_cast<const struct HccpTpInfo *>(reqCtx.dataBuffer.data());
+        HCCL_INFO("[TpManager][GetTpInfo] list stage ok, devPhyId[%u] tpInfoNum[%u] firstTpHandle[%llu] param[%s].",
+            devPhyId, reqCtx.tpInfoNum, static_cast<unsigned long long>(list[0].tpHandle), param.Describe().c_str());
+        try {
+            StartGetTpAttrForFirstTpDevice(param, reqCtx);
+        } catch (...) {
+            qosReqMap.erase(it);
+            throw;
+        }
+        return HcclResult::HCCL_E_AGAIN;
+    }
+    return FinishGetTpInfoFromReq(qosReqMap, it, reqCtxLock, param, tpInfo, false);
+}
 
-    std::unique_lock<std::mutex> reqCtxLock(GetReqCtxMutex(tpProtocol));
-
-    auto &reqCtxMap = GetReqCtxMap(tpProtocol);
+HcclResult TpManager::PollGetTpInfoReqCtx(std::unique_lock<std::mutex> &reqCtxLock, const RaUbGetTpInfoParam &param,
+    TpInfo &tpInfo, const bool isSync)
+{
+    auto &reqCtxMap = GetReqCtxMap(param.tpProtocol);
     const auto &locAddr = param.locAddr;
     const auto &rmtAddr = param.rmtAddr;
     const QosKey qosKey = QosMapKey(param.qos);
@@ -367,44 +406,25 @@ HcclResult TpManager::GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo,
 
     if (!isHost) {
         if (reqCtx.phase == RequestCtx::ReqPhase::WAIT_LIST) {
-            if (reqCtx.tpInfoNum == 0U) {
-                qosReqMap.erase(it);
-                reqCtxLock.unlock();
-                HCCL_WARNING("[TpManager][%s] failed to find tp info, tpInfoNum is 0, param[%s].", __func__,
-                    param.Describe().c_str());
-                return HcclResult::HCCL_E_NOT_FOUND;
-            }
-            if (DeviceSupportsRaGetTpAttrAsync(devPhyId)) {
-                const struct HccpTpInfo *list =
-                    reinterpret_cast<const struct HccpTpInfo *>(reqCtx.dataBuffer.data());
-                HCCL_INFO("[TpManager][GetTpInfo] list stage ok, devPhyId[%u] tpInfoNum[%u] firstTpHandle[%llu] param[%s].",
-                    devPhyId, reqCtx.tpInfoNum, static_cast<unsigned long long>(list[0].tpHandle),
-                    param.Describe().c_str());
-                try {
-                    StartGetTpAttrForFirstTpDevice(param, reqCtx);
-                } catch (...) {
-                    qosReqMap.erase(it);
-                    throw;
-                }
-                return HcclResult::HCCL_E_AGAIN;
-            }
-            RequestCtx completedReqCtx = std::move(it->second);
-            qosReqMap.erase(it);
-            reqCtxLock.unlock();
-            return HandleCompletedRequest(std::move(completedReqCtx), param, tpInfo, false);
+            return AdvanceDeviceWaitListPhase(param, reqCtx, qosReqMap, it, reqCtxLock, tpInfo);
         }
         if (reqCtx.phase == RequestCtx::ReqPhase::WAIT_TP_ATTR) {
-            RequestCtx completedReqCtx = std::move(it->second);
-            qosReqMap.erase(it);
-            reqCtxLock.unlock();
-            return HandleCompletedRequest(std::move(completedReqCtx), param, tpInfo, true);
+            return FinishGetTpInfoFromReq(qosReqMap, it, reqCtxLock, param, tpInfo, true);
         }
     }
 
-    RequestCtx completedReqCtx = std::move(it->second);
-    qosReqMap.erase(it);
-    reqCtxLock.unlock();
-    return HandleCompletedRequest(std::move(completedReqCtx), param, tpInfo, false);
+    return FinishGetTpInfoFromReq(qosReqMap, it, reqCtxLock, param, tpInfo, false);
+}
+
+HcclResult TpManager::GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo, bool isSync)
+{
+    CHK_RET(CheckTpProtocol(param.tpProtocol));
+    if (FindAndGetTpInfo(param, tpInfo) == HcclResult::HCCL_SUCCESS) {
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    std::unique_lock<std::mutex> reqCtxLock(GetReqCtxMutex(param.tpProtocol));
+    return PollGetTpInfoReqCtx(reqCtxLock, param, tpInfo, isSync);
 }
 
 HcclResult TpManager::FindAndGetTpAttr(const TpHandle tpHandle, TpAttrInfo &tpAttrInfo)
