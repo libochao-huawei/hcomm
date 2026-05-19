@@ -320,7 +320,7 @@ HcclResult CcuTransport::RecvDataProcess()
     CHK_RET(ConnInfoUnpackProc(binaryStream));
     CHK_RET(TransResUnpackProc(binaryStream));
     rmtBufferInfos_.clear();
-    remoteUserMemTag_.clear();
+    remoteMemTag_.clear();
     CHK_RET(BufferInfoUnpack(binaryStream));
     return HcclResult::HCCL_SUCCESS;
 }
@@ -456,7 +456,7 @@ HcclResult CcuTransport::BufferInfoUnpack(Hccl::BinaryStream &binaryStream)
         CclBufferInfo rmtBufferInfo{};
         rmtBufferInfo.Unpack(binaryStream);
         rmtBufferInfos_.push_back(rmtBufferInfo);
-        remoteUserMemTag_.push_back(rmtBufferInfo.memTag);
+        remoteMemTag_.push_back(rmtBufferInfo.memTag);
     }
     return HcclResult::HCCL_SUCCESS;
 }
@@ -648,18 +648,18 @@ void CcuTransport::Clean()
     ccuConnection_->Clean();
 }
 
-HcclResult CcuTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum)
+HcclResult CcuTransport::GetRemoteMems(CommMem **remoteMem, uint32_t *memNum, char ***memTags)
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
-    uint32_t userMemCount = rmtBufferInfos_.size() - 1; // 默认 cclBuffer 数量为1，后续出现1的含义也是 cclBufferNum
+    uint32_t userMemCount = rmtBufferInfos_.size();
     auto cacheBuilder = [](Hccl::RemoteMemCtx<CclBufferInfo> &remoteMemCtx, uint32_t index) {
-        auto &rmtBuffer = remoteMemCtx.rmtBufferVec[index + 1];
-        remoteMemCtx.remoteUserMems[index].type = rmtBuffer.type;
-        remoteMemCtx.remoteUserMems[index].addr = reinterpret_cast<void *>(rmtBuffer.addr);
-        remoteMemCtx.remoteUserMems[index].size = rmtBuffer.size;
+        auto &rmtBuffer = remoteMemCtx.rmtBufferVec[index];
+        remoteMemCtx.remoteMems[index].type = rmtBuffer.type;
+        remoteMemCtx.remoteMems[index].addr = reinterpret_cast<void *>(rmtBuffer.addr);
+        remoteMemCtx.remoteMems[index].size = rmtBuffer.size;
     };
     Hccl::RemoteMemCtx<CclBufferInfo> remoteMemCtx{
-        userMemCount, cacheValid_, rmtBufferInfos_, remoteUserMemTag_, remoteUserMems_, tagCopies_, tagPointers_,
+        userMemCount, cacheValid_, rmtBufferInfos_, remoteMemTag_, remoteMems_, tagCopies_, tagPointers_,
         cacheBuilder, remoteMem, memTags, memNum};
     CHK_RET(Hccl::GetRemoteUserMem(remoteMemCtx));
     return HcclResult::HCCL_SUCCESS;

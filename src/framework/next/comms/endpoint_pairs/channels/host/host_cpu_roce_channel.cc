@@ -538,11 +538,11 @@ HcclResult HostCpuRoceChannel::ModifyQp() {
     return HCCL_SUCCESS;
 }
 
-HcclResult HostCpuRoceChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char** memTags)
+HcclResult HostCpuRoceChannel::GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, char** memTags)
 {
-    CHK_PRT_RET(remoteMem == nullptr, HCCL_ERROR("[GetRemoteMem] remoteMem is nullptr"), HCCL_E_PTR);
-    CHK_PRT_RET(memNum == nullptr, HCCL_ERROR("[GetRemoteMem] memNum is nullptr"), HCCL_E_PTR);
-    CHK_PRT_RET(memTags == nullptr, HCCL_ERROR("[GetRemoteMem] memTags is nullptr"), HCCL_E_PTR);
+    CHK_PRT_RET(remoteMem == nullptr, HCCL_ERROR("[GetRemoteMems] remoteMem is nullptr"), HCCL_E_PTR);
+    CHK_PRT_RET(memNum == nullptr, HCCL_ERROR("[GetRemoteMems] memNum is nullptr"), HCCL_E_PTR);
+    CHK_PRT_RET(memTags == nullptr, HCCL_ERROR("[GetRemoteMems] memTags is nullptr"), HCCL_E_PTR);
  
     *remoteMem = nullptr;
     *memNum = 0;
@@ -551,7 +551,7 @@ HcclResult HostCpuRoceChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNu
  
     uint32_t totalCount = rmtRmaBuffers_.size();
     if (totalCount == 0) {
-        HCCL_INFO("[GetRemoteMem] No remote memory regions available");
+        HCCL_INFO("[GetRemoteMems] No remote memory regions available");
         return HCCL_SUCCESS;
     }
     // 释放之前的内存
