@@ -18,6 +18,13 @@ LocalIpcRmaBuffer::LocalIpcRmaBuffer(const HcclNetDevCtx netDevCtx, void* addr, 
     pimpl_ = std::make_unique<LocalIpcRmaBufferImpl>(netDevCtx, addr, size, memType);
 }
 
+LocalIpcRmaBuffer::LocalIpcRmaBuffer(const HcclNetDevCtx netDevCtx, void* addr, u64 size,
+    const RmaMemType memType, bool skipReg)
+    : RmaBuffer(netDevCtx, addr, size, memType, RmaType::IPC_RMA)
+{
+    // Protected constructor for virtual subclass — does not create pimpl, skips IPC registration.
+}
+
 LocalIpcRmaBuffer::~LocalIpcRmaBuffer()
 {
     HcclResult res = Destroy();

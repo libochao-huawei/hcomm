@@ -18,6 +18,13 @@ LocalRdmaRmaBuffer::LocalRdmaRmaBuffer(const HcclNetDevCtx netDevCtx, void* addr
     pimpl_ = std::make_unique<LocalRdmaRmaBufferImpl>(netDevCtx, addr, size, memType);
 }
 
+LocalRdmaRmaBuffer::LocalRdmaRmaBuffer(const HcclNetDevCtx netDevCtx, void* addr, u64 size,
+    const RmaMemType memType, bool skipReg)
+    : RmaBuffer(netDevCtx, addr, size, memType, RmaType::RDMA_RMA)
+{
+    // Protected constructor for virtual subclass — does not create pimpl, skips RDMA registration.
+}
+
 LocalRdmaRmaBuffer::~LocalRdmaRmaBuffer()
 {
     HcclResult res = Destroy();
