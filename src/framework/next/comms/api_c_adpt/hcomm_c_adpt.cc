@@ -29,6 +29,8 @@
 #include "endpoint_map.h"
 
 #include "../hcomm_res_mgr.h"
+#include "../base_comm_res_mgr.h"
+#include "../sub_resource_mgrs.h"
 
 #include "param_check_pub.h"
 #include "exception_handler.h"
@@ -156,11 +158,11 @@ HcommResult NormalizeHcommChannelDescs(HcommChannelDesc *channelDescs, uint32_t 
 
 HcommResult HcommResMgrInit(uint32_t devPhyId)
 {
-    // 临时方案：触发统一平台层单例触发静态对象声明
-    // 内部流程触发各种单例声明，保证时序
+    // HcommResMgr触发BaseCommResMgr的初始化，进程级资源统一管理
     EXCEPTION_HANDLE_BEGIN
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
-        (void)HcommResMgr::GetInstance(devPhyId);
+        HcommResMgr& mgr = HcommResMgr::GetInstance(devPhyId);
+        CHK_PTR_NULL(mgr.baseCommRes_);
         return HcclResult::HCCL_SUCCESS;
     }());
     EXCEPTION_HANDLE_END
@@ -517,18 +519,35 @@ HcommResult HcommThreadAllocWithStream(CommEngine engine,
     rtStream_t stream, uint32_t notifyNum, ThreadHandle *thread)
 {
     CHK_PTR_NULL(thread);
+
+    int32_t deviceId = 0;
+    CHK_RET(hrtGetDevice(&deviceId));
+    uint32_t devPhyId = static_cast<uint32_t>(deviceId);
+
+    BaseCommResMgr& baseCommResMgr = BaseCommResMgr::Instance();
+    BaseCommRes* baseCommRes = baseCommResMgr.GetOrCreate(devPhyId);
+    if (baseCommRes == nullptr) {
+        HCCL_ERROR("[HcommThreadAllocWithStream] GetOrCreate BaseCommRes failed for devPhyId=%u", devPhyId);
+        return HCCL_E_INTERNAL;
+    }
+
+    ThreadsMgr* threadsMgr = baseCommRes->GetThreadsMgr();
+    if (threadsMgr == nullptr) {
+        HCCL_ERROR("[HcommThreadAllocWithStream] GetThreadsMgr failed for devPhyId=%u", devPhyId);
+        return HCCL_E_INTERNAL;
+    }
+
     hccl::NotifyLoadType notifyLoadType;
     CHK_RET(CommHostEngineToNotifyLoadType(engine, notifyLoadType));
     std::shared_ptr<hccl::Thread> handle;
     EXECEPTION_CATCH(handle = std::make_shared<hccl::CpuTsThread>(stream, notifyNum, notifyLoadType), return HCCL_E_PTR);
     CHK_RET(handle->Init());
- 
-    // 返回第一个句柄
+
     *thread = reinterpret_cast<ThreadHandle>(handle.get());
-    hcomm::g_ThreadMap.emplace(*thread , handle);
- 
-    HCCL_INFO("[ThreadMgr]  ThreadAcquireWithStream done: engine[%d] stream[%p],"
-        "notifyNum[%u]",  engine, stream, notifyNum);
+    CHK_RET(threadsMgr->RegisterStreamThread(*thread, handle));
+
+    HCCL_INFO("[ThreadMgr] ThreadAcquireWithStream done: engine[%d] stream[%p], "
+        "notifyNum[%u] devPhyId[%u]", engine, stream, notifyNum, devPhyId);
     return HCCL_SUCCESS;
 }
 
