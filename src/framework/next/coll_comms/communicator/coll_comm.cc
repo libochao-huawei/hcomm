@@ -33,7 +33,11 @@ CollComm::~CollComm()
         return;
     }
 
-    // fullMode collComm正常析构
+    // fullMode collComm正常析构，rankgraph_在fullMode下是自己new的，需要释放
+    if (rankgraph_ != nullptr) {
+        delete rankgraph_;
+        rankgraph_ = nullptr;
+    }
     CollCommMgr::GetInstance()->UnRegisteCollComm(this); 
     HCCL_INFO("[CollComm][~CollComm] collComm deinit");
     // dpu的兜底上报 - 异常退出时捕获异常避免二次崩溃
@@ -86,15 +90,15 @@ HcclResult CollComm::InitSimpleMode(void* rankGraph, aclrtBinHandle binHandle, H
 
     CHK_RET(DlHalFunction::GetInstance().DlHalFunctionInit());
 
-    // SimpleMode: A2/A3的RankGraph是保存在hccl::Communicator中的静态对象裸指针构造shared_ptr
-    rankgraph_ = std::shared_ptr<RankGraph>(static_cast<RankGraph*>(rankGraph));
+    // SimpleMode: A2/A3的RankGraph是保存在hccl::Communicator中的静态对象裸指针，CollComm不负责释放
+    rankgraph_ = static_cast<RankGraph*>(rankGraph);
 
     uint32_t rankNum = 0;
     CHK_PTR_NULL(rankgraph_);
     CHK_RET(rankgraph_->GetRankSize(&rankNum));
 
     EXECEPTION_CATCH(
-        myRank_ = std::make_shared<MyRank>(binHandle, rankId_, config_, callbacks_, rankgraph_.get(), rankIpPortMap_),
+        myRank_ = std::make_shared<MyRank>(binHandle, rankId_, config_, callbacks_, rankgraph_, rankIpPortMap_),
         return HCCL_E_PTR);
 
     uint32_t opExpansionMode = (config != nullptr) ? config->hcclOpExpansionMode : 0;
@@ -112,7 +116,7 @@ HcclResult CollComm::InitFullMode(void* rankGraph, aclrtBinHandle binHandle, Hcc
     EXCEPTION_HANDLE_BEGIN
 
     CHK_RET(DlHalFunction::GetInstance().DlHalFunctionInit());
-    EXECEPTION_CATCH(rankgraph_ = std::make_unique<RankGraphV2>(rankGraph), return HCCL_E_PTR);
+    rankgraph_ = new RankGraphV2(rankGraph);
     uint32_t rankNum = 0;
     CHK_PTR_NULL(rankgraph_);
     CHK_RET(rankgraph_->GetRankSize(&rankNum));
@@ -131,7 +135,7 @@ HcclResult CollComm::InitFullMode(void* rankGraph, aclrtBinHandle binHandle, Hcc
     }
 
     EXECEPTION_CATCH(
-        myRank_ = std::make_shared<MyRank>(binHandle, rankId_, config_, callbacks_, rankgraph_.get(), rankIpPortMap_),
+        myRank_ = std::make_shared<MyRank>(binHandle, rankId_, config_, callbacks_, rankgraph_, rankIpPortMap_),
         return HCCL_E_PTR);
     uint32_t opExpansionMode = 0;
     if (config) {
