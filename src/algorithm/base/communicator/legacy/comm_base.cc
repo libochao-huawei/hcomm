@@ -891,7 +891,7 @@ HcclResult CommBase::TransportBuildAsync(const MachineType machineType, const st
     TransportPara para {};
     para.timeout = kdefaultTimeout;
     para.virtualFlag = false;
-    transportInfo_[dstRank].reset(new (std::nothrow) Transport(TransportType::TRANS_TYPE_HETEROG_P2P, para,
+    transportInfo_[dstRank].reset(new (std::nothrow) Transport(TransportType::TRANS_TYPE_RESERVED, para,
         dispatcher_, notifyPool_, machinePara));
     CHK_PRT_RET(!transportInfo_[dstRank], HCCL_ERROR("[Init][Transport]In create link, new link failed"),
         HCCL_E_PTR);
