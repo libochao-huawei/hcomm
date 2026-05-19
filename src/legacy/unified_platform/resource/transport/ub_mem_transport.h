@@ -171,7 +171,6 @@ private:
     vector<char> sendFinishMsg{};
 
     void SaveDfxTaskInfo(const TaskParam &taskParam);
-    bool resReady_{false};
 };
 } // namespace Hccl
 #endif
