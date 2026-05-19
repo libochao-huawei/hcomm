@@ -75,7 +75,7 @@ typedef struct HcclCommConfigDef {
   - 0：使用默认算子展开模式，针对**Ascend 950PR/Ascend 950DT**，通信算子默认在CCU展开，使用调度模式。
   - 2：通信算子在AI CPU计算单元展开。
 
-    该配置项仅支持Broadcast、Reduce、AllReduce、Scatter、ReduceScatter、ReduceScatterV、AllGather、AllGatherV、AlltoAll、AlltoAllV、AlltoAllVC算子。
+    该配置项支持Broadcast、Reduce、AllReduce、Scatter、ReduceScatter、ReduceScatterV、AllGather、AllGatherV、AlltoAll、AlltoAllV、AlltoAllVC、Send、Recv、BatchSendRecv算子。
 
     图模式（Ascend IR）或者图捕获（aclgraph）场景，当通信算法采用AI CPU模式时，单卡上的并发图数量不能超过6个，否则可能会因AI CPU核被占满而导致通信阻塞。
 
