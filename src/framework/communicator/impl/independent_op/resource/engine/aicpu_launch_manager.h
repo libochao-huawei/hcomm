@@ -24,6 +24,10 @@ constexpr uint32_t NOTIFY_UNIQUE_ID_MAX_SIZE = THREAD_UNIQUE_ID_MAX_SIZE * hccl:
 constexpr uint32_t NOTIFY_DEVICE_ID_MAX_SIZE = 21  * hccl::HCCL_THREAD_NOTIFY_MAX_NUM;
 constexpr uint32_t NAME_SIZE = 64;
 constexpr uint32_t SIGNAL_DEV_STREAM_MAX_NUM = 200;
+struct DevAicpuThreadConfig {
+    // 如要新增配置类字段，在此处添加
+};
+
 struct ThreadMgrAicpuParam {
     u32 threadNum;
     char hcomId[HCOMID_MAX_SIZE];
@@ -32,6 +36,11 @@ struct ThreadMgrAicpuParam {
     u32 rsv1;
     s32 deviceLogicId{-1}; // 基础通信使用
     u32 deviceType{0}; // 基础通信使用
+    DevAicpuThreadConfig threadConfig;
+};
+
+struct DevAicpuNotifyConfig {
+    // 如要新增配置类字段，在此处添加
 };
 
 struct NotifyMgrAicpuParam {
@@ -41,6 +50,7 @@ struct NotifyMgrAicpuParam {
     void* deviceHandle;
     bool freeFlag;
     u32 rsv1;
+    DevAicpuNotifyConfig notifyConfig;
 };
 
 namespace hccl {

@@ -15,8 +15,9 @@
 
 constexpr uint32_t HCOMID_MAX_SIZE = 128;
 
-struct AicpuEnvConfig {
+struct DevAicpuCommConfig {
     bool taskExceptionEnable{true};
+    // 如要新增配置类字段，在此处添加
 };
 
 // 自定义算子aicpu通信域公共初始化参数
@@ -29,7 +30,7 @@ struct CommAicpuParam {
     u32 userRank;
     hccl::HDCommunicateParams kfcControlTransferH2DParams;
     hccl::HDCommunicateParams kfcStatusTransferD2HParams;
-    AicpuEnvConfig envConfig;
+    DevAicpuCommConfig commConfig;
 };
 
 #endif

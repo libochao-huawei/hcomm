@@ -85,8 +85,8 @@ HcclResult CollCommAicpu::InitHDCommunicate(CommAicpuParam *commAicpuParam)
 
 void CollCommAicpu::InitIndopEnv(CommAicpuParam *commAicpuParam)
 {
-    hcomm::SetTaskExceptionEnable(commAicpuParam->envConfig.taskExceptionEnable);
-    HCCL_RUN_INFO("[%s]Env: taskExceptionEnable[%d]", __func__, commAicpuParam->envConfig.taskExceptionEnable);
+    hcomm::SetTaskExceptionEnable(commAicpuParam->commConfig.taskExceptionEnable);
+    HCCL_RUN_INFO("[%s]Env: taskExceptionEnable[%d]", __func__, commAicpuParam->commConfig.taskExceptionEnable);
 }
 
 void CollCommAicpu::SetCommmStatus(HcclCommStatus status)
