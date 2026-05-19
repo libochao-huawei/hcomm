@@ -48,12 +48,12 @@ public:
         return memHandle;
     }
 
-    size_t GetSize() const
+    virtual size_t GetSize() const
     {
         return buf->GetSize();
     }
- 
-    uintptr_t GetAddr() const
+
+    virtual uintptr_t GetAddr() const
     {
         return buf->GetAddr();
     }
@@ -62,6 +62,32 @@ public:
     {
         HCCL_ERROR("this is base class, not support.");
         return nullptr;
+    }
+
+    virtual bool IsVirtual() const
+    {
+        return false;
+    }
+
+    virtual LocalRmaBuffer* GetRealBuffer() const
+    {
+        return nullptr;
+    }
+
+    virtual std::pair<uintptr_t, u64> GetBufferInfo()
+    {
+        return {buf->GetAddr(), buf->GetSize()};
+    }
+
+    // 硬件实际注册的内存范围（可能因对齐而大于传入值），用于树引用计数
+    virtual uintptr_t GetAlignedAddr() const
+    {
+        return buf->GetAddr();
+    }
+
+    virtual u64 GetAlignedSize() const
+    {
+        return buf->GetSize();
     }
 
 protected:

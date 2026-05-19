@@ -49,6 +49,11 @@ private:
         }
     };
 
+    // 全新注册：构造 buffer + 硬件注册 + Init + 入树（每 Manager 独有逻辑）
+    HcclResult RegNew(hccl::NetDevContext *netDevCtx, HcommMem mem,
+                      hccl::BufferKey<uintptr_t, u64> &tempKey,
+                      void **memHandle);
+
     HcclResult GetParamsFromMemDesc(const void *memDesc, uint32_t descLen, EndpointDesc &endpointDesc, std::string &rdmaBlob);
     void TrackRegisteredBuffer(const std::shared_ptr<hccl::LocalRdmaRmaBuffer> &localBuffer);
     HcclResult GetOrCreateLocalRdmaRmaBuffer(hccl::NetDevContext *netDevCtx, HcommMem mem,

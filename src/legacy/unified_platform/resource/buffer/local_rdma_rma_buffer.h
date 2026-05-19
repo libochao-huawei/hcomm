@@ -31,20 +31,34 @@ public:
 
     std::unique_ptr<Serializable> GetExchangeDto() override;
 
-    u32 GetLkey() const 
+    virtual u32 GetLkey() const
     {
-        return lkey;
+        return lkey_;
     }
-    std::pair<uintptr_t, u64> GetBufferInfo() {return make_pair(buf->GetAddr(), buf->GetSize());}
+
+    virtual u32 GetRkey() const
+    {
+        return rkey_;
+    }
+
+    virtual RdmaHandle GetRdmaHandle() const
+    {
+        return rdmaHandle_;
+    }
+
+    std::pair<uintptr_t, u64> GetBufferInfo() override {return make_pair(GetAddr(), GetSize());}
 
     std::vector<char> Desc;
-    
-private:
-    RdmaHandle rdmaHandle;
-    u8         key[RDMA_MEM_KEY_MAX_LEN]{0};
-    u32        lkey{0};
-    u32        rkey{0};
-    MrHandle   mrHandle{nullptr};
+
+protected:
+    // Skip-registration constructor for virtual subclass — does not call RaRegisterMr
+    LocalRdmaRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle rdmaHandle, u32 lkey, u32 rkey);
+
+    RdmaHandle rdmaHandle_;
+    u8         key_[RDMA_MEM_KEY_MAX_LEN]{0};
+    u32        lkey_{0};
+    u32        rkey_{0};
+    MrHandle   mrHandle_{nullptr};
 };
 
 } // namespace Hccl
