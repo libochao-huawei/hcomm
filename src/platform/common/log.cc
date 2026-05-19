@@ -12,10 +12,18 @@
 #include "log.h"
 
 thread_local bool g_hcclErrToWarn = false;
+constexpr int32_t HCCL_LOG_LEVEL_INVALID = -1;
+static int32_t g_logLevelCache = -1;
 int32_t CheckLogLevel(int32_t moduleId, int32_t logLevel) __attribute((weak));
+int32_t dlog_getlevel(int32_t moduleId, int32_t *enableEvent) __attribute((weak));
+
 bool HcclCheckLogLevel(int logType, int moduleId)
 {
-    return (CheckLogLevel(moduleId, logType) == 1);
+    if (g_logLevelCache == HCCL_LOG_LEVEL_INVALID) {
+        int32_t enableEvent = -1;
+        g_logLevelCache = dlog_getlevel(moduleId, &enableEvent);
+    }
+    return (logType >= g_logLevelCache);
 }
 
 void SetErrToWarnSwitch(bool flag)
