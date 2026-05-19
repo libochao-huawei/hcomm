@@ -186,7 +186,10 @@ HcclResult HcclAllReduceInner(void *sendBuf, void *recvBuf, uint64_t count, Hccl
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclBarrier(HcclComm comm, aclrtStream stream)
+// HcclBarrierInner: V<950 / 非 950 设备的 barrier 实现（基于伪 AllReduce）。
+// 新流程公开入口 HcclBarrier 位于 hccl_claude/src/ops/barrier/barrier_op.cc，
+// 该入口在 V950 路径上走新流程（框内 AICPU + 框间 DPU），其余路径 fallback 到本函数。
+HcclResult HcclBarrierInner(HcclComm comm, aclrtStream stream)
 {
     // 入参合法性校验
     CHK_PTR_NULL(comm);
@@ -202,11 +205,6 @@ HcclResult HcclBarrier(HcclComm comm, aclrtStream stream)
     s32 threadID = SalGetTid();
     ProfilingManagerPub::SetThreadCaptureStatus(threadID, isCapture);
     uint64_t beginTime = hrtMsprofSysCycleTime();
-    HCCLV2_FUNC_RUN([&]() -> HcclResult {
-        hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-        CHK_RET(HcclBarrierV2(hcclComm->GetCommunicatorV2(), stream));
-        return HCCL_SUCCESS;
-    }());
 
     // Allreduce入参定义
     HcclDataType dataType = HCCL_DATA_TYPE_FP32;
@@ -235,7 +233,7 @@ HcclResult HcclBarrier(HcclComm comm, aclrtStream stream)
                              GetDataTypeEnumStr(dataType).c_str(), GetReduceOpEnumStr(op).c_str(), localRank, streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
-        std::string logInfo = "Entry-HcclBarrier:" + std::string(stackLogBuffer) +
+        std::string logInfo = "Entry-HcclBarrierInner:" + std::string(stackLogBuffer) +
                               ", capture status[" + to_string(captureStatus) + "], model id[" + to_string(modelId) + "].";
         CHK_RET_AND_PRINT_IDE(hcclComm->SaveTraceInfo(logInfo), tag.c_str());
     }
@@ -262,7 +260,7 @@ HcclResult HcclBarrier(HcclComm comm, aclrtStream stream)
     if (GetExternalInputHcclEnableEntryLog()) {
         HcclUs endut = TIME_NOW();
         /* 关键状态记录 */
-        std::string endInfo = "HcclBarrier:success,take time: " +
+        std::string endInfo = "HcclBarrierInner:success,take time: " +
                               std::to_string(DURATION_US(endut - startut).count()) + " us," + std::string(stackLogBuffer);
         CHK_RET_AND_PRINT_IDE(hcclComm->SaveTraceInfo(endInfo), tag.c_str());
     }
