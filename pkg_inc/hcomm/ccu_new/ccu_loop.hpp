@@ -34,7 +34,6 @@ public:
 
     // config-based：loopCfg 拷贝进 config_，func 同上仅在 ctor 内使用，
     //               两者均接 const &，支持完整 inline 写法
-    //               Loop({.addrOffset=..., .loopIterNum=...}, Func([&]{...})).
     Loop(const CcuLoopConfig &loopCfg, const Func &func)
     {
         ComposeLoopBody(func);
