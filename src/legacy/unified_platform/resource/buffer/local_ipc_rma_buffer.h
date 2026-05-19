@@ -32,14 +32,32 @@ public:
 
     void Grant(u32 pid);
 
+    virtual u64 GetIpcOffset() const { return ipcOffset_; }
+    virtual const char* GetIpcName() const { return name_; }
+
+    // 硬件实际注册范围：页对齐后可能大于传入的 addr/size
+    uintptr_t GetAlignedAddr() const override
+    {
+        if (ipcPtr_ != nullptr) return reinterpret_cast<uintptr_t>(ipcPtr_);
+        return GetAddr();
+    }
+    u64 GetAlignedSize() const override
+    {
+        if (ipcSize_ > 0) return ipcSize_;
+        return GetSize();
+    }
+
     std::unique_ptr<Serializable> GetExchangeDto() override;
-    std::pair<uintptr_t, u64> GetBufferInfo() {return std::make_pair(buf->GetAddr(), buf->GetSize());}
+    std::pair<uintptr_t, u64> GetBufferInfo() override {return std::make_pair(GetAddr(), GetSize());}
 
 protected:
-    char  name[RTS_IPC_MEM_NAME_LEN];
-    void *ipcPtr{nullptr};
-    u64   ipcOffset{0};
-    u64   ipcSize{0};
+    // Skip-registration constructor for virtual subclass — does not call HrtIpcSetMemoryName
+    LocalIpcRmaBuffer(std::shared_ptr<Buffer> buf, bool skipReg);
+
+    char  name_[RTS_IPC_MEM_NAME_LEN]{0};
+    void *ipcPtr_{nullptr};
+    u64   ipcOffset_{0};
+    u64   ipcSize_{0};
 };
 
 } // namespace Hccl
