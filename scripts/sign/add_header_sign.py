@@ -38,8 +38,8 @@ import shlex
 from subprocess import run, PIPE, STDOUT
 from collections import namedtuple
 from typing import Dict, Iterator, List, Tuple
-import common_log as COMM_LOG
 import xml.etree.ElementTree as ET
+import common_log as COMM_LOG
 
 THIS_FILE_NAME = __file__
 THIS_FILE_PATH = os.path.realpath(THIS_FILE_NAME)
@@ -379,7 +379,6 @@ def convert_der_file(crl_file: str, der_file: str) -> int:
             return 1
         # 调用 openssl 转换
         cmd = f"openssl crl -in {crl_file} -outform DER -out {der_file}"
-        # result = subprocess.getstatusoutput(cmd)
         code, output = safe_run_str_cmd(cmd)
         if code != 0:
             print(f"[ERROR] OpenSSL conversion failed: {output}")
