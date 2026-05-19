@@ -1,15 +1,15 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 #ifndef HCCS_MEM_H
 #define HCCS_MEM_H
- 
+
 #include <memory>
 #include <vector>
 #include <string>
@@ -21,9 +21,6 @@
 #include "inner/local_ipc_rma_buffer.h"
 
 namespace hcomm {
-/**
- * @note 职责：用于通信设备EndPoint的注册内存信息管理，支持基于RmaBufferMgr类的重叠内存的检测报错等。
- */
 class HccsRegedMemMgr : public RegedMemMgr {
 public:
     using LocalIpcRmaBufferMgr =
@@ -33,7 +30,7 @@ public:
 
     HccsRegedMemMgr(HcclNetDevCtx netDevCtx);
     ~HccsRegedMemMgr();
- 
+
     HcclResult RegisterMemory(HcommMem mem, const char *memTag, void **memHandle) override;
     HcclResult UnregisterMemory(void* memHandle) override;
     HcclResult MemoryExport(const EndpointDesc endpointDesc, void *memHandle,
@@ -52,21 +49,24 @@ public:
     HcclResult GetLocalIpcRmaBufferEx(std::vector<HcclMemEx> &localIpcRmaBufferVec);
 
 private:
+    // 全新注册：构造 buffer + Init + 入树（每 Manager 独有逻辑）
+    HcclResult RegNew(HcommMem mem, const char *memTag,
+                      std::shared_ptr<LocalIpcRmaBufferMgr> &mgr,
+                      hccl::BufferKey<uintptr_t, u64> &memKey,
+                      void **memHandle);
+
     HcclResult SerializeToMemDesc(const EndpointDesc &endpointDesc, hccl::LocalIpcRmaBuffer *localIpcRmaBuffer,
         void **memDesc, uint32_t *descLen);
     HcclResult MakeRemoteIpcRmaBuffer(std::string &ipcRmaBufferDesc,
         std::shared_ptr<hccl::RemoteIpcRmaBuffer> &remoteIpcRmaBuffer);
     HcclResult DeSerializeFromMemDesc(const void *memDesc, uint32_t descLen,
         EndpointDesc &endpointDesc, std::shared_ptr<hccl::RemoteIpcRmaBuffer> &remoteIpcRmaBuffer);
-
     HcclResult AddMem(hccl::BufferKey<uintptr_t, u64> &memKey,
         std::shared_ptr<hccl::RemoteIpcRmaBuffer> &remoteIpcRmaBuffer);
     HcclResult DeleteMem(hccl::BufferKey<uintptr_t, u64> &memKey);
 
-private:
     HcclNetDevCtx netDevCtx_{};
     std::vector<std::shared_ptr<hccl::LocalIpcRmaBuffer>> allRegisteredBuffers_;
-    // for read/write with origin addr and len
     RemoteIpcRmaBufferMgr remoteIpcRmaBufferMgr_;
 };
 }
