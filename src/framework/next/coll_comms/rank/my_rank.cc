@@ -681,27 +681,16 @@ HcclResult MyRank::ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, ui
     CHK_PTR_NULL(buffer);
     CHK_PTR_NULL(size);
 
-    u32 memNum = 0;  // 接收内存块数量
-    /* 实现获取buffer Num的接口，此处Size为500的vector暂存 */
-    // 临时方案，暂时写死大小，后续需定下正式修改方案整改
-    std::vector<CommMem *> remoteMemList(500);
-    std::vector<char *> memTags(500);
-    CHK_RET(static_cast<HcclResult>(HcommChannelGetRemoteMem(channel, remoteMemList.data(), &memNum, memTags.data())));
+    u32 memNum = 0;
+    CommMem* remoteMems = nullptr;
+    char** memTags = nullptr;
+    CHK_RET(static_cast<HcclResult>(HcommChannelGetRemoteMems(channel, &remoteMems, &memNum, &memTags)));
+    CHK_PTR_NULL(remoteMems);
+    CHK_PTR_NULL(memTags);
+    *buffer = remoteMems[0]->addr; // 默认索引0对应内存为cclbuffer
+    *size = remoteMems[0]->size;
+    HCCL_INFO("[%s] Found %s : addr=%p, size=%llu", __func__, memTags[0], remoteMems[0]->addr, remoteMems[0]->size);
 
-    for (u32 i = 0; i < memNum; i++) {
-        HCCL_INFO("%s memNum[%u] memTags[%s] size[%llu]", __func__, memNum, memTags[i], *size);
-        if (strcmp(memTags[i], "HcclBuffer") == 0) {
-            *buffer = remoteMemList[i]->addr;
-            *size = remoteMemList[i]->size;
-            HCCL_INFO("[%s] Found Hccl buffer memNum is %u at index %u: addr=%p, size=%llu",
-                __func__,
-                memNum,
-                i,
-                remoteMemList[i]->addr,
-                remoteMemList[i]->size);
-            break;  // 找到后立即退出循环
-        }
-    }
     return HCCL_SUCCESS;
 }
 
@@ -711,7 +700,7 @@ HcclResult MyRank::ChannelGetRemoteMem(ChannelHandle channel, CommMem **remoteMe
     CHK_PTR_NULL(memTag);
     CHK_PTR_NULL(memNum);
 
-    CHK_RET(ChannelProcess::ChannelGetUserRemoteMem(channel, remoteMem, memTag, memNum));
+    CHK_RET(static_cast<HcclResult>(HcommChannelGetRemoteMems(channel, remoteMem, memNum, memTags)));
     // 添加空指针检查，防止返回的指针为空
     if (*memNum > 0) {
         CHK_PTR_NULL(*remoteMem);

@@ -462,18 +462,17 @@ HcommResult HcommChannelDestroy(const ChannelHandle *channels, uint32_t channelN
     return ChannelProcess::ChannelDestroy(channels, channelNum, g_BinHandle);
 }
 
-HcommResult HcommChannelGetRemoteMem(ChannelHandle channelHandle, CommMem **remoteMem, uint32_t *memNum, char **memTags)
+HcommResult HcommChannelGetRemoteMems(ChannelHandle channelHandle, CommMem **remoteMem, uint32_t *memNum, char **memTags)
 {
     CHK_PTR_NULL(remoteMem);
     CHK_PTR_NULL(memNum);
     CHK_PTR_NULL(memTags);
     return ChannelProcess::ChannelGetRemoteMem(channelHandle, remoteMem, memNum, memTags);
-}
-
-HcommResult HcommChannelGetRemoteMems(ChannelHandle channelHandle, uint32_t *memNum, CommMem **remoteMems,
-    char ***memTags)
-{
-    return ChannelProcess::ChannelGetUserRemoteMem(channelHandle, remoteMems, memTags, memNum);
+    // 添加空指针检查，防止返回的指针为空
+    if (*memNum > 0) {
+        CHK_PTR_NULL(*remoteMem);
+        CHK_PTR_NULL(*memTags);
+    }
 }
 
 HcommResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, const uint32_t *notifyNumPerThread,
