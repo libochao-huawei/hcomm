@@ -138,3 +138,49 @@ TEST_F(TestCollComm, test_resume_fail_invalid_and_resume_success)
     EXPECT_EQ(coll_->commStatus_, HcclCommStatus::HCCL_COMM_STATUS_READY);
     EXPECT_FALSE(coll_->isCleaned_);
 }
+
+TEST_F(TestCollComm, Ut_InitSimpleMode_When_Success_Expect_ReturnsSuccessAndRankgraphSet)
+{
+    // SimpleMode: comm_ = nullptr, so IsFullMode() returns false
+    hccl::CollComm collComm(nullptr, 0, "test_comm", hccl::ManagerCallbacks{});
+
+    // Mock rankGraph
+    RankGraph* mockRankGraph = new RankGraph();
+    uint32_t mockRankNum = 4;
+    EXPECT_CALL(*mockRankGraph, GetRankSize(::testing::_))
+        .WillOnce(DoAll(::testing::SetArgPointee<0>(mockRankNum), ::testing::Return(HCCL_SUCCESS)));
+
+    // Mock DlHalFunctionInit
+    MOCKER_CPP(&DlHalFunction::DlHalFunctionInit, HcclResult(DlHalFunction::*)())
+    .stubs()
+    .will(returnValue(HCCL_SUCCESS));
+
+    // Mock ValidateConfig
+    MOCKER_CPP(&CollComm::ValidateConfig, HcclResult(CollComm::*)(const HcclCommConfig*))
+    .stubs()
+    .with(any())
+    .will(returnValue(HCCL_SUCCESS));
+
+    // Mock MyRank::Init
+    MOCKER_CPP(&MyRank::Init, HcclResult(MyRank::*)(HcclMem, u32, u32))
+    .stubs()
+    .with(any(), any(), any())
+    .will(returnValue(HCCL_SUCCESS));
+
+    // Mock RankPairMgr creation inside MyRank (for MyRank construction)
+    MOCKER_CPP(&RankPairMgr::GetInstance, RankPairMgr&(*)())
+    .stubs()
+    .will(returnValueByReference(*((RankPairMgr*)0x1)));
+
+    HcclMem cclBuffer = {};
+    HcclCommConfig config = {};
+    config.hcclOpExpansionMode = 0;
+
+    auto ret = collComm.Init(mockRankGraph, nullptr, cclBuffer, &config);
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(collComm.GetRankGraph(), mockRankGraph);
+    EXPECT_NE(collComm.GetMyRank(), nullptr);
+
+    delete mockRankGraph;
+}

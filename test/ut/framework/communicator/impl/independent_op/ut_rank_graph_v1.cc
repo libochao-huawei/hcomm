@@ -271,3 +271,59 @@ TEST_F(RankGraphV1DirectTest, Ut_FillAttr_When_EndPointAttrLocation_Expect_Succe
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(locType, EndpointLocType::ENDPOINT_LOC_TYPE_DEVICE);
 }
+
+TEST_F(RankGraphV1DirectTest, Ut_GetRankSize_When_Normal_Expect_Success)
+{
+    RankGraphV1 rankGraph;
+
+    RankInfo_t rankInfo0;
+    rankInfo0.rankId = 0;
+    rankGraph.rankGraph_.push_back(rankInfo0);
+    RankInfo_t rankInfo1;
+    rankInfo1.rankId = 1;
+    rankGraph.rankGraph_.push_back(rankInfo1);
+
+    uint32_t rankSize = 0;
+    HcclResult ret = rankGraph.GetRankSize(&rankSize);
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(rankSize, 2u);
+}
+
+TEST_F(RankGraphV1DirectTest, Ut_GetRankSize_When_RankSizeNullptr_Expect_HCCL_E_PTR)
+{
+    RankGraphV1 rankGraph;
+    HcclResult ret = rankGraph.GetRankSize(nullptr);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(RankGraphV1DirectTest, Ut_GetDevicePort_When_RankExists_Expect_Success)
+{
+    RankGraphV1 rankGraph;
+
+    RankInfo_t rankInfo;
+    rankInfo.rankId = 0;
+    rankInfo.deviceInfo.port = 123;
+    rankGraph.rankGraph_.push_back(rankInfo);
+
+    uint32_t devPort = 0;
+    HcclResult ret = rankGraph.GetDevicePort(0, &devPort);
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(devPort, 123u);
+}
+
+TEST_F(RankGraphV1DirectTest, Ut_GetDevicePort_When_RankNotFound_Expect_HCCL_E_PARA)
+{
+    RankGraphV1 rankGraph;
+    uint32_t devPort = 0;
+    HcclResult ret = rankGraph.GetDevicePort(999, &devPort);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(RankGraphV1DirectTest, Ut_GetDevicePort_When_DevPortNullptr_Expect_HCCL_E_PTR)
+{
+    RankGraphV1 rankGraph;
+    HcclResult ret = rankGraph.GetDevicePort(0, nullptr);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
