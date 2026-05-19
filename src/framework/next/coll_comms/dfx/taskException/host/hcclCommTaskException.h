@@ -11,6 +11,7 @@
 #define HCCL_COMM_TASKEXCEPTION_H
 
 #include <array>
+#include <map>
 #include "types.h"
 #include "hccl_types.h"
 #include "orion_adapter_rts.h"
@@ -29,6 +30,8 @@ void RegisterGetAicpuCqeErrInfoCallBackHcomm(GetAicpuCqeErrInfoCallBackHcomm); /
 
 using AicpuGetErrStatusVecCallBack = std::vector<std::string> (*)(s32 deviceLogicID);
 void RegisterAicpuGetErrStatusVecCallBack(AicpuGetErrStatusVecCallBack);
+
+extern std::array<std::map<s32, GetAicpuTaskExceptionCallBackHcomm>, MAX_MODULE_DEVICE_NUM> g_communicatorCallbackMapV2;
 
 class TaskExceptionHost {
 public:
