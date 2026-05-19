@@ -40,6 +40,8 @@ LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle rdmaH
     memHandle  = reqReg.handle;
     segVa      = reqReg.targetSegVa;
     memcpy_s(key, HRT_UB_MEM_KEY_MAX_LEN, reqReg.key, HRT_UB_MEM_KEY_MAX_LEN);
+    alignedAddr_ = static_cast<uintptr_t>(alignBuf.first);
+    alignedSize_ = alignBuf.second;
 
     HCCL_INFO("[LocalUbRmaBuffer::%s] end, rdmaHandle[%p], lmemHandle[0x%llx], keySize[%u]", __func__, rdmaHandle,
                memHandle, keySize);
@@ -67,6 +69,8 @@ LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, void *netDevice,
     keySize   = reqReg.keySize;
     memHandle = reqReg.handle;
     memcpy_s(key, HRT_UB_MEM_KEY_MAX_LEN, reqReg.key, HRT_UB_MEM_KEY_MAX_LEN);
+    alignedAddr_ = static_cast<uintptr_t>(alignBuf.first);
+    alignedSize_ = alignBuf.second;
     HCCL_INFO("[LocalUbRmaBuffer::%s] end, rdmaHandle[%p], lmemHandle[0x%llx], keySize[%u]", __func__, rdmaHandle,
               memHandle, keySize);
 }
@@ -79,6 +83,8 @@ LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf) : LocalRmaBuffer
     HrtUbDevQueryInfo(QUERY_PROCESS_TOKEN, &info);
     tokenId    = info.tokenId;
     tokenValue = info.tokenValue; // 未处理tokenIdHandle
+    alignedAddr_ = buf->GetAddr();
+    alignedSize_ = buf->GetSize();
     HCCL_INFO("LocalUbRmaBuffer Construct: buf=[%s]", buf->Describe().c_str());
 }
 
@@ -100,6 +106,22 @@ std::unique_ptr<Serializable> LocalUbRmaBuffer::GetExchangeDto()
     (void)memcpy_s(dto->key, HRT_UB_MEM_KEY_MAX_LEN, key, HRT_UB_MEM_KEY_MAX_LEN);
     dto->segVa = segVa;
     return std::unique_ptr<Serializable>(dto.release());
+}
+
+LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, u32 tokenValue, u32 tokenId,
+                                     TokenIdHandle tokenIdHandle, u32 keySize, u64 segVa, const u8* keySrc)
+    : LocalRmaBuffer(buf, RmaType::UB),
+      tokenValue(tokenValue), tokenId(tokenId), tokenIdHandle(tokenIdHandle),
+      keySize(keySize), segVa(segVa)
+{
+    // Protected constructor for virtual subclass — skips HrtRaUbLocalMemReg.
+    // rdmaHandle stays nullptr so the destructor does not deregister.
+    if (keySrc != nullptr) {
+        memcpy_s(key, HRT_UB_MEM_KEY_MAX_LEN, keySrc, HRT_UB_MEM_KEY_MAX_LEN);
+    }
+    auto alignBuf = BufAlign(buf->GetAddr(), buf->GetSize());
+    alignedAddr_ = static_cast<uintptr_t>(alignBuf.first);
+    alignedSize_ = alignBuf.second;
 }
 
 LocalUbRmaBuffer::~LocalUbRmaBuffer()
