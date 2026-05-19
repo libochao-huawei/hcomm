@@ -105,6 +105,13 @@ private:
     HcclResult InitTaskExceptionHandler();
     HcclResult InitKfcAndRegisterCollComm();
     HcclResult GetRankIpPortMap();
+    HcclResult InitFullMode(void* rankGraph, aclrtBinHandle binHandle, HcclMem cclBuffer, HcclCommConfig* config);
+    HcclResult InitSimpleMode(void* rankGraph, aclrtBinHandle binHandle, HcclMem cclBuffer, HcclCommConfig* config);
+
+    /* A2/A3：使用simpleMode兼容模式没有CommV2，使用简化版的CollComm代理rankgraph、myrank对象，其他功能暂不实现
+     * A5&&下一代：使用fullMode全功能collComm模式
+     */
+    bool IsFullMode() const { return comm_ != nullptr; }
 
     void* comm_{nullptr};
     uint32_t rankId_{};
