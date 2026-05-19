@@ -8,31 +8,31 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef HCOMM_RES_MGR_H
-#define HCOMM_RES_MGR_H
+#ifndef CHANNEL_DEVICE_KEY_H
+#define CHANNEL_DEVICE_KEY_H
 
 #include <cstdint>
+#include <functional>
+#include "hcomm_res_defs.h"
 
 namespace hcomm {
 
-class BaseCommRes;
+struct DeviceChannelKey {
+    int32_t deviceId;
+    ChannelHandle handle;
 
-class HcommResMgr {
-public:
-    static HcommResMgr &GetInstance(const uint32_t devicePhyId);
+    bool operator==(const DeviceChannelKey& other) const {
+        return deviceId == other.deviceId && handle == other.handle;
+    }
+};
 
-    BaseCommRes* GetBaseCommRes() { return baseCommRes_; }
-
-private:
-    HcommResMgr();
-    ~HcommResMgr();
-    HcommResMgr(const HcommResMgr &that) = delete;
-    HcommResMgr &operator=(const HcommResMgr &that) = delete;
-
-    BaseCommRes* baseCommRes_{nullptr};
-    mutable std::mutex mutex_;
+struct DeviceChannelKeyHash {
+    std::size_t operator()(const DeviceChannelKey& key) const {
+        return std::hash<int32_t>()(key.deviceId) ^
+               (std::hash<ChannelHandle>()(key.handle) << 1);
+    }
 };
 
 } // namespace hcomm
 
-#endif // HCOMM_RES_MGR_H
+#endif // CHANNEL_DEVICE_KEY_H
