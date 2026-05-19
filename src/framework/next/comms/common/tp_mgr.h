@@ -129,6 +129,8 @@ private:
 
     HcclResult StartGetTpInfoListRequest(const GetTpInfoParam &param, RequestCtx &reqCtx) const;
     HcclResult StartGetTpAttrForFirstTp(const GetTpInfoParam &param, RequestCtx &reqCtx) const;
+    HcclResult BuildTpInfoAndCommitQosAttr(const GetTpInfoParam &param, const RequestCtx &reqCtx,
+        const struct HccpTpInfo *baseInfoPtr, uint32_t tpListIndex, uint32_t mappedSl, TpInfo &tmpTpInfo);
     HcclResult HandleCompletedRequest(RequestCtx reqCtx, const GetTpInfoParam &param, TpInfo &tpInfo);
 
     InfoCtxMap &GetInfoCtxMap(const TpProtocol tpProtocol);

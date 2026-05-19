@@ -544,9 +544,8 @@ HcclResult TpMgr::StartGetTpAttrForFirstTp(const GetTpInfoParam &param, RequestC
     return HcclResult::HCCL_SUCCESS;
 }
 
-static HcclResult BuildTpInfoAndCommitQosAttr(const uint32_t devPhyId, const GetTpInfoParam &param,
-    const TpMgr::RequestCtx &reqCtx, const struct HccpTpInfo *baseInfoPtr, const uint32_t tpListIndex,
-    const uint32_t mappedSl, TpInfo &tmpTpInfo)
+HcclResult TpMgr::BuildTpInfoAndCommitQosAttr(const GetTpInfoParam &param, const RequestCtx &reqCtx,
+    const struct HccpTpInfo *baseInfoPtr, const uint32_t tpListIndex, const uint32_t mappedSl, TpInfo &tmpTpInfo)
 {
     tmpTpInfo = TpInfo{};
     tmpTpInfo.tpHandle = baseInfoPtr[tpListIndex].tpHandle;
@@ -554,14 +553,14 @@ static HcclResult BuildTpInfoAndCommitQosAttr(const uint32_t devPhyId, const Get
     tmpTpInfo.hasMappedJettyPriority = true;
 
     if (param.tpProtocol == TpProtocol::RTP || param.tpProtocol == TpProtocol::UBOE) {
-        CHK_RET(CommitMappedSlToTpAttr(devPhyId, param.locAddr, tmpTpInfo.tpHandle, mappedSl));
+        CHK_RET(CommitMappedSlToTpAttr(devPhyId_, param.locAddr, tmpTpInfo.tpHandle, mappedSl));
     }
     if (param.tpProtocol == TpProtocol::UBOE && reqCtx.tpAttr.dscpConfigMode == 0) {
         const uint8_t dscpBefore = static_cast<uint8_t>(reqCtx.tpAttr.dscp & 0x3FU);
         const uint8_t qos = static_cast<uint8_t>(param.qos & 0xFFU);
         uint8_t dscp = 33U;
-        (void)GetDscpByQosFromHccnCfg(devPhyId, qos, dscp);
-        CHK_RET(CommitUboeDscpToTpAttr(devPhyId, param.locAddr, tmpTpInfo.tpHandle, dscp));
+        (void)GetDscpByQosFromHccnCfg(devPhyId_, qos, dscp);
+        CHK_RET(CommitUboeDscpToTpAttr(devPhyId_, param.locAddr, tmpTpInfo.tpHandle, dscp));
         HCCL_INFO("[TpMgr][%s] UBOE dscp updated: tpHandle[%llu] qos[%u] dscpBefore[%u] dscpAfter[%u].", __func__,
             tmpTpInfo.tpHandle, static_cast<unsigned>(qos), static_cast<unsigned>(dscpBefore),
             static_cast<unsigned>(dscp));
@@ -606,7 +605,7 @@ HcclResult TpMgr::HandleCompletedRequest(RequestCtx reqCtx, const GetTpInfoParam
     }
 
     TpInfo tmpTpInfo{};
-    CHK_RET(BuildTpInfoAndCommitQosAttr(devPhyId_, param, reqCtx, baseInfoPtr, tpListIndex, mappedSl, tmpTpInfo));
+    CHK_RET(BuildTpInfoAndCommitQosAttr(param, reqCtx, baseInfoPtr, tpListIndex, mappedSl, tmpTpInfo));
 
     Hccl::IpAddress locAddr{};
     Hccl::IpAddress rmtAddr{};
