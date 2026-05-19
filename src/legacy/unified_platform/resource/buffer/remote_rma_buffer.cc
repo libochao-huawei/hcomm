@@ -155,4 +155,108 @@ string RemoteUbRmaBuffer::Describe() const
                         rdmaHandle, addr, size, memHandle, segVa);
 }
 
+RemoteUbAggregatedRmaBuffer::RemoteUbAggregatedRmaBuffer(const std::vector<RdmaHandle> &handles)
+{
+    if (handles.empty()) {
+        THROW<NullPtrException>("RemoteUbAggregatedRmaBuffer's handles is empty");
+    }
+
+    for (const auto &handle : handles) {
+        if (handle == nullptr) {
+            THROW<NullPtrException>("RemoteUbAggregatedRmaBuffer's rdmaHandle is NULL");
+        }
+
+        PortAggregationContext ctx;
+        ctx.rdmaHandle = handle;
+        portCtxs_.push_back(ctx);
+    }
+
+    HCCL_INFO("[RemoteUbAggregatedRmaBuffer::%s] end, handleCount[%zu]", __func__, handles.size());
+}
+
+RemoteUbAggregatedRmaBuffer::RemoteUbAggregatedRmaBuffer(const std::vector<RdmaHandle> &handles, const Serializable &rmtDto)
+{
+    if (handles.empty()) {
+        THROW<NullPtrException>("RemoteUbAggregatedRmaBuffer's handles is empty");
+    }
+
+    const auto &dto = dynamic_cast<const ExchangeAggregatedUbBufferDto &>(rmtDto);
+    addr = dto.addr;
+    size = dto.size;
+    memType = dto.memType;
+    memTag = dto.memTag;
+
+    if (dto.portDtos.size() != handles.size()) {
+        THROW<InvalidParamsException>("RemoteUbAggregatedRmaBuffer: handles size[%zu] != portDtos size[%zu]",
+                                      handles.size(), dto.portDtos.size());
+    }
+
+    for (size_t i = 0; i < handles.size(); ++i) {
+        const auto &handle = handles[i];
+        if (handle == nullptr) {
+            THROW<NullPtrException>("RemoteUbAggregatedRmaBuffer's rdmaHandle is NULL");
+        }
+
+        auto &portDto = dto.portDtos[i];
+        PortAggregationContext ctx;
+        ctx.rdmaHandle = handle;
+
+        if (portDto.keySize != 0) {
+            u8 keyBuf[HRT_UB_MEM_KEY_MAX_LEN] = {0};
+            memcpy_s(keyBuf, HRT_UB_MEM_KEY_MAX_LEN, portDto.key, HRT_UB_MEM_KEY_MAX_LEN);
+            auto res = HrtRaUbRemoteMemImport(handle, keyBuf, portDto.keySize, portDto.tokenValue);
+            ctx.memHandle = res.handle;
+            ctx.segVa = res.targetSegVa;
+        } else {
+            HCCL_INFO("[RemoteUbAggregatedRmaBuffer] port[%zu] key is 0, do not need to import memory", i);
+            ctx.memHandle = 0;
+            ctx.segVa = 0;
+        }
+
+        portCtxs_.push_back(ctx);
+
+        HCCL_INFO("[RemoteUbAggregatedRmaBuffer::%s] import handle[%p], memHandle[%p], keySize[%u], tokenValue[%u]",
+                  __func__, handle, ctx.memHandle, portDto.keySize, portDto.tokenValue);
+    }
+
+    HCCL_INFO("Construct RemoteUbAggregatedRmaBuffer:%s", Describe().c_str());
+}
+
+RemoteUbAggregatedRmaBuffer::~RemoteUbAggregatedRmaBuffer()
+{
+    for (size_t i = 0; i < portCtxs_.size(); ++i) {
+        const auto &ctx = portCtxs_[i];
+        if (ctx.rdmaHandle != nullptr && ctx.memHandle != 0) {
+            HCCL_INFO("[RemoteUbAggregatedRmaBuffer::%s] port[%zu] rdmaHandle[%p], memHandle[%p]",
+                      __func__, i, ctx.rdmaHandle, ctx.memHandle);
+            DECTOR_TRY_CATCH("RemoteUbAggregatedRmaBuffer", HrtRaUbRemoteMemUnimport(ctx.rdmaHandle, ctx.memHandle));
+        }
+    }
+}
+
+string RemoteUbAggregatedRmaBuffer::Describe() const
+{
+    return StringFormat("RemoteUbAggregatedRmaBuffer[handleCount=%zu, addr=0x%llx, size=0x%llx]",
+                        portCtxs_.size(), addr, size);
+}
+u64 RemoteUbAggregatedRmaBuffer::GetMemHandleByPortIdx(uint8_t idx)
+{
+    if (idx >= portCtxs_.size()) {
+        HCCL_ERROR("[RemoteUbAggregatedRmaBuffer::%s] invalid port idx[%u], total ports[%zu]",
+                   __func__, idx, portCtxs_.size());
+        return 0;
+    }
+    return portCtxs_[idx].memHandle;
+}
+
+std::vector<u64> RemoteUbAggregatedRmaBuffer::GetAllTargetSeg() const
+{
+    std::vector<u64> allTargetSeg;
+    allTargetSeg.reserve(portCtxs_.size());
+    for (const auto &ctx : portCtxs_) {
+        allTargetSeg.push_back(ctx.segVa);
+    }
+    return allTargetSeg;
+}
+
 } // namespace Hccl
