@@ -95,6 +95,7 @@ def get_sign_cmd(file, rootdir) -> list:
     ]
     return cmd_list
 
+
 def _run_sign(inputfiles, rootdir):
     """执行签名（安全版，shell=False）"""
     crlfile, cmstag = _get_sign_filename()

@@ -29,17 +29,17 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 #
 """
-from collections import namedtuple
-from typing import Dict, Iterator, List, Tuple
 import os
 import sys
 import shutil
 import subprocess
 import argparse
-import xml.etree.ElementTree as ET
-import common_log as COMM_LOG
 import shlex
 from subprocess import run, PIPE, STDOUT
+from collections import namedtuple
+from typing import Dict, Iterator, List, Tuple
+import common_log as COMM_LOG
+import xml.etree.ElementTree as ET
 
 THIS_FILE_NAME = __file__
 THIS_FILE_PATH = os.path.realpath(THIS_FILE_NAME)
@@ -153,6 +153,7 @@ def parse_item(node):
                                position, image_pack_version, bist_flag)
     return cur_conf
 
+
 def safe_run_str_cmd(cmd_str, work_dir=None):
     # 字符串命令 → 安全列表命令（关键一步）
     cmd_list = shlex.split(cmd_str)
@@ -167,6 +168,7 @@ def safe_run_str_cmd(cmd_str, work_dir=None):
         encoding='utf-8'
     )
     return result.returncode, result.stdout
+
 
 def get_item_set(config_file, sign_file_dir, version) -> Tuple[int, Dict, List]:
     """
@@ -249,7 +251,6 @@ def build_inifile(item_size_set, sign_file_dir, bios_tool_path,
     if add_sign == "true" and cms_flag:
         COMM_LOG.cilog_info(THIS_FILE_NAME, "------------------------------------")
         COMM_LOG.cilog_info(THIS_FILE_NAME, "execute:%s", cmd)
-        # ret = subprocess.getstatusoutput(cmd)
         code, output = safe_run_str_cmd(cmd)
         if code != 0:
             COMM_LOG.cilog_error(THIS_FILE_NAME, "build inifile failed!\n\t%s", (output))
@@ -271,7 +272,6 @@ def build_sign(item_size_set, sign_file_dir, sign_tool_path, sign_tmp_path, root
         input_path = os.path.join(sign_file_dir, infile)
         if os.path.exists(input_path):
             cmd = "ls {}".format(input_path)
-            # ret = subprocess.getstatusoutput(cmd)
             code, output = safe_run_str_cmd(cmd)
             if code != 0:
                 COMM_LOG.cilog_warning(THIS_FILE_NAME, "can not find %s in %s \n\t%s", input_path, sign_file_dir,
@@ -322,7 +322,6 @@ def build_sign(item_size_set, sign_file_dir, sign_tool_path, sign_tmp_path, root
         COMM_LOG.cilog_info(THIS_FILE_NAME, "------------------------------------")
         COMM_LOG.cilog_info(THIS_FILE_NAME, "execute:%s", cmd)
         # 签名后会在ini文件通目录下生成p7s文件，比如a.ini=>a.ini.p7s
-        # ret = subprocess.getstatusoutput(cmd)
         code, output = safe_run_str_cmd(cmd)
         if code != 0:
             COMM_LOG.cilog_error(THIS_FILE_NAME, "make %s sign failed!\n\t%s", sign, output)
@@ -357,7 +356,6 @@ def add_bios_esbc_header(root_dir, item_size_set, sign_file_dir):
 
             COMM_LOG.cilog_info(THIS_FILE_NAME, "------------------------------------")
             COMM_LOG.cilog_info(THIS_FILE_NAME, "execute:%s", cmd)
-            # ret = subprocess.getstatusoutput(cmd)
             code, output = safe_run_str_cmd(cmd)
             if code != 0:
                 COMM_LOG.cilog_error(THIS_FILE_NAME, "add %s esbc header failed!\n\t%s", input_file, output)
@@ -472,7 +470,6 @@ def add_bios_header(item_size_set, sign_file_dir, bios_tool_path, sign_tool_path
             return -1
         COMM_LOG.cilog_info(THIS_FILE_NAME, "------------------------------------")
         COMM_LOG.cilog_info(THIS_FILE_NAME, "execute:%s", cmd)
-        # ret = subprocess.getstatusoutput(cmd)
         code, output = safe_run_str_cmd(cmd)
         if code != 0:
             COMM_LOG.cilog_error(THIS_FILE_NAME, "add %s header failed!\n\t%s", input_file, output)
