@@ -377,12 +377,12 @@ HcclResult AicpuTsRoceChannel::GetNotifyNum(uint32_t *notifyNum) const
 }
 
 // 单边通信暂未使用，接口先保留但返回不支持
-HcclResult AicpuTsRoceChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags)
+HcclResult AicpuTsRoceChannel::GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, char **memTags)
 {
     (void)remoteMem;
     (void)memTags;
     (void)memNum;
-    HCCL_DEBUG("[AicpuTsRoceChannel][%s] GetRemoteMem not supported for AICPU TS RoCE channel", SocketRoleTag());
+    HCCL_DEBUG("[AicpuTsRoceChannel][%s] GetRemoteMems not supported for AICPU TS RoCE channel", SocketRoleTag());
     return HCCL_E_NOT_SUPPORT;
 }
 

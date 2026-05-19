@@ -25,28 +25,28 @@ namespace Hccl {
 
 template <typename T>
 struct RemoteMemCtx{
-    uint32_t                        userMemCount = 0;
+    uint32_t                        memCount = 0;
     bool                            &cacheValid;
     std::vector<T>                  &rmtBufferVec;
-    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &remoteUserMemTag;
-    std::vector<CommMem>            &remoteUserMems;
+    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &remoteMemTag;
+    std::vector<HcclMem>            &remoteMems;
     std::vector<std::string>        &tagCopies;
     std::vector<char*>              &tagPointers;
     std::function<void(RemoteMemCtx<T> &remoteMemCtx, uint32_t index)> cacheBuilder;
-    CommMem                         **remoteMem;
-    char                            ***memTags;
+    HcclMem                         **remoteMem;
     uint32_t                        *memNum;
+    char                            ***memTags;
 
-    RemoteMemCtx(uint32_t userMemCount, bool &cacheValid, std::vector<T> &rmtBufferVec,
-        std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &remoteUserMemTag,
-        std::vector<CommMem> &remoteUserMems, std::vector<std::string> &tagCopies,
+    RemoteMemCtx(uint32_t memCount, bool &cacheValid, std::vector<T> &rmtBufferVec,
+        std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &remoteMemTag,
+        std::vector<HcclMem> &remoteMems, std::vector<std::string> &tagCopies,
         std::vector<char*> &tagPointers,
         std::function<void(RemoteMemCtx<T> &remoteMemCtx, uint32_t index)> cacheBuilder,
-        CommMem **remoteMem, char ***memTags, uint32_t *memNum) :
-        userMemCount(userMemCount), cacheValid(cacheValid), rmtBufferVec(rmtBufferVec),
-        remoteUserMemTag(remoteUserMemTag), remoteUserMems(remoteUserMems),
+        HcclMem **remoteMem, uint32_t *memNum, char ***memTags) :
+        memCount(memCount), cacheValid(cacheValid), rmtBufferVec(rmtBufferVec),
+        remoteMemTag(remoteMemTag), remoteMems(remoteMems),
         tagCopies(tagCopies), tagPointers(tagPointers), cacheBuilder(cacheBuilder),
-        remoteMem(remoteMem), memTags(memTags), memNum(memNum)
+        remoteMem(remoteMem), memNum(memNum), memTags(memTags)
     {};
 };
 
@@ -59,29 +59,29 @@ HcclResult GetRemoteUserMem(RemoteMemCtx<T> &remoteMemCtx)
     *(remoteMemCtx.remoteMem) = nullptr;
     *(remoteMemCtx.memTags) = nullptr;
     *(remoteMemCtx.memNum) = 0;
-    if (remoteMemCtx.userMemCount == 0) {
+    if (remoteMemCtx.memCount == 0) {
         HCCL_INFO("[GetUserRemoteMem] No user remote memory found");
         return HCCL_SUCCESS;
     }
     // 检查是否有缓存
     if (!remoteMemCtx.cacheValid) {
-        remoteMemCtx.remoteUserMems.resize(remoteMemCtx.userMemCount);
+        remoteMemCtx.remoteMems.resize(remoteMemCtx.memCount);
         remoteMemCtx.tagCopies.clear();
-        remoteMemCtx.tagCopies.reserve(remoteMemCtx.userMemCount);
+        remoteMemCtx.tagCopies.reserve(remoteMemCtx.memCount);
         remoteMemCtx.tagPointers.clear();
-        remoteMemCtx.tagPointers.reserve(remoteMemCtx.userMemCount);
-        for (uint32_t i = 0; i < remoteMemCtx.userMemCount; ++i) {
+        remoteMemCtx.tagPointers.reserve(remoteMemCtx.memCount);
+        for (uint32_t i = 0; i < remoteMemCtx.memCount; ++i) {
             remoteMemCtx.cacheBuilder(remoteMemCtx, i);
-            const char* src = remoteMemCtx.remoteUserMemTag[i + 1].data();
+            const char* src = remoteMemCtx.remoteMemTag[i].data();
             std::string tagCopy(src, strnlen(src, HCCL_RES_TAG_MAX_LEN));
             remoteMemCtx.tagCopies.push_back(std::move(tagCopy));
             remoteMemCtx.tagPointers.push_back(const_cast<char*>(remoteMemCtx.tagCopies.back().c_str()));
         }
         remoteMemCtx.cacheValid = true;
     }
-    *(remoteMemCtx.remoteMem) = remoteMemCtx.remoteUserMems.data();
+    *(remoteMemCtx.remoteMem) = remoteMemCtx.remoteMems.data();
     *(remoteMemCtx.memTags) = remoteMemCtx.tagPointers.data();
-    *(remoteMemCtx.memNum) = remoteMemCtx.userMemCount;
+    *(remoteMemCtx.memNum) = remoteMemCtx.memCount;
     return HCCL_SUCCESS;
 }
 } // namespace Hccl
