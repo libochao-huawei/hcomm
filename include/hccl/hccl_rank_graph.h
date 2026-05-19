@@ -396,10 +396,10 @@ typedef struct {
 } RankDesc;
 
 /**
- * @brief 获取通信域内本rank的拓扑描述信息
+ * @brief 获取通信域内所有rank的拓扑描述信息
  * @param[in] comm 通信域句柄
- * @param[out] descList RankDesc描述信息（本rank单条）
- * @param[out] descNum 描述信息数量（当前固定为1）
+ * @param[out] descList RankDesc描述信息列表
+ * @param[out] descNum 描述信息数量
  * @return HcclResult 执行结果状态码
  * @warning 1、返回的descList内存由库内管理，调用者严禁释放
  *          2、应及时复制返回的数据，同一通信域重复调用可能使前次结果失效
