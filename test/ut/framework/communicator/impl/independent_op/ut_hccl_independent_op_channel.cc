@@ -55,3 +55,16 @@ TEST_F(HcclIndependentOpChannelTest, Ut_HcclChannelAcquire_When_NotifyNum_Is_Inv
     HcclResult ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_AICPU_TS, channelDesc.data(), 1, channels.data());
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
+
+TEST_F(HcclIndependentOpChannelTest, Ut_BuildChannelRequests_Expect_Success)
+{
+    ChannelManager channelManager_;
+    std::vector<HcclChannelDesc> channelDesc(2);
+    HcclChannelDescInit(channelDesc.data(), 2);
+    channelDesc[0].remoteRank = 1;
+    channelDesc[0].channelProtocol = CommProtocol::COMM_PROTOCOL_HCCS_ONLY;
+    channelDesc[0].remoteRank = 1;
+    channelDesc[0].channelProtocol = CommProtocol::COMM_PROTOCOL_SIO;
+    OpCommTransport  transport = channelManager_.BuildChannelRequests(channelDesc);
+    EXPECT_EQ(1, transport.size());
+}

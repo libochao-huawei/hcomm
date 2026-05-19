@@ -128,6 +128,7 @@ HcclResult ProcessHcclChannelDesc(const HcclChannelDesc &channelDesc, HcclChanne
         case COMM_PROTOCOL_UBC_CTP:
         case COMM_PROTOCOL_UB_MEM:
         case COMM_PROTOCOL_UBC_TP:
+        case COMM_PROTOCOL_HCCS_ONLY:
             break;
         case COMM_PROTOCOL_ROCE:
             return ProcessRoceChannelDesc(channelDesc, channelDescFinal, hcclComm);
@@ -141,6 +142,7 @@ HcclResult ProcessHcclChannelDesc(const HcclChannelDesc &channelDesc, HcclChanne
                     case COMM_PROTOCOL_UB_MEM:  return "COMM_PROTOCOL_UB_MEM";
                     case COMM_PROTOCOL_ROCE:    return "COMM_PROTOCOL_ROCE";
                     case COMM_PROTOCOL_UBC_TP:  return "COMM_PROTOCOL_UBC_TP";
+                    case COMM_PROTOCOL_HCCS_ONLY:   return "COMM_PROTOCOL_HCCS_ONLY";
                     default:                    return "UNKNOWN_PROTOCOL";
                 }
             };
