@@ -195,10 +195,6 @@ public:
     CcuResult LoopCreate(CcuLoop *loop);
     CcuResult LoopBodyEnter(CcuLoop loop);
     CcuResult LoopBodyExit(CcuLoop loop);
-    // LoopGroup 创建时按需扩容 LoopEngine 资源池：
-    //   if (res_.blockExecutor[0].size() < maxLoopNum)
-    //       补足到 maxLoopNum；否则复用，不重复申请。
-    // maxLoopNum 应填本 LoopGroup 实际要 AddLoop 的次数（含展开复用）。
     CcuResult LoopGroupCreate(CcuLoopGroup *group, uint32_t maxLoopNum,
         const CcuLoopGroupConfig *config);
     CcuResult LoopGroupCreateFromVar(CcuLoopGroup *group, uint32_t maxLoopNum,
