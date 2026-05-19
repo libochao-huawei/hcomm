@@ -12,12 +12,6 @@
 #include "base/err_msg.h"
 #include "base/err_mgr.h"
 
-ErrContext hrtErrMGetErrorContext(void)
-{
-    return error_message::GetErrMgrContext();
-}
+ErrContext hrtErrMGetErrorContext(void) { return error_message::GetErrMgrContext(); }
 
-void hrtErrMSetErrorContext(ErrContext error_context)
-{
-    error_message::SetErrMgrContext(error_context);
-}
+void hrtErrMSetErrorContext(ErrContext error_context) { error_message::SetErrMgrContext(error_context); }

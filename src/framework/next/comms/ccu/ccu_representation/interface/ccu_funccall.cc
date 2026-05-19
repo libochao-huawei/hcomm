@@ -16,23 +16,23 @@
 namespace hcomm {
 namespace CcuRep {
 
-FuncCall::FuncCall(CcuRepContext *context, std::string label) : context(context), label(label)
-{
-    repFuncCall = std::make_shared<CcuRepFuncCall>(label);
-}
-
-FuncCall::FuncCall(CcuRepContext *context, const Variable &funcAddr) : context(context)
-{
-    repFuncCall = std::make_shared<CcuRepFuncCall>(funcAddr);
-}
-
-void FuncCall::AppendToContext()
-{
-    if (context == nullptr) {
-        Hccl::THROW<Hccl::CcuApiException>("context is nullptr, func call, append to context");
+    FuncCall::FuncCall(CcuRepContext* context, std::string label) : context(context), label(label)
+    {
+        repFuncCall = std::make_shared<CcuRepFuncCall>(label);
     }
-    return context->Append(repFuncCall);
-}
+
+    FuncCall::FuncCall(CcuRepContext* context, const Variable& funcAddr) : context(context)
+    {
+        repFuncCall = std::make_shared<CcuRepFuncCall>(funcAddr);
+    }
+
+    void FuncCall::AppendToContext()
+    {
+        if (context == nullptr) {
+            Hccl::THROW<Hccl::CcuApiException>("context is nullptr, func call, append to context");
+        }
+        return context->Append(repFuncCall);
+    }
 
 }; // namespace CcuRep
 }; // namespace hcomm

@@ -28,28 +28,19 @@ using namespace Hccl;
 
 std::map<std::string, std::string> envCfgMap = defaultEnvCfgMap;
 
-char *getenv_stub (const char *__name)
+char* getenv_stub(const char* __name)
 {
-    char *ret = const_cast<char*>(envCfgMap[std::string(__name)].c_str());
+    char* ret = const_cast<char*>(envCfgMap[std::string(__name)].c_str());
     return ret;
 }
 
 class EnvConfigTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "EnvConfigTest SetUP" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "EnvConfigTest SetUP" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "EnvConfigTest TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "EnvConfigTest TearDown" << std::endl; }
 
-    virtual void SetUp()
-    {
-        std::cout << "A Test case in EnvConfigTest SetUP" << std::endl;
-    }
+    virtual void SetUp() { std::cout << "A Test case in EnvConfigTest SetUP" << std::endl; }
 
     virtual void TearDown()
     {
@@ -57,7 +48,7 @@ protected:
         std::cout << "A Test case in EnvConfigTest TearDown" << std::endl;
     }
 
-    bool CmpIpAddress(const IpAddress &ip1, const IpAddress &ip2)
+    bool CmpIpAddress(const IpAddress& ip1, const IpAddress& ip2)
     {
         if (ip1.GetFamily() != ip2.GetFamily()) {
             return false;
@@ -71,30 +62,21 @@ protected:
         }
     }
 
-    bool CmpSocketIfName(const SocketIfName &fiName1, const SocketIfName &fiName2)
+    bool CmpSocketIfName(const SocketIfName& fiName1, const SocketIfName& fiName2)
     {
-        return (fiName1.configIfNames == fiName2.configIfNames) &&
-            (fiName1.searchNot == fiName2.searchNot) &&
-            (fiName1.searchExact == fiName2.searchExact);
+        return (fiName1.configIfNames == fiName2.configIfNames) && (fiName1.searchNot == fiName2.searchNot)
+               && (fiName1.searchExact == fiName2.searchExact);
     }
 
 protected:
     void MockFunc()
     {
-        MOCKER(getenv)
-            .stubs()
-            .with(any())
-            .will(invoke(getenv_stub));
+        MOCKER(getenv).stubs().with(any()).will(invoke(getenv_stub));
 
         char c = '1';
-        MOCKER(realpath)
-            .stubs()
-            .with(any())
-            .will(returnValue(&c));
+        MOCKER(realpath).stubs().with(any()).will(returnValue(&c));
 
-        MOCKER(HrtGetDeviceType)
-            .stubs()
-            .will(returnValue((DevType)DevType::DEV_TYPE_910A));
+        MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910A));
     }
 
     void ResetEnvCfgMap()
@@ -103,19 +85,19 @@ protected:
         envCfgMap = defaultEnvCfgMap;
     }
 
-    void GenFile(const std::string &filePath, const std::string fileContent)
+    void GenFile(const std::string& filePath, const std::string fileContent)
     {
         try {
             std::ofstream out(filePath.c_str(), std::ofstream::out);
             out << fileContent;
-        } catch(...) {
+        } catch (...) {
             std::cout << filePath << " generate failed!" << std::endl;
             return;
         }
         std::cout << filePath << " generated." << std::endl;
     }
 
-    void DelFile(const std::string &filePath)
+    void DelFile(const std::string& filePath)
     {
         int res = unlink(filePath.c_str());
         if (res == -1) {
@@ -149,7 +131,7 @@ TEST_F(EnvConfigTest, parse_env_config_should_success)
 
     MockFunc();
 
-    try{
+    try {
         EnvConfigStub envCfg;
         EXPECT_EQ(CmpIpAddress(envCfg.GetHostNicConfig().GetControlIfIp(), IpAddress("10.10.10.1")), true);
         EXPECT_EQ(envCfg.GetHostNicConfig().GetIfBasePort(), 50000);
@@ -163,11 +145,10 @@ TEST_F(EnvConfigTest, parse_env_config_should_success)
         EXPECT_EQ(envCfg.GetRdmaConfig().GetRdmaTimeOut(), 6);
         EXPECT_EQ(envCfg.GetRdmaConfig().GetRdmaRetryCnt(), 5);
         EXPECT_EQ(envCfg.GetAlgoConfig().GetPrimQueueGenName(), "AllReduceRing");
-        std::map<OpType, std::vector<HcclAlgoType>> algoMap = {{OpType::ALLREDUCE,
-            {HcclAlgoType::HCCL_ALGO_TYPE_NA,
-                HcclAlgoType::HCCL_ALGO_TYPE_RING,
-                HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT,
-                HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT}}};
+        std::map<OpType, std::vector<HcclAlgoType>> algoMap
+            = {{OpType::ALLREDUCE,
+                {HcclAlgoType::HCCL_ALGO_TYPE_NA, HcclAlgoType::HCCL_ALGO_TYPE_RING,
+                 HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT, HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT}}};
         EXPECT_EQ(envCfg.GetAlgoConfig().GetAlgoConfig(), algoMap);
         EXPECT_EQ(envCfg.GetAlgoConfig().GetBuffSize(), 200 * 1024 * 1024);
         EXPECT_EQ(envCfg.GetLogConfig().GetEntryLogEnable(), true);
@@ -203,8 +184,8 @@ TEST_F(EnvConfigTest, parse_env_config_should_success2)
 
     EXPECT_EQ(CmpIpAddress(envCfg.GetHostNicConfig().GetControlIfIp(), IpAddress("10.10.10.1")), true);
     EXPECT_EQ(envCfg.GetHostNicConfig().GetIfBasePort(), 50000);
-    EXPECT_EQ(CmpSocketIfName(envCfg.GetHostNicConfig().GetSocketIfName(), SocketIfName({{"eth0", "endvnic"}, true, true})), true);
-    EXPECT_EQ(envCfg.GetHostNicConfig().GetWhitelistDisable(), false);
+    EXPECT_EQ(CmpSocketIfName(envCfg.GetHostNicConfig().GetSocketIfName(), SocketIfName({{"eth0", "endvnic"}, true,
+true})), true); EXPECT_EQ(envCfg.GetHostNicConfig().GetWhitelistDisable(), false);
     EXPECT_EQ(envCfg.GetHostNicConfig().GetWhiteListFile(), "");
     EXPECT_EQ(envCfg.GetSocketConfig().GetSocketFamily(), AF_INET);
     EXPECT_EQ(envCfg.GetSocketConfig().GetLinkTimeOut(), 200);
@@ -214,7 +195,8 @@ TEST_F(EnvConfigTest, parse_env_config_should_success2)
     EXPECT_EQ(envCfg.GetRdmaConfig().GetRdmaTimeOut(), 6);
     EXPECT_EQ(envCfg.GetRdmaConfig().GetRdmaRetryCnt(), 5);
     EXPECT_EQ(envCfg.GetAlgoConfig().GetPrimQueueGenName(), "AllReduceRing");
-    EXPECT_EQ(envCfg.GetAlgoConfig().GetAlgoConfig(), vector<HcclAlgoType>({HcclAlgoType::HCCL_ALGO_TYPE_RING, HcclAlgoType::HCCL_ALGO_TYPE_RING, HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT, HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT}));
+    EXPECT_EQ(envCfg.GetAlgoConfig().GetAlgoConfig(), vector<HcclAlgoType>({HcclAlgoType::HCCL_ALGO_TYPE_RING,
+HcclAlgoType::HCCL_ALGO_TYPE_RING, HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT, HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT}));
     EXPECT_EQ(envCfg.GetAlgoConfig().GetBuffSize(), 200*1024*1024);
     EXPECT_EQ(envCfg.GetAlgoConfig().GetOpExpansionMode(), OpExpansionMode::AI_CPU);
     EXPECT_EQ(envCfg.GetLogConfig().GetEntryLogEnable(), true);
@@ -233,8 +215,8 @@ TEST_F(EnvConfigTest, parse_env_config_should_success3)
 
     EXPECT_EQ(CmpIpAddress(envCfg.GetHostNicConfig().GetControlIfIp(), IpAddress("10.10.10.1")), true);
     EXPECT_EQ(envCfg.GetHostNicConfig().GetIfBasePort(), 50000);
-    EXPECT_EQ(CmpSocketIfName(envCfg.GetHostNicConfig().GetSocketIfName(), SocketIfName({{"eth0", "endvnic"}, true, true})), true);
-    EXPECT_EQ(envCfg.GetHostNicConfig().GetWhitelistDisable(), false);
+    EXPECT_EQ(CmpSocketIfName(envCfg.GetHostNicConfig().GetSocketIfName(), SocketIfName({{"eth0", "endvnic"}, true,
+true})), true); EXPECT_EQ(envCfg.GetHostNicConfig().GetWhitelistDisable(), false);
     EXPECT_EQ(envCfg.GetHostNicConfig().GetWhiteListFile(), "");
     EXPECT_EQ(envCfg.GetSocketConfig().GetSocketFamily(), AF_INET6);
     EXPECT_EQ(envCfg.GetSocketConfig().GetLinkTimeOut(), 200);
@@ -244,7 +226,8 @@ TEST_F(EnvConfigTest, parse_env_config_should_success3)
     EXPECT_EQ(envCfg.GetRdmaConfig().GetRdmaTimeOut(), 6);
     EXPECT_EQ(envCfg.GetRdmaConfig().GetRdmaRetryCnt(), 5);
     EXPECT_EQ(envCfg.GetAlgoConfig().GetPrimQueueGenName(), "AllReduceRing");
-    EXPECT_EQ(envCfg.GetAlgoConfig().GetAlgoConfig(), vector<HcclAlgoType>({HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT, HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT, HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT, HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT}));
+    EXPECT_EQ(envCfg.GetAlgoConfig().GetAlgoConfig(), vector<HcclAlgoType>({HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT,
+HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT, HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT, HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT}));
     EXPECT_EQ(envCfg.GetAlgoConfig().GetBuffSize(), 200*1024*1024);
     EXPECT_EQ(envCfg.GetAlgoConfig().GetOpExpansionMode(), OpExpansionMode::AI_CPU);
     EXPECT_EQ(envCfg.GetLogConfig().GetEntryLogEnable(), true);
@@ -384,7 +367,6 @@ TEST_F(EnvConfigTest, parse_env_config_hccl_algo_invalid_test)
     EnvAlgoConfig algConfig2;
     EXPECT_THROW(algConfig.Parse(), InvalidParamsException);
     unsetenv("HCCL_ALGO");
-
 }
 
 TEST_F(EnvConfigTest, parse_env_config_hccl_algo_invalid_test_1)
@@ -394,7 +376,6 @@ TEST_F(EnvConfigTest, parse_env_config_hccl_algo_invalid_test_1)
 
     std::string str2 = "abcdefg";
     EXPECT_THROW(SetHcclAlgoConfig(str2), InvalidParamsException);
-
 }
 
 TEST_F(EnvConfigTest, parse_env_config_HCCL_DETOUR_test)
@@ -417,7 +398,7 @@ TEST_F(EnvConfigTest, str2T_test)
     EXPECT_THROW(Str2T<int>(input), InvalidParamsException);
 }
 
-//临时方案
+// 临时方案
 TEST_F(EnvConfigTest, parse_env_config_socketIFName_test)
 {
     std::string input = "=eth0,endvnic";
@@ -433,10 +414,7 @@ TEST_F(EnvConfigTest, CastAlgoTypeVec_test)
 TEST_F(EnvConfigTest, Ut_CastSocketPortRange_When_Config_Auto_Expect_Right)
 {
     std::vector<SocketPortRange> rangs;
-    SocketPortRange autoSocketPortRange = {
-            HCCL_SOCKET_PORT_RANGE_AUTO,
-            HCCL_SOCKET_PORT_RANGE_AUTO
-        };
+    SocketPortRange autoSocketPortRange = {HCCL_SOCKET_PORT_RANGE_AUTO, HCCL_SOCKET_PORT_RANGE_AUTO};
     rangs.push_back(autoSocketPortRange);
     EXPECT_EQ(CastSocketPortRange(HCCL_AUTO_PORT_CONFIG, "envName"), rangs);
 }
@@ -444,10 +422,7 @@ TEST_F(EnvConfigTest, Ut_CastSocketPortRange_When_Config_Auto_Expect_Right)
 TEST_F(EnvConfigTest, Ut_CastSocketPortRange_When_Config_Whitespace_Expect_Erase_Return_OK)
 {
     std::vector<SocketPortRange> rangs;
-    SocketPortRange autoSocketPortRange = {
-            60000,
-            60050
-        };
+    SocketPortRange autoSocketPortRange = {60000, 60050};
     rangs.push_back(autoSocketPortRange);
     EXPECT_EQ(CastSocketPortRange(" 60000-60050 ", "envName"), rangs);
 }

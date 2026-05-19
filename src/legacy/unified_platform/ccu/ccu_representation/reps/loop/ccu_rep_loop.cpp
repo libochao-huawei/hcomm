@@ -17,48 +17,40 @@
 namespace Hccl {
 namespace CcuRep {
 
-CcuRepLoop::CcuRepLoop(const std::string &label, const Variable &loopParam) : label(label), loopParam(loopParam)
-{
-    type       = CcuRepType::LOOP;
-    instrCount = 1; // loop翻译需要1条指令
-}
-
-const std::string &CcuRepLoop::GetLabel() const
-{
-    return label;
-}
-
-void CcuRepLoop::Reference(std::shared_ptr<CcuRepLoopBlock> refRep)
-{
-    loopBlock = refRep;
-}
-
-std::shared_ptr<CcuRepBase> CcuRepLoop::SetLoopParam(Executor executor, Variable var)
-{
-    return std::make_shared<CcuRepSetLoop>(loopParam, executor, var);
-}
-
-bool CcuRepLoop::Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep)
-{
-    this->instrId = instrId;
-    translated    = true;
-
-    if (!loopBlock->Translated()) {
-        THROW<CcuApiException>("Reference To Invalid LoopBlock");
+    CcuRepLoop::CcuRepLoop(const std::string& label, const Variable& loopParam) : label(label), loopParam(loopParam)
+    {
+        type = CcuRepType::LOOP;
+        instrCount = 1; // loop翻译需要1条指令
     }
 
-    LoopInstr(instr++, loopBlock->StartInstrId(), loopBlock->StartInstrId() + loopBlock->InstrCount() - 1,
-              loopParam.Id());
+    const std::string& CcuRepLoop::GetLabel() const { return label; }
 
-    instrId += instrCount;
+    void CcuRepLoop::Reference(std::shared_ptr<CcuRepLoopBlock> refRep) { loopBlock = refRep; }
 
-    return translated;
-}
+    std::shared_ptr<CcuRepBase> CcuRepLoop::SetLoopParam(Executor executor, Variable var)
+    {
+        return std::make_shared<CcuRepSetLoop>(loopParam, executor, var);
+    }
 
-std::string CcuRepLoop::Describe()
-{
-    return StringFormat("Loop reference to [%s]", label.c_str());
-}
+    bool CcuRepLoop::Translate(CcuInstr*& instr, uint16_t& instrId, const TransDep& dep)
+    {
+        this->instrId = instrId;
+        translated = true;
+
+        if (!loopBlock->Translated()) {
+            THROW<CcuApiException>("Reference To Invalid LoopBlock");
+        }
+
+        LoopInstr(
+            instr++, loopBlock->StartInstrId(), loopBlock->StartInstrId() + loopBlock->InstrCount() - 1,
+            loopParam.Id());
+
+        instrId += instrCount;
+
+        return translated;
+    }
+
+    std::string CcuRepLoop::Describe() { return StringFormat("Loop reference to [%s]", label.c_str()); }
 
 }; // namespace CcuRep
 }; // namespace Hccl

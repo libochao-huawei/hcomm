@@ -30,15 +30,9 @@
 using namespace Hccl;
 class StreamLiteManagerTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "StreamLiteManagerTest SetUP" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "StreamLiteManagerTest SetUP" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "StreamLiteManagerTest TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "StreamLiteManagerTest TearDown" << std::endl; }
 
     virtual void SetUp()
     {
@@ -48,17 +42,17 @@ protected:
         MOCKER_CPP(&RtsqBase::QuerySqStatusByType).stubs().with(any()).will(returnValue(0));
         MOCKER_CPP(&RtsqBase::ConfigSqStatusByType).stubs();
 
-        DevUbConnection  ubConnection((void *)0x100, link.GetLocalAddr(), link.GetRemoteAddr(), OpMode::OPBASE);
-        RmaConnection   *rmaConnection = &ubConnection;
+        DevUbConnection ubConnection((void*)0x100, link.GetLocalAddr(), link.GetRemoteAddr(), OpMode::OPBASE);
+        RmaConnection* rmaConnection = &ubConnection;
         locRes.connVec.push_back(rmaConnection);
-        UbLocalNotify    ubLocalNotify(rdmaHandle);
-        BaseLocalNotify *validLocalNotify = &ubLocalNotify;
+        UbLocalNotify ubLocalNotify(rdmaHandle);
+        BaseLocalNotify* validLocalNotify = &ubLocalNotify;
         locRes.notifyVec.push_back(validLocalNotify);
         LocalUbRmaBuffer ubLocalRmaBuffer(devBuf, rdmaHandle);
-        LocalRmaBuffer  *validLocalRmaBuffer = &ubLocalRmaBuffer;
+        LocalRmaBuffer* validLocalRmaBuffer = &ubLocalRmaBuffer;
         locRes.bufferVec.push_back(validLocalRmaBuffer);
 
-        RtsCntNotify   rtsCntNotify;
+        RtsCntNotify rtsCntNotify;
         LocalCntNotify localCntNotify(rdmaHandle, &rtsCntNotify);
         locCntRes.vec.push_back(&localCntNotify);
         locCntRes.desc.push_back('0');
@@ -82,27 +76,27 @@ protected:
         std::cout << "A Test case in StreamLiteManagerTest TearDown" << std::endl;
     }
 
-    u32 num1        = 1;
-    u32 num2        = 2;
+    u32 num1 = 1;
+    u32 num2 = 2;
     u32 fakedevPhyId1 = 0;
     s32 fakeStreamId1 = 1;
-    u32 fakeSqId1     = 2;
+    u32 fakeSqId1 = 2;
     u32 fakeNotifyId1 = 1;
     u32 fakedevPhyId2 = 1;
     s32 fakeStreamId2 = 2;
-    u32 fakeSqId2     = 3;
+    u32 fakeSqId2 = 3;
     u32 fakeNotifyId2 = 2;
     u64 fakeNotifyHandleAddr = 100;
-    u8  mockSq[AC_SQE_SIZE * AC_SQE_MAX_CNT]{0};
+    u8 mockSq[AC_SQE_SIZE * AC_SQE_MAX_CNT]{0};
 
-    BaseMemTransport::CommonLocRes    locRes;
-    BaseMemTransport::Attribution     attr;
+    BaseMemTransport::CommonLocRes locRes;
+    BaseMemTransport::Attribution attr;
     BaseMemTransport::LocCntNotifyRes locCntRes;
-    LinkData                          link{BasePortType(PortDeploymentType::DEV_NET), 0, 1, 0, 1};
-    void                             *rdmaHandle = (void *)0x100;
-    IpAddress                         ipAddress{"1.0.0.0"};
-    Socket                            fakeSocket{nullptr, ipAddress, 100, ipAddress, "tag", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE};
-    std::shared_ptr<DevBuffer>        devBuf = DevBuffer::Create(0x100, 0x100);
+    LinkData link{BasePortType(PortDeploymentType::DEV_NET), 0, 1, 0, 1};
+    void* rdmaHandle = (void*)0x100;
+    IpAddress ipAddress{"1.0.0.0"};
+    Socket fakeSocket{nullptr, ipAddress, 100, ipAddress, "tag", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE};
+    std::shared_ptr<DevBuffer> devBuf = DevBuffer::Create(0x100, 0x100);
 
     std::unique_ptr<MemTransportLite> transportLite;
 };
@@ -149,7 +143,7 @@ TEST_F(StreamLiteManagerTest, update_reset)
     liteBinaryStream.Dump(uniqueId);
 
     StreamLite stream(uniqueId);
-    RtsqA5     rtsq(fakedevPhyId1, fakeStreamId1, fakeSqId1);
+    RtsqA5 rtsq(fakedevPhyId1, fakeStreamId1, fakeSqId1);
     stream.rtsq = std::make_unique<RtsqA5>(rtsq);
     MOCKER_CPP_VIRTUAL(rtsq, &RtsqA5::SdmaCopy).stubs().with(any(), any(), any(), any());
 

@@ -43,22 +43,16 @@ using namespace Hccl;
 
 class CollServiceAiCpuImplTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "CollServiceAiCpuImplTest SetUP" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "CollServiceAiCpuImplTest SetUP" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "CollServiceAiCpuImplTest TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "CollServiceAiCpuImplTest TearDown" << std::endl; }
 
     virtual void SetUp()
     {
         std::cout << "A Test case in CollServiceAiCpuImplTest SetUp" << std::endl;
         MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-        MOCKER(HrtNotifyCreate).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
-        MOCKER(HrtNotifyCreateWithFlag).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
+        MOCKER(HrtNotifyCreate).stubs().will(returnValue((void*)(fakeNotifyHandleAddr)));
+        MOCKER(HrtNotifyCreateWithFlag).stubs().will(returnValue((void*)(fakeNotifyHandleAddr)));
         MOCKER(HrtGetNotifyID).stubs().will(returnValue(fakeNotifyId));
         MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(fakeDevPhyId)));
         MOCKER(HrtIpcSetNotifyName).stubs().with(any(), outBoundP(fakeName, sizeof(fakeName)), any());
@@ -243,10 +237,10 @@ TEST_F(CollServiceAiCpuImplTest, test_AllocOpMem)
     comm.rankGraph->AddPeer(peer0);
     comm.localRmaBufManager = std::make_unique<LocalRmaBufManager>(comm);
 
-    u64 *sendCounts = (u64 *)malloc(comm.rankSize * sizeof(u64));
-    u64 *recvCounts = (u64 *)malloc(comm.rankSize * sizeof(u64));
-    u64 *sendDispls = (u64 *)malloc(comm.rankSize * sizeof(u64));
-    u64 *recvDispls = (u64 *)malloc(comm.rankSize * sizeof(u64));
+    u64* sendCounts = (u64*)malloc(comm.rankSize * sizeof(u64));
+    u64* recvCounts = (u64*)malloc(comm.rankSize * sizeof(u64));
+    u64* sendDispls = (u64*)malloc(comm.rankSize * sizeof(u64));
+    u64* recvDispls = (u64*)malloc(comm.rankSize * sizeof(u64));
     u64 count = 2;
     for (u32 i = 0; i < comm.rankSize; i++) {
         sendCounts[i] = count * (i + 1);
@@ -340,7 +334,7 @@ TEST_F(CollServiceAiCpuImplTest, test_AllocOpMem_op_BATCHSENDRECV)
     service.counterBuf = DevBuffer::Create(0x100, 10);
 }
 
-void AlltoallVCTestSetCommOp(CommunicatorImpl &comm)
+void AlltoallVCTestSetCommOp(CommunicatorImpl& comm)
 {
     // set acc mode to AICPU
     comm.opExecuteConfig.accState = AcceleratorState::AICPU_TS;
@@ -354,12 +348,12 @@ void AlltoallVCTestSetCommOp(CommunicatorImpl &comm)
     comm.rankSize = 4;
     comm.id = "testTag";
     std::shared_ptr<Buffer> buffer = DevBuffer::Create(0x100, 10);
-    comm.dataBufferManager      = std::make_unique<DataBufManager>();
+    comm.dataBufferManager = std::make_unique<DataBufManager>();
     comm.dataBufferManager->Register("testTag", BufferType::SCRATCH, buffer);
     comm.rankGraph = std::make_unique<RankGraph>(0);
     comm.connLocalNotifyManager = std::make_unique<ConnLocalNotifyManager>(&comm);
     comm.connLocalCntNotifyManager = std::make_unique<ConnLocalCntNotifyManager>(&comm);
-    comm.rmaConnectionManager   = std::make_unique<RmaConnManager>(comm);
+    comm.rmaConnectionManager = std::make_unique<RmaConnManager>(comm);
     // set coll operator in comm
     comm.currentCollOperator = std::make_unique<CollOperator>();
     comm.currentCollOperator->opTag = "testTag";
@@ -369,7 +363,7 @@ void AlltoallVCTestSetCommOp(CommunicatorImpl &comm)
     comm.currentCollOperator->inputMem = DevBuffer::Create(0x100, 10);
     comm.currentCollOperator->outputMem = DevBuffer::Create(0x100, 10);
     comm.currentCollOperator->scratchMem = DevBuffer::Create(0x100, 10);
-    
+
     // set virtual topo
     s32 rankId = 0;
     s32 localId = 0;
@@ -392,7 +386,7 @@ TEST_F(CollServiceAiCpuImplTest, St_AllocOpMem_When_Op_ALLTOALLVC_Expect_Success
     CommunicatorImpl comm;
     CollOperator op;
     AlltoallVCTestSetCommOp(comm);
-    
+
     // initialize sendCountMatrix
     u64* sendMem = (u64*)malloc(comm.rankSize * comm.rankSize * sizeof(u64));
     u64 count = 2;
@@ -435,7 +429,7 @@ TEST_F(CollServiceAiCpuImplTest, reg_port_ub_first_time_get_then_second_no_throw
     PortData port(0, basePortType, 0, IpAddress());
     string opTag = "optag";
 
-    void *rdmaHandle = (void *)0x200;
+    void* rdmaHandle = (void*)0x200;
 
     MOCKER_CPP(&RdmaHandleManager::Get).stubs().with(any(), any()).will(returnValue(rdmaHandle));
 
@@ -472,8 +466,8 @@ TEST_F(CollServiceAiCpuImplTest, test_IsAllTransportRecoveredReady)
     service.IsAllTransportRecoveredReady(comm.id);
 }
 
-extern NetInstance::Link InitBaseLink2(std::shared_ptr<NetInstance::Node> srcNodePtr,
-                                       std::shared_ptr<NetInstance::Node> dstNodePtr, u32 hop = 1)
+extern NetInstance::Link
+InitBaseLink2(std::shared_ptr<NetInstance::Node> srcNodePtr, std::shared_ptr<NetInstance::Node> dstNodePtr, u32 hop = 1)
 {
     IpAddress srcAddr = IpAddress(0);
     IpAddress dstAddr = IpAddress(0);
@@ -487,31 +481,33 @@ extern NetInstance::Link InitBaseLink2(std::shared_ptr<NetInstance::Node> srcNod
 
     NetInstance::ConnInterface dstIf = NetInstance::ConnInterface(dstAddr, ports, addrPos, linkType, protocols);
 
-    NetInstance::Link link =
-        NetInstance::Link(srcNodePtr, dstNodePtr, std::make_shared<NetInstance::ConnInterface>(srcIf),
-                          std::make_shared<NetInstance::ConnInterface>(dstIf), linkType, protocols, direction, hop);
+    NetInstance::Link link = NetInstance::Link(
+        srcNodePtr, dstNodePtr, std::make_shared<NetInstance::ConnInterface>(srcIf),
+        std::make_shared<NetInstance::ConnInterface>(dstIf), linkType, protocols, direction, hop);
 
     return link;
 }
 
 TEST_F(CollServiceAiCpuImplTest, test_RecoverTransport)
 {
-    LocalRmaBuffer *fakeBuffer = nullptr;
-    LocalRmaBuffer *rmaBuffer = reinterpret_cast<LocalRmaBuffer *>(0x12345678);
-    MOCKER_CPP(&LocalRmaBufManager::Get,
-               LocalRmaBuffer * (LocalRmaBufManager::*)(const std::string &, const PortData &, BufferType))
+    LocalRmaBuffer* fakeBuffer = nullptr;
+    LocalRmaBuffer* rmaBuffer = reinterpret_cast<LocalRmaBuffer*>(0x12345678);
+    MOCKER_CPP(
+        &LocalRmaBufManager::Get,
+        LocalRmaBuffer * (LocalRmaBufManager::*)(const std::string&, const PortData&, BufferType))
         .stubs()
         .will(returnValue(fakeBuffer))
         .then(returnValue(rmaBuffer));
 
-    MOCKER_CPP(&LocalRmaBufManager::Reg,
-               LocalRmaBuffer *
-                   (LocalRmaBufManager::*)(const std::string &, BufferType, std::shared_ptr<Buffer>, const PortData &, LinkProtocol))
+    MOCKER_CPP(
+        &LocalRmaBufManager::Reg, LocalRmaBuffer
+                                      * (LocalRmaBufManager::*)(const std::string&, BufferType, std::shared_ptr<Buffer>,
+                                                                const PortData&, LinkProtocol))
         .stubs()
         .will(returnValue(rmaBuffer));
 
-    void *addr = reinterpret_cast<void *>(0x12345678);
-    MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue(addr));
+    void* addr = reinterpret_cast<void*>(0x12345678);
+    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue(addr));
     MOCKER(HrtFree).stubs();
 
     CommunicatorImpl comm;
@@ -562,7 +558,7 @@ TEST_F(CollServiceAiCpuImplTest, test_RecoverTransport)
     NetInstance::Peer dstPeer = NetInstance::Peer(dstRankId, dstLocalId, dstLocalId, deviceId);
     std::shared_ptr<NetInstance::Peer> srcPeerPtr = std::make_shared<NetInstance::Peer>(srcPeer);
     std::shared_ptr<NetInstance::Peer> dstPeerPtr = std::make_shared<NetInstance::Peer>(dstPeer);
-    NetInstance::Link link = InitBaseLink2(srcPeerPtr, dstPeerPtr);  // use from ut_fabric_group.cc
+    NetInstance::Link link = InitBaseLink2(srcPeerPtr, dstPeerPtr); // use from ut_fabric_group.cc
 
     std::vector<NetInstance::Link> rawLinks;
     rawLinks.push_back(link);
@@ -585,34 +581,36 @@ TEST_F(CollServiceAiCpuImplTest, test_RecoverTransport)
 
     vector<std::pair<LinkGroup, u32>> linkGroupPair;
     LinkGroup linkGroup;
-    linkGroup.AddLink({0,0,IpAddress{"10.0.0.1"},IpAddress{"10.0.0.2"}});
-    linkGroup.AddLink({1,0,IpAddress{"10.0.0.3"},IpAddress{"10.0.0.4"}});
+    linkGroup.AddLink({0, 0, IpAddress{"10.0.0.1"}, IpAddress{"10.0.0.2"}});
+    linkGroup.AddLink({1, 0, IpAddress{"10.0.0.3"}, IpAddress{"10.0.0.4"}});
     linkGroupPair.push_back(make_pair(linkGroup, 0));
 
     EXPECT_NO_THROW(service.RecoverTransport(links, linkGroupPair));
 }
 
-extern NetInstance::Link InitBaseLink(std::shared_ptr<NetInstance::Node> srcNodePtr,
-                                      std::shared_ptr<NetInstance::Node> dstNodePtr, u32 hop = 1);
+extern NetInstance::Link
+InitBaseLink(std::shared_ptr<NetInstance::Node> srcNodePtr, std::shared_ptr<NetInstance::Node> dstNodePtr, u32 hop = 1);
 
 TEST_F(CollServiceAiCpuImplTest, test_register_ccl_buffer)
 {
-    LocalRmaBuffer *fakeBuffer = nullptr;
-    LocalRmaBuffer *rmaBuffer = reinterpret_cast<LocalRmaBuffer *>(0x12345678);
-    MOCKER_CPP(&LocalRmaBufManager::Get,
-               LocalRmaBuffer * (LocalRmaBufManager::*)(const std::string &, const PortData &, BufferType))
+    LocalRmaBuffer* fakeBuffer = nullptr;
+    LocalRmaBuffer* rmaBuffer = reinterpret_cast<LocalRmaBuffer*>(0x12345678);
+    MOCKER_CPP(
+        &LocalRmaBufManager::Get,
+        LocalRmaBuffer * (LocalRmaBufManager::*)(const std::string&, const PortData&, BufferType))
         .stubs()
         .will(returnValue(fakeBuffer))
         .then(returnValue(rmaBuffer));
 
-    MOCKER_CPP(&LocalRmaBufManager::Reg,
-               LocalRmaBuffer *
-                   (LocalRmaBufManager::*)(const std::string &, BufferType, std::shared_ptr<Buffer>, const PortData &, LinkProtocol))
+    MOCKER_CPP(
+        &LocalRmaBufManager::Reg, LocalRmaBuffer
+                                      * (LocalRmaBufManager::*)(const std::string&, BufferType, std::shared_ptr<Buffer>,
+                                                                const PortData&, LinkProtocol))
         .stubs()
         .will(returnValue(rmaBuffer));
 
-    void *addr = reinterpret_cast<void *>(0x12345678);
-    MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue(addr));
+    void* addr = reinterpret_cast<void*>(0x12345678);
+    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue(addr));
     MOCKER(HrtFree).stubs();
 
     CommunicatorImpl comm;
@@ -663,7 +661,7 @@ TEST_F(CollServiceAiCpuImplTest, test_register_ccl_buffer)
     NetInstance::Peer dstPeer = NetInstance::Peer(dstRankId, dstLocalId, dstLocalId, deviceId);
     std::shared_ptr<NetInstance::Peer> srcPeerPtr = std::make_shared<NetInstance::Peer>(srcPeer);
     std::shared_ptr<NetInstance::Peer> dstPeerPtr = std::make_shared<NetInstance::Peer>(dstPeer);
-    NetInstance::Link link = InitBaseLink2(srcPeerPtr, dstPeerPtr);  // use from ut_fabric_group.cc
+    NetInstance::Link link = InitBaseLink2(srcPeerPtr, dstPeerPtr); // use from ut_fabric_group.cc
 
     std::vector<NetInstance::Link> rawLinks;
     rawLinks.push_back(link);
@@ -675,13 +673,13 @@ TEST_F(CollServiceAiCpuImplTest, test_register_ccl_buffer)
     links.push_back(LinkData(path));
 
     service.RegisterCclBuffer(links);
-    service.RegisterCclBuffer(links);  // for duplicated buffer
+    service.RegisterCclBuffer(links); // for duplicated buffer
 }
 
 TEST_F(CollServiceAiCpuImplTest, MemTransportManager_getpackeddata)
 {
     // mock
-    MOCKER_CPP(&MemTransportManager::IsAllOffloadTransportReady, bool(MemTransportManager::*)(const std::string &))
+    MOCKER_CPP(&MemTransportManager::IsAllOffloadTransportReady, bool (MemTransportManager::*)(const std::string&))
         .stubs()
         .with(any())
         .will(returnValue(true));
@@ -706,7 +704,7 @@ TEST_F(CollServiceAiCpuImplTest, MemTransportManager_getpackeddata)
     IpAddress ipAddress("1.0.0.0");
     Socket fakeSocket(nullptr, ipAddress, 100, ipAddress, "tag", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
     unique_ptr<P2PTransport> transport = make_unique<P2PTransport>(locRes, attr, linkData, fakeSocket);
-    P2PTransport *transportPtr = transport.get();
+    P2PTransport* transportPtr = transport.get();
     transportManager.opTagOffloadMap[opTag][linkData] = std::move(transport);
     transportManager.newOffloadTransports[opTag][linkData] = 0;
     RdmaHandle rdmaHandle;
@@ -773,8 +771,8 @@ TEST_F(CollServiceAiCpuImplTest, test_init_LoadWithOpBasedMode)
     u64 fakeOffset = 200;
     char fakeName[65] = "testRtsNotify";
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtNotifyCreate).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
-    MOCKER(HrtNotifyCreateWithFlag).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
+    MOCKER(HrtNotifyCreate).stubs().will(returnValue((void*)(fakeNotifyHandleAddr)));
+    MOCKER(HrtNotifyCreateWithFlag).stubs().will(returnValue((void*)(fakeNotifyHandleAddr)));
     MOCKER(HrtGetNotifyID).stubs().will(returnValue(fakeNotifyId));
     MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(fakeDevPhyId)));
     MOCKER(HrtIpcSetNotifyName).stubs().with(any(), outBoundP(fakeName, sizeof(fakeName)), any());
@@ -785,12 +783,13 @@ TEST_F(CollServiceAiCpuImplTest, test_init_LoadWithOpBasedMode)
     MOCKER_CPP(&CcuInsPreprocessor::Preprocess).stubs().with().will(ignoreReturnValue());
     MOCKER_CPP(&AicpuInsPreprocessor::Preprocess).stubs().with().will(ignoreReturnValue());
 
-    Buffer *buf = nullptr;
-    LocalRmaBuffer *rmaBuf = nullptr;
+    Buffer* buf = nullptr;
+    LocalRmaBuffer* rmaBuf = nullptr;
     MOCKER_CPP(&DataBufManager::Get).stubs().with(any(), any(), any()).will(returnValue(buf));
     MOCKER_CPP(
-        &LocalRmaBufManager::Reg,
-        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &, LinkProtocol))
+        &LocalRmaBufManager::Reg, LocalRmaBuffer
+                                      * (LocalRmaBufManager::*)(const string&, BufferType, std::shared_ptr<Buffer>,
+                                                                const PortData&, LinkProtocol))
         .stubs()
         .with(any(), any(), any())
         .will(returnValue(rmaBuf));
@@ -802,7 +801,7 @@ TEST_F(CollServiceAiCpuImplTest, test_init_LoadWithOpBasedMode)
         .stubs()
         .with(any(), any())
         .will(returnValue(std::vector<char>{'1', '2'}));
-    void *ptr1 = (void*)1;
+    void* ptr1 = (void*)1;
     MOCKER(HrtStreamCreateWithFlags).stubs().with(any(), any()).will(returnValue(ptr1));
     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
 
@@ -861,7 +860,7 @@ TEST_F(CollServiceAiCpuImplTest, test_init_LoadWithOpBasedMode)
     fakeComm.InitCollService();
     fakeComm.CollAlgComponentInit();
     MOCKER_CPP(&CollAlgComponent::ExecAlgSelect).stubs().with(any()).will(returnValue(HcclResult::HCCL_SUCCESS));
-    OpExecuteConfig opConfig;  // aicpu 展开
+    OpExecuteConfig opConfig; // aicpu 展开
     opConfig.accState = AcceleratorState::AICPU_TS;
     fakeComm.opExecuteConfig = opConfig;
     fakeComm.SelectCollService();
@@ -871,15 +870,18 @@ TEST_F(CollServiceAiCpuImplTest, test_init_LoadWithOpBasedMode)
     collAlgOpReq.algName = "testAlg";
     collAlgOpReq.resReq.primQueueNum = 1;
     CollAlgComponent collAlgComponent(nullptr, DevType::DEV_TYPE_950, 0, 1);
-    MOCKER_CPP_VIRTUAL(collAlgComponent, &CollAlgComponent::Orchestrate,
-                       HcclResult(CollAlgComponent::*)(const CollAlgOperator &op, const CollAlgParams &params,
-                                                       const string &algName, InsQuePtr queue))
+    MOCKER_CPP_VIRTUAL(
+        collAlgComponent, &CollAlgComponent::Orchestrate,
+        HcclResult (CollAlgComponent::*)(
+            const CollAlgOperator& op, const CollAlgParams& params, const string& algName, InsQuePtr queue))
         .stubs()
         .with(any(), any(), any(), any())
         .will(returnValue(HcclResult::HCCL_SUCCESS));
-    MOCKER_CPP_VIRTUAL(collAlgComponent, &CollAlgComponent::CalcResOffload,
-                       HcclResult(CollAlgComponent::*)(const OpType &opType, const u64 &dataSize, const HcclDataType &dataType,
-                                                       const OpExecuteConfig &opConfig, CollOffloadOpResReq &resReq))
+    MOCKER_CPP_VIRTUAL(
+        collAlgComponent, &CollAlgComponent::CalcResOffload,
+        HcclResult (CollAlgComponent::*)(
+            const OpType& opType, const u64& dataSize, const HcclDataType& dataType, const OpExecuteConfig& opConfig,
+            CollOffloadOpResReq& resReq))
         .stubs()
         .with(any(), any(), any(), any())
         .will(returnValue(HcclResult::HCCL_SUCCESS));
@@ -912,7 +914,7 @@ TEST_F(CollServiceAiCpuImplTest, test_init_LoadWithOpBasedMode)
     op.staticAddr = false;
     OpType opType = OpType::ALLREDUCE;
     auto stream = std::make_unique<Stream>();
-    auto service = dynamic_cast<CollServiceAiCpuImpl *>(fakeComm.collService);
+    auto service = dynamic_cast<CollServiceAiCpuImpl*>(fakeComm.collService);
     EXPECT_NO_THROW(service->LoadWithOpBasedMode(op, std::move(stream)));
 }
 
@@ -976,7 +978,7 @@ TEST_F(CollServiceAiCpuImplTest, st_GetAlgExecParam_When_Aicpu_Expect_ReturnNotS
 {
     CommunicatorImpl comm;
     CollServiceAiCpuImpl service(&comm);
- 
+
     bool clearEnable = true;
     int32_t numBlocks = 2;
     void* commContext = nullptr;
@@ -990,18 +992,19 @@ TEST_F(CollServiceAiCpuImplTest, test_LoadWithOffloadMode_Success)
     MOCKER(HrtNotifyRecord).stubs();
     MOCKER(HrtNotifyWaitWithTimeOut).stubs();
 
-    Buffer *buf = nullptr;
-    LocalRmaBuffer *rmaBuf = nullptr;
+    Buffer* buf = nullptr;
+    LocalRmaBuffer* rmaBuf = nullptr;
     MOCKER_CPP(&DataBufManager::Get).stubs().with(any(), any(), any()).will(returnValue(buf));
     MOCKER_CPP(
-        &LocalRmaBufManager::Reg,
-        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &, LinkProtocol))
+        &LocalRmaBufManager::Reg, LocalRmaBuffer
+                                      * (LocalRmaBufManager::*)(const string&, BufferType, std::shared_ptr<Buffer>,
+                                                                const PortData&, LinkProtocol))
         .stubs()
         .with(any(), any(), any())
         .will(returnValue(rmaBuf));
     MOCKER_CPP(&CollServiceAiCpuImpl::SetHcclKernelLaunchParam).stubs().with(any(), any());
     MOCKER_CPP(&Trace::Save).stubs();
- 
+
     CollAlgOpReq collAlgOpReq;
     collAlgOpReq.algName = "testAlg";
     collAlgOpReq.resReq.primQueueNum = 1;
@@ -1010,7 +1013,7 @@ TEST_F(CollServiceAiCpuImplTest, test_LoadWithOffloadMode_Success)
         .stubs()
         .with(any(), any())
         .will(returnValue(collAlgOpReq));
- 
+
     vector<char> fakeBuffer{'0'};
     DevBuffer dataBuffer(8);
     RtsNotify notify(false);
@@ -1018,7 +1021,7 @@ TEST_F(CollServiceAiCpuImplTest, test_LoadWithOffloadMode_Success)
     MOCKER_CPP(&DataBufManager::Get).stubs().with(any(), any(), any()).will(returnValue(&dataBuffer));
     MOCKER_CPP(&HostDeviceSyncNotifyManager::GetHostWaitNotify).stubs().with().will(returnValue(&notify));
     MOCKER_CPP(&HostDeviceSyncNotifyManager::GetDeviceWaitNotify).stubs().with().will(returnValue(&notify1));
- 
+
     CommunicatorImpl comm;
     comm.InitNotifyManager();
     comm.InitSocketManager();
@@ -1056,15 +1059,15 @@ TEST_F(CollServiceAiCpuImplTest, test_LoadWithOffloadMode_Success)
     peer0->AddConnInterface(connInterface);
     comm.rankGraph->AddPeer(peer0);
     comm.localRmaBufManager = std::make_unique<LocalRmaBufManager>(comm);
- 
+
     comm.InitCollService();
     comm.CollAlgComponentInit();
     MOCKER_CPP(&CollAlgComponent::ExecAlgSelect).stubs().with(any()).will(returnValue(HcclResult::HCCL_SUCCESS));
-    OpExecuteConfig opConfig;  // aicpu 展开
+    OpExecuteConfig opConfig; // aicpu 展开
     opConfig.accState = AcceleratorState::AICPU_TS;
     comm.opExecuteConfig = opConfig;
     comm.SelectCollService();
- 
+
     CollOperator op;
     op.inputMem = DevBuffer::Create(0x100, 10);
     op.outputMem = DevBuffer::Create(0x100, 10);
@@ -1074,10 +1077,10 @@ TEST_F(CollServiceAiCpuImplTest, test_LoadWithOffloadMode_Success)
     op.opTag = "testTag";
     op.scratchMem = buffer;
     op.staticAddr = false;
- 
+
     OpType opType = OpType::ALLREDUCE;
     CollOffloadOpResReq resReq;
-    GlobalMirrorTasks &globalMirrorTasks = GlobalMirrorTasks::Instance();
+    GlobalMirrorTasks& globalMirrorTasks = GlobalMirrorTasks::Instance();
     std::shared_ptr<DfxOpInfo> dfxOpInfo = std::make_shared<DfxOpInfo>();
     dfxOpInfo->op_ = op;
     dfxOpInfo->comm_ = &comm;
@@ -1089,6 +1092,6 @@ TEST_F(CollServiceAiCpuImplTest, test_LoadWithOffloadMode_Success)
         .will(returnValue(std::vector<char>{'1', '2'}));
     MOCKER_CPP(&Trace::Save).stubs();
     MOCKER_CPP(&CollServiceBase::SaveMirrorDfxOpInfo).stubs();
-    CollServiceAiCpuImpl *service = dynamic_cast<CollServiceAiCpuImpl *>(comm.collService);
+    CollServiceAiCpuImpl* service = dynamic_cast<CollServiceAiCpuImpl*>(comm.collService);
     EXPECT_NO_THROW(service->LoadWithOffloadMode(op, std::move(stream)));
 }

@@ -11,10 +11,7 @@ protected:
     void SetUp() override { GlobalMockObject::reset(); }
     void TearDown() override { GlobalMockObject::reset(); }
 
-    static void MockHalTsdrvCtlReturn(int rv)
-    {
-        MOCKER(halTsdrvCtl).stubs().with(any()).will(returnValue(rv));
-    }
+    static void MockHalTsdrvCtlReturn(int rv) { MOCKER(halTsdrvCtl).stubs().with(any()).will(returnValue(rv)); }
 };
 
 TEST_F(NsRecoveryFuncLiteTest, Ut_DeviceQueryWhenDrvErrorExpectHcclEDrv)

@@ -38,81 +38,84 @@
 namespace hcomm {
 
 namespace {
-constexpr uint32_t kDefaultRocePort = 16666;
-constexpr uint8_t kHcommTrafficClassConfigNotSet = 0xff;
-constexpr uint8_t kHcommServiceLevelConfigNotSet = 0xff;
+    constexpr uint32_t kDefaultRocePort = 16666;
+    constexpr uint8_t kHcommTrafficClassConfigNotSet = 0xff;
+    constexpr uint8_t kHcommServiceLevelConfigNotSet = 0xff;
 
-HcclResult CommAddrToHcclIp(const CommAddr &ca, hccl::HcclIpAddress &out)
-{
-    if (ca.type == COMM_ADDR_TYPE_IP_V4) {
-        out = hccl::HcclIpAddress(ca.addr);
-        return HCCL_SUCCESS;
-    }
-    if (ca.type == COMM_ADDR_TYPE_IP_V6) {
-        out = hccl::HcclIpAddress(ca.addr6);
-        return HCCL_SUCCESS;
-    }
-    HCCL_ERROR("[AicpuTsRoceChannel] unsupported CommAddr type[%d]", ca.type);
-    return HCCL_E_NOT_SUPPORT;
-}
-
-HcclResult DecideLocalIsClientByEndpointIps(const EndpointDesc &local, const EndpointDesc &remote, bool &outLocalIsClient)
-{
-    hccl::HcclIpAddress localIp{};
-    hccl::HcclIpAddress remoteIp{};
-    CHK_RET(CommAddrToHcclIp(local.commAddr, localIp));
-    CHK_RET(CommAddrToHcclIp(remote.commAddr, remoteIp));
-    const std::string localStr(localIp.GetReadableIP());
-    const std::string remoteStr(remoteIp.GetReadableIP());
-    if (localStr < remoteStr) {
-        outLocalIsClient = true;
-    } else if (localStr > remoteStr) {
-        outLocalIsClient = false;
-    } else {
-        HCCL_ERROR("[AicpuTsRoceChannel] same readable IP but loc not DEVICE; cannot decide socket role");
-        return HCCL_E_PARA;
-    }
-    return HCCL_SUCCESS;
-}
-
-HcclResult WaitClientSocketLinkEstablished(const std::shared_ptr<hccl::HcclSocket> &socket, s32 timeoutSec)
-{
-    CHK_SMART_PTR_NULL(socket);
-    u32 pollCount = 0;
-    const auto startTime = std::chrono::steady_clock::now();
-    const auto timeout = std::chrono::seconds(timeoutSec > 0 ? timeoutSec : GetExternalInputHcclLinkTimeOut());
-    HCCL_DEBUG("[AicpuTsRoceChannel][client][WaitLink] waiting for socket link up...");
-    while (true) {
-        if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
-            HCCL_ERROR("[AicpuTsRoceChannel][client][WaitLink] wait socket establish timeout, timeout[%lld s]",
-                static_cast<long long>(timeout.count()));
-            socket->SetStatus(hccl::HcclSocketStatus::SOCKET_TIMEOUT);
-            return HCCL_E_TIMEOUT;
-        }
-        const hccl::HcclSocketStatus status = socket->GetStatus();
-        if (status == hccl::HcclSocketStatus::SOCKET_OK) {
-            HCCL_DEBUG("[AicpuTsRoceChannel][client][WaitLink] socket established. localIp[%s], remoteIp[%s]",
-                socket->GetLocalIp().GetReadableIP(), socket->GetRemoteIp().GetReadableIP());
+    HcclResult CommAddrToHcclIp(const CommAddr& ca, hccl::HcclIpAddress& out)
+    {
+        if (ca.type == COMM_ADDR_TYPE_IP_V4) {
+            out = hccl::HcclIpAddress(ca.addr);
             return HCCL_SUCCESS;
         }
-        if (status == hccl::HcclSocketStatus::SOCKET_CONNECTING) {
-            SaluSleep(ONE_MILLISECOND_OF_USLEEP);
-            if (pollCount % 1000U == 0U) {
-                HCCL_DEBUG("[AicpuTsRoceChannel][client][WaitLink] socket is connecting");
-            }
-            ++pollCount;
-            continue;
+        if (ca.type == COMM_ADDR_TYPE_IP_V6) {
+            out = hccl::HcclIpAddress(ca.addr6);
+            return HCCL_SUCCESS;
         }
-        if (status == hccl::HcclSocketStatus::SOCKET_TIMEOUT) {
-            return HCCL_E_TIMEOUT;
-        }
-        socket->SetStatus(hccl::HcclSocketStatus::SOCKET_ERROR);
-        return HCCL_E_TCP_CONNECT;
+        HCCL_ERROR("[AicpuTsRoceChannel] unsupported CommAddr type[%d]", ca.type);
+        return HCCL_E_NOT_SUPPORT;
     }
-}
+
+    HcclResult
+    DecideLocalIsClientByEndpointIps(const EndpointDesc& local, const EndpointDesc& remote, bool& outLocalIsClient)
+    {
+        hccl::HcclIpAddress localIp{};
+        hccl::HcclIpAddress remoteIp{};
+        CHK_RET(CommAddrToHcclIp(local.commAddr, localIp));
+        CHK_RET(CommAddrToHcclIp(remote.commAddr, remoteIp));
+        const std::string localStr(localIp.GetReadableIP());
+        const std::string remoteStr(remoteIp.GetReadableIP());
+        if (localStr < remoteStr) {
+            outLocalIsClient = true;
+        } else if (localStr > remoteStr) {
+            outLocalIsClient = false;
+        } else {
+            HCCL_ERROR("[AicpuTsRoceChannel] same readable IP but loc not DEVICE; cannot decide socket role");
+            return HCCL_E_PARA;
+        }
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult WaitClientSocketLinkEstablished(const std::shared_ptr<hccl::HcclSocket>& socket, s32 timeoutSec)
+    {
+        CHK_SMART_PTR_NULL(socket);
+        u32 pollCount = 0;
+        const auto startTime = std::chrono::steady_clock::now();
+        const auto timeout = std::chrono::seconds(timeoutSec > 0 ? timeoutSec : GetExternalInputHcclLinkTimeOut());
+        HCCL_DEBUG("[AicpuTsRoceChannel][client][WaitLink] waiting for socket link up...");
+        while (true) {
+            if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
+                HCCL_ERROR(
+                    "[AicpuTsRoceChannel][client][WaitLink] wait socket establish timeout, timeout[%lld s]",
+                    static_cast<long long>(timeout.count()));
+                socket->SetStatus(hccl::HcclSocketStatus::SOCKET_TIMEOUT);
+                return HCCL_E_TIMEOUT;
+            }
+            const hccl::HcclSocketStatus status = socket->GetStatus();
+            if (status == hccl::HcclSocketStatus::SOCKET_OK) {
+                HCCL_DEBUG(
+                    "[AicpuTsRoceChannel][client][WaitLink] socket established. localIp[%s], remoteIp[%s]",
+                    socket->GetLocalIp().GetReadableIP(), socket->GetRemoteIp().GetReadableIP());
+                return HCCL_SUCCESS;
+            }
+            if (status == hccl::HcclSocketStatus::SOCKET_CONNECTING) {
+                SaluSleep(ONE_MILLISECOND_OF_USLEEP);
+                if (pollCount % 1000U == 0U) {
+                    HCCL_DEBUG("[AicpuTsRoceChannel][client][WaitLink] socket is connecting");
+                }
+                ++pollCount;
+                continue;
+            }
+            if (status == hccl::HcclSocketStatus::SOCKET_TIMEOUT) {
+                return HCCL_E_TIMEOUT;
+            }
+            socket->SetStatus(hccl::HcclSocketStatus::SOCKET_ERROR);
+            return HCCL_E_TCP_CONNECT;
+        }
+    }
 } // namespace
 
-HcclResult AicpuTsRoceChannel::BuildSocketTagName(std::string &outTag) const
+HcclResult AicpuTsRoceChannel::BuildSocketTagName(std::string& outTag) const
 {
     hccl::HcclIpAddress localIp{};
     hccl::HcclIpAddress remoteIp{};
@@ -122,18 +125,22 @@ HcclResult AicpuTsRoceChannel::BuildSocketTagName(std::string &outTag) const
     const std::string serverStr(isLocalIpClient_ ? remoteIp.GetReadableIP() : localIp.GetReadableIP());
     const uint32_t port = channelDesc_.port != 0 ? channelDesc_.port : kDefaultRocePort;
     uint32_t socketTagIdx = 0;
-    CHK_SAFETY_FUNC_RET(memcpy_s(&socketTagIdx, sizeof(socketTagIdx),
-        channelDesc_.raws + sizeof(channelDesc_.raws) - sizeof(uint32_t), sizeof(uint32_t)));
+    CHK_SAFETY_FUNC_RET(memcpy_s(
+        &socketTagIdx, sizeof(socketTagIdx), channelDesc_.raws + sizeof(channelDesc_.raws) - sizeof(uint32_t),
+        sizeof(uint32_t)));
     outTag = clientStr + "_" + serverStr + ":" + std::to_string(port) + "_" + std::to_string(socketTagIdx);
     if (outTag.size() + 1U > SOCK_CONN_TAG_SIZE) {
-        HCCL_ERROR("[AicpuTsRoceChannel] socketTag too long (max %u bytes)", static_cast<unsigned int>(SOCK_CONN_TAG_SIZE - 1U));
+        HCCL_ERROR(
+            "[AicpuTsRoceChannel] socketTag too long (max %u bytes)",
+            static_cast<unsigned int>(SOCK_CONN_TAG_SIZE - 1U));
         return HCCL_E_PARA;
     }
     return HCCL_SUCCESS;
 }
 
-AicpuTsRoceChannel::AicpuTsRoceChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc)
-    : endpointHandle_(endpointHandle), channelDesc_(channelDesc)
+AicpuTsRoceChannel::AicpuTsRoceChannel(EndpointHandle endpointHandle, const HcommChannelDesc& channelDesc)
+    : endpointHandle_(endpointHandle),
+      channelDesc_(channelDesc)
 {}
 
 AicpuTsRoceChannel::~AicpuTsRoceChannel()
@@ -153,7 +160,7 @@ AicpuTsRoceChannel::~AicpuTsRoceChannel()
 
 HcclResult AicpuTsRoceChannel::ParseInputParam()
 {
-    auto *localEpPtr = reinterpret_cast<Endpoint *>(endpointHandle_);
+    auto* localEpPtr = reinterpret_cast<Endpoint*>(endpointHandle_);
     CHK_PTR_NULL(localEpPtr);
     localEp_ = localEpPtr->GetEndpointDesc();
     rdmaHandle_ = localEpPtr->GetRdmaHandle();
@@ -166,7 +173,8 @@ HcclResult AicpuTsRoceChannel::ParseInputParam()
         isLocalIpClient_ = false;
     } else {
         if (channelDesc_.role != HCOMM_SOCKET_ROLE_RESERVED) {
-            HCCL_WARNING("[AicpuTsRoceChannel] unexpected channelDesc.role[%d]; "
+            HCCL_WARNING(
+                "[AicpuTsRoceChannel] unexpected channelDesc.role[%d]; "
                 "using inner logic to decide socket role based on endpoint IPs",
                 static_cast<int>(channelDesc_.role));
         }
@@ -176,7 +184,8 @@ HcclResult AicpuTsRoceChannel::ParseInputParam()
 
     notifyNum_ = channelDesc_.notifyNum;
     if (notifyNum_ != 0) {
-        HCCL_WARNING("[AicpuTsRoceChannel][%s] channelDesc.notifyNum[%u] ignored; transport uses notifyNum=0 for now.",
+        HCCL_WARNING(
+            "[AicpuTsRoceChannel][%s] channelDesc.notifyNum[%u] ignored; transport uses notifyNum=0 for now.",
             SocketRoleTag(), notifyNum_);
     }
     HCCL_INFO("[AicpuTsRoceChannel][%s] ParseInputParam done", SocketRoleTag());
@@ -186,13 +195,13 @@ HcclResult AicpuTsRoceChannel::ParseInputParam()
 HcclResult AicpuTsRoceChannel::BuildDataSocket()
 {
     HCCL_INFO("[AicpuTsRoceChannel][%s] BuildDataSocket start", SocketRoleTag());
-    auto *roceEp = dynamic_cast<AicpuTsRoceEndpoint *>(reinterpret_cast<Endpoint *>(endpointHandle_));
+    auto* roceEp = dynamic_cast<AicpuTsRoceEndpoint*>(reinterpret_cast<Endpoint*>(endpointHandle_));
     CHK_PTR_NULL(roceEp);
 
     HcclNetDevCtx netDevCtx = static_cast<HcclNetDevCtx>(roceEp->GetNetDev());
     CHK_PTR_NULL(netDevCtx);
 
-    auto *netDevCtxPtr = static_cast<hccl::NetDevContext *>(netDevCtx);
+    auto* netDevCtxPtr = static_cast<hccl::NetDevContext*>(netDevCtx);
     machinePara_.localIpAddr = netDevCtxPtr->GetLocalIp();
 
     hccl::HcclIpAddress remoteIp{};
@@ -202,8 +211,9 @@ HcclResult AicpuTsRoceChannel::BuildDataSocket()
     std::string socketTag;
     CHK_RET(BuildSocketTagName(socketTag));
 
-    HCCL_INFO("[AicpuTsRoceChannel][%s] BuildDataSocket localIp[%s] remoteIp[%s] port[%u] socketTag[%s]",
-        SocketRoleTag(), machinePara_.localIpAddr.GetReadableIP(), remoteIp.GetReadableIP(), port, socketTag.c_str());
+    HCCL_INFO(
+        "[AicpuTsRoceChannel][%s] BuildDataSocket localIp[%s] remoteIp[%s] port[%u] socketTag[%s]", SocketRoleTag(),
+        machinePara_.localIpAddr.GetReadableIP(), remoteIp.GetReadableIP(), port, socketTag.c_str());
 
     if (isLocalIpClient_) {
         CHK_RET(BuildClientDataSocket(netDevCtx, remoteIp, port, socketTag));
@@ -214,17 +224,19 @@ HcclResult AicpuTsRoceChannel::BuildDataSocket()
     machinePara_.remoteIpAddr = remoteIp;
     machinePara_.localSocketPort = dataSocket_->GetLocalPort();
     machinePara_.remoteSocketPort = dataSocket_->GetRemotePort();
-    HCCL_INFO("[AicpuTsRoceChannel][%s] BuildDataSocket done localPort[%u] remotePort[%u]",
-        SocketRoleTag(), machinePara_.localSocketPort, machinePara_.remoteSocketPort);
+    HCCL_INFO(
+        "[AicpuTsRoceChannel][%s] BuildDataSocket done localPort[%u] remotePort[%u]", SocketRoleTag(),
+        machinePara_.localSocketPort, machinePara_.remoteSocketPort);
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsRoceChannel::BuildClientDataSocket(HcclNetDevCtx netDevCtx, const hccl::HcclIpAddress &remoteIp,
-    uint32_t port, const std::string &socketTag)
+HcclResult AicpuTsRoceChannel::BuildClientDataSocket(
+    HcclNetDevCtx netDevCtx, const hccl::HcclIpAddress& remoteIp, uint32_t port, const std::string& socketTag)
 {
     HCCL_INFO("[AicpuTsRoceChannel][client] BuildDataSocket connect to server");
-    EXECEPTION_CATCH(dataSocket_ = std::make_shared<hccl::HcclSocket>(socketTag, netDevCtx, remoteIp, port,
-                         hccl::HcclSocketRole::SOCKET_ROLE_CLIENT),
+    EXECEPTION_CATCH(
+        dataSocket_ = std::make_shared<hccl::HcclSocket>(
+            socketTag, netDevCtx, remoteIp, port, hccl::HcclSocketRole::SOCKET_ROLE_CLIENT),
         return HCCL_E_PTR);
     CHK_SMART_PTR_NULL(dataSocket_);
     CHK_RET(dataSocket_->Init());
@@ -238,8 +250,8 @@ HcclResult AicpuTsRoceChannel::BuildClientDataSocket(HcclNetDevCtx netDevCtx, co
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsRoceChannel::BuildServerDataSocket(AicpuTsRoceEndpoint *roceEp, const hccl::HcclIpAddress &remoteIp,
-    uint32_t port, const std::string &socketTag)
+HcclResult AicpuTsRoceChannel::BuildServerDataSocket(
+    AicpuTsRoceEndpoint* roceEp, const hccl::HcclIpAddress& remoteIp, uint32_t port, const std::string& socketTag)
 {
     HCCL_INFO("[AicpuTsRoceChannel][server] BuildDataSocket listen and accept");
     SocketWlistInfo wlistEntry{};
@@ -248,7 +260,8 @@ HcclResult AicpuTsRoceChannel::BuildServerDataSocket(AicpuTsRoceEndpoint *roceEp
     wlistEntry.remoteIp.addr = bin.addr;
     wlistEntry.remoteIp.addr6 = bin.addr6;
     s32 mw = memcpy_s(wlistEntry.tag, sizeof(wlistEntry.tag), socketTag.c_str(), socketTag.size() + 1U);
-    CHK_PRT_RET(mw != EOK, HCCL_ERROR("[AicpuTsRoceChannel][%s] memcpy_s whitelist tag failed", SocketRoleTag()),
+    CHK_PRT_RET(
+        mw != EOK, HCCL_ERROR("[AicpuTsRoceChannel][%s] memcpy_s whitelist tag failed", SocketRoleTag()),
         HCCL_E_MEMORY);
     const std::vector<SocketWlistInfo> wlistVec = {wlistEntry};
     CHK_RET(roceEp->AddListenSocketWhiteList(port, wlistVec));
@@ -261,7 +274,7 @@ HcclResult AicpuTsRoceChannel::BuildServerDataSocket(AicpuTsRoceEndpoint *roceEp
 HcclResult AicpuTsRoceChannel::AssignDispatcherCommId()
 {
     char commBuf[160];
-    int nc = snprintf_s(commBuf, sizeof(commBuf), sizeof(commBuf) - 1U, "hcomm_roce_ch_%p", static_cast<void *>(this));
+    int nc = snprintf_s(commBuf, sizeof(commBuf), sizeof(commBuf) - 1U, "hcomm_roce_ch_%p", static_cast<void*>(this));
     CHK_PRT_RET(nc < 0, HCCL_ERROR("[AicpuTsRoceChannel] snprintf_s commId failed"), HCCL_E_INTERNAL);
     dispatcherCommId_.assign(commBuf);
     return HCCL_SUCCESS;
@@ -283,8 +296,8 @@ HcclResult AicpuTsRoceChannel::EnsureDispatcherCtx(u32 devPhyId)
 
 HcclResult AicpuTsRoceChannel::ConfigureMachineParaForTransport()
 {
-    machinePara_.machineType = isLocalIpClient_ ? hccl::MachineType::MACHINE_CLIENT_TYPE
-                                                 : hccl::MachineType::MACHINE_SERVER_TYPE;
+    machinePara_.machineType
+        = isLocalIpClient_ ? hccl::MachineType::MACHINE_CLIENT_TYPE : hccl::MachineType::MACHINE_SERVER_TYPE;
     machinePara_.linkMode = hccl::LinkMode::LINK_DUPLEX_MODE;
     machinePara_.tag = dispatcherCommId_;
     machinePara_.localDeviceId = localEp_.loc.device.devPhyId;
@@ -322,8 +335,8 @@ void AicpuTsRoceChannel::ConfigureTransportParaForRoce()
 HcclResult AicpuTsRoceChannel::CreateAndInitTransport(HcclDispatcher dispatcher)
 {
     EXECEPTION_CATCH(
-        transport_ = std::make_unique<hccl::Transport>(hccl::TransportType::TRANS_TYPE_IBV_EXP, transportPara_, dispatcher,
-            notifyPoolHolder_, machinePara_),
+        transport_ = std::make_unique<hccl::Transport>(
+            hccl::TransportType::TRANS_TYPE_IBV_EXP, transportPara_, dispatcher, notifyPoolHolder_, machinePara_),
         return HCCL_E_PTR);
     CHK_SMART_PTR_NULL(transport_);
     HCCL_INFO("[AicpuTsRoceChannel][%s] Transport Init start", SocketRoleTag());
@@ -339,10 +352,11 @@ HcclResult AicpuTsRoceChannel::BuildDispatcherAndTransport()
 {
     const u32 devPhyId = static_cast<u32>(localEp_.loc.device.devPhyId);
     CHK_RET(AssignDispatcherCommId());
-    HCCL_INFO("[AicpuTsRoceChannel][%s] BuildDispatcherAndTransport commId[%s]", SocketRoleTag(), dispatcherCommId_.c_str());
+    HCCL_INFO(
+        "[AicpuTsRoceChannel][%s] BuildDispatcherAndTransport commId[%s]", SocketRoleTag(), dispatcherCommId_.c_str());
 
     CHK_RET(EnsureDispatcherCtx(devPhyId));
-    auto *dctx = static_cast<hccl::DispatcherCtx *>(dispatcherCtx_);
+    auto* dctx = static_cast<hccl::DispatcherCtx*>(dispatcherCtx_);
     const HcclDispatcher dispatcher = dctx->GetDispatcher();
     CHK_PTR_NULL(dispatcher);
 
@@ -364,12 +378,9 @@ HcclResult AicpuTsRoceChannel::Init()
     return HCCL_SUCCESS;
 }
 
-HcommChannelKind AicpuTsRoceChannel::GetChannelKind() const
-{
-    return HcommChannelKind::AICPU_TS_ROCE;
-}
+HcommChannelKind AicpuTsRoceChannel::GetChannelKind() const { return HcommChannelKind::AICPU_TS_ROCE; }
 
-HcclResult AicpuTsRoceChannel::GetNotifyNum(uint32_t *notifyNum) const
+HcclResult AicpuTsRoceChannel::GetNotifyNum(uint32_t* notifyNum) const
 {
     CHK_PTR_NULL(notifyNum);
     *notifyNum = notifyNum_;
@@ -377,7 +388,7 @@ HcclResult AicpuTsRoceChannel::GetNotifyNum(uint32_t *notifyNum) const
 }
 
 // 单边通信暂未使用，接口先保留但返回不支持
-HcclResult AicpuTsRoceChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags)
+HcclResult AicpuTsRoceChannel::GetRemoteMem(HcclMem** remoteMem, uint32_t* memNum, char** memTags)
 {
     (void)remoteMem;
     (void)memTags;
@@ -395,7 +406,7 @@ ChannelStatus AicpuTsRoceChannel::GetStatus()
 }
 
 // 单边通信暂未使用，接口先保留但返回不支持
-HcclResult AicpuTsRoceChannel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum)
+HcclResult AicpuTsRoceChannel::GetUserRemoteMem(CommMem** remoteMem, char*** memTag, uint32_t* memNum)
 {
     (void)remoteMem;
     (void)memTag;
@@ -414,28 +425,33 @@ HcclResult AicpuTsRoceChannel::Clean()
 // 单边通信暂未使用，接口先保留但返回不支持
 HcclResult AicpuTsRoceChannel::Resume()
 {
-    HCCL_INFO("[AicpuTsRoceChannel][%s] Resume not implemented, no resume needed for AICPU TS RoCE channel", SocketRoleTag());
+    HCCL_INFO(
+        "[AicpuTsRoceChannel][%s] Resume not implemented, no resume needed for AICPU TS RoCE channel", SocketRoleTag());
     return HCCL_E_NOT_SUPPORT;
 }
 
 HcclResult AicpuTsRoceChannel::ValidateSerializeParams(u32 qpNum, size_t localMemCount, size_t remoteMemCount) const
 {
-    CHK_PRT_RET(qpNum > RDMA_QP_MAX_NUM || qpNum < 1U,
-        HCCL_ERROR("[AicpuTsRoceChannel] bad qpNum[%u]", qpNum), HCCL_E_INTERNAL);
-    CHK_PRT_RET(localMemCount > 0U && localMemCount > (SIZE_MAX / sizeof(RoceMemDetails)),
+    CHK_PRT_RET(
+        qpNum > RDMA_QP_MAX_NUM || qpNum < 1U, HCCL_ERROR("[AicpuTsRoceChannel] bad qpNum[%u]", qpNum),
+        HCCL_E_INTERNAL);
+    CHK_PRT_RET(
+        localMemCount > 0U && localMemCount > (SIZE_MAX / sizeof(RoceMemDetails)),
         HCCL_ERROR("[AicpuTsRoceChannel][Serialize] localMem count overflow"), HCCL_E_PARA);
-    CHK_PRT_RET(remoteMemCount > 0U && remoteMemCount > (SIZE_MAX / sizeof(RoceMemDetails)),
+    CHK_PRT_RET(
+        remoteMemCount > 0U && remoteMemCount > (SIZE_MAX / sizeof(RoceMemDetails)),
         HCCL_ERROR("[AicpuTsRoceChannel][Serialize] remoteMem count overflow"), HCCL_E_PARA);
     const u64 localBytes = static_cast<u64>(localMemCount * sizeof(RoceMemDetails));
     const u64 remoteBytes = static_cast<u64>(remoteMemCount * sizeof(RoceMemDetails));
-    CHK_PRT_RET(localBytes > static_cast<u64>(UINT32_MAX) || remoteBytes > static_cast<u64>(UINT32_MAX),
+    CHK_PRT_RET(
+        localBytes > static_cast<u64>(UINT32_MAX) || remoteBytes > static_cast<u64>(UINT32_MAX),
         HCCL_ERROR("[AicpuTsRoceChannel][Serialize] mem detail blob too large"), HCCL_E_PARA);
     return HCCL_SUCCESS;
 }
 
-void AicpuTsRoceChannel::InitSerializeRoceChannelRes(HcommRoceChannelRes &res, size_t localMemCount,
-    size_t remoteMemCount, void *localMem, void *remoteMem, const std::vector<HcclQpInfoV2> &aiQpInfos,
-    u32 qpNum) const noexcept
+void AicpuTsRoceChannel::InitSerializeRoceChannelRes(
+    HcommRoceChannelRes& res, size_t localMemCount, size_t remoteMemCount, void* localMem, void* remoteMem,
+    const std::vector<HcclQpInfoV2>& aiQpInfos, u32 qpNum) const noexcept
 {
     res = HcommRoceChannelRes{};
     res.localMemCount = static_cast<u32>(localMemCount);
@@ -447,9 +463,9 @@ void AicpuTsRoceChannel::InitSerializeRoceChannelRes(HcommRoceChannelRes &res, s
     res.qpsPerConnection = qpNum - static_cast<u32>(qpNum > 1U);
 }
 
-HcclResult AicpuTsRoceChannel::BuildSerializeChannelMem(AicpuTsRoceChannelMem &bundle,
-    const std::vector<RoceMemDetails> &localMd, const std::vector<RoceMemDetails> &remoteMd,
-    const std::vector<HcclQpInfoV2> &aiQpInfos, u32 qpNum)
+HcclResult AicpuTsRoceChannel::BuildSerializeChannelMem(
+    AicpuTsRoceChannelMem& bundle, const std::vector<RoceMemDetails>& localMd,
+    const std::vector<RoceMemDetails>& remoteMd, const std::vector<HcclQpInfoV2>& aiQpInfos, u32 qpNum)
 {
     const size_t nL = localMd.size();
     const size_t nR = remoteMd.size();
@@ -461,45 +477,34 @@ HcclResult AicpuTsRoceChannel::BuildSerializeChannelMem(AicpuTsRoceChannelMem &b
     if (nL > 0U) {
         EXECEPTION_CATCH(bundle.localAlloc = hccl::DeviceMem::alloc(localBytes), return HCCL_E_PTR);
         CHK_PTR_NULL(bundle.localAlloc.ptr());
-        CHK_RET(hrtMemSyncCopy(bundle.localAlloc.ptr(),
-            localBytes,
-            localMd.data(),
-            localBytes,
+        CHK_RET(hrtMemSyncCopy(
+            bundle.localAlloc.ptr(), localBytes, localMd.data(), localBytes,
             HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
     }
     if (nR > 0U) {
         EXECEPTION_CATCH(bundle.remoteAlloc = hccl::DeviceMem::alloc(remoteBytes), return HCCL_E_PTR);
         CHK_PTR_NULL(bundle.remoteAlloc.ptr());
-        CHK_RET(hrtMemSyncCopy(bundle.remoteAlloc.ptr(),
-            remoteBytes,
-            remoteMd.data(),
-            remoteBytes,
+        CHK_RET(hrtMemSyncCopy(
+            bundle.remoteAlloc.ptr(), remoteBytes, remoteMd.data(), remoteBytes,
             HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
     }
 
     HcommRoceChannelRes res{};
-    InitSerializeRoceChannelRes(res,
-        nL,
-        nR,
-        nL > 0U ? bundle.localAlloc.ptr() : nullptr,
-        nR > 0U ? bundle.remoteAlloc.ptr() : nullptr,
-        aiQpInfos,
-        qpNum);
+    InitSerializeRoceChannelRes(
+        res, nL, nR, nL > 0U ? bundle.localAlloc.ptr() : nullptr, nR > 0U ? bundle.remoteAlloc.ptr() : nullptr,
+        aiQpInfos, qpNum);
 
-    CHK_RET(hrtMemSyncCopy(bundle.resAlloc.ptr(),
-        sizeof(res),
-        &res,
-        sizeof(res),
-        HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
+    CHK_RET(hrtMemSyncCopy(
+        bundle.resAlloc.ptr(), sizeof(res), &res, sizeof(res), HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsRoceChannel::Serialize(std::shared_ptr<hccl::DeviceMem> &out)
+HcclResult AicpuTsRoceChannel::Serialize(std::shared_ptr<hccl::DeviceMem>& out)
 {
     out.reset();
     HCCL_INFO("[AicpuTsRoceChannel][%s] Serialize start", SocketRoleTag());
-    CHK_PRT_RET(!inited_, HCCL_ERROR("[AicpuTsRoceChannel][%s][Serialize] channel not inited",
-        SocketRoleTag()),
+    CHK_PRT_RET(
+        !inited_, HCCL_ERROR("[AicpuTsRoceChannel][%s][Serialize] channel not inited", SocketRoleTag()),
         HCCL_E_INTERNAL);
 
     std::vector<RoceMemDetails> localMd;
@@ -507,7 +512,7 @@ HcclResult AicpuTsRoceChannel::Serialize(std::shared_ptr<hccl::DeviceMem> &out)
     std::vector<HcclQpInfoV2> aiQpInfos;
     u32 qpNum = 0;
 
-    auto *ep = reinterpret_cast<Endpoint *>(endpointHandle_);
+    auto* ep = reinterpret_cast<Endpoint*>(endpointHandle_);
     CHK_PTR_NULL(ep);
     auto mgr = std::dynamic_pointer_cast<AicpuTsRoceRegedMemMgr>(ep->GetRegedMemMgr());
     CHK_SMART_PTR_NULL(mgr);
@@ -524,17 +529,17 @@ HcclResult AicpuTsRoceChannel::Serialize(std::shared_ptr<hccl::DeviceMem> &out)
     std::shared_ptr<AicpuTsRoceChannelMem> bundleKeep;
     EXECEPTION_CATCH(bundleKeep = std::make_shared<AicpuTsRoceChannelMem>(std::move(bundle)), return HCCL_E_PTR);
 
-    hccl::DeviceMem *viewPtr = nullptr;
+    hccl::DeviceMem* viewPtr = nullptr;
     EXECEPTION_CATCH(
-        viewPtr = new hccl::DeviceMem(
-            hccl::DeviceMem::create(bundleKeep->resAlloc.ptr(), sizeof(HcommRoceChannelRes))),
+        viewPtr = new hccl::DeviceMem(hccl::DeviceMem::create(bundleKeep->resAlloc.ptr(), sizeof(HcommRoceChannelRes))),
         return HCCL_E_PTR);
 
-    out = std::shared_ptr<hccl::DeviceMem>(viewPtr, [bundleKeep](hccl::DeviceMem *p) {
+    out = std::shared_ptr<hccl::DeviceMem>(viewPtr, [bundleKeep](hccl::DeviceMem* p) {
         delete p;
     });
-    HCCL_INFO("[AicpuTsRoceChannel][%s] Serialize done qpNum[%u] localMem[%zu] remoteMem[%zu]",
-        SocketRoleTag(), qpNum, nL, nR);
+    HCCL_INFO(
+        "[AicpuTsRoceChannel][%s] Serialize done qpNum[%u] localMem[%zu] remoteMem[%zu]", SocketRoleTag(), qpNum, nL,
+        nR);
     return HCCL_SUCCESS;
 }
 
@@ -550,19 +555,19 @@ HcclResult AicpuTsRoceChannel::NotifyWait(const uint32_t localNotifyIdx, const u
     return HCCL_E_NOT_SUPPORT;
 }
 
-HcclResult AicpuTsRoceChannel::WriteWithNotify(void *dst, const void *src, const uint64_t len, uint32_t remoteNotifyIdx)
+HcclResult AicpuTsRoceChannel::WriteWithNotify(void* dst, const void* src, const uint64_t len, uint32_t remoteNotifyIdx)
 {
     HCCL_INFO("[AicpuTsRoceChannel::%s] not supported yet.", __func__);
     return HCCL_E_NOT_SUPPORT;
 }
 
-HcclResult AicpuTsRoceChannel::Write(void *dst, const void *src, uint64_t len)
+HcclResult AicpuTsRoceChannel::Write(void* dst, const void* src, uint64_t len)
 {
     HCCL_INFO("[AicpuTsRoceChannel::%s] not supported yet.", __func__);
     return HCCL_E_NOT_SUPPORT;
 }
 
-HcclResult AicpuTsRoceChannel::Read(void *dst, const void *src, uint64_t len)
+HcclResult AicpuTsRoceChannel::Read(void* dst, const void* src, uint64_t len)
 {
     HCCL_INFO("[AicpuTsRoceChannel::%s] not supported yet.", __func__);
     return HCCL_E_NOT_SUPPORT;

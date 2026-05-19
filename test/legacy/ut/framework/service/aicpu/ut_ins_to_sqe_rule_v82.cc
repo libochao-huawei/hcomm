@@ -33,59 +33,40 @@ using namespace Hccl;
 
 class StubTransportLiteImpl : public BaseTransportLiteImpl {
 public:
-    StubTransportLiteImpl() : BaseTransportLiteImpl(), stubRmaBuffer(remote_addr, remote_addr_len)
-    {
-    }
+    StubTransportLiteImpl() : BaseTransportLiteImpl(), stubRmaBuffer(remote_addr, remote_addr_len) {}
 
-    void Wait(u32 index, const StreamLite &stream) override
-    {
-    }
+    void Wait(u32 index, const StreamLite& stream) override {}
 
-    void Post(u32 index, const StreamLite &stream) override
-    {
-    }
+    void Post(u32 index, const StreamLite& stream) override {}
 
-    void Read(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream) override
-    {
-    }
+    void Read(const RmaBufferLite& loc, const Buffer& rmt, const StreamLite& stream) override {}
 
-    void ReadReduce(const RmaBufferLite &loc, const Buffer &rmt, const ReduceIn &reduceIn,
-                    const StreamLite &stream) override
-    {
-    }
+    void
+    ReadReduce(const RmaBufferLite& loc, const Buffer& rmt, const ReduceIn& reduceIn, const StreamLite& stream) override
+    {}
 
-    void Write(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream) override
-    {
-    }
+    void Write(const RmaBufferLite& loc, const Buffer& rmt, const StreamLite& stream) override {}
 
-    void WriteReduce(const RmaBufferLite &loc, const Buffer &rmt, const ReduceIn &reduceIn,
-                     const StreamLite &stream) override
-    {
-    }
+    void WriteReduce(
+        const RmaBufferLite& loc, const Buffer& rmt, const ReduceIn& reduceIn, const StreamLite& stream) override
+    {}
 
-    void WriteWithNotify(const RmaBufferLite &loc, const Buffer &rmt, const WithNotifyIn &withNotify,
-                         const StreamLite &stream) override
-    {
-    }
+    void WriteWithNotify(
+        const RmaBufferLite& loc, const Buffer& rmt, const WithNotifyIn& withNotify, const StreamLite& stream) override
+    {}
 
-    void WriteReduceWithNotify(const RmaBufferLite &loc, const Buffer &rmt, const ReduceIn &reduceIn,
-                               const WithNotifyIn &withNotify, const StreamLite &stream) override
-    {
-    }
+    void WriteReduceWithNotify(
+        const RmaBufferLite& loc, const Buffer& rmt, const ReduceIn& reduceIn, const WithNotifyIn& withNotify,
+        const StreamLite& stream) override
+    {}
 
-    Buffer GetRmtBuffer(u32 index) override
-    {
-        return stubRmaBuffer;
-    }
+    Buffer GetRmtBuffer(u32 index) override { return stubRmaBuffer; }
 
-    void SetRmaBuffer(Buffer rmaBuffer)
-    {
-        stubRmaBuffer = rmaBuffer;
-    }
+    void SetRmaBuffer(Buffer rmaBuffer) { stubRmaBuffer = rmaBuffer; }
 
 private:
-    u64    remote_addr     = 0x100;
-    u64    remote_addr_len = 0x100;
+    u64 remote_addr = 0x100;
+    u64 remote_addr_len = 0x100;
     Buffer stubRmaBuffer;
 };
 
@@ -103,60 +84,27 @@ public:
         currentOp.opMode = OpMode::OFFLOAD;
     }
 
-    u32 GetExecTimeOut() override
-    {
-        return 1836;
-    }
-    
-    HostDeviceSyncNotifyLiteMgr *GetHostDeviceSyncNotifyLiteMgr() override
-    {
-        return &hostDeviceSyncNotifyLiteMgr;
-    }
+    u32 GetExecTimeOut() override { return 1836; }
 
-    StreamLiteMgr *GetStreamLiteMgr() override
-    {
-        return &streamLiteMgr;
-    }
+    HostDeviceSyncNotifyLiteMgr* GetHostDeviceSyncNotifyLiteMgr() override { return &hostDeviceSyncNotifyLiteMgr; }
 
-    QueueNotifyLiteMgr *GetQueueNotifyLiteMgr() override
-    {
-        return &queueNotifyLiteMgr;
-    }
+    StreamLiteMgr* GetStreamLiteMgr() override { return &streamLiteMgr; }
 
-    Cnt1tonNotifyLiteMgr *GetCnt1tonNotifyLiteMgr() override
-    {
-        return &cnt1tonNotifyLiteMgr;
-    }
+    QueueNotifyLiteMgr* GetQueueNotifyLiteMgr() override { return &queueNotifyLiteMgr; }
 
-    CntNto1NotifyLiteMgr *GetCntNto1NotifyLiteMgr() override
-    {
-        return &cntNto1NotifyLiteMgr;
-    }
+    Cnt1tonNotifyLiteMgr* GetCnt1tonNotifyLiteMgr() override { return &cnt1tonNotifyLiteMgr; }
 
-    MemTransportLiteMgr *GetTransportLiteMgr() override
-    {
-        return transportLiteMgr.get();
-    }
+    CntNto1NotifyLiteMgr* GetCntNto1NotifyLiteMgr() override { return &cntNto1NotifyLiteMgr; }
 
-    ConnectedLinkMgr *GetConnectedLinkMgr() override
-    {
-        return &connectedLinkMgr;
-    }
+    MemTransportLiteMgr* GetTransportLiteMgr() override { return transportLiteMgr.get(); }
 
-    DevId GetDevPhyId()
-    {
-        return 0;
-    }
+    ConnectedLinkMgr* GetConnectedLinkMgr() override { return &connectedLinkMgr; }
 
-    u64 GetCounterAddr() override
-    {
-        return opCounterAddr;
-    }
+    DevId GetDevPhyId() { return 0; }
 
-    u64 GetLocAddr(BufferType type)
-    {
-        return 0xffffffff;
-    }
+    u64 GetCounterAddr() override { return opCounterAddr; }
+
+    u64 GetLocAddr(BufferType type) { return 0xffffffff; }
 
     CollOperator GetCurrentOp() override
     {
@@ -164,27 +112,21 @@ public:
         return currentOp;
     }
 
-    RmaBufferLite *GetRmaBufferLite(BufferType type) override
-    {
-        return rmaBufferLiteVec[type].get();
-    }
+    RmaBufferLite* GetRmaBufferLite(BufferType type) override { return rmaBufferLiteVec[type].get(); }
 
-    MirrorTaskManagerLite *GetMirrorTaskMgrLite() override
-    {
-        return mirrorTaskMgrLite.get();
-    }
+    MirrorTaskManagerLite* GetMirrorTaskMgrLite() override { return mirrorTaskMgrLite.get(); }
 
-    HostDeviceSyncNotifyLiteMgr   hostDeviceSyncNotifyLiteMgr;
-    StreamLiteMgr                 streamLiteMgr;
-    QueueNotifyLiteMgr            queueNotifyLiteMgr;
-    Cnt1tonNotifyLiteMgr          cnt1tonNotifyLiteMgr;
-    CntNto1NotifyLiteMgr          cntNto1NotifyLiteMgr;
+    HostDeviceSyncNotifyLiteMgr hostDeviceSyncNotifyLiteMgr;
+    StreamLiteMgr streamLiteMgr;
+    QueueNotifyLiteMgr queueNotifyLiteMgr;
+    Cnt1tonNotifyLiteMgr cnt1tonNotifyLiteMgr;
+    CntNto1NotifyLiteMgr cntNto1NotifyLiteMgr;
     ConnectedLinkMgr connectedLinkMgr;
-    std::unique_ptr<MirrorTaskManagerLite>           mirrorTaskMgrLite
-        = std::make_unique<MirrorTaskManagerLite>();
+    std::unique_ptr<MirrorTaskManagerLite> mirrorTaskMgrLite = std::make_unique<MirrorTaskManagerLite>();
 
-    std::unique_ptr<MemTransportLiteMgr> transportLiteMgr = std::make_unique<MemTransportLiteMgr>(mirrorTaskMgrLite.get());
-    CollOperator                  currentOp;
+    std::unique_ptr<MemTransportLiteMgr> transportLiteMgr
+        = std::make_unique<MemTransportLiteMgr>(mirrorTaskMgrLite.get());
+    CollOperator currentOp;
     std::vector<std::unique_ptr<RmaBufferLite>> rmaBufferLiteVec;
     std::unordered_map<DataBuffer, SendRecvItemTokenInfo> sendRecvTokenMap;
     u64 opCounterAddr;
@@ -192,15 +134,9 @@ public:
 
 class InsToSqeRuleV82Test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "InsToSqeRuleV82Test SetUP" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "InsToSqeRuleV82Test SetUP" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "InsToSqeRuleV82Test TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "InsToSqeRuleV82Test TearDown" << std::endl; }
 
     virtual void SetUp()
     {
@@ -212,17 +148,17 @@ protected:
         MOCKER_CPP(&MirrorTaskManager::AddTaskInfo).stubs().with(any());
 
         LinkData linkData(BasePortType(PortDeploymentType::DEV_NET, ConnectProtoType::UB), 0, 1, 0, 1);
-        DevUbConnection  ubConnection((void *)0x100, linkData.GetLocalAddr(), linkData.GetRemoteAddr(), OpMode::OPBASE);
-        RmaConnection   *rmaConnection = &ubConnection;
+        DevUbConnection ubConnection((void*)0x100, linkData.GetLocalAddr(), linkData.GetRemoteAddr(), OpMode::OPBASE);
+        RmaConnection* rmaConnection = &ubConnection;
         locRes.connVec.push_back(rmaConnection);
-        UbLocalNotify    ubLocalNotify(rdmaHandle);
-        BaseLocalNotify *validLocalNotify = &ubLocalNotify;
+        UbLocalNotify ubLocalNotify(rdmaHandle);
+        BaseLocalNotify* validLocalNotify = &ubLocalNotify;
         locRes.notifyVec.push_back(validLocalNotify);
         LocalUbRmaBuffer ubLocalRmaBuffer(devBuf, rdmaHandle);
-        LocalRmaBuffer  *validLocalRmaBuffer = &ubLocalRmaBuffer;
+        LocalRmaBuffer* validLocalRmaBuffer = &ubLocalRmaBuffer;
         locRes.bufferVec.push_back(validLocalRmaBuffer);
 
-        RtsCntNotify   rtsCntNotify;
+        RtsCntNotify rtsCntNotify;
         LocalCntNotify localCntNotify(rdmaHandle, &rtsCntNotify);
         locCntRes.vec.push_back(&localCntNotify);
         locCntRes.desc.push_back('0');
@@ -246,61 +182,61 @@ protected:
 
     u32 fakedevPhyId = 0;
     u32 fakeStreamId = 1;
-    u32 fakeSqId     = 2;
+    u32 fakeSqId = 2;
     u32 fakeNotifyId = 1;
     u64 fakeNotifyHandleAddr = 100;
-    u8  mockSq[AC_SQE_SIZE * AC_SQE_MAX_CNT]{0};
+    u8 mockSq[AC_SQE_SIZE * AC_SQE_MAX_CNT]{0};
 
-    BaseMemTransport::CommonLocRes    locRes;
-    BaseMemTransport::Attribution     attr;
+    BaseMemTransport::CommonLocRes locRes;
+    BaseMemTransport::Attribution attr;
     BaseMemTransport::LocCntNotifyRes locCntRes;
-    LinkData                          link{BasePortType(PortDeploymentType::DEV_NET), 0, 1, 0, 1};
-    void                             *rdmaHandle = (void *)0x100;
-    IpAddress                         ipAddress{"1.0.0.0"};
-    Socket                            fakeSocket{nullptr, ipAddress, 100, ipAddress, "tag", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE};
-    std::shared_ptr<DevBuffer>        devBuf = DevBuffer::Create(0x100, 0x100);
+    LinkData link{BasePortType(PortDeploymentType::DEV_NET), 0, 1, 0, 1};
+    void* rdmaHandle = (void*)0x100;
+    IpAddress ipAddress{"1.0.0.0"};
+    Socket fakeSocket{nullptr, ipAddress, 100, ipAddress, "tag", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE};
+    std::shared_ptr<DevBuffer> devBuf = DevBuffer::Create(0x100, 0x100);
 
     std::unique_ptr<MemTransportLite> transportLite;
 };
 
 TEST_F(InsToSqeRuleV82Test, Interpret_local_copy)
 {
-    u64          size = 100;
-    DataSlice    srcSlice(BufferType::SCRATCH, 0, size);
-    DataSlice    dstSlice(BufferType::SCRATCH, 100, size);
+    u64 size = 100;
+    DataSlice srcSlice(BufferType::SCRATCH, 0, size);
+    DataSlice dstSlice(BufferType::SCRATCH, 100, size);
     InsLocalCopy insLocalCopy(srcSlice, dstSlice);
 
-    DataSlice    srcSlice2(BufferType::SCRATCH, 0, 0);
-    DataSlice    dstSlice2(BufferType::SCRATCH, 100, 0);
+    DataSlice srcSlice2(BufferType::SCRATCH, 0, 0);
+    DataSlice dstSlice2(BufferType::SCRATCH, 100, 0);
     InsLocalCopy insLocalCopy2(srcSlice2, dstSlice2);
 
-    std::vector<char> notifyLite1{fakeStreamId,fakeSqId};
+    std::vector<char> notifyLite1{fakeStreamId, fakeSqId};
     StreamLite stream(notifyLite1);
-    RtsqA5     rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
+    RtsqA5 rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
     stream.rtsq = std::make_unique<RtsqA5>(rtsq);
     MOCKER_CPP_VIRTUAL(rtsq, &RtsqA5::SdmaCopy).stubs().with(any(), any(), any(), any());
 
     StubResMgrFetcher mockResMgrFetcher;
-    
+
     Interpret(insLocalCopy, stream, &mockResMgrFetcher);
     Interpret(insLocalCopy2, stream, &mockResMgrFetcher);
 }
 
 TEST_F(InsToSqeRuleV82Test, Interpret_local_copy_extend)
 {
-    u64          size = 100;
-    DataBuffer    srcBuffer(0x1234560, size);
-    DataBuffer    dstBuffer(0x1321000, size);
+    u64 size = 100;
+    DataBuffer srcBuffer(0x1234560, size);
+    DataBuffer dstBuffer(0x1321000, size);
     InsLocalCopyExtend insLocalCopyExtend(srcBuffer, dstBuffer);
 
-    std::vector<char> notifyLite1{fakeStreamId,fakeSqId};
+    std::vector<char> notifyLite1{fakeStreamId, fakeSqId};
     StreamLite stream(notifyLite1);
-    RtsqA5     rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
+    RtsqA5 rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
     stream.rtsq = std::make_unique<RtsqA5>(rtsq);
     MOCKER_CPP_VIRTUAL(rtsq, &RtsqA5::SdmaCopy).stubs().with(any(), any(), any(), any());
 
     StubResMgrFetcher mockResMgrFetcher;
-    
+
     Interpret(insLocalCopyExtend, stream, &mockResMgrFetcher);
 }
 
@@ -311,16 +247,16 @@ TEST_F(InsToSqeRuleV82Test, Interpret_LocalReduce)
     DataSlice dstSlice(BufferType::OUTPUT, 0, 100);
     InsLocalReduce insLocalReduce(srcSlice, dstSlice, DataType::FP32, ReduceOp::SUM);
 
-    std::vector<char> notifyLite1{1,2};
+    std::vector<char> notifyLite1{1, 2};
     StreamLite stream(notifyLite1);
-    RtsqA5     rtsq(0, 1, 2);
+    RtsqA5 rtsq(0, 1, 2);
     stream.rtsq = std::make_unique<RtsqA5>(rtsq);
     MOCKER_CPP_VIRTUAL(rtsq, &RtsqA5::SdmaCopy).stubs().with(any(), any(), any(), any());
 
     StubResMgrFetcher mockResMgrFetcher;
     Interpret(insLocalReduce, stream, &mockResMgrFetcher);
 }
- 
+
 TEST_F(InsToSqeRuleV82Test, Interpret_AicpuReduce)
 {
     DataSlice srcSlice(BufferType::INPUT, 0, 100);
@@ -340,13 +276,13 @@ TEST_F(InsToSqeRuleV82Test, Interpret_AicpuReduce)
     EXPECT_EQ(true, ui0 == 2);
     insAicpuReduce.RunAicpuReduce(&d0, 8, &d1, 8, DataType::FP64, ReduceOp::MIN);
     EXPECT_EQ(true, d0 == 1.0);
- 
-    std::vector<char> notifyLite1{1,2};
+
+    std::vector<char> notifyLite1{1, 2};
     StreamLite stream(notifyLite1);
-    RtsqA5     rtsq(0, 1, 2);
+    RtsqA5 rtsq(0, 1, 2);
     stream.rtsq = std::make_unique<RtsqA5>(rtsq);
     MOCKER(&InsAicpuReduce::RunAicpuReduce).stubs();
- 
+
     StubResMgrFetcher mockResMgrFetcher;
     Interpret(insAicpuReduce, stream, &mockResMgrFetcher);
 }
@@ -355,9 +291,9 @@ TEST_F(InsToSqeRuleV82Test, Interpret_StreamSync)
 {
     InsStreamSync insStreamSync;
 
-    std::vector<char> notifyLite1{1,2};
+    std::vector<char> notifyLite1{1, 2};
     StreamLite stream(notifyLite1);
-    RtsqA5     rtsq(0, 1, 2);
+    RtsqA5 rtsq(0, 1, 2);
     stream.rtsq = std::make_unique<RtsqA5>(rtsq);
 
     StubResMgrFetcher mockResMgrFetcher;
@@ -366,14 +302,14 @@ TEST_F(InsToSqeRuleV82Test, Interpret_StreamSync)
 
 TEST_F(InsToSqeRuleV82Test, Interpret_local_copy_extend_err)
 {
-    u64          size = 100;
-    DataBuffer    srcBuffer(0x1234560, size);
-    DataBuffer    dstBuffer(0x1321000, size);
+    u64 size = 100;
+    DataBuffer srcBuffer(0x1234560, size);
+    DataBuffer dstBuffer(0x1321000, size);
     InsLocalCopyExtend insLocalCopyExtend(srcBuffer, dstBuffer);
 
-    std::vector<char> notifyLite1{fakeStreamId,fakeSqId};
+    std::vector<char> notifyLite1{fakeStreamId, fakeSqId};
     StreamLite stream(notifyLite1);
-    RtsqA5     rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
+    RtsqA5 rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
     stream.rtsq = std::make_unique<RtsqA5>(rtsq);
     MOCKER_CPP_VIRTUAL(rtsq, &RtsqA5::SdmaCopy).stubs().with(any(), any(), any(), any());
 
@@ -385,10 +321,10 @@ TEST_F(InsToSqeRuleV82Test, Interpret_local_copy_extend_err)
 TEST_F(InsToSqeRuleV82Test, Interpret_local_post_to)
 {
     // normal notify
-    NotifyLite *nullNotify = nullptr;
-    std::vector<char> notifyLite1{fakeNotifyId,fakedevPhyId};
-    NotifyLite  notify(notifyLite1);
-    NotifyLite *validNotify = &notify;
+    NotifyLite* nullNotify = nullptr;
+    std::vector<char> notifyLite1{fakeNotifyId, fakedevPhyId};
+    NotifyLite notify(notifyLite1);
+    NotifyLite* validNotify = &notify;
     MOCKER_CPP(&QueueNotifyLiteMgr::Get)
         .stubs()
         .with(any(), any(), any())
@@ -398,22 +334,22 @@ TEST_F(InsToSqeRuleV82Test, Interpret_local_post_to)
     InsLocalPostTo insLocalPostTo(1, NotifyType::NORMAL, 0);
     insLocalPostTo.SetPostQid(0);
 
-    std::vector<char> streamLite1{fakeStreamId,fakeSqId};
+    std::vector<char> streamLite1{fakeStreamId, fakeSqId};
     StreamLite stream(streamLite1);
-    RtsqA5     rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
+    RtsqA5 rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
     stream.rtsq = std::make_unique<RtsqA5>(rtsq);
     MOCKER_CPP_VIRTUAL(rtsq, &RtsqA5::NotifyRecordLoc).stubs().with(any());
 
     StubResMgrFetcher mockResMgrFetcher;
-    
+
     EXPECT_THROW(Interpret(insLocalPostTo, stream, &mockResMgrFetcher), NullPtrException);
     Interpret(insLocalPostTo, stream, &mockResMgrFetcher);
 
     // count notify
-    CntNto1NotifyLite *nullCntNotify = nullptr;
+    CntNto1NotifyLite* nullCntNotify = nullptr;
     std::vector<char> cntNto1NotifyLite1{fakeNotifyId, fakedevPhyId};
-    CntNto1NotifyLite  cntNtify(cntNto1NotifyLite1);
-    CntNto1NotifyLite *validCntNotify = &cntNtify;
+    CntNto1NotifyLite cntNtify(cntNto1NotifyLite1);
+    CntNto1NotifyLite* validCntNotify = &cntNtify;
     MOCKER_CPP(&CntNto1NotifyLiteMgr::Get)
         .stubs()
         .with(any(), any())
@@ -432,10 +368,10 @@ TEST_F(InsToSqeRuleV82Test, Interpret_local_post_to)
 TEST_F(InsToSqeRuleV82Test, Interpret_local_wait_from)
 {
     // normal notify
-    NotifyLite *nullNotify = nullptr;
-    std::vector<char> notifyLite1{fakeNotifyId,fakedevPhyId};
-    NotifyLite  notify(notifyLite1);
-    NotifyLite *validNotify = &notify;
+    NotifyLite* nullNotify = nullptr;
+    std::vector<char> notifyLite1{fakeNotifyId, fakedevPhyId};
+    NotifyLite notify(notifyLite1);
+    NotifyLite* validNotify = &notify;
     MOCKER_CPP(&QueueNotifyLiteMgr::Get)
         .stubs()
         .with(any(), any(), any())
@@ -445,9 +381,9 @@ TEST_F(InsToSqeRuleV82Test, Interpret_local_wait_from)
     InsLocalWaitFrom insLocalWaitFrom(0, NotifyType::NORMAL, 0);
     insLocalWaitFrom.SetWaitQid(1);
 
-    std::vector<char> streamLite1{fakeStreamId,fakeSqId};
+    std::vector<char> streamLite1{fakeStreamId, fakeSqId};
     StreamLite stream(streamLite1);
-    RtsqA5     rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
+    RtsqA5 rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
     stream.rtsq = std::make_unique<RtsqA5>(rtsq);
     MOCKER_CPP_VIRTUAL(rtsq, static_cast<void (RtsqA5::*)(u32)>(&RtsqA5::NotifyWait)).stubs().with(any());
     MOCKER_CPP_VIRTUAL(rtsq, static_cast<void (RtsqA5::*)(u32, u32)>(&RtsqA5::NotifyWait)).stubs().with(any());
@@ -458,10 +394,10 @@ TEST_F(InsToSqeRuleV82Test, Interpret_local_wait_from)
     Interpret(insLocalWaitFrom, stream, &mockResMgrFetcher);
 
     // count notify
-    Cnt1tonNotifyLite *nullCntNotify = nullptr;
+    Cnt1tonNotifyLite* nullCntNotify = nullptr;
     std::vector<char> cntNto1NotifyLite1{fakeNotifyId, fakedevPhyId};
-    Cnt1tonNotifyLite  cntNtify(cntNto1NotifyLite1);
-    Cnt1tonNotifyLite *validCntNotify = &cntNtify;
+    Cnt1tonNotifyLite cntNtify(cntNto1NotifyLite1);
+    Cnt1tonNotifyLite* validCntNotify = &cntNtify;
     MOCKER_CPP(&Cnt1tonNotifyLiteMgr::Get)
         .stubs()
         .with(any(), any())
@@ -479,10 +415,10 @@ TEST_F(InsToSqeRuleV82Test, Interpret_local_wait_from)
 
 TEST_F(InsToSqeRuleV82Test, Interpret_local_bcast_post)
 {
-    Cnt1tonNotifyLite *nullNotify = nullptr;
+    Cnt1tonNotifyLite* nullNotify = nullptr;
     std::vector<char> cntNto1NotifyLite1{fakeNotifyId, fakedevPhyId};
-    Cnt1tonNotifyLite  notify(cntNto1NotifyLite1);
-    Cnt1tonNotifyLite *validNotify = &notify;
+    Cnt1tonNotifyLite notify(cntNto1NotifyLite1);
+    Cnt1tonNotifyLite* validNotify = &notify;
     MOCKER_CPP(&Cnt1tonNotifyLiteMgr::Get)
         .stubs()
         .with(any(), any())
@@ -493,9 +429,9 @@ TEST_F(InsToSqeRuleV82Test, Interpret_local_bcast_post)
     insLocalBcastPost.Append(0);
     insLocalBcastPost.Append(1);
 
-    std::vector<char> streamLite1{fakeStreamId,fakeSqId};
+    std::vector<char> streamLite1{fakeStreamId, fakeSqId};
     StreamLite stream(streamLite1);
-    RtsqA5     rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
+    RtsqA5 rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
     stream.rtsq = std::make_unique<RtsqA5>(rtsq);
     MOCKER_CPP_VIRTUAL(rtsq, &RtsqA5::Cnt1toNNotifyRecord).stubs().with(any(), any());
 
@@ -507,10 +443,10 @@ TEST_F(InsToSqeRuleV82Test, Interpret_local_bcast_post)
 
 TEST_F(InsToSqeRuleV82Test, Interpret_local_wait_group)
 {
-    CntNto1NotifyLite *nullNotify = nullptr;
+    CntNto1NotifyLite* nullNotify = nullptr;
     std::vector<char> cntNto1NotifyLite1{fakeNotifyId, fakedevPhyId};
-    CntNto1NotifyLite  notify(cntNto1NotifyLite1);
-    CntNto1NotifyLite *validNotify = &notify;
+    CntNto1NotifyLite notify(cntNto1NotifyLite1);
+    CntNto1NotifyLite* validNotify = &notify;
     MOCKER_CPP(&CntNto1NotifyLiteMgr::Get)
         .stubs()
         .with(any(), any())
@@ -521,9 +457,9 @@ TEST_F(InsToSqeRuleV82Test, Interpret_local_wait_group)
     insLocalWaitGroup.Append(0);
     insLocalWaitGroup.Append(1);
 
-    std::vector<char> streamLite1{fakeStreamId,fakeSqId};
+    std::vector<char> streamLite1{fakeStreamId, fakeSqId};
     StreamLite stream(streamLite1);
-    RtsqA5     rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
+    RtsqA5 rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
     stream.rtsq = std::make_unique<RtsqA5>(rtsq);
     MOCKER_CPP_VIRTUAL(rtsq, &RtsqA5::CntNto1NotifyWait).stubs().with(any(), any());
 
@@ -538,8 +474,8 @@ TEST_F(InsToSqeRuleV82Test, Interpret_wait_ready)
     RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
-    MemTransportLite *stubTransportPtr0 = nullptr;
-    MemTransportLite *stubTransportPtr1 = transportLite.get();
+    MemTransportLite* stubTransportPtr0 = nullptr;
+    MemTransportLite* stubTransportPtr1 = transportLite.get();
     MOCKER_CPP(&MemTransportLiteMgr::GetOffload)
         .stubs()
         .with(any(), any())
@@ -553,7 +489,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_wait_ready)
 
     InsWaitReady insWaitReady(remoteRank, link);
 
-    std::vector<char> streamLite1{fakeStreamId,fakeSqId};
+    std::vector<char> streamLite1{fakeStreamId, fakeSqId};
     StreamLite stream(streamLite1);
     StubResMgrFetcher mockResMgrFetcher;
 
@@ -571,8 +507,8 @@ TEST_F(InsToSqeRuleV82Test, Interpret_post_ready)
     RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
-    MemTransportLite *stubTransportPtr0 = nullptr;
-    MemTransportLite *stubTransportPtr1 = transportLite.get();
+    MemTransportLite* stubTransportPtr0 = nullptr;
+    MemTransportLite* stubTransportPtr1 = transportLite.get();
     MOCKER_CPP(&MemTransportLiteMgr::GetOffload)
         .stubs()
         .with(any(), any())
@@ -586,7 +522,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_post_ready)
 
     InsPostReady insPostReady(remoteRank, link);
 
-    std::vector<char> streamLite1{fakeStreamId,fakeSqId};
+    std::vector<char> streamLite1{fakeStreamId, fakeSqId};
     StreamLite stream(streamLite1);
     StubResMgrFetcher mockResMgrFetcher;
 
@@ -599,8 +535,8 @@ TEST_F(InsToSqeRuleV82Test, Interpret_wait_fin)
     RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
-    MemTransportLite *stubTransportPtr0 = nullptr;
-    MemTransportLite *stubTransportPtr1 = transportLite.get();
+    MemTransportLite* stubTransportPtr0 = nullptr;
+    MemTransportLite* stubTransportPtr1 = transportLite.get();
     MOCKER_CPP(&MemTransportLiteMgr::GetOffload)
         .stubs()
         .with(any(), any())
@@ -614,7 +550,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_wait_fin)
 
     InsWaitFin insWaitFin(remoteRank, link);
 
-    std::vector<char> streamLite1{fakeStreamId,fakeSqId};
+    std::vector<char> streamLite1{fakeStreamId, fakeSqId};
     StreamLite stream(streamLite1);
     StubResMgrFetcher mockResMgrFetcher;
 
@@ -627,8 +563,8 @@ TEST_F(InsToSqeRuleV82Test, Interpret_post_fin)
     RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
-    MemTransportLite *stubTransportPtr0 = nullptr;
-    MemTransportLite *stubTransportPtr1 = transportLite.get();
+    MemTransportLite* stubTransportPtr0 = nullptr;
+    MemTransportLite* stubTransportPtr1 = transportLite.get();
     MOCKER_CPP(&MemTransportLiteMgr::GetOffload)
         .stubs()
         .with(any(), any())
@@ -642,7 +578,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_post_fin)
 
     InsPostFin insPostFin(remoteRank, link);
 
-    std::vector<char> streamLite1{fakeStreamId,fakeSqId};
+    std::vector<char> streamLite1{fakeStreamId, fakeSqId};
     StreamLite stream(streamLite1);
     StubResMgrFetcher mockResMgrFetcher;
 
@@ -655,7 +591,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_batch_write)
     RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
-    MemTransportLite *stubTransportPtr = transportLite.get();
+    MemTransportLite* stubTransportPtr = transportLite.get();
     MOCKER_CPP(&MemTransportLiteMgr::GetOffload).stubs().with(any(), any()).then(returnValue(stubTransportPtr));
     MOCKER_CPP(&MemTransportLiteMgr::GetOpbase).stubs().with(any()).then(returnValue(stubTransportPtr));
 
@@ -663,7 +599,8 @@ TEST_F(InsToSqeRuleV82Test, Interpret_batch_write)
     DataSlice remoteSlice(BufferType::SCRATCH, 0, 100);
     InsBatchWrite insBatchWrite(remoteRank, link);
     insBatchWrite.PushWriteIns(std::make_unique<InsWrite>(remoteRank, link, localSlice, remoteSlice));
-    insBatchWrite.PushWriteIns(std::make_unique<InsWriteReduce>(remoteRank, link, localSlice, remoteSlice, DataType::FP32, ReduceOp::SUM));
+    insBatchWrite.PushWriteIns(
+        std::make_unique<InsWriteReduce>(remoteRank, link, localSlice, remoteSlice, DataType::FP32, ReduceOp::SUM));
 
     std::vector<char> streamLite1{fakeStreamId, fakeSqId};
     StreamLite stream(streamLite1);
@@ -677,7 +614,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_batch_write_is_empty_err)
     RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
-    MemTransportLite *stubTransportPtr = transportLite.get();
+    MemTransportLite* stubTransportPtr = transportLite.get();
     MOCKER_CPP(&MemTransportLiteMgr::GetOffload).stubs().with(any(), any()).then(returnValue(stubTransportPtr));
     MOCKER_CPP(&MemTransportLiteMgr::GetOpbase).stubs().with(any()).then(returnValue(stubTransportPtr));
 
@@ -697,7 +634,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_batch_write_insWrite_size_is_0)
     RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
-    MemTransportLite *stubTransportPtr = transportLite.get();
+    MemTransportLite* stubTransportPtr = transportLite.get();
     MOCKER_CPP(&MemTransportLiteMgr::GetOffload).stubs().with(any(), any()).then(returnValue(stubTransportPtr));
     MOCKER_CPP(&MemTransportLiteMgr::GetOpbase).stubs().with(any()).then(returnValue(stubTransportPtr));
 
@@ -721,7 +658,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_batch_write_insWrite_size_isnot_0_err)
     RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
-    MemTransportLite *stubTransportPtr = transportLite.get();
+    MemTransportLite* stubTransportPtr = transportLite.get();
     MOCKER_CPP(&MemTransportLiteMgr::GetOffload).stubs().with(any(), any()).then(returnValue(stubTransportPtr));
     MOCKER_CPP(&MemTransportLiteMgr::GetOpbase).stubs().with(any()).then(returnValue(stubTransportPtr));
 
@@ -744,14 +681,15 @@ TEST_F(InsToSqeRuleV82Test, Interpret_batch_write_insWriteReduce_size_is_0)
     RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
-    MemTransportLite *stubTransportPtr = transportLite.get();
+    MemTransportLite* stubTransportPtr = transportLite.get();
     MOCKER_CPP(&MemTransportLiteMgr::GetOffload).stubs().with(any(), any()).then(returnValue(stubTransportPtr));
     MOCKER_CPP(&MemTransportLiteMgr::GetOpbase).stubs().with(any()).then(returnValue(stubTransportPtr));
 
     DataSlice localSlice(BufferType::SCRATCH, 0, 100);
     DataSlice remoteSlice(BufferType::SCRATCH, 0, 100);
     InsBatchWrite insBatchWrite(remoteRank, link);
-    auto insWriteReduce = std::make_unique<InsWriteReduce>(remoteRank, link, localSlice, remoteSlice, DataType::FP32, ReduceOp::SUM);
+    auto insWriteReduce
+        = std::make_unique<InsWriteReduce>(remoteRank, link, localSlice, remoteSlice, DataType::FP32, ReduceOp::SUM);
     insWriteReduce->localSlice_.size = 0;
     insWriteReduce->remoteSlice_.size = 0;
     insBatchWrite.PushWriteIns(std::move(insWriteReduce));
@@ -768,14 +706,15 @@ TEST_F(InsToSqeRuleV82Test, Interpret_batch_write_insWriteReduce_size_isnot_0_er
     RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
-    MemTransportLite *stubTransportPtr = transportLite.get();
+    MemTransportLite* stubTransportPtr = transportLite.get();
     MOCKER_CPP(&MemTransportLiteMgr::GetOffload).stubs().with(any(), any()).then(returnValue(stubTransportPtr));
     MOCKER_CPP(&MemTransportLiteMgr::GetOpbase).stubs().with(any()).then(returnValue(stubTransportPtr));
 
     DataSlice localSlice(BufferType::SCRATCH, 0, 100);
     DataSlice remoteSlice(BufferType::SCRATCH, 0, 100);
     InsBatchWrite insBatchWrite(remoteRank, link);
-    auto insWriteReduce = std::make_unique<InsWriteReduce>(remoteRank, link, localSlice, remoteSlice, DataType::FP32, ReduceOp::SUM);
+    auto insWriteReduce
+        = std::make_unique<InsWriteReduce>(remoteRank, link, localSlice, remoteSlice, DataType::FP32, ReduceOp::SUM);
     insWriteReduce->localSlice_.size = 0;
     insBatchWrite.PushWriteIns(std::move(insWriteReduce));
 
@@ -791,7 +730,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_batch_read)
     RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
-    MemTransportLite *stubTransportPtr = transportLite.get();
+    MemTransportLite* stubTransportPtr = transportLite.get();
     MOCKER_CPP(&MemTransportLiteMgr::GetOffload).stubs().with(any(), any()).then(returnValue(stubTransportPtr));
     MOCKER_CPP(&MemTransportLiteMgr::GetOpbase).stubs().with(any()).then(returnValue(stubTransportPtr));
 
@@ -799,7 +738,8 @@ TEST_F(InsToSqeRuleV82Test, Interpret_batch_read)
     DataSlice remoteSlice(BufferType::SCRATCH, 0, 100);
     InsBatchRead insBatchRead(remoteRank, link);
     insBatchRead.PushReadIns(std::make_unique<InsRead>(remoteRank, link, localSlice, remoteSlice));
-    insBatchRead.PushReadIns(std::make_unique<InsReadReduce>(remoteRank, link, localSlice, remoteSlice, DataType::FP32, ReduceOp::SUM));
+    insBatchRead.PushReadIns(
+        std::make_unique<InsReadReduce>(remoteRank, link, localSlice, remoteSlice, DataType::FP32, ReduceOp::SUM));
 
     std::vector<char> streamLite1{fakeStreamId, fakeSqId};
     StreamLite stream(streamLite1);
@@ -813,7 +753,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_batch_read_is_empty_err)
     RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
-    MemTransportLite *stubTransportPtr = transportLite.get();
+    MemTransportLite* stubTransportPtr = transportLite.get();
     MOCKER_CPP(&MemTransportLiteMgr::GetOffload).stubs().with(any(), any()).then(returnValue(stubTransportPtr));
     MOCKER_CPP(&MemTransportLiteMgr::GetOpbase).stubs().with(any()).then(returnValue(stubTransportPtr));
 
@@ -833,7 +773,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_batch_read_insRead_size_is_0)
     RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
-    MemTransportLite *stubTransportPtr = transportLite.get();
+    MemTransportLite* stubTransportPtr = transportLite.get();
     MOCKER_CPP(&MemTransportLiteMgr::GetOffload).stubs().with(any(), any()).then(returnValue(stubTransportPtr));
     MOCKER_CPP(&MemTransportLiteMgr::GetOpbase).stubs().with(any()).then(returnValue(stubTransportPtr));
 
@@ -857,7 +797,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_batch_read_insRead_size_isnot_0_err)
     RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
-    MemTransportLite *stubTransportPtr = transportLite.get();
+    MemTransportLite* stubTransportPtr = transportLite.get();
     MOCKER_CPP(&MemTransportLiteMgr::GetOffload).stubs().with(any(), any()).then(returnValue(stubTransportPtr));
     MOCKER_CPP(&MemTransportLiteMgr::GetOpbase).stubs().with(any()).then(returnValue(stubTransportPtr));
 
@@ -880,14 +820,15 @@ TEST_F(InsToSqeRuleV82Test, Interpret_batch_read_insReadReduce_size_is_0)
     RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
-    MemTransportLite *stubTransportPtr = transportLite.get();
+    MemTransportLite* stubTransportPtr = transportLite.get();
     MOCKER_CPP(&MemTransportLiteMgr::GetOffload).stubs().with(any(), any()).then(returnValue(stubTransportPtr));
     MOCKER_CPP(&MemTransportLiteMgr::GetOpbase).stubs().with(any()).then(returnValue(stubTransportPtr));
 
     DataSlice localSlice(BufferType::SCRATCH, 0, 100);
     DataSlice remoteSlice(BufferType::SCRATCH, 0, 100);
     InsBatchRead insBatchRead(remoteRank, link);
-    auto insReadReduce = std::make_unique<InsReadReduce>(remoteRank, link, localSlice, remoteSlice, DataType::FP32, ReduceOp::SUM);
+    auto insReadReduce
+        = std::make_unique<InsReadReduce>(remoteRank, link, localSlice, remoteSlice, DataType::FP32, ReduceOp::SUM);
     insReadReduce->localSlice_.size = 0;
     insReadReduce->remoteSlice_.size = 0;
     insBatchRead.PushReadIns(std::move(insReadReduce));
@@ -904,14 +845,15 @@ TEST_F(InsToSqeRuleV82Test, Interpret_batch_read_insReadReduce_size_isnot_0_err)
     RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
-    MemTransportLite *stubTransportPtr = transportLite.get();
+    MemTransportLite* stubTransportPtr = transportLite.get();
     MOCKER_CPP(&MemTransportLiteMgr::GetOffload).stubs().with(any(), any()).then(returnValue(stubTransportPtr));
     MOCKER_CPP(&MemTransportLiteMgr::GetOpbase).stubs().with(any()).then(returnValue(stubTransportPtr));
 
     DataSlice localSlice(BufferType::SCRATCH, 0, 100);
     DataSlice remoteSlice(BufferType::SCRATCH, 0, 100);
     InsBatchRead insBatchRead(remoteRank, link);
-    auto insReadReduce = std::make_unique<InsReadReduce>(remoteRank, link, localSlice, remoteSlice, DataType::FP32, ReduceOp::SUM);
+    auto insReadReduce
+        = std::make_unique<InsReadReduce>(remoteRank, link, localSlice, remoteSlice, DataType::FP32, ReduceOp::SUM);
     insReadReduce->localSlice_.size = 0;
     insBatchRead.PushReadIns(std::move(insReadReduce));
 
@@ -927,7 +869,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_write)
     RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
-    MemTransportLite *stubTransportPtr = transportLite.get();
+    MemTransportLite* stubTransportPtr = transportLite.get();
     MOCKER_CPP(&MemTransportLiteMgr::GetOffload).stubs().with(any(), any()).then(returnValue(stubTransportPtr));
     MOCKER_CPP(&MemTransportLiteMgr::GetOpbase).stubs().with(any()).then(returnValue(stubTransportPtr));
 
@@ -935,7 +877,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_write)
     DataSlice remoteSlice(BufferType::SCRATCH, 0, 100);
     InsWrite insWrite(remoteRank, link, localSlice, remoteSlice);
 
-    std::vector<char> streamLite1{fakeStreamId,fakeSqId};
+    std::vector<char> streamLite1{fakeStreamId, fakeSqId};
     StreamLite stream(streamLite1);
     StubResMgrFetcher mockResMgrFetcher;
 
@@ -947,7 +889,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_write_err)
     RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
-    MemTransportLite *stubTransportPtr = transportLite.get();
+    MemTransportLite* stubTransportPtr = transportLite.get();
     MOCKER_CPP(&MemTransportLiteMgr::GetOffload).stubs().with(any(), any()).then(returnValue(stubTransportPtr));
     MOCKER_CPP(&MemTransportLiteMgr::GetOpbase).stubs().with(any()).then(returnValue(stubTransportPtr));
 
@@ -955,7 +897,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_write_err)
     DataSlice remoteSlice(BufferType::SCRATCH, 0, 100);
     InsWrite insWrite(remoteRank, link, localSlice, remoteSlice);
 
-    std::vector<char> streamLite1{fakeStreamId,fakeSqId};
+    std::vector<char> streamLite1{fakeStreamId, fakeSqId};
     StreamLite stream(streamLite1);
     StubResMgrFetcher mockResMgrFetcher;
     insWrite.localSlice_.size = 0;
@@ -967,16 +909,16 @@ TEST_F(InsToSqeRuleV82Test, Interpret_write_extend)
     RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
-    MemTransportLite *stubTransportPtr = transportLite.get();
+    MemTransportLite* stubTransportPtr = transportLite.get();
     MOCKER_CPP(&MemTransportLiteMgr::GetOffload).stubs().with(any(), any()).then(returnValue(stubTransportPtr));
     MOCKER_CPP(&MemTransportLiteMgr::GetOpbase).stubs().with(any()).then(returnValue(stubTransportPtr));
 
-    u64          size = 100;
-    DataBuffer    localBuffer(0x1234560, size);
-    DataBuffer    remoteBuffer(0x1321000, size);
+    u64 size = 100;
+    DataBuffer localBuffer(0x1234560, size);
+    DataBuffer remoteBuffer(0x1321000, size);
     InsWriteExtend insWriteExtend(remoteRank, link, localBuffer, remoteBuffer);
 
-    std::vector<char> streamLite1{fakeStreamId,fakeSqId};
+    std::vector<char> streamLite1{fakeStreamId, fakeSqId};
     StreamLite stream(streamLite1);
     StubResMgrFetcher mockResMgrFetcher;
 
@@ -988,16 +930,16 @@ TEST_F(InsToSqeRuleV82Test, Interpret_write_extend_err)
     RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
-    MemTransportLite *stubTransportPtr = transportLite.get();
+    MemTransportLite* stubTransportPtr = transportLite.get();
     MOCKER_CPP(&MemTransportLiteMgr::GetOffload).stubs().with(any(), any()).then(returnValue(stubTransportPtr));
     MOCKER_CPP(&MemTransportLiteMgr::GetOpbase).stubs().with(any()).then(returnValue(stubTransportPtr));
 
-    u64          size = 100;
-    DataBuffer    localBuffer(0x1234560, size);
-    DataBuffer    remoteBuffer(0x1321000, size);
+    u64 size = 100;
+    DataBuffer localBuffer(0x1234560, size);
+    DataBuffer remoteBuffer(0x1321000, size);
     InsWriteExtend insWriteExtend(remoteRank, link, localBuffer, remoteBuffer);
 
-    std::vector<char> streamLite1{fakeStreamId,fakeSqId};
+    std::vector<char> streamLite1{fakeStreamId, fakeSqId};
     StreamLite stream(streamLite1);
     StubResMgrFetcher mockResMgrFetcher;
     insWriteExtend.localBuffer_.size = 0;
@@ -1009,7 +951,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_write_reduce)
     RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
-    MemTransportLite *stubTransportPtr = transportLite.get();
+    MemTransportLite* stubTransportPtr = transportLite.get();
     MOCKER_CPP(&MemTransportLiteMgr::GetOffload).stubs().with(any(), any()).then(returnValue(stubTransportPtr));
     MOCKER_CPP(&MemTransportLiteMgr::GetOpbase).stubs().with(any()).then(returnValue(stubTransportPtr));
 
@@ -1017,7 +959,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_write_reduce)
     DataSlice remoteSlice(BufferType::SCRATCH, 0, 100);
     InsWriteReduce insWriteReduce(remoteRank, link, localSlice, remoteSlice, DataType::FP32, ReduceOp::SUM);
 
-    std::vector<char> streamLite1{fakeStreamId,fakeSqId};
+    std::vector<char> streamLite1{fakeStreamId, fakeSqId};
     StreamLite stream(streamLite1);
     StubResMgrFetcher mockResMgrFetcher;
 
@@ -1029,7 +971,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_write_reduce_err)
     RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
-    MemTransportLite *stubTransportPtr = transportLite.get();
+    MemTransportLite* stubTransportPtr = transportLite.get();
     MOCKER_CPP(&MemTransportLiteMgr::GetOffload).stubs().with(any(), any()).then(returnValue(stubTransportPtr));
     MOCKER_CPP(&MemTransportLiteMgr::GetOpbase).stubs().with(any()).then(returnValue(stubTransportPtr));
 
@@ -1037,7 +979,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_write_reduce_err)
     DataSlice remoteSlice(BufferType::SCRATCH, 0, 100);
     InsWriteReduce insWriteReduce(remoteRank, link, localSlice, remoteSlice, DataType::FP32, ReduceOp::SUM);
 
-    std::vector<char> streamLite1{fakeStreamId,fakeSqId};
+    std::vector<char> streamLite1{fakeStreamId, fakeSqId};
     StreamLite stream(streamLite1);
     StubResMgrFetcher mockResMgrFetcher;
     insWriteReduce.localSlice_.size = 0;
@@ -1049,7 +991,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_read)
     RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
-    MemTransportLite *stubTransportPtr = transportLite.get();
+    MemTransportLite* stubTransportPtr = transportLite.get();
     MOCKER_CPP(&MemTransportLiteMgr::GetOffload).stubs().with(any(), any()).then(returnValue(stubTransportPtr));
     MOCKER_CPP(&MemTransportLiteMgr::GetOpbase).stubs().with(any()).then(returnValue(stubTransportPtr));
 
@@ -1057,7 +999,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_read)
     DataSlice remoteSlice(BufferType::SCRATCH, 0, 100);
     InsRead insRead(remoteRank, link, localSlice, remoteSlice);
 
-    std::vector<char> streamLite1{fakeStreamId,fakeSqId};
+    std::vector<char> streamLite1{fakeStreamId, fakeSqId};
     StreamLite stream(streamLite1);
     StubResMgrFetcher mockResMgrFetcher;
 
@@ -1069,7 +1011,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_read_reduce)
     RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
-    MemTransportLite *stubTransportPtr = transportLite.get();
+    MemTransportLite* stubTransportPtr = transportLite.get();
     MOCKER_CPP(&MemTransportLiteMgr::GetOffload).stubs().with(any(), any()).then(returnValue(stubTransportPtr));
     MOCKER_CPP(&MemTransportLiteMgr::GetOpbase).stubs().with(any()).then(returnValue(stubTransportPtr));
 
@@ -1077,7 +1019,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_read_reduce)
     DataSlice remoteSlice(BufferType::SCRATCH, 0, 100);
     InsReadReduce insReadReduce(remoteRank, link, localSlice, remoteSlice, DataType::FP32, ReduceOp::SUM);
 
-    std::vector<char> streamLite1{fakeStreamId,fakeSqId};
+    std::vector<char> streamLite1{fakeStreamId, fakeSqId};
     StreamLite stream(streamLite1);
     StubResMgrFetcher mockResMgrFetcher;
 
@@ -1089,15 +1031,15 @@ TEST_F(InsToSqeRuleV82Test, Interpret_write_reduce_with_fin)
     RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
-    MemTransportLite *stubTransportPtr = transportLite.get();
+    MemTransportLite* stubTransportPtr = transportLite.get();
     MOCKER_CPP(&MemTransportLiteMgr::GetOffload).stubs().with(any(), any()).then(returnValue(stubTransportPtr));
     MOCKER_CPP(&MemTransportLiteMgr::GetOpbase).stubs().with(any()).then(returnValue(stubTransportPtr));
 
     DataSlice localSlice(BufferType::SCRATCH, 0, 100);
     DataSlice remoteSlice(BufferType::SCRATCH, 0, 100);
-    InsWriteReduceWithFin insWriteReduceWithFin(remoteRank, link, localSlice, remoteSlice, DataType::FP32,
-                                                ReduceOp::SUM, NotifyType::NORMAL);
-    std::vector<char> streamLite1{fakeStreamId,fakeSqId};
+    InsWriteReduceWithFin insWriteReduceWithFin(
+        remoteRank, link, localSlice, remoteSlice, DataType::FP32, ReduceOp::SUM, NotifyType::NORMAL);
+    std::vector<char> streamLite1{fakeStreamId, fakeSqId};
     StreamLite stream(streamLite1);
     StubResMgrFetcher mockResMgrFetcher;
 
@@ -1109,15 +1051,15 @@ TEST_F(InsToSqeRuleV82Test, Interpret_write_reduce_with_fin_err)
     RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
-    MemTransportLite *stubTransportPtr = transportLite.get();
+    MemTransportLite* stubTransportPtr = transportLite.get();
     MOCKER_CPP(&MemTransportLiteMgr::GetOffload).stubs().with(any(), any()).then(returnValue(stubTransportPtr));
     MOCKER_CPP(&MemTransportLiteMgr::GetOpbase).stubs().with(any()).then(returnValue(stubTransportPtr));
 
     DataSlice localSlice(BufferType::SCRATCH, 0, 100);
     DataSlice remoteSlice(BufferType::SCRATCH, 0, 100);
-    InsWriteReduceWithFin insWriteReduceWithFin(remoteRank, link, localSlice, remoteSlice, DataType::FP32,
-                                                ReduceOp::SUM, NotifyType::NORMAL);
-    std::vector<char> streamLite1{fakeStreamId,fakeSqId};
+    InsWriteReduceWithFin insWriteReduceWithFin(
+        remoteRank, link, localSlice, remoteSlice, DataType::FP32, ReduceOp::SUM, NotifyType::NORMAL);
+    std::vector<char> streamLite1{fakeStreamId, fakeSqId};
     StreamLite stream(streamLite1);
     StubResMgrFetcher mockResMgrFetcher;
     insWriteReduceWithFin.localSlice_.size = 0;
@@ -1129,14 +1071,14 @@ TEST_F(InsToSqeRuleV82Test, Interpret_write_with_fin)
     RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
-    MemTransportLite *stubTransportPtr = transportLite.get();
+    MemTransportLite* stubTransportPtr = transportLite.get();
     MOCKER_CPP(&MemTransportLiteMgr::GetOffload).stubs().with(any(), any()).then(returnValue(stubTransportPtr));
     MOCKER_CPP(&MemTransportLiteMgr::GetOpbase).stubs().with(any()).then(returnValue(stubTransportPtr));
 
     DataSlice localSlice(BufferType::SCRATCH, 0, 100);
     DataSlice remoteSlice(BufferType::SCRATCH, 0, 100);
     InsWriteWithFin insWriteWithFin(remoteRank, link, localSlice, remoteSlice, NotifyType::NORMAL);
-    std::vector<char> streamLite1{fakeStreamId,fakeSqId};
+    std::vector<char> streamLite1{fakeStreamId, fakeSqId};
     StreamLite stream(streamLite1);
     StubResMgrFetcher mockResMgrFetcher;
 
@@ -1148,14 +1090,14 @@ TEST_F(InsToSqeRuleV82Test, Interpret_write_with_fin_err)
     RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
-    MemTransportLite *stubTransportPtr = transportLite.get();
+    MemTransportLite* stubTransportPtr = transportLite.get();
     MOCKER_CPP(&MemTransportLiteMgr::GetOffload).stubs().with(any(), any()).then(returnValue(stubTransportPtr));
     MOCKER_CPP(&MemTransportLiteMgr::GetOpbase).stubs().with(any()).then(returnValue(stubTransportPtr));
 
     DataSlice localSlice(BufferType::SCRATCH, 0, 100);
     DataSlice remoteSlice(BufferType::SCRATCH, 0, 100);
     InsWriteWithFin insWriteWithFin(remoteRank, link, localSlice, remoteSlice, NotifyType::NORMAL);
-    std::vector<char> streamLite1{fakeStreamId,fakeSqId};
+    std::vector<char> streamLite1{fakeStreamId, fakeSqId};
     StreamLite stream(streamLite1);
     StubResMgrFetcher mockResMgrFetcher;
     insWriteWithFin.localSlice_.size = 0;
@@ -1167,15 +1109,15 @@ TEST_F(InsToSqeRuleV82Test, Interpret_write_with_fin_extend)
     RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
-    MemTransportLite *stubTransportPtr = transportLite.get();
+    MemTransportLite* stubTransportPtr = transportLite.get();
     MOCKER_CPP(&MemTransportLiteMgr::GetOffload).stubs().with(any(), any()).then(returnValue(stubTransportPtr));
     MOCKER_CPP(&MemTransportLiteMgr::GetOpbase).stubs().with(any()).then(returnValue(stubTransportPtr));
 
-    u64          size = 100;
-    DataBuffer    localBuffer(0x1234560, size);
-    DataBuffer    remoteBuffer(0x1321000, size);
+    u64 size = 100;
+    DataBuffer localBuffer(0x1234560, size);
+    DataBuffer remoteBuffer(0x1321000, size);
     InsWriteWithFinExtend insWriteWithFinExtend(remoteRank, link, localBuffer, remoteBuffer, NotifyType::NORMAL);
-    std::vector<char> streamLite1{fakeStreamId,fakeSqId};
+    std::vector<char> streamLite1{fakeStreamId, fakeSqId};
     StreamLite stream(streamLite1);
     StubResMgrFetcher mockResMgrFetcher;
 
@@ -1187,15 +1129,15 @@ TEST_F(InsToSqeRuleV82Test, Interpret_write_with_fin_extend_err)
     RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
-    MemTransportLite *stubTransportPtr = transportLite.get();
+    MemTransportLite* stubTransportPtr = transportLite.get();
     MOCKER_CPP(&MemTransportLiteMgr::GetOffload).stubs().with(any(), any()).then(returnValue(stubTransportPtr));
     MOCKER_CPP(&MemTransportLiteMgr::GetOpbase).stubs().with(any()).then(returnValue(stubTransportPtr));
 
-    u64          size = 100;
-    DataBuffer    localBuffer(0x1234560, size);
-    DataBuffer    remoteBuffer(0x1321000, size);
+    u64 size = 100;
+    DataBuffer localBuffer(0x1234560, size);
+    DataBuffer remoteBuffer(0x1321000, size);
     InsWriteWithFinExtend insWriteWithFinExtend(remoteRank, link, localBuffer, remoteBuffer, NotifyType::NORMAL);
-    std::vector<char> streamLite1{fakeStreamId,fakeSqId};
+    std::vector<char> streamLite1{fakeStreamId, fakeSqId};
     StreamLite stream(streamLite1);
     StubResMgrFetcher mockResMgrFetcher;
     insWriteWithFinExtend.localBuffer_.size = 0;

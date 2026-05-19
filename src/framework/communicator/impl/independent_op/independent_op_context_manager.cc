@@ -7,37 +7,34 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #include "independent_op_context_manager.h"
 #include "hccl_comm_pub.h"
 #include "log.h"
 #include "adapter_rts_common.h"
 
 namespace hccl {
-ContextManager::ContextManager()
-{
-}
+ContextManager::ContextManager() {}
 
-ContextManager::~ContextManager()
-{
-}
+ContextManager::~ContextManager() {}
 
-HcclResult ContextManager::CreateCommEngineCtx(const std::string &tag, CommEngine engine, uint64_t size, void **ctx)
+HcclResult ContextManager::CreateCommEngineCtx(const std::string& tag, CommEngine engine, uint64_t size, void** ctx)
 {
-    std::lock_guard<std::mutex> lock(mutex_); 
+    std::lock_guard<std::mutex> lock(mutex_);
     // 阻止重复创建
     if (contextMap_.find(tag) != contextMap_.end()) {
         auto engineCtxMap = contextMap_[tag];
-        CHK_PRT_RET(engineCtxMap.find(engine) != engineCtxMap.end(),
-            HCCL_ERROR("[%s] already exist a context with same key, tag[%s], engine[%d]",
-            __func__, tag.c_str(), engine), HCCL_E_PARA);
+        CHK_PRT_RET(
+            engineCtxMap.find(engine) != engineCtxMap.end(),
+            HCCL_ERROR(
+                "[%s] already exist a context with same key, tag[%s], engine[%d]", __func__, tag.c_str(), engine),
+            HCCL_E_PARA);
     }
 
     void* ctxData = nullptr;
     // 区分设备类型
     HcclMemType type;
-    if (engine == COMM_ENGINE_CPU || engine == COMM_ENGINE_CPU_TS
-        || engine == COMM_ENGINE_CCU) {
+    if (engine == COMM_ENGINE_CPU || engine == COMM_ENGINE_CPU_TS || engine == COMM_ENGINE_CCU) {
         type = HCCL_MEM_TYPE_HOST;
         ctxData = malloc(size);
         CHK_PTR_NULL(ctxData);
@@ -48,8 +45,7 @@ HcclResult ContextManager::CreateCommEngineCtx(const std::string &tag, CommEngin
             ctxData = nullptr;
             return HCCL_E_INTERNAL;
         }
-    } else if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS
-        || engine == COMM_ENGINE_AIV) {
+    } else if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS || engine == COMM_ENGINE_AIV) {
         type = HCCL_MEM_TYPE_DEVICE;
         CHK_RET(hrtMalloc(&ctxData, size));
     } else {
@@ -64,9 +60,9 @@ HcclResult ContextManager::CreateCommEngineCtx(const std::string &tag, CommEngin
     return HCCL_SUCCESS;
 }
 
-HcclResult ContextManager::GetCommEngineCtx(const std::string &tag, CommEngine engine, void **ctx, uint64_t *size)
+HcclResult ContextManager::GetCommEngineCtx(const std::string& tag, CommEngine engine, void** ctx, uint64_t* size)
 {
-    std::lock_guard<std::mutex> lock(mutex_); 
+    std::lock_guard<std::mutex> lock(mutex_);
     // Ctx未创建返回
     if (contextMap_.find(tag) == contextMap_.end()) {
         HCCL_INFO("[%s] not exist a context with tag[%s]", __func__, tag.c_str());
@@ -81,23 +77,22 @@ HcclResult ContextManager::GetCommEngineCtx(const std::string &tag, CommEngine e
 
     *ctx = contextMap_[tag][engine].addr;
     *size = contextMap_[tag][engine].size;
-    HCCL_INFO("[%s]get context success, tag[%s], engine[%d]", __func__, tag.c_str(), engine);    
+    HCCL_INFO("[%s]get context success, tag[%s], engine[%d]", __func__, tag.c_str(), engine);
     return HCCL_SUCCESS;
 }
 
-HcclResult ContextManager::CopyCommEngineCtx(const std::string &tag, CommEngine engine, const void *srcCtx,
-    uint64_t size, uint64_t dstCtxOffset)
+HcclResult ContextManager::CopyCommEngineCtx(
+    const std::string& tag, CommEngine engine, const void* srcCtx, uint64_t size, uint64_t dstCtxOffset)
 {
-    void *dstCtx;
+    void* dstCtx;
     uint64_t dstSize = 0;
-    if (engine == COMM_ENGINE_AICPU_TS || engine == COMM_ENGINE_AICPU
-        || engine == COMM_ENGINE_AIV) {
+    if (engine == COMM_ENGINE_AICPU_TS || engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AIV) {
         CHK_RET(GetCommEngineCtx(tag, engine, &dstCtx, &dstSize));
         // 从Host内存拷贝到Device Context内存上
-        CHK_RET(hrtMemSyncCopy(reinterpret_cast<uint8_t*>(dstCtx) + dstCtxOffset, size, srcCtx, size,
+        CHK_RET(hrtMemSyncCopy(
+            reinterpret_cast<uint8_t*>(dstCtx) + dstCtxOffset, size, srcCtx, size,
             HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
-    } else if (engine == COMM_ENGINE_CPU || engine == COMM_ENGINE_CPU_TS
-        || engine == COMM_ENGINE_CCU) {
+    } else if (engine == COMM_ENGINE_CPU || engine == COMM_ENGINE_CPU_TS || engine == COMM_ENGINE_CCU) {
         CHK_RET(GetCommEngineCtx(tag, engine, &dstCtx, &dstSize));
         (void)memcpy_s(reinterpret_cast<uint8_t*>(dstCtx) + dstCtxOffset, size, srcCtx, size);
     } else {
@@ -108,9 +103,9 @@ HcclResult ContextManager::CopyCommEngineCtx(const std::string &tag, CommEngine 
     return HCCL_SUCCESS;
 }
 
-HcclResult ContextManager::DestroyCommEngineCtx(const std::string &tag, CommEngine engine)
+HcclResult ContextManager::DestroyCommEngineCtx(const std::string& tag, CommEngine engine)
 {
-    std::lock_guard<std::mutex> lock(mutex_); 
+    std::lock_guard<std::mutex> lock(mutex_);
     // Ctx不存在返回错误
     if (contextMap_.find(tag) == contextMap_.end()) {
         HCCL_ERROR("[%s] not exist a context with tag[%s]", __func__, tag.c_str());
@@ -138,7 +133,7 @@ HcclResult ContextManager::DestroyCommEngineCtx(const std::string &tag, CommEngi
         contextMap_.erase(tag);
     }
 
-    HCCL_INFO("[%s]destroy context success, tag[%s], engine[%d]", __func__, tag.c_str(), engine);   
+    HCCL_INFO("[%s]destroy context success, tag[%s], engine[%d]", __func__, tag.c_str(), engine);
     return HCCL_SUCCESS;
 }
-}
+} // namespace hccl

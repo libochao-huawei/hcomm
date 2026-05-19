@@ -12,12 +12,8 @@
 
 class TestHcommMem : public TestHcommCAdptBase {
 public:
-    void SetUp() override {
-        TestHcommCAdptBase::SetUp();
-    }
-    void TearDown() override {
-        TestHcommCAdptBase::TearDown();
-    }
+    void SetUp() override { TestHcommCAdptBase::SetUp(); }
+    void TearDown() override { TestHcommCAdptBase::TearDown(); }
 };
 
 TEST_F(TestHcommMem, Ut_TestHcommMemReg_When_InvalidHandle_Return_HCCL_E_NOT_FOUND)

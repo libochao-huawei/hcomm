@@ -16,7 +16,7 @@
 
 namespace Hccl {
 
-HccpHdcManager &HccpHdcManager::GetInstance()
+HccpHdcManager& HccpHdcManager::GetInstance()
 {
     static HccpHdcManager hccpHdcManager;
     return hccpHdcManager;
@@ -33,7 +33,7 @@ void HccpHdcManager::Init(u32 deviceLogicId)
 
     HRaInitConfig cfg;
     cfg.phyId = HrtGetDevicePhyIdByIndex(deviceLogicId);
-    cfg.mode  = HrtNetworkMode::HDC;
+    cfg.mode = HrtNetworkMode::HDC;
     HrtRaInit(cfg);
 
     instances.insert(deviceLogicId);
@@ -47,16 +47,13 @@ void HccpHdcManager::DestroyAll()
 
         HRaInitConfig cfg;
         cfg.phyId = HrtGetDevicePhyIdByIndex(deviceLogicId);
-        cfg.mode  = HrtNetworkMode::HDC;
+        cfg.mode = HrtNetworkMode::HDC;
         DECTOR_TRY_CATCH("HccpHdcManager", HrtRaDeInit(cfg));
         DECTOR_TRY_CATCH("HccpHdcManager", HrtResetDevice(deviceLogicId));
     }
     instances.clear();
 }
 
-HccpHdcManager::~HccpHdcManager()
-{
-    DECTOR_TRY_CATCH("HccpHdcManager", DestroyAll());
-}
+HccpHdcManager::~HccpHdcManager() { DECTOR_TRY_CATCH("HccpHdcManager", DestroyAll()); }
 
 } // namespace Hccl

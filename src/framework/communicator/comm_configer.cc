@@ -7,21 +7,21 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See the License in the root of the software repository for the full text of the License.
  */
- 
+
 #include "comm_configer.h"
 #include "adapter_rts_common.h"
 #include "externalinput.h"
 #include "alg_env_config.h"
- 
+
 namespace hccl {
 CommConfiger& CommConfiger::GetInstance()
 {
     static CommConfiger configer;
     return configer;
 }
- 
+
 CommConfiger::CommConfiger() : initialized_(true) {}
- 
+
 HcclResult CommConfiger::SetCommConfig(CommConfig config, const std::string& identifier)
 {
     std::lock_guard<std::mutex> lock(lock_);
@@ -31,13 +31,14 @@ HcclResult CommConfiger::SetCommConfig(CommConfig config, const std::string& ide
     }
     auto commConfigIter = commConfigMap_.find(identifier);
     if (commConfigIter != commConfigMap_.end()) {
-        HCCL_WARNING("[CommConfiger][SetCommConfig]: commConfig of identifier[%s] is already existed.", identifier.c_str());
+        HCCL_WARNING(
+            "[CommConfiger][SetCommConfig]: commConfig of identifier[%s] is already existed.", identifier.c_str());
     }
     commConfigMap_[identifier] = config;
     HCCL_INFO("[CommConfiger][SetCommConfig]: commConfig of identifier[%s]", identifier.c_str());
     return HCCL_SUCCESS;
 }
- 
+
 HcclResult CommConfiger::SetCommConfigExecTimeOut(s32 execTimeOut, const std::string& identifier)
 {
     std::lock_guard<std::mutex> lock(lock_);
@@ -47,13 +48,12 @@ HcclResult CommConfiger::SetCommConfigExecTimeOut(s32 execTimeOut, const std::st
     }
     auto commConfigIter = commConfigMap_.find(identifier);
     if (commConfigIter == commConfigMap_.end()) {
-        HCCL_WARNING("[CommConfiger][GetCommConfigExecTimeOut]: CommConfig of [%s] is not found.",
-            identifier.c_str());
+        HCCL_WARNING("[CommConfiger][GetCommConfigExecTimeOut]: CommConfig of [%s] is not found.", identifier.c_str());
         return HCCL_SUCCESS;
     }
     return commConfigMap_[identifier].SetConfigExecTimeOut(execTimeOut);
 }
- 
+
 s32 CommConfiger::GetCommConfigExecTimeOut(const std::string& identifier)
 {
     std::lock_guard<std::mutex> lock(lock_);
@@ -63,17 +63,16 @@ s32 CommConfiger::GetCommConfigExecTimeOut(const std::string& identifier)
         return execTimeOut;
     }
     auto commConfigIter = commConfigMap_.find(identifier);
-    if(commConfigIter == commConfigMap_.end()){
-        HCCL_WARNING("[CommConfiger][GetCommConfigExecTimeOut]: CommConfig of [%s] is not found.",
-            identifier.c_str());
+    if (commConfigIter == commConfigMap_.end()) {
+        HCCL_WARNING("[CommConfiger][GetCommConfigExecTimeOut]: CommConfig of [%s] is not found.", identifier.c_str());
         return execTimeOut;
     }
     execTimeOut = commConfigMap_[identifier].GetConfigExecTimeOut();
-    HCCL_INFO("[CommConfiger][GetCommConfigExecTimeOut]: identifier[%s], execTimeOut[%d]s",
-        identifier.c_str(), execTimeOut);
+    HCCL_INFO(
+        "[CommConfiger][GetCommConfigExecTimeOut]: identifier[%s], execTimeOut[%d]s", identifier.c_str(), execTimeOut);
     return execTimeOut;
 }
- 
+
 bool CommConfiger::GetCommConfigExecTimeOutSet(const std::string& identifier)
 {
     std::lock_guard<std::mutex> lock(lock_);
@@ -83,17 +82,17 @@ bool CommConfiger::GetCommConfigExecTimeOutSet(const std::string& identifier)
         return execTimeOutSet;
     }
     auto commConfigIter = commConfigMap_.find(identifier);
-    if(commConfigIter == commConfigMap_.end()){
-        HCCL_WARNING("[CommConfiger][GetCommConfigExecTimeOut]: CommConfig of [%s] is not found.",
-            identifier.c_str());
+    if (commConfigIter == commConfigMap_.end()) {
+        HCCL_WARNING("[CommConfiger][GetCommConfigExecTimeOut]: CommConfig of [%s] is not found.", identifier.c_str());
         return execTimeOutSet;
     }
     execTimeOutSet = commConfigMap_[identifier].GetConfigExecTimeOutSet();
-    HCCL_INFO("[CommConfiger][GetCommConfigExecTimeOutSet]: identifier[%s], execTimeOutSet[%d]",
-        identifier.c_str(), execTimeOutSet);
+    HCCL_INFO(
+        "[CommConfiger][GetCommConfigExecTimeOutSet]: identifier[%s], execTimeOutSet[%d]", identifier.c_str(),
+        execTimeOutSet);
     return execTimeOutSet;
 }
- 
+
 std::vector<HcclAlgoType> CommConfiger::GetCommConfigAlgoConfig(const std::string& identifier, HcclCMDType opType)
 {
     std::lock_guard<std::mutex> lock(lock_);
@@ -108,8 +107,7 @@ std::vector<HcclAlgoType> CommConfiger::GetCommConfigAlgoConfig(const std::strin
     }
     return commConfigMap_[identifier].GetConfigHcclAlgo(opType);
 }
- 
- 
+
 bool CommConfiger::GetCommConfigInterServerRetryEnable(const std::string& identifier)
 {
     std::lock_guard<std::mutex> lock(lock_);
@@ -120,16 +118,18 @@ bool CommConfiger::GetCommConfigInterServerRetryEnable(const std::string& identi
     }
     auto commConfigIter = commConfigMap_.find(identifier);
     if (commConfigIter == commConfigMap_.end()) {
-        HCCL_WARNING("[CommConfiger][GetCommConfigInterServerRetryEnable]: CommConfig of [%s] is not found.",
+        HCCL_WARNING(
+            "[CommConfiger][GetCommConfigInterServerRetryEnable]: CommConfig of [%s] is not found.",
             identifier.c_str());
         return isRetry;
     }
     isRetry = commConfigMap_[identifier].GetConfigInterServerRetryEnable();
-    HCCL_INFO("[CommConfiger][GetCommConfigInterServerRetryEnable]: identifier[%s], isRetry[%d].",
-        identifier.c_str(), isRetry);
+    HCCL_INFO(
+        "[CommConfiger][GetCommConfigInterServerRetryEnable]: identifier[%s], isRetry[%d].", identifier.c_str(),
+        isRetry);
     return isRetry;
 }
- 
+
 bool CommConfiger::GetCommConfigInterSuperPodRetryEnable(const std::string& identifier)
 {
     std::lock_guard<std::mutex> lock(lock_);
@@ -140,16 +140,18 @@ bool CommConfiger::GetCommConfigInterSuperPodRetryEnable(const std::string& iden
     }
     auto commConfigIter = commConfigMap_.find(identifier);
     if (commConfigIter == commConfigMap_.end()) {
-        HCCL_WARNING("[CommConfiger][GetCommConfigInterSuperPodRetryEnable]: CommConfig of [%s] is not found.",
+        HCCL_WARNING(
+            "[CommConfiger][GetCommConfigInterSuperPodRetryEnable]: CommConfig of [%s] is not found.",
             identifier.c_str());
         return isRetry;
     }
     isRetry = commConfigMap_[identifier].GetConfigInterSuperPodRetryEnable();
-    HCCL_INFO("[CommConfiger][GetCommConfigInterSuperPodRetryEnable]: identifier[%s], isRetry[%d].",
-        identifier.c_str(), isRetry);
+    HCCL_INFO(
+        "[CommConfiger][GetCommConfigInterSuperPodRetryEnable]: identifier[%s], isRetry[%d].", identifier.c_str(),
+        isRetry);
     return isRetry;
 }
- 
+
 u32 CommConfiger::GetCommConfigRetryMaxCnt(const std::string& identifier)
 {
     std::lock_guard<std::mutex> lock(lock_);
@@ -160,16 +162,15 @@ u32 CommConfiger::GetCommConfigRetryMaxCnt(const std::string& identifier)
     }
     auto commConfigIter = commConfigMap_.find(identifier);
     if (commConfigIter == commConfigMap_.end()) {
-        HCCL_WARNING("[CommConfiger][GetCommConfigRetryMaxCnt]: CommConfig of [%s] is not found.",
-            identifier.c_str());
+        HCCL_WARNING("[CommConfiger][GetCommConfigRetryMaxCnt]: CommConfig of [%s] is not found.", identifier.c_str());
         return retryMaxCnt;
     }
     retryMaxCnt = commConfigMap_[identifier].GetConfigRetryMaxCnt();
-    HCCL_INFO("[CommConfiger][GetCommConfigRetryMaxCnt]: identifier[%s], retryMaxCnt[%d].",
-        identifier.c_str(), retryMaxCnt);
+    HCCL_INFO(
+        "[CommConfiger][GetCommConfigRetryMaxCnt]: identifier[%s], retryMaxCnt[%d].", identifier.c_str(), retryMaxCnt);
     return retryMaxCnt;
 }
- 
+
 u32 CommConfiger::GetCommConfigRetryHoldTime(const std::string& identifier)
 {
     std::lock_guard<std::mutex> lock(lock_);
@@ -180,16 +181,17 @@ u32 CommConfiger::GetCommConfigRetryHoldTime(const std::string& identifier)
     }
     auto commConfigIter = commConfigMap_.find(identifier);
     if (commConfigIter == commConfigMap_.end()) {
-        HCCL_WARNING("[CommConfiger][GetCommConfigRetryHoldTime]: CommConfig of [%s] is not found.",
-            identifier.c_str());
+        HCCL_WARNING(
+            "[CommConfiger][GetCommConfigRetryHoldTime]: CommConfig of [%s] is not found.", identifier.c_str());
         return retryHoldTime;
     }
     retryHoldTime = commConfigMap_[identifier].GetConfigRetryHoldTime();
-    HCCL_INFO("[CommConfiger][GetCommConfigRetryHoldTime]: identifier[%s], retryHoldTime[%d].",
-        identifier.c_str(), retryHoldTime);
+    HCCL_INFO(
+        "[CommConfiger][GetCommConfigRetryHoldTime]: identifier[%s], retryHoldTime[%d].", identifier.c_str(),
+        retryHoldTime);
     return retryHoldTime;
 }
- 
+
 u32 CommConfiger::GetCommConfigRetryIntervalTime(const std::string& identifier)
 {
     std::lock_guard<std::mutex> lock(lock_);
@@ -200,16 +202,17 @@ u32 CommConfiger::GetCommConfigRetryIntervalTime(const std::string& identifier)
     }
     auto commConfigIter = commConfigMap_.find(identifier);
     if (commConfigIter == commConfigMap_.end()) {
-        HCCL_WARNING("[CommConfiger][GetCommConfigRetryIntervalTime]: CommConfig of [%s] is not found.",
-            identifier.c_str());
+        HCCL_WARNING(
+            "[CommConfiger][GetCommConfigRetryIntervalTime]: CommConfig of [%s] is not found.", identifier.c_str());
         return retryIntervalTime;
     }
     retryIntervalTime = commConfigMap_[identifier].GetConfigRetryIntervalTime();
-    HCCL_INFO("[CommConfiger][GetCommConfigRetryIntervalTime]: identifier[%s], retryIntervalTime[%d].",
-        identifier.c_str(), retryIntervalTime);
+    HCCL_INFO(
+        "[CommConfiger][GetCommConfigRetryIntervalTime]: identifier[%s], retryIntervalTime[%d].", identifier.c_str(),
+        retryIntervalTime);
     return retryIntervalTime;
 }
- 
+
 void CommConfiger::UnRegisterToCommConfiger(const std::string& identifier)
 {
     if (initialized_ == false) {
@@ -228,11 +231,11 @@ void CommConfiger::UnRegisterToCommConfiger(const std::string& identifier)
     }
     commConfigMap_.erase(identifier);
 }
- 
+
 CommConfiger::~CommConfiger()
 {
     std::lock_guard<std::mutex> lock(lock_);
     initialized_ = false;
     commConfigMap_.clear();
 }
-}
+} // namespace hccl

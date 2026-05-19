@@ -17,20 +17,11 @@ using namespace hcomm;
 
 class HcommAdapterHccpTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "HcommAdapterHccpTest tests set up." << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "HcommAdapterHccpTest tests set up." << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "HcommAdapterHccpTest tests tear down." << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "HcommAdapterHccpTest tests tear down." << std::endl; }
 
-    virtual void SetUp()
-    {
-        std::cout << "A Test case in HcommAdapterHccpTest SetUP" << std::endl;
-    }
+    virtual void SetUp() { std::cout << "A Test case in HcommAdapterHccpTest SetUP" << std::endl; }
 
     virtual void TearDown()
     {
@@ -49,7 +40,7 @@ TEST_F(HcommAdapterHccpTest, ut_HccpGetUboeFlagEnable_VersionEnough_Expect_Succe
         .will(returnValue(0));
 
     HcclResult ret = HccpGetUboeFlagEnable(devPhyId);
-    
+
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
@@ -61,9 +52,9 @@ TEST_F(HcommAdapterHccpTest, ut_HccpGetUboeFlagEnable_When_VersionNotEnough_Expe
         .stubs()
         .with(any(), any(), outBoundP(&mock_version, sizeof(s32)))
         .will(returnValue(0));
-    
+
     HcclResult ret = HccpGetUboeFlagEnable(devPhyId);
-    
+
     EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
 }
 
@@ -80,7 +71,7 @@ TEST_F(HcommAdapterHccpTest, ut_HccpCheckUboeSupported_When_DevFeatureBitSet_Exp
     u32 devFeature = 1 << UBOE_DEV_FLAG_RIGHT_SHIFT;
     bool result = HccpCheckUboeSupported(devFeature);
     EXPECT_TRUE(result);
-    
+
     // 测试其他位也有值的情况
     devFeature = (1 << UBOE_DEV_FLAG_RIGHT_SHIFT) | 0xFFFF;
     result = HccpCheckUboeSupported(devFeature);
@@ -92,10 +83,9 @@ TEST_F(HcommAdapterHccpTest, ut_HccpCheckUboeSupported_When_DevFeatureBitNotSet_
     u32 devFeature = 0;
     bool result = HccpCheckUboeSupported(devFeature);
     EXPECT_FALSE(result);
-    
+
     // 测试只有其他位被设置，但UBOE位未设置
     devFeature = 0xFFFFFFFF & ~(1 << UBOE_DEV_FLAG_RIGHT_SHIFT);
     result = HccpCheckUboeSupported(devFeature);
     EXPECT_FALSE(result);
 }
-

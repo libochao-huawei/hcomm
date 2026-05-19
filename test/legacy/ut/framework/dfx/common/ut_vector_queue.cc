@@ -20,7 +20,7 @@
 using namespace Hccl;
 
 class VectorQueueTest : public testing::Test {
-    protected:
+protected:
     static void SetUpTestCase()
     {
         GlobalMockObject::verify();
@@ -48,9 +48,9 @@ class VectorQueueTest : public testing::Test {
         GlobalMockObject::reset();
         std::cout << "A Test case in VectorQueueTest TearDown" << std::endl;
     }
-    public:
-        VectorQueue<int> fakeQueue;
 
+public:
+    VectorQueue<int> fakeQueue;
 };
 
 TEST_F(VectorQueueTest, Ut_Append_When_AppendNumIs2048_Return_Ok)
@@ -73,14 +73,12 @@ TEST_F(VectorQueueTest, Ut_Traverse_When_PrintAllElems_ReturnIsAllElems)
         fakeQueue.Append(i);
     }
     // Then
-    fakeQueue.Traverse([](const int &value){std::cout << value << std::endl;});
+    fakeQueue.Traverse([](const int& value) {
+        std::cout << value << std::endl;
+    });
 }
 
-
-TEST_F(VectorQueueTest, Ut_IsEmpty_When_VectorIsEmpty_ReturnIsTrue)
-{
-    EXPECT_EQ(fakeQueue.IsEmpty(), true);
-}
+TEST_F(VectorQueueTest, Ut_IsEmpty_When_VectorIsEmpty_ReturnIsTrue) { EXPECT_EQ(fakeQueue.IsEmpty(), true); }
 
 TEST_F(VectorQueueTest, Ut_IsEmpty_When_VectorIsNotEmpty_ReturnIsFalse)
 {
@@ -95,7 +93,9 @@ TEST_F(VectorQueueTest, Ut_Find_When_ValueInVector_ReturnIsNeEnd)
     // When
     fakeQueue.Append(10);
     // Then
-    auto it = fakeQueue.Find([](const int &value){return value == 10;});
+    auto it = fakeQueue.Find([](const int& value) {
+        return value == 10;
+    });
     EXPECT_NE(*it, *fakeQueue.End());
     EXPECT_EQ(*(*it), 10);
 }
@@ -105,7 +105,9 @@ TEST_F(VectorQueueTest, Ut_Find_When_ValueNotInVector_ReturnIsEqEnd)
     // When
     fakeQueue.Append(10);
     // Then
-    auto it = fakeQueue.Find([](const int &value){return value == 100;});
+    auto it = fakeQueue.Find([](const int& value) {
+        return value == 100;
+    });
     EXPECT_EQ(*it, *fakeQueue.End());
 }
 
@@ -176,16 +178,15 @@ TEST_F(VectorQueueTest, Ut_Iterator_When_PlusAndMinus_ReturnIsOk)
     EXPECT_EQ(*(*it), 20);
     (*it)--;
     EXPECT_EQ(*(*it), 10);
-
 }
 
 TEST_F(VectorQueueTest, Ut_Iterator_When_ScaleUp_ReturnIsOk)
-{   
-    //When
+{
+    // When
     fakeQueue.Append(10);
     fakeQueue.elems_.shrink_to_fit(); // 缩小空间
-    auto it = fakeQueue.Begin();       // 取迭代器
-    // Then 
-    fakeQueue.Append(20);             // 触发扩容
-    EXPECT_EQ(*(*it), 10);            // 校验
+    auto it = fakeQueue.Begin();      // 取迭代器
+    // Then
+    fakeQueue.Append(20);  // 触发扩容
+    EXPECT_EQ(*(*it), 10); // 校验
 }

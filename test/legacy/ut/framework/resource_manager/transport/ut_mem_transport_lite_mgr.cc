@@ -27,14 +27,12 @@ using namespace Hccl;
 
 class StubDevUbConnection : public DevUbConnection {
 public:
-    StubDevUbConnection(const LinkData &linkData) : link(linkData), DevUbConnection((void *)0x100, linkData.GetLocalAddr(), linkData.GetRemoteAddr(), OpMode::OPBASE)
-    {
-    }
+    StubDevUbConnection(const LinkData& linkData)
+        : link(linkData),
+          DevUbConnection((void*)0x100, linkData.GetLocalAddr(), linkData.GetRemoteAddr(), OpMode::OPBASE)
+    {}
 
-    RmaConnStatus GetStatus() override
-    {
-        return RmaConnStatus::INIT;
-    }
+    RmaConnStatus GetStatus() override { return RmaConnStatus::INIT; }
 
 private:
     LinkData link;
@@ -42,20 +40,18 @@ private:
 
 class MemTransportLiteMgrTest : public testing::Test {
 protected:
-    static void SetUpTestCase() {
-        std::cout << "MemTransportLiteMgrTest SetUP" << std::endl;
-    }
- 
-    static void TearDownTestCase() {
-        std::cout << "MemTransportLiteMgrTest TearDown" << std::endl;
-    }
- 
-    virtual void SetUp() {
+    static void SetUpTestCase() { std::cout << "MemTransportLiteMgrTest SetUP" << std::endl; }
+
+    static void TearDownTestCase() { std::cout << "MemTransportLiteMgrTest TearDown" << std::endl; }
+
+    virtual void SetUp()
+    {
         std::cout << "A Test case in MemTransportLiteMgrTest SetUP" << std::endl;
         MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910A2));
     }
- 
-    virtual void TearDown () {
+
+    virtual void TearDown()
+    {
         GlobalMockObject::verify();
         std::cout << "A Test case in MemTransportLiteMgrTest TearDown" << std::endl;
     }
@@ -84,16 +80,16 @@ protected:
 
     std::vector<char> GetConnUniqueId()
     {
-        u32  dieId           = 0;
-        u32  funcId          = 0;
-        u32  jettyId         = 0;
-        u32  jfcPollMode     = 0;     // 待修改，0代表STARS POLL，1代表software Poll
+        u32 dieId = 0;
+        u32 funcId = 0;
+        u32 jettyId = 0;
+        u32 jfcPollMode = 0;          // 待修改，0代表STARS POLL，1代表software Poll
         bool dwqeCacheLocked = false; // 待修改，该jetty是否支持dwqeCachedLocked，默认不支持
-        u64  dbAddr          = 0x100;
-        u64  sqVa            = 0x100;
-        u32  sqDepth         = 100;
-        u32  tpn             = 100;
-        Eid  rmtEid;
+        u64 dbAddr = 0x100;
+        u64 sqVa = 0x100;
+        u32 sqDepth = 100;
+        u32 tpn = 100;
+        Eid rmtEid;
 
         BinaryStream binaryStream;
         binaryStream << dieId;
@@ -125,13 +121,13 @@ protected:
 
         auto rmtBuffer0 = GetRmtBufferUniqueId(300, 200, 3, 3);
         auto rmtBuffer1 = GetRmtBufferUniqueId(300, 200, 4, 4);
-        u32  bufferBum  = 2;
+        u32 bufferBum = 2;
 
-        auto conn0   = GetConnUniqueId();
-        u32  connNum = 1;
+        auto conn0 = GetConnUniqueId();
+        u32 connNum = 1;
 
         BinaryStream binaryStream;
-        u32          type = (u32)TransportType::UB;
+        u32 type = (u32)TransportType::UB;
         binaryStream << type;
         binaryStream << notifyNum;
         binaryStream << bufferBum;
@@ -217,7 +213,7 @@ TEST_F(MemTransportLiteMgrTest, test_parse_offload_packed_data)
     MemTransportLiteMgr liteMgr(&mirrorTaskMgrLite);
 
     const string opTag = "opTag";
-    EXPECT_NO_THROW(liteMgr.ParseOffloadPackedData(opTag, packedData)); 
+    EXPECT_NO_THROW(liteMgr.ParseOffloadPackedData(opTag, packedData));
 }
 
 TEST_F(MemTransportLiteMgrTest, test_parse_all_packed_data)
@@ -247,5 +243,5 @@ TEST_F(MemTransportLiteMgrTest, test_parse_all_packed_data)
 
     MirrorTaskManagerLite mirrorTaskMgrLite;
     MemTransportLiteMgr liteMgr(&mirrorTaskMgrLite);
-    EXPECT_NO_THROW(liteMgr.ParseAllPackedData(packedData)); 
+    EXPECT_NO_THROW(liteMgr.ParseAllPackedData(packedData));
 }

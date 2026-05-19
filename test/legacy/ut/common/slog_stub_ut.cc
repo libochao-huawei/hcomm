@@ -23,7 +23,7 @@ static int GetLogLevelFromEnv()
             return val;
         }
     }
-    
+
     return DLOG_ERROR;
 }
 static int g_UT_LOG_LEVEL = GetLogLevelFromEnv();
@@ -35,7 +35,7 @@ int CheckLogLevel(int moduleId, int logLevel)
     return 1;
 }
 
-void DlogRecord(int moduleId, int level, const char *fmt, ...)
+void DlogRecord(int moduleId, int level, const char* fmt, ...)
 {
     (void)moduleId;
     (void)fmt;
@@ -47,7 +47,7 @@ void DlogRecord(int moduleId, int level, const char *fmt, ...)
     }
 }
 
-void DlogInner(int moduleId, int level, const char *fmt, ...)
+void DlogInner(int moduleId, int level, const char* fmt, ...)
 {
     (void)moduleId;
     (void)fmt;

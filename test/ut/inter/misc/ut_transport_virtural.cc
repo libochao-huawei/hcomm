@@ -23,21 +23,20 @@
 
 #include "llt_hccl_stub_pub.h"
 #include "profiler_manager.h"
-#include "transport_heterog_p2p_pub.h" 
-
-
+#include "transport_heterog_p2p_pub.h"
 
 using namespace std;
 using namespace hccl;
 
-class TransportVirturalTest : public testing::Test
-{
+class TransportVirturalTest : public testing::Test {
 protected:
     static void SetUpTestCase()
     {
         s32 ret = HcclDispatcherInit(DispatcherType::DISPATCHER_NORMAL, 0, &dispatcherPtr);
-        if (ret != HCCL_SUCCESS) return;
-        if (dispatcherPtr == nullptr) return;
+        if (ret != HCCL_SUCCESS)
+            return;
+        if (dispatcherPtr == nullptr)
+            return;
         dispatcher = reinterpret_cast<DispatcherPub*>(dispatcherPtr);
         std::cout << "\033[36m--CommBaseTest SetUP--\033[0m" << std::endl;
     }
@@ -55,22 +54,15 @@ protected:
     virtual void SetUp()
     {
         s32 portNum = 7;
-        MOCKER(hrtGetHccsPortNum)
-            .stubs()
-            .with(any(), outBound(portNum))
-            .will(returnValue(HCCL_SUCCESS));
+        MOCKER(hrtGetHccsPortNum).stubs().with(any(), outBound(portNum)).will(returnValue(HCCL_SUCCESS));
         std::cout << "A Test SetUP" << std::endl;
     }
-    virtual void TearDown()
-    {
-        std::cout << "A Test TearDown" << std::endl;
-    }
+    virtual void TearDown() { std::cout << "A Test TearDown" << std::endl; }
     static HcclDispatcher dispatcherPtr;
-    static DispatcherPub *dispatcher;
-
+    static DispatcherPub* dispatcher;
 };
 HcclDispatcher TransportVirturalTest::dispatcherPtr = nullptr;
-DispatcherPub *TransportVirturalTest::dispatcher = nullptr;
+DispatcherPub* TransportVirturalTest::dispatcher = nullptr;
 
 TEST_F(TransportVirturalTest, ut_function_for_batchsendrecv_heterog_p2p)
 {
@@ -79,10 +71,10 @@ TEST_F(TransportVirturalTest, ut_function_for_batchsendrecv_heterog_p2p)
     s32 mem_size = 256;
     DeviceMem mem = DeviceMem::alloc(mem_size);
     MachinePara machinePara;
- 
+
     std::chrono::milliseconds timeout;
     const std::string tag;
- 
+
     std::shared_ptr<TransportHeterogP2P> linktmp = nullptr;
     linktmp.reset(new TransportHeterogP2P(dispatcher, nullptr, machinePara, timeout));
 

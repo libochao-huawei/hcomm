@@ -27,20 +27,11 @@ using namespace hcomm;
 
 class UrmaRegedMemMgrTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "UrmaRegedMemMgrTest tests set up." << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "UrmaRegedMemMgrTest tests set up." << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "UrmaRegedMemMgrTest tests tear down." << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "UrmaRegedMemMgrTest tests tear down." << std::endl; }
 
-    virtual void SetUp()
-    {
-        std::cout << "A Test case in UrmaRegedMemMgrTest SetUP" << std::endl;
-    }
+    virtual void SetUp() { std::cout << "A Test case in UrmaRegedMemMgrTest SetUP" << std::endl; }
 
     virtual void TearDown()
     {
@@ -57,7 +48,7 @@ TEST_F(UrmaRegedMemMgrTest, ut_UbRegedMemMgr_URMA_When_Normal_Expect_ReturnIsHCC
     mem0.addr = (void*)0x100;
     mem0.size = 100;
     std::string memTag0 = "buffer0";
-    void *memHandle0 = nullptr;
+    void* memHandle0 = nullptr;
     HcclResult ret = ubRegedMemMgr.RegisterMemory(mem0, memTag0.c_str(), &memHandle0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
@@ -66,7 +57,7 @@ TEST_F(UrmaRegedMemMgrTest, ut_UbRegedMemMgr_URMA_When_Normal_Expect_ReturnIsHCC
     mem1.addr = (void*)0x100;
     mem1.size = 10;
     std::string memTag1 = "buffer0";
-    void *memHandle1 = nullptr;
+    void* memHandle1 = nullptr;
     ret = ubRegedMemMgr.RegisterMemory(mem1, memTag1.c_str(), &memHandle1);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 

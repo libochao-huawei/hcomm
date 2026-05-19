@@ -16,7 +16,8 @@ protected:
     void TearDown() override { GlobalMockObject::verify(); }
 };
 
-TEST_F(CollCommAicpuTest, Ut_DefaultStatus_IsInvalid_And_SetGet_Works) {
+TEST_F(CollCommAicpuTest, Ut_DefaultStatus_IsInvalid_And_SetGet_Works)
+{
     CollCommAicpu coll;
     // default constructed status should be INVALID as in header init
     EXPECT_EQ(coll.GetCommmStatus(), HcclCommStatus::HCCL_COMM_STATUS_INVALID);
@@ -25,14 +26,16 @@ TEST_F(CollCommAicpuTest, Ut_DefaultStatus_IsInvalid_And_SetGet_Works) {
     EXPECT_EQ(coll.GetCommmStatus(), HcclCommStatus::HCCL_COMM_STATUS_READY);
 }
 
-TEST_F(CollCommAicpuTest, Ut_Clean_EmptyUbTransportMap_Returns_SUCCESS) {
+TEST_F(CollCommAicpuTest, Ut_Clean_EmptyUbTransportMap_Returns_SUCCESS)
+{
     CollCommAicpu coll;
     // with empty ubTransportMap_ Clean should return success
     auto ret = coll.Clean();
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-TEST_F(CollCommAicpuTest, Ut_GetNsRecoveryLitePtr_DefaultNull_And_Settable) {
+TEST_F(CollCommAicpuTest, Ut_GetNsRecoveryLitePtr_DefaultNull_And_Settable)
+{
     CollCommAicpu coll;
     // default should be nullptr
     EXPECT_EQ(coll.GetNsRecoveryLitePtr(), nullptr);
@@ -43,7 +46,8 @@ TEST_F(CollCommAicpuTest, Ut_GetNsRecoveryLitePtr_DefaultNull_And_Settable) {
     EXPECT_NE(coll.GetNsRecoveryLitePtr(), nullptr);
 }
 
-TEST_F(CollCommAicpuTest, Ut_Resume_CallsProcessUrmaRes_And_ResetsNsRecoveryFlags) {
+TEST_F(CollCommAicpuTest, Ut_Resume_CallsProcessUrmaRes_And_ResetsNsRecoveryFlags)
+{
     CollCommAicpu coll;
 
     // ensure nsRecoveryLitePtr_ exists so Resume can call SetNeedClean/ResetErrorReported
@@ -51,7 +55,7 @@ TEST_F(CollCommAicpuTest, Ut_Resume_CallsProcessUrmaRes_And_ResetsNsRecoveryFlag
     coll.SetCommmStatus(HcclCommStatus::HCCL_COMM_STATUS_SUSPENDING);
 
     // Mock ProcessUrmaRes to avoid running heavy logic; return success
-    MOCKER_CPP(&CollCommAicpu::ProcessUrmaRes, HcclResult(CollCommAicpu::*)(HcclChannelUrmaRes*, bool))
+    MOCKER_CPP(&CollCommAicpu::ProcessUrmaRes, HcclResult (CollCommAicpu::*)(HcclChannelUrmaRes*, bool))
         .stubs()
         .with(any(), any())
         .will(returnValue(HCCL_SUCCESS));

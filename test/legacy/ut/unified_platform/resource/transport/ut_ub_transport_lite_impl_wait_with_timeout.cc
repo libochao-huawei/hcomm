@@ -34,10 +34,7 @@ using namespace Hccl;
 
 class UbTransportLiteImplWaitWithTimeoutTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "UbTransportLiteImplWaitWithTimeoutTest tests set up." << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "UbTransportLiteImplWaitWithTimeoutTest tests set up." << std::endl; }
 
     static void TearDownTestCase()
     {
@@ -84,20 +81,20 @@ protected:
 
     std::vector<char> GetConnUniqueId()
     {
-        u32  dieId           = 0;
-        u32  funcId          = 0;
-        u32  jettyId         = 0;
-        u32  jfcPollMode     = 0;
+        u32 dieId = 0;
+        u32 funcId = 0;
+        u32 jettyId = 0;
+        u32 jfcPollMode = 0;
         bool dwqeCacheLocked = false;
-        u64  dbAddr          = 0x100;
-        u64  sqVa            = 0x100;
-        u32  sqDepth         = 100;
-        u32  tpn             = 100;
-        u32  cqId            = 1;
-        u32  connVector      = 1;
-        u32  protocolType    = 1;
-        u32  roceVersion     = 2;
-        u32  mtu             = 1;
+        u64 dbAddr = 0x100;
+        u64 sqVa = 0x100;
+        u32 sqDepth = 100;
+        u32 tpn = 100;
+        u32 cqId = 1;
+        u32 connVector = 1;
+        u32 protocolType = 1;
+        u32 roceVersion = 2;
+        u32 mtu = 1;
         BinaryStream binaryStream;
         binaryStream << dieId;
         binaryStream << funcId;
@@ -132,8 +129,8 @@ protected:
         u32 buffeNum = 2;
 
         auto conn0 = GetConnUniqueId();
-        u32  connNum = 1;
-            
+        u32 connNum = 1;
+
         BinaryStream binaryStream;
 
         u32 type = (u32)TransportType::UB;
@@ -166,7 +163,7 @@ protected:
         return liteData;
     }
 
-    u8  mockSq[64];
+    u8 mockSq[64];
 };
 
 TEST_F(UbTransportLiteImplWaitWithTimeoutTest, UbTransportLiteImpl_WaitWithTimeout_Normal_Success)
@@ -174,17 +171,17 @@ TEST_F(UbTransportLiteImplWaitWithTimeoutTest, UbTransportLiteImpl_WaitWithTimeo
     std::vector<char> liteData = BuildUbTransportLiteUniqueId();
 
     RmaConnLite rmaConnLite;
-    RmaConnLite *connLite =  &rmaConnLite;
+    RmaConnLite* connLite = &rmaConnLite;
     MOCKER_CPP(&UbConnLiteMgr::Get).stubs().will(returnValue(connLite));
     MOCKER_CPP(&MirrorTaskManager::AddTaskInfo).stubs().with(any());
     LinkData linkData(BasePortType(PortDeploymentType::DEV_NET, ConnectProtoType::UB), 0, 1, 0, 1);
     MirrorTaskManager mirrorTaskMgr(0, &GlobalMirrorTasks::Instance(), true);
     auto transportCallback = MemTransportCallback(linkData, mirrorTaskMgr);
     MemTransportLite transportLite(liteData, transportCallback);
-    auto &ubTransportLite = *(dynamic_cast<UbTransportLiteImpl *>(transportLite.impl.get()));
+    auto& ubTransportLite = *(dynamic_cast<UbTransportLiteImpl*>(transportLite.impl.get()));
 
     u32 fakeStreamId = 1;
-    u32 fakeSqId     = 1;
+    u32 fakeSqId = 1;
     u32 fakedevPhyId = 1;
     BinaryStream liteBinaryStream;
     liteBinaryStream << fakeStreamId;
@@ -194,7 +191,7 @@ TEST_F(UbTransportLiteImplWaitWithTimeoutTest, UbTransportLiteImpl_WaitWithTimeo
     liteBinaryStream.Dump(uniqueId);
 
     StreamLite stream(uniqueId);
-    RtsqA5     rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
+    RtsqA5 rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
     stream.rtsq = std::make_unique<RtsqA5>(rtsq);
 
     u32 timeout = 1800;
@@ -206,17 +203,17 @@ TEST_F(UbTransportLiteImplWaitWithTimeoutTest, UbTransportLiteImpl_WaitWithTimeo
     std::vector<char> liteData = BuildUbTransportLiteUniqueId();
 
     RmaConnLite rmaConnLite;
-    RmaConnLite *connLite =  &rmaConnLite;
+    RmaConnLite* connLite = &rmaConnLite;
     MOCKER_CPP(&UbConnLiteMgr::Get).stubs().will(returnValue(connLite));
     MOCKER_CPP(&MirrorTaskManager::AddTaskInfo).stubs().with(any());
     LinkData linkData(BasePortType(PortDeploymentType::DEV_NET, ConnectProtoType::UB), 0, 1, 0, 1);
     MirrorTaskManager mirrorTaskMgr(0, &GlobalMirrorTasks::Instance(), true);
     auto transportCallback = MemTransportCallback(linkData, mirrorTaskMgr);
     MemTransportLite transportLite(liteData, transportCallback);
-    auto &ubTransportLite = *(dynamic_cast<UbTransportLiteImpl *>(transportLite.impl.get()));
+    auto& ubTransportLite = *(dynamic_cast<UbTransportLiteImpl*>(transportLite.impl.get()));
 
     u32 fakeStreamId = 1;
-    u32 fakeSqId     = 1;
+    u32 fakeSqId = 1;
     u32 fakedevPhyId = 1;
     BinaryStream liteBinaryStream;
     liteBinaryStream << fakeStreamId;
@@ -226,7 +223,7 @@ TEST_F(UbTransportLiteImplWaitWithTimeoutTest, UbTransportLiteImpl_WaitWithTimeo
     liteBinaryStream.Dump(uniqueId);
 
     StreamLite stream(uniqueId);
-    RtsqA5     rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
+    RtsqA5 rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
     stream.rtsq = std::make_unique<RtsqA5>(rtsq);
 
     u32 timeout = 0;
@@ -238,17 +235,17 @@ TEST_F(UbTransportLiteImplWaitWithTimeoutTest, UbTransportLiteImpl_WaitWithTimeo
     std::vector<char> liteData = BuildUbTransportLiteUniqueId();
 
     RmaConnLite rmaConnLite;
-    RmaConnLite *connLite =  &rmaConnLite;
+    RmaConnLite* connLite = &rmaConnLite;
     MOCKER_CPP(&UbConnLiteMgr::Get).stubs().will(returnValue(connLite));
     MOCKER_CPP(&MirrorTaskManager::AddTaskInfo).stubs().with(any());
     LinkData linkData(BasePortType(PortDeploymentType::DEV_NET, ConnectProtoType::UB), 0, 1, 0, 1);
     MirrorTaskManager mirrorTaskMgr(0, &GlobalMirrorTasks::Instance(), true);
     auto transportCallback = MemTransportCallback(linkData, mirrorTaskMgr);
     MemTransportLite transportLite(liteData, transportCallback);
-    auto &ubTransportLite = *(dynamic_cast<UbTransportLiteImpl *>(transportLite.impl.get()));
+    auto& ubTransportLite = *(dynamic_cast<UbTransportLiteImpl*>(transportLite.impl.get()));
 
     u32 fakeStreamId = 1;
-    u32 fakeSqId     = 1;
+    u32 fakeSqId = 1;
     u32 fakedevPhyId = 1;
     BinaryStream liteBinaryStream;
     liteBinaryStream << fakeStreamId;
@@ -258,7 +255,7 @@ TEST_F(UbTransportLiteImplWaitWithTimeoutTest, UbTransportLiteImpl_WaitWithTimeo
     liteBinaryStream.Dump(uniqueId);
 
     StreamLite stream(uniqueId);
-    RtsqA5     rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
+    RtsqA5 rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
     stream.rtsq = std::make_unique<RtsqA5>(rtsq);
 
     u32 timeout = 0xFFFFFFFF;

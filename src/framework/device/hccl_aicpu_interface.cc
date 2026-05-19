@@ -21,33 +21,32 @@
 #include "utils/aicpu_hdc_utils.h"
 
 extern "C" {
-__attribute__((visibility("default"))) uint32_t RunAicpuKfcResInitV2(void *args)
+__attribute__((visibility("default"))) uint32_t RunAicpuKfcResInitV2(void* args)
 {
     if (args == nullptr) {
         HCCL_ERROR("args is null.");
         return HCCL_E_PARA;
     }
 
-    KFCResInitTask *ctxArgs = reinterpret_cast<KFCResInitTask *>(args);
+    KFCResInitTask* ctxArgs = reinterpret_cast<KFCResInitTask*>(args);
     HCCL_INFO("RunAicpuKfcResInitV2 isCustom %u, context %#llx", ctxArgs->isCustom, ctxArgs->context);
-    if (ctxArgs->context == 0) {    // for OneSideComm
+    if (ctxArgs->context == 0) { // for OneSideComm
         CHK_RET(hrtSetWorkModeAicpu(true));
         HCCL_INFO("RunAicpuKfcResInitV2 done as context is null, set aicpu work mode");
         return HCCL_SUCCESS;
     }
-    return AicpuHcclProcess::AicpuRpcResInitV2(reinterpret_cast<HcclOpResParam *>(ctxArgs->context),
-        ctxArgs->isCustom);
+    return AicpuHcclProcess::AicpuRpcResInitV2(reinterpret_cast<HcclOpResParam*>(ctxArgs->context), ctxArgs->isCustom);
 }
 
-__attribute__((visibility("default"))) uint32_t RunAicpuRpcSrvLaunchV2(void *args)
+__attribute__((visibility("default"))) uint32_t RunAicpuRpcSrvLaunchV2(void* args)
 {
     if (args == nullptr) {
         HCCL_ERROR("RunAicpuRpcSrvLaunchV2 args is null.");
         return HCCL_E_PARA;
     }
 
-    KFCTaskComm *task = reinterpret_cast<KFCTaskComm *>(args);
-    OpTilingData *tilingData = reinterpret_cast<OpTilingData *>(reinterpret_cast<std::uintptr_t>(task) + sizeof(u64));
+    KFCTaskComm* task = reinterpret_cast<KFCTaskComm*>(args);
+    OpTilingData* tilingData = reinterpret_cast<OpTilingData*>(reinterpret_cast<std::uintptr_t>(task) + sizeof(u64));
     if (tilingData == nullptr) {
         HCCL_ERROR("RunAicpuRpcSrvLaunchV2 tilingData args is null.");
         return HCCL_E_PARA;
@@ -58,7 +57,7 @@ __attribute__((visibility("default"))) uint32_t RunAicpuRpcSrvLaunchV2(void *arg
         return AicpuHcclProcess::HandleOneSideService(tilingData);
     }
 
-    HcclOpResParam *commParam = reinterpret_cast<HcclOpResParam *>(task->context);
+    HcclOpResParam* commParam = reinterpret_cast<HcclOpResParam*>(task->context);
     if (commParam == nullptr) {
         HCCL_ERROR("RunAicpuRpcSrvLaunchV2 context args is null.");
         return HCCL_E_PARA;
@@ -66,21 +65,22 @@ __attribute__((visibility("default"))) uint32_t RunAicpuRpcSrvLaunchV2(void *arg
     HCCL_INFO("RunAicpuRpcSrvLaunchV2 KFCTask task %p, context %p, tilingData %p", task, commParam, tilingData);
 
     std::string group = commParam->hcomId;
-    hccl::HcclCommAicpu *hcclCommAicpu = AicpuHcclProcess::AicpuGetCommbyGroup(group);
+    hccl::HcclCommAicpu* hcclCommAicpu = AicpuHcclProcess::AicpuGetCommbyGroup(group);
     if (hcclCommAicpu == nullptr) {
         HCCL_ERROR("RunAicpuRpcSrvLaunchV2 get Hcclcomm error group[%s], tag[%s]", commParam->hcomId, tilingData->tag);
         return HCCL_E_INTERNAL;
     }
-    HCCL_INFO("[RunAicpuRpcSrvLaunchV2] isZeroCopy [%d], isSymmetricMemory [%d], workflowMode[%d]",
-        tilingData->isZeroCopy, tilingData->isSymmetricMemory, tilingData->workflowMode);
+    HCCL_INFO(
+        "[RunAicpuRpcSrvLaunchV2] isZeroCopy [%d], isSymmetricMemory [%d], workflowMode[%d]", tilingData->isZeroCopy,
+        tilingData->isSymmetricMemory, tilingData->workflowMode);
     hcclCommAicpu->SetZeroCopyEnable(tilingData->isZeroCopy);
     hcclCommAicpu->SetSymmetricMemoryEnable(tilingData->isSymmetricMemory);
     DfxExtendInfo* dfxInfo = hcclCommAicpu->GetDfxExtendInfo();
-    if ((dfxInfo->cqeStatus != dfx::CqeStatus::kDefault) ||
-        (dfxInfo->pollStatus == PollStatus::kStopAsException)) {
+    if ((dfxInfo->cqeStatus != dfx::CqeStatus::kDefault) || (dfxInfo->pollStatus == PollStatus::kStopAsException)) {
         AicpuHcclProcess::AicpuReleaseCommbyGroup(group);
-        HCCL_ERROR("RunAicpuRpcSrvLaunchV2 exist errors before, cqeStatus:%d, pollStatus:%d, group[%s], sqeType[%u]",
-                   dfxInfo->cqeStatus, dfxInfo->pollStatus, commParam->hcomId, dfxInfo->cqeException.sqeType);
+        HCCL_ERROR(
+            "RunAicpuRpcSrvLaunchV2 exist errors before, cqeStatus:%d, pollStatus:%d, group[%s], sqeType[%u]",
+            dfxInfo->cqeStatus, dfxInfo->pollStatus, commParam->hcomId, dfxInfo->cqeException.sqeType);
         if (dfxInfo->cqeException.sqeType == RT_STARS_SQE_TYPE_SDMA) {
             return TS_ERROR_AICPU_SDMA;
         }
@@ -117,4 +117,4 @@ __attribute__((visibility("default"))) uint32_t RunAicpuRpcSrvLaunchV2(void *arg
     HCCL_INFO("end RunAicpuRpcSrvLaunchV2");
     return 0;
 }
-}  // extern "C"
+} // extern "C"

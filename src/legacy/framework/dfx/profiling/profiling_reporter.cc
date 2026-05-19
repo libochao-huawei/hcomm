@@ -12,7 +12,7 @@
 #include "communicator_impl.h"
 namespace Hccl {
 std::array<ProfilingReporter::lastPosesMap, MAX_MODULE_DEVICE_NUM> ProfilingReporter::allLastPoses_{};
-ProfilingReporter::ProfilingReporter(MirrorTaskManager *mirrorTaskMgr, ProfilingHandler* profilingHandler) 
+ProfilingReporter::ProfilingReporter(MirrorTaskManager* mirrorTaskMgr, ProfilingHandler* profilingHandler)
 {
     HCCL_INFO("[ProfilingReporter]ProfilingReporter Construct start.");
     if (mirrorTaskMgr == nullptr || profilingHandler == nullptr) {
@@ -20,17 +20,15 @@ ProfilingReporter::ProfilingReporter(MirrorTaskManager *mirrorTaskMgr, Profiling
     }
     profilingHandler_ = profilingHandler;
     mirrorTaskMgr_ = mirrorTaskMgr;
-    mirrorTaskMgr_->RegFullyCallBack([this]() { ReportCallBackAllTasks(); });
+    mirrorTaskMgr_->RegFullyCallBack([this]() {
+        ReportCallBackAllTasks();
+    });
     HCCL_INFO("[ProfilingReporter]ProfilingReporter Construct end.");
 }
 
-ProfilingReporter::~ProfilingReporter()
-{
-}
+ProfilingReporter::~ProfilingReporter() {}
 
-void ProfilingReporter::Init() const
-{
-}
+void ProfilingReporter::Init() const {}
 
 void ProfilingReporter::ReportOp(uint64_t beginTime, bool cachedReq, bool opbased) const
 {
@@ -40,8 +38,8 @@ void ProfilingReporter::ReportOp(uint64_t beginTime, bool cachedReq, bool opbase
         THROW<InternalException>("[ProfilingReporter]ProfilingReporter reportOp failed, opInfo is nullptr.");
         return;
     }
-    uint64_t endTime   = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
-    OpType   opType    = opInfo->op_.opType;
+    uint64_t endTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
+    OpType opType = opInfo->op_.opType;
     bool isAiCpu = false;
     // 新老流程判断
     if (opInfo->isIndop_ == true) {
@@ -50,14 +48,14 @@ void ProfilingReporter::ReportOp(uint64_t beginTime, bool cachedReq, bool opbase
             isAiCpu = true;
         }
     } else {
-        CommunicatorImpl *commImp = static_cast<CommunicatorImpl *>(opInfo->comm_);
+        CommunicatorImpl* commImp = static_cast<CommunicatorImpl*>(opInfo->comm_);
         CHECK_NULLPTR(commImp, "[]commImp is nullptr!");
         isAiCpu = commImp->GetOpAiCpuTSFeatureFlag();
     }
     // 上报op信息
     opInfo->endTime_ = endTime;
     profilingHandler_->ReportHcclOp(*opInfo, cachedReq);
-    
+
     // 单算子模式涉及HOST API信息上报
     if (opbased) {
         profilingHandler_->ReportHostApi(opType, beginTime, endTime, cachedReq, isAiCpu);
@@ -82,37 +80,42 @@ void ProfilingReporter::ReportAllTasks(bool cachedReq)
     }
     auto& curLastPoses = allLastPoses_[deviceLogicId];
     if (mirrorTaskMgr_ == nullptr || profilingHandler_ == nullptr) {
-        HCCL_ERROR("[ProfilingReporter][ReportAllTasks] mirrorTaskMgr_[%p] or profilingHandler_[%p] is nullptr", mirrorTaskMgr_, profilingHandler_);
+        HCCL_ERROR(
+            "[ProfilingReporter][ReportAllTasks] mirrorTaskMgr_[%p] or profilingHandler_[%p] is nullptr",
+            mirrorTaskMgr_, profilingHandler_);
         return;
     }
     for (auto it = mirrorTaskMgr_->Begin(); it != mirrorTaskMgr_->End(); ++it) {
-        u32  streamId     = it->first;
-        Queue<std::shared_ptr<TaskInfo>> *currQueue = it->second;
+        u32 streamId = it->first;
+        Queue<std::shared_ptr<TaskInfo>>* currQueue = it->second;
         if (currQueue == nullptr || currQueue->Begin() == nullptr || currQueue->Tail() == nullptr) {
             HCCL_WARNING("[ProfilingReporter][ReportAllTasks] currQueue is nullptr, continue to next task.");
             continue;
         }
         if (*(*(currQueue->Begin())) == nullptr) {
-            HCCL_WARNING("[ProfilingReporter][ReportAllTasks] (*(*(currQueue->Begin())) is nullptr, continue to next task.");
+            HCCL_WARNING(
+                "[ProfilingReporter][ReportAllTasks] (*(*(currQueue->Begin())) is nullptr, continue to next task.");
             continue;
         }
         if (curLastPoses.find(streamId) == curLastPoses.end() && currQueue->Begin() != nullptr) { // 是首个任务
             TaskInfo task = (*(*(*currQueue->Begin())));
             HCCL_INFO("[ProfilingReporter] ReportTask, streamId = %u, taskId = %u", task.streamId_, task.taskId_);
-            profilingHandler_->ReportHcclTaskApi(task.taskParam_.taskType, task.taskParam_.beginTime,
-                                                 task.taskParam_.endTime, task.isMaster_, cachedReq, true);
+            profilingHandler_->ReportHcclTaskApi(
+                task.taskParam_.taskType, task.taskParam_.beginTime, task.taskParam_.endTime, task.isMaster_, cachedReq,
+                true);
             profilingHandler_->ReportHcclTaskDetails(task, cachedReq);
             curLastPoses[streamId] = currQueue->Begin();
         }
-        
+
         auto endPos = currQueue->Tail();
         auto iter = curLastPoses[streamId];
         ++(*(iter));
         for (; (*(iter)) != (*(currQueue->End())); ++(*(iter))) {
             TaskInfo task = (*(*(*iter)));
             HCCL_INFO("[ProfilingReporter] ReportTask, streamId = %u, taskId = %u", task.streamId_, task.taskId_);
-            profilingHandler_->ReportHcclTaskApi(task.taskParam_.taskType, task.taskParam_.beginTime,
-                                                 task.taskParam_.endTime, task.isMaster_, cachedReq, true);
+            profilingHandler_->ReportHcclTaskApi(
+                task.taskParam_.taskType, task.taskParam_.beginTime, task.taskParam_.endTime, task.isMaster_, cachedReq,
+                true);
             profilingHandler_->ReportHcclTaskDetails(task, cachedReq);
         }
         curLastPoses[streamId] = endPos;
@@ -152,18 +155,18 @@ void ProfilingReporter::UpdateProfStat(void)
     HCCL_INFO("[ProfilingReporter]ProfilingReporter UpdateProfStat end.");
 }
 
-void ProfilingReporter::CallReportMc2CommInfo(const Stream &kfcStream, Stream &stream, const std::vector<Stream *> &aicpuStreams,
-                                   const std::string &id, RankId myRank, u32 rankSize, RankId rankInParentComm) const
+void ProfilingReporter::CallReportMc2CommInfo(
+    const Stream& kfcStream, Stream& stream, const std::vector<Stream*>& aicpuStreams, const std::string& id,
+    RankId myRank, u32 rankSize, RankId rankInParentComm) const
 {
     profilingHandler_->ReportHcclMC2CommInfo(kfcStream, stream, aicpuStreams, id, myRank, rankSize, rankInParentComm);
 }
 
-void ProfilingReporter::CallReportMc2CommInfo(const u32 kfcStreamId,
-                                            const std::vector<u32> &aicpuStreamsId, const std::string &id,
-                                            RankId myRank, u32 rankSize, RankId rankInParentComm) const
+void ProfilingReporter::CallReportMc2CommInfo(
+    const u32 kfcStreamId, const std::vector<u32>& aicpuStreamsId, const std::string& id, RankId myRank, u32 rankSize,
+    RankId rankInParentComm) const
 {
-    profilingHandler_->ReportHcclMC2CommInfo(kfcStreamId, aicpuStreamsId, id,
-                                            myRank, rankSize, rankInParentComm);
+    profilingHandler_->ReportHcclMC2CommInfo(kfcStreamId, aicpuStreamsId, id, myRank, rankSize, rankInParentComm);
 }
- 
+
 } // namespace Hccl

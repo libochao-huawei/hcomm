@@ -12,28 +12,25 @@
 namespace hcomm {
 namespace CcuRep {
 
-CcuRepNop::CcuRepNop()
-{
-    type       = CcuRepType::NOP;
-    instrCount = 1;
-}
+    CcuRepNop::CcuRepNop()
+    {
+        type = CcuRepType::NOP;
+        instrCount = 1;
+    }
 
-bool CcuRepNop::Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep)
-{
-    this->instrId = instrId;
-    translated    = true;
+    bool CcuRepNop::Translate(CcuInstr*& instr, uint16_t& instrId, const TransDep& dep)
+    {
+        this->instrId = instrId;
+        translated = true;
 
-    LoadImdToXnInstr(instr++, dep.reserveXnId, 0);
+        LoadImdToXnInstr(instr++, dep.reserveXnId, 0);
 
-    instrId += instrCount;
+        instrId += instrCount;
 
-    return translated;
-}
+        return translated;
+    }
 
-std::string CcuRepNop::Describe()
-{
-    return Hccl::StringFormat("Nop");
-}
+    std::string CcuRepNop::Describe() { return Hccl::StringFormat("Nop"); }
 
 }; // namespace CcuRep
 }; // namespace hcomm

@@ -13,8 +13,8 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif  // __cplusplus
-int32_t HcommSendRequest(MsgHandle handle, const char *msgTag, const void *src, size_t sizeByte, uint32_t *msgId)
+#endif // __cplusplus
+int32_t HcommSendRequest(MsgHandle handle, const char* msgTag, const void* src, size_t sizeByte, uint32_t* msgId)
 {
     (void)handle;
     (void)msgTag;
@@ -25,7 +25,7 @@ int32_t HcommSendRequest(MsgHandle handle, const char *msgTag, const void *src, 
     return HCCL_SUCCESS;
 }
 
-int32_t HcommWaitResponse(MsgHandle handle, void *dst, size_t sizeByte, uint32_t *msgId)
+int32_t HcommWaitResponse(MsgHandle handle, void* dst, size_t sizeByte, uint32_t* msgId)
 {
     (void)handle;
     (void)dst;
@@ -43,4 +43,4 @@ int32_t HcommThreadSynchronize(ThreadHandle thread)
 }
 #ifdef __cplusplus
 }
-#endif  // __cplusplus
+#endif // __cplusplus

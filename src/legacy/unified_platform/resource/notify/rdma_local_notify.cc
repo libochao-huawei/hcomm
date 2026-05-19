@@ -14,10 +14,11 @@
 namespace Hccl {
 
 RdmaLocalNotify::RdmaLocalNotify(RdmaHandle rdmaHandle, bool devUsed)
-    : BaseLocalNotify(RmaType::RDMA, devUsed), rdmaHandle(rdmaHandle)
+    : BaseLocalNotify(RmaType::RDMA, devUsed),
+      rdmaHandle(rdmaHandle)
 {
-    notify   = std::make_unique<RtsNotify>(true);
-    u64 va   = 0;
+    notify = std::make_unique<RtsNotify>(true);
+    u64 va = 0;
     u64 size = 0;
     HrtRaGetNotifyBaseAddr(rdmaHandle, &va, &size);
     if (va > (UINT64_MAX - notify->GetOffset())) {
@@ -27,12 +28,9 @@ RdmaLocalNotify::RdmaLocalNotify(RdmaHandle rdmaHandle, bool devUsed)
     // 待修改: 利用 rdmaHandle 从 HCCP 新接口获取 key
 }
 
-void RdmaLocalNotify::Wait(const Stream &stream, u32 timeout) const
-{
-    notify->Wait(stream, timeout);
-}
+void RdmaLocalNotify::Wait(const Stream& stream, u32 timeout) const { notify->Wait(stream, timeout); }
 
-void RdmaLocalNotify::Post(const Stream &stream) const
+void RdmaLocalNotify::Post(const Stream& stream) const
 {
     HCCL_ERROR("RdmaLocalNotify does not support submit record task");
     throw NotSupportException("RdmaLocalNotify does not support submit record task");
@@ -43,5 +41,4 @@ string RdmaLocalNotify::Describe() const
     return StringFormat("RdmaLocalNotify[notify=%s, addr=0x%llx]", notify->Describe().c_str(), addr);
 }
 
-} // namesapce Hccl
-
+} // namespace Hccl

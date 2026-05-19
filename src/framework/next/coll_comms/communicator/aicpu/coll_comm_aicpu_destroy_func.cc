@@ -12,7 +12,7 @@
 #include "read_write_lock.h"
 
 namespace hccl {
-CollCommAicpuDestroyFunc &CollCommAicpuDestroyFunc::GetInstance()
+CollCommAicpuDestroyFunc& CollCommAicpuDestroyFunc::GetInstance()
 {
     static CollCommAicpuDestroyFunc func;
     return func;
@@ -33,16 +33,16 @@ void CollCommAicpuDestroyFunc::Call()
 
 HcclResult CollCommAicpuDestroyFunc::Process()
 {
-    ReadWriteLockBase &commAicpuMapMutex = AicpuIndopProcess::AicpuGetCommMutex();
+    ReadWriteLockBase& commAicpuMapMutex = AicpuIndopProcess::AicpuGetCommMutex();
     ReadWriteLock rwlock(commAicpuMapMutex);
     rwlock.readLock();
 
-    std::vector<std::pair<std::string, CollCommAicpuMgr *>> aicpuCommInfo;
+    std::vector<std::pair<std::string, CollCommAicpuMgr*>> aicpuCommInfo;
     CHK_RET(AicpuIndopProcess::AicpuGetCommAll(aicpuCommInfo));
     std::vector<std::string> destroyComm;
 
-    for (auto &commInfo : aicpuCommInfo) {
-        CollCommAicpu *aicpuComm = commInfo.second->GetCollCommAicpu();
+    for (auto& commInfo : aicpuCommInfo) {
+        CollCommAicpu* aicpuComm = commInfo.second->GetCollCommAicpu();
         CHK_PTR_NULL(aicpuComm);
 
         if (aicpuComm->GetCommmStatus() == HcclCommStatus::HCCL_COMM_STATUS_INVALID) {
@@ -56,8 +56,9 @@ HcclResult CollCommAicpuDestroyFunc::Process()
         }
         destroyComm.push_back(aicpuComm->GetIdentifier());
         CHK_RET(aicpuComm->BackGroundSetStatus(Hccl::KfcStatus::DESTROY_AICPU_COMM_DONE));
-        HCCL_RUN_INFO("[%s]group[%s] Recv DESTROY_AICPU_COMM cmd and set DESTROY_AICPU_COMM_DONE",
-            __func__, aicpuComm->GetIdentifier().c_str());
+        HCCL_RUN_INFO(
+            "[%s]group[%s] Recv DESTROY_AICPU_COMM cmd and set DESTROY_AICPU_COMM_DONE", __func__,
+            aicpuComm->GetIdentifier().c_str());
     }
     rwlock.readUnlock();
 
@@ -66,4 +67,4 @@ HcclResult CollCommAicpuDestroyFunc::Process()
     }
     return HCCL_SUCCESS;
 }
-}  // namespace hccl
+} // namespace hccl

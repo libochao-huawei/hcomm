@@ -13,15 +13,9 @@ using namespace hccl;
 
 class MyRankTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "MyRankTest tests set up." << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "MyRankTest tests set up." << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "MyRankTest tests tear down." << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "MyRankTest tests tear down." << std::endl; }
 
     virtual void SetUp()
     {
@@ -38,13 +32,15 @@ protected:
         std::cout << "A Test case in MyRankTest TearDown" << std::endl;
     }
 
-    void CreateCclBuffer(HcclMem& cclBuffer) {
+    void CreateCclBuffer(HcclMem& cclBuffer)
+    {
         cclBuffer.addr = (void*)0xab;
         cclBuffer.size = 1024;
         cclBuffer.type = HCCL_MEM_TYPE_DEVICE;
     }
 
-    void CreateEndpointDesc(EndpointDesc& ep, CommProtocol protocol, const std::string& ip) {
+    void CreateEndpointDesc(EndpointDesc& ep, CommProtocol protocol, const std::string& ip)
+    {
         ep.protocol = protocol;
         ep.commAddr.type = COMM_ADDR_TYPE_IP_V4;
         ep.commAddr.addr = Hccl::IpAddress(ip).GetBinaryAddress().addr;
@@ -71,7 +67,10 @@ protected:
 TEST_F(MyRankTest, Ut_When_QueryListenPort_Listen_Port_Expect_SUCCESS)
 {
     uint32_t devPort = 60001;
-    MOCKER_CPP(&Hccl::IRankGraph::GetDevicePort).stubs().with(any(), outBoundP(&devPort)).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&Hccl::IRankGraph::GetDevicePort)
+        .stubs()
+        .with(any(), outBoundP(&devPort))
+        .will(returnValue(HCCL_SUCCESS));
 
     aclrtBinHandle binHandle;
     CommConfig config;
@@ -103,7 +102,10 @@ TEST_F(MyRankTest, Ut_When_QueryListenPort_Listen_Port_Expect_SUCCESS)
 TEST_F(MyRankTest, Ut_When_QueryListenPort_InValid_Port_Expect_E_PARA)
 {
     uint32_t devPort = 1919000;
-    MOCKER_CPP(&Hccl::IRankGraph::GetDevicePort).stubs().with(any(), outBoundP(&devPort)).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&Hccl::IRankGraph::GetDevicePort)
+        .stubs()
+        .with(any(), outBoundP(&devPort))
+        .will(returnValue(HCCL_SUCCESS));
 
     aclrtBinHandle binHandle;
     CommConfig config;
@@ -127,13 +129,14 @@ TEST_F(MyRankTest, Ut_When_BatchCreateChannels_Expect_SUCCESS)
 {
     setenv("HCCL_DFS_CONFIG", "task_exception:on", 1);
     uint32_t devPort = 60001;
-    MOCKER_CPP(&Hccl::IRankGraph::GetDevicePort).stubs().with(any(), outBoundP(&devPort)).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&Hccl::IRankGraph::GetDevicePort)
+        .stubs()
+        .with(any(), outBoundP(&devPort))
+        .will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&Hccl::IRankGraph::GetDeviceId).stubs().with(any()).will(returnValue(static_cast<int>(HCCL_SUCCESS)));
     MockerFuncs();
     ChannelHandle channelHandle = 0xab;
-    MOCKER(hcomm::ChannelProcess::CreateChannelsLoop)
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hcomm::ChannelProcess::CreateChannelsLoop).stubs().will(returnValue(HCCL_SUCCESS));
 
     aclrtBinHandle binHandle;
     CommConfig config;
@@ -141,7 +144,7 @@ TEST_F(MyRankTest, Ut_When_BatchCreateChannels_Expect_SUCCESS)
     void* rankGraphPtr = (void*)0x114514;
     std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
     MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get(), rankIpPortMap);
-    
+
     HcclMem cclBuffer;
     CreateCclBuffer(cclBuffer);
     EXPECT_EQ(myRank.Init(cclBuffer, 2, 2), HCCL_SUCCESS);
@@ -182,18 +185,24 @@ TEST_F(MyRankTest, Ut_When_BatchCreateChannels_Expect_SUCCESS)
     }
     EXPECT_EQ(myRank.BatchCreateSockets(channelDesc, 1, "test", hcommDesc), HCCL_SUCCESS);
     std::vector<ChannelHandle> hostChannelHandles(3);
-    ChannelHandle *hostChannelHandleList = hostChannelHandles.data();
-    EXPECT_EQ(myRank.BatchCreateChannels(COMM_ENGINE_AICPU_TS, channelDesc, 1, hcommDesc, hostChannelHandleList), HCCL_SUCCESS);
+    ChannelHandle* hostChannelHandleList = hostChannelHandles.data();
+    EXPECT_EQ(
+        myRank.BatchCreateChannels(COMM_ENGINE_AICPU_TS, channelDesc, 1, hcommDesc, hostChannelHandleList),
+        HCCL_SUCCESS);
     EXPECT_EQ(myRank.newChannels_.size(), 1);
     EXPECT_EQ(myRank.newChannels_[0], std::make_pair(channelIdx0, RmtEp1reuseIdx0));
 
     EXPECT_EQ(myRank.BatchCreateSockets(channelDesc, 2, "test", hcommDesc), HCCL_SUCCESS);
-    EXPECT_EQ(myRank.BatchCreateChannels(COMM_ENGINE_AICPU_TS, channelDesc, 2, hcommDesc, hostChannelHandleList), HCCL_SUCCESS);
+    EXPECT_EQ(
+        myRank.BatchCreateChannels(COMM_ENGINE_AICPU_TS, channelDesc, 2, hcommDesc, hostChannelHandleList),
+        HCCL_SUCCESS);
     EXPECT_EQ(myRank.newChannels_.size(), 1);
     EXPECT_EQ(myRank.newChannels_[0], std::make_pair(channelIdx1, RmtEp1reuseIdx1));
 
     EXPECT_EQ(myRank.BatchCreateSockets(channelDesc, 3, "test", hcommDesc), HCCL_SUCCESS);
-    EXPECT_EQ(myRank.BatchCreateChannels(COMM_ENGINE_AICPU_TS, channelDesc, 3, hcommDesc, hostChannelHandleList), HCCL_SUCCESS);
+    EXPECT_EQ(
+        myRank.BatchCreateChannels(COMM_ENGINE_AICPU_TS, channelDesc, 3, hcommDesc, hostChannelHandleList),
+        HCCL_SUCCESS);
     EXPECT_EQ(myRank.newChannels_.size(), 1);
     EXPECT_EQ(myRank.newChannels_[0], std::make_pair(channelIdx2, RmtEp2reuseIdx0));
 
@@ -217,7 +226,7 @@ TEST_F(MyRankTest, Ut_Init_When_Default_Mode_Expect_Set_By_Env)
     void* rankGraphPtr = (void*)0x114514;
     std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
     MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get(), rankIpPortMap);
-    
+
     HcclMem cclBuffer;
     CreateCclBuffer(cclBuffer);
 
@@ -239,7 +248,7 @@ TEST_F(MyRankTest, Ut_Init_When_Ccu_Driver_Fail_Expect_Fallback_Aicpu)
     void* rankGraphPtr = (void*)0x114514;
     std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
     MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get(), rankIpPortMap);
-    
+
     HcclMem cclBuffer;
     CreateCclBuffer(cclBuffer);
 
@@ -253,7 +262,8 @@ TEST_F(MyRankTest, Ut_Init_When_Ccu_Driver_Fail_Expect_Fallback_Aicpu)
 TEST_F(MyRankTest, Ut_Init_When_Ccu_Ms_Insufficient_Expect_Fallback_Sched)
 {
     setenv("HCCL_CCU_CUSTOM_OP_MODE", "1", 1);
-    MOCKER_CPP(&hcomm::CcuResContainer::ChangeMode).stubs()
+    MOCKER_CPP(&hcomm::CcuResContainer::ChangeMode)
+        .stubs()
         .will(returnValue(HCCL_E_UNAVAIL))
         .then(returnValue(HCCL_SUCCESS));
 
@@ -263,7 +273,7 @@ TEST_F(MyRankTest, Ut_Init_When_Ccu_Ms_Insufficient_Expect_Fallback_Sched)
     void* rankGraphPtr = (void*)0x114514;
     std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
     MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get(), rankIpPortMap);
-    
+
     HcclMem cclBuffer;
     CreateCclBuffer(cclBuffer);
 
@@ -285,7 +295,7 @@ TEST_F(MyRankTest, Ut_Init_When_Ccu_Ms_And_Sched_Insufficient_Expect_Fallback_Ai
     void* rankGraphPtr = (void*)0x114514;
     std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
     MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get(), rankIpPortMap);
-    
+
     HcclMem cclBuffer;
     CreateCclBuffer(cclBuffer);
 
@@ -307,7 +317,7 @@ TEST_F(MyRankTest, Ut_Init_When_Resource_Fail_Expect_Fail)
     void* rankGraphPtr = (void*)0x114514;
     std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
     MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get(), rankIpPortMap);
-    
+
     HcclMem cclBuffer;
     CreateCclBuffer(cclBuffer);
 
@@ -320,11 +330,13 @@ TEST_F(MyRankTest, Ut_Init_When_Resource_Fail_Expect_Fail)
 TEST_F(MyRankTest, St_BatchCreateChannels_When_Resource_fallback_Expect_Return_HCCL_E_UNAVAIL)
 {
     uint32_t devPort = 60001;
-    MOCKER_CPP(&Hccl::IRankGraph::GetDevicePort).stubs().with(any(), outBoundP(&devPort)).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&Hccl::IRankGraph::GetDevicePort)
+        .stubs()
+        .with(any(), outBoundP(&devPort))
+        .will(returnValue(HCCL_SUCCESS));
     MOCKER(HcommEndpointStartListen).stubs().with(any()).will(returnValue(static_cast<int>(HCCL_SUCCESS)));
     MOCKER(HcommChannelDestroy).stubs().with(any(), any()).will(returnValue(static_cast<int>(HCCL_SUCCESS)));
     MockerFuncs();
-    
 
     aclrtBinHandle binHandle;
     CommConfig config;
@@ -332,7 +344,7 @@ TEST_F(MyRankTest, St_BatchCreateChannels_When_Resource_fallback_Expect_Return_H
     void* rankGraphPtr = (void*)0x114514;
     std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
     MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get(), rankIpPortMap);
-    
+
     HcclMem cclBuffer;
     CreateCclBuffer(cclBuffer);
     EXPECT_EQ(myRank.Init(cclBuffer, 5, 2), HCCL_SUCCESS);
@@ -369,8 +381,9 @@ TEST_F(MyRankTest, St_BatchCreateChannels_When_Resource_fallback_Expect_Return_H
         .then(returnValue(static_cast<int>(HCCL_E_UNAVAIL)));
     std::vector<HcommChannelDesc> hcommDesc(5);
     std::vector<ChannelHandle> hostChannelHandles(5);
-    ChannelHandle *hostChannelHandleList = hostChannelHandles.data();
-    EXPECT_EQ(myRank.BatchCreateChannels(COMM_ENGINE_CCU, channelDesc, 5, hcommDesc, hostChannelHandleList), HCCL_E_UNAVAIL);
+    ChannelHandle* hostChannelHandleList = hostChannelHandles.data();
+    EXPECT_EQ(
+        myRank.BatchCreateChannels(COMM_ENGINE_CCU, channelDesc, 5, hcommDesc, hostChannelHandleList), HCCL_E_UNAVAIL);
     EXPECT_EQ(myRank.newChannels_.size(), 0);
 
     // 获取到rmtEp1的endpointPair
@@ -404,7 +417,10 @@ TEST_F(MyRankTest, St_BatchCreateChannels_When_Resource_fallback_Expect_Return_H
 TEST_F(MyRankTest, St_BatchCreateChannels_Multi_Times_When_fallback_Expect_Return_HCCL_E_UNAVAIL)
 {
     uint32_t devPort = 60001;
-    MOCKER_CPP(&Hccl::IRankGraph::GetDevicePort).stubs().with(any(), outBoundP(&devPort)).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&Hccl::IRankGraph::GetDevicePort)
+        .stubs()
+        .with(any(), outBoundP(&devPort))
+        .will(returnValue(HCCL_SUCCESS));
     MOCKER(HcommEndpointStartListen).stubs().with(any()).will(returnValue(static_cast<int>(HCCL_SUCCESS)));
     MOCKER(HcommChannelDestroy).stubs().with(any(), any()).will(returnValue(static_cast<int>(HCCL_SUCCESS)));
     MockerFuncs();
@@ -415,7 +431,7 @@ TEST_F(MyRankTest, St_BatchCreateChannels_Multi_Times_When_fallback_Expect_Retur
     void* rankGraphPtr = (void*)0x114514;
     std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
     MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get(), rankIpPortMap);
-    
+
     HcclMem cclBuffer;
     CreateCclBuffer(cclBuffer);
     EXPECT_EQ(myRank.Init(cclBuffer, 5, 2), HCCL_SUCCESS);
@@ -448,16 +464,17 @@ TEST_F(MyRankTest, St_BatchCreateChannels_Multi_Times_When_fallback_Expect_Retur
     // 需要只清理到rmtEp2的第二个channel
     MOCKER(HcommCollectiveChannelCreate)
         .stubs()
-        .will(returnValue(static_cast<int>(HCCL_SUCCESS))) // 第一次调用，到rmtEp1的channel1成功
-        .then(returnValue(static_cast<int>(HCCL_SUCCESS))) // 第一次调用，到rmtEp1的channel2成功
-        .then(returnValue(static_cast<int>(HCCL_SUCCESS))) // 第一次调用，到rmtEp2的channel1成功
-        .then(returnValue(static_cast<int>(HCCL_SUCCESS))) // 第二次调用，到rmtEp2的channel2成功
+        .will(returnValue(static_cast<int>(HCCL_SUCCESS)))    // 第一次调用，到rmtEp1的channel1成功
+        .then(returnValue(static_cast<int>(HCCL_SUCCESS)))    // 第一次调用，到rmtEp1的channel2成功
+        .then(returnValue(static_cast<int>(HCCL_SUCCESS)))    // 第一次调用，到rmtEp2的channel1成功
+        .then(returnValue(static_cast<int>(HCCL_SUCCESS)))    // 第二次调用，到rmtEp2的channel2成功
         .then(returnValue(static_cast<int>(HCCL_E_UNAVAIL))); // 第二次调用，到rmtEp2的channel3失败
     std::vector<HcommChannelDesc> hcommDesc(5);
     std::vector<ChannelHandle> hostChannelHandles(5);
-    ChannelHandle *hostChannelHandleList = hostChannelHandles.data();
+    ChannelHandle* hostChannelHandleList = hostChannelHandles.data();
     // 第一次调用BatchCreateChannels成功，创建3个channel
-    EXPECT_EQ(myRank.BatchCreateChannels(COMM_ENGINE_CCU, channelDesc, 3, hcommDesc, hostChannelHandleList), HCCL_SUCCESS);
+    EXPECT_EQ(
+        myRank.BatchCreateChannels(COMM_ENGINE_CCU, channelDesc, 3, hcommDesc, hostChannelHandleList), HCCL_SUCCESS);
     EXPECT_EQ(myRank.newChannels_.size(), 3);
     u32 channelIdx0 = 0u;
     u32 channelIdx1 = 1u;
@@ -484,7 +501,7 @@ TEST_F(MyRankTest, St_BatchCreateChannels_Multi_Times_When_fallback_Expect_Retur
     hcomm::EndpointPair* endpointPair2 = nullptr;
     myRank.rankPairMgr_->Get(rankIdPair2, rankPair2);
     rankPair2->GetEndpointPair(endpointDescPair2, endpointPair2);
-    
+
     // 期望到rmtEp1的channelHandle有两个channel
     EXPECT_EQ(endpointPair1->channelHandles_.size(), 1);
     EXPECT_NE(endpointPair1->channelHandles_.find(COMM_ENGINE_CCU), endpointPair1->channelHandles_.end());
@@ -496,7 +513,8 @@ TEST_F(MyRankTest, St_BatchCreateChannels_Multi_Times_When_fallback_Expect_Retur
     EXPECT_EQ(endpointPair2->channelHandles_[COMM_ENGINE_CCU].size(), 1);
 
     // 第二次调用BatchCreateChannels，创建第5个channel失败
-    EXPECT_EQ(myRank.BatchCreateChannels(COMM_ENGINE_CCU, channelDesc, 5, hcommDesc, hostChannelHandleList), HCCL_E_UNAVAIL);
+    EXPECT_EQ(
+        myRank.BatchCreateChannels(COMM_ENGINE_CCU, channelDesc, 5, hcommDesc, hostChannelHandleList), HCCL_E_UNAVAIL);
     EXPECT_EQ(myRank.newChannels_.size(), 0);
 
     // 期望到rmtEp1的channelHandle不被清理，保持两个channel
@@ -512,9 +530,7 @@ TEST_F(MyRankTest, St_BatchCreateChannels_Multi_Times_When_fallback_Expect_Retur
 
 TEST_F(MyRankTest, Ut_When_ChannelGetRemoteMem_Normal_Expect_SUCCESS)
 {
-    MOCKER(hcomm::ChannelProcess::ChannelGetUserRemoteMem)
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hcomm::ChannelProcess::ChannelGetUserRemoteMem).stubs().will(returnValue(HCCL_SUCCESS));
 
     aclrtBinHandle binHandle;
     CommConfig config;
@@ -592,7 +608,7 @@ TEST_F(MyRankTest, ut_SetMemHandles_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
     CommMemInfo memInfo = CommMemInfo{};
     std::vector<CommMemInfo*> mems{};
     mems.push_back(&memInfo);
-    void **memHandles = reinterpret_cast<void**>(mems.data());
+    void** memHandles = reinterpret_cast<void**>(mems.data());
     std::vector<MemHandle> memHandleVec{};
     memHandleVec.emplace_back((void*)0x100);
     memHandleVec.emplace_back((void*)0x101);

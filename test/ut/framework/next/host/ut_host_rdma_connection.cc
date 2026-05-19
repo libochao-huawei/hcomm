@@ -12,21 +12,15 @@
 
 class HostRdmaConnectionTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "HostRdmaConnectionTest tests set up." << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "HostRdmaConnectionTest tests set up." << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "HostRdmaConnectionTest tests tear down." << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "HostRdmaConnectionTest tests tear down." << std::endl; }
 
     virtual void SetUp()
     {
         std::cout << "A Test case in HostRdmaConnectionTest SetUP" << std::endl;
-        fakeSocket = new Hccl::Socket(nullptr, localIp, listenPort, remoteIp, tag, Hccl::SocketRole::SERVER, 
-                                        Hccl::NicType::HOST_NIC_TYPE);
+        fakeSocket = new Hccl::Socket(
+            nullptr, localIp, listenPort, remoteIp, tag, Hccl::SocketRole::SERVER, Hccl::NicType::HOST_NIC_TYPE);
         MOCKER(Hccl::HrtGetRaQpStatus).stubs().with(any()).will(returnValue(1));
         MOCKER(Hccl::HrtRaDestroyQpWithCq).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
         MOCKER(RaCreateCompChannel).stubs().with(any(), any()).will(returnValue(0));
@@ -39,22 +33,21 @@ protected:
         delete fakeSocket;
         std::cout << "A Test case in HostRdmaConnectionTest TearDown" << std::endl;
     }
-    Hccl::Socket     *fakeSocket;
-    Hccl::IpAddress   localIp;
-    Hccl::IpAddress   remoteIp;
-    u32         listenPort = 100;
-    std::string tag        = "test";
+    Hccl::Socket* fakeSocket;
+    Hccl::IpAddress localIp;
+    Hccl::IpAddress remoteIp;
+    u32 listenPort = 100;
+    std::string tag = "test";
 };
 
 TEST_F(HostRdmaConnectionTest, Ut_When_Normal_Call_Expect_Status_Consisitent)
 {
     DevType devType = DevType::DEV_TYPE_950;
-    MOCKER(hrtGetDeviceType).stubs()
-                            .with(outBound(devType))
-                            .will(returnValue(HCCL_SUCCESS));
-    MOCKER(Hccl::HrtRaCreateQpWithCq).stubs()
-                                .with(any(), any(), any(), any(), any(), any(), any())
-                                .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtGetDeviceType).stubs().with(outBound(devType)).will(returnValue(HCCL_SUCCESS));
+    MOCKER(Hccl::HrtRaCreateQpWithCq)
+        .stubs()
+        .with(any(), any(), any(), any(), any(), any(), any())
+        .will(returnValue(HCCL_SUCCESS));
     std::cout << "start" << std::endl;
     // socket 打桩
     MOCKER_CPP(&Hccl::Socket::GetStatus).stubs().will(returnValue((Hccl::SocketStatus)Hccl::SocketStatus::OK));
@@ -63,11 +56,14 @@ TEST_F(HostRdmaConnectionTest, Ut_When_Normal_Call_Expect_Status_Consisitent)
         .stubs()
         .with(outBoundP(&targetChipVer[0], sizeof(targetChipVer)), any())
         .will(returnValue(RT_ERROR_NONE));
-    QpHandle fakeQpHandle = (void *)0x1000000;
-    MOCKER(Hccl::HrtRaQpCreate, QpHandle(*)(RdmaHandle, int, int)).stubs().with(any(), any(), any()).will(returnValue(fakeQpHandle));
+    QpHandle fakeQpHandle = (void*)0x1000000;
+    MOCKER(Hccl::HrtRaQpCreate, QpHandle (*)(RdmaHandle, int, int))
+        .stubs()
+        .with(any(), any(), any())
+        .will(returnValue(fakeQpHandle));
 
-    RdmaHandle   rdmaHandle = (void *)0x1000000;
-    std::string  tag = "test";
+    RdmaHandle rdmaHandle = (void*)0x1000000;
+    std::string tag = "test";
 
     // construct HostRdmaConnection
     std::cout << "construct" << std::endl;
@@ -113,16 +109,15 @@ TEST_F(HostRdmaConnectionTest, Ut_When_Normal_Call_Expect_Status_Consisitent)
 TEST_F(HostRdmaConnectionTest, Ut_When_DevType_NotExpected_Expect_ERROR)
 {
     DevType devType = DevType::DEV_TYPE_910_93;
-    MOCKER(hrtGetDeviceType).stubs()
-                            .with(outBound(devType))
-                            .will(returnValue(HCCL_SUCCESS));
-    MOCKER(Hccl::HrtRaCreateQpWithCq).stubs()
-                                .with(any(), any(), any(), any(), any(), any(), any())
-                                .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtGetDeviceType).stubs().with(outBound(devType)).will(returnValue(HCCL_SUCCESS));
+    MOCKER(Hccl::HrtRaCreateQpWithCq)
+        .stubs()
+        .with(any(), any(), any(), any(), any(), any(), any())
+        .will(returnValue(HCCL_SUCCESS));
     std::cout << "start" << std::endl;
 
-    RdmaHandle   rdmaHandle = (void *)0x1000000;
-    std::string  tag = "test";
+    RdmaHandle rdmaHandle = (void*)0x1000000;
+    std::string tag = "test";
 
     // construct HostRdmaConnection
     std::cout << "construct" << std::endl;
@@ -141,9 +136,7 @@ TEST_F(HostRdmaConnectionTest, Ut_When_DevType_NotExpected_Expect_ERROR)
 TEST_F(HostRdmaConnectionTest, Ut_When_Socket_TIMEOUT_Expect_ERROR)
 {
     DevType devType = DevType::DEV_TYPE_950;
-    MOCKER(hrtGetDeviceType).stubs()
-                            .with(outBound(devType))
-                            .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtGetDeviceType).stubs().with(outBound(devType)).will(returnValue(HCCL_SUCCESS));
     std::cout << "start" << std::endl;
     // socket 打桩
     MOCKER_CPP(&Hccl::Socket::GetStatus).stubs().will(returnValue((Hccl::SocketStatus)Hccl::SocketStatus::TIMEOUT));
@@ -153,8 +146,8 @@ TEST_F(HostRdmaConnectionTest, Ut_When_Socket_TIMEOUT_Expect_ERROR)
         .with(outBoundP(&targetChipVer[0], sizeof(targetChipVer)), any())
         .will(returnValue(RT_ERROR_NONE));
 
-    RdmaHandle   rdmaHandle = (void *)0x1000000;
-    std::string  tag = "test";
+    RdmaHandle rdmaHandle = (void*)0x1000000;
+    std::string tag = "test";
 
     // construct HostRdmaConnection
     std::cout << "construct" << std::endl;
@@ -179,9 +172,7 @@ TEST_F(HostRdmaConnectionTest, Ut_When_Socket_TIMEOUT_Expect_ERROR)
 TEST_F(HostRdmaConnectionTest, Ut_When_Call_GetStatus_Expect_Return_Ready)
 {
     DevType devType = DevType::DEV_TYPE_950;
-    MOCKER(hrtGetDeviceType).stubs()
-                            .with(outBound(devType))
-                            .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtGetDeviceType).stubs().with(outBound(devType)).will(returnValue(HCCL_SUCCESS));
     std::cout << "start" << std::endl;
     // socket 打桩
     MOCKER_CPP(&Hccl::Socket::GetStatus).stubs().will(returnValue((Hccl::SocketStatus)Hccl::SocketStatus::OK));
@@ -190,12 +181,13 @@ TEST_F(HostRdmaConnectionTest, Ut_When_Call_GetStatus_Expect_Return_Ready)
         .stubs()
         .with(outBoundP(&targetChipVer[0], sizeof(targetChipVer)), any())
         .will(returnValue(RT_ERROR_NONE));
-    MOCKER(Hccl::HrtRaCreateQpWithCq).stubs()
-                                .with(any(), any(), any(), any(), any(), any(), any())
-                                .will(returnValue(HCCL_E_INTERNAL));
+    MOCKER(Hccl::HrtRaCreateQpWithCq)
+        .stubs()
+        .with(any(), any(), any(), any(), any(), any(), any())
+        .will(returnValue(HCCL_E_INTERNAL));
 
-    RdmaHandle   rdmaHandle = (void *)0x1000000;
-    std::string  tag = "test";
+    RdmaHandle rdmaHandle = (void*)0x1000000;
+    std::string tag = "test";
 
     // construct HostRdmaConnection
     std::cout << "construct" << std::endl;
@@ -218,20 +210,15 @@ TEST_F(HostRdmaConnectionTest, Ut_When_Call_GetStatus_Expect_Return_Ready)
 
 TEST_F(HostRdmaConnectionTest, Ut_RaSetQpAttr_Qos_TimeOut_RetryCnt_Success)
 {
-    MOCKER(RaSetQpAttrQos).stubs()
-                          .with(any(), any())
-                          .will(returnValue(0));
-    MOCKER(RaSetQpAttrTimeout).stubs()
-                              .with(any(), any())
-                              .will(returnValue(0));
-    MOCKER(RaSetQpAttrRetryCnt).stubs()
-                               .with(any(), any())
-                               .will(returnValue(0));
-    MOCKER(Hccl::HrtRaCreateQpWithCq).stubs()
-                                     .with(any(), any(), any(), any(), any(), any(), any())
-                                     .will(returnValue(HCCL_SUCCESS));
+    MOCKER(RaSetQpAttrQos).stubs().with(any(), any()).will(returnValue(0));
+    MOCKER(RaSetQpAttrTimeout).stubs().with(any(), any()).will(returnValue(0));
+    MOCKER(RaSetQpAttrRetryCnt).stubs().with(any(), any()).will(returnValue(0));
+    MOCKER(Hccl::HrtRaCreateQpWithCq)
+        .stubs()
+        .with(any(), any(), any(), any(), any(), any(), any())
+        .will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&Hccl::Socket::GetStatus).stubs().will(returnValue((Hccl::SocketStatus)Hccl::SocketStatus::OK));
-    RdmaHandle rdmaHandle = (void *)0x1000000;
+    RdmaHandle rdmaHandle = (void*)0x1000000;
     hcomm::HostRdmaConnection conn(fakeSocket, rdmaHandle);
     conn.Init();
     conn.qpInfo_.trafficClass = 1;
@@ -244,20 +231,15 @@ TEST_F(HostRdmaConnectionTest, Ut_RaSetQpAttr_Qos_TimeOut_RetryCnt_Success)
 
 TEST_F(HostRdmaConnectionTest, Ut_RaSetQpAttrQos_Fail)
 {
-    MOCKER(RaSetQpAttrQos).stubs()
-                          .with(any(), any())
-                          .will(returnValue(-1));
-    MOCKER(RaSetQpAttrTimeout).stubs()
-                              .with(any(), any())
-                              .will(returnValue(0));
-    MOCKER(RaSetQpAttrRetryCnt).stubs()
-                               .with(any(), any())
-                               .will(returnValue(0));
-    MOCKER(Hccl::HrtRaCreateQpWithCq).stubs()
-                                     .with(any(), any(), any(), any(), any(), any(), any())
-                                     .will(returnValue(HCCL_SUCCESS));
+    MOCKER(RaSetQpAttrQos).stubs().with(any(), any()).will(returnValue(-1));
+    MOCKER(RaSetQpAttrTimeout).stubs().with(any(), any()).will(returnValue(0));
+    MOCKER(RaSetQpAttrRetryCnt).stubs().with(any(), any()).will(returnValue(0));
+    MOCKER(Hccl::HrtRaCreateQpWithCq)
+        .stubs()
+        .with(any(), any(), any(), any(), any(), any(), any())
+        .will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&Hccl::Socket::GetStatus).stubs().will(returnValue((Hccl::SocketStatus)Hccl::SocketStatus::OK));
-    RdmaHandle rdmaHandle = (void *)0x1000000;
+    RdmaHandle rdmaHandle = (void*)0x1000000;
     hcomm::HostRdmaConnection conn(fakeSocket, rdmaHandle);
     conn.Init();
     conn.qpInfo_.trafficClass = 1;
@@ -270,20 +252,15 @@ TEST_F(HostRdmaConnectionTest, Ut_RaSetQpAttrQos_Fail)
 
 TEST_F(HostRdmaConnectionTest, Ut_RaSetQpAttrTimeout_Fail)
 {
-    MOCKER(RaSetQpAttrQos).stubs()
-                          .with(any(), any())
-                          .will(returnValue(0));
-    MOCKER(RaSetQpAttrTimeout).stubs()
-                              .with(any(), any())
-                              .will(returnValue(-1));
-    MOCKER(RaSetQpAttrRetryCnt).stubs()
-                               .with(any(), any())
-                               .will(returnValue(0));
-    MOCKER(Hccl::HrtRaCreateQpWithCq).stubs()
-                                     .with(any(), any(), any(), any(), any(), any(), any())
-                                     .will(returnValue(HCCL_SUCCESS));
+    MOCKER(RaSetQpAttrQos).stubs().with(any(), any()).will(returnValue(0));
+    MOCKER(RaSetQpAttrTimeout).stubs().with(any(), any()).will(returnValue(-1));
+    MOCKER(RaSetQpAttrRetryCnt).stubs().with(any(), any()).will(returnValue(0));
+    MOCKER(Hccl::HrtRaCreateQpWithCq)
+        .stubs()
+        .with(any(), any(), any(), any(), any(), any(), any())
+        .will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&Hccl::Socket::GetStatus).stubs().will(returnValue((Hccl::SocketStatus)Hccl::SocketStatus::OK));
-    RdmaHandle rdmaHandle = (void *)0x1000000;
+    RdmaHandle rdmaHandle = (void*)0x1000000;
     hcomm::HostRdmaConnection conn(fakeSocket, rdmaHandle);
     conn.Init();
     conn.qpInfo_.trafficClass = 1;
@@ -296,20 +273,15 @@ TEST_F(HostRdmaConnectionTest, Ut_RaSetQpAttrTimeout_Fail)
 
 TEST_F(HostRdmaConnectionTest, Ut_RaSetQpAttrRetryCnt_Fail)
 {
-    MOCKER(RaSetQpAttrQos).stubs()
-                          .with(any(), any())
-                          .will(returnValue(0));
-    MOCKER(RaSetQpAttrTimeout).stubs()
-                              .with(any(), any())
-                              .will(returnValue(0));
-    MOCKER(RaSetQpAttrRetryCnt).stubs()
-                               .with(any(), any())
-                               .will(returnValue(-1));
-    MOCKER(Hccl::HrtRaCreateQpWithCq).stubs()
-                                     .with(any(), any(), any(), any(), any(), any(), any())
-                                     .will(returnValue(HCCL_SUCCESS));
+    MOCKER(RaSetQpAttrQos).stubs().with(any(), any()).will(returnValue(0));
+    MOCKER(RaSetQpAttrTimeout).stubs().with(any(), any()).will(returnValue(0));
+    MOCKER(RaSetQpAttrRetryCnt).stubs().with(any(), any()).will(returnValue(-1));
+    MOCKER(Hccl::HrtRaCreateQpWithCq)
+        .stubs()
+        .with(any(), any(), any(), any(), any(), any(), any())
+        .will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&Hccl::Socket::GetStatus).stubs().will(returnValue((Hccl::SocketStatus)Hccl::SocketStatus::OK));
-    RdmaHandle rdmaHandle = (void *)0x1000000;
+    RdmaHandle rdmaHandle = (void*)0x1000000;
     hcomm::HostRdmaConnection conn(fakeSocket, rdmaHandle);
     conn.Init();
     conn.qpInfo_.trafficClass = 1;

@@ -29,12 +29,16 @@ LocalRdmaRmaBuffer::~LocalRdmaRmaBuffer()
 HcclResult LocalRdmaRmaBuffer::Init()
 {
     CHK_PTR_NULL(addr);
-    CHK_PRT_RET((memType >= RmaMemType::TYPE_NUM),
+    CHK_PRT_RET(
+        (memType >= RmaMemType::TYPE_NUM),
         HCCL_ERROR("[LocalRdmaRmaBuffer][Init]RmaMemType[%d] is invalid.", static_cast<int>(memType)), HCCL_E_PARA);
-    CHK_PRT_RET((size == 0 || (memType == RmaMemType::HOST && size >= HOST_MEM_MAX_COUNT) ||
-        (memType == RmaMemType::DEVICE && size >= DEVICE_MEM_MAX_COUNT)),
-        HCCL_ERROR("[LocalRdmaRmaBuffer][Init]memory size[%llu] should be greater than 0 and less than [%llu].",
-        size, (memType == RmaMemType::DEVICE ? DEVICE_MEM_MAX_COUNT : HOST_MEM_MAX_COUNT)), HCCL_E_PARA);
+    CHK_PRT_RET(
+        (size == 0 || (memType == RmaMemType::HOST && size >= HOST_MEM_MAX_COUNT)
+         || (memType == RmaMemType::DEVICE && size >= DEVICE_MEM_MAX_COUNT)),
+        HCCL_ERROR(
+            "[LocalRdmaRmaBuffer][Init]memory size[%llu] should be greater than 0 and less than [%llu].", size,
+            (memType == RmaMemType::DEVICE ? DEVICE_MEM_MAX_COUNT : HOST_MEM_MAX_COUNT)),
+        HCCL_E_PARA);
 
     CHK_SMART_PTR_NULL(pimpl_);
     HcclResult ret = pimpl_->Init();
@@ -44,7 +48,7 @@ HcclResult LocalRdmaRmaBuffer::Init()
         return ret;
     }
 
-    this->devAddr   = pimpl_->GetDevAddr();
+    this->devAddr = pimpl_->GetDevAddr();
 
     return HCCL_SUCCESS;
 }
@@ -56,28 +60,19 @@ HcclResult LocalRdmaRmaBuffer::Destroy()
         if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("[LocalRdmaRmaBuffer][Destroy]Destroy failed, ret[%d]", ret);
         }
-        pimpl_  = nullptr;
-        addr    = nullptr;
-        size    = 0;
+        pimpl_ = nullptr;
+        addr = nullptr;
+        size = 0;
         devAddr = nullptr;
         return ret;
     }
     return HCCL_SUCCESS;
 }
 
-std::string &LocalRdmaRmaBuffer::Serialize()
-{
-    return pimpl_->Serialize();
-}
+std::string& LocalRdmaRmaBuffer::Serialize() { return pimpl_->Serialize(); }
 
-u32 LocalRdmaRmaBuffer::GetKey() const
-{
-    return pimpl_->GetKey();
-}
+u32 LocalRdmaRmaBuffer::GetKey() const { return pimpl_->GetKey(); }
 
-HcclResult LocalRdmaRmaBuffer::Remap(void* addr, u64 length)
-{
-    return pimpl_->Remap(addr, length);
-}
+HcclResult LocalRdmaRmaBuffer::Remap(void* addr, u64 length) { return pimpl_->Remap(addr, length); }
 
-}
+} // namespace hccl

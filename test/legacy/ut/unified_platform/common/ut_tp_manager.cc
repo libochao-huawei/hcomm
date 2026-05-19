@@ -19,20 +19,14 @@ using namespace Hccl;
 
 class TpManagerTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "TpManagerTest SetUP" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "TpManagerTest SetUP" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "TpManagerTest TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "TpManagerTest TearDown" << std::endl; }
 
     virtual void SetUp()
     {
         MOCKER(HrtGetDevicePhyIdByIndex).defaults().will(returnValue(static_cast<DevId>(0)));
-        void *rdmaHandle = (void*)0x200;
+        void* rdmaHandle = (void*)0x200;
         MOCKER(HrtRaUbCtxInit).stubs().with(any(), any()).will(returnValue(rdmaHandle));
         std::cout << "A Test case in TpManagerTest SetUP" << std::endl;
     }
@@ -101,9 +95,7 @@ TEST_F(TpManagerTest, tp_manager_get_infos_not_found)
 {
     uint32_t errNum = 0;
     RequestHandle reqHandle = 0x12345678;
-    MOCKER(RaUbGetTpInfoAsync).stubs()
-        .with(any(), any(), any(), outBound(errNum))
-        .will(returnValue(reqHandle));
+    MOCKER(RaUbGetTpInfoAsync).stubs().with(any(), any(), any(), outBound(errNum)).will(returnValue(reqHandle));
     HcclResult result;
     int32_t devLogicId = 0;
 
@@ -120,12 +112,10 @@ TEST_F(TpManagerTest, tp_manager_get_infos_not_found)
 }
 
 TEST_F(TpManagerTest, tp_manager_redo_get_infos_not_found)
-{   // 新版本查询失败后，下一次调用还会尝试寻找tp资源，不会直接按记录报错
+{ // 新版本查询失败后，下一次调用还会尝试寻找tp资源，不会直接按记录报错
     uint32_t errNum = 0;
     RequestHandle reqHandle = 0x12345678;
-    MOCKER(RaUbGetTpInfoAsync).stubs()
-        .with(any(), any(), any(), outBound(errNum))
-        .will(returnValue(reqHandle));
+    MOCKER(RaUbGetTpInfoAsync).stubs().with(any(), any(), any(), outBound(errNum)).will(returnValue(reqHandle));
     HcclResult result;
     int32_t devLogicId = 0;
 

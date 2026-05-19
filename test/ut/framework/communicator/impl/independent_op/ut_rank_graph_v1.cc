@@ -19,21 +19,10 @@ using namespace hccl;
 
 class RankGraphV1DirectTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "RankGraphV1DirectTest SetUp" << std::endl;
-    }
-    static void TearDownTestCase()
-    {
-        std::cout << "RankGraphV1DirectTest TearDown" << std::endl;
-    }
-    virtual void SetUp()
-    {
-    }
-    virtual void TearDown()
-    {
-        GlobalMockObject::verify();
-    }
+    static void SetUpTestCase() { std::cout << "RankGraphV1DirectTest SetUp" << std::endl; }
+    static void TearDownTestCase() { std::cout << "RankGraphV1DirectTest TearDown" << std::endl; }
+    virtual void SetUp() {}
+    virtual void TearDown() { GlobalMockObject::verify(); }
 };
 
 TEST_F(RankGraphV1DirectTest, Ut_GetTopoInstsByLayer_When_ValidLayer_Expect_Success)
@@ -45,7 +34,7 @@ TEST_F(RankGraphV1DirectTest, Ut_GetTopoInstsByLayer_When_ValidLayer_Expect_Succ
     rankGraph.rankSizeList_[0] = instRanks;
 
     uint32_t netLayer = 0;
-    uint32_t *topoInsts = nullptr;
+    uint32_t* topoInsts = nullptr;
     uint32_t topoInstNum = 0;
 
     HcclResult ret = rankGraph.GetTopoInstsByLayer(netLayer, &topoInsts, &topoInstNum);
@@ -85,7 +74,7 @@ TEST_F(RankGraphV1DirectTest, Ut_GetRanksByTopoInst_When_ValidParams_Expect_Succ
 
     uint32_t netLayer = 0;
     uint32_t topoInstId = 0;
-    uint32_t *ranks = nullptr;
+    uint32_t* ranks = nullptr;
     uint32_t rankNum = 0;
 
     HcclResult ret = rankGraph.GetRanksByTopoInst(netLayer, topoInstId, &ranks, &rankNum);

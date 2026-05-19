@@ -10,19 +10,14 @@
 #include "rank_graph_v1.h"
 
 namespace hccl {
-RankGraphV1::RankGraphV1(const std::string& rankTable) {
-    ParseRankTable(rankTable);
-}
+RankGraphV1::RankGraphV1(const std::string& rankTable) { ParseRankTable(rankTable); }
 
-void RankGraphV1::ParseRankTable(const std::string& rankTable) {
+void RankGraphV1::ParseRankTable(const std::string& rankTable)
+{
     // 解析rankTable文件
 }
 
-uint32_t RankGraphV1::GetRankId() const {
-    return myRankId_;
-}
+uint32_t RankGraphV1::GetRankId() const { return myRankId_; }
 
-uint32_t RankGraphV1::GetRankSize() const {
-    return totalRanks_;
-}
-}
+uint32_t RankGraphV1::GetRankSize() const { return totalRanks_; }
+} // namespace hccl

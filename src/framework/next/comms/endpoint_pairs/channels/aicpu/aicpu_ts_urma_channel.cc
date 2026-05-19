@@ -24,25 +24,28 @@
 
 namespace hcomm {
 
-AicpuTsUrmaChannel::AicpuTsUrmaChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc):
-    endpointHandle_(endpointHandle), channelDesc_(channelDesc) {}
+AicpuTsUrmaChannel::AicpuTsUrmaChannel(EndpointHandle endpointHandle, const HcommChannelDesc& channelDesc)
+    : endpointHandle_(endpointHandle),
+      channelDesc_(channelDesc)
+{}
 
-HcclResult AicpuTsUrmaChannel::Makebufs(HcommMemHandle *memHandles, uint32_t memHandleNum,
-    std::vector<std::shared_ptr<Hccl::Buffer>> &bufs)
+HcclResult AicpuTsUrmaChannel::Makebufs(
+    HcommMemHandle* memHandles, uint32_t memHandleNum, std::vector<std::shared_ptr<Hccl::Buffer>>& bufs)
 {
     bufs.clear();
     for (uint32_t i = 0; i < memHandleNum; ++i) {
-        auto locMemInfo = reinterpret_cast<CommMemInfo *>(memHandles[i]);
+        auto locMemInfo = reinterpret_cast<CommMemInfo*>(memHandles[i]);
         HCCL_INFO("[AicpuTsUrmaChannel][%s] tag[%s]", __func__, locMemInfo->memTag);
-        bufs.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
-            reinterpret_cast<uintptr_t>(locMemInfo->mem.addr), locMemInfo->mem.size,
-            hccl::ConvertCommToHcclMemType(locMemInfo->mem.type), locMemInfo->memTag)
-        ));
+        bufs.emplace_back(
+            std::move(
+                std::make_shared<Hccl::Buffer>(
+                    reinterpret_cast<uintptr_t>(locMemInfo->mem.addr), locMemInfo->mem.size,
+                    hccl::ConvertCommToHcclMemType(locMemInfo->mem.type), locMemInfo->memTag)));
     }
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsUrmaChannel::ParseInputParam() 
+HcclResult AicpuTsUrmaChannel::ParseInputParam()
 {
     // 1. 从 endpointHandle_，获得 localEp_ 和 rdmaHandle_
     // TODO: 使用 HcommEndpointGet
@@ -61,18 +64,23 @@ HcclResult AicpuTsUrmaChannel::ParseInputParam()
     if (channelDesc_.exchangeAllMems) {
         // 3. Get memHandles from endpoint
         HCCL_INFO("[AicpuTsUrmaChannel][%s] exchangeAllMems == True. Get memHandles from endpoint.", __func__);
-        std::shared_ptr<Hccl::LocalUbRmaBuffer> *memHandles = nullptr;
+        std::shared_ptr<Hccl::LocalUbRmaBuffer>* memHandles = nullptr;
         uint32_t memHandleNum = 0;
-        CHK_RET(static_cast<HcclResult>(HcommMemGetAllMemHandles(
-            endpointHandle_, reinterpret_cast<void**>(&memHandles), &memHandleNum)));
+        CHK_RET(
+            static_cast<HcclResult>(
+                HcommMemGetAllMemHandles(endpointHandle_, reinterpret_cast<void**>(&memHandles), &memHandleNum)));
         HCCL_INFO("[AicpuTsUrmaChannel][%s] Got memHandleNum[%u].", __func__, memHandleNum);
         for (uint32_t i = 0; i < memHandleNum; ++i) {
-            std::shared_ptr<Hccl::LocalUbRmaBuffer> &localUbRmaBuffer = memHandles[i];
-            HCCL_INFO("[AicpuTsUrmaChannel][%s] Got memHandle No.%u: addr[0x%llx], size[0x%llx], memTag[%s].",
-                __func__, i, localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize(), localUbRmaBuffer->GetBuf()->GetMemTag().c_str());
-            bufs_.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
-                localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize(), localUbRmaBuffer->GetBuf()->GetMemTag().c_str())
-            ));
+            std::shared_ptr<Hccl::LocalUbRmaBuffer>& localUbRmaBuffer = memHandles[i];
+            HCCL_INFO(
+                "[AicpuTsUrmaChannel][%s] Got memHandle No.%u: addr[0x%llx], size[0x%llx], memTag[%s].", __func__, i,
+                localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize(),
+                localUbRmaBuffer->GetBuf()->GetMemTag().c_str());
+            bufs_.emplace_back(
+                std::move(
+                    std::make_shared<Hccl::Buffer>(
+                        localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize(),
+                        localUbRmaBuffer->GetBuf()->GetMemTag().c_str())));
         }
     } else {
         // 3. 从 channelDesc 的 memHandle，获得 bufs_
@@ -88,19 +96,19 @@ HcclResult AicpuTsUrmaChannel::ParseInputParam()
 HcclResult AicpuTsUrmaChannel::BuildAttr()
 {
     attr_.devicePhyId = localEp_.loc.device.devPhyId;
-    attr_.opMode      = Hccl::OpMode::OPBASE;
+    attr_.opMode = Hccl::OpMode::OPBASE;
     return HCCL_SUCCESS;
 }
 
 HcclResult AicpuTsUrmaChannel::BuildConnection()
 {
-    Hccl::OpMode        opMode = Hccl::OpMode::OPBASE;
-    bool                devUsed  = true;  // aicpu 为 true
-    Hccl::LinkProtocol  protocol;
+    Hccl::OpMode opMode = Hccl::OpMode::OPBASE;
+    bool devUsed = true; // aicpu 为 true
+    Hccl::LinkProtocol protocol;
     CHK_RET(CommProtocolToLinkProtocol(localEp_.protocol, protocol));
-    
-    Hccl::IpAddress     locAddr;
-    Hccl::IpAddress     rmtAddr;
+
+    Hccl::IpAddress locAddr;
+    Hccl::IpAddress rmtAddr;
     CHK_RET(CommAddrToIpAddress(localEp_.commAddr, locAddr));
     CHK_RET(CommAddrToIpAddress(remoteEp_.commAddr, rmtAddr));
 
@@ -113,14 +121,12 @@ HcclResult AicpuTsUrmaChannel::BuildConnection()
         case Hccl::LinkProtocol::UB_TP:
             EXECEPTION_CATCH(
                 ubConn = std::make_unique<Hccl::DevUbTpConnection>(rdmaHandle_, locAddr, rmtAddr, opMode, devUsed),
-                return HCCL_E_PTR
-            );
+                return HCCL_E_PTR);
             break;
         case Hccl::LinkProtocol::UB_CTP:
             EXECEPTION_CATCH(
                 ubConn = std::make_unique<Hccl::DevUbCtpConnection>(rdmaHandle_, locAddr, rmtAddr, opMode, devUsed),
-                return HCCL_E_PTR
-            );
+                return HCCL_E_PTR);
             break;
         default:
             HCCL_ERROR("%s No LinkProtocol to match", __func__);
@@ -143,10 +149,7 @@ HcclResult AicpuTsUrmaChannel::BuildNotify()
     bool devUsed = true;
     for (uint32_t i = 0; i < notifyNum_; ++i) {
         std::unique_ptr<Hccl::UbLocalNotify> notifyPtr = nullptr;
-        EXECEPTION_CATCH(
-            notifyPtr = std::make_unique<Hccl::UbLocalNotify>(rdmaHandle_, devUsed),
-            return HCCL_E_PTR
-        );
+        EXECEPTION_CATCH(notifyPtr = std::make_unique<Hccl::UbLocalNotify>(rdmaHandle_, devUsed), return HCCL_E_PTR);
         commonRes_.notifyVec.push_back(notifyPtr.get());
         localNotifies_.push_back(std::move(notifyPtr));
     }
@@ -154,15 +157,12 @@ HcclResult AicpuTsUrmaChannel::BuildNotify()
 }
 
 // TODO: to be deleted
-HcclResult AicpuTsUrmaChannel::BuildBuffer(std::vector<std::shared_ptr<Hccl::Buffer>> &bufs)
+HcclResult AicpuTsUrmaChannel::BuildBuffer(std::vector<std::shared_ptr<Hccl::Buffer>>& bufs)
 {
     bufferVecTemp_.clear();
     for (size_t i = 0; i < bufs.size(); i++) {
         std::unique_ptr<Hccl::LocalUbRmaBuffer> bufferPtr = nullptr;
-        EXECEPTION_CATCH(
-            bufferPtr = std::make_unique<Hccl::LocalUbRmaBuffer>(bufs[i], rdmaHandle_),
-            return HCCL_E_PTR
-        );
+        EXECEPTION_CATCH(bufferPtr = std::make_unique<Hccl::LocalUbRmaBuffer>(bufs[i], rdmaHandle_), return HCCL_E_PTR);
         bufferVecTemp_.push_back(bufferPtr.get());
         commonRes_.bufferVec.push_back(bufferPtr.get());
         localRmaBuffers_.push_back(std::move(bufferPtr));
@@ -175,7 +175,7 @@ HcclResult AicpuTsUrmaChannel::BuildUbMemTransport()
     Hccl::BaseMemTransport::LocCntNotifyRes locCntNotifyRes{};
     locCntNotifyRes.vec.clear();
     locCntNotifyRes.desc.clear();
-    const Hccl::Socket &socket = *socket_;
+    const Hccl::Socket& socket = *socket_;
 
     Hccl::LinkData linkData = BuildDefaultLinkData();
     CHK_RET(EndpointDescPairToLinkData(localEp_, remoteEp_, linkData));
@@ -185,10 +185,8 @@ HcclResult AicpuTsUrmaChannel::BuildUbMemTransport()
     // make_unique / make_shared / release 包一层抛异常的宏
     EXECEPTION_CATCH(
         memTransport_ = std::make_unique<Hccl::UbMemTransport>(
-            commonRes_, attr_, linkData, socket, rdmaHandle_, locCntNotifyRes, isRecvFirst
-        ),
-        return HCCL_E_PTR
-    );
+            commonRes_, attr_, linkData, socket, rdmaHandle_, locCntNotifyRes, isRecvFirst),
+        return HCCL_E_PTR);
     return HCCL_SUCCESS;
 }
 
@@ -203,9 +201,12 @@ HcclResult AicpuTsUrmaChannel::BuildSocket()
     CHK_RET(CommAddrToIpAddress(localEp_.commAddr, ipaddr));
     Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::UB);
     Hccl::PortData localPort = Hccl::PortData(static_cast<Hccl::RankId>(localEp_.loc.device.devPhyId), type, 0, ipaddr);
-    Hccl::SocketHandle socketHandle = Hccl::SocketHandleManager::GetInstance().Create(localEp_.loc.device.devPhyId, localPort);
-    EXECEPTION_CATCH(serverSocket_ = std::make_unique<Hccl::Socket>(socketHandle, ipaddr, 60001, 
-        ipaddr, "server", Hccl::SocketRole::SERVER, Hccl::NicType::DEVICE_NIC_TYPE), return HCCL_E_PARA);
+    Hccl::SocketHandle socketHandle
+        = Hccl::SocketHandleManager::GetInstance().Create(localEp_.loc.device.devPhyId, localPort);
+    EXECEPTION_CATCH(
+        serverSocket_ = std::make_unique<Hccl::Socket>(
+            socketHandle, ipaddr, 60001, ipaddr, "server", Hccl::SocketRole::SERVER, Hccl::NicType::DEVICE_NIC_TYPE),
+        return HCCL_E_PARA);
     HCCL_INFO("[AicpuTsUrmaChannel][%s] listen_socket_info[%s]", __func__, serverSocket_->Describe().c_str());
     EXECEPTION_CATCH(serverSocket_->Listen(), return HCCL_E_INTERNAL);
 
@@ -239,13 +240,13 @@ HcclResult AicpuTsUrmaChannel::Init()
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsUrmaChannel::GetNotifyNum(uint32_t *notifyNum) const
+HcclResult AicpuTsUrmaChannel::GetNotifyNum(uint32_t* notifyNum) const
 {
     *notifyNum = this->notifyNum_;
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsUrmaChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags)
+HcclResult AicpuTsUrmaChannel::GetRemoteMem(HcclMem** remoteMem, uint32_t* memNum, char** memTags)
 {
     return memTransport_->GetRemoteMem(remoteMem, memNum, memTags);
 }
@@ -271,7 +272,7 @@ ChannelStatus AicpuTsUrmaChannel::GetStatus()
     return out;
 }
 
-HcclResult SetModuleDataName(Hccl::ModuleData &module, const std::string &name)
+HcclResult SetModuleDataName(Hccl::ModuleData& module, const std::string& name)
 {
     int ret = strcpy_s(module.name, sizeof(module.name), name.c_str());
     if (ret != 0) {
@@ -282,7 +283,7 @@ HcclResult SetModuleDataName(Hccl::ModuleData &module, const std::string &name)
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsUrmaChannel::PackOpData(std::vector<char> &data)
+HcclResult AicpuTsUrmaChannel::PackOpData(std::vector<char>& data)
 {
     std::vector<Hccl::ModuleData> dataVec;
     dataVec.resize(Hccl::AicpuResMgrType::__COUNT__);
@@ -291,7 +292,7 @@ HcclResult AicpuTsUrmaChannel::PackOpData(std::vector<char> &data)
     CHK_RET(SetModuleDataName(dataVec[resType], "UbMemTransport"));
 
     std::vector<char> result;
-    Hccl::BinaryStream      binaryStream;
+    Hccl::BinaryStream binaryStream;
     binaryStream << memTransport_->GetUniqueIdV2();
 
     binaryStream.Dump(result);
@@ -307,8 +308,9 @@ HcclResult AicpuTsUrmaChannel::PackOpData(std::vector<char> &data)
 HcclResult AicpuTsUrmaChannel::H2DResPack(std::vector<char>& buffer)
 {
     CHK_RET(PackOpData(buffer));
-    HCCL_INFO("[AicpuTsUrmaChannel][%s] Pack Buffer data[%p], Pack Buffer size[%zu].",
-        __func__, buffer.data(), buffer.size());
+    HCCL_INFO(
+        "[AicpuTsUrmaChannel][%s] Pack Buffer data[%p], Pack Buffer size[%zu].", __func__, buffer.data(),
+        buffer.size());
     return HCCL_SUCCESS;
 }
 
@@ -325,12 +327,12 @@ HcclResult AicpuTsUrmaChannel::Resume()
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsUrmaChannel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum)
+HcclResult AicpuTsUrmaChannel::GetUserRemoteMem(CommMem** remoteMem, char*** memTag, uint32_t* memNum)
 {
     return memTransport_->GetUserRemoteMem(remoteMem, memTag, memNum);
 }
 
-HcclResult AicpuTsUrmaChannel::UpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum)
+HcclResult AicpuTsUrmaChannel::UpdateMemInfo(HcommMemHandle* memHandles, uint32_t memHandleNum)
 {
     CHK_RET(Makebufs(memHandles, memHandleNum, bufsTemp));
     CHK_RET(BuildBuffer(bufsTemp));
@@ -339,10 +341,7 @@ HcclResult AicpuTsUrmaChannel::UpdateMemInfo(HcommMemHandle *memHandles, uint32_
 }
 
 // 返回当前 channel 类型，供上层区分不同 channel 的能力和行为
-HcommChannelKind AicpuTsUrmaChannel::GetChannelKind() const
-{
-    return HcommChannelKind::AICPU_TS_URMA;
-}
+HcommChannelKind AicpuTsUrmaChannel::GetChannelKind() const { return HcommChannelKind::AICPU_TS_URMA; }
 
 HcclResult AicpuTsUrmaChannel::NotifyRecord(const uint32_t remoteNotifyIdx)
 {
@@ -356,19 +355,19 @@ HcclResult AicpuTsUrmaChannel::NotifyWait(const uint32_t localNotifyIdx, const u
     return HCCL_E_NOT_SUPPORT;
 }
 
-HcclResult AicpuTsUrmaChannel::WriteWithNotify(void *dst, const void *src, const uint64_t len, uint32_t remoteNotifyIdx)
+HcclResult AicpuTsUrmaChannel::WriteWithNotify(void* dst, const void* src, const uint64_t len, uint32_t remoteNotifyIdx)
 {
     HCCL_INFO("[AicpuTsUrmaChannel::%s] not supported yet.", __func__);
     return HCCL_E_NOT_SUPPORT;
 }
 
-HcclResult AicpuTsUrmaChannel::Write(void *dst, const void *src, uint64_t len)
+HcclResult AicpuTsUrmaChannel::Write(void* dst, const void* src, uint64_t len)
 {
     HCCL_INFO("[AicpuTsUrmaChannel::%s] not supported yet.", __func__);
     return HCCL_E_NOT_SUPPORT;
 }
 
-HcclResult AicpuTsUrmaChannel::Read(void *dst, const void *src, uint64_t len)
+HcclResult AicpuTsUrmaChannel::Read(void* dst, const void* src, uint64_t len)
 {
     HCCL_INFO("[AicpuTsUrmaChannel::%s] not supported yet.", __func__);
     return HCCL_E_NOT_SUPPORT;

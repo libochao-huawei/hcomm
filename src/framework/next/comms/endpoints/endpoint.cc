@@ -15,10 +15,10 @@
 #include "ub_mem_endpoint.h"
 #include "uboe_endpoint.h"
 #include "cpu_urma_endpoint.h"
- #include "aicputs_hccs_endpoint.h"
+#include "aicputs_hccs_endpoint.h"
 
-namespace hcomm{
-static bool IsSupported(const EndpointDesc &endpointDesc)
+namespace hcomm {
+static bool IsSupported(const EndpointDesc& endpointDesc)
 {
     bool protocolSupported = false;
     bool locTypeSupported = false;
@@ -47,32 +47,35 @@ static bool IsSupported(const EndpointDesc &endpointDesc)
     return protocolSupported && locTypeSupported;
 }
 
-Endpoint::Endpoint(const EndpointDesc &endpointDesc)
-{
-    endpointDesc_ = endpointDesc;
-}
+Endpoint::Endpoint(const EndpointDesc& endpointDesc) { endpointDesc_ = endpointDesc; }
 
-HcclResult Endpoint::CreateEndpoint(const EndpointDesc &endpointDesc, std::unique_ptr<Endpoint> &endpointPtr)
+HcclResult Endpoint::CreateEndpoint(const EndpointDesc& endpointDesc, std::unique_ptr<Endpoint>& endpointPtr)
 {
     if (!IsSupported(endpointDesc)) {
-        HCCL_ERROR("[%s]endpointDesc is not supported. endpointDesc.protocol [%d] endpointDesc.loc.locType [%d].", __func__, endpointDesc.protocol, endpointDesc.loc.locType);
+        HCCL_ERROR(
+            "[%s]endpointDesc is not supported. endpointDesc.protocol [%d] endpointDesc.loc.locType [%d].", __func__,
+            endpointDesc.protocol, endpointDesc.loc.locType);
         return HCCL_E_PARA;
     }
 
-    HCCL_INFO("[%s]endpointDesc.protocol [%d] endpointDesc.loc.locType [%d].", __func__, endpointDesc.protocol, endpointDesc.loc.locType);
+    HCCL_INFO(
+        "[%s]endpointDesc.protocol [%d] endpointDesc.loc.locType [%d].", __func__, endpointDesc.protocol,
+        endpointDesc.loc.locType);
 
     return CreateEndpointBase(endpointDesc, endpointPtr);
 }
 
-HcclResult Endpoint::CreateEndpointBase(const EndpointDesc &endpointDesc, std::unique_ptr<Endpoint> &endpointPtr)
+HcclResult Endpoint::CreateEndpointBase(const EndpointDesc& endpointDesc, std::unique_ptr<Endpoint>& endpointPtr)
 {
-if (endpointDesc.protocol == COMM_PROTOCOL_ROCE && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_HOST) {
+    if (endpointDesc.protocol == COMM_PROTOCOL_ROCE && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_HOST) {
         EXECEPTION_CATCH(endpointPtr = std::make_unique<CpuRoceEndpoint>(endpointDesc), return HCCL_E_PTR);
-    } else if ((endpointDesc.protocol == COMM_PROTOCOL_UBC_TP || endpointDesc.protocol == COMM_PROTOCOL_UBC_CTP) 	 
-                && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_HOST) { 
-        EXECEPTION_CATCH(endpointPtr = std::make_unique<CpuUrmaEndpoint>(endpointDesc), return HCCL_E_PTR);	 
-    } else if ((endpointDesc.protocol == COMM_PROTOCOL_UBC_TP || endpointDesc.protocol == COMM_PROTOCOL_UBC_CTP)	 
-                 && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
+    } else if (
+        (endpointDesc.protocol == COMM_PROTOCOL_UBC_TP || endpointDesc.protocol == COMM_PROTOCOL_UBC_CTP)
+        && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_HOST) {
+        EXECEPTION_CATCH(endpointPtr = std::make_unique<CpuUrmaEndpoint>(endpointDesc), return HCCL_E_PTR);
+    } else if (
+        (endpointDesc.protocol == COMM_PROTOCOL_UBC_TP || endpointDesc.protocol == COMM_PROTOCOL_UBC_CTP)
+        && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
         EXECEPTION_CATCH(endpointPtr = std::make_unique<UrmaEndpoint>(endpointDesc), return HCCL_E_PTR);
     } else if (endpointDesc.protocol == COMM_PROTOCOL_UB_MEM && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
         EXECEPTION_CATCH(endpointPtr = std::make_unique<UbMemEndpoint>(endpointDesc), return HCCL_E_PTR);
@@ -86,10 +89,11 @@ if (endpointDesc.protocol == COMM_PROTOCOL_ROCE && endpointDesc.loc.locType == E
         EXECEPTION_CATCH(endpointPtr = std::make_unique<AicpuTsHccsEndpoint>(endpointDesc), return HCCL_E_PTR);
     } else {
         endpointPtr = nullptr;
-        HCCL_ERROR("[%s] failed, endpointDesc.protocol [%d] and endpointDesc.loc.locType [%d] do not match.", 
-            __func__, endpointDesc.protocol, endpointDesc.loc.locType);
+        HCCL_ERROR(
+            "[%s] failed, endpointDesc.protocol [%d] and endpointDesc.loc.locType [%d] do not match.", __func__,
+            endpointDesc.protocol, endpointDesc.loc.locType);
         return HCCL_E_PARA;
     }
     return HCCL_SUCCESS;
 }
-}
+} // namespace hcomm

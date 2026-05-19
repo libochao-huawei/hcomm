@@ -15,11 +15,9 @@
 
 namespace Hccl {
 
-SelectorStatus AlltoAllVCAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topoInfo,
-                                                             const CollAlgOperator &op,
-                                                             const std::map<OpType,
-                                                             std::vector<HcclAlgoType>> &configAlgMap,
-                                                             std::string &primQueueGenName) const
+SelectorStatus AlltoAllVCAutoSelector::SelectCcuScheduleAlgo(
+    const TopoInfo& topoInfo, const CollAlgOperator& op,
+    const std::map<OpType, std::vector<HcclAlgoType>>& configAlgMap, std::string& primQueueGenName) const
 {
     (void)topoInfo;
     (void)op;
@@ -29,10 +27,9 @@ SelectorStatus AlltoAllVCAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &top
     return SelectorStatus::NOT_MATCH;
 }
 
-SelectorStatus AlltoAllVCAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo,
-                                                      const CollAlgOperator &op,
-                                                      const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,
-                                                      std::string &primQueueGenName) const
+SelectorStatus AlltoAllVCAutoSelector::SelectAicpuAlgo(
+    const TopoInfo& topoInfo, const CollAlgOperator& op,
+    const std::map<OpType, std::vector<HcclAlgoType>>& configAlgMap, std::string& primQueueGenName) const
 {
     (void)op;
     (void)configAlgMap;

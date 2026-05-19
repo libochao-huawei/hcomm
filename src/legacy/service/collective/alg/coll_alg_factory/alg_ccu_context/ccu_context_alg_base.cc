@@ -9,17 +9,18 @@
  */
 
 #include <vector>
- 
+
 #include "ccu_assist.h"
 #include "ccu_loopcall.h"
 #include "ccu_ctx.h"
 #include "ccu_datatype.h"
 #include "ccu_context_alg_base.h"
- 
+
 namespace Hccl {
 
-void CcuContextAlgBase::GroupBroadcastV2(const std::vector<CcuTransport*> &transports, const std::vector<CcuRep::Memory> &dst,
-                                         const CcuRep::Memory &src, const GroupOpSizeV2 &goSize) const
+void CcuContextAlgBase::GroupBroadcastV2(
+    const std::vector<CcuTransport*>& transports, const std::vector<CcuRep::Memory>& dst, const CcuRep::Memory& src,
+    const GroupOpSizeV2& goSize) const
 {
     (void)transports;
     (void)dst;
@@ -28,9 +29,9 @@ void CcuContextAlgBase::GroupBroadcastV2(const std::vector<CcuTransport*> &trans
     THROW<NotSupportException>("Unimplemented Interface: %s", __func__);
 }
 
-void CcuContextAlgBase::GroupReduceV2(const std::vector<CcuTransport*> &transports, const CcuRep::Memory& dst,
-                                      const std::vector<CcuRep::Memory>& src, const GroupOpSizeV2 &goSize,
-                                      DataType dataType, DataType outputDataType, ReduceOp reduceType) const
+void CcuContextAlgBase::GroupReduceV2(
+    const std::vector<CcuTransport*>& transports, const CcuRep::Memory& dst, const std::vector<CcuRep::Memory>& src,
+    const GroupOpSizeV2& goSize, DataType dataType, DataType outputDataType, ReduceOp reduceType) const
 {
     (void)transports;
     (void)dst;
@@ -41,4 +42,4 @@ void CcuContextAlgBase::GroupReduceV2(const std::vector<CcuTransport*> &transpor
     (void)reduceType;
     THROW<NotSupportException>("Unimplemented Interface: %s", __func__);
 }
-}
+} // namespace Hccl

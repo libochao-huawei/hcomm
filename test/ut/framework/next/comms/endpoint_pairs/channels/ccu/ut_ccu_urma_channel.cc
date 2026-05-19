@@ -16,7 +16,8 @@ protected:
     void TearDown() override {}
 };
 
-TEST_F(CcuUrmaChannelTest, Ut_Clean_When_ImplIsNull_Expect_HCCL_E_PTR) {
+TEST_F(CcuUrmaChannelTest, Ut_Clean_When_ImplIsNull_Expect_HCCL_E_PTR)
+{
     HcommChannelDesc desc{};
     EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
     CcuUrmaChannel ch(ep, desc);
@@ -28,13 +29,16 @@ TEST_F(CcuUrmaChannelTest, Ut_Clean_When_ImplIsNull_Expect_HCCL_E_PTR) {
 // Minimal test-only connection deriving from CcuConnection to avoid heavy Init()
 class TestCcuConnection : public CcuConnection {
 public:
-    TestCcuConnection(const CommAddr &locAddr, const CommAddr &rmtAddr,
-        const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys)
-        : CcuConnection(locAddr, rmtAddr, channelInfo, ccuJettys) {}
+    TestCcuConnection(
+        const CommAddr& locAddr, const CommAddr& rmtAddr, const CcuChannelInfo& channelInfo,
+        const std::vector<CcuJetty*>& ccuJettys)
+        : CcuConnection(locAddr, rmtAddr, channelInfo, ccuJettys)
+    {}
     // Do not call Init(); use default base behavior for Clean()
 };
 
-TEST_F(CcuUrmaChannelTest, Ut_Clean_When_ImplIsPresent_Expect_HCCL_SUCCESS) {
+TEST_F(CcuUrmaChannelTest, Ut_Clean_When_ImplIsPresent_Expect_HCCL_SUCCESS)
+{
     HcommChannelDesc desc{};
     EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
     CcuUrmaChannel ch(ep, desc);
@@ -43,13 +47,13 @@ TEST_F(CcuUrmaChannelTest, Ut_Clean_When_ImplIsPresent_Expect_HCCL_SUCCESS) {
     CommAddr locAddr{};
     CommAddr rmtAddr{};
     CcuChannelInfo channelInfo{};
-    std::vector<CcuJetty *> jettys{};
+    std::vector<CcuJetty*> jettys{};
 
     // Create a test connection (does not call Init)
     std::unique_ptr<CcuConnection> conn(new TestCcuConnection(locAddr, rmtAddr, channelInfo, jettys));
 
     // Fake socket pointer (not dereferenced by Clean())
-    Hccl::Socket *fakeSocket = reinterpret_cast<Hccl::Socket *>(0x1);
+    Hccl::Socket* fakeSocket = reinterpret_cast<Hccl::Socket*>(0x1);
 
     // Prepare a simple buffer info
     CcuTransport::CclBufferInfo bufInfo(0x1000, 0x100, 1, 1);
@@ -64,7 +68,8 @@ TEST_F(CcuUrmaChannelTest, Ut_Clean_When_ImplIsPresent_Expect_HCCL_SUCCESS) {
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
 }
 
-TEST_F(CcuUrmaChannelTest, Ut_Resume_When_Called_Expect_HCCL_SUCCESS) {
+TEST_F(CcuUrmaChannelTest, Ut_Resume_When_Called_Expect_HCCL_SUCCESS)
+{
     HcommChannelDesc desc{};
     EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
     CcuUrmaChannel ch(ep, desc);
@@ -73,7 +78,8 @@ TEST_F(CcuUrmaChannelTest, Ut_Resume_When_Called_Expect_HCCL_SUCCESS) {
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
 }
 
-TEST_F(CcuUrmaChannelTest, Ut_GetStatus_DfxInfo_TEST) {
+TEST_F(CcuUrmaChannelTest, Ut_GetStatus_DfxInfo_TEST)
+{
     HcommChannelDesc desc{};
     EndpointHandle ep = reinterpret_cast<EndpointHandle>(1);
     CcuUrmaChannel ch(ep, desc);

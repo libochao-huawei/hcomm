@@ -23,19 +23,18 @@
 #include "llt_hccl_stub_pub.h"
 #include "profiler_manager.h"
 
-
-
 using namespace std;
 using namespace hccl;
 
-class TransportHeterogP2PTest : public testing::Test
-{
+class TransportHeterogP2PTest : public testing::Test {
 protected:
     static void SetUpTestCase()
     {
         s32 ret = HcclDispatcherInit(DispatcherType::DISPATCHER_NORMAL, 0, &dispatcherPtr);
-        if (ret != HCCL_SUCCESS) return;
-        if (dispatcherPtr == nullptr) return;
+        if (ret != HCCL_SUCCESS)
+            return;
+        if (dispatcherPtr == nullptr)
+            return;
         dispatcher = reinterpret_cast<DispatcherPub*>(dispatcherPtr);
         std::cout << "\033[36m--CommBaseTest SetUP--\033[0m" << std::endl;
     }
@@ -53,23 +52,15 @@ protected:
     virtual void SetUp()
     {
         s32 portNum = 7;
-        MOCKER(hrtGetHccsPortNum)
-            .stubs()
-            .with(any(), outBound(portNum))
-            .will(returnValue(HCCL_SUCCESS));
+        MOCKER(hrtGetHccsPortNum).stubs().with(any(), outBound(portNum)).will(returnValue(HCCL_SUCCESS));
         std::cout << "A Test SetUP" << std::endl;
     }
-    virtual void TearDown()
-    {
-        std::cout << "A Test TearDown" << std::endl;
-    }
+    virtual void TearDown() { std::cout << "A Test TearDown" << std::endl; }
     static HcclDispatcher dispatcherPtr;
-    static DispatcherPub *dispatcher;
-
+    static DispatcherPub* dispatcher;
 };
 HcclDispatcher TransportHeterogP2PTest::dispatcherPtr = nullptr;
-DispatcherPub *TransportHeterogP2PTest::dispatcher = nullptr;
-
+DispatcherPub* TransportHeterogP2PTest::dispatcher = nullptr;
 
 TEST_F(TransportHeterogP2PTest, ut_function_for_batchsendrecv_HeterogP2P)
 {

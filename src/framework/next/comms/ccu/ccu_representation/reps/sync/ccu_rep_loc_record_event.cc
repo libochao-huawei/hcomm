@@ -19,33 +19,35 @@
 namespace hcomm {
 namespace CcuRep {
 
-CcuRepLocRecordEvent::CcuRepLocRecordEvent(const CompletedEvent &event)
-    : event_(event)
-{
-    type       = CcuRepType::LOC_RECORD_EVENT;
-    instrCount = 1;
-}
+    CcuRepLocRecordEvent::CcuRepLocRecordEvent(const CompletedEvent& event) : event_(event)
+    {
+        type = CcuRepType::LOC_RECORD_EVENT;
+        instrCount = 1;
+    }
 
-bool CcuRepLocRecordEvent::Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep)
-{
-    this->instrId = instrId;
-    translated    = true;
+    bool CcuRepLocRecordEvent::Translate(CcuInstr*& instr, uint16_t& instrId, const TransDep& dep)
+    {
+        this->instrId = instrId;
+        translated = true;
 
-    SetCKEInstr(instr++, event_.Id(), event_.mask, 0, 0, 1);
+        SetCKEInstr(instr++, event_.Id(), event_.mask, 0, 0, 1);
 
-    CHK_PRT_THROW(instrId > USHRT_MAX - instrCount,
-        HCCL_ERROR("[CcuRepLocRecordEvent][Translate] instrId[%u] + instrCount[%u] "
-            "exceeds the maximum value of unsigned short int.", instrId, instrCount),
-        Hccl::CcuApiException, "integer overflow");
+        CHK_PRT_THROW(
+            instrId > USHRT_MAX - instrCount,
+            HCCL_ERROR(
+                "[CcuRepLocRecordEvent][Translate] instrId[%u] + instrCount[%u] "
+                "exceeds the maximum value of unsigned short int.",
+                instrId, instrCount),
+            Hccl::CcuApiException, "integer overflow");
 
-    instrId += instrCount;
-    return translated;
-}
+        instrId += instrCount;
+        return translated;
+    }
 
-std::string CcuRepLocRecordEvent::Describe()
-{
-    return Hccl::StringFormat("CcuRepLocRecordEvent=id[%u], mask[%04x]", event_.Id(), event_.mask);
-}
+    std::string CcuRepLocRecordEvent::Describe()
+    {
+        return Hccl::StringFormat("CcuRepLocRecordEvent=id[%u], mask[%04x]", event_.Id(), event_.mask);
+    }
 
 }; // namespace CcuRep
 }; // namespace hcomm

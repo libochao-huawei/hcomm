@@ -19,20 +19,11 @@ using namespace Hccl;
 
 class NotifyFixedValueTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "NotifyFixedValueTest SetUP" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "NotifyFixedValueTest SetUP" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "NotifyFixedValueTest TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "NotifyFixedValueTest TearDown" << std::endl; }
 
-    virtual void SetUp()
-    {
-        std::cout << "A Test case in NotifyFixedValueTest SetUP" << std::endl;
-    }
+    virtual void SetUp() { std::cout << "A Test case in NotifyFixedValueTest SetUP" << std::endl; }
 
     virtual void TearDown()
     {
@@ -44,16 +35,11 @@ protected:
 TEST_F(NotifyFixedValueTest, notify_fixed_value_get_addr_and_size)
 {
     // Given
-    MOCKER(HrtGetDeviceType).
-        stubs().
-        will(returnValue((DevType)DevType::DEV_TYPE_950));
- 
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
+
     void* fakeAddr = nullptr;
-    MOCKER(HrtMalloc)
-        .stubs()
-        .with(any(), any())
-        .will(returnValue(fakeAddr));
- 
+    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue(fakeAddr));
+
     NotifyFixedValue notifyFixedValue;
     // when
     u64 addrRes = notifyFixedValue.GetAddr();

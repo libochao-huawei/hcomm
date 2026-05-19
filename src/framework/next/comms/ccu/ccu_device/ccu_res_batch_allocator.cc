@@ -30,13 +30,15 @@ constexpr uint32_t DISCRETE_RES_TYPE_NUM = 5;
 constexpr uint32_t NON_BLOCK_TYPE_NUM = CONS_RES_TYPE_NUM + DISCRETE_RES_TYPE_NUM;
 constexpr uint32_t CCUA_NUM = 4;
 
-CcuResBatchAllocator &CcuResBatchAllocator::GetInstance(const int32_t deviceLogicId)
+CcuResBatchAllocator& CcuResBatchAllocator::GetInstance(const int32_t deviceLogicId)
 {
     static CcuResBatchAllocator ccuResBatchAllocator[MAX_MODULE_DEVICE_NUM + 1];
     int32_t devLogicId = deviceLogicId;
     if (devLogicId < 0 || static_cast<uint32_t>(devLogicId) >= MAX_MODULE_DEVICE_NUM) {
-        HCCL_WARNING("[CcuResBatchAllocator][%s] use the backup device, devLogicId[%d] "
-            "should be less than %u.", __func__, devLogicId, MAX_MODULE_DEVICE_NUM);
+        HCCL_WARNING(
+            "[CcuResBatchAllocator][%s] use the backup device, devLogicId[%d] "
+            "should be less than %u.",
+            __func__, devLogicId, MAX_MODULE_DEVICE_NUM);
         devLogicId = MAX_MODULE_DEVICE_NUM; // 使用备份设备
     }
     ccuResBatchAllocator[devLogicId].devLogicId_ = devLogicId;
@@ -51,27 +53,33 @@ HcclResult CcuResBatchAllocator::Init()
 
     dieEnableFlags_ = CcuComponent::GetInstance(devLogicId_).GetDieEnableFlags();
     if (!dieEnableFlags_[0] && !dieEnableFlags_[1]) {
-        HCCL_WARNING("[CcuResBatchAllocator][%s] failed but passed, "
-            "devLogicId[%d] no usable die.", __func__, devLogicId_);
+        HCCL_WARNING(
+            "[CcuResBatchAllocator][%s] failed but passed, "
+            "devLogicId[%d] no usable die.",
+            __func__, devLogicId_);
         return HcclResult::HCCL_E_UNAVAIL;
     }
 
     auto ret = PreAllocBlockRes();
     if (ret == HcclResult::HCCL_E_UNAVAIL) {
-        HCCL_WARNING("[CcuResBatchAllocator][%s] pre alloc block res failed but passed, "
-            "some sources are not enough, devLogicId[%d].", __func__, devLogicId_);
+        HCCL_WARNING(
+            "[CcuResBatchAllocator][%s] pre alloc block res failed but passed, "
+            "some sources are not enough, devLogicId[%d].",
+            __func__, devLogicId_);
         return ret;
     }
     CHK_RET(ret);
 
     ret = missionMgr_.PreAlloc(devLogicId_, resStrategys_[0].missionNum, dieEnableFlags_);
     if (ret == HcclResult::HCCL_E_UNAVAIL) {
-        HCCL_WARNING("[CcuResBatchAllocator][%s] pre alloc mission res failed but passed, "
-            "some sources are not enough, devLogicId[%d].", __func__, devLogicId_);
+        HCCL_WARNING(
+            "[CcuResBatchAllocator][%s] pre alloc mission res failed but passed, "
+            "some sources are not enough, devLogicId[%d].",
+            __func__, devLogicId_);
         return ret;
     }
     CHK_RET(ret);
-    
+
     initFlag_ = true;
     return HcclResult::HCCL_SUCCESS;
 }
@@ -94,12 +102,13 @@ struct CcuResBlockNum {
     uint32_t ckeNum{0};
 };
 
-static CcuResBlockNum GetPreAllocatedMaxBlockNum(const uint32_t devLogicId, const uint8_t dieId,
-    const std::array<CcuBlockResStrategy, CCU_MAX_IODIE_NUM> &resStrategys)
+static CcuResBlockNum GetPreAllocatedMaxBlockNum(
+    const uint32_t devLogicId, const uint8_t dieId,
+    const std::array<CcuBlockResStrategy, CCU_MAX_IODIE_NUM>& resStrategys)
 {
     CcuResBlockNum blockNum{};
 
-    CcuResSpecifications &ccuResSepcs = CcuResSpecifications::GetInstance(devLogicId);
+    CcuResSpecifications& ccuResSepcs = CcuResSpecifications::GetInstance(devLogicId);
 
     uint32_t loopNum = 0;
     (void)ccuResSepcs.GetLoopEngineNum(dieId, loopNum);
@@ -114,20 +123,23 @@ static CcuResBlockNum GetPreAllocatedMaxBlockNum(const uint32_t devLogicId, cons
     const uint32_t maxCkeBlockNum = ckeNum / resStrategys[dieId].ckeNum;
     blockNum.ckeNum = std::min({std::max({blockNum.loopNum, blockNum.msNum}), maxCkeBlockNum});
 
-    HCCL_INFO("[CcuResBatchAllocator][%s] batch allocator will alloc blocks resources: loop blocks[%u] "
-        "ms blocks[%u] cke blocks[%u], devLogicId[%d] dieId[%u].", __func__, blockNum.loopNum,
-        blockNum.msNum, blockNum.ckeNum, devLogicId, dieId);
+    HCCL_INFO(
+        "[CcuResBatchAllocator][%s] batch allocator will alloc blocks resources: loop blocks[%u] "
+        "ms blocks[%u] cke blocks[%u], devLogicId[%d] dieId[%u].",
+        __func__, blockNum.loopNum, blockNum.msNum, blockNum.ckeNum, devLogicId, dieId);
     return blockNum;
 }
 
 HcclResult CcuResBatchAllocator::PreAllocBlockRes()
 {
-    CcuComponent &ccuComponent = CcuComponent::GetInstance(devLogicId_);
+    CcuComponent& ccuComponent = CcuComponent::GetInstance(devLogicId_);
     const bool armX86Flag = CcuResSpecifications::GetInstance(devLogicId_).GetArmX86Flag();
     for (uint8_t dieId = 0; dieId < CCU_MAX_IODIE_NUM; dieId++) {
         if (!dieEnableFlags_[dieId]) {
-            HCCL_WARNING("[CcuResBatchAllocator][%s] devLogicId[%d] dieId[%u] is not enable, "
-                "will not pre-allocate block resource.", __func__, devLogicId_, dieId);
+            HCCL_WARNING(
+                "[CcuResBatchAllocator][%s] devLogicId[%d] dieId[%u] is not enable, "
+                "will not pre-allocate block resource.",
+                __func__, devLogicId_, dieId);
             continue;
         }
 
@@ -138,22 +150,24 @@ HcclResult CcuResBatchAllocator::PreAllocBlockRes()
             std::make_tuple(ResType::CKE, blockNums.ckeNum, resStrategys_[dieId].ckeNum),
         };
 
-        for (auto &resReq : blockResReqs) {
+        for (auto& resReq : blockResReqs) {
             const ResType resType = std::get<0>(resReq);
             const uint32_t blockNum = std::get<1>(resReq);
             const uint32_t blockSize = std::get<2>(resReq);
             const uint32_t reqNum = blockNum * blockSize; // 生成时已保证不会溢出
             if (reqNum == 0) {
-                HCCL_WARNING("[CcuResBatchAllocator][%s] devLogicId[%d] dieId[%u], "
-                    "resType[%s], request num is 0, passed.", __func__,
-                    devLogicId_, dieId, resType.Describe().c_str());
+                HCCL_WARNING(
+                    "[CcuResBatchAllocator][%s] devLogicId[%d] dieId[%u], "
+                    "resType[%s], request num is 0, passed.",
+                    __func__, devLogicId_, dieId, resType.Describe().c_str());
                 continue;
             }
 
             std::vector<ResInfo> tempResInfos;
             auto ret = ccuComponent.AllocRes(dieId, resType, reqNum, true, tempResInfos);
             if (ret == HcclResult::HCCL_E_UNAVAIL) {
-                HCCL_WARNING("[CcuResBatchAllocator][%s] failed, devLogicId[%d] dieId[%u], "
+                HCCL_WARNING(
+                    "[CcuResBatchAllocator][%s] failed, devLogicId[%d] dieId[%u], "
                     "failed to pre allocate block type resource, resType[%s], num[%u].",
                     __func__, devLogicId_, dieId, resType.Describe().c_str(), reqNum);
                 return ret;
@@ -166,13 +180,13 @@ HcclResult CcuResBatchAllocator::PreAllocBlockRes()
             const uint32_t startId = tempResInfos[0].startId;
             for (uint32_t k = 0; k < blockNum; k++) {
                 BlockInfo blockInfo;
-                blockInfo.id        = k;
-                blockInfo.startId   = startId + k * blockSize;
-                blockInfo.num       = blockSize;
+                blockInfo.id = k;
+                blockInfo.startId = startId + k * blockSize;
+                blockInfo.num = blockSize;
                 // A+X形态，PCIE连接到IOdie0，导致IOdie0上连接PCIE的CCUA0无法使用，分配MS资源时需要跳过CCUA0
                 // 给要分给CCUA0的块，设置成已分配过，防止后续分给算法使用
                 blockInfo.allocated = avoidCcu0Flag ? (k % CCUA_NUM == 0) : false;
-                blockInfo.handle    = 0;
+                blockInfo.handle = 0;
                 tempBlocks.emplace_back(blockInfo);
             }
             resBlocks_[dieId].emplace_back(tempBlocks);
@@ -182,28 +196,20 @@ HcclResult CcuResBatchAllocator::PreAllocBlockRes()
     return HcclResult::HCCL_SUCCESS;
 }
 
-static bool CheckReqValid(const CcuResReq &req, int32_t devLogicId,
-    std::array<bool, CCU_MAX_IODIE_NUM> &dieEnableFlags)
+static bool CheckReqValid(const CcuResReq& req, int32_t devLogicId, std::array<bool, CCU_MAX_IODIE_NUM>& dieEnableFlags)
 {
     bool ifValid = false;
     for (uint8_t i = 0; i < CCU_MAX_IODIE_NUM; i++) {
-        const std::array<uint32_t, REQ_RES_TYPE_NUM> reqs = {
-            req.loopEngineReq[i],
-            req.blockLoopEngineReq[i],
-            req.msReq[i],
-            req.blockMsReq[i],
-            req.ckeReq[i],
-            req.blockCkeReq[i],
-            req.continuousXnReq[i],
-            req.xnReq[i],
-            req.gsaReq[i],
-            req.missionReq.req[i]
-        };
+        const std::array<uint32_t, REQ_RES_TYPE_NUM> reqs
+            = {req.loopEngineReq[i], req.blockLoopEngineReq[i], req.msReq[i], req.blockMsReq[i], req.ckeReq[i],
+               req.blockCkeReq[i],   req.continuousXnReq[i],    req.xnReq[i], req.gsaReq[i],     req.missionReq.req[i]};
 
-        const bool ifReqEmpty = std::all_of(std::begin(reqs), std::end(reqs),
-            [](uint32_t x) { return x == 0; });
+        const bool ifReqEmpty = std::all_of(std::begin(reqs), std::end(reqs), [](uint32_t x) {
+            return x == 0;
+        });
         if (!dieEnableFlags[i] && !ifReqEmpty) { // 当前die未使能，但请求资源
-            HCCL_WARNING("[CcuResBatchAllocator][%s] failed, dieId[%u] is not enable, "
+            HCCL_WARNING(
+                "[CcuResBatchAllocator][%s] failed, dieId[%u] is not enable, "
                 "but resource request is not empty, devLogicId[%d].",
                 __func__, i, devLogicId);
             return false;
@@ -216,20 +222,23 @@ static bool CheckReqValid(const CcuResReq &req, int32_t devLogicId,
     }
 
     if (!ifValid) {
-        HCCL_WARNING("[CcuResBatchAllocator][%s] all dies resource request is empty, "
-            "devLogicId[%d].", __func__, devLogicId);
+        HCCL_WARNING(
+            "[CcuResBatchAllocator][%s] all dies resource request is empty, "
+            "devLogicId[%d].",
+            __func__, devLogicId);
     }
 
     return ifValid;
 }
 
-HcclResult CcuResBatchAllocator::AllocResHandle(const CcuResReq &resReq,
-    CcuResHandle &resHandle)
+HcclResult CcuResBatchAllocator::AllocResHandle(const CcuResReq& resReq, CcuResHandle& resHandle)
 {
     if (!CheckReqValid(resReq, devLogicId_, dieEnableFlags_)) {
         resHandle = nullptr;
-        HCCL_ERROR("[CcuResBatchAllocator][%s] failed, devLogicId[%d], invalid resource "
-            "request, all resource request is empty.", __func__, devLogicId_);
+        HCCL_ERROR(
+            "[CcuResBatchAllocator][%s] failed, devLogicId[%d], invalid resource "
+            "request, all resource request is empty.",
+            __func__, devLogicId_);
         return HcclResult::HCCL_E_PARA;
     }
 
@@ -241,21 +250,25 @@ HcclResult CcuResBatchAllocator::AllocResHandle(const CcuResReq &resReq,
     HcclResult ret = TryAllocResHandle(handleKey, resReq, resRepoPtr);
     if (ret != HcclResult::HCCL_SUCCESS) {
         resHandle = nullptr;
-        HCCL_WARNING("[CcuResBatchAllocator][%s] failed, devLogicId[%d], failed to "
+        HCCL_WARNING(
+            "[CcuResBatchAllocator][%s] failed, devLogicId[%d], failed to "
             "allocate resource handle, release temporary resources of this request.",
             __func__, devLogicId_);
 
         // 释放申请的临时资源，由CcuResRepo对象对应的智能指针管理
         HcclResult releaseRet = ReleaseResource(resRepoPtr);
         if (releaseRet != HcclResult::HCCL_SUCCESS) {
-            HCCL_ERROR("[CcuResBatchAllocator][%s] failed, devLogicId[%d], "
+            HCCL_ERROR(
+                "[CcuResBatchAllocator][%s] failed, devLogicId[%d], "
                 "failed to release temporary resources of this request.",
                 __func__, devLogicId_);
             return releaseRet;
         }
 
-        HCCL_INFO("[CcuResBatchAllocator][%s] devLogicId[%d], "
-            "temporary resources released.", __func__, devLogicId_);
+        HCCL_INFO(
+            "[CcuResBatchAllocator][%s] devLogicId[%d], "
+            "temporary resources released.",
+            __func__, devLogicId_);
         return ret;
     }
     // 保存资源信息
@@ -265,15 +278,15 @@ HcclResult CcuResBatchAllocator::AllocResHandle(const CcuResReq &resReq,
     return HcclResult::HCCL_SUCCESS;
 }
 
-static HcclResult HandleBlockRes(const uintptr_t handleKey, const uint32_t num,
-    const uint32_t blockSize, std::vector<BlockInfo> &blocks,
-    std::vector<ResInfo> &resInfos)
+static HcclResult HandleBlockRes(
+    const uintptr_t handleKey, const uint32_t num, const uint32_t blockSize, std::vector<BlockInfo>& blocks,
+    std::vector<ResInfo>& resInfos)
 {
-    uint32_t blockNum     = 1 + (num - 1) / blockSize;
+    uint32_t blockNum = 1 + (num - 1) / blockSize;
     uint32_t blockMaxSize = blocks.size();
     uint32_t blockStartId = blockMaxSize;
-    uint32_t freeNum      = 0;
-    bool     allocatable  = false;
+    uint32_t freeNum = 0;
+    bool allocatable = false;
     for (size_t k = 0; k < blockMaxSize; k++) {
         // 如果当前块已分配，说明当前分配不够，重置分配数量与起始id
         if (blocks[k].allocated) {
@@ -298,48 +311,51 @@ static HcclResult HandleBlockRes(const uintptr_t handleKey, const uint32_t num,
     }
     // 更新所有新分配的块的信息
     for (size_t k = blockStartId; k < blockStartId + blockNum; k++) {
-        blocks[k].handle    = handleKey;
+        blocks[k].handle = handleKey;
         blocks[k].allocated = true;
     }
     resInfos.emplace_back(ResInfo{blocks[blockStartId].startId, blockNum * blockSize});
     return HcclResult::HCCL_SUCCESS;
 }
 
-static void DumpBlockResInfo(ResType resType, const std::vector<BlockInfo> &blocks)
+static void DumpBlockResInfo(ResType resType, const std::vector<BlockInfo>& blocks)
 {
     HCCL_INFO("Dump ResType[%s] block resources info: ", resType.Describe().c_str());
     uint32_t blockNum = blocks.size();
     for (size_t k = 0; k < blockNum; k++) {
-        HCCL_INFO("Block[id[%u], startId[%u], num[%u], handle(uintptr_t)[%llu], allocated[%d]]",
-            blocks[k].id, blocks[k].startId, blocks[k].num, blocks[k].handle,
-            static_cast<int>(blocks[k].allocated));
+        HCCL_INFO(
+            "Block[id[%u], startId[%u], num[%u], handle(uintptr_t)[%llu], allocated[%d]]", blocks[k].id,
+            blocks[k].startId, blocks[k].num, blocks[k].handle, static_cast<int>(blocks[k].allocated));
     }
 }
 
-HcclResult CcuResBatchAllocator::AllocBlockRes(const uintptr_t handleKey,
-    const CcuResReq &resReq, std::unique_ptr<CcuResRepository> &resRepoPtr)
+HcclResult CcuResBatchAllocator::AllocBlockRes(
+    const uintptr_t handleKey, const CcuResReq& resReq, std::unique_ptr<CcuResRepository>& resRepoPtr)
 {
-    using ResTypeReqNumBlockNumFunc =
-        std::tuple<ResType::Value, uint32_t, uint32_t, std::vector<ResInfo> &>;
+    using ResTypeReqNumBlockNumFunc = std::tuple<ResType::Value, uint32_t, uint32_t, std::vector<ResInfo>&>;
 
     for (uint8_t dieId = 0; dieId < CCU_MAX_IODIE_NUM; dieId++) {
         if (!dieEnableFlags_[dieId]) {
-            HCCL_WARNING("[CcuResBatchAllocator][%s] devLogicId[%d] dieId[%u] is not enable, "
-                "will not allocate block resource.", __func__, devLogicId_, dieId);
+            HCCL_WARNING(
+                "[CcuResBatchAllocator][%s] devLogicId[%d] dieId[%u] is not enable, "
+                "will not allocate block resource.",
+                __func__, devLogicId_, dieId);
             continue;
         }
 
-        std::array<ResTypeReqNumBlockNumFunc, BLOCK_RES_TYPE_NUM> blockReqParas = {
-            std::make_tuple(ResType::LOOP, resReq.blockLoopEngineReq[dieId],
-                resStrategys_[dieId].loopNum, std::ref(resRepoPtr->blockLoopEngine[dieId])),
-            std::make_tuple(ResType::MS, resReq.blockMsReq[dieId],
-                resStrategys_[dieId].msNum, std::ref(resRepoPtr->blockMs[dieId])),
-            std::make_tuple(ResType::CKE, resReq.blockCkeReq[dieId],
-                resStrategys_[dieId].ckeNum, std::ref(resRepoPtr->blockCke[dieId]))
-        };
-        
+        std::array<ResTypeReqNumBlockNumFunc, BLOCK_RES_TYPE_NUM> blockReqParas
+            = {std::make_tuple(
+                   ResType::LOOP, resReq.blockLoopEngineReq[dieId], resStrategys_[dieId].loopNum,
+                   std::ref(resRepoPtr->blockLoopEngine[dieId])),
+               std::make_tuple(
+                   ResType::MS, resReq.blockMsReq[dieId], resStrategys_[dieId].msNum,
+                   std::ref(resRepoPtr->blockMs[dieId])),
+               std::make_tuple(
+                   ResType::CKE, resReq.blockCkeReq[dieId], resStrategys_[dieId].ckeNum,
+                   std::ref(resRepoPtr->blockCke[dieId]))};
+
         for (uint32_t blockType = 0; blockType < BLOCK_RES_TYPE_NUM; blockType++) {
-            const auto &req = blockReqParas[blockType];
+            const auto& req = blockReqParas[blockType];
             const uint32_t num = std::get<1>(req);
             if (num == 0) {
                 continue;
@@ -347,14 +363,15 @@ HcclResult CcuResBatchAllocator::AllocBlockRes(const uintptr_t handleKey,
 
             const ResType resType = std::get<0>(req);
             const uint32_t blockSize = std::get<2>(req);
-            auto &blocks = resBlocks_[dieId][blockType];
-            auto &resInfos = std::get<3>(req);
+            auto& blocks = resBlocks_[dieId][blockType];
+            auto& resInfos = std::get<3>(req);
             auto ret = HandleBlockRes(handleKey, num, blockSize, blocks, resInfos);
             if (ret != HcclResult::HCCL_SUCCESS) {
-                HCCL_WARNING("[CcuResBatchAllocator][%s] failed, devLogicId[%d] dieId[%u], "
+                HCCL_WARNING(
+                    "[CcuResBatchAllocator][%s] failed, devLogicId[%d] dieId[%u], "
                     "failed to allocate [%s] block resource, remaining block resources are "
-                    "not enough, request num[%u].", __func__, devLogicId_, dieId,
-                    resType.Describe().c_str(), num);
+                    "not enough, request num[%u].",
+                    __func__, devLogicId_, dieId, resType.Describe().c_str(), num);
                 DumpBlockResInfo(std::get<0>(req), resBlocks_[dieId][blockType]);
                 return ret;
             }
@@ -363,36 +380,36 @@ HcclResult CcuResBatchAllocator::AllocBlockRes(const uintptr_t handleKey,
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult CcuResBatchAllocator::AllocConsecutiveRes(const CcuResReq &resReq,
-    std::unique_ptr<CcuResRepository> &resRepoPtr) const
+HcclResult
+CcuResBatchAllocator::AllocConsecutiveRes(const CcuResReq& resReq, std::unique_ptr<CcuResRepository>& resRepoPtr) const
 {
     using ResTypeReqNumResInfoTuple = std::tuple<ResType, uint32_t, std::vector<ResInfo>&>;
 
-    CcuComponent &ccuComponent = CcuComponent::GetInstance(devLogicId_);
+    CcuComponent& ccuComponent = CcuComponent::GetInstance(devLogicId_);
     for (uint8_t dieId = 0; dieId < CCU_MAX_IODIE_NUM; dieId++) {
         if (!dieEnableFlags_[dieId]) {
-            HCCL_WARNING("[CcuResBatchAllocator][%s] devLogicId[%d] dieId[%u] is not enable, "
-                "will not allocate consecutive resource.", __func__, devLogicId_, dieId);
+            HCCL_WARNING(
+                "[CcuResBatchAllocator][%s] devLogicId[%d] dieId[%u] is not enable, "
+                "will not allocate consecutive resource.",
+                __func__, devLogicId_, dieId);
             continue;
         }
 
-        std::array<ResTypeReqNumResInfoTuple, CONS_RES_TYPE_NUM> reqParas = {
-            std::make_tuple(ResType::XN, resReq.continuousXnReq[dieId],
-                std::ref(resRepoPtr->continuousXn[dieId]))
-        };
+        std::array<ResTypeReqNumResInfoTuple, CONS_RES_TYPE_NUM> reqParas
+            = {std::make_tuple(ResType::XN, resReq.continuousXnReq[dieId], std::ref(resRepoPtr->continuousXn[dieId]))};
 
-        for (const auto &req : reqParas) {
+        for (const auto& req : reqParas) {
             if (std::get<1>(req) == 0) {
                 continue;
             }
 
             std::vector<ResInfo> resInfos;
-            auto ret = ccuComponent.AllocRes(dieId, std::get<0>(req), std::get<1>(req),
-                true, resInfos);
+            auto ret = ccuComponent.AllocRes(dieId, std::get<0>(req), std::get<1>(req), true, resInfos);
             if (ret == HcclResult::HCCL_E_UNAVAIL) {
-                HCCL_WARNING("[CcuResBatchAllocator][%s] failed, devLogicId[%d] dieId[%u], "
-                    "failed to allocate %s resource, num[%u].", __func__, devLogicId_, dieId,
-                    std::get<0>(req).Describe().c_str(), std::get<1>(req));
+                HCCL_WARNING(
+                    "[CcuResBatchAllocator][%s] failed, devLogicId[%d] dieId[%u], "
+                    "failed to allocate %s resource, num[%u].",
+                    __func__, devLogicId_, dieId, std::get<0>(req).Describe().c_str(), std::get<1>(req));
                 return ret;
             }
             CHK_RET(ret);
@@ -404,40 +421,40 @@ HcclResult CcuResBatchAllocator::AllocConsecutiveRes(const CcuResReq &resReq,
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult CcuResBatchAllocator::AllocDiscreteRes(const CcuResReq &resReq,
-    std::unique_ptr<CcuResRepository> &resRepoPtr) const
+HcclResult
+CcuResBatchAllocator::AllocDiscreteRes(const CcuResReq& resReq, std::unique_ptr<CcuResRepository>& resRepoPtr) const
 {
     using ResTypeReqNumResInfoTuple = std::tuple<ResType, uint32_t, std::vector<ResInfo>&>;
 
-    CcuComponent &ccuComponent = CcuComponent::GetInstance(devLogicId_);
+    CcuComponent& ccuComponent = CcuComponent::GetInstance(devLogicId_);
     for (uint8_t dieId = 0; dieId < CCU_MAX_IODIE_NUM; dieId++) {
         if (!dieEnableFlags_[dieId]) {
-            HCCL_WARNING("[CcuResBatchAllocator][%s] devLogicId[%d] dieId[%u] is not enable, "
-                "will not allocate discrete resource.", __func__, devLogicId_, dieId);
+            HCCL_WARNING(
+                "[CcuResBatchAllocator][%s] devLogicId[%d] dieId[%u] is not enable, "
+                "will not allocate discrete resource.",
+                __func__, devLogicId_, dieId);
             continue;
         }
 
-        std::array<ResTypeReqNumResInfoTuple, DISCRETE_RES_TYPE_NUM> reqParas = {
-            std::make_tuple(ResType::LOOP, resReq.loopEngineReq[dieId],
-                std::ref(resRepoPtr->loopEngine[dieId])),
-            std::make_tuple(ResType::MS, resReq.msReq[dieId], std::ref(resRepoPtr->ms[dieId])),
-            std::make_tuple(ResType::CKE, resReq.ckeReq[dieId], std::ref(resRepoPtr->cke[dieId])),
-            std::make_tuple(ResType::XN, resReq.xnReq[dieId], std::ref(resRepoPtr->xn[dieId])),
-            std::make_tuple(ResType::GSA, resReq.gsaReq[dieId], std::ref(resRepoPtr->gsa[dieId]))
-        };
+        std::array<ResTypeReqNumResInfoTuple, DISCRETE_RES_TYPE_NUM> reqParas
+            = {std::make_tuple(ResType::LOOP, resReq.loopEngineReq[dieId], std::ref(resRepoPtr->loopEngine[dieId])),
+               std::make_tuple(ResType::MS, resReq.msReq[dieId], std::ref(resRepoPtr->ms[dieId])),
+               std::make_tuple(ResType::CKE, resReq.ckeReq[dieId], std::ref(resRepoPtr->cke[dieId])),
+               std::make_tuple(ResType::XN, resReq.xnReq[dieId], std::ref(resRepoPtr->xn[dieId])),
+               std::make_tuple(ResType::GSA, resReq.gsaReq[dieId], std::ref(resRepoPtr->gsa[dieId]))};
 
-        for (const auto &req : reqParas) {
+        for (const auto& req : reqParas) {
             if (std::get<1>(req) == 0) {
                 continue;
             }
 
             std::vector<ResInfo> resInfos;
-            auto ret = ccuComponent.AllocRes(dieId, std::get<0>(req), std::get<1>(req),
-                false, resInfos);
+            auto ret = ccuComponent.AllocRes(dieId, std::get<0>(req), std::get<1>(req), false, resInfos);
             if (ret == HcclResult::HCCL_E_UNAVAIL) {
-                HCCL_WARNING("[CcuResBatchAllocator][%s] failed, devLogicId[%d] dieId[%u], "
-                    "failed to allocate %s resource, num[%u].", __func__, devLogicId_, dieId,
-                    std::get<0>(req).Describe().c_str(), std::get<1>(req));
+                HCCL_WARNING(
+                    "[CcuResBatchAllocator][%s] failed, devLogicId[%d] dieId[%u], "
+                    "failed to allocate %s resource, num[%u].",
+                    __func__, devLogicId_, dieId, std::get<0>(req).Describe().c_str(), std::get<1>(req));
                 return ret;
             }
             CHK_RET(ret);
@@ -449,22 +466,25 @@ HcclResult CcuResBatchAllocator::AllocDiscreteRes(const CcuResReq &resReq,
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult CcuResBatchAllocator::TryAllocResHandle(const uintptr_t handleKey,
-    const CcuResReq &resReq, std::unique_ptr<CcuResRepository> &resRepoPtr)
+HcclResult CcuResBatchAllocator::TryAllocResHandle(
+    const uintptr_t handleKey, const CcuResReq& resReq, std::unique_ptr<CcuResRepository>& resRepoPtr)
 {
     std::unique_lock<std::mutex> lock(innerMutex_);
 
     HcclResult ret = AllocBlockRes(handleKey, resReq, resRepoPtr);
     if (ret == HcclResult::HCCL_E_UNAVAIL) {
-        HCCL_WARNING("[CcuResBatchAllocator][%s] failed, devLogicId[%d], "
-            "failed to allocate block type resource.", __func__, devLogicId_);
+        HCCL_WARNING(
+            "[CcuResBatchAllocator][%s] failed, devLogicId[%d], "
+            "failed to allocate block type resource.",
+            __func__, devLogicId_);
         return ret;
     }
     CHK_RET(ret);
 
     ret = missionMgr_.Alloc(handleKey, resReq.missionReq, resRepoPtr->mission);
     if (ret == HcclResult::HCCL_E_UNAVAIL) {
-        HCCL_WARNING("[CcuResBatchAllocator][%s] devLogicId[%d], failed to allocate "
+        HCCL_WARNING(
+            "[CcuResBatchAllocator][%s] devLogicId[%d], failed to allocate "
             "mission resource, remaining block resources are not enough.",
             __func__, devLogicId_);
         return ret;
@@ -473,16 +493,20 @@ HcclResult CcuResBatchAllocator::TryAllocResHandle(const uintptr_t handleKey,
 
     ret = AllocConsecutiveRes(resReq, resRepoPtr);
     if (ret == HcclResult::HCCL_E_UNAVAIL) {
-        HCCL_WARNING("[CcuResBatchAllocator][%s] devLogicId[%d], failed to allocate "
-            "consecutive resource.", __func__, devLogicId_);
+        HCCL_WARNING(
+            "[CcuResBatchAllocator][%s] devLogicId[%d], failed to allocate "
+            "consecutive resource.",
+            __func__, devLogicId_);
         return ret;
     }
     CHK_RET(ret);
 
     ret = AllocDiscreteRes(resReq, resRepoPtr);
     if (ret == HcclResult::HCCL_E_UNAVAIL) {
-        HCCL_WARNING("[CcuResBatchAllocator][%s] devLogicId[%d], failed to allocate "
-            "discrete resource.", __func__, devLogicId_);
+        HCCL_WARNING(
+            "[CcuResBatchAllocator][%s] devLogicId[%d], failed to allocate "
+            "discrete resource.",
+            __func__, devLogicId_);
         return ret;
     }
     CHK_RET(ret);
@@ -490,39 +514,41 @@ HcclResult CcuResBatchAllocator::TryAllocResHandle(const uintptr_t handleKey,
     return HcclResult::HCCL_SUCCESS;
 }
 
-static void ReleaseBlockRes(const uint32_t blockSize, std::vector<BlockInfo> &blocks,
-    std::vector<ResInfo> &resInfos)
+static void ReleaseBlockRes(const uint32_t blockSize, std::vector<BlockInfo>& blocks, std::vector<ResInfo>& resInfos)
 {
     uint32_t startId = resInfos[0].startId;
-    uint32_t num     = resInfos[0].num;
+    uint32_t num = resInfos[0].num;
     uint32_t startBlockId = (startId - blocks[0].startId) / blockSize;
-    uint32_t blockNum     = num / blockSize;
+    uint32_t blockNum = num / blockSize;
 
     for (uint32_t k = startBlockId; k < startBlockId + blockNum; k++) {
-        blocks[k].handle    = 0;
+        blocks[k].handle = 0;
         blocks[k].allocated = false;
     }
     resInfos.clear();
 }
 
-HcclResult CcuResBatchAllocator::ReleaseResHandle(const CcuResHandle &handle)
+HcclResult CcuResBatchAllocator::ReleaseResHandle(const CcuResHandle& handle)
 {
     std::unique_lock<std::mutex> lock(innerMutex_);
 
     uintptr_t handleKey = reinterpret_cast<uintptr_t>(handle);
     if (handleMap_.find(handleKey) == handleMap_.end()) {
-        HCCL_ERROR("[CcuResBatchAllocator][%s] failed, devLogicId[%d], "
+        HCCL_ERROR(
+            "[CcuResBatchAllocator][%s] failed, devLogicId[%d], "
             "failed to find resource repository, invalid resource handle(uintptr_t)[%llu]",
             __func__, devLogicId_, handleKey);
         return HcclResult::HCCL_E_PARA;
     }
 
-    std::unique_ptr<CcuResRepository> &resRepoPtr = handleMap_[handleKey];
+    std::unique_ptr<CcuResRepository>& resRepoPtr = handleMap_[handleKey];
 
     auto ret = ReleaseResource(resRepoPtr);
     if (ret != HcclResult::HCCL_SUCCESS) {
-        HCCL_ERROR("[CcuResBatchAllocator][%s] failed, devLogicId[%d], "
-            "failed[%u] to release resource.", __func__, devLogicId_, ret);
+        HCCL_ERROR(
+            "[CcuResBatchAllocator][%s] failed, devLogicId[%d], "
+            "failed[%u] to release resource.",
+            __func__, devLogicId_, ret);
         return ret;
     }
 
@@ -530,21 +556,23 @@ HcclResult CcuResBatchAllocator::ReleaseResHandle(const CcuResHandle &handle)
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult CcuResBatchAllocator::ReleaseResource(std::unique_ptr<CcuResRepository> &resRepoPtr)
+HcclResult CcuResBatchAllocator::ReleaseResource(std::unique_ptr<CcuResRepository>& resRepoPtr)
 {
     ReleaseBlockResource(resRepoPtr);
     missionMgr_.Release(resRepoPtr->mission);
     HcclResult ret = ReleaseNonBlockTypeRes(resRepoPtr);
     if (ret != HcclResult::HCCL_SUCCESS) {
-        HCCL_ERROR("[CcuResBatchAllocator][%s] failed, devLogicId[%d], "
-            "failed[%u] to release discrete resource.", __func__, devLogicId_, ret);
+        HCCL_ERROR(
+            "[CcuResBatchAllocator][%s] failed, devLogicId[%d], "
+            "failed[%u] to release discrete resource.",
+            __func__, devLogicId_, ret);
         return ret;
     }
 
     return HcclResult::HCCL_SUCCESS;
 }
 
-void CcuResBatchAllocator::ReleaseBlockResource(std::unique_ptr<CcuResRepository> &resRepoPtr)
+void CcuResBatchAllocator::ReleaseBlockResource(std::unique_ptr<CcuResRepository>& resRepoPtr)
 {
     using BlockSizeResNum = std::pair<uint32_t, std::vector<ResInfo>&>;
 
@@ -553,15 +581,14 @@ void CcuResBatchAllocator::ReleaseBlockResource(std::unique_ptr<CcuResRepository
             continue;
         }
 
-        const std::array<BlockSizeResNum, BLOCK_RES_TYPE_NUM> blockReqParas = {
-            std::make_pair(resStrategys_[i].loopNum, std::ref(resRepoPtr->blockLoopEngine[i])),
-            std::make_pair(resStrategys_[i].msNum, std::ref(resRepoPtr->blockMs[i])),
-            std::make_pair(resStrategys_[i].ckeNum, std::ref(resRepoPtr->blockCke[i]))
-        };
+        const std::array<BlockSizeResNum, BLOCK_RES_TYPE_NUM> blockReqParas
+            = {std::make_pair(resStrategys_[i].loopNum, std::ref(resRepoPtr->blockLoopEngine[i])),
+               std::make_pair(resStrategys_[i].msNum, std::ref(resRepoPtr->blockMs[i])),
+               std::make_pair(resStrategys_[i].ckeNum, std::ref(resRepoPtr->blockCke[i]))};
 
         for (uint32_t j = 0; j < BLOCK_RES_TYPE_NUM; j++) {
             auto req = blockReqParas[j];
-            std::vector<ResInfo> &resInfos = req.second;
+            std::vector<ResInfo>& resInfos = req.second;
             if (resInfos.size() == 0) {
                 continue;
             }
@@ -572,18 +599,14 @@ void CcuResBatchAllocator::ReleaseBlockResource(std::unique_ptr<CcuResRepository
 }
 
 using ResTypeResInfo = std::pair<ResType, std::vector<ResInfo>*>;
-static auto EraseReverse(std::vector<ResInfo>& vec,
-                         std::vector<ResInfo>::reverse_iterator it)
+static auto EraseReverse(std::vector<ResInfo>& vec, std::vector<ResInfo>::reverse_iterator it)
     -> std::vector<ResInfo>::reverse_iterator
 {
-    return std::vector<ResInfo>::reverse_iterator(
-        vec.erase(std::next(it).base())
-    );
+    return std::vector<ResInfo>::reverse_iterator(vec.erase(std::next(it).base()));
 }
 
-static HcclResult DoReleaseNonBlockTypeRes(
-    int32_t devLogicId, uint8_t dieId,
-    std::array<ResTypeResInfo, NON_BLOCK_TYPE_NUM>& infoParas)
+static HcclResult
+DoReleaseNonBlockTypeRes(int32_t devLogicId, uint8_t dieId, std::array<ResTypeResInfo, NON_BLOCK_TYPE_NUM>& infoParas)
 {
     CcuComponent& ccuComponent = CcuComponent::GetInstance(devLogicId);
 
@@ -595,7 +618,7 @@ static HcclResult DoReleaseNonBlockTypeRes(
         }
         std::vector<ResInfo>& resInfos = *resInfosPtr;
         // 倒序删除，减少vector元素移动
-        for (auto it = resInfos.rbegin(); it != resInfos.rend(); ) {
+        for (auto it = resInfos.rbegin(); it != resInfos.rend();) {
             const uint32_t num = it->num;
             if (num == 0) {
                 it = EraseReverse(resInfos, it);
@@ -605,9 +628,10 @@ static HcclResult DoReleaseNonBlockTypeRes(
             const uint32_t startId = it->startId;
             auto ret = ccuComponent.ReleaseRes(dieId, resType, startId, num);
             if (ret != HcclResult::HCCL_SUCCESS) {
-                HCCL_ERROR("[CcuResBatchAllocator][%s] failed, devLogicId[%d] dieId[%u], "
-                    "failed to release %s resource, startId[%u], num[%u].", __func__,
-                    devLogicId, dieId, resType.Describe().c_str(), startId, num);
+                HCCL_ERROR(
+                    "[CcuResBatchAllocator][%s] failed, devLogicId[%d] dieId[%u], "
+                    "failed to release %s resource, startId[%u], num[%u].",
+                    __func__, devLogicId, dieId, resType.Describe().c_str(), startId, num);
                 return ret;
             }
 
@@ -617,37 +641,35 @@ static HcclResult DoReleaseNonBlockTypeRes(
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult CcuResBatchAllocator::ReleaseNonBlockTypeRes(
-    std::unique_ptr<CcuResRepository>& resRepoPtr) const
+HcclResult CcuResBatchAllocator::ReleaseNonBlockTypeRes(std::unique_ptr<CcuResRepository>& resRepoPtr) const
 {
     for (uint8_t dieId = 0; dieId < CCU_MAX_IODIE_NUM; dieId++) {
         if (!dieEnableFlags_[dieId]) {
             continue;
         }
 
-        std::array<ResTypeResInfo, NON_BLOCK_TYPE_NUM> infoParas = {{
-            {ResType::LOOP, &resRepoPtr->loopEngine[dieId]},
-            {ResType::MS,   &resRepoPtr->ms[dieId]},
-            {ResType::CKE,  &resRepoPtr->cke[dieId]},
-            {ResType::XN,   &resRepoPtr->continuousXn[dieId]},
-            {ResType::XN,   &resRepoPtr->xn[dieId]},
-            {ResType::GSA,  &resRepoPtr->gsa[dieId]}
-        }};
-    
+        std::array<ResTypeResInfo, NON_BLOCK_TYPE_NUM> infoParas
+            = {{{ResType::LOOP, &resRepoPtr->loopEngine[dieId]},
+                {ResType::MS, &resRepoPtr->ms[dieId]},
+                {ResType::CKE, &resRepoPtr->cke[dieId]},
+                {ResType::XN, &resRepoPtr->continuousXn[dieId]},
+                {ResType::XN, &resRepoPtr->xn[dieId]},
+                {ResType::GSA, &resRepoPtr->gsa[dieId]}}};
+
         CHK_RET(DoReleaseNonBlockTypeRes(devLogicId_, dieId, infoParas));
     }
 
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult CcuResBatchAllocator::GetResource(const CcuResHandle &handle,
-    CcuResRepository &ccuResRepo)
+HcclResult CcuResBatchAllocator::GetResource(const CcuResHandle& handle, CcuResRepository& ccuResRepo)
 {
     std::unique_lock<std::mutex> lock(innerMutex_);
 
     uintptr_t handleKey = reinterpret_cast<uintptr_t>(handle);
     if (handleMap_.find(handleKey) == handleMap_.end()) {
-        HCCL_ERROR("[CcuResBatchAllocator][%s] devLogicId[%d], failed to find "
+        HCCL_ERROR(
+            "[CcuResBatchAllocator][%s] devLogicId[%d], failed to find "
             "resource repository, invalid resource handle(uintptr_t)[%lu]",
             __func__, devLogicId_, handleKey);
         return HcclResult::HCCL_E_PARA;
@@ -657,28 +679,27 @@ HcclResult CcuResBatchAllocator::GetResource(const CcuResHandle &handle,
     return HcclResult::HCCL_SUCCESS;
 }
 
-static HcclResult PreAllocMissionRes(int32_t devLogicId,
-    std::array<bool, CCU_MAX_IODIE_NUM> &dieEnableFlags,
-    std::array<uint32_t, CCU_MAX_IODIE_NUM> &missionNums,
-    std::array<uint32_t, CCU_MAX_IODIE_NUM> &missionStartIds)
+static HcclResult PreAllocMissionRes(
+    int32_t devLogicId, std::array<bool, CCU_MAX_IODIE_NUM>& dieEnableFlags,
+    std::array<uint32_t, CCU_MAX_IODIE_NUM>& missionNums, std::array<uint32_t, CCU_MAX_IODIE_NUM>& missionStartIds)
 {
-    auto &ccuResSepcs = CcuResSpecifications::GetInstance(devLogicId);
-    auto &ccuComponent = CcuComponent::GetInstance(devLogicId);
+    auto& ccuResSepcs = CcuResSpecifications::GetInstance(devLogicId);
+    auto& ccuComponent = CcuComponent::GetInstance(devLogicId);
     for (uint8_t i = 0; i < CCU_MAX_IODIE_NUM; i++) {
         if (!dieEnableFlags[i]) {
-            missionNums[i]     = 0;
+            missionNums[i] = 0;
             missionStartIds[i] = 0;
             continue;
         }
 
         (void)ccuResSepcs.GetMissionNum(i, missionNums[i]);
         std::vector<ResInfo> tempResInfos;
-        auto ret = ccuComponent.AllocRes(i, ResType::MISSION, missionNums[i],
-            true, tempResInfos);
+        auto ret = ccuComponent.AllocRes(i, ResType::MISSION, missionNums[i], true, tempResInfos);
         if (ret == HcclResult::HCCL_E_UNAVAIL) {
-            HCCL_WARNING("[CcuMissionMgr][%s] devLogicId[%d] dieId[%u], failed[%u] "
-                "to pre allocate mission resource, num[%u]", __func__, devLogicId,
-                i, ret, missionNums[i]);
+            HCCL_WARNING(
+                "[CcuMissionMgr][%s] devLogicId[%d] dieId[%u], failed[%u] "
+                "to pre allocate mission resource, num[%u]",
+                __func__, devLogicId, i, ret, missionNums[i]);
             return ret;
         }
         CHK_RET(ret);
@@ -689,15 +710,14 @@ static HcclResult PreAllocMissionRes(int32_t devLogicId,
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult CcuResBatchAllocator::CcuMissionMgr::PreAlloc(const int32_t devLogicId,
-    const uint32_t blockSize, const std::array<bool, CCU_MAX_IODIE_NUM> &dieFlags)
+HcclResult CcuResBatchAllocator::CcuMissionMgr::PreAlloc(
+    const int32_t devLogicId, const uint32_t blockSize, const std::array<bool, CCU_MAX_IODIE_NUM>& dieFlags)
 {
     dieEnableFlags_ = dieFlags;
     std::array<uint32_t, CCU_MAX_IODIE_NUM> missionNums;
     std::array<uint32_t, CCU_MAX_IODIE_NUM> missionStartIds;
 
-    auto ret = PreAllocMissionRes(devLogicId, dieEnableFlags_,
-        missionNums, missionStartIds);
+    auto ret = PreAllocMissionRes(devLogicId, dieEnableFlags_, missionNums, missionStartIds);
     if (ret != HcclResult::HCCL_SUCCESS) {
         return ret;
     }
@@ -709,13 +729,13 @@ HcclResult CcuResBatchAllocator::CcuMissionMgr::PreAlloc(const int32_t devLogicI
         missionNum = missionNums[1];
     }
 
-    if (dieEnableFlags_[0] && dieEnableFlags_[1] &&
-        missionStartIds[0] != missionStartIds[1]) {
+    if (dieEnableFlags_[0] && dieEnableFlags_[1] && missionStartIds[0] != missionStartIds[1]) {
         // 当前 FUSION_MULTIPLE_DIE 要求多Die ID一致
-        HCCL_ERROR("[CcuMissionMgr][%s] devLogicId[%d] die 0 allocated missions "
+        HCCL_ERROR(
+            "[CcuMissionMgr][%s] devLogicId[%d] die 0 allocated missions "
             "start with id %u, die 1 allocated missions start with id %u, the start "
-            "id should be same.", __func__, devLogicId, missionStartIds[0],
-            missionStartIds[1]);
+            "id should be same.",
+            __func__, devLogicId, missionStartIds[0], missionStartIds[1]);
         return HcclResult::HCCL_E_INTERNAL;
     }
 
@@ -723,27 +743,29 @@ HcclResult CcuResBatchAllocator::CcuMissionMgr::PreAlloc(const int32_t devLogicI
     uint32_t blockNum = missionNum / stragtegy_;
     for (uint32_t i = 0; i < blockNum; i++) {
         BlockInfo blockInfo;
-        blockInfo.id        = i;
-        blockInfo.startId   = missionStartIds[0] + i * stragtegy_;
-        blockInfo.num       = stragtegy_;
+        blockInfo.id = i;
+        blockInfo.startId = missionStartIds[0] + i * stragtegy_;
+        blockInfo.num = stragtegy_;
         blockInfo.allocated = false;
-        blockInfo.handle    = 0;
+        blockInfo.handle = 0;
         blocks_.emplace_back(blockInfo);
     }
 
     return HcclResult::HCCL_SUCCESS;
 }
 
-static uint32_t Check2DieMissionReqNum(const MissionReq &missionReq,
-    const std::array<bool, CCU_MAX_IODIE_NUM> &dieEnableFlags)
+static uint32_t
+Check2DieMissionReqNum(const MissionReq& missionReq, const std::array<bool, CCU_MAX_IODIE_NUM>& dieEnableFlags)
 {
     uint32_t die0ReqNum = missionReq.req[0];
     uint32_t die1ReqNum = missionReq.req[1];
 
     if (dieEnableFlags[0] && dieEnableFlags[1]) {
         if (die0ReqNum != die1ReqNum) {
-            HCCL_WARNING("[CcuMissionMgr][Alloc] die 0 request %u, die 1 request %u, "
-                         "will choose the larger one.", die0ReqNum, die1ReqNum);
+            HCCL_WARNING(
+                "[CcuMissionMgr][Alloc] die 0 request %u, die 1 request %u, "
+                "will choose the larger one.",
+                die0ReqNum, die1ReqNum);
             return std::max(die0ReqNum, die1ReqNum);
         }
 
@@ -761,31 +783,35 @@ static uint32_t Check2DieMissionReqNum(const MissionReq &missionReq,
     return 0;
 }
 
-HcclResult CcuResBatchAllocator::CcuMissionMgr::Alloc(const uintptr_t handleKey,
-    const MissionReq &missionReq, MissionResInfo &missionInfos)
+HcclResult CcuResBatchAllocator::CcuMissionMgr::Alloc(
+    const uintptr_t handleKey, const MissionReq& missionReq, MissionResInfo& missionInfos)
 {
     MissionReqType reqType = missionReq.reqType;
     constexpr MissionReqType defaultReqType = MissionReqType::FUSION_MULTIPLE_DIE;
     if (missionReq.reqType != MissionReqType::FUSION_MULTIPLE_DIE) {
-        HCCL_WARNING("[CcuMissionMgr][%s] mission reqType[%d], mission resouces "
-            "now only support %d.", __func__, reqType,
-            defaultReqType);
+        HCCL_WARNING(
+            "[CcuMissionMgr][%s] mission reqType[%d], mission resouces "
+            "now only support %d.",
+            __func__, reqType, defaultReqType);
         reqType = MissionReqType::FUSION_MULTIPLE_DIE;
     }
 
     uint32_t reqNum = Check2DieMissionReqNum(missionReq, dieEnableFlags_);
     if (reqNum == 0) {
-        HCCL_INFO("[CcuMissionMgr][%s] passed, request mission num is 0, "
-            "will not allocate mission resource.", __func__);
+        HCCL_INFO(
+            "[CcuMissionMgr][%s] passed, request mission num is 0, "
+            "will not allocate mission resource.",
+            __func__);
         return HcclResult::HCCL_SUCCESS;
     }
 
     std::vector<ResInfo> resInfos;
     auto ret = HandleBlockRes(handleKey, reqNum, stragtegy_, blocks_, resInfos);
     if (ret == HcclResult::HCCL_E_UNAVAIL) {
-        HCCL_WARNING("[CcuMissionMgr][%s] failed, mission block resources are unavaiable, "
-            "reqNum[%u], stragtegy[%u], reqType[%d].", __func__, reqNum, stragtegy_,
-            reqType);
+        HCCL_WARNING(
+            "[CcuMissionMgr][%s] failed, mission block resources are unavaiable, "
+            "reqNum[%u], stragtegy[%u], reqType[%d].",
+            __func__, reqNum, stragtegy_, reqType);
         DumpBlockResInfo(ResType::MISSION, blocks_);
         return ret;
     }
@@ -802,7 +828,7 @@ HcclResult CcuResBatchAllocator::CcuMissionMgr::Alloc(const uintptr_t handleKey,
     return HcclResult::HCCL_SUCCESS;
 }
 
-void CcuResBatchAllocator::CcuMissionMgr::Release(MissionResInfo &missionInfos)
+void CcuResBatchAllocator::CcuMissionMgr::Release(MissionResInfo& missionInfos)
 {
     // 目前支持 FUSION_MULTIPLE_DIE 类型，故多die同步释放
     for (uint8_t i = 0; i < CCU_MAX_IODIE_NUM; i++) {
@@ -817,9 +843,6 @@ void CcuResBatchAllocator::CcuMissionMgr::Release(MissionResInfo &missionInfos)
     }
 }
 
-void CcuResBatchAllocator::CcuMissionMgr::Reset()
-{
-    blocks_.clear();
-}
+void CcuResBatchAllocator::CcuMissionMgr::Reset() { blocks_.clear(); }
 
 }; // namespace hcomm

@@ -62,15 +62,16 @@
 using namespace std;
 using namespace hccl;
 
-class MPI_TRANSPORT_ROCE_TEST : public testing::Test
-{
+class MPI_TRANSPORT_ROCE_TEST : public testing::Test {
 protected:
     static void SetUpTestCase()
     {
         SetFftsSwitch(false);
         s32 ret = HcclDispatcherInit(DispatcherType::DISPATCHER_NORMAL, 0, &dispatcherPtr);
-        if (ret != HCCL_SUCCESS) return;
-        if (dispatcherPtr == nullptr) return;
+        if (ret != HCCL_SUCCESS)
+            return;
+        if (dispatcherPtr == nullptr)
+            return;
         dispatcher = reinterpret_cast<DispatcherPub*>(dispatcherPtr);
         std::cout << "MPI_TRANSPORT_ROCE_TEST SetUP" << std::endl;
     }
@@ -108,23 +109,21 @@ protected:
     TransportResourceInfo transportResourceInfo = TransportResourceInfo();
 
     static HcclDispatcher dispatcherPtr;
-    static DispatcherPub *dispatcher;
+    static DispatcherPub* dispatcher;
 };
 HcclDispatcher MPI_TRANSPORT_ROCE_TEST::dispatcherPtr = nullptr;
-DispatcherPub *MPI_TRANSPORT_ROCE_TEST::dispatcher = nullptr;
+DispatcherPub* MPI_TRANSPORT_ROCE_TEST::dispatcher = nullptr;
 
 TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_SendAsync)
 {
     HcclIpAddress invalidIp;
     TransportHeterogRoce transport("test_ta", invalidIp, invalidIp, 18000, 0, transportResourceInfo);
-    MOCKER_CPP_VIRTUAL(transport, &TransportHeterogRoce::Isend)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP_VIRTUAL(transport, &TransportHeterogRoce::Isend).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     MachinePara machinePara;
     std::chrono::milliseconds timeout;
-    TransportRoce roce(nullptr, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
+    TransportRoce roce(
+        nullptr, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
 
     u32 sendData = 0;
     u64 len = 4;
@@ -134,10 +133,7 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_SendAsync)
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
 
-    MOCKER_CPP(&TransportHeterog::WaitBuildLinkComplete)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportHeterog::WaitBuildLinkComplete).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     roce.isESMode_ = true;
     ret = roce.Connect();
@@ -155,19 +151,20 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_Send_Success)
     TransportHeterogRoce transport("test_ta", invalidIp, invalidIp, 18000, 0, transportResourceInfo);
     HcclRequestInfo request;
     MOCKER_CPP_VIRTUAL(transport, &TransportHeterogRoce::Isend)
-    .stubs()
-    .with(any(), any(), outBound(&request))
-    .will(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any(), any(), outBound(&request))
+        .will(returnValue(HCCL_SUCCESS));
 
     HcclStatus compState = {0};
     MOCKER_CPP_VIRTUAL(transport, &TransportHeterogRoce::Test)
-    .stubs()
-    .with(any(), outBound(1), outBound(compState))
-    .will(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any(), outBound(1), outBound(compState))
+        .will(returnValue(HCCL_SUCCESS));
 
     MachinePara machinePara;
     std::chrono::milliseconds timeout;
-    TransportRoce roce(nullptr, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
+    TransportRoce roce(
+        nullptr, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
 
     u32 sendData = 0;
     u64 len = 4;
@@ -182,25 +179,20 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_Send_Fail)
 {
     HcclIpAddress invalidIp;
     TransportHeterogRoce transport("test_ta", invalidIp, invalidIp, 18000, 0, transportResourceInfo);
-    MOCKER_CPP_VIRTUAL(transport, &TransportHeterogRoce::Isend)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP_VIRTUAL(transport, &TransportHeterogRoce::Isend).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     HcclStatus compState = {0};
     MOCKER_CPP_VIRTUAL(transport, &TransportHeterogRoce::Test)
-    .stubs()
-    .with(any(), outBound(1), outBound(compState))
-    .will(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any(), outBound(1), outBound(compState))
+        .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TransportRoce::WaitCompletion)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportRoce::WaitCompletion).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     MachinePara machinePara;
     std::chrono::milliseconds timeout;
-    TransportRoce roce(nullptr, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
+    TransportRoce roce(
+        nullptr, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
     roce.isESMode_ = true;
     u32 sendData = 0;
     u64 len = 4;
@@ -217,18 +209,16 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_WaitSendAsyncComplete)
     TransportHeterogRoce transport("test_ta", invalidIp, invalidIp, 18000, 0, transportResourceInfo);
     HcclStatus compState = {0};
     MOCKER_CPP_VIRTUAL(transport, &TransportHeterogRoce::Test)
-    .stubs()
-    .with(any(), outBound(1), outBound(compState))
-    .will(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any(), outBound(1), outBound(compState))
+        .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TransportRoce::WaitCompletion)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportRoce::WaitCompletion).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     MachinePara machinePara;
     std::chrono::milliseconds timeout;
-    TransportRoce roce(nullptr, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
+    TransportRoce roce(
+        nullptr, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
 
     u32 sendData = 0;
     u64 len = 4;
@@ -248,30 +238,31 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_Recv_Success)
     // TransportHeterogRoce transport("test_ta", 0, 1, 18000, 0, transportResourceInfo);
     HcclMessageInfo msg;
     HcclStatus compState = {0};
-    MOCKER_CPP_VIRTUAL(transport, &TransportHeterogRoce::Improbe, HcclResult (TransportHeterogRoce::*)(const TransportEndPointParam&, s32&, HcclMessageInfo*&, HcclStatus&))
-    .stubs()
-    .with(any(), outBound(1), outBound(&msg), outBound(compState))
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP_VIRTUAL(
+        transport, &TransportHeterogRoce::Improbe,
+        HcclResult (TransportHeterogRoce::*)(const TransportEndPointParam&, s32&, HcclMessageInfo*&, HcclStatus&))
+        .stubs()
+        .with(any(), outBound(1), outBound(&msg), outBound(compState))
+        .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP_VIRTUAL(transport, &TransportHeterogRoce::Imrecv,
+    MOCKER_CPP_VIRTUAL(
+        transport, &TransportHeterogRoce::Imrecv,
         HcclResult (TransportHeterogRoce::*)(const TransData&, HcclMessageInfo&, HcclRequestInfo*&))
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_SUCCESS));
 
     MOCKER_CPP_VIRTUAL(transport, &TransportHeterogRoce::Test)
-    .stubs()
-    .with(any(), outBound(1), outBound(compState))
-    .will(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any(), outBound(1), outBound(compState))
+        .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TransportRoce::WaitCompletion)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportRoce::WaitCompletion).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     MachinePara machinePara;
     std::chrono::milliseconds timeout;
-    TransportRoce roce(nullptr, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
+    TransportRoce roce(
+        nullptr, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
     roce.isESMode_ = true;
     u32 sendData = 0;
     u64 len = 4;
@@ -289,30 +280,31 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_Recv_Fail)
     // TransportHeterogRoce transport("test_ta", 0, 1, 18000, 0, transportResourceInfo);
     HcclMessageInfo msg;
     HcclStatus compState = {0};
-    MOCKER_CPP_VIRTUAL(transport, &TransportHeterogRoce::Improbe, HcclResult (TransportHeterogRoce::*)(const TransportEndPointParam&, s32&, HcclMessageInfo*&, HcclStatus&))
-    .stubs()
-    .with(any(), outBound(1), outBound(&msg), outBound(compState))
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP_VIRTUAL(
+        transport, &TransportHeterogRoce::Improbe,
+        HcclResult (TransportHeterogRoce::*)(const TransportEndPointParam&, s32&, HcclMessageInfo*&, HcclStatus&))
+        .stubs()
+        .with(any(), outBound(1), outBound(&msg), outBound(compState))
+        .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP_VIRTUAL(transport, &TransportHeterogRoce::Imrecv,
+    MOCKER_CPP_VIRTUAL(
+        transport, &TransportHeterogRoce::Imrecv,
         HcclResult (TransportHeterogRoce::*)(const TransData&, HcclMessageInfo&, HcclRequestInfo*&))
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_SUCCESS));
 
     MOCKER_CPP_VIRTUAL(transport, &TransportHeterogRoce::Test)
-    .stubs()
-    .with(any(), outBound(1), outBound(compState))
-    .will(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any(), outBound(1), outBound(compState))
+        .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TransportRoce::WaitCompletion)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportRoce::WaitCompletion).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     MachinePara machinePara;
     std::chrono::milliseconds timeout;
-    TransportRoce roce(nullptr, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
+    TransportRoce roce(
+        nullptr, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
     roce.isESMode_ = true;
     u32 sendData = 0;
     u64 len = 4;
@@ -330,31 +322,35 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_SendRecv_Success)
     // TransportHeterogRoce transport("test_ta", 0, 1, 18000, 0, transportResourceInfo);
     HcclRequestInfo request;
     MOCKER_CPP_VIRTUAL(transport, &TransportHeterogRoce::Isend)
-    .stubs()
-    .with(any(), any(), outBound(&request))
-    .will(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any(), any(), outBound(&request))
+        .will(returnValue(HCCL_SUCCESS));
 
     HcclMessageInfo msg;
     HcclStatus compState = {0};
-    MOCKER_CPP_VIRTUAL(transport, &TransportHeterogRoce::Improbe, HcclResult (TransportHeterogRoce::*)(const TransportEndPointParam&, s32&, HcclMessageInfo*&, HcclStatus&))
-    .stubs()
-    .with(any(), outBound(1), outBound(&msg), outBound(compState))
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP_VIRTUAL(
+        transport, &TransportHeterogRoce::Improbe,
+        HcclResult (TransportHeterogRoce::*)(const TransportEndPointParam&, s32&, HcclMessageInfo*&, HcclStatus&))
+        .stubs()
+        .with(any(), outBound(1), outBound(&msg), outBound(compState))
+        .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP_VIRTUAL(transport, &TransportHeterogRoce::Imrecv,
+    MOCKER_CPP_VIRTUAL(
+        transport, &TransportHeterogRoce::Imrecv,
         HcclResult (TransportHeterogRoce::*)(const TransData&, HcclMessageInfo&, HcclRequestInfo*&))
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_SUCCESS));
 
     MOCKER_CPP_VIRTUAL(transport, &TransportHeterogRoce::Test)
-    .stubs()
-    .with(any(), outBound(1), outBound(compState))
-    .will(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any(), outBound(1), outBound(compState))
+        .will(returnValue(HCCL_SUCCESS));
 
     MachinePara machinePara;
     std::chrono::milliseconds timeout;
-    TransportRoce roce(nullptr, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
+    TransportRoce roce(
+        nullptr, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
 
     u32 sendData = 0;
     u64 len = 4;
@@ -373,36 +369,37 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_SendRecv_Fail)
     // TransportHeterogRoce transport("test_ta", 0, 1, 18000, 0, transportResourceInfo);
     HcclRequestInfo request;
     MOCKER_CPP_VIRTUAL(transport, &TransportHeterogRoce::Isend)
-    .stubs()
-    .with(any(), any(), outBound(&request))
-    .will(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any(), any(), outBound(&request))
+        .will(returnValue(HCCL_SUCCESS));
 
     HcclMessageInfo msg;
     HcclStatus compState = {0};
-    MOCKER_CPP_VIRTUAL(transport, &TransportHeterogRoce::Improbe, HcclResult (TransportHeterogRoce::*)(const TransportEndPointParam&, s32&, HcclMessageInfo*&, HcclStatus&))
-    .stubs()
-    .with(any(), outBound(1), outBound(&msg), outBound(compState))
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP_VIRTUAL(
+        transport, &TransportHeterogRoce::Improbe,
+        HcclResult (TransportHeterogRoce::*)(const TransportEndPointParam&, s32&, HcclMessageInfo*&, HcclStatus&))
+        .stubs()
+        .with(any(), outBound(1), outBound(&msg), outBound(compState))
+        .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP_VIRTUAL(transport, &TransportHeterogRoce::Imrecv,
+    MOCKER_CPP_VIRTUAL(
+        transport, &TransportHeterogRoce::Imrecv,
         HcclResult (TransportHeterogRoce::*)(const TransData&, HcclMessageInfo&, HcclRequestInfo*&))
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_SUCCESS));
 
     MOCKER_CPP_VIRTUAL(transport, &TransportHeterogRoce::Test)
-    .stubs()
-    .with(any(), outBound(1), outBound(compState))
-    .will(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any(), outBound(1), outBound(compState))
+        .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TransportRoce::WaitCompletion)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportRoce::WaitCompletion).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     MachinePara machinePara;
     std::chrono::milliseconds timeout;
-    TransportRoce roce(nullptr, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
+    TransportRoce roce(
+        nullptr, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
 
     u32 sendData = 0;
     u64 len = 4;
@@ -417,29 +414,25 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_SendRecv_Fail)
 TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_WaitCompletion)
 {
     struct ibv_cq cq;
-    struct ibv_cq *evCq = &cq;
-    void *cqContext;
-    MOCKER(hrtIbvReqNotifyCq)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    struct ibv_cq* evCq = &cq;
+    void* cqContext;
+    MOCKER(hrtIbvReqNotifyCq).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     MOCKER(hrtIbvGetCqEvent)
-    .stubs()
-    .with(any(), outBoundP(&evCq, sizeof(evCq)), outBoundP(&cqContext, sizeof(cqContext)))
-    .will(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any(), outBoundP(&evCq, sizeof(evCq)), outBoundP(&cqContext, sizeof(cqContext)))
+        .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(hrtIbvAckCqEvent)
-    .stubs()
-    .with(any());
+    MOCKER(hrtIbvAckCqEvent).stubs().with(any());
 
     MachinePara machinePara;
     std::chrono::milliseconds timeout;
     HcclIpAddress invalidIp;
-    TransportRoce roce(nullptr, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
+    TransportRoce roce(
+        nullptr, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
 
     struct ibv_cq* notifyCq;
-    struct ibv_comp_channel *channel;
+    struct ibv_comp_channel* channel;
     int ret = roce.WaitCompletion(notifyCq, channel);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
@@ -447,25 +440,13 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_WaitCompletion)
 
 TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_TaskExec)
 {
-    MOCKER_CPP(&TransportRoce::Send)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportRoce::Send).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TransportRoce::Recv)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportRoce::Recv).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TransportRoce::WaitSendAsyncCompleteAndRecv)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportRoce::WaitSendAsyncCompleteAndRecv).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TransportRoce::SendAsync)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportRoce::SendAsync).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     s32 streamId = 0;
     s32 queIndex = 1;
@@ -473,7 +454,8 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_TaskExec)
     MachinePara machinePara;
     std::chrono::milliseconds timeout;
     HcclIpAddress invalidIp;
-    TransportRoce roce(nullptr, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
+    TransportRoce roce(
+        nullptr, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
 
     u32 sendData = 0;
     u64 len = 4;
@@ -517,7 +499,8 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_isSupportTransportWithReduce)
     MachinePara machinePara;
     std::chrono::milliseconds timeout;
     HcclIpAddress invalidIp;
-    TransportRoce roce(nullptr, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
+    TransportRoce roce(
+        nullptr, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
 
     bool ret = roce.IsSupportTransportWithReduce();
     EXPECT_EQ(ret, true);
@@ -525,51 +508,46 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_isSupportTransportWithReduce)
 
 TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_RxWithReduce)
 {
-    MOCKER(hrtGetStreamId)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtGetStreamId).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     MachinePara machinePara;
     std::chrono::milliseconds timeout;
     HcclIpAddress invalidIp;
-    TransportRoce roce(nullptr, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
+    TransportRoce roce(
+        nullptr, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
 
     UserMemType recvSrcMemType = UserMemType::INPUT_MEM;
     u32 recvData = 0;
     Stream stream;
 
-    int ret = roce.RxWithReduce(recvSrcMemType, 0, &recvData, 4, &recvData, &recvData, 4,
-        HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, stream, INLINE_REDUCE_BIT);
+    int ret = roce.RxWithReduce(
+        recvSrcMemType, 0, &recvData, 4, &recvData, &recvData, 4, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, stream,
+        INLINE_REDUCE_BIT);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    TransportBase* rocePtr = new (std::nothrow) TransportRoce(nullptr, nullptr,
-        machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
+    TransportBase* rocePtr = new (std::nothrow) TransportRoce(
+        nullptr, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
     EXPECT_NE(rocePtr, nullptr);
 
     Transport link_base(rocePtr);
-    link_base.RxWithReduce(recvSrcMemType, 0, &recvData, 4, &recvData, &recvData, 4,
-        HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, stream, INLINE_REDUCE_BIT);
+    link_base.RxWithReduce(
+        recvSrcMemType, 0, &recvData, 4, &recvData, &recvData, 4, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, stream,
+        INLINE_REDUCE_BIT);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
 }
 
 TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_TxWithReduce)
 {
-    MOCKER(hrtGetStreamId)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtGetStreamId).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(hrtCallbackLaunch)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtCallbackLaunch).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     MachinePara machinePara;
     std::chrono::milliseconds timeout;
     HcclIpAddress invalidIp;
-    TransportRoce roce(nullptr, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
+    TransportRoce roce(
+        nullptr, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
 
     UserMemType dstMemType = UserMemType::OUTPUT_MEM;
     u32 srcData = 0;
@@ -585,15 +563,15 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_GetRemoteMem)
     MachinePara machinePara;
     std::chrono::milliseconds timeout;
     HcclIpAddress invalidIp;
-    TransportRoce roce(nullptr, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
-
+    TransportRoce roce(
+        nullptr, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
 
     u32 memory = 0;
     roce.remoteMemMsg_[static_cast<u32>(UserMemType::INPUT_MEM)].addr = &memory;
     roce.remoteMemMsg_[static_cast<u32>(UserMemType::OUTPUT_MEM)].addr = &memory;
     roce.remoteMemMsg_[static_cast<u32>(UserMemType::MEM_RESERVED)].addr = nullptr;
 
-    void *remotePtr = &memory;
+    void* remotePtr = &memory;
     int ret = roce.GetRemoteMem(UserMemType::INPUT_MEM, &remotePtr);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
@@ -603,28 +581,24 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_GetRemoteMem)
 
 TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_RxWaitDone)
 {
-    MOCKER(hrtGetStreamId)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtGetStreamId).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(hrtCallbackLaunch)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtCallbackLaunch).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     DispatcherPub dispatcherDummy(0);
-    MOCKER_CPP_VIRTUAL(dispatcherDummy, &DispatcherPub::ReduceAsync, HcclResult(DispatcherPub::*)(const void *, void *, u64, const HcclDataType,
-        HcclReduceOp, Stream&, HcclReduceType))
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP_VIRTUAL(
+        dispatcherDummy, &DispatcherPub::ReduceAsync,
+        HcclResult (DispatcherPub::*)(
+            const void*, void*, u64, const HcclDataType, HcclReduceOp, Stream&, HcclReduceType))
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_SUCCESS));
 
     MachinePara machinePara;
     std::chrono::milliseconds timeout;
     HcclIpAddress invalidIp;
-    TransportRoce roce(dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
-
+    TransportRoce roce(
+        dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
 
     s32 streamId = 0;
     s32 queIndex = 0;
@@ -642,28 +616,24 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_RxWaitDone)
 
 TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_TxWaitDone)
 {
-    MOCKER(hrtGetStreamId)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtGetStreamId).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(hrtCallbackLaunch)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtCallbackLaunch).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     DispatcherPub dispatcherDummy(0);
-    MOCKER_CPP_VIRTUAL(dispatcherDummy, &DispatcherPub::ReduceAsync, HcclResult(DispatcherPub::*)(const void *, void *, u64, const HcclDataType,
-        HcclReduceOp, Stream&, HcclReduceType))
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP_VIRTUAL(
+        dispatcherDummy, &DispatcherPub::ReduceAsync,
+        HcclResult (DispatcherPub::*)(
+            const void*, void*, u64, const HcclDataType, HcclReduceOp, Stream&, HcclReduceType))
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_SUCCESS));
 
     MachinePara machinePara;
     std::chrono::milliseconds timeout;
     HcclIpAddress invalidIp;
-    TransportRoce roce(dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
-
+    TransportRoce roce(
+        dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
 
     s32 streamId = 0;
     s32 queIndex = 0;
@@ -681,21 +651,15 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_TxWaitDone)
 
 TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_TaskExecCallback)
 {
-    MOCKER(hrtSetDevice)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtSetDevice).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TransportRoce::TaskExec)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportRoce::TaskExec).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     MachinePara machinePara;
     std::chrono::milliseconds timeout;
     HcclIpAddress invalidIp;
-    TransportRoce roce(dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
-
+    TransportRoce roce(
+        dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
 
     SendRecvParam param;
     param.transportRocePtr = &roce;
@@ -705,16 +669,13 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_TaskExecCallback)
 
 TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_RxAck)
 {
-    MOCKER(hrtGetStreamId)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtGetStreamId).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     MachinePara machinePara;
     std::chrono::milliseconds timeout;
     HcclIpAddress invalidIp;
-    TransportRoce roce(dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
-
+    TransportRoce roce(
+        dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
 
     Stream stream;
     int ret = roce.RxAck(stream);
@@ -724,16 +685,13 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_RxAck)
 
 TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_TxAck)
 {
-    MOCKER(hrtGetStreamId)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtGetStreamId).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     MachinePara machinePara;
     std::chrono::milliseconds timeout;
     HcclIpAddress invalidIp;
-    TransportRoce roce(dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
-
+    TransportRoce roce(
+        dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
 
     Stream stream;
     int ret = roce.TxAck(stream);
@@ -743,16 +701,13 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_TxAck)
 
 TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_RxAsync)
 {
-    MOCKER(hrtGetStreamId)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtGetStreamId).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     MachinePara machinePara;
     std::chrono::milliseconds timeout;
     HcclIpAddress invalidIp;
-    TransportRoce roce(dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
-
+    TransportRoce roce(
+        dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
 
     Stream stream;
     int ret = roce.RxAsync(UserMemType::INPUT_MEM, 0, nullptr, 1024, stream);
@@ -762,16 +717,13 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_RxAsync)
 
 TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_RxAsync_alltoallv)
 {
-    MOCKER(hrtGetStreamId)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtGetStreamId).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     MachinePara machinePara;
     std::chrono::milliseconds timeout;
     HcclIpAddress invalidIp;
-    TransportRoce roce(dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
-
+    TransportRoce roce(
+        dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
 
     Stream stream;
     std::vector<RxMemoryInfo> rxMems;
@@ -782,16 +734,13 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_RxAsync_alltoallv)
 
 TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_TxAsync_alltoallv)
 {
-    MOCKER(hrtGetStreamId)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtGetStreamId).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     MachinePara machinePara;
     std::chrono::milliseconds timeout;
     HcclIpAddress invalidIp;
-    TransportRoce roce(dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
-
+    TransportRoce roce(
+        dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
 
     Stream stream;
     std::vector<TxMemoryInfo> txMems;
@@ -802,21 +751,15 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_TxAsync_alltoallv)
 
 TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_TxAsync)
 {
-    MOCKER(hrtGetStreamId)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtGetStreamId).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(hrtCallbackLaunch)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtCallbackLaunch).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     MachinePara machinePara;
     std::chrono::milliseconds timeout;
     HcclIpAddress invalidIp;
-    TransportRoce roce(dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
-
+    TransportRoce roce(
+        dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
 
     Stream stream;
     int ret = roce.TxAsync(UserMemType::OUTPUT_MEM, 0, nullptr, 1024, stream);
@@ -826,16 +769,13 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_TxAsync)
 
 TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_RxDataSignal)
 {
-    MOCKER(hrtGetStreamId)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtGetStreamId).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     MachinePara machinePara;
     std::chrono::milliseconds timeout;
     HcclIpAddress invalidIp;
-    TransportRoce roce(dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
-
+    TransportRoce roce(
+        dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
 
     Stream stream;
     int ret = roce.RxDataSignal(stream);
@@ -845,16 +785,13 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_RxDataSignal)
 
 TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_TxDataSignal)
 {
-    MOCKER(hrtGetStreamId)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtGetStreamId).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     MachinePara machinePara;
     std::chrono::milliseconds timeout;
     HcclIpAddress invalidIp;
-    TransportRoce roce(dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
-
+    TransportRoce roce(
+        dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
 
     Stream stream;
     int ret = roce.TxDataSignal(stream);
@@ -864,30 +801,23 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_TxDataSignal)
 
 TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_DeInit)
 {
-    MOCKER_CPP(&MrManager::DeRegGlobalMr)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&MrManager::DeRegGlobalMr).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&MrManager::ReleaseKey)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&MrManager::ReleaseKey).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     HcclIpAddress invalidIp;
     TransportHeterogRoce transport("test_ta", invalidIp, invalidIp, 18000, 0, transportResourceInfo);
-    MOCKER_CPP_VIRTUAL(transport, &TransportHeterogRoce::Deinit)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP_VIRTUAL(transport, &TransportHeterogRoce::Deinit).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     MachinePara machinePara;
     std::chrono::milliseconds timeout;
-    void *rdmaHandle = (void *)0xabcd;
+    void* rdmaHandle = (void*)0xabcd;
     std::unique_ptr<MrManager> mrManager;
     mrManager.reset(new (std::nothrow) MrManager());
     mrManager->Init(rdmaHandle);
-    TransportRoce roce(dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, TransportResourceInfo(mrManager, nullptr, nullptr, nullptr, nullptr));
+    TransportRoce roce(
+        dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000,
+        TransportResourceInfo(mrManager, nullptr, nullptr, nullptr, nullptr));
 
     roce.isInited_ = true;
     roce.isHdcMode_ = true;
@@ -904,28 +834,20 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_DeInit)
 
 TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_RegUserMem)
 {
-    MOCKER_CPP(&MrManager::RegGlobalMr)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&MrManager::RegGlobalMr).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(hrtRaSocketBlockSend)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtRaSocketBlockSend).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&MrManager::GetKey)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&MrManager::GetKey).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     MachinePara machinePara;
     std::chrono::milliseconds timeout;
     HcclIpAddress invalidIp;
-    TransportRoce roce(dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
+    TransportRoce roce(
+        dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
 
     s32 fd = 0;
-    void *fdHandle = &fd;
+    void* fdHandle = &fd;
     roce.socketFdHandles_.push_back(fdHandle);
 
     int ret = roce.RegUserMem(MemType::USER_INPUT_MEM);
@@ -942,22 +864,22 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_RegUserMem)
 TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_GetRemoteAddr)
 {
     MemMsg mrMsg;
-    void *dataPtr = &mrMsg;
+    void* dataPtr = &mrMsg;
     mrMsg.memType = MemType::USER_INPUT_MEM;
     u64 size = 1024;
     MOCKER(hrtRaSocketBlockRecv)
-    .stubs()
-    .with(any(), outBoundP(dataPtr, sizeof(dataPtr)), outBound(size))
-    .will(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any(), outBoundP(dataPtr, sizeof(dataPtr)), outBound(size))
+        .will(returnValue(HCCL_SUCCESS));
 
     MachinePara machinePara;
     std::chrono::milliseconds timeout;
     HcclIpAddress invalidIp;
-    TransportRoce roce(dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
-
+    TransportRoce roce(
+        dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
 
     s32 fd = 0;
-    void *fdHandle = &fd;
+    void* fdHandle = &fd;
     roce.socketFdHandles_.push_back(fdHandle);
 
     int ret = roce.GetRemoteAddr(MemType::USER_INPUT_MEM);
@@ -970,21 +892,15 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_GetRemoteAddr)
 
 TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_InitMem)
 {
-    MOCKER_CPP(&TransportRoce::RegUserMem)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportRoce::RegUserMem).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TransportRoce::GetRemoteAddr)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportRoce::GetRemoteAddr).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     MachinePara machinePara;
     std::chrono::milliseconds timeout;
     HcclIpAddress invalidIp;
-    TransportRoce roce(dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
-
+    TransportRoce roce(
+        dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
 
     int ret = roce.InitMem();
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -993,21 +909,15 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_InitMem)
 
 TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_CreateCqAndQp)
 {
-    MOCKER(hrtRaCreateCompChannel)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtRaCreateCompChannel).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(CreateQpWithCq)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(CreateQpWithCq).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     MachinePara machinePara;
     std::chrono::milliseconds timeout;
     HcclIpAddress invalidIp;
-    TransportRoce roce(dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
-
+    TransportRoce roce(
+        dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
 
     int ret = roce.CreateCqAndQp();
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -1020,21 +930,15 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_CreateCqAndQp)
 
 TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_DestroyCqAndQp)
 {
-    MOCKER(DestroyQpWithCq)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(DestroyQpWithCq).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(hrtRaDestroyCompChannel)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtRaDestroyCompChannel).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     MachinePara machinePara;
     std::chrono::milliseconds timeout;
     HcclIpAddress invalidIp;
-    TransportRoce roce(dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
-
+    TransportRoce roce(
+        dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
 
     int ret = roce.DestroyCqAndQp();
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -1050,8 +954,8 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_GetNicHandle)
     MachinePara machinePara;
     std::chrono::milliseconds timeout;
     HcclIpAddress invalidIp;
-    TransportRoce roce(dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
-
+    TransportRoce roce(
+        dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
 
     roce.machinePara_.nicDeploy = NICDeployment::NIC_DEPLOYMENT_DEVICE;
     IpSocket socket;
@@ -1059,7 +963,7 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_GetNicHandle)
     socket.nicRdmaHandle = &nic;
     socket.nicSocketHandle = &nic;
     roce.machinePara_.deviceLogicId = 0;
-    RaResourceInfo &raResourceInfo = NetworkManager::GetInstance(roce.machinePara_.deviceLogicId).raResourceInfo_;
+    RaResourceInfo& raResourceInfo = NetworkManager::GetInstance(roce.machinePara_.deviceLogicId).raResourceInfo_;
     raResourceInfo.nicSocketMap[HcclIpAddress(0)] = socket;
     raResourceInfo.nicSocketMap[HcclIpAddress(1)] = socket;
     roce.machinePara_.localIpAddr = HcclIpAddress(0);
@@ -1080,65 +984,54 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_GetNicHandle)
 
 TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_Init)
 {
-    MOCKER(hrtGetDevice)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtGetDevice).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TransportRoce::GetNicHandle)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportRoce::GetNicHandle).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TransportRoce::WaitCompletion)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportRoce::WaitCompletion).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     HcclIpAddress invalidIp;
     TransportHeterogRoce transport("test_ta", invalidIp, invalidIp, 18000, 0, transportResourceInfo);
     // TransportHeterogRoce transport("test_ta", 0, 1, 18000, 0, transportResourceInfo);
     MOCKER_CPP_VIRTUAL(transport, &TransportHeterogRoce::Init, HcclResult (TransportHeterogRoce::*)())
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TransportRoce::InitMem)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportRoce::InitMem).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TransportRoce::GetSocketInfo)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportRoce::GetSocketInfo).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     HcclRequestInfo request;
     MOCKER_CPP_VIRTUAL(transport, &TransportHeterogRoce::Isend)
-    .stubs()
-    .with(any(), any(), outBound(&request))
-    .will(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any(), any(), outBound(&request))
+        .will(returnValue(HCCL_SUCCESS));
 
     HcclStatus compState = {0};
     MOCKER_CPP_VIRTUAL(transport, &TransportHeterogRoce::Test)
-    .stubs()
-    .with(any(), outBound(1), outBound(compState))
-    .will(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any(), outBound(1), outBound(compState))
+        .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP_VIRTUAL(transport, &TransportHeterogRoce::Improbe, HcclResult (TransportHeterogRoce::*)(const TransportEndPointParam&, s32&, HcclMessageInfo*&, HcclStatus&))
-    .stubs()
-    .with(any(), outBound(1), any(), any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP_VIRTUAL(
+        transport, &TransportHeterogRoce::Improbe,
+        HcclResult (TransportHeterogRoce::*)(const TransportEndPointParam&, s32&, HcclMessageInfo*&, HcclStatus&))
+        .stubs()
+        .with(any(), outBound(1), any(), any())
+        .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP_VIRTUAL(transport, &TransportHeterogRoce::Imrecv,
+    MOCKER_CPP_VIRTUAL(
+        transport, &TransportHeterogRoce::Imrecv,
         HcclResult (TransportHeterogRoce::*)(const TransData&, HcclMessageInfo&, HcclRequestInfo*&))
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_SUCCESS));
 
     MachinePara machinePara;
     std::chrono::milliseconds timeout;
-    TransportRoce roce(dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
+    TransportRoce roce(
+        dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
 
     DeviceMem inputMem = DeviceMem::alloc(sizeof(s32));
     DeviceMem outputMem = DeviceMem::alloc(sizeof(s32));
@@ -1168,9 +1061,9 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_Init)
 
 TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_hrtIbvGetCqEvent_err)
 {
-    struct ibv_comp_channel *channel = nullptr;
-    struct ibv_cq **cq = nullptr;
-    void **cq_context = nullptr;
+    struct ibv_comp_channel* channel = nullptr;
+    struct ibv_cq** cq = nullptr;
+    void** cq_context = nullptr;
 
     HcclResult ret = hrtIbvGetCqEvent(channel, cq, cq_context);
     EXPECT_EQ(ret, HCCL_E_NETWORK);
@@ -1178,26 +1071,18 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_hrtIbvGetCqEvent_err)
 
 TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_DeInit_tmp)
 {
-    MOCKER_CPP(&MrManager::DeRegGlobalMr)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&MrManager::DeRegGlobalMr).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&MrManager::ReleaseKey)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&MrManager::ReleaseKey).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     HcclIpAddress invalidIp;
     TransportHeterogRoce transport("test_ta", invalidIp, invalidIp, 18000, 0, transportResourceInfo);
-    MOCKER_CPP_VIRTUAL(transport, &TransportHeterogRoce::Deinit)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP_VIRTUAL(transport, &TransportHeterogRoce::Deinit).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     MachinePara machinePara;
     std::chrono::milliseconds timeout;
-    TransportRoce roce(dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
+    TransportRoce roce(
+        dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
 
     roce.isInited_ = true;
     int ret = roce.DeInit();
@@ -1212,8 +1097,8 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_Transport_BatchTransferAsync_TransportBaseNot
     std::chrono::milliseconds timeout;
     HcclIpAddress invalidIp;
 
-    TransportBase *basePtr = new (std::nothrow) TransportRoce(nullptr, nullptr,
-        machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
+    TransportBase* basePtr = new (std::nothrow) TransportRoce(
+        nullptr, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
     EXPECT_NE(basePtr, nullptr);
 
     Transport link(basePtr);

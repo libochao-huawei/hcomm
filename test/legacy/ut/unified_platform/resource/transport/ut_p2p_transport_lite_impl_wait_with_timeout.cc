@@ -25,10 +25,7 @@ using namespace Hccl;
 
 class P2PTransportLiteImplWaitWithTimeoutTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "P2PTransportLiteImplWaitWithTimeoutTest tests set up." << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "P2PTransportLiteImplWaitWithTimeoutTest tests set up." << std::endl; }
 
     static void TearDownTestCase()
     {
@@ -61,13 +58,13 @@ protected:
         return result;
     }
 
-    u8  mockSq[64];
+    u8 mockSq[64];
 };
 
 TEST_F(P2PTransportLiteImplWaitWithTimeoutTest, P2PTransportLiteImpl_WaitWithTimeout_Normal_Success)
 {
     u32 fakeStreamId = 1;
-    u32 fakeSqId     = 1;
+    u32 fakeSqId = 1;
     u32 fakeDevPhyId = 1;
 
     BinaryStream liteBinaryStream;
@@ -78,7 +75,7 @@ TEST_F(P2PTransportLiteImplWaitWithTimeoutTest, P2PTransportLiteImpl_WaitWithTim
     liteBinaryStream.Dump(uniqueId);
 
     StreamLite stream(uniqueId);
-    RtsqA5     rtsq(fakeDevPhyId, fakeStreamId, fakeSqId);
+    RtsqA5 rtsq(fakeDevPhyId, fakeStreamId, fakeSqId);
     stream.rtsq = std::make_unique<RtsqA5>(rtsq);
 
     std::vector<char> notifyUniqueId = GetNotifyUniqueId(0, fakeDevPhyId);
@@ -93,7 +90,11 @@ TEST_F(P2PTransportLiteImplWaitWithTimeoutTest, P2PTransportLiteImpl_WaitWithTim
     std::vector<char> p2pUniqueId;
     binaryStream.Dump(p2pUniqueId);
 
-    auto callback = [](u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam) { (void)streamId; (void)taskId; (void)taskParam; };
+    auto callback = [](u32 streamId, u32 taskId, const Hccl::TaskParam& taskParam) {
+        (void)streamId;
+        (void)taskId;
+        (void)taskParam;
+    };
     P2PTransportLiteImpl transportLite(p2pUniqueId, callback);
 
     u32 timeout = 1800;
@@ -103,7 +104,7 @@ TEST_F(P2PTransportLiteImplWaitWithTimeoutTest, P2PTransportLiteImpl_WaitWithTim
 TEST_F(P2PTransportLiteImplWaitWithTimeoutTest, P2PTransportLiteImpl_WaitWithTimeout_ZeroTimeout_Success)
 {
     u32 fakeStreamId = 1;
-    u32 fakeSqId     = 1;
+    u32 fakeSqId = 1;
     u32 fakeDevPhyId = 1;
 
     BinaryStream liteBinaryStream;
@@ -114,7 +115,7 @@ TEST_F(P2PTransportLiteImplWaitWithTimeoutTest, P2PTransportLiteImpl_WaitWithTim
     liteBinaryStream.Dump(uniqueId);
 
     StreamLite stream(uniqueId);
-    RtsqA5     rtsq(fakeDevPhyId, fakeStreamId, fakeSqId);
+    RtsqA5 rtsq(fakeDevPhyId, fakeStreamId, fakeSqId);
     stream.rtsq = std::make_unique<RtsqA5>(rtsq);
 
     std::vector<char> notifyUniqueId = GetNotifyUniqueId(0, fakeDevPhyId);
@@ -129,7 +130,11 @@ TEST_F(P2PTransportLiteImplWaitWithTimeoutTest, P2PTransportLiteImpl_WaitWithTim
     std::vector<char> p2pUniqueId;
     binaryStream.Dump(p2pUniqueId);
 
-    auto callback = [](u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam) { (void)streamId; (void)taskId; (void)taskParam; };
+    auto callback = [](u32 streamId, u32 taskId, const Hccl::TaskParam& taskParam) {
+        (void)streamId;
+        (void)taskId;
+        (void)taskParam;
+    };
     P2PTransportLiteImpl transportLite(p2pUniqueId, callback);
 
     u32 timeout = 0;
@@ -139,7 +144,7 @@ TEST_F(P2PTransportLiteImplWaitWithTimeoutTest, P2PTransportLiteImpl_WaitWithTim
 TEST_F(P2PTransportLiteImplWaitWithTimeoutTest, P2PTransportLiteImpl_WaitWithTimeout_MaxTimeout_Success)
 {
     u32 fakeStreamId = 1;
-    u32 fakeSqId     = 1;
+    u32 fakeSqId = 1;
     u32 fakeDevPhyId = 1;
 
     BinaryStream liteBinaryStream;
@@ -150,7 +155,7 @@ TEST_F(P2PTransportLiteImplWaitWithTimeoutTest, P2PTransportLiteImpl_WaitWithTim
     liteBinaryStream.Dump(uniqueId);
 
     StreamLite stream(uniqueId);
-    RtsqA5     rtsq(fakeDevPhyId, fakeStreamId, fakeSqId);
+    RtsqA5 rtsq(fakeDevPhyId, fakeStreamId, fakeSqId);
     stream.rtsq = std::make_unique<RtsqA5>(rtsq);
 
     std::vector<char> notifyUniqueId = GetNotifyUniqueId(0, fakeDevPhyId);
@@ -165,7 +170,11 @@ TEST_F(P2PTransportLiteImplWaitWithTimeoutTest, P2PTransportLiteImpl_WaitWithTim
     std::vector<char> p2pUniqueId;
     binaryStream.Dump(p2pUniqueId);
 
-    auto callback = [](u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam) { (void)streamId; (void)taskId; (void)taskParam; };
+    auto callback = [](u32 streamId, u32 taskId, const Hccl::TaskParam& taskParam) {
+        (void)streamId;
+        (void)taskId;
+        (void)taskParam;
+    };
     P2PTransportLiteImpl transportLite(p2pUniqueId, callback);
 
     u32 timeout = 0xFFFFFFFF;

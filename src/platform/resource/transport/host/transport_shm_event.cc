@@ -33,18 +33,23 @@ using NotifyMsg = struct NotifyMsgDef {
     u8 remoteImrecvDoneNotify[NOTIFY_INFO_LENGTH];
 };
 
-TransportShmEvent::TransportShmEvent(const HcclDispatcher dispatcher,
-    const std::unique_ptr<NotifyPool> &notifyPool,
-    MachinePara &machinePara, std::chrono::milliseconds timeout,
-    HcclIpAddress &selfIp, HcclIpAddress &peerIp, u32 peerPort, u32 selfPort, s32 deviceLogicId, u32 role,
-    const TransportResourceInfo &transportResourceInfo, HcclRtContext rtCtx)
-    : TransportBase(reinterpret_cast<DispatcherPub*>(const_cast<HcclDispatcher>(dispatcher)),
-        notifyPool, machinePara, timeout),
-    TransportHeterog(machinePara.tag, selfIp, peerIp, peerPort, selfPort, transportResourceInfo),
-      selfIp_(selfIp), peerIp_(peerIp), peerPort_(peerPort), selfPort_(selfPort), tag_(machinePara.tag),
-      deviceLogicId_(deviceLogicId), role_(role), isInited_(false), rtCtx_(rtCtx)
-{
-}
+TransportShmEvent::TransportShmEvent(
+    const HcclDispatcher dispatcher, const std::unique_ptr<NotifyPool>& notifyPool, MachinePara& machinePara,
+    std::chrono::milliseconds timeout, HcclIpAddress& selfIp, HcclIpAddress& peerIp, u32 peerPort, u32 selfPort,
+    s32 deviceLogicId, u32 role, const TransportResourceInfo& transportResourceInfo, HcclRtContext rtCtx)
+    : TransportBase(
+          reinterpret_cast<DispatcherPub*>(const_cast<HcclDispatcher>(dispatcher)), notifyPool, machinePara, timeout),
+      TransportHeterog(machinePara.tag, selfIp, peerIp, peerPort, selfPort, transportResourceInfo),
+      selfIp_(selfIp),
+      peerIp_(peerIp),
+      peerPort_(peerPort),
+      selfPort_(selfPort),
+      tag_(machinePara.tag),
+      deviceLogicId_(deviceLogicId),
+      role_(role),
+      isInited_(false),
+      rtCtx_(rtCtx)
+{}
 
 TransportShmEvent::~TransportShmEvent()
 {
@@ -97,9 +102,10 @@ HcclResult TransportShmEvent::InitMem()
             std::unique_ptr<ShmEnvelopeQue> tempQue(new (std::nothrow) ShmEnvelopeQue());
             CHK_SMART_PTR_NULL(tempQue);
             CHK_RET(hrtDrvMemCpy(envelopeShmQue_.ptr(), envelopeShmQue_.size(), tempQue.get(), sizeof(ShmEnvelopeQue)));
-            CHK_RET(hrtDrvMemCpy(static_cast<u8 *>(envelopeShmQue_.ptr()) + sizeof(ShmEnvelopeQue),
+            CHK_RET(hrtDrvMemCpy(
+                static_cast<u8*>(envelopeShmQue_.ptr()) + sizeof(ShmEnvelopeQue),
                 envelopeShmQue_.size() - sizeof(ShmEnvelopeQue), tempQue.get(), sizeof(ShmEnvelopeQue)));
-            localEnvelopeShmQue_ = static_cast<u8 *>(envelopeShmQue_.ptr()) + sizeof(ShmEnvelopeQue);
+            localEnvelopeShmQue_ = static_cast<u8*>(envelopeShmQue_.ptr()) + sizeof(ShmEnvelopeQue);
         }
     }
     CHK_RET(ExchangeIpcMesg());
@@ -113,72 +119,98 @@ HcclResult TransportShmEvent::ExchangeIpcMesg()
     if (deviceLogicId_ != HOST_DEVICE_ID) {
         /* 发送IPC input中转内存 */
         ret = SendIpcMemMesg(inputShmMem_.ptr(), inputShmMem_.size());
-        CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[ExchangeI][pcMesg]In exchange ipc mesg, send ipc mem output mesg fail. ret[%d], "\
-                "ptr[%p], size[%llu]", ret, inputShmMem_.ptr(), inputShmMem_.size()), ret);
+        CHK_PRT_RET(
+            ret != HCCL_SUCCESS,
+            HCCL_ERROR(
+                "[ExchangeI][pcMesg]In exchange ipc mesg, send ipc mem output mesg fail. ret[%d], "
+                "ptr[%p], size[%llu]",
+                ret, inputShmMem_.ptr(), inputShmMem_.size()),
+            ret);
         /* 发送IPC output中转内存 */
         ret = SendIpcMemMesg(outputShmMem_.ptr(), outputShmMem_.size());
-        CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[ExchangeI][pcMesg]In exchange ipc mesg, send ipc mem output mesg fail. ret[%d], "\
-                "ptr[%p], size[%llu]", ret, outputShmMem_.ptr(), outputShmMem_.size()), ret);
+        CHK_PRT_RET(
+            ret != HCCL_SUCCESS,
+            HCCL_ERROR(
+                "[ExchangeI][pcMesg]In exchange ipc mesg, send ipc mem output mesg fail. ret[%d], "
+                "ptr[%p], size[%llu]",
+                ret, outputShmMem_.ptr(), outputShmMem_.size()),
+            ret);
         /* 发送IPC 信封元素内存 */
         ret = SendIpcMemMesg(envelopeShmQue_.ptr(), envelopeShmQue_.size());
-        CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[ExchangeI][pcMesg]In exchange ipc mesg, send ipc mem output mesg fail. ret[%d], "\
-                "ptr[%p], size[%llu]", ret, envelopeShmQue_.ptr(), envelopeShmQue_.size()), ret);
+        CHK_PRT_RET(
+            ret != HCCL_SUCCESS,
+            HCCL_ERROR(
+                "[ExchangeI][pcMesg]In exchange ipc mesg, send ipc mem output mesg fail. ret[%d], "
+                "ptr[%p], size[%llu]",
+                ret, envelopeShmQue_.ptr(), envelopeShmQue_.size()),
+            ret);
     } else {
         u64 size = 0;
         /* 接收IPC input中转内存 */
-        void *remoteMemPtr = nullptr;
+        void* remoteMemPtr = nullptr;
         ret = RecvIpcMemMesg(&remoteMemPtr, remoteInputMemName_.ipcName, remoteInputOffsetValue_, size);
-        CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[Exchange][IpcMesg]In exchange ipc mesg, receive ipc input mem mesg fail. ret[%d], "\
-            "ptr[%p], mem name[%s], offset[%llu]", ret, remoteMemPtr, remoteInputMemName_.ipcName,
-            remoteOutputOffsetValue_), ret);
+        CHK_PRT_RET(
+            ret != HCCL_SUCCESS,
+            HCCL_ERROR(
+                "[Exchange][IpcMesg]In exchange ipc mesg, receive ipc input mem mesg fail. ret[%d], "
+                "ptr[%p], mem name[%s], offset[%llu]",
+                ret, remoteMemPtr, remoteInputMemName_.ipcName, remoteOutputOffsetValue_),
+            ret);
         HCCL_DEBUG("remote inpue ptr size[%llu]", size);
         inputShmMem_ = DeviceMem::create(remoteMemPtr, size);
         /* 接收IPC output中转内存 */
         ret = RecvIpcMemMesg(&remoteMemPtr, remoteOutputMemName_.ipcName, remoteOutputOffsetValue_, size);
-        CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[Exchange][IpcMesg]In exchange ipc mesg, receive ipc output mem mesg fail. ret[%d], "\
-            "ptr[%p], mem name[%s], offset[%llu]", ret, remoteMemPtr, remoteOutputMemName_.ipcName,
-            remoteOutputOffsetValue_), ret);
+        CHK_PRT_RET(
+            ret != HCCL_SUCCESS,
+            HCCL_ERROR(
+                "[Exchange][IpcMesg]In exchange ipc mesg, receive ipc output mem mesg fail. ret[%d], "
+                "ptr[%p], mem name[%s], offset[%llu]",
+                ret, remoteMemPtr, remoteOutputMemName_.ipcName, remoteOutputOffsetValue_),
+            ret);
         HCCL_DEBUG("remote inpue ptr size[%llu]", size);
         outputShmMem_ = DeviceMem::create(remoteMemPtr, size);
         /* 接收IPC 信封元素内存 */
-        ret = RecvIpcMemMesg(&remoteMemPtr, remoteEnvelopeItemMemName_.ipcName,
-            remoteEnvelopeItemOffsetValue_, size);
-        CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[Exchange][IpcMesg]In exchange ipc mesg, receive ipc envelope mem mesg fail. ret[%d], "\
-            "ptr[%p], mem name[%s], offset[%llu]", ret, remoteMemPtr, remoteEnvelopeItemMemName_.ipcName,
-            remoteOutputOffsetValue_), ret);
+        ret = RecvIpcMemMesg(&remoteMemPtr, remoteEnvelopeItemMemName_.ipcName, remoteEnvelopeItemOffsetValue_, size);
+        CHK_PRT_RET(
+            ret != HCCL_SUCCESS,
+            HCCL_ERROR(
+                "[Exchange][IpcMesg]In exchange ipc mesg, receive ipc envelope mem mesg fail. ret[%d], "
+                "ptr[%p], mem name[%s], offset[%llu]",
+                ret, remoteMemPtr, remoteEnvelopeItemMemName_.ipcName, remoteOutputOffsetValue_),
+            ret);
         envelopeShmQue_ = DeviceMem::create(remoteMemPtr, size);
     }
 
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportShmEvent::SocketSend(std::string &message)
+HcclResult TransportShmEvent::SocketSend(std::string& message)
 {
     u32 msgLen = message.length() + 1;
     /* 检查入参，包括消息长度是否符合要求，目的rank是否合法 */
     if (msgLen > MSG_BUFF_SIZE) {
-        HCCL_ERROR("[ExchangerNetwork][Send]errNo[0x%016llx] deviceLogicId_[%d] message "\
-            "length[%u] is illegal", HCCL_ERROR_CODE(HCCL_E_PARA), deviceLogicId_, msgLen);
+        HCCL_ERROR(
+            "[ExchangerNetwork][Send]errNo[0x%016llx] deviceLogicId_[%d] message "
+            "length[%u] is illegal",
+            HCCL_ERROR_CODE(HCCL_E_PARA), deviceLogicId_, msgLen);
         return HCCL_E_INTERNAL;
     }
 
     /* 使用socket发送，非阻塞。能确保写入发送缓冲区 */
     u8 buff[MSG_BUFF_SIZE] = {0};
 
-    s32 sRet = strncpy_s(reinterpret_cast<char *>(buff), msgLen, message.c_str(), message.size());
-    CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[ExchangerNetwork][Send]errNo[0x%016llx]str copy failed, return[%d]. ",\
-        HCCL_ERROR_CODE(HCCL_E_INTERNAL), sRet), HCCL_E_INTERNAL);
+    s32 sRet = strncpy_s(reinterpret_cast<char*>(buff), msgLen, message.c_str(), message.size());
+    CHK_PRT_RET(
+        sRet != EOK,
+        HCCL_ERROR(
+            "[ExchangerNetwork][Send]errNo[0x%016llx]str copy failed, return[%d]. ", HCCL_ERROR_CODE(HCCL_E_INTERNAL),
+            sRet),
+        HCCL_E_INTERNAL);
     CHK_RET(hrtRaSocketBlockSend(fdHandle_, buff, MSG_BUFF_SIZE));
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportShmEvent::SocketRecv(std::string &message)
+HcclResult TransportShmEvent::SocketRecv(std::string& message)
 {
     /* 检查入参，包括消息长度是否符合要求，目的rank是否合法，清理出参message */
     message.clear();
@@ -188,7 +220,7 @@ HcclResult TransportShmEvent::SocketRecv(std::string &message)
     HCCL_DEBUG("socket deviceLogicId_[%d], msg_len[%u].", deviceLogicId_, MSG_BUFF_SIZE);
 
     /* 接收信息处理 */
-    message.assign(reinterpret_cast<char *>(buff));
+    message.assign(reinterpret_cast<char*>(buff));
 
     return HCCL_SUCCESS;
 }
@@ -225,12 +257,12 @@ HcclResult TransportShmEvent::ExchangeSignalMesg()
 
         // Notify start
         CHK_RET(hrtRaSocketBlockRecv(fdHandle_, &notifyMsg, sizeof(notifyMsg)));
-        std::vector<u8> isendDoneNotify(notifyMsg.remoteIsendDoneNotify,
-            notifyMsg.remoteIsendDoneNotify + NOTIFY_INFO_LENGTH);
+        std::vector<u8> isendDoneNotify(
+            notifyMsg.remoteIsendDoneNotify, notifyMsg.remoteIsendDoneNotify + NOTIFY_INFO_LENGTH);
         CHK_RET(OpenRemoteNotify(isendDoneNotify, isendDoneNotify_));
 
-        std::vector<u8> imrecvDoneNotify(notifyMsg.remoteImrecvDoneNotify,
-            notifyMsg.remoteImrecvDoneNotify + NOTIFY_INFO_LENGTH);
+        std::vector<u8> imrecvDoneNotify(
+            notifyMsg.remoteImrecvDoneNotify, notifyMsg.remoteImrecvDoneNotify + NOTIFY_INFO_LENGTH);
         CHK_RET(OpenRemoteNotify(imrecvDoneNotify, imrecvDoneNotify_));
         // Notify end
     } else {
@@ -238,12 +270,12 @@ HcclResult TransportShmEvent::ExchangeSignalMesg()
         // EVENT start
         NotifyMsg notifyMsg;
         CHK_RET(hrtRaSocketBlockRecv(fdHandle_, &notifyMsg, sizeof(notifyMsg)));
-        std::vector<u8> isendDoneNotify(notifyMsg.remoteIsendDoneNotify,
-            notifyMsg.remoteIsendDoneNotify + NOTIFY_INFO_LENGTH);
+        std::vector<u8> isendDoneNotify(
+            notifyMsg.remoteIsendDoneNotify, notifyMsg.remoteIsendDoneNotify + NOTIFY_INFO_LENGTH);
         CHK_RET(OpenRemoteNotify(isendDoneNotify, isendDoneNotify_));
 
-        std::vector<u8> imrecvDoneNotify(notifyMsg.remoteIsendDoneNotify,
-            notifyMsg.remoteIsendDoneNotify + NOTIFY_INFO_LENGTH);
+        std::vector<u8> imrecvDoneNotify(
+            notifyMsg.remoteIsendDoneNotify, notifyMsg.remoteIsendDoneNotify + NOTIFY_INFO_LENGTH);
         CHK_RET(OpenRemoteNotify(imrecvDoneNotify, imrecvDoneNotify_));
         // EVENT end
 
@@ -257,28 +289,28 @@ HcclResult TransportShmEvent::ExchangeSignalMesg()
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportShmEvent::GetRemoteIsendDoneSignal(std::shared_ptr<LocalIpcNotify> &notify)
+HcclResult TransportShmEvent::GetRemoteIsendDoneSignal(std::shared_ptr<LocalIpcNotify>& notify)
 {
     notify = remoteIsendDoneNotify_;
     CHK_SMART_PTR_NULL(notify);
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportShmEvent::GetRemoteImrecvDoneSignal(std::shared_ptr<LocalIpcNotify> &notify)
+HcclResult TransportShmEvent::GetRemoteImrecvDoneSignal(std::shared_ptr<LocalIpcNotify>& notify)
 {
     notify = remoteImrecvDoneNotify_;
     CHK_SMART_PTR_NULL(notify);
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportShmEvent::GetIsendDoneSignal(std::shared_ptr<RemoteNotify> &notify)
+HcclResult TransportShmEvent::GetIsendDoneSignal(std::shared_ptr<RemoteNotify>& notify)
 {
     notify = isendDoneNotify_;
     CHK_SMART_PTR_NULL(notify);
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportShmEvent::CreateIpcSignal(std::shared_ptr<LocalIpcNotify> &localNotify, u8 *notifyInfo)
+HcclResult TransportShmEvent::CreateIpcSignal(std::shared_ptr<LocalIpcNotify>& localNotify, u8* notifyInfo)
 {
     EXECEPTION_CATCH((localNotify = std::make_shared<LocalIpcNotify>()), return HCCL_E_PTR);
     CHK_SMART_PTR_NULL(localNotify);
@@ -290,28 +322,33 @@ HcclResult TransportShmEvent::CreateIpcSignal(std::shared_ptr<LocalIpcNotify> &l
 
     std::vector<u8> data(NOTIFY_INFO_LENGTH, 0);
     CHK_RET(localNotify->Serialize(data));
-    CHK_SAFETY_FUNC_RET(memcpy_s((u8 *)notifyInfo, NOTIFY_INFO_LENGTH, &data[0], data.size()));
+    CHK_SAFETY_FUNC_RET(memcpy_s((u8*)notifyInfo, NOTIFY_INFO_LENGTH, &data[0], data.size()));
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportShmEvent::SendIpcMemMesg(void *ptr, u64 size)
+HcclResult TransportShmEvent::SendIpcMemMesg(void* ptr, u64 size)
 {
     HcclResult ret;
     /* make memory shared interprocess and assigned a name */
     u64 offset;
     SecIpcName_t memName;
-    ret = MemNameRepository::GetInstance(deviceLogicId_)->SetIpcMem(ptr, size, memName.ipcName, NAME_LEN,
-        offset, recvPid_);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Send][IpcMemMesg]errNo[0x%016llx], In send ipc mesg, get para mem name failed. "\
-        "mem addr[%p] local rank[%u]", HCCL_ERROR_CODE(ret), ptr, machinePara_.localUserrank), ret);
+    ret = MemNameRepository::GetInstance(deviceLogicId_)
+              ->SetIpcMem(ptr, size, memName.ipcName, NAME_LEN, offset, recvPid_);
+    CHK_PRT_RET(
+        ret != HCCL_SUCCESS,
+        HCCL_ERROR(
+            "[Send][IpcMemMesg]errNo[0x%016llx], In send ipc mesg, get para mem name failed. "
+            "mem addr[%p] local rank[%u]",
+            HCCL_ERROR_CODE(ret), ptr, machinePara_.localUserrank),
+        ret);
 
     /* send memName to remote rank */
     CHK_RET(hrtRaSocketBlockSend(fdHandle_, &memName.ipcName, NAME_LEN));
 
     std::string memOffset = std::to_string(offset);
-    HCCL_INFO("localUserrank=%u, ptr=%p, remoteUserrank=%u, mem_offset=%s.",
-        machinePara_.localUserrank, ptr, machinePara_.remoteUserrank, memOffset.c_str());
+    HCCL_INFO(
+        "localUserrank=%u, ptr=%p, remoteUserrank=%u, mem_offset=%s.", machinePara_.localUserrank, ptr,
+        machinePara_.remoteUserrank, memOffset.c_str());
 
     /* send memsize to remote rank */
     CHK_RET(hrtRaSocketBlockSend(fdHandle_, &size, sizeof(u64)));
@@ -319,12 +356,13 @@ HcclResult TransportShmEvent::SendIpcMemMesg(void *ptr, u64 size)
     /* send memOffset to remote rank */
     CHK_RET(SocketSend(memOffset));
 
-    HCCL_DEBUG("localUserrank=%u, ptr=%p, remoteUserrank=%u, offset=%s, memName[%s].",
-        machinePara_.localUserrank, ptr, machinePara_.remoteUserrank, memOffset.c_str(), memName.ipcName);
+    HCCL_DEBUG(
+        "localUserrank=%u, ptr=%p, remoteUserrank=%u, offset=%s, memName[%s].", machinePara_.localUserrank, ptr,
+        machinePara_.remoteUserrank, memOffset.c_str(), memName.ipcName);
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportShmEvent::RecvIpcMemMesg(void **memPtr, u8 *memName, u64 &offset, u64 &size)
+HcclResult TransportShmEvent::RecvIpcMemMesg(void** memPtr, u8* memName, u64& offset, u64& size)
 {
     HcclResult ret;
     /* 获取对端内存名字 */
@@ -339,33 +377,41 @@ HcclResult TransportShmEvent::RecvIpcMemMesg(void **memPtr, u8 *memName, u64 &of
     CHK_RET(SalStrToULonglong(remoteOffsetName, HCCL_BASE_DECIMAL, offset));
 
     /* 根据名字，获取对端IPC 内存 */
-    ret = WaitPeerMemConfig(memPtr, const_cast<u8 *>(memName), size, offset);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Recv][IpcMemMesg]errNo[0x%016llx]In recv ipc mem mesg, wait peer mem config "\
-        "failed. local rank[%u]", HCCL_ERROR_CODE(ret), machinePara_.localUserrank), ret);
+    ret = WaitPeerMemConfig(memPtr, const_cast<u8*>(memName), size, offset);
+    CHK_PRT_RET(
+        ret != HCCL_SUCCESS,
+        HCCL_ERROR(
+            "[Recv][IpcMemMesg]errNo[0x%016llx]In recv ipc mem mesg, wait peer mem config "
+            "failed. local rank[%u]",
+            HCCL_ERROR_CODE(ret), machinePara_.localUserrank),
+        ret);
 
-    HCCL_DEBUG("localUserrank[%u] receive from remoteUserrank[%u], memName[%s]",
-        machinePara_.localUserrank, machinePara_.remoteUserrank, memName);
+    HCCL_DEBUG(
+        "localUserrank[%u] receive from remoteUserrank[%u], memName[%s]", machinePara_.localUserrank,
+        machinePara_.remoteUserrank, memName);
 
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportShmEvent::WaitPeerMemConfig(void **memPtr, const u8 *memName, uint64_t size, u64 offset)
+HcclResult TransportShmEvent::WaitPeerMemConfig(void** memPtr, const u8* memName, uint64_t size, u64 offset)
 {
     CHK_PTR_NULL(memPtr);
     CHK_PTR_NULL(memName);
 
     bool firstOpened = false;
     // 支持进程间、进程内都可以通过name获取对端内存
-    HcclResult ret = MemNameRepository::GetInstance(deviceLogicId_)->OpenIpcMem(memPtr, size, memName, 65,
-        offset, firstOpened);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Wait][WaitPeerMemConfig]errNo[0x%016llx]In link pcie, open mem failed. offset[%llu], size[%llu Byte]",
-            HCCL_ERROR_CODE(ret), offset, size), ret);
+    HcclResult ret
+        = MemNameRepository::GetInstance(deviceLogicId_)->OpenIpcMem(memPtr, size, memName, 65, offset, firstOpened);
+    CHK_PRT_RET(
+        ret != HCCL_SUCCESS,
+        HCCL_ERROR(
+            "[Wait][WaitPeerMemConfig]errNo[0x%016llx]In link pcie, open mem failed. offset[%llu], size[%llu Byte]",
+            HCCL_ERROR_CODE(ret), offset, size),
+        ret);
     return HCCL_SUCCESS;
 }
 
-void TransportShmEvent::GetScratchMem(std::vector<DeviceMem> &scratchMemInfos)
+void TransportShmEvent::GetScratchMem(std::vector<DeviceMem>& scratchMemInfos)
 {
     u32 size = 2;
     scratchMemInfos.resize(size);
@@ -383,11 +429,11 @@ HcclResult TransportShmEvent::PrepareConnect()
 
     linkTag_ = tag_;
     if (role_ == CLIENT_ROLE_SOCKET) {
-        linkTag_ += std::string(peerIp_.GetReadableIP()) + std::to_string(peerPort_) +
-            std::string(selfIp_.GetReadableIP()) + std::to_string(selfPort_);
+        linkTag_ += std::string(peerIp_.GetReadableIP()) + std::to_string(peerPort_)
+                    + std::string(selfIp_.GetReadableIP()) + std::to_string(selfPort_);
     } else {
-        linkTag_ += std::string(selfIp_.GetReadableIP()) + std::to_string(selfPort_) +
-            std::string(peerIp_.GetReadableIP()) + std::to_string(peerPort_);
+        linkTag_ += std::string(selfIp_.GetReadableIP()) + std::to_string(selfPort_)
+                    + std::string(peerIp_.GetReadableIP()) + std::to_string(peerPort_);
     }
     HCCL_INFO("link tag[%s]", linkTag_.c_str());
 
@@ -411,12 +457,13 @@ HcclResult TransportShmEvent::GetConnection()
     s32 sRet = memcpy_s(socketInfo.tag, sizeof(socketInfo.tag) - 1, linkTag_.c_str(), linkTag_.size());
     CHK_PRT_RET(sRet != EOK, HCCL_ERROR("memcpy_s failed, errorno[%d]", sRet), HCCL_E_MEMORY);
     CHK_RET(hrtRaBlockGetSockets(role_, &socketInfo, 1));
-    CHK_PRT_RET((socketInfo.status != CONNECT_OK) || (socketInfo.fdHandle == nullptr),
-        HCCL_ERROR("[Socket][GetConnection] get socket failed. status[%d]",
-            socketInfo.status), HCCL_E_TCP_TRANSFER);
+    CHK_PRT_RET(
+        (socketInfo.status != CONNECT_OK) || (socketInfo.fdHandle == nullptr),
+        HCCL_ERROR("[Socket][GetConnection] get socket failed. status[%d]", socketInfo.status), HCCL_E_TCP_TRANSFER);
     fdHandle_ = socketInfo.fdHandle;
-    HCCL_INFO("[Socket][GetConnection] get socket success with remote[%s], tag[%s]",
-        peerIp_.GetReadableAddress(), socketInfo.tag);
+    HCCL_INFO(
+        "[Socket][GetConnection] get socket success with remote[%s], tag[%s]", peerIp_.GetReadableAddress(),
+        socketInfo.tag);
 
     return HCCL_SUCCESS;
 }
@@ -498,7 +545,7 @@ HcclResult TransportShmEvent::SetCtxCurrent()
 
     if (ctx != rtCtx_) {
         HCCL_INFO("hrt set ctx [%p]", rtCtx_);
-        CHK_RET(hrtCtxSetCurrent(rtCtx_));  // set rt ctx
+        CHK_RET(hrtCtxSetCurrent(rtCtx_)); // set rt ctx
     }
     return HCCL_SUCCESS;
 }
@@ -511,8 +558,7 @@ HcclResult TransportShmEvent::Init()
         deviceType=[%d], inputMem=%p, outputMem=%p",
         machinePara_.machineType, machinePara_.serverId.c_str(), machinePara_.localDeviceId,
         machinePara_.remoteDeviceId, machinePara_.localUserrank, machinePara_.localWorldRank,
-        machinePara_.remoteUserrank, machinePara_.remoteWorldRank,
-        machinePara_.deviceType, machinePara_.inputMem.ptr(),
+        machinePara_.remoteUserrank, machinePara_.remoteWorldRank, machinePara_.deviceType, machinePara_.inputMem.ptr(),
         machinePara_.outputMem.ptr());
 
     RaResourceInfo raResourceInfo;
@@ -525,7 +571,7 @@ HcclResult TransportShmEvent::Init()
     CHK_RET(DlHalFunction::GetInstance().DlHalFunctionInit());
 
     CHK_PTR_NULL(rtCtx_);
-    CHK_RET(SetCtxCurrent());  // set rt ctx
+    CHK_RET(SetCtxCurrent()); // set rt ctx
 
     if (deviceLogicId_ == HOST_DEVICE_ID) {
         nodeType_ = NodeType::PS_NODE;
@@ -554,13 +600,15 @@ HcclResult TransportShmEvent::Init()
     CHK_RET(InitMem()); // 初始化内存信息，初始化信封队列的dev mem（ipc），初始化2块中转内存
 
     isInited_ = true;
-    HCCL_INFO("[TransportShmEvent] init success! serverId[%s] localRank[%u], localIp[%s], remoteRank[%u], "
-        "remoteIp[%u], linkTag[%s]", machinePara_.serverId.c_str(), machinePara_.localUserrank,
-        selfIp_.GetReadableAddress(), machinePara_.remoteUserrank, peerIp_.GetReadableAddress(), linkTag_.c_str());
+    HCCL_INFO(
+        "[TransportShmEvent] init success! serverId[%s] localRank[%u], localIp[%s], remoteRank[%u], "
+        "remoteIp[%u], linkTag[%s]",
+        machinePara_.serverId.c_str(), machinePara_.localUserrank, selfIp_.GetReadableAddress(),
+        machinePara_.remoteUserrank, peerIp_.GetReadableAddress(), linkTag_.c_str());
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportShmEvent::Init(TransportShmEventMember transport)  // aicpu-sd进程中执行
+HcclResult TransportShmEvent::Init(TransportShmEventMember transport) // aicpu-sd进程中执行
 {
     CHK_RET(CheckRecvMsgAndRequestBuffer());
 
@@ -568,7 +616,7 @@ HcclResult TransportShmEvent::Init(TransportShmEventMember transport)  // aicpu-
     inputShmMem_ = transport.inputShmMem;
     outputShmMem_ = transport.outputShmMem;
     envelopeShmQue_ = transport.envelopeShmQue;
-    localEnvelopeShmQue_ = static_cast<u8 *>(envelopeShmQue_.ptr()) + sizeof(ShmEnvelopeQue);
+    localEnvelopeShmQue_ = static_cast<u8*>(envelopeShmQue_.ptr()) + sizeof(ShmEnvelopeQue);
 
     return HCCL_SUCCESS;
 }
@@ -602,8 +650,8 @@ HcclResult TransportShmEvent::CheckShmMemRange(MemType memType, u64 offset, u64 
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportShmEvent::Isend(const TransData &sendData, const TransportEndPointParam &epParam,
-    HcclRequestInfo *&request)
+HcclResult
+TransportShmEvent::Isend(const TransData& sendData, const TransportEndPointParam& epParam, HcclRequestInfo*& request)
 {
     CHK_RET(GenerateSendRequest(sendData, epParam, request));
 
@@ -611,16 +659,16 @@ HcclResult TransportShmEvent::Isend(const TransData &sendData, const TransportEn
     u64 offset = 0;
     CHK_RET(GetMemInfo(sendData.srcBuf, memType, offset));
     CHK_RET(CheckShmMemRange(memType, offset, sendData.count, sendData.dataType));
-    HcclEnvelopePcie envelope(memType, offset, sendData.count, sendData.dataType, false, sendData.tableId,
-        sendData.globalStep);
+    HcclEnvelopePcie envelope(
+        memType, offset, sendData.count, sendData.dataType, false, sendData.tableId, sendData.globalStep);
     if (sendData.count == 0) {
         envelope.updateEndFlag = true;
     }
 
     CHK_RET(PushEnvelope(envelope));
-    HCCL_DEBUG("print envelope memType[%d] offset[%llu] count[%llu] dataType[%s] updateEndFlag[%d]",
-        envelope.memType, envelope.offset, envelope.count, GetDataTypeEnumStr(envelope.dataType).c_str(),
-        envelope.updateEndFlag);
+    HCCL_DEBUG(
+        "print envelope memType[%d] offset[%llu] count[%llu] dataType[%s] updateEndFlag[%d]", envelope.memType,
+        envelope.offset, envelope.count, GetDataTypeEnumStr(envelope.dataType).c_str(), envelope.updateEndFlag);
     if (deviceLogicId_ == HOST_DEVICE_ID) {
         Stream tmpStream(nullptr);
         CHK_RET(isendDoneNotify_->Post(tmpStream, dispatcher_));
@@ -629,14 +677,17 @@ HcclResult TransportShmEvent::Isend(const TransData &sendData, const TransportEn
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportShmEvent::GetMemInfo(uintptr_t memPtr, MemType &memType, u64 &offset)
+HcclResult TransportShmEvent::GetMemInfo(uintptr_t memPtr, MemType& memType, u64& offset)
 {
-    HCCL_DEBUG("GetMemInfo inputShmMem_ ptr[%p] uintptr[%llx] size[%llu Byte]",
-        inputShmMem_.ptr(), reinterpret_cast<uintptr_t>(inputShmMem_.ptr()), inputShmMem_.size());
-    HCCL_DEBUG("GetMemInfo outputShmMem_ ptr[%p] uintptr[%llx] size[%llu Byte]",
-        outputShmMem_.ptr(), reinterpret_cast<uintptr_t>(inputShmMem_.ptr()), outputShmMem_.size());
-    HCCL_DEBUG("GetMemInfo envelopeShmQue_ ptr[%p] uintptr[%llx] size[%llu Byte]",
-        envelopeShmQue_.ptr(), reinterpret_cast<uintptr_t>(inputShmMem_.ptr()), envelopeShmQue_.size());
+    HCCL_DEBUG(
+        "GetMemInfo inputShmMem_ ptr[%p] uintptr[%llx] size[%llu Byte]", inputShmMem_.ptr(),
+        reinterpret_cast<uintptr_t>(inputShmMem_.ptr()), inputShmMem_.size());
+    HCCL_DEBUG(
+        "GetMemInfo outputShmMem_ ptr[%p] uintptr[%llx] size[%llu Byte]", outputShmMem_.ptr(),
+        reinterpret_cast<uintptr_t>(inputShmMem_.ptr()), outputShmMem_.size());
+    HCCL_DEBUG(
+        "GetMemInfo envelopeShmQue_ ptr[%p] uintptr[%llx] size[%llu Byte]", envelopeShmQue_.ptr(),
+        reinterpret_cast<uintptr_t>(inputShmMem_.ptr()), envelopeShmQue_.size());
     HCCL_DEBUG("GetMemInfo input param memPtr[%llx]", memPtr);
 
     uintptr_t shmPtr = reinterpret_cast<uintptr_t>(inputShmMem_.ptr());
@@ -661,22 +712,22 @@ HcclResult TransportShmEvent::GetMemInfo(uintptr_t memPtr, MemType &memType, u64
     return HCCL_E_PARA;
 }
 
-HcclResult TransportShmEvent::Send(const TransData &sendData, const TransportEndPointParam &epParam)
+HcclResult TransportShmEvent::Send(const TransData& sendData, const TransportEndPointParam& epParam)
 {
     Stream tmpStream(nullptr);
     CHK_RET(isendDoneNotify_->Post(tmpStream, dispatcher_));
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportShmEvent::Improbe(const TransportEndPointParam &epParam, s32 &matched,
-    HcclMessageInfo *&msg, HcclStatus &status)
+HcclResult TransportShmEvent::Improbe(
+    const TransportEndPointParam& epParam, s32& matched, HcclMessageInfo*& msg, HcclStatus& status)
 {
     bool flag = true;
     return Improbe(epParam, matched, msg, status, flag);
 }
 
-HcclResult TransportShmEvent::Improbe(const TransportEndPointParam &epParam, s32 &matched, HcclMessageInfo *&msg,
-    HcclStatus &status, bool &flag)
+HcclResult TransportShmEvent::Improbe(
+    const TransportEndPointParam& epParam, s32& matched, HcclMessageInfo*& msg, HcclStatus& status, bool& flag)
 {
     HcclEnvelopeSummary envelopInfo{};
     if (deviceLogicId_ == HOST_DEVICE_ID) {
@@ -706,36 +757,39 @@ HcclResult TransportShmEvent::Improbe(const TransportEndPointParam &epParam, s32
     status.count = envelopInfo.pcieEnvelope.count;
     status.error = 0;
     matched = HCCL_IMPROBE_COMPLETED;
-    HCCL_DEBUG("Improbe: memType[%u] offset[%llu] count[%llu] datatype[%s]",
-        envelopInfo.pcieEnvelope.memType, envelopInfo.pcieEnvelope.offset, envelopInfo.pcieEnvelope.count,
+    HCCL_DEBUG(
+        "Improbe: memType[%u] offset[%llu] count[%llu] datatype[%s]", envelopInfo.pcieEnvelope.memType,
+        envelopInfo.pcieEnvelope.offset, envelopInfo.pcieEnvelope.count,
         GetDataTypeEnumStr(envelopInfo.pcieEnvelope.dataType).c_str());
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportShmEvent::Imrecv(const TransData &recvData, HcclMessageInfo &msg, HcclRequestInfo *&request)
+HcclResult TransportShmEvent::Imrecv(const TransData& recvData, HcclMessageInfo& msg, HcclRequestInfo*& request)
 {
     return Imrecv(recvData, msg, request, true, true);
 }
 
-HcclResult TransportShmEvent::Imrecv(const TransData &recvData, HcclMessageInfo &msg, HcclRequestInfo *&request,
-    bool flag, bool needRecordFlag)
+HcclResult TransportShmEvent::Imrecv(
+    const TransData& recvData, HcclMessageInfo& msg, HcclRequestInfo*& request, bool flag, bool needRecordFlag)
 {
     CHK_RET(GenerateRecvRequest(recvData, msg, request));
 
-    HcclEnvelopePcie &envelope = msg.envelope.pcieEnvelope;
+    HcclEnvelopePcie& envelope = msg.envelope.pcieEnvelope;
     if (envelope.count != 0) {
-        void *localMem = reinterpret_cast<void *>(recvData.dstBuf);
+        void* localMem = reinterpret_cast<void*>(recvData.dstBuf);
         u64 maxLength = recvData.count * SIZE_TABLE[recvData.dataType];
         u64 length = envelope.count * SIZE_TABLE[envelope.dataType];
-        void *remoteBaseMem = envelope.memType == MemType::USER_INPUT_MEM ? inputShmMem_.ptr() : outputShmMem_.ptr();
+        void* remoteBaseMem = envelope.memType == MemType::USER_INPUT_MEM ? inputShmMem_.ptr() : outputShmMem_.ptr();
 
         CHK_RET(CheckShmMemRange(envelope.memType, envelope.offset, envelope.count, envelope.dataType));
-        void *remoteMem = reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(remoteBaseMem) + envelope.offset);
+        void* remoteMem = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(remoteBaseMem) + envelope.offset);
 
         if (localMem != remoteMem) {
             if (ShmMemcpy(localMem, maxLength, remoteMem, length) != HCCL_SUCCESS) {
-                HCCL_ERROR("[TransportShmEvent][Imrecv] shm mem cpy failed, local mem %p max length %llu remote mem %p"\
-                    " length %llu", localMem, maxLength, remoteMem, length);
+                HCCL_ERROR(
+                    "[TransportShmEvent][Imrecv] shm mem cpy failed, local mem %p max length %llu remote mem %p"
+                    " length %llu",
+                    localMem, maxLength, remoteMem, length);
                 return HCCL_E_MEMORY;
             }
         }
@@ -755,7 +809,7 @@ HcclResult TransportShmEvent::Imrecv(const TransData &recvData, HcclMessageInfo 
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportShmEvent::Test(HcclRequestInfo &request, s32 &flag, HcclStatus &compState)
+HcclResult TransportShmEvent::Test(HcclRequestInfo& request, s32& flag, HcclStatus& compState)
 {
     flag = HCCL_TEST_COMPLETED;
     HCCL_INFO("QueryRequestStatus: flag [%d]", flag);
@@ -764,38 +818,32 @@ HcclResult TransportShmEvent::Test(HcclRequestInfo &request, s32 &flag, HcclStat
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportShmEvent::EnterStateProcess(ConnState nextState)
-{
-    return HCCL_SUCCESS;
-}
+HcclResult TransportShmEvent::EnterStateProcess(ConnState nextState) { return HCCL_SUCCESS; }
 
-HcclResult TransportShmEvent::LoopStateProcess()
-{
-    return HCCL_SUCCESS;
-}
+HcclResult TransportShmEvent::LoopStateProcess() { return HCCL_SUCCESS; }
 
-HcclResult TransportShmEvent::PushEnvelope(HcclEnvelopePcie &envelope)
+HcclResult TransportShmEvent::PushEnvelope(HcclEnvelopePcie& envelope)
 {
     std::unique_lock<std::mutex> lock(queMutex_);
     if (deviceLogicId_ == HOST_DEVICE_ID) {
         ShmEnvelopeQue tempQue;
-        void *remoteQue = static_cast<u8 *>(envelopeShmQue_.ptr()) + sizeof(ShmEnvelopeQue);
+        void* remoteQue = static_cast<u8*>(envelopeShmQue_.ptr()) + sizeof(ShmEnvelopeQue);
         CHK_RET(hrtDrvMemCpy(&tempQue.queInfo, sizeof(ShmEnvelopeQue), remoteQue, sizeof(tempQue.queInfo)));
 
-        CHK_PRT_RET((tempQue.queInfo.size >= ENVELOPE_QUE_CAPACITY),
-            HCCL_WARNING("shm que is full"), HCCL_E_AGAIN);
+        CHK_PRT_RET((tempQue.queInfo.size >= ENVELOPE_QUE_CAPACITY), HCCL_WARNING("shm que is full"), HCCL_E_AGAIN);
 
         u32 tempHead = tempQue.queInfo.head;
-        u8 *dstAddr = static_cast<u8 *>(remoteQue) + MEMBER_OFFSET(ShmEnvelopeQue, que) +
-            (tempHead * sizeof(HcclEnvelopePcie));
-        CHK_RET(hrtDrvMemCpy(dstAddr, ENVELOPE_QUE_CAPACITY * sizeof(HcclEnvelopePcie) - tempHead *
-            sizeof(HcclEnvelopePcie), &envelope, sizeof(HcclEnvelopePcie)));
+        u8* dstAddr
+            = static_cast<u8*>(remoteQue) + MEMBER_OFFSET(ShmEnvelopeQue, que) + (tempHead * sizeof(HcclEnvelopePcie));
+        CHK_RET(hrtDrvMemCpy(
+            dstAddr, ENVELOPE_QUE_CAPACITY * sizeof(HcclEnvelopePcie) - tempHead * sizeof(HcclEnvelopePcie), &envelope,
+            sizeof(HcclEnvelopePcie)));
         tempQue.queInfo.head = (tempQue.queInfo.head + 1) % ENVELOPE_QUE_CAPACITY;
         tempQue.queInfo.size++;
 
         CHK_RET(hrtDrvMemCpy(remoteQue, sizeof(ShmEnvelopeQue), &tempQue.queInfo, sizeof(tempQue.queInfo)));
     } else {
-        ShmEnvelopeQue *quePtr = static_cast<ShmEnvelopeQue *>(envelopeShmQue_.ptr());
+        ShmEnvelopeQue* quePtr = static_cast<ShmEnvelopeQue*>(envelopeShmQue_.ptr());
         quePtr->que[quePtr->queInfo.head] = envelope;
         quePtr->queInfo.head = (quePtr->queInfo.head + 1) % ENVELOPE_QUE_CAPACITY;
         quePtr->queInfo.size++;
@@ -803,23 +851,24 @@ HcclResult TransportShmEvent::PushEnvelope(HcclEnvelopePcie &envelope)
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportShmEvent::FrontEnvelope(HcclEnvelopePcie &envelope)
+HcclResult TransportShmEvent::FrontEnvelope(HcclEnvelopePcie& envelope)
 {
     std::unique_lock<std::mutex> lock(queMutex_);
     if (deviceLogicId_ == HOST_DEVICE_ID) {
         ShmEnvelopeQue::QueInfo queInfo;
         CHK_RET(hrtDrvMemCpy(&queInfo, sizeof(queInfo), envelopeShmQue_.ptr(), sizeof(ShmEnvelopeQue::QueInfo)));
         if (queInfo.size == 0) {
-            HCCL_ERROR("[TransportShmEvent][FrontEnvelope] que size is zero head[%u] tail[%u]",
-                queInfo.head, queInfo.tail);
+            HCCL_ERROR(
+                "[TransportShmEvent][FrontEnvelope] que size is zero head[%u] tail[%u]", queInfo.head, queInfo.tail);
             return HCCL_E_INTERNAL;
         }
 
-        u8 *queBeginAddr = static_cast<u8 *>(envelopeShmQue_.ptr()) + MEMBER_OFFSET(ShmEnvelopeQue, que);
-        CHK_RET(hrtDrvMemCpy(&envelope, sizeof(HcclEnvelopePcie),
-            queBeginAddr + queInfo.tail * sizeof(HcclEnvelopePcie), sizeof(HcclEnvelopePcie)));
+        u8* queBeginAddr = static_cast<u8*>(envelopeShmQue_.ptr()) + MEMBER_OFFSET(ShmEnvelopeQue, que);
+        CHK_RET(hrtDrvMemCpy(
+            &envelope, sizeof(HcclEnvelopePcie), queBeginAddr + queInfo.tail * sizeof(HcclEnvelopePcie),
+            sizeof(HcclEnvelopePcie)));
     } else {
-        ShmEnvelopeQue *quePtr = static_cast<ShmEnvelopeQue *>(localEnvelopeShmQue_);
+        ShmEnvelopeQue* quePtr = static_cast<ShmEnvelopeQue*>(localEnvelopeShmQue_);
         envelope = quePtr->que[quePtr->queInfo.tail];
     }
     return HCCL_SUCCESS;
@@ -836,14 +885,14 @@ HcclResult TransportShmEvent::PopEnvelope()
         queInfo.size--;
         CHK_RET(hrtDrvMemCpy(envelopeShmQue_.ptr(), sizeof(ShmEnvelopeQue), &queInfo, sizeof(queInfo)));
     } else {
-        ShmEnvelopeQue *quePtr = static_cast<ShmEnvelopeQue *>(localEnvelopeShmQue_);
+        ShmEnvelopeQue* quePtr = static_cast<ShmEnvelopeQue*>(localEnvelopeShmQue_);
         quePtr->queInfo.tail = (quePtr->queInfo.tail + 1) % ENVELOPE_QUE_CAPACITY;
         quePtr->queInfo.size--;
     }
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportShmEvent::EnvelopeQueSize(u32 &size)
+HcclResult TransportShmEvent::EnvelopeQueSize(u32& size)
 {
     std::unique_lock<std::mutex> lock(queMutex_);
     if (deviceLogicId_ == HOST_DEVICE_ID) {
@@ -851,28 +900,29 @@ HcclResult TransportShmEvent::EnvelopeQueSize(u32 &size)
         CHK_RET(hrtDrvMemCpy(&queInfo, sizeof(queInfo), envelopeShmQue_.ptr(), sizeof(ShmEnvelopeQue::QueInfo)));
         size = queInfo.size;
     } else {
-        ShmEnvelopeQue *quePtr = static_cast<ShmEnvelopeQue *>(localEnvelopeShmQue_);
+        ShmEnvelopeQue* quePtr = static_cast<ShmEnvelopeQue*>(localEnvelopeShmQue_);
         size = quePtr->queInfo.size;
     }
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportShmEvent::RemoteEnvelopeQueSize(u32 &size)
+HcclResult TransportShmEvent::RemoteEnvelopeQueSize(u32& size)
 {
     std::unique_lock<std::mutex> lock(queMutex_);
     if (deviceLogicId_ == HOST_DEVICE_ID) {
         ShmEnvelopeQue::QueInfo queInfo;
-        CHK_RET(hrtDrvMemCpy(&queInfo, sizeof(queInfo),
-            static_cast<u8 *>(envelopeShmQue_.ptr()) + sizeof(ShmEnvelopeQue), sizeof(ShmEnvelopeQue::QueInfo)));
+        CHK_RET(hrtDrvMemCpy(
+            &queInfo, sizeof(queInfo), static_cast<u8*>(envelopeShmQue_.ptr()) + sizeof(ShmEnvelopeQue),
+            sizeof(ShmEnvelopeQue::QueInfo)));
         size = queInfo.size;
     } else {
-        ShmEnvelopeQue *quePtr = static_cast<ShmEnvelopeQue *>(envelopeShmQue_.ptr());
+        ShmEnvelopeQue* quePtr = static_cast<ShmEnvelopeQue*>(envelopeShmQue_.ptr());
         size = quePtr->queInfo.size;
     }
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportShmEvent::GetTransportMember(TransportShmEventMember &transport)
+HcclResult TransportShmEvent::GetTransportMember(TransportShmEventMember& transport)
 {
     transport.deviceLogicId = deviceLogicId_;
     transport.inputShmMem = inputShmMem_;
@@ -882,7 +932,7 @@ HcclResult TransportShmEvent::GetTransportMember(TransportShmEventMember &transp
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportShmEvent::ShmMemcpy(void *dst, uint64_t destMax, const void *src, uint64_t count)
+HcclResult TransportShmEvent::ShmMemcpy(void* dst, uint64_t destMax, const void* src, uint64_t count)
 {
     if (deviceLogicId_ == HOST_DEVICE_ID) {
         TIME_PRINT(CHK_RET(hrtDrvMemCpy(dst, destMax, src, count)));
@@ -892,7 +942,7 @@ HcclResult TransportShmEvent::ShmMemcpy(void *dst, uint64_t destMax, const void 
     return HCCL_SUCCESS;
 }
 
-void TransportShmEvent::GetLinkTag(std::string &tag)
+void TransportShmEvent::GetLinkTag(std::string& tag)
 {
     tag = linkTag_;
     return;

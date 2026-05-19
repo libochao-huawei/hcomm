@@ -40,27 +40,15 @@ constexpr u32 d2hBufferSize = sizeof(KfcExecStatus);
 
 class MC2AicpuRetry_UT : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "MC2AicpuRetry_UT SetUP" << std::endl;
-    }
-    static void TearDownTestCase()
-    {
-        std::cout << "MC2AicpuRetry_UT TearDown" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "MC2AicpuRetry_UT SetUP" << std::endl; }
+    static void TearDownTestCase() { std::cout << "MC2AicpuRetry_UT TearDown" << std::endl; }
     // Some expensive resource shared by all tests.
     virtual void SetUp()
     {
         s32 portNum = 7;
-        MOCKER(hrtGetHccsPortNum)
-            .stubs()
-            .with(any(), outBound(portNum))
-            .will(returnValue(HCCL_SUCCESS));
+        MOCKER(hrtGetHccsPortNum).stubs().with(any(), outBound(portNum)).will(returnValue(HCCL_SUCCESS));
         g_stubDevType = DevType::DEV_TYPE_910B;
-        MOCKER(halGetDeviceInfo)
-            .stubs()
-            .with(any())
-            .will(invoke(StubhalGetDeviceInfo));
+        MOCKER(halGetDeviceInfo).stubs().with(any()).will(invoke(StubhalGetDeviceInfo));
 
         DlHalFunction::GetInstance().DlHalFunctionInit();
         hrtSetDevice(0);
@@ -75,55 +63,54 @@ protected:
     }
 };
 
-#define init_kfc_args(initTask)                                                             \
-    StubHccCommRes commRes;                                                                 \
-    HccCommResParamTask paramTask = commRes.StubHccCommResParamTask();                      \
-    AicpuKfcRpcServer::RpcMsgBody msgBody;                                                     \
-    (void)memset_s(&msgBody, sizeof(msgBody), 0, sizeof(msgBody));                          \
-    paramTask.mc2WorkSpace.workSpace = uint64_t(&msgBody);                                  \
-                                                                                            \
-    std::shared_ptr<hccl::HDCommunicate> h2dTransfer;                                       \
-    std::shared_ptr<hccl::HDCommunicate> d2hTransfer;                                       \
-    h2dTransfer.reset(new (std::nothrow) hccl::HDCommunicate(0, HCCL_HDC_TYPE_H2D, h2dBufferSize));        \
-    d2hTransfer.reset(new (std::nothrow) hccl::HDCommunicate(0, HCCL_HDC_TYPE_D2H, d2hBufferSize));        \
-    h2dTransfer->InitHost();                                                                \
-    d2hTransfer->InitHost();                                                                \
-    paramTask.kfcControlTransferH2DParams = h2dTransfer->GetCommunicateParams();                      \
-    paramTask.kfcStatusTransferD2HParams = d2hTransfer->GetCommunicateParams();                      \
-    paramTask.config.retryEnable = 1;                                                       \
-    initTask.context = uint64_t(&paramTask);                                                \
+#define init_kfc_args(initTask)                                                                     \
+    StubHccCommRes commRes;                                                                         \
+    HccCommResParamTask paramTask = commRes.StubHccCommResParamTask();                              \
+    AicpuKfcRpcServer::RpcMsgBody msgBody;                                                          \
+    (void)memset_s(&msgBody, sizeof(msgBody), 0, sizeof(msgBody));                                  \
+    paramTask.mc2WorkSpace.workSpace = uint64_t(&msgBody);                                          \
+                                                                                                    \
+    std::shared_ptr<hccl::HDCommunicate> h2dTransfer;                                               \
+    std::shared_ptr<hccl::HDCommunicate> d2hTransfer;                                               \
+    h2dTransfer.reset(new (std::nothrow) hccl::HDCommunicate(0, HCCL_HDC_TYPE_H2D, h2dBufferSize)); \
+    d2hTransfer.reset(new (std::nothrow) hccl::HDCommunicate(0, HCCL_HDC_TYPE_D2H, d2hBufferSize)); \
+    h2dTransfer->InitHost();                                                                        \
+    d2hTransfer->InitHost();                                                                        \
+    paramTask.kfcControlTransferH2DParams = h2dTransfer->GetCommunicateParams();                    \
+    paramTask.kfcStatusTransferD2HParams = d2hTransfer->GetCommunicateParams();                     \
+    paramTask.config.retryEnable = 1;                                                               \
+    initTask.context = uint64_t(&paramTask);
 
-#define init_tiling_data(tilingData)                                                        \
-    tilingData.commOrder = 0;                                                               \
-    tilingData.commType = HCCL_CMD_ALLREDUCE;                                               \
-    tilingData.dataType = HCCL_DATA_TYPE_FP16;                                              \
-    tilingData.turnNum = 1;                                                                 \
-    tilingData.sendCnt = 256;                                                               \
-    tilingData.totalCnt = 1;                                                                \
-    tilingData.rspPolicy = 0;                                                               \
-    tilingData.waitPolicy = 0;                                                              \
-    tilingData.taskType = HCCL_KFC_TASK_HCCL_ONLY_EXE;                                      \
-    tilingData.useBufferType = 0;                                                           \
-    tilingData.debugMode = MC2_DEBUG_WAIT_COMM;                                             \
-    tilingData.preparePosition = TASK_PREPARE_HOST;                                         \
-    tilingData.notifyOff = 0;                                                               \
+#define init_tiling_data(tilingData)                   \
+    tilingData.commOrder = 0;                          \
+    tilingData.commType = HCCL_CMD_ALLREDUCE;          \
+    tilingData.dataType = HCCL_DATA_TYPE_FP16;         \
+    tilingData.turnNum = 1;                            \
+    tilingData.sendCnt = 256;                          \
+    tilingData.totalCnt = 1;                           \
+    tilingData.rspPolicy = 0;                          \
+    tilingData.waitPolicy = 0;                         \
+    tilingData.taskType = HCCL_KFC_TASK_HCCL_ONLY_EXE; \
+    tilingData.useBufferType = 0;                      \
+    tilingData.debugMode = MC2_DEBUG_WAIT_COMM;        \
+    tilingData.preparePosition = TASK_PREPARE_HOST;    \
+    tilingData.notifyOff = 0;
 
-#define init_kfc_task(kfcTask)                                                              \
-    u64* a = (u64*)malloc(1024*1024);                                                       \
-    u64* b = (u64*)malloc(1024*1024);                                                       \
-    kfcTask.inputA = uint64_t(a);                                                           \
-    kfcTask.outputC = 0;                                                                    \
-    kfcTask.commOut = uint64_t(b);                                                          \
-    kfcTask.context = uint64_t(&paramTask);                                                 \
-    kfcTask.tilingData = uint64_t(&tilingData);                                             \
+#define init_kfc_task(kfcTask)              \
+    u64* a = (u64*)malloc(1024 * 1024);     \
+    u64* b = (u64*)malloc(1024 * 1024);     \
+    kfcTask.inputA = uint64_t(a);           \
+    kfcTask.outputC = 0;                    \
+    kfcTask.commOut = uint64_t(b);          \
+    kfcTask.context = uint64_t(&paramTask); \
+    kfcTask.tilingData = uint64_t(&tilingData);
 
-#define deinit()                                                                            \
-    free(a);                                                                                \
-    free(b);                                                                                \
-
+#define deinit() \
+    free(a);     \
+    free(b);
 
 uint8_t sqBuffer[64 * 32 * 64];
-drvError_t halSqCpQueryStub_1(uint32_t devId, struct halSqCqQueryInfo *info)
+drvError_t halSqCpQueryStub_1(uint32_t devId, struct halSqCqQueryInfo* info)
 {
     if (info == nullptr) {
         return DRV_ERROR_INNER_ERR;
@@ -145,15 +132,16 @@ drvError_t halSqCpQueryStub_1(uint32_t devId, struct halSqCqQueryInfo *info)
             return DRV_ERROR_NONE;
         };
         case DRV_SQCQ_PROP_SQ_BASE: {
-            uint8_t *buffer = sqBuffer;
+            uint8_t* buffer = sqBuffer;
             info->value[0] = reinterpret_cast<uintptr_t>(buffer) & 0xFFFFFFFF;
             info->value[1] = reinterpret_cast<uintptr_t>(buffer) >> 32;
         }
-        default:return DRV_ERROR_NONE;
+        default:
+            return DRV_ERROR_NONE;
     }
 }
 
-drvError_t halSqCpQueryStub_2(uint32_t devId, struct halSqCqQueryInfo *info)
+drvError_t halSqCpQueryStub_2(uint32_t devId, struct halSqCqQueryInfo* info)
 {
     if (info == nullptr) {
         return DRV_ERROR_INNER_ERR;
@@ -176,11 +164,12 @@ drvError_t halSqCpQueryStub_2(uint32_t devId, struct halSqCqQueryInfo *info)
             return DRV_ERROR_NONE;
         };
         case DRV_SQCQ_PROP_SQ_BASE: {
-            uint8_t *buffer = sqBuffer;
+            uint8_t* buffer = sqBuffer;
             info->value[0] = reinterpret_cast<uintptr_t>(buffer) & 0xFFFFFFFF;
             info->value[1] = reinterpret_cast<uintptr_t>(buffer) >> 32;
         }
-        default:return DRV_ERROR_NONE;
+        default:
+            return DRV_ERROR_NONE;
     }
 }
 
@@ -198,10 +187,7 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_normal)
     KFCTask kfcTask;
     init_kfc_task(kfcTask);
 
-    MOCKER(&AicpuDispatcher::LaunchTask)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(&AicpuDispatcher::LaunchTask).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     StubSqeBuffer sqeBufferStub;
     EXPECT_EQ(0, RunAicpuRpcSrvLaunch(&kfcTask));
@@ -216,7 +202,6 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_normal)
     deinit();
 }
 
-
 TEST_F(MC2AicpuRetry_UT, allreduce_fp16_retry_success_when_op_runing)
 {
     MOCKER_CPP(&HcclCommAicpu::GenTaskExceptionInfo).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
@@ -230,12 +215,13 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_retry_success_when_op_runing)
     memset_s(&request, sizeof(KfcExecControl), 0, sizeof(KfcExecControl));
     KfcExecStatus response;
     memset_s(&response, sizeof(KfcExecStatus), 0, sizeof(KfcExecStatus));
-    thread threadHandle([&]{
+    thread threadHandle([&] {
         request.kfcCmd = KfcCommand::kStopLaunch;
         h2dTransfer->Put(0, sizeof(KfcExecControl), (u8*)&request);
-        while(true) {
+        while (true) {
             d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8*)&response);
-             if ((response.execStatus.kfcStatus != KfcStatus::kRuning)&&(response.execStatus.kfcStatus !=KfcStatus::kNull)) {
+            if ((response.execStatus.kfcStatus != KfcStatus::kRuning)
+                && (response.execStatus.kfcStatus != KfcStatus::kNull)) {
                 break;
             }
         }
@@ -243,7 +229,7 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_retry_success_when_op_runing)
 
         request.kfcCmd = KfcCommand::kStopExec;
         h2dTransfer->Put(0, sizeof(KfcExecControl), (u8*)&request);
-        while(true) {
+        while (true) {
             d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8*)&response);
             if (response.execStatus.kfcStatus != KfcStatus::kStoplaunch) {
                 break;
@@ -253,16 +239,15 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_retry_success_when_op_runing)
 
         request.kfcCmd = KfcCommand::kRetry;
         h2dTransfer->Put(0, sizeof(KfcExecControl), (u8*)&request);
-        while(true) {
+        while (true) {
             d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8*)&response);
-            if ((response.execStatus.kfcStatus != KfcStatus::kStopExec) &&
-                (response.execStatus.kfcStatus != KfcStatus::kRuning)) {
+            if ((response.execStatus.kfcStatus != KfcStatus::kStopExec)
+                && (response.execStatus.kfcStatus != KfcStatus::kRuning)) {
                 break;
             }
         }
         EXPECT_EQ(response.execStatus.kfcStatus, KfcStatus::kEnd);
     });
-
 
     HcclKFCTilingData tilingData = {0};
     init_tiling_data(tilingData);
@@ -270,22 +255,15 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_retry_success_when_op_runing)
     KFCTask kfcTask;
     init_kfc_task(kfcTask);
 
-    MOCKER(halSqCqQuery)
-    .stubs()
-    .with(any())
-    .will(invoke(halSqCpQueryStub_2));
+    MOCKER(halSqCqQuery).stubs().with(any()).will(invoke(halSqCpQueryStub_2));
 
-    MOCKER(&AicpuDispatcher::LaunchTask)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
-
+    MOCKER(&AicpuDispatcher::LaunchTask).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     MOCKER(&TaskOrchestrator::WaitFinishWhileLoop)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_E_SUSPENDING))
-    .then(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_E_SUSPENDING))
+        .then(returnValue(HCCL_SUCCESS));
 
     usleep(10000);
 
@@ -308,12 +286,13 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_retry_when_op_end)
     memset_s(&request, sizeof(KfcExecControl), 0, sizeof(KfcExecControl));
     KfcExecStatus response;
     memset_s(&response, sizeof(KfcExecStatus), 0, sizeof(KfcExecStatus));
-    thread threadHandle([&]{
+    thread threadHandle([&] {
         request.kfcCmd = KfcCommand::kStopLaunch;
         h2dTransfer->Put(0, sizeof(KfcExecControl), (u8*)&request);
-        while(true) {
+        while (true) {
             d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8*)&response);
-            if ((response.execStatus.kfcStatus != KfcStatus::kRuning)&&(response.execStatus.kfcStatus !=KfcStatus::kNull)) {
+            if ((response.execStatus.kfcStatus != KfcStatus::kRuning)
+                && (response.execStatus.kfcStatus != KfcStatus::kNull)) {
                 break;
             }
         }
@@ -321,7 +300,7 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_retry_when_op_end)
 
         request.kfcCmd = KfcCommand::kStopExec;
         h2dTransfer->Put(0, sizeof(KfcExecControl), (u8*)&request);
-        while(true) {
+        while (true) {
             d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8*)&response);
             if (response.execStatus.kfcStatus != KfcStatus::kStoplaunch) {
                 break;
@@ -336,10 +315,7 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_retry_when_op_end)
     KFCTask kfcTask;
     init_kfc_task(kfcTask);
 
-    MOCKER(&AicpuDispatcher::LaunchTask)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(&AicpuDispatcher::LaunchTask).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     usleep(10000);
 
@@ -362,12 +338,13 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_not_support_retry_for_inplace)
     memset_s(&request, sizeof(KfcExecControl), 0, sizeof(KfcExecControl));
     KfcExecStatus response;
     memset_s(&response, sizeof(KfcExecStatus), 0, sizeof(KfcExecStatus));
-    thread threadHandle([&]{
+    thread threadHandle([&] {
         request.kfcCmd = KfcCommand::kStopLaunch;
         h2dTransfer->Put(0, sizeof(KfcExecControl), (u8*)&request);
-        while(true) {
+        while (true) {
             d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8*)&response);
-           if ((response.execStatus.kfcStatus != KfcStatus::kRuning)&&(response.execStatus.kfcStatus !=KfcStatus::kNull)) {
+            if ((response.execStatus.kfcStatus != KfcStatus::kRuning)
+                && (response.execStatus.kfcStatus != KfcStatus::kNull)) {
                 break;
             }
         }
@@ -375,7 +352,7 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_not_support_retry_for_inplace)
 
         request.kfcCmd = KfcCommand::kStopExec;
         h2dTransfer->Put(0, sizeof(KfcExecControl), (u8*)&request);
-        while(true) {
+        while (true) {
             d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8*)&response);
             if (response.execStatus.kfcStatus != KfcStatus::kStoplaunch) {
                 break;
@@ -390,24 +367,17 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_not_support_retry_for_inplace)
     KFCTask kfcTask;
     init_kfc_task(kfcTask);
     kfcTask.inputA = uint64_t(a);
-    kfcTask.commOut = uint64_t(a);  // 输入内存和输出内存一致，不能进行retry
+    kfcTask.commOut = uint64_t(a); // 输入内存和输出内存一致，不能进行retry
 
-    MOCKER(halSqCqQuery)
-    .stubs()
-    .with(any())
-    .will(invoke(halSqCpQueryStub_2));
+    MOCKER(halSqCqQuery).stubs().with(any()).will(invoke(halSqCpQueryStub_2));
 
-    MOCKER(&AicpuDispatcher::LaunchTask)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
-
+    MOCKER(&AicpuDispatcher::LaunchTask).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     MOCKER(&TaskOrchestrator::WaitFinishWhileLoop)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_E_SUSPENDING))
-    .then(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_E_SUSPENDING))
+        .then(returnValue(HCCL_SUCCESS));
 
     usleep(10000);
 
@@ -424,19 +394,20 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_not_support_retry_for_disable_retry)
 
     KFCResInitTask initTask;
     init_kfc_args(initTask);
-    paramTask.config.retryEnable = 0;   // 关闭op retry
+    paramTask.config.retryEnable = 0; // 关闭op retry
     EXPECT_EQ(0, RunAicpuKfcResInit(&initTask));
 
     KfcExecControl request;
     memset_s(&request, sizeof(KfcExecControl), 0, sizeof(KfcExecControl));
     KfcExecStatus response;
     memset_s(&response, sizeof(KfcExecStatus), 0, sizeof(KfcExecStatus));
-    thread threadHandle([&]{
+    thread threadHandle([&] {
         request.kfcCmd = KfcCommand::kStopLaunch;
         h2dTransfer->Put(0, sizeof(KfcExecControl), (u8*)&request);
-        while(true) {
+        while (true) {
             d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8*)&response);
-             if ((response.execStatus.kfcStatus != KfcStatus::kRuning)&&(response.execStatus.kfcStatus !=KfcStatus::kNull)) {
+            if ((response.execStatus.kfcStatus != KfcStatus::kRuning)
+                && (response.execStatus.kfcStatus != KfcStatus::kNull)) {
                 break;
             }
         }
@@ -444,7 +415,7 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_not_support_retry_for_disable_retry)
 
         request.kfcCmd = KfcCommand::kStopExec;
         h2dTransfer->Put(0, sizeof(KfcExecControl), (u8*)&request);
-        while(true) {
+        while (true) {
             d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8*)&response);
             if (response.execStatus.kfcStatus != KfcStatus::kStoplaunch) {
                 break;
@@ -459,22 +430,15 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_not_support_retry_for_disable_retry)
     KFCTask kfcTask;
     init_kfc_task(kfcTask);
 
-    MOCKER(halSqCqQuery)
-    .stubs()
-    .with(any())
-    .will(invoke(halSqCpQueryStub_2));
+    MOCKER(halSqCqQuery).stubs().with(any()).will(invoke(halSqCpQueryStub_2));
 
-    MOCKER(&AicpuDispatcher::LaunchTask)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
-
+    MOCKER(&AicpuDispatcher::LaunchTask).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     MOCKER(&TaskOrchestrator::WaitFinishWhileLoop)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_E_SUSPENDING))
-    .then(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_E_SUSPENDING))
+        .then(returnValue(HCCL_SUCCESS));
 
     usleep(10000);
 
@@ -497,16 +461,17 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_stop)
     memset_s(&request, sizeof(KfcExecControl), 0, sizeof(KfcExecControl));
     KfcExecStatus response;
     memset_s(&response, sizeof(KfcExecStatus), 0, sizeof(KfcExecStatus));
-    thread threadHandle([&]{
+    thread threadHandle([&] {
         request.kfcCmd = KfcCommand::kExit;
         h2dTransfer->Put(0, sizeof(KfcExecControl), (u8*)&request);
-        while(true) {
+        while (true) {
             d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8*)&response);
-            if ((response.execStatus.kfcStatus != KfcStatus::kRuning)&&(response.execStatus.kfcStatus !=KfcStatus::kNull)) {
+            if ((response.execStatus.kfcStatus != KfcStatus::kRuning)
+                && (response.execStatus.kfcStatus != KfcStatus::kNull)) {
                 break;
             }
         }
-        while(true) {
+        while (true) {
             d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8*)&response);
             if (response.execStatus.kfcStatus != KfcStatus::kStoplaunch) {
                 break;
@@ -515,30 +480,21 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_stop)
         EXPECT_EQ(response.execStatus.kfcStatus, KfcStatus::kError);
     });
 
-
     HcclKFCTilingData tilingData = {0};
     init_tiling_data(tilingData);
 
     KFCTask kfcTask;
     init_kfc_task(kfcTask);
 
+    MOCKER(halSqCqQuery).stubs().with(any()).will(invoke(halSqCpQueryStub_2));
 
-    MOCKER(halSqCqQuery)
-    .stubs()
-    .with(any())
-    .will(invoke(halSqCpQueryStub_2));
-
-    MOCKER(&AicpuDispatcher::LaunchTask)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
-
+    MOCKER(&AicpuDispatcher::LaunchTask).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     MOCKER(&TaskOrchestrator::WaitFinishWhileLoop)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_E_SUSPENDING))
-    .then(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_E_SUSPENDING))
+        .then(returnValue(HCCL_SUCCESS));
 
     usleep(10000);
 
@@ -561,12 +517,13 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_stop_when_wait_stop_exec)
     memset_s(&request, sizeof(KfcExecControl), 0, sizeof(KfcExecControl));
     KfcExecStatus response;
     memset_s(&response, sizeof(KfcExecStatus), 0, sizeof(KfcExecStatus));
-    thread threadHandle([&]{
+    thread threadHandle([&] {
         request.kfcCmd = KfcCommand::kStopLaunch;
         h2dTransfer->Put(0, sizeof(KfcExecControl), (u8*)&request);
-        while(true) {
+        while (true) {
             d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8*)&response);
-            if ((response.execStatus.kfcStatus != KfcStatus::kRuning)&&(response.execStatus.kfcStatus !=KfcStatus::kNull)) {
+            if ((response.execStatus.kfcStatus != KfcStatus::kRuning)
+                && (response.execStatus.kfcStatus != KfcStatus::kNull)) {
                 break;
             }
         }
@@ -574,7 +531,7 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_stop_when_wait_stop_exec)
 
         request.kfcCmd = KfcCommand::kExit;
         h2dTransfer->Put(0, sizeof(KfcExecControl), (u8*)&request);
-        while(true) {
+        while (true) {
             d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8*)&response);
             if (response.execStatus.kfcStatus != KfcStatus::kStoplaunch) {
                 break;
@@ -583,29 +540,21 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_stop_when_wait_stop_exec)
         EXPECT_EQ(response.execStatus.kfcStatus, KfcStatus::kError);
     });
 
-
     HcclKFCTilingData tilingData = {0};
     init_tiling_data(tilingData);
 
     KFCTask kfcTask;
     init_kfc_task(kfcTask);
 
-    MOCKER(halSqCqQuery)
-    .stubs()
-    .with(any())
-    .will(invoke(halSqCpQueryStub_2));
+    MOCKER(halSqCqQuery).stubs().with(any()).will(invoke(halSqCpQueryStub_2));
 
-    MOCKER(&AicpuDispatcher::LaunchTask)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
-
+    MOCKER(&AicpuDispatcher::LaunchTask).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     MOCKER(&TaskOrchestrator::WaitFinishWhileLoop)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_E_SUSPENDING))
-    .then(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_E_SUSPENDING))
+        .then(returnValue(HCCL_SUCCESS));
 
     usleep(10000);
 
@@ -628,12 +577,13 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_stop_when_wait_retry)
     memset_s(&request, sizeof(KfcExecControl), 0, sizeof(KfcExecControl));
     KfcExecStatus response;
     memset_s(&response, sizeof(KfcExecStatus), 0, sizeof(KfcExecStatus));
-    thread threadHandle([&]{
+    thread threadHandle([&] {
         request.kfcCmd = KfcCommand::kStopLaunch;
         h2dTransfer->Put(0, sizeof(KfcExecControl), (u8*)&request);
-        while(true) {
+        while (true) {
             d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8*)&response);
-            if ((response.execStatus.kfcStatus != KfcStatus::kRuning)&&(response.execStatus.kfcStatus !=KfcStatus::kNull)) {
+            if ((response.execStatus.kfcStatus != KfcStatus::kRuning)
+                && (response.execStatus.kfcStatus != KfcStatus::kNull)) {
                 break;
             }
         }
@@ -641,7 +591,7 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_stop_when_wait_retry)
 
         request.kfcCmd = KfcCommand::kStopExec;
         h2dTransfer->Put(0, sizeof(KfcExecControl), (u8*)&request);
-        while(true) {
+        while (true) {
             d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8*)&response);
             if (response.execStatus.kfcStatus != KfcStatus::kStoplaunch) {
                 break;
@@ -651,16 +601,15 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_stop_when_wait_retry)
 
         request.kfcCmd = KfcCommand::kExit;
         h2dTransfer->Put(0, sizeof(KfcExecControl), (u8*)&request);
-        while(true) {
+        while (true) {
             d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8*)&response);
-            if ((response.execStatus.kfcStatus != KfcStatus::kStopExec) &&
-                (response.execStatus.kfcStatus != KfcStatus::kRuning)) {
+            if ((response.execStatus.kfcStatus != KfcStatus::kStopExec)
+                && (response.execStatus.kfcStatus != KfcStatus::kRuning)) {
                 break;
             }
         }
         EXPECT_EQ(response.execStatus.kfcStatus, KfcStatus::kError);
     });
-
 
     HcclKFCTilingData tilingData = {0};
     init_tiling_data(tilingData);
@@ -668,22 +617,15 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_stop_when_wait_retry)
     KFCTask kfcTask;
     init_kfc_task(kfcTask);
 
-    MOCKER(halSqCqQuery)
-    .stubs()
-    .with(any())
-    .will(invoke(halSqCpQueryStub_2));
+    MOCKER(halSqCqQuery).stubs().with(any()).will(invoke(halSqCpQueryStub_2));
 
-    MOCKER(&AicpuDispatcher::LaunchTask)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
-
+    MOCKER(&AicpuDispatcher::LaunchTask).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     MOCKER(&TaskOrchestrator::WaitFinishWhileLoop)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_E_SUSPENDING))
-    .then(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_E_SUSPENDING))
+        .then(returnValue(HCCL_SUCCESS));
 
     usleep(10000);
 
@@ -706,12 +648,13 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_retry_launch_fail)
     memset_s(&request, sizeof(KfcExecControl), 0, sizeof(KfcExecControl));
     KfcExecStatus response;
     memset_s(&response, sizeof(KfcExecStatus), 0, sizeof(KfcExecStatus));
-    thread threadHandle([&]{
+    thread threadHandle([&] {
         request.kfcCmd = KfcCommand::kStopLaunch;
         h2dTransfer->Put(0, sizeof(KfcExecControl), (u8*)&request);
-        while(true) {
+        while (true) {
             d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8*)&response);
-           if ((response.execStatus.kfcStatus != KfcStatus::kRuning)&&(response.execStatus.kfcStatus !=KfcStatus::kNull)) {
+            if ((response.execStatus.kfcStatus != KfcStatus::kRuning)
+                && (response.execStatus.kfcStatus != KfcStatus::kNull)) {
                 break;
             }
         }
@@ -719,7 +662,7 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_retry_launch_fail)
 
         request.kfcCmd = KfcCommand::kStopExec;
         h2dTransfer->Put(0, sizeof(KfcExecControl), (u8*)&request);
-        while(true) {
+        while (true) {
             d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8*)&response);
             if (response.execStatus.kfcStatus != KfcStatus::kStoplaunch) {
                 break;
@@ -729,16 +672,15 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_retry_launch_fail)
 
         request.kfcCmd = KfcCommand::kRetry;
         h2dTransfer->Put(0, sizeof(KfcExecControl), (u8*)&request);
-        while(true) {
+        while (true) {
             d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8*)&response);
-            if ((response.execStatus.kfcStatus != KfcStatus::kStopExec) &&
-                (response.execStatus.kfcStatus != KfcStatus::kRuning)) {
+            if ((response.execStatus.kfcStatus != KfcStatus::kStopExec)
+                && (response.execStatus.kfcStatus != KfcStatus::kRuning)) {
                 break;
             }
         }
         EXPECT_EQ(response.execStatus.kfcStatus, KfcStatus::kError);
     });
-
 
     HcclKFCTilingData tilingData = {0};
     init_tiling_data(tilingData);
@@ -746,27 +688,17 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_retry_launch_fail)
     KFCTask kfcTask;
     init_kfc_task(kfcTask);
 
-    MOCKER(halSqCqQuery)
-    .stubs()
-    .with(any())
-    .will(invoke(halSqCpQueryStub_2));
+    MOCKER(halSqCqQuery).stubs().with(any()).will(invoke(halSqCpQueryStub_2));
 
-    MOCKER(&AicpuDispatcher::LaunchTask)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
-
+    MOCKER(&AicpuDispatcher::LaunchTask).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     MOCKER(&TaskOrchestrator::WaitFinishWhileLoop)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_E_SUSPENDING))
-    .then(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_E_SUSPENDING))
+        .then(returnValue(HCCL_SUCCESS));
 
-    MOCKER(&AicpuKfcDeprecatedProcess::RetryLaunchHcclOp)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_E_INTERNAL));
+    MOCKER(&AicpuKfcDeprecatedProcess::RetryLaunchHcclOp).stubs().with(any()).will(returnValue(HCCL_E_INTERNAL));
 
     usleep(10000);
 
@@ -789,12 +721,13 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_retry_reset_sq_fail)
     memset_s(&request, sizeof(KfcExecControl), 0, sizeof(KfcExecControl));
     KfcExecStatus response;
     memset_s(&response, sizeof(KfcExecStatus), 0, sizeof(KfcExecStatus));
-    thread threadHandle([&]{
+    thread threadHandle([&] {
         request.kfcCmd = KfcCommand::kStopLaunch;
         h2dTransfer->Put(0, sizeof(KfcExecControl), (u8*)&request);
-        while(true) {
+        while (true) {
             d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8*)&response);
-            if ((response.execStatus.kfcStatus != KfcStatus::kRuning)&&(response.execStatus.kfcStatus !=KfcStatus::kNull)) {
+            if ((response.execStatus.kfcStatus != KfcStatus::kRuning)
+                && (response.execStatus.kfcStatus != KfcStatus::kNull)) {
                 break;
             }
         }
@@ -802,7 +735,7 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_retry_reset_sq_fail)
 
         request.kfcCmd = KfcCommand::kStopExec;
         h2dTransfer->Put(0, sizeof(KfcExecControl), (u8*)&request);
-        while(true) {
+        while (true) {
             d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8*)&response);
             if (response.execStatus.kfcStatus != KfcStatus::kStoplaunch) {
                 break;
@@ -812,16 +745,15 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_retry_reset_sq_fail)
 
         request.kfcCmd = KfcCommand::kRetry;
         h2dTransfer->Put(0, sizeof(KfcExecControl), (u8*)&request);
-        while(true) {
+        while (true) {
             d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8*)&response);
-            if ((response.execStatus.kfcStatus != KfcStatus::kStopExec) &&
-                (response.execStatus.kfcStatus != KfcStatus::kRuning)) {
+            if ((response.execStatus.kfcStatus != KfcStatus::kStopExec)
+                && (response.execStatus.kfcStatus != KfcStatus::kRuning)) {
                 break;
             }
         }
         EXPECT_EQ(response.execStatus.kfcStatus, KfcStatus::kError);
     });
-
 
     HcclKFCTilingData tilingData = {0};
     init_tiling_data(tilingData);
@@ -829,27 +761,17 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_retry_reset_sq_fail)
     KFCTask kfcTask;
     init_kfc_task(kfcTask);
 
-    MOCKER(halSqCqQuery)
-    .stubs()
-    .with(any())
-    .will(invoke(halSqCpQueryStub_2));
+    MOCKER(halSqCqQuery).stubs().with(any()).will(invoke(halSqCpQueryStub_2));
 
-    MOCKER(&AicpuDispatcher::LaunchTask)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
-
+    MOCKER(&AicpuDispatcher::LaunchTask).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     MOCKER(&TaskOrchestrator::WaitFinishWhileLoop)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_E_SUSPENDING))
-    .then(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_E_SUSPENDING))
+        .then(returnValue(HCCL_SUCCESS));
 
-    MOCKER(&AicpuKfcProcess::ResetSqBuff)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_E_INTERNAL));
+    MOCKER(&AicpuKfcProcess::ResetSqBuff).stubs().with(any()).will(returnValue(HCCL_E_INTERNAL));
 
     usleep(10000);
 
@@ -872,16 +794,16 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_init_opexec_status_fail)
     memset_s(&request, sizeof(KfcExecControl), 0, sizeof(KfcExecControl));
     KfcExecStatus response;
     memset_s(&response, sizeof(KfcExecStatus), 0, sizeof(KfcExecStatus));
-    thread threadHandle([&]{
-        while(true) {
+    thread threadHandle([&] {
+        while (true) {
             d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8*)&response);
-           if ((response.execStatus.kfcStatus != KfcStatus::kRuning)&&(response.execStatus.kfcStatus !=KfcStatus::kNull)) {
+            if ((response.execStatus.kfcStatus != KfcStatus::kRuning)
+                && (response.execStatus.kfcStatus != KfcStatus::kNull)) {
                 break;
             }
         }
         EXPECT_EQ(response.execStatus.kfcStatus, KfcStatus::kError);
     });
-
 
     HcclKFCTilingData tilingData = {0};
     init_tiling_data(tilingData);
@@ -889,27 +811,17 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_init_opexec_status_fail)
     KFCTask kfcTask;
     init_kfc_task(kfcTask);
 
-    MOCKER(halSqCqQuery)
-    .stubs()
-    .with(any())
-    .will(invoke(halSqCpQueryStub_2));
+    MOCKER(halSqCqQuery).stubs().with(any()).will(invoke(halSqCpQueryStub_2));
 
-    MOCKER(&AicpuDispatcher::LaunchTask)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
-
+    MOCKER(&AicpuDispatcher::LaunchTask).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     MOCKER(&TaskOrchestrator::WaitFinishWhileLoop)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_E_SUSPENDING))
-    .then(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_E_SUSPENDING))
+        .then(returnValue(HCCL_SUCCESS));
 
-    MOCKER(&AicpuHdcUtils::InitOpExecStatus)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_E_INTERNAL));
+    MOCKER(&AicpuHdcUtils::InitOpExecStatus).stubs().with(any()).will(returnValue(HCCL_E_INTERNAL));
 
     usleep(10000);
 
@@ -932,16 +844,16 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_task_exec_fail)
     memset_s(&request, sizeof(KfcExecControl), 0, sizeof(KfcExecControl));
     KfcExecStatus response;
     memset_s(&response, sizeof(KfcExecStatus), 0, sizeof(KfcExecStatus));
-    thread threadHandle([&]{
-        while(true) {
+    thread threadHandle([&] {
+        while (true) {
             d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8*)&response);
-           if ((response.execStatus.kfcStatus != KfcStatus::kRuning)&&(response.execStatus.kfcStatus !=KfcStatus::kNull)) {
+            if ((response.execStatus.kfcStatus != KfcStatus::kRuning)
+                && (response.execStatus.kfcStatus != KfcStatus::kNull)) {
                 break;
             }
         }
         EXPECT_EQ(response.execStatus.kfcStatus, KfcStatus::kError);
     });
-
 
     HcclKFCTilingData tilingData = {0};
     init_tiling_data(tilingData);
@@ -949,27 +861,17 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_task_exec_fail)
     KFCTask kfcTask;
     init_kfc_task(kfcTask);
 
-    MOCKER(halSqCqQuery)
-    .stubs()
-    .with(any())
-    .will(invoke(halSqCpQueryStub_2));
+    MOCKER(halSqCqQuery).stubs().with(any()).will(invoke(halSqCpQueryStub_2));
 
-    MOCKER(&AicpuDispatcher::LaunchTask)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
-
+    MOCKER(&AicpuDispatcher::LaunchTask).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     MOCKER(&TaskOrchestrator::WaitFinishWhileLoop)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_E_TIMEOUT))
-    .then(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_E_TIMEOUT))
+        .then(returnValue(HCCL_SUCCESS));
 
-    MOCKER(&AicpuKfcProcess::ResetSqBuff)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_E_INTERNAL));
+    MOCKER(&AicpuKfcProcess::ResetSqBuff).stubs().with(any()).will(returnValue(HCCL_E_INTERNAL));
 
     usleep(10000);
 
@@ -992,19 +894,19 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_retry_when_sdma_taskexception)
     memset_s(&request, sizeof(KfcExecControl), 0, sizeof(KfcExecControl));
     KfcExecStatus response;
     memset_s(&response, sizeof(KfcExecStatus), 0, sizeof(KfcExecStatus));
-    thread threadHandle([&]{
-        while(true) {
+    thread threadHandle([&] {
+        while (true) {
             d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8*)&response);
-           if ((response.execStatus.kfcStatus == KfcStatus::kRuning)) {
+            if ((response.execStatus.kfcStatus == KfcStatus::kRuning)) {
                 break;
             }
         }
         EXPECT_EQ(response.execStatus.kfcStatus, KfcStatus::kRuning);
 
-        while(true) {
+        while (true) {
             d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8*)&response);
-            if ((response.execStatus.kfcStatus != KfcStatus::kRuning) &&
-                (response.execStatus.kfcStatus != KfcStatus::kStoplaunch)) {
+            if ((response.execStatus.kfcStatus != KfcStatus::kRuning)
+                && (response.execStatus.kfcStatus != KfcStatus::kStoplaunch)) {
                 break;
             }
         }
@@ -1012,16 +914,15 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_retry_when_sdma_taskexception)
 
         request.kfcCmd = KfcCommand::kRetry;
         h2dTransfer->Put(0, sizeof(KfcExecControl), (u8*)&request);
-        while(true) {
+        while (true) {
             d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8*)&response);
-            if ((response.execStatus.kfcStatus != KfcStatus::kStopExec) &&
-                (response.execStatus.kfcStatus != KfcStatus::kRuning)) {
+            if ((response.execStatus.kfcStatus != KfcStatus::kStopExec)
+                && (response.execStatus.kfcStatus != KfcStatus::kRuning)) {
                 break;
             }
         }
         EXPECT_EQ(response.execStatus.kfcStatus, KfcStatus::kEnd);
     });
-
 
     HcclKFCTilingData tilingData = {0};
     init_tiling_data(tilingData);
@@ -1029,28 +930,22 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_retry_when_sdma_taskexception)
     KFCTask kfcTask;
     init_kfc_task(kfcTask);
 
-    MOCKER(halSqCqQuery)
-    .stubs()
-    .with(any())
-    .will(invoke(halSqCpQueryStub_2));
+    MOCKER(halSqCqQuery).stubs().with(any()).will(invoke(halSqCpQueryStub_2));
 
-    MOCKER(&AicpuDispatcher::LaunchTask)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(&AicpuDispatcher::LaunchTask).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     MOCKER(&TaskOrchestrator::WaitFinishWhileLoop)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_E_SUSPENDING))
-    .then(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_E_SUSPENDING))
+        .then(returnValue(HCCL_SUCCESS));
 
     MOCKER(&TaskOrchestrator::IsTaskExceptionForHccs)
-    .stubs()
-    .with(any())
-    .will(returnValue(true))
-    .then(returnValue(true))
-    .then(returnValue(false));
+        .stubs()
+        .with(any())
+        .will(returnValue(true))
+        .then(returnValue(true))
+        .then(returnValue(false));
 
     usleep(10000);
 
@@ -1071,18 +966,18 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_retry_wait_stop_exec_timeout)
     memset_s(&request, sizeof(KfcExecControl), 0, sizeof(KfcExecControl));
     KfcExecStatus response;
     memset_s(&response, sizeof(KfcExecStatus), 0, sizeof(KfcExecStatus));
-    thread threadHandle([&]{
+    thread threadHandle([&] {
         request.kfcCmd = KfcCommand::kStopLaunch;
         h2dTransfer->Put(0, sizeof(KfcExecControl), (u8*)&request);
-        while(true) {
+        while (true) {
             d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8*)&response);
-            if ((response.execStatus.kfcStatus != KfcStatus::kRuning)&&(response.execStatus.kfcStatus !=KfcStatus::kNull)) {
+            if ((response.execStatus.kfcStatus != KfcStatus::kRuning)
+                && (response.execStatus.kfcStatus != KfcStatus::kNull)) {
                 break;
             }
         }
         EXPECT_EQ(response.execStatus.kfcStatus, KfcStatus::kStoplaunch);
     });
-
 
     HcclKFCTilingData tilingData = {0};
     init_tiling_data(tilingData);
@@ -1090,26 +985,17 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_retry_wait_stop_exec_timeout)
     KFCTask kfcTask;
     init_kfc_task(kfcTask);
 
-    MOCKER(halSqCqQuery)
-    .stubs()
-    .with(any())
-    .will(invoke(halSqCpQueryStub_2));
+    MOCKER(halSqCqQuery).stubs().with(any()).will(invoke(halSqCpQueryStub_2));
 
-    MOCKER(&AicpuDispatcher::LaunchTask)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(&AicpuDispatcher::LaunchTask).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(&HcclCommAicpu::HcclGetWaitStopExecCmdTimeout)
-    .stubs()
-    .with(any())
-    .will(returnValue(1));
+    MOCKER(&HcclCommAicpu::HcclGetWaitStopExecCmdTimeout).stubs().with(any()).will(returnValue(1));
 
     MOCKER(&TaskOrchestrator::WaitFinishWhileLoop)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_E_SUSPENDING))
-    .then(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_E_SUSPENDING))
+        .then(returnValue(HCCL_SUCCESS));
 
     usleep(10000);
 
@@ -1122,7 +1008,7 @@ TEST_F(MC2AicpuRetry_UT, allreduce_fp16_retry_wait_stop_exec_timeout)
 
 TEST_F(MC2AicpuRetry_UT, ut_AicpuHcclProcess_function)
 {
-    AicpuComContext *ctx = AicpuGetComContext();
+    AicpuComContext* ctx = AicpuGetComContext();
     HcclOpExecFSM state;
     KfcError errorCode;
     AicpuKfcDeprecatedProcess Process;
@@ -1131,17 +1017,11 @@ TEST_F(MC2AicpuRetry_UT, ut_AicpuHcclProcess_function)
     uint32_t beginSqePos;
     uint32_t endSqePos;
     HcclOpExecFSM fsmState;
-    MOCKER(&AicpuKfcDeprecatedProcess::LaunchHcclOp)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_E_PARA));
+    MOCKER(&AicpuKfcDeprecatedProcess::LaunchHcclOp).stubs().with(any()).will(returnValue(HCCL_E_PARA));
     HcclResult ret = Process.HcclOpExecFsmLaunchProcess(ctx, state, errorCode, opParams, beginSqePos, endSqePos);
     EXPECT_EQ(ret, HCCL_E_PARA);
 
-    MOCKER(&AicpuHdcUtils::GetOpExecCtrlCmd)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_E_PARA));
+    MOCKER(&AicpuHdcUtils::GetOpExecCtrlCmd).stubs().with(any()).will(returnValue(HCCL_E_PARA));
     ret = HcclOpExecFsmStoppingProcess(ctx, state, errorCode);
     EXPECT_EQ(ret, HCCL_E_PARA);
     ret = Process.HcclOpExecFsmWaitRetryProcess(ctx, state, errorCode);
@@ -1149,27 +1029,18 @@ TEST_F(MC2AicpuRetry_UT, ut_AicpuHcclProcess_function)
     ret = HcclOpExecFsmStoppedProcess(ctx, state, errorCode, beginSqePos, opParams, beginSqePos, endSqePos);
     EXPECT_EQ(ret, HCCL_E_PARA);
     KfcStatus opstate;
-    MOCKER(&AicpuHdcUtils::SetOpExecStatus)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_E_PARA));
+    MOCKER(&AicpuHdcUtils::SetOpExecStatus).stubs().with(any()).will(returnValue(HCCL_E_PARA));
     ret = UpdateOpExecStatus(ctx, fsmState, opstate, errorCode, beginSqePos);
     EXPECT_EQ(ret, HCCL_E_PARA);
 
     GlobalMockObject::verify();
     KfcCommand cmd = KfcCommand::kExit;
-    MOCKER(&AicpuHdcUtils::GetOpExecCtrlCmd)
-    .stubs()
-    .with(any(), outBound(cmd))
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(&AicpuHdcUtils::GetOpExecCtrlCmd).stubs().with(any(), outBound(cmd)).will(returnValue(HCCL_SUCCESS));
     ret = HcclOpExecFsmStoppedProcess(ctx, state, errorCode, beginSqePos, opParams, beginSqePos, endSqePos);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
-    cmd =  KfcCommand::kNone;
-    MOCKER(&AicpuHdcUtils::GetOpExecCtrlCmd)
-    .stubs()
-    .with(any(), outBound(cmd))
-    .will(returnValue(HCCL_SUCCESS));
+    cmd = KfcCommand::kNone;
+    MOCKER(&AicpuHdcUtils::GetOpExecCtrlCmd).stubs().with(any(), outBound(cmd)).will(returnValue(HCCL_SUCCESS));
     ret = HcclOpExecFsmStoppingProcess(ctx, state, errorCode);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
@@ -1190,16 +1061,13 @@ TEST_F(MC2AicpuRetry_UT, ut_InitProcess_BatchSendRecv_hcclCommAicpu)
     KfcError errorCode;
     std::string newTag = "test";
 
-    MOCKER(&AicpuHdcUtils::InitOpExecStatus)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(&AicpuHdcUtils::InitOpExecStatus).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&HcclCommAicpu::InitBatchSendRecvOpId,
-        HcclResult(HcclCommAicpu::*)(const OpParam&, AlgResourceResponse&))
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(
+        &HcclCommAicpu::InitBatchSendRecvOpId, HcclResult (HcclCommAicpu::*)(const OpParam&, AlgResourceResponse&))
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_SUCCESS));
 
     comm.retryEnable_ = true;
     OpParam param;
@@ -1219,21 +1087,12 @@ TEST_F(MC2AicpuRetry_UT, ut_WaitEndProcess_hcclCommAicpu)
     uint32_t retryCnt = 0;
     std::string tag = "";
 
-    MOCKER(QuerySqStatusByType)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(QuerySqStatusByType).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&Stream::ClearLocalBuff)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&Stream::ClearLocalBuff).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     KfcCommand cmd = KfcCommand::kStopLaunch;
-    MOCKER_CPP(&AicpuHdc::GetOpExecCtrlCmd)
-    .stubs()
-    .with(any(), outBound(cmd))
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&AicpuHdc::GetOpExecCtrlCmd).stubs().with(any(), outBound(cmd)).will(returnValue(HCCL_SUCCESS));
 
     comm.retryEnable_ = true;
     cmd = KfcCommand::kStopLaunch;
@@ -1261,10 +1120,10 @@ TEST_F(MC2AicpuRetry_UT, allreduce_backGround_stop)
     init_kfc_args(initTask);
     EXPECT_EQ(0, RunAicpuKfcResInit(&initTask));
 
-    AicpuComContext *ctx = AicpuGetComContext();
+    AicpuComContext* ctx = AicpuGetComContext();
     ctx->dfxExtendInfo.commandToBackGroud = CommandToBackGroud::kDefault;
     KfcExecControl request;
-    
+
     memset_s(&request, sizeof(KfcExecControl), 0, sizeof(KfcExecControl));
     request.bgCmd = BackgroundCommand::kStop;
     h2dTransfer->Put(0, sizeof(KfcExecControl), (u8*)&request);
@@ -1275,10 +1134,7 @@ TEST_F(MC2AicpuRetry_UT, allreduce_backGround_stop)
     tilingData.preparePosition = TASK_PREPARE_KERNEL;
     KFCTask kfcTask;
     init_kfc_task(kfcTask);
-    MOCKER(&AicpuDispatcher::LaunchTask)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(&AicpuDispatcher::LaunchTask).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     StubSqeBuffer sqeBufferStub;
     EXPECT_NE(HCCL_SUCCESS, RunAicpuRpcSrvLaunch(&kfcTask));
@@ -1294,12 +1150,13 @@ TEST_F(MC2AicpuRetry_UT, allreduce_ns_stoplaunch)
     memset_s(&request, sizeof(KfcExecControl), 0, sizeof(KfcExecControl));
     KfcExecStatus response;
     memset_s(&response, sizeof(KfcExecStatus), 0, sizeof(KfcExecStatus));
-    thread threadHandle([&]{
+    thread threadHandle([&] {
         request.kfcCmd = KfcCommand::NsStopLaunch;
         h2dTransfer->Put(0, sizeof(KfcExecControl), (u8*)&request);
-        while(true) {
+        while (true) {
             d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8*)&response);
-             if ((response.execStatus.kfcStatus != KfcStatus::kRuning)&&(response.execStatus.kfcStatus !=KfcStatus::kNull)) {
+            if ((response.execStatus.kfcStatus != KfcStatus::kRuning)
+                && (response.execStatus.kfcStatus != KfcStatus::kNull)) {
                 break;
             }
         }
@@ -1311,10 +1168,7 @@ TEST_F(MC2AicpuRetry_UT, allreduce_ns_stoplaunch)
     tilingData.preparePosition = TASK_PREPARE_KERNEL;
     KFCTask kfcTask;
     init_kfc_task(kfcTask);
-    MOCKER(&AicpuDispatcher::LaunchTask)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(&AicpuDispatcher::LaunchTask).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     usleep(10000);
     StubSqeBuffer sqeBufferStub;
     EXPECT_EQ(AICPUSUSPENDING_ERROR, RunAicpuRpcSrvLaunch(&kfcTask));
@@ -1327,22 +1181,22 @@ TEST_F(MC2AicpuRetry_UT, allreduce_ns_stopexec_clear)
     KFCResInitTask initTask;
     init_kfc_args(initTask);
     EXPECT_EQ(0, RunAicpuKfcResInit(&initTask));
-    AicpuComContext *ctx = AicpuGetComContext();
+    AicpuComContext* ctx = AicpuGetComContext();
     ctx->isStopLaunch = true;
     KfcExecControl request;
     memset_s(&request, sizeof(KfcExecControl), 0, sizeof(KfcExecControl));
     KfcExecStatus response;
     memset_s(&response, sizeof(KfcExecStatus), 0, sizeof(KfcExecStatus));
     request.kfcCmd = KfcCommand::NsStopExec;
-    h2dTransfer->Put(0, sizeof(KfcExecControl), (u8 *)&request);
+    h2dTransfer->Put(0, sizeof(KfcExecControl), (u8*)&request);
     dfx_tracer::AicpuExecutorTracer::KfcCommandHandle(ctx);
-    d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8 *)&response);
+    d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8*)&response);
     EXPECT_EQ(response.execStatus.kfcStatus, KfcStatus::kStopExec);
     ctx->isStopLaunch = true;
     request.kfcCmd = KfcCommand::NsClear;
-    h2dTransfer->Put(0, sizeof(KfcExecControl), (u8 *)&request);
+    h2dTransfer->Put(0, sizeof(KfcExecControl), (u8*)&request);
     dfx_tracer::AicpuExecutorTracer::KfcCommandHandle(ctx);
-    d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8 *)&response);
+    d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8*)&response);
     EXPECT_EQ(response.execStatus.kfcStatus, KfcStatus::kClear);
 }
 
@@ -1351,21 +1205,21 @@ TEST_F(MC2AicpuRetry_UT, allreduce_ns_stopexec_clear_end)
     KFCResInitTask initTask;
     init_kfc_args(initTask);
     EXPECT_EQ(0, RunAicpuKfcResInit(&initTask));
-    AicpuComContext *ctx = AicpuGetComContext();
+    AicpuComContext* ctx = AicpuGetComContext();
     ctx->isStopLaunch = false;
     KfcExecControl request;
     memset_s(&request, sizeof(KfcExecControl), 0, sizeof(KfcExecControl));
     KfcExecStatus response;
     memset_s(&response, sizeof(KfcExecStatus), 0, sizeof(KfcExecStatus));
     request.kfcCmd = KfcCommand::NsStopExec;
-    h2dTransfer->Put(0, sizeof(KfcExecControl), (u8 *)&request);
+    h2dTransfer->Put(0, sizeof(KfcExecControl), (u8*)&request);
     dfx_tracer::AicpuExecutorTracer::KfcCommandHandle(ctx);
-    d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8 *)&response);
+    d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8*)&response);
     EXPECT_EQ(response.execStatus.kfcStatus, KfcStatus::kEnd);
     request.kfcCmd = KfcCommand::NsClear;
-    h2dTransfer->Put(0, sizeof(KfcExecControl), (u8 *)&request);
+    h2dTransfer->Put(0, sizeof(KfcExecControl), (u8*)&request);
     dfx_tracer::AicpuExecutorTracer::KfcCommandHandle(ctx);
-    d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8 *)&response);
+    d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8*)&response);
     EXPECT_EQ(response.execStatus.kfcStatus, KfcStatus::kEnd);
 }
 
@@ -1375,21 +1229,21 @@ TEST_F(MC2AicpuRetry_UT, allreduce_ns_stopexec_clear_error)
     init_kfc_args(initTask);
     EXPECT_EQ(0, RunAicpuKfcResInit(&initTask));
     MOCKER(halTsdrvCtl).stubs().with(any()).will(returnValue(DRV_ERROR_NOT_SUPPORT));
-    AicpuComContext *ctx = AicpuGetComContext();
+    AicpuComContext* ctx = AicpuGetComContext();
     ctx->isStopLaunch = true;
     KfcExecControl request;
     memset_s(&request, sizeof(KfcExecControl), 0, sizeof(KfcExecControl));
     KfcExecStatus response;
     memset_s(&response, sizeof(KfcExecStatus), 0, sizeof(KfcExecStatus));
     request.kfcCmd = KfcCommand::NsStopExec;
-    h2dTransfer->Put(0, sizeof(KfcExecControl), (u8 *)&request);
+    h2dTransfer->Put(0, sizeof(KfcExecControl), (u8*)&request);
     dfx_tracer::AicpuExecutorTracer::KfcCommandHandle(ctx);
-    d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8 *)&response);
+    d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8*)&response);
     EXPECT_EQ(response.execStatus.kfcStatus, KfcStatus::kError);
     ctx->isStopLaunch = true;
     request.kfcCmd = KfcCommand::NsClear;
-    h2dTransfer->Put(0, sizeof(KfcExecControl), (u8 *)&request);
+    h2dTransfer->Put(0, sizeof(KfcExecControl), (u8*)&request);
     dfx_tracer::AicpuExecutorTracer::KfcCommandHandle(ctx);
-    d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8 *)&response);
+    d2hTransfer->Get(0, sizeof(KfcExecStatus), (u8*)&response);
     EXPECT_EQ(response.execStatus.kfcStatus, KfcStatus::kError);
 }

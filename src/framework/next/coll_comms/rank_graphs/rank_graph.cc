@@ -15,7 +15,7 @@ namespace hccl {
 /**
  * @note 职责：集合通信域内的RankGraph的创建工厂C++接口实现
  */
-std::shared_ptr<RankGraph> RankGraph::CreateRankGraph(const std::string &rankTable, const std::string &topoFile)
+std::shared_ptr<RankGraph> RankGraph::CreateRankGraph(const std::string& rankTable, const std::string& topoFile)
 {
     if (topoFile.empty()) {
         // 使用V1版本
@@ -25,4 +25,4 @@ std::shared_ptr<RankGraph> RankGraph::CreateRankGraph(const std::string &rankTab
         return std::make_shared<RankGraphV2>(rankTable, topoFile);
     }
 }
-}
+} // namespace hccl

@@ -30,7 +30,7 @@ namespace hccl {
 struct socket_peer_info {
     int phyId;
     int fd;
-    void *socketHandle;
+    void* socketHandle;
 };
 
 constexpr s32 PROTOCOL_TYPE = 1;
@@ -49,10 +49,10 @@ EventReportFlag TransportHeterogEventTcp::gCompCounterEvent[DEVID_TO_GROUP_ID_NU
 
 TransportHeterogEventTcp::EpollEventInfo TransportHeterogEventTcp::gRecvEpollEventInfo{};
 
-unordered_map<FdHandle, TransportHeterog *> TransportHeterogEventTcp::gFdhandleToTransportMap;
+unordered_map<FdHandle, TransportHeterog*> TransportHeterogEventTcp::gFdhandleToTransportMap;
 
-void TransportHeterogEventTcp::EschedAckCallbackRecvRequest(unsigned int devId, unsigned int subeventId, u8 *msg,
-    unsigned int msgLen)
+void TransportHeterogEventTcp::EschedAckCallbackRecvRequest(
+    unsigned int devId, unsigned int subeventId, u8* msg, unsigned int msgLen)
 {
     (void)subeventId;
     (void)msg;
@@ -60,8 +60,8 @@ void TransportHeterogEventTcp::EschedAckCallbackRecvRequest(unsigned int devId, 
     TransportHeterogEventTcp::EschedAckCallback(devId, HCCL_EVENT_RECV_REQUEST_MSG);
 }
 
-void TransportHeterogEventTcp::EschedAckCallbackSendCompletion(unsigned int devId, unsigned int subeventId, u8 *msg,
-    unsigned int msgLen)
+void TransportHeterogEventTcp::EschedAckCallbackSendCompletion(
+    unsigned int devId, unsigned int subeventId, u8* msg, unsigned int msgLen)
 {
     (void)subeventId;
     (void)msg;
@@ -69,8 +69,8 @@ void TransportHeterogEventTcp::EschedAckCallbackSendCompletion(unsigned int devI
     TransportHeterogEventTcp::EschedAckCallback(devId, HCCL_EVENT_SEND_COMPLETION_MSG);
 }
 
-void TransportHeterogEventTcp::EschedAckCallbackRecvCompletion(unsigned int devId, unsigned int subeventId, u8 *msg,
-    unsigned int msgLen)
+void TransportHeterogEventTcp::EschedAckCallbackRecvCompletion(
+    unsigned int devId, unsigned int subeventId, u8* msg, unsigned int msgLen)
 {
     (void)subeventId;
     (void)msg;
@@ -78,17 +78,16 @@ void TransportHeterogEventTcp::EschedAckCallbackRecvCompletion(unsigned int devI
     TransportHeterogEventTcp::EschedAckCallback(devId, HCCL_EVENT_RECV_COMPLETION_MSG);
 }
 
-
-TransportHeterogEventTcp::TransportHeterogEventTcp(const std::string &transTag, HcclIpAddress &selfIp,
-    HcclIpAddress &peerIp, u32 peerPort, u32 selfPort, u32 devId, const TransportResourceInfo &transportResourceInfo)
-    : TransportHeterog(transTag, selfIp, peerIp, peerPort, selfPort, transportResourceInfo), initFlag_(false),
-    devId_(devId), needRepoEvent_(true)
+TransportHeterogEventTcp::TransportHeterogEventTcp(
+    const std::string& transTag, HcclIpAddress& selfIp, HcclIpAddress& peerIp, u32 peerPort, u32 selfPort, u32 devId,
+    const TransportResourceInfo& transportResourceInfo)
+    : TransportHeterog(transTag, selfIp, peerIp, peerPort, selfPort, transportResourceInfo),
+      initFlag_(false),
+      devId_(devId),
+      needRepoEvent_(true)
 {}
 
-TransportHeterogEventTcp::~TransportHeterogEventTcp()
-{
-    (void)Deinit();
-}
+TransportHeterogEventTcp::~TransportHeterogEventTcp() { (void)Deinit(); }
 
 void TransportHeterogEventTcp::EschedAckCallback(u32 devId, u32 eventId)
 {
@@ -111,8 +110,8 @@ void TransportHeterogEventTcp::EschedAckCallback(u32 devId, u32 eventId)
     }
 
     HcclUs endut = TIME_NOW();
-    HCCL_INFO("EschedAckCallback cost time: %lld us, event id: %u, devId:%u",
-        DURATION_US(endut - startut), eventId, devId);
+    HCCL_INFO(
+        "EschedAckCallback cost time: %lld us, event id: %u, devId:%u", DURATION_US(endut - startut), eventId, devId);
     return;
 }
 
@@ -124,10 +123,10 @@ HcclResult TransportHeterogEventTcp::RegisterEschedAckCallback()
         u32 grpId = static_cast<u32>(TransportHeterogEventTcp::gDevidToGroupid[devId_]);
 
         CHK_RET(hrtHalEschedRegisterAckFuncWithGrpid(grpId, HCCL_EVENT_RECV_REQUEST_MSG, EschedAckCallbackRecvRequest));
-        CHK_RET(hrtHalEschedRegisterAckFuncWithGrpid(grpId,
-            HCCL_EVENT_SEND_COMPLETION_MSG, EschedAckCallbackSendCompletion));
-        CHK_RET(hrtHalEschedRegisterAckFuncWithGrpid(grpId,
-            HCCL_EVENT_RECV_COMPLETION_MSG, EschedAckCallbackRecvCompletion));
+        CHK_RET(hrtHalEschedRegisterAckFuncWithGrpid(
+            grpId, HCCL_EVENT_SEND_COMPLETION_MSG, EschedAckCallbackSendCompletion));
+        CHK_RET(hrtHalEschedRegisterAckFuncWithGrpid(
+            grpId, HCCL_EVENT_RECV_COMPLETION_MSG, EschedAckCallbackRecvCompletion));
 
         HCCL_DEBUG("grpId[%u] all Registered", grpId);
 
@@ -165,7 +164,7 @@ HcclResult TransportHeterogEventTcp::Init(u32 localUserRank, u32 remoteUserRank)
     needRepoEvent_ = false;
     CHK_RET(TransportHeterog::SetDeviceIndex(deviceLogicId_));
     Init();
-    Connect(localUserRank, remoteUserRank);  // 推动建链
+    Connect(localUserRank, remoteUserRank); // 推动建链
     return HCCL_SUCCESS;
 }
 
@@ -178,8 +177,8 @@ HcclResult TransportHeterogEventTcp::Connect(u32 localUserRank, u32 remoteUserRa
         HcclStatus compState = {0};
         buffer.localUserRank = localUserRank;
         buffer.remoteUserRank = remoteUserRank;
-        TransData sendData(reinterpret_cast<u64>(&buffer), reinterpret_cast<u64>(nullptr), sizeof(TcpRankInfo),
-            HCCL_DATA_TYPE_INT8);
+        TransData sendData(
+            reinterpret_cast<u64>(&buffer), reinterpret_cast<u64>(nullptr), sizeof(TcpRankInfo), HCCL_DATA_TYPE_INT8);
         TransportEndPointInfo srcEp(0, localUserRank, BUILD_TRANS_TAG);
         TransportEndPointInfo dstEp(0, remoteUserRank, BUILD_TRANS_TAG);
         TransportEndPointParam epParam(srcEp, dstEp);
@@ -187,8 +186,8 @@ HcclResult TransportHeterogEventTcp::Connect(u32 localUserRank, u32 remoteUserRa
         // Test推动异步建链
         while (flag != HCCL_TEST_COMPLETED) {
             CHK_RET(Test(*request, flag, compState));
-            CHK_PRT_RET(compState.error > 0, HCCL_ERROR("Test failed, compState.error[%d].", compState.error),
-                HCCL_E_INTERNAL);
+            CHK_PRT_RET(
+                compState.error > 0, HCCL_ERROR("Test failed, compState.error[%d].", compState.error), HCCL_E_INTERNAL);
             SaluSleep(ONE_HUNDRED_MICROSECOND_OF_USLEEP);
         }
     } else {
@@ -197,31 +196,30 @@ HcclResult TransportHeterogEventTcp::Connect(u32 localUserRank, u32 remoteUserRa
         s32 testFlag = HCCL_TEST_INCOMPLETED;
         HcclStatus status = {0};
         HcclStatus compState = {0};
-        HcclMessageInfo *msg = nullptr;
+        HcclMessageInfo* msg = nullptr;
         TransportEndPointInfo srcEp(0, remoteUserRank, BUILD_TRANS_TAG);
         TransportEndPointInfo dstEp(0, localUserRank, BUILD_TRANS_TAG);
         TransportEndPointParam epParam(srcEp, dstEp);
         // Improbe推动异步建链
         while (improbeFlag != HCCL_IMPROBE_COMPLETED) {
             CHK_RET(Improbe(epParam, improbeFlag, msg, status));
-            CHK_PRT_RET(status.error > 0, HCCL_ERROR("Improbe failed, status.error[%d].", status.error),
-                HCCL_E_INTERNAL);
+            CHK_PRT_RET(
+                status.error > 0, HCCL_ERROR("Improbe failed, status.error[%d].", status.error), HCCL_E_INTERNAL);
             SaluSleep(ONE_HUNDRED_MICROSECOND_OF_USLEEP);
         }
 
-        TransData recvData(reinterpret_cast<u64>(nullptr), reinterpret_cast<u64>(&buffer),
-            sizeof(TcpRankInfo), HCCL_DATA_TYPE_INT8);
+        TransData recvData(
+            reinterpret_cast<u64>(nullptr), reinterpret_cast<u64>(&buffer), sizeof(TcpRankInfo), HCCL_DATA_TYPE_INT8);
         CHK_RET(Imrecv(recvData, *msg, request));
 
         while (testFlag != HCCL_TEST_COMPLETED) {
             CHK_RET(Test(*request, testFlag, compState));
-            CHK_PRT_RET(compState.error > 0, HCCL_ERROR("Test failed, compState.error[%d].", compState.error),
-                HCCL_E_INTERNAL);
+            CHK_PRT_RET(
+                compState.error > 0, HCCL_ERROR("Test failed, compState.error[%d].", compState.error), HCCL_E_INTERNAL);
             SaluSleep(ONE_HUNDRED_MICROSECOND_OF_USLEEP);
         }
 
-        HCCL_INFO("recv envelope localRank=[%u], remoteRank=[%u]",
-            buffer.localUserRank, buffer.remoteUserRank);
+        HCCL_INFO("recv envelope localRank=[%u], remoteRank=[%u]", buffer.localUserRank, buffer.remoteUserRank);
     }
     return HCCL_SUCCESS;
 }
@@ -280,13 +278,13 @@ HcclResult TransportHeterogEventTcp::Deinit()
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportHeterogEventTcp::Isend(const TransData &sendData, const TransportEndPointParam &epParam,
-    HcclRequestInfo *&request)
+HcclResult TransportHeterogEventTcp::Isend(
+    const TransData& sendData, const TransportEndPointParam& epParam, HcclRequestInfo*& request)
 {
     CHK_RET(GenerateSendRequest(sendData, epParam, request));
-    HCCL_DEBUG("Isend: peerRank[%u] tag[%d] buffer[%llu] count[%d] dataType[%s] request[%p]",
-        epParam.dst.rank, epParam.dst.tag, sendData.srcBuf, sendData.count,
-        GetDataTypeEnumStr(sendData.dataType).c_str(), request);
+    HCCL_DEBUG(
+        "Isend: peerRank[%u] tag[%d] buffer[%llu] count[%d] dataType[%s] request[%p]", epParam.dst.rank,
+        epParam.dst.tag, sendData.srcBuf, sendData.count, GetDataTypeEnumStr(sendData.dataType).c_str(), request);
 
     // 如果建链未完成，或者积压的信封未发送完成，则Isend不进行信封发送。
     // Test接口中推动积压信封发送完成后，Isend接口才启动信封发送。
@@ -300,8 +298,9 @@ HcclResult TransportHeterogEventTcp::Isend(const TransData &sendData, const Tran
     return TcpSendThreadPool::GetSendPoolInstance()->AddSendTask(request);
 }
 
-HcclResult TransportHeterogEventTcp::SendNoBlock(const TransData &sendData, const TransportEndPointParam &epParam,
-    u64& envoffset, u64& dataTranoffset, bool &envCompleted, bool &tranCompleted)
+HcclResult TransportHeterogEventTcp::SendNoBlock(
+    const TransData& sendData, const TransportEndPointParam& epParam, u64& envoffset, u64& dataTranoffset,
+    bool& envCompleted, bool& tranCompleted)
 {
     HcclResult ret;
     u64 envSentSize = 0;
@@ -317,8 +316,9 @@ HcclResult TransportHeterogEventTcp::SendNoBlock(const TransData &sendData, cons
         return HCCL_E_INTERNAL;
     }
     if (envelopeSize > 0) {
-        ret = hrtRaSocketNonBlockSendHeterog(initSM_.locInitInfo.socketInfo[0].fdHandle,
-            (reinterpret_cast<u8 *>(&envelope) + envoffset), envelopeSize, &envSentSize);
+        ret = hrtRaSocketNonBlockSendHeterog(
+            initSM_.locInitInfo.socketInfo[0].fdHandle, (reinterpret_cast<u8*>(&envelope) + envoffset), envelopeSize,
+            &envSentSize);
         envoffset += envSentSize;
         if (ret == HCCL_E_NETWORK) {
             HCCL_ERROR("TransportHeterogEventTcp SendNoBlock fail error[%d]", ret);
@@ -332,13 +332,14 @@ HcclResult TransportHeterogEventTcp::SendNoBlock(const TransData &sendData, cons
     if (payloadSize >= dataTranoffset) {
         payloadSize -= dataTranoffset;
     } else {
-        HCCL_ERROR("TransportHeterogEventTcp SendNoBlock payloadSize[%llu] < dataTranoffset[%llu]",
-            envelopeSize, envoffset);
+        HCCL_ERROR(
+            "TransportHeterogEventTcp SendNoBlock payloadSize[%llu] < dataTranoffset[%llu]", envelopeSize, envoffset);
         return HCCL_E_INTERNAL;
     }
     if (payloadSize > 0) {
-        ret = hrtRaSocketNonBlockSendHeterog(initSM_.locInitInfo.socketInfo[0].fdHandle,
-            (reinterpret_cast<u8 *>(envelope.transData.srcBuf) + dataTranoffset), payloadSize, &dataSentSize);
+        ret = hrtRaSocketNonBlockSendHeterog(
+            initSM_.locInitInfo.socketInfo[0].fdHandle,
+            (reinterpret_cast<u8*>(envelope.transData.srcBuf) + dataTranoffset), payloadSize, &dataSentSize);
         dataTranoffset += dataSentSize;
         if (ret == HCCL_E_NETWORK) {
             HCCL_ERROR("TransportHeterogEventTcp SendNoBlock fail error[%d]", ret);
@@ -350,24 +351,24 @@ HcclResult TransportHeterogEventTcp::SendNoBlock(const TransData &sendData, cons
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportHeterogEventTcp::Send(const TransData &sendData, const TransportEndPointParam &epParam)
+HcclResult TransportHeterogEventTcp::Send(const TransData& sendData, const TransportEndPointParam& epParam)
 {
     TransData transData = sendData;
     TransportEndPointParam transportParam = epParam;
     HcclEnvelope envelope(1, transData, transportParam, 0, 0);
 
-    CHK_RET(hrtRaSocketBlockSend(initSM_.locInitInfo.socketInfo[0].fdHandle, &envelope,
-        sizeof(envelope)));
+    CHK_RET(hrtRaSocketBlockSend(initSM_.locInitInfo.socketInfo[0].fdHandle, &envelope, sizeof(envelope)));
 
     if (envelope.transData.count > 0) {
         u64 payloadSize = envelope.transData.count * SIZE_TABLE[envelope.transData.dataType];
-        CHK_RET(hrtRaSocketBlockSend(initSM_.locInitInfo.socketInfo[0].fdHandle,
-            reinterpret_cast<void *>(envelope.transData.srcBuf), payloadSize));
+        CHK_RET(hrtRaSocketBlockSend(
+            initSM_.locInitInfo.socketInfo[0].fdHandle, reinterpret_cast<void*>(envelope.transData.srcBuf),
+            payloadSize));
     }
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportHeterogEventTcp::ReportSendComp(HcclRequestInfo *request)
+HcclResult TransportHeterogEventTcp::ReportSendComp(HcclRequestInfo* request)
 {
     CHK_PTR_NULL(request);
     request->transportRequest.status = 0;
@@ -378,11 +379,11 @@ HcclResult TransportHeterogEventTcp::ReportSendComp(HcclRequestInfo *request)
         return HCCL_SUCCESS;
     }
 
-    EventReportFlag &flag = gCompCounterEvent[devId_][HCCL_EVENT_SEND_COMPLETION_MSG];
+    EventReportFlag& flag = gCompCounterEvent[devId_][HCCL_EVENT_SEND_COMPLETION_MSG];
     flag.counter++;
     if (!flag.flag.test_and_set()) {
-        HcclResult ret = hrtHalSubmitEvent(devId_, HCCL_EVENT_SEND_COMPLETION_MSG,
-            TransportHeterogEventTcp::gDevidToGroupid[devId_]);
+        HcclResult ret = hrtHalSubmitEvent(
+            devId_, HCCL_EVENT_SEND_COMPLETION_MSG, TransportHeterogEventTcp::gDevidToGroupid[devId_]);
         if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("hrtHalSubmitEvent failed for devId[%u], ret:%d", devId_, ret);
         }
@@ -403,11 +404,11 @@ HcclResult TransportHeterogEventTcp::ReportEnvelpComp(HcclEnvelopeSummary envelo
         return HCCL_SUCCESS;
     }
 
-    EventReportFlag &flag = gCompCounterEvent[devId_][HCCL_EVENT_RECV_REQUEST_MSG];
+    EventReportFlag& flag = gCompCounterEvent[devId_][HCCL_EVENT_RECV_REQUEST_MSG];
     flag.counter++;
     if (!flag.flag.test_and_set()) {
-        HcclResult ret = hrtHalSubmitEvent(devId_, HCCL_EVENT_RECV_REQUEST_MSG,
-            TransportHeterogEventTcp::gDevidToGroupid[devId_]);
+        HcclResult ret
+            = hrtHalSubmitEvent(devId_, HCCL_EVENT_RECV_REQUEST_MSG, TransportHeterogEventTcp::gDevidToGroupid[devId_]);
         if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("hrtHalSubmitEvent failed for devId[%u], ret:%d", devId_, ret);
         }
@@ -416,7 +417,7 @@ HcclResult TransportHeterogEventTcp::ReportEnvelpComp(HcclEnvelopeSummary envelo
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportHeterogEventTcp::ReportRecvComp(HcclRequestInfo *request)
+HcclResult TransportHeterogEventTcp::ReportRecvComp(HcclRequestInfo* request)
 {
     CHK_PTR_NULL(request);
     request->transportRequest.status = 0;
@@ -427,11 +428,11 @@ HcclResult TransportHeterogEventTcp::ReportRecvComp(HcclRequestInfo *request)
         return HCCL_SUCCESS;
     }
 
-    EventReportFlag &flag = gCompCounterEvent[devId_][HCCL_EVENT_RECV_COMPLETION_MSG];
+    EventReportFlag& flag = gCompCounterEvent[devId_][HCCL_EVENT_RECV_COMPLETION_MSG];
     flag.counter++;
     if (!flag.flag.test_and_set()) {
-        HcclResult ret = hrtHalSubmitEvent(devId_, HCCL_EVENT_RECV_COMPLETION_MSG,
-            TransportHeterogEventTcp::gDevidToGroupid[devId_]);
+        HcclResult ret = hrtHalSubmitEvent(
+            devId_, HCCL_EVENT_RECV_COMPLETION_MSG, TransportHeterogEventTcp::gDevidToGroupid[devId_]);
         if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("hrtHalSubmitEvent failed for devId[%u], ret:%d", devId_, ret);
         }
@@ -440,8 +441,8 @@ HcclResult TransportHeterogEventTcp::ReportRecvComp(HcclRequestInfo *request)
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportHeterogEventTcp::Improbe(const TransportEndPointParam &epParam, s32 &matched, HcclMessageInfo *&msg,
-    HcclStatus &status)
+HcclResult TransportHeterogEventTcp::Improbe(
+    const TransportEndPointParam& epParam, s32& matched, HcclMessageInfo*& msg, HcclStatus& status)
 {
     // 建链未完成时，返回未匹配到
     if (GetState() != ConnState::CONN_STATE_COMPLETE) {
@@ -451,7 +452,7 @@ HcclResult TransportHeterogEventTcp::Improbe(const TransportEndPointParam &epPar
 
     // 检查能否匹配到
     std::unique_lock<std::mutex> Queuelock(gRecvEnvelopesMutex);
-    std::queue<HcclEnvelopeSummary> &envelopInfos = gRecvEnvelopes[epParam.src];
+    std::queue<HcclEnvelopeSummary>& envelopInfos = gRecvEnvelopes[epParam.src];
     Queuelock.unlock();
 
     auto probeSomething = [&]() -> HcclResult {
@@ -474,7 +475,7 @@ HcclResult TransportHeterogEventTcp::Improbe(const TransportEndPointParam &epPar
     }
 }
 
-HcclResult TransportHeterogEventTcp::Imrecv(const TransData &recvData, HcclMessageInfo &msg, HcclRequestInfo *&request)
+HcclResult TransportHeterogEventTcp::Imrecv(const TransData& recvData, HcclMessageInfo& msg, HcclRequestInfo*& request)
 {
     CHK_RET(CheckRecvEnvelope(recvData, msg.envelope));
     CHK_RET(GenerateRecvRequest(recvData, msg, request));
@@ -484,7 +485,7 @@ HcclResult TransportHeterogEventTcp::Imrecv(const TransData &recvData, HcclMessa
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportHeterogEventTcp::Test(HcclRequestInfo &request, s32 &flag, HcclStatus &compState)
+HcclResult TransportHeterogEventTcp::Test(HcclRequestInfo& request, s32& flag, HcclStatus& compState)
 {
     HCCL_DEBUG("[TransportHeterogEventTcp][Test]requestType [%u]", request.transportRequest.requestType);
     flag = HCCL_TEST_INCOMPLETED;
@@ -524,16 +525,15 @@ HcclResult TransportHeterogEventTcp::EnterStateProcess(ConnState nextState)
             CHK_RET(InitRecvCallback());
             CHK_RET(TryTransition(HCCL_SUCCESS, true, ConnState::CONN_STATE_COMPLETE));
             break;
-        case ConnState::CONN_STATE_COMPLETE:
-            {
-                HCCL_INFO("link[%s]: connect complete", initSM_.locInitInfo.socketInfo[0].tag);
-                std::unique_lock<std::mutex> lock(taskCacheQueueLock_);
-                while (!taskCacheQueue_.empty()) {
-                    CHK_RET(TcpSendThreadPool::GetSendPoolInstance()->AddSendTask(GetTaskCache()));
-                }
-                lock.unlock();
-                break;
+        case ConnState::CONN_STATE_COMPLETE: {
+            HCCL_INFO("link[%s]: connect complete", initSM_.locInitInfo.socketInfo[0].tag);
+            std::unique_lock<std::mutex> lock(taskCacheQueueLock_);
+            while (!taskCacheQueue_.empty()) {
+                CHK_RET(TcpSendThreadPool::GetSendPoolInstance()->AddSendTask(GetTaskCache()));
             }
+            lock.unlock();
+            break;
+        }
         default:
             HCCL_INFO("link[%s]: state[%u] no need to do anything", initSM_.locInitInfo.socketInfo[0].tag, nextState);
     }
@@ -551,8 +551,9 @@ HcclResult TransportHeterogEventTcp::LoopStateProcess()
             CHK_RET(TryTransition(testRet, completed, ConnState::CONN_STATE_GET_CHECK_SOCKET));
             break;
         case ConnState::CONN_STATE_GET_CHECK_SOCKET:
-            testRet = GetSocket(initSM_.locInitInfo.role, initSM_.locInitInfo.socketInfo.data(), initSM_.socketNum,
-                initSM_.completeNum, completed);
+            testRet = GetSocket(
+                initSM_.locInitInfo.role, initSM_.locInitInfo.socketInfo.data(), initSM_.socketNum, initSM_.completeNum,
+                completed);
             CHK_RET(TryTransition(testRet, completed, ConnState::CONN_STATE_SEND_CF));
             break;
         case ConnState::CONN_STATE_SEND_CF:
@@ -560,8 +561,9 @@ HcclResult TransportHeterogEventTcp::LoopStateProcess()
                 HCCL_ERROR("[LoopStateProcess]initSM_.locInitInfo.socketInfo is invalid!");
                 return HCCL_E_PARA;
             }
-            testRet = SocketSend(initSM_.locInitInfo.socketInfo[0].fdHandle, initSM_.locInitInfo.checkFrame,
-                initSM_.size, initSM_.completeSize, completed);
+            testRet = SocketSend(
+                initSM_.locInitInfo.socketInfo[0].fdHandle, initSM_.locInitInfo.checkFrame, initSM_.size,
+                initSM_.completeSize, completed);
             CHK_RET(TryTransition(testRet, completed, ConnState::CONN_STATE_RECV_CF));
             break;
         case ConnState::CONN_STATE_RECV_CF:
@@ -569,8 +571,9 @@ HcclResult TransportHeterogEventTcp::LoopStateProcess()
                 HCCL_ERROR("[LoopStateProcess]initSM_.locInitInfo.socketInfo is invalid!");
                 return HCCL_E_PARA;
             }
-            testRet = SocketRecv(initSM_.locInitInfo.socketInfo[0].fdHandle, initSM_.remInitInfo.checkFrame,
-                initSM_.size, initSM_.completeSize, completed);
+            testRet = SocketRecv(
+                initSM_.locInitInfo.socketInfo[0].fdHandle, initSM_.remInitInfo.checkFrame, initSM_.size,
+                initSM_.completeSize, completed);
             CHK_RET(TryTransition(testRet, completed, ConnState::CONN_STATE_CHECK_CF));
             break;
         default:
@@ -585,7 +588,7 @@ HcclResult TransportHeterogEventTcp::LoopStateProcess()
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportHeterogEventTcp::QueryRequestStatus(HcclRequestInfo &request, s32 &flag, HcclStatus &compState)
+HcclResult TransportHeterogEventTcp::QueryRequestStatus(HcclRequestInfo& request, s32& flag, HcclStatus& compState)
 {
     u32 eventType;
     if (request.transportRequest.requestType == HcclRequestType::HCCL_REQUEST_SEND) {
@@ -593,12 +596,11 @@ HcclResult TransportHeterogEventTcp::QueryRequestStatus(HcclRequestInfo &request
     } else if (request.transportRequest.requestType == HcclRequestType::HCCL_REQUEST_RECV) {
         eventType = HCCL_EVENT_RECV_COMPLETION_MSG;
     } else {
-        HCCL_ERROR("[QueryRequestStatus]requestType is invalid! requestType[%u]",
-            request.transportRequest.requestType);
+        HCCL_ERROR("[QueryRequestStatus]requestType is invalid! requestType[%u]", request.transportRequest.requestType);
         return HCCL_E_PARA;
     }
 
-    EventReportFlag &eFlag = gCompCounterEvent[devId_][eventType];
+    EventReportFlag& eFlag = gCompCounterEvent[devId_][eventType];
 
     if (eFlag.counter > 0) {
         if (request.transportRequest.status >= 0) {
@@ -629,28 +631,27 @@ HcclResult TransportHeterogEventTcp::GetNetworkResource()
     return HCCL_SUCCESS;
 }
 
-HcclRequestInfo *TransportHeterogEventTcp::GetTaskCache()
+HcclRequestInfo* TransportHeterogEventTcp::GetTaskCache()
 {
     auto tmp = taskCacheQueue_.front();
     taskCacheQueue_.pop();
     return tmp;
 }
 
-
 // matched为false的时候，fdHandle为出参；否则fdHandle为入参
-HcclResult TransportHeterogEventTcp::WaitEvents(EpollEventInfo &epollEventInfo,
-    vector<SocketEventInfo> &eventInfos, const EventStatus &eventStatus, FdHandle &fdHandle, s32 timeout)
+HcclResult TransportHeterogEventTcp::WaitEvents(
+    EpollEventInfo& epollEventInfo, vector<SocketEventInfo>& eventInfos, const EventStatus& eventStatus,
+    FdHandle& fdHandle, s32 timeout)
 {
     bool waitComleted = false;
-    u32 eventsNum{ 0 };
-    HcclResult ret{ HCCL_SUCCESS };
+    u32 eventsNum{0};
+    HcclResult ret{HCCL_SUCCESS};
 
     // 可能存在一直有epoll事件，但是一直没有预期的fd的可能性
     while (!waitComleted) {
         {
             lock_guard<mutex> lock(epollEventInfo.epollEventFdMtx);
-            ret = hrtRaWaitEventHandle(epollEventInfo.epollEventFd, eventInfos,
-                timeout, eventInfos.size(), eventsNum);
+            ret = hrtRaWaitEventHandle(epollEventInfo.epollEventFd, eventInfos, timeout, eventInfos.size(), eventsNum);
         }
 
         if (eventsNum == 0 && ret == HCCL_SUCCESS) {
@@ -664,13 +665,14 @@ HcclResult TransportHeterogEventTcp::WaitEvents(EpollEventInfo &epollEventInfo,
 
         for (u32 i = 0; i < eventsNum; i++) {
             if ((eventInfos[i].event & static_cast<u32>(EPOLLRDHUP)) != 0) {
-                HCCL_ERROR("Peer socket has been closed from event, eventInfos[%u] fdHandle[%p], eventInfos num[%u]",
-                    i, eventInfos[i].fdHandle, eventsNum);
+                HCCL_ERROR(
+                    "Peer socket has been closed from event, eventInfos[%u] fdHandle[%p], eventInfos num[%u]", i,
+                    eventInfos[i].fdHandle, eventsNum);
                 return HCCL_E_TCP_CONNECT;
             }
 
             if (eventStatus.matched) {
-                socket_peer_info *socketInfo = static_cast<socket_peer_info *>(fdHandle);
+                socket_peer_info* socketInfo = static_cast<socket_peer_info*>(fdHandle);
                 CHK_PTR_NULL(socketInfo);
                 if (eventInfos[i].fdHandle != socketInfo) {
                     continue;
@@ -692,13 +694,13 @@ HcclResult TransportHeterogEventTcp::WaitEvents(EpollEventInfo &epollEventInfo,
     return HCCL_SUCCESS;
 }
 
-
-HcclResult TransportHeterogEventTcp::BlockSend(const TransData &sendData, const TransportEndPointParam &epParam,
-    HcclRequestInfo *&request, s32 waitTimeOut)
+HcclResult TransportHeterogEventTcp::BlockSend(
+    const TransData& sendData, const TransportEndPointParam& epParam, HcclRequestInfo*& request, s32 waitTimeOut)
 {
     CHK_RET(GenerateSendRequest(sendData, epParam, request));
-    HCCL_DEBUG("Isend: peerRank[%u] tag[%d] buffer[%llu] count[%d] dataType[%s]", epParam.dst.rank,
-        epParam.dst.tag, sendData.srcBuf, sendData.count, GetDataTypeEnumStr(sendData.dataType).c_str());
+    HCCL_DEBUG(
+        "Isend: peerRank[%u] tag[%d] buffer[%llu] count[%d] dataType[%s]", epParam.dst.rank, epParam.dst.tag,
+        sendData.srcBuf, sendData.count, GetDataTypeEnumStr(sendData.dataType).c_str());
 
     std::vector<SocketEventInfo> eventInfos(EPOLL_EVENTS_NUM);
 
@@ -709,14 +711,17 @@ HcclResult TransportHeterogEventTcp::BlockSend(const TransData &sendData, const 
     // 当前只考虑一个连接
     FdHandle fdHandle = initSM_.locInitInfo.socketInfo[0].fdHandle;
 
-    bool envCompleted; // 信封数据是否完全发送成功
+    bool envCompleted;  // 信封数据是否完全发送成功
     bool tranCompleted; // 数据是否完全发送
     do {
-        envCompleted = true; // 信封数据是否完全发送成功
+        envCompleted = true;  // 信封数据是否完全发送成功
         tranCompleted = true; // 数据是否完全发送
-        TransportRequestInfo &transpReqInfo = request->transportRequest;
-        CHK_RET(static_cast<TransportHeterogEventTcp*>(request->transportHandle)->SendNoBlock(transpReqInfo.transData,
-            transpReqInfo.epParam, transpReqInfo.envoffset, transpReqInfo.tranoffset, envCompleted, tranCompleted));
+        TransportRequestInfo& transpReqInfo = request->transportRequest;
+        CHK_RET(
+            static_cast<TransportHeterogEventTcp*>(request->transportHandle)
+                ->SendNoBlock(
+                    transpReqInfo.transData, transpReqInfo.epParam, transpReqInfo.envoffset, transpReqInfo.tranoffset,
+                    envCompleted, tranCompleted));
 
         HcclResult ret = WaitEvents(sendEpollEventInfo_, eventInfos, eventStatus, fdHandle, waitTimeOut);
         CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("WaitEvents Error, ret[%d]", ret), HCCL_E_INTERNAL);
@@ -726,8 +731,8 @@ HcclResult TransportHeterogEventTcp::BlockSend(const TransData &sendData, const 
 }
 
 // matched为true，表示只处理当前tcp对象的tag；否则，哪个tag先到达就先收，并返回对应的transport。 后续优化提取manager类
-HcclResult TransportHeterogEventTcp::BlockRecv(const TransData &recvData, bool matched,
-    TransportHeterog *&transport, s32 waitTimeOut, s32 waitPayloadTimeOut)
+HcclResult TransportHeterogEventTcp::BlockRecv(
+    const TransData& recvData, bool matched, TransportHeterog*& transport, s32 waitTimeOut, s32 waitPayloadTimeOut)
 {
     std::vector<SocketEventInfo> eventInfos(EPOLL_EVENTS_NUM);
     u64 recvSize = 0;
@@ -745,7 +750,7 @@ HcclResult TransportHeterogEventTcp::BlockRecv(const TransData &recvData, bool m
         fdHandle = initSM_.locInitInfo.socketInfo[0].fdHandle;
     }
 
-    void *recvBuffer = reinterpret_cast<void *>(recvData.dstBuf);
+    void* recvBuffer = reinterpret_cast<void*>(recvData.dstBuf);
     while (recvSize < byteSize) {
         // 内部会循环获取需要的fdHandle的事件，循环获取超时会返回。
         HcclResult ret = WaitEvents(gRecvEpollEventInfo, eventInfos, eventStatus, fdHandle, waitTimeOut);
@@ -793,19 +798,22 @@ HcclResult TransportHeterogEventTcp::BlockRecv(const TransData &recvData, bool m
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportHeterogEventTcp::NoBlockRecv(const FdHandle fdHandle, void *&recvBuffer, u64 byteSize,
-    u64 &recvSize)
+HcclResult
+TransportHeterogEventTcp::NoBlockRecv(const FdHandle fdHandle, void*& recvBuffer, u64 byteSize, u64& recvSize)
 {
     u64 recvLen = 0;
     byteSize -= recvSize;
     s32 rtRet = hrtRaSocketRecv(fdHandle, recvBuffer, byteSize, &recvLen);
     if ((rtRet == 0) && (recvLen > 0)) {
-        CHK_PRT_RET(recvLen > byteSize,
-            HCCL_ERROR("hrtRaSocketRecv errNo[0x%016llx] socket receive recvLen[%llu] > size[%llu]",
-            HCCL_ERROR_CODE(HCCL_E_TCP_TRANSFER), recvLen, byteSize), HCCL_E_TCP_TRANSFER);
+        CHK_PRT_RET(
+            recvLen > byteSize,
+            HCCL_ERROR(
+                "hrtRaSocketRecv errNo[0x%016llx] socket receive recvLen[%llu] > size[%llu]",
+                HCCL_ERROR_CODE(HCCL_E_TCP_TRANSFER), recvLen, byteSize),
+            HCCL_E_TCP_TRANSFER);
         recvSize += recvLen;
         // 更新recvBuffer的位置
-        recvBuffer = static_cast<s8 *>(recvBuffer) + recvLen;
+        recvBuffer = static_cast<s8*>(recvBuffer) + recvLen;
     } else if ((rtRet == 0) && (recvLen == 0)) {
         HCCL_ERROR("hrtRaSocketRecv recv fail, recLen[%llu]", recvLen);
         return HCCL_E_TCP_TRANSFER;
@@ -846,12 +854,14 @@ HcclResult TransportHeterogEventTcp::CreateEventHandle()
 HcclResult TransportHeterogEventTcp::AddEpollEvents()
 {
     for (int i = 0; i < LINK_NUM; i++) {
-        CHK_RET(hrtRaCtlEventHandle(sendEpollEventInfo_.epollEventFd, initSM_.locInitInfo.socketInfo[i].fdHandle,
-            EPOLL_CTL_ADD, HcclEpollEvent::HCCL_EPOLLOUT));
+        CHK_RET(hrtRaCtlEventHandle(
+            sendEpollEventInfo_.epollEventFd, initSM_.locInitInfo.socketInfo[i].fdHandle, EPOLL_CTL_ADD,
+            HcclEpollEvent::HCCL_EPOLLOUT));
 
         lock_guard<mutex> lock(gRecvEpollEventInfo.epollEventFdMtx);
-        CHK_RET(hrtRaCtlEventHandle(gRecvEpollEventInfo.epollEventFd, initSM_.locInitInfo.socketInfo[i].fdHandle,
-            EPOLL_CTL_ADD, HcclEpollEvent::HCCL_EPOLLIN));
+        CHK_RET(hrtRaCtlEventHandle(
+            gRecvEpollEventInfo.epollEventFd, initSM_.locInitInfo.socketInfo[i].fdHandle, EPOLL_CTL_ADD,
+            HcclEpollEvent::HCCL_EPOLLIN));
     }
 
     return HCCL_SUCCESS;
@@ -888,15 +898,17 @@ HcclResult TransportHeterogEventTcp::DestroyEventHandle()
 HcclResult TransportHeterogEventTcp::DelEpollEvents()
 {
     for (int i = 0; i < LINK_NUM; i++) {
-        CHK_RET(hrtRaCtlEventHandle(sendEpollEventInfo_.epollEventFd, initSM_.locInitInfo.socketInfo[i].fdHandle,
-            EPOLL_CTL_DEL, HcclEpollEvent::HCCL_EPOLLOUT));
+        CHK_RET(hrtRaCtlEventHandle(
+            sendEpollEventInfo_.epollEventFd, initSM_.locInitInfo.socketInfo[i].fdHandle, EPOLL_CTL_DEL,
+            HcclEpollEvent::HCCL_EPOLLOUT));
 
         lock_guard<mutex> lock(gRecvEpollEventInfo.epollEventFdMtx);
-        CHK_RET(hrtRaCtlEventHandle(gRecvEpollEventInfo.epollEventFd, initSM_.locInitInfo.socketInfo[i].fdHandle,
-            EPOLL_CTL_DEL, HcclEpollEvent::HCCL_EPOLLIN));
+        CHK_RET(hrtRaCtlEventHandle(
+            gRecvEpollEventInfo.epollEventFd, initSM_.locInitInfo.socketInfo[i].fdHandle, EPOLL_CTL_DEL,
+            HcclEpollEvent::HCCL_EPOLLIN));
     }
 
     return HCCL_SUCCESS;
 }
 
-}
+} // namespace hccl

@@ -52,10 +52,7 @@ protected:
         std::cout << "RankGraphBuilderTest TearDown" << std::endl;
     }
 
-    virtual void SetUp()
-    {
-        std::cout << "A Test case in RankGraphBuilderTest SetUP" << std::endl;
-    }
+    virtual void SetUp() { std::cout << "A Test case in RankGraphBuilderTest SetUP" << std::endl; }
 
     virtual void TearDown()
     {
@@ -98,7 +95,8 @@ TEST_F(RankGraphBuilderTest, Ut_Build_When_1pRankTable_Expect_Success)
 {
     PhyTopo::GetInstance()->Clear();
     RankGraphBuilder rankGraphBuilder;
-    std::string topoPath{HCOMM_CODE_ROOT_DIR "/test/legacy/ut/framework/topo/new_topo_builder/rank_graph_builder/1ptopo.json"};
+    std::string topoPath{HCOMM_CODE_ROOT_DIR
+                         "/test/legacy/ut/framework/topo/new_topo_builder/rank_graph_builder/1ptopo.json"};
     std::unique_ptr<RankGraph> rankGraph = rankGraphBuilder.Build(RankTable1p, topoPath, 0);
     EXPECT_NE(nullptr, rankGraph);
     auto path1 = rankGraph->GetPaths(0, 0, 1);
@@ -114,7 +112,8 @@ TEST_F(RankGraphBuilderTest, Ut_Build_When_OnePTopoFileWithoutEdge_Expect_Succes
 {
     PhyTopo::GetInstance()->Clear();
     RankGraphBuilder rankGraphBuilder;
-    std::string topoPath{HCOMM_CODE_ROOT_DIR "/test/legacy/ut/framework/topo/new_topo_builder/rank_graph_builder/1ptopo_without_edge.json"};
+    std::string topoPath{HCOMM_CODE_ROOT_DIR
+                         "/test/legacy/ut/framework/topo/new_topo_builder/rank_graph_builder/1ptopo_without_edge.json"};
     std::unique_ptr<RankGraph> rankGraph = rankGraphBuilder.Build(RankTable1p, topoPath, 0);
     EXPECT_NE(nullptr, rankGraph);
     auto rankSize = rankGraph->GetRankSize();
@@ -146,8 +145,8 @@ TEST_F(RankGraphBuilderTest, ut_Build_When_4pRankTable_Expect_Success)
     EXPECT_NE(nullptr, rankGraph);
     std::vector<std::string> netIds = {"az0-rack0", "az0", "all"};
     for (s32 rankId = 0; rankId < 3; rankId++) {
-                for (u32 netLayer = 0; netLayer < 3; netLayer++) {
-            const NetInstance *fabGroup = rankGraph->GetNetInstanceByRankId(netLayer, rankId);
+        for (u32 netLayer = 0; netLayer < 3; netLayer++) {
+            const NetInstance* fabGroup = rankGraph->GetNetInstanceByRankId(netLayer, rankId);
             EXPECT_EQ(netIds[netLayer], fabGroup->GetNetInstId());
 
             EXPECT_EQ(true, fabGroup->HasNode(NetInstance::Peer(rankId, 0, 0, 0).GetLocalId()));

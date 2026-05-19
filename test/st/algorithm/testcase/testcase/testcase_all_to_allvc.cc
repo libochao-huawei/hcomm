@@ -26,20 +26,15 @@ using namespace hccl;
 
 class AllToAllVCTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "AllToAllVCTest set up." << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "AllToAllVCTest set up." << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "AllToAllVCTest tear down." << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "AllToAllVCTest tear down." << std::endl; }
 
     virtual void SetUp()
     {
         const ::testing::TestInfo* const test_info = ::testing::UnitTest::GetInstance()->current_test_info();
-        std::string caseName = "analysis_result_" + std::string(test_info->test_case_name()) + "_" + std::string(test_info->name());
+        std::string caseName
+            = "analysis_result_" + std::string(test_info->test_case_name()) + "_" + std::string(test_info->name());
         Checker::SetDumpFileName(caseName);
     }
 
@@ -376,9 +371,12 @@ TEST_F(AllToAllVCTest, alltoallvc_test_910_93_offload_RunAlltoAllDirectFullmesh)
 
 TEST_F(AllToAllVCTest, alltoallvc_test_91093_offload_AlltoAllMeshAivFor91093Executor)
 {
-    MOCKER(ExecuteKernelLaunch, HcclResult(const AivOpArgs&, const AivTopoArgs&,
-    const AivResourceArgs&, const AivAlgArgs&, const ExtraArgsV2&,
-    AivProfilingInfo&)).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(
+        ExecuteKernelLaunch, HcclResult(
+                                 const AivOpArgs&, const AivTopoArgs&, const AivResourceArgs&, const AivAlgArgs&,
+                                 const ExtraArgsV2&, AivProfilingInfo&))
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
     MOCKER(GetExternalInputHcclAivMode).stubs().will(returnValue(true));
     MOCKER_CPP(&AlltoAllOperator::IsSatisfyAlltoAllAivCondition).stubs().will(returnValue(true));
     RankTable_For_LLT gen;

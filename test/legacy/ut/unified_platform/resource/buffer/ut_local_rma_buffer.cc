@@ -22,15 +22,9 @@ using namespace Hccl;
 
 class LocalRmaBufferTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "LocalRmaBuffer tests set up." << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "LocalRmaBuffer tests set up." << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "LocalRmaBuffer tests tear down." << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "LocalRmaBuffer tests tear down." << std::endl; }
 
     virtual void SetUp()
     {
@@ -59,7 +53,7 @@ TEST_F(LocalRmaBufferTest, localubrmabuffer_serialize)
 {
     u32 token = 1;
     MOCKER(GetUbToken).stubs().will(returnValue(token));
-    RdmaHandle rdmaHandle = (void *)0x1000000;
+    RdmaHandle rdmaHandle = (void*)0x1000000;
     LocalUbRmaBuffer localUbRmaBuffer(devBuf, rdmaHandle);
     string msg = localUbRmaBuffer.Describe();
     EXPECT_NE(0, msg.length());
@@ -77,7 +71,7 @@ TEST_F(LocalRmaBufferTest, getExchangeDto_rdma_test)
 {
     u32 token = 1;
     MOCKER(GetUbToken).stubs().will(returnValue(token));
-    RdmaHandle rdmaHandle = (void *)0x1000000;
+    RdmaHandle rdmaHandle = (void*)0x1000000;
     LocalUbRmaBuffer localUbRmaBuffer(devBuf, rdmaHandle);
 
     localUbRmaBuffer.GetExchangeDto();
@@ -87,7 +81,7 @@ TEST_F(LocalRmaBufferTest, Serialize_test)
 {
     u32 token = 1;
     MOCKER(GetUbToken).stubs().will(returnValue(token));
-    RdmaHandle rdmaHandle = (void *)0x1000000;
+    RdmaHandle rdmaHandle = (void*)0x1000000;
     LocalRdmaRmaBuffer localRdmaRmaBuffer(devBuf, rdmaHandle);
 
     localRdmaRmaBuffer.Describe();

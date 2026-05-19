@@ -25,8 +25,7 @@ constexpr u32 d2hBufferSize = sizeof(KfcExecStatus);
 #define HCCL_HDC_TYPE_D2H 0
 #define HCCL_HDC_TYPE_H2D 1
 
-
-static HcclResult HrtDrvMemCpyStub(void *dst, uint64_t destMax, const void *src, uint64_t count)
+static HcclResult HrtDrvMemCpyStub(void* dst, uint64_t destMax, const void* src, uint64_t count)
 {
     memcpy(dst, src, count);
     return HCCL_SUCCESS;
@@ -34,31 +33,30 @@ static HcclResult HrtDrvMemCpyStub(void *dst, uint64_t destMax, const void *src,
 
 class NsRecoveryHandlerFuncTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "NsRecoveryHandlerFuncTest SetUP" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "NsRecoveryHandlerFuncTest SetUP" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "NsRecoveryHandlerFuncTest TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "NsRecoveryHandlerFuncTest TearDown" << std::endl; }
 
     virtual void SetUp()
     {
-        
         memset_s(hostBufH2d, sizeof(hostBufH2d), 0, sizeof(hostBufH2d));
         memset_s(hostBufD2h, sizeof(hostBufD2h), 0, sizeof(hostBufD2h));
         memset_s(hostCacheD2h, sizeof(hostCacheD2h), 0, sizeof(hostCacheD2h));
-        MOCKER(HrtMallocHost).stubs().with(any()).will(returnValue(static_cast<void *>(hostBufH2d)))
-                                                .then(returnValue(static_cast<void *>(hostBufD2h)))
-                                                .then(returnValue(static_cast<void *>(hostCacheD2h)));
+        MOCKER(HrtMallocHost)
+            .stubs()
+            .with(any())
+            .will(returnValue(static_cast<void*>(hostBufH2d)))
+            .then(returnValue(static_cast<void*>(hostBufD2h)))
+            .then(returnValue(static_cast<void*>(hostCacheD2h)));
         memset_s(devBufH2d, sizeof(devBufH2d), 0, sizeof(devBufH2d));
         memset_s(devCacheH2d, sizeof(devCacheH2d), 0, sizeof(devCacheH2d));
         memset_s(devBufD2h, sizeof(devBufD2h), 0, sizeof(devBufD2h));
-        MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue(static_cast<void *>(devBufH2d)))
-                                                    .then(returnValue(static_cast<void *>(devCacheH2d)))
-                                                    .then(returnValue(static_cast<void *>(devBufD2h)));
+        MOCKER(HrtMalloc)
+            .stubs()
+            .with(any(), any())
+            .will(returnValue(static_cast<void*>(devBufH2d)))
+            .then(returnValue(static_cast<void*>(devCacheH2d)))
+            .then(returnValue(static_cast<void*>(devBufD2h)));
         MOCKER(HrtDrvMemCpy).stubs().with().will(invoke(HrtDrvMemCpyStub));
 
         MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910A2));
@@ -82,7 +80,7 @@ protected:
     char devCacheH2d[4 * 1024];
     char devBufD2h[4 * 1024];
 
-    u8   mockSq[AC_SQE_SIZE * AC_SQE_MAX_CNT]{0};
+    u8 mockSq[AC_SQE_SIZE * AC_SQE_MAX_CNT]{0};
 };
 
 TEST_F(NsRecoveryHandlerFuncTest, test_handle_stop_launch)
@@ -110,39 +108,40 @@ TEST_F(NsRecoveryHandlerFuncTest, test_handle_stop_launch)
     // 模拟host侧行为
     thread threadHandle([&] {
         cmd = KfcCommand::NS_STOP_LAUNCH;
-        comm.kfcControlTransferH2D->Put(0, sizeof(KfcCommand), (u8 *)&cmd);  // 把命令NS_STOP_LAUNCH发到device侧
-        auto timeout   = std::chrono::milliseconds(100);
+        comm.kfcControlTransferH2D->Put(0, sizeof(KfcCommand), (u8*)&cmd); // 把命令NS_STOP_LAUNCH发到device侧
+        auto timeout = std::chrono::milliseconds(100);
         auto startTime = std::chrono::steady_clock::now();
         while (true) {
-            comm.kfcStatusTransferD2H->Get(0, sizeof(KfcExecStatus), (u8 *)&response);  // 从device侧拿STOP_LAUNCH_DONE的命令字
+            comm.kfcStatusTransferD2H->Get(
+                0, sizeof(KfcExecStatus), (u8*)&response); // 从device侧拿STOP_LAUNCH_DONE的命令字
             if (response.kfcStatus != KfcStatus::NONE) {
                 break;
             }
-            if((std::chrono::steady_clock::now() - startTime) >= timeout){
+            if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
                 break;
             }
         }
-        EXPECT_EQ(response.kfcStatus, KfcStatus::STOP_LAUNCH_DONE);  // 希望从device侧拿到STOP_LAUNCH_DONE
+        EXPECT_EQ(response.kfcStatus, KfcStatus::STOP_LAUNCH_DONE); // 希望从device侧拿到STOP_LAUNCH_DONE
     });
     usleep(1000);
 
     commLite.isSuspended = false;
     commLite.isCommReady = true;
 
-    auto timeout   = std::chrono::milliseconds(100);
+    auto timeout = std::chrono::milliseconds(100);
     auto startTime = std::chrono::steady_clock::now();
     while (true) {
         NsRecoveryHandlerFunc::GetInstance().HandleStopLaunch(&commLite);
         if (commLite.isSuspended) {
             break;
         }
-        if((std::chrono::steady_clock::now() - startTime) >= timeout){
+        if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
             break;
         }
     }
     threadHandle.join();
-    EXPECT_EQ(commLite.isSuspended, true);  // 希望commLite进入暂停状态
-    EXPECT_EQ(commLite.needClean, true);  // 希望commLite需要清理
+    EXPECT_EQ(commLite.isSuspended, true); // 希望commLite进入暂停状态
+    EXPECT_EQ(commLite.needClean, true);   // 希望commLite需要清理
 }
 
 TEST_F(NsRecoveryHandlerFuncTest, test_handle_clean)
@@ -170,19 +169,19 @@ TEST_F(NsRecoveryHandlerFuncTest, test_handle_clean)
     // 模拟host侧行为
     thread threadHandle([&] {
         cmd = KfcCommand::NS_CLEAN;
-        comm.kfcControlTransferH2D->Put(0, sizeof(KfcCommand), (u8 *)&cmd);  // 把命令NS_CLEAN发到device侧
-        auto timeout   = std::chrono::milliseconds(100);
+        comm.kfcControlTransferH2D->Put(0, sizeof(KfcCommand), (u8*)&cmd); // 把命令NS_CLEAN发到device侧
+        auto timeout = std::chrono::milliseconds(100);
         auto startTime = std::chrono::steady_clock::now();
         while (true) {
-            comm.kfcStatusTransferD2H->Get(0, sizeof(KfcExecStatus), (u8 *)&response);  // 从device侧拿CLEAN_DONE的命令字
+            comm.kfcStatusTransferD2H->Get(0, sizeof(KfcExecStatus), (u8*)&response); // 从device侧拿CLEAN_DONE的命令字
             if (response.kfcStatus != KfcStatus::NONE) {
                 break;
             }
-            if((std::chrono::steady_clock::now() - startTime) >= timeout){
+            if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
                 break;
             }
         }
-        EXPECT_EQ(response.kfcStatus, KfcStatus::CLEAN_DONE);  // 希望从device侧拿到CLEAN_DONE
+        EXPECT_EQ(response.kfcStatus, KfcStatus::CLEAN_DONE); // 希望从device侧拿到CLEAN_DONE
     });
     usleep(1000);
 
@@ -191,7 +190,7 @@ TEST_F(NsRecoveryHandlerFuncTest, test_handle_clean)
     commLite.needClean = true;
 
     u32 fakeStreamId = 0;
-    u32 fakeSqId     = 0;
+    u32 fakeSqId = 0;
     u32 fakedevPhyId = 0;
     BinaryStream liteBinaryStream;
     liteBinaryStream << fakeStreamId;
@@ -201,21 +200,24 @@ TEST_F(NsRecoveryHandlerFuncTest, test_handle_clean)
     liteBinaryStream.Dump(uniqueId);
     StreamLite stream(uniqueId);
     MOCKER_CPP(&StreamLiteMgr::GetMaster).stubs().with().will(returnValue(&stream));
-    MOCKER_CPP(&NsRecoveryHandlerFunc::DeviceQuery).stubs().with(any(), any(), any()).will(returnValue(HcclResult::HCCL_SUCCESS));
+    MOCKER_CPP(&NsRecoveryHandlerFunc::DeviceQuery)
+        .stubs()
+        .with(any(), any(), any())
+        .will(returnValue(HcclResult::HCCL_SUCCESS));
 
-    auto timeout   = std::chrono::milliseconds(100);
+    auto timeout = std::chrono::milliseconds(100);
     auto startTime = std::chrono::steady_clock::now();
     while (true) {
         NsRecoveryHandlerFunc::GetInstance().HandleClean(&commLite);
         if (commLite.needClean == false) {
             break;
         }
-        if((std::chrono::steady_clock::now() - startTime) >= timeout){
+        if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
             break;
         }
     }
     threadHandle.join();
-    EXPECT_EQ(commLite.isSuspended, true);  // 希望commLite维持暂停状态
+    EXPECT_EQ(commLite.isSuspended, true); // 希望commLite维持暂停状态
     EXPECT_EQ(commLite.needClean, false);  // 希望commLite取消需要清理的状态
 }
 

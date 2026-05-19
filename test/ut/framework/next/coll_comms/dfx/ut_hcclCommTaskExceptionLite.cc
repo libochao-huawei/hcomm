@@ -28,19 +28,15 @@ constexpr u32 RT_UB_LOCAL_OPERATIOINERR = 0x2;
 constexpr u32 RT_UB_REMOTE_OPERATIOINERR = 0x3;
 constexpr u32 RT_UB_LINK_FAILEDERR = 0x5;
 
-class hcclCommTaskExceptionLiteTest : public testing::Test
-{
+class hcclCommTaskExceptionLiteTest : public testing::Test {
 protected:
     virtual void SetUp() override
     {
         g_communicatorCallbackMapV2.fill({});
-        MOCKER(::getpid)
-            .stubs()
-            .will(returnValue(12345));
-        MOCKER(HrtHalDrvQueryProcessHostPid)
-            .stubs()
-            .will(returnValue(HCCL_SUCCESS));
-        Hccl::DlHalFunctionV2::GetInstance().dlHalEschedSubmitEvent = [](unsigned int, struct event_summary *) -> drvError_t {
+        MOCKER(::getpid).stubs().will(returnValue(12345));
+        MOCKER(HrtHalDrvQueryProcessHostPid).stubs().will(returnValue(HCCL_SUCCESS));
+        Hccl::DlHalFunctionV2::GetInstance().dlHalEschedSubmitEvent
+            = [](unsigned int, struct event_summary*) -> drvError_t {
             return DRV_ERROR_NONE;
         };
         HcclCommTaskExceptionLite::GetInstance().Init(0);
@@ -51,6 +47,7 @@ protected:
         g_communicatorCallbackMapV2.fill({});
         GlobalMockObject::verify();
     }
+
 private:
     u32 notifyId = 1;
     u32 tsId = 2;
@@ -60,7 +57,7 @@ TEST_F(hcclCommTaskExceptionLiteTest, Ut_SwitchUBCqeErrCodeToTsErrCode_When_Norm
 {
     uint16_t ret = HcclCommTaskExceptionLite::GetInstance().SwitchUBCqeErrCodeToTsErrCode(RT_UB_LOCAL_OPERATIOINERR);
     EXPECT_EQ(ret, TS_ERROR_HCCL_OP_UB_DDRC_FAILED);
-    
+
     ret = HcclCommTaskExceptionLite::GetInstance().SwitchUBCqeErrCodeToTsErrCode(RT_UB_REMOTE_OPERATIOINERR);
     EXPECT_EQ(ret, TS_ERROR_HCCL_OP_UB_POISON_FAILED);
 
@@ -75,7 +72,7 @@ TEST_F(hcclCommTaskExceptionLiteTest, Ut_SwitchSdmaCqeErrCodeToTsErrCode_When_No
 {
     uint16_t ret = HcclCommTaskExceptionLite::GetInstance().SwitchSdmaCqeErrCodeToTsErrCode(RT_SDMA_COMPERR);
     EXPECT_EQ(ret, TS_ERROR_SDMA_LINK_ERROR);
-    
+
     ret = HcclCommTaskExceptionLite::GetInstance().SwitchSdmaCqeErrCodeToTsErrCode(RT_SDMA_COMPDATAERR);
     EXPECT_EQ(ret, TS_ERROR_SDMA_POISON_ERROR);
 
@@ -135,8 +132,8 @@ TEST_F(hcclCommTaskExceptionLiteTest, Ut_RegisterGetAicpuTaskExceptionCallBack_W
     };
 
     TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId, callback);
-    EXPECT_TRUE(g_communicatorCallbackMapV2[deviceLogicId].find(streamId) !=
-                g_communicatorCallbackMapV2[deviceLogicId].end());
+    EXPECT_TRUE(
+        g_communicatorCallbackMapV2[deviceLogicId].find(streamId) != g_communicatorCallbackMapV2[deviceLogicId].end());
 }
 
 TEST_F(hcclCommTaskExceptionLiteTest, Ut_UnregisterGetAicpuTaskExceptionCallBack_When_Registered_Expect_Removed)
@@ -149,11 +146,11 @@ TEST_F(hcclCommTaskExceptionLiteTest, Ut_UnregisterGetAicpuTaskExceptionCallBack
     };
 
     TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId, callback);
-    EXPECT_TRUE(g_communicatorCallbackMapV2[deviceLogicId].find(streamId) !=
-                g_communicatorCallbackMapV2[deviceLogicId].end());
+    EXPECT_TRUE(
+        g_communicatorCallbackMapV2[deviceLogicId].find(streamId) != g_communicatorCallbackMapV2[deviceLogicId].end());
     TaskExceptionHostManager::UnregisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId);
-    EXPECT_FALSE(g_communicatorCallbackMapV2[deviceLogicId].find(streamId) !=
-                 g_communicatorCallbackMapV2[deviceLogicId].end());
+    EXPECT_FALSE(
+        g_communicatorCallbackMapV2[deviceLogicId].find(streamId) != g_communicatorCallbackMapV2[deviceLogicId].end());
 }
 
 TEST_F(hcclCommTaskExceptionLiteTest, Ut_UnregisterGetAicpuTaskExceptionCallBack_When_NoRegistered_Expect_NoCrash)
@@ -189,12 +186,12 @@ TEST_F(hcclCommTaskExceptionLiteTest, Ut_RegisterMultipleCallBacks_SameDevice_Di
     TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(streamId3, deviceLogicId, callback3);
 
     EXPECT_EQ(g_communicatorCallbackMapV2[deviceLogicId].size(), 3u);
-    EXPECT_TRUE(g_communicatorCallbackMapV2[deviceLogicId].find(streamId1) !=
-                g_communicatorCallbackMapV2[deviceLogicId].end());
-    EXPECT_TRUE(g_communicatorCallbackMapV2[deviceLogicId].find(streamId2) !=
-                g_communicatorCallbackMapV2[deviceLogicId].end());
-    EXPECT_TRUE(g_communicatorCallbackMapV2[deviceLogicId].find(streamId3) !=
-                g_communicatorCallbackMapV2[deviceLogicId].end());
+    EXPECT_TRUE(
+        g_communicatorCallbackMapV2[deviceLogicId].find(streamId1) != g_communicatorCallbackMapV2[deviceLogicId].end());
+    EXPECT_TRUE(
+        g_communicatorCallbackMapV2[deviceLogicId].find(streamId2) != g_communicatorCallbackMapV2[deviceLogicId].end());
+    EXPECT_TRUE(
+        g_communicatorCallbackMapV2[deviceLogicId].find(streamId3) != g_communicatorCallbackMapV2[deviceLogicId].end());
 }
 
 TEST_F(hcclCommTaskExceptionLiteTest, Ut_UnregisterOneCallBack_OtherCallbacksPreserved_Expect_Correct)
@@ -216,10 +213,10 @@ TEST_F(hcclCommTaskExceptionLiteTest, Ut_UnregisterOneCallBack_OtherCallbacksPre
     EXPECT_EQ(g_communicatorCallbackMapV2[deviceLogicId].size(), 2u);
     TaskExceptionHostManager::UnregisterGetAicpuTaskExceptionCallBack(streamId1, deviceLogicId);
     EXPECT_EQ(g_communicatorCallbackMapV2[deviceLogicId].size(), 1u);
-    EXPECT_TRUE(g_communicatorCallbackMapV2[deviceLogicId].find(streamId2) !=
-                g_communicatorCallbackMapV2[deviceLogicId].end());
-    EXPECT_FALSE(g_communicatorCallbackMapV2[deviceLogicId].find(streamId1) !=
-                 g_communicatorCallbackMapV2[deviceLogicId].end());
+    EXPECT_TRUE(
+        g_communicatorCallbackMapV2[deviceLogicId].find(streamId2) != g_communicatorCallbackMapV2[deviceLogicId].end());
+    EXPECT_FALSE(
+        g_communicatorCallbackMapV2[deviceLogicId].find(streamId1) != g_communicatorCallbackMapV2[deviceLogicId].end());
 }
 
 TEST_F(hcclCommTaskExceptionLiteTest, Ut_CallbackOverwrite_SameStreamId_Expect_Updated)
@@ -261,7 +258,7 @@ TEST_F(hcclCommTaskExceptionLiteTest, Ut_RegisterGetAicpuTaskExceptionCallBack_W
     };
 
     TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(streamId, invalidDeviceLogicId, callback);
-    EXPECT_FALSE(g_communicatorCallbackMapV2[invalidDeviceLogicId].find(streamId) !=
-                 g_communicatorCallbackMapV2[invalidDeviceLogicId].end());
+    EXPECT_FALSE(
+        g_communicatorCallbackMapV2[invalidDeviceLogicId].find(streamId)
+        != g_communicatorCallbackMapV2[invalidDeviceLogicId].end());
 }
-

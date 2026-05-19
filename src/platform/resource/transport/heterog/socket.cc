@@ -15,12 +15,19 @@
 #include "adapter_hccp.h"
 namespace hccl {
 
-Socket::Socket() : tag_(""), role_(SERVER_ROLE_SOCKET), type_(SocketType::SOCKET_VNIC),
-    nicDeploy_(NICDeployment::NIC_DEPLOYMENT_DEVICE), locDevPhyId_(0),
-    remDevPhyId_(0), deviceIdType_(DeviceIdType::DEVICE_ID_TYPE_PHY_ID) {}
+Socket::Socket()
+    : tag_(""),
+      role_(SERVER_ROLE_SOCKET),
+      type_(SocketType::SOCKET_VNIC),
+      nicDeploy_(NICDeployment::NIC_DEPLOYMENT_DEVICE),
+      locDevPhyId_(0),
+      remDevPhyId_(0),
+      deviceIdType_(DeviceIdType::DEVICE_ID_TYPE_PHY_ID)
+{}
 
-Socket::Socket(const std::string &tag, u32 role, SocketType type, NICDeployment nicDeploy, HcclIpAddress &locNicIp,
-    u32 locDevPhyId, HcclIpAddress &remNicIp, u32 remDevPhyId, DeviceIdType deviceIdType, u32 serverPort)
+Socket::Socket(
+    const std::string& tag, u32 role, SocketType type, NICDeployment nicDeploy, HcclIpAddress& locNicIp,
+    u32 locDevPhyId, HcclIpAddress& remNicIp, u32 remDevPhyId, DeviceIdType deviceIdType, u32 serverPort)
     : tag_(tag),
       role_(role),
       type_(type),
@@ -80,8 +87,9 @@ HcclResult Socket::ConnectAsync(u32& status)
         tempAddr.addr = socketInfo.remoteIp.addr;
         tempAddr.addr6 = socketInfo.remoteIp.addr6;
         HcclIpAddress remoteIP(locNicIp_.GetFamily(), tempAddr);
-        HCCL_RUN_INFO("[Socket][GetConnection] get socket success with remote[%s], tag[%s]",
-            remoteIP.GetReadableAddress(), socketInfo.tag);
+        HCCL_RUN_INFO(
+            "[Socket][GetConnection] get socket success with remote[%s], tag[%s]", remoteIP.GetReadableAddress(),
+            socketInfo.tag);
     } else if (ret == HCCL_E_AGAIN || ret == HCCL_SUCCESS) {
         status = static_cast<u32>(SocketStatus::HCCL_CONNECT_WAIT);
     } else {
@@ -93,10 +101,7 @@ HcclResult Socket::ConnectAsync(u32& status)
     return HCCL_SUCCESS;
 }
 
-HcclResult Socket::ConnectQuerry(u32& status)
-{
-    return ConnectAsync(status);
-}
+HcclResult Socket::ConnectQuerry(u32& status) { return ConnectAsync(status); }
 
 HcclResult Socket::Close()
 {
@@ -133,12 +138,13 @@ HcclResult Socket::GetConnection()
     s32 sRet = memcpy_s(socketInfo.tag, sizeof(socketInfo.tag) - 1, tag_.c_str(), tag_.size());
     CHK_PRT_RET(sRet != EOK, HCCL_ERROR("memcpy_s failed, errorno[%d].", sRet), HCCL_E_MEMORY);
     CHK_RET(hrtRaBlockGetSockets(role_, &socketInfo, 1));
-    CHK_PRT_RET((socketInfo.status != CONNECT_OK) || (socketInfo.fdHandle == nullptr),
-        HCCL_ERROR("[Socket][GetConnection] get socket failed. status[%d]",
-            socketInfo.status), HCCL_E_TCP_TRANSFER);
+    CHK_PRT_RET(
+        (socketInfo.status != CONNECT_OK) || (socketInfo.fdHandle == nullptr),
+        HCCL_ERROR("[Socket][GetConnection] get socket failed. status[%d]", socketInfo.status), HCCL_E_TCP_TRANSFER);
     fdHandle_ = socketInfo.fdHandle;
-    HCCL_RUN_INFO("[Socket][GetConnection] get socket success with remote[%s], tag[%s]",
-        GetRemAddr().GetReadableAddress(), socketInfo.tag);
+    HCCL_RUN_INFO(
+        "[Socket][GetConnection] get socket success with remote[%s], tag[%s]", GetRemAddr().GetReadableAddress(),
+        socketInfo.tag);
 
     return HCCL_SUCCESS;
 }
@@ -156,7 +162,8 @@ HcclResult Socket::ConnectToServer()
     connInfo.port = GetRemPort();
     s32 sRet = memcpy_s(connInfo.tag, sizeof(connInfo.tag) - 1, tag_.c_str(), tag_.size());
     CHK_PRT_RET(sRet != EOK, HCCL_ERROR("memcpy_s failed, errorno[%d].", sRet), HCCL_E_MEMORY);
-    HCCL_RUN_INFO("[Socket][ConnectToServer] link tag[%s] remote ip[%s] remote port[%u]", connInfo.tag,
+    HCCL_RUN_INFO(
+        "[Socket][ConnectToServer] link tag[%s] remote ip[%s] remote port[%u]", connInfo.tag,
         GetRemAddr().GetReadableAddress(), connInfo.port);
     CHK_RET(hrtRaSocketBatchConnect(&connInfo, 1));
     return HCCL_SUCCESS;
@@ -196,14 +203,14 @@ HcclResult Socket::DelSocketWhiteList()
     return HCCL_SUCCESS;
 }
 
-HcclResult Socket::Send(void *data, u64 size) const
+HcclResult Socket::Send(void* data, u64 size) const
 {
     HcclResult ret = hrtRaSocketBlockSend(fdHandle_, data, size);
     HCCL_DEBUG("[Send]BlockSend, send size [%u Byte], ret[%u]", size, ret);
     return ret;
 }
 
-HcclResult Socket::ISend(void *data, u64 size, u64& compSize)
+HcclResult Socket::ISend(void* data, u64 size, u64& compSize)
 {
     HcclResult ret = hrtRaSocketNonBlockSendHeart(fdHandle_, data, size, &compSize);
 
@@ -214,7 +221,7 @@ HcclResult Socket::ISend(void *data, u64 size, u64& compSize)
     return ret;
 }
 
-HcclResult Socket::IRecv(void *data, u64 size, u64& compSize)
+HcclResult Socket::IRecv(void* data, u64 size, u64& compSize)
 {
     HcclResult ret = hrtRaSocketNonBlockRecvHeart(fdHandle_, data, size, &compSize);
 
@@ -252,8 +259,8 @@ HcclResult Socket::GetSocketHandle()
         // 获取远端vic ip
         CHK_RET(hrtRaGetSingleSocketVnicIpInfo(devicePhyId, deviceIdType_, remDevPhyId_, remNicIp_));
     } else {
-        auto& tmpSocketMap = (nicDeploy_ == NICDeployment::NIC_DEPLOYMENT_HOST) ?
-        raResourceInfo.hostNetSocketMap : raResourceInfo.nicSocketMap;
+        auto& tmpSocketMap = (nicDeploy_ == NICDeployment::NIC_DEPLOYMENT_HOST) ? raResourceInfo.hostNetSocketMap :
+                                                                                  raResourceInfo.nicSocketMap;
         auto itSocket = tmpSocketMap.find(locNicIp_);
         if (itSocket == tmpSocketMap.end()) {
             HCCL_ERROR("nic socket handle did not found");
@@ -265,10 +272,7 @@ HcclResult Socket::GetSocketHandle()
     return HCCL_SUCCESS;
 }
 
-HcclIpAddress Socket::GetRemAddr()
-{
-    return remNicIp_;
-}
+HcclIpAddress Socket::GetRemAddr() { return remNicIp_; }
 
 u32 Socket::GetRemPort() const
 {
@@ -281,4 +285,4 @@ u32 Socket::GetRemPort() const
     return port;
 }
 
-}
+} // namespace hccl

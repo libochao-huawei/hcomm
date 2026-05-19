@@ -25,19 +25,18 @@
 #include "llt_hccl_stub_pub.h"
 #include "profiler_manager.h"
 
-
-
 using namespace std;
 using namespace hccl;
 
-class LinkTcpTest : public testing::Test
-{
+class LinkTcpTest : public testing::Test {
 protected:
     static void SetUpTestCase()
     {
         s32 ret = HcclDispatcherInit(DispatcherType::DISPATCHER_NORMAL, 0, &dispatcherPtr);
-        if (ret != HCCL_SUCCESS) return;
-        if (dispatcherPtr == nullptr) return;
+        if (ret != HCCL_SUCCESS)
+            return;
+        if (dispatcherPtr == nullptr)
+            return;
         dispatcher = reinterpret_cast<DispatcherPub*>(dispatcherPtr);
         std::cout << "\033[36m--CommBaseTest SetUP--\033[0m" << std::endl;
     }
@@ -55,42 +54,27 @@ protected:
     virtual void SetUp()
     {
         s32 portNum = 7;
-        MOCKER(hrtGetHccsPortNum)
-            .stubs()
-            .with(any(), outBound(portNum))
-            .will(returnValue(HCCL_SUCCESS));
+        MOCKER(hrtGetHccsPortNum).stubs().with(any(), outBound(portNum)).will(returnValue(HCCL_SUCCESS));
         std::cout << "A Test SetUP" << std::endl;
     }
-    virtual void TearDown()
-    {
-        std::cout << "A Test TearDown" << std::endl;
-    }
+    virtual void TearDown() { std::cout << "A Test TearDown" << std::endl; }
     static HcclDispatcher dispatcherPtr;
-    static DispatcherPub *dispatcher;
-
+    static DispatcherPub* dispatcher;
 };
 HcclDispatcher LinkTcpTest::dispatcherPtr = nullptr;
-DispatcherPub *LinkTcpTest::dispatcher = nullptr;
+DispatcherPub* LinkTcpTest::dispatcher = nullptr;
 
-class LinkTcpExpTmp : public TransportTcp
-{
+class LinkTcpExpTmp : public TransportTcp {
 public:
-    explicit LinkTcpExpTmp(HcclDispatcher dispatcher,
-                        MachinePara& machine_para, std::chrono::milliseconds timeout);
+    explicit LinkTcpExpTmp(HcclDispatcher dispatcher, MachinePara& machine_para, std::chrono::milliseconds timeout);
     virtual ~LinkTcpExpTmp();
 };
 
-LinkTcpExpTmp::LinkTcpExpTmp(HcclDispatcher dispatcher,
-                        MachinePara& machine_para, std::chrono::milliseconds timeout)
+LinkTcpExpTmp::LinkTcpExpTmp(HcclDispatcher dispatcher, MachinePara& machine_para, std::chrono::milliseconds timeout)
     : TransportTcp(reinterpret_cast<DispatcherPub*>(dispatcher), nullptr, machine_para, timeout)
-{
+{}
 
-}
-
-LinkTcpExpTmp::~LinkTcpExpTmp()
-{
-
-}
+LinkTcpExpTmp::~LinkTcpExpTmp() {}
 
 #if 1
 TEST_F(LinkTcpTest, ut_link_base_test)
@@ -101,15 +85,15 @@ TEST_F(LinkTcpTest, ut_link_base_test)
     MachinePara machinePara;
     HcclIpAddress remoteIp{};
     HcclIpAddress localIp{};
-    std::shared_ptr<HcclSocket> newSocket(new (std::nothrow)HcclSocket("test", 
-        nullptr, remoteIp, 0, HcclSocketRole::SOCKET_ROLE_SERVER));
+    std::shared_ptr<HcclSocket> newSocket(
+        new (std::nothrow) HcclSocket("test", nullptr, remoteIp, 0, HcclSocketRole::SOCKET_ROLE_SERVER));
     machinePara.sockets.push_back(newSocket);
 
     std::chrono::milliseconds timeout;
     const std::string tag;
 
-    std::shared_ptr<Transport> link_base(new Transport(new (std::nothrow) TransportTcp(
-        dispatcher, nullptr, machinePara, timeout)));
+    std::shared_ptr<Transport> link_base(
+        new Transport(new (std::nothrow) TransportTcp(dispatcher, nullptr, machinePara, timeout)));
 
     link_base->TxAck(stream);
     link_base->RxAck(stream);
@@ -124,8 +108,8 @@ TEST_F(LinkTcpTest, ut_link_base_helper_tcp_test)
     MachinePara machinePara;
     HcclIpAddress remoteIp{};
     HcclIpAddress localIp{};
-    std::shared_ptr<HcclSocket> newSocket(new (std::nothrow)HcclSocket("test", 
-        nullptr, remoteIp, 0, HcclSocketRole::SOCKET_ROLE_SERVER));
+    std::shared_ptr<HcclSocket> newSocket(
+        new (std::nothrow) HcclSocket("test", nullptr, remoteIp, 0, HcclSocketRole::SOCKET_ROLE_SERVER));
     machinePara.sockets.push_back(newSocket);
 
     std::chrono::milliseconds timeout;
@@ -135,13 +119,9 @@ TEST_F(LinkTcpTest, ut_link_base_helper_tcp_test)
 
     link_base->nicDeploy_ = NICDeployment::NIC_DEPLOYMENT_DEVICE;
 
-    MOCKER_CPP(&DispatcherPub::HostNicTcpSend)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&DispatcherPub::HostNicTcpSend).stubs().will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&DispatcherPub::HostNicTcpRecv)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&DispatcherPub::HostNicTcpRecv).stubs().will(returnValue(HCCL_SUCCESS));
 
     link_base->TxAsync(UserMemType::INPUT_MEM, 0, &(link_base->nicDeploy_), 100, stream);
     link_base->RxAsync(UserMemType::OUTPUT_MEM, 0, &(link_base->nicDeploy_), 100, stream);
@@ -156,8 +136,8 @@ TEST_F(LinkTcpTest, ut_linktcp_for_batchsendrecv)
     MachinePara machinePara;
     HcclIpAddress remoteIp{};
     HcclIpAddress localIp{};
-    std::shared_ptr<HcclSocket> newSocket(new (std::nothrow)HcclSocket("test", 
-        nullptr, remoteIp, 0, HcclSocketRole::SOCKET_ROLE_SERVER));
+    std::shared_ptr<HcclSocket> newSocket(
+        new (std::nothrow) HcclSocket("test", nullptr, remoteIp, 0, HcclSocketRole::SOCKET_ROLE_SERVER));
     machinePara.sockets.push_back(newSocket);
 
     std::chrono::milliseconds timeout;
@@ -167,13 +147,9 @@ TEST_F(LinkTcpTest, ut_linktcp_for_batchsendrecv)
 
     link_base->nicDeploy_ = NICDeployment::NIC_DEPLOYMENT_DEVICE;
 
-    MOCKER_CPP(&DispatcherPub::HostNicTcpSend)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&DispatcherPub::HostNicTcpSend).stubs().will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&DispatcherPub::HostNicTcpRecv)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&DispatcherPub::HostNicTcpRecv).stubs().will(returnValue(HCCL_SUCCESS));
 
     link_base->TxPrepare(stream);
     link_base->RxPrepare(stream);
@@ -194,8 +170,8 @@ TEST_F(LinkTcpTest, ut_link_base_helper_tcp_0_test)
     MachinePara machinePara;
     HcclIpAddress remoteIp{};
     HcclIpAddress localIp{};
-    std::shared_ptr<HcclSocket> newSocket(new (std::nothrow)HcclSocket("test", 
-        nullptr, remoteIp, 0, HcclSocketRole::SOCKET_ROLE_SERVER));
+    std::shared_ptr<HcclSocket> newSocket(
+        new (std::nothrow) HcclSocket("test", nullptr, remoteIp, 0, HcclSocketRole::SOCKET_ROLE_SERVER));
     machinePara.sockets.push_back(newSocket);
 
     std::chrono::milliseconds timeout;
@@ -205,13 +181,9 @@ TEST_F(LinkTcpTest, ut_link_base_helper_tcp_0_test)
 
     link_base->nicDeploy_ = NICDeployment::NIC_DEPLOYMENT_DEVICE;
 
-    MOCKER_CPP(&DispatcherPub::HostNicTcpSend)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&DispatcherPub::HostNicTcpSend).stubs().will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&DispatcherPub::HostNicTcpRecv)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&DispatcherPub::HostNicTcpRecv).stubs().will(returnValue(HCCL_SUCCESS));
 
     link_base->TxAsync(UserMemType::INPUT_MEM, 0, &(link_base->nicDeploy_), 0, stream);
     link_base->RxAsync(UserMemType::OUTPUT_MEM, 0, &(link_base->nicDeploy_), 0, stream);

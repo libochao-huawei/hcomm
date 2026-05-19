@@ -17,13 +17,13 @@
 
 namespace Hccl {
 
-SelectorRegistry *SelectorRegistry::Global()
+SelectorRegistry* SelectorRegistry::Global()
 {
-    static SelectorRegistry *globalSelectorRegistry = new SelectorRegistry;
+    static SelectorRegistry* globalSelectorRegistry = new SelectorRegistry;
     return globalSelectorRegistry;
 }
 
-HcclResult SelectorRegistry::Register(u32 priority, BaseSelector *selector)
+HcclResult SelectorRegistry::Register(u32 priority, BaseSelector* selector)
 {
     const std::lock_guard<std::mutex> lock(mu_);
     if (impls_.count(priority) != 0) {
@@ -35,7 +35,7 @@ HcclResult SelectorRegistry::Register(u32 priority, BaseSelector *selector)
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult SelectorRegistry::RegisterByOpType(const OpType opType, u32 priority, BaseSelector *selector)
+HcclResult SelectorRegistry::RegisterByOpType(const OpType opType, u32 priority, BaseSelector* selector)
 {
     const std::lock_guard<std::mutex> lock(mu_);
     if (opTypeImpls_[opType].count(priority) != 0) {
@@ -46,7 +46,7 @@ HcclResult SelectorRegistry::RegisterByOpType(const OpType opType, u32 priority,
     return HcclResult::HCCL_SUCCESS;
 }
 
-std::map<u32, BaseSelector *> SelectorRegistry::GetSelectorsByOpType(const OpType opType)
+std::map<u32, BaseSelector*> SelectorRegistry::GetSelectorsByOpType(const OpType opType)
 {
     if (opTypeImpls_.count(opType) == 0) {
         HCCL_WARNING("[Algo][Selector] opType %d has no selector registered.", opType);
@@ -55,9 +55,6 @@ std::map<u32, BaseSelector *> SelectorRegistry::GetSelectorsByOpType(const OpTyp
     return opTypeImpls_[opType];
 }
 
-std::map<u32, BaseSelector *> SelectorRegistry::GetAllSelectors()
-{
-    return impls_;
-}
+std::map<u32, BaseSelector*> SelectorRegistry::GetAllSelectors() { return impls_; }
 
 } // namespace Hccl

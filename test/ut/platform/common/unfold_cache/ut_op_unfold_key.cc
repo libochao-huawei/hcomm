@@ -18,25 +18,12 @@
 using namespace std;
 using namespace hccl;
 
-class OpUnfoldKeyTest : public testing::Test
-{
+class OpUnfoldKeyTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "OpUnfoldKeyTest SetUP" << std::endl;
-    }
-    static void TearDownTestCase()
-    {
-        std::cout << "OpUnfoldKeyTest TearDown" << std::endl;
-    }
-    virtual void SetUp()
-    {
-        std::cout << "A Test SetUP" << std::endl;
-    }
-    virtual void TearDown()
-    {
-        std::cout << "A Test TearDown" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "OpUnfoldKeyTest SetUP" << std::endl; }
+    static void TearDownTestCase() { std::cout << "OpUnfoldKeyTest TearDown" << std::endl; }
+    virtual void SetUp() { std::cout << "A Test SetUP" << std::endl; }
+    virtual void TearDown() { std::cout << "A Test TearDown" << std::endl; }
 };
 
 // 测试默认构造函数
@@ -57,9 +44,9 @@ TEST_F(OpUnfoldKeyTest, ut_DefaultConstructor_Expect_DefaultValues)
 TEST_F(OpUnfoldKeyTest, ut_CopyConstructor_Expect_CopiedValues)
 {
     OpUnfoldKey key1;
-    key1.Init(HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_FP32,
-              HcclReduceOp::HCCL_REDUCE_SUM, true, 1024, false,
-              HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE, true);
+    key1.Init(
+        HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_FP32, HcclReduceOp::HCCL_REDUCE_SUM, true, 1024,
+        false, HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE, true);
 
     OpUnfoldKey key2(key1);
     EXPECT_EQ(key2.opType, HcclCMDType::HCCL_CMD_ALLREDUCE);
@@ -76,9 +63,9 @@ TEST_F(OpUnfoldKeyTest, ut_CopyConstructor_Expect_CopiedValues)
 TEST_F(OpUnfoldKeyTest, ut_Init_WithValidParams_Expect_Success)
 {
     OpUnfoldKey key;
-    HcclResult ret = key.Init(HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_FP32,
-                              HcclReduceOp::HCCL_REDUCE_SUM, true, 1024, false,
-                              HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE, true);
+    HcclResult ret = key.Init(
+        HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_FP32, HcclReduceOp::HCCL_REDUCE_SUM, true, 1024,
+        false, HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE, true);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(key.opType, HcclCMDType::HCCL_CMD_ALLREDUCE);
     EXPECT_EQ(key.dataType, HcclDataType::HCCL_DATA_TYPE_FP32);
@@ -94,9 +81,9 @@ TEST_F(OpUnfoldKeyTest, ut_Init_WithValidParams_Expect_Success)
 TEST_F(OpUnfoldKeyTest, ut_GetKeyString_Expect_ValidStringFormat)
 {
     OpUnfoldKey key;
-    key.Init(HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_FP32,
-             HcclReduceOp::HCCL_REDUCE_SUM, true, 1024, false,
-             HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE, true);
+    key.Init(
+        HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_FP32, HcclReduceOp::HCCL_REDUCE_SUM, true, 1024,
+        false, HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE, true);
     std::string keyStr = key.GetKeyString();
     // 验证字符串包含必要的字段信息
     EXPECT_NE(keyStr.find("opType"), std::string::npos);
@@ -113,14 +100,14 @@ TEST_F(OpUnfoldKeyTest, ut_GetKeyString_Expect_ValidStringFormat)
 TEST_F(OpUnfoldKeyTest, ut_OperatorEqual_WithSameKey_Expect_True)
 {
     OpUnfoldKey key1;
-    key1.Init(HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_FP32,
-              HcclReduceOp::HCCL_REDUCE_SUM, true, 1024, false,
-              HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE, true);
+    key1.Init(
+        HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_FP32, HcclReduceOp::HCCL_REDUCE_SUM, true, 1024,
+        false, HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE, true);
 
     OpUnfoldKey key2;
-    key2.Init(HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_FP32,
-              HcclReduceOp::HCCL_REDUCE_SUM, true, 1024, false,
-              HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE, true);
+    key2.Init(
+        HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_FP32, HcclReduceOp::HCCL_REDUCE_SUM, true, 1024,
+        false, HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE, true);
 
     EXPECT_TRUE(key1 == key2);
 }
@@ -129,9 +116,9 @@ TEST_F(OpUnfoldKeyTest, ut_OperatorEqual_WithSameKey_Expect_True)
 TEST_F(OpUnfoldKeyTest, OperatorAssign_Expect_CopiedValues)
 {
     OpUnfoldKey key1;
-    key1.Init(HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_FP32,
-              HcclReduceOp::HCCL_REDUCE_SUM, true, 1024, false,
-              HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE, true);
+    key1.Init(
+        HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_FP32, HcclReduceOp::HCCL_REDUCE_SUM, true, 1024,
+        false, HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE, true);
 
     OpUnfoldKey key2;
     key2 = key1;

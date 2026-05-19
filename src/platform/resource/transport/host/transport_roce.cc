@@ -32,17 +32,18 @@ constexpr u32 RECV_WQE_NUM_THRESHOLD = 32;
 constexpr u32 RECV_WQE_BATCH_SUPPLEMENT = 16;
 constexpr u32 LOOP_SLEEP_TIME_US = 10;
 
-TransportRoce::TransportRoce(const HcclDispatcher dispatcher,
-    const std::unique_ptr<NotifyPool> &notifyPool,
-    MachinePara &machinePara,
-    std::chrono::milliseconds timeout, HcclIpAddress &selfIp, HcclIpAddress &peerIp, u32 peerPort, u32 selfPort,
-    const TransportResourceInfo &transportResourceInfo, u32 proxyDevLogicId,
-    bool isRootRank, bool isESPs)
-    : TransportBase(reinterpret_cast<DispatcherPub*>(const_cast<HcclDispatcher>(dispatcher)),
-        notifyPool, machinePara, timeout),
+TransportRoce::TransportRoce(
+    const HcclDispatcher dispatcher, const std::unique_ptr<NotifyPool>& notifyPool, MachinePara& machinePara,
+    std::chrono::milliseconds timeout, HcclIpAddress& selfIp, HcclIpAddress& peerIp, u32 peerPort, u32 selfPort,
+    const TransportResourceInfo& transportResourceInfo, u32 proxyDevLogicId, bool isRootRank, bool isESPs)
+    : TransportBase(
+          reinterpret_cast<DispatcherPub*>(const_cast<HcclDispatcher>(dispatcher)), notifyPool, machinePara, timeout),
       TransportHeterogRoce(machinePara_.tag, selfIp, peerIp, peerPort, selfPort, transportResourceInfo),
-      deviceLogicId_(HCCL_DEFAULT_INITIAL_VALUE), isInited_(false), proxyDevLogicId_(proxyDevLogicId),
-      isRootRank_(isRootRank), isESPs_(isESPs)
+      deviceLogicId_(HCCL_DEFAULT_INITIAL_VALUE),
+      isInited_(false),
+      proxyDevLogicId_(proxyDevLogicId),
+      isRootRank_(isRootRank),
+      isESPs_(isESPs)
 {
     recvWithReduceParam_ = ReduceParam();
     recvWqeBatchNum_ = RECV_WQE_BATCH_NUM;
@@ -50,13 +51,11 @@ TransportRoce::TransportRoce(const HcclDispatcher dispatcher,
     recvWqeBatchSupplement_ = RECV_WQE_BATCH_SUPPLEMENT;
 }
 
-TransportRoce::~TransportRoce()
-{
-}
+TransportRoce::~TransportRoce() {}
 
 HcclResult TransportRoce::RegUserMem(MemType memType)
 {
-    void *memPtr = nullptr;
+    void* memPtr = nullptr;
     u64 memSize;
     switch (memType) {
         case USER_INPUT_MEM: {
@@ -96,18 +95,31 @@ HcclResult TransportRoce::GetRemoteAddr(MemType memType)
 {
     MemMsg mrMsg;
     s32 sRet = memset_s(&mrMsg, sizeof(MemMsg), 0, sizeof(MemMsg));
-    CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[Get][RemoteAddr]errNo[0x%016llx]get remote addr, memory set 0 failed. \
-        params: dest[%p], destMaxSize[%zu], count[%zu]", HCCL_ERROR_CODE(HCCL_E_MEMORY), \
-        &mrMsg, sizeof(MemMsg), sizeof(MemMsg)), HCCL_E_MEMORY);
+    CHK_PRT_RET(
+        sRet != EOK,
+        HCCL_ERROR(
+            "[Get][RemoteAddr]errNo[0x%016llx]get remote addr, memory set 0 failed. \
+        params: dest[%p], destMaxSize[%zu], count[%zu]",
+            HCCL_ERROR_CODE(HCCL_E_MEMORY), &mrMsg, sizeof(MemMsg), sizeof(MemMsg)),
+        HCCL_E_MEMORY);
 
     CHK_RET(hrtRaSocketBlockRecv(socketFdHandles_[0], &mrMsg, sizeof(MemMsg)));
-    CHK_PRT_RET((memType != mrMsg.memType), HCCL_ERROR("[Get][RemoteAddr]In lbv exp get remote addr, "\
-        "receive type error. memType[%d] msg type[%d]", memType, mrMsg.memType), HCCL_E_INTERNAL);
+    CHK_PRT_RET(
+        (memType != mrMsg.memType),
+        HCCL_ERROR(
+            "[Get][RemoteAddr]In lbv exp get remote addr, "
+            "receive type error. memType[%d] msg type[%d]",
+            memType, mrMsg.memType),
+        HCCL_E_INTERNAL);
     sRet = memcpy_s(&remoteMemMsg_[mrMsg.memType], sizeof(MemMsg), &mrMsg, sizeof(MemMsg));
-    CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[Get][RemoteAddr]errNo[0x%016llx] In lbv exp get remote addr, "\
-        "memcpy failed. errorno[%d], params:dest[%p],destMaxSize[%zu],src[%p],count[%zu]",
-        HCCL_ERROR_CODE(HCCL_E_MEMORY), sRet, static_cast<MemMsg *>(&remoteMemMsg_[mrMsg.memType]),
-        sizeof(MemMsg), &mrMsg, sizeof(MemMsg)), HCCL_E_MEMORY);
+    CHK_PRT_RET(
+        sRet != EOK,
+        HCCL_ERROR(
+            "[Get][RemoteAddr]errNo[0x%016llx] In lbv exp get remote addr, "
+            "memcpy failed. errorno[%d], params:dest[%p],destMaxSize[%zu],src[%p],count[%zu]",
+            HCCL_ERROR_CODE(HCCL_E_MEMORY), sRet, static_cast<MemMsg*>(&remoteMemMsg_[mrMsg.memType]), sizeof(MemMsg),
+            &mrMsg, sizeof(MemMsg)),
+        HCCL_E_MEMORY);
     HCCL_INFO("recv success: memType=%d, addr=%p len=%llu", mrMsg.memType, mrMsg.addr, mrMsg.len);
 
     return HCCL_SUCCESS;
@@ -138,10 +150,10 @@ HcclResult TransportRoce::CreateCqAndQp()
 
     HCCL_INFO("TransportRoce CreateCompChannel");
     // 创建Comp Channel
-    void *tagSendChannel = nullptr;
-    void *tagRecvChannel = nullptr;
-    void *dataSendCompChannel = nullptr;
-    void *dataRecvCompChannel = nullptr;
+    void* tagSendChannel = nullptr;
+    void* tagRecvChannel = nullptr;
+    void* dataSendCompChannel = nullptr;
+    void* dataRecvCompChannel = nullptr;
     CHK_RET(hrtRaCreateCompChannel(nicRdmaHandle_, &tagSendChannel));
     CHK_RET(hrtRaCreateCompChannel(nicRdmaHandle_, &tagRecvChannel));
     CHK_RET(hrtRaCreateCompChannel(nicRdmaHandle_, &dataSendCompChannel));
@@ -166,10 +178,10 @@ HcclResult TransportRoce::DestroyCqAndQp()
     CHK_RET(DestroyQpWithCq(dataQpInfo_));
 
     HCCL_INFO("TransportRoce DestroyCompChannel");
-    CHK_RET(hrtRaDestroyCompChannel(nicRdmaHandle_, reinterpret_cast<void *>(tagQpInfo_.sendChannel)));
-    CHK_RET(hrtRaDestroyCompChannel(nicRdmaHandle_, reinterpret_cast<void *>(tagQpInfo_.recvChannel)));
-    CHK_RET(hrtRaDestroyCompChannel(nicRdmaHandle_, reinterpret_cast<void *>(dataQpInfo_.sendChannel)));
-    CHK_RET(hrtRaDestroyCompChannel(nicRdmaHandle_, reinterpret_cast<void *>(dataQpInfo_.recvChannel)));
+    CHK_RET(hrtRaDestroyCompChannel(nicRdmaHandle_, reinterpret_cast<void*>(tagQpInfo_.sendChannel)));
+    CHK_RET(hrtRaDestroyCompChannel(nicRdmaHandle_, reinterpret_cast<void*>(tagQpInfo_.recvChannel)));
+    CHK_RET(hrtRaDestroyCompChannel(nicRdmaHandle_, reinterpret_cast<void*>(dataQpInfo_.sendChannel)));
+    CHK_RET(hrtRaDestroyCompChannel(nicRdmaHandle_, reinterpret_cast<void*>(dataQpInfo_.recvChannel)));
 
     tagQpInfo_ = QpInfo();
     dataQpInfo_ = QpInfo();
@@ -182,16 +194,19 @@ HcclResult TransportRoce::GetNicHandle()
 {
     RaResourceInfo raResourceInfo;
     CHK_RET(NetworkManager::GetInstance(machinePara_.deviceLogicId).GetRaResourceInfo(raResourceInfo));
-    std::map<HcclIpAddress, IpSocket> &tmpSocketMap = machinePara_.nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE ?
-        raResourceInfo.nicSocketMap : raResourceInfo.hostNetSocketMap;
+    std::map<HcclIpAddress, IpSocket>& tmpSocketMap = machinePara_.nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE ?
+                                                          raResourceInfo.nicSocketMap :
+                                                          raResourceInfo.hostNetSocketMap;
 
     HcclIpAddress localIpAddr = machinePara_.localIpAddr;
 
     // 获取 nicSocketHandle
     auto itSocket = tmpSocketMap.find(localIpAddr);
     if (itSocket == tmpSocketMap.end()) {
-        HCCL_ERROR("[Get][NicHandle]In get nic handle, can not find socket handle, handle size[%u], "\
-            "local ip[%s]", tmpSocketMap.size(), localIpAddr.GetReadableAddress());
+        HCCL_ERROR(
+            "[Get][NicHandle]In get nic handle, can not find socket handle, handle size[%u], "
+            "local ip[%s]",
+            tmpSocketMap.size(), localIpAddr.GetReadableAddress());
         return HCCL_E_PARA;
     }
     nicSocketHandle_ = itSocket->second.nicSocketHandle;
@@ -214,7 +229,8 @@ HcclResult TransportRoce::GetSocketInfo()
             break;
         }
     }
-    CHK_PRT_RET(socketFdHandles_.size() == 0,
+    CHK_PRT_RET(
+        socketFdHandles_.size() == 0,
         HCCL_ERROR("[Get][SocketInfo]transport roce init failed, get socket fd handle fail."), HCCL_E_INTERNAL);
 
     return HCCL_SUCCESS;
@@ -234,8 +250,8 @@ HcclResult TransportRoce::Connect()
         HcclStatus compState = {0};
         buffer.localUserrank = machinePara_.localUserrank;
         buffer.remoteUserrank = machinePara_.remoteUserrank;
-        TransData sendData(reinterpret_cast<u64>(&buffer), reinterpret_cast<u64>(nullptr), sizeof(RoceRankInfo),
-            HCCL_DATA_TYPE_INT8);
+        TransData sendData(
+            reinterpret_cast<u64>(&buffer), reinterpret_cast<u64>(nullptr), sizeof(RoceRankInfo), HCCL_DATA_TYPE_INT8);
         TransportEndPointInfo srcEp(0, machinePara_.localUserrank, 0);
         TransportEndPointInfo dstEp(0, machinePara_.remoteUserrank, 0);
         TransportEndPointParam epParam(srcEp, dstEp);
@@ -244,8 +260,8 @@ HcclResult TransportRoce::Connect()
         while (flag != HCCL_TEST_COMPLETED) {
             CHK_RET(IsProcessStop());
             CHK_RET(Test(*request, flag, compState));
-            CHK_PRT_RET(compState.error > 0, HCCL_ERROR("Test failed, compState.error[%d].", compState.error),
-                HCCL_E_INTERNAL);
+            CHK_PRT_RET(
+                compState.error > 0, HCCL_ERROR("Test failed, compState.error[%d].", compState.error), HCCL_E_INTERNAL);
             SaluSleep(ONE_HUNDRED_MICROSECOND_OF_USLEEP);
         }
     } else {
@@ -254,7 +270,7 @@ HcclResult TransportRoce::Connect()
         s32 testFlag = HCCL_TEST_INCOMPLETED;
         HcclStatus status = {0};
         HcclStatus compState = {0};
-        HcclMessageInfo *msg = nullptr;
+        HcclMessageInfo* msg = nullptr;
         TransportEndPointInfo srcEp(0, machinePara_.remoteUserrank, 0);
         TransportEndPointInfo dstEp(0, machinePara_.localUserrank, 0);
         TransportEndPointParam epParam(srcEp, dstEp);
@@ -262,31 +278,29 @@ HcclResult TransportRoce::Connect()
         while (improbeFlag != HCCL_IMPROBE_COMPLETED) {
             CHK_RET(IsProcessStop());
             CHK_RET(Improbe(epParam, improbeFlag, msg, status));
-            CHK_PRT_RET(status.error > 0, HCCL_ERROR("Improbe failed, status.error[%d].", status.error),
-                HCCL_E_INTERNAL);
+            CHK_PRT_RET(
+                status.error > 0, HCCL_ERROR("Improbe failed, status.error[%d].", status.error), HCCL_E_INTERNAL);
             SaluSleep(ONE_HUNDRED_MICROSECOND_OF_USLEEP);
         }
 
-        TransData recvData(reinterpret_cast<u64>(nullptr), reinterpret_cast<u64>(&buffer),
-            sizeof(RoceRankInfo), HCCL_DATA_TYPE_INT8);
+        TransData recvData(
+            reinterpret_cast<u64>(nullptr), reinterpret_cast<u64>(&buffer), sizeof(RoceRankInfo), HCCL_DATA_TYPE_INT8);
         CHK_RET(Imrecv(recvData, *msg, request));
         // 此处已经完成建链，可以使用 WaitCompletion
         CHK_RET(Test(*request, testFlag, compState));
-        CHK_PRT_RET(compState.error > 0, HCCL_ERROR("Test failed, status.error[%d].", compState.error),
-            HCCL_E_INTERNAL);
+        CHK_PRT_RET(
+            compState.error > 0, HCCL_ERROR("Test failed, status.error[%d].", compState.error), HCCL_E_INTERNAL);
         while (testFlag != HCCL_TEST_COMPLETED) {
             CHK_RET(IsProcessStop());
             if (!isESMode_) {
                 CHK_RET(WaitCompletion(dataQpInfo_.sendCq, dataQpInfo_.sendChannel));
             }
             CHK_RET(Test(*request, testFlag, compState));
-            CHK_PRT_RET(compState.error > 0, HCCL_ERROR("Test failed, compState.error[%d].", compState.error),
-                HCCL_E_INTERNAL);
+            CHK_PRT_RET(
+                compState.error > 0, HCCL_ERROR("Test failed, compState.error[%d].", compState.error), HCCL_E_INTERNAL);
         }
 
-        HCCL_INFO("recv envelope localRank=[%u], remoteRank=[%u]",
-            buffer.localUserrank,
-            buffer.remoteUserrank);
+        HCCL_INFO("recv envelope localRank=[%u], remoteRank=[%u]", buffer.localUserrank, buffer.remoteUserrank);
     }
     return HCCL_SUCCESS;
 }
@@ -300,16 +314,16 @@ HcclResult TransportRoce::SendAndRecvExchangeData()
     }
     HCCL_DEBUG("[SendAndRecv][ExchangeData]exchangeInfo size[%llu].", dataLength);
     HcclResult ret = hrtRaSocketBlockSend(socketFdHandles_[0], machinePara_.exchangeInfo.data(), dataLength);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[SendAndRecv][ExchangeData]failed to send custom exchange data size [%llu].",
-        dataLength), ret);
+    CHK_PRT_RET(
+        ret != HCCL_SUCCESS,
+        HCCL_ERROR("[SendAndRecv][ExchangeData]failed to send custom exchange data size [%llu].", dataLength), ret);
 
     exchangeMsg_.resize(dataLength);
 
     ret = hrtRaSocketBlockRecv(socketFdHandles_[0], exchangeMsg_.data(), dataLength);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[SendAndRecv][ExchangeData]failed to recv custom exchange data size [%llu].",
-        dataLength), ret);
+    CHK_PRT_RET(
+        ret != HCCL_SUCCESS,
+        HCCL_ERROR("[SendAndRecv][ExchangeData]failed to recv custom exchange data size [%llu].", dataLength), ret);
 
     return HCCL_SUCCESS;
 }
@@ -317,13 +331,12 @@ HcclResult TransportRoce::SendAndRecvExchangeData()
 HcclResult TransportRoce::Init()
 {
     HCCL_INFO(
-        "machineType=[%d], serverId=[%s], localDeviceId=[%d], remoteDeviceId=[%d]," \
-        "localRank=[%u], localUserRank=[%u], remoteRank=[%u], remoteUserRank=[%u]," \
+        "machineType=[%d], serverId=[%s], localDeviceId=[%d], remoteDeviceId=[%d],"
+        "localRank=[%u], localUserRank=[%u], remoteRank=[%u], remoteUserRank=[%u],"
         "deviceType=[%d], inputMem=%p, outputMem=%p, custom exchange data size [%llu].",
         machinePara_.machineType, machinePara_.serverId.c_str(), machinePara_.localDeviceId,
         machinePara_.remoteDeviceId, machinePara_.localUserrank, machinePara_.localWorldRank,
-        machinePara_.remoteUserrank, machinePara_.remoteWorldRank,
-        machinePara_.deviceType, machinePara_.inputMem.ptr(),
+        machinePara_.remoteUserrank, machinePara_.remoteWorldRank, machinePara_.deviceType, machinePara_.inputMem.ptr(),
         machinePara_.outputMem.ptr(), machinePara_.exchangeInfo.size());
 
     transportAttr_.linkType = hccl::LinkType::LINK_STANDARD_ROCE;
@@ -384,11 +397,13 @@ HcclResult TransportRoce::Init()
 
     struct QpAttr attr{};
     hrtRaGetQpAttr(tagQpInfo_.qpHandle, &attr);
-    HCCL_USER_CRITICAL_LOG("create hccl transport:communicator[%s], local rank[%u] ip[%s], remote rank[%u] ip[%s], "\
-        "transporttype[%s], rdma qpn[%u], rdma qp sport[%u].", machinePara_.collectiveId.c_str(), machinePara_.localUserrank, 
-        machinePara_.localIpAddr.GetReadableAddress(), machinePara_.remoteUserrank, machinePara_.remoteIpAddr.GetReadableAddress(),
+    HCCL_USER_CRITICAL_LOG(
+        "create hccl transport:communicator[%s], local rank[%u] ip[%s], remote rank[%u] ip[%s], "
+        "transporttype[%s], rdma qpn[%u], rdma qp sport[%u].",
+        machinePara_.collectiveId.c_str(), machinePara_.localUserrank, machinePara_.localIpAddr.GetReadableAddress(),
+        machinePara_.remoteUserrank, machinePara_.remoteIpAddr.GetReadableAddress(),
         GetLinkTypeEnumStr(GetLinkType()).c_str(), attr.qpn, attr.udpSport);
-        
+
     return HCCL_SUCCESS;
 }
 
@@ -421,22 +436,13 @@ HcclResult TransportRoce::DeInit()
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportRoce::Deinit()
-{
-    return DeInit();
-}
+HcclResult TransportRoce::Deinit() { return DeInit(); }
 
-HcclResult TransportRoce::TxDataSignal(Stream &stream)
-{
-    return HCCL_SUCCESS;
-}
+HcclResult TransportRoce::TxDataSignal(Stream& stream) { return HCCL_SUCCESS; }
 
-HcclResult TransportRoce::RxDataSignal(Stream &stream)
-{
-    return HCCL_SUCCESS;
-}
+HcclResult TransportRoce::RxDataSignal(Stream& stream) { return HCCL_SUCCESS; }
 
-HcclResult TransportRoce::WaitDone(HcclRequestInfo *request)
+HcclResult TransportRoce::WaitDone(HcclRequestInfo* request)
 {
     s32 flag = HCCL_TEST_INCOMPLETED;
     while (flag != HCCL_TEST_COMPLETED) {
@@ -458,18 +464,17 @@ HcclResult TransportRoce::WaitDone(HcclRequestInfo *request)
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportRoce::TxAsync(UserMemType dstMemType, u64 dstOffset, const void *src,
-                                  u64 len, Stream &stream)
+HcclResult TransportRoce::TxAsync(UserMemType dstMemType, u64 dstOffset, const void* src, u64 len, Stream& stream)
 {
     if (dataQpInfo_.qpMode == NORMAL_QP_MODE && !IsGeneralServer()) {
         s32 streamId = 0;
         CHK_RET(hrtGetStreamId(stream.ptr(), streamId));
         if (len > 0) {
-            SendRecvParam sendParam(const_cast<void *>(src), len, streamId, this);
+            SendRecvParam sendParam(const_cast<void*>(src), len, streamId, this);
             sendParam.queIndex = taskOrchestration_[streamId].size();
             taskOrchestration_[streamId].push_back(std::make_pair(OperationType::OP_SEND, sendParam));
-            CHK_RET(hrtCallbackLaunch(TaskExecCallback, &taskOrchestration_[streamId].back().second,
-                stream.ptr(), true));
+            CHK_RET(
+                hrtCallbackLaunch(TaskExecCallback, &taskOrchestration_[streamId].back().second, stream.ptr(), true));
         }
         return HCCL_SUCCESS;
     }
@@ -477,13 +482,15 @@ HcclResult TransportRoce::TxAsync(UserMemType dstMemType, u64 dstOffset, const v
     if (!isESPs_) {
         std::shared_ptr<LocalIpcNotify> remoteImrecvDoneSignal;
         CHK_RET(GetRemoteImrecvDoneSignal(remoteImrecvDoneSignal));
-        CHK_RET(LocalIpcNotify::Wait(stream, dispatcher_, remoteImrecvDoneSignal, INVALID_VALUE_STAGE,
-            NOTIFY_INVALID_WAIT_TIME, machinePara_.localUserrank, machinePara_.remoteUserrank));
+        CHK_RET(
+            LocalIpcNotify::Wait(
+                stream, dispatcher_, remoteImrecvDoneSignal, INVALID_VALUE_STAGE, NOTIFY_INVALID_WAIT_TIME,
+                machinePara_.localUserrank, machinePara_.remoteUserrank));
 
         s32 streamId = 0;
         CHK_RET(hrtGetStreamId(stream.ptr(), streamId));
         if (len > 0) {
-            SendRecvParam recvParam(const_cast<void *>(src), len, streamId, this);
+            SendRecvParam recvParam(const_cast<void*>(src), len, streamId, this);
             taskOrchestration_[streamId].push_back(std::make_pair(OperationType::OP_RECV, recvParam));
         }
         return HCCL_SUCCESS;
@@ -492,7 +499,7 @@ HcclResult TransportRoce::TxAsync(UserMemType dstMemType, u64 dstOffset, const v
     HCCL_INFO("TransportRoce TxAsync rdma_write start!");
     // rdma_write向对端写数据，不产生cq
     HcclEnvelopeSummary envelope;
-    HcclRequestInfo *request = nullptr;
+    HcclRequestInfo* request = nullptr;
     if (GetSavedEnvelope(envelope)) {
         TransData sendData(reinterpret_cast<u64>(src), reinterpret_cast<u64>(nullptr), len, HCCL_DATA_TYPE_INT8);
         CHK_RET(Iwrite(sendData, envelope.envelope, request));
@@ -503,10 +510,7 @@ HcclResult TransportRoce::TxAsync(UserMemType dstMemType, u64 dstOffset, const v
 }
 
 // 分级alltoallv才会用的，暂时不考虑实现
-HcclResult TransportRoce::TxAsync(std::vector<TxMemoryInfo>& txMems, Stream &stream)
-{
-    return HCCL_SUCCESS;
-}
+HcclResult TransportRoce::TxAsync(std::vector<TxMemoryInfo>& txMems, Stream& stream) { return HCCL_SUCCESS; }
 
 HcclResult TransportRoce::IsProcessStop()
 {
@@ -524,7 +528,7 @@ void TransportRoce::Break()
 }
 
 // wr_list:RDMA_READ+RDMA_SEND(ACK)
-HcclResult TransportRoce::RxAsync(UserMemType srcMemType, u64 srcOffset, void *dst, u64 len, Stream &stream)
+HcclResult TransportRoce::RxAsync(UserMemType srcMemType, u64 srcOffset, void* dst, u64 len, Stream& stream)
 {
     if (dataQpInfo_.qpMode == NORMAL_QP_MODE && !IsGeneralServer()) {
         s32 streamId = 0;
@@ -539,8 +543,10 @@ HcclResult TransportRoce::RxAsync(UserMemType srcMemType, u64 srcOffset, void *d
     if (!isESPs_) {
         std::shared_ptr<LocalIpcNotify> remoteIsendDoneSignal;
         GetRemoteIsendDoneSignal(remoteIsendDoneSignal);
-        CHK_RET(LocalIpcNotify::Wait(stream, dispatcher_, remoteIsendDoneSignal, INVALID_VALUE_STAGE,
-            NOTIFY_INVALID_WAIT_TIME, machinePara_.localUserrank, machinePara_.remoteUserrank));
+        CHK_RET(
+            LocalIpcNotify::Wait(
+                stream, dispatcher_, remoteIsendDoneSignal, INVALID_VALUE_STAGE, NOTIFY_INVALID_WAIT_TIME,
+                machinePara_.localUserrank, machinePara_.remoteUserrank));
 
         s32 streamId = 0;
         CHK_RET(hrtGetStreamId(stream.ptr(), streamId));
@@ -552,7 +558,7 @@ HcclResult TransportRoce::RxAsync(UserMemType srcMemType, u64 srcOffset, void *d
     }
 
     HcclEnvelopeSummary envelope;
-    HcclRequestInfo *request = nullptr;
+    HcclRequestInfo* request = nullptr;
     if (GetSavedEnvelope(envelope)) {
         TransData recvData(reinterpret_cast<u64>(nullptr), reinterpret_cast<u64>(dst), len, HCCL_DATA_TYPE_INT8);
         HcclMessageInfo* tmpMsg;
@@ -563,7 +569,7 @@ HcclResult TransportRoce::RxAsync(UserMemType srcMemType, u64 srcOffset, void *d
     }
 
     // notify通知对端
-    HcclRequestInfo *requestNotify = nullptr;
+    HcclRequestInfo* requestNotify = nullptr;
     CHK_RET(RecordNotifyWithReq(stream, RdmaNotifyOp::RECV_NOTIFY, requestNotify));
 
     CHK_RET(WaitDone(request));
@@ -571,60 +577,38 @@ HcclResult TransportRoce::RxAsync(UserMemType srcMemType, u64 srcOffset, void *d
 }
 
 // 分级alltoallv才会用的，暂时不考虑实现
-HcclResult TransportRoce::RxAsync(std::vector<RxMemoryInfo>& rxMems, Stream &stream)
-{
-    return HCCL_SUCCESS;
-}
+HcclResult TransportRoce::RxAsync(std::vector<RxMemoryInfo>& rxMems, Stream& stream) { return HCCL_SUCCESS; }
 
-HcclResult TransportRoce::TxAck(Stream &stream)
-{
-    return HCCL_SUCCESS;
-}
+HcclResult TransportRoce::TxAck(Stream& stream) { return HCCL_SUCCESS; }
 
-HcclResult TransportRoce::RxAck(Stream &stream)
-{
-    return HCCL_SUCCESS;
-}
+HcclResult TransportRoce::RxAck(Stream& stream) { return HCCL_SUCCESS; }
 
-HcclResult TransportRoce::TxPrepare(Stream &stream)
-{
-    return HCCL_SUCCESS;
-}
+HcclResult TransportRoce::TxPrepare(Stream& stream) { return HCCL_SUCCESS; }
 
-HcclResult TransportRoce::RxPrepare(Stream &stream)
-{
-    return HCCL_SUCCESS;
-}
+HcclResult TransportRoce::RxPrepare(Stream& stream) { return HCCL_SUCCESS; }
 
-
-HcclResult TransportRoce::TxData(UserMemType dstMemType, u64 dstOffset, const void *src, u64 len, Stream &stream)
+HcclResult TransportRoce::TxData(UserMemType dstMemType, u64 dstOffset, const void* src, u64 len, Stream& stream)
 {
     CHK_RET(TxAsync(dstMemType, dstOffset, src, len, stream));
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportRoce::RxData(UserMemType srcMemType, u64 srcOffset, void *dst, u64 len, Stream &stream)
+HcclResult TransportRoce::RxData(UserMemType srcMemType, u64 srcOffset, void* dst, u64 len, Stream& stream)
 {
     CHK_RET(RxAsync(srcMemType, srcOffset, dst, len, stream));
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportRoce::TxDone(Stream &stream)
-{
-    return HCCL_SUCCESS;
-}
+HcclResult TransportRoce::TxDone(Stream& stream) { return HCCL_SUCCESS; }
 
-HcclResult TransportRoce::RxDone(Stream &stream)
-{
-    return HCCL_SUCCESS;
-}
+HcclResult TransportRoce::RxDone(Stream& stream) { return HCCL_SUCCESS; }
 
 // callback实现send、recv
-void TaskExecCallback(void *fnData)
+void TaskExecCallback(void* fnData)
 {
-    SendRecvParam *params = static_cast<SendRecvParam *>(fnData);
+    SendRecvParam* params = static_cast<SendRecvParam*>(fnData);
     HcclResult ret = HCCL_SUCCESS;
-    TransportRoce *tmpDispatcherPtr = static_cast<TransportRoce *>(params->transportRocePtr);
+    TransportRoce* tmpDispatcherPtr = static_cast<TransportRoce*>(params->transportRocePtr);
     ret = tmpDispatcherPtr->TaskExec(params->streamId, params->queIndex);
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[TaskExecCallback] TaskExec failed");
@@ -632,25 +616,26 @@ void TaskExecCallback(void *fnData)
 }
 
 // 下发callback任务
-HcclResult TransportRoce::TxWaitDone(Stream &stream)
+HcclResult TransportRoce::TxWaitDone(Stream& stream)
 {
     // 判断当前stream中最后一个task是否是WaitDone类型的，若是，则不下callback；反之，下发callback
     s32 streamId = 0;
     CHK_RET(hrtGetStreamId(stream.ptr(), streamId));
-    if (taskOrchestration_[streamId].size() != 0 &&
-        taskOrchestration_[streamId].back().first != OperationType::OP_WAIT_DONE) {
+    if (taskOrchestration_[streamId].size() != 0
+        && taskOrchestration_[streamId].back().first != OperationType::OP_WAIT_DONE) {
         s32 queIndex = taskOrchestration_[streamId].size();
         SendRecvParam tempParam(streamId, this, queIndex);
         taskOrchestration_[streamId].push_back(std::make_pair(OperationType::OP_WAIT_DONE, tempParam));
 
         // 下发callback任务
-        HCCL_INFO("param[%p] streamId[%d] queIndex[%d]", &taskOrchestration_[streamId].back().second,
+        HCCL_INFO(
+            "param[%p] streamId[%d] queIndex[%d]", &taskOrchestration_[streamId].back().second,
             taskOrchestration_[streamId].back().second.streamId, taskOrchestration_[streamId].back().second.queIndex);
         CHK_RET(hrtCallbackLaunch(TaskExecCallback, &taskOrchestration_[streamId].back().second, stream.ptr(), true));
         if (recvWithReduceParam_.stream != nullptr) {
-            CHK_RET(dispatcher_->ReduceAsync(recvWithReduceParam_.src, recvWithReduceParam_.dst,
-                recvWithReduceParam_.dataCount, recvWithReduceParam_.datatype,
-                recvWithReduceParam_.reduceOp, stream, recvWithReduceParam_.reduceType));
+            CHK_RET(dispatcher_->ReduceAsync(
+                recvWithReduceParam_.src, recvWithReduceParam_.dst, recvWithReduceParam_.dataCount,
+                recvWithReduceParam_.datatype, recvWithReduceParam_.reduceOp, stream, recvWithReduceParam_.reduceType));
             recvWithReduceParam_ = ReduceParam();
         }
     }
@@ -658,31 +643,30 @@ HcclResult TransportRoce::TxWaitDone(Stream &stream)
 }
 
 // 下发callback任务
-HcclResult TransportRoce::RxWaitDone(Stream &stream)
+HcclResult TransportRoce::RxWaitDone(Stream& stream)
 {
     // 判断当前stream中最后一个task是否是WaitDone类型的，若是，则不下callback；反之，下发callback
     s32 streamId = 0;
     CHK_RET(hrtGetStreamId(stream.ptr(), streamId));
-    if (taskOrchestration_[streamId].size() != 0 &&
-        taskOrchestration_[streamId].back().first != OperationType::OP_WAIT_DONE) {
+    if (taskOrchestration_[streamId].size() != 0
+        && taskOrchestration_[streamId].back().first != OperationType::OP_WAIT_DONE) {
         s32 queIndex = taskOrchestration_[streamId].size();
         SendRecvParam tempParam(streamId, this, queIndex);
         taskOrchestration_[streamId].push_back(std::make_pair(OperationType::OP_WAIT_DONE, tempParam));
 
         // 下发callback任务
-        CHK_RET(hrtCallbackLaunch(TaskExecCallback, &taskOrchestration_[streamId].back().second,
-            stream.ptr(), true));
+        CHK_RET(hrtCallbackLaunch(TaskExecCallback, &taskOrchestration_[streamId].back().second, stream.ptr(), true));
         if (recvWithReduceParam_.stream != nullptr) {
-            CHK_RET(dispatcher_->ReduceAsync(recvWithReduceParam_.src, recvWithReduceParam_.dst,
-                recvWithReduceParam_.dataCount, recvWithReduceParam_.datatype,
-                recvWithReduceParam_.reduceOp, stream, recvWithReduceParam_.reduceType));
+            CHK_RET(dispatcher_->ReduceAsync(
+                recvWithReduceParam_.src, recvWithReduceParam_.dst, recvWithReduceParam_.dataCount,
+                recvWithReduceParam_.datatype, recvWithReduceParam_.reduceOp, stream, recvWithReduceParam_.reduceType));
             recvWithReduceParam_ = ReduceParam();
         }
     }
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportRoce::GetRemoteMem(UserMemType memType, void **remotePtr)
+HcclResult TransportRoce::GetRemoteMem(UserMemType memType, void** remotePtr)
 {
     switch (memType) {
         case UserMemType::INPUT_MEM:
@@ -697,7 +681,7 @@ HcclResult TransportRoce::GetRemoteMem(UserMemType memType, void **remotePtr)
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportRoce::GetRemoteMemSize(UserMemType memType, u64 &size)
+HcclResult TransportRoce::GetRemoteMemSize(UserMemType memType, u64& size)
 {
     switch (memType) {
         case UserMemType::INPUT_MEM:
@@ -712,16 +696,17 @@ HcclResult TransportRoce::GetRemoteMemSize(UserMemType memType, u64 &size)
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportRoce::TxWithReduce(UserMemType dstMemType, u64 dstOffset, const void *src, u64 len,
-    const HcclDataType datatype, HcclReduceOp redOp, Stream &stream)
+HcclResult TransportRoce::TxWithReduce(
+    UserMemType dstMemType, u64 dstOffset, const void* src, u64 len, const HcclDataType datatype, HcclReduceOp redOp,
+    Stream& stream)
 {
     CHK_RET(TxAsync(dstMemType, dstOffset, src, len, stream));
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportRoce::RxWithReduce(UserMemType recvSrcMemType, u64 recvSrcOffset, void *recvDst, u64 recvLen,
-    void *reduceSrc, void *reduceDst, u64 reduceDataCount, HcclDataType reduceDatatype,
-    HcclReduceOp reduceOp, Stream &stream, u64 reduceAttr)
+HcclResult TransportRoce::RxWithReduce(
+    UserMemType recvSrcMemType, u64 recvSrcOffset, void* recvDst, u64 recvLen, void* reduceSrc, void* reduceDst,
+    u64 reduceDataCount, HcclDataType reduceDatatype, HcclReduceOp reduceOp, Stream& stream, u64 reduceAttr)
 {
     s32 streamId = 0;
     CHK_RET(hrtGetStreamId(stream.ptr(), streamId));
@@ -733,16 +718,13 @@ HcclResult TransportRoce::RxWithReduce(UserMemType recvSrcMemType, u64 recvSrcOf
         }
         SendRecvParam recvParam(recvDst, recvLen, streamId, this);
         taskOrchestration_[streamId].push_back(std::make_pair(OperationType::OP_RECV_WITH_REDUCE, recvParam));
-        recvWithReduceParam_ = ReduceParam(reduceSrc, reduceDst, reduceDataCount, reduceDatatype, reduceOp,
-            stream.ptr(), reduceType);
+        recvWithReduceParam_
+            = ReduceParam(reduceSrc, reduceDst, reduceDataCount, reduceDatatype, reduceOp, stream.ptr(), reduceType);
     }
     return HCCL_SUCCESS;
 }
 
-bool TransportRoce::IsSupportTransportWithReduce()
-{
-    return true;
-}
+bool TransportRoce::IsSupportTransportWithReduce() { return true; }
 
 // callback实现
 // 参数列表：streamId
@@ -751,7 +733,7 @@ bool TransportRoce::IsSupportTransportWithReduce()
 // 调用完成后及时更新stream队列状态
 HcclResult TransportRoce::TaskExec(s32 streamId, s32 queIndex)
 {
-    if (taskOrchestration_[streamId].size() == 0 ||queIndex >= static_cast<s32>(taskOrchestration_[streamId].size())) {
+    if (taskOrchestration_[streamId].size() == 0 || queIndex >= static_cast<s32>(taskOrchestration_[streamId].size())) {
         HCCL_WARNING("cur TaskExec para is invalid, streamId[%d], queIndex[%d]", streamId, queIndex);
         return HCCL_SUCCESS;
     }
@@ -777,8 +759,9 @@ HcclResult TransportRoce::TaskExec(s32 streamId, s32 queIndex)
         if (taskOrchestration_[streamId][queIndex].first == OperationType::OP_SEND) {
             haveSend = true;
             sendParam = taskOrchestration_[streamId][queIndex].second;
-        } else if (taskOrchestration_[streamId][queIndex].first == OperationType::OP_RECV ||
-            taskOrchestration_[streamId][queIndex].first == OperationType::OP_RECV_WITH_REDUCE) {
+        } else if (
+            taskOrchestration_[streamId][queIndex].first == OperationType::OP_RECV
+            || taskOrchestration_[streamId][queIndex].first == OperationType::OP_RECV_WITH_REDUCE) {
             haveRecv = true;
             recvParam = taskOrchestration_[streamId][queIndex].second;
         }
@@ -798,10 +781,10 @@ HcclResult TransportRoce::TaskExec(s32 streamId, s32 queIndex)
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportRoce::WaitCompletion(struct ibv_cq* notifyCq, struct ibv_comp_channel *channel)
+HcclResult TransportRoce::WaitCompletion(struct ibv_cq* notifyCq, struct ibv_comp_channel* channel)
 {
-    void *cqContext = nullptr;
-    struct ibv_cq *evCq;
+    void* cqContext = nullptr;
+    struct ibv_cq* evCq;
     CHK_RET(hrtIbvReqNotifyCq(notifyCq, 0));
 
     CHK_RET(hrtIbvGetCqEvent(channel, &evCq, &cqContext));
@@ -810,7 +793,7 @@ HcclResult TransportRoce::WaitCompletion(struct ibv_cq* notifyCq, struct ibv_com
 }
 
 // Isend语义实现：RDMA send
-HcclResult TransportRoce::SendAsync(SendRecvParam &sendParam)
+HcclResult TransportRoce::SendAsync(SendRecvParam& sendParam)
 {
     CHK_PTR_NULL(sendParam.ptr);
     HcclRequestInfo* request = nullptr;
@@ -828,7 +811,7 @@ HcclResult TransportRoce::SendAsync(SendRecvParam &sendParam)
 }
 
 // Send语义实现 ：RDMA send -> wait tag sq cqe、data rq cqe
-HcclResult TransportRoce::Send(const SendRecvParam &sendParam)
+HcclResult TransportRoce::Send(const SendRecvParam& sendParam)
 {
     CHK_PTR_NULL(sendParam.ptr);
     s32 flag = HCCL_TEST_INCOMPLETED;
@@ -842,22 +825,21 @@ HcclResult TransportRoce::Send(const SendRecvParam &sendParam)
     CHK_RET(Isend(sendData, epParam, request));
 
     CHK_RET(Test(*request, flag, compState));
-    CHK_PRT_RET(compState.error > 0, HCCL_ERROR("Test failed, status.error[%d].", compState.error),
-        HCCL_E_INTERNAL);
+    CHK_PRT_RET(compState.error > 0, HCCL_ERROR("Test failed, status.error[%d].", compState.error), HCCL_E_INTERNAL);
     while (flag != HCCL_TEST_COMPLETED) {
         CHK_RET(IsProcessStop());
         if (!isESMode_) {
             CHK_RET(WaitCompletion(dataQpInfo_.recvCq, dataQpInfo_.recvChannel));
         }
         CHK_RET(Test(*request, flag, compState));
-        CHK_PRT_RET(compState.error > 0, HCCL_ERROR("Test failed, compState.error[%d].", compState.error),
-            HCCL_E_INTERNAL);
+        CHK_PRT_RET(
+            compState.error > 0, HCCL_ERROR("Test failed, compState.error[%d].", compState.error), HCCL_E_INTERNAL);
     }
     return HCCL_SUCCESS;
 }
 
 // WaitSendComplete语义实现 ：wait rcqe
-HcclResult TransportRoce::WaitSendAsyncComplete(const SendRecvParam &sendParam)
+HcclResult TransportRoce::WaitSendAsyncComplete(const SendRecvParam& sendParam)
 {
     CHK_PTR_NULL(sendParam.ptr);
     s32 flag = HCCL_TEST_INCOMPLETED;
@@ -865,68 +847,64 @@ HcclResult TransportRoce::WaitSendAsyncComplete(const SendRecvParam &sendParam)
     HcclRequestInfo* request = sendParam.sendRequest;
 
     CHK_RET(Test(*request, flag, compState));
-    CHK_PRT_RET(compState.error > 0, HCCL_ERROR("Test failed, status.error[%d].", compState.error),
-        HCCL_E_INTERNAL);
+    CHK_PRT_RET(compState.error > 0, HCCL_ERROR("Test failed, status.error[%d].", compState.error), HCCL_E_INTERNAL);
     while (flag != HCCL_TEST_COMPLETED) {
         CHK_RET(IsProcessStop());
         if (!isESMode_) {
             CHK_RET(WaitCompletion(dataQpInfo_.recvCq, dataQpInfo_.recvChannel));
         }
         CHK_RET(Test(*request, flag, compState));
-        CHK_PRT_RET(compState.error > 0, HCCL_ERROR("Test failed, compState.error[%d].", compState.error),
-            HCCL_E_INTERNAL);
+        CHK_PRT_RET(
+            compState.error > 0, HCCL_ERROR("Test failed, compState.error[%d].", compState.error), HCCL_E_INTERNAL);
     }
     return HCCL_SUCCESS;
 }
 
 // Recv语义实现 ：wait cqe -> （RDMA read + RDMA send）
-HcclResult TransportRoce::Recv(const SendRecvParam &recvParam)
+HcclResult TransportRoce::Recv(const SendRecvParam& recvParam)
 {
     CHK_PTR_NULL(recvParam.ptr);
     s32 improbeFlag = HCCL_IMPROBE_INCOMPLETED;
     s32 TestFlag = HCCL_TEST_INCOMPLETED;
     HcclStatus status = {0};
     HcclStatus compState = {0};
-    HcclMessageInfo *msg = nullptr;
+    HcclMessageInfo* msg = nullptr;
     TransportEndPointInfo srcEp(0, machinePara_.localUserrank, 0);
     TransportEndPointInfo dstEp(0, machinePara_.remoteUserrank, 0);
     TransportEndPointParam epParam(srcEp, dstEp);
 
     CHK_RET(Improbe(epParam, improbeFlag, msg, status));
-    CHK_PRT_RET(status.error > 0, HCCL_ERROR("Improbe failed, status.error[%d].", status.error),
-        HCCL_E_INTERNAL);
+    CHK_PRT_RET(status.error > 0, HCCL_ERROR("Improbe failed, status.error[%d].", status.error), HCCL_E_INTERNAL);
     while (improbeFlag != HCCL_IMPROBE_COMPLETED) {
         CHK_RET(IsProcessStop());
         if (!isESMode_) {
             CHK_RET(WaitCompletion(tagQpInfo_.recvCq, tagQpInfo_.recvChannel));
         }
         CHK_RET(Improbe(epParam, improbeFlag, msg, status));
-        CHK_PRT_RET(status.error > 0, HCCL_ERROR("Improbe failed, status.error[%d].", status.error),
-            HCCL_E_INTERNAL);
+        CHK_PRT_RET(status.error > 0, HCCL_ERROR("Improbe failed, status.error[%d].", status.error), HCCL_E_INTERNAL);
     }
 
     HcclRequestInfo* request = nullptr;
-    TransData recvData(reinterpret_cast<u64>(nullptr), reinterpret_cast<u64>(recvParam.ptr),
-        status.count, HCCL_DATA_TYPE_INT8);
+    TransData recvData(
+        reinterpret_cast<u64>(nullptr), reinterpret_cast<u64>(recvParam.ptr), status.count, HCCL_DATA_TYPE_INT8);
 
     CHK_RET(Imrecv(recvData, *msg, request));
     CHK_RET(Test(*request, TestFlag, compState));
-    CHK_PRT_RET(compState.error > 0, HCCL_ERROR("Test failed, compState.error[%d].", compState.error),
-        HCCL_E_INTERNAL);
+    CHK_PRT_RET(compState.error > 0, HCCL_ERROR("Test failed, compState.error[%d].", compState.error), HCCL_E_INTERNAL);
     while (TestFlag != HCCL_TEST_COMPLETED) {
         CHK_RET(IsProcessStop());
         if (!isESMode_) {
             CHK_RET(WaitCompletion(dataQpInfo_.sendCq, dataQpInfo_.sendChannel));
         }
         CHK_RET(Test(*request, TestFlag, compState));
-        CHK_PRT_RET(compState.error > 0, HCCL_ERROR("Test failed, compState.error[%d].", compState.error),
-            HCCL_E_INTERNAL);
+        CHK_PRT_RET(
+            compState.error > 0, HCCL_ERROR("Test failed, compState.error[%d].", compState.error), HCCL_E_INTERNAL);
     }
     return HCCL_SUCCESS;
 }
 
 // SendRecv语义实现 ：wait rcqe -> (RDMA read + RDMA send) -> wait scqe
-HcclResult TransportRoce::WaitSendAsyncCompleteAndRecv(const SendRecvParam &sendParam, const SendRecvParam &recvParam)
+HcclResult TransportRoce::WaitSendAsyncCompleteAndRecv(const SendRecvParam& sendParam, const SendRecvParam& recvParam)
 {
     CHK_PTR_NULL(sendParam.ptr);
     CHK_PTR_NULL(recvParam.ptr);
@@ -938,61 +916,57 @@ HcclResult TransportRoce::WaitSendAsyncCompleteAndRecv(const SendRecvParam &send
     TransportEndPointInfo srcEp(0, machinePara_.localUserrank, 0);
     TransportEndPointInfo dstEp(0, machinePara_.remoteUserrank, 0);
     TransportEndPointParam epParam(srcEp, dstEp);
-    HcclMessageInfo *msg = nullptr;
+    HcclMessageInfo* msg = nullptr;
 
     CHK_RET(Improbe(epParam, improbeFlag, msg, status));
-    CHK_PRT_RET(status.error > 0, HCCL_ERROR("Improbe failed, status.error[%d].", status.error),
-        HCCL_E_INTERNAL);
+    CHK_PRT_RET(status.error > 0, HCCL_ERROR("Improbe failed, status.error[%d].", status.error), HCCL_E_INTERNAL);
     while (improbeFlag != HCCL_IMPROBE_COMPLETED) {
         CHK_RET(IsProcessStop());
         if (isESMode_) {
             CHK_RET(WaitCompletion(tagQpInfo_.recvCq, tagQpInfo_.recvChannel));
         };
         CHK_RET(Improbe(epParam, improbeFlag, msg, status));
-        CHK_PRT_RET(status.error > 0, HCCL_ERROR("Improbe failed, status.error[%d].", status.error),
-            HCCL_E_INTERNAL);
+        CHK_PRT_RET(status.error > 0, HCCL_ERROR("Improbe failed, status.error[%d].", status.error), HCCL_E_INTERNAL);
     }
 
     HcclRequestInfo* recvRequest = nullptr;
-    TransData recvData(reinterpret_cast<u64>(nullptr), reinterpret_cast<u64>(recvParam.ptr),
-        recvParam.len, HCCL_DATA_TYPE_INT8);
+    TransData recvData(
+        reinterpret_cast<u64>(nullptr), reinterpret_cast<u64>(recvParam.ptr), recvParam.len, HCCL_DATA_TYPE_INT8);
     CHK_RET(Imrecv(recvData, *msg, recvRequest));
 
     CHK_RET(Test(*sendRequest, TestFlag, compState));
-    CHK_PRT_RET(compState.error > 0, HCCL_ERROR("Test failed, compState.error[%d].", compState.error),
-        HCCL_E_INTERNAL);
+    CHK_PRT_RET(compState.error > 0, HCCL_ERROR("Test failed, compState.error[%d].", compState.error), HCCL_E_INTERNAL);
     while (TestFlag != HCCL_TEST_COMPLETED) {
         CHK_RET(IsProcessStop());
         if (!isESMode_) {
             CHK_RET(WaitCompletion(dataQpInfo_.recvCq, dataQpInfo_.recvChannel));
         }
         CHK_RET(Test(*sendRequest, TestFlag, compState));
-        CHK_PRT_RET(compState.error > 0, HCCL_ERROR("Test failed, compState.error[%d].", compState.error),
-            HCCL_E_INTERNAL);
+        CHK_PRT_RET(
+            compState.error > 0, HCCL_ERROR("Test failed, compState.error[%d].", compState.error), HCCL_E_INTERNAL);
     }
 
     // 重置TestFlag，保证Improbe不影响Test
     TestFlag = HCCL_TEST_INCOMPLETED;
     compState = {0};
     CHK_RET(Test(*recvRequest, TestFlag, compState));
-    CHK_PRT_RET(compState.error > 0, HCCL_ERROR("Test failed, compState.error[%d].", compState.error),
-        HCCL_E_INTERNAL);
+    CHK_PRT_RET(compState.error > 0, HCCL_ERROR("Test failed, compState.error[%d].", compState.error), HCCL_E_INTERNAL);
     while (TestFlag != HCCL_TEST_COMPLETED) {
         CHK_RET(IsProcessStop());
         if (!isESMode_) {
             CHK_RET(WaitCompletion(dataQpInfo_.sendCq, dataQpInfo_.sendChannel));
         }
         CHK_RET(Test(*recvRequest, TestFlag, compState));
-        CHK_PRT_RET(compState.error > 0, HCCL_ERROR("Test failed, compState.error[%d].", compState.error),
-            HCCL_E_INTERNAL);
+        CHK_PRT_RET(
+            compState.error > 0, HCCL_ERROR("Test failed, compState.error[%d].", compState.error), HCCL_E_INTERNAL);
     }
 
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportRoce::TxEnv(const void *ptr, const u64 len, Stream &stream)
+HcclResult TransportRoce::TxEnv(const void* ptr, const u64 len, Stream& stream)
 {
-    HcclRequestInfo *request = nullptr;
+    HcclRequestInfo* request = nullptr;
     TransData sendData(reinterpret_cast<u64>(ptr), reinterpret_cast<u64>(ptr), len, HCCL_DATA_TYPE_INT8);
     TransportEndPointInfo srcEp(0, machinePara_.localUserrank, 0);
     TransportEndPointInfo dstEp(0, machinePara_.remoteUserrank, 0);
@@ -1000,21 +974,25 @@ HcclResult TransportRoce::TxEnv(const void *ptr, const u64 len, Stream &stream)
     CHK_RET(GenerateSendRequest(sendData, epParam, request));
 
     u32 lkey = 0;
-    CHK_RET(RegMr(reinterpret_cast<void *>(sendData.srcBuf),
-        static_cast<u64>(sendData.count * SIZE_TABLE[sendData.dataType]), lkey, true));
-    HCCL_DEBUG("TxEnv addr[%llu] count[%d] datatype[%s]", sendData.srcBuf, sendData.count,
+    CHK_RET(RegMr(
+        reinterpret_cast<void*>(sendData.srcBuf), static_cast<u64>(sendData.count * SIZE_TABLE[sendData.dataType]),
+        lkey, true));
+    HCCL_DEBUG(
+        "TxEnv addr[%llu] count[%d] datatype[%s]", sendData.srcBuf, sendData.count,
         GetDataTypeEnumStr(sendData.dataType).c_str());
 
-    HcclEnvelope envelope(request->transportRequest.protocol, request->transportRequest.transData,
-        request->transportRequest.epParam, lkey, request->transportRequest.msn);
+    HcclEnvelope envelope(
+        request->transportRequest.protocol, request->transportRequest.transData, request->transportRequest.epParam,
+        lkey, request->transportRequest.msn);
 
-    HcclEnvelope *envPtr = reinterpret_cast<HcclEnvelope *>(sendEnvelopeMem_.ptr());
-    CHK_RET(hrtMemSyncCopy(envPtr, sizeof(HcclEnvelope), &(envelope), sizeof(HcclEnvelope),
+    HcclEnvelope* envPtr = reinterpret_cast<HcclEnvelope*>(sendEnvelopeMem_.ptr());
+    CHK_RET(hrtMemSyncCopy(
+        envPtr, sizeof(HcclEnvelope), &(envelope), sizeof(HcclEnvelope),
         HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
     return SendEnvelope(*envPtr, stream.ptr());
 }
 
-HcclResult TransportRoce::RxEnv(Stream &stream)
+HcclResult TransportRoce::RxEnv(Stream& stream)
 {
     struct ibv_wc wc[HCCL_POLL_CQ_DEPTH];
     s32 tagCqNum = 0;

@@ -20,21 +20,22 @@
 namespace Hccl {
 
 UbLocalNotify::UbLocalNotify(RdmaHandle rdmaHandle, bool devUsed)
-    : BaseLocalNotify(RmaType::UB, devUsed), rdmaHandle(rdmaHandle)
+    : BaseLocalNotify(RmaType::UB, devUsed),
+      rdmaHandle(rdmaHandle)
 {
     HrtDevResInfo devResInfo;
-    devResInfo.dieId            = 0;
-    devResInfo.procType         = HrtDevResProcType::PROCESS_HCCP;
-    devResInfo.resType          = HrtDevResType::RES_TYPE_STARS_NOTIFY_RECORD;
-    devResInfo.resId            = GetNotify()->GetId();
-    devResInfo.flag             = 0;
-    auto resAddrInfo            = HrtGetDevResAddress(devResInfo);
-    addr                        = resAddrInfo.address;
+    devResInfo.dieId = 0;
+    devResInfo.procType = HrtDevResProcType::PROCESS_HCCP;
+    devResInfo.resType = HrtDevResType::RES_TYPE_STARS_NOTIFY_RECORD;
+    devResInfo.resId = GetNotify()->GetId();
+    devResInfo.flag = 0;
+    auto resAddrInfo = HrtGetDevResAddress(devResInfo);
+    addr = resAddrInfo.address;
     DevCapability::GetInstance().Init(DevType::DEV_TYPE_950); // 单例初始化
-    size                        = DevCapability::GetInstance().GetNotifySize();
-    auto tokenIdInfoPair        = RdmaHandleManager::GetInstance().GetTokenIdInfo(rdmaHandle);
+    size = DevCapability::GetInstance().GetNotifySize();
+    auto tokenIdInfoPair = RdmaHandleManager::GetInstance().GetTokenIdInfo(rdmaHandle);
     TokenIdHandle tokenIdHandle = tokenIdInfoPair.first;
-    tokenId                     = tokenIdInfoPair.second;
+    tokenId = tokenIdInfoPair.second;
     HCCL_INFO("[UbLocalNotify] tokenIdHandle=0x[%llx]", tokenIdHandle);
     HCCL_INFO("mapped addr=[%llx]", addr);
     HCCL_INFO("UB notify size=[%u]", size);
@@ -45,23 +46,21 @@ UbLocalNotify::UbLocalNotify(RdmaHandle rdmaHandle, bool devUsed)
     std::pair<u64, u64> alignBuf = BufAlign(addr, size);
     HrtRaUbLocMemRegParam lmemReg{alignBuf.first, alignBuf.second, tokenValue, tokenIdHandle, 1};
     reqReg = HrtRaUbLocalMemReg(rdmaHandle, lmemReg);
-    keySize         = reqReg.keySize;
-    memHandle       = reqReg.handle;
+    keySize = reqReg.keySize;
+    memHandle = reqReg.handle;
     (void)memcpy_s(key, HRT_UB_MEM_KEY_MAX_LEN, reqReg.key, HRT_UB_MEM_KEY_MAX_LEN);
 }
 
 string UbLocalNotify::Describe() const
 {
-    return StringFormat("UbLocalNotify:notify=%s, addr=0x%llx, keySize=%u, memHandle=0x%llx",
-                        GetNotify()->Describe().c_str(), addr, keySize, memHandle);
+    return StringFormat(
+        "UbLocalNotify:notify=%s, addr=0x%llx, keySize=%u, memHandle=0x%llx", GetNotify()->Describe().c_str(), addr,
+        keySize, memHandle);
 }
 
-void UbLocalNotify::Wait(const Stream &stream, u32 timeout) const
-{
-    GetNotify()->Wait(stream, timeout);
-}
+void UbLocalNotify::Wait(const Stream& stream, u32 timeout) const { GetNotify()->Wait(stream, timeout); }
 
-void UbLocalNotify::Post(const Stream &stream) const
+void UbLocalNotify::Post(const Stream& stream) const
 {
     std::string msg = "UbLocalNotify does not support submitting record task";
     MACRO_THROW(NotSupportException, msg);
@@ -82,16 +81,13 @@ void UbLocalNotify::ReleaseResource() const
     }
 
     HrtDevResInfo devResInfo;
-    devResInfo.dieId    = 0;
+    devResInfo.dieId = 0;
     devResInfo.procType = HrtDevResProcType::PROCESS_HCCP;
-    devResInfo.resType  = HrtDevResType::RES_TYPE_STARS_NOTIFY_RECORD;
-    devResInfo.resId    = GetNotify()->GetId();
-    devResInfo.flag     = 0;
+    devResInfo.resType = HrtDevResType::RES_TYPE_STARS_NOTIFY_RECORD;
+    devResInfo.resId = GetNotify()->GetId();
+    devResInfo.flag = 0;
     HrtReleaseDevResAddress(devResInfo);
 }
 
-UbLocalNotify::~UbLocalNotify()
-{
-    DECTOR_TRY_CATCH("UbLocalNotify", ReleaseResource());
-}
+UbLocalNotify::~UbLocalNotify() { DECTOR_TRY_CATCH("UbLocalNotify", ReleaseResource()); }
 } // namespace Hccl

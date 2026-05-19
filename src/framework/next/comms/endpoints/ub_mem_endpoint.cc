@@ -13,9 +13,9 @@
 #include "adapter_rts_common.h"
 #include "server_socket_mgr.h"
 #include "ub_mem.h"
- 
+
 namespace hcomm {
-UbMemEndpoint::UbMemEndpoint(const EndpointDesc &endpointDesc) : Endpoint(endpointDesc){}
+UbMemEndpoint::UbMemEndpoint(const EndpointDesc& endpointDesc) : Endpoint(endpointDesc) {}
 
 HcclResult UbMemEndpoint::Init()
 {
@@ -31,7 +31,7 @@ HcclResult UbMemEndpoint::ServerSocketListen(const uint32_t port)
     return HCCL_SUCCESS;
 }
 
-HcclResult UbMemEndpoint::RegisterMemory(HcommMem mem, const char *memTag, void **memHandle)
+HcclResult UbMemEndpoint::RegisterMemory(HcommMem mem, const char* memTag, void** memHandle)
 {
     CHK_RET(this->regedMemMgr_->RegisterMemory(mem, memTag, memHandle));
     return HCCL_SUCCESS;
@@ -43,27 +43,27 @@ HcclResult UbMemEndpoint::UnregisterMemory(void* memHandle)
     return HCCL_SUCCESS;
 }
 
-HcclResult UbMemEndpoint::MemoryExport(void *memHandle, void **memDesc, uint32_t *memDescLen)
+HcclResult UbMemEndpoint::MemoryExport(void* memHandle, void** memDesc, uint32_t* memDescLen)
 {
     HCCL_INFO("UbMemEndpoint MemoryExport is not supported");
     return HCCL_SUCCESS;
 }
 
-HcclResult UbMemEndpoint::MemoryImport(const void *memDesc, uint32_t descLen, HcommMem *outMem)
+HcclResult UbMemEndpoint::MemoryImport(const void* memDesc, uint32_t descLen, HcommMem* outMem)
 {
     HCCL_INFO("UbMemEndpoint MemoryImport is not supported");
     return HCCL_SUCCESS;
 }
 
-HcclResult UbMemEndpoint::MemoryUnimport(const void *memDesc, uint32_t descLen)
+HcclResult UbMemEndpoint::MemoryUnimport(const void* memDesc, uint32_t descLen)
 {
     HCCL_INFO("UbMemEndpoint MemoryUnimport is not supported");
     return HCCL_SUCCESS;
 }
 
-HcclResult UbMemEndpoint::GetAllMemHandles(void **memHandles, uint32_t *memHandleNum)
+HcclResult UbMemEndpoint::GetAllMemHandles(void** memHandles, uint32_t* memHandleNum)
 {
     HCCL_INFO("UbMemEndpoint GetAllMemHandles is not supported");
     return HCCL_SUCCESS;
 }
-}
+} // namespace hcomm

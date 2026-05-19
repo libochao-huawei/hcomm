@@ -35,14 +35,16 @@ HcclResult TcpSendThreadPool::SetAffinity(u32 devId, u32 cpuId)
     CPU_ZERO(&mask);
     CPU_SET(cpuId, &mask);
     ret = pthread_setaffinity_np(pthread_self(), sizeof(mask), &mask);
-    CHK_PRT_RET(ret != 0, HCCL_ERROR("[SetAffinity]could not set CPU affinity, ret[%d], strerror[%s]",
-        ret, strerror(errno)), HCCL_E_SYSCALL);
+    CHK_PRT_RET(
+        ret != 0, HCCL_ERROR("[SetAffinity]could not set CPU affinity, ret[%d], strerror[%s]", ret, strerror(errno)),
+        HCCL_E_SYSCALL);
 
     // 获取线程cpu亲和力
     CPU_ZERO(&get);
     ret = pthread_getaffinity_np(pthread_self(), sizeof(get), &get);
-    CHK_PRT_RET(ret != 0, HCCL_ERROR("[SetAffinity]could not get CPU affinity, ret[%d], strerror[%s]",
-        ret, strerror(errno)), HCCL_E_SYSCALL);
+    CHK_PRT_RET(
+        ret != 0, HCCL_ERROR("[SetAffinity]could not get CPU affinity, ret[%d], strerror[%s]", ret, strerror(errno)),
+        HCCL_E_SYSCALL);
 
     if (CPU_ISSET(cpuId, &get)) {
         HCCL_INFO("[SetAffinity]dev is %d thread %llu is running in processor %d", devId, pthread_self(), cpuId);
@@ -95,8 +97,9 @@ HcclResult TcpSendThreadPool::BindDataCpu(unsigned int devId)
 
     // 计算单个device上的核数
     cpuNum = cCpuNum + dCpuNum + aCpuNum;
-    HCCL_INFO("halGetDeviceInf devId = %u, devNum = %u ccpu = %lld dcpu = %lld acpu = %lld cpu_num = %lld",
-        devId, numDev, cCpuNum, dCpuNum, aCpuNum, cpuNum);
+    HCCL_INFO(
+        "halGetDeviceInf devId = %u, devNum = %u ccpu = %lld dcpu = %lld acpu = %lld cpu_num = %lld", devId, numDev,
+        cCpuNum, dCpuNum, aCpuNum, cpuNum);
 
     cpuId = (devId % numDev) * cpuNum + cCpuNum;
 
@@ -126,10 +129,7 @@ u32 TcpSendThreadPool::GetThreadNum()
     return threadNum;
 }
 
-TcpSendThreadPool::TcpSendThreadPool()
-    : threadNum_(0), isRunning_(false), initCount_(0), devId_(0)
-{
-}
+TcpSendThreadPool::TcpSendThreadPool() : threadNum_(0), isRunning_(false), initCount_(0), devId_(0) {}
 
 TcpSendThreadPool::~TcpSendThreadPool()
 {
@@ -156,8 +156,8 @@ HcclResult TcpSendThreadPool::Init(u32 devId)
                 TaskQueueManager_[i].taskQueues = make_pair(mainThreadTaskQueue, swapThreadTaskQueue);
                 TaskQueueManager_[i].threadTaskQueuePtr = &TaskQueueManager_[i].taskQueues.first;
             }
-            EXECEPTION_CATCH((threads_[i] = make_unique<thread>(&TcpSendThreadPool::RunTask, this, i)),
-                return HCCL_E_PTR);
+            EXECEPTION_CATCH(
+                (threads_[i] = make_unique<thread>(&TcpSendThreadPool::RunTask, this, i)), return HCCL_E_PTR);
         }
     }
     initCount_++;
@@ -172,7 +172,7 @@ HcclResult TcpSendThreadPool::Deinit()
         isRunning_ = false;
         cond_.notify_all();
 
-        for (auto &ptr : threads_) {
+        for (auto& ptr : threads_) {
             if (ptr != nullptr && ptr->joinable()) {
                 ptr->join();
                 ptr = nullptr;
@@ -189,16 +189,16 @@ HcclResult TcpSendThreadPool::Deinit()
     return HCCL_SUCCESS;
 }
 
-HcclResult TcpSendThreadPool::AddSendTask(HcclRequestInfo *request)
+HcclResult TcpSendThreadPool::AddSendTask(HcclRequestInfo* request)
 {
     CHK_PTR_NULL(request);
     HCCL_DEBUG("AddSendTask request[%p] tag[%d]", request, request->transportRequest.epParam.dst.tag);
     s32 tag = request->transportRequest.epParam.dst.tag;
     {
         lock_guard<mutex> threadLock(threadMutexs_[tag % threadNum_]);
-        TagTaskQueue *ptr = TaskQueueManager_[tag % threadNum_].threadTaskQueuePtr;
+        TagTaskQueue* ptr = TaskQueueManager_[tag % threadNum_].threadTaskQueuePtr;
         CHK_PTR_NULL(ptr);
-        auto &&iter = ptr->emplace(tag, queue<HcclRequestInfo *>());
+        auto&& iter = ptr->emplace(tag, queue<HcclRequestInfo*>());
         iter.first->second.push(request);
     }
 
@@ -214,7 +214,7 @@ HcclResult TcpSendThreadPool::RunTask(u32 serialNum)
     }
 
     HCCL_DEBUG("threadSerial[%u]", serialNum);
-    TagTaskQueue *sendWorkQueue = nullptr;
+    TagTaskQueue* sendWorkQueue = nullptr;
 
     while (isRunning_) {
         unique_lock<mutex> threadLock(threadMutexs_[serialNum]);
@@ -230,16 +230,18 @@ HcclResult TcpSendThreadPool::RunTask(u32 serialNum)
     return HCCL_SUCCESS;
 }
 
-HcclResult TcpSendThreadPool::SendWork(queue<HcclRequestInfo *>& requestArray, bool &sendComplete)
+HcclResult TcpSendThreadPool::SendWork(queue<HcclRequestInfo*>& requestArray, bool& sendComplete)
 {
     bool envCompleted = true;  // 信封数据是否完全发送成功
-    bool tranCompleted = true;  // 数据是否完全发送
+    bool tranCompleted = true; // 数据是否完全发送
     while (!requestArray.empty()) {
-        HcclRequestInfo *request = requestArray.front();
-        CHK_RET(static_cast<TransportHeterogEventTcp*>(request->transportHandle)->SendNoBlock(
-            request->transportRequest.transData, request->transportRequest.epParam,
-            request->transportRequest.envoffset, request->transportRequest.tranoffset,
-            envCompleted, tranCompleted));
+        HcclRequestInfo* request = requestArray.front();
+        CHK_RET(
+            static_cast<TransportHeterogEventTcp*>(request->transportHandle)
+                ->SendNoBlock(
+                    request->transportRequest.transData, request->transportRequest.epParam,
+                    request->transportRequest.envoffset, request->transportRequest.tranoffset, envCompleted,
+                    tranCompleted));
         if (envCompleted && tranCompleted) { // 发完出队
             CHK_RET(static_cast<TransportHeterogEventTcp*>(request->transportHandle)->ReportSendComp(request));
             requestArray.pop(); // 删除
@@ -252,16 +254,17 @@ HcclResult TcpSendThreadPool::SendWork(queue<HcclRequestInfo *>& requestArray, b
     return HCCL_SUCCESS;
 }
 
-bool TcpSendThreadPool::ThreadTaskQueueAddTask(u32 &threadSerial, TagTaskQueue* &sendWorkQueue)
+bool TcpSendThreadPool::ThreadTaskQueueAddTask(u32& threadSerial, TagTaskQueue*& sendWorkQueue)
 {
     bool threadTaskQueueEmpty = true;
-    for (auto &iter : *(TaskQueueManager_[threadSerial].threadTaskQueuePtr)) {
+    for (auto& iter : *(TaskQueueManager_[threadSerial].threadTaskQueuePtr)) {
         if (!iter.second.empty()) {
             sendWorkQueue = TaskQueueManager_[threadSerial].threadTaskQueuePtr;
-            TaskQueueManager_[threadSerial].threadTaskQueuePtr =
-                &TaskQueueManager_[threadSerial].taskQueues.first ==
-                TaskQueueManager_[threadSerial].threadTaskQueuePtr ?
-                &TaskQueueManager_[threadSerial].taskQueues.second : &TaskQueueManager_[threadSerial].taskQueues.first;
+            TaskQueueManager_[threadSerial].threadTaskQueuePtr
+                = &TaskQueueManager_[threadSerial].taskQueues.first
+                          == TaskQueueManager_[threadSerial].threadTaskQueuePtr ?
+                      &TaskQueueManager_[threadSerial].taskQueues.second :
+                      &TaskQueueManager_[threadSerial].taskQueues.first;
             threadTaskQueueEmpty = false;
             break;
         }
@@ -270,14 +273,14 @@ bool TcpSendThreadPool::ThreadTaskQueueAddTask(u32 &threadSerial, TagTaskQueue* 
     return threadTaskQueueEmpty;
 }
 
-HcclResult TcpSendThreadPool::LoadBalancing(TagTaskQueue *&sendWorkQueue)
+HcclResult TcpSendThreadPool::LoadBalancing(TagTaskQueue*& sendWorkQueue)
 {
     while (true) {
         if (sendWorkQueue == nullptr) {
             break;
         }
         bool allSendTaskFinish = true;
-        for (auto &&iter : *sendWorkQueue) {
+        for (auto&& iter : *sendWorkQueue) {
             if (iter.second.empty()) {
                 continue;
             }
@@ -292,4 +295,4 @@ HcclResult TcpSendThreadPool::LoadBalancing(TagTaskQueue *&sendWorkQueue)
 
     return HCCL_SUCCESS;
 }
-}
+} // namespace hccl

@@ -21,9 +21,9 @@ constexpr u32 V82_NOTIFY_SIZE = 8;
 NotifyFixedValue::NotifyFixedValue() : size(DevCapability::GetInstance().GetNotifySize())
 {
     size = HrtGetDeviceType() == DevType::DEV_TYPE_950 ? V82_NOTIFY_SIZE : DevCapability::GetInstance().GetNotifySize();
-    u64   notifyValueSize = LARGE_PAGE_MEMORY_MIN_SIZE; // 避免申请小页内存。最小2*1024*1024
-    void *ptr             = HrtMalloc(notifyValueSize, static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH));
-    u32   notifyValue     = 1; // notify值写1表示record
+    u64 notifyValueSize = LARGE_PAGE_MEMORY_MIN_SIZE; // 避免申请小页内存。最小2*1024*1024
+    void* ptr = HrtMalloc(notifyValueSize, static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH));
+    u32 notifyValue = 1; // notify值写1表示record
     HrtMemcpy(ptr, notifyValueSize, &notifyValue, size, RT_MEMCPY_HOST_TO_DEVICE);
     addr = reinterpret_cast<uintptr_t>(ptr);
 }
@@ -34,20 +34,11 @@ NotifyFixedValue::~NotifyFixedValue()
     DECTOR_TRY_CATCH("NotifyFixedValue", Free());
 }
 
-u64 NotifyFixedValue::GetAddr() const
-{
-    return addr;
-}
+u64 NotifyFixedValue::GetAddr() const { return addr; }
 
-u32 NotifyFixedValue::GetSize() const
-{
-    return size;
-}
+u32 NotifyFixedValue::GetSize() const { return size; }
 
-void NotifyFixedValue::Free() const
-{
-    HrtFree(reinterpret_cast<void *>(addr));
-}
+void NotifyFixedValue::Free() const { HrtFree(reinterpret_cast<void*>(addr)); }
 
 void NotifyFixedValue::RegisterMem(RdmaHandle rdmaHandle)
 {
@@ -56,9 +47,9 @@ void NotifyFixedValue::RegisterMem(RdmaHandle rdmaHandle)
     }
     TokenIdHandle tokenIdHandle = RdmaHandleManager::GetInstance().GetTokenIdInfo(rdmaHandle).first;
     std::pair<u64, u64> alignBuf = BufAlign(addr, size);
-    HrtRaUbLocMemRegParam      memRegParam(alignBuf.first, alignBuf.second, GetUbToken(), tokenIdHandle, 0);
+    HrtRaUbLocMemRegParam memRegParam(alignBuf.first, alignBuf.second, GetUbToken(), tokenIdHandle, 0);
     HrtRaUbLocalMemRegOutParam memRegOutParam = HrtRaUbLocalMemReg(rdmaHandle, memRegParam);
-    memHandles[rdmaHandle]                    = memRegOutParam.handle;
+    memHandles[rdmaHandle] = memRegOutParam.handle;
 }
 LocMemHandle NotifyFixedValue::GetMemHandle(RdmaHandle rdmaHandle)
 {

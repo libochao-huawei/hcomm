@@ -29,14 +29,8 @@ using namespace hccl;
 
 class OneSideServiceUT : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "OneSideServiceUT SetUp" << std::endl;
-    }
-    static void TearDownTestCase()
-    {
-        std::cout << "OneSideServiceUT TearDown" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "OneSideServiceUT SetUp" << std::endl; }
+    static void TearDownTestCase() { std::cout << "OneSideServiceUT TearDown" << std::endl; }
     virtual void SetUp()
     {
         HcclOneSideServiceAicpu::services_.clear();
@@ -49,7 +43,8 @@ protected:
         std::cout << "A Test TearDown" << std::endl;
     }
 
-    void SetupService(std::shared_ptr<HcclOneSideServiceAicpu> &service, const std::string &identifier, bool execStreamEnable, 
+    void SetupService(
+        std::shared_ptr<HcclOneSideServiceAicpu>& service, const std::string& identifier, bool execStreamEnable,
         uint32_t devId, uint32_t sqId, uint32_t actualStreamId)
     {
         service->identifier_ = identifier;
@@ -64,24 +59,18 @@ protected:
 };
 
 TEST_F(OneSideServiceUT, Ut_CleanStreamFunc_When_Disabled_ExecutesClean)
-{   
+{
     auto service = std::make_shared<HcclOneSideServiceAicpu>();
     SetupService(service, "test_clean", false, 0, 1, 100);
 
     SqCqeContext sqCqeContext{};
     service->execStream_.sqeContext_ = &sqCqeContext.sqContext;
 
-    MOCKER(ConfigSqStatusByType)
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
+    MOCKER(ConfigSqStatusByType).stubs().will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&Stream::ClearLocalBuff)
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&Stream::ClearLocalBuff).stubs().will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(QuerySqStatusByType)
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
+    MOCKER(QuerySqStatusByType).stubs().will(returnValue(HCCL_SUCCESS));
 
     HcclResult ret = service->CleanStreamFunc();
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -103,9 +92,7 @@ TEST_F(OneSideServiceUT, Ut_CleanAllStreamFunc_When_CleanStreamFuncFail_ReturnsE
     SetupService(service, "fail_tag", false, 0, 1, 100);
     HcclOneSideServiceAicpu::services_["fail_tag"] = service;
 
-    MOCKER(ConfigSqStatusByType)
-        .stubs()
-        .will(returnValue(HCCL_E_INTERNAL));
+    MOCKER(ConfigSqStatusByType).stubs().will(returnValue(HCCL_E_INTERNAL));
 
     HcclResult ret = HcclOneSideServiceAicpu::CleanAllStreamFunc();
     EXPECT_NE(ret, HCCL_SUCCESS);

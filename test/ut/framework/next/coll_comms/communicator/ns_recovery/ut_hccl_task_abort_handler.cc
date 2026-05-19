@@ -18,20 +18,14 @@
 #include "ccu_dev_mgr_pub.h"
 #undef private
 
-using namespace hccl; 
+using namespace hccl;
 using namespace hcomm;
 
 class HcclTaskAbortHandlerTest : public testing::Test {
 public:
-    static void SetUpTestCase()
-    {
-        std::cout << "HcclTaskAbortHandlerTest SetUP" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "HcclTaskAbortHandlerTest SetUP" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "HcclTaskAbortHandlerTest TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "HcclTaskAbortHandlerTest TearDown" << std::endl; }
 
     virtual void SetUp()
     {
@@ -55,15 +49,12 @@ TEST_F(HcclTaskAbortHandlerTest, test_task_abort_handle_call_back_stage_pre_succ
     uint32_t timeout = 30U;
 
     // 使用 nullptr 作为测试 communicator 的占位符并注册
-    CollComm *comm = nullptr;
+    CollComm* comm = nullptr;
     HcclTaskAbortHandler::GetInstance().Register(comm);
     void* args = reinterpret_cast<void*>(&HcclTaskAbortHandler::GetInstance().commVector_);
 
     // 模拟 Suspend 方法返回成功
-    MOCKER_CPP(&CollComm::Suspend, HcclResult(CollComm:: *)())
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CollComm::Suspend, HcclResult (CollComm::*)()).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     // 测试带超时的情况
     auto ret = ProcessTaskAbortHandleCallback(deviceLogicId, stage, timeout, args);
@@ -87,15 +78,12 @@ TEST_F(HcclTaskAbortHandlerTest, test_task_abort_handle_call_back_stage_pre_fail
     uint32_t timeout = 30U;
 
     // 使用 nullptr 作为测试 communicator 的占位符并注册
-    CollComm *comm = nullptr;
+    CollComm* comm = nullptr;
     HcclTaskAbortHandler::GetInstance().Register(comm);
     void* args = reinterpret_cast<void*>(&HcclTaskAbortHandler::GetInstance().commVector_);
 
     // 模拟 Suspend 方法返回失败
-    MOCKER_CPP(&CollComm::Suspend, HcclResult(CollComm:: *)())
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_E_INTERNAL));
+    MOCKER_CPP(&CollComm::Suspend, HcclResult (CollComm::*)()).stubs().with(any()).will(returnValue(HCCL_E_INTERNAL));
 
     // 测试带超时的情况
     auto ret = ProcessTaskAbortHandleCallback(deviceLogicId, stage, timeout, args);
@@ -118,7 +106,7 @@ TEST_F(HcclTaskAbortHandlerTest, test_task_abort_handle_call_back_stage_post_suc
     uint32_t timeout = 30U;
 
     // 使用 nullptr 作为测试 communicator 的占位符并注册
-    CollComm *comm = nullptr;
+    CollComm* comm = nullptr;
     HcclTaskAbortHandler::GetInstance().Register(comm);
     void* args = reinterpret_cast<void*>(&HcclTaskAbortHandler::GetInstance().commVector_);
 
@@ -127,10 +115,7 @@ TEST_F(HcclTaskAbortHandlerTest, test_task_abort_handle_call_back_stage_post_suc
     MOCKER(CcuSetTaskKillDone).stubs().will(returnValue(HCCL_SUCCESS));
 
     // 模拟 Clean 方法返回成功
-    MOCKER_CPP(&CollComm::Clean, HcclResult(CollComm:: *)())
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CollComm::Clean, HcclResult (CollComm::*)()).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     // 测试带超时的情况
     auto ret = ProcessTaskAbortHandleCallback(deviceLogicId, stage, timeout, args);
@@ -153,7 +138,7 @@ TEST_F(HcclTaskAbortHandlerTest, test_task_abort_handle_call_back_stage_post_fai
     uint32_t timeout = 30U;
 
     // 使用 nullptr 作为测试 communicator 的占位符并注册
-    CollComm *comm = nullptr;
+    CollComm* comm = nullptr;
     HcclTaskAbortHandler::GetInstance().Register(comm);
     void* args = reinterpret_cast<void*>(&HcclTaskAbortHandler::GetInstance().commVector_);
 
@@ -162,10 +147,7 @@ TEST_F(HcclTaskAbortHandlerTest, test_task_abort_handle_call_back_stage_post_fai
     MOCKER(CcuSetTaskKillDone).stubs().will(returnValue(HCCL_SUCCESS));
 
     // 模拟 Clean 方法返回失败
-    MOCKER_CPP(&CollComm::Clean, HcclResult(CollComm:: *)())
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_E_INTERNAL));
+    MOCKER_CPP(&CollComm::Clean, HcclResult (CollComm::*)()).stubs().with(any()).will(returnValue(HCCL_E_INTERNAL));
 
     // 测试带超时的情况
     auto ret = ProcessTaskAbortHandleCallback(deviceLogicId, stage, timeout, args);

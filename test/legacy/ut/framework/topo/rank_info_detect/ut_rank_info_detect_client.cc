@@ -48,15 +48,12 @@ std::string filePath{HCOMM_CODE_ROOT_DIR "/test/legacy/ut/framework/topo/rank_in
 
 class RankInfoDetectClientTest : public testing::Test {
 protected:
-    static void SetUpTestCase() {
-        std::cout << "RankInfoDetectClientTest SetUP" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "RankInfoDetectClientTest SetUP" << std::endl; }
 
-    static void TearDownTestCase() {
-        std::cout << "RankInfoDetectClientTest TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "RankInfoDetectClientTest TearDown" << std::endl; }
 
-    virtual void SetUp() {
+    virtual void SetUp()
+    {
         std::cout << "A Test case in RankInfoDetectClientTest SetUP" << std::endl;
         socketHandle = new int(0);
         MOCKER(HrtRaSocketInit).stubs().with(any(), any()).will(returnValue(socketHandle));
@@ -70,42 +67,40 @@ protected:
         u32 rankId_ = 0;
         std::string clientSocketTag = "rank_info_test_server";
 
-
         auto clientSocket_ = std::make_shared<Socket>(
-            socketHandle, hostIp_, hostPort, serverIp,
-            clientSocketTag, SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE
-        );
+            socketHandle, hostIp_, hostPort, serverIp, clientSocketTag, SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
         SocketAgent socketAgent_ = SocketAgent(clientSocket_.get());
         rankInfoDetectClient_ = new RankInfoDetectClient(devPhyId_, rankSize_, rankId_, clientSocket_);
     }
 
-    virtual void TearDown() {
+    virtual void TearDown()
+    {
         GlobalMockObject::verify();
         delete socketHandle;
         delete rankInfoDetectClient_;
         std::cout << "A Test case in RankInfoDetectServiceTest TearDown" << std::endl;
     }
 
-    RankInfoDetectClient *rankInfoDetectClient_;
-    nlohmann::json presetParseJson_;       // 模拟ParseFileToJson的返回结果
-    nlohmann::json presetLocalDevJson_;    // 模拟GetLocalDevInfoJson的返回结果
-    nlohmann::json presetRankTableJson_;   // 模拟GetLocalRankTableJson的返回结果
+    RankInfoDetectClient* rankInfoDetectClient_;
+    nlohmann::json presetParseJson_;     // 模拟ParseFileToJson的返回结果
+    nlohmann::json presetLocalDevJson_;  // 模拟GetLocalDevInfoJson的返回结果
+    nlohmann::json presetRankTableJson_; // 模拟GetLocalRankTableJson的返回结果
     SocketHandle socketHandle;
 };
 
 namespace {
 NewRankInfo BuildRankInfoForTls(u32 rankId, TlsStatus tlsStatus)
 {
-    NewRankInfo rankInfo {};
+    NewRankInfo rankInfo{};
     rankInfo.rankId = rankId;
     rankInfo.localId = rankId;
     rankInfo.replacedLocalId = rankId;
-    rankInfo.rankLevelInfos.emplace_back(RankLevelInfo {});
+    rankInfo.rankLevelInfos.emplace_back(RankLevelInfo{});
     rankInfo.tlsStatus = tlsStatus;
     return rankInfo;
 }
 
-void BuildRankTableForTls(RankTableInfo &rankTable, const std::vector<TlsStatus> &tlsStatusList)
+void BuildRankTableForTls(RankTableInfo& rankTable, const std::vector<TlsStatus>& tlsStatusList)
 {
     rankTable.version = "2.0";
     rankTable.rankCount = tlsStatusList.size();
@@ -114,23 +109,18 @@ void BuildRankTableForTls(RankTableInfo &rankTable, const std::vector<TlsStatus>
         rankTable.ranks.emplace_back(BuildRankInfoForTls(idx, tlsStatusList[idx]));
     }
 }
-}
+} // namespace
 
 TEST_F(RankInfoDetectClientTest, Ut_CheckStatus_When_Normal_Expect_Success)
 {
-    MOCKER_CPP(&Socket::GetStatus)
-        .stubs()
-        .then(returnValue((SocketStatus)SocketStatus::OK));
+    MOCKER_CPP(&Socket::GetStatus).stubs().then(returnValue((SocketStatus)SocketStatus::OK));
 
     EXPECT_NO_THROW(rankInfoDetectClient_->CheckStatus());
 }
 
 TEST_F(RankInfoDetectClientTest, Ut_SendAgentIdAndRankSize_When_Normal_Expect_Success)
 {
-    MOCKER(HrtRaSocketBlockSend)
-        .stubs()
-        .with(any(), any())
-        .will(returnValue(true));
+    MOCKER(HrtRaSocketBlockSend).stubs().with(any(), any()).will(returnValue(true));
 
     EXPECT_NO_THROW(rankInfoDetectClient_->SendAgentIdAndRankSize());
 }
@@ -142,11 +132,11 @@ TEST_F(RankInfoDetectClientTest, Ut_ConstructSingleRank_When_Normal_Expect_Succe
     EXPECT_NO_THROW(rankInfoDetectClient_->ConstructSingleRank(localRankTable));
 
     EXPECT_EQ(localRankTable.version, "2.0");
-    EXPECT_EQ(localRankTable.rankCount, 1U) ;
+    EXPECT_EQ(localRankTable.rankCount, 1U);
     EXPECT_EQ(localRankTable.ranks.size(), 1U);
     const NewRankInfo& actualRankInfo = localRankTable.ranks[0];
-    EXPECT_EQ(actualRankInfo.rankId, 0); 
-    EXPECT_EQ(actualRankInfo.rankLevelInfos.size(), 1U); 
+    EXPECT_EQ(actualRankInfo.rankId, 0);
+    EXPECT_EQ(actualRankInfo.rankLevelInfos.size(), 1U);
 }
 
 TEST_F(RankInfoDetectClientTest, Ut_ConstructRankTable_When_Normal_Expect_Success)
@@ -155,18 +145,10 @@ TEST_F(RankInfoDetectClientTest, Ut_ConstructRankTable_When_Normal_Expect_Succes
     RankTableInfo localRankTable;
     std::string testJsonPath{HCOMM_CODE_ROOT_DIR "/test/legacy/ut/framework/topo/rank_info_detect/rootInfo.json"};
 
-    MOCKER(realpath) 
-        .stubs()  
-        .with(
-            any(), 
-            outBoundP(
-                const_cast<char*>(testJsonPath.c_str()),  
-                testJsonPath.size() + 1                   
-            )
-        )
-        .will(returnValue(
-            const_cast<char*>(testJsonPath.c_str()) 
-        ));
+    MOCKER(realpath)
+        .stubs()
+        .with(any(), outBoundP(const_cast<char*>(testJsonPath.c_str()), testJsonPath.size() + 1))
+        .will(returnValue(const_cast<char*>(testJsonPath.c_str())));
     std::string testJsonContent = R"({
         "version": "2.0",
         "topo_file_path": "rootInfo.json",
@@ -215,21 +197,19 @@ TEST_F(RankInfoDetectClientTest, Ut_ConstructRankTable_When_Normal_Expect_Succes
         ]
     })";
     size_t expectedSize = testJsonContent.size();
-    MOCKER(TopoAddrInfoGetSize)
-        .stubs()
-        .with(0, outBoundP(&expectedSize, sizeof(size_t)))
-        .will(returnValue(0));
+    MOCKER(TopoAddrInfoGetSize).stubs().with(0, outBoundP(&expectedSize, sizeof(size_t))).will(returnValue(0));
     const char* rootInfoCtx = testJsonContent.c_str();
     MOCKER(TopoAddrInfoGet)
         .stubs()
-        .with(0, outBoundP(const_cast<char*>(rootInfoCtx), testJsonContent.size()), outBoundP(&expectedSize, sizeof(size_t)))
+        .with(
+            0, outBoundP(const_cast<char*>(rootInfoCtx), testJsonContent.size()),
+            outBoundP(&expectedSize, sizeof(size_t)))
         .will(returnValue(0));
 
     EXPECT_NO_THROW(rankInfoDetectClient_->ConstructRankTable(localRankTable));
 
     EXPECT_EQ(localRankTable.version, "2.0");
     EXPECT_EQ(localRankTable.rankCount, 2);
-
 }
 
 TEST_F(RankInfoDetectClientTest, Ut_RecvRankTable_When_Normal_Expect_Success)
@@ -245,7 +225,8 @@ TEST_F(RankInfoDetectClientTest, Ut_RecvRankTable_When_Normal_Expect_Success)
     BinaryStream binaryStream;
     localRankTable.GetBinStream(true, binaryStream);
     binaryStream << rankInfoDetectClient_->currentStep_;
-    std:string temp = "";
+std:
+    string temp = "";
     binaryStream << temp;
 
     // 字节流转换为vector<char>格式
@@ -259,13 +240,10 @@ TEST_F(RankInfoDetectClientTest, Ut_RecvRankTable_When_Normal_Expect_Success)
     // 取rankInfoMsg的data() （const char *）
     MOCKER(aclrtMallocHostWithCfg).stubs().will(returnValue(1));
     MOCKER(HrtMallocHost).stubs().with(any()).will(returnValue((void*)rankInfoMsg.data()));
-    void *msg = rankInfoMsg.data();
+    void* msg = rankInfoMsg.data();
     u64 msgLen = rankInfoMsg.size();
-    u64 &revMsgLen = msgLen;
-    MOCKER_CPP(&SocketAgent::RecvMsg)
-            .stubs()
-            .with(outBound(msg), outBound(revMsgLen))
-            .will(returnValue(true));
+    u64& revMsgLen = msgLen;
+    MOCKER_CPP(&SocketAgent::RecvMsg).stubs().with(outBound(msg), outBound(revMsgLen)).will(returnValue(true));
 
     MOCKER_CPP(&RankInfoDetectClient::VerifyRankTable).stubs().will(ignoreReturnValue());
 
@@ -310,7 +288,8 @@ TEST_F(RankInfoDetectClientTest, Ut_VerifyTlsConsistency_When_KnownConsistentAnd
 
 TEST_F(RankInfoDetectClientTest, Ut_VerifyTlsConsistency_When_KnownInconsistentAndUnknownExists_Expect_ReturnParaError)
 {
-    BuildRankTableForTls(rankInfoDetectClient_->rankTable_, {TlsStatus::ENABLE, TlsStatus::DISABLE, TlsStatus::UNKNOWN});
+    BuildRankTableForTls(
+        rankInfoDetectClient_->rankTable_, {TlsStatus::ENABLE, TlsStatus::DISABLE, TlsStatus::UNKNOWN});
 
     HcclResult ret = rankInfoDetectClient_->VerifyTlsConsistency();
 
@@ -334,4 +313,3 @@ TEST_F(RankInfoDetectClientTest, Ut_VerifyRankTable_When_TlsStatus_Expect_Throw)
 
     EXPECT_THROW(rankInfoDetectClient_->VerifyRankTable(), InvalidParamsException);
 }
-

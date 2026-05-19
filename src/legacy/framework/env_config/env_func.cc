@@ -12,7 +12,7 @@
 #include <climits>
 #include <fstream>
 #include <linux/limits.h>
-#include <cctype> 
+#include <cctype>
 #include <algorithm>
 #include <sstream>
 #include <set>
@@ -28,7 +28,7 @@ namespace Hccl {
 
 /*----------------------------- cast functions -------------------------*/
 
-bool CastBin2Bool(const std::string &s)
+bool CastBin2Bool(const std::string& s)
 {
     bool b = true;
     if (s == "0") {
@@ -41,7 +41,7 @@ bool CastBin2Bool(const std::string &s)
     return b;
 }
 
-u32 CastBin2UInt(const std::string &s)
+u32 CastBin2UInt(const std::string& s)
 {
     u32 b = std::stoi(s);
     if (b > HCCL_CCU_FLAG_NUM) {
@@ -51,11 +51,10 @@ u32 CastBin2UInt(const std::string &s)
     return b;
 }
 
-
-static HcclResult SplitHcclSocketIfName(const std::string &socketIfName, std::vector<std::string> &configIfNames)
+static HcclResult SplitHcclSocketIfName(const std::string& socketIfName, std::vector<std::string>& configIfNames)
 {
     std::size_t start = 0;
-    std::size_t end   = socketIfName.find(",");
+    std::size_t end = socketIfName.find(",");
     while (end != std::string::npos) {
         if (start == 0 && end == 0) {
             HCCL_ERROR("[Split][HcclSocketIfName] configIfNames config is invalid.");
@@ -63,7 +62,7 @@ static HcclResult SplitHcclSocketIfName(const std::string &socketIfName, std::ve
         }
         configIfNames.push_back(socketIfName.substr(start, end - start));
         start = end + 1;
-        end   = socketIfName.find(",", start);
+        end = socketIfName.find(",", start);
     }
     // 处理最后一个部分
     if (start < socketIfName.length()) {
@@ -76,7 +75,7 @@ static HcclResult SplitHcclSocketIfName(const std::string &socketIfName, std::ve
 }
 
 // 临时方案，且当前未使用，测试期望在此拦截该环境变量所有异常值
-SocketIfName CastSocketIfName(const std::string &s)
+SocketIfName CastSocketIfName(const std::string& s)
 {
     SocketIfName hcclSocketIfNameGroup{};
     hcclSocketIfNameGroup.configIfNameStr = s;
@@ -100,9 +99,11 @@ SocketIfName CastSocketIfName(const std::string &s)
 
         // 获取用户输入的网卡名列表(使用逗号隔开),将网卡名列表存放到vector变量中
         HcclResult ret = SplitHcclSocketIfName(remainSocketIfName, hcclSocketIfNameGroup.configIfNames);
-        if(ret != HCCL_SUCCESS) {
-            THROW<InvalidParamsException>(StringFormat("environmental variable HCCL_SOCKET_IFNAME[%s] is invalid. "\
-                "please check.", s.c_str()));
+        if (ret != HCCL_SUCCESS) {
+            THROW<InvalidParamsException>(StringFormat(
+                "environmental variable HCCL_SOCKET_IFNAME[%s] is invalid. "
+                "please check.",
+                s.c_str()));
         }
         HCCL_INFO("HCCL_SOCKET_IFNAME set by environment to [%s]", hcclSocketIfName.c_str());
     } else {
@@ -113,7 +114,7 @@ SocketIfName CastSocketIfName(const std::string &s)
     return hcclSocketIfNameGroup;
 }
 
-bool SplitString(std::string &totalStr, std::string &prefixStr, const std::string &delim)
+bool SplitString(std::string& totalStr, std::string& prefixStr, const std::string& delim)
 {
     std::size_t found = totalStr.find(delim);
     if (found == std::string::npos) {
@@ -124,17 +125,19 @@ bool SplitString(std::string &totalStr, std::string &prefixStr, const std::strin
     return true;
 }
 
-void GetUIntFromStr(const std::string &digitStr, u32 &val)
+void GetUIntFromStr(const std::string& digitStr, u32& val)
 {
     bool isAllDigits = std::all_of(digitStr.begin(), digitStr.end(), ::isdigit);
-    CHK_PRT_THROW(!isAllDigits, HCCL_ERROR("[GetUIntFromStr] str[%s] is not all digit.",
-        digitStr.c_str()), InvalidParamsException, "parser portRange fail.");
+    CHK_PRT_THROW(
+        !isAllDigits, HCCL_ERROR("[GetUIntFromStr] str[%s] is not all digit.", digitStr.c_str()),
+        InvalidParamsException, "parser portRange fail.");
     auto ret = SalStrToULong(digitStr.c_str(), HCCL_BASE_DECIMAL, val);
-    CHK_PRT_THROW(ret != HCCL_SUCCESS, HCCL_ERROR("[GetUIntFromStr] str[%s] is a invalid number.",
-        digitStr.c_str()), InvalidParamsException, "parser portRange fail.");
+    CHK_PRT_THROW(
+        ret != HCCL_SUCCESS, HCCL_ERROR("[GetUIntFromStr] str[%s] is a invalid number.", digitStr.c_str()),
+        InvalidParamsException, "parser portRange fail.");
 }
 
-void SplitSinglePortRange(const std::string &envName, std::string &rangeStr, SocketPortRange &portRange)
+void SplitSinglePortRange(const std::string& envName, std::string& rangeStr, SocketPortRange& portRange)
 {
     std::string rangeMin{};
     const std::string delim = "-";
@@ -145,46 +148,57 @@ void SplitSinglePortRange(const std::string &envName, std::string &rangeStr, Soc
         GetUIntFromStr(rangeStr, portRange.min);
         portRange.max = portRange.min;
     }
-    HCCL_INFO("[SplitSinglePortRange] Load hccl socket port range [%u, %u] from %s",
-        portRange.min, portRange.max, envName.c_str());
+    HCCL_INFO(
+        "[SplitSinglePortRange] Load hccl socket port range [%u, %u] from %s", portRange.min, portRange.max,
+        envName.c_str());
 }
 
-void CheckSocketPortRangeValid(const std::string &envName, const std::vector<SocketPortRange> &portRanges)
+void CheckSocketPortRangeValid(const std::string& envName, const std::vector<SocketPortRange>& portRanges)
 {
     std::vector<SocketPortRange> rangeVec(portRanges.begin(), portRanges.end());
-    std::sort(rangeVec.begin(), rangeVec.end(), [](SocketPortRange &a, SocketPortRange &b) {
+    std::sort(rangeVec.begin(), rangeVec.end(), [](SocketPortRange& a, SocketPortRange& b) {
         return (a.min == b.min) ? (a.max < b.max) : (a.min < b.min);
     });
     for (size_t i = 0; i < rangeVec.size(); ++i) {
         // the socket range should not be inverted
-        CHK_PRT_THROW(rangeVec[i].min > rangeVec[i].max,
-            HCCL_ERROR("[%s] In %s, in socket port range [%u, %u], the lower bound is greater than"
-                " the upper bound.", __func__, envName.c_str(), rangeVec[i].min, rangeVec[i].max), 
+        CHK_PRT_THROW(
+            rangeVec[i].min > rangeVec[i].max,
+            HCCL_ERROR(
+                "[%s] In %s, in socket port range [%u, %u], the lower bound is greater than"
+                " the upper bound.",
+                __func__, envName.c_str(), rangeVec[i].min, rangeVec[i].max),
             InvalidParamsException, "check portRange fail.");
 
         // the socket range should not include the reserved port for auto listening.
-        CHK_PRT_THROW((rangeVec[i].min <= HCCL_SOCKET_PORT_RANGE_AUTO),
-            HCCL_ERROR("[%s] In %s, socket port range [%u, %u] includes the reserved port number [%u]. "
-                "please do not use port [%u] in socket port range.", __func__, envName.c_str(), 
-                rangeVec[i].min, rangeVec[i].max, HCCL_SOCKET_PORT_RANGE_AUTO, HCCL_SOCKET_PORT_RANGE_AUTO), 
+        CHK_PRT_THROW(
+            (rangeVec[i].min <= HCCL_SOCKET_PORT_RANGE_AUTO),
+            HCCL_ERROR(
+                "[%s] In %s, socket port range [%u, %u] includes the reserved port number [%u]. "
+                "please do not use port [%u] in socket port range.",
+                __func__, envName.c_str(), rangeVec[i].min, rangeVec[i].max, HCCL_SOCKET_PORT_RANGE_AUTO,
+                HCCL_SOCKET_PORT_RANGE_AUTO),
             InvalidParamsException, "check portRange fail.");
 
         // the socket range should not exceed the maximum port number
-        CHK_PRT_THROW(rangeVec[i].max > MAX_PORT_NUMBER,
-            HCCL_ERROR("[%s] In %s, in socket port range [%u, %u], the upper bound exceed max port number[%u].",
-                __func__, envName.c_str(), rangeVec[i].min, rangeVec[i].max, MAX_PORT_NUMBER), 
+        CHK_PRT_THROW(
+            rangeVec[i].max > MAX_PORT_NUMBER,
+            HCCL_ERROR(
+                "[%s] In %s, in socket port range [%u, %u], the upper bound exceed max port number[%u].", __func__,
+                envName.c_str(), rangeVec[i].min, rangeVec[i].max, MAX_PORT_NUMBER),
             InvalidParamsException, "check portRange fail.");
 
         // the socket range should not be overlapped
-        CHK_PRT_THROW(i != 0 && rangeVec[i - 1].max >= rangeVec[i].min,
-            HCCL_ERROR("[%s] In %s, socket port range [%u, %u] is conflict with socket port range [%u, %u].",
-                __func__, envName.c_str(), rangeVec[i - 1].min, rangeVec[i - 1].max, rangeVec[i].min, rangeVec[i].max),
+        CHK_PRT_THROW(
+            i != 0 && rangeVec[i - 1].max >= rangeVec[i].min,
+            HCCL_ERROR(
+                "[%s] In %s, socket port range [%u, %u] is conflict with socket port range [%u, %u].", __func__,
+                envName.c_str(), rangeVec[i - 1].min, rangeVec[i - 1].max, rangeVec[i].min, rangeVec[i].max),
             InvalidParamsException, "check portRange fail.");
     }
 }
 
-void SplitHcclSocketPortRange(const std::string &envName, std::string &portRangeConfig,
-    std::vector<SocketPortRange> &portRangeVec)
+void SplitHcclSocketPortRange(
+    const std::string& envName, std::string& portRangeConfig, std::vector<SocketPortRange>& portRangeVec)
 {
     std::string rangeStr{};
     const std::string delim = ",";
@@ -200,7 +214,7 @@ void SplitHcclSocketPortRange(const std::string &envName, std::string &portRange
     CheckSocketPortRangeValid(envName, portRangeVec);
 }
 
-void PrintSocketPortRange(const std::string &envName, const std::vector<SocketPortRange> &portRangeVec)
+void PrintSocketPortRange(const std::string& envName, const std::vector<SocketPortRange>& portRangeVec)
 {
     // assemble port ranges into a string to print the result range
     std::ostringstream portRangeOss;
@@ -210,7 +224,7 @@ void PrintSocketPortRange(const std::string &envName, const std::vector<SocketPo
     HCCL_INFO("%s is set to%s.", envName.c_str(), portRangeOss.str().c_str());
 }
 
-std::vector<SocketPortRange> CastSocketPortRange(const std::string &s, const std::string &envName)
+std::vector<SocketPortRange> CastSocketPortRange(const std::string& s, const std::string& envName)
 {
     std::vector<SocketPortRange> hcclSocketPortRange;
     // the environment variable is not set
@@ -221,14 +235,12 @@ std::vector<SocketPortRange> CastSocketPortRange(const std::string &s, const std
 
     // the socket port range is set to auto, then the os will listen on the ports dymamically and automatically.
     if (socketPortRange == HCCL_AUTO_PORT_CONFIG) {
-        SocketPortRange autoSocketPortRange = {
-            HCCL_SOCKET_PORT_RANGE_AUTO,
-            HCCL_SOCKET_PORT_RANGE_AUTO
-        };
+        SocketPortRange autoSocketPortRange = {HCCL_SOCKET_PORT_RANGE_AUTO, HCCL_SOCKET_PORT_RANGE_AUTO};
         hcclSocketPortRange.emplace_back(autoSocketPortRange);
 
-        HCCL_INFO("HCCL_HOST_SOCKET_PORT_RANGE is set to %s as [%u, %u].", HCCL_AUTO_PORT_CONFIG,
-            autoSocketPortRange.min, autoSocketPortRange.max);
+        HCCL_INFO(
+            "HCCL_HOST_SOCKET_PORT_RANGE is set to %s as [%u, %u].", HCCL_AUTO_PORT_CONFIG, autoSocketPortRange.min,
+            autoSocketPortRange.max);
         return hcclSocketPortRange;
     }
 
@@ -240,27 +252,30 @@ std::vector<SocketPortRange> CastSocketPortRange(const std::string &s, const std
 
     // load ranges from string
     SplitHcclSocketPortRange(envName, socketPortRange, hcclSocketPortRange);
-    CHK_PRT_THROW(hcclSocketPortRange.size() == 0, 
+    CHK_PRT_THROW(
+        hcclSocketPortRange.size() == 0,
         HCCL_ERROR("Load empty port range from HCCL_HOST_SOCKET_PORT_RANGE, should not empty, please check."),
         InvalidParamsException, "parser portRange fail.");
-    
+
     PrintSocketPortRange(envName, hcclSocketPortRange);
     return hcclSocketPortRange;
 }
 
-constexpr u32 HCCL_RDMA_TC_BASE = 4;    // RDMATrafficClass需要是4的整数倍
-void CheckRDMATrafficClass(const u32 &rdmaTrafficClass)
+constexpr u32 HCCL_RDMA_TC_BASE = 4; // RDMATrafficClass需要是4的整数倍
+void CheckRDMATrafficClass(const u32& rdmaTrafficClass)
 {
     if (rdmaTrafficClass % HCCL_RDMA_TC_BASE != 0) {
-        RPT_ENV_ERR(true, "EI0001", std::vector<std::string>({"value", "env", "expect"}),
-                            std::vector<std::string>({std::to_string(rdmaTrafficClass), "HCCL_RDMA_TC", "value should be multiple of four"}));
+        RPT_ENV_ERR(
+            true, "EI0001", std::vector<std::string>({"value", "env", "expect"}),
+            std::vector<std::string>(
+                {std::to_string(rdmaTrafficClass), "HCCL_RDMA_TC", "value should be multiple of four"}));
         HCCL_ERROR("rdmaTrafficClass[%u] is not a multiple of [%u]", rdmaTrafficClass, HCCL_RDMA_TC_BASE);
         THROW<InvalidParamsException>(
             StringFormat("rdmaTrafficClass[%u] is not a multiple of [%u]", rdmaTrafficClass, HCCL_RDMA_TC_BASE));
     }
 }
 
-static void ParseAlgoLevel(const std::string &algoLevel, u32 &level, HcclAlgoType &algoType)
+static void ParseAlgoLevel(const std::string& algoLevel, u32& level, HcclAlgoType& algoType)
 {
     std::size_t found = algoLevel.find(':');
     if ((found == 0) || (found == (algoLevel.length() - 1))) {
@@ -271,12 +286,13 @@ static void ParseAlgoLevel(const std::string &algoLevel, u32 &level, HcclAlgoTyp
     }
 
     std::string orginalLevel = algoLevel.substr(0, found);
-    std::string orginalAlgo  = algoLevel.substr(found + 1);
+    std::string orginalAlgo = algoLevel.substr(found + 1);
 
-    const std::map<std::string, u32> hcclAlgoLevelMap = {{"level0", HCCL_ALGO_LEVEL_0},
-                                                         {"level1", HCCL_ALGO_LEVEL_1},
-                                                         {"level2", HCCL_ALGO_LEVEL_2},
-                                                         {"level3", HCCL_ALGO_LEVEL_3}};
+    const std::map<std::string, u32> hcclAlgoLevelMap
+        = {{"level0", HCCL_ALGO_LEVEL_0},
+           {"level1", HCCL_ALGO_LEVEL_1},
+           {"level2", HCCL_ALGO_LEVEL_2},
+           {"level3", HCCL_ALGO_LEVEL_3}};
 
     const std::map<std::string, HcclAlgoType> hcclAlgoTypeMap = {
         {"null", HcclAlgoType::HCCL_ALGO_TYPE_NULL},
@@ -304,14 +320,14 @@ static void ParseAlgoLevel(const std::string &algoLevel, u32 &level, HcclAlgoTyp
             StringFormat("algo config is invalid, algo %s is not supported.", orginalAlgo.c_str()));
     }
 
-    level    = iterAlgoLevel->second;
+    level = iterAlgoLevel->second;
     algoType = iterAlgoType->second;
 }
 
-std::vector<HcclAlgoType> CastAlgoTypeVec(const std::string &s)
+std::vector<HcclAlgoType> CastAlgoTypeVec(const std::string& s)
 {
     std::vector<HcclAlgoType> algoTypeVec(HCCL_ALGO_LEVEL_NUM);
-    std::string               algoConfig = s;
+    std::string algoConfig = s;
     algoConfig.erase(std::remove(algoConfig.begin(), algoConfig.end(), ' '), algoConfig.end());
 
     for (u32 i = 0; i < HCCL_ALGO_LEVEL_NUM; i++) {
@@ -328,9 +344,9 @@ std::vector<HcclAlgoType> CastAlgoTypeVec(const std::string &s)
         THROW<InvalidParamsException>(
             StringFormat("The number of algo levels is greater than %u.", HCCL_ALGO_LEVEL_NUM));
     }
-    for (const auto &algoLevel : algoLevels) {
-        u32          level = 0;
-        HcclAlgoType algo  = HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT;
+    for (const auto& algoLevel : algoLevels) {
+        u32 level = 0;
+        HcclAlgoType algo = HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT;
         ParseAlgoLevel(algoLevel, level, algo);
         // 检查是否存在重复配置level
         if (algoTypeVec[level] != HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT) {
@@ -348,7 +364,7 @@ std::vector<HcclAlgoType> CastAlgoTypeVec(const std::string &s)
     return algoTypeVec;
 }
 
-HcclResult SplitHcclOpType(const std::string &algoConfig, std::vector<std::string> &algos)
+HcclResult SplitHcclOpType(const std::string& algoConfig, std::vector<std::string>& algos)
 {
     std::string remainAlgoConfig;
     std::size_t found = algoConfig.find("/");
@@ -366,10 +382,7 @@ HcclResult SplitHcclOpType(const std::string &algoConfig, std::vector<std::strin
 }
 
 // 新的逐算法的配置和原有的统一配置只可使用一种，发现同时存在时报错
-HcclResult CheckAlgoConfigValid(
-    std::vector<std::string> &algos,
-    bool& anyCommonConfig,
-    bool& anySpecificConfig)
+HcclResult CheckAlgoConfigValid(std::vector<std::string>& algos, bool& anyCommonConfig, bool& anySpecificConfig)
 {
     for (std::string& algConfig : algos) {
         std::size_t found = algConfig.find("=");
@@ -393,7 +406,7 @@ HcclResult CheckAlgoConfigValid(
     return HCCL_SUCCESS;
 }
 
-HcclResult ParserHcclAlgoLevel(const std::string &algoLevel, u32 &level, HcclAlgoType &algoType)
+HcclResult ParserHcclAlgoLevel(const std::string& algoLevel, u32& level, HcclAlgoType& algoType)
 {
     std::size_t found = algoLevel.find(":");
     if ((found == 0) || (found == (algoLevel.length() - 1))) {
@@ -407,12 +420,11 @@ HcclResult ParserHcclAlgoLevel(const std::string &algoLevel, u32 &level, HcclAlg
     std::string orginalLevel = algoLevel.substr(0, found);
     std::string orginalAlgo = algoLevel.substr(found + 1);
 
-    const std::map<std::string, u32> hcclAlgoLevelMap = {
-        {"level0", HCCL_ALGO_LEVEL_0},
-        {"level1", HCCL_ALGO_LEVEL_1},
-        {"level2", HCCL_ALGO_LEVEL_2},
-        {"level3", HCCL_ALGO_LEVEL_3}
-    };
+    const std::map<std::string, u32> hcclAlgoLevelMap
+        = {{"level0", HCCL_ALGO_LEVEL_0},
+           {"level1", HCCL_ALGO_LEVEL_1},
+           {"level2", HCCL_ALGO_LEVEL_2},
+           {"level3", HCCL_ALGO_LEVEL_3}};
 
     const std::map<std::string, HcclAlgoType> hcclAlgoTypeMap = {
         {"null", HcclAlgoType::HCCL_ALGO_TYPE_NULL},
@@ -447,21 +459,15 @@ HcclResult ParserHcclAlgoLevel(const std::string &algoLevel, u32 &level, HcclAlg
 }
 
 const std::map<HcclAlgoType, std::string> HcclAlgoTypeMap = {
-    {HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT, "default"},
-    {HcclAlgoType::HCCL_ALGO_TYPE_RING, "ring"},
-    {HcclAlgoType::HCCL_ALGO_TYPE_PIPELINE, "pipeline"},
-    {HcclAlgoType::HCCL_ALGO_TYPE_FULLMESH, "fullmesh"},
-    {HcclAlgoType::HCCL_ALGO_TYPE_HDR, "HDR"},
-    {HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE, "pairwise"},
-    {HcclAlgoType::HCCL_ALGO_TYPE_NHR, "NHR"},
-    {HcclAlgoType::HCCL_ALGO_TYPE_NB, "NB"},
-    {HcclAlgoType::HCCL_ALGO_TYPE_NULL, "null"},
-    {HcclAlgoType::HCCL_ALGO_TYPE_NA, "NA"},
-    {HcclAlgoType::HCCL_ALGO_TYPE_NHR_V1, "NHR_V1"},
-    {HcclAlgoType::HCCL_ALGO_TYPE_AHC, "AHC"},
+    {HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT, "default"},   {HcclAlgoType::HCCL_ALGO_TYPE_RING, "ring"},
+    {HcclAlgoType::HCCL_ALGO_TYPE_PIPELINE, "pipeline"}, {HcclAlgoType::HCCL_ALGO_TYPE_FULLMESH, "fullmesh"},
+    {HcclAlgoType::HCCL_ALGO_TYPE_HDR, "HDR"},           {HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE, "pairwise"},
+    {HcclAlgoType::HCCL_ALGO_TYPE_NHR, "NHR"},           {HcclAlgoType::HCCL_ALGO_TYPE_NB, "NB"},
+    {HcclAlgoType::HCCL_ALGO_TYPE_NULL, "null"},         {HcclAlgoType::HCCL_ALGO_TYPE_NA, "NA"},
+    {HcclAlgoType::HCCL_ALGO_TYPE_NHR_V1, "NHR_V1"},     {HcclAlgoType::HCCL_ALGO_TYPE_AHC, "AHC"},
 };
 
-HcclResult SplitHcclAlgoLevel(const std::string &algoConfig, std::vector<std::string> &algos)
+HcclResult SplitHcclAlgoLevel(const std::string& algoConfig, std::vector<std::string>& algos)
 {
     std::string remainAlgoConfig;
     std::size_t found = algoConfig.find(";");
@@ -486,24 +492,33 @@ HcclResult SplitHcclAlgoLevel(const std::string &algoConfig, std::vector<std::st
     return HCCL_SUCCESS;
 }
 
-HcclResult ParseAlgoString(std::string opName, std::string &algoString, std::vector<HcclAlgoType>& algType)
+HcclResult ParseAlgoString(std::string opName, std::string& algoString, std::vector<HcclAlgoType>& algType)
 {
     algType = std::vector<HcclAlgoType>(HCCL_ALGO_LEVEL_NUM, HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT);
     std::vector<std::string> algoLevels;
     HcclResult ret = SplitHcclAlgoLevel(algoString, algoLevels);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Set][HcclAlgoConfig]hccl algo config[%s] is invalid. "\
-        "expect: level0:NA;level1:<algo> or <op0>=level0:NA;level1:<algo0>/<op1>=level0:NA;level1:<algo1>",
-        algoString.c_str()), ret);
+    CHK_PRT_RET(
+        ret != HCCL_SUCCESS,
+        HCCL_ERROR(
+            "[Set][HcclAlgoConfig]hccl algo config[%s] is invalid. "
+            "expect: level0:NA;level1:<algo> or <op0>=level0:NA;level1:<algo0>/<op1>=level0:NA;level1:<algo1>",
+            algoString.c_str()),
+        ret);
     for (auto algoLevel : algoLevels) {
         u32 level = 0;
         HcclAlgoType algo = HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT;
         ret = ParserHcclAlgoLevel(algoLevel, level, algo);
-        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Set][HcclAlgoConfig]hccl algo config[%s] is invalid. "\
-            "expect: level0:NA;level1:<algo> or <op0>=level0:NA;level1:<algo0>/<op1>=level0:NA;level1:<algo1>",
-            algoString.c_str()), ret);
+        CHK_PRT_RET(
+            ret != HCCL_SUCCESS,
+            HCCL_ERROR(
+                "[Set][HcclAlgoConfig]hccl algo config[%s] is invalid. "
+                "expect: level0:NA;level1:<algo> or <op0>=level0:NA;level1:<algo0>/<op1>=level0:NA;level1:<algo1>",
+                algoString.c_str()),
+            ret);
         // 检查是否存在重复配置level
         if (algType[level] != HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT) {
-            HCCL_ERROR("[Set][HcclAlgoConfig]hccl algo config[%s] is invalid. "\
+            HCCL_ERROR(
+                "[Set][HcclAlgoConfig]hccl algo config[%s] is invalid. "
                 "expect: level0:NA;level1:<algo> or <op0>=level0:NA;level1:<algo0>/<op1>=level0:NA;level1:<algo1>",
                 algoString.c_str());
             return HCCL_E_PARA;
@@ -514,14 +529,14 @@ HcclResult ParseAlgoString(std::string opName, std::string &algoString, std::vec
     auto level1Iter = HcclAlgoTypeMap.find(algType[HCCL_ALGO_LEVEL_1]);
     auto level2Iter = HcclAlgoTypeMap.find(algType[HCCL_ALGO_LEVEL_2]);
     auto level3Iter = HcclAlgoTypeMap.find(algType[HCCL_ALGO_LEVEL_3]);
-    HCCL_RUN_INFO("hccl algo op %s config: level0:%s, level1:%s, level2:%s, level3:%s",
-        opName.c_str(),
-        level0Iter->second.c_str(), level1Iter->second.c_str(),
-        level2Iter->second.c_str(), level3Iter->second.c_str());
+    HCCL_RUN_INFO(
+        "hccl algo op %s config: level0:%s, level1:%s, level2:%s, level3:%s", opName.c_str(),
+        level0Iter->second.c_str(), level1Iter->second.c_str(), level2Iter->second.c_str(), level3Iter->second.c_str());
     return HCCL_SUCCESS;
 }
 
-HcclResult SetCommonAlgType(std::vector<std::string> &algos, std::map<OpType, std::vector<HcclAlgoType>>& hcclAlgoConfig)
+HcclResult
+SetCommonAlgType(std::vector<std::string>& algos, std::map<OpType, std::vector<HcclAlgoType>>& hcclAlgoConfig)
 {
     std::vector<HcclAlgoType> algType;
     CHK_RET(ParseAlgoString("all op type", algos[0], algType));
@@ -531,7 +546,8 @@ HcclResult SetCommonAlgType(std::vector<std::string> &algos, std::map<OpType, st
     return HCCL_SUCCESS;
 }
 
-HcclResult SetSpecificAlgType(std::vector<std::string> &algos, std::map<OpType, std::vector<HcclAlgoType>>& hcclAlgoConfig)
+HcclResult
+SetSpecificAlgType(std::vector<std::string>& algos, std::map<OpType, std::vector<HcclAlgoType>>& hcclAlgoConfig)
 {
     std::map<std::string, OpType> hcclOpTypeMap = {
         {"broadcast", OpType::BROADCAST},
@@ -560,21 +576,19 @@ HcclResult SetSpecificAlgType(std::vector<std::string> &algos, std::map<OpType, 
             }
             hcclAlgoConfig[optype] = algType;
         } else {
-            HCCL_ERROR("[SetSpecificAlgType] specific config optype[%s] is invalid, please check",
-                opStringName.c_str());
+            HCCL_ERROR(
+                "[SetSpecificAlgType] specific config optype[%s] is invalid, please check", opStringName.c_str());
             return HCCL_E_PARA;
         }
     }
     if (hcclAlgoConfig.find(OpType::ALLTOALL) != hcclAlgoConfig.end()) {
-        hcclAlgoConfig[OpType::ALLTOALLV] =
-            hcclAlgoConfig[OpType::ALLTOALL];
-        hcclAlgoConfig[OpType::ALLTOALLVC] =
-            hcclAlgoConfig[OpType::ALLTOALL];
+        hcclAlgoConfig[OpType::ALLTOALLV] = hcclAlgoConfig[OpType::ALLTOALL];
+        hcclAlgoConfig[OpType::ALLTOALLVC] = hcclAlgoConfig[OpType::ALLTOALL];
     }
     return HCCL_SUCCESS;
 }
 
-std::map<OpType, std::vector<HcclAlgoType>> SetHcclAlgoConfig(const std::string &hcclAlgo)
+std::map<OpType, std::vector<HcclAlgoType>> SetHcclAlgoConfig(const std::string& hcclAlgo)
 {
     std::string algoConfig = hcclAlgo;
     algoConfig.erase(std::remove(algoConfig.begin(), algoConfig.end(), ' '), algoConfig.end());
@@ -586,18 +600,20 @@ std::map<OpType, std::vector<HcclAlgoType>> SetHcclAlgoConfig(const std::string 
     std::vector<std::string> algoPerOptype;
     HcclResult splitRet = SplitHcclOpType(algoConfig, algoPerOptype);
     if (splitRet != HCCL_SUCCESS) {
-        THROW<InvalidParamsException>(
-            StringFormat("Env HCCL_ALGO config \"%s\" is invalid. example [level0:NA;level1:NHR] or"
-                "[allreduce=level0:NA;level1:ring/allgather=level0:NA;level1:H-D_R]", hcclAlgo.c_str()));
+        THROW<InvalidParamsException>(StringFormat(
+            "Env HCCL_ALGO config \"%s\" is invalid. example [level0:NA;level1:NHR] or"
+            "[allreduce=level0:NA;level1:ring/allgather=level0:NA;level1:H-D_R]",
+            hcclAlgo.c_str()));
     }
 
     bool anyCommonConfig = false;
     bool anySpecificConfig = false;
     HcclResult checkRet = CheckAlgoConfigValid(algoPerOptype, anyCommonConfig, anySpecificConfig);
     if (checkRet != HCCL_SUCCESS) {
-        THROW<InvalidParamsException>(
-            StringFormat("Env HCCL_ALGO config \"%s\" is invalid. example [level0:NA;level1:NHR] or"
-                "[allreduce=level0:NA;level1:ring/allgather=level0:NA;level1:H-D_R]", hcclAlgo.c_str()));
+        THROW<InvalidParamsException>(StringFormat(
+            "Env HCCL_ALGO config \"%s\" is invalid. example [level0:NA;level1:NHR] or"
+            "[allreduce=level0:NA;level1:ring/allgather=level0:NA;level1:H-D_R]",
+            hcclAlgo.c_str()));
     }
     HcclResult ret = HCCL_SUCCESS;
     if (anyCommonConfig) {
@@ -606,14 +622,15 @@ std::map<OpType, std::vector<HcclAlgoType>> SetHcclAlgoConfig(const std::string 
         ret = SetSpecificAlgType(algoPerOptype, hcclAlgoConfig);
     }
     if (ret != HCCL_SUCCESS) {
-        THROW<InvalidParamsException>(
-            StringFormat("Env HCCL_ALGO config \"%s\" is invalid. example [level0:NA;level1:NHR] or"
-                "[allreduce=level0:NA;level1:ring/allgather=level0:NA;level1:H-D_R]", hcclAlgo.c_str()));
+        THROW<InvalidParamsException>(StringFormat(
+            "Env HCCL_ALGO config \"%s\" is invalid. example [level0:NA;level1:NHR] or"
+            "[allreduce=level0:NA;level1:ring/allgather=level0:NA;level1:H-D_R]",
+            hcclAlgo.c_str()));
     }
     return hcclAlgoConfig;
 }
 
-HcclAccelerator CastHcclAccelerator(const std::string &s)
+HcclAccelerator CastHcclAccelerator(const std::string& s)
 {
     HcclAccelerator mode;
     if (s == "AI_CPU") {
@@ -625,15 +642,19 @@ HcclAccelerator CastHcclAccelerator(const std::string &s)
     } else if (s == "CCU_SCHED") {
         mode = HcclAccelerator::CCU_SCHED;
     } else {
-        HCCL_ERROR("Env HCCL_OP_EXPANSION_MODE config do not support %s, it should be one of [AI_CPU, AIV, AIV_ONLY, CCU_MS, CCU_SCHED].", s.c_str());
-        THROW<InvalidParamsException>(
-            StringFormat("Env HCCL_OP_EXPANSION_MODE config \"%s\" is invalid."
-                "it should be one of [AI_CPU, AIV, AIV_ONLY, CCU_MS, CCU_SCHED].", s.c_str()));
+        HCCL_ERROR(
+            "Env HCCL_OP_EXPANSION_MODE config do not support %s, it should be one of [AI_CPU, AIV, AIV_ONLY, CCU_MS, "
+            "CCU_SCHED].",
+            s.c_str());
+        THROW<InvalidParamsException>(StringFormat(
+            "Env HCCL_OP_EXPANSION_MODE config \"%s\" is invalid."
+            "it should be one of [AI_CPU, AIV, AIV_ONLY, CCU_MS, CCU_SCHED].",
+            s.c_str()));
     }
     return mode;
 }
- 
-s32 CastSocketFamily(const std::string &s)
+
+s32 CastSocketFamily(const std::string& s)
 {
     s32 hcclSocketFamily;
     if (s == "AF_INET") {
@@ -642,15 +663,15 @@ s32 CastSocketFamily(const std::string &s)
         hcclSocketFamily = AF_INET6;
     } else {
         hcclSocketFamily = -1;
-        THROW<InvalidParamsException>(
-            StringFormat("environmental variable HCCL_SOCKET_FAMILY[%s] is invalid. it should "
-                         "be \"AF_INET\" or \"AF_INET6\".",
-                         s.c_str()));
+        THROW<InvalidParamsException>(StringFormat(
+            "environmental variable HCCL_SOCKET_FAMILY[%s] is invalid. it should "
+            "be \"AF_INET\" or \"AF_INET6\".",
+            s.c_str()));
     }
     return hcclSocketFamily;
 }
 
-std::string GetCannVersionPath(const std::string &cannEnvStr, const std::string &keyStr)
+std::string GetCannVersionPath(const std::string& cannEnvStr, const std::string& keyStr)
 {
     std::string cannVersionPath;
     std::string tempPath; // 存放临时路径
@@ -684,7 +705,7 @@ std::string GetCannVersionPath(const std::string &cannEnvStr, const std::string 
     return cannVersionPath;
 }
 
-std::string LoadCannVersionInfoFile(const std::string &realName, const std::string &keyStr)
+std::string LoadCannVersionInfoFile(const std::string& realName, const std::string& keyStr)
 {
     std::string cannVersion;
     // 打开该文件前，判断该文件路径是否有效、规范
@@ -705,7 +726,7 @@ std::string LoadCannVersionInfoFile(const std::string &realName, const std::stri
 
     // 逐行读取，结果放在line中，寻找带有keyStr的字符串
     string line;
-    s32    maxRows = 100; // 在文件中读取的最长行数为100，避免超大文件长时间读取
+    s32 maxRows = 100; // 在文件中读取的最长行数为100，避免超大文件长时间读取
     while (getline(infile, line)) {
         --maxRows;
         if (maxRows < 0) {
@@ -717,15 +738,15 @@ std::string LoadCannVersionInfoFile(const std::string &realName, const std::stri
         // runtime目录下, version.info文件, Version=1.83.T8.0.B128
         // latest目录下, version.cfg文件, runtime_running_version=[1.83.T8.0.B128:CANN-1.83]
         if (found == 0) {
-            u32 startPos = keyStr.length();                    // 版本字符串开始位置
-            u32 endPos   = min(line.find(":"), line.length()); // 版本字符串在":"或结尾处结束
+            u32 startPos = keyStr.length();                  // 版本字符串开始位置
+            u32 endPos = min(line.find(":"), line.length()); // 版本字符串在":"或结尾处结束
             // 版本字符串为空
             if (endPos <= startPos) {
                 HCCL_WARNING("[CannVersion][Verification]cannVersion is invalid.");
                 return "";
             }
 
-            u32 len     = endPos - startPos;          // 版本字符串长度
+            u32 len = endPos - startPos;              // 版本字符串长度
             cannVersion = line.substr(startPos, len); // 从keyStr截断
             HCCL_INFO("[Parse][CannVersion]success, CannVersion is %s ", cannVersion.c_str());
             break;
@@ -735,7 +756,7 @@ std::string LoadCannVersionInfoFile(const std::string &realName, const std::stri
     return cannVersion;
 }
 
-std::string CastCannVersion(const std::string &cannEnv)
+std::string CastCannVersion(const std::string& cannEnv)
 {
     std::string cannVersionPath = GetCannVersionPath(cannEnv, "/runtime");
     if (cannVersionPath != "NotFound") {
@@ -755,11 +776,11 @@ std::string CastCannVersion(const std::string &cannEnv)
     return "";
 }
 
-std::vector<std::string> SplitDfsConfig(const std::string &str, char delimiter)
+std::vector<std::string> SplitDfsConfig(const std::string& str, char delimiter)
 {
     std::vector<std::string> tokens;
-    std::istringstream       stream(str);
-    std::string              token;
+    std::istringstream stream(str);
+    std::string token;
 
     while (std::getline(stream, token, delimiter)) {
         tokens.push_back(token);
@@ -775,22 +796,23 @@ std::vector<std::string> SplitDfsConfig(const std::string &str, char delimiter)
     return tokens;
 }
 
-DfsConfig CastDfsConfig(const std::string &dfsConfigEnv)
+DfsConfig CastDfsConfig(const std::string& dfsConfigEnv)
 {
-    constexpr std::size_t                              DFS_CONFIG_ITEM_NUM = 2;
-    const std::array<std::string, DFS_CONFIG_ITEM_NUM> dfsItemName   = {"task_exception", "cluster_heartbeat"};
-    bool                                               taskExceptionEnable = true;
-    bool                                               clusterHeartBeatEnable = true;
-    std::string                                        dfsConfigEnvCopy    = dfsConfigEnv;
+    constexpr std::size_t DFS_CONFIG_ITEM_NUM = 2;
+    const std::array<std::string, DFS_CONFIG_ITEM_NUM> dfsItemName = {"task_exception", "cluster_heartbeat"};
+    bool taskExceptionEnable = true;
+    bool clusterHeartBeatEnable = true;
+    std::string dfsConfigEnvCopy = dfsConfigEnv;
     dfsConfigEnvCopy.erase(std::remove(dfsConfigEnvCopy.begin(), dfsConfigEnvCopy.end(), ' '), dfsConfigEnvCopy.end());
     auto items = SplitDfsConfig(dfsConfigEnvCopy, ',');
-    for (const auto &item : items) {
-        auto                  itemPair  = SplitDfsConfig(item, ':');
+    for (const auto& item : items) {
+        auto itemPair = SplitDfsConfig(item, ':');
         constexpr std::size_t ITEM_SIZE = 2;
         if (itemPair.size() != ITEM_SIZE
             || std::find(dfsItemName.begin(), dfsItemName.end(), itemPair[0]) == dfsItemName.end()) {
-            THROW<InvalidParamsException>(
-                StringFormat("env[HCCL_DFS_CONFIG] value[%s] is invalid,  please check, example [task_exception:on]", dfsConfigEnv.c_str()));
+            THROW<InvalidParamsException>(StringFormat(
+                "env[HCCL_DFS_CONFIG] value[%s] is invalid,  please check, example [task_exception:on]",
+                dfsConfigEnv.c_str()));
         }
         if (itemPair[0] == dfsItemName[0]) {
             auto taskException = itemPair[1];
@@ -818,13 +840,14 @@ DfsConfig CastDfsConfig(const std::string &dfsConfigEnv)
     }
     DfsConfig config{taskExceptionEnable, clusterHeartBeatEnable};
 
-    HCCL_RUN_INFO("[Parse] HCCL_DFS_CONFIG task_exception set by environment to [%d], cluster_heartbeat [%d]",
+    HCCL_RUN_INFO(
+        "[Parse] HCCL_DFS_CONFIG task_exception set by environment to [%d], cluster_heartbeat [%d]",
         config.taskExceptionEnable, config.clusterHeartBeatEnable);
     return config;
 }
 
 /*----------------------------- validate functions -------------------------*/
-void CheckExecTimeOut(const u32 &timeOut)
+void CheckExecTimeOut(const u32& timeOut)
 {
     DevType devType = HrtGetDeviceType();
     if (devType == DevType::DEV_TYPE_910A2 || devType == DevType::DEV_TYPE_910A3 || devType == DevType::DEV_TYPE_950) {
@@ -836,7 +859,7 @@ void CheckExecTimeOut(const u32 &timeOut)
     }
 }
 
-void CheckFilePath(const string &filePath)
+void CheckFilePath(const string& filePath)
 {
     if (filePath.length() >= (PATH_MAX) || filePath.length() == 0) {
         THROW<InvalidParamsException>(
@@ -844,16 +867,17 @@ void CheckFilePath(const string &filePath)
     }
 }
 /*-------------------------- post process functions -------------------------*/
-void SetRealPath(string &filePath)
+void SetRealPath(string& filePath)
 {
     char realFile[PATH_MAX] = {0};
     if (realpath(filePath.c_str(), realFile) == nullptr) {
-        THROW<InvalidParamsException>(StringFormat("[Init][EnvVarParam]path %s is not a valid real path", filePath.c_str()));
+        THROW<InvalidParamsException>(
+            StringFormat("[Init][EnvVarParam]path %s is not a valid real path", filePath.c_str()));
     }
     filePath = std::string(realFile);
 }
 
-void ProcExecTimeOut(u32 &timeOut)
+void ProcExecTimeOut(u32& timeOut)
 {
     DevType devType = HrtGetDeviceType();
     if (devType == DevType::DEV_TYPE_910A2 || devType == DevType::DEV_TYPE_910A3 || devType == DevType::DEV_TYPE_950) {
@@ -861,13 +885,13 @@ void ProcExecTimeOut(u32 &timeOut)
     }
     // 910A芯片限制超时时长为68的倍数
     s32 intPart = timeOut / HCCL_INTEVAL_EXEC_TIME_OUT_S;
-    intPart     = (intPart == 0) ? 1 : intPart;
-    timeOut     = intPart * HCCL_INTEVAL_EXEC_TIME_OUT_S;
+    intPart = (intPart == 0) ? 1 : intPart;
+    timeOut = intPart * HCCL_INTEVAL_EXEC_TIME_OUT_S;
 }
 
 /*-------------------------- detour type -------------------------*/
 // 临时方案，特定场景执行算法会报错，后续适配了再放开
-HcclDetourType CastDetourType(const std::string &s)
+HcclDetourType CastDetourType(const std::string& s)
 {
     if (s == "detour:1") {
         HCCL_INFO("HCCL detour type is 2P (detour:1).");
@@ -875,8 +899,9 @@ HcclDetourType CastDetourType(const std::string &s)
     } else if (s == "detour:0") {
         HCCL_INFO("HCCL detour type is disable (detour:0).");
     } else {
-        THROW<NotSupportException>(StringFormat("environment variable HCCL_DETOUR currently only supports"
-                                                " detour:1 and detour:0 or not set."));
+        THROW<NotSupportException>(StringFormat(
+            "environment variable HCCL_DETOUR currently only supports"
+            " detour:1 and detour:0 or not set."));
     }
     return HcclDetourType::HCCL_DETOUR_DISABLE;
 }

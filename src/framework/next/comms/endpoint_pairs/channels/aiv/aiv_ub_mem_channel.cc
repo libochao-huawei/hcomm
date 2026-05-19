@@ -18,10 +18,12 @@
 
 namespace hcomm {
 
-AivUbMemChannel::AivUbMemChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc):
-    endpointHandle_(endpointHandle), channelDesc_(channelDesc) {}
+AivUbMemChannel::AivUbMemChannel(EndpointHandle endpointHandle, const HcommChannelDesc& channelDesc)
+    : endpointHandle_(endpointHandle),
+      channelDesc_(channelDesc)
+{}
 
-HcclResult AivUbMemChannel::ParseInputParam() 
+HcclResult AivUbMemChannel::ParseInputParam()
 {
     socket_ = reinterpret_cast<Hccl::Socket*>(channelDesc_.socket);
     return HCCL_SUCCESS;
@@ -43,28 +45,25 @@ HcclResult AivUbMemChannel::Init()
     return HCCL_SUCCESS;
 }
 
-ChannelStatus AivUbMemChannel::GetStatus()
-{
-    return Channel::TransportStatusToChannelStatus(transport_->GetStatus());
-}
+ChannelStatus AivUbMemChannel::GetStatus() { return Channel::TransportStatusToChannelStatus(transport_->GetStatus()); }
 
-HcclResult AivUbMemChannel::GetNotifyNum(uint32_t *notifyNum) const
+HcclResult AivUbMemChannel::GetNotifyNum(uint32_t* notifyNum) const
 {
     HCCL_INFO("AivUbMemChannel GetNotifyNum is not supported.");
     return HCCL_SUCCESS;
 }
 
-HcclResult AivUbMemChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags)
+HcclResult AivUbMemChannel::GetRemoteMem(HcclMem** remoteMem, uint32_t* memNum, char** memTags)
 {
     return transport_->GetRemoteMem(remoteMem, memNum, memTags);
 }
 
-HcclResult AivUbMemChannel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum)
+HcclResult AivUbMemChannel::GetUserRemoteMem(CommMem** remoteMem, char*** memTag, uint32_t* memNum)
 {
     return transport_->GetUserRemoteMem(remoteMem, memTag, memNum);
 }
 
-HcclResult AivUbMemChannel::UpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum)
+HcclResult AivUbMemChannel::UpdateMemInfo(HcommMemHandle* memHandles, uint32_t memHandleNum)
 {
     return transport_->UpdateMemInfo(memHandles, memHandleNum);
 }
@@ -81,7 +80,6 @@ HcclResult AivUbMemChannel::Resume()
     return HCCL_SUCCESS;
 }
 
-
 HcclResult AivUbMemChannel::NotifyRecord(const uint32_t remoteNotifyIdx)
 {
     HCCL_INFO("[AivUbMemChannel::%s] not supported yet.", __func__);
@@ -94,19 +92,19 @@ HcclResult AivUbMemChannel::NotifyWait(const uint32_t localNotifyIdx, const uint
     return HCCL_E_NOT_SUPPORT;
 }
 
-HcclResult AivUbMemChannel::WriteWithNotify(void *dst, const void *src, const uint64_t len, uint32_t remoteNotifyIdx)
+HcclResult AivUbMemChannel::WriteWithNotify(void* dst, const void* src, const uint64_t len, uint32_t remoteNotifyIdx)
 {
     HCCL_INFO("[AivUbMemChannel::%s] not supported yet.", __func__);
     return HCCL_E_NOT_SUPPORT;
 }
 
-HcclResult AivUbMemChannel::Write(void *dst, const void *src, uint64_t len)
+HcclResult AivUbMemChannel::Write(void* dst, const void* src, uint64_t len)
 {
     HCCL_INFO("[AivUbMemChannel::%s] not supported yet.", __func__);
     return HCCL_E_NOT_SUPPORT;
 }
 
-HcclResult AivUbMemChannel::Read(void *dst, const void *src, uint64_t len)
+HcclResult AivUbMemChannel::Read(void* dst, const void* src, uint64_t len)
 {
     HCCL_INFO("[AivUbMemChannel::%s] not supported yet.", __func__);
     return HCCL_E_NOT_SUPPORT;
@@ -117,4 +115,4 @@ HcclResult AivUbMemChannel::ChannelFence()
     HCCL_INFO("[AivUbMemChannel::%s] not supported yet.", __func__);
     return HCCL_E_NOT_SUPPORT;
 }
-}
+} // namespace hcomm

@@ -19,38 +19,43 @@
 namespace hcomm {
 namespace CcuRep {
 
-CcuRepLocWaitNotify::CcuRepLocWaitNotify(const LocalNotify &notify, const uint32_t mask, bool isProfiling)
-    : notify_(notify), mask_(mask), isProfiling_(isProfiling)
-{
-    type       = CcuRepType::LOC_WAIT_EVENT;
-    instrCount = 1;
-}
-
-bool CcuRepLocWaitNotify::Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep)
-{
-    this->instrId = instrId;
-    translated    = true;
-
-    // SetCKEInstr支持硬件profiling功能
-    if (isProfiling_) {
-        SetCKEInstr(instr++, 0, 0, notify_.Id(), mask_, 1);
-    } else {
-        ClearCKEInstr(instr++, 0, 0, notify_.Id(), mask_, 1);
+    CcuRepLocWaitNotify::CcuRepLocWaitNotify(const LocalNotify& notify, const uint32_t mask, bool isProfiling)
+        : notify_(notify),
+          mask_(mask),
+          isProfiling_(isProfiling)
+    {
+        type = CcuRepType::LOC_WAIT_EVENT;
+        instrCount = 1;
     }
 
-    CHK_PRT_THROW((instrId > UINT16_MAX - instrCount),
-        HCCL_ERROR("[CcuRepLocWaitNotify::Translate]uint16 integer overflow occurs, "
-            "instrId = [%hu], instrCount = [%hu]", instrId, instrCount),
-        Hccl::CcuApiException, "integer overflow");
+    bool CcuRepLocWaitNotify::Translate(CcuInstr*& instr, uint16_t& instrId, const TransDep& dep)
+    {
+        this->instrId = instrId;
+        translated = true;
 
-    instrId += instrCount;
-    return translated;
-}
+        // SetCKEInstr支持硬件profiling功能
+        if (isProfiling_) {
+            SetCKEInstr(instr++, 0, 0, notify_.Id(), mask_, 1);
+        } else {
+            ClearCKEInstr(instr++, 0, 0, notify_.Id(), mask_, 1);
+        }
 
-std::string CcuRepLocWaitNotify::Describe()
-{
-    return Hccl::StringFormat("CcuRepLocWaitNotify=id[%u], mask[%04x]", notify_.Id(), mask_);
-}
+        CHK_PRT_THROW(
+            (instrId > UINT16_MAX - instrCount),
+            HCCL_ERROR(
+                "[CcuRepLocWaitNotify::Translate]uint16 integer overflow occurs, "
+                "instrId = [%hu], instrCount = [%hu]",
+                instrId, instrCount),
+            Hccl::CcuApiException, "integer overflow");
+
+        instrId += instrCount;
+        return translated;
+    }
+
+    std::string CcuRepLocWaitNotify::Describe()
+    {
+        return Hccl::StringFormat("CcuRepLocWaitNotify=id[%u], mask[%04x]", notify_.Id(), mask_);
+    }
 
 }; // namespace CcuRep
 }; // namespace hcomm

@@ -13,9 +13,9 @@
 
 namespace hccl {
 
-void AclgraphDestroyCallback(void *fnData)
+void AclgraphDestroyCallback(void* fnData)
 {
-    AclgraphDestroyCallbackParam *callbackParam = static_cast<AclgraphDestroyCallbackParam *>(fnData);
+    AclgraphDestroyCallbackParam* callbackParam = static_cast<AclgraphDestroyCallbackParam*>(fnData);
     if (callbackParam == nullptr) {
         HCCL_ERROR("[%s] callbackParam ptr is NULL", __func__);
         return;
@@ -28,7 +28,7 @@ void AclgraphDestroyCallback(void *fnData)
     }
 }
 
-AclgraphCallback &AclgraphCallback::GetInstance()
+AclgraphCallback& AclgraphCallback::GetInstance()
 {
     static AclgraphCallback aclgraphCallback;
     return aclgraphCallback;
@@ -46,19 +46,20 @@ HcclResult AclgraphCallback::CleanCaptureRes(u64 modelId)
     HcclResult ret;
 
     std::lock_guard<std::mutex> lock(resMutex_);
-    auto modelIt  = captureResMap_.find(modelId);
-    if (modelIt  == captureResMap_.end()) {
+    auto modelIt = captureResMap_.find(modelId);
+    if (modelIt == captureResMap_.end()) {
         HCCL_ERROR("[%s] modelID[%llu] is not record", __func__, modelId);
         return HCCL_E_NOT_FOUND;
     }
 
     bool isResourceReleaseFailed = false;
-    for (auto &commIt : modelIt->second) {
-        for (auto &newTag : commIt.second) {
+    for (auto& commIt : modelIt->second) {
+        for (auto& newTag : commIt.second) {
             ret = commIt.first->ClearOpResource(newTag);
             if (ret != HCCL_SUCCESS) {
-                HCCL_ERROR("[%s] modelID[%llu] tag[%s] resource release fail, ret[%d]",
-                    __func__, modelId, newTag.c_str(), ret);
+                HCCL_ERROR(
+                    "[%s] modelID[%llu] tag[%s] resource release fail, ret[%d]", __func__, modelId, newTag.c_str(),
+                    ret);
                 isResourceReleaseFailed = true;
             }
             HCCL_DEBUG("[%s] modelID[%llu] tag[%s] resource release finish", __func__, modelId, newTag.c_str());
@@ -76,14 +77,14 @@ HcclResult AclgraphCallback::CleanCaptureRes(u64 modelId)
     return isResourceReleaseFailed ? HCCL_E_INTERNAL : HCCL_SUCCESS;
 }
 
-void AclgraphCallback::CleanCaptureRes(HcclCommunicator *communicator)
+void AclgraphCallback::CleanCaptureRes(HcclCommunicator* communicator)
 {
     if (communicator == nullptr) {
         return;
     }
 
     std::lock_guard<std::mutex> lock(resMutex_);
-    for (auto &modelIt : captureResMap_) {
+    for (auto& modelIt : captureResMap_) {
         if (modelIt.second.find(communicator) != modelIt.second.end()) {
             modelIt.second.erase(communicator);
         }
@@ -93,8 +94,8 @@ void AclgraphCallback::CleanCaptureRes(HcclCommunicator *communicator)
 }
 
 // 记录aclgraph下发的所有tag, 首次记录时注册aclgraph销毁回调
-HcclResult AclgraphCallback::InsertNewTagToCaptureResMap(HcclCommunicator *communicator,
-    const std::string &newTag, const OpParam &opParam)
+HcclResult AclgraphCallback::InsertNewTagToCaptureResMap(
+    HcclCommunicator* communicator, const std::string& newTag, const OpParam& opParam)
 {
     CHK_PTR_NULL(communicator);
     aclmdlRI rtModel = nullptr;
@@ -108,10 +109,11 @@ HcclResult AclgraphCallback::InsertNewTagToCaptureResMap(HcclCommunicator *commu
     std::lock_guard<std::mutex> lock(resMutex_);
     if (captureResMap_.find(modelId) == captureResMap_.end()) {
         captureCallbackParamMap_[modelId].modelId = modelId;
-        aclError aclRet = aclmdlRIDestroyRegisterCallback(rtModel, AclgraphDestroyCallback,
-            static_cast<void *>(&captureCallbackParamMap_[modelId]));
-        CHK_PRT_RET(aclRet != ACL_SUCCESS, HCCL_ERROR("[%s] aclmdlRIDestroyRegisterCallback fail, modelId[%llu]",
-            __func__, modelId), HCCL_E_RUNTIME);
+        aclError aclRet = aclmdlRIDestroyRegisterCallback(
+            rtModel, AclgraphDestroyCallback, static_cast<void*>(&captureCallbackParamMap_[modelId]));
+        CHK_PRT_RET(
+            aclRet != ACL_SUCCESS,
+            HCCL_ERROR("[%s] aclmdlRIDestroyRegisterCallback fail, modelId[%llu]", __func__, modelId), HCCL_E_RUNTIME);
         HCCL_INFO("[%s] aclmdlRIDestroyRegisterCallback success modelID[%llu]", __func__, modelId);
     }
     captureResMap_[modelId][communicator].insert(newTag);

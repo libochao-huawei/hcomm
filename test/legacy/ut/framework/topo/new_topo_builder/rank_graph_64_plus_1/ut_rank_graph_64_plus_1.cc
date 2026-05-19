@@ -34,22 +34,23 @@ using namespace std;
 
 class RankGraph64Plus1Test : public testing::Test {
 protected:
-    static void SetUpTestCase() {
-        cout << "RankGraph64Plus1Test SetUP" << endl;
-    }
- 
-    static void TearDownTestCase() {
+    static void SetUpTestCase() { cout << "RankGraph64Plus1Test SetUP" << endl; }
+
+    static void TearDownTestCase()
+    {
         DelTopoFile();
         cout << "RankGraph64Plus1Test TearDown" << endl;
     }
- 
-    virtual void SetUp() {
-        PhyTopo::GetInstance()->Clear();   // PhyTopo是单例，每个用例开始前需要重置
-        MOCKER_CPP(&DetourService::InsertDetourLinks).stubs();  // 64+1场景暂时不涉及绕路，将绕路接口打桩成空函数
+
+    virtual void SetUp()
+    {
+        PhyTopo::GetInstance()->Clear();                       // PhyTopo是单例，每个用例开始前需要重置
+        MOCKER_CPP(&DetourService::InsertDetourLinks).stubs(); // 64+1场景暂时不涉及绕路，将绕路接口打桩成空函数
         cout << "A Test case in RankGraph64Plus1Test SetUP" << endl;
     }
- 
-    virtual void TearDown() {
+
+    virtual void TearDown()
+    {
         PhyTopo::GetInstance()->Clear();
         GlobalMockObject::verify();
         cout << "A Test case in RankGraph64Plus1Test TearDown" << endl;
@@ -60,23 +61,24 @@ TEST_F(RankGraph64Plus1Test, test_4p_without_backup)
 {
     // ranktable不使用备份, topo文件也无备份信息
     RankGraphBuilder rankGraphBuilder;
-    string topoFilePath{HCOMM_CODE_ROOT_DIR "/test/legacy/ut/framework/topo/new_topo_builder/rank_graph_64_plus_1/topo_4p.json"};
+    string topoFilePath{HCOMM_CODE_ROOT_DIR
+                        "/test/legacy/ut/framework/topo/new_topo_builder/rank_graph_64_plus_1/topo_4p.json"};
     unique_ptr<RankGraph> rankGraph = rankGraphBuilder.Build(RANK_TABLE_4P, topoFilePath, 0);
 
     EXPECT_NE(rankGraph, nullptr);
     // check innerRanks
-    set<RankId> expectRanks {0, 1, 2, 3};
+    set<RankId> expectRanks{0, 1, 2, 3};
     EXPECT_EQ(rankGraph->innerRanks_, expectRanks);
     // check peers
     EXPECT_EQ(rankGraph->peers_.size(), 4);
-    for (u32 i = 0 ; i < expectRanks.size(); i++) {
+    for (u32 i = 0; i < expectRanks.size(); i++) {
         EXPECT_EQ(rankGraph->peers_[i]->GetRankId(), i);
         EXPECT_EQ(rankGraph->peers_[i]->GetLocalId(), i);
         EXPECT_EQ(rankGraph->peers_[i]->GetNodeId(), i);
-        EXPECT_EQ(rankGraph->peers_[i]->GetLevels().size(),1);
+        EXPECT_EQ(rankGraph->peers_[i]->GetLevels().size(), 1);
     }
     // check GetPaths()
-    for (u32 i = 1 ; i < expectRanks.size() - 1; i++) {
+    for (u32 i = 1; i < expectRanks.size() - 1; i++) {
         NetInstance::Link link_0 = rankGraph->GetPaths(0, 0, i)[0].links[0];
         NetInstance::Link link_1 = rankGraph->GetPaths(0, i, 3)[0].links[0];
         EXPECT_EQ(link_0.source_->GetNodeId(), 0);
@@ -94,7 +96,8 @@ TEST_F(RankGraph64Plus1Test, test_RankGraph_Build_should_failed_when_topo_missin
 {
     // 使用备份D但topo文件中缺少备份相关信息
     RankGraphBuilder rankGraphBuilder;
-    string topoFilePath{HCOMM_CODE_ROOT_DIR "/test/legacy/ut/framework/topo/new_topo_builder/rank_graph_64_plus_1/topo_4p.json"};
+    string topoFilePath{HCOMM_CODE_ROOT_DIR
+                        "/test/legacy/ut/framework/topo/new_topo_builder/rank_graph_64_plus_1/topo_4p.json"};
     EXPECT_THROW(rankGraphBuilder.Build(RANK_TABLE_4P_REPLACE_RANK1, topoFilePath, 0), InvalidParamsException);
 }
 
@@ -102,12 +105,13 @@ TEST_F(RankGraph64Plus1Test, test_RankGraph_Build_without_Backup)
 {
     // 直接启动，不使用备份D
     RankGraphBuilder rankGraphBuilder;
-    string topoFilePath{HCOMM_CODE_ROOT_DIR "/test/legacy/ut/framework/topo/new_topo_builder/rank_graph_64_plus_1/topo_2x2plus1.json"};
+    string topoFilePath{HCOMM_CODE_ROOT_DIR
+                        "/test/legacy/ut/framework/topo/new_topo_builder/rank_graph_64_plus_1/topo_2x2plus1.json"};
     unique_ptr<RankGraph> rankGraph = rankGraphBuilder.Build(RANK_TABLE_2X2, topoFilePath, 0);
 
     EXPECT_NE(rankGraph, nullptr);
     // check innerRanks
-    set<RankId> expectRanks {0, 1, 2, 3};
+    set<RankId> expectRanks{0, 1, 2, 3};
     EXPECT_EQ(rankGraph->innerRanks_, expectRanks);
     // check peers
     EXPECT_EQ(rankGraph->peers_.size(), 4);
@@ -115,7 +119,7 @@ TEST_F(RankGraph64Plus1Test, test_RankGraph_Build_without_Backup)
     EXPECT_EQ(rankGraph->peers_[1]->GetLocalId(), 1);
     EXPECT_EQ(rankGraph->peers_[2]->GetLocalId(), 8);
     EXPECT_EQ(rankGraph->peers_[3]->GetLocalId(), 9);
-    for (u32 i = 0 ; i < expectRanks.size(); i++) {
+    for (u32 i = 0; i < expectRanks.size(); i++) {
         EXPECT_EQ(rankGraph->peers_[i]->GetRankId(), i);
         EXPECT_EQ(rankGraph->peers_[i]->GetNodeId(), i);
         EXPECT_EQ(rankGraph->peers_[i]->GetLevels().size(), 2);
@@ -129,7 +133,7 @@ TEST_F(RankGraph64Plus1Test, test_RankGraph_Build_without_Backup)
     EXPECT_EQ(netInstL0->fabrics.size(), 4);
     EXPECT_EQ(netInstL0->vGraph.nodes.size(), 8);
 
-    for (u32 i = 1; i < expectRanks.size() - 1; i++) {  
+    for (u32 i = 1; i < expectRanks.size() - 1; i++) {
         EXPECT_EQ(netInstL0->vGraph.edges[0][i][0]->source_->GetNodeId(), 0);
         EXPECT_EQ(netInstL0->vGraph.edges[0][i][0]->target_->GetNodeId(), i);
         EXPECT_EQ(netInstL0->vGraph.edges[i][3][0]->source_->GetNodeId(), i);
@@ -153,12 +157,13 @@ TEST_F(RankGraph64Plus1Test, test_RankGraph_Build_with_Backup)
 {
     // 直接启动，使用备份D
     RankGraphBuilder rankGraphBuilder;
-    string topoFilePath{HCOMM_CODE_ROOT_DIR "/test/legacy/ut/framework/topo/new_topo_builder/rank_graph_64_plus_1/topo_2x2plus1.json"};
+    string topoFilePath{HCOMM_CODE_ROOT_DIR
+                        "/test/legacy/ut/framework/topo/new_topo_builder/rank_graph_64_plus_1/topo_2x2plus1.json"};
     unique_ptr<RankGraph> rankGraph = rankGraphBuilder.Build(RANK_TABLE_2X2_REPLACE_RANK1, topoFilePath, 0);
 
     EXPECT_NE(rankGraph, nullptr);
     // check innerRanks
-    set<RankId> expectRanks {0, 1, 2, 3};
+    set<RankId> expectRanks{0, 1, 2, 3};
     EXPECT_EQ(rankGraph->innerRanks_, expectRanks);
     // check peers
     EXPECT_EQ(rankGraph->peers_.size(), 4);
@@ -174,11 +179,11 @@ TEST_F(RankGraph64Plus1Test, test_RankGraph_Build_with_Backup)
     EXPECT_EQ(netInstL0->peers.size(), 4);
     EXPECT_EQ(netInstL0->fabrics.size(), 4); // netLayer0支持peer2net的边rankGraph会有4个fabric
     EXPECT_EQ(netInstL0->vGraph.nodes.size(), 8);
-    for (u32 i = 1; i < expectRanks.size() - 1; i++) {  
-    EXPECT_EQ(netInstL0->vGraph.edges[0][i][0]->source_->GetNodeId(), 0);
-    EXPECT_EQ(netInstL0->vGraph.edges[0][i][0]->target_->GetNodeId(), i);
-    EXPECT_EQ(netInstL0->vGraph.edges[i][3][0]->source_->GetNodeId(), i);
-    EXPECT_EQ(netInstL0->vGraph.edges[i][3][0]->target_->GetNodeId(), 3);
+    for (u32 i = 1; i < expectRanks.size() - 1; i++) {
+        EXPECT_EQ(netInstL0->vGraph.edges[0][i][0]->source_->GetNodeId(), 0);
+        EXPECT_EQ(netInstL0->vGraph.edges[0][i][0]->target_->GetNodeId(), i);
+        EXPECT_EQ(netInstL0->vGraph.edges[i][3][0]->source_->GetNodeId(), i);
+        EXPECT_EQ(netInstL0->vGraph.edges[i][3][0]->target_->GetNodeId(), 3);
     }
     // check level1 az0-level1
     NetInstance* netInstL1 = rankGraph->GetNetInstanceByNetInstId(1, "az0-layer1");
@@ -201,11 +206,14 @@ TEST_F(RankGraph64Plus1Test, test_checkpoint_normal_to_backup)
     RankTableInfo rankTableInfo;
     parser.ParseString(RANK_TABLE_2X2, rankTableInfo);
     TopoInfo topoInfo;
-    string topoFilePath{HCOMM_CODE_ROOT_DIR "/test/legacy/ut/framework/topo/new_topo_builder/rank_graph_64_plus_1/topo_2x2plus1.json"};
+    string topoFilePath{HCOMM_CODE_ROOT_DIR
+                        "/test/legacy/ut/framework/topo/new_topo_builder/rank_graph_64_plus_1/topo_2x2plus1.json"};
     parser.ParseFile(topoFilePath, topoInfo);
 
     // 更新 rankTableInfo
-    string changeInfoFilePath{HCOMM_CODE_ROOT_DIR "/test/legacy/ut/framework/topo/new_topo_builder/rank_graph_64_plus_1/changeInfo_2x2_normal_to_backup.json"};
+    string changeInfoFilePath{
+        HCOMM_CODE_ROOT_DIR
+        "/test/legacy/ut/framework/topo/new_topo_builder/rank_graph_64_plus_1/changeInfo_2x2_normal_to_backup.json"};
     EXPECT_EQ(DiffRankUpdater(changeInfoFilePath.c_str(), rankTableInfo), HcclResult::HCCL_SUCCESS);
 
     RankGraphBuilder rankGraphBuilder;
@@ -213,7 +221,7 @@ TEST_F(RankGraph64Plus1Test, test_checkpoint_normal_to_backup)
 
     EXPECT_NE(rankGraph, nullptr);
     // check innerRanks
-    set<RankId> expectRanks {0, 1, 2, 3};
+    set<RankId> expectRanks{0, 1, 2, 3};
     EXPECT_EQ(rankGraph->innerRanks_, expectRanks);
     // check peers
     EXPECT_EQ(rankGraph->peers_.size(), 4);
@@ -229,7 +237,7 @@ TEST_F(RankGraph64Plus1Test, test_checkpoint_normal_to_backup)
     EXPECT_EQ(netInstL0->peers.size(), 4);
     EXPECT_EQ(netInstL0->fabrics.size(), 4);
     EXPECT_EQ(netInstL0->vGraph.nodes.size(), 8);
-    for (u32 i = 1; i < expectRanks.size() - 1; i++) {  
+    for (u32 i = 1; i < expectRanks.size() - 1; i++) {
         EXPECT_EQ(netInstL0->vGraph.edges[0][i][0]->source_->GetNodeId(), 0);
         EXPECT_EQ(netInstL0->vGraph.edges[0][i][0]->target_->GetNodeId(), i);
         EXPECT_EQ(netInstL0->vGraph.edges[i][3][0]->source_->GetNodeId(), i);
@@ -255,11 +263,14 @@ TEST_F(RankGraph64Plus1Test, test_checkpoint_normal_switch_pod_without_backup)
     RankTableInfo rankTableInfo;
     parser.ParseString(RANK_TABLE_2X2, rankTableInfo);
     TopoInfo topoInfo;
-    string topoFilePath{HCOMM_CODE_ROOT_DIR "/test/legacy/ut/framework/topo/new_topo_builder/rank_graph_64_plus_1/topo_2x2plus1.json"};
+    string topoFilePath{HCOMM_CODE_ROOT_DIR
+                        "/test/legacy/ut/framework/topo/new_topo_builder/rank_graph_64_plus_1/topo_2x2plus1.json"};
     parser.ParseFile(topoFilePath, topoInfo);
 
     // 更新 rankTableInfo
-    string changeInfoFilePath{HCOMM_CODE_ROOT_DIR "/test/legacy/ut/framework/topo/new_topo_builder/rank_graph_64_plus_1/changeInfo_normal_switch_pod_without_backup.json"};
+    string changeInfoFilePath{HCOMM_CODE_ROOT_DIR
+                              "/test/legacy/ut/framework/topo/new_topo_builder/rank_graph_64_plus_1/"
+                              "changeInfo_normal_switch_pod_without_backup.json"};
     EXPECT_EQ(DiffRankUpdater(changeInfoFilePath.c_str(), rankTableInfo), HcclResult::HCCL_SUCCESS);
 
     RankGraphBuilder rankGraphBuilder;
@@ -267,7 +278,7 @@ TEST_F(RankGraph64Plus1Test, test_checkpoint_normal_switch_pod_without_backup)
 
     EXPECT_NE(rankGraph, nullptr);
     // check innerRanks
-    set<RankId> expectRanks {0, 1, 2, 3};
+    set<RankId> expectRanks{0, 1, 2, 3};
     EXPECT_EQ(rankGraph->innerRanks_, expectRanks);
     // check peers
     EXPECT_EQ(rankGraph->peers_.size(), 4);
@@ -283,7 +294,7 @@ TEST_F(RankGraph64Plus1Test, test_checkpoint_normal_switch_pod_without_backup)
     EXPECT_EQ(netInstL0->peers.size(), 4);
     EXPECT_EQ(netInstL0->fabrics.size(), 4);
     EXPECT_EQ(netInstL0->vGraph.nodes.size(), 8);
-    for (u32 i = 1; i < expectRanks.size() - 1; i++) {  
+    for (u32 i = 1; i < expectRanks.size() - 1; i++) {
         EXPECT_EQ(netInstL0->vGraph.edges[0][i][0]->source_->GetNodeId(), 0);
         EXPECT_EQ(netInstL0->vGraph.edges[0][i][0]->target_->GetNodeId(), i);
         EXPECT_EQ(netInstL0->vGraph.edges[i][3][0]->source_->GetNodeId(), i);

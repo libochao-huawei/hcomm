@@ -24,18 +24,18 @@
 
 class CcuComponentTest : public BaseInit {
 public:
-    void SetUp() override {
+    void SetUp() override
+    {
         BaseInit::SetUp();
         // 将enableEntryLog默认返回为true
-        MOCKER(GetExternalInputHcclEnableEntryLog)
-            .stubs()
-            .with(any())
-            .will(returnValue(true));
+        MOCKER(GetExternalInputHcclEnableEntryLog).stubs().with(any()).will(returnValue(true));
     }
-    void TearDown() override {
+    void TearDown() override
+    {
         BaseInit::TearDown();
         GlobalMockObject::verify();
     }
+
 protected:
 };
 

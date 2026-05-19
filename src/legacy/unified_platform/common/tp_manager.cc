@@ -18,18 +18,17 @@
 #include "orion_adapter_rts.h"
 #include "rdma_handle_manager.h"
 
-
 namespace Hccl {
 
 TpManager& TpManager::GetInstance(const int32_t deviceLogicId)
 {
     static TpManager tpManager[MAX_MODULE_DEVICE_NUM + 1];
 
-    if (deviceLogicId < 0 ||
-        static_cast<uint32_t>(deviceLogicId) > MAX_MODULE_DEVICE_NUM) {
-        THROW<InvalidParamsException>("[TpManager][%s] failed to get instance, "
-            "devLogicId[%d] should be less than %u.", __func__,
-            deviceLogicId, MAX_MODULE_DEVICE_NUM);
+    if (deviceLogicId < 0 || static_cast<uint32_t>(deviceLogicId) > MAX_MODULE_DEVICE_NUM) {
+        THROW<InvalidParamsException>(
+            "[TpManager][%s] failed to get instance, "
+            "devLogicId[%d] should be less than %u.",
+            __func__, deviceLogicId, MAX_MODULE_DEVICE_NUM);
     }
 
     tpManager[deviceLogicId].devLogicId = deviceLogicId;
@@ -47,7 +46,7 @@ void TpManager::Init()
     initFlag = true;
 }
 
-bool TpManager::CheckRequestResult(RequestHandle &reqHandle) const
+bool TpManager::CheckRequestResult(RequestHandle& reqHandle) const
 {
     if (reqHandle == 0) {
         return true;
@@ -59,27 +58,26 @@ bool TpManager::CheckRequestResult(RequestHandle &reqHandle) const
     }
 
     if (result != ReqHandleResult::COMPLETED) {
-        THROW<InternalException>("[TpManager][%s] failed, result[%s] is unexpected.",
-            __func__, result.Describe().c_str());
+        THROW<InternalException>(
+            "[TpManager][%s] failed, result[%s] is unexpected.", __func__, result.Describe().c_str());
     }
 
     return true;
 }
 
-HcclResult CheckTpProtocol(const TpProtocol tpProtocol) {
+HcclResult CheckTpProtocol(const TpProtocol tpProtocol)
+{
     if (tpProtocol != TpProtocol::CTP && tpProtocol != TpProtocol::TP && tpProtocol != TpProtocol::UBOE) {
-        HCCL_WARNING("[TpManager][%s] failed, tpProtocol[%d] is not supported.",
-            __func__, tpProtocol);
+        HCCL_WARNING("[TpManager][%s] failed, tpProtocol[%d] is not supported.", __func__, tpProtocol);
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
 
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult TpManager::GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo,
-    bool isSync)
+HcclResult TpManager::GetTpInfo(const RaUbGetTpInfoParam& param, TpInfo& tpInfo, bool isSync)
 {
-    const auto &tpProtocol = param.tpProtocol;
+    const auto& tpProtocol = param.tpProtocol;
     CHK_RET(CheckTpProtocol(tpProtocol));
     if (FindAndGetTpInfo(param, tpInfo)) {
         return HcclResult::HCCL_SUCCESS;
@@ -87,50 +85,52 @@ HcclResult TpManager::GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo,
 
     std::unique_lock<std::mutex> reqCtxLock(GetReqCtxMutex(tpProtocol));
 
-    auto &reqCtxMap = GetReqCtxMap(tpProtocol);
-    const auto &locAddr = param.locAddr;
-    const auto &rmtAddr = param.rmtAddr;
-    auto &locReqCtxMap = reqCtxMap[locAddr];
+    auto& reqCtxMap = GetReqCtxMap(tpProtocol);
+    const auto& locAddr = param.locAddr;
+    const auto& rmtAddr = param.rmtAddr;
+    auto& locReqCtxMap = reqCtxMap[locAddr];
     auto locReqCtxIter = locReqCtxMap.find(rmtAddr);
     if (locReqCtxIter == locReqCtxMap.end()) {
-        HCCL_INFO("[TpManager][%s] get new tpInfo, param[%s].", __func__,
-            param.Describe().c_str());
+        HCCL_INFO("[TpManager][%s] get new tpInfo, param[%s].", __func__, param.Describe().c_str());
 
-        RequestCtx &reqCtx = locReqCtxMap[rmtAddr];
+        RequestCtx& reqCtx = locReqCtxMap[rmtAddr];
         reqCtx.isSync = isSync;
         StartGetTpInfoListRequest(param, reqCtx, isSync);
         return HcclResult::HCCL_E_AGAIN;
     }
 
     if (!locReqCtxIter->second.isSync) {
-        auto &reqCtx = locReqCtxIter->second;
+        auto& reqCtx = locReqCtxIter->second;
         if (!CheckRequestResult(reqCtx.handle)) {
             return HcclResult::HCCL_E_AGAIN;
         }
     }
 
     RequestCtx completedReqCtx = locReqCtxIter->second; // 深拷贝构造对象，与map解耦
-    locReqCtxMap.erase(locReqCtxIter); // 删除已经完成的请求，避免下次申请错误复用
+    locReqCtxMap.erase(locReqCtxIter);                  // 删除已经完成的请求，避免下次申请错误复用
     reqCtxLock.unlock();
 
     return HandleCompletedRequest(std::move(completedReqCtx), param, tpInfo);
 }
 
-HcclResult TpManager::ReleaseTpInfo(const RaUbGetTpInfoParam &param, const TpInfo &tpInfo)
+HcclResult TpManager::ReleaseTpInfo(const RaUbGetTpInfoParam& param, const TpInfo& tpInfo)
 {
     std::lock_guard<std::mutex> lock(GetInfoCtxMutex(param.tpProtocol));
-    auto &infoMap = GetInfoCtxMap(param.tpProtocol);
-    auto &locInfoMap = infoMap[param.locAddr];
+    auto& infoMap = GetInfoCtxMap(param.tpProtocol);
+    auto& locInfoMap = infoMap[param.locAddr];
     auto locInfoIter = locInfoMap.find(param.rmtAddr);
     if (locInfoIter == locInfoMap.end()) {
-        HCCL_ERROR("[TpManager][%s] failed, tp info is not found, "
-            "param[%s].", __func__, param.Describe().c_str());
+        HCCL_ERROR(
+            "[TpManager][%s] failed, tp info is not found, "
+            "param[%s].",
+            __func__, param.Describe().c_str());
         return HcclResult::HCCL_E_NOT_FOUND;
     }
 
     if (tpInfo.tpHandle != locInfoIter->second.tpInfo.tpHandle) {
-        HCCL_ERROR("[TpManager][%s] failed, tp info[%llu] is not expected[%llu].",
-            __func__, tpInfo.tpHandle, locInfoIter->second.tpInfo.tpHandle);
+        HCCL_ERROR(
+            "[TpManager][%s] failed, tp info[%llu] is not expected[%llu].", __func__, tpInfo.tpHandle,
+            locInfoIter->second.tpInfo.tpHandle);
         return HcclResult::HCCL_E_PARA;
     }
 
@@ -144,11 +144,11 @@ HcclResult TpManager::ReleaseTpInfo(const RaUbGetTpInfoParam &param, const TpInf
     return HcclResult::HCCL_SUCCESS;
 }
 
-bool TpManager::FindAndGetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo)
+bool TpManager::FindAndGetTpInfo(const RaUbGetTpInfoParam& param, TpInfo& tpInfo)
 {
     std::lock_guard<std::mutex> lock(GetInfoCtxMutex(param.tpProtocol));
-    auto &infoMap = GetInfoCtxMap(param.tpProtocol);
-    auto &locInfoMap = infoMap[param.locAddr];
+    auto& infoMap = GetInfoCtxMap(param.tpProtocol);
+    auto& locInfoMap = infoMap[param.locAddr];
     auto locInfoIter = locInfoMap.find(param.rmtAddr);
     if (locInfoIter != locInfoMap.end()) {
         locInfoIter->second.useCnt += 1;
@@ -159,30 +159,29 @@ bool TpManager::FindAndGetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo
     return false;
 }
 
-void TpManager::StartGetTpInfoListRequest(const RaUbGetTpInfoParam &param,
-    TpManager::RequestCtx &reqCtx, bool isSync) const
+void TpManager::StartGetTpInfoListRequest(
+    const RaUbGetTpInfoParam& param, TpManager::RequestCtx& reqCtx, bool isSync) const
 {
     Hccl::IpAddress localIp = param.locAddr;
 
     // isSync为true走同步路径，false走异步路径。当前仅HostUbConnection使用同步模式。
-    RdmaHandle rdmaHandle = isSync 
-        ? RdmaHandleManager::GetInstance().GetByAddr(devPhyId, LinkProtoType::UB, 
-                                localIp, Hccl::PortDeploymentType::HOST_NET)
-        : RdmaHandleManager::GetInstance().GetByIp(devPhyId, param.locAddr);
+    RdmaHandle rdmaHandle = isSync ? RdmaHandleManager::GetInstance().GetByAddr(
+                                         devPhyId, LinkProtoType::UB, localIp, Hccl::PortDeploymentType::HOST_NET) :
+                                     RdmaHandleManager::GetInstance().GetByIp(devPhyId, param.locAddr);
     if (!rdmaHandle) {
-        THROW<InternalException>("[TpManager][%s] can not find rdmaHandle, "
-            "devPhyId[%u] locAddr[%s].", __func__, devPhyId,
-            param.locAddr.Describe().c_str());
+        THROW<InternalException>(
+            "[TpManager][%s] can not find rdmaHandle, "
+            "devPhyId[%u] locAddr[%s].",
+            __func__, devPhyId, param.locAddr.Describe().c_str());
     }
     if (isSync) {
         RaUbGetTpInfo(rdmaHandle, param, reqCtx.dataBuffer, reqCtx.tpInfoNum);
         return;
     }
-    reqCtx.handle = RaUbGetTpInfoAsync(rdmaHandle, param, reqCtx.dataBuffer,
-        reqCtx.tpInfoNum);
+    reqCtx.handle = RaUbGetTpInfoAsync(rdmaHandle, param, reqCtx.dataBuffer, reqCtx.tpInfoNum);
 }
 
-inline TpInfo ParseTpInfo(const struct HccpTpInfo *infoPtr)
+inline TpInfo ParseTpInfo(const struct HccpTpInfo* infoPtr)
 {
     TpInfo tpInfo;
     tpInfo.tpHandle = infoPtr->tpHandle;
@@ -190,28 +189,30 @@ inline TpInfo ParseTpInfo(const struct HccpTpInfo *infoPtr)
     return tpInfo;
 }
 
-HcclResult TpManager::HandleCompletedRequest(const TpManager::RequestCtx reqCtx,
-    const RaUbGetTpInfoParam &param, TpInfo &tpInfo)
+HcclResult
+TpManager::HandleCompletedRequest(const TpManager::RequestCtx reqCtx, const RaUbGetTpInfoParam& param, TpInfo& tpInfo)
 {
     const uint32_t tpInfoNum = reqCtx.tpInfoNum;
     if (tpInfoNum == 0) {
-        HCCL_WARNING("[TpManager][%s] failed to find tp info, tpInfoNum is 0, "
-            "param[%s].", __func__, param.Describe().c_str());
+        HCCL_WARNING(
+            "[TpManager][%s] failed to find tp info, tpInfoNum is 0, "
+            "param[%s].",
+            __func__, param.Describe().c_str());
         return HcclResult::HCCL_E_NOT_FOUND;
     }
 
-    const struct HccpTpInfo *baseInfoPtr = // 类的私有变量vector指向的堆内存，不会为空
-        reinterpret_cast<const struct HccpTpInfo *>(reqCtx.dataBuffer.data());
+    const struct HccpTpInfo* baseInfoPtr = // 类的私有变量vector指向的堆内存，不会为空
+        reinterpret_cast<const struct HccpTpInfo*>(reqCtx.dataBuffer.data());
 
     TpInfo tmpTpInfo = ParseTpInfo(baseInfoPtr); // 封装接口只会申请1个tpHandle
 
-    auto &locAddr = param.locAddr;
-    auto &rmtAddr = param.rmtAddr;
+    auto& locAddr = param.locAddr;
+    auto& rmtAddr = param.rmtAddr;
 
     std::lock_guard<std::mutex> lock(GetInfoCtxMutex(param.tpProtocol));
-    auto &infoMap = GetInfoCtxMap(param.tpProtocol);
+    auto& infoMap = GetInfoCtxMap(param.tpProtocol);
     infoMap[locAddr][rmtAddr] = {std::move(tmpTpInfo), 1};
-    
+
     tpInfo = infoMap[locAddr][rmtAddr].tpInfo;
     return HcclResult::HCCL_SUCCESS;
 }

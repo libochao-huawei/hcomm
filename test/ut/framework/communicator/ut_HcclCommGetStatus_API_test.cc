@@ -13,16 +13,19 @@
 
 class HcclCommGetStatusTest : public BaseInit {
 public:
-    void SetUp() override {
+    void SetUp() override
+    {
         BaseInit::SetUp();
         UT_USE_1SERVER_1RANK_AS_DEFAULT;
     }
-    void TearDown() override {
+    void TearDown() override
+    {
         BaseInit::TearDown();
         GlobalMockObject::verify();
     }
 
-    std::string GetCommId(HcclComm comm) {
+    std::string GetCommId(HcclComm comm)
+    {
         char commId[256] = {0};
         HcclResult ret = HcclGetCommName(comm, commId);
         EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -30,7 +33,8 @@ public:
     }
 };
 
-TEST_F(HcclCommGetStatusTest, Ut_HcclCommGetStatus_When_StatusIsNull_Expect_ReturnIsHCCL_E_PTR) {
+TEST_F(HcclCommGetStatusTest, Ut_HcclCommGetStatus_When_StatusIsNull_Expect_ReturnIsHCCL_E_PTR)
+{
     UT_COMM_CREATE_DEFAULT(comm);
 
     std::string commId = GetCommId(comm);
@@ -41,7 +45,8 @@ TEST_F(HcclCommGetStatusTest, Ut_HcclCommGetStatus_When_StatusIsNull_Expect_Retu
     Ut_Comm_Destroy(comm);
 }
 
-TEST_F(HcclCommGetStatusTest, Ut_HcclCommGetStatus_When_CommIsOk_StatusOutIsReady_Expect_ReturnIsHCCL_SUCCESS) {
+TEST_F(HcclCommGetStatusTest, Ut_HcclCommGetStatus_When_CommIsOk_StatusOutIsReady_Expect_ReturnIsHCCL_SUCCESS)
+{
     UT_COMM_CREATE_DEFAULT(comm);
 
     std::string commId = GetCommId(comm);

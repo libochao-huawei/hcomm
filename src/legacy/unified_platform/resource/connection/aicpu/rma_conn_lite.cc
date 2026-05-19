@@ -16,24 +16,30 @@
 #include "not_support_exception.h"
 #include "log.h"
 namespace Hccl {
-RmaConnLite::RmaConnLite(const UbJettyLiteId &id, const UbJettyLiteAttr &attr, const Eid &rmtEid)
-    : dieId_(id.dieId_), funcId_(id.funcId_), jettyId_(id.jettyId_), dbAddr_(attr.dbAddr_), sqVa_(attr.sqVa_),
-      sqDepth_(attr.sqDepth_), jfcPollMode_(attr.jfcPollMode_), tpn_(attr.tpn_), rmtEid_(rmtEid)
+RmaConnLite::RmaConnLite(const UbJettyLiteId& id, const UbJettyLiteAttr& attr, const Eid& rmtEid)
+    : dieId_(id.dieId_),
+      funcId_(id.funcId_),
+      jettyId_(id.jettyId_),
+      dbAddr_(attr.dbAddr_),
+      sqVa_(attr.sqVa_),
+      sqDepth_(attr.sqDepth_),
+      jfcPollMode_(attr.jfcPollMode_),
+      tpn_(attr.tpn_),
+      rmtEid_(rmtEid)
 {
-    HCCL_INFO("RmaConnLite id.dieId %u, id.funcId %u, id.jettyId %u, attr.dbaddr %llu, attr.sqVa %u, attr.sqDepth %u",
-               id.dieId_, id.funcId_, id.jettyId_, attr.dbAddr_, attr.sqVa_, attr.sqDepth_);
+    HCCL_INFO(
+        "RmaConnLite id.dieId %u, id.funcId %u, id.jettyId %u, attr.dbaddr %llu, attr.sqVa %u, attr.sqDepth %u",
+        id.dieId_, id.funcId_, id.jettyId_, attr.dbAddr_, attr.sqVa_, attr.sqDepth_);
 }
 
-RmaConnLite::RmaConnLite(const u64 qpVa) : qpVa_(qpVa)
-{
-}
+RmaConnLite::RmaConnLite(const u64 qpVa) : qpVa_(qpVa) {}
 
-std::unique_ptr<RmaConnLite> RmaConnLite::Create(std::vector<char> &uniqueId)
+std::unique_ptr<RmaConnLite> RmaConnLite::Create(std::vector<char>& uniqueId)
 {
     BinaryStream binaryStream(uniqueId);
     u32 type;
     binaryStream >> type;
-    auto connType =  static_cast<RmaConnLiteType::Value>(type);
+    auto connType = static_cast<RmaConnLiteType::Value>(type);
     if (connType == RmaConnLiteType::RDMA) {
         return std::make_unique<RdmaConnLite>(0); // 待RdmaConnLite构造实现
     }
@@ -47,34 +53,19 @@ std::unique_ptr<RmaConnLite> RmaConnLite::Create(std::vector<char> &uniqueId)
     return nullptr;
 }
 
-std::string RmaConnLite::Describe()
-{
-    return StringFormat("RmaConnLite");
-}
+std::string RmaConnLite::Describe() { return StringFormat("RmaConnLite"); }
 
-UbJettyLiteId RmaConnLite::GetUbJettyLiteId() const
-{
-    return UbJettyLiteId(dieId_, funcId_, jettyId_);
-}
+UbJettyLiteId RmaConnLite::GetUbJettyLiteId() const { return UbJettyLiteId(dieId_, funcId_, jettyId_); }
 
 UbJettyLiteAttr RmaConnLite::GetUbJettyLiteAttr() const
 {
     return UbJettyLiteAttr(dbAddr_, sqVa_, sqDepth_, tpn_, dwqeCacheLocked_, jfcPollMode_);
 }
 
-Eid RmaConnLite::GetRmtEid() const
-{
-    return rmtEid_;
-}
+Eid RmaConnLite::GetRmtEid() const { return rmtEid_; }
 
-Eid RmaConnLite::GetLocEid() const
-{
-    return locEid_;
-}
+Eid RmaConnLite::GetLocEid() const { return locEid_; }
 
-u32 RmaConnLite::GetQpVa() const
-{
-    return qpVa_;
-}
+u32 RmaConnLite::GetQpVa() const { return qpVa_; }
 
 } // namespace Hccl

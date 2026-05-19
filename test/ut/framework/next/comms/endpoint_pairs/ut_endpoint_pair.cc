@@ -7,16 +7,15 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #include "../../hccl_api_base_test.h"
 #include "endpoint_pair.h"
 using namespace hcomm;
 class TestEndpointPair : public BaseInit {
 public:
-    void SetUp() override {
-        BaseInit::SetUp();
-    }
-    void TearDown() override {
+    void SetUp() override { BaseInit::SetUp(); }
+    void TearDown() override
+    {
         BaseInit::TearDown();
         GlobalMockObject::verify();
     }

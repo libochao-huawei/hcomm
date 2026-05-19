@@ -25,39 +25,29 @@ using namespace Hccl;
 
 class SocketManagerTest : public testing::Test {
 protected:
-    static void SetUpTestCase() {
-        std::cout << "SocketManagerTest SetUP" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "SocketManagerTest SetUP" << std::endl; }
 
-    static void TearDownTestCase() {
-        std::cout << "SocketManagerTest TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "SocketManagerTest TearDown" << std::endl; }
 
-    virtual void SetUp() {
+    virtual void SetUp()
+    {
         hccpSocketHandle = new int(0);
-        MOCKER_CPP(&SocketHandleManager::Create)
-            .stubs()
-            .with(any(), any())
-            .will(returnValue(hccpSocketHandle));
-        MOCKER_CPP(&SocketHandleManager::Get)
-            .stubs()
-            .with(any(), any())
-            .will(returnValue(hccpSocketHandle));
-        MOCKER_CPP(&PreemptPortManager::ListenPreempt)
-            .stubs()
-            .will(ignoreReturnValue());
+        MOCKER_CPP(&SocketHandleManager::Create).stubs().with(any(), any()).will(returnValue(hccpSocketHandle));
+        MOCKER_CPP(&SocketHandleManager::Get).stubs().with(any(), any()).will(returnValue(hccpSocketHandle));
+        MOCKER_CPP(&PreemptPortManager::ListenPreempt).stubs().will(ignoreReturnValue());
         SetLinks();
 
         std::cout << "A Test case in SocketManagerTest SetUP" << std::endl;
     }
 
-    virtual void TearDown() {
+    virtual void TearDown()
+    {
         GlobalMockObject::verify();
         delete hccpSocketHandle;
         std::cout << "A Test case in SocketManagerTest TearDown" << std::endl;
     }
 
-    IpAddress GetAnIpAddress(RankId rankId=1)
+    IpAddress GetAnIpAddress(RankId rankId = 1)
     {
         IpAddress ipAddress(StringFormat("%u.0.0.0", rankId));
         return ipAddress;
@@ -71,39 +61,40 @@ protected:
             LinkProtocol linkProtocol = LinkProtocol::UB_CTP;
             RankId localRankId = 0;
             RankId remoteRankId = 3 - i;
-            
-            LinkData tmpLink(portDeploymentType, linkProtocol, localRankId, remoteRankId,
-                GetAnIpAddress(localRankId), GetAnIpAddress(remoteRankId));
+
+            LinkData tmpLink(
+                portDeploymentType, linkProtocol, localRankId, remoteRankId, GetAnIpAddress(localRankId),
+                GetAnIpAddress(remoteRankId));
             links.push_back(tmpLink);
         }
     }
 
-    void *hccpSocketHandle;
-    IpAddress           localIp;
-    IpAddress           remoteIp;
-    vector<LinkData>    links;
+    void* hccpSocketHandle;
+    IpAddress localIp;
+    IpAddress remoteIp;
+    vector<LinkData> links;
     CommunicatorImpl impl;
     u32 localRank = 0;
     u32 devicePhyId = 0;
     u32 listenPort = 60001;
 };
 
-
-TEST_F(SocketManagerTest, batch_create_sockets_should_ok) {
+TEST_F(SocketManagerTest, batch_create_sockets_should_ok)
+{
     // Given
     MOCKER_CPP(&SocketManager::BatchAddWhiteList).stubs();
-    
+
     // when
 
     // then
     SocketManager socketMgr(impl, localRank, devicePhyId, listenPort);
     socketMgr.BatchCreateSockets(links);
-    auto &serverSocketMap = SocketManager::GetServerSocketMap();
-    for (const auto& sock: serverSocketMap) {
+    auto& serverSocketMap = SocketManager::GetServerSocketMap();
+    for (const auto& sock : serverSocketMap) {
         EXPECT_EQ(sock.second->socketStatus, SocketStatus::LISTENING);
     }
 
-    for (const auto& sock: socketMgr.connectedSocketMap) {
+    for (const auto& sock : socketMgr.connectedSocketMap) {
         if (sock.first.role == SocketRole::CLIENT) {
             EXPECT_EQ(sock.second->socketStatus, SocketStatus::CONNECT_STARTING);
         }
@@ -111,43 +102,46 @@ TEST_F(SocketManagerTest, batch_create_sockets_should_ok) {
     }
 }
 
-TEST_F(SocketManagerTest, test_ServerDeInit_and_GetServerListenSocket) {
+TEST_F(SocketManagerTest, test_ServerDeInit_and_GetServerListenSocket)
+{
     MOCKER_CPP(&SocketManager::BatchAddWhiteList).stubs();
     SocketManager socketMgr(impl, localRank, devicePhyId, listenPort);
     socketMgr.BatchCreateSockets(links);
-    for(auto& link : links){
+    for (auto& link : links) {
         auto portData = link.GetLocalPort();
         socketMgr.ServerDeInit(portData);
         socketMgr.GetServerListenSocket(portData);
     }
 }
 
-TEST_F(SocketManagerTest, Ut_ServerInitAll_Skip_Init_When_Env_not_Config) {
+TEST_F(SocketManagerTest, Ut_ServerInitAll_Skip_Init_When_Env_not_Config)
+{
     EnvHostNicConfig envConfig;
-    EnvHostNicConfig &fakeEnvConfig = envConfig;
-    fakeEnvConfig.hcclDeviceSocketPortRange = CfgField<std::vector<SocketPortRange>>{"HCCL_NPU_SOCKET_PORT_RANGE", {}, 
-        [] (const std::string &s) -> std::vector<SocketPortRange> { return CastSocketPortRange(s, "HCCL_NPU_SOCKET_PORT_RANGE"); }};
+    EnvHostNicConfig& fakeEnvConfig = envConfig;
+    fakeEnvConfig.hcclDeviceSocketPortRange = CfgField<std::vector<SocketPortRange>>{
+        "HCCL_NPU_SOCKET_PORT_RANGE", {}, [](const std::string& s) -> std::vector<SocketPortRange> {
+            return CastSocketPortRange(s, "HCCL_NPU_SOCKET_PORT_RANGE");
+        }};
     fakeEnvConfig.hcclDeviceSocketPortRange.isParsed = true;
     MOCKER_CPP(&EnvConfig::GetHostNicConfig).stubs().will(returnValue(fakeEnvConfig));
     NewRankInfo rankInfo;
     EXPECT_NO_THROW(SocketManager::ServerInitAll(rankInfo));
 }
 
-TEST_F(SocketManagerTest, Ut_ServerInitAll_Skip_Init_When_Env_Config) {
+TEST_F(SocketManagerTest, Ut_ServerInitAll_Skip_Init_When_Env_Config)
+{
     EnvHostNicConfig envConfig;
-    EnvHostNicConfig &fakeEnvConfig = envConfig;
-    fakeEnvConfig.hcclDeviceSocketPortRange = CfgField<std::vector<SocketPortRange>>{"HCCL_NPU_SOCKET_PORT_RANGE", {{16666, 18888}}, 
-        [] (const std::string &s) -> std::vector<SocketPortRange> { return CastSocketPortRange(s, "HCCL_NPU_SOCKET_PORT_RANGE"); }};
+    EnvHostNicConfig& fakeEnvConfig = envConfig;
+    fakeEnvConfig.hcclDeviceSocketPortRange = CfgField<std::vector<SocketPortRange>>{
+        "HCCL_NPU_SOCKET_PORT_RANGE", {{16666, 18888}}, [](const std::string& s) -> std::vector<SocketPortRange> {
+            return CastSocketPortRange(s, "HCCL_NPU_SOCKET_PORT_RANGE");
+        }};
     fakeEnvConfig.hcclDeviceSocketPortRange.isParsed = true;
     MOCKER_CPP(&EnvConfig::GetHostNicConfig).stubs().will(returnValue(fakeEnvConfig));
 
     string topoFilePath{HCOMM_CODE_ROOT_DIR "/test/legacy/ut/framework/communicator/topo2pclos.json"};
-    MOCKER_CPP(&CommunicatorImpl::GetTopoFilePath)
-        .stubs()
-        .will(returnValue(topoFilePath));
-    MOCKER(HrtGetDevice)
-        .stubs()
-        .will(returnValue(0));
+    MOCKER_CPP(&CommunicatorImpl::GetTopoFilePath).stubs().will(returnValue(topoFilePath));
+    MOCKER(HrtGetDevice).stubs().will(returnValue(0));
     RankGraphBuilder rankGraphBuilder;
     unique_ptr<RankGraph> graph = rankGraphBuilder.Build(RankTable2pClos, topoFilePath, 0);
     EXPECT_NE(nullptr, graph);
@@ -155,7 +149,8 @@ TEST_F(SocketManagerTest, Ut_ServerInitAll_Skip_Init_When_Env_Config) {
     EXPECT_NO_THROW(SocketManager::ServerInitAll(rankInfo));
 }
 
-TEST_F(SocketManagerTest, test_BatchCreateSockets_with_SocketConfig) {
+TEST_F(SocketManagerTest, test_BatchCreateSockets_with_SocketConfig)
+{
     SocketManager socketMgr(localRank, devicePhyId, devicePhyId, "tmp");
     auto link = links[0];
     Hccl::SocketConfig socketConfig(link.GetRemoteRankId(), link, "test");

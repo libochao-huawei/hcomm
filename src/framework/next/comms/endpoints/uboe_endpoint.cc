@@ -15,13 +15,10 @@
 #include "reged_mems/urma_mem.h"
 #include "adapter_rts_common.h"
 #include "server_socket_manager.h"
- 
+
 namespace hcomm {
 
-UboeEndpoint::UboeEndpoint(const EndpointDesc &endpointDesc)
-    : Endpoint(endpointDesc)
-{
-}
+UboeEndpoint::UboeEndpoint(const EndpointDesc& endpointDesc) : Endpoint(endpointDesc) {}
 
 HcclResult UboeEndpoint::Init()
 {
@@ -37,14 +34,16 @@ HcclResult UboeEndpoint::Init()
     endpointDesc_.loc.device.devPhyId = devPhyId;
 
     Hccl::HccpHdcManager::GetInstance().Init(deviceLogicId);
-    auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
+    auto& rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
     Hccl::IpAddress eidAddress{};
     rdmaHandleMgr.UboeIpv4ToEid(ipAddr, eidAddress, devPhyId);
-    EXECEPTION_CATCH(ctxHandle_ = static_cast<void *>(rdmaHandleMgr.GetByIp(endpointDesc_.loc.device.devPhyId, eidAddress)), 
+    EXECEPTION_CATCH(
+        ctxHandle_ = static_cast<void*>(rdmaHandleMgr.GetByIp(endpointDesc_.loc.device.devPhyId, eidAddress)),
         return HCCL_E_PARA);
     CHK_PTR_NULL(ctxHandle_);
-    HCCL_INFO("%s success, devId[%u], eidAddress[%s], ctxHandle[%p]",
-        __func__, devPhyId, eidAddress.Describe().c_str(), ctxHandle_);
+    HCCL_INFO(
+        "%s success, devId[%u], eidAddress[%s], ctxHandle[%p]", __func__, devPhyId, eidAddress.Describe().c_str(),
+        ctxHandle_);
 
     EXECEPTION_CATCH(regedMemMgr_ = std::make_unique<UbRegedMemMgr>(), return HCCL_E_INTERNAL);
     regedMemMgr_->rdmaHandle_ = ctxHandle_;
@@ -64,7 +63,7 @@ HcclResult UboeEndpoint::ServerSocketStopListen(const uint32_t port)
     return HCCL_SUCCESS;
 }
 
-HcclResult UboeEndpoint::RegisterMemory(HcommMem mem, const char *memTag, void **memHandle)
+HcclResult UboeEndpoint::RegisterMemory(HcommMem mem, const char* memTag, void** memHandle)
 {
     CHK_RET(regedMemMgr_->RegisterMemory(mem, memTag, memHandle));
     return HCCL_SUCCESS;
@@ -76,28 +75,28 @@ HcclResult UboeEndpoint::UnregisterMemory(void* memHandle)
     return HCCL_SUCCESS;
 }
 
-HcclResult UboeEndpoint::MemoryExport(void *memHandle, void **memDesc, uint32_t *memDescLen)
+HcclResult UboeEndpoint::MemoryExport(void* memHandle, void** memDesc, uint32_t* memDescLen)
 {
     CHK_RET(regedMemMgr_->MemoryExport(endpointDesc_, memHandle, memDesc, memDescLen));
     return HCCL_SUCCESS;
 }
 
-HcclResult UboeEndpoint::MemoryImport(const void *memDesc, uint32_t descLen, HcommMem *outMem)
+HcclResult UboeEndpoint::MemoryImport(const void* memDesc, uint32_t descLen, HcommMem* outMem)
 {
     CHK_RET(regedMemMgr_->MemoryImport(memDesc, descLen, outMem));
     return HCCL_SUCCESS;
 }
 
-HcclResult UboeEndpoint::MemoryUnimport(const void *memDesc, uint32_t descLen)
+HcclResult UboeEndpoint::MemoryUnimport(const void* memDesc, uint32_t descLen)
 {
     CHK_RET(regedMemMgr_->MemoryUnimport(memDesc, descLen));
     return HCCL_SUCCESS;
 }
 
-HcclResult UboeEndpoint::GetAllMemHandles(void **memHandles, uint32_t *memHandleNum)
+HcclResult UboeEndpoint::GetAllMemHandles(void** memHandles, uint32_t* memHandleNum)
 {
     CHK_RET(regedMemMgr_->GetAllMemHandles(memHandles, memHandleNum));
     return HCCL_SUCCESS;
 }
 
-}
+} // namespace hcomm

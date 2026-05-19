@@ -18,7 +18,7 @@ public:
     void SetUp() override
     {
         BaseInit::SetUp();
-        const char *fakeA5SocName = "Ascend950PR_958b";
+        const char* fakeA5SocName = "Ascend950PR_958b";
         MOCKER(aclrtGetSocName).stubs().will(returnValue(fakeA5SocName));
         MOCKER(&HcclCommDfx::ReportKernel).stubs().will(returnValue(HCCL_SUCCESS));
         SetUpCommAndGraph(hcclCommPtr, rankGraphV2, comm, ret);
@@ -29,15 +29,15 @@ public:
         BaseInit::TearDown();
         GlobalMockObject::verify();
     }
-protected: 
-    void SetUpCommAndGraph(std::shared_ptr < hccl::hcclComm > &hcclCommPtr, 
-        std::shared_ptr < Hccl::RankGraph > &rankGraphV2, void* &comm, HcclResult &ret) 
+
+protected:
+    void SetUpCommAndGraph(
+        std::shared_ptr<hccl::hcclComm>& hcclCommPtr, std::shared_ptr<Hccl::RankGraph>& rankGraphV2, void*& comm,
+        HcclResult& ret)
     {
         MOCKER(hrtGetDeviceType).stubs().with(outBound(DevType::DEV_TYPE_950)).will(returnValue(HCCL_SUCCESS));
 
-        bool isDeviceSide {
-            false
-        };
+        bool isDeviceSide{false};
         MOCKER(GetRunSideIsDevice).stubs().with(outBound(isDeviceSide)).will(returnValue(HCCL_SUCCESS));
         MOCKER(IsSupportHCCLV2).stubs().will(returnValue(true));
         setenv("HCCL_INDEPENDENT_OP", "1", 1);
@@ -57,16 +57,16 @@ protected:
         char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
         hcclCommPtr = std::make_shared<hccl::hcclComm>(1, 1, commName);
         HcclCommConfig config;
-        config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
+        config.hcclOpExpansionMode = 1;           // 非CCU模式，避免拉起CCU平台层
         config.hcclRdmaTrafficClass = 0xFFFFFFFF; // 不配置RDMA Traffic Class
-        config.hcclRdmaServiceLevel = 0xFFFFFFFF; // 不配置RDMA Service Level 
-        unsetenv("HCCL_DFS_CONFIG");      
+        config.hcclRdmaServiceLevel = 0xFFFFFFFF; // 不配置RDMA Service Level
+        unsetenv("HCCL_DFS_CONFIG");
         ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
         CollComm* collComm = hcclCommPtr->GetCollComm();
         comm = static_cast<HcclComm>(hcclCommPtr.get());
     }
 
-    void GetChannelDesc(std::vector<HcclChannelDesc> &channelDesc)
+    void GetChannelDesc(std::vector<HcclChannelDesc>& channelDesc)
     {
         HcclChannelDescInit(channelDesc.data(), 1);
         channelDesc[0].remoteRank = 2;
@@ -78,9 +78,10 @@ protected:
         channelDesc[0].roceAttr.tc = 120;
         channelDesc[0].roceAttr.sl = 3;
     }
+
 private:
-    std::shared_ptr<hccl::hcclComm>hcclCommPtr;
-    std::shared_ptr<Hccl::RankGraph>rankGraphV2;
+    std::shared_ptr<hccl::hcclComm> hcclCommPtr;
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2;
     void* comm;
     HcclResult ret;
 };

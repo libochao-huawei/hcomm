@@ -19,28 +19,27 @@
 
 namespace Hccl {
 
-P2PTransport::P2PTransport(CommonLocRes &commonLocRes, Attribution &attr, const LinkData &linkData,
-                           const Socket &socket)
+P2PTransport::P2PTransport(
+    CommonLocRes& commonLocRes, Attribution& attr, const LinkData& linkData, const Socket& socket)
     : BaseMemTransport(commonLocRes, attr, linkData, socket, TransportType::P2P)
 {
     HcclResult result = FillTagVec(commonLocRes.bufferVec, localUserMemTag_);
-    CHK_RET_THROW(InternalException,
-        StringFormat("[P2PTransport][P2PTransport] failed to construct P2PTransport."),
-        result);
+    CHK_RET_THROW(
+        InternalException, StringFormat("[P2PTransport][P2PTransport] failed to construct P2PTransport."), result);
 }
 
-P2PTransport::P2PTransport(CommonLocRes &commonLocRes, Attribution &attr, const LinkData &linkData,
-                           const Socket &socket, std::function<void(u32 streamId, u32 taskId, TaskParam taskParam)> callback)
+P2PTransport::P2PTransport(
+    CommonLocRes& commonLocRes, Attribution& attr, const LinkData& linkData, const Socket& socket,
+    std::function<void(u32 streamId, u32 taskId, TaskParam taskParam)> callback)
     : BaseMemTransport(commonLocRes, attr, linkData, socket, TransportType::P2P, callback)
 {
     HcclResult result = FillTagVec(commonLocRes.bufferVec, localUserMemTag_);
-    CHK_RET_THROW(InternalException,
-        StringFormat("[P2PTransport][P2PTransport] failed to construct P2PTransport."),
-        result);
+    CHK_RET_THROW(
+        InternalException, StringFormat("[P2PTransport][P2PTransport] failed to construct P2PTransport."), result);
 }
 
-HcclResult P2PTransport::FillTagVec(std::vector<LocalRmaBuffer *> &bufferVec,
-    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &tagVec)
+HcclResult P2PTransport::FillTagVec(
+    std::vector<LocalRmaBuffer*>& bufferVec, std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>>& tagVec)
 {
     bufferNum += bufferVec.size();
     if (bufferNum == 0) {
@@ -53,7 +52,7 @@ HcclResult P2PTransport::FillTagVec(std::vector<LocalRmaBuffer *> &bufferVec,
     HCCL_INFO("[P2PTransport][FillTagVec] bufferNum[%zu]", bufferVec.size());
     tagVec.reserve(bufferNum);
     uint32_t index = 0;
-    for (auto &localRmaBuffer : bufferVec) {
+    for (auto& localRmaBuffer : bufferVec) {
         std::array<char, HCCL_RES_TAG_MAX_LEN> memTag{};
         if (localRmaBuffer == nullptr) {
             HCCL_WARNING("[P2PTransport][FillTagVec] localRmaBuffer is nullptr. memHandleNum[%u]", index);
@@ -75,17 +74,18 @@ HcclResult P2PTransport::FillTagVec(std::vector<LocalRmaBuffer *> &bufferVec,
 
 std::string P2PTransport::Describe() const
 {
-    string msg = StringFormat("P2PTransport:commonLocRes=%s, pidMsgSize=%u, myPid=%u, rmtPid=%u, rmtPidValid=%d,",
-                              commonLocRes.Describe().c_str(), pidMsgSize, myPid, rmtPid, rmtPidValid);
+    string msg = StringFormat(
+        "P2PTransport:commonLocRes=%s, pidMsgSize=%u, myPid=%u, rmtPid=%u, rmtPidValid=%d,",
+        commonLocRes.Describe().c_str(), pidMsgSize, myPid, rmtPid, rmtPidValid);
     msg += StringFormat("exchangeDataSize=%u, ", exchangeDataSize);
     u32 pos = 0;
-    for (auto &it : rmtNotifyVec) {
+    for (auto& it : rmtNotifyVec) {
         msg += StringFormat("rmtNotify[%u]=%s, ", pos, it->Describe().c_str());
         pos++;
     }
 
     pos = 0;
-    for (auto &it : rmtNotifyVec) {
+    for (auto& it : rmtNotifyVec) {
         if (it != nullptr) {
             msg += StringFormat("rmtBuffer[%u]=%s, ", pos, it->Describe().c_str());
         } else {
@@ -96,79 +96,83 @@ std::string P2PTransport::Describe() const
     return msg;
 }
 
-static void SubmitTask(const TaskP2pMemcpy &p2pMemcpy, const Stream &stream)
+static void SubmitTask(const TaskP2pMemcpy& p2pMemcpy, const Stream& stream)
 {
-    HCCL_INFO("[P2PTransport::%s]not support, p2p dst addr[%llu], stream[%p]", __func__, p2pMemcpy.GetDstAddr(), stream.GetPtr());
+    HCCL_INFO(
+        "[P2PTransport::%s]not support, p2p dst addr[%llu], stream[%p]", __func__, p2pMemcpy.GetDstAddr(),
+        stream.GetPtr());
 }
 
-static void SubmitTask(const TaskSdmaReduce &sdmaReduce, const Stream &stream)
+static void SubmitTask(const TaskSdmaReduce& sdmaReduce, const Stream& stream)
 {
-    HCCL_INFO("[P2PTransport::%s]not support, sdmaReduce dst addr[%llu], stream[%p]", __func__, sdmaReduce.GetDstAddr(), stream.GetPtr());
+    HCCL_INFO(
+        "[P2PTransport::%s]not support, sdmaReduce dst addr[%llu], stream[%p]", __func__, sdmaReduce.GetDstAddr(),
+        stream.GetPtr());
 }
 
-template <typename TaskType> std::function<void(const BaseTask &, const Stream &)> GetSubmitP2PTaskFunction()
+template <typename TaskType>
+std::function<void(const BaseTask&, const Stream&)> GetSubmitP2PTaskFunction()
 {
-    return [](const BaseTask &task, const Stream &stream) {
-        SubmitTask(static_cast<const TaskType &>(task), stream);
+    return [](const BaseTask& task, const Stream& stream) {
+        SubmitTask(static_cast<const TaskType&>(task), stream);
     };
 }
 
-std::map<TaskType, std::function<void(const BaseTask &, const Stream &)>> g_p2pTaskSubmitRuleMap
+std::map<TaskType, std::function<void(const BaseTask&, const Stream&)>> g_p2pTaskSubmitRuleMap
     = {{TaskType::P2P_MEMCPY, GetSubmitP2PTaskFunction<TaskP2pMemcpy>()},
        {TaskType::SDMA_REDUCE, GetSubmitP2PTaskFunction<TaskSdmaReduce>()}};
 
-static void SubmitP2PTask(unique_ptr<BaseTask> task, const Stream &stream)
+static void SubmitP2PTask(unique_ptr<BaseTask> task, const Stream& stream)
 {
     if (task != nullptr) { // task为空的情况下，不需要提交task
         g_p2pTaskSubmitRuleMap.at(task->GetType())(*task.get(), stream);
     }
 }
 
-MemoryBuffer P2PTransport::GetLocMemBuffer(const RmaBufferSlice &locSlice) const
+MemoryBuffer P2PTransport::GetLocMemBuffer(const RmaBufferSlice& locSlice) const
 {
     return MemoryBuffer(locSlice.addr, locSlice.size, 0);
 }
 
-MemoryBuffer P2PTransport::GetRmtMemBuffer(const RmtRmaBufferSlice &rmtSlice) const
+MemoryBuffer P2PTransport::GetRmtMemBuffer(const RmtRmaBufferSlice& rmtSlice) const
 {
     return MemoryBuffer(rmtSlice.addr, rmtSlice.size, 0);
 }
 
-void P2PTransport::Post(u32 index, const Stream &stream)
-{
-    rmtNotifyVec[index]->Post(stream);
-}
+void P2PTransport::Post(u32 index, const Stream& stream) { rmtNotifyVec[index]->Post(stream); }
 
-void P2PTransport::Read(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice, const Stream &stream)
+void P2PTransport::Read(const RmaBufferSlice& locSlice, const RmtRmaBufferSlice& rmtSlice, const Stream& stream)
 {
     SqeConfig config;
-    SubmitP2PTask(commonLocRes.connVec[0]->PrepareRead(GetRmtMemBuffer(rmtSlice), GetLocMemBuffer(locSlice), config),
-                  stream);
+    SubmitP2PTask(
+        commonLocRes.connVec[0]->PrepareRead(GetRmtMemBuffer(rmtSlice), GetLocMemBuffer(locSlice), config), stream);
 }
 
-void P2PTransport::ReadReduce(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice,
-                              const ReduceIn &reduceIn, const Stream &stream)
+void P2PTransport::ReadReduce(
+    const RmaBufferSlice& locSlice, const RmtRmaBufferSlice& rmtSlice, const ReduceIn& reduceIn, const Stream& stream)
 {
     SqeConfig config;
-    SubmitP2PTask(commonLocRes.connVec[0]->PrepareReadReduce(GetRmtMemBuffer(rmtSlice), GetLocMemBuffer(locSlice),
-                                                             reduceIn.dataType, reduceIn.reduceOp, config),
-                  stream);
+    SubmitP2PTask(
+        commonLocRes.connVec[0]->PrepareReadReduce(
+            GetRmtMemBuffer(rmtSlice), GetLocMemBuffer(locSlice), reduceIn.dataType, reduceIn.reduceOp, config),
+        stream);
 }
 
-void P2PTransport::Write(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice, const Stream &stream)
+void P2PTransport::Write(const RmaBufferSlice& locSlice, const RmtRmaBufferSlice& rmtSlice, const Stream& stream)
 {
     SqeConfig config;
-    SubmitP2PTask(commonLocRes.connVec[0]->PrepareWrite(GetRmtMemBuffer(rmtSlice), GetLocMemBuffer(locSlice), config),
-                  stream);
+    SubmitP2PTask(
+        commonLocRes.connVec[0]->PrepareWrite(GetRmtMemBuffer(rmtSlice), GetLocMemBuffer(locSlice), config), stream);
 }
 
-void P2PTransport::WriteReduce(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice,
-                               const ReduceIn &reduceIn, const Stream &stream)
+void P2PTransport::WriteReduce(
+    const RmaBufferSlice& locSlice, const RmtRmaBufferSlice& rmtSlice, const ReduceIn& reduceIn, const Stream& stream)
 {
     SqeConfig config;
-    SubmitP2PTask(commonLocRes.connVec[0]->PrepareWriteReduce(GetRmtMemBuffer(rmtSlice), GetLocMemBuffer(locSlice),
-                                                              reduceIn.dataType, reduceIn.reduceOp, config),
-                  stream);
+    SubmitP2PTask(
+        commonLocRes.connVec[0]->PrepareWriteReduce(
+            GetRmtMemBuffer(rmtSlice), GetLocMemBuffer(locSlice), reduceIn.dataType, reduceIn.reduceOp, config),
+        stream);
 }
 
 TransportStatus P2PTransport::GetStatus()
@@ -198,7 +202,7 @@ TransportStatus P2PTransport::GetStatus()
         case P2PStatus::SEND_PID:
             RecvPid();
             rmtPidValid = true; // 收到 PID 了
-            p2pStatus   = P2PStatus::RECV_PID;
+            p2pStatus = P2PStatus::RECV_PID;
             break;
         case P2PStatus::RECV_PID:
             Grant();
@@ -211,13 +215,14 @@ TransportStatus P2PTransport::GetStatus()
         case P2PStatus::SEND_DATA:
             RecvExchangeData();
             p2pStatus = P2PStatus::RECV_DATA;
-            SetBaseStatusReady(); 
+            SetBaseStatusReady();
             break;
         default:
             break;
     }
-    HCCL_INFO("%s, baseStatus=%s, p2pStatus = %s", GetLinkDescInfo().c_str(), baseStatus.Describe().c_str(),
-               p2pStatus.Describe().c_str());
+    HCCL_INFO(
+        "%s, baseStatus=%s, p2pStatus = %s", GetLinkDescInfo().c_str(), baseStatus.Describe().c_str(),
+        p2pStatus.Describe().c_str());
     return baseStatus;
 }
 
@@ -238,18 +243,20 @@ void P2PTransport::SendPid()
     std::vector<char> data;
     binaryStream.Dump(data);
     pidMsgSize = data.size();
-    socket->Send(reinterpret_cast<u8 *>(&data[0]), data.size());
+    socket->Send(reinterpret_cast<u8*>(&data[0]), data.size());
 
-    HCCL_INFO("send pid %s, size=%llu, data=0x%s", GetLinkDescInfo().c_str(), data.size(),
-               Bytes2hex(data.data(), data.size()).c_str());
+    HCCL_INFO(
+        "send pid %s, size=%llu, data=0x%s", GetLinkDescInfo().c_str(), data.size(),
+        Bytes2hex(data.data(), data.size()).c_str());
 }
 
 void P2PTransport::RecvPid()
 {
     std::vector<char> data(pidMsgSize);
-    socket->Recv(reinterpret_cast<u8 *>(&data[0]), data.size());
-    HCCL_INFO("recv pid %s, size=%llu, data=%s", GetLinkDescInfo().c_str(), data.size(),
-               Bytes2hex(data.data(), data.size()).c_str());
+    socket->Recv(reinterpret_cast<u8*>(&data[0]), data.size());
+    HCCL_INFO(
+        "recv pid %s, size=%llu, data=%s", GetLinkDescInfo().c_str(), data.size(),
+        Bytes2hex(data.data(), data.size()).c_str());
 
     BinaryStream binaryStream(data);
     binaryStream >> rmtPid;
@@ -262,12 +269,12 @@ void P2PTransport::Grant()
     return;
 
     for (auto it : commonLocRes.notifyVec) {
-        static_cast<IpcLocalNotify *>(it)->Grant(rmtPid);
+        static_cast<IpcLocalNotify*>(it)->Grant(rmtPid);
     }
 
     for (auto it : commonLocRes.bufferVec) {
         if (it != nullptr) {
-            static_cast<LocalIpcRmaBuffer *>(it)->Grant(rmtPid);
+            static_cast<LocalIpcRmaBuffer*>(it)->Grant(rmtPid);
         }
     }
 }
@@ -277,8 +284,9 @@ void P2PTransport::SendExchangeData()
     notifyNum = commonLocRes.notifyVec.size(); // 需要交换的notify数量
     bufferNum = commonLocRes.bufferVec.size(); // 需要交换的buffer数量
 
-    HCCL_INFO("%s commLocResExchange %s, notifyNum=%u, bufferNum=%u", GetLinkDescInfo().c_str(),
-               commonLocRes.Describe().c_str(), notifyNum, bufferNum);
+    HCCL_INFO(
+        "%s commLocResExchange %s, notifyNum=%u, bufferNum=%u", GetLinkDescInfo().c_str(),
+        commonLocRes.Describe().c_str(), notifyNum, bufferNum);
 
     BinaryStream binaryStream;
 
@@ -289,19 +297,21 @@ void P2PTransport::SendExchangeData()
     std::vector<char> data;
     binaryStream.Dump(data);
     exchangeDataSize = data.size();
-    socket->Send(reinterpret_cast<u8 *>(&exchangeDataSize), sizeof(exchangeDataSize));
-    socket->Send(reinterpret_cast<u8 *>(&data[0]), data.size());
-    HCCL_INFO("send data %s, size=%llu, data=0x%s", GetLinkDescInfo().c_str(), data.size(),
-               Bytes2hex(data.data(), data.size()).c_str());
+    socket->Send(reinterpret_cast<u8*>(&exchangeDataSize), sizeof(exchangeDataSize));
+    socket->Send(reinterpret_cast<u8*>(&data[0]), data.size());
+    HCCL_INFO(
+        "send data %s, size=%llu, data=0x%s", GetLinkDescInfo().c_str(), data.size(),
+        Bytes2hex(data.data(), data.size()).c_str());
 }
 
 void P2PTransport::RecvExchangeData()
 {
-    socket->Recv(reinterpret_cast<u8 *>(&exchangeDataSize), sizeof(exchangeDataSize));
+    socket->Recv(reinterpret_cast<u8*>(&exchangeDataSize), sizeof(exchangeDataSize));
     vector<char> data(exchangeDataSize);
-    socket->Recv(reinterpret_cast<u8 *>(&data[0]), data.size());
-    HCCL_INFO("recv data %s, size=%llu, data=%s", GetLinkDescInfo().c_str(), data.size(),
-               Bytes2hex(data.data(), data.size()).c_str());
+    socket->Recv(reinterpret_cast<u8*>(&data[0]), data.size());
+    HCCL_INFO(
+        "recv data %s, size=%llu, data=%s", GetLinkDescInfo().c_str(), data.size(),
+        Bytes2hex(data.data(), data.size()).c_str());
 
     BinaryStream binaryStream(data);
     HandshakeMsgUnpack(binaryStream);
@@ -311,14 +321,15 @@ void P2PTransport::RecvExchangeData()
     HCCL_INFO("%s unpack success", GetLinkDescInfo().c_str());
 }
 
-void P2PTransport::RmtNotifyVecUnpackProc(BinaryStream &binaryStream)
+void P2PTransport::RmtNotifyVecUnpackProc(BinaryStream& binaryStream)
 {
     u32 rmtNotifyNum;
     binaryStream >> rmtNotifyNum;
     HCCL_INFO("unpack notify %s locNum=%u, rmtNum=%u", GetLinkDescInfo().c_str(), notifyNum, rmtNotifyNum);
     if (rmtNotifyNum != notifyNum) {
-        MACRO_THROW(InvalidParamsException,
-                    StringFormat("notifyNum=%u is not equal to rmtNotifyNum=%u", notifyNum, rmtNotifyNum));
+        MACRO_THROW(
+            InvalidParamsException,
+            StringFormat("notifyNum=%u is not equal to rmtNotifyNum=%u", notifyNum, rmtNotifyNum));
     }
 
     rmtNotifyVec.clear(); // 清空remote资源
@@ -333,12 +344,12 @@ void P2PTransport::RmtNotifyVecUnpackProc(BinaryStream &binaryStream)
     }
 }
 
-void P2PTransport::BufferVecPack(BinaryStream &binaryStream)
+void P2PTransport::BufferVecPack(BinaryStream& binaryStream)
 {
     binaryStream << bufferNum;
     HCCL_INFO("start pack %s bufferVec", transportType.Describe().c_str());
     u32 pos = 0;
-    for (auto &it : commonLocRes.bufferVec) {
+    for (auto& it : commonLocRes.bufferVec) {
         binaryStream << pos;
         if (it != nullptr) { // 非空的buffer，从buffer中获取 dto
             std::unique_ptr<Serializable> dto = it->GetExchangeDto();
@@ -360,14 +371,15 @@ void P2PTransport::BufferVecPack(BinaryStream &binaryStream)
     }
 }
 
-void P2PTransport::RmtBufferVecUnpackProc(BinaryStream &binaryStream)
+void P2PTransport::RmtBufferVecUnpackProc(BinaryStream& binaryStream)
 {
     u32 rmtBufferNum;
     binaryStream >> rmtBufferNum;
     HCCL_INFO("unpack buffer %s locNum=%u rmtNum=%u", GetLinkDescInfo().c_str(), bufferNum, rmtBufferNum);
     if (rmtBufferNum != bufferNum) {
-        MACRO_THROW(InvalidParamsException,
-                    StringFormat("bufferNum=%u is not equal to rmtBufferNum=%u", bufferNum, rmtBufferNum));
+        MACRO_THROW(
+            InvalidParamsException,
+            StringFormat("bufferNum=%u is not equal to rmtBufferNum=%u", bufferNum, rmtBufferNum));
     }
 
     rmtBufferVec.clear();
@@ -407,7 +419,7 @@ std::vector<char> P2PTransport::GetUniqueId()
     if (baseStatus != TransportStatus::READY) {
         MACRO_THROW(InternalException, StringFormat("transport status is not ready, please check"));
     }
-    u32          type = static_cast<u32>(transportType);
+    u32 type = static_cast<u32>(transportType);
     BinaryStream binaryStream;
     binaryStream << type;
     binaryStream << notifyNum;
@@ -433,7 +445,7 @@ std::vector<char> P2PTransport::GetUniqueIdV2()
     if (baseStatus != TransportStatus::READY) {
         MACRO_THROW(InternalException, StringFormat("transport status is not ready, please check"));
     }
-    u32          type = static_cast<u32>(transportType);
+    u32 type = static_cast<u32>(transportType);
     BinaryStream binaryStream;
     binaryStream << type;
     binaryStream << notifyNum;
@@ -461,7 +473,7 @@ std::vector<char> P2PTransport::GetNotifyUniqueIds()
 {
     HCCL_INFO("start packing all notify uniqueIds");
     std::vector<char> result(0);
-    for (auto &it : commonLocRes.notifyVec) {
+    for (auto& it : commonLocRes.notifyVec) {
         HCCL_INFO("p2pMemTransport Notify %s", it->Describe().c_str());
         auto uniqueId = it->GetUniqueId();
         result.insert(result.end(), uniqueId.begin(), uniqueId.end());
@@ -485,7 +497,7 @@ std::vector<char> P2PTransport::GetRmtNotifyUniqueIds() const
 {
     HCCL_INFO("start packing all remote notify uniqueIds");
     std::vector<char> result(0);
-    for (auto &it : rmtNotifyVec) {
+    for (auto& it : rmtNotifyVec) {
         std::vector<char> uniqueId;
         if (it != nullptr) {
             uniqueId = GetSingleRmtNotifyUniqueId(it->GetAddr(), it->GetSize(), it->GetId());
@@ -514,7 +526,7 @@ std::vector<char> P2PTransport::GetLocBufferUniqueIds() const
 {
     HCCL_INFO("start packing all local buffer uniqueIds");
     std::vector<char> result(0);
-    for (auto &it : commonLocRes.bufferVec) {
+    for (auto& it : commonLocRes.bufferVec) {
         std::vector<char> uniqueId;
         if (it != nullptr) {
             uniqueId = GetSingleBufferUniqueId(it->GetAddr(), it->GetSize());
@@ -532,7 +544,7 @@ std::vector<char> P2PTransport::GetRmtBufferUniqueIds() const
 {
     HCCL_INFO("start packing all remote buffer uniqueIds");
     std::vector<char> result(0);
-    for (auto &it : rmtBufferVec) {
+    for (auto& it : rmtBufferVec) {
         std::vector<char> uniqueId;
         if (it != nullptr) {
             uniqueId = GetSingleBufferUniqueId(it->GetAddr(), it->GetSize());
@@ -546,35 +558,36 @@ std::vector<char> P2PTransport::GetRmtBufferUniqueIds() const
     return result;
 }
 
-HcclResult P2PTransport::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags) 
+HcclResult P2PTransport::GetRemoteMem(HcclMem** remoteMem, uint32_t* memNum, char** memTags)
 {
     CHK_PRT_RET(!remoteMem, HCCL_ERROR("[GetRemoteMem] remoteMem is nullptr"), HCCL_E_PARA);
     CHK_PRT_RET(!memNum, HCCL_ERROR("[GetRemoteMem] memNum is nullptr"), HCCL_E_PARA);
     HCCL_RUN_INFO("[P2PTransport]GetRemoteMem begin");
- 
+
     *remoteMem = nullptr;
     *memNum = 0;
- 
+
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
- 
+
     uint32_t totalCount = rmtBufferVec.size();
     if (totalCount == 0) {
         HCCL_INFO("[GetRemoteMem] No remote memory regions available");
         return HCCL_SUCCESS;
     }
     // 释放之前的内存
-    remoteMemsPtr_.reset();  
+    remoteMemsPtr_.reset();
     remoteMemsPtr_ = std::make_unique<HcclMem[]>(totalCount);
     CHK_PTR_NULL(remoteMemsPtr_);
 
     for (uint32_t i = 0; i < totalCount; i++) {
         auto& rmtRmaBuffer = rmtBufferVec[i];
         remoteMemsPtr_[i].type = rmtRmaBuffer->GetMemType();
-        remoteMemsPtr_[i].addr = reinterpret_cast<void *>(rmtRmaBuffer->GetAddr());
+        remoteMemsPtr_[i].addr = reinterpret_cast<void*>(rmtRmaBuffer->GetAddr());
         remoteMemsPtr_[i].size = rmtRmaBuffer->GetSize();
         memTags[i] = const_cast<char*>(rmtRmaBuffer->GetMemTag().c_str());
-        HCCL_INFO("[%s] addr[%p] size[%zu] rmtRmaBuffer[%p] memTags[%s]", 
-            __func__, reinterpret_cast<void *>(rmtRmaBuffer->GetAddr()), rmtRmaBuffer->GetSize(), rmtRmaBuffer.get(), memTags[i]);
+        HCCL_INFO(
+            "[%s] addr[%p] size[%zu] rmtRmaBuffer[%p] memTags[%s]", __func__,
+            reinterpret_cast<void*>(rmtRmaBuffer->GetAddr()), rmtRmaBuffer->GetSize(), rmtRmaBuffer.get(), memTags[i]);
     }
 
     *memNum = totalCount;
@@ -583,7 +596,7 @@ HcclResult P2PTransport::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, cha
     return HCCL_SUCCESS;
 }
 
-HcclResult P2PTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum)
+HcclResult P2PTransport::GetUserRemoteMem(CommMem** remoteMem, char*** memTags, uint32_t* memNum)
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
     if (rmtBufferVec.size() == 0) {
@@ -591,27 +604,27 @@ HcclResult P2PTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags, 
         return HCCL_E_PARA;
     }
     uint32_t userMemCount = rmtBufferVec.size() - 1; // 默认 cclBuffer 数量为1，后续出现1的含义也是 cclBufferNum
-    auto cacheBuilder = [](RemoteMemCtx<std::unique_ptr<RemoteIpcRmaBuffer>> &remoteMemCtx, uint32_t index) {
-        auto &rmtBuffer = remoteMemCtx.rmtBufferVec[index + 1];
+    auto cacheBuilder = [](RemoteMemCtx<std::unique_ptr<RemoteIpcRmaBuffer>>& remoteMemCtx, uint32_t index) {
+        auto& rmtBuffer = remoteMemCtx.rmtBufferVec[index + 1];
         if (rmtBuffer == nullptr) {
             return;
         }
         switch (rmtBuffer->GetMemType()) {
-                case HCCL_MEM_TYPE_DEVICE:
-                    remoteMemCtx.remoteUserMems[index].type = COMM_MEM_TYPE_DEVICE;
-                    break;
-                case HCCL_MEM_TYPE_HOST:
-                    remoteMemCtx.remoteUserMems[index].type = COMM_MEM_TYPE_HOST;
-                    break;
-                default:
-                    remoteMemCtx.remoteUserMems[index].type = COMM_MEM_TYPE_INVALID;
+            case HCCL_MEM_TYPE_DEVICE:
+                remoteMemCtx.remoteUserMems[index].type = COMM_MEM_TYPE_DEVICE;
+                break;
+            case HCCL_MEM_TYPE_HOST:
+                remoteMemCtx.remoteUserMems[index].type = COMM_MEM_TYPE_HOST;
+                break;
+            default:
+                remoteMemCtx.remoteUserMems[index].type = COMM_MEM_TYPE_INVALID;
         }
-        remoteMemCtx.remoteUserMems[index].addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
+        remoteMemCtx.remoteUserMems[index].addr = reinterpret_cast<void*>(rmtBuffer->GetAddr());
         remoteMemCtx.remoteUserMems[index].size = rmtBuffer->GetSize();
     };
     RemoteMemCtx<std::unique_ptr<RemoteIpcRmaBuffer>> remoteMemCtx{
-        userMemCount, cacheValid_, rmtBufferVec, remoteUserMemTag_, remoteUserMems_, tagCopies_, tagPointers_,
-        cacheBuilder, remoteMem, memTags, memNum};
+        userMemCount, cacheValid_,  rmtBufferVec, remoteUserMemTag_, remoteUserMems_, tagCopies_,
+        tagPointers_, cacheBuilder, remoteMem,    memTags,           memNum};
     CHK_RET(GetRemoteUserMem(remoteMemCtx));
     return HCCL_SUCCESS;
 }

@@ -16,7 +16,7 @@ namespace hccl {
 CollCommMgr* CollCommMgr::instance_ = nullptr;
 static std::once_flag instanceFlag;
 
-CollCommMgr* CollCommMgr::GetInstance() 
+CollCommMgr* CollCommMgr::GetInstance()
 {
     std::call_once(instanceFlag, [&] {
         instance_ = new CollCommMgr();
@@ -24,14 +24,14 @@ CollCommMgr* CollCommMgr::GetInstance()
     return instance_;
 }
 
-hcomm::ClusterMonitor &CollCommMgr::GetClusterMonitor(s32 deviceLogicId)
+hcomm::ClusterMonitor& CollCommMgr::GetClusterMonitor(s32 deviceLogicId)
 {
     if (static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM) {
-	    HCCL_WARNING("[ClusterMonitor][%s]deviceLogicId[%d] >= %u, invalid",
-	        __func__, deviceLogicId, MAX_MODULE_DEVICE_NUM);
-	    return clusterMonitor_[0];
-	}
-	return clusterMonitor_[deviceLogicId];
+        HCCL_WARNING(
+            "[ClusterMonitor][%s]deviceLogicId[%d] >= %u, invalid", __func__, deviceLogicId, MAX_MODULE_DEVICE_NUM);
+        return clusterMonitor_[0];
+    }
+    return clusterMonitor_[deviceLogicId];
 }
 
 void CollCommMgr::RegisteCollComm(CollComm* collComm)
@@ -51,9 +51,6 @@ void CollCommMgr::UnRegisteCollComm(CollComm* collComm)
     (void)GetClusterMonitor(collComm->GetDeviceLogicId()).UnRegisterToClusterMonitor(collComm);
 }
 
-std::unordered_map<std::string, CollComm*> CollCommMgr::GetAllCollComms()
-{
-    return allCollComms_;
-}
+std::unordered_map<std::string, CollComm*> CollCommMgr::GetAllCollComms() { return allCollComms_; }
 
-}
+} // namespace hccl

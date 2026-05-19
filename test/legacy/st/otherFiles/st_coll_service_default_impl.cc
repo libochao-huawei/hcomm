@@ -42,24 +42,16 @@ using namespace Hccl;
 using namespace std;
 
 HcclResult GetProfilingInfoStub(
-    s32 deviceLogicId, CcuTaskArg &ccuTaskArg, const uint64_t executorId, std::vector<std::vector<CcuProfilingInfo>> &ccuProfilingInfo);
+    s32 deviceLogicId, CcuTaskArg& ccuTaskArg, const uint64_t executorId,
+    std::vector<std::vector<CcuProfilingInfo>>& ccuProfilingInfo);
 
 class CollServiceDefaultImplTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "CollServiceDefaultImpl SetUP" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "CollServiceDefaultImpl SetUP" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "CollServiceDefaultImpl TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "CollServiceDefaultImpl TearDown" << std::endl; }
 
-    virtual void SetUp()
-    {
-        std::cout << "A Test case in CollServiceDefaultImpl SetUP" << std::endl;
-    }
+    virtual void SetUp() { std::cout << "A Test case in CollServiceDefaultImpl SetUP" << std::endl; }
 
     virtual void TearDown()
     {
@@ -311,8 +303,8 @@ TEST(CollServiceDefaultImplTest, test_base_register_offload_buf)
     MOCKER(HrtIpcSetMemoryName).stubs();
     MOCKER(HrtDevMemAlignWithPage).stubs();
     MOCKER(HrtIpcDestroyMemoryName).stubs();
-    void *devPtr = nullptr;
-    MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue(devPtr));
+    void* devPtr = nullptr;
+    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue(devPtr));
     MOCKER(HrtMemset).stubs().with(any(), any(), any(), any());
     MOCKER_CPP(&CommunicatorImpl::InitNotifyFixedValue).stubs().will(ignoreReturnValue());
     GenRankTableFile4p();
@@ -324,10 +316,12 @@ TEST(CollServiceDefaultImplTest, test_base_register_offload_buf)
     std::shared_ptr<DevBuffer> devBuf = DevBuffer::Create(0x100, 0x100);
     LocalIpcRmaBuffer localRmaBuf(devBuf);
     MOCKER_CPP(&HcclOneSidedService::AddOpCounterMems).stubs().will(ignoreReturnValue());
-    MOCKER_CPP(&LocalRmaBufManager::Reg,
-        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &, LinkProtocol))
+    MOCKER_CPP(
+        &LocalRmaBufManager::Reg, LocalRmaBuffer
+                                      * (LocalRmaBufManager::*)(const string&, BufferType, std::shared_ptr<Buffer>,
+                                                                const PortData&, LinkProtocol))
         .stubs()
-        .will(returnValue(dynamic_cast<LocalRmaBuffer *>(&localRmaBuf)));
+        .will(returnValue(dynamic_cast<LocalRmaBuffer*>(&localRmaBuf)));
 
     CommunicatorImpl comm;
     CommParams commParams;
@@ -356,7 +350,7 @@ TEST(CollServiceDefaultImplTest, test_base_register_offload_buf)
 TEST(CollServiceDefaultImplTest, test_base_register_offload_stream)
 {
     MOCKER(HrtStreamDestroy).stubs();
-    void* temp = (void *)0x1;
+    void* temp = (void*)0x1;
     MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(temp));
     MOCKER(HrtGetStreamId).stubs().will(returnValue(0));
     CommunicatorImpl comm;
@@ -390,30 +384,30 @@ TEST(CollServiceDefaultImplTest, test_calc_coll_offload_op_res_with_hccl_success
 
     CollAlgComponentBuilder collAlgComponentBuilder;
     std::shared_ptr<CollAlgComponent> collAlgComponent = collAlgComponentBuilder.SetRankGraph(&virtTopo)
-                                   .SetDevType(DevType::DEV_TYPE_950)
-                                   .SetMyRank(myRank)
-                                   .SetRankSize(rankSize)
-                                   .Build();
+                                                             .SetDevType(DevType::DEV_TYPE_950)
+                                                             .SetMyRank(myRank)
+                                                             .SetRankSize(rankSize)
+                                                             .Build();
     comm.collAlgComponent = collAlgComponent;
-    OpExecuteConfig opConfig;  // host 展开，图模式使用
+    OpExecuteConfig opConfig; // host 展开，图模式使用
     opConfig.accState = AcceleratorState::HOSTCPU_TS;
     comm.opExecuteConfig = opConfig;
     EXPECT_NO_THROW(comm.CalcCollOffloadOpRes(opType, dataSize, HCCL_DATA_TYPE_INT8, resReq1));
     EXPECT_EQ(16, resReq1.requiredSubQueNum);
-    EXPECT_EQ(256*1024*1024, resReq1.requiredScratchMemSize);
+    EXPECT_EQ(256 * 1024 * 1024, resReq1.requiredScratchMemSize);
 }
 
 class FakeCollAlgComponent : public CollAlgComponent {
 public:
-    FakeCollAlgComponent() : CollAlgComponent(nullptr, DevType::DEV_TYPE_950, 0, 1){};
-    HcclResult Orchestrate(
-        const CollAlgOperator &op, const CollAlgParams &params, const string &algName, InsQuePtr queue) override
+    FakeCollAlgComponent() : CollAlgComponent(nullptr, DevType::DEV_TYPE_950, 0, 1) {};
+    HcclResult
+    Orchestrate(const CollAlgOperator& op, const CollAlgParams& params, const string& algName, InsQuePtr queue) override
     {
         return HcclResult::HCCL_SUCCESS;
     }
 
     HcclResult Orchestrate(
-        const CollAlgOperator &op, const CollAlgParams &params, const string &algName, PrimQuePtr queue) override
+        const CollAlgOperator& op, const CollAlgParams& params, const string& algName, PrimQuePtr queue) override
     {
         return HcclResult::HCCL_SUCCESS;
     }
@@ -421,10 +415,9 @@ public:
 
 class FakeCollAlgComponentWithError : public CollAlgComponent {
 public:
-    FakeCollAlgComponentWithError() : CollAlgComponent(nullptr, DevType::DEV_TYPE_950, 0, 1)
-    {}
-    HcclResult Orchestrate(
-        const CollAlgOperator &op, const CollAlgParams &params, const string &algName, InsQuePtr queue) override
+    FakeCollAlgComponentWithError() : CollAlgComponent(nullptr, DevType::DEV_TYPE_950, 0, 1) {}
+    HcclResult
+    Orchestrate(const CollAlgOperator& op, const CollAlgParams& params, const string& algName, InsQuePtr queue) override
     {
         return HcclResult::HCCL_E_INTERNAL;
     }
@@ -445,13 +438,13 @@ TEST(CollServiceDefaultImplTest, test_orchestrate_with_ins)
     op.scratchMem = DevBuffer::Create(0x100, 1);
     std::shared_ptr<FakeCollAlgComponent> collAlgComponent = std::make_shared<FakeCollAlgComponent>();
     comm.collAlgComponent = collAlgComponent;
-    MOCKER_CPP_VIRTUAL(*collAlgComponent,
-    &CollAlgComponent::Orchestrate,
-    HcclResult(CollAlgComponent::*)(
-        const CollAlgOperator &op, const CollAlgParams &params, const string &algName, InsQuePtr queue))
-    .stubs()
-    .with(any(), any(), any(), any())
-    .will(returnValue(HcclResult::HCCL_SUCCESS));
+    MOCKER_CPP_VIRTUAL(
+        *collAlgComponent, &CollAlgComponent::Orchestrate,
+        HcclResult (CollAlgComponent::*)(
+            const CollAlgOperator& op, const CollAlgParams& params, const string& algName, InsQuePtr queue))
+        .stubs()
+        .with(any(), any(), any(), any())
+        .will(returnValue(HcclResult::HCCL_SUCCESS));
     EXPECT_NO_THROW(service.OrchestrateWithIns(op));
 }
 
@@ -511,8 +504,8 @@ TEST(CollServiceDefaultImplTest, alloc_cnt_notify_for_single_queue)
 TEST(CollServiceDefaultImplTest, test_communicator_impl_hostDeviceSyncNotifyManager_GetIdIndex)
 {
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtNotifyCreate).stubs().will(returnValue((void *)(1)));
-    MOCKER(HrtNotifyCreateWithFlag).stubs().will(returnValue((void *)(1)));
+    MOCKER(HrtNotifyCreate).stubs().will(returnValue((void*)(1)));
+    MOCKER(HrtNotifyCreateWithFlag).stubs().will(returnValue((void*)(1)));
     MOCKER(HrtGetNotifyID).stubs().will(returnValue(1));
     MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(1)));
 
@@ -540,7 +533,7 @@ TEST(CollServiceDefaultImplTest, coll_service_default_impl_orchestrate_with_ins_
     u32 remoteRank = 1;
     CollOpParams collOpParams;
     collOpParams.opType = OpType::SEND;
-    collOpParams.dataType = DataType::INT8;  // sizeof(int8) = 1
+    collOpParams.dataType = DataType::INT8; // sizeof(int8) = 1
     collOpParams.reduceOp = ReduceOp::SUM;
     collOpParams.dstRank = remoteRank;
     collOpParams.sendBuf = nullptr;
@@ -556,17 +549,17 @@ TEST(CollServiceDefaultImplTest, coll_service_default_impl_orchestrate_with_ins_
     comm.CovertToCurrentCollOperator(name, collOpParams, OpMode::OPBASE);
 
     CollServiceDefaultImpl service(&comm);
-    std::vector<Stream *> slaveVec;
+    std::vector<Stream*> slaveVec;
     MOCKER_CPP(&Interpreter::Submit).stubs();
     std::shared_ptr<FakeCollAlgComponent> collAlgComponent = std::make_shared<FakeCollAlgComponent>();
     comm.collAlgComponent = collAlgComponent;
-    MOCKER_CPP_VIRTUAL(*collAlgComponent,
-    &CollAlgComponent::Orchestrate,
-    HcclResult(CollAlgComponent::*)(
-        const CollAlgOperator &op, const CollAlgParams &params, const string &algName, InsQuePtr queue))
-    .stubs()
-    .with(any(), any(), any(), any())
-    .will(returnValue(HcclResult::HCCL_SUCCESS));
+    MOCKER_CPP_VIRTUAL(
+        *collAlgComponent, &CollAlgComponent::Orchestrate,
+        HcclResult (CollAlgComponent::*)(
+            const CollAlgOperator& op, const CollAlgParams& params, const string& algName, InsQuePtr queue))
+        .stubs()
+        .with(any(), any(), any(), any())
+        .will(returnValue(HcclResult::HCCL_SUCCESS));
     service.connectionsBuilders[comm.id] = std::make_unique<ConnectionsBuilder>(comm);
 
     DevType devType = DevType::DEV_TYPE_910A;
@@ -575,7 +568,7 @@ TEST(CollServiceDefaultImplTest, coll_service_default_impl_orchestrate_with_ins_
     MOCKER_CPP(&CollServiceDefaultImpl::RegisterOpbasedStream).stubs();
     MOCKER_CPP(&SocketManager::BatchCreateSockets).stubs();
     MOCKER_CPP(&CollServiceBase::SaveMirrorDfxOpInfo).stubs();
-    
+
     vector<LinkData> links;
     MOCKER_CPP(&InsQueue::GetUniqueLinks).stubs().will(returnValue(links));
 
@@ -596,11 +589,11 @@ TEST(CollServiceDefaultImplTest, coll_service_default_impl_orchestrate_with_ins_
     comm.currentCollOperator->opMode = OpMode::OPBASE;
     comm.rankGraph = std::make_unique<RankGraph>(comm.GetMyRank());
     comm.rankGraph->peers_[comm.GetMyRank()] = std::make_shared<NetInstance::Peer>(comm.GetMyRank(), 0, 0, 0);
-    
+
     EnvAlgoConfig fakeAlgoCfg;
-    EnvAlgoConfig &algoCfg = fakeAlgoCfg;
-    algoCfg.bufferSize =
-        CfgField<u64>("HCCL_BUFFSIZE", 200 * 1024 * 1024, Str2T<u64>, CHK_RANGE_CLOSED<u64>(1, ULLONG_MAX), [](u64 &i) {
+    EnvAlgoConfig& algoCfg = fakeAlgoCfg;
+    algoCfg.bufferSize = CfgField<u64>(
+        "HCCL_BUFFSIZE", 200 * 1024 * 1024, Str2T<u64>, CHK_RANGE_CLOSED<u64>(1, ULLONG_MAX), [](u64& i) {
             i *= 1024 * 1024;
         });
     algoCfg.bufferSize.isParsed = true;
@@ -615,12 +608,12 @@ TEST(CollServiceDefaultImplTest, coll_service_default_RmaConnManager_Get_allDTO_
 
     CollOpParams collOpParams;
     collOpParams.opType = OpType::SEND;
-    collOpParams.dataType = DataType::INT8;  // sizeof(int8) = 1
+    collOpParams.dataType = DataType::INT8; // sizeof(int8) = 1
     collOpParams.reduceOp = ReduceOp::SUM;
     collOpParams.dstRank = 1;
     u32 buffer = 10;
-    collOpParams.sendBuf = static_cast<void *>(&buffer);
-    collOpParams.recvBuf = static_cast<void *>(&buffer);
+    collOpParams.sendBuf = static_cast<void*>(&buffer);
+    collOpParams.recvBuf = static_cast<void*>(&buffer);
     collOpParams.count = 10;
     collOpParams.root = 0;
     collOpParams.staticAddr = true;
@@ -641,15 +634,15 @@ TEST(CollServiceDefaultImplTest, col_service_default_impl_update_ub_ci_if_need_s
     u32 remoteRank = 1;
     CommunicatorImpl comm;
     CollOpParams collOpParams;
-    collOpParams.opType      = OpType::SEND;
-    collOpParams.dataType    = DataType::INT8; // sizeof(int8) = 1
-    collOpParams.reduceOp    = ReduceOp::SUM;
-    collOpParams.dstRank     = remoteRank;
-    collOpParams.sendBuf     = nullptr;
-    collOpParams.recvBuf     = nullptr;
-    collOpParams.count       = 10;
-    collOpParams.root        = 0;
-    collOpParams.staticAddr  = true;
+    collOpParams.opType = OpType::SEND;
+    collOpParams.dataType = DataType::INT8; // sizeof(int8) = 1
+    collOpParams.reduceOp = ReduceOp::SUM;
+    collOpParams.dstRank = remoteRank;
+    collOpParams.sendBuf = nullptr;
+    collOpParams.recvBuf = nullptr;
+    collOpParams.count = 10;
+    collOpParams.root = 0;
+    collOpParams.staticAddr = true;
     collOpParams.staticShape = true;
     collOpParams.outputDataType = DataType::INT8;
     collOpParams.debugCase = 1;
@@ -679,7 +672,10 @@ TEST(CollServiceDefaultImplTest, col_service_default_impl_update_ub_ci_if_need_s
     service.updatingUbCiEvent = make_unique<MaskEvent>();
     RtEvent_t fakePtr = nullptr;
     aclrtEventWaitStatus status = ACL_EVENT_WAIT_STATUS_COMPLETE;
-    MOCKER(aclrtQueryEventWaitStatus).stubs().with(any(), outBoundP(&status, sizeof(status))).will(returnValue(ACL_SUCCESS));
+    MOCKER(aclrtQueryEventWaitStatus)
+        .stubs()
+        .with(any(), outBoundP(&status, sizeof(status)))
+        .will(returnValue(ACL_SUCCESS));
     MOCKER_CPP(&UbCiUpdaterManager::UpdateConnsCi).stubs().with(any());
     service.UpdateUbCiIfNeed(op.opTag);
 }
@@ -688,17 +684,17 @@ TEST(CollServiceDefaultImplTest, AddCountTask)
 {
     GlobalMockObject::verify();
     MOCKER(HrtStreamDestroy).stubs().with(any());
-    void *ptr = nullptr;
+    void* ptr = nullptr;
     MOCKER(HrtStreamCreateWithFlags).stubs().with(any(), any()).will(returnValue(ptr));
     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
     DevType devType = DevType::DEV_TYPE_910A;
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(devType));
     MOCKER(HrtReduceAsync).stubs().with(any());
     MOCKER(HrtMemcpy).stubs().with(any(), any(), any(), any(), any());
-    void *devPtr = nullptr;
-    MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue(devPtr));
+    void* devPtr = nullptr;
+    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue(devPtr));
     MOCKER(HrtMemset).stubs().with(any(), any(), any(), any());
- 
+
     CommunicatorImpl comm;
     comm.streamManager = make_unique<StreamManager>(&comm);
     comm.streamManager->opbase = make_unique<OpbaseStreamManager>(&comm);
@@ -707,26 +703,27 @@ TEST(CollServiceDefaultImplTest, AddCountTask)
     comm.currentCollOperator->opMode = OpMode::OPBASE;
     CollServiceDefaultImpl collServiceDefaultImpl(&comm);
     EXPECT_NO_THROW(collServiceDefaultImpl.AddCountTask(true));
-
 }
-
 
 TEST(CollServiceDefaultImplTest, Test_RecoverTransport)
 {
     std::unique_ptr<CommunicatorImpl> comm = std::make_unique<CommunicatorImpl>();
     CollServiceDefaultImpl collServiceDefaultImpl(comm.get());
- 
-    MOCKER_CPP(&RdmaHandleManager::GetDieAndFuncId).stubs().will(returnValue(make_pair<uint32_t,uint32_t>(0,0)));
+
+    MOCKER_CPP(&RdmaHandleManager::GetDieAndFuncId).stubs().will(returnValue(make_pair<uint32_t, uint32_t>(0, 0)));
     DevType devType = DevType::DEV_TYPE_950;
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(devType));
-    
+
     vector<LinkData> links;
     vector<std::pair<LinkGroup, u32>> linkGroupPair;
-    LinkData linkData(PortDeploymentType::P2P,LinkProtocol::UB_CTP, 0, 1, IpAddress{"10.0.0.1"}, IpAddress{"10.0.0.2"});
+    LinkData linkData(
+        PortDeploymentType::P2P, LinkProtocol::UB_CTP, 0, 1, IpAddress{"10.0.0.1"}, IpAddress{"10.0.0.2"});
     links.push_back(linkData);
     LinkGroup linkGroup{};
     linkGroup.AddLink({linkData});
-    LinkData otherLinkData(PortDeploymentType::P2P,LinkProtocol::UB_CTP, 1, 1, IpAddress{"10.0.0.3"}, IpAddress{"10.0.0.4"});;
+    LinkData otherLinkData(
+        PortDeploymentType::P2P, LinkProtocol::UB_CTP, 1, 1, IpAddress{"10.0.0.3"}, IpAddress{"10.0.0.4"});
+    ;
     linkGroup.AddLink({otherLinkData});
     linkGroupPair.push_back(make_pair(linkGroup, 0));
 

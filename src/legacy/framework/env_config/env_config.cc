@@ -11,12 +11,9 @@
 
 namespace Hccl {
 
-EnvConfig::EnvConfig()
-{
-    Parse();
-}
+EnvConfig::EnvConfig() { Parse(); }
 
-EnvConfig &EnvConfig::GetInstance()
+EnvConfig& EnvConfig::GetInstance()
 {
     static EnvConfig envConfig;
     return envConfig;
@@ -33,39 +30,18 @@ void EnvConfig::Parse()
     detourCfg.Parse();
 }
 
-const EnvHostNicConfig &EnvConfig::GetHostNicConfig()
-{
-    return hostNicCfg;
-}
+const EnvHostNicConfig& EnvConfig::GetHostNicConfig() { return hostNicCfg; }
 
-const EnvSocketConfig &EnvConfig::GetSocketConfig()
-{
-    return socketCfg;
-}
+const EnvSocketConfig& EnvConfig::GetSocketConfig() { return socketCfg; }
 
-const EnvRtsConfig &EnvConfig::GetRtsConfig()
-{
-    return rtsCfg;
-}
+const EnvRtsConfig& EnvConfig::GetRtsConfig() { return rtsCfg; }
 
-const EnvRdmaConfig &EnvConfig::GetRdmaConfig()
-{
-    return rdmaCfg;
-}
+const EnvRdmaConfig& EnvConfig::GetRdmaConfig() { return rdmaCfg; }
 
-const EnvAlgoConfig &EnvConfig::GetAlgoConfig()
-{
-    return algoCfg;
-}
+const EnvAlgoConfig& EnvConfig::GetAlgoConfig() { return algoCfg; }
 
-const EnvLogConfig &EnvConfig::GetLogConfig()
-{
-    return logCfg;
-}
+const EnvLogConfig& EnvConfig::GetLogConfig() { return logCfg; }
 
-const EnvDetourConfig &EnvConfig::GetDetourConfig()
-{
-    return detourCfg;
-}
+const EnvDetourConfig& EnvConfig::GetDetourConfig() { return detourCfg; }
 
 } // namespace Hccl

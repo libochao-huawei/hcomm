@@ -25,301 +25,301 @@
 
 namespace hcomm {
 namespace CcuRep {
-namespace {
+    namespace {
 
-class CcuRepLocWaitEventTest : public ::testing::Test {
-protected:
-    void SetUp() override {}
-};
+        class CcuRepLocWaitEventTest : public ::testing::Test {
+        protected:
+            void SetUp() override {}
+        };
 
-class CcuRepLocWaitNotifyTest : public ::testing::Test {
-protected:
-    void SetUp() override {}
-};
+        class CcuRepLocWaitNotifyTest : public ::testing::Test {
+        protected:
+            void SetUp() override {}
+        };
 
-class CcuRepLocRecordEventTest : public ::testing::Test {
-protected:
-    void SetUp() override {}
-};
+        class CcuRepLocRecordEventTest : public ::testing::Test {
+        protected:
+            void SetUp() override {}
+        };
 
-class CcuRepRecordSharedNotifyTest : public ::testing::Test {
-protected:
-    void SetUp() override {}
-};
+        class CcuRepRecordSharedNotifyTest : public ::testing::Test {
+        protected:
+            void SetUp() override {}
+        };
 
-class CcuRepRemPostSemTest : public ::testing::Test {
-protected:
-    void SetUp() override {}
-};
+        class CcuRepRemPostSemTest : public ::testing::Test {
+        protected:
+            void SetUp() override {}
+        };
 
-class CcuRepRemPostVarTest : public ::testing::Test {
-protected:
-    void SetUp() override {}
-};
+        class CcuRepRemPostVarTest : public ::testing::Test {
+        protected:
+            void SetUp() override {}
+        };
 
-class CcuRepRemWaitSemTest : public ::testing::Test {
-protected:
-    void SetUp() override {}
-};
+        class CcuRepRemWaitSemTest : public ::testing::Test {
+        protected:
+            void SetUp() override {}
+        };
 
-TEST_F(CcuRepLocWaitEventTest, ConstructorInitializesCorrectly)
-{
-    CompletedEvent event;
-    event.SetMask(0xF);
-    CcuRepLocWaitEvent rep(event, true);
+        TEST_F(CcuRepLocWaitEventTest, ConstructorInitializesCorrectly)
+        {
+            CompletedEvent event;
+            event.SetMask(0xF);
+            CcuRepLocWaitEvent rep(event, true);
 
-    EXPECT_EQ(rep.Type(), CcuRepType::LOC_WAIT_EVENT);
-    EXPECT_EQ(rep.InstrCount(), 1);
-    EXPECT_EQ(rep.GetMask(), 0xF);
-}
+            EXPECT_EQ(rep.Type(), CcuRepType::LOC_WAIT_EVENT);
+            EXPECT_EQ(rep.InstrCount(), 1);
+            EXPECT_EQ(rep.GetMask(), 0xF);
+        }
 
-TEST_F(CcuRepLocWaitEventTest, ConstructorWithProfilingDisabled)
-{
-    CompletedEvent event;
-    event.SetMask(0xA);
-    CcuRepLocWaitEvent rep(event, false);
+        TEST_F(CcuRepLocWaitEventTest, ConstructorWithProfilingDisabled)
+        {
+            CompletedEvent event;
+            event.SetMask(0xA);
+            CcuRepLocWaitEvent rep(event, false);
 
-    EXPECT_EQ(rep.Type(), CcuRepType::LOC_WAIT_EVENT);
-    EXPECT_EQ(rep.InstrCount(), 1);
-    EXPECT_FALSE(rep.Translated());
-}
+            EXPECT_EQ(rep.Type(), CcuRepType::LOC_WAIT_EVENT);
+            EXPECT_EQ(rep.InstrCount(), 1);
+            EXPECT_FALSE(rep.Translated());
+        }
 
-TEST_F(CcuRepLocWaitEventTest, TranslateWithProfilingEnabled)
-{
-    CompletedEvent event;
-    event.SetMask(0xF);
-    CcuRepLocWaitEvent rep(event, true);
+        TEST_F(CcuRepLocWaitEventTest, TranslateWithProfilingEnabled)
+        {
+            CompletedEvent event;
+            event.SetMask(0xF);
+            CcuRepLocWaitEvent rep(event, true);
 
-    CcuInstr instr;
-    CcuInstr* instrPtr = &instr;
-    uint16_t instrId = 0;
-    TransDep dep = {};
+            CcuInstr instr;
+            CcuInstr* instrPtr = &instr;
+            uint16_t instrId = 0;
+            TransDep dep = {};
 
-    bool result = rep.Translate(instrPtr, instrId, dep);
+            bool result = rep.Translate(instrPtr, instrId, dep);
 
-    EXPECT_TRUE(result);
-    EXPECT_TRUE(rep.Translated());
-    EXPECT_EQ(rep.StartInstrId(), 0);
-    EXPECT_EQ(instrId, 1);
-    EXPECT_EQ(instr.header.type, 0x1);
-    EXPECT_EQ(instr.header.code, 0x2);
-}
+            EXPECT_TRUE(result);
+            EXPECT_TRUE(rep.Translated());
+            EXPECT_EQ(rep.StartInstrId(), 0);
+            EXPECT_EQ(instrId, 1);
+            EXPECT_EQ(instr.header.type, 0x1);
+            EXPECT_EQ(instr.header.code, 0x2);
+        }
 
-TEST_F(CcuRepLocWaitEventTest, TranslateWithProfilingDisabled)
-{
-    CompletedEvent event;
-    event.SetMask(0x5);
-    CcuRepLocWaitEvent rep(event, false);
+        TEST_F(CcuRepLocWaitEventTest, TranslateWithProfilingDisabled)
+        {
+            CompletedEvent event;
+            event.SetMask(0x5);
+            CcuRepLocWaitEvent rep(event, false);
 
-    CcuInstr instr;
-    CcuInstr* instrPtr = &instr;
-    uint16_t instrId = 10;
-    TransDep dep = {};
+            CcuInstr instr;
+            CcuInstr* instrPtr = &instr;
+            uint16_t instrId = 10;
+            TransDep dep = {};
 
-    bool result = rep.Translate(instrPtr, instrId, dep);
+            bool result = rep.Translate(instrPtr, instrId, dep);
 
-    EXPECT_TRUE(result);
-    EXPECT_TRUE(rep.Translated());
-    EXPECT_EQ(instrId, 11);
-    EXPECT_EQ(instr.header.type, 0x1);
-    EXPECT_EQ(instr.header.code, 0x4);
-}
+            EXPECT_TRUE(result);
+            EXPECT_TRUE(rep.Translated());
+            EXPECT_EQ(instrId, 11);
+            EXPECT_EQ(instr.header.type, 0x1);
+            EXPECT_EQ(instr.header.code, 0x4);
+        }
 
-TEST_F(CcuRepLocWaitEventTest, Describe)
-{
-    CompletedEvent event;
-    event.SetMask(0xABCD);
-    CcuRepLocWaitEvent rep(event, true);
+        TEST_F(CcuRepLocWaitEventTest, Describe)
+        {
+            CompletedEvent event;
+            event.SetMask(0xABCD);
+            CcuRepLocWaitEvent rep(event, true);
 
-    std::string desc = rep.Describe();
+            std::string desc = rep.Describe();
 
-    EXPECT_NE(desc.find("CcuRepLocWaitEvent"), std::string::npos);
-    EXPECT_NE(desc.find("mask"), std::string::npos);
-}
+            EXPECT_NE(desc.find("CcuRepLocWaitEvent"), std::string::npos);
+            EXPECT_NE(desc.find("mask"), std::string::npos);
+        }
 
-TEST_F(CcuRepLocWaitNotifyTest, ConstructorInitializesCorrectly)
-{
-    LocalNotify notify;
-    uint32_t mask = 0xFF;
-    CcuRepLocWaitNotify rep(notify, mask, true);
+        TEST_F(CcuRepLocWaitNotifyTest, ConstructorInitializesCorrectly)
+        {
+            LocalNotify notify;
+            uint32_t mask = 0xFF;
+            CcuRepLocWaitNotify rep(notify, mask, true);
 
-    EXPECT_EQ(rep.Type(), CcuRepType::LOC_WAIT_EVENT);
-    EXPECT_EQ(rep.InstrCount(), 1);
-    EXPECT_EQ(rep.GetMask(), 0xFF);
-}
+            EXPECT_EQ(rep.Type(), CcuRepType::LOC_WAIT_EVENT);
+            EXPECT_EQ(rep.InstrCount(), 1);
+            EXPECT_EQ(rep.GetMask(), 0xFF);
+        }
 
-TEST_F(CcuRepLocWaitNotifyTest, ConstructorWithProfilingDisabled)
-{
-    LocalNotify notify;
-    uint32_t mask = 0x0F;
-    CcuRepLocWaitNotify rep(notify, mask, false);
+        TEST_F(CcuRepLocWaitNotifyTest, ConstructorWithProfilingDisabled)
+        {
+            LocalNotify notify;
+            uint32_t mask = 0x0F;
+            CcuRepLocWaitNotify rep(notify, mask, false);
 
-    EXPECT_EQ(rep.Type(), CcuRepType::LOC_WAIT_EVENT);
-    EXPECT_FALSE(rep.Translated());
-}
+            EXPECT_EQ(rep.Type(), CcuRepType::LOC_WAIT_EVENT);
+            EXPECT_FALSE(rep.Translated());
+        }
 
-TEST_F(CcuRepLocWaitNotifyTest, TranslateWithProfilingEnabled)
-{
-    LocalNotify notify;
-    uint32_t mask = 0xF;
-    CcuRepLocWaitNotify rep(notify, mask, true);
+        TEST_F(CcuRepLocWaitNotifyTest, TranslateWithProfilingEnabled)
+        {
+            LocalNotify notify;
+            uint32_t mask = 0xF;
+            CcuRepLocWaitNotify rep(notify, mask, true);
 
-    CcuInstr instr;
-    CcuInstr* instrPtr = &instr;
-    uint16_t instrId = 0;
-    TransDep dep = {};
+            CcuInstr instr;
+            CcuInstr* instrPtr = &instr;
+            uint16_t instrId = 0;
+            TransDep dep = {};
 
-    bool result = rep.Translate(instrPtr, instrId, dep);
+            bool result = rep.Translate(instrPtr, instrId, dep);
 
-    EXPECT_TRUE(result);
-    EXPECT_TRUE(rep.Translated());
-    EXPECT_EQ(instrId, 1);
-    EXPECT_EQ(instr.header.type, 0x1);
-    EXPECT_EQ(instr.header.code, 0x2);
-}
+            EXPECT_TRUE(result);
+            EXPECT_TRUE(rep.Translated());
+            EXPECT_EQ(instrId, 1);
+            EXPECT_EQ(instr.header.type, 0x1);
+            EXPECT_EQ(instr.header.code, 0x2);
+        }
 
-TEST_F(CcuRepLocWaitNotifyTest, TranslateWithProfilingDisabled)
-{
-    LocalNotify notify;
-    uint32_t mask = 0xA;
-    CcuRepLocWaitNotify rep(notify, mask, false);
+        TEST_F(CcuRepLocWaitNotifyTest, TranslateWithProfilingDisabled)
+        {
+            LocalNotify notify;
+            uint32_t mask = 0xA;
+            CcuRepLocWaitNotify rep(notify, mask, false);
 
-    CcuInstr instr;
-    CcuInstr* instrPtr = &instr;
-    uint16_t instrId = 5;
-    TransDep dep = {};
+            CcuInstr instr;
+            CcuInstr* instrPtr = &instr;
+            uint16_t instrId = 5;
+            TransDep dep = {};
 
-    bool result = rep.Translate(instrPtr, instrId, dep);
+            bool result = rep.Translate(instrPtr, instrId, dep);
 
-    EXPECT_TRUE(result);
-    EXPECT_TRUE(rep.Translated());
-    EXPECT_EQ(instrId, 6);
-    EXPECT_EQ(instr.header.type, 0x1);
-    EXPECT_EQ(instr.header.code, 0x4);
-}
+            EXPECT_TRUE(result);
+            EXPECT_TRUE(rep.Translated());
+            EXPECT_EQ(instrId, 6);
+            EXPECT_EQ(instr.header.type, 0x1);
+            EXPECT_EQ(instr.header.code, 0x4);
+        }
 
-TEST_F(CcuRepLocWaitNotifyTest, Describe)
-{
-    LocalNotify notify;
-    uint32_t mask = 0x1234;
-    CcuRepLocWaitNotify rep(notify, mask, true);
+        TEST_F(CcuRepLocWaitNotifyTest, Describe)
+        {
+            LocalNotify notify;
+            uint32_t mask = 0x1234;
+            CcuRepLocWaitNotify rep(notify, mask, true);
 
-    std::string desc = rep.Describe();
+            std::string desc = rep.Describe();
 
-    EXPECT_NE(desc.find("CcuRepLocWaitNotify"), std::string::npos);
-}
+            EXPECT_NE(desc.find("CcuRepLocWaitNotify"), std::string::npos);
+        }
 
-TEST_F(CcuRepLocRecordEventTest, ConstructorInitializesCorrectly)
-{
-    CompletedEvent event;
-    event.SetMask(0xF);
-    CcuRepLocRecordEvent rep(event);
+        TEST_F(CcuRepLocRecordEventTest, ConstructorInitializesCorrectly)
+        {
+            CompletedEvent event;
+            event.SetMask(0xF);
+            CcuRepLocRecordEvent rep(event);
 
-    EXPECT_EQ(rep.Type(), CcuRepType::LOC_RECORD_EVENT);
-    EXPECT_EQ(rep.InstrCount(), 1);
-    EXPECT_EQ(rep.GetMask(), 0xF);
-}
+            EXPECT_EQ(rep.Type(), CcuRepType::LOC_RECORD_EVENT);
+            EXPECT_EQ(rep.InstrCount(), 1);
+            EXPECT_EQ(rep.GetMask(), 0xF);
+        }
 
-TEST_F(CcuRepLocRecordEventTest, Translate)
-{
-    CompletedEvent event;
-    event.SetMask(0xABCD);
-    CcuRepLocRecordEvent rep(event);
+        TEST_F(CcuRepLocRecordEventTest, Translate)
+        {
+            CompletedEvent event;
+            event.SetMask(0xABCD);
+            CcuRepLocRecordEvent rep(event);
 
-    CcuInstr instr;
-    CcuInstr* instrPtr = &instr;
-    uint16_t instrId = 100;
-    TransDep dep = {};
+            CcuInstr instr;
+            CcuInstr* instrPtr = &instr;
+            uint16_t instrId = 100;
+            TransDep dep = {};
 
-    bool result = rep.Translate(instrPtr, instrId, dep);
+            bool result = rep.Translate(instrPtr, instrId, dep);
 
-    EXPECT_TRUE(result);
-    EXPECT_TRUE(rep.Translated());
-    EXPECT_EQ(rep.StartInstrId(), 100);
-    EXPECT_EQ(instrId, 101);
-    EXPECT_EQ(instr.header.type, 0x1);
-    EXPECT_EQ(instr.header.code, 0x2);
-}
+            EXPECT_TRUE(result);
+            EXPECT_TRUE(rep.Translated());
+            EXPECT_EQ(rep.StartInstrId(), 100);
+            EXPECT_EQ(instrId, 101);
+            EXPECT_EQ(instr.header.type, 0x1);
+            EXPECT_EQ(instr.header.code, 0x2);
+        }
 
-TEST_F(CcuRepLocRecordEventTest, Describe)
-{
-    CompletedEvent event;
-    event.SetMask(0xABCD);
-    CcuRepLocRecordEvent rep(event);
+        TEST_F(CcuRepLocRecordEventTest, Describe)
+        {
+            CompletedEvent event;
+            event.SetMask(0xABCD);
+            CcuRepLocRecordEvent rep(event);
 
-    std::string desc = rep.Describe();
+            std::string desc = rep.Describe();
 
-    EXPECT_NE(desc.find("CcuRepLocRecordEvent"), std::string::npos);
-    EXPECT_NE(desc.find("mask"), std::string::npos);
-}
+            EXPECT_NE(desc.find("CcuRepLocRecordEvent"), std::string::npos);
+            EXPECT_NE(desc.find("mask"), std::string::npos);
+        }
 
-TEST_F(CcuRepRecordSharedNotifyTest, ConstructorInitializesCorrectly)
-{
-    LocalNotify notify;
-    uint16_t mask = 0xFF;
-    CcuRepRecordSharedNotify rep(notify, mask);
+        TEST_F(CcuRepRecordSharedNotifyTest, ConstructorInitializesCorrectly)
+        {
+            LocalNotify notify;
+            uint16_t mask = 0xFF;
+            CcuRepRecordSharedNotify rep(notify, mask);
 
-    EXPECT_EQ(rep.Type(), CcuRepType::RECORD_SHARED_NOTIFY);
-    EXPECT_EQ(rep.InstrCount(), 1);
-    EXPECT_EQ(rep.GetMask(), 0xFF);
-}
+            EXPECT_EQ(rep.Type(), CcuRepType::RECORD_SHARED_NOTIFY);
+            EXPECT_EQ(rep.InstrCount(), 1);
+            EXPECT_EQ(rep.GetMask(), 0xFF);
+        }
 
-TEST_F(CcuRepRecordSharedNotifyTest, TranslateSameDie)
-{
-    LocalNotify notify;
-    uint16_t mask = 0xF;
-    CcuRepRecordSharedNotify rep(notify, mask);
+        TEST_F(CcuRepRecordSharedNotifyTest, TranslateSameDie)
+        {
+            LocalNotify notify;
+            uint16_t mask = 0xF;
+            CcuRepRecordSharedNotify rep(notify, mask);
 
-    CcuInstr instr;
-    CcuInstr* instrPtr = &instr;
-    uint16_t instrId = 0;
-    TransDep dep = {};
-    dep.dieId = 0;
+            CcuInstr instr;
+            CcuInstr* instrPtr = &instr;
+            uint16_t instrId = 0;
+            TransDep dep = {};
+            dep.dieId = 0;
 
-    bool result = rep.Translate(instrPtr, instrId, dep);
+            bool result = rep.Translate(instrPtr, instrId, dep);
 
-    EXPECT_TRUE(result);
-    EXPECT_TRUE(rep.Translated());
-    EXPECT_EQ(instrId, 1);
-    EXPECT_EQ(instr.header.type, 0x1);
-    EXPECT_EQ(instr.header.code, 0x2);
-}
+            EXPECT_TRUE(result);
+            EXPECT_TRUE(rep.Translated());
+            EXPECT_EQ(instrId, 1);
+            EXPECT_EQ(instr.header.type, 0x1);
+            EXPECT_EQ(instr.header.code, 0x2);
+        }
 
-TEST_F(CcuRepRecordSharedNotifyTest, TranslateDifferentDie)
-{
-    LocalNotify notify;
-    uint16_t mask = 0xA;
-    CcuRepRecordSharedNotify rep(notify, mask);
+        TEST_F(CcuRepRecordSharedNotifyTest, TranslateDifferentDie)
+        {
+            LocalNotify notify;
+            uint16_t mask = 0xA;
+            CcuRepRecordSharedNotify rep(notify, mask);
 
-    CcuInstr instr;
-    CcuInstr* instrPtr = &instr;
-    uint16_t instrId = 5;
-    TransDep dep = {};
-    dep.dieId = 1;
-    dep.reserveCkeId = 2;
-    dep.reserveChannalId[1] = 3;
+            CcuInstr instr;
+            CcuInstr* instrPtr = &instr;
+            uint16_t instrId = 5;
+            TransDep dep = {};
+            dep.dieId = 1;
+            dep.reserveCkeId = 2;
+            dep.reserveChannalId[1] = 3;
 
-    bool result = rep.Translate(instrPtr, instrId, dep);
+            bool result = rep.Translate(instrPtr, instrId, dep);
 
-    EXPECT_TRUE(result);
-    EXPECT_TRUE(rep.Translated());
-    EXPECT_EQ(instrId, 6);
-    EXPECT_EQ(instr.header.type, 0x2);
-    EXPECT_EQ(instr.header.code, 0xb);
-}
+            EXPECT_TRUE(result);
+            EXPECT_TRUE(rep.Translated());
+            EXPECT_EQ(instrId, 6);
+            EXPECT_EQ(instr.header.type, 0x2);
+            EXPECT_EQ(instr.header.code, 0xb);
+        }
 
-TEST_F(CcuRepRecordSharedNotifyTest, Describe)
-{
-    LocalNotify notify;
-    uint16_t mask = 0x1234;
-    CcuRepRecordSharedNotify rep(notify, mask);
+        TEST_F(CcuRepRecordSharedNotifyTest, Describe)
+        {
+            LocalNotify notify;
+            uint16_t mask = 0x1234;
+            CcuRepRecordSharedNotify rep(notify, mask);
 
-    std::string desc = rep.Describe();
+            std::string desc = rep.Describe();
 
-    EXPECT_NE(desc.find("Post"), std::string::npos);
-    EXPECT_NE(desc.find("mask"), std::string::npos);
-}
+            EXPECT_NE(desc.find("Post"), std::string::npos);
+            EXPECT_NE(desc.find("mask"), std::string::npos);
+        }
 
-}
-}
-}
+    } // namespace
+} // namespace CcuRep
+} // namespace hcomm

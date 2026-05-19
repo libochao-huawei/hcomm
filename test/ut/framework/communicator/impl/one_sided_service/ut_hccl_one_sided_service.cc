@@ -64,36 +64,29 @@
 using namespace std;
 using namespace hccl;
 
-class OneSidedUt : public testing::Test
-{
+class OneSidedUt : public testing::Test {
 protected:
-    void SetUp() override {
+    void SetUp() override
+    {
         s32 portNum = -1;
-        MOCKER(hrtGetHccsPortNum)
-            .stubs()
-            .with(any(), outBound(portNum))
-            .will(returnValue(HCCL_SUCCESS));
+        MOCKER(hrtGetHccsPortNum).stubs().with(any(), outBound(portNum)).will(returnValue(HCCL_SUCCESS));
         std::cout << "A Test SetUP" << std::endl;
     }
 
-    void TearDown() override {
-        std::cout << "A Test TearDown" << std::endl;
-    }
+    void TearDown() override { std::cout << "A Test TearDown" << std::endl; }
 };
 
 TEST_F(OneSidedUt, Prepare_When_PrepareFullMeshFail_With_NullptrConn_Expect_SkipClean)
 {
-    unique_ptr<HcclSocketManager> socketManager = std::make_unique<HcclSocketManager>(NICDeployment::NIC_DEPLOYMENT_DEVICE, 0, 0, 0);
+    unique_ptr<HcclSocketManager> socketManager
+        = std::make_unique<HcclSocketManager>(NICDeployment::NIC_DEPLOYMENT_DEVICE, 0, 0, 0);
     unique_ptr<NotifyPool> notifyPool = std::make_unique<NotifyPool>();
     CommConfig commConfig;
-    unique_ptr<HcclOneSidedService> service = std::make_unique<HcclOneSidedService>(socketManager, notifyPool, commConfig);
+    unique_ptr<HcclOneSidedService> service
+        = std::make_unique<HcclOneSidedService>(socketManager, notifyPool, commConfig);
 
-    MOCKER_CPP(&HcclOneSidedService::PrepareFullMesh)
-    .stubs()
-    .will(returnValue(HCCL_E_INTERNAL));
-    MOCKER_CPP(&HcclOneSidedConn::CleanSocketResource)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HcclOneSidedService::PrepareFullMesh).stubs().will(returnValue(HCCL_E_INTERNAL));
+    MOCKER_CPP(&HcclOneSidedConn::CleanSocketResource).stubs().will(returnValue(HCCL_SUCCESS));
 
     // 构造ranktable
     HcclDispatcher dispatcher = &notifyPool;

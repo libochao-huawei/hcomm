@@ -26,25 +26,27 @@ HcclResult HcclGroupStart()
     return HCCL_SUCCESS;
 }
 
-namespace hccl{
+namespace hccl {
 
-HcclResult initGroupPlanner(HcclComm comm) {
-    hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+HcclResult initGroupPlanner(HcclComm comm)
+{
+    hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm*>(comm);
     std::shared_ptr<struct hcclKernelPlanner> planner = hcclComm->planner;
     u32 rankSize = INVALID_VALUE_RANKSIZE;
     hcclComm->GetRankSize(rankSize);
     planner->rankSize = rankSize;
     HCCL_DEBUG("[initGroupPlanner] ranksize: %d", rankSize);
-    
+
     planner->nTasksP2p = 0;
     planner->nTasksColl = 0;
     return HCCL_SUCCESS;
 }
 
-HcclResult taskAppend(HcclComm comm, hcclOpInfo& info) {
-    hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+HcclResult taskAppend(HcclComm comm, hcclOpInfo& info)
+{
+    hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm*>(comm);
     std::shared_ptr<struct hcclKernelPlanner> planner = hcclComm->planner;
-    if(planner->nTasksP2p == -1){
+    if (planner->nTasksP2p == -1) {
         initGroupPlanner(comm);
     }
 
@@ -55,7 +57,7 @@ HcclResult taskAppend(HcclComm comm, hcclOpInfo& info) {
         HcclSendRecvItem item;
         item.sendRecvType = isSendOp ? HcclSendRecvType::HCCL_SEND : HcclSendRecvType::HCCL_RECV;
         item.buf = const_cast<void*>(isSendOp ? info.sendbuff : info.recvbuff);
-        item.count  = isSendOp ? info.sendCount : info.recvCount;
+        item.count = isSendOp ? info.sendCount : info.recvCount;
         item.dataType = isSendOp ? info.sendType : info.recvType;
         item.remoteRank = info.root;
 
@@ -65,10 +67,9 @@ HcclResult taskAppend(HcclComm comm, hcclOpInfo& info) {
             planner->sendRecvMainStream = info.stream;
             HCCL_INFO("[TaskAppend] planner->sendRecvMainStream[%p]", planner->sendRecvMainStream);
         }
-        
+
         planner->nTasksP2p += 1;
-    }
-    else {
+    } else {
         hcclOpInfo task = info;
         planner->collTaskQueue.push_back(task);
         planner->nTasksColl += 1;
@@ -83,7 +84,8 @@ HcclResult taskAppend(HcclComm comm, hcclOpInfo& info) {
     return ret;
 }
 
-HcclResult commInitTaskAppend(std::shared_ptr<struct hcclAsyncJob> job, HcclResult (*func)(struct hcclAsyncJob *), HcclComm* comm)
+HcclResult
+commInitTaskAppend(std::shared_ptr<struct hcclAsyncJob> job, HcclResult (*func)(struct hcclAsyncJob*), HcclComm* comm)
 {
     HCCL_INFO("[hcclAsyncJobEnqueue] add item to queue");
     /*hcclAsyncLaunch只是将job放入队列，并不等待执行完成。groupLaunch->asyncJobLaunch中给每个job起一个线程去执行*/
@@ -93,11 +95,11 @@ HcclResult commInitTaskAppend(std::shared_ptr<struct hcclAsyncJob> job, HcclResu
     hcclInitJobs.push_back(job);
     return HCCL_SUCCESS;
 }
-}// namespace hccl
+} // namespace hccl
 
-void *hcclAsyncJobMain(void *arg)
+void* hcclAsyncJobMain(void* arg)
 {
-    struct hcclAsyncJob *job = (struct hcclAsyncJob *)arg;
+    struct hcclAsyncJob* job = (struct hcclAsyncJob*)arg;
     job->result = job->func(job); /*func是上层asyncjob里面设置的函数*/
     if (job->result == HCCL_SUCCESS) {
         HCCL_INFO("Function launch success");
@@ -139,8 +141,8 @@ static HcclResult asyncJobLaunch()
                     }
                 } else {
                     /* safety check */
-                    CHK_PRT_RET(state != hcclGroupJobJoined,
-                        HCCL_ERROR("[asyncJobLaunch] state != hcclGroupJobJoined"),
+                    CHK_PRT_RET(
+                        state != hcclGroupJobJoined, HCCL_ERROR("[asyncJobLaunch] state != hcclGroupJobJoined"),
                         HCCL_E_INTERNAL);
                 }
             }
@@ -156,64 +158,77 @@ static HcclResult asyncJobLaunch()
 
 static HcclResult doLaunches(HcclComm comm)
 {
-    hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+    hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm*>(comm);
     std::shared_ptr<struct hcclKernelPlanner> planner = hcclComm->planner;
     HcclUs startutime = TIME_NOW();
-    if (planner->nTasksP2p != 0) { 
+    if (planner->nTasksP2p != 0) {
         // 将所有send/recv的任务打包作为一个集合通信算子来执行
         HCCL_INFO("HcclBatchSendRecvGroup, sendRecvInfo.size()[%u]", static_cast<u32>(planner->sendRecvInfo.size()));
-        CHK_RET(HcclBatchSendRecvGroup(planner->sendRecvInfo.data(), planner->sendRecvInfo.size(), comm, planner->sendRecvMainStream));
+        CHK_RET(HcclBatchSendRecvGroup(
+            planner->sendRecvInfo.data(), planner->sendRecvInfo.size(), comm, planner->sendRecvMainStream));
     }
     HCCL_INFO("[doLaunches] take time [%lld]us.", DURATION_US(TIME_NOW() - startutime));
     if (planner->nTasksColl != 0) {
         /*展开下发集合通信算子*/
-        while(!planner->collTaskQueue.empty()){
+        while (!planner->collTaskQueue.empty()) {
             hcclOpInfo taskColl = planner->collTaskQueue.front();
             planner->collTaskQueue.pop_front();
             switch (taskColl.coll) {
                 case HcclCMDType::HCCL_CMD_ALLGATHER:
-                    HcclAllGatherInner(const_cast<void *>(taskColl.sendbuff), const_cast<void *>(taskColl.recvbuff), taskColl.sendCount,
-                                    taskColl.sendType, taskColl.comm, taskColl.stream);
+                    HcclAllGatherInner(
+                        const_cast<void*>(taskColl.sendbuff), const_cast<void*>(taskColl.recvbuff), taskColl.sendCount,
+                        taskColl.sendType, taskColl.comm, taskColl.stream);
                     break;
                 case HcclCMDType::HCCL_CMD_REDUCE_SCATTER:
-                    HcclReduceScatterInner(const_cast<void *>(taskColl.sendbuff), const_cast<void *>(taskColl.recvbuff), taskColl.recvCount, 
-                                taskColl.recvType, taskColl.op, taskColl.comm, taskColl.stream);
+                    HcclReduceScatterInner(
+                        const_cast<void*>(taskColl.sendbuff), const_cast<void*>(taskColl.recvbuff), taskColl.recvCount,
+                        taskColl.recvType, taskColl.op, taskColl.comm, taskColl.stream);
                     break;
                 case HcclCMDType::HCCL_CMD_ALLREDUCE:
-                    HcclAllReduceInner(const_cast<void *>(taskColl.sendbuff), const_cast<void *>(taskColl.recvbuff), taskColl.sendCount, taskColl.sendType, 
-                                    taskColl.op, taskColl.comm, taskColl.stream);
+                    HcclAllReduceInner(
+                        const_cast<void*>(taskColl.sendbuff), const_cast<void*>(taskColl.recvbuff), taskColl.sendCount,
+                        taskColl.sendType, taskColl.op, taskColl.comm, taskColl.stream);
                     break;
                 case HcclCMDType::HCCL_CMD_BROADCAST:
-                    HcclBroadcastInner(const_cast<void *>(taskColl.sendbuff), taskColl.sendCount, taskColl.sendType, taskColl.root, taskColl.comm, 
-                                    taskColl.stream);
+                    HcclBroadcastInner(
+                        const_cast<void*>(taskColl.sendbuff), taskColl.sendCount, taskColl.sendType, taskColl.root,
+                        taskColl.comm, taskColl.stream);
                     break;
                 case HcclCMDType::HCCL_CMD_ALLTOALL:
-                    HcclAlltoAllInner(taskColl.sendbuff, taskColl.sendCount, taskColl.sendType, taskColl.recvbuff, taskColl.recvCount, taskColl.recvType, 
-                                    taskColl.comm, taskColl.stream);
+                    HcclAlltoAllInner(
+                        taskColl.sendbuff, taskColl.sendCount, taskColl.sendType, taskColl.recvbuff, taskColl.recvCount,
+                        taskColl.recvType, taskColl.comm, taskColl.stream);
                     break;
                 case HcclCMDType::HCCL_CMD_ALLTOALLV:
-                    HcclAlltoAllVInner(taskColl.sendbuff, taskColl.sendCounts, taskColl.sdispls, taskColl.sendType,
-                                    taskColl.recvbuff, taskColl.recvCounts, taskColl.rdispls, taskColl.recvType,
-                                    taskColl.comm, taskColl.stream);
+                    HcclAlltoAllVInner(
+                        taskColl.sendbuff, taskColl.sendCounts, taskColl.sdispls, taskColl.sendType, taskColl.recvbuff,
+                        taskColl.recvCounts, taskColl.rdispls, taskColl.recvType, taskColl.comm, taskColl.stream);
                     break;
                 case HcclCMDType::HCCL_CMD_ALLTOALLVC:
-                    HcclAlltoAllVCInner(taskColl.sendbuff, taskColl.sendCounts, taskColl.sendType, taskColl.recvbuff, taskColl.recvType, 
-                                    taskColl.comm, taskColl.stream);
+                    HcclAlltoAllVCInner(
+                        taskColl.sendbuff, taskColl.sendCounts, taskColl.sendType, taskColl.recvbuff, taskColl.recvType,
+                        taskColl.comm, taskColl.stream);
                     break;
                 case HcclCMDType::HCCL_CMD_REDUCE:
-                    HcclReduceInner(const_cast<void *>(taskColl.sendbuff), const_cast<void *>(taskColl.recvbuff), taskColl.recvCount, taskColl.recvType, taskColl.op, taskColl.root, 
-                                    taskColl.comm, taskColl.stream);
+                    HcclReduceInner(
+                        const_cast<void*>(taskColl.sendbuff), const_cast<void*>(taskColl.recvbuff), taskColl.recvCount,
+                        taskColl.recvType, taskColl.op, taskColl.root, taskColl.comm, taskColl.stream);
                     break;
                 case HcclCMDType::HCCL_CMD_SCATTER:
-                    HcclScatterInner(const_cast<void *>(taskColl.sendbuff), const_cast<void *>(taskColl.recvbuff), taskColl.recvCount, taskColl.recvType, taskColl.root, taskColl.comm, taskColl.stream);
+                    HcclScatterInner(
+                        const_cast<void*>(taskColl.sendbuff), const_cast<void*>(taskColl.recvbuff), taskColl.recvCount,
+                        taskColl.recvType, taskColl.root, taskColl.comm, taskColl.stream);
                     break;
                 case HcclCMDType::HCCL_CMD_ALLGATHER_V:
-                    HcclAllGatherVInner(const_cast<void *>(taskColl.sendbuff), taskColl.sendCount, const_cast<void *>(taskColl.recvbuff), taskColl.recvCounts, taskColl.rdispls, 
-                                    taskColl.recvType, taskColl.comm, taskColl.stream);
+                    HcclAllGatherVInner(
+                        const_cast<void*>(taskColl.sendbuff), taskColl.sendCount, const_cast<void*>(taskColl.recvbuff),
+                        taskColl.recvCounts, taskColl.rdispls, taskColl.recvType, taskColl.comm, taskColl.stream);
                     break;
                 case HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V:
-                    HcclReduceScatterVInner(const_cast<void *>(taskColl.sendbuff), taskColl.sendCounts, taskColl.sdispls, const_cast<void *>(taskColl.recvbuff), taskColl.recvCount, 
-                                        taskColl.sendType, taskColl.op, taskColl.comm, taskColl.stream);
+                    HcclReduceScatterVInner(
+                        const_cast<void*>(taskColl.sendbuff), taskColl.sendCounts, taskColl.sdispls,
+                        const_cast<void*>(taskColl.recvbuff), taskColl.recvCount, taskColl.sendType, taskColl.op,
+                        taskColl.comm, taskColl.stream);
                     break;
                 default:
                     HCCL_ERROR("[doLaunches] not supported hcclFunc!");
@@ -225,7 +240,7 @@ static HcclResult doLaunches(HcclComm comm)
 }
 
 static HcclResult groupLaunch()
-{  // 将各种通信域初始化/destroy的asyncJobs，在这里触发放到背景线程执行
+{ // 将各种通信域初始化/destroy的asyncJobs，在这里触发放到背景线程执行
     HCCL_INFO("[groupLaunch] entered");
 
     asyncJobLaunch();
@@ -234,11 +249,11 @@ static HcclResult groupLaunch()
         doLaunches(comm);
     }
     HCCL_INFO("[groupLaunch] doLaunches done");
-    //流同步
-    for (HcclComm comm : hcclGroupCommList){
-        hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+    // 流同步
+    for (HcclComm comm : hcclGroupCommList) {
+        hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm*>(comm);
         std::shared_ptr<struct hcclKernelPlanner> planner = hcclComm->planner;
-        for (auto it : planner->collStreams){
+        for (auto it : planner->collStreams) {
             CHK_RET(hcclStreamSynchronize(it));
         }
     }
@@ -250,7 +265,7 @@ inline void groupLocalResetJobState()
 {
     // hcclcomm中group相关的变量
     for (HcclComm comm : hcclGroupCommList) {
-        hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+        hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm*>(comm);
         hcclComm->planner = std::make_shared<hcclKernelPlanner>();
         hcclComm->SetGroupMode(false);
     }

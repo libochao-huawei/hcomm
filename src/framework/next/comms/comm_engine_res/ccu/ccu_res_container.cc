@@ -26,22 +26,21 @@ constexpr uint32_t CCU_MS_MODE = 5;
 constexpr uint32_t CCU_SCHE_MODE = 6;
 inline CcuEngine OpExpansionModeToCcuEngine(const uint32_t opExpansionMode)
 {
-    if (opExpansionMode == DEFAULT_MODE ||
-        opExpansionMode == CCU_SCHE_MODE) {
+    if (opExpansionMode == DEFAULT_MODE || opExpansionMode == CCU_SCHE_MODE) {
         return CcuEngine::CCU_SCHE;
     }
 
     if (opExpansionMode == CCU_MS_MODE) {
         return CcuEngine::CCU_MS;
     }
-    
+
     return CcuEngine::INVALID;
 }
 
 CcuResContainer::~CcuResContainer()
 {
     // 主动释放资源保证时序，不得随意调整顺序
-    for (auto &kernelHandle : kernelHandles_) {
+    for (auto& kernelHandle : kernelHandles_) {
         if (kernelHandle != 0) {
             (void)CcuKernelMgr::GetInstance(devLogicId_).UnRegister(kernelHandle);
             kernelHandle = 0;
@@ -90,7 +89,6 @@ HcclResult CcuResContainer::Init()
             ccuDrvHandle_ = nullptr;
             return ret;
         }
-
     }
 
     if (!resPack_) {
@@ -121,10 +119,7 @@ HcclResult CcuResContainer::ResetResPack()
     return HcclResult::HCCL_SUCCESS;
 }
 
-CcuResPack *CcuResContainer::GetResPack()
-{
-    return resPack_.get();
-}
+CcuResPack* CcuResContainer::GetResPack() { return resPack_.get(); }
 
 HcclResult CcuResContainer::SaveCcuKernel(const CcuKernelHandle kernelHandle)
 {
@@ -135,9 +130,6 @@ HcclResult CcuResContainer::SaveCcuKernel(const CcuKernelHandle kernelHandle)
     return HcclResult::HCCL_SUCCESS;
 }
 
-const std::vector<CcuKernelHandle> &CcuResContainer::GetUntranslatedKernels()
-{
-    return untranslatedKernelHandles_;
-}
+const std::vector<CcuKernelHandle>& CcuResContainer::GetUntranslatedKernels() { return untranslatedKernelHandles_; }
 
-}
+} // namespace hcomm

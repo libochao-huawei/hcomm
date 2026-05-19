@@ -25,23 +25,13 @@
 using namespace std;
 using namespace Hccl;
 
-
 class CcuRaTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "CcuRaTest tests set up." << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "CcuRaTest tests set up." << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "CcuRaTest tests tear down." << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "CcuRaTest tests tear down." << std::endl; }
 
-    virtual void SetUp()
-    {
-        std::cout << "A Test case in CcuRaTest SetUP" << std::endl;
-    }
+    virtual void SetUp() { std::cout << "A Test case in CcuRaTest SetUP" << std::endl; }
 
     virtual void TearDown()
     {
@@ -96,7 +86,7 @@ TEST_F(CcuRaTest, test_loop_xm)
 TEST_F(CcuRaTest, test_loop_group_xn)
 {
     EXPECT_EQ(sizeof(LoopGroupXn), 8);
-    
+
     LoopGroupXn loopGroupXn{};
     loopGroupXn.value = 0xaaaabbbbccccdddd;
 
@@ -108,7 +98,7 @@ TEST_F(CcuRaTest, test_loop_group_xn)
 TEST_F(CcuRaTest, test_loop_group_xm)
 {
     EXPECT_EQ(sizeof(LoopGroupXm), 8);
-    
+
     LoopGroupXm loopGroupXm{};
     loopGroupXm.value = 0xaaaabbbbccccdddd;
 
@@ -117,7 +107,7 @@ TEST_F(CcuRaTest, test_loop_group_xm)
     EXPECT_EQ(loopGroupXm.gsaOffset, 0b01010101110111011101111001100110);
 }
 
-void MockHrtRaCustomChannelXn(const HRaInfo &raInfo, void *customIn, void *customOut)
+void MockHrtRaCustomChannelXn(const HRaInfo& raInfo, void* customIn, void* customOut)
 {
     uint64_t mockXnVal = 0xaaaabbbbccccdddd;
     CustomChannelInfoOut* mockOutBuff = (CustomChannelInfoOut*)customOut;
@@ -132,7 +122,7 @@ TEST_F(CcuRaTest, test_get_ccu_xn_value)
     EXPECT_EQ(CcuErrorHandler::GetCcuXnValue(0, 0, 0), 0xaaaabbbbccccdddd);
 }
 
-void MockHrtRaCustomChannelGSA(const HRaInfo &raInfo, void *customIn, void *customOut)
+void MockHrtRaCustomChannelGSA(const HRaInfo& raInfo, void* customIn, void* customOut)
 {
     uint64_t mockGSAVal = 0x1111222233334444;
     CustomChannelInfoOut* mockOutBuff = (CustomChannelInfoOut*)customOut;
@@ -147,7 +137,7 @@ TEST_F(CcuRaTest, test_get_ccu_gsa_value)
     EXPECT_EQ(CcuErrorHandler::GetCcuGSAValue(0, 0, 0), 0x1111222233334444);
 }
 
-void MockHrtRaCustomChannelCKE(const HRaInfo &raInfo, void *customIn, void *customOut)
+void MockHrtRaCustomChannelCKE(const HRaInfo& raInfo, void* customIn, void* customOut)
 {
     uint64_t mockCKEVal = 0x000000000000ffff;
     CustomChannelInfoOut* mockOutBuff = (CustomChannelInfoOut*)customOut;
@@ -162,7 +152,7 @@ TEST_F(CcuRaTest, test_get_ccu_cke_value)
     EXPECT_EQ(CcuErrorHandler::GetCcuCKEValue(0, 0, 0), 0xffff);
 }
 
-void MockHrtRaCustomChannelMissionContext(const HRaInfo &raInfo, void *customIn, void *customOut)
+void MockHrtRaCustomChannelMissionContext(const HRaInfo& raInfo, void* customIn, void* customOut)
 {
     CcuMissionContext missionCtx{};
     missionCtx.part2.value = 0xaaaa;
@@ -183,7 +173,7 @@ TEST_F(CcuRaTest, test_get_ccu_mission_context)
     EXPECT_EQ(missionCtx.GetCurrentIns(), 0b1110111001100110);
 }
 
-void MockHrtRaCustomChannelLoopContext(const HRaInfo &raInfo, void *customIn, void *customOut)
+void MockHrtRaCustomChannelLoopContext(const HRaInfo& raInfo, void* customIn, void* customOut)
 {
     CcuLoopContext loopCtx{};
     loopCtx.part9.value = 0x9999;

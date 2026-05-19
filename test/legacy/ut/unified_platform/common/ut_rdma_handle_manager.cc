@@ -34,20 +34,13 @@
 #undef protected
 #undef private
 
-
 using namespace Hccl;
 
 class RdmaHandleManagerTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "RdmaHandleManagerTest SetUP" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "RdmaHandleManagerTest SetUP" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "RdmaHandleManagerTest TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "RdmaHandleManagerTest TearDown" << std::endl; }
 
     virtual void SetUp()
     {
@@ -72,15 +65,15 @@ protected:
         return ipAddress;
     }
 
-    void            *rdmaHandle;
+    void* rdmaHandle;
 };
 
 TEST_F(RdmaHandleManagerTest, rdma_handle_manager_get_and_create)
 {
     // Given
-    u32      devicePhyId = 0;
-    BasePortType       basePortType(PortDeploymentType::DEV_NET, ConnectProtoType::RDMA);
-    PortData           localPortData(0, basePortType, 0, IpAddress());
+    u32 devicePhyId = 0;
+    BasePortType basePortType(PortDeploymentType::DEV_NET, ConnectProtoType::RDMA);
+    PortData localPortData(0, basePortType, 0, IpAddress());
 
     // when
     auto res = RdmaHandleManager::GetInstance().Get(devicePhyId, localPortData, LinkProtocol::UB_CTP);
@@ -92,9 +85,9 @@ TEST_F(RdmaHandleManagerTest, rdma_handle_manager_get_and_create)
 TEST_F(RdmaHandleManagerTest, rdma_handle_manager_get_twice)
 {
     // Given
-    u32      devicePhyId = 0;
-    BasePortType       basePortType(PortDeploymentType::DEV_NET, ConnectProtoType::RDMA);
-    PortData           localPortData(0, basePortType, 0, IpAddress());
+    u32 devicePhyId = 0;
+    BasePortType basePortType(PortDeploymentType::DEV_NET, ConnectProtoType::RDMA);
+    PortData localPortData(0, basePortType, 0, IpAddress());
 
     // when
     auto res1 = RdmaHandleManager::GetInstance().Get(devicePhyId, localPortData, LinkProtocol::UB_CTP);
@@ -113,7 +106,6 @@ TEST_F(RdmaHandleManagerTest, rdma_handle_manager_get_jfc)
     rdmaHandle = new RdmaHandle();
     EXPECT_THROW(RdmaHandleManager::GetInstance().GetJfcHandle(rdmaHandle, cqInfo, mode), InvalidParamsException);
 
-
     RdmaHandle rdmaHandle2 = nullptr;
     EXPECT_THROW(RdmaHandleManager::GetInstance().GetDieAndFuncId(rdmaHandle2), InvalidParamsException);
     delete rdmaHandle;
@@ -125,9 +117,9 @@ TEST_F(RdmaHandleManagerTest, rdma_handle_manager_get_token_id_handle)
     TokenIdHandle tokenIdHandle;
     EXPECT_THROW(RdmaHandleManager::GetInstance().GetTokenIdInfo(rdmaHandle), InvalidParamsException);
 
-    RdmaHandle rdmaHandle1 = (void *)0x12;
+    RdmaHandle rdmaHandle1 = (void*)0x12;
     RdmaHandleManager::GetInstance().tokenInfoMap[rdmaHandle1] = make_unique<TokenInfoManager>(0, rdmaHandle1);
-    RdmaHandle rdmaHandle2 = (void *)0x1365;
+    RdmaHandle rdmaHandle2 = (void*)0x1365;
     EXPECT_THROW(RdmaHandleManager::GetInstance().GetTokenIdInfo(rdmaHandle2), InvalidParamsException);
 
     std::pair<TokenIdHandle, uint32_t> expectResult(0, 0);

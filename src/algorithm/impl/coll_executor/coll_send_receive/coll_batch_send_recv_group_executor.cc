@@ -13,16 +13,15 @@
 namespace hccl {
 constexpr u64 BIG_DATA = 128 * 1024;
 
-CollBatchSendRecvGroupExecutor::CollBatchSendRecvGroupExecutor(const HcclDispatcher dispatcher,
-    std::unique_ptr<TopoMatcher> &topoMatcher)
+CollBatchSendRecvGroupExecutor::CollBatchSendRecvGroupExecutor(
+    const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher>& topoMatcher)
     : CollBatchSendRecvExecutor(dispatcher, topoMatcher)
-{
-}
+{}
 
 HcclResult CollBatchSendRecvGroupExecutor::CalcBufferSliceSize()
 {
     u32 bufferSliceNum = GROUP_MAX_CONCURRENT;
-    u32 alignSize = HCCL_MIN_SLICE_ALIGN_910B; // 对齐
+    u32 alignSize = HCCL_MIN_SLICE_ALIGN_910B;                                                   // 对齐
     bufferSliceSize_ = algResResp_->cclInputMem.size() / alignSize / bufferSliceNum * alignSize; // cclInp
     HCCL_INFO("[CollBatchSendRecvGroupExecutor][CalcBufferSliceSize] bufferSliceSize_[%llu]", bufferSliceSize_);
     return HCCL_SUCCESS;
@@ -56,7 +55,8 @@ HcclResult CollBatchSendRecvGroupExecutor::OrganizeRecvItemByStream()
     return HCCL_SUCCESS;
 }
 
-HcclResult CollBatchSendRecvGroupExecutor::isGroupBigCount(HcclSendRecvItem *sendRecvInfo, u32 itemNum, bool& isBig) const
+HcclResult
+CollBatchSendRecvGroupExecutor::isGroupBigCount(HcclSendRecvItem* sendRecvInfo, u32 itemNum, bool& isBig) const
 {
     CHK_PTR_NULL(sendRecvInfo);
 
@@ -76,7 +76,7 @@ HcclResult CollBatchSendRecvGroupExecutor::Orchestrate(OpParam& param, AlgResour
 {
     HcclUs startut = TIME_NOW();
     HCCL_CONFIG_INFO(HCCL_ALG, "[CollBatchSendRecvGroupExecutor] groupsendrecv starts.");
-    
+
     sendStreamNum_ = GROUP_MAX_CONCURRENT;
     recvStreamNum_ = GROUP_MAX_CONCURRENT;
     HCCL_INFO("[Orchestrate] sendStreamNum_[%u], recvStreamNum_[%u]", sendStreamNum_, recvStreamNum_);
@@ -86,8 +86,9 @@ HcclResult CollBatchSendRecvGroupExecutor::Orchestrate(OpParam& param, AlgResour
     CHK_RET(GetPairWiseList(param.BatchSendRecvDataDes.sendRecvItemsPtr, param.BatchSendRecvDataDes.itemNum));
     CHK_RET(ProcessSelfSendRecvTasks(param.stream));
     if (topoAttr_.userRankSize == 1) {
-        HCCL_INFO("tag[%s] BatchSendRecvGroup Excutor orchestrate success, take time [%lld]us.",
-            param.tag.c_str(), DURATION_US(TIME_NOW() - startut));
+        HCCL_INFO(
+            "tag[%s] BatchSendRecvGroup Excutor orchestrate success, take time [%lld]us.", param.tag.c_str(),
+            DURATION_US(TIME_NOW() - startut));
         return HCCL_SUCCESS;
     }
     CHK_RET(CalcBufferSliceSize());
@@ -109,26 +110,33 @@ HcclResult CollBatchSendRecvGroupExecutor::Orchestrate(OpParam& param, AlgResour
         CHK_RET(RunLoopSmall(param));
     }
 
-    HCCL_INFO("tag[%s] BatchSendRecvGroup Excutor orchestrate success, take time [%lld]us.",
-        param.tag.c_str(), DURATION_US(TIME_NOW() - startut));
+    HCCL_INFO(
+        "tag[%s] BatchSendRecvGroup Excutor orchestrate success, take time [%lld]us.", param.tag.c_str(),
+        DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
 }
 
 HcclResult CollBatchSendRecvGroupExecutor::MainPostSubWait(Stream& mainStream)
 {
     // 主流通知所有从流开始
-    for (u32 i  = 0; i < sendStreamNum_; i++){
-        if (!sendDataSilcesBySendStream_[i].empty()){ // 只对有任务的流进行同步，减少开销
+    for (u32 i = 0; i < sendStreamNum_; i++) {
+        if (!sendDataSilcesBySendStream_[i].empty()) { // 只对有任务的流进行同步，减少开销
             CHK_RET(LocalNotify::Post(mainStream, dispatcher_, algResResp_->notifiesAux[i], PROF_STAGE_0));
-            CHK_RET(LocalNotify::Wait(algResResp_->slaveStreams[i], dispatcher_, algResResp_->notifiesAux[i], PROF_STAGE_0));
+            CHK_RET(
+                LocalNotify::Wait(
+                    algResResp_->slaveStreams[i], dispatcher_, algResResp_->notifiesAux[i], PROF_STAGE_0));
             HCCL_INFO("MainPost, Send[%u] Wait", i);
         }
     }
 
-    for (u32 i  = 0; i < recvStreamNum_; i++){
-        if (!recvDataSilcesByRecvStream_[i].empty()){
-            CHK_RET(LocalNotify::Post(mainStream, dispatcher_, algResResp_->notifiesAux[i + sendStreamNum_], PROF_STAGE_0));
-            CHK_RET(LocalNotify::Wait(algResResp_->slaveStreams[i + sendStreamNum_], dispatcher_, algResResp_->notifiesAux[i + sendStreamNum_], PROF_STAGE_0));
+    for (u32 i = 0; i < recvStreamNum_; i++) {
+        if (!recvDataSilcesByRecvStream_[i].empty()) {
+            CHK_RET(
+                LocalNotify::Post(mainStream, dispatcher_, algResResp_->notifiesAux[i + sendStreamNum_], PROF_STAGE_0));
+            CHK_RET(
+                LocalNotify::Wait(
+                    algResResp_->slaveStreams[i + sendStreamNum_], dispatcher_,
+                    algResResp_->notifiesAux[i + sendStreamNum_], PROF_STAGE_0));
             HCCL_INFO("MainPost, Recv[%u] Wait", i);
         }
     }
@@ -139,18 +147,25 @@ HcclResult CollBatchSendRecvGroupExecutor::MainPostSubWait(Stream& mainStream)
 HcclResult CollBatchSendRecvGroupExecutor::MainWaitSubPost(Stream& mainStream)
 {
     // 最后主流等待所有从流结束
-    for (u32 i  = 0; i < sendStreamNum_; i++){
-        if (!sendDataSilcesBySendStream_[i].empty()){ // 只对有任务的流进行同步，减少开销
-            CHK_RET(LocalNotify::Post(algResResp_->slaveStreams[i], dispatcher_, algResResp_->notifiesMain[i], PROF_STAGE_0));
+    for (u32 i = 0; i < sendStreamNum_; i++) {
+        if (!sendDataSilcesBySendStream_[i].empty()) { // 只对有任务的流进行同步，减少开销
+            CHK_RET(
+                LocalNotify::Post(
+                    algResResp_->slaveStreams[i], dispatcher_, algResResp_->notifiesMain[i], PROF_STAGE_0));
             CHK_RET(LocalNotify::Wait(mainStream, dispatcher_, algResResp_->notifiesMain[i], PROF_STAGE_0));
             HCCL_INFO("MainWait, Send[%u] Post", i);
         }
     }
 
-    for (u32 i  = 0; i < recvStreamNum_; i++){
-        if (!recvDataSilcesByRecvStream_[i].empty()){
-            CHK_RET(LocalNotify::Post(algResResp_->slaveStreams[i + sendStreamNum_], dispatcher_, algResResp_->notifiesMain[i + sendStreamNum_], PROF_STAGE_0));
-            CHK_RET(LocalNotify::Wait(mainStream, dispatcher_, algResResp_->notifiesMain[i + sendStreamNum_], PROF_STAGE_0));
+    for (u32 i = 0; i < recvStreamNum_; i++) {
+        if (!recvDataSilcesByRecvStream_[i].empty()) {
+            CHK_RET(
+                LocalNotify::Post(
+                    algResResp_->slaveStreams[i + sendStreamNum_], dispatcher_,
+                    algResResp_->notifiesMain[i + sendStreamNum_], PROF_STAGE_0));
+            CHK_RET(
+                LocalNotify::Wait(
+                    mainStream, dispatcher_, algResResp_->notifiesMain[i + sendStreamNum_], PROF_STAGE_0));
             HCCL_INFO("MainWait, Recv[%u] Post", i);
         }
     }
@@ -159,7 +174,7 @@ HcclResult CollBatchSendRecvGroupExecutor::MainWaitSubPost(Stream& mainStream)
 
 HcclResult CollBatchSendRecvGroupExecutor::CopyLocalDataForARound(Stream& mainStream)
 {
-    for (u32 i = 0; i < sendStreamNum_; i++){
+    for (u32 i = 0; i < sendStreamNum_; i++) {
         if (sendDataSilcesBySendStream_[i].empty()) {
             continue;
         }
@@ -179,10 +194,12 @@ HcclResult CollBatchSendRecvGroupExecutor::RunTasksBig(OpParam& param)
     u32 nonEmptySendStream = 0;
     u32 nonEmptyRecvStream = 0;
     for (u32 i = 0; i < sendStreamNum_; i++) {
-        if (!sendDataSilcesBySendStream_[i].empty()) nonEmptySendStream++;
+        if (!sendDataSilcesBySendStream_[i].empty())
+            nonEmptySendStream++;
     }
     for (u32 i = 0; i < recvStreamNum_; i++) {
-        if (!recvDataSilcesByRecvStream_[i].empty()) nonEmptyRecvStream++;
+        if (!recvDataSilcesByRecvStream_[i].empty())
+            nonEmptyRecvStream++;
     }
 
     while (nonEmptySendStream > 0 || nonEmptyRecvStream > 0) {
@@ -190,12 +207,12 @@ HcclResult CollBatchSendRecvGroupExecutor::RunTasksBig(OpParam& param)
         HCCL_INFO("nonEmptySendStream[%u], nonEmptyRecvStream[%u]", nonEmptySendStream, nonEmptyRecvStream);
         CHK_RET(MainPostSubWait(param.stream));
 
-        for (u32 i = 0; i < sendStreamNum_; i++){
+        for (u32 i = 0; i < sendStreamNum_; i++) {
             if (!sendDataSilcesBySendStream_[i].empty()) {
                 CHK_RET(ProcessSendStreamDataSlice(algResResp_->slaveStreams[i], i, false, false));
             }
         }
-        for (u32 i = 0; i < recvStreamNum_; i++){
+        for (u32 i = 0; i < recvStreamNum_; i++) {
             if (!recvDataSilcesByRecvStream_[i].empty()) {
                 CHK_RET(ProcessRecvStreamDataSlice(algResResp_->slaveStreams[i + sendStreamNum_], i, false, false));
             }
@@ -203,7 +220,7 @@ HcclResult CollBatchSendRecvGroupExecutor::RunTasksBig(OpParam& param)
         CHK_RET(MainWaitSubPost(param.stream));
 
         // 更新DataSlices
-        for (u32 i = 0; i < sendStreamNum_; i++){
+        for (u32 i = 0; i < sendStreamNum_; i++) {
             if (!sendDataSilcesBySendStream_[i].empty()) {
                 sendDataSilcesBySendStream_[i].pop_front();
                 if (sendDataSilcesBySendStream_[i].empty()) {
@@ -212,7 +229,7 @@ HcclResult CollBatchSendRecvGroupExecutor::RunTasksBig(OpParam& param)
                 }
             }
         }
-        for (u32 i = 0; i < recvStreamNum_; i++){
+        for (u32 i = 0; i < recvStreamNum_; i++) {
             if (!recvDataSilcesByRecvStream_[i].empty()) {
                 recvDataSilcesByRecvStream_[i].pop_front();
                 if (recvDataSilcesByRecvStream_[i].empty()) {
@@ -232,8 +249,9 @@ HcclResult CollBatchSendRecvGroupExecutor::RunLoopBig(OpParam& param)
         auto meta = HcclOpMetaInfo::GetOneForBatchSendRecv();
         CHK_RET(InitTask(dispatcher_, param.stream, meta.isEnableCache, meta.GetCacheKey()));
         // 多流子图前后需加空拷贝
-        CHK_RET(AlgTemplateBase::ExecEmptyTask(algResResp_->cclInputMem, algResResp_->cclOutputMem, param.stream,
-            dispatcher_));
+        CHK_RET(
+            AlgTemplateBase::ExecEmptyTask(
+                algResResp_->cclInputMem, algResResp_->cclOutputMem, param.stream, dispatcher_));
     }
     bool IsSetNormalMode = false; // 设置过一次就不需要再设置了
     for (u32 i = 0; i < sendDataSilces_.size(); ++i) {
@@ -261,7 +279,9 @@ HcclResult CollBatchSendRecvGroupExecutor::RunLoopBig(OpParam& param)
     CHK_RET(RunTasksBig(param));
     if (static_cast<bool>(topoMatcher_->GetExternalInputHcclEnableFfts())) {
         // 多流子图前后需加空拷贝
-        CHK_RET(AlgTemplateBase::ExecEmptyTask(algResResp_->cclInputMem, algResResp_->cclOutputMem, param.stream, dispatcher_));
+        CHK_RET(
+            AlgTemplateBase::ExecEmptyTask(
+                algResResp_->cclInputMem, algResResp_->cclOutputMem, param.stream, dispatcher_));
         CHK_RET(LaunchTaskExtend(dispatcher_, param.stream, algResResp_->slaveStreams));
         HCCL_INFO("LaunchTaskExtend!");
     }
@@ -274,8 +294,9 @@ HcclResult CollBatchSendRecvGroupExecutor::RunLoopSmall(OpParam& param)
         auto meta = HcclOpMetaInfo::GetOneForBatchSendRecv();
         CHK_RET(InitTask(dispatcher_, param.stream, meta.isEnableCache, meta.GetCacheKey()));
         // 多流子图前后需加空拷贝
-        CHK_RET(AlgTemplateBase::ExecEmptyTask(algResResp_->cclInputMem, algResResp_->cclOutputMem, param.stream,
-            dispatcher_));
+        CHK_RET(
+            AlgTemplateBase::ExecEmptyTask(
+                algResResp_->cclInputMem, algResResp_->cclOutputMem, param.stream, dispatcher_));
     }
     bool IsSetNormalMode = false; // 设置过一次就不需要再设置了
     for (u32 i = 0; i < sendDataSilces_.size(); ++i) {
@@ -305,8 +326,9 @@ HcclResult CollBatchSendRecvGroupExecutor::RunLoopSmall(OpParam& param)
 
     if (static_cast<bool>(topoMatcher_->GetExternalInputHcclEnableFfts())) {
         // 多流子图前后需加空拷贝
-        CHK_RET(AlgTemplateBase::ExecEmptyTask(algResResp_->cclInputMem,
-            algResResp_->cclOutputMem, param.stream, dispatcher_));
+        CHK_RET(
+            AlgTemplateBase::ExecEmptyTask(
+                algResResp_->cclInputMem, algResResp_->cclOutputMem, param.stream, dispatcher_));
         CHK_RET(LaunchTaskExtend(dispatcher_, param.stream, algResResp_->slaveStreams));
         HCCL_INFO("LaunchTaskExtend!");
     }
@@ -317,25 +339,26 @@ HcclResult CollBatchSendRecvGroupExecutor::CalcSendSlices()
 {
     sendDataSilcesBySendStream_.resize(sendStreamNum_);
     for (u32 i = 0; i < sendStreamNum_; i++) { // 一个个stream处理
-        auto sendQueueInner = sendQueueBySendstream_[i]; 
+        auto sendQueueInner = sendQueueBySendstream_[i];
         // 遍历这个stream对应的queue中的所有item，每次取一个slice，然后再重新遍历，直到所有的itemcount减为0
         u32 emptyItem = 0;
         while (emptyItem < sendQueueInner.size()) {
-            for (u32 j = 0; j < sendQueueInner.size(); j++){
+            for (u32 j = 0; j < sendQueueInner.size(); j++) {
                 HcclSendRecvItem* sendRecvItem = sendQueueInner[j];
                 if (sendRecvItem->count == 0) {
                     continue;
                 }
                 u32 unitSize = SIZE_TABLE[sendRecvItem->dataType];
                 u64 maxCountPerLoop = CalcSendLoopMaxCount(unitSize);
-                u8 *curInputPtr = static_cast<u8 *>(sendRecvItem->buf);
+                u8* curInputPtr = static_cast<u8*>(sendRecvItem->buf);
                 CHK_PTR_NULL(curInputPtr);
                 u64 curCount = (sendRecvItem->count > maxCountPerLoop) ? maxCountPerLoop : sendRecvItem->count;
                 u64 curSize = curCount * unitSize; // 单位：字节
                 sendDataSilcesBySendStream_[i].emplace_back(curInputPtr, curSize, sendRecvItem->remoteRank);
-                sendRecvItem->count -= curCount; // 更新剩余的count, 若sendRecvItem->count <= maxCountPerLoop，sendRecvItem->count会更新为0
-                sendRecvItem->buf = static_cast<u8 *>(sendRecvItem->buf) + curSize; // 更新usrIn，下一次从新的地址取数据
-                if (sendRecvItem->count == 0){
+                sendRecvItem->count -= curCount; // 更新剩余的count, 若sendRecvItem->count <=
+                                                 // maxCountPerLoop，sendRecvItem->count会更新为0
+                sendRecvItem->buf = static_cast<u8*>(sendRecvItem->buf) + curSize; // 更新usrIn，下一次从新的地址取数据
+                if (sendRecvItem->count == 0) {
                     emptyItem++;
                 }
             }
@@ -343,8 +366,10 @@ HcclResult CollBatchSendRecvGroupExecutor::CalcSendSlices()
     }
     for (u32 i = 0; i < sendStreamNum_; i++) {
         const auto& sendQueueInner = sendDataSilcesBySendStream_[i];
-        for (const auto& slice : sendQueueInner){
-            HCCL_INFO("[CalcSendSlices] sendstream[%u] slice.addr[%p], slice.size[%llu] slice.remoteRank[%u]", i, slice.addr, slice.size, slice.remoteRank);
+        for (const auto& slice : sendQueueInner) {
+            HCCL_INFO(
+                "[CalcSendSlices] sendstream[%u] slice.addr[%p], slice.size[%llu] slice.remoteRank[%u]", i, slice.addr,
+                slice.size, slice.remoteRank);
         }
     }
     return HCCL_SUCCESS;
@@ -358,21 +383,22 @@ HcclResult CollBatchSendRecvGroupExecutor::CalcRecvSlices()
         // 遍历这个stream对应的queue中的所有item，每次取一个slice，然后再重新遍历，直到所有的itemcount减为0
         u32 emptyItem = 0;
         while (emptyItem < recvQueueInner.size()) {
-            for (u32 j = 0; j < recvQueueInner.size(); j++){
+            for (u32 j = 0; j < recvQueueInner.size(); j++) {
                 HcclSendRecvItem* sendRecvItem = recvQueueInner[j];
                 if (sendRecvItem->count == 0) {
                     continue;
                 }
                 u32 unitSize = SIZE_TABLE[sendRecvItem->dataType];
                 u64 maxCountPerLoop = CalcRecvLoopMaxCount(unitSize);
-                u8 *curOutputPtr = static_cast<u8 *>(sendRecvItem->buf);
+                u8* curOutputPtr = static_cast<u8*>(sendRecvItem->buf);
                 CHK_PTR_NULL(curOutputPtr);
                 u64 curCount = (sendRecvItem->count > maxCountPerLoop) ? maxCountPerLoop : sendRecvItem->count;
                 u64 curSize = curCount * unitSize; // 单位：字节
                 recvDataSilcesByRecvStream_[i].emplace_back(curOutputPtr, curSize, sendRecvItem->remoteRank);
-                sendRecvItem->count -= curCount; // 更新剩余的count, 若sendRecvItem->count <= maxCountPerLoop，sendRecvItem->count会更新为0
-                sendRecvItem->buf = static_cast<u8 *>(sendRecvItem->buf) + curSize; // 更新usrOut，下一次从新的地址取数据
-                if (sendRecvItem->count == 0){
+                sendRecvItem->count -= curCount; // 更新剩余的count, 若sendRecvItem->count <=
+                                                 // maxCountPerLoop，sendRecvItem->count会更新为0
+                sendRecvItem->buf = static_cast<u8*>(sendRecvItem->buf) + curSize; // 更新usrOut，下一次从新的地址取数据
+                if (sendRecvItem->count == 0) {
                     emptyItem++;
                 }
             }
@@ -380,8 +406,10 @@ HcclResult CollBatchSendRecvGroupExecutor::CalcRecvSlices()
     }
     for (u32 i = 0; i < recvStreamNum_; i++) {
         auto recvQueueInner = recvDataSilcesByRecvStream_[i];
-        for (auto slice : recvQueueInner){
-            HCCL_INFO("[CalcRecvSlices] recvstream[%u] slice.addr[%p], slice.size[%llu] slice.remoteRank[%u]", i, slice.addr, slice.size, slice.remoteRank);
+        for (auto slice : recvQueueInner) {
+            HCCL_INFO(
+                "[CalcRecvSlices] recvstream[%u] slice.addr[%p], slice.size[%llu] slice.remoteRank[%u]", i, slice.addr,
+                slice.size, slice.remoteRank);
         }
     }
     return HCCL_SUCCESS;
@@ -391,21 +419,25 @@ HcclResult CollBatchSendRecvGroupExecutor::CalcSendSlicesSmall()
 {
     while (!sendDeque_.empty()) {
         HcclSendRecvItem* sendRecvItem = sendDeque_.front();
-        HCCL_INFO("[CollBatchSendRecvGroupExecutor][CalcSendSlicesSmall] tag[%s], remoteRank[%u], buf[%p], count[%llu],"\
-            "dataType[%s], sendRecvType[%d].", tag_.c_str(), sendRecvItem->remoteRank, sendRecvItem->buf,
-            sendRecvItem->count, GetDataTypeEnumStr(sendRecvItem->dataType).c_str(), sendRecvItem->sendRecvType);
-        u8 *curInputPtr = static_cast<u8 *>(sendRecvItem->buf);
+        HCCL_INFO(
+            "[CollBatchSendRecvGroupExecutor][CalcSendSlicesSmall] tag[%s], remoteRank[%u], buf[%p], count[%llu],"
+            "dataType[%s], sendRecvType[%d].",
+            tag_.c_str(), sendRecvItem->remoteRank, sendRecvItem->buf, sendRecvItem->count,
+            GetDataTypeEnumStr(sendRecvItem->dataType).c_str(), sendRecvItem->sendRecvType);
+        u8* curInputPtr = static_cast<u8*>(sendRecvItem->buf);
         CHK_PTR_NULL(curInputPtr);
         u32 unitSize = SIZE_TABLE[sendRecvItem->dataType];
         u64 maxCountPerLoop = CalcSendLoopMaxCount(unitSize);
 
-        for (u64 countLeft = sendRecvItem->count, curCount = 0, curOffset = 0; countLeft > 0;
-            countLeft -= curCount) {
+        for (u64 countLeft = sendRecvItem->count, curCount = 0, curOffset = 0; countLeft > 0; countLeft -= curCount) {
             curInputPtr += curOffset;
             curCount = (countLeft > maxCountPerLoop) ? maxCountPerLoop : countLeft;
             u64 curSize = curCount * unitSize; // 单位：字节
             sendDataSilces_.emplace_back(curInputPtr, curSize, sendRecvItem->remoteRank);
-            HCCL_INFO("[CollBatchSendRecvGroupExecutor][CalcSendSlicesSmall] slice userAddr[%p], slice size[%llu], remoteRank[%u]", curInputPtr, curSize, sendRecvItem->remoteRank);
+            HCCL_INFO(
+                "[CollBatchSendRecvGroupExecutor][CalcSendSlicesSmall] slice userAddr[%p], slice size[%llu], "
+                "remoteRank[%u]",
+                curInputPtr, curSize, sendRecvItem->remoteRank);
             curOffset = curSize;
         }
         sendDeque_.pop_front();
@@ -417,21 +449,25 @@ HcclResult CollBatchSendRecvGroupExecutor::CalcRecvSlicesSmall()
 {
     while (!recvDeque_.empty()) {
         HcclSendRecvItem* sendRecvItem = recvDeque_.front();
-        HCCL_INFO("[CollBatchSendRecvGroupExecutor][CalcRecvSlicesSmall] tag[%s], remoteRank[%u], buf[%p], count[%llu],"\
-            "dataType[%s], sendRecvType[%d].", tag_.c_str(), sendRecvItem ->remoteRank, sendRecvItem ->buf, sendRecvItem->count,
+        HCCL_INFO(
+            "[CollBatchSendRecvGroupExecutor][CalcRecvSlicesSmall] tag[%s], remoteRank[%u], buf[%p], count[%llu],"
+            "dataType[%s], sendRecvType[%d].",
+            tag_.c_str(), sendRecvItem->remoteRank, sendRecvItem->buf, sendRecvItem->count,
             GetDataTypeEnumStr(sendRecvItem->dataType).c_str(), sendRecvItem->sendRecvType);
-        u8 *curOutputPtr = static_cast<u8*>(sendRecvItem->buf);
+        u8* curOutputPtr = static_cast<u8*>(sendRecvItem->buf);
         CHK_PTR_NULL(curOutputPtr);
         u32 unitSize = SIZE_TABLE[sendRecvItem->dataType];
         u64 maxCountPerLoop = CalcRecvLoopMaxCount(unitSize);
 
-        for (u64 countLeft = sendRecvItem->count, curCount = 0, curOffset = 0; countLeft > 0;
-            countLeft -= curCount) {
+        for (u64 countLeft = sendRecvItem->count, curCount = 0, curOffset = 0; countLeft > 0; countLeft -= curCount) {
             curOutputPtr += curOffset;
             curCount = (countLeft > maxCountPerLoop) ? maxCountPerLoop : countLeft;
             u64 curSize = curCount * unitSize; // 单位：字节
             recvDataSilces_.emplace_back(curOutputPtr, curSize, sendRecvItem->remoteRank);
-            HCCL_INFO("[CollBatchSendRecvGroupExecutor][CalcRecvSlicesSmall] slice userAddr[%p], slice size[%llu], remoteRank[%u]", curOutputPtr, curSize, sendRecvItem->remoteRank);
+            HCCL_INFO(
+                "[CollBatchSendRecvGroupExecutor][CalcRecvSlicesSmall] slice userAddr[%p], slice size[%llu], "
+                "remoteRank[%u]",
+                curOutputPtr, curSize, sendRecvItem->remoteRank);
             curOffset = curSize;
         }
         recvDeque_.pop_front();
@@ -446,11 +482,11 @@ HcclResult CollBatchSendRecvGroupExecutor::SubNotifyMain(Stream& stream, u32 str
     return HCCL_SUCCESS;
 }
 
-HcclResult CollBatchSendRecvGroupExecutor::ProcessSendStreamDataSlice(Stream& stream, u32 sendStreamId, bool needStreamSync, 
-    bool retryEnable)
+HcclResult CollBatchSendRecvGroupExecutor::ProcessSendStreamDataSlice(
+    Stream& stream, u32 sendStreamId, bool needStreamSync, bool retryEnable)
 {
     SendRecvSlice& slice = sendDataSilcesBySendStream_[sendStreamId].front();
-    
+
     u64 offset = bufferSliceSize_ * (slice.remoteRank % sendStreamNum_);
     DeviceMem inCommMem = algResResp_->cclInputMem.range(offset, slice.size);
     HCCL_INFO("[ProcessSendStreamDataSlice] inCommMem ptr[%p], size[%llu]", inCommMem.ptr(), inCommMem.size());
@@ -462,34 +498,41 @@ HcclResult CollBatchSendRecvGroupExecutor::ProcessSendStreamDataSlice(Stream& st
     ExecMem execMem;
     execMem.inputMem = inCommMem;
     HcclResult ret = SendKernelRun(stream, execMem, slice.remoteRank, retryEnable);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollBatchSendRecvGroupExecutor][ProcessSendStreamDataSlice]errNo[0x%016llx]kernel run error, tag[%s], " \
-        "input_ptr[%p], size[%llu]", HCCL_ERROR_CODE(ret), tag_.c_str(), execMem.inputMem.ptr(),
-        slice.size), ret);
+    CHK_PRT_RET(
+        ret != HCCL_SUCCESS,
+        HCCL_ERROR(
+            "[CollBatchSendRecvGroupExecutor][ProcessSendStreamDataSlice]errNo[0x%016llx]kernel run error, tag[%s], "
+            "input_ptr[%p], size[%llu]",
+            HCCL_ERROR_CODE(ret), tag_.c_str(), execMem.inputMem.ptr(), slice.size),
+        ret);
     return HCCL_SUCCESS;
 }
 
-HcclResult CollBatchSendRecvGroupExecutor::ProcessRecvStreamDataSlice(Stream& stream, u32 recvStreamId, bool needStreamSync, 
-    bool retryEnable)
+HcclResult CollBatchSendRecvGroupExecutor::ProcessRecvStreamDataSlice(
+    Stream& stream, u32 recvStreamId, bool needStreamSync, bool retryEnable)
 {
     SendRecvSlice& slice = recvDataSilcesByRecvStream_[recvStreamId].front();
-    
+
     ExecMem execMem;
     if (needStreamSync) {
         CHK_RET(SubNotifyMain(stream, recvStreamId + sendStreamNum_));
     }
     LINK targetLink;
     CHK_RET(GetRecvTargetLink(slice.remoteRank, targetLink));
-    if (topoAttr_.isDiffDeviceType || topoAttr_.superPodNum > 1 || 
-            (topoAttr_.moduleNum > 1 && static_cast<bool>(topoMatcher_->GetExternalInputInterHccsDisable())) ||
-            (topoAttr_.deviceType == DevType::DEV_TYPE_910B && targetLink->GetLinkType() == LinkType::LINK_ROCE)) {
+    if (topoAttr_.isDiffDeviceType || topoAttr_.superPodNum > 1
+        || (topoAttr_.moduleNum > 1 && static_cast<bool>(topoMatcher_->GetExternalInputInterHccsDisable()))
+        || (topoAttr_.deviceType == DevType::DEV_TYPE_910B && targetLink->GetLinkType() == LinkType::LINK_ROCE)) {
         u64 offset = bufferSliceSize_ * (slice.remoteRank % recvStreamNum_);
         execMem.outputMem = algResResp_->cclOutputMem.range(offset, slice.size);
         HcclResult ret = RecvKernelRun(stream, execMem, slice.remoteRank, retryEnable);
-        CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[CollBatchSendRecvGroupExecutor][ProcessRecvStreamDataSlice]errNo[0x%016llx]kernel run error, tag[%s], " \
-            "output_ptr[%p], size[%llu]", HCCL_ERROR_CODE(ret), tag_.c_str(), execMem.outputMem.ptr(),
-            slice.size), ret);
+        CHK_PRT_RET(
+            ret != HCCL_SUCCESS,
+            HCCL_ERROR(
+                "[CollBatchSendRecvGroupExecutor][ProcessRecvStreamDataSlice]errNo[0x%016llx]kernel run error, "
+                "tag[%s], "
+                "output_ptr[%p], size[%llu]",
+                HCCL_ERROR_CODE(ret), tag_.c_str(), execMem.outputMem.ptr(), slice.size),
+            ret);
 
         DeviceMem outMem(slice.addr, slice.size);
         DeviceMem outCommMem = execMem.outputMem;
@@ -501,10 +544,14 @@ HcclResult CollBatchSendRecvGroupExecutor::ProcessRecvStreamDataSlice(Stream& st
         execMem.outputMem = outMem;
         HCCL_INFO("[ProcessRecvStreamDataSlice] DMA Reduce, outMem ptr[%p], size[%llu]", outMem.ptr(), outMem.size());
         HcclResult ret = RecvKernelRun(stream, execMem, slice.remoteRank, retryEnable);
-        CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[CollBatchSendRecvGroupExecutor][ProcessRecvStreamDataSlice]errNo[0x%016llx]kernel run error, tag[%s], " \
-            "input_ptr[%p], size[%llu]", HCCL_ERROR_CODE(ret), tag_.c_str(), execMem.inputMem.ptr(),
-            slice.size), ret);
+        CHK_PRT_RET(
+            ret != HCCL_SUCCESS,
+            HCCL_ERROR(
+                "[CollBatchSendRecvGroupExecutor][ProcessRecvStreamDataSlice]errNo[0x%016llx]kernel run error, "
+                "tag[%s], "
+                "input_ptr[%p], size[%llu]",
+                HCCL_ERROR_CODE(ret), tag_.c_str(), execMem.inputMem.ptr(), slice.size),
+            ret);
     }
     return HCCL_SUCCESS;
 }
@@ -513,11 +560,11 @@ HcclResult CollBatchSendRecvGroupExecutor::ProcessDataSliceSmall(OpParam& param)
 {
     CHK_RET(MainPostSubWaitSmall(param.stream, algResResp_->slaveStreams[STREAM_INDEX_0]));
     while (!sendDataSilces_.empty() || !recvDataSilces_.empty()) {
-        if(!sendDataSilces_.empty()) {
+        if (!sendDataSilces_.empty()) {
             CHK_RET(ProcessSendDataSliceSmall(param.stream, false, false));
             sendDataSilces_.pop_front();
         }
-        if(!recvDataSilces_.empty()) {
+        if (!recvDataSilces_.empty()) {
             CHK_RET(ProcessRecvDataSliceSmall(algResResp_->slaveStreams[STREAM_INDEX_0], false, false));
             recvDataSilces_.pop_front();
         }
@@ -529,25 +576,23 @@ HcclResult CollBatchSendRecvGroupExecutor::ProcessDataSliceSmall(OpParam& param)
 HcclResult CollBatchSendRecvGroupExecutor::MainPostSubWaitSmall(Stream& mainStream, Stream& subStream) const
 {
     CHK_RET(LocalNotify::Post(mainStream, dispatcher_, algResResp_->notifiesAux[STREAM_INDEX_0], PROF_STAGE_0));
-    CHK_RET(LocalNotify::Wait(subStream, dispatcher_,
-        algResResp_->notifiesAux[STREAM_INDEX_0], PROF_STAGE_0));
+    CHK_RET(LocalNotify::Wait(subStream, dispatcher_, algResResp_->notifiesAux[STREAM_INDEX_0], PROF_STAGE_0));
     return HCCL_SUCCESS;
 }
 
 HcclResult CollBatchSendRecvGroupExecutor::MainWaitSubPostSmall(Stream& mainStream, Stream& subStream) const
 {
-    CHK_RET(LocalNotify::Post(subStream, dispatcher_,
-        algResResp_->notifiesMain[STREAM_INDEX_0], PROF_STAGE_0));
+    CHK_RET(LocalNotify::Post(subStream, dispatcher_, algResResp_->notifiesMain[STREAM_INDEX_0], PROF_STAGE_0));
 
-    CHK_RET(LocalNotify::Wait(mainStream, dispatcher_, algResResp_->notifiesMain[STREAM_INDEX_0],
-        PROF_STAGE_0));
+    CHK_RET(LocalNotify::Wait(mainStream, dispatcher_, algResResp_->notifiesMain[STREAM_INDEX_0], PROF_STAGE_0));
     return HCCL_SUCCESS;
 }
 
-HcclResult CollBatchSendRecvGroupExecutor::ProcessSendDataSliceSmall(Stream& stream, bool needStreamSync, bool retryEnable)
+HcclResult
+CollBatchSendRecvGroupExecutor::ProcessSendDataSliceSmall(Stream& stream, bool needStreamSync, bool retryEnable)
 {
     SendRecvSlice& slice = sendDataSilces_.front();
-    
+
     DeviceMem inMem(slice.addr, slice.size);
     u32 sendStreamId = slice.remoteRank % sendStreamNum_;
     u64 offset = bufferSliceSize_ * sendStreamId;
@@ -563,34 +608,42 @@ HcclResult CollBatchSendRecvGroupExecutor::ProcessSendDataSliceSmall(Stream& str
     ExecMem execMem;
     execMem.inputMem = inCommMem;
     HcclResult ret = SendKernelRun(stream, execMem, slice.remoteRank, retryEnable);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollBatchSendRecvGroupExecutor][ProcessSendStreamDataSlice]errNo[0x%016llx]kernel run error, tag[%s], " \
-        "input_ptr[%p], size[%llu]", HCCL_ERROR_CODE(ret), tag_.c_str(), execMem.inputMem.ptr(),
-        slice.size), ret);
+    CHK_PRT_RET(
+        ret != HCCL_SUCCESS,
+        HCCL_ERROR(
+            "[CollBatchSendRecvGroupExecutor][ProcessSendStreamDataSlice]errNo[0x%016llx]kernel run error, tag[%s], "
+            "input_ptr[%p], size[%llu]",
+            HCCL_ERROR_CODE(ret), tag_.c_str(), execMem.inputMem.ptr(), slice.size),
+        ret);
     return HCCL_SUCCESS;
 }
 
-HcclResult CollBatchSendRecvGroupExecutor::ProcessRecvDataSliceSmall(Stream& stream, bool needStreamSync, bool retryEnable)
+HcclResult
+CollBatchSendRecvGroupExecutor::ProcessRecvDataSliceSmall(Stream& stream, bool needStreamSync, bool retryEnable)
 {
     SendRecvSlice& slice = recvDataSilces_.front();
     u32 recvStreamId = slice.remoteRank % recvStreamNum_;
-    
+
     ExecMem execMem;
     if (needStreamSync) {
         CHK_RET(SubNotifyMain(stream, recvStreamId + sendStreamNum_));
     }
     LINK targetLink;
     CHK_RET(GetRecvTargetLink(slice.remoteRank, targetLink));
-    if (topoAttr_.isDiffDeviceType || topoAttr_.superPodNum > 1 || 
-            (topoAttr_.moduleNum > 1 && static_cast<bool>(topoMatcher_->GetExternalInputInterHccsDisable())) ||
-            (topoAttr_.deviceType == DevType::DEV_TYPE_910B && targetLink->GetLinkType() == LinkType::LINK_ROCE)) {
+    if (topoAttr_.isDiffDeviceType || topoAttr_.superPodNum > 1
+        || (topoAttr_.moduleNum > 1 && static_cast<bool>(topoMatcher_->GetExternalInputInterHccsDisable()))
+        || (topoAttr_.deviceType == DevType::DEV_TYPE_910B && targetLink->GetLinkType() == LinkType::LINK_ROCE)) {
         u64 offset = bufferSliceSize_ * recvStreamId;
         execMem.outputMem = algResResp_->cclOutputMem.range(offset, slice.size);
         HcclResult ret = RecvKernelRun(stream, execMem, slice.remoteRank, retryEnable);
-        CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[CollBatchSendRecvGroupExecutor][ProcessRecvStreamDataSlice]errNo[0x%016llx]kernel run error, tag[%s], " \
-            "output_ptr[%p], size[%llu]", HCCL_ERROR_CODE(ret), tag_.c_str(), execMem.outputMem.ptr(),
-            slice.size), ret);
+        CHK_PRT_RET(
+            ret != HCCL_SUCCESS,
+            HCCL_ERROR(
+                "[CollBatchSendRecvGroupExecutor][ProcessRecvStreamDataSlice]errNo[0x%016llx]kernel run error, "
+                "tag[%s], "
+                "output_ptr[%p], size[%llu]",
+                HCCL_ERROR_CODE(ret), tag_.c_str(), execMem.outputMem.ptr(), slice.size),
+            ret);
 
         DeviceMem outMem(slice.addr, slice.size);
         DeviceMem outCommMem = execMem.outputMem;
@@ -602,21 +655,26 @@ HcclResult CollBatchSendRecvGroupExecutor::ProcessRecvDataSliceSmall(Stream& str
         execMem.outputMem = outMem;
         HCCL_INFO("[ProcessRecvStreamDataSlice] DMA Reduce, outMem ptr[%p], size[%llu]", outMem.ptr(), outMem.size());
         HcclResult ret = RecvKernelRun(stream, execMem, slice.remoteRank, retryEnable);
-        CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[CollBatchSendRecvGroupExecutor][ProcessRecvStreamDataSlice]errNo[0x%016llx]kernel run error, tag[%s], " \
-            "input_ptr[%p], size[%llu]", HCCL_ERROR_CODE(ret), tag_.c_str(), execMem.inputMem.ptr(),
-            slice.size), ret);
+        CHK_PRT_RET(
+            ret != HCCL_SUCCESS,
+            HCCL_ERROR(
+                "[CollBatchSendRecvGroupExecutor][ProcessRecvStreamDataSlice]errNo[0x%016llx]kernel run error, "
+                "tag[%s], "
+                "input_ptr[%p], size[%llu]",
+                HCCL_ERROR_CODE(ret), tag_.c_str(), execMem.inputMem.ptr(), slice.size),
+            ret);
     }
     return HCCL_SUCCESS;
 }
-
 
 u64 CollBatchSendRecvGroupExecutor::CalcSendLoopMaxCount(const u32 unitSize) const
 {
     // 中转内存单次最多能够接受的input count
     u64 maxCountPerLoop = bufferSliceSize_ / unitSize;
-    HCCL_WARNING("[CollBatchSendRecvGroupExecutor][CalcSendLoopMaxCount]" \
-        "using default maxCountPerLoop[%llu] as CCLBuffSize / unitSize.", maxCountPerLoop);
+    HCCL_WARNING(
+        "[CollBatchSendRecvGroupExecutor][CalcSendLoopMaxCount]"
+        "using default maxCountPerLoop[%llu] as CCLBuffSize / unitSize.",
+        maxCountPerLoop);
     return maxCountPerLoop;
 }
 
@@ -624,8 +682,10 @@ u64 CollBatchSendRecvGroupExecutor::CalcRecvLoopMaxCount(const u32 unitSize) con
 {
     // 中转内存单次最多能够接受的output count
     u64 maxCountPerLoop = bufferSliceSize_ / unitSize;
-    HCCL_WARNING("[CollBatchSendRecvGroupExecutor][CalcRecvLoopMaxCount]" \
-        "using default maxCountPerLoop[%llu] as CCLBuffSize / unitSize.", maxCountPerLoop);
+    HCCL_WARNING(
+        "[CollBatchSendRecvGroupExecutor][CalcRecvLoopMaxCount]"
+        "using default maxCountPerLoop[%llu] as CCLBuffSize / unitSize.",
+        maxCountPerLoop);
     return maxCountPerLoop;
 }
 

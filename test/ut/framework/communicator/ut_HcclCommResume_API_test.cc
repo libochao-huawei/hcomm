@@ -12,23 +12,23 @@
 
 class HcclCommResumeTest : public BaseInit {
 public:
-    void SetUp() override {
+    void SetUp() override
+    {
         BaseInit::SetUp();
         UT_USE_1SERVER_1RANK_AS_DEFAULT;
         // MOCK掉对communicator层的依赖，保证分层测试
         HcclCommunicator commun_mock;
-        MOCKER_CPP_VIRTUAL(commun_mock, &HcclCommunicator::Resume)
-            .stubs()
-            .with(any())
-            .will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP_VIRTUAL(commun_mock, &HcclCommunicator::Resume).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     }
-    void TearDown() override {
+    void TearDown() override
+    {
         BaseInit::TearDown();
         GlobalMockObject::verify();
     }
 };
 
-TEST_F(HcclCommResumeTest, Ut_HcclCommResume_When_CommIsNull_Expect_ReturnIsHCCL_E_PTR) {
+TEST_F(HcclCommResumeTest, Ut_HcclCommResume_When_CommIsNull_Expect_ReturnIsHCCL_E_PTR)
+{
     Ut_Device_Set(0);
 
     HcclResult ret = HcclCommResume(comm);
@@ -37,7 +37,8 @@ TEST_F(HcclCommResumeTest, Ut_HcclCommResume_When_CommIsNull_Expect_ReturnIsHCCL
     Ut_Comm_Destroy(comm);
 }
 
-TEST_F(HcclCommResumeTest, Ut_HcclCommResume_When_CommIsOk_Expect_ReturnIsHCCL_SUCCESS) {
+TEST_F(HcclCommResumeTest, Ut_HcclCommResume_When_CommIsOk_Expect_ReturnIsHCCL_SUCCESS)
+{
     UT_COMM_CREATE_DEFAULT(comm);
 
     HcclResult ret = HcclCommResume(comm);

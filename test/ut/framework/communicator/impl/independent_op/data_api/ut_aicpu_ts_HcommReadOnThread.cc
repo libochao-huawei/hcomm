@@ -13,18 +13,11 @@
 
 using namespace hccl;
 
-class UtAicpuTsHcommReadOnThread : public UtAicpuTsBase
-{
+class UtAicpuTsHcommReadOnThread : public UtAicpuTsBase {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "UtAicpuTsHcommReadOnThread tests set up." << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "UtAicpuTsHcommReadOnThread tests set up." << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "UtAicpuTsHcommReadOnThread tests tear down." << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "UtAicpuTsHcommReadOnThread tests tear down." << std::endl; }
 
     virtual void SetUp() override
     {
@@ -49,8 +42,8 @@ protected:
 
     uint64_t tempDst[6] = {0};
     uint64_t tempSrc[6] = {1, 1, 4, 5, 1, 4};
-    void *dst = reinterpret_cast<void *>(tempDst);
-    void *src = reinterpret_cast<void *>(tempSrc);
+    void* dst = reinterpret_cast<void*>(tempDst);
+    void* src = reinterpret_cast<void*>(tempSrc);
     uint64_t len = sizeof(tempDst);
     std::vector<char> uniqueId;
     Hccl::UbTransportLiteImpl transportDev{uniqueId};

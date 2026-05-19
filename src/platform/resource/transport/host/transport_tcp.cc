@@ -18,12 +18,12 @@
 #include "network_manager_pub.h"
 
 namespace hccl {
-TransportTcp::TransportTcp(DispatcherPub *dispatcher,
-    const std::unique_ptr<NotifyPool> &notifyPool,
-    MachinePara &machinePara, std::chrono::milliseconds timeout, NICDeployment nicDeploy)
-    : TransportNet(dispatcher, notifyPool, machinePara, timeout), nicDeploy_(nicDeploy)
-{
-}
+TransportTcp::TransportTcp(
+    DispatcherPub* dispatcher, const std::unique_ptr<NotifyPool>& notifyPool, MachinePara& machinePara,
+    std::chrono::milliseconds timeout, NICDeployment nicDeploy)
+    : TransportNet(dispatcher, notifyPool, machinePara, timeout),
+      nicDeploy_(nicDeploy)
+{}
 
 TransportTcp::~TransportTcp()
 {
@@ -37,7 +37,8 @@ TransportTcp::~TransportTcp()
 // 申请内存做缓冲区，取socket链接
 HcclResult TransportTcp::Init()
 {
-    CHK_PRT_RET(nicDeploy_ == NICDeployment::NIC_DEPLOYMENT_RESERVED,
+    CHK_PRT_RET(
+        nicDeploy_ == NICDeployment::NIC_DEPLOYMENT_RESERVED,
         HCCL_ERROR("[TransportTcp][Init]transport tcp nicDeploy invalid"), HCCL_E_PARA);
 
     /* 获取socket */
@@ -76,13 +77,15 @@ HcclResult TransportTcp::Init()
         deviceType=[%d], inputMem=%p, outputMem=%p, custom exchange data size [%llu]",
         machinePara_.machineType, machinePara_.serverId.c_str(), machinePara_.localDeviceId,
         machinePara_.remoteDeviceId, machinePara_.localUserrank, machinePara_.localWorldRank,
-        machinePara_.remoteUserrank, machinePara_.remoteWorldRank, machinePara_.deviceType,
-        machinePara_.inputMem.ptr(), machinePara_.outputMem.ptr(), machinePara_.exchangeInfo.size());
+        machinePara_.remoteUserrank, machinePara_.remoteWorldRank, machinePara_.deviceType, machinePara_.inputMem.ptr(),
+        machinePara_.outputMem.ptr(), machinePara_.exchangeInfo.size());
 
-    HCCL_USER_CRITICAL_LOG("create hccl transport:communicator[%s], local rank[%u], remote rank[%u], "\
-        "transporttype[%s]", machinePara_.collectiveId.c_str(), machinePara_.localUserrank, 
-        machinePara_.remoteUserrank, GetLinkTypeEnumStr(GetLinkType()).c_str());
-        
+    HCCL_USER_CRITICAL_LOG(
+        "create hccl transport:communicator[%s], local rank[%u], remote rank[%u], "
+        "transporttype[%s]",
+        machinePara_.collectiveId.c_str(), machinePara_.localUserrank, machinePara_.remoteUserrank,
+        GetLinkTypeEnumStr(GetLinkType()).c_str());
+
     return HCCL_SUCCESS;
 }
 
@@ -95,19 +98,13 @@ HcclResult TransportTcp::DeInit()
 }
 
 // tcp不关心
-HcclResult TransportTcp::TxDataSignal(Stream &stream)
-{
-    return HCCL_SUCCESS;
-}
+HcclResult TransportTcp::TxDataSignal(Stream& stream) { return HCCL_SUCCESS; }
 
 // tcp不关心
-HcclResult TransportTcp::RxDataSignal(Stream &stream)
-{
-    return HCCL_SUCCESS;
-}
+HcclResult TransportTcp::RxDataSignal(Stream& stream) { return HCCL_SUCCESS; }
 
 // 发送数据，使用得到的socket去发数据，实际去下callback task
-HcclResult TransportTcp::TxAsync(UserMemType dstMemType, u64 dstOffset, const void *src, u64 len, Stream &stream)
+HcclResult TransportTcp::TxAsync(UserMemType dstMemType, u64 dstOffset, const void* src, u64 len, Stream& stream)
 {
     CHK_SMART_PTR_NULL(stream);
     static_cast<void>(dstMemType);
@@ -118,21 +115,25 @@ HcclResult TransportTcp::TxAsync(UserMemType dstMemType, u64 dstOffset, const vo
     }
     CHK_PTR_NULL(src);
 
-    const void* sendBufferPtr = nicDeploy_ == NICDeployment::NIC_DEPLOYMENT_HOST ? hostSendBuffer_.ptr() :
-        deviceSendBuffer_.ptr();
-    u64 sendBufferSize = nicDeploy_ == NICDeployment::NIC_DEPLOYMENT_HOST ? hostSendBuffer_.size() :
-        deviceSendBuffer_.size();
+    const void* sendBufferPtr
+        = nicDeploy_ == NICDeployment::NIC_DEPLOYMENT_HOST ? hostSendBuffer_.ptr() : deviceSendBuffer_.ptr();
+    u64 sendBufferSize
+        = nicDeploy_ == NICDeployment::NIC_DEPLOYMENT_HOST ? hostSendBuffer_.size() : deviceSendBuffer_.size();
     HcclResult ret = HCCL_SUCCESS;
-    ret = dispatcher_->HostNicTcpSend(defaultSocket_->GetFdHandle(),
-        sendBufferPtr, sendBufferSize, src, len, stream, nicDeploy_);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[TransportTcp][TxAsync]errNo[0x%016llx]" \
-            "tcp send failed. src[%p], len[%llu]", HCCL_ERROR_CODE(ret), src, len), ret);
+    ret = dispatcher_->HostNicTcpSend(
+        defaultSocket_->GetFdHandle(), sendBufferPtr, sendBufferSize, src, len, stream, nicDeploy_);
+    CHK_PRT_RET(
+        ret != HCCL_SUCCESS,
+        HCCL_ERROR(
+            "[TransportTcp][TxAsync]errNo[0x%016llx]"
+            "tcp send failed. src[%p], len[%llu]",
+            HCCL_ERROR_CODE(ret), src, len),
+        ret);
 
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportTcp::TxAsync(std::vector<TxMemoryInfo>& txMems, Stream &stream)
+HcclResult TransportTcp::TxAsync(std::vector<TxMemoryInfo>& txMems, Stream& stream)
 {
     CHK_SMART_PTR_NULL(stream);
     for (auto& mem : txMems) {
@@ -146,7 +147,7 @@ HcclResult TransportTcp::TxAsync(std::vector<TxMemoryInfo>& txMems, Stream &stre
 }
 
 // 接收数据，使用得到的socket去接收数据，实际去下callback task
-HcclResult TransportTcp::RxAsync(UserMemType srcMemType, u64 srcOffset, void *dst, u64 len, Stream &stream)
+HcclResult TransportTcp::RxAsync(UserMemType srcMemType, u64 srcOffset, void* dst, u64 len, Stream& stream)
 {
     CHK_SMART_PTR_NULL(stream);
     if (!(len > 0)) {
@@ -155,33 +156,37 @@ HcclResult TransportTcp::RxAsync(UserMemType srcMemType, u64 srcOffset, void *ds
     }
     CHK_PTR_NULL(dst);
 
-    const void* recvBufferPtr = nicDeploy_ == NICDeployment::NIC_DEPLOYMENT_HOST ? hostRecvBuffer_.ptr() :
-        deviceRecvBuffer_.ptr();
-    u64 recvBufferSize = nicDeploy_ == NICDeployment::NIC_DEPLOYMENT_HOST ? hostRecvBuffer_.size() :
-        deviceRecvBuffer_.size();
+    const void* recvBufferPtr
+        = nicDeploy_ == NICDeployment::NIC_DEPLOYMENT_HOST ? hostRecvBuffer_.ptr() : deviceRecvBuffer_.ptr();
+    u64 recvBufferSize
+        = nicDeploy_ == NICDeployment::NIC_DEPLOYMENT_HOST ? hostRecvBuffer_.size() : deviceRecvBuffer_.size();
     HcclResult ret = HCCL_SUCCESS;
-    ret = dispatcher_->HostNicTcpRecv(defaultSocket_->GetFdHandle(),
-        recvBufferPtr, recvBufferSize, dst, len, stream, nicDeploy_);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[TransportTcp][RxAsync]errNo[0x%016llx]" \
-            "tcp recv failed. dst[%p], len[%llu]", HCCL_ERROR_CODE(ret), dst, len), ret);
+    ret = dispatcher_->HostNicTcpRecv(
+        defaultSocket_->GetFdHandle(), recvBufferPtr, recvBufferSize, dst, len, stream, nicDeploy_);
+    CHK_PRT_RET(
+        ret != HCCL_SUCCESS,
+        HCCL_ERROR(
+            "[TransportTcp][RxAsync]errNo[0x%016llx]"
+            "tcp recv failed. dst[%p], len[%llu]",
+            HCCL_ERROR_CODE(ret), dst, len),
+        ret);
 
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportTcp::TxData(UserMemType dstMemType, u64 dstOffset, const void *src, u64 len, Stream &stream)
+HcclResult TransportTcp::TxData(UserMemType dstMemType, u64 dstOffset, const void* src, u64 len, Stream& stream)
 {
     CHK_RET(TxAsync(dstMemType, dstOffset, src, len, stream));
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportTcp::RxData(UserMemType srcMemType, u64 srcOffset, void *dst, u64 len, Stream &stream)
+HcclResult TransportTcp::RxData(UserMemType srcMemType, u64 srcOffset, void* dst, u64 len, Stream& stream)
 {
     CHK_RET(RxAsync(srcMemType, srcOffset, dst, len, stream));
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportTcp::RxAsync(std::vector<RxMemoryInfo>& rxMems, Stream &stream)
+HcclResult TransportTcp::RxAsync(std::vector<RxMemoryInfo>& rxMems, Stream& stream)
 {
     CHK_SMART_PTR_NULL(stream);
     for (auto& mem : rxMems) {
@@ -195,46 +200,33 @@ HcclResult TransportTcp::RxAsync(std::vector<RxMemoryInfo>& rxMems, Stream &stre
 }
 
 // tcp不关心
-HcclResult TransportTcp::TxAck(Stream &stream)
-{
-    return HCCL_SUCCESS;
-}
+HcclResult TransportTcp::TxAck(Stream& stream) { return HCCL_SUCCESS; }
 
 // tcp不关心
-HcclResult TransportTcp::RxAck(Stream &stream)
-{
-    return HCCL_SUCCESS;
-}
+HcclResult TransportTcp::RxAck(Stream& stream) { return HCCL_SUCCESS; }
 
 // tcp不关心
-HcclResult TransportTcp::TxPrepare(Stream &stream)
-{
-    return HCCL_SUCCESS;
-}
+HcclResult TransportTcp::TxPrepare(Stream& stream) { return HCCL_SUCCESS; }
 
 // tcp不关心
-HcclResult TransportTcp::RxPrepare(Stream &stream)
-{
-    return HCCL_SUCCESS;
-}
+HcclResult TransportTcp::RxPrepare(Stream& stream) { return HCCL_SUCCESS; }
 
 // tcp不关心
-HcclResult TransportTcp::TxDone(Stream &stream)
-{
-    return HCCL_SUCCESS;
-}
+HcclResult TransportTcp::TxDone(Stream& stream) { return HCCL_SUCCESS; }
 
 // tcp不关心
-HcclResult TransportTcp::RxDone(Stream &stream)
-{
-    return HCCL_SUCCESS;
-}
+HcclResult TransportTcp::RxDone(Stream& stream) { return HCCL_SUCCESS; }
 
-HcclResult TransportTcp::TxWaitDone(Stream &stream)
+HcclResult TransportTcp::TxWaitDone(Stream& stream)
 {
     HcclResult ret = dispatcher_->HostNicTcpWaitSendCompletion(stream);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[TransportTcp][TxWaitDone]errNo[0x%016llx]" \
-        "TxWaitDone callback task failed", HCCL_ERROR_CODE(ret)), ret);
+    CHK_PRT_RET(
+        ret != HCCL_SUCCESS,
+        HCCL_ERROR(
+            "[TransportTcp][TxWaitDone]errNo[0x%016llx]"
+            "TxWaitDone callback task failed",
+            HCCL_ERROR_CODE(ret)),
+        ret);
     return HCCL_SUCCESS;
 }
-}  // namespace hccl
+} // namespace hccl

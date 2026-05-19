@@ -20,25 +20,13 @@ using namespace Hccl;
 
 class StreamUtilsTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "StreamUtilsTest tests set up." << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "StreamUtilsTest tests set up." << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "StreamUtilsTest tests tear down." << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "StreamUtilsTest tests tear down." << std::endl; }
 
-    virtual void SetUp()
-    {
-        std::cout << "A Test case in StreamUtilsTest SetUP" << std::endl;
-    }
+    virtual void SetUp() { std::cout << "A Test case in StreamUtilsTest SetUP" << std::endl; }
 
-    virtual void TearDown()
-    {
-        std::cout << "A Test case in StreamUtilsTest TearDown" << std::endl;
-    }
+    virtual void TearDown() { std::cout << "A Test case in StreamUtilsTest TearDown" << std::endl; }
 };
 
 TEST_F(StreamUtilsTest, Ut_AddStreamToModel_When_rtStreamAddToModel_fail_Expect_HCCL_E_RUNTIME)

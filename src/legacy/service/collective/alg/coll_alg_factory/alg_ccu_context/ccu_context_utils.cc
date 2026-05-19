@@ -27,11 +27,12 @@ constexpr int COMM_LEVEL_SIZE_2 = 2;
 
 uint64_t CalcLGMaxTransSize()
 {
-    return LOC_CPY_LOOP_NUM * 4096 * 8192;  // 单片MS搬4096B，每个loop循环最多8192次
+    return LOC_CPY_LOOP_NUM * 4096 * 8192; // 单片MS搬4096B，每个loop循环最多8192次
 }
 
-HcclResult GenerateCcuCtxSignature(CcuCtxSignature &sig, CcuInstType instType, const CollAlgOperator &op,
-    const std::vector<std::vector<RankId>> &tempVTopo)
+HcclResult GenerateCcuCtxSignature(
+    CcuCtxSignature& sig, CcuInstType instType, const CollAlgOperator& op,
+    const std::vector<std::vector<RankId>>& tempVTopo)
 {
     sig.Append<int>(int(instType));
     if (op.opType == OpType::REDUCESCATTER || op.opType == OpType::ALLREDUCE || op.opType == OpType::REDUCE
@@ -61,4 +62,4 @@ HcclResult GenerateCcuCtxSignature(CcuCtxSignature &sig, CcuInstType instType, c
     }
     return HcclResult::HCCL_SUCCESS;
 }
-}
+} // namespace Hccl

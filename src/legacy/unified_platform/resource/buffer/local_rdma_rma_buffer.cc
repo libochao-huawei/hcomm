@@ -17,7 +17,8 @@
 namespace Hccl {
 
 LocalRdmaRmaBuffer::LocalRdmaRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle rdmaHandle)
-    : LocalRmaBuffer(buf, RmaType::RDMA), rdmaHandle(rdmaHandle)
+    : LocalRmaBuffer(buf, RmaType::RDMA),
+      rdmaHandle(rdmaHandle)
 {
     if (rdmaHandle == nullptr || buf == nullptr) {
         THROW<NullPtrException>("LocalRdmaRmaBuffer's rdmaHandle is NULL");
@@ -25,14 +26,14 @@ LocalRdmaRmaBuffer::LocalRdmaRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle r
     const uintptr_t bufAddr = buf->GetAddr();
     size_t bufSize = buf->GetSize();
     if (bufAddr == 0 || bufSize <= 0) {
-        HCCL_ERROR("[LocalRdmaRmaBuffer]buffer size[%llu Byte] and addr[%llu] should be greater than 0.", bufAddr,
-                   bufSize);
+        HCCL_ERROR(
+            "[LocalRdmaRmaBuffer]buffer size[%llu Byte] and addr[%llu] should be greater than 0.", bufAddr, bufSize);
         THROW<InvalidParamsException>("[%s] failed, param error.", __func__);
     }
     // 注册内存
     struct MrInfoT mrInfo;
-    mrInfo.addr   = reinterpret_cast<void *>(bufAddr);
-    mrInfo.size   = bufSize;
+    mrInfo.addr = reinterpret_cast<void*>(bufAddr);
+    mrInfo.size = bufSize;
     mrInfo.access = RA_ACCESS_REMOTE_WRITE | RA_ACCESS_LOCAL_WRITE | RA_ACCESS_REMOTE_READ;
 
     s32 ret = RaRegisterMr(rdmaHandle, &mrInfo, &mrHandle);
@@ -42,8 +43,8 @@ LocalRdmaRmaBuffer::LocalRdmaRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle r
     }
     lkey = mrInfo.lkey;
     rkey = mrInfo.rkey;
-    HCCL_INFO("LocalRdmaRmaBuffer[rdmaHandle=%p, mrHandle = %p, buf=%s]", 
-            rdmaHandle, mrHandle, buf->Describe().c_str());
+    HCCL_INFO(
+        "LocalRdmaRmaBuffer[rdmaHandle=%p, mrHandle = %p, buf=%s]", rdmaHandle, mrHandle, buf->Describe().c_str());
 }
 
 LocalRdmaRmaBuffer::~LocalRdmaRmaBuffer()
@@ -51,7 +52,8 @@ LocalRdmaRmaBuffer::~LocalRdmaRmaBuffer()
     if (mrHandle) {
         s32 ret = RaDeregisterMr(rdmaHandle, mrHandle);
         if (ret != 0) {
-            HCCL_ERROR("[HrtRaDeRegisterMr]errNo[0x%016llx] RaDeregisterMr failed, return[%d]",
+            HCCL_ERROR(
+                "[HrtRaDeRegisterMr]errNo[0x%016llx] RaDeregisterMr failed, return[%d]",
                 HCCL_ERROR_CODE(HCCL_E_NETWORK), ret);
             // THROW<InternalException>("[%s] failed, call interface error[%d].", __func__, ret);
         }
@@ -61,14 +63,14 @@ LocalRdmaRmaBuffer::~LocalRdmaRmaBuffer()
 
 string LocalRdmaRmaBuffer::Describe() const
 {
-    return StringFormat("LocalRdmaRmaBuffer[rdmaHandle=%p, mrHandle = %p, buf=%s]", rdmaHandle, mrHandle,
-                        buf->Describe().c_str());
+    return StringFormat(
+        "LocalRdmaRmaBuffer[rdmaHandle=%p, mrHandle = %p, buf=%s]", rdmaHandle, mrHandle, buf->Describe().c_str());
 }
 
 std::unique_ptr<Serializable> LocalRdmaRmaBuffer::GetExchangeDto()
 {
-    std::unique_ptr<ExchangeRdmaBufferDto> dto = make_unique<ExchangeRdmaBufferDto>(
-        buf->GetAddr(), buf->GetSize(), this->rkey, buf->GetMemTag().c_str());
+    std::unique_ptr<ExchangeRdmaBufferDto> dto
+        = make_unique<ExchangeRdmaBufferDto>(buf->GetAddr(), buf->GetSize(), this->rkey, buf->GetMemTag().c_str());
     return std::unique_ptr<Serializable>(dto.release());
 }
 

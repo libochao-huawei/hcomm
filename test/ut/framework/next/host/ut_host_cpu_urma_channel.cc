@@ -23,15 +23,9 @@ using namespace hcomm;
 
 class HostCpuUrmaChannelTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "HostCpuUrmaChannelTest tests set up." << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "HostCpuUrmaChannelTest tests set up." << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "HostCpuUrmaChannelTest tests tear down." << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "HostCpuUrmaChannelTest tests tear down." << std::endl; }
 
     virtual void SetUp()
     {
@@ -59,8 +53,8 @@ protected:
         channelDesc.exchangeAllMems = false;
         channelDesc.port = 60001;
 
-        fakeSocket = new Hccl::Socket(nullptr, localIp, 60001, remoteIp, "_0_1_",
-                                      Hccl::SocketRole::SERVER, Hccl::NicType::HOST_NIC_TYPE);
+        fakeSocket = new Hccl::Socket(
+            nullptr, localIp, 60001, remoteIp, "_0_1_", Hccl::SocketRole::SERVER, Hccl::NicType::HOST_NIC_TYPE);
         channelDesc.socket = static_cast<void*>(fakeSocket);
 
         localBufferPtr = std::make_shared<Hccl::Buffer>(666);

@@ -22,13 +22,10 @@
 
 namespace hcomm {
 namespace {
-constexpr uint32_t kDefaultRocePort = 16666;
+    constexpr uint32_t kDefaultRocePort = 16666;
 }
 
-AicpuTsRoceEndpoint::AicpuTsRoceEndpoint(const EndpointDesc &endpointDesc)
-    : Endpoint(endpointDesc)
-{
-}
+AicpuTsRoceEndpoint::AicpuTsRoceEndpoint(const EndpointDesc& endpointDesc) : Endpoint(endpointDesc) {}
 
 AicpuTsRoceEndpoint::~AicpuTsRoceEndpoint()
 {
@@ -41,58 +38,60 @@ AicpuTsRoceEndpoint::~AicpuTsRoceEndpoint()
 void AicpuTsRoceEndpoint::ReleaseListenSocketRefs()
 {
     std::lock_guard<std::mutex> lk(ListenSocketMapMutex());
-    HCCL_INFO("[ReleaseListenSocketRefs] netDevRefPhyId_[%u], listenRefKeys_.size[%zu]",
-        netDevRefPhyId_, listenRefKeys_.size());
+    HCCL_INFO(
+        "[ReleaseListenSocketRefs] netDevRefPhyId_[%u], listenRefKeys_.size[%zu]", netDevRefPhyId_,
+        listenRefKeys_.size());
 
     std::vector<SocketMapKey> keys = std::move(listenRefKeys_);
-    auto &sockMap = GetServerSocketMap();
-    for (const auto &key : keys) {
+    auto& sockMap = GetServerSocketMap();
+    for (const auto& key : keys) {
         auto it = sockMap.find(key);
         if (it == sockMap.end()) {
-            HCCL_INFO("[ReleaseListenSocketRefs] key[dev=%u,port=%u] not found in sockMap",
-                key.devicePhyId, key.port);
+            HCCL_INFO("[ReleaseListenSocketRefs] key[dev=%u,port=%u] not found in sockMap", key.devicePhyId, key.port);
             continue;
         }
-        HCCL_INFO("[ReleaseListenSocketRefs] key[dev=%u,port=%u] refCount[%u] before decrement",
-            key.devicePhyId, key.port, it->second.refCount);
+        HCCL_INFO(
+            "[ReleaseListenSocketRefs] key[dev=%u,port=%u] refCount[%u] before decrement", key.devicePhyId, key.port,
+            it->second.refCount);
         if (it->second.refCount > 0U) {
             it->second.refCount--;
         }
-        HCCL_INFO("[ReleaseListenSocketRefs] key[dev=%u,port=%u] refCount[%u] after decrement, socket shared_ptr use_count[%ld]",
+        HCCL_INFO(
+            "[ReleaseListenSocketRefs] key[dev=%u,port=%u] refCount[%u] after decrement, socket shared_ptr "
+            "use_count[%ld]",
             key.devicePhyId, key.port, it->second.refCount, it->second.socket.use_count());
         if (it->second.refCount == 0U) {
-            HCCL_INFO("[ReleaseListenSocketRefs] erasing key[dev=%u,port=%u] from sockMap",
-                key.devicePhyId, key.port);
+            HCCL_INFO("[ReleaseListenSocketRefs] erasing key[dev=%u,port=%u] from sockMap", key.devicePhyId, key.port);
             (void)sockMap.erase(it);
         }
     }
-    HCCL_INFO("[ReleaseListenSocketRefs] serverSocket_ use_count[%ld] before reset",
-        serverSocket_.use_count());
+    HCCL_INFO("[ReleaseListenSocketRefs] serverSocket_ use_count[%ld] before reset", serverSocket_.use_count());
     serverSocket_.reset();
 }
 
-std::mutex &AicpuTsRoceEndpoint::NetDevMapMutex()
+std::mutex& AicpuTsRoceEndpoint::NetDevMapMutex()
 {
     static std::mutex mutex;
     return mutex;
 }
 
-std::unordered_map<uint32_t, AicpuTsNetDevSlot> &AicpuTsRoceEndpoint::GetNetDevMap()
+std::unordered_map<uint32_t, AicpuTsNetDevSlot>& AicpuTsRoceEndpoint::GetNetDevMap()
 {
     static std::unordered_map<uint32_t, AicpuTsNetDevSlot> netDevMap;
     return netDevMap;
 }
 
-HcclResult AicpuTsRoceEndpoint::AcquireSharedNetDev(uint32_t devicePhyId, const HcclNetDevInfos &info)
+HcclResult AicpuTsRoceEndpoint::AcquireSharedNetDev(uint32_t devicePhyId, const HcclNetDevInfos& info)
 {
     std::lock_guard<std::mutex> lk(NetDevMapMutex());
-    auto &netDevMap = GetNetDevMap();
+    auto& netDevMap = GetNetDevMap();
     const auto it = netDevMap.find(devicePhyId);
     if (it != netDevMap.end()) {
         it->second.refCount++;
         netDev_ = it->second.netDev;
         netDevRefPhyId_ = devicePhyId;
-        HCCL_INFO("[AicpuTsRoceEndpoint][%s] reuse HcclNetDev for devicePhyId[%u], ref[%u]", __func__, devicePhyId,
+        HCCL_INFO(
+            "[AicpuTsRoceEndpoint][%s] reuse HcclNetDev for devicePhyId[%u], ref[%u]", __func__, devicePhyId,
             it->second.refCount);
         return HCCL_SUCCESS;
     }
@@ -103,7 +102,7 @@ HcclResult AicpuTsRoceEndpoint::AcquireSharedNetDev(uint32_t devicePhyId, const 
         HCCL_ERROR("[AicpuTsRoceEndpoint][%s] HcclNetDevOpen failed, ret[%d]", __func__, ret);
         return ret;
     }
-    netDevMap[devicePhyId] = AicpuTsNetDevSlot{ netDev, 1U };
+    netDevMap[devicePhyId] = AicpuTsNetDevSlot{netDev, 1U};
     netDev_ = netDev;
     netDevRefPhyId_ = devicePhyId;
     return HCCL_SUCCESS;
@@ -119,7 +118,7 @@ void AicpuTsRoceEndpoint::ReleaseSharedNetDev()
     HcclNetDev toClose = nullptr;
     {
         std::lock_guard<std::mutex> lk(NetDevMapMutex());
-        auto &netDevMap = GetNetDevMap();
+        auto& netDevMap = GetNetDevMap();
         const auto it = netDevMap.find(key);
         if (it == netDevMap.end()) {
             HCCL_ERROR("[AicpuTsRoceEndpoint][ReleaseSharedNetDev] missing slot for devicePhyId[%u]", key);
@@ -143,7 +142,7 @@ void AicpuTsRoceEndpoint::ReleaseSharedNetDev()
     }
 }
 
-HcclResult AicpuTsRoceEndpoint::AcquireRdmaContext(uint32_t devPhyId, const EndpointDesc &endpointDesc)
+HcclResult AicpuTsRoceEndpoint::AcquireRdmaContext(uint32_t devPhyId, const EndpointDesc& endpointDesc)
 {
     HcclNetDevInfos info;
     info.addr.protoType = HCCL_PROTO_TYPE_ROCE;
@@ -160,7 +159,7 @@ HcclResult AicpuTsRoceEndpoint::AcquireRdmaContext(uint32_t devPhyId, const Endp
         return ret;
     }
 
-    auto *netDevCtx = static_cast<hccl::NetDevContext *>(netDev_);
+    auto* netDevCtx = static_cast<hccl::NetDevContext*>(netDev_);
     if (netDevCtx == nullptr) {
         ReleaseSharedNetDev();
         return HCCL_E_PTR;
@@ -175,13 +174,15 @@ HcclResult AicpuTsRoceEndpoint::AcquireRdmaContext(uint32_t devPhyId, const Endp
     }
     ctxHandle_ = rdmaHandle;
     if (ctxHandle_ == nullptr) {
-        HCCL_ERROR("[%s]errNo[0x%016llx]ptr [ctxHandle_] is nullptr, return HCCL_E_PTR",
-            __func__, HCCL_ERROR_CODE(HCCL_E_PTR));
+        HCCL_ERROR(
+            "[%s]errNo[0x%016llx]ptr [ctxHandle_] is nullptr, return HCCL_E_PTR", __func__,
+            HCCL_ERROR_CODE(HCCL_E_PTR));
         ReleaseSharedNetDev();
         return HCCL_E_PTR;
     }
-    HCCL_INFO("AicpuTsRoceEndpoint::%s success, devId[%u], ipAddr[%s], ctxHandle[%p]",
-        __func__, devPhyId, ipAddr.GetReadableAddress(), ctxHandle_);
+    HCCL_INFO(
+        "AicpuTsRoceEndpoint::%s success, devId[%u], ipAddr[%s], ctxHandle[%p]", __func__, devPhyId,
+        ipAddr.GetReadableAddress(), ctxHandle_);
     return HCCL_SUCCESS;
 }
 
@@ -206,7 +207,7 @@ HcclResult AicpuTsRoceEndpoint::Init()
 
     try {
         regedMemMgr_ = std::make_shared<AicpuTsRoceRegedMemMgr>(netDev_, ctxHandle_);
-    } catch (std::exception &e) {
+    } catch (std::exception& e) {
         HCCL_ERROR("[%s]Failed, exception caught:%s", __func__, e.what());
         ctxHandle_ = nullptr;
         ReleaseSharedNetDev();
@@ -233,14 +234,15 @@ HcclResult AicpuTsRoceEndpoint::ServerSocketListen(const uint32_t port)
 
     {
         std::lock_guard<std::mutex> lk(ListenSocketMapMutex());
-        auto &serverSocketMap = GetServerSocketMap();
+        auto& serverSocketMap = GetServerSocketMap();
         auto it = serverSocketMap.find(key);
         if (it != serverSocketMap.end() && it->second.socket != nullptr) {
             it->second.refCount++;
             listenRefKeys_.push_back(key);
             serverSocket_ = it->second.socket;
-            HCCL_INFO("[AicpuTsRoceEndpoint::%s] reuse serverSocket for key[dev=%u,port=%u], ref[%u]",
-                __func__, key.devicePhyId, key.port, it->second.refCount);
+            HCCL_INFO(
+                "[AicpuTsRoceEndpoint::%s] reuse serverSocket for key[dev=%u,port=%u], ref[%u]", __func__,
+                key.devicePhyId, key.port, it->second.refCount);
             return HCCL_SUCCESS;
         }
     }
@@ -265,73 +267,73 @@ HcclResult AicpuTsRoceEndpoint::ServerSocketListen(const uint32_t port)
     }
 
     std::lock_guard<std::mutex> lk(ListenSocketMapMutex());
-    auto &serverSocketMap = GetServerSocketMap();
+    auto& serverSocketMap = GetServerSocketMap();
     auto it = serverSocketMap.find(key);
     if (it != serverSocketMap.end() && it->second.socket != nullptr) {
         it->second.refCount++;
         listenRefKeys_.push_back(key);
         serverSocket_ = it->second.socket;
-        HCCL_INFO("[AicpuTsRoceEndpoint::%s] concurrent reuse key[dev=%u,port=%u], ref[%u]",
-            __func__, key.devicePhyId, key.port, it->second.refCount);
+        HCCL_INFO(
+            "[AicpuTsRoceEndpoint::%s] concurrent reuse key[dev=%u,port=%u], ref[%u]", __func__, key.devicePhyId,
+            key.port, it->second.refCount);
         return HCCL_SUCCESS;
     }
 
     serverSocketMap[key] = AicpuTsListenSocketSlot{serverSocket_, 1U};
     listenRefKeys_.push_back(key);
-    HCCL_INFO("[AicpuTsRoceEndpoint][%s] listen on key[dev=%u,port=%u] success",
-        __func__, key.devicePhyId, key.port);
+    HCCL_INFO("[AicpuTsRoceEndpoint][%s] listen on key[dev=%u,port=%u] success", __func__, key.devicePhyId, key.port);
     return HCCL_SUCCESS;
 }
 
-std::mutex &AicpuTsRoceEndpoint::ListenSocketMapMutex()
+std::mutex& AicpuTsRoceEndpoint::ListenSocketMapMutex()
 {
     static std::mutex mutex;
     return mutex;
 }
 
-std::unordered_map<SocketMapKey, AicpuTsListenSocketSlot, SocketMapKeyHash> &AicpuTsRoceEndpoint::GetServerSocketMap()
+std::unordered_map<SocketMapKey, AicpuTsListenSocketSlot, SocketMapKeyHash>& AicpuTsRoceEndpoint::GetServerSocketMap()
 {
     static std::unordered_map<SocketMapKey, AicpuTsListenSocketSlot, SocketMapKeyHash> serverSocketMap;
     return serverSocketMap;
 }
 
-HcclResult AicpuTsRoceEndpoint::AddListenSocketWhiteList(uint32_t port, const std::vector<SocketWlistInfo> &wlistInfos)
+HcclResult AicpuTsRoceEndpoint::AddListenSocketWhiteList(uint32_t port, const std::vector<SocketWlistInfo>& wlistInfos)
 {
     if (wlistInfos.empty()) {
         HCCL_ERROR("[AicpuTsRoceEndpoint][%s] empty whitelist", __func__);
         return HCCL_E_PARA;
     }
     std::lock_guard<std::mutex> lk(ListenSocketMapMutex());
-    auto &sockMap = GetServerSocketMap();
+    auto& sockMap = GetServerSocketMap();
     const uint32_t listenPort = (port != 0U) ? port : kDefaultRocePort;
     const SocketMapKey key{netDevRefPhyId_, listenPort};
     auto it = sockMap.find(key);
     if (it == sockMap.end() || it->second.socket == nullptr) {
-        HCCL_ERROR("[AicpuTsRoceEndpoint][%s] no listen socket for key[dev=%u,port=%u]",
-            __func__, key.devicePhyId, key.port);
+        HCCL_ERROR(
+            "[AicpuTsRoceEndpoint][%s] no listen socket for key[dev=%u,port=%u]", __func__, key.devicePhyId, key.port);
         return HCCL_E_NOT_FOUND;
     }
     std::vector<SocketWlistInfo> mutableCopy = wlistInfos;
     return it->second.socket->AddWhiteList(mutableCopy);
 }
 
-HcclResult AicpuTsRoceEndpoint::AcceptDataSocket(uint32_t port, const std::string &tag,
-    std::shared_ptr<hccl::HcclSocket> &outConnected, uint32_t acceptTimeoutMs)
+HcclResult AicpuTsRoceEndpoint::AcceptDataSocket(
+    uint32_t port, const std::string& tag, std::shared_ptr<hccl::HcclSocket>& outConnected, uint32_t acceptTimeoutMs)
 {
     std::lock_guard<std::mutex> lk(ListenSocketMapMutex());
-    auto &map = GetServerSocketMap();
+    auto& map = GetServerSocketMap();
     const uint32_t listenPort = (port != 0U) ? port : kDefaultRocePort;
     const SocketMapKey key{netDevRefPhyId_, listenPort};
     auto it = map.find(key);
     if (it == map.end() || it->second.socket == nullptr) {
-        HCCL_ERROR("[AicpuTsRoceEndpoint][%s] no listen socket for key[dev=%u,port=%u]",
-            __func__, key.devicePhyId, key.port);
+        HCCL_ERROR(
+            "[AicpuTsRoceEndpoint][%s] no listen socket for key[dev=%u,port=%u]", __func__, key.devicePhyId, key.port);
         return HCCL_E_NOT_FOUND;
     }
     return it->second.socket->Accept(tag, outConnected, acceptTimeoutMs);
 }
 
-HcclResult AicpuTsRoceEndpoint::RegisterMemory(HcommMem mem, const char *memTag, void **memHandle)
+HcclResult AicpuTsRoceEndpoint::RegisterMemory(HcommMem mem, const char* memTag, void** memHandle)
 {
     CHK_RET(this->regedMemMgr_->RegisterMemory(mem, memTag, memHandle));
     return HCCL_SUCCESS;
@@ -343,27 +345,27 @@ HcclResult AicpuTsRoceEndpoint::UnregisterMemory(void* memHandle)
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsRoceEndpoint::MemoryExport(void *memHandle, void **memDesc, uint32_t *memDescLen)
+HcclResult AicpuTsRoceEndpoint::MemoryExport(void* memHandle, void** memDesc, uint32_t* memDescLen)
 {
     CHK_RET(this->regedMemMgr_->MemoryExport(this->endpointDesc_, memHandle, memDesc, memDescLen));
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsRoceEndpoint::MemoryImport(const void *memDesc, uint32_t descLen, HcommMem *outMem)
+HcclResult AicpuTsRoceEndpoint::MemoryImport(const void* memDesc, uint32_t descLen, HcommMem* outMem)
 {
     CHK_RET(this->regedMemMgr_->MemoryImport(memDesc, descLen, outMem));
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsRoceEndpoint::MemoryUnimport(const void *memDesc, uint32_t descLen)
+HcclResult AicpuTsRoceEndpoint::MemoryUnimport(const void* memDesc, uint32_t descLen)
 {
     CHK_RET(this->regedMemMgr_->MemoryUnimport(memDesc, descLen));
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsRoceEndpoint::GetAllMemHandles(void **memHandles, uint32_t *memHandleNum)
+HcclResult AicpuTsRoceEndpoint::GetAllMemHandles(void** memHandles, uint32_t* memHandleNum)
 {
     CHK_RET(this->regedMemMgr_->GetAllMemHandles(memHandles, memHandleNum));
     return HCCL_SUCCESS;
 }
-}
+} // namespace hcomm

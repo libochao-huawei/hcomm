@@ -29,20 +29,15 @@ using namespace hccl;
 
 class AllToAllTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "AllToAllTest set up." << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "AllToAllTest set up." << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "AllToAllTest tear down." << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "AllToAllTest tear down." << std::endl; }
 
     virtual void SetUp()
     {
         const ::testing::TestInfo* const test_info = ::testing::UnitTest::GetInstance()->current_test_info();
-        std::string caseName = "analysis_result_" + std::string(test_info->test_case_name()) + "_" + std::string(test_info->name());
+        std::string caseName
+            = "analysis_result_" + std::string(test_info->test_case_name()) + "_" + std::string(test_info->name());
         Checker::SetDumpFileName(caseName);
     }
 
@@ -457,10 +452,14 @@ TEST_F(AllToAllTest, alltoall_test_910_93_opbase_2superpod_RunAlltoAllDirectFull
 TEST_F(AllToAllTest, alltoall_test_910_93_opbase_RunAlltoAllDirectFullmesh_1)
 {
     RankTable_For_LLT gen;
-    TopoMeta topoMeta {{{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}, {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15},
-        {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}, {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}},
-        {{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}, {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15},
-        {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}}};
+    TopoMeta topoMeta{
+        {{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
+         {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
+         {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
+         {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}},
+        {{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
+         {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
+         {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}}};
 
     CheckerOpParam checkerOpParam;
     checkerOpParam.opType = CheckerOpType::ALLTOALL;
@@ -548,9 +547,9 @@ TEST_F(AllToAllTest, alltoall_AlltoAllVDirectFullmesh)
 TEST_F(AllToAllTest, alltoall_superpod_asym_gcd)
 {
     RankTable_For_LLT gen;
-    TopoMeta topoMeta {{{0, 1, 2}, {0, 1, 2}}, {{0, 1, 2}, {0, 1, 2}}, {{0, 1, 2}, {0, 1, 2}, {0, 1, 2}, {0, 1, 2}}};
+    TopoMeta topoMeta{{{0, 1, 2}, {0, 1, 2}}, {{0, 1, 2}, {0, 1, 2}}, {{0, 1, 2}, {0, 1, 2}, {0, 1, 2}, {0, 1, 2}}};
 
-    CheckerOpParam  checkerOpParam;
+    CheckerOpParam checkerOpParam;
     checkerOpParam.opType = CheckerOpType::ALLTOALL;
     checkerOpParam.tag = "AllToAll";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;

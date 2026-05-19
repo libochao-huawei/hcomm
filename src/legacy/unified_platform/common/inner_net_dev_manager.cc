@@ -12,10 +12,10 @@
 #include "hccl_net_dev_v2.h"
 
 namespace Hccl {
-HcclResult InnerNetDevManager::AddDevice(const NetDevInfo &info, HcclNetDevice *&device)
+HcclResult InnerNetDevManager::AddDevice(const NetDevInfo& info, HcclNetDevice*& device)
 {
-    device = new HcclNetDevice(info);  
-    if(device == nullptr) {
+    device = new HcclNetDevice(info);
+    if (device == nullptr) {
         HCCL_ERROR("new HcclNetDevice fail, devId[%u]", info.devId);
         return HCCL_E_PTR;
     }
@@ -24,8 +24,8 @@ HcclResult InnerNetDevManager::AddDevice(const NetDevInfo &info, HcclNetDevice *
     InnerNetDev* innerNetDev = nullptr;
     auto it = netDevMap_.find(info);
     if (it == netDevMap_.end()) {
-        innerNetDev = new(nothrow) InnerNetDev(info);
-        if(innerNetDev == nullptr || !innerNetDev->GetIsValid()) {
+        innerNetDev = new (nothrow) InnerNetDev(info);
+        if (innerNetDev == nullptr || !innerNetDev->GetIsValid()) {
             HCCL_ERROR("new InnerNetDev fail, devId[%u]", info.devId);
             return HCCL_E_PARA;
         }
@@ -39,9 +39,9 @@ HcclResult InnerNetDevManager::AddDevice(const NetDevInfo &info, HcclNetDevice *
     return HCCL_SUCCESS;
 }
 
-HcclResult InnerNetDevManager::DeleteDevice(Hccl::HcclNetDevice *device)
+HcclResult InnerNetDevManager::DeleteDevice(Hccl::HcclNetDevice* device)
 {
-    if(device == nullptr) {
+    if (device == nullptr) {
         return HCCL_SUCCESS;
     }
     HcclResult ret = RemoveDevice(device->GetNetDevInfo());
@@ -54,7 +54,7 @@ HcclResult InnerNetDevManager::DeleteDevice(Hccl::HcclNetDevice *device)
     return HCCL_SUCCESS;
 }
 
-HcclResult InnerNetDevManager::RemoveDevice(const NetDevInfo &info)
+HcclResult InnerNetDevManager::RemoveDevice(const NetDevInfo& info)
 {
     auto cntIt = netDevCnt_.find(info);
     if (cntIt == netDevCnt_.end()) {
@@ -63,17 +63,17 @@ HcclResult InnerNetDevManager::RemoveDevice(const NetDevInfo &info)
     }
 
     cntIt->second--;
-    if (cntIt->second == 0) {          
+    if (cntIt->second == 0) {
         netDevMap_.erase(info);
         netDevCnt_.erase(cntIt);
     }
     return HCCL_SUCCESS;
 }
 
-InnerNetDev *InnerNetDevManager::GetDevice(const NetDevInfo &info) 
+InnerNetDev* InnerNetDevManager::GetDevice(const NetDevInfo& info)
 {
     auto it = netDevMap_.find(info);
-    if(it == netDevMap_.end()) {
+    if (it == netDevMap_.end()) {
         auto innerNetDev = new InnerNetDev(info);
         netDevMap_.insert(std::make_pair(info, std::unique_ptr<InnerNetDev>(innerNetDev)));
         netDevCnt_[info] = 1;
@@ -82,12 +82,12 @@ InnerNetDev *InnerNetDevManager::GetDevice(const NetDevInfo &info)
     return it->second.get();
 }
 
-uint32_t InnerNetDevManager::GetDeviceCount(const NetDevInfo &info) const
+uint32_t InnerNetDevManager::GetDeviceCount(const NetDevInfo& info) const
 {
     auto it = netDevCnt_.find(info);
     return (it != netDevCnt_.end()) ? it->second : 0;
 }
-bool InnerNetDevManager::ReplaceDevice(const NetDevInfo &info, std::unique_ptr<InnerNetDev> newDevice)
+bool InnerNetDevManager::ReplaceDevice(const NetDevInfo& info, std::unique_ptr<InnerNetDev> newDevice)
 {
     auto it = netDevMap_.find(info);
     if (it == netDevMap_.end())
@@ -97,7 +97,7 @@ bool InnerNetDevManager::ReplaceDevice(const NetDevInfo &info, std::unique_ptr<I
     return true;
 }
 
-RdmaHandle InnerNetDevManager::GetRdmaHandleByIP(uint32_t devPhyId, const IpAddress &ip)
+RdmaHandle InnerNetDevManager::GetRdmaHandleByIP(uint32_t devPhyId, const IpAddress& ip)
 {
     NetDevInfo info;
     info.devId = devPhyId;
@@ -117,14 +117,14 @@ void InnerNetDevManager::Cleanup()
     // 3. 清理pltNetDevVec_：释放所有HcclNetDev*指向的动态内存
     for (HcclNetDevice* dev : pltNetDevVec_) {
         if (dev != nullptr) {
-            delete dev;  // 释放堆上分配的HcclNetDev对象
-            dev = nullptr;  // 避免悬空指针
+            delete dev;    // 释放堆上分配的HcclNetDev对象
+            dev = nullptr; // 避免悬空指针
         }
     }
-    pltNetDevVec_.clear();  // 清空容器
+    pltNetDevVec_.clear(); // 清空容器
 }
 
-InnerNetDevManager &InnerNetDevManager::GetInstance()
+InnerNetDevManager& InnerNetDevManager::GetInstance()
 {
     static InnerNetDevManager instance;
     return instance;

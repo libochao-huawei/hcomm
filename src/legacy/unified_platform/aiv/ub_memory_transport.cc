@@ -18,10 +18,15 @@
 
 namespace Hccl {
 constexpr u32 ONE_HUNDRED_MICROSECOND_OF_USLEEP = 100;
-UbMemoryTransport::UbMemoryTransport(const std::shared_ptr<Buffer> cclBuffer, const std::shared_ptr<Buffer> aivTagBuffer, const std::shared_ptr<Buffer> aivOffloadTagBuffer, Socket *socket, int32_t deviceLogicId)
-    : cclBuffer(cclBuffer), aivTagBuffer(aivTagBuffer), aivOffloadTagBuffer(aivOffloadTagBuffer), socket(socket), deviceLogicId(deviceLogicId)
-{
-}
+UbMemoryTransport::UbMemoryTransport(
+    const std::shared_ptr<Buffer> cclBuffer, const std::shared_ptr<Buffer> aivTagBuffer,
+    const std::shared_ptr<Buffer> aivOffloadTagBuffer, Socket* socket, int32_t deviceLogicId)
+    : cclBuffer(cclBuffer),
+      aivTagBuffer(aivTagBuffer),
+      aivOffloadTagBuffer(aivOffloadTagBuffer),
+      socket(socket),
+      deviceLogicId(deviceLogicId)
+{}
 
 HcclResult UbMemoryTransport::Init()
 {
@@ -31,7 +36,7 @@ HcclResult UbMemoryTransport::Init()
     return HCCL_SUCCESS;
 }
 
-LocalIpcRmaBuffer *UbMemoryTransport::GetLocMemBuffer(const u32 bufIndex) const
+LocalIpcRmaBuffer* UbMemoryTransport::GetLocMemBuffer(const u32 bufIndex) const
 {
     HCCL_INFO("[%s] start", __func__);
     if (bufIndex >= localBufferVec.size()) {
@@ -42,7 +47,7 @@ LocalIpcRmaBuffer *UbMemoryTransport::GetLocMemBuffer(const u32 bufIndex) const
     return localBufferVec[bufIndex].get();
 }
 
-RemoteIpcRmaBuffer *UbMemoryTransport::GetRmtMemBuffer(const u32 bufIndex) const
+RemoteIpcRmaBuffer* UbMemoryTransport::GetRmtMemBuffer(const u32 bufIndex) const
 {
     HCCL_INFO("[%s] start", __func__);
     if (bufIndex >= rmtBufferVec.size()) {
@@ -53,16 +58,15 @@ RemoteIpcRmaBuffer *UbMemoryTransport::GetRmtMemBuffer(const u32 bufIndex) const
     return rmtBufferVec[bufIndex].get();
 }
 
-
 UbMemoryTransport::UBTransportStatus UbMemoryTransport::GetStatus()
 {
     UbMemoryTransport::UBTransportStatus status = UbMemoryTransport::UBTransportStatus::CONNECT_FAILED;
     try {
         status = StateMachine();
-    } catch (HcclException &e) {
+    } catch (HcclException& e) {
         HCCL_ERROR(e.what());
         return UbMemoryTransport::UBTransportStatus::CONNECT_FAILED;
-    } catch (exception &e) {
+    } catch (exception& e) {
         HCCL_ERROR(e.what());
         return UbMemoryTransport::UBTransportStatus::CONNECT_FAILED;
     } catch (...) {
@@ -128,12 +132,12 @@ void UbMemoryTransport::SendMemInfo()
 
     std::vector<char> data;
     binaryStream.Dump(data);
-    socket->SendAsync(reinterpret_cast<u8 *>(&data[0]), data.size());
+    socket->SendAsync(reinterpret_cast<u8*>(&data[0]), data.size());
     exchangeDataSize = data.size();
     HCCL_INFO("[%s] finished", __func__);
 }
 
-void UbMemoryTransport::HandshakeMsgPack(BinaryStream &binaryStream)
+void UbMemoryTransport::HandshakeMsgPack(BinaryStream& binaryStream)
 {
     binaryStream << static_cast<u32>(locOpAcceState);
     binaryStream << localHandshakeMsg;
@@ -143,8 +147,9 @@ void UbMemoryTransport::HandshakeMsgPack(BinaryStream &binaryStream)
 void UbMemoryTransport::RecvMemInfo()
 {
     recvDataMsg.resize(exchangeDataSize);
-    socket->RecvAsync(reinterpret_cast<u8 *>(&recvDataMsg[0]), recvDataMsg.size());
-    HCCL_INFO("recv data, size=%llu, data=%s", recvDataMsg.size(), Bytes2hex(recvDataMsg.data(), recvDataMsg.size()).c_str());
+    socket->RecvAsync(reinterpret_cast<u8*>(&recvDataMsg[0]), recvDataMsg.size());
+    HCCL_INFO(
+        "recv data, size=%llu, data=%s", recvDataMsg.size(), Bytes2hex(recvDataMsg.data(), recvDataMsg.size()).c_str());
 }
 
 void UbMemoryTransport::RecvMemProcess()
@@ -154,7 +159,7 @@ void UbMemoryTransport::RecvMemProcess()
     RmtBufferUnpackProc(binaryStream);
 }
 
-void UbMemoryTransport::HandshakeMsgUnpack(BinaryStream &binaryStream)
+void UbMemoryTransport::HandshakeMsgUnpack(BinaryStream& binaryStream)
 {
     u32 rmtAccelerator{0};
     binaryStream >> rmtAccelerator;
@@ -162,32 +167,32 @@ void UbMemoryTransport::HandshakeMsgUnpack(BinaryStream &binaryStream)
     rmtOpAcceState = static_cast<AcceleratorState::Value>(rmtAccelerator);
 
     if (rmtOpAcceState != locOpAcceState) {
-        THROW<InvalidParamsException>(
-            StringFormat("[UbMemoryTransport::HandshakeMsgUnpack] Accelerator information check fail. "
-                         "locOpAccelerator[%s], rmtOpAccelerator[%s]",
-                         locOpAcceState.Describe().c_str(), rmtOpAcceState.Describe().c_str()));
+        THROW<InvalidParamsException>(StringFormat(
+            "[UbMemoryTransport::HandshakeMsgUnpack] Accelerator information check fail. "
+            "locOpAccelerator[%s], rmtOpAccelerator[%s]",
+            locOpAcceState.Describe().c_str(), rmtOpAcceState.Describe().c_str()));
     }
 
     rmtHandshakeMsg.clear();
     binaryStream >> rmtHandshakeMsg;
 
     if (localHandshakeMsg.size() != rmtHandshakeMsg.size()) {
-        THROW<InvalidParamsException>(StringFormat("handshakeMsg size=%u is not equal to rmt=%u",
-                                                         localHandshakeMsg.size(), rmtHandshakeMsg.size()));
+        THROW<InvalidParamsException>(StringFormat(
+            "handshakeMsg size=%u is not equal to rmt=%u", localHandshakeMsg.size(), rmtHandshakeMsg.size()));
     }
 
-    auto localCollOperator  = CollOperator::GetPackedData(localHandshakeMsg);
+    auto localCollOperator = CollOperator::GetPackedData(localHandshakeMsg);
     auto remoteCollOperator = CollOperator::GetPackedData(rmtHandshakeMsg);
     CheckCollOperator(localCollOperator, remoteCollOperator); // 两端算子参数一致性校验
 
     HCCL_INFO("[UbMemoryTransport][%s] start unpack handshakeMsg", __func__);
 }
 
-void UbMemoryTransport::BufferPack(BinaryStream &binaryStream)
+void UbMemoryTransport::BufferPack(BinaryStream& binaryStream)
 {
     u32 vecSize = localBufferVec.size();
     binaryStream << vecSize;
-    for (auto &it : localBufferVec) {
+    for (auto& it : localBufferVec) {
         if (it != nullptr) { // 非空的buffer，从buffer中获取 dto
             std::unique_ptr<Serializable> dto = it->GetExchangeDto();
             HCCL_INFO("[%s] dto[%s]", __func__, dto->Describe().c_str());
@@ -199,7 +204,7 @@ void UbMemoryTransport::BufferPack(BinaryStream &binaryStream)
     }
 }
 
-void UbMemoryTransport::RmtBufferUnpackProc(BinaryStream &binaryStream)
+void UbMemoryTransport::RmtBufferUnpackProc(BinaryStream& binaryStream)
 {
     rmtBufferVec.clear();
     rmtRmaBufferVec.clear();

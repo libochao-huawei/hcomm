@@ -16,28 +16,32 @@
 #include <chrono>
 
 namespace Hccl {
-constexpr uint32_t CTRL_HDR_FLAG_LENGTH    = 1;
-constexpr uint32_t TASKTYPE_ADDR_LENGTH    = 256;
-constexpr uint32_t CTRL_HDR_MSG_ID_LEN     = 4;
-constexpr uint32_t CTRL_HDR_DATA_SIZE_LEN  = 8; // size_t 在不同平台上长度不同，取最大值
-constexpr uint32_t CTRL_HDR_DEFAULT_DATA_LEN  = 512;
+constexpr uint32_t CTRL_HDR_FLAG_LENGTH = 1;
+constexpr uint32_t TASKTYPE_ADDR_LENGTH = 256;
+constexpr uint32_t CTRL_HDR_MSG_ID_LEN = 4;
+constexpr uint32_t CTRL_HDR_DATA_SIZE_LEN = 8; // size_t 在不同平台上长度不同，取最大值
+constexpr uint32_t CTRL_HDR_DEFAULT_DATA_LEN = 512;
 
-constexpr uint8_t  TASK_UNSET              = 0;
-constexpr uint8_t  TASK_OK                 = 1;
-constexpr uint8_t  TASK_TERMINATE          = 2;
-constexpr uint8_t  TASK_TERMINATE_RESPONSE = 3;
-constexpr uint8_t  MEMORY_DEVIDE           = 2;
+constexpr uint8_t TASK_UNSET = 0;
+constexpr uint8_t TASK_OK = 1;
+constexpr uint8_t TASK_TERMINATE = 2;
+constexpr uint8_t TASK_TERMINATE_RESPONSE = 3;
+constexpr uint8_t MEMORY_DEVIDE = 2;
 
-TaskService::TaskService(void *deviceMem, int32_t deviceMemSize, void *hostMem, int32_t hostMemSize)
-    : npu2dpuMem_(deviceMem), shmemSize_(deviceMemSize / MEMORY_DEVIDE), hostMem_(hostMem), hostMemSize_(hostMemSize)
+TaskService::TaskService(void* deviceMem, int32_t deviceMemSize, void* hostMem, int32_t hostMemSize)
+    : npu2dpuMem_(deviceMem),
+      shmemSize_(deviceMemSize / MEMORY_DEVIDE),
+      hostMem_(hostMem),
+      hostMemSize_(hostMemSize)
 {
-    int32_t controlSize = sizeof(uint8_t) + sizeof(char) * TASKTYPE_ADDR_LENGTH + sizeof(uint32_t) + CTRL_HDR_DATA_SIZE_LEN;
+    int32_t controlSize
+        = sizeof(uint8_t) + sizeof(char) * TASKTYPE_ADDR_LENGTH + sizeof(uint32_t) + CTRL_HDR_DATA_SIZE_LEN;
     if (shmemSize_ < controlSize) {
         leftSize_ = 0;
     } else {
         leftSize_ = shmemSize_ - controlSize;
     }
-    dpu2npuMem_ = static_cast<uint8_t *>(npu2dpuMem_) + shmemSize_;
+    dpu2npuMem_ = static_cast<uint8_t*>(npu2dpuMem_) + shmemSize_;
 }
 
 HcclResult TaskService::TaskRegister(std::string taskType, CallbackTemplate callback)
@@ -64,7 +68,7 @@ HcclResult TaskService::TaskProfRegister(ProfCallbackTemplate profCallback)
     return HCCL_SUCCESS;
 }
 
-HcclResult TaskService::WriteFlag(uint8_t *flagPtr, uint8_t newFlag) const
+HcclResult TaskService::WriteFlag(uint8_t* flagPtr, uint8_t newFlag) const
 {
     errno_t ret = memcpy_s(flagPtr, sizeof(newFlag), &newFlag, sizeof(newFlag));
     if (ret != EOK) {
@@ -74,7 +78,7 @@ HcclResult TaskService::WriteFlag(uint8_t *flagPtr, uint8_t newFlag) const
     return HCCL_SUCCESS;
 }
 
-HcclResult TaskService::ReadFlag(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t &flag) const
+HcclResult TaskService::ReadFlag(uint8_t* ctrlHdr, uint64_t hdrLen, uint8_t& flag) const
 {
     errno_t ret = memcpy_s(ctrlHdr, hdrLen, npu2dpuMem_, hdrLen);
     if (ret != EOK) {
@@ -85,14 +89,16 @@ HcclResult TaskService::ReadFlag(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t &fla
     return HCCL_SUCCESS;
 }
 
-HcclResult TaskService::ReadTaskType(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t *srcTaskTypePtr, std::string &taskTypeStr) const
+HcclResult
+TaskService::ReadTaskType(uint8_t* ctrlHdr, uint64_t hdrLen, uint8_t* srcTaskTypePtr, std::string& taskTypeStr) const
 {
     CHK_PTR_NULL(srcTaskTypePtr);
     // 读 taskType
-    char    *taskType = new char[TASKTYPE_ADDR_LENGTH];
+    char* taskType = new char[TASKTYPE_ADDR_LENGTH];
     CHK_PTR_NULL(taskType);
-    int ret = memcpy_s(taskType, (sizeof(char) * TASKTYPE_ADDR_LENGTH),
-        ctrlHdr + CTRL_HDR_FLAG_LENGTH, (sizeof(char) * TASKTYPE_ADDR_LENGTH));
+    int ret = memcpy_s(
+        taskType, (sizeof(char) * TASKTYPE_ADDR_LENGTH), ctrlHdr + CTRL_HDR_FLAG_LENGTH,
+        (sizeof(char) * TASKTYPE_ADDR_LENGTH));
     if (ret != EOK) {
         HCCL_ERROR("[%s] memcpy failed on taskType, return[%d].", __func__, ret);
         delete[] taskType;
@@ -108,9 +114,9 @@ HcclResult TaskService::ReadTaskType(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t 
     taskTypeStr = std::string(taskType);
     delete[] taskType;
     HCCL_INFO("[TaskService::TaskRun] read taskType = %s", taskTypeStr.c_str());
- 
+
     uint32_t msgId{0};
-    ret = memcpy_s(&msgId, sizeof(msgId),  ctrlHdr + CTRL_HDR_FLAG_LENGTH + TASKTYPE_ADDR_LENGTH, sizeof(msgId));
+    ret = memcpy_s(&msgId, sizeof(msgId), ctrlHdr + CTRL_HDR_FLAG_LENGTH + TASKTYPE_ADDR_LENGTH, sizeof(msgId));
     if (ret != EOK) {
         HCCL_ERROR("[%s] memcpy failed on msgId, return[%d].", __func__, ret);
         return HCCL_E_INTERNAL;
@@ -119,14 +125,14 @@ HcclResult TaskService::ReadTaskType(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t 
     return HCCL_SUCCESS;
 }
 
-HcclResult TaskService::ExecuteTask(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t *srcPtr, std::string taskTypeStr)
+HcclResult TaskService::ExecuteTask(uint8_t* ctrlHdr, uint64_t hdrLen, uint8_t* srcPtr, std::string taskTypeStr)
 {
     uint64_t beginTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
     auto itFunc = callbacks_.find(taskTypeStr);
     if (itFunc == callbacks_.end()) {
         HCCL_ERROR("[TaskService::TaskRun] Callback of taskType[%s] Not Found", taskTypeStr.c_str());
         std::string taskTypeMsg{"map{"};
-        for (const auto &pair : callbacks_) {
+        for (const auto& pair : callbacks_) {
             taskTypeMsg += pair.first;
         }
         taskTypeMsg += "}";
@@ -135,23 +141,24 @@ HcclResult TaskService::ExecuteTask(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t *
     }
 
     // copy data
-    uint64_t dataLen = *(size_t *)(ctrlHdr + CTRL_HDR_FLAG_LENGTH + TASKTYPE_ADDR_LENGTH + CTRL_HDR_MSG_ID_LEN);
+    uint64_t dataLen = *(size_t*)(ctrlHdr + CTRL_HDR_FLAG_LENGTH + TASKTYPE_ADDR_LENGTH + CTRL_HDR_MSG_ID_LEN);
     if (dataLen > static_cast<uint64_t>(leftSize_) || dataLen > static_cast<uint64_t>(hostMemSize_)) {
-        HCCL_ERROR("[TaskService::%s] dataLen[%llu] larger than leftSize[%d] or hostMemSize[%d]", __func__, dataLen,
-            leftSize_, hostMemSize_);
+        HCCL_ERROR(
+            "[TaskService::%s] dataLen[%llu] larger than leftSize[%d] or hostMemSize[%d]", __func__, dataLen, leftSize_,
+            hostMemSize_);
         return HCCL_E_PARA;
     }
     uint32_t ctrlHdrLen = CTRL_HDR_FLAG_LENGTH + TASKTYPE_ADDR_LENGTH + CTRL_HDR_MSG_ID_LEN + CTRL_HDR_DATA_SIZE_LEN;
     /* ctrlHdr提前从deviceMem copy一定长度，如果长度够，直接从ctrlHdr copy，减少一次aclmemcpy耗时 */
     if (hdrLen < ctrlHdrLen + dataLen) {
-        uint8_t *dataPtr = srcPtr + ctrlHdrLen;
-        errno_t ret     = memcpy_s(hostMem_, leftSize_, dataPtr, dataLen);
+        uint8_t* dataPtr = srcPtr + ctrlHdrLen;
+        errno_t ret = memcpy_s(hostMem_, leftSize_, dataPtr, dataLen);
         if (ret != EOK) {
             HCCL_ERROR("control data memcpy failed: %d", ret);
             return HCCL_E_INTERNAL;
         }
     } else {
-        uint8_t *dataPtr = ctrlHdr + ctrlHdrLen;
+        uint8_t* dataPtr = ctrlHdr + ctrlHdrLen;
         int ret = memcpy_s(hostMem_, leftSize_, dataPtr, dataLen);
         if (ret != EOK) {
             HCCL_ERROR("control data memcpy failed: %d", ret);
@@ -172,7 +179,7 @@ HcclResult TaskService::ExecuteTask(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t *
     return HCCL_SUCCESS;
 }
 
-HcclResult TaskService::SynchronizeControlInfo(uint8_t *ctrlHdr, uint64_t hdrLen)
+HcclResult TaskService::SynchronizeControlInfo(uint8_t* ctrlHdr, uint64_t hdrLen)
 {
     CHK_PTR_NULL(npu2dpuMem_);
     CHK_PTR_NULL(dpu2npuMem_);
@@ -195,15 +202,15 @@ HcclResult TaskService::SynchronizeControlInfo(uint8_t *ctrlHdr, uint64_t hdrLen
     return HCCL_SUCCESS;
 }
 
-HcclResult TaskService::ProcessTaskOk(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t *srcFlagPtr, uint8_t *srcTaskTypePtr)
+HcclResult TaskService::ProcessTaskOk(uint8_t* ctrlHdr, uint64_t hdrLen, uint8_t* srcFlagPtr, uint8_t* srcTaskTypePtr)
 {
     std::string taskTypeStr;
     HCCL_INFO("[TaskService::TaskRun] flag = %u.", TASK_OK);
     HCCL_INFO("[TaskService::TaskRun] Set npu2dpu flag -> %u.", TASK_UNSET);
     CHK_RET(WriteFlag(srcFlagPtr, TASK_UNSET));
-    CHK_RET(ReadTaskType((uint8_t *)ctrlHdr, hdrLen, srcTaskTypePtr, taskTypeStr));
-    CHK_RET(ExecuteTask((uint8_t *)ctrlHdr, hdrLen, srcFlagPtr, taskTypeStr));
-    CHK_RET(SynchronizeControlInfo((uint8_t *)ctrlHdr, hdrLen));
+    CHK_RET(ReadTaskType((uint8_t*)ctrlHdr, hdrLen, srcTaskTypePtr, taskTypeStr));
+    CHK_RET(ExecuteTask((uint8_t*)ctrlHdr, hdrLen, srcFlagPtr, taskTypeStr));
+    CHK_RET(SynchronizeControlInfo((uint8_t*)ctrlHdr, hdrLen));
     return HCCL_SUCCESS;
 }
 
@@ -212,8 +219,9 @@ HcclResult TaskService::TaskRun()
     CHK_PTR_NULL(hostMem_);
     CHK_PTR_NULL(npu2dpuMem_);
     CHK_PTR_NULL(dpu2npuMem_);
-    HCCL_INFO("[TaskService::%s] TaskService{npu2dpuMem:%p; dpu2npuMem:%p; hostMem:%p}", __func__, npu2dpuMem_,
-              dpu2npuMem_, hostMem_);
+    HCCL_INFO(
+        "[TaskService::%s] TaskService{npu2dpuMem:%p; dpu2npuMem:%p; hostMem:%p}", __func__, npu2dpuMem_, dpu2npuMem_,
+        hostMem_);
     if (leftSize_ <= 0) {
         HCCL_ERROR("[TaskService::%s] dataSize[%d] illegal", __func__, leftSize_);
         return HCCL_E_INTERNAL;
@@ -223,22 +231,22 @@ HcclResult TaskService::TaskRun()
         return HCCL_E_INTERNAL;
     }
     uint8_t flag{0};
-    uint8_t *srcFlagPtr = static_cast<uint8_t *>(npu2dpuMem_);
-    uint8_t *srcTaskTypePtr = srcFlagPtr + sizeof(flag);
-    uint64_t hdrLen = CTRL_HDR_FLAG_LENGTH + TASKTYPE_ADDR_LENGTH + CTRL_HDR_MSG_ID_LEN + CTRL_HDR_DATA_SIZE_LEN +
-        CTRL_HDR_DEFAULT_DATA_LEN;
+    uint8_t* srcFlagPtr = static_cast<uint8_t*>(npu2dpuMem_);
+    uint8_t* srcTaskTypePtr = srcFlagPtr + sizeof(flag);
+    uint64_t hdrLen = CTRL_HDR_FLAG_LENGTH + TASKTYPE_ADDR_LENGTH + CTRL_HDR_MSG_ID_LEN + CTRL_HDR_DATA_SIZE_LEN
+                      + CTRL_HDR_DEFAULT_DATA_LEN;
     uint8_t ctrlHdr[hdrLen];
 
     CHK_RET(WriteFlag(srcFlagPtr, TASK_UNSET)); // 初始化重置flag 为 0
 
     while (true) {
-        CHK_RET(ReadFlag((uint8_t *)ctrlHdr, hdrLen, flag));
+        CHK_RET(ReadFlag((uint8_t*)ctrlHdr, hdrLen, flag));
         switch (flag) {
             case TASK_UNSET:
                 std::this_thread::sleep_for(std::chrono::milliseconds(1));
                 continue;
             case TASK_OK:
-                CHK_RET(ProcessTaskOk((uint8_t *)ctrlHdr, hdrLen, srcFlagPtr, srcTaskTypePtr));
+                CHK_RET(ProcessTaskOk((uint8_t*)ctrlHdr, hdrLen, srcFlagPtr, srcTaskTypePtr));
                 continue;
             case TASK_TERMINATE:
                 HCCL_INFO("[TaskService::TaskRun] flag = %u.", flag);

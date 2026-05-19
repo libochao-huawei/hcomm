@@ -17,25 +17,23 @@ namespace Hccl {
 
 LocalIpcRmaBuffer::LocalIpcRmaBuffer(std::shared_ptr<Buffer> buf) : LocalRmaBuffer(buf, RmaType::IPC)
 {
-    HrtDevMemAlignWithPage(reinterpret_cast<void *>(buf->GetAddr()), buf->GetSize(), ipcPtr, ipcSize, ipcOffset);
+    HrtDevMemAlignWithPage(reinterpret_cast<void*>(buf->GetAddr()), buf->GetSize(), ipcPtr, ipcSize, ipcOffset);
     HrtIpcSetMemoryName(ipcPtr, name, ipcSize, RTS_IPC_MEM_NAME_LEN);
 }
 
-LocalIpcRmaBuffer::~LocalIpcRmaBuffer()
-{
-    DECTOR_TRY_CATCH("LocalIpcRmaBuffer", HrtIpcDestroyMemoryName(name));
-}
+LocalIpcRmaBuffer::~LocalIpcRmaBuffer() { DECTOR_TRY_CATCH("LocalIpcRmaBuffer", HrtIpcDestroyMemoryName(name)); }
 
 string LocalIpcRmaBuffer::Describe() const
 {
-    return StringFormat("LocalIpcRmaBuffer[buf=%s, ipcPtr=0x%llx, ipcOffset=0x%llx, ipcSize=0x%llx, name=%s]",
-                        buf->Describe().c_str(), reinterpret_cast<uintptr_t>(ipcPtr), ipcOffset, ipcSize, name);
+    return StringFormat(
+        "LocalIpcRmaBuffer[buf=%s, ipcPtr=0x%llx, ipcOffset=0x%llx, ipcSize=0x%llx, name=%s]", buf->Describe().c_str(),
+        reinterpret_cast<uintptr_t>(ipcPtr), ipcOffset, ipcSize, name);
 }
 
 std::unique_ptr<Serializable> LocalIpcRmaBuffer::GetExchangeDto()
 {
-    std::unique_ptr<ExchangeIpcBufferDto> dto
-        = make_unique<ExchangeIpcBufferDto>(buf->GetAddr(), buf->GetSize(), ipcOffset, HrtDeviceGetBareTgid(), buf->GetMemTag().c_str());
+    std::unique_ptr<ExchangeIpcBufferDto> dto = make_unique<ExchangeIpcBufferDto>(
+        buf->GetAddr(), buf->GetSize(), ipcOffset, HrtDeviceGetBareTgid(), buf->GetMemTag().c_str());
     (void)memcpy_s(dto->name, RTS_IPC_MEM_NAME_LEN, name, RTS_IPC_MEM_NAME_LEN);
     return std::unique_ptr<Serializable>(dto.release());
 }

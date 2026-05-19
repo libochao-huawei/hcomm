@@ -10,26 +10,22 @@
 #include "rank_graph_v2.h"
 
 namespace hccl {
-RankGraphV2::RankGraphV2(const std::string& rankTable, const std::string& topoFile) {
+RankGraphV2::RankGraphV2(const std::string& rankTable, const std::string& topoFile)
+{
     ParseRankTable(rankTable);
     if (!topoFile.empty()) {
         ParseTopoFile(topoFile);
     }
 }
 
-void RankGraphV2::ParseRankTable(const std::string& rankTable) {
+void RankGraphV2::ParseRankTable(const std::string& rankTable)
+{
     // 解析rankTable文件
 }
 
-uint32_t RankGraphV2::GetRankId() const {
-    return myRankId_;
-}
+uint32_t RankGraphV2::GetRankId() const { return myRankId_; }
 
-uint32_t RankGraphV2::GetRankSize() const {
-    return totalRanks_;
-}
+uint32_t RankGraphV2::GetRankSize() const { return totalRanks_; }
 
-void RankGraphV2::ParseTopoFile(const std::string& topoFile)
-{
-}
-}
+void RankGraphV2::ParseTopoFile(const std::string& topoFile) {}
+} // namespace hccl

@@ -74,14 +74,8 @@ constexpr u32 RECV_WQE_BATCH_SUPPLEMENT = 96;
 
 class ST_MPI_TRANSPORT_MEM_TEST : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "ST_MPI_TRANSPORT_MEM_TEST SetUP" << std::endl;
-    }
-    static void TearDownTestCase()
-    {
-        std::cout << "ST_MPI_TRANSPORT_MEM_TEST TearDown" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "ST_MPI_TRANSPORT_MEM_TEST SetUP" << std::endl; }
+    static void TearDownTestCase() { std::cout << "ST_MPI_TRANSPORT_MEM_TEST TearDown" << std::endl; }
     virtual void SetUp()
     {
         hrtSetDevice(0);
@@ -97,32 +91,31 @@ protected:
     }
 };
 
-
-HcclResult stub_CreateNormalQp1(RdmaHandle rdmaHandle, QpInfo &qp)
+HcclResult stub_CreateNormalQp1(RdmaHandle rdmaHandle, QpInfo& qp)
 {
     static struct ibv_qp sqp = {0};
     qp.qp = &sqp;
     return HCCL_SUCCESS;
 }
 
-HcclResult stub_CreateQp1(RdmaHandle rdmaHandle, int &flag, s32 &qpMode, QpInfo &qp)
+HcclResult stub_CreateQp1(RdmaHandle rdmaHandle, int& flag, s32& qpMode, QpInfo& qp)
 {
     static struct ibv_qp sqp = {0};
     qp.qp = &sqp;
     return HCCL_SUCCESS;
 }
 
-s32 hrtGetRaQpStatusStub(QpHandle handle, int *status)
+s32 hrtGetRaQpStatusStub(QpHandle handle, int* status)
 {
     *status = 1;
     return 0;
 }
 
-s32 hrtRaPollCqStub(QpHandle handle, bool is_send_cq, unsigned int num, void *wc)
+s32 hrtRaPollCqStub(QpHandle handle, bool is_send_cq, unsigned int num, void* wc)
 {
     CHK_PTR_NULL(handle);
     CHK_PTR_NULL(wc);
-    auto ww = reinterpret_cast<struct ibv_wc *>(wc);
+    auto ww = reinterpret_cast<struct ibv_wc*>(wc);
     ww->status = ibv_wc_status::IBV_WC_SUCCESS;
     ww->wr_id = 0;
     return 1;
@@ -134,181 +127,85 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_TransportMem_Init_Roce)
     HcclResult ret = HCCL_SUCCESS;
     s32 rank = 0;
     std::string commTag = "SocketManagerTest";
-    MOCKER(hrtRaCreateCq)
-        .stubs()
-        .with(any())
-        .will(returnValue(0));
+    MOCKER(hrtRaCreateCq).stubs().with(any()).will(returnValue(0));
 
-    MOCKER(hrtRaNormalQpCreate)
-        .stubs()
-        .with(any())
-        .will(returnValue(0));
+    MOCKER(hrtRaNormalQpCreate).stubs().with(any()).will(returnValue(0));
 
-    MOCKER(HrtRaQpCreate)
-        .stubs()
-        .with(any())
-        .will(returnValue(HCCL_SUCCESS));
+    MOCKER(HrtRaQpCreate).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&MrManager::ReleaseKey)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&MrManager::ReleaseKey).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&MrManager::GetKey)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&MrManager::GetKey).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&MrManager::DeInit, HcclResult (MrManager::*)(const void *))
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
-
-    MOCKER_CPP(&MrManager::InitMrManager, HcclResult (MrManager::*)(void *))
+    MOCKER_CPP(&MrManager::DeInit, HcclResult (MrManager::*)(const void*))
         .stubs()
         .with(any())
         .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(HrtRaMrReg)
+    MOCKER_CPP(&MrManager::InitMrManager, HcclResult (MrManager::*)(void*))
         .stubs()
         .with(any())
         .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(hrtRaSocketBlockRecv)
-        .stubs()
-        .with(any())
-        .will(returnValue(HCCL_SUCCESS));
+    MOCKER(HrtRaMrReg).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(hrtRaSocketBlockSend)
-        .stubs()
-        .with(any())
-        .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtRaSocketBlockRecv).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TransportRoceMem::RecoverNotifyMsg)
-        .stubs()
-        .with(any())
-        .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtRaSocketBlockSend).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(HrtRaQpNonBlockConnectAsync)
-        .stubs()
-        .with(any())
-        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportRoceMem::RecoverNotifyMsg).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(hrtRaSocketBatchClose)
-        .stubs()
-        .with(any())
-        .will(returnValue(HCCL_SUCCESS));
+    MOCKER(HrtRaQpNonBlockConnectAsync).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(DestroyQpWithCq)
-        .stubs()
-        .with(any())
-        .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtRaSocketBatchClose).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(DestroyQpWithCq).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     int qpStatus = 1;
-    MOCKER(hrtGetRaQpStatus)
-        .stubs()
-        .with(any())
-        .will(invoke(hrtGetRaQpStatusStub));
+    MOCKER(hrtGetRaQpStatus).stubs().with(any()).will(invoke(hrtGetRaQpStatusStub));
 
-    MOCKER(CreateQp)
-        .stubs()
-        .with(any())
-        .will(invoke(stub_CreateQp1));
+    MOCKER(CreateQp).stubs().with(any()).will(invoke(stub_CreateQp1));
 
-    MOCKER(CreateNormalQp, HcclResult (*)(RdmaHandle, QpInfo&))
-        .stubs()
-        .with(any())
-        .will(invoke(stub_CreateNormalQp1));
+    MOCKER(CreateNormalQp, HcclResult (*)(RdmaHandle, QpInfo&)).stubs().with(any()).will(invoke(stub_CreateNormalQp1));
 
-    MOCKER(CreateQpWithCq)
+    MOCKER(CreateQpWithCq).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+
+    MOCKER_CPP(&MrManager::GetDevVirAddr).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(HrtRaSendWrV2).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtRDMASend).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtRDMADBSend).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(hrtCtxSetCurrent).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER(HrtRaGetNotifyBaseAddr).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(hrtRaPollCq).stubs().with(any()).will(invoke(hrtRaPollCqStub));
+
+    MOCKER(LocalIpcNotify::Wait).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+
+    MOCKER_CPP(
+        &DispatcherPub::SignalWait, HcclResult (DispatcherPub::*)(HcclRtNotify, HcclRtStream, u32, u32, s32, u32, bool))
         .stubs()
         .with(any())
         .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&MrManager::GetDevVirAddr)
-        .stubs()
-        .with(any())
-        .will(returnValue(HCCL_SUCCESS));
+    MOCKER(HrtRaMrDereg).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(HrtRaSendWrV2)
-        .stubs()
-        .with(any())
-        .will(returnValue(HCCL_SUCCESS));
-    MOCKER(hrtRDMASend)
-        .stubs()
-        .with(any())
-        .will(returnValue(HCCL_SUCCESS));
-    MOCKER(hrtRDMADBSend)
-        .stubs()
-        .with(any())
-        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&NotifyPool::RegisterOp).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(hrtCtxSetCurrent)
-        .stubs()
-        .with(any())
-        .will(returnValue(HCCL_SUCCESS));
-    MOCKER(HrtRaGetNotifyBaseAddr)
-        .stubs()
-        .with(any())
-        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&NotifyPool::UnregisterOp).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(hrtRaPollCq)
-        .stubs()
-        .with(any())
-        .will(invoke(hrtRaPollCqStub));
+    MOCKER_CPP(&NotifyPool::Alloc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(LocalIpcNotify::Wait)
-        .stubs()
-        .with(any())
-        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&LocalIpcNotify::Grant).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&DispatcherPub::SignalWait,
-            HcclResult(DispatcherPub:: *)(HcclRtNotify, HcclRtStream, u32, u32, s32, u32, bool))
-        .stubs()
-        .with(any())
-        .will(returnValue(HCCL_SUCCESS));
-
-    MOCKER(HrtRaMrDereg)
-        .stubs()
-        .with(any())
-        .will(returnValue(HCCL_SUCCESS));
-
-    MOCKER_CPP(&NotifyPool::RegisterOp)
-        .stubs()
-        .with(any())
-        .will(returnValue(HCCL_SUCCESS));
-
-    MOCKER_CPP(&NotifyPool::UnregisterOp)
-        .stubs()
-        .with(any())
-        .will(returnValue(HCCL_SUCCESS));
-
-    MOCKER_CPP(&NotifyPool::Alloc)
-        .stubs()
-        .with(any())
-        .will(returnValue(HCCL_SUCCESS));
-
-    MOCKER_CPP(&LocalIpcNotify::Grant)
-        .stubs()
-        .with(any())
-        .will(returnValue(HCCL_SUCCESS));
-
-    MOCKER_CPP(&LocalIpcNotify::GetNotifyOffset)
-        .stubs()
-        .with(any())
-        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&LocalIpcNotify::GetNotifyOffset).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     MOCKER_CPP(&LocalIpcNotify::GetNotifyData).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(RaQpConnectAsync)
-        .stubs()
-        .with(any())
-        .will(returnValue(EOK));
+    MOCKER(RaQpConnectAsync).stubs().with(any()).will(returnValue(EOK));
 
-    MOCKER_CPP(&HcclSocket::DeInit)
-        .stubs()
-        .with(any())
-        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HcclSocket::DeInit).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     MOCKER_CPP(&HcclSocket::Close).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
@@ -323,18 +220,17 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_TransportMem_Init_Roce)
     MOCKER(HcclNetCloseDev).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     Stream stream(StreamType::STREAM_TYPE_OFFLINE);
-    //init dispatcher
-
+    // init dispatcher
 
     SetFftsSwitch(false);
     HcclDispatcher dispatcherPtr = nullptr;
     ret = HcclDispatcherInit(DispatcherType::DISPATCHER_NORMAL, rank, &dispatcherPtr);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_NE(dispatcherPtr, nullptr);
-    DispatcherPub * dispatcher= reinterpret_cast<DispatcherPub*>(dispatcherPtr);
+    DispatcherPub* dispatcher = reinterpret_cast<DispatcherPub*>(dispatcherPtr);
     dispatcher->AddRetryPreamble(stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    //init notifyPool
+    // init notifyPool
     std::unique_ptr<NotifyPool> notifyPool = nullptr;
     notifyPool.reset(new (std::nothrow) NotifyPool());
     EXPECT_NE(notifyPool, nullptr);
@@ -342,7 +238,7 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_TransportMem_Init_Roce)
     EXPECT_EQ(ret, HCCL_SUCCESS);
     notifyPool->RegisterOp(commTag);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    //init Net
+    // init Net
     u32 socketsPerLink = 1;
     NicType socketType = NicType::DEVICE_NIC_TYPE;
     HcclSocketRole localRole = HcclSocketRole::SOCKET_ROLE_RESERVED;
@@ -352,8 +248,8 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_TransportMem_Init_Roce)
     IpSocket ipSocket;
     u64 nicSocketHandle = 0;
     rdevInfo_t nicRdmaHandle = {0};
-    ipSocket.nicSocketHandle = reinterpret_cast<void *>(&nicSocketHandle);
-    ipSocket.nicRdmaHandle = reinterpret_cast<void *>(&nicRdmaHandle);
+    ipSocket.nicSocketHandle = reinterpret_cast<void*>(&nicSocketHandle);
+    ipSocket.nicRdmaHandle = reinterpret_cast<void*>(&nicRdmaHandle);
     raResourceInfo.nicSocketMap[localIp] = ipSocket;
     MOCKER_CPP(&NetworkManager::GetRaResourceInfo)
         .stubs()
@@ -362,13 +258,13 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_TransportMem_Init_Roce)
     EXPECT_EQ(ret, HCCL_SUCCESS);
     hccl::NetDevContext nicPortCtx;
     nicPortCtx.Init(socketType, 0, 0, localIp);
-    //init socket
+    // init socket
     std::shared_ptr<HcclSocket> tempSocket = nullptr;
     tempSocket.reset(new (std::nothrow) HcclSocket(reinterpret_cast<HcclNetDevCtx>(&nicPortCtx), 6000));
     tempSocket->Init();
     tempSocket->localRole_ = HcclSocketRole::SOCKET_ROLE_SERVER;
     tempSocket->tag_ = commTag;
-    tempSocket->fdHandle_ = (void *)0x01;
+    tempSocket->fdHandle_ = (void*)0x01;
     tempSocket->status_ = HcclSocketStatus::SOCKET_OK;
 
     hrtSetDevice(rank);
@@ -377,20 +273,17 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_TransportMem_Init_Roce)
     attrInfo.remoteRankId = 0;
     attrInfo.sdid = 0;
     attrInfo.serverId = 0;
-    unique_ptr<TransportRoceMem> transport(new (nothrow) TransportRoceMem(notifyPool,
-        reinterpret_cast<HcclNetDevCtx>(&nicPortCtx),dispatcherPtr, attrInfo));
+    unique_ptr<TransportRoceMem> transport(new (nothrow) TransportRoceMem(
+        notifyPool, reinterpret_cast<HcclNetDevCtx>(&nicPortCtx), dispatcherPtr, attrInfo));
     ret = transport->SetSocket(tempSocket);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     DevType deviceType = DevType::DEV_TYPE_910B;
-    MOCKER(hrtGetDeviceType)
-    .stubs()
-    .with(outBound(deviceType))
-    .will(returnValue(HCCL_SUCCESS));
-    struct ibv_qp qp= {0};
+    MOCKER(hrtGetDeviceType).stubs().with(outBound(deviceType)).will(returnValue(HCCL_SUCCESS));
+    struct ibv_qp qp = {0};
     transport->dataQpInfo_.qp = &qp;
-    transport->dataQpInfo_.qpHandle = (void *)0x1000000;
+    transport->dataQpInfo_.qpHandle = (void*)0x1000000;
     transport->rdmaSignalMrHandle_ = (void*)0x2000000;
-    transport->notifyValueMemMrHandle_ = (void *)0x3000000;
+    transport->notifyValueMemMrHandle_ = (void*)0x3000000;
     transport->trafficClass_ = 0;
     transport->serviceLevel_ = 8; // HCCL_RDMA_SL_MAX 为7，异常分支校验
     ret = transport->Connect(1);
@@ -409,14 +302,15 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_TransportMem_Init_Roce)
     s8* localbuf;
     s8* remotebuf;
     s32 count = 1024;
-    localbuf= (s8*)sal_malloc(count * sizeof(s8));
+    localbuf = (s8*)sal_malloc(count * sizeof(s8));
     sal_memset(localbuf, count * sizeof(s8), 0, count * sizeof(s8));
-    remotebuf= (s8*)sal_malloc(count * sizeof(s8));
+    remotebuf = (s8*)sal_malloc(count * sizeof(s8));
     sal_memset(remotebuf, count * sizeof(s8), 0, count * sizeof(s8));
     u64 dev = 0;
     HcclNetDevCtx devCtx = reinterpret_cast<HcclNetDevCtx>(&dev);
     RmaBufferSlice localSlice, remoteSlice;
-    std::shared_ptr<LocalRdmaRmaBuffer> tempLocalRdmaBufferPtr = make_shared<LocalRdmaRmaBuffer>(devCtx, localbuf, count * sizeof(s8));
+    std::shared_ptr<LocalRdmaRmaBuffer> tempLocalRdmaBufferPtr
+        = make_shared<LocalRdmaRmaBuffer>(devCtx, localbuf, count * sizeof(s8));
     localSlice.addr = localbuf;
     localSlice.len = count * sizeof(s8);
     localSlice.rmaBuffer = tempLocalRdmaBufferPtr;
@@ -463,10 +357,7 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_TransportMem_Init_Ipc)
     s32 rank = 0;
     std::string commTag = "SocketManagerTest";
 
-    MOCKER_CPP(&HcclSocket::DeInit)
-        .stubs()
-        .with(any())
-        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HcclSocket::DeInit).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     MOCKER_CPP(&HcclSocket::Close).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
@@ -479,18 +370,17 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_TransportMem_Init_Ipc)
     MOCKER(hrtMemAsyncCopy).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     Stream stream(StreamType::STREAM_TYPE_OFFLINE);
-    //init dispatcher
-
+    // init dispatcher
 
     SetFftsSwitch(false);
     HcclDispatcher dispatcherPtr = nullptr;
     ret = HcclDispatcherInit(DispatcherType::DISPATCHER_NORMAL, rank, &dispatcherPtr);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_NE(dispatcherPtr, nullptr);
-    DispatcherPub * dispatcher= reinterpret_cast<DispatcherPub*>(dispatcherPtr);
+    DispatcherPub* dispatcher = reinterpret_cast<DispatcherPub*>(dispatcherPtr);
     dispatcher->AddRetryPreamble(stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    //init notifyPool
+    // init notifyPool
     std::unique_ptr<NotifyPool> notifyPool = nullptr;
     notifyPool.reset(new (std::nothrow) NotifyPool());
     EXPECT_NE(notifyPool, nullptr);
@@ -498,7 +388,7 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_TransportMem_Init_Ipc)
     EXPECT_EQ(ret, HCCL_SUCCESS);
     notifyPool->RegisterOp(commTag);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    //init Net
+    // init Net
     u32 socketsPerLink = 1;
     NicType socketType = NicType::DEVICE_NIC_TYPE;
     HcclSocketRole localRole = HcclSocketRole::SOCKET_ROLE_RESERVED;
@@ -508,8 +398,8 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_TransportMem_Init_Ipc)
     IpSocket ipSocket;
     u64 nicSocketHandle = 0;
     rdevInfo_t nicRdmaHandle = {0};
-    ipSocket.nicSocketHandle = reinterpret_cast<void *>(&nicSocketHandle);
-    ipSocket.nicRdmaHandle = reinterpret_cast<void *>(&nicRdmaHandle);
+    ipSocket.nicSocketHandle = reinterpret_cast<void*>(&nicSocketHandle);
+    ipSocket.nicRdmaHandle = reinterpret_cast<void*>(&nicRdmaHandle);
     raResourceInfo.nicSocketMap[localIp] = ipSocket;
     MOCKER_CPP(&NetworkManager::GetRaResourceInfo)
         .stubs()
@@ -518,13 +408,13 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_TransportMem_Init_Ipc)
     EXPECT_EQ(ret, HCCL_SUCCESS);
     hccl::NetDevContext nicPortCtx;
     nicPortCtx.Init(socketType, 0, 0, localIp);
-    //init socket
+    // init socket
     std::shared_ptr<HcclSocket> tempSocket = nullptr;
     tempSocket.reset(new (std::nothrow) HcclSocket(reinterpret_cast<HcclNetDevCtx>(&nicPortCtx), 6000));
     tempSocket->Init();
     tempSocket->localRole_ = HcclSocketRole::SOCKET_ROLE_SERVER;
     tempSocket->tag_ = commTag;
-    tempSocket->fdHandle_ = (void *)0x01;
+    tempSocket->fdHandle_ = (void*)0x01;
     tempSocket->status_ = HcclSocketStatus::SOCKET_OK;
 
     hrtSetDevice(rank);
@@ -533,18 +423,19 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_TransportMem_Init_Ipc)
     attrInfo.remoteRankId = 0;
     attrInfo.sdid = 0;
     attrInfo.serverId = 0;
-    unique_ptr<TransportIpcMem> transport(new (nothrow) TransportIpcMem(notifyPool,
-        reinterpret_cast<HcclNetDevCtx>(&nicPortCtx),dispatcherPtr,attrInfo));
+    unique_ptr<TransportIpcMem> transport(new (nothrow) TransportIpcMem(
+        notifyPool, reinterpret_cast<HcclNetDevCtx>(&nicPortCtx), dispatcherPtr, attrInfo));
     s8* localbuf;
     s8* remotebuf;
     s32 count = 1024;
-    localbuf= (s8*)sal_malloc(count * sizeof(s8));
+    localbuf = (s8*)sal_malloc(count * sizeof(s8));
     sal_memset(localbuf, count * sizeof(s8), 0, count * sizeof(s8));
-    remotebuf= (s8*)sal_malloc(count * sizeof(s8));
+    remotebuf = (s8*)sal_malloc(count * sizeof(s8));
     sal_memset(remotebuf, count * sizeof(s8), 0, count * sizeof(s8));
     HcclNetDevCtx devCtx;
     RmaBufferSlice localSlice, remoteSlice;
-    std::shared_ptr<LocalIpcRmaBuffer> tempLocalIpcBufferPtr = make_shared<LocalIpcRmaBuffer>(devCtx, localbuf, count * sizeof(s8));
+    std::shared_ptr<LocalIpcRmaBuffer> tempLocalIpcBufferPtr
+        = make_shared<LocalIpcRmaBuffer>(devCtx, localbuf, count * sizeof(s8));
     localSlice.addr = localbuf;
     localSlice.len = count * sizeof(s8);
     localSlice.rmaBuffer = tempLocalIpcBufferPtr;
@@ -607,10 +498,12 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_transport_ipc_mem_exchange)
     attrInfo.remoteRankId = 1;
     attrInfo.sdid = 1;
     attrInfo.serverId = 1;
-    std::shared_ptr<TransportMem> transport = TransportMem::Create(TransportMem::TpType::IPC, notifyPool, netDevCtx, dispatcher, attrInfo);
-    TransportIpcMem *transportPtr = dynamic_cast<TransportIpcMem *>(transport.get());
+    std::shared_ptr<TransportMem> transport
+        = TransportMem::Create(TransportMem::TpType::IPC, notifyPool, netDevCtx, dispatcher, attrInfo);
+    TransportIpcMem* transportPtr = dynamic_cast<TransportIpcMem*>(transport.get());
     HcclIpAddress ipAddr;
-    std::shared_ptr<HcclSocket> socketPtr = make_shared<HcclSocket>("tagIpc", netDevCtx, ipAddr, 16666, HcclSocketRole::SOCKET_ROLE_SERVER);
+    std::shared_ptr<HcclSocket> socketPtr
+        = make_shared<HcclSocket>("tagIpc", netDevCtx, ipAddr, 16666, HcclSocketRole::SOCKET_ROLE_SERVER);
     transport->SetDataSocket(socketPtr);
 
     u64 count = 1024;
@@ -618,13 +511,9 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_transport_ipc_mem_exchange)
     s8* localbuf = (s8*)sal_malloc(bufSize);
     sal_memset(localbuf, bufSize, 0, bufSize);
 
-    MOCKER_CPP(&LocalIpcRmaBuffer::Init)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&LocalIpcRmaBuffer::Init).stubs().will(returnValue(HCCL_SUCCESS));
     std::string localdesc = "lRoced";
-    MOCKER_CPP(&LocalIpcRmaBuffer::Serialize)
-    .stubs()
-    .will(returnValue(localdesc));
+    MOCKER_CPP(&LocalIpcRmaBuffer::Serialize).stubs().will(returnValue(localdesc));
 
     TransportMem::RmaMemDesc localMemDesc{};
     localMemDesc.localRankId = 0U;
@@ -633,10 +522,10 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_transport_ipc_mem_exchange)
     TransportMem::RmaMem localMem = {RmaMemType::DEVICE, localbuf, bufSize};
 
     HcclResult ret;
-    MOCKER_CPP(&HcclSocket::Send, HcclResult(HcclSocket::*)(const void *, u64))
-    .stubs()
-    .with(any())
-    .then(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HcclSocket::Send, HcclResult (HcclSocket::*)(const void*, u64))
+        .stubs()
+        .with(any())
+        .then(returnValue(HCCL_SUCCESS));
 
     TransportMem::RmaMemDesc remoteMemDescRecv;
     remoteMemDescRecv.localRankId = 1;
@@ -644,17 +533,20 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_transport_ipc_mem_exchange)
     strcpy(remoteMemDescRecv.memDesc, "remote");
     u32 numOfRemote = 1;
 
-    MOCKER_CPP(&HcclSocket::Recv, HcclResult(HcclSocket::*)(void *, u32, u32))
-    .expects(once())
-    .with(outBoundP((void*)&numOfRemote, sizeof(numOfRemote)), eq((u32)sizeof(numOfRemote))) // 接收actualNumOfRemote
-    .will(returnValue(HCCL_SUCCESS))
-    .id("first");
+    MOCKER_CPP(&HcclSocket::Recv, HcclResult (HcclSocket::*)(void*, u32, u32))
+        .expects(once())
+        .with(
+            outBoundP((void*)&numOfRemote, sizeof(numOfRemote)), eq((u32)sizeof(numOfRemote))) // 接收actualNumOfRemote
+        .will(returnValue(HCCL_SUCCESS))
+        .id("first");
 
-    MOCKER_CPP(&HcclSocket::Recv, HcclResult(HcclSocket::*)(void *, u32, u32))
-    .expects(once())
-    .with(outBoundP((void*)&remoteMemDescRecv, sizeof(TransportMem::RmaMemDesc)), eq((u32)sizeof(TransportMem::RmaMemDesc))) // 接收remoteMemDesc
-    .after("first")
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HcclSocket::Recv, HcclResult (HcclSocket::*)(void*, u32, u32))
+        .expects(once())
+        .with(
+            outBoundP((void*)&remoteMemDescRecv, sizeof(TransportMem::RmaMemDesc)),
+            eq((u32)sizeof(TransportMem::RmaMemDesc))) // 接收remoteMemDesc
+        .after("first")
+        .will(returnValue(HCCL_SUCCESS));
 
     TransportMem::RmaMemDescs localMemDescs = {&localMemDesc, 1};
     TransportMem::RmaMemDesc remoteMemDesc[2];
@@ -678,17 +570,20 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_transport_ipc_mem_enable_disable_mem_access
     attrInfo.remoteRankId = 1;
     attrInfo.sdid = 1;
     attrInfo.serverId = 1;
-    std::shared_ptr<TransportMem> transport = TransportMem::Create(TransportMem::TpType::IPC, notifyPool, netDevCtx, dispatcher, attrInfo);
-    TransportIpcMem *transportPtr = dynamic_cast<TransportIpcMem *>(transport.get());
+    std::shared_ptr<TransportMem> transport
+        = TransportMem::Create(TransportMem::TpType::IPC, notifyPool, netDevCtx, dispatcher, attrInfo);
+    TransportIpcMem* transportPtr = dynamic_cast<TransportIpcMem*>(transport.get());
     HcclIpAddress ipAddr;
-    std::shared_ptr<HcclSocket> socketPtr = make_shared<HcclSocket>("tagIpc", netDevCtx, ipAddr, 16666, HcclSocketRole::SOCKET_ROLE_SERVER);
+    std::shared_ptr<HcclSocket> socketPtr
+        = make_shared<HcclSocket>("tagIpc", netDevCtx, ipAddr, 16666, HcclSocketRole::SOCKET_ROLE_SERVER);
     transport->SetDataSocket(socketPtr);
 
     u64 count = 1024;
     u64 bufSize = 1024 * sizeof(s8);
     s8* remotebuf = (s8*)sal_malloc(bufSize);
     sal_memset(remotebuf, bufSize, 0, bufSize);
-    shared_ptr<LocalIpcRmaBufferImpl> localbuffer = make_shared<LocalIpcRmaBufferImpl>(netDevCtx, remotebuf, bufSize, RmaMemType::DEVICE);
+    shared_ptr<LocalIpcRmaBufferImpl> localbuffer
+        = make_shared<LocalIpcRmaBufferImpl>(netDevCtx, remotebuf, bufSize, RmaMemType::DEVICE);
     LocalIpcRmaBufferImpl* localbufferPtr = localbuffer.get();
     localbufferPtr->devAddr = remotebuf;
     char* ipcName = "ipc";
@@ -701,12 +596,8 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_transport_ipc_mem_enable_disable_mem_access
     remoteMemDesc.remoteRankId = 0;
     transport->RmaMemDescCopyFromStr(remoteMemDesc, desc);
 
-    MOCKER_CPP(&RemoteIpcRmaBuffer::Open)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&RemoteIpcRmaBuffer::Close)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&RemoteIpcRmaBuffer::Open).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&RemoteIpcRmaBuffer::Close).stubs().will(returnValue(HCCL_SUCCESS));
 
     // 使能与去使能
     TransportMem::RmaMem remoteMem{};
@@ -757,22 +648,25 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_transport_ipc_mem_read_write)
     attrInfo.remoteRankId = 1;
     attrInfo.sdid = 1;
     attrInfo.serverId = 1;
-    std::shared_ptr<TransportMem> transport = TransportMem::Create(TransportMem::TpType::IPC, notifyPool, netDevCtx, dispatcher, attrInfo);
-    TransportIpcMem *transportPtr = dynamic_cast<TransportIpcMem *>(transport.get());
+    std::shared_ptr<TransportMem> transport
+        = TransportMem::Create(TransportMem::TpType::IPC, notifyPool, netDevCtx, dispatcher, attrInfo);
+    TransportIpcMem* transportPtr = dynamic_cast<TransportIpcMem*>(transport.get());
     HcclIpAddress ipAddr;
-    std::shared_ptr<HcclSocket> socketPtr = make_shared<HcclSocket>("tagIpc", netDevCtx, ipAddr, 16666, HcclSocketRole::SOCKET_ROLE_SERVER);
+    std::shared_ptr<HcclSocket> socketPtr
+        = make_shared<HcclSocket>("tagIpc", netDevCtx, ipAddr, 16666, HcclSocketRole::SOCKET_ROLE_SERVER);
     transport->SetDataSocket(socketPtr);
 
     u64 count = 1024;
     u64 bufSize = 1024 * sizeof(s8);
-    s8* localbuf= (s8*)sal_malloc(bufSize);
+    s8* localbuf = (s8*)sal_malloc(bufSize);
     sal_memset(localbuf, bufSize, 0, bufSize);
     BufferKey<uintptr_t, u64> tempLocalKey(reinterpret_cast<uintptr_t>(localbuf), bufSize);
-    std::shared_ptr<LocalIpcRmaBuffer> tempLocalIpcBufferPtr = make_shared<LocalIpcRmaBuffer>(netDevCtx, localbuf, bufSize);
+    std::shared_ptr<LocalIpcRmaBuffer> tempLocalIpcBufferPtr
+        = make_shared<LocalIpcRmaBuffer>(netDevCtx, localbuf, bufSize);
     tempLocalIpcBufferPtr->devAddr = localbuf;
     devContext.localIpcRmaBufferMgr_->Add(tempLocalKey, tempLocalIpcBufferPtr);
 
-    s8* remotebuf= (s8*)sal_malloc(bufSize);
+    s8* remotebuf = (s8*)sal_malloc(bufSize);
     sal_memset(remotebuf, bufSize, 0, bufSize);
     BufferKey<uintptr_t, u64> tempRemoteKey(reinterpret_cast<uintptr_t>(remotebuf), bufSize);
     std::shared_ptr<RemoteIpcRmaBuffer> tempRemoteIpcBufferPtr = make_shared<RemoteIpcRmaBuffer>(netDevCtx);
@@ -782,10 +676,13 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_transport_ipc_mem_read_write)
     tempRemoteIpcBufferPtr->memType = RmaMemType::HOST;
     transportPtr->remoteIpcRmaBufferMgr_.Add(tempRemoteKey, tempRemoteIpcBufferPtr);
 
-    MOCKER_CPP(&DispatcherPub::MemcpyAsyncWithoutCheckKind, HcclResult(DispatcherPub::*)(void*, uint64_t, const void*, u64, HcclRtMemcpyKind, hccl::Stream&, u32, hccl::LinkType))
-    .stubs()
-    .will(returnValue(HCCL_E_INTERNAL))
-    .then(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(
+        &DispatcherPub::MemcpyAsyncWithoutCheckKind,
+        HcclResult (DispatcherPub::*)(
+            void*, uint64_t, const void*, u64, HcclRtMemcpyKind, hccl::Stream&, u32, hccl::LinkType))
+        .stubs()
+        .will(returnValue(HCCL_E_INTERNAL))
+        .then(returnValue(HCCL_SUCCESS));
 
     // Read/Write未注册的内存
     HcclBuf localMem = {localbuf - 1, 1, nullptr};
@@ -856,7 +753,7 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_transport_ipc_mem_get_trans_info)
     HcclResult ret;
     HcclQpInfoV2 qpInfo;
     std::shared_ptr<TransportMem> transport = CreateIpcMemTransport();
-    ret = transport->GetTransInfo(qpInfo, nullptr, nullptr, nullptr, nullptr, 0);   // nullptr
+    ret = transport->GetTransInfo(qpInfo, nullptr, nullptr, nullptr, nullptr, 0); // nullptr
     EXPECT_EQ(ret, HCCL_E_PTR);
     const u32 DESC_NUM = 2;
     u32 lkey[DESC_NUM];
@@ -865,11 +762,11 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_transport_ipc_mem_get_trans_info)
     memset_s(localMem, sizeof(localMem), 0, sizeof(HcclBuf) * DESC_NUM);
     HcclBuf remoteMem[DESC_NUM];
     memset_s(remoteMem, sizeof(remoteMem), 0, sizeof(HcclBuf) * DESC_NUM);
-    ret = transport->GetTransInfo(qpInfo, lkey, rkey, localMem, remoteMem, 0);  // num is 0
+    ret = transport->GetTransInfo(qpInfo, lkey, rkey, localMem, remoteMem, 0); // num is 0
     EXPECT_EQ(ret, HCCL_E_PARA);
-    ret = transport->GetTransInfo(qpInfo, lkey, rkey, localMem, remoteMem, 1);  // num is 1
+    ret = transport->GetTransInfo(qpInfo, lkey, rkey, localMem, remoteMem, 1); // num is 1
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    ret = transport->GetTransInfo(qpInfo, lkey, rkey, localMem, remoteMem, DESC_NUM);   // invalid mem
+    ret = transport->GetTransInfo(qpInfo, lkey, rkey, localMem, remoteMem, DESC_NUM); // invalid mem
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
@@ -894,10 +791,12 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_transport_roce_mem_exchange)
     attrInfo.remoteRankId = 1;
     attrInfo.sdid = 1;
     attrInfo.serverId = 1;
-    std::shared_ptr<TransportMem> transport = TransportMem::Create(TransportMem::TpType::ROCE, notifyPool, netDevCtx, dispatcher, attrInfo);
-    TransportRoceMem *transportPtr = dynamic_cast<TransportRoceMem *>(transport.get());
+    std::shared_ptr<TransportMem> transport
+        = TransportMem::Create(TransportMem::TpType::ROCE, notifyPool, netDevCtx, dispatcher, attrInfo);
+    TransportRoceMem* transportPtr = dynamic_cast<TransportRoceMem*>(transport.get());
     HcclIpAddress ipAddr;
-    std::shared_ptr<HcclSocket> socketPtr = make_shared<HcclSocket>("tagRoce", netDevCtx, ipAddr, 16666, HcclSocketRole::SOCKET_ROLE_SERVER);
+    std::shared_ptr<HcclSocket> socketPtr
+        = make_shared<HcclSocket>("tagRoce", netDevCtx, ipAddr, 16666, HcclSocketRole::SOCKET_ROLE_SERVER);
     transport->SetDataSocket(socketPtr);
 
     u64 count = 1024;
@@ -905,13 +804,9 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_transport_roce_mem_exchange)
     s8* localbuf = (s8*)sal_malloc(bufSize);
     sal_memset(localbuf, bufSize, 0, bufSize);
 
-    MOCKER_CPP(&LocalRdmaRmaBuffer::Init)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&LocalRdmaRmaBuffer::Init).stubs().will(returnValue(HCCL_SUCCESS));
     std::string localdesc = "lRoced";
-    MOCKER_CPP(&LocalRdmaRmaBuffer::Serialize)
-    .stubs()
-    .will(returnValue(localdesc));
+    MOCKER_CPP(&LocalRdmaRmaBuffer::Serialize).stubs().will(returnValue(localdesc));
 
     TransportMem::RmaMemDesc localMemDesc{};
     localMemDesc.localRankId = 0U;
@@ -921,10 +816,10 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_transport_roce_mem_exchange)
 
     HcclResult ret;
 
-    MOCKER_CPP(&HcclSocket::Send, HcclResult(HcclSocket::*)(const void *, u64))
-    .stubs()
-    .with(any())
-    .then(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HcclSocket::Send, HcclResult (HcclSocket::*)(const void*, u64))
+        .stubs()
+        .with(any())
+        .then(returnValue(HCCL_SUCCESS));
 
     TransportMem::RmaMemDesc remoteMemDescRecv;
     remoteMemDescRecv.localRankId = 1;
@@ -932,17 +827,20 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_transport_roce_mem_exchange)
     strcpy(remoteMemDescRecv.memDesc, "remote");
     u32 numOfRemote = 1;
 
-    MOCKER_CPP(&HcclSocket::Recv, HcclResult(HcclSocket::*)(void *, u32, u32))
-    .expects(once())
-    .with(outBoundP((void*)&numOfRemote, sizeof(numOfRemote)), eq((u32)sizeof(numOfRemote))) // 接收actualNumOfRemote
-    .will(returnValue(HCCL_SUCCESS))
-    .id("first");
+    MOCKER_CPP(&HcclSocket::Recv, HcclResult (HcclSocket::*)(void*, u32, u32))
+        .expects(once())
+        .with(
+            outBoundP((void*)&numOfRemote, sizeof(numOfRemote)), eq((u32)sizeof(numOfRemote))) // 接收actualNumOfRemote
+        .will(returnValue(HCCL_SUCCESS))
+        .id("first");
 
-    MOCKER_CPP(&HcclSocket::Recv, HcclResult(HcclSocket::*)(void *, u32, u32))
-    .expects(once())
-    .with(outBoundP((void*)&remoteMemDescRecv, sizeof(TransportMem::RmaMemDesc)), eq((u32)sizeof(TransportMem::RmaMemDesc))) // 接收remoteMemDesc
-    .after("first")
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HcclSocket::Recv, HcclResult (HcclSocket::*)(void*, u32, u32))
+        .expects(once())
+        .with(
+            outBoundP((void*)&remoteMemDescRecv, sizeof(TransportMem::RmaMemDesc)),
+            eq((u32)sizeof(TransportMem::RmaMemDesc))) // 接收remoteMemDesc
+        .after("first")
+        .will(returnValue(HCCL_SUCCESS));
 
     TransportMem::RmaMemDescs localMemDescs = {&localMemDesc, 1};
     TransportMem::RmaMemDesc remoteMemDesc[2];
@@ -972,12 +870,11 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_transport_roce_mem_CheckRaSendNormalWrlistS
     attrInfo.remoteRankId = 1;
     attrInfo.sdid = 1;
     attrInfo.serverId = 1;
-    std::shared_ptr<TransportRoceMem> transport = std::make_unique<TransportRoceMem>(notifyPool, netDevCtx, dispatcher, attrInfo);
+    std::shared_ptr<TransportRoceMem> transport
+        = std::make_unique<TransportRoceMem>(notifyPool, netDevCtx, dispatcher, attrInfo);
     transport->isSupportRaSendNormalWrlist_ = TransportRoceMem::SupportStatus::INIT;
 
-    MOCKER(IsSupportRDMALite)
-    .stubs()
-    .will(returnValue(true));
+    MOCKER(IsSupportRDMALite).stubs().will(returnValue(true));
     auto ret = transport->CheckRaSendNormalWrlistSupport();
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(transport->isSupportRaSendNormalWrlist_, TransportRoceMem::SupportStatus::SUPPORT);
@@ -995,16 +892,12 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_transport_roce_mem_CheckRaSendNormalWrlistS
     attrInfo.remoteRankId = 1;
     attrInfo.sdid = 1;
     attrInfo.serverId = 1;
-    std::shared_ptr<TransportRoceMem> transport = std::make_unique<TransportRoceMem>(notifyPool, netDevCtx, dispatcher, attrInfo);
+    std::shared_ptr<TransportRoceMem> transport
+        = std::make_unique<TransportRoceMem>(notifyPool, netDevCtx, dispatcher, attrInfo);
 
     transport->isSupportRaSendNormalWrlist_ = TransportRoceMem::SupportStatus::INIT;
-    MOCKER(IsSupportRDMALite)
-    .stubs()
-    .will(returnValue(false));
-    MOCKER(IsSupportRaSendNormalWrlist)
-    .stubs()
-    .with(any())
-    .will(invoke(stub_IsSupportRaSendNormalWrlist));
+    MOCKER(IsSupportRDMALite).stubs().will(returnValue(false));
+    MOCKER(IsSupportRaSendNormalWrlist).stubs().with(any()).will(invoke(stub_IsSupportRaSendNormalWrlist));
     auto ret = transport->CheckRaSendNormalWrlistSupport();
     EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
     EXPECT_EQ(transport->isSupportRaSendNormalWrlist_, TransportRoceMem::SupportStatus::NOT_SUPPORT);
@@ -1022,17 +915,20 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_transport_roce_mem_enable_disable_mem_acces
     attrInfo.remoteRankId = 1;
     attrInfo.sdid = 1;
     attrInfo.serverId = 1;
-    std::shared_ptr<TransportMem> transport = TransportMem::Create(TransportMem::TpType::ROCE, notifyPool, netDevCtx, dispatcher, attrInfo);
-    TransportRoceMem *transportPtr = dynamic_cast<TransportRoceMem *>(transport.get());
+    std::shared_ptr<TransportMem> transport
+        = TransportMem::Create(TransportMem::TpType::ROCE, notifyPool, netDevCtx, dispatcher, attrInfo);
+    TransportRoceMem* transportPtr = dynamic_cast<TransportRoceMem*>(transport.get());
     HcclIpAddress ipAddr;
-    std::shared_ptr<HcclSocket> socketPtr = make_shared<HcclSocket>("tagRoce", netDevCtx, ipAddr, 16666, HcclSocketRole::SOCKET_ROLE_SERVER);
+    std::shared_ptr<HcclSocket> socketPtr
+        = make_shared<HcclSocket>("tagRoce", netDevCtx, ipAddr, 16666, HcclSocketRole::SOCKET_ROLE_SERVER);
     transport->SetDataSocket(socketPtr);
 
     u64 count = 1024;
     u64 bufSize = 1024 * sizeof(s8);
     s8* remotebuf = (s8*)sal_malloc(bufSize);
     sal_memset(remotebuf, bufSize, 0, bufSize);
-    shared_ptr<LocalRdmaRmaBufferImpl> remotebuffer = make_shared<LocalRdmaRmaBufferImpl>(netDevCtx, remotebuf, bufSize, RmaMemType::DEVICE);
+    shared_ptr<LocalRdmaRmaBufferImpl> remotebuffer
+        = make_shared<LocalRdmaRmaBufferImpl>(netDevCtx, remotebuf, bufSize, RmaMemType::DEVICE);
     LocalRdmaRmaBufferImpl* remoteufferPtr = remotebuffer.get();
     remoteufferPtr->devAddr = remotebuf;
     remoteufferPtr->lkey = 23;
@@ -1092,22 +988,25 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_transport_roce_mem_read_write)
     attrInfo.remoteRankId = 1;
     attrInfo.sdid = 1;
     attrInfo.serverId = 1;
-    std::shared_ptr<TransportMem> transport = TransportMem::Create(TransportMem::TpType::ROCE, notifyPool, netDevCtx, dispatcher, attrInfo);
-    TransportRoceMem *transportPtr = dynamic_cast<TransportRoceMem *>(transport.get());
+    std::shared_ptr<TransportMem> transport
+        = TransportMem::Create(TransportMem::TpType::ROCE, notifyPool, netDevCtx, dispatcher, attrInfo);
+    TransportRoceMem* transportPtr = dynamic_cast<TransportRoceMem*>(transport.get());
     HcclIpAddress ipAddr;
-    std::shared_ptr<HcclSocket> socketPtr = make_shared<HcclSocket>("tagRoce", netDevCtx, ipAddr, 16666, HcclSocketRole::SOCKET_ROLE_SERVER);
+    std::shared_ptr<HcclSocket> socketPtr
+        = make_shared<HcclSocket>("tagRoce", netDevCtx, ipAddr, 16666, HcclSocketRole::SOCKET_ROLE_SERVER);
     transport->SetDataSocket(socketPtr);
 
     u64 count = 1024;
     u64 bufSize = 1024 * sizeof(s8);
-    s8* localbuf= (s8*)sal_malloc(bufSize);
+    s8* localbuf = (s8*)sal_malloc(bufSize);
     sal_memset(localbuf, bufSize, 0, bufSize);
     BufferKey<uintptr_t, u64> tempLocalKey(reinterpret_cast<uintptr_t>(localbuf), bufSize);
-    std::shared_ptr<LocalRdmaRmaBuffer> tempLocalBufferPtr = make_shared<LocalRdmaRmaBuffer>(netDevCtx, localbuf, bufSize);
+    std::shared_ptr<LocalRdmaRmaBuffer> tempLocalBufferPtr
+        = make_shared<LocalRdmaRmaBuffer>(netDevCtx, localbuf, bufSize);
     tempLocalBufferPtr->devAddr = localbuf;
     devContext.localRdmaRmaBufferMgr_->Add(tempLocalKey, tempLocalBufferPtr);
 
-    s8* remotebuf= (s8*)sal_malloc(bufSize);
+    s8* remotebuf = (s8*)sal_malloc(bufSize);
     sal_memset(remotebuf, bufSize, 0, bufSize);
     BufferKey<uintptr_t, u64> tempRemoteKey(reinterpret_cast<uintptr_t>(remotebuf), bufSize);
     std::shared_ptr<RemoteRdmaRmaBuffer> tempRemoteBufferPtr = make_shared<RemoteRdmaRmaBuffer>();
@@ -1117,13 +1016,13 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_transport_roce_mem_read_write)
     tempRemoteBufferPtr->memType = RmaMemType::HOST;
     transportPtr->remoteRdmaRmaBufferMgr_.Add(tempRemoteKey, tempRemoteBufferPtr);
 
-    MOCKER(HrtRaSendWrV2)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(HrtRaSendWrV2).stubs().will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&DispatcherPub::RdmaSend, HcclResult(DispatcherPub::*)(u32, u64, const struct SendWr&, HcclRtStream, hccl::RdmaType, u64, u64, bool))
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(
+        &DispatcherPub::RdmaSend,
+        HcclResult (DispatcherPub::*)(u32, u64, const struct SendWr&, HcclRtStream, hccl::RdmaType, u64, u64, bool))
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
 
     // Read/Write未注册的内存
     HcclBuf localMem = {localbuf - 1, 1, nullptr};

@@ -63,32 +63,32 @@ using namespace hccl;
 constexpr u32 RECV_WQE_BATCH_NUM = 192;
 constexpr u32 RECV_WQE_NUM_THRESHOLD = 96;
 constexpr u32 RECV_WQE_BATCH_SUPPLEMENT = 96;
-class MPI_TRANSPORT_HETEROG_ROCE_TEST : public testing::Test
-{
+class MPI_TRANSPORT_HETEROG_ROCE_TEST : public testing::Test {
 protected:
     static void SetUpTestCase()
     {
         std::cout << "MPI_TRANSPORT_HETEROG_ROCE_TEST SetUP" << std::endl;
         pMsgInfosMem.reset(new (std::nothrow) LocklessRingMemoryAllocate<HcclMessageInfo>(100));
-        if (pMsgInfosMem == nullptr) return;
+        if (pMsgInfosMem == nullptr)
+            return;
         pMsgInfosMem->Init();
 
         pReqInfosMem.reset(new (std::nothrow) LocklessRingMemoryAllocate<HcclRequestInfo>(100));
-        if (pReqInfosMem == nullptr) return;
+        if (pReqInfosMem == nullptr)
+            return;
         pReqInfosMem->Init();
 
         memBlocksManager.reset(new (std::nothrow) HeterogMemBlocksManager());
-        if (memBlocksManager == nullptr) return;
+        if (memBlocksManager == nullptr)
+            return;
         memBlocksManager->Init(MEM_BLOCK_NUM);
 
         pRecvWrInfosMem.reset(new (std::nothrow) LocklessRingMemoryAllocate<RecvWrInfo>(100));
-        if (pRecvWrInfosMem == nullptr) return;
+        if (pRecvWrInfosMem == nullptr)
+            return;
         pRecvWrInfosMem->Init();
     }
-    static void TearDownTestCase()
-    {
-        std::cout << "MPI_TRANSPORT_HETEROG_ROCE_TEST TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "MPI_TRANSPORT_HETEROG_ROCE_TEST TearDown" << std::endl; }
     // Some expensive resource shared by all tests.
     virtual void SetUp()
     {
@@ -108,8 +108,8 @@ protected:
     static std::unique_ptr<LocklessRingMemoryAllocate<HcclRequestInfo>> pReqInfosMem;
     static std::unique_ptr<HeterogMemBlocksManager> memBlocksManager;
     static std::unique_ptr<LocklessRingMemoryAllocate<RecvWrInfo>> pRecvWrInfosMem;
-    TransportResourceInfo transportResourceInfo = TransportResourceInfo(nullptr, pMsgInfosMem, pReqInfosMem,
-        memBlocksManager, pRecvWrInfosMem);
+    TransportResourceInfo transportResourceInfo
+        = TransportResourceInfo(nullptr, pMsgInfosMem, pReqInfosMem, memBlocksManager, pRecvWrInfosMem);
 };
 std::unique_ptr<LocklessRingMemoryAllocate<HcclMessageInfo>> MPI_TRANSPORT_HETEROG_ROCE_TEST::pMsgInfosMem = nullptr;
 std::unique_ptr<LocklessRingMemoryAllocate<HcclRequestInfo>> MPI_TRANSPORT_HETEROG_ROCE_TEST::pReqInfosMem = nullptr;
@@ -118,19 +118,13 @@ std::unique_ptr<LocklessRingMemoryAllocate<RecvWrInfo>> MPI_TRANSPORT_HETEROG_RO
 
 TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_AllEschedAckCallback)
 {
-    MOCKER(TransportHeterogEventRoce::UpdateStatus)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(TransportHeterogEventRoce::UpdateStatus).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(hrtHalSubmitEvent)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtHalSubmitEvent).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     unsigned int devId = 0;
     unsigned int subeventId = 0;
-    u8 *msg = nullptr;
+    u8* msg = nullptr;
     unsigned int msgLen = 0;
 
     TransportHeterogEventRoce::EschedAckCallbackRecvRequest(devId, subeventId, msg, msgLen);
@@ -141,19 +135,15 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_AllEschedAckCall
 
 TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_RegisterEschedAckCallback)
 {
-    MOCKER_CPP(&DlHalFunction::DlHalFunctionInit)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
-    MOCKER(hrtHalEschedRegisterAckFunc)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&DlHalFunction::DlHalFunctionInit).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtHalEschedRegisterAckFunc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-        HcclIpAddress invalidIp;
-    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
-    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1, 18000, 0, transportResourceInfo));
-    TransportHeterogEventRoce *transportHandle = transport.get();
+    HcclIpAddress invalidIp;
+    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce(
+        "test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
+    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1,
+    // 18000, 0, transportResourceInfo));
+    TransportHeterogEventRoce* transportHandle = transport.get();
     int ret = transportHandle->DeregisterEschedAckCallback();
     ret = transportHandle->RegisterEschedAckCallback();
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -164,9 +154,11 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_RegisterEschedAc
 TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_InitAllLinkVec)
 {
     HcclIpAddress invalidIp;
-    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
-    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1, 18000, 0, transportResourceInfo));
-    TransportHeterogEventRoce *transportHandle = transport.get();
+    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce(
+        "test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
+    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1,
+    // 18000, 0, transportResourceInfo));
+    TransportHeterogEventRoce* transportHandle = transport.get();
     int ret = transportHandle->InitAllLinkVec();
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
@@ -186,10 +178,12 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_EraseTransportFr
     TransportHeterogEventRoce::gAllLinkVec[HCCL_EVENT_RECV_COMPLETION_MSG].push_back(&transportPtr);
     lockRecvComp.unlock();
 
-        HcclIpAddress invalidIp;
-    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
-    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1, 18000, 0, transportResourceInfo));
-    TransportHeterogEventRoce *transportHandle = transport.get();
+    HcclIpAddress invalidIp;
+    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce(
+        "test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
+    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1,
+    // 18000, 0, transportResourceInfo));
+    TransportHeterogEventRoce* transportHandle = transport.get();
 
     int ret = transportHandle->EraseTransportFromAllLinkVec(&transportPtr);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -205,67 +199,40 @@ HcclResult stub_CreateQp(RdmaHandle rdmaHandle, int& flag, s32& qpMode, QpInfo& 
 TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_White_List)
 {
     HcclIpAddress invalidIp;
-    unique_ptr<TransportHeterogRoce> transport(new (nothrow) TransportHeterogRoce("test_collective",
-        invalidIp, invalidIp, 18000, 0, transportResourceInfo));
+    unique_ptr<TransportHeterogRoce> transport(
+        new (nothrow) TransportHeterogRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
     transport->isHdcMode_ = true;
     transport->deviceLogicId_ = HOST_DEVICE_ID;
     transport->tagQpInfo_.qpMode = OFFLINE_QP_MODE;
     std::string tag = "0000";
 
-    MOCKER_CPP(&MrManager::ReleaseKey)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&MrManager::ReleaseKey).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&MrManager::GetKey)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&MrManager::GetKey).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&MrManager::InitUnRegMrMap, HcclResult(MrManager::*)(map<MrMapKey, MrInfo>&))
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&MrManager::InitUnRegMrMap, HcclResult (MrManager::*)(map<MrMapKey, MrInfo>&))
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&MrManager::DeInit, HcclResult (MrManager::*)(const void *))
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&MrManager::DeInit, HcclResult (MrManager::*)(const void*))
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TransportHeterogRoce::GetNetworkResource)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportHeterogRoce::GetNetworkResource).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TransportHeterog::ConnectAsync)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportHeterog::ConnectAsync).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TransportHeterog::PrepareSocketInfo)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportHeterog::PrepareSocketInfo).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&RankConsistentcyChecker::GetCheckFrame)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&RankConsistentcyChecker::GetCheckFrame).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(DestroyQpWithCq)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(DestroyQpWithCq).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TransportHeterog::SocketClose)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportHeterog::SocketClose).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(CreateQp)
-    .stubs()
-    .with(any())
-    .will(invoke(stub_CreateQp));
+    MOCKER(CreateQp).stubs().with(any()).will(invoke(stub_CreateQp));
 
     int ret = transport->AddSocketWhiteList(tag);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -273,11 +240,11 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_White_List)
     ret = transport->PreQpConnect();
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    std::list<void *> blockList;
+    std::list<void*> blockList;
     ret = transport->AllocMemBlocks(blockList);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    void *block;
+    void* block;
     ret = transport->FreeMemBlock(block);
     EXPECT_EQ(ret, 4);
 
@@ -299,87 +266,53 @@ HcclResult stub_CreateNormalQp(RdmaHandle rdmaHandle, QpInfo& qp)
 TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_Init)
 {
     HcclIpAddress invalidIp;
-    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
-    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1, 18000, 0, transportResourceInfo));
-    TransportHeterogEventRoce *transportHandle = transport.get();
-    TransportHeterogEventRoce *transportHandle_1 = transport.get();
+    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce(
+        "test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
+    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1,
+    // 18000, 0, transportResourceInfo));
+    TransportHeterogEventRoce* transportHandle = transport.get();
+    TransportHeterogEventRoce* transportHandle_1 = transport.get();
     RaResourceInfo raResourceInfo;
     IpSocket ipSocket;
     u64 nicSocketHandle = 0;
     rdevInfo_t nicRdmaHandle = {0};
-    ipSocket.nicSocketHandle = reinterpret_cast<void *>(&nicSocketHandle);
-    ipSocket.nicRdmaHandle = reinterpret_cast<void *>(&nicRdmaHandle);
+    ipSocket.nicSocketHandle = reinterpret_cast<void*>(&nicSocketHandle);
+    ipSocket.nicRdmaHandle = reinterpret_cast<void*>(&nicRdmaHandle);
     raResourceInfo.nicSocketMap[transportHandle->selfIp_] = ipSocket;
 
     MOCKER_CPP(&NetworkManager::GetRaResourceInfo)
-    .stubs()
-    .with(outBound(raResourceInfo))
-    .will(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(outBound(raResourceInfo))
+        .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&MrManager::GetKey)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&MrManager::GetKey).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(CreateQp)
-    .stubs()
-    .with(any())
-    .will(invoke(stub_CreateQp));
+    MOCKER(CreateQp).stubs().with(any()).will(invoke(stub_CreateQp));
 
-    MOCKER(CreateNormalQp, HcclResult (*)(RdmaHandle, QpInfo&))
-    .stubs()
-    .with(any())
-    .will(invoke(stub_CreateNormalQp));
+    MOCKER(CreateNormalQp, HcclResult (*)(RdmaHandle, QpInfo&)).stubs().with(any()).will(invoke(stub_CreateNormalQp));
 
-    MOCKER(hrtRaCreateCq)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtRaCreateCq).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TransportHeterogRoce::IssueRecvWqe)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportHeterogRoce::IssueRecvWqe).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TransportHeterogEventRoce::IssueRecvWqe)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportHeterogEventRoce::IssueRecvWqe).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     MOCKER_CPP(&TransportHeterogEventRoce::RegisterEschedAckCallback)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TransportHeterogEventRoce::InitAllLinkVec)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportHeterogEventRoce::InitAllLinkVec).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TransportHeterog::TryTransition)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportHeterog::TryTransition).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&RankConsistentcyChecker::GetCheckFrame)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&RankConsistentcyChecker::GetCheckFrame).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TransportHeterog::ConnectAsync)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportHeterog::ConnectAsync).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(hrtRaNormalQpDestroy)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtRaNormalQpDestroy).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(hrtRaDestroyCq)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtRaDestroyCq).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     int ret = transportHandle->Init();
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -400,26 +333,22 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_Init)
 TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_Deinit)
 {
     MOCKER_CPP(&TransportHeterogEventRoce::DeregisterEschedAckCallback)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TransportHeterogEventRoce::DeinitAllLinkVec)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportHeterogEventRoce::DeinitAllLinkVec).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     HcclIpAddress invalidIp;
     TransportHeterogRoce roce("test_ta", invalidIp, invalidIp, 18000, 0, transportResourceInfo);
     // TransportHeterogRoce roce("test_ta", 0, 1, 18000, 0, transportResourceInfo);
-    MOCKER_CPP_VIRTUAL(roce, &TransportHeterogRoce::Deinit)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP_VIRTUAL(roce, &TransportHeterogRoce::Deinit).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
-    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1, 18000, 0, transportResourceInfo));
-    TransportHeterogEventRoce *transportHandle = transport.get();
+    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce(
+        "test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
+    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1,
+    // 18000, 0, transportResourceInfo));
+    TransportHeterogEventRoce* transportHandle = transport.get();
     int ret = transportHandle->Deinit();
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
@@ -428,9 +357,11 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_Deinit)
 TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_Send)
 {
     HcclIpAddress invalidIp;
-    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
-    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1, 18000, 0, transportResourceInfo));
-    TransportHeterogEventRoce *transportHandle = transport.get();
+    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce(
+        "test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
+    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1,
+    // 18000, 0, transportResourceInfo));
+    TransportHeterogEventRoce* transportHandle = transport.get();
     TransData sendData;
     TransportEndPointParam epParam;
     int ret = transportHandle->Send(sendData, epParam);
@@ -453,74 +384,55 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_Imrecv)
     bool flag;
     bool needRecordFlag = true;
 
-    MOCKER_CPP_VIRTUAL(transport, &TransportHeterogRoce::Imrecv,
+    MOCKER_CPP_VIRTUAL(
+        transport, &TransportHeterogRoce::Imrecv,
         HcclResult (TransportHeterogRoce::*)(const TransData&, HcclMessageInfo&, HcclRequestInfo*&))
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_SUCCESS));
     transport.deviceLogicId_ = HOST_DEVICE_ID;
     transport.Imrecv(recvData, msg, request, flag, needRecordFlag);
-    MOCKER(GetExternalInputHcclLinkTimeOut)
-    .stubs()
-    .with(any())
-    .will(returnValue(1));
+    MOCKER(GetExternalInputHcclLinkTimeOut).stubs().with(any()).will(returnValue(1));
 
-    MOCKER_CPP(&TransportHeterog::CheckAndPushBuildLink)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_E_AGAIN));
+    MOCKER_CPP(&TransportHeterog::CheckAndPushBuildLink).stubs().with(any()).will(returnValue(HCCL_E_AGAIN));
     transport.WaitBuildLinkComplete();
 
-    MOCKER_CPP(&TransportHeterog::CheckAndPushBuildLink)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportHeterog::CheckAndPushBuildLink).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     transport.WaitBuildLinkComplete();
 
-    MOCKER_CPP(&TransportHeterog::CheckAndPushBuildLink)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_E_PARA));
+    MOCKER_CPP(&TransportHeterog::CheckAndPushBuildLink).stubs().with(any()).will(returnValue(HCCL_E_PARA));
     transport.WaitBuildLinkComplete();
     transport.GetLinkTag(tag);
-
 }
 
 TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogEventRoce_SendFlowControl)
 {
-    MOCKER_CPP(&TransportHeterogRoce::IssueRecvWqe)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportHeterogRoce::IssueRecvWqe).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TransportHeterogEventRoce::IssueRecvWqe)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportHeterogEventRoce::IssueRecvWqe).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(hrtIbvPostRecv)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtIbvPostRecv).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     HcclIpAddress invalidIp;
     TransportHeterogEventRoce transportEvent("test_ta", invalidIp, invalidIp, 18000, 0, transportResourceInfo);
     // TransportHeterogEventRoce transportEvent("test_ta", 0, 1, 18000, 0, transportResourceInfo);
     MOCKER_CPP_VIRTUAL(transportEvent, &TransportHeterogEventRoce::PullSendStatus)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_SUCCESS));
 
-    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
-    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1, 18000, 0, transportResourceInfo));
-    TransportHeterogEventRoce *transportHandle = transport.get();
-    TransportHeterogEventRoce *transportHandle_1 = transport.get();
+    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce(
+        "test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
+    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1,
+    // 18000, 0, transportResourceInfo));
+    TransportHeterogEventRoce* transportHandle = transport.get();
+    TransportHeterogEventRoce* transportHandle_1 = transport.get();
 
     transportHandle->dataRecvWqeNum_ = RECV_WQE_NUM_THRESHOLD;
     transportHandle->dataRecvWqeExpNum_ = RECV_WQE_BATCH_SUPPLEMENT - 1;
     transportHandle_1->dataRecvWqeNum_ = RECV_WQE_NUM_THRESHOLD;
     hccl::TransportHeterogEventRoce::gQpnToSqMaxWrMap[0] = 1;
-    struct ibv_qp qp= {0};
+    struct ibv_qp qp = {0};
     transportHandle->dataQpInfo_.qp = &qp;
 
     int ret = transportHandle->SendFlowControl();
@@ -534,30 +446,26 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogEventRoce_SendFlowCon
 
 TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_SendFlowControl)
 {
-    MOCKER_CPP(&TransportHeterogRoce::IssueRecvWqe)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportHeterogRoce::IssueRecvWqe).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(hrtIbvPostRecv)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtIbvPostRecv).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     HcclIpAddress invalidIp;
     TransportHeterogRoce transportEvent("test_ta", invalidIp, invalidIp, 18000, 0, transportResourceInfo);
     // TransportHeterogRoce transportEvent("test_ta", 0, 1, 18000, 0, transportResourceInfo);
     MOCKER_CPP_VIRTUAL(transportEvent, &TransportHeterogRoce::PullSendStatus)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_SUCCESS));
 
-    unique_ptr<TransportHeterogRoce> transport(new (nothrow) TransportHeterogRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
-    // unique_ptr<TransportHeterogRoce> transport(new (nothrow) TransportHeterogRoce("test_collective", 0, 1, 18000, 0, transportResourceInfo));
-    TransportHeterogRoce *transportHandle = transport.get();
+    unique_ptr<TransportHeterogRoce> transport(
+        new (nothrow) TransportHeterogRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
+    // unique_ptr<TransportHeterogRoce> transport(new (nothrow) TransportHeterogRoce("test_collective", 0, 1, 18000, 0,
+    // transportResourceInfo));
+    TransportHeterogRoce* transportHandle = transport.get();
     transportHandle->dataRecvWqeNum_ = RECV_WQE_NUM_THRESHOLD;
     transportHandle->dataRecvWqeExpNum_ = RECV_WQE_NUM_THRESHOLD;
-    struct ibv_qp qp= {0};
+    struct ibv_qp qp = {0};
     transportHandle->dataQpInfo_.qp = &qp;
 
     int ret = transportHandle->SendFlowControl();
@@ -567,15 +475,14 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_SendFlowControl)
 
 TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_ParseErrorTagSqe)
 {
-    MOCKER_CPP(&MrManager::ReleaseKey)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&MrManager::ReleaseKey).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     HcclIpAddress invalidIp;
-    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
-    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1, 18000, 0, transportResourceInfo));
-    TransportHeterogEventRoce *transportHandle = transport.get();
+    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce(
+        "test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
+    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1,
+    // 18000, 0, transportResourceInfo));
+    TransportHeterogEventRoce* transportHandle = transport.get();
     u64 buf = 0;
     HcclRequestInfo request;
     request.transportRequest.transData.srcBuf = reinterpret_cast<u64>(&buf);
@@ -594,29 +501,19 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_ParseErrorTagSqe
 
 TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogEventRoce_ParseTagRqes)
 {
-    MOCKER_CPP(&TransportHeterogEventRoce::IssueRecvWqe)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportHeterogEventRoce::IssueRecvWqe).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TransportHeterogEventRoce::FreeMemBlock)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportHeterogEventRoce::FreeMemBlock).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TransportHeterogEventRoce::FreeRecvWrId)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&TransportHeterogRoce::SaveEnvelope)
-    .stubs()
-    .with(any())
-    .will(returnValue(nullptr));
+    MOCKER_CPP(&TransportHeterogEventRoce::FreeRecvWrId).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportHeterogRoce::SaveEnvelope).stubs().with(any()).will(returnValue(nullptr));
 
     HcclIpAddress invalidIp;
-    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
-    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1, 18000, 0, transportResourceInfo));
-    TransportHeterogEventRoce *transportHandle = transport.get();
+    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce(
+        "test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
+    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1,
+    // 18000, 0, transportResourceInfo));
+    TransportHeterogEventRoce* transportHandle = transport.get();
 
     int num = 1;
     struct ibv_wc wc[HCCL_POLL_CQ_DEPTH] = {0};
@@ -635,29 +532,19 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogEventRoce_ParseTagRqe
 
 TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_ParseTagRqes)
 {
-    MOCKER_CPP(&TransportHeterogRoce::IssueRecvWqe)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportHeterogRoce::IssueRecvWqe).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TransportHeterogRoce::FreeMemBlock)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportHeterogRoce::FreeMemBlock).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TransportHeterogRoce::FreeRecvWrId)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&TransportHeterogRoce::SaveEnvelope)
-    .stubs()
-    .with(any())
-    .will(returnValue(nullptr));
+    MOCKER_CPP(&TransportHeterogRoce::FreeRecvWrId).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportHeterogRoce::SaveEnvelope).stubs().with(any()).will(returnValue(nullptr));
 
     HcclIpAddress invalidIp;
-    unique_ptr<TransportHeterogRoce> transport(new (nothrow) TransportHeterogRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
-    // unique_ptr<TransportHeterogRoce> transport(new (nothrow) TransportHeterogRoce("test_collective", 0, 1, 18000, 0, transportResourceInfo));
-    TransportHeterogRoce *transportHandle = transport.get();
+    unique_ptr<TransportHeterogRoce> transport(
+        new (nothrow) TransportHeterogRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
+    // unique_ptr<TransportHeterogRoce> transport(new (nothrow) TransportHeterogRoce("test_collective", 0, 1, 18000, 0,
+    // transportResourceInfo));
+    TransportHeterogRoce* transportHandle = transport.get();
 
     int num = 1;
     struct ibv_wc wc[HCCL_POLL_CQ_DEPTH] = {0};
@@ -676,36 +563,23 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_ParseTagRqes)
 
 TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogEventRoce_ParseDataRqes)
 {
-    MOCKER_CPP(&TransportHeterogRoce::IssueRecvWqe)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportHeterogRoce::IssueRecvWqe).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TransportHeterogEventRoce::IssueRecvWqe)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportHeterogEventRoce::IssueRecvWqe).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&MrManager::ReleaseKey)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&MrManager::ReleaseKey).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TransportHeterogEventRoce::FreeMemBlock)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportHeterogEventRoce::FreeMemBlock).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TransportHeterogEventRoce::FreeRecvWrId)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportHeterogEventRoce::FreeRecvWrId).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     HcclIpAddress invalidIp;
-    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
-    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1, 18000, 0, transportResourceInfo));
-    TransportHeterogEventRoce *transportHandle = transport.get();
-    TransportHeterogEventRoce *transportHandle_1 = transport.get();
+    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce(
+        "test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
+    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1,
+    // 18000, 0, transportResourceInfo));
+    TransportHeterogEventRoce* transportHandle = transport.get();
+    TransportHeterogEventRoce* transportHandle_1 = transport.get();
     transportHandle->dataRecvWqeNum_ = RECV_WQE_NUM_THRESHOLD;
     hccl::TransportHeterogEventRoce::gQpnToSqMaxWrMap[0] = 1;
     int num = 1;
@@ -743,30 +617,20 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogEventRoce_ParseDataRq
 
 TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_ParseDataRqes)
 {
-    MOCKER_CPP(&TransportHeterogRoce::IssueRecvWqe)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportHeterogRoce::IssueRecvWqe).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&MrManager::ReleaseKey)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&MrManager::ReleaseKey).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TransportHeterogRoce::FreeMemBlock)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportHeterogRoce::FreeMemBlock).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TransportHeterogRoce::FreeRecvWrId)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportHeterogRoce::FreeRecvWrId).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     HcclIpAddress invalidIp;
-    unique_ptr<TransportHeterogRoce> transport(new (nothrow) TransportHeterogRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
-    // unique_ptr<TransportHeterogRoce> transport(new (nothrow) TransportHeterogRoce("test_collective", 0, 1, 18000, 0, transportResourceInfo));
-    TransportHeterogRoce *transportHandle = transport.get();
+    unique_ptr<TransportHeterogRoce> transport(
+        new (nothrow) TransportHeterogRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
+    // unique_ptr<TransportHeterogRoce> transport(new (nothrow) TransportHeterogRoce("test_collective", 0, 1, 18000, 0,
+    // transportResourceInfo));
+    TransportHeterogRoce* transportHandle = transport.get();
 
     transportHandle->dataRecvWqeNum_ = RECV_WQE_NUM_THRESHOLD;
     int num = 1;
@@ -795,15 +659,14 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_ParseDataRqes)
 
 TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_ParseDataSqes)
 {
-    MOCKER_CPP(&MrManager::ReleaseKey)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&MrManager::ReleaseKey).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     HcclIpAddress invalidIp;
-    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
-    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1, 18000, 0, transportResourceInfo));
-    TransportHeterogEventRoce *transportHandle = transport.get();
+    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce(
+        "test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
+    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1,
+    // 18000, 0, transportResourceInfo));
+    TransportHeterogEventRoce* transportHandle = transport.get();
 
     int num = 1;
     u64 buf = 0;
@@ -832,13 +695,15 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_PullRecvRequestS
     TransportHeterogEventRoce transportEvent("test_ta", invalidIp, invalidIp, 18000, 0, transportResourceInfo);
     // TransportHeterogEventRoce transportEvent("test_ta", 0, 1, 18000, 0, transportResourceInfo);
     MOCKER_CPP_VIRTUAL(transportEvent, &TransportHeterogEventRoce::PullRecvRequestStatus)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_SUCCESS));
 
-    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
-    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1, 18000, 0, transportResourceInfo));
-    TransportHeterogEventRoce *transportHandle = transport.get();
+    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce(
+        "test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
+    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1,
+    // 18000, 0, transportResourceInfo));
+    TransportHeterogEventRoce* transportHandle = transport.get();
 
     int ret = TransportHeterogEventRoce::PullRecvRequestStatus(transportHandle);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -851,13 +716,15 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_PullRecvRequestS
     TransportHeterogRoce transportEvent("test_ta", invalidIp, invalidIp, 18000, 0, transportResourceInfo);
     // TransportHeterogRoce transportEvent("test_ta", 0, 1, 18000, 0, transportResourceInfo);
     MOCKER_CPP_VIRTUAL(transportEvent, &TransportHeterogRoce::PullRecvRequestStatus)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_SUCCESS));
 
-    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
-    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1, 18000, 0, transportResourceInfo));
-    TransportHeterogEventRoce *transportHandle = transport.get();
+    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce(
+        "test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
+    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1,
+    // 18000, 0, transportResourceInfo));
+    TransportHeterogEventRoce* transportHandle = transport.get();
 
     int ret = transportHandle->PullRecvRequestStatus(true);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -870,13 +737,15 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_PullSendStatus)
     TransportHeterogEventRoce transportEvent("test_ta", invalidIp, invalidIp, 18000, 0, transportResourceInfo);
     // TransportHeterogEventRoce transportEvent("test_ta", 0, 1, 18000, 0, transportResourceInfo);
     MOCKER_CPP_VIRTUAL(transportEvent, &TransportHeterogEventRoce::PullSendStatus)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_SUCCESS));
 
-    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
-    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1, 18000, 0, transportResourceInfo));
-    TransportHeterogEventRoce *transportHandle = transport.get();
+    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce(
+        "test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
+    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1,
+    // 18000, 0, transportResourceInfo));
+    TransportHeterogEventRoce* transportHandle = transport.get();
 
     int ret = TransportHeterogEventRoce::PullSendStatus(transportHandle);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -889,13 +758,15 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_PullRecvStatus)
     TransportHeterogEventRoce transportEvent("test_ta", invalidIp, invalidIp, 18000, 0, transportResourceInfo);
     // TransportHeterogEventRoce transportEvent("test_ta", 0, 1, 18000, 0, transportResourceInfo);
     MOCKER_CPP_VIRTUAL(transportEvent, &TransportHeterogEventRoce::PullRecvStatus)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_SUCCESS));
 
-    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
-    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1, 18000, 0, transportResourceInfo));
-    TransportHeterogEventRoce *transportHandle = transport.get();
+    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce(
+        "test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
+    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1,
+    // 18000, 0, transportResourceInfo));
+    TransportHeterogEventRoce* transportHandle = transport.get();
 
     int ret = TransportHeterogEventRoce::PullRecvStatus(transportHandle);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -908,27 +779,29 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_UpdateStatus)
     TransportHeterogEventRoce transportEvent("test_ta", invalidIp, invalidIp, 18000, 0, transportResourceInfo);
     // TransportHeterogEventRoce transportEvent("test_ta", 0, 1, 18000, 0, transportResourceInfo);
     MOCKER_CPP_VIRTUAL(transportEvent, &TransportHeterogEventRoce::PullRecvRequestStatus)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_SUCCESS));
 
     MOCKER_CPP_VIRTUAL(transportEvent, &TransportHeterogEventRoce::PullSendStatus)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_SUCCESS));
 
     MOCKER_CPP_VIRTUAL(transportEvent, &TransportHeterogEventRoce::PullRecvStatus)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_SUCCESS));
 
     TransportHeterogEventRoce::gCqeCounterPerEvent[HCCL_EVENT_RECV_REQUEST_MSG] = 0;
     TransportHeterogEventRoce::gCqeCounterPerEvent[HCCL_EVENT_SEND_COMPLETION_MSG] = 0;
     TransportHeterogEventRoce::gCqeCounterPerEvent[HCCL_EVENT_RECV_COMPLETION_MSG] = 0;
 
-    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
-    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1, 18000, 0, transportResourceInfo));
-    TransportHeterogEventRoce *transportHandle = transport.get();
+    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce(
+        "test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
+    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1,
+    // 18000, 0, transportResourceInfo));
+    TransportHeterogEventRoce* transportHandle = transport.get();
     transportHandle->connState_ = ConnState::CONN_STATE_COMPLETE;
 
     TransportHeterogEventRoce::gAllLinkVec[HCCL_EVENT_RECV_REQUEST_MSG].clear();
@@ -952,15 +825,9 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_UpdateStatus)
 
 TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_EschedAckCallback)
 {
-    MOCKER(TransportHeterogEventRoce::UpdateStatus)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(TransportHeterogEventRoce::UpdateStatus).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(hrtHalSubmitEvent)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtHalSubmitEvent).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     TransportHeterogEventRoce::gCqeCounterPerEvent[HCCL_EVENT_RECV_REQUEST_MSG] = 1;
     TransportHeterogEventRoce::EschedAckCallback(0, HCCL_EVENT_RECV_REQUEST_MSG);
@@ -969,15 +836,14 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_EschedAckCallbac
 
 TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_InitTagRecvWqe)
 {
-    MOCKER_CPP(&TransportHeterogRoce::IssueRecvWqe)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportHeterogRoce::IssueRecvWqe).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     HcclIpAddress invalidIp;
-    unique_ptr<TransportHeterogRoce> transport(new (nothrow) TransportHeterogRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
-    // unique_ptr<TransportHeterogRoce> transport(new (nothrow) TransportHeterogRoce("test_collective", 0, 1, 18000, 0, transportResourceInfo));
-    TransportHeterogRoce *transportHandle = transport.get();
+    unique_ptr<TransportHeterogRoce> transport(
+        new (nothrow) TransportHeterogRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
+    // unique_ptr<TransportHeterogRoce> transport(new (nothrow) TransportHeterogRoce("test_collective", 0, 1, 18000, 0,
+    // transportResourceInfo));
+    TransportHeterogRoce* transportHandle = transport.get();
 
     int ret = transportHandle->InitDataRecvWqe();
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -987,24 +853,19 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_InitTagRecvWqe)
     GlobalMockObject::verify();
 }
 
-
 TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportEventHeterogRoce_InitTagRecvWqe)
 {
-    MOCKER_CPP(&TransportHeterogRoce::IssueRecvWqe)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportHeterogRoce::IssueRecvWqe).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TransportHeterogEventRoce::IssueRecvWqe)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportHeterogEventRoce::IssueRecvWqe).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     HcclIpAddress invalidIp;
-    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
-    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1, 18000, 0, transportResourceInfo));
-    TransportHeterogEventRoce *transportHandle = transport.get();
-    TransportHeterogEventRoce *transportHandle_1 = transport.get();
+    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce(
+        "test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
+    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1,
+    // 18000, 0, transportResourceInfo));
+    TransportHeterogEventRoce* transportHandle = transport.get();
+    TransportHeterogEventRoce* transportHandle_1 = transport.get();
 
     int ret = transportHandle->InitDataRecvWqe();
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -1021,7 +882,7 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportEventHeterogRoce_InitTagRecv
     GlobalMockObject::verify();
 }
 
-HcclResult stub_AllocMemBlocks(TransportHeterogRoce* roce, std::list<void *> &blockList)
+HcclResult stub_AllocMemBlocks(TransportHeterogRoce* roce, std::list<void*>& blockList)
 {
     static HcclRequestInfo requestInfo;
     blockList.push_front(&requestInfo);
@@ -1030,26 +891,19 @@ HcclResult stub_AllocMemBlocks(TransportHeterogRoce* roce, std::list<void *> &bl
 
 TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_IssueRecvWqe)
 {
-    MOCKER_CPP(&TransportHeterogRoce::AllocMemBlocks)
-    .stubs()
-    .with(any())
-    .will(invoke(stub_AllocMemBlocks));
+    MOCKER_CPP(&TransportHeterogRoce::AllocMemBlocks).stubs().with(any()).will(invoke(stub_AllocMemBlocks));
 
-    MOCKER_CPP(&TransportHeterogEventRoce::GenerateRecvWrId)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportHeterogEventRoce::GenerateRecvWrId).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(hrtIbvPostSrqRecv)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtIbvPostSrqRecv).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     struct ibv_srq* srq;
     HcclIpAddress invalidIp;
-    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
-    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1, 18000, 0, transportResourceInfo));
-    TransportHeterogEventRoce *transportHandle = transport.get();
+    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce(
+        "test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
+    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1,
+    // 18000, 0, transportResourceInfo));
+    TransportHeterogEventRoce* transportHandle = transport.get();
 
     int ret = transportHandle->IssueRecvWqe(srq, 1);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -1058,20 +912,16 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_IssueRecvWqe)
 
 TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_QpConnect)
 {
-    MOCKER(HrtRaQpNonBlockConnectAsync)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(HrtRaQpNonBlockConnectAsync).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(hrtRaSocketBatchClose)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtRaSocketBatchClose).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     HcclIpAddress invalidIp;
-    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
-    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1, 18000, 0, transportResourceInfo));
-    TransportHeterogEventRoce *transportHandle = transport.get();
+    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce(
+        "test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
+    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1,
+    // 18000, 0, transportResourceInfo));
+    TransportHeterogEventRoce* transportHandle = transport.get();
     SocketInfoT socketInfo1;
     transport->initSM_.locInitInfo.socketInfo.push_back(socketInfo1);
     transport->initSM_.locInitInfo.socketInfo.push_back(socketInfo1);
@@ -1087,25 +937,21 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_QpConnect)
 TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogEventRoce_GetQpStatus)
 {
     int qpStatus = 0;
-    MOCKER(hrtGetRaQpStatus)
-    .stubs()
-    .with(any(), outBound(&qpStatus))
-    .will(returnValue(0));
+    MOCKER(hrtGetRaQpStatus).stubs().with(any(), outBound(&qpStatus)).will(returnValue(0));
 
     bool completed;
     HcclIpAddress invalidIp;
-    unique_ptr<TransportHeterogRoce> transport(new (nothrow) TransportHeterogRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
-    // unique_ptr<TransportHeterogRoce> transport(new (nothrow) TransportHeterogRoce("test_collective", 0, 1, 18000, 0, transportResourceInfo));
-    TransportHeterogRoce *transportHandle = transport.get();
+    unique_ptr<TransportHeterogRoce> transport(
+        new (nothrow) TransportHeterogRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
+    // unique_ptr<TransportHeterogRoce> transport(new (nothrow) TransportHeterogRoce("test_collective", 0, 1, 18000, 0,
+    // transportResourceInfo));
+    TransportHeterogRoce* transportHandle = transport.get();
     int ret = transportHandle->GetQpStatus(completed);
     EXPECT_EQ(ret, HCCL_E_AGAIN);
     GlobalMockObject::verify();
 
     qpStatus = 1;
-    MOCKER(hrtGetRaQpStatus)
-    .stubs()
-    .with(any(), outBound(&qpStatus))
-    .will(returnValue(0));
+    MOCKER(hrtGetRaQpStatus).stubs().with(any(), outBound(&qpStatus)).will(returnValue(0));
     ret = transportHandle->GetQpStatus(completed);
     EXPECT_EQ(ret, HCCL_E_AGAIN);
     GlobalMockObject::verify();
@@ -1125,16 +971,15 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_hccd_TransportHeterogRoce_CreateSrq_s
 
 TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_FlushSendQueue)
 {
-    MOCKER_CPP(&TransportHeterogEventRoce::SendEnvelope)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportHeterogEventRoce::SendEnvelope).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     HcclEnvelope tmpEnvelopInfo;
     HcclIpAddress invalidIp;
-    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
-    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1, 18000, 0, transportResourceInfo));
-    TransportHeterogEventRoce *transportHandle = transport.get();
+    unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce(
+        "test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
+    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1,
+    // 18000, 0, transportResourceInfo));
+    TransportHeterogEventRoce* transportHandle = transport.get();
     transportHandle->envelopeBacklogQueue_.push(tmpEnvelopInfo);
 
     bool completed;
@@ -1145,25 +990,22 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_FlushSendQueue)
 
 TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_CreateCqAndQp)
 {
-    MOCKER(CreateQpWithCq)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(CreateQpWithCq).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     HcclIpAddress invalidIp;
-    unique_ptr<TransportHeterogRoce> transport(new (nothrow) TransportHeterogRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
-    // unique_ptr<TransportHeterogRoce> transport(new (nothrow) TransportHeterogRoce("test_collective", 0, 1, 18000, 0, transportResourceInfo));
-    TransportHeterogRoce *transportHandle = transport.get();
+    unique_ptr<TransportHeterogRoce> transport(
+        new (nothrow) TransportHeterogRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
+    // unique_ptr<TransportHeterogRoce> transport(new (nothrow) TransportHeterogRoce("test_collective", 0, 1, 18000, 0,
+    // transportResourceInfo));
+    TransportHeterogRoce* transportHandle = transport.get();
     int ret = transportHandle->CreateCqAndQp();
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    MOCKER(CreateQpWithSharedCq)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(CreateQpWithSharedCq).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    unique_ptr<TransportHeterogEventRoce> eventTransport(new (nothrow) TransportHeterogEventRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
-    TransportHeterogEventRoce *eventTransportHandle = eventTransport.get();
+    unique_ptr<TransportHeterogEventRoce> eventTransport(new (nothrow) TransportHeterogEventRoce(
+        "test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
+    TransportHeterogEventRoce* eventTransportHandle = eventTransport.get();
     TransportHeterogEventRoce::gNeedRepoEvent = false;
     ret = eventTransportHandle->CreateCqAndQp();
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -1175,26 +1017,24 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_PullSendOrRecvSt
     HcclIpAddress invalidIp;
     TransportHeterogRoce transportEvent("test_ta", invalidIp, invalidIp, 18000, 0, transportResourceInfo);
     MOCKER_CPP_VIRTUAL(transportEvent, &TransportHeterogRoce::PullSendStatus)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TransportHeterog::GetState)
-    .stubs()
-    .with(any())
-    .will(returnValue(ConnState::CONN_STATE_COMPLETE));
+    MOCKER_CPP(&TransportHeterog::GetState).stubs().with(any()).will(returnValue(ConnState::CONN_STATE_COMPLETE));
 
-    unique_ptr<TransportHeterogRoce> transport(new (nothrow) TransportHeterogRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
-    TransportHeterogRoce *transportHandle = transport.get();
+    unique_ptr<TransportHeterogRoce> transport(
+        new (nothrow) TransportHeterogRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
+    TransportHeterogRoce* transportHandle = transport.get();
     HcclRequestInfo request;
     request.transportRequest.requestType = HcclRequestType::HCCL_REQUEST_SEND;
     int ret = transportHandle->PullSendOrRecvStatus(request);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     MOCKER_CPP_VIRTUAL(transportEvent, &TransportHeterogRoce::PullRecvStatus)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_SUCCESS));
 
     request.transportRequest.requestType = HcclRequestType::HCCL_REQUEST_RECV;
     ret = transportHandle->PullSendOrRecvStatus(request);
@@ -1204,10 +1044,7 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_PullSendOrRecvSt
     ret = transportHandle->PullSendOrRecvStatus(request);
     EXPECT_EQ(ret, HCCL_E_PARA);
 
-    MOCKER_CPP(&TransportHeterog::GetState)
-    .stubs()
-    .with(any())
-    .will(returnValue(ConnState::CONN_STATE_SEND_STATUS));
+    MOCKER_CPP(&TransportHeterog::GetState).stubs().with(any()).will(returnValue(ConnState::CONN_STATE_SEND_STATUS));
 
     ret = transportHandle->PullSendOrRecvStatus(request);
     GlobalMockObject::verify();
@@ -1216,23 +1053,15 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_PullSendOrRecvSt
 TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_Wait)
 {
     HcclIpAddress invalidIp;
-    unique_ptr<TransportHeterogRoce> transport(new (nothrow) TransportHeterogRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
-    TransportHeterogRoce *transportHandle = transport.get();
+    unique_ptr<TransportHeterogRoce> transport(
+        new (nothrow) TransportHeterogRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
+    TransportHeterogRoce* transportHandle = transport.get();
 
-    MOCKER_CPP(&TransportHeterogRoce::PullSendOrRecvStatus)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportHeterogRoce::PullSendOrRecvStatus).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TransportHeterog::GetState)
-    .stubs()
-    .with(any())
-    .will(returnValue(ConnState::CONN_STATE_SEND_STATUS));
+    MOCKER_CPP(&TransportHeterog::GetState).stubs().with(any()).will(returnValue(ConnState::CONN_STATE_SEND_STATUS));
 
-    MOCKER_CPP(&TransportHeterog::ConnectAsync)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportHeterog::ConnectAsync).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     HcclRequestInfo request;
     s32 flag = HCCL_TEST_INCOMPLETED;
@@ -1253,14 +1082,16 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogEventRoce_Imrecv)
     HcclMessageInfo msg;
     HcclRequestInfo* request;
 
-    unique_ptr<TransportHeterogEventRoce> transport1(new (nothrow) TransportHeterogEventRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
+    unique_ptr<TransportHeterogEventRoce> transport1(new (nothrow) TransportHeterogEventRoce(
+        "test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
     TransportHeterogRoce transport("test_ta", invalidIp, invalidIp, 18000, 0, transportResourceInfo);
-    MOCKER_CPP_VIRTUAL(transport, &TransportHeterogRoce::Imrecv,
+    MOCKER_CPP_VIRTUAL(
+        transport, &TransportHeterogRoce::Imrecv,
         HcclResult (TransportHeterogRoce::*)(const TransData&, HcclMessageInfo&, HcclRequestInfo*&))
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
-    TransportHeterogEventRoce *transportHandle = transport1.get();
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_SUCCESS));
+    TransportHeterogEventRoce* transportHandle = transport1.get();
     int ret = transportHandle->Imrecv(recvData, msg, request);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();

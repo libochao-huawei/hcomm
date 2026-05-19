@@ -28,15 +28,9 @@
 using namespace Hccl;
 class CommunicatorImplLiteTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "CommunicatorImplLiteTest SetUP" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "CommunicatorImplLiteTest SetUP" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "CommunicatorImplLiteTest TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "CommunicatorImplLiteTest TearDown" << std::endl; }
 
     virtual void SetUp()
     {
@@ -54,7 +48,7 @@ protected:
         std::cout << "A Test case in CommunicatorImplLiteTest TearDown" << std::endl;
         GlobalMockObject::verify();
     }
-    u8  mockSq[AC_SQE_SIZE * AC_SQE_MAX_CNT]{0};
+    u8 mockSq[AC_SQE_SIZE * AC_SQE_MAX_CNT]{0};
 };
 
 TEST_F(CommunicatorImplLiteTest, test_load_with_hccl_exception)
@@ -68,27 +62,27 @@ TEST_F(CommunicatorImplLiteTest, test_load_with_hccl_exception)
     service.insExecutor = std::make_unique<InsExecutor>(&service);
     std::vector<char> uniqueId = {'0', '0', '0'};
     service.GetStreamLiteMgr()->streams.push_back(std::make_unique<StreamLite>(uniqueId));
-    HcclSendRecvItem *items = new HcclSendRecvItem[5];
+    HcclSendRecvItem* items = new HcclSendRecvItem[5];
     u32 inttobuff = 100;
     for (int i = 0; i < 5; i++) {
         items[i].remoteRank = i;
         items[i].count = inttobuff;
-        items[i].buf = static_cast<void *>(&inttobuff);
+        items[i].buf = static_cast<void*>(&inttobuff);
     }
 
-    SendRecvItemTokenInfo *sendRecvItems = new SendRecvItemTokenInfo[5];
+    SendRecvItemTokenInfo* sendRecvItems = new SendRecvItemTokenInfo[5];
     u32 idvalue = 10;
     for (int i = 0; i < 5; i++) {
         sendRecvItems->tokenId = idvalue;
         sendRecvItems->tokenValue = idvalue;
     }
-    
+
     HcclKernelParamLite param;
     param.op.algOperator.opMode = OpMode::OPBASE;
     param.op.algOperator.batchSendRecvDataDes.sendRecvItemsPtr = items;
-    auto                ret = service.LoadWithOpBasedMode(&param);
+    auto ret = service.LoadWithOpBasedMode(&param);
     EXPECT_EQ(ret, 1);
-    
+
     HcclKernelParamLite param1;
     param1.op.algOperator.opMode = OpMode::OPBASE;
     param1.comm.devType = DevType::DEV_TYPE_950;
@@ -108,8 +102,8 @@ TEST_F(CommunicatorImplLiteTest, test_load_with_hccl_exception)
     service.UpdateCommParam(&param2);
     ret = service.LoadWithOpBasedMode(&param2);
     EXPECT_EQ(ret, 1);
-    delete [] items;
-    delete [] sendRecvItems;
+    delete[] items;
+    delete[] sendRecvItems;
 }
 
 TEST_F(CommunicatorImplLiteTest, Ut_LoadWithOpBasedMode_When_910A2_Expect_ReturnKERNEL_SUCCESS)
@@ -120,21 +114,21 @@ TEST_F(CommunicatorImplLiteTest, Ut_LoadWithOpBasedMode_When_910A2_Expect_Return
     service.insExecutor = std::make_unique<InsExecutor>(&service);
     std::vector<char> uniqueId = {'0', '0', '0'};
     service.GetStreamLiteMgr()->streams.push_back(std::make_unique<StreamLite>(uniqueId));
-    HcclSendRecvItem *items = new HcclSendRecvItem[5];
+    HcclSendRecvItem* items = new HcclSendRecvItem[5];
     u32 inttobuff = 100;
     for (int i = 0; i < 5; i++) {
         items[i].remoteRank = i;
         items[i].count = inttobuff;
-        items[i].buf = static_cast<void *>(&inttobuff);
+        items[i].buf = static_cast<void*>(&inttobuff);
     }
 
-    SendRecvItemTokenInfo *sendRecvItems = new SendRecvItemTokenInfo[5];
+    SendRecvItemTokenInfo* sendRecvItems = new SendRecvItemTokenInfo[5];
     u32 idvalue = 10;
     for (int i = 0; i < 5; i++) {
         sendRecvItems->tokenId = idvalue;
         sendRecvItems->tokenValue = idvalue;
     }
-    
+
     HcclKernelParamLite param2;
     param2.op.algOperator.opMode = OpMode::OPBASE;
     param2.comm.devType = DevType::DEV_TYPE_910A2;
@@ -144,8 +138,8 @@ TEST_F(CommunicatorImplLiteTest, Ut_LoadWithOpBasedMode_When_910A2_Expect_Return
     service.UpdateCommParam(&param2);
     auto ret = service.LoadWithOpBasedMode(&param2);
     EXPECT_EQ(ret, 1);
-    delete [] items;
-    delete [] sendRecvItems;
+    delete[] items;
+    delete[] sendRecvItems;
 }
 
 TEST_F(CommunicatorImplLiteTest, test_load_with_any_exception)
@@ -155,18 +149,18 @@ TEST_F(CommunicatorImplLiteTest, test_load_with_any_exception)
     MOCKER_CPP(&CommunicatorImplLite::RegisterRtsqCallback).stubs();
     CommunicatorImplLite service(0);
     service.primTranslator = std::make_unique<PrimTranslator>();
-    service.insExecutor    = std::make_unique<InsExecutor>(&service);
+    service.insExecutor = std::make_unique<InsExecutor>(&service);
     std::vector<char> uniqueId = {'0', '0', '0'};
     service.GetStreamLiteMgr()->streams.push_back(std::make_unique<StreamLite>(uniqueId));
-    HcclSendRecvItem *items = new HcclSendRecvItem[5];
+    HcclSendRecvItem* items = new HcclSendRecvItem[5];
     u32 inttobuff = 100;
     for (int i = 0; i < 5; i++) {
         items[i].remoteRank = i;
         items[i].count = inttobuff;
-        items[i].buf = static_cast<void *>(&inttobuff);
+        items[i].buf = static_cast<void*>(&inttobuff);
     }
 
-    SendRecvItemTokenInfo *sendRecvItems = new SendRecvItemTokenInfo[5];
+    SendRecvItemTokenInfo* sendRecvItems = new SendRecvItemTokenInfo[5];
     u32 idvalue = 10;
     for (int i = 0; i < 5; i++) {
         sendRecvItems->tokenId = idvalue;
@@ -179,8 +173,8 @@ TEST_F(CommunicatorImplLiteTest, test_load_with_any_exception)
 
     auto ret = service.LoadWithOpBasedMode(&param);
     EXPECT_EQ(ret, 1);
-    delete [] items;
-    delete [] sendRecvItems;
+    delete[] items;
+    delete[] sendRecvItems;
 }
 
 TEST_F(CommunicatorImplLiteTest, test_get_method)
@@ -204,7 +198,7 @@ TEST_F(CommunicatorImplLiteTest, test_update_comm_with_hccl_exception)
     MOCKER(memcpy_s).stubs().will(returnValue(-1));
     auto ret = service.UpdateComm(&param);
     EXPECT_EQ(ret, 1);
-    
+
     MOCKER_CPP(&CommunicatorImplLite::UpdateTransports).stubs().with(any()).will(throws(InternalException("")));
     ret = service.UpdateComm(&param);
     EXPECT_EQ(ret, 1);
@@ -212,8 +206,6 @@ TEST_F(CommunicatorImplLiteTest, test_update_comm_with_hccl_exception)
     service.isSuspended = true;
     ret = service.UpdateComm(&param);
     EXPECT_EQ(ret, 1);
-
-    
 }
 
 TEST_F(CommunicatorImplLiteTest, test_update_comm_with_any_exception)
@@ -223,7 +215,7 @@ TEST_F(CommunicatorImplLiteTest, test_update_comm_with_any_exception)
     CommunicatorImplLite service(0);
     service.isSuspended = true;
     HcclKernelParamLite param;
-    auto                ret = service.UpdateComm(&param);
+    auto ret = service.UpdateComm(&param);
     EXPECT_EQ(ret, 1);
 }
 
@@ -255,7 +247,7 @@ TEST_F(CommunicatorImplLiteTest, test_update_comm_success)
     MOCKER_CPP(&RtsqBase::ConfigSqStatusByType).stubs();
 
     u32 fakeStreamId = 0;
-    u32 fakeSqId     = 0;
+    u32 fakeSqId = 0;
     BinaryStream liteBinaryStream;
     liteBinaryStream << fakeStreamId;
     liteBinaryStream << fakeSqId;
@@ -264,7 +256,7 @@ TEST_F(CommunicatorImplLiteTest, test_update_comm_success)
     liteBinaryStream.Dump(uniqueId);
     service.GetStreamLiteMgr()->streams.emplace_back(std::make_unique<StreamLite>(uniqueId));
 
-    auto rtsq = static_cast<RtsqA5 *>(service.GetStreamLiteMgr()->GetMaster()->GetRtsq());
+    auto rtsq = static_cast<RtsqA5*>(service.GetStreamLiteMgr()->GetMaster()->GetRtsq());
     MOCKER_CPP_VIRTUAL(*rtsq, static_cast<void (RtsqA5::*)(u32)>(&RtsqA5::NotifyWait)).stubs().with(any());
     MOCKER_CPP_VIRTUAL(*rtsq, static_cast<void (RtsqA5::*)(u32, u32)>(&RtsqA5::NotifyWait)).stubs().with(any());
     MOCKER_CPP_VIRTUAL(*rtsq, &RtsqA5::NotifyRecordLoc).stubs().with(any());
@@ -326,7 +318,7 @@ TEST_F(CommunicatorImplLiteTest, test_UpdateLocBuffer_ranksize1_batchsendrecv)
     HcclSendRecvItem sendRecvItems[5];
     for (i = 0; i < 5; i++) {
         sendRecvItems[i].remoteRank = i;
-        sendRecvItems[i].buf = static_cast<void *>(&buf);
+        sendRecvItems[i].buf = static_cast<void*>(&buf);
         sendRecvItems[i].count = i;
     }
     kernelParam.op.algOperator.batchSendRecvDataDes.sendRecvItemsPtr = sendRecvItems;
@@ -356,7 +348,7 @@ TEST_F(CommunicatorImplLiteTest, test_UpdateLocBuffer_ranksize1_batchsendrecv_1)
     collAlgOperator.opType = OpType::BATCHSENDRECV;
     HcclAicpuOpLite opLite;
     opLite.algOperator = collAlgOperator;
-    
+
     SendRecvItemTokenInfo sendRecvTokens[5];
     int buf[5] = {1, 2, 3, 4, 5};
     int i = 0;
@@ -367,7 +359,7 @@ TEST_F(CommunicatorImplLiteTest, test_UpdateLocBuffer_ranksize1_batchsendrecv_1)
     HcclSendRecvItem sendRecvItems[5];
     for (i = 0; i < 5; i++) {
         sendRecvItems[i].remoteRank = i;
-        sendRecvItems[i].buf = static_cast<void *>(&buf);
+        sendRecvItems[i].buf = static_cast<void*>(&buf);
         sendRecvItems[i].count = i;
     }
     opLite.algOperator.batchSendRecvDataDes.sendRecvItemsPtr = sendRecvItems;

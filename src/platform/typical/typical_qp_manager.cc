@@ -17,9 +17,7 @@
 #include "rdma_resource_manager.h"
 
 namespace hccl {
-TypicalQpManager::TypicalQpManager()
-{
-}
+TypicalQpManager::TypicalQpManager() {}
 
 TypicalQpManager::~TypicalQpManager()
 {
@@ -75,7 +73,8 @@ HcclResult TypicalQpManager::CreateQp(struct TypicalQp& qpInfo, const QpConfigIn
 
 HcclResult TypicalQpManager::ModifyQp(struct TypicalQp& localQpInfo, struct TypicalQp& remoteQpInfo)
 {
-    CHK_PRT_RET((localQpInfo.qpn == 0 || remoteQpInfo.qpn == 0),
+    CHK_PRT_RET(
+        (localQpInfo.qpn == 0 || remoteQpInfo.qpn == 0),
         HCCL_ERROR("[TypicalQpManager][ModifyQp] the qpinfo is wrong, qpn is 0."), HCCL_E_PARA);
     QpHandle qpHandle = nullptr;
     CHK_RET(GetQpHandleByQpn(localQpInfo.qpn, qpHandle));
@@ -90,8 +89,8 @@ HcclResult TypicalQpManager::ModifyQp(struct TypicalQp& localQpInfo, struct Typi
 
 HcclResult TypicalQpManager::DestroyQp(struct TypicalQp& qpInfo)
 {
-    CHK_PRT_RET((qpInfo.qpn == 0), HCCL_ERROR("[TypicalQpManager][DestroyQp] The qpinfo is wrong, qpn is 0."),
-        HCCL_E_PARA);
+    CHK_PRT_RET(
+        (qpInfo.qpn == 0), HCCL_ERROR("[TypicalQpManager][DestroyQp] The qpinfo is wrong, qpn is 0."), HCCL_E_PARA);
     QpHandle qpHandle;
     CHK_RET(GetQpHandleByQpn(qpInfo.qpn, qpHandle));
     CHK_PTR_NULL(qpHandle);
@@ -106,8 +105,10 @@ HcclResult TypicalQpManager::SetQpRdmaRetryCfg(struct TypicalQp& qpInfo)
 {
     qpInfo.retryCnt = GetExternalInputRdmaRetryCnt();
     qpInfo.retryTime = GetExternalInputRdmaTimeOut();
-    HCCL_INFO("[TypicalQpManager][SetQpCreateBaseInfo] Qpinfo is set, tc is %u, sl is %u, retry cnt is %u, "\
-        "retry time is %u", qpInfo.tc, qpInfo.sl, qpInfo.retryCnt, qpInfo.retryTime);
+    HCCL_INFO(
+        "[TypicalQpManager][SetQpCreateBaseInfo] Qpinfo is set, tc is %u, sl is %u, retry cnt is %u, "
+        "retry time is %u",
+        qpInfo.tc, qpInfo.sl, qpInfo.retryCnt, qpInfo.retryTime);
     return HCCL_SUCCESS;
 }
 
@@ -118,10 +119,11 @@ HcclResult TypicalQpManager::GetQpHandleByQpn(u32 qpn, QpHandle& qpHandle)
     CHK_PTR_NULL(rdmaHandle_);
     std::unique_lock<std::mutex> lock(qpMutex_);
     auto it = qpMap_.find(qpn);
-    CHK_PRT_RET((it == qpMap_.end()),
-        HCCL_ERROR("[TypicalQpManager][GetQpHandleByQpn] Qpn is not found"), HCCL_E_NOT_FOUND);
+    CHK_PRT_RET(
+        (it == qpMap_.end()), HCCL_ERROR("[TypicalQpManager][GetQpHandleByQpn] Qpn is not found"), HCCL_E_NOT_FOUND);
     qpHandle = it->second.second;
-    CHK_PRT_RET((qpHandle == nullptr),
+    CHK_PRT_RET(
+        (qpHandle == nullptr),
         HCCL_ERROR("[TypicalQpManager][GetQpHandleByQpn] Get Qphandle failed, qphandle is nullptr. qpn is %u", qpn),
         HCCL_E_NOT_FOUND);
     return HCCL_SUCCESS;

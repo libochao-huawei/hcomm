@@ -25,18 +25,9 @@ using namespace hccl;
 
 class HcclCommunicatorHostTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "HcclCommunicatorHostTest SetUP" << std::endl;
-    }
-    static void TearDownTestCase()
-    {
-        std::cout << "HcclCommunicatorHostTest TearDown" << std::endl;
-    }
-    virtual void SetUp()
-    {
-        std::cout << "HcclCommunicatorHostTest Test SetUP" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "HcclCommunicatorHostTest SetUP" << std::endl; }
+    static void TearDownTestCase() { std::cout << "HcclCommunicatorHostTest TearDown" << std::endl; }
+    virtual void SetUp() { std::cout << "HcclCommunicatorHostTest Test SetUP" << std::endl; }
     virtual void TearDown()
     {
         GlobalMockObject::verify();
@@ -101,8 +92,8 @@ TEST_F(HcclCommunicatorHostTest, Ut_IsSupportSymmetricMemory_When_Normal_Expect_
     hcclCommunicator->multiModuleDiffDeviceNumMode_ = false;
 
     OpParam opParam;
-    opParam.inputSymWindow = reinterpret_cast<void *>(0x1000);
-    opParam.outputSymWindow = reinterpret_cast<void *>(0x2000);
+    opParam.inputSymWindow = reinterpret_cast<void*>(0x1000);
+    opParam.outputSymWindow = reinterpret_cast<void*>(0x2000);
     opParam.aicpuUnfoldMode = true;
 
     bool retBool = hcclCommunicator->IsSupportSymmetricMemory(HcclCMDType::HCCL_CMD_ALLGATHER, opParam);
@@ -178,7 +169,8 @@ TEST_F(
     EXPECT_EQ(retBool, false);
 }
 
-TEST_F(HcclCommunicatorHostTest,
+TEST_F(
+    HcclCommunicatorHostTest,
     Ut_IsSupportSymmetricMemory_When_FindSymmetricWindowReturnIsHCCL_E_NOT_FOUND_Expect_ReturnIsFalse)
 {
     MOCKER_CPP(&SymmetricMemory::FindSymmetricWindow).stubs().will(returnValue(HCCL_E_NOT_FOUND));
@@ -202,8 +194,9 @@ TEST_F(HcclCommunicatorHostTest,
 
 class TestHcclCommunicator {
 public:
-    HcclResult AicpuInitOpTilingDataBuf(const OpParam &opParam, const HcclCMDType &opType,
-        const std::string &kernelName, const AicpuOpTiling opTilingInfo, u64 dynamicDataSize)
+    HcclResult AicpuInitOpTilingDataBuf(
+        const OpParam& opParam, const HcclCMDType& opType, const std::string& kernelName,
+        const AicpuOpTiling opTilingInfo, u64 dynamicDataSize)
     {
         MOCKER_CPP(&HcclCommunicator::InitAndCheckAicpuOrderNotify).stubs().will(returnValue(HCCL_SUCCESS));
         MOCKER_CPP(&HcclCommunicator::BuildHierarchicalAlgOption).stubs().will(returnValue(HCCL_SUCCESS));
@@ -214,7 +207,7 @@ public:
         return hcclCommunicator->AicpuInitOpTilingDataBuf(opParam, opType, kernelName, opTilingInfo, dynamicDataSize);
     }
 
-    HcclCommunicator *hcclCommunicator;
+    HcclCommunicator* hcclCommunicator;
 };
 
 TEST_F(HcclCommunicatorHostTest, Ut_SetDynamicTilingData_When_A2GroupSendRecv_Expect_SkipIsDirectRemoteRank)
@@ -258,7 +251,7 @@ TEST_F(HcclCommunicatorHostTest, Ut_SetDynamicTilingData_When_A2GroupSendRecv_Ex
     EXPECT_EQ(hcclCommunicator->userRankSize_, 2);
 }
 
-static void TestConstructParam(HcclCommParams &params, RankTable_t &rankTable)
+static void TestConstructParam(HcclCommParams& params, RankTable_t& rankTable)
 {
     string commId = "comm ";
     memcpy_s(params.id.internal, HCCL_ROOT_INFO_BYTES, commId.c_str(), commId.length() + 1);
@@ -323,13 +316,13 @@ TEST_F(HcclCommunicatorHostTest, Ut_HcclGetAlgExecParam_When_Normal_Expect_Retur
     HcclCMDType opType = HcclCMDType::HCCL_CMD_ALLREDUCE;
     u64 count = 1024;
 
-    void *inputPtr = malloc(count * sizeof(int8_t));
-    void *outputPtr = malloc(count * sizeof(int8_t));
+    void* inputPtr = malloc(count * sizeof(int8_t));
+    void* outputPtr = malloc(count * sizeof(int8_t));
 
     bool clearEnable = true;
     HcclDataType dataType = HCCL_DATA_TYPE_INT8;
     HcclReduceOp op = HCCL_REDUCE_SUM;
-    void *commContext = nullptr;
+    void* commContext = nullptr;
     u64 len = 0;
     u32 aivCoreLimit = 2;
 

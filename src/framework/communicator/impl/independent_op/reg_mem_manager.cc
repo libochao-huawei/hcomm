@@ -9,6 +9,4 @@
  */
 
 #include "reg_mem_manager.h"
-namespace hccl {
-
-}
+namespace hccl {}

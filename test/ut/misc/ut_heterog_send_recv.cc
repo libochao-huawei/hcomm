@@ -37,106 +37,49 @@
 #include "llt_hccl_stub_gdr.h"
 #include "externalinput.h"
 
-
 using namespace std;
 using namespace hccl;
 
-
-class HeterogSendRecvTest : public testing::Test
-{
+class HeterogSendRecvTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "\033[36m--HeterogSendRecvTest SetUP--\033[0m" << std::endl;
-    }
-    static void TearDownTestCase()
-    {
-        std::cout << "\033[36m--HeterogSendRecvTest TearDown--\033[0m" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "\033[36m--HeterogSendRecvTest SetUP--\033[0m" << std::endl; }
+    static void TearDownTestCase() { std::cout << "\033[36m--HeterogSendRecvTest TearDown--\033[0m" << std::endl; }
     // Some expensive resource shared by all tests.
     virtual void SetUp()
     {
-        static s32  call_cnt = 0;
-        string name =std::to_string(call_cnt++) +"_" + __PRETTY_FUNCTION__;
-        ra_set_shm_name(name .c_str());
+        static s32 call_cnt = 0;
+        string name = std::to_string(call_cnt++) + "_" + __PRETTY_FUNCTION__;
+        ra_set_shm_name(name.c_str());
         ra_set_test_type(0, "UT_TEST");
         s32 portNum = -1;
-        MOCKER(hrtGetHccsPortNum)
-            .stubs()
-            .with(any(), outBound(portNum))
-            .will(returnValue(HCCL_SUCCESS));
+        MOCKER(hrtGetHccsPortNum).stubs().with(any(), outBound(portNum)).will(returnValue(HCCL_SUCCESS));
         std::cout << "A Test SetUP" << std::endl;
     }
-    virtual void TearDown()
-    {
-        std::cout << "A Test TearDown" << std::endl;
-    }
+    virtual void TearDown() { std::cout << "A Test TearDown" << std::endl; }
 };
 
 TEST_F(HeterogSendRecvTest, ut_mr_manager)
 {
-    nlohmann::json rank_table =
-    {
-	    {"collective_id", "192.168.0.101-9527-0001"},
-        {"master_ip", "192.168.0.101"},
-        {"master_port", "18000"},
-        {"status", "completed"},
-	    {"version","1.1"},
-        {"node_list", {
-            {
-                {"node_addr", "192.168.0.101"},
-                {"ranks", {
-                    {
-                        {"rank_id", "0"}
-                    }
-                }}
-            },
-            {
-                {"node_addr", "192.168.1.101"},
-                {"ranks", {
-                    {
-                        {"rank_id", "1"},
-                        {"device_id", "0"}
-                    }
-                }}
-            },
-            {
-                {"node_addr", "192.168.2.101"},
-                {"ranks", {
-                    {
-                        {"rank_id", "2"}
-                    }
-                }}
-            },
-            {
-                {"node_addr", "192.168.3.101"},
-                {"ranks", {
-                    {
-                        {"rank_id", "3"}
-                    }
-                }}
-            }
-        }
-        }
-    };
-    MOCKER(hrtIbvPostSrqRecv)
-    .stubs()
-    .with(any())
-    .will(returnValue(0));
-    MOCKER_CPP(&TransportHeterogEventRoce::IssueRecvWqe)
-    .stubs()
-    .with(any())
-    .will(returnValue(0));
+    nlohmann::json rank_table
+        = {{"collective_id", "192.168.0.101-9527-0001"},
+           {"master_ip", "192.168.0.101"},
+           {"master_port", "18000"},
+           {"status", "completed"},
+           {"version", "1.1"},
+           {"node_list",
+            {{{"node_addr", "192.168.0.101"}, {"ranks", {{{"rank_id", "0"}}}}},
+             {{"node_addr", "192.168.1.101"}, {"ranks", {{{"rank_id", "1"}, {"device_id", "0"}}}}},
+             {{"node_addr", "192.168.2.101"}, {"ranks", {{{"rank_id", "2"}}}}},
+             {{"node_addr", "192.168.3.101"}, {"ranks", {{{"rank_id", "3"}}}}}}}};
+    MOCKER(hrtIbvPostSrqRecv).stubs().with(any()).will(returnValue(0));
+    MOCKER_CPP(&TransportHeterogEventRoce::IssueRecvWqe).stubs().with(any()).will(returnValue(0));
 
-    MOCKER(hrtRaSocketWhiteListAdd)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtRaSocketWhiteListAdd).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     HcclResult ret;
     void *buff, *buff1, *buff2;
-    void *rdmaHandle = (void *)0xabcd;
-    void *qpHandle = (void *)0xabce;
+    void* rdmaHandle = (void*)0xabcd;
+    void* qpHandle = (void*)0xabce;
     u32 devId = 0;
     bool IsHostMem = true;
     map<MrMapKey, MrInfo> unRegMrMap;
@@ -159,7 +102,7 @@ TEST_F(HeterogSendRecvTest, ut_mr_manager)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     MrManager::GetInstance().Init(rdmaHandle);
-    HccdComm *hcclcomm = static_cast<HccdComm *>(comm);
+    HccdComm* hcclcomm = static_cast<HccdComm*>(comm);
     hcclcomm->impl_->mrManager_->rdmaHandle_ = rdmaHandle;
 
     // 注册全局内存
@@ -189,7 +132,7 @@ TEST_F(HeterogSendRecvTest, ut_mr_manager)
     ret = MrManager::GetInstance().GetKey(buff, size, lkey);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     // 注册地址相同大小不同的临时内存
-    ret = MrManager::GetInstance().GetKey(buff, size+1, lkey);
+    ret = MrManager::GetInstance().GetKey(buff, size + 1, lkey);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     // 释放临时内存
     ret = MrManager::GetInstance().ReleaseKey(buff, size);
@@ -197,7 +140,7 @@ TEST_F(HeterogSendRecvTest, ut_mr_manager)
     ret = MrManager::GetInstance().ReleaseKey(buff, size);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     // 释放地址相同大小不同的临时内存
-    ret = MrManager::GetInstance().ReleaseKey(buff, size+1);
+    ret = MrManager::GetInstance().ReleaseKey(buff, size + 1);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     // 注册全局内存
     ret = HcclRegisterMemory(comm, buff, size);
@@ -209,7 +152,7 @@ TEST_F(HeterogSendRecvTest, ut_mr_manager)
     ret = MrManager::GetInstance().GetKey(buff, size, lkey);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     // 使用小于全局内存的地址
-    ret = MrManager::GetInstance().GetKey(buff-1, size, lkey);
+    ret = MrManager::GetInstance().GetKey(buff - 1, size, lkey);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     // 释放未注册的全局内存，报错
     ret = MrManager::GetInstance().ReleaseKey(buff1, size);
@@ -241,27 +184,15 @@ TEST_F(HeterogSendRecvTest, ut_mr_manager)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     MrManager::GetInstance().Init(qpHandle, devId, IsHostMem, unRegMrMap);
- 
+
     unRegMrMap = MrManager::GetInstance().GetUnregMap();
     HcclMrInfo mrinfo;
     MrManager::GetInstance().TransMrInfo(qpHandle, size, mrinfo);
-    MOCKER(hrtHalHostRegister)
-        .stubs()
-        .with(any())
-        .will(returnValue(HCCL_SUCCESS));
-    MOCKER(HrtRaMrDereg)
-        .stubs()
-        .with(any())
-        .will(returnValue(HCCL_SUCCESS));
-    MOCKER(HrtRaMrReg)
-        .stubs()
-        .with(any())
-        .will(returnValue(HCCL_SUCCESS));
-    MOCKER(hrtHalHostUnregister)
-        .stubs()
-        .with(any())
-        .will(returnValue(HCCL_SUCCESS));
-    void *stub;
+    MOCKER(hrtHalHostRegister).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER(HrtRaMrDereg).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER(HrtRaMrReg).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtHalHostUnregister).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    void* stub;
     MrInfo MrInformation;
     MrInformation.addr = buff;
     MrInformation.size = size;
@@ -281,10 +212,7 @@ TEST_F(HeterogSendRecvTest, ut_mr_manager)
     MrManager::GetInstance().curDevId_ = 0;
     MrManager::mappedHostToDevMap_[key].devVirAddr = stub;
     MrManager::GetInstance().IsRequireMapping(buff, size - 1, stub);
-    MOCKER_CPP(&MrManager::GetMrInfo)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&MrManager::GetMrInfo).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     u64 dva = reinterpret_cast<uintptr_t>(stub);
     ret = MrManager::GetInstance().GetDevVirAddr(buff, size, dva);
 

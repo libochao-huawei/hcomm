@@ -16,16 +16,16 @@ namespace Hccl {
 constexpr u32 TEN_MILLISECOND_OF_USLEEP = 10000;
 std::mutex AicpuDaemonService::mutexForFuncs_;
 
-AicpuDaemonService &AicpuDaemonService::GetInstance()
+AicpuDaemonService& AicpuDaemonService::GetInstance()
 {
     static AicpuDaemonService daemonService;
     return daemonService;
 }
 
-void AicpuDaemonService::ServiceRun(void *info)
+void AicpuDaemonService::ServiceRun(void* info)
 {
     HCCL_RUN_INFO("Start background thread");
-    auto commandToBackGroud = static_cast<CommandToBackGroud *>(info);
+    auto commandToBackGroud = static_cast<CommandToBackGroud*>(info);
     while (true) {
         if (*commandToBackGroud == CommandToBackGroud::Stop) {
             HCCL_RUN_INFO("Background thread returned");
@@ -33,14 +33,14 @@ void AicpuDaemonService::ServiceRun(void *info)
         }
 
         std::unique_lock<std::mutex> lock(mutexForFuncs_);
-        for (auto &func : daemonFuncs) {
+        for (auto& func : daemonFuncs) {
             func->Call();
             if (needBreak) {
                 break;
             }
         }
         lock.unlock();
-        
+
         if (needBreak) {
             HCCL_RUN_INFO("Background thread needBreak");
             break;
@@ -51,14 +51,14 @@ void AicpuDaemonService::ServiceRun(void *info)
     HCCL_RUN_INFO("Exit background thread");
 }
 
-void AicpuDaemonService::ServiceStop(void *info) const
+void AicpuDaemonService::ServiceStop(void* info) const
 {
-    auto commandToBackGroud = static_cast<CommandToBackGroud *>(info);
-    *commandToBackGroud     = CommandToBackGroud::Stop;
+    auto commandToBackGroud = static_cast<CommandToBackGroud*>(info);
+    *commandToBackGroud = CommandToBackGroud::Stop;
     HCCL_INFO("Stop background thread");
 }
 
-void AicpuDaemonService::Register(DaemonFunc *daemonFunc)
+void AicpuDaemonService::Register(DaemonFunc* daemonFunc)
 {
     std::unique_lock<std::mutex> lock(mutexForFuncs_);
     daemonFuncs.push_back(daemonFunc);
@@ -70,4 +70,4 @@ void AicpuDaemonService::Break()
     needBreak = true;
     HCCL_INFO("Background thread received break");
 }
-}
+} // namespace Hccl

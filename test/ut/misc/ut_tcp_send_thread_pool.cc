@@ -50,20 +50,14 @@
 
 class MPI_SendThreadPool_Test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "MPI_SendThreadPool_Test SetUP" << std::endl;
-    }
-    static void TearDownTestCase()
-    {
-        std::cout << "MPI_SendThreadPool_Test TearDown" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "MPI_SendThreadPool_Test SetUP" << std::endl; }
+    static void TearDownTestCase() { std::cout << "MPI_SendThreadPool_Test TearDown" << std::endl; }
     // Some expensive resource shared by all tests.
     virtual void SetUp()
     {
-        static s32  call_cnt = 0;
-        std::string name =std::to_string(call_cnt++) +"_" + __PRETTY_FUNCTION__;
-        ra_set_shm_name(name .c_str());
+        static s32 call_cnt = 0;
+        std::string name = std::to_string(call_cnt++) + "_" + __PRETTY_FUNCTION__;
+        ra_set_shm_name(name.c_str());
         ra_set_test_type(1, "UT_MPI_TEST");
 
         std::cout << "MPI_SendThreadPool_Test SetUP" << std::endl;
@@ -76,26 +70,23 @@ protected:
 };
 
 HcclRequestInfo request;
-TcpSendThreadPool::TagTaskQueue *currentThreadTaskQueue = nullptr;
+TcpSendThreadPool::TagTaskQueue* currentThreadTaskQueue = nullptr;
 TcpSendThreadPool::TagTaskQueue queue1;
 TcpSendThreadPool::TagTaskQueue queue2;
-std::pair<TcpSendThreadPool::TagTaskQueue *, TcpSendThreadPool::TagTaskQueue *> taskQueues(&queue1, &queue2);
+std::pair<TcpSendThreadPool::TagTaskQueue*, TcpSendThreadPool::TagTaskQueue*> taskQueues(&queue1, &queue2);
 
 TEST_F(MPI_SendThreadPool_Test, ut_SendThreadPool_Init_Bind_CPU)
 {
     GlobalMockObject::verify();
     DlHalFunction::GetInstance().DlHalFunctionInit();
-    MOCKER_CPP(&TcpSendThreadPool::RunTask)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TcpSendThreadPool::RunTask).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
     bool envCompleted = true;
     bool tranCompleted = true;
     MOCKER_CPP(&TransportHeterogEventTcp::SendNoBlock)
-    .stubs()
-    .with(any(), any(), any(), any(), outBound(envCompleted), outBound(tranCompleted))
-    .will(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any(), any(), any(), any(), outBound(envCompleted), outBound(tranCompleted))
+        .will(returnValue(HCCL_SUCCESS));
 
     u32 devId = 0;
     HcclResult ret = TcpSendThreadPool::GetSendPoolInstance()->Init(devId);
@@ -108,17 +99,10 @@ TEST_F(MPI_SendThreadPool_Test, ut_SendThreadPool_Init_Bind_CPU)
 
 TEST_F(MPI_SendThreadPool_Test, ut_GetThreadNum)
 {
-
     u32 output = 0;
-    MOCKER_CPP(&TcpSendThreadPool::RunTask)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TcpSendThreadPool::RunTask).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(hrtDrvGetPlatformInfo)
-    .stubs()
-    .with(outBoundP(&output, sizeof(output)))
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtDrvGetPlatformInfo).stubs().with(outBoundP(&output, sizeof(output))).will(returnValue(HCCL_SUCCESS));
 
     TcpSendThreadPool::GetSendPoolInstance()->threadNum_ = 0;
     u32 devId = 0;
@@ -138,13 +122,16 @@ TEST_F(MPI_SendThreadPool_Test, ut_ThreadTaskQueueAddTask)
     HcclResult ret = TcpSendThreadPool::GetSendPoolInstance()->Init(devId);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    HCCL_ERROR("TcpSendThreadPool::GetSendPoolInstance() threadNum[%u]", TcpSendThreadPool::GetSendPoolInstance()->threadNum_);
+    HCCL_ERROR(
+        "TcpSendThreadPool::GetSendPoolInstance() threadNum[%u]", TcpSendThreadPool::GetSendPoolInstance()->threadNum_);
 
     TcpSendThreadPool::GetSendPoolInstance()->TaskQueueManager_[threadSerial].threadTaskQueuePtr = taskQueues.first;
-    TcpSendThreadPool::TagTaskQueue *ptr = TcpSendThreadPool::GetSendPoolInstance()->TaskQueueManager_[threadSerial].threadTaskQueuePtr;
-    auto &&iter = ptr->emplace(tag, std::queue<HcclRequestInfo *>());
+    TcpSendThreadPool::TagTaskQueue* ptr
+        = TcpSendThreadPool::GetSendPoolInstance()->TaskQueueManager_[threadSerial].threadTaskQueuePtr;
+    auto&& iter = ptr->emplace(tag, std::queue<HcclRequestInfo*>());
     iter.first->second.push(&request);
-    bool queueEmpty = TcpSendThreadPool::GetSendPoolInstance()->ThreadTaskQueueAddTask(threadSerial, currentThreadTaskQueue);
+    bool queueEmpty
+        = TcpSendThreadPool::GetSendPoolInstance()->ThreadTaskQueueAddTask(threadSerial, currentThreadTaskQueue);
     EXPECT_EQ(queueEmpty, false);
 
     ret = TcpSendThreadPool::GetSendPoolInstance()->Deinit();
@@ -160,14 +147,11 @@ TEST_F(MPI_SendThreadPool_Test, ut_LoadBalancing)
     bool envCompleted = true;
     bool tranCompleted = true;
     MOCKER_CPP(&TransportHeterogEventTcp::SendNoBlock)
-    .stubs()
-    .with(any(), any(), any(), any(), outBound(envCompleted), outBound(tranCompleted))
-    .will(returnValue(HCCL_SUCCESS));
+        .stubs()
+        .with(any(), any(), any(), any(), outBound(envCompleted), outBound(tranCompleted))
+        .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TransportHeterogEventTcp::ReportSendComp)
-    .stubs()
-    .with()
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TransportHeterogEventTcp::ReportSendComp).stubs().with().will(returnValue(HCCL_SUCCESS));
 
     ret = TcpSendThreadPool::GetSendPoolInstance()->LoadBalancing(currentThreadTaskQueue);
     ret = TcpSendThreadPool::GetSendPoolInstance()->Deinit();

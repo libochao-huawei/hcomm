@@ -38,13 +38,13 @@ protected:
 
 TEST_F(AivUbMemTransportTest, St_GetStatus_When_SOCKET_OK_Expect_Success)
 {
-    Hccl::Socket *fakeSocket = reinterpret_cast<Hccl::Socket *>(0x1);
+    Hccl::Socket* fakeSocket = reinterpret_cast<Hccl::Socket*>(0x1);
     HcommChannelDesc desc{};
     AivUbMemTransport aivTransport(fakeSocket, desc);
 
     aivTransport.baseStatus_ = Hccl::TransportStatus::SOCKET_OK;
     aivTransport.aivUbStatus_ = hcomm::AivUbMemTransport::AivUbMemTransportStatus::SOCKET_OK;
-    
+
     MOCKER_CPP(&AivUbMemTransport::RmtBufferUnpackProc).stubs();
 
     EXPECT_EQ(aivTransport.GetStatus(), Hccl::TransportStatus::SOCKET_OK);
@@ -68,7 +68,7 @@ TEST_F(AivUbMemTransportTest, St_GetStatus_When_SOCKET_OK_Expect_Success)
 
 TEST_F(AivUbMemTransportTest, Ut_GetStatus_When_RecvData_Fail_Expect_Status_Invalid)
 {
-    Hccl::Socket *fakeSocket = reinterpret_cast<Hccl::Socket *>(0x1);
+    Hccl::Socket* fakeSocket = reinterpret_cast<Hccl::Socket*>(0x1);
     HcommChannelDesc desc{};
     AivUbMemTransport aivTransport(fakeSocket, desc);
 
@@ -83,7 +83,7 @@ TEST_F(AivUbMemTransportTest, Ut_GetStatus_When_RecvData_Fail_Expect_Status_Inva
 
 TEST_F(AivUbMemTransportTest, Ut_GetStatus_When_SocketReady_Fail_Expect_Status_Invalid)
 {
-    Hccl::Socket *fakeSocket = reinterpret_cast<Hccl::Socket *>(0x1);
+    Hccl::Socket* fakeSocket = reinterpret_cast<Hccl::Socket*>(0x1);
     HcommChannelDesc desc{};
     AivUbMemTransport aivTransport(fakeSocket, desc);
 

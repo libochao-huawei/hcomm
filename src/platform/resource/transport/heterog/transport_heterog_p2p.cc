@@ -27,20 +27,18 @@ constexpr u64 LINK_ATTRIBUTE_WRITE = 0x1;
 constexpr u64 LINK_ATTRIBUTE_READ = 0x2;
 
 static bool g_eschedEventInit = false;
-TransportHeterogP2P::TransportHeterogP2P(DispatcherPub *dispatcher,
-    const std::unique_ptr<NotifyPool> &notifyPool,
-    MachinePara &machinePara,
+TransportHeterogP2P::TransportHeterogP2P(
+    DispatcherPub* dispatcher, const std::unique_ptr<NotifyPool>& notifyPool, MachinePara& machinePara,
     std::chrono::milliseconds timeout)
-    : TransportBase(dispatcher, notifyPool, machinePara, timeout), remoteInputPtr_(nullptr),
-      remoteOutputPtr_(nullptr), endType_(TRANSPORT_ENDPOINT_TYPE_NPU), connectState_(TRANSPORT_CONNECT_STATE_INIT),
+    : TransportBase(dispatcher, notifyPool, machinePara, timeout),
+      remoteInputPtr_(nullptr),
+      remoteOutputPtr_(nullptr),
+      endType_(TRANSPORT_ENDPOINT_TYPE_NPU),
+      connectState_(TRANSPORT_CONNECT_STATE_INIT),
       socketRecvSize_(0)
-{
-}
+{}
 
-TransportHeterogP2P::~TransportHeterogP2P()
-{
-    DeInit();
-}
+TransportHeterogP2P::~TransportHeterogP2P() { DeInit(); }
 
 HcclResult TransportHeterogP2P::DeInit()
 {
@@ -50,7 +48,7 @@ HcclResult TransportHeterogP2P::DeInit()
 
     bool devHasBeenSet = false;
     if (endType_ == TRANSPORT_ENDPOINT_TYPE_CPU) {
-        void *ctx = nullptr;
+        void* ctx = nullptr;
         CHK_RET(hrtCtxGetCurrent(&ctx));
         if (ctx == nullptr) {
             CHK_RET(SetDeivceByPhyId());
@@ -59,10 +57,10 @@ HcclResult TransportHeterogP2P::DeInit()
     }
     HCCL_DEBUG("TransportHeterogP2P DeInit Enter!");
     MemNameRepository* memNameRepositoryInstance = MemNameRepository::GetInstance(machinePara_.deviceLogicId);
-    for (auto &ipcName : openIpcNames_) {
-        memNameRepositoryInstance->CloseIpcMem(reinterpret_cast<const u8 *>(ipcName.c_str()));
+    for (auto& ipcName : openIpcNames_) {
+        memNameRepositoryInstance->CloseIpcMem(reinterpret_cast<const u8*>(ipcName.c_str()));
     }
-    for (auto &ipcInfo : setIpcMemInfos_) {
+    for (auto& ipcInfo : setIpcMemInfos_) {
         memNameRepositoryInstance->DestroyIpcMem(ipcInfo.ptr, ipcInfo.size);
     }
 
@@ -133,10 +131,12 @@ HcclResult TransportHeterogP2P::Init(void)
         }
     } while (status != HETEROG_P2P_SUCCESS);
 
-    HCCL_USER_CRITICAL_LOG("create hccl transport:communicator[%s], local rank[%u], remote rank[%u], "\
-        "transporttype[%s]", machinePara_.collectiveId.c_str(), machinePara_.localUserrank, 
-        machinePara_.remoteUserrank, GetLinkTypeEnumStr(GetLinkType()).c_str());
-        
+    HCCL_USER_CRITICAL_LOG(
+        "create hccl transport:communicator[%s], local rank[%u], remote rank[%u], "
+        "transporttype[%s]",
+        machinePara_.collectiveId.c_str(), machinePara_.localUserrank, machinePara_.remoteUserrank,
+        GetLinkTypeEnumStr(GetLinkType()).c_str());
+
     return ret;
 }
 
@@ -185,14 +185,15 @@ HcclResult TransportHeterogP2P::SetDeivceByPhyId()
 
 HcclResult TransportHeterogP2P::ConnectInit()
 {
-    HCCL_INFO("machineType=[%d], serverId=[%s], localDeviceId=[%d] remoteDeviceId=[%d], "
+    HCCL_INFO(
+        "machineType=[%d], serverId=[%s], localDeviceId=[%d] remoteDeviceId=[%d], "
         "localRank=[%u], localUserRank=[%u], remoteRank=[%u], remoteUserRank=[%u], "
         "deviceType=[%d], input_ptr=[%p], output_ptr=[%p], linkAttribute=[0x%x], linkMode=[%d]"
         "remoteAddr=[%s], localAddr=[%s], remotePort=[%u], localport=[%u], custom exchange data size [%llu].",
         machinePara_.machineType, machinePara_.serverId.c_str(), machinePara_.localDeviceId,
         machinePara_.remoteDeviceId, machinePara_.localUserrank, machinePara_.localWorldRank,
-        machinePara_.remoteUserrank, machinePara_.remoteWorldRank, machinePara_.deviceType,
-        machinePara_.inputMem.ptr(), machinePara_.outputMem.ptr(), machinePara_.linkAttribute, machinePara_.linkMode,
+        machinePara_.remoteUserrank, machinePara_.remoteWorldRank, machinePara_.deviceType, machinePara_.inputMem.ptr(),
+        machinePara_.outputMem.ptr(), machinePara_.linkAttribute, machinePara_.linkMode,
         machinePara_.remoteIpAddr.GetReadableAddress(), machinePara_.localIpAddr.GetReadableAddress(),
         machinePara_.remoteSocketPort, machinePara_.localSocketPort, machinePara_.exchangeInfo.size());
 
@@ -226,7 +227,8 @@ HcclResult TransportHeterogP2P::ConnectSocket()
     HCCL_INFO("TransportHeterogP2P start socket connect.");
     u32 role = (machinePara_.machineType == MachineType::MACHINE_SERVER_TYPE) ? SERVER_ROLE_SOCKET : CLIENT_ROLE_SOCKET;
     u32 socketServerPort = (machinePara_.machineType == MachineType::MACHINE_SERVER_TYPE) ?
-        machinePara_.localSocketPort : machinePara_.remoteSocketPort;
+                               machinePara_.localSocketPort :
+                               machinePara_.remoteSocketPort;
 
     std::string linkTag = machinePara_.tag + "_";
     if (machinePara_.remoteUserrank < machinePara_.localUserrank) {
@@ -240,9 +242,10 @@ HcclResult TransportHeterogP2P::ConnectSocket()
     }
 
     HcclIpAddress loopBackIp("127.0.0.1");
-    socket_.reset(new (std::nothrow) Socket(linkTag, role, SocketType::SOCKET_NIC, NICDeployment::NIC_DEPLOYMENT_HOST,
-        loopBackIp, machinePara_.localDeviceId, loopBackIp, machinePara_.remoteDeviceId,
-        DeviceIdType::DEVICE_ID_TYPE_PHY_ID, socketServerPort));
+    socket_.reset(new (std::nothrow) Socket(
+        linkTag, role, SocketType::SOCKET_NIC, NICDeployment::NIC_DEPLOYMENT_HOST, loopBackIp,
+        machinePara_.localDeviceId, loopBackIp, machinePara_.remoteDeviceId, DeviceIdType::DEVICE_ID_TYPE_PHY_ID,
+        socketServerPort));
     CHK_SMART_PTR_NULL(socket_);
 
     CHK_RET(socket_->PrepareConnect());
@@ -284,8 +287,8 @@ HcclResult TransportHeterogP2P::ExchangePid()
 HcclResult TransportHeterogP2P::RecvPid()
 {
     u64 recvSize = 0;
-    CHK_RET(socket_->IRecv((reinterpret_cast<char *>(&recvPid_) + socketRecvSize_),
-        (sizeof(recvPid_) - socketRecvSize_), recvSize));
+    CHK_RET(socket_->IRecv(
+        (reinterpret_cast<char*>(&recvPid_) + socketRecvSize_), (sizeof(recvPid_) - socketRecvSize_), recvSize));
     socketRecvSize_ += recvSize;
     if (socketRecvSize_ == sizeof(recvPid_)) {
         socketRecvSize_ = 0;
@@ -308,19 +311,20 @@ HcclResult TransportHeterogP2P::SendIpcInfo()
 {
     ExchangeMsg sendMsg;
     s32 sRet = memset_s(&sendMsg, sizeof(sendMsg), 0, sizeof(sendMsg));
-    CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[Clear][CheckInfo]memory set fail. return[%d].",\
-        sRet), HCCL_E_MEMORY);
+    CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[Clear][CheckInfo]memory set fail. return[%d].", sRet), HCCL_E_MEMORY);
     CHK_RET(CreateIpcSignal(sendReadyNotify_, sendMsg.sendReadyNotify));
     CHK_RET(CreateIpcSignal(sendDoneNotify_, sendMsg.sendDoneNotify));
     if (endType_ == TRANSPORT_ENDPOINT_TYPE_NPU) {
         CHK_RET(SetIpcMem(machinePara_.inputMem, sendMsg.ipcMem[0]));
         setIpcMemInfos_.push_back(sendMsg.ipcMem[0]);
-        HCCL_INFO("set ipc mem input mem[%p] size[%llu] setIpcMemInfos size[%u]",
-            machinePara_.inputMem.ptr(), machinePara_.inputMem.size(), setIpcMemInfos_.size());
+        HCCL_INFO(
+            "set ipc mem input mem[%p] size[%llu] setIpcMemInfos size[%u]", machinePara_.inputMem.ptr(),
+            machinePara_.inputMem.size(), setIpcMemInfos_.size());
         CHK_RET(SetIpcMem(machinePara_.outputMem, sendMsg.ipcMem[1]));
         setIpcMemInfos_.push_back(sendMsg.ipcMem[1]);
-        HCCL_INFO("set ipc mem output mem[%p] size[%llu] setIpcMemInfos size[%u]",
-            machinePara_.outputMem.ptr(), machinePara_.outputMem.size(), setIpcMemInfos_.size());
+        HCCL_INFO(
+            "set ipc mem output mem[%p] size[%llu] setIpcMemInfos size[%u]", machinePara_.outputMem.ptr(),
+            machinePara_.outputMem.size(), setIpcMemInfos_.size());
     }
     u64 dataLength = machinePara_.exchangeInfo.size();
     exchangeDataTotalSize_ += sizeof(sendMsg);
@@ -328,13 +332,11 @@ HcclResult TransportHeterogP2P::SendIpcInfo()
     exchangeDataForSend_.resize(exchangeDataTotalSize_);
     exchangeDataForRecv_.resize(exchangeDataTotalSize_);
     u8* exchangeDataPtr = exchangeDataForSend_.data();
-    CHK_SAFETY_FUNC_RET(memcpy_s(exchangeDataPtr, sizeof(sendMsg),
-        &sendMsg, sizeof(sendMsg)));
+    CHK_SAFETY_FUNC_RET(memcpy_s(exchangeDataPtr, sizeof(sendMsg), &sendMsg, sizeof(sendMsg)));
     exchangeDataPtr += sizeof(sendMsg);
 
     if (dataLength != 0) {
-        CHK_SAFETY_FUNC_RET(memcpy_s(exchangeDataPtr, dataLength,
-            &machinePara_.exchangeInfo[0], dataLength));
+        CHK_SAFETY_FUNC_RET(memcpy_s(exchangeDataPtr, dataLength, &machinePara_.exchangeInfo[0], dataLength));
     }
 
     CHK_RET(socket_->Send(exchangeDataForSend_.data(), exchangeDataTotalSize_));
@@ -344,14 +346,13 @@ HcclResult TransportHeterogP2P::SendIpcInfo()
 HcclResult TransportHeterogP2P::RecvIpcInfo()
 {
     u64 recvSize = 0;
-    CHK_RET(socket_->IRecv((exchangeDataForRecv_.data() + socketRecvSize_),
-        (exchangeDataTotalSize_ - socketRecvSize_), recvSize));
+    CHK_RET(socket_->IRecv(
+        (exchangeDataForRecv_.data() + socketRecvSize_), (exchangeDataTotalSize_ - socketRecvSize_), recvSize));
     socketRecvSize_ += recvSize;
     if (socketRecvSize_ == exchangeDataTotalSize_) {
         socketRecvSize_ = 0;
         u8* exchangeDataPtr = exchangeDataForRecv_.data();
-        CHK_SAFETY_FUNC_RET(memcpy_s(&remoteMsg_, sizeof(remoteMsg_),
-            exchangeDataPtr, sizeof(remoteMsg_)));
+        CHK_SAFETY_FUNC_RET(memcpy_s(&remoteMsg_, sizeof(remoteMsg_), exchangeDataPtr, sizeof(remoteMsg_)));
         exchangeDataPtr += sizeof(remoteMsg_);
 
         std::vector<u8> sendReadyNotify(remoteMsg_.sendReadyNotify, remoteMsg_.sendReadyNotify + NOTIFY_INFO_LENGTH);
@@ -361,11 +362,13 @@ HcclResult TransportHeterogP2P::RecvIpcInfo()
         CHK_RET(OpenRemoteNotify(sendDoneNotify, remoteSendDoneNotify_));
 
         if (endType_ == TRANSPORT_ENDPOINT_TYPE_CPU) {
-            CHK_RET(WaitPeerMemConfig(&remoteInputPtr_, remoteMsg_.ipcMem[0].name.ipcName,
-                remoteMsg_.ipcMem[0].size, remoteMsg_.ipcMem[0].offset));
+            CHK_RET(WaitPeerMemConfig(
+                &remoteInputPtr_, remoteMsg_.ipcMem[0].name.ipcName, remoteMsg_.ipcMem[0].size,
+                remoteMsg_.ipcMem[0].offset));
             remoteInputMemSize_ = remoteMsg_.ipcMem[0].size;
-            CHK_RET(WaitPeerMemConfig(&remoteOutputPtr_, remoteMsg_.ipcMem[1].name.ipcName,
-                remoteMsg_.ipcMem[1].size, remoteMsg_.ipcMem[1].offset));
+            CHK_RET(WaitPeerMemConfig(
+                &remoteOutputPtr_, remoteMsg_.ipcMem[1].name.ipcName, remoteMsg_.ipcMem[1].size,
+                remoteMsg_.ipcMem[1].offset));
             remoteOutputMemSize_ = remoteMsg_.ipcMem[1].size;
         }
 
@@ -385,7 +388,7 @@ HcclResult TransportHeterogP2P::RecvIpcInfo()
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportHeterogP2P::GetRemoteMem(UserMemType memType, void **remotePtr, u64 &remoteMemSize)
+HcclResult TransportHeterogP2P::GetRemoteMem(UserMemType memType, void** remotePtr, u64& remoteMemSize)
 {
     switch (memType) {
         case UserMemType::INPUT_MEM: {
@@ -409,24 +412,31 @@ HcclResult TransportHeterogP2P::GetRemoteMem(UserMemType memType, void **remoteP
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportHeterogP2P::SetIpcMem(DeviceMem &memory, HcclIpcMemInfo& ipcMemInfo)
+HcclResult TransportHeterogP2P::SetIpcMem(DeviceMem& memory, HcclIpcMemInfo& ipcMemInfo)
 {
     HcclResult ret;
     /* make memory shared interprocess and assigned a name */
-    ret = MemNameRepository::GetInstance(machinePara_.deviceLogicId)->SetIpcMem(
-        memory.ptr(), memory.size(), ipcMemInfo.name.ipcName, HCCL_IPC_MEM_NAME_LEN, ipcMemInfo.offset, recvPid_);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Send][IpcMemMesg]errNo[0x%016llx], In send ipc mesg, get para mem name failed. "
-        "mem addr[%p] local rank[%u]", HCCL_ERROR_CODE(ret), memory.ptr(), machinePara_.localUserrank), ret);
+    ret = MemNameRepository::GetInstance(machinePara_.deviceLogicId)
+              ->SetIpcMem(
+                  memory.ptr(), memory.size(), ipcMemInfo.name.ipcName, HCCL_IPC_MEM_NAME_LEN, ipcMemInfo.offset,
+                  recvPid_);
+    CHK_PRT_RET(
+        ret != HCCL_SUCCESS,
+        HCCL_ERROR(
+            "[Send][IpcMemMesg]errNo[0x%016llx], In send ipc mesg, get para mem name failed. "
+            "mem addr[%p] local rank[%u]",
+            HCCL_ERROR_CODE(ret), memory.ptr(), machinePara_.localUserrank),
+        ret);
 
     ipcMemInfo.size = memory.size();
     ipcMemInfo.ptr = memory.ptr();
 
-    HCCL_DEBUG("localUserrank=%u, ptr=%p, remoteUserrank=%u, offset=%llu",
-        machinePara_.localUserrank, memory.ptr(), machinePara_.remoteUserrank, ipcMemInfo.offset);
+    HCCL_DEBUG(
+        "localUserrank=%u, ptr=%p, remoteUserrank=%u, offset=%llu", machinePara_.localUserrank, memory.ptr(),
+        machinePara_.remoteUserrank, ipcMemInfo.offset);
     return HCCL_SUCCESS;
 }
-HcclResult TransportHeterogP2P::CreateIpcSignal(std::shared_ptr<LocalIpcNotify> &localNotify, u8 *notifyInfo)
+HcclResult TransportHeterogP2P::CreateIpcSignal(std::shared_ptr<LocalIpcNotify>& localNotify, u8* notifyInfo)
 {
     RemoteRankInfo info(machinePara_.remoteDeviceId, machinePara_.remoteWorldRank, recvPid_);
     CHK_SMART_PTR_NULL(notifyPool_);
@@ -434,12 +444,12 @@ HcclResult TransportHeterogP2P::CreateIpcSignal(std::shared_ptr<LocalIpcNotify> 
 
     std::vector<u8> data(NOTIFY_INFO_LENGTH, 0);
     CHK_RET(localNotify->Serialize(data));
-    CHK_SAFETY_FUNC_RET(memcpy_s((u8 *)notifyInfo, NOTIFY_INFO_LENGTH, &data[0], data.size()));
+    CHK_SAFETY_FUNC_RET(memcpy_s((u8*)notifyInfo, NOTIFY_INFO_LENGTH, &data[0], data.size()));
 
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportHeterogP2P::WaitPeerMemConfig(void **memPtr, const u8 *memName, uint64_t size, u64 offset)
+HcclResult TransportHeterogP2P::WaitPeerMemConfig(void** memPtr, const u8* memName, uint64_t size, u64 offset)
 {
     CHK_PTR_NULL(memPtr);
     CHK_PTR_NULL(memName);
@@ -449,68 +459,83 @@ HcclResult TransportHeterogP2P::WaitPeerMemConfig(void **memPtr, const u8 *memNa
     HcclResult ret = MemNameRepository::GetInstance(machinePara_.deviceLogicId)
                          ->OpenIpcMem(memPtr, size, memName, HCCL_IPC_MEM_NAME_LEN, offset, firstOpened);
 
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Wait][WaitPeerMemConfig]errNo[0x%016llx]In link pcie, open mem failed. offset[%llu], size[%llu Byte]",
-            HCCL_ERROR_CODE(ret), offset, size), ret);
+    CHK_PRT_RET(
+        ret != HCCL_SUCCESS,
+        HCCL_ERROR(
+            "[Wait][WaitPeerMemConfig]errNo[0x%016llx]In link pcie, open mem failed. offset[%llu], size[%llu Byte]",
+            HCCL_ERROR_CODE(ret), offset, size),
+        ret);
 
-    openIpcNames_.push_back(reinterpret_cast<const char *>(memName));
+    openIpcNames_.push_back(reinterpret_cast<const char*>(memName));
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportHeterogP2P::TxDataSignal(Stream &stream)
+HcclResult TransportHeterogP2P::TxDataSignal(Stream& stream)
 {
     CHK_PRT_RET((connectState_ != TRANSPORT_CONNECT_STATE_DONE), HCCL_ERROR("transport is not ready"), HCCL_E_PARA);
     HcclResult ret = remoteSendReadyNotify_->Post(stream, dispatcher_);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[TransportHeterogP2P][TxDataSignal]errNo[0x%016llx]In tx data signal, signal record failed.",
-        HCCL_ERROR_CODE(ret)), ret);
+    CHK_PRT_RET(
+        ret != HCCL_SUCCESS,
+        HCCL_ERROR(
+            "[TransportHeterogP2P][TxDataSignal]errNo[0x%016llx]In tx data signal, signal record failed.",
+            HCCL_ERROR_CODE(ret)),
+        ret);
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportHeterogP2P::RxDataSignal(Stream &stream)
+HcclResult TransportHeterogP2P::RxDataSignal(Stream& stream)
 {
     CHK_PRT_RET((connectState_ != TRANSPORT_CONNECT_STATE_DONE), HCCL_ERROR("transport is not ready"), HCCL_E_PARA);
-    HcclResult ret = sendReadyNotify_->Wait(stream, dispatcher_, INVALID_VALUE_STAGE,
-        static_cast<u32>(dispatcher_->GetExecTimeOut()));
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[TransportHeterogP2P][RxDataSignal]errNo[0x%016llx]In rx data signal, signal wait failed.",
-        HCCL_ERROR_CODE(ret)), ret);
+    HcclResult ret = sendReadyNotify_->Wait(
+        stream, dispatcher_, INVALID_VALUE_STAGE, static_cast<u32>(dispatcher_->GetExecTimeOut()));
+    CHK_PRT_RET(
+        ret != HCCL_SUCCESS,
+        HCCL_ERROR(
+            "[TransportHeterogP2P][RxDataSignal]errNo[0x%016llx]In rx data signal, signal wait failed.",
+            HCCL_ERROR_CODE(ret)),
+        ret);
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportHeterogP2P::TxAck(Stream &stream)
+HcclResult TransportHeterogP2P::TxAck(Stream& stream)
 {
     CHK_PRT_RET((connectState_ != TRANSPORT_CONNECT_STATE_DONE), HCCL_ERROR("transport is not ready"), HCCL_E_PARA);
     HcclResult ret = remoteSendDoneNotify_->Post(stream, dispatcher_);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[TransportHeterogP2P][TxAck]errNo[0x%016llx]In tx ack signal, signal record failed.",
-        HCCL_ERROR_CODE(ret)), ret);
+    CHK_PRT_RET(
+        ret != HCCL_SUCCESS,
+        HCCL_ERROR(
+            "[TransportHeterogP2P][TxAck]errNo[0x%016llx]In tx ack signal, signal record failed.",
+            HCCL_ERROR_CODE(ret)),
+        ret);
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportHeterogP2P::RxAck(Stream &stream)
+HcclResult TransportHeterogP2P::RxAck(Stream& stream)
 {
     CHK_PRT_RET((connectState_ != TRANSPORT_CONNECT_STATE_DONE), HCCL_ERROR("transport is not ready"), HCCL_E_PARA);
-    HcclResult ret = sendDoneNotify_->Wait(stream, dispatcher_, INVALID_VALUE_STAGE,
-        static_cast<u32>(dispatcher_->GetExecTimeOut()));
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[TransportHeterogP2P][RxAck]errNo[0x%016llx]In rx ack signal, signal wait failed.",
-        HCCL_ERROR_CODE(ret)), ret);
+    HcclResult ret = sendDoneNotify_->Wait(
+        stream, dispatcher_, INVALID_VALUE_STAGE, static_cast<u32>(dispatcher_->GetExecTimeOut()));
+    CHK_PRT_RET(
+        ret != HCCL_SUCCESS,
+        HCCL_ERROR(
+            "[TransportHeterogP2P][RxAck]errNo[0x%016llx]In rx ack signal, signal wait failed.", HCCL_ERROR_CODE(ret)),
+        ret);
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportHeterogP2P::TxAsync(UserMemType dstMemType, u64 dstOffset, const void *src, u64 len, Stream &stream)
+HcclResult TransportHeterogP2P::TxAsync(UserMemType dstMemType, u64 dstOffset, const void* src, u64 len, Stream& stream)
 {
     CHK_PRT_RET((connectState_ != TRANSPORT_CONNECT_STATE_DONE), HCCL_ERROR("transport is not ready"), HCCL_E_PARA);
     /* 源端发起数据传输 */
-    if ((machinePara_.linkAttribute & LINK_ATTRIBUTE_WRITE) && len > 0) {  // 支持源端发起
+    if ((machinePara_.linkAttribute & LINK_ATTRIBUTE_WRITE) && len > 0) { // 支持源端发起
         CHK_PTR_NULL(src);
-        void *dstMemPtr = nullptr;
+        void* dstMemPtr = nullptr;
         u64 dstMemSize = 0;
         CHK_RET(GetRemoteMem(dstMemType, &dstMemPtr, dstMemSize));
-        void *dstAddr = static_cast<s8 *>(dstMemPtr) + dstOffset;
+        void* dstAddr = static_cast<s8*>(dstMemPtr) + dstOffset;
 
-        HCCL_INFO("TxAsync srcAddr=[%p], dstOffset=[%llu],dstAddr=[%p],dstSize=[%llu] len=[%llu]" \
+        HCCL_INFO(
+            "TxAsync srcAddr=[%p], dstOffset=[%llu],dstAddr=[%p],dstSize=[%llu] len=[%llu]"
             " remoteInput[%p] remoteOutput[%p]",
             src, dstOffset, dstMemPtr, dstMemSize - dstOffset, len, remoteInputPtr_, remoteOutputPtr_);
         CHK_RET(hrtDrvMemCpy(dstAddr, dstMemSize - dstOffset, src, len));
@@ -518,32 +543,35 @@ HcclResult TransportHeterogP2P::TxAsync(UserMemType dstMemType, u64 dstOffset, c
 
     /* 发起send_ready_signal事件 */
     HcclResult ret = remoteSendReadyNotify_->Post(stream, dispatcher_);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[TransportHeterogP2P][TxAsync]errNo[0x%016llx]In tx async, signal record failed.",
-        HCCL_ERROR_CODE(ret)), ret);
+    CHK_PRT_RET(
+        ret != HCCL_SUCCESS,
+        HCCL_ERROR(
+            "[TransportHeterogP2P][TxAsync]errNo[0x%016llx]In tx async, signal record failed.", HCCL_ERROR_CODE(ret)),
+        ret);
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportHeterogP2P::TxAsync(std::vector<TxMemoryInfo>& txMems, Stream &stream)
+HcclResult TransportHeterogP2P::TxAsync(std::vector<TxMemoryInfo>& txMems, Stream& stream)
 {
     CHK_PRT_RET((connectState_ != TRANSPORT_CONNECT_STATE_DONE), HCCL_ERROR("transport is not ready"), HCCL_E_PARA);
 
     /* 源端发起数据传输 */
-    if (machinePara_.linkAttribute & LINK_ATTRIBUTE_WRITE) {  // 支持源端端发起
+    if (machinePara_.linkAttribute & LINK_ATTRIBUTE_WRITE) { // 支持源端端发起
         for (auto& mem : txMems) {
             if (mem.len == 0) {
                 continue;
             }
             CHK_PTR_NULL(mem.src);
-            void *dstMemPtr = nullptr;
+            void* dstMemPtr = nullptr;
             u64 dstMemSize = 0;
             CHK_RET(GetRemoteMem(mem.dstMemType, &dstMemPtr, dstMemSize));
 
-            DeviceMem dstDevMem = DeviceMem::create(static_cast<s8 *>(dstMemPtr) + mem.dstOffset,
-                dstMemSize - mem.dstOffset);
-            DeviceMem srcDevMem = DeviceMem::create(const_cast<void *>(mem.src), mem.len);
+            DeviceMem dstDevMem
+                = DeviceMem::create(static_cast<s8*>(dstMemPtr) + mem.dstOffset, dstMemSize - mem.dstOffset);
+            DeviceMem srcDevMem = DeviceMem::create(const_cast<void*>(mem.src), mem.len);
             /* 增加hccl 数据传输时数据地址和size记录 */
-            HCCL_INFO("HCCL_KEY_INFO: srcAddr=[%p],srcSize=[%llu],dstAddr=[%p],dstSize=[%llu]", srcDevMem.ptr(),
+            HCCL_INFO(
+                "HCCL_KEY_INFO: srcAddr=[%p],srcSize=[%llu],dstAddr=[%p],dstSize=[%llu]", srcDevMem.ptr(),
                 srcDevMem.size(), dstDevMem.ptr(), dstDevMem.size());
             CHK_RET(hrtDrvMemCpy(dstDevMem.ptr(), dstDevMem.size(), srcDevMem.ptr(), srcDevMem.size()));
         }
@@ -551,76 +579,83 @@ HcclResult TransportHeterogP2P::TxAsync(std::vector<TxMemoryInfo>& txMems, Strea
 
     /* 发起send_ready_signal事件 */
     HcclResult ret = remoteSendReadyNotify_->Post(stream, dispatcher_);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[TransportHeterogP2P][TxAsync]errNo[0x%016llx]In tx async, signal record failed.",
-        HCCL_ERROR_CODE(ret)), ret);
+    CHK_PRT_RET(
+        ret != HCCL_SUCCESS,
+        HCCL_ERROR(
+            "[TransportHeterogP2P][TxAsync]errNo[0x%016llx]In tx async, signal record failed.", HCCL_ERROR_CODE(ret)),
+        ret);
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportHeterogP2P::RxAsync(UserMemType srcMemType, u64 srcOffset, void *dst, u64 len, Stream &stream)
+HcclResult TransportHeterogP2P::RxAsync(UserMemType srcMemType, u64 srcOffset, void* dst, u64 len, Stream& stream)
 {
     CHK_PRT_RET((connectState_ != TRANSPORT_CONNECT_STATE_DONE), HCCL_ERROR("transport is not ready"), HCCL_E_PARA);
     /* 等待send_ready_signal事件 */
     HcclResult ret = sendReadyNotify_->Wait(stream, dispatcher_, INVALID_VALUE_STAGE, GetIncreSaveExecTimeOut());
     CHK_PRT_RET(ret == HCCL_E_AGAIN, HCCL_WARNING("[TransportHeterogP2P][RxAsync]group has been destroyed."), ret);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[TransportHeterogP2P][RxAsync]errNo[0x%016llx]In rx async, signal wait failed.",
-        HCCL_ERROR_CODE(ret)), ret);
+    CHK_PRT_RET(
+        ret != HCCL_SUCCESS,
+        HCCL_ERROR(
+            "[TransportHeterogP2P][RxAsync]errNo[0x%016llx]In rx async, signal wait failed.", HCCL_ERROR_CODE(ret)),
+        ret);
 
     /* 目的端发起数据传输 */
-    if ((machinePara_.linkAttribute & LINK_ATTRIBUTE_READ) && len > 0) {  // 支持目的端发起
+    if ((machinePara_.linkAttribute & LINK_ATTRIBUTE_READ) && len > 0) { // 支持目的端发起
         CHK_PTR_NULL(dst);
-        void *srcMemPtr = nullptr;
+        void* srcMemPtr = nullptr;
         u64 srcMemSize = 0;
         CHK_RET(GetRemoteMem(srcMemType, &srcMemPtr, srcMemSize));
-        void *srcAddr = static_cast<s8 *>(srcMemPtr) + srcOffset;
+        void* srcAddr = static_cast<s8*>(srcMemPtr) + srcOffset;
         CHK_RET(hrtDrvMemCpy(dst, len, srcAddr, len));
     }
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportHeterogP2P::RxAsync(std::vector<RxMemoryInfo>& rxMems, Stream &stream)
+HcclResult TransportHeterogP2P::RxAsync(std::vector<RxMemoryInfo>& rxMems, Stream& stream)
 {
     CHK_PRT_RET((connectState_ != TRANSPORT_CONNECT_STATE_DONE), HCCL_ERROR("transport is not ready"), HCCL_E_PARA);
 
     /* 等待send_ready_signal事件 */
-    HcclResult ret = sendReadyNotify_->Wait(stream, dispatcher_, INVALID_VALUE_STAGE,
-        static_cast<u32>(dispatcher_->GetExecTimeOut()));
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[TransportHeterogP2P][RxAsync]errNo[0x%016llx]In rx async, signal wait failed.",
-        HCCL_ERROR_CODE(ret)), ret);
+    HcclResult ret = sendReadyNotify_->Wait(
+        stream, dispatcher_, INVALID_VALUE_STAGE, static_cast<u32>(dispatcher_->GetExecTimeOut()));
+    CHK_PRT_RET(
+        ret != HCCL_SUCCESS,
+        HCCL_ERROR(
+            "[TransportHeterogP2P][RxAsync]errNo[0x%016llx]In rx async, signal wait failed.", HCCL_ERROR_CODE(ret)),
+        ret);
 
     /* 目的端发起数据传输 */
-    if ((machinePara_.linkAttribute & LINK_ATTRIBUTE_READ) != 0) {  // 支持目的端发起
+    if ((machinePara_.linkAttribute & LINK_ATTRIBUTE_READ) != 0) { // 支持目的端发起
         for (auto& mem : rxMems) {
             if (mem.len == 0) {
                 continue;
             }
             CHK_PTR_NULL(mem.dst);
-            void *srcMemPtr = nullptr;
+            void* srcMemPtr = nullptr;
             u64 srcMemSize = 0;
             CHK_RET(GetRemoteMem(mem.srcMemType, &srcMemPtr, srcMemSize));
 
-            DeviceMem srcDevMem = DeviceMem::create(static_cast<s8 *>(srcMemPtr) + mem.srcOffset, mem.len);
-            DeviceMem dstDevMem = DeviceMem::create(static_cast<s8 *>(mem.dst), mem.len);
+            DeviceMem srcDevMem = DeviceMem::create(static_cast<s8*>(srcMemPtr) + mem.srcOffset, mem.len);
+            DeviceMem dstDevMem = DeviceMem::create(static_cast<s8*>(mem.dst), mem.len);
             CHK_RET(hrtDrvMemCpy(dstDevMem.ptr(), dstDevMem.size(), srcDevMem.ptr(), srcDevMem.size()));
         }
     }
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportHeterogP2P::TxData(UserMemType dstMemType, u64 dstOffset, const void *src, u64 len, Stream &stream)
+HcclResult TransportHeterogP2P::TxData(UserMemType dstMemType, u64 dstOffset, const void* src, u64 len, Stream& stream)
 {
     CHK_PRT_RET((connectState_ != TRANSPORT_CONNECT_STATE_DONE), HCCL_ERROR("transport is not ready"), HCCL_E_PARA);
     /* 源端发起数据传输 */
-    if ((machinePara_.linkAttribute & LINK_ATTRIBUTE_WRITE) && len > 0) {  // 支持源端发起
+    if ((machinePara_.linkAttribute & LINK_ATTRIBUTE_WRITE) && len > 0) { // 支持源端发起
         CHK_PTR_NULL(src);
-        void *dstMemPtr = nullptr;
+        void* dstMemPtr = nullptr;
         u64 dstMemSize = 0;
         CHK_RET(GetRemoteMem(dstMemType, &dstMemPtr, dstMemSize));
-        void *dstAddr = static_cast<s8 *>(dstMemPtr) + dstOffset;
+        void* dstAddr = static_cast<s8*>(dstMemPtr) + dstOffset;
 
-        HCCL_INFO("TxAsync srcAddr=[%p], dstOffset=[%llu],dstAddr=[%p],dstSize=[%llu] len=[%llu]" \
+        HCCL_INFO(
+            "TxAsync srcAddr=[%p], dstOffset=[%llu],dstAddr=[%p],dstSize=[%llu] len=[%llu]"
             " remoteInput[%p] remoteOutput[%p]",
             src, dstOffset, dstMemPtr, dstMemSize - dstOffset, len, remoteInputPtr_, remoteOutputPtr_);
         CHK_RET(hrtDrvMemCpy(dstAddr, dstMemSize - dstOffset, src, len));
@@ -628,34 +663,34 @@ HcclResult TransportHeterogP2P::TxData(UserMemType dstMemType, u64 dstOffset, co
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportHeterogP2P::RxData(UserMemType srcMemType, u64 srcOffset, void *dst, u64 len, Stream &stream)
+HcclResult TransportHeterogP2P::RxData(UserMemType srcMemType, u64 srcOffset, void* dst, u64 len, Stream& stream)
 {
     CHK_PRT_RET((connectState_ != TRANSPORT_CONNECT_STATE_DONE), HCCL_ERROR("transport is not ready"), HCCL_E_PARA);
     /* 目的端发起数据传输 */
-    if ((machinePara_.linkAttribute & LINK_ATTRIBUTE_READ) && len > 0) {  // 支持目的端发起
+    if ((machinePara_.linkAttribute & LINK_ATTRIBUTE_READ) && len > 0) { // 支持目的端发起
         CHK_PTR_NULL(dst);
-        void *srcMemPtr = nullptr;
+        void* srcMemPtr = nullptr;
         u64 srcMemSize = 0;
         CHK_RET(GetRemoteMem(srcMemType, &srcMemPtr, srcMemSize));
-        void *srcAddr = static_cast<s8 *>(srcMemPtr) + srcOffset;
+        void* srcAddr = static_cast<s8*>(srcMemPtr) + srcOffset;
         CHK_RET(hrtDrvMemCpy(dst, len, srcAddr, len));
     }
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportHeterogP2P::TxPrepare(Stream &stream)
+HcclResult TransportHeterogP2P::TxPrepare(Stream& stream)
 {
     CHK_RET(TxAck(stream));
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportHeterogP2P::RxPrepare(Stream &stream)
+HcclResult TransportHeterogP2P::RxPrepare(Stream& stream)
 {
     CHK_RET(RxAck(stream));
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportHeterogP2P::TxDone(Stream &stream)
+HcclResult TransportHeterogP2P::TxDone(Stream& stream)
 {
     HcclResult ret = RxDataSignal(stream);
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[TransportP2p][TxDone]RxDataSignal failed"), ret);
@@ -667,10 +702,10 @@ HcclResult TransportHeterogP2P::TxDone(Stream &stream)
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportHeterogP2P::RxDone(Stream &stream)
+HcclResult TransportHeterogP2P::RxDone(Stream& stream)
 {
     HcclResult ret = TxDataSignal(stream);
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[TransportP2p][RxDone]TxDataSignal failed"), ret);
     return HCCL_SUCCESS;
 }
-}  // namespace hccl
+} // namespace hccl

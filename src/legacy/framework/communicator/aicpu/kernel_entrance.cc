@@ -25,22 +25,24 @@
 extern "C" {
 using namespace Hccl;
 
-uint32_t SetOldA5CommToCommMgr(std::string group, Hccl::CommunicatorImplLite *communicatorImplLite) {
+uint32_t SetOldA5CommToCommMgr(std::string group, Hccl::CommunicatorImplLite* communicatorImplLite)
+{
 #ifdef CCL_KERNEL_AICPU
-    CollCommAicpuMgr *collCommAicpuMgr = nullptr;
+    CollCommAicpuMgr* collCommAicpuMgr = nullptr;
     HcclResult ret = AicpuIndopProcess::AcquireAicpuCommMgr(group, &collCommAicpuMgr);
     if (ret != HcclResult::HCCL_SUCCESS) {
         HCCL_ERROR("%s Acquire aicpu commMgr failed, group[%s].", __func__, group.c_str());
         return 1;
     }
-    CHK_PRT_RET(collCommAicpuMgr == nullptr, HCCL_ERROR("%s collCommAicpuMgr is null, group[%s]", __func__, group.c_str()), 1);
+    CHK_PRT_RET(
+        collCommAicpuMgr == nullptr, HCCL_ERROR("%s collCommAicpuMgr is null, group[%s]", __func__, group.c_str()), 1);
     collCommAicpuMgr->SetOldA5Comm(communicatorImplLite);
     HCCL_INFO("Acquire AicpuCommMgr success");
 #endif
     return 0;
 }
 
-uint32_t HcclKernelEntrance(void *args)
+uint32_t HcclKernelEntrance(void* args)
 {
     if (args == nullptr) {
         HCCL_ERROR("HcclKernelEntrance Args is null.");
@@ -51,17 +53,20 @@ uint32_t HcclKernelEntrance(void *args)
     RegisterProfCallBack();
 #endif
 
-    auto *kernelParam = reinterpret_cast<HcclKernelParamLite *>(args);
+    auto* kernelParam = reinterpret_cast<HcclKernelParamLite*>(args);
     AicpuUtils::GetInstance().CreateSingleInstance(args);
     NsRecoveryHandlerFunc::GetInstance();
     CHK_RET(DlHalFunctionV2::GetInstance().DlHalFunctionInit());
 
     u32 commIdIndex = kernelParam->comm.idIndex;
-    HCCL_RUN_INFO("HcclKernelEntrance begin, OpType[%s] algName[%s] commIdIndex[%u] commId[%s] opTag[%s], devPhyId[%u] myRank[%u] rankSize[%u] oneSidedComm[%d] opIndex[%u]",
-        kernelParam->op.algOperator.opType.Describe().c_str(), kernelParam->algName, commIdIndex, kernelParam->comm.commId,
-        kernelParam->opTag, kernelParam->comm.devPhyId, kernelParam->comm.myRank, kernelParam->comm.rankSize, kernelParam->oneSidedComm, kernelParam->comm.opIndex_);
+    HCCL_RUN_INFO(
+        "HcclKernelEntrance begin, OpType[%s] algName[%s] commIdIndex[%u] commId[%s] opTag[%s], devPhyId[%u] "
+        "myRank[%u] rankSize[%u] oneSidedComm[%d] opIndex[%u]",
+        kernelParam->op.algOperator.opType.Describe().c_str(), kernelParam->algName, commIdIndex,
+        kernelParam->comm.commId, kernelParam->opTag, kernelParam->comm.devPhyId, kernelParam->comm.myRank,
+        kernelParam->comm.rankSize, kernelParam->oneSidedComm, kernelParam->comm.opIndex_);
 
-    Hccl::CommunicatorImplLite *communicatorImplLite = CommunicatorImplLiteMgr::GetInstance().Get(commIdIndex);
+    Hccl::CommunicatorImplLite* communicatorImplLite = CommunicatorImplLiteMgr::GetInstance().Get(commIdIndex);
     if (communicatorImplLite == nullptr) {
         HCCL_ERROR("HcclKernelEntrance communicatorImplLite is null.");
         return 1;
@@ -85,18 +90,18 @@ uint32_t HcclKernelEntrance(void *args)
     return 0;
 }
 
-uint32_t HcclUpdateCommKernelEntrance(void *args)
+uint32_t HcclUpdateCommKernelEntrance(void* args)
 {
     if (args == nullptr) {
         HCCL_ERROR("[NsRecovery] HcclUpdateCommKernelEntrance Args is null.");
         return 1;
     }
 
-    auto *kernelParam = reinterpret_cast<HcclKernelParamLite *>(args);
+    auto* kernelParam = reinterpret_cast<HcclKernelParamLite*>(args);
     u32 commIdIndex = kernelParam->comm.idIndex;
     HCCL_INFO("[NsRecovery] HcclUpdateCommKernelEntrance begin, commIdIndex[%u]", commIdIndex);
- 
-    Hccl::CommunicatorImplLite *communicatorImplLite = CommunicatorImplLiteMgr::GetInstance().Get(commIdIndex);
+
+    Hccl::CommunicatorImplLite* communicatorImplLite = CommunicatorImplLiteMgr::GetInstance().Get(commIdIndex);
     if (communicatorImplLite == nullptr) {
         HCCL_ERROR("HcclUpdateCommKernelEntrance communicatorImplLite is null.");
         return 1;

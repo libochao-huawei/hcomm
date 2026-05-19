@@ -14,18 +14,26 @@
 #include "coll_operator_check.h"
 
 namespace Hccl {
-BaseMemTransport::BaseMemTransport(CommonLocRes &commonLocRes, Attribution &attr, const LinkData &linkData,
-                                   const Socket &socket, TransportType type)
-    : commonLocRes(commonLocRes), attr(attr), linkData(linkData), socket(const_cast<Socket *>(&socket)),
+BaseMemTransport::BaseMemTransport(
+    CommonLocRes& commonLocRes, Attribution& attr, const LinkData& linkData, const Socket& socket, TransportType type)
+    : commonLocRes(commonLocRes),
+      attr(attr),
+      linkData(linkData),
+      socket(const_cast<Socket*>(&socket)),
       transportType(type)
 {
     CheckCommonLocRes(commonLocRes);
 }
 
-BaseMemTransport::BaseMemTransport(CommonLocRes &commonLocRes, Attribution &attr, const LinkData &linkData,
-                                   const Socket &socket, TransportType type, std::function<void(u32 streamId, u32 taskId, TaskParam taskParam)> callback)
-    : commonLocRes(commonLocRes), attr(attr), linkData(linkData), socket(const_cast<Socket *>(&socket)),
-      transportType(type), callback(callback)
+BaseMemTransport::BaseMemTransport(
+    CommonLocRes& commonLocRes, Attribution& attr, const LinkData& linkData, const Socket& socket, TransportType type,
+    std::function<void(u32 streamId, u32 taskId, TaskParam taskParam)> callback)
+    : commonLocRes(commonLocRes),
+      attr(attr),
+      linkData(linkData),
+      socket(const_cast<Socket*>(&socket)),
+      transportType(type),
+      callback(callback)
 {
     CheckCommonLocRes(commonLocRes);
 }
@@ -36,10 +44,7 @@ void BaseMemTransport::Establish()
     rmtRmaBufferVec.clear();
 }
 
-void BaseMemTransport::SetBaseStatusReady()
-{
-    baseStatus = TransportStatus::READY;
-}
+void BaseMemTransport::SetBaseStatusReady() { baseStatus = TransportStatus::READY; }
 
 bool BaseMemTransport::IsSocketReady()
 {
@@ -59,12 +64,12 @@ bool BaseMemTransport::IsSocketReady()
     return false;
 }
 
-void BaseMemTransport::NotifyVecPack(BinaryStream &binaryStream)
+void BaseMemTransport::NotifyVecPack(BinaryStream& binaryStream)
 {
     binaryStream << notifyNum;
     HCCL_INFO("start pack %s notifyVec", transportType.Describe().c_str());
     u32 pos = 0;
-    for (auto &it : commonLocRes.notifyVec) {
+    for (auto& it : commonLocRes.notifyVec) {
         binaryStream << pos;
         std::unique_ptr<Serializable> dto = it->GetExchangeDto();
         dto->Serialize(binaryStream);
@@ -73,12 +78,12 @@ void BaseMemTransport::NotifyVecPack(BinaryStream &binaryStream)
     }
 }
 
-void BaseMemTransport::ConnVecPack(BinaryStream &binaryStream)
+void BaseMemTransport::ConnVecPack(BinaryStream& binaryStream)
 {
     binaryStream << connNum;
     HCCL_INFO("start pack %s connVec", transportType.Describe().c_str());
     u32 pos = 0;
-    for (auto &it : commonLocRes.connVec) {
+    for (auto& it : commonLocRes.connVec) {
         binaryStream << pos;
         std::unique_ptr<Serializable> dto = it->GetExchangeDto();
         dto->Serialize(binaryStream);
@@ -87,37 +92,41 @@ void BaseMemTransport::ConnVecPack(BinaryStream &binaryStream)
     }
 }
 
-void BaseMemTransport::HandshakeMsgPack(BinaryStream &binaryStream)
+void BaseMemTransport::HandshakeMsgPack(BinaryStream& binaryStream)
 {
-    HCCL_INFO("[BaseMemTransport::%s] start pack %s handshakeMsg, size=%u, accelerator=%s", 
-        __func__, transportType.Describe().c_str(), attr.handshakeMsg.size(), attr.opAcceState.Describe().c_str());
+    HCCL_INFO(
+        "[BaseMemTransport::%s] start pack %s handshakeMsg, size=%u, accelerator=%s", __func__,
+        transportType.Describe().c_str(), attr.handshakeMsg.size(), attr.opAcceState.Describe().c_str());
     binaryStream << static_cast<u32>(attr.opAcceState);
     binaryStream << attr.handshakeMsg;
 }
 
-void BaseMemTransport::HandshakeMsgUnpack(BinaryStream &binaryStream)
+void BaseMemTransport::HandshakeMsgUnpack(BinaryStream& binaryStream)
 {
     u32 rmtAccelerator{0};
     binaryStream >> rmtAccelerator;
     rmtOpAcceState = static_cast<AcceleratorState::Value>(rmtAccelerator);
-    HCCL_INFO("[BaseMemTransport::%s] locOpAccelerator[%s], rmtOpAccelerator[%s]", 
-        __func__, attr.opAcceState.Describe().c_str(), rmtOpAcceState.Describe().c_str());
+    HCCL_INFO(
+        "[BaseMemTransport::%s] locOpAccelerator[%s], rmtOpAccelerator[%s]", __func__,
+        attr.opAcceState.Describe().c_str(), rmtOpAcceState.Describe().c_str());
     if (rmtOpAcceState != attr.opAcceState) {
-        THROW<InvalidParamsException>(
-            StringFormat("[BaseMemTransport::HandshakeMsgUnpack] Accelerator information check fail. "
-                         "locOpAccelerator[%s], rmtOpAccelerator[%s]",
-                         attr.opAcceState.Describe().c_str(), rmtOpAcceState.Describe().c_str()));
+        THROW<InvalidParamsException>(StringFormat(
+            "[BaseMemTransport::HandshakeMsgUnpack] Accelerator information check fail. "
+            "locOpAccelerator[%s], rmtOpAccelerator[%s]",
+            attr.opAcceState.Describe().c_str(), rmtOpAcceState.Describe().c_str()));
     }
 
     rmtHandshakeMsg.clear();
     binaryStream >> rmtHandshakeMsg;
 
     if (attr.handshakeMsg.size() != rmtHandshakeMsg.size()) {
-        MACRO_THROW(InvalidParamsException, StringFormat("handshakeMsg size=%u is not equal to rmt=%u",
-                                                         attr.handshakeMsg.size(), rmtHandshakeMsg.size()));
+        MACRO_THROW(
+            InvalidParamsException,
+            StringFormat(
+                "handshakeMsg size=%u is not equal to rmt=%u", attr.handshakeMsg.size(), rmtHandshakeMsg.size()));
     }
 
-    //单边通信情况下，handshakeMsg的size为0
+    // 单边通信情况下，handshakeMsg的size为0
     if (attr.handshakeMsg.size() == 0) {
         return;
     }
@@ -128,8 +137,9 @@ void BaseMemTransport::HandshakeMsgUnpack(BinaryStream &binaryStream)
 
 string BaseMemTransport::GetLinkDescInfo()
 {
-    return StringFormat("rank[%u], rmtRank[%u] linkData=%s, type=%s", linkData.GetLocalRankId(),
-                        linkData.GetRemoteRankId(), linkData.Describe().c_str(), transportType.Describe().c_str());
+    return StringFormat(
+        "rank[%u], rmtRank[%u] linkData=%s, type=%s", linkData.GetLocalRankId(), linkData.GetRemoteRankId(),
+        linkData.Describe().c_str(), transportType.Describe().c_str());
 }
 
 string BaseMemTransport::DescribeSocket() const
@@ -137,11 +147,11 @@ string BaseMemTransport::DescribeSocket() const
     return StringFormat("BaseMemTransport socket=[%s]", socket->Describe().c_str());
 }
 
-void BaseMemTransport::CheckLocNotify(CommonLocRes &res)
+void BaseMemTransport::CheckLocNotify(CommonLocRes& res)
 {
     HCCL_INFO("%s notify check start, notifyNum=%u", GetLinkDescInfo().c_str(), res.notifyVec.size());
     // notify 不允许出现空指针情况
-    for (auto &it : res.notifyVec) {
+    for (auto& it : res.notifyVec) {
         if (it == nullptr) {
             string msg = StringFormat("%s notify is nullptr", GetLinkDescInfo().c_str());
             MACRO_THROW(InvalidParamsException, msg);
@@ -151,11 +161,11 @@ void BaseMemTransport::CheckLocNotify(CommonLocRes &res)
     HCCL_INFO("%s notify check ok, notifyNum=%u", GetLinkDescInfo().c_str(), res.notifyVec.size());
 }
 
-void BaseMemTransport::CheckLocBuffer(CommonLocRes &res)
+void BaseMemTransport::CheckLocBuffer(CommonLocRes& res)
 {
     HCCL_INFO("%s buffer check start, bufferNum=%u", GetLinkDescInfo().c_str(), res.bufferVec.size());
     u32 bufIndex = 0;
-    for (auto &it : res.bufferVec) {
+    for (auto& it : res.bufferVec) {
         if (it == nullptr) {
             HCCL_INFO("bufIndex=%u is nullptr", bufIndex);
         } else {
@@ -167,10 +177,10 @@ void BaseMemTransport::CheckLocBuffer(CommonLocRes &res)
     HCCL_INFO("%s buffer check ok, bufferNum=%u", GetLinkDescInfo().c_str(), res.bufferVec.size());
 }
 
-void BaseMemTransport::CheckLocConn(CommonLocRes &res)
+void BaseMemTransport::CheckLocConn(CommonLocRes& res)
 {
     HCCL_INFO("%s connection check start, connNum=%u", GetLinkDescInfo().c_str(), res.connVec.size());
-    for (auto &it : res.connVec) {
+    for (auto& it : res.connVec) {
         if (it == nullptr) {
             string msg = StringFormat("%s conn is nullptr", GetLinkDescInfo().c_str());
             MACRO_THROW(InvalidParamsException, msg);
@@ -180,7 +190,7 @@ void BaseMemTransport::CheckLocConn(CommonLocRes &res)
     HCCL_INFO("%s connection check ok, connNum=%u", GetLinkDescInfo().c_str(), res.connVec.size());
 }
 
-void BaseMemTransport::CheckCommonLocRes(CommonLocRes &res)
+void BaseMemTransport::CheckCommonLocRes(CommonLocRes& res)
 {
     CheckLocNotify(res);
     CheckLocBuffer(res);

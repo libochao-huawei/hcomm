@@ -13,45 +13,34 @@
 
 class HcclTopoInfoDetectTest : public BaseInit {
 public:
-    void SetUp() override {
+    void SetUp() override
+    {
         BaseInit::SetUp();
 
         NetDevContext devContext;
-        HcclNetDevCtx devCtx= &devContext;
+        HcclNetDevCtx devCtx = &devContext;
         MOCKER(HcclNetOpenDev)
             .stubs()
             .with(outBoundP(&devCtx), any(), any(), any(), any())
             .will(returnValue(HCCL_SUCCESS));
 
-        MOCKER(HcclNetInit)
-            .stubs()
-            .will(returnValue(HCCL_SUCCESS));
+        MOCKER(HcclNetInit).stubs().will(returnValue(HCCL_SUCCESS));
 
-        MOCKER_CPP(&TopoInfoDetect::GetRootHostIP)
-            .stubs()
-            .with(any())
-            .will(returnValue(HCCL_SUCCESS));
-    
-        MOCKER_CPP(&HcclSocket::Listen, HcclResult(HcclSocket::*)(u32 port))
+        MOCKER_CPP(&TopoInfoDetect::GetRootHostIP).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+
+        MOCKER_CPP(&HcclSocket::Listen, HcclResult (HcclSocket::*)(u32 port))
             .stubs()
             .with(any())
             .will(returnValue(HCCL_SUCCESS));
 
-        MOCKER_CPP(&TopoInfoDetect::GenerateRootInfo)
-            .stubs()
-            .with(any())
-            .will(returnValue(HCCL_SUCCESS));
-    
-        MOCKER_CPP(&TopoInfoDetect::SetupTopoExchangeServer)
-            .stubs()
-            .with(any())
-            .will(returnValue(HCCL_SUCCESS));
-    
-        MOCKER_CPP(&TopoInfoDetect::Teardown)
-            .stubs()
-            .will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&TopoInfoDetect::GenerateRootInfo).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+
+        MOCKER_CPP(&TopoInfoDetect::SetupTopoExchangeServer).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+
+        MOCKER_CPP(&TopoInfoDetect::Teardown).stubs().will(returnValue(HCCL_SUCCESS));
     }
-    void TearDown() override {
+    void TearDown() override
+    {
         BaseInit::TearDown();
         GlobalMockObject::verify();
     }

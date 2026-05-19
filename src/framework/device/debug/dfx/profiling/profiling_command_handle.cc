@@ -13,14 +13,15 @@
 #include "profiling_command_handle.h"
 #include "profiling_manager.h"
 namespace hccl {
-int32_t DeviceCommandHandle(uint32_t profType, void *data, uint32_t len) {
+int32_t DeviceCommandHandle(uint32_t profType, void* data, uint32_t len)
+{
     HCCL_INFO("[%s] start", __func__);
     (void)len;
     if (data == nullptr) {
         HCCL_ERROR("[%s] CommandHandle's data is NULL.", __func__);
         return PROF_FAILED;
     }
-    MsprofCommandHandle *command = reinterpret_cast<MsprofCommandHandle *>(data);
+    MsprofCommandHandle* command = reinterpret_cast<MsprofCommandHandle*>(data);
     auto type = command->type;
     HCCL_INFO("[%s] type = [%u]. CommandHandle_switch = [%llu]", __func__, type, command->profSwitch);
     // 目前只会有两种状态 开启或者关闭
@@ -37,4 +38,4 @@ int32_t DeviceCommandHandle(uint32_t profType, void *data, uint32_t len) {
     }
     return PROF_SUCCESS;
 }
-}
+} // namespace hccl

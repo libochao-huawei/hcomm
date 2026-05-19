@@ -34,32 +34,19 @@
 using namespace std;
 using namespace hccl;
 
-class CommMeshTest : public testing::Test
-{
+class CommMeshTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "\033[36m--CommMeshTest SetUP--\033[0m" << std::endl;
-    }
-    static void TearDownTestCase()
-    {
-        std::cout << "\033[36m--CommMeshTest TearDown--\033[0m" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "\033[36m--CommMeshTest SetUP--\033[0m" << std::endl; }
+    static void TearDownTestCase() { std::cout << "\033[36m--CommMeshTest TearDown--\033[0m" << std::endl; }
     // Some expensive resource shared by all tests.
     virtual void SetUp()
     {
         DlTdtFunction::GetInstance().DlTdtFunctionInit();
         TsdOpen(1, 2);
         std::cout << "A Test SetUP" << std::endl;
-        MOCKER(hrtRaGetSingleSocketVnicIpInfo)
-        .stubs()
-        .with(any())
-        .will(invoke(stub_hrtRaGetSingleSocketVnicIpInfo));
+        MOCKER(hrtRaGetSingleSocketVnicIpInfo).stubs().with(any()).will(invoke(stub_hrtRaGetSingleSocketVnicIpInfo));
         s32 portNum = -1;
-        MOCKER(hrtGetHccsPortNum)
-            .stubs()
-            .with(any(), outBound(portNum))
-            .will(returnValue(HCCL_SUCCESS));
+        MOCKER(hrtGetHccsPortNum).stubs().with(any(), outBound(portNum)).will(returnValue(HCCL_SUCCESS));
     }
     virtual void TearDown()
     {
@@ -69,8 +56,7 @@ protected:
     }
 };
 
-typedef struct innerpara_struct_mesh
-{
+typedef struct innerpara_struct_mesh {
     std::string collectiveId;
     u32 userRank;
     u32 user_rank_size;
@@ -83,21 +69,21 @@ typedef struct innerpara_struct_mesh
     std::string tag;
     HcclDispatcher dispatcher;
     std::unique_ptr<NotifyPool> notifyPool;
-    IntraExchanger *exchanger;
+    IntraExchanger* exchanger;
     std::vector<RankInfo> para_vector;
     DeviceMem inputMem;
     DeviceMem outputMem;
     std::shared_ptr<CommMesh> comm_mesh;
 } innerpara_t_mesh;
 
-HcclDispatcher get_mesh_dispatcher(s32 devid, std::shared_ptr<hccl::ProfilerManager> &profilerManager)
+HcclDispatcher get_mesh_dispatcher(s32 devid, std::shared_ptr<hccl::ProfilerManager>& profilerManager)
 {
     HcclResult ret = HCCL_SUCCESS;
     ret = hrtSetDevice(devid);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-     // 创建dispatcher
+    // 创建dispatcher
 
-    void *dispatcher = nullptr;
+    void* dispatcher = nullptr;
     ret = HcclDispatcherInit(DispatcherType::DISPATCHER_NORMAL, devid, &dispatcher);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_NE(dispatcher, nullptr);
@@ -110,43 +96,32 @@ void* comm_mesh_task_handle(void* para)
     innerpara_t_mesh* para_info = (innerpara_t_mesh*)para;
     s32 rt_ret = 0;
     ret = hrtSetDevice(para_info->devicePhyId);
-	EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
     RankConsistentcyChecker::GetInstance().ClearCheckInfo();
     /* 作为socket server端启动监听 */
     ret = HcclNetInit(NICDeployment::NIC_DEPLOYMENT_DEVICE, para_info->devicePhyId, para_info->devicePhyId, false);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     HcclNetDevCtx portCtx;
-    ret = HcclNetOpenDev(&portCtx, NicType::VNIC_TYPE, para_info->devicePhyId, para_info->devicePhyId, HcclIpAddress(para_info->devicePhyId));
+    ret = HcclNetOpenDev(
+        &portCtx, NicType::VNIC_TYPE, para_info->devicePhyId, para_info->devicePhyId,
+        HcclIpAddress(para_info->devicePhyId));
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     std::map<HcclIpAddress, HcclNetDevCtx> netDevCtxMap;
     netDevCtxMap.insert(make_pair(HcclIpAddress(para_info->devicePhyId), portCtx));
 
     IntraExchanger exchanger{};
-    ret = CreateIntraExchanger(para_info->collectiveId, portCtx,
-        para_info->devicePhyId, para_info->devicePhyId, para_info->userRank, para_info->user_rank_size, 
-        para_info->device_ids, para_info->user_ranks,
-        true, exchanger);
+    ret = CreateIntraExchanger(
+        para_info->collectiveId, portCtx, para_info->devicePhyId, para_info->devicePhyId, para_info->userRank,
+        para_info->user_rank_size, para_info->device_ids, para_info->user_ranks, true, exchanger);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     TopoType topoFlag = TopoType::TOPO_TYPE_8P_RING;
-    para_info->comm_mesh.reset(new CommMesh(para_info->collectiveId,
-                                para_info->userRank,
-                                para_info->user_rank_size,
-                                para_info->rank,
-                                para_info->rank_size,
-                                topoFlag,
-                                para_info->dispatcher, para_info->notifyPool,
-                                netDevCtxMap,
-                                exchanger,
-                                para_info->para_vector,
-                                para_info->inputMem,
-                                para_info->outputMem,
-                                false,
-                                nullptr, 0,
-                                para_info->tag
-                                ));
+    para_info->comm_mesh.reset(new CommMesh(
+        para_info->collectiveId, para_info->userRank, para_info->user_rank_size, para_info->rank, para_info->rank_size,
+        topoFlag, para_info->dispatcher, para_info->notifyPool, netDevCtxMap, exchanger, para_info->para_vector,
+        para_info->inputMem, para_info->outputMem, false, nullptr, 0, para_info->tag));
     ret = para_info->notifyPool->RegisterOp(para_info->tag);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
@@ -170,7 +145,9 @@ TEST_F(CommMeshTest, destructor_D0)
 
     TopoType topoFlag = TopoType::TOPO_TYPE_8P_RING;
     std::map<HcclIpAddress, HcclNetDevCtx> netDevCtxMap;
-    CommMesh* comm_mesh = new CommMesh(rootInfo, 0, 1, 0, 1, topoFlag, nullptr, nullptr, netDevCtxMap, exchanger, para_vector, DeviceMem(), DeviceMem(), false, nullptr, 0, "");
+    CommMesh* comm_mesh = new CommMesh(
+        rootInfo, 0, 1, 0, 1, topoFlag, nullptr, nullptr, netDevCtxMap, exchanger, para_vector, DeviceMem(),
+        DeviceMem(), false, nullptr, 0, "");
 
     delete comm_mesh;
 }
@@ -185,8 +162,8 @@ TEST_F(CommMeshTest, init)
     RankInfo tmp_para;
 
     tmp_para.userRank = userRank;
-    DeviceMem inputMem = DeviceMem::alloc(128*3);
-    DeviceMem outputMem = DeviceMem::alloc(128*3);
+    DeviceMem inputMem = DeviceMem::alloc(128 * 3);
+    DeviceMem outputMem = DeviceMem::alloc(128 * 3);
 
     s32 device_id = 0;
     ret = hrtGetDevice(&device_id);
@@ -209,7 +186,8 @@ TEST_F(CommMeshTest, init)
 
     TopoType topoFlag = TopoType::TOPO_TYPE_8P_RING;
     std::map<HcclIpAddress, HcclNetDevCtx> netDevCtxMap;
-    CommMesh* comm_mesh = new CommMesh(collective_id_tmp, userRank, user_rank_size, 0, 1, topoFlag, nullptr, nullptr, netDevCtxMap, exchanger,
+    CommMesh* comm_mesh = new CommMesh(
+        collective_id_tmp, userRank, user_rank_size, 0, 1, topoFlag, nullptr, nullptr, netDevCtxMap, exchanger,
         para_vector, inputMem, outputMem, true, nullptr, 0, "");
 
     ret = comm_mesh->Init();
@@ -218,9 +196,9 @@ TEST_F(CommMeshTest, init)
     delete comm_mesh;
 }
 
-HcclResult StupIsSupportAicpuNormalQP(const u32& devicePhyId, bool &isSupportNormalQP)
+HcclResult StupIsSupportAicpuNormalQP(const u32& devicePhyId, bool& isSupportNormalQP)
 {
-    isSupportNormalQP = devicePhyId >= 0 ? true: false;
+    isSupportNormalQP = devicePhyId >= 0 ? true : false;
     return HCCL_SUCCESS;
 }
 
@@ -234,8 +212,8 @@ TEST_F(CommMeshTest, ut_set_machinePara)
     RankInfo tmp_para;
 
     tmp_para.userRank = userRank;
-    DeviceMem inputMem = DeviceMem::alloc(128*3);
-    DeviceMem outputMem = DeviceMem::alloc(128*3);
+    DeviceMem inputMem = DeviceMem::alloc(128 * 3);
+    DeviceMem outputMem = DeviceMem::alloc(128 * 3);
 
     s32 device_id = 0;
     ret = hrtGetDevice(&device_id);
@@ -258,7 +236,8 @@ TEST_F(CommMeshTest, ut_set_machinePara)
 
     TopoType topoFlag = TopoType::TOPO_TYPE_8P_RING;
     std::map<HcclIpAddress, HcclNetDevCtx> netDevCtxMap;
-    CommMesh* comm_mesh = new CommMesh(collective_id_tmp, userRank, user_rank_size, 0, 1, topoFlag, nullptr, nullptr, netDevCtxMap, exchanger,
+    CommMesh* comm_mesh = new CommMesh(
+        collective_id_tmp, userRank, user_rank_size, 0, 1, topoFlag, nullptr, nullptr, netDevCtxMap, exchanger,
         para_vector, inputMem, outputMem, true, nullptr, 0, "tag_" + HCCL_MC2_MULTISERVER_SUFFIX);
 
     ret = comm_mesh->Init();
@@ -268,9 +247,9 @@ TEST_F(CommMeshTest, ut_set_machinePara)
     const u32 dstRank = 0;
     std::vector<std::shared_ptr<HcclSocket>> socketList;
     MachinePara machinePara;
-    
+
     MOCKER(IsSupportAicpuNormalQP).stubs().with(any()).will(invoke(StupIsSupportAicpuNormalQP));
-    
+
     ret = comm_mesh->SetMachinePara(machineType, tmp_para.serverId, dstRank, socketList, machinePara);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 

@@ -24,20 +24,11 @@ using namespace hccl;
 
 class DpuManagerTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "DpuManagerTest SetUpTestCase" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "DpuManagerTest SetUpTestCase" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "DpuManagerTest TearDownTestCase" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "DpuManagerTest TearDownTestCase" << std::endl; }
 
-    virtual void SetUp()
-    {
-        std::cout << "DpuManagerTest SetUp" << std::endl;
-    }
+    virtual void SetUp() { std::cout << "DpuManagerTest SetUp" << std::endl; }
 
     virtual void TearDown()
     {
@@ -52,7 +43,7 @@ protected:
 TEST_F(DpuManagerTest, Ut_CreateWorkspaceBuf_When_NewTag_Expect_Success)
 {
     DpuManager dpuManager;
-    const char *memTag = "TEST_TAG";
+    const char* memTag = "TEST_TAG";
     uint64_t size = 1024;
     bool newCreated = false;
 
@@ -65,7 +56,7 @@ TEST_F(DpuManagerTest, Ut_CreateWorkspaceBuf_When_NewTag_Expect_Success)
 TEST_F(DpuManagerTest, Ut_CreateWorkspaceBuf_When_SameTagAgain_Expect_NotNewCreated)
 {
     DpuManager dpuManager;
-    const char *memTag = "TEST_TAG";
+    const char* memTag = "TEST_TAG";
     uint64_t size1 = 1024;
     uint64_t size2 = 2048;
     bool newCreated1 = false;
@@ -85,7 +76,7 @@ TEST_F(DpuManagerTest, Ut_CreateWorkspaceBuf_When_SameTagAgain_Expect_NotNewCrea
 TEST_F(DpuManagerTest, Ut_CreateWorkspaceBuf_When_NullTag_Expect_Success)
 {
     DpuManager dpuManager;
-    const char *memTag = nullptr;
+    const char* memTag = nullptr;
     uint64_t size = 1024;
     bool newCreated = false;
 
@@ -98,7 +89,7 @@ TEST_F(DpuManagerTest, Ut_CreateWorkspaceBuf_When_NullTag_Expect_Success)
 TEST_F(DpuManagerTest, Ut_CreateWorkspaceBuf_When_NewCreatedIsNull_Expect_Success)
 {
     DpuManager dpuManager;
-    const char *memTag = "TEST_TAG";
+    const char* memTag = "TEST_TAG";
     uint64_t size = 1024;
 
     HcclResult ret = dpuManager.CreateWorkspaceBuf(memTag, &size, nullptr);
@@ -111,7 +102,7 @@ TEST_F(DpuManagerTest, Ut_CreateWorkspaceBuf_When_NewCreatedIsNull_Expect_Succes
 TEST_F(DpuManagerTest, Ut_GetKFCWorkSpace_When_WorkspaceExists_Expect_NotNull)
 {
     DpuManager dpuManager;
-    const char *memTag = "TEST_TAG";
+    const char* memTag = "TEST_TAG";
     uint64_t size = 1024;
 
     // 先创建工作空间
@@ -126,7 +117,7 @@ TEST_F(DpuManagerTest, Ut_GetKFCWorkSpace_When_WorkspaceExists_Expect_NotNull)
 TEST_F(DpuManagerTest, Ut_GetKFCWorkSpace_When_TagNotExists_Expect_Null)
 {
     DpuManager dpuManager;
-    const char *memTag = "NOT_EXIST_TAG";
+    const char* memTag = "NOT_EXIST_TAG";
 
     auto workspace = dpuManager.GetKFCWorkSpace(memTag);
     EXPECT_EQ(workspace, nullptr);
@@ -136,7 +127,7 @@ TEST_F(DpuManagerTest, Ut_GetKFCWorkSpace_When_TagNotExists_Expect_Null)
 TEST_F(DpuManagerTest, Ut_GetKFCWorkSpace_When_NullTag_Expect_Null)
 {
     DpuManager dpuManager;
-    const char *memTag = nullptr;
+    const char* memTag = nullptr;
 
     auto workspace = dpuManager.GetKFCWorkSpace(memTag);
     EXPECT_EQ(workspace, nullptr);
@@ -150,7 +141,7 @@ TEST_F(DpuManagerTest, Ut_GetDevMemWorkSpace_When_NewTag_Expect_Success)
     DpuManager dpuManager;
     std::string memTag = "DEV_MEM_TAG";
     uint64_t size = 2048;
-    void *addr = nullptr;
+    void* addr = nullptr;
     bool newCreated = false;
 
     HcclResult ret = dpuManager.GetDevMemWorkSpace(memTag, &size, &addr, &newCreated);
@@ -165,7 +156,7 @@ TEST_F(DpuManagerTest, Ut_GetDevMemWorkSpace_When_WorkspaceExists_SameSize_Expec
     DpuManager dpuManager;
     std::string memTag = "DEV_MEM_TAG";
     uint64_t size = 2048;
-    void *addr1 = nullptr;
+    void* addr1 = nullptr;
     bool newCreated1 = false;
 
     // 首次创建
@@ -174,7 +165,7 @@ TEST_F(DpuManagerTest, Ut_GetDevMemWorkSpace_When_WorkspaceExists_SameSize_Expec
     EXPECT_EQ(newCreated1, true);
 
     // 再次获取，大小相同
-    void *addr2 = nullptr;
+    void* addr2 = nullptr;
     bool newCreated2 = false;
     HcclResult ret2 = dpuManager.GetDevMemWorkSpace(memTag, &size, &addr2, &newCreated2);
     EXPECT_EQ(ret2, HCCL_SUCCESS);
@@ -187,7 +178,7 @@ TEST_F(DpuManagerTest, Ut_GetDevMemWorkSpace_When_WorkspaceExists_DiffSize_Expec
     DpuManager dpuManager;
     std::string memTag = "DEV_MEM_TAG";
     uint64_t size1 = 2048;
-    void *addr1 = nullptr;
+    void* addr1 = nullptr;
     bool newCreated1 = false;
 
     // 首次创建
@@ -196,7 +187,7 @@ TEST_F(DpuManagerTest, Ut_GetDevMemWorkSpace_When_WorkspaceExists_DiffSize_Expec
 
     // 再次获取，大小不同
     uint64_t size2 = 4096;
-    void *addr2 = nullptr;
+    void* addr2 = nullptr;
     bool newCreated2 = false;
     HcclResult ret2 = dpuManager.GetDevMemWorkSpace(memTag, &size2, &addr2, &newCreated2);
     EXPECT_EQ(ret2, HCCL_E_PARA);
@@ -208,7 +199,7 @@ TEST_F(DpuManagerTest, Ut_GetDevMemWorkSpace_When_AddrIsNull_Expect_Success)
     DpuManager dpuManager;
     std::string memTag = "DEV_MEM_TAG";
     uint64_t size = 2048;
-    void *addr = nullptr;
+    void* addr = nullptr;
 
     HcclResult ret = dpuManager.GetDevMemWorkSpace(memTag, &size, &addr, nullptr);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -262,7 +253,7 @@ TEST_F(DpuManagerTest, Ut_DeInitDpuKernel_When_NotLaunched_Expect_Success)
 // 这样可以测试hostShareBuf_被正确清理
 // 全局计数器
 static int g_memcpyCallCount = 0;
-aclError MockAclrtMemcpy(void *dst, const void *src, size_t size, int kind)
+aclError MockAclrtMemcpy(void* dst, const void* src, size_t size, int kind)
 {
     g_memcpyCallCount++;
     // 第一次返回 0（成功），之后返回 -1（失败）
@@ -316,7 +307,7 @@ TEST_F(DpuManagerTest, Ut_WaitDpuKernelThreadTerminate_When_MemcpyFailed_Expect_
 {
     DpuManager dpuManager;
     // 先创建工作空间
-    const char *memTag = DPUTAG;
+    const char* memTag = DPUTAG;
     uint64_t size = 100 * 1024 * 1024; // SHARE_HBM_MEMORY_SIZE
     dpuManager.CreateWorkspaceBuf(memTag, &size, nullptr);
 
@@ -336,8 +327,8 @@ TEST_F(DpuManagerTest, Ut_Init_When_AllMockSuccess_Expect_Success)
     std::string commId = "test_comm_id_123";
     u32 deviceLogicId = 5;
 
-    MOCKER(getenv).stubs().will(returnValue(static_cast<char *>(nullptr)));
-    MOCKER(realpath).stubs().will(returnValue(reinterpret_cast<char *>(0x2000)));
+    MOCKER(getenv).stubs().will(returnValue(static_cast<char*>(nullptr)));
+    MOCKER(realpath).stubs().will(returnValue(reinterpret_cast<char*>(0x2000)));
     MOCKER(aclrtGetCurrentContext)
         .stubs()
         .will(returnValue(ACL_SUCCESS))
@@ -381,8 +372,8 @@ TEST_F(DpuManagerTest, Ut_Init_When_SetXpuDeviceFail_Expect_EInternal)
     std::string commId = "test_comm_id";
     u32 deviceLogicId = 0;
 
-    MOCKER(getenv).stubs().will(returnValue(static_cast<char *>(nullptr)));
-    MOCKER(realpath).stubs().will(returnValue(reinterpret_cast<char *>(0x2000)));
+    MOCKER(getenv).stubs().will(returnValue(static_cast<char*>(nullptr)));
+    MOCKER(realpath).stubs().will(returnValue(reinterpret_cast<char*>(0x2000)));
     MOCKER(aclrtGetCurrentContext).stubs().will(returnValue(ACL_SUCCESS)).then(returnValue(ACL_SUCCESS));
     MOCKER(Hccl::HrtSetXpuDevice).stubs().will(returnValue(HCCL_E_INTERNAL));
     MOCKER(aclrtMemcpy).stubs().will(returnValue(ACL_SUCCESS));
@@ -399,8 +390,8 @@ TEST_F(DpuManagerTest, Ut_Init_When_CreateStreamFail_Expect_EInternal)
     std::string commId = "test_comm_id";
     u32 deviceLogicId = 0;
 
-    MOCKER(getenv).stubs().will(returnValue(static_cast<char *>(nullptr)));
-    MOCKER(realpath).stubs().will(returnValue(reinterpret_cast<char *>(0x2000)));
+    MOCKER(getenv).stubs().will(returnValue(static_cast<char*>(nullptr)));
+    MOCKER(realpath).stubs().will(returnValue(reinterpret_cast<char*>(0x2000)));
     MOCKER(aclrtGetCurrentContext).stubs().will(returnValue(ACL_SUCCESS)).then(returnValue(ACL_SUCCESS));
     MOCKER(Hccl::HrtSetXpuDevice).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(aclrtCreateStreamWithConfig).stubs().will(returnValue(ACL_ERROR_INVALID_PARAM));
@@ -418,8 +409,8 @@ TEST_F(DpuManagerTest, Ut_Init_When_BinaryLoadFail_Expect_EOpenFileFailure)
     std::string commId = "test_comm_id";
     u32 deviceLogicId = 0;
 
-    MOCKER(getenv).stubs().will(returnValue(static_cast<char *>(nullptr)));
-    MOCKER(realpath).stubs().will(returnValue(reinterpret_cast<char *>(0x2000)));
+    MOCKER(getenv).stubs().will(returnValue(static_cast<char*>(nullptr)));
+    MOCKER(realpath).stubs().will(returnValue(reinterpret_cast<char*>(0x2000)));
     MOCKER(aclrtGetCurrentContext).stubs().will(returnValue(ACL_SUCCESS)).then(returnValue(ACL_SUCCESS));
     MOCKER(Hccl::HrtSetXpuDevice).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(aclrtCreateStreamWithConfig).stubs().will(returnValue(ACL_SUCCESS));
@@ -438,8 +429,8 @@ TEST_F(DpuManagerTest, Ut_Init_When_GetFunctionFail_Expect_EInternal)
     std::string commId = "test_comm_id";
     u32 deviceLogicId = 0;
 
-    MOCKER(getenv).stubs().will(returnValue(static_cast<char *>(nullptr)));
-    MOCKER(realpath).stubs().will(returnValue(reinterpret_cast<char *>(0x2000)));
+    MOCKER(getenv).stubs().will(returnValue(static_cast<char*>(nullptr)));
+    MOCKER(realpath).stubs().will(returnValue(reinterpret_cast<char*>(0x2000)));
     MOCKER(aclrtGetCurrentContext).stubs().will(returnValue(ACL_SUCCESS)).then(returnValue(ACL_SUCCESS));
     MOCKER(Hccl::HrtSetXpuDevice).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(aclrtCreateStreamWithConfig).stubs().will(returnValue(ACL_SUCCESS));
@@ -459,8 +450,8 @@ TEST_F(DpuManagerTest, Ut_Init_When_LaunchKernelFail_Expect_EInternal)
     std::string commId = "test_comm_id";
     u32 deviceLogicId = 0;
 
-    MOCKER(getenv).stubs().will(returnValue(static_cast<char *>(nullptr)));
-    MOCKER(realpath).stubs().will(returnValue(reinterpret_cast<char *>(0x2000)));
+    MOCKER(getenv).stubs().will(returnValue(static_cast<char*>(nullptr)));
+    MOCKER(realpath).stubs().will(returnValue(reinterpret_cast<char*>(0x2000)));
     MOCKER(aclrtGetCurrentContext).stubs().will(returnValue(ACL_SUCCESS)).then(returnValue(ACL_SUCCESS));
     MOCKER(Hccl::HrtSetXpuDevice).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(aclrtCreateStreamWithConfig).stubs().will(returnValue(ACL_SUCCESS));
@@ -481,8 +472,8 @@ TEST_F(DpuManagerTest, Ut_Init_When_ResetContextFail_Expect_EInternal)
     std::string commId = "test_comm_id";
     u32 deviceLogicId = 0;
 
-    MOCKER(getenv).stubs().will(returnValue(static_cast<char *>(nullptr)));
-    MOCKER(realpath).stubs().will(returnValue(reinterpret_cast<char *>(0x2000)));
+    MOCKER(getenv).stubs().will(returnValue(static_cast<char*>(nullptr)));
+    MOCKER(realpath).stubs().will(returnValue(reinterpret_cast<char*>(0x2000)));
     MOCKER(aclrtGetCurrentContext)
         .stubs()
         .will(returnValue(ACL_SUCCESS))
@@ -510,7 +501,7 @@ TEST_F(DpuManagerTest, Ut_Init_When_ResetContextFail_Expect_EInternal)
 // 析构函数: 正常析构不崩溃
 TEST_F(DpuManagerTest, Ut_Destructor_When_Normal_Expect_NoCrash)
 {
-    DpuManager *dpuManager = new DpuManager();
+    DpuManager* dpuManager = new DpuManager();
     // 设置一些状态
     dpuManager->hostShareBuf_ = malloc(1024);
     // 正常析构
@@ -520,7 +511,7 @@ TEST_F(DpuManagerTest, Ut_Destructor_When_Normal_Expect_NoCrash)
 // 析构函数: isDpuKernelLaunched为true时调用DeInit
 TEST_F(DpuManagerTest, Ut_Destructor_When_KernelLaunched_Expect_CallDeInit)
 {
-    DpuManager *dpuManager = new DpuManager();
+    DpuManager* dpuManager = new DpuManager();
     dpuManager->isDpuKernelLaunched_ = true;
     dpuManager->hostShareBuf_ = malloc(1024);
 

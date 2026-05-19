@@ -29,7 +29,7 @@
 using namespace hccl;
 
 // Mock 函数用于 rtModelGetId
-rtError_t rtModelGetIdMock(rtModel_t model, uint32_t *modelId)
+rtError_t rtModelGetIdMock(rtModel_t model, uint32_t* modelId)
 {
     *modelId = 1; // 返回一个固定的 mock modelId
     return RT_ERROR_NONE;
@@ -37,7 +37,8 @@ rtError_t rtModelGetIdMock(rtModel_t model, uint32_t *modelId)
 
 class AclgraphCallbackTest : public testing::Test {
 protected:
-    void SetUp() override {
+    void SetUp() override
+    {
         comm.reset(new (std::nothrow) hccl::hcclComm());
         if (!comm) {
             HCCL_ERROR("Failed to create hccl::hcclComm");
@@ -45,7 +46,8 @@ protected:
         }
     }
 
-    void TearDown() override {
+    void TearDown() override
+    {
         // 清理单例状态，避免测试用例之间相互影响
         std::lock_guard<std::mutex> lock(AclgraphCallback::GetInstance().resMutex_);
         AclgraphCallback::GetInstance().captureResMap_.clear();
@@ -61,9 +63,7 @@ protected:
 
 TEST_F(AclgraphCallbackTest, ut_InsertNewTagToCaptureResMap_When_Capture_Expect_SUCCESS)
 {
-    MOCKER(rtModelGetId)
-    .stubs()
-    .will(invoke(rtModelGetIdMock));
+    MOCKER(rtModelGetId).stubs().will(invoke(rtModelGetIdMock));
 
     std::string newTag = "tag";
     OpParam opParam;
@@ -104,7 +104,7 @@ TEST_F(AclgraphCallbackTest, ut_CleanCaptureRes_By_Communicator_With_Multiple_Co
     // 验证插入成功
     bool foundComm1Before = false;
     bool foundComm2Before = false;
-    for (const auto &modelEntry : AclgraphCallback::GetInstance().captureResMap_) {
+    for (const auto& modelEntry : AclgraphCallback::GetInstance().captureResMap_) {
         if (modelEntry.second.find(&communicator1_) != modelEntry.second.end()) {
             foundComm1Before = true;
         }
@@ -121,7 +121,7 @@ TEST_F(AclgraphCallbackTest, ut_CleanCaptureRes_By_Communicator_With_Multiple_Co
     // 验证：communicator1 应该被删除，communicator2 应该仍然存在
     bool foundComm1After = false;
     bool foundComm2After = false;
-    for (const auto &modelEntry : AclgraphCallback::GetInstance().captureResMap_) {
+    for (const auto& modelEntry : AclgraphCallback::GetInstance().captureResMap_) {
         if (modelEntry.second.find(&communicator1_) != modelEntry.second.end()) {
             foundComm1After = true;
         }

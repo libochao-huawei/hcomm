@@ -28,15 +28,9 @@ using namespace Hccl;
 
 class AicpuMc2HandlerTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "AicpuMc2HandlerTest SetUP" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "AicpuMc2HandlerTest SetUP" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "AicpuMc2HandlerTest TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "AicpuMc2HandlerTest TearDown" << std::endl; }
 
 protected:
     void SetUp() override
@@ -73,15 +67,20 @@ protected:
 };
 
 // HcclGetCommHandleByCtx
-TEST_F(AicpuMc2HandlerTest, Ut_HcclGetCommHandleByCtx_When_GetCommIsNull_Expect_ReturnError) {
+TEST_F(AicpuMc2HandlerTest, Ut_HcclGetCommHandleByCtx_When_GetCommIsNull_Expect_ReturnError)
+{
     auto* ctx = reinterpret_cast<void*>(kernelParam);
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
-    MOCKER_CPP(&CommunicatorImplLiteMgr::Get).stubs().with(any()).will(returnValue(static_cast<Hccl::CommunicatorImplLite*>(nullptr)));
+    MOCKER_CPP(&CommunicatorImplLiteMgr::Get)
+        .stubs()
+        .with(any())
+        .will(returnValue(static_cast<Hccl::CommunicatorImplLite*>(nullptr)));
     EXPECT_EQ(HCCL_E_PTR, handler.HcclGetCommHandleByCtx(ctx, &comm));
     GlobalMockObject::verify();
 }
 
-TEST_F(AicpuMc2HandlerTest, Ut_HcclGetCommHandleByCtx_When_OpModeIsOffload_Expect_ReturnError) {
+TEST_F(AicpuMc2HandlerTest, Ut_HcclGetCommHandleByCtx_When_OpModeIsOffload_Expect_ReturnError)
+{
     kernelParam->op.algOperator.opMode = OpMode::OFFLOAD;
     auto* ctx = reinterpret_cast<void*>(kernelParam);
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
@@ -90,7 +89,8 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclGetCommHandleByCtx_When_OpModeIsOffload_Expec
     kernelParam->op.algOperator.opMode = OpMode::OPBASE;
 }
 
-TEST_F(AicpuMc2HandlerTest, Ut_HcclGetCommHandleByCtx_When_CommIsUsed_Expect_ReturnTimeout) {
+TEST_F(AicpuMc2HandlerTest, Ut_HcclGetCommHandleByCtx_When_CommIsUsed_Expect_ReturnTimeout)
+{
     auto* ctx = reinterpret_cast<void*>(kernelParam);
     communicatorImplLite->SetIsUsed(true);
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
@@ -98,7 +98,8 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclGetCommHandleByCtx_When_CommIsUsed_Expect_Ret
     EXPECT_EQ(HCCL_E_TIMEOUT, handler.HcclGetCommHandleByCtx(ctx, &comm));
 }
 
-TEST_F(AicpuMc2HandlerTest, Ut_HcclGetCommHandleByCtx_When_CommIsFree_Expect_ReturnSuccess) {
+TEST_F(AicpuMc2HandlerTest, Ut_HcclGetCommHandleByCtx_When_CommIsFree_Expect_ReturnSuccess)
+{
     auto* ctx = reinterpret_cast<void*>(kernelParam);
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
     MOCKER_CPP(&CommunicatorImplLite::CheckNeedUpdateRes).stubs().will(returnValue(false));
@@ -110,7 +111,8 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclGetCommHandleByCtx_When_CommIsFree_Expect_Ret
 }
 
 // HcclReleaseComm
-TEST_F(AicpuMc2HandlerTest, Ut_HcclReleaseComm_When_ValidParams_Expect_ReturnSuccess) {
+TEST_F(AicpuMc2HandlerTest, Ut_HcclReleaseComm_When_ValidParams_Expect_ReturnSuccess)
+{
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
     handler.HcclReleaseComm(comm);
     EXPECT_EQ(false, communicatorImplLite->IsUsed());
@@ -118,74 +120,72 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclReleaseComm_When_ValidParams_Expect_ReturnSuc
 
 // HcclGetTaskStatus
 extern "C" {
-drvError_t halCqReportRecv(uint32_t devId, struct halReportRecvInfo *info)
-{
-    return DRV_ERROR_NONE;
-}
+drvError_t halCqReportRecv(uint32_t devId, struct halReportRecvInfo* info) { return DRV_ERROR_NONE; }
 }
 
 int Mocker_GetReporterInfo_Normal(
-    TaskExceptionFunc *This, const StreamLite *curStream, std::shared_ptr<halReportRecvInfo> recvInfo)
+    TaskExceptionFunc* This, const StreamLite* curStream, std::shared_ptr<halReportRecvInfo> recvInfo)
 {
     recvInfo->type = static_cast<drvSqCqType_t>(DRV_LOGIC_TYPE);
     recvInfo->tsId = 0;
     recvInfo->report_cqe_num = 1;
     recvInfo->stream_id = 0;
     recvInfo->cqId = 0;
-    recvInfo->timeout = 0;               // 不设置超时时间，非阻塞
-    recvInfo->task_id = 0xFFFF;          // 接收所有类型
-    recvInfo->cqe_num = 100;  // 单次接收的最大cqe数量
+    recvInfo->timeout = 0;      // 不设置超时时间，非阻塞
+    recvInfo->task_id = 0xFFFF; // 接收所有类型
+    recvInfo->cqe_num = 100;    // 单次接收的最大cqe数量
     constexpr uint32_t cqeSize = 100;
-    rtLogicCqReport_t *tmpCqeAddr = reinterpret_cast<rtLogicCqReport_t *>(recvInfo->cqe_addr);
+    rtLogicCqReport_t* tmpCqeAddr = reinterpret_cast<rtLogicCqReport_t*>(recvInfo->cqe_addr);
     tmpCqeAddr[0] = {1, 2, 3, 4, 5, 6, 7, 0, 0, 0, 0, 0};
     tmpCqeAddr->errorType = 0;
     return 0;
 }
 
 int Mocker_GetReporterInfo_Error(
-    TaskExceptionFunc *This, const StreamLite *curStream, std::shared_ptr<halReportRecvInfo> recvInfo)
+    TaskExceptionFunc* This, const StreamLite* curStream, std::shared_ptr<halReportRecvInfo> recvInfo)
 {
     recvInfo->type = static_cast<drvSqCqType_t>(DRV_LOGIC_TYPE);
     recvInfo->tsId = 0;
     recvInfo->report_cqe_num = 1;
     recvInfo->stream_id = 0;
     recvInfo->cqId = 0;
-    recvInfo->timeout = 0;               // 不设置超时时间，非阻塞
-    recvInfo->task_id = 0xFFFF;          // 接收所有类型
-    recvInfo->cqe_num = 100;  // 单次接收的最大cqe数量
+    recvInfo->timeout = 0;      // 不设置超时时间，非阻塞
+    recvInfo->task_id = 0xFFFF; // 接收所有类型
+    recvInfo->cqe_num = 100;    // 单次接收的最大cqe数量
     constexpr uint32_t cqeSize = 100;
-    rtLogicCqReport_t * tmpCqeAddr = reinterpret_cast<rtLogicCqReport_t *>(recvInfo->cqe_addr);
+    rtLogicCqReport_t* tmpCqeAddr = reinterpret_cast<rtLogicCqReport_t*>(recvInfo->cqe_addr);
     tmpCqeAddr[0] = {1, 2, 3, 4, 5, 6, 7, 0, 0, 0, 0, 0};
     tmpCqeAddr->errorType = 1;
     return 0;
 }
 
 int Mocker_GetReporterInfo_Continue(
-    TaskExceptionFunc *This, const StreamLite *curStream, std::shared_ptr<halReportRecvInfo> recvInfo)
+    TaskExceptionFunc* This, const StreamLite* curStream, std::shared_ptr<halReportRecvInfo> recvInfo)
 {
     recvInfo->type = static_cast<drvSqCqType_t>(DRV_LOGIC_TYPE);
     recvInfo->tsId = 0;
     recvInfo->report_cqe_num = 1;
     recvInfo->stream_id = 0;
     recvInfo->cqId = 0;
-    recvInfo->timeout = 0;               // 不设置超时时间，非阻塞
-    recvInfo->task_id = 0xFFFF;          // 接收所有类型
-    recvInfo->cqe_num = 100;  // 单次接收的最大cqe数量
+    recvInfo->timeout = 0;      // 不设置超时时间，非阻塞
+    recvInfo->task_id = 0xFFFF; // 接收所有类型
+    recvInfo->cqe_num = 100;    // 单次接收的最大cqe数量
     constexpr uint32_t cqeSize = 100;
-    rtLogicCqReport_t *tmpCqeAddr = reinterpret_cast<rtLogicCqReport_t *>(recvInfo->cqe_addr);
+    rtLogicCqReport_t* tmpCqeAddr = reinterpret_cast<rtLogicCqReport_t*>(recvInfo->cqe_addr);
     tmpCqeAddr[0] = {1, 2, 3, 4, 5, 6, 7, 0, 0, 0, 0, 0};
     tmpCqeAddr->errorType = 0;
     return 1;
 }
 
-TEST_F(AicpuMc2HandlerTest, Ut_HcclGetTaskStatus_When_TaskHasException_Expect_ReturnErrorStatus) {
+TEST_F(AicpuMc2HandlerTest, Ut_HcclGetTaskStatus_When_TaskHasException_Expect_ReturnErrorStatus)
+{
     MOCKER_CPP(&TaskExceptionFunc::GetReporterInfo).stubs().with(any()).will(invoke(Mocker_GetReporterInfo_Error));
 
     vector<char> masterBuff = {
-        0x00, 0x00, 0x00, 0x00,  // id
-        0x00, 0x00, 0x00, 0x01,  // sqId
-        0x00, 0x00, 0x00, 0x01,  // devPhyId
-        0x00, 0x00, 0x00, 0x01   // cqId
+        0x00, 0x00, 0x00, 0x00, // id
+        0x00, 0x00, 0x00, 0x01, // sqId
+        0x00, 0x00, 0x00, 0x01, // devPhyId
+        0x00, 0x00, 0x00, 0x01  // cqId
     };
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
     HcclTaskStatus status = HcclTaskStatus::HCCL_NORMAL_STATUS;
@@ -195,14 +195,15 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclGetTaskStatus_When_TaskHasException_Expect_Re
     EXPECT_EQ(HcclTaskStatus::HCCL_CQE_ERROR, status);
 }
 
-TEST_F(AicpuMc2HandlerTest, Ut_HcclGetTaskStatus_When_TaskIsNormal_Expect_ReturnNormalStatus) {
+TEST_F(AicpuMc2HandlerTest, Ut_HcclGetTaskStatus_When_TaskIsNormal_Expect_ReturnNormalStatus)
+{
     MOCKER_CPP(&TaskExceptionFunc::GetReporterInfo).stubs().with(any()).will(invoke(Mocker_GetReporterInfo_Normal));
 
     vector<char> masterBuff = {
-        0x00, 0x00, 0x00, 0x00,  // id
-        0x00, 0x00, 0x00, 0x01,  // sqId
-        0x00, 0x00, 0x00, 0x01,  // devPhyId
-        0x00, 0x00, 0x00, 0x01   // cqId
+        0x00, 0x00, 0x00, 0x00, // id
+        0x00, 0x00, 0x00, 0x01, // sqId
+        0x00, 0x00, 0x00, 0x01, // devPhyId
+        0x00, 0x00, 0x00, 0x01  // cqId
     };
 
     communicatorImplLite->GetStreamLiteMgr()->streams.push_back(std::make_unique<StreamLite>(masterBuff));
@@ -214,13 +215,17 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclGetTaskStatus_When_TaskIsNormal_Expect_Return
 }
 
 // HcclCheckFinishByStream
-TEST_F(AicpuMc2HandlerTest, Ut_HcclCheckFinishByStream_When_StreamLiteMgrIsNull_Expect_ReturnError) {
+TEST_F(AicpuMc2HandlerTest, Ut_HcclCheckFinishByStream_When_StreamLiteMgrIsNull_Expect_ReturnError)
+{
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
-    MOCKER_CPP_VIRTUAL(communicatorImplLite, &CommunicatorImplLite::GetStreamLiteMgr).stubs().will(returnValue((StreamLiteMgr*)nullptr));
+    MOCKER_CPP_VIRTUAL(communicatorImplLite, &CommunicatorImplLite::GetStreamLiteMgr)
+        .stubs()
+        .will(returnValue((StreamLiteMgr*)nullptr));
     EXPECT_EQ(HCCL_E_PTR, handler.HcclCheckFinishByStream(comm));
 }
 
-TEST_F(AicpuMc2HandlerTest, Ut_HcclCheckFinishByStream_When_MasterIsNull_Expect_ReturnError) {
+TEST_F(AicpuMc2HandlerTest, Ut_HcclCheckFinishByStream_When_MasterIsNull_Expect_ReturnError)
+{
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
     MOCKER_CPP(&StreamLiteMgr::GetMaster).stubs().with(any()).will(returnValue((StreamLite*)nullptr));
     EXPECT_EQ(HCCL_E_PTR, handler.HcclCheckFinishByStream(comm));
@@ -228,19 +233,18 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclCheckFinishByStream_When_MasterIsNull_Expect_
 
 TEST_F(AicpuMc2HandlerTest, Ut_HcclCheckFinishByStream_When_StreamIsFinished_Expect_ReturnSuccess)
 {
-    
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
     vector<char> masterBuff = {
-        0x00, 0x00, 0x00, 0x00,  // id
-        0x00, 0x00, 0x00, 0x01,  // sqId
-        0x00, 0x00, 0x00, 0x01,  // devPhyId
-        0x00, 0x00, 0x00, 0x01   // cqId
+        0x00, 0x00, 0x00, 0x00, // id
+        0x00, 0x00, 0x00, 0x01, // sqId
+        0x00, 0x00, 0x00, 0x01, // devPhyId
+        0x00, 0x00, 0x00, 0x01  // cqId
     };
     vector<char> slaveBuff = {
-        0x00, 0x00, 0x00, 0x01,  // id
-        0x00, 0x00, 0x00, 0x02,  // sqId
-        0x00, 0x00, 0x00, 0x01,  // devPhyId
-        0x00, 0x00, 0x00, 0x02   // cqId
+        0x00, 0x00, 0x00, 0x01, // id
+        0x00, 0x00, 0x00, 0x02, // sqId
+        0x00, 0x00, 0x00, 0x01, // devPhyId
+        0x00, 0x00, 0x00, 0x02  // cqId
     };
     StreamLite master(masterBuff);
     StreamLite slave(slaveBuff);
@@ -248,11 +252,11 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclCheckFinishByStream_When_StreamIsFinished_Exp
     MOCKER_CPP(&StreamLiteMgr::GetSlave).stubs().with(any()).will(returnValue(&slave));
 
     halSqCqQueryInfo queryInfo;
-    queryInfo.tsId     = 0;
-    queryInfo.sqId     = 0;
-    queryInfo.cqId     = 0;
-    queryInfo.type     = DRV_NORMAL_TYPE;
-    queryInfo.prop     = DRV_SQCQ_PROP_SQ_BASE;
+    queryInfo.tsId = 0;
+    queryInfo.sqId = 0;
+    queryInfo.cqId = 0;
+    queryInfo.type = DRV_NORMAL_TYPE;
+    queryInfo.prop = DRV_SQCQ_PROP_SQ_BASE;
     queryInfo.value[0] = 0;
     queryInfo.value[1] = 0;
 
@@ -266,16 +270,16 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclCheckFinishByStream_When_StreamIsRunning_Expe
 {
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
     vector<char> masterBuff = {
-        0x00, 0x00, 0x00, 0x00,  // id
-        0x00, 0x00, 0x00, 0x01,  // sqId
-        0x00, 0x00, 0x00, 0x01,  // devPhyId
-        0x00, 0x00, 0x00, 0x01   // cqId
+        0x00, 0x00, 0x00, 0x00, // id
+        0x00, 0x00, 0x00, 0x01, // sqId
+        0x00, 0x00, 0x00, 0x01, // devPhyId
+        0x00, 0x00, 0x00, 0x01  // cqId
     };
     vector<char> slaveBuff = {
-        0x00, 0x00, 0x00, 0x01,  // id
-        0x00, 0x00, 0x00, 0x02,  // sqId
-        0x00, 0x00, 0x00, 0x01,  // devPhyId
-        0x00, 0x00, 0x00, 0x02   // cqId
+        0x00, 0x00, 0x00, 0x01, // id
+        0x00, 0x00, 0x00, 0x02, // sqId
+        0x00, 0x00, 0x00, 0x01, // devPhyId
+        0x00, 0x00, 0x00, 0x02  // cqId
     };
     StreamLite master(masterBuff);
     StreamLite slave(slaveBuff);
@@ -283,11 +287,11 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclCheckFinishByStream_When_StreamIsRunning_Expe
     MOCKER_CPP(&StreamLiteMgr::GetSlave).stubs().with(any()).will(returnValue(&slave));
 
     halSqCqQueryInfo queryInfo;
-    queryInfo.tsId     = 0;
-    queryInfo.sqId     = 0;
-    queryInfo.cqId     = 0;
-    queryInfo.type     = DRV_NORMAL_TYPE;
-    queryInfo.prop     = DRV_SQCQ_PROP_SQ_BASE;
+    queryInfo.tsId = 0;
+    queryInfo.sqId = 0;
+    queryInfo.cqId = 0;
+    queryInfo.type = DRV_NORMAL_TYPE;
+    queryInfo.prop = DRV_SQCQ_PROP_SQ_BASE;
     queryInfo.value[0] = 0;
     queryInfo.value[1] = 0;
 
@@ -298,31 +302,36 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclCheckFinishByStream_When_StreamIsRunning_Expe
 }
 
 // HcclPrintTaskExceptionAllComm
-TEST_F(AicpuMc2HandlerTest, Ut_HcclPrintTaskExceptionAllComm_When_CommunicatorImplLiteMgrIsNull_Expect_Return) {
+TEST_F(AicpuMc2HandlerTest, Ut_HcclPrintTaskExceptionAllComm_When_CommunicatorImplLiteMgrIsNull_Expect_Return)
+{
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
-    MOCKER_CPP(&CommunicatorImplLiteMgr::GetAll).stubs().with(any()).will(returnValue(vector<CommunicatorImplLite *>()));
+    MOCKER_CPP(&CommunicatorImplLiteMgr::GetAll).stubs().with(any()).will(returnValue(vector<CommunicatorImplLite*>()));
     handler.HcclPrintTaskExceptionAllComm(comm);
 }
 
-TEST_F(AicpuMc2HandlerTest, Ut_HcclPrintTaskExceptionAllComm_When_StreamLiteMgrIsNull_Expect_Return) {
+TEST_F(AicpuMc2HandlerTest, Ut_HcclPrintTaskExceptionAllComm_When_StreamLiteMgrIsNull_Expect_Return)
+{
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
-    vector<CommunicatorImplLite *> v;
+    vector<CommunicatorImplLite*> v;
     v.push_back(communicatorImplLite);
     MOCKER_CPP(&CommunicatorImplLiteMgr::GetAll).stubs().with(any()).will(returnValue(v));
-    MOCKER_CPP_VIRTUAL(communicatorImplLite, &CommunicatorImplLite::GetStreamLiteMgr).stubs().will(returnValue((StreamLiteMgr*)nullptr));
+    MOCKER_CPP_VIRTUAL(communicatorImplLite, &CommunicatorImplLite::GetStreamLiteMgr)
+        .stubs()
+        .will(returnValue((StreamLiteMgr*)nullptr));
     handler.HcclPrintTaskExceptionAllComm(comm);
 }
 
-TEST_F(AicpuMc2HandlerTest, Ut_HcclPrintTaskExceptionAllComm_When_MasterIsNull_Expect_Return) {
+TEST_F(AicpuMc2HandlerTest, Ut_HcclPrintTaskExceptionAllComm_When_MasterIsNull_Expect_Return)
+{
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
-    vector<CommunicatorImplLite *> v;
+    vector<CommunicatorImplLite*> v;
     v.push_back(communicatorImplLite);
     MOCKER_CPP(&CommunicatorImplLiteMgr::GetAll).stubs().with(any()).will(returnValue(v));
     vector<char> masterBuff = {
-        0x00, 0x00, 0x00, 0x00,  // id
-        0x00, 0x00, 0x00, 0x01,  // sqId
-        0x00, 0x00, 0x00, 0x01,  // devPhyId
-        0x00, 0x00, 0x00, 0x01   // cqId
+        0x00, 0x00, 0x00, 0x00, // id
+        0x00, 0x00, 0x00, 0x01, // sqId
+        0x00, 0x00, 0x00, 0x01, // devPhyId
+        0x00, 0x00, 0x00, 0x01  // cqId
     };
 
     StreamLite master(masterBuff);
@@ -331,22 +340,23 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclPrintTaskExceptionAllComm_When_MasterIsNull_E
     handler.HcclPrintTaskExceptionAllComm(comm);
 }
 
-TEST_F(AicpuMc2HandlerTest, Ut_HcclPrintTaskExceptionAllComm_When_RtsqIsNull_Expect_Return) {
+TEST_F(AicpuMc2HandlerTest, Ut_HcclPrintTaskExceptionAllComm_When_RtsqIsNull_Expect_Return)
+{
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
-    vector<CommunicatorImplLite *> v;
+    vector<CommunicatorImplLite*> v;
     v.push_back(communicatorImplLite);
     MOCKER_CPP(&CommunicatorImplLiteMgr::GetAll).stubs().with(any()).will(returnValue(v));
     vector<char> masterBuff = {
-        0x00, 0x00, 0x00, 0x00,  // id
-        0x00, 0x00, 0x00, 0x01,  // sqId
-        0x00, 0x00, 0x00, 0x01,  // devPhyId
-        0x00, 0x00, 0x00, 0x01   // cqId
+        0x00, 0x00, 0x00, 0x00, // id
+        0x00, 0x00, 0x00, 0x01, // sqId
+        0x00, 0x00, 0x00, 0x01, // devPhyId
+        0x00, 0x00, 0x00, 0x01  // cqId
     };
     vector<char> slaveBuff = {
-        0x00, 0x00, 0x00, 0x01,  // id
-        0x00, 0x00, 0x00, 0x02,  // sqId
-        0x00, 0x00, 0x00, 0x01,  // devPhyId
-        0x00, 0x00, 0x00, 0x02   // cqId
+        0x00, 0x00, 0x00, 0x01, // id
+        0x00, 0x00, 0x00, 0x02, // sqId
+        0x00, 0x00, 0x00, 0x01, // devPhyId
+        0x00, 0x00, 0x00, 0x02  // cqId
     };
 
     StreamLite master(masterBuff);
@@ -358,23 +368,21 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclPrintTaskExceptionAllComm_When_RtsqIsNull_Exp
 
 TEST_F(AicpuMc2HandlerTest, Ut_HcclPrintTaskExceptionAllComm_When_ReportIsInvalid_Expect_Return)
 {
-    
-
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
-    vector<CommunicatorImplLite *> v;
+    vector<CommunicatorImplLite*> v;
     v.push_back(communicatorImplLite);
     MOCKER_CPP(&CommunicatorImplLiteMgr::GetAll).stubs().with(any()).will(returnValue(v));
     vector<char> masterBuff = {
-        0x00, 0x00, 0x00, 0x00,  // id
-        0x00, 0x00, 0x00, 0x01,  // sqId
-        0x00, 0x00, 0x00, 0x01,  // devPhyId
-        0x00, 0x00, 0x00, 0x01   // cqId
+        0x00, 0x00, 0x00, 0x00, // id
+        0x00, 0x00, 0x00, 0x01, // sqId
+        0x00, 0x00, 0x00, 0x01, // devPhyId
+        0x00, 0x00, 0x00, 0x01  // cqId
     };
     vector<char> slaveBuff = {
-        0x00, 0x00, 0x00, 0x01,  // id
-        0x00, 0x00, 0x00, 0x02,  // sqId
-        0x00, 0x00, 0x00, 0x01,  // devPhyId
-        0x00, 0x00, 0x00, 0x02   // cqId
+        0x00, 0x00, 0x00, 0x01, // id
+        0x00, 0x00, 0x00, 0x02, // sqId
+        0x00, 0x00, 0x00, 0x01, // devPhyId
+        0x00, 0x00, 0x00, 0x02  // cqId
     };
     StreamLite master(masterBuff);
     StreamLite slave(slaveBuff);
@@ -389,31 +397,31 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchCcoreWait_When_ValidParams_Expect_Retur
 {
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
     vector<char> masterBuff = {
-        0x00, 0x00, 0x00, 0x00,  // id
-        0x00, 0x00, 0x00, 0x01,  // sqId
-        0x00, 0x00, 0x00, 0x01,  // devPhyId
-        0x00, 0x00, 0x00, 0x01   // cqId
+        0x00, 0x00, 0x00, 0x00, // id
+        0x00, 0x00, 0x00, 0x01, // sqId
+        0x00, 0x00, 0x00, 0x01, // devPhyId
+        0x00, 0x00, 0x00, 0x01  // cqId
     };
     vector<char> slaveBuff = {
-        0x00, 0x00, 0x00, 0x01,  // id
-        0x00, 0x00, 0x00, 0x02,  // sqId
-        0x00, 0x00, 0x00, 0x01,  // devPhyId
-        0x00, 0x00, 0x00, 0x02   // cqId
+        0x00, 0x00, 0x00, 0x01, // id
+        0x00, 0x00, 0x00, 0x02, // sqId
+        0x00, 0x00, 0x00, 0x01, // devPhyId
+        0x00, 0x00, 0x00, 0x02  // cqId
     };
     StreamLite master(masterBuff);
     StreamLite slave(slaveBuff);
     halSqCqQueryInfo queryInfo;
-    queryInfo.tsId     = 0;
-    queryInfo.sqId     = 0;
-    queryInfo.cqId     = 0;
-    queryInfo.type     = DRV_NORMAL_TYPE;
-    queryInfo.prop     = DRV_SQCQ_PROP_SQ_BASE;
+    queryInfo.tsId = 0;
+    queryInfo.sqId = 0;
+    queryInfo.cqId = 0;
+    queryInfo.type = DRV_NORMAL_TYPE;
+    queryInfo.prop = DRV_SQCQ_PROP_SQ_BASE;
     queryInfo.value[0] = 0;
     queryInfo.value[1] = 0;
 
     MOCKER(halSqCqQuery).stubs().with(any(), outBoundP(&queryInfo, sizeof(queryInfo))).will(returnValue(0));
     MOCKER_CPP(&StreamLiteMgr::GetMaster).stubs().with().will(returnValue(&master));
-    auto rtsq = static_cast<RtsqA5 *>(master.GetRtsq());
+    auto rtsq = static_cast<RtsqA5*>(master.GetRtsq());
     MOCKER_CPP_VIRTUAL(*rtsq, &RtsqA5::LaunchTask).stubs().will(ignoreReturnValue());
 
     EXPECT_EQ(HCCL_SUCCESS, handler.HcclLaunchCcoreWait(comm, 0, 0, 0, false));
@@ -424,31 +432,31 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchCcorePost_When_ThrowException_Expect_Re
 {
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
     vector<char> masterBuff = {
-        0x00, 0x00, 0x00, 0x00,  // id
-        0x00, 0x00, 0x00, 0x01,  // sqId
-        0x00, 0x00, 0x00, 0x01,  // devPhyId
-        0x00, 0x00, 0x00, 0x01   // cqId
+        0x00, 0x00, 0x00, 0x00, // id
+        0x00, 0x00, 0x00, 0x01, // sqId
+        0x00, 0x00, 0x00, 0x01, // devPhyId
+        0x00, 0x00, 0x00, 0x01  // cqId
     };
     vector<char> slaveBuff = {
-        0x00, 0x00, 0x00, 0x01,  // id
-        0x00, 0x00, 0x00, 0x02,  // sqId
-        0x00, 0x00, 0x00, 0x01,  // devPhyId
-        0x00, 0x00, 0x00, 0x02   // cqId
+        0x00, 0x00, 0x00, 0x01, // id
+        0x00, 0x00, 0x00, 0x02, // sqId
+        0x00, 0x00, 0x00, 0x01, // devPhyId
+        0x00, 0x00, 0x00, 0x02  // cqId
     };
     StreamLite master(masterBuff);
     StreamLite slave(slaveBuff);
     halSqCqQueryInfo queryInfo;
-    queryInfo.tsId     = 0;
-    queryInfo.sqId     = 0;
-    queryInfo.cqId     = 0;
-    queryInfo.type     = DRV_NORMAL_TYPE;
-    queryInfo.prop     = DRV_SQCQ_PROP_SQ_BASE;
+    queryInfo.tsId = 0;
+    queryInfo.sqId = 0;
+    queryInfo.cqId = 0;
+    queryInfo.type = DRV_NORMAL_TYPE;
+    queryInfo.prop = DRV_SQCQ_PROP_SQ_BASE;
     queryInfo.value[0] = 0;
     queryInfo.value[1] = 0;
 
     MOCKER(halSqCqQuery).stubs().with(any(), outBoundP(&queryInfo, sizeof(queryInfo))).will(returnValue(0));
     MOCKER_CPP(&StreamLiteMgr::GetMaster).stubs().with().will(returnValue(&master));
-    auto rtsq = static_cast<RtsqA5 *>(master.GetRtsq());
+    auto rtsq = static_cast<RtsqA5*>(master.GetRtsq());
     MOCKER_CPP_VIRTUAL(*rtsq, &RtsqA5::LaunchTask).stubs().will(ignoreReturnValue());
     MOCKER_CPP_VIRTUAL(*rtsq, &RtsqA5::CCoreNotifyRecord).stubs().will(throws(InternalException("")));
     EXPECT_THROW(handler.HcclLaunchCcorePost(comm, 0, 0, 0), std::exception);
@@ -458,37 +466,38 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchCcorePost_When_ValidParams_Expect_Retur
 {
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
     vector<char> masterBuff = {
-        0x00, 0x00, 0x00, 0x00,  // id
-        0x00, 0x00, 0x00, 0x01,  // sqId
-        0x00, 0x00, 0x00, 0x01,  // devPhyId
-        0x00, 0x00, 0x00, 0x01   // cqId
+        0x00, 0x00, 0x00, 0x00, // id
+        0x00, 0x00, 0x00, 0x01, // sqId
+        0x00, 0x00, 0x00, 0x01, // devPhyId
+        0x00, 0x00, 0x00, 0x01  // cqId
     };
     vector<char> slaveBuff = {
-        0x00, 0x00, 0x00, 0x01,  // id
-        0x00, 0x00, 0x00, 0x02,  // sqId
-        0x00, 0x00, 0x00, 0x01,  // devPhyId
-        0x00, 0x00, 0x00, 0x02   // cqId
+        0x00, 0x00, 0x00, 0x01, // id
+        0x00, 0x00, 0x00, 0x02, // sqId
+        0x00, 0x00, 0x00, 0x01, // devPhyId
+        0x00, 0x00, 0x00, 0x02  // cqId
     };
     StreamLite master(masterBuff);
     StreamLite slave(slaveBuff);
     halSqCqQueryInfo queryInfo;
-    queryInfo.tsId     = 0;
-    queryInfo.sqId     = 0;
-    queryInfo.cqId     = 0;
-    queryInfo.type     = DRV_NORMAL_TYPE;
-    queryInfo.prop     = DRV_SQCQ_PROP_SQ_BASE;
+    queryInfo.tsId = 0;
+    queryInfo.sqId = 0;
+    queryInfo.cqId = 0;
+    queryInfo.type = DRV_NORMAL_TYPE;
+    queryInfo.prop = DRV_SQCQ_PROP_SQ_BASE;
     queryInfo.value[0] = 0;
     queryInfo.value[1] = 0;
 
     MOCKER(halSqCqQuery).stubs().with(any(), outBoundP(&queryInfo, sizeof(queryInfo))).will(returnValue(0));
     MOCKER_CPP(&StreamLiteMgr::GetMaster).stubs().with().will(returnValue(&master));
-    auto rtsq = static_cast<RtsqA5 *>(master.GetRtsq());
+    auto rtsq = static_cast<RtsqA5*>(master.GetRtsq());
     MOCKER_CPP_VIRTUAL(*rtsq, &RtsqA5::LaunchTask).stubs().will(ignoreReturnValue());
     EXPECT_EQ(HCCL_SUCCESS, handler.HcclLaunchCcorePost(comm, 0, 0, 0));
 }
 
 // HcclLaunchOp
-TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchOp_When_ThrowException_Expect_ReturnError) {
+TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchOp_When_ThrowException_Expect_ReturnError)
+{
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
     HcclOpData data;
     data.opType = HcclCMDType::HCCL_CMD_ALLREDUCE;
@@ -509,12 +518,13 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchOp_When_ThrowException_Expect_ReturnErr
     MOCKER_CPP(&CommunicatorImplLite::SetDfxOpInfo).stubs().will(ignoreReturnValue());
     MOCKER_CPP(&CommunicatorImplLite::UpdateHDCommnicate).stubs().will(ignoreReturnValue());
     MOCKER_CPP(&CommunicatorImplLite::RegisterRtsqCallback).stubs().will(ignoreReturnValue());
-    
+
     MOCKER_CPP(&AicpuUtils::RecoverKernelParam).stubs().will(throws(InternalException("")));
     EXPECT_THROW(handler.HcclLaunchOp(comm, &data), std::exception);
 }
 
-TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchOp_When_KernelParamIsNull_Expect_ReturnError) {
+TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchOp_When_KernelParamIsNull_Expect_ReturnError)
+{
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
     AicpuUtils::GetInstance().kernelParam_ = nullptr;
     AicpuUtils::GetInstance().kernelParamMap_ = {};
@@ -529,7 +539,8 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchOp_When_KernelParamIsNull_Expect_Return
     EXPECT_EQ(HCCL_E_PTR, handler.HcclLaunchOp(comm, &data));
 }
 
-TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchOp_When_OpTypeMismatch_Expect_ReturnError) {
+TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchOp_When_OpTypeMismatch_Expect_ReturnError)
+{
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
     HcclOpData data;
     data.opType = HCCL_CMD_ALLREDUCE;
@@ -549,7 +560,8 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchOp_When_OpTypeMismatch_Expect_ReturnErr
     EXPECT_EQ(HCCL_E_PARA, handler.HcclLaunchOp(comm, &data));
 }
 
-TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchOp_When_ALLREDUCE_Expect_ReturnSuccess) {
+TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchOp_When_ALLREDUCE_Expect_ReturnSuccess)
+{
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
     HcclOpData data;
     data.opType = HcclCMDType::HCCL_CMD_ALLREDUCE;
@@ -573,7 +585,8 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchOp_When_ALLREDUCE_Expect_ReturnSuccess)
     EXPECT_EQ(HCCL_SUCCESS, handler.HcclLaunchOp(comm, &data));
 }
 
-TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchOp_When_ALLTOALL_Expect_ReturnSuccess) {
+TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchOp_When_ALLTOALL_Expect_ReturnSuccess)
+{
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
     HcclOpData data;
     data.opType = HcclCMDType::HCCL_CMD_ALLTOALL;
@@ -599,7 +612,8 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchOp_When_ALLTOALL_Expect_ReturnSuccess) 
     EXPECT_EQ(HCCL_SUCCESS, handler.HcclLaunchOp(comm, &data));
 }
 
-TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchOp_When_ALLTOALLV_Expect_ReturnSuccess) {
+TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchOp_When_ALLTOALLV_Expect_ReturnSuccess)
+{
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
     HcclOpData data;
     data.opType = HcclCMDType::HCCL_CMD_ALLTOALLV;
@@ -631,7 +645,8 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchOp_When_ALLTOALLV_Expect_ReturnSuccess)
     EXPECT_EQ(HCCL_SUCCESS, handler.HcclLaunchOp(comm, &data));
 }
 
-TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchOp_When_ALLTOALLVC_Expect_ReturnSuccess) {
+TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchOp_When_ALLTOALLVC_Expect_ReturnSuccess)
+{
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
     HcclOpData data;
     data.opType = HcclCMDType::HCCL_CMD_ALLTOALLVC;
@@ -658,7 +673,8 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchOp_When_ALLTOALLVC_Expect_ReturnSuccess
     EXPECT_EQ(HCCL_SUCCESS, handler.HcclLaunchOp(comm, &data));
 }
 
-TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchOp_When_REDUCE_SCATTER_V_Expect_ReturnSuccess) {
+TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchOp_When_REDUCE_SCATTER_V_Expect_ReturnSuccess)
+{
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
     vector<u64> counts{300, 200};
     vector<u64> displs{0};

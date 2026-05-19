@@ -22,39 +22,24 @@ typedef enum tagRtClearStep {
 
 RTS_API rtError_t rtStreamClear(rtStream_t stm, rtClearStep_t step);
 
-RTS_API rtError_t rtGetServerIDBySDID(uint32_t sdid, uint32_t *srvId);
+RTS_API rtError_t rtGetServerIDBySDID(uint32_t sdid, uint32_t* srvId);
 
 #ifdef __cplusplus
 }
 #endif
 
-rtError_t rtStreamClear(rtStream_t stm, rtClearStep_t step)
-{
-    return 0;
-}
+rtError_t rtStreamClear(rtStream_t stm, rtClearStep_t step) { return 0; }
 
-rtError_t rtGetServerIDBySDID(uint32_t sdid, uint32_t *srvId)
+rtError_t rtGetServerIDBySDID(uint32_t sdid, uint32_t* srvId)
 {
     *srvId = 0;
     return 0;
 }
 
-RTS_API rtError_t rtUbDevQueryInfo(rtUbDevQueryCmd cmd, void *devInfo)
-{
-    return 0;
-}
- 
-rtError_t rtCCULaunch(rtCcuTaskInfo_t *taskInfo,  rtStream_t const stm)
-{
-    return 0;
-}
+RTS_API rtError_t rtUbDevQueryInfo(rtUbDevQueryCmd cmd, void* devInfo) { return 0; }
 
-rtError_t rtReleaseDevResAddress(rtDevResInfo * const resInfo)
-{
-    return RT_ERROR_NONE;
-}
+rtError_t rtCCULaunch(rtCcuTaskInfo_t* taskInfo, rtStream_t const stm) { return 0; }
 
-rtError_t rtGetDevResAddress(rtDevResInfo * const resInfo, rtDevResAddrInfo * const addrInfo)
-{
-    return RT_ERROR_NONE;
-}
+rtError_t rtReleaseDevResAddress(rtDevResInfo* const resInfo) { return RT_ERROR_NONE; }
+
+rtError_t rtGetDevResAddress(rtDevResInfo* const resInfo, rtDevResAddrInfo* const addrInfo) { return RT_ERROR_NONE; }

@@ -15,24 +15,21 @@
 #include "hcom_common.h"
 #include "op_base_v2.h"
 
-class HcomInitCollCommTest : public testing::Test
-{
+class HcomInitCollCommTest : public testing::Test {
 protected:
-    virtual void SetUp() override {
-        const char *fakeA5SocName = "Ascend950PR_958b";
+    virtual void SetUp() override
+    {
+        const char* fakeA5SocName = "Ascend950PR_958b";
         MOCKER(aclrtGetSocName).stubs().will(returnValue(fakeA5SocName));
     }
 
-    virtual void TearDown() override
-    {
-        GlobalMockObject::verify();
-    }
+    virtual void TearDown() override { GlobalMockObject::verify(); }
 };
 
 TEST_F(HcomInitCollCommTest, ut_HcomInitCollComm_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
 {
-    HcomInfo &hcomInfo = HcomGetCtxHomInfo();
-    void *commV2 = nullptr;
+    HcomInfo& hcomInfo = HcomGetCtxHomInfo();
+    void* commV2 = nullptr;
     MOCKER(&HcclGetCommNameV2).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(&HcclGetCclBuffer).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(&HcclGetRankGraphV2).stubs().will(returnValue(HCCL_SUCCESS));
@@ -44,7 +41,7 @@ TEST_F(HcomInitCollCommTest, ut_HcomInitCollComm_When_Normal_Expect_ReturnIsHCCL
 
 TEST_F(HcomInitCollCommTest, ut_HcomInitCollComm_When_commV2IsNullptr_Expect_ReturnIsHCCL_E_PARA)
 {
-    HcomInfo &hcomInfo = HcomGetCtxHomInfo();
+    HcomInfo& hcomInfo = HcomGetCtxHomInfo();
     HcclResult ret = HcomInitCollComm(0, nullptr, hcomInfo.pComm);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }

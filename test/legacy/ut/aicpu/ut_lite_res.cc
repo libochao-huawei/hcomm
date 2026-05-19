@@ -31,15 +31,9 @@ using namespace Hccl;
 
 class LiteResTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "LiteResTest SetUP" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "LiteResTest SetUP" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "LiteResTest TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "LiteResTest TearDown" << std::endl; }
 
     virtual void SetUp()
     {
@@ -57,13 +51,13 @@ protected:
         std::cout << "A Test case in LiteResTest TearDown" << std::endl;
     }
     u32 fakeStreamId = 0;
-    u32 fakeSqId     = 0;
+    u32 fakeSqId = 0;
     u32 fakedevPhyId = 0;
 
     u32 fakeNotifyId = 1;
     u32 fakeNotifyDevPhyId = 1;
 
-    u8  mockSq[AC_SQE_SIZE * AC_SQE_MAX_CNT]{0};
+    u8 mockSq[AC_SQE_SIZE * AC_SQE_MAX_CNT]{0};
 };
 
 TEST_F(LiteResTest, test_stream_lite)
@@ -76,12 +70,12 @@ TEST_F(LiteResTest, test_stream_lite)
     liteBinaryStream.Dump(uniqueId);
 
     StreamLite stream(uniqueId);
-    RtsqA5     rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
+    RtsqA5 rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
     stream.rtsq = std::make_unique<RtsqA5>(rtsq);
     MOCKER_CPP_VIRTUAL(rtsq, &RtsqA5::SdmaCopy).stubs().with(any(), any(), any(), any());
 
     EXPECT_EQ(fakeStreamId, stream.GetId());
-    EXPECT_EQ(fakeSqId,     stream.GetSqId());
+    EXPECT_EQ(fakeSqId, stream.GetSqId());
     EXPECT_EQ(fakedevPhyId, stream.GetDevPhyId());
     stream.Describe();
 }
@@ -99,4 +93,3 @@ TEST_F(LiteResTest, test_notify_lite)
     EXPECT_EQ(fakeNotifyDevPhyId, lite.GetDevPhyId());
     lite.Describe();
 }
-

@@ -19,10 +19,10 @@ extern "C" {
 __attribute__((visibility("default"))) uint32_t RunDpuRpcSrvLaunch(const uint64_t args)
 {
     struct DpuKernelLaunchParam {
-        u64      memorySize;
-        void*       deviceMem;
-        void*       hostMem;
-        int32_t    deviceId;
+        u64 memorySize;
+        void* deviceMem;
+        void* hostMem;
+        int32_t deviceId;
         std::string commId;
     };
 
@@ -37,10 +37,11 @@ __attribute__((visibility("default"))) uint32_t RunDpuRpcSrvLaunch(const uint64_
         return HCCL_E_PARA;
     }
     // 解析参数信息
-    DpuKernelLaunchParam *params = reinterpret_cast<DpuKernelLaunchParam *>(args);
+    DpuKernelLaunchParam* params = reinterpret_cast<DpuKernelLaunchParam*>(args);
 
-    HCCL_RUN_INFO("[%s] DpuKernelLaunchParam{commId:%s; memorySize:%lu; deviceMem:%p; hostMem:%p; devId:%d}", __func__,
-                  params->commId.c_str(), params->memorySize, params->deviceMem, params->hostMem, params->deviceId);
+    HCCL_RUN_INFO(
+        "[%s] DpuKernelLaunchParam{commId:%s; memorySize:%lu; deviceMem:%p; hostMem:%p; devId:%d}", __func__,
+        params->commId.c_str(), params->memorySize, params->deviceMem, params->hostMem, params->deviceId);
 
     if (params->memorySize == 0) {
         HCCL_ERROR("[%s] memorySize is 0.", __func__);
@@ -52,8 +53,8 @@ __attribute__((visibility("default"))) uint32_t RunDpuRpcSrvLaunch(const uint64_
     }
 
     // 实例化TaskService
-    std::unique_ptr<Hccl::TaskService> taskService = std::make_unique<Hccl::TaskService>(params->deviceMem, params->memorySize,
-                            params->hostMem, params->memorySize);
+    std::unique_ptr<Hccl::TaskService> taskService = std::make_unique<Hccl::TaskService>(
+        params->deviceMem, params->memorySize, params->hostMem, params->memorySize);
 
     aclError ret = aclrtSetDevice(params->deviceId);
     if (ret != ACL_SUCCESS) {

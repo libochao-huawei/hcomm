@@ -11,10 +11,11 @@
 #include "hcclCommOp.h"
 namespace hccl {
 
-std::shared_ptr<Hccl::DfxOpInfo> ConvertToDfxOpInfo(const HcclDfxOpInfo& dfxOpInfo) {
+std::shared_ptr<Hccl::DfxOpInfo> ConvertToDfxOpInfo(const HcclDfxOpInfo& dfxOpInfo)
+{
     auto dfxOpInfoOnce = std::make_shared<Hccl::DfxOpInfo>();
     Hccl::CollOperator collOp{};
-    collOp.opMode = static_cast<Hccl::OpMode::Value>(dfxOpInfo.opMode); 
+    collOp.opMode = static_cast<Hccl::OpMode::Value>(dfxOpInfo.opMode);
     if (Hccl::OP_TYPE_MAP.find(static_cast<HcclCMDType>(dfxOpInfo.opType)) == Hccl::OP_TYPE_MAP.end()) {
         HCCL_WARNING("%s dfxOpInfo.opType[%u] is not supported.", __func__, dfxOpInfo.opType);
     } else {
@@ -30,7 +31,7 @@ std::shared_ptr<Hccl::DfxOpInfo> ConvertToDfxOpInfo(const HcclDfxOpInfo& dfxOpIn
     collOp.outputMem = std::make_shared<Hccl::Buffer>(dfxOpInfo.outputMemAddr, dfxOpInfo.outputMemSize);
     collOp.scratchMem = std::make_shared<Hccl::Buffer>(0, 0);
 
-    dfxOpInfoOnce->op_= std::move(collOp);
+    dfxOpInfoOnce->op_ = std::move(collOp);
     dfxOpInfoOnce->algTag_ = dfxOpInfo.algTag;
     dfxOpInfoOnce->algType_ = Hccl::AlgType{Hccl::AlgType::MESH}.Describe();
     dfxOpInfoOnce->tag_ = Hccl::OpTypeToString(collOp.opType);
@@ -40,4 +41,4 @@ std::shared_ptr<Hccl::DfxOpInfo> ConvertToDfxOpInfo(const HcclDfxOpInfo& dfxOpIn
     return dfxOpInfoOnce;
 }
 
-}
+} // namespace hccl

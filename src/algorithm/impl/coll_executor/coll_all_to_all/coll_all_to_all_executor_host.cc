@@ -19,4 +19,4 @@ HcclResult CollAlltoAllExecutor::SetParallelTaskLoader(ParallelTaskLoader* paral
     return HCCL_SUCCESS;
 }
 
-}
+} // namespace hccl

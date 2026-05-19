@@ -58,51 +58,35 @@
 using namespace std;
 using namespace hccl;
 
-extern HcclResult HcomSetGradFusionByIndex(const char *group, u32 segmentNum, const u32 *IdxList);
-extern HcclResult HcomSetGradFusionBySize(const char *group, u32 segmentNum, const float *sizeList);
-extern HcclResult HcomDestroyBackloggedGroup(const std::string &group);
-static nlohmann::json allreduce_topo_switch_connect =
-{
-    {"topology type", "switch connection"},
-    {
-        "topology desc", {
-            {
-                {"node type", "TOR"},
-                {"node name", "tor0"},
-                {
-                    "link info", {
-                        {
-                            {"link id", "0"},
-                            {"local port name", "port0"},
-                            {"local ip address", "100.100.83.1"},
-                            {"opposite type", "SERVER"},
-                            {"opposite name", "server0"},
-                            {"opposite port name", "eth8"},
-                            {"opposite ip address", "100.100.83.178"}
-                        }
-                    }
-                }
-            }
-        }
-    }
-};
+extern HcclResult HcomSetGradFusionByIndex(const char* group, u32 segmentNum, const u32* IdxList);
+extern HcclResult HcomSetGradFusionBySize(const char* group, u32 segmentNum, const float* sizeList);
+extern HcclResult HcomDestroyBackloggedGroup(const std::string& group);
+static nlohmann::json allreduce_topo_switch_connect
+    = {{"topology type", "switch connection"},
+       {"topology desc",
+        {{{"node type", "TOR"},
+          {"node name", "tor0"},
+          {"link info",
+           {{{"link id", "0"},
+             {"local port name", "port0"},
+             {"local ip address", "100.100.83.1"},
+             {"opposite type", "SERVER"},
+             {"opposite name", "server0"},
+             {"opposite port name", "eth8"},
+             {"opposite ip address", "100.100.83.178"}}}}}}}};
 
-class HcomTest : public testing::Test
-{
+class HcomTest : public testing::Test {
 protected:
     static void SetUpTestCase()
     {
-         nlohmann::json rank_table = rank_table_910_2server_8rank;
+        nlohmann::json rank_table = rank_table_910_2server_8rank;
         char file_name[] = "./ut_hcom.json";
 
         std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-        if (outfile.is_open())
-        {
+        if (outfile.is_open()) {
             HCCL_INFO("open %s success", file_name);
-        }
-        else
-        {
+        } else {
             HCCL_INFO("open %s failed", file_name);
         }
 
@@ -113,12 +97,9 @@ protected:
 
         std::ofstream outfile_v610(file_name_v610, std::ios::out | std::ios::trunc | std::ios::binary);
 
-        if (outfile.is_open())
-        {
+        if (outfile.is_open()) {
             HCCL_INFO("open %s success", file_name_v610);
-        }
-        else
-        {
+        } else {
             HCCL_INFO("open %s failed", file_name_v610);
         }
 
@@ -138,10 +119,7 @@ protected:
     virtual void SetUp()
     {
         s32 portNum = 7;
-        MOCKER(hrtGetHccsPortNum)
-            .stubs()
-            .with(any(), outBound(portNum))
-            .will(returnValue(HCCL_SUCCESS));
+        MOCKER(hrtGetHccsPortNum).stubs().with(any(), outBound(portNum)).will(returnValue(HCCL_SUCCESS));
         setenv("HCCL_OP_RETRY_ENABLE", "L0:0, L1:0, L2:0", 1);
         std::cout << "A Test SetUP" << std::endl;
     }
@@ -156,9 +134,11 @@ TEST_F(HcomTest, ut_hcom_broadcast)
 {
     DlTraceFunction::GetInstance().DlTraceFunctionInit();
     HcclCommunicator impl;
-    MOCKER_CPP_VIRTUAL(impl, &HcclCommunicator::Init, HcclResult(HcclCommunicator::*)(HcclCommParams &params, const RankTable_t &rankTable))
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP_VIRTUAL(
+        impl, &HcclCommunicator::Init,
+        HcclResult (HcclCommunicator::*)(HcclCommParams& params, const RankTable_t& rankTable))
+        .expects(atMost(1))
+        .will(returnValue(0));
 
     char* rank_table_file = "./ut_hcom.json";
     char* rank_ID = "0";
@@ -175,31 +155,21 @@ TEST_F(HcomTest, ut_hcom_broadcast)
     rtError_t rt_ret = aclrtCreateStream(&stream);
     EXPECT_EQ(rt_ret, RT_ERROR_NONE);
 
-    MOCKER_CPP(&hcclComm::GetRankTableCrc)
-    .stubs()
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetRankTableCrc).stubs().will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetAlgType)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hcclComm::GetAlgType).stubs().will(returnValue(HCCL_SUCCESS));
 
     MOCKER_CPP(&hcclComm::GetNumBlocks).stubs().will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&hcclComm::Broadcast)
-    .expects(atMost(1))
-    .will(returnValue(0));
-    ret = HcomBroadcast("tag", sendbuf, 10, HCCL_DATA_TYPE_INT8, 0, NULL,stream);
+    MOCKER_CPP(&hcclComm::Broadcast).expects(atMost(1)).will(returnValue(0));
+    ret = HcomBroadcast("tag", sendbuf, 10, HCCL_DATA_TYPE_INT8, 0, NULL, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
 
-    MOCKER_CPP(&hcclComm::GetAlgType)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hcclComm::GetAlgType).stubs().will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&hcclComm::Broadcast)
-    .expects(atMost(1))
-    .will(returnValue(0));
-    ret = HcomBroadcast("tag", sendbuf, 10, HCCL_DATA_TYPE_INT8, 1, NULL,stream);
+    MOCKER_CPP(&hcclComm::Broadcast).expects(atMost(1)).will(returnValue(0));
+    ret = HcomBroadcast("tag", sendbuf, 10, HCCL_DATA_TYPE_INT8, 1, NULL, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
 
@@ -211,7 +181,7 @@ TEST_F(HcomTest, ut_hcom_broadcast)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     sal_free(sendbuf);
-   //remove(file_name);
+    // remove(file_name);
 }
 
 TEST_F(HcomTest, ut_hcom_get_data_size)
@@ -236,11 +206,10 @@ TEST_F(HcomTest, ut_hcom_get_data_size)
 
 TEST_F(HcomTest, ut_hcom_check_rank_id_reterr)
 {
-    HcclResult  ret = HCCL_SUCCESS;
+    HcclResult ret = HCCL_SUCCESS;
     ret = CheckRankId("ERR");
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
-
 
 TEST_F(HcomTest, ut_hcom_cfg_check_file_path_test)
 {
@@ -249,7 +218,7 @@ TEST_F(HcomTest, ut_hcom_cfg_check_file_path_test)
     std::string file_path = "./testjson.json";
     std::string file_type = ".json";
 
-    ret  = CheckFilePath(file_path, file_type);
+    ret = CheckFilePath(file_path, file_type);
     EXPECT_EQ(ret, true);
 }
 
@@ -261,112 +230,79 @@ TEST_F(HcomTest, ut_hcom_cfg_get_file_name_test)
     std::string file_type = ".json";
     std::string file_name = "";
 
-    ret  = GetFileName(file_path, file_type, file_name);
+    ret = GetFileName(file_path, file_type, file_name);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ((file_name == "testjson"), true);
 }
 
 TEST_F(HcomTest, ut_hcom_CfgGetCcInfo_severnum0_ERR)
 {
-    nlohmann::json rank_table =
-        {
-            {"status", "completed"},
-            {"deploy_mode", "lab"},
-            {"group_count", "1"},
-            {"chip_info", "910"},
-            {"board_id", "0x0000"},
-            {"para_plane_nic_location", "device"},
-            {"para_plane_nic_num", "2"},
-            {"para_plane_nic_name", {"eth0", "eth1"}},
-            {
-                "group_list",
-                {
-                    {
-                        {"group_name", ""},
-                        {"device_num", "4"},
-                        {"server_num", "0"},
-                        {"instance_count", "4"},
-                            {
-                                "instance_list",
-                                {
-                                    {   {"rank_id", "0"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "1"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.1.12"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "2"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.14"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "3"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.1.14"}}}
-                                        }
-                                    }
-                                }
-                            },
-                            {
-                                "server_list",
-                                {
-                                    {
-                                        {"server_id", "192.168.10.2"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth1", "192.168.210.2"},
-                                                },
-                                                {
-                                                    {"eth0", "192.168.200.2"},
-                                                }
-                                            }
-                                        }
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"deploy_mode", "lab"},
+           {"group_count", "1"},
+           {"chip_info", "910"},
+           {"board_id", "0x0000"},
+           {"para_plane_nic_location", "device"},
+           {"para_plane_nic_num", "2"},
+           {"para_plane_nic_name", {"eth0", "eth1"}},
+           {"group_list",
+            {{{"group_name", ""},
+              {"device_num", "4"},
+              {"server_num", "0"},
+              {"instance_count", "4"},
+              {"instance_list",
+               {{{"rank_id", "0"},
+                 {"server_id", "10.0.0.10"},
+                 {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}}},
+                {{"rank_id", "1"},
+                 {"server_id", "10.0.0.10"},
+                 {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.1.12"}}}}},
+                {{"rank_id", "2"},
+                 {"server_id", "10.0.0.11"},
+                 {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.14"}}}}},
+                {{"rank_id", "3"},
+                 {"server_id", "10.0.0.11"},
+                 {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.1.14"}}}}}}},
+              {"server_list",
+               {
+                   {{"server_id", "192.168.10.2"},
+                    {"para_plane_info",
+                     {{
+                          {"eth1", "192.168.210.2"},
+                      },
+                      {
+                          {"eth0", "192.168.200.2"},
+                      }}}
 
-                                    },
-                                    {
-                                        {"server_id", "192.168.10.3"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.200.3"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.210.3"},
-                                                }
-                                            }
-                                        }
+                   },
+                   {{"server_id", "192.168.10.3"},
+                    {"para_plane_info",
+                     {{
+                          {"eth0", "192.168.200.3"},
+                      },
+                      {
+                          {"eth1", "192.168.210.3"},
+                      }}}
 
-                                    },
+                   },
 
-                                }
-                            }
-                    }
-                }
-            }
-        };
+               }}}}}};
 
     char file_name[] = "./ut_hcom_CfgGetCcInfo_severnum0_ERR.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
     outfile.close();
 
     s32 ret = HCCL_SUCCESS;
-    HcomInfo  hcom;
+    HcomInfo hcom;
     std::string identify = "0";
     std::string ranktable_file(file_name);
     std::string rankTableM;
@@ -376,111 +312,76 @@ TEST_F(HcomTest, ut_hcom_CfgGetCcInfo_severnum0_ERR)
     ret = CfgGetClusterInfo(rankTableM, identify, hcom.params, hcom.rankTable);
     EXPECT_EQ(ret, HCCL_E_PARA);
     remove(file_name);
-
 }
-
 
 TEST_F(HcomTest, ut_hcom_CfgGetCcInfo_group_count0_ERR)
 {
-    nlohmann::json rank_table =
-        {
-            {"status", "completed"},
-            {"deploy_mode", "lab"},
-            {"group_count", "0"},
-            {"chip_info", "910"},
-            {"board_id", "0x0000"},
-            {"para_plane_nic_location", "device"},
-            {"para_plane_nic_num", "2"},
-            {"para_plane_nic_name", {"eth0", "eth1"}},
-            {
-                "group_list",
-                {
-                    {
-                        {"group_name", ""},
-                        {"device_num", "4"},
-                        {"server_num", "4"},
-                        {"instance_count", "4"},
-                            {
-                                "instance_list",
-                                {
-                                    {   {"rank_id", "0"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "1"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.1.12"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "2"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.14"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "3"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.1.14"}}}
-                                        }
-                                    }
-                                }
-                            },
-                            {
-                                "server_list",
-                                {
-                                    {
-                                        {"server_id", "192.168.10.2"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth1", "192.168.210.2"},
-                                                },
-                                                {
-                                                    {"eth0", "192.168.200.2"},
-                                                }
-                                            }
-                                        }
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"deploy_mode", "lab"},
+           {"group_count", "0"},
+           {"chip_info", "910"},
+           {"board_id", "0x0000"},
+           {"para_plane_nic_location", "device"},
+           {"para_plane_nic_num", "2"},
+           {"para_plane_nic_name", {"eth0", "eth1"}},
+           {"group_list",
+            {{{"group_name", ""},
+              {"device_num", "4"},
+              {"server_num", "4"},
+              {"instance_count", "4"},
+              {"instance_list",
+               {{{"rank_id", "0"},
+                 {"server_id", "10.0.0.10"},
+                 {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}}},
+                {{"rank_id", "1"},
+                 {"server_id", "10.0.0.10"},
+                 {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.1.12"}}}}},
+                {{"rank_id", "2"},
+                 {"server_id", "10.0.0.11"},
+                 {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.14"}}}}},
+                {{"rank_id", "3"},
+                 {"server_id", "10.0.0.11"},
+                 {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.1.14"}}}}}}},
+              {"server_list",
+               {
+                   {{"server_id", "192.168.10.2"},
+                    {"para_plane_info",
+                     {{
+                          {"eth1", "192.168.210.2"},
+                      },
+                      {
+                          {"eth0", "192.168.200.2"},
+                      }}}
 
-                                    },
-                                    {
-                                        {"server_id", "192.168.10.3"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.200.3"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.210.3"},
-                                                }
-                                            }
-                                        }
+                   },
+                   {{"server_id", "192.168.10.3"},
+                    {"para_plane_info",
+                     {{
+                          {"eth0", "192.168.200.3"},
+                      },
+                      {
+                          {"eth1", "192.168.210.3"},
+                      }}}
 
-                                    },
+                   },
 
-                                }
-                            }
-                    }
-                }
-            }
-        };
+               }}}}}};
 
     char file_name[] = "./ut_hcom_CfgGetCcInfo_group_count0_ERR.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
     outfile.close();
 
     s32 ret = HCCL_SUCCESS;
-    HcomInfo  hcom;
+    HcomInfo hcom;
     std::string identify = "0";
     std::string ranktable_file(file_name);
     std::string rankTableM;
@@ -490,110 +391,76 @@ TEST_F(HcomTest, ut_hcom_CfgGetCcInfo_group_count0_ERR)
     ret = CfgGetClusterInfo(rankTableM, identify, hcom.params, hcom.rankTable);
     EXPECT_EQ(ret, HCCL_E_PARA);
     remove(file_name);
-
 }
 
 TEST_F(HcomTest, ut_hcom_CfgGetCcInfo_para_plane_nic_num0_ERR)
 {
-    nlohmann::json rank_table =
-        {
-            {"status", "completed"},
-            {"deploy_mode", "lab"},
-            {"group_count", "1"},
-        {"chip_info", "910"},
-        {"board_id", "0x0000"},
-            {"para_plane_nic_location", "device"},
-            {"para_plane_nic_num", "0"},
-            {"para_plane_nic_name", {}},
-            {
-                "group_list",
-                {
-                    {
-                        {"group_name", ""},
-                        {"device_num", "4"},
-                        {"server_num", "4"},
-                        {"instance_count", "4"},
-                            {
-                                "instance_list",
-                                {
-                                    {   {"rank_id", "0"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "1"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.1.12"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "2"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.14"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "3"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.1.14"}}}
-                                        }
-                                    }
-                                }
-                            },
-                            {
-                                "server_list",
-                                {
-                                    {
-                                        {"server_id", "192.168.10.2"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth1", "192.168.210.2"},
-                                                },
-                                                {
-                                                    {"eth0", "192.168.200.2"},
-                                                }
-                                            }
-                                        }
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"deploy_mode", "lab"},
+           {"group_count", "1"},
+           {"chip_info", "910"},
+           {"board_id", "0x0000"},
+           {"para_plane_nic_location", "device"},
+           {"para_plane_nic_num", "0"},
+           {"para_plane_nic_name", {}},
+           {"group_list",
+            {{{"group_name", ""},
+              {"device_num", "4"},
+              {"server_num", "4"},
+              {"instance_count", "4"},
+              {"instance_list",
+               {{{"rank_id", "0"},
+                 {"server_id", "10.0.0.10"},
+                 {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}}},
+                {{"rank_id", "1"},
+                 {"server_id", "10.0.0.10"},
+                 {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.1.12"}}}}},
+                {{"rank_id", "2"},
+                 {"server_id", "10.0.0.11"},
+                 {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.14"}}}}},
+                {{"rank_id", "3"},
+                 {"server_id", "10.0.0.11"},
+                 {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.1.14"}}}}}}},
+              {"server_list",
+               {
+                   {{"server_id", "192.168.10.2"},
+                    {"para_plane_info",
+                     {{
+                          {"eth1", "192.168.210.2"},
+                      },
+                      {
+                          {"eth0", "192.168.200.2"},
+                      }}}
 
-                                    },
-                                    {
-                                        {"server_id", "192.168.10.3"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.200.3"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.210.3"},
-                                                }
-                                            }
-                                        }
+                   },
+                   {{"server_id", "192.168.10.3"},
+                    {"para_plane_info",
+                     {{
+                          {"eth0", "192.168.200.3"},
+                      },
+                      {
+                          {"eth1", "192.168.210.3"},
+                      }}}
 
-                                    },
+                   },
 
-                                }
-                            }
-                    }
-                }
-            }
-        };
+               }}}}}};
 
     char file_name[] = "./ut_hcom_CfgGetCcInfo_para_plane_nic_num0_ERR.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
     outfile.close();
 
     s32 ret = HCCL_SUCCESS;
-    HcomInfo  hcom;
+    HcomInfo hcom;
     std::string identify = "0";
     std::string ranktable_file(file_name);
     std::string rankTableM;
@@ -603,111 +470,76 @@ TEST_F(HcomTest, ut_hcom_CfgGetCcInfo_para_plane_nic_num0_ERR)
     ret = CfgGetClusterInfo(rankTableM, identify, hcom.params, hcom.rankTable);
     EXPECT_EQ(ret, HCCL_E_UNAVAIL);
     remove(file_name);
-
 }
-
 
 TEST_F(HcomTest, ut_hcom_CfgGetCcInfo_device_num0_ERR)
 {
-    nlohmann::json rank_table =
-        {
-            {"status", "completed"},
-            {"deploy_mode", "lab"},
-            {"group_count", "1"},
-        {"chip_info", "910"},
-        {"board_id", "0x0000"},
-            {"para_plane_nic_location", "device"},
-            {"para_plane_nic_num", "1"},
-            {"para_plane_nic_name", {}},
-            {
-                "group_list",
-                {
-                    {
-                        {"group_name", ""},
-                        {"device_num", "0"},
-                        {"server_num", "4"},
-                        {"instance_count", "4"},
-                            {
-                                "instance_list",
-                                {
-                                    {   {"rank_id", "0"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "1"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.1.12"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "2"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.14"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "3"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.1.14"}}}
-                                        }
-                                    }
-                                }
-                            },
-                            {
-                                "server_list",
-                                {
-                                    {
-                                        {"server_id", "192.168.10.2"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth1", "192.168.210.2"},
-                                                },
-                                                {
-                                                    {"eth0", "192.168.200.2"},
-                                                }
-                                            }
-                                        }
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"deploy_mode", "lab"},
+           {"group_count", "1"},
+           {"chip_info", "910"},
+           {"board_id", "0x0000"},
+           {"para_plane_nic_location", "device"},
+           {"para_plane_nic_num", "1"},
+           {"para_plane_nic_name", {}},
+           {"group_list",
+            {{{"group_name", ""},
+              {"device_num", "0"},
+              {"server_num", "4"},
+              {"instance_count", "4"},
+              {"instance_list",
+               {{{"rank_id", "0"},
+                 {"server_id", "10.0.0.10"},
+                 {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}}},
+                {{"rank_id", "1"},
+                 {"server_id", "10.0.0.10"},
+                 {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.1.12"}}}}},
+                {{"rank_id", "2"},
+                 {"server_id", "10.0.0.11"},
+                 {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.14"}}}}},
+                {{"rank_id", "3"},
+                 {"server_id", "10.0.0.11"},
+                 {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.1.14"}}}}}}},
+              {"server_list",
+               {
+                   {{"server_id", "192.168.10.2"},
+                    {"para_plane_info",
+                     {{
+                          {"eth1", "192.168.210.2"},
+                      },
+                      {
+                          {"eth0", "192.168.200.2"},
+                      }}}
 
-                                    },
-                                    {
-                                        {"server_id", "192.168.10.3"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.200.3"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.210.3"},
-                                                }
-                                            }
-                                        }
+                   },
+                   {{"server_id", "192.168.10.3"},
+                    {"para_plane_info",
+                     {{
+                          {"eth0", "192.168.200.3"},
+                      },
+                      {
+                          {"eth1", "192.168.210.3"},
+                      }}}
 
-                                    },
+                   },
 
-                                }
-                            }
-                    }
-                }
-            }
-        };
+               }}}}}};
 
     char file_name[] = "./ut_hcom_CfgGetCcInfo_device_num0_ERR.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
     outfile.close();
 
     s32 ret = HCCL_SUCCESS;
-    HcomInfo  hcom;
+    HcomInfo hcom;
     std::string identify = "0";
     std::string ranktable_file(file_name);
     std::string rankTableM;
@@ -717,113 +549,76 @@ TEST_F(HcomTest, ut_hcom_CfgGetCcInfo_device_num0_ERR)
     ret = CfgGetClusterInfo(rankTableM, identify, hcom.params, hcom.rankTable);
     EXPECT_EQ(ret, HCCL_E_PARA);
     remove(file_name);
-
 }
-
-
-
 
 TEST_F(HcomTest, ut_hcom_CfgGetCcInfo_instance_count0_ERR)
 {
-    nlohmann::json rank_table =
-        {
-            {"status", "completed"},
-            {"deploy_mode", "lab"},
-            {"group_count", "1"},
-        {"chip_info", "910"},
-        {"board_id", "0x0000"},
-            {"para_plane_nic_location", "device"},
-            {"para_plane_nic_num", "1"},
-            {"para_plane_nic_name", {}},
-            {
-                "group_list",
-                {
-                    {
-                        {"group_name", ""},
-                        {"device_num", "4"},
-                        {"server_num", "4"},
-                        {"instance_count", "0"},
-                            {
-                                "instance_list",
-                                {
-                                    {   {"rank_id", "0"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "1"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.1.12"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "2"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.14"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "3"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.1.14"}}}
-                                        }
-                                    }
-                                }
-                            },
-                            {
-                                "server_list",
-                                {
-                                    {
-                                        {"server_id", "192.168.10.2"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth1", "192.168.210.2"},
-                                                },
-                                                {
-                                                    {"eth0", "192.168.200.2"},
-                                                }
-                                            }
-                                        }
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"deploy_mode", "lab"},
+           {"group_count", "1"},
+           {"chip_info", "910"},
+           {"board_id", "0x0000"},
+           {"para_plane_nic_location", "device"},
+           {"para_plane_nic_num", "1"},
+           {"para_plane_nic_name", {}},
+           {"group_list",
+            {{{"group_name", ""},
+              {"device_num", "4"},
+              {"server_num", "4"},
+              {"instance_count", "0"},
+              {"instance_list",
+               {{{"rank_id", "0"},
+                 {"server_id", "10.0.0.10"},
+                 {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}}},
+                {{"rank_id", "1"},
+                 {"server_id", "10.0.0.10"},
+                 {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.1.12"}}}}},
+                {{"rank_id", "2"},
+                 {"server_id", "10.0.0.11"},
+                 {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.14"}}}}},
+                {{"rank_id", "3"},
+                 {"server_id", "10.0.0.11"},
+                 {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.1.14"}}}}}}},
+              {"server_list",
+               {
+                   {{"server_id", "192.168.10.2"},
+                    {"para_plane_info",
+                     {{
+                          {"eth1", "192.168.210.2"},
+                      },
+                      {
+                          {"eth0", "192.168.200.2"},
+                      }}}
 
-                                    },
-                                    {
-                                        {"server_id", "192.168.10.3"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.200.3"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.210.3"},
-                                                }
-                                            }
-                                        }
+                   },
+                   {{"server_id", "192.168.10.3"},
+                    {"para_plane_info",
+                     {{
+                          {"eth0", "192.168.200.3"},
+                      },
+                      {
+                          {"eth1", "192.168.210.3"},
+                      }}}
 
-                                    },
+                   },
 
-                                }
-                            }
-                    }
-                }
-            }
-        };
+               }}}}}};
 
     char file_name[] = "./ut_hcom_CfgGetCcInfo_instance_count0_ERR.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
     outfile.close();
 
     s32 ret = HCCL_SUCCESS;
-    HcomInfo  hcom;
+    HcomInfo hcom;
     std::string identify = "0";
     std::string ranktable_file(file_name);
     std::string rankTableM;
@@ -833,72 +628,52 @@ TEST_F(HcomTest, ut_hcom_CfgGetCcInfo_instance_count0_ERR)
     ret = CfgGetClusterInfo(rankTableM, identify, hcom.params, hcom.rankTable);
     EXPECT_EQ(ret, HCCL_E_PARA);
     remove(file_name);
-
 }
 
 #if 1
 TEST_F(HcomTest, ut_hcom_get_invalid_jsonPropertyinfo)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"version", "1.0"},
+           {"server_count", "1"},
+           {"server",
+            {{
+                {"server_id", "10.0.0.10"},
+                {"host_nic_ip", "192.168.0.12:0,192.168.1.12:199"},
+                {"device",
+                 {
+                     {{"rank_id", "0"}, {"device_id", "0"}, {"device_ip", "192.168.0.12,192.168.0.13"}
 
-    nlohmann::json rank_table =
-    {
-        {"status", "completed"},
-        {"version", "1.0"},
-        {"server_count", "1"},
-        {
-            "server",
-            {
-                {
-                    {"server_id", "10.0.0.10"},
-                    {"host_nic_ip", "192.168.0.12:0,192.168.1.12:199"},
-                    {
-                        "device",
-                        {
-                            {   {"rank_id", "0"},
-                                {"device_id", "0"},
-                                {"device_ip", "192.168.0.12,192.168.0.13"}
+                     },
+                     {{"rank_id", "1"}, {"device_id", "1"}, {"device_ip", "192.168.1.12,192.168.1.13"}
 
-                            },
-                            {   {"rank_id", "1"},
-                                {"device_id", "1"},
-                                {"device_ip", "192.168.1.12,192.168.1.13"}
+                     },
+                     {{"rank_id", "2"}, {"device_id", "2"}, {"device_ip", "192.168.2.12,192.168.2.13"}
 
-                            },
-                            {   {"rank_id", "2"},
-                                {"device_id", "2"},
-                                {"device_ip", "192.168.2.12,192.168.2.13"}
-
-                            },
-                        }
-                    },
-                }
-            }
-        }
-    };
+                     },
+                 }},
+            }}}};
 
     char file_name_t[] = "./ut_hcom_get_invalid_jsonPropertyinfo.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(1) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name_t);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name_t);
     }
 
     outfile.close();
     int ret = HCCL_SUCCESS;
 
-
     ret = hrtSetDevice(0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     string rank_table_file("./ut_hcom_get_invalid_jsonPropertyinfo.json");
 
-    HcomInfo  hcom;
+    HcomInfo hcom;
     std::string identify = "0";
     std::string rankTableM;
     std::string realFilePath;
@@ -916,13 +691,10 @@ TEST_F(HcomTest, ut_hcom_load_rank_table_from_file_to_json_fail)
     char file_name[] = "./jobstart_hccl_invalid_json_file.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << "invalid json format" << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -936,7 +708,6 @@ TEST_F(HcomTest, ut_hcom_load_rank_table_from_file_to_json_fail)
     EXPECT_NE(ret, HCCL_SUCCESS);
 
     remove(file_name);
-
 }
 
 TEST_F(HcomTest, ut_hcom_JsonFile_LoadFile)
@@ -965,25 +736,20 @@ TEST_F(HcomTest, ut_hcom_JsonFile_LoadFile)
     ranktable_file = "./*%%ld.json";
     ret = HcomLoadRanktableFile(ranktable_file.c_str(), rankTableM, realFilePath);
     EXPECT_EQ(ret, HCCL_E_PARA);
-
 }
 
 TEST_F(HcomTest, ut_hcom_get_hcom_info_boardType2_alg0)
 {
-
     nlohmann::json rank_table = rank_table_910_2server_8rank;
 
     setenv("HCCL_ALG_TYPE", "0", 1);
     char file_name[] = "./ut_hcom_get_hcom_info_boardType400.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -1008,84 +774,46 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_boardType2_alg0)
     EXPECT_EQ(ret, HCCL_SUCCESS);
     unsetenv("HCCL_ALG_TYPE");
     remove(file_name);
-
 }
 
 #if 1
 TEST_F(HcomTest, ut_hcom_get_hcom_info_4rank2server_ERR)
 {
- nlohmann::json rank_table =
-    {
-       {"status", "completed"},
+    nlohmann::json rank_table = {
+        {"status", "completed"},
         {"group_count", "1"},
-        {
-            "group_list",
-            {
-                {
-                    {"group_name", ""},
-                    {"instance_count", "2"},
-                    {"device_count", "8"},
-                    {
-                        "instance_list",
-                        {
-                            {   {"pod_name", "tf-0"},
-                                {"server_id", "10.0.0.10"},
-                                {
-                                    "devices",
-                                    {
-                                        {   {"device_id", "0"},
-                                            {"device_ip", "192.168.0.10"}
-                                        },
-                                        {   {"device_id", "1"},
-                                            {"device_ip", "192.168.0.11"}
-                                        },
-                                        {   {"device_id", "2"},
-                                            {"device_ip", "192.168.0.12"}
-                                        },
-                                        {   {"device_id", "3"},
-                                            {"device_ip", "192.168.0.13"}
-                                        }
-                                    }
-                                }
-                            },
-                            {   {"pod_name", "tf-1"},
-                                {"server_id", "10.0.0.11"},
-                                {
-                                    "devices",
-                                    {
-                                        {   {"device_id", "0"},
-                                            {"device_ip", "192.168.0.21"}
-                                        },
-                                        {   {"device_id", "1"},
-                                            {"device_ip", "192.168.0.22"}
-                                        },
-                                        {   {"device_id", "2"},
-                                            {"device_ip", "192.168.0.23"}
-                                        },
-                                        {   {"device_id", "3"},
-                                            {"device_ip", "192.168.0.24"}
-                                        }
-                                    }
-                                }
-                            },
-                        }
-                    },
-                }
-            }
-        },
+        {"group_list",
+         {{
+             {"group_name", ""},
+             {"instance_count", "2"},
+             {"device_count", "8"},
+             {"instance_list",
+              {
+                  {{"pod_name", "tf-0"},
+                   {"server_id", "10.0.0.10"},
+                   {"devices",
+                    {{{"device_id", "0"}, {"device_ip", "192.168.0.10"}},
+                     {{"device_id", "1"}, {"device_ip", "192.168.0.11"}},
+                     {{"device_id", "2"}, {"device_ip", "192.168.0.12"}},
+                     {{"device_id", "3"}, {"device_ip", "192.168.0.13"}}}}},
+                  {{"pod_name", "tf-1"},
+                   {"server_id", "10.0.0.11"},
+                   {"devices",
+                    {{{"device_id", "0"}, {"device_ip", "192.168.0.21"}},
+                     {{"device_id", "1"}, {"device_ip", "192.168.0.22"}},
+                     {{"device_id", "2"}, {"device_ip", "192.168.0.23"}},
+                     {{"device_id", "3"}, {"device_ip", "192.168.0.24"}}}}},
+              }},
+         }}},
     };
-
 
     char file_name[] = "./ut_hcom_get_hcom_info_4rank2server_ERR.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -1101,112 +829,56 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_4rank2server_ERR)
     ret = HcomDestroy();
     EXPECT_EQ(ret, HCCL_SUCCESS);
     remove(file_name);
-
 }
 #endif
 
-HcclResult fake_CheckRanklistValid(std::vector<RankInfo_t> &rankList)
-{
-    return HCCL_SUCCESS;
-}
+HcclResult fake_CheckRanklistValid(std::vector<RankInfo_t>& rankList) { return HCCL_SUCCESS; }
 
 TEST_F(HcomTest, ut_hcom_get_cloud_hcom_info2)
 {
-    nlohmann::json rank_table =
-    {
-       {"status", "completed"},
+    nlohmann::json rank_table = {
+        {"status", "completed"},
         {"group_count", "1"},
-        {
-            "group_list",
-            {
-                {
-                    {"group_name", ""},
-                    {"instance_count", "2"},
-                    {"device_count", "16"},
-                    {
-                        "instance_list",
-                        {
-                            {   {"pod_name", "tf-0"},
-                                {"server_id", "10.0.0.10"},
-                                {
-                                    "devices",
-                                    {
-                                        {   {"device_id", "0"},
-                                            {"device_ip", "192.168.0.10"}
-                                        },
-                                        {   {"device_id", "1"},
-                                            {"device_ip", "192.168.0.11"}
-                                        },
-                                        {   {"device_id", "2"},
-                                            {"device_ip", "192.168.0.12"}
-                                        },
-                                        {   {"device_id", "3"},
-                                            {"device_ip", "192.168.0.13"}
-                                        },
-                                         {   {"device_id", "4"},
-                                            {"device_ip", "192.168.0.14"}
-                                        },
-                                        {   {"device_id", "5"},
-                                            {"device_ip", "192.168.0.15"}
-                                        },
-                                        {   {"device_id", "6"},
-                                            {"device_ip", "192.168.0.16"}
-                                        },
-                                        {   {"device_id", "7"},
-                                            {"device_ip", "192.168.0.17"}
-                                        }
-                                    }
-                                }
-                            },
-                            {   {"pod_name", "tf-1"},
-                                {"server_id", "10.0.0.11"},
-                                {
-                                    "devices",
-                                    {
-                                        {   {"device_id", "0"},
-                                            {"device_ip", "192.168.0.21"}
-                                        },
-                                        {   {"device_id", "1"},
-                                            {"device_ip", "192.168.0.22"}
-                                        },
-                                        {   {"device_id", "2"},
-                                            {"device_ip", "192.168.0.23"}
-                                        },
-                                        {   {"device_id", "3"},
-                                            {"device_ip", "192.168.0.24"}
-                                        },
-                                         {   {"device_id", "4"},
-                                            {"device_ip", "192.168.0.20"}
-                                        },
-                                        {   {"device_id", "5"},
-                                            {"device_ip", "192.168.0.25"}
-                                        },
-                                        {   {"device_id", "6"},
-                                            {"device_ip", "192.168.0.26"}
-                                        },
-                                        {   {"device_id", "7"},
-                                            {"device_ip", "192.168.0.27"}
-                                        }
-                                    }
-                                }
-                            },
-                        }
-                    },
-                }
-            }
-        },
+        {"group_list",
+         {{
+             {"group_name", ""},
+             {"instance_count", "2"},
+             {"device_count", "16"},
+             {"instance_list",
+              {
+                  {{"pod_name", "tf-0"},
+                   {"server_id", "10.0.0.10"},
+                   {"devices",
+                    {{{"device_id", "0"}, {"device_ip", "192.168.0.10"}},
+                     {{"device_id", "1"}, {"device_ip", "192.168.0.11"}},
+                     {{"device_id", "2"}, {"device_ip", "192.168.0.12"}},
+                     {{"device_id", "3"}, {"device_ip", "192.168.0.13"}},
+                     {{"device_id", "4"}, {"device_ip", "192.168.0.14"}},
+                     {{"device_id", "5"}, {"device_ip", "192.168.0.15"}},
+                     {{"device_id", "6"}, {"device_ip", "192.168.0.16"}},
+                     {{"device_id", "7"}, {"device_ip", "192.168.0.17"}}}}},
+                  {{"pod_name", "tf-1"},
+                   {"server_id", "10.0.0.11"},
+                   {"devices",
+                    {{{"device_id", "0"}, {"device_ip", "192.168.0.21"}},
+                     {{"device_id", "1"}, {"device_ip", "192.168.0.22"}},
+                     {{"device_id", "2"}, {"device_ip", "192.168.0.23"}},
+                     {{"device_id", "3"}, {"device_ip", "192.168.0.24"}},
+                     {{"device_id", "4"}, {"device_ip", "192.168.0.20"}},
+                     {{"device_id", "5"}, {"device_ip", "192.168.0.25"}},
+                     {{"device_id", "6"}, {"device_ip", "192.168.0.26"}},
+                     {{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}}},
+              }},
+         }}},
     };
 
     char file_name[] = "./ut_hcom_get_cloud_hcom_info_boardid_ERR.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
     outfile.close();
@@ -1232,104 +904,51 @@ TEST_F(HcomTest, ut_hcom_get_cloud_hcom_info2)
     remove(file_name);
 }
 
-
 TEST_F(HcomTest, ut_hcom_get_cloud_hcom_info1)
 {
-    nlohmann::json rank_table =
-    {
-       {"status", "completed"},
+    nlohmann::json rank_table = {
+        {"status", "completed"},
         {"group_count", "1"},
-        {
-            "group_list",
-            {
-                {
-                    {"group_name", ""},
-                    {"instance_count", "2"},
-                    {"device_count", "16"},
-                    {
-                        "instance_list",
-                        {
-                            {   {"pod_name", "tf-0"},
-                                {"server_id", "10.0.0.10"},
-                                {
-                                    "devices",
-                                    {
-                                        {   {"device_id", "0"},
-                                            {"device_ip", "192.168.0.10"}
-                                        },
-                                        {   {"device_id", "1"},
-                                            {"device_ip", "192.168.0.11"}
-                                        },
-                                        {   {"device_id", "2"},
-                                            {"device_ip", "192.168.0.12"}
-                                        },
-                                        {   {"device_id", "3"},
-                                            {"device_ip", "192.168.0.13"}
-                                        },
-                                         {   {"device_id", "4"},
-                                            {"device_ip", "192.168.0.14"}
-                                        },
-                                        {   {"device_id", "5"},
-                                            {"device_ip", "192.168.0.15"}
-                                        },
-                                        {   {"device_id", "6"},
-                                            {"device_ip", "192.168.0.16"}
-                                        },
-                                        {   {"device_id", "7"},
-                                            {"device_ip", "192.168.0.17"}
-                                        }
-                                    }
-                                }
-                            },
-                            {   {"pod_name", "tf-1"},
-                                {"server_id", "10.0.0.11"},
-                                {
-                                    "devices",
-                                    {
-                                        {   {"device_id", "0"},
-                                            {"device_ip", "192.168.0.21"}
-                                        },
-                                        {   {"device_id", "1"},
-                                            {"device_ip", "192.168.0.22"}
-                                        },
-                                        {   {"device_id", "2"},
-                                            {"device_ip", "192.168.0.23"}
-                                        },
-                                        {   {"device_id", "3"},
-                                            {"device_ip", "192.168.0.24"}
-                                        },
-                                         {   {"device_id", "4"},
-                                            {"device_ip", "192.168.0.20"}
-                                        },
-                                        {   {"device_id", "5"},
-                                            {"device_ip", "192.168.0.25"}
-                                        },
-                                        {   {"device_id", "6"},
-                                            {"device_ip", "192.168.0.26"}
-                                        },
-                                        {   {"device_id", "7"},
-                                            {"device_ip", "192.168.0.27"}
-                                        }
-                                    }
-                                }
-                            },
-                        }
-                    },
-                }
-            }
-        },
+        {"group_list",
+         {{
+             {"group_name", ""},
+             {"instance_count", "2"},
+             {"device_count", "16"},
+             {"instance_list",
+              {
+                  {{"pod_name", "tf-0"},
+                   {"server_id", "10.0.0.10"},
+                   {"devices",
+                    {{{"device_id", "0"}, {"device_ip", "192.168.0.10"}},
+                     {{"device_id", "1"}, {"device_ip", "192.168.0.11"}},
+                     {{"device_id", "2"}, {"device_ip", "192.168.0.12"}},
+                     {{"device_id", "3"}, {"device_ip", "192.168.0.13"}},
+                     {{"device_id", "4"}, {"device_ip", "192.168.0.14"}},
+                     {{"device_id", "5"}, {"device_ip", "192.168.0.15"}},
+                     {{"device_id", "6"}, {"device_ip", "192.168.0.16"}},
+                     {{"device_id", "7"}, {"device_ip", "192.168.0.17"}}}}},
+                  {{"pod_name", "tf-1"},
+                   {"server_id", "10.0.0.11"},
+                   {"devices",
+                    {{{"device_id", "0"}, {"device_ip", "192.168.0.21"}},
+                     {{"device_id", "1"}, {"device_ip", "192.168.0.22"}},
+                     {{"device_id", "2"}, {"device_ip", "192.168.0.23"}},
+                     {{"device_id", "3"}, {"device_ip", "192.168.0.24"}},
+                     {{"device_id", "4"}, {"device_ip", "192.168.0.20"}},
+                     {{"device_id", "5"}, {"device_ip", "192.168.0.25"}},
+                     {{"device_id", "6"}, {"device_ip", "192.168.0.26"}},
+                     {{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}}},
+              }},
+         }}},
     };
 
     char file_name[] = "./ut_hcom_get_cloud_hcom_info_boardid_ERR.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
     outfile.close();
@@ -1352,107 +971,53 @@ TEST_F(HcomTest, ut_hcom_get_cloud_hcom_info1)
     ret = hrtResetDevice(0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     remove(file_name);
-
 }
 
 TEST_F(HcomTest, ut_hcom_get_cloud_hcom_info_boardType2_)
 {
-
-    nlohmann::json rank_table =
-    {
-       {"status", "completed"},
+    nlohmann::json rank_table = {
+        {"status", "completed"},
         {"group_count", "1"},
-        {
-            "group_list",
-            {
-                {
-                    {"group_name", ""},
-                    {"instance_count", "2"},
-                    {"device_count", "16"},
-                    {
-                        "instance_list",
-                        {
-                            {   {"pod_name", "tf-0"},
-                                {"server_id", "10.0.0.10"},
-                                {
-                                    "devices",
-                                    {
-                                        {   {"device_id", "0"},
-                                            {"device_ip", "192.168.0.10"}
-                                        },
-                                        {   {"device_id", "1"},
-                                            {"device_ip", "192.168.0.11"}
-                                        },
-                                        {   {"device_id", "2"},
-                                            {"device_ip", "192.168.0.12"}
-                                        },
-                                        {   {"device_id", "3"},
-                                            {"device_ip", "192.168.0.13"}
-                                        },
-                                         {   {"device_id", "4"},
-                                            {"device_ip", "192.168.0.14"}
-                                        },
-                                        {   {"device_id", "5"},
-                                            {"device_ip", "192.168.0.15"}
-                                        },
-                                        {   {"device_id", "6"},
-                                            {"device_ip", "192.168.0.16"}
-                                        },
-                                        {   {"device_id", "7"},
-                                            {"device_ip", "192.168.0.17"}
-                                        }
-                                    }
-                                }
-                            },
-                            {   {"pod_name", "tf-1"},
-                                {"server_id", "10.0.0.11"},
-                                {
-                                    "devices",
-                                    {
-                                        {   {"device_id", "0"},
-                                            {"device_ip", "192.168.0.21"}
-                                        },
-                                        {   {"device_id", "1"},
-                                            {"device_ip", "192.168.0.22"}
-                                        },
-                                        {   {"device_id", "2"},
-                                            {"device_ip", "192.168.0.23"}
-                                        },
-                                        {   {"device_id", "3"},
-                                            {"device_ip", "192.168.0.24"}
-                                        },
-                                         {   {"device_id", "4"},
-                                            {"device_ip", "192.168.0.20"}
-                                        },
-                                        {   {"device_id", "5"},
-                                            {"device_ip", "192.168.0.25"}
-                                        },
-                                        {   {"device_id", "6"},
-                                            {"device_ip", "192.168.0.26"}
-                                        },
-                                        {   {"device_id", "7"},
-                                            {"device_ip", "192.168.0.27"}
-                                        }
-                                    }
-                                }
-                            },
-                        }
-                    },
-                }
-            }
-        },
+        {"group_list",
+         {{
+             {"group_name", ""},
+             {"instance_count", "2"},
+             {"device_count", "16"},
+             {"instance_list",
+              {
+                  {{"pod_name", "tf-0"},
+                   {"server_id", "10.0.0.10"},
+                   {"devices",
+                    {{{"device_id", "0"}, {"device_ip", "192.168.0.10"}},
+                     {{"device_id", "1"}, {"device_ip", "192.168.0.11"}},
+                     {{"device_id", "2"}, {"device_ip", "192.168.0.12"}},
+                     {{"device_id", "3"}, {"device_ip", "192.168.0.13"}},
+                     {{"device_id", "4"}, {"device_ip", "192.168.0.14"}},
+                     {{"device_id", "5"}, {"device_ip", "192.168.0.15"}},
+                     {{"device_id", "6"}, {"device_ip", "192.168.0.16"}},
+                     {{"device_id", "7"}, {"device_ip", "192.168.0.17"}}}}},
+                  {{"pod_name", "tf-1"},
+                   {"server_id", "10.0.0.11"},
+                   {"devices",
+                    {{{"device_id", "0"}, {"device_ip", "192.168.0.21"}},
+                     {{"device_id", "1"}, {"device_ip", "192.168.0.22"}},
+                     {{"device_id", "2"}, {"device_ip", "192.168.0.23"}},
+                     {{"device_id", "3"}, {"device_ip", "192.168.0.24"}},
+                     {{"device_id", "4"}, {"device_ip", "192.168.0.20"}},
+                     {{"device_id", "5"}, {"device_ip", "192.168.0.25"}},
+                     {{"device_id", "6"}, {"device_ip", "192.168.0.26"}},
+                     {{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}}},
+              }},
+         }}},
     };
 
     char file_name[] = "./ut_hcom_get_cloud_hcom_info_boardType2_.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
     outfile.close();
@@ -1476,105 +1041,53 @@ TEST_F(HcomTest, ut_hcom_get_cloud_hcom_info_boardType2_)
     remove(file_name);
 }
 
-
 TEST_F(HcomTest, ut_hcom_put_cloud_ranktable_info_other)
 {
-        nlohmann::json rank_table =
-    {
-       {"status", "completed"},
+    nlohmann::json rank_table = {
+        {"status", "completed"},
         {"group_count", "1"},
-        {
-            "group_list",
-            {
-                {
-                    {"group_name", ""},
-                    {"instance_count", "2"},
-                    {"device_count", "16"},
-                    {
-                        "instance_list",
-                        {
-                            {   {"pod_name", "tf-0"},
-                                {"server_id", "10.0.0.10"},
-                                {
-                                    "devices",
-                                    {
-                                        {   {"device_id", "0"},
-                                            {"device_ip", "192.168.0.10"}
-                                        },
-                                        {   {"device_id", "1"},
-                                            {"device_ip", "192.168.0.11"}
-                                        },
-                                        {   {"device_id", "2"},
-                                            {"device_ip", "192.168.0.12"}
-                                        },
-                                        {   {"device_id", "3"},
-                                            {"device_ip", "192.168.0.13"}
-                                        },
-                                        {   {"device_id", "4"},
-                                            {"device_ip", "192.168.0.14"}
-                                        },
-                                        {   {"device_id", "5"},
-                                            {"device_ip", "192.168.0.15"}
-                                        },
-                                        {   {"device_id", "6"},
-                                            {"device_ip", "192.168.0.16"}
-                                        },
-                                        {   {"device_id", "7"},
-                                            {"device_ip", "192.168.0.17"}
-                                        }
-                                    }
-                                }
-                            },
-                            {   {"pod_name", "tf-1"},
-                                {"server_id", "10.0.0.11"},
-                                {
-                                    "devices",
-                                    {
-                                        {   {"device_id", "0"},
-                                            {"device_ip", "192.168.0.21"}
-                                        },
-                                        {   {"device_id", "1"},
-                                            {"device_ip", "192.168.0.22"}
-                                        },
-                                        {   {"device_id", "2"},
-                                            {"device_ip", "192.168.0.23"}
-                                        },
-                                        {   {"device_id", "3"},
-                                            {"device_ip", "192.168.0.24"}
-                                        },
-                                        {   {"device_id", "4"},
-                                            {"device_ip", "192.168.0.25"}
-                                        },
-                                        {   {"device_id", "5"},
-                                            {"device_ip", "192.168.0.26"}
-                                        },
-                                        {   {"device_id", "6"},
-                                            {"device_ip", "192.168.0.27"}
-                                        },
-                                        {   {"device_id", "7"},
-                                            {"device_ip", "192.168.0.28"}
-                                        }
+        {"group_list",
+         {{
+             {"group_name", ""},
+             {"instance_count", "2"},
+             {"device_count", "16"},
+             {"instance_list",
+              {
+                  {{"pod_name", "tf-0"},
+                   {"server_id", "10.0.0.10"},
+                   {"devices",
+                    {{{"device_id", "0"}, {"device_ip", "192.168.0.10"}},
+                     {{"device_id", "1"}, {"device_ip", "192.168.0.11"}},
+                     {{"device_id", "2"}, {"device_ip", "192.168.0.12"}},
+                     {{"device_id", "3"}, {"device_ip", "192.168.0.13"}},
+                     {{"device_id", "4"}, {"device_ip", "192.168.0.14"}},
+                     {{"device_id", "5"}, {"device_ip", "192.168.0.15"}},
+                     {{"device_id", "6"}, {"device_ip", "192.168.0.16"}},
+                     {{"device_id", "7"}, {"device_ip", "192.168.0.17"}}}}},
+                  {{"pod_name", "tf-1"},
+                   {"server_id", "10.0.0.11"},
+                   {"devices",
+                    {{{"device_id", "0"}, {"device_ip", "192.168.0.21"}},
+                     {{"device_id", "1"}, {"device_ip", "192.168.0.22"}},
+                     {{"device_id", "2"}, {"device_ip", "192.168.0.23"}},
+                     {{"device_id", "3"}, {"device_ip", "192.168.0.24"}},
+                     {{"device_id", "4"}, {"device_ip", "192.168.0.25"}},
+                     {{"device_id", "5"}, {"device_ip", "192.168.0.26"}},
+                     {{"device_id", "6"}, {"device_ip", "192.168.0.27"}},
+                     {{"device_id", "7"}, {"device_ip", "192.168.0.28"}}
 
-                                    }
-                                }
-                            },
-                        }
-                    },
-                }
-            }
-        },
+                    }}},
+              }},
+         }}},
     };
 
     char file_name[] = "./ut_hcom_put_cloud_ranktable_info_other.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -1595,7 +1108,7 @@ TEST_F(HcomTest, ut_hcom_put_cloud_ranktable_info_other)
     ret = CfgGetClusterInfo(rankTableM, identify, hcom_info.params, hcom_info.rankTable);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    ret=DisplayCloudRankTableInfo(hcom_info.params, hcom_info.rankTable);
+    ret = DisplayCloudRankTableInfo(hcom_info.params, hcom_info.rankTable);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     ret = hrtResetDevice(0);
@@ -1603,29 +1116,23 @@ TEST_F(HcomTest, ut_hcom_put_cloud_ranktable_info_other)
     remove(file_name);
 }
 
-
-
 TEST_F(HcomTest, ut_hcom_get_hcom_info_boardType0)
 {
-
     nlohmann::json rank_table = rank_table_910_2server_8rank;
-
 
     char file_name[] = "./ut_hcom_get_hcom_info_boardType0.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
     outfile.close();
-    set_board_id(0x0000);    outfile.close();
+    set_board_id(0x0000);
+    outfile.close();
 
     std::string identify = "0";
     s32 ret = HCCL_SUCCESS;
@@ -1646,94 +1153,63 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_boardType0)
     EXPECT_EQ(ret, HCCL_SUCCESS);
     set_board_id(0);
     remove(file_name);
-
 }
 
 TEST_F(HcomTest, ut_hcom_get_hcom_info_nicLocationErr)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"deploy_mode", "lab"},
+           {"group_count", "1"},
+           {"chip_info", "910"},
+           {"board_id", "0x0000"},
+           {"para_plane_nic_location", "device"},
+           {"para_plane_nic_num", "2"},
+           {"para_plane_nic_name", {"eth0", "eth1"}},
+           {"group_list",
+            {{{"group_name", ""},
+              {"device_num", "2"},
+              {"server_num", "2"},
+              {"instance_count", "2"},
+              {"instance_list",
+               {{{"rank_id", "0"},
+                 {"server_id", "10.0.0.10"},
+                 {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.12"}}}}},
+                {{"rank_id", "1"},
+                 {"server_id", "10.0.0.11"},
+                 {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.12"}}}}}}},
+              {"server_list",
+               {
+                   {{"server_id", "192.168.10.10"},
+                    {"para_plane_info",
+                     {{
+                          {"eth1", "192.168.210.2"},
+                      },
+                      {
+                          {"eth0", "192.168.200.2"},
+                      }}}
 
-    nlohmann::json rank_table =
-    {
-        {"status", "completed"},
-        {"deploy_mode", "lab"},
-        {"group_count", "1"},
-        {"chip_info", "910"},
-        {"board_id", "0x0000"},
-        {"para_plane_nic_location", "device"},
-        {"para_plane_nic_num", "2"},
-        {"para_plane_nic_name", {"eth0", "eth1"}},
-        {
-            "group_list",
-            {
-                {
-                    {"group_name", ""},
-                    {"device_num", "2"},
-                    {"server_num", "2"},
-                    {"instance_count", "2"},
-                        {
-                            "instance_list",
-                            {
-                                {   {"rank_id", "0"}, {"server_id", "10.0.0.10"},
-                                    {
-                                        "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.12"}}}
-                                    }
-                                },
-                                {   {"rank_id", "1"}, {"server_id", "10.0.0.11"},
-                                    {
-                                        "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.12"}}}
-                                    }
-                                }
-                            }
-                        },
-                        {
-                            "server_list",
-                            {
-                                {
-                                    {"server_id", "192.168.10.10"},
-                                    {
-                                        "para_plane_info",
-                                        {{
-                                                {"eth1", "192.168.210.2"},
-                                            },
-                                            {
-                                                {"eth0", "192.168.200.2"},
-                                            }
-                                        }
-                                    }
+                   },
+                   {{"server_id", "192.168.10.11"},
+                    {"para_plane_info",
+                     {{
+                          {"eth0", "192.168.200.3"},
+                      },
+                      {
+                          {"eth1", "192.168.210.3"},
+                      }}}
 
-                                },
-                                {
-                                    {"server_id", "192.168.10.11"},
-                                    {
-                                        "para_plane_info",
-                                        {{
-                                                {"eth0", "192.168.200.3"},
-                                            },
-                                            {
-                                                {"eth1", "192.168.210.3"},
-                                            }
-                                        }
-                                    }
+                   },
 
-                                },
-
-                            }
-                        }
-                }
-            }
-        }
-    };
+               }}}}}};
 
     char file_name[] = "./ut_hcom_get_hcom_info_nicLocationErr.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -1759,209 +1235,156 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_nicLocationErr)
     EXPECT_EQ(ret, HCCL_SUCCESS);
     set_board_id(0);
     remove(file_name);
-
 }
 
 #if 1
 TEST_F(HcomTest, ut_hcom_get_hcom_info_serverNoExit)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"deploy_mode", "lab"},
+           {"group_count", "1"},
+           {"chip_info", "910"},
+           {"board_id", "0x0000"},
+           {"para_plane_nic_location", "device"},
+           {"para_plane_nic_num", "8"},
+           {"para_plane_nic_name", {"eth0", "eth1", "eth2", "eth3", "eth4", "eth5", "eth6", "eth7"}},
+           {"group_list",
+            {{{"group_name", ""},
+              {"device_num", "16"},
+              {"server_num", "2"},
+              {"instance_count", "16"},
+              {"instance_list",
+               {
+                   {{"rank_id", "0"},
+                    {"server_id", "10.0.200.10"},
+                    {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.10"}}}}},
 
-    nlohmann::json rank_table =
-    {
-            {"status", "completed"},
-            {"deploy_mode", "lab"},
-            {"group_count", "1"},
-            {"chip_info", "910"},
-            {"board_id", "0x0000"},
-            {"para_plane_nic_location", "device"},
-            {"para_plane_nic_num", "8"},
-            {"para_plane_nic_name", {"eth0", "eth1", "eth2", "eth3","eth4", "eth5", "eth6", "eth7"}},
-            {
-                "group_list",
-                {
-                    {
-                        {"group_name", ""},
-                        {"device_num", "16"},
-                        {"server_num", "2"},
-                        {"instance_count", "16"},
-                            {
-                                "instance_list",
-                                {
-                                    {   {"rank_id", "0"}, {"server_id", "10.0.200.10"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.10"}}}
-                                        }
-                                    },
+                   {{"rank_id", "1"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.11"}}}}},
+                   {{"rank_id", "2"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.13"}}}}},
 
-                                    {   {"rank_id", "1"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.11"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "2"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.13"}}}
-                                        }
-                                    },
+                   {{"rank_id", "3"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.14"}}}}},
+                   {{"rank_id", "4"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.15"}}}}},
 
-                                    {   {"rank_id", "3"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.14"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "4"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.15"}}}
-                                        }
-                                    },
+                   {{"rank_id", "5"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.16"}}}}},
+                   {{"rank_id", "6"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.17"}}}}},
 
-                                    {   {"rank_id", "5"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.16"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "6"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.17"}}}
-                                        }
-                                    },
+                   {{"rank_id", "7"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.18"}}}}},
+                   {{"rank_id", "8"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.20"}}}}},
 
-                                    {   {"rank_id", "7"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.18"}}}
-                                        }
-                                    },
-                                     {  {"rank_id", "8"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.20"}}}
-                                        }
-                                    },
+                   {{"rank_id", "9"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.21"}}}}},
+                   {{"rank_id", "10"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.22"}}}}},
 
-                                    {   {"rank_id", "9"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.21"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "10"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.22"}}}
-                                        }
-                                    },
+                   {{"rank_id", "11"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.23"}}}}},
+                   {{"rank_id", "12"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.24"}}}}},
 
-                                    {   {"rank_id", "11"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.23"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "12"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.24"}}}
-                                        }
-                                    },
+                   {{"rank_id", "13"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.25"}}}}},
+                   {{"rank_id", "14"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.26"}}}}},
 
-                                    {   {"rank_id", "13"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.25"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "14"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.26"}}}
-                                        }
-                                    },
+                   {{"rank_id", "15"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}}},
+               }},
+              {"server_list",
+               {
+                   {{"server_id", "10.0.0.10"},
+                    {"para_plane_info",
+                     {
+                         {
+                             {"eth0", "192.168.200.2"},
+                         },
+                         {
+                             {"eth1", "192.168.201.2"},
+                         },
+                         {
+                             {"eth2", "192.168.202.2"},
+                         },
+                         {
+                             {"eth3", "192.168.203.2"},
+                         },
+                         {
+                             {"eth4", "192.168.204.2"},
+                         },
+                         {
+                             {"eth5", "192.168.205.2"},
+                         },
+                         {
+                             {"eth6", "192.168.206.2"},
+                         },
+                         {
+                             {"eth7", "192.168.207.2"},
+                         },
+                     }}
 
-                                    {   {"rank_id", "15"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}
-                                        }
-                                    },
-                                }
-                            },
-                            {
-                                "server_list",
-                                {
-                                    {
-                                        {"server_id", "10.0.0.10"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.200.2"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.201.2"},
-                                                },
-                                                {
-                                                    {"eth2", "192.168.202.2"},
-                                                },
-                                                {
-                                                    {"eth3", "192.168.203.2"},
-                                                },
-                                                {
-                                                    {"eth4", "192.168.204.2"},
-                                                },
-                                                {
-                                                    {"eth5", "192.168.205.2"},
-                                                },
-                                                {
-                                                    {"eth6", "192.168.206.2"},
-                                                },
-                                                {
-                                                    {"eth7", "192.168.207.2"},
-                                                },
-                                            }
-                                        }
+                   },
+                   {{"server_id", "10.0.0.11"},
+                    {"para_plane_info",
+                     {
+                         {
+                             {"eth0", "192.168.210.3"},
+                         },
+                         {
+                             {"eth1", "192.168.211.3"},
+                         },
+                         {
+                             {"eth2", "192.168.212.3"},
+                         },
+                         {
+                             {"eth3", "192.168.213.3"},
+                         },
+                         {
+                             {"eth4", "192.168.214.3"},
+                         },
+                         {
+                             {"eth5", "192.168.215.3"},
+                         },
+                         {
+                             {"eth6", "192.168.216.3"},
+                         },
+                         {
+                             {"eth7", "192.168.217.3"},
+                         },
+                     }}
 
-                                    },
-                                    {
-                                        {"server_id", "10.0.0.11"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.210.3"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.211.3"},
-                                                },
-                                                {
-                                                    {"eth2", "192.168.212.3"},
-                                                },
-                                                {
-                                                    {"eth3", "192.168.213.3"},
-                                                },
-                                                {
-                                                    {"eth4", "192.168.214.3"},
-                                                },
-                                                {
-                                                    {"eth5", "192.168.215.3"},
-                                                },
-                                                {
-                                                    {"eth6", "192.168.216.3"},
-                                                },
-                                                {
-                                                    {"eth7", "192.168.217.3"},
-                                                },
-                                            }
-                                        }
+                   },
 
-                                    },
-
-                                }
-                            }
-                    }
-                }
-            }
-        };
+               }}}}}};
 
     char file_name[] = "./ut_hcom_get_hcom_info_serverNoExit.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -1988,210 +1411,156 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_serverNoExit)
 
     set_board_id(0);
     remove(file_name);
-
 }
 #endif
 
-
 TEST_F(HcomTest, ut_hcom_get_hcom_info_deviceIpErr)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"deploy_mode", "lab"},
+           {"group_count", "1"},
+           {"chip_info", "910"},
+           {"board_id", "0x0000"},
+           {"para_plane_nic_location", "device"},
+           {"para_plane_nic_num", "8"},
+           {"para_plane_nic_name", {"eth0", "eth1", "eth2", "eth3", "eth4", "eth5", "eth6", "eth7"}},
+           {"group_list",
+            {{{"group_name", ""},
+              {"device_num", "16"},
+              {"server_num", "2"},
+              {"instance_count", "16"},
+              {"instance_list",
+               {
+                   {{"rank_id", "0"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.11"}}}}},
 
-    nlohmann::json rank_table =
-    {
-            {"status", "completed"},
-            {"deploy_mode", "lab"},
-            {"group_count", "1"},
-            {"chip_info", "910"},
-            {"board_id", "0x0000"},
-            {"para_plane_nic_location", "device"},
-            {"para_plane_nic_num", "8"},
-            {"para_plane_nic_name", {"eth0", "eth1", "eth2", "eth3","eth4", "eth5", "eth6", "eth7"}},
-            {
-                "group_list",
-                {
-                    {
-                        {"group_name", ""},
-                        {"device_num", "16"},
-                        {"server_num", "2"},
-                        {"instance_count", "16"},
-                            {
-                                "instance_list",
-                                {
-                                    {   {"rank_id", "0"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.11"}}}
-                                        }
-                                    },
+                   {{"rank_id", "1"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.11"}}}}},
+                   {{"rank_id", "2"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.13"}}}}},
 
-                                    {   {"rank_id", "1"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.11"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "2"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.13"}}}
-                                        }
-                                    },
+                   {{"rank_id", "3"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.14"}}}}},
+                   {{"rank_id", "4"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.15"}}}}},
 
-                                    {   {"rank_id", "3"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.14"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "4"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.15"}}}
-                                        }
-                                    },
+                   {{"rank_id", "5"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.16"}}}}},
+                   {{"rank_id", "6"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.17"}}}}},
 
-                                    {   {"rank_id", "5"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.16"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "6"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.17"}}}
-                                        }
-                                    },
+                   {{"rank_id", "7"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.18"}}}}},
+                   {{"rank_id", "8"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.20"}}}}},
 
-                                    {   {"rank_id", "7"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.18"}}}
-                                        }
-                                    },
-                                     {  {"rank_id", "8"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.20"}}}
-                                        }
-                                    },
+                   {{"rank_id", "9"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.21"}}}}},
+                   {{"rank_id", "10"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.22"}}}}},
 
-                                    {   {"rank_id", "9"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.21"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "10"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.22"}}}
-                                        }
-                                    },
+                   {{"rank_id", "11"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.23"}}}}},
+                   {{"rank_id", "12"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.24"}}}}},
 
-                                    {   {"rank_id", "11"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.23"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "12"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.24"}}}
-                                        }
-                                    },
+                   {{"rank_id", "13"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.25"}}}}},
+                   {{"rank_id", "14"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.26"}}}}},
 
-                                    {   {"rank_id", "13"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.25"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "14"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.26"}}}
-                                        }
-                                    },
+                   {{"rank_id", "15"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}}},
+               }},
+              {"server_list",
+               {
+                   {{"server_id", "10.0.0.10"},
+                    {"para_plane_info",
+                     {
+                         {
+                             {"eth0", "192.168.200.2"},
+                         },
+                         {
+                             {"eth1", "192.168.201.2"},
+                         },
+                         {
+                             {"eth2", "192.168.202.2"},
+                         },
+                         {
+                             {"eth3", "192.168.203.2"},
+                         },
+                         {
+                             {"eth4", "192.168.204.2"},
+                         },
+                         {
+                             {"eth5", "192.168.205.2"},
+                         },
+                         {
+                             {"eth6", "192.168.206.2"},
+                         },
+                         {
+                             {"eth7", "192.168.207.2"},
+                         },
+                     }}
 
-                                    {   {"rank_id", "15"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}
-                                        }
-                                    },
-                                }
-                            },
-                            {
-                                "server_list",
-                                {
-                                    {
-                                        {"server_id", "10.0.0.10"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.200.2"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.201.2"},
-                                                },
-                                                {
-                                                    {"eth2", "192.168.202.2"},
-                                                },
-                                                {
-                                                    {"eth3", "192.168.203.2"},
-                                                },
-                                                {
-                                                    {"eth4", "192.168.204.2"},
-                                                },
-                                                {
-                                                    {"eth5", "192.168.205.2"},
-                                                },
-                                                {
-                                                    {"eth6", "192.168.206.2"},
-                                                },
-                                                {
-                                                    {"eth7", "192.168.207.2"},
-                                                },
-                                            }
-                                        }
+                   },
+                   {{"server_id", "10.0.0.11"},
+                    {"para_plane_info",
+                     {
+                         {
+                             {"eth0", "192.168.210.3"},
+                         },
+                         {
+                             {"eth1", "192.168.211.3"},
+                         },
+                         {
+                             {"eth2", "192.168.212.3"},
+                         },
+                         {
+                             {"eth3", "192.168.213.3"},
+                         },
+                         {
+                             {"eth4", "192.168.214.3"},
+                         },
+                         {
+                             {"eth5", "192.168.215.3"},
+                         },
+                         {
+                             {"eth6", "192.168.216.3"},
+                         },
+                         {
+                             {"eth7", "192.168.217.3"},
+                         },
+                     }}
 
-                                    },
-                                    {
-                                        {"server_id", "10.0.0.11"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.210.3"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.211.3"},
-                                                },
-                                                {
-                                                    {"eth2", "192.168.212.3"},
-                                                },
-                                                {
-                                                    {"eth3", "192.168.213.3"},
-                                                },
-                                                {
-                                                    {"eth4", "192.168.214.3"},
-                                                },
-                                                {
-                                                    {"eth5", "192.168.215.3"},
-                                                },
-                                                {
-                                                    {"eth6", "192.168.216.3"},
-                                                },
-                                                {
-                                                    {"eth7", "192.168.217.3"},
-                                                },
-                                            }
-                                        }
+                   },
 
-                                    },
-
-                                }
-                            }
-                    }
-                }
-            }
-        };
+               }}}}}};
 
     char file_name[] = "./ut_hcom_get_hcom_info_deviceIpErr.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -2217,209 +1586,155 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_deviceIpErr)
     EXPECT_EQ(ret, HCCL_SUCCESS);
     set_board_id(0);
     remove(file_name);
-
 }
-
 
 TEST_F(HcomTest, ut_hcom_get_hcom_info_serverIdIpv4Err)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"deploy_mode", "lab"},
+           {"group_count", "1"},
+           {"chip_info", "910"},
+           {"board_id", "0x0000"},
+           {"para_plane_nic_location", "device"},
+           {"para_plane_nic_num", "8"},
+           {"para_plane_nic_name", {"eth0", "eth1", "eth2", "eth3", "eth4", "eth5", "eth6", "eth7"}},
+           {"group_list",
+            {{{"group_name", ""},
+              {"device_num", "16"},
+              {"server_num", "2"},
+              {"instance_count", "16"},
+              {"instance_list",
+               {
+                   {{"rank_id", "0"},
+                    {"server_id", "10.277.0.10"},
+                    {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.11"}}}}},
 
-    nlohmann::json rank_table =
-    {
-            {"status", "completed"},
-            {"deploy_mode", "lab"},
-            {"group_count", "1"},
-            {"chip_info", "910"},
-            {"board_id", "0x0000"},
-            {"para_plane_nic_location", "device"},
-            {"para_plane_nic_num", "8"},
-            {"para_plane_nic_name", {"eth0", "eth1", "eth2", "eth3","eth4", "eth5", "eth6", "eth7"}},
-            {
-                "group_list",
-                {
-                    {
-                        {"group_name", ""},
-                        {"device_num", "16"},
-                        {"server_num", "2"},
-                        {"instance_count", "16"},
-                            {
-                                "instance_list",
-                                {
-                                    {   {"rank_id", "0"}, {"server_id", "10.277.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.11"}}}
-                                        }
-                                    },
+                   {{"rank_id", "1"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}}},
+                   {{"rank_id", "2"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.13"}}}}},
 
-                                    {   {"rank_id", "1"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "2"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.13"}}}
-                                        }
-                                    },
+                   {{"rank_id", "3"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.14"}}}}},
+                   {{"rank_id", "4"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.15"}}}}},
 
-                                    {   {"rank_id", "3"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.14"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "4"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.15"}}}
-                                        }
-                                    },
+                   {{"rank_id", "5"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.16"}}}}},
+                   {{"rank_id", "6"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.17"}}}}},
 
-                                    {   {"rank_id", "5"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.16"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "6"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.17"}}}
-                                        }
-                                    },
+                   {{"rank_id", "7"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.18"}}}}},
+                   {{"rank_id", "8"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.20"}}}}},
 
-                                    {   {"rank_id", "7"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.18"}}}
-                                        }
-                                    },
-                                     {  {"rank_id", "8"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.20"}}}
-                                        }
-                                    },
+                   {{"rank_id", "9"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.21"}}}}},
+                   {{"rank_id", "10"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.22"}}}}},
 
-                                    {   {"rank_id", "9"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.21"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "10"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.22"}}}
-                                        }
-                                    },
+                   {{"rank_id", "11"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.23"}}}}},
+                   {{"rank_id", "12"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.24"}}}}},
 
-                                    {   {"rank_id", "11"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.23"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "12"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.24"}}}
-                                        }
-                                    },
+                   {{"rank_id", "13"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.25"}}}}},
+                   {{"rank_id", "14"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.26"}}}}},
 
-                                    {   {"rank_id", "13"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.25"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "14"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.26"}}}
-                                        }
-                                    },
+                   {{"rank_id", "15"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}}},
+               }},
+              {"server_list",
+               {
+                   {{"server_id", "10.0.0.10"},
+                    {"para_plane_info",
+                     {
+                         {
+                             {"eth0", "192.168.200.2"},
+                         },
+                         {
+                             {"eth1", "192.168.201.2"},
+                         },
+                         {
+                             {"eth2", "192.168.202.2"},
+                         },
+                         {
+                             {"eth3", "192.168.203.2"},
+                         },
+                         {
+                             {"eth4", "192.168.204.2"},
+                         },
+                         {
+                             {"eth5", "192.168.205.2"},
+                         },
+                         {
+                             {"eth6", "192.168.206.2"},
+                         },
+                         {
+                             {"eth7", "192.168.207.2"},
+                         },
+                     }}
 
-                                    {   {"rank_id", "15"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}
-                                        }
-                                    },
-                                }
-                            },
-                            {
-                                "server_list",
-                                {
-                                    {
-                                        {"server_id", "10.0.0.10"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.200.2"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.201.2"},
-                                                },
-                                                {
-                                                    {"eth2", "192.168.202.2"},
-                                                },
-                                                {
-                                                    {"eth3", "192.168.203.2"},
-                                                },
-                                                {
-                                                    {"eth4", "192.168.204.2"},
-                                                },
-                                                {
-                                                    {"eth5", "192.168.205.2"},
-                                                },
-                                                {
-                                                    {"eth6", "192.168.206.2"},
-                                                },
-                                                {
-                                                    {"eth7", "192.168.207.2"},
-                                                },
-                                            }
-                                        }
+                   },
+                   {{"server_id", "10.0.0.11"},
+                    {"para_plane_info",
+                     {
+                         {
+                             {"eth0", "192.168.210.3"},
+                         },
+                         {
+                             {"eth1", "192.168.211.3"},
+                         },
+                         {
+                             {"eth2", "192.168.212.3"},
+                         },
+                         {
+                             {"eth3", "192.168.213.3"},
+                         },
+                         {
+                             {"eth4", "192.168.214.3"},
+                         },
+                         {
+                             {"eth5", "192.168.215.3"},
+                         },
+                         {
+                             {"eth6", "192.168.216.3"},
+                         },
+                         {
+                             {"eth7", "192.168.217.3"},
+                         },
+                     }}
 
-                                    },
-                                    {
-                                        {"server_id", "10.0.0.11"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.210.3"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.211.3"},
-                                                },
-                                                {
-                                                    {"eth2", "192.168.212.3"},
-                                                },
-                                                {
-                                                    {"eth3", "192.168.213.3"},
-                                                },
-                                                {
-                                                    {"eth4", "192.168.214.3"},
-                                                },
-                                                {
-                                                    {"eth5", "192.168.215.3"},
-                                                },
-                                                {
-                                                    {"eth6", "192.168.216.3"},
-                                                },
-                                                {
-                                                    {"eth7", "192.168.217.3"},
-                                                },
-                                            }
-                                        }
+                   },
 
-                                    },
-
-                                }
-                            }
-                    }
-                }
-            }
-        };
+               }}}}}};
 
     char file_name[] = "./ut_hcom_get_hcom_info_serverIdIpv4Err.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -2446,210 +1761,155 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_serverIdIpv4Err)
 
     set_board_id(0);
     remove(file_name);
-
 }
-
-
 
 TEST_F(HcomTest, ut_hcom_get_hcom_info_deviceIdErr)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"deploy_mode", "lab"},
+           {"group_count", "1"},
+           {"chip_info", "910"},
+           {"board_id", "0x0000"},
+           {"para_plane_nic_location", "device"},
+           {"para_plane_nic_num", "8"},
+           {"para_plane_nic_name", {"eth0", "eth1", "eth2", "eth3", "eth4", "eth5", "eth6", "eth7"}},
+           {"group_list",
+            {{{"group_name", ""},
+              {"device_num", "16"},
+              {"server_num", "2"},
+              {"instance_count", "16"},
+              {"instance_list",
+               {
+                   {{"rank_id", "0"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.11"}}}}},
 
-    nlohmann::json rank_table =
-    {
-            {"status", "completed"},
-            {"deploy_mode", "lab"},
-            {"group_count", "1"},
-            {"chip_info", "910"},
-            {"board_id", "0x0000"},
-            {"para_plane_nic_location", "device"},
-            {"para_plane_nic_num", "8"},
-            {"para_plane_nic_name", {"eth0", "eth1", "eth2", "eth3","eth4", "eth5", "eth6", "eth7"}},
-            {
-                "group_list",
-                {
-                    {
-                        {"group_name", ""},
-                        {"device_num", "16"},
-                        {"server_num", "2"},
-                        {"instance_count", "16"},
-                            {
-                                "instance_list",
-                                {
-                                    {   {"rank_id", "0"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.11"}}}
-                                        }
-                                    },
+                   {{"rank_id", "1"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.12"}}}}},
+                   {{"rank_id", "2"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.13"}}}}},
 
-                                    {   {"rank_id", "1"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.12"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "2"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.13"}}}
-                                        }
-                                    },
+                   {{"rank_id", "3"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.14"}}}}},
+                   {{"rank_id", "4"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.15"}}}}},
 
-                                    {   {"rank_id", "3"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.14"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "4"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.15"}}}
-                                        }
-                                    },
+                   {{"rank_id", "5"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.16"}}}}},
+                   {{"rank_id", "6"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.17"}}}}},
 
-                                    {   {"rank_id", "5"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.16"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "6"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.17"}}}
-                                        }
-                                    },
+                   {{"rank_id", "7"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.18"}}}}},
+                   {{"rank_id", "8"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.20"}}}}},
 
-                                    {   {"rank_id", "7"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.18"}}}
-                                        }
-                                    },
-                                     {  {"rank_id", "8"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.20"}}}
-                                        }
-                                    },
+                   {{"rank_id", "9"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.21"}}}}},
+                   {{"rank_id", "10"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.22"}}}}},
 
-                                    {   {"rank_id", "9"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.21"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "10"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.22"}}}
-                                        }
-                                    },
+                   {{"rank_id", "11"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.23"}}}}},
+                   {{"rank_id", "12"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.24"}}}}},
 
-                                    {   {"rank_id", "11"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.23"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "12"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.24"}}}
-                                        }
-                                    },
+                   {{"rank_id", "13"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.25"}}}}},
+                   {{"rank_id", "14"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.26"}}}}},
 
-                                    {   {"rank_id", "13"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.25"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "14"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.26"}}}
-                                        }
-                                    },
+                   {{"rank_id", "15"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}}},
+               }},
+              {"server_list",
+               {
+                   {{"server_id", "10.0.0.10"},
+                    {"para_plane_info",
+                     {
+                         {
+                             {"eth0", "192.168.200.2"},
+                         },
+                         {
+                             {"eth1", "192.168.201.2"},
+                         },
+                         {
+                             {"eth2", "192.168.202.2"},
+                         },
+                         {
+                             {"eth3", "192.168.203.2"},
+                         },
+                         {
+                             {"eth4", "192.168.204.2"},
+                         },
+                         {
+                             {"eth5", "192.168.205.2"},
+                         },
+                         {
+                             {"eth6", "192.168.206.2"},
+                         },
+                         {
+                             {"eth7", "192.168.207.2"},
+                         },
+                     }}
 
-                                    {   {"rank_id", "15"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}
-                                        }
-                                    },
-                                }
-                            },
-                            {
-                                "server_list",
-                                {
-                                    {
-                                        {"server_id", "10.0.0.10"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.200.2"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.201.2"},
-                                                },
-                                                {
-                                                    {"eth2", "192.168.202.2"},
-                                                },
-                                                {
-                                                    {"eth3", "192.168.203.2"},
-                                                },
-                                                {
-                                                    {"eth4", "192.168.204.2"},
-                                                },
-                                                {
-                                                    {"eth5", "192.168.205.2"},
-                                                },
-                                                {
-                                                    {"eth6", "192.168.206.2"},
-                                                },
-                                                {
-                                                    {"eth7", "192.168.207.2"},
-                                                },
-                                            }
-                                        }
+                   },
+                   {{"server_id", "10.0.0.11"},
+                    {"para_plane_info",
+                     {
+                         {
+                             {"eth0", "192.168.210.3"},
+                         },
+                         {
+                             {"eth1", "192.168.211.3"},
+                         },
+                         {
+                             {"eth2", "192.168.212.3"},
+                         },
+                         {
+                             {"eth3", "192.168.213.3"},
+                         },
+                         {
+                             {"eth4", "192.168.214.3"},
+                         },
+                         {
+                             {"eth5", "192.168.215.3"},
+                         },
+                         {
+                             {"eth6", "192.168.216.3"},
+                         },
+                         {
+                             {"eth7", "192.168.217.3"},
+                         },
+                     }}
 
-                                    },
-                                    {
-                                        {"server_id", "10.0.0.11"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.210.3"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.211.3"},
-                                                },
-                                                {
-                                                    {"eth2", "192.168.212.3"},
-                                                },
-                                                {
-                                                    {"eth3", "192.168.213.3"},
-                                                },
-                                                {
-                                                    {"eth4", "192.168.214.3"},
-                                                },
-                                                {
-                                                    {"eth5", "192.168.215.3"},
-                                                },
-                                                {
-                                                    {"eth6", "192.168.216.3"},
-                                                },
-                                                {
-                                                    {"eth7", "192.168.217.3"},
-                                                },
-                                            }
-                                        }
+                   },
 
-                                    },
-
-                                }
-                            }
-                    }
-                }
-            }
-        };
+               }}}}}};
 
     char file_name[] = "./ut_hcom_get_hcom_info_deviceIdErr.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -2676,210 +1936,155 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_deviceIdErr)
     EXPECT_EQ(ret, HCCL_SUCCESS);
     set_board_id(0);
     remove(file_name);
-
 }
-
-
 
 TEST_F(HcomTest, ut_hcom_get_hcom_info_eth0Ipv4Err)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"deploy_mode", "lab"},
+           {"group_count", "1"},
+           {"chip_info", "910"},
+           {"board_id", "0x0000"},
+           {"para_plane_nic_location", "device"},
+           {"para_plane_nic_num", "8"},
+           {"para_plane_nic_name", {"eth0", "eth1", "eth2", "eth3", "eth4", "eth5", "eth6", "eth7"}},
+           {"group_list",
+            {{{"group_name", ""},
+              {"device_num", "16"},
+              {"server_num", "2"},
+              {"instance_count", "16"},
+              {"instance_list",
+               {
+                   {{"rank_id", "0"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.xx.11"}}}}},
 
-    nlohmann::json rank_table =
-    {
-            {"status", "completed"},
-            {"deploy_mode", "lab"},
-            {"group_count", "1"},
-            {"chip_info", "910"},
-            {"board_id", "0x0000"},
-            {"para_plane_nic_location", "device"},
-            {"para_plane_nic_num", "8"},
-            {"para_plane_nic_name", {"eth0", "eth1", "eth2", "eth3","eth4", "eth5", "eth6", "eth7"}},
-            {
-                "group_list",
-                {
-                    {
-                        {"group_name", ""},
-                        {"device_num", "16"},
-                        {"server_num", "2"},
-                        {"instance_count", "16"},
-                            {
-                                "instance_list",
-                                {
-                                    {   {"rank_id", "0"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.xx.11"}}}
-                                        }
-                                    },
+                   {{"rank_id", "1"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}}},
+                   {{"rank_id", "2"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.13"}}}}},
 
-                                    {   {"rank_id", "1"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "2"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.13"}}}
-                                        }
-                                    },
+                   {{"rank_id", "3"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.14"}}}}},
+                   {{"rank_id", "4"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.15"}}}}},
 
-                                    {   {"rank_id", "3"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.14"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "4"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.15"}}}
-                                        }
-                                    },
+                   {{"rank_id", "5"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.16"}}}}},
+                   {{"rank_id", "6"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.17"}}}}},
 
-                                    {   {"rank_id", "5"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.16"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "6"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.17"}}}
-                                        }
-                                    },
+                   {{"rank_id", "7"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.18"}}}}},
+                   {{"rank_id", "8"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.20"}}}}},
 
-                                    {   {"rank_id", "7"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.18"}}}
-                                        }
-                                    },
-                                     {  {"rank_id", "8"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.20"}}}
-                                        }
-                                    },
+                   {{"rank_id", "9"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.21"}}}}},
+                   {{"rank_id", "10"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.22"}}}}},
 
-                                    {   {"rank_id", "9"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.21"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "10"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.22"}}}
-                                        }
-                                    },
+                   {{"rank_id", "11"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.23"}}}}},
+                   {{"rank_id", "12"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.24"}}}}},
 
-                                    {   {"rank_id", "11"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.23"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "12"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.24"}}}
-                                        }
-                                    },
+                   {{"rank_id", "13"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.25"}}}}},
+                   {{"rank_id", "14"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.26"}}}}},
 
-                                    {   {"rank_id", "13"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.25"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "14"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.26"}}}
-                                        }
-                                    },
+                   {{"rank_id", "15"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}}},
+               }},
+              {"server_list",
+               {
+                   {{"server_id", "10.0.0.10"},
+                    {"para_plane_info",
+                     {
+                         {
+                             {"eth0", "192.168.2xx.2"},
+                         },
+                         {
+                             {"eth1", "192.168.201.2"},
+                         },
+                         {
+                             {"eth2", "192.168.202.2"},
+                         },
+                         {
+                             {"eth3", "192.168.203.2"},
+                         },
+                         {
+                             {"eth4", "192.168.204.2"},
+                         },
+                         {
+                             {"eth5", "192.168.205.2"},
+                         },
+                         {
+                             {"eth6", "192.168.206.2"},
+                         },
+                         {
+                             {"eth7", "192.168.207.2"},
+                         },
+                     }}
 
-                                    {   {"rank_id", "15"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}
-                                        }
-                                    },
-                                }
-                            },
-                            {
-                                "server_list",
-                                {
-                                    {
-                                        {"server_id", "10.0.0.10"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.2xx.2"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.201.2"},
-                                                },
-                                                {
-                                                    {"eth2", "192.168.202.2"},
-                                                },
-                                                {
-                                                    {"eth3", "192.168.203.2"},
-                                                },
-                                                {
-                                                    {"eth4", "192.168.204.2"},
-                                                },
-                                                {
-                                                    {"eth5", "192.168.205.2"},
-                                                },
-                                                {
-                                                    {"eth6", "192.168.206.2"},
-                                                },
-                                                {
-                                                    {"eth7", "192.168.207.2"},
-                                                },
-                                            }
-                                        }
+                   },
+                   {{"server_id", "10.0.0.11"},
+                    {"para_plane_info",
+                     {
+                         {
+                             {"eth0", "192.168.210.3"},
+                         },
+                         {
+                             {"eth1", "192.168.211.3"},
+                         },
+                         {
+                             {"eth2", "192.168.212.3"},
+                         },
+                         {
+                             {"eth3", "192.168.213.3"},
+                         },
+                         {
+                             {"eth4", "192.168.214.3"},
+                         },
+                         {
+                             {"eth5", "192.168.215.3"},
+                         },
+                         {
+                             {"eth6", "192.168.216.3"},
+                         },
+                         {
+                             {"eth7", "192.168.217.3"},
+                         },
+                     }}
 
-                                    },
-                                    {
-                                        {"server_id", "10.0.0.11"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.210.3"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.211.3"},
-                                                },
-                                                {
-                                                    {"eth2", "192.168.212.3"},
-                                                },
-                                                {
-                                                    {"eth3", "192.168.213.3"},
-                                                },
-                                                {
-                                                    {"eth4", "192.168.214.3"},
-                                                },
-                                                {
-                                                    {"eth5", "192.168.215.3"},
-                                                },
-                                                {
-                                                    {"eth6", "192.168.216.3"},
-                                                },
-                                                {
-                                                    {"eth7", "192.168.217.3"},
-                                                },
-                                            }
-                                        }
+                   },
 
-                                    },
-
-                                }
-                            }
-                    }
-                }
-            }
-        };
+               }}}}}};
 
     char file_name[] = "./ut_hcom_get_hcom_info_eth0Ipv4Err.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -2906,117 +2111,60 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_eth0Ipv4Err)
     EXPECT_EQ(ret, HCCL_SUCCESS);
     set_board_id(0);
     remove(file_name);
-
 }
 
 #if 1
 TEST_F(HcomTest, ut_hcom_get_hcom_info_groupnameErr)
 {
-    nlohmann::json rank_table =
-    {
-       {"status", "completed"},
+    nlohmann::json rank_table = {
+        {"status", "completed"},
         {"group_count", "2"},
-        {
-            "group_list",
-            {
-                {
-                    {"group_name", "1"},
-                    {"instance_count", "1"},
-                    {"device_count", "8"},
-                    {
-                        "instance_list",
-                        {
-                            {   {"pod_name", "tf-0"},
-                                {"server_id", "10.0.0.10"},
-                                {
-                                    "devices",
-                                    {
-                                        {   {"device_id", "0"},
-                                            {"device_ip", "192.168.0.10"}
-                                        },
-                                        {   {"device_id", "1"},
-                                            {"device_ip", "192.168.0.11"}
-                                        },
-                                        {   {"device_id", "2"},
-                                            {"device_ip", "192.168.0.12"}
-                                        },
-                                        {   {"device_id", "3"},
-                                            {"device_ip", "192.168.0.13"}
-                                        },
-                                         {   {"device_id", "4"},
-                                            {"device_ip", "192.168.0.14"}
-                                        },
-                                        {   {"device_id", "5"},
-                                            {"device_ip", "192.168.0.15"}
-                                        },
-                                        {   {"device_id", "6"},
-                                            {"device_ip", "192.168.0.16"}
-                                        },
-                                        {   {"device_id", "7"},
-                                            {"device_ip", "192.168.0.17"}
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                },
-                {
-                    {"group_name", "1"},
-                    {"instance_count", "1"},
-                    {"device_count", "8"},
-                    {
-                        "instance_list",
-                        {
-                            {   {"pod_name", "tf-1"},
-                                {"server_id", "10.0.0.11"},
-                                {
-                                    "devices",
-                                    {
-                                        {   {"device_id", "0"},
-                                            {"device_ip", "192.168.0.21"}
-                                        },
-                                        {   {"device_id", "1"},
-                                            {"device_ip", "192.168.0.22"}
-                                        },
-                                        {   {"device_id", "2"},
-                                            {"device_ip", "192.168.0.23"}
-                                        },
-                                        {   {"device_id", "3"},
-                                            {"device_ip", "192.168.0.24"}
-                                        },
-                                         {   {"device_id", "4"},
-                                            {"device_ip", "192.168.0.20"}
-                                        },
-                                        {   {"device_id", "5"},
-                                            {"device_ip", "192.168.0.25"}
-                                        },
-                                        {   {"device_id", "6"},
-                                            {"device_ip", "192.168.0.26"}
-                                        },
-                                        {   {"device_id", "7"},
-                                            {"device_ip", "192.168.0.27"}
-                                        }
-                                    }
-                                }
-                            },
-                        }
-                    },
-                }
-            }
-        },
+        {"group_list",
+         {{
+              {"group_name", "1"},
+              {"instance_count", "1"},
+              {"device_count", "8"},
+              {"instance_list",
+               {{{"pod_name", "tf-0"},
+                 {"server_id", "10.0.0.10"},
+                 {"devices",
+                  {{{"device_id", "0"}, {"device_ip", "192.168.0.10"}},
+                   {{"device_id", "1"}, {"device_ip", "192.168.0.11"}},
+                   {{"device_id", "2"}, {"device_ip", "192.168.0.12"}},
+                   {{"device_id", "3"}, {"device_ip", "192.168.0.13"}},
+                   {{"device_id", "4"}, {"device_ip", "192.168.0.14"}},
+                   {{"device_id", "5"}, {"device_ip", "192.168.0.15"}},
+                   {{"device_id", "6"}, {"device_ip", "192.168.0.16"}},
+                   {{"device_id", "7"}, {"device_ip", "192.168.0.17"}}}}}}},
+          },
+          {
+              {"group_name", "1"},
+              {"instance_count", "1"},
+              {"device_count", "8"},
+              {"instance_list",
+               {
+                   {{"pod_name", "tf-1"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices",
+                     {{{"device_id", "0"}, {"device_ip", "192.168.0.21"}},
+                      {{"device_id", "1"}, {"device_ip", "192.168.0.22"}},
+                      {{"device_id", "2"}, {"device_ip", "192.168.0.23"}},
+                      {{"device_id", "3"}, {"device_ip", "192.168.0.24"}},
+                      {{"device_id", "4"}, {"device_ip", "192.168.0.20"}},
+                      {{"device_id", "5"}, {"device_ip", "192.168.0.25"}},
+                      {{"device_id", "6"}, {"device_ip", "192.168.0.26"}},
+                      {{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}}},
+               }},
+          }}},
     };
 
     char file_name[] = "./ut_hcom_get_hcom_info_groupnameErr.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -3040,109 +2188,55 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_groupnameErr)
     ret = hrtResetDevice(0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     remove(file_name);
-
 }
 #endif
-
 
 #if 1
 TEST_F(HcomTest, ut_hcom_get_hcom_info_podnameErr)
 {
-    nlohmann::json rank_table =
-    {
-       {"status", "completed"},
+    nlohmann::json rank_table = {
+        {"status", "completed"},
         {"group_count", "1"},
-        {
-            "group_list",
-            {
-                {
-                    {"group_name", ""},
-                    {"instance_count", "2"},
-                    {"device_count", "16"},
-                    {
-                        "instance_list",
-                        {
-                            {   {"pod_name", "tf-0"},
-                                {"server_id", "10.0.0.10"},
-                                {
-                                    "devices",
-                                    {
-                                        {   {"device_id", "0"},
-                                            {"device_ip", "192.168.0.10"}
-                                        },
-                                        {   {"device_id", "1"},
-                                            {"device_ip", "192.168.0.11"}
-                                        },
-                                        {   {"device_id", "2"},
-                                            {"device_ip", "192.168.0.12"}
-                                        },
-                                        {   {"device_id", "3"},
-                                            {"device_ip", "192.168.0.13"}
-                                        },
-                                         {   {"device_id", "4"},
-                                            {"device_ip", "192.168.0.14"}
-                                        },
-                                        {   {"device_id", "5"},
-                                            {"device_ip", "192.168.0.15"}
-                                        },
-                                        {   {"device_id", "6"},
-                                            {"device_ip", "192.168.0.16"}
-                                        },
-                                        {   {"device_id", "7"},
-                                            {"device_ip", "192.168.0.17"}
-                                        }
-                                    }
-                                }
-                            },
-                            {   {"pod_name", "tf-0"},
-                                {"server_id", "10.0.0.11"},
-                                {
-                                    "devices",
-                                    {
-                                        {   {"device_id", "0"},
-                                            {"device_ip", "192.168.0.21"}
-                                        },
-                                        {   {"device_id", "1"},
-                                            {"device_ip", "192.168.0.22"}
-                                        },
-                                        {   {"device_id", "2"},
-                                            {"device_ip", "192.168.0.23"}
-                                        },
-                                        {   {"device_id", "3"},
-                                            {"device_ip", "192.168.0.24"}
-                                        },
-                                         {   {"device_id", "4"},
-                                            {"device_ip", "192.168.0.20"}
-                                        },
-                                        {   {"device_id", "5"},
-                                            {"device_ip", "192.168.0.25"}
-                                        },
-                                        {   {"device_id", "6"},
-                                            {"device_ip", "192.168.0.26"}
-                                        },
-                                        {   {"device_id", "7"},
-                                            {"device_ip", "192.168.0.27"}
-                                        }
-                                    }
-                                }
-                            },
-                        }
-                    },
-                }
-            }
-        },
+        {"group_list",
+         {{
+             {"group_name", ""},
+             {"instance_count", "2"},
+             {"device_count", "16"},
+             {"instance_list",
+              {
+                  {{"pod_name", "tf-0"},
+                   {"server_id", "10.0.0.10"},
+                   {"devices",
+                    {{{"device_id", "0"}, {"device_ip", "192.168.0.10"}},
+                     {{"device_id", "1"}, {"device_ip", "192.168.0.11"}},
+                     {{"device_id", "2"}, {"device_ip", "192.168.0.12"}},
+                     {{"device_id", "3"}, {"device_ip", "192.168.0.13"}},
+                     {{"device_id", "4"}, {"device_ip", "192.168.0.14"}},
+                     {{"device_id", "5"}, {"device_ip", "192.168.0.15"}},
+                     {{"device_id", "6"}, {"device_ip", "192.168.0.16"}},
+                     {{"device_id", "7"}, {"device_ip", "192.168.0.17"}}}}},
+                  {{"pod_name", "tf-0"},
+                   {"server_id", "10.0.0.11"},
+                   {"devices",
+                    {{{"device_id", "0"}, {"device_ip", "192.168.0.21"}},
+                     {{"device_id", "1"}, {"device_ip", "192.168.0.22"}},
+                     {{"device_id", "2"}, {"device_ip", "192.168.0.23"}},
+                     {{"device_id", "3"}, {"device_ip", "192.168.0.24"}},
+                     {{"device_id", "4"}, {"device_ip", "192.168.0.20"}},
+                     {{"device_id", "5"}, {"device_ip", "192.168.0.25"}},
+                     {{"device_id", "6"}, {"device_ip", "192.168.0.26"}},
+                     {{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}}},
+              }},
+         }}},
     };
 
     char file_name[] = "./ut_hcom_get_hcom_info_podnameErr.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -3165,29 +2259,21 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_podnameErr)
     ret = hrtResetDevice(0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     remove(file_name);
-
 }
 
 #endif
 
-
 TEST_F(HcomTest, ut_hcom_get_hcom_info_boardType400)
 {
-
-
     nlohmann::json rank_table = rank_table_910_2server_8rank;
-
 
     char file_name[] = "./ut_hcom_get_hcom_info_boardType400.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -3212,26 +2298,19 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_boardType400)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     remove(file_name);
-
 }
 
 TEST_F(HcomTest, ut_hcom_get_hcom_info_boardType500)
 {
-
-
     nlohmann::json rank_table = rank_table_910_2server_8rank;
-
 
     char file_name[] = "./ut_hcom_get_hcom_info_boardType500.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -3256,10 +2335,7 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_boardType500)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     remove(file_name);
-
 }
-
-
 
 TEST_F(HcomTest, ut_hcom_get_hcom_info_boardType500_put)
 {
@@ -3268,19 +2344,16 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_boardType500_put)
     char file_name[] = "./ut_hcom_get_hcom_info_boardType500_put.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
     outfile.close();
 
-    HcomInfo  hcom;
+    HcomInfo hcom;
 
     std::string identify = "0";
     s32 ret = HCCL_SUCCESS;
@@ -3345,204 +2418,151 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_boardType500_put)
 
 TEST_F(HcomTest, ut_hcom_get_hcom_info_boardType_arm880)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"deploy_mode", "lab"},
+           {"group_count", "1"},
+           {"chip_info", "910"},
+           {"board_id", "0x002F"},
+           {"para_plane_nic_location", "device"},
+           {"para_plane_nic_num", "8"},
+           {"para_plane_nic_name", {"eth0", "eth1", "eth2", "eth3", "eth4", "eth5", "eth6", "eth7"}},
+           {"group_list",
+            {{{"group_name", ""},
+              {"device_num", "16"},
+              {"server_num", "2"},
+              {"instance_count", "16"},
+              {"instance_list",
+               {
+                   {{"rank_id", "0"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.11"}}}}},
 
-    nlohmann::json rank_table =
-        {
-            {"status", "completed"},
-            {"deploy_mode", "lab"},
-            {"group_count", "1"},
-            {"chip_info", "910"},
-            {"board_id", "0x002F"},
-            {"para_plane_nic_location", "device"},
-            {"para_plane_nic_num", "8"},
-            {"para_plane_nic_name", {"eth0", "eth1", "eth2", "eth3","eth4", "eth5", "eth6", "eth7"}},
-            {
-                "group_list",
-                {
-                    {
-                        {"group_name", ""},
-                        {"device_num", "16"},
-                        {"server_num", "2"},
-                        {"instance_count", "16"},
-                            {
-                                "instance_list",
-                                {
-                                    {   {"rank_id", "0"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.11"}}}
-                                        }
-                                    },
+                   {{"rank_id", "1"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}}},
+                   {{"rank_id", "2"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.13"}}}}},
 
-                                    {   {"rank_id", "1"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "2"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.13"}}}
-                                        }
-                                    },
+                   {{"rank_id", "3"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.14"}}}}},
+                   {{"rank_id", "4"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.15"}}}}},
 
-                                    {   {"rank_id", "3"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.14"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "4"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.15"}}}
-                                        }
-                                    },
+                   {{"rank_id", "5"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.16"}}}}},
+                   {{"rank_id", "6"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.17"}}}}},
 
-                                    {   {"rank_id", "5"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.16"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "6"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.17"}}}
-                                        }
-                                    },
+                   {{"rank_id", "7"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.18"}}}}},
+                   {{"rank_id", "8"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.20"}}}}},
 
-                                    {   {"rank_id", "7"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.18"}}}
-                                        }
-                                    },
-                                     {  {"rank_id", "8"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.20"}}}
-                                        }
-                                    },
+                   {{"rank_id", "9"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.21"}}}}},
+                   {{"rank_id", "10"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.22"}}}}},
 
-                                    {   {"rank_id", "9"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.21"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "10"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.22"}}}
-                                        }
-                                    },
+                   {{"rank_id", "11"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.23"}}}}},
+                   {{"rank_id", "12"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.24"}}}}},
 
-                                    {   {"rank_id", "11"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.23"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "12"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.24"}}}
-                                        }
-                                    },
+                   {{"rank_id", "13"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.25"}}}}},
+                   {{"rank_id", "14"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.26"}}}}},
 
-                                    {   {"rank_id", "13"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.25"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "14"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.26"}}}
-                                        }
-                                    },
+                   {{"rank_id", "15"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}}},
+               }},
+              {"server_list",
+               {
+                   {{"server_id", "10.0.0.10"},
+                    {"para_plane_info",
+                     {
+                         {
+                             {"eth0", "192.168.200.2"},
+                         },
+                         {
+                             {"eth1", "192.168.201.2"},
+                         },
+                         {
+                             {"eth2", "192.168.202.2"},
+                         },
+                         {
+                             {"eth3", "192.168.203.2"},
+                         },
+                         {
+                             {"eth4", "192.168.204.2"},
+                         },
+                         {
+                             {"eth5", "192.168.205.2"},
+                         },
+                         {
+                             {"eth6", "192.168.206.2"},
+                         },
+                         {
+                             {"eth7", "192.168.207.2"},
+                         },
+                     }}
 
-                                    {   {"rank_id", "15"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}
-                                        }
-                                    },
-                                }
-                            },
-                            {
-                                "server_list",
-                                {
-                                    {
-                                        {"server_id", "10.0.0.10"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.200.2"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.201.2"},
-                                                },
-                                                {
-                                                    {"eth2", "192.168.202.2"},
-                                                },
-                                                {
-                                                    {"eth3", "192.168.203.2"},
-                                                },
-                                                {
-                                                    {"eth4", "192.168.204.2"},
-                                                },
-                                                {
-                                                    {"eth5", "192.168.205.2"},
-                                                },
-                                                {
-                                                    {"eth6", "192.168.206.2"},
-                                                },
-                                                {
-                                                    {"eth7", "192.168.207.2"},
-                                                },
-                                            }
-                                        }
+                   },
+                   {{"server_id", "10.0.0.11"},
+                    {"para_plane_info",
+                     {
+                         {
+                             {"eth0", "192.168.210.3"},
+                         },
+                         {
+                             {"eth1", "192.168.211.3"},
+                         },
+                         {
+                             {"eth2", "192.168.212.3"},
+                         },
+                         {
+                             {"eth3", "192.168.213.3"},
+                         },
+                         {
+                             {"eth4", "192.168.214.3"},
+                         },
+                         {
+                             {"eth5", "192.168.215.3"},
+                         },
+                         {
+                             {"eth6", "192.168.216.3"},
+                         },
+                         {
+                             {"eth7", "192.168.217.3"},
+                         },
+                     }}
 
-                                    },
-                                    {
-                                        {"server_id", "10.0.0.11"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.210.3"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.211.3"},
-                                                },
-                                                {
-                                                    {"eth2", "192.168.212.3"},
-                                                },
-                                                {
-                                                    {"eth3", "192.168.213.3"},
-                                                },
-                                                {
-                                                    {"eth4", "192.168.214.3"},
-                                                },
-                                                {
-                                                    {"eth5", "192.168.215.3"},
-                                                },
-                                                {
-                                                    {"eth6", "192.168.216.3"},
-                                                },
-                                                {
-                                                    {"eth7", "192.168.217.3"},
-                                                },
-                                            }
-                                        }
+                   },
 
-                                    },
-
-                                }
-                            }
-                    }
-                }
-            }
-        };
-
+               }}}}}};
 
     char file_name[] = "./ut_hcom_get_hcom_info_boardType1000.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -3569,208 +2589,155 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_boardType_arm880)
     set_board_id(0);
 
     remove(file_name);
-
 }
 
 TEST_F(HcomTest, ut_hcom_get_hcom_info_boardType_arm880_1)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"deploy_mode", "lab"},
+           {"group_count", "1"},
+           {"chip_info", "910"},
+           {"board_id", "0x002f"},
+           {"para_plane_nic_location", "device"},
+           {"para_plane_nic_num", "8"},
+           {"para_plane_nic_name", {"eth0", "eth1", "eth2", "eth3", "eth4", "eth5", "eth6", "eth7"}},
+           {"group_list",
+            {{{"group_name", ""},
+              {"device_num", "16"},
+              {"server_num", "2"},
+              {"instance_count", "16"},
+              {"instance_list",
+               {
+                   {{"rank_id", "0"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.11"}}}}},
 
-    nlohmann::json rank_table =
-        {
-            {"status", "completed"},
-            {"deploy_mode", "lab"},
-            {"group_count", "1"},
-            {"chip_info", "910"},
-            {"board_id", "0x002f"},
-            {"para_plane_nic_location", "device"},
-            {"para_plane_nic_num", "8"},
-            {"para_plane_nic_name", {"eth0", "eth1", "eth2", "eth3","eth4", "eth5", "eth6", "eth7"}},
-            {
-                "group_list",
-                {
-                    {
-                        {"group_name", ""},
-                        {"device_num", "16"},
-                        {"server_num", "2"},
-                        {"instance_count", "16"},
-                            {
-                                "instance_list",
-                                {
-                                    {   {"rank_id", "0"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.11"}}}
-                                        }
-                                    },
+                   {{"rank_id", "1"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}}},
+                   {{"rank_id", "2"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.13"}}}}},
 
-                                    {   {"rank_id", "1"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "2"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.13"}}}
-                                        }
-                                    },
+                   {{"rank_id", "3"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.14"}}}}},
+                   {{"rank_id", "4"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.15"}}}}},
 
-                                    {   {"rank_id", "3"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.14"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "4"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.15"}}}
-                                        }
-                                    },
+                   {{"rank_id", "5"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.16"}}}}},
+                   {{"rank_id", "6"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.17"}}}}},
 
-                                    {   {"rank_id", "5"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.16"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "6"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.17"}}}
-                                        }
-                                    },
+                   {{"rank_id", "7"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.18"}}}}},
+                   {{"rank_id", "8"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.20"}}}}},
 
-                                    {   {"rank_id", "7"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.18"}}}
-                                        }
-                                    },
-                                     {  {"rank_id", "8"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.20"}}}
-                                        }
-                                    },
+                   {{"rank_id", "9"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.21"}}}}},
+                   {{"rank_id", "10"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.22"}}}}},
 
-                                    {   {"rank_id", "9"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.21"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "10"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.22"}}}
-                                        }
-                                    },
+                   {{"rank_id", "11"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.23"}}}}},
+                   {{"rank_id", "12"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.24"}}}}},
 
-                                    {   {"rank_id", "11"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.23"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "12"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.24"}}}
-                                        }
-                                    },
+                   {{"rank_id", "13"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.25"}}}}},
+                   {{"rank_id", "14"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.26"}}}}},
 
-                                    {   {"rank_id", "13"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.25"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "14"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.26"}}}
-                                        }
-                                    },
+                   {{"rank_id", "15"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}}},
+               }},
+              {"server_list",
+               {
+                   {{"server_id", "10.0.0.10"},
+                    {"para_plane_info",
+                     {
+                         {
+                             {"eth0", "192.168.200.2"},
+                         },
+                         {
+                             {"eth1", "192.168.201.2"},
+                         },
+                         {
+                             {"eth2", "192.168.202.2"},
+                         },
+                         {
+                             {"eth3", "192.168.203.2"},
+                         },
+                         {
+                             {"eth4", "192.168.204.2"},
+                         },
+                         {
+                             {"eth5", "192.168.205.2"},
+                         },
+                         {
+                             {"eth6", "192.168.206.2"},
+                         },
+                         {
+                             {"eth7", "192.168.207.2"},
+                         },
+                     }}
 
-                                    {   {"rank_id", "15"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}
-                                        }
-                                    },
-                                }
-                            },
-                            {
-                                "server_list",
-                                {
-                                    {
-                                        {"server_id", "10.0.0.10"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.200.2"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.201.2"},
-                                                },
-                                                {
-                                                    {"eth2", "192.168.202.2"},
-                                                },
-                                                {
-                                                    {"eth3", "192.168.203.2"},
-                                                },
-                                                {
-                                                    {"eth4", "192.168.204.2"},
-                                                },
-                                                {
-                                                    {"eth5", "192.168.205.2"},
-                                                },
-                                                {
-                                                    {"eth6", "192.168.206.2"},
-                                                },
-                                                {
-                                                    {"eth7", "192.168.207.2"},
-                                                },
-                                            }
-                                        }
+                   },
+                   {{"server_id", "10.0.0.11"},
+                    {"para_plane_info",
+                     {
+                         {
+                             {"eth0", "192.168.210.3"},
+                         },
+                         {
+                             {"eth1", "192.168.211.3"},
+                         },
+                         {
+                             {"eth2", "192.168.212.3"},
+                         },
+                         {
+                             {"eth3", "192.168.213.3"},
+                         },
+                         {
+                             {"eth4", "192.168.214.3"},
+                         },
+                         {
+                             {"eth5", "192.168.215.3"},
+                         },
+                         {
+                             {"eth6", "192.168.216.3"},
+                         },
+                         {
+                             {"eth7", "192.168.217.3"},
+                         },
+                     }}
 
-                                    },
-                                    {
-                                        {"server_id", "10.0.0.11"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.210.3"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.211.3"},
-                                                },
-                                                {
-                                                    {"eth2", "192.168.212.3"},
-                                                },
-                                                {
-                                                    {"eth3", "192.168.213.3"},
-                                                },
-                                                {
-                                                    {"eth4", "192.168.214.3"},
-                                                },
-                                                {
-                                                    {"eth5", "192.168.215.3"},
-                                                },
-                                                {
-                                                    {"eth6", "192.168.216.3"},
-                                                },
-                                                {
-                                                    {"eth7", "192.168.217.3"},
-                                                },
-                                            }
-                                        }
+                   },
 
-                                    },
-
-                                }
-                            }
-                    }
-                }
-            }
-        };
+               }}}}}};
 
     char file_name[] = "./ut_hcom_get_hcom_info_boardType1000.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -3795,105 +2762,69 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_boardType_arm880_1)
     set_board_id(0);
 
     remove(file_name);
-
 }
 
 TEST_F(HcomTest, ut_hcom_get_hcom_info_device_per_server_err)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"deploy_mode", "lab"},
+           {"group_count", "1"},
+           {"chip_info", "910"},
+           {"board_id", "0x0000"},
+           {"para_plane_nic_location", "device"},
+           {"para_plane_nic_num", "2"},
+           {"para_plane_nic_name", {"eth0", "eth1"}},
+           {"group_list",
+            {{{"group_name", ""},
+              {"device_num", "3"},
+              {"server_num", "2"},
+              {"instance_count", "4"},
+              {"instance_list",
+               {{{"rank_id", "0"},
+                 {"server_id", "10.0.0.10"},
+                 {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}}},
+                {{"rank_id", "1"},
+                 {"server_id", "10.0.0.11"},
+                 {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.11"}}}}},
+                {{"rank_id", "2"},
+                 {"server_id", "10.0.0.11"},
+                 {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.11"}}}}},
+                {{"rank_id", "3"},
+                 {"server_id", "10.0.0.11"},
+                 {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.11"}}}}}}},
+              {"server_list",
+               {
+                   {{"server_id", "192.168.10.2"},
+                    {"para_plane_info",
+                     {{
+                          {"eth1", "192.168.210.2"},
+                      },
+                      {
+                          {"eth0", "192.168.200.2"},
+                      }}}
 
-    nlohmann::json rank_table =
-    {
-        {"status", "completed"},
-        {"deploy_mode", "lab"},
-        {"group_count", "1"},
-        {"chip_info", "910"},
-        {"board_id", "0x0000"},
-        {"para_plane_nic_location", "device"},
-        {"para_plane_nic_num", "2"},
-        {"para_plane_nic_name", {"eth0", "eth1"}},
-        {
-            "group_list",
-            {
-                {
-                    {"group_name", ""},
-                    {"device_num", "3"},
-                    {"server_num", "2"},
-                    {"instance_count", "4"},
-                        {
-                            "instance_list",
-                            {
-                                {   {"rank_id", "0"}, {"server_id", "10.0.0.10"},
-                                    {
-                                        "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}
-                                    }
-                                },
-                                {   {"rank_id", "1"}, {"server_id", "10.0.0.11"},
-                                    {
-                                        "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.11"}}}
-                                    }
-                                },
-                                {   {"rank_id", "2"}, {"server_id", "10.0.0.11"},
-                                    {
-                                        "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.11"}}}
-                                    }
-                                },
-                                {   {"rank_id", "3"}, {"server_id", "10.0.0.11"},
-                                    {
-                                        "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.11"}}}
-                                    }
-                                }
-                            }
-                        },
-                        {
-                            "server_list",
-                            {
-                                {
-                                    {"server_id", "192.168.10.2"},
-                                    {
-                                        "para_plane_info",
-                                        {{
-                                                {"eth1", "192.168.210.2"},
-                                            },
-                                            {
-                                                {"eth0", "192.168.200.2"},
-                                            }
-                                        }
-                                    }
+                   },
+                   {{"server_id", "192.168.10.3"},
+                    {"para_plane_info",
+                     {{
+                          {"eth0", "192.168.200.3"},
+                      },
+                      {
+                          {"eth1", "192.168.210.3"},
+                      }}}
 
-                                },
-                                {
-                                    {"server_id", "192.168.10.3"},
-                                    {
-                                        "para_plane_info",
-                                        {{
-                                                {"eth0", "192.168.200.3"},
-                                            },
-                                            {
-                                                {"eth1", "192.168.210.3"},
-                                            }
-                                        }
-                                    }
+                   },
 
-                                },
-
-                            }
-                        }
-                }
-            }
-        }
-    };
-
+               }}}}}};
 
     char file_name[] = "./ut_hcom_get_hcom_info_device_per_server_err.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -3918,106 +2849,69 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_device_per_server_err)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     remove(file_name);
-
 }
-
 
 TEST_F(HcomTest, ut_hcom_get_hcom_info_deviceNum_check)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"deploy_mode", "lab"},
+           {"group_count", "1"},
+           {"chip_info", "910"},
+           {"board_id", "0x0000"},
+           {"para_plane_nic_location", "device"},
+           {"para_plane_nic_num", "2"},
+           {"para_plane_nic_name", {"eth0", "eth1"}},
+           {"group_list",
+            {{{"group_name", ""},
+              {"device_num", "4"},
+              {"server_num", "2"},
+              {"instance_count", "4"},
+              {"instance_list",
+               {{{"rank_id", "0"},
+                 {"server_id", "10.0.0.10"},
+                 {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.12"}}}}},
+                {{"rank_id", "1"},
+                 {"server_id", "10.0.0.10"},
+                 {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.1.12"}}}}},
+                {{"rank_id", "2"},
+                 {"server_id", "10.0.0.10"},
+                 {"devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.14"}}}}},
+                {{"rank_id", "3"},
+                 {"server_id", "10.0.0.11"},
+                 {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.1.14"}}}}}}},
+              {"server_list",
+               {
+                   {{"server_id", "192.168.10.2"},
+                    {"para_plane_info",
+                     {{
+                          {"eth1", "192.168.210.2"},
+                      },
+                      {
+                          {"eth0", "192.168.200.2"},
+                      }}}
 
-    nlohmann::json rank_table =
-    {
-        {"status", "completed"},
-        {"deploy_mode", "lab"},
-        {"group_count", "1"},
-        {"chip_info", "910"},
-        {"board_id", "0x0000"},
-        {"para_plane_nic_location", "device"},
-        {"para_plane_nic_num", "2"},
-        {"para_plane_nic_name", {"eth0", "eth1"}},
-        {
-            "group_list",
-            {
-                {
-                    {"group_name", ""},
-                    {"device_num", "4"},
-                    {"server_num", "2"},
-                    {"instance_count", "4"},
-                        {
-                            "instance_list",
-                            {
-                                {   {"rank_id", "0"}, {"server_id", "10.0.0.10"},
-                                    {
-                                        "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.12"}}}
-                                    }
-                                },
-                                {   {"rank_id", "1"}, {"server_id", "10.0.0.10"},
-                                    {
-                                        "devices", {{{"device_id", "1"}, {"device_ip", "192.168.1.12"}}}
-                                    }
-                                },
-                                {   {"rank_id", "2"}, {"server_id", "10.0.0.10"},
-                                    {
-                                        "devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.14"}}}
-                                    }
-                                },
-                                {   {"rank_id", "3"}, {"server_id", "10.0.0.11"},
-                                    {
-                                        "devices", {{{"device_id", "0"}, {"device_ip", "192.168.1.14"}}}
-                                    }
-                                }
-                            }
-                        },
-                        {
-                            "server_list",
-                            {
-                                {
-                                    {"server_id", "192.168.10.2"},
-                                    {
-                                        "para_plane_info",
-                                        {{
-                                                {"eth1", "192.168.210.2"},
-                                            },
-                                            {
-                                                {"eth0", "192.168.200.2"},
-                                            }
-                                        }
-                                    }
+                   },
+                   {{"server_id", "192.168.10.3"},
+                    {"para_plane_info",
+                     {{
+                          {"eth0", "192.168.200.3"},
+                      },
+                      {
+                          {"eth1", "192.168.210.3"},
+                      }}}
 
-                                },
-                                {
-                                    {"server_id", "192.168.10.3"},
-                                    {
-                                        "para_plane_info",
-                                        {{
-                                                {"eth0", "192.168.200.3"},
-                                            },
-                                            {
-                                                {"eth1", "192.168.210.3"},
-                                            }
-                                        }
-                                    }
+                   },
 
-                                },
-
-                            }
-                        }
-                }
-            }
-        }
-    };
-
+               }}}}}};
 
     char file_name[] = "./ut_hcom_get_hcom_info_err2.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -4042,25 +2936,19 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_deviceNum_check)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     remove(file_name);
-
 }
 
 TEST_F(HcomTest, ut_hcom_get_hcom_info_deviceid_check)
 {
-
     nlohmann::json rank_table = rank_table_910_2server_8rank;
-
 
     char file_name[] = "./ut_hcom_get_hcom_info_err2.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -4085,105 +2973,69 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_deviceid_check)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     remove(file_name);
-
 }
 
 TEST_F(HcomTest, ut_hcom_get_severId_checkErr)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"deploy_mode", "lab"},
+           {"group_count", "1"},
+           {"chip_info", "910"},
+           {"board_id", "0x0000"},
+           {"para_plane_nic_location", "device"},
+           {"para_plane_nic_num", "2"},
+           {"para_plane_nic_name", {"eth0", "eth1"}},
+           {"group_list",
+            {{{"group_name", ""},
+              {"device_num", "4"},
+              {"server_num", "2"},
+              {"instance_count", "4"},
+              {"instance_list",
+               {{{"rank_id", "0"},
+                 {"server_id_Err", "10.0.0.10"},
+                 {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}}},
+                {{"rank_id", "1"},
+                 {"server_id_Err", "10.0.0.10"},
+                 {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.1.12"}}}}},
+                {{"rank_id", "2"},
+                 {"server_id_Err", "10.0.0.11"},
+                 {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.14"}}}}},
+                {{"rank_id", "3"},
+                 {"server_id_Err", "10.0.0.11"},
+                 {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.1.14"}}}}}}},
+              {"server_list",
+               {
+                   {{"server_id", "192.168.10.2"},
+                    {"para_plane_info",
+                     {{
+                          {"eth1", "192.168.210.2"},
+                      },
+                      {
+                          {"eth0", "192.168.200.2"},
+                      }}}
 
-    nlohmann::json rank_table =
-    {
-        {"status", "completed"},
-        {"deploy_mode", "lab"},
-        {"group_count", "1"},
-        {"chip_info", "910"},
-        {"board_id", "0x0000"},
-        {"para_plane_nic_location", "device"},
-        {"para_plane_nic_num", "2"},
-        {"para_plane_nic_name", {"eth0", "eth1"}},
-        {
-            "group_list",
-            {
-                {
-                    {"group_name", ""},
-                    {"device_num", "4"},
-                    {"server_num", "2"},
-                    {"instance_count", "4"},
-                        {
-                            "instance_list",
-                            {
-                                {   {"rank_id", "0"}, {"server_id_Err", "10.0.0.10"},
-                                    {
-                                        "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}
-                                    }
-                                },
-                                {   {"rank_id", "1"}, {"server_id_Err", "10.0.0.10"},
-                                    {
-                                        "devices", {{{"device_id", "0"}, {"device_ip", "192.168.1.12"}}}
-                                    }
-                                },
-                                {   {"rank_id", "2"}, {"server_id_Err", "10.0.0.11"},
-                                    {
-                                        "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.14"}}}
-                                    }
-                                },
-                                {   {"rank_id", "3"}, {"server_id_Err", "10.0.0.11"},
-                                    {
-                                        "devices", {{{"device_id", "1"}, {"device_ip", "192.168.1.14"}}}
-                                    }
-                                }
-                            }
-                        },
-                        {
-                            "server_list",
-                            {
-                                {
-                                    {"server_id", "192.168.10.2"},
-                                    {
-                                        "para_plane_info",
-                                        {{
-                                                {"eth1", "192.168.210.2"},
-                                            },
-                                            {
-                                                {"eth0", "192.168.200.2"},
-                                            }
-                                        }
-                                    }
+                   },
+                   {{"server_id", "192.168.10.3"},
+                    {"para_plane_info",
+                     {{
+                          {"eth0", "192.168.200.3"},
+                      },
+                      {
+                          {"eth1", "192.168.210.3"},
+                      }}}
 
-                                },
-                                {
-                                    {"server_id", "192.168.10.3"},
-                                    {
-                                        "para_plane_info",
-                                        {{
-                                                {"eth0", "192.168.200.3"},
-                                            },
-                                            {
-                                                {"eth1", "192.168.210.3"},
-                                            }
-                                        }
-                                    }
+                   },
 
-                                },
-
-                            }
-                        }
-                }
-            }
-        }
-    };
-
+               }}}}}};
 
     char file_name[] = "./ut_hcom_get_severId_checkErr.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -4208,104 +3060,69 @@ TEST_F(HcomTest, ut_hcom_get_severId_checkErr)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     remove(file_name);
-
 }
 
 TEST_F(HcomTest, ut_hcom_get_json_property_checkErr)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"deploy_mode", "lab"},
+           {"group_count", "1"},
+           {"chip_info", "910"},
+           {"board_id", "0x0000"},
+           {"para_plane_nic_location", "device"},
+           {"para_plane_nic_num", "2"},
+           {"para_plane_nic_name", {"eth0", "eth1"}},
+           {"group_list",
+            {{{"group_name", ""},
+              {"device_num", "4"},
+              {"server_num", "2"},
+              {"instance_count", "4"},
+              {"instance_list_Err",
+               {{{"rank_id", "0"},
+                 {"server_id", "10.0.0.10"},
+                 {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}}},
+                {{"rank_id", "1"},
+                 {"server_id", "10.0.0.10"},
+                 {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.1.12"}}}}},
+                {{"rank_id", "2"},
+                 {"server_id", "10.0.0.11"},
+                 {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.14"}}}}},
+                {{"rank_id", "3"},
+                 {"server_id", "10.0.0.11"},
+                 {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.1.14"}}}}}}},
+              {"server_list",
+               {
+                   {{"server_id", "192.168.10.2"},
+                    {"para_plane_info",
+                     {{
+                          {"eth1", "192.168.210.2"},
+                      },
+                      {
+                          {"eth0", "192.168.200.2"},
+                      }}}
 
-    nlohmann::json rank_table =
-    {
-        {"status", "completed"},
-        {"deploy_mode", "lab"},
-        {"group_count", "1"},
-        {"chip_info", "910"},
-        {"board_id", "0x0000"},
-        {"para_plane_nic_location", "device"},
-        {"para_plane_nic_num", "2"},
-        {"para_plane_nic_name", {"eth0", "eth1"}},
-        {
-            "group_list",
-            {
-                {
-                    {"group_name", ""},
-                    {"device_num", "4"},
-                    {"server_num", "2"},
-                    {"instance_count", "4"},
-                        {
-                            "instance_list_Err",
-                            {
-                                {   {"rank_id", "0"}, {"server_id", "10.0.0.10"},
-                                    {
-                                        "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}
-                                    }
-                                },
-                                {   {"rank_id", "1"}, {"server_id", "10.0.0.10"},
-                                    {
-                                        "devices", {{{"device_id", "0"}, {"device_ip", "192.168.1.12"}}}
-                                    }
-                                },
-                                {   {"rank_id", "2"}, {"server_id", "10.0.0.11"},
-                                    {
-                                        "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.14"}}}
-                                    }
-                                },
-                                {   {"rank_id", "3"}, {"server_id", "10.0.0.11"},
-                                    {
-                                        "devices", {{{"device_id", "1"}, {"device_ip", "192.168.1.14"}}}
-                                    }
-                                }
-                            }
-                        },
-                        {
-                            "server_list",
-                            {
-                                {
-                                    {"server_id", "192.168.10.2"},
-                                    {
-                                        "para_plane_info",
-                                        {{
-                                                {"eth1", "192.168.210.2"},
-                                            },
-                                            {
-                                                {"eth0", "192.168.200.2"},
-                                            }
-                                        }
-                                    }
+                   },
+                   {{"server_id", "192.168.10.3"},
+                    {"para_plane_info",
+                     {{
+                          {"eth0", "192.168.200.3"},
+                      },
+                      {
+                          {"eth1", "192.168.210.3"},
+                      }}}
 
-                                },
-                                {
-                                    {"server_id", "192.168.10.3"},
-                                    {
-                                        "para_plane_info",
-                                        {{
-                                                {"eth0", "192.168.200.3"},
-                                            },
-                                            {
-                                                {"eth1", "192.168.210.3"},
-                                            }
-                                        }
-                                    }
+                   },
 
-                                },
-
-                            }
-                        }
-                }
-            }
-        }
-    };
+               }}}}}};
 
     char file_name[] = "./ut_hcom_get_json_property_checkErr.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -4330,106 +3147,69 @@ TEST_F(HcomTest, ut_hcom_get_json_property_checkErr)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     remove(file_name);
-
 }
-
-
 
 TEST_F(HcomTest, ut_hcom_get_json_chip_info_checkErr)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"deploy_mode", "lab"},
+           {"group_count", "1"},
+           {"chip_info", "210"},
+           {"board_id", "0x0000"},
+           {"para_plane_nic_location", "device"},
+           {"para_plane_nic_num", "2"},
+           {"para_plane_nic_name", {"eth0", "eth1"}},
+           {"group_list",
+            {{{"group_name", ""},
+              {"device_num", "4"},
+              {"server_num", "2"},
+              {"instance_count", "4"},
+              {"instance_list",
+               {{{"rank_id", "0"},
+                 {"server_id", "10.0.0.10"},
+                 {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}}},
+                {{"rank_id", "1"},
+                 {"server_id", "10.0.0.10"},
+                 {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.1.12"}}}}},
+                {{"rank_id", "2"},
+                 {"server_id", "10.0.0.11"},
+                 {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.14"}}}}},
+                {{"rank_id", "3"},
+                 {"server_id", "10.0.0.11"},
+                 {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.1.14"}}}}}}},
+              {"server_list",
+               {
+                   {{"server_id", "192.168.10.2"},
+                    {"para_plane_info",
+                     {{
+                          {"eth1", "192.168.210.2"},
+                      },
+                      {
+                          {"eth0", "192.168.200.2"},
+                      }}}
 
-    nlohmann::json rank_table =
-    {
-        {"status", "completed"},
-        {"deploy_mode", "lab"},
-        {"group_count", "1"},
-        {"chip_info", "210"},
-        {"board_id", "0x0000"},
-        {"para_plane_nic_location", "device"},
-        {"para_plane_nic_num", "2"},
-        {"para_plane_nic_name", {"eth0", "eth1"}},
-        {
-            "group_list",
-            {
-                {
-                    {"group_name", ""},
-                    {"device_num", "4"},
-                    {"server_num", "2"},
-                    {"instance_count", "4"},
-                        {
-                            "instance_list",
-                            {
-                                {   {"rank_id", "0"}, {"server_id", "10.0.0.10"},
-                                    {
-                                        "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}
-                                    }
-                                },
-                                {   {"rank_id", "1"}, {"server_id", "10.0.0.10"},
-                                    {
-                                        "devices", {{{"device_id", "0"}, {"device_ip", "192.168.1.12"}}}
-                                    }
-                                },
-                                {   {"rank_id", "2"}, {"server_id", "10.0.0.11"},
-                                    {
-                                        "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.14"}}}
-                                    }
-                                },
-                                {   {"rank_id", "3"}, {"server_id", "10.0.0.11"},
-                                    {
-                                        "devices", {{{"device_id", "1"}, {"device_ip", "192.168.1.14"}}}
-                                    }
-                                }
-                            }
-                        },
-                        {
-                            "server_list",
-                            {
-                                {
-                                    {"server_id", "192.168.10.2"},
-                                    {
-                                        "para_plane_info",
-                                        {{
-                                                {"eth1", "192.168.210.2"},
-                                            },
-                                            {
-                                                {"eth0", "192.168.200.2"},
-                                            }
-                                        }
-                                    }
+                   },
+                   {{"server_id", "192.168.10.3"},
+                    {"para_plane_info",
+                     {{
+                          {"eth0", "192.168.200.3"},
+                      },
+                      {
+                          {"eth1", "192.168.210.3"},
+                      }}}
 
-                                },
-                                {
-                                    {"server_id", "192.168.10.3"},
-                                    {
-                                        "para_plane_info",
-                                        {{
-                                                {"eth0", "192.168.200.3"},
-                                            },
-                                            {
-                                                {"eth1", "192.168.210.3"},
-                                            }
-                                        }
-                                    }
+                   },
 
-                                },
-
-                            }
-                        }
-                }
-            }
-        }
-    };
+               }}}}}};
 
     char file_name[] = "./ut_hcom_get_json_property_checkErr.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -4454,21 +3234,20 @@ TEST_F(HcomTest, ut_hcom_get_json_chip_info_checkErr)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     remove(file_name);
-
 }
 
 #if 1
 
 TEST_F(HcomTest, ut_hcom_allreduce)
 {
-
-
     rtModel_t model = (void*)1;
 
     HcclCommunicator impl;
-    MOCKER_CPP_VIRTUAL(impl, &HcclCommunicator::Init,HcclResult(HcclCommunicator::*)(HcclCommParams &params, const RankTable_t &rankTable))
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP_VIRTUAL(
+        impl, &HcclCommunicator::Init,
+        HcclResult (HcclCommunicator::*)(HcclCommParams& params, const RankTable_t& rankTable))
+        .expects(atMost(1))
+        .will(returnValue(0));
     char* rank_table_file = "./ut_hcom.json";
     char* rank_ID = "0";
     HcclResult ret = hrtSetDevice(0);
@@ -4484,10 +3263,10 @@ TEST_F(HcomTest, ut_hcom_allreduce)
     u32* rank_size_t = &rank_size;
     u32 rank_id = 0;
     u32* rank_id_t = &rank_id;
-    ret = HcomGetRankSize(HCCL_WORLD_GROUP,rank_size_t);
-    //printf("rank_size is %d \n",rank_size);
+    ret = HcomGetRankSize(HCCL_WORLD_GROUP, rank_size_t);
+    // printf("rank_size is %d \n",rank_size);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    ret = HcomGetRankId(HCCL_WORLD_GROUP,rank_id_t);
+    ret = HcomGetRankId(HCCL_WORLD_GROUP, rank_id_t);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     s8* sendbuf = (s8*)sal_malloc(10 * sizeof(s8));
@@ -4495,28 +3274,17 @@ TEST_F(HcomTest, ut_hcom_allreduce)
     s8* recv = (s8*)sal_malloc(10 * sizeof(s8));
     sal_memset(recv, 10 * sizeof(s8), 0, 10 * sizeof(s8));
 
+    MOCKER_CPP_VIRTUAL(impl, &HcclCommunicator::AllReduce).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER_CPP_VIRTUAL(impl, &HcclCommunicator::AllReduce)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetRankTableCrc).stubs().will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetRankTableCrc)
-    .stubs()
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetAlgType).stubs().will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&hcclComm::GetAlgType)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hcclComm::GetRankSize).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetRankSize)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetGroupRank).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetGroupRank)
-    .expects(atMost(1))
-    .will(returnValue(0));
-
-    ret = HcomAllReduce("tag", sendbuf, recv, 10, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM,NULL, stream);
+    ret = HcomAllReduce("tag", sendbuf, recv, 10, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, NULL, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
 
@@ -4527,7 +3295,7 @@ TEST_F(HcomTest, ut_hcom_allreduce)
 
     sal_free(sendbuf);
     sal_free(recv);
-    //remove(file_name);
+    // remove(file_name);
 }
 
 #endif
@@ -4546,9 +3314,11 @@ TEST_F(HcomTest, ut_hcom_reducescatterv)
     outfile.close();
 
     HcclCommunicator impl;
-    MOCKER_CPP_VIRTUAL(impl, &HcclCommunicator::Init,HcclResult(HcclCommunicator::*)(HcclCommParams &params, const RankTable_t &rankTable))
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP_VIRTUAL(
+        impl, &HcclCommunicator::Init,
+        HcclResult (HcclCommunicator::*)(HcclCommParams& params, const RankTable_t& rankTable))
+        .expects(atMost(1))
+        .will(returnValue(0));
     char* rank_table_file = "./st_hcom.json";
     char* rank_ID = "0";
     hrtSetDevice(0);
@@ -4562,30 +3332,20 @@ TEST_F(HcomTest, ut_hcom_reducescatterv)
     sal_memset(recvbuf, 10 * sizeof(s8), 0, 10 * sizeof(s8));
 
     rtStream_t stream;
- 
+
     rtError_t rt_ret = aclrtCreateStream(&stream);
     EXPECT_EQ(rt_ret, RT_ERROR_NONE);
- 
-    MOCKER_CPP_VIRTUAL(impl, &HcclCommunicator::ReduceScatterV)
-    .expects(atMost(1))
-    .will(returnValue(0));
- 
-    MOCKER_CPP(&hcclComm::GetRankTableCrc)
-    .stubs()
-    .will(returnValue(0));
- 
-    MOCKER_CPP(&hcclComm::GetAlgType)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
- 
-    MOCKER_CPP(&hcclComm::GetRankSize)
-    .expects(atMost(1))
-    .will(returnValue(0));
- 
-    MOCKER_CPP(&hcclComm::GetGroupRank)
-    .expects(atMost(1))
-    .will(returnValue(0));
- 
+
+    MOCKER_CPP_VIRTUAL(impl, &HcclCommunicator::ReduceScatterV).expects(atMost(1)).will(returnValue(0));
+
+    MOCKER_CPP(&hcclComm::GetRankTableCrc).stubs().will(returnValue(0));
+
+    MOCKER_CPP(&hcclComm::GetAlgType).stubs().will(returnValue(HCCL_SUCCESS));
+
+    MOCKER_CPP(&hcclComm::GetRankSize).expects(atMost(1)).will(returnValue(0));
+
+    MOCKER_CPP(&hcclComm::GetGroupRank).expects(atMost(1)).will(returnValue(0));
+
     // 构造入参
     int32_t rankSize = 2;
     vector<u64> sendCounts(rankSize, 10);
@@ -4593,18 +3353,19 @@ TEST_F(HcomTest, ut_hcom_reducescatterv)
     for (int i = 0; i < rankSize; i++) {
         sdispls[i] = 10 * i;
     }
- 
-    ret = HcomReduceScatterV("tag", sendbuf, sendCounts.data(), sdispls.data(), recvbuf, 10,
-        HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, HCCL_WORLD_GROUP, stream);
+
+    ret = HcomReduceScatterV(
+        "tag", sendbuf, sendCounts.data(), sdispls.data(), recvbuf, 10, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM,
+        HCCL_WORLD_GROUP, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
- 
+
     aclrtSynchronizeStream(stream);
     rt_ret = aclrtDestroyStream(stream);
- 
+
     ret = HcomDestroy();
     EXPECT_EQ(ret, HCCL_SUCCESS);
- 
+
     sal_free(sendbuf);
     sal_free(recvbuf);
 
@@ -4625,9 +3386,11 @@ TEST_F(HcomTest, ut_hcom_reducescatterv_check_int64)
     outfile.close();
 
     HcclCommunicator impl;
-    MOCKER_CPP_VIRTUAL(impl, &HcclCommunicator::Init,HcclResult(HcclCommunicator::*)(HcclCommParams &params, const RankTable_t &rankTable))
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP_VIRTUAL(
+        impl, &HcclCommunicator::Init,
+        HcclResult (HcclCommunicator::*)(HcclCommParams& params, const RankTable_t& rankTable))
+        .expects(atMost(1))
+        .will(returnValue(0));
     char* rank_table_file = "./st_hcom.json";
     char* rank_ID = "0";
     hrtSetDevice(0);
@@ -4641,30 +3404,20 @@ TEST_F(HcomTest, ut_hcom_reducescatterv_check_int64)
     sal_memset(recvbuf, 10 * sizeof(s8), 0, 10 * sizeof(s8));
 
     rtStream_t stream;
- 
+
     rtError_t rt_ret = aclrtCreateStream(&stream);
     EXPECT_EQ(rt_ret, RT_ERROR_NONE);
- 
-    MOCKER_CPP_VIRTUAL(impl, &HcclCommunicator::ReduceScatterV)
-    .expects(atMost(1))
-    .will(returnValue(0));
- 
-    MOCKER_CPP(&hcclComm::GetRankTableCrc)
-    .stubs()
-    .will(returnValue(0));
- 
-    MOCKER_CPP(&hcclComm::GetAlgType)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
- 
-    MOCKER_CPP(&hcclComm::GetRankSize)
-    .expects(atMost(1))
-    .will(returnValue(0));
- 
-    MOCKER_CPP(&hcclComm::GetGroupRank)
-    .expects(atMost(1))
-    .will(returnValue(0));
- 
+
+    MOCKER_CPP_VIRTUAL(impl, &HcclCommunicator::ReduceScatterV).expects(atMost(1)).will(returnValue(0));
+
+    MOCKER_CPP(&hcclComm::GetRankTableCrc).stubs().will(returnValue(0));
+
+    MOCKER_CPP(&hcclComm::GetAlgType).stubs().will(returnValue(HCCL_SUCCESS));
+
+    MOCKER_CPP(&hcclComm::GetRankSize).expects(atMost(1)).will(returnValue(0));
+
+    MOCKER_CPP(&hcclComm::GetGroupRank).expects(atMost(1)).will(returnValue(0));
+
     // 构造入参
     int32_t rankSize = 2;
     vector<u64> sendCounts(rankSize, 10);
@@ -4672,18 +3425,19 @@ TEST_F(HcomTest, ut_hcom_reducescatterv_check_int64)
     for (int i = 0; i < rankSize; i++) {
         sdispls[i] = 10 * i;
     }
- 
-    ret = HcomReduceScatterV("tag", sendbuf, sendCounts.data(), sdispls.data(), recvbuf, 10,
-        HCCL_DATA_TYPE_INT64, HCCL_REDUCE_SUM, HCCL_WORLD_GROUP, stream);
+
+    ret = HcomReduceScatterV(
+        "tag", sendbuf, sendCounts.data(), sdispls.data(), recvbuf, 10, HCCL_DATA_TYPE_INT64, HCCL_REDUCE_SUM,
+        HCCL_WORLD_GROUP, stream);
     EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
     GlobalMockObject::verify();
- 
+
     aclrtSynchronizeStream(stream);
     rt_ret = aclrtDestroyStream(stream);
- 
+
     ret = HcomDestroy();
     EXPECT_EQ(ret, HCCL_SUCCESS);
- 
+
     sal_free(sendbuf);
     sal_free(recvbuf);
 
@@ -4695,9 +3449,11 @@ TEST_F(HcomTest, ut_hcom_send_receive_same_server)
     rtModel_t model = (void*)1;
 
     HcclCommunicator impl;
-    MOCKER_CPP_VIRTUAL(impl, &HcclCommunicator::Init,HcclResult(HcclCommunicator::*)(HcclCommParams &params, const RankTable_t &rankTable))
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP_VIRTUAL(
+        impl, &HcclCommunicator::Init,
+        HcclResult (HcclCommunicator::*)(HcclCommParams& params, const RankTable_t& rankTable))
+        .expects(atMost(1))
+        .will(returnValue(0));
     char* rank_table_file = "./ut_hcom.json";
     char* rank_ID = "0";
     HcclResult ret = hrtSetDevice(0);
@@ -4713,10 +3469,10 @@ TEST_F(HcomTest, ut_hcom_send_receive_same_server)
     u32* rank_size_t = &rank_size;
     u32 rank_id = 0;
     u32* rank_id_t = &rank_id;
-    ret = HcomGetRankSize(HCCL_WORLD_GROUP,rank_size_t);
-    //printf("rank_size is %d \n",rank_size);
+    ret = HcomGetRankSize(HCCL_WORLD_GROUP, rank_size_t);
+    // printf("rank_size is %d \n",rank_size);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    ret = HcomGetRankId(HCCL_WORLD_GROUP,rank_id_t);
+    ret = HcomGetRankId(HCCL_WORLD_GROUP, rank_id_t);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     s8* sendbuf = (s8*)sal_malloc(10 * sizeof(s8));
@@ -4724,31 +3480,21 @@ TEST_F(HcomTest, ut_hcom_send_receive_same_server)
     s8* recv = (s8*)sal_malloc(10 * sizeof(s8));
     sal_memset(recv, 10 * sizeof(s8), 0, 10 * sizeof(s8));
 
-    MOCKER_CPP(&hcclComm::GetRankTableCrc)
-    .stubs()
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetRankTableCrc).stubs().will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetAlgType)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hcclComm::GetAlgType).stubs().will(returnValue(HCCL_SUCCESS));
 
     aclrtSetDevice(0);
-    MOCKER_CPP_VIRTUAL(impl, &HcclCommunicator::Send)
-    .expects(atMost(1))
-    .will(returnValue(0));
-    ret = HcomSend("tag", sendbuf, 10, HCCL_DATA_TYPE_INT8, 1,0,NULL, stream);
+    MOCKER_CPP_VIRTUAL(impl, &HcclCommunicator::Send).expects(atMost(1)).will(returnValue(0));
+    ret = HcomSend("tag", sendbuf, 10, HCCL_DATA_TYPE_INT8, 1, 0, NULL, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
 
-    MOCKER_CPP(&hcclComm::GetAlgType)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hcclComm::GetAlgType).stubs().will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP_VIRTUAL(impl, &HcclCommunicator::Receive)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP_VIRTUAL(impl, &HcclCommunicator::Receive).expects(atMost(1)).will(returnValue(0));
     aclrtSetDevice(0);
-    ret = HcomReceive("tag", recv, 10, HCCL_DATA_TYPE_INT8, 1,0,NULL, stream);
+    ret = HcomReceive("tag", recv, 10, HCCL_DATA_TYPE_INT8, 1, 0, NULL, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
 
@@ -4760,20 +3506,19 @@ TEST_F(HcomTest, ut_hcom_send_receive_same_server)
     EXPECT_EQ(ret, HCCL_SUCCESS);
     sal_free(sendbuf);
     sal_free(recv);
-    //remove(file_name);
+    // remove(file_name);
 }
-
 
 TEST_F(HcomTest, ut_hcom_send_receive)
 {
-
-
     rtModel_t model = (void*)1;
     rtModel_t model2 = (void*)2;
     HcclCommunicator impl;
-    MOCKER_CPP_VIRTUAL(impl, &HcclCommunicator::Init,HcclResult(HcclCommunicator::*)(HcclCommParams &params, const RankTable_t &rankTable))
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP_VIRTUAL(
+        impl, &HcclCommunicator::Init,
+        HcclResult (HcclCommunicator::*)(HcclCommParams& params, const RankTable_t& rankTable))
+        .expects(atMost(1))
+        .will(returnValue(0));
     char* rank_table_file = "./ut_hcom.json";
     char* rank_ID = "0";
     HcclResult ret = hrtSetDevice(0);
@@ -4793,12 +3538,11 @@ TEST_F(HcomTest, ut_hcom_send_receive)
     u32* rank_size_t = &rank_size;
     u32 rank_id = 0;
     u32* rank_id_t = &rank_id;
-    ret = HcomGetRankSize(HCCL_WORLD_GROUP,rank_size_t);
-    //printf("rank_size is %d \n",rank_size);
+    ret = HcomGetRankSize(HCCL_WORLD_GROUP, rank_size_t);
+    // printf("rank_size is %d \n",rank_size);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    ret = HcomGetRankId(HCCL_WORLD_GROUP,rank_id_t);
+    ret = HcomGetRankId(HCCL_WORLD_GROUP, rank_id_t);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-
 
     s8* sendbuf = (s8*)sal_malloc(10 * sizeof(s8));
     sal_memset(sendbuf, 10 * sizeof(s8), 0, 10 * sizeof(s8));
@@ -4807,29 +3551,19 @@ TEST_F(HcomTest, ut_hcom_send_receive)
 
     EXPECT_EQ(rt_ret, RT_ERROR_NONE);
 
-    MOCKER_CPP(&hcclComm::GetRankTableCrc)
-    .stubs()
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetRankTableCrc).stubs().will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetAlgType)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hcclComm::GetAlgType).stubs().will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&hcclComm::send)
-    .stubs()
-    .will(returnValue(0));
-    ret = HcomSend("tag", sendbuf, 10, HCCL_DATA_TYPE_INT8, 8,0,NULL, stream);
+    MOCKER_CPP(&hcclComm::send).stubs().will(returnValue(0));
+    ret = HcomSend("tag", sendbuf, 10, HCCL_DATA_TYPE_INT8, 8, 0, NULL, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
 
-    MOCKER_CPP(&hcclComm::GetAlgType)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hcclComm::GetAlgType).stubs().will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&hcclComm::receive)
-    .stubs()
-    .will(returnValue(0));
-    ret = HcomReceive("tag", recv, 10, HCCL_DATA_TYPE_INT8, 8,0,NULL, stream);
+    MOCKER_CPP(&hcclComm::receive).stubs().will(returnValue(0));
+    ret = HcomReceive("tag", recv, 10, HCCL_DATA_TYPE_INT8, 8, 0, NULL, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
 
@@ -4844,17 +3578,18 @@ TEST_F(HcomTest, ut_hcom_send_receive)
     sal_free(sendbuf);
     sal_free(recv);
 
-    //remove(file_name);
+    // remove(file_name);
 }
 TEST_F(HcomTest, ut_610_hcom_send_receive)
 {
-
     rtModel_t model = (void*)1;
     rtModel_t model2 = (void*)2;
     HcclCommunicator impl;
-    MOCKER_CPP_VIRTUAL(impl, &HcclCommunicator::Init,HcclResult(HcclCommunicator::*)(HcclCommParams &params, const RankTable_t &rankTable))
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP_VIRTUAL(
+        impl, &HcclCommunicator::Init,
+        HcclResult (HcclCommunicator::*)(HcclCommParams& params, const RankTable_t& rankTable))
+        .expects(atMost(1))
+        .will(returnValue(0));
     char* rank_table_file = "./ut_hcom_v610.json";
     char* rank_ID = "0";
     HcclResult ret = hrtSetDevice(0);
@@ -4875,10 +3610,10 @@ TEST_F(HcomTest, ut_610_hcom_send_receive)
     u32* rank_size_t = &rank_size;
     u32 rank_id = 0;
     u32* rank_id_t = &rank_id;
-    ret = HcomGetRankSize(HCCL_WORLD_GROUP,rank_size_t);
-    //printf("rank_size is %d \n",rank_size);
+    ret = HcomGetRankSize(HCCL_WORLD_GROUP, rank_size_t);
+    // printf("rank_size is %d \n",rank_size);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    ret = HcomGetRankId(HCCL_WORLD_GROUP,rank_id_t);
+    ret = HcomGetRankId(HCCL_WORLD_GROUP, rank_id_t);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     s8* sendbuf = (s8*)sal_malloc(10 * sizeof(s8));
@@ -4888,30 +3623,20 @@ TEST_F(HcomTest, ut_610_hcom_send_receive)
 
     EXPECT_EQ(rt_ret, RT_ERROR_NONE);
 
-    MOCKER_CPP(&hcclComm::GetRankTableCrc)
-    .stubs()
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetRankTableCrc).stubs().will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetAlgType)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hcclComm::GetAlgType).stubs().will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&hcclComm::send)
-    .stubs()
-    .will(returnValue(0));
-    ret = HcomSend("tag", sendbuf, 10, HCCL_DATA_TYPE_INT8, 1,0,NULL, stream);
+    MOCKER_CPP(&hcclComm::send).stubs().will(returnValue(0));
+    ret = HcomSend("tag", sendbuf, 10, HCCL_DATA_TYPE_INT8, 1, 0, NULL, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
 
-    MOCKER_CPP(&hcclComm::GetAlgType)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hcclComm::GetAlgType).stubs().will(returnValue(HCCL_SUCCESS));
 
     ret = hrtSetDevice(0);
-    MOCKER_CPP(&hcclComm::receive)
-    .stubs()
-    .will(returnValue(0));
-    ret = HcomReceive("tag", recv, 10, HCCL_DATA_TYPE_INT8, 1,0,NULL, stream);
+    MOCKER_CPP(&hcclComm::receive).stubs().will(returnValue(0));
+    ret = HcomReceive("tag", recv, 10, HCCL_DATA_TYPE_INT8, 1, 0, NULL, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
 
@@ -4926,9 +3651,8 @@ TEST_F(HcomTest, ut_610_hcom_send_receive)
     sal_free(sendbuf);
     sal_free(recv);
 
-    //remove(file_name);
+    // remove(file_name);
 }
-
 
 TEST_F(HcomTest, ut_hcom_rankid_valid_check)
 {
@@ -4936,9 +3660,7 @@ TEST_F(HcomTest, ut_hcom_rankid_valid_check)
 
     hrtSetDevice(18);
 
-    MOCKER(HcomCheckrtMemcpyAddrAsync)
-    .stubs()
-    .will(returnValue(false));
+    MOCKER(HcomCheckrtMemcpyAddrAsync).stubs().will(returnValue(false));
 
     char* rank_table_file = "./ut_hcom.json";
     char* rank_ID = "0";
@@ -4952,9 +3674,11 @@ TEST_F(HcomTest, ut_hcom_rankid_valid_check)
 TEST_F(HcomTest, ut_hcom_allgather)
 {
     HcclCommunicator impl;
-    MOCKER_CPP_VIRTUAL(impl, &HcclCommunicator::Init,HcclResult(HcclCommunicator::*)(HcclCommParams &params, const RankTable_t &rankTable))
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP_VIRTUAL(
+        impl, &HcclCommunicator::Init,
+        HcclResult (HcclCommunicator::*)(HcclCommParams& params, const RankTable_t& rankTable))
+        .expects(atMost(1))
+        .will(returnValue(0));
     char* rank_table_file = "./ut_hcom.json";
     char* rank_ID = "0";
     hrtSetDevice(0);
@@ -4972,48 +3696,39 @@ TEST_F(HcomTest, ut_hcom_allgather)
     rtError_t rt_ret = aclrtCreateStream(&stream);
     EXPECT_EQ(rt_ret, RT_ERROR_NONE);
 
-    MOCKER_CPP_VIRTUAL(impl, &HcclCommunicator::AllGather)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP_VIRTUAL(impl, &HcclCommunicator::AllGather).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetRankTableCrc)
-    .stubs()
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetRankTableCrc).stubs().will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetAlgType)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hcclComm::GetAlgType).stubs().will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&hcclComm::GetRankSize)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetRankSize).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetGroupRank)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetGroupRank).expects(atMost(1)).will(returnValue(0));
 
-    ret = HcomAllGather("tag", sendbuf, recv, 10, HCCL_DATA_TYPE_INT8,NULL, stream);
+    ret = HcomAllGather("tag", sendbuf, recv, 10, HCCL_DATA_TYPE_INT8, NULL, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
 
     aclrtSynchronizeStream(stream);
     rt_ret = aclrtDestroyStream(stream);
 
-
     ret = HcomDestroy();
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     sal_free(sendbuf);
     sal_free(recv);
-    //remove(file_name);
+    // remove(file_name);
 }
 
 TEST_F(HcomTest, ut_hcom_allgatherv)
 {
     HcclCommunicator impl;
-    MOCKER_CPP_VIRTUAL(impl, &HcclCommunicator::Init,HcclResult(HcclCommunicator::*)(HcclCommParams &params, const RankTable_t &rankTable))
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP_VIRTUAL(
+        impl, &HcclCommunicator::Init,
+        HcclResult (HcclCommunicator::*)(HcclCommParams& params, const RankTable_t& rankTable))
+        .expects(atMost(1))
+        .will(returnValue(0));
     char* rank_table_file = "./ut_hcom.json";
     char* rank_ID = "0";
     hrtSetDevice(0);
@@ -5031,25 +3746,15 @@ TEST_F(HcomTest, ut_hcom_allgatherv)
     rtError_t rt_ret = aclrtCreateStream(&stream);
     EXPECT_EQ(rt_ret, RT_ERROR_NONE);
 
-    MOCKER_CPP_VIRTUAL(impl, &HcclCommunicator::AllGatherV)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP_VIRTUAL(impl, &HcclCommunicator::AllGatherV).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetRankTableCrc)
-    .stubs()
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetRankTableCrc).stubs().will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetAlgType)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hcclComm::GetAlgType).stubs().will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&hcclComm::GetRankSize)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetRankSize).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetGroupRank)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetGroupRank).expects(atMost(1)).will(returnValue(0));
 
     // 构造入参
     int32_t rankSize = 2;
@@ -5059,28 +3764,30 @@ TEST_F(HcomTest, ut_hcom_allgatherv)
         rdispls[i] = 10 * i;
     }
 
-    ret = HcomAllGatherV("tag", sendbuf, 10,recv, recvCounts.data(), rdispls.data(), HCCL_DATA_TYPE_INT8,NULL, stream);
+    ret = HcomAllGatherV(
+        "tag", sendbuf, 10, recv, recvCounts.data(), rdispls.data(), HCCL_DATA_TYPE_INT8, NULL, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
 
     aclrtSynchronizeStream(stream);
     rt_ret = aclrtDestroyStream(stream);
 
-
     ret = HcomDestroy();
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     sal_free(sendbuf);
     sal_free(recv);
-    //remove(file_name);
+    // remove(file_name);
 }
 
 TEST_F(HcomTest, ut_hcom_reduce)
 {
     HcclCommunicator impl;
-    MOCKER_CPP_VIRTUAL(impl, &HcclCommunicator::Init, HcclResult(HcclCommunicator::*)(HcclCommParams &params, const RankTable_t &rankTable))
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP_VIRTUAL(
+        impl, &HcclCommunicator::Init,
+        HcclResult (HcclCommunicator::*)(HcclCommParams& params, const RankTable_t& rankTable))
+        .expects(atMost(1))
+        .will(returnValue(0));
     char* rank_table_file = "./ut_hcom.json";
     char* rank_ID = "0";
     HcclResult ret = hrtSetDevice(0);
@@ -5098,19 +3805,13 @@ TEST_F(HcomTest, ut_hcom_reduce)
     rtError_t rt_ret = aclrtCreateStream(&stream);
     EXPECT_EQ(rt_ret, RT_ERROR_NONE);
 
-    MOCKER_CPP(&hcclComm::Reduce)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::Reduce).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetRankTableCrc)
-    .stubs()
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetRankTableCrc).stubs().will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetAlgType)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hcclComm::GetAlgType).stubs().will(returnValue(HCCL_SUCCESS));
 
-    ret = HcomReduce("tag", sendbuf, recv, 10, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, 0,NULL, stream);
+    ret = HcomReduce("tag", sendbuf, recv, 10, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, 0, NULL, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
 
@@ -5124,17 +3825,17 @@ TEST_F(HcomTest, ut_hcom_reduce)
 
     sal_free(sendbuf);
     sal_free(recv);
-    //remove(file_name);
+    // remove(file_name);
 }
-
-
 
 TEST_F(HcomTest, ut_hcom_reducescatter)
 {
     HcclCommunicator impl;
-    MOCKER_CPP_VIRTUAL(impl, &HcclCommunicator::Init,HcclResult(HcclCommunicator::*)(HcclCommParams &params, const RankTable_t &rankTable))
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP_VIRTUAL(
+        impl, &HcclCommunicator::Init,
+        HcclResult (HcclCommunicator::*)(HcclCommParams& params, const RankTable_t& rankTable))
+        .expects(atMost(1))
+        .will(returnValue(0));
     char* rank_table_file = "./ut_hcom.json";
     char* rank_ID = "0";
     HcclResult ret = hrtSetDevice(0);
@@ -5152,27 +3853,17 @@ TEST_F(HcomTest, ut_hcom_reducescatter)
     rtError_t rt_ret = aclrtCreateStream(&stream);
     EXPECT_EQ(rt_ret, RT_ERROR_NONE);
 
-    MOCKER_CPP(&hcclComm::ReduceScatter)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::ReduceScatter).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetRankTableCrc)
-    .stubs()
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetRankTableCrc).stubs().will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetAlgType)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hcclComm::GetAlgType).stubs().will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&hcclComm::GetRankSize)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetRankSize).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetGroupRank)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetGroupRank).expects(atMost(1)).will(returnValue(0));
 
-    ret = HcomReduceScatter("tag", sendbuf, recv, 10, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM,NULL, stream);
+    ret = HcomReduceScatter("tag", sendbuf, recv, 10, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, NULL, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
 
@@ -5180,30 +3871,25 @@ TEST_F(HcomTest, ut_hcom_reducescatter)
 
     rt_ret = aclrtDestroyStream(stream);
 
-
     ret = HcomDestroy();
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     sal_free(sendbuf);
     sal_free(recv);
-    //remove(file_name);
+    // remove(file_name);
 }
 
 TEST_F(HcomTest, ut_hcom_get_hcom_info_boardType2)
 {
     nlohmann::json rank_table = rank_table_910_2server_8rank;
 
-
     char file_name[] = "./ut_hcom_get_hcom_info_boardType2.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -5228,30 +3914,24 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_boardType2)
     ret = hrtResetDevice(0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     remove(file_name);
-
 }
 
 TEST_F(HcomTest, ut_hcom_get_rank_info)
 {
-
     nlohmann::json rank_table = rank_table_910_1server_1rank;
 
     char file_name_t[] = "./ut_hcom_get_rank_info.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(1) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name_t);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name_t);
     }
 
     outfile.close();
     int ret = HCCL_SUCCESS;
-
 
     ret = hrtSetDevice(0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -5290,28 +3970,18 @@ TEST_F(HcomTest, ut_HcclCommGraphAllGather)
     rtError_t rt_ret = aclrtCreateStream(&stream);
     EXPECT_EQ(rt_ret, RT_ERROR_NONE);
 
-    hccl::hcclComm *comm = new hccl::hcclComm(1, 1, "123");
+    hccl::hcclComm* comm = new hccl::hcclComm(1, 1, "123");
     s64 opBaseHcom = (s64)comm;
 
-    MOCKER_CPP(&hcclComm::GetRankTableCrc)
-    .stubs()
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetRankTableCrc).stubs().will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetRankSize)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetRankSize).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetGroupRank)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetGroupRank).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::AllGather)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::AllGather).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetAlgType)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hcclComm::GetAlgType).stubs().will(returnValue(HCCL_SUCCESS));
 
     int ret = HCCL_SUCCESS;
     ret = HcclCommGraphAllGather("tag", sendbuf, recv, 10, HCCL_DATA_TYPE_INT8, 0, stream);
@@ -5342,28 +4012,18 @@ TEST_F(HcomTest, ut_HcclCommGraphAllReduce)
     s8* recv = (s8*)sal_malloc(10 * sizeof(s8));
     sal_memset(recv, 10 * sizeof(s8), 0, 10 * sizeof(s8));
 
-    hccl::hcclComm *comm = new hccl::hcclComm(1, 1, "123");
+    hccl::hcclComm* comm = new hccl::hcclComm(1, 1, "123");
     s64 opBaseHcom = (s64)comm;
 
-    MOCKER_CPP(&hcclComm::GetRankTableCrc)
-    .stubs()
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetRankTableCrc).stubs().will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetRankSize)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetRankSize).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetGroupRank)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetGroupRank).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::AllReduce)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::AllReduce).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetAlgType)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hcclComm::GetAlgType).stubs().will(returnValue(HCCL_SUCCESS));
 
     ret = HcclCommGraphAllReduce("tag", sendbuf, recv, 10, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, 0, stream);
     EXPECT_EQ(ret, HCCL_E_PTR);
@@ -5394,32 +4054,20 @@ TEST_F(HcomTest, ut_HcclCommGraphReduce)
     rtError_t rt_ret = aclrtCreateStream(&stream);
     EXPECT_EQ(rt_ret, RT_ERROR_NONE);
 
-    hccl::hcclComm *comm = new hccl::hcclComm(1, 1, "123");
+    hccl::hcclComm* comm = new hccl::hcclComm(1, 1, "123");
     s64 opBaseHcom = (s64)comm;
 
-    MOCKER_CPP(&hcclComm::Reduce)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::Reduce).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetRankTableCrc)
-    .stubs()
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetRankTableCrc).stubs().will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetRankSize)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetRankSize).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetGroupRank)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetGroupRank).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER(HcomCheckUserRank)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER(HcomCheckUserRank).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetAlgType)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hcclComm::GetAlgType).stubs().will(returnValue(HCCL_SUCCESS));
 
     ret = HcclCommGraphReduce("tag", sendbuf, recv, 10, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, 0, 0, stream);
     EXPECT_EQ(ret, HCCL_E_PTR);
@@ -5450,32 +4098,20 @@ TEST_F(HcomTest, ut_HcclCommGraphBroadcast)
     rtError_t rt_ret = aclrtCreateStream(&stream);
     EXPECT_EQ(rt_ret, RT_ERROR_NONE);
 
-    hccl::hcclComm *comm = new hccl::hcclComm(1, 1, "123");
+    hccl::hcclComm* comm = new hccl::hcclComm(1, 1, "123");
     s64 opBaseHcom = (s64)comm;
 
-    MOCKER_CPP(&hcclComm::Broadcast)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::Broadcast).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetRankTableCrc)
-    .stubs()
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetRankTableCrc).stubs().will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetRankSize)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetRankSize).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetGroupRank)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetGroupRank).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER(HcomCheckUserRank)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER(HcomCheckUserRank).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetAlgType)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hcclComm::GetAlgType).stubs().will(returnValue(HCCL_SUCCESS));
 
     MOCKER_CPP(&hcclComm::GetNumBlocks).stubs().will(returnValue(HCCL_SUCCESS));
 
@@ -5508,44 +4144,32 @@ TEST_F(HcomTest, ut_HcclCommGraphReduceScatter)
     rtError_t rt_ret = aclrtCreateStream(&stream);
     EXPECT_EQ(rt_ret, RT_ERROR_NONE);
 
-    hccl::hcclComm *comm = new hccl::hcclComm(1, 1, "123");
+    hccl::hcclComm* comm = new hccl::hcclComm(1, 1, "123");
     s64 opBaseHcom = (s64)comm;
 
-    MOCKER_CPP(&hcclComm::ReduceScatter)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::ReduceScatter).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER(HcomCheckUserRank)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER(HcomCheckUserRank).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetRankTableCrc)
-    .stubs()
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetRankTableCrc).stubs().will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetAlgType)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hcclComm::GetAlgType).stubs().will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&hcclComm::GetRankSize)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetRankSize).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetGroupRank)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetGroupRank).expects(atMost(1)).will(returnValue(0));
 
     ret = HcclCommGraphReduceScatter("tag", sendbuf, recv, 10, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, 0, stream);
     EXPECT_EQ(ret, HCCL_E_PTR);
 
-    ret = HcclCommGraphReduceScatter("tag", sendbuf, recv, 10, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, opBaseHcom, stream);
+    ret = HcclCommGraphReduceScatter(
+        "tag", sendbuf, recv, 10, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, opBaseHcom, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
 
     aclrtSynchronizeStream(stream);
 
     rt_ret = aclrtDestroyStream(stream);
-
 
     sal_free(sendbuf);
     sal_free(recv);
@@ -5554,7 +4178,6 @@ TEST_F(HcomTest, ut_HcclCommGraphReduceScatter)
 
 TEST_F(HcomTest, ut_HcclCommGraphSendRecv)
 {
-
     HcclResult ret = hrtSetDevice(0);
 
     rtStream_t stream;
@@ -5572,76 +4195,48 @@ TEST_F(HcomTest, ut_HcclCommGraphSendRecv)
 
     EXPECT_EQ(rt_ret, RT_ERROR_NONE);
 
-    hccl::hcclComm *comm = new hccl::hcclComm(1, 1, "123");
+    hccl::hcclComm* comm = new hccl::hcclComm(1, 1, "123");
     s64 opBaseHcom = (s64)comm;
 
-    MOCKER_CPP(&hcclComm::GetRankTableCrc)
-    .stubs()
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetRankTableCrc).stubs().will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetAlgType)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hcclComm::GetAlgType).stubs().will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&hcclComm::send)
-    .stubs()
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::send).stubs().will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetRankSize)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetRankSize).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetUserRank)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetUserRank).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER(HcomCheckUserRank)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER(HcomCheckUserRank).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER(HcclCommGraphGetRankId)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER(HcclCommGraphGetRankId).expects(atMost(1)).will(returnValue(0));
 
-    ret = HcclCommGraphSend("tag", sendbuf, 10, HCCL_DATA_TYPE_INT8, 8,0, 0, stream);
+    ret = HcclCommGraphSend("tag", sendbuf, 10, HCCL_DATA_TYPE_INT8, 8, 0, 0, stream);
     EXPECT_EQ(ret, HCCL_E_PTR);
 
-    ret = HcclCommGraphSend("tag", sendbuf, 10, HCCL_DATA_TYPE_INT8, 8,0, opBaseHcom, stream);
+    ret = HcclCommGraphSend("tag", sendbuf, 10, HCCL_DATA_TYPE_INT8, 8, 0, opBaseHcom, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
 
-    MOCKER_CPP(&hcclComm::receive)
-    .stubs()
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::receive).stubs().will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetRankTableCrc)
-    .stubs()
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetRankTableCrc).stubs().will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetRankSize)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetRankSize).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetUserRank)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetUserRank).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER(HcomCheckUserRank)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER(HcomCheckUserRank).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER(HcclCommGraphGetRankId)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER(HcclCommGraphGetRankId).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetAlgType)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hcclComm::GetAlgType).stubs().will(returnValue(HCCL_SUCCESS));
 
-    ret = HcclCommGraphReceive("tag", recv, 10, HCCL_DATA_TYPE_INT8, 8,0, 0, stream);
+    ret = HcclCommGraphReceive("tag", recv, 10, HCCL_DATA_TYPE_INT8, 8, 0, 0, stream);
     EXPECT_EQ(ret, HCCL_E_PTR);
 
-    ret = HcclCommGraphReceive("tag", recv, 10, HCCL_DATA_TYPE_INT8, 8,0, opBaseHcom, stream);
+    ret = HcclCommGraphReceive("tag", recv, 10, HCCL_DATA_TYPE_INT8, 8, 0, opBaseHcom, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
 
@@ -5657,14 +4252,13 @@ TEST_F(HcomTest, ut_HcclCommGraphSendRecv)
 
 TEST_F(HcomTest, ut_HcclCommGraphGetRankId)
 {
-
     HcclResult ret = hrtSetDevice(0);
 
     rtStream_t stream;
     rtError_t rt_ret = aclrtCreateStream(&stream);
     EXPECT_EQ(rt_ret, RT_ERROR_NONE);
 
-    hccl::hcclComm *comm = new hccl::hcclComm(1, 1, "123");
+    hccl::hcclComm* comm = new hccl::hcclComm(1, 1, "123");
     s64 opBaseHcom = (s64)comm;
 
     ret = HcclCommGraphGetRankId(opBaseHcom, nullptr);
@@ -5678,7 +4272,7 @@ TEST_F(HcomTest, ut_HcclCommGraphGetRankId)
 TEST_F(HcomTest, ut_HcclCommGraphAlltoAllV)
 {
     s32 deviceId = 0;
-    char *identify = "0";
+    char* identify = "0";
     s32 rankSize = 1;
     s32 rank = atoi(identify);
     u64 count = 2;
@@ -5694,7 +4288,7 @@ TEST_F(HcomTest, ut_HcclCommGraphAlltoAllV)
     HostMem hostSendMem = HostMem::alloc(memSize);
     memset_s(hostSendMem.ptr(), memSize, 0, COUNT_PER_RANK * rankSize);
     for (u32 i = 0; i < COUNT_PER_RANK * rankSize; i++) {
-        *((s32 *)hostSendMem.ptr() + i) = rank + 1;
+        *((s32*)hostSendMem.ptr() + i) = rank + 1;
     }
 
     // 构造入参
@@ -5709,39 +4303,31 @@ TEST_F(HcomTest, ut_HcclCommGraphAlltoAllV)
     }
 
     DeviceMem sendMem = DeviceMem::alloc(memSize);
-    ret = hrtMemSyncCopy(sendMem.ptr(), memSize, hostSendMem.ptr(), memSize, HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE);
+    ret = hrtMemSyncCopy(
+        sendMem.ptr(), memSize, hostSendMem.ptr(), memSize, HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     DeviceMem recvMem = DeviceMem::alloc(memSize);
 
     hccl::Stream stream(StreamType::STREAM_TYPE_OFFLINE);
 
-    hccl::hcclComm *comm = new hccl::hcclComm(1, 1, "123");
+    hccl::hcclComm* comm = new hccl::hcclComm(1, 1, "123");
     s64 opBaseHcom = (s64)comm;
 
-    MOCKER_CPP(&hcclComm::AlltoAllV)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::AlltoAllV).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetRankTableCrc)
-    .stubs()
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetRankTableCrc).stubs().will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetRankSize)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetRankSize).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetUserRank)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetUserRank).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetAlgType)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hcclComm::GetAlgType).stubs().will(returnValue(HCCL_SUCCESS));
 
     MOCKER_CPP(&hcclComm::GetNumBlocks).stubs().will(returnValue(HCCL_SUCCESS));
 
-    ret = HcclCommGraphAlltoAllV(sendMem.ptr(), sendCounts.data(), sdispls.data(), HCCL_DATA_TYPE_INT32, recvMem.ptr(),
-        recvCounts.data(), rdispls.data(), HCCL_DATA_TYPE_INT32, opBaseHcom, stream.ptr(), "hcom_alltoallv");
+    ret = HcclCommGraphAlltoAllV(
+        sendMem.ptr(), sendCounts.data(), sdispls.data(), HCCL_DATA_TYPE_INT32, recvMem.ptr(), recvCounts.data(),
+        rdispls.data(), HCCL_DATA_TYPE_INT32, opBaseHcom, stream.ptr(), "hcom_alltoallv");
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     ret = hcclStreamSynchronize(stream.ptr());
@@ -5755,44 +4341,31 @@ TEST_F(HcomTest, ut_HcclCommGraphAlltoAllV)
 #if 1
 TEST_F(HcomTest, ut_hcom_allreduce_cloud)
 {
-    nlohmann::json rank_table =
-    {
+    nlohmann::json rank_table = {
         {"status", "completed"},
         {"chip_info", "910"},
         {"group_count", "1"},
-        {
-            "group_list",
-            {
-                {
-                    {"group_name", ""},
-                    {"instance_count", "1"},
-                    {"device_count", "1"},
-                    {
-                        "instance_list",
-                        {
-                            {   {"pod_name", "tf-bae43"},
-                                {"server_id", "10.0.0.10"},
-                                {
-                                    "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.12"}}}
-                                }
-                            },
-                        }
-                    },
-                }
-            }
-        },
+        {"group_list",
+         {{
+             {"group_name", ""},
+             {"instance_count", "1"},
+             {"device_count", "1"},
+             {"instance_list",
+              {
+                  {{"pod_name", "tf-bae43"},
+                   {"server_id", "10.0.0.10"},
+                   {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.12"}}}}},
+              }},
+         }}},
     };
 
     char file_name_t[] = "./ut_hcom_allreduce_cloud.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(1) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name_t);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name_t);
     }
 
@@ -5804,7 +4377,7 @@ TEST_F(HcomTest, ut_hcom_allreduce_cloud)
     s8* sendbuf;
     s8* recvbuf;
     s32 rank = 0;
-    s32 errors=0;
+    s32 errors = 0;
     s32 count = HCCL_COM_DATA_SIZE;
     ret = hrtSetDevice(0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -5817,31 +4390,26 @@ TEST_F(HcomTest, ut_hcom_allreduce_cloud)
 
     rt_ret = aclrtCreateStream(&stream);
     EXPECT_EQ(rt_ret, RT_ERROR_NONE);
-    sendbuf= (s8*)sal_malloc(count);
-     sal_memset(sendbuf, count, 0, count );
-    recvbuf= (s8*)sal_malloc(count);
-     sal_memset(recvbuf, count, 0, count );
+    sendbuf = (s8*)sal_malloc(count);
+    sal_memset(sendbuf, count, 0, count);
+    recvbuf = (s8*)sal_malloc(count);
+    sal_memset(recvbuf, count, 0, count);
 
-    for (int j = 0; j < count; j++)
-    {
+    for (int j = 0; j < count; j++) {
         sendbuf[j] = 2;
     }
 
-
-    ret = HcomAllReduce("testreduce", sendbuf, recvbuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM,NULL, stream);
+    ret = HcomAllReduce("testreduce", sendbuf, recvbuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, NULL, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     rt_ret = aclrtSynchronizeStream(stream);
     EXPECT_EQ(rt_ret, RT_ERROR_NONE);
 
-    for (int j = 0; j < count; j++)
-    {
-        if (recvbuf[j] != 2)
-        {
-            errors ++;
+    for (int j = 0; j < count; j++) {
+        if (recvbuf[j] != 2) {
+            errors++;
         }
     }
-
 
     rt_ret = aclrtDestroyStream(stream);
 
@@ -5858,203 +4426,151 @@ TEST_F(HcomTest, ut_hcom_allreduce_cloud)
 #if 1
 TEST_F(HcomTest, ut_hcom_creatgroup)
 {
+    nlohmann::json rank_table_group
+        = {{"status", "completed"},
+           {"deploy_mode", "lab"},
+           {"group_count", "1"},
+           {"chip_info", "910"},
+           {"board_id", "0x3011"},
+           {"para_plane_nic_location", "device"},
+           {"para_plane_nic_num", "8"},
+           {"para_plane_nic_name", {"eth0", "eth1", "eth2", "eth3", "eth4", "eth5", "eth6", "eth7"}},
+           {"group_list",
+            {{{"group_name", ""},
+              {"device_num", "16"},
+              {"server_num", "2"},
+              {"instance_count", "16"},
+              {"instance_list",
+               {
+                   {{"rank_id", "0"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.31"}}}}},
 
-    nlohmann::json rank_table_group =
-    {
-            {"status", "completed"},
-            {"deploy_mode", "lab"},
-            {"group_count", "1"},
-            {"chip_info", "910"},
-            {"board_id", "0x3011"},
-            {"para_plane_nic_location", "device"},
-            {"para_plane_nic_num", "8"},
-            {"para_plane_nic_name", {"eth0", "eth1", "eth2", "eth3","eth4", "eth5", "eth6", "eth7"}},
-            {
-                "group_list",
-                {
-                    {
-                        {"group_name", ""},
-                        {"device_num", "16"},
-                        {"server_num", "2"},
-                        {"instance_count", "16"},
-                            {
-                                "instance_list",
-                                {
-                                    {   {"rank_id", "0"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.31"}}}
-                                        }
-                                    },
+                   {{"rank_id", "1"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.32"}}}}},
+                   {{"rank_id", "2"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.33"}}}}},
 
-                                    {   {"rank_id", "1"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.32"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "2"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.33"}}}
-                                        }
-                                    },
+                   {{"rank_id", "3"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.34"}}}}},
+                   {{"rank_id", "4"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.35"}}}}},
 
-                                    {   {"rank_id", "3"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.34"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "4"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.35"}}}
-                                        }
-                                    },
+                   {{"rank_id", "5"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.36"}}}}},
+                   {{"rank_id", "6"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.37"}}}}},
 
-                                    {   {"rank_id", "5"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.36"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "6"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.37"}}}
-                                        }
-                                    },
+                   {{"rank_id", "7"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.38"}}}}},
+                   {{"rank_id", "8"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.40"}}}}},
 
-                                    {   {"rank_id", "7"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.38"}}}
-                                        }
-                                    },
-                                     {  {"rank_id", "8"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.40"}}}
-                                        }
-                                    },
+                   {{"rank_id", "9"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.41"}}}}},
+                   {{"rank_id", "10"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.42"}}}}},
 
-                                    {   {"rank_id", "9"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.41"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "10"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.42"}}}
-                                        }
-                                    },
+                   {{"rank_id", "11"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.43"}}}}},
+                   {{"rank_id", "12"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.44"}}}}},
 
-                                    {   {"rank_id", "11"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.43"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "12"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.44"}}}
-                                        }
-                                    },
+                   {{"rank_id", "13"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.45"}}}}},
+                   {{"rank_id", "14"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.46"}}}}},
 
-                                    {   {"rank_id", "13"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.45"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "14"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.46"}}}
-                                        }
-                                    },
+                   {{"rank_id", "15"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.47"}}}}},
+               }},
+              {"server_list",
+               {
+                   {{"server_id", "10.0.0.10"},
+                    {"para_plane_info",
+                     {
+                         {
+                             {"eth0", "192.168.200.2"},
+                         },
+                         {
+                             {"eth1", "192.168.201.2"},
+                         },
+                         {
+                             {"eth2", "192.168.202.2"},
+                         },
+                         {
+                             {"eth3", "192.168.203.2"},
+                         },
+                         {
+                             {"eth4", "192.168.204.2"},
+                         },
+                         {
+                             {"eth5", "192.168.205.2"},
+                         },
+                         {
+                             {"eth6", "192.168.206.2"},
+                         },
+                         {
+                             {"eth7", "192.168.207.2"},
+                         },
+                     }}
 
-                                    {   {"rank_id", "15"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.47"}}}
-                                        }
-                                    },
-                                }
-                            },
-                            {
-                                "server_list",
-                                {
-                                    {
-                                        {"server_id", "10.0.0.10"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.200.2"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.201.2"},
-                                                },
-                                                {
-                                                    {"eth2", "192.168.202.2"},
-                                                },
-                                                {
-                                                    {"eth3", "192.168.203.2"},
-                                                },
-                                                {
-                                                    {"eth4", "192.168.204.2"},
-                                                },
-                                                {
-                                                    {"eth5", "192.168.205.2"},
-                                                },
-                                                {
-                                                    {"eth6", "192.168.206.2"},
-                                                },
-                                                {
-                                                    {"eth7", "192.168.207.2"},
-                                                },
-                                            }
-                                        }
+                   },
+                   {{"server_id", "10.0.0.11"},
+                    {"para_plane_info",
+                     {
+                         {
+                             {"eth0", "192.168.210.3"},
+                         },
+                         {
+                             {"eth1", "192.168.211.3"},
+                         },
+                         {
+                             {"eth2", "192.168.212.3"},
+                         },
+                         {
+                             {"eth3", "192.168.213.3"},
+                         },
+                         {
+                             {"eth4", "192.168.214.3"},
+                         },
+                         {
+                             {"eth5", "192.168.215.3"},
+                         },
+                         {
+                             {"eth6", "192.168.216.3"},
+                         },
+                         {
+                             {"eth7", "192.168.217.3"},
+                         },
+                     }}
 
-                                    },
-                                    {
-                                        {"server_id", "10.0.0.11"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.210.3"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.211.3"},
-                                                },
-                                                {
-                                                    {"eth2", "192.168.212.3"},
-                                                },
-                                                {
-                                                    {"eth3", "192.168.213.3"},
-                                                },
-                                                {
-                                                    {"eth4", "192.168.214.3"},
-                                                },
-                                                {
-                                                    {"eth5", "192.168.215.3"},
-                                                },
-                                                {
-                                                    {"eth6", "192.168.216.3"},
-                                                },
-                                                {
-                                                    {"eth7", "192.168.217.3"},
-                                                },
-                                            }
-                                        }
+                   },
 
-                                    },
-
-                                }
-                            }
-                    }
-                }
-            }
-        };
+               }}}}}};
 
     char file_name_t[] = "./st_hcom_creatgroup.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(1) << rank_table_group << std::endl;
         HCCL_INFO("open %s success", file_name_t);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name_t);
     }
 
@@ -6067,7 +4583,7 @@ TEST_F(HcomTest, ut_hcom_creatgroup)
     u32 rankNum = 1;
     u32 worldRank;
     u32 groupRank;
-    //std::vector<u32> groupRanks;
+    // std::vector<u32> groupRanks;
     u32 groupRanks[1] = {0};
     int ret = HCCL_SUCCESS;
     rtError_t rt_ret = RT_ERROR_NONE;
@@ -6076,7 +4592,7 @@ TEST_F(HcomTest, ut_hcom_creatgroup)
     s8* sendbuf;
     s8* recvbuf;
     s32 rank = 0;
-    s32 errors=0;
+    s32 errors = 0;
     s32 count = HCCL_COM_DATA_SIZE;
     ret = hrtSetDevice(0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -6093,41 +4609,41 @@ TEST_F(HcomTest, ut_hcom_creatgroup)
 
     rt_ret = aclrtCreateStream(&stream);
     EXPECT_EQ(rt_ret, RT_ERROR_NONE);
-    //groupRanks.push_back(0);
-    //groupRanks.push_back(4);
+    // groupRanks.push_back(0);
+    // groupRanks.push_back(4);
 
     HCCL_INFO("this is hcom_group");
-    ret = HcomCreateGroup(strGroup1, groupRanksNum,(u32*)groupRanks);
+    ret = HcomCreateGroup(strGroup1, groupRanksNum, (u32*)groupRanks);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    ret = HcomCreateGroup(strGroup2, groupRanksNum,(u32*)groupRanks);
+    ret = HcomCreateGroup(strGroup2, groupRanksNum, (u32*)groupRanks);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     ret = HcomGetRankSize(strGroup1, &rankNum);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     ret = HcomGetRankId(strGroup1, &worldRank);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     groupRank = 0;
-    ret = HcomGetWorldRankFromGroupRank(strGroup1, groupRank ,&worldRank);
-    HCCL_INFO("groupRank:%d worldRank:%d",groupRank,worldRank);
+    ret = HcomGetWorldRankFromGroupRank(strGroup1, groupRank, &worldRank);
+    HCCL_INFO("groupRank:%d worldRank:%d", groupRank, worldRank);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     worldRank = 0;
-    ret = HcomGetGroupRankFromWorldRank(worldRank,strGroup1, &groupRank);
-    HCCL_INFO("worldRank:%d groupRank:%d",worldRank,groupRank);
+    ret = HcomGetGroupRankFromWorldRank(worldRank, strGroup1, &groupRank);
+    HCCL_INFO("worldRank:%d groupRank:%d", worldRank, groupRank);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     ret = HcomGetRankSize(HCCL_WORLD_GROUP, &rankNum);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     ret = HcomGetRankId(HCCL_WORLD_GROUP, &worldRank);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     groupRank = 0;
-    ret = HcomGetWorldRankFromGroupRank(HCCL_WORLD_GROUP, groupRank ,&worldRank);
-    HCCL_INFO("groupRank:%d worldRank:%d",groupRank,worldRank);
+    ret = HcomGetWorldRankFromGroupRank(HCCL_WORLD_GROUP, groupRank, &worldRank);
+    HCCL_INFO("groupRank:%d worldRank:%d", groupRank, worldRank);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     worldRank = 0;
-    ret = HcomGetGroupRankFromWorldRank(worldRank,HCCL_WORLD_GROUP, &groupRank);
-    HCCL_INFO("worldRank:%d groupRank:%d",worldRank,groupRank);
+    ret = HcomGetGroupRankFromWorldRank(worldRank, HCCL_WORLD_GROUP, &groupRank);
+    HCCL_INFO("worldRank:%d groupRank:%d", worldRank, groupRank);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    ret = HcomCreateGroup(strGroup1, groupRanksNum,(u32*)groupRanks);
+    ret = HcomCreateGroup(strGroup1, groupRanksNum, (u32*)groupRanks);
     EXPECT_EQ(ret, HCCL_E_PARA);
 
     ret = HcomDestroyGroup(strGroupErr);
@@ -6136,13 +4652,12 @@ TEST_F(HcomTest, ut_hcom_creatgroup)
     ret = HcomGetRankSize(strGroupErr, &rankNum);
     EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
 
-    sendbuf= (s8*)sal_malloc(count);
-     sal_memset(sendbuf, count , 0, count );
-    recvbuf= (s8*)sal_malloc(count);
-     sal_memset(recvbuf, count , 0, count );
+    sendbuf = (s8*)sal_malloc(count);
+    sal_memset(sendbuf, count, 0, count);
+    recvbuf = (s8*)sal_malloc(count);
+    sal_memset(recvbuf, count, 0, count);
 
-    for (int j = 0; j < count; j++)
-    {
+    for (int j = 0; j < count; j++) {
         sendbuf[j] = 2;
     }
 
@@ -6156,15 +4671,14 @@ TEST_F(HcomTest, ut_hcom_creatgroup)
 
     HCCL_INFO("hcom_reduce5");
 
-    for (int j = 0; j < count; j++)
-    {
-        if (recvbuf[j] != 2)
-        {
-            errors ++;
+    for (int j = 0; j < count; j++) {
+        if (recvbuf[j] != 2) {
+            errors++;
         }
     }
 
-    ret = HcomReduce("testreduce1", sendbuf, recvbuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, 0, strGroupErr, stream);
+    ret = HcomReduce(
+        "testreduce1", sendbuf, recvbuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, 0, strGroupErr, stream);
     EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
     HCCL_INFO("hcom_reduce0");
 
@@ -6194,18 +4708,18 @@ TEST_F(HcomTest, ut_hcom_backlog_group)
 {
     const u32 groupRanksNum = 4;
     char* strGroup = "group1";
-    u32 groupRanks[4] = {0,1,2,3};
+    u32 groupRanks[4] = {0, 1, 2, 3};
     int ret = HCCL_SUCCESS;
-    ret = HcomCreateGroup(strGroup, groupRanksNum,(u32*)groupRanks);
+    ret = HcomCreateGroup(strGroup, groupRanksNum, (u32*)groupRanks);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     ret = HcomDestroyGroup(strGroup);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    ret = HcomCreateGroup(strGroup, groupRanksNum,(u32*)groupRanks);
+    ret = HcomCreateGroup(strGroup, groupRanksNum, (u32*)groupRanks);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     // GROUP 已存在
-    ret = HcomCreateGroup(strGroup, groupRanksNum,(u32*)groupRanks);
+    ret = HcomCreateGroup(strGroup, groupRanksNum, (u32*)groupRanks);
     EXPECT_EQ(ret, HCCL_E_PARA);
 
     nlohmann::json rank_table = rank_table_1server_8rank;
@@ -6221,19 +4735,19 @@ TEST_F(HcomTest, ut_hcom_backlog_group)
 
     outfile.close();
     s32 deviceId = 0;
-    char *identify = "0";
+    char* identify = "0";
     s32 rankSize = 1;
     s32 rank = atoi(identify);
     u32 devLogicId = 0;
     ret = hrtSetDevice(devLogicId);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    char *rankTableFile = "./ut_hcom_test_rank_table_1server_8rank.json";
+    char* rankTableFile = "./ut_hcom_test_rank_table_1server_8rank.json";
     ret = HcomInitByFile(rankTableFile, identify);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     // GROUP 已存在
-    ret = HcomCreateGroup(strGroup, groupRanksNum,(u32*)groupRanks);
+    ret = HcomCreateGroup(strGroup, groupRanksNum, (u32*)groupRanks);
     EXPECT_EQ(ret, HCCL_E_PARA);
 
     ret = HcomDestroyGroup(strGroup);
@@ -6251,9 +4765,11 @@ TEST_F(HcomTest, ut_hcom_gradient_segment)
     std::vector<u32> segment_index;
 
     HcclCommunicator impl;
-    MOCKER_CPP_VIRTUAL(impl, &HcclCommunicator::Init,HcclResult(HcclCommunicator::*)(HcclCommParams &params, const RankTable_t &rankTable))
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP_VIRTUAL(
+        impl, &HcclCommunicator::Init,
+        HcclResult (HcclCommunicator::*)(HcclCommParams& params, const RankTable_t& rankTable))
+        .expects(atMost(1))
+        .will(returnValue(0));
     char* rank_table_file = "./ut_hcom.json";
     char* rank_ID = "0";
     HcclResult ret = hrtSetDevice(0);
@@ -6263,15 +4779,13 @@ TEST_F(HcomTest, ut_hcom_gradient_segment)
 
     char group[] = "1";
     char model_name[] = "";
-    feature.gradient_num=2;
+    feature.gradient_num = 2;
     feature.gradient_size = (float*)sal_malloc(2 * sizeof(float));
     sal_memset(feature.gradient_size, 2 * sizeof(float), 0, 2 * sizeof(float));
     feature.gradient_time = (float*)sal_malloc(2 * sizeof(float));
     sal_memset(feature.gradient_time, 2 * sizeof(float), 0, 2 * sizeof(float));
     feature.model_name = model_name;
-    MOCKER(GetGradientSegment)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER(GetGradientSegment).expects(atMost(1)).will(returnValue(0));
 
     bool isConfig = true;
     u32 len = segment_index.size();
@@ -6330,49 +4844,34 @@ TEST_F(HcomTest, ut_hcom_gradient_segment_global_set_and_get)
     HcclResult ret;
     u32 segList[2] = {1, 4};
 
-    nlohmann::json rank_table =
-    {
-        {"status", "completed"},
-        {"deploy_mode", "lab"},
-        {"group_count", "1"},
-        {"chip_info", "910"},
-        {"board_id", "0x0000"},
-        {"para_plane_nic_location", "device"},
-        {"para_plane_nic_num", "1"},
-        {"para_plane_nic_name", {"eth0"}},
-        {
-            "group_list",
-            {
-                {
-                    {"group_name", ""},
-                    {"device_num", "1"},
-                    {"server_num", "1"},
-                    {"instance_count", "1"},
-                        {
-                            "instance_list",
-                            {
-                                {   {"rank_id", "0"}, {"server_id", "172.17.1.120"},
-                                    {
-                                        "devices", {{{"device_id", "0"}, {"device_ip", "192.168.1.120"}}}
-                                    }
-                                }
-                            }
-                        },
-                }
-            }
-        }
-    };
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"deploy_mode", "lab"},
+           {"group_count", "1"},
+           {"chip_info", "910"},
+           {"board_id", "0x0000"},
+           {"para_plane_nic_location", "device"},
+           {"para_plane_nic_num", "1"},
+           {"para_plane_nic_name", {"eth0"}},
+           {"group_list",
+            {{
+                {"group_name", ""},
+                {"device_num", "1"},
+                {"server_num", "1"},
+                {"instance_count", "1"},
+                {"instance_list",
+                 {{{"rank_id", "0"},
+                   {"server_id", "172.17.1.120"},
+                   {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.1.120"}}}}}}},
+            }}}};
 
     char file_name_t[] = "./ut_hcom_gradient_segment_global_set_and_get.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(1) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name_t);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name_t);
     }
 
@@ -6422,49 +4921,34 @@ TEST_F(HcomTest, ut_hcom_gradient_segment_global_size_set_and_get)
     HcclResult ret;
     float segList[3] = {20, 40, 40};
 
-    nlohmann::json rank_table =
-    {
-        {"status", "completed"},
-        {"deploy_mode", "lab"},
-        {"group_count", "1"},
-        {"chip_info", "910"},
-        {"board_id", "0x0000"},
-        {"para_plane_nic_location", "device"},
-        {"para_plane_nic_num", "1"},
-        {"para_plane_nic_name", {"eth0"}},
-        {
-            "group_list",
-            {
-                {
-                    {"group_name", ""},
-                    {"device_num", "1"},
-                    {"server_num", "1"},
-                    {"instance_count", "1"},
-                        {
-                            "instance_list",
-                            {
-                                {   {"rank_id", "0"}, {"server_id", "172.17.1.120"},
-                                    {
-                                        "devices", {{{"device_id", "0"}, {"device_ip", "192.168.1.120"}}}
-                                    }
-                                }
-                            }
-                        },
-                }
-            }
-        }
-    };
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"deploy_mode", "lab"},
+           {"group_count", "1"},
+           {"chip_info", "910"},
+           {"board_id", "0x0000"},
+           {"para_plane_nic_location", "device"},
+           {"para_plane_nic_num", "1"},
+           {"para_plane_nic_name", {"eth0"}},
+           {"group_list",
+            {{
+                {"group_name", ""},
+                {"device_num", "1"},
+                {"server_num", "1"},
+                {"instance_count", "1"},
+                {"instance_list",
+                 {{{"rank_id", "0"},
+                   {"server_id", "172.17.1.120"},
+                   {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.1.120"}}}}}}},
+            }}}};
 
     char file_name_t[] = "./ut_hcom_gradient_segment_global_size_set_and_get.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(1) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name_t);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name_t);
     }
 
@@ -6479,10 +4963,9 @@ TEST_F(HcomTest, ut_hcom_gradient_segment_global_size_set_and_get)
     char setGroup[] = "1";
     char getGroup[] = "1";
     char model_name[] = "resnet50";
-    float gradient_array[30] = {4096,8257536,8704,8704,4194304,2560,2560,9437184,2560,
-        2560,4194304,8704,8704,4194304,2560,2560,9437184,2560,2560,4194304,8704,8704,
-        8388608,4194304,2560,2560,9437184,2560,2560,2097152
-    };
+    float gradient_array[30] = {4096,    8257536, 8704,    8704,    4194304, 2560, 2560,    9437184, 2560, 2560,
+                                4194304, 8704,    8704,    4194304, 2560,    2560, 9437184, 2560,    2560, 4194304,
+                                8704,    8704,    8388608, 4194304, 2560,    2560, 9437184, 2560,    2560, 2097152};
     feature.gradient_num = 30;
     feature.gradient_size = gradient_array;
     feature.gradient_time = (float*)sal_malloc(30 * sizeof(float));
@@ -6516,49 +4999,34 @@ TEST_F(HcomTest, ut_hcom_gradient_segment_global_size_set_close_and_get)
     HcclResult ret;
     float segList[3] = {96, 2, 2};
 
-    nlohmann::json rank_table =
-    {
-        {"status", "completed"},
-        {"deploy_mode", "lab"},
-        {"group_count", "1"},
-        {"chip_info", "910"},
-        {"board_id", "0x0000"},
-        {"para_plane_nic_location", "device"},
-        {"para_plane_nic_num", "1"},
-        {"para_plane_nic_name", {"eth0"}},
-        {
-            "group_list",
-            {
-                {
-                    {"group_name", ""},
-                    {"device_num", "1"},
-                    {"server_num", "1"},
-                    {"instance_count", "1"},
-                        {
-                            "instance_list",
-                            {
-                                {   {"rank_id", "0"}, {"server_id", "172.17.1.120"},
-                                    {
-                                        "devices", {{{"device_id", "0"}, {"device_ip", "192.168.1.120"}}}
-                                    }
-                                }
-                            }
-                        },
-                }
-            }
-        }
-    };
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"deploy_mode", "lab"},
+           {"group_count", "1"},
+           {"chip_info", "910"},
+           {"board_id", "0x0000"},
+           {"para_plane_nic_location", "device"},
+           {"para_plane_nic_num", "1"},
+           {"para_plane_nic_name", {"eth0"}},
+           {"group_list",
+            {{
+                {"group_name", ""},
+                {"device_num", "1"},
+                {"server_num", "1"},
+                {"instance_count", "1"},
+                {"instance_list",
+                 {{{"rank_id", "0"},
+                   {"server_id", "172.17.1.120"},
+                   {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.1.120"}}}}}}},
+            }}}};
 
     char file_name_t[] = "./ut_hcom_gradient_segment_global_size_set_close_and_get.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(1) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name_t);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name_t);
     }
 
@@ -6573,10 +5041,9 @@ TEST_F(HcomTest, ut_hcom_gradient_segment_global_size_set_close_and_get)
     char setGroup[] = "1";
     char getGroup[] = "1";
     char model_name[] = "resnet50";
-    float gradient_array[30] = {4096,8257536,8704,8704,4194304,2560,2560,9437184,2560,
-        2560,4194304,8704,8704,4194304,2560,2560,9437184,2560,2560,4194304,8704,8704,
-        8388608,4194304,2560,2560,9437184,2560,2560,2097152
-    };
+    float gradient_array[30] = {4096,    8257536, 8704,    8704,    4194304, 2560, 2560,    9437184, 2560, 2560,
+                                4194304, 8704,    8704,    4194304, 2560,    2560, 9437184, 2560,    2560, 4194304,
+                                8704,    8704,    8388608, 4194304, 2560,    2560, 9437184, 2560,    2560, 2097152};
     feature.gradient_num = 30;
     feature.gradient_size = gradient_array;
     feature.gradient_time = (float*)sal_malloc(30 * sizeof(float));
@@ -6610,49 +5077,34 @@ TEST_F(HcomTest, ut_hcom_gradient_segment_global_size_set_and_get_gradient_1)
     HcclResult ret;
     float segList[2] = {50, 50};
 
-    nlohmann::json rank_table =
-    {
-        {"status", "completed"},
-        {"deploy_mode", "lab"},
-        {"group_count", "1"},
-        {"chip_info", "910"},
-        {"board_id", "0x0000"},
-        {"para_plane_nic_location", "device"},
-        {"para_plane_nic_num", "1"},
-        {"para_plane_nic_name", {"eth0"}},
-        {
-            "group_list",
-            {
-                {
-                    {"group_name", ""},
-                    {"device_num", "1"},
-                    {"server_num", "1"},
-                    {"instance_count", "1"},
-                        {
-                            "instance_list",
-                            {
-                                {   {"rank_id", "0"}, {"server_id", "172.17.1.120"},
-                                    {
-                                        "devices", {{{"device_id", "0"}, {"device_ip", "192.168.1.120"}}}
-                                    }
-                                }
-                            }
-                        },
-                }
-            }
-        }
-    };
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"deploy_mode", "lab"},
+           {"group_count", "1"},
+           {"chip_info", "910"},
+           {"board_id", "0x0000"},
+           {"para_plane_nic_location", "device"},
+           {"para_plane_nic_num", "1"},
+           {"para_plane_nic_name", {"eth0"}},
+           {"group_list",
+            {{
+                {"group_name", ""},
+                {"device_num", "1"},
+                {"server_num", "1"},
+                {"instance_count", "1"},
+                {"instance_list",
+                 {{{"rank_id", "0"},
+                   {"server_id", "172.17.1.120"},
+                   {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.1.120"}}}}}}},
+            }}}};
 
     char file_name_t[] = "./ut_hcom_gradient_segment_global_size_set_and_get_gradient_1.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(1) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name_t);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name_t);
     }
 
@@ -6694,111 +5146,55 @@ TEST_F(HcomTest, ut_hcom_gradient_segment_global_size_set_and_get_gradient_1)
 #if 1
 TEST_F(HcomTest, ut_hcom_get_hcom_info_podnameEmpty)
 {
-    nlohmann::json rank_table =
-    {
-       {"status", "completed"},
+    nlohmann::json rank_table = {
+        {"status", "completed"},
         {"group_count", "2"},
-        {
-            "group_list",
-            {
-                {
-                    {"group_name", "group1"},
-                    {"instance_count", "1"},
-                    {"device_count", "8"},
-                    {
-                        "instance_list",
-                        {
-                            {   {"pod_name", ""},
-                                {"server_id", "10.0.0.10"},
-                                {
-                                    "devices",
-                                    {
-                                        {   {"device_id", "0"},
-                                            {"device_ip", "192.168.0.10"}
-                                        },
-                                        {   {"device_id", "1"},
-                                            {"device_ip", "192.168.0.11"}
-                                        },
-                                        {   {"device_id", "2"},
-                                            {"device_ip", "192.168.0.12"}
-                                        },
-                                        {   {"device_id", "3"},
-                                            {"device_ip", "192.168.0.13"}
-                                        },
-                                         {   {"device_id", "4"},
-                                            {"device_ip", "192.168.0.14"}
-                                        },
-                                        {   {"device_id", "5"},
-                                            {"device_ip", "192.168.0.15"}
-                                        },
-                                        {   {"device_id", "6"},
-                                            {"device_ip", "192.168.0.16"}
-                                        },
-                                        {   {"device_id", "7"},
-                                            {"device_ip", "192.168.0.17"}
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                },
-                {
-                    {"group_name", "1"},
-                    {"instance_count", "1"},
-                    {"device_count", "8"},
-                    {
-                        "instance_list",
-                        {
-                            {   {"pod_name", "tf-1"},
-                                {"server_id", "10.0.0.11"},
-                                {
-                                    "devices",
-                                    {
-                                        {   {"device_id", "0"},
-                                            {"device_ip", "192.168.0.21"}
-                                        },
-                                        {   {"device_id", "1"},
-                                            {"device_ip", "192.168.0.22"}
-                                        },
-                                        {   {"device_id", "2"},
-                                            {"device_ip", "192.168.0.23"}
-                                        },
-                                        {   {"device_id", "3"},
-                                            {"device_ip", "192.168.0.24"}
-                                        },
-                                         {   {"device_id", "4"},
-                                            {"device_ip", "192.168.0.20"}
-                                        },
-                                        {   {"device_id", "5"},
-                                            {"device_ip", "192.168.0.25"}
-                                        },
-                                        {   {"device_id", "6"},
-                                            {"device_ip", "192.168.0.26"}
-                                        },
-                                        {   {"device_id", "7"},
-                                            {"device_ip", "192.168.0.27"}
-                                        }
-                                    }
-                                }
-                            },
-                        }
-                    },
-                }
-            }
-        },
+        {"group_list",
+         {{
+              {"group_name", "group1"},
+              {"instance_count", "1"},
+              {"device_count", "8"},
+              {"instance_list",
+               {{{"pod_name", ""},
+                 {"server_id", "10.0.0.10"},
+                 {"devices",
+                  {{{"device_id", "0"}, {"device_ip", "192.168.0.10"}},
+                   {{"device_id", "1"}, {"device_ip", "192.168.0.11"}},
+                   {{"device_id", "2"}, {"device_ip", "192.168.0.12"}},
+                   {{"device_id", "3"}, {"device_ip", "192.168.0.13"}},
+                   {{"device_id", "4"}, {"device_ip", "192.168.0.14"}},
+                   {{"device_id", "5"}, {"device_ip", "192.168.0.15"}},
+                   {{"device_id", "6"}, {"device_ip", "192.168.0.16"}},
+                   {{"device_id", "7"}, {"device_ip", "192.168.0.17"}}}}}}},
+          },
+          {
+              {"group_name", "1"},
+              {"instance_count", "1"},
+              {"device_count", "8"},
+              {"instance_list",
+               {
+                   {{"pod_name", "tf-1"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices",
+                     {{{"device_id", "0"}, {"device_ip", "192.168.0.21"}},
+                      {{"device_id", "1"}, {"device_ip", "192.168.0.22"}},
+                      {{"device_id", "2"}, {"device_ip", "192.168.0.23"}},
+                      {{"device_id", "3"}, {"device_ip", "192.168.0.24"}},
+                      {{"device_id", "4"}, {"device_ip", "192.168.0.20"}},
+                      {{"device_id", "5"}, {"device_ip", "192.168.0.25"}},
+                      {{"device_id", "6"}, {"device_ip", "192.168.0.26"}},
+                      {{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}}},
+               }},
+          }}},
     };
 
     char file_name[] = "./ut_hcom_get_hcom_info_podnameEmpty.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -6823,119 +5219,61 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_podnameEmpty)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     remove(file_name);
-
 }
 #endif
-
 
 #if 1
 TEST_F(HcomTest, ut_hcom_get_hcom_info_instance_countIsZero)
 {
-    nlohmann::json rank_table =
-    {
-       {"status", "completed"},
+    nlohmann::json rank_table = {
+        {"status", "completed"},
         {"group_count", "2"},
-        {
-            "group_list",
-            {
-                {
-                    {"group_name", "group1"},
-                    {"instance_count", "0"},
-                    {"device_count", "8"},
-                    {
-                        "instance_list",
-                        {
-                            {   {"pod_name", "tf-0"},
-                                {"server_id", "10.0.0.10"},
-                                {
-                                    "devices",
-                                    {
-                                        {   {"device_id", "0"},
-                                            {"device_ip", "192.168.0.10"}
-                                        },
-                                        {   {"device_id", "1"},
-                                            {"device_ip", "192.168.0.11"}
-                                        },
-                                        {   {"device_id", "2"},
-                                            {"device_ip", "192.168.0.12"}
-                                        },
-                                        {   {"device_id", "3"},
-                                            {"device_ip", "192.168.0.13"}
-                                        },
-                                         {   {"device_id", "4"},
-                                            {"device_ip", "192.168.0.14"}
-                                        },
-                                        {   {"device_id", "5"},
-                                            {"device_ip", "192.168.0.15"}
-                                        },
-                                        {   {"device_id", "6"},
-                                            {"device_ip", "192.168.0.16"}
-                                        },
-                                        {   {"device_id", "7"},
-                                            {"device_ip", "192.168.0.17"}
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                },
-                {
-                    {"group_name", "1"},
-                    {"instance_count", "1"},
-                    {"device_count", "8"},
-                    {
-                        "instance_list",
-                        {
-                            {   {"pod_name", "tf-1"},
-                                {"server_id", "10.0.0.11"},
-                                {
-                                    "devices",
-                                    {
-                                        {   {"device_id", "0"},
-                                            {"device_ip", "192.168.0.21"}
-                                        },
-                                        {   {"device_id", "1"},
-                                            {"device_ip", "192.168.0.22"}
-                                        },
-                                        {   {"device_id", "2"},
-                                            {"device_ip", "192.168.0.23"}
-                                        },
-                                        {   {"device_id", "3"},
-                                            {"device_ip", "192.168.0.24"}
-                                        },
-                                         {   {"device_id", "4"},
-                                            {"device_ip", "192.168.0.20"}
-                                        },
-                                        {   {"device_id", "5"},
-                                            {"device_ip", "192.168.0.25"}
-                                        },
-                                        {   {"device_id", "6"},
-                                            {"device_ip", "192.168.0.26"}
-                                        },
-                                        {   {"device_id", "7"},
-                                            {"device_ip", "192.168.0.27"}
-                                        }
-                                    }
-                                }
-                            },
-                        }
-                    },
-                }
-            }
-        },
+        {"group_list",
+         {{
+              {"group_name", "group1"},
+              {"instance_count", "0"},
+              {"device_count", "8"},
+              {"instance_list",
+               {{{"pod_name", "tf-0"},
+                 {"server_id", "10.0.0.10"},
+                 {"devices",
+                  {{{"device_id", "0"}, {"device_ip", "192.168.0.10"}},
+                   {{"device_id", "1"}, {"device_ip", "192.168.0.11"}},
+                   {{"device_id", "2"}, {"device_ip", "192.168.0.12"}},
+                   {{"device_id", "3"}, {"device_ip", "192.168.0.13"}},
+                   {{"device_id", "4"}, {"device_ip", "192.168.0.14"}},
+                   {{"device_id", "5"}, {"device_ip", "192.168.0.15"}},
+                   {{"device_id", "6"}, {"device_ip", "192.168.0.16"}},
+                   {{"device_id", "7"}, {"device_ip", "192.168.0.17"}}}}}}},
+          },
+          {
+              {"group_name", "1"},
+              {"instance_count", "1"},
+              {"device_count", "8"},
+              {"instance_list",
+               {
+                   {{"pod_name", "tf-1"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices",
+                     {{{"device_id", "0"}, {"device_ip", "192.168.0.21"}},
+                      {{"device_id", "1"}, {"device_ip", "192.168.0.22"}},
+                      {{"device_id", "2"}, {"device_ip", "192.168.0.23"}},
+                      {{"device_id", "3"}, {"device_ip", "192.168.0.24"}},
+                      {{"device_id", "4"}, {"device_ip", "192.168.0.20"}},
+                      {{"device_id", "5"}, {"device_ip", "192.168.0.25"}},
+                      {{"device_id", "6"}, {"device_ip", "192.168.0.26"}},
+                      {{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}}},
+               }},
+          }}},
     };
 
     char file_name[] = "./ut_hcom_get_hcom_info_instance_countIsZero.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -6960,118 +5298,61 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_instance_countIsZero)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     remove(file_name);
-
 }
 #endif
 
 #if 1
 TEST_F(HcomTest, ut_hcom_get_hcom_info_group_count_zero)
 {
-    nlohmann::json rank_table =
-    {
-       {"status", "completed"},
+    nlohmann::json rank_table = {
+        {"status", "completed"},
         {"group_count", "0"},
-        {
-            "group_list",
-            {
-                {
-                    {"group_name", "group1"},
-                    {"instance_count", "1"},
-                    {"device_count", "8"},
-                    {
-                        "instance_list",
-                        {
-                            {   {"pod_name", "tf-0"},
-                                {"server_id", "10.0.0.10"},
-                                {
-                                    "devices",
-                                    {
-                                        {   {"device_id", "0"},
-                                            {"device_ip", "192.168.0.10"}
-                                        },
-                                        {   {"device_id", "1"},
-                                            {"device_ip", "192.168.0.11"}
-                                        },
-                                        {   {"device_id", "2"},
-                                            {"device_ip", "192.168.0.12"}
-                                        },
-                                        {   {"device_id", "3"},
-                                            {"device_ip", "192.168.0.13"}
-                                        },
-                                         {   {"device_id", "4"},
-                                            {"device_ip", "192.168.0.14"}
-                                        },
-                                        {   {"device_id", "5"},
-                                            {"device_ip", "192.168.0.15"}
-                                        },
-                                        {   {"device_id", "6"},
-                                            {"device_ip", "192.168.0.16"}
-                                        },
-                                        {   {"device_id", "7"},
-                                            {"device_ip", "192.168.0.17"}
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                },
-                {
-                    {"group_name", "1"},
-                    {"instance_count", "1"},
-                    {"device_count", "8"},
-                    {
-                        "instance_list",
-                        {
-                            {   {"pod_name", "tf-1"},
-                                {"server_id", "10.0.0.11"},
-                                {
-                                    "devices",
-                                    {
-                                        {   {"device_id", "0"},
-                                            {"device_ip", "192.168.0.21"}
-                                        },
-                                        {   {"device_id", "1"},
-                                            {"device_ip", "192.168.0.22"}
-                                        },
-                                        {   {"device_id", "2"},
-                                            {"device_ip", "192.168.0.23"}
-                                        },
-                                        {   {"device_id", "3"},
-                                            {"device_ip", "192.168.0.24"}
-                                        },
-                                         {   {"device_id", "4"},
-                                            {"device_ip", "192.168.0.20"}
-                                        },
-                                        {   {"device_id", "5"},
-                                            {"device_ip", "192.168.0.25"}
-                                        },
-                                        {   {"device_id", "6"},
-                                            {"device_ip", "192.168.0.26"}
-                                        },
-                                        {   {"device_id", "7"},
-                                            {"device_ip", "192.168.0.27"}
-                                        }
-                                    }
-                                }
-                            },
-                        }
-                    },
-                }
-            }
-        },
+        {"group_list",
+         {{
+              {"group_name", "group1"},
+              {"instance_count", "1"},
+              {"device_count", "8"},
+              {"instance_list",
+               {{{"pod_name", "tf-0"},
+                 {"server_id", "10.0.0.10"},
+                 {"devices",
+                  {{{"device_id", "0"}, {"device_ip", "192.168.0.10"}},
+                   {{"device_id", "1"}, {"device_ip", "192.168.0.11"}},
+                   {{"device_id", "2"}, {"device_ip", "192.168.0.12"}},
+                   {{"device_id", "3"}, {"device_ip", "192.168.0.13"}},
+                   {{"device_id", "4"}, {"device_ip", "192.168.0.14"}},
+                   {{"device_id", "5"}, {"device_ip", "192.168.0.15"}},
+                   {{"device_id", "6"}, {"device_ip", "192.168.0.16"}},
+                   {{"device_id", "7"}, {"device_ip", "192.168.0.17"}}}}}}},
+          },
+          {
+              {"group_name", "1"},
+              {"instance_count", "1"},
+              {"device_count", "8"},
+              {"instance_list",
+               {
+                   {{"pod_name", "tf-1"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices",
+                     {{{"device_id", "0"}, {"device_ip", "192.168.0.21"}},
+                      {{"device_id", "1"}, {"device_ip", "192.168.0.22"}},
+                      {{"device_id", "2"}, {"device_ip", "192.168.0.23"}},
+                      {{"device_id", "3"}, {"device_ip", "192.168.0.24"}},
+                      {{"device_id", "4"}, {"device_ip", "192.168.0.20"}},
+                      {{"device_id", "5"}, {"device_ip", "192.168.0.25"}},
+                      {{"device_id", "6"}, {"device_ip", "192.168.0.26"}},
+                      {{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}}},
+               }},
+          }}},
     };
 
     char file_name[] = "./ut_hcom_get_hcom_info_group_count_zero.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -7095,118 +5376,61 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_group_count_zero)
     ret = hrtResetDevice(0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     remove(file_name);
-
 }
 #endif
 
 #if 1
 TEST_F(HcomTest, ut_hcom_get_hcom_info_deviceidErrBig)
 {
-    nlohmann::json rank_table =
-    {
-       {"status", "completed"},
+    nlohmann::json rank_table = {
+        {"status", "completed"},
         {"group_count", "2"},
-        {
-            "group_list",
-            {
-                {
-                    {"group_name", "group1"},
-                    {"device_count", "8"},
-                    {"instance_count", "1"},
-                    {
-                        "instance_list",
-                        {
-                            {   {"pod_name", "tf-0"},
-                                {"server_id", "10.0.0.10"},
-                                {
-                                    "devices",
-                                    {
-                                        {   {"device_id", "0"},
-                                            {"device_ip", "192.168.0.10"}
-                                        },
-                                        {   {"device_id", "1"},
-                                            {"device_ip", "192.168.0.11"}
-                                        },
-                                        {   {"device_id", "2"},
-                                            {"device_ip", "192.168.0.12"}
-                                        },
-                                        {   {"device_id", "3"},
-                                            {"device_ip", "192.168.0.13"}
-                                        },
-                                         {   {"device_id", "10"},
-                                            {"device_ip", "192.168.0.14"}
-                                        },
-                                        {   {"device_id", "5"},
-                                            {"device_ip", "192.168.0.15"}
-                                        },
-                                        {   {"device_id", "6"},
-                                            {"device_ip", "192.168.0.16"}
-                                        },
-                                        {   {"device_id", "7"},
-                                            {"device_ip", "192.168.0.17"}
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                },
-                {
-                    {"group_name", "1"},
-                    {"instance_count", "1"},
-                    {"device_count", "8"},
-                    {
-                        "instance_list",
-                        {
-                            {   {"pod_name", "tf-1"},
-                                {"server_id", "10.0.0.11"},
-                                {
-                                    "devices",
-                                    {
-                                        {   {"device_id", "0"},
-                                            {"device_ip", "192.168.0.21"}
-                                        },
-                                        {   {"device_id", "1"},
-                                            {"device_ip", "192.168.0.22"}
-                                        },
-                                        {   {"device_id", "2"},
-                                            {"device_ip", "192.168.0.23"}
-                                        },
-                                        {   {"device_id", "3"},
-                                            {"device_ip", "192.168.0.24"}
-                                        },
-                                         {   {"device_id", "4"},
-                                            {"device_ip", "192.168.0.20"}
-                                        },
-                                        {   {"device_id", "5"},
-                                            {"device_ip", "192.168.0.25"}
-                                        },
-                                        {   {"device_id", "6"},
-                                            {"device_ip", "192.168.0.26"}
-                                        },
-                                        {   {"device_id", "7"},
-                                            {"device_ip", "192.168.0.27"}
-                                        }
-                                    }
-                                }
-                            },
-                        }
-                    },
-                }
-            }
-        },
+        {"group_list",
+         {{
+              {"group_name", "group1"},
+              {"device_count", "8"},
+              {"instance_count", "1"},
+              {"instance_list",
+               {{{"pod_name", "tf-0"},
+                 {"server_id", "10.0.0.10"},
+                 {"devices",
+                  {{{"device_id", "0"}, {"device_ip", "192.168.0.10"}},
+                   {{"device_id", "1"}, {"device_ip", "192.168.0.11"}},
+                   {{"device_id", "2"}, {"device_ip", "192.168.0.12"}},
+                   {{"device_id", "3"}, {"device_ip", "192.168.0.13"}},
+                   {{"device_id", "10"}, {"device_ip", "192.168.0.14"}},
+                   {{"device_id", "5"}, {"device_ip", "192.168.0.15"}},
+                   {{"device_id", "6"}, {"device_ip", "192.168.0.16"}},
+                   {{"device_id", "7"}, {"device_ip", "192.168.0.17"}}}}}}},
+          },
+          {
+              {"group_name", "1"},
+              {"instance_count", "1"},
+              {"device_count", "8"},
+              {"instance_list",
+               {
+                   {{"pod_name", "tf-1"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices",
+                     {{{"device_id", "0"}, {"device_ip", "192.168.0.21"}},
+                      {{"device_id", "1"}, {"device_ip", "192.168.0.22"}},
+                      {{"device_id", "2"}, {"device_ip", "192.168.0.23"}},
+                      {{"device_id", "3"}, {"device_ip", "192.168.0.24"}},
+                      {{"device_id", "4"}, {"device_ip", "192.168.0.20"}},
+                      {{"device_id", "5"}, {"device_ip", "192.168.0.25"}},
+                      {{"device_id", "6"}, {"device_ip", "192.168.0.26"}},
+                      {{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}}},
+               }},
+          }}},
     };
 
     char file_name[] = "./ut_hcom_get_hcom_info_deviceidErrBig.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -7230,120 +5454,61 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_deviceidErrBig)
     ret = hrtResetDevice(0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     remove(file_name);
-
 }
 #endif
-
-
 
 #if 1
 TEST_F(HcomTest, ut_hcom_get_hcom_info_propety_err)
 {
-    nlohmann::json rank_table =
-    {
-       {"status", "completed"},
+    nlohmann::json rank_table = {
+        {"status", "completed"},
         {"group_count", "2"},
-        {
-            "group_list",
-            {
-                {
-                    {"group_name", "group1"},
-                    {"instance_count", "1"},
-                    {"device_count", "8"},
-                    {
-                        "instance_list",
-                        {
-                            {   {"pod_name", "tf-0"},
-                                {"server_id", "10.0.0.10"},
-                                {
-                                    "devices",
-                                    {
-                                        {   {"device_id", "0"},
-                                            {"device_ip", "192.168.0.10"}
-                                        },
-                                        {   {"device_id", "1"},
-                                            {"device_ip", "192.168.0.11"}
-                                        },
-                                        {   {"device_id", 2},
-                                            {"device_ip", "192.168.0.12"}
-                                        },
-                                        {   {"device_id", "3"},
-                                            {"device_ip", "192.168.0.13"}
-                                        },
-                                         {   {"device_id", "4"},
-                                            {"device_ip", "192.168.0.14"}
-                                        },
-                                        {   {"device_id", "5"},
-                                            {"device_ip", "192.168.0.15"}
-                                        },
-                                        {   {"device_id", "6"},
-                                            {"device_ip", "192.168.0.16"}
-                                        },
-                                        {   {"device_id", "7"},
-                                            {"device_ip", "192.168.0.17"}
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                },
-                {
-                    {"group_name", "1"},
-                    {"instance_count", "1"},
-                    {"device_count", "8"},
-                    {
-                        "instance_list",
-                        {
-                            {   {"pod_name", "tf-1"},
-                                {"server_id", "10.0.0.11"},
-                                {
-                                    "devices",
-                                    {
-                                        {   {"device_id", "0"},
-                                            {"device_ip", "192.168.0.21"}
-                                        },
-                                        {   {"device_id", "1"},
-                                            {"device_ip", "192.168.0.22"}
-                                        },
-                                        {   {"device_id", "2"},
-                                            {"device_ip", "192.168.0.23"}
-                                        },
-                                        {   {"device_id", "3"},
-                                            {"device_ip", "192.168.0.24"}
-                                        },
-                                         {   {"device_id", "4"},
-                                            {"device_ip", "192.168.0.20"}
-                                        },
-                                        {   {"device_id", "5"},
-                                            {"device_ip", "192.168.0.25"}
-                                        },
-                                        {   {"device_id", "6"},
-                                            {"device_ip", "192.168.0.26"}
-                                        },
-                                        {   {"device_id", "7"},
-                                            {"device_ip", "192.168.0.27"}
-                                        }
-                                    }
-                                }
-                            },
-                        }
-                    },
-                }
-            }
-        },
+        {"group_list",
+         {{
+              {"group_name", "group1"},
+              {"instance_count", "1"},
+              {"device_count", "8"},
+              {"instance_list",
+               {{{"pod_name", "tf-0"},
+                 {"server_id", "10.0.0.10"},
+                 {"devices",
+                  {{{"device_id", "0"}, {"device_ip", "192.168.0.10"}},
+                   {{"device_id", "1"}, {"device_ip", "192.168.0.11"}},
+                   {{"device_id", 2}, {"device_ip", "192.168.0.12"}},
+                   {{"device_id", "3"}, {"device_ip", "192.168.0.13"}},
+                   {{"device_id", "4"}, {"device_ip", "192.168.0.14"}},
+                   {{"device_id", "5"}, {"device_ip", "192.168.0.15"}},
+                   {{"device_id", "6"}, {"device_ip", "192.168.0.16"}},
+                   {{"device_id", "7"}, {"device_ip", "192.168.0.17"}}}}}}},
+          },
+          {
+              {"group_name", "1"},
+              {"instance_count", "1"},
+              {"device_count", "8"},
+              {"instance_list",
+               {
+                   {{"pod_name", "tf-1"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices",
+                     {{{"device_id", "0"}, {"device_ip", "192.168.0.21"}},
+                      {{"device_id", "1"}, {"device_ip", "192.168.0.22"}},
+                      {{"device_id", "2"}, {"device_ip", "192.168.0.23"}},
+                      {{"device_id", "3"}, {"device_ip", "192.168.0.24"}},
+                      {{"device_id", "4"}, {"device_ip", "192.168.0.20"}},
+                      {{"device_id", "5"}, {"device_ip", "192.168.0.25"}},
+                      {{"device_id", "6"}, {"device_ip", "192.168.0.26"}},
+                      {{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}}},
+               }},
+          }}},
     };
 
     char file_name[] = "./ut_hcom_get_hcom_info_propety_err.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -7367,120 +5532,61 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_propety_err)
     ret = hrtResetDevice(0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     remove(file_name);
-
 }
 #endif
-
-
 
 #if 1
 TEST_F(HcomTest, ut_hcom_get_hcom_info_propety_err2)
 {
-    nlohmann::json rank_table =
-    {
-       {"status", "completed"},
+    nlohmann::json rank_table = {
+        {"status", "completed"},
         {"group_count", 2},
-        {
-            "group_list",
-            {
-                {
-                    {"group_name", "group1"},
-                    {"instance_count", "1"},
-                    {"device_count", "8"},
-                    {
-                        "instance_list",
-                        {
-                            {   {"pod_name", "tf-0"},
-                                {"server_id", "10.0.0.10"},
-                                {
-                                    "devices",
-                                    {
-                                        {   {"device_id", "0"},
-                                            {"device_ip", "192.168.0.10"}
-                                        },
-                                        {   {"device_id", "1"},
-                                            {"device_ip", "192.168.0.11"}
-                                        },
-                                        {   {"device_id", "2"},
-                                            {"device_ip", "192.168.0.12"}
-                                        },
-                                        {   {"device_id", "3"},
-                                            {"device_ip", "192.168.0.13"}
-                                        },
-                                         {   {"device_id", "4"},
-                                            {"device_ip", "192.168.0.14"}
-                                        },
-                                        {   {"device_id", "5"},
-                                            {"device_ip", "192.168.0.15"}
-                                        },
-                                        {   {"device_id", "6"},
-                                            {"device_ip", "192.168.0.16"}
-                                        },
-                                        {   {"device_id", "7"},
-                                            {"device_ip", "192.168.0.17"}
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                },
-                {
-                    {"group_name", "1"},
-                    {"instance_count", "1"},
-                    {"device_count", "8"},
-                    {
-                        "instance_list",
-                        {
-                            {   {"pod_name", "tf-1"},
-                                {"server_id", "10.0.0.11"},
-                                {
-                                    "devices",
-                                    {
-                                        {   {"device_id", "0"},
-                                            {"device_ip", "192.168.0.21"}
-                                        },
-                                        {   {"device_id", "1"},
-                                            {"device_ip", "192.168.0.22"}
-                                        },
-                                        {   {"device_id", "2"},
-                                            {"device_ip", "192.168.0.23"}
-                                        },
-                                        {   {"device_id", "3"},
-                                            {"device_ip", "192.168.0.24"}
-                                        },
-                                         {   {"device_id", "4"},
-                                            {"device_ip", "192.168.0.20"}
-                                        },
-                                        {   {"device_id", "5"},
-                                            {"device_ip", "192.168.0.25"}
-                                        },
-                                        {   {"device_id", "6"},
-                                            {"device_ip", "192.168.0.26"}
-                                        },
-                                        {   {"device_id", "7"},
-                                            {"device_ip", "192.168.0.27"}
-                                        }
-                                    }
-                                }
-                            },
-                        }
-                    },
-                }
-            }
-        },
+        {"group_list",
+         {{
+              {"group_name", "group1"},
+              {"instance_count", "1"},
+              {"device_count", "8"},
+              {"instance_list",
+               {{{"pod_name", "tf-0"},
+                 {"server_id", "10.0.0.10"},
+                 {"devices",
+                  {{{"device_id", "0"}, {"device_ip", "192.168.0.10"}},
+                   {{"device_id", "1"}, {"device_ip", "192.168.0.11"}},
+                   {{"device_id", "2"}, {"device_ip", "192.168.0.12"}},
+                   {{"device_id", "3"}, {"device_ip", "192.168.0.13"}},
+                   {{"device_id", "4"}, {"device_ip", "192.168.0.14"}},
+                   {{"device_id", "5"}, {"device_ip", "192.168.0.15"}},
+                   {{"device_id", "6"}, {"device_ip", "192.168.0.16"}},
+                   {{"device_id", "7"}, {"device_ip", "192.168.0.17"}}}}}}},
+          },
+          {
+              {"group_name", "1"},
+              {"instance_count", "1"},
+              {"device_count", "8"},
+              {"instance_list",
+               {
+                   {{"pod_name", "tf-1"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices",
+                     {{{"device_id", "0"}, {"device_ip", "192.168.0.21"}},
+                      {{"device_id", "1"}, {"device_ip", "192.168.0.22"}},
+                      {{"device_id", "2"}, {"device_ip", "192.168.0.23"}},
+                      {{"device_id", "3"}, {"device_ip", "192.168.0.24"}},
+                      {{"device_id", "4"}, {"device_ip", "192.168.0.20"}},
+                      {{"device_id", "5"}, {"device_ip", "192.168.0.25"}},
+                      {{"device_id", "6"}, {"device_ip", "192.168.0.26"}},
+                      {{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}}},
+               }},
+          }}},
     };
 
     char file_name[] = "./ut_hcom_get_hcom_info_propety_err.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -7504,7 +5610,6 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_propety_err2)
     ret = hrtResetDevice(0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     remove(file_name);
-
 }
 #endif
 
@@ -7512,204 +5617,151 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_propety_err2)
 
 TEST_F(HcomTest, ut_hcom_get_hcom_info_ech_server_devNum_err)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"deploy_mode", "lab"},
+           {"group_count", "1"},
+           {"chip_info", "910"},
+           {"board_id", "0x0000"},
+           {"para_plane_nic_location", "device"},
+           {"para_plane_nic_num", "8"},
+           {"para_plane_nic_name", {"eth0", "eth1", "eth2", "eth3", "eth4", "eth5", "eth6", "eth7"}},
+           {"group_list",
+            {{{"group_name", ""},
+              {"device_num", "16"},
+              {"server_num", "2"},
+              {"instance_count", "16"},
+              {"instance_list",
+               {
+                   {{"rank_id", "0"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.11"}}}}},
 
-    nlohmann::json rank_table =
-    {
-            {"status", "completed"},
-            {"deploy_mode", "lab"},
-            {"group_count", "1"},
-            {"chip_info", "910"},
-            {"board_id", "0x0000"},
-            {"para_plane_nic_location", "device"},
-            {"para_plane_nic_num", "8"},
-            {"para_plane_nic_name", {"eth0", "eth1", "eth2", "eth3","eth4", "eth5", "eth6", "eth7"}},
-            {
-                "group_list",
-                {
-                    {
-                        {"group_name", ""},
-                        {"device_num", "16"},
-                        {"server_num", "2"},
-                        {"instance_count", "16"},
-                            {
-                                "instance_list",
-                                {
-                                    {   {"rank_id", "0"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.11"}}}
-                                        }
-                                    },
+                   {{"rank_id", "1"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}}},
+                   {{"rank_id", "2"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.13"}}}}},
 
-                                    {   {"rank_id", "1"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "2"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.13"}}}
-                                        }
-                                    },
+                   {{"rank_id", "3"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.14"}}}}},
+                   {{"rank_id", "4"},
+                    {"server_id", "10.0.0.15"},
+                    {"devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.15"}}}}},
 
-                                    {   {"rank_id", "3"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.14"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "4"}, {"server_id", "10.0.0.15"},
-                                        {
-                                            "devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.15"}}}
-                                        }
-                                    },
+                   {{"rank_id", "5"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.16"}}}}},
+                   {{"rank_id", "6"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.17"}}}}},
 
-                                    {   {"rank_id", "5"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.16"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "6"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.17"}}}
-                                        }
-                                    },
+                   {{"rank_id", "7"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.18"}}}}},
+                   {{"rank_id", "8"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.20"}}}}},
 
-                                    {   {"rank_id", "7"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.18"}}}
-                                        }
-                                    },
-                                     {  {"rank_id", "8"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.20"}}}
-                                        }
-                                    },
+                   {{"rank_id", "9"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.21"}}}}},
+                   {{"rank_id", "10"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.22"}}}}},
 
-                                    {   {"rank_id", "9"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.21"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "10"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.22"}}}
-                                        }
-                                    },
+                   {{"rank_id", "11"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.23"}}}}},
+                   {{"rank_id", "12"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.24"}}}}},
 
-                                    {   {"rank_id", "11"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.23"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "12"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.24"}}}
-                                        }
-                                    },
+                   {{"rank_id", "13"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.25"}}}}},
+                   {{"rank_id", "14"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.26"}}}}},
 
-                                    {   {"rank_id", "13"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.25"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "14"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.26"}}}
-                                        }
-                                    },
+                   {{"rank_id", "15"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}}},
+               }},
+              {"server_list",
+               {
+                   {{"server_id", "10.0.0.10"},
+                    {"para_plane_info",
+                     {
+                         {
+                             {"eth0", "192.168.200.2"},
+                         },
+                         {
+                             {"eth1", "192.168.201.2"},
+                         },
+                         {
+                             {"eth2", "192.168.202.2"},
+                         },
+                         {
+                             {"eth3", "192.168.203.2"},
+                         },
+                         {
+                             {"eth4", "192.168.204.2"},
+                         },
+                         {
+                             {"eth5", "192.168.205.2"},
+                         },
+                         {
+                             {"eth6", "192.168.206.2"},
+                         },
+                         {
+                             {"eth7", "192.168.207.2"},
+                         },
+                     }}
 
-                                    {   {"rank_id", "15"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}
-                                        }
-                                    },
-                                }
-                            },
-                            {
-                                "server_list",
-                                {
-                                    {
-                                        {"server_id", "10.0.0.10"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.200.2"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.201.2"},
-                                                },
-                                                {
-                                                    {"eth2", "192.168.202.2"},
-                                                },
-                                                {
-                                                    {"eth3", "192.168.203.2"},
-                                                },
-                                                {
-                                                    {"eth4", "192.168.204.2"},
-                                                },
-                                                {
-                                                    {"eth5", "192.168.205.2"},
-                                                },
-                                                {
-                                                    {"eth6", "192.168.206.2"},
-                                                },
-                                                {
-                                                    {"eth7", "192.168.207.2"},
-                                                },
-                                            }
-                                        }
+                   },
+                   {{"server_id", "10.0.0.11"},
+                    {"para_plane_info",
+                     {
+                         {
+                             {"eth0", "192.168.210.3"},
+                         },
+                         {
+                             {"eth1", "192.168.211.3"},
+                         },
+                         {
+                             {"eth2", "192.168.212.3"},
+                         },
+                         {
+                             {"eth3", "192.168.213.3"},
+                         },
+                         {
+                             {"eth4", "192.168.214.3"},
+                         },
+                         {
+                             {"eth5", "192.168.215.3"},
+                         },
+                         {
+                             {"eth6", "192.168.216.3"},
+                         },
+                         {
+                             {"eth7", "192.168.217.3"},
+                         },
+                     }}
 
-                                    },
-                                    {
-                                        {"server_id", "10.0.0.11"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.210.3"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.211.3"},
-                                                },
-                                                {
-                                                    {"eth2", "192.168.212.3"},
-                                                },
-                                                {
-                                                    {"eth3", "192.168.213.3"},
-                                                },
-                                                {
-                                                    {"eth4", "192.168.214.3"},
-                                                },
-                                                {
-                                                    {"eth5", "192.168.215.3"},
-                                                },
-                                                {
-                                                    {"eth6", "192.168.216.3"},
-                                                },
-                                                {
-                                                    {"eth7", "192.168.217.3"},
-                                                },
-                                            }
-                                        }
+                   },
 
-                                    },
-
-                                }
-                            }
-                    }
-                }
-            }
-        };
-
+               }}}}}};
 
     char file_name[] = "./ut_hcom_get_hcom_info_ech_server_devNum_err.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -7733,41 +5785,31 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_ech_server_devNum_err)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     remove(file_name);
-
 }
 #endif
 TEST_F(HcomTest, ut_hcom_get_hcom_info_groupsizeErr)
 {
-
-    nlohmann::json rank_table =
-    {
-            {"status", "completed"},
-            {"deploy_mode", "lab"},
-            {"group_count", "1"},
-            {"chip_info", "910"},
-            {"board_id", "0x0000"},
-            {"para_plane_nic_location", "device"},
-            {"para_plane_nic_num", "8"},
-            {"para_plane_nic_name", {"eth0", "eth1", "eth2", "eth3","eth4", "eth5", "eth6", "eth7"}},
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"deploy_mode", "lab"},
+           {"group_count", "1"},
+           {"chip_info", "910"},
+           {"board_id", "0x0000"},
+           {"para_plane_nic_location", "device"},
+           {"para_plane_nic_num", "8"},
+           {"para_plane_nic_name", {"eth0", "eth1", "eth2", "eth3", "eth4", "eth5", "eth6", "eth7"}},
+           {"group_list",
             {
-                "group_list",
-                {
 
-                }
-            }
-        };
-
+            }}};
 
     char file_name[] = "./ut_hcom_get_hcom_info_groupsizeErr.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -7794,209 +5836,155 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_groupsizeErr)
     set_board_id(0x0000);
 
     remove(file_name);
-
 }
 
 TEST_F(HcomTest, ut_hcom_get_hcom_info_910boardidErr)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"deploy_mode", "lab"},
+           {"group_count", "1"},
+           {"chip_info", "910"},
+           {"board_id", "0x0000"},
+           {"para_plane_nic_location", "device"},
+           {"para_plane_nic_num", "8"},
+           {"para_plane_nic_name", {"eth0", "eth1", "eth2", "eth3", "eth4", "eth5", "eth6", "eth7"}},
+           {"group_list",
+            {{{"group_name", ""},
+              {"device_num", "16"},
+              {"server_num", "2"},
+              {"instance_count", "16"},
+              {"instance_list",
+               {
+                   {{"rank_id", "0"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.11"}}}}},
 
-    nlohmann::json rank_table =
-    {
-            {"status", "completed"},
-            {"deploy_mode", "lab"},
-            {"group_count", "1"},
-            {"chip_info", "910"},
-            {"board_id", "0x0000"},
-            {"para_plane_nic_location", "device"},
-            {"para_plane_nic_num", "8"},
-            {"para_plane_nic_name", {"eth0", "eth1", "eth2", "eth3","eth4", "eth5", "eth6", "eth7"}},
-            {
-                "group_list",
-                {
-                    {
-                        {"group_name", ""},
-                        {"device_num", "16"},
-                        {"server_num", "2"},
-                        {"instance_count", "16"},
-                            {
-                                "instance_list",
-                                {
-                                    {   {"rank_id", "0"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.11"}}}
-                                        }
-                                    },
+                   {{"rank_id", "1"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}}},
+                   {{"rank_id", "2"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.13"}}}}},
 
-                                    {   {"rank_id", "1"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "2"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.13"}}}
-                                        }
-                                    },
+                   {{"rank_id", "3"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.14"}}}}},
+                   {{"rank_id", "4"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.15"}}}}},
 
-                                    {   {"rank_id", "3"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.14"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "4"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.15"}}}
-                                        }
-                                    },
+                   {{"rank_id", "5"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.16"}}}}},
+                   {{"rank_id", "6"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.17"}}}}},
 
-                                    {   {"rank_id", "5"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.16"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "6"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.17"}}}
-                                        }
-                                    },
+                   {{"rank_id", "7"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.18"}}}}},
+                   {{"rank_id", "8"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.20"}}}}},
 
-                                    {   {"rank_id", "7"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.18"}}}
-                                        }
-                                    },
-                                     {  {"rank_id", "8"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.20"}}}
-                                        }
-                                    },
+                   {{"rank_id", "9"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.21"}}}}},
+                   {{"rank_id", "10"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.22"}}}}},
 
-                                    {   {"rank_id", "9"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.21"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "10"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.22"}}}
-                                        }
-                                    },
+                   {{"rank_id", "11"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.23"}}}}},
+                   {{"rank_id", "12"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.24"}}}}},
 
-                                    {   {"rank_id", "11"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.23"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "12"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.24"}}}
-                                        }
-                                    },
+                   {{"rank_id", "13"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.25"}}}}},
+                   {{"rank_id", "14"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.26"}}}}},
 
-                                    {   {"rank_id", "13"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.25"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "14"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.26"}}}
-                                        }
-                                    },
+                   {{"rank_id", "15"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}}},
+               }},
+              {"server_list",
+               {
+                   {{"server_id", "10.0.0.10"},
+                    {"para_plane_info",
+                     {
+                         {
+                             {"eth0", "192.168.200.2"},
+                         },
+                         {
+                             {"eth1", "192.168.201.2"},
+                         },
+                         {
+                             {"eth2", "192.168.202.2"},
+                         },
+                         {
+                             {"eth3", "192.168.203.2"},
+                         },
+                         {
+                             {"eth4", "192.168.204.2"},
+                         },
+                         {
+                             {"eth5", "192.168.205.2"},
+                         },
+                         {
+                             {"eth6", "192.168.206.2"},
+                         },
+                         {
+                             {"eth7", "192.168.207.2"},
+                         },
+                     }}
 
-                                    {   {"rank_id", "15"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}
-                                        }
-                                    },
-                                }
-                            },
-                            {
-                                "server_list",
-                                {
-                                    {
-                                        {"server_id", "10.0.0.10"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.200.2"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.201.2"},
-                                                },
-                                                {
-                                                    {"eth2", "192.168.202.2"},
-                                                },
-                                                {
-                                                    {"eth3", "192.168.203.2"},
-                                                },
-                                                {
-                                                    {"eth4", "192.168.204.2"},
-                                                },
-                                                {
-                                                    {"eth5", "192.168.205.2"},
-                                                },
-                                                {
-                                                    {"eth6", "192.168.206.2"},
-                                                },
-                                                {
-                                                    {"eth7", "192.168.207.2"},
-                                                },
-                                            }
-                                        }
+                   },
+                   {{"server_id", "10.0.0.11"},
+                    {"para_plane_info",
+                     {
+                         {
+                             {"eth0", "192.168.210.3"},
+                         },
+                         {
+                             {"eth1", "192.168.211.3"},
+                         },
+                         {
+                             {"eth2", "192.168.212.3"},
+                         },
+                         {
+                             {"eth3", "192.168.213.3"},
+                         },
+                         {
+                             {"eth4", "192.168.214.3"},
+                         },
+                         {
+                             {"eth5", "192.168.215.3"},
+                         },
+                         {
+                             {"eth6", "192.168.216.3"},
+                         },
+                         {
+                             {"eth7", "192.168.217.3"},
+                         },
+                     }}
 
-                                    },
-                                    {
-                                        {"server_id", "10.0.0.11"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.210.3"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.211.3"},
-                                                },
-                                                {
-                                                    {"eth2", "192.168.212.3"},
-                                                },
-                                                {
-                                                    {"eth3", "192.168.213.3"},
-                                                },
-                                                {
-                                                    {"eth4", "192.168.214.3"},
-                                                },
-                                                {
-                                                    {"eth5", "192.168.215.3"},
-                                                },
-                                                {
-                                                    {"eth6", "192.168.216.3"},
-                                                },
-                                                {
-                                                    {"eth7", "192.168.217.3"},
-                                                },
-                                            }
-                                        }
+                   },
 
-                                    },
-
-                                }
-                            }
-                    }
-                }
-            }
-        };
-
+               }}}}}};
 
     char file_name[] = "./ut_hcom_get_hcom_info_910boardidErr.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -8023,210 +6011,155 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_910boardidErr)
 
     set_board_id(0x0000);
     remove(file_name);
-
 }
-
 
 TEST_F(HcomTest, ut_hcom_get_hcom_info_910boardidErr2)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"deploy_mode", "lab"},
+           {"group_count", "1"},
+           {"chip_info", "910"},
+           {"board_id", "0x00005"},
+           {"para_plane_nic_location", "device"},
+           {"para_plane_nic_num", "8"},
+           {"para_plane_nic_name", {"eth0", "eth1", "eth2", "eth3", "eth4", "eth5", "eth6", "eth7"}},
+           {"group_list",
+            {{{"group_name", ""},
+              {"device_num", "16"},
+              {"server_num", "2"},
+              {"instance_count", "16"},
+              {"instance_list",
+               {
+                   {{"rank_id", "0"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.11"}}}}},
 
-    nlohmann::json rank_table =
-    {
-            {"status", "completed"},
-            {"deploy_mode", "lab"},
-            {"group_count", "1"},
-            {"chip_info", "910"},
-            {"board_id", "0x00005"},
-            {"para_plane_nic_location", "device"},
-            {"para_plane_nic_num", "8"},
-            {"para_plane_nic_name", {"eth0", "eth1", "eth2", "eth3","eth4", "eth5", "eth6", "eth7"}},
-            {
-                "group_list",
-                {
-                    {
-                        {"group_name", ""},
-                        {"device_num", "16"},
-                        {"server_num", "2"},
-                        {"instance_count", "16"},
-                            {
-                                "instance_list",
-                                {
-                                    {   {"rank_id", "0"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.11"}}}
-                                        }
-                                    },
+                   {{"rank_id", "1"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}}},
+                   {{"rank_id", "2"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.13"}}}}},
 
-                                    {   {"rank_id", "1"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "2"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.13"}}}
-                                        }
-                                    },
+                   {{"rank_id", "3"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.14"}}}}},
+                   {{"rank_id", "4"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.15"}}}}},
 
-                                    {   {"rank_id", "3"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.14"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "4"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.15"}}}
-                                        }
-                                    },
+                   {{"rank_id", "5"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.16"}}}}},
+                   {{"rank_id", "6"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.17"}}}}},
 
-                                    {   {"rank_id", "5"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.16"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "6"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.17"}}}
-                                        }
-                                    },
+                   {{"rank_id", "7"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.18"}}}}},
+                   {{"rank_id", "8"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.20"}}}}},
 
-                                    {   {"rank_id", "7"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.18"}}}
-                                        }
-                                    },
-                                     {  {"rank_id", "8"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.20"}}}
-                                        }
-                                    },
+                   {{"rank_id", "9"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.21"}}}}},
+                   {{"rank_id", "10"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.22"}}}}},
 
-                                    {   {"rank_id", "9"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.21"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "10"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.22"}}}
-                                        }
-                                    },
+                   {{"rank_id", "11"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.23"}}}}},
+                   {{"rank_id", "12"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.24"}}}}},
 
-                                    {   {"rank_id", "11"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.23"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "12"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.24"}}}
-                                        }
-                                    },
+                   {{"rank_id", "13"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.25"}}}}},
+                   {{"rank_id", "14"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.26"}}}}},
 
-                                    {   {"rank_id", "13"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.25"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "14"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.26"}}}
-                                        }
-                                    },
+                   {{"rank_id", "15"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}}},
+               }},
+              {"server_list",
+               {
+                   {{"server_id", "10.0.0.10"},
+                    {"para_plane_info",
+                     {
+                         {
+                             {"eth0", "192.168.200.2"},
+                         },
+                         {
+                             {"eth1", "192.168.201.2"},
+                         },
+                         {
+                             {"eth2", "192.168.202.2"},
+                         },
+                         {
+                             {"eth3", "192.168.203.2"},
+                         },
+                         {
+                             {"eth4", "192.168.204.2"},
+                         },
+                         {
+                             {"eth5", "192.168.205.2"},
+                         },
+                         {
+                             {"eth6", "192.168.206.2"},
+                         },
+                         {
+                             {"eth7", "192.168.207.2"},
+                         },
+                     }}
 
-                                    {   {"rank_id", "15"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}
-                                        }
-                                    },
-                                }
-                            },
-                            {
-                                "server_list",
-                                {
-                                    {
-                                        {"server_id", "10.0.0.10"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.200.2"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.201.2"},
-                                                },
-                                                {
-                                                    {"eth2", "192.168.202.2"},
-                                                },
-                                                {
-                                                    {"eth3", "192.168.203.2"},
-                                                },
-                                                {
-                                                    {"eth4", "192.168.204.2"},
-                                                },
-                                                {
-                                                    {"eth5", "192.168.205.2"},
-                                                },
-                                                {
-                                                    {"eth6", "192.168.206.2"},
-                                                },
-                                                {
-                                                    {"eth7", "192.168.207.2"},
-                                                },
-                                            }
-                                        }
+                   },
+                   {{"server_id", "10.0.0.11"},
+                    {"para_plane_info",
+                     {
+                         {
+                             {"eth0", "192.168.210.3"},
+                         },
+                         {
+                             {"eth1", "192.168.211.3"},
+                         },
+                         {
+                             {"eth2", "192.168.212.3"},
+                         },
+                         {
+                             {"eth3", "192.168.213.3"},
+                         },
+                         {
+                             {"eth4", "192.168.214.3"},
+                         },
+                         {
+                             {"eth5", "192.168.215.3"},
+                         },
+                         {
+                             {"eth6", "192.168.216.3"},
+                         },
+                         {
+                             {"eth7", "192.168.217.3"},
+                         },
+                     }}
 
-                                    },
-                                    {
-                                        {"server_id", "10.0.0.11"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.210.3"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.211.3"},
-                                                },
-                                                {
-                                                    {"eth2", "192.168.212.3"},
-                                                },
-                                                {
-                                                    {"eth3", "192.168.213.3"},
-                                                },
-                                                {
-                                                    {"eth4", "192.168.214.3"},
-                                                },
-                                                {
-                                                    {"eth5", "192.168.215.3"},
-                                                },
-                                                {
-                                                    {"eth6", "192.168.216.3"},
-                                                },
-                                                {
-                                                    {"eth7", "192.168.217.3"},
-                                                },
-                                            }
-                                        }
+                   },
 
-                                    },
-
-                                }
-                            }
-                    }
-                }
-            }
-        };
-
+               }}}}}};
 
     char file_name[] = "./ut_hcom_get_hcom_info_910boardidErr.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -8253,210 +6186,155 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_910boardidErr2)
 
     set_board_id(0x0000);
     remove(file_name);
-
 }
-
 
 TEST_F(HcomTest, ut_hcom_get_hcom_info_910boardidErr3)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"deploy_mode", "lab"},
+           {"group_count", "1"},
+           {"chip_info", "910"},
+           {"board_id", "0x0000"},
+           {"para_plane_nic_location", "device"},
+           {"para_plane_nic_num", "8"},
+           {"para_plane_nic_name", {"eth0", "eth1", "eth2", "eth3", "eth4", "eth5", "eth6", "eth7"}},
+           {"group_list",
+            {{{"group_name", ""},
+              {"device_num", "16"},
+              {"server_num", "2"},
+              {"instance_count", "16"},
+              {"instance_list",
+               {
+                   {{"rank_id", "0"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.11"}}}}},
 
-    nlohmann::json rank_table =
-    {
-            {"status", "completed"},
-            {"deploy_mode", "lab"},
-            {"group_count", "1"},
-            {"chip_info", "910"},
-            {"board_id", "0x0000"},
-            {"para_plane_nic_location", "device"},
-            {"para_plane_nic_num", "8"},
-            {"para_plane_nic_name", {"eth0", "eth1", "eth2", "eth3","eth4", "eth5", "eth6", "eth7"}},
-            {
-                "group_list",
-                {
-                    {
-                        {"group_name", ""},
-                        {"device_num", "16"},
-                        {"server_num", "2"},
-                        {"instance_count", "16"},
-                            {
-                                "instance_list",
-                                {
-                                    {   {"rank_id", "0"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.11"}}}
-                                        }
-                                    },
+                   {{"rank_id", "1"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}}},
+                   {{"rank_id", "2"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.13"}}}}},
 
-                                    {   {"rank_id", "1"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "2"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.13"}}}
-                                        }
-                                    },
+                   {{"rank_id", "3"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.14"}}}}},
+                   {{"rank_id", "4"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.15"}}}}},
 
-                                    {   {"rank_id", "3"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.14"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "4"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.15"}}}
-                                        }
-                                    },
+                   {{"rank_id", "5"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.16"}}}}},
+                   {{"rank_id", "6"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.17"}}}}},
 
-                                    {   {"rank_id", "5"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.16"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "6"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.17"}}}
-                                        }
-                                    },
+                   {{"rank_id", "7"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.18"}}}}},
+                   {{"rank_id", "8"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.20"}}}}},
 
-                                    {   {"rank_id", "7"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.18"}}}
-                                        }
-                                    },
-                                     {  {"rank_id", "8"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.20"}}}
-                                        }
-                                    },
+                   {{"rank_id", "9"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.21"}}}}},
+                   {{"rank_id", "10"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.22"}}}}},
 
-                                    {   {"rank_id", "9"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.21"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "10"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.22"}}}
-                                        }
-                                    },
+                   {{"rank_id", "11"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.23"}}}}},
+                   {{"rank_id", "12"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.24"}}}}},
 
-                                    {   {"rank_id", "11"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.23"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "12"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.24"}}}
-                                        }
-                                    },
+                   {{"rank_id", "13"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.25"}}}}},
+                   {{"rank_id", "14"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.26"}}}}},
 
-                                    {   {"rank_id", "13"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.25"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "14"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.26"}}}
-                                        }
-                                    },
+                   {{"rank_id", "15"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}}},
+               }},
+              {"server_list",
+               {
+                   {{"server_id", "10.0.0.10"},
+                    {"para_plane_info",
+                     {
+                         {
+                             {"eth0", "192.168.200.2"},
+                         },
+                         {
+                             {"eth1", "192.168.201.2"},
+                         },
+                         {
+                             {"eth2", "192.168.202.2"},
+                         },
+                         {
+                             {"eth3", "192.168.203.2"},
+                         },
+                         {
+                             {"eth4", "192.168.204.2"},
+                         },
+                         {
+                             {"eth5", "192.168.205.2"},
+                         },
+                         {
+                             {"eth6", "192.168.206.2"},
+                         },
+                         {
+                             {"eth7", "192.168.207.2"},
+                         },
+                     }}
 
-                                    {   {"rank_id", "15"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}
-                                        }
-                                    },
-                                }
-                            },
-                            {
-                                "server_list",
-                                {
-                                    {
-                                        {"server_id", "10.0.0.10"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.200.2"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.201.2"},
-                                                },
-                                                {
-                                                    {"eth2", "192.168.202.2"},
-                                                },
-                                                {
-                                                    {"eth3", "192.168.203.2"},
-                                                },
-                                                {
-                                                    {"eth4", "192.168.204.2"},
-                                                },
-                                                {
-                                                    {"eth5", "192.168.205.2"},
-                                                },
-                                                {
-                                                    {"eth6", "192.168.206.2"},
-                                                },
-                                                {
-                                                    {"eth7", "192.168.207.2"},
-                                                },
-                                            }
-                                        }
+                   },
+                   {{"server_id", "10.0.0.11"},
+                    {"para_plane_info",
+                     {
+                         {
+                             {"eth0", "192.168.210.3"},
+                         },
+                         {
+                             {"eth1", "192.168.211.3"},
+                         },
+                         {
+                             {"eth2", "192.168.212.3"},
+                         },
+                         {
+                             {"eth3", "192.168.213.3"},
+                         },
+                         {
+                             {"eth4", "192.168.214.3"},
+                         },
+                         {
+                             {"eth5", "192.168.215.3"},
+                         },
+                         {
+                             {"eth6", "192.168.216.3"},
+                         },
+                         {
+                             {"eth7", "192.168.217.3"},
+                         },
+                     }}
 
-                                    },
-                                    {
-                                        {"server_id", "10.0.0.11"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.210.3"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.211.3"},
-                                                },
-                                                {
-                                                    {"eth2", "192.168.212.3"},
-                                                },
-                                                {
-                                                    {"eth3", "192.168.213.3"},
-                                                },
-                                                {
-                                                    {"eth4", "192.168.214.3"},
-                                                },
-                                                {
-                                                    {"eth5", "192.168.215.3"},
-                                                },
-                                                {
-                                                    {"eth6", "192.168.216.3"},
-                                                },
-                                                {
-                                                    {"eth7", "192.168.217.3"},
-                                                },
-                                            }
-                                        }
+                   },
 
-                                    },
-
-                                }
-                            }
-                    }
-                }
-            }
-        };
-
+               }}}}}};
 
     char file_name[] = "./ut_hcom_get_hcom_info_boardidErr.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -8483,213 +6361,155 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_910boardidErr3)
 
     set_board_id(0x0000);
     remove(file_name);
-
 }
-
-
-
-
 
 TEST_F(HcomTest, ut_hcom_get_hcom_info_910boardidErr4)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"deploy_mode", "lab"},
+           {"group_count", "1"},
+           {"chip_info", "910"},
+           {"board_id", "0x00"},
+           {"para_plane_nic_location", "device"},
+           {"para_plane_nic_num", "8"},
+           {"para_plane_nic_name", {"eth0", "eth1", "eth2", "eth3", "eth4", "eth5", "eth6", "eth7"}},
+           {"group_list",
+            {{{"group_name", ""},
+              {"device_num", "16"},
+              {"server_num", "2"},
+              {"instance_count", "16"},
+              {"instance_list",
+               {
+                   {{"rank_id", "0"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.11"}}}}},
 
-    nlohmann::json rank_table =
-    {
-            {"status", "completed"},
-            {"deploy_mode", "lab"},
-            {"group_count", "1"},
-            {"chip_info", "910"},
-            {"board_id", "0x00"},
-            {"para_plane_nic_location", "device"},
-            {"para_plane_nic_num", "8"},
-            {"para_plane_nic_name", {"eth0", "eth1", "eth2", "eth3","eth4", "eth5", "eth6", "eth7"}},
-            {
-                "group_list",
-                {
-                    {
-                        {"group_name", ""},
-                        {"device_num", "16"},
-                        {"server_num", "2"},
-                        {"instance_count", "16"},
-                            {
-                                "instance_list",
-                                {
-                                    {   {"rank_id", "0"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.11"}}}
-                                        }
-                                    },
+                   {{"rank_id", "1"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}}},
+                   {{"rank_id", "2"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.13"}}}}},
 
-                                    {   {"rank_id", "1"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "2"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.13"}}}
-                                        }
-                                    },
+                   {{"rank_id", "3"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.14"}}}}},
+                   {{"rank_id", "4"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.15"}}}}},
 
-                                    {   {"rank_id", "3"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.14"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "4"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.15"}}}
-                                        }
-                                    },
+                   {{"rank_id", "5"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.16"}}}}},
+                   {{"rank_id", "6"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.17"}}}}},
 
-                                    {   {"rank_id", "5"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.16"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "6"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.17"}}}
-                                        }
-                                    },
+                   {{"rank_id", "7"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.18"}}}}},
+                   {{"rank_id", "8"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.20"}}}}},
 
-                                    {   {"rank_id", "7"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.18"}}}
-                                        }
-                                    },
-                                     {  {"rank_id", "8"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.20"}}}
-                                        }
-                                    },
+                   {{"rank_id", "9"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.21"}}}}},
+                   {{"rank_id", "10"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.22"}}}}},
 
-                                    {   {"rank_id", "9"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.21"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "10"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.22"}}}
-                                        }
-                                    },
+                   {{"rank_id", "11"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.23"}}}}},
+                   {{"rank_id", "12"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.24"}}}}},
 
-                                    {   {"rank_id", "11"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.23"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "12"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.24"}}}
-                                        }
-                                    },
+                   {{"rank_id", "13"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.25"}}}}},
+                   {{"rank_id", "14"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.26"}}}}},
 
-                                    {   {"rank_id", "13"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.25"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "14"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.26"}}}
-                                        }
-                                    },
+                   {{"rank_id", "15"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}}},
+               }},
+              {"server_list",
+               {
+                   {{"server_id", "10.0.0.10"},
+                    {"para_plane_info",
+                     {
+                         {
+                             {"eth0", "192.168.200.2"},
+                         },
+                         {
+                             {"eth1", "192.168.201.2"},
+                         },
+                         {
+                             {"eth2", "192.168.202.2"},
+                         },
+                         {
+                             {"eth3", "192.168.203.2"},
+                         },
+                         {
+                             {"eth4", "192.168.204.2"},
+                         },
+                         {
+                             {"eth5", "192.168.205.2"},
+                         },
+                         {
+                             {"eth6", "192.168.206.2"},
+                         },
+                         {
+                             {"eth7", "192.168.207.2"},
+                         },
+                     }}
 
-                                    {   {"rank_id", "15"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}
-                                        }
-                                    },
-                                }
-                            },
-                            {
-                                "server_list",
-                                {
-                                    {
-                                        {"server_id", "10.0.0.10"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.200.2"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.201.2"},
-                                                },
-                                                {
-                                                    {"eth2", "192.168.202.2"},
-                                                },
-                                                {
-                                                    {"eth3", "192.168.203.2"},
-                                                },
-                                                {
-                                                    {"eth4", "192.168.204.2"},
-                                                },
-                                                {
-                                                    {"eth5", "192.168.205.2"},
-                                                },
-                                                {
-                                                    {"eth6", "192.168.206.2"},
-                                                },
-                                                {
-                                                    {"eth7", "192.168.207.2"},
-                                                },
-                                            }
-                                        }
+                   },
+                   {{"server_id", "10.0.0.11"},
+                    {"para_plane_info",
+                     {
+                         {
+                             {"eth0", "192.168.210.3"},
+                         },
+                         {
+                             {"eth1", "192.168.211.3"},
+                         },
+                         {
+                             {"eth2", "192.168.212.3"},
+                         },
+                         {
+                             {"eth3", "192.168.213.3"},
+                         },
+                         {
+                             {"eth4", "192.168.214.3"},
+                         },
+                         {
+                             {"eth5", "192.168.215.3"},
+                         },
+                         {
+                             {"eth6", "192.168.216.3"},
+                         },
+                         {
+                             {"eth7", "192.168.217.3"},
+                         },
+                     }}
 
-                                    },
-                                    {
-                                        {"server_id", "10.0.0.11"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.210.3"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.211.3"},
-                                                },
-                                                {
-                                                    {"eth2", "192.168.212.3"},
-                                                },
-                                                {
-                                                    {"eth3", "192.168.213.3"},
-                                                },
-                                                {
-                                                    {"eth4", "192.168.214.3"},
-                                                },
-                                                {
-                                                    {"eth5", "192.168.215.3"},
-                                                },
-                                                {
-                                                    {"eth6", "192.168.216.3"},
-                                                },
-                                                {
-                                                    {"eth7", "192.168.217.3"},
-                                                },
-                                            }
-                                        }
+                   },
 
-                                    },
-
-                                }
-                            }
-                    }
-                }
-            }
-        };
-
+               }}}}}};
 
     char file_name[] = "./ut_hcom_get_hcom_info_910boardidErr4.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -8716,209 +6536,155 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_910boardidErr4)
 
     set_board_id(0x0000);
     remove(file_name);
-
 }
 
 TEST_F(HcomTest, ut_hcom_get_hcom_info_chip_info_arm)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"deploy_mode", "lab"},
+           {"group_count", "1"},
+           {"chip_info", "910"},
+           {"board_id", "0x002A"},
+           {"para_plane_nic_location", "device"},
+           {"para_plane_nic_num", "8"},
+           {"para_plane_nic_name", {"eth0", "eth1", "eth2", "eth3", "eth4", "eth5", "eth6", "eth7"}},
+           {"group_list",
+            {{{"group_name", ""},
+              {"device_num", "16"},
+              {"server_num", "2"},
+              {"instance_count", "16"},
+              {"instance_list",
+               {
+                   {{"rank_id", "0"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.11"}}}}},
 
-    nlohmann::json rank_table =
-    {
-            {"status", "completed"},
-            {"deploy_mode", "lab"},
-            {"group_count", "1"},
-            {"chip_info", "910"},
-            {"board_id", "0x002A"},
-            {"para_plane_nic_location", "device"},
-            {"para_plane_nic_num", "8"},
-            {"para_plane_nic_name", {"eth0", "eth1", "eth2", "eth3","eth4", "eth5", "eth6", "eth7"}},
-            {
-                "group_list",
-                {
-                    {
-                        {"group_name", ""},
-                        {"device_num", "16"},
-                        {"server_num", "2"},
-                        {"instance_count", "16"},
-                            {
-                                "instance_list",
-                                {
-                                    {   {"rank_id", "0"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.11"}}}
-                                        }
-                                    },
+                   {{"rank_id", "1"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}}},
+                   {{"rank_id", "2"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.13"}}}}},
 
-                                    {   {"rank_id", "1"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "2"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.13"}}}
-                                        }
-                                    },
+                   {{"rank_id", "3"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.14"}}}}},
+                   {{"rank_id", "4"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.15"}}}}},
 
-                                    {   {"rank_id", "3"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.14"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "4"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.15"}}}
-                                        }
-                                    },
+                   {{"rank_id", "5"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.16"}}}}},
+                   {{"rank_id", "6"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.17"}}}}},
 
-                                    {   {"rank_id", "5"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.16"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "6"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.17"}}}
-                                        }
-                                    },
+                   {{"rank_id", "7"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.18"}}}}},
+                   {{"rank_id", "8"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.20"}}}}},
 
-                                    {   {"rank_id", "7"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.18"}}}
-                                        }
-                                    },
-                                     {  {"rank_id", "8"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.20"}}}
-                                        }
-                                    },
+                   {{"rank_id", "9"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.21"}}}}},
+                   {{"rank_id", "10"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.22"}}}}},
 
-                                    {   {"rank_id", "9"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.21"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "10"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.22"}}}
-                                        }
-                                    },
+                   {{"rank_id", "11"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.23"}}}}},
+                   {{"rank_id", "12"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.24"}}}}},
 
-                                    {   {"rank_id", "11"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.23"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "12"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.24"}}}
-                                        }
-                                    },
+                   {{"rank_id", "13"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.25"}}}}},
+                   {{"rank_id", "14"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.26"}}}}},
 
-                                    {   {"rank_id", "13"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.25"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "14"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.26"}}}
-                                        }
-                                    },
+                   {{"rank_id", "15"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}}},
+               }},
+              {"server_list",
+               {
+                   {{"server_id", "10.0.0.10"},
+                    {"para_plane_info",
+                     {
+                         {
+                             {"eth0", "192.168.200.2"},
+                         },
+                         {
+                             {"eth1", "192.168.201.2"},
+                         },
+                         {
+                             {"eth2", "192.168.202.2"},
+                         },
+                         {
+                             {"eth3", "192.168.203.2"},
+                         },
+                         {
+                             {"eth4", "192.168.204.2"},
+                         },
+                         {
+                             {"eth5", "192.168.205.2"},
+                         },
+                         {
+                             {"eth6", "192.168.206.2"},
+                         },
+                         {
+                             {"eth7", "192.168.207.2"},
+                         },
+                     }}
 
-                                    {   {"rank_id", "15"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}
-                                        }
-                                    },
-                                }
-                            },
-                            {
-                                "server_list",
-                                {
-                                    {
-                                        {"server_id", "10.0.0.10"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.200.2"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.201.2"},
-                                                },
-                                                {
-                                                    {"eth2", "192.168.202.2"},
-                                                },
-                                                {
-                                                    {"eth3", "192.168.203.2"},
-                                                },
-                                                {
-                                                    {"eth4", "192.168.204.2"},
-                                                },
-                                                {
-                                                    {"eth5", "192.168.205.2"},
-                                                },
-                                                {
-                                                    {"eth6", "192.168.206.2"},
-                                                },
-                                                {
-                                                    {"eth7", "192.168.207.2"},
-                                                },
-                                            }
-                                        }
+                   },
+                   {{"server_id", "10.0.0.11"},
+                    {"para_plane_info",
+                     {
+                         {
+                             {"eth0", "192.168.210.3"},
+                         },
+                         {
+                             {"eth1", "192.168.211.3"},
+                         },
+                         {
+                             {"eth2", "192.168.212.3"},
+                         },
+                         {
+                             {"eth3", "192.168.213.3"},
+                         },
+                         {
+                             {"eth4", "192.168.214.3"},
+                         },
+                         {
+                             {"eth5", "192.168.215.3"},
+                         },
+                         {
+                             {"eth6", "192.168.216.3"},
+                         },
+                         {
+                             {"eth7", "192.168.217.3"},
+                         },
+                     }}
 
-                                    },
-                                    {
-                                        {"server_id", "10.0.0.11"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.210.3"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.211.3"},
-                                                },
-                                                {
-                                                    {"eth2", "192.168.212.3"},
-                                                },
-                                                {
-                                                    {"eth3", "192.168.213.3"},
-                                                },
-                                                {
-                                                    {"eth4", "192.168.214.3"},
-                                                },
-                                                {
-                                                    {"eth5", "192.168.215.3"},
-                                                },
-                                                {
-                                                    {"eth6", "192.168.216.3"},
-                                                },
-                                                {
-                                                    {"eth7", "192.168.217.3"},
-                                                },
-                                            }
-                                        }
+                   },
 
-                                    },
-
-                                }
-                            }
-                    }
-                }
-            }
-        };
-
+               }}}}}};
 
     char file_name[] = "./ut_hcom_get_hcom_info_chip_infoErr.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -8949,204 +6715,151 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_chip_info_arm)
 
 TEST_F(HcomTest, ut_hcom_get_hcom_info_chip_infoErr3)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"deploy_mode", "lab"},
+           {"group_count", "1"},
+           {"chip_info", "910"},
+           {"board_id", "0x003A"},
+           {"para_plane_nic_location", "device"},
+           {"para_plane_nic_num", "8"},
+           {"para_plane_nic_name", {"eth0", "eth1", "eth2", "eth3", "eth4", "eth5", "eth6", "eth7"}},
+           {"group_list",
+            {{{"group_name", ""},
+              {"device_num", "16"},
+              {"server_num", "2"},
+              {"instance_count", "16"},
+              {"instance_list",
+               {
+                   {{"rank_id", "0"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.11"}}}}},
 
-    nlohmann::json rank_table =
-    {
-            {"status", "completed"},
-            {"deploy_mode", "lab"},
-            {"group_count", "1"},
-            {"chip_info", "910"},
-            {"board_id", "0x003A"},
-            {"para_plane_nic_location", "device"},
-            {"para_plane_nic_num", "8"},
-            {"para_plane_nic_name", {"eth0", "eth1", "eth2", "eth3","eth4", "eth5", "eth6", "eth7"}},
-            {
-                "group_list",
-                {
-                    {
-                        {"group_name", ""},
-                        {"device_num", "16"},
-                        {"server_num", "2"},
-                        {"instance_count", "16"},
-                            {
-                                "instance_list",
-                                {
-                                    {   {"rank_id", "0"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.11"}}}
-                                        }
-                                    },
+                   {{"rank_id", "1"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}}},
+                   {{"rank_id", "2"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.13"}}}}},
 
-                                    {   {"rank_id", "1"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "2"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.13"}}}
-                                        }
-                                    },
+                   {{"rank_id", "3"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.14"}}}}},
+                   {{"rank_id", "4"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.15"}}}}},
 
-                                    {   {"rank_id", "3"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.14"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "4"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.15"}}}
-                                        }
-                                    },
+                   {{"rank_id", "5"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.16"}}}}},
+                   {{"rank_id", "6"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.17"}}}}},
 
-                                    {   {"rank_id", "5"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.16"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "6"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.17"}}}
-                                        }
-                                    },
+                   {{"rank_id", "7"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.18"}}}}},
+                   {{"rank_id", "8"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.20"}}}}},
 
-                                    {   {"rank_id", "7"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.18"}}}
-                                        }
-                                    },
-                                     {  {"rank_id", "8"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.20"}}}
-                                        }
-                                    },
+                   {{"rank_id", "9"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.21"}}}}},
+                   {{"rank_id", "10"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.22"}}}}},
 
-                                    {   {"rank_id", "9"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.21"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "10"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.22"}}}
-                                        }
-                                    },
+                   {{"rank_id", "11"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.23"}}}}},
+                   {{"rank_id", "12"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.24"}}}}},
 
-                                    {   {"rank_id", "11"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.23"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "12"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.24"}}}
-                                        }
-                                    },
+                   {{"rank_id", "13"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.25"}}}}},
+                   {{"rank_id", "14"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.26"}}}}},
 
-                                    {   {"rank_id", "13"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.25"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "14"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.26"}}}
-                                        }
-                                    },
+                   {{"rank_id", "15"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}}},
+               }},
+              {"server_list",
+               {
+                   {{"server_id", "10.0.0.10"},
+                    {"para_plane_info",
+                     {
+                         {
+                             {"eth0", "192.168.200.2"},
+                         },
+                         {
+                             {"eth1", "192.168.201.2"},
+                         },
+                         {
+                             {"eth2", "192.168.202.2"},
+                         },
+                         {
+                             {"eth3", "192.168.203.2"},
+                         },
+                         {
+                             {"eth4", "192.168.204.2"},
+                         },
+                         {
+                             {"eth5", "192.168.205.2"},
+                         },
+                         {
+                             {"eth6", "192.168.206.2"},
+                         },
+                         {
+                             {"eth7", "192.168.207.2"},
+                         },
+                     }}
 
-                                    {   {"rank_id", "15"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}
-                                        }
-                                    },
-                                }
-                            },
-                            {
-                                "server_list",
-                                {
-                                    {
-                                        {"server_id", "10.0.0.10"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.200.2"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.201.2"},
-                                                },
-                                                {
-                                                    {"eth2", "192.168.202.2"},
-                                                },
-                                                {
-                                                    {"eth3", "192.168.203.2"},
-                                                },
-                                                {
-                                                    {"eth4", "192.168.204.2"},
-                                                },
-                                                {
-                                                    {"eth5", "192.168.205.2"},
-                                                },
-                                                {
-                                                    {"eth6", "192.168.206.2"},
-                                                },
-                                                {
-                                                    {"eth7", "192.168.207.2"},
-                                                },
-                                            }
-                                        }
+                   },
+                   {{"server_id", "10.0.0.11"},
+                    {"para_plane_info",
+                     {
+                         {
+                             {"eth0", "192.168.210.3"},
+                         },
+                         {
+                             {"eth1", "192.168.211.3"},
+                         },
+                         {
+                             {"eth2", "192.168.212.3"},
+                         },
+                         {
+                             {"eth3", "192.168.213.3"},
+                         },
+                         {
+                             {"eth4", "192.168.214.3"},
+                         },
+                         {
+                             {"eth5", "192.168.215.3"},
+                         },
+                         {
+                             {"eth6", "192.168.216.3"},
+                         },
+                         {
+                             {"eth7", "192.168.217.3"},
+                         },
+                     }}
 
-                                    },
-                                    {
-                                        {"server_id", "10.0.0.11"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.210.3"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.211.3"},
-                                                },
-                                                {
-                                                    {"eth2", "192.168.212.3"},
-                                                },
-                                                {
-                                                    {"eth3", "192.168.213.3"},
-                                                },
-                                                {
-                                                    {"eth4", "192.168.214.3"},
-                                                },
-                                                {
-                                                    {"eth5", "192.168.215.3"},
-                                                },
-                                                {
-                                                    {"eth6", "192.168.216.3"},
-                                                },
-                                                {
-                                                    {"eth7", "192.168.217.3"},
-                                                },
-                                            }
-                                        }
+                   },
 
-                                    },
-
-                                }
-                            }
-                    }
-                }
-            }
-        };
-
+               }}}}}};
 
     char file_name[] = "./ut_hcom_get_hcom_info_chip_infoErr.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -9173,54 +6886,38 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_chip_infoErr3)
 
     set_board_id(0x0000);
     remove(file_name);
-
 }
 
 TEST_F(HcomTest, ut_hcom_get_new_rank_info)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"version", "1.0"},
+           {"server_count", "1"},
+           {"server_list",
+            {{
+                {"server_id", "10.0.0.10"},
+                {"host_nic_ip", "192.168.0.12:0"},
+                {"device",
+                 {
+                     {{"rank_id", "0"}, {"device_id", "0"}, {"device_ip", "192.168.0.12"}
 
-    nlohmann::json rank_table =
-    {
-        {"status", "completed"},
-        {"version", "1.0"},
-        {"server_count", "1"},
-        {
-            "server_list",
-            {
-                {
-                    {"server_id", "10.0.0.10"},
-                    {"host_nic_ip", "192.168.0.12:0"},
-                    {
-                        "device",
-                        {
-                            {   {"rank_id", "0"},
-                                {"device_id", "0"},
-                                {"device_ip", "192.168.0.12"}
-
-                            },
-                        }
-                    },
-                }
-            }
-        }
-    };
+                     },
+                 }},
+            }}}};
 
     char file_name_t[] = "./ut_hcom_get_new_rank_info.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(1) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name_t);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name_t);
     }
 
     outfile.close();
     int ret = HCCL_SUCCESS;
-
 
     ret = hrtSetDevice(0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -9251,52 +6948,36 @@ TEST_F(HcomTest, ut_hcom_get_new_rank_info)
     ret = hrtResetDevice(0);
 }
 
-
 TEST_F(HcomTest, ut_hcom_get_new_rank_info_ERR)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"version", "2.0"},
+           {"server_count", "1"},
+           {"server_list",
+            {{
+                {"server_id", "10.0.0.10"},
+                {"host_nic_ip", "192.168.0.12:0"},
+                {"device",
+                 {
+                     {{"rank_id", "0"}, {"device_id", "0"}, {"device_ip", "192.168.0.12"}
 
-    nlohmann::json rank_table =
-    {
-        {"status", "completed"},
-        {"version", "2.0"},
-        {"server_count", "1"},
-        {
-            "server_list",
-            {
-                {
-                    {"server_id", "10.0.0.10"},
-                    {"host_nic_ip", "192.168.0.12:0"},
-                    {
-                        "device",
-                        {
-                            {   {"rank_id", "0"},
-                                {"device_id", "0"},
-                                {"device_ip", "192.168.0.12"}
-
-                            },
-                        }
-                    },
-                }
-            }
-        }
-    };
+                     },
+                 }},
+            }}}};
 
     char file_name_t[] = "./ut_hcom_get_new_rank_info_ERR.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(1) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name_t);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name_t);
     }
 
     outfile.close();
     int ret = HCCL_SUCCESS;
-
 
     ret = hrtSetDevice(0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -9316,53 +6997,36 @@ TEST_F(HcomTest, ut_hcom_get_new_rank_info_ERR)
     remove(file_name_t);
 }
 
-
-
 TEST_F(HcomTest, ut_hcom_get_new_rank_info_serverCountERR)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"version", "1.0"},
+           {"server_count", "2"},
+           {"server_list",
+            {{
+                {"server_id", "10.0.0.10"},
+                {"host_nic_ip", "192.168.0.12:0"},
+                {"device",
+                 {
+                     {{"rank_id", "0"}, {"device_id", "0"}, {"device_ip", "192.168.0.12"}
 
-    nlohmann::json rank_table =
-    {
-        {"status", "completed"},
-        {"version", "1.0"},
-        {"server_count", "2"},
-        {
-            "server_list",
-            {
-                {
-                    {"server_id", "10.0.0.10"},
-                    {"host_nic_ip", "192.168.0.12:0"},
-                    {
-                        "device",
-                        {
-                            {   {"rank_id", "0"},
-                                {"device_id", "0"},
-                                {"device_ip", "192.168.0.12"}
-
-                            },
-                        }
-                    },
-                }
-            }
-        }
-    };
+                     },
+                 }},
+            }}}};
 
     char file_name_t[] = "./ut_hcom_get_new_rank_info_serverCountERR.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(1) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name_t);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name_t);
     }
 
     outfile.close();
     int ret = HCCL_SUCCESS;
-
 
     ret = hrtSetDevice(0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -9382,52 +7046,36 @@ TEST_F(HcomTest, ut_hcom_get_new_rank_info_serverCountERR)
     remove(file_name_t);
 }
 
-
 TEST_F(HcomTest, ut_hcom_get_new_rank_info_muti_ip)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"version", "1.0"},
+           {"server_count", "1"},
+           {"server_list",
+            {{
+                {"server_id", "10.0.0.10"},
+                {"host_nic_ip", "192.168.0.12:0,192.168.1.12:199"},
+                {"device",
+                 {
+                     {{"rank_id", "0"}, {"device_id", "0"}, {"device_ip", "192.168.0.12,192.168.1.12"}
 
-    nlohmann::json rank_table =
-    {
-        {"status", "completed"},
-        {"version", "1.0"},
-        {"server_count", "1"},
-        {
-            "server_list",
-            {
-                {
-                    {"server_id", "10.0.0.10"},
-                    {"host_nic_ip", "192.168.0.12:0,192.168.1.12:199"},
-                    {
-                        "device",
-                        {
-                            {   {"rank_id", "0"},
-                                {"device_id", "0"},
-                                {"device_ip", "192.168.0.12,192.168.1.12"}
-
-                            },
-                        }
-                    },
-                }
-            }
-        }
-    };
+                     },
+                 }},
+            }}}};
 
     char file_name_t[] = "./ut_hcom_get_new_rank_info_muti_ip.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(1) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name_t);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name_t);
     }
 
     outfile.close();
     int ret = HCCL_SUCCESS;
-
 
     ret = hrtSetDevice(0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -9446,49 +7094,34 @@ TEST_F(HcomTest, ut_hcom_get_new_rank_info_muti_ip)
 
 TEST_F(HcomTest, ut_hcom_get_new_rank_info_devId_err)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"version", "1.0"},
+           {"server_count", "1"},
+           {"server_list",
+            {{
+                {"server_id", "10.0.0.10"},
+                {"host_nic_ip", "192.168.0.12:198,192.168.1.12:199"},
+                {"device",
+                 {
+                     {{"rank_id", "0"}, {"device_id", "10"}, {"device_ip", "192.168.0.12,192.168.1.12"}
 
-    nlohmann::json rank_table =
-    {
-        {"status", "completed"},
-        {"version", "1.0"},
-        {"server_count", "1"},
-        {
-            "server_list",
-            {
-                {
-                    {"server_id", "10.0.0.10"},
-                    {"host_nic_ip", "192.168.0.12:198,192.168.1.12:199"},
-                    {
-                        "device",
-                        {
-                            {   {"rank_id", "0"},
-                                {"device_id", "10"},
-                                {"device_ip", "192.168.0.12,192.168.1.12"}
-
-                            },
-                        }
-                    },
-                }
-            }
-        }
-    };
+                     },
+                 }},
+            }}}};
 
     char file_name_t[] = "./ut_hcom_get_new_rank_info_devId_err.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(1) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name_t);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name_t);
     }
 
     outfile.close();
     int ret = HCCL_SUCCESS;
-
 
     ret = hrtSetDevice(0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -9510,49 +7143,34 @@ TEST_F(HcomTest, ut_hcom_get_new_rank_info_devId_err)
 
 TEST_F(HcomTest, ut_hcom_get_new_rank_info_rankId_err)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"version", "1.0"},
+           {"server_count", "1"},
+           {"server_list",
+            {{
+                {"server_id", "10.0.0.10"},
+                {"host_nic_ip", "192.168.0.12:198,192.168.1.12:199"},
+                {"device",
+                 {
+                     {{"rank_id", "2"}, {"device_id", "0"}, {"device_ip", "192.168.0.12,192.168.1.12"}
 
-    nlohmann::json rank_table =
-    {
-        {"status", "completed"},
-        {"version", "1.0"},
-        {"server_count", "1"},
-        {
-            "server_list",
-            {
-                {
-                    {"server_id", "10.0.0.10"},
-                    {"host_nic_ip", "192.168.0.12:198,192.168.1.12:199"},
-                    {
-                        "device",
-                        {
-                            {   {"rank_id", "2"},
-                                {"device_id", "0"},
-                                {"device_ip", "192.168.0.12,192.168.1.12"}
-
-                            },
-                        }
-                    },
-                }
-            }
-        }
-    };
+                     },
+                 }},
+            }}}};
 
     char file_name_t[] = "./ut_hcom_get_new_rank_info_rankId_err.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(1) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name_t);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name_t);
     }
 
     outfile.close();
     int ret = HCCL_SUCCESS;
-
 
     ret = hrtSetDevice(0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -9574,73 +7192,46 @@ TEST_F(HcomTest, ut_hcom_get_new_rank_info_rankId_err)
 
 TEST_F(HcomTest, ut_hcom_get_new_rank_info_mutiserver_devID)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"version", "1.0"},
+           {"server_count", "2"},
+           {"server_list",
+            {{
+                 {"server_id", "10.0.0.10"},
+                 {"host_nic_ip", "192.168.0.12:0,192.168.1.12:199"},
+                 {"device",
+                  {{{"rank_id", "0"}, {"device_id", "0"}, {"device_ip", "192.168.0.12,192.168.0.13"}
 
-    nlohmann::json rank_table =
-    {
-        {"status", "completed"},
-        {"version", "1.0"},
-        {"server_count", "2"},
-        {
-            "server_list",
-            {
-                {
-                    {"server_id", "10.0.0.10"},
-                    {"host_nic_ip", "192.168.0.12:0,192.168.1.12:199"},
-                    {
-                        "device",
-                        {
-                            {   {"rank_id", "0"},
-                                {"device_id", "0"},
-                                {"device_ip", "192.168.0.12,192.168.0.13"}
+                   },
+                   {{"rank_id", "1"}, {"device_id", "1"}, {"device_ip", "192.168.1.12,192.168.1.13"}
 
-                            },
-                            {   {"rank_id", "1"},
-                                {"device_id", "1"},
-                                {"device_ip", "192.168.1.12,192.168.1.13"}
+                   }}},
+             },
+             {
+                 {"server_id", "10.0.0.11"},
+                 {"host_nic_ip", "192.168.2.12:0,192.168.3.12:199"},
+                 {"device",
+                  {{{"rank_id", "2"}, {"device_id", "2"}, {"device_ip", "192.168.2.12,192.168.2.13"}
 
-                            }
-                        }
-                    },
-                },
-                {
-                    {"server_id", "10.0.0.11"},
-                    {"host_nic_ip", "192.168.2.12:0,192.168.3.12:199"},
-                    {
-                        "device",
-                        {
-                            {   {"rank_id", "2"},
-                                {"device_id", "2"},
-                                {"device_ip", "192.168.2.12,192.168.2.13"}
+                   },
+                   {{"rank_id", "3"}, {"device_id", "3"}, {"device_ip", "192.168.3.12,192.168.3.13"}
 
-                            },
-                            {   {"rank_id", "3"},
-                                {"device_id", "3"},
-                                {"device_ip", "192.168.3.12,192.168.3.13"}
-
-                            }
-                        }
-                    },
-                }
-            }
-        }
-    };
+                   }}},
+             }}}};
 
     char file_name_t[] = "./ut_hcom_get_new_rank_info_mutiserver_devID.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(1) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name_t);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name_t);
     }
 
     outfile.close();
     int ret = HCCL_SUCCESS;
-
 
     ret = hrtSetDevice(0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -9662,73 +7253,46 @@ TEST_F(HcomTest, ut_hcom_get_new_rank_info_mutiserver_devID)
 
 TEST_F(HcomTest, ut_hcom_get_new_rank_info_sameRankid)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"version", "1.0"},
+           {"server_count", "2"},
+           {"server_list",
+            {{
+                 {"server_id", "10.0.0.10"},
+                 {"host_nic_ip", "192.168.0.12:0,192.168.1.12:199"},
+                 {"device",
+                  {{{"rank_id", "0"}, {"device_id", "0"}, {"device_ip", "192.168.0.12,192.168.0.13"}
 
-    nlohmann::json rank_table =
-    {
-        {"status", "completed"},
-        {"version", "1.0"},
-        {"server_count", "2"},
-        {
-            "server_list",
-            {
-                {
-                    {"server_id", "10.0.0.10"},
-                    {"host_nic_ip", "192.168.0.12:0,192.168.1.12:199"},
-                    {
-                        "device",
-                        {
-                            {   {"rank_id", "0"},
-                                {"device_id", "0"},
-                                {"device_ip", "192.168.0.12,192.168.0.13"}
+                   },
+                   {{"rank_id", "1"}, {"device_id", "1"}, {"device_ip", "192.168.1.12,192.168.1.13"}
 
-                            },
-                            {   {"rank_id", "1"},
-                                {"device_id", "1"},
-                                {"device_ip", "192.168.1.12,192.168.1.13"}
+                   }}},
+             },
+             {
+                 {"server_id", "10.0.0.11"},
+                 {"host_nic_ip", "192.168.2.12:0,192.168.3.12:199"},
+                 {"device",
+                  {{{"rank_id", "0"}, {"device_id", "0"}, {"device_ip", "192.168.2.12,192.168.2.13"}
 
-                            }
-                        }
-                    },
-                },
-                {
-                    {"server_id", "10.0.0.11"},
-                    {"host_nic_ip", "192.168.2.12:0,192.168.3.12:199"},
-                    {
-                        "device",
-                        {
-                            {   {"rank_id", "0"},
-                                {"device_id", "0"},
-                                {"device_ip", "192.168.2.12,192.168.2.13"}
+                   },
+                   {{"rank_id", "1"}, {"device_id", "1"}, {"device_ip", "192.168.3.12,192.168.3.13"}
 
-                            },
-                            {   {"rank_id", "1"},
-                                {"device_id", "1"},
-                                {"device_ip", "192.168.3.12,192.168.3.13"}
-
-                            }
-                        }
-                    },
-                }
-            }
-        }
-    };
+                   }}},
+             }}}};
 
     char file_name_t[] = "./ut_hcom_get_new_rank_info_sameRankid.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(1) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name_t);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name_t);
     }
 
     outfile.close();
     int ret = HCCL_SUCCESS;
-
 
     ret = hrtSetDevice(0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -9748,63 +7312,42 @@ TEST_F(HcomTest, ut_hcom_get_new_rank_info_sameRankid)
     remove(file_name_t);
 }
 
-
-
 TEST_F(HcomTest, ut_hcom_get_new_rank_info_muti)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"version", "1.0"},
+           {"server_count", "1"},
+           {"server_list",
+            {{
+                {"server_id", "10.0.0.10"},
+                {"host_nic_ip", "192.168.0.12:0,192.168.1.12:199"},
+                {"device",
+                 {
+                     {{"rank_id", "0"}, {"device_id", "0"}, {"device_ip", "192.168.0.12,192.168.0.13"}
 
-    nlohmann::json rank_table =
-    {
-        {"status", "completed"},
-        {"version", "1.0"},
-        {"server_count", "1"},
-        {
-            "server_list",
-            {
-                {
-                    {"server_id", "10.0.0.10"},
-                    {"host_nic_ip", "192.168.0.12:0,192.168.1.12:199"},
-                    {
-                        "device",
-                        {
-                            {   {"rank_id", "0"},
-                                {"device_id", "0"},
-                                {"device_ip", "192.168.0.12,192.168.0.13"}
+                     },
+                     {{"rank_id", "1"}, {"device_id", "1"}, {"device_ip", "192.168.1.12,192.168.1.13"}
 
-                            },
-                            {   {"rank_id", "1"},
-                                {"device_id", "1"},
-                                {"device_ip", "192.168.1.12,192.168.1.13"}
+                     },
+                     {{"rank_id", "2"}, {"device_id", "2"}, {"device_ip", "192.168.2.12,192.168.2.13"}
 
-                            },
-                            {   {"rank_id", "2"},
-                                {"device_id", "2"},
-                                {"device_ip", "192.168.2.12,192.168.2.13"}
-
-                            },
-                        }
-                    },
-                }
-            }
-        }
-    };
+                     },
+                 }},
+            }}}};
 
     char file_name_t[] = "./ut_hcom_get_new_rank_info_muti.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(1) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name_t);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name_t);
     }
 
     outfile.close();
     int ret = HCCL_SUCCESS;
-
 
     ret = hrtSetDevice(0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -9827,59 +7370,40 @@ TEST_F(HcomTest, ut_hcom_get_new_rank_info_muti)
 #if 1
 TEST_F(HcomTest, ut_hcom_get_new_ranktable_info)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"version", "1.0"},
+           {"server_count", "1"},
+           {"server_list",
+            {{
+                {"server_id", "10.0.0.10"},
+                {"host_nic_ip", "192.168.0.12:0,192.168.1.12:199"},
+                {"device",
+                 {
+                     {{"rank_id", "0"}, {"device_id", "0"}, {"device_ip", "192.168.0.12,192.168.0.13"}
 
-    nlohmann::json rank_table =
-    {
-        {"status", "completed"},
-        {"version", "1.0"},
-        {"server_count", "1"},
-        {
-            "server_list",
-            {
-                {
-                    {"server_id", "10.0.0.10"},
-                    {"host_nic_ip", "192.168.0.12:0,192.168.1.12:199"},
-                    {
-                        "device",
-                        {
-                            {   {"rank_id", "0"},
-                                {"device_id", "0"},
-                                {"device_ip", "192.168.0.12,192.168.0.13"}
+                     },
+                     {{"rank_id", "1"}, {"device_id", "1"}, {"device_ip", "192.168.1.12,192.168.1.13"}
 
-                            },
-                            {   {"rank_id", "1"},
-                                {"device_id", "1"},
-                                {"device_ip", "192.168.1.12,192.168.1.13"}
+                     },
+                     {{"rank_id", "2"}, {"device_id", "2"}, {"device_ip", "192.168.2.12,192.168.2.13"}
 
-                            },
-                            {   {"rank_id", "2"},
-                                {"device_id", "2"},
-                                {"device_ip", "192.168.2.12,192.168.2.13"}
-
-                            },
-                        }
-                    },
-                }
-            }
-        }
-    };
+                     },
+                 }},
+            }}}};
 
     char file_name_t[] = "./ut_hcom_get_new_ranktable_info.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(1) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name_t);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name_t);
     }
 
     outfile.close();
     int ret = HCCL_SUCCESS;
-
 
     ret = hrtSetDevice(0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -9906,63 +7430,43 @@ TEST_F(HcomTest, ut_hcom_get_new_ranktable_info)
 }
 #endif
 
-
 #if 1
 TEST_F(HcomTest, ut_hcom_get_new_ranktable_info_rankID)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"version", "1.0"},
+           {"server_count", "1"},
+           {"server_list",
+            {{
+                {"server_id", "10.0.0.10"},
+                {"host_nic_ip", "192.168.0.12:0,192.168.1.12:199"},
+                {"device",
+                 {
+                     {{"rank_id", "2"}, {"device_id", "0"}, {"device_ip", "192.168.0.12,192.168.0.13"}
 
-    nlohmann::json rank_table =
-    {
-        {"status", "completed"},
-        {"version", "1.0"},
-        {"server_count", "1"},
-        {
-            "server_list",
-            {
-                {
-                    {"server_id", "10.0.0.10"},
-                    {"host_nic_ip", "192.168.0.12:0,192.168.1.12:199"},
-                    {
-                        "device",
-                        {
-                            {   {"rank_id", "2"},
-                                {"device_id", "0"},
-                                {"device_ip", "192.168.0.12,192.168.0.13"}
+                     },
+                     {{"rank_id", "1"}, {"device_id", "1"}, {"device_ip", "192.168.1.12,192.168.1.13"}
 
-                            },
-                            {   {"rank_id", "1"},
-                                {"device_id", "1"},
-                                {"device_ip", "192.168.1.12,192.168.1.13"}
+                     },
+                     {{"rank_id", "0"}, {"device_id", "2"}, {"device_ip", "192.168.2.12,192.168.2.13"}
 
-                            },
-                            {   {"rank_id", "0"},
-                                {"device_id", "2"},
-                                {"device_ip", "192.168.2.12,192.168.2.13"}
-
-                            },
-                        }
-                    },
-                }
-            }
-        }
-    };
+                     },
+                 }},
+            }}}};
 
     char file_name_t[] = "./ut_hcom_get_new_ranktable_info_rankID.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(1) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name_t);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name_t);
     }
 
     outfile.close();
     int ret = HCCL_SUCCESS;
-
 
     ret = hrtSetDevice(2);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -10005,58 +7509,40 @@ TEST_F(HcomTest, ut_hcom_test_config)
 #if 1
 TEST_F(HcomTest, ut_hcom_get_new_ranktable_info_noIP)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"version", "1.0"},
+           {"server_count", "1"},
+           {"server_list",
+            {{
+                {"server_id", "10.0.0.10"},
+                {"host_nic_ip", "192.168.0.12:0,192.168.1.12:199"},
+                {"device",
+                 {
+                     {{"rank_id", "2"}, {"device_id", "0"}
 
-    nlohmann::json rank_table =
-    {
-        {"status", "completed"},
-        {"version", "1.0"},
-        {"server_count", "1"},
-        {
-            "server_list",
-            {
-                {
-                    {"server_id", "10.0.0.10"},
-                    {"host_nic_ip", "192.168.0.12:0,192.168.1.12:199"},
-                    {
-                        "device",
-                        {
-                            {   {"rank_id", "2"},
-                                {"device_id", "0"}
+                     },
+                     {{"rank_id", "1"}, {"device_id", "1"}, {"device_ip", ""}
 
-                            },
-                            {   {"rank_id", "1"},
-                                {"device_id", "1"},
-                                {"device_ip", ""}
+                     },
+                     {{"rank_id", "0"}, {"device_id", "2"}, {"device_ip", "10.0.0.10"}
 
-                            },
-                            {   {"rank_id", "0"},
-                                {"device_id", "2"},
-                                {"device_ip", "10.0.0.10"}
-
-                            },
-                        }
-                    },
-                }
-            }
-        }
-    };
+                     },
+                 }},
+            }}}};
 
     char file_name_t[] = "./ut_hcom_get_new_ranktable_info_noIP.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(1) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name_t);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name_t);
     }
 
     outfile.close();
     int ret = HCCL_SUCCESS;
-
 
     ret = hrtSetDevice(2);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -10083,19 +7569,16 @@ TEST_F(HcomTest, ut_hcom_alltoallv)
     char file_name_t[] = "./ut_hcom_alltoallv.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(1) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name_t);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name_t);
     }
 
     outfile.close();
     s32 deviceId = 0;
-    char *identify = "0";
+    char* identify = "0";
     s32 rankSize = 1;
     s32 rank = atoi(identify);
     u64 count = 2;
@@ -10106,7 +7589,7 @@ TEST_F(HcomTest, ut_hcom_alltoallv)
     ret = hrtSetDevice(devLogicId);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    char *rankTableFile = "./ut_hcom_alltoallv.json";
+    char* rankTableFile = "./ut_hcom_alltoallv.json";
     ret = HcomInitByFile(rankTableFile, identify);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     ResetInitState();
@@ -10116,7 +7599,7 @@ TEST_F(HcomTest, ut_hcom_alltoallv)
     HostMem hostSendMem = HostMem::alloc(memSize);
     memset_s(hostSendMem.ptr(), memSize, 0, COUNT_PER_RANK * rankSize);
     for (u32 i = 0; i < COUNT_PER_RANK * rankSize; i++) {
-        *((s32 *)hostSendMem.ptr() + i) = rank + 1;
+        *((s32*)hostSendMem.ptr() + i) = rank + 1;
     }
 
     // 构造入参
@@ -10131,14 +7614,16 @@ TEST_F(HcomTest, ut_hcom_alltoallv)
     }
 
     DeviceMem sendMem = DeviceMem::alloc(memSize);
-    ret = hrtMemSyncCopy(sendMem.ptr(), memSize, hostSendMem.ptr(), memSize, HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE);
+    ret = hrtMemSyncCopy(
+        sendMem.ptr(), memSize, hostSendMem.ptr(), memSize, HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     DeviceMem recvMem = DeviceMem::alloc(memSize);
 
     hccl::Stream stream(StreamType::STREAM_TYPE_OFFLINE);
     MOCKER_CPP(&hcclComm::GetNumBlocks).stubs().will(returnValue(HCCL_SUCCESS));
-    ret = HcomAlltoAllV(sendMem.ptr(), sendCounts.data(), sdispls.data(), HCCL_DATA_TYPE_INT32, recvMem.ptr(),
-        recvCounts.data(), rdispls.data(), HCCL_DATA_TYPE_INT32, nullptr, stream.ptr(), "hcom_alltoallv");
+    ret = HcomAlltoAllV(
+        sendMem.ptr(), sendCounts.data(), sdispls.data(), HCCL_DATA_TYPE_INT32, recvMem.ptr(), recvCounts.data(),
+        rdispls.data(), HCCL_DATA_TYPE_INT32, nullptr, stream.ptr(), "hcom_alltoallv");
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     ret = hcclStreamSynchronize(stream.ptr());
@@ -10157,19 +7642,16 @@ TEST_F(HcomTest, ut_hcom_alltoallv_null_input)
     char file_name_t[] = "./ut_hcom_alltoallv_null_input.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(1) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name_t);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name_t);
     }
 
     outfile.close();
     s32 deviceId = 0;
-    char *identify = "0";
+    char* identify = "0";
     s32 rankSize = 1;
     s32 rank = atoi(identify);
     u64 count = 2;
@@ -10180,7 +7662,7 @@ TEST_F(HcomTest, ut_hcom_alltoallv_null_input)
     ret = hrtSetDevice(devLogicId);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    char *rankTableFile = "./ut_hcom_alltoallv_null_input.json";
+    char* rankTableFile = "./ut_hcom_alltoallv_null_input.json";
     ret = HcomInitByFile(rankTableFile, identify);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     ResetInitState();
@@ -10196,8 +7678,9 @@ TEST_F(HcomTest, ut_hcom_alltoallv_null_input)
 
     hccl::Stream stream(StreamType::STREAM_TYPE_OFFLINE);
     MOCKER_CPP(&hcclComm::GetNumBlocks).stubs().will(returnValue(HCCL_SUCCESS));
-    ret = HcomAlltoAllV(nullptr, sendCounts.data(), sdispls.data(), HCCL_DATA_TYPE_INT32, nullptr,
-        recvCounts.data(), rdispls.data(), HCCL_DATA_TYPE_INT32, nullptr, stream.ptr(), "hcom_alltoallv");
+    ret = HcomAlltoAllV(
+        nullptr, sendCounts.data(), sdispls.data(), HCCL_DATA_TYPE_INT32, nullptr, recvCounts.data(), rdispls.data(),
+        HCCL_DATA_TYPE_INT32, nullptr, stream.ptr(), "hcom_alltoallv");
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     ret = hcclStreamSynchronize(stream.ptr());
@@ -10212,56 +7695,18 @@ TEST_F(HcomTest, ut_hcom_alltoallv_null_input)
 
 TEST_F(HcomTest, ut_hcom_init_by_string)
 {
-    nlohmann::json rank_table =
-    {
-	    {"collective_id", "192.168.3.3-9527-0001"},
-        {"master_ip", "192.168.0.100"},
-        {"master_port", "18000"},
-        {"status", "completed"},
-	    {"version","1.1"},
-        {"node_list", {
-            {
-                {"node_addr", "192.168.0.101"},
-                {"ranks", {
-                    {
-                        {"rank_id", "0"},
-                        {"device_id", "0"}
-                    }
-                }}
-            },
-            {
-                {"node_addr", "192.168.1.101"},
-                {"ranks", {
-                    {
-                        {"rank_id", "1"},
-                        {"device_id", "0"}
-                    }
-                }}
-            },
-            {
-                {"node_addr", "192.168.2.101"},
-                {"ranks", {
-                    {
-                        {"rank_id", "2"},
-                        {"device_id", "0"}
-                    }
-                }}
-            },
-            {
-                {"node_addr", "192.168.3.101"},
-                {"ranks", {
-                    {
-                        {"rank_id", "3"},
-                        {"device_id", "0"}
-                    }
-                }}
-            }
-        }
-        }
-    };
-    MOCKER(Is310PDevice)
-    .stubs()
-    .will(returnValue(true));
+    nlohmann::json rank_table
+        = {{"collective_id", "192.168.3.3-9527-0001"},
+           {"master_ip", "192.168.0.100"},
+           {"master_port", "18000"},
+           {"status", "completed"},
+           {"version", "1.1"},
+           {"node_list",
+            {{{"node_addr", "192.168.0.101"}, {"ranks", {{{"rank_id", "0"}, {"device_id", "0"}}}}},
+             {{"node_addr", "192.168.1.101"}, {"ranks", {{{"rank_id", "1"}, {"device_id", "0"}}}}},
+             {{"node_addr", "192.168.2.101"}, {"ranks", {{{"rank_id", "2"}, {"device_id", "0"}}}}},
+             {{"node_addr", "192.168.3.101"}, {"ranks", {{{"rank_id", "3"}, {"device_id", "0"}}}}}}}};
+    MOCKER(Is310PDevice).stubs().will(returnValue(true));
 
     std::string rank_table_string = rank_table.dump();
     HcclResult ret;
@@ -10276,7 +7721,7 @@ TEST_F(HcomTest, ut_hcom_init_by_string)
     ret = HcomDestroy();
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    std::string rank_table_string_invalid(40*1024*1024+1,'a');
+    std::string rank_table_string_invalid(40 * 1024 * 1024 + 1, 'a');
     ret = HcomInitByString(rank_table_string_invalid.c_str(), "2");
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
@@ -10287,19 +7732,16 @@ TEST_F(HcomTest, ut_hcom_get_dev_phy_id)
     char file_name_t[] = "./ut_hcom_get_dev_phy_id.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(1) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name_t);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name_t);
     }
 
     outfile.close();
     s32 deviceId = 0;
-    char *identify = "0";
+    char* identify = "0";
     s32 rankSize = 1;
     s32 rank = atoi(identify);
     u64 count = 2;
@@ -10310,10 +7752,10 @@ TEST_F(HcomTest, ut_hcom_get_dev_phy_id)
     ret = hrtSetDevice(devLogicId);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    char *rankTableFile = "./ut_hcom_get_dev_phy_id.json";
+    char* rankTableFile = "./ut_hcom_get_dev_phy_id.json";
     ret = HcomInitByFile(rankTableFile, identify);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    const char *group = HCCL_WORLD_GROUP;
+    const char* group = HCCL_WORLD_GROUP;
     s32 devId = 0;
     ret = HcomGetDevId(group, &devId);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -10328,7 +7770,7 @@ TEST_F(HcomTest, ut_hcom_get_dev_phy_id)
 
 TEST_F(HcomTest, ut_hcom_HcclCommGraphGetDevId)
 {
-    hccl::hcclComm *comm = new hccl::hcclComm(1, 1, "123");
+    hccl::hcclComm* comm = new hccl::hcclComm(1, 1, "123");
     comm->communicator_.reset(new (std::nothrow) HcclCommunicator());
     comm->communicator_->deviceLogicId_ = 1;
     s64 opBaseHcom = (s64)comm;
@@ -10340,15 +7782,11 @@ TEST_F(HcomTest, ut_hcom_HcclCommGraphGetDevId)
 
 TEST_F(HcomTest, ut_hcom_get_dev_phy_id_group)
 {
-    const char *group = "test_group";
+    const char* group = "test_group";
     s32 devId = 0;
 
-    MOCKER(HcomGetRankId)
-    .expects(atMost(1))
-    .will(returnValue(HCCL_SUCCESS));
-    MOCKER(HcomGetWorldRankFromGroupRank)
-    .expects(atMost(1))
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(HcomGetRankId).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
+    MOCKER(HcomGetWorldRankFromGroupRank).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
 
     HcclResult ret = HcomGetDevId(group, &devId);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -10357,12 +7795,10 @@ TEST_F(HcomTest, ut_hcom_get_dev_phy_id_group)
 
 TEST_F(HcomTest, ut_HcclCommGraphUnloadTask)
 {
-    hccl::hcclComm *comm = new hccl::hcclComm(1, 1, "123");
+    hccl::hcclComm* comm = new hccl::hcclComm(1, 1, "123");
     s64 opBaseHcom = (s64)comm;
     std::string tag = "test_tag";
-    MOCKER_CPP(&hcclComm::ClearOpResource)
-    .expects(atMost(1))
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hcclComm::ClearOpResource).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
     HcclResult ret = HcclCommGraphUnloadTask(opBaseHcom, tag.c_str());
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
@@ -10371,12 +7807,10 @@ TEST_F(HcomTest, ut_HcclCommGraphUnloadTask)
 
 TEST_F(HcomTest, ut_HcclCommGlobalWorkSpace)
 {
-    hccl::hcclComm *comm = new hccl::hcclComm(1, 1, "123");
+    hccl::hcclComm* comm = new hccl::hcclComm(1, 1, "123");
     s64 opBaseHcom = (s64)comm;
-    std::vector<void *> globalWorkSpaceAddr;
-    MOCKER_CPP(&hcclComm::SetGlobalWorkSpace)
-    .expects(atMost(1))
-    .will(returnValue(HCCL_SUCCESS));
+    std::vector<void*> globalWorkSpaceAddr;
+    MOCKER_CPP(&hcclComm::SetGlobalWorkSpace).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
     HcclResult ret = HcclCommSetGlobalWorkSpace(opBaseHcom, globalWorkSpaceAddr);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
@@ -10386,59 +7820,40 @@ TEST_F(HcomTest, ut_HcclCommGlobalWorkSpace)
 #if 1
 TEST_F(HcomTest, ut_hcom_get_new_ranktable_info_serverId)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"version", "1.0"},
+           {"server_count", "1"},
+           {"server_list",
+            {{
+                {"server_id", "167772170"},
+                {"host_nic_ip", "192.168.0.12:0,192.168.1.12:199"},
+                {"device",
+                 {
+                     {{"rank_id", "2"}, {"device_id", "0"}, {"device_ip", "192.168.0.12,192.168.0.13"}
 
-    nlohmann::json rank_table =
-    {
-        {"status", "completed"},
-        {"version", "1.0"},
-        {"server_count", "1"},
-        {
-            "server_list",
-            {
-                {
-                    {"server_id", "167772170"},
-                    {"host_nic_ip", "192.168.0.12:0,192.168.1.12:199"},
-                    {
-                        "device",
-                        {
-                            {   {"rank_id", "2"},
-                                {"device_id", "0"},
-                                {"device_ip", "192.168.0.12,192.168.0.13"}
+                     },
+                     {{"rank_id", "1"}, {"device_id", "1"}, {"device_ip", "192.168.1.12,192.168.1.13"}
 
-                            },
-                            {   {"rank_id", "1"},
-                                {"device_id", "1"},
-                                {"device_ip", "192.168.1.12,192.168.1.13"}
+                     },
+                     {{"rank_id", "0"}, {"device_id", "2"}, {"device_ip", "192.168.2.12,192.168.2.13"}
 
-                            },
-                            {   {"rank_id", "0"},
-                                {"device_id", "2"},
-                                {"device_ip", "192.168.2.12,192.168.2.13"}
-
-                            },
-                        }
-                    },
-                }
-            }
-        }
-    };
+                     },
+                 }},
+            }}}};
 
     char file_name_t[] = "./ut_hcom_get_new_ranktable_info_serverId.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(1) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name_t);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name_t);
     }
 
     outfile.close();
     int ret = HCCL_SUCCESS;
-
 
     ret = hrtSetDevice(2);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -10461,59 +7876,40 @@ TEST_F(HcomTest, ut_hcom_get_new_ranktable_info_serverId)
 #if 1
 TEST_F(HcomTest, ut_hcom_get_new_ranktable_info_empty_serverId)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"version", "1.0"},
+           {"server_count", "1"},
+           {"server_list",
+            {{
+                {"server_id", ""},
+                {"host_nic_ip", "192.168.0.12:0,192.168.1.12:199"},
+                {"device",
+                 {
+                     {{"rank_id", "2"}, {"device_id", "0"}, {"device_ip", "192.168.0.12,192.168.0.13"}
 
-    nlohmann::json rank_table =
-    {
-        {"status", "completed"},
-        {"version", "1.0"},
-        {"server_count", "1"},
-        {
-            "server_list",
-            {
-                {
-                    {"server_id", ""},
-                    {"host_nic_ip", "192.168.0.12:0,192.168.1.12:199"},
-                    {
-                        "device",
-                        {
-                            {   {"rank_id", "2"},
-                                {"device_id", "0"},
-                                {"device_ip", "192.168.0.12,192.168.0.13"}
+                     },
+                     {{"rank_id", "1"}, {"device_id", "1"}, {"device_ip", "192.168.1.12,192.168.1.13"}
 
-                            },
-                            {   {"rank_id", "1"},
-                                {"device_id", "1"},
-                                {"device_ip", "192.168.1.12,192.168.1.13"}
+                     },
+                     {{"rank_id", "0"}, {"device_id", "2"}, {"device_ip", "192.168.2.12,192.168.2.13"}
 
-                            },
-                            {   {"rank_id", "0"},
-                                {"device_id", "2"},
-                                {"device_ip", "192.168.2.12,192.168.2.13"}
-
-                            },
-                        }
-                    },
-                }
-            }
-        }
-    };
+                     },
+                 }},
+            }}}};
 
     char file_name_t[] = "./ut_hcom_get_new_ranktable_info_empty_serverId.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(1) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name_t);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name_t);
     }
 
     outfile.close();
     int ret = HCCL_SUCCESS;
-
 
     ret = hrtSetDevice(2);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -10536,59 +7932,40 @@ TEST_F(HcomTest, ut_hcom_get_new_ranktable_info_empty_serverId)
 #if 1
 TEST_F(HcomTest, ut_hcom_get_new_ranktable_info_exception_serverId)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"version", "1.0"},
+           {"server_count", "1"},
+           {"server_list",
+            {{
+                {"server_id", "4294967296"},
+                {"host_nic_ip", "192.168.0.12:0,192.168.1.12:199"},
+                {"device",
+                 {
+                     {{"rank_id", "2"}, {"device_id", "0"}, {"device_ip", "192.168.0.12,192.168.0.13"}
 
-    nlohmann::json rank_table =
-    {
-        {"status", "completed"},
-        {"version", "1.0"},
-        {"server_count", "1"},
-        {
-            "server_list",
-            {
-                {
-                    {"server_id", "4294967296"},
-                    {"host_nic_ip", "192.168.0.12:0,192.168.1.12:199"},
-                    {
-                        "device",
-                        {
-                            {   {"rank_id", "2"},
-                                {"device_id", "0"},
-                                {"device_ip", "192.168.0.12,192.168.0.13"}
+                     },
+                     {{"rank_id", "1"}, {"device_id", "1"}, {"device_ip", "192.168.1.12,192.168.1.13"}
 
-                            },
-                            {   {"rank_id", "1"},
-                                {"device_id", "1"},
-                                {"device_ip", "192.168.1.12,192.168.1.13"}
+                     },
+                     {{"rank_id", "0"}, {"device_id", "2"}, {"device_ip", "192.168.2.12,192.168.2.13"}
 
-                            },
-                            {   {"rank_id", "0"},
-                                {"device_id", "2"},
-                                {"device_ip", "192.168.2.12,192.168.2.13"}
-
-                            },
-                        }
-                    },
-                }
-            }
-        }
-    };
+                     },
+                 }},
+            }}}};
 
     char file_name_t[] = "./ut_hcom_get_new_ranktable_info_exception_serverId.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(1) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name_t);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name_t);
     }
 
     outfile.close();
     int ret = HCCL_SUCCESS;
-
 
     ret = hrtSetDevice(2);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -10611,56 +7988,37 @@ TEST_F(HcomTest, ut_hcom_get_new_ranktable_info_exception_serverId)
 #if 1
 TEST_F(HcomTest, ut_rank_select_err)
 {
-    nlohmann::json rank_table =
-    {
-        {"status", "completed"},
-        {"version", "1.0"},
-        {"server_count", "1"},
-        {
-            "server_list",
-            {
-                {
-                    {"server_id", "10.0.0.10"},
-                    {"host_nic_ip", "192.168.0.12:0,192.168.1.12:199"},
-                    {
-                        "device",
-                        {
-                            {   {"rank_id", "0"},
-                                {"device_id", "0"},
-                                {"device_ip", "192.168.0.1"}
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"version", "1.0"},
+           {"server_count", "1"},
+           {"server_list",
+            {{
+                {"server_id", "10.0.0.10"},
+                {"host_nic_ip", "192.168.0.12:0,192.168.1.12:199"},
+                {"device",
+                 {
+                     {{"rank_id", "0"}, {"device_id", "0"}, {"device_ip", "192.168.0.1"}
 
-                            },
-                            {   {"rank_id", "1"},
-                                {"device_id", "1"},
-                                {"device_ip", "192.168.0.2"}
+                     },
+                     {{"rank_id", "1"}, {"device_id", "1"}, {"device_ip", "192.168.0.2"}
 
-                            },
-                            {   {"rank_id", "2"},
-                                {"device_id", "6"},
-                                {"device_ip", "192.168.0.3"}
+                     },
+                     {{"rank_id", "2"}, {"device_id", "6"}, {"device_ip", "192.168.0.3"}
 
-                            },
-                            {   {"rank_id", "3"},
-                                {"device_id", "7"},
-                                {"device_ip", "192.168.0.4"}
+                     },
+                     {{"rank_id", "3"}, {"device_id", "7"}, {"device_ip", "192.168.0.4"}
 
-                            },
-                        }
-                    },
-                }
-            }
-        }
-    };
+                     },
+                 }},
+            }}}};
     char file_name_t[] = "./ut_mpi_broadcast_4ranks_2server_ring_float_root10_4096_not_equa.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name_t);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name_t);
     }
 
@@ -10688,67 +8046,54 @@ TEST_F(HcomTest, ut_rank_inner_server_4p_select_full)
     test.serverId_ = "1";
     test.deviceType_ = DevType::DEV_TYPE_910;
     for (int i = 0; i < 8; ++i)
-    for (int j = i + 1; j < 8; ++j)
-    for (int k = j + 1; k < 8; ++k)
-    for (int m = k + 1; m < 8; ++m)
-    {
-        RankInfo tmp;
-        tmp.serverIdx = 0;
-        tmp.serverId = "1";
-        tmp.devicePhyId = i;
-        test.rankList_.push_back(tmp);
-        tmp.devicePhyId = j;
-        test.rankList_.push_back(tmp);
-        tmp.devicePhyId = k;
-        test.rankList_.push_back(tmp);
-        tmp.devicePhyId = m;
-        test.rankList_.push_back(tmp);
-        if (test.CheckServerInnerRankInfo() == 0) ret++;
-        test.rankList_.clear();
-    }
+        for (int j = i + 1; j < 8; ++j)
+            for (int k = j + 1; k < 8; ++k)
+                for (int m = k + 1; m < 8; ++m) {
+                    RankInfo tmp;
+                    tmp.serverIdx = 0;
+                    tmp.serverId = "1";
+                    tmp.devicePhyId = i;
+                    test.rankList_.push_back(tmp);
+                    tmp.devicePhyId = j;
+                    test.rankList_.push_back(tmp);
+                    tmp.devicePhyId = k;
+                    test.rankList_.push_back(tmp);
+                    tmp.devicePhyId = m;
+                    test.rankList_.push_back(tmp);
+                    if (test.CheckServerInnerRankInfo() == 0)
+                        ret++;
+                    test.rankList_.clear();
+                }
     EXPECT_EQ(ret, 8);
 }
 #endif
 
 TEST_F(HcomTest, ut_hcom_reducescatter_cloud)
 {
-    nlohmann::json rank_table =
-    {
+    nlohmann::json rank_table = {
         {"status", "completed"},
         {"group_count", "1"},
-        {
-            "group_list",
-            {
-                {
-                    {"group_name", ""},
-                    {"instance_count", "1"},
-                    {"device_count", "1"},
-                    {
-                        "instance_list",
-                        {
-                            {   {"pod_name", "tf-bae43"},
-                                {"server_id", "10.0.0.10"},
-                                {
-                                    "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.12"}}}
-                                }
-                            },
-                        }
-                    },
-                }
-            }
-        },
+        {"group_list",
+         {{
+             {"group_name", ""},
+             {"instance_count", "1"},
+             {"device_count", "1"},
+             {"instance_list",
+              {
+                  {{"pod_name", "tf-bae43"},
+                   {"server_id", "10.0.0.10"},
+                   {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.12"}}}}},
+              }},
+         }}},
     };
 
     char file_name_t[] = "./ut_hcom_reducescatter_cloud.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(1) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name_t);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name_t);
     }
 
@@ -10760,7 +8105,7 @@ TEST_F(HcomTest, ut_hcom_reducescatter_cloud)
     s8* sendbuf;
     s8* recvbuf;
     s32 rank = 0;
-    s32 errors=0;
+    s32 errors = 0;
     s32 count = HCCL_COM_DATA_SIZE;
     ret = hrtSetDevice(0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -10773,13 +8118,12 @@ TEST_F(HcomTest, ut_hcom_reducescatter_cloud)
 
     rt_ret = aclrtCreateStream(&stream);
     EXPECT_EQ(rt_ret, RT_ERROR_NONE);
-    sendbuf= (s8*)sal_malloc(count * sizeof(s8));
-     sal_memset(sendbuf, count * sizeof(s8) , 0, count * sizeof(s8) );
-    recvbuf= (s8*)sal_malloc(count * sizeof(s8));
-     sal_memset(recvbuf, count * sizeof(s8) , 0, count * sizeof(s8) );
+    sendbuf = (s8*)sal_malloc(count * sizeof(s8));
+    sal_memset(sendbuf, count * sizeof(s8), 0, count * sizeof(s8));
+    recvbuf = (s8*)sal_malloc(count * sizeof(s8));
+    sal_memset(recvbuf, count * sizeof(s8), 0, count * sizeof(s8));
 
-    for (int j = 0; j < count; j++)
-    {
+    for (int j = 0; j < count; j++) {
         sendbuf[j] = 2;
     }
     //-----------------Set Workspace Resource Start------------------//:
@@ -10794,7 +8138,7 @@ TEST_F(HcomTest, ut_hcom_reducescatter_cloud)
     ret = HcomGetWorkspaceSubStreamNum(strGroup1, stream_list_size);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(stream_list_size, 0);
-    ret = HcomCreateGroup(strGroup1, groupRanksNum,(u32*)groupRanks);
+    ret = HcomCreateGroup(strGroup1, groupRanksNum, (u32*)groupRanks);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     ret = HcomGetWorkspaceSubStreamNum(strGroup1, stream_list_size);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -10803,12 +8147,11 @@ TEST_F(HcomTest, ut_hcom_reducescatter_cloud)
     EXPECT_EQ(ret, HCCL_SUCCESS);
     HCCL_INFO("get stream_list_size[%d] success", stream_list_size);
     vector<HcclRtStream> streamList(stream_list_size);
-    //生成从stream
-    for (s32 i = 0; i < stream_list_size; i++)
-    {
+    // 生成从stream
+    for (s32 i = 0; i < stream_list_size; i++) {
         rt_ret = aclrtCreateStreamWithConfig(&streamList[i], 0, ACL_STREAM_PERSISTENT);
         EXPECT_EQ(rt_ret, RT_ERROR_NONE);
-        //从流bind到model
+        // 从流bind到model
         rt_ret = rtModelBindStream(model, streamList[i], RT_MODEL_WAIT_ACTIVE_STREAM);
         EXPECT_EQ(rt_ret, RT_ERROR_NONE);
     }
@@ -10821,25 +8164,26 @@ TEST_F(HcomTest, ut_hcom_reducescatter_cloud)
     ret = HcomGetWorkspaceMemSize("HcomReduceScatter", count, HCCL_DATA_TYPE_INT8, HCCL_WORLD_GROUP, memSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    void *memptr = nullptr;
+    void* memptr = nullptr;
     ret = hrtMalloc(&memptr, memSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    ret = HcomSetWorkspaceResource("testreducescatter", HCCL_WORLD_GROUP, streamList.data(), streamList.size(), memptr, memSize);
+    ret = HcomSetWorkspaceResource(
+        "testreducescatter", HCCL_WORLD_GROUP, streamList.data(), streamList.size(), memptr, memSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    ret = HcomRpcSetWorkspaceResource("testreducescatter", HCCL_WORLD_GROUP, streamList.data(), streamList.size(), memptr, memSize);
+    ret = HcomRpcSetWorkspaceResource(
+        "testreducescatter", HCCL_WORLD_GROUP, streamList.data(), streamList.size(), memptr, memSize);
     //-----------------Set Workspace Resource End------------------//
-    ret = HcomReduceScatter("testreducescatter", sendbuf, recvbuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, HCCL_WORLD_GROUP, stream);
+    ret = HcomReduceScatter(
+        "testreducescatter", sendbuf, recvbuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, HCCL_WORLD_GROUP, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     rt_ret = aclrtSynchronizeStream(stream);
     EXPECT_EQ(rt_ret, RT_ERROR_NONE);
 
-    for (int j = 0; j < count; j++)
-    {
-        if (recvbuf[j] != 2)
-        {
-            HCCL_ERROR("ERR recvbuf[%d] = [%d] ",j,recvbuf[j]);
-            errors ++;
+    for (int j = 0; j < count; j++) {
+        if (recvbuf[j] != 2) {
+            HCCL_ERROR("ERR recvbuf[%d] = [%d] ", j, recvbuf[j]);
+            errors++;
             break;
         }
     }
@@ -10850,8 +8194,7 @@ TEST_F(HcomTest, ut_hcom_reducescatter_cloud)
 
     ret = HcomDestroy();
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    for (s32 i = 0; i < stream_list_size; i++)
-    {
+    for (s32 i = 0; i < stream_list_size; i++) {
         rt_ret = rtModelUnbindStream(model, streamList[i]);
         EXPECT_EQ(rt_ret, RT_ERROR_NONE);
 
@@ -10863,88 +8206,75 @@ TEST_F(HcomTest, ut_hcom_reducescatter_cloud)
     EXPECT_EQ(errors, 0);
 }
 
-HcclResult Stub_GetAlgType_DEFAULT(hcclComm* comm, AlgType &algType)
+HcclResult Stub_GetAlgType_DEFAULT(hcclComm* comm, AlgType& algType)
 {
     HCCL_INFO("==TMP== point1");
     algType = AlgType();
     return HCCL_SUCCESS;
 }
 
-HcclResult Stub_GetAlgType_Reserved(hcclComm* comm, AlgType &algType)
+HcclResult Stub_GetAlgType_Reserved(hcclComm* comm, AlgType& algType)
 {
     algType = AlgType::Reserved();
     return HCCL_SUCCESS;
 }
 
-HcclResult Stub_GetAlgType_mesh_plus_ring(hcclComm* comm, AlgType &algType)
+HcclResult Stub_GetAlgType_mesh_plus_ring(hcclComm* comm, AlgType& algType)
 {
     algType.algoLevel0 = AlgTypeLevel0::ALG_LEVEL0_4P_MESH;
     algType.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_RING;
     return HCCL_SUCCESS;
 }
 
-HcclResult Stub_GetAlgType_Reserved_plus_NHR_V1(hcclComm* comm, AlgType &algType)
+HcclResult Stub_GetAlgType_Reserved_plus_NHR_V1(hcclComm* comm, AlgType& algType)
 {
     algType.algoLevel0 = AlgTypeLevel0::ALG_LEVEL0_RESERVED;
     algType.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_NHR_V1;
     return HCCL_SUCCESS;
 }
 
-HcclResult Stub_GetAlgType_pipeline(HcclCommunicator* comm, AlgType &algType, HcclCMDType opType)
+HcclResult Stub_GetAlgType_pipeline(HcclCommunicator* comm, AlgType& algType, HcclCMDType opType)
 {
     algType.algoLevel0 = AlgTypeLevel0::ALG_LEVEL0_NP_MESH;
     algType.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_PIPELINE;
     return HCCL_SUCCESS;
 }
 
-HcclResult Stub_GetAlgType_ALG_ALLGATHER_REDUCESCATTER_GRAPH_PIPELINE(
-    HcclCommunicator *comm, AlgType &algType, HcclCMDType opType)
+HcclResult
+Stub_GetAlgType_ALG_ALLGATHER_REDUCESCATTER_GRAPH_PIPELINE(HcclCommunicator* comm, AlgType& algType, HcclCMDType opType)
 {
     algType.algoLevel0 = AlgTypeLevel0::ALG_LEVEL0_NP_MESH;
-    
+
     return HCCL_SUCCESS;
 }
 
 TEST_F(HcomTest, ut_HcomGetAlgorithm)
 {
-    nlohmann::json rank_table =
-    {
+    nlohmann::json rank_table = {
         {"status", "completed"},
         {"chip_info", "910"},
         {"group_count", "1"},
-        {
-            "group_list",
-            {
-                {
-                    {"group_name", ""},
-                    {"instance_count", "1"},
-                    {"device_count", "1"},
-                    {
-                        "instance_list",
-                        {
-                            {   {"pod_name", "tf-bae43"},
-                                {"server_id", "10.0.0.10"},
-                                {
-                                    "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.12"}}}
-                                }
-                            },
-                        }
-                    },
-                }
-            }
-        },
+        {"group_list",
+         {{
+             {"group_name", ""},
+             {"instance_count", "1"},
+             {"device_count", "1"},
+             {"instance_list",
+              {
+                  {{"pod_name", "tf-bae43"},
+                   {"server_id", "10.0.0.10"},
+                   {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.12"}}}}},
+              }},
+         }}},
     };
 
     char file_name_t[] = "./ut_HcomGetAlgorithm.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(1) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name_t);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name_t);
     }
 
@@ -10964,57 +8294,44 @@ TEST_F(HcomTest, ut_HcomGetAlgorithm)
 
     u32 level = 1;
     std::string algo;
-    MOCKER_CPP(&hcclComm::GetAlgType)
-              .stubs()
-              .will(invoke(Stub_GetAlgType_DEFAULT));
+    MOCKER_CPP(&hcclComm::GetAlgType).stubs().will(invoke(Stub_GetAlgType_DEFAULT));
     ret = HcomGetAlgorithm(level, algo);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
 
     level = 0;
-    MOCKER_CPP(&hcclComm::GetAlgType)
-                .stubs()
-              .will(invoke(Stub_GetAlgType_mesh_plus_ring));
+    MOCKER_CPP(&hcclComm::GetAlgType).stubs().will(invoke(Stub_GetAlgType_mesh_plus_ring));
     ret = HcomGetAlgorithm(level, algo);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-        GlobalMockObject::verify();
+    GlobalMockObject::verify();
 
     level = 1;
-    MOCKER_CPP(&hcclComm::GetAlgType)
-                .stubs()
-              .will(invoke(Stub_GetAlgType_mesh_plus_ring));
+    MOCKER_CPP(&hcclComm::GetAlgType).stubs().will(invoke(Stub_GetAlgType_mesh_plus_ring));
     ret = HcomGetAlgorithm(level, algo);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-        GlobalMockObject::verify();
+    GlobalMockObject::verify();
 
     level = 0;
-    MOCKER_CPP(&hcclComm::GetAlgType)
-                .stubs()
-              .will(invoke(Stub_GetAlgType_Reserved_plus_NHR_V1));
+    MOCKER_CPP(&hcclComm::GetAlgType).stubs().will(invoke(Stub_GetAlgType_Reserved_plus_NHR_V1));
     ret = HcomGetAlgorithm(level, algo);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-        GlobalMockObject::verify();
+    GlobalMockObject::verify();
 
     level = 0;
-    MOCKER_CPP(&hcclComm::GetAlgType)
-                .stubs()
-              .will(invoke(Stub_GetAlgType_Reserved));
+    MOCKER_CPP(&hcclComm::GetAlgType).stubs().will(invoke(Stub_GetAlgType_Reserved));
     ret = HcomGetAlgorithm(level, algo);
     EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
-        GlobalMockObject::verify();
+    GlobalMockObject::verify();
 
     level = 1;
-    MOCKER_CPP(&hcclComm::GetAlgType)
-                .stubs()
-              .will(invoke(Stub_GetAlgType_Reserved));
+    MOCKER_CPP(&hcclComm::GetAlgType).stubs().will(invoke(Stub_GetAlgType_Reserved));
     ret = HcomGetAlgorithm(level, algo);
     EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
-        GlobalMockObject::verify();
+    GlobalMockObject::verify();
 
     ret = HcomDestroy();
     EXPECT_EQ(ret, HCCL_SUCCESS);
     remove(file_name_t);
-
 }
 
 #if 1
@@ -11061,22 +8378,17 @@ TEST_F(HcomTest, ut_check_and_assign_nic_info)
 }
 #endif
 
-
 void* hcom_get_cur_hcom_ctx(void* parg)
 {
-    const char *group = "test_group";
+    const char* group = "test_group";
     s32 devId = 0;
     HcclResult ret = HCCL_SUCCESS;
 
     ret = hrtSetDevice(MAX_MODULE_DEVICE_NUM);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    MOCKER(HcomGetRankId)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
-    MOCKER(HcomGetWorldRankFromGroupRank)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(HcomGetRankId).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(HcomGetWorldRankFromGroupRank).stubs().will(returnValue(HCCL_SUCCESS));
 
     ret = HcomGetDevId(group, &devId);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -11085,19 +8397,15 @@ void* hcom_get_cur_hcom_ctx(void* parg)
 
 void* hcom_get_cur_hcom_ctx_second(void* parg)
 {
-    const char *group = "test_group";
+    const char* group = "test_group";
     s32 devId = 0;
     HcclResult ret = HCCL_SUCCESS;
 
     ret = hrtSetDevice(15);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    MOCKER(HcomGetRankId)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
-    MOCKER(HcomGetWorldRankFromGroupRank)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(HcomGetRankId).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(HcomGetWorldRankFromGroupRank).stubs().will(returnValue(HCCL_SUCCESS));
 
     ret = HcomGetDevId(group, &devId);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -11109,18 +8417,16 @@ TEST_F(HcomTest, ut_HcomGetCurHcomCtx)
     sal_thread_t tid;
 
     tid = sal_thread_create("thread", hcom_get_cur_hcom_ctx, (void*)nullptr);
-    EXPECT_NE(tid, (sal_thread_t )nullptr);
+    EXPECT_NE(tid, (sal_thread_t) nullptr);
 
-    while (sal_thread_is_running(tid))
-    {
+    while (sal_thread_is_running(tid)) {
         SaluSleep(SAL_MILLISECOND_USEC * 10);
     }
 
     tid = sal_thread_create("thread", hcom_get_cur_hcom_ctx_second, (void*)nullptr);
-    EXPECT_NE(tid, (sal_thread_t )nullptr);
+    EXPECT_NE(tid, (sal_thread_t) nullptr);
 
-    while (sal_thread_is_running(tid))
-    {
+    while (sal_thread_is_running(tid)) {
         SaluSleep(SAL_MILLISECOND_USEC * 10);
     }
 
@@ -11137,7 +8443,7 @@ TEST_F(HcomTest, ut_HcomGetWorkspaceMemSize_exception)
 TEST_F(HcomTest, ut_hcom_HcclCommGraphAlltoAllVC)
 {
     s32 deviceId = 0;
-    char *identify = "0";
+    char* identify = "0";
     s32 rankSize = 1;
     s32 rank = atoi(identify);
     u64 count = 2;
@@ -11153,7 +8459,7 @@ TEST_F(HcomTest, ut_hcom_HcclCommGraphAlltoAllVC)
     HostMem hostSendMem = HostMem::alloc(memSize);
     memset_s(hostSendMem.ptr(), memSize, 0, COUNT_PER_RANK * rankSize);
     for (u32 i = 0; i < COUNT_PER_RANK * rankSize; i++) {
-        *((s32 *)hostSendMem.ptr() + i) = rank + 1;
+        *((s32*)hostSendMem.ptr() + i) = rank + 1;
     }
 
     // �������
@@ -11168,38 +8474,30 @@ TEST_F(HcomTest, ut_hcom_HcclCommGraphAlltoAllVC)
     }
 
     DeviceMem sendMem = DeviceMem::alloc(memSize);
-    ret = hrtMemSyncCopy(sendMem.ptr(), memSize, hostSendMem.ptr(), memSize, HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE);
+    ret = hrtMemSyncCopy(
+        sendMem.ptr(), memSize, hostSendMem.ptr(), memSize, HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     DeviceMem recvMem = DeviceMem::alloc(memSize);
 
     hccl::Stream stream(StreamType::STREAM_TYPE_OFFLINE);
 
-    hccl::hcclComm *comm = new hccl::hcclComm(1, 1, "123");
+    hccl::hcclComm* comm = new hccl::hcclComm(1, 1, "123");
     s64 opBaseHcom = (s64)comm;
 
-    MOCKER_CPP(&hcclComm::AlltoAllVC)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::AlltoAllVC).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetRankTableCrc)
-    .stubs()
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetRankTableCrc).stubs().will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetRankSize)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetRankSize).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetGroupRank)
-    .expects(atMost(1))
-    .will(returnValue(0));
+    MOCKER_CPP(&hcclComm::GetGroupRank).expects(atMost(1)).will(returnValue(0));
 
-    MOCKER_CPP(&hcclComm::GetAlgType)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hcclComm::GetAlgType).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&hcclComm::GetNumBlocks).stubs().will(returnValue(HCCL_SUCCESS));
 
-    ret = HcclCommGraphAlltoAllVC(sendMem.ptr(), sendMem.ptr(),HCCL_DATA_TYPE_INT32, recvMem.ptr(), HCCL_DATA_TYPE_INT32,
-        opBaseHcom, stream.ptr(), "hcom_alltoallvc");
+    ret = HcclCommGraphAlltoAllVC(
+        sendMem.ptr(), sendMem.ptr(), HCCL_DATA_TYPE_INT32, recvMem.ptr(), HCCL_DATA_TYPE_INT32, opBaseHcom,
+        stream.ptr(), "hcom_alltoallvc");
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     ret = hcclStreamSynchronize(stream.ptr());
@@ -11212,203 +8510,151 @@ TEST_F(HcomTest, ut_hcom_HcclCommGraphAlltoAllVC)
 #if 1
 TEST_F(HcomTest, ut_hcom_get_hcom_info_eth0Err)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"deploy_mode", "lab"},
+           {"group_count", "1"},
+           {"chip_info", "910"},
+           {"board_id", "0x0000"},
+           {"para_plane_nic_location", "device"},
+           {"para_plane_nic_num", "8"},
+           {"para_plane_nic_name", {"eth0", "eth1", "eth2", "eth3", "eth4", "eth5", "eth6", "eth7"}},
+           {"group_list",
+            {{{"group_name", ""},
+              {"device_num", "16"},
+              {"server_num", "2"},
+              {"instance_count", "16"},
+              {"instance_list",
+               {
+                   {{"rank_id", "0"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.11"}}}}},
 
-    nlohmann::json rank_table =
-    {
-            {"status", "completed"},
-            {"deploy_mode", "lab"},
-            {"group_count", "1"},
-            {"chip_info", "910"},
-            {"board_id", "0x0000"},
-            {"para_plane_nic_location", "device"},
-            {"para_plane_nic_num", "8"},
-            {"para_plane_nic_name", {"eth0", "eth1", "eth2", "eth3","eth4", "eth5", "eth6", "eth7"}},
-            {
-                "group_list",
-                {
-                    {
-                        {"group_name", ""},
-                        {"device_num", "16"},
-                        {"server_num", "2"},
-                        {"instance_count", "16"},
-                            {
-                                "instance_list",
-                                {
-                                    {   {"rank_id", "0"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.11"}}}
-                                        }
-                                    },
+                   {{"rank_id", "1"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}}},
+                   {{"rank_id", "2"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.13"}}}}},
 
-                                    {   {"rank_id", "1"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "2"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.13"}}}
-                                        }
-                                    },
+                   {{"rank_id", "3"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.14"}}}}},
+                   {{"rank_id", "4"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.15"}}}}},
 
-                                    {   {"rank_id", "3"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.14"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "4"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.15"}}}
-                                        }
-                                    },
+                   {{"rank_id", "5"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.16"}}}}},
+                   {{"rank_id", "6"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.17"}}}}},
 
-                                    {   {"rank_id", "5"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.16"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "6"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.17"}}}
-                                        }
-                                    },
+                   {{"rank_id", "7"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.18"}}}}},
+                   {{"rank_id", "8"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.20"}}}}},
 
-                                    {   {"rank_id", "7"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.18"}}}
-                                        }
-                                    },
-                                     {  {"rank_id", "8"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.20"}}}
-                                        }
-                                    },
+                   {{"rank_id", "9"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.21"}}}}},
+                   {{"rank_id", "10"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.22"}}}}},
 
-                                    {   {"rank_id", "9"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.21"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "10"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.22"}}}
-                                        }
-                                    },
+                   {{"rank_id", "11"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.23"}}}}},
+                   {{"rank_id", "12"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.24"}}}}},
 
-                                    {   {"rank_id", "11"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.23"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "12"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.24"}}}
-                                        }
-                                    },
+                   {{"rank_id", "13"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.25"}}}}},
+                   {{"rank_id", "14"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.26"}}}}},
 
-                                    {   {"rank_id", "13"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.25"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "14"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.26"}}}
-                                        }
-                                    },
+                   {{"rank_id", "15"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}}},
+               }},
+              {"server_list",
+               {
+                   {{"server_id", "10.0.0.10"},
+                    {"para_plane_info",
+                     {
+                         {
+                             {"eth0", "192.168.200.2"},
+                         },
+                         {
+                             {"eth0", "192.168.201.2"},
+                         },
+                         {
+                             {"eth2", "192.168.202.2"},
+                         },
+                         {
+                             {"eth3", "192.168.203.2"},
+                         },
+                         {
+                             {"eth4", "192.168.204.2"},
+                         },
+                         {
+                             {"eth5", "192.168.205.2"},
+                         },
+                         {
+                             {"eth6", "192.168.206.2"},
+                         },
+                         {
+                             {"eth7", "192.168.207.2"},
+                         },
+                     }}
 
-                                    {   {"rank_id", "15"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}
-                                        }
-                                    },
-                                }
-                            },
-                            {
-                                "server_list",
-                                {
-                                    {
-                                        {"server_id", "10.0.0.10"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.200.2"},
-                                                },
-                                                {
-                                                    {"eth0", "192.168.201.2"},
-                                                },
-                                                {
-                                                    {"eth2", "192.168.202.2"},
-                                                },
-                                                {
-                                                    {"eth3", "192.168.203.2"},
-                                                },
-                                                {
-                                                    {"eth4", "192.168.204.2"},
-                                                },
-                                                {
-                                                    {"eth5", "192.168.205.2"},
-                                                },
-                                                {
-                                                    {"eth6", "192.168.206.2"},
-                                                },
-                                                {
-                                                    {"eth7", "192.168.207.2"},
-                                                },
-                                            }
-                                        }
+                   },
+                   {{"server_id", "10.0.0.11"},
+                    {"para_plane_info",
+                     {
+                         {
+                             {"eth0", "192.168.210.3"},
+                         },
+                         {
+                             {"eth1", "192.168.211.3"},
+                         },
+                         {
+                             {"eth2", "192.168.212.3"},
+                         },
+                         {
+                             {"eth3", "192.168.213.3"},
+                         },
+                         {
+                             {"eth4", "192.168.214.3"},
+                         },
+                         {
+                             {"eth5", "192.168.215.3"},
+                         },
+                         {
+                             {"eth6", "192.168.216.3"},
+                         },
+                         {
+                             {"eth7", "192.168.217.3"},
+                         },
+                     }}
 
-                                    },
-                                    {
-                                        {"server_id", "10.0.0.11"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.210.3"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.211.3"},
-                                                },
-                                                {
-                                                    {"eth2", "192.168.212.3"},
-                                                },
-                                                {
-                                                    {"eth3", "192.168.213.3"},
-                                                },
-                                                {
-                                                    {"eth4", "192.168.214.3"},
-                                                },
-                                                {
-                                                    {"eth5", "192.168.215.3"},
-                                                },
-                                                {
-                                                    {"eth6", "192.168.216.3"},
-                                                },
-                                                {
-                                                    {"eth7", "192.168.217.3"},
-                                                },
-                                            }
-                                        }
+                   },
 
-                                    },
-
-                                }
-                            }
-                    }
-                }
-            }
-        };
+               }}}}}};
 
     char file_name[] = "./ut_hcom_get_hcom_info_eth0Err.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -11431,7 +8677,7 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_eth0Err)
     TopoinfoRanktableStandard myTopoinfoRanktableStandard(rankTableM, rank_ID);
     set_board_id(0x0000);
     s32 rankId = -1;
-    HcomInfo  hcom;
+    HcomInfo hcom;
     std::string identify = "0";
     ret = myTopoRanktable.LoadFile(file_name);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -11447,208 +8693,155 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_eth0Err)
     EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
     set_board_id(0);
     remove(file_name);
-
 }
 
 TEST_F(HcomTest, ut_hcom_get_hcom_info_eth0Err1)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"deploy_mode", "lab"},
+           {"group_count", "1"},
+           {"chip_info", "910"},
+           {"board_id", "0x0000"},
+           {"para_plane_nic_location", "device"},
+           {"para_plane_nic_num", "8"},
+           {"para_plane_nic_name", {"eth0", "eth0", "eth2", "eth3", "eth4", "eth5", "eth6", "eth7"}},
+           {"group_list",
+            {{{"group_name", ""},
+              {"device_num", "16"},
+              {"server_num", "2"},
+              {"instance_count", "16"},
+              {"instance_list",
+               {
+                   {{"rank_id", "0"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.11"}}}}},
 
-    nlohmann::json rank_table =
-    {
-            {"status", "completed"},
-            {"deploy_mode", "lab"},
-            {"group_count", "1"},
-            {"chip_info", "910"},
-            {"board_id", "0x0000"},
-            {"para_plane_nic_location", "device"},
-            {"para_plane_nic_num", "8"},
-            {"para_plane_nic_name", {"eth0", "eth0", "eth2", "eth3","eth4", "eth5", "eth6", "eth7"}},
-            {
-                "group_list",
-                {
-                    {
-                        {"group_name", ""},
-                        {"device_num", "16"},
-                        {"server_num", "2"},
-                        {"instance_count", "16"},
-                            {
-                                "instance_list",
-                                {
-                                    {   {"rank_id", "0"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.11"}}}
-                                        }
-                                    },
+                   {{"rank_id", "1"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}}},
+                   {{"rank_id", "2"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.13"}}}}},
 
-                                    {   {"rank_id", "1"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "2"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.13"}}}
-                                        }
-                                    },
+                   {{"rank_id", "3"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.14"}}}}},
+                   {{"rank_id", "4"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.15"}}}}},
 
-                                    {   {"rank_id", "3"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.14"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "4"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.15"}}}
-                                        }
-                                    },
+                   {{"rank_id", "5"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.16"}}}}},
+                   {{"rank_id", "6"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.17"}}}}},
 
-                                    {   {"rank_id", "5"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.16"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "6"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.17"}}}
-                                        }
-                                    },
+                   {{"rank_id", "7"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.18"}}}}},
+                   {{"rank_id", "8"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.20"}}}}},
 
-                                    {   {"rank_id", "7"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.18"}}}
-                                        }
-                                    },
-                                     {  {"rank_id", "8"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.20"}}}
-                                        }
-                                    },
+                   {{"rank_id", "9"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.21"}}}}},
+                   {{"rank_id", "10"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.22"}}}}},
 
-                                    {   {"rank_id", "9"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.21"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "10"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.22"}}}
-                                        }
-                                    },
+                   {{"rank_id", "11"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.23"}}}}},
+                   {{"rank_id", "12"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.24"}}}}},
 
-                                    {   {"rank_id", "11"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.23"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "12"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.24"}}}
-                                        }
-                                    },
+                   {{"rank_id", "13"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.25"}}}}},
+                   {{"rank_id", "14"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.26"}}}}},
 
-                                    {   {"rank_id", "13"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.25"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "14"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.26"}}}
-                                        }
-                                    },
+                   {{"rank_id", "15"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}}},
+               }},
+              {"server_list",
+               {
+                   {{"server_id", "10.0.0.10"},
+                    {"para_plane_info",
+                     {
+                         {
+                             {"eth0", "192.168.200.2"},
+                         },
+                         {
+                             {"eth1", "192.168.201.2"},
+                         },
+                         {
+                             {"eth2", "192.168.202.2"},
+                         },
+                         {
+                             {"eth3", "192.168.203.2"},
+                         },
+                         {
+                             {"eth4", "192.168.204.2"},
+                         },
+                         {
+                             {"eth5", "192.168.205.2"},
+                         },
+                         {
+                             {"eth6", "192.168.206.2"},
+                         },
+                         {
+                             {"eth7", "192.168.207.2"},
+                         },
+                     }}
 
-                                    {   {"rank_id", "15"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}
-                                        }
-                                    },
-                                }
-                            },
-                            {
-                                "server_list",
-                                {
-                                    {
-                                        {"server_id", "10.0.0.10"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.200.2"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.201.2"},
-                                                },
-                                                {
-                                                    {"eth2", "192.168.202.2"},
-                                                },
-                                                {
-                                                    {"eth3", "192.168.203.2"},
-                                                },
-                                                {
-                                                    {"eth4", "192.168.204.2"},
-                                                },
-                                                {
-                                                    {"eth5", "192.168.205.2"},
-                                                },
-                                                {
-                                                    {"eth6", "192.168.206.2"},
-                                                },
-                                                {
-                                                    {"eth7", "192.168.207.2"},
-                                                },
-                                            }
-                                        }
+                   },
+                   {{"server_id", "10.0.0.11"},
+                    {"para_plane_info",
+                     {
+                         {
+                             {"eth0", "192.168.210.3"},
+                         },
+                         {
+                             {"eth1", "192.168.211.3"},
+                         },
+                         {
+                             {"eth2", "192.168.212.3"},
+                         },
+                         {
+                             {"eth3", "192.168.213.3"},
+                         },
+                         {
+                             {"eth4", "192.168.214.3"},
+                         },
+                         {
+                             {"eth5", "192.168.215.3"},
+                         },
+                         {
+                             {"eth6", "192.168.216.3"},
+                         },
+                         {
+                             {"eth7", "192.168.217.3"},
+                         },
+                     }}
 
-                                    },
-                                    {
-                                        {"server_id", "10.0.0.11"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.210.3"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.211.3"},
-                                                },
-                                                {
-                                                    {"eth2", "192.168.212.3"},
-                                                },
-                                                {
-                                                    {"eth3", "192.168.213.3"},
-                                                },
-                                                {
-                                                    {"eth4", "192.168.214.3"},
-                                                },
-                                                {
-                                                    {"eth5", "192.168.215.3"},
-                                                },
-                                                {
-                                                    {"eth6", "192.168.216.3"},
-                                                },
-                                                {
-                                                    {"eth7", "192.168.217.3"},
-                                                },
-                                            }
-                                        }
+                   },
 
-                                    },
-
-                                }
-                            }
-                    }
-                }
-            }
-        };
+               }}}}}};
 
     char file_name[] = "./ut_hcom_get_hcom_info_eth0Err1.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -11672,7 +8865,7 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_eth0Err1)
     set_board_id(0x0000);
     TopoInfoRanktableParser myTopoRanktable(rankTableM, rank_ID);
     TopoinfoRanktableStandard myTopoinfoRanktableStandard(rankTableM, rank_ID);
-    HcomInfo  hcom;
+    HcomInfo hcom;
     std::string identify = "0";
     ret = myTopoRanktable.LoadFile(file_name);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -11688,208 +8881,155 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_eth0Err1)
     set_board_id(0);
     EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
     remove(file_name);
-
 }
 
 TEST_F(HcomTest, ut_hcom_get_hcom_info_eth0IPErr)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"deploy_mode", "lab"},
+           {"group_count", "1"},
+           {"chip_info", "910"},
+           {"board_id", "0x0000"},
+           {"para_plane_nic_location", "device"},
+           {"para_plane_nic_num", "8"},
+           {"para_plane_nic_name", {"eth0", "eth1", "eth2", "eth3", "eth4", "eth5", "eth6", "eth7"}},
+           {"group_list",
+            {{{"group_name", ""},
+              {"device_num", "16"},
+              {"server_num", "2"},
+              {"instance_count", "16"},
+              {"instance_list",
+               {
+                   {{"rank_id", "0"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.11"}}}}},
 
-    nlohmann::json rank_table =
-    {
-            {"status", "completed"},
-            {"deploy_mode", "lab"},
-            {"group_count", "1"},
-            {"chip_info", "910"},
-            {"board_id", "0x0000"},
-            {"para_plane_nic_location", "device"},
-            {"para_plane_nic_num", "8"},
-            {"para_plane_nic_name", {"eth0", "eth1", "eth2", "eth3","eth4", "eth5", "eth6", "eth7"}},
-            {
-                "group_list",
-                {
-                    {
-                        {"group_name", ""},
-                        {"device_num", "16"},
-                        {"server_num", "2"},
-                        {"instance_count", "16"},
-                            {
-                                "instance_list",
-                                {
-                                    {   {"rank_id", "0"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.11"}}}
-                                        }
-                                    },
+                   {{"rank_id", "1"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}}},
+                   {{"rank_id", "2"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.13"}}}}},
 
-                                    {   {"rank_id", "1"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "2"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.13"}}}
-                                        }
-                                    },
+                   {{"rank_id", "3"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.14"}}}}},
+                   {{"rank_id", "4"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.15"}}}}},
 
-                                    {   {"rank_id", "3"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.14"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "4"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.15"}}}
-                                        }
-                                    },
+                   {{"rank_id", "5"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.16"}}}}},
+                   {{"rank_id", "6"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.17"}}}}},
 
-                                    {   {"rank_id", "5"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.16"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "6"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.17"}}}
-                                        }
-                                    },
+                   {{"rank_id", "7"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.18"}}}}},
+                   {{"rank_id", "8"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.20"}}}}},
 
-                                    {   {"rank_id", "7"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.18"}}}
-                                        }
-                                    },
-                                     {  {"rank_id", "8"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.20"}}}
-                                        }
-                                    },
+                   {{"rank_id", "9"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.21"}}}}},
+                   {{"rank_id", "10"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.22"}}}}},
 
-                                    {   {"rank_id", "9"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.21"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "10"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.22"}}}
-                                        }
-                                    },
+                   {{"rank_id", "11"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.23"}}}}},
+                   {{"rank_id", "12"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.24"}}}}},
 
-                                    {   {"rank_id", "11"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.23"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "12"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.24"}}}
-                                        }
-                                    },
+                   {{"rank_id", "13"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.25"}}}}},
+                   {{"rank_id", "14"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.26"}}}}},
 
-                                    {   {"rank_id", "13"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.25"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "14"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.26"}}}
-                                        }
-                                    },
+                   {{"rank_id", "15"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}}},
+               }},
+              {"server_list",
+               {
+                   {{"server_id", "10.0.0.10"},
+                    {"para_plane_info",
+                     {
+                         {
+                             {"eth0", "192.168.200.2"},
+                         },
+                         {
+                             {"eth1", "192.168.200.2"},
+                         },
+                         {
+                             {"eth2", "192.168.202.2"},
+                         },
+                         {
+                             {"eth3", "192.168.203.2"},
+                         },
+                         {
+                             {"eth4", "192.168.204.2"},
+                         },
+                         {
+                             {"eth5", "192.168.205.2"},
+                         },
+                         {
+                             {"eth6", "192.168.206.2"},
+                         },
+                         {
+                             {"eth7", "192.168.207.2"},
+                         },
+                     }}
 
-                                    {   {"rank_id", "15"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}
-                                        }
-                                    },
-                                }
-                            },
-                            {
-                                "server_list",
-                                {
-                                    {
-                                        {"server_id", "10.0.0.10"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.200.2"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.200.2"},
-                                                },
-                                                {
-                                                    {"eth2", "192.168.202.2"},
-                                                },
-                                                {
-                                                    {"eth3", "192.168.203.2"},
-                                                },
-                                                {
-                                                    {"eth4", "192.168.204.2"},
-                                                },
-                                                {
-                                                    {"eth5", "192.168.205.2"},
-                                                },
-                                                {
-                                                    {"eth6", "192.168.206.2"},
-                                                },
-                                                {
-                                                    {"eth7", "192.168.207.2"},
-                                                },
-                                            }
-                                        }
+                   },
+                   {{"server_id", "10.0.0.11"},
+                    {"para_plane_info",
+                     {
+                         {
+                             {"eth0", "192.168.210.3"},
+                         },
+                         {
+                             {"eth1", "192.168.211.3"},
+                         },
+                         {
+                             {"eth2", "192.168.212.3"},
+                         },
+                         {
+                             {"eth3", "192.168.213.3"},
+                         },
+                         {
+                             {"eth4", "192.168.214.3"},
+                         },
+                         {
+                             {"eth5", "192.168.215.3"},
+                         },
+                         {
+                             {"eth6", "192.168.216.3"},
+                         },
+                         {
+                             {"eth7", "192.168.217.3"},
+                         },
+                     }}
 
-                                    },
-                                    {
-                                        {"server_id", "10.0.0.11"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.210.3"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.211.3"},
-                                                },
-                                                {
-                                                    {"eth2", "192.168.212.3"},
-                                                },
-                                                {
-                                                    {"eth3", "192.168.213.3"},
-                                                },
-                                                {
-                                                    {"eth4", "192.168.214.3"},
-                                                },
-                                                {
-                                                    {"eth5", "192.168.215.3"},
-                                                },
-                                                {
-                                                    {"eth6", "192.168.216.3"},
-                                                },
-                                                {
-                                                    {"eth7", "192.168.217.3"},
-                                                },
-                                            }
-                                        }
+                   },
 
-                                    },
-
-                                }
-                            }
-                    }
-                }
-            }
-        };
+               }}}}}};
 
     char file_name[] = "./ut_hcom_get_hcom_info_eth0IPErr.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -11911,7 +9051,7 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_eth0IPErr)
     TopoInfoRanktableParser myTopoRanktable(rankTableM, rank_ID);
     TopoinfoRanktableStandard myTopoinfoRanktableStandard(rankTableM, rank_ID);
     s32 rankId = -1;
-    HcomInfo  hcom;
+    HcomInfo hcom;
     set_board_id(0x0000);
     std::string identify = "0";
     ret = myTopoRanktable.LoadFile(file_name);
@@ -11928,14 +9068,13 @@ TEST_F(HcomTest, ut_hcom_get_hcom_info_eth0IPErr)
     EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
     set_board_id(0);
     remove(file_name);
-
 }
 #endif
 
 #if 1
 TEST_F(HcomTest, ut_hcom_CheckPortValid)
 {
-    HcclResult  ret = HCCL_SUCCESS;
+    HcclResult ret = HCCL_SUCCESS;
     u32 port = 18000;
     HcomInfo hcom_info;
     ret = CheckPortValid(port);
@@ -11969,206 +9108,153 @@ TEST_F(HcomTest, ut_hcom_CheckPortValid)
 }
 #endif
 
-
 TEST_F(HcomTest, ut_hcom_TopoInfoRanktableParser)
 {
+    nlohmann::json rank_table
+        = {{"status", "completed"},
+           {"deploy_mode", "lab"},
+           {"group_count", "1"},
+           {"chip_info", "910"},
+           {"board_id", "0x0000"},
+           {"para_plane_nic_location", "device"},
+           {"para_plane_nic_num", "8"},
+           {"para_plane_nic_name", {"eth0", "eth1", "eth2", "eth3", "eth4", "eth5", "eth6", "eth7"}},
+           {"group_list",
+            {{{"group_name", ""},
+              {"device_num", "16"},
+              {"server_num", "2"},
+              {"instance_count", "16"},
+              {"instance_list",
+               {
+                   {{"rank_id", "0"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.11"}}}}},
 
-    nlohmann::json rank_table =
-    {
-            {"status", "completed"},
-            {"deploy_mode", "lab"},
-            {"group_count", "1"},
-            {"chip_info", "910"},
-            {"board_id", "0x0000"},
-            {"para_plane_nic_location", "device"},
-            {"para_plane_nic_num", "8"},
-            {"para_plane_nic_name", {"eth0", "eth1", "eth2", "eth3","eth4", "eth5", "eth6", "eth7"}},
-            {
-                "group_list",
-                {
-                    {
-                        {"group_name", ""},
-                        {"device_num", "16"},
-                        {"server_num", "2"},
-                        {"instance_count", "16"},
-                            {
-                                "instance_list",
-                                {
-                                    {   {"rank_id", "0"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.11"}}}
-                                        }
-                                    },
+                   {{"rank_id", "1"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}}},
+                   {{"rank_id", "2"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.13"}}}}},
 
-                                    {   {"rank_id", "1"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.12"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "2"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.13"}}}
-                                        }
-                                    },
+                   {{"rank_id", "3"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.14"}}}}},
+                   {{"rank_id", "4"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.15"}}}}},
 
-                                    {   {"rank_id", "3"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.14"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "4"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.15"}}}
-                                        }
-                                    },
+                   {{"rank_id", "5"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.16"}}}}},
+                   {{"rank_id", "6"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.17"}}}}},
 
-                                    {   {"rank_id", "5"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.16"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "6"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.17"}}}
-                                        }
-                                    },
+                   {{"rank_id", "7"},
+                    {"server_id", "10.0.0.10"},
+                    {"devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.18"}}}}},
+                   {{"rank_id", "8"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.20"}}}}},
 
-                                    {   {"rank_id", "7"}, {"server_id", "10.0.0.10"},
-                                        {
-                                            "devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.18"}}}
-                                        }
-                                    },
-                                     {  {"rank_id", "8"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "0"}, {"device_ip", "192.168.0.20"}}}
-                                        }
-                                    },
+                   {{"rank_id", "9"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.21"}}}}},
+                   {{"rank_id", "10"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.22"}}}}},
 
-                                    {   {"rank_id", "9"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "1"}, {"device_ip", "192.168.0.21"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "10"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "2"}, {"device_ip", "192.168.0.22"}}}
-                                        }
-                                    },
+                   {{"rank_id", "11"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.23"}}}}},
+                   {{"rank_id", "12"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.24"}}}}},
 
-                                    {   {"rank_id", "11"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "3"}, {"device_ip", "192.168.0.23"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "12"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "4"}, {"device_ip", "192.168.0.24"}}}
-                                        }
-                                    },
+                   {{"rank_id", "13"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.25"}}}}},
+                   {{"rank_id", "14"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.26"}}}}},
 
-                                    {   {"rank_id", "13"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "5"}, {"device_ip", "192.168.0.25"}}}
-                                        }
-                                    },
-                                    {   {"rank_id", "14"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "6"}, {"device_ip", "192.168.0.26"}}}
-                                        }
-                                    },
+                   {{"rank_id", "15"},
+                    {"server_id", "10.0.0.11"},
+                    {"devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}}},
+               }},
+              {"server_list",
+               {
+                   {{"server_id", "10.0.0.10"},
+                    {"para_plane_info",
+                     {
+                         {
+                             {"eth0", "192.168.200.2"},
+                         },
+                         {
+                             {"eth1", "192.168.200.2"},
+                         },
+                         {
+                             {"eth2", "192.168.202.2"},
+                         },
+                         {
+                             {"eth3", "192.168.203.2"},
+                         },
+                         {
+                             {"eth4", "192.168.204.2"},
+                         },
+                         {
+                             {"eth5", "192.168.205.2"},
+                         },
+                         {
+                             {"eth6", "192.168.206.2"},
+                         },
+                         {
+                             {"eth7", "192.168.207.2"},
+                         },
+                     }}
 
-                                    {   {"rank_id", "15"}, {"server_id", "10.0.0.11"},
-                                        {
-                                            "devices", {{{"device_id", "7"}, {"device_ip", "192.168.0.27"}}}
-                                        }
-                                    },
-                                }
-                            },
-                            {
-                                "server_list",
-                                {
-                                    {
-                                        {"server_id", "10.0.0.10"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.200.2"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.200.2"},
-                                                },
-                                                {
-                                                    {"eth2", "192.168.202.2"},
-                                                },
-                                                {
-                                                    {"eth3", "192.168.203.2"},
-                                                },
-                                                {
-                                                    {"eth4", "192.168.204.2"},
-                                                },
-                                                {
-                                                    {"eth5", "192.168.205.2"},
-                                                },
-                                                {
-                                                    {"eth6", "192.168.206.2"},
-                                                },
-                                                {
-                                                    {"eth7", "192.168.207.2"},
-                                                },
-                                            }
-                                        }
+                   },
+                   {{"server_id", "10.0.0.11"},
+                    {"para_plane_info",
+                     {
+                         {
+                             {"eth0", "192.168.210.3"},
+                         },
+                         {
+                             {"eth1", "192.168.211.3"},
+                         },
+                         {
+                             {"eth2", "192.168.212.3"},
+                         },
+                         {
+                             {"eth3", "192.168.213.3"},
+                         },
+                         {
+                             {"eth4", "192.168.214.3"},
+                         },
+                         {
+                             {"eth5", "192.168.215.3"},
+                         },
+                         {
+                             {"eth6", "192.168.216.3"},
+                         },
+                         {
+                             {"eth7", "192.168.217.3"},
+                         },
+                     }}
 
-                                    },
-                                    {
-                                        {"server_id", "10.0.0.11"},
-                                        {
-                                            "para_plane_info",
-                                            {{
-                                                    {"eth0", "192.168.210.3"},
-                                                },
-                                                {
-                                                    {"eth1", "192.168.211.3"},
-                                                },
-                                                {
-                                                    {"eth2", "192.168.212.3"},
-                                                },
-                                                {
-                                                    {"eth3", "192.168.213.3"},
-                                                },
-                                                {
-                                                    {"eth4", "192.168.214.3"},
-                                                },
-                                                {
-                                                    {"eth5", "192.168.215.3"},
-                                                },
-                                                {
-                                                    {"eth6", "192.168.216.3"},
-                                                },
-                                                {
-                                                    {"eth7", "192.168.217.3"},
-                                                },
-                                            }
-                                        }
+                   },
 
-                                    },
-
-                                }
-                            }
-                    }
-                }
-            }
-        };
+               }}}}}};
 
     char file_name[] = "./ut_hcom_TopoInfoRanktableParser.json";
     std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(4) << rank_table << std::endl;
         HCCL_INFO("open %s success", file_name);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name);
     }
 
@@ -12190,14 +9276,14 @@ TEST_F(HcomTest, ut_hcom_TopoInfoRanktableParser)
     TopoInfoRanktableParser myTopoRanktable(rankTableM, rank_ID);
     TopoinfoRanktableStandard myTopoinfoRanktableStandard(rankTableM, rank_ID);
     s32 rankId = -1;
-    HcomInfo  hcom;
+    HcomInfo hcom;
     set_board_id(0x0000);
     std::string identify = "0";
     ret = myTopoRanktable.LoadFile(file_name);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     ret = myTopoRanktable.RefreshStatus();
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    u32 index =1;
+    u32 index = 1;
     ret = myTopoRanktable.GetJsonArrayMemberProperty(rank_table, index, rank_table_file.c_str(), index);
     EXPECT_EQ(ret, HCCL_E_PARA);
 
@@ -12244,10 +9330,7 @@ TEST_F(HcomTest, ut_hcom_TopoInfoRanktableParser)
     roleTableInfo.servers = clientsInfoCtx;
     roleTableInfo.clients = clientsInfoCtx;
 
-    MOCKER_CPP(&TopoInfoRanktableParser::LoadConfigString)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TopoInfoRanktableParser::LoadConfigString).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     ret = myTopoinfoRoletable.ParserRoleTable(roleTableInfo);
     EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
     set_board_id(0);
@@ -12255,48 +9338,34 @@ TEST_F(HcomTest, ut_hcom_TopoInfoRanktableParser)
     GlobalMockObject::verify();
 }
 
-
 #if 1
-nlohmann::json ranktable_invalid_superPodId =
-{
-    {"status", "completed"},
-    {"version", "1.2"},
-    {"server_list",
-        {
-            {
-                {"server_id", "10.155.111.140"},
-                {"device",
-                    {
-                        {{"rank_id", "0"},{"device_id", "0"},{"device_ip", "192.1.27.6"}},
-                    }
-                },
-            }
-        }
-    },
-    {"super_pod_list",
-        {
-            {
-                {"server_list",
-                    {
-                        {{"server_id", "10.155.111.140"},{"server_index", "1"}},
-                    }
-                },
-            }
-        }
-    }
-};
+nlohmann::json ranktable_invalid_superPodId
+    = {{"status", "completed"},
+       {"version", "1.2"},
+       {"server_list",
+        {{
+            {"server_id", "10.155.111.140"},
+            {"device",
+             {
+                 {{"rank_id", "0"}, {"device_id", "0"}, {"device_ip", "192.1.27.6"}},
+             }},
+        }}},
+       {"super_pod_list",
+        {{
+            {"server_list",
+             {
+                 {{"server_id", "10.155.111.140"}, {"server_index", "1"}},
+             }},
+        }}}};
 TEST_F(HcomTest, ut_hcom_91093_InitByFile_invalid_superPodId)
 {
     char file_name_t[] = "./ranktable_invalid_superPodId.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(1) << ranktable_invalid_superPodId << std::endl;
         HCCL_INFO("open %s success", file_name_t);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name_t);
     }
 
@@ -12304,10 +9373,7 @@ TEST_F(HcomTest, ut_hcom_91093_InitByFile_invalid_superPodId)
     int ret = HCCL_SUCCESS;
 
     DevType type91093 = DevType::DEV_TYPE_910_93;
-    MOCKER(hrtGetDeviceType)
-    .stubs()
-    .with(outBound(type91093))
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtGetDeviceType).stubs().with(outBound(type91093)).will(returnValue(HCCL_SUCCESS));
 
     ret = hrtSetDevice(0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -12316,11 +9382,11 @@ TEST_F(HcomTest, ut_hcom_91093_InitByFile_invalid_superPodId)
     char* rank_table_file = "./ranktable_invalid_superPodId.json";
     char* rank_ID = "0";
 
-    MOCKER_CPP(&HcclCommunicatorAttrs::CheckSuperDeviceId,
-         HcclResult(HcclCommunicatorAttrs::*)(const RankTable_t &rankTable))
-	.stubs()
-	.with(any())
-	.will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(
+        &HcclCommunicatorAttrs::CheckSuperDeviceId, HcclResult (HcclCommunicatorAttrs::*)(const RankTable_t& rankTable))
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_SUCCESS));
 
     ret = HcomInitByFile(rank_table_file, rank_ID);
     EXPECT_NE(ret, HCCL_SUCCESS);
@@ -12333,47 +9399,34 @@ TEST_F(HcomTest, ut_hcom_91093_InitByFile_invalid_superPodId)
     GlobalMockObject::verify();
 }
 
-nlohmann::json ranktable_invalid_serverId =
-{
-    {"status", "completed"},
-    {"version", "1.2"},
-    {"server_list",
-        {
-            {
-                {"server_id", "10.155.111.140"},
-                {"device",
-                    {
-                        {{"rank_id", "0"},{"device_id", "0"},{"super_device_id", "0"},{"device_ip", "192.1.27.6"}},
-                    }
-                },
-            }
-        }
-    },
-    {"super_pod_list",
-        {
-            {
-                {"super_pod_id", "0"},
-                {"server_list",
-                    {
-                        {{"server_id", "10.155.111.666"}},
-                    }
-                },
-            }
-        }
-    }
-};
+nlohmann::json ranktable_invalid_serverId
+    = {{"status", "completed"},
+       {"version", "1.2"},
+       {"server_list",
+        {{
+            {"server_id", "10.155.111.140"},
+            {"device",
+             {
+                 {{"rank_id", "0"}, {"device_id", "0"}, {"super_device_id", "0"}, {"device_ip", "192.1.27.6"}},
+             }},
+        }}},
+       {"super_pod_list",
+        {{
+            {"super_pod_id", "0"},
+            {"server_list",
+             {
+                 {{"server_id", "10.155.111.666"}},
+             }},
+        }}}};
 TEST_F(HcomTest, ut_hcom_91093_InitByFile_invalid_serverId)
 {
     char file_name_t[] = "./ranktable_invalid_serverId.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(1) << ranktable_invalid_serverId << std::endl;
         HCCL_INFO("open %s success", file_name_t);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name_t);
     }
 
@@ -12381,10 +9434,7 @@ TEST_F(HcomTest, ut_hcom_91093_InitByFile_invalid_serverId)
     int ret = HCCL_SUCCESS;
 
     DevType type91093 = DevType::DEV_TYPE_910_93;
-    MOCKER(hrtGetDeviceType)
-    .stubs()
-    .with(outBound(type91093))
-    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtGetDeviceType).stubs().with(outBound(type91093)).will(returnValue(HCCL_SUCCESS));
 
     ret = hrtSetDevice(0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -12406,50 +9456,39 @@ TEST_F(HcomTest, ut_hcom_91093_InitByFile_invalid_serverId)
 #endif
 
 #if 1
-nlohmann::json super_pod_ranktable_1_2_4 =
-{
-    {"status", "completed"},
-    {"version", "1.2"},
-    {"server_list",
-        {
-            {
-                {"server_id", "10.155.111.140"},
-                {"device",
-                    {
-                        {{"rank_id", "0"},{"device_id", "0"},{"super_device_id", "0"},{"device_ip", "192.1.27.6"}},
-                        {{"rank_id", "1"},{"device_id", "1"},{"super_device_id", "1"},{"device_ip", "192.2.27.6"}},
-                        {{"rank_id", "2"},{"device_id", "2"},{"super_device_id", "2"},{"device_ip", "192.3.27.6"}},
-                        {{"rank_id", "3"},{"device_id", "3"},{"super_device_id", "3"},{"device_ip", "192.4.27.6"}},
-                    }
-                },
-            },
-            {
-                {"server_id", "10.155.111.141"},
-                {"device",
-                    {
-                        {{"rank_id", "4"},{"device_id", "0"},{"super_device_id", "4"},{"device_ip", "192.1.27.7"}},
-                        {{"rank_id", "5"},{"device_id", "1"},{"super_device_id", "5"},{"device_ip", "192.2.27.7"}},
-                        {{"rank_id", "6"},{"device_id", "2"},{"super_device_id", "6"},{"device_ip", "192.3.27.7"}},
-                        {{"rank_id", "7"},{"device_id", "3"},{"super_device_id", "7"},{"device_ip", "192.4.27.7"}},
-                    }
-                },
-            }
-        }
-    },
-    {"super_pod_list",
-        {
-            {
-                {"super_pod_id", "0"},
-                {"server_list",
-                    {
-                        {{"server_id", "10.155.111.140"}},
-                        {{"server_id", "10.155.111.141"}},
-                    }
-                },
-            }
-        }
-    }
-};
+nlohmann::json super_pod_ranktable_1_2_4
+    = {{"status", "completed"},
+       {"version", "1.2"},
+       {"server_list",
+        {{
+             {"server_id", "10.155.111.140"},
+             {"device",
+              {
+                  {{"rank_id", "0"}, {"device_id", "0"}, {"super_device_id", "0"}, {"device_ip", "192.1.27.6"}},
+                  {{"rank_id", "1"}, {"device_id", "1"}, {"super_device_id", "1"}, {"device_ip", "192.2.27.6"}},
+                  {{"rank_id", "2"}, {"device_id", "2"}, {"super_device_id", "2"}, {"device_ip", "192.3.27.6"}},
+                  {{"rank_id", "3"}, {"device_id", "3"}, {"super_device_id", "3"}, {"device_ip", "192.4.27.6"}},
+              }},
+         },
+         {
+             {"server_id", "10.155.111.141"},
+             {"device",
+              {
+                  {{"rank_id", "4"}, {"device_id", "0"}, {"super_device_id", "4"}, {"device_ip", "192.1.27.7"}},
+                  {{"rank_id", "5"}, {"device_id", "1"}, {"super_device_id", "5"}, {"device_ip", "192.2.27.7"}},
+                  {{"rank_id", "6"}, {"device_id", "2"}, {"super_device_id", "6"}, {"device_ip", "192.3.27.7"}},
+                  {{"rank_id", "7"}, {"device_id", "3"}, {"super_device_id", "7"}, {"device_ip", "192.4.27.7"}},
+              }},
+         }}},
+       {"super_pod_list",
+        {{
+            {"super_pod_id", "0"},
+            {"server_list",
+             {
+                 {{"server_id", "10.155.111.140"}},
+                 {{"server_id", "10.155.111.141"}},
+             }},
+        }}}};
 
 TEST_F(HcomTest, ut_hcom_91093_InitByFile)
 {
@@ -12458,13 +9497,10 @@ TEST_F(HcomTest, ut_hcom_91093_InitByFile)
     char file_name_t[] = "./super_pod_ranktable_1_2_4.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
+    if (outfile.is_open()) {
         outfile << std::setw(1) << super_pod_ranktable_1_2_4 << std::endl;
         HCCL_INFO("open %s success", file_name_t);
-    }
-    else
-    {
+    } else {
         HCCL_ERROR("open %s failed", file_name_t);
     }
 
@@ -12472,14 +9508,8 @@ TEST_F(HcomTest, ut_hcom_91093_InitByFile)
     int ret = HCCL_SUCCESS;
 
     DevType type91093 = DevType::DEV_TYPE_910_93;
-    MOCKER(hrtGetDeviceType)
-    .stubs()
-    .with(outBound(type91093))
-    .will(returnValue(HCCL_SUCCESS));
-	MOCKER(hrtRaGetSingleSocketVnicIpInfo)
-	.stubs()
-	.with(any())
-	.will(invoke(stub_hrtRaGetSingleSocketVnicIpInfo));
+    MOCKER(hrtGetDeviceType).stubs().with(outBound(type91093)).will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtRaGetSingleSocketVnicIpInfo).stubs().with(any()).will(invoke(stub_hrtRaGetSingleSocketVnicIpInfo));
     ret = hrtSetDevice(0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     u32 localrankid = 0;
@@ -12487,10 +9517,11 @@ TEST_F(HcomTest, ut_hcom_91093_InitByFile)
     char* rank_table_file = "./super_pod_ranktable_1_2_4.json";
     char* rank_ID = "0";
 
-    MOCKER_CPP(&HcclCommunicatorAttrs::CheckSuperDeviceId, HcclResult(HcclCommunicatorAttrs::*)(const RankTable_t &rankTable))
-	.stubs()
-	.with(any())
-	.will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(
+        &HcclCommunicatorAttrs::CheckSuperDeviceId, HcclResult (HcclCommunicatorAttrs::*)(const RankTable_t& rankTable))
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_SUCCESS));
 
     ret = HcomInitByFile(rank_table_file, rank_ID);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -12515,7 +9546,7 @@ TEST_F(HcomTest, ut_hcom_91093_InitByFile)
 
 TEST_F(HcomTest, ut_remote_acess_error)
 {
-shared_ptr<RemoteAccess> RemoteAccess;
+    shared_ptr<RemoteAccess> RemoteAccess;
     RemoteAccess.reset(new (std::nothrow) hccl::RemoteAccess());
     vector<MemRegisterAddr> addrInfos;
     RmaRankTable rankTable;
@@ -12527,7 +9558,7 @@ shared_ptr<RemoteAccess> RemoteAccess;
 TEST_F(HcomTest, ut_Destroy_backlogged_group)
 {
     std::vector<u32> ranklist;
-    HcomInfo &hcomInfo = HcomGetCtxHomInfo();
+    HcomInfo& hcomInfo = HcomGetCtxHomInfo();
     hcomInfo.isHcomInit = true;
 
     HcclResult ret;
@@ -12551,9 +9582,7 @@ TEST_F(HcomTest, should_return_substream_num_when_910b_graph_allreduce_pipeline)
     u64 dataSize = 0;
     HcclCMDType opType = HcclCMDType::HCCL_CMD_ALLREDUCE;
 
-    MOCKER_CPP_VIRTUAL(comm, &HcclCommunicator::GetAlgType)
-            .stubs()
-            .will(invoke(Stub_GetAlgType_pipeline));
+    MOCKER_CPP_VIRTUAL(comm, &HcclCommunicator::GetAlgType).stubs().will(invoke(Stub_GetAlgType_pipeline));
 
     HcclResult result = comm.GetWorkspaceSubStreamNum(streamNum, dataSize, opType);
 
@@ -12598,8 +9627,8 @@ TEST_F(HcomTest, should_return_substream_num_when_910_93_allgather_graph_pipelin
     HcclCMDType opType = HcclCMDType::HCCL_CMD_ALLGATHER;
 
     MOCKER_CPP_VIRTUAL(comm, &HcclCommunicator::GetAlgType)
-            .stubs()
-            .will(invoke(Stub_GetAlgType_ALG_ALLGATHER_REDUCESCATTER_GRAPH_PIPELINE));
+        .stubs()
+        .will(invoke(Stub_GetAlgType_ALG_ALLGATHER_REDUCESCATTER_GRAPH_PIPELINE));
 
     HcclResult result = comm.GetWorkspaceSubStreamNum(streamNum, dataSize, opType);
 
@@ -12643,9 +9672,7 @@ TEST_F(HcomTest, should_return_substream_num_when_910b_allgather_graph_pipeline_
 
     HcclCMDType opType = HcclCMDType::HCCL_CMD_ALLGATHER;
 
-    MOCKER_CPP_VIRTUAL(comm, &HcclCommunicator::GetAlgType)
-        .stubs()
-        .will(invoke(Stub_GetAlgType_pipeline));
+    MOCKER_CPP_VIRTUAL(comm, &HcclCommunicator::GetAlgType).stubs().will(invoke(Stub_GetAlgType_pipeline));
 
     HcclResult result = comm.GetWorkspaceSubStreamNum(streamNum, dataSize, opType);
 
@@ -12666,9 +9693,7 @@ TEST_F(HcomTest, should_return_substream_num_when_910b_reducescatter_graph_pipel
 
     HcclCMDType opType = HcclCMDType::HCCL_CMD_REDUCE_SCATTER;
 
-    MOCKER_CPP_VIRTUAL(comm, &HcclCommunicator::GetAlgType)
-        .stubs()
-        .will(invoke(Stub_GetAlgType_pipeline));
+    MOCKER_CPP_VIRTUAL(comm, &HcclCommunicator::GetAlgType).stubs().will(invoke(Stub_GetAlgType_pipeline));
 
     HcclResult result = comm.GetWorkspaceSubStreamNum(streamNum, dataSize, opType);
 
@@ -12700,7 +9725,7 @@ TEST_F(HcomTest, should_return_substream_num_when_910b_reduce_order_preservation
 TEST_F(HcomTest, ut_group_fail_test)
 {
     hcclComm comm(0, 0, "tag");
-    std::string group = ""; 
+    std::string group = "";
     u32 groupRank = 0;
     u32 userRank = 0;
     std::vector<u32> groupRanks;
@@ -12730,16 +9755,19 @@ TEST_F(HcomTest, ut_HcomGetSplitStrategy_When_ParamIsNullptr_Expect_ReturnIsHCCL
     feature.model_name = reinterpret_cast<const char*>(0x1234);
     feature.gradient_size = reinterpret_cast<float*>(0x1234);
     feature.gradient_time = reinterpret_cast<float*>(0x1234);
-    HcclResult ret = HcomGetSplitStrategy(group.c_str(), feature, nullptr, nullptr, nullptr,
-        GradSplitForceMode::FORCE_NONE, OriginalGraphShapeType::KNOWN_SHAPE);
+    HcclResult ret = HcomGetSplitStrategy(
+        group.c_str(), feature, nullptr, nullptr, nullptr, GradSplitForceMode::FORCE_NONE,
+        OriginalGraphShapeType::KNOWN_SHAPE);
     EXPECT_EQ(ret, HCCL_E_PTR);
 
     u32 ptr = 0;
-    ret = HcomGetSplitStrategy(group.c_str(), feature, &ptr, nullptr, nullptr,
-        GradSplitForceMode::FORCE_NONE, OriginalGraphShapeType::KNOWN_SHAPE);
+    ret = HcomGetSplitStrategy(
+        group.c_str(), feature, &ptr, nullptr, nullptr, GradSplitForceMode::FORCE_NONE,
+        OriginalGraphShapeType::KNOWN_SHAPE);
     EXPECT_EQ(ret, HCCL_E_PTR);
 
-    ret = HcomGetSplitStrategy(group.c_str(), feature, &ptr, &ptr, nullptr,
-        GradSplitForceMode::FORCE_NONE, OriginalGraphShapeType::KNOWN_SHAPE);
+    ret = HcomGetSplitStrategy(
+        group.c_str(), feature, &ptr, &ptr, nullptr, GradSplitForceMode::FORCE_NONE,
+        OriginalGraphShapeType::KNOWN_SHAPE);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }

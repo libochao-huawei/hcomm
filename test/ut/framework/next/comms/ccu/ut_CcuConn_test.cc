@@ -33,11 +33,8 @@
 using namespace Hccl;
 
 class CcuConnTest : public testing::Test {
-protected:    
-    static void SetUpTestCase()
-    {
-        std::cout << "CcuConnTest tests set up." << std::endl;
-    }
+protected:
+    static void SetUpTestCase() { std::cout << "CcuConnTest tests set up." << std::endl; }
 
     static void TearDownTestCase()
     {
@@ -56,10 +53,10 @@ protected:
         GlobalMockObject::verify();
         std::cout << "A Test case in CcuConnTest TearDown" << std::endl;
     }
-
 };
 
-pair<unique_ptr<hcomm::CcuConnection>, vector<unique_ptr<hcomm::CcuJetty>>> MockMakeCcuConnection(hcomm::TpProtocol tpProtocol)
+pair<unique_ptr<hcomm::CcuConnection>, vector<unique_ptr<hcomm::CcuJetty>>>
+MockMakeCcuConnection(hcomm::TpProtocol tpProtocol)
 {
     constexpr uint64_t fakeMemAddr = 0x12345678;
 
@@ -78,9 +75,9 @@ pair<unique_ptr<hcomm::CcuConnection>, vector<unique_ptr<hcomm::CcuJetty>>> Mock
     hcomm::CcuChannelInfo channelInfo;
     channelInfo.channelId = 1;
     channelInfo.dieId = 1;
-    
+
     vector<unique_ptr<hcomm::CcuJetty>> ccuJettys;
-    vector<hcomm::CcuJetty *> ccuJettyPtrs;
+    vector<hcomm::CcuJetty*> ccuJettyPtrs;
     for (uint32_t i = 0; i < 2; i++) {
         hcomm::CcuJettyInfo jettyInfo;
         jettyInfo.jettyCtxId = 1 + i;
@@ -116,7 +113,10 @@ TEST_F(CcuConnTest, Ut_GetStatus_When_CreateAndImportJettySuccess_Expect_Return_
     connection->Describe(testDfxMsg);
     GlobalMockObject::verify();
 
-    MOCKER(HrtRaGetTpAttrAsync).stubs().will(returnValue(HcclResult::HCCL_E_NOT_SUPPORT)).then(returnValue(HcclResult::HCCL_E_INTERNAL));
+    MOCKER(HrtRaGetTpAttrAsync)
+        .stubs()
+        .will(returnValue(HcclResult::HCCL_E_NOT_SUPPORT))
+        .then(returnValue(HcclResult::HCCL_E_INTERNAL));
     ret = connection->Describe(testDfxMsg);
     EXPECT_NE(ret, HcclResult::HCCL_SUCCESS);
     ret = connection->Describe(testDfxMsg);

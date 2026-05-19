@@ -9,20 +9,11 @@ using namespace hcomm;
 
 class CcuResContainerTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "CcuResContainerTest tests set up." << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "CcuResContainerTest tests set up." << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "CcuResContainerTest tests tear down." << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "CcuResContainerTest tests tear down." << std::endl; }
 
-    virtual void SetUp()
-    {
-        std::cout << "A Test case in CcuResContainerTest SetUP" << std::endl;
-    }
+    virtual void SetUp() { std::cout << "A Test case in CcuResContainerTest SetUP" << std::endl; }
 
     virtual void TearDown()
     {
@@ -54,4 +45,3 @@ TEST_F(CcuResContainerTest, Ut_ChangeMode_When_CcuResPack_Init_UNAVAIL_Expect_UN
     CcuResContainer ccuResContainer;
     EXPECT_EQ(ccuResContainer.ChangeMode(0), HcclResult::HCCL_E_UNAVAIL);
 }
-

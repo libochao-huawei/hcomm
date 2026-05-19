@@ -14,18 +14,11 @@
 
 using namespace hccl;
 
-class UtAicpuTsHcommBatchTransferOnThread : public UtAicpuTsBase
-{
+class UtAicpuTsHcommBatchTransferOnThread : public UtAicpuTsBase {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "UtAicpuTsHcommBatchTransferOnThread tests set up." << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "UtAicpuTsHcommBatchTransferOnThread tests set up." << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "UtAicpuTsHcommBatchTransferOnThread tests tear down." << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "UtAicpuTsHcommBatchTransferOnThread tests tear down." << std::endl; }
 
     virtual void SetUp() override
     {
@@ -41,8 +34,8 @@ protected:
 
     uint64_t tempDst[6] = {0};
     uint64_t tempSrc[6] = {1, 1, 4, 5, 1, 4};
-    void *dst = reinterpret_cast<void *>(tempDst);
-    void *src = reinterpret_cast<void *>(tempSrc);
+    void* dst = reinterpret_cast<void*>(tempDst);
+    void* src = reinterpret_cast<void*>(tempSrc);
     uint64_t len = sizeof(tempDst);
     std::vector<char> uniqueId;
     Hccl::UbTransportLiteImpl transportDev{uniqueId};
@@ -90,7 +83,9 @@ TEST_F(UtAicpuTsHcommBatchTransferOnThread, Ut_HcommBatchTransferOnThread_When_D
     EXPECT_EQ(res, HCCL_E_PARA);
 }
 
-TEST_F(UtAicpuTsHcommBatchTransferOnThread, Ut_HcommBatchTransferOnThread_When_InvalidTransType_Expect_ReturnHCCL_E_NOT_SUPPORT)
+TEST_F(
+    UtAicpuTsHcommBatchTransferOnThread,
+    Ut_HcommBatchTransferOnThread_When_InvalidTransType_Expect_ReturnHCCL_E_NOT_SUPPORT)
 {
     transferDescs[0].transferInfo.write.len = len;
     transferDescs[0].transferInfo.write.dst = dst;
@@ -101,7 +96,8 @@ TEST_F(UtAicpuTsHcommBatchTransferOnThread, Ut_HcommBatchTransferOnThread_When_I
     EXPECT_EQ(res, HCCL_E_NOT_SUPPORT);
 }
 
-TEST_F(UtAicpuTsHcommBatchTransferOnThread, Ut_HcommBatchTransferOnThread_When_DstIsNull_Expect_ReturnHCCL_E_NOT_SUPPORT)
+TEST_F(
+    UtAicpuTsHcommBatchTransferOnThread, Ut_HcommBatchTransferOnThread_When_DstIsNull_Expect_ReturnHCCL_E_NOT_SUPPORT)
 {
     transferDescs[0].transferInfo.write.len = len;
     transferDescs[0].transferInfo.write.dst = nullptr;
@@ -112,7 +108,8 @@ TEST_F(UtAicpuTsHcommBatchTransferOnThread, Ut_HcommBatchTransferOnThread_When_D
     EXPECT_EQ(res, HCCL_E_NOT_SUPPORT);
 }
 
-TEST_F(UtAicpuTsHcommBatchTransferOnThread, Ut_HcommBatchTransferOnThread_When_SrcIsNull_Expect_ReturnHCCL_E_NOT_SUPPORT)
+TEST_F(
+    UtAicpuTsHcommBatchTransferOnThread, Ut_HcommBatchTransferOnThread_When_SrcIsNull_Expect_ReturnHCCL_E_NOT_SUPPORT)
 {
     transferDescs[0].transferInfo.write.len = len;
     transferDescs[0].transferInfo.write.dst = dst;
@@ -123,7 +120,9 @@ TEST_F(UtAicpuTsHcommBatchTransferOnThread, Ut_HcommBatchTransferOnThread_When_S
     EXPECT_EQ(res, HCCL_E_NOT_SUPPORT);
 }
 
-TEST_F(UtAicpuTsHcommBatchTransferOnThread, Ut_HcommBatchTransferOnThread_When_MultipleDescs_Expect_ReturnHCCL_E_NOT_SUPPORT)
+TEST_F(
+    UtAicpuTsHcommBatchTransferOnThread,
+    Ut_HcommBatchTransferOnThread_When_MultipleDescs_Expect_ReturnHCCL_E_NOT_SUPPORT)
 {
     transferDescs[0].transferInfo.write.len = len;
     transferDescs[0].transferInfo.write.dst = dst;

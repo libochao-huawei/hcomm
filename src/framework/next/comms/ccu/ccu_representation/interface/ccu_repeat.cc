@@ -15,46 +15,40 @@
 namespace hcomm {
 namespace CcuRep {
 
-Repeat::Repeat(CcuRepContext *context, CcuRelationalOperator<Variable, uint64_t> rel) : context(context)
-{
-    std::string label = "Repeat";
-    beginLabel        = std::make_shared<CcuRepJumpLabel>(label);
-    endLabel          = std::make_shared<CcuRepJumpLabel>("Break");
+    Repeat::Repeat(CcuRepContext* context, CcuRelationalOperator<Variable, uint64_t> rel) : context(context)
+    {
+        std::string label = "Repeat";
+        beginLabel = std::make_shared<CcuRepJumpLabel>(label);
+        endLabel = std::make_shared<CcuRepJumpLabel>("Break");
 
-    if (rel.type == CcuRelationalOperatorType::NOT_EQUAL) {
-        jump = std::make_shared<CcuRepJumpNE>(label, CreateVariable(context), rel.lhs, rel.rhs);
-    } else if (rel.type == CcuRelationalOperatorType::EQUAL) {
-        jump = std::make_shared<CcuRepJumpEQ>(label, CreateVariable(context), rel.lhs, rel.rhs);
-    } else {
-        Hccl::THROW<Hccl::CcuApiException>("Unsupported relational operation");
+        if (rel.type == CcuRelationalOperatorType::NOT_EQUAL) {
+            jump = std::make_shared<CcuRepJumpNE>(label, CreateVariable(context), rel.lhs, rel.rhs);
+        } else if (rel.type == CcuRelationalOperatorType::EQUAL) {
+            jump = std::make_shared<CcuRepJumpEQ>(label, CreateVariable(context), rel.lhs, rel.rhs);
+        } else {
+            Hccl::THROW<Hccl::CcuApiException>("Unsupported relational operation");
+        }
+        jump->Reference(beginLabel);
+
+        AppendToContext(context, beginLabel);
     }
-    jump->Reference(beginLabel);
 
-    AppendToContext(context, beginLabel);
-}
+    Repeat::~Repeat()
+    {
+        AppendToContext(context, jump);
+        AppendToContext(context, endLabel);
+    }
 
-Repeat::~Repeat()
-{
-    AppendToContext(context, jump);
-    AppendToContext(context, endLabel);
-}
+    void Repeat::Break()
+    {
+        auto jumpToEnd = std::make_shared<CcuRepJump>("Break", CreateVariable(context));
+        jumpToEnd->Reference(endLabel);
+        AppendToContext(context, jumpToEnd);
+    }
 
-void Repeat::Break()
-{
-    auto jumpToEnd = std::make_shared<CcuRepJump>("Break", CreateVariable(context));
-    jumpToEnd->Reference(endLabel);
-    AppendToContext(context, jumpToEnd);
-}
+    bool Repeat::Check() const { return !isExecuted; }
 
-bool Repeat::Check() const
-{
-    return !isExecuted;
-}
-
-void Repeat::Run()
-{
-    isExecuted = true;
-}
+    void Repeat::Run() { isExecuted = true; }
 
 }; // namespace CcuRep
 }; // namespace hcomm

@@ -20,20 +20,11 @@ using namespace hcomm;
 
 class RoceRegedMemMgrTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "RoceRegedMemMgrTest tests set up." << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "RoceRegedMemMgrTest tests set up." << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "RoceRegedMemMgrTest tests tear down." << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "RoceRegedMemMgrTest tests tear down." << std::endl; }
 
-    virtual void SetUp()
-    {
-        std::cout << "A Test case in RoceRegedMemMgrTest SetUP" << std::endl;
-    }
+    virtual void SetUp() { std::cout << "A Test case in RoceRegedMemMgrTest SetUP" << std::endl; }
 
     virtual void TearDown()
     {
@@ -47,10 +38,10 @@ TEST_F(RoceRegedMemMgrTest, Ut_GetParamsFromMemDesc_When_DescLenTooSmall_Expect_
     std::shared_ptr<RoceRegedMemMgr> roceRegedMemMgrPtr = std::make_shared<RoceRegedMemMgr>();
     EndpointDesc endpointDesc;
     Hccl::ExchangeRdmaBufferDto dto;
-    
+
     char buffer[10];
     uint32_t descLen = 10;
-    
+
     HcclResult ret = roceRegedMemMgrPtr->GetParamsFromMemDesc(buffer, descLen, endpointDesc, dto);
     EXPECT_EQ(HCCL_E_INTERNAL, ret);
 }
@@ -60,13 +51,12 @@ TEST_F(RoceRegedMemMgrTest, Ut_GetParamsFromMemDesc_When_DescLenEqualSize_Expect
     std::shared_ptr<RoceRegedMemMgr> roceRegedMemMgrPtr = std::make_shared<RoceRegedMemMgr>();
     EndpointDesc endpointDesc;
     Hccl::ExchangeRdmaBufferDto dto;
-    
+
     char buffer[sizeof(EndpointDesc)];
     uint32_t descLen = sizeof(EndpointDesc);
-    
-    MOCKER_CPP_VIRTUAL(dto,&Hccl::ExchangeRdmaBufferDto::Deserialize)
-        .stubs();
-    
+
+    MOCKER_CPP_VIRTUAL(dto, &Hccl::ExchangeRdmaBufferDto::Deserialize).stubs();
+
     HcclResult ret = roceRegedMemMgrPtr->GetParamsFromMemDesc(buffer, descLen, endpointDesc, dto);
     EXPECT_EQ(HCCL_SUCCESS, ret);
 }

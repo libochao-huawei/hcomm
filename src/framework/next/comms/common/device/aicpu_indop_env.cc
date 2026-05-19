@@ -23,9 +23,6 @@ void SetTaskExceptionEnable(bool taskExceptionEnable)
     HCCL_INFO("[%s] taskExceptionEnable[%d]", __func__, taskExceptionEnable);
 }
 
-const bool& GetTaskExceptionEnable()
-{
-    return g_aicpuIndopEnv.taskExceptionEnable;
-}
+const bool& GetTaskExceptionEnable() { return g_aicpuIndopEnv.taskExceptionEnable; }
 
-}  // namespace hcomm
+} // namespace hcomm

@@ -15,7 +15,7 @@
 #include "hccl_comm_pub.h"
 #include "stream_pub.h"
 // 通信域内首次才能上报
-HcclResult HcclStreamProfilingReport(HcclComm comm, u32 threadNum, u32 *threadId)
+HcclResult HcclStreamProfilingReport(HcclComm comm, u32 threadNum, u32* threadId)
 {
     HCCL_INFO("[%s] threadNum = [%u]", __func__, threadNum);
     CHK_PTR_NULL(comm);
@@ -39,8 +39,9 @@ HcclResult HcclStreamProfilingReport(HcclComm comm, u32 threadNum, u32 *threadId
         hcclMc2Info.commStreamIds[reportId++] = id;
         if (reportId == ONCE_REPORT_STREAM_NUM_MAX) {
             hcclMc2Info.commStreamSize = reportId;
-            CHK_RET(hccl::ProfilingManagerPub::CallMsprofReportMc2CommInfo(hrtMsprofSysCycleTime(), &hcclMc2Info,
-                                                                        sizeof(hcclMc2Info)));
+            CHK_RET(
+                hccl::ProfilingManagerPub::CallMsprofReportMc2CommInfo(
+                    hrtMsprofSysCycleTime(), &hcclMc2Info, sizeof(hcclMc2Info)));
             reportId = 0;
         }
     }
@@ -48,11 +49,11 @@ HcclResult HcclStreamProfilingReport(HcclComm comm, u32 threadNum, u32 *threadId
     if (reportId > 0) {
         HCCL_DEBUG("[%s] last reportId[%u]", __func__, reportId);
         hcclMc2Info.commStreamSize = reportId;
-        CHK_RET(hccl::ProfilingManagerPub::CallMsprofReportMc2CommInfo(hrtMsprofSysCycleTime(), &hcclMc2Info,
-                                                                    sizeof(hcclMc2Info)));
+        CHK_RET(
+            hccl::ProfilingManagerPub::CallMsprofReportMc2CommInfo(
+                hrtMsprofSysCycleTime(), &hcclMc2Info, sizeof(hcclMc2Info)));
         reportId = 0;
     }
     HCCL_INFO("[%s] success", __func__);
     return HCCL_SUCCESS;
 }
-

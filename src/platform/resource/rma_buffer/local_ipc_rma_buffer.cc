@@ -29,12 +29,16 @@ LocalIpcRmaBuffer::~LocalIpcRmaBuffer()
 HcclResult LocalIpcRmaBuffer::Init()
 {
     CHK_PTR_NULL(addr);
-    CHK_PRT_RET((memType >= RmaMemType::TYPE_NUM),
+    CHK_PRT_RET(
+        (memType >= RmaMemType::TYPE_NUM),
         HCCL_ERROR("[LocalIpcRmaBuffer][Init]RmaMemType[%d] is invalid.", static_cast<int>(memType)), HCCL_E_PARA);
-    CHK_PRT_RET((size == 0 || (memType == RmaMemType::HOST && size >= HOST_MEM_MAX_COUNT) ||
-        (memType == RmaMemType::DEVICE && size >= DEVICE_MEM_MAX_COUNT)),
-        HCCL_ERROR("[LocalIpcRmaBuffer][Init]memory size[%llu] should be greater than 0 and less than [%llu].",
-        size, (memType == RmaMemType::DEVICE ? HOST_MEM_MAX_COUNT : DEVICE_MEM_MAX_COUNT)), HCCL_E_PARA);
+    CHK_PRT_RET(
+        (size == 0 || (memType == RmaMemType::HOST && size >= HOST_MEM_MAX_COUNT)
+         || (memType == RmaMemType::DEVICE && size >= DEVICE_MEM_MAX_COUNT)),
+        HCCL_ERROR(
+            "[LocalIpcRmaBuffer][Init]memory size[%llu] should be greater than 0 and less than [%llu].", size,
+            (memType == RmaMemType::DEVICE ? HOST_MEM_MAX_COUNT : DEVICE_MEM_MAX_COUNT)),
+        HCCL_E_PARA);
 
     CHK_SMART_PTR_NULL(pimpl_);
     HcclResult ret = pimpl_->Init();
@@ -44,7 +48,7 @@ HcclResult LocalIpcRmaBuffer::Init()
         return ret;
     }
 
-    this->devAddr   = pimpl_->GetDevAddr();
+    this->devAddr = pimpl_->GetDevAddr();
 
     return HCCL_SUCCESS;
 }
@@ -56,22 +60,16 @@ HcclResult LocalIpcRmaBuffer::Destroy()
         if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("[LocalIpcRmaBuffer][Destroy]Destroy failed, ret[%d]", ret);
         }
-        pimpl_  = nullptr;
-        addr    = nullptr;
-        size    = 0;
+        pimpl_ = nullptr;
+        addr = nullptr;
+        size = 0;
         devAddr = nullptr;
         return ret;
     }
     return HCCL_SUCCESS;
 }
 
-std::string &LocalIpcRmaBuffer::Serialize()
-{
-    return pimpl_->Serialize();
-}
+std::string& LocalIpcRmaBuffer::Serialize() { return pimpl_->Serialize(); }
 
-HcclResult LocalIpcRmaBuffer::Grant(u32 remotePid, u32 remoteSdid)
-{
-    return pimpl_->Grant(remotePid, remoteSdid);
-}
-}
+HcclResult LocalIpcRmaBuffer::Grant(u32 remotePid, u32 remoteSdid) { return pimpl_->Grant(remotePid, remoteSdid); }
+} // namespace hccl

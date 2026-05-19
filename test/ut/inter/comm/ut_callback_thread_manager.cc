@@ -61,17 +61,10 @@
 using namespace std;
 using namespace hccl;
 
-class MPI_ThreadStreamManager_Test : public testing::Test
-{
+class MPI_ThreadStreamManager_Test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "MPI_ThreadStreamManager_Test SetUP" << std::endl;
-    }
-    static void TearDownTestCase()
-    {
-        std::cout << "MPI_ThreadStreamManager_Test TearDown" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "MPI_ThreadStreamManager_Test SetUP" << std::endl; }
+    static void TearDownTestCase() { std::cout << "MPI_ThreadStreamManager_Test TearDown" << std::endl; }
     // Some expensive resource shared by all tests.
     virtual void SetUp()
     {
@@ -80,10 +73,7 @@ protected:
         DlRaFunction::GetInstance().DlRaFunctionInit();
         ClearHalEvent();
         s32 portNum = -1;
-        MOCKER(hrtGetHccsPortNum)
-            .stubs()
-            .with(any(), outBound(portNum))
-            .will(returnValue(HCCL_SUCCESS));
+        MOCKER(hrtGetHccsPortNum).stubs().with(any(), outBound(portNum)).will(returnValue(HCCL_SUCCESS));
         std::cout << "A TestCase SetUP" << std::endl;
     }
     virtual void TearDown()

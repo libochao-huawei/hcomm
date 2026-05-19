@@ -13,15 +13,15 @@
 
 namespace hccl {
 
-HcclAicpuHdcHandler::HcclAicpuHdcHandler(const std::shared_ptr<HDCommunicate> &h2dTransfer, 
-    const std::shared_ptr<HDCommunicate> &d2hTransfer) 
-    :h2dTransfer_(h2dTransfer), d2hTransfer_(d2hTransfer)
-{
-}
+HcclAicpuHdcHandler::HcclAicpuHdcHandler(
+    const std::shared_ptr<HDCommunicate>& h2dTransfer, const std::shared_ptr<HDCommunicate>& d2hTransfer)
+    : h2dTransfer_(h2dTransfer),
+      d2hTransfer_(d2hTransfer)
+{}
 
-HcclResult HcclAicpuHdcHandler::GetKfcCommand(Hccl::KfcCommand &cmd)
+HcclResult HcclAicpuHdcHandler::GetKfcCommand(Hccl::KfcCommand& cmd)
 {
-    auto ret = h2dTransfer_->Get(0, sizeof(Hccl::KfcCommand), reinterpret_cast<uint8_t *>(&cmd));
+    auto ret = h2dTransfer_->Get(0, sizeof(Hccl::KfcCommand), reinterpret_cast<uint8_t*>(&cmd));
     if (ret != HcclResult::HCCL_SUCCESS) {
         HCCL_ERROR("[HcclAicpuHdcHandler][GetKfcCommand] h2dTransfer Get fail, ret[%d]", ret);
         return ret;
@@ -37,9 +37,9 @@ void HcclAicpuHdcHandler::SetKfcExecStatus(Hccl::KfcStatus state, Hccl::KfcErrTy
 {
     Hccl::KfcExecStatus status;
     status.kfcStatus = state;
-    status.kfcError  = errorCode;
+    status.kfcError = errorCode;
     HCCL_INFO("[HcclAicpuHdcHandler][SetKfcExecStatus] SetKfcExecStatus: state[%u], errorCode[%u]", state, errorCode);
-    auto ret = d2hTransfer_->Put(0, sizeof(Hccl::KfcExecStatus), reinterpret_cast<uint8_t *>(&status));
+    auto ret = d2hTransfer_->Put(0, sizeof(Hccl::KfcExecStatus), reinterpret_cast<uint8_t*>(&status));
     if (ret != HcclResult::HCCL_SUCCESS) {
         HCCL_ERROR("[HcclAicpuHdcHandler][SetKfcExecStatus] d2hTransfer Put fail, ret[%d]", ret);
     }

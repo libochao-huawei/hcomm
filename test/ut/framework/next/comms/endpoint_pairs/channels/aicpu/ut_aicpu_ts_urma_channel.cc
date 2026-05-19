@@ -17,7 +17,8 @@ protected:
     void TearDown() override { GlobalMockObject::verify(); }
 };
 
-TEST_F(AicpuTsUrmaChannelTest, Ut_Clean_WithoutInit_Returns_SUCCESS) {
+TEST_F(AicpuTsUrmaChannelTest, Ut_Clean_WithoutInit_Returns_SUCCESS)
+{
     HcommChannelDesc desc{};
     EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
     AicpuTsUrmaChannel ch(ep, desc);
@@ -26,18 +27,19 @@ TEST_F(AicpuTsUrmaChannelTest, Ut_Clean_WithoutInit_Returns_SUCCESS) {
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-TEST_F(AicpuTsUrmaChannelTest, Ut_Resume_MockedBuilds_Returns_SUCCESS) {
+TEST_F(AicpuTsUrmaChannelTest, Ut_Resume_MockedBuilds_Returns_SUCCESS)
+{
     HcommChannelDesc desc{};
     EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
     AicpuTsUrmaChannel ch(ep, desc);
 
     // Mock private helper methods BuildConnection and BuildUbMemTransport
-    MOCKER_CPP(&AicpuTsUrmaChannel::BuildConnection, HcclResult(AicpuTsUrmaChannel::*)())
+    MOCKER_CPP(&AicpuTsUrmaChannel::BuildConnection, HcclResult (AicpuTsUrmaChannel::*)())
         .stubs()
         .with(any())
         .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&AicpuTsUrmaChannel::BuildUbMemTransport, HcclResult(AicpuTsUrmaChannel::*)())
+    MOCKER_CPP(&AicpuTsUrmaChannel::BuildUbMemTransport, HcclResult (AicpuTsUrmaChannel::*)())
         .stubs()
         .with(any())
         .will(returnValue(HCCL_SUCCESS));
@@ -46,7 +48,8 @@ TEST_F(AicpuTsUrmaChannelTest, Ut_Resume_MockedBuilds_Returns_SUCCESS) {
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-TEST_F(AicpuTsUrmaChannelTest, Ut_GetStatus_DfxInfo_TEST) {
+TEST_F(AicpuTsUrmaChannelTest, Ut_GetStatus_DfxInfo_TEST)
+{
     HcommChannelDesc desc{};
     EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
     AicpuTsUrmaChannel ch(ep, desc);
@@ -55,16 +58,9 @@ TEST_F(AicpuTsUrmaChannelTest, Ut_GetStatus_DfxInfo_TEST) {
     Hccl::BaseMemTransport::Attribution attr{};
     Hccl::IpAddress locAddrIp{"1.1.1.1"};
     Hccl::IpAddress rmtAddrIp{"2.2.2.2"};
-    Hccl::Socket sock{
-        nullptr,
-        locAddrIp,
-        0,
-        rmtAddrIp,
-        "ut",
-        Hccl::SocketRole::CLIENT,
-        Hccl::NicType::DEVICE_NIC_TYPE};
+    Hccl::Socket sock{nullptr, locAddrIp, 0, rmtAddrIp, "ut", Hccl::SocketRole::CLIENT, Hccl::NicType::DEVICE_NIC_TYPE};
     Hccl::BaseMemTransport::CommonLocRes commonLocRes{};
-    std::vector<Hccl::RmaConnection *> conns;
+    std::vector<Hccl::RmaConnection*> conns;
     auto conn = std::make_unique<Hccl::DevUbConnection>(nullptr, locAddrIp, rmtAddrIp, Hccl::OpMode::OPBASE);
     conns.push_back(conn.get()); // 仅占位，测试不涉及具体连接对象
     commonLocRes.connVec = conns;
@@ -77,14 +73,10 @@ TEST_F(AicpuTsUrmaChannelTest, Ut_GetStatus_DfxInfo_TEST) {
     Hccl::IpAddress rmtAddr;
     uint32_t locDevPhyId = 0;
     uint32_t rmtDevPhyId = 0;
-    Hccl::LinkData ld = Hccl::LinkData(
-        portDeploymentType,
-        linkProtocol, 
-        locDevPhyId, rmtDevPhyId,
-        locAddr, rmtAddr
-    );
+    Hccl::LinkData ld = Hccl::LinkData(portDeploymentType, linkProtocol, locDevPhyId, rmtDevPhyId, locAddr, rmtAddr);
 
-    auto memTransport = std::make_unique<Hccl::UbMemTransport>(commonLocRes, attr, ld, sock, rdmaHandle, locCntNotifyRes, false);
+    auto memTransport
+        = std::make_unique<Hccl::UbMemTransport>(commonLocRes, attr, ld, sock, rdmaHandle, locCntNotifyRes, false);
     memTransport->connNum = 1;
     memTransport->baseStatus = Hccl::TransportStatus::READY;
     ch.memTransport_ = std::move(memTransport);

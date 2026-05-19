@@ -12,15 +12,18 @@
 #include "string_util.h"
 namespace Hccl {
 RmtRmaBufSliceLite::RmtRmaBufSliceLite(u64 addr, u64 size, u32 rkey, u32 tokenId, u32 tokenValue)
-    : addr_(addr), size_(size), rkey_(rkey), tokenId_(tokenId), tokenValue_(tokenValue)
+    : addr_(addr),
+      size_(size),
+      rkey_(rkey),
+      tokenId_(tokenId),
+      tokenValue_(tokenValue)
 {
     HCCL_INFO("RmtRmaBufSliceLite::RmtRmaBufSliceLite:%s", Describe().c_str());
 }
 
 std::string RmtRmaBufSliceLite::Describe() const
 {
-    return StringFormat("RmtRmaBufSliceLite[addr=0x%llx, size=0x%llx, rkey=%u]", addr_, size_,
-                        rkey_);
+    return StringFormat("RmtRmaBufSliceLite[addr=0x%llx, size=0x%llx, rkey=%u]", addr_, size_, rkey_);
 }
 
 } // namespace Hccl
