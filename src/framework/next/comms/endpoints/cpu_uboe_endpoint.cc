@@ -10,6 +10,10 @@
 #include "hccp_peer_manager.h"
 #include "server_socket_manager.h"
 
+using Hccl::HcclException;
+using std::string;
+using std::exception;
+
 namespace hcomm {
 
 CpuUboeEndpoint::CpuUboeEndpoint(const EndpointDesc &endpointDesc)
@@ -78,7 +82,7 @@ HcclResult CpuUboeEndpoint::Init()
     s32 devId = 0;
     CHK_RET(hrtGetDevice(&devId));
 
-    RaSocketSetWhiteListStatus(1);
+    Hccl::HrtRaSocketSetWhiteListStatus(1);
     EXECEPTION_CATCH(Hccl::HccpPeerManager::GetInstance().Init(devId), return HCCL_E_INTERNAL);
 
     u32 devPhyId = 0;
@@ -98,7 +102,7 @@ HcclResult CpuUboeEndpoint::Init()
 
         void *ctxHandle = nullptr;
         TRY_CATCH_RETURN(ctxHandle = static_cast<void *>(
-            rdmaHandleMgr.GetByAddr(devPhyId, Hccl::LinkProtoType::UB, ipAddr, Hccl::PortDeploymentType::HOST_NET, Hccl::LinkProtocol::UBOE)));
+            rdmaHandleMgr.GetByAddr(devPhyId, Hccl::LinkProtoType::UB, ipAddr, Hccl::PortDeploymentType::HOST_NET)));
         CHK_PTR_NULL(ctxHandle);
 
         ctxHandleList_.push_back(ctxHandle);
