@@ -227,6 +227,22 @@ private:
         CcuRep::CcuBuf **buf, CcuRep::RemoteAddr **remote,
         CcuRep::Variable **len, CcuRep::CompletedEvent **event);
 
+    // 校验从 varHandle 起的 num 个 Variable 句柄对应的内部变量 Id 连续递增，
+    // 用于 LoadVar/StoreVar 等接口对“连续变量块”的前置校验。
+    CcuResult CheckContinuousVariables(CcuVariableHandle varHandle, uint32_t num,
+        const CcuRep::Variable &baseVar, const char *tag);
+
+    // GetCcuProfilingInfo 的子步骤：处理 sqe & waitcke 类型的 profiling 信息，结果直接 push 到 allCcuProfilingInfos_ 中。
+    HcclResult CollectSqeAndWaitCkeProfilingInfo();
+    // GetCcuProfilingInfo 的子步骤：根据 LoopGroup 的 profiling 缓存构建
+    // varId -> argIndex 与 varId -> varId 两个查找表，供 LoopGroup 段查询入参使用。
+    HcclResult BuildLoopGroupVarIdMaps(std::unordered_map<uint16_t, uint32_t> &varId2ArgIndexMap,
+        std::unordered_map<uint16_t, uint16_t> &varId2VarIdMap);
+    // GetCcuProfilingInfo 的子步骤：处理 LoopGroup 的 profiling 信息，结果 push 到 allCcuProfilingInfos_ 中。
+    HcclResult CollectLoopGroupProfilingInfo(const uint64_t *taskArgs, uint32_t argSize,
+        const std::unordered_map<uint16_t, uint32_t> &varId2ArgIndexMap,
+        const std::unordered_map<uint16_t, uint16_t> &varId2VarIdMap);
+
     struct IfLabelEntry {
         const char *label{nullptr};
         bool        bodyDone{false};
