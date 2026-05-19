@@ -31,12 +31,12 @@ public:
 
     RmaBuffer &operator=(const RmaBuffer &that) = delete;
 
-    inline void* GetAddr() const
+    virtual void* GetAddr() const
     {
         return addr;
     }
 
-    inline u64 GetSize() const
+    virtual u64 GetSize() const
     {
         return size;
     }
@@ -59,6 +59,27 @@ public:
     inline const HcclNetDevCtx GetNetDevCtx() const
     {
         return netDevCtx;
+    }
+
+    virtual bool IsVirtual() const
+    {
+        return false;
+    }
+
+    virtual RmaBuffer* GetRealBuffer() const
+    {
+        return nullptr;
+    }
+
+    // 硬件实际注册的内存范围（可能因对齐而大于传入值），用于树引用计数
+    virtual void* GetAlignedAddr() const
+    {
+        return addr;
+    }
+
+    virtual u64 GetAlignedSize() const
+    {
+        return size;
     }
 
 protected:
