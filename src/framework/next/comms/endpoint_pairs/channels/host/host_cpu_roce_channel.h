@@ -103,8 +103,9 @@ private:
     HcclResult ConnVecUnpackProc(Hccl::BinaryStream &binaryStream);
 
     std::vector<Hccl::QpInfo> GetQpInfos() const; // in Connection
-
+    HcclResult CalcQpTile(uint64_t len, const uint32_t qpCount, uint32_t &useQpNum, uint64_t &tileLen, uint64_t &tileLenTail);
     HcclResult IbvPostRecv() const;
+    HcclResult PreparePostRecvWrResource(utin32_t qpIdx, struct ibv_recv_wr &recvWr);
     HcclResult PrepareNotifyWrResource(uint32_t qpIdx, const uint64_t len, const uint32_t remoteNotifyIdx, struct ibv_send_wr &notifyRecordWr,
                                        Hccl::TaskParam &taskParam) const;
     HcclResult PrepareWriteWrResource(const void *dst, const void *src, const uint64_t len, const uint32_t remoteNotifyIdx,
@@ -147,14 +148,15 @@ private:
     std::vector<std::unique_ptr<Hccl::RemoteRdmaRmaBuffer>> rmtRmaBuffers_{};
     std::vector<ExchangeRdmaConnDto> rmtConnDtos_;
     std::vector<std::unique_ptr<HcclMem>> remoteMems{};
-    std::vector<uint32_t> wqeNums_;
+    std::vector<int> wqeNums_;
     std::unique_ptr<SocketMgr> socketMgr_{nullptr};
     bool fenceFlag_{false};
+    uint32_t fenceCount_{0};
     std::mutex      remoteMemsMutex_; // 远端内存列表互斥锁
     std::unique_ptr<HcclMem[]> remoteMemsPtr_;
 
     uint64_t maxMsgSize_{0};
-    uint32_t lbMax_{0};             // 多QP负载均衡
+    uint32_t loadBalancingMax_{0};             // 多QP负载均衡
 
     std::function<HcclResult(const Hccl::TaskParam&, u64)> dfxCallback_;
 
