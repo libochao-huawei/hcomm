@@ -247,11 +247,10 @@ HcclResult AicpuTsUboeChannel::GetNotifyNum(uint32_t *notifyNum) const
     return HCCL_SUCCESS;
 }
 
-// 获取远端的CCLBUFFER，但当前实现返回了所有远端内存，待整改
-HcclResult AicpuTsUboeChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags)
+HcclResult AicpuTsUboeChannel::GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, char **memTags)
 {
-    CHK_PRT_RET(!remoteMem, HCCL_ERROR("[GetRemoteMem] remoteMem is nullptr"), HCCL_E_PARA);
-    CHK_PRT_RET(!memNum, HCCL_ERROR("[GetRemoteMem] memNum is nullptr"), HCCL_E_PARA);
+    CHK_PRT_RET(!remoteMem, HCCL_ERROR("[GetRemoteMems] remoteMem is nullptr"), HCCL_E_PARA);
+    CHK_PRT_RET(!memNum, HCCL_ERROR("[GetRemoteMems] memNum is nullptr"), HCCL_E_PARA);
  
     *remoteMem = nullptr;
     *memNum = 0;
@@ -260,7 +259,7 @@ HcclResult AicpuTsUboeChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNu
  
     uint32_t totalCount = rmtBufferVec_.size();
     if (totalCount == 0) {
-        HCCL_INFO("[GetRemoteMem] No remote memory regions available");
+        HCCL_INFO("[GetRemoteMems] No remote memory regions available");
         return HCCL_SUCCESS;
     }
     // 释放之前的内存
