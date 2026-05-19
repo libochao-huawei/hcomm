@@ -16,8 +16,6 @@
 #include "mem_host_pub.h"
 #include "hccl_diag.h"
 
-#include "ccu_kernel.h" // todo: 不合理
-
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
