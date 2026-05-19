@@ -3436,8 +3436,9 @@ static HcclConfigTypeOpExpansionMode OpExpansionModeValueToModeEnum(const uint32
         case ccuSchedMode:
             return static_cast<HcclConfigTypeOpExpansionMode>(opExpansionModeCcuSched);
         case aivMode:
-        case aivOnlyMode:
             return HcclOpExpansionMode::HCCL_OP_EXPANSION_MODE_AIV;
+        case aivOnlyMode:
+            return HcclOpExpansionMode::HCCL_OP_EXPANSION_AIV_ONLY;
         default:
             break;
     }
