@@ -2135,17 +2135,9 @@ static uint16_t ParseRepeatNumFromParallelParam(uint64_t parallelParam)
     return ( parallelParam >> repeatNumShiftBit) & SetBits(repeatBitNum);
 }
 
-/*
- 	* variable/maskSignal等资源变量Id，一定要在获取ccu profiling时才获取；
- 	* 原因：在创建context Rep时，其资源Id属于虚拟资源；翻译时，才会绑定固定的物理资源。
-*/
-HcclResult CcuKernel::GetCcuProfilingInfo(const uint64_t *taskArgs, uint32_t argSize,
-    std::vector<CcuProfilingInfo> &allCcuProfilingInfo)
+HcclResult CcuKernel::CollectSqeAndWaitCkeProfilingInfo()
 {
-    HCCL_INFO("[GetCcuProfilingInfo] Enter.");
-    allCcuProfilingInfos_.clear();
     auto &ccuProfilingCache = GetProfilingInfo();
-
     uint32_t count {0};
     HCCL_INFO("[GetCcuProfilingInfo] Process sqe&waitcke profiling info start.");
     for (auto &profInfo : ccuProfilingCache) {
@@ -2173,12 +2165,15 @@ HcclResult CcuKernel::GetCcuProfilingInfo(const uint64_t *taskArgs, uint32_t arg
         allCcuProfilingInfos_.push_back(profInfo);
         count++;
     }
+    return HCCL_SUCCESS;
+}
 
-    // loopGroup
+HcclResult CcuKernel::BuildLoopGroupVarIdMaps(std::unordered_map<uint16_t, uint32_t> &varId2ArgIndexMap,
+    std::unordered_map<uint16_t, uint16_t> &varId2VarIdMap)
+{
     auto &lgProfInfo = GetLGProfilingInfo();
     HCCL_INFO("[GetCcuProfilingInfo] create varId2ArgIndexMap start. size=%lu",
         lgProfInfo.loadRep2ArgIdxMap.size());
-    std::unordered_map<uint16_t, uint32_t> varId2ArgIndexMap;
     for (auto &iter : lgProfInfo.loadRep2ArgIdxMap) {
         if (iter.first.get() == nullptr) {
             HCCL_ERROR("[GetCcuProfilingInfo] loadRep is nullptr.");
@@ -2190,7 +2185,6 @@ HcclResult CcuKernel::GetCcuProfilingInfo(const uint64_t *taskArgs, uint32_t arg
 
     HCCL_INFO("[GetCcuProfilingInfo] create varId2VarIdMap start. size=%lu",
         lgProfInfo.assignProfilingReps.size());
-    std::unordered_map<uint16_t, uint16_t> varId2VarIdMap;
     for (auto &iter : lgProfInfo.assignProfilingReps) {
         if (iter.get() == nullptr) {
             HCCL_ERROR("[GetCcuProfilingInfo] assignRep is nullptr.");
@@ -2199,7 +2193,14 @@ HcclResult CcuKernel::GetCcuProfilingInfo(const uint64_t *taskArgs, uint32_t arg
         auto assignRep = dynamic_cast<CcuRep::CcuRepAssign*>(iter.get());
         varId2VarIdMap[assignRep->varB.Id()] = assignRep->varA.Id();
     }
+    return HCCL_SUCCESS;
+}
 
+HcclResult CcuKernel::CollectLoopGroupProfilingInfo(const uint64_t *taskArgs, uint32_t argSize,
+    const std::unordered_map<uint16_t, uint32_t> &varId2ArgIndexMap,
+    const std::unordered_map<uint16_t, uint16_t> &varId2VarIdMap)
+{
+    auto &lgProfInfo = GetLGProfilingInfo();
     HCCL_INFO("[GetCcuProfilingInfo] process loop group profiling start: "
         "lgsize(%lu), goSize(%lu)", lgProfInfo.lgProfilingReps.size(), groupOpSizeInfo_.size());
     for (uint32_t i = 0; i < lgProfInfo.lgProfilingReps.size(); i += 2) { // 2: 一个goSize对应一个CcuProfilingInfo，对应1个loopGroup Rep
@@ -2233,6 +2234,27 @@ HcclResult CcuKernel::GetCcuProfilingInfo(const uint64_t *taskArgs, uint32_t arg
             allCcuProfilingInfos_.push_back(lgProfInfo.ccuProfilingInfos[i]);
         }
     }
+    return HCCL_SUCCESS;
+}
+
+/*
+ 	* variable/maskSignal等资源变量Id，一定要在获取ccu profiling时才获取；
+ 	* 原因：在创建context Rep时，其资源Id属于虚拟资源；翻译时，才会绑定固定的物理资源。
+*/
+HcclResult CcuKernel::GetCcuProfilingInfo(const uint64_t *taskArgs, uint32_t argSize,
+    std::vector<CcuProfilingInfo> &allCcuProfilingInfo)
+{
+    HCCL_INFO("[GetCcuProfilingInfo] Enter.");
+    allCcuProfilingInfos_.clear();
+
+    CHK_RET(CollectSqeAndWaitCkeProfilingInfo());
+
+    std::unordered_map<uint16_t, uint32_t> varId2ArgIndexMap;
+    std::unordered_map<uint16_t, uint16_t> varId2VarIdMap;
+    CHK_RET(BuildLoopGroupVarIdMaps(varId2ArgIndexMap, varId2VarIdMap));
+
+    CHK_RET(CollectLoopGroupProfilingInfo(taskArgs, argSize, varId2ArgIndexMap, varId2VarIdMap));
+
     DumpCcuProfilingInfo(allCcuProfilingInfos_);
     allCcuProfilingInfo = allCcuProfilingInfos_;
     return HCCL_SUCCESS;
