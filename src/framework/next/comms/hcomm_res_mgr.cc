@@ -31,6 +31,7 @@
 #include "ccu_comp.h"
 #include "../ccu/ccu_device/ccu_res_batch_allocator.h"
 #include "ccu_kernel_mgr.h"
+#include "../endpoint_pairs/sockets/socket_process.h"
 
 namespace hcomm {
 
@@ -65,6 +66,7 @@ HcommResMgr& HcommResMgr::GetInstance(const uint32_t devicePhyId)
     CcuComponent::GetInstance(devicePhyId);
     Hccl::CcuResBatchAllocator::GetInstance(devicePhyId);
     CcuKernelMgr::GetInstance(devicePhyId);
+    SocketProcess::GetInstance(devicePhyId);
 
     static HcommResMgr hcommResMgrs[MAX_MODULE_DEVICE_NUM + 1];
     hcommResMgrs[devPhyId].devPhyId_ = devPhyId;
