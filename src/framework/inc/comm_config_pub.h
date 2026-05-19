@@ -150,6 +150,8 @@ private:
     std::string bufferName_;    // CCL buffer名称
     u32 hcclQos_;
     u64 symmetricMemoryStride_; // 对称内存预留VA大小，单位GB
+    std::string identify_;
+    std::string groupName_;
 };
 }
 #endif /* HCCL_COMM_CONFIG_PUB_H */

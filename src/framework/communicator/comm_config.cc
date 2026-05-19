@@ -35,7 +35,9 @@ CommConfig::CommConfig(const std::string &commName)
       retryIntervalTime_(GetExternalInputRetryIntervalTime()),
       bufferName_(""),
       hcclQos_(HCCL_COMM_QOS_CONFIG_NOT_SET),
-      symmetricMemoryStride_(HCCL_DEFAULT_SYMMETRIC_MEMORY_STRIDE)
+      symmetricMemoryStride_(HCCL_DEFAULT_SYMMETRIC_MEMORY_STRIDE),
+      identify_(commName),
+      groupName_(commName)
 {
     InitAlgoConfig();
     InitRetryEnable();
@@ -115,8 +117,8 @@ HcclResult CommConfig::Load(const HcclCommConfig *userConfig)
     // 根据版本号读取配置，检查配置参数合法性
     CHK_RET(SetConfigByVersion(configHandle));
 
-    HCCL_RUN_INFO("[Load] comm config info of [%s]: configSize[%llu], version[%u], opExpansionMode[%u]", commName_.c_str(),
-        configHandle.info.configSize, configHandle.info.version, configHandle.opExpansionMode);
+    HCCL_RUN_INFO("[Load] comm config info of [%s]: identify[%s], groupName[%s], configSize[%llu], version[%u], opExpansionMode[%u]", commName_.c_str(),
+        identify_.c_str(), groupName_.c_str(), configHandle.info.configSize, configHandle.info.version, configHandle.opExpansionMode);
     HCCL_RUN_INFO("[Load] comm config of [%s]: bufferSize[%llu], deterministic[%u], trafficClass[%u], serviceLevel[%u]"
         ", execTimeOut[%u]s, bufferName[%s], hcclQos[%u], symmetricMemoryStride[%llu], aclGraphZeroCopyEnable[%u]",
         commName_.c_str(), bufferSize_, deterministic_, trafficClass_, serviceLevel_, execTimeOut_, bufferName_.c_str(), hcclQos_, symmetricMemoryStride_, aclGraphZeroCopyEnable_);
@@ -164,14 +166,28 @@ HcclResult CommConfig::SetConfigByVersion(const CommConfigHandle &config)
         CHK_RET(SetConfigDeterministic(config));
     }
 
+    std::string suffix = identify_; // 默认使用identify, identify太长对用户不友好
     if (config.info.version >= CommConfigVersion::COMM_CONFIG_VERSION_TWO) {
         // 版本大于等于2，设置通信域名称
         CHK_RET(SetConfigCommName(config));
+        groupName_ = commName_;
+        // 使用group_name_xxx 最后的xxx
+        size_t startPos = commName_.find_last_of('_');
+        if (startPos != std::string::npos) {
+            suffix = commName_.substr(startPos + 1);
+        }
     }
 
     if (config.info.version >= CommConfigVersion::COMM_CONFIG_VERSION_THREE) {
         // 版本大于等于3，设置Udi
         CHK_RET(SetConfigUdi(config));
+        if (config.udi != nullptr && config.udi[0] != '\0') {
+            auto commNameLength = strlen(config.udi);
+            commNameLength = commNameLength < UDI_MAX_LENGTH ? commNameLength : UDI_MAX_LENGTH;
+            commName_ = std::string(config.udi, commNameLength);
+            commName_ = commName_ + "_" + suffix;
+            return HCCL_SUCCESS;
+        }
     }
 
     if (config.info.version >= CommConfigVersion::COMM_CONFIG_VERSION_FOUR) {
