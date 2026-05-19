@@ -46,7 +46,7 @@ target_link_libraries(hccl_v2 PRIVATE
     unified_dlog
     mmpa
     runtime
-    ascendcl
+    acl_rt
     error_manager
     ccl_dpu
     tsdclient

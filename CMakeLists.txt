@@ -114,6 +114,8 @@ elseif(BUILD_OPEN_PROJECT)
     find_cann_package(mmpa MODULE REQUIRED)
     find_cann_package(runtime MODULE REQUIRED)
     find_cann_package(error_manager MODULE REQUIRED)
+    find_cann_package(acl_rt MODULE REQUIRED)
+    find_cann_package(tsdclient MODULE REQUIRED)
     # 检查构建依赖
     check_pkg_build_deps("hcomm")
     add_version_info_targets()

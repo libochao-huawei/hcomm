@@ -33,6 +33,9 @@ find_cann_package(unified_dlog MODULE REQUIRED)
 find_cann_package(mmpa MODULE REQUIRED)
 find_cann_package(runtime MODULE REQUIRED)
 find_cann_package(error_manager MODULE REQUIRED)
+find_cann_package(metadef MODULE REQUIRED)
+find_cann_package(ascend_hal MODULE REQUIRED)
+find_cann_package(aicpu_sharder MODULE REQUIRED)
 
 # third_party
 include(${HCOMM_DIR}/cmake/hcomm_utils.cmake)

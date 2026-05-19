@@ -177,7 +177,7 @@ else()
         unified_dlog
         mmpa
         runtime
-        ascendcl
+        acl_rt
         error_manager
         hccl_legacy
         -Wl,--as-needed
