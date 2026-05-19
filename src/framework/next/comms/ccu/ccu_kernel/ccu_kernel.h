@@ -227,6 +227,11 @@ private:
         CcuRep::CcuBuf **buf, CcuRep::RemoteAddr **remote,
         CcuRep::Variable **len, CcuRep::CompletedEvent **event);
 
+    // 校验从 varHandle 起的 num 个 Variable 句柄对应的内部变量 Id 连续递增，
+    // 用于 LoadVar/StoreVar 等接口对“连续变量块”的前置校验。
+    CcuResult CheckContinuousVariables(CcuVariableHandle varHandle, uint32_t num,
+        const CcuRep::Variable &baseVar, const char *tag);
+
     struct IfLabelEntry {
         const char *label{nullptr};
         bool        bodyDone{false};
