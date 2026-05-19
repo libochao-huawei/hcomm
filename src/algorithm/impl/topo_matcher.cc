@@ -627,4 +627,20 @@ void TopoMatcher::SetAHCAlgOption(std::map<AHCConcOpType, TemplateType> &ahcAlgO
     topoInfo_.ahcAlgOption = ahcAlgOption;
 }
 
+u32 TopoMatcher::GetCurrentPlaneGroupSize(CommPlane plane) const
+{
+    const u32 planeIndex = static_cast<u32>(plane);
+    if (planeIndex >= CommPlaneVector_.size()) {
+        return 0;
+    }
+
+    for (const auto &subComm : CommPlaneVector_[planeIndex]) {
+        if (std::find(subComm.begin(), subComm.end(), userRank_) != subComm.end()) {
+            return static_cast<u32>(subComm.size());
+        }
+    }
+
+    return 0;
+}
+
 }

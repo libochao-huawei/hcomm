@@ -10,6 +10,7 @@
 set(src_list_pub
     ${CMAKE_CURRENT_SOURCE_DIR}/reducer.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/sender.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/layered_base.cc
 )
 
 target_sources(hccl_alg PRIVATE

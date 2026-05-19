@@ -20,6 +20,7 @@ set(src_list_pub
     ${CMAKE_CURRENT_SOURCE_DIR}/reduce_scatter_mesh_mix.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/reduce_scatter_mesh_mix_single_stream.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/reduce_scatter_graph_pipeline.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/reduce_scatter_layered.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/reduce_scatter_nhr.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/reduce_scatter_nhr_v1.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/reduce_scatter_nb.cc

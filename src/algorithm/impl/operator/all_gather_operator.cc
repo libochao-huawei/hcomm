@@ -16,6 +16,7 @@
 #include "stream_active_manager.h"
 #include "hccl_aiv.h"
 #include "coll_alg_op_registry.h"
+#include "layered_base_pub.h"
 
 constexpr u32 MODULE_NUM_FOUR = 4;
 constexpr u32 HCCL_310P_DATA_SIZE_MID_COUNT = 320 * 1024;
@@ -361,6 +362,27 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
             algName = "AllGatherRingFor91093Executor";
         } else {
             algName = "AllGatherComm";
+        }
+    }
+
+    if (algName == "AllGatherRingFor91093Executor" && deviceType_ == DevType::DEV_TYPE_910_93 &&
+        algConfigurator_ != nullptr && param.GetStrideCount() == 0) {
+        const HcclTopoAttr &topoAttr = algConfigurator_->GetTopoAttr();
+        const u32 layeredLevel1GroupSize = topoMatcher_ != nullptr ?
+            topoMatcher_->GetCurrentPlaneGroupSize(COMM_LAYERED_LEVEL1) : 0U;
+        const u32 layeredLevel2GroupSize = topoMatcher_ != nullptr ?
+            topoMatcher_->GetCurrentPlaneGroupSize(COMM_LAYERED_LEVEL2) : 0U;
+        const bool layeredPlanesAvailable = layeredLevel1GroupSize > 0U && layeredLevel2GroupSize > 0U;
+        if (topoAttr.isOxcMode && layeredPlanesAvailable &&
+            LayeredBase::IsSupportLayered(layeredLevel1GroupSize, algType_)) {
+            HCCL_INFO("[SelectAlgfor91093] route ordinary ring to AllGatherRingLayeredExecutor, "
+                "derivedLevel1GroupSize[%u], derivedLevel2GroupSize[%u], algoLevel1[%u].",
+                layeredLevel1GroupSize, layeredLevel2GroupSize, algType_.algoLevel1);
+            algName = "AllGatherRingLayeredExecutor";
+        } else if (topoAttr.isOxcMode) {
+            HCCL_INFO("[SelectAlgfor91093] keep ordinary ring path, layeredLevel1GroupSize[%u], "
+                "layeredLevel2GroupSize[%u], algoLevel1[%u].",
+                layeredLevel1GroupSize, layeredLevel2GroupSize, algType_.algoLevel1);
         }
     }
     // 如果配置了aiv only,但是实际没有选择aiv算法,需要通过DFX打印出具体原因

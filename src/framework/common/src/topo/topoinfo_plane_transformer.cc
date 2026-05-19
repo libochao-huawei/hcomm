@@ -19,12 +19,15 @@
 
 #include "common.h"
 #include "log.h"
+#include "plane_transformer/plane_transformer_factory.h"
 #include "sal_pub.h"
 
 namespace hccl {
 namespace {
 constexpr u32 DEFAULT_NET_PLANE_ID = 0;
 constexpr u32 DEFAULT_NET_PLANE_NUM = 1;
+constexpr double STATIC_DELAY = 10.0;
+constexpr double TRANSMIT_DELAY = 5.0;
 using RankIdentity = std::pair<std::string, s32>;
 
 /**
@@ -90,6 +93,58 @@ bool TryGetPrimaryPlaneToken(const RankInfo_t &rankInfo, std::string &planeToken
         }
     }
     return false;
+}
+
+u32 CeilDiv(const u32 lhs, const u32 rhs)
+{
+    return (rhs == 0) ? 0 : ((lhs + rhs - 1) / rhs);
+}
+
+void ApplyGroupsRefactor(const u32 symmSize, std::vector<std::vector<u32>> &groups)
+{
+    if (symmSize == 0) {
+        return;
+    }
+
+    std::vector<std::vector<u32>> newGroups;
+    for (const auto &group : groups) {
+        std::vector<u32> tmpGroup;
+        for (u32 value : group) {
+            tmpGroup.push_back(value);
+            if (tmpGroup.size() == symmSize) {
+                newGroups.push_back(tmpGroup);
+                tmpGroup.clear();
+            }
+        }
+        if (!tmpGroup.empty()) {
+            newGroups.push_back(tmpGroup);
+        }
+    }
+    groups = std::move(newGroups);
+}
+
+HcclAlgoType ResolveAhcAlgoType(const std::string &envName, const bool allowDefault)
+{
+    const std::string algoName = SalGetEnv(envName.c_str());
+    if (algoName == "ring") {
+        return HcclAlgoType::HCCL_ALGO_TYPE_RING;
+    }
+    if (algoName == "HD") {
+        return HcclAlgoType::HCCL_ALGO_TYPE_HDR;
+    }
+    if (algoName == "NB") {
+        return HcclAlgoType::HCCL_ALGO_TYPE_NB;
+    }
+    if (algoName == "NHR") {
+        return HcclAlgoType::HCCL_ALGO_TYPE_NHR;
+    }
+    if (algoName == "NHR_V1") {
+        return HcclAlgoType::HCCL_ALGO_TYPE_NHR_V1;
+    }
+    if (allowDefault && algoName == "MTR") {
+        return HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT;
+    }
+    return HcclAlgoType::HCCL_ALGO_TYPE_RING;
 }
 
 /**
@@ -418,6 +473,241 @@ HcclResult TopoinfoPlaneTransformer::ParsePlane(const std::vector<u32> &rankIds,
     }
 
     return ParseUniformPlaneByGroups(rankIds, globalRankList, globalGroupIds, subRankList, netPlaneNum);
+}
+
+namespace ApplyTransformUtils {
+std::pair<bool, u32> FindTargetRow(const std::vector<std::vector<u32>> &groups, const u32 localIndex)
+{
+    for (const auto &group : groups) {
+        auto it = std::find(group.begin(), group.end(), localIndex);
+        if (it != group.end()) {
+            return {true, static_cast<u32>(std::distance(group.begin(), it))};
+        }
+    }
+    return {false, 0U};
+}
+
+std::vector<u32> ComputeMetaPlaneIds(const u32 targetRowId, const u32 netPlaneId, const u32 metaPlaneNum,
+    const u32 symGroupSize)
+{
+    std::vector<u32> metaPlaneIds(symGroupSize, 0U);
+    if (symGroupSize == 0U || metaPlaneNum == 0U) {
+        return metaPlaneIds;
+    }
+
+    metaPlaneIds[targetRowId] = netPlaneId % metaPlaneNum;
+    for (s32 row = static_cast<s32>(targetRowId) - 1; row >= 0; --row) {
+        metaPlaneIds[static_cast<u32>(row)] = (metaPlaneIds[static_cast<u32>(row + 1)] + metaPlaneNum - 1U) % metaPlaneNum;
+    }
+    for (u32 row = targetRowId + 1U; row < symGroupSize; ++row) {
+        metaPlaneIds[row] = (metaPlaneIds[row - 1U] + 1U) % metaPlaneNum;
+    }
+    return metaPlaneIds;
+}
+
+HcclResult ProcessSingleRow(const u32 row, const std::vector<u32> &metaPlaneIds,
+    const std::vector<std::vector<u32>> &groups, const TransformMatrix &transformMatrix, std::vector<u32> &indexList)
+{
+    const u32 metaPlaneId = metaPlaneIds[row];
+    CHK_PRT_RET(metaPlaneId >= transformMatrix.size(),
+        HCCL_ERROR("[OXC_HCOMM][TopoinfoPlaneTransformer][ApplyTransform] metaPlaneId[%u] out of range[%zu].",
+            metaPlaneId, transformMatrix.size()), HCCL_E_PARA);
+    const auto &mapping = transformMatrix[metaPlaneId];
+    const u32 numNodes = static_cast<u32>(groups.size());
+    CHK_PRT_RET(mapping.size() != numNodes,
+        HCCL_ERROR("[OXC_HCOMM][TopoinfoPlaneTransformer][ApplyTransform] mappingSize[%zu] != numNodes[%u].",
+            mapping.size(), numNodes), HCCL_E_PARA);
+
+    std::vector<u32> rowIndexList;
+    rowIndexList.reserve(numNodes);
+    for (const auto &group : groups) {
+        CHK_PRT_RET(row >= group.size(),
+            HCCL_ERROR("[OXC_HCOMM][TopoinfoPlaneTransformer][ApplyTransform] row[%u] out of range groupSize[%zu].",
+                row, group.size()), HCCL_E_PARA);
+        rowIndexList.push_back(group[row]);
+    }
+
+    std::vector<u32> elemList(numNodes, 0U);
+    for (u32 i = 0; i < numNodes; ++i) {
+        CHK_PRT_RET(mapping[i] >= rowIndexList.size(),
+            HCCL_ERROR("[OXC_HCOMM][TopoinfoPlaneTransformer][ApplyTransform] mapping[%u]=%u out of range[%zu].",
+                i, mapping[i], rowIndexList.size()), HCCL_E_PARA);
+        elemList[i] = rowIndexList[mapping[i]];
+    }
+
+    for (u32 i = 0; i < numNodes; ++i) {
+        CHK_PRT_RET(rowIndexList[i] >= indexList.size(),
+            HCCL_ERROR("[OXC_HCOMM][TopoinfoPlaneTransformer][ApplyTransform] rowIndex[%u]=%u out of range[%zu].",
+                i, rowIndexList[i], indexList.size()), HCCL_E_PARA);
+        indexList[rowIndexList[i]] = elemList[i];
+    }
+    return HCCL_SUCCESS;
+}
+}  // namespace ApplyTransformUtils
+
+u32 TopoinfoPlaneTransformer::CalcSymGroupSize(const std::vector<std::vector<u32>> &groups)
+{
+    CHK_PRT_RET(groups.empty(), HCCL_ERROR("[OXC_HCOMM][TopoinfoPlaneTransformer][CalcSymGroupSize] groups is empty."),
+        0);
+    u32 symGroupSize = static_cast<u32>(groups.front().size());
+    for (const auto &group : groups) {
+        symGroupSize = std::min(symGroupSize, static_cast<u32>(group.size()));
+    }
+    return symGroupSize;
+}
+
+HcclResult TopoinfoPlaneTransformer::ApplyTransform(const u32 netPlaneId, const u32 localIndex,
+    const std::vector<std::vector<u32>> &groups, const TransformMatrix &transformMatrix, std::vector<u32> &indexList)
+{
+    CHK_PRT_RET(groups.empty(),
+        HCCL_ERROR("[OXC_HCOMM][TopoinfoPlaneTransformer][ApplyTransform] groups is empty."), HCCL_E_PARA);
+    bool isFound = false;
+    u32 targetRowId = 0U;
+    std::tie(isFound, targetRowId) = ApplyTransformUtils::FindTargetRow(groups, localIndex);
+    CHK_PRT_RET(!isFound,
+        HCCL_ERROR("[OXC_HCOMM][TopoinfoPlaneTransformer][ApplyTransform] localIndex[%u] not found.", localIndex),
+        HCCL_E_NOT_FOUND);
+
+    const u32 symGroupSize = CalcSymGroupSize(groups);
+    BuildIdentityIndexList(static_cast<u32>(indexList.size()), indexList);
+    if (targetRowId >= symGroupSize) {
+        return HCCL_SUCCESS;
+    }
+
+    const u32 metaPlaneNum = static_cast<u32>(transformMatrix.size());
+    if (metaPlaneNum == 0U) {
+        return HCCL_SUCCESS;
+    }
+    CHK_PRT_RET(metaPlaneNum > 0U && groups.size() != transformMatrix.front().size(),
+        HCCL_ERROR("[OXC_HCOMM][TopoinfoPlaneTransformer][ApplyTransform] groupNum[%zu] != matrixWidth[%zu].",
+            groups.size(), transformMatrix.front().size()), HCCL_E_PARA);
+    for (u32 metaPlaneId = 0; metaPlaneId < metaPlaneNum; ++metaPlaneId) {
+        CHK_PRT_RET(transformMatrix[metaPlaneId].size() != groups.size(),
+            HCCL_ERROR("[OXC_HCOMM][TopoinfoPlaneTransformer][ApplyTransform] matrixRow[%u] width[%zu] != groupNum[%zu].",
+                metaPlaneId, transformMatrix[metaPlaneId].size(), groups.size()), HCCL_E_PARA);
+        std::vector<bool> seen(groups.size(), false);
+        for (u32 column = 0; column < transformMatrix[metaPlaneId].size(); ++column) {
+            const u32 mapped = transformMatrix[metaPlaneId][column];
+            CHK_PRT_RET(mapped >= groups.size(),
+                HCCL_ERROR("[OXC_HCOMM][TopoinfoPlaneTransformer][ApplyTransform] matrixRow[%u][%u]=%u out of range[%zu].",
+                    metaPlaneId, column, mapped, groups.size()), HCCL_E_PARA);
+            CHK_PRT_RET(seen[mapped],
+                HCCL_ERROR("[OXC_HCOMM][TopoinfoPlaneTransformer][ApplyTransform] matrixRow[%u] duplicated mapped[%u].",
+                    metaPlaneId, mapped), HCCL_E_PARA);
+            seen[mapped] = true;
+        }
+    }
+    for (const auto &group : groups) {
+        CHK_PRT_RET(group.empty(),
+            HCCL_ERROR("[OXC_HCOMM][TopoinfoPlaneTransformer][ApplyTransform] found empty group."), HCCL_E_PARA);
+        for (u32 index : group) {
+            CHK_PRT_RET(index >= indexList.size(),
+                HCCL_ERROR("[OXC_HCOMM][TopoinfoPlaneTransformer][ApplyTransform] group index[%u] out of range[%zu].",
+                    index, indexList.size()), HCCL_E_PARA);
+        }
+    }
+    const auto metaPlaneIds = ApplyTransformUtils::ComputeMetaPlaneIds(targetRowId, netPlaneId, metaPlaneNum, symGroupSize);
+    for (u32 row = 0U; row < symGroupSize; ++row) {
+        CHK_RET(ApplyTransformUtils::ProcessSingleRow(row, metaPlaneIds, groups, transformMatrix, indexList));
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult TopoinfoPlaneTransformer::RegroupAndSelectAlgo(const u32 netPlaneNum, const bool enabledBroke,
+    std::vector<std::vector<u32>> &groups, HcclAlgoType &intraAlgType, HcclAlgoType &interAlgType)
+{
+    CHK_PRT_RET(groups.empty(),
+        HCCL_ERROR("[OXC_HCOMM][TopoinfoPlaneTransformer][RegroupAndSelectAlgo] groups is empty."), HCCL_E_PARA);
+
+    std::vector<u32> groupSizes;
+    groupSizes.reserve(groups.size());
+    for (const auto &group : groups) {
+        CHK_PRT_RET(group.empty(),
+            HCCL_ERROR("[OXC_HCOMM][TopoinfoPlaneTransformer][RegroupAndSelectAlgo] found empty group."), HCCL_E_PARA);
+        groupSizes.push_back(static_cast<u32>(group.size()));
+    }
+
+    u32 bestSymmSize = 1;
+    if (enabledBroke) {
+        const u32 sumGroupSize = std::accumulate(groupSizes.begin(), groupSizes.end(), 0U);
+        const u32 minGroupSize = *std::min_element(groupSizes.begin(), groupSizes.end());
+        double minCost = static_cast<double>(sumGroupSize) * STATIC_DELAY;
+        for (u32 symmSize = 1; symmSize <= minGroupSize; ++symmSize) {
+            double maxBrokeRate = 0.0;
+            u32 newGroupNum = 0;
+            for (const u32 size : groupSizes) {
+                const double brokeRate = static_cast<double>(symmSize + (size % symmSize) - 1U) /
+                    static_cast<double>(symmSize);
+                maxBrokeRate = std::max(maxBrokeRate, brokeRate);
+                newGroupNum += CeilDiv(size, symmSize);
+            }
+            const double cost = (static_cast<double>(symmSize + newGroupNum) * STATIC_DELAY) +
+                (maxBrokeRate * TRANSMIT_DELAY);
+            if (cost < minCost) {
+                minCost = cost;
+                bestSymmSize = symmSize;
+            }
+        }
+    } else {
+        bestSymmSize = groupSizes.front();
+        for (u32 i = 1; i < groupSizes.size(); ++i) {
+            bestSymmSize = std::__gcd(bestSymmSize, groupSizes[i]);
+        }
+    }
+
+    ApplyGroupsRefactor(bestSymmSize, groups);
+
+    intraAlgType = ResolveAhcAlgoType("HCCL_AHC_ALGO_INTRA", false);
+    interAlgType = ResolveAhcAlgoType("HCCL_AHC_ALGO_INTER", true);
+    HCCL_INFO("[OXC_HCOMM][TopoinfoPlaneTransformer][RegroupAndSelectAlgo] netPlaneNum[%u] enabledBroke[%u] bestSymmSize[%u] intraAlgType[%u] interAlgType[%u].",
+        netPlaneNum, static_cast<u32>(enabledBroke), bestSymmSize, intraAlgType, interAlgType);
+    return HCCL_SUCCESS;
+}
+
+HcclResult TopoinfoPlaneTransformer::ReparseGroupedPlane(const u32 localIndex,
+    const std::vector<std::vector<u32>> &groups, u32 &netPlaneId, u32 &netPlaneNum)
+{
+    CHK_PRT_RET(groups.empty(),
+        HCCL_ERROR("[OXC_HCOMM][TopoinfoPlaneTransformer][ReparseGroupedPlane] groups is empty."), HCCL_E_PARA);
+
+    const u32 symGroupSize = CalcSymGroupSize(groups);
+    u32 rankOfGroup = 0;
+    bool found = false;
+    for (const auto &group : groups) {
+        for (u32 i = 0; i < group.size(); ++i) {
+            if (group[i] == localIndex) {
+                rankOfGroup = std::min(i, symGroupSize - 1U);
+                found = true;
+                break;
+            }
+        }
+        if (found) {
+            break;
+        }
+    }
+    CHK_PRT_RET(!found,
+        HCCL_ERROR("[OXC_HCOMM][TopoinfoPlaneTransformer][ReparseGroupedPlane] localIndex[%u] not found.", localIndex),
+        HCCL_E_NOT_FOUND);
+
+    netPlaneId = netPlaneId * symGroupSize + rankOfGroup;
+    netPlaneNum = symGroupSize * netPlaneNum;
+    return HCCL_SUCCESS;
+}
+
+HcclResult TopoinfoPlaneTransformer::TransformPlaneByAlgo(HcclAlgoType algType, const u32 netPlaneId,
+    const u32 localIndex, const std::vector<std::vector<u32>> &groups, std::vector<u32> &indexList)
+{
+    const IPlaneTransformer *transformer = PlaneTransformerFactory::Instance().Get(algType);
+    if (transformer == nullptr) {
+        BuildIdentityIndexList(static_cast<u32>(indexList.size()), indexList);
+        return HCCL_SUCCESS;
+    }
+
+    const u32 planeSize = static_cast<u32>(groups.size());
+    const u32 planeNum = CalcSymGroupSize(groups);
+    TransformMatrix transformMatrix;
+    CHK_RET(transformer->CalcPlaneTransform(planeSize, planeNum, transformMatrix));
+    return ApplyTransform(netPlaneId, localIndex, groups, transformMatrix, indexList);
 }
 
 }  // namespace hccl

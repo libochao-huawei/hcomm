@@ -16,6 +16,7 @@
 #include "stream_active_manager.h"
 #include "hccl_aiv.h"
 #include "coll_alg_op_registry.h"
+#include "layered_base_pub.h"
 #include <algorithm>
 
 constexpr u32 MODULE_NUM_FOUR = 4;
@@ -498,6 +499,28 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
         HCCL_WARNING("[ReduceScatterOperator][SelectAlgfor91093] only support ring, NB AHC and NHR in AlgoLevel1 yet, "\
             "default is algType=NHR.");
     }
+
+    if (algName == "ReduceScatterRingFor91093Executor" && deviceType_ == DevType::DEV_TYPE_910_93 &&
+        algConfigurator_ != nullptr) {
+        const HcclTopoAttr &topoAttr = algConfigurator_->GetTopoAttr();
+        const u32 layeredLevel1GroupSize = topoMatcher_ != nullptr ?
+            topoMatcher_->GetCurrentPlaneGroupSize(COMM_LAYERED_LEVEL1) : 0U;
+        const u32 layeredLevel2GroupSize = topoMatcher_ != nullptr ?
+            topoMatcher_->GetCurrentPlaneGroupSize(COMM_LAYERED_LEVEL2) : 0U;
+        const bool layeredPlanesAvailable = layeredLevel1GroupSize > 0 && layeredLevel2GroupSize > 0;
+        if (topoAttr.isOxcMode && layeredPlanesAvailable &&
+            LayeredBase::IsSupportLayered(layeredLevel1GroupSize, algType_)) {
+            HCCL_INFO("[SelectAlgfor91093] route ordinary ring to ReduceScatterRingLayeredExecutor, "
+                "derivedLevel1GroupSize[%u], derivedLevel2GroupSize[%u], algoLevel1[%u].",
+                layeredLevel1GroupSize, layeredLevel2GroupSize, algType_.algoLevel1);
+            algName = "ReduceScatterRingLayeredExecutor";
+        } else if (topoAttr.isOxcMode) {
+            HCCL_INFO("[SelectAlgfor91093] keep ordinary ring path, layeredLevel1GroupSize[%u], "
+                "layeredLevel2GroupSize[%u], algoLevel1[%u].",
+                layeredLevel1GroupSize, layeredLevel2GroupSize, algType_.algoLevel1);
+        }
+    }
+
      // 如果配置了aiv only,但是实际没有选择aiv算法,需要通过DFX打印出具体原因
     if (isOnlyAiv && !isAivMode) {
         HCCL_ERROR("The current conditions do not meet the aiv only execution criteria because:");

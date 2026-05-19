@@ -287,6 +287,8 @@ HcclResult HcclAlg::InitTopoInfo(HcclTopoInfo& topoInfo, HcclTopoAttr &topoAttr)
     topoInfo.realUserRank = topoAttr.realUserRank;
     topoInfo.moduleNum = topoAttr.moduleNum;
     topoInfo.useSuperPodMode = topoAttr.useSuperPodMode;
+    topoInfo.netPlaneId = topoAttr.netPlaneId;
+    topoInfo.netPlaneNum = topoAttr.netPlaneNum;
 
     topoInfoEx_->GetCommPlaneSubGroupVector(topoInfo.CommPlaneSubGroupVector);
     topoInfoEx_->GetAHCAlgOption(topoInfo.ahcAlgOption);

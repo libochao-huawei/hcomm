@@ -82,9 +82,8 @@ private:
      * @brief 在 OXC 路线下恢复组内平面 `COMM_LAYERED_LEVEL1`。
      *
      * @details
-     * 当前阶段只恢复 Level1/Level2 的基础 OXC 语义，不再依赖额外的
-     * plane transformer 辅助链。
-     * 这里直接基于 `COMM_LEVEL1` 与缓存 subgroup 构造当前 rank 所属的组内平面。
+     * 按 A2 形态调用 `TopoinfoPlaneTransformer::RegroupAndSelectAlgo` 后，
+     * 基于 `COMM_LEVEL1` 与缓存 subgroup 直接查找当前 rank 所属 ring/group。
      *
      * @return HcclResult
      */
@@ -93,9 +92,8 @@ private:
      * @brief 在 OXC 路线下恢复组间平面 `COMM_LAYERED_LEVEL2`。
      *
      * @details
-     * 当前阶段只恢复组间平面的基础拼接语义：从每个 subgroup 中取当前 rank
-     * 相同组内位置的成员构成组间平面；不额外恢复基于辅助 helper 的
-     * netplane 重算与最终重排。
+     * 按 A2 形态直接串联 `RegroupAndSelectAlgo/ReparseGroupedPlane/TransformPlaneByAlgo`，
+     * 由 extractor 按组内位置构造当前 rank 对应的组间平面。
      *
      * @return HcclResult
      */
@@ -156,8 +154,10 @@ private:
 
     // 保存所有级别的通信rank关系, CommPlaneVector_[CommPlane][ringIndex]: 第CommPlane级 第ringIndex个环
     std::vector<std::vector<std::vector<RankInfo> > > CommPlaneVector_;
-    // 当前主线已屏蔽 plane_transformer 的 Layered 闭环；保留该字段仅用于显式表达“当前无 layered 重排结果”。
+    // 记录 layered helper 链对源平面的选中下标，供 OXC layered 闭环与回归验证复用。
     std::vector<u32> layeredIndexVector_;
+    // 指向传入的算法属性，便于把 grouped helper 的算法选择结果回写给上游。
+    HcclAlgoAttr *algoAttr_ { nullptr };
     // 指向传入的拓扑属性，便于把 plane/group 结果回写给上游。
     HcclTopoAttr *topoAttr_ { nullptr };
 };

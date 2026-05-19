@@ -372,6 +372,7 @@ bool ExecutorCanSupportDMAReduce(const std::string& algName)
 {
     const std::set<std::string> executorCanSupportDMAReduceSet = {
         "AllReduceRingFor91093Executor",
+        "AllReduceRingLayeredExecutor",
         "AllReduceFastDoubleRingFor91093Executor",
         "AlignedAllReduceDoubleRingFor91093Executor",
         "ReduceScatterRingFor91093Executor",

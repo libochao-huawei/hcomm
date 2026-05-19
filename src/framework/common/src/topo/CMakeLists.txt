@@ -8,6 +8,9 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 set(src_list
+    ${CMAKE_CURRENT_SOURCE_DIR}/plane_transformer/plane_transformer_factory.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/plane_transformer/plane_transformer_nb.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/plane_transformer/plane_transformer_recursive_hd.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/topoinfo_ranktableParser.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/topoinfo_ranktableStandard.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/topoinfo_ranktableConcise.cc

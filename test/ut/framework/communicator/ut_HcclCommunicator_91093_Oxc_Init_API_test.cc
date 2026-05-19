@@ -13,6 +13,13 @@
 #include "heartbeat.h"
 #include "hccl_network.h"
 #include "rank_graph.h"
+#define private public
+#define protected public
+#include "coll_reduce_scatter_ring_layered_executor.h"
+#include "coll_all_reduce_ring_layered_executor.h"
+#include "coll_all_gather_ring_layered_executor.h"
+#undef protected
+#undef private
 
 bool IsOneSidedComm(HcclComm comm);
 bool IsCommNameExistInOneSidedComms(s32 deviceLogicId, const std::string &commName);
@@ -448,6 +455,7 @@ TEST_F(HcclCommunicator91093OxcInitTest,
     ASSERT_EQ(HcclCommInitClusterInfo(rankTableFileName, 0, &localComm), HCCL_SUCCESS);
     ExpectOxcA3WorldCommReady(localComm);
     Ut_Comm_Destroy(reinterpret_cast<void *&>(localComm));
+    ASSERT_EQ(ResetInitState(), HCCL_SUCCESS);
 }
 
 TEST_F(HcclCommunicator91093OxcInitTest,
@@ -508,6 +516,7 @@ TEST_F(HcclCommunicator91093OxcClusterInfoConfigTest,
     EXPECT_FALSE(IsOneSidedComm(localComm));
     EXPECT_FALSE(IsCommNameExistInOneSidedComms(0, config.hcclCommName));
     Ut_Comm_Destroy(reinterpret_cast<void *&>(localComm));
+    ASSERT_EQ(ResetInitState(), HCCL_SUCCESS);
 }
 
 TEST_F(HcclCommunicator91093OxcClusterInfoConfigTest,
@@ -596,4 +605,742 @@ TEST_F(HcclCommunicator91093OxcMemConfigDeltaTest,
     Ut_Comm_Destroy(reinterpret_cast<void *&>(localComm));
     EXPECT_FALSE(IsOneSidedComm(oneSidedComm));
     EXPECT_FALSE(IsCommNameExistInOneSidedComms(0, config.hcclCommName));
+}
+
+
+// -----------------------------------------------------------------------------
+// OXC Ring high-fidelity proof helpers and tests
+//
+// First-pass scope only:
+// - real-entry provenance from ClusterInfo family surfaces
+// - representative diagonal matrix: RS×ClusterInfo, AR×Config, AG×MemConfig
+// - residual broader shape/dtype/stride/topology expansion is intentionally deferred
+// -----------------------------------------------------------------------------
+
+namespace {
+using namespace hccl;
+
+constexpr u64 HF_RS_AR_COUNT = 8U;
+constexpr u64 HF_AG_COUNT = 2U;
+constexpr u64 HF_CCL_BUFFER_SIZE = 64U * 1024U * 1024U;
+constexpr u32 HF_PROOF_USER_RANK = 0U;
+constexpr u32 HF_PROOF_RANK_SIZE = 4U;
+constexpr u32 HF_TEST_SQ_HEAD = 0U;
+constexpr u32 HF_TEST_SQ_TAIL = 100U;
+u8 g_hfSqAddr[HCCL_SQE_SIZE * HCCL_SQE_MAX_CNT] = {0};
+
+enum class OxcRingHighFidelityEntryRoute {
+    CLUSTER_INFO = 0,
+    CONFIG,
+    MEM_CONFIG,
+};
+
+enum class OxcRingHighFidelityClassification {
+    REAL_ENTRY_HIGH_FIDELITY = 0,
+    BRIDGE_FALLBACK,
+};
+
+struct OxcRingHighFidelitySnapshot {
+    OxcRingHighFidelityEntryRoute route {OxcRingHighFidelityEntryRoute::CLUSTER_INFO};
+    std::string routeName;
+    std::string commName;
+    HcclTopoAttr topoAttr {};
+    HcclAlgoAttr algoAttr {};
+    TopoType topoType {TopoType::TOPO_TYPE_RESERVED};
+    u32 netPlaneId {0};
+    u32 netPlaneNum {1};
+    bool isOneSided {false};
+    bool commNameRegistered {false};
+    std::vector<u32> layers;
+};
+
+nlohmann::json BuildOxcA3HighFidelityRankTable()
+{
+    auto buildDevice = [](uint32_t rankId, uint32_t deviceId, uint32_t superDeviceId) {
+        return nlohmann::json::object({
+            {"device_id", std::to_string(deviceId)},
+            {"super_device_id", std::to_string(superDeviceId)},
+            {"rankid", std::to_string(rankId)},
+            {"device_ip", std::string("10.10.0.") + std::to_string(10 + rankId)},
+            {"backup_device_ip", std::string("10.20.0.") + std::to_string(10 + rankId)},
+            {"device_port", 16666 + static_cast<int>(rankId)},
+            {"backup_device_port", 17666 + static_cast<int>(rankId)}
+        });
+    };
+
+    nlohmann::json serverList = nlohmann::json::array({
+        nlohmann::json::object({
+            {"server_id", "server0"},
+            {"host_ip", "192.168.10.10"},
+            {"device", nlohmann::json::array({
+                buildDevice(0U, 0U, 100U),
+                buildDevice(1U, 1U, 101U)
+            })}
+        }),
+        nlohmann::json::object({
+            {"server_id", "server1"},
+            {"host_ip", "192.168.10.11"},
+            {"device", nlohmann::json::array({
+                buildDevice(2U, 0U, 200U),
+                buildDevice(3U, 1U, 201U)
+            })}
+        })
+    });
+
+    return nlohmann::json::object({
+        {"status", "completed"},
+        {"version", OXC_CLUSTER_VERSION},
+        {"task_id", "oxc_hf_proof_ut"},
+        {"server_list", serverList},
+        {"super_pod_list", nlohmann::json::array({
+            nlohmann::json::object({{"super_pod_id", "pod0"}, {"server_list", nlohmann::json::array({nlohmann::json::object({{"server_id", "server0"}})})}}),
+            nlohmann::json::object({{"super_pod_id", "pod1"}, {"server_list", nlohmann::json::array({nlohmann::json::object({{"server_id", "server1"}})})}})
+        })},
+        {"oxc_group_list", nlohmann::json::array({
+            nlohmann::json::object({{"group_id", "group0"}, {"rank_list", nlohmann::json::array({
+                nlohmann::json::object({{"rank_id", "0"}}),
+                nlohmann::json::object({{"rank_id", "1"}})
+            })}}),
+            nlohmann::json::object({{"group_id", "group1"}, {"rank_list", nlohmann::json::array({
+                nlohmann::json::object({{"rank_id", "2"}}),
+                nlohmann::json::object({{"rank_id", "3"}})
+            })}})
+        })}
+    });
+}
+
+void WriteOxcA3HighFidelityRankTableFile(const char *fileName)
+{
+    Ut_Clusterinfo_File_Create(fileName, BuildOxcA3HighFidelityRankTable());
+}
+
+std::vector<u32> CaptureVisibleLayers(HcclComm comm)
+{
+    uint32_t *layers = nullptr;
+    uint32_t layerNum = 0;
+    EXPECT_EQ(HcclRankGraphGetLayers(comm, &layers, &layerNum), HCCL_SUCCESS);
+    EXPECT_NE(layers, nullptr);
+    if (layers == nullptr) {
+        return {};
+    }
+    return std::vector<u32>(layers, layers + layerNum);
+}
+
+OxcRingHighFidelitySnapshot CaptureOxcRingHighFidelitySnapshot(HcclComm comm,
+    OxcRingHighFidelityEntryRoute route, const std::string &commName = std::string())
+{
+    OxcRingHighFidelitySnapshot snapshot;
+    snapshot.route = route;
+    snapshot.commName = commName;
+    snapshot.routeName = (route == OxcRingHighFidelityEntryRoute::CLUSTER_INFO) ? "clusterinfo" :
+        ((route == OxcRingHighFidelityEntryRoute::CONFIG) ? "config" : "memconfig");
+
+    auto &communicator = GetCommunicatorFromComm(comm);
+    snapshot.topoAttr = communicator.GetTopoAttr();
+    communicator.attrCollector_.GetAlgoAttr(snapshot.algoAttr);
+    EXPECT_NE(communicator.implAlg_.get(), nullptr);
+    if (communicator.implAlg_ != nullptr) {
+        EXPECT_EQ(communicator.implAlg_->GetCommPlaneRanks(snapshot.topoAttr.commPlaneRanks), HCCL_SUCCESS);
+        EXPECT_EQ(communicator.implAlg_->GetTopoType(snapshot.topoType), HCCL_SUCCESS);
+    }
+    snapshot.layers = CaptureVisibleLayers(comm);
+    EXPECT_EQ(HcclGetNetPlaneId(comm, &snapshot.netPlaneId), HCCL_SUCCESS);
+    EXPECT_EQ(HcclGetNetPlaneNum(comm, &snapshot.netPlaneNum), HCCL_SUCCESS);
+    snapshot.topoAttr.netPlaneId = snapshot.netPlaneId;
+    snapshot.topoAttr.netPlaneNum = snapshot.netPlaneNum;
+    snapshot.isOneSided = IsOneSidedComm(comm);
+    snapshot.commNameRegistered = !commName.empty() && IsCommNameExistInOneSidedComms(0, commName);
+    return snapshot;
+}
+
+void ExpectOxcRingHighFidelityEntryReady(const OxcRingHighFidelitySnapshot &snapshot)
+{
+    EXPECT_TRUE(snapshot.topoAttr.isOxcMode);
+    EXPECT_EQ(snapshot.topoAttr.userRank, HF_PROOF_USER_RANK);
+    EXPECT_EQ(snapshot.topoAttr.userRankSize, HF_PROOF_RANK_SIZE);
+    EXPECT_TRUE(snapshot.topoAttr.useSuperPodMode);
+    EXPECT_EQ(snapshot.topoAttr.superPodNum, 2U);
+    EXPECT_EQ(snapshot.topoAttr.netPlaneId, snapshot.netPlaneId);
+    EXPECT_EQ(snapshot.topoAttr.netPlaneNum, snapshot.netPlaneNum);
+    EXPECT_EQ(snapshot.netPlaneNum, 2U);
+    EXPECT_LT(snapshot.netPlaneId, snapshot.netPlaneNum);
+    EXPECT_TRUE(snapshot.algoAttr.isUsedInterHccsMode);
+    EXPECT_NE(std::find(snapshot.layers.begin(), snapshot.layers.end(), HCCL_NETLAYER_LAYERED_LEVEL1), snapshot.layers.end());
+    EXPECT_NE(std::find(snapshot.layers.begin(), snapshot.layers.end(), HCCL_NETLAYER_LAYERED_LEVEL2), snapshot.layers.end());
+    ASSERT_GT(snapshot.topoAttr.commPlaneRanks.size(), COMM_LAYERED_LEVEL2);
+    EXPECT_FALSE(snapshot.topoAttr.commPlaneRanks[COMM_LEVEL0].empty());
+    EXPECT_FALSE(snapshot.topoAttr.commPlaneRanks[COMM_LAYERED_LEVEL1].empty());
+    EXPECT_FALSE(snapshot.topoAttr.commPlaneRanks[COMM_LAYERED_LEVEL2].empty());
+}
+
+OxcRingHighFidelityClassification ClassifyOxcRingHighFidelitySnapshot(const OxcRingHighFidelitySnapshot &snapshot)
+{
+    if (!snapshot.topoAttr.isOxcMode || snapshot.netPlaneNum == 0U || snapshot.netPlaneId >= snapshot.netPlaneNum) {
+        return OxcRingHighFidelityClassification::BRIDGE_FALLBACK;
+    }
+    if (snapshot.topoAttr.commPlaneRanks.size() <= COMM_LAYERED_LEVEL2) {
+        return OxcRingHighFidelityClassification::BRIDGE_FALLBACK;
+    }
+    if (snapshot.topoAttr.commPlaneRanks[COMM_LEVEL0].empty() ||
+        snapshot.topoAttr.commPlaneRanks[COMM_LAYERED_LEVEL1].empty() ||
+        snapshot.topoAttr.commPlaneRanks[COMM_LAYERED_LEVEL2].empty()) {
+        return OxcRingHighFidelityClassification::BRIDGE_FALLBACK;
+    }
+    if (std::find(snapshot.layers.begin(), snapshot.layers.end(), HCCL_NETLAYER_LAYERED_LEVEL1) == snapshot.layers.end() ||
+        std::find(snapshot.layers.begin(), snapshot.layers.end(), HCCL_NETLAYER_LAYERED_LEVEL2) == snapshot.layers.end()) {
+        return OxcRingHighFidelityClassification::BRIDGE_FALLBACK;
+    }
+    return OxcRingHighFidelityClassification::REAL_ENTRY_HIGH_FIDELITY;
+}
+
+void ExpectOxcRingHighFidelitySnapshotUnchanged(const OxcRingHighFidelitySnapshot &before,
+    const OxcRingHighFidelitySnapshot &after)
+{
+    EXPECT_EQ(before.routeName, after.routeName);
+    EXPECT_EQ(before.commName, after.commName);
+    EXPECT_EQ(before.netPlaneId, after.netPlaneId);
+    EXPECT_EQ(before.netPlaneNum, after.netPlaneNum);
+    EXPECT_EQ(before.topoType, after.topoType);
+    EXPECT_EQ(before.topoAttr.useSuperPodMode, after.topoAttr.useSuperPodMode);
+    EXPECT_EQ(before.topoAttr.superPodNum, after.topoAttr.superPodNum);
+    EXPECT_EQ(before.algoAttr.isUsedInterHccsMode, after.algoAttr.isUsedInterHccsMode);
+    EXPECT_EQ(before.topoAttr.isOxcMode, after.topoAttr.isOxcMode);
+    EXPECT_EQ(before.topoAttr.userRank, after.topoAttr.userRank);
+    EXPECT_EQ(before.topoAttr.userRankSize, after.topoAttr.userRankSize);
+    EXPECT_EQ(before.topoAttr.commPlaneRanks, after.topoAttr.commPlaneRanks);
+    EXPECT_EQ(before.layers, after.layers);
+}
+
+class OxcHighFidelityDummyTransportBase final : public TransportBase {
+public:
+    OxcHighFidelityDummyTransportBase() : TransportBase(nullptr, DummyNotifyPool(), DummyMachinePara(), std::chrono::milliseconds(0)) {}
+    HcclResult TxAsync(std::vector<TxMemoryInfo> &txMems, Stream &stream) override {(void)txMems;(void)stream;return HCCL_SUCCESS;}
+    HcclResult RxAsync(std::vector<RxMemoryInfo> &rxMems, Stream &stream) override {(void)rxMems;(void)stream;return HCCL_SUCCESS;}
+    HcclResult TxAck(Stream &stream) override {(void)stream;return HCCL_SUCCESS;}
+    HcclResult RxAck(Stream &stream) override {(void)stream;return HCCL_SUCCESS;}
+    HcclResult TxWaitDone(Stream &stream) override {(void)stream;return HCCL_SUCCESS;}
+    HcclResult RxWaitDone(Stream &stream) override {(void)stream;return HCCL_SUCCESS;}
+private:
+    static std::unique_ptr<NotifyPool> &DummyNotifyPool(){ static std::unique_ptr<NotifyPool> pool = nullptr; return pool; }
+    static MachinePara &DummyMachinePara(){ static MachinePara para {}; return para; }
+};
+
+LINK BuildOxcHighFidelityDummyLink()
+{
+    return std::make_shared<Transport>(new (std::nothrow) OxcHighFidelityDummyTransportBase());
+}
+
+SingleSubCommTransport BuildOxcHighFidelitySingleSubCommTransport(const std::vector<u32> &userRanks, u32 selfUserRank)
+{
+    SingleSubCommTransport transport;
+    transport.transportRequests.resize(userRanks.size());
+    transport.links.resize(userRanks.size());
+    transport.status.resize(userRanks.size(), TransportStatus::READY);
+    for (u32 i = 0; i < userRanks.size(); ++i) {
+        transport.userRank2subCommRank[userRanks[i]] = i;
+        transport.subCommRank2UserRank[i] = userRanks[i];
+        transport.links[i] = BuildOxcHighFidelityDummyLink();
+        transport.transportRequests[i].isValid = true;
+        transport.transportRequests[i].localUserRank = selfUserRank;
+        transport.transportRequests[i].remoteUserRank = userRanks[i];
+    }
+    return transport;
+}
+
+HcclResult HcclD2DMemcpyAsyncStub(HcclDispatcher, DeviceMem &dst, const DeviceMem &src, Stream &)
+{
+    CHK_PTR_NULL(dst.ptr());
+    CHK_PTR_NULL(src.ptr());
+    const size_t copySize = static_cast<size_t>(std::min(dst.size(), src.size()));
+    const errno_t ret = memcpy_s(dst.ptr(), copySize, src.ptr(), copySize);
+    return (ret == EOK) ? HCCL_SUCCESS : HCCL_E_INTERNAL;
+}
+
+AlgResourceResponse BuildOxcHighFidelityAlgResourceResponse(const OxcRingHighFidelitySnapshot &snapshot)
+{
+    AlgResourceResponse algRes;
+    algRes.opTransportResponse.resize(static_cast<u32>(COMM_LEVEL_RESERVED));
+    const std::array<CommPlane, 3> planes = {COMM_LEVEL0, COMM_LAYERED_LEVEL1, COMM_LAYERED_LEVEL2};
+    for (CommPlane plane : planes) {
+        const u32 planeIndex = static_cast<u32>(plane);
+        for (const auto &subComm : snapshot.topoAttr.commPlaneRanks[planeIndex]) {
+            if (subComm.empty()) {
+                continue;
+            }
+            algRes.opTransportResponse[planeIndex].push_back(
+                BuildOxcHighFidelitySingleSubCommTransport(subComm, snapshot.topoAttr.userRank));
+        }
+    }
+    return algRes;
+}
+
+class OxcRingHighFidelityDispatcher final : public DispatcherPub {
+public:
+    explicit OxcRingHighFidelityDispatcher() : DispatcherPub(0) {}
+    HcclResult Init() override { return HCCL_SUCCESS; }
+    HcclResult MemcpyAsync(DeviceMem &dst, const DeviceMem &src, Stream &stream,
+        u32 remoteUserRank = INVALID_VALUE_RANKID,
+        LinkType inLinkType = LinkType::LINK_ONCHIP) override
+    {
+        (void)stream;
+        (void)remoteUserRank;
+        (void)inLinkType;
+        return HcclD2DMemcpyAsyncStub(nullptr, dst, src, stream);
+    }
+    HcclResult InlineReduceAsync(const void *src, u64 count, const HcclDataType datatype, HcclReduceOp redOp,
+        Stream &stream, void *dst, u32 remoteUserRank = INVALID_VALUE_RANKID,
+        LinkType inLinkType = LinkType::LINK_ONCHIP) override
+    {
+        (void)remoteUserRank;
+        (void)inLinkType;
+        return ReduceIntoDst(src, dst, count, datatype, redOp, stream);
+    }
+    HcclResult ReduceAsync(const void *src, void *dst, u64 dataCount, const HcclDataType datatype,
+        HcclReduceOp redOp, Stream &stream,
+        HcclReduceType reduceType = HcclReduceType::HCCL_TBE_REDUCE) override
+    {
+        (void)reduceType;
+        return ReduceIntoDst(src, dst, dataCount, datatype, redOp, stream);
+    }
+private:
+    HcclResult ReduceIntoDst(const void *src, void *dst, u64 dataCount,
+        const HcclDataType datatype, HcclReduceOp redOp, Stream &stream)
+    {
+        (void)stream;
+        if (datatype != HCCL_DATA_TYPE_INT32 || redOp != HCCL_REDUCE_SUM) {
+            return HCCL_E_NOT_SUPPORT;
+        }
+        auto *srcPtr = static_cast<const int *>(src);
+        auto *dstPtr = static_cast<int *>(dst);
+        CHK_PTR_NULL(srcPtr);
+        CHK_PTR_NULL(dstPtr);
+        for (u64 i = 0; i < dataCount; ++i) {
+            dstPtr[i] += srcPtr[i];
+        }
+        return HCCL_SUCCESS;
+    }
+};
+
+Stream BuildOxcHighFidelityTestStream()
+{
+    HcclComStreamInfo streamInfo;
+    streamInfo.actualStreamId = 1;
+    streamInfo.sqId = 1;
+    streamInfo.sqDepth = 128;
+    streamInfo.sqBaseAddr = static_cast<void *>(g_hfSqAddr);
+    streamInfo.logicCqId = 1;
+    Stream stream(streamInfo, true);
+    static SqCqeContext sqeCqeCtx;
+    sqeCqeCtx.sqContext.inited = false;
+    stream.InitSqAndCqeContext(HF_TEST_SQ_HEAD, HF_TEST_SQ_TAIL, &sqeCqeCtx);
+    return stream;
+}
+
+std::unique_ptr<TopoMatcher> BuildOxcHighFidelityTopoMatcher(const OxcRingHighFidelitySnapshot &snapshot)
+{
+    HcclTopoInfo topoInfo;
+    topoInfo.userRank = snapshot.topoAttr.userRank;
+    topoInfo.realUserRank = snapshot.topoAttr.realUserRank;
+    topoInfo.userRankSize = snapshot.topoAttr.userRankSize;
+    topoInfo.serverNum = snapshot.topoAttr.serverNum;
+    topoInfo.superPodNum = snapshot.topoAttr.superPodNum;
+    topoInfo.deviceNumPerAggregation = snapshot.topoAttr.deviceNumPerAggregation;
+    topoInfo.deviceType = snapshot.topoAttr.deviceType;
+    topoInfo.topoType = snapshot.topoType;
+    topoInfo.devicePhyId = snapshot.topoAttr.devicePhyId;
+    topoInfo.deviceLogicId = snapshot.topoAttr.deviceLogicId;
+    topoInfo.useSuperPodMode = snapshot.topoAttr.useSuperPodMode;
+    topoInfo.meshAggregationRankSize = snapshot.topoAttr.meshAggregationRankSize;
+    topoInfo.moduleNum = snapshot.topoAttr.moduleNum;
+    topoInfo.isSingleMeshAggregation = snapshot.topoAttr.isSingleMeshAggregation;
+    topoInfo.isDiffDeviceModule = snapshot.topoAttr.isDiffDeviceModule;
+    topoInfo.isDiffDeviceType = snapshot.topoAttr.isDiffDeviceType;
+    topoInfo.gcdDeviceNumPerAggregation = snapshot.topoAttr.gcdDeviceNumPerAggregation;
+    topoInfo.nicList = snapshot.topoAttr.nicList;
+    topoInfo.pairLinkCounter = snapshot.topoAttr.pairLinkCounter;
+    topoInfo.netPlaneId = snapshot.netPlaneId;
+    topoInfo.netPlaneNum = snapshot.netPlaneNum;
+
+    HcclAlgoInfo algoInfo;
+    algoInfo.inlineReduceSwitchOn = snapshot.algoAttr.inlineReduceSwitchOn;
+    algoInfo.identifier = snapshot.algoAttr.identifier;
+    algoInfo.isUsedRdmaLevel0 = snapshot.algoAttr.isUsedRdmaLevel0;
+
+    HcclExternalEnable externalEnable;
+    externalEnable.algoConfig = snapshot.algoAttr.commAlgoConfig;
+
+    std::vector<bool> isBridgeVector;
+    std::vector<std::vector<std::vector<u32>>> serverAndSuperPodToRank;
+    return std::unique_ptr<TopoMatcher>(new (std::nothrow) TopoMatcher(snapshot.topoAttr.commPlaneRanks,
+        isBridgeVector, topoInfo, algoInfo, externalEnable, serverAndSuperPodToRank));
+}
+
+class OxcRingHighFidelityReduceScatterExecutorProbe : public CollReduceScatterRingLayeredExecutor {
+public:
+    explicit OxcRingHighFidelityReduceScatterExecutorProbe(const HcclDispatcher dispatcher,
+        std::unique_ptr<TopoMatcher> &topoMatcher)
+        : CollReduceScatterRingLayeredExecutor(dispatcher, topoMatcher) {}
+
+    using CollReduceScatterRingLayeredExecutor::KernelRun;
+    using CollReduceScatterRingLayeredExecutor::algResResp_;
+    using CollReduceScatterRingLayeredExecutor::workflowMode_;
+    using CollReduceScatterRingLayeredExecutor::tag_;
+
+    std::vector<std::string> evidence;
+
+protected:
+    HcclResult ActiveSlaveStreamsForTest(const Stream &stream) override {(void)stream; evidence.push_back("active-slave-streams"); return HCCL_SUCCESS;}
+    HcclResult MultiRingReduceScatterForTest(const std::string &, DeviceMem inputMem, DeviceMem,
+        u64, HcclDataType, HcclReduceOp, const std::vector<std::vector<Slice>> &, Stream, s32, u64,
+        const HcomCollOpInfo *, const std::vector<std::vector<Slice>> &) override
+    {
+        evidence.push_back("outer-rs");
+        int *inputSeed = static_cast<int *>(inputMem.ptr());
+        const int values[8] = {1111,1112,1113,1114,1115,1116,1117,1118};
+        for (int i = 0; i < 8; ++i) {
+            inputSeed[i] = values[i];
+        }
+        return HCCL_SUCCESS;
+    }
+};
+
+class OxcRingHighFidelityAllReduceExecutorProbe : public CollAllReduceRingLayeredExecutor {
+public:
+    explicit OxcRingHighFidelityAllReduceExecutorProbe(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher)
+        : CollAllReduceRingLayeredExecutor(dispatcher, topoMatcher) {}
+
+    using CollAllReduceRingLayeredExecutor::KernelRun;
+    using CollAllReduceRingLayeredExecutor::algResResp_;
+    using CollAllReduceRingLayeredExecutor::workflowMode_;
+    using CollAllReduceRingLayeredExecutor::tag_;
+
+    std::vector<std::string> evidence;
+
+protected:
+    HcclResult ActiveSlaveStreamsForTest(const Stream &stream) override {(void)stream; evidence.push_back("active-slave-streams"); return HCCL_SUCCESS;}
+    HcclResult MultiRingReduceScatterForTest(const std::string &, DeviceMem, DeviceMem outputMem, u64,
+        HcclDataType, HcclReduceOp, const std::vector<std::vector<Slice>> &, Stream, s32, u64,
+        const HcomCollOpInfo *) override
+    {
+        evidence.push_back("outer-rs");
+        int *buffer = static_cast<int *>(outputMem.ptr());
+        const int values[8] = {101,102,201,202,301,302,401,402};
+        for (int i = 0; i < 8; ++i) {
+            buffer[i] = values[i];
+        }
+        return HCCL_SUCCESS;
+    }
+    HcclResult MultiRingAllGatherForTest(const std::string &, DeviceMem, DeviceMem outputMem, u64,
+        HcclDataType, const std::vector<std::vector<Slice>> &, Stream, s32, u64,
+        const HcomCollOpInfo *) override
+    {
+        evidence.push_back("outer-ag");
+        int *buffer = static_cast<int *>(outputMem.ptr());
+        const int values[8] = {1001,1002,1003,1004,1005,1006,1007,1008};
+        for (int i = 0; i < 8; ++i) {
+            buffer[i] = values[i];
+        }
+        return HCCL_SUCCESS;
+    }
+};
+
+class OxcRingHighFidelityAllGatherExecutorProbe : public CollAllGatherRingLayeredExecutor {
+public:
+    explicit OxcRingHighFidelityAllGatherExecutorProbe(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher)
+        : CollAllGatherRingLayeredExecutor(dispatcher, topoMatcher) {}
+
+    using CollAllGatherRingLayeredExecutor::KernelRun;
+    using CollAllGatherRingLayeredExecutor::algResResp_;
+    using CollAllGatherRingLayeredExecutor::workflowMode_;
+    using CollAllGatherRingLayeredExecutor::tag_;
+
+    std::vector<std::string> evidence;
+
+protected:
+    HcclResult ActiveSlaveStreamsForTest(const Stream &stream) override {(void)stream; evidence.push_back("active-slave-streams"); return HCCL_SUCCESS;}
+    HcclResult MultiRingAllGatherForTest(const std::string &, DeviceMem, DeviceMem outputMem, u64,
+        HcclDataType, const std::vector<std::vector<Slice>> &, Stream, s32) override
+    {
+        evidence.push_back("outer-ag");
+        int *buffer = static_cast<int *>(outputMem.ptr());
+        const int values[32] = {
+            21,22,61,62,101,102,141,142,
+            41,42,81,82,121,122,161,162,
+            31,32,71,72,111,112,151,152,
+            51,52,91,92,131,132,171,172
+        };
+        for (int i = 0; i < 32; ++i) {
+            buffer[i] = values[i];
+        }
+        return HCCL_SUCCESS;
+    }
+};
+
+} // namespace
+
+TEST_F(HcclCommunicator91093OxcInitTest,
+    Ut_OxcRingHighFidelityHarnessContract_When_ClusterInfoFamilyParified_Expect_RealEntryStatePreserved)
+{
+    WriteOxcA3HighFidelityRankTableFile(rankTableFileName);
+    Ut_Device_Set(0);
+
+    HcclComm fileComm = nullptr;
+    ASSERT_EQ(HcclCommInitClusterInfo(rankTableFileName, 0, &fileComm), HCCL_SUCCESS);
+    const OxcRingHighFidelitySnapshot fileSnapshot =
+        CaptureOxcRingHighFidelitySnapshot(fileComm, OxcRingHighFidelityEntryRoute::CLUSTER_INFO);
+    Ut_Comm_Destroy(reinterpret_cast<void *&>(fileComm));
+    ASSERT_EQ(ResetInitState(), HCCL_SUCCESS);
+
+    HcclCommConfig cfg;
+    InitA3CommConfig(cfg, "ut_hf_cfg");
+    HcclComm configComm = nullptr;
+    ASSERT_EQ(HcclCommInitClusterInfoConfig(rankTableFileName, 0, &cfg, &configComm), HCCL_SUCCESS);
+    const OxcRingHighFidelitySnapshot configSnapshot =
+        CaptureOxcRingHighFidelitySnapshot(configComm, OxcRingHighFidelityEntryRoute::CONFIG, "ut_hf_cfg");
+    Ut_Comm_Destroy(reinterpret_cast<void *&>(configComm));
+    ASSERT_EQ(ResetInitState(), HCCL_SUCCESS);
+
+    HcclCommConfig memCfg;
+    InitA3CommConfig(memCfg, "ut_hf_memcfg");
+    const std::string rankTableString = BuildOxcA3HighFidelityRankTable().dump();
+    HcclComm memComm = nullptr;
+    ASSERT_EQ(HcclCommInitClusterInfoMemConfig(rankTableString.c_str(), 0, &memCfg, &memComm), HCCL_SUCCESS);
+    const OxcRingHighFidelitySnapshot memSnapshot =
+        CaptureOxcRingHighFidelitySnapshot(memComm, OxcRingHighFidelityEntryRoute::MEM_CONFIG, "ut_hf_memcfg");
+
+    ExpectOxcRingHighFidelityEntryReady(fileSnapshot);
+    ExpectOxcRingHighFidelityEntryReady(configSnapshot);
+    ExpectOxcRingHighFidelityEntryReady(memSnapshot);
+
+    EXPECT_EQ(ClassifyOxcRingHighFidelitySnapshot(fileSnapshot), OxcRingHighFidelityClassification::REAL_ENTRY_HIGH_FIDELITY);
+    EXPECT_EQ(ClassifyOxcRingHighFidelitySnapshot(configSnapshot), OxcRingHighFidelityClassification::REAL_ENTRY_HIGH_FIDELITY);
+    EXPECT_EQ(ClassifyOxcRingHighFidelitySnapshot(memSnapshot), OxcRingHighFidelityClassification::REAL_ENTRY_HIGH_FIDELITY);
+
+    EXPECT_EQ(fileSnapshot.netPlaneId, configSnapshot.netPlaneId);
+    EXPECT_EQ(fileSnapshot.netPlaneId, memSnapshot.netPlaneId);
+    EXPECT_EQ(fileSnapshot.netPlaneNum, configSnapshot.netPlaneNum);
+    EXPECT_EQ(fileSnapshot.netPlaneNum, memSnapshot.netPlaneNum);
+    EXPECT_EQ(fileSnapshot.topoAttr.useSuperPodMode, configSnapshot.topoAttr.useSuperPodMode);
+    EXPECT_EQ(fileSnapshot.topoAttr.useSuperPodMode, memSnapshot.topoAttr.useSuperPodMode);
+    EXPECT_EQ(fileSnapshot.topoAttr.superPodNum, configSnapshot.topoAttr.superPodNum);
+    EXPECT_EQ(fileSnapshot.topoAttr.superPodNum, memSnapshot.topoAttr.superPodNum);
+    EXPECT_EQ(fileSnapshot.algoAttr.isUsedInterHccsMode, configSnapshot.algoAttr.isUsedInterHccsMode);
+    EXPECT_EQ(fileSnapshot.algoAttr.isUsedInterHccsMode, memSnapshot.algoAttr.isUsedInterHccsMode);
+    EXPECT_EQ(fileSnapshot.topoAttr.commPlaneRanks, configSnapshot.topoAttr.commPlaneRanks);
+    EXPECT_EQ(fileSnapshot.topoAttr.commPlaneRanks, memSnapshot.topoAttr.commPlaneRanks);
+    EXPECT_FALSE(fileSnapshot.isOneSided);
+    EXPECT_FALSE(configSnapshot.isOneSided);
+    EXPECT_TRUE(memSnapshot.isOneSided);
+    EXPECT_TRUE(memSnapshot.commNameRegistered);
+
+    HcclComm oneSidedComm = memComm;
+    Ut_Comm_Destroy(reinterpret_cast<void *&>(memComm));
+    EXPECT_FALSE(IsOneSidedComm(oneSidedComm));
+    EXPECT_FALSE(IsCommNameExistInOneSidedComms(0, memCfg.hcclCommName));
+    ASSERT_EQ(ResetInitState(), HCCL_SUCCESS);
+}
+
+TEST_F(HcclCommunicator91093OxcInitTest,
+    Ut_OxcRingHighFidelityHarnessContract_When_EntryDerivedFieldsMutated_Expect_BridgeFallback)
+{
+    WriteOxcA3HighFidelityRankTableFile(rankTableFileName);
+    Ut_Device_Set(0);
+    HcclComm localComm = nullptr;
+    ASSERT_EQ(HcclCommInitClusterInfo(rankTableFileName, 0, &localComm), HCCL_SUCCESS);
+    OxcRingHighFidelitySnapshot mutated = CaptureOxcRingHighFidelitySnapshot(localComm, OxcRingHighFidelityEntryRoute::CLUSTER_INFO);
+    ExpectOxcRingHighFidelityEntryReady(mutated);
+    ASSERT_EQ(ClassifyOxcRingHighFidelitySnapshot(mutated), OxcRingHighFidelityClassification::REAL_ENTRY_HIGH_FIDELITY);
+
+    mutated.netPlaneNum = 0U;
+    EXPECT_EQ(ClassifyOxcRingHighFidelitySnapshot(mutated), OxcRingHighFidelityClassification::BRIDGE_FALLBACK);
+
+    mutated = CaptureOxcRingHighFidelitySnapshot(localComm, OxcRingHighFidelityEntryRoute::CLUSTER_INFO);
+    ASSERT_GT(mutated.topoAttr.commPlaneRanks.size(), COMM_LAYERED_LEVEL2);
+    mutated.topoAttr.commPlaneRanks[COMM_LAYERED_LEVEL1].clear();
+    EXPECT_EQ(ClassifyOxcRingHighFidelitySnapshot(mutated), OxcRingHighFidelityClassification::BRIDGE_FALLBACK);
+    Ut_Comm_Destroy(reinterpret_cast<void *&>(localComm));
+    ASSERT_EQ(ResetInitState(), HCCL_SUCCESS);
+}
+
+TEST_F(HcclCommunicator91093OxcInitTest,
+    Ut_OxcRingHighFidelityReduceScatter_When_ClusterInfoEntry_Expect_CommInitToLayeredOutputCorrect)
+{
+    MOCKER(HcclD2DMemcpyAsync).stubs().with(any(), any(), any(), any()).will(invoke(HcclD2DMemcpyAsyncStub));
+    WriteOxcA3HighFidelityRankTableFile(rankTableFileName);
+    Ut_Device_Set(0);
+    HcclComm localComm = nullptr;
+    ASSERT_EQ(HcclCommInitClusterInfo(rankTableFileName, 0, &localComm), HCCL_SUCCESS);
+    const OxcRingHighFidelitySnapshot before = CaptureOxcRingHighFidelitySnapshot(localComm, OxcRingHighFidelityEntryRoute::CLUSTER_INFO);
+    ExpectOxcRingHighFidelityEntryReady(before);
+    ASSERT_EQ(ClassifyOxcRingHighFidelitySnapshot(before), OxcRingHighFidelityClassification::REAL_ENTRY_HIGH_FIDELITY);
+
+    std::unique_ptr<TopoMatcher> topoMatcher = BuildOxcHighFidelityTopoMatcher(before);
+    ASSERT_NE(topoMatcher, nullptr);
+    OxcRingHighFidelityDispatcher dispatcher;
+    ASSERT_EQ(dispatcher.Init(), HCCL_SUCCESS);
+    OxcRingHighFidelityReduceScatterExecutorProbe executor(reinterpret_cast<HcclDispatcher>(&dispatcher), topoMatcher);
+    ASSERT_EQ(executor.SetAlgType(AlgType(AlgTypeLevel0::ALG_LEVEL0_NP_SINGLE_RING,
+        AlgTypeLevel1::ALG_LEVEL1_RING, AlgTypeLevel2::ALG_LEVEL2_RING)), HCCL_SUCCESS);
+    executor.workflowMode_ = HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE;
+    executor.tag_ = "oxc_hf_rs";
+    AlgResourceResponse algRes = BuildOxcHighFidelityAlgResourceResponse(before);
+    executor.algResResp_ = &algRes;
+
+    int input[HF_RS_AR_COUNT * 2] = {0};
+    for (int i = 0; i < static_cast<int>(HF_RS_AR_COUNT); ++i) {
+        input[i] = 100 + i;
+    }
+    int output[HF_RS_AR_COUNT] = {0};
+    int scratch[HF_RS_AR_COUNT * 2] = {0};
+    int userOutput[HF_RS_AR_COUNT] = {0};
+    ExecMem execMem;
+    execMem.count = HF_RS_AR_COUNT;
+    execMem.inputMem = DeviceMem::create(input, sizeof(input));
+    execMem.outputMem = DeviceMem::create(output, sizeof(output));
+    execMem.scratchMem = DeviceMem::create(scratch, sizeof(scratch));
+    execMem.inputPtr = input;
+    execMem.outputPtr = userOutput;
+
+    OpParam param;
+    param.tag = "oxc_hf_rs";
+    param.opType = HcclCMDType::HCCL_CMD_REDUCE_SCATTER;
+    param.DataDes.count = HF_RS_AR_COUNT;
+    param.DataDes.dataType = HCCL_DATA_TYPE_INT32;
+    param.reduceType = HCCL_REDUCE_SUM;
+    param.stream = BuildOxcHighFidelityTestStream();
+
+    ASSERT_EQ(executor.KernelRun(param, execMem), HCCL_SUCCESS);
+    EXPECT_EQ(executor.evidence, (std::vector<std::string>{"active-slave-streams", "outer-rs"}));
+    const int expected[8] = {1111,1112,1113,1114,1115,1116,1117,1118};
+    for (int i = 0; i < 8; ++i) {
+        EXPECT_EQ(userOutput[i], expected[i]);
+    }
+    const OxcRingHighFidelitySnapshot after = CaptureOxcRingHighFidelitySnapshot(localComm, OxcRingHighFidelityEntryRoute::CLUSTER_INFO);
+    ExpectOxcRingHighFidelitySnapshotUnchanged(before, after);
+    Ut_Comm_Destroy(reinterpret_cast<void *&>(localComm));
+    ASSERT_EQ(ResetInitState(), HCCL_SUCCESS);
+}
+
+TEST_F(HcclCommunicator91093OxcInitTest,
+    Ut_OxcRingHighFidelityAllReduce_When_ClusterInfoConfigEntry_Expect_CommInitToLayeredOutputCorrect)
+{
+    MOCKER(HcclD2DMemcpyAsync).stubs().with(any(), any(), any(), any()).will(invoke(HcclD2DMemcpyAsyncStub));
+    WriteOxcA3HighFidelityRankTableFile(rankTableFileName);
+    Ut_Device_Set(0);
+    HcclCommConfig config;
+    InitA3CommConfig(config, "ut_oxc_hf_ar");
+    HcclComm localComm = nullptr;
+    ASSERT_EQ(HcclCommInitClusterInfoConfig(rankTableFileName, 0, &config, &localComm), HCCL_SUCCESS);
+    const OxcRingHighFidelitySnapshot before = CaptureOxcRingHighFidelitySnapshot(localComm, OxcRingHighFidelityEntryRoute::CONFIG, "ut_oxc_hf_ar");
+    ExpectOxcRingHighFidelityEntryReady(before);
+    ASSERT_EQ(ClassifyOxcRingHighFidelitySnapshot(before), OxcRingHighFidelityClassification::REAL_ENTRY_HIGH_FIDELITY);
+
+    std::unique_ptr<TopoMatcher> topoMatcher = BuildOxcHighFidelityTopoMatcher(before);
+    ASSERT_NE(topoMatcher, nullptr);
+    OxcRingHighFidelityDispatcher dispatcher;
+    ASSERT_EQ(dispatcher.Init(), HCCL_SUCCESS);
+    OxcRingHighFidelityAllReduceExecutorProbe executor(reinterpret_cast<HcclDispatcher>(&dispatcher), topoMatcher);
+    ASSERT_EQ(executor.SetAlgType(AlgType(AlgTypeLevel0::ALG_LEVEL0_NP_SINGLE_RING,
+        AlgTypeLevel1::ALG_LEVEL1_RING, AlgTypeLevel2::ALG_LEVEL2_RING)), HCCL_SUCCESS);
+    executor.workflowMode_ = HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE;
+    executor.tag_ = "oxc_hf_ar";
+    AlgResourceResponse algRes = BuildOxcHighFidelityAlgResourceResponse(before);
+    executor.algResResp_ = &algRes;
+
+    int input[HF_RS_AR_COUNT] = {1,2,3,4,5,6,7,8};
+    int output[HF_RS_AR_COUNT] = {0};
+    int scratch[HF_RS_AR_COUNT] = {0};
+    int userOutput[HF_RS_AR_COUNT] = {0};
+    ExecMem execMem;
+    execMem.count = HF_RS_AR_COUNT;
+    execMem.inputMem = DeviceMem::create(input, sizeof(input));
+    execMem.outputMem = DeviceMem::create(output, sizeof(output));
+    execMem.scratchMem = DeviceMem::create(scratch, sizeof(scratch));
+    execMem.inputPtr = input;
+    execMem.outputPtr = userOutput;
+
+    OpParam param;
+    param.tag = "oxc_hf_ar";
+    param.opType = HcclCMDType::HCCL_CMD_ALLREDUCE;
+    param.DataDes.count = HF_RS_AR_COUNT;
+    param.DataDes.dataType = HCCL_DATA_TYPE_INT32;
+    param.reduceType = HCCL_REDUCE_SUM;
+    param.stream = BuildOxcHighFidelityTestStream();
+
+    ASSERT_EQ(executor.KernelRun(param, execMem), HCCL_SUCCESS);
+    EXPECT_EQ(executor.evidence, (std::vector<std::string>{"active-slave-streams", "outer-rs", "outer-ag"}));
+    for (int i = 0; i < 8; ++i) {
+        EXPECT_EQ(output[i], 1001 + i);
+    }
+    const OxcRingHighFidelitySnapshot after = CaptureOxcRingHighFidelitySnapshot(localComm, OxcRingHighFidelityEntryRoute::CONFIG, "ut_oxc_hf_ar");
+    ExpectOxcRingHighFidelitySnapshotUnchanged(before, after);
+    Ut_Comm_Destroy(reinterpret_cast<void *&>(localComm));
+    ASSERT_EQ(ResetInitState(), HCCL_SUCCESS);
+}
+
+TEST_F(HcclCommunicator91093OxcInitTest,
+    Ut_OxcRingHighFidelityAllGather_When_MemConfigEntry_Expect_CommInitToLayeredOutputCorrect)
+{
+    MOCKER(HcclD2DMemcpyAsync).stubs().with(any(), any(), any(), any()).will(invoke(HcclD2DMemcpyAsyncStub));
+    Ut_Device_Set(0);
+    HcclCommConfig config;
+    InitA3CommConfig(config, "ut_oxc_hf_ag");
+    const std::string rankTableString = BuildOxcA3HighFidelityRankTable().dump();
+    HcclComm localComm = nullptr;
+    ASSERT_EQ(HcclCommInitClusterInfoMemConfig(rankTableString.c_str(), 0, &config, &localComm), HCCL_SUCCESS);
+    const OxcRingHighFidelitySnapshot before = CaptureOxcRingHighFidelitySnapshot(localComm, OxcRingHighFidelityEntryRoute::MEM_CONFIG, "ut_oxc_hf_ag");
+    ExpectOxcRingHighFidelityEntryReady(before);
+    ASSERT_TRUE(before.isOneSided);
+    ASSERT_TRUE(before.commNameRegistered);
+    ASSERT_EQ(ClassifyOxcRingHighFidelitySnapshot(before), OxcRingHighFidelityClassification::REAL_ENTRY_HIGH_FIDELITY);
+
+    std::unique_ptr<TopoMatcher> topoMatcher = BuildOxcHighFidelityTopoMatcher(before);
+    ASSERT_NE(topoMatcher, nullptr);
+    OxcRingHighFidelityDispatcher dispatcher;
+    ASSERT_EQ(dispatcher.Init(), HCCL_SUCCESS);
+    OxcRingHighFidelityAllGatherExecutorProbe executor(reinterpret_cast<HcclDispatcher>(&dispatcher), topoMatcher);
+    ASSERT_EQ(executor.SetAlgType(AlgType(AlgTypeLevel0::ALG_LEVEL0_NP_SINGLE_RING,
+        AlgTypeLevel1::ALG_LEVEL1_RING, AlgTypeLevel2::ALG_LEVEL2_RING)), HCCL_SUCCESS);
+    executor.workflowMode_ = HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE;
+    executor.tag_ = "oxc_hf_ag";
+    AlgResourceResponse algRes = BuildOxcHighFidelityAlgResourceResponse(before);
+    executor.algResResp_ = &algRes;
+
+    int input[HF_AG_COUNT] = {21,22};
+    int output[32] = {0};
+    int scratch[HF_AG_COUNT] = {0};
+    int userOutput[32] = {0};
+    ExecMem execMem;
+    execMem.count = HF_AG_COUNT;
+    execMem.inputMem = DeviceMem::create(input, sizeof(input));
+    execMem.outputMem = DeviceMem::create(output, sizeof(output));
+    execMem.scratchMem = DeviceMem::create(scratch, sizeof(scratch));
+    execMem.inputPtr = input;
+    execMem.outputPtr = userOutput;
+
+    OpParam param;
+    param.tag = "oxc_hf_ag";
+    param.opType = HcclCMDType::HCCL_CMD_ALLGATHER;
+    param.DataDes.count = HF_AG_COUNT;
+    param.DataDes.dataType = HCCL_DATA_TYPE_INT32;
+    param.DataDes.strideCount = 0U;
+    param.supportZeroCopy = false;
+    param.aicpuUnfoldMode = false;
+    param.stream = BuildOxcHighFidelityTestStream();
+
+    ASSERT_EQ(executor.KernelRun(param, execMem), HCCL_SUCCESS);
+    EXPECT_EQ(executor.evidence, (std::vector<std::string>{"active-slave-streams", "outer-ag"}));
+    const int expected[32] = {
+        21,22,61,62,101,102,141,142,
+        41,42,81,82,121,122,161,162,
+        31,32,71,72,111,112,151,152,
+        51,52,91,92,131,132,171,172
+    };
+    for (int i = 0; i < 32; ++i) {
+        EXPECT_EQ(output[i], expected[i]);
+    }
+    const OxcRingHighFidelitySnapshot after = CaptureOxcRingHighFidelitySnapshot(localComm, OxcRingHighFidelityEntryRoute::MEM_CONFIG, "ut_oxc_hf_ag");
+    ExpectOxcRingHighFidelitySnapshotUnchanged(before, after);
+    Ut_Comm_Destroy(reinterpret_cast<void *&>(localComm));
+    ASSERT_EQ(ResetInitState(), HCCL_SUCCESS);
 }

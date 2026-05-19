@@ -21,8 +21,6 @@ public:
 
 protected:
     u64 CalcTotalCount(const OpParam &param) const;
-
-private:
     void ParseParam(const OpParam& param) override;
     /* *************** 资源计算 *************** */
     HcclResult CalcScratchMemSize(u64& scratchMemSize) override;

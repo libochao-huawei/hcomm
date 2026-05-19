@@ -14,6 +14,21 @@ set(src_to_test_list
     ut_HcclCommunicator_91093_Oxc_Capability_test.cc
     ut_HcclCommunicator_91093_Oxc_Init_API_test.cc
     ut_HcclRankGraph_Layered_API_test.cc
+    ut_PlaneTransformerFactory_API_test.cc
+    ut_TopoinfoPlaneTransformer_A2Selection_API_test.cc
+    ut_TopoInfoExtractor_PlaneTransformer_Integration_test.cc
+    ut_TopoinfoPlaneTransformer_Layered_Helper_API_test.cc
+    ut_LayeredBase_API_test.cc
+    ut_ReduceScatterSelector_91093_Layered_API_test.cc
+    ut_ReduceScatterLayeredExecutor_API_test.cc
+    ut_ReduceScatterLayered_Correctness_API_test.cc
+    ut_AllGatherLayeredExecutor_API_test.cc
+    ut_AllGatherLayered_Correctness_API_test.cc
+    ut_AllReduceSelector_91093_Layered_API_test.cc
+    ut_AllReduceLayeredExecutor_API_test.cc
+    ut_AllReduceLayered_Correctness_API_test.cc
+    ut_AllReduceLayered_Communicator_API_test.cc
+    ut_AllGatherSelector_91093_Layered_API_test.cc
     ut_HcclSetConfig_API_test.cc
     ut_HcclGetConfig_API_test.cc
     ut_HcclGetCommName_API_test.cc

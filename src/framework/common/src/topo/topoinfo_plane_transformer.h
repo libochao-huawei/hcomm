@@ -12,14 +12,15 @@
 #define TOPOINFO_PLANE_TRANSFORMER_H
 
 #include "common.h"
+#include "plane_transformer/plane_transformer_base.h"
 #include "topoinfo_struct.h"
 
 namespace hccl {
 /**
- * @brief `TopoinfoPlaneTransformer` 负责 OXC 并行平面解析。
+ * @brief `TopoinfoPlaneTransformer` 负责 OXC 并行平面解析与 A2 layered helper 闭环。
  *
- * @note 当前主线仅保留 `ParsePlane` 相关能力；
- *       Layered / CommPlane 辅助 helper 已不再作为仓内保留面。
+ * @note `ParsePlane` 仍负责 netplane 主线；Layered helper 保留 A2 调用面：
+ *       `RegroupAndSelectAlgo/ReparseGroupedPlane/TransformPlaneByAlgo`。
  */
 class TopoinfoPlaneTransformer {
 public:
@@ -58,7 +59,20 @@ public:
     static HcclResult ParsePlane(const std::vector<u32> &rankIds, const std::vector<RankInfo_t> &globalRankList,
         std::vector<RankInfo_t> &subRankList, u32 &netPlaneNum);
 
+    static HcclResult RegroupAndSelectAlgo(u32 netPlaneNum, bool enabledBroke, std::vector<std::vector<u32>> &groups,
+        HcclAlgoType &intraAlgType, HcclAlgoType &interAlgType);
+
+    static HcclResult ReparseGroupedPlane(u32 localIndex, const std::vector<std::vector<u32>> &groups,
+        u32 &netPlaneId, u32 &netPlaneNum);
+
+    static HcclResult TransformPlaneByAlgo(HcclAlgoType algType, u32 netPlaneId, u32 localIndex,
+        const std::vector<std::vector<u32>> &groups, std::vector<u32> &indexList);
+
 private:
+    static HcclResult ApplyTransform(u32 netPlaneId, u32 localIndex,
+        const std::vector<std::vector<u32>> &groups, const TransformMatrix &transformMatrix,
+        std::vector<u32> &indexList);
+    static u32 CalcSymGroupSize(const std::vector<std::vector<u32>> &groups);
 };
 }  // namespace hccl
 

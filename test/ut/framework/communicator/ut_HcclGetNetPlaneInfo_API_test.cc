@@ -160,22 +160,27 @@ const LayeredMemberExpectation &GetRank4LayeredExpectation()
  * @param comm 通信域句柄。
  * @param expectation 预期的 netplane 信息。
  */
-void ExpectSingleLayeredTopoInstRanks(HcclComm comm, uint32_t layer, const std::vector<uint32_t> &expectedRanks)
+void ExpectLayeredTopoInstRanks(HcclComm comm, uint32_t layer, const std::vector<uint32_t> &expectedRanks)
 {
     uint32_t *topoInsts = nullptr;
     uint32_t topoInstNum = 0;
     ASSERT_EQ(HcclRankGraphGetTopoInstsByLayer(comm, layer, &topoInsts, &topoInstNum), HCCL_SUCCESS);
     ASSERT_NE(topoInsts, nullptr);
-    ASSERT_EQ(topoInstNum, 1U);
-    EXPECT_EQ(topoInsts[0], 0U);
 
-    uint32_t *ranks = nullptr;
-    uint32_t rankNum = 0;
-    ASSERT_EQ(HcclRankGraphGetRanksByTopoInst(comm, layer, topoInsts[0], &ranks, &rankNum), HCCL_SUCCESS);
-    ASSERT_NE(ranks, nullptr);
-    ASSERT_EQ(rankNum, expectedRanks.size());
-    std::vector<uint32_t> rankVec(ranks, ranks + rankNum);
-    EXPECT_EQ(rankVec, expectedRanks);
+    for (uint32_t i = 0; i < topoInstNum; ++i) {
+        uint32_t *ranks = nullptr;
+        uint32_t rankNum = 0;
+        ASSERT_EQ(HcclRankGraphGetRanksByTopoInst(comm, layer, topoInsts[i], &ranks, &rankNum), HCCL_SUCCESS);
+        if (rankNum == 0U) {
+            continue;
+        }
+        ASSERT_NE(ranks, nullptr);
+        std::vector<uint32_t> rankVec(ranks, ranks + rankNum);
+        if (rankVec == expectedRanks) {
+            return;
+        }
+    }
+    ADD_FAILURE() << "expected layered topo inst ranks were not found";
 }
 
 void ExpectNoLayeredLinks(HcclComm comm, uint32_t layer, uint32_t srcRank, uint32_t dstRank)
@@ -190,8 +195,8 @@ void ExpectNoLayeredLinks(HcclComm comm, uint32_t layer, uint32_t srcRank, uint3
 void ExpectOxcA2ReadyWithRestoredLayeredMainline(HcclComm comm, const LayeredMemberExpectation &expectation)
 {
     ExpectOxcA2Ready(comm, expectation.netPlaneId, expectation.netPlaneNum);
-    ExpectSingleLayeredTopoInstRanks(comm, HCCL_NETLAYER_LAYERED_LEVEL1, expectation.level1Ranks);
-    ExpectSingleLayeredTopoInstRanks(comm, HCCL_NETLAYER_LAYERED_LEVEL2, expectation.level2Ranks);
+    ExpectLayeredTopoInstRanks(comm, HCCL_NETLAYER_LAYERED_LEVEL1, expectation.level1Ranks);
+    ExpectLayeredTopoInstRanks(comm, HCCL_NETLAYER_LAYERED_LEVEL2, expectation.level2Ranks);
     ExpectNoLayeredLinks(comm, HCCL_NETLAYER_LAYERED_LEVEL1,
         expectation.level1NegativeSrc, expectation.level1NegativeDst);
 }

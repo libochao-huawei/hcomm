@@ -16,6 +16,7 @@
 #include "stream_active_manager.h"
 #include "hccl_aiv.h"
 #include "coll_alg_op_registry.h"
+#include "layered_base_pub.h"
 
 namespace hccl {
 
@@ -684,6 +685,26 @@ HcclResult AllReduceOperator::SelectAlgfor91093(const OpParam& param, std::strin
         HCCL_ERROR("isOpbase[%d] deterministic config[%u] retryEnable_[%d]",
             isOpbase, topoMatcher_->GetDeterministicConfig(), retryEnable_);
         return HCCL_E_NOT_SUPPORT;
+    }
+    if (algName == "AllReduceRingFor91093Executor" && deviceType_ == DevType::DEV_TYPE_910_93 &&
+        algConfigurator_ != nullptr) {
+        const HcclTopoAttr &topoAttr = algConfigurator_->GetTopoAttr();
+        const u32 layeredLevel1GroupSize = topoMatcher_ != nullptr ?
+            topoMatcher_->GetCurrentPlaneGroupSize(COMM_LAYERED_LEVEL1) : 0U;
+        const u32 layeredLevel2GroupSize = topoMatcher_ != nullptr ?
+            topoMatcher_->GetCurrentPlaneGroupSize(COMM_LAYERED_LEVEL2) : 0U;
+        const bool layeredPlanesAvailable = layeredLevel1GroupSize > 0U && layeredLevel2GroupSize > 0U;
+        if (topoAttr.isOxcMode && layeredPlanesAvailable &&
+            LayeredBase::IsSupportLayered(layeredLevel1GroupSize, algType_)) {
+            HCCL_INFO("[SelectAlgfor91093] route ordinary ring to AllReduceRingLayeredExecutor, "
+                "derivedLevel1GroupSize[%u], derivedLevel2GroupSize[%u], algoLevel1[%u].",
+                layeredLevel1GroupSize, layeredLevel2GroupSize, algType_.algoLevel1);
+            algName = "AllReduceRingLayeredExecutor";
+        } else if (topoAttr.isOxcMode) {
+            HCCL_INFO("[SelectAlgfor91093] keep ordinary ring path, layeredLevel1GroupSize[%u], "
+                "layeredLevel2GroupSize[%u], algoLevel1[%u].",
+                layeredLevel1GroupSize, layeredLevel2GroupSize, algType_.algoLevel1);
+        }
     }
     HCCL_INFO("[SelectAlgfor91093] AllReduce SelectAlgfor91093 is algName [%s].", algName.c_str());
     return HCCL_SUCCESS;

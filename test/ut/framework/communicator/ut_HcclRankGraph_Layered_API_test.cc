@@ -133,8 +133,8 @@ TEST_F(HcclRankGraphLayeredApiTest,
     uint32_t topoInstNum = 0;
     ASSERT_EQ(HcclRankGraphGetTopoInstsByLayer(reinterpret_cast<HcclComm>(&comm), HCCL_NETLAYER_LAYERED_LEVEL1,
         &topoInsts, &topoInstNum), HCCL_SUCCESS);
-    ASSERT_EQ(topoInstNum, 1U);
-    EXPECT_EQ(GetLayeredRanksByTopoInst(reinterpret_cast<HcclComm>(&comm), HCCL_NETLAYER_LAYERED_LEVEL1, 0),
+    ASSERT_EQ(topoInstNum, 2U);
+    EXPECT_EQ(GetLayeredRanksByTopoInst(reinterpret_cast<HcclComm>(&comm), HCCL_NETLAYER_LAYERED_LEVEL1, 1),
         std::vector<uint32_t>({1U, 3U}));
 
     ASSERT_EQ(HcclRankGraphGetTopoInstsByLayer(reinterpret_cast<HcclComm>(&comm), HCCL_NETLAYER_LAYERED_LEVEL2,
@@ -155,8 +155,8 @@ TEST_F(HcclRankGraphLayeredApiTest,
     uint32_t topoInstNum = 0;
     ASSERT_EQ(HcclRankGraphGetTopoInstsByLayer(reinterpret_cast<HcclComm>(&comm), HCCL_NETLAYER_LAYERED_LEVEL1,
         &topoInsts, &topoInstNum), HCCL_SUCCESS);
-    ASSERT_EQ(topoInstNum, 1U);
-    EXPECT_EQ(GetLayeredRanksByTopoInst(reinterpret_cast<HcclComm>(&comm), HCCL_NETLAYER_LAYERED_LEVEL1, 0),
+    ASSERT_EQ(topoInstNum, 2U);
+    EXPECT_EQ(GetLayeredRanksByTopoInst(reinterpret_cast<HcclComm>(&comm), HCCL_NETLAYER_LAYERED_LEVEL1, 1),
         std::vector<uint32_t>({5U, 7U}));
 
     ASSERT_EQ(HcclRankGraphGetTopoInstsByLayer(reinterpret_cast<HcclComm>(&comm), HCCL_NETLAYER_LAYERED_LEVEL2,

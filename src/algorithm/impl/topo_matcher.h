@@ -59,6 +59,8 @@ struct HcclTopoInfo {
     bool isDiffDeviceModule;
     u32 moduleNum;
     bool useSuperPodMode;
+    u32 netPlaneId;
+    u32 netPlaneNum;
     std::unordered_map<u32, bool> isUsedRdmaMap;
     std::unordered_map<u32, u32> pairLinkCounter; // server内所有device间的链路类型计数
 
@@ -85,7 +87,9 @@ struct HcclTopoInfo {
         realUserRank(0),
         isDiffDeviceModule(false),
         moduleNum(0),
-        useSuperPodMode(false)
+        useSuperPodMode(false),
+        netPlaneId(0),
+        netPlaneNum(1)
     {}
 };
 
@@ -168,6 +172,7 @@ public:
     HcclResult SetCommPlaneSubGroupVector(std::vector<std::vector<std::vector<std::vector<u32>>>> &commPlaneSubGroupVector);
     void GetAHCAlgOption(std::map<AHCConcOpType, TemplateType> &ahcAlgOption);
     void SetAHCAlgOption(std::map<AHCConcOpType, TemplateType> &ahcAlgOption);
+    u32 GetCurrentPlaneGroupSize(CommPlane plane) const;
 protected:
 
 private:
