@@ -855,7 +855,7 @@ HcclResult MyRank::BatchExchangeAndCheckConsistency(
             reinterpret_cast<const u8*>(&localFrame), static_cast<u32>(frameLenV2),
             reinterpret_cast<u8*>(remoteFrames.data()), static_cast<u32>(frameLenV2)));
 
-        // ====== 逐个比对CheckFrameV2（精确报错：环境变量名/子通信域参数名）======
+        // ====== 逐个比对CheckFrameV2（精确报错：环境变量名/子通信域参数名等）======
         for (u32 i = 0; i < sockets.size(); i++) {
             HcclResult cmpRet = checker.CompareCheckFrameV2(localFrame, remoteFrames[i]);
             if (cmpRet != HCCL_SUCCESS) {
@@ -864,6 +864,7 @@ HcclResult MyRank::BatchExchangeAndCheckConsistency(
                 return cmpRet;
             }
         }
+        HCCL_INFO("[BatchExchangeAndCheckConsistency] hcomm compare check suc.");
         checker.SetInconsistentCheckFirstDone(true);
     }
 
