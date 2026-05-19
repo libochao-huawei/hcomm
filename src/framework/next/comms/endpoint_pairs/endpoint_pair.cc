@@ -73,7 +73,7 @@ HcclResult EndpointPair::GetSocketWithRank(const uint32_t myRank, const uint32_t
     return HCCL_SUCCESS;
 }
 
-HcclResult EndpointPair::BatchServerInit(const uint32_t myRank, const uint32_t rmtRank,
+HcclResult EndpointPair::ServerInit(const uint32_t myRank, const uint32_t rmtRank,
     const std::string &socketTag, u32 reuseIdx, uint32_t devicePhyId, uint32_t remoteDevicePhyId)
 {
     // server异步监听
@@ -97,7 +97,7 @@ HcclResult EndpointPair::BatchServerInit(const uint32_t myRank, const uint32_t r
     }
     Hccl::SocketConfig socketConfig(linkData.GetRemoteRankId(), linkData, linkTag);
     // 调用sock的server异步监听接口
-    socketMgrCompat_->BatchServerListen(socketConfig); 
+    socketMgrCompat_->ServerListen(socketConfig); 
     EXCEPTION_HANDLE_END
 
     return HCCL_SUCCESS;
@@ -131,7 +131,7 @@ HcclResult EndpointPair::GetConnectedSocket(const uint32_t myRank, const uint32_
     }
     Hccl::SocketConfig socketConfig(linkData.GetRemoteRankId(), linkData, linkTag);
     // socket 建链添加白名单和其他客户端连接部分
-    socketMgrCompat_->BatchConectSockets(socketConfig); // 内部同时处理server端和connect端两类socket
+    socketMgrCompat_->ConnectSockets(socketConfig); // 内部同时处理server端和connect端两类socket
     socket = socketMgrCompat_->GetConnectedSocket(socketConfig);
     CHK_PTR_NULL(socket);
     EXCEPTION_HANDLE_END
