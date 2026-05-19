@@ -186,9 +186,6 @@ HcclResult HcclAllReduceInner(void *sendBuf, void *recvBuf, uint64_t count, Hccl
     return HCCL_SUCCESS;
 }
 
-// HcclBarrierInner: V<950 / 非 950 设备的 barrier 实现（基于伪 AllReduce）。
-// 新流程公开入口 HcclBarrier 位于 hccl_claude/src/ops/barrier/barrier_op.cc，
-// 该入口在 V950 路径上走新流程（框内 AICPU + 框间 DPU），其余路径 fallback 到本函数。
 HcclResult HcclBarrierInner(HcclComm comm, aclrtStream stream)
 {
     // 入参合法性校验
