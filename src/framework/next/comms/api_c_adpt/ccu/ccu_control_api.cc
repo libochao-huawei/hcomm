@@ -199,8 +199,12 @@ static HcclResult HcommReportCcuProfilingInfo(const ThreadHandle threadHandle,
     HCCL_DEBUG("[%s]dieId[%u]", __func__, taskParam.taskPara.Ccu.dieId);
 
     // 通过线程Handle中注册的回调函数完成数据存储
+    // 注意：profiling 上报是可选能力，未注册 callback 时仅打 warning 跳过，不阻塞主功能路径
     auto callback = rtsThread->GetCallback();
-    CHK_PTR_NULL(callback);
+    if (!callback) {
+        HCCL_WARNING("[%s] task info callback is not registered on thread, skip ccu profiling report.", __func__);
+        return HCCL_SUCCESS;
+    }
     u32 streamId = INVALID_UINT;
     u32 taskId = INVALID_UINT;
     CHK_RET(hrtGetTaskIdAndStreamID(taskId, streamId));
