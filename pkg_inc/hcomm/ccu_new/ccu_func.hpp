@@ -28,10 +28,7 @@
 //
 // 用户接口形态：
 //   - 用户在 namespace / static 全局位置定义 ccu::Func，构造函数接受 lambda；
-//     lambda 形参一律为 ccu::Variable，个数 N 在编译期由 lambda 推导：
-//         static ccu::Func MyAdd([](ccu::Variable a, ccu::Variable b) {
-//             ccu::Variable r; ccu::Alloc(&r); r = a + b;
-//         });
+//     lambda 形参一律为 ccu::Variable，个数 N 在编译期由 lambda 推导
 //   - kernel 内通过 ccu::CallFunc<MyAdd>(x, y) 触发 jmp 调用：
 //         ccu::CallFunc<MyAdd>(x, y);
 //
