@@ -106,7 +106,7 @@ set(include_list
 
     # libc_sec目录下的头文件
     ${TOP_DIR}/abl/slog/inc/toolchain
-
+    ${HCCL_CODE_ROOT}/test/legacy/depends/toolchain/
     # json 目录的头文件
     ${TOP_DIR}/open_source/json/include
 

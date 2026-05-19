@@ -34,7 +34,6 @@ target_compile_definitions(ra_adp PRIVATE
 )
 
 target_include_directories(ra_adp PRIVATE
-    ${BASIC_PATH}/external_depends/inc/log
     ${RDMA_CORE_INCLUDE_DIR}
     ${BASIC_PATH}/inc/network
     ${BASIC_PATH}/inc/private/network
