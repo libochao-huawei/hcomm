@@ -17,6 +17,7 @@ set(src_list
     aicputs_hccs_endpoint.cc
     endpoint.cc
     uboe_endpoint.cc
+    cpu_uboe_endpoint.cc
 )
 
 if(TARGET hcomm)
