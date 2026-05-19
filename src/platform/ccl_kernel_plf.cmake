@@ -32,7 +32,7 @@ set(CCL_KERNEL_PLF_COMPILE_OPTIONS
     -fno-common
     -fno-strict-aliasing
     -pipe
-    -std=c++14
+    -std=c++17
     -D_FORTIFY_SOURCE=2 -O2
     -fstack-protector-all
 )

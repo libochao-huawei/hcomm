@@ -10,7 +10,7 @@
 
 cmake_minimum_required(VERSION 3.16.0)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 
 set(HCCL_ALG_ANALYZER_DAVID 1 CACHE STRING "Define HCCL_ALG_ANALYZER_DAVID as a fixed value")
 
