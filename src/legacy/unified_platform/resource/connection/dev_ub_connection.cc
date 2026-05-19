@@ -147,6 +147,68 @@ inline uint32_t GetRandomNum()
     return randNum;
 }
 
+void DevUbConnection::AdvanceUbConnFromInit()
+{
+    HCCL_INFO("[DevUbConnection][%s] start, status[%s], ubConnStatus[%s].", __func__, status.Describe().c_str(),
+              ubConnStatus.Describe().c_str());
+
+    if (devUsed_) {
+        if (!GetTpInfo()) {
+            ubConnStatus = UbConnStatus::TP_INFO_GETTING;
+            return;
+        }
+        CreateJetty(devUsed_);
+        ubConnStatus = UbConnStatus::JETTY_CREATING;
+        return;
+    }
+
+    SetJettyInfo();
+
+    if (!GetTpInfo()) {
+        ubConnStatus = UbConnStatus::TP_INFO_GETTING;
+        return;
+    }
+
+    status       = RmaConnStatus::EXCHANGEABLE;
+    ubConnStatus = UbConnStatus::JETTY_CREATED;
+}
+
+void DevUbConnection::AdvanceUbConnFromTpInfoGetting()
+{
+    if (!GetTpInfo()) {
+        return;
+    }
+    if (devUsed_) {
+        CreateJetty(devUsed_);
+        ubConnStatus = UbConnStatus::JETTY_CREATING;
+        return;
+    }
+    status       = RmaConnStatus::EXCHANGEABLE;
+    ubConnStatus = UbConnStatus::JETTY_CREATED;
+}
+
+void DevUbConnection::AdvanceUbConnFromJettyCreating()
+{
+    SetJettyInfo();
+    status       = RmaConnStatus::EXCHANGEABLE;
+    ubConnStatus = UbConnStatus::JETTY_CREATED;
+}
+
+void DevUbConnection::AdvanceUbConnFromJettyCreated()
+{
+    HCCL_INFO("[DevUbConnection][%s] status[%s] will not change, "
+              "should call ImportRmtDto to change status.",
+              __func__, status.Describe().c_str());
+}
+
+void DevUbConnection::AdvanceUbConnFromJettyImporting()
+{
+    SetImportInfo();
+
+    status       = RmaConnStatus::READY;
+    ubConnStatus = UbConnStatus::READY;
+}
+
 RmaConnStatus DevUbConnection::GetStatus()
 {
     if (!CheckRequestResult()) {
@@ -154,63 +216,21 @@ RmaConnStatus DevUbConnection::GetStatus()
     }
 
     switch (ubConnStatus) {
-        case UbConnStatus::INIT: {
-            HCCL_INFO("[DevUbConnection][%s] start, status[%s], ubConnStatus[%s].", __func__, status.Describe().c_str(),
-                      ubConnStatus.Describe().c_str());
-
-            if (devUsed_) {
-                if (!GetTpInfo()) {
-                    ubConnStatus = UbConnStatus::TP_INFO_GETTING;
-                    break;
-                }
-                CreateJetty(devUsed_);
-                ubConnStatus = UbConnStatus::JETTY_CREATING;
-                break;
-            }
-
-            SetJettyInfo();
-
-            if (!GetTpInfo()) {
-                ubConnStatus = UbConnStatus::TP_INFO_GETTING;
-                break;
-            }
-
-            status       = RmaConnStatus::EXCHANGEABLE;
-            ubConnStatus = UbConnStatus::JETTY_CREATED;
+        case UbConnStatus::INIT:
+            AdvanceUbConnFromInit();
             break;
-        }
-        case UbConnStatus::TP_INFO_GETTING: {
-            if (!GetTpInfo()) {
-                break;
-            }
-            if (devUsed_) {
-                CreateJetty(devUsed_);
-                ubConnStatus = UbConnStatus::JETTY_CREATING;
-                break;
-            }
-            status       = RmaConnStatus::EXCHANGEABLE;
-            ubConnStatus = UbConnStatus::JETTY_CREATED;
+        case UbConnStatus::TP_INFO_GETTING:
+            AdvanceUbConnFromTpInfoGetting();
             break;
-        }
-        case UbConnStatus::JETTY_CREATING: {
-            SetJettyInfo();
-            status       = RmaConnStatus::EXCHANGEABLE;
-            ubConnStatus = UbConnStatus::JETTY_CREATED;
+        case UbConnStatus::JETTY_CREATING:
+            AdvanceUbConnFromJettyCreating();
             break;
-        }
-        case UbConnStatus::JETTY_CREATED: {
-            HCCL_INFO("[DevUbConnection][%s] status[%s] will not change, "
-                      "should call ImportRmtDto to change status.",
-                      __func__, status.Describe().c_str());
+        case UbConnStatus::JETTY_CREATED:
+            AdvanceUbConnFromJettyCreated();
             break;
-        }
-        case UbConnStatus::JETTY_IMPORTING: {
-            SetImportInfo();
-
-            status       = RmaConnStatus::READY;
-            ubConnStatus = UbConnStatus::READY;
+        case UbConnStatus::JETTY_IMPORTING:
+            AdvanceUbConnFromJettyImporting();
             break;
-        }
         case UbConnStatus::READY:
             break;
         default:
