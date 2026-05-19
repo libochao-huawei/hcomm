@@ -76,6 +76,9 @@ target_compile_definitions(rs PRIVATE
 
 # 链接库
 target_link_libraries(rs PRIVATE
+    $<BUILD_INTERFACE:ascend_hal_headers>
+    $<BUILD_INTERFACE:msprof_headers>
+    $<BUILD_INTERFACE:slog_headers>
     -Wl,--no-as-needed
     c_sec
     $<$<STREQUAL:${PRODUCT_SIDE},host>:unified_dlog>
@@ -113,15 +116,7 @@ target_include_directories(rs PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/ubengine
 )
 
-if(BUILD_OPEN_PROJECT)
-    target_include_directories(rs PRIVATE
-        ${ASCEND_CANN_PACKAGE_PATH}/include/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/toolchain/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
-    )
-else()
+if(NOT BUILD_OPEN_PROJECT)
     target_include_directories(rs PRIVATE
         ${TOP_DIR}/drivers/network/tls_adp
         ${TOP_DIR}/runtime/pkg_inc/base

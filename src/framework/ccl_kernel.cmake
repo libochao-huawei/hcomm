@@ -118,26 +118,10 @@ target_include_directories(ccl_kernel PRIVATE
 
 if(BUILD_OPEN_PROJECT)
     target_include_directories(ccl_kernel PRIVATE
-        # runtime头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/
-        # mmpa头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/acl/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/mmpa/
-        # 包间接口
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/common/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
-        # driver头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/driver
         # ascendc
+        ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/
         ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/
     )
 
     target_compile_definitions(ccl_kernel PRIVATE
@@ -146,8 +130,12 @@ if(BUILD_OPEN_PROJECT)
     )
 
     target_link_libraries(ccl_kernel PRIVATE
+        $<BUILD_INTERFACE:acl_rt_headers>
+        $<BUILD_INTERFACE:ascend_hal_headers>
+        $<BUILD_INTERFACE:atrace_headers>
+        $<BUILD_INTERFACE:mmpa_headers>
+        $<BUILD_INTERFACE:runtime_headers>
         -Wl,--no-as-needed
-        ascend_hal
         c_sec
         mmpa
         ccl_kernel_plf
