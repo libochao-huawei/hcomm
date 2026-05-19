@@ -713,8 +713,8 @@ uint8_t TpMgr::CalcTaTimeout(const TpAttrInfo &tpAttrInfo)
 }
 
 static HcclResult BuildTpInfoAndCommitQosAttr(const uint32_t devPhyId, const GetTpInfoParam &param,
-    const RequestCtx &reqCtx, const struct HccpTpInfo *baseInfoPtr, const uint32_t tpListIndex, const uint32_t mappedSl,
-    TpInfo &tmpTpInfo)
+    const TpMgr::RequestCtx &reqCtx, const struct HccpTpInfo *baseInfoPtr, const uint32_t tpListIndex,
+    const uint32_t mappedSl, TpInfo &tmpTpInfo)
 {
     tmpTpInfo = TpInfo{};
     tmpTpInfo.tpHandle = baseInfoPtr[tpListIndex].tpHandle;
