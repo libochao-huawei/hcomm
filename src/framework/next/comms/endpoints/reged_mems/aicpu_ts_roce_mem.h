@@ -49,6 +49,22 @@ private:
         }
     };
 
+    // 精确重复：Add 触发 ref++
+    HcclResult RegExactDup(HcommMem mem,
+                           hccl::BufferKey<uintptr_t, u64> &tempKey,
+                           std::shared_ptr<hccl::LocalRdmaRmaBuffer> &existingBuffer,
+                           void **memHandle);
+
+    // 子集：创建虚拟 buffer 复用硬件注册
+    HcclResult RegSubset(HcommMem mem, const char *memTag,
+                         std::shared_ptr<hccl::LocalRdmaRmaBuffer> &existingBuffer,
+                         void **memHandle);
+
+    // 全新注册：构造 buffer + 硬件注册 + Init + 入树
+    HcclResult RegNew(hccl::NetDevContext *netDevCtx, HcommMem mem,
+                      hccl::BufferKey<uintptr_t, u64> &tempKey,
+                      void **memHandle);
+
     HcclResult GetParamsFromMemDesc(const void *memDesc, uint32_t descLen, EndpointDesc &endpointDesc, std::string &rdmaBlob);
     void TrackRegisteredBuffer(const std::shared_ptr<hccl::LocalRdmaRmaBuffer> &localBuffer);
     HcclResult GetOrCreateLocalRdmaRmaBuffer(hccl::NetDevContext *netDevCtx, HcommMem mem,

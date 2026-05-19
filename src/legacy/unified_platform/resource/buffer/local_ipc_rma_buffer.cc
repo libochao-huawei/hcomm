@@ -17,26 +17,36 @@ namespace Hccl {
 
 LocalIpcRmaBuffer::LocalIpcRmaBuffer(std::shared_ptr<Buffer> buf) : LocalRmaBuffer(buf, RmaType::IPC)
 {
-    HrtDevMemAlignWithPage(reinterpret_cast<void *>(buf->GetAddr()), buf->GetSize(), ipcPtr, ipcSize, ipcOffset);
-    HrtIpcSetMemoryName(ipcPtr, name, ipcSize, RTS_IPC_MEM_NAME_LEN);
+    HrtDevMemAlignWithPage(reinterpret_cast<void *>(buf->GetAddr()), buf->GetSize(), ipcPtr_, ipcSize_, ipcOffset_);
+    HrtIpcSetMemoryName(ipcPtr_, name_, ipcSize_, RTS_IPC_MEM_NAME_LEN);
+}
+
+LocalIpcRmaBuffer::LocalIpcRmaBuffer(std::shared_ptr<Buffer> buf, bool skipReg)
+    : LocalRmaBuffer(buf, RmaType::IPC)
+{
+    // Protected constructor for virtual subclass — skips HrtIpcSetMemoryName.
+    // ipcPtr_/ipcSize_/ipcOffset_ stay zero; name_ stays empty.
+    // Destructor must not call HrtIpcDestroyMemoryName for virtual buffers.
 }
 
 LocalIpcRmaBuffer::~LocalIpcRmaBuffer()
 {
-    DECTOR_TRY_CATCH("LocalIpcRmaBuffer", HrtIpcDestroyMemoryName(name));
+    if (name_[0] != '\0') {
+        DECTOR_TRY_CATCH("LocalIpcRmaBuffer", HrtIpcDestroyMemoryName(name_));
+    }
 }
 
 string LocalIpcRmaBuffer::Describe() const
 {
     return StringFormat("LocalIpcRmaBuffer[buf=%s, ipcPtr=0x%llx, ipcOffset=0x%llx, ipcSize=0x%llx, name=%s]",
-                        buf->Describe().c_str(), reinterpret_cast<uintptr_t>(ipcPtr), ipcOffset, ipcSize, name);
+                        buf->Describe().c_str(), reinterpret_cast<uintptr_t>(ipcPtr_), ipcOffset_, ipcSize_, name_);
 }
 
 std::unique_ptr<Serializable> LocalIpcRmaBuffer::GetExchangeDto()
 {
     std::unique_ptr<ExchangeIpcBufferDto> dto
-        = make_unique<ExchangeIpcBufferDto>(buf->GetAddr(), buf->GetSize(), ipcOffset, HrtDeviceGetBareTgid(), buf->GetMemTag().c_str());
-    (void)memcpy_s(dto->name, RTS_IPC_MEM_NAME_LEN, name, RTS_IPC_MEM_NAME_LEN);
+        = make_unique<ExchangeIpcBufferDto>(GetAddr(), GetSize(), ipcOffset_, HrtDeviceGetBareTgid(), buf->GetMemTag().c_str());
+    (void)memcpy_s(dto->name, RTS_IPC_MEM_NAME_LEN, name_, RTS_IPC_MEM_NAME_LEN);
     return std::unique_ptr<Serializable>(dto.release());
 }
 
@@ -47,7 +57,7 @@ void LocalIpcRmaBuffer::Grant(u32 pid)
         HCCL_INFO("pid is equal to myPid, do need to use HrtIpcSetMemoryPid grant, pid==myPid=%u", pid);
         return;
     }
-    HrtIpcSetMemoryPid(name, static_cast<s32>(pid));
+    HrtIpcSetMemoryPid(name_, static_cast<s32>(pid));
 }
 
 } // namespace Hccl

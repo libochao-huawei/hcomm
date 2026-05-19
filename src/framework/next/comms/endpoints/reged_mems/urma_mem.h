@@ -1,16 +1,16 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #ifndef URMA_MEMORY_H
 #define URMA_MEMORY_H
- 
+
 #include <memory>
 #include <vector>
 #include <string>
@@ -20,7 +20,7 @@
 #include "local_ub_rma_buffer.h"
 #include "remote_rma_buffer.h"
 #include "exchange_ub_buffer_dto.h"
- 
+
 namespace hcomm {
 /**
  * @note 职责：用于通信设备EndPoint的注册内存信息管理，支持基于RmaBufferMgr类的重叠内存的检测报错等。
@@ -29,10 +29,10 @@ class UbRegedMemMgr : public RegedMemMgr {
 public:
     using LocalUbRmaBufferMgr = hccl::RmaBufferMgr<hccl::BufferKey<uintptr_t, u64>, std::shared_ptr<Hccl::LocalUbRmaBuffer>>;
     using RemoteUbRmaBufferMgr = hccl::RmaBufferMgr<hccl::BufferKey<uintptr_t, u64>, std::shared_ptr<Hccl::RemoteUbRmaBuffer>>;
- 
+
     UbRegedMemMgr();
     ~UbRegedMemMgr() = default;
- 
+
     HcclResult RegisterMemory(HcommMem mem, const char *memTag, void **memHandle) override;
     HcclResult UnregisterMemory(void* memHandle) override;
     HcclResult MemoryExport(const EndpointDesc endpointDesc, void *memHandle, void **memDesc, uint32_t *memDescLen) override;
@@ -40,14 +40,29 @@ public:
     HcclResult MemoryUnimport(const void *memDesc, uint32_t descLen) override;
     HcclResult GetAllMemHandles(void **memHandles, uint32_t *memHandleNum) override;
     HcclResult GetMemDesc(const EndpointDesc endpointDesc, Hccl::LocalUbRmaBuffer *localUbRmaBuffer);
-    HcclResult GetParamsFromMemDesc(const void *memDesc, uint32_t descLen, 
+    HcclResult GetParamsFromMemDesc(const void *memDesc, uint32_t descLen,
                                         EndpointDesc &endpointDesc, Hccl::ExchangeUbBufferDto &dto);
- 
+
 private:
+    // 注册情况的三种子函数
+
+    // 精确重复：传入 mem 与已注册 buffer 的 addr/size 完全一致，仅对 HW 范围引用计数 +1
+    HcclResult RegExactDup(HcommMem mem,
+                           std::shared_ptr<Hccl::LocalUbRmaBuffer> &existingBuffer,
+                           void **memHandle);
+
+    // 子集：传入 mem 落在已有 HW 注册范围内 → 创建虚拟 buffer 复用硬件 token
+    HcclResult RegSubset(HcommMem mem, const char *memTag,
+                         std::shared_ptr<Hccl::LocalUbRmaBuffer> &existingBuffer,
+                         void **memHandle);
+
+    // 全新注册：构造真实 buffer，进行硬件注册，以 HW 覆盖范围作为 key 加入树
+    HcclResult RegNew(HcommMem mem, const char *memTag, void **memHandle);
+
     std::unique_ptr<LocalUbRmaBufferMgr> localUbRmaBufferMgr_{};
     std::vector<std::shared_ptr<Hccl::LocalUbRmaBuffer>> allRegisteredBuffers_;
     std::unordered_map<EndpointDesc, std::unique_ptr<RemoteUbRmaBufferMgr>> remoteUbRmaBufferMgrs_;
 };
 }
- 
+
 #endif //URMA_ENDPOINT_H
