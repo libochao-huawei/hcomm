@@ -33,10 +33,6 @@ CollComm::~CollComm()
     if (comm_ == nullptr) { /* A2/A3 CollComm是简化版本 */
         return;
     }
-    if (rankgraph_ != nullptr) {
-        delete rankgraph_;
-        rankgraph_ = nullptr;
-    }
     CollCommMgr::GetInstance()->UnRegisteCollComm(this); 
     HCCL_INFO("[CollComm][~CollComm] collComm deinit");
     // dpu的兜底上报 - 异常退出时捕获异常避免二次崩溃
@@ -80,9 +76,10 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
 
     CHK_RET(DlHalFunction::GetInstance().DlHalFunctionInit());
     if (comm_ == nullptr) { /* A2/A3 hccl::Communicator对应版本 */
-        EXECEPTION_CATCH(rankgraph_ = static_cast<RankGraph*>(rankGraph), return HCCL_E_PTR);
+        EXECEPTION_CATCH(rankgraph_ = std::shared_ptr<RankGraph>(static_cast<RankGraph*>(rankGraph)),
+            return HCCL_E_PTR);
     } else {  /* A5 Hccl::Communicator对应版本 */
-        EXECEPTION_CATCH(rankgraph_ = new RankGraphV2(rankGraph), return HCCL_E_PTR);
+        EXECEPTION_CATCH(rankgraph_ = std::make_shared<RankGraphV2>(rankGraph), return HCCL_E_PTR);
     }
     uint32_t rankNum = 0;
     CHK_PTR_NULL(rankgraph_);
@@ -105,7 +102,7 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
     }
 
     EXECEPTION_CATCH(
-        myRank_ = std::make_shared<MyRank>(binHandle, rankId_, config_, callbacks_, rankgraph_, rankIpPortMap_),
+        myRank_ = std::make_shared<MyRank>(binHandle, rankId_, config_, callbacks_, rankgraph_.get(), rankIpPortMap_),
         return HCCL_E_PTR);
     uint32_t opExpansionMode = (config != nullptr) ? config->hcclOpExpansionMode : 0;
     CHK_RET(ValidateConfig(config));
