@@ -39,6 +39,8 @@ public:
 
     HcclResult CalcResRequest(const OpParam& param, AlgResourceRequest &resourceRequest) override;
 
+    void SetWorkflowMode(HcclWorkflowMode workflowMode);
+
 protected:
     /* *************** 资源计算 *************** */
     virtual void ParseParam(const OpParam& param);
@@ -121,8 +123,6 @@ protected:
     
     HcclResult SetOpCache(const AivOpArgs& opArgs, const AivTopoArgs& topoArgs, const AivResourceArgs& resourceArgs, 
         const AivAlgArgs& algArgs, ExtraArgs& extraArgs, AivProfilingInfo& aivProfilingInfo, bool isA3CrossNode);
-
-    void SetWorkflowMode(HcclWorkflowMode workflowMode);
 
     /* ---------------以下为 protected 成员变量定义领域-------------------------- */
     std::string tag_;
