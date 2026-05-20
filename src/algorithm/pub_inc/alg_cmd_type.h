@@ -33,6 +33,7 @@ const std::map<HcclCMDType, std::string> HCOM_CMD_TYPE_STR_MAP{
     {HcclCMDType::HCCL_CMD_BATCH_WRITE, "batch_write"},
     {HcclCMDType::HCCL_CMD_BATCH_GET, "batch_get"},
     {HcclCMDType::HCCL_CMD_BATCH_PUT, "batch_put"},
+    {HcclCMDType::HCCL_CMD_LOCAL_GATHER, "local_gather"},
     {HcclCMDType::HCCL_CMD_ALL, "all"},
     {HcclCMDType::HCCL_CMD_MAX, "max"}
 };
