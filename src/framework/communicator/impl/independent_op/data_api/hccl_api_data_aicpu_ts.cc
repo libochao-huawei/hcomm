@@ -704,8 +704,18 @@ int32_t HcommBatchTransferOnThread(ThreadHandle thread, ChannelHandle channel,
     CHK_PTR_NULL(transport);
 
     HcclResult ret = transport->BatchTransferAsync(transferDescs, transferDescNum, *stream);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s] BatchTransferAsync failed.", __func__), ret);
+    if (ret != HCCL_SUCCESS) {
+        if (ret == HCCL_E_NOT_SUPPORT) {
+            HCCL_WARNING("[%s] BatchTransferAsync is not supported, "
+                         "thread[0x%llx], channel[0x%llx], transferDescNum[%u].",
+                __func__, thread, channel, transferDescNum);
+        } else {
+            HCCL_ERROR("[%s] BatchTransferAsync failed. thread[0x%llx], channel[0x%llx], transferDescNum[%u].",
+                __func__, thread, channel, transferDescNum);
+
+        }
+        return ret;
+    }
 
     HCCL_INFO("[%s] SUCCESS. transferDescNum[%u].", __func__, transferDescNum);
     return HCCL_SUCCESS;
