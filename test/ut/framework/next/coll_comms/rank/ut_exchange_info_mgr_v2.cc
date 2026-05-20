@@ -30,6 +30,10 @@ protected:
     virtual void SetUp()
     {
         std::cout << "A Test case in ExchangeInfoMgrV2Test SetUP" << std::endl;
+        rankIpPortMap = std::make_shared<std::unordered_map<u32, std::unordered_map<Hccl::IpAddress, u32>>>();
+        (*rankIpPortMap)[0][Hccl::IpAddress("1.0.0.0")] = 16666;
+        (*rankIpPortMap)[1][Hccl::IpAddress("2.0.0.0")] = 16666;
+        (*rankIpPortMap)[2][Hccl::IpAddress("0.0.0.0")] = 16666;
     }
 
     virtual void TearDown()
@@ -37,6 +41,8 @@ protected:
         GlobalMockObject::verify();
         std::cout << "A Test case in ExchangeInfoMgrV2Test TearDown" << std::endl;
     }
+
+    Hccl::RankIpPortMapPtr rankIpPortMap;
 };
 
 void InitCollComm(std::shared_ptr<hccl::hcclComm> hcclCommPtr)
