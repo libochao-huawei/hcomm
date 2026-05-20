@@ -139,7 +139,7 @@ void TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(s32 streamI
     if (deviceLogicId >= MAX_MODULE_DEVICE_NUM_V2) {
         HCCL_ERROR("[RegisterGetAicpuTaskExceptionCallBack] deviceLogicId[%u] out of range, max is %u",
             deviceLogicId, MAX_MODULE_DEVICE_NUM_V2 - 1);
-       return;
+        return;
     }
     lock_guard<mutex> lock(g_communicatorCallbackMapMutexV2);
     g_communicatorCallbackMapV2[deviceLogicId][streamId] = p1;
