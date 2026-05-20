@@ -203,7 +203,7 @@ HcclResult AicpuTsUboeChannel::BuildBuffer(std::vector<std::shared_ptr<Hccl::Buf
         commonRes_.bufferVec.push_back(bufferPtr.get());
         localRmaBuffers_.push_back(std::move(bufferPtr));
     }
-    CHK_RET(FillTagVec(commonRes_.bufferVec, localMemTag_));
+    CHK_RET(FillTagVec(commonRes_.bufferVec, localUserMemTag_));
 
     return HCCL_SUCCESS;
 }
@@ -269,13 +269,13 @@ HcclResult AicpuTsUboeChannel::GetRemoteMems(CommMem **remoteMem, uint32_t *memN
     auto cacheBuilder = [](Hccl::RemoteMemCtx<std::unique_ptr<Hccl::RemoteUbRmaBuffer>> &remoteMemCtx, uint32_t index) {
         auto &rmtBuffer = remoteMemCtx.rmtBufferVec[index];
         CHK_PTR_NULL(rmtBuffer);
-        remoteMemCtx.remoteMems[index].type = rmtBuffer->GetMemType();
-        remoteMemCtx.remoteMems[index].addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
-        remoteMemCtx.remoteMems[index].size = rmtBuffer->GetSize();
+        remoteMemCtx.remoteUserMems[index].type = rmtBuffer->GetMemType();
+        remoteMemCtx.remoteUserMems[index].addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
+        remoteMemCtx.remoteUserMems[index].size = rmtBuffer->GetSize();
         return HCCL_SUCCESS;
     };
     Hccl::RemoteMemCtx<std::unique_ptr<Hccl::RemoteUbRmaBuffer>> remoteMemCtx{
-        memCount, cacheValid_, rmtBufferVec_, remoteMemTag_, remoteMems_, tagCopies_, tagPointers_,
+        memCount, cacheValid_, rmtBufferVec_, remoteUserMemTag_, remoteUserMems_, tagCopies_, tagPointers_,
         cacheBuilder, remoteMem, memNum, memTag};
     CHK_RET(GetRemoteUserMem(remoteMemCtx));
     return HCCL_SUCCESS;
@@ -414,7 +414,7 @@ void AicpuTsUboeChannel::SendDataSize()
 
     Hccl::BinaryStream binaryStream;
     NotifyVecPack(binaryStream);
-    BufferVecPack(binaryStream, commonRes_.bufferVec, localMemTag_);
+    BufferVecPack(binaryStream, commonRes_.bufferVec, localUserMemTag_);
     ConnVecPack(binaryStream);
 
     binaryStream.Dump(sendData_);
@@ -525,7 +525,7 @@ void AicpuTsUboeChannel::RmtBufferVecUnpackProc(u32 locNum, Hccl::BinaryStream &
             }
         }
     }
-    remoteMemTag_.insert(remoteMemTag_.end(), rmtMemTagTemp_.begin(), rmtMemTagTemp_.end());
+    remoteUserMemTag_.insert(remoteUserMemTag_.end(), rmtMemTagTemp_.begin(), rmtMemTagTemp_.end());
 }
 
 bool AicpuTsUboeChannel::ConnVecUnpackProc(Hccl::BinaryStream &binaryStream)
