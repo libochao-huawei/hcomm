@@ -24,6 +24,7 @@
 #include "hdc_pub.h"
 #include "rank_graph.h"
 #include "orion_adapter_hccp.h"
+#include "coll_comm_config_consistency.h"
 
 #include "ccu_types.h"
 
@@ -51,6 +52,8 @@ public:
     CcuInsHandle GetCcuInstance() {
         return ccuInsHandle_;
     }
+
+    CollCommConfigConsistency &GetCollCommConfigConsistency();
 
     HcclResult CreateChannels(CommEngine engine, const std::string &commTag, 
         const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle *channels);
@@ -81,6 +84,31 @@ private:
     HcclResult ConfigSqDepthByExpansionMode(CommEngine engine, HcommChannelDesc& hcommDesc);
     HcclResult DestroyNewChannels(CommEngine engine, const HcclChannelDesc* channelDescs);
 
+    HcclResult BatchExchangeAndCheckConsistency(
+        const HcclChannelDesc* channelDescs,
+        const std::vector<HcommChannelDesc> &hcommDescs,
+        uint32_t channelNum,
+        const std::string &commTag);
+    HcclResult ExchangeUserInfo(
+        const std::vector<Hccl::Socket*> &sockets,
+        const std::vector<u32> &remoteRanks,
+        const std::vector<HcommSocketRole> &roles);
+    HcclResult BatchExchangeFixedData(
+        const std::vector<Hccl::Socket*> &sockets,
+        const std::vector<u32> &remoteRanks,
+        const std::vector<HcommSocketRole> &roles,
+        const u8 *sendData, u32 sendLen,
+        u8 *recvData, u32 recvLen);
+    HcclResult WaitAllAsyncComplete(const std::vector<Hccl::Socket*> &sockets,
+        const std::vector<u32> &remoteRanks);
+    HcclResult WaitActiveAsyncComplete(
+        const std::vector<Hccl::Socket*> &sockets,
+        const std::vector<u32> &remoteRanks,
+        const std::vector<HcommSocketRole> &roles,
+        const std::vector<u32> &remoteExchangeInfoLens,
+        u32 localExchangeInfoLen,
+        bool isFirstPass);
+
     aclrtBinHandle binHandle_{nullptr};
     uint32_t rankId_{};
     CommConfig config_{};
@@ -109,6 +137,8 @@ private:
     HcclResult GetDevicePortInternal(uint32_t rank, uint32_t *devPort);
 
     Hccl::RankIpPortMapPtr rankIpPortMap_;
+
+    CollCommConfigConsistency collCommConfigConsistency_;
 };
 
 } // namespace hccl

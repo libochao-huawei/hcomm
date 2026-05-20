@@ -131,7 +131,7 @@ void RankGraphBuilder::AddPeer2NetLink(const u32 netLayer,  const string &netIns
         // 将rank插入到当前netInstance对应的topoInstance中
         tempNetInsts_[netLayer][netInstId]->UpdateTopoInst(topoInstId, topoType, rankId);
 
-        HCCL_RUN_INFO("[RankGraphBuilder][AddPeer2NetLink] Add Peer2NetLink Net2PeerLink success. level[%u] "
+        HCCL_INFO("[RankGraphBuilder][AddPeer2NetLink] Add Peer2NetLink Net2PeerLink success. level[%u] "
                    "netInstId[%s] rankId[%u] planeId[%s] AddrStr[%s],topoInstId[%u],topoType[%u]",
             netLayer,  netInstId.c_str(), rankId, fabNode->GetPlaneId().c_str(), addrInfo.addr.Describe().c_str(),
             topoInstId, topoType);
