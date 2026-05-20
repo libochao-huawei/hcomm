@@ -295,19 +295,33 @@ HcclResult RankGraph::GetNetInstanceList(const u32 netLayer, vector<u32> &instSi
 
 void RankGraph::GetTopoInstsByLayer(const u32 netLayer, std::vector<u32>& topoInsts, u32& topoInstNum) const
 {
+    HCCL_INFO("[subRankGraph][RankGraph::GetTopoInstsByLayer] enter this[%p], netLayer[%u], myRank[%d]",
+              static_cast<const void *>(this), netLayer, myRank_);
     auto* netInstance = GetNetInstanceByRankId(netLayer, myRank_);
+    HCCL_INFO("[subRankGraph][RankGraph::GetTopoInstsByLayer] netInstance[%p]",
+              static_cast<const void *>(netInstance));
     netInstance->GetTopoInstsByLayer(topoInsts, topoInstNum);
+    HCCL_INFO("[subRankGraph][RankGraph::GetTopoInstsByLayer] exit netLayer[%u], topoInstNum[%u]", netLayer,
+              topoInstNum);
 }
 
 HcclResult RankGraph::GetTopoType(const u32 netLayer, const u32 topoInstId, TopoType &topoType) const
 {
+    HCCL_INFO("[subRankGraph][RankGraph::GetTopoType] enter this[%p], netLayer[%u], topoInstId[%u], myRank[%d]",
+              static_cast<const void *>(this), netLayer, topoInstId, myRank_);
     auto *netInstance = GetNetInstanceByRankId(netLayer, myRank_);
+    HCCL_INFO("[subRankGraph][RankGraph::GetTopoType] netInstance[%p], netLayer[%u], topoInstId[%u]",
+              static_cast<const void *>(netInstance), netLayer, topoInstId);
 
     auto ret = netInstance->GetTopoType(topoInstId, topoType);
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[%s] Failed to GetTopoType ret[%d]", __func__, ret);
+        HCCL_INFO("[subRankGraph][RankGraph::GetTopoType] exit failed netLayer[%u], topoInstId[%u], ret[%d]",
+                  netLayer, topoInstId, ret);
         return ret;
     }
+    HCCL_INFO("[subRankGraph][RankGraph::GetTopoType] exit success netLayer[%u], topoInstId[%u], topoType[%d]",
+              netLayer, topoInstId, topoType);
     return HCCL_SUCCESS;
 }
 
@@ -532,6 +546,13 @@ void GetNewNodeInfo(u32 layer, RankId newRankId, const NetInstance::Link &oldLin
                     RankId2PeerMap &tmpPeers, shared_ptr<NetInstance::Node> &newNode,
                     shared_ptr<NetInstance::ConnInterface> &newIface, bool isSource)
 {
+    HCCL_INFO("[subRankGraph][GetNewNodeInfo] enter layer[%u], newRankId[%d], isSource[%d], oldLinkType[%s], "
+              "oldLinkHop[%u], oldSourceNode[%p], oldTargetNode[%p], oldSourceIface[%p], oldTargetIface[%p], "
+              "newNetInstance[%p], tmpPeersSize[%zu]",
+              layer, newRankId, isSource, oldLink.GetType().Describe().c_str(), oldLink.GetHop(),
+              static_cast<void *>(oldLink.GetSourceNode().get()), static_cast<void *>(oldLink.GetTargetNode().get()),
+              static_cast<void *>(oldLink.GetSourceIface().get()), static_cast<void *>(oldLink.GetTargetIface().get()),
+              static_cast<void *>(newNetInstance.get()), tmpPeers.size());
     shared_ptr<NetInstance::Node> oldNode;
     shared_ptr<NetInstance::ConnInterface>  oldIface;
     if (isSource) {
@@ -542,30 +563,57 @@ void GetNewNodeInfo(u32 layer, RankId newRankId, const NetInstance::Link &oldLin
         oldIface = oldLink.GetTargetIface();
     }
 
+    HCCL_INFO("[subRankGraph][GetNewNodeInfo] selected oldNode[%p], oldIface[%p], tmpPeersHasRank[%d]",
+              static_cast<void *>(oldNode.get()), static_cast<void *>(oldIface.get()),
+              static_cast<int>(tmpPeers.find(newRankId) != tmpPeers.end()));
     NetInstance::Node::NodeType type = oldNode->GetType();
     if (type == NetInstance::Node::NodeType::PEER) {
+        HCCL_INFO("[subRankGraph][GetNewNodeInfo] handle PEER node, layer[%u], newRankId[%d], oldIface[%p]",
+                  layer, newRankId, static_cast<void *>(oldIface.get()));
         newIface = oldIface;
         newNode = tmpPeers.at(newRankId);
         tmpPeers.at(newRankId)->AddConnInterface(layer, newIface);
     } else if (type == NetInstance::Node::NodeType::FABRIC) {
+        HCCL_INFO("[subRankGraph][GetNewNodeInfo] handle FABRIC node, layer[%u], newRankId[%d], oldNodeId[%llu]",
+                  layer, newRankId, oldNode->GetNodeId());
         newIface = nullptr;
         newNode = oldNode;
         if (!newNetInstance->HasNode(newNode->GetNodeId())) {
+            HCCL_INFO("[subRankGraph][GetNewNodeInfo] add fabric node to newNetInstance, nodeId[%llu], "
+                      "newNetInstance[%p]",
+                      newNode->GetNodeId(), static_cast<void *>(newNetInstance.get()));
             newNetInstance->AddNode(newNode);
         }
     } else {
+        HCCL_INFO("[subRankGraph][GetNewNodeInfo] exit failed unsupported node type, layer[%u], newRankId[%d], "
+                  "isSource[%d], nodeType[%s]",
+                  layer, newRankId, isSource, type.Describe().c_str());
         THROW<NotSupportException>(
             StringFormat("[CreateSubNetInstances][GetNewNodeInfo] newRankId[%d] oldLink Node isSource[%d] type[%s] "
                          " is not supported.",
                          newRankId, isSource, type.Describe().c_str()));
     }
+    HCCL_INFO("[subRankGraph][GetNewNodeInfo] exit layer[%u], newRankId[%d], isSource[%d], nodeType[%s], "
+              "newNode[%p], newIface[%p]",
+              layer, newRankId, isSource, type.Describe().c_str(), static_cast<void *>(newNode.get()),
+              static_cast<void *>(newIface.get()));
 }
 
 void AddNewLink(u32 layer, const NetInstance::Link &oldLink, RankId srcNewRankId, RankId dstNewRankId,
                 shared_ptr<NetInstance> &newNetInstance, RankId2PeerMap &tmpPeers)
 {
+    HCCL_INFO("[subRankGraph][AddNewLink] enter layer[%u], srcNewRankId[%d], dstNewRankId[%d], oldLinkType[%s], "
+              "oldLinkHop[%u], oldSourceNode[%p], oldTargetNode[%p], oldSourceIface[%p], oldTargetIface[%p], "
+              "newNetInstance[%p], tmpPeersSize[%zu]",
+              layer, srcNewRankId, dstNewRankId, oldLink.GetType().Describe().c_str(), oldLink.GetHop(),
+              static_cast<void *>(oldLink.GetSourceNode().get()), static_cast<void *>(oldLink.GetTargetNode().get()),
+              static_cast<void *>(oldLink.GetSourceIface().get()), static_cast<void *>(oldLink.GetTargetIface().get()),
+              static_cast<void *>(newNetInstance.get()), tmpPeers.size());
     // 不添加绕路link
     if (oldLink.GetHop() > 1 && oldLink.GetType() != LinkType::PEER2NET) {
+        HCCL_INFO("[subRankGraph][AddNewLink] exit skip detour link, layer[%u], srcNewRankId[%d], dstNewRankId[%d], "
+                  "oldLinkType[%s], oldLinkHop[%u]",
+                  layer, srcNewRankId, dstNewRankId, oldLink.GetType().Describe().c_str(), oldLink.GetHop());
         return;
     }
 
@@ -575,48 +623,102 @@ void AddNewLink(u32 layer, const NetInstance::Link &oldLink, RankId srcNewRankId
     shared_ptr<NetInstance::Node> newTargetNode;
     // oldLink有fabicNode需要先addFabricNode
     // SourceNode
+    HCCL_INFO("[subRankGraph][AddNewLink] before GetNewNodeInfo source, layer[%u], srcNewRankId[%d]", layer,
+              srcNewRankId);
     GetNewNodeInfo(layer, srcNewRankId, oldLink, newNetInstance, tmpPeers, newSourceNode, newSourceIface, true);
+    HCCL_INFO("[subRankGraph][AddNewLink] after GetNewNodeInfo source, newSourceNode[%p], newSourceIface[%p]",
+              static_cast<void *>(newSourceNode.get()), static_cast<void *>(newSourceIface.get()));
     // TargetNode
+    HCCL_INFO("[subRankGraph][AddNewLink] before GetNewNodeInfo target, layer[%u], dstNewRankId[%d]", layer,
+              dstNewRankId);
     GetNewNodeInfo(layer, dstNewRankId, oldLink, newNetInstance, tmpPeers, newTargetNode, newTargetIface, false);
+    HCCL_INFO("[subRankGraph][AddNewLink] after GetNewNodeInfo target, newTargetNode[%p], newTargetIface[%p]",
+              static_cast<void *>(newTargetNode.get()), static_cast<void *>(newTargetIface.get()));
     // link
     shared_ptr<NetInstance::Link> link
         = make_shared<NetInstance::Link>(newSourceNode, newTargetNode, newSourceIface, newTargetIface, oldLink.GetType(),
                                       oldLink.GetLinkProtocols(), oldLink.GetLinkDirection(), oldLink.GetHop());
 
+    HCCL_INFO("[subRankGraph][AddNewLink] before AddLink, link[%p], newSourceNode[%p], newTargetNode[%p], "
+              "newSourceIface[%p], newTargetIface[%p]",
+              static_cast<void *>(link.get()), static_cast<void *>(newSourceNode.get()),
+              static_cast<void *>(newTargetNode.get()), static_cast<void *>(newSourceIface.get()),
+              static_cast<void *>(newTargetIface.get()));
     newNetInstance->AddLink(link);
+    HCCL_INFO("[subRankGraph][AddNewLink] after AddLink, link[%p]", static_cast<void *>(link.get()));
     if (newSourceIface != nullptr) {
-        newNetInstance->UpdateTopoInst(newSourceIface->GetTopoInstId(), newSourceIface->GetTopoType(), srcNewRankId);
+        HCCL_INFO("[subRankGraph][AddNewLink] source iface before GetTopoInstId, iface[%p], rankId[%d]",
+                  static_cast<void *>(newSourceIface.get()), srcNewRankId);
+        u32 srcTopoInstId = newSourceIface->GetTopoInstId();
+        HCCL_INFO("[subRankGraph][AddNewLink] source iface before GetTopoType, iface[%p], topoInstId[%u], rankId[%d]",
+                  static_cast<void *>(newSourceIface.get()), srcTopoInstId, srcNewRankId);
+        TopoType srcTopoType = newSourceIface->GetTopoType();
+        HCCL_INFO("[subRankGraph][AddNewLink] source iface after GetTopoType, iface[%p], topoInstId[%u], topoType[%d], "
+                  "rankId[%d]",
+                  static_cast<void *>(newSourceIface.get()), srcTopoInstId, srcTopoType, srcNewRankId);
+        newNetInstance->UpdateTopoInst(srcTopoInstId, srcTopoType, srcNewRankId);
+        HCCL_INFO("[subRankGraph][AddNewLink] source iface after UpdateTopoInst, topoInstId[%u], topoType[%d], "
+                  "rankId[%d]",
+                  srcTopoInstId, srcTopoType, srcNewRankId);
+    } else {
+        HCCL_INFO("[subRankGraph][AddNewLink] source iface is nullptr, skip UpdateTopoInst, rankId[%d]", srcNewRankId);
     }
     if (newTargetIface != nullptr) {
-        newNetInstance->UpdateTopoInst(newTargetIface->GetTopoInstId(), newTargetIface->GetTopoType(), dstNewRankId);
+        HCCL_INFO("[subRankGraph][AddNewLink] target iface before GetTopoInstId, iface[%p], rankId[%d]",
+                  static_cast<void *>(newTargetIface.get()), dstNewRankId);
+        u32 dstTopoInstId = newTargetIface->GetTopoInstId();
+        HCCL_INFO("[subRankGraph][AddNewLink] target iface before GetTopoType, iface[%p], topoInstId[%u], rankId[%d]",
+                  static_cast<void *>(newTargetIface.get()), dstTopoInstId, dstNewRankId);
+        TopoType dstTopoType = newTargetIface->GetTopoType();
+        HCCL_INFO("[subRankGraph][AddNewLink] target iface after GetTopoType, iface[%p], topoInstId[%u], topoType[%d], "
+                  "rankId[%d]",
+                  static_cast<void *>(newTargetIface.get()), dstTopoInstId, dstTopoType, dstNewRankId);
+        newNetInstance->UpdateTopoInst(dstTopoInstId, dstTopoType, dstNewRankId);
+        HCCL_INFO("[subRankGraph][AddNewLink] target iface after UpdateTopoInst, topoInstId[%u], topoType[%d], "
+                  "rankId[%d]",
+                  dstTopoInstId, dstTopoType, dstNewRankId);
+    } else {
+        HCCL_INFO("[subRankGraph][AddNewLink] target iface is nullptr, skip UpdateTopoInst, rankId[%d]", dstNewRankId);
     }
     
     for (const auto&pair: newNetInstance->topoInsts_){
         uint32_t topoInstId = pair.first;
+        HCCL_INFO("[subRankGraph][AddNewLink] inspect topoInst, topoInstId[%u], topoInstPtr[%p]",
+                  topoInstId, static_cast<void *>(pair.second.get()));
         if(pair.second==nullptr){
             THROW<NullPtrException>(StringFormat("[SubRankGraph][AddNewLink] topoInstId %u has no TopoInst", topoInstId));
         }
         auto topoType = pair.second->topoType;
-        if (UNLIKELY(HcclCheckLogLevel(DLOG_DEBUG))) {
-            HCCL_DEBUG("[SubRankGraph] topoInstId[%u] topoType[%d]", topoInstId, topoType);
-        }
+        HCCL_INFO("[subRankGraph][AddNewLink] topoInstId[%u] topoType[%d]", topoInstId, topoType);
     }
     HCCL_DEBUG("[RankGraph][AddNewLink] srcNewRankId[%d] dstNewRankId[%d] newLink[%s]", srcNewRankId, dstNewRankId,
                link->Describe().c_str());
+    HCCL_INFO("[subRankGraph][AddNewLink] exit success layer[%u], srcNewRankId[%d], dstNewRankId[%d], link[%p]",
+              layer, srcNewRankId, dstNewRankId, static_cast<void *>(link.get()));
 }
 
 void AddGroupLinks(const vector<RankId> &rankIds, const NetInstance *oldNetInstance, shared_ptr<NetInstance> &newNetInstance,
                    RankId2PeerMap &tmpPeers)
 {
+    HCCL_INFO("[subRankGraph][AddGroupLinks] enter rankIdsSize[%zu], oldNetInstance[%p], newNetInstance[%p], "
+              "tmpPeersSize[%zu]",
+              rankIds.size(), static_cast<const void *>(oldNetInstance), static_cast<void *>(newNetInstance.get()),
+              tmpPeers.size());
     set<RankId> newRankIds = newNetInstance->GetRankIds();
     u32 layer = newNetInstance->GetNetLayer();
+    HCCL_INFO("[subRankGraph][AddGroupLinks] resolved newNetInstance, layer[%u], newRankIdsSize[%zu]",
+              layer, newRankIds.size());
     if (oldNetInstance == nullptr) {
+        HCCL_INFO("[subRankGraph][AddGroupLinks] exit failed, oldNetInstance is nullptr, layer[%u]", layer);
         THROW<NullPtrException>(StringFormat("[AddGroupLinks]oldNetInstance is nullptr"));
     }
     if (newRankIds.size() == 1) { 
          // 子通信域单卡场景直接返回1DMESH 
          RankId singleId = *newRankIds.begin(); 
+         HCCL_INFO("[subRankGraph][AddGroupLinks] single rank branch before UpdateTopoInst, layer[%u], singleId[%d]",
+                   layer, singleId);
          newNetInstance->UpdateTopoInst(0, TopoType::MESH_1D, singleId); 
+         HCCL_INFO("[subRankGraph][AddGroupLinks] exit single rank branch, layer[%u], singleId[%d]", layer, singleId);
          return; 
      }
     for (RankId srcRankId : newRankIds) {
@@ -625,14 +727,33 @@ void AddGroupLinks(const vector<RankId> &rankIds, const NetInstance *oldNetInsta
                 continue;
             }
             // 对oldNetInstance中的每一条Link, 创建新的Link添加到newNetInstance
+            HCCL_INFO("[subRankGraph][AddGroupLinks] before GetPaths, layer[%u], srcSubRankId[%d], "
+                      "dstSubRankId[%d], "
+                      "srcOldRankId[%d], dstOldRankId[%d]",
+                      layer, srcRankId, dstRankId, rankIds[srcRankId], rankIds[dstRankId]);
             vector<NetInstance::Path> oldPaths = oldNetInstance->GetPaths(rankIds[srcRankId], rankIds[dstRankId]);
+            HCCL_INFO("[subRankGraph][AddGroupLinks] after GetPaths, layer[%u], srcSubRankId[%d], dstSubRankId[%d], "
+                      "oldPathsSize[%zu]",
+                      layer, srcRankId, dstRankId, oldPaths.size());
+            u32 pathIdx = 0;
             for (auto &oldPath : oldPaths) {
+                u32 linkIdx = 0;
                 for (auto &oldLink : oldPath.links) {
+                    HCCL_INFO("[subRankGraph][AddGroupLinks] before AddNewLink, layer[%u], srcSubRankId[%d], "
+                              "dstSubRankId[%d], pathIdx[%u], linkIdx[%u], oldLinkType[%s], oldLinkHop[%u]",
+                              layer, srcRankId, dstRankId, pathIdx, linkIdx, oldLink.GetType().Describe().c_str(),
+                              oldLink.GetHop());
                     AddNewLink(layer, oldLink, srcRankId, dstRankId, newNetInstance, tmpPeers);
+                    HCCL_INFO("[subRankGraph][AddGroupLinks] after AddNewLink, layer[%u], srcSubRankId[%d], "
+                              "dstSubRankId[%d], pathIdx[%u], linkIdx[%u]",
+                              layer, srcRankId, dstRankId, pathIdx, linkIdx);
+                    ++linkIdx;
                 }
+                ++pathIdx;
             }
         }
     }
+    HCCL_INFO("[subRankGraph][AddGroupLinks] exit success, layer[%u]", layer);
 }
 
 void RankGraph::AddSubPeers(const std::vector<RankId> &rankIds, RankGraph *subRankGraph, RankId2PeerMap &peers) const

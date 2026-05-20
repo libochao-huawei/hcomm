@@ -121,8 +121,13 @@ void NetInstance::AddFabric(const shared_ptr<NetInstance::Fabric> &fabric)
 
 void NetInstance::AddLink(const shared_ptr<NetInstance::Link>& link)
 {
+    HCCL_INFO("[subRankGraph][NetInstance::AddLink] enter this[%p], link[%p], netLayer[%u], netInstId[%s]",
+              static_cast<void *>(this), static_cast<void *>(link.get()), netLayer, netInstId.c_str());
     NodeId srcNodeId = link->GetSourceNode()->GetNodeId();
     NodeId dstNodeId = link->GetTargetNode()->GetNodeId();
+    HCCL_INFO("[subRankGraph][NetInstance::AddLink] resolved link nodes, srcNodeId[%llu], dstNodeId[%llu], "
+              "linkType[%s], hop[%u]",
+              srcNodeId, dstNodeId, link->GetType().Describe().c_str(), link->GetHop());
 
     bool hasLink = false;
     vGraph.TraverseEdge(srcNodeId, dstNodeId, [&](shared_ptr<NetInstance::Link> edge) {
@@ -136,12 +141,16 @@ void NetInstance::AddLink(const shared_ptr<NetInstance::Link>& link)
         HCCL_WARNING("[NetInstance::AddLink] failed to add %s to %s, "
                      "the fabric group already has the same link.",
                      link->Describe().c_str(), this->Describe().c_str());
+        HCCL_INFO("[subRankGraph][NetInstance::AddLink] exit duplicate link, srcNodeId[%llu], dstNodeId[%llu]",
+                  srcNodeId, dstNodeId);
         return;
     }
 
     vGraph.AddEdge(srcNodeId, dstNodeId, link);
 
     HCCL_DEBUG("[NetInstance::AddLink] add %s to %s", link->Describe().c_str(), this->Describe().c_str());
+    HCCL_INFO("[subRankGraph][NetInstance::AddLink] exit success, srcNodeId[%llu], dstNodeId[%llu]", srcNodeId,
+              dstNodeId);
 }
 
 void NetInstance::DeleteLink(const NodeId srcNodeId, const NodeId dstNodeId)
@@ -155,8 +164,13 @@ void NetInstance::UpdateTopoInst(u32 topoInstId, TopoType topoType, RankId rankI
 {
     auto it = topoInsts_.find(topoInstId);
     if (it != topoInsts_.end()) {
+        HCCL_INFO("[subRankGraph][NetInstance::UpdateTopoInst] found existing topoInst, topoInstId[%u], "
+                  "topoInstPtr[%p]",
+                  topoInstId, static_cast<void *>(it->second.get()));
         TopoInstance& existingInst = *it->second;
         existingInst.ranks.insert(rankId);
+        HCCL_INFO("[subRankGraph][NetInstance::UpdateTopoInst] exit update existing, topoInstId[%u], ranksSize[%zu]",
+                  topoInstId, existingInst.ranks.size());
     } else {
         // 创建新的TopoInstance
         TopoInstance newInst;
@@ -164,6 +178,9 @@ void NetInstance::UpdateTopoInst(u32 topoInstId, TopoType topoType, RankId rankI
         newInst.topoType = topoType;
         newInst.ranks.insert(rankId);
         topoInsts_.emplace(topoInstId, std::make_shared<TopoInstance>(std::move(newInst)));
+        HCCL_INFO("[subRankGraph][NetInstance::UpdateTopoInst] exit create new, topoInstId[%u], topoType[%d], "
+                  "topoInstsSize[%zu]",
+                  topoInstId, topoType, topoInsts_.size());
     }
 }
 
@@ -602,12 +619,22 @@ u32 NetInstance::ConnInterface::GetLocalDieId() const
 
 TopoType NetInstance::ConnInterface::GetTopoType() const
 {
-    return topoType;
+    HCCL_INFO("[subRankGraph][NetInstance::ConnInterface::GetTopoType] enter this[%p]",
+              static_cast<const void *>(this));
+    TopoType ret = topoType;
+    HCCL_INFO("[subRankGraph][NetInstance::ConnInterface::GetTopoType] exit this[%p], topoInstId[%u], topoType[%d]",
+              static_cast<const void *>(this), topoInstId, ret);
+    return ret;
 }
 
 u32 NetInstance::ConnInterface::GetTopoInstId() const
 {
-    return topoInstId;
+    HCCL_INFO("[subRankGraph][NetInstance::ConnInterface::GetTopoInstId] enter this[%p]",
+              static_cast<const void *>(this));
+    u32 ret = topoInstId;
+    HCCL_INFO("[subRankGraph][NetInstance::ConnInterface::GetTopoInstId] exit this[%p], topoInstId[%u], topoType[%d]",
+              static_cast<const void *>(this), ret, topoType);
+    return ret;
 }
 
 std::string NetInstance::ConnInterface::Describe() const
