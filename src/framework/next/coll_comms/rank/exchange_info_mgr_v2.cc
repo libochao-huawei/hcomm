@@ -60,7 +60,7 @@ HcclResult ExchangeInfoMgrV2::ExchangeUserInfo(
     const std::vector<Hccl::Socket*> &sockets,
     const std::vector<u32> &remoteRanks,
     const std::vector<HcommSocketRole> &roles,
-    CollCommConfigConsistency collCommConfigConsistency)
+    const CollCommConfigConsistency &collCommConfigConsistency)
 {
     u32 localExchangeInfoLen = collCommConfigConsistency.GetExchangeInfoLen();
     if (localExchangeInfoLen == 0) {
