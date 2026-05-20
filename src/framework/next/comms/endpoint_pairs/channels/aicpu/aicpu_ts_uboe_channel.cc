@@ -278,7 +278,7 @@ HcclResult AicpuTsUboeChannel::GetRemoteMems(HcclMem **remoteMem, uint32_t *memN
     Hccl::RemoteMemCtx<std::unique_ptr<Hccl::RemoteUbRmaBuffer>> remoteMemCtx{
         userMemCount, cacheValid_, rmtBufferVec_, remoteUserMemTag_, remoteUserMems_, tagCopies_, tagPointers_,
         cacheBuilder, remoteMem, memNum, memTag};
-    CHK_RET(GetRemoteUserMem(remoteMemCtx));
+    CHK_RET(Hccl::GetRemoteUserMem(remoteMemCtx));
     return HCCL_SUCCESS;
 }
 
