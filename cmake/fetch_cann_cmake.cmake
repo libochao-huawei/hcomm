@@ -15,7 +15,7 @@ if(NOT PROJECT_SOURCE_DIR)
     else()
         include(FetchContent)
 
-        set(CANN_CMAKE_TAG "master-013")
+        set(CANN_CMAKE_TAG "20260519-update-find-ascend-hal")
         if(CANN_3RD_LIB_PATH AND EXISTS "${CANN_3RD_LIB_PATH}/cmake-${CANN_CMAKE_TAG}.tar.gz")
             FetchContent_Declare(
                 cann-cmake
@@ -25,7 +25,7 @@ if(NOT PROJECT_SOURCE_DIR)
         else()
             FetchContent_Declare(
                 cann-cmake
-                GIT_REPOSITORY https://gitcode.com/cann/cmake.git
+                GIT_REPOSITORY https://gitcode.com/zhengfeiteng/cmake.git
                 GIT_TAG        ${CANN_CMAKE_TAG}
                 GIT_SHALLOW    TRUE
             )
