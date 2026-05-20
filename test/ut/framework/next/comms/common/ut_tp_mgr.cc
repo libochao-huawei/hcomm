@@ -170,6 +170,19 @@ TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_Uboe_WithQos_Expect_Success)
     EXPECT_EQ(PollGetTpInfo(mgr, param, tpInfo), HCCL_SUCCESS);
 }
 
+TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_Uboe_EightTp_DynamicSl012_Qos0_Expect_LastTp_Sl2)
+{
+    MOCKER(RaGetTpInfoListAsync).stubs().will(invoke(StubRaGetTpInfoListAsyncUboeEight));
+    MOCKER(RaGetTpAttrAsync).stubs().will(invoke(StubRaGetTpAttrAsyncUboe));
+
+    TpMgr &mgr = TpMgr::GetInstance(0);
+    const GetTpInfoParam param = MakeParam("10.10.11.1", "10.10.11.2", TpProtocol::UBOE, 0U);
+    TpInfo tpInfo{};
+    ASSERT_EQ(PollGetTpInfo(mgr, param, tpInfo), HCCL_SUCCESS);
+    EXPECT_EQ(tpInfo.tpHandle, 0x107ULL);
+    EXPECT_EQ(tpInfo.mappedJettyPriority, 2U);
+}
+
 TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_Uboe_EightTp_Sl789_Qos0_Expect_LastTp_Sl9)
 {
     MOCKER(RaGetTpInfoListAsync).stubs().will(invoke(StubRaGetTpInfoListAsyncUboeEight));

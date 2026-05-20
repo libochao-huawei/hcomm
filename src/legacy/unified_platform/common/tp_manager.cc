@@ -74,19 +74,42 @@ static uint16_t ReadSlAvailableMask16(const struct TpAttr &attr)
     return static_cast<uint16_t>(attr.slBitmap);
 }
 
-constexpr uint16_t kUboeSl789Mask = static_cast<uint16_t>((1U << 7U) | (1U << 8U) | (1U << 9U));
 constexpr uint32_t kUboeEightTpPolicyCount = 8U;
 
-static bool ValidateUboeSl789Mask(uint16_t slMask)
+static uint32_t ResolveSlAvailableCntForPolicy(uint16_t slMask, uint32_t slLevelCount)
 {
-    if (slMask == kUboeSl789Mask) {
-        return true;
+    uint32_t slAvailableCnt = CalSlAvailableCnt(slMask);
+    if (slLevelCount != 0U) {
+        slAvailableCnt = std::min(slLevelCount, slAvailableCnt);
     }
-    if (CalSlAvailableCnt(slMask) != 3U) {
-        return false;
+    return slAvailableCnt;
+}
+
+static uint32_t MapUboeEightTpSlFromMask(uint32_t qos, uint16_t slMask, uint32_t slAvailableCnt)
+{
+    const uint32_t q = qos & 7U;
+    if (slAvailableCnt == 0U) {
+        return 0U;
     }
-    return SlValueAtRankInMask16(slMask, 0U) == 7U && SlValueAtRankInMask16(slMask, 1U) == 8U &&
-           SlValueAtRankInMask16(slMask, 2U) == 9U;
+    if (slAvailableCnt == 1U) {
+        return SlValueAtRankInMask16(slMask, 0U);
+    }
+    if (slAvailableCnt == 2U) {
+        const uint32_t slRank = (q >= 4U) ? 0U : 1U;
+        return SlValueAtRankInMask16(slMask, slRank);
+    }
+    uint32_t slRank = 0U;
+    if (q >= 5U) {
+        slRank = 0U;
+    } else if (q >= 3U) {
+        slRank = (slAvailableCnt - 1U) / 2U;
+    } else {
+        slRank = slAvailableCnt - 1U;
+    }
+    if (slRank >= slAvailableCnt) {
+        slRank = slAvailableCnt - 1U;
+    }
+    return SlValueAtRankInMask16(slMask, slRank);
 }
 
 static bool ApplyUbcQosTpSlPolicy(const RaUbGetTpInfoParam &param, uint32_t nTp, uint16_t slMask,
@@ -95,19 +118,20 @@ static bool ApplyUbcQosTpSlPolicy(const RaUbGetTpInfoParam &param, uint32_t nTp,
 static bool TryApplyUboeEightTpQosPolicy(const RaUbGetTpInfoParam &param, uint32_t nTp, uint16_t slMask,
     uint32_t &tpListIndexOut, uint32_t &mappedSlOut)
 {
-    if (param.tpProtocol != TpProtocol::UBOE || param.loopFirstTpLowestSl || param.slLevelCount != 0U) {
+    if (param.tpProtocol != TpProtocol::UBOE || param.loopFirstTpLowestSl) {
         return false;
     }
-    if (nTp != kUboeEightTpPolicyCount || !ValidateUboeSl789Mask(slMask)) {
+    const uint32_t slAvailableCnt = ResolveSlAvailableCntForPolicy(slMask, param.slLevelCount);
+    if (nTp != kUboeEightTpPolicyCount || slAvailableCnt == 0U) {
         return false;
     }
     const uint32_t qos = param.qos & 7U;
     static constexpr uint8_t kUboeEightTpIndexByQos[8] = {7U, 6U, 5U, 4U, 3U, 2U, 1U, 0U};
-    static constexpr uint8_t kUboeEightTpSlByQos[8] = {9U, 9U, 9U, 8U, 8U, 7U, 7U, 7U};
     tpListIndexOut = kUboeEightTpIndexByQos[qos];
-    mappedSlOut = kUboeEightTpSlByQos[qos];
-    HCCL_INFO("[TpManager][TryApplyUboeEightTpQosPolicy] qos[%u] tpListIndex[%u] mappedSl[%u] param[%s].", qos,
-        tpListIndexOut, mappedSlOut, param.Describe().c_str());
+    mappedSlOut = MapUboeEightTpSlFromMask(qos, slMask, slAvailableCnt);
+    HCCL_INFO("[TpManager][TryApplyUboeEightTpQosPolicy] qos[%u] tpListIndex[%u] mappedSl[%u] slMask[0x%x] "
+              "slAvailableCnt[%u] param[%s].",
+        qos, tpListIndexOut, mappedSlOut, static_cast<unsigned>(slMask), slAvailableCnt, param.Describe().c_str());
     return true;
 }
 
