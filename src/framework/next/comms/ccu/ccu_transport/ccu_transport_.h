@@ -91,7 +91,7 @@ public:
     HcclResult  Init();
     TransStatus GetStatus();
     void        Clean();
-    HcclResult GetRemoteMems(CommMem **remoteMem, uint32_t *memNum, char ***memTags);
+    HcclResult GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, char ***memTags);
     HcclResult CheckSocketStatus();
     HcclResult UpdateMemInfo(std::vector<CcuTransport::CclBufferInfo> &bufferVecTemp);
 
