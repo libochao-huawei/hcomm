@@ -25,13 +25,13 @@ public:
         const HcclChannelDesc* channelDescs,
         const std::vector<HcommChannelDesc> &hcommDescs,
         uint32_t channelNum,
-        const CollCommConfigConsistency &collCommConfigConsistency,
+        CollCommConfigConsistency &collCommConfigConsistency,
         const std::string &commTag);
     HcclResult ExchangeUserInfo(
         const std::vector<Hccl::Socket*> &sockets,
         const std::vector<u32> &remoteRanks,
         const std::vector<HcommSocketRole> &roles,
-        const CollCommConfigConsistency &collCommConfigConsistency);
+        CollCommConfigConsistency &collCommConfigConsistency);
     HcclResult BatchExchangeFixedData(
         const std::vector<Hccl::Socket*> &sockets,
         const std::vector<u32> &remoteRanks,

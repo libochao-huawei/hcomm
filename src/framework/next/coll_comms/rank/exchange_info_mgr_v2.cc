@@ -24,7 +24,7 @@ HcclResult ExchangeInfoMgrV2::BatchExchangeAndCheckConsistency(
     const HcclChannelDesc* channelDescs,
     const std::vector<HcommChannelDesc> &hcommDescs,
     uint32_t channelNum,
-    const CollCommConfigConsistency &collCommConfigConsistency,
+    CollCommConfigConsistency &collCommConfigConsistency,
     const std::string &commTag)
 {
     std::vector<Hccl::Socket*> sockets;
@@ -60,7 +60,7 @@ HcclResult ExchangeInfoMgrV2::ExchangeUserInfo(
     const std::vector<Hccl::Socket*> &sockets,
     const std::vector<u32> &remoteRanks,
     const std::vector<HcommSocketRole> &roles,
-    const CollCommConfigConsistency &collCommConfigConsistency)
+    CollCommConfigConsistency &collCommConfigConsistency)
 {
     u32 localExchangeInfoLen = collCommConfigConsistency.GetExchangeInfoLen();
     if (localExchangeInfoLen == 0) {

@@ -120,7 +120,6 @@ TEST_F(ExchangeInfoMgrV2Test, Ut_BatchExchange_When_NewRankConsistent_Expect_Suc
     hcommDesc.role = HCOMM_SOCKET_ROLE_CLIENT;
     std::vector<HcommChannelDesc> hcommDescVec;
     hcommDescVec.push_back(hcommDesc);
-    CollCommConfigConsistency &collCommConfigConsistency = myRank->GetCollCommConfigConsistency();
     ExchangeInfoMgrV2 exchangeInfoMgrV2;
     ret = exchangeInfoMgrV2.BatchExchangeAndCheckConsistency(channelDescs, hcommDescVec, 1, collCommConfigConsistency, "test_tag");
     EXPECT_EQ(ret, HCCL_SUCCESS);
