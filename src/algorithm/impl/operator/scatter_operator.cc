@@ -38,6 +38,13 @@ ScatterOperator::~ScatterOperator()
 HcclResult ScatterOperator::SelectAlg(const std::string& tag, const OpParam& param, std::string& algName,
     std::string& newTag)
 {
+    if (param.isLocalOp) {
+        algName = "LocalScatterExecutor";
+        newTag = tag + algName;
+        newTag += (param.aicpuUnfoldMode ? "_device" : "_host");
+        HCCL_INFO("[SelectAlg] LocalScatter newTag is [%s]", newTag.c_str());
+        return HCCL_SUCCESS;
+    }
     if (isDiffDeviceType_) {
         HCCL_ERROR("[ScatterOperator][SelectAlg] Scatter not support diffDeviceType");
         return HCCL_E_NOT_SUPPORT;

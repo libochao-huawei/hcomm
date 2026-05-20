@@ -59,7 +59,7 @@ public:
     HcclResult CallMsprofRegEsTaskTypeApi() const;
     HcclResult CallMsprofRegTaskTypeApi() const;
     HcclResult CallMsprofReportHostApi(HcclCMDType cmdType, uint64_t beginTime, u64 count, HcclDataType dataType,
-        AlgType algType, uint64_t groupName, u32 numBlocks=0) const;
+        AlgType algType, uint64_t groupName, u32 numBlocks=0, bool isLocalOp=false) const;
     HcclResult CallMsprofReportHostHcclOpApi(uint64_t beginTime, uint64_t endTime, uint64_t itemId,
         uint32_t threadId) const;
     HcclResult CallMsprofReportTaskApi(bool isMainStrem, uint64_t beginTime, ProfTaskType taskType) const;

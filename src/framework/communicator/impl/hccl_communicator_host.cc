@@ -5011,6 +5011,12 @@ namespace hccl
         u8 deterministic = implAlg_->GetDeterministicConfig();
         switch (opType) {
             case HcclCMDType::HCCL_CMD_ALLGATHER:
+                if (opParam.isLocalOp) {
+                    CHK_RET(RankConsistentcyChecker::GetInstance().RecordOpPara(opType,
+                            opParam.tag, cclBufferManager_.GetInCCLbufferSize(), cclBufferManager_.GetOutCCLbufferSize(),
+                            identifier_.c_str(), ranktableCrc_));
+                    break;
+                }
             case HcclCMDType::HCCL_CMD_ALLREDUCE:
             case HcclCMDType::HCCL_CMD_REDUCE_SCATTER:
             case HcclCMDType::HCCL_CMD_BROADCAST:
@@ -5020,6 +5026,12 @@ namespace hccl
                         identifier_.c_str(), ranktableCrc_, deterministic, aivCoreLimit));
                 break;
             case HcclCMDType::HCCL_CMD_SCATTER:
+                if (opParam.isLocalOp) {
+                    CHK_RET(RankConsistentcyChecker::GetInstance().RecordOpPara(opType,
+                            opParam.tag, cclBufferManager_.GetInCCLbufferSize(), cclBufferManager_.GetOutCCLbufferSize(),
+                            identifier_.c_str(), ranktableCrc_));
+                    break;
+                }
             case HcclCMDType::HCCL_CMD_REDUCE:
                 CHK_RET(RankConsistentcyChecker::GetInstance().RecordOpPara(opType,
                         opParam.tag, opParam.DataDes.count, opParam.DataDes.dataType, opParam.reduceType, opParam.root,
@@ -6534,6 +6546,7 @@ namespace hccl
 
         algResResponse.cclInputMem = cclBufferManager_.GetInCCLbuffer();
         algResResponse.cclOutputMem = cclBufferManager_.GetOutCCLbuffer();
+
         DeviceMem expMem = cclBufferManager_.GetCommCCLBuffer(); // 获取拓展内存
         if (opParam.opType == HcclCMDType::HCCL_CMD_ALLTOALLV || opParam.opType == HcclCMDType::HCCL_CMD_ALLTOALLVC || opParam.opType == HcclCMDType::HCCL_CMD_ALLTOALL) {
             DeviceMem tinySendRecvMem;
@@ -9315,5 +9328,107 @@ namespace hccl
         bool *newCreated)
     {
         return dpuManager_->GetDevMemWorkSpace(memTag, size, addr, newCreated);
+    }
+
+    HcclResult HcclCommunicator::LocalGather(const std::string &tag, void** sendBufs, u64* counts, u32 numBufs,
+                                              void* gatheredBuf, u32 splitNum, HcclDataType dataType, HcclRtStream stream)
+    {
+        CHK_RET(CheckSuspendingStatus());
+        if (!IsAtomicInit()) {
+            HCCL_ERROR("[HcclCommunicator][LocalGather]errNo[0x%016llx] hccl init must be called before call this function",
+                       HCCL_ERROR_CODE(HCCL_E_UNAVAIL));
+            return HCCL_E_UNAVAIL;
+        }
+
+        Stream streamObj(stream);
+        CHK_RET(callbackTask_->CallbackRegStream(stream));
+
+        u32 perDataSize = SIZE_TABLE[dataType];
+        u64 totalSize = 0;
+        for (u32 i = 0; i < numBufs; ++i) {
+            totalSize += counts[i] * perDataSize;
+        }
+        totalSize *= splitNum;
+
+        OpParam opParam;
+        opParam.tag = tag;
+        opParam.inputPtr = gatheredBuf;
+        opParam.inputSize = totalSize;
+        opParam.outputPtr = gatheredBuf;
+        opParam.outputSize = totalSize;
+        opParam.LocalGatherDataDes.sendBufs = sendBufs;
+        opParam.LocalGatherDataDes.counts = counts;
+        opParam.LocalGatherDataDes.numBufs = numBufs;
+        opParam.LocalGatherDataDes.gatheredBuf = gatheredBuf;
+        opParam.LocalGatherDataDes.splitNum = splitNum;
+        opParam.LocalGatherDataDes.dataType = dataType;
+        opParam.stream = streamObj;
+        opParam.opType = HcclCMDType::HCCL_CMD_ALLGATHER;
+        opParam.isLocalOp = true;
+
+        u64 totalCount = totalSize / perDataSize;
+        uint64_t beginTime = hrtMsprofSysCycleTime();
+        CHK_RET(ExecOp(HcclCMDType::HCCL_CMD_ALLGATHER, opParam));
+        if (GetIfProfile()) {
+            AlgType algType;
+            CHK_RET(GetAlgType(algType, HcclCMDType::HCCL_CMD_ALLGATHER));
+            u32 numBlocks = 0;
+            GetNumBlocks(numBlocks);
+            uint64_t groupName = hrtMsprofGetHashId(identifier_.c_str(), identifier_.length());
+            CHK_RET_AND_PRINT_IDE(ProfilingManagerPub::CallMsprofReportHostApi(HcclCMDType::HCCL_CMD_ALLGATHER,
+                beginTime, totalCount, dataType, algType, groupName, numBlocks, true), tag.c_str());
+        }
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::LocalScatter(const std::string &tag, void** recvBufs, u64* counts, u32 numBufs,
+                                               void* gatheredBuf, u32 splitNum, HcclDataType dataType, HcclRtStream stream)
+    {
+        CHK_RET(CheckSuspendingStatus());
+        if (!IsAtomicInit()) {
+            HCCL_ERROR("[HcclCommunicator][LocalScatter]errNo[0x%016llx] hccl init must be called before call this function",
+                       HCCL_ERROR_CODE(HCCL_E_UNAVAIL));
+            return HCCL_E_UNAVAIL;
+        }
+
+        Stream streamObj(stream);
+        CHK_RET(callbackTask_->CallbackRegStream(stream));
+
+        u32 perDataSize = SIZE_TABLE[dataType];
+        u64 totalSize = 0;
+        for (u32 i = 0; i < numBufs; ++i) {
+            totalSize += counts[i] * perDataSize;
+        }
+        totalSize *= splitNum;
+
+        OpParam opParam;
+        opParam.tag = tag;
+        opParam.inputPtr = gatheredBuf;
+        opParam.inputSize = totalSize;
+        opParam.outputPtr = gatheredBuf;
+        opParam.outputSize = totalSize;
+        opParam.LocalScatterDataDes.recvBufs = recvBufs;
+        opParam.LocalScatterDataDes.counts = counts;
+        opParam.LocalScatterDataDes.numBufs = numBufs;
+        opParam.LocalScatterDataDes.gatheredBuf = gatheredBuf;
+        opParam.LocalScatterDataDes.splitNum = splitNum;
+        opParam.LocalScatterDataDes.dataType = dataType;
+        opParam.stream = streamObj;
+        opParam.opType = HcclCMDType::HCCL_CMD_SCATTER;
+        opParam.isLocalOp = true;
+
+        u64 totalCount = totalSize / perDataSize;
+        uint64_t beginTime = hrtMsprofSysCycleTime();
+        CHK_RET(ExecOp(HcclCMDType::HCCL_CMD_SCATTER, opParam));
+        if (GetIfProfile()) {
+            AlgType algType;
+            CHK_RET(GetAlgType(algType, HcclCMDType::HCCL_CMD_SCATTER));
+            u32 numBlocks = 0;
+            GetNumBlocks(numBlocks);
+            uint64_t groupName = hrtMsprofGetHashId(identifier_.c_str(), identifier_.length());
+            CHK_RET_AND_PRINT_IDE(ProfilingManagerPub::CallMsprofReportHostApi(HcclCMDType::HCCL_CMD_SCATTER,
+                beginTime, totalCount, dataType, algType, groupName, numBlocks, true), tag.c_str());
+        }
+        return HCCL_SUCCESS;
     }
 }

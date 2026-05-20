@@ -256,9 +256,17 @@ const std::map<HcclCMDType, std::string> PROF_OP_NAME = {{HcclCMDType::HCCL_CMD_
     {HcclCMDType::HCCL_CMD_BATCH_SEND_RECV, "hcom_batchSendRecv_"},
     {HcclCMDType::HCCL_CMD_BATCH_PUT, "hccl_batchPut_"}, {HcclCMDType::HCCL_CMD_BATCH_GET, "hccl_batchGet_"}};
 
-inline std::string GetProfOpName(HcclCMDType cmdType)
+inline std::string GetProfOpName(HcclCMDType cmdType, bool isLocalOp = false)
 {
     CHK_PRT_RET(PROF_OP_NAME.empty(), HCCL_ERROR("PROF_OP_NAME has not inited."), "hcom_ivalid_");
+    if (isLocalOp) {
+        if (cmdType == HcclCMDType::HCCL_CMD_ALLGATHER) {
+            return "hcom_localGather_";
+        }
+        if (cmdType == HcclCMDType::HCCL_CMD_SCATTER) {
+            return "hcom_localScatter_";
+        }
+    }
     auto it = PROF_OP_NAME.find(cmdType);
     if (it != PROF_OP_NAME.end()) {
         return it->second;

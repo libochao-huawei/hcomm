@@ -102,6 +102,11 @@ public:
     HcclResult AllGatherV(const std::string &tag, const void *sendBuf, u64 sendCount, const void *recvBuf,
         const void *recvCounts, const void *rdispls, HcclDataType dataType, HcclRtStream stream);
 
+    HcclResult LocalGather(const std::string &tag, void** sendBufs, u64* counts, u32 numBufs,
+        void* gatheredBuf, u32 splitNum, HcclDataType dataType, HcclRtStream stream);
+    HcclResult LocalScatter(const std::string &tag, void** recvBufs, u64* counts, u32 numBufs,
+        void* gatheredBuf, u32 splitNum, HcclDataType dataType, HcclRtStream stream);
+
     /* *********************************************************************
      功能描述  : all reduce功能实现
      输入参数  : const char *tag

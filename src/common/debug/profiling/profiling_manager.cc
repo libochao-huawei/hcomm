@@ -155,7 +155,7 @@ HcclResult ProfilingManager::CallMsprofReportNodeInfo(uint64_t beginTime, uint64
 }
 
 HcclResult ProfilingManager::CallMsprofReportHostApi(HcclCMDType cmdType, uint64_t beginTime, u64 count,
-    HcclDataType dataType, AlgType algType, uint64_t groupName, u32 numBlocks) const
+    HcclDataType dataType, AlgType algType, uint64_t groupName, u32 numBlocks, bool isLocalOp) const
 {
     if (isHostApiSubscribe_ != HCCL_SUCCESS && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
         !GetThreadCaptureStatus()) {
@@ -164,7 +164,7 @@ HcclResult ProfilingManager::CallMsprofReportHostApi(HcclCMDType cmdType, uint64
     uint64_t endTime = hrtMsprofSysCycleTime();
     uint32_t threadId = SalGetTid();
     uint32_t type = static_cast<int32_t>(cmdType);
-    const std::string profName(GetProfOpName(cmdType));
+    const std::string profName(GetProfOpName(cmdType, isLocalOp));
     uint64_t itemId = hrtMsprofGetHashId(profName.c_str(), profName.length());
     if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && IsLaunchKernelMode() != true) {
         CHK_RET(CallMsprofReportHostAclApi(type, beginTime, endTime, itemId, threadId));

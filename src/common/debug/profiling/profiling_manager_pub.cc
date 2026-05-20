@@ -33,10 +33,10 @@ HcclResult ProfilingManagerPub::GetTaskApiState()
     return ProfilingManager::Instance().GetTaskApiState();
 }
 HcclResult ProfilingManagerPub::CallMsprofReportHostApi(HcclCMDType cmdType, uint64_t beginTime, u64 count,
-    HcclDataType dataType, AlgType algType, uint64_t groupName, u32 numBlocks)
+    HcclDataType dataType, AlgType algType, uint64_t groupName, u32 numBlocks, bool isLocalOp)
 {
     return ProfilingManager::Instance().CallMsprofReportHostApi(cmdType, beginTime, count,
-        dataType, algType, groupName, numBlocks);
+        dataType, algType, groupName, numBlocks, isLocalOp);
 }
 
 HcclResult ProfilingManagerPub::CallMsprofReportMc2CommInfo(uint64_t timeStamp, const void *data, int len)
