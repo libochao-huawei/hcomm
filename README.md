@@ -14,7 +14,7 @@ HCOMM提供了标准化通信编程接口，具备以下关键特性：
 - 支持多种通信协议，包括PCIe、HCCS、RDMA等。
 - 通信平台与通信算子开发解耦，支持通信算子的独立开发、构建与部署。
 
-<img src="./docs/build/figures/architecture.png" alt="hccl-architecture" style="width: 65%;  height:65%;" />
+<img src="./docs/zh/build/figures/architecture.png" alt="hccl-architecture" style="width: 65%;  height:65%;" />
 
 HCOMM通信基础库采用分层解耦的设计思路，将通信能力划分为控制面和数据面两部分。
 
