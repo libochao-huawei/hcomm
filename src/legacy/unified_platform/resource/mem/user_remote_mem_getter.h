@@ -53,14 +53,14 @@ struct RemoteMemCtx{
 template<typename T>
 HcclResult GetRemoteUserMems(RemoteMemCtx<T> &remoteMemCtx)
 {
-    CHK_PRT_RET(!remoteMemCtx.remoteMem, HCCL_ERROR("[GetUserRemoteMem] remoteMem is nullptr"), HCCL_E_PARA);
-    CHK_PRT_RET(!remoteMemCtx.memTags, HCCL_ERROR("[GetUserRemoteMem] memTags is nullptr"), HCCL_E_PARA);
-    CHK_PRT_RET(!remoteMemCtx.memNum, HCCL_ERROR("[GetUserRemoteMem] memNum is nullptr"), HCCL_E_PARA);
+    CHK_PRT_RET(!remoteMemCtx.remoteMem, HCCL_ERROR("[GetRemoteUserMems] remoteMem is nullptr"), HCCL_E_PARA);
+    CHK_PRT_RET(!remoteMemCtx.memTags, HCCL_ERROR("[GetRemoteUserMems] memTags is nullptr"), HCCL_E_PARA);
+    CHK_PRT_RET(!remoteMemCtx.memNum, HCCL_ERROR("[GetRemoteUserMems] memNum is nullptr"), HCCL_E_PARA);
     *(remoteMemCtx.remoteMem) = nullptr;
     *(remoteMemCtx.memTags) = nullptr;
     *(remoteMemCtx.memNum) = 0;
     if (remoteMemCtx.memCount == 0) {
-        HCCL_INFO("[GetUserRemoteMem] No user remote memory found");
+        HCCL_INFO("[GetRemoteUserMems] No memory found");
         return HCCL_SUCCESS;
     }
     // 检查是否有缓存
