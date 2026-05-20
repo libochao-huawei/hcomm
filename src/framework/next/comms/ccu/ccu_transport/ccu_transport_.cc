@@ -648,7 +648,7 @@ void CcuTransport::Clean()
     ccuConnection_->Clean();
 }
 
-HcclResult CcuTransport::GetRemoteMems(CommMem **remoteMem, uint32_t *memNum, char ***memTags)
+HcclResult CcuTransport::GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, char ***memTags)
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
     uint32_t userMemCount = rmtBufferInfos_.size();
