@@ -93,7 +93,7 @@ public:
     static HcclResult CreateChannel(EndpointHandle endpointHandle, 
                                     CommEngine engine, 
                                     HcommChannelDesc channelDesc,
-                                    std::unique_ptr<Channel>& out);
+                                    std::shared_ptr<Channel>& out);
 };
 
 } // namespace hcomm
