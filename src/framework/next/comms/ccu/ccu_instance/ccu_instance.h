@@ -17,7 +17,7 @@
 #include "ccu_types.h"
 #include "ccu_res_pack.h"
 #include "ccu_drv_handle.h"
-#include "ccu_primitives.h"
+#include "ccu_device_res.h"
 
 namespace hcomm {
 

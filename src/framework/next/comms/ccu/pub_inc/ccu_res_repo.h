@@ -65,7 +65,6 @@ struct CcuResRepository {
     MissionResInfo mission{};
 };
 
-
 struct MissionReq {
     MissionReqType reqType{MissionReqType::FUSION_MULTIPLE_DIE};
     std::array<uint32_t, CCU_MAX_IODIE_NUM> req{};

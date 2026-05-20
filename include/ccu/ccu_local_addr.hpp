@@ -16,24 +16,25 @@
 #include "ccu_variable.hpp"
 #include "ccu_address.hpp"
 
+namespace AscendC {
 namespace ccu {
 
 template <typename U> class Array;
 
 class LocalAddr final {
 public:
-    LocalAddr() : addr(NoAllocTag{}), token(NoAllocTag{}) {
+    LocalAddr() : addr(detail::NoAllocTag{}), token(detail::NoAllocTag{}) {
         CCU_THROW_IF_FAILED(
             CcuLocalAddrAlloc(&this->handle, &this->addr.handle, &this->token.handle),
             "CcuLocalAddrAlloc: failed");
     }
 
-    LocalAddr(const LocalAddr& other) : addr(NoAllocTag{}), token(NoAllocTag{}) {
+    LocalAddr(const LocalAddr& other) : addr(detail::NoAllocTag{}), token(detail::NoAllocTag{}) {
         this->handle = other.handle;
         this->addr.handle = other.addr.handle;
         this->token.handle = other.token.handle;
     }
-    LocalAddr(LocalAddr&& other) noexcept : addr(NoAllocTag{}), token(NoAllocTag{}) {
+    LocalAddr(LocalAddr&& other) noexcept : addr(detail::NoAllocTag{}), token(detail::NoAllocTag{}) {
         this->handle = other.handle;
         this->addr.handle = other.addr.handle;
         this->token.handle = other.token.handle;
@@ -53,10 +54,11 @@ public:
     CcuLocalAddrHandle handle{0};
 
 private:
-    explicit LocalAddr(NoAllocTag) : addr(NoAllocTag{}), token(NoAllocTag{}) {}
+    explicit LocalAddr(detail::NoAllocTag) : addr(detail::NoAllocTag{}), token(detail::NoAllocTag{}) {}
     template <typename U> friend class Array;
 };
 
 } // namespace ccu
+} // namespace AscendC
 
 #endif // CCU_LOCAL_ADDR_HPP

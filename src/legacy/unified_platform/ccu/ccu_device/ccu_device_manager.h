@@ -19,8 +19,10 @@
 #include "orion_adapter_hccp.h"
 #include "local_ub_rma_buffer.h"
 
-// 支持新老ccu混跑新增，引入对外头文件，避免重复定义
-#include "../../../../pkg_inc/hcomm/ccu/ccu_res_repo.h"
+// 支持新老ccu混跑新增，引入 next CCU 内部头，避免重复定义。
+// 注：next CCU 内部头已从 pkg_inc/ 搬到 ccu_representation/ 下，
+// legacy 自身没有把对应路径加到 -I，故继续沿用相对路径硬引用方式。
+#include "../../../../framework/next/comms/ccu/pub_inc/ccu_res_repo.h"
 
 namespace Hccl {
 

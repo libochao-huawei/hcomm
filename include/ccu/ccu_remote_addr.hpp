@@ -16,24 +16,25 @@
 #include "ccu_variable.hpp"
 #include "ccu_address.hpp"
 
+namespace AscendC {
 namespace ccu {
 
 template <typename U> class Array;
 
 class RemoteAddr final {
 public:
-    RemoteAddr() : addr(NoAllocTag{}), token(NoAllocTag{}) {
+    RemoteAddr() : addr(detail::NoAllocTag{}), token(detail::NoAllocTag{}) {
         CCU_THROW_IF_FAILED(
             CcuRemoteAddrAlloc(&this->handle, &this->addr.handle, &this->token.handle),
             "CcuRemoteAddrAlloc: failed");
     }
 
-    RemoteAddr(const RemoteAddr& other) : addr(NoAllocTag{}), token(NoAllocTag{}) {
+    RemoteAddr(const RemoteAddr& other) : addr(detail::NoAllocTag{}), token(detail::NoAllocTag{}) {
         this->handle = other.handle;
         this->addr.handle = other.addr.handle;
         this->token.handle = other.token.handle;
     }
-    RemoteAddr(RemoteAddr&& other) noexcept : addr(NoAllocTag{}), token(NoAllocTag{}) {
+    RemoteAddr(RemoteAddr&& other) noexcept : addr(detail::NoAllocTag{}), token(detail::NoAllocTag{}) {
         this->handle = other.handle;
         this->addr.handle = other.addr.handle;
         this->token.handle = other.token.handle;
@@ -53,10 +54,11 @@ public:
     CcuRemoteAddrHandle handle{0};
 
 private:
-    explicit RemoteAddr(NoAllocTag) : addr(NoAllocTag{}), token(NoAllocTag{}) {}
+    explicit RemoteAddr(detail::NoAllocTag) : addr(detail::NoAllocTag{}), token(detail::NoAllocTag{}) {}
     template <typename U> friend class Array;
 };
 
 } // namespace ccu
+} // namespace AscendC
 
 #endif // CCU_REMOTE_ADDR_HPP

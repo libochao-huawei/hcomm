@@ -11,7 +11,7 @@
 #ifndef CCU_API_HPP
 #define CCU_API_HPP
 
-#include "ccu_data_api_impl.h"
+#include "ccu_primitives_impl.h"
 #include "ccu_control_flow_macro.h"
 
 #include "ccu_variable.hpp"
@@ -24,7 +24,12 @@
 #include "ccu_func.hpp"
 #include "ccu_loop.hpp"
 
+namespace AscendC {
 namespace ccu {
+
+// ==================== 类型别名 ====================
+using LoopConfig      = ::CcuLoopConfig;
+using LoopGroupConfig = ::CcuLoopGroupConfig;
 
 // ==================== 资源创建 ====================
 
@@ -36,7 +41,7 @@ inline T GetResByChannel(ChannelHandle /*channel*/, uint32_t /*index*/) {
 }
 template <>
 inline Variable GetResByChannel<Variable>(ChannelHandle channel, uint32_t varIndex) {
-    Variable v{NoAllocTag{}};
+    Variable v{detail::NoAllocTag{}};
     CCU_THROW_IF_FAILED(CcuVariableCreateByChannel(channel, varIndex, &v.handle),
         "CcuVariableCreateByChannel: failed");  
     return v;
@@ -104,11 +109,7 @@ inline CcuResult Write(ChannelHandle ch, RemoteAddr remote, CcuBuffer local, Var
 // LocalAddr → RemoteAddr Reduce (Reduce)
 inline CcuResult WriteReduce(ChannelHandle ch, RemoteAddr remote, LocalAddr local, Variable len, HcclDataType dataType, HcclReduceOp opType, Event event, uint16_t mask = 1){ return CcuWriteMemToMemReduce(ch, remote.handle, local.handle, len.handle, dataType, opType, event.handle, mask);}
 
-// ==================== Loop ====================
-//
-// LoopEngine 资源池由 ccu::LoopGroup 在创建时按 maxLoopNum 自动按需扩容，
-// 不再需要用户态显式调用 SetLoopNum / CcuSetLoopNum。
-
 } // namespace ccu
+} // namespace AscendC
 
 #endif // CCU_API_HPP
