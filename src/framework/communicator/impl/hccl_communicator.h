@@ -170,6 +170,12 @@ public:
     virtual HcclResult AllGatherVOutPlace(const std::string &tag, void *inputPtr, void *outputPtr,
         u64 inputCount, const void *outputCounts, const void *outputDispls, HcclDataType dataType, HcclRtStream stream);
 
+    virtual HcclResult LocalGather(const std::string &tag, void** sendBufs, u64* counts, u32 numBufs,
+        void* gatheredBuf, u32 splitNum, HcclDataType dataType, HcclRtStream stream);
+
+    virtual HcclResult LocalScatter(const std::string &tag, void** recvBufs, u64* counts, u32 numBufs,
+        void* gatheredBuf, u32 splitNum, HcclDataType dataType, HcclRtStream stream);
+
     virtual HcclResult AllReduce(const std::string &tag, void *inputPtr, void *outputPtr, u64 count,
         HcclDataType dataType, HcclReduceOp op, HcclRtStream stream,
         SyncMode syncMode = SyncMode::DEFAULT_TIMEWAITSYNCMODE, const HcomCollOpInfo *opInfo = nullptr);
