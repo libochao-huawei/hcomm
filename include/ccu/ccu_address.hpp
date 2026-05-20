@@ -15,10 +15,11 @@
 #include <type_traits>
 
 #include "ccu_types.h"
-#include "ccu_data_utils.hpp"
-#include "ccu_data_api_impl.h"
+#include "ccu_utils.hpp"
+#include "ccu_primitives_impl.h"
 #include "ccu_variable.hpp"
 
+namespace AscendC {
 namespace ccu {
 
 class LocalAddr;
@@ -59,32 +60,34 @@ public:
             "Address::operator=(Variable): CcuAddressAssignVar failed");
     }
 
-    void operator=(CcuArithmeticOperator<Address, Address> op) const {
+    void operator=(detail::CcuArithmeticOperator<Address, Address> op) const {
         CCU_THROW_IF_FAILED(
             CcuAddressAddAddrToAddr(this->handle, op.lhs.handle, op.rhs.handle),
             "Address::operator=(Addr+Addr): CcuAddressAddAddrToAddr failed");
     }
 
-    void operator=(CcuArithmeticOperator<Address, Variable> op) const {
+    void operator=(detail::CcuArithmeticOperator<Address, Variable> op) const {
         CCU_THROW_IF_FAILED(
             CcuAddressAddVarToAddr(this->handle, op.lhs.handle, op.rhs.handle),
             "Address::operator=(Addr+Var): CcuAddressAddVarToAddr failed");
     }
 
-    void operator=(CcuArithmeticOperator<Variable, Address> op) const {
+    void operator=(detail::CcuArithmeticOperator<Variable, Address> op) const {
         CCU_THROW_IF_FAILED(
             CcuAddressAddVarToAddr(this->handle, op.rhs.handle, op.lhs.handle),
             "Address::operator=(Var+Addr): CcuAddressAddVarToAddr failed");
     }
 
     // addr + addr
-    CcuArithmeticOperator<Address, Address> operator+(const Address &that) const {
-        return CcuArithmeticOperator<Address, Address>(*this, that, CcuArithmeticOperatorType::ADDITION);
+    detail::CcuArithmeticOperator<Address, Address> operator+(const Address &that) const {
+        return detail::CcuArithmeticOperator<Address, Address>(*this, that,
+            detail::CcuArithmeticOperatorType::ADDITION);
     }
 
     // addr + variable
-    CcuArithmeticOperator<Address, Variable> operator+(const Variable &var) const {
-        return CcuArithmeticOperator<Address, Variable>(*this, var, CcuArithmeticOperatorType::ADDITION);
+    detail::CcuArithmeticOperator<Address, Variable> operator+(const Variable &var) const {
+        return detail::CcuArithmeticOperator<Address, Variable>(*this, var,
+            detail::CcuArithmeticOperatorType::ADDITION);
     }
 
     void operator+=(const Variable &var) const {
@@ -102,21 +105,29 @@ public:
     CcuAddressHandle handle{0};
 
 private:
-    explicit Address(NoAllocTag) {}
+    explicit Address(detail::NoAllocTag) {}
     template <typename U> friend class Array;
     friend class LocalAddr;
     friend class RemoteAddr;
 };
 
 // variable + addr（交换律）
-inline CcuArithmeticOperator<Variable, Address> operator+(const Variable &var, const Address &addr) {
-    return CcuArithmeticOperator<Variable, Address>(var, addr, CcuArithmeticOperatorType::ADDITION);
+inline detail::CcuArithmeticOperator<Variable, Address> operator+(const Variable &var, const Address &addr) {
+    return detail::CcuArithmeticOperator<Variable, Address>(var, addr,
+        detail::CcuArithmeticOperatorType::ADDITION);
 }
 
 } // namespace ccu
+} // namespace AscendC
 
-template <> inline void CcuArithmeticOperator<ccu::Address, ccu::Address>::Check() const {}
-template <> inline void CcuArithmeticOperator<ccu::Address, ccu::Variable>::Check() const {}
-template <> inline void CcuArithmeticOperator<ccu::Variable, ccu::Address>::Check() const {}
+template <>
+inline void AscendC::ccu::detail::CcuArithmeticOperator<AscendC::ccu::Address,
+                                                       AscendC::ccu::Address>::Check() const {}
+template <>
+inline void AscendC::ccu::detail::CcuArithmeticOperator<AscendC::ccu::Address,
+                                                       AscendC::ccu::Variable>::Check() const {}
+template <>
+inline void AscendC::ccu::detail::CcuArithmeticOperator<AscendC::ccu::Variable,
+                                                       AscendC::ccu::Address>::Check() const {}
 
 #endif // CCU_ADDRESS_HPP
