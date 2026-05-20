@@ -37,6 +37,12 @@ extern HcclResult HcclScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCo
 extern HcclResult HcclAllGatherInner(void *sendBuf, void *recvBuf, uint64_t sendCount, HcclDataType dataType,
     HcclComm comm, aclrtStream stream);
 
+extern HcclResult HcclLocalGatherInner(void** sendBufs, uint64_t* counts, uint32_t numBufs, void* gatheredBuf,
+    uint32_t splitNum, HcclDataType dataType, HcclComm comm, aclrtStream stream);
+
+extern HcclResult HcclLocalScatterInner(void** recvBufs, uint64_t* counts, uint32_t numBufs, void* gatheredBuf,
+    uint32_t splitNum, HcclDataType dataType, HcclComm comm, aclrtStream stream);
+
 extern HcclResult HcclAllGatherVInner(void *sendBuf, uint64_t sendCount, void *recvBuf,
     const void *recvCounts, const void *recvDispls, HcclDataType dataType, HcclComm comm, aclrtStream stream);
 
