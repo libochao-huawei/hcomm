@@ -29,7 +29,7 @@
 #include "hccp_tlv_hdc_mgr.h"
 #include "tp_mgr.h"
 #include "ccu_comp.h"
-#include "../ccu/ccu_device/ccu_res_batch_allocator.h"
+#include "ccu/ccu_device/ccu_res_batch_allocator.h"
 #include "ccu_kernel_mgr.h"
 #include "../endpoint_pairs/sockets/socket_process.h"
 
@@ -64,7 +64,7 @@ HcommResMgr& HcommResMgr::GetInstance(const uint32_t devicePhyId)
     HccpTlvHdcMgr::GetInstance(devicePhyId);
     TpMgr::GetInstance(devicePhyId);
     CcuComponent::GetInstance(devicePhyId);
-    Hccl::CcuResBatchAllocator::GetInstance(devicePhyId);
+    CcuResBatchAllocator::GetInstance(devicePhyId);
     CcuKernelMgr::GetInstance(devicePhyId);
     SocketProcess::GetInstance(devicePhyId);
 
