@@ -650,7 +650,7 @@ void CcuTransport::Clean()
 
 HcclResult CcuTransport::GetRemoteMems(CommMem **remoteMem, uint32_t *memNum, char ***memTags)
 {
-    std::lock_guard<std::mutex> lock(remoteUserMemsMutex_);
+    std::lock_guard<std::mutex> lock(remoteMemsMutex_);
     uint32_t userMemCount = rmtBufferInfos_.size();
     auto cacheBuilder = [](Hccl::RemoteMemCtx<CclBufferInfo> &remoteMemCtx, uint32_t index) {
         auto &rmtBuffer = remoteMemCtx.rmtBufferVec[index];
