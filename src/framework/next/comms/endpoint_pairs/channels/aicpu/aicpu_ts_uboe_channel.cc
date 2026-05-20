@@ -258,7 +258,7 @@ HcclResult AicpuTsUboeChannel::GetNotifyNum(uint32_t *notifyNum) const
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsUboeChannel::GetRemoteMems(CommMem **remoteMem, uint32_t *memNum, char ***memTag)
+HcclResult AicpuTsUboeChannel::GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, char ***memTag)
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
     if (rmtBufferVec_.size() == 0) {
