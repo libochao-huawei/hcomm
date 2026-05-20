@@ -45,6 +45,7 @@ enum class HcommChannelKind : uint32_t {
     CPU_ROCE = 4U,
     AIV_UB_MEM = 5U,
     AICPU_TS_UBOE = 6U,
+    AICPU_TS_ROCE_V2 = 7U,
 };
 
 /**

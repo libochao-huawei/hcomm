@@ -25,7 +25,7 @@ public:
 
     HcclResult Init();
 
-    HcclResult CreateJetty();
+    HcclResult CreateJetty(u8 errTimeout);
 
     HrtRaUbCreateJettyParam GetCreateJettyParam() const;
     HrtRaUbJettyCreatedOutParam GetJettyedOutParam() const;
