@@ -32,7 +32,7 @@ struct RemoteMemCtx{
     std::vector<HcclMem>            &remoteMems;
     std::vector<std::string>        &tagCopies;
     std::vector<char*>              &tagPointers;
-    std::function<void(RemoteMemCtx<T> &remoteMemCtx, uint32_t index)> cacheBuilder;
+    std::function<HcclResult(RemoteMemCtx<T> &remoteMemCtx, uint32_t index)> cacheBuilder;
     HcclMem                         **remoteMem;
     uint32_t                        *memNum;
     char                            ***memTags;
@@ -41,7 +41,7 @@ struct RemoteMemCtx{
         std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &remoteMemTag,
         std::vector<HcclMem> &remoteMems, std::vector<std::string> &tagCopies,
         std::vector<char*> &tagPointers,
-        std::function<void(RemoteMemCtx<T> &remoteMemCtx, uint32_t index)> cacheBuilder,
+        std::function<HcclResult(RemoteMemCtx<T> &remoteMemCtx, uint32_t index)> cacheBuilder,
         HcclMem **remoteMem, uint32_t *memNum, char ***memTags) :
         memCount(memCount), cacheValid(cacheValid), rmtBufferVec(rmtBufferVec),
         remoteMemTag(remoteMemTag), remoteMems(remoteMems),
@@ -71,7 +71,7 @@ HcclResult GetRemoteUserMems(RemoteMemCtx<T> &remoteMemCtx)
         remoteMemCtx.tagPointers.clear();
         remoteMemCtx.tagPointers.reserve(remoteMemCtx.memCount);
         for (uint32_t i = 0; i < remoteMemCtx.memCount; ++i) {
-            remoteMemCtx.cacheBuilder(remoteMemCtx, i);
+            CHK_RET(remoteMemCtx.cacheBuilder(remoteMemCtx, i));
             const char* src = remoteMemCtx.remoteMemTag[i].data();
             std::string tagCopy(src, strnlen(src, HCCL_RES_TAG_MAX_LEN));
             remoteMemCtx.tagCopies.push_back(std::move(tagCopy));
