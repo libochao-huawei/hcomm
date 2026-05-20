@@ -203,6 +203,16 @@ HcclResult hrtRaTypicalCqCreate(RdmaHandle rdmaHandle, unsigned int cqDepth, uns
     return HCCL_SUCCESS;
 }
 
+s32 hrtRaTypicalCqPoll(RdmaHandle rdmaHandle, unsigned int cqn, unsigned int numEntries, void *wc)
+{
+    CHK_PTR_NULL(rdmaHandle);
+    CHK_PTR_NULL(wc);
+
+    s32 ret = DlRaFunction::GetInstance().dlRaTypicalCqPoll(rdmaHandle, cqn, numEntries, wc);
+    CHK_PRT_RET(ret < 0, HCCL_ERROR("[hrtRaTypicalCqPoll] PollCq fail. ret[%d], cqn[%u]", ret, cqn), ret);
+    return ret;
+}
+
 HcclResult hrtRaTypicalQpCreateWithCq(RdmaHandle rdmaHandle, int flag, int qpMode,
     unsigned int sendCqn, unsigned int recvCqn, struct ibv_qp_cap *cap, int qpType, int sqSigAll,
     struct TypicalQp* qpInfo, QpHandle &qpHandle)

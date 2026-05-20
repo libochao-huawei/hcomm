@@ -1796,20 +1796,61 @@ RS_ATTRI_VISI_DEF int RsTypicalCqCreate(unsigned int phyId, unsigned int rdevInd
         cqDepth = RS_DRV_CQ_DEPTH;
     }
 
-    ibCq = RsIbvCreateCq(rdevCb->ibCtx, (int)cqDepth, NULL, NULL, 0);
-    CHK_PRT_RETURN(ibCq == NULL, hccp_err("ibv create cq failed"), -ENOMEM);
-
-    *cqn = ibCq->handle;
-
-    if (rdevCb->typicalCqCnt < RS_MAX_TYPICAL_CQ_NUM) {
-        rdevCb->typicalCqTable[rdevCb->typicalCqCnt].cqn = *cqn;
-        rdevCb->typicalCqTable[rdevCb->typicalCqCnt].ibCq = ibCq;
-        rdevCb->typicalCqCnt++;
+    {
+        struct rdma_lite_device_cq_attr deviceCqAttr;
+        struct rdma_lite_device_cq_init_attr initAttr = {0};
+        ibCq = RsIbvExpCreateCq(rdevCb->ibCtx, (int)cqDepth,
+            NULL, NULL, 0, &initAttr, &deviceCqAttr);
+        if (ibCq != NULL) {
+            *cqn = ibCq->handle;
+            if (rdevCb->typicalCqCnt < RS_MAX_TYPICAL_CQ_NUM) {
+                rdevCb->typicalCqTable[rdevCb->typicalCqCnt].cqn = *cqn;
+                rdevCb->typicalCqTable[rdevCb->typicalCqCnt].ibCq = ibCq;
+                rdevCb->typicalCqTable[rdevCb->typicalCqCnt].deviceCqAttr = deviceCqAttr;
+                rdevCb->typicalCqTable[rdevCb->typicalCqCnt].hasDeviceAttr = true;
+                rdevCb->typicalCqCnt++;
+            }
+        }
+    }
+    if (ibCq == NULL) {
+        ibCq = RsIbvCreateCq(rdevCb->ibCtx, (int)cqDepth, NULL, NULL, 0);
+        CHK_PRT_RETURN(ibCq == NULL, hccp_err("ibv create cq failed"), -ENOMEM);
+        *cqn = ibCq->handle;
+        if (rdevCb->typicalCqCnt < RS_MAX_TYPICAL_CQ_NUM) {
+            rdevCb->typicalCqTable[rdevCb->typicalCqCnt].cqn = *cqn;
+            rdevCb->typicalCqTable[rdevCb->typicalCqCnt].ibCq = ibCq;
+            rdevCb->typicalCqCnt++;
+        }
     }
 
     hccp_info("create cq success, cqn[%u], cqDepth[%u]", *cqn, cqDepth);
 
     return 0;
+}
+
+RS_ATTRI_VISI_DEF int RsGetTypicalCqAttr(unsigned int phyId, unsigned int rdevIndex, unsigned int cqn,
+    struct rdma_lite_device_cq_attr *deviceCqAttr)
+{
+    struct RsRdevCb *rdevCb = NULL;
+    unsigned int i;
+    int ret;
+
+    CHK_PRT_RETURN(deviceCqAttr == NULL, hccp_err("deviceCqAttr is NULL!"), -EINVAL);
+
+    RS_QP_PARA_CHECK(phyId);
+    ret = RsQpQueryInfo(phyId, rdevIndex, &rdevCb, RA_RS_NOR_QP_MODE);
+    CHK_PRT_RETURN(ret, hccp_err("query qp info failed:%d", ret), ret);
+
+    for (i = 0; i < rdevCb->typicalCqCnt; i++) {
+        if (rdevCb->typicalCqTable[i].cqn == cqn &&
+            rdevCb->typicalCqTable[i].hasDeviceAttr) {
+            *deviceCqAttr = rdevCb->typicalCqTable[i].deviceCqAttr;
+            return 0;
+        }
+    }
+
+    hccp_err("cqn[%u] not found or no device attr", cqn);
+    return -ENOENT;
 }
 
 RS_ATTRI_VISI_DEF int RsQpCreateWithCq(unsigned int phyId, unsigned int rdevIndex,

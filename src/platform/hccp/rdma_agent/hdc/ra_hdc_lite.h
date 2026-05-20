@@ -124,6 +124,10 @@ int RaHdcLiteRecvWrlist(struct RaQpHandle *qpHdc, struct RecvWrlistData *wr, uns
     unsigned int *completeNum);
 int RaHdcLitePollCq(struct RaQpHandle *qpHdc, bool isSendCq, unsigned int numEntries,
     struct rdma_lite_wc_v2 *liteWc);
+int RaHdcLiteTypicalCqPoll(struct rdma_lite_cq *liteCq, unsigned int numEntries,
+    struct rdma_lite_wc_v2 *liteWc);
+int RaHdcLiteCqCreate(struct RaRdmaHandle *rdmaHandle,
+    struct rdma_lite_device_cq_attr *deviceCqAttr, struct rdma_lite_cq **liteCq);
 int RaHdcLiteInitCqeErrInfo(unsigned int phyId);
 void RaHdcLiteDeinitCqeErrInfo(unsigned int phyId);
 void RaHdcLiteGetCqeErrInfo(unsigned int phyId, struct CqeErrInfo *info);

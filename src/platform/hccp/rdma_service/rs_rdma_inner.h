@@ -13,6 +13,7 @@
 
 #include "rs_common_inner.h"
 #include "rs_list.h"
+#include "rdma_lite_common.h"
 
 #define RS_WC_NUM 16384
 #define RS_QP_ATTR_MIN_RNR_TIMER 12
@@ -94,6 +95,8 @@ struct RsRdevCb {
     struct {
         unsigned int cqn;
         struct ibv_cq *ibCq;
+        struct rdma_lite_device_cq_attr deviceCqAttr;
+        bool hasDeviceAttr;
     } typicalCqTable[RS_MAX_TYPICAL_CQ_NUM];
     unsigned int typicalCqCnt;
 };

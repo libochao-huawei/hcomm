@@ -18,6 +18,7 @@
 #include <infiniband/driver.h>
 #include "hccp_common.h"
 #include "user_log.h"
+#include "rdma_lite_common.h"
 #include "ra_rs_comm.h"
 
 #define PROCESS_RS_SIGN_LENGTH 49
@@ -101,6 +102,8 @@ RS_ATTRI_VISI_DEF int RsQpCreateWithAttrs(unsigned int phyId, unsigned int rdevI
     struct RsQpNormWithAttrs *qpNorm, struct RsQpRespWithAttrs *qpResp);
 RS_ATTRI_VISI_DEF int RsTypicalCqCreate(unsigned int phyId, unsigned int rdevIndex, unsigned int cqDepth,
     unsigned int *cqn);
+RS_ATTRI_VISI_DEF int RsGetTypicalCqAttr(unsigned int phyId, unsigned int rdevIndex, unsigned int cqn,
+    struct rdma_lite_device_cq_attr *deviceCqAttr);
 RS_ATTRI_VISI_DEF int RsQpCreateWithCq(unsigned int phyId, unsigned int rdevIndex,
     struct RsQpNormWithCq qpNorm, struct RsQpResp *qpResp);
 RS_ATTRI_VISI_DEF int RsQpDestroy(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn);

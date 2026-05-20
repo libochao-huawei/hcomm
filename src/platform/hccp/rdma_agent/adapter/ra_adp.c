@@ -100,6 +100,8 @@ struct RsOps {
     int (*getSecRandom)(int *value);
     int (*getHccnCfg)(unsigned int phyId, enum HccnCfgKey key, char *value, unsigned int *valueLen);
     int (*cqCreate)(unsigned int phyId, unsigned int rdevIndex, unsigned int cqDepth, unsigned int *cqn);
+    int (*getTypicalCqAttr)(unsigned int phyId, unsigned int rdevIndex, unsigned int cqn,
+        struct rdma_lite_device_cq_attr *deviceCqAttr);
     int (*qpCreateWithCq)(unsigned int phyId, unsigned int rdevIndex, struct RsQpNormWithCq qpNorm,
         struct RsQpResp *qpResp);
 };
@@ -146,6 +148,7 @@ struct RsOps gRaRsOps = {
     .getSecRandom = RsDrvGetRandomNum,
     .getHccnCfg = RsGetHccnCfg,
     .cqCreate = RsTypicalCqCreate,
+    .getTypicalCqAttr = RsGetTypicalCqAttr,
     .qpCreateWithCq = RsQpCreateWithCq,
 };
 
@@ -527,6 +530,15 @@ STATIC int RaRsTypicalCqCreate(char *inBuf, char *outBuf, int *outLen, int *opRe
 
     createData = (union OpTypicalCqCreateData *)(outBuf + sizeof(struct MsgHead));
     createData->rxData.cqn = cqn;
+
+    if (gRaRsOps.getTypicalCqAttr != NULL) {
+        *opResult = gRaRsOps.getTypicalCqAttr(createData->txData.phyId, createData->txData.rdevIndex,
+            cqn, &createData->rxData.deviceCqAttr);
+        createData->rxData.hasDeviceAttr = (*opResult == 0) ? 1 : 0;
+    } else {
+        createData->rxData.hasDeviceAttr = 0;
+    }
+    *opResult = 0;
 
     return 0;
 }

@@ -329,6 +329,7 @@ HcclResult hrtRaQpBatchModify(RdmaHandle rdmaHandle, QpHandle qpHandle[], unsign
 HcclResult hrtRaTypicalQpCreate(RdmaHandle rdmaHandle, int flag,
     int qpMode, struct TypicalQp* qpInfo, QpHandle &qpHandle);
 HcclResult hrtRaTypicalCqCreate(RdmaHandle rdmaHandle, unsigned int cqDepth, unsigned int &cqn);
+s32 hrtRaTypicalCqPoll(RdmaHandle rdmaHandle, unsigned int cqn, unsigned int numEntries, void *wc);
 HcclResult hrtRaTypicalQpCreateWithCq(RdmaHandle rdmaHandle, int flag, int qpMode,
     unsigned int sendCqn, unsigned int recvCqn, struct ibv_qp_cap *cap, int qpType, int sqSigAll,
     struct TypicalQp* qpInfo, QpHandle &qpHandle);

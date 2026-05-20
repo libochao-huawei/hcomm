@@ -86,6 +86,7 @@ struct RaRdmaOps gRaHdcRdmaOps = {
     .raAiQpCreateWithAttrs = RaHdcAiQpCreateWithAttrs,
     .raTypicalQpCreate = RaHdcTypicalQpCreate,
     .raTypicalCqCreate = RaHdcTypicalCqCreate,
+    .raTypicalCqPoll = RaHdcTypicalCqPoll,
     .raTypicalQpCreateWithCq = RaHdcTypicalQpCreateWithCq,
     .raLoopbackQpCreate = NULL,
     .raQpDestroy = RaHdcQpDestroy,
@@ -1306,6 +1307,33 @@ HCCP_ATTRI_VISI_DEF int RaTypicalCqCreate(void *rdevHandle, unsigned int cqDepth
         ConverReturnCode(RDMA_OP, ret));
 
     return 0;
+}
+
+HCCP_ATTRI_VISI_DEF int RaTypicalCqPoll(void *rdevHandle, unsigned int cqn, unsigned int numEntries, void *wc)
+{
+    struct RaRdmaHandle *rdmaHandleTmp = (struct RaRdmaHandle *)rdevHandle;
+    unsigned int phyId;
+    int ret;
+
+    CHK_PRT_RETURN(rdevHandle == NULL || rdmaHandleTmp->rdmaOps == NULL ||
+        rdmaHandleTmp->rdmaOps->raTypicalCqPoll == NULL,
+        hccp_err("[poll][ra_typical_cq]rdev_handle is NULL or func is NULL"), ConverReturnCode(RDMA_OP, -EINVAL));
+
+    CHK_PRT_RETURN(wc == NULL, hccp_err("[poll][ra_typical_cq]wc is NULL"),
+        ConverReturnCode(RDMA_OP, -EINVAL));
+
+    phyId = rdmaHandleTmp->rdevInfo.phyId;
+    CHK_PRT_RETURN(phyId >= RA_MAX_PHY_ID_NUM,
+        hccp_err("[poll][ra_typical_cq]phyId(%u) must greater or equal to 0 and less than %d!", phyId,
+        RA_MAX_PHY_ID_NUM), ConverReturnCode(RDMA_OP, -EINVAL));
+
+    hccp_run_info("Input parameters: phyId[%u], cqn[%u], numEntries[%u]", phyId, cqn, numEntries);
+
+    ret = rdmaHandleTmp->rdmaOps->raTypicalCqPoll(rdmaHandleTmp, cqn, numEntries, wc);
+    if (ret < 0) {
+        return ConverReturnCode(RDMA_OP, ret);
+    }
+    return ret;
 }
 
 HCCP_ATTRI_VISI_DEF int RaTypicalQpCreateWithCQ(void *rdevHandle, int flag, int qpMode,

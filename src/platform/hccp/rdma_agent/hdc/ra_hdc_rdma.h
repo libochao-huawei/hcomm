@@ -194,7 +194,8 @@ union OpTypicalCqCreateData {
 
     struct {
         unsigned int cqn;
-        unsigned int rsvd;
+        struct rdma_lite_device_cq_attr deviceCqAttr;
+        unsigned int hasDeviceAttr;
     } rxData;
 };
 
@@ -550,6 +551,7 @@ int RaHdcTypicalQpCreateWithCq(struct RaRdmaHandle *rdmaHandle, int flag, int qp
     unsigned int sendCqn, unsigned int recvCqn, struct ibv_qp_cap *cap, int qpType, int sqSigAll,
     struct TypicalQp *qpInfo, void **qpHandle);
 int RaHdcPollCq(struct RaQpHandle *qpHdc, bool isSendCq, unsigned int numEntries, void *wc);
+int RaHdcTypicalCqPoll(struct RaRdmaHandle *rdmaHandle, unsigned int cqn, unsigned int numEntries, void *wc);
 int RaHdcQpDestroy(struct RaQpHandle *qpHdc);
 int RaHdcTypicalQpModify(struct RaQpHandle *qpHdc, struct TypicalQp *localQpInfo,
     struct TypicalQp *remoteQpInfo);

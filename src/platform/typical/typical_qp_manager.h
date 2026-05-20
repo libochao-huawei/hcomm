@@ -28,6 +28,7 @@ public:
     HcclResult ModifyQp(struct TypicalQp& localQpInfo, struct TypicalQp& remoteQpInfo);
     HcclResult DestroyQp(struct TypicalQp& qpInfo);
     HcclResult GetQpHandleByQpn(u32 qpn, QpHandle& qpHandle);
+    HcclResult PollCq(u32 cqn, u32 num, u32 *polledNum, void *wc);
 private:
     TypicalQpManager();
     ~TypicalQpManager();
