@@ -191,6 +191,9 @@ HcclResult HostCpuUrmaChannel::BuildUbMemTransport()
 
 HcclResult HostCpuUrmaChannel::Init()
 {
+    s32 devLogicId;
+    CHK_RET(hrtGetDevice(&devLogicId));
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_));
     CHK_RET(ParseInputParam());
     CHK_RET(StartListen());
     CHK_RET(BuildSocket());
@@ -201,10 +204,6 @@ HcclResult HostCpuUrmaChannel::Init()
     CHK_RET(DlUrmaFunction::GetInstance().DlUrmaFunctionInit());
     // 获取urma read/write 单个wr的最大传输数据大小
     CHK_RET(HccpRaGetDevBaseAttr(rdmaHandle_, &devBaseAttr_));
-    s32 devLogicId;
-    CHK_RET(hrtGetDevice(&devLogicId));
-    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_));
-
     return HCCL_SUCCESS;
 }
 
