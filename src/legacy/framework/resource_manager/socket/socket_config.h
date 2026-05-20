@@ -147,16 +147,17 @@ template <> class equal_to<Hccl::SocketConfig> {
 public:
     bool operator()(const Hccl::SocketConfig &config, const Hccl::SocketConfig &otherConfig) const
     {
+        bool IsOthersSame =
+            config.link.GetLocalPort().GetAddr() == otherConfig.link.GetLocalPort().GetAddr() &&
+            config.link.GetRemotePort().GetAddr() == otherConfig.link.GetRemotePort().GetAddr() &&
+            config.tag == otherConfig.tag &&
+            config.listeningPort == otherConfig.listeningPort;
+
         if (config.noRankId && otherConfig.noRankId) {
-            return config.link.GetLocalPort().GetAddr() == otherConfig.link.GetLocalPort().GetAddr()
-                && config.link.GetRemotePort().GetAddr() == otherConfig.link.GetRemotePort().GetAddr()
-                && config.tag == otherConfig.tag && config.listeningPort == otherConfig.listeningPort;
+            return IsOthersSame;
         }
 
-        return config.remoteRank == otherConfig.remoteRank
-               && config.link.GetLocalPort().GetAddr() == otherConfig.link.GetLocalPort().GetAddr()
-               && config.link.GetRemotePort().GetAddr() == otherConfig.link.GetRemotePort().GetAddr()
-               && config.tag == otherConfig.tag && config.listeningPort == otherConfig.listeningPort;
+        return IsOthersSame && config.remoteRank == otherConfig.remoteRank;
     }
 };
 } // namespace std
