@@ -155,7 +155,7 @@ HcclResult CcuConnection::UpdateInitStatus()
             jetty->SetMappedJettyPriority(tpInfo_.mappedJettyPriority);
         }
         innerStatus_ = InnerStatus::TP_ATTR_GETTING;
-        break;
+        return HcclResult::HCCL_SUCCESS;
     }
     case InnerStatus::TP_ATTR_GETTING: {
         auto ret = GetTpAttr();
