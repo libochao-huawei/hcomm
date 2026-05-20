@@ -14,6 +14,7 @@
 #include "../../../../../../legacy/unified_platform/resource/buffer/exchange_ipc_buffer_dto.h"
 #include "../../../../../../legacy/common/utils/string_util.h"
 #include "../../../../../../legacy/unified_platform/resource/mem/user_remote_mem_getter.h"
+#include "comm_mems.h"
 #include "env_config/env_config.h"
 
 namespace hcomm {

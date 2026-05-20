@@ -658,9 +658,9 @@ HcclResult CcuTransport::GetRemoteMems(CommMem **remoteMem, uint32_t *memNum, ch
         remoteMemCtx.remoteUserMems[index].addr = reinterpret_cast<void *>(rmtBuffer.addr);
         remoteMemCtx.remoteUserMems[index].size = rmtBuffer.size;
     };
-    Hccl::RemoteMemCtx<CclBufferInfo> remoteMemCtx{
+    Hccl::RemoteMemCtx<CclBufferInfo> remoteMemCtx(
         userMemCount, cacheValid_, rmtBufferInfos_, remoteUserMemTag_, remoteUserMems_, tagCopies_, tagPointers_,
-        cacheBuilder, remoteMem, memNum, memTags};
+        cacheBuilder, remoteMem, memNum, memTags);
     CHK_RET(Hccl::GetRemoteUserMems(remoteMemCtx));
     return HcclResult::HCCL_SUCCESS;
 }
